@@ -27,8 +27,10 @@ D3D11Encoder::D3D11Encoder()
     , m_capsQuery()
     , m_capsGet()
     , m_infoQueried(false)
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     , m_pavp(false)
     , m_widi(false)
+#endif
     , m_maxSlices(0)
     , m_sps()
     , m_pps()
@@ -129,8 +131,13 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
         desc.OutputFormat = DXGI_FORMAT_NV12;
         desc.Guid         = m_guid; 
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         config.ConfigDecoderSpecific         = m_widi ? (ENCODE_ENC_PAK | ENCODE_WIDI) : ENCODE_ENC_PAK;  
         config.guidConfigBitstreamEncryption = m_pavp ? DXVA2_INTEL_PAVP : DXVA_NoEncrypt;
+#else
+        config.ConfigDecoderSpecific         = ENCODE_ENC_PAK;  
+        config.guidConfigBitstreamEncryption = DXVA_NoEncrypt;
+#endif
 
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "CreateVideoDecoder");
@@ -177,6 +184,7 @@ mfxStatus D3D11Encoder::CreateAccelerationService(MfxVideoParam const & par)
     HRESULT hr;
     D3D11_VIDEO_DECODER_EXTENSION ext = {};
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (   m_pavp != (par.Protected == MFX_PROTECTION_PAVP || par.Protected == MFX_PROTECTION_GPUCP_PAVP)
         || m_widi != par.WiDi)
     {
@@ -205,6 +213,7 @@ mfxStatus D3D11Encoder::CreateAccelerationService(MfxVideoParam const & par)
             MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
         }
     }
+#endif
 
     ext.Function = ENCODE_ENC_CTRL_CAPS_ID;
     ext.pPrivateOutputData = &m_capsQuery;
@@ -650,11 +659,13 @@ mfxStatus D3D11Encoder::QueryStatus(Task & task)
         Trace(*feedback, 0);
         task.m_bsDataLength = feedback->bitstreamSize;
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         if (m_widi && m_caps.HWCounterAutoIncrementSupport)
         {
             task.m_aes_counter.Count = feedback->aes_counter.Counter;
             task.m_aes_counter.IV    = feedback->aes_counter.IV;
         }
+#endif
 
         {
             mfxExtEncodedSlicesInfo* pESI = ExtBuffer::Get(task.m_ctrl);

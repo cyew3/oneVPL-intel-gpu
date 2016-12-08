@@ -272,7 +272,13 @@ namespace MfxHwH264Encode
         HeaderPacker m_headerPacker;
 
         // SkipFlag
-        enum { NO_SKIP, NORMAL_MODE, PAVP_MODE};
+        enum {
+            NO_SKIP,
+            NORMAL_MODE,
+#ifndef MFX_PROTECTED_FEATURE_DISABLE        
+            PAVP_MODE
+#endif
+        };
 
         mfxU8  m_numSkipFrames;
         mfxU32 m_sizeSkipFrames;

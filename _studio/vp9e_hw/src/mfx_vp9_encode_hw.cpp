@@ -16,6 +16,7 @@
 #include "mfx_vp9_encode_hw_utils.h"
 #include "ippi.h"
 #include "ipps.h"
+#include "fast_copy.h"
 
 #if defined (PRE_SI_TARGET_PLATFORM_GEN10)
 namespace MfxHwVP9Encode
@@ -691,7 +692,7 @@ mfxStatus Plugin::UpdateBitstream(
     if (bsSizeToCopy)
     {
         IppiSize roi = {(Ipp32s)bsSizeToCopy,1};
-        ippiCopyManaged_8u_C1R(bitstream.Y, bitstream.Pitch, bsData, bsSizeToCopy, roi, IPP_NONTEMPORAL_LOAD);
+        FastCopy::Copy(bsData, bsSizeToCopy, bitstream.Y, bitstream.Pitch, roi, COPY_VIDEO_TO_SYS);
     }
 
     mfxU8 * pIVFPicHeader = InsertSeqHeader(task) ? bsData + IVF_SEQ_HEADER_SIZE_BYTES : bsData;

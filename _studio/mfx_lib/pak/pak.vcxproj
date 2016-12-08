@@ -248,8 +248,6 @@
     <ClCompile Include="h264\src\mfx_h264_pak_utils.cpp" />
     <ClCompile Include="mpeg2\src\mfx_mpeg2_pak.cpp" />
     <ClCompile Include="mpeg2\src\mfx_mpeg2_pak_tabs.cpp" />
-    <ClCompile Include="vc1\src\mfx_vc1_enc_pak_adv.cpp" />
-    <ClCompile Include="vc1\src\mfx_vc1_enc_pak_sm.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="h264\include\mfx_h264_pak.h" />
@@ -259,8 +257,6 @@
     <ClInclude Include="h264\include\mfx_h264_pak_utils.h" />
     <ClInclude Include="mpeg2\include\mfx_mpeg2_pak.h" />
     <ClInclude Include="mpeg2\include\mfx_mpeg2_pak_tabs.h" />
-    <ClInclude Include="vc1\include\mfx_vc1_enc_pak_adv.h" />
-    <ClInclude Include="vc1\include\mfx_vc1_enc_pak_sm.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

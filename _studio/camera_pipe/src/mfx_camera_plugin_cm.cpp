@@ -2754,7 +2754,7 @@ void CmContext::Setup(
 
     if(m_platform == MFX_HW_HSW || m_platform == MFX_HW_HSW_ULT)
         m_program = ReadProgram(m_device, genx_hsw_camerapipe, SizeOf(genx_hsw_camerapipe));
-    else if(m_platform == MFX_HW_BDW || m_platform == MFX_HW_CHV)
+    else if(m_platform == MFX_HW_BDW || m_platform == MFX_HW_CHT)
         m_program = ReadProgram(m_device, genx_bdw_camerapipe, SizeOf(genx_bdw_camerapipe));
     else if(m_platform == MFX_HW_SCL)
         m_program = ReadProgram(m_device, genx_skl_camerapipe, SizeOf(genx_skl_camerapipe));

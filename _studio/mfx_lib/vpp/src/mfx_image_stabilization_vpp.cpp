@@ -55,7 +55,7 @@ mfxStatus MFXVideoVPPImgStab::Query( mfxExtBuffer* pHint )
 #include "videovme.h"
 #include "mfx_common_int.h"
 
-// aya: reason is VME. we prefer doesn't modify one
+// reason is VME. we prefer doesn't modify one
 #pragma warning( disable : 4244 )
 
 /* ******************************************************************** */
@@ -371,7 +371,7 @@ mfxStatus MFXVideoVPPImgStab::GetBufferSize( mfxU32* pBufferSize )
 } // mfxStatus MFXVideoVPPImgStab::GetBufferSize( mfxU32* pBufferSize )
 
 
-// aya: should be synch with GetBufferSize()
+// should be synch with GetBufferSize()
 mfxStatus MFXVideoVPPImgStab::SetBuffer( mfxU8* pBuffer )
 {
     VPP_CHECK_NOT_INITIALIZED;
@@ -1032,7 +1032,7 @@ mfxStatus MFXVideoVPPImgStab::GetBufferSizeEx( SizeInfo & sizeInf )
         sizeInf.m_preOutSizeY  = m_preOut.Data.Pitch * m_preOut.Info.Height;
         sizeInf.m_preOutSizeUV = (m_preOut.Data.Pitch * m_preOut.Info.Height) >> 1;
 
-        IppiSize dstSize = {static_cast<int>(m_width), static_cast<int>(m_height)};// aya: it is correct
+        IppiSize dstSize = {static_cast<int>(m_width), static_cast<int>(m_height)};
         IppiSize srcSize = {static_cast<int>(m_destWidth), static_cast<int>(m_destHeight)};
 
         ippSts = ippiResizeYUV420GetBufSize(

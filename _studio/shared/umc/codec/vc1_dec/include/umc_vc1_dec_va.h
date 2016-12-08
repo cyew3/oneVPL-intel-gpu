@@ -5,14 +5,12 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
 
 #if defined (UMC_ENABLE_VC1_VIDEO_DECODER)
-
-#ifndef UMC_RESTRICTED_CODE_VA
 
 #ifndef __UMC_VC1_VIDEO_DECODER_VA_H_
 #define __UMC_VC1_VIDEO_DECODER_VA_H_
@@ -229,9 +227,11 @@ namespace UMC
 #if defined (UMC_VA_DXVA)
                 if (m_va->IsIntelCustomGUID())
                 {
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
                     if(m_va->GetProtectedVA())
                          return VC1DecodeFrame_VLD<VC1FrameDescriptorVA_Protected<T> >(pDec,in,out_data);
                     else
+#endif
                          return VC1DecodeFrame_VLD<VC1FrameDescriptorVA_EagleLake<T> >(pDec,in,out_data);
                 }
                 else
@@ -452,5 +452,4 @@ namespace UMC
 #endif // #if defined(UMC_VA)
 
 #endif //__UMC_VC1_VIDEO_DECODER_VA_H
-#endif // #ifndef UMC_RESTRICTED_CODE_VA
 #endif //UMC_ENABLE_VC1_VIDEO_DECODER

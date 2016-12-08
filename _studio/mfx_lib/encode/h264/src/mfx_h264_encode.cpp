@@ -1789,7 +1789,7 @@ mfxStatus MFXVideoENCODEH264::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
     if (surface && !realSurface)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
 
-    if (MFX_ERR_NONE == status || static_cast<int>(MFX_ERR_MORE_DATA_RUN_TASK) == static_cast<int>(status) || MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == status || MFX_ERR_MORE_BITSTREAM == status)
+    if (MFX_ERR_NONE == status || static_cast<int>(MFX_ERR_MORE_DATA_SUBMIT_TASK) == static_cast<int>(status) || MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == status || MFX_ERR_MORE_BITSTREAM == status)
     {
         // lock surface. If input surface is opaque core will lock both opaque and associated realSurface
         if (realSurface) {
@@ -1799,8 +1799,8 @@ mfxStatus MFXVideoENCODEH264::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
         }
 
         EncodeTaskInputParams *m_pTaskInputParams = (EncodeTaskInputParams*)H264_Malloc(sizeof(EncodeTaskInputParams));
-        // MFX_ERR_MORE_DATA_RUN_TASK means that frame will be buffered and will be encoded later. Output bitstream isn't required for this task
-        m_pTaskInputParams->bs = (static_cast<int>(status) == static_cast<int>(MFX_ERR_MORE_DATA_RUN_TASK)) ? 0 : bs;
+        // MFX_ERR_MORE_DATA_SUBMIT_TASK means that frame will be buffered and will be encoded later. Output bitstream isn't required for this task
+        m_pTaskInputParams->bs = (static_cast<int>(status) == static_cast<int>(MFX_ERR_MORE_DATA_SUBMIT_TASK)) ? 0 : bs;
         m_pTaskInputParams->ctrl = ctrl;
         m_pTaskInputParams->surface = surface;
         m_pTaskInputParams->picState = m_fieldOutput ? m_fieldOutputState : 0; // field-based output: tell async part is it called for 1st or 2nd field
@@ -2226,7 +2226,7 @@ mfxStatus MFXVideoENCODEH264::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
         pRefPicListCtrl = (mfxExtAVCRefListCtrl*)GetExtBuffer(ctrl->ExtParam, ctrl->NumExtParam, MFX_EXTBUFF_AVC_REFLIST_CTRL);
         // ref pic list control info is ignored for B-frames
         if (pRefPicListCtrl) {
-            // ref list ctrl will be ignored in async part for Lync, field encoding and encoding with B-frames
+            // ref list ctrl will be ignored in async part for tempScalabilityMode, field encoding and encoding with B-frames
             // signal about it with warning
             if (isFieldEncoding || m_temporalLayers.NumLayers || cur_enc->m_info.B_frame_rate)
                 st = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
@@ -2326,7 +2326,7 @@ mfxStatus MFXVideoENCODEH264::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
             layer->m_frameCountBufferedSync++;
             if (m_fieldOutput)
                 m_fieldOutputStatus = MFX_ERR_MORE_DATA;
-            return (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK;
+            return (mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK;
         }
     }
 
@@ -2336,7 +2336,7 @@ mfxStatus MFXVideoENCODEH264::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
     }
 
     if (!lastDid && surface) // encode only when all depId are here
-        return (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK;
+        return (mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK;
 
     return st;
 }
@@ -3639,7 +3639,7 @@ mfxStatus MFXVideoENCODEH264::Init(mfxVideoParam* par_in)
         threadSpec = (threadSpecificDataH264*)H264_Malloc(sizeof(threadSpecificDataH264)  * numThreads);
         // copy existing
         if(threadsAllocated) {
-            ippsCopy_8u((Ipp8u*)cur_threadSpec, (Ipp8u*)threadSpec,
+            MFX_INTERNAL_CPY((Ipp8u*)threadSpec, (Ipp8u*)cur_threadSpec, 
             threadsAllocated*sizeof(threadSpecificDataH264));
             H264_Free(cur_threadSpec);
         }
@@ -4980,8 +4980,8 @@ mfxStatus MFXVideoENCODEH264::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
         if (optsSP_in) {
             if (((optsSP_in->SPSBuffer == 0) != (optsSP_out->SPSBuffer == 0)) ||
                 ((optsSP_in->PPSBuffer == 0) != (optsSP_out->PPSBuffer == 0)) ||
-                (optsSP_in->SPSBuffer && (optsSP_out->SPSBufSize < optsSP_out->SPSBufSize)) ||
-                (optsSP_in->PPSBuffer && (optsSP_out->PPSBufSize < optsSP_out->PPSBufSize)))
+                (optsSP_in->SPSBuffer && (optsSP_out->SPSBufSize < optsSP_in->SPSBufSize)) ||
+                (optsSP_in->PPSBuffer && (optsSP_out->PPSBufSize < optsSP_in->PPSBufSize)))
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
 
             st = LoadSPSPPS(&par_SPSPPS, seq_parms, pic_parms);
@@ -10605,9 +10605,12 @@ mfxStatus MFXVideoENCODEH264::InitSVCLayer(const mfxExtSVCRateControl* rc, mfxU1
     UMC::Status status;
     UMC::VideoBrcParams brcParams;
     H264EncoderParams videoParams;
-    mfxVideoInternalParam* par = &layer->m_mfxVideoParam;
 
     if( layer == NULL ) return MFX_ERR_NULL_PTR;
+
+    mfxVideoInternalParam* par = &layer->m_mfxVideoParam;
+
+
     if (layer->m_Initialized)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
 
@@ -11366,7 +11369,6 @@ mfxStatus MFXVideoENCODEH264::InitSVCLayer(const mfxExtSVCRateControl* rc, mfxU1
                 ((rsz->leftOffset & 0xF) == 0) &&
                 ((rsz->topOffset % (16 * (1 + sps->frame_mbs_only_flag))) == 0) &&
                 //(curSliceHeader->MbaffFrameFlag == refLayer->is_MbAff) &&
-                (rsz->refPhaseX == rsz->phaseX) &&
                 (rsz->refPhaseX == rsz->phaseX))
             {
                 rsz->m_spatial_resolution_change = 0;

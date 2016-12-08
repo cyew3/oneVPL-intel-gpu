@@ -51,9 +51,7 @@ sVideoFrameBuffer::sVideoFrameBuffer()
 {}
 
 sFrameBuffer::sFrameBuffer()
-    : ptr_context_data   (0)
-    , mid_context_data   (0)
-    , Y_comp_height      (0)
+    : Y_comp_height      (0)
     , Y_comp_pitch       (0)
     , U_comp_pitch       (0)
     , V_comp_pitch       (0)

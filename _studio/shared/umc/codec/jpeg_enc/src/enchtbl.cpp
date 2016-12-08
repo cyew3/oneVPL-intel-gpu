@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2001-2012 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2001-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -93,8 +93,8 @@ JERRCODE CJPEGEncoderHuffmanTable::Init(int id,int hclass,Ipp8u* bits,Ipp8u* val
   m_id     = id     & 0x0f;
   m_hclass = hclass & 0x0f;
 
-  ippsCopy_8u(bits,m_bits,16);
-  ippsCopy_8u(vals,m_vals,256);
+  MFX_INTERNAL_CPY(m_bits,bits,16);
+  MFX_INTERNAL_CPY(m_vals,vals,256);
 
   status = ippiEncodeHuffmanSpecInit_JPEG_8u(m_bits,m_vals,m_table);
   if(ippStsNoErr != status)

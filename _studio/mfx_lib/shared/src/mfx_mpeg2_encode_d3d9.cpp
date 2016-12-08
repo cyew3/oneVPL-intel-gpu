@@ -18,10 +18,8 @@
 //#define MFX_VA
 #include "libmfx_core_interface.h"
 #include "mfx_mpeg2_encode_d3d9.h"
-#include "ippi.h"
+#include "fast_copy.h"
 
-
-// aya: temporal solution
 #ifndef D3DDDIFMT_NV12
 #define D3DDDIFMT_NV12 (D3DDDIFORMAT)(MAKEFOURCC('N', 'V', '1', '2'))
 #endif
@@ -848,7 +846,7 @@ mfxStatus D3D9Encoder::FillMBBufferPointer(ExecuteBuffers* pExecuteBuffers)
         dst.Info.Height = mfxU16(numMB);
         dst.Info.FourCC = MFX_FOURCC_P8;
 
-        sts = m_core->DoFastCopy(&dst, &src);
+        sts = m_core->DoFastCopyExtended(&dst, &src);
         MFX_CHECK_STS(sts);
 #ifdef MPEG2_ENC_HW_PERF
         if (pExecuteBuffers->m_pps.picture_coding_type == CODING_TYPE_I)
@@ -920,7 +918,7 @@ mfxStatus D3D9Encoder::FillBSBuffer(mfxU32 nFeedback,mfxU32 nBitstream, mfxBitst
     sts = m_core->LockFrame(Frame.MemId,&Frame);
     MFX_CHECK_STS(sts);
 
-
+    pEncrypt = pEncrypt;
 #ifdef PAVP_SUPPORT
     if (pEncrypt->m_bEncryptionMode)
     {
@@ -945,16 +943,13 @@ mfxStatus D3D9Encoder::FillBSBuffer(mfxU32 nFeedback,mfxU32 nBitstream, mfxBitst
 
         IppiSize roi = {queryStatus.bitstreamSize, 1 };
 
-        IppStatus ret = ippStsNoErr;
-        
-        ret = ippiCopyManaged_8u_C1R( Frame.Y, queryStatus.bitstreamSize,
-        pBitstream->Data + pBitstream->DataLength + pBitstream->DataOffset, 
-        queryStatus.bitstreamSize,
-        roi, IPP_NONTEMPORAL_LOAD);
+        sts = FastCopy::Copy(
+            pBitstream->Data + pBitstream->DataLength + pBitstream->DataOffset, 
+            queryStatus.bitstreamSize,
+            Frame.Y, queryStatus.bitstreamSize,
+            roi, COPY_VIDEO_TO_SYS);
 
-        MFX_CHECK(ret == ippStsNoErr, MFX_ERR_UNDEFINED_BEHAVIOR);
-
-        //MFX_INTERNAL_CPY(pBitstream->Data + pBitstream->DataLength + pBitstream->DataOffset, Frame.Y, queryStatus.bitstreamSize);
+        MFX_CHECK(sts == MFX_ERR_NONE, MFX_ERR_UNDEFINED_BEHAVIOR);
         pBitstream->DataLength += queryStatus.bitstreamSize;     
     }
 

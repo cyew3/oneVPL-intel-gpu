@@ -292,8 +292,8 @@ Status MFXVC1VideoDecoder::GetAndProcessPerformedDS(MediaData* in, VideoData* ou
                     if (pCurrDescriptor->m_pContext->m_InitPicLayer->FCM == VC1_FieldInterlace)
                     {
                         heightMB =  m_pContext->m_seqLayerHeader.MaxHeightMB +  (m_pContext->m_seqLayerHeader.MaxHeightMB & 1);
-                        ippsCopy_8u(pCurrDescriptor->m_pContext->savedMVSamePolarity,
-                            m_pContext->savedMVSamePolarity_Curr,
+                        MFX_INTERNAL_CPY(m_pContext->savedMVSamePolarity_Curr,
+                            pCurrDescriptor->m_pContext->savedMVSamePolarity,
                             heightMB*m_pContext->m_seqLayerHeader.MaxWidthMB);
                     }
 
@@ -1205,7 +1205,7 @@ mfxStatus MFXVideoDECODEVC1::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
         MFXSts  = CheckBitstream(bs);
         MFX_CHECK_STS(MFXSts);
 
-#ifdef MFX_VA_WIN
+#if defined(MFX_VA_WIN) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (m_par.Protected && bs)
     {
        if (!m_pVC1VideoDecoder->m_va->GetProtectedVA())
@@ -1219,7 +1219,6 @@ mfxStatus MFXVideoDECODEVC1::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
     }
 #endif
     }
-
     
     // not enough descriptors in queue for the next frame
     if (!m_pVC1VideoDecoder->m_pStore->IsReadyDS() && m_bIsNeedToProcFrame)
@@ -1386,8 +1385,8 @@ mfxStatus MFXVideoDECODEVC1::SelfConstructFrame(mfxBitstream *bs)
         Ipp32u dataSize = ((bs->DataLength) > (m_FrameSize - ReadDataSize))?(m_FrameSize - ReadDataSize):(bs->DataLength);
         Ipp32u remainedBytes = (Ipp32u)(m_FrameConstrData.GetBufferSize() - m_FrameConstrData.GetDataSize());
         dataSize = (dataSize > remainedBytes) ? remainedBytes : dataSize;
-        ippsCopy_8u(bs->Data + bs->DataOffset,
-                   (Ipp8u*)m_FrameConstrData.GetBufferPointer() + m_FrameConstrData.GetDataSize(),
+        MFX_INTERNAL_CPY((Ipp8u*)m_FrameConstrData.GetBufferPointer() + m_FrameConstrData.GetDataSize(),
+                    bs->Data + bs->DataOffset,
                     dataSize);
         m_FrameConstrData.SetDataSize(m_FrameConstrData.GetDataSize() + dataSize);
         if (dataSize < (m_FrameSize - ReadDataSize))
@@ -2169,8 +2168,8 @@ mfxStatus MFXVideoDECODEVC1::ConvertMediaDataToMfxBS(mfxBitstream    *pBitstream
     }
     else
     {
-        ippsCopy_8u((Ipp8u*)m_FrameConstrData.GetDataPointer(),
-            pBitstream->Data + pBitstream->DataOffset,
+        MFX_INTERNAL_CPY(pBitstream->Data + pBitstream->DataOffset,
+            (Ipp8u*)m_FrameConstrData.GetDataPointer(),
             (mfxU32)m_FrameConstrData.GetDataSize());
 
         pBitstream->DataLength = (mfxU32)m_FrameConstrData.GetDataSize();
@@ -2866,7 +2865,7 @@ mfxStatus MFXVideoDECODEVC1::DecodeFrameCheck(mfxBitstream *bs,
 
     mfxStatus mfxSts = DecodeFrameCheck(bs, surface_work, surface_out);
     if (MFX_ERR_NONE == mfxSts ||
-        (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK == mfxSts) // It can be useful to run threads right after first frame receive
+        (mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK == mfxSts) // It can be useful to run threads right after first frame receive
     {
         AsyncSurface *pAsyncSurface = new AsyncSurface;
         pAsyncSurface->surface_work = GetOriginalSurface(surface_work);

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2006-2009 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2006-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_default_memory_allocator.h"
@@ -44,7 +44,7 @@ namespace UMC
     Status Alloc(size_t s_Size, Ipp32s s_Alignment)
     {
       if(!CanReuse(s_Size, s_Alignment)) { // can't reuse
-        pMemory = ippsMalloc_8u((Ipp32s)s_Size+s_Alignment);
+        pMemory = malloc((Ipp32s)s_Size+s_Alignment);
         if(pMemory == 0) {
           vm_debug_trace1(VM_DEBUG_ERROR, VM_STRING("failed to allocate %d bytes"), (Ipp32s)Size);
           return UMC_ERR_ALLOC;
@@ -78,7 +78,7 @@ namespace UMC
     {
       if(pMemory != 0) {
         Clear();
-        ippsFree(pMemory);
+        free(pMemory);
         pMemory = 0;
       }
 
@@ -118,7 +118,7 @@ Status DefaultMemoryAllocator::Close()
     memInfo[i].Release();
   }
   if(memInfo != 0) {
-    ippsFree(memInfo);
+    delete[] memInfo;
     memInfo = 0;
   }
   memUsed = 0;
@@ -170,7 +170,7 @@ Status DefaultMemoryAllocator::Alloc(MemID *pNewMemID, size_t Size, Ipp32u /*Fla
   }
   if (pmem == 0) { // relocate all descriptors
     Ipp32s newcount = IPP_MAX(8, memCount*2);
-    MemoryInfo* newmem = (MemoryInfo*)ippsMalloc_8u((int)(newcount*sizeof(MemoryInfo)));
+    MemoryInfo* newmem = new MemoryInfo[newcount];
     if (newmem == 0) {
       vm_debug_trace1(VM_DEBUG_ERROR, VM_STRING("failed to allocate %d bytes"), newcount*sizeof(MemoryInfo));
       return UMC_ERR_ALLOC;
@@ -181,7 +181,7 @@ Status DefaultMemoryAllocator::Alloc(MemID *pNewMemID, size_t Size, Ipp32u /*Fla
 
     // free old descriptors
     if (memInfo)
-        ippsFree(memInfo);
+        delete[] memInfo;
 
     memInfo = newmem;
     memCount = newcount;

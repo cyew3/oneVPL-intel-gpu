@@ -18,7 +18,7 @@
 
 using namespace UMC;
 
-Status MPEG2VideoDecoderSW::DecodeSlice_FrameI_420(IppVideoContext *video, int task_num)
+Status MPEG2VideoDecoderSW::DecodeSlice_FrameI_420(VideoContext *video, int task_num)
 {
     Ipp32s dct_type = 0;
 
@@ -175,9 +175,9 @@ Status MPEG2VideoDecoderSW::DecodeSlice_FrameI_420(IppVideoContext *video, int t
     return UMC_OK;
 #endif
 
-} // Status MPEG2VideoDecoderSW::DecodeSlice_FrameI_420(IppVideoContext *video, int task_num)
+} // Status MPEG2VideoDecoderSW::DecodeSlice_FrameI_420(VideoContext *video, int task_num)
 
-Status MPEG2VideoDecoderSW::DecodeSlice_FramePB_420(IppVideoContext *video, int task_num)
+Status MPEG2VideoDecoderSW::DecodeSlice_FramePB_420(VideoContext *video, int task_num)
 {
     Ipp32s dct_type = 0;
     Ipp32s macroblock_type;
@@ -446,7 +446,7 @@ Status MPEG2VideoDecoderSW::DecodeSlice_FramePB_420(IppVideoContext *video, int 
 
 }//DecodeSlice_FramePB_420
 
-Status MPEG2VideoDecoderSW::DecodeSlice_FieldPB_420(IppVideoContext *video, int task_num)
+Status MPEG2VideoDecoderSW::DecodeSlice_FieldPB_420(VideoContext *video, int task_num)
 {
   Ipp32s macroblock_type;
   Ipp32s macroblock_address_increment = 0;

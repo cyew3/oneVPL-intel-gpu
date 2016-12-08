@@ -44,16 +44,6 @@ CoeffsBuffer::~CoeffsBuffer(void)
     Close();
 } // CoeffsBuffer::~CoeffsBuffer(void)
 
-void CoeffsBuffer::Lock()
-{
-    mutex.Lock();
-}
-
-void CoeffsBuffer::Unlock()
-{
-    mutex.Unlock();
-}
-
 void CoeffsBuffer::Close(void)
 {
     // delete buffer
@@ -142,11 +132,6 @@ bool CoeffsBuffer::IsInputAvailable() const
 Ipp8u* CoeffsBuffer::LockInputBuffer()
 {
     size_t lFreeSize;
-    //size_t size = m_lItemSize;
-
-#ifdef LIGHT_SYNC
-    AutomaticUMCMutex guard(mutex);
-#endif
 
     // check error(s)
     if (NULL == m_pbFree)
@@ -204,9 +189,6 @@ Ipp8u* CoeffsBuffer::LockInputBuffer()
         }
     }
 
-    // set free pointer
-    //pointer = m_pbFree;
-    //size = lFreeSize - COEFFS_BUFFER_ALIGN_VALUE_H265 - sizeof(BufferInfo);
     return m_pbFree;
 } // bool CoeffsBuffer::LockInputBuffer(MediaData* in)
 
@@ -215,10 +197,6 @@ bool CoeffsBuffer::UnLockInputBuffer(size_t size)
     size_t lFreeSize;
     BufferInfo *pTemp;
     Ipp8u *pb;
-
-#ifdef LIGHT_SYNC
-    AutomaticUMCMutex guard(mutex);
-#endif
 
     // check error(s)
     if (NULL == m_pbFree)
@@ -297,10 +275,6 @@ bool CoeffsBuffer::LockOutputBuffer(Ipp8u* &pointer, size_t &size)
 
 bool CoeffsBuffer::UnLockOutputBuffer()
 {
-#ifdef LIGHT_SYNC
-    AutomaticUMCMutex guard(mutex);
-#endif
-
     // no filled data is present
     if (0 == m_pBuffers)
         return false;
@@ -314,10 +288,6 @@ bool CoeffsBuffer::UnLockOutputBuffer()
 
 void CoeffsBuffer::Reset()
 {
-#ifdef LIGHT_SYNC
-    AutomaticUMCMutex guard(mutex);
-#endif
-
     // align buffer
     m_pbBuffer = UMC::align_pointer<Ipp8u *> (m_pbAllocatedBuffer, COEFFS_BUFFER_ALIGN_VALUE_H265);
 
@@ -331,89 +301,6 @@ void CoeffsBuffer::Free()
 {
     HeapObject::Free();
 }
-
-/*class Allocator
-{
-public:
-    template<typename T>
-    T * AllocateObject()
-    {
-        T * t = new T();
-        if (!t)
-            throw h265_exception(UMC_ERR_ALLOC);
-        return t;
-    }
-
-    template<typename T>
-    T * AllocateArray(Ipp32s size)
-    {
-        T * t = new T();
-        if (!t)
-            throw h265_exception(UMC_ERR_ALLOC);
-        return t;
-    }
-
-    template <typename T>
-    T* Allocate(Ipp32s size = sizeof(T))
-    {
-        if (!m_pFirstFree)
-        {
-            Item_H265 * item = Item_H265::Allocate<T>(size);
-            return (T*)(item->m_Ptr);
-        }
-
-        Item_H265 * temp = m_pFirstFree;
-
-        while (temp->m_pNext)
-        {
-            if (temp->m_pNext->m_Size == size)
-            {
-                void * ptr = temp->m_pNext->m_Ptr;
-                temp->m_pNext = temp->m_pNext->m_pNext;
-                return (T*)ptr;
-            }
-
-            temp = temp->m_pNext;
-        }
-
-        Item_H265 * item = Item_H265::Allocate<T>(size);
-        return (T*)(item->m_Ptr);
-    }
-
-    template <typename T>
-    T* AllocateObject()
-    {
-        void * ptr = Allocate<T>();
-        return new(ptr) T();
-    }
-
-    template <typename T>
-    void FreeObject(T * obj, bool force = false)
-    {
-        if (!obj)
-            return;
-        obj->~T();
-        Free(obj, force);
-    }
-
-    void Free(void * obj, bool force = false)
-    {
-        if (!obj)
-            return;
-
-        Item_H265 * item = (Item_H265 *) ((Ipp8u*)obj - sizeof(Item_H265));
-
-        if (force)
-        {
-            Item_H265::Free(item);
-            return;
-        }
-
-        item->m_pNext = m_pFirstFree;
-        m_pFirstFree = item;
-    }
-};*/
-
 
 void HeapObject::Free()
 {

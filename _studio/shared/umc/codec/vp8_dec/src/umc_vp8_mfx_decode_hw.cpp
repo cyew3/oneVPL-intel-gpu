@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -212,7 +212,6 @@ Status VP8VideoDecoderHardware::PackHeaders(MediaData* src)
     if (0 == m_frameInfo.segmentationEnabled)
     {
         // when segmentation is disabled, use the first entry 0 for the quantization values
-        // ippsCopy_8u
         qmTable->Qvalue[0][0] = USHORT(m_quantInfo.ydcQ[0]);
         qmTable->Qvalue[0][1] = USHORT(m_quantInfo.yacQ[0]);
         qmTable->Qvalue[0][2] = USHORT(m_quantInfo.uvdcQ[0]);

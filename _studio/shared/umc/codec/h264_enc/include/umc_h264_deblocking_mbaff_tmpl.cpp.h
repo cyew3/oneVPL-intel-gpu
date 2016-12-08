@@ -443,10 +443,7 @@ void H264ENC_MAKE_NAME(H264CoreEncoder_ResetDeblockingVariablesMBAFF)(
         }
         else
         {
-            if (pGetMBFieldDecodingFlag(core_enc_debl->m_pCurrentFrame->m_mbinfo.mbs + MBAddr - core_enc_debl->m_WidthInMBs * 2))
-                pParams->m_base.nNeighbour[HORIZONTAL_DEBLOCKING] = MBAddr - core_enc_debl->m_WidthInMBs * 2;
-            else
-                pParams->m_base.nNeighbour[HORIZONTAL_DEBLOCKING] = MBAddr - core_enc_debl->m_WidthInMBs * 2;
+            pParams->m_base.nNeighbour[HORIZONTAL_DEBLOCKING] = MBAddr - core_enc_debl->m_WidthInMBs * 2;
         }
     }
 

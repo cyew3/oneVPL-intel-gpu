@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2011 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -492,8 +492,8 @@ namespace UMC
     bool H264_AU_Stream::IsPictureSame(H264SliceHeaderParse & p_newHeader)
     {
         if ((p_newHeader.frame_num != m_lastSlice.frame_num) ||
-            (p_newHeader.pic_parameter_set_id != p_newHeader.pic_parameter_set_id) ||
-            (p_newHeader.field_pic_flag != p_newHeader.field_pic_flag) ||
+            (p_newHeader.pic_parameter_set_id != m_lastSlice.pic_parameter_set_id) ||
+            (p_newHeader.field_pic_flag != m_lastSlice.field_pic_flag) ||
             (p_newHeader.bottom_field_flag != m_lastSlice.bottom_field_flag)
             ){
             return false;

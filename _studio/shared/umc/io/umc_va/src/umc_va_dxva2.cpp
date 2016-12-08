@@ -98,7 +98,7 @@ Status DXVA2Accelerator::CloseDirectXDecoder()
         m_pDirect3DDeviceManager9->CloseDeviceHandle(m_hDevice);
         m_hDevice = INVALID_HANDLE_VALUE;
     }
-    UMC_RETURN(UMC_OK);
+    return UMC_OK;
 }
 
 DXVA2Accelerator::~DXVA2Accelerator()
@@ -141,6 +141,13 @@ Status DXVA2Accelerator::BeginFrame(Ipp32s index)
 
 Status DXVA2Accelerator::EndFrame(void * handle)
 {
+    for (Ipp32u j = 0; j < m_bufferOrder.size(); ++j)
+    {
+        ReleaseBuffer(m_bufferOrder[j]); 
+    }
+
+    m_bufferOrder.clear();
+
     for (int i = 0; i < MAX_BUFFER_TYPES; i++)
     {
         m_pCompBuffer[i].SetBufferPointer(NULL, 0);
@@ -194,17 +201,6 @@ void* DXVA2Accelerator::GetCompBuffer(Ipp32s buffer_type, UMCVACompBuffer **buf,
 }
 
 //////////////////////////////////////////////////////////////
-
-Status DXVA2Accelerator::ReleaseAllBuffers()
-{
-    for (Ipp32u j = 0; j < m_bufferOrder.size(); ++j)
-    {
-        Status s = ReleaseBuffer(m_bufferOrder[j]); 
-        if (s != UMC_OK)
-            return s;
-    }
-    return UMC_OK;
-}
 
 Status DXVA2Accelerator::ReleaseBuffer(Ipp32s type)
 {
@@ -381,8 +377,6 @@ static const GuidProfile guidProfiles[] =
     { MPEG2_VLD,        sDXVA2_ModeMPEG2_VLD },
     { H264_VLD,         sDXVA2_ModeH264_VLD_NoFGT },
 
-    { H264_VLD,  sDXVA2_Intel_EagleLake_ModeH264_VLD_NoFGT },
-
     { VC1_VLD,   sDXVA2_Intel_ModeVC1_D_Super},
 
     { JPEG_VLD,  sDXVA2_Intel_IVB_ModeJPEG_VLD_NoFGT},
@@ -474,7 +468,7 @@ bool GuidProfile::IsIntelCustomGUID(const GUID & guid)
 {
     return
         guid == sDXVA2_Intel_ModeVC1_D_Super || 
-        guid == sDXVA2_Intel_EagleLake_ModeH264_VLD_NoFGT || guid == sDXVA_Intel_ModeH264_VLD_MVC || 
+        guid == sDXVA_Intel_ModeH264_VLD_MVC || 
         guid == DXVA_Intel_ModeHEVC_VLD_MainProfile       || guid == DXVA_Intel_ModeHEVC_VLD_Main10Profile ||
         guid == DXVA_Intel_ModeVP9_Profile0_VLD           || guid == DXVA_Intel_ModeVP9_Profile2_10bit_VLD
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
@@ -711,7 +705,7 @@ Status DXVA2Accelerator::Init(VideoAcceleratorParams *pParams)
 
     if (m_bInitilized)
     {
-        UMC_RETURN(UMC_OK);
+        return UMC_OK;
     }
 
     m_allocator = pParams->m_allocator;
@@ -719,10 +713,12 @@ Status DXVA2Accelerator::Init(VideoAcceleratorParams *pParams)
     if (!m_allocator)
         return UMC_ERR_NULL_PTR;
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (IS_PROTECTION_ANY(pParams->m_protectedVA))
     {
         m_protectedVA = new UMC::ProtectedVA((mfxU16)pParams->m_protectedVA);
     }
+#endif
 
     UMC_CALL(FindConfiguration(pParams->m_pVideoStreamInfo));
 
@@ -752,21 +748,25 @@ Status DXVA2Accelerator::Init(VideoAcceleratorParams *pParams)
 
     if (FAILED(hr))
     {
-        UMC_RETURN(UMC_ERR_INIT);
+        return UMC_ERR_INIT;
     }
 
-    m_isUseStatuReport = m_HWPlatform != VA_HW_LAKE;
+    m_isUseStatuReport = true;
     m_bInitilized = TRUE;
-    UMC_RETURN(UMC_OK);
+    return UMC_OK;
 }
 
 Status DXVA2Accelerator::Close()
 {
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     delete m_protectedVA;
     m_protectedVA = 0;
+#endif
 
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
     delete m_videoProcessingVA;
     m_videoProcessingVA = 0;
+#endif
 
     m_bInitilized = FALSE;
     return VideoAccelerator::Close();

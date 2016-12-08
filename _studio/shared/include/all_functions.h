@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2009 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2016 Intel Corporation. All Rights Reserved.
 //
 
 // Library Common
@@ -64,8 +64,6 @@ FUNCTION(mfxStatus, MFXVideoENC_Reset, (mfxSession session, mfxVideoParam *par),
 FUNCTION(mfxStatus, MFXVideoENC_Close, (mfxSession session), (session))
 
 FUNCTION(mfxStatus, MFXVideoENC_GetVideoParam, (mfxSession session, mfxVideoParam *par), (session, par))
-//FUNCTION(mfxStatus, MFXVideoENC_GetFrameParam, (mfxSession session, mfxFrameParam *par), (session, par))
-FUNCTION(mfxStatus, MFXVideoENC_RunFrameVmeENCAsync, (mfxSession session, mfxFrameCUC *cuc, mfxSyncPoint *syncp), (session, cuc, syncp))
 
 // PAK interface functions
 FUNCTION(mfxStatus, MFXVideoPAK_Query, (mfxSession session, mfxVideoParam *in, mfxVideoParam *out), (session, in, out))
@@ -75,16 +73,3 @@ FUNCTION(mfxStatus, MFXVideoPAK_Reset, (mfxSession session, mfxVideoParam *par),
 FUNCTION(mfxStatus, MFXVideoPAK_Close, (mfxSession session), (session))
 
 FUNCTION(mfxStatus, MFXVideoPAK_GetVideoParam, (mfxSession session, mfxVideoParam *par), (session, par))
-//FUNCTION(mfxStatus, MFXVideoPAK_GetFrameParam, (mfxSession session, mfxFrameParam *par), (session, par))
-//FUNCTION(mfxStatus, MFXVideoPAK_RunSeqHeader, (mfxSession session, mfxFrameCUC *cuc), (session, cuc))
-FUNCTION(mfxStatus, MFXVideoPAK_RunFramePAKAsync, (mfxSession session, mfxFrameCUC *cuc, mfxSyncPoint *syncp), (session, cuc, syncp))
-
-// BRC interface functions
-FUNCTION(mfxStatus, MFXVideoBRC_Query, (mfxSession session, mfxVideoParam *in, mfxVideoParam *out), (session, in, out))
-FUNCTION(mfxStatus, MFXVideoBRC_Init, (mfxSession session, mfxVideoParam *par), (session, par))
-FUNCTION(mfxStatus, MFXVideoBRC_Reset, (mfxSession session, mfxVideoParam *par), (session, par))
-FUNCTION(mfxStatus, MFXVideoBRC_Close, (mfxSession session), (session))
-
-//FUNCTION(mfxStatus, MFXVideoBRC_FrameENCUpdate, (mfxSession session, mfxFrameCUC *cuc), (session, cuc))
-//FUNCTION(mfxStatus, MFXVideoBRC_FramePAKRefine, (mfxSession session, mfxFrameCUC *cuc), (session, cuc))
-//FUNCTION(mfxStatus, MFXVideoBRC_FramePAKRecord, (mfxSession session, mfxFrameCUC *cuc), (session, cuc))

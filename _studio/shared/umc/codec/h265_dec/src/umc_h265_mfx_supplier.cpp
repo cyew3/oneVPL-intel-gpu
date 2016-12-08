@@ -13,8 +13,6 @@
 
 #include "umc_h265_mfx_supplier.h"
 
-#ifndef UMC_RESTRICTED_CODE_MFX
-
 #include "umc_h265_frame_list.h"
 #include "umc_h265_nal_spl.h"
 #include "umc_h265_bitstream_headers.h"
@@ -450,6 +448,7 @@ eMFXPlatform MFX_Utility::GetPlatform_H265(VideoCORE * core, mfxVideoParam * par
 #if defined (MFX_VA)
     if (platform != MFX_PLATFORM_SOFTWARE)
     {
+#if defined (MFX_VA_WIN)
         GUID guids[2] = {};
         if (IS_PROTECTION_WIDEVINE(par->Protected))
             guids[0] = DXVA_Intel_Decode_Elementary_Stream_HEVC;
@@ -501,6 +500,10 @@ eMFXPlatform MFX_Utility::GetPlatform_H265(VideoCORE * core, mfxVideoParam * par
 
         if (i == sizeof(guids) / sizeof(guids[0]))
             return MFX_PLATFORM_SOFTWARE;
+#else
+        if (core->IsGuidSupported(DXVA_ModeHEVC_VLD_Main, par) != MFX_ERR_NONE)
+            return MFX_PLATFORM_SOFTWARE;
+#endif
     }
 #endif
     return platform;
@@ -683,7 +686,6 @@ bool CheckFourcc(mfxU32 fourcc, int codecProfile, mfxFrameInfo const* frameInfo)
                 fi.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
                 break;
 #endif
-
             default:
                 return false;
         }
@@ -1277,6 +1279,7 @@ mfxStatus MFX_CDECL MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, 
         if (stsExt < MFX_ERR_NONE)
             sts = MFX_ERR_UNSUPPORTED;
 
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
         if (in->Protected)
         {
             out->Protected = in->Protected;
@@ -1374,6 +1377,7 @@ mfxStatus MFX_CDECL MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, 
             if (pavpOptIn)
                 sts = MFX_ERR_UNSUPPORTED;
         }
+#endif // #ifndef MFX_PROTECTED_FEATURE_DISABLE
 
         if (GetPlatform_H265(core, out) != core->GetPlatformType() && sts == MFX_ERR_NONE)
         {
@@ -1419,6 +1423,7 @@ mfxStatus MFX_CDECL MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, 
         out->mfx.FrameInfo.BitDepthChroma = 8;
         out->mfx.FrameInfo.Shift = 0;
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         if (type >= MFX_HW_SNB)
         {
             out->Protected = MFX_PROTECTION_GPUCP_PAVP;
@@ -1436,6 +1441,9 @@ mfxStatus MFX_CDECL MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, 
                 pavpOptOut->CipherCounter.IV = 0;
             }
         }
+#else
+        out->Protected = 0;
+#endif
 
         out->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
 
@@ -1458,11 +1466,15 @@ bool MFX_CDECL MFX_Utility::CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType t
     if (!in)
         return false;
 
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
     if (in->Protected)
     {
         if (type == MFX_HW_UNKNOWN || !IS_PROTECTION_ANY(in->Protected))
             return false;
     }
+#else
+    type = type;
+#endif
 
     if (MFX_CODEC_HEVC != in->mfx.CodecId)
         return false;
@@ -1587,5 +1599,4 @@ bool MFX_CDECL MFX_Utility::CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType t
 
 } // namespace UMC_HEVC_DECODER
 
-#endif // UMC_RESTRICTED_CODE_MFX
 #endif // UMC_ENABLE_H265_VIDEO_DECODER

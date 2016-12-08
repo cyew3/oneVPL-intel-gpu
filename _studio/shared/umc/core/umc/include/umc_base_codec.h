@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2010 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_BASE_CODEC_H__
@@ -67,18 +67,8 @@ public:
     // Set codec to initial state
     virtual Status Reset(void) = 0;
 
-    // Set new working parameter(s)
-    virtual Status SetParams(BaseCodecParams *params)
-    {
-        if (NULL == params)
-            return UMC_ERR_NULL_PTR;
-
-        return UMC_ERR_NOT_IMPLEMENTED;
-    }
-
 protected:
     MemoryAllocator *m_pMemoryAllocator; // (MemoryAllocator*) pointer to memory allocator
-    bool             m_bOwnAllocator;    // True when default allocator is used
 };
 
 } // end namespace UMC

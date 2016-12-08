@@ -231,6 +231,8 @@ namespace mfxDefaultAllocatorD3D11
     mfxStatus UnlockFrameHW(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr=0);
     mfxStatus FreeFramesHW(mfxHDL pthis, mfxFrameAllocResponse *response);
 
+    mfxStatus SetFrameData(const D3D11_TEXTURE2D_DESC &desc, const D3D11_MAPPED_SUBRESOURCE  &LockedRect, mfxFrameData *ptr);
+
     class mfxWideHWFrameAllocator : public  mfxBaseWideFrameAllocator
     {
     public:

@@ -65,11 +65,6 @@
   } \
 }
 
-#define UMC_RET_STATUS(umcRes) { \
-    vm_debug_trace1(VM_DEBUG_ERROR, VM_STRING("Result (UMC::Status) = %d\n"), (int)umcRes); \
-    return umcRes; \
-}
-
 #define UMC_CHECK(EXPRESSION, ERR_CODE) { \
   if (!(EXPRESSION)) { \
     vm_debug_trace2(VM_DEBUG_ERROR, VM_STRING("[%s] FAILED (%s)"), VM_STRING(#ERR_CODE), VM_STRING(#EXPRESSION)); \
@@ -91,12 +86,6 @@
   } \
   UMC_CHECK_STATUS(_umcRes); \
 }
-
-#define UMC_SUCCEEDED(hr) (vm_trace_hresult(hr, VM_STRING("[if SUCCEEDED] ") VM_STRING(#hr), NULL) >= 0)
-
-#define UMC_FAILED(hr) (vm_trace_hresult(hr, VM_STRING("[if FAILED] ") VM_STRING(#hr), NULL) < 0)
-
-#define UMC_RETURN(hr) return (Status) vm_trace_hresult(hr, VM_STRING("[RETURN] ") VM_STRING(#hr), NULL)
 
 #define UMC_NEW(PTR, TYPE) { \
   UMC_DELETE(PTR); \
@@ -124,33 +113,6 @@
   if (PTR) { \
     vm_debug_trace1(VM_DEBUG_MEMORY, VM_STRING("[MEMORY] delete[] %s"), VM_STRING(#PTR)); \
     delete[] PTR; \
-    PTR = NULL; \
-  } \
-}
-
-#define UMC_ALLOC(PTR, TYPE) { \
-  UMC_FREE(PTR); \
-  vm_debug_trace3(VM_DEBUG_MEMORY, VM_STRING("[MEMORY] %s = ALLOC %s (%d bytes)"), VM_STRING(#PTR), VM_STRING(#TYPE), (int) sizeof(TYPE)); \
-  PTR = (TYPE*)ippsMalloc_8u((int) sizeof(TYPE)); \
-  UMC_CHECK(PTR != NULL, UMC_ERR_ALLOC); \
-}
-
-#define UMC_ALLOC_ARR(PTR, TYPE, NUM) { \
-  UMC_FREE(PTR);    \
-  vm_debug_trace3(VM_DEBUG_MEMORY, VM_STRING("[MEMORY] %s = ALLOC %s[%d]"), VM_STRING(#PTR), VM_STRING(#TYPE), (int) NUM); \
-  PTR = (TYPE*)ippsMalloc_8u((int) ((NUM)*sizeof(TYPE))); \
-  UMC_CHECK(PTR != NULL, UMC_ERR_ALLOC); \
-}
-
-#define UMC_ALLOC_ZERO_ARR(PTR, TYPE, NUM) { \
-  UMC_ALLOC_ARR(PTR, TYPE, NUM); \
-  ippsZero_8u((Ipp8u*)(PTR), (int) ((NUM)*sizeof(TYPE))); \
-}
-
-#define UMC_FREE(PTR) { \
-  if (PTR) { \
-    vm_debug_trace1(VM_DEBUG_MEMORY, VM_STRING("[MEMORY] Free %s"), VM_STRING(#PTR)); \
-    ippsFree(PTR); \
     PTR = NULL; \
   } \
 }
@@ -252,8 +214,6 @@ namespace UMC
 
         WMA_AUDIO               = 0x00001000   // WMA, WMA Pro, WMA Losless
     };
-
-#define WAVE_FORMAT_SPEECH         (0x4D41)
 
     enum TrickModesType
     {
@@ -397,8 +357,6 @@ namespace UMC
         Y216    ,       // Packed YUV 4:2:2 16-bit.
         Y410    ,       // Packed YUV 4:4:4 10-bit.
         Y416    ,       // Packed YUV 4:4:4 16-bit.
-        D3D_SURFACE_DEC,// Pointer to D3D surface in decoder pool
-        D3D_SURFACE     // Pointer to D3D surface
     };
 
     enum FrameType
@@ -691,17 +649,8 @@ namespace UMC
     const vm_char* GetFormatTypeString(ColorFormat Code);
     const vm_char* GetAudioTypeString(AudioStreamType Code);
     const vm_char* GetVideoTypeString(VideoStreamType Code);
-    const vm_char* GetVideoSubTypeString(VideoStreamSubType Code);
     const vm_char* GetVideoRenderTypeString(VideoRenderType Code);
     const vm_char* GetAudioRenderTypeString(AudioRenderType Code);
-
-    Status GetFormatType(const vm_char *Name, ColorFormat *pCode);
-    Status GetStreamType(const vm_char *Name, SystemStreamType *pCode);
-    Status GetAudioType(const vm_char *Name, AudioStreamType *pCode);
-    Status GetVideoType(const vm_char *Name, VideoStreamType *pCode);
-    Status GetVideoSubType(const vm_char *Name, VideoStreamSubType *pCode);
-    Status GetAudioRenderType(const vm_char *string, AudioRenderType *pCode);
-    Status GetVideoRenderType(const vm_char *string, VideoRenderType *pCode);
 
 #ifdef __cplusplus
 } // extern "C"

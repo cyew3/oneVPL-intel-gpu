@@ -1406,7 +1406,7 @@ mfxStatus D3D11VideoProcessor::QueryTaskStatus(mfxU32 idx)
         }
     }
 
-    // aya: the same as for d3d9 (FC)
+    // the same as for d3d9 (FC)
     const mfxU32 numStructures = 6 * 2;
     std::set<mfxU32>::iterator iterator;
 
@@ -1539,10 +1539,10 @@ mfxStatus D3D11VideoProcessor::QueryVariance(
     {
         VPE_VPREP_GET_VARIANCE_PARAMS queryVarianceParam = {0};
 
-        queryVarianceParam.FrameCount = 1;//aya???
+        queryVarianceParam.FrameCount = 1;
         queryVarianceParam.BufferSize = queryVarianceParam.FrameCount * ( sizeof(VPE_STATUS_PARAM) + ( m_varianceCaps.VarianceCount * m_varianceCaps.VarianceSize) );
 
-        // aya: should be precalculated\pre-allocated on ::Init() stage
+        // should be precalculated\pre-allocated on ::Init() stage
         std::vector<mfxU8> varianceBuffer(queryVarianceParam.BufferSize, 0);
 
         queryVarianceParam.pBuffer    = &varianceBuffer[0];
@@ -1559,7 +1559,7 @@ mfxStatus D3D11VideoProcessor::QueryVariance(
             &iFunc);
         CHECK_HRES(hRes);
 
-        // aya: OK, try to find required variance
+        // OK, try to find required variance
         mfxU8* pVarRepBuffer = (mfxU8*)&varianceBuffer[0];
         for(UINT frame = 0; frame < queryVarianceParam.FrameCount; frame++)
         {
@@ -3088,8 +3088,6 @@ mfxStatus D3D11VideoProcessor::QueryCapabilities(mfxVppCaps& caps)
 
     // [FRC]
     size_t rateDataCount = m_customRateData.size();
-    // aya: wo
-    //rateDataCount = 0;
 
     if(rateDataCount > 0)
     {

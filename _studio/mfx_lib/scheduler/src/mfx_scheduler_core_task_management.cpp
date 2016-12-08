@@ -321,16 +321,12 @@ mfxStatus mfxSchedulerCore::WrapUpTask(MFX_CALL_INFO &callInfo,
             time = m_currentTimeStamp - pTask->param.timing.timeLastEnter;
             if (m_timeWaitPeriod > time)
             {
-//#if !defined (EXTERNAL_THREADING)
-                {
-                    const mfxU64 hwCounter = GetHWEventCounter();
+                const mfxU64 hwCounter = GetHWEventCounter();
 
-                    if (hwCounter == pTask->param.timing.hwCounterLastEnter)
-                    {
-                        return MFX_ERR_NOT_FOUND;
-                    }
+                if (hwCounter == pTask->param.timing.hwCounterLastEnter)
+                {
+                    return MFX_ERR_NOT_FOUND;
                 }
-//#endif
             }
         }
     }

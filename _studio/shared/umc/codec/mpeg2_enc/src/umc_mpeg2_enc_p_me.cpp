@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2006-2011 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2006-2016 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef UMC_RESTRICTED_CODE
@@ -685,7 +685,7 @@ skip_macroblock:
         }
       }
 
-      ippsCopy_8u((Ipp8u*)threadSpec[numTh].PMV, (Ipp8u*)pMBInfo[k].MV, sizeof(threadSpec[0].PMV));
+      MFX_INTERNAL_CPY((Ipp8u*)pMBInfo[k].MV, (Ipp8u*)threadSpec[numTh].PMV, sizeof(threadSpec[0].PMV));
 
       k++;
     } // for(i)

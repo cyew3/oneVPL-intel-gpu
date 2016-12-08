@@ -833,7 +833,7 @@ Status FrameConstructor::LockInputBuffer(MediaData *in)
         if (m_lLastBytePos + lChunkSize - curFramePos >= m_lFirstBytePos)
             return UMC_ERR_NOT_ENOUGH_BUFFER;
 
-        ippsCopy_8u(m_pBuf + curFramePos, m_pBuf, m_lLastBytePos - curFramePos);
+        MFX_INTERNAL_CPY(m_pBuf, m_pBuf + curFramePos, m_lLastBytePos - curFramePos);
         m_lLastBytePos -= curFramePos;
         m_lCurPos -= curFramePos;
         m_lCurPicStart -= IPP_MIN(m_lCurPicStart, curFramePos);
@@ -1979,8 +1979,7 @@ Status Mpeg2TrackInfo::CopyFrom(Mpeg2TrackInfo *pSrc)
         size_t size = pSrc->m_pDecSpecInfo->GetDataSize();
         UMC_NEW(m_pDecSpecInfo, MediaData);
         UMC_CALL(m_pDecSpecInfo->Alloc(size));
-        ippsCopy_8u((Ipp8u *)pSrc->m_pDecSpecInfo->GetDataPointer(),
-            (Ipp8u *)m_pDecSpecInfo->GetDataPointer(), (int)size);
+        MFX_INTERNAL_CPY((Ipp8u *)m_pDecSpecInfo->GetDataPointer(), (Ipp8u *)pSrc->m_pDecSpecInfo->GetDataPointer(), (int)size);
         UMC_CALL(m_pDecSpecInfo->SetDataSize(size));
     }
 

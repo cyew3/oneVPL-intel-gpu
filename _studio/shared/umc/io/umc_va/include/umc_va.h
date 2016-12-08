@@ -63,7 +63,6 @@ public:
         void operator ( ) ( VACompBuffer & x )
         {
            x.ptr = malloc(x.BufferSize);
-            //SimError::CheckPtr(x.ptr, "UMCVACompBuffer::Allocate()");
         }
     };
 
@@ -119,12 +118,12 @@ public:
 
     bool IsLongSliceControl() const
     {
-        return m_bLongSliceControl;//m_DXVA_ConfigPictureDecode.bConfigBitstreamRaw != 2;
+        return m_bLongSliceControl;
     }
 
     bool IsDeblockingBufferNeeded() const
     {
-        return m_bDeblockingBufferNeeded;//m_DXVA_ConfigPictureDecode.bConfig4GroupedCoefs == 1;
+        return m_bDeblockingBufferNeeded;
     }
 
     //GetCompBuffer function returns compressed buffer from cache if there is one in it or get buffer from HW and put

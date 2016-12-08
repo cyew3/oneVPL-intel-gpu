@@ -360,10 +360,10 @@ TEST_F(InitTest, GetVideoParam_SpsPps) {
     MFX_ENTRY_POINT entrypoint = {};
     EXPECT_CALL(core, IncreaseReference(_)).WillRepeatedly(Return(MFX_ERR_NONE));
     EXPECT_CALL(core, DecreaseReference(_)).WillRepeatedly(Return(MFX_ERR_NONE));
-    mfxStatus sts = (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK;
-    while (sts == MFX_ERR_MORE_DATA_RUN_TASK && surf < surfaces + sizeof(surfaces) / sizeof(surfaces[0])) {
+    mfxStatus sts = (mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK;
+    while (sts == MFX_ERR_MORE_DATA_SUBMIT_TASK && surf < surfaces + sizeof(surfaces) / sizeof(surfaces[0])) {
         sts = encoder.EncodeFrameCheck(nullptr, surf++, &bs, &reorder, nullptr, &entrypoint);
-        if (sts == MFX_ERR_MORE_DATA_RUN_TASK) {
+        if (sts == MFX_ERR_MORE_DATA_SUBMIT_TASK) {
             ASSERT_EQ(MFX_ERR_NONE, entrypoint.pRoutine(entrypoint.pState, entrypoint.pParam, 0, 0));
             ASSERT_EQ(MFX_ERR_NONE, entrypoint.pCompleteProc(entrypoint.pState, entrypoint.pParam, MFX_ERR_NONE));
         }
@@ -447,10 +447,10 @@ TEST_F(InitTest, GetVideoParam_Vps) {
     MFX_ENTRY_POINT entrypoint = {};
     EXPECT_CALL(core, IncreaseReference(_)).WillRepeatedly(Return(MFX_ERR_NONE));
     EXPECT_CALL(core, DecreaseReference(_)).WillRepeatedly(Return(MFX_ERR_NONE));
-    mfxStatus sts = (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK;
-    while (sts == MFX_ERR_MORE_DATA_RUN_TASK && surf < surfaces + sizeof(surfaces) / sizeof(surfaces[0])) {
+    mfxStatus sts = (mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK;
+    while (sts == MFX_ERR_MORE_DATA_SUBMIT_TASK && surf < surfaces + sizeof(surfaces) / sizeof(surfaces[0])) {
         sts = encoder.EncodeFrameCheck(nullptr, surf++, &bs, &reorder, nullptr, &entrypoint);
-        if (sts == MFX_ERR_MORE_DATA_RUN_TASK) {
+        if (sts == MFX_ERR_MORE_DATA_SUBMIT_TASK) {
             ASSERT_EQ(MFX_ERR_NONE, entrypoint.pRoutine(entrypoint.pState, entrypoint.pParam, 0, 0));
             ASSERT_EQ(MFX_ERR_NONE, entrypoint.pCompleteProc(entrypoint.pState, entrypoint.pParam, MFX_ERR_NONE));
         }

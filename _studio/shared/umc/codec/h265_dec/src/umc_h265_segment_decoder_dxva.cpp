@@ -11,8 +11,6 @@
 #include "umc_defs.h"
 #ifdef UMC_ENABLE_H265_VIDEO_DECODER
 
-#ifndef UMC_RESTRICTED_CODE_VA
-
 #include <algorithm>
 #include "umc_structures.h"
 
@@ -26,6 +24,8 @@
 #include "umc_h265_va_packer.h"
 
 #include "mfx_common.h" //  for trace routines
+
+#include "vm_time.h"
 
 #ifdef UMC_VA_DXVA
 #include "umc_va_base.h"
@@ -342,5 +342,4 @@ void TaskBrokerSingleThreadDXVA::AwakeThreads()
 
 } // namespace UMC_HEVC_DECODER
 
-#endif // UMC_RESTRICTED_CODE_VA
 #endif // UMC_ENABLE_H265_VIDEO_DECODER

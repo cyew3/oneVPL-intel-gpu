@@ -9,7 +9,7 @@
 //
 
 #include "mfx_common.h"
-#ifdef MFX_ENABLE_H264_VIDEO_ENCODE_HW
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
 
 #include <algorithm>
 #include <functional>
@@ -286,11 +286,9 @@ mfxStatus ImplementationSvc::QueryIOSurf(
 
     //need to fix
 
-    GUID guid = DXVA2_Intel_Encode_SVC;    //m_core->IsGuidSupported(DXVA2_Intel_Encode_SVC, par, true) == MFX_ERR_NONE
+    //GUID guid = DXVA2_Intel_Encode_SVC;    //m_core->IsGuidSupported(DXVA2_Intel_Encode_SVC, par, true) == MFX_ERR_NONE
     //? DXVA2_Intel_Encode_SVC
     //: DXVA2_Intel_Encode_AVC;
-
-
 
     mfxU32 inPattern = par->IOPattern & MFX_IOPATTERN_IN_MASK;
     MFX_CHECK(
@@ -300,7 +298,7 @@ mfxStatus ImplementationSvc::QueryIOSurf(
         MFX_ERR_INVALID_VIDEO_PARAM);
 
     ENCODE_CAPS hwCaps = { 0 };
-    sts = QueryHwCaps(core, hwCaps, guid);
+    sts = QueryHwCaps(core, hwCaps, par);
     if (sts != MFX_ERR_NONE)
         return MFX_WRN_PARTIAL_ACCELERATION;
 
@@ -362,19 +360,21 @@ mfxStatus ImplementationSvc::QueryIOSurf(
 }
 
 ImplementationSvc::ImplementationSvc(VideoCORE * core)
-: m_core(core)
-, m_video()
-, m_videoInit()
-, m_hrd()
-, m_guid()
-, m_manager()
-, m_aesCounter()
-, m_maxBsSize(0)
-, m_layout()
-, m_caps()
-, m_deviceFailed()
-, m_inputFrameType()
-, m_sei()
+    : m_core(core)
+    , m_video()
+    , m_videoInit()
+    , m_hrd()
+    , m_guid()
+    , m_manager()
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
+    , m_aesCounter()
+#endif
+    , m_maxBsSize(0)
+    , m_layout()
+    , m_caps()
+    , m_deviceFailed()
+    , m_inputFrameType()
+    , m_sei()
 {
 }
 
@@ -468,8 +468,10 @@ mfxStatus ImplementationSvc::Init(mfxVideoParam * par)
     // need it for both ENCODE and ENC
     m_hrd.Setup(m_video);
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     mfxExtPAVPOption * extOptPavp = GetExtBuffer(m_video);
     m_aesCounter.Init(*extOptPavp);
+#endif
 
     sts = m_ddi->CreateAccelerationService(m_video);
     MFX_CHECK_STS(sts);
@@ -506,7 +508,7 @@ mfxStatus ImplementationSvc::Init(mfxVideoParam * par)
             request.Type        = extOpaq->In.Type;
             request.NumFrameMin = extOpaq->In.NumSurface;
 
-            sts = m_opaqHren.Alloc(m_core, request, extOpaq->In.Surfaces, extOpaq->In.NumSurface);
+            sts = m_opaqResponse.Alloc(m_core, request, extOpaq->In.Surfaces, extOpaq->In.NumSurface);
             MFX_CHECK_STS(sts);
 
             if (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)
@@ -518,7 +520,11 @@ mfxStatus ImplementationSvc::Init(mfxVideoParam * par)
     }
 
     // ENC+PAK always needs separate chain for reconstructions produced by PAK.
-    request.Type        = m_video.Protected ? MFX_MEMTYPE_D3D_SERPENT_INT : MFX_MEMTYPE_D3D_INT;
+    request.Type        = MFX_MEMTYPE_D3D_INT;
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
+    if (m_video.Protected)
+        request.Type = MFX_MEMTYPE_D3D_SERPENT_INT;
+#endif
     request.NumFrameMin = mfxU16(CalcNumSurfRecon(m_video) * m_video.calcParam.numLayersTotal);
     sts = m_recon.Alloc(m_core, request);
     MFX_CHECK_STS(sts);
@@ -570,8 +576,10 @@ mfxStatus ImplementationSvc::Reset(mfxVideoParam *par)
     sts = CheckExtBufferId(*par);
     MFX_CHECK_STS(sts);
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     mfxExtPAVPOption * optPavp = GetExtBuffer(*par);
     MFX_CHECK(optPavp == 0, MFX_ERR_INVALID_VIDEO_PARAM); // mfxExtPAVPOption should not come to Reset
+#endif
 
     MfxVideoParam newPar = *par;
 
@@ -866,7 +874,7 @@ mfxStatus ImplementationSvc::EncodeFrameCheck(
         entryPoints[0].requiredNumThreads   = 1;
         numEntryPoints                      = 1;
 
-        return mfxStatus(MFX_ERR_MORE_DATA_RUN_TASK);
+        return mfxStatus(MFX_ERR_MORE_DATA_SUBMIT_TASK);
     }
     else
     {
@@ -1233,4 +1241,4 @@ mfxStatus ImplementationSvc::TaskRoutineDoNothing(
     return MFX_TASK_DONE;
 }
 
-#endif // MFX_ENABLE_H264_VIDEO_ENCODE_HW
+#endif // MFX_ENABLE_SVC_VIDEO_ENCODE_HW

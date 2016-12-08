@@ -1269,10 +1269,7 @@ int PTIRCM_BaseFrameMode(PTIRSystemBuffer *SysBuffer)
     if(SysBuffer->control.uiCur == BUFMINSIZE - 1 || SysBuffer->control.uiEndOfFrames)
     {
         Analyze_Buffer_Stats_Automode_CM(SysBuffer->frmBuffer, &SysBuffer->control.mainPattern, &SysBuffer->control.uiDispatch);
-        if(!SysBuffer->control.uiEndOfFrames)
-            uiNumFramesToDispatch = min(SysBuffer->control.uiDispatch, SysBuffer->control.uiCur + 1);
-        else
-            uiNumFramesToDispatch = min(SysBuffer->control.uiDispatch, SysBuffer->control.uiCur + 1);
+        uiNumFramesToDispatch = min(SysBuffer->control.uiDispatch, SysBuffer->control.uiCur + 1);
 
         Interlaced_detection_logCM(SysBuffer->frmBuffer, uiNumFramesToDispatch);
         if(SysBuffer->control.mainPattern.ucPatternFound)

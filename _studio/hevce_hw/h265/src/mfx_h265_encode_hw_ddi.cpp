@@ -23,7 +23,8 @@
 namespace MfxHwH265Encode
 {
 
-const GUID GuidTable[2][2][3] =
+#ifndef OPEN_SOURCE
+const GUID GuidTable[2][2][3] = 
 {
     // LowPower = OFF
     {
@@ -67,9 +68,13 @@ const GUID GuidTable[2][2][3] =
     }
 #endif
 };
+#endif
 
 GUID GetGUID(MfxVideoParam const & par)
 {
+    GUID guid = DXVA2_Intel_Encode_HEVC_Main;
+
+#ifndef OPEN_SOURCE
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     bool is10bit =
         (   par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10
@@ -88,7 +93,9 @@ GUID GetGUID(MfxVideoParam const & par)
     if (par.m_platform.CodeName < MFX_PLATFORM_KABYLAKE)
         is10bit = false;
 
-    return GuidTable[IsOn(par.mfx.LowPower)][is10bit] [cfId];
+    guid = GuidTable[IsOn(par.mfx.LowPower)][is10bit] [cfId];
+#endif // OPEN_SOURCE
+    return guid;
 }
 
 DriverEncoder* CreatePlatformH265Encoder(MFXCoreInterface* core)

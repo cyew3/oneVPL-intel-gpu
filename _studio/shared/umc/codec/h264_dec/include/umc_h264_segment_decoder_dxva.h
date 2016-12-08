@@ -16,8 +16,6 @@
 
 #include "umc_va_base.h"
 
-#ifndef UMC_RESTRICTED_CODE_VA
-
 #include <memory>
 #include "umc_h264_segment_decoder_base.h"
 #include "umc_h264_task_broker.h"
@@ -202,6 +200,5 @@ protected:
 
 } // namespace UMC
 
-#endif // UMC_RESTRICTED_CODE_VA
 #endif /* __UMC_H264_SEGMENT_DECODER_DXVA_H */
 #endif // UMC_ENABLE_H264_VIDEO_DECODER

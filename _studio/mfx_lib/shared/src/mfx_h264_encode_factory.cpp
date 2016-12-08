@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2012 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2016 Intel Corporation. All Rights Reserved.
 //
 
 /* ****************************************************************************** */
@@ -37,6 +37,7 @@ using namespace MfxHwH264Encode;
 // platform switcher
 
 // tmp solution
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
 DriverEncoder* MfxHwH264Encode::CreatePlatformSvcEncoder( VideoCORE * core )
 {
     assert( core );
@@ -55,6 +56,7 @@ DriverEncoder* MfxHwH264Encode::CreatePlatformSvcEncoder( VideoCORE * core )
 
     return 0;
 }
+#endif
 
 DriverEncoder* MfxHwH264Encode::CreatePlatformH264Encoder( VideoCORE* core )
 {

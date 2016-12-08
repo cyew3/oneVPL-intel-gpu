@@ -22,6 +22,45 @@
 #include "ippi.h"
 #include <algorithm>
 
+template<typename T>
+bool SetPlaneROI(T value, T* pDst, int dstStep, IppiSize roiSize)
+{
+    if (!pDst || roiSize.width < 0 || roiSize.height < 0)
+        return false;
+
+    for(int h = 0; h < roiSize.height; h++ ) {
+        std::fill(pDst, pDst + roiSize.width, value);
+        pDst = (T *)((unsigned char*)pDst + dstStep);
+    }
+
+    return true;
+}
+
+#if !defined (OPEN_SOURCE)
+template<>
+bool SetPlaneROI<int>(int value, int* pDst, int dstStep, IppiSize roiSize)
+{
+    const Ipp8u backgroundValues[4] = { (Ipp8u)((value &0x000000ff) >> 0),
+                                        (Ipp8u)((value &0x0000ff00) >> 8),
+                                        (Ipp8u)((value &0x00ff0000) >>16),
+                                        (Ipp8u)((value &0xff000000) >>24)};
+
+    return ippiSet_8u_C4R(backgroundValues, (Ipp8u*)pDst, dstStep, roiSize) == ippStsNoErr;
+}
+
+template<>
+bool SetPlaneROI<Ipp8u>(Ipp8u value, Ipp8u* pDst, int dstStep, IppiSize roiSize)
+{
+    return ippiSet_8u_C1R(value, (Ipp8u*)pDst, dstStep, roiSize) == ippStsNoErr;
+}
+
+template<>
+bool SetPlaneROI<Ipp16s>(Ipp16s value, Ipp16s* pDst, int dstStep, IppiSize roiSize)
+{
+    return ippiSet_16s_C1R(value, (Ipp16s*)pDst, dstStep, roiSize) == ippStsNoErr;
+}
+#endif
+
 enum QueryStatus
 {
     VPREP_GPU_READY         =   0,
@@ -214,7 +253,7 @@ mfxStatus VAAPIVideoProcessing::Init(_mfxPlatformAccelerationService* pVADisplay
         VAStatus vaSts;
         int va_max_num_entrypoints   = vaMaxNumEntrypoints(m_vaDisplay);
         if(va_max_num_entrypoints)
-            va_entrypoints = (VAEntrypoint*)ippsMalloc_8u(va_max_num_entrypoints*sizeof(VAEntrypoint));
+            va_entrypoints = new VAEntrypoint[va_max_num_entrypoints];
         else
             return MFX_ERR_DEVICE_FAILED;
 
@@ -234,7 +273,7 @@ mfxStatus VAAPIVideoProcessing::Init(_mfxPlatformAccelerationService* pVADisplay
                 break;
             }
         }
-        ippsFree(va_entrypoints);
+        delete[] va_entrypoints;
 
         if( !m_bRunning )
         {
@@ -517,7 +556,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         mfxFrameInfo *inInfo = &(pRefSurf->frameInfo);
 
         m_primarySurface4Composition = (VASurfaceID*)calloc(1,sizeof(VASurfaceID));
-        /* KW fix, but it is true, required to check, is memory allocated o not  */
+        /* required to check, is memory allocated o not  */
         if (m_primarySurface4Composition == NULL)
             return MFX_ERR_MEMORY_ALLOC;
 
@@ -556,7 +595,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             {
                 if (pParams->bEOS && MFX_DEINTERLACING_ADVANCED == pParams->iDeinterlacingAlgorithm)
                 {
-                    // WA for the last frame
+                    // for the last frame
                     // otherwise it's not processed properly
                     bForceADI = true;
                 }
@@ -782,7 +821,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         if (pParams->bFRCEnable)
         {
           VAProcFilterParameterBufferFrameRateConversion frcParams;
-          /* Actually KW fix */
+
           memset(&frcParams, 0, sizeof(VAProcFilterParameterBufferFrameRateConversion));
           frcParams.type = VAProcFilterFrameRateConversion;
           if (30 == pParams->customRateData.customRate.FrameRateExtD)
@@ -820,16 +859,10 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
     /* pParams->refCount is total number of processing surfaces:
      * in case of composition this is primary + sub streams*/
 
-    // mfxU32 SampleCount = pParams->refCount;
-    // WA:
     mfxU32 SampleCount = 1;
     mfxU32 refIdx = 0;
 
-    //m_pipelineParam.resize(SampleCount);
-    //m_pipelineParam.clear();
     m_pipelineParam.resize(pParams->refCount);
-    //m_pipelineParamID.resize(SampleCount);
-    //m_pipelineParamID.clear();
     m_pipelineParamID.resize(pParams->refCount, VA_INVALID_ID);
 
     std::vector<VARectangle> input_region;
@@ -948,7 +981,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             m_pipelineParam[refIdx].surface_color_standard = VAProcColorStandardNone;
             m_pipelineParam[refIdx].input_surface_flag     = VA_SOURCE_RANGE_FULL;
             break;
-        case MFX_FOURCC_NV12:  //VA_FOURCC_NV12:
+        case MFX_FOURCC_NV12:
         default:
             m_pipelineParam[refIdx].surface_color_standard = VAProcColorStandardBT601;
             m_pipelineParam[refIdx].input_surface_flag     = VA_SOURCE_RANGE_REDUCED;
@@ -969,8 +1002,8 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             break;
         }
 
-        /* 16.5 driver needs interlaced flag passed only for
-         * deinterlacing and scaling. All other filters must
+        /* It needs interlaced flag passed only for 
+         * deinterlacing and scaling. All other filters must 
          * use progressive even for interlaced content.
          */
         bool forceProgressive = true;
@@ -1042,7 +1075,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         switch (pParams->scalingMode)
         {
         case MFX_SCALING_MODE_LOWPOWER:
-            /* As per driver spec, VA_FILTER_SCALING_DEFAULT means the following:
+            /* VA_FILTER_SCALING_DEFAULT means the following:
              *  First priority is SFC. If SFC can't work, revert to AVS
              *  If scaling ratio between 1/8...8 -> SFC
              *  If scaling ratio between 1/16...1/8 or larger than 8 -> AVS
@@ -1051,7 +1084,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             m_pipelineParam[refIdx].filter_flags |= VA_FILTER_SCALING_DEFAULT;
             break;
         case MFX_SCALING_MODE_QUALITY:
-            /* As per driver spec, VA_FILTER_SCALING_HQ means the following:
+            /*  VA_FILTER_SCALING_HQ means the following:
              *  If scaling ratio is less than 1/16 -> bilinear
              *  For all other cases, AVS is used.
              */
@@ -1197,6 +1230,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         m_numFilterBufs--;
     }
 
+#if 0
     /* drop "internal" ADI frame for 30i->30p mode
      * HW or EU kernels always generates from interlaced SRC and REF frames two
      * de-interlaced frames, so by fact HW is always working in 30i->60p mode.
@@ -1206,19 +1240,20 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
      * for 30i->30p mode application needs to drop this is second internal frame.
      * */
 
-//    if ((pParams->refCount > 1) && (pParams->bFMDEnable == false) && (0 != pParams->iDeinterlacingAlgorithm))
-//    {
-//        vaSts = vaSyncSurface(m_vaDisplay,*outputSurface);
-//        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-//
-//        m_bFakeOutputEnabled = true;
-//
-//        mfxStatus mfxSts = Execute_FakeOutput(pParams);
-//
-//        m_bFakeOutputEnabled = false;
-//        if (mfxSts != MFX_ERR_NONE)
-//            return mfxSts;
-//    }
+    if ((pParams->refCount > 1) && (pParams->bFMDEnable == false) && (0 != pParams->iDeinterlacingAlgorithm))
+    {
+        vaSts = vaSyncSurface(m_vaDisplay,*outputSurface);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+        m_bFakeOutputEnabled = true;
+
+        mfxStatus mfxSts = Execute_FakeOutput(pParams);
+
+        m_bFakeOutputEnabled = false;
+        if (mfxSts != MFX_ERR_NONE)
+            return mfxSts;
+    }
+#endif
 
     return MFX_ERR_NONE;
 } // mfxStatus VAAPIVideoProcessing::Execute(FASTCOMP_BLT_PARAMS *pVideoCompositingBlt)
@@ -1270,7 +1305,7 @@ mfxStatus VAAPIVideoProcessing::Execute_FakeOutput(mfxExecuteParams *pParams)
             VAProcFilterParameterBufferDeinterlacing deint;
             deint.type  = VAProcFilterDeinterlacing;
             deint.flags = 0;
-            //WA for VPG driver. Need to rewrite it with caps usage when driver begins to return a correct list of supported DI algorithms
+
 #ifndef MFX_VA_ANDROID
             if (MFX_DEINTERLACING_BOB == pParams->iDeinterlacingAlgorithm)
             {
@@ -1345,8 +1380,6 @@ mfxStatus VAAPIVideoProcessing::Execute_FakeOutput(mfxExecuteParams *pParams)
     /* pParams->refCount is total number of processing surfaces:
      * in case of composition this is primary + sub streams*/
 
-    //mfxU32 SampleCount = pParams->refCount;
-    // WA:
     mfxU32 SampleCount = 1;
     mfxU32 refIdx = 0;
 
@@ -1399,7 +1432,7 @@ mfxStatus VAAPIVideoProcessing::Execute_FakeOutput(mfxExecuteParams *pParams)
         case MFX_FOURCC_RGB4:
             m_pipelineParam[refIdx].surface_color_standard = VAProcColorStandardNone;
             break;
-        case MFX_FOURCC_NV12:  //VA_FOURCC_NV12:
+        case MFX_FOURCC_NV12:
         default:
             m_pipelineParam[refIdx].surface_color_standard = VAProcColorStandardBT601;
             break;
@@ -1672,7 +1705,7 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition_VideoWall(mfxExecuteParams *
             case MFX_FOURCC_RGB4:
                 m_pipelineParam[i].surface_color_standard = VAProcColorStandardNone;
                 break;
-            case MFX_FOURCC_NV12:  //VA_FOURCC_NV12:
+            case MFX_FOURCC_NV12:
             default:
                 m_pipelineParam[i].surface_color_standard = VAProcColorStandardBT601;
                 break;
@@ -1903,7 +1936,7 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
         mfxFrameInfo *inInfo = &(pRefSurf->frameInfo);
 
         m_primarySurface4Composition = (VASurfaceID*)calloc(1,1*sizeof(VASurfaceID));
-        /* KW fix, but it is true, required to check, is memory allocated o not  */
+        /* required to check, is memory allocated o not  */
         if (m_primarySurface4Composition == NULL)
             return MFX_ERR_MEMORY_ALLOC;
 
@@ -1940,7 +1973,6 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
             vaSts = vaMapBuffer(m_vaDisplay, imagePrimarySurface.buf, (void **) &pPrimarySurfaceBuffer);
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-            IppStatus ippSts = ippStsNoErr;
             IppiSize roiSize;
             roiSize.width = imagePrimarySurface.width;
             roiSize.height = imagePrimarySurface.height;
@@ -1949,13 +1981,8 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
              * it is easy for ARGB format as Initial background value ARGB*/
             if (imagePrimarySurface.format.fourcc == VA_FOURCC_ARGB)
             {
-                const Ipp8u backgroundValues[4] = { (Ipp8u)((pParams->iBackgroundColor &0x000000ff) >> 0),
-                                                    (Ipp8u)((pParams->iBackgroundColor &0x0000ff00) >> 8),
-                                                    (Ipp8u)((pParams->iBackgroundColor &0x00ff0000) >>16),
-                                                    (Ipp8u)((pParams->iBackgroundColor &0xff000000) >>24)};
-                ippSts = ippiSet_8u_C4R(backgroundValues, pPrimarySurfaceBuffer,
-                                    imagePrimarySurface.pitches[0], roiSize);
-                MFX_CHECK(ippStsNoErr == ippSts, MFX_ERR_DEVICE_FAILED);
+                bool setPlaneSts = SetPlaneROI<int>(pParams->iBackgroundColor, (int *)pPrimarySurfaceBuffer, imagePrimarySurface.pitches[0], roiSize);
+                MFX_CHECK(setPlaneSts, MFX_ERR_DEVICE_FAILED);
             }
             /* A bit more complicated for NV12 as you need to do conversion ARGB => NV12 */
             if (imagePrimarySurface.format.fourcc == VA_FOURCC_NV12)
@@ -1967,16 +1994,17 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
                 Ipp8u valueY = (Ipp8u) Y;
                 Ipp16s valueUV = (Ipp16s)((U<<8)  + V);
 
-                ippSts = ippiSet_8u_C1R(valueY, pPrimarySurfaceBuffer, imagePrimarySurface.pitches[0], roiSize);
-                MFX_CHECK(ippStsNoErr == ippSts, MFX_ERR_DEVICE_FAILED);
+                bool setPlaneSts = SetPlaneROI<Ipp8u>(valueY, pPrimarySurfaceBuffer, imagePrimarySurface.pitches[0], roiSize);
+                MFX_CHECK(setPlaneSts, MFX_ERR_DEVICE_FAILED);
+
                 // NV12 format -> need to divide height 2 times less
                 roiSize.height = roiSize.height/2;
                 // "UV" this is short (16 bit) value already, have to use ippiSet_16s_C1R
                 // so need to divide width 2 times less too!
                 roiSize.width = roiSize.width/2;
-                ippSts = ippiSet_16s_C1R(valueUV, (Ipp16s *)(pPrimarySurfaceBuffer + imagePrimarySurface.offsets[1]),
+                setPlaneSts = SetPlaneROI<Ipp16s>(valueUV, (Ipp16s *)(pPrimarySurfaceBuffer + imagePrimarySurface.offsets[1]),
                                                 imagePrimarySurface.pitches[1], roiSize);
-                MFX_CHECK(ippStsNoErr == ippSts, MFX_ERR_DEVICE_FAILED);
+                MFX_CHECK(setPlaneSts, MFX_ERR_DEVICE_FAILED);
             }
 
             vaSts = vaUnmapBuffer(m_vaDisplay, imagePrimarySurface.buf);
@@ -1989,16 +2017,10 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
     /* pParams->refCount is total number of processing surfaces:
      * in case of composition this is primary + sub streams*/
 
-    // mfxU32 SampleCount = pParams->refCount;
-    // WA:
     mfxU32 SampleCount = 1;
     mfxU32 refIdx = 0;
 
-    //m_pipelineParam.resize(SampleCount);
-    //m_pipelineParam.clear();
     m_pipelineParam.resize(pParams->refCount + 1);
-    //m_pipelineParamID.resize(SampleCount);
-    //m_pipelineParamID.clear();
     m_pipelineParamID.resize(pParams->refCount + 1, VA_INVALID_ID);
     blend_state.resize(pParams->refCount + 1);
 
@@ -2047,7 +2069,7 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
         case MFX_FOURCC_RGB4:
             m_pipelineParam[refIdx].surface_color_standard = VAProcColorStandardNone;
             break;
-        case MFX_FOURCC_NV12:  //VA_FOURCC_NV12:
+        case MFX_FOURCC_NV12:
         default:
             m_pipelineParam[refIdx].surface_color_standard = VAProcColorStandardBT601;
             break;
@@ -2091,8 +2113,6 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
             }
         }
 
-        //m_pipelineParam[refIdx].pipeline_flags = ?? //VA_PROC_PIPELINE_FAST or VA_PROC_PIPELINE_SUBPICTURES
-
         switch (pRefSurf->frameInfo.PicStruct)
         {
             case MFX_PICSTRUCT_PROGRESSIVE:
@@ -2123,7 +2143,6 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
             m_pipelineParam[refIdx].filter_flags   |= VA_FILTER_SCALING_HQ;
 #else
             m_pipelineParam[refIdx].pipeline_flags  |= VA_PROC_PIPELINE_FAST;
-            //m_pipelineParam[refIdx].filter_flags    |= VA_FILTER_SCALING_FAST;
 #endif
         }
 
@@ -2138,8 +2157,6 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
     }
 
     MFX_LTRACE_2(MFX_TRACE_LEVEL_HOTSPOTS, "A|VPP|COMP|PACKET_START|", "%d|%d", m_vaContextVPP, 0);
-    //VASurfaceID *outputSurface = (VASurfaceID*)(pParams->targetSurface.hdl.first);
-    //if ((refCount + 1) < 8)
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaBeginPicture");
         vaSts = vaBeginPicture(m_vaDisplay,
@@ -2147,14 +2164,6 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
                             *outputSurface);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
-//    else
-//    {
-//        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaBeginPicture");
-//        vaSts = vaBeginPicture(m_vaDisplay,
-//                            m_vaContextVPP,
-//                            m_primarySurface4Composition[1]);
-//        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-//    }
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaRenderPicture");
         for( refIdx = 0; refIdx < SampleCount; refIdx++ )
@@ -2165,7 +2174,6 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
     }
 
     unsigned int uBeginPictureCounter = 0;
-    //unsigned int uInputIndex = 1, uOutputIndex = 2;
     std::vector<VAProcPipelineParameterBuffer> m_pipelineParamComp;
     std::vector<VABufferID> m_pipelineParamCompID;
     /* for new buffers for Begin Picture*/
@@ -2174,25 +2182,16 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
 
     /* pParams->fwdRefCount actually is number of sub stream*/
     for( refIdx = 1; refIdx <= (refCount + 1); refIdx++ )
-    //for( refIdx = uStartIndex; refIdx <= uEndIndex; refIdx++ )
     {
         /*for frames 8, 15, 22, 29,... */
         unsigned int uLastPass = (refCount + 1) - ( (refIdx /7) *7);
         if ((refIdx != 1) && ((refIdx %7) == 1) )
         {
-            //m_pipelineParam[refIdx].output_background_color = pParams->iBackgroundColor;
-            //if ((uLastPass < 8) && (refIdx != 1))
             {
                 vaSts = vaBeginPicture(m_vaDisplay,
                                     m_vaContextVPP,
                                     *outputSurface);
             }
-            //else
-            //{
-            //vaSts = vaBeginPicture(m_vaDisplay,
-            //                    m_vaContextVPP,
-            //                    m_primarySurface4Composition[uOutputIndex]);
-            //}
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
             /*to copy initial properties of primary surface... */
             m_pipelineParamComp[uBeginPictureCounter] = m_pipelineParam[0];
@@ -2250,7 +2249,7 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
         case MFX_FOURCC_RGB4:
             m_pipelineParam[refIdx].surface_color_standard = VAProcColorStandardNone;
             break;
-        case MFX_FOURCC_NV12:  //VA_FOURCC_NV12:
+        case MFX_FOURCC_NV12:
         default:
             m_pipelineParam[refIdx].surface_color_standard = VAProcColorStandardBT601;
             break;
@@ -2321,7 +2320,7 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
         {
             /* Per-pixel alpha case. Having VA_BLEND_PREMULTIPLIED_ALPHA as a parameter
              * leads to using BLEND_PARTIAL approach by driver that may produce
-             * "white line"-like artifacts on transparent-opaque borders (see HSD10045182).
+             * "white line"-like artifacts on transparent-opaque borders.
              * Setting nothing here triggers using a BLEND_SOURCE approach that is used on
              * Windows and looks to be free of such kind of artifacts */
             /* Issue in described in HSD10045182 is over */

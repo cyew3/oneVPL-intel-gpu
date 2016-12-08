@@ -2422,12 +2422,7 @@ mfxStatus MFXVideoPAKMPEG2::preEnc(MPEG2FrameState* state)
  
   state->YSrcFrameHSize = surface->Data[curind]->Pitch;
 
-  if (m_info.FrameInfo.FourCC == MFX_FOURCC_NV12) {
-    state->UVSrcFrameHSize = state->YSrcFrameHSize >> 1; // to optimize in future
-  } else {
-    // now only YV12
-    state->UVSrcFrameHSize = state->YSrcFrameHSize >> 1; // surface->Info.ScaleCPitch;
-  }
+  state->UVSrcFrameHSize = state->YSrcFrameHSize >> 1;
 
   mfxU32 offl, offc;
   offl = surface->Info.CropX + surface->Info.CropY*state->YSrcFrameHSize;
@@ -2462,12 +2457,8 @@ mfxStatus MFXVideoPAKMPEG2::preEnc(MPEG2FrameState* state)
 
     state->YOutFrameHSize = surface->Data[recind]->Pitch;
 
-    if (m_info.FrameInfo.FourCC == MFX_FOURCC_NV12) {
-      state->UVOutFrameHSize = state->YOutFrameHSize >> 1; // to optimize in future
-    } else {
-      // now only YV12
-      state->UVOutFrameHSize = state->YOutFrameHSize >> 1; // surface->Info.ScaleCPitch;
-    }
+    state->UVOutFrameHSize = state->YOutFrameHSize >> 1;
+
     offl = surface->Info.CropX + surface->Info.CropY*state->YOutFrameHSize;
     offc = (surface->Info.CropX>>1) + 
        (surface->Info.CropY>>1)*state->UVOutFrameHSize;
@@ -2535,12 +2526,8 @@ mfxStatus MFXVideoPAKMPEG2::preEnc(MPEG2FrameState* state)
         {
             state->YRefFrameHSize = surface->Data[ind[i]]->Pitch;
 
-            if (m_info.FrameInfo.FourCC == MFX_FOURCC_NV12) {
-              state->UVRefFrameHSize = state->YRefFrameHSize >> 1; // to optimize in future
-            } else {
-              // now only YV12
-              state->UVRefFrameHSize = state->YRefFrameHSize >> 1; // surface->Info.ScaleCPitch;
-            }
+            state->UVRefFrameHSize = state->YRefFrameHSize >> 1;
+
             offl = surface->Info.CropX + surface->Info.CropY*state->YRefFrameHSize;
             offc = (surface->Info.CropX>>1) + 
                 (surface->Info.CropY>>1)*state->UVRefFrameHSize;

@@ -14,7 +14,7 @@
 
 #include "umc_va_base.h"
 
-#ifdef UMC_VA_DXVA
+#if defined(UMC_VA_DXVA)
 
 #include "umc_va_dxva2_protected.h"
 #include "umc_va_dxva2.h"
@@ -22,8 +22,8 @@
 
 using namespace UMC;
 
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
 // from pavp
-
 const GUID DXVA2_Intel_Pavp = 
 { 0x7460004, 0x7533, 0x4e1a, { 0xbd, 0xe3, 0xff, 0x20, 0x6b, 0xf5, 0xce, 0x47 } };
 
@@ -43,6 +43,7 @@ static mfxExtBuffer* GetExtBuffer(mfxExtBuffer** extBuf, mfxU32 numExtBuf, mfxU3
 
     return 0;
 }
+#endif // MFX_PROTECTED_FEATURE_DISABLE
 
 /////////////////////////////////////////////////
 ProtectedVA::ProtectedVA(mfxU16 p)
@@ -67,6 +68,7 @@ void ProtectedVA::SetProtected(mfxU16 p)
 
 Status ProtectedVA::SetModes(mfxVideoParam * params)
 {
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
     if (IS_PROTECTION_PAVP_ANY(m_protected))
     {
         mfxExtPAVPOption * pavpOpt = (mfxExtPAVPOption*)GetExtBuffer(params->ExtParam, params->NumExtParam, MFX_EXTBUFF_PAVP_OPTION);
@@ -90,8 +92,9 @@ Status ProtectedVA::SetModes(mfxVideoParam * params)
         m_encryptionType = PAVP_ENCRYPTION_AES128_CTR;
         m_counterMode = PAVP_COUNTER_TYPE_C;
     }
-
-
+#else
+    params = params;
+#endif
     return UMC_OK;
 }
 
@@ -128,6 +131,7 @@ void ProtectedVA::SetBitstream(mfxBitstream *bs)
 
 const GUID & ProtectedVA::GetEncryptionGUID() const
 {
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
     if (IS_PROTECTION_PAVP_ANY(m_protected))
         return ::DXVA2_Intel_Pavp;
     else if (MFX_PROTECTION_GPUCP_AES128_CTR == m_protected)
@@ -135,6 +139,7 @@ const GUID & ProtectedVA::GetEncryptionGUID() const
         are only supports RSAES_OAEP through DX11*/
         return ::D3D11_CRYPTO_TYPE_AES128_CTR;
     else
+#endif
         return GUID_NULL;
 }
 
@@ -163,4 +168,4 @@ void ProtectedVA::MoveBSCurrentEncrypt(mfxI32 count)
     }
 }
 
-#endif // UMC_VA_DXVA
+#endif // #if defined(UMC_VA_DXVA)

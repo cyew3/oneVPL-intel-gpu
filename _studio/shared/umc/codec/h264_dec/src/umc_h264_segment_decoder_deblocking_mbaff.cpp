@@ -434,10 +434,7 @@ void H264SegmentDecoder::ResetDeblockingVariablesMBAFF()
             }
             else
             {
-                if (GetMBFieldDecodingFlag(m_gmbinfo->mbs[m_CurMBAddr - mb_width * 2]))
-                    m_deblockingParams.nNeighbour[HORIZONTAL_DEBLOCKING] = m_CurMBAddr - mb_width * 2;
-                else
-                    m_deblockingParams.nNeighbour[HORIZONTAL_DEBLOCKING] = m_CurMBAddr - mb_width * 2;
+                m_deblockingParams.nNeighbour[HORIZONTAL_DEBLOCKING] = m_CurMBAddr - mb_width * 2;
             }
         }
     }

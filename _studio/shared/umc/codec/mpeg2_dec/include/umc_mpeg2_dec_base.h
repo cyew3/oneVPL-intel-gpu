@@ -21,9 +21,6 @@
 
 //VM headers
 #include "vm_debug.h"
-//#include "vm_thread.h"
-//#include "vm_event.h"
-
 //UMC headers
 #include "umc_structures.h"
 #include "umc_media_data_ex.h"
@@ -130,7 +127,6 @@ namespace UMC
             bool   isOriginal;
         } TimeStampInfo;
 
-        MemoryAllocator *m_pMemoryAllocator; // (MemoryAllocator*) pointer to memory allocator
         VideoStreamInfo         m_ClipInfo;                         // (VideoStreamInfo) clip info
 
         TimeStampInfo   m_dTime[2 * DPB_SIZE];
@@ -158,10 +154,10 @@ namespace UMC
         //Level 1 can call level 2 functions or re-implement it
 
         //Sequence Header search. Stops after header start code
-        Status FindSequenceHeader(IppVideoContext *video);
+        Status FindSequenceHeader(VideoContext *video);
 
         //Sequence Header decode
-        virtual Status DecodeSequenceHeader(IppVideoContext *video, int task_num);
+        virtual Status DecodeSequenceHeader(VideoContext *video, int task_num);
 
         // Is current picture to be skipped
         bool IsPictureToSkip(int task_num);
@@ -177,10 +173,10 @@ namespace UMC
 
 
         //Slice decode, includes MB decode
-        virtual  Status DecodeSlice(IppVideoContext *video, int task_num) = 0;
+        virtual  Status DecodeSlice(VideoContext *video, int task_num) = 0;
 
         // decode all headers but slice, starts right after startcode
-        virtual Status DecodeHeader(Ipp32s startcode, IppVideoContext *video, int task_num);
+        virtual Status DecodeHeader(Ipp32s startcode, VideoContext *video, int task_num);
 
         ///////////////////////////////////////////////////////
         /////////////Level 3 protected interface///////////////
@@ -188,7 +184,7 @@ namespace UMC
         //Level 3 can call level 4 functions or re-implement it
 
         //Slice Header decode
-        virtual Status DecodeSliceHeader(IppVideoContext *video, int task_num) = 0;
+        virtual Status DecodeSliceHeader(VideoContext *video, int task_num) = 0;
 
         ///////////////////////////////////////////////////////
         /////////////Level 4 protected interface///////////////
@@ -220,7 +216,8 @@ namespace UMC
         Ipp32s                    first_i_occure_backup;
         Ipp32s                    frame_count_backup;
 
-        IppVideoContext**         Video[2*DPB_SIZE];
+        VideoContext**         Video[2*DPB_SIZE];
+        Ipp8u *                   video_ptr;
 
         Ipp32u                    m_lFlags;
 

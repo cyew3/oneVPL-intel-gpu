@@ -36,9 +36,9 @@ typedef const mfxU8 mfxUC8;
             return _ret;                        \
         }
 
-#define THREAD_SPACE
 CmCopyWrapper::CmCopyWrapper()
 {
+    m_HWType = MFX_HW_UNKNOWN;
     m_pCmProgram = NULL;
     m_pCmDevice  = NULL;
 
@@ -1293,7 +1293,7 @@ mfxStatus CmCopyWrapper::EnqueueCopyNV12GPUtoCPU(   CmSurface2D* pSurface,
             slice_copy_height_row = copy_height_row;
             sliceCopyBufferUPSize = totalBufferUPSize;
         }
-        //WA SKL driver KMD issue - map CmBufferUP instead of map/unmap each time each time for better performance and CPU utilization.
+        //map CmBufferUP instead of map/unmap each time each time for better performance and CPU utilization.
         pBufferIndexCM = CreateUpBuffer((mfxU8*)pLinearAddressAligned,sliceCopyBufferUPSize,m_tableSysRelations2,m_tableSysIndex2);
         //hr = m_pCmDevice->CreateBufferUP(  sliceCopyBufferUPSize, ( void * )pLinearAddressAligned, pCMBufferUP );
         MFX_CHECK_NULL_PTR1(pBufferIndexCM);
@@ -1498,14 +1498,17 @@ mfxStatus CmCopyWrapper::EnqueueCopyMirrorNV12CPUtoGPU(CmSurface2D* pSurface,
         CHECK_CM_HR(hr);
         hr = m_pCmKernel->SetKernelArg( 5, sizeof( UINT ), &width_dword );
         CHECK_CM_HR(hr);
-        //hr = m_pCmKernel->SetKernelArg( 5, sizeof( UINT ), &threadHeight );
-        //CHECK_CM_HR(hr);
-        //hr = m_pCmKernel->SetKernelArg( 7, sizeof( UINT ), &slice_copy_height_row );
-        //CHECK_CM_HR(hr);
-        /*hr = m_pCmKernel->SetKernelArg( 9, sizeof( UINT ), &start_x );
+
+#if 0
+        hr = m_pCmKernel->SetKernelArg( 5, sizeof( UINT ), &threadHeight );
+        CHECK_CM_HR(hr);
+        hr = m_pCmKernel->SetKernelArg( 7, sizeof( UINT ), &slice_copy_height_row );
+        CHECK_CM_HR(hr);
+        hr = m_pCmKernel->SetKernelArg( 9, sizeof( UINT ), &start_x );
         CHECK_CM_HR(hr);
         hr = m_pCmKernel->SetKernelArg( 10, sizeof( UINT ), &start_y );
-        CHECK_CM_HR(hr);*/
+        CHECK_CM_HR(hr);
+#endif
 
         hr = m_pCmDevice->CreateTask(pGPUCopyTask);
         CHECK_CM_HR(hr);
@@ -1646,7 +1649,7 @@ mfxStatus CmCopyWrapper::EnqueueCopyNV12CPUtoGPU(CmSurface2D* pSurface,
             slice_copy_height_row = copy_height_row;
             sliceCopyBufferUPSize = totalBufferUPSize;
         }
-        //WA SKL driver KMD issue - map CmBufferUP instead of map/unmap each time for better performance and CPU utilization.
+        //map CmBufferUP instead of map/unmap each time for better performance and CPU utilization.
         pBufferIndexCM = CreateUpBuffer((mfxU8*)pLinearAddressAligned,sliceCopyBufferUPSize,m_tableSysRelations2,m_tableSysIndex2);
         MFX_CHECK_NULL_PTR1(pBufferIndexCM);
         hr = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(surfaceCopy_write_NV12), m_pCmKernel);
@@ -1682,14 +1685,16 @@ mfxStatus CmCopyWrapper::EnqueueCopyNV12CPUtoGPU(CmSurface2D* pSurface,
         CHECK_CM_HR(hr);
         hr = m_pCmKernel->SetKernelArg( 6, sizeof( UINT ), &height_stride_in_rows );
         CHECK_CM_HR(hr);
-        //hr = m_pCmKernel->SetKernelArg( 5, sizeof( UINT ), &threadHeight );
-        //CHECK_CM_HR(hr);
-        //hr = m_pCmKernel->SetKernelArg( 7, sizeof( UINT ), &slice_copy_height_row );
-        //CHECK_CM_HR(hr);
-        /*hr = m_pCmKernel->SetKernelArg( 9, sizeof( UINT ), &start_x );
+#if 0
+        hr = m_pCmKernel->SetKernelArg( 5, sizeof( UINT ), &threadHeight );
+        CHECK_CM_HR(hr);
+        hr = m_pCmKernel->SetKernelArg( 7, sizeof( UINT ), &slice_copy_height_row );
+        CHECK_CM_HR(hr);
+        hr = m_pCmKernel->SetKernelArg( 9, sizeof( UINT ), &start_x );
         CHECK_CM_HR(hr);
         hr = m_pCmKernel->SetKernelArg( 10, sizeof( UINT ), &start_y );
-        CHECK_CM_HR(hr);*/
+        CHECK_CM_HR(hr);
+#endif
 
         hr = m_pCmDevice->CreateTask(pGPUCopyTask);
         CHECK_CM_HR(hr);
@@ -1865,12 +1870,14 @@ mfxStatus CmCopyWrapper::EnqueueCopyShiftP010GPUtoCPU(   CmSurface2D* pSurface,
         CHECK_CM_HR(hr);
         hr = m_pCmKernel->SetKernelArg( 7, sizeof( UINT ), &height_stride_in_rows );
         CHECK_CM_HR(hr);
-        //hr = m_pCmKernel->SetKernelArg( 7, sizeof( UINT ), &slice_copy_height_row );
-        //CHECK_CM_HR(hr);
-        /*hr = m_pCmKernel->SetKernelArg( 9, sizeof( UINT ), &start_x );
+#if 0
+        hr = m_pCmKernel->SetKernelArg( 7, sizeof( UINT ), &slice_copy_height_row );
+        CHECK_CM_HR(hr);
+        hr = m_pCmKernel->SetKernelArg( 9, sizeof( UINT ), &start_x );
         CHECK_CM_HR(hr);
         hr = m_pCmKernel->SetKernelArg( 10, sizeof( UINT ), &start_y );
-        CHECK_CM_HR(hr);*/
+        CHECK_CM_HR(hr);
+#endif
 
         hr = m_pCmDevice->CreateTask(pGPUCopyTask);
         CHECK_CM_HR(hr);
@@ -2039,14 +2046,15 @@ mfxStatus CmCopyWrapper::EnqueueCopyShiftP010CPUtoGPU(   CmSurface2D* pSurface,
         hr = m_pCmKernel->SetKernelArg( 5, sizeof( UINT ), &bitshift );
         CHECK_CM_HR(hr);
 
-
+#if 0
         //this only works for the kernel surfaceCopy_write_32x32
-        /*hr = m_pCmKernel->SetKernelArg( 6, sizeof( UINT ), &sizePerPixel );
+        hr = m_pCmKernel->SetKernelArg( 6, sizeof( UINT ), &sizePerPixel );
         CHECK_CM_HR(hr);
         hr = m_pCmKernel->SetKernelArg( 7, sizeof( UINT ), &start_x );
         CHECK_CM_HR(hr);
         hr = m_pCmKernel->SetKernelArg( 8, sizeof( UINT ), &start_y );
-        CHECK_CM_HR(hr);*/
+        CHECK_CM_HR(hr);
+#endif
 
         hr = m_pCmDevice->CreateTask(pGPUCopyTask);
         CHECK_CM_HR(hr);
@@ -2090,70 +2098,45 @@ mfxStatus CmCopyWrapper::Initialize(eMFXHWType hwtype)
     if (!m_pCmDevice)
         return MFX_ERR_DEVICE_FAILED;
 
+    m_HWType = hwtype;
 
+#if defined (MFX_VA_LINUX)
+    if (m_HWType == MFX_HW_UNKNOWN)  // sometimes linux don't know platform
+        m_HWType = MFX_HW_IVB;
+#endif
 
-    //void *pCommonISACode = new mfxU32[CM_CODE_SIZE];
+#if 0
+    void *pCommonISACode = new mfxU32[CM_CODE_SIZE];
 
-    //if (false == pCommonISACode)
-    //{
-    //    return MFX_ERR_DEVICE_FAILED;
-    //}
+    if (false == pCommonISACode)
+    {
+        return MFX_ERR_DEVICE_FAILED;
+    }
 
-    //memcpy((char*)pCommonISACode, cm_code, CM_CODE_SIZE);
+    memcpy((char*)pCommonISACode, cm_code, CM_CODE_SIZE);
 
-    //cmSts = m_pCmDevice->LoadProgram(pCommonISACode, CM_CODE_SIZE, m_pCmProgram);
-    //CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
-
-    //delete [] pCommonISACode;
-
-#ifndef THREAD_SPACE
-
-    cmSts = m_pCmDevice->CreateKernel(m_pCmProgram, _NAME(surfaceCopy_2DToBufferNV12_2) , m_pCmKernel);
+    cmSts = m_pCmDevice->LoadProgram(pCommonISACode, CM_CODE_SIZE, m_pCmProgram);
     CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
 
-#else
+    delete [] pCommonISACode;
 
-    //cmSts = m_pCmDevice->CreateKernel(m_pCmProgram, _NAME(surfaceCopy_2DToBuffer_Single_nv12_128_full) , m_pCmKernel1);
-    //CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
+    cmSts = m_pCmDevice->CreateKernel(m_pCmProgram, _NAME(surfaceCopy_2DToBuffer_Single_nv12_128_full) , m_pCmKernel1);
+    CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
 
-    //cmSts = m_pCmDevice->CreateKernel(m_pCmProgram, _NAME(surfaceCopy_BufferTo2D_Single_nv12_128_full) , m_pCmKernel2);
-    //CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
+    cmSts = m_pCmDevice->CreateKernel(m_pCmProgram, _NAME(surfaceCopy_BufferTo2D_Single_nv12_128_full) , m_pCmKernel2);
+    CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
 
+    mfxU32 width_ = ALIGN128(width);
+
+    mfxU32 threadWidth = (unsigned int)ceil((double)width / 128);
+    mfxU32 threadHeight = (unsigned int)ceil((double)height / 8);
+
+    m_pCmKernel1->SetThreadCount(threadWidth * threadHeight);
+    m_pCmKernel2->SetThreadCount(threadWidth * threadHeight);
+
+    m_pCmDevice->CreateThreadSpace(threadWidth, threadHeight, m_pThreadSpace);
 #endif
 
-    //mfxU32 width_ = ALIGN128(width);
-
-//    mfxU32 threadWidth = (unsigned int)ceil((double)width / 128);
-//    mfxU32 threadHeight = (unsigned int)ceil((double)height / 8);
-
-//    m_pCmKernel1->SetThreadCount(threadWidth * threadHeight);
-//    m_pCmKernel2->SetThreadCount(threadWidth * threadHeight);
-
-#ifndef THREAD_SPACE
-
-    mfxU32 threadId = 0, block_y = 0, x, y;
-
-    mfxU32 xxx = (int)ceil((float)height / 32) * 32;
-
-    for (block_y = 0; block_y < xxx; block_y += 32)
-    {
-        for (x = 0; x < width; x += BLOCK_PIXEL_WIDTH)
-        {
-            for (y = block_y; y < block_y + 32; y += BLOCK_HEIGHT)
-            {
-                if (y < height)
-                {
-                    m_pCmKernel->SetThreadArg(threadId, 2, 4, &x);
-                    m_pCmKernel->SetThreadArg(threadId, 3, 4, &y);
-
-                    threadId++;
-                }
-            }
-        }
-    }
-#else
- //   m_pCmDevice->CreateThreadSpace(threadWidth, threadHeight, m_pThreadSpace);
-#endif
     if(hwtype >= MFX_HW_SCL)
         InitializeSwapKernels(hwtype);
     cmSts = m_pCmDevice->CreateQueue(m_pCmQueue);
@@ -2162,18 +2145,20 @@ mfxStatus CmCopyWrapper::Initialize(eMFXHWType hwtype)
     m_tableCmIndex2.clear();
     m_tableSysRelations2.clear();
     m_tableSysIndex2.clear();
-    //cmSts = m_pCmDevice->CreateTask(m_pCmTask1);
-    //CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
 
-    //cmSts = m_pCmDevice->CreateTask(m_pCmTask2);
-    //CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED)
+#if 0
+    cmSts = m_pCmDevice->CreateTask(m_pCmTask1);
+    CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
 
-    //cmSts = m_pCmTask1->AddKernel(m_pCmKernel1);
-    //CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
+    cmSts = m_pCmDevice->CreateTask(m_pCmTask2);
+    CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED)
 
-    //cmSts = m_pCmTask2->AddKernel(m_pCmKernel2);
-    //CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
+    cmSts = m_pCmTask1->AddKernel(m_pCmKernel1);
+    CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
 
+    cmSts = m_pCmTask2->AddKernel(m_pCmKernel2);
+    CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
+#endif
     return MFX_ERR_NONE;
 
 } // mfxStatus CmCopyWrapper::Initialize(void)
@@ -2186,83 +2171,53 @@ mfxStatus CmCopyWrapper::InitializeSwapKernels(eMFXHWType hwtype)
         return MFX_ERR_DEVICE_FAILED;
 
 
+#if 0
+    void *pCommonISACode = new mfxU32[CM_CODE_SIZE];
 
-    //void *pCommonISACode = new mfxU32[CM_CODE_SIZE];
+    if (false == pCommonISACode)
+    {
+        return MFX_ERR_DEVICE_FAILED;
+    }
 
-    //if (false == pCommonISACode)
-    //{
-    //    return MFX_ERR_DEVICE_FAILED;
-    //}
+    memcpy((char*)pCommonISACode, cm_code, CM_CODE_SIZE);
 
-    //memcpy((char*)pCommonISACode, cm_code, CM_CODE_SIZE);
-
-    //cmSts = m_pCmDevice->LoadProgram(pCommonISACode, CM_CODE_SIZE, m_pCmProgram);
-    //CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
-
-    //delete [] pCommonISACode;
-
-#ifndef THREAD_SPACE
-
-    cmSts = m_pCmDevice->CreateKernel(m_pCmProgram, _NAME(surfaceCopy_2DToBufferNV12_2) , m_pCmKernel);
+    cmSts = m_pCmDevice->LoadProgram(pCommonISACode, CM_CODE_SIZE, m_pCmProgram);
     CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
 
-#else
+    delete [] pCommonISACode;
 
-    //cmSts = m_pCmDevice->CreateKernel(m_pCmProgram, _NAME(surfaceCopy_2DToBuffer_Single_nv12_128_full) , m_pCmKernel1);
-    //CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
+    cmSts = m_pCmDevice->CreateKernel(m_pCmProgram, _NAME(surfaceCopy_2DToBuffer_Single_nv12_128_full) , m_pCmKernel1);
+    CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
 
-    //cmSts = m_pCmDevice->CreateKernel(m_pCmProgram, _NAME(surfaceCopy_BufferTo2D_Single_nv12_128_full) , m_pCmKernel2);
-    //CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
+    cmSts = m_pCmDevice->CreateKernel(m_pCmProgram, _NAME(surfaceCopy_BufferTo2D_Single_nv12_128_full) , m_pCmKernel2);
+    CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
 
-#endif
+    mfxU32 width_ = ALIGN128(width);
 
-    //mfxU32 width_ = ALIGN128(width);
+    mfxU32 threadWidth = (unsigned int)ceil((double)width / 128);
+    mfxU32 threadHeight = (unsigned int)ceil((double)height / 8);
 
-//    mfxU32 threadWidth = (unsigned int)ceil((double)width / 128);
-//    mfxU32 threadHeight = (unsigned int)ceil((double)height / 8);
+    m_pCmKernel1->SetThreadCount(threadWidth * threadHeight);
+    m_pCmKernel2->SetThreadCount(threadWidth * threadHeight);
 
-//    m_pCmKernel1->SetThreadCount(threadWidth * threadHeight);
-//    m_pCmKernel2->SetThreadCount(threadWidth * threadHeight);
-
-#ifndef THREAD_SPACE
-
-    mfxU32 threadId = 0, block_y = 0, x, y;
-
-    mfxU32 xxx = (int)ceil((float)height / 32) * 32;
-
-    for (block_y = 0; block_y < xxx; block_y += 32)
-    {
-        for (x = 0; x < width; x += BLOCK_PIXEL_WIDTH)
-        {
-            for (y = block_y; y < block_y + 32; y += BLOCK_HEIGHT)
-            {
-                if (y < height)
-                {
-                    m_pCmKernel->SetThreadArg(threadId, 2, 4, &x);
-                    m_pCmKernel->SetThreadArg(threadId, 3, 4, &y);
-
-                    threadId++;
-                }
-            }
-        }
-    }
-#else
- //   m_pCmDevice->CreateThreadSpace(threadWidth, threadHeight, m_pThreadSpace);
+    m_pCmDevice->CreateThreadSpace(threadWidth, threadHeight, m_pThreadSpace);
 #endif
     #if defined(WIN64) || defined(WIN32)
         switch (hwtype)
         {
 #if !(defined(AS_VPP_PLUGIN) || defined(UNIFIED_PLUGIN) || defined(AS_H265FEI_PLUGIN) || defined(AS_H264LA_PLUGIN))
         case MFX_HW_BDW:
-        case MFX_HW_CHV:
+        case MFX_HW_CHT:
             {
             cmSts = m_pCmDevice->LoadProgram((void*)cht_copy_kernel_genx,sizeof(cht_copy_kernel_genx),m_pCmProgram,"nojitter");
             break;
             }
 #endif
         case MFX_HW_SCL:
+#ifndef MFX_CLOSED_PLATFORMS_DISABLE
         case MFX_HW_BXT:
         case MFX_HW_KBL:
+#endif
             {
             cmSts = m_pCmDevice->LoadProgram((void*)skl_copy_kernel_genx,sizeof(skl_copy_kernel_genx),m_pCmProgram,"nojitter");
             break;
@@ -2276,19 +2231,19 @@ mfxStatus CmCopyWrapper::InitializeSwapKernels(eMFXHWType hwtype)
         CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
     #endif
 
+#if 0
+    cmSts = m_pCmDevice->CreateTask(m_pCmTask1);
+    CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
 
-    //cmSts = m_pCmDevice->CreateTask(m_pCmTask1);
-    //CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
+    cmSts = m_pCmDevice->CreateTask(m_pCmTask2);
+    CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED)
 
-    //cmSts = m_pCmDevice->CreateTask(m_pCmTask2);
-    //CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED)
+    cmSts = m_pCmTask1->AddKernel(m_pCmKernel1);
+    CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
 
-    //cmSts = m_pCmTask1->AddKernel(m_pCmKernel1);
-    //CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
-
-    //cmSts = m_pCmTask2->AddKernel(m_pCmKernel2);
-    //CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
-
+    cmSts = m_pCmTask2->AddKernel(m_pCmKernel2);
+    CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
+#endif
     return MFX_ERR_NONE;
 
 } // mfxStatus CmCopyWrapper::Initialize(void)
@@ -2799,5 +2754,252 @@ mfxStatus CmCopyWrapper::CopyMirrorVideoToVideoMemory(void *pDst, void *pSrc, Ip
     CHECK_CM_NULL_PTR(pSrcCmSurface2D, MFX_ERR_DEVICE_FAILED);
 
     return EnqueueCopyMirrorGPUtoGPU(pSrcCmSurface2D, pDstCmSurface2D, width, height, format, 0, e);
+}
+
+#ifdef MFX_VA_WIN
+#define CM_RGB_MAX_GPUCOPY_SURFACE_HEIGHT        16352
+#else
+#define CM_RGB_MAX_GPUCOPY_SURFACE_HEIGHT        4088
+#endif
+
+#define CM_RGB_SUPPORTED_COPY_SIZE(ROI) (ROI.width <= CM_RGB_MAX_GPUCOPY_SURFACE_HEIGHT && ROI.height <= CM_RGB_MAX_GPUCOPY_SURFACE_HEIGHT )
+
+bool CmCopyWrapper::CanUseCmCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc)
+{
+    IppiSize roi = {IPP_MIN(pSrc->Info.Width, pDst->Info.Width), IPP_MIN(pSrc->Info.Height, pDst->Info.Height)};
+
+    if (NULL != pSrc->Data.MemId && NULL != pDst->Data.MemId)
+    {
+        if (pDst->Info.FourCC != MFX_FOURCC_YV12 && CM_SUPPORTED_COPY_SIZE(roi))
+        {
+            return true;
+        }
+    }
+    else if (NULL != pSrc->Data.MemId && NULL != pDst->Data.Y)
+    {
+        if (!CM_ALIGNED(pDst->Data.Pitch))
+            return false;
+
+        mfxI64 verticalPitch = (mfxI64)(pDst->Data.UV - pDst->Data.Y);
+        verticalPitch = (verticalPitch % pDst->Data.Pitch)? 0 : verticalPitch / pDst->Data.Pitch;
+        if ((pDst->Info.FourCC == MFX_FOURCC_NV12 || (pDst->Info.FourCC == MFX_FOURCC_P010 && pDst->Info.Shift == pSrc->Info.Shift)) && CM_ALIGNED(pDst->Data.Y) && CM_ALIGNED(pDst->Data.UV) && CM_SUPPORTED_COPY_SIZE(roi) && verticalPitch >= pDst->Info.Height && verticalPitch <= 16384)
+        {
+            return true;
+        }
+        else if ((pDst->Info.FourCC == MFX_FOURCC_P010 && pDst->Info.Shift != pSrc->Info.Shift) && CM_ALIGNED(pDst->Data.Y) && CM_ALIGNED(pDst->Data.UV) && CM_SUPPORTED_COPY_SIZE(roi) && verticalPitch >= pDst->Info.Height && verticalPitch <= 4096)
+        {
+            return true;
+        }
+        else if((pDst->Info.FourCC == MFX_FOURCC_RGB4 || pDst->Info.FourCC == MFX_FOURCC_BGR4 || pDst->Info.FourCC == MFX_FOURCC_AYUV) && CM_ALIGNED(IPP_MIN(IPP_MIN(pDst->Data.R,pDst->Data.G),pDst->Data.B)) && CM_RGB_SUPPORTED_COPY_SIZE(roi)){
+            return true;
+        }
+        else if((pDst->Info.FourCC == MFX_FOURCC_ARGB16 || pDst->Info.FourCC == MFX_FOURCC_ABGR16) && CM_ALIGNED(IPP_MIN(IPP_MIN(pDst->Data.R,pDst->Data.G),pDst->Data.B)) && roi.height <= 10240 && roi.width <= 10240){
+            return true;
+        }
+        else if(pDst->Info.FourCC != MFX_FOURCC_YV12 && pDst->Info.FourCC != MFX_FOURCC_NV12 && pDst->Info.FourCC != MFX_FOURCC_P010 && pDst->Info.FourCC != MFX_FOURCC_A2RGB10 && pDst->Info.FourCC != MFX_FOURCC_UYVY && CM_ALIGNED(pDst->Data.Y) && CM_SUPPORTED_COPY_SIZE(roi)){
+            return true;
+        }
+        else
+            return false;
+    }
+    else if (NULL != pSrc->Data.Y && NULL != pDst->Data.Y)
+    {
+        return false;
+    }
+    else if (NULL != pSrc->Data.Y && NULL != pDst->Data.MemId)
+    {
+        if (!CM_ALIGNED(pSrc->Data.Pitch))
+            return false;
+
+        mfxI64 verticalPitch = (mfxI64)(pSrc->Data.UV - pSrc->Data.Y);
+        verticalPitch = (verticalPitch % pSrc->Data.Pitch)? 0 : verticalPitch / pSrc->Data.Pitch;
+
+        if ((pDst->Info.FourCC == MFX_FOURCC_NV12 || (pDst->Info.FourCC == MFX_FOURCC_P010 && pDst->Info.Shift == pSrc->Info.Shift)) && CM_ALIGNED(pSrc->Data.Y) && CM_ALIGNED(pSrc->Data.UV) && CM_SUPPORTED_COPY_SIZE(roi) && verticalPitch >= pSrc->Info.Height && verticalPitch <= 16384)
+        {
+            return true;
+        }
+        else if ((pDst->Info.FourCC == MFX_FOURCC_P010 && pDst->Info.Shift != pSrc->Info.Shift) && CM_ALIGNED(pSrc->Data.Y) && CM_ALIGNED(pSrc->Data.UV) && CM_SUPPORTED_COPY_SIZE(roi) && verticalPitch >= pSrc->Info.Height && verticalPitch <= 4096)
+        {
+            return true;
+        }
+        else if((pSrc->Info.FourCC == MFX_FOURCC_RGB4 || pSrc->Info.FourCC == MFX_FOURCC_BGR4) && CM_ALIGNED(IPP_MIN(IPP_MIN(pSrc->Data.R,pSrc->Data.G),pSrc->Data.B)) && CM_RGB_SUPPORTED_COPY_SIZE(roi)){
+            return true;
+        }
+        else if ((pSrc->Info.FourCC == MFX_FOURCC_ARGB16 || pDst->Info.FourCC == MFX_FOURCC_ABGR16) && CM_ALIGNED(IPP_MIN(IPP_MIN(pSrc->Data.R,pSrc->Data.G),pSrc->Data.B)) && roi.height <= 10240 && roi.width <= 10240)
+        {
+            return true;
+        }
+        else if(pSrc->Info.FourCC != MFX_FOURCC_YV12 && pSrc->Info.FourCC != MFX_FOURCC_NV12 && pSrc->Info.FourCC != MFX_FOURCC_P010 && pSrc->Info.FourCC != MFX_FOURCC_A2RGB10 && pSrc->Info.FourCC != MFX_FOURCC_UYVY && CM_ALIGNED(pSrc->Data.Y) && CM_SUPPORTED_COPY_SIZE(roi)){
+            return true;
+        }
+    }
+
+    return false;
+}
+
+mfxStatus CmCopyWrapper::CopyVideoToVideo(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+    IppiSize roi = {IPP_MIN(pSrc->Info.Width, pDst->Info.Width), IPP_MIN(pSrc->Info.Height, pDst->Info.Height)};
+
+    // check that region of interest is valid
+    if (0 == roi.width || 0 == roi.height || m_HWType == MFX_HW_UNKNOWN)
+    {
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+
+    if (NULL != pSrc->Data.MemId && NULL != pDst->Data.MemId)
+    {
+        if(pSrc->Info.FourCC == MFX_FOURCC_RGB4 && pDst->Info.FourCC == MFX_FOURCC_BGR4)
+            sts = CopySwapVideoToVideoMemory(pDst->Data.MemId,pSrc->Data.MemId, roi, MFX_FOURCC_BGR4);
+        else
+            sts = CopyVideoToVideoMemoryAPI(pDst->Data.MemId,pSrc->Data.MemId, roi);
+        return sts;
+    }
+
+    return MFX_ERR_UNDEFINED_BEHAVIOR;
+}
+
+mfxStatus CmCopyWrapper::CopyVideoToSys(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+    IppiSize roi = {IPP_MIN(pSrc->Info.Width, pDst->Info.Width), IPP_MIN(pSrc->Info.Height, pDst->Info.Height)};
+
+    // check that region of interest is valid
+    if (0 == roi.width || 0 == roi.height || m_HWType == MFX_HW_UNKNOWN)
+    {
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+
+    mfxU32 dstPitch = pDst->Data.PitchLow + ((mfxU32)pDst->Data.PitchHigh << 16);
+
+    if (NULL != pSrc->Data.MemId && NULL != pDst->Data.Y)
+    {
+        if (!CM_ALIGNED(pDst->Data.Pitch) )
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+        mfxI64 verticalPitch = (mfxI64)(pDst->Data.UV - pDst->Data.Y);
+        verticalPitch = (verticalPitch % dstPitch)? 0 : verticalPitch / dstPitch;
+        if ((pDst->Info.FourCC == MFX_FOURCC_NV12 || (pDst->Info.FourCC == MFX_FOURCC_P010 && pDst->Info.Shift == pSrc->Info.Shift)) && CM_ALIGNED(pDst->Data.Y) && CM_ALIGNED(pDst->Data.UV) && CM_SUPPORTED_COPY_SIZE(roi) && verticalPitch >= pDst->Info.Height && verticalPitch <= 16384)
+        {
+            if(m_HWType >= MFX_HW_SCL) 
+                sts = CopyVideoToSystemMemory(pDst->Data.Y, pDst->Data.Pitch,(mfxU32)verticalPitch, pSrc->Data.MemId, 0, roi,pDst->Info.FourCC);
+            else
+                sts = CopyVideoToSystemMemoryAPI(pDst->Data.Y, pDst->Data.Pitch,(mfxU32)verticalPitch, pSrc->Data.MemId, 0, roi);
+            return sts;
+        }
+        else if ((pDst->Info.FourCC == MFX_FOURCC_P010 && pDst->Info.Shift != pSrc->Info.Shift) && CM_ALIGNED(pDst->Data.Y) && CM_ALIGNED(pDst->Data.UV) && CM_SUPPORTED_COPY_SIZE(roi) && verticalPitch >= pDst->Info.Height && verticalPitch <= 4096)
+        {
+            sts = CopyShiftVideoToSystemMemory(pDst->Data.Y, pDst->Data.Pitch,(mfxU32)verticalPitch, pSrc->Data.MemId, 0, roi, 16-pDst->Info.BitDepthLuma);
+            return sts;
+        }
+        else if (pDst->Info.FourCC == MFX_FOURCC_RGB4 && CM_ALIGNED(IPP_MIN(IPP_MIN(pDst->Data.R,pDst->Data.G),pDst->Data.B)) && CM_RGB_SUPPORTED_COPY_SIZE(roi))
+        {
+            if(pSrc->Info.FourCC == MFX_FOURCC_BGR4)
+                sts = CopySwapVideoToSystemMemory(IPP_MIN(IPP_MIN(pDst->Data.R,pDst->Data.G),pDst->Data.B), pDst->Data.Pitch, (mfxU32)pSrc->Info.Height,pSrc->Data.MemId, 0, roi, MFX_FOURCC_BGR4);
+            else if(m_HWType >= MFX_HW_SCL)
+                sts = CopyVideoToSystemMemory(IPP_MIN(IPP_MIN(pDst->Data.R,pDst->Data.G),pDst->Data.B), pDst->Data.Pitch,(mfxU32)verticalPitch,pSrc->Data.MemId, 0, roi,pDst->Info.FourCC);
+            else
+                sts = CopyVideoToSystemMemoryAPI(IPP_MIN(IPP_MIN(pDst->Data.R,pDst->Data.G),pDst->Data.B), pDst->Data.Pitch, (mfxU32)pSrc->Info.Height,pSrc->Data.MemId, 0, roi);
+            return sts;
+        }
+        else if (pDst->Info.FourCC == MFX_FOURCC_BGR4 && CM_ALIGNED(IPP_MIN(IPP_MIN(pDst->Data.R,pDst->Data.G),pDst->Data.B)) && CM_RGB_SUPPORTED_COPY_SIZE(roi))
+        {
+            sts = CopyVideoToSystemMemoryAPI(IPP_MIN(IPP_MIN(pDst->Data.R,pDst->Data.G),pDst->Data.B), pDst->Data.Pitch, (mfxU32)pSrc->Info.Height,pSrc->Data.MemId, 0, roi);
+            return sts;
+        }
+        else if (pDst->Info.FourCC == MFX_FOURCC_ARGB16 && CM_ALIGNED(IPP_MIN(IPP_MIN(pDst->Data.R,pDst->Data.G),pDst->Data.B)) && roi.height <= 10240 && roi.width <= 10240)
+        {
+            if(pSrc->Info.FourCC == MFX_FOURCC_ABGR16)
+                sts = CopySwapVideoToSystemMemory(IPP_MIN(IPP_MIN(pDst->Data.R,pDst->Data.G),pDst->Data.B), pDst->Data.Pitch, (mfxU32)pSrc->Info.Height,pSrc->Data.MemId, 0, roi, MFX_FOURCC_ABGR16);
+            else if(m_HWType >= MFX_HW_SCL)
+                sts = CopyVideoToSystemMemory(IPP_MIN(IPP_MIN(pDst->Data.R,pDst->Data.G),pDst->Data.B), pDst->Data.Pitch,(mfxU32)verticalPitch,pSrc->Data.MemId, 0, roi,pDst->Info.FourCC);
+            else
+                sts = CopyVideoToSystemMemoryAPI(IPP_MIN(IPP_MIN(pDst->Data.R,pDst->Data.G),pDst->Data.B), pDst->Data.Pitch, (mfxU32)pSrc->Info.Height,pSrc->Data.MemId, 0, roi);
+            return sts;
+        }
+        else if (pDst->Info.FourCC == MFX_FOURCC_ABGR16 && CM_ALIGNED(IPP_MIN(IPP_MIN(pDst->Data.R,pDst->Data.G),pDst->Data.B)) && roi.height <= 10240 && roi.width <= 10240)
+        {
+            sts = CopyVideoToSystemMemoryAPI(IPP_MIN(IPP_MIN(pDst->Data.R,pDst->Data.G),pDst->Data.B), pDst->Data.Pitch, (mfxU32)pSrc->Info.Height,pSrc->Data.MemId, 0, roi);
+            return sts;
+        }
+        else if (pDst->Info.FourCC != MFX_FOURCC_NV12 && pDst->Info.FourCC != MFX_FOURCC_YV12 && pDst->Info.FourCC != MFX_FOURCC_P010 && pDst->Info.FourCC != MFX_FOURCC_A2RGB10 && pDst->Info.FourCC != MFX_FOURCC_UYVY && CM_ALIGNED(pDst->Data.Y) && CM_SUPPORTED_COPY_SIZE(roi))
+        {
+            sts = CopyVideoToSystemMemoryAPI(pDst->Data.Y, pDst->Data.Pitch,(mfxU32)pDst->Info.Height, pSrc->Data.MemId, 0, roi);
+            return sts;
+        }
+    }
+
+    return MFX_ERR_UNDEFINED_BEHAVIOR;
+}
+
+mfxStatus CmCopyWrapper::CopySysToVideo(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+    IppiSize roi = {IPP_MIN(pSrc->Info.Width, pDst->Info.Width), IPP_MIN(pSrc->Info.Height, pDst->Info.Height)};
+
+    // check that region of interest is valid
+    if (0 == roi.width || 0 == roi.height || m_HWType == MFX_HW_UNKNOWN)
+    {
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+
+    if (NULL != pSrc->Data.Y && NULL != pDst->Data.MemId)
+    {
+        if (!CM_ALIGNED(pSrc->Data.Pitch) )
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+        // source are placed in system memory, destination is in video memory
+        // use common way to copy frames from system to video, most faster
+        mfxI64 verticalPitch = (mfxI64)(pSrc->Data.UV - pSrc->Data.Y);
+        verticalPitch = (verticalPitch % pSrc->Data.Pitch)? 0 : verticalPitch / pSrc->Data.Pitch;
+
+        if ((pDst->Info.FourCC == MFX_FOURCC_NV12 || (pDst->Info.FourCC == MFX_FOURCC_P010 && pDst->Info.Shift == pSrc->Info.Shift)) && CM_ALIGNED(pSrc->Data.Y) && CM_ALIGNED(pSrc->Data.UV) && CM_SUPPORTED_COPY_SIZE(roi) && verticalPitch >= pSrc->Info.Height && verticalPitch <= 16384)
+        {
+            if(m_HWType >= MFX_HW_SCL)
+                sts = CopySystemToVideoMemory(pDst->Data.MemId, 0, pSrc->Data.Y, pSrc->Data.Pitch,(mfxU32)verticalPitch, roi,pDst->Info.FourCC);
+            else
+                sts = CopySystemToVideoMemoryAPI(pDst->Data.MemId, 0, pSrc->Data.Y, pSrc->Data.Pitch,(mfxU32)verticalPitch, roi);
+            return sts;
+        }
+        else if ((pDst->Info.FourCC == MFX_FOURCC_P010 && pDst->Info.Shift != pSrc->Info.Shift) && CM_ALIGNED(pSrc->Data.Y) && CM_ALIGNED(pSrc->Data.UV) && CM_SUPPORTED_COPY_SIZE(roi) && verticalPitch >= pSrc->Info.Height && verticalPitch <= 4096)
+        {
+            sts = CopyShiftSystemToVideoMemory(pDst->Data.MemId, 0, pSrc->Data.Y, pSrc->Data.Pitch,(mfxU32)verticalPitch, roi, 16 - pSrc->Info.BitDepthLuma);
+            return sts;
+        }
+        else if(pSrc->Info.FourCC == MFX_FOURCC_RGB4 && CM_ALIGNED(IPP_MIN(IPP_MIN(pSrc->Data.R,pSrc->Data.G),pSrc->Data.B)) && CM_RGB_SUPPORTED_COPY_SIZE(roi)){
+            if(pDst->Info.FourCC == MFX_FOURCC_BGR4)
+                sts = CopySwapSystemToVideoMemory(pDst->Data.MemId, 0, IPP_MIN(IPP_MIN(pSrc->Data.R,pSrc->Data.G),pSrc->Data.B), pSrc->Data.Pitch, (mfxU32)pSrc->Info.Height, roi, MFX_FOURCC_BGR4);
+            else if(m_HWType >= MFX_HW_SCL)
+                sts = CopySystemToVideoMemory(pDst->Data.MemId, 0, IPP_MIN(IPP_MIN(pSrc->Data.R,pSrc->Data.G),pSrc->Data.B), pSrc->Data.Pitch, (mfxU32)pSrc->Info.Height, roi, MFX_FOURCC_RGB4);
+            else
+                sts = CopySystemToVideoMemoryAPI(pDst->Data.MemId, 0, IPP_MIN(IPP_MIN(pSrc->Data.R,pSrc->Data.G),pSrc->Data.B), pSrc->Data.Pitch, (mfxU32)pSrc->Info.Height, roi);
+            return sts;
+        }
+        else if (pDst->Info.FourCC == MFX_FOURCC_ARGB16 && CM_ALIGNED(IPP_MIN(IPP_MIN(pDst->Data.R,pDst->Data.G),pDst->Data.B)) && roi.height <= 10240 && roi.width <= 10240)
+        {
+            if(pSrc->Info.FourCC == MFX_FOURCC_ABGR16)
+                sts = CopySwapSystemToVideoMemory(pDst->Data.MemId, 0, IPP_MIN(IPP_MIN(pSrc->Data.R,pSrc->Data.G),pSrc->Data.B), pSrc->Data.Pitch, (mfxU32)pSrc->Info.Height, roi, MFX_FOURCC_ABGR16);
+            else if(m_HWType >= MFX_HW_SCL)
+                sts = CopySystemToVideoMemory(pDst->Data.MemId, 0, IPP_MIN(IPP_MIN(pSrc->Data.R,pSrc->Data.G),pSrc->Data.B), pSrc->Data.Pitch, (mfxU32)pSrc->Info.Height, roi, MFX_FOURCC_ABGR16);
+            else
+                sts = CopySystemToVideoMemoryAPI(pDst->Data.MemId, 0, IPP_MIN(IPP_MIN(pSrc->Data.R,pSrc->Data.G),pSrc->Data.B), pSrc->Data.Pitch, (mfxU32)pSrc->Info.Height, roi);
+            return sts;
+        }
+        else if (pDst->Info.FourCC == MFX_FOURCC_ABGR16 && CM_ALIGNED(IPP_MIN(IPP_MIN(pDst->Data.R,pDst->Data.G),pDst->Data.B)) && roi.height <= 10240 && roi.width <= 10240)
+        {
+            sts = CopySystemToVideoMemoryAPI(pDst->Data.MemId, 0, IPP_MIN(IPP_MIN(pSrc->Data.R,pSrc->Data.G),pSrc->Data.B), pSrc->Data.Pitch, (mfxU32)pSrc->Info.Height, roi);
+            return sts;
+        }
+        else if(pSrc->Info.FourCC != MFX_FOURCC_YV12 && pSrc->Info.FourCC != MFX_FOURCC_NV12 && pSrc->Info.FourCC != MFX_FOURCC_P010  && pSrc->Info.FourCC != MFX_FOURCC_A2RGB10 && pSrc->Info.FourCC != MFX_FOURCC_UYVY && CM_ALIGNED(pSrc->Data.Y) && CM_SUPPORTED_COPY_SIZE(roi)){
+            if(pSrc->Info.FourCC == MFX_FOURCC_R16 && m_HWType >= MFX_HW_SCL)
+                sts = CopySystemToVideoMemory(pDst->Data.MemId, 0, pSrc->Data.Y, pSrc->Data.Pitch, (mfxU32)pSrc->Info.Height, roi, MFX_FOURCC_R16);
+            else
+                sts = CopySystemToVideoMemoryAPI(pDst->Data.MemId, 0, pSrc->Data.Y, pSrc->Data.Pitch, (mfxU32)pDst->Info.Height, roi);
+            return sts;
+        }
+    }
+
+    return MFX_ERR_UNDEFINED_BEHAVIOR;
 }
 #endif // defined (MFX_VA) && !defined(OSX)

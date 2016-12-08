@@ -259,7 +259,6 @@
     <ClCompile Include="src\umc_h264_dec_tables.cpp" />
     <ClCompile Include="src\umc_h264_dec_tables_cabac.cpp" />
     <ClCompile Include="src\umc_h264_direct_pred.cpp" />
-    <ClCompile Include="src\umc_h264_dxva.cpp" />
     <ClCompile Include="src\umc_h264_frame.cpp" />
     <ClCompile Include="src\umc_h264_frame_ex.cpp" />
     <ClCompile Include="src\umc_h264_frame_list.cpp" />
@@ -313,7 +312,6 @@
     <ClInclude Include="include\umc_h264_dec_structures.h" />
     <ClInclude Include="include\umc_h264_dec_tables.h" />
     <ClInclude Include="include\umc_h264_dec_total_zero.h" />
-    <ClInclude Include="include\umc_h264_dxva.h" />
     <ClInclude Include="include\umc_h264_frame.h" />
     <ClInclude Include="include\umc_h264_frame_ex.h" />
     <ClInclude Include="include\umc_h264_frame_info.h" />

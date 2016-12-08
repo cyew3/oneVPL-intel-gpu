@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -2138,7 +2138,7 @@ inline void ippiInterpolateBlock_H264_A_8u16s(
 inline void ippiEncodeCoeffsCAVLC_H264_8u16s(
     Ipp16s* pSrc,
     Ipp8u   AC,
-    Ipp32s* pScanMatrix,
+    const Ipp32s* pScanMatrix,
     Ipp8u   Count,
     Ipp8u*  Trailing_Ones,
     Ipp8u*  Trailing_One_Signs,

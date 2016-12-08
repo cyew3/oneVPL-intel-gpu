@@ -14,8 +14,6 @@
 #ifndef __UMC_H265_VA_SUPPLIER_H
 #define __UMC_H265_VA_SUPPLIER_H
 
-#ifndef UMC_RESTRICTED_CODE_VA
-
 #include "umc_h265_mfx_supplier.h"
 #include "umc_h265_segment_decoder_dxva.h"
 
@@ -101,8 +99,6 @@ protected:
 
 }// namespace UMC_HEVC_DECODER
 
-
-#endif // UMC_RESTRICTED_CODE_VA
 
 #endif // __UMC_H265_VA_SUPPLIER_H
 #endif // UMC_ENABLE_H265_VIDEO_DECODER

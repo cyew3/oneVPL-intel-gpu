@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2012 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2016 Intel Corporation. All Rights Reserved.
 //
 
 #if PIXBITS == 8
@@ -131,7 +131,7 @@ typedef struct H264ENC_MAKE_NAME(sH264EncoderFrame)
     Ipp32s           m_LongTermPicNum[2];
     Ipp32s           m_FrameNum; // frame_num
     Ipp32s           m_FrameNumWrap;
-    Ipp32s           m_EncodedFrameNum; // counter m_EncodedFrameNum is used in construction of Lync-compatible ref lists
+    Ipp32s           m_EncodedFrameNum; // counter m_EncodedFrameNum is used in construction of tempScalabilityMode-compatible ref lists
     Ipp32u           m_FrameCount; // frame counter in display order
     Ipp32u           m_EncFrameCount; // frame counter in encoded order
     Ipp32u           m_LastIframeEncCount; // m_EncFrameCount of previous I-frame in encoded order

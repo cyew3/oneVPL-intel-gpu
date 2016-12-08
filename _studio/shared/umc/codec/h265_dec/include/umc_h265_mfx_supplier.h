@@ -14,11 +14,7 @@
 #ifndef __UMC_H265_MFX_SUPPLIER_H
 #define __UMC_H265_MFX_SUPPLIER_H
 
-//#define UMC_RESTRICTED_CODE_MFX
-
-#ifndef UMC_RESTRICTED_CODE_MFX
 #include "vm_thread.h"
-//#include "mfx_h265_ex_param_buf.h"
 #include "umc_h265_task_supplier.h"
 #include "umc_media_data_ex.h"
 
@@ -151,8 +147,6 @@ private:
 };
 
 } // namespace UMC_HEVC_DECODER
-
-#endif // UMC_RESTRICTED_CODE_MFX
 
 #endif // __UMC_H265_MFX_SUPPLIER_H
 #endif // UMC_ENABLE_H265_VIDEO_DECODER

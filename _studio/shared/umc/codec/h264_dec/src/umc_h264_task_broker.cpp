@@ -20,9 +20,6 @@
 #include "umc_h264_dec_debug.h"
 #include "mfx_trace.h"
 
-//#define ECHO_DEB
-//#define VM_DEBUG
-
 namespace UMC
 {
 

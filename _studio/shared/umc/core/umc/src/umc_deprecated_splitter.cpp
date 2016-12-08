@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2011 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include <string.h>
@@ -157,12 +157,12 @@ Status Splitter::GetInfo(SplitterInfo* pInfo) { // DEPRECATED !!!
     //if any additional audio track
     if (pInfo->number_audio_tracks > 1) {
       if(pInfo->m_audio_info_aux) {
-        free/*ippsFree*/(pInfo->m_audio_info_aux);
+        free(pInfo->m_audio_info_aux);
         pInfo->m_audio_info_aux = NULL;
       }
 
       Ipp32u buff_size = (pInfo->number_audio_tracks - 1) * sizeof(sAudioStreamInfo);
-      pInfo->m_audio_info_aux = (sAudioStreamInfo*)malloc(buff_size); //ippsMalloc_8u(buff_size);
+      pInfo->m_audio_info_aux = (sAudioStreamInfo*)malloc(buff_size);
 
       if(pInfo->m_audio_info_aux) {
         memset(pInfo->m_audio_info_aux, 0, buff_size);
@@ -190,11 +190,11 @@ Status Splitter::GetInfo(SplitterInfo* pInfo) { // DEPRECATED !!!
     if (pInfo->number_video_tracks > 1) {
       //alloc memory
       if (pInfo->m_video_info_aux) {
-          free/*ippsFree*/(pInfo->m_video_info_aux);
+          free(pInfo->m_video_info_aux);
       }
 
       Ipp32u buff_size = (pInfo->number_video_tracks - 1) * sizeof(sVideoStreamInfo);
-      pInfo->m_video_info_aux = (sVideoStreamInfo*)malloc/*ippsMalloc_8u*/(buff_size);
+      pInfo->m_video_info_aux = (sVideoStreamInfo*)malloc(buff_size);
       if (pInfo->m_video_info_aux) {
           memset(pInfo->m_video_info_aux, 0, buff_size);
       } else {

@@ -26,14 +26,6 @@
 #define mdprintf(...)
 #endif
 
-#define SKIP_FRAME_SUPPORT
-#define ROLLING_INTRA_REFRESH_SUPPORT
-#define MAX_FRAME_SIZE_SUPPORT
-
-#ifndef MFX_VA_ANDROID
-    #define TRELLIS_QUANTIZATION_SUPPORT
-#endif
-
 using namespace MfxHwH264Encode;
 
 mfxU8 ConvertRateControlMFX2VAAPI(mfxU8 rateControl)
@@ -405,7 +397,6 @@ mfxStatus SetPrivateParams(
     {
         mfxExtCodingOption2 const * extOpt2rt  = GetExtBuffer(*pCtrl);
         mfxExtCodingOption3 const * extOpt3rt  = GetExtBuffer(*pCtrl);
-        mfxExtAVCEncodeCtrl const * extPCQC    = GetExtBuffer(*pCtrl);
 
         if (extOpt2rt)
             private_param->useRawPicForRef = IsOn(extOpt2rt->UseRawRef);
@@ -419,6 +410,8 @@ mfxStatus SetPrivateParams(
                 private_param->HMEMVCostScalingFactor = extOpt3rt->MVCostScalingFactor;
         }
 
+#ifndef MFX_PRIVATE_AVC_ENCODE_CTRL_DISABLE
+        mfxExtAVCEncodeCtrl const * extPCQC    = GetExtBuffer(*pCtrl);
         if (extPCQC)
         {
             private_param->skipCheckDisable = (extPCQC->SkipCheck & 0x0F) == MFX_SKIP_CHECK_DISABLE;
@@ -446,6 +439,7 @@ mfxStatus SetPrivateParams(
                 Copy(private_param->lambdaValueLUT, extPCQC->LambdaValue );
             }
         }
+#endif
     }
 
     vaUnmapBuffer(vaDisplay, privateParams_id);
@@ -461,7 +455,6 @@ mfxStatus SetSkipFrame(
     mfxU8 numSkipFrames,
     mfxU32 sizeSkipFrames)
 {
-#ifdef SKIP_FRAME_SUPPORT
     VAStatus vaSts;
     VAEncMiscParameterBuffer *misc_param;
     VAEncMiscParameterSkipFrame *skipParam;
@@ -495,9 +488,6 @@ mfxStatus SetSkipFrame(
     vaUnmapBuffer(vaDisplay, skipParam_id);
 
     return MFX_ERR_NONE;
-#else
-    return MFX_ERR_UNSUPPORTED;
-#endif
 }
 
 static mfxStatus SetROI(
@@ -576,8 +566,8 @@ void FillConstPartOfPps(
     pps.seq_parameter_set_id = 0; // extSps->seqParameterSetId; - driver doesn't support non-zero sps_id
     pps.pic_parameter_set_id = 0; // extPps->picParameterSetId; - driver doesn't support non-zero pps_id
 
-    pps.last_picture = 0;// aya???
-    pps.frame_num = 0;   // aya???
+    pps.last_picture = 0;
+    pps.frame_num = 0;
 
     pps.pic_init_qp = extPps->picInitQpMinus26 + 26;
     pps.num_ref_idx_l0_active_minus1            = extPps->numRefIdxL0DefaultActiveMinus1;
@@ -585,7 +575,7 @@ void FillConstPartOfPps(
     pps.chroma_qp_index_offset                  = extPps->chromaQpIndexOffset;
     pps.second_chroma_qp_index_offset           = extPps->secondChromaQpIndexOffset;
 
-    pps.pic_fields.bits.deblocking_filter_control_present_flag  = 1;//aya: ???
+    pps.pic_fields.bits.deblocking_filter_control_present_flag  = 1;
     pps.pic_fields.bits.entropy_coding_mode_flag                = extPps->entropyCodingModeFlag;
 
     pps.pic_fields.bits.pic_order_present_flag                  = extPps->bottomFieldPicOrderInframePresentFlag;
@@ -979,16 +969,10 @@ void VAAPIEncoder::FillSps(
 
         sps.frame_cropping_flag                            = extSps->frameCroppingFlag;
 
-//#if VA_CHECK_VERSION(0, 34, 0)
-//after backport of va to OTC staging 0.33 also has the same fields. TODO: fully remove after validation
         sps.sar_height        = extSps->vui.sarHeight;
         sps.sar_width         = extSps->vui.sarWidth;
         sps.aspect_ratio_idc  = extSps->vui.aspectRatioIdc;
-//#endif
-/*
- *  In Windows DDI Trellis Quantization in SPS, while for VA in miscEnc.
- *  keep is here to have processed in Execute
- */
+
         mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(par);
         assert( extOpt2 != 0 );
         m_newTrellisQuantization = extOpt2 ? extOpt2->Trellis : 0;
@@ -1064,17 +1048,15 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     m_caps.SkipFrame = (attrs[10].value & (~VA_ATTRIB_NOT_SUPPORTED)) ? 1 : 0 ;
 #endif
 
-    m_caps.UserMaxFrameSizeSupport = 1; // no request on support for libVA
-    m_caps.MBBRCSupport = 1;            // starting 16.3 Beta, enabled in driver by default for TU-1,2
+    m_caps.UserMaxFrameSizeSupport = 1;
+    m_caps.MBBRCSupport = 1;
     m_caps.MbQpDataSupport = 1;
-    m_caps.NoWeightedPred = 1;          // unsupported for 16.4.3
-    m_caps.Color420Only = 1;// fixme in case VAAPI direct YUY2/RGB support added
+    m_caps.NoWeightedPred = 1;
+    m_caps.Color420Only = 1;
 
     vaExtQueryEncCapabilities pfnVaExtQueryCaps = NULL;
     pfnVaExtQueryCaps = (vaExtQueryEncCapabilities)vaGetLibFunc(m_vaDisplay,VPG_EXT_QUERY_ENC_CAPS);
-    /* This is for 16.3.* approach.
-     * It was used private libVA function to get information which feature is supported
-     * */
+
     if (pfnVaExtQueryCaps)
     {
         VAEncQueryCapabilities VaEncCaps;
@@ -1090,7 +1072,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
         m_caps.MaxNum_Reference = VaEncCaps.MaxNum_ReferenceL0;
         m_caps.MaxNum_Reference1 = VaEncCaps.MaxNum_ReferenceL1;
     }
-    else /* this is LibVA legacy approach. Should be supported from 16.4 driver */
+    else
     {
         if ((attrs[5].value != VA_ATTRIB_NOT_SUPPORTED) && (attrs[5].value != 0))
             m_caps.MaxPicWidth  = attrs[5].value;
@@ -1273,12 +1255,6 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
         }else{
             attrib[2].value = VA_ENC_FUNCTION_ENC_PAK_INTEL;
         }
-        if (VA_CONFIG_ATTRIB_FEI_INTERFACE_REV_INTEL != attrib[3].value)
-        {
-            /* DDI version in MSDk and in driver mismatched
-             * This is fatal error */
-            //return MFX_ERR_DEVICE_FAILED;
-        }
     } //if(m_isENCPAK){
 
     attrib[0].value = VA_RT_FORMAT_YUV420;
@@ -1297,9 +1273,10 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
     for(unsigned int i = 0; i < m_reconQueue.size(); i++)
         reconSurf.push_back(m_reconQueue[i].surface);
 
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
     if (m_videoParam.Protected && IsSupported__VAHDCPEncryptionParameterBuffer())
         flag |= VA_HDCP_ENABLED;
-
+#endif
     // Encoder create
 
     {
@@ -1852,7 +1829,7 @@ mfxStatus VAAPIEncoder::Execute(
                 //mdprintf(stderr, "MB Stat bufId=%d\n", vaFeiMBStatId);
             }
         }
-        /* MbCode and MVout buffer always should be in pair - driver's request (aka limitation)
+        /* MbCode and MVout buffer always should be in pair 
          * If one from buffers does not requested by application but one of them requested
          * library have to create both buffers sets. And for this need to know number of MBs
          * */
@@ -2244,11 +2221,13 @@ mfxStatus VAAPIEncoder::Execute(
             configBuffers[buffersCount++] = m_packedSkippedSliceHeaderBufferId;
             configBuffers[buffersCount++] = m_packedSkippedSliceBufferId;
 
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
             if (PAVP_MODE == skipFlag)
             {
                 m_numSkipFrames = 1;
                 m_sizeSkipFrames = (skipMode != MFX_SKIPFRAME_INSERT_NOTHING) ? packedDataSize : 0;
             }
+#endif
         }
         else
         {
@@ -2325,7 +2304,6 @@ mfxStatus VAAPIEncoder::Execute(
     configBuffers[buffersCount++] = m_rateParamBufferId;
     configBuffers[buffersCount++] = m_frameRateId;
 
-#ifdef MAX_FRAME_SIZE_SUPPORT
 /*
  * Limit frame size by application/user level
  */
@@ -2335,9 +2313,8 @@ mfxStatus VAAPIEncoder::Execute(
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetMaxFrameSize(m_userMaxFrameSize, m_vaDisplay,
                                                           m_vaContextEncode, m_maxFrameSizeId), MFX_ERR_DEVICE_FAILED);
     configBuffers[buffersCount++] = m_maxFrameSizeId;
-#endif
 
-#ifdef TRELLIS_QUANTIZATION_SUPPORT
+#ifndef MFX_VA_ANDROID
 /*
  *  By default (0) - driver will decide.
  *  1 - disable trellis quantization
@@ -2352,7 +2329,6 @@ mfxStatus VAAPIEncoder::Execute(
     }
 #endif
 
-#ifdef ROLLING_INTRA_REFRESH_SUPPORT
  /*
  *   RollingIntraRefresh
  */
@@ -2363,7 +2339,6 @@ mfxStatus VAAPIEncoder::Execute(
                                                                      m_vaContextEncode, m_rirId), MFX_ERR_DEVICE_FAILED);
         configBuffers[buffersCount++] = m_rirId;
     }
-#endif
 
     if (task.m_numRoi)
     {
@@ -2468,7 +2443,6 @@ mfxStatus VAAPIEncoder::Execute(
 
     if (skipFlag != NORMAL_MODE)
     {
-#ifdef SKIP_FRAME_SUPPORT
         MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetSkipFrame(m_vaDisplay, m_vaContextEncode, m_miscParameterSkipBufferId,
                                                            skipFlag ? skipFlag : !!m_numSkipFrames,
                                                            m_numSkipFrames, m_sizeSkipFrames), MFX_ERR_DEVICE_FAILED);
@@ -2477,7 +2451,7 @@ mfxStatus VAAPIEncoder::Execute(
 
         m_numSkipFrames  = 0;
         m_sizeSkipFrames = 0;
-#endif
+
         mdprintf(stderr, "task.m_frameNum=%d\n", task.m_frameNum);
         mdprintf(stderr, "inputSurface=%d\n", *inputSurface);
         mdprintf(stderr, "m_pps.CurrPic.picture_id=%d\n", m_pps.CurrPic.picture_id);
@@ -2693,10 +2667,7 @@ mfxStatus VAAPIEncoder::QueryStatus(
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaSyncSurface");
         vaSts = vaSyncSurface(m_vaDisplay, waitSurface);
-        // following code is workaround:
-        // because of driver bug it could happen that decoding error will not be returned after decoder sync
-        // and will be returned at subsequent encoder sync instead
-        // just ignore VA_STATUS_ERROR_DECODING_ERROR in encoder
+        // ignore VA_STATUS_ERROR_DECODING_ERROR in encoder
         if (vaSts == VA_STATUS_ERROR_DECODING_ERROR)
             vaSts = VA_STATUS_SUCCESS;
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
@@ -2746,6 +2717,7 @@ mfxStatus VAAPIEncoder::QueryStatus(
     else if (!codedBufferSegment->size || !codedBufferSegment->buf)
         sts = MFX_ERR_DEVICE_FAILED;
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (m_videoParam.Protected && IsSupported__VAHDCPEncryptionParameterBuffer() && codedBufferSegment->next)
     {
         VACodedBufferSegment *nextSegment = (VACodedBufferSegment*)codedBufferSegment->next;
@@ -2779,6 +2751,7 @@ mfxStatus VAAPIEncoder::QueryStatus(
             task.m_notProtected = !isProtected;
         }
     }
+#endif
 
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");

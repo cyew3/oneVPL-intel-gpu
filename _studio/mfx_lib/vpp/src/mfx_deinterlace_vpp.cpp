@@ -990,7 +990,6 @@ mfxStatus MFXVideoVPPDeinterlace::di_AdvancedProcessing( mfxFrameSurface1* in,
             }
             else
             {
-                // AYA: variable ROI ????
                 mfxSts = di_LQ_dispatcher( in, out, picStruct ); // use BOB instead of adv DI
                 MFX_CHECK_STS( mfxSts );
 

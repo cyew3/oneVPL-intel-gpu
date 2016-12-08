@@ -588,7 +588,7 @@ mfxStatus FullEncode::EncodeFrameCheck(
 
     sts_ret = EncodeFrameCheck(ctrl, pOriginalSurface, bs, reordered_surface, internalParams);
 
-    if (sts_ret != MFX_ERR_NONE && sts_ret !=(mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK && sts_ret<0)
+    if (sts_ret != MFX_ERR_NONE && sts_ret !=(mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK && sts_ret<0)
         return sts_ret;  
 
 

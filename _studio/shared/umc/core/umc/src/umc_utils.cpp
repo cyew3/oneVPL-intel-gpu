@@ -10,7 +10,6 @@
 
 #include "vm_strings.h"
 #include "umc_structures.h"
-#include "umc_va_base.h"
 
 #define UMC_SAME_NAME(X) \
   { UMC::X, VM_STRING(#X) }
@@ -95,7 +94,6 @@ namespace UMC
     UMC_SAME_NAME(YUV422A),
     UMC_SAME_NAME(YUV444A),
     UMC_SAME_NAME(YVU9),
-    UMC_SAME_NAME(D3D_SURFACE)
   };
   static CodeStringTable StringsOfAudioType[] = {
     { UMC::UNDEF_AUDIO,         VM_STRING("UNDEF") },
@@ -147,23 +145,6 @@ namespace UMC
     { UMC::VP8_VIDEO,           VM_STRING("VP8") },
     { UMC::VP9_VIDEO,           VM_STRING("VP9") },
     { UMC::HEVC_VIDEO,          VM_STRING("HEVC") },
-  };
-
-  static CodeStringTable StringsOfVideoSubType[] = {
-    { UMC::UNDEF_VIDEO_SUBTYPE,        VM_STRING("UNDEF") },
-    { UMC::MPEG4_VIDEO_DIVX5,          VM_STRING("DIVX5") },
-    { UMC::MPEG4_VIDEO_QTIME,          VM_STRING("QTIME") },
-    { UMC::DIGITAL_VIDEO_TYPE_1,       VM_STRING("DV_TYPE1") },
-    { UMC::DIGITAL_VIDEO_TYPE_2,       VM_STRING("DV_TYPE2") },
-    { UMC::MPEG4_VIDEO_DIVX3,          VM_STRING("DIVX3") },
-    { UMC::MPEG4_VIDEO_DIVX4,          VM_STRING("DIVX4") },
-    { UMC::MPEG4_VIDEO_XVID,           VM_STRING("XVID") },
-    { UMC::AVC1_VIDEO,                 VM_STRING("AVC1") },
-    { UMC::H263_VIDEO_SORENSON,        VM_STRING("H263_SORENSON") },
-    { UMC::VC1_VIDEO_RCV,              VM_STRING("VC1_RCV") },
-    { UMC::VC1_VIDEO_VC1,              VM_STRING("VC1") },
-    { UMC::WVC1_VIDEO,                 VM_STRING("WVC1") },
-    { UMC::WMV3_VIDEO,                 VM_STRING("WMV3") },
   };
 
   static CodeStringTable StringsOfStreamType[] = {
@@ -218,35 +199,10 @@ namespace UMC
     return VM_STRING("UNDEF");
   }
 
-  static Status umcStringToCode(CodeStringTable *table,
-                                int table_size,
-                                const vm_char* string,
-                                int *code)
-  {
-    int i;
-    for (i = 0; i < table_size; i++) {
-      if (!vm_string_stricmp(table[i].string, string)) {
-        *code = table[i].code;
-        return UMC_OK;
-      }
-    }
-    return UMC_ERR_INVALID_PARAMS;
-  }
-
   //////////////////////////////////////////////////////////////////////////////
 
 #define UMC_CODE_TO_STRING(table, code) \
   umcCodeToString(table, sizeof(table)/sizeof(CodeStringTable), code)
-
-#define UMC_STRING_TO_CODE(table, string, code, type) \
-  { \
-    Status res; \
-    int tmp_code = -1; \
-    res = umcStringToCode(table, sizeof(table)/sizeof(CodeStringTable), string, &tmp_code); \
-    if (UMC_OK == res) *code = (type)tmp_code; \
-    return res; \
-  }
-
   //////////////////////////////////////////////////////////////////////////////
 
   const vm_char* GetErrString(Status code)
@@ -269,10 +225,6 @@ namespace UMC
   {
     return UMC_CODE_TO_STRING(StringsOfVideoType, code);
   }
-  const vm_char* GetVideoSubTypeString(VideoStreamSubType code)
-  {
-      return UMC_CODE_TO_STRING(StringsOfVideoSubType, code);
-  }
   const vm_char* GetVideoRenderTypeString(VideoRenderType code)
   {
     return UMC_CODE_TO_STRING(StringsOfVideoRenderType, code);
@@ -280,35 +232,6 @@ namespace UMC
   const vm_char* GetAudioRenderTypeString(AudioRenderType code)
   {
     return UMC_CODE_TO_STRING(StringsOfAudioRenderType, code);
-  }
-
-  Status GetFormatType(const vm_char *string, ColorFormat *code)
-  {
-    UMC_STRING_TO_CODE(StringsOfFormatType, string, code, ColorFormat);
-  }
-  Status GetStreamType(const vm_char *string, SystemStreamType *code)
-  {
-    UMC_STRING_TO_CODE(StringsOfStreamType, string, code, SystemStreamType);
-  }
-  Status GetAudioType(const vm_char *string, AudioStreamType *code)
-  {
-    UMC_STRING_TO_CODE(StringsOfAudioType, string, code, AudioStreamType);
-  }
-  Status GetVideoType(const vm_char *string, VideoStreamType *code)
-  {
-    UMC_STRING_TO_CODE(StringsOfVideoType, string, code, VideoStreamType);
-  }
-  Status GetVideoSubType(const vm_char *string, VideoStreamSubType *code)
-  {
-      UMC_STRING_TO_CODE(StringsOfVideoSubType, string, code, VideoStreamSubType);
-  }
-  Status GetAudioRenderType(const vm_char *string, AudioRenderType *code)
-  {
-    UMC_STRING_TO_CODE(StringsOfAudioRenderType, string, code, AudioRenderType);
-  }
-  Status GetVideoRenderType(const vm_char *string, VideoRenderType *code)
-  {
-    UMC_STRING_TO_CODE(StringsOfVideoRenderType, string, code, VideoRenderType);
   }
 
 }; // namespace UMC

@@ -18,8 +18,8 @@
 #include "libmfx_core_vaapi.h"
 #include "mfx_mpeg2_encode_vaapi.h"
 #include "vaapi_ext_interface.h"
-#include "ippi.h"
 #include <climits>
+#include "fast_copy.h"
 
 #ifndef D3DDDIFMT_NV12
 #define D3DDDIFMT_NV12 (D3DDDIFORMAT)(MFX_MAKEFOURCC('N', 'V', '1', '2'))
@@ -323,131 +323,6 @@ namespace
 //         }
     } // void FillPps(...)
 
-
-/*
-    mfxStatus SetRateControl(
-        MfxVideoParam const & par,
-        VADisplay    m_vaDisplay,
-        VAContextID  m_vaContextEncode,
-        VABufferID & rateParamBuf_id)
-    {
-        VAStatus vaSts;
-        VAEncMiscParameterBuffer *misc_param;
-        VAEncMiscParameterRateControl *rate_param;
-
-        if ( rateParamBuf_id != VA_INVALID_ID)
-        {
-            vaDestroyBuffer(m_vaDisplay, rateParamBuf_id);
-        }
-
-        vaSts = vaCreateBuffer(m_vaDisplay,
-            m_vaContextEncode,
-            VAEncMiscParameterBufferType,
-            sizeof(VAEncMiscParameterBuffer) + sizeof(VAEncMiscParameterRateControl),
-            1,
-            NULL,
-            &rateParamBuf_id);
-        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-
-        vaSts = vaMapBuffer(m_vaDisplay,
-            rateParamBuf_id,
-            (void **)&misc_param);
-        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-
-        misc_param->type = VAEncMiscParameterTypeRateControl;
-        rate_param = (VAEncMiscParameterRateControl *)misc_param->data;
-
-        rate_param->bits_per_second = par.calcParam.maxKbps * 1000;
-        rate_param->window_size     = par.mfx.Convergence * 100;
-
-        if(par.calcParam.maxKbps)
-            rate_param->target_percentage = (unsigned int)(100.0 * (mfxF64)par.calcParam.targetKbps / (mfxF64)par.calcParam.maxKbps);
-
-        vaUnmapBuffer(m_vaDisplay, rateParamBuf_id);
-
-        return MFX_ERR_NONE;
-    } // void SetRateControl(...)
-
-    mfxStatus SetFrameRate(
-        MfxVideoParam const & par,
-        VADisplay    m_vaDisplay,
-        VAContextID  m_vaContextEncode,
-        VABufferID & frameRateBuf_id)
-    {
-        VAStatus vaSts;
-        VAEncMiscParameterBuffer *misc_param;
-        VAEncMiscParameterFrameRate *frameRate_param;
-
-        if ( frameRateBuf_id != VA_INVALID_ID)
-        {
-            vaDestroyBuffer(m_vaDisplay, frameRateBuf_id);
-        }
-
-        vaSts = vaCreateBuffer(m_vaDisplay,
-            m_vaContextEncode,
-            VAEncMiscParameterBufferType,
-            sizeof(VAEncMiscParameterBuffer) + sizeof(VAEncMiscParameterFrameRate),
-            1,
-            NULL,
-            &frameRateBuf_id);
-        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-
-        vaSts = vaMapBuffer(m_vaDisplay,
-            frameRateBuf_id,
-            (void **)&misc_param);
-        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-
-        misc_param->type = VAEncMiscParameterTypeFrameRate;
-        frameRate_param = (VAEncMiscParameterFrameRate *)misc_param->data;
-
-        frameRate_param->framerate = (unsigned int)(100.0 * (mfxF64)par.mfx.FrameInfo.FrameRateExtN / (mfxF64)par.mfx.FrameInfo.FrameRateExtD);
-
-        vaUnmapBuffer(m_vaDisplay, frameRateBuf_id);
-
-        return MFX_ERR_NONE;
-    } // void SetFrameRate(...)
-
-    mfxStatus SetPrivateParams(
-        MfxVideoParam const & par,
-        VADisplay    m_vaDisplay,
-        VAContextID  m_vaContextEncode,
-        VABufferID & privateParams_id)
-    {
-        if (!IsSupported__VAEncMiscParameterPrivate()) return MFX_ERR_UNSUPPORTED;
-
-        VAStatus vaSts;
-        VAEncMiscParameterBuffer *misc_param;
-        VAEncMiscParameterPrivate *private_param;
-
-        if ( privateParams_id != VA_INVALID_ID)
-        {
-            vaDestroyBuffer(m_vaDisplay, privateParams_id);
-        }
-
-        vaSts = vaCreateBuffer(m_vaDisplay,
-            m_vaContextEncode,
-            VAEncMiscParameterBufferType,
-            sizeof(VAEncMiscParameterBuffer) + sizeof(VAEncMiscParameterPrivate),
-            1,
-            NULL,
-            &privateParams_id);
-        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-
-        vaSts = vaMapBuffer(m_vaDisplay,
-            privateParams_id,
-            (void **)&misc_param);
-        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-
-        misc_param->type = (VAEncMiscParameterType)VAEncMiscParameterTypePrivate;
-        private_param = (VAEncMiscParameterPrivate *)misc_param->data;
-
-        private_param->target_usage = (unsigned int)(par.mfx.TargetUsage);
-
-        vaUnmapBuffer(m_vaDisplay, privateParams_id);
-
-        return MFX_ERR_NONE;
-    } // void SetPrivateParams(...)
-*/
     template<class T> inline void Zero(T & obj)                { memset(&obj, 0, sizeof(obj)); }
     template<class T> inline void Zero(std::vector<T> & vec)   { memset(&vec[0], 0, sizeof(T) * vec.size()); }
     template<class T> inline void Zero(T * first, size_t cnt)  { memset(first, 0, sizeof(T) * cnt); }
@@ -520,8 +395,8 @@ mfxStatus VAAPIEncoder::QueryEncodeCaps(ENCODE_CAPS & caps)
     caps.BRCReset         = 1; // no bitrate resolution control
     caps.VCMBitrateControl = 0; //Video conference mode
     caps.HeaderInsertion  = 0; // we will privide headers (SPS, PPS) in binary format to the driver
-    caps.MbQpDataSupport = 1;  // starting with 16.4.1 
-    caps.SkipFrame = 1;  // starting with 16.4.2
+    caps.MbQpDataSupport = 1;
+    caps.SkipFrame = 1;
 
     VAStatus vaSts;
     vaExtQueryEncCapabilities pfnVaExtQueryCaps = NULL;
@@ -634,7 +509,7 @@ mfxStatus VAAPIEncoder::Init(ENCODE_FUNC func, ExecuteBuffers* pExecuteBuffers)
         mfxI32 maxNumEntrypoints   = vaMaxNumEntrypoints(m_vaDisplay);
 
         if(maxNumEntrypoints)
-            pEntrypoints = (VAEntrypoint*)ippsMalloc_8u(maxNumEntrypoints*sizeof(VAEntrypoint));
+            pEntrypoints = new VAEntrypoint[maxNumEntrypoints];
         else
             return MFX_ERR_DEVICE_FAILED;
         
@@ -654,7 +529,7 @@ mfxStatus VAAPIEncoder::Init(ENCODE_FUNC func, ExecuteBuffers* pExecuteBuffers)
                 break;
             }
         }
-        ippsFree(pEntrypoints);
+        delete[] pEntrypoints;
         if( !bEncodeEnable )
         {
             return MFX_ERR_DEVICE_FAILED;// unsupport?
@@ -1804,7 +1679,7 @@ mfxStatus VAAPIEncoder::FillMBBufferPointer(ExecuteBuffers* pExecuteBuffers)
         dst.Info.Height = mfxU16(numMB);
         dst.Info.FourCC = MFX_FOURCC_P8;
 
-        sts = m_core->DoFastCopy(&dst, &src);
+        sts = m_core->DoFastCopyExtended(&dst, &src);
         MFX_CHECK_STS(sts);
 #ifdef MPEG2_ENC_HW_PERF
         if (pExecuteBuffers->m_pps.picture_coding_type == CODING_TYPE_I)
@@ -1965,15 +1840,13 @@ mfxStatus VAAPIEncoder::FillBSBuffer(mfxU32 nFeedback,mfxU32 nBitstream, mfxBits
 
         IppiSize roi = {(mfxI32)bitstreamSize, 1};
 
-        IppStatus ret = ippStsNoErr;
         mfxU8 *pData = (mfxU8*)codedBufferSegment->buf;
 
-        ret = ippiCopyManaged_8u_C1R(pData, bitstreamSize,
-            pBitstream->Data + pBitstream->DataLength + pBitstream->DataOffset, 
-            bitstreamSize,
-            roi, IPP_NONTEMPORAL_LOAD);
+        mfxStatus ret = FastCopy::Copy(pBitstream->Data + pBitstream->DataLength + pBitstream->DataOffset,  bitstreamSize,
+            pData, bitstreamSize,
+            roi, COPY_VIDEO_TO_SYS);
 
-        MFX_CHECK(ret == ippStsNoErr, MFX_ERR_UNDEFINED_BEHAVIOR);
+        MFX_CHECK(ret == MFX_ERR_NONE, MFX_ERR_UNDEFINED_BEHAVIOR);
 
         //memcpy(pBitstream->Data + pBitstream->DataLength + pBitstream->DataOffset, Frame.Y, queryStatus.bitstreamSize);
         pBitstream->DataLength += bitstreamSize;

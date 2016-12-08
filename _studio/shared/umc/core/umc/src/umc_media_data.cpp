@@ -5,12 +5,12 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2010 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "ippdefs.h"
 #include "umc_media_data.h"
-
+#include "umc_defs.h"
 #include <ipps.h>
 
 namespace UMC
@@ -33,12 +33,9 @@ MediaData::MediaData(size_t length)
     if (length)
     {
         m_pBufferPointer = new Ipp8u[length];
-        if (m_pBufferPointer)
-        {
-            m_pDataPointer     = m_pBufferPointer;
-            m_nBufferSize      = length;
-            m_bMemoryAllocated = 1;
-        }
+        m_pDataPointer     = m_pBufferPointer;
+        m_nBufferSize      = length;
+        m_bMemoryAllocated = 1;
     }
 } // MediaData::MediaData(size_t length) :
 
@@ -73,9 +70,6 @@ Status MediaData::Alloc(size_t length)
     if (length)
     {
         m_pBufferPointer = new Ipp8u[length];
-        if (!m_pBufferPointer) {
-            return UMC_ERR_ALLOC;
-        }
         m_pDataPointer     = m_pBufferPointer;
         m_nBufferSize      = length;
         m_bMemoryAllocated = 1;
@@ -204,7 +198,7 @@ MediaData& MediaData::operator = (const MediaData& src)
 
     m_pDataPointer     = src.m_pDataPointer;
     m_pBufferPointer   = src.m_pBufferPointer;
-    m_bMemoryAllocated = false;
+    m_bMemoryAllocated = 0;
 
     m_flags            = src.m_flags;
 
@@ -237,7 +231,7 @@ Status MediaData::MoveDataTo(MediaData* dst)
 
     if (size)
     {
-        ippsCopy_8u(src->m_pDataPointer, pDataEnd, (int)size);
+        MFX_INTERNAL_CPY_S(pDataEnd, (int)size, src->m_pDataPointer, (int)size);
     }
 
     dst->m_nDataSize += size;

@@ -12,7 +12,7 @@
 
 #include "mfx_common.h"
 
-#if defined (MFX_ENABLE_VPP)
+#if defined (MFX_ENABLE_VPP) && defined (MFX_ENABLE_VPP_SVC)
 
 #ifndef __MFX_VPP_SVC_H
 #define __MFX_VPP_SVC_H
@@ -24,7 +24,6 @@
 #include "mfx_task.h"
 #include "mfx_vpp_defs.h"
 #include "mfx_vpp_base.h"
-#include "mfx_vpp_service.h"
 #include "mfx_vpp_sw.h"
 
 using namespace std;
@@ -102,5 +101,5 @@ namespace MfxVideoProcessing
 }; // namespace MfxVideoProcessing
 
 #endif // __MFX_VPP_SVC_H
-#endif // MFX_ENABLE_VPP
+#endif // defined (MFX_ENABLE_VPP) && defined (MFX_ENABLE_VPP_SVC)
 /* EOF */

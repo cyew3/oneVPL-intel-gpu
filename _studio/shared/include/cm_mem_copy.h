@@ -26,8 +26,6 @@
 #pragma warning(disable: 4100)
 #pragma warning(disable: 4201)
 
-//#include "cm_def.h"
-//#include "cm_vm.h"
 #include "cmrt_cross_platform.h"
 
 #include <algorithm>
@@ -39,7 +37,6 @@ typedef mfxI32 cmStatus;
 #define BLOCK_PIXEL_WIDTH   (32)
 #define BLOCK_HEIGHT        (8)
 
-// CM 3.0 restriction, need to change in future
 #define CM_MAX_GPUCOPY_SURFACE_WIDTH_IN_BYTE 65408
 #ifdef MFX_VA_WIN
 #define CM_MAX_GPUCOPY_SURFACE_HEIGHT        12000
@@ -48,8 +45,8 @@ typedef mfxI32 cmStatus;
 #endif
 
 #define CM_SUPPORTED_COPY_SIZE(ROI) (ROI.width <= CM_MAX_GPUCOPY_SURFACE_WIDTH_IN_BYTE && ROI.height <= CM_MAX_GPUCOPY_SURFACE_HEIGHT )
-#define CM_ALIGNED(PTR) (!((Ipp64u(PTR))&0xf))
-#define CM_ALIGNED64(PTR) (!((Ipp64u(PTR))&0x3f))
+#define CM_ALIGNED(PTR) (!((mfxU64(PTR))&0xf))
+#define CM_ALIGNED64(PTR) (!((mfxU64(PTR))&0x3f))
 
 #ifndef max
 #define max(a,b)            (((a) > (b)) ? (a) : (b))
@@ -136,6 +133,11 @@ public:
     // check input parameters
     mfxStatus IsCmCopySupported(mfxFrameSurface1 *pSurface, IppiSize roi);
 
+    static bool CanUseCmCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc);
+
+    mfxStatus CopyVideoToVideo(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc);
+    mfxStatus CopySysToVideo(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc);
+    mfxStatus CopyVideoToSys(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc);
 
     mfxStatus CopyVideoToSystemMemoryAPI(mfxU8 *pDst, mfxU32 dstPitch, mfxU32 dstUVOffset, void *pSrc, mfxU32 srcPitch, IppiSize roi);
     mfxStatus CopyVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPitch, mfxU32 dstUVOffset, void *pSrc, mfxU32 srcPitch, IppiSize roi, mfxU32 format);
@@ -263,10 +265,10 @@ public:
                                     CmEvent* & pEvent );
 protected:
 
+    eMFXHWType m_HWType;
     CmDevice  *m_pCmDevice;
     CmProgram *m_pCmProgram;
 
-    //std::map<mfxU32, CmThreadSpace *> m_tableThreadSpace;
     CmThreadSpace *m_pThreadSpace;
 
     CmQueue *m_pCmQueue;

@@ -2007,13 +2007,11 @@ Status H264HeadersBitstream::GetSliceHeaderPart3(
             ref_pic_list_reordering_flag_l0 = Get1Bit();
             if (ref_pic_list_reordering_flag_l0)
             {
-                bool bOk = true;
-
                 reorder_idx = 0;
                 reordering_of_pic_nums_idc = 0;
 
                 // Get reorder idc,pic_num pairs until idc==3
-                while (bOk)
+                for (;;)
                 {
                   reordering_of_pic_nums_idc = (Ipp8u)GetVLCElement(false);
                   if (reordering_of_pic_nums_idc > 5)
@@ -2047,12 +2045,10 @@ Status H264HeadersBitstream::GetSliceHeaderPart3(
                 ref_pic_list_reordering_flag_l1 = Get1Bit();
                 if (ref_pic_list_reordering_flag_l1)
                 {
-                    bool bOk = true;
-
                     // Get reorder idc,pic_num pairs until idc==3
                     reorder_idx = 0;
                     reordering_of_pic_nums_idc = 0;
-                    while (bOk)
+                    for (;;)
                     {
                     reordering_of_pic_nums_idc = GetVLCElement(false);
                       if (reordering_of_pic_nums_idc > 5)

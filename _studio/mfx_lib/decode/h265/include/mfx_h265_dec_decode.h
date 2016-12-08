@@ -41,7 +41,6 @@ namespace UMC_HEVC_DECODER
 {
     class MFXTaskSupplier_H265;
     class VATaskSupplier;
-    class WidevineTaskSupplier_H265;
     class H265DecoderFrame;
 }
 

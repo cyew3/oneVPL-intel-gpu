@@ -319,7 +319,6 @@ namespace MFX_HEVC_PP
     typedef Ipp32s (* PTR_DiffDc_16u)(const Ipp16u *src, Ipp32s pitchSrc, const Ipp16u *pred, Ipp32s pitchPred, Ipp32s width);
 
     //-----------------------------------------------------
-    // aya: approach from Ken/Jon
     // [PTR.Interpolation]
 #define INTERP_S8_D16_PARAMETERS_LIST const unsigned char* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index, \
         int width, int height, int shift, short offset
@@ -666,7 +665,7 @@ namespace MFX_HEVC_PP
     void h265_QuantInv_ScaleList_LShift_16s(const Ipp16s* pSrc, const Ipp16s* pScaleList, Ipp16s* pDst, int len, int shift);
     void h265_QuantInv_ScaleList_RShift_16s(const Ipp16s* pSrc, const Ipp16s* pScaleList, Ipp16s* pDst, int len, int offset, int shift);
 
-    /* Intra prediction (aya: encoder version, decoder under redesign yet) Luma is OK, Chroma - plane/interleave for encoder/decoder accordingly */
+    /* Intra prediction Luma is OK, Chroma - plane/interleave for encoder/decoder accordingly */
     void h265_PredictIntra_Ver_8u(
         Ipp8u* PredPel,
         Ipp8u* pels,

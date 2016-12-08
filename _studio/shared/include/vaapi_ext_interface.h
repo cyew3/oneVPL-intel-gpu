@@ -11,17 +11,25 @@
 #ifndef __VAAPI_EXT_INTERFACE_H__
 #define __VAAPI_EXT_INTERFACE_H__
 
-#define VAAPI_DRIVER_VPG
+#include "mfx_config.h"
 
+//#define VAAPI_OPEN_SOURCE_DRIVER
+
+#ifdef MFX_EXTBUFF_GPU_HANG_ENABLE
 #define VATriggerCodecHangBufferType ((VABufferType)-16)
+#endif // MFX_EXTBUFF_GPU_HANG_ENABLE
+
 // Misc parameter for encoder
 #define  VAEncMiscParameterTypePrivate     -2
+
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
 // encryption parameters for PAVP
 #define  VAEncryptionParameterBufferType   -3
-
 #define EXTERNAL_ENCRYPTED_SURFACE_FLAG   (1<<16)
 #define VA_CODED_BUF_STATUS_PRIVATE_DATA_HDCP (1<<8)
 #define VA_HDCP_ENABLED (1<<12)
+#endif // #ifndef MFX_PROTECTED_FEATURE_DISABLE
+
 #define VA_CODED_BUF_STATUS_BAD_BITSTREAM 0x8000
 #define VA_CODED_BUF_STATUS_HW_TEAR_DOWN 0x4000
 
@@ -31,23 +39,23 @@ typedef struct _VAEncMiscParameterPrivate
 {
     unsigned int target_usage; // Valid values 1-7 for AVC & MPEG2.
     union
-    {   
+    {
         struct
         {
             // Use raw frames for reference instead of reconstructed frames.
             unsigned int useRawPicForRef                    : 1;
-            // Disables skip check for ENC. 
+            // Disables skip check for ENC.
             unsigned int skipCheckDisable                   : 1;
             // Indicates app will override default driver FTQ settings using FTQEnable.
             unsigned int FTQOverride                        : 1;
             // Enables/disables FTQ.
-            unsigned int FTQEnable                          : 1;    
-            // Indicates the app will provide the Skip Threshold LUT to use when FTQ is 
+            unsigned int FTQEnable                          : 1;
+            // Indicates the app will provide the Skip Threshold LUT to use when FTQ is
             // enabled (FTQSkipThresholdLUT), else default driver thresholds will be used.
-            unsigned int FTQSkipThresholdLUTInput           : 1; 
-            // Indicates the app will provide the Skip Threshold LUT to use when FTQ is 
+            unsigned int FTQSkipThresholdLUTInput           : 1;
+            // Indicates the app will provide the Skip Threshold LUT to use when FTQ is
             // disabled (NonFTQSkipThresholdLUT), else default driver thresholds will be used.
-            unsigned int NonFTQSkipThresholdLUTInput        : 1; 
+            unsigned int NonFTQSkipThresholdLUTInput        : 1;
             // Indicates the app will provide the lambda LUT in lambdaValueLUT[], else default
             // driver lambda values will be used.
             unsigned int lambdaValueLUTInput                : 1;
@@ -56,7 +64,7 @@ typedef struct _VAEncMiscParameterPrivate
             unsigned int directBiasAdjustmentEnable         : 1;
             // Enables global motion bias.
             unsigned int globalMotionBiasAdjustmentEnable   : 1;
-            // MV cost scaling ratio for HME predictors.  It is used when 
+            // MV cost scaling ratio for HME predictors.  It is used when
             // globalMotionBiasAdjustmentEnable == 1, else it is ignored.  Values are:
             //      0: set MV cost to be 0 for HME predictor.
             //      1: scale MV cost to be 1/2 of the default value for HME predictor.
@@ -87,9 +95,9 @@ typedef struct _VAEncMiscParameterPrivate
 } VAEncMiscParameterPrivate;
 
 // Force MB's to be non skip for both ENC and PAK.  The width of the MB map
-// Surface is (width of the Picture in MB unit) * 1 byte, multiple of 64 bytes. 
-/// The height is (height of the picture in MB unit). The picture is either 
-// frame or non-interleaved top or bottom field.  If the application provides this 
+// Surface is (width of the Picture in MB unit) * 1 byte, multiple of 64 bytes.
+/// The height is (height of the picture in MB unit). The picture is either
+// frame or non-interleaved top or bottom field.  If the application provides this
 // surface, it will override the "skipCheckDisable" setting in VAEncMiscParameterPrivate.
 #define VAEncMacroblockDisableSkipMapBufferType     -7
 
@@ -112,6 +120,8 @@ typedef struct _VAEncMiscParameterExtensionDataSeqDisplayMPEG2
 } VAEncMiscParameterExtensionDataSeqDisplayMPEG2;
 
 #define VAEncMiscParameterTypeExtensionData        -8
+
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
 /*VAEncrytpionParameterBuffer*/
 typedef struct _VAEncryptionParameterBuffer
 {
@@ -148,6 +158,7 @@ typedef struct _VAHDCPEncryptionParameterBuffer {
     int                bEncrypted;
     unsigned int       counter[4];
 } VAHDCPEncryptionParameterBuffer;
+#endif
 
 // structure for encoder capability
 typedef struct _VAEncQueryCapabilities
@@ -180,6 +191,7 @@ typedef VAStatus (*vaExtQueryEncCapabilities)(
 #define VPG_EXT_QUERY_ENC_CAPS  "vpgExtQueryEncCapabilities"
 
 
+#ifdef MFX_ENABLE_VP8_VIDEO_ENCODE_HW
 /* below is private VAAPI for VP8 Hybrid encoder */
 
 // entry point for ENC + hybrid PAK
@@ -204,10 +216,10 @@ typedef struct _VAEncMbDataLayout
 //#define FUNC_QUERY_BUFFER_ATTRIBUTES "vpgQueryBufferAttributes"
 
 // VAAPI private extension for quering buffer attributes for different buffer types
-// at the moment supports only VAEncMbDataBufferType 
+// at the moment supports only VAEncMbDataBufferType
 typedef VAStatus (*hybridQueryBufferAttributes)(
-     VADisplay      dpy, 
-     VAContextID    context, 
+     VADisplay      dpy,
+     VAContextID    context,
      VABufferType   bufferType,
      void           *outputData,
      unsigned int   *outputDataLen);
@@ -251,6 +263,8 @@ typedef struct _VAEncMiscParameterVP8SegmentMapParams
     // VAEncMacroblockMapBufferType.
     char yac_quantization_index_delta[4];
 } VAEncMiscParameterVP8SegmentMapParams;
+#endif // #ifdef MFX_ENABLE_VP8_VIDEO_ENCODE_HW
+
 #if 0
 /*======================= FEI ==================================*/
     /**
@@ -341,16 +355,6 @@ typedef struct _VAEncMiscParameterVP8SegmentMapParams
 
 
 // move above definition to va_private.h file
-
-//// change in va_enc_h264.h
-//typedef struct _VAEncQpBufferH264 {
-//    /*
-//     * \brief This structure holds luma Qp per 16x16 macroblock. Buffer size shall be
-//     * sufficient to fit the slice or frame to be encoded depending on if it is a slice level
-//     * or frame level encoding.
-//     */
-//    unsigned char qp_y;
-//} VAEncQpBufferH264;
 
 #define VA_CONFIG_ATTRIB_FEI_INTERFACE_REV_INTEL  0x014
 
@@ -829,5 +833,33 @@ typedef struct _VAStatsStatistics16x16Intel
     unsigned int    pixel_average8x8[4];
 } VAStatsStatistics16x16Intel;  // size is 64 bytes
 
+#ifdef OPEN_SOURCE
+
+#define VA_ENC_FUNCTION_DEFAULT_INTEL 0x00000000
+#define VA_ENC_FUNCTION_ENC_INTEL     0x00000001
+#define VA_ENC_FUNCTION_PAK_INTEL     0x00000002
+#define VA_ENC_FUNCTION_ENC_PAK_INTEL 0x00000004
+
+#define VAEntrypointEncFEIIntel     1001
+#define VAEntrypointStatisticsIntel 1002
+
+#define VAEncMiscParameterTypeFEIFrameControlIntel 1001
+
+#define VAEncFEIMVBufferTypeIntel                   1001
+#define VAEncFEIModeBufferTypeIntel                 1002
+#define VAEncFEIDistortionBufferTypeIntel           1003
+#define VAEncFEIMBControlBufferTypeIntel            1004
+#define VAEncFEIMVPredictorBufferTypeIntel          1005
+#define VAStatsStatisticsParameterBufferTypeIntel   1006
+#define VAStatsStatisticsBufferTypeIntel            1007
+#define VAStatsMotionVectorBufferTypeIntel          1008
+#define VAStatsMVPredictorBufferTypeIntel           1009
+
+typedef struct _VAMotionVectorIntel {
+    short  mv0[2];
+    short  mv1[2];
+} VAMotionVectorIntel;
+
+#endif // OPEN_SOURCE
 
 #endif // __VAAPI_EXT_INTERFACE_H__

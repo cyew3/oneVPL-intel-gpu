@@ -23,94 +23,22 @@
 #include "libmfx_core_interface.h"
 #include "libmfx_core_factory.h"
 
-#ifndef __SW_ENC
 using namespace MfxHwMpeg2Encode;
-
-//static const GUID DXVA2_Intel_Auxiliary_Device = 
-//{ 0xa74ccae2, 0xf466, 0x45ae, { 0x86, 0xf5, 0xab, 0x8b, 0xe8, 0xaf, 0x84, 0x83 } };
-
-//static const GUID DXVA2_Intel_Encode_MPEG2 = 
-//{ 0xc346e8a3, 0xcbed, 0x4d27, { 0x87, 0xcc, 0xa7, 0xe, 0xb4, 0xdc, 0x8c, 0x27 } };
-
-// {55BF20CF-6FF1-4fb4-B08B-33E97E15BA29}
-//static const GUID DXVA2_IntelEncode = 
-//{ 0x55bf20cf, 0x6ff1, 0x4fb4, { 0xb0, 0x8b, 0x33, 0xe9, 0x7e, 0x15, 0xba, 0x29 } };
-
-// {C346E8A3-CBED-4d27-87CC-A70EB4DC8C27}
-//static const GUID INTEL_ENCODE_GUID_MPEG2_VME = 
-//{ 0xc346e8a3, 0xcbed, 0x4d27, { 0x87, 0xcc, 0xa7, 0xe, 0xb4, 0xdc, 0x8c, 0x27 } };
-
-// !!! This device GUID is not reported by the GetVideoProcessorDeviceGuids() method.
-// {44dee63b-77e6-4dd2-b2e1-443b130f2e2f}
-
-//static const GUID DXVA2_Registration_Device = 
-//{ 0x44dee63b, 0x77e6, 0x4dd2, { 0xb2, 0xe1, 0x44, 0x3b, 0x13, 0x0f, 0x2e, 0x2f } };
-
-// from "Intel DXVA Encoding DDI for Vista rev 0.77"
-/*enum
-{
-    ENCODE_ENC_ID                           = 0x100,
-    ENCODE_PAK_ID                           = 0x101,
-    ENCODE_ENC_PAK_ID                       = 0x102,
-    ENCODE_VPP_ID                           = 0x103, // reserved for now
-
-    ENCODE_FORMAT_COUNT_ID                  = 0x104,
-    ENCODE_FORMATS_ID                       = 0x105,
-    ENCODE_ENC_CTRL_CAPS_ID                 = 0x106,
-    ENCODE_ENC_CTRL_GET_ID                  = 0x107,
-    ENCODE_ENC_CTRL_SET_ID                  = 0x108,
-    ENCODE_INSERT_DATA_ID                   = 0x120,
-    ENCODE_QUERY_STATUS_ID                  = 0x121
-};*/
 
 namespace MfxHwMpeg2Encode
 {
-    // aya: declaration 
     bool ConvertFrameRateMPEG2(mfxU32 FrameRateExtD, mfxU32 FrameRateExtN, mfxI32 &frame_rate_code, mfxI32 &frame_rate_extension_n, mfxI32 &frame_rate_extension_d);
 }
-
-// From "Intel DXVA2 Auxiliary Functionality Device rev 0.6"
-/*typedef enum
-{
-    AUXDEV_GET_ACCEL_GUID_COUNT             = 1,
-    AUXDEV_GET_ACCEL_GUIDS                  = 2,
-    AUXDEV_GET_ACCEL_RT_FORMAT_COUNT        = 3,
-    AUXDEV_GET_ACCEL_RT_FORMATS             = 4,
-    AUXDEV_GET_ACCEL_FORMAT_COUNT           = 5,
-    AUXDEV_GET_ACCEL_FORMATS                = 6,
-    AUXDEV_QUERY_ACCEL_CAPS                 = 7,
-    AUXDEV_CREATE_ACCEL_SERVICE             = 8,
-    AUXDEV_DESTROY_ACCEL_SERVICE            = 9
-} AUXDEV_FUNCTION_ID;*/
-
-//#define D3DFMT_NV12 (D3DFORMAT)(MAKEFOURCC('N', 'V', '1', '2'))
-//#define D3DDDIFMT_NV12 (D3DDDIFORMAT)(MAKEFOURCC('N', 'V', '1', '2'))
-//#define D3DDDIFMT_YU12 (D3DDDIFORMAT)(MAKEFOURCC('Y', 'U', '1', '2'))
 
 typedef struct tagENCODE_QUERY_STATUS_DATA_tmp
 {
     UINT    uBytesWritten;
 } ENCODE_QUERY_STATUS_DATA_tmp;
 
-// from "Intel DXVA Encoding DDI for Vista rev 0.77"
-/*typedef struct tagENCODE_QUERY_STATUS_PARAMS
-{
-    UINT    uFrameNum;
-    void*   pStatusData;
-} ENCODE_QUERY_STATUS_PARAMS;*/
-
-
 using namespace MfxHwMpeg2Encode;
 
 mfxStatus MfxHwMpeg2Encode::QueryHwCaps(VideoCORE* pCore, ENCODE_CAPS & hwCaps)
 {
-    // FIXME: remove this when driver starts returning actual encode caps
-    /*hwCaps.SliceIPBOnly     = 1;
-    hwCaps.EncodeFunc       = 1;
-    hwCaps.MaxNum_Reference = 1;
-    hwCaps.MaxPicWidth      = 4096;
-    hwCaps.MaxPicHeight     = 4096;*/
-
     EncodeHWCaps* pEncodeCaps = QueryCoreInterface<EncodeHWCaps>(pCore); 
     if (!pEncodeCaps)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -590,6 +518,79 @@ void ExecuteBuffers::InitFramesSet(mfxMemId curr, bool bExternal, mfxMemId rec, 
     m_RefFrameMemID[1]      = ref_1;
 
 }
+
+static Ipp32s QuantToScaleCode(Ipp32s quant_value, Ipp32s q_scale_type)
+{
+    if (q_scale_type == 0)
+    {
+        return (quant_value + 1)/2;
+    }
+    else
+    {
+        if (quant_value <= 8)
+            return quant_value;
+        else if (quant_value <= 24)
+            return 8 + (quant_value - 8)/2;
+        else if (quant_value <= 56)
+            return 16 + (quant_value - 24)/4;
+        else 
+            return 24 + (quant_value - 56)/8;
+    }
+}
+
+mfxStatus ExecuteBuffers::InitSliceParameters(mfxU8 qp, mfxU16 scale_type, mfxU8 * mbqp, mfxU32 numMB)
+{
+    if (m_pps.NumSlice > m_nSlices)
+        return MFX_ERR_UNSUPPORTED;
+    
+    mfxU8  intra = (m_pps.picture_coding_type == CODING_TYPE_I)? 1:0;
+    mfxU16 numMBSlice = (mfxU16)((m_sps.FrameWidth +15)>>4);
+
+    bool isMBQP = (m_mbqp_data != 0) && (mbqp != 0) && (mbqp[0] != 0);
+
+    if (isMBQP)
+    {
+        for (mfxU32 i = 0; i < numMB; i++)
+        {
+            m_mbqp_data[i] = (Ipp8u)QuantToScaleCode(mbqp[i], scale_type);
+        }
+    }
+   
+    for (int i=0; i<(int)m_pps.NumSlice; i++)
+    {
+        ENCODE_SET_SLICE_HEADER_MPEG2*  pDDISlice = &m_pSlice[i];
+        pDDISlice->FirstMbX                       = 0;
+        pDDISlice->FirstMbY                       = (mfxU16)i;
+        pDDISlice->NumMbsForSlice                 = numMBSlice;
+        pDDISlice->IntraSlice                     = intra; 
+        pDDISlice->quantiser_scale_code           = isMBQP ? mbqp[i*numMBSlice] : qp;
+        //pDDISlice->quantiser_scale_code           = qp;
+    }
+
+    return MFX_ERR_NONE;
+
+} // mfxStatus ExecuteBuffers::InitSliceParameters
+
+#if defined (MFX_ENABLE_MPEG2_VIDEO_ENC)
+
+enum
+{
+    MBTYPE_INTRA                = 0x1A,
+    MBTYPE_FORWARD              = 0x01,
+    MBTYPE_BACKWARD             = 0x02,
+    MBTYPE_BI                   = 0x03,
+    
+    MBTYPE_DUALPRIME            = 0x19,
+    MBTYPE_FIELD_PRED_FORW      = 0x04,
+    MBTYPE_FIELD_PRED_BACW      = 0x06,    
+    MBTYPE_FIELD_PRED_BI        = 0x14,    
+};
+
+#define MB_MV(pmb,dir,num) (pmb)->MV[(dir)*4+(num)]
+#define MB_FSEL(pmb,dir,i) ((mfxMbCodeAVC*)pmb)->RefPicSelect[dir][i] // tmp cast
+
+#define _TEMP_DEBUG
+
 mfxStatus ExecuteBuffers::InitPictureParameters(mfxFrameCUC* pCUC)
 {
     mfxStatus               sts = MFX_ERR_NONE;
@@ -649,78 +650,6 @@ mfxStatus ExecuteBuffers::InitSliceParameters(mfxFrameCUC* pCUC)
         pDDISlice->quantiser_scale_code = pCUC->MbParam->Mb[numMBs].MPEG2.QpScaleCode;
         
         numMBs += pMFXSlice->NumMb;
-    }
-
-    return MFX_ERR_NONE;
-
-} // mfxStatus ExecuteBuffers::InitSliceParameters(mfxFrameCUC* pCUC)
-
-
-enum
-{
-    MBTYPE_INTRA                = 0x1A,
-    MBTYPE_FORWARD              = 0x01,
-    MBTYPE_BACKWARD             = 0x02,
-    MBTYPE_BI                   = 0x03,
-    
-    MBTYPE_DUALPRIME            = 0x19,
-    MBTYPE_FIELD_PRED_FORW      = 0x04,
-    MBTYPE_FIELD_PRED_BACW      = 0x06,    
-    MBTYPE_FIELD_PRED_BI        = 0x14,    
-};
-
-#define MB_MV(pmb,dir,num) (pmb)->MV[(dir)*4+(num)]
-#define MB_FSEL(pmb,dir,i) ((mfxMbCodeAVC*)pmb)->RefPicSelect[dir][i] // tmp cast
-
-#define _TEMP_DEBUG
-
-
-static Ipp32s QuantToScaleCode(Ipp32s quant_value, Ipp32s q_scale_type)
-{
-    if (q_scale_type == 0)
-    {
-        return (quant_value + 1)/2;
-    }
-    else
-    {
-        if (quant_value <= 8)
-            return quant_value;
-        else if (quant_value <= 24)
-            return 8 + (quant_value - 8)/2;
-        else if (quant_value <= 56)
-            return 16 + (quant_value - 24)/4;
-        else 
-            return 24 + (quant_value - 56)/8;
-    }
-}
-
-mfxStatus ExecuteBuffers::InitSliceParameters(mfxU8 qp, mfxU16 scale_type, mfxU8 * mbqp, mfxU32 numMB)
-{
-    if (m_pps.NumSlice > m_nSlices)
-        return MFX_ERR_UNSUPPORTED;
-    
-    mfxU8  intra = (m_pps.picture_coding_type == CODING_TYPE_I)? 1:0;
-    mfxU16 numMBSlice = (mfxU16)((m_sps.FrameWidth +15)>>4);
-
-    bool isMBQP = (m_mbqp_data != 0) && (mbqp != 0) && (mbqp[0] != 0);
-
-    if (isMBQP)
-    {
-        for (mfxU32 i = 0; i < numMB; i++)
-        {
-            m_mbqp_data[i] = (Ipp8u)QuantToScaleCode(mbqp[i], scale_type);
-        }
-    }
-   
-    for (int i=0; i<(int)m_pps.NumSlice; i++)
-    {
-        ENCODE_SET_SLICE_HEADER_MPEG2*  pDDISlice = &m_pSlice[i];
-        pDDISlice->FirstMbX                       = 0;
-        pDDISlice->FirstMbY                       = (mfxU16)i;
-        pDDISlice->NumMbsForSlice                 = numMBSlice;
-        pDDISlice->IntraSlice                     = intra; 
-        pDDISlice->quantiser_scale_code           = isMBQP ? mbqp[i*numMBSlice] : qp;
-        //pDDISlice->quantiser_scale_code           = qp;
     }
 
     return MFX_ERR_NONE;
@@ -855,7 +784,6 @@ bool CheckMV (ENCODE_ENC_MB_DATA_MPEG2* pMB, ENCODE_SET_PICTURE_PARAMETERS_MPEG2
     return true;
 
 } // bool CheckMV (ENCODE_ENC_MB_DATA_MPEG2* pMB, ENCODE_SET_PICTURE_PARAMETERS_MPEG2 *pPic, ENCODE_SET_SEQUENCE_PARAMETERS_MPEG2 *pSeq)
-
 
 mfxStatus ExecuteBuffers::GetMBParameters(mfxFrameCUC* pCUC)
 {
@@ -1075,8 +1003,9 @@ mfxStatus ExecuteBuffers::GetMBParameters(mfxFrameCUC* pCUC)
     return MFX_ERR_NONE;
 
 } // mfxStatus ExecuteBuffers::GetMBParameters(mfxFrameCUC* pCUC)
+#endif // #if defined (MFX_ENABLE_MPEG2_VIDEO_ENC)
 
-//--------AYA: fixme!!! depreciated functions
+//depreciated functions
 namespace MfxHwMpeg2Encode
 {
     bool ConvertFrameRateMPEG2(mfxU32 FrameRateExtD, mfxU32 FrameRateExtN, mfxI32 &frame_rate_code, mfxI32 &frame_rate_extension_n, mfxI32 &frame_rate_extension_d)
@@ -1174,6 +1103,5 @@ namespace MfxHwMpeg2Encode
     }
 }
 
-#endif
 #endif
 /* EOF */

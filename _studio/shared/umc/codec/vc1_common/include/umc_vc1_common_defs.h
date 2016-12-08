@@ -21,10 +21,6 @@
 #include "umc_vc1_common_macros_defs.h"
 #include "umc_structures.h"
 
-//#ifndef UMC_RESTRICTED_CODE_VA
-//#include "umc_va_base.h"
-//#endif
-
 //#define _OWN_FUNCTION
 #ifndef UMC_RESTRICTED_CODE
    //#define   _VC1_ENC_OWN_FUNCTIONS_

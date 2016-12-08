@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2015 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFX_MJPEG_ENCODE_HW_H__
@@ -16,7 +16,6 @@
 #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined (MFX_VA)
 
 #include "mfxvideo++int.h"
-#include "mfxvideopro++.h"
 #include "mfx_mjpeg_encode_hw_utils.h"
 #include "mfx_mjpeg_encode_interface.h"
 

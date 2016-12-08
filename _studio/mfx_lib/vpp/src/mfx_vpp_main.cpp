@@ -21,7 +21,10 @@
 #include "mfx_vpp_sw.h"
 
 #include "mfx_vpp_mvc.h"
+
+#ifdef MFX_ENABLE_VPP_SVC
 #include "mfx_vpp_svc.h"
+#endif
 
 using namespace MfxVideoProcessing;
 
@@ -29,8 +32,8 @@ using namespace MfxVideoProcessing;
 /*                 Main (High Level) Class of MSDK VPP                  */
 /* ******************************************************************** */
 
-static
-bool IsSvcMode(mfxVideoParam * par)
+#ifdef MFX_ENABLE_VPP_SVC
+static bool IsSvcMode(mfxVideoParam * par)
 {
     if(par)
     {
@@ -42,24 +45,22 @@ bool IsSvcMode(mfxVideoParam * par)
     return false;
 
 } // bool IsSvcMode(mfxVideoParam * par)
-
+#endif
 
 mfxStatus VideoVPPMain::Query(VideoCORE* core, mfxVideoParam *in, mfxVideoParam *out)
 {
-    /*return IsSvcMode(par) 
-        ? ImplementationSvc::Query(core, in, out)
-        : ImplementationMvc::Query(core, in, out);*/
-
     return ImplementationMvc::Query(core, in, out);
-
 } // mfxStatus VideoVPPMain::Query(VideoCORE* core, mfxVideoParam *in, mfxVideoParam *out)
 
 
 mfxStatus VideoVPPMain::QueryIOSurf(VideoCORE* core, mfxVideoParam *par, mfxFrameAllocRequest *request)
 {
-    return IsSvcMode(par) 
-        ? ImplementationSvc::QueryIOSurf(core, par, request)
-        : ImplementationMvc::QueryIOSurf(core, par, request);
+#ifdef MFX_ENABLE_VPP_SVC
+    if (IsSvcMode(par))
+        return ImplementationSvc::QueryIOSurf(core, par, request);
+#endif
+
+    return ImplementationMvc::QueryIOSurf(core, par, request);
 
 } // mfxStatus VideoVPPMain::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request, const mfxU32 adapterNum)
 
@@ -91,10 +92,12 @@ mfxStatus VideoVPPMain::Init(mfxVideoParam *par)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
 
-    std::auto_ptr<VideoVPP> impl( //new ImplementationMvc(m_core) );
+    std::auto_ptr<VideoVPP> impl(
+#ifdef MFX_ENABLE_VPP_SVC
         IsSvcMode(par)
-            ? (VideoVPP*) new ImplementationSvc(m_core) 
-            : (VideoVPP*) new ImplementationMvc(m_core));
+            ? (VideoVPP*) new ImplementationSvc(m_core) :
+#endif
+              (VideoVPP*) new ImplementationMvc(m_core));
 
     mfxStatus mfxSts = impl->Init(par);
     MFX_CHECK(
@@ -155,6 +158,7 @@ mfxStatus VideoVPPMain::Init(mfxVideoParam *par)
 
             MFX_CHECK_STS( mfxSts );
 
+#if defined (MFX_VA_WIN)
             // additional check for case when encoder allocates surfaces for vpp out
             // check that for DX11 they have MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET BingFlags
             if (MFX_HW_D3D11 == m_core->GetVAType() && !(requestOpaq.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
@@ -166,6 +170,7 @@ mfxStatus VideoVPPMain::Init(mfxVideoParam *par)
             }
 
             MFX_CHECK_STS( mfxSts );
+#endif
         }
     }
     
@@ -254,7 +259,7 @@ mfxStatus VideoVPPMain::VppFrameCheck(mfxFrameSurface1 *in,
     {
         if( (MFX_ERR_NONE == mfxSts) ||
             (MFX_ERR_MORE_DATA == mfxSts) ||
-            ((mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK == mfxSts) ||
+            ((mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK == mfxSts) ||
             (MFX_ERR_MORE_SURFACE == mfxSts) )
         {
             out->Data.FrameOrder = pOutputNative->Data.FrameOrder;

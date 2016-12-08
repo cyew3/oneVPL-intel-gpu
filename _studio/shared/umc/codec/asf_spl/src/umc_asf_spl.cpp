@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_asf_spl.h"
@@ -203,10 +203,10 @@ Status ASFSplitter::CleanInternalObjects()
             UMC_DELETE(m_pInfo->m_ppTrackInfo[iES]);
         }
     }
-    UMC_FREE(m_pES2PIDTbl);
-    UMC_FREE(m_ppLockedFrame);
-    UMC_FREE(m_ppFBuffer);
-    UMC_FREE(m_pInfo->m_ppTrackInfo);
+    delete[] m_pES2PIDTbl;
+    delete[] m_ppLockedFrame;
+    delete[] m_ppFBuffer;
+    delete[] m_pInfo->m_ppTrackInfo;
 
     return UMC_OK;
 }
@@ -240,10 +240,14 @@ Status ASFSplitter::Init(SplitterParams& init)
         m_pInfo->m_dDuration = (Ipp64f)m_pHeaderObject->pFPropObject->playDuration * 1E-7;
     }
 
-    UMC_ALLOC_ZERO_ARR(m_pInfo->m_ppTrackInfo, TrackInfo*, m_pInfo->m_nOfTracks)
-    UMC_ALLOC_ZERO_ARR(m_ppFBuffer, ASFFrameBuffer*, m_pInfo->m_nOfTracks)
-    UMC_ALLOC_ZERO_ARR(m_ppLockedFrame, asf_LockedFrame*, m_pInfo->m_nOfTracks)
-    UMC_ALLOC_ZERO_ARR(m_pES2PIDTbl, Ipp32u, m_pInfo->m_nOfTracks)
+    m_pInfo->m_ppTrackInfo = new TrackInfo*[m_pInfo->m_nOfTracks];
+    memset(m_pInfo->m_ppTrackInfo, 0, m_pInfo->m_nOfTracks*sizeof(TrackInfo*));
+    m_ppFBuffer = new ASFFrameBuffer*[m_pInfo->m_nOfTracks];
+    memset(m_ppFBuffer, 0, m_pInfo->m_nOfTracks*sizeof(ASFFrameBuffer*));
+    m_ppLockedFrame = new asf_LockedFrame*[m_pInfo->m_nOfTracks];
+    memset(m_ppLockedFrame, 0, m_pInfo->m_nOfTracks*sizeof(asf_LockedFrame*));
+    m_pES2PIDTbl = new Ipp32u[m_pInfo->m_nOfTracks];
+    memset(m_pES2PIDTbl, 0, m_pInfo->m_nOfTracks*sizeof(Ipp32u));
 
     for (iES = 0; iES < m_pInfo->m_nOfTracks; iES++) {
         MediaBufferParams mParams;

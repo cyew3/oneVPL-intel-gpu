@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2011 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -387,10 +387,6 @@ const Ipp8u c2x2m[4][4] = {{0,0,1,1},{0,0,1,1},{2,2,3,3},{2,2,3,3}};
 
 //////////////////////////////////////////////////////////
 // scan matrices
-Ipp32s dec_single_scan[2][16] = {
-    {0,1,4,8,5,2,3,6,9,12,13,10,7,11,14,15},
-    {0,4,1,8,12,5,9,13,2,6,10,14,3,7,11,15}
-};
 
 const Ipp32s dec_single_scan_p[4] = {0,1,2,3};
 const Ipp32s dec_single_scan_p422[8] = {0,2,1,4,6,3,5,7};
@@ -398,11 +394,6 @@ const Ipp32s dec_single_scan_p422[8] = {0,2,1,4,6,3,5,7};
 Ipp16s enc_single_scan[2][16] = {
     {0,1,5,6,2,4,7,12,3,8,11,13,9,10,14,15},
     {0,2,8,12,1,5,9,13,3,6,10,14,4,7,11,15}
-};
-
-const Ipp32s dec_single_scan_8x8[2][64] = {
-    {0, 1, 8, 16, 9, 2, 3, 10, 17, 24, 32, 25, 18, 11, 4, 5, 12, 19, 26, 33, 40, 48, 41, 34, 27, 20, 13, 6, 7, 14, 21, 28, 35, 42, 49, 56, 57, 50, 43, 36, 29, 22, 15, 23, 30, 37, 44, 51, 58, 59, 52, 45, 38, 31, 39, 46, 53, 60, 61, 54, 47, 55, 62, 63},
-    {0, 8, 16, 1, 9, 24, 32, 17, 2, 25, 40, 48, 56, 33, 10, 3, 18, 41, 49, 57, 26, 11, 4, 19, 34, 42, 50, 58, 27, 12, 5, 20, 35, 43, 51, 59, 28, 13, 6, 21, 36, 44, 52, 60, 29, 14, 22, 37, 45, 53, 61, 30, 7, 15, 38, 46, 54, 62, 23, 31, 39, 47, 55, 63}
 };
 
 Ipp16s enc_single_scan_8x8[2][64] = {

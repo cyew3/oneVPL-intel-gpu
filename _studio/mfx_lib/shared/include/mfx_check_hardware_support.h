@@ -5,13 +5,13 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2012 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
 //
 
 #if !defined(_MFX_CHECK_HARDWARE_SUPPORT_H)
 #define _MFX_CHECK_HARDWARE_SUPPORT_H
 
-#if defined (MFX_VA)
+#if defined (MFX_VA_WIN)
 #include "mfxvideo++int.h"
 
 namespace MFX
@@ -22,6 +22,6 @@ eMFXHWType GetHardwareType(const mfxU32 adapterNum, mfxU32 platformFromDriver);
 
 } // namespace MFX
 
-#endif // #if defined (MFX_VA)
+#endif // #if defined (MFX_VA_WIN)
 
 #endif // _MFX_CHECK_HARDWARE_SUPPORT_H

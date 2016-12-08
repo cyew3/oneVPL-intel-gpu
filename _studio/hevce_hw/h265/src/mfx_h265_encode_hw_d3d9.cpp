@@ -492,7 +492,9 @@ D3D9Encoder::D3D9Encoder()
     , m_capsQuery()
     , m_capsGet()
     , m_infoQueried(false)
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     , m_widi(false)
+#endif
     , m_maxSlices(0)
     , m_sps()
     , m_pps()
@@ -586,9 +588,11 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
 mfxStatus D3D9Encoder::CreateAccelerationService(MfxVideoParam const & par)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9Encoder::CreateAccelerationService");
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     const mfxExtPAVPOption& PAVP = par.m_ext.PAVP;
 
     m_widi = par.WiDi;
+#endif
 
 #ifndef HEADER_PACKING_TEST
     MFX_CHECK_WITH_ASSERT(m_auxDevice.get(), MFX_ERR_NOT_INITIALIZED);
@@ -600,9 +604,11 @@ mfxStatus D3D9Encoder::CreateAccelerationService(MfxVideoParam const & par)
 
     ENCODE_CREATEDEVICE encodeCreateDevice = {};
     encodeCreateDevice.pVideoDesc     = &desc;
-    encodeCreateDevice.CodingFunction = m_widi ? (ENCODE_ENC_PAK | ENCODE_WIDI) : ENCODE_ENC_PAK;
+    encodeCreateDevice.CodingFunction = ENCODE_ENC_PAK;
     encodeCreateDevice.EncryptionMode = DXVA_NoEncrypt;
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
+    encodeCreateDevice.CodingFunction = m_widi ? (ENCODE_ENC_PAK | ENCODE_WIDI) : ENCODE_ENC_PAK;
     D3DAES_CTR_IV        initialCounter = { PAVP.CipherCounter.IV, PAVP.CipherCounter.Count };
     PAVP_ENCRYPTION_MODE encryptionMode = { PAVP.EncryptionType,   PAVP.CounterType         };
 
@@ -613,6 +619,7 @@ mfxStatus D3D9Encoder::CreateAccelerationService(MfxVideoParam const & par)
         encodeCreateDevice.pInitialCipherCounter = &initialCounter;
         encodeCreateDevice.pPavpEncryptionMode   = &encryptionMode;
     }
+#endif
 
     HRESULT hr;
     {
@@ -985,11 +992,13 @@ mfxStatus D3D9Encoder::QueryStatus(Task & task)
         Trace(*feedback, 0);
         task.m_bsDataLength = feedback->bitstreamSize;
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         if (m_widi && m_caps.HWCounterAutoIncrementSupport)
         {
             task.m_aes_counter.Count = feedback->aes_counter.Counter;
             task.m_aes_counter.IV    = feedback->aes_counter.IV;
         }
+#endif
 
         {
             mfxExtEncodedSlicesInfo* pESI = ExtBuffer::Get(task.m_ctrl);

@@ -294,7 +294,7 @@ mfxStatus CheckVideoParamCommon(mfxVideoParam *in, eMFXHWType type)
     if (sts != MFX_ERR_NONE)
         return sts;
 
-    // need to change on SNB type. Only SNB supports protected currently
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (in->Protected)
     {
         if (type == MFX_HW_UNKNOWN || !IS_PROTECTION_ANY(in->Protected))
@@ -308,6 +308,7 @@ mfxStatus CheckVideoParamCommon(mfxVideoParam *in, eMFXHWType type)
         if (!IS_PROTECTION_PAVP_ANY(in->Protected) && pavpOpt)
             return MFX_ERR_INVALID_VIDEO_PARAM;
     }
+#endif
 
     switch (in->mfx.CodecId)
     {
@@ -326,7 +327,6 @@ mfxStatus CheckVideoParamCommon(mfxVideoParam *in, eMFXHWType type)
     if (!in->IOPattern)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
-    //special case for HEVC as it specified in https://jira01.devtools.intel.com/browse/MDP-17396
     if (in->mfx.CodecId == MFX_CODEC_HEVC &&
        (in->mfx.FrameInfo.FourCC == MFX_FOURCC_P010 || in->mfx.FrameInfo.FourCC == MFX_FOURCC_P210))
     {
@@ -369,6 +369,7 @@ mfxStatus CheckVideoParamDecoders(mfxVideoParam *in, bool IsExternalFrameAllocat
     if (!IsExternalFrameAllocator && (in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (in->Protected)
     {
         if (in->mfx.CodecId == MFX_CODEC_AVC || in->mfx.CodecId == MFX_CODEC_JPEG)
@@ -386,16 +387,19 @@ mfxStatus CheckVideoParamDecoders(mfxVideoParam *in, bool IsExternalFrameAllocat
 
         if (!((in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)||(in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)))
             return MFX_ERR_INVALID_VIDEO_PARAM;
-    }
-    else
-    {
-        if (GetExtendedBuffer(in->ExtParam, in->NumExtParam, MFX_EXTBUFF_PAVP_OPTION))
-            return MFX_ERR_INVALID_VIDEO_PARAM;
 
-        sts = CheckDecodersExtendedBuffers(in);
-        if (sts < MFX_ERR_NONE)
-            return sts;
+        return MFX_ERR_NONE;
     }
+#endif
+
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
+    if (GetExtendedBuffer(in->ExtParam, in->NumExtParam, MFX_EXTBUFF_PAVP_OPTION))
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+#endif
+
+    sts = CheckDecodersExtendedBuffers(in);
+    if (sts < MFX_ERR_NONE)
+        return sts;
 
     return MFX_ERR_NONE;
 }
@@ -439,6 +443,7 @@ mfxStatus CheckBitstream(const mfxBitstream *bs)
     if (bs->DataOffset + bs->DataLength > bs->MaxLength)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (bs->EncryptedData)
     {
         mfxEncryptedData * encryptedData = bs->EncryptedData;
@@ -453,10 +458,11 @@ mfxStatus CheckBitstream(const mfxBitstream *bs)
             encryptedData = encryptedData->Next;
         }
     }
-
+#endif
     return MFX_ERR_NONE;
 }
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 mfxStatus CheckEncryptedBitstream(const mfxBitstream *bs)
 {
        mfxEncryptedData *ptr = 0;
@@ -493,6 +499,7 @@ mfxStatus CheckEncryptedBitstream(const mfxBitstream *bs)
         }
     return MFX_ERR_NONE;
 }
+#endif // #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 
 mfxStatus CheckFrameData(const mfxFrameSurface1 *surface)
 {
@@ -508,6 +515,7 @@ mfxStatus CheckFrameData(const mfxFrameSurface1 *surface)
         case MFX_FOURCC_NV12:
         case MFX_FOURCC_P010:
         case MFX_FOURCC_P210:
+        case MFX_FOURCC_NV16:
             if (!surface->Data.Y || !surface->Data.UV)
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
             if (pitch > 0xFFFF)
@@ -526,6 +534,7 @@ mfxStatus CheckFrameData(const mfxFrameSurface1 *surface)
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
             break;
         case MFX_FOURCC_RGB3:
+        case MFX_FOURCC_A2RGB10:
             if (!surface->Data.R || !surface->Data.G || !surface->Data.B)
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
             if (pitch > 0x2FFFF)
@@ -544,6 +553,10 @@ mfxStatus CheckFrameData(const mfxFrameSurface1 *surface)
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
             break;
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
+        case MFX_FOURCC_P8:
+            if (!surface->Data.Y)
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+            break;
 #if defined(_WIN32) || defined(_WIN64)
         case DXGI_FORMAT_AYUV:
             if (!surface->Data.A || !surface->Data.R || !surface->Data.G || !surface->Data.B)
@@ -561,34 +574,37 @@ mfxStatus CheckFrameData(const mfxFrameSurface1 *surface)
 
 mfxStatus CheckDecodersExtendedBuffers(mfxVideoParam* par)
 {
-    static const mfxU32 g_decoderSupportedExtBuffersAVC[]   = {MFX_EXTBUFF_PAVP_OPTION,
+    static const mfxU32 g_commonSupportedExtBuffers[]       = {
+                                                               MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION,
+#ifndef MFX_ADAPTIVE_PLAYBACK_DISABLE
+                                                               MFX_EXTBUFF_DEC_ADAPTIVE_PLAYBACK,
+#endif
+    };
+
+    static const mfxU32 g_decoderSupportedExtBuffersAVC[]   = {
                                                                MFX_EXTBUFF_MVC_SEQ_DESC,
                                                                MFX_EXTBUFF_MVC_TARGET_VIEWS,
-                                                               MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION,
-                                                               MFX_EXTBUFF_SVC_SEQ_DESC,
-                                                               MFX_EXTBUFF_SVC_TARGET_LAYER,
-                                                               MFX_EXTBUFF_DEC_ADAPTIVE_PLAYBACK,
-                                                               MFX_EXTBUFF_FEI_PARAM,
-                                                               MFX_EXTBUFF_DEC_VIDEO_PROCESSING};
+#if !defined (MFX_PROTECTED_FEATURE_DISABLE)
+                                                               MFX_EXTBUFF_PAVP_OPTION,
+#endif
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
+                                                               MFX_EXTBUFF_DEC_VIDEO_PROCESSING,
+#endif
+                                                               MFX_EXTBUFF_FEI_PARAM};
 
-    static const mfxU32 g_decoderSupportedExtBuffersHEVC[]  = {MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION,
-                                                               MFX_EXTBUFF_HEVC_PARAM,
-                                                               MFX_EXTBUFF_DEC_ADAPTIVE_PLAYBACK};
+    static const mfxU32 g_decoderSupportedExtBuffersHEVC[]  = {
+                                                               MFX_EXTBUFF_HEVC_PARAM
+                                                               };
 
-    static const mfxU32 g_decoderSupportedExtBuffersVC1[]   = {MFX_EXTBUFF_PAVP_OPTION,
-                                                               MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION,
-                                                               MFX_EXTBUFF_DEC_ADAPTIVE_PLAYBACK};
+    static const mfxU32 g_decoderSupportedExtBuffersVC1[]   = {MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION,
+#if !defined (MFX_PROTECTED_FEATURE_DISABLE)
+                                                               MFX_EXTBUFF_PAVP_OPTION,
+#endif
+                                                               };
 
-    static const mfxU32 g_decoderSupportedExtBuffersVP8[]   = {MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION,
-                                                               MFX_EXTBUFF_DEC_ADAPTIVE_PLAYBACK};
 
-    static const mfxU32 g_decoderSupportedExtBuffersVP9[]   = {MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION,
-                                                               MFX_EXTBUFF_DEC_ADAPTIVE_PLAYBACK};
-
-    static const mfxU32 g_decoderSupportedExtBuffersMJPEG[] = {MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION,
-                                                               MFX_EXTBUFF_JPEG_HUFFMAN,
-                                                               MFX_EXTBUFF_JPEG_QT,
-                                                               MFX_EXTBUFF_DEC_ADAPTIVE_PLAYBACK};
+    static const mfxU32 g_decoderSupportedExtBuffersMJPEG[] = {MFX_EXTBUFF_JPEG_HUFFMAN,
+                                                               MFX_EXTBUFF_JPEG_QT};
 
     const mfxU32 *supported_buffers = 0;
     mfxU32 numberOfSupported = 0;
@@ -613,19 +629,17 @@ mfxStatus CheckDecodersExtendedBuffers(mfxVideoParam* par)
         supported_buffers = g_decoderSupportedExtBuffersMJPEG;
         numberOfSupported = sizeof(g_decoderSupportedExtBuffersMJPEG) / sizeof(g_decoderSupportedExtBuffersMJPEG[0]);
     }
-    else if (par->mfx.CodecId == MFX_CODEC_VP8)
+    else
     {
-        supported_buffers = g_decoderSupportedExtBuffersVP8;
-        numberOfSupported = sizeof(g_decoderSupportedExtBuffersVP8) / sizeof(g_decoderSupportedExtBuffersVP8[0]);
-    }
-    else if (par->mfx.CodecId == MFX_CODEC_VP9)
-    {
-        supported_buffers = g_decoderSupportedExtBuffersVP9;
-        numberOfSupported = sizeof(g_decoderSupportedExtBuffersVP9) / sizeof(g_decoderSupportedExtBuffersVP9[0]);
+        supported_buffers = g_commonSupportedExtBuffers;
+        numberOfSupported = sizeof(g_commonSupportedExtBuffers) / sizeof(g_commonSupportedExtBuffers[0]);
     }
 
     if (!supported_buffers)
         return MFX_ERR_NONE;
+
+    const mfxU32 *common_supported_buffers = g_commonSupportedExtBuffers;
+    mfxU32 common_numberOfSupported = sizeof(g_commonSupportedExtBuffers) / sizeof(g_commonSupportedExtBuffers[0]);
 
     for (mfxU32 i = 0; i < par->NumExtParam; i++)
     {
@@ -639,12 +653,17 @@ mfxStatus CheckDecodersExtendedBuffers(mfxVideoParam* par)
         {
             if (par->ExtParam[i]->BufferId == supported_buffers[j])
             {
-                if (is_known)
-                {
-                    return MFX_ERR_UNDEFINED_BEHAVIOR;
-                }
-
                 is_known = true;
+                break;
+            }
+        }
+
+        for (mfxU32 j = 0; j < common_numberOfSupported; ++j)
+        {
+            if (par->ExtParam[i]->BufferId == common_supported_buffers[j])
+            {
+                is_known = true;
+                break;
             }
         }
 
@@ -766,12 +785,6 @@ mfxVideoParamWrapper & mfxVideoParamWrapper::operator = (const mfxVideoParamWrap
     return mfxVideoParamWrapper::operator = ( *((const mfxVideoParam *)&par));
 }
 
-/*void mfxVideoParamWrapper::ReserveForSPSPPSBuffers(size_t spsSize, size_t ppsSize)
-{
-    mfxExtCodingOptionSPSPPS * spsPps = (mfxExtCodingOptionSPSPPS *)GetExtendedBuffer(ExtParam, NumExtParam, MFX_EXTBUFF_CODING_OPTION_SPSPPS);
-
-}*/
-
 bool mfxVideoParamWrapper::CreateExtendedBuffer(mfxU32 bufferId)
 {
     if (m_buffers.GetBufferById<void *>(bufferId))
@@ -814,14 +827,22 @@ void mfxVideoParamWrapper::CopyVideoParam(const mfxVideoParam & par)
     {
         switch(par.ExtParam[i]->BufferId)
         {
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
         case MFX_EXTBUFF_DEC_VIDEO_PROCESSING:
+#endif
         case MFX_EXTBUFF_MVC_TARGET_VIEWS:
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         case MFX_EXTBUFF_PAVP_OPTION:
+#endif
         case MFX_EXTBUFF_VIDEO_SIGNAL_INFO:
         case MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION:
+#if defined(MFX_ENABLE_SVC_VIDEO_DECODE)
         case MFX_EXTBUFF_SVC_SEQ_DESC:
         case MFX_EXTBUFF_SVC_TARGET_LAYER:
+#endif
+#ifndef MFX_ADAPTIVE_PLAYBACK_DISABLE
         case MFX_EXTBUFF_DEC_ADAPTIVE_PLAYBACK:
+#endif
         case MFX_EXTBUFF_JPEG_QT:
         case MFX_EXTBUFF_JPEG_HUFFMAN:
         case MFX_EXTBUFF_HEVC_PARAM:
@@ -878,31 +899,11 @@ void mfxVideoParamWrapper::CopyVideoParam(const mfxVideoParam & par)
                         points->OP[i].TargetViewId = targetView;
                         targetView += points->OP[i].NumTargetViews;
                     }
-
-                    //points->CompatibilityMode = mvcPoints->CompatibilityMode;
                 }
             }
             break;
 
         case MFX_EXTBUFF_CODING_OPTION_SPSPPS:
-            {
-            /*mfxExtCodingOptionSPSPPS * spsPpsInternal = (mfxExtCodingOptionSPSPPS *)GetExtendedBuffer(m_vPar.ExtParam, m_vPar.NumExtParam, MFX_EXTBUFF_CODING_OPTION_SPSPPS);
-
-            VM_ASSERT(spsPpsInternal);
-
-            spsPps->SPSId = spsPpsInternal->SPSId;
-            spsPps->PPSId = spsPpsInternal->PPSId;
-
-            if (spsPps->SPSBufSize < spsPpsInternal->SPSBufSize ||
-                spsPps->PPSBufSize < spsPpsInternal->PPSBufSize)
-                return MFX_ERR_NOT_ENOUGH_BUFFER;
-
-            spsPps->SPSBufSize = spsPpsInternal->SPSBufSize;
-            spsPps->PPSBufSize = spsPpsInternal->PPSBufSize;
-
-            MFX_INTERNAL_CPY(spsPps->SPSBuffer, spsPpsInternal->SPSBuffer, spsPps->SPSBufSize);
-            MFX_INTERNAL_CPY(spsPps->PPSBuffer, spsPpsInternal->PPSBuffer, spsPps->PPSBufSize);*/
-            }
             break;
 
         default:

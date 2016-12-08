@@ -19,68 +19,6 @@
 
 using namespace UMC;
 
-VideoAccelerationHW ConvertMFXToUMCType(eMFXHWType type)
-{
-    VideoAccelerationHW umcType = VA_HW_UNKNOWN;
-
-    switch(type)
-    {
-    case MFX_HW_LAKE:
-        umcType = VA_HW_LAKE;
-        break;
-    case MFX_HW_LRB:
-        umcType = VA_HW_LRB;
-        break;
-    case MFX_HW_SNB:
-        umcType = VA_HW_SNB;
-        break;
-    case MFX_HW_IVB:
-        umcType = VA_HW_IVB;
-        break;
-    case MFX_HW_HSW:
-        umcType = VA_HW_HSW;
-        break;
-    case MFX_HW_HSW_ULT:
-        umcType = VA_HW_HSW_ULT;
-        break;
-    case MFX_HW_VLV:
-        umcType = VA_HW_VLV;
-        break;
-    case MFX_HW_BDW:
-        umcType = VA_HW_BDW;
-        break;
-    case MFX_HW_CHV:
-        umcType = VA_HW_CHV;
-        break;
-    case MFX_HW_SCL:
-        umcType = VA_HW_SCL;
-        break;
-    case MFX_HW_BXT:
-        umcType = VA_HW_BXT;
-        break;
-    case MFX_HW_KBL:
-        umcType = VA_HW_KBL;
-        break;
-#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
-    case MFX_HW_CNL:
-        umcType = VA_HW_CNL;
-        break;
-#endif //PRE_SI_TARGET_PLATFORM_GEN10
-    case MFX_HW_SOFIA:
-        umcType = VA_HW_SOFIA;
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-    case MFX_HW_ICL:
-        umcType = VA_HW_ICL;
-        break;
-    case MFX_HW_ICL_LP:
-        umcType = VA_HW_ICL_LP;
-        break;
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
-    }
-
-    return umcType;
-}
-
 mfxU32 ChooseProfile(mfxVideoParam * param, eMFXHWType )
 {
     mfxU32 profile = UMC::VA_VLD;
@@ -98,6 +36,7 @@ mfxU32 ChooseProfile(mfxVideoParam * param, eMFXHWType )
         {
         profile |= VA_H264;
 
+#ifndef OPEN_SOURCE
         mfxU32 profile_idc = ExtractProfile(param->mfx.CodecProfile);
 
         if (IsMVCProfile(profile_idc))
@@ -109,16 +48,21 @@ mfxU32 ChooseProfile(mfxVideoParam * param, eMFXHWType )
             else
                 profile |= param->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? VA_PROFILE_MVC_STEREO_PROG : VA_PROFILE_MVC_STEREO;
         }
+#endif
 
+#ifdef MFX_ENABLE_SVC_VIDEO_DECODE
         if (IsSVCProfile(profile_idc))
         {
             profile |= (profile_idc == MFX_PROFILE_AVC_SCALABLE_HIGH) ? VA_PROFILE_SVC_HIGH : VA_PROFILE_SVC_BASELINE;
         }
+#endif
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         if (IS_PROTECTION_WIDEVINE(param->Protected))
         {
             profile |= VA_PROFILE_WIDEVINE;
         }
+#endif
 
         }
         break;
@@ -130,6 +74,7 @@ mfxU32 ChooseProfile(mfxVideoParam * param, eMFXHWType )
         break;
     case MFX_CODEC_VP9:
         profile |= VA_VP9;
+#ifndef OPEN_SOURCE
         switch (param->mfx.FrameInfo.FourCC)
         {
         case MFX_FOURCC_P010:
@@ -151,9 +96,11 @@ mfxU32 ChooseProfile(mfxVideoParam * param, eMFXHWType )
             break;
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
         }
+#endif
         break;
     case MFX_CODEC_HEVC:
         profile |= VA_H265;
+#ifndef OPEN_SOURCE
         switch (param->mfx.FrameInfo.FourCC)
         {
             case MFX_FOURCC_P010:
@@ -175,10 +122,13 @@ mfxU32 ChooseProfile(mfxVideoParam * param, eMFXHWType )
                 break;
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
         }
+#endif
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         if (IS_PROTECTION_WIDEVINE(param->Protected))
         {
             profile |= VA_PROFILE_WIDEVINE;
         }
+#endif
         break;
 
     default:

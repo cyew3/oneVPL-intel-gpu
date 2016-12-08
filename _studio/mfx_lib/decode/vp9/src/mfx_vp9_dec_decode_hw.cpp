@@ -36,12 +36,6 @@ using namespace UMC_VP9_DECODER;
 static bool IsSameVideoParam(mfxVideoParam *newPar, mfxVideoParam *oldPar);
 
 inline
-void mfx_memcpy(void * dst, size_t dstLen, void * src, size_t len)
-{
-    memcpy_s(dst, dstLen, src, len);
-}
-
-inline
 bool CheckHardwareSupport(VideoCORE *p_core, mfxVideoParam *p_video_param)
 {
 #ifdef MFX_VA_WIN
@@ -527,7 +521,7 @@ mfxStatus VideoDECODEVP9_HW::GetDecodeStat(mfxDecodeStat *pStat)
     m_stat.NumSkippedFrame = 0;
     m_stat.NumCachedFrame = 0;
 
-    mfx_memcpy(pStat, sizeof(m_stat), &m_stat, sizeof(m_stat));
+    memcpy_s(pStat, sizeof(m_stat), &m_stat, sizeof(m_stat));
 
     return MFX_ERR_NONE;
 }
@@ -893,7 +887,7 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
         sts = GetOutputSurface(surface_out, surface_work, m_frameInfo.currFrame);
         MFX_CHECK_STS(sts);
         surface_out = 0;
-        return (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK;
+        return (mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK;
     }
 }
 

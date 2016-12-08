@@ -14,8 +14,6 @@
 #ifndef __UMC_H265_WIDEVINE_SUPPLIER_H
 #define __UMC_H265_WIDEVINE_SUPPLIER_H
 
-#ifndef UMC_RESTRICTED_CODE_VA
-
 #include "umc_h265_va_supplier.h"
 #include "umc_h265_widevine_decrypter.h"
 
@@ -62,8 +60,6 @@ private:
 };
 
 } // namespace UMC_HEVC_DECODER
-
-#endif // UMC_RESTRICTED_CODE_VA
 
 #endif // __UMC_H265_WIDEVINE_SUPPLIER_H
 #endif // UMC_ENABLE_H265_VIDEO_DECODER

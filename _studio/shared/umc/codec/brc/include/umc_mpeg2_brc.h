@@ -144,7 +144,7 @@ public:
       Mpeg2_BrcParams *brcParams = DynamicCast<Mpeg2_BrcParams>(init);
       if (brcParams && brcParams->quant[0]>0 && brcParams->frameHeight > 0 && brcParams->frameWidth >0 )
       {
-          ippsCopy_8u((Ipp8u*)brcParams, (Ipp8u*)&m_params, sizeof(Mpeg2_BrcParams));
+          MFX_INTERNAL_CPY((Ipp8u*)&m_params, (Ipp8u*)brcParams, sizeof(Mpeg2_BrcParams));
           m_params.frameHeight = brcParams->frameHeight;
           m_params.frameWidth  = brcParams->frameWidth;
 

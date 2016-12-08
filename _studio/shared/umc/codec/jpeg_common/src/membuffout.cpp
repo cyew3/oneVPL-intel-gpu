@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2006-2012 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2006-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -61,7 +61,7 @@ JERRCODE CMemBuffOutput::Write(void* buf,uic_size_t len,uic_size_t* cnt)
 
   wb = (uic_size_t)IPP_MIN((int)len,m_buflen - m_currpos);
 
-  ippsCopy_8u((Ipp8u*)buf,m_buf + m_currpos,wb);
+  MFX_INTERNAL_CPY(m_buf + m_currpos,(Ipp8u*)buf,wb);
 
   m_currpos += wb;
 

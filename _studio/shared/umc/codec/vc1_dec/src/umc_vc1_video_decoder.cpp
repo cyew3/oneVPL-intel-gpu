@@ -32,16 +32,9 @@
 #include "assert.h"
 #include "umc_vc1_dec_exception.h"
 
-
-#ifndef UMC_RESTRICTED_CODE_VA
 #include "umc_va_base.h"
 #include "umc_vc1_dec_va.h"
 #include "umc_vc1_dec_frame_descr_va.h"
-#endif
-
-
-
-
 
 #include "ipps.h"
 
@@ -162,8 +155,6 @@ Status VC1VideoDecoder::Init(BaseCodecParams *pInit)
 
     m_SurfaceNum = init->m_SuggestedOutputSize;
 
-
-#ifndef UMC_RESTRICTED_CODE_VA
     //VA initializtion
     if (init->pVideoAccelerator)
     {
@@ -172,7 +163,6 @@ Status VC1VideoDecoder::Init(BaseCodecParams *pInit)
         else
             return UMC_ERR_UNSUPPORTED;
     }
-#endif
 
     //MEMORY ALLOCATOR
     if (UMC_OK != BaseCodec::Init(pInit) )
@@ -214,11 +204,7 @@ Status VC1VideoDecoder::Init(BaseCodecParams *pInit)
     m_iThreadDecoderNum = (0 == nAllowedThreadNumber) ? (vm_sys_info_get_cpu_num()) : (nAllowedThreadNumber);
     //m_iThreadDecoderNum = (0 == nAllowedThreadNumber) ? 1 : nAllowedThreadNumber;
 
-    if (m_iThreadDecoderNum >= 2)
-        m_iMaxFramesInProcessing = m_iThreadDecoderNum + NumBufferedFrames;
-    else
-        m_iMaxFramesInProcessing = m_iThreadDecoderNum + NumBufferedFrames; // + 4 may be
-
+    m_iMaxFramesInProcessing = m_iThreadDecoderNum + NumBufferedFrames;
 
     if (UMC_OK != ContextAllocation(mbWidth, mbHeight))
         return UMC_ERR_INIT;
@@ -412,16 +398,11 @@ Status VC1VideoDecoder::Init(BaseCodecParams *pInit)
             return UMC_ERR_ALLOC;
 
 
-#ifndef UMC_RESTRICTED_CODE_VA
 #if defined UMC_VA_DXVA || defined UMC_VA_LINUX
         m_pStore->CreateDSQueue(m_pContext,m_va);
 #else
         m_pStore->CreateDSQueue(m_pContext,m_bIsReorder,0);
 #endif
-#else
-        m_pStore->CreateDSQueue(m_pContext, m_bIsReorder, 0);
-#endif
-
 
         m_pStore->CreateOutBuffersQueue();
         m_pStore->SetDefinition(&m_pContext->m_seqLayerHeader);
@@ -531,9 +512,11 @@ bool VC1VideoDecoder::InitVAEnvironment(Ipp32u frameSize)
 #ifdef UMC_VA_DXVA
     if (m_va->IsIntelCustomGUID())
     {
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
         if(m_va->GetProtectedVA())
             m_pSelfDecoder = new VC1VideoDecoderVA<VC1PackerDXVA_Protected>;
         else
+#endif
             m_pSelfDecoder = new VC1VideoDecoderVA<VC1PackerDXVA_EagleLake>;
     }
     else
@@ -1314,7 +1297,6 @@ Status VC1VideoDecoder::Close(void)
         delete m_allocatedPostProcessing;
         m_allocatedPostProcessing = 0;
     }
-    BaseCodec::Close(); // delete internal allocator if exists
     m_pMemoryAllocator = 0;
 
 #ifdef CREATE_ES
@@ -1328,7 +1310,6 @@ Status VC1VideoDecoder::Close(void)
 #endif
 
 
-#ifndef UMC_RESTRICTED_CODE_VA
     if (m_va)
         {
             if ((m_pSelfDecoder)&&
@@ -1338,7 +1319,6 @@ Status VC1VideoDecoder::Close(void)
                 m_pSelfDecoder = NULL;
             }
         }
-#endif
 
 #if defined (_WIN32) && (_DEBUG)
 #ifdef VC1_DEBUG_ON
@@ -1373,14 +1353,10 @@ Status VC1VideoDecoder::Reset(void)
         if (!m_pStore->Reset())
             return UMC_ERR_NOT_INITIALIZED;
     
-    #ifndef UMC_RESTRICTED_CODE_VA
     #if defined UMC_VA_DXVA || defined UMC_VA_LINUX
             m_pStore->CreateDSQueue(&m_pInitContext,m_va);
     #else
             m_pStore->CreateDSQueue(&m_pInitContext,m_bIsReorder,0);
-    #endif
-    #else
-            m_pStore->CreateDSQueue(&m_pInitContext, m_bIsReorder, 0);
     #endif
             m_pStore->CreateOutBuffersQueue();
             m_pStore->SetDefinition(&(m_pInitContext.m_seqLayerHeader)); 
@@ -2147,13 +2123,11 @@ Status VC1VideoDecoder::ProcessPrevFrame(VC1FrameDescriptor *pCurrDescriptor, Me
     return umcRes;
 }
 
-#ifndef UMC_RESTRICTED_CODE_VA
 void   VC1VideoDecoder::SetVideoHardwareAccelerator            (VideoAccelerator* va)
 {
     if (va)
         m_va = (VideoAccelerator*)va;
 }
-#endif
 
 bool VC1VideoDecoder::InitAlloc(VC1Context* pContext, Ipp32u MaxFrameNum)
 {
@@ -2356,7 +2330,7 @@ Status VC1VideoDecoder::ProcessPerformedDS(MediaData* in, VideoData* out_data)
     return umcRes;
 
 }
-#ifndef UMC_RESTRICTED_CODE_VA
+
 Status VC1VideoDecoder::CheckLevelProfileOnly(VideoDecoderParams *pParam)
 {
     Ipp32u Profile;
@@ -2379,7 +2353,6 @@ Status VC1VideoDecoder::CheckLevelProfileOnly(VideoDecoderParams *pParam)
     else
         return UMC_ERR_UNSUPPORTED;
 }
-#endif
 
 #endif //UMC_ENABLE_VC1_VIDEO_DECODER
 

@@ -54,6 +54,7 @@ void ProtectedVA::SetProtected(mfxU16 p)
 
 Status ProtectedVA::SetModes(mfxVideoParam * params)
 {
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (IS_PROTECTION_PAVP_ANY(m_protected))
     {
         mfxExtPAVPOption const * extPAVP = (mfxExtPAVPOption*)GetExtBuffer(params->ExtParam, params->NumExtParam, MFX_EXTBUFF_PAVP_OPTION);
@@ -70,7 +71,9 @@ Status ProtectedVA::SetModes(mfxVideoParam * params)
         m_encryptionType = MFX_PAVP_AES128_CTR;
         m_counterMode = MFX_PAVP_CTR_TYPE_C;
     }
-
+#else
+    params = params;
+#endif
     return UMC_OK;
 }
 

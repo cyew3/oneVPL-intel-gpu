@@ -22,7 +22,7 @@ namespace MFX_HEVC_PP
 {
 
     //---------------------------------------------------------
-    // aya: reference SAD. not used. IPP instead
+    // reference SAD. not used. IPP instead
     //---------------------------------------------------------
     IppStatus __STDCALL h265_SAD_reference_8u32s_C1R(
         const Ipp8u* pSrcCur,

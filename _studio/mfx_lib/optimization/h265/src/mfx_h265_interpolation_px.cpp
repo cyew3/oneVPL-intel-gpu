@@ -20,10 +20,6 @@
 #define SaturateToShort(val) Saturate(-32768, 32767, (val))
 
 //=========================================================
-// AYA TMP SOLUTIONS
-//#include <intrin.h> // aya for WriteP.B/N only
-//=========================================================
-
 namespace MFX_HEVC_PP
 {
 

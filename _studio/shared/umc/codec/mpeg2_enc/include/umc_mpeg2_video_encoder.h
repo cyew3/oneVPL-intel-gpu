@@ -50,7 +50,6 @@ public:
   virtual ~MPEG2EncoderParams();
 
   //void      operator=(MPEG2EncoderParams &p);
-  Status ReadParamFile(const vm_char *ParFileName); // opens and reads MSSG standard par-file
   Status ReadQMatrices(vm_char* IntraQMatrixFName, vm_char* NonIntraQMatrixFName);
   Status Profile_and_Level_Checks();
   Status RelationChecks();
@@ -115,9 +114,6 @@ public:
   Ipp32s                   UserDataLen;             // current user data length, set to 0 after is used
   char                     idStr[PAR_STRLEN];       // default user data to put to each sequence
 
-private:
-  Status ReadOldParamFile(const vm_char *ParFileName);  // opens and reads cut par-file (obsolete)
-
 };
 
 class MPEG2VideoEncoder : public VideoEncoder
@@ -161,12 +157,6 @@ private:
   MPEG2VideoEncoder(const MPEG2VideoEncoder &);
   MPEG2VideoEncoder & operator = (const MPEG2VideoEncoder &);
 };
-
-// reads parameters from ParamList to VideoEncoderParams
-Status ReadParamList(MPEG2EncoderParams* par, ParamList* lst);
-
-// information about parameters for VideoEncoderParams
-extern const ParamList::OptionInfo MPEG2EncoderOptions[];
 
 } // end namespace UMC
 

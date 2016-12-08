@@ -17,7 +17,6 @@
 #if defined (MFX_ENABLE_MPEG2_VIDEO_ENCODE) && defined (MFX_ENABLE_MPEG2_VIDEO_PAK)
 
 #include "mfxvideo++int.h"
-#include "mfxvideopro++.h"
 #include "mfx_mpeg2_encode_utils_hw.h"
 #include "umc_mpeg2_enc.h"
 #include "mfx_mpeg2_enc_hw.h"

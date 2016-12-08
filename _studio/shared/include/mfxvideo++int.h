@@ -13,9 +13,9 @@
 
 #include "mfxvideo.h"
 #include "mfxstructures-int.h"
-#include "mfxvideopro.h"
 #include <mfx_task_threading_policy.h>
 #include <mfx_interface.h>
+#include "mfxstructurespro.h"
 #include "mfxmvc.h"
 #include "mfxsvc.h"
 #include "mfxjpeg.h"
@@ -47,28 +47,10 @@ static int operator==(const GUID & guidOne, const GUID & guidOther)
 #define GUID_TYPE_DEFINED
 #endif
 
+#ifndef OPEN_SOURCE
 
-// GUIDs from DDI spec 0.73
-static const GUID DXVA2_Intel_Encode_AVC =
-{ 0x97688186, 0x56a8, 0x4094, { 0xb5, 0x43, 0xfc, 0x9d, 0xaa, 0xa4, 0x9f, 0x4b } };
-static const GUID DXVA2_Intel_Encode_VP8 =
-{ 0x2364d06a, 0xf67f, 0x4186, { 0xae, 0xd0, 0x62, 0xb9, 0x9e, 0x17, 0x84, 0xf1 } };
-static const GUID DXVA2_Intel_Encode_MPEG2 =
-{ 0xc346e8a3, 0xcbed, 0x4d27, { 0x87, 0xcc, 0xa7, 0xe, 0xb4, 0xdc, 0x8c, 0x27 } };
 static const GUID DXVA2_Intel_Encode_SVC =
 { 0xd41289c2, 0xecf3, 0x4ede, { 0x9a, 0x04, 0x3b, 0xbf, 0x90, 0x68, 0xa6, 0x29 } };
-
-static const GUID sDXVA2_Intel_IVB_ModeJPEG_VLD_NoFGT =
-{ 0x91cd2d6e, 0x897b, 0x4fa1, { 0xb0, 0xd7, 0x51, 0xdc, 0x88, 0x01, 0x0e, 0x0a } };
-
-static const GUID sDXVA2_ModeMPEG2_VLD =
-{ 0xee27417f, 0x5e28, 0x4e65, { 0xbe, 0xea, 0x1d, 0x26, 0xb5, 0x08, 0xad, 0xc9 } };
-
-static const GUID sDXVA2_Intel_ModeVC1_D_Super =
-{ 0xE07EC519, 0xE651, 0x4cd6, { 0xAC, 0x84, 0x13, 0x70, 0xCC, 0xEE, 0xC8, 0x51 } };
-
-static const GUID sDXVA2_Intel_EagleLake_ModeH264_VLD_NoFGT =
-{ 0x604f8e68, 0x4951, 0x4c54, { 0x88, 0xfe, 0xab, 0xd2, 0x5c, 0x15, 0xb3, 0xd6 } };
 
 static const GUID sDXVA_ModeH264_VLD_SVC_Scalable_Constrained_Baseline =
 { 0x9b8175d4, 0xd670, 0x4cf2, { 0xa9, 0xf0, 0xfa, 0x56, 0xdf, 0x71, 0xa1, 0xae } };
@@ -85,9 +67,6 @@ static const GUID sDXVA_ModeH264_VLD_Stereo_Progressive_NoFGT =
 static const GUID sDXVA_ModeH264_VLD_Stereo_NoFGT =
 { 0xf9aaccbb, 0xc2b6, 0x4cfc, { 0x87, 0x79, 0x57, 0x07, 0xb1, 0x76, 0x05, 0x52 } };
 
-static const GUID sDXVA2_ModeH264_VLD_NoFGT =
-{ 0x1b81be68, 0xa0c7, 0x11d3, { 0xb9, 0x84, 0x00, 0xc0, 0x4f, 0x2e, 0x73, 0xc5 } };
-
 static const GUID sDXVA_Intel_ModeH264_VLD_MVC =
 { 0xe296bf50, 0x8808, 0x4ff8, { 0x92, 0xd4, 0xf1, 0xee, 0x79, 0x9f, 0xc3, 0x3c } };
 
@@ -103,17 +82,39 @@ static const GUID DXVA_Intel_ModeHEVC_VLD_Main422_10Profile =
 static const GUID DXVA_Intel_ModeHEVC_VLD_Main444_10Profile =
 { 0x6a6a81ba, 0x912a, 0x485d, { 0xb5, 0x7f, 0xcc, 0xd2, 0xd3, 0x7b, 0x8d, 0x94 } };
 
-static const GUID DXVA_ModeHEVC_VLD_Main =
-{ 0x5b11d51b, 0x2f4c, 0x4452, { 0xbc, 0xc3, 0x9,  0xf2, 0xa1, 0x16, 0xc,  0xc0 } };
-
-static const GUID DXVA_ModeHEVC_VLD_Main10 =
-{ 0x107af0e0, 0xef1a, 0x4d19, { 0xab, 0xa8, 0x67, 0xa1, 0x63, 0x07, 0x3d, 0x13 } };
-
 static const GUID DXVA_Intel_Decode_Elementary_Stream_AVC =
 { 0xc528916c, 0xc0af, 0x4645, { 0x8c, 0xb2, 0x37, 0x2b, 0x6d, 0x4a, 0xdc, 0x2a } };
 
 static const GUID DXVA_Intel_Decode_Elementary_Stream_HEVC =
 { 0x7cfaffb, 0x5a2e, 0x4b99, { 0xb6, 0x2a, 0xe4, 0xca, 0x53, 0xb6, 0xd5, 0xaa } };
+
+static const GUID DXVA2_Intel_Encode_VP8 =
+{ 0x2364d06a, 0xf67f, 0x4186, { 0xae, 0xd0, 0x62, 0xb9, 0x9e, 0x17, 0x84, 0xf1 } };
+
+static const GUID sDXVA2_Intel_IVB_ModeJPEG_VLD_NoFGT =
+{ 0x91cd2d6e, 0x897b, 0x4fa1, { 0xb0, 0xd7, 0x51, 0xdc, 0x88, 0x01, 0x0e, 0x0a } };
+
+static const GUID sDXVA2_Intel_ModeVC1_D_Super =
+{ 0xE07EC519, 0xE651, 0x4cd6, { 0xAC, 0x84, 0x13, 0x70, 0xCC, 0xEE, 0xC8, 0x51 } };
+
+#endif // #ifndef OPEN_SOURCE
+
+static const GUID DXVA2_Intel_Encode_AVC =
+{ 0x97688186, 0x56a8, 0x4094, { 0xb5, 0x43, 0xfc, 0x9d, 0xaa, 0xa4, 0x9f, 0x4b } };
+static const GUID DXVA2_Intel_Encode_MPEG2 =
+{ 0xc346e8a3, 0xcbed, 0x4d27, { 0x87, 0xcc, 0xa7, 0xe, 0xb4, 0xdc, 0x8c, 0x27 } };
+
+static const GUID sDXVA2_ModeMPEG2_VLD =
+{ 0xee27417f, 0x5e28, 0x4e65, { 0xbe, 0xea, 0x1d, 0x26, 0xb5, 0x08, 0xad, 0xc9 } };
+
+static const GUID sDXVA2_ModeH264_VLD_NoFGT =
+{ 0x1b81be68, 0xa0c7, 0x11d3, { 0xb9, 0x84, 0x00, 0xc0, 0x4f, 0x2e, 0x73, 0xc5 } };
+
+static const GUID DXVA_ModeHEVC_VLD_Main =
+{ 0x5b11d51b, 0x2f4c, 0x4452, { 0xbc, 0xc3, 0x9,  0xf2, 0xa1, 0x16, 0xc,  0xc0 } };
+
+static const GUID DXVA_ModeHEVC_VLD_Main10 =
+{ 0x107af0e0, 0xef1a, 0x4d19, { 0xab, 0xa8, 0x67, 0xa1, 0x63, 0x07, 0x3d, 0x13 } };
 
 // {1424D4DC-7CF5-4BB1-9CD7-B63717A72A6B}
 static const GUID DXVA2_INTEL_LOWPOWERENCODE_AVC =
@@ -121,83 +122,12 @@ static const GUID DXVA2_INTEL_LOWPOWERENCODE_AVC =
 
 #endif
 
-#if defined(_WIN32) || defined(_WIN64)
-#undef MFX_DEBUG_TOOLS
-#define MFX_DEBUG_TOOLS
-
-#if defined(DEBUG) || defined(_DEBUG)
-#undef  MFX_DEBUG_TOOLS // to avoid redefinition
-#define MFX_DEBUG_TOOLS
-#endif
-#endif // #if defined(_WIN32) || defined(_WIN64)
-
-//#ifdef MFX_DEBUG_TOOLS
-#define SKIP_EXT_BUFFERS_CHECK // (mynikols) check of supported extended buffers disabled in trunk
-//#endif
-
-
 namespace UMC
 {
     class FrameAllocator;
 };
 
-// This is the include file for Media SDK component development.
-enum eMFXPlatform
-{
-    MFX_PLATFORM_SOFTWARE      = 0,
-    MFX_PLATFORM_HARDWARE      = 1,
-};
-
-enum eMFXVAType
-{
-    MFX_HW_NO       = 0,
-    MFX_HW_D3D9     = 1,
-    MFX_HW_D3D11    = 2,
-    //MFX_HW_VA       = 3,//aya???
-    MFX_HW_VAAPI    = 4,// Linux VA-API
-    MFX_HW_VDAAPI   = 5,// OS X VDA-API
-
-};
-
-enum eMFXHWType
-{
-    MFX_HW_UNKNOWN   = 0,
-    MFX_HW_LAKE      = 0x100000,
-    MFX_HW_LRB       = 0x200000,
-    MFX_HW_SNB       = 0x300000,
-
-    MFX_HW_IVB       = 0x400000,
-
-    MFX_HW_HSW       = 0x500000,
-    MFX_HW_HSW_ULT   = 0x500001,
-
-    MFX_HW_VLV       = 0x600000,
-
-    MFX_HW_BDW       = 0x700000,
-
-    MFX_HW_CHV       = 0x800000,
-
-    MFX_HW_SCL       = 0x900000,
-
-    MFX_HW_BXT       = 0x1000000,
-
-    MFX_HW_KBL       = 0x1100000,
-
-    MFX_HW_CNL       = 0x1200000,
-
-    MFX_HW_SOFIA     = 0x1300000,
-
-    MFX_HW_ICL       = 0x1400000,
-    MFX_HW_ICL_LP    = MFX_HW_ICL + 1,
-};
-
-#ifdef MFX_DEBUG_TOOLS
-// commented since running behavior tests w/o catch is very annoying
-// #define MFX_CORE_CATCH_TYPE     int**** // to disable catch
 #define MFX_CORE_CATCH_TYPE     ...
-#else
-#define MFX_CORE_CATCH_TYPE     ...
-#endif
 
 // Forward declaration of used classes
 struct MFX_ENTRY_POINT;
@@ -220,11 +150,6 @@ public:
     virtual mfxStatus  LockBuffer(mfxMemId mid, mfxU8 **ptr) = 0;
     virtual mfxStatus  UnlockBuffer(mfxMemId mid) = 0;
     virtual mfxStatus  FreeBuffer(mfxMemId mid) = 0;
-
-    // Function checks D3D device for I/O D3D surfaces
-    // If external allocator exists means that component can obtain device handle
-    // If I/O surfaces in system memory  returns MFX_ERR_NONE
-    virtual mfxStatus  CheckHandle() = 0;
 
     virtual mfxStatus  GetFrameHDL(mfxMemId mid, mfxHDL *handle, bool ExtendedSearch = true) = 0;
 
@@ -275,10 +200,8 @@ public:
     virtual void INeedMoreThreadsInside(const void *pComponent) = 0;
 
     // need for correct video accelerator creation
-    virtual mfxStatus DoFastCopy(mfxFrameSurface1 *dst, mfxFrameSurface1 *src) = 0;
     virtual mfxStatus DoFastCopyExtended(mfxFrameSurface1 *dst, mfxFrameSurface1 *src) = 0;
     virtual mfxStatus DoFastCopyWrapper(mfxFrameSurface1 *dst, mfxU16 dstMemType, mfxFrameSurface1 *src, mfxU16 srcMemType) = 0;
-    virtual bool IsFastCopyEnabled(void) = 0;
 
     virtual bool IsExternalFrameAllocator(void) const = 0;
 
@@ -318,30 +241,6 @@ public:
     virtual mfxStatus QueryPlatform(mfxPlatform* platform) = 0;
 };
 
-
-class VideoBRC
-{
-public:
-    // Destructor
-    virtual
-    ~VideoBRC(void) {}
-
-    virtual
-    mfxStatus Init(mfxVideoParam *par) = 0;
-    virtual
-    mfxStatus Reset(mfxVideoParam *par) = 0;
-    virtual
-    mfxStatus Close(void) = 0;
-
-    virtual
-    mfxStatus FrameENCUpdate(mfxFrameCUC *cuc) = 0;
-    virtual
-    mfxStatus FramePAKRefine(mfxFrameCUC *cuc) = 0;
-    virtual
-    mfxStatus FramePAKRecord(mfxFrameCUC *cuc) = 0;
-
-};
-
 class VideoENC
 {
 public:
@@ -362,22 +261,6 @@ public:
     mfxStatus GetVideoParam(mfxVideoParam *par) = 0;
     virtual
     mfxStatus GetFrameParam(mfxFrameParam *par) = 0;
-
-    // THIS METHOD SHOULD BECOME PURE VIRTUAL TOO,
-    // BUT FOR COMPATIBILITY REASONS LET IT INTACT
-    virtual
-    mfxStatus RunFrameVmeENCCheck(mfxFrameCUC *cuc,
-                                  MFX_ENTRY_POINT *pEntryPoint)
-    {
-        cuc = cuc;
-        pEntryPoint = pEntryPoint;
-        return MFX_ERR_NONE;
-    }
-    virtual
-    mfxStatus RunFrameVmeENC(mfxFrameCUC * /*cuc*/)
-    {
-        return MFX_ERR_UNSUPPORTED;
-    };
 
 };
 
@@ -401,21 +284,6 @@ public:
     mfxStatus GetVideoParam(mfxVideoParam *par) = 0;
     virtual
     mfxStatus GetFrameParam(mfxFrameParam *par) = 0;
-
-    virtual
-    mfxStatus RunSeqHeader(mfxFrameCUC *cuc) = 0;
-
-    // THIS METHOD SHOULD BECOME PURE VIRTUAL TOO,
-    // BUT FOR COMPATIBILITY REASONS LET IT INTACT
-    virtual
-    mfxStatus RunFramePAKCheck(mfxFrameCUC *cuc, MFX_ENTRY_POINT *pEntryPoint)
-    {
-        cuc = cuc;
-        pEntryPoint = pEntryPoint;
-        return MFX_ERR_NONE;
-    }
-    virtual
-    mfxStatus RunFramePAK(mfxFrameCUC *cuc) = 0;
 
 };
 

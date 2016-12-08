@@ -164,7 +164,7 @@ void ConfigureTask_FEI_ENC(
     task.m_reference[ffid] = task.m_nalRefIdc[ffid] = !!(task.m_type[ffid] & MFX_FRAMETYPE_REF);
     task.m_reference[sfid] = task.m_nalRefIdc[sfid] = !!(task.m_type[sfid] & MFX_FRAMETYPE_REF);
 
-    if (video.calcParam.lyncMode)
+    if (video.calcParam.tempScalabilityMode)
     {
         task.m_insertPps[ffid] = task.m_insertSps[ffid];
         task.m_insertPps[sfid] = task.m_insertSps[sfid];

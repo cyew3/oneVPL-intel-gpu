@@ -134,7 +134,10 @@ protected:
     bool                            m_bInit;
     mfxStatus                       m_runtimeErr;
     BrcIface*                       m_brc;
+
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     mfxAES128CipherCounter          m_aesCounter;
+#endif
 };
 
 } //MfxHwH265Encode

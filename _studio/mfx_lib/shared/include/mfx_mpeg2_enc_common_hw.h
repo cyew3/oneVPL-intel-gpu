@@ -23,7 +23,10 @@
 #if   defined(MFX_VA_WIN)
     #include "encoder_ddi.hpp"
     #include "auxiliary_device.h"
+
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
     #define PAVP_SUPPORT
+#endif
 #elif defined(MFX_VA_LINUX) || defined(MFX_VA_OSX)
     #include "mfx_h264_encode_struct_vaapi.h"
 #endif
@@ -114,20 +117,6 @@ namespace MfxHwMpeg2Encode
     typedef std::vector<ExtVASurface> mfxRecFrames;
     typedef std::vector<ExtVASurface> mfxRawFrames;
 
-/*    struct mfxRecFrames
-    {
-        mfxMemId    mids[NUM_FRAMES];         
-        mfxU16      indexes[NUM_FRAMES];    
-        mfxU16      NumFrameActual;
-    };
-
-    struct mfxRawFrames
-    {
-        mfxMemId    mids[NUM_FRAMES];         
-        mfxU16      NumFrameActual;
-    };    
-*/
-
 #endif
 
 #if defined(MFX_VA_WIN)
@@ -160,14 +149,6 @@ namespace MfxHwMpeg2Encode
 
        inline bool GetFeedback(UINT StatusReportFeedbackNumber, ENCODE_QUERY_STATUS_PARAMS& feedback)
        {
-           /*for (int i=0; i < _NUM_STORED_FEEDBACKS; i++)
-           {
-               if (queryStatus[i].StatusReportFeedbackNumber)
-               {
-                   printf("_q %d\n", queryStatus[i].StatusReportFeedbackNumber);
-               }
-           }
-           */
            for (int i=0; i < _NUM_STORED_FEEDBACKS; i++)
            {
                if (queryStatus[i].StatusReportFeedbackNumber == StatusReportFeedbackNumber)
@@ -182,7 +163,6 @@ namespace MfxHwMpeg2Encode
 
        inline void* GetPointer()
        {
-            //printf("Update \n");
             return  (void*)queryStatus;
        }
 

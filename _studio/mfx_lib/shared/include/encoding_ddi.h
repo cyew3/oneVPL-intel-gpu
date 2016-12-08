@@ -404,7 +404,7 @@ enum
 {
     FASTCOMP_BLT                     = 0x100,
     FASTCOMP_QUERY_SCENE_DETECTION   = 0x200,
-    FASTCOMP_QUERY_STATUS_FUNC_ID    = 0x300, // aya: tmp solution
+    FASTCOMP_QUERY_STATUS_FUNC_ID    = 0x300,
     FASTCOMP_QUERY_VARIANCE          = 0x400
 };
 

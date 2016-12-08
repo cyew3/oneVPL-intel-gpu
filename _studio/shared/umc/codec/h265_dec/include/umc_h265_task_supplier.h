@@ -30,7 +30,7 @@
 
 #include "umc_va_base.h"
 
-#if defined(UMC_VA_DXVA) || defined(UMC_VA_LINUX)
+#if (defined(UMC_VA_DXVA) || defined(UMC_VA_LINUX)) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
 #include "umc_h265_widevine_decrypter.h"
 #endif
 
@@ -295,7 +295,7 @@ public:
     // Add a new bitstream data buffer to decoding
     virtual UMC::Status AddSource(UMC::MediaData * pSource);
 
-#if defined(UMC_VA_DXVA) || defined(UMC_VA_LINUX)
+#if (defined(UMC_VA_DXVA) || defined(UMC_VA_LINUX)) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
     // Add a new Widevine buffer to decoding
     virtual UMC::Status AddSource(DecryptParametersWrapper* pDecryptParams) {pDecryptParams; return MFX_ERR_UNSUPPORTED;}
 #endif

@@ -1015,7 +1015,6 @@ mfxStatus FastCompositingDDI::ConvertExecute2BltParams( mfxExecuteParams *pExecu
     pBltParams->TargetFrame   = pExecuteParams->targetTimeStamp;
     pBltParams->pRenderTarget = (IDirect3DSurface9*)(size_t)(pExecuteParams->targetSurface.hdl.first);
     
-    // aya: FIXME rewritting
     // initialize region of interest
     RECT srcRect, outRect;
     srcRect.left = srcRect.top = outRect.left = outRect.top = 0;

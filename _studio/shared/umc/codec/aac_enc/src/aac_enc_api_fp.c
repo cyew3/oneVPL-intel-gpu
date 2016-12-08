@@ -1417,16 +1417,9 @@ AACStatus aacencGetFrame(Ipp16s *inPointer,
       if (ics[0].windows_sequence == EIGHT_SHORT_SEQUENCE) {
         Ipp32s g;
 
-        if (maxEn[0] > maxEn[1]) {
-          ics[1].num_window_groups = ics[0].num_window_groups;
-          for (g = 0; g < ics[0].num_window_groups; g++) {
-            ics[1].len_window_group[g] = ics[0].len_window_group[g];
-          }
-        } else {
-          ics[1].num_window_groups = ics[0].num_window_groups;
-          for (g = 0; g < ics[0].num_window_groups; g++) {
-            ics[1].len_window_group[g] = ics[0].len_window_group[g];
-          }
+        ics[1].num_window_groups = ics[0].num_window_groups;
+        for (g = 0; g < ics[0].num_window_groups; g++) {
+          ics[1].len_window_group[g] = ics[0].len_window_group[g];
         }
       }
     }

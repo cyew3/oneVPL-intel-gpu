@@ -11,13 +11,13 @@
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_H264_VIDEO_DECODER)
 
-#ifndef UMC_RESTRICTED_CODE_VA
-
 #include "umc_h264_widevine_supplier.h"
 
 #include "umc_va_dxva2_protected.h"
 #include "umc_va_linux_protected.h"
 #include "umc_h264_notify.h"
+
+#if defined (MFX_VA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
 
 namespace UMC
 {
@@ -64,7 +64,7 @@ void POCDecoderWidevine::DecodePictureOrderCount(const H264Slice *slice, Ipp32s 
         m_TopFieldPOC = sliceHeader->pic_order_cnt_lsb;
         m_BottomFieldPOC = sliceHeader->pic_order_cnt_lsb + sliceHeader->delta_pic_order_cnt_bottom;
 
-        if ((sliceHeader->delta_pic_order_cnt[0] == 0) && (sliceHeader->delta_pic_order_cnt[0] == 0))
+        if ((sliceHeader->delta_pic_order_cnt[0] == 0))
         {
             Ipp32u i;
             Ipp32u uAbsFrameNum;    // frame # relative to last IDR pic
@@ -601,7 +601,7 @@ Status WidevineTaskSupplier::ParseWidevineSPSPPS(DecryptParametersWrapper* pDecr
 
     //Ipp32u nal_unit_type = nalUnit->GetExData()->values[0];
     if (/*nal_unit_type == NAL_UT_SPS && */m_firstVideoParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE &&
-        isMVCProfile(m_firstVideoParams.mfx.CodecProfile) && m_va && (m_va->m_HWPlatform >= VA_HW_HSW))
+        isMVCProfile(m_firstVideoParams.mfx.CodecProfile) && m_va && (m_va->m_HWPlatform >= MFX_HW_HSW))
     {
         H264SeqParamSet * currSPS = m_Headers.m_SeqParams.GetCurrentHeader();
         if (currSPS && !currSPS->frame_mbs_only_flag)
@@ -1253,5 +1253,6 @@ Status WidevineTaskSupplier::CompleteFrame(H264DecoderFrame * pFrame, Ipp32s fie
 
 } // namespace UMC
 
-#endif // UMC_RESTRICTED_CODE_VA
+#endif // #if defined (MFX_VA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
+
 #endif // UMC_ENABLE_H264_VIDEO_DECODER

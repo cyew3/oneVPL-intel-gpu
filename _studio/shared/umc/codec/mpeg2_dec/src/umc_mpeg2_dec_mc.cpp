@@ -196,22 +196,22 @@ Ipp16s zero_memory[64*8] = {0};
   ippiCopy8x##H##_8u_C1R(ref_U_data + offset_c, PITCH_C, cur_U_data + offset_c, PITCH_C);   \
   ippiCopy8x##H##_8u_C1R(ref_V_data + offset_c, PITCH_C, cur_V_data + offset_c, PITCH_C);
 
-void MPEG2VideoDecoderSW::mc_frame_forward0_420(IppVideoContext *video, int task_num)
+void MPEG2VideoDecoderSW::mc_frame_forward0_420(VideoContext *video, int task_num)
 {
     MC_FORWARD0(8, video->Y_comp_pitch, video->U_comp_pitch, task_num);
 }
 
-void MPEG2VideoDecoderSW::mc_frame_forward0_422(IppVideoContext *video, int task_num)
+void MPEG2VideoDecoderSW::mc_frame_forward0_422(VideoContext *video, int task_num)
 {
     MC_FORWARD0(16, video->Y_comp_pitch, video->U_comp_pitch, task_num);
 }
 
-void MPEG2VideoDecoderSW::mc_field_forward0_420(IppVideoContext *video, int task_num)
+void MPEG2VideoDecoderSW::mc_field_forward0_420(VideoContext *video, int task_num)
 {
     MC_FORWARD0(8, 2 * video->Y_comp_pitch, 2 * video->U_comp_pitch, task_num);
 }
 
-void MPEG2VideoDecoderSW::mc_field_forward0_422(IppVideoContext *video, int task_num)
+void MPEG2VideoDecoderSW::mc_field_forward0_422(VideoContext *video, int task_num)
 {
     MC_FORWARD0(16, 2 * video->Y_comp_pitch, 2 * video->U_comp_pitch, task_num);
 }
@@ -284,18 +284,18 @@ void MPEG2VideoDecoderSW::mc_field_forward0_422(IppVideoContext *video, int task
   }                                                                                               \
   return UMC_OK
 
-Status MPEG2VideoDecoderSW::mc_frame_forward_420(IppVideoContext *video, int task_num)
+Status MPEG2VideoDecoderSW::mc_frame_forward_420(VideoContext *video, int task_num)
 {
   FUNC_MC_MBLOCK_420(FRW, COPY, CP, task_num);
 }
 
 
-Status MPEG2VideoDecoderSW::mc_frame_backward_420(IppVideoContext *video, int task_num)
+Status MPEG2VideoDecoderSW::mc_frame_backward_420(VideoContext *video, int task_num)
 {
   FUNC_MC_MBLOCK_420(BKW, COPY, CP, task_num);
 }
 
-Status MPEG2VideoDecoderSW::mc_frame_backward_add_420(IppVideoContext *video, int task_num)
+Status MPEG2VideoDecoderSW::mc_frame_backward_add_420(VideoContext *video, int task_num)
 {
   FUNC_MC_MBLOCK_420(BKW, AVE, AV, task_num);
 }
@@ -354,17 +354,17 @@ Status MPEG2VideoDecoderSW::mc_frame_backward_add_420(IppVideoContext *video, in
   }                                                                                                     \
   return UMC_OK
 
-Status MPEG2VideoDecoderSW::mc_frame_forward_422(IppVideoContext *video, int task_num)
+Status MPEG2VideoDecoderSW::mc_frame_forward_422(VideoContext *video, int task_num)
 {
   FUNC_MC_MBLOCK_422(FRW, COPY, CP, task_num);
 }
 
-Status MPEG2VideoDecoderSW::mc_frame_backward_422(IppVideoContext *video, int task_num)
+Status MPEG2VideoDecoderSW::mc_frame_backward_422(VideoContext *video, int task_num)
 {
   FUNC_MC_MBLOCK_422(BKW, COPY, CP, task_num);
 }
 
-Status MPEG2VideoDecoderSW::mc_frame_backward_add_422(IppVideoContext *video, int task_num)
+Status MPEG2VideoDecoderSW::mc_frame_backward_add_422(VideoContext *video, int task_num)
 {
   FUNC_MC_MBLOCK_422(BKW, AVE, AV, task_num);
 }
@@ -392,17 +392,17 @@ Status MPEG2VideoDecoderSW::mc_frame_backward_add_422(IppVideoContext *video, in
                                                                               \
   return UMC_OK
 
-Status MPEG2VideoDecoderSW::mc_fullpel_forward(IppVideoContext *video, int task_num)
+Status MPEG2VideoDecoderSW::mc_fullpel_forward(VideoContext *video, int task_num)
 {
   FUNC_MC_FULLPEL(FRW, COPY, CP, task_num);
 }
 
-Status MPEG2VideoDecoderSW::mc_fullpel_backward(IppVideoContext *video, int task_num)
+Status MPEG2VideoDecoderSW::mc_fullpel_backward(VideoContext *video, int task_num)
 {
   FUNC_MC_FULLPEL(BKW, COPY, CP, task_num);
 }
 
-Status MPEG2VideoDecoderSW::mc_fullpel_backward_add(IppVideoContext *video, int task_num)
+Status MPEG2VideoDecoderSW::mc_fullpel_backward_add(VideoContext *video, int task_num)
 {
   FUNC_MC_FULLPEL(BKW, AVE, AV, task_num);
 }
@@ -491,12 +491,12 @@ Status MPEG2VideoDecoderSW::mc_fullpel_backward_add(IppVideoContext *video, int 
   }                                                                                                 \
   return UMC_OK
 
-Status MPEG2VideoDecoderSW::mc_field_forward_420(IppVideoContext *video, int task_num)
+Status MPEG2VideoDecoderSW::mc_field_forward_420(VideoContext *video, int task_num)
 {
   FUNC_MC_FIELD_420(FRW, COPY, CP, task_num);
 }
 
-Status MPEG2VideoDecoderSW::mc_field_backward_420(IppVideoContext *video, int task_num)
+Status MPEG2VideoDecoderSW::mc_field_backward_420(VideoContext *video, int task_num)
 {
   //FUNC_MC_FIELD_420(BKW, COPY, CP);
   //  #define FUNC_MC_FIELD_420(DIR, METH, FLG)
@@ -581,7 +581,7 @@ Status MPEG2VideoDecoderSW::mc_field_backward_420(IppVideoContext *video, int ta
 
 }
 
-Status MPEG2VideoDecoderSW::mc_field_backward_add_420(IppVideoContext *video, int task_num)
+Status MPEG2VideoDecoderSW::mc_field_backward_add_420(VideoContext *video, int task_num)
 {
   FUNC_MC_FIELD_420(BKW, AVE, AV, task_num);
 }
@@ -666,22 +666,22 @@ Status MPEG2VideoDecoderSW::mc_field_backward_add_420(IppVideoContext *video, in
   }                                                                                                 \
   return UMC_OK
 
-Status MPEG2VideoDecoderSW::mc_field_forward_422(IppVideoContext *video, int task_num)
+Status MPEG2VideoDecoderSW::mc_field_forward_422(VideoContext *video, int task_num)
 {
   FUNC_MC_FIELD_422(FRW, COPY, CP, task_num);
 }
 
-Status MPEG2VideoDecoderSW::mc_field_backward_422(IppVideoContext *video, int task_num)
+Status MPEG2VideoDecoderSW::mc_field_backward_422(VideoContext *video, int task_num)
 {
   FUNC_MC_FIELD_422(BKW, COPY, CP, task_num);
 }
 
-Status MPEG2VideoDecoderSW::mc_field_backward_add_422(IppVideoContext *video, int task_num)
+Status MPEG2VideoDecoderSW::mc_field_backward_add_422(VideoContext *video, int task_num)
 {
   FUNC_MC_FIELD_422(BKW, AVE, AV, task_num);
 }
 
-Status MPEG2VideoDecoderSW::mc_mp2_420_skip(IppVideoContext *video, int task_num)
+Status MPEG2VideoDecoderSW::mc_mp2_420_skip(VideoContext *video, int task_num)
 {
   Ipp32s ref_index = (video->macroblock_motion_backward) ?
       frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].next_index : frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].prev_index;
@@ -748,7 +748,7 @@ Status MPEG2VideoDecoderSW::mc_mp2_420_skip(IppVideoContext *video, int task_num
   return UMC_OK;
 } //mc_mp2_420_skip
 
-Status MPEG2VideoDecoderSW::mc_mp2_422_skip(IppVideoContext *video, int task_num)
+Status MPEG2VideoDecoderSW::mc_mp2_422_skip(VideoContext *video, int task_num)
 {
   Ipp32s ref_index = (video->macroblock_motion_backward) ?
       frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].next_index : frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].prev_index;
@@ -816,7 +816,7 @@ Status MPEG2VideoDecoderSW::mc_mp2_422_skip(IppVideoContext *video, int task_num
   return UMC_OK;
 } //mc_mp2_422_skip
 
-Status MPEG2VideoDecoderSW::mc_mp2_420b_skip(IppVideoContext *video, int task_num)
+Status MPEG2VideoDecoderSW::mc_mp2_420b_skip(VideoContext *video, int task_num)
 {
   Ipp8u *ref_Y_data1 = frame_buffer.frame_p_c_n[frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].prev_index].Y_comp_data;
   Ipp8u *ref_U_data1 = frame_buffer.frame_p_c_n[frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].prev_index].U_comp_data;
@@ -898,7 +898,7 @@ Status MPEG2VideoDecoderSW::mc_mp2_420b_skip(IppVideoContext *video, int task_nu
   return UMC_OK;
 } //mc_mp2_420b_skip
 
-Status MPEG2VideoDecoderSW::mc_mp2_422b_skip(IppVideoContext *video, int task_num)
+Status MPEG2VideoDecoderSW::mc_mp2_422b_skip(VideoContext *video, int task_num)
 {
 
   Ipp8u *ref_Y_data1 = frame_buffer.frame_p_c_n[frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].prev_index].Y_comp_data;
@@ -981,7 +981,7 @@ Status MPEG2VideoDecoderSW::mc_mp2_422b_skip(IppVideoContext *video, int task_nu
   return UMC_OK;
 } //mc_mp2_422b_skip
 
-Status MPEG2VideoDecoderSW::mc_dualprime_frame_420(IppVideoContext *video, int task_num)
+Status MPEG2VideoDecoderSW::mc_dualprime_frame_420(VideoContext *video, int task_num)
 {
   Ipp32s pitch_l, pitch_c;
   Ipp8u *ref_Y_data, *ref_U_data, *ref_V_data;
@@ -1044,7 +1044,7 @@ Status MPEG2VideoDecoderSW::mc_dualprime_frame_420(IppVideoContext *video, int t
   return UMC_OK;
 } //mc_dualprime_frame
 
-Status MPEG2VideoDecoderSW::mc_dualprime_field_420(IppVideoContext *video, int task_num)
+Status MPEG2VideoDecoderSW::mc_dualprime_field_420(VideoContext *video, int task_num)
 {
   Ipp32s pitch_l, pitch_c;
   Ipp8u *ref_Y_data, *ref_U_data, *ref_V_data;
@@ -1108,7 +1108,7 @@ Status MPEG2VideoDecoderSW::mc_dualprime_field_420(IppVideoContext *video, int t
   return UMC_OK;
 } //mc_dualprime_field_420
 
-Status MPEG2VideoDecoderSW::mc_dualprime_frame_422(IppVideoContext *video, int task_num)
+Status MPEG2VideoDecoderSW::mc_dualprime_frame_422(VideoContext *video, int task_num)
 {
   Ipp32s pitch_l, pitch_c;
   Ipp8u *ref_Y_data, *ref_U_data, *ref_V_data;
@@ -1171,7 +1171,7 @@ Status MPEG2VideoDecoderSW::mc_dualprime_frame_422(IppVideoContext *video, int t
   return UMC_OK;
 } //mc_dualprime_frame_422
 
-Status MPEG2VideoDecoderSW::mc_dualprime_field_422(IppVideoContext *video, int task_num)
+Status MPEG2VideoDecoderSW::mc_dualprime_field_422(VideoContext *video, int task_num)
 {
   Ipp32s pitch_l, pitch_c;
   Ipp8u *ref_Y_data, *ref_U_data, *ref_V_data;

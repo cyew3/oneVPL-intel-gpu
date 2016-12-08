@@ -42,7 +42,7 @@ namespace MFX_HEVC_PP
 //    only 8-byte aligned, but PMOVZX does not require 16-byte alignment.
 
 //---------------------------------------------------------
-// aya: should be move in common place (aka: mfx_h265_optimization_defs.h)
+// should be move in common place (aka: mfx_h265_optimization_defs.h)
 // but common include file mfx_h265_optimization.h should be free from platform specific defs
 
 #if defined(_WIN32) || defined(_WIN64)

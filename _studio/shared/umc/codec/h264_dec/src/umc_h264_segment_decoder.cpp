@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -55,7 +55,6 @@ Status H264SegmentDecoder::Init(Ipp32s iNumber)
     // save ordinal number
     m_iNumber = iNumber;
 
-    // ADB
     m_pCoefficientsBuffer = (UMC::CoeffsCommon*)(new Ipp32s[COEFFICIENTS_BUFFER_SIZE + DEFAULT_ALIGN_VALUE]);
 
     return UMC_OK;

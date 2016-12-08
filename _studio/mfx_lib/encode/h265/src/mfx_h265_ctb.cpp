@@ -884,7 +884,6 @@ H265CUData* H265CU<PixType>::GetQpMinCuAbove( Ipp32u& aPartUnitIdx, Ipp32u currA
     return m_data;
 }
 
-
 template <class PixType>
 Ipp8s GetLastCodedQP(const H265CU<PixType>* cu, Ipp32s absPartIdx)
 {

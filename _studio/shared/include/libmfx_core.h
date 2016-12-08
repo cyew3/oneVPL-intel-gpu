@@ -60,7 +60,6 @@ public:
     virtual mfxStatus  UnlockBuffer(mfxMemId mid);
     virtual mfxStatus  FreeBuffer(mfxMemId mid);
 
-    virtual mfxStatus  CheckHandle();
     virtual mfxStatus  GetFrameHDL(mfxMemId mid, mfxHDL *handle, bool ExtendedSearch = true);
 
     virtual mfxStatus  AllocFrames(mfxFrameAllocRequest *request, 
@@ -114,15 +113,12 @@ public:
     virtual mfxU32 GetNumWorkingThreads(void) {return m_numThreadsAvailable;}
     virtual void INeedMoreThreadsInside(const void *pComponent);
 
-    virtual mfxStatus DoFastCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc);
     virtual mfxStatus DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc);
+    mfxStatus DoSWFastCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc, int copyFlag);
     virtual mfxStatus DoFastCopyWrapper(mfxFrameSurface1 *pDst, mfxU16 dstMemType, mfxFrameSurface1 *pSrc, mfxU16 srcMemType);
-
-    virtual bool IsFastCopyEnabled(void);
 
     virtual bool IsExternalFrameAllocator() const;
     virtual eMFXHWType   GetHWType() { return MFX_HW_UNKNOWN; }
-    //virtual mfxStatus Init(mfxVideoParam *par);
 
     virtual
     mfxStatus CopyFrame(mfxFrameSurface1 *dst, mfxFrameSurface1 *src);
@@ -133,7 +129,6 @@ public:
     virtual
     mfxStatus CopyFrameEx(mfxFrameSurface1 *pDst, mfxU16 dstMemType, mfxFrameSurface1 *pSrc, mfxU16 srcMemType) {return DoFastCopyWrapper(pDst, dstMemType, pSrc, srcMemType);}
 
-    // just a WA for a while
     virtual mfxStatus IsGuidSupported(const GUID guid, mfxVideoParam *par, bool isEncoder = false) {guid; par; isEncoder;  return MFX_ERR_NONE;};
 
     bool CheckOpaqueRequest(mfxFrameAllocRequest *request, mfxFrameSurface1 **pOpaqueSurface, mfxU32 NumOpaqueSurface, bool ExtendedSearch = true);
@@ -293,7 +288,6 @@ protected:
     s_ptr<mfxBaseWideFrameAllocator, true> m_pcAlloc;
 
     s_ptr<FastCopy, true> m_pFastCopy;
-    bool m_bFastCopy;
     bool m_bUseExtManager;
     UMC::Mutex m_guard;
 

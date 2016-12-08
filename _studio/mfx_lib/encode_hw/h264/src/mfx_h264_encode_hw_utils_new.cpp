@@ -653,10 +653,9 @@ namespace
     }
 
     inline mfxU16 GetMaxNumRefActiveBL1(const mfxU32& targetUsage, 
-                                        //const eMFXHWType& platform,
                                         const bool& isField)
     {
-        if (isField /*&& (platform >= MFX_HW_HSW && platform != MFX_HW_VLV) */)
+        if (isField)
         {
             mfxU16 const DEFAULT_BY_TU[] = { 0, 2, 2, 2, 2, 2, 1, 1 };
             return DEFAULT_BY_TU[targetUsage];
@@ -842,8 +841,8 @@ void MfxHwH264Encode::ModifyRefPicLists(
                 std::sort(list0.Begin(), list0.End(), RefPocIsGreater(dpb));
                 std::sort(list1.Begin(), list1.End(), RefPocIsLess(dpb));
 
-                if (video.calcParam.lyncMode)
-                { // cut lists to 1 element for lync
+                if (video.calcParam.tempScalabilityMode)
+                { // cut lists to 1 element for tempScalabilityMode
                     list0.Resize(IPP_MIN(list0.Size(), 1));
                     list1.Resize(IPP_MIN(list1.Size(), 1));
                 }
@@ -904,8 +903,8 @@ void MfxHwH264Encode::ModifyRefPicLists(
         initList0.Resize(list0.Size());
         initList1.Resize(list1.Size());
 
-        bool bNoRefListModOpt0 = (video.calcParam.lyncMode == 0) && video.calcParam.numTemporalLayer && RefListHasLongTerm(dpb, initList0); // ref list mod syntax optimization is prohibited for SVC + LTR
-        bool bNoRefListModOpt1 = (video.calcParam.lyncMode == 0) && video.calcParam.numTemporalLayer && RefListHasLongTerm(dpb, initList1); // ref list mod syntax optimization is prohibited for SVC + LTR
+        bool bNoRefListModOpt0 = (video.calcParam.tempScalabilityMode== 0) && video.calcParam.numTemporalLayer && RefListHasLongTerm(dpb, initList0); // ref list mod syntax optimization is prohibited for SVC + LTR
+        bool bNoRefListModOpt1 = (video.calcParam.tempScalabilityMode == 0) && video.calcParam.numTemporalLayer && RefListHasLongTerm(dpb, initList1); // ref list mod syntax optimization is prohibited for SVC + LTR
 
         mod0 = CreateRefListMod(dpb, initList0, list0, task.m_viewIdx, curPicNum, !bNoRefListModOpt0);
         mod1 = CreateRefListMod(dpb, initList1, list1, task.m_viewIdx, curPicNum, !bNoRefListModOpt1);
@@ -1126,8 +1125,7 @@ namespace
     void MfxHwH264Encode::MarkDecodedRefPictures(
         MfxVideoParam const & video,
         DdiTask &             task,
-        mfxU32                fid,
-        bool                  isSofiaMode)
+        mfxU32                fid)
     {
         // declare shorter names
         ArrayDpbFrame const &  initDpb  = task.m_dpb[fid];
@@ -1151,7 +1149,9 @@ namespace
             false == ValidateLtrForTemporalScalability(video, task))
             ctrl = 0; // requested changes in dpb conflict with temporal scalability. Ingore requested dpb changes
 
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
         mfxExtSpecialEncodingModes const * extSpeModes = GetExtBuffer(video);
+#endif
 
         if (type & MFX_FRAMETYPE_IDR)
         {
@@ -1162,8 +1162,11 @@ namespace
 
             marking.long_term_reference_flag = 0;
 
-            if (ctrl &&
-              extSpeModes->refDummyFramesForWiDi == 0)  // no explicit DBP modifications for WA WiDi mode
+            if (ctrl
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
+                && extSpeModes->refDummyFramesForWiDi == 0  // no explicit DBP modifications for WA WiDi mode
+#endif
+                )
             {
                 for (mfxU32 i = 0; i < 16 && ctrl->LongTermRefList[i].FrameOrder != static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN); i++)
                 {
@@ -1175,14 +1178,6 @@ namespace
                         break;
                     }
                 }
-            }
-
-            if (isSofiaMode && currFrameIsLongTerm == false && video.mfx.NumRefFrame > 1)
-            {
-                // SoFIA internally marks every IDR as LTR. MSDK can't control this case and should replicate this behavior
-                marking.long_term_reference_flag = 1;
-                currFrameIsLongTerm = true;
-                task.m_longTermFrameIdx = 0;
             }
 
             DpbFrame newDpbFrame;
@@ -1210,8 +1205,12 @@ namespace
 
             // check longterm list
             // when frameOrder is sent first time corresponsing 'short-term' reference is marked 'long-term'
-            if (ctrl &&
-              extSpeModes->refDummyFramesForWiDi == 0) // no explicit DBP modifications for WA WiDi mode
+            if (ctrl
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
+                && extSpeModes->refDummyFramesForWiDi == 0  // no explicit DBP modifications for WA WiDi mode
+#endif
+               )
+
             {
                 for (mfxU32 i = 0; i < 16 && ctrl->RejectedRefList[i].FrameOrder != static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN); i++)
                 {
@@ -1282,8 +1281,7 @@ namespace
                         // mark it as 'long-term'
 
                         mfxU8 longTermIdx;
-                        if (ctrl->ApplyLongTermIdx != 1 &&
-                            isSofiaMode == false) // SoFIA has only one LTR slot
+                        if (ctrl->ApplyLongTermIdx != 1)
                         {
                             // first make free space in dpb if it is full
                             if (currDpb.Size() == video.mfx.NumRefFrame)
@@ -1320,16 +1318,8 @@ namespace
                         }
                         else
                         {
-                            if (isSofiaMode)
-                            {
-                                // SoFIA has only one LTR slot, so MSDK will replace existing LTR with ltr_idx = 0 (if any)
-                                longTermIdx = 0;
-                            }
-                            else
-                            {
-                                // use LTR idx provided by application
-                                longTermIdx = (mfxU8)ctrl->LongTermRefList[i].LongTermIdx;
-                            }
+                            // use LTR idx provided by application
+                            longTermIdx = (mfxU8)ctrl->LongTermRefList[i].LongTermIdx;
 
                             // don't validate input, just perform quick check
                             assert(longTermIdx < video.mfx.NumRefFrame);
@@ -1433,7 +1423,7 @@ namespace
         mfxU32 refPicFlag = !!((task.m_type[0] | task.m_type[1]) & MFX_FRAMETYPE_REF);
 
         if (refPicFlag &&                                   // only ref frames occupy slot in dpb
-            video.calcParam.lyncMode == 0 &&                // no long term refs in lync-mode
+            video.calcParam.tempScalabilityMode == 0 &&     // no long term refs in temporal scalability
             numLayers > 1 && task.m_tidx + 1 != numLayers)  // no dpb commands for last-not-based temporal laeyr
         {
             // find oldest ref frame from the same temporal layer
@@ -1810,8 +1800,7 @@ BiFrameLocation MfxHwH264Encode::GetBiFrameLocation(
 void MfxHwH264Encode::ConfigureTask(
     DdiTask &             task,
     DdiTask const &       prevTask,
-    MfxVideoParam const & video,
-    bool const            isSofiaMode)
+    MfxVideoParam const & video)
 {
     mfxExtCodingOption const &      extOpt         = GetExtBufferRef(video);
     mfxExtCodingOption2 const &     extOpt2        = GetExtBufferRef(video);
@@ -1819,11 +1808,13 @@ void MfxHwH264Encode::ConfigureTask(
     mfxExtCodingOptionDDI const &   extDdi         = GetExtBufferRef(video);
     mfxExtSpsHeader const &         extSps         = GetExtBufferRef(video);
     mfxExtAvcTemporalLayers const & extTemp        = GetExtBufferRef(video);
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     mfxExtPAVPOption const &        extPavp        = GetExtBufferRef(video);
+    mfxExtSpecialEncodingModes const *extSpecModes = GetExtBuffer(video);
+#endif
     mfxExtEncoderROI const &        extRoi         = GetExtBufferRef(video);
     mfxExtEncoderROI const *        extRoiRuntime  = GetExtBuffer(task.m_ctrl);
     mfxExtCodingOption3 const *     extOpt3        = GetExtBuffer(video);
-    mfxExtSpecialEncodingModes const *extSpecModes = GetExtBuffer(video);
     mfxExtDirtyRect const *    extDirtyRect        = GetExtBuffer(video);
     mfxExtDirtyRect const *    extDirtyRectRuntime = GetExtBuffer(task.m_ctrl);
     mfxExtMoveRect const *     extMoveRect         = GetExtBuffer(video);
@@ -1869,8 +1860,8 @@ void MfxHwH264Encode::ConfigureTask(
     task.m_cpbRemoval[ffid] = 2 * (task.m_encOrder - prevBPSeiFrameEncOrder);
     task.m_cpbRemoval[sfid] = (insertBPSei) ? 1 : task.m_cpbRemoval[ffid] + 1;
 
-    if (video.calcParam.lyncMode)
-        task.m_tidx = CalcTemporalLayerIndex(video, task.m_frameOrder - task.m_frameOrderStartLyncStructure);
+    if (video.calcParam.tempScalabilityMode)
+        task.m_tidx = CalcTemporalLayerIndex(video, task.m_frameOrder - task.m_frameOrderStartTScalStructure);
     else
         task.m_tidx = CalcTemporalLayerIndex(video, task.m_frameOrder - task.m_frameOrderIdrInDisplayOrder);
     task.m_tid  = video.calcParam.tid[task.m_tidx];
@@ -1880,8 +1871,11 @@ void MfxHwH264Encode::ConfigureTask(
     
     if (task.m_ctrl.SkipFrame != 0 && SkipMode != MFX_SKIPFRAME_BRC_ONLY)
     {
-        task.m_ctrl.SkipFrame = (extOpt2.SkipFrame) ? (1 + (IsProtectionPavp(video.Protected) || IsProtectionHdcp(video.Protected)) ) : 0;
-
+        task.m_ctrl.SkipFrame = (extOpt2.SkipFrame) ? 1 : 0;
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
+        if (IsProtectionPavp(video.Protected) || IsProtectionHdcp(video.Protected))
+            task.m_ctrl.SkipFrame = (extOpt2.SkipFrame) ? 2 : 0;
+#endif
         if (video.mfx.GopRefDist > 1 && ((task.m_type.top & MFX_FRAMETYPE_REF) || (task.m_type.bot & MFX_FRAMETYPE_REF)))
         {
             task.m_ctrl.SkipFrame = 0;
@@ -1919,11 +1913,13 @@ void MfxHwH264Encode::ConfigureTask(
     task.m_insertPps[sfid] = task.m_insertSps[sfid] || IsOn(extOpt2.RepeatPPS);
     task.m_nalRefIdc[ffid] = task.m_reference[ffid];
     task.m_nalRefIdc[sfid] = task.m_reference[sfid];
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
     if (extSpecModes->refDummyFramesForWiDi &&
         task.m_ctrl.SkipFrame != 0 && SkipMode == MFX_SKIPFRAME_INSERT_DUMMY && task.SkipFlag())
     {
         task.m_nalRefIdc[ffid] = task.m_nalRefIdc[sfid] = 1;
     }
+#endif
 
 // process roi
     mfxExtEncoderROI const * pRoi = &extRoi;
@@ -2016,7 +2012,7 @@ void MfxHwH264Encode::ConfigureTask(
     task.m_numSlice[!ffid] = (task.m_type[!ffid] & MFX_FRAMETYPE_I) ? extOpt3->NumSliceI :
         (task.m_type[!ffid] & MFX_FRAMETYPE_P) ? extOpt3->NumSliceP : extOpt3->NumSliceB;
 
-    if (video.calcParam.lyncMode)
+    if (video.calcParam.tempScalabilityMode)
     {
         task.m_insertPps[ffid] = task.m_insertSps[ffid];
         task.m_insertPps[sfid] = task.m_insertSps[sfid];
@@ -2037,7 +2033,7 @@ void MfxHwH264Encode::ConfigureTask(
     UpdateDpbFrames(task, ffid, FRAME_NUM_MAX);
     InitRefPicList(task, ffid);
     ModifyRefPicLists(video, task, ffid);
-    MarkDecodedRefPictures(video, task, ffid, isSofiaMode);
+    MarkDecodedRefPictures(video, task, ffid);
 
     if (task.m_fieldPicFlag)
     {
@@ -2051,6 +2047,7 @@ void MfxHwH264Encode::ConfigureTask(
             task.m_dpbPostEncoding.Back().m_refPicFlag[sfid] = 1;
     }
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (IsProtectionPavp(video.Protected))
     {
         mfxAES128CipherCounter aesCounter = prevTask.m_aesCounter[prevsfid];
@@ -2063,6 +2060,7 @@ void MfxHwH264Encode::ConfigureTask(
             task.m_aesCounter[sfid] = aesCounter;
         }
     }
+#endif
 
     const mfxExtCodingOption2* extOpt2Cur = (extOpt2Runtime ? extOpt2Runtime : &extOpt2);
 
@@ -2203,22 +2201,19 @@ mfxStatus MfxHwH264Encode::CodeAsSkipFrame(     VideoCORE &            core,
     if (task.GetFrameType() & MFX_FRAMETYPE_I)
     {
         mfxFrameData curr = { 0 };
-        IppiSize roiSize = {video.mfx.FrameInfo.Width, video.mfx.FrameInfo.Height};
         curr.MemId = task.m_midRaw;
         FrameLocker lock1(&core, curr, task.m_midRaw);  
-        ippiSet_8u_C1R(0, curr.Y, curr.Pitch,roiSize);
+        mfxU32 size = curr.Pitch*video.mfx.FrameInfo.Height;
+        memset(curr.Y, 0, size);
 
         switch (video.mfx.FrameInfo.FourCC)
         {
             case MFX_FOURCC_NV12:
-                roiSize.height >>= 1;
-                ippiSet_8u_C1R(0, curr.UV, curr.Pitch,roiSize);
+                memset(curr.UV, 0, size >> 1);
                 break;
             case MFX_FOURCC_YV12:
-                roiSize.width >>= 1;
-                roiSize.height >>= 1;
-                ippiSet_8u_C1R(0, curr.U, curr.Pitch>>1,roiSize);
-                ippiSet_8u_C1R(0, curr.V, curr.Pitch>>1,roiSize);
+                memset(curr.U, 0, size >> 2);
+                memset(curr.V, 0, size >> 2);
                 break;
             default:
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -2414,6 +2409,7 @@ void MfxHwH264Encode::AnalyzeVmeData(DdiTaskIter begin, DdiTaskIter end, mfxU32 
         begin->m_vmeData->propCost += begin->m_vmeData->mb[i].propCost;
 }
 
+#ifndef MFX_FADE_DETECTION_FEATURE_DISABLE 
 namespace FadeDetectionHistLSE
 {
     mfxU16 GetSegments(
@@ -2739,6 +2735,8 @@ namespace FadeDetectionHistLSE
         }
     }
 };
+#endif // #ifndef MFX_FADE_DETECTION_FEATURE_DISABLE 
+
 
 void MfxHwH264Encode::CalcPredWeightTable(
     DdiTask & task,
@@ -2746,9 +2744,10 @@ void MfxHwH264Encode::CalcPredWeightTable(
     mfxU32 MaxNum_WeightedPredL1)
 {
     //MaxNum_WeightedPredL0 = MaxNum_WeightedPredL1 = 1;
-
+#ifndef MFX_FADE_DETECTION_FEATURE_DISABLE
     mfxU32* curHist = (mfxU32*)task.m_cmHistSys;
     mfxU32* refHist = 0;
+#endif
     mfxU32 MaxWPLX[2] = { MaxNum_WeightedPredL0, MaxNum_WeightedPredL1 };
 
     //if (curHist)
@@ -2768,6 +2767,7 @@ void MfxHwH264Encode::CalcPredWeightTable(
 
         //fprintf(stderr, "FO: %04d POC %04d:\n", task.m_frameOrder, task.GetPoc()[fid]); fflush(stderr);
 
+#ifndef MFX_FADE_DETECTION_FEATURE_DISABLE
         for (mfxU32 l = 0; l < 2; l++)
         {
             Pair<ArrayU8x33> const & ListX = l ? task.m_list1 : task.m_list0;
@@ -2795,6 +2795,7 @@ void MfxHwH264Encode::CalcPredWeightTable(
                 fade &= !!task.m_pwt[fid].LumaWeightFlag[l][i];
             }
         }
+#endif
 
         if (!fade)
         {

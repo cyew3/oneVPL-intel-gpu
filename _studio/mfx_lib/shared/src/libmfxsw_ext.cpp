@@ -5,12 +5,11 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include <mfxaudio.h>
 #include <mfx_session.h>
-#include <mfx_check_hardware_support.h>
 #include <mfx_trace.h>
 
 #include <ippcore.h>

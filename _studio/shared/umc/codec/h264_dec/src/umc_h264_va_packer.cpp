@@ -11,8 +11,6 @@
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_H264_VIDEO_DECODER)
 
-#ifndef UMC_RESTRICTED_CODE_VA
-
 #include "umc_h264_va_packer.h"
 #include "umc_h264_task_supplier.h"
 #include "huc_based_drm_common.h"
@@ -74,21 +72,23 @@ Packer * Packer::CreatePacker(VideoAccelerator * va, TaskSupplier* supplier)
     va;
     supplier;
     Packer * packer = 0;
-#if defined(UMC_VA_DXVA) || defined (UMC_VA_LINUX)
-#ifdef UMC_VA_DXVA
+#if defined(UMC_VA_DXVA)
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
     if (va->GetProtectedVA() && IS_PROTECTION_WIDEVINE(va->GetProtectedVA()->GetProtected()))
         packer = new PackerDXVA2_Widevine(va, supplier);
     else
+#endif
         packer = new PackerDXVA2(va, supplier);
-#else
+#elif defined (UMC_VA_LINUX)
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
     if (va->GetProtectedVA() && IS_PROTECTION_WIDEVINE(va->GetProtectedVA()->GetProtected()))
         packer = new PackerVA_Widevine(va, supplier);
     else if (va->GetProtectedVA())
         packer = new PackerVA_PAVP(va, supplier);
     else
+#endif
         packer = new PackerVA(va, supplier);
-#endif // UMC_VA_DXVA
-#endif // UMC_VA_DXVA || UMC_VA_LINUX
+#endif // UMC_VA_LINUX
 
     return packer;
 }
@@ -180,6 +180,7 @@ void PackerDXVA2::PackAU(H264DecoderFrameInfo * sliceInfo, Ipp32s first_slice, I
         count_all -= partial_count;
     }
 
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
     if (m_va->GetProtectedVA())
     {
         mfxBitstream * bs = m_va->GetProtectedVA()->GetBitstream();
@@ -190,6 +191,7 @@ void PackerDXVA2::PackAU(H264DecoderFrameInfo * sliceInfo, Ipp32s first_slice, I
             m_va->GetProtectedVA()->MoveBSCurrentEncrypt(count);
         }
     }
+#endif
 }
 
 void PackerDXVA2::PackAU(const H264DecoderFrame *pFrame, Ipp32s field)
@@ -202,6 +204,7 @@ void PackerDXVA2::PackAU(const H264DecoderFrame *pFrame, Ipp32s field)
 
     Ipp32s first_slice = field ? pFrame->GetAU(0)->GetSliceCount() : 0;
 
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
     if (m_va && m_va->GetProtectedVA())
     {
         if (sliceInfo->m_pFrame->m_viewId == m_supplier->GetBaseViewId() && !field)
@@ -214,6 +217,7 @@ void PackerDXVA2::PackAU(const H264DecoderFrame *pFrame, Ipp32s field)
             first_slice = m_va->GetProtectedVA()->GetBSCurrentEncrypt();
         }
     }
+#endif
 
     PackAU(sliceInfo, first_slice, count_all);
 }
@@ -640,7 +644,7 @@ void PackerDXVA2::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * p
     pPicParams_H264->MbsConsecutiveFlag = (USHORT)(pPicParamSet->num_slice_groups > 1 ? 0 : 1);
     pPicParams_H264->frame_mbs_only_flag = pSeqParamSet->frame_mbs_only_flag;
     pPicParams_H264->transform_8x8_mode_flag = pPicParamSet->transform_8x8_mode_flag;
-    pPicParams_H264->MinLumaBipredSize8x8Flag = (m_va->m_HWPlatform == VA_HW_LAKE) ? 1 : pSeqParamSet->level_idc > 30 ? 1 : 0;
+    pPicParams_H264->MinLumaBipredSize8x8Flag = pSeqParamSet->level_idc > 30 ? 1 : 0;
 
     pPicParams_H264->IntraPicFlag = pSliceInfo->IsIntraAU(); //1 ???
 
@@ -648,11 +652,6 @@ void PackerDXVA2::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * p
     pPicParams_H264->bit_depth_chroma_minus8 = (UCHAR)(pSeqParamSet->bit_depth_chroma - 8);
 
     pPicParams_H264->StatusReportFeedbackNumber = m_statusReportFeedbackCounter;
-
-    if (m_va->m_HWPlatform == VA_HW_LAKE)
-    {
-        pPicParams_H264->Reserved16Bits = 0x534c;
-    }
 
     //create reference picture list
     for (Ipp32s i = 0; i < 16; i++)
@@ -765,8 +764,6 @@ void PackerDXVA2::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * p
 
             if (!reference)
             {
-                if (m_va->m_HWPlatform == VA_HW_LAKE)
-                    j++;
                 continue;
             }
 
@@ -828,6 +825,7 @@ void PackerDXVA2::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * p
     }*/
 }
 
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
 void PackerDXVA2::SendPAVPStructure(Ipp32s numSlicesOfPrevField, H264Slice *pSlice)
 {
     mfxBitstream * bs = m_va->GetProtectedVA()->GetBitstream();
@@ -910,47 +908,25 @@ void PackerDXVA2::SendPAVPStructure(Ipp32s numSlicesOfPrevField, H264Slice *pSli
     extensionData.pPrivateOutputData = &extensionOutput;
     extensionData.PrivateOutputDataSize = sizeof(extensionOutput);
 
-    if (m_va->m_HWPlatform == VA_HW_LAKE)
+    DXVA_Intel_Pavp_Protocol2  extensionInput = {0};
+    extensionInput.EncryptProtocolHeader.dwFunction = 0xffff0001;
+    if(encryptedData)
     {
-        DXVA_Intel_Pavp_Protocol  extensionInput = {0};
-        extensionInput.EncryptProtocolHeader.dwFunction = 0xffff0001;
-        if(encryptedData)
-        {
-            extensionInput.EncryptProtocolHeader.guidEncryptProtocol = m_va->GetProtectedVA()->GetEncryptionGUID();
-            extensionInput.dwBufferSize = encryptedBufferSize;
-            extensionInput.dwAesCounter = LITTLE_ENDIAN_SWAP32((DWORD)(encryptedData->CipherCounter.Count >> 32));
-        }
-        else
-        {
-            extensionInput.EncryptProtocolHeader.guidEncryptProtocol = DXVA_NoEncrypt;
-        }
-
-        extensionData.pPrivateInputData = &extensionInput;
-        extensionData.PrivateInputDataSize = sizeof(extensionInput);
-        hr = m_va->ExecuteExtensionBuffer(&extensionData);
+        extensionInput.EncryptProtocolHeader.guidEncryptProtocol = m_va->GetProtectedVA()->GetEncryptionGUID();
+        extensionInput.dwBufferSize = encryptedBufferSize;
+        MFX_INTERNAL_CPY(extensionInput.dwAesCounter, &encryptedData->CipherCounter, sizeof(encryptedData->CipherCounter));
     }
     else
     {
-        DXVA_Intel_Pavp_Protocol2  extensionInput = {0};
-        extensionInput.EncryptProtocolHeader.dwFunction = 0xffff0001;
-        if(encryptedData)
-        {
-            extensionInput.EncryptProtocolHeader.guidEncryptProtocol = m_va->GetProtectedVA()->GetEncryptionGUID();
-            extensionInput.dwBufferSize = encryptedBufferSize;
-            MFX_INTERNAL_CPY(extensionInput.dwAesCounter, &encryptedData->CipherCounter, sizeof(encryptedData->CipherCounter));
-        }
-        else
-        {
-            extensionInput.EncryptProtocolHeader.guidEncryptProtocol = DXVA_NoEncrypt;
-        }
-
-        extensionInput.PavpEncryptionMode.eEncryptionType = (PAVP_ENCRYPTION_TYPE) m_va->GetProtectedVA()->GetEncryptionMode();
-        extensionInput.PavpEncryptionMode.eCounterMode = (PAVP_COUNTER_TYPE) m_va->GetProtectedVA()->GetCounterMode();
-
-        extensionData.pPrivateInputData = &extensionInput;
-        extensionData.PrivateInputDataSize = sizeof(extensionInput);
-        hr = m_va->ExecuteExtensionBuffer(&extensionData);
+        extensionInput.EncryptProtocolHeader.guidEncryptProtocol = DXVA_NoEncrypt;
     }
+
+    extensionInput.PavpEncryptionMode.eEncryptionType = (PAVP_ENCRYPTION_TYPE) m_va->GetProtectedVA()->GetEncryptionMode();
+    extensionInput.PavpEncryptionMode.eCounterMode = (PAVP_COUNTER_TYPE) m_va->GetProtectedVA()->GetCounterMode();
+
+    extensionData.pPrivateInputData = &extensionInput;
+    extensionData.PrivateInputDataSize = sizeof(extensionInput);
+    hr = m_va->ExecuteExtensionBuffer(&extensionData);
 
     if (FAILED(hr) ||
         (encryptedData && extensionOutput.guidEncryptProtocol != m_va->GetProtectedVA()->GetEncryptionGUID()) ||
@@ -1058,6 +1034,7 @@ void PackerDXVA2::CheckData()
         temp = temp->Next;
     }
 }
+#endif // #ifndef MFX_PROTECTED_FEATURE_DISABLE
 
 Ipp32s PackerDXVA2::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s chopping, Ipp32s numSlicesOfPrevField)
 {
@@ -1163,9 +1140,11 @@ Ipp32s PackerDXVA2::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s c
     if (!sliceParams->wBadSliceChopping)
         NalUnitSize += sizeof(start_code_prefix);
 
+    Ipp32u alignedSize = NalUnitSize;
+
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
     mfxBitstream * bs = 0;
     mfxEncryptedData * encryptedData = 0;
-
     mfxU16 prot = 0;
     if (m_va->GetProtectedVA())
     {
@@ -1192,17 +1171,15 @@ Ipp32s PackerDXVA2::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s c
         {
             SendPAVPStructure(numSlicesOfPrevField, pSlice);
         }
-    }
 
-    Ipp32u alignedSize = 0;
-    if (NULL != encryptedData)
-    {
-        alignedSize = encryptedData->DataLength + encryptedData->DataOffset;
-        if(alignedSize & 0xf)
-            alignedSize = alignedSize+(0x10 - (alignedSize & 0xf));
+        if (NULL != encryptedData)
+        {
+            alignedSize = encryptedData->DataLength + encryptedData->DataOffset;
+            if(alignedSize & 0xf)
+                alignedSize = alignedSize+(0x10 - (alignedSize & 0xf));
+        }
     }
-    else
-        alignedSize = NalUnitSize;
+#endif // #ifndef MFX_PROTECTED_FEATURE_DISABLE
 
     UMCVACompBuffer* CompBuf;
     Ipp8u *pDXVA_BitStreamBuffer = (Ipp8u*)m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &CompBuf);
@@ -1228,7 +1205,9 @@ Ipp32s PackerDXVA2::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s c
     sliceParams->BSNALunitDataLocation = CompBuf->GetDataSize();
     pDXVA_BitStreamBuffer += sliceParams->BSNALunitDataLocation;
 
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
     Ipp32u diff = 0;
+
     if(encryptedData)
     {
         if(!sliceNum)
@@ -1239,10 +1218,12 @@ Ipp32s PackerDXVA2::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s c
         CompBuf->SetDataSize(sliceParams->BSNALunitDataLocation + (UINT)(alignedSize - diff));
     }
     else
+#endif
     {
         CompBuf->SetDataSize(sliceParams->BSNALunitDataLocation + NalUnitSize);
     }
 
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
     if (encryptedData)
     {
         PAVP_ENCRYPTION_TYPE encrType=(PAVP_ENCRYPTION_TYPE) m_va->GetProtectedVA()->GetEncryptionMode();
@@ -1287,12 +1268,15 @@ Ipp32s PackerDXVA2::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s c
             CompBuf->SetPVPState(NULL, 0);
     }
     else
+#endif
     {
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
         if (m_va->GetProtectedVA())
         {
             if (IS_PROTECTION_GPUCP_ANY(prot))
                 CompBuf->SetPVPState(NULL, 0);
         }
+#endif
 
         if (sliceParams->wBadSliceChopping < 2)
         {
@@ -1394,7 +1378,7 @@ Ipp32s PackerDXVA2::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s c
                     m_picParams->FrameNumList[j] == frameNum)
                 {
                     isFound = true;
-                    sliceParams->RefPicList[0][i].Index7Bits = (m_va->m_HWPlatform == VA_HW_LAKE) ? idx.Index7Bits : (UCHAR)j;
+                    sliceParams->RefPicList[0][i].Index7Bits = (UCHAR)j;
                     sliceParams->RefPicList[0][i].AssociatedFlag = pFields0[i].field;
                     break;
                 }
@@ -1416,7 +1400,7 @@ Ipp32s PackerDXVA2::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s c
                     m_picParams->FrameNumList[j] == frameNum)
                 {
                     isFound = true;
-                    sliceParams->RefPicList[1][i].Index7Bits = (m_va->m_HWPlatform == VA_HW_LAKE) ? idx.Index7Bits : (UCHAR)j;
+                    sliceParams->RefPicList[1][i].Index7Bits = (UCHAR)j;
                     sliceParams->RefPicList[1][i].AssociatedFlag = pFields1[i].field;
                     break;
                 }
@@ -1550,52 +1534,14 @@ void PackerDXVA2_Widevine::PackAU(H264DecoderFrameInfo * sliceInfo, Ipp32s first
     if (!m_va || !count_all)
         return;
 
-    //Ipp32u sliceStructSize = m_va->IsLongSliceControl() ? sizeof(DXVA_Slice_H264_Long) : sizeof(DXVA_Slice_H264_Short);
-    //Ipp32s numSlicesOfPrevField = first_slice;
-
     first_slice = 0;
     H264Slice* slice = sliceInfo->GetSlice(first_slice);
-
-    //const H264ScalingPicParams * scaling = &slice->GetPicParam()->scaling[NAL_UT_CODED_SLICE_EXTENSION == slice->GetSliceHeader()->nal_unit_type ? 1 : 0];
-    //PackQmatrix(scaling);
-
-    //Ipp32s chopping = CHOPPING_NONE;
 
     for ( ; count_all; )
     {
         PackPicParams(sliceInfo, slice);
 
         Ipp32u partial_count = count_all;
-
-        //UMCVACompBuffer* CompBuf;
-        //m_va->GetCompBuffer(DXVA_SLICE_CONTROL_BUFFER, &CompBuf);
-
-        //if (CompBuf->GetBufferSize() / sliceStructSize < partial_count)
-        //    partial_count = CompBuf->GetBufferSize() / sliceStructSize;
-
-        //for (Ipp32u i = 0; i < partial_count; i++)
-        //{
-        //    // put slice header
-        //    H264Slice *pSlice = sliceInfo->GetSlice(first_slice + i);
-        //    chopping = PackSliceParams(pSlice, i, chopping, numSlicesOfPrevField);
-        //    if (chopping != CHOPPING_NONE)
-        //    {
-        //        partial_count = i;
-        //        break;
-        //    }
-        //}
-
-        //Ipp32u passedSliceNum = chopping == CHOPPING_SPLIT_SLICE_DATA ? partial_count + 1 : partial_count;
-        //CompBuf->FirstMb = 0;
-        //CompBuf->NumOfMB = passedSliceNum;
-        //CompBuf->SetDataSize(passedSliceNum * sliceStructSize);
-
-        //Ipp8u *pDXVA_BitStreamBuffer = (Ipp8u*)m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &CompBuf);
-        //Ipp32s AlignedNalUnitSize = align_value<Ipp32s>(CompBuf->GetDataSize(), 128);
-        //pDXVA_BitStreamBuffer += CompBuf->GetDataSize();
-        //memset(pDXVA_BitStreamBuffer, 0, AlignedNalUnitSize - CompBuf->GetDataSize());
-        //CompBuf->SetDataSize(AlignedNalUnitSize);
-        //CompBuf->NumOfMB = passedSliceNum;
 
         Status sts = m_va->Execute();
         if (sts != UMC_OK)
@@ -1607,6 +1553,7 @@ void PackerDXVA2_Widevine::PackAU(H264DecoderFrameInfo * sliceInfo, Ipp32s first
         count_all -= partial_count;
     }
 
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
     if (m_va->GetProtectedVA())
     {
         mfxBitstream * bs = m_va->GetProtectedVA()->GetBitstream();
@@ -1617,6 +1564,7 @@ void PackerDXVA2_Widevine::PackAU(H264DecoderFrameInfo * sliceInfo, Ipp32s first
             m_va->GetProtectedVA()->MoveBSCurrentEncrypt(count);
         }
     }
+#endif
 }
 
 void PackerDXVA2_Widevine::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice)
@@ -1644,72 +1592,17 @@ void PackerDXVA2_Widevine::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264
 void PackerDXVA2_Widevine::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice, DXVA_PicParams_H264* pPicParams_H264)
 {
     const H264SliceHeader *pSliceHeader = pSlice->GetSliceHeader();
-    //const H264SeqParamSet *pSeqParamSet = pSlice->GetSeqParam();
-    //const H264PicParamSet *pPicParamSet = pSlice->GetPicParam();
 
     const H264DecoderFrame *pCurrentFrame = pSliceInfo->m_pFrame;
 
     m_picParams = pPicParams_H264;
 
-    //DXVA_Intel_PicParams_MVC* picParamsIntelMVC = 0;
-    //DXVA_PicParams_H264_MVC * picParamsMSMVC = 0;
-    //if (m_va->IsMVCSupport())
-    //{
-    //    if ((m_va->m_Profile & VA_PROFILE) == VA_PROFILE_MVC) // intel MVC profile
-    //    {
-    //        UMCVACompBuffer *picMVCParamBuf;
-    //        picParamsIntelMVC = (DXVA_Intel_PicParams_MVC*)m_va->GetCompBuffer(DXVA_MVCPictureParametersExtBufferType, &picMVCParamBuf);
-
-    //        if (!picParamsIntelMVC)
-    //            throw h264_exception(UMC_ERR_FAILED);
-
-    //        memset(picParamsIntelMVC, 0, sizeof(DXVA_Intel_PicParams_MVC));
-    //        PackPicParamsMVC(pSliceInfo, picParamsIntelMVC);
-    //        picMVCParamBuf->SetDataSize(sizeof(DXVA_Intel_PicParams_MVC));
-    //    }
-    //    else
-    //    {
-    //        picParamsMSMVC = (DXVA_PicParams_H264_MVC*)pPicParams_H264;
-
-    //        if (!picParamsMSMVC)
-    //            throw h264_exception(UMC_ERR_FAILED);
-
-    //        memset(picParamsMSMVC, 0, sizeof(DXVA_PicParams_H264_MVC));
-    //        PackPicParamsMVC(pSliceInfo, picParamsMSMVC);
-    //    }
-    //}
-
     //packing
-    //pPicParams_H264->wFrameWidthInMbsMinus1 = (USHORT)(pSeqParamSet->frame_width_in_mbs - 1);
-    //pPicParams_H264->wFrameHeightInMbsMinus1 = (USHORT)(pSeqParamSet->frame_height_in_mbs - 1);
     pPicParams_H264->CurrPic.Index7Bits = (UCHAR)pCurrentFrame->m_index;
     pPicParams_H264->CurrPic.AssociatedFlag = pSliceHeader->bottom_field_flag;
-    //pPicParams_H264->num_ref_frames = (UCHAR)pSeqParamSet->num_ref_frames;
-    //pPicParams_H264->field_pic_flag = pSliceHeader->field_pic_flag;
-    //pPicParams_H264->MbaffFrameFlag = pSliceHeader->MbaffFrameFlag;
-    //pPicParams_H264->residual_colour_transform_flag = pSeqParamSet->residual_colour_transform_flag;
-    //pPicParams_H264->sp_for_switch_flag  = pSliceHeader->sp_for_switch_flag;
-    //pPicParams_H264->chroma_format_idc = pSeqParamSet->chroma_format_idc;
-    //pPicParams_H264->RefPicFlag = (USHORT)((pSliceHeader->nal_ref_idc == 0) ? 0 : 1);
-    //pPicParams_H264->constrained_intra_pred_flag = pPicParamSet->constrained_intra_pred_flag;
-    //pPicParams_H264->weighted_pred_flag = pPicParamSet->weighted_pred_flag;
-    //pPicParams_H264->weighted_bipred_idc = pPicParamSet->weighted_bipred_idc;
-    //pPicParams_H264->MbsConsecutiveFlag = (USHORT)(pPicParamSet->num_slice_groups > 1 ? 0 : 1);
-    //pPicParams_H264->frame_mbs_only_flag = pSeqParamSet->frame_mbs_only_flag;
-    //pPicParams_H264->transform_8x8_mode_flag = pPicParamSet->transform_8x8_mode_flag;
-    //pPicParams_H264->MinLumaBipredSize8x8Flag = (m_va->m_HWPlatform == VA_HW_LAKE) ? 1 : pSeqParamSet->level_idc > 30 ? 1 : 0;
-
-    //pPicParams_H264->IntraPicFlag = pSliceInfo->IsIntraAU(); //1 ???
-
-    //pPicParams_H264->bit_depth_luma_minus8 = (UCHAR)(pSeqParamSet->bit_depth_luma - 8);
-    //pPicParams_H264->bit_depth_chroma_minus8 = (UCHAR)(pSeqParamSet->bit_depth_chroma - 8);
 
     pPicParams_H264->StatusReportFeedbackNumber = m_statusReportFeedbackCounter;
 
-    //if (m_va->m_HWPlatform == VA_HW_LAKE)
-    //{
-    //    pPicParams_H264->Reserved16Bits = 0x534c;
-    //}
 
     pPicParams_H264->Reserved16Bits = pSlice->m_WidevineStatusReportNumber;
 
@@ -1731,39 +1624,12 @@ void PackerDXVA2_Widevine::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264
         pPicParams_H264->CurrFieldOrderCnt[1] = pCurrentFrame->m_PicOrderCnt[pCurrentFrame->GetNumberByParity(1)];
     }
 
-    //pPicParams_H264->pic_init_qs_minus26 = (CHAR)(pPicParamSet->pic_init_qs - 26);
-    //pPicParams_H264->chroma_qp_index_offset = pPicParamSet->chroma_qp_index_offset[0];
-    //pPicParams_H264->second_chroma_qp_index_offset = pPicParamSet->chroma_qp_index_offset[1];
-
     //1 VLD
     if (!(m_va->m_Profile & VA_VLD))
         return;
 
-    //pPicParams_H264->ContinuationFlag = 1;
-    //pPicParams_H264->pic_init_qp_minus26 = (CHAR)(pPicParamSet->pic_init_qp - 26);
-    //pPicParams_H264->num_ref_idx_l0_active_minus1 = (UCHAR)(pPicParamSet->num_ref_idx_l0_active-1);
-    //pPicParams_H264->num_ref_idx_l1_active_minus1 = (UCHAR)(pPicParamSet->num_ref_idx_l1_active-1);
 
     pPicParams_H264->NonExistingFrameFlags = 0;
-    //pPicParams_H264->frame_num = (USHORT)pSliceHeader->frame_num;
-    //pPicParams_H264->log2_max_frame_num_minus4 = (UCHAR)(pSeqParamSet->log2_max_frame_num - 4);
-    //pPicParams_H264->pic_order_cnt_type = pSeqParamSet->pic_order_cnt_type;
-    //pPicParams_H264->log2_max_pic_order_cnt_lsb_minus4 = (UCHAR)(pSeqParamSet->log2_max_pic_order_cnt_lsb - 4);
-    //pPicParams_H264->delta_pic_order_always_zero_flag = pSeqParamSet->delta_pic_order_always_zero_flag;
-    //pPicParams_H264->direct_8x8_inference_flag = pSeqParamSet->direct_8x8_inference_flag;
-    //pPicParams_H264->entropy_coding_mode_flag = pPicParamSet->entropy_coding_mode;
-    //pPicParams_H264->pic_order_present_flag = pPicParamSet->bottom_field_pic_order_in_frame_present_flag;
-    //pPicParams_H264->num_slice_groups_minus1 = (UCHAR)(pPicParamSet->num_slice_groups - 1);
-    //pPicParams_H264->slice_group_map_type = pPicParamSet->SliceGroupInfo.slice_group_map_type;
-    //pPicParams_H264->deblocking_filter_control_present_flag = pPicParamSet->deblocking_filter_variables_present_flag;
-    //pPicParams_H264->redundant_pic_cnt_present_flag = pPicParamSet->redundant_pic_cnt_present_flag;
-    //pPicParams_H264->slice_group_change_rate_minus1 = (USHORT)(pPicParamSet->SliceGroupInfo.t2.slice_group_change_rate ?
-    //    pPicParamSet->SliceGroupInfo.t2.slice_group_change_rate - 1 : 0);
-
-    //if (pCurrentFrame->isInterViewRef(pPicParams_H264->field_pic_flag ? pCurrentFrame->GetNumberByParity(pSliceHeader->bottom_field_flag) : 0) && !pPicParams_H264->RefPicFlag)
-    //    pPicParams_H264->RefPicFlag = 1;
-
-    //PackSliceGroups(pPicParams_H264, const_cast<H264DecoderFrame *>(pCurrentFrame));
 
     Ipp32s j = 0;
 
@@ -1777,11 +1643,6 @@ void PackerDXVA2_Widevine::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264
         Ipp32s dpbSize = pDPBList->GetDPBSize();
 
         Ipp32s start = j;
-
-        /*if (m_va->IsMVCSupport() && view.viewId != pSliceHeader->nal_ext.mvc.view_id && picParamsMSMVC)
-        {
-            continue;
-        }*/
 
         if (view.viewId == pSliceHeader->nal_ext.mvc.view_id)
             currViewVisited = true;
@@ -1824,17 +1685,10 @@ void PackerDXVA2_Widevine::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264
 
             if (!reference)
             {
-                if (m_va->m_HWPlatform == VA_HW_LAKE)
-                    j++;
                 continue;
             }
 
             AddReferenceFrame(pPicParams_H264, j, pFrm, reference);
-            //if (picParamsIntelMVC)
-            //    picParamsIntelMVC->ViewIDList[j] = (USHORT)pFrm->m_viewId;
-
-            //if (picParamsMSMVC)
-            //    picParamsMSMVC->ViewIDList[j] = (USHORT)pFrm->m_viewId;
 
             if (pFrm == pCurrentFrame && pCurrentFrame->GetAU(0) != pSliceInfo)
             {
@@ -1850,41 +1704,6 @@ void PackerDXVA2_Widevine::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264
         }
     }
 
-    /*if (m_va->IsMVCSupport() && pSliceHeader->nal_ext.mvc.view_id && picParamsMSMVC)
-    {
-        Ipp32u VOIdx = GetVOIdx(pSlice->m_pSeqParamSetMvcEx, pSliceHeader->nal_ext.mvc.view_id);
-        const H264ViewRefInfo &refInfo = pSlice->m_pSeqParamSetMvcEx->viewInfo[VOIdx];
-
-        Ipp32s numInterViewRefsL0 = pSliceHeader->nal_ext.mvc.anchor_pic_flag ? refInfo.num_anchor_refs_lx[0] : refInfo.num_non_anchor_refs_lx[0];
-        Ipp32s numInterViewRefsL1 = pSliceHeader->nal_ext.mvc.anchor_pic_flag ? refInfo.num_anchor_refs_lx[1] : refInfo.num_non_anchor_refs_lx[1];
-
-        for (Ipp32s i = 0; i < numInterViewRefsL0 + numInterViewRefsL1; i++)
-        {
-            Ipp32s listNum = (i >= numInterViewRefsL0) ?  1 : 0;
-            Ipp32s refNum = listNum ? (i - numInterViewRefsL0) : i;
-
-            ViewItem * view = m_supplier->GetView(pSliceHeader->nal_ext.mvc.anchor_pic_flag ? refInfo.anchor_refs_lx[listNum][refNum] : refInfo.non_anchor_refs_lx[listNum][refNum]);
-
-            if (!view)
-                continue;
-
-            H264DecoderFrame * pFrm = view->GetDPBList(0)->findInterViewRef(pCurrentFrame->m_auIndex, pSliceHeader->bottom_field_flag);
-
-            if (!pFrm)
-                continue;
-
-            Ipp32s reference = INTERVIEW_TERM_REFERENCE;
-            AddReferenceFrame(pPicParams_H264, j, pFrm, reference);
-
-            if (picParamsIntelMVC)
-                picParamsIntelMVC->ViewIDList[j] = (USHORT)pFrm->m_viewId;
-
-            if (picParamsMSMVC)
-                picParamsMSMVC->ViewIDList[j] = (USHORT)pFrm->m_viewId;
-
-            j++;
-        }
-    }*/
 }
 
 #endif // UMC_VA_DXVA
@@ -2145,8 +1964,6 @@ void PackerVA::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSli
 
             if (!reference)
             {
-                if (m_va->m_HWPlatform == VA_HW_LAKE)
-                    j++;
                 continue;
             }
 
@@ -2476,6 +2293,7 @@ Ipp32s PackerVA::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s chop
     return partial_data;
 }
 
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
 void PackerVA::PackProcessingInfo(H264DecoderFrameInfo * sliceInfo)
 {
     VideoProcessingVA *vpVA = m_va->GetVideoProcessingVA();
@@ -2493,6 +2311,7 @@ void PackerVA::PackProcessingInfo(H264DecoderFrameInfo * sliceInfo)
     pipelineBuf->surface = m_va->GetSurfaceID(sliceInfo->m_pFrame->m_index); // should filled in packer
     pipelineBuf->additional_outputs = (VASurfaceID*)vpVA->GetCurrentOutputSurface();
 }
+#endif // #ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
 
 void PackerVA::PackQmatrix(const H264ScalingPicParams * scaling)
 {
@@ -2526,8 +2345,9 @@ void PackerVA::BeginFrame(H264DecoderFrame* pFrame, Ipp32s field)
     FrameData* fd = pFrame->GetFrameData();
     VM_ASSERT(fd);
 
+    FrameData::FrameAuxInfo* aux;
 #if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
-    FrameData::FrameAuxInfo* aux = fd->GetAuxInfo(MFX_EXTBUFF_GPU_HANG);
+    aux = fd->GetAuxInfo(MFX_EXTBUFF_GPU_HANG);
     if (aux)
     {
         VM_ASSERT(aux->type == MFX_EXTBUFF_GPU_HANG);
@@ -2552,7 +2372,7 @@ void PackerVA::BeginFrame(H264DecoderFrame* pFrame, Ipp32s field)
             *trigger = 1;
         }
     }
-#endif
+#endif // defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
 
     if (!m_enableStreamOut)
         return;
@@ -2635,8 +2455,10 @@ void PackerVA::PackAU(const H264DecoderFrame *pFrame, Ipp32s isTop)
 
         sliceParamBuf->SetNumOfItem(count);
 
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
         if (m_va->GetVideoProcessingVA())
             PackProcessingInfo(sliceInfo);
+#endif
 
         Status sts = m_va->Execute();
         if (sts != UMC_OK)
@@ -2714,6 +2536,8 @@ Status PackerVA::QueryStreamOut(H264DecoderFrame* pFrame)
 
     return UMC_OK;
 }
+
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 
 /****************************************************************************************************/
 // PAVP Widevine HuC-based implementation
@@ -2969,10 +2793,9 @@ void PackerVA_PAVP::PackPavpParams(void)
     pEncryptParam->hostEncryptMode = 2; //ENCRYPTION_PAVP
     pEncryptParam->pavpHasBeenEnabled = 1;
 }
-
+#endif // #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 #endif // UMC_VA_LINUX
 
 } // namespace UMC
 
-#endif // UMC_RESTRICTED_CODE_VA
 #endif // UMC_ENABLE_H264_VIDEO_DECODER

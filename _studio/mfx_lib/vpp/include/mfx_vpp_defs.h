@@ -100,8 +100,6 @@ enum {
     MFX_EXTBUFF_VPP_FIELD_WEAVING     =   MFX_MAKEFOURCC('F','I','W','F'),
     MFX_EXTBUFF_VPP_FIELD_SPLITTING   =   MFX_MAKEFOURCC('F','I','S','F'),
 
-    // MSDK 2013 requires [NV12, RGB4] as output.SW algorithm designed for NV12 only.
-    // the best solution is (XXX->NV12) + VPP + (NV12->RGB4)
     MFX_EXTBUFF_VPP_CSC_OUT_RGB4    =   MFX_MAKEFOURCC('C','S','R','4'), //COLOR SPACE CONVERSION FILTER
     MFX_EXTBUFF_VPP_CSC_OUT_A2RGB10 =   MFX_MAKEFOURCC('C','S','1','0'), //COLOR SPACE CONVERSION FILTER
     MFX_EXTBUFF_VPP_RSHIFT_IN       =   MFX_MAKEFOURCC('R','S','F','I'),
@@ -145,7 +143,7 @@ typedef enum
 
 } mfxGamutMode;
 
-
+#if !defined (MFX_ENABLE_HW_ONLY_VPP)
 // frames for internal float-point calculation of SW algorithms
 typedef struct
 {
@@ -165,6 +163,7 @@ typedef struct
     mfxU16  Height;
 
 } Surface1_32f;
+#endif
 
 typedef enum
 {

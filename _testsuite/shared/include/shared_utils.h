@@ -13,12 +13,10 @@
 #ifndef __SHARED_UTILS_H
 #define __SHARED_UTILS_H
 
-//#include <memory.h>
 #include <stdio.h>
 #include "mfxvideo.h"
 #include "mfxvideo++.h"
-#include "mfxvideopro.h"
-#include "mfxvideopro++.h"
+#include "mfxstructurespro.h"
 #include "mfxjpeg.h"
 #include "cc_utils.h"
 #include "app_defs.h"

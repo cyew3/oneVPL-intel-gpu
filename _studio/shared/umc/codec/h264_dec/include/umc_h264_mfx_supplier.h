@@ -124,10 +124,12 @@ inline bool isMVCProfile(mfxU32 profile)
     return (profile == MFX_PROFILE_AVC_MULTIVIEW_HIGH || profile == MFX_PROFILE_AVC_STEREO_HIGH);
 }
 
+#if defined(MFX_ENABLE_SVC_VIDEO_DECODE)
 inline bool isSVCProfile(mfxU32 profile)
 {
     return (profile == MFX_PROFILE_AVC_SCALABLE_BASELINE || profile == MFX_PROFILE_AVC_SCALABLE_HIGH);
 }
+#endif
 
 } // namespace UMC
 

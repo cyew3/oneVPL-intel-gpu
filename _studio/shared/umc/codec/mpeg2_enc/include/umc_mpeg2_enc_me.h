@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2002-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2002-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -433,10 +433,10 @@ exit_me:
     *currMAD = BestMAD;
   }
   if (pDstVar != NULL) {
-    ippsCopy_8u((Ipp8u*)Var[min_index], (Ipp8u*)pDstVar, NUM_BLOCKS*sizeof(*pDstVar));
+    MFX_INTERNAL_CPY((Ipp8u*)pDstVar, (Ipp8u*)Var[min_index], NUM_BLOCKS*sizeof(*pDstVar));
   }
   if (pDstMean != NULL) {
-    ippsCopy_8u((Ipp8u*)Mean[min_index], (Ipp8u*)pDstMean, NUM_BLOCKS*sizeof(*pDstMean));
+    MFX_INTERNAL_CPY((Ipp8u*)pDstMean, (Ipp8u*)Mean[min_index], NUM_BLOCKS*sizeof(*pDstMean));
   }
 #if FIELD_FLAG == 0
   SET_MOTION_VECTOR(vector, XMIN, YMIN,YFramePitchRef,UVFramePitchRef );

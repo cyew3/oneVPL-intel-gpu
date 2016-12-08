@@ -5,12 +5,12 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2006-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2006-2016 Intel Corporation. All Rights Reserved.
 //
 
+#include "umc_defs.h"
 #include "vm_debug.h"
 #include "umc_muxer.h"
-
 #include <ipps.h>
 
 using namespace UMC;
@@ -146,7 +146,8 @@ Status Muxer::CopyMuxerParams(MuxerParams *lpInit)
   }
 
   // Alloc pointers to MediaBuffer (and set to NULL)
-  UMC_ALLOC_ZERO_ARR(m_ppBuffers, MediaBuffer*, m_uiTotalNumStreams);
+  m_ppBuffers = new MediaBuffer*[m_uiTotalNumStreams];
+  memset(m_ppBuffers, 0, sizeof(MediaBuffer*)*m_uiTotalNumStreams);
 
   return UMC_OK;
 }
@@ -158,7 +159,7 @@ Status Muxer::Close()
     for (i = 0; i < m_uiTotalNumStreams; i++) {
       UMC_DELETE(m_ppBuffers[i]);
     }
-    UMC_FREE(m_ppBuffers);
+    delete[] m_ppBuffers;
   }
 
   UMC_DELETE(m_pParams);
@@ -221,7 +222,7 @@ Status Muxer::PutData(MediaData *lpData, Ipp32s iTrack)
 
   // copy data
   UMC_CHECK(dataSize <= data.GetBufferSize(), UMC_ERR_NOT_ENOUGH_BUFFER);
-  ippsCopy_8u((Ipp8u*)pData, (Ipp8u*)data.GetDataPointer(), (Ipp32s)dataSize);
+  MFX_INTERNAL_CPY_S((Ipp8u*)data.GetDataPointer(), (Ipp32s)data.GetDataSize(), (Ipp8u*)pData, (Ipp32s)dataSize);
 
   // copy time & frame type
   Ipp64f dPTS, dDTS;

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2010 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include <assert.h>
@@ -276,11 +276,6 @@ mfxStatus MFXVideoPAKH264::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest 
     MFX_CHECK_NULL_PTR1(par);
     MFX_CHECK_NULL_PTR1(request);
     request->NumFrameMin = request->NumFrameSuggested = par->mfx.GopRefDist + 2;
-    return MFX_ERR_NONE;
-}
-
-mfxStatus MFXVideoPAKH264::RunSeqHeader(mfxFrameCUC *)
-{
     return MFX_ERR_NONE;
 }
 

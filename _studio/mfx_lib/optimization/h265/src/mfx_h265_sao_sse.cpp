@@ -984,7 +984,6 @@ namespace MFX_HEVC_PP
 
     }
 
-    //aya: FIXME!!! must be replaced by intrinsic version 
     void MAKE_NAME(h265_ProcessSaoCu_Luma_8u)(SAOCU_PARAMETERS_LIST)
     {
         Ipp32s tmpUpBuff1[65];

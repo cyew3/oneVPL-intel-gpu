@@ -49,15 +49,6 @@ PicStructMode GetPicStructMode(mfxU16 inPicStruct, mfxU16 outPicStruct);
 mfxStatus CheckInputPicStruct( mfxU16 inPicStruct );
 mfxU16 UpdatePicStruct( mfxU16 inPicStruct, mfxU16 outPicStruct, bool bDynamicDeinterlace, mfxStatus& sts );
 
-// copy surfaces based on Region Of Interest
-mfxStatus SurfaceCopy_ROI(mfxFrameSurface1* out, mfxFrameSurface1* in, bool bROIControl = true);
-
-//
-mfxStatus SetBackGroundColor(mfxFrameSurface1 *ptr);
-
-// compare ROI between 3 surfaces
-bool IsROIConstant(mfxFrameSurface1* pSrc1, mfxFrameSurface1* pSrc2, mfxFrameSurface1* pSrc3);
-
 bool IsRoiDifferent(mfxFrameSurface1 *input, mfxFrameSurface1 *output);
 
 // utility calculates frames count (in/out) to correct processing in sync/async mode by external application
@@ -130,7 +121,9 @@ private:
 
 mfxU32 GetFilterIndex( mfxU32* pList, mfxU32 len, mfxU32 filterName);
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 mfxStatus CheckProtectedMode( mfxU16 mode );
+#endif
 
 mfxU16 vppMax_16u(const mfxU16* pSrc, int len);
 
@@ -183,10 +176,12 @@ void SignalPlatformCapabilities(
     const mfxVideoParam & param,
     const std::vector<mfxU32> & supportedList);
 
+#if !defined (MFX_ENABLE_HW_ONLY_VPP)
 mfxStatus CheckLimitationsSW(
     mfxVideoParam & param, 
     const std::vector<mfxU32> & supportedList, 
     bool bCorrectionEnable);
+#endif
 
 bool IsFrcInterpolationEnable(
     const mfxVideoParam & param, 
@@ -198,6 +193,17 @@ size_t GetConfigSize( mfxU32 filterId );
 void ConvertCaps2ListDoUse(MfxHwVideoProcessing::mfxVppCaps& caps, std::vector<mfxU32>& list);
 
 //mfxStatus QueryExtParams()
+
+#if !defined (MFX_ENABLE_HW_ONLY_VPP)
+// copy surfaces based on Region Of Interest
+mfxStatus SurfaceCopy_ROI(mfxFrameSurface1* out, mfxFrameSurface1* in, bool bROIControl = true);
+
+//
+mfxStatus SetBackGroundColor(mfxFrameSurface1 *ptr);
+
+// compare ROI between 3 surfaces
+bool IsROIConstant(mfxFrameSurface1* pSrc1, mfxFrameSurface1* pSrc2, mfxFrameSurface1* pSrc3);
+#endif
 
 #endif // __MFX_VPP_UTILS_H
 

@@ -1913,7 +1913,8 @@ void TaskBrokerTwoThread_H265::AddPerformedTask(H265Task *pTask)
 
     TaskBrokerSingleThread_H265::AddPerformedTask(pTask);
 
-    /*if (pTask->m_pSlicesInfo->m_hasTiles) // ADB: Need to fix this issue
+#if 0
+    if (pTask->m_pSlicesInfo->m_hasTiles) // Need to fix this issue
     {
         bool completed = true;
         for (Ipp32u i = 0; i < pTask->m_pSlicesInfo->m_tilesThreadingInfo.size(); i ++)
@@ -1930,7 +1931,8 @@ void TaskBrokerTwoThread_H265::AddPerformedTask(H265Task *pTask)
             pTask->m_pSlicesInfo->m_curCUToProcess[DEC_PROCESS_ID] = pTask->m_pSlicesInfo->m_pFrame->getCD()->m_NumCUsInFrame;
             pTask->m_pSlicesInfo->m_curCUToProcess[REC_PROCESS_ID] = pTask->m_pSlicesInfo->m_pFrame->getCD()->m_NumCUsInFrame;
         }
-    }*/
+    }
+#endif
 
     if (pTask->m_pSlicesInfo->IsCompleted())
     {

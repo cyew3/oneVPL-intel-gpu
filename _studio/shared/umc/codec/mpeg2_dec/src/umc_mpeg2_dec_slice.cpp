@@ -293,7 +293,7 @@ void MPEG2VideoDecoderSW::DeleteHuffmanTables()
     mp2_HuffmanTableFree(&vlcMotionVector);
 }
 
-Status MPEG2VideoDecoderSW::DecodeSliceHeader(IppVideoContext *video, int task_num)
+Status MPEG2VideoDecoderSW::DecodeSliceHeader(VideoContext *video, int task_num)
 {
     Ipp32u extra_bit_slice;
     Ipp32u code;
@@ -379,7 +379,7 @@ Status MPEG2VideoDecoderSW::DecodeSliceHeader(IppVideoContext *video, int task_n
     return UMC_OK;
 }
 
-Status MPEG2VideoDecoderSW::DecodeSlice(IppVideoContext  *video, int task_num)
+Status MPEG2VideoDecoderSW::DecodeSlice(VideoContext  *video, int task_num)
 {
     if (MPEG1_VIDEO == video->stream_type) 
     {
@@ -464,7 +464,7 @@ void MPEG2VideoDecoderSW::SetOutputPointers(MediaData *output, int task_num)
 
         for (Ipp32u i = 0; i < threadsNum; i += 1)
         {
-            IppVideoContext* video = Video[task_num][i];
+            VideoContext* video = Video[task_num][i];
 
             video->Y_comp_pitch = pitch_l;
             video->U_comp_pitch = pitch_c;
@@ -532,7 +532,7 @@ void MPEG2VideoDecoderSW::SetOutputPointers(MediaData *output, int task_num)
 
         for (Ipp32u i = 0; i < threadsNum; i += 1)
         {
-            IppVideoContext* video = Video[task_num][i];
+            VideoContext* video = Video[task_num][i];
 
             video->Y_comp_pitch = pitch_l;
             video->U_comp_pitch = pitch_c;
@@ -559,7 +559,7 @@ void MPEG2VideoDecoderSW::SetOutputPointers(MediaData *output, int task_num)
 
     for (Ipp32u i = 0; i < threadsNum; i += 1)
     {
-        IppVideoContext* video = Video[task_num][i];
+        VideoContext* video = Video[task_num][i];
 
         video->blkOffsets[0][0] = 0;
         video->blkOffsets[0][1] = 8;
@@ -599,7 +599,7 @@ void MPEG2VideoDecoderSW::quant_matrix_extension(int task_num)
 {
     Ipp32s i;
     Ipp32u code;
-    IppVideoContext* video = Video[task_num][0];
+    VideoContext* video = Video[task_num][0];
     Ipp32s load_intra_quantizer_matrix, load_non_intra_quantizer_matrix, load_chroma_intra_quantizer_matrix, load_chroma_non_intra_quantizer_matrix;
     Ipp8u q_matrix[4][64];
 
@@ -773,12 +773,6 @@ Status MPEG2VideoDecoderSW::UpdateFrameBuffer(int task_num, Ipp8u* iqm, Ipp8u*ni
       Ipp32s height_l, height_c;
       Ipp32s size_l, size_c;
 
-      if(frame_buffer.ptr_context_data &&
-        frame_buffer.allocated_mb_width == sequenceHeader.mb_width[task_num] &&
-        frame_buffer.allocated_mb_height == sequenceHeader.mb_height[task_num] &&
-        frame_buffer.allocated_cformat == m_ClipInfo.color_format)
-        return UMC_OK; // all is the same
-
       pitch_l = align_value<Ipp32s>(sequenceHeader.mb_width[task_num]*16, ALIGN_VALUE);
       height_l = align_value<Ipp32s>(sequenceHeader.mb_height[task_num]*16, ALIGN_VALUE);
       size_l = height_l*pitch_l;
@@ -803,7 +797,7 @@ Status MPEG2VideoDecoderSW::UpdateFrameBuffer(int task_num, Ipp8u* iqm, Ipp8u*ni
 
     for (Ipp32u i = 0; i < threadsNum; i += 1)
     {
-        IppVideoContext* video = Video[task_num][i];
+        VideoContext* video = Video[task_num][i];
 
         video->Y_comp_pitch = pitch_l;
         video->U_comp_pitch = pitch_c;
@@ -813,7 +807,7 @@ Status MPEG2VideoDecoderSW::UpdateFrameBuffer(int task_num, Ipp8u* iqm, Ipp8u*ni
 
   for (Ipp32u i = 0; i < threadsNum; i += 1)
     {
-      IppVideoContext* video = Video[task_num][i];
+      VideoContext* video = Video[task_num][i];
 
       video->blkOffsets[0][0] = 0;
       video->blkOffsets[0][1] = 8;
@@ -850,27 +844,11 @@ Status MPEG2VideoDecoderSW::UpdateFrameBuffer(int task_num, Ipp8u* iqm, Ipp8u*ni
 
     }
 
-  if(frame_buffer.ptr_context_data &&
-    frame_buffer.allocated_mb_width >= sequenceHeader.mb_width[task_num] &&
-    frame_buffer.allocated_mb_height >= sequenceHeader.mb_height[task_num] &&
-    frame_buffer.allocated_cformat >= m_ClipInfo.color_format)
-    return UMC_OK; // use allocated before
-
   frame_buffer.allocated_mb_width = sequenceHeader.mb_width[task_num];
   frame_buffer.allocated_mb_height = sequenceHeader.mb_height[task_num];
   frame_buffer.allocated_cformat = m_ClipInfo.color_format;
 
-#if defined(UMC_VA_DXVA) || defined(UMC_VA_LINUX)
-  if(pack_w.va_mode != VA_NO)
-  {
-      return UMC_OK;
-  }
-#endif
-
   // Alloc frames
-
-  if(frame_buffer.mid_context_data != MID_INVALID)
-    m_pMemoryAllocator->Free(frame_buffer.mid_context_data);
 
     Ipp32s flag_mpeg1 = (m_ClipInfo.stream_type == MPEG1_VIDEO) ? IPPVC_MPEG1_STREAM : 0;
     ippiDecodeIntraInit_MPEG2(NULL, flag_mpeg1, PictureHeader[task_num].intra_vlc_format, PictureHeader[task_num].curr_intra_dc_multi, &m_Spec.decodeIntraSpec);

@@ -316,9 +316,6 @@ void TaskBrokerSingleThread::AddPerformedTask(H264Task *pTask)
         }
         else
         { // slice is deblocked only when deblocking was available
-            // check condition for frame deblocking
-            //if (DEBLOCK_FILTER_ON_NO_SLICE_EDGES == pSlice->GetSliceHeader()->disable_deblocking_filter_idc)
-                //m_bDoFrameDeblocking = false; // DEBUG : ADB
 
             // error handling
             pSlice->m_iMaxMB = pTask->m_iMaxMB;
@@ -474,10 +471,6 @@ void TaskBrokerSingleThread::AddPerformedTask(H264Task *pTask)
                 pSlice->m_bRecVacant = 0;
                 pSlice->CompleteDecoding();
                 pSlice->m_bDecoded = true;
-
-                // check condition for frame deblocking
-                //if (DEBLOCK_FILTER_ON_NO_SLICE_EDGES == pSlice->GetSliceHeader()->disable_deblocking_filter_idc)
-                //    m_bDoFrameDeblocking = false;  // DEBUG : ADB
             }
             else
             {

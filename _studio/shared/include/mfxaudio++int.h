@@ -41,7 +41,6 @@ static int operator==(const GUID & guidOne, const GUID & guidOther)
 
 #endif
 
-// This is the include file for Media SDK component development.
 enum eMFXAudioPlatform
 {
     MFX_AUDIO_PLATFORM_SOFTWARE      = 0,
@@ -171,7 +170,8 @@ public:
 
 
 };
-   /*
+
+#if 0
 class AudioPP
 {
 public:
@@ -225,8 +225,7 @@ public:
     mfxStatus RunFrameAudioPP(mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux) = 0;
 
 };
-
-   */
+#endif
 
 struct ThreadAudioDecodeTaskInfo
 {

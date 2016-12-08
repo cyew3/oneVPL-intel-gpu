@@ -19,7 +19,6 @@
 #include "libmfx_core_vaapi.h"
 #include "mfx_utils.h"
 #include "mfx_session.h"
-#include "mfx_check_hardware_support.h"
 #include "ippi.h"
 #include "mfx_common_decode_int.h"
 #include "mfx_enc_common.h"
@@ -36,10 +35,7 @@
 #include <va/va_backend.h>
 
 #define MFX_CHECK_HDL(hdl) {if (!hdl) MFX_RETURN(MFX_ERR_INVALID_HANDLE);}
-//#define MFX_GUID_CHECKING
 
-/* Definitions below extracted from kernel DRM headers files */
-/* START: IOCTLs structure definitions */
 typedef struct drm_i915_getparam {
     int param;
     int *value;
@@ -57,10 +53,8 @@ typedef struct {
     eMFXHWType platform;
 } mfx_device_item;
 
-/* list of legal dev ID for Intel's graphics
- * Copied form i915_drv.c from linux kernel 3.9-rc7
- * */
-const mfx_device_item listLegalDevIDs[] = {
+// list of legal dev ID for Intel's graphics
+ const mfx_device_item listLegalDevIDs[] = {
     /*IVB*/
     { 0x0156, MFX_HW_IVB },   /* GT1 mobile */
     { 0x0166, MFX_HW_IVB },   /* GT2 mobile */
@@ -171,11 +165,11 @@ const mfx_device_item listLegalDevIDs[] = {
     { 0x1606, MFX_HW_BDW},
     { 0x1602, MFX_HW_BDW},
 
-    /* CHV */
-    { 0x22b0, MFX_HW_CHV},
-    { 0x22b1, MFX_HW_CHV},
-    { 0x22b2, MFX_HW_CHV},
-    { 0x22b3, MFX_HW_CHV},
+    /* CHT */
+    { 0x22b0, MFX_HW_CHT},
+    { 0x22b1, MFX_HW_CHT},
+    { 0x22b2, MFX_HW_CHT},
+    { 0x22b3, MFX_HW_CHT},
 
     /* SCL */
     /* GT1F */
@@ -209,6 +203,7 @@ const mfx_device_item listLegalDevIDs[] = {
     { 0x193B, MFX_HW_SCL }, // Halo
     { 0x193D, MFX_HW_SCL }, // WKS
 
+#ifndef MFX_CLOSED_PLATFORMS_DISABLE
     /* BXT */
     { 0x0A84, MFX_HW_BXT},
     { 0x0A85, MFX_HW_BXT},
@@ -239,6 +234,7 @@ const mfx_device_item listLegalDevIDs[] = {
     { 0x5A5A, MFX_HW_CNL},
     { 0x5A60, MFX_HW_CNL},
     { 0x5A62, MFX_HW_CNL}
+#endif
 };
 
 /* END: IOCTLs definitions */
@@ -249,60 +245,6 @@ using namespace std;
 using namespace UMC;
 
 #pragma warning(disable: 4311) // in HWVideoCORE::TraceFrames(): pointer truncation from 'void*' to 'int'
-
-static
-VideoAccelerationHW ConvertMFXToUMCType(eMFXHWType type)
-{
-    VideoAccelerationHW umcType = VA_HW_UNKNOWN;
-
-    switch(type)
-    {
-    case MFX_HW_LAKE:
-        umcType = VA_HW_LAKE;
-        break;
-    case MFX_HW_LRB:
-        umcType = VA_HW_LRB;
-        break;
-    case MFX_HW_SNB:
-        umcType = VA_HW_SNB;
-        break;
-    case MFX_HW_IVB:
-        umcType = VA_HW_IVB;
-        break;
-    case MFX_HW_HSW:
-        umcType = VA_HW_HSW;
-        break;
-    case MFX_HW_HSW_ULT:
-        umcType = VA_HW_HSW_ULT;
-        break;
-    case MFX_HW_VLV:
-        umcType = VA_HW_VLV;
-        break;
-    case MFX_HW_BDW:
-        umcType = VA_HW_BDW;
-        break;
-    case MFX_HW_CHV:
-        umcType = VA_HW_CHV;
-        break;
-    case MFX_HW_SCL:
-        umcType = VA_HW_SCL;
-        break;
-    case MFX_HW_BXT:
-        umcType = VA_HW_BXT;
-        break;
-    case MFX_HW_CNL:
-        umcType = VA_HW_CNL;
-        break;
-    case MFX_HW_SOFIA:
-        umcType = VA_HW_SOFIA;
-        break;
-    default:
-        break;
-    }
-
-    return umcType;
-
-} // VideoAccelerationHW ConvertMFXToUMCType(eMFXHWType type)
 
 static
 eMFXHWType getPlatformType (VADisplay pVaDisplay)
@@ -356,7 +298,7 @@ VAAPIVideoCORE::VAAPIVideoCORE(
           , m_KeepVAState(false)
           , m_adapterNum(adapterNum)
           , m_bUseExtAllocForHWFrames(false)
-          , m_HWType(MFX_HW_IVB) //MFX_HW_UNKNOWN
+          , m_HWType(MFX_HW_IVB)
 #if !defined(ANDROID)
           , m_bCmCopy(false)
           , m_bCmCopyAllowed(true)
@@ -396,6 +338,7 @@ VAAPIVideoCORE::GetHandle(
     MFX_CHECK_NULL_PTR1(handle);
     UMC::AutomaticUMCMutex guard(m_guard);
 
+#ifndef MFX_ADAPTIVE_PLAYBACK_DISABLE
     if (MFX_HANDLE_VA_CONTEXT_ID == type )
     {
         if (m_VAContextHandle != (mfxHDL)VA_INVALID_ID)
@@ -408,6 +351,7 @@ VAAPIVideoCORE::GetHandle(
             return MFX_ERR_NOT_FOUND;
     }
     else
+#endif
         return CommonCORE::GetHandle(type, handle);
 
 } // mfxStatus VAAPIVideoCORE::GetHandle(mfxHandleType type, mfxHDL *handle)
@@ -423,6 +367,7 @@ VAAPIVideoCORE::SetHandle(
     {
         switch ((mfxU32)type)
         {
+#ifndef MFX_ADAPTIVE_PLAYBACK_DISABLE
         case MFX_HANDLE_VA_CONFIG_ID:
             // if device manager already set
             if (m_VAConfigHandle != (mfxHDL)VA_INVALID_ID)
@@ -439,6 +384,7 @@ VAAPIVideoCORE::SetHandle(
             m_VAContextHandle = hdl;
             m_KeepVAState = true;
             break;
+#endif
         default:
             mfxStatus sts = CommonCORE::SetHandle(type, hdl);
             MFX_CHECK_STS(sts);
@@ -491,28 +437,16 @@ VAAPIVideoCORE::AllocFrames(
             temp_request.Type |= MFX_MEMTYPE_INTERNAL_FRAME;
         }
 
-        if (!m_bFastCopy)
-        {
-            // initialize fast copy
-            m_pFastCopy.reset(new FastCopy());
-            m_pFastCopy.get()->Initialize();
-
-            m_bFastCopy = true;
-        }
-
         if (!m_bCmCopy && m_bCmCopyAllowed && isNeedCopy && m_Display)
         {
             m_pCmCopy.reset(new CmCopyWrapper);
             if (!m_pCmCopy.get()->GetCmDevice(m_Display)){
-                //!!!! WA: CM restricts multiple CmDevice creation from different device managers.
-                //if failed to create CM device, continue without CmCopy
                 m_bCmCopy = false;
                 m_bCmCopyAllowed = false;
                 m_pCmCopy.get()->Release();
                 m_pCmCopy.reset();
-                //return MFX_ERR_DEVICE_FAILED;
             }else{
-                sts = m_pCmCopy.get()->Initialize();
+                sts = m_pCmCopy.get()->Initialize(GetHWType());
                 MFX_CHECK_STS(sts);
                 m_bCmCopy = true;
             }
@@ -586,7 +520,7 @@ VAAPIVideoCORE::AllocFrames(
             }
             else
             {
-                // Default Allocator is used for internal memory allocation and all coded buffers allocation since 16.5
+                // Default Allocator is used for internal memory allocation and all coded buffers allocation
                 if (request->Type & MFX_MEMTYPE_EXTERNAL_FRAME)
                     return MFX_ERR_MEMORY_ALLOC;
 
@@ -727,9 +661,11 @@ VAAPIVideoCORE::CreateVA(
         }
     }
 
+#ifndef MFX_ADAPTIVE_PLAYBACK_DISABLE
     if(GetExtBuffer(param->ExtParam, param->NumExtParam, MFX_EXTBUFF_DEC_ADAPTIVE_PLAYBACK))
         m_KeepVAState = true;
     else
+#endif
         m_KeepVAState = false;
 
     sts = CreateVideoAccelerator(param, profile, response->NumFrameActual, RenderTargets, allocator);
@@ -769,40 +705,6 @@ VAAPIVideoCORE::ProcessRenderTargets(
     return MFX_ERR_NONE;
 
 } // mfxStatus VAAPIVideoCORE::ProcessRenderTargets(
-
-
-#ifdef CUSTOM_DXVA2_DLL
-
-typedef HRESULT (STDAPICALLTYPE *FUNC_TYPE)(__out UINT* pResetToken,
-                                            __deref_out IDirect3DDeviceManager9** ppDeviceManager);
-
-HRESULT
-myDXVA2CreateDirect3DDeviceManager9(
-    UINT* pResetToken,
-    IDirect3DDeviceManager9** ppDeviceManager,
-    TCHAR* pDXVA2LIBNAME = NULL)
-{
-    if (!pDXVA2LIBNAME)
-    {
-        pDXVA2LIBNAME = CUSTOM_DXVA2_DLL;
-    }
-
-    HMODULE m_pLibDXVA2 = LoadLibraryExW(pDXVA2LIBNAME);
-    if (NULL == m_pLibDXVA2)
-    {
-        return NULL;
-    }
-
-    FUNC_TYPE pFunc = (FUNC_TYPE)GetProcAddress(m_pLibDXVA2, "DXVA2CreateDirect3DDeviceManager9");
-    if (NULL == pFunc)
-    {
-        return NULL;
-    }
-
-    return pFunc(pResetToken, ppDeviceManager);
-}
-
-#endif // CUSTOM_DXVA2_DLL
 
 mfxStatus
 VAAPIVideoCORE::GetVAService(
@@ -851,8 +753,6 @@ VAAPIVideoCORE::CreateVideoAccelerator(
     UMC::LinuxVideoAcceleratorParams params;
     mfxFrameInfo *pInfo = &(param->mfx.FrameInfo);
 
-    //m_pVA.reset(new LinuxVideoAccelerator); aya must be fixed late
-
     if (!m_Display)
         return MFX_ERR_NOT_INITIALIZED;
 
@@ -872,10 +772,12 @@ VAAPIVideoCORE::CreateVideoAccelerator(
 
     params.m_protectedVA = param->Protected;
 
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
     if (GetExtBuffer(param->ExtParam, param->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING))
     {
         params.m_needVideoProcessingVA = true;
     }
+#endif
 
     //check 'StreamOut' feature is requested
     {
@@ -887,13 +789,12 @@ VAAPIVideoCORE::CreateVideoAccelerator(
     m_pVA.reset((params.m_CreateFlags & VA_DECODE_STREAM_OUT_ENABLE) ? new FEIVideoAccelerator() : new LinuxVideoAccelerator());
     m_pVA.get()->m_Platform = UMC::VA_LINUX;
     m_pVA.get()->m_Profile = (VideoAccelerationProfile)profile;
-    m_pVA.get()->m_HWPlatform = ConvertMFXToUMCType(m_HWType);
+    m_pVA.get()->m_HWPlatform = m_HWType;
 
     st = m_pVA.get()->Init(&params);
 
     if(UMC_OK != st)
     {
-        //m_pVA.reset(); aya must be fixed late
         return MFX_ERR_UNSUPPORTED;
     }
 
@@ -1101,23 +1002,18 @@ VAAPIVideoCORE::DoFastCopyExtended(
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
 
-    FastCopy *pFastCopy = m_pFastCopy.get();
-    if(!pFastCopy){
-        m_pFastCopy.reset(new FastCopy());
-        m_pFastCopy.get()->Initialize();
-        m_bFastCopy = true;
-        pFastCopy = m_pFastCopy.get();
-    }
     CmCopyWrapper *pCmCopy = m_pCmCopy.get();
 
     mfxU32 srcPitch = pSrc->Data.PitchLow + ((mfxU32)pSrc->Data.PitchHigh << 16);
     mfxU32 dstPitch = pDst->Data.PitchLow + ((mfxU32)pDst->Data.PitchHigh << 16);
 
+    bool canUseCMCopy = m_bCmCopy ? CmCopyWrapper::CanUseCmCopy(pDst, pSrc) : false;
+
     if (NULL != pSrc->Data.MemId && NULL != pDst->Data.MemId)
     {
-        if (m_bCmCopy == true && pDst->Info.FourCC != MFX_FOURCC_YV12 && CM_SUPPORTED_COPY_SIZE(roi))
+        if (canUseCMCopy)
         {
-            sts = pCmCopy->CopyVideoToVideoMemoryAPI(pDst->Data.MemId, pSrc->Data.MemId, roi);
+            sts = pCmCopy->CopyVideoToVideo(pDst, pSrc);
             MFX_CHECK_STS(sts);
         }
         else
@@ -1155,22 +1051,9 @@ VAAPIVideoCORE::DoFastCopyExtended(
 
         // copy data
         {
-            mfxI64 verticalPitch = (mfxI64)(pDst->Data.UV - pDst->Data.Y);
-            verticalPitch = (verticalPitch % pDst->Data.Pitch)? 0 : verticalPitch / pDst->Data.Pitch;
-
-            if (m_bCmCopy == true && CM_ALIGNED(pDst->Data.Pitch) && pDst->Info.FourCC == MFX_FOURCC_NV12 && CM_ALIGNED(pDst->Data.Y) && CM_ALIGNED(pDst->Data.UV) && CM_SUPPORTED_COPY_SIZE(roi) && verticalPitch >= pDst->Info.Height && verticalPitch <= 16384)
+            if (canUseCMCopy)
             {
-                sts = pCmCopy->CopyVideoToSystemMemoryAPI(pDst->Data.Y, pDst->Data.Pitch, (mfxU32)verticalPitch, pSrc->Data.MemId, 0, roi);
-                MFX_CHECK_STS(sts);
-            }
-            else if (m_bCmCopy == true && CM_ALIGNED(pDst->Data.Pitch) && pDst->Info.FourCC == MFX_FOURCC_RGB4 && CM_ALIGNED(IPP_MIN(IPP_MIN(pDst->Data.R,pDst->Data.G),pDst->Data.B)) && CM_SUPPORTED_COPY_SIZE(roi))
-            {
-                sts = pCmCopy->CopyVideoToSystemMemoryAPI(IPP_MIN(IPP_MIN(pDst->Data.R,pDst->Data.G),pDst->Data.B), pDst->Data.Pitch,0,pSrc->Data.MemId, 0, roi);
-                MFX_CHECK_STS(sts);
-            }
-            else if (m_bCmCopy == true && CM_ALIGNED(pDst->Data.Pitch) && pDst->Info.FourCC != MFX_FOURCC_NV12 && pDst->Info.FourCC != MFX_FOURCC_YV12 && CM_ALIGNED(pDst->Data.Y) && CM_SUPPORTED_COPY_SIZE(roi))
-            {
-                sts = pCmCopy->CopyVideoToSystemMemoryAPI(pDst->Data.Y, pDst->Data.Pitch,(mfxU32)verticalPitch,pSrc->Data.MemId, 0, roi);
+                sts = pCmCopy->CopyVideoToSys(pDst, pSrc);
                 MFX_CHECK_STS(sts);
             }
             else
@@ -1190,97 +1073,23 @@ VAAPIVideoCORE::DoFastCopyExtended(
                 MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
 
                 Ipp32u srcPitch = va_image.pitches[0];
-                Ipp32u Height =  va_image.height;
-
-                mfxStatus sts;
 
                 MFX_CHECK(srcPitch < 0x8000, MFX_ERR_UNDEFINED_BEHAVIOR);
 
                 {
                     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "memcpy_vid2sys");
-                    switch (pDst->Info.FourCC)
-                    {
-                    case MFX_FOURCC_NV12:
+                    mfxStatus sts = mfxDefaultAllocatorVAAPI::SetFrameData(va_image, pDst->Info.FourCC, (mfxU8*)pBits, &pSrc->Data);
+                    MFX_CHECK_STS(sts);
 
-                        sts = pFastCopy->Copy(pDst->Data.Y, dstPitch, (mfxU8 *)pBits + va_image.offsets[0], srcPitch, roi);
-                        MFX_CHECK_STS(sts);
+                    mfxMemId saveMemId = pSrc->Data.MemId;
+                    pSrc->Data.MemId = 0;
 
-                        roi.height >>= 1;
+                    sts = CommonCORE::DoSWFastCopy(pDst, pSrc, COPY_VIDEO_TO_SYS); // sw copy
+                    MFX_CHECK_STS(sts);
 
-                        sts = pFastCopy->Copy(pDst->Data.UV, dstPitch, (mfxU8 *)pBits + va_image.offsets[1], srcPitch, roi);
-                        MFX_CHECK_STS(sts);
-
-                        break;
-
-                    case MFX_FOURCC_YV12:
-
-                        sts = pFastCopy->Copy(pDst->Data.Y, dstPitch, (mfxU8 *)pBits + va_image.offsets[0], srcPitch, roi);
-                        MFX_CHECK_STS(sts);
-
-                        roi.width >>= 1;
-                        roi.height >>= 1;
-
-                        srcPitch >>= 1;
-                        dstPitch >>= 1;
-
-                        sts = pFastCopy->Copy(pDst->Data.V, dstPitch, (mfxU8 *)pBits + va_image.offsets[1], srcPitch, roi);
-                        MFX_CHECK_STS(sts);
-
-                        sts = pFastCopy->Copy(pDst->Data.U, dstPitch, (mfxU8 *)pBits + va_image.offsets[2], srcPitch, roi);
-                        MFX_CHECK_STS(sts);
-
-                        break;
-
-                    case MFX_FOURCC_YUY2:
-
-                        roi.width *= 2;
-
-                        sts = pFastCopy->Copy(pDst->Data.Y, dstPitch, (mfxU8 *)pBits, srcPitch, roi);
-                        MFX_CHECK_STS(sts);
-
-                        break;
-
-                    case MFX_FOURCC_RGB3:
-                    {
-                        MFX_CHECK_NULL_PTR1(pDst->Data.R);
-                        MFX_CHECK_NULL_PTR1(pDst->Data.G);
-                        MFX_CHECK_NULL_PTR1(pDst->Data.B);
-
-                        mfxU8* ptrDst = IPP_MIN(IPP_MIN(pDst->Data.R, pDst->Data.G), pDst->Data.B);
-
-                        roi.width *= 3;
-
-                        sts = pFastCopy->Copy(ptrDst, dstPitch, (mfxU8 *)pBits, srcPitch, roi);
-                        MFX_CHECK_STS(sts);
-                    }
-                        break;
-
-                    case MFX_FOURCC_RGB4:
-                    {
-                        MFX_CHECK_NULL_PTR1(pDst->Data.R);
-                        MFX_CHECK_NULL_PTR1(pDst->Data.G);
-                        MFX_CHECK_NULL_PTR1(pDst->Data.B);
-
-                        mfxU8* ptrDst = IPP_MIN(IPP_MIN(pDst->Data.R, pDst->Data.G), pDst->Data.B);
-
-                        roi.width *= 4;
-
-                        sts = pFastCopy->Copy(ptrDst, dstPitch, (mfxU8 *)pBits, srcPitch, roi);
-                        MFX_CHECK_STS(sts);
-                    }
-                        break;
-
-                    case MFX_FOURCC_P8:
-
-                        sts = pFastCopy->Copy(pDst->Data.Y, dstPitch, (mfxU8 *)pBits, srcPitch, roi);
-                        MFX_CHECK_STS(sts);
-
-                        break;
-
-                    default:
-
-                        return MFX_ERR_UNSUPPORTED;
-                    }
+                    pSrc->Data.MemId = saveMemId;
+                    MFX_CHECK_STS(sts);
+                    
                 }
 
                 {
@@ -1307,109 +1116,14 @@ VAAPIVideoCORE::DoFastCopyExtended(
         MFX_CHECK(dstPitch < 0x8000 || pDst->Info.FourCC == MFX_FOURCC_RGB4 || pDst->Info.FourCC == MFX_FOURCC_YUY2, MFX_ERR_UNDEFINED_BEHAVIOR);
         MFX_CHECK(srcPitch < 0x8000 || pSrc->Info.FourCC == MFX_FOURCC_RGB4 || pSrc->Info.FourCC == MFX_FOURCC_YUY2, MFX_ERR_UNDEFINED_BEHAVIOR);
 
-        switch (pDst->Info.FourCC)
-        {
-            case MFX_FOURCC_NV12:
-
-                ippiCopy_8u_C1R(pSrc->Data.Y, srcPitch, pDst->Data.Y, dstPitch, roi);
-
-                roi.height >>= 1;
-
-                ippiCopy_8u_C1R(pSrc->Data.UV, srcPitch, pDst->Data.UV, dstPitch, roi);
-
-                break;
-
-            case MFX_FOURCC_YV12:
-
-                ippiCopy_8u_C1R(pSrc->Data.Y, srcPitch, pDst->Data.Y, dstPitch, roi);
-
-                roi.width >>= 1;
-                roi.height >>= 1;
-
-                srcPitch >>= 1;
-                dstPitch >>= 1;
-
-                ippiCopy_8u_C1R(pSrc->Data.V, srcPitch, pDst->Data.V, dstPitch, roi);
-
-                ippiCopy_8u_C1R(pSrc->Data.U, srcPitch, pDst->Data.U, dstPitch, roi);
-
-                break;
-
-            case MFX_FOURCC_YUY2:
-
-                roi.width *= 2;
-
-                ippiCopy_8u_C1R(pSrc->Data.Y, srcPitch, pDst->Data.Y, dstPitch, roi);
-
-                break;
-
-            case MFX_FOURCC_RGB3:
-            {
-                MFX_CHECK_NULL_PTR1(pSrc->Data.R);
-                MFX_CHECK_NULL_PTR1(pSrc->Data.G);
-                MFX_CHECK_NULL_PTR1(pSrc->Data.B);
-
-                mfxU8* ptrSrc = IPP_MIN(IPP_MIN(pSrc->Data.R, pSrc->Data.G), pSrc->Data.B);
-
-                MFX_CHECK_NULL_PTR1(pDst->Data.R);
-                MFX_CHECK_NULL_PTR1(pDst->Data.G);
-                MFX_CHECK_NULL_PTR1(pDst->Data.B);
-
-                mfxU8* ptrDst = IPP_MIN(IPP_MIN(pDst->Data.R, pDst->Data.G), pDst->Data.B);
-
-                roi.width *= 3;
-
-                ippiCopy_8u_C1R(ptrSrc, srcPitch, ptrDst, dstPitch, roi);
-            }
-                break;
-
-            case MFX_FOURCC_RGB4:
-            {
-                MFX_CHECK_NULL_PTR1(pSrc->Data.R);
-                MFX_CHECK_NULL_PTR1(pSrc->Data.G);
-                MFX_CHECK_NULL_PTR1(pSrc->Data.B);
-
-                mfxU8* ptrSrc = IPP_MIN(IPP_MIN(pSrc->Data.R, pSrc->Data.G), pSrc->Data.B);
-
-                MFX_CHECK_NULL_PTR1(pDst->Data.R);
-                MFX_CHECK_NULL_PTR1(pDst->Data.G);
-                MFX_CHECK_NULL_PTR1(pDst->Data.B);
-
-                mfxU8* ptrDst = IPP_MIN(IPP_MIN(pDst->Data.R, pDst->Data.G), pDst->Data.B);
-
-                roi.width *= 4;
-
-                ippiCopy_8u_C1R(ptrSrc, srcPitch, ptrDst, dstPitch, roi);
-            }
-                break;
-
-            case MFX_FOURCC_P8:
-
-                ippiCopy_8u_C1R(pSrc->Data.Y, srcPitch, pDst->Data.Y, dstPitch, roi);
-
-                break;
-
-            default:
-
-                return MFX_ERR_UNSUPPORTED;
-        }
+        sts = CommonCORE::DoSWFastCopy(pDst, pSrc, COPY_SYS_TO_SYS); // sw copy
+        MFX_CHECK_STS(sts);
     }
     else if (NULL != pSrc->Data.Y && NULL != pDst->Data.MemId)
     {
-        mfxI64 verticalPitch = (mfxI64)(pSrc->Data.UV - pSrc->Data.Y);
-        verticalPitch = (verticalPitch % pSrc->Data.Pitch)? 0 : verticalPitch / pSrc->Data.Pitch;
-
-        if (m_bCmCopy == true && CM_ALIGNED(pSrc->Data.Pitch) && pDst->Info.FourCC == MFX_FOURCC_NV12 && CM_ALIGNED(pSrc->Data.Y) && CM_ALIGNED(pSrc->Data.UV) && CM_SUPPORTED_COPY_SIZE(roi) && verticalPitch >= pSrc->Info.Height && verticalPitch <= 16384)
+        if (canUseCMCopy)
         {
-            sts = pCmCopy->CopySystemToVideoMemoryAPI(pDst->Data.MemId, 0, pSrc->Data.Y, pSrc->Data.Pitch,(mfxU32)verticalPitch, roi);
-            MFX_CHECK_STS(sts);
-        }
-        else if(m_bCmCopy == true && CM_ALIGNED(pSrc->Data.Pitch) && pSrc->Info.FourCC == MFX_FOURCC_RGB4 && CM_ALIGNED(IPP_MIN(IPP_MIN(pSrc->Data.R,pSrc->Data.G),pSrc->Data.B)) && CM_SUPPORTED_COPY_SIZE(roi)){
-            sts = pCmCopy->CopySystemToVideoMemoryAPI(pDst->Data.MemId, 0, IPP_MIN(IPP_MIN(pSrc->Data.R,pSrc->Data.G),pSrc->Data.B), pSrc->Data.Pitch, (mfxU32)pSrc->Info.Height, roi);
-            MFX_CHECK_STS(sts);
-        }
-        else if(m_bCmCopy == true && CM_ALIGNED(pSrc->Data.Pitch) && pSrc->Info.FourCC != MFX_FOURCC_UYVY && pSrc->Info.FourCC != MFX_FOURCC_YV12 && pSrc->Info.FourCC != MFX_FOURCC_NV12 && CM_ALIGNED(pSrc->Data.Y) && CM_SUPPORTED_COPY_SIZE(roi)){
-            sts = pCmCopy->CopySystemToVideoMemoryAPI(pDst->Data.MemId, 0, pSrc->Data.Y, pSrc->Data.Pitch, (mfxU32)verticalPitch, roi);
+            sts = pCmCopy->CopySysToVideo(pDst, pSrc);
             MFX_CHECK_STS(sts);
         }
         else
@@ -1440,85 +1154,18 @@ VAAPIVideoCORE::DoFastCopyExtended(
             {
                 MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "memcpy_sys2vid");
                 
-                switch (pDst->Info.FourCC)
-                {
-                case MFX_FOURCC_NV12:
+                mfxStatus sts = mfxDefaultAllocatorVAAPI::SetFrameData(va_image, pDst->Info.FourCC, (mfxU8*)pBits, &pDst->Data);
+                MFX_CHECK_STS(sts);
 
-                    ippiCopy_8u_C1R(pSrc->Data.Y, srcPitch, (mfxU8 *)pBits + va_image.offsets[0], dstPitch, roi);
+                mfxMemId saveMemId = pDst->Data.MemId;
+                pDst->Data.MemId = 0;
 
-                    roi.height >>= 1;
+                sts = CommonCORE::DoSWFastCopy(pDst, pSrc, COPY_SYS_TO_VIDEO); // sw copy
+                MFX_CHECK_STS(sts);
 
-                    ippiCopy_8u_C1R(pSrc->Data.UV, srcPitch, (mfxU8 *)pBits + va_image.offsets[1], dstPitch, roi);
+                pDst->Data.MemId = saveMemId;
+                MFX_CHECK_STS(sts);
 
-                    break;
-
-                case MFX_FOURCC_YV12:
-
-                    ippiCopy_8u_C1R(pSrc->Data.Y, srcPitch, (mfxU8 *)pBits + va_image.offsets[0], dstPitch, roi);
-
-                    roi.width >>= 1;
-                    roi.height >>= 1;
-
-                    srcPitch >>= 1;
-                    dstPitch >>= 1;
-
-                    ippiCopy_8u_C1R(pSrc->Data.V, srcPitch, (mfxU8 *)pBits + va_image.offsets[1], dstPitch, roi);
-
-                    ippiCopy_8u_C1R(pSrc->Data.U, srcPitch, (mfxU8 *)pBits + va_image.offsets[2], dstPitch, roi);
-
-                    break;
-                case MFX_FOURCC_YUY2:
-
-                    roi.width *= 2;
-
-                    ippiCopy_8u_C1R(pSrc->Data.Y, srcPitch, (mfxU8 *)pBits + va_image.offsets[0], dstPitch, roi);
-
-                    break;
-
-                case MFX_FOURCC_UYVY:
-
-                    roi.width *= 2;
-
-                    ippiCopy_8u_C1R(pSrc->Data.U, srcPitch, (mfxU8 *)pBits + va_image.offsets[0], dstPitch, roi);
-
-                    break;
-
-                case MFX_FOURCC_RGB3:
-                {
-                    MFX_CHECK_NULL_PTR1(pSrc->Data.R);
-                    MFX_CHECK_NULL_PTR1(pSrc->Data.G);
-                    MFX_CHECK_NULL_PTR1(pSrc->Data.B);
-
-                    mfxU8* ptrSrc = IPP_MIN(IPP_MIN(pSrc->Data.R, pSrc->Data.G), pSrc->Data.B);
-
-                    roi.width *= 3;
-
-                    ippiCopy_8u_C1R(ptrSrc, srcPitch, (mfxU8 *)pBits + va_image.offsets[0], dstPitch, roi);
-                }
-                    break;
-
-                case MFX_FOURCC_RGB4:
-                {
-                    MFX_CHECK_NULL_PTR1(pSrc->Data.R);
-                    MFX_CHECK_NULL_PTR1(pSrc->Data.G);
-                    MFX_CHECK_NULL_PTR1(pSrc->Data.B);
-
-                    mfxU8* ptrSrc = IPP_MIN(IPP_MIN(pSrc->Data.R, pSrc->Data.G), pSrc->Data.B);
-
-                    roi.width *= 4;
-
-                    ippiCopy_8u_C1R(ptrSrc, srcPitch, (mfxU8 *)pBits + va_image.offsets[0], dstPitch, roi);
-                }
-                    break;
-
-                case MFX_FOURCC_P8:
-                    ippiCopy_8u_C1R(pSrc->Data.Y, srcPitch, (mfxU8 *)pBits + va_image.offsets[0], dstPitch, roi);
-                    break;
-
-                default:
-
-                    return MFX_ERR_UNSUPPORTED;
-                }
             }
 
             {
@@ -1541,17 +1188,6 @@ VAAPIVideoCORE::DoFastCopyExtended(
 
 } // mfxStatus VAAPIVideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc)
 
-mfxStatus
-VAAPIVideoCORE::DoFastCopy(
-    mfxFrameSurface1* dst,
-    mfxFrameSurface1* src)
-{
-    CommonCORE::DoFastCopy(dst, src);
-
-    return MFX_ERR_NONE;
-
-} // mfxStatus VAAPIVideoCORE::DoFastCopy(...)
-
 
 void VAAPIVideoCORE::ReleaseHandle()
 {
@@ -1564,7 +1200,7 @@ mfxStatus VAAPIVideoCORE::IsGuidSupported(const GUID /*guid*/,
     if (!par)
         return MFX_WRN_PARTIAL_ACCELERATION;
 
-    if (IsMVCProfile(par->mfx.CodecProfile) || IsSVCProfile(par->mfx.CodecProfile))
+    if (IsMVCProfile(par->mfx.CodecProfile))
         return MFX_WRN_PARTIAL_ACCELERATION;
 
     switch (par->mfx.CodecId)
@@ -1596,7 +1232,7 @@ mfxStatus VAAPIVideoCORE::IsGuidSupported(const GUID /*guid*/,
         return MFX_ERR_UNSUPPORTED;
     }
 
-    if (MFX_HW_LAKE == m_HWType || MFX_HW_SNB == m_HWType)
+    if (MFX_HW_SNB == m_HWType)
     {
         if (par->mfx.FrameInfo.Width > 1920 || par->mfx.FrameInfo.Height > 1200)
             return MFX_WRN_PARTIAL_ACCELERATION;
@@ -1635,7 +1271,7 @@ void* VAAPIVideoCORE::QueryCoreInterface(const MFX_GUID &guid)
             pCmDevice = m_pCmCopy.get()->GetCmDevice(m_Display);
             if (!pCmDevice)
                 return NULL;
-            if (MFX_ERR_NONE != m_pCmCopy.get()->Initialize())
+            if (MFX_ERR_NONE != m_pCmCopy.get()->Initialize(GetHWType()))
                 return NULL;
             m_bCmCopy = true;
         }
@@ -1651,15 +1287,13 @@ void* VAAPIVideoCORE::QueryCoreInterface(const MFX_GUID &guid)
         {
             m_pCmCopy.reset(new CmCopyWrapper);
             if (!m_pCmCopy.get()->GetCmDevice(m_Display)){
-                //!!!! WA: CM restricts multiple CmDevice creation from different device managers.
-                //if failed to create CM device, continue without CmCopy
                 m_bCmCopy = false;
                 m_bCmCopyAllowed = false;
                 m_pCmCopy.get()->Release();
                 m_pCmCopy.reset();
                 return NULL;
             }else{
-                if(!m_pCmCopy.get()->Initialize())
+                if(!m_pCmCopy.get()->Initialize(GetHWType()))
                     return NULL;
             }
         }

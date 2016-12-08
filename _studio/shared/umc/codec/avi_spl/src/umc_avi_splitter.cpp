@@ -152,9 +152,9 @@ Status AVISplitter::TerminateInit(Status umcRes)
             delete m_pInfo->m_ppTrackInfo[i]->m_pDecSpecInfo;
         }
         if (m_pTrack && m_pTrack[i].m_pStreamFormat)
-            ippsFree(m_pTrack[i].m_pStreamFormat);
+            delete [] m_pTrack[i].m_pStreamFormat;
         if (m_pTrack && m_pTrack[i].m_pIndex)
-            ippsFree(m_pTrack[i].m_pIndex);
+            delete [] m_pTrack[i].m_pIndex;
     }
     delete[] m_ppMediaBuffer;
     m_ppMediaBuffer = NULL;
@@ -258,8 +258,8 @@ Status AVISplitter::Close()
         }
         if (m_pTrack)
         {
-            UMC_FREE(m_pTrack[i].m_pStreamFormat)
-            UMC_FREE(m_pTrack[i].m_pIndex)
+            delete[] m_pTrack[i].m_pStreamFormat;
+            delete[] m_pTrack[i].m_pIndex;
         }
     }
 
@@ -358,9 +358,7 @@ Status AVISplitter::ReadStreamsInfo(Ipp32u uiTrack)
 
     // reader stream format
     track.m_uiStreamFormatSize = m_AviChunkReader.GetChunkSize();
-    track.m_pStreamFormat = ippsMalloc_8u(track.m_uiStreamFormatSize);
-    if (!track.m_pStreamFormat)
-        return UMC_ERR_ALLOC;
+    track.m_pStreamFormat = new Ipp8u[track.m_uiStreamFormatSize];
     umcRes = m_AviChunkReader.GetData((Ipp8u *)track.m_pStreamFormat, track.m_uiStreamFormatSize);
     if (UMC_OK != umcRes)
         return umcRes;
@@ -380,9 +378,7 @@ Status AVISplitter::ReadStreamsInfo(Ipp32u uiTrack)
     {
         // index buffer doesn't include chunk header!
         track.m_uiIndexSize = m_AviChunkReader.GetChunkSize();
-        track.m_pIndex = ippsMalloc_8u(track.m_uiIndexSize);
-        if (!track.m_pIndex)
-            return UMC_ERR_ALLOC;
+        track.m_pIndex = new Ipp8u[track.m_uiIndexSize];
         m_AviChunkReader.GetData(track.m_pIndex, track.m_uiIndexSize);
         if (UMC_OK != umcRes)
             return umcRes;
@@ -744,14 +740,11 @@ Status AVISplitter::GenerateIndex()
                 return bExtension ? UMC_OK : umcRes;
 
             Ipp32u nIndexSize = m_AviChunkReader.GetChunkSize();
-            Ipp8u *pIndex = ippsMalloc_8u(nIndexSize);
-            if (pIndex == NULL)
-                return UMC_ERR_ALLOC;
-
+            Ipp8u *pIndex = new Ipp8u[nIndexSize];
             umcRes = m_AviChunkReader.GetData(pIndex, nIndexSize);
             if (UMC_OK != umcRes)
             {
-                ippsFree(pIndex);
+                delete[] pIndex;
                 return umcRes;
             }
 
@@ -760,7 +753,7 @@ Status AVISplitter::GenerateIndex()
 #endif
 
             InitIndexUsingOldAVIIndex(pIndex, nIndexSize, nMoviChunkStartAddr, nMoviChunkEndAddr);
-            ippsFree(pIndex);
+            delete[] pIndex;
             // ascend from idx1
             m_AviChunkReader.Ascend();
             // ascend from avi_ or avix
@@ -1036,10 +1029,7 @@ Status AVISplitter::InitIndexUsingNewAVIIndex(Ipp32u nTrackNum, Ipp8u *pIndexBuf
             buf += 4;
             buf += 4; // ignore dwDuration
 
-            Ipp8u *pIndexBuffer = ippsMalloc_8u(dwSize);
-            if (pIndexBuffer == NULL)
-                return UMC_ERR_ALLOC;
-
+            Ipp8u *pIndexBuffer = new Ipp8u[dwSize];
             Status umcRes = m_AviChunkReader.GetData(qwOffset, pIndexBuffer, dwSize);
             if (umcRes == UMC_OK)
             {
@@ -1047,7 +1037,7 @@ Status AVISplitter::InitIndexUsingNewAVIIndex(Ipp32u nTrackNum, Ipp8u *pIndexBuf
                 umcRes = InitIndexUsingNewAVIIndex(nTrackNum, pIndexBuffer + 8, dwSize - 8);
             }
 
-            ippsFree(pIndexBuffer);
+            delete[] pIndexBuffer;
         }
     }
     else

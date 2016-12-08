@@ -50,8 +50,6 @@ protected:
     Ipp32s m_index;
     Ipp32s m_id;
     bool   m_bDestroy;
-    // debug bufferization
-    Ipp8u  m_CompareByte;
 };
 
 /* LinuxVideoAcceleratorParams -----------------------------------------------*/
@@ -111,10 +109,7 @@ public:
     // NOT implemented functions:
     virtual Status ReleaseBuffer(Ipp32s /*type*/)
     { return UMC_OK; };
-    virtual Status ReleaseAllBuffers()
-    { return UMC_OK; };
 
-    // Following functions are absent in menlow!!!!!!!!!!!!!!!!!!!!!!
     virtual Status ExecuteExtensionBuffer(void* /*x*/) { return UMC_ERR_UNSUPPORTED;}
     virtual Status ExecuteStatusReportBuffer(void* /*x*/, Ipp32s /*y*/)  { return UMC_ERR_UNSUPPORTED;}
     virtual Status SyncTask(Ipp32s index, void * error = NULL);

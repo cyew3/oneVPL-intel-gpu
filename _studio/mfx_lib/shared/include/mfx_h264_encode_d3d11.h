@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2016 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFX_H264_ENCODE_D3D11__H
@@ -27,7 +27,7 @@
 #include "mfx_h264_encode_interface.h"
 
 #include <d3d11.h>
-#include "mfx_h264_encode_d3d9.h" // aya: suggest that the same syncop based on cache functionality is used
+#include "mfx_h264_encode_d3d9.h" // suggest that the same syncop based on cache functionality is used
 
 
 namespace MfxHwH264Encode

@@ -91,12 +91,12 @@ TEST_F(EncodedOrderTest, RunTimeParamValidation) {
         ctrl = goodCtrl;
     }
     { SCOPED_TRACE("Test valid case");
-        mfxStatus sts = (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK;
+        mfxStatus sts = (mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK;
         mfxFrameSurface1 *surf = surfaces;
-        while (sts == MFX_ERR_MORE_DATA_RUN_TASK && surf < surfaces + sizeof(surfaces) / sizeof(surfaces[0])) {
+        while (sts == MFX_ERR_MORE_DATA_SUBMIT_TASK && surf < surfaces + sizeof(surfaces) / sizeof(surfaces[0])) {
             EXPECT_CALL(core, IncreaseReference(_)).WillOnce(Return(MFX_ERR_NONE));
             sts = encoder.EncodeFrameCheck(&ctrl, surf++, &bitstream, &reordered, nullptr, &entryPoint);
-            if (sts == MFX_ERR_MORE_DATA_RUN_TASK) {
+            if (sts == MFX_ERR_MORE_DATA_SUBMIT_TASK) {
                 EXPECT_CALL(core, DecreaseReference(_)).WillOnce(Return(MFX_ERR_NONE));
                 ASSERT_EQ(MFX_ERR_NONE, entryPoint.pRoutine(entryPoint.pState, entryPoint.pParam, 0, 0));
                 ASSERT_EQ(MFX_ERR_NONE, entryPoint.pCompleteProc(entryPoint.pState, entryPoint.pParam, MFX_ERR_NONE));
@@ -140,9 +140,9 @@ TEST_F(EncodedOrderTest, RunTimeParamValidationLaExt) {
     }
     { SCOPED_TRACE("Test valid case");
 
-        mfxStatus sts = (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK;
+        mfxStatus sts = (mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK;
         mfxFrameSurface1 *surf = surfaces;
-        while (sts == MFX_ERR_MORE_DATA_RUN_TASK && surf < surfaces + sizeof(surfaces) / sizeof(surfaces[0])) {
+        while (sts == MFX_ERR_MORE_DATA_SUBMIT_TASK && surf < surfaces + sizeof(surfaces) / sizeof(surfaces[0])) {
             EXPECT_CALL(core, IncreaseReference(_)).WillOnce(Return(MFX_ERR_NONE));
             sts = encoder.EncodeFrameCheck(&ctrl, surf++, &bitstream, &reordered, nullptr, &entryPoint);
         }

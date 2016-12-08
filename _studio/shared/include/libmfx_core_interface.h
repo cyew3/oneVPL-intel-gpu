@@ -252,10 +252,6 @@ struct D3D11Interface
         {
             return MFXICOREVAAPI_GUID;
         }
-    
-    //    virtual mfxStatus              GetD3DService(mfxU16 width,
-    //                                                 mfxU16 height,
-    //                                                 VADisplay** pDisplay = NULL) = 0;      
     };
 
 #elif defined (MFX_VA_OSX)

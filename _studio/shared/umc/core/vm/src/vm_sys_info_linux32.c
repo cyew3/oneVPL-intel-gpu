@@ -43,71 +43,6 @@ Ipp32u osx_sysctl_entry_32u( int ctl_class, int ctl_entry, Ipp32u *res ) {
 
 #endif /* __APPLE__ */
 
-void vm_sys_info_get_date(vm_char *m_date, DateFormat df)
-{
-    time_t ltime;
-    struct tm *today;
-    size_t len = 0;
-
-    /* check error(s) */
-    if (NULL == m_date)
-        return;
-
-    len = vm_string_strnlen_s(m_date, 1024);
-
-    time(&ltime);
-    if (NULL == (today = localtime(&ltime)))
-        return;
-
-    switch (df)
-    {
-    case DDMMYY:
-        strftime(m_date, len, "%d/%m/%Y", today);
-        break;
-
-    case MMDDYY:
-        strftime(m_date, len, "%m/%d/%Y", today);
-        break;
-
-    case YYMMDD:
-        strftime(m_date, len, "%Y/%m/%d", today);
-        break;
-
-    default:
-        strftime(m_date, len, "%m/%d/%Y", today);
-        break;
-    }
-} /* void vm_sys_info_get_date(vm_char *m_date, DateFormat df) */
-
-void vm_sys_info_get_time(vm_char *m_time, TimeFormat tf)
-{
-    time_t ltime;
-    struct tm *today;
-
-    /* check error(s) */
-    if (NULL == m_time)
-        return;
-
-    time(&ltime);
-    if (NULL == (today = localtime(&ltime)))
-        return;
-
-    switch (tf)
-    {
-    case HHMMSS:
-        strftime(m_time, 128, "%H:%M:%S", today);
-        break;
-
-    case HHMM:
-        strftime(m_time, 128, "%H:%M", today);
-        break;
-
-    default:
-        strftime(m_time, 128, "%H:%M:%S", today);
-        break;
-    }
-} /* void vm_sys_info_get_time(vm_char *m_time, TimeFormat tf) */
-
 Ipp32u vm_sys_info_get_cpu_num(void)
 {
 #if defined(__APPLE__)
@@ -240,14 +175,6 @@ void vm_sys_info_get_program_path(vm_char *program_path)
 
 } /* void vm_sys_info_get_program_path(vm_char *program_path) */
 
-void vm_sys_info_get_program_description(vm_char *program_description)
-{
-    /* check error(s) */
-    if (NULL == program_description)
-        return;
-
-} /* void vm_sys_info_get_program_description(vm_char *program_description) */
-
 Ipp32u vm_sys_info_get_cpu_speed(void)
 {
 #ifdef __APPLE__
@@ -288,17 +215,6 @@ Ipp32u vm_sys_info_get_mem_size(void)
 
 } /* Ipp32u vm_sys_info_get_mem_size(void) */
 
-
-#ifdef UMC_VERSION_INFO
-/* Functions to obtain UMC version information */
-vm_char *vm_get_version_string( void ) {
-  return umc_version_string;
-  }
-
-Ipp64u vm_get_version_number( void ) {
-  return umc_version_number;
-  }
-#endif
 #else
 # pragma warning( disable: 4206 )
 #endif /* LINUX32 */

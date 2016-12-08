@@ -24,7 +24,6 @@
 #include "mfx_task.h"
 #include "mfx_vpp_defs.h"
 #include "mfx_vpp_base.h"
-#include "mfx_vpp_service.h"
 #include "mfx_vpp_sw.h"
 
 using namespace std;

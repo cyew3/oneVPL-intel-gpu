@@ -350,16 +350,16 @@ Status SampleBuffer::UnLockOutputBuffer(MediaData* out)
     if (m_bEndOfStream)
         m_bQuit = false;
 
+    // no filled data is present
+    if (NULL == m_pSamples)
+        return UMC_ERR_FAILED;
+
     // when 0 bytes to unlock
     lToSkip = out->GetBufferSize();
     lToSkip -= out->GetDataSize();
     if ((0 == lToSkip) &&
         (m_pSamples->m_lDataSize))
         return UMC_OK;
-
-    // no filled data is present
-    if (NULL == m_pSamples)
-        return UMC_ERR_FAILED;
 
     // error occurs
     if (lToSkip > m_pSamples->m_lDataSize)

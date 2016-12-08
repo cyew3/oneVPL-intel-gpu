@@ -550,7 +550,9 @@ MfxVideoParam::MfxVideoParam()
     , LCUSize         (DEFAULT_LCU_SIZE)
     , InsertHRDInfo   (false)
     , RawRef          (false)
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     , WiDi            (false)
+#endif
 {
     Zero(*(mfxVideoParam*)this);
     Zero(NumRefLX);
@@ -578,7 +580,9 @@ MfxVideoParam::MfxVideoParam(mfxVideoParam const & par)
     , LCUSize         (DEFAULT_LCU_SIZE)
     , InsertHRDInfo   (false)
     , RawRef          (false)
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     , WiDi            (false)
+#endif
 {
     Zero(*(mfxVideoParam*)this);
     Zero(NumRefLX);
@@ -652,12 +656,16 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     ExtBuffer::Construct(par, m_ext.DumpFiles, m_ext.m_extParam, base.NumExtParam);
 #endif
     ExtBuffer::Construct(par, m_ext.VSI, m_ext.m_extParam, base.NumExtParam);
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     ExtBuffer::Construct(par, m_ext.PAVP, m_ext.m_extParam, base.NumExtParam);
+    WiDi = !!((mfxExtAVCEncoderWiDiUsage*)ExtBuffer::Get(par));
+#endif
+#if !defined(MFX_EXT_BRC_DISABLE)
     ExtBuffer::Construct(par, m_ext.extBRC, m_ext.m_extParam, base.NumExtParam);
+#endif
     ExtBuffer::Construct(par, m_ext.SliceInfo, m_ext.m_extParam, base.NumExtParam);
     ExtBuffer::Construct(par, m_ext.ROI, m_ext.m_extParam, base.NumExtParam);
 
-    WiDi = !!((mfxExtAVCEncoderWiDiUsage*)ExtBuffer::Get(par));
 }
 
 mfxStatus MfxVideoParam::FillPar(mfxVideoParam& par, bool query)
@@ -688,8 +696,9 @@ mfxStatus MfxVideoParam::GetExtBuffers(mfxVideoParam& par, bool query)
     ExtBuffer::Set(par, m_ext.DumpFiles);
 #endif
     ExtBuffer::Set(par, m_ext.VSI);
+#if !defined(MFX_EXT_BRC_DISABLE)
     ExtBuffer::Set(par, m_ext.extBRC);
-
+#endif
 
     mfxExtCodingOptionSPSPPS * pSPSPPS = ExtBuffer::Get(par);
     if (pSPSPPS && !query)
@@ -756,8 +765,9 @@ bool MfxVideoParam::CheckExtBufferParam()
     bUnsupported += ExtBuffer::CheckBufferParams(m_ext.DumpFiles, true);
 #endif
     bUnsupported += ExtBuffer::CheckBufferParams(m_ext.VSI, true);
+#if !defined(MFX_EXT_BRC_DISABLE)
     bUnsupported += ExtBuffer::CheckBufferParams(m_ext.extBRC, true);
-
+#endif
 
     return !!bUnsupported;
 }
@@ -1606,6 +1616,7 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
     if (m_ext.CO2.MaxSliceSize)
         m_pps.cu_qp_delta_enabled_flag = 1;
 
+#ifndef MFX_CLOSED_PLATFORMS_DISABLE
     if ((m_platform.CodeName == MFX_PLATFORM_CANNONLAKE) ||
         (m_platform.CodeName == MFX_PLATFORM_ICELAKE))
     {
@@ -1613,6 +1624,7 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
         if (mfx.LowPower)
             m_pps.diff_cu_qp_delta_depth = 3;
     }
+#endif
 
     m_pps.cb_qp_offset                          = 0;
     m_pps.cr_qp_offset                          = 0;
@@ -1991,9 +2003,9 @@ mfxStatus MfxVideoParam::GetSliceHeader(Task const & task, Task const & prevTask
         s.slice_cr_qp_offset = 0;
     }
 
-     s.deblocking_filter_disabled_flag = m_pps.deblocking_filter_disabled_flag; //  needed for DDI
-     s.beta_offset_div2     = m_pps.beta_offset_div2; //  needed for DDI
-     s.tc_offset_div2       = m_pps.tc_offset_div2;   //  needed for DDI
+     s.deblocking_filter_disabled_flag = m_pps.deblocking_filter_disabled_flag;
+     s.beta_offset_div2     = m_pps.beta_offset_div2;
+     s.tc_offset_div2       = m_pps.tc_offset_div2;
      s.deblocking_filter_override_flag = 0;
 
      if ( ext2 && ext2->DisableDeblockingIdc != m_ext.CO2.DisableDeblockingIdc && m_pps.deblocking_filter_override_enabled_flag)
@@ -2534,6 +2546,7 @@ void UpdateDPB(
             dpb[i].m_codingType = 0; //don't keep coding types for prev. mini-GOP
 }
 
+#ifndef MFX_EXT_DPB_HEVC_DISABLE
 void ReportDPB(DpbArray const & DPB, mfxExtDPB& report)
 {
     report.DPBSize = 0;
@@ -2548,6 +2561,7 @@ void ReportDPB(DpbArray const & DPB, mfxExtDPB& report)
         report.DPB[i].PicType = MFX_PICTYPE_FRAME;
     }
 }
+#endif
 
 bool isLTR(
     DpbArray const & dpb,
@@ -3013,7 +3027,11 @@ void ConfigureTask(
 
         task.m_qpY -= 6 * par.m_sps.bit_depth_luma_minus8;
 
-        if ((IsOn(par.mfx.LowPower) || par.m_platform.CodeName == MFX_PLATFORM_KABYLAKE) && task.m_qpY < 0)
+        if (task.m_qpY < 0 && (
+#ifndef MFX_CLOSED_PLATFORMS_DISABLE
+            par.m_platform.CodeName == MFX_PLATFORM_KABYLAKE || 
+#endif
+            IsOn(par.mfx.LowPower)))
             task.m_qpY = 0;
     }
     else if (par.mfx.RateControlMethod != MFX_RATECONTROL_LA_EXT)
@@ -3098,8 +3116,10 @@ void ConfigureTask(
     task.m_statusReportNumber = prevTask.m_statusReportNumber + 1;
     task.m_statusReportNumber = (task.m_statusReportNumber == 0) ? 1 : task.m_statusReportNumber;
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     task.m_aes_counter = prevTask.m_aes_counter;
     Increment(task.m_aes_counter, par.m_ext.PAVP);
+#endif
 }
 
 mfxI64 CalcDTSFromPTS(
@@ -3116,6 +3136,7 @@ mfxI64 CalcDTSFromPTS(
     return MFX_TIMESTAMP_UNKNOWN;
 }
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 bool Increment(
     mfxAES128CipherCounter & aesCounter,
     mfxExtPAVPOption const & extPavp)
@@ -3150,6 +3171,7 @@ void Decrement(
         aesCounter.Count = SwapEndian(tmp);
     }
 }
+#endif
 
 bool IsFrameToSkip(Task&  task, MfxFrameAllocResponse & poolRec, bool bSWBRC)
 {
@@ -3184,22 +3206,19 @@ mfxStatus CodeAsSkipFrame(     MFXCoreInterface &            core,
     }
     if (task.m_frameType & MFX_FRAMETYPE_I)
     {
-        IppiSize roiSize = {video.mfx.FrameInfo.Width, video.mfx.FrameInfo.Height};
         FrameLocker lock1(&core, task.m_midRaw); 
+
+        mfxU32 size = lock1.Pitch*video.mfx.FrameInfo.Height;
+        memset(lock1.Y, 0, size);
 
         switch (video.mfx.FrameInfo.FourCC)
         {
         case MFX_FOURCC_NV12:             
-            ippiSet_8u_C1R(0, lock1.Y, lock1.Pitch,roiSize);
-            roiSize.height >>= 1;
-            ippiSet_8u_C1R(126, lock1.UV, lock1.Pitch,roiSize);
+            memset(lock1.UV, 126, size >> 1);
             break;
 
         case MFX_FOURCC_P010:
-            roiSize.width <<= 1;
-            ippiSet_8u_C1R(0, lock1.Y, lock1.Pitch,roiSize);
-            roiSize.height >>= 1;
-            ippiSet_8u_C1R(0, lock1.UV, lock1.Pitch,roiSize);
+            memset(lock1.UV, 0, size >> 1);
             break;
 
         default:

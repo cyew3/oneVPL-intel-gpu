@@ -522,8 +522,6 @@ public:
     virtual void Free();
 
 protected:
-    Mutex mutex;
-
     Ipp8u *m_pbAllocatedBuffer;       // (Ipp8u *) pointer to allocated unaligned buffer
     size_t m_lAllocatedBufferSize;    // (Ipp32s) size of allocated buffer
 
@@ -543,9 +541,6 @@ protected:
     };
 
     BufferInfo *m_pBuffers;           // (Buffer *) queue of filled sample info
-
-    void Lock();
-    void Unlock();
 private:
     H264CoeffsBuffer( const H264CoeffsBuffer &s );              // no copy CTR
     H264CoeffsBuffer & operator=(const H264CoeffsBuffer &s );

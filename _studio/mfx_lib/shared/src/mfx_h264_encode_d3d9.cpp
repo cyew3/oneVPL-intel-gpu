@@ -12,15 +12,14 @@
 
 #if defined (MFX_ENABLE_H264_VIDEO_ENCODE_HW)
 
-//#include "libmfx_core_d3d9.h"
 #include "mfx_h264_encode_d3d9.h"
 #include "libmfx_core_interface.h"
 
-// aya: cyclic ref
 #include "mfx_h264_encode_hw_utils.h"
 
-
 using namespace MfxHwH264Encode;
+
+void Dump(ENCODE_EXECUTE_PARAMS const & params, GUID guid);
 
 mfxU8 ConvertProfileMfx2Ddi(mfxU32 profile)
 {
@@ -235,7 +234,6 @@ void MfxHwH264Encode::FillVaringPartOfPpsBuffer(
     std::vector<MOVE_RECT> &             movingRects)
 {
     mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(task.m_ctrl);
-    mfxExtAVCEncoderWiDiUsage const * extWiDi = GetExtBuffer(task.m_ctrl);
 
     pps.NumSlice                                = mfxU8(task.m_numSlice[fieldId]);
     pps.CurrOriginalPic.Index7Bits              = mfxU8(task.m_idxRecon);
@@ -264,10 +262,14 @@ void MfxHwH264Encode::FillVaringPartOfPpsBuffer(
 
     if (extOpt2)
         pps.bUseRawPicForRef = IsOn(extOpt2->UseRawRef);
-    if (extWiDi)
+
+    pps.InputType = eType_DRM_NONE;
+
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
+    if (GetExtBuffer(task.m_ctrl.ExtParam, task.m_ctrl.NumExtParam, MFX_EXTBUFF_ENCODER_WIDI_USAGE))
         pps.InputType = eType_DRM_SECURE;
-    else
-        pps.InputType = eType_DRM_NONE;
+#endif
+       
     mfxU32 i = 0;
     for (; i < task.m_dpb[fieldId].Size(); i++)
     {
@@ -1112,7 +1114,6 @@ mfxStatus D3D9Encoder::CreateAccelerationService(MfxVideoParam const & par)
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9Encoder::CreateAccelerationService");
     MFX_CHECK_WITH_ASSERT(m_auxDevice.get(), MFX_ERR_NOT_INITIALIZED);
 
-    mfxExtPAVPOption const * extPavp = GetExtBuffer(par);
     mfxExtCodingOption2 const * extCO2 = GetExtBuffer(par);
 
     if (extCO2)
@@ -1130,6 +1131,8 @@ mfxStatus D3D9Encoder::CreateAccelerationService(MfxVideoParam const & par)
     encodeCreateDevice.CodingFunction = m_forcedCodingFunction ? m_forcedCodingFunction : ENCODE_ENC_PAK;
     encodeCreateDevice.EncryptionMode = DXVA_NoEncrypt;
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
+    mfxExtPAVPOption const * extPavp = GetExtBuffer(par);
     D3DAES_CTR_IV        initialCounter = { extPavp->CipherCounter.IV, extPavp->CipherCounter.Count };
     PAVP_ENCRYPTION_MODE encryptionMode = { extPavp->EncryptionType,   extPavp->CounterType         };
 
@@ -1140,6 +1143,7 @@ mfxStatus D3D9Encoder::CreateAccelerationService(MfxVideoParam const & par)
         encodeCreateDevice.pInitialCipherCounter = &initialCounter;
         encodeCreateDevice.pPavpEncryptionMode   = &encryptionMode;
     }
+#endif
 
     HRESULT hr = m_auxDevice->Execute(AUXDEV_CREATE_ACCEL_SERVICE, m_guid, encodeCreateDevice);
     MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
@@ -1642,7 +1646,7 @@ mfxStatus D3D9Encoder::Execute(
             HRESULT hr = m_auxDevice->BeginFrame((IDirect3DSurface9 *)surface, 0);
             MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
-            //DumpExecuteBuffers(encodeExecuteParams, DXVA2_Intel_Encode_AVC);
+            //::Dump(encodeExecuteParams, DXVA2_Intel_Encode_AVC);
 
             {
                 MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "Execute");
@@ -1767,11 +1771,13 @@ mfxStatus D3D9Encoder::QueryStatus(
             task.m_mad[fieldId] = feedback->MAD;
         task.m_resetBRC = !!feedback->reserved0; //WiDi w/a
         //for KBL we need retrive counter from HW instead of incrementing ourselfs.
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         if(m_caps.HWCounterAutoIncrement)
         {
             task.m_aesCounter[0].Count = feedback->aes_counter.Counter;
             task.m_aesCounter[0].IV = feedback->aes_counter.IV;
         }
+#endif
         m_feedbackCached.Remove(task.m_statusReportNumber[fieldId]);
         return MFX_ERR_NONE;
 
@@ -2851,12 +2857,6 @@ namespace
     }
 };
 
-void MfxHwH264Encode::DumpExecuteBuffers(ENCODE_EXECUTE_PARAMS const & params, GUID guid)
-{
-    ::Dump(params, guid);
-}
-
-
 mfxStatus D3D9SvcEncoder::Execute(
     mfxHDL                     surface,
     DdiTask const &            task,
@@ -3030,7 +3030,7 @@ mfxStatus D3D9SvcEncoder::Execute(
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
         //printf("Execute\n"); fflush(stdout);
-        //DumpExecuteBuffers(encodeExecuteParams, DXVA2_Intel_Encode_SVC);
+        //::Dump(encodeExecuteParams, DXVA2_Intel_Encode_SVC);
         //DumpRefInfo(task, fieldId);
         fflush(stdout);
 

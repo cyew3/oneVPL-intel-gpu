@@ -11,75 +11,87 @@
 #ifndef __FAST_COPY_H__
 #define __FAST_COPY_H__
 
-#include "ippcore.h"
-#include "umc_event.h"
-#include "umc_thread.h"
-#include "libmfx_allocator.h"
+#include "ippdefs.h"
 
-struct FC_TASK
+#if defined(_WIN32) || defined(_WIN64)
+// suppress ipp depricated warning
+#undef IPP_DEPRECATED
+#define IPP_DEPRECATED(comment)
+#endif
+
+#include "ippi.h"
+#include "mfx_trace.h"
+#include "mfxdefs.h"
+#include <algorithm>
+
+enum
 {
-    // pointers to source and destination
-    Ipp8u *pS;
-    Ipp8u *pD;
-
-    // size of chunk to copy
-    Ipp32u chunkSize;
-
-    // pitches and frame size
-    IppiSize roi;
-    Ipp32u srcPitch, dstPitch;
-
-    // event handles
-    UMC::Event EventStart;
-    UMC::Event EventEnd;
+    COPY_SYS_TO_SYS = 0,
+    COPY_SYS_TO_VIDEO = 1,
+    COPY_VIDEO_TO_SYS = 2,
 };
-enum eFAST_COPY_MODE
+
+template<typename T>
+inline int mfxCopyRect(const T* pSrc, int srcStep, T* pDst, int dstStep, IppiSize roiSize, int )
 {
-    FAST_COPY_SSE41         =   0x02,
-    FAST_COPY_UNSUPPORTED   =   0x03
-};
+    if (!pDst || !pSrc || roiSize.width < 0 || roiSize.height < 0 || srcStep < 0 || dstStep < 0)
+        return -1;
+
+    for(int h = 0; h < roiSize.height; h++ ) {
+        std::copy(pSrc, pSrc + roiSize.width, pDst);
+        //memcpy_s(pDst, roiSize.width, pSrc,roiSize.width);
+        pSrc = (T *)((unsigned char*)pSrc + srcStep);
+        pDst = (T *)((unsigned char*)pDst + dstStep);
+    }
+
+    return 0;
+}
+
+#ifndef OPEN_SOURCE
+template<>
+inline int mfxCopyRect<mfxU8>(const mfxU8* pSrc, int srcStep, mfxU8* pDst, int dstStep, IppiSize roiSize, int flags)
+{
+    return ippiCopyManaged_8u_C1R(pSrc, srcStep, pDst, dstStep, roiSize, flags);
+}
+#endif
 
 class FastCopy
 {
 public:
-
-    // constructor
-    FastCopy(void);
-
-    // destructor
-    virtual ~FastCopy(void);
-
-    // initialize available functionality
-    mfxStatus Initialize(void);
-
-    // release object
-    mfxStatus Release(void);
-
     // copy memory by streaming
-    mfxStatus Copy(mfxU8 *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, IppiSize roi);
-#ifndef LINUX64
+    static mfxStatus Copy(mfxU8 *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, IppiSize roi, int flag)
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "FastCopy::Copy");
+
+        if (NULL == pDst || NULL == pSrc)
+        {
+            return MFX_ERR_NULL_PTR;
+        }
+
+        mfxCopyRect<mfxU8>(pSrc, srcPitch, pDst, dstPitch, roi, flag);
+
+        return MFX_ERR_NONE;
+    }
+#if defined(_WIN32) || defined(_WIN64)
     // copy memory by streaming with shifting
-    mfxStatus Copy(mfxU16 *pDst, mfxU32 dstPitch, mfxU16 *pSrc, mfxU32 srcPitch, IppiSize roi, Ipp8u lshift, Ipp8u rshift);
+    static mfxStatus CopyAndShift(mfxU16 *pDst, mfxU32 dstPitch, mfxU16 *pSrc, mfxU32 srcPitch, IppiSize roi, mfxU8 lshift, mfxU8 rshift, int flag)
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "FastCopy::Copy");
+
+        if (NULL == pDst || NULL == pSrc)
+        {
+            return MFX_ERR_NULL_PTR;
+        }
+
+        mfxCopyRect<mfxU8>((mfxU8*)pSrc, srcPitch, (mfxU8*)pDst, dstPitch, roi, flag);
+        if(rshift)
+            ippiRShiftC_16u_C1IR(rshift, (mfxU16*)pDst, dstPitch,roi);
+        if(lshift)
+            ippiLShiftC_16u_C1IR(lshift, (mfxU16*)pDst, dstPitch,roi);
+
+        return MFX_ERR_NONE;
+    }
 #endif
-    // return supported mode
-    virtual eFAST_COPY_MODE GetSupportedMode(void) const;
-
-protected:
-
-   // synchronize threads
-    mfxStatus Synchronize(void);
-
-    static mfxU32 __STDCALL CopyByThread(void *object);
-    static IppBool m_bCopyQuit;
-
-    // mode
-    eFAST_COPY_MODE m_mode;
-
-    // handles
-    UMC::Thread *m_pThreads;
-    Ipp32u m_numThreads;
-
-    FC_TASK *m_tasks;
 };
 
 #endif // __FAST_COPY_H__

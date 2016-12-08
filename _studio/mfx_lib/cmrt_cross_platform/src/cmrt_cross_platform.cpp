@@ -53,16 +53,26 @@ const vm_char * DLL_NAME_LINUX = VM_STRING("igfxcmrt32.so");
 #endif //CMRT_EMU
 
 
+#if defined(CM_WIN)
 #define IMPL_FOR_ALL(RET, FUNC, PROTO, PARAM)   \
     RET FUNC PROTO {                            \
         switch (m_platform) {                   \
         case DX9:   return m_dx9->FUNC PARAM;   \
         case DX11:  return m_dx11->FUNC PARAM;  \
+        default:    return CM_NOT_IMPLEMENTED;  \
+        }                                       \
+    }
+#else // #if defined(CM_WIN)
+#define IMPL_FOR_ALL(RET, FUNC, PROTO, PARAM)   \
+    RET FUNC PROTO {                            \
+        switch (m_platform) {                   \
         case VAAPI: return m_linux->FUNC PARAM; \
         default:    return CM_NOT_IMPLEMENTED;  \
         }                                       \
     }
+#endif // #if defined(CM_WIN)
 
+#if defined(CM_WIN)
 #define IMPL_FOR_DX(RET, FUNC, PROTO, PARAM)    \
     RET FUNC PROTO {                            \
         switch (m_platform) {                   \
@@ -79,8 +89,6 @@ const vm_char * DLL_NAME_LINUX = VM_STRING("igfxcmrt32.so");
         default:    return CM_NOT_IMPLEMENTED;  \
         }                                       \
     }
-
-#ifndef __GNUC__
 
 #include "dxgiformat.h"
 
@@ -107,23 +115,26 @@ namespace
     }
 };
 
-#else /* __GNUC__ */
+#else /* #if defined(CM_WIN) */
 
 #define CONVERT_FORMAT(FORMAT) (FORMAT)
 
-#endif /* __GNUC__ */
+#endif /* #if defined(CM_WIN) */
 
 enum { DX9=1, DX11=2, VAAPI=3 };
 
+#if defined(CM_WIN) 
 typedef INT (* CreateCmDeviceDx9FuncTypeEx)(CmDx9::CmDevice *&, UINT &, IDirect3DDeviceManager9 *, UINT);
 typedef INT (* CreateCmDeviceDx11FuncTypeEx)(CmDx11::CmDevice *&, UINT &, ID3D11Device *, UINT);
-typedef INT (* CreateCmDeviceLinuxFuncTypeEx)(CmLinux::CmDevice *&, UINT &, VADisplay, UINT);
 typedef INT (* CreateCmDeviceDx9FuncType)(CmDx9::CmDevice *&, UINT &, IDirect3DDeviceManager9 *);
 typedef INT (* CreateCmDeviceDx11FuncType)(CmDx11::CmDevice *&, UINT &, ID3D11Device *);
-typedef INT (* CreateCmDeviceLinuxFuncType)(CmLinux::CmDevice *&, UINT &, VADisplay);
 typedef INT (* DestroyCmDeviceDx9FuncType)(CmDx9::CmDevice *&);
 typedef INT (* DestroyCmDeviceDx11FuncType)(CmDx11::CmDevice *&);
+#else // #if defined(CM_WIN) 
+typedef INT (* CreateCmDeviceLinuxFuncTypeEx)(CmLinux::CmDevice *&, UINT &, VADisplay, UINT);
+typedef INT (* CreateCmDeviceLinuxFuncType)(CmLinux::CmDevice *&, UINT &, VADisplay);
 typedef INT (* DestroyCmDeviceVAAPIFuncType)(CmLinux::CmDevice *&);
+#endif // #if defined(CM_WIN) 
 
 class CmDeviceImpl : public CmDevice
 {
@@ -133,9 +144,12 @@ public:
 
     union
     {
+#if defined(CM_WIN)
         CmDx9::CmDevice *       m_dx9;
         CmDx11::CmDevice *      m_dx11;
+#else
         CmLinux::CmDevice *     m_linux;
+#endif
     };
 
     virtual ~CmDeviceImpl(){}
@@ -145,9 +159,12 @@ public:
     INT GetDevice(AbstractDeviceHandle & pDevice)
     {
         switch (m_platform) {
+#if defined(CM_WIN)
         case DX9:   return m_dx9->GetD3DDeviceManager((IDirect3DDeviceManager9 *&)pDevice);
         case DX11:  return m_dx11->GetD3D11Device((ID3D11Device *&)pDevice);
+#else
         case VAAPI: return CM_NOT_IMPLEMENTED;
+#endif
         default:    return CM_NOT_IMPLEMENTED;
         }
     }
@@ -155,29 +172,25 @@ public:
     INT CreateSurface2D(AbstractSurfaceHandle pD3DSurf, CmSurface2D *& pSurface)
     {
         switch (m_platform) {
+#if defined(CM_WIN)
         case DX9:   return m_dx9->CreateSurface2D((IDirect3DSurface9 *)pD3DSurf, pSurface);
         case DX11:  return m_dx11->CreateSurface2D((ID3D11Texture2D *)pD3DSurf, pSurface);
+#else
         case VAAPI: return m_linux->CreateSurface2D(*(VASurfaceID*)pD3DSurf, pSurface);
+#endif
         default:    return CM_NOT_IMPLEMENTED;
         }
     }
-/*
-     INT CreateSurface2D(AbstractSurfaceHandle * pD3DSurf, const UINT surfaceCount, CmSurface2D ** pSurface)
-     {
-         switch (m_platform) {
-         case DX9:   return m_dx9->CreateSurface2D((IDirect3DSurface9 **)pD3DSurf, surfaceCount, pSurface);
-         case DX11:  return m_dx11->CreateSurface2D((ID3D11Texture2D **)pD3DSurf, surfaceCount, pSurface);
-         case VAAPI: return m_linux->CreateSurface2D((VASurfaceID *)pD3DSurf, surfaceCount, pSurface);
-         default:    return CM_NOT_IMPLEMENTED;
-         }
-     }
-*/
+
     INT CreateSurface2DSubresource(AbstractSurfaceHandle pD3D11Texture2D, UINT subresourceCount, CmSurface2D ** ppSurfaces, UINT & createdSurfaceCount, UINT option)
     {
         switch (m_platform) {
+#if defined(CM_WIN)
         case DX9:   return CM_NOT_IMPLEMENTED;
         case DX11:  return m_dx11->CreateSurface2DSubresource((ID3D11Texture2D *)pD3D11Texture2D, subresourceCount, ppSurfaces, createdSurfaceCount, option);
+#else
         case VAAPI: return CM_NOT_IMPLEMENTED;
+#endif
         default:    return CM_NOT_IMPLEMENTED;
         }
     }
@@ -185,9 +198,12 @@ public:
     INT CreateSurface2DbySubresourceIndex(AbstractSurfaceHandle pD3D11Texture2D, UINT FirstArraySlice, UINT FirstMipSlice, CmSurface2D *& pSurface)
     {
         switch (m_platform) {
+#if defined(CM_WIN)
         case DX9:   return CM_NOT_IMPLEMENTED;
         case DX11:  return m_dx11->CreateSurface2DbySubresourceIndex((ID3D11Texture2D *)pD3D11Texture2D, FirstArraySlice, FirstMipSlice, pSurface);
+#else
         case VAAPI: return CM_NOT_IMPLEMENTED;
+#endif
         default:    return CM_NOT_IMPLEMENTED;
         }
     }
@@ -242,7 +258,7 @@ public:
     IMPL_FOR_ALL(INT, FlushPrintBuffer, (), ());
 };
 
-#ifndef __GNUC__
+#ifdef CM_WIN
 INT CreateCmDevice(CmDevice *& pD, UINT & version, IDirect3DDeviceManager9 * pD3DDeviceMgr, UINT mode )
 {
     CmDeviceImpl * device = new CmDeviceImpl;
@@ -311,7 +327,7 @@ INT CreateCmDevice(CmDevice* &pD, UINT& version, ID3D11Device * pD3D11Device, UI
     return CM_SUCCESS;
 }
 
-#else /* #ifndef __GNUC__ */
+#else /* #ifdef CM_WIN */
 
 INT CreateCmDevice(CmDevice *& pD, UINT & version, VADisplay va_dpy, UINT mode)
 {
@@ -343,7 +359,7 @@ INT CreateCmDevice(CmDevice *& pD, UINT & version, VADisplay va_dpy, UINT mode)
     return CM_SUCCESS;
 }
 
-#endif /* #ifndef __GNUC__ */
+#endif /* #ifdef CM_WIN */
 
 INT DestroyCmDevice(CmDevice *& pD)
 {
@@ -358,24 +374,30 @@ INT DestroyCmDevice(CmDevice *& pD)
     {
         switch (device->GetPlatform())
         {
+#if defined(CM_WIN)
         case DX9:
             res = ((DestroyCmDeviceDx9FuncType)destroyFunc)(device->m_dx9);
             break;
         case DX11:
             res = ((DestroyCmDeviceDx11FuncType)destroyFunc)(device->m_dx11);
             break;
+#else
         case VAAPI:
             res = ((DestroyCmDeviceVAAPIFuncType)destroyFunc)(device->m_linux);
             break;
+#endif
         }
     }
 
     vm_so_free(device->m_dll);
 
     device->m_dll  = 0;
+#if defined(CM_WIN)
     device->m_dx9  = 0;
     device->m_dx11 = 0;
+#else
     device->m_linux = 0;
+#endif
 
     delete device;
     pD = 0;

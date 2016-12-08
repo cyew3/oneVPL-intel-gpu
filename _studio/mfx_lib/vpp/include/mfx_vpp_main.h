@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2012 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
 //
 
 /* ****************************************************************************** */
@@ -123,7 +123,7 @@ private:
     VideoCORE* m_core;
     std::auto_ptr<VideoVPP> m_impl;
 
-    // opaque processing (MSDK_3.0)
+    // opaque processing
     bool  m_bOpaqMode[2];
     mfxFrameAllocResponse m_responseOpaq[2];
 };

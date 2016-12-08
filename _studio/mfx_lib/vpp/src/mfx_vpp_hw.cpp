@@ -29,7 +29,6 @@
 #include "mfx_vpp_defs.h"
 #include "mfx_vpp_hw.h"
 
-// GPU Copy V.S. Composition hack
 #ifdef MFX_VA_LINUX
 #include "libmfx_core_vaapi.h"
 #endif
@@ -58,7 +57,6 @@ enum
     DEINTERLACE_DISABLE = 1
 };
 
-
 enum
 {
     TFF2TFF = 0x0,
@@ -73,7 +71,6 @@ enum
     FROM_RUNTIME_EXTBUFF_FIELD_PROC = 0x100,
     FROM_RUNTIME_PICSTRUCT = 0x200,
 };
-
 // enum for m_scene_change
 enum
 {
@@ -93,7 +90,7 @@ static void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )
 {
     memset(&pMfxExecuteParams->targetSurface, 0, sizeof(mfxDrvSurface));
     pMfxExecuteParams->pRefSurfaces = NULL ;
-    pMfxExecuteParams->dstRects.clear(); /* NB! Due to STL container memset can not be used */
+    pMfxExecuteParams->dstRects.clear();
     memset(&pMfxExecuteParams->customRateData, 0, sizeof(CustomRateData));
     pMfxExecuteParams->targetTimeStamp = 0;
     pMfxExecuteParams->refCount = 0;
@@ -121,6 +118,7 @@ static void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )
     pMfxExecuteParams->statusReportID = 0;
     pMfxExecuteParams->bFieldWeaving = false;
     pMfxExecuteParams->iFieldProcessingMode = 0;
+#ifndef MFX_CAMERA_FEATURE_DISABLE
     pMfxExecuteParams->bCameraPipeEnabled = false;
     pMfxExecuteParams->bCameraBlackLevelCorrection = false;
     pMfxExecuteParams->bCameraGammaCorrection = false;
@@ -128,6 +126,7 @@ static void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )
     pMfxExecuteParams->bCameraWhiteBalaceCorrection = false;
     pMfxExecuteParams->bCCM = false;
     pMfxExecuteParams->bCameraLensCorrection = false;
+#endif
     pMfxExecuteParams->rotation = 0;
     pMfxExecuteParams->scalingMode = MFX_SCALING_MODE_DEFAULT;
     pMfxExecuteParams->bEOS = false;
@@ -290,7 +289,7 @@ mfxStatus CpuFrc::PtsFrc::DoCpuFRC_AndUpdatePTS(
 
     mfxU32 timeStampDifference = abs((mfxI32)(inputTimeStamp - m_expectedTimeStamp));
 
-    /*
+#if 0
     // process timestamps jumps
     if (timeStampDifference > MAX_ACCEPTED_DIFFERENCE)
     {
@@ -301,7 +300,7 @@ mfxStatus CpuFrc::PtsFrc::DoCpuFRC_AndUpdatePTS(
     m_expectedTimeStamp = ((mfxU64) (m_numOutputFrames - 1) * m_params.vpp.Out.FrameRateExtD * MFX_TIME_STAMP_FREQUENCY) / m_params.vpp.Out.FrameRateExtN +
     m_timeOffset + m_timeStampJump;
     }
-    */
+#endif
 
     // process irregularity
     if (m_minDeltaTime > timeStampDifference)
@@ -419,7 +418,7 @@ mfxStatus CpuFrc::DoCpuFRC_AndUpdatePTS(
 
 
 ////////////////////////////////////////////////////////////////////////////////////
-// Gfx Resource Manager
+// Resource Manager
 ////////////////////////////////////////////////////////////////////////////////////
 mfxStatus ResMngr::Close(void)
 {
@@ -725,8 +724,6 @@ ReleaseResource* ResMngr::CreateSubResource(void)
 {
     // fill resource to remove after task slot completion
     ReleaseResource* subRes = new ReleaseResource;
-    /* KW fix*/
-    //memset(subRes, 0, sizeof(ReleaseResource));
     subRes->refCount = 0;
     subRes->surfaceListForRelease.clear();
 
@@ -751,8 +748,6 @@ ReleaseResource* ResMngr::CreateSubResourceForMode30i60p(void)
 {
     // fill resource to remove after task slot completion
     ReleaseResource* subRes = new ReleaseResource;
-    /* KW fix*/
-    //memset(subRes, 0, sizeof(ReleaseResource));
     subRes->refCount = 0;
     subRes->surfaceListForRelease.clear();
 
@@ -783,7 +778,7 @@ mfxStatus ResMngr::FillTaskForMode30i60p(
     mfxU32 refIndx = 0;
     pTask->bEOS = m_EOS;
     // bkwd
-    pTask->bkwdRefCount = m_bkwdRefCount;//aya: we set real bkw frames
+    pTask->bkwdRefCount = m_bkwdRefCount;
     mfxU32 actualNumber = m_actualNumber;
     for(refIndx = 0; refIndx < pTask->bkwdRefCount; refIndx++)
     {
@@ -874,7 +869,7 @@ mfxStatus ResMngr::FillTask(
     mfxU32 refIndx = 0;
 
     // bkwd
-    pTask->bkwdRefCount = m_bkwdRefCount;//aya: we set real bkw frames
+    pTask->bkwdRefCount = m_bkwdRefCount;//we set real bkw frames
     mfxU32 actualNumber = m_actualNumber;
     for(refIndx = 0; refIndx < pTask->bkwdRefCount; refIndx++)
     {
@@ -1114,7 +1109,6 @@ mfxStatus TaskManager::AssignTask(
     }
     else if( m_mode30i60p.IsEnabled() )
     {
-        //aya: (input == NULL) is OK for 30i60p WITHOUT DISTRIBUTED_TIME_STAMP only.
         if( (NULL == input) && (FRC_DISTRIBUTED_TIMESTAMP & m_extMode) )
         {
             return MFX_ERR_MORE_DATA;
@@ -1155,9 +1149,6 @@ mfxStatus TaskManager::AssignTask(
     {
         UpdatePTS_SimpleMode(input, output);
     }
-
-
-    //pTask = GetTask();//AYA!!!
 
     return MFX_ERR_NONE;
 
@@ -2204,7 +2195,6 @@ mfxStatus VideoVPPHW::VppFrameCheck(
     DdiTask *pTask = NULL;
 
 #ifdef MFX_VA_LINUX
-    // W/a for 1-pixel crops which cause Linux 16.5 driver hang.
     if(input && ((input->Info.CropW == 1) || (input->Info.CropH == 1))){
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
@@ -2311,7 +2301,7 @@ mfxStatus VideoVPPHW::PreWorkOutSurface(ExtSurface & output)
 
     out = hdl;
 
-    // register output surface (aya: make sense for DX9 only)
+    // register output surface (make sense for DX9 only)
     mfxStatus sts = (*m_ddi)->Register(&out, 1, TRUE);
     MFX_CHECK_STS(sts);
 
@@ -2660,7 +2650,7 @@ int RunGpu(
     return CM_SUCCESS;
 }
 
-// aya: it is expected video->video, external memory only!!!
+// it is expected video->video, external memory only!!!
 mfxStatus VideoVPPHW::ProcessFieldCopy(mfxHDL in, mfxHDL out, mfxU32 fieldMask)
 {
     MFX_CHECK_NULL_PTR1(in);
@@ -2821,7 +2811,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
         surfQueue[indx] = pTask->m_refList[pTask->bkwdRefCount + i];
     }
 
-    /* in VPP Field Copy mode we just copy field only and ignore driver call!!! */
+    /* in VPP Field Copy mode we just copy field only */
     mfxU32 imfxFPMode = 0xffffffff;
     if (m_executeParams.iFieldProcessingMode != 0)
     {
@@ -3022,6 +3012,16 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
         mfxU32 sc_in_second_field = 0;
         mfxU32  sc_detected = 0;
 
+        // WA to mark consecutive frames after scene change with SCENE_NEW flag
+        if(m_scene_change >= 2)
+            scene_change = m_scene_change/2;
+
+        if (m_executeParams.bFMDEnable && m_frame_num % 2 != 0 && m_frame_num > 1)
+        {
+            // This frame was analyzed already, so just re-use data.
+            scene_change = m_scene_change;
+        }
+        else
         {
             mfxHDL frameHandle;
             mfxFrameSurface1 frameSurface;
@@ -3060,14 +3060,11 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
             }
 
             // Check for scene change
-            // In ADI, current field uses information from previous field and next field (if it is present in current frame).
-            // Use BOB for scene change when previous or next field can not be used
-            // WA: we check both last frame in scene and scene change as parity information may not be accurate.
             analysisReady = m_SCD.ProcessField(); // First field
-            sc_in_first_field = m_SCD.Get_frame_shot_Decision() + m_SCD.Get_frame_last_in_scene(); //takes care of bad parity info
+            sc_in_first_field = m_SCD.Get_frame_shot_Decision() + m_SCD.Get_frame_last_in_scene();
 
             analysisReady = m_SCD.ProcessField(); // Second field
-            sc_in_second_field = m_SCD.Get_frame_shot_Decision() + m_SCD.Get_frame_last_in_scene(); //Dima
+            sc_in_second_field += m_SCD.Get_frame_shot_Decision() + m_SCD.Get_frame_last_in_scene();
 
             sc_detected = sc_in_first_field + sc_in_second_field;
             scene_change += sc_detected;
@@ -3075,45 +3072,15 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
             // Check for repeat frame
             repeat_frame = m_SCD.Query_is_frame_repeated();
 
-
-            /*
-            Default is NO_SCENE_CHANGE (value 0)
-            Use BOB when scene change occurs (i.e. m_scene_change > NO_SCENE_CHANGE).
-            Use BOB for repeat frame after scene change.  Allow maximum of 2 repeat frames
-            WA: use BOB for 2 frames after scene change (or scene change followed by repeat frame)
-            This is needed when there is discrepancy in frame parity (e.g. BFF marked as TFF)
-            */
-            switch (m_scene_change)
-            {
-                case SCENE_CHANGE:
-                    if (repeat_frame)
-                        m_scene_change = REPEAT;
-                    else
-                        m_scene_change = SCENE_CHANGE_PLUS_1;
-                    break;
-                case REPEAT:
-                    if (repeat_frame)
-                        m_scene_change = REPEAT1;
-                    else
-                        m_scene_change = SCENE_CHANGE_PLUS_1;
-                    break;
-                case REPEAT1:
-                    m_scene_change = SCENE_CHANGE_PLUS_1;
-                    break;
-                case SCENE_CHANGE_PLUS_1:
-                    m_scene_change = SCENE_CHANGE_PLUS_2;
-                    break;
-                case SCENE_CHANGE_PLUS_2:
-                    m_scene_change = NO_SCENE_CHANGE;
-                    break;
-                default:
-                    break;
+            // WA: if scene change is detected, force next 2 frames to be processed with BOB.
+            // Same for repeat frame after scene change.
+            // This may be removed after frame counts get synchronized with BOB and m_refCountForADI
+            // in mfx_vpp_vaapi.cpp
+            if (sc_detected || (repeat_frame && scene_change)){
+                m_scene_change = 4;
+            } else {
+                m_scene_change /= 2;
             }
-
-            if (sc_detected)
-                m_scene_change = SCENE_CHANGE;
-
-            scene_change = m_scene_change;
         }
 
         m_executeParams.scene = scene_change ? VPP_SCENE_NEW : VPP_SCENE_NO_CHANGE;
@@ -3127,25 +3094,6 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
     m_executeParams.bEOS         = pTask->bEOS;
 
     m_executeParams.statusReportID = pTask->taskIndex;
-
-    // aya: logic of deinterlace using is very complex (see internal msdk spec)
-    // here is correct code but driver produce artefact.
-    // will be used after driver fix
-    //-----------------------------------------------------
-    //{
-    //    m_executeParams.iTargetInterlacingMode = DEINTERLACE_DISABLE;
-
-    //    mfxU16 dstPic = m_executeParams.targetSurface.frameInfo.PicStruct;
-    //    mfxU16 srcPic = pInputSurface->Info.PicStruct;// aya: may be issue in case of multiple input frames
-
-    //    bool bDeinterlaceRequired = ((dstPic & MFX_PICSTRUCT_PROGRESSIVE) && (!(srcPic & MFX_PICSTRUCT_PROGRESSIVE)));
-    //
-    //    if( bDeinterlaceRequired )
-    //    {
-    //        m_executeParams.iTargetInterlacingMode = DEINTERLACE_ENABLE;
-    //    }
-    //}
-    //-----------------------------------------------------
 
     m_executeParams.iTargetInterlacingMode = DEINTERLACE_ENABLE;
 
@@ -3168,7 +3116,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
 
     MFX_CHECK_STS(sts);
 
-    //aya: wa for variance
+    //wa for variance
     if(execParams.bVarianceEnable)
     {
         //pTask->frameNumber = m_executeParams.frameNumber;
@@ -3232,7 +3180,7 @@ mfxStatus VideoVPPHW::QueryTaskRoutine(void *pState, void *pParam, mfxU32 thread
     //[2] Variance
     if( pTask->bVariance )
     {
-        // aya: windows part
+        // windows part
         std::vector<UINT> variance;
 
         sts = (*pHwVpp->m_ddi)->QueryVariance(
@@ -3252,31 +3200,33 @@ mfxStatus VideoVPPHW::QueryTaskRoutine(void *pState, void *pParam, mfxU32 thread
         }
     }
 
+#if 0
     // code moved in Submission() part due to issue with encoder
     //// [3] Copy sys -> vid
-    //if( SYS_TO_SYS == pHwVpp->m_ioMode || D3D_TO_SYS == pHwVpp->m_ioMode)
-    //{
-    //    mfxFrameData d3dSurf = { 0 };
-    //    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Surface lock (output frame)");
-    //    MFX_LTRACE_S(MFX_TRACE_LEVEL_INTERNAL, pTask->frameNumber);
-    //    FrameLocker lock(
-    //        pHwVpp->m_pCore,
-    //        d3dSurf,
-    //        pHwVpp->m_internalVidSurf[VPP_OUT].mids[ pTask->output.resIdx ]);
+    if( SYS_TO_SYS == pHwVpp->m_ioMode || D3D_TO_SYS == pHwVpp->m_ioMode)
+    {
+        mfxFrameData d3dSurf = { 0 };
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Surface lock (output frame)");
+        MFX_LTRACE_S(MFX_TRACE_LEVEL_INTERNAL, pTask->frameNumber);
+        FrameLocker lock(
+            pHwVpp->m_pCore,
+            d3dSurf,
+            pHwVpp->m_internalVidSurf[VPP_OUT].mids[ pTask->output.resIdx ]);
 
-    //    MFX_CHECK(d3dSurf.Y != 0, MFX_ERR_LOCK_MEMORY);
-    //    MFX_AUTO_TRACE_STOP();
+        MFX_CHECK(d3dSurf.Y != 0, MFX_ERR_LOCK_MEMORY);
+        MFX_AUTO_TRACE_STOP();
 
-    //    mfxFrameData sysSurf = pTask->output.pSurf->Data;
-    //    FrameLocker lock2(pHwVpp->m_pCore, sysSurf, true);
-    //    MFX_CHECK(sysSurf.Y != 0, MFX_ERR_LOCK_MEMORY);
+        mfxFrameData sysSurf = pTask->output.pSurf->Data;
+        FrameLocker lock2(pHwVpp->m_pCore, sysSurf, true);
+        MFX_CHECK(sysSurf.Y != 0, MFX_ERR_LOCK_MEMORY);
 
-    //    {
-    //        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "HW_VPP: Copy output (d3d->sys)");
-    //        sts = CopyFrameDataBothFields(pHwVpp->m_pCore, sysSurf, d3dSurf, pTask->output.pSurf->Info);
-    //        MFX_CHECK_STS(sts);
-    //    }
-    //}
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "HW_VPP: Copy output (d3d->sys)");
+            sts = CopyFrameDataBothFields(pHwVpp->m_pCore, sysSurf, d3dSurf, pTask->output.pSurf->Info);
+            MFX_CHECK_STS(sts);
+        }
+    }
+#endif
 
     // [4] Complete task
     sts = pHwVpp->m_taskMngr.CompleteTask(pTask);
@@ -3292,7 +3242,6 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
     mfxStatus sts = MFX_ERR_NONE;
 
 #ifdef MFX_VA_LINUX
-    // W/a for 1-pixel crops which cause Linux 16.5 driver hang.
     if((par->vpp.In.CropW  == 1) ||
        (par->vpp.In.CropH  == 1) ||
        (par->vpp.Out.CropW == 1) ||
@@ -3410,7 +3359,7 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
         } // switch
     }
 
-    /* 2. p010 video memory should be shifted (msdn) */
+    /* 2. p010 video memory should be shifted */
     if ((MFX_FOURCC_P010 == par->vpp.In.FourCC  && 0 == par->vpp.In.Shift  && par->IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY) ||
         (MFX_FOURCC_P010 == par->vpp.Out.FourCC && 0 == par->vpp.Out.Shift && par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
         sts = GetWorstSts(sts, MFX_ERR_INVALID_VIDEO_PARAM);
@@ -3460,7 +3409,7 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
     if ( !(caps->mFormatSupport[par->vpp.In.FourCC] & MFX_FORMAT_SUPPORT_INPUT) || !(caps->mFormatSupport[par->vpp.Out.FourCC] & MFX_FORMAT_SUPPORT_OUTPUT) )
         sts = GetWorstSts(sts, MFX_WRN_PARTIAL_ACCELERATION);
 
-    /* 6. HSD 8159506 */
+    /* 6. */
     if (MFX_FOURCC_YV12 == par->vpp.In.FourCC && MFX_HW_BDW < core->GetHWType() && (par->vpp.In.Width > 6144 || par->vpp.In.Height > 6144))
         sts = GetWorstSts(sts, MFX_WRN_PARTIAL_ACCELERATION);
 
@@ -4006,20 +3955,20 @@ mfxStatus ConfigureExecuteParams(
 
             case MFX_EXTBUFF_VPP_RESIZE:
             {
-                break;// aya: make sense for SW_VPP only
+                break;// make sense for SW_VPP only
             }
 
             case MFX_EXTBUFF_VPP_CSC:
             case MFX_EXTBUFF_VPP_CSC_OUT_RGB4:
             case MFX_EXTBUFF_VPP_CSC_OUT_A2RGB10:
             {
-                break;// aya: make sense for SW_VPP only
+                break;// make sense for SW_VPP only
             }
 
             case MFX_EXTBUFF_VPP_RSHIFT_IN:
             case MFX_EXTBUFF_VPP_LSHIFT_OUT:
             {
-                break;// aya: make sense for SW_VPP only
+                break;// make sense for SW_VPP only
             }
 
             case MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION:
@@ -4032,12 +3981,12 @@ mfxStatus ConfigureExecuteParams(
                 config.m_extConfig.frcRational[VPP_OUT].FrameRateExtD = videoParam.vpp.Out.FrameRateExtD;
 
                 config.m_surfCount[VPP_IN]  = IPP_MAX(2, config.m_surfCount[VPP_IN]);
-                config.m_surfCount[VPP_OUT] = IPP_MAX(2, config.m_surfCount[VPP_OUT]);//aya fixme ????
+                config.m_surfCount[VPP_OUT] = IPP_MAX(2, config.m_surfCount[VPP_OUT]);
                 executeParams.frcModeOrig = static_cast<mfxU16>(GetMFXFrcMode(videoParam));
 #if 0
                 // Disable interpolated FRC until related issues resolved
 
-                // aya: driver supports GFX FRC for progressive content only and NV12 input!!!
+                // driver supports GFX FRC for progressive content only and NV12 input!!!
                 bool isProgressiveStream = ((MFX_PICSTRUCT_PROGRESSIVE == videoParam.vpp.In.PicStruct) &&
                     (MFX_PICSTRUCT_PROGRESSIVE == videoParam.vpp.Out.PicStruct)) ? true : false;
 
@@ -4121,8 +4070,9 @@ mfxStatus ConfigureExecuteParams(
 #if defined(MFX_ENABLE_IMAGE_STABILIZATION_VPP)
             case MFX_EXTBUFF_VPP_IMAGE_STABILIZATION:
             {
+#if 0
                 //DISABLE IMAGE_STABILIZATION
-                /*if(caps.uIStabFilter)
+                if(caps.uIStabFilter)
                 {
                     executeParams.bImgStabilizationEnable = true;
                     executeParams.istabMode               = MFX_IMAGESTAB_MODE_BOXING;
@@ -4134,12 +4084,6 @@ mfxStatus ConfigureExecuteParams(
                             mfxExtVPPImageStab *extIStab = (mfxExtVPPImageStab*) videoParam.ExtParam[i];
 
                             executeParams.istabMode = extIStab->Mode;
-
-                            // aya: all checks provided on high level
-                                //if( extIStab->Mode != MFX_IMAGESTAB_MODE_UPSCALE && extIStab->Mode != MFX_IMAGESTAB_MODE_BOXING )
-                                //{
-                                //   return MFX_ERR_INVALID_VIDEO_PARAM;
-                                //}
                         }
                     }
                 }
@@ -4147,10 +4091,10 @@ mfxStatus ConfigureExecuteParams(
                 {
                     executeParams.bImgStabilizationEnable = false;
                     //bIsPartialAccel = true;
-                }*/
+                }
+#endif
                 executeParams.bImgStabilizationEnable = false;
                 // no SW Fall Back
-
                 break;
             }
 #endif
@@ -4262,11 +4206,6 @@ mfxStatus ConfigureExecuteParams(
                     if (videoParam.ExtParam[jj]->BufferId == MFX_EXTBUFF_VPP_FIELD_PROCESSING)
                     {
                         mfxExtVPPFieldProcessing* extFP = (mfxExtVPPFieldProcessing*) videoParam.ExtParam[jj];
-                        // aya: quick fix for CM
-                        /*const int TFF2TFF = 0x0;
-                        const int TFF2BFF = 0x1;
-                        const int BFF2TFF = 0x2;
-                        const int BFF2BFF = 0x3;*/
 
                         if (extFP->Mode == MFX_VPP_COPY_FRAME)
                         {
@@ -4285,7 +4224,7 @@ mfxStatus ConfigureExecuteParams(
                             }
                         }
 
-                        // aya, al: !!! Sergey Osipov's kernel uses "0"  as a "valid" data, but HW_VPP doesn't
+                        // kernel uses "0"  as a "valid" data, but HW_VPP doesn't
                         // to prevent issue we increment here and decrement before kernel call
                         executeParams.iFieldProcessingMode++;
                     }
@@ -4455,12 +4394,6 @@ mfxStatus ConfigureExecuteParams(
                     executeParams.Contrast       = 0;
                     executeParams.Hue            = 0;
                     executeParams.Saturation     = 0;
-                }
-                else if (MFX_EXTBUFF_VPP_DETAIL == bufferId)
-                {
-                    executeParams.bDetailAutoAdjust    = false;
-                    executeParams.detailFactor         = 0;
-                    executeParams.detailFactorOriginal = 0;
                 }
                 else if (MFX_EXTBUFF_VIDEO_SIGNAL_INFO == bufferId)
                 {
@@ -4913,6 +4846,7 @@ mfxStatus MfxFrameAllocResponse::Alloc(
 {
     req.NumFrameSuggested = req.NumFrameMin; // no need in 2 different NumFrames
 
+#ifdef MFX_VA_WIN
     if (MFX_HW_D3D11  == core->GetVAType())
     {
         mfxFrameAllocRequest tmp = req;
@@ -4932,6 +4866,7 @@ mfxStatus MfxFrameAllocResponse::Alloc(
         NumFrameActual = req.NumFrameMin;
     }
     else
+#endif
     {
         mfxStatus sts = core->AllocFrames(&req, this, isCopyReqiured);
         MFX_CHECK_STS(sts);

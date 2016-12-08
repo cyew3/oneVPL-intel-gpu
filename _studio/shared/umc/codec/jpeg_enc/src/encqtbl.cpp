@@ -56,7 +56,7 @@ JERRCODE CJPEGEncoderQuantTable::Init(int id,Ipp8u raw[64],int quality)
   m_id        = id;
   m_precision = 0; // 8-bit precision
 
-  ippsCopy_8u(raw,m_raw8u,DCTSIZE2);
+  MFX_INTERNAL_CPY(m_raw8u,raw,DCTSIZE2);
 
   // scale according quality parameter
   if(quality)
@@ -151,7 +151,7 @@ JERRCODE CJPEGEncoderQuantTable::Init(int id,Ipp16u raw[64],int quality)
   m_id        = id;
   m_precision = 1; // 16-bit precision
 
-  ippsCopy_8u((Ipp8u*)raw,(Ipp8u*)m_raw16u,DCTSIZE2*sizeof(Ipp16u));
+  MFX_INTERNAL_CPY((Ipp8u*)m_raw16u,(Ipp8u*)raw,DCTSIZE2*sizeof(Ipp16u));
 
   if(quality)
   {

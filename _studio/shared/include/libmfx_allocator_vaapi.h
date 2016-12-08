@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2012 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -36,6 +36,8 @@ namespace mfxDefaultAllocatorVAAPI
     mfxStatus GetHDLHW(mfxHDL pthis, mfxMemId mid, mfxHDL *handle);
     mfxStatus UnlockFrameHW(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr=0);
     mfxStatus FreeFramesHW(mfxHDL pthis, mfxFrameAllocResponse *response);
+
+    mfxStatus SetFrameData(const VAImage &va_image, mfxU32 mfx_fourcc, mfxU8* pBuffer, mfxFrameData*  ptr);
 
     class mfxWideHWFrameAllocator : public  mfxBaseWideFrameAllocator
     {

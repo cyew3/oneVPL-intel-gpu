@@ -1328,15 +1328,19 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     {
         maxQP += 6 * (par.mfx.FrameInfo.BitDepthLuma - 8);
 
-        if (IsOn(par.mfx.LowPower) || par.m_platform.CodeName == MFX_PLATFORM_KABYLAKE)
+        if (IsOn(par.mfx.LowPower)
+#ifndef MFX_CLOSED_PLATFORMS_DISABLE
+            || par.m_platform.CodeName == MFX_PLATFORM_KABYLAKE
+#endif
+            )
             minQP = 6 * (par.mfx.FrameInfo.BitDepthLuma - 8);
     }
 #endif
 
     if (IsOn(par.mfx.LowPower))
     {
-        surfAlignW = HW_SURF_ALIGN_VDENC_W;
-        surfAlignH = HW_SURF_ALIGN_VDENC_H;
+        surfAlignW = HW_SURF_ALIGN_LOWPOWER_W;
+        surfAlignH = HW_SURF_ALIGN_LOWPOWER_H;
     }
 
     changed +=  par.CheckExtBufferParam();  // todo: check ROI?? check SliceInfo??
@@ -1407,6 +1411,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 
     changed += CheckMax(par.mfx.GopRefDist, (caps.SliceIPOnly || IsOn(par.mfx.LowPower)) ? 1 : (par.mfx.GopPicSize ? par.mfx.GopPicSize - 1 : 0xFFFF));
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     invalid += CheckOption(par.Protected
 #ifndef MFX_VA_LINUX
         , (mfxU16)MFX_PROTECTION_PAVP
@@ -1445,6 +1450,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
                 , 0x0C000);
         }
     }
+#endif // !defined(MFX_PROTECTED_FEATURE_DISABLE)
 
     changed += CheckOption(par.IOPattern
         , (mfxU32)MFX_IOPATTERN_IN_VIDEO_MEMORY
@@ -1497,11 +1503,13 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     else 
         changed += CheckOption(par.m_ext.CO2.MBBRC, (mfxU32)MFX_CODINGOPTION_ON, 0);
 
+#if !defined(MFX_EXT_BRC_DISABLE)
     if (par.m_ext.extBRC.pthis!=0 && !(par.m_ext.CO2.ExtBRC && (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR || par.mfx.RateControlMethod == MFX_RATECONTROL_VBR)))
     {
         par.m_ext.extBRC.pthis = 0;
         changed ++;    
     }
+#endif
 
     changed += CheckOption(par.mfx.FrameInfo.PicStruct, (mfxU16)MFX_PICSTRUCT_PROGRESSIVE, 0);
 
@@ -1629,7 +1637,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
             changed ++;
         }
         else if (   par.mfx.RateControlMethod != MFX_RATECONTROL_CQP
-                 || par.mfx.RateControlMethod != MFX_RATECONTROL_ICQ)
+                 && par.mfx.RateControlMethod != MFX_RATECONTROL_ICQ)
         {
             mfxF64 fr = par.mfx.FrameInfo.FrameRateExtD ? (mfxF64)par.mfx.FrameInfo.FrameRateExtN / par.mfx.FrameInfo.FrameRateExtD : 30.;
             mfxU32 avgFS = Ceil((mfxF64)par.TargetKbps / fr / 8);
@@ -1726,7 +1734,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         par.m_ext.CO2.IntRefCycleSize = 0;
         changed +=1;
     }
- #ifdef MAX_FRAME_SIZE_SUPPORT  
+#ifdef MAX_HEVC_FRAME_SIZE_SUPPORT
     if (((caps.UserMaxFrameSizeSupport == 0 && !par.isSWBRC()) || (par.mfx.RateControlMethod != MFX_RATECONTROL_VBR)) && par.m_ext.CO2.MaxFrameSize)
 #else  
     if (par.m_ext.CO2.MaxFrameSize)
@@ -2060,7 +2068,11 @@ void SetDefaults(
         rawBits = rawBits / 8 * par.mfx.FrameInfo.BitDepthLuma;
         maxQP += 6 * (par.mfx.FrameInfo.BitDepthLuma - 8);
 
-        if (IsOn(par.mfx.LowPower) || par.m_platform.CodeName == MFX_PLATFORM_KABYLAKE)
+        if (IsOn(par.mfx.LowPower)
+#ifndef MFX_CLOSED_PLATFORMS_DISABLE
+            || par.m_platform.CodeName == MFX_PLATFORM_KABYLAKE
+#endif
+            )
             minQP = 6 * (par.mfx.FrameInfo.BitDepthLuma - 8);
     }
 #endif
@@ -2190,11 +2202,15 @@ void SetDefaults(
     {
         while (par.NumRefLX[0] + par.NumRefLX[1] > par.mfx.NumRefFrame)
         {
+#ifndef MFX_CLOSED_PLATFORMS_DISABLE
             if (IsOn(par.mfx.LowPower) && (par.m_platform.CodeName >= MFX_PLATFORM_CANNONLAKE)) {  // identical reference lists are required
                 if (par.mfx.GopRefDist == 1 &&
                     par.NumRefLX[0] == par.mfx.NumRefFrame && par.NumRefLX[1] == par.mfx.NumRefFrame)
                     break;
-            } else {
+            }
+            else
+#endif
+            {
                 if (par.mfx.GopRefDist == 1 && par.NumRefLX[1] == 1
                     && par.NumRefLX[0] + par.NumRefLX[1] == par.mfx.NumRefFrame + 1)
                     break;
@@ -2276,6 +2292,7 @@ void SetDefaults(
             CO3.NumRefActiveBL1[i] = i ? CO3.NumRefActiveBL1[i - 1] : par.NumRefLX[1];
     }
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (   par.Protected == MFX_PROTECTION_PAVP
         || par.Protected == MFX_PROTECTION_GPUCP_PAVP)
     {
@@ -2290,6 +2307,7 @@ void SetDefaults(
         if (!PAVP.CounterIncrement)
             PAVP.CounterIncrement = 0xC000;
     }
+#endif // #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN10)
     if (!CO3.TransformSkip)

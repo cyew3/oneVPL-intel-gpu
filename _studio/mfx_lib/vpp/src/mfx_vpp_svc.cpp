@@ -13,7 +13,7 @@
 
 #include "mfx_common.h"
 
-#if defined (MFX_ENABLE_VPP)
+#if defined (MFX_ENABLE_VPP) && defined (MFX_ENABLE_VPP_SVC)
 #include "mfx_enc_common.h"
 #include "mfx_session.h"
 #include "mfxsvc.h"
@@ -32,10 +32,9 @@ mfxStatus ImplementationSvc::Query(VideoCORE* core, mfxVideoParam *in, mfxVideoP
 
 mfxStatus ImplementationSvc::QueryIOSurf(VideoCORE* core, mfxVideoParam *par, mfxFrameAllocRequest *request)
 {
-    //aya: interface SVC_VPP isn't clear right now.
     mfxVideoParam queryVideoParam = *par;
-    queryVideoParam.vpp.Out = queryVideoParam.vpp.In; //aya: it is right, exclude DI processing
-    queryVideoParam.vpp.Out.PicStruct = par->vpp.Out.PicStruct;// aya: it is OK for DI
+    queryVideoParam.vpp.Out = queryVideoParam.vpp.In;
+    queryVideoParam.vpp.Out.PicStruct = par->vpp.Out.PicStruct;
 
     mfxStatus sts = VideoVPPBase::QueryIOSurf(core, &queryVideoParam, request);
 
@@ -276,7 +275,7 @@ mfxStatus ImplementationSvc::VppFrameCheck(
     // advanced processing (delay or multi outputs)
     if( (MFX_ERR_MORE_DATA == mfxSts || 
          MFX_ERR_MORE_SURFACE == mfxSts ||
-         (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK == mfxSts) &&
+         (mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK == mfxSts) &&
          (m_recievedDidList.size() == m_declaredDidList.size()) )
     {
         m_recievedDidList.clear();
@@ -355,5 +354,5 @@ void ImplementationSvc::GetLayerParam(
     return;
 }
 
-#endif // MFX_ENABLE_VPP
+#endif // defined (MFX_ENABLE_VPP) && defined (MFX_ENABLE_VPP_SVC)
 /* EOF */

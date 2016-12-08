@@ -38,6 +38,8 @@ namespace MfxHwH265Encode
 // GUIDs from DDI for HEVC Encoder spec 0.956
 static const GUID DXVA2_Intel_Encode_HEVC_Main =
 { 0x28566328, 0xf041, 0x4466, { 0x8b, 0x14, 0x8f, 0x58, 0x31, 0xe7, 0x8f, 0x8b } };
+
+#ifndef OPEN_SOURCE
 static const GUID DXVA2_Intel_Encode_HEVC_Main10 =
 { 0x6b4a94db, 0x54fe, 0x4ae1, { 0x9b, 0xe4, 0x7a, 0x7d, 0xad, 0x00, 0x46, 0x00 } };
 
@@ -66,6 +68,7 @@ static const GUID DXVA2_Intel_LowpowerEncode_HEVC_Main444 =
 static const GUID DXVA2_Intel_LowpowerEncode_HEVC_Main444_10 =
 { 0x10e19ac8, 0xbf39, 0x4443, { 0xbe, 0xc3, 0x1b, 0x0c, 0xbf, 0xe4, 0xc7, 0xaa } };
 #endif
+#endif // #ifndef OPEN_SOURCE
 
 GUID GetGUID(MfxVideoParam const & par);
 
@@ -328,7 +331,7 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_HEVC
 
     ENCODE_INPUT_TYPE    InputType;
 #else
-    // following parameters are for VDEnc only
+    // following parameters are for LowPower only
     UCHAR   slice_pic_parameter_set_id; // [0..63]
     UCHAR   nal_unit_type;              // [0..63]
     UINT    MaxSliceSizeInBytes;

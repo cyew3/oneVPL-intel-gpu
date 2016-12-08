@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -1538,7 +1538,6 @@ void umc_h264_mv_resampling(//H264SegmentDecoderMultiThreaded *sd,
         ((leftOffset & 0xF) == 0) &&
         ((topOffset % (16 * (1 + curEnc->m_SeqParamSet->frame_mbs_only_flag))) == 0) &&
         //(curSliceHeader->MbaffFrameFlag == refLayer->is_MbAff) &&
-        (refPhaseX == phaseX) &&
         (refPhaseX == phaseX))
     {
         SpatialResolutionChangeFlag = 0;

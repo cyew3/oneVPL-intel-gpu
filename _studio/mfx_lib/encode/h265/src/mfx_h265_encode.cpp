@@ -35,6 +35,7 @@
 #include "mfx_enc_common.h"
 #include "mfx_h265_fei.h"
 #include "mfx_h265_cmcopy.h"
+#include "fast_copy.h"
 
 #ifdef AMT_HROI_PSY_AQ
 #include "FSapi.h"
@@ -2100,7 +2101,7 @@ mfxStatus H265Encoder::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *s
     mfxStatus status = MFX_ERR_NONE;
     if (surface && (Ipp32s)m_frameCountBufferedSync < buffering) {
         m_frameCountBufferedSync++;
-        status = (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK;
+        status = (mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK;
     }
 
     if (surface) {
@@ -2112,9 +2113,9 @@ mfxStatus H265Encoder::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *s
     }
 
     H265EncodeTaskInputParams *m_pTaskInputParams = (H265EncodeTaskInputParams*)H265_Malloc(sizeof(H265EncodeTaskInputParams));
-    // MFX_ERR_MORE_DATA_RUN_TASK means that frame will be buffered and will be encoded later.
+    // MFX_ERR_MORE_DATA_SUBMIT_TASK means that frame will be buffered and will be encoded later.
     // Output bitstream isn't required for this task. it is marker for TaskRoutine() and TaskComplete()
-    m_pTaskInputParams->bs = (status == (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK) ? 0 : bs;
+    m_pTaskInputParams->bs = (status == (mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK) ? 0 : bs;
     Zero(m_pTaskInputParams->ctrl_);
     m_pTaskInputParams->ctrl = NULL;
     if (ctrl) {
@@ -3064,9 +3065,9 @@ void H265Encoder::InitNewFrame(Frame *out, mfxFrameSurface1 *inExternal)
         Ipp32s width = out->m_origin->width * bpp;
         Ipp32s height = out->m_origin->height;
         IppiSize roi = { width, height };
-        ippiCopyManaged_8u_C1R(in.Data.Y, in.Data.Pitch, out->m_origin->y, out->m_origin->pitch_luma_bytes, roi, 2);
+        FastCopy::Copy(out->m_origin->y, out->m_origin->pitch_luma_bytes, in.Data.Y, in.Data.Pitch, roi, COPY_VIDEO_TO_SYS);
         roi.height >>= m_videoParam.chromaShiftH;
-        ippiCopyManaged_8u_C1R(in.Data.UV, in.Data.Pitch, out->m_origin->uv, out->m_origin->pitch_chroma_bytes, roi, 2);
+        FastCopy::Copy(out->m_origin->uv, out->m_origin->pitch_chroma_bytes, in.Data.UV, in.Data.Pitch, roi, COPY_VIDEO_TO_SYS);
         fa.Unlock(fa.pthis, in.Data.MemId, &in.Data);
 #ifdef AMT_HROI_PSY_AQ
         if((m_videoParam.DeltaQpMode & AMT_DQP_HROI) && (out->m_origin->height & 0xf)) {

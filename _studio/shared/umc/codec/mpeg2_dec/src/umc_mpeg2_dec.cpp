@@ -23,14 +23,6 @@
 #include "mfx_trace.h"
 #include "mfx_common_int.h"
 
-//#ifdef OTLAD
-//FILE *otl = NULL;
-//int frame_count = 0;
-//int slice_count = 0;
-//#endif
-
-//int frame_count = 0;
-
 using namespace UMC;
 
 static void ClearUserDataVector(sVideoFrameBuffer::UserDataVector & data)
@@ -58,23 +50,18 @@ bool MPEG2VideoDecoderBase::DeleteTables()
 {
   // release tools
 
+    if (video_ptr)
+    {
+        free(video_ptr);
+        video_ptr = NULL;
+    }
+
     for(int i = 0; i < 2*DPB_SIZE; i++)
     {
-        if(Video[i])
-        {
-            ippsFree(Video[i][0]);
-            Video[i][0] = NULL;
-            ippsFree(Video[i]);
-            Video[i] = NULL;
-        }
+        delete[] Video[i];
+        Video[i] = NULL;
 
         ClearUserDataVector(frame_user_data_v[i]);
-    }
-    if(frame_buffer.ptr_context_data)
-    {
-        //ippsFree(frame_buffer.ptr_context_data);
-      m_pMemoryAllocator->Free(frame_buffer.mid_context_data);
-      frame_buffer.ptr_context_data = NULL;
     }
 
     // release tables
@@ -95,20 +82,23 @@ Status MPEG2VideoDecoderBase::ThreadingSetup(Ipp32s maxThreads)
     else if (8 < m_nNumberOfThreads)
         m_nNumberOfThreads = 8;
 
+    aligned_size = (Ipp32s)((sizeof(VideoContext) + 15) &~ 15);
+    size_t size = m_nNumberOfThreads*aligned_size*2*DPB_SIZE;
+
+    video_ptr = (Ipp8u*)malloc(size);
+    if (NULL == video_ptr)
+        return UMC_ERR_ALLOC;
+
+    memset(video_ptr, 0, size);
+
+    Ipp8u * temp = video_ptr;
     for(j = 0; j < 2*DPB_SIZE; j++)
     {
-        Video[j] = (IppVideoContext**)ippsMalloc_8u(m_nNumberOfThreads*(Ipp32s)sizeof(IppVideoContext*));
-        if(!Video[j]) return UMC_ERR_ALLOC;
-
-        aligned_size = (Ipp32s)((sizeof(IppVideoContext) + 15) &~ 15);
-
-        Video[j][0] = (IppVideoContext*)ippsMalloc_8u(m_nNumberOfThreads*aligned_size);
-        if(!Video[j][0]) return UMC_ERR_ALLOC;
-        memset(Video[j][0], 0, m_nNumberOfThreads*aligned_size);
+        Video[j] = new VideoContext*[m_nNumberOfThreads];
         for(i = 0; i < m_nNumberOfThreads; i++)
         {
-          if (i)
-            Video[j][i] = (IppVideoContext*)((Ipp8u *)Video[j][0] + i*aligned_size);
+            Video[j][i] = (VideoContext*)temp;
+            temp += aligned_size;
         }
     }
     m_nNumberOfAllocatedThreads = m_nNumberOfThreads;
@@ -124,9 +114,6 @@ Status MPEG2VideoDecoderBase::Init(BaseCodecParams *pInit)
     VideoDecoderParams *init = DynamicCast<VideoDecoderParams, BaseCodecParams>(pInit);
     if(!init)
         return UMC_ERR_INIT;
-
-    // checks or create memory allocator;
-    m_pMemoryAllocator = init->lpMemoryAllocator;
 
     if((init->lFlags & FLAG_VDEC_4BYTE_ACCESS) != 0)
       return UMC_ERR_UNSUPPORTED;
@@ -211,7 +198,7 @@ Status MPEG2VideoDecoderBase::Init(BaseCodecParams *pInit)
 
 Status MPEG2VideoDecoderBase::PrepareBuffer(MediaData* data, int task_num)
 {
-    IppVideoContext *video = Video[task_num][0];
+    VideoContext *video = Video[task_num][0];
     Ipp8u  *ptr;
     size_t size;
 
@@ -280,7 +267,7 @@ Status MPEG2VideoDecoderBase::GetCCData(Ipp8u* ptr, Ipp32u *size, Ipp64u *time, 
 
     if (0 < m_user_ts_data.front().second)
     {
-        ippsCopy_8u((Ipp8u *)&m_user_ts_data.front().first, (Ipp8u *)time, (Ipp32u)m_user_ts_data.front().second);
+        MFX_INTERNAL_CPY((Ipp8u *)time, (Ipp8u *)&m_user_ts_data.front().first, (Ipp32u)m_user_ts_data.front().second);
     }
 
 
@@ -312,7 +299,7 @@ Status MPEG2VideoDecoderBase::GetCCData(Ipp8u* ptr, Ipp32u *size, Ipp64u *time, 
         return UMC_ERR_NOT_ENOUGH_BUFFER;
     }
 
-    ippsCopy_8u(p_user_data, ptr, *size);
+    MFX_INTERNAL_CPY(ptr, p_user_data, *size);
     *size *= 8;
 
     free(p_user_data);
@@ -375,7 +362,7 @@ Status MPEG2VideoDecoderBase::GetPictureHeader(MediaData* input, int task_num, i
   }
 
   PrepareBuffer(input, task_num);
-  IppVideoContext  *video = Video[task_num][0];
+  VideoContext  *video = Video[task_num][0];
 
   Ipp32u code;
 
@@ -447,7 +434,7 @@ Status MPEG2VideoDecoderBase::ProcessRestFrame(int task_num)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MPEG2VideoDecoderBase::ProcessRestFrame");
     Status umcRes = UMC_OK;
-    IppVideoContext* video = Video[task_num][0];
+    VideoContext* video = Video[task_num][0];
     Ipp32s i;
 
     Video[task_num][0]->slice_vertical_position = 1;
@@ -614,8 +601,7 @@ Status MPEG2VideoDecoderBase::Close()
 
 
 MPEG2VideoDecoderBase::MPEG2VideoDecoderBase()
-    : m_pMemoryAllocator(NULL)
-    , m_dTimeCalc(0)
+    : m_dTimeCalc(0)
     , m_picture_coding_type_save(MPEG2_I_PICTURE)
     , bNeedNewFrame(false)
     , m_SkipLevel(SKIP_NONE)
@@ -653,8 +639,6 @@ MPEG2VideoDecoderBase::MPEG2VideoDecoderBase()
     sequenceHeader.level = MPEG2_LEVEL_MAIN;
 
     frame_buffer.allocated_cformat = NONE;
-    frame_buffer.mid_context_data = MID_INVALID;
-
 
     m_user_data.clear();
     m_user_ts_data.clear();
@@ -756,7 +740,6 @@ Status MPEG2VideoDecoderBase::GetInfo(BaseCodecParams* info)
     pParams->info = m_ClipInfo;
     pParams->lFlags = m_lFlags;
     pParams->lpMemoryAllocator = 0;
-    pParams->pPostProcessing = 0;
     pParams->numThreads = m_nNumberOfThreads;
   }
   return UMC_OK;
@@ -797,7 +780,7 @@ void MPEG2VideoDecoderBase::ReadCCData(int task_num)
       Ipp32s code;
       Ipp32s t_num = task_num < DPB_SIZE? task_num : task_num - DPB_SIZE;
 
-      IppVideoContext* video = Video[task_num][0];
+      VideoContext* video = Video[task_num][0];
 
       input_size = (Ipp32s)(GET_REMAINED_BYTES(video->bs));
       readptr = GET_BYTE_PTR(video->bs);
@@ -816,7 +799,7 @@ void MPEG2VideoDecoderBase::ReadCCData(int task_num)
             return;
         }
         p[0] = 0; p[1] = 0; p[2] = 1; p[3] = 0xb2;
-        ippsCopy_8u(readptr, p + 4, input_size);
+        MFX_INTERNAL_CPY(p + 4, readptr, input_size);
 
         frame_user_data_v[t_num].push_back(std::make_pair(p, input_size + 4));
 

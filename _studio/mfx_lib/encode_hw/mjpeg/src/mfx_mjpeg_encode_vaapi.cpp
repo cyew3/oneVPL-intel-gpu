@@ -23,6 +23,7 @@
 
 #include "mfx_mjpeg_encode_hw_utils.h"
 #include "libmfx_core_vaapi.h"
+#include "fast_copy.h"
 
 using namespace MfxHwMJpegEncode;
 
@@ -494,16 +495,16 @@ mfxStatus VAAPIEncoder::UpdateBitstream(
     m_core->LockFrame(MemId, &bitstream);
     MFX_CHECK(bitstream.Y != 0, MFX_ERR_LOCK_MEMORY);
 
-    IppStatus sts = ippiCopyManaged_8u_C1R(
-        (Ipp8u *)bitstream.Y, task.m_bsDataLength,
+    mfxStatus sts = FastCopy::Copy(
         bsData, task.m_bsDataLength,
-        roi, IPP_NONTEMPORAL_LOAD);
-    assert(sts == ippStsNoErr);
+        (Ipp8u *)bitstream.Y, task.m_bsDataLength,
+        roi, COPY_VIDEO_TO_SYS);
+    assert(sts == MFX_ERR_NONE);
 
     task.bs->DataLength += task.m_bsDataLength;
     m_core->UnlockFrame(MemId, &bitstream);
 
-    return (sts != ippStsNoErr) ? MFX_ERR_UNKNOWN : MFX_ERR_NONE;
+    return sts;
 }
 
 mfxStatus VAAPIEncoder::DestroyBuffers() {

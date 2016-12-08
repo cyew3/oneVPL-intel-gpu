@@ -17,10 +17,6 @@
 
 namespace UMC
 {
-Ipp32s lock_failed = 0;
-
-//#define LIGHT_SYNC
-
 enum
 {
     COEFFS_BUFFER_ALIGN_VALUE                 = 128
@@ -44,16 +40,6 @@ H264CoeffsBuffer::~H264CoeffsBuffer(void)
 {
     Close();
 } // H264CoeffsBuffer::~H264CoeffsBuffer(void)
-
-void H264CoeffsBuffer::Lock()
-{
-    mutex.Lock();
-}
-
-void H264CoeffsBuffer::Unlock()
-{
-    mutex.Unlock();
-}
 
 void H264CoeffsBuffer::Close(void)
 {
@@ -142,11 +128,6 @@ bool H264CoeffsBuffer::IsInputAvailable() const
 Ipp8u* H264CoeffsBuffer::LockInputBuffer()
 {
     size_t lFreeSize;
-    //size_t size = m_lItemSize;
-
-#ifdef LIGHT_SYNC
-    AutomaticUMCMutex guard(mutex);
-#endif
 
     // check error(s)
     if (NULL == m_pbFree)
@@ -203,10 +184,6 @@ Ipp8u* H264CoeffsBuffer::LockInputBuffer()
             return 0;
         }
     }
-
-    // set free pointer
-    //pointer = m_pbFree;
-    //size = lFreeSize - COEFFS_BUFFER_ALIGN_VALUE - sizeof(BufferInfo);
     return m_pbFree;
 } // bool H264CoeffsBuffer::LockInputBuffer(MediaData* in)
 
@@ -216,17 +193,9 @@ bool H264CoeffsBuffer::UnLockInputBuffer(size_t size)
     BufferInfo *pTemp;
     Ipp8u *pb;
 
-#ifdef LIGHT_SYNC
-    AutomaticUMCMutex guard(mutex);
-#endif
-
     // check error(s)
     if (NULL == m_pbFree)
         return false;
-
-    // when no data given
-    //if (0 == size) // even for size = 0 we should add buffer
-      //  return true;
 
     // get free size
     if (m_pbFree >= m_pbBuffer + (m_lBufferSize - m_lFreeSize))
@@ -297,10 +266,6 @@ bool H264CoeffsBuffer::LockOutputBuffer(Ipp8u* &pointer, size_t &size)
 
 bool H264CoeffsBuffer::UnLockOutputBuffer()
 {
-#ifdef LIGHT_SYNC
-    AutomaticUMCMutex guard(mutex);
-#endif
-
     // no filled data is present
     if (0 == m_pBuffers)
         return false;
@@ -314,10 +279,6 @@ bool H264CoeffsBuffer::UnLockOutputBuffer()
 
 void H264CoeffsBuffer::Reset()
 {
-#ifdef LIGHT_SYNC
-    AutomaticUMCMutex guard(mutex);
-#endif
-
     // align buffer
     m_pbBuffer = align_pointer<Ipp8u *> (m_pbAllocatedBuffer, COEFFS_BUFFER_ALIGN_VALUE);
 
@@ -331,89 +292,6 @@ void H264CoeffsBuffer::Free()
 {
     HeapObject::Free();
 }
-
-/*class Allocator
-{
-public:
-    template<typename T>
-    T * AllocateObject()
-    {
-        T * t = new T();
-        if (!t)
-            throw h264_exception(UMC_ERR_ALLOC);
-        return t;
-    }
-
-    template<typename T>
-    T * AllocateArray(Ipp32s size)
-    {
-        T * t = new T();
-        if (!t)
-            throw h264_exception(UMC_ERR_ALLOC);
-        return t;
-    }
-
-    template <typename T>
-    T* Allocate(Ipp32s size = sizeof(T))
-    {
-        if (!m_pFirstFree)
-        {
-            Item * item = Item::Allocate<T>(size);
-            return (T*)(item->m_Ptr);
-        }
-
-        Item * temp = m_pFirstFree;
-
-        while (temp->m_pNext)
-        {
-            if (temp->m_pNext->m_Size == size)
-            {
-                void * ptr = temp->m_pNext->m_Ptr;
-                temp->m_pNext = temp->m_pNext->m_pNext;
-                return (T*)ptr;
-            }
-
-            temp = temp->m_pNext;
-        }
-
-        Item * item = Item::Allocate<T>(size);
-        return (T*)(item->m_Ptr);
-    }
-
-    template <typename T>
-    T* AllocateObject()
-    {
-        void * ptr = Allocate<T>();
-        return new(ptr) T();
-    }
-
-    template <typename T>
-    void FreeObject(T * obj, bool force = false)
-    {
-        if (!obj)
-            return;
-        obj->~T();
-        Free(obj, force);
-    }
-
-    void Free(void * obj, bool force = false)
-    {
-        if (!obj)
-            return;
-
-        Item * item = (Item *) ((Ipp8u*)obj - sizeof(Item));
-
-        if (force)
-        {
-            Item::Free(item);
-            return;
-        }
-
-        item->m_pNext = m_pFirstFree;
-        m_pFirstFree = item;
-    }
-};*/
-
 
 void HeapObject::Free()
 {

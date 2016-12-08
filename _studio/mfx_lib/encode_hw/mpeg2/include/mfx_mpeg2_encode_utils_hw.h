@@ -17,7 +17,6 @@
 #if defined (MFX_ENABLE_MPEG2_VIDEO_ENCODE)
 
 #include "mfxvideo++int.h"
-#include "mfxvideopro++.h"
 #include "mfx_frames.h"
 #include "mfx_mpeg2_enc_common_hw.h"
 #include "umc_mpeg2_brc.h"
@@ -311,7 +310,9 @@ namespace MPEG2EncoderHW
         void Close ();
 
         mfxStatus StartNewFrame(const mfxFrameParamMPEG2 *pFrameParams, mfxI32 recode);
+#ifndef OPEN_SOURCE
         mfxStatus SetQuantDCPredAndDelay(mfxFrameCUC *pCUC, mfxI32 recode);
+#endif
         mfxStatus SetQuantDCPredAndDelay(mfxFrameParamMPEG2 *pFrameParams, mfxU8 *pQuant);
 
         mfxStatus UpdateBRC(const mfxFrameParamMPEG2 *pParams, mfxBitstream* pBitsream, mfxU32 bitsize, mfxU32 numEncodedFrame, bool bNotEnoughBuffer ,mfxI32 &recode);

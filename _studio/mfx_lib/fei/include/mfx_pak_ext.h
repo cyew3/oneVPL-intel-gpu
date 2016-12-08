@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -36,23 +36,6 @@ public:
         return MFX_ERR_UNSUPPORTED;
     }
 
-    virtual
-    mfxStatus RunSeqHeader(mfxFrameCUC /* *cuc */ )
-    {
-        return MFX_ERR_UNSUPPORTED;
-    }
-    virtual
-    mfxStatus RunFramePAKCheck(mfxFrameCUC * /* cuc */,
-                                  MFX_ENTRY_POINT * /* pEntryPoint */)
-    {
-        return MFX_ERR_UNSUPPORTED;
-    }
-    virtual
-    mfxStatus RunFramePAK(mfxFrameCUC * /* cuc */)
-    {
-        return MFX_ERR_UNSUPPORTED;
-    }
-
     virtual 
     mfxStatus  RunFramePAKCheck( mfxPAKInput *           /* in */,
                                     mfxPAKOutput *          /* out */,
@@ -66,10 +49,6 @@ public:
                                     mfxPAKOutput *  out,
                                     MFX_ENTRY_POINT pEntryPoints[],
                                     mfxU32 & numEntryPoints) = 0;
-//    {
-//        numEntryPoints = 1;
-//        return RunFramePAKCheck( in, out, pEntryPoints);
-//    }
 
     virtual
     mfxStatus RunFramePAK(mfxPAKInput * /* in */, mfxPAKOutput * /* out */)

@@ -14,6 +14,7 @@
 #include "umc_structures.h"
 #include "mfx_trace.h"
 #include "mfx_timing.h"
+#include "mfx_config.h"
 
 #ifndef MFX_DEBUG_TRACE
 #define MFX_STS_TRACE(sts) sts
@@ -92,10 +93,12 @@ mfxU64 GetMfxTimeStamp(mfxF64 ts)
 #define SAFE_RELEASE(PTR)   { if (PTR) { PTR->Release(); PTR = NULL; } }
 #endif
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 #define IS_PROTECTION_PAVP_ANY(val) (MFX_PROTECTION_PAVP == (val) || MFX_PROTECTION_GPUCP_PAVP == (val))
 #define IS_PROTECTION_WIDEVINE(val) (MFX_PROTECTION_WIDEVINE_CLASSIC == (val) || MFX_PROTECTION_WIDEVINE_GOOGLE_DASH == (val))
 #define IS_PROTECTION_ANY(val) (IS_PROTECTION_PAVP_ANY(val) || MFX_PROTECTION_GPUCP_AES128_CTR == (val) || IS_PROTECTION_WIDEVINE(val))
 #define IS_PROTECTION_GPUCP_ANY(val) (MFX_PROTECTION_GPUCP_PAVP == (val) || MFX_PROTECTION_GPUCP_AES128_CTR == (val))
+#endif
 
 //#undef  SUCCEEDED
 //#define SUCCEEDED(hr)   (MFX_STS_TRACE(hr) >= 0)

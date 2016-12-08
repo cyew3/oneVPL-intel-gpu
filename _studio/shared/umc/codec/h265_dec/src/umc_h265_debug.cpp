@@ -12,8 +12,11 @@
 #ifdef UMC_ENABLE_H265_VIDEO_DECODER
 
 #include "umc_h265_debug.h"
-//#include "umc_h265_timing.h"
 #include <cstdarg>
+
+#if defined(_MSC_VER)
+#include <windows.h>
+#endif
 
 #ifdef ENABLE_TRACE
 #include "umc_h265_frame.h"
@@ -21,10 +24,6 @@
 
 namespace UMC_HEVC_DECODER
 {
-
-#ifdef USE_DETAILED_H265_TIMING
-    TimingInfo* clsTimingInfo;
-#endif
 
 #ifdef ENABLE_TRACE
 // Debug output

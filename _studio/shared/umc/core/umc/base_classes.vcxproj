@@ -254,7 +254,6 @@
     <ClCompile Include="src\umc_default_frame_allocator.cpp" />
     <ClCompile Include="src\umc_default_memory_allocator.cpp" />
     <ClCompile Include="src\umc_deprecated_splitter.cpp" />
-    <ClCompile Include="src\umc_dual_thread_codec.cpp" />
     <ClCompile Include="src\umc_frame_data.cpp" />
     <ClCompile Include="src\umc_index.cpp" />
     <ClCompile Include="src\umc_media_buffer.cpp" />
@@ -281,7 +280,6 @@
     <ClInclude Include="include\umc_default_frame_allocator.h" />
     <ClInclude Include="include\umc_default_memory_allocator.h" />
     <ClInclude Include="include\umc_defs.h" />
-    <ClInclude Include="include\umc_dual_thread_codec.h" />
     <ClInclude Include="include\umc_dynamic_cast.h" />
     <ClInclude Include="include\umc_frame_allocator.h" />
     <ClInclude Include="include\umc_frame_data.h" />

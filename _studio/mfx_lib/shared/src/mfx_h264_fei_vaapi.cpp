@@ -142,7 +142,7 @@ mfxStatus VAAPIFEIPREENCEncoder::CreatePREENCAccelerationService(MfxVideoParam c
 
     //attrib[0].value = VA_RT_FORMAT_YUV420;
 
-#if defined(_DEBUG)
+#if defined(FEI_DEBUG)
     //check statistic attributes
     VAConfigAttribValStatisticsIntel statVal;
     statVal.value = attrib[0].value;
@@ -290,8 +290,6 @@ mfxStatus VAAPIFEIPREENCEncoder::CreatePREENCAccelerationService(MfxVideoParam c
     //------------------------------------------------------------------
 
     FillSps(par, m_sps);
-    //SetPrivateParams(par, m_vaDisplay, m_vaContextEncode, m_privateParamsId);
-    //FillConstPartOfPps(par, m_pps);
 
     return MFX_ERR_NONE;
 } // mfxStatus VAAPIFEIPREENCEncoder::CreatePREENCAccelerationService(MfxVideoParam const & par)
@@ -955,7 +953,7 @@ mfxStatus VAAPIFEIENCEncoder::CreateENCAccelerationService(MfxVideoParam const &
 
 //#endif
 
-    m_slice.resize(par.mfx.NumSlice); // aya - it is enough for encoding
+    m_slice.resize(par.mfx.NumSlice); // it is enough for encoding
     m_sliceBufferId.resize(par.mfx.NumSlice);
     m_packeSliceHeaderBufferId.resize(par.mfx.NumSlice);
     m_packedSliceBufferId.resize(par.mfx.NumSlice);
@@ -983,9 +981,7 @@ mfxStatus VAAPIFEIENCEncoder::CreateENCAccelerationService(MfxVideoParam const &
 
     FillSps(par, m_sps);
     SetHRD(par, m_vaDisplay, m_vaContextEncode, m_hrdBufferId);
-    //SetRateControl(par, m_vaDisplay, m_vaContextEncode, m_rateParamBufferId);
     SetFrameRate(par, m_vaDisplay, m_vaContextEncode, m_frameRateId);
-    //SetPrivateParams(par, m_vaDisplay, m_vaContextEncode, m_privateParamsId);
     FillConstPartOfPps(par, m_pps);
 
     if (m_caps.HeaderInsertion == 0)
@@ -1338,7 +1334,7 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
      * (4): Generated reconstructed surfaces become references and managed accordingly by application.
      * (5): Library does not manage reference by itself.
      * (6): And of course main rule: ENC (N number call) and PAK (N number call) should have same exactly
-     * same reference /reconstruct list ! (else GPU hang)
+     * same reference /reconstruct list !
      * */
 
     mfxHDL recon_handle;
@@ -1440,7 +1436,6 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
         m_slice[i].slice_beta_offset_div2        = pDataSliceHeader->Slice[i].SliceBetaOffsetDiv2;
     } // for (size_t i = 0; i < m_slice.size(); ++i)
 
-
     mfxU32 prefix_bytes = (task.m_AUStartsFromSlice[fieldId] + 8) * m_headerPacker.isSvcPrefixUsed();
 
     //Slice headers only
@@ -1535,7 +1530,6 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
         mdprintf(stderr,"inputSurface = %d\n",*inputSurface);
     }
     {
-
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaRenderPicture");
             vaSts = vaRenderPicture(
@@ -1643,10 +1637,8 @@ mfxStatus VAAPIFEIENCEncoder::QueryStatus(
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaSyncSurface");
         vaSts = vaSyncSurface(m_vaDisplay, waitSurface);
     }
-    // following code is workaround:
-    // because of driver bug it could happen that decoding error will not be returned after decoder sync
-    // and will be returned at subsequent encoder sync instead
-    // just ignore VA_STATUS_ERROR_DECODING_ERROR in encoder
+
+    // ignore VA_STATUS_ERROR_DECODING_ERROR in encoder
     if (vaSts == VA_STATUS_ERROR_DECODING_ERROR)
         vaSts = VA_STATUS_SUCCESS;
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
@@ -1904,7 +1896,7 @@ mfxStatus VAAPIFEIPAKEncoder::CreatePAKAccelerationService(MfxVideoParam const &
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
 
-    m_slice.resize(par.mfx.NumSlice); // aya - it is enough for encoding
+    m_slice.resize(par.mfx.NumSlice); // it is enough for encoding
     m_sliceBufferId.resize(par.mfx.NumSlice);
     m_packeSliceHeaderBufferId.resize(par.mfx.NumSlice);
     m_packedSliceBufferId.resize(par.mfx.NumSlice);
@@ -1929,9 +1921,7 @@ mfxStatus VAAPIFEIPAKEncoder::CreatePAKAccelerationService(MfxVideoParam const &
 
     FillSps(par, m_sps);
     SetHRD(par, m_vaDisplay, m_vaContextEncode, m_hrdBufferId);
-    //SetRateControl(par, m_vaDisplay, m_vaContextEncode, m_rateParamBufferId);
     SetFrameRate(par, m_vaDisplay, m_vaContextEncode, m_frameRateId);
-    //SetPrivateParams(par, m_vaDisplay, m_vaContextEncode, m_privateParamsId);
     FillConstPartOfPps(par, m_pps);
 
     if (m_caps.HeaderInsertion == 0)
@@ -2203,7 +2193,6 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
     // Fill PPS
     UpdatePPS(task, fieldId, m_pps, m_reconQueue);
 
-
     /* ENC & PAK has issue with reconstruct surface.
      * How does it work right now?
      * ENC & PAK has same surface pool, both for source and reconstructed surfaces,
@@ -2217,7 +2206,7 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
      * (4): Generated reconstructed surfaces become references and managed accordingly by application.
      * (5): Library does not manage reference by itself.
      * (6): And of course main rule: ENC (N number call) and PAK (N number call) should have same exactly
-     * same reference /reconstruct list ! (else GPU hang)
+     * same reference /reconstruct list !
      * */
 
     mfxHDL recon_handle;
@@ -2515,10 +2504,8 @@ mfxStatus VAAPIFEIPAKEncoder::QueryStatus(
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaSyncSurface");
         vaSts = vaSyncSurface(m_vaDisplay, waitSurface);
     }
-    // following code is workaround:
-    // because of driver bug it could happen that decoding error will not be returned after decoder sync
-    // and will be returned at subsequent encoder sync instead
-    // just ignore VA_STATUS_ERROR_DECODING_ERROR in encoder
+
+    //  ignore VA_STATUS_ERROR_DECODING_ERROR in encoder
     if (vaSts == VA_STATUS_ERROR_DECODING_ERROR)
         vaSts = VA_STATUS_SUCCESS;
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
@@ -2530,7 +2517,7 @@ mfxStatus VAAPIFEIPAKEncoder::QueryStatus(
 
     switch (surfSts)
     {
-        default: //for now driver does not return correct status
+        default:
         case VASurfaceReady:
         {
             VACodedBufferSegment *codedBufferSegment;

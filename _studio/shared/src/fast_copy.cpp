@@ -9,14 +9,72 @@
 //
 
 #include "fast_copy.h"
-#include "ippi.h"
-#include "mfx_trace.h"
 
-IppBool FastCopy::m_bCopyQuit = ippFalse;
+#include "umc_event.h"
+#include "umc_thread.h"
+#include "libmfx_allocator.h"
 
-FastCopy::FastCopy(void)
+struct FC_TASK
 {
-    m_mode = FAST_COPY_UNSUPPORTED;
+    // pointers to source and destination
+    Ipp8u *pS;
+    Ipp8u *pD;
+
+    // size of chunk to copy
+    Ipp32u chunkSize;
+
+    // pitches and frame size
+    IppiSize roi;
+    Ipp32u srcPitch, dstPitch;
+    int flag;
+
+    // event handles
+    UMC::Event EventStart;
+    UMC::Event EventEnd;
+};
+
+class FastCopyMultithreading : public FastCopy
+{
+public:
+
+    // constructor
+    FastCopyMultithreading(void);
+
+    // destructor
+    virtual ~FastCopyMultithreading(void);
+
+    // initialize available functionality
+    mfxStatus Initialize(void);
+
+    // release object
+    mfxStatus Release(void);
+
+    // copy memory by streaming
+    mfxStatus Copy(mfxU8 *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, IppiSize roi, int flag);
+#ifndef LINUX64
+    // copy memory by streaming with shifting
+    mfxStatus CopyAndShift(mfxU16 *pDst, mfxU32 dstPitch, mfxU16 *pSrc, mfxU32 srcPitch, IppiSize roi, Ipp8u lshift, Ipp8u rshift, int flag);
+#endif
+
+protected:
+
+   // synchronize threads
+    mfxStatus Synchronize(void);
+
+    static mfxU32 __STDCALL CopyByThread(void *object);
+    static IppBool m_bCopyQuit;
+
+    // handles
+    UMC::Thread *m_pThreads;
+    Ipp32u m_numThreads;
+
+    FC_TASK *m_tasks;
+};
+
+IppBool FastCopyMultithreading::m_bCopyQuit = ippFalse;
+
+FastCopyMultithreading::FastCopyMultithreading(void)
+{
     m_pThreads = NULL;
     m_tasks = NULL;
 
@@ -24,16 +82,15 @@ FastCopy::FastCopy(void)
 
 } // FastCopy::FastCopy(void)
 
-FastCopy::~FastCopy(void)
+FastCopyMultithreading::~FastCopyMultithreading(void)
 {
     Release();
 
 } // FastCopy::~FastCopy(void)
 
-mfxStatus FastCopy::Initialize(void)
+mfxStatus FastCopyMultithreading::Initialize(void)
 {
     mfxStatus sts = MFX_ERR_NONE;
-    mfxU64 pFeatureMask;
     mfxU32 i = 0;
 
     // release object before allocation
@@ -41,10 +98,7 @@ mfxStatus FastCopy::Initialize(void)
 
     if (MFX_ERR_NONE == sts)
     {
-        ippGetCpuFeatures(&pFeatureMask, NULL);
-
         // streaming is on
-        m_mode = FAST_COPY_SSE41;
         m_numThreads = 1;
     }
     if (MFX_ERR_NONE == sts)
@@ -78,7 +132,7 @@ mfxStatus FastCopy::Initialize(void)
     return MFX_ERR_NONE;
 } // mfxStatus FastCopy::Initialize(void)
 
-mfxStatus FastCopy::Release(void)
+mfxStatus FastCopyMultithreading::Release(void)
 {
     m_bCopyQuit = ippTrue;
 
@@ -93,7 +147,6 @@ mfxStatus FastCopy::Release(void)
     }
 
     m_numThreads = 0;
-    m_mode = FAST_COPY_UNSUPPORTED;
 
     if (m_pThreads)
     {
@@ -113,10 +166,8 @@ mfxStatus FastCopy::Release(void)
 
 } // mfxStatus FastCopy::Release(void)
 
-mfxStatus FastCopy::Copy(mfxU8 *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, IppiSize roi)
+mfxStatus FastCopyMultithreading::Copy(mfxU8 *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, IppiSize roi, int flag)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "FastCopy::Copy");
-
     if (NULL == pDst || NULL == pSrc)
     {
         return MFX_ERR_NULL_PTR;
@@ -135,6 +186,7 @@ mfxStatus FastCopy::Copy(mfxU8 *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPi
         m_tasks[i].srcPitch = srcPitch;
         m_tasks[i].dstPitch = dstPitch;
         m_tasks[i].roi = roi;
+        m_tasks[i].flag = flag;
 
         m_tasks[i].EventStart.Set();
     }
@@ -147,7 +199,7 @@ mfxStatus FastCopy::Copy(mfxU8 *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPi
     pSrc = pSrc + (m_numThreads - 1) * (partSize * srcPitch);
     pDst = pDst + (m_numThreads - 1) * (partSize * dstPitch);
 
-    ippiCopyManaged_8u_C1R(pSrc, srcPitch, pDst, dstPitch, roi, 2);
+    FastCopy::Copy(pDst, dstPitch, pSrc, srcPitch, roi, flag);
 
     Synchronize();
 
@@ -155,66 +207,17 @@ mfxStatus FastCopy::Copy(mfxU8 *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPi
 
 } // mfxStatus FastCopy::Copy(mfxU8 *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, IppiSize roi)
 #ifndef LINUX64
-mfxStatus FastCopy::Copy(mfxU16 *pDst, mfxU32 dstPitch, mfxU16 *pSrc, mfxU32 srcPitch, IppiSize roi, Ipp8u lshift, Ipp8u rshift)
+mfxStatus FastCopyMultithreading::CopyAndShift(mfxU16 *pDst, mfxU32 dstPitch, mfxU16 *pSrc, mfxU32 srcPitch, IppiSize roi, Ipp8u lshift, Ipp8u rshift, int flag)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "FastCopy::Copy");
-
-    if (NULL == pDst || NULL == pSrc)
-    {
-        return MFX_ERR_NULL_PTR;
-    }
-
-    //mfxU32 partSize = roi.height / m_numThreads;
-    //mfxU32 rest = roi.height % m_numThreads;
-
-    //roi.height = partSize;
-    /*
-    // distribute tasks
-    for (mfxU32 i = 0; i < m_numThreads - 1; i += 1)
-    {
-        m_tasks[i].pS = pSrc + i * (partSize * srcPitch);
-        m_tasks[i].pD = pDst + i * (partSize * dstPitch);
-        m_tasks[i].srcPitch = srcPitch;
-        m_tasks[i].dstPitch = dstPitch;
-        m_tasks[i].roi = roi;
-
-        m_tasks[i].EventStart.Set();
-    }
-
-    if (rest != 0)
-    {
-        roi.height = rest;
-    }
-    */
-//    pSrc = pSrc + (m_numThreads - 1) * (partSize * srcPitch);
-//    pDst = pDst + (m_numThreads - 1) * (partSize * dstPitch);
-
-    ippiCopyManaged_8u_C1R((Ipp8u*)pSrc, srcPitch, (Ipp8u*)pDst, dstPitch, roi, 2);
-    if(rshift)
-        ippiRShiftC_16u_C1IR(rshift, (Ipp16u*)pDst, dstPitch,roi);
-    if(lshift)
-        ippiLShiftC_16u_C1IR(lshift, (Ipp16u*)pDst, dstPitch,roi);
-//    Synchronize();
-
-    return MFX_ERR_NONE;
-
-} // mfxStatus FastCopy::Copy(mfxU8 *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, IppiSize roi)
+    return FastCopy::CopyAndShift(pDst, dstPitch, pSrc, srcPitch, roi, lshift, rshift, flag);
+} // mfxStatus FastCopyMultithreading::Copy(mfxU8 *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, IppiSize roi)
 #endif
 
-eFAST_COPY_MODE FastCopy::GetSupportedMode(void) const
+mfxStatus FastCopyMultithreading::Synchronize(void)
 {
-    return m_mode;
-
-} // eFAST_COPY_MODE FastCopy::GetSupportedMode(void) const
-
-mfxStatus FastCopy::Synchronize(void)
-{
-    if (m_mode == FAST_COPY_SSE41)
+    for (mfxU32 i = 0; i < m_numThreads - 1; i += 1)
     {
-        for (mfxU32 i = 0; i < m_numThreads - 1; i += 1)
-        {
-            m_tasks[i].EventEnd.Wait();
-        }
+        m_tasks[i].EventEnd.Wait();
     }
 
     return MFX_ERR_NONE;
@@ -222,7 +225,7 @@ mfxStatus FastCopy::Synchronize(void)
 } // mfxStatus FastCopy::Synchronize(void)
 
 // thread function
-mfxU32 __STDCALL FastCopy::CopyByThread(void *arg)
+mfxU32 __STDCALL FastCopyMultithreading::CopyByThread(void *arg)
 {
     FC_TASK *task = (FC_TASK *)arg;
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "ThreadName=FastCopy");
@@ -240,8 +243,8 @@ mfxU32 __STDCALL FastCopy::CopyByThread(void *arg)
         Ipp8u *pDst = task->pD;
 
         {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "ippiCopyManaged");
-            ippiCopyManaged_8u_C1R(pSrc, srcPitch, pDst, dstPitch, roi, 2);
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "FastCopy::Copy");
+            FastCopy::Copy(pDst, dstPitch, pSrc, srcPitch, roi, task->flag);
         }
 
         // done copy
@@ -253,4 +256,4 @@ mfxU32 __STDCALL FastCopy::CopyByThread(void *arg)
 
     return 0;
 
-} // mfxU32 __stdcall FastCopy::CopyByThread(void *arg)
+} // mfxU32 __stdcall FastCopyMultithreading::CopyByThread(void *arg)

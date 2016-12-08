@@ -277,7 +277,7 @@ Ipp8u H265CU<PixType>::QuantFwdTuBase(CoeffsType *resid, CoeffsType *coeff, Ipp3
 
 
 void h265_quant_inv(const CoeffsType *qcoeffs,
-                    const Ipp16s *scaling_list, // aya: replaced 32s->16s to align with decoder/hevc_pp
+                    const Ipp16s *scaling_list,
                     CoeffsType *coeffs,
                     Ipp32s log2_tr_size,
                     Ipp32s bit_depth,

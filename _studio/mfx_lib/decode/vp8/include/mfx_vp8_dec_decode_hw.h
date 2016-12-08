@@ -14,13 +14,11 @@
 #include "mfx_common.h"
 
 #if defined(MFX_ENABLE_VP8_VIDEO_DECODE_HW) && defined(MFX_VA)
-//#define __FAKE_VP8_HW
 
 #include "mfx_common_int.h"
 #include "mfx_umc_alloc_wrapper.h"
 #include "mfx_critical_error_handler.h"
 #include "umc_frame_data.h"
-#include "umc_media_buffer.h"
 #include "umc_media_data.h"
 #include "umc_va_base.h"
 

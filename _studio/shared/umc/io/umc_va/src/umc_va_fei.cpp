@@ -211,7 +211,7 @@ namespace UMC
                 continue;
 
             slice_map::iterator n = f; ++n;
-            
+
             Ipp16u const first_mb_in_slice = (*f).first;
             Ipp32s const mb_per_slice_count =
                 ((n != l ? (*n).first : m_allowed_max_mbs_in_slice)) - first_mb_in_slice;
@@ -253,8 +253,6 @@ namespace UMC
                             mb->InterMB.RefIdx[j][k] = UCHAR_MAX;
                         else
                         {
-                            //NOTE: while GFX spec describe Store ID as bits 4:1 forms the index
-                            //we see that all 4:0 bits do this
                             Ipp32u const idx   = (mb->InterMB.RefIdx[j][k] & 0x1f);
 
                             mb->InterMB.RefIdx[j][k] =  map[count * field + idx];
@@ -428,29 +426,6 @@ namespace UMC
         VAStatus va_res;
         VAImage image;
 
-        //lates driver drop doesn't require frame mapping before to map SO
-        //these code parts should be removed later
-        if (0)
-        {
-            //we should map frame data befor SO buffer will be mapped.
-            VASurfaceID* surface;
-            umcRes = m_allocator->GetFrameHandle(index, &surface);
-            if (umcRes != UMC_OK)
-                return umcRes;
-
-            va_res = vaDeriveImage(m_dpy, *surface, &image);
-            if (va_res != VA_STATUS_SUCCESS)
-                return va_to_umc_res(va_res);
-
-            Ipp8u* ptr = NULL;
-            va_res = vaMapBuffer(m_dpy, image.buf, (void**)&ptr);
-            if (va_res != VA_STATUS_SUCCESS)
-                return va_to_umc_res(va_res);
-
-            if (!ptr)
-                return UMC_ERR_FAILED;
-        }
-
         for (int i = 0; i < 2; ++i)
         {
             VAStreamOutBuffer* streamOut = QueryStreamOutBuffer(index, i);
@@ -476,21 +451,6 @@ namespace UMC
                 fflush(dump_);
 #endif
             }
-        }
-
-        if (0)
-        {
-            va_res = vaUnmapBuffer(m_dpy, image.buf);
-            if (va_res != VA_STATUS_SUCCESS)
-                umcRes = va_to_umc_res(va_res);
-
-
-            va_res = vaDestroyImage(m_dpy, image.image_id);
-            if (umcRes != UMC_OK)
-                return umcRes;
-
-            if (va_res != VA_STATUS_SUCCESS)
-                umcRes = va_to_umc_res(va_res);
         }
 
         return umcRes;

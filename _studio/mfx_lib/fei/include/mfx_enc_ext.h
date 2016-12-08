@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -35,17 +35,6 @@ public:
     {
         return MFX_ERR_UNSUPPORTED;
     }  
-    virtual
-    mfxStatus RunFrameVmeENCCheck(mfxFrameCUC * /* cuc */,
-                                  MFX_ENTRY_POINT * /* pEntryPoint */)
-    {
-        return MFX_ERR_UNSUPPORTED;
-    }
-    virtual
-    mfxStatus RunFrameVmeENC(mfxFrameCUC * /* cuc */) 
-    {
-        return MFX_ERR_UNSUPPORTED;
-    }
 
     virtual 
     mfxStatus  RunFrameVmeENCCheck( mfxENCInput *           /* in */, 

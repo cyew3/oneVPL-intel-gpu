@@ -75,7 +75,7 @@ DXGI_FORMAT mfxDefaultAllocatorD3D11::MFXtoDXGI(mfxU32 format)
 
     case MFX_FOURCC_P8:
     case MFX_FOURCC_P8_MBDATA:
-        return DXGI_FORMAT_P8;// aya???
+        return DXGI_FORMAT_P8;
 
     case MFX_FOURCC_AYUV:
     case DXGI_FORMAT_AYUV:
@@ -91,7 +91,6 @@ DXGI_FORMAT mfxDefaultAllocatorD3D11::MFXtoDXGI(mfxU32 format)
         return DXGI_FORMAT_R16G16B16A16_UNORM;
     case MFX_FOURCC_A2RGB10:
         return DXGI_FORMAT_R10G10B10A2_UNORM;
-
 #if defined (PRE_SI_TARGET_PLATFORM_GEN11)
     case MFX_FOURCC_Y210:
         return DXGI_FORMAT_Y210;
@@ -182,15 +181,18 @@ mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocReq
     Desc.Format = MFXtoDXGI(request->Info.FourCC);
     Desc.SampleDesc.Count = 1;
     Desc.Usage = D3D11_USAGE_DEFAULT;
+
+#ifndef MFX_SURFACE_ENCODER_TARGET_DISABLE
     if((request->Type&MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET) && (request->Type & MFX_MEMTYPE_INTERNAL_FRAME))
     {
         Desc.BindFlags = D3D11_BIND_VIDEO_ENCODER;
     }
     else
+#endif
         Desc.BindFlags = D3D11_BIND_DECODER;
 
 
-    //aya: P8 with 0
+    // P8 with 0
     if(request->Info.FourCC == MFX_FOURCC_P8)
     {
         pSelf->m_NumSurface = 1;
@@ -259,7 +261,7 @@ mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocReq
             Desc.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
             Desc.MiscFlags = D3D11_RESOURCE_MISC_SHARED;
         }
-        // aya: d3d11 wo
+        // d3d11 wo
         if( DXGI_FORMAT_P8 == Desc.Format )
         {
             Desc.BindFlags = 0;
@@ -331,45 +333,9 @@ mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocReq
 
     return MFX_ERR_NONE;
 }
-mfxStatus mfxDefaultAllocatorD3D11::LockFrameHW(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr)
+
+mfxStatus mfxDefaultAllocatorD3D11::SetFrameData(const D3D11_TEXTURE2D_DESC &Desc, const D3D11_MAPPED_SUBRESOURCE  &LockedRect, mfxFrameData *ptr)
 {
-    HRESULT hr = S_OK;
-    // TBD
-    if (!pthis)
-        return MFX_ERR_INVALID_HANDLE;
-
-    mfxWideHWFrameAllocator *pSelf = (mfxWideHWFrameAllocator*)pthis;
-    size_t index =  (size_t)mid - 1;
-
-    D3D11_TEXTURE2D_DESC Desc = {0};
-
-    D3D11_MAPPED_SUBRESOURCE LockedRect = {0};
-    D3D11_MAP MapType = D3D11_MAP_READ;
-    UINT MapFlags = 0;// D3D11_MAP_FLAG_DO_NOT_WAIT; //!!!!!!WA synchronization issue on Win10, requires to return back after fix, can affect performance negatively
-    
-    // need to copy surface into staging surface then map
-    ID3D11Texture2D *pStagingSurface = pSelf->m_StagingSrfPool;
-
-    if (!pSelf->isBufferKeeper)
-    {
-        pSelf->m_SrfPool[index]->GetDesc(&Desc);
-        pSelf->m_pD11DeviceContext->CopySubresourceRegion(pStagingSurface, 0, 0, 0, 0, pSelf->m_SrfPool[index], 0, NULL);
-    }
-    else
-    {
-        pStagingSurface = pSelf->m_SrfPool[index];
-        Desc.Format = DXGI_FORMAT_P8;
-    }
-
-    do
-    {
-        hr = pSelf->m_pD11DeviceContext->Map(pStagingSurface, 0, MapType, MapFlags, &LockedRect);
-    }
-    while (DXGI_ERROR_WAS_STILL_DRAWING == hr);
-    MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
-
-
-
     // not sure about commented formats
     switch (Desc.Format)
     {
@@ -453,6 +419,46 @@ mfxStatus mfxDefaultAllocatorD3D11::LockFrameHW(mfxHDL pthis, mfxMemId mid, mfxF
         return MFX_ERR_LOCK_MEMORY;
     }
     return MFX_ERR_NONE;
+}
+
+mfxStatus mfxDefaultAllocatorD3D11::LockFrameHW(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr)
+{
+    HRESULT hr = S_OK;
+    // TBD
+    if (!pthis)
+        return MFX_ERR_INVALID_HANDLE;
+
+    mfxWideHWFrameAllocator *pSelf = (mfxWideHWFrameAllocator*)pthis;
+    size_t index =  (size_t)mid - 1;
+
+    D3D11_TEXTURE2D_DESC Desc = {0};
+
+    D3D11_MAPPED_SUBRESOURCE LockedRect = {0};
+    D3D11_MAP MapType = D3D11_MAP_READ;
+    UINT MapFlags = 0;// D3D11_MAP_FLAG_DO_NOT_WAIT; //!!!!!!WA synchronization issue on Win10, requires to return back after fix, can affect performance negatively
+    
+    // need to copy surface into staging surface then map
+    ID3D11Texture2D *pStagingSurface = pSelf->m_StagingSrfPool;
+
+    if (!pSelf->isBufferKeeper)
+    {
+        pSelf->m_SrfPool[index]->GetDesc(&Desc);
+        pSelf->m_pD11DeviceContext->CopySubresourceRegion(pStagingSurface, 0, 0, 0, 0, pSelf->m_SrfPool[index], 0, NULL);
+    }
+    else
+    {
+        pStagingSurface = pSelf->m_SrfPool[index];
+        Desc.Format = DXGI_FORMAT_P8;
+    }
+
+    do
+    {
+        hr = pSelf->m_pD11DeviceContext->Map(pStagingSurface, 0, MapType, MapFlags, &LockedRect);
+    }
+    while (DXGI_ERROR_WAS_STILL_DRAWING == hr);
+    MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
+
+    return mfxDefaultAllocatorD3D11::SetFrameData(Desc, LockedRect, ptr);
 }
 mfxStatus mfxDefaultAllocatorD3D11::GetHDLHW(mfxHDL pthis, mfxMemId mid, mfxHDL *handle)
 {

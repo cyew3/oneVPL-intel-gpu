@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -21,7 +21,6 @@
 #include "ipps.h"
 
 #include "umc_h264_config.h"
-//#include "umc_video_encoder.h"
 #include "umc_h264_video_encoder.h"
 
 using namespace UMC;

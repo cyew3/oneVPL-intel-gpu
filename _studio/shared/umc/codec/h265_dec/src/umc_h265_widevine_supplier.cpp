@@ -11,9 +11,10 @@
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_H265_VIDEO_DECODER)
 
-#ifndef UMC_RESTRICTED_CODE_VA
-
 #include "umc_h265_widevine_supplier.h"
+
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
+
 #include "umc_h265_widevine_slice_decoding.h"
 
 #include "umc_va_dxva2_protected.h"
@@ -973,5 +974,5 @@ void WidevineTaskSupplier::CompleteFrame(H265DecoderFrame * pFrame)
 
 } // namespace UMC_HEVC_DECODER
 
-#endif // UMC_RESTRICTED_CODE_VA
+#endif // MFX_PROTECTED_FEATURE_DISABLE
 #endif // UMC_ENABLE_H265_VIDEO_DECODER

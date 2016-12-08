@@ -156,7 +156,7 @@ TEST_F(RuntimeTest, ParamValidation) {
         ctrl.Payload = payloadArr;
         ctrl.NumPayload = 1;
         EXPECT_CALL(core, IncreaseReference(_)).WillOnce(Return(MFX_ERR_NONE));
-        EXPECT_EQ(MFX_ERR_MORE_DATA_RUN_TASK, encoder.EncodeFrameCheck(&ctrl, surfaces, &bitstream, &reordered, nullptr, &entryPoint));
+        EXPECT_EQ(MFX_ERR_MORE_DATA_SUBMIT_TASK, encoder.EncodeFrameCheck(&ctrl, surfaces, &bitstream, &reordered, nullptr, &entryPoint));
         ctrl = goodCtrl;
     }
     { SCOPED_TRACE("Test case of ctrl.Payload[i].Data == nullptr && ctrl.Payload[i].NumBit > 0");
@@ -182,7 +182,7 @@ TEST_F(RuntimeTest, ParamValidation) {
     }
     { SCOPED_TRACE("Test valid case");
         EXPECT_CALL(core, IncreaseReference(_)).WillOnce(Return(MFX_ERR_NONE));
-        EXPECT_EQ(MFX_ERR_MORE_DATA_RUN_TASK, encoder.EncodeFrameCheck(&ctrl, surfaces, &bitstream, &reordered, nullptr, &entryPoint));
+        EXPECT_EQ(MFX_ERR_MORE_DATA_SUBMIT_TASK, encoder.EncodeFrameCheck(&ctrl, surfaces, &bitstream, &reordered, nullptr, &entryPoint));
     }
 }
 
@@ -209,7 +209,7 @@ TEST_F(RuntimeTest, NullNativeSurface) {
 
 TEST_F(RuntimeTest, UserSeiMessages) {
     mfxFrameSurface1 *surf = surfaces;
-    mfxStatus sts = (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK;
+    mfxStatus sts = (mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK;
 
     Ipp8u seiData1[5] = { 0x10, 0x20, 0x30, 0x40, 0x50 };
     Ipp8u seiData2[510] = {};
@@ -228,10 +228,10 @@ TEST_F(RuntimeTest, UserSeiMessages) {
     ctrl.Payload = payloadPtrs;
     ctrl.NumPayload = sizeof(payloadPtrs) / sizeof(payloadPtrs[0]);
 
-    while (sts == MFX_ERR_MORE_DATA_RUN_TASK && surf < surfaces + sizeof(surfaces) / sizeof(surfaces[0])) {
+    while (sts == MFX_ERR_MORE_DATA_SUBMIT_TASK && surf < surfaces + sizeof(surfaces) / sizeof(surfaces[0])) {
         EXPECT_CALL(core, IncreaseReference(_)).WillOnce(Return(MFX_ERR_NONE));
         sts = encoder.EncodeFrameCheck(&ctrl, surf++, &bitstream, &reordered, nullptr, &entryPoint);
-        if (sts == MFX_ERR_MORE_DATA_RUN_TASK) {
+        if (sts == MFX_ERR_MORE_DATA_SUBMIT_TASK) {
             EXPECT_CALL(core, DecreaseReference(_)).WillOnce(Return(MFX_ERR_NONE));
             ASSERT_EQ(MFX_ERR_NONE, entryPoint.pRoutine(entryPoint.pState, entryPoint.pParam, 0, 0));
             ASSERT_EQ(MFX_ERR_NONE, entryPoint.pCompleteProc(entryPoint.pState, entryPoint.pParam, MFX_ERR_NONE));
@@ -278,7 +278,7 @@ TEST_F(RuntimeTest, UserSeiMessages) {
 }
 
 TEST_F(RuntimeTest, EncodeStat) {
-    mfxStatus sts = (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK;
+    mfxStatus sts = (mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK;
     mfxEncodeStat stat = {};
     Ipp32u expectedNumFrame = 0;
     Ipp64u expectedNumBit = 0;
@@ -298,7 +298,7 @@ TEST_F(RuntimeTest, EncodeStat) {
         EXPECT_EQ(expectedNumFrame, stat.NumFrame);
         EXPECT_EQ(expectedNumBit, stat.NumBit);
 
-        if (sts == MFX_ERR_MORE_DATA_RUN_TASK) {
+        if (sts == MFX_ERR_MORE_DATA_SUBMIT_TASK) {
             EXPECT_CALL(core, DecreaseReference(_)).WillOnce(Return(MFX_ERR_NONE));
             ASSERT_EQ(MFX_ERR_NONE, entryPoint.pRoutine(entryPoint.pState, entryPoint.pParam, 0, 0));
             ASSERT_EQ(MFX_ERR_NONE, entryPoint.pCompleteProc(entryPoint.pState, entryPoint.pParam, MFX_ERR_NONE));

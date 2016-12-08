@@ -5,14 +5,12 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
 
 #if defined (UMC_ENABLE_VC1_VIDEO_DECODER)
-
-#ifndef UMC_RESTRICTED_CODE_VA
 
 #ifndef _UMC_VC1_DEC_VA_DEFS_H_
 #define _UMC_VC1_DEC_VA_DEFS_H_
@@ -128,6 +126,5 @@ union
 
 #endif
 
-#endif
 #endif //_UMC_VC1_DEC_VA_DEFS_H_
 #endif //UMC_ENABLE_VC1_VIDEO_DECODER

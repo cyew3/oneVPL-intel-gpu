@@ -34,7 +34,7 @@ using namespace UMC;
 
 // can decode all headers, except of slices
 // bitstream should point to next after header byte
-Status MPEG2VideoDecoderBase::DecodeHeader(Ipp32s startcode, IppVideoContext* video, int task_num)
+Status MPEG2VideoDecoderBase::DecodeHeader(Ipp32s startcode, VideoContext* video, int task_num)
 {
   Ipp32u code;
   //m_IsUserDataPresent = false;
@@ -221,7 +221,7 @@ Status MPEG2VideoDecoderBase::DecodeHeader(Ipp32s startcode, IppVideoContext* vi
 }
 
 //Sequence Header search. Stops after header start code
-Status MPEG2VideoDecoderBase::FindSequenceHeader(IppVideoContext *video)
+Status MPEG2VideoDecoderBase::FindSequenceHeader(VideoContext *video)
 {
   Ipp32u code;
   do {
@@ -239,7 +239,7 @@ enum {
     FIXED_SEQ_HEADER_EXT_SIZE   = 21,
 };
 
-Status MPEG2VideoDecoderBase::DecodeSequenceHeader(IppVideoContext* video, int task_num)
+Status MPEG2VideoDecoderBase::DecodeSequenceHeader(VideoContext* video, int task_num)
 {
     Ipp32u load_non_intra_quantizer_matrix = 0;
     Ipp32u load_intra_quantizer_matrix = 0;
@@ -539,7 +539,7 @@ Status MPEG2VideoDecoderBase::DecodeSequenceHeader(IppVideoContext* video, int t
 void MPEG2VideoDecoderBase::sequence_display_extension(int task_num)
 {
     Ipp32u  code;
-    IppVideoContext* video = Video[task_num][0];
+    VideoContext* video = Video[task_num][0];
     Ipp8u* ptr = video->bs_curr_ptr - 4;
 
     // skip 3 bits, get 1
@@ -571,7 +571,7 @@ void MPEG2VideoDecoderBase::sequence_display_extension(int task_num)
 void MPEG2VideoDecoderBase::sequence_scalable_extension(int task_num)
 {
     Ipp32u code;
-    IppVideoContext* video = Video[task_num][0];
+    VideoContext* video = Video[task_num][0];
     sequenceHeader.extension_start_code_ID[task_num] = SEQUENCE_SCALABLE_EXTENSION_ID;
 
     GET_TO9BITS(video->bs, 2, sequenceHeader.scalable_mode[task_num])//scalable_mode
@@ -737,7 +737,7 @@ void MPEG2VideoDecoderBase::CalculateFrameTime(Ipp64f in_time, Ipp64f * out_time
 Status MPEG2VideoDecoderBase::DecodeSlices(Ipp32s threadID, int task_num)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MPEG2VideoDecoderBase::DecodeSlices");
-    IppVideoContext *video = Video[task_num][threadID];
+    VideoContext *video = Video[task_num][threadID];
     Status umcRes = UMC_OK;
 
     for (;;) 
@@ -763,7 +763,7 @@ Status MPEG2VideoDecoderBase::DecodePictureHeader(int task_num)
 {
     Ipp32u          code;
     Ipp32s          pic_type = 0;
-    IppVideoContext *video   = Video[task_num][0];
+    VideoContext *video   = Video[task_num][0];
     sPictureHeader  *pPic    = &PictureHeader[task_num];
 
     bool isCorrupted = false;
@@ -1051,13 +1051,12 @@ Status MPEG2VideoDecoderBase::DecodePictureHeader(int task_num)
                 frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].prev_index;
         }
 
-        //fix for VCSD100019408. B frame with no forward prediction -> use backward instead of forward
+        //B frame with no forward prediction -> use backward instead of forward
         if (frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].prev_index < 0)
         {
             frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].prev_index =
                 frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].next_index;
         }
-        //end of fix for VCSD100019408
 
         if (PictureHeader[task_num].picture_structure == FRAME_PICTURE
             || frame_buffer.field_buffer_index[task_num] == 1)
@@ -1114,7 +1113,7 @@ Status MPEG2VideoDecoderBase::DecodePictureHeader(int task_num)
 
 void MPEG2VideoDecoderBase::copyright_extension(int task_num)
 {
-    IppVideoContext* video = Video[task_num][0];
+    VideoContext* video = Video[task_num][0];
 
     SKIP_BITS_32(video->bs)
     SKIP_BITS_32(video->bs)
@@ -1126,7 +1125,7 @@ void MPEG2VideoDecoderBase::picture_display_extension(int task_num)
 {
     Ipp32s number_of_frame_center_offsets = 0, i;
     //Ipp32u code;
-    IppVideoContext* video = Video[task_num][0];
+    VideoContext* video = Video[task_num][0];
 
     //GET_TO9BITS(video->bs, 4 ,code)
     SKIP_BITS(video->bs, 4);
@@ -1166,7 +1165,7 @@ void MPEG2VideoDecoderBase::picture_display_extension(int task_num)
 
 void MPEG2VideoDecoderBase::picture_spartial_scalable_extension(int task_num)
 {
-    IppVideoContext* video = Video[task_num][0];
+    VideoContext* video = Video[task_num][0];
     SKIP_BITS_32(video->bs)
     SKIP_BITS_LONG(video->bs, 18)
 }
@@ -1174,7 +1173,7 @@ void MPEG2VideoDecoderBase::picture_spartial_scalable_extension(int task_num)
 
 void MPEG2VideoDecoderBase::picture_temporal_scalable_extension(int task_num)
 {
-    IppVideoContext* video = Video[task_num][0];
+    VideoContext* video = Video[task_num][0];
     SKIP_BITS_LONG(video->bs, 27)
 }
 

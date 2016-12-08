@@ -59,9 +59,6 @@
     <ClCompile Include="shared\src\libmfxsw_async.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="shared\src\libmfxsw_brc.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="shared\src\libmfxsw_decode.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -263,6 +260,9 @@
       <Filter>MFX API</Filter>
     </ClInclude>
     <ClInclude Include="genx\copy_kernels\include\skl_copy_kernel_genx_isa.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shared\include\mfx_config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

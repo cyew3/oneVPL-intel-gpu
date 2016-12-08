@@ -60,10 +60,12 @@ mfxStatus MFXD3D11Accelerator::CreateVideoAccelerator(mfxU32 hwProfile, const mf
 
     D3D11_VIDEO_DECODER_CONFIG video_config = {0}; // !!!!!!!!
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (IS_PROTECTION_ANY(param->Protected))
     {
         m_protectedVA = new UMC::ProtectedVA(param->Protected);
     }
+#endif
 
     mfxStatus sts = GetSuitVideoDecoderConfig(param, &video_desc, &video_config);
     MFX_CHECK_STS(sts);
@@ -261,6 +263,13 @@ Status  MFXD3D11Accelerator::BeginFrame(Ipp32s index)
 
 Status MFXD3D11Accelerator::EndFrame(void *handle)
 {
+    for (Ipp32u j = 0; j < m_bufferOrder.size(); ++j)
+    {
+        ReleaseBuffer(m_bufferOrder[j]); 
+    }
+
+    m_bufferOrder.clear();
+
     HRESULT hr;
     handle;
     {
@@ -276,17 +285,6 @@ Status MFXD3D11Accelerator::EndFrame(void *handle)
      return UMC_ERR_DEVICE_FAILED;
 
 } //Status MFXD3D11Accelerator::EndFrame(void *handle)
-
-Status MFXD3D11Accelerator::ReleaseAllBuffers()
-{
-    for (Ipp32u j = 0; j < m_bufferOrder.size(); ++j)
-    {
-        Status s = ReleaseBuffer(m_bufferOrder[j]); 
-        if (s != UMC_OK)
-            return s;
-    }
-    return UMC_OK;
-}
 
 Status MFXD3D11Accelerator::ReleaseBuffer(Ipp32s type)
 {
@@ -389,11 +387,15 @@ Status MFXD3D11Accelerator::Close()
 {
     SAFE_RELEASE(m_pVDOView);
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     delete m_protectedVA;
     m_protectedVA = 0;
+#endif
 
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
     delete m_videoProcessingVA;
     m_videoProcessingVA = 0;
+#endif
 
     return VideoAccelerator::Close();
 }

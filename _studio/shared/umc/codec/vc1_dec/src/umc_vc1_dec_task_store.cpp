@@ -21,10 +21,8 @@
 
 #include "mfx_trace.h"
 
-#ifndef UMC_RESTRICTED_CODE_VA
 #include "umc_va_base.h"
 #include "umc_vc1_dec_frame_descr_va.h"
-#endif
 
 
 static const Ipp32u FrameReadyTable[9] = {0, 0x5,     0x55,     0x555,     0x5555,
@@ -527,15 +525,17 @@ namespace UMC
             Size += align_value<Ipp32u>(sizeof(VC1Task**)*VC1SLICEINPARAL); //m_pAdditionalQueue
             Size += align_value<Ipp32u>(sizeof(vm_mutex)); //m_pGuardGet
             Size += align_value<Ipp32u>(sizeof(vm_mutex)); //m_pGuardAdd
-#ifndef UMC_RESTRICTED_CODE_VA
+
 #ifdef UMC_VA_DXVA
             if (pMainVC1Decoder->m_va)
             {
                 if (pMainVC1Decoder->m_va->IsIntelCustomGUID())
                 {
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
                     if(pMainVC1Decoder->m_va->GetProtectedVA())
                         Size += align_value<Ipp32u>(sizeof(VC1FrameDescriptorVA_Protected<VC1PackerDXVA_Protected>));
                     else
+#endif
                         Size += align_value<Ipp32u>(sizeof(VC1FrameDescriptorVA_EagleLake<VC1PackerDXVA_EagleLake>));
                 }
                 else
@@ -549,7 +549,6 @@ namespace UMC
                 Size += align_value<Ipp32u>(sizeof(VC1FrameDescriptorVA_Linux<VC1PackerLVA>));
             }
             else
-#endif
 #endif
             Size += align_value<Ipp32u>(sizeof(VC1FrameDescriptor));
         }
@@ -1440,7 +1439,7 @@ STATISTICS_END_TIME(m_timeStatistics->AddPerfomed_StartTime,
                     return true;
         }
     }
-#ifndef UMC_RESTRICTED_CODE_VA
+
     bool VC1TaskStore::CreateDSQueue(VC1Context* pContext,
                                      VideoAccelerator* va)
     {
@@ -1454,12 +1453,14 @@ STATISTICS_END_TIME(m_timeStatistics->AddPerfomed_StartTime,
                 Ipp8u* pBuf;
                 if (va->IsIntelCustomGUID())
                 {
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
                     if(va->GetProtectedVA())
                     {
                         pBuf = m_pSHeap->s_alloc<VC1FrameDescriptorVA_Protected<VC1PackerDXVA_Protected>>();
                         m_pDescriptorQueue[i] = new(pBuf) VC1FrameDescriptorVA_Protected<VC1PackerDXVA_Protected>(m_pMemoryAllocator,va);
                     }
                     else
+#endif
                     {
                         pBuf = m_pSHeap->s_alloc<VC1FrameDescriptorVA_EagleLake<VC1PackerDXVA_EagleLake>>();
                         m_pDescriptorQueue[i] = new(pBuf) VC1FrameDescriptorVA_EagleLake<VC1PackerDXVA_EagleLake>(m_pMemoryAllocator,va);
@@ -1495,7 +1496,7 @@ STATISTICS_END_TIME(m_timeStatistics->AddPerfomed_StartTime,
         m_pPrefDS =  m_pDescriptorQueue[0];
         return true;
     }
-#endif
+
     bool VC1TaskStore::CreateDSQueue(VC1Context* pContext,
                                      bool IsReorder,
                                      Ipp16s* pResidBuf)

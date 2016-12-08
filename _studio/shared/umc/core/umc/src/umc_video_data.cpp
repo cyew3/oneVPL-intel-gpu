@@ -64,12 +64,8 @@ ColorFormatInfo FormatInfo[] =
     {YUV420A, 4,  8, 1, {{1, 1, 1, 1}, {2, 2, 1, 1}, {2, 2, 1, 1}, {1, 1, 1, 1}}},
     {YUV422A, 4,  8, 1, {{1, 1, 1, 1}, {2, 1, 1, 1}, {2, 1, 1, 1}, {1, 1, 1, 1}}},
     {YUV444A, 4,  8, 1, {{1, 1, 1, 1}, {1, 1, 1, 1}, {1, 1, 1, 1}, {1, 1, 1, 1}}},
-    {YVU9,    3,  8, 1, {{1, 1, 1, 1}, {4, 4, 1, 1}, {4, 4, 1, 1}}},
-    {D3D_SURFACE_DEC,   3, 8, 1, {{1, 1, 1, 1}, {1, 1, 1, 1}, {1, 1, 1, 1}}},
-    {D3D_SURFACE,       3, 8, 1, {{1, 1, 1, 1}, {1, 1, 1, 1}, {1, 1, 1, 1}}},
+    {YVU9,    3,  8, 1, {{1, 1, 1, 1}, {4, 4, 1, 1}, {4, 4, 1, 1}}}
 };
-
-#define D3D_SURFACE_SIZE    256
 
 // Number of entries in the FormatInfo table
 static
@@ -174,8 +170,6 @@ Status VideoData::Init(Ipp32s iWidth,
 
     // allocate plane info
     m_pPlaneData = new PlaneInfo[iPlanes];
-    if (NULL == m_pPlaneData)
-        return UMC_ERR_ALLOC;
 
     // fill plane info
     for (i = 0; i < iPlanes; i++)
@@ -210,17 +204,6 @@ Status VideoData::Init(Ipp32s iWidth,
 {
     Status umcRes;
     const ColorFormatInfo* pFormat;
-
-    // if D3D_SURFACE, data pointer should point to D3DSurface structure
-    if (cFormat == D3D_SURFACE)
-    {
-        m_ColorFormat = cFormat;
-        m_ippSize.width = iWidth;
-        m_ippSize.height = iHeight;
-        umcRes = Alloc();
-        memset(m_pBufferPointer, 0, m_nBufferSize);
-        return umcRes;
-    }
 
     pFormat = GetColorFormatInfo(cFormat);
     if(NULL == pFormat)
@@ -357,8 +340,6 @@ Status VideoData::Alloc(size_t requiredSize)
 
     // allocate buffer
     m_pbAllocated = new Ipp8u[nSize + m_iAlignment - 1];
-    if (NULL == m_pbAllocated)
-        return UMC_ERR_ALLOC;
 
     // set pointer to image
     return SetBufferPointer(m_pbAllocated, nSize);
@@ -374,7 +355,7 @@ Status VideoData::SetBufferPointer(Ipp8u *pbBuffer, size_t nSize)
     Ipp8u *ptr = align_pointer<Ipp8u *>(pbBuffer, m_iAlignment);
 
     // check error(s)
-    if (NULL == m_pPlaneData && m_ColorFormat != D3D_SURFACE) {
+    if (NULL == m_pPlaneData) {
         SetDataSize(0);
         return UMC_ERR_FAILED;
     }
@@ -410,11 +391,6 @@ size_t VideoData::GetMappingSize() const
 {
     Ipp32s i;
     size_t size = 0;
-
-    if (m_ColorFormat == D3D_SURFACE)
-    {
-        return D3D_SURFACE_SIZE;
-    }
 
     UMC_CHECK(m_pPlaneData, 0);
 
@@ -513,10 +489,6 @@ Status VideoData::SetPlaneSampleSize(Ipp32s iSampleSize, Ipp32s iPlaneNumber)
 // Supposes no gaps between planes.
 Status VideoData::SetSurface(void* ptr, size_t nPitch)
 {
-    Status ret;
-    size_t size = 0;
-    int i;
-
     // check error(s)
     UMC_CHECK(ptr, UMC_ERR_NULL_PTR);
     UMC_CHECK(m_pPlaneData, UMC_ERR_NOT_INITIALIZED);
@@ -525,8 +497,9 @@ Status VideoData::SetSurface(void* ptr, size_t nPitch)
       nPitch = m_pPlaneData[0].m_nPitch;
 
     m_pPlaneData[0].m_nOffset = 0;
+    size_t size = 0;
 
-    for (i = 0; i < m_iPlanes; i++) {
+    for (int i = 0; i < m_iPlanes; i++) {
       m_pPlaneData[i].m_nPitch = nPitch;
       if (i > 0) {
         m_pPlaneData[i].m_nPitch *= m_pPlaneData[i].m_iSamples*m_pPlaneData[0].m_iWidthDiv;
@@ -538,10 +511,9 @@ Status VideoData::SetSurface(void* ptr, size_t nPitch)
       size += m_pPlaneData[i].m_nMemSize;
     }
 
-    ret = MediaData::SetBufferPointer((Ipp8u*)ptr, size);
-    ret = MediaData::SetDataSize(size);
+    MediaData::SetBufferPointer((Ipp8u*)ptr, size);
 
-    return ret;
+    return MediaData::SetDataSize(size);
 }
 
 #define PITCH_PREC  8

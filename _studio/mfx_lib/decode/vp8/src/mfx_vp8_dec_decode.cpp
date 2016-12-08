@@ -134,7 +134,7 @@ VideoDECODEVP8::VideoDECODEVP8(VideoCORE *p_core, mfxStatus *p_sts)
     vm_mutex_set_invalid(&m_mutex);
 
     // allocate vpx decoder
-    m_vpx_codec = ippMalloc(sizeof(vpx_codec_ctx_t));
+    m_vpx_codec = malloc(sizeof(vpx_codec_ctx_t));
 
     if (!m_vpx_codec)
     {
@@ -1106,13 +1106,13 @@ mfxStatus VideoDECODEVP8::ConstructFrame(mfxBitstream *p_in, mfxBitstream *p_out
 
     if (p_out->Data)
     {
-        ippFree(p_out->Data);
+        delete[] p_out->Data;
         p_out->DataLength = 0;
     }
 
-    p_out->Data = (Ipp8u*)ippMalloc(p_in->DataLength);
+    p_out->Data = new Ipp8u[p_in->DataLength];
 
-    ippsCopy_8u(p_bs_start, p_out->Data, p_in->DataLength);
+    std::copy(p_bs_start, p_bs_start + p_in->DataLength, p_out->Data);
     p_out->DataLength = p_in->DataLength;
     p_out->DataOffset = 0;
 

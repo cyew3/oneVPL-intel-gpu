@@ -26,7 +26,7 @@
 #define VPP_DETAIL_GAIN_MIN      (0)
 #define VPP_DETAIL_GAIN_MAX      (63)
 #define VPP_DETAIL_GAIN_MAX_REAL (63)
-// for MSDK 2.0 Sergey Plotnikov replaced range [0...63] to native [0, 100%] wo notification of dev
+// replaced range [0...63] to native [0, 100%] wo notification of dev
 // so a lot of modification requiried to provide smooth control (recalculate test streams etc)
 // solution is realGain = CLIP(userGain, 0, 63)
 #define VPP_DETAIL_GAIN_MAX_USER_LEVEL (100)

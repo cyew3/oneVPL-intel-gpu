@@ -27,9 +27,10 @@
 #include <vector>
 #include <list>
 #include <assert.h>
-
+#ifndef OPEN_SOURCE // MFX_MIN/MFX_MAX defined in umc_defs.h which is used in Open Source
 #define MFX_MIN(x,y) ((x) < (y) ? (x) : (y))
 #define MFX_MAX(x,y) ((x) > (y) ? (x) : (y))
+#endif
 #define STATIC_ASSERT(ASSERTION, MESSAGE) char MESSAGE[(ASSERTION) ? 1 : -1]; MESSAGE
 #define MFX_SORT_COMMON(_AR, _SZ, _COND)\
     for (mfxU32 _i = 0; _i < (_SZ); _i ++)\
@@ -39,7 +40,7 @@
 #define MFX_SORT_STRUCT(_AR, _SZ, _M, _OP) MFX_SORT_COMMON(_AR, _SZ, _AR[_i]._M _OP _AR[_j]._M)
 
 #ifdef MFX_VA_WIN
-#define MAX_FRAME_SIZE_SUPPORT
+#define MAX_HEVC_FRAME_SIZE_SUPPORT
 #endif
 
 namespace MfxHwH265Encode
@@ -138,8 +139,8 @@ enum
     HW_SURF_ALIGN_W         = 16,
     HW_SURF_ALIGN_H         = 16,
     
-    HW_SURF_ALIGN_VDENC_W   = 32,
-    HW_SURF_ALIGN_VDENC_H   = HW_SURF_ALIGN_H,
+    HW_SURF_ALIGN_LOWPOWER_W  = 32,
+    HW_SURF_ALIGN_LOWPOWER_H  = HW_SURF_ALIGN_H,
 
     CODED_PIC_ALIGN_W       = 16,
     CODED_PIC_ALIGN_H       = 16,
@@ -295,8 +296,10 @@ typedef struct _Task : DpbFrame
     mfxFrameSurface1*   m_surf_real;
     mfxEncodeCtrl       m_ctrl;
     Slice               m_sh;
-    mfxAES128CipherCounter m_aes_counter;
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
+    mfxAES128CipherCounter m_aes_counter;
+#endif
     mfxU32 m_idxBs;
     mfxU8  m_idxCUQp;
 
@@ -358,20 +361,15 @@ struct remove_const<const T>
 
 namespace ExtBuffer
 {
-
-    /*template<typename T, int sz>
-    int size_of_array(T(&)[sz])
-    {
-        return sz;
-    }*/
-
     #define SIZE_OF_ARRAY(ARR) (sizeof(ARR) / sizeof(ARR[0]))
 
     const mfxU32 allowed_buffers[] = {
          MFX_EXTBUFF_HEVC_PARAM,
          MFX_EXTBUFF_HEVC_TILES,
          MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION,
+#ifndef MFX_EXT_DPB_HEVC_DISABLE
          MFX_EXTBUFF_DPB,
+#endif
          MFX_EXTBUFF_AVC_REFLISTS,
          MFX_EXTBUFF_CODING_OPTION,
          MFX_EXTBUFF_CODING_OPTION2,
@@ -387,9 +385,13 @@ namespace ExtBuffer
          MFX_EXTBUFF_CODING_OPTION_VPS,
          MFX_EXTBUFF_VIDEO_SIGNAL_INFO,
          MFX_EXTBUFF_LOOKAHEAD_STAT,
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
          MFX_EXTBUFF_PAVP_OPTION,
          MFX_EXTBUFF_ENCODER_WIDI_USAGE,
+#endif
+#if !defined(MFX_EXT_BRC_DISABLE)
          MFX_EXTBUFF_BRC,
+#endif
          MFX_EXTBUFF_ENCODED_SLICES_INFO,
          MFX_EXTBUFF_MBQP,
          MFX_EXTBUFF_ENCODER_ROI
@@ -401,7 +403,9 @@ namespace ExtBuffer
         EXTBUF(mfxExtHEVCParam,             MFX_EXTBUFF_HEVC_PARAM);
         EXTBUF(mfxExtHEVCTiles,             MFX_EXTBUFF_HEVC_TILES);
         EXTBUF(mfxExtOpaqueSurfaceAlloc,    MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
+#ifndef MFX_EXT_DPB_HEVC_DISABLE
         EXTBUF(mfxExtDPB,                   MFX_EXTBUFF_DPB);
+#endif
         EXTBUF(mfxExtAVCRefLists,           MFX_EXTBUFF_AVC_REFLISTS);
         EXTBUF(mfxExtCodingOption,          MFX_EXTBUFF_CODING_OPTION);
         EXTBUF(mfxExtCodingOption2,         MFX_EXTBUFF_CODING_OPTION2);
@@ -421,11 +425,15 @@ namespace ExtBuffer
 #if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
         EXTBUF(mfxExtIntGPUHang,            MFX_EXTBUFF_GPU_HANG);
 #endif
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         EXTBUF(mfxExtPAVPOption,            MFX_EXTBUFF_PAVP_OPTION);
         EXTBUF(mfxExtAVCEncoderWiDiUsage,   MFX_EXTBUFF_ENCODER_WIDI_USAGE);
-        EXTBUF(mfxExtBRC,                   MFX_EXTBUFF_BRC);
+#endif
         EXTBUF(mfxExtEncodedSlicesInfo,     MFX_EXTBUFF_ENCODED_SLICES_INFO);
         EXTBUF(mfxExtEncoderROI,            MFX_EXTBUFF_ENCODER_ROI);
+#if !defined(MFX_EXT_BRC_DISABLE)
+        EXTBUF(mfxExtBRC,                   MFX_EXTBUFF_BRC);
+#endif
         EXTBUF(mfxExtMBQP,                  MFX_EXTBUFF_MBQP);
 
     #undef EXTBUF
@@ -449,7 +457,7 @@ namespace ExtBuffer
     {
         _CopyPar1(NumTileRows);
         _CopyPar1(NumTileColumns);
-    } 
+    }
 
     inline void CopySupportedParams (mfxExtCodingOption& buf_dst, mfxExtCodingOption& buf_src)
     {
@@ -540,9 +548,9 @@ namespace ExtBuffer
         {
             memcpy_s(&buf, sizeof(T), &buf_ref, sizeof(T));
         }
-        return bUnsuppoted;    
+        return bUnsuppoted;
     }
-    
+
     class Proxy
     {
     private:
@@ -650,8 +658,6 @@ namespace ExtBuffer
             return MFX_ERR_UNDEFINED_BEHAVIOR;
         return MFX_ERR_NONE;
     }
-
-    #undef ExtBuffersArray
 };
 
 class TemporalLayers
@@ -741,11 +747,15 @@ public:
         mfxExtDumpFiles             DumpFiles;
 #endif
         mfxExtVideoSignalInfo       VSI;
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         mfxExtPAVPOption            PAVP;
+#endif
+#if !defined(MFX_EXT_BRC_DISABLE)
         mfxExtBRC                   extBRC;
         mfxExtEncodedSlicesInfo     SliceInfo;
         mfxExtEncoderROI            ROI;
         mfxExtBuffer *              m_extParam[SIZE_OF_ARRAY(ExtBuffer::allowed_buffers)];
+#endif
     } m_ext;
 
     mfxU32 BufferSizeInKB;
@@ -757,7 +767,10 @@ public:
     mfxU32 LCUSize;
     bool   InsertHRDInfo;
     bool   RawRef;
+
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     bool   WiDi;
+#endif
 
     MfxVideoParam();
     MfxVideoParam(MfxVideoParam const & par);
@@ -981,9 +994,10 @@ IntraRefreshState GetIntraRefreshState(
     mfxU16                intraStripeWidthInMBs);
 
 mfxU8 GetNumReorderFrames(
-    mfxU32 BFrameRate, 
+    mfxU32 BFrameRate,
     bool BPyramid);
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 bool Increment(
     mfxAES128CipherCounter & aesCounter,
     mfxExtPAVPOption const & extPavp);
@@ -991,15 +1005,19 @@ bool Increment(
 void Decrement(
     mfxAES128CipherCounter & aesCounter,
     mfxExtPAVPOption const & extPavp);
+#endif
 
+#ifndef MFX_EXT_DPB_HEVC_DISABLE
 void ReportDPB(DpbArray const & DPB, mfxExtDPB& report);
+#endif
+
 bool IsFrameToSkip(
-    Task&  task, 
+    Task&  task,
     MfxFrameAllocResponse & poolRec,
     bool bSWBRC);
 
-mfxStatus CodeAsSkipFrame(     
-    MFXCoreInterface &            core,                               
+mfxStatus CodeAsSkipFrame(
+    MFXCoreInterface &            core,
     MfxVideoParam const &  video,
     Task&       task,
     MfxFrameAllocResponse & poolSkip,

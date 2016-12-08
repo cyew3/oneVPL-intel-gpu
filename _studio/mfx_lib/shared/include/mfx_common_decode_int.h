@@ -5,13 +5,14 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2012 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFX_COMMON_DECODE_INT_H__
 #define __MFX_COMMON_DECODE_INT_H__
 
 #include <vector>
+#include "mfx_config.h"
 #include "mfx_common_int.h"
 #include "umc_video_decoder.h"
 
@@ -42,24 +43,26 @@ inline bool IsMVCProfile(mfxU32 profile)
     return (profile == MFX_PROFILE_AVC_MULTIVIEW_HIGH || profile == MFX_PROFILE_AVC_STEREO_HIGH);
 }
 
+#if defined(MFX_ENABLE_SVC_VIDEO_DECODE)
 inline bool IsSVCProfile(mfxU32 profile)
 {
     profile = ExtractProfile(profile);
     return (profile == MFX_PROFILE_AVC_SCALABLE_BASELINE || profile == MFX_PROFILE_AVC_SCALABLE_HIGH);
 }
+#endif
 
+#if defined (MFX_VA_WIN)
 template <class T>
 mfxStatus CheckIntelDataPrivateReport(T *pConfig, mfxVideoParam *par)
 {
-
     if ((par->mfx.FrameInfo.Width > pConfig->ConfigMBcontrolRasterOrder) ||
         (par->mfx.FrameInfo.Height > pConfig->ConfigResidDiffHost))
     {
         return MFX_WRN_PARTIAL_ACCELERATION;
     }
 
+#ifdef MFX_ENABLE_SVC_VIDEO_DECODE
     bool isArbitraryCroppingSupported = pConfig->ConfigDecoderSpecific & 0x01;
-
 
     mfxExtSVCSeqDesc * svcDesc = (mfxExtSVCSeqDesc*)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_SVC_SEQ_DESC);
     if (svcDesc && IsSVCProfile(par->mfx.CodecProfile) && !isArbitraryCroppingSupported)
@@ -101,7 +104,10 @@ mfxStatus CheckIntelDataPrivateReport(T *pConfig, mfxVideoParam *par)
             return MFX_WRN_PARTIAL_ACCELERATION;
         }
     }
+#endif
+
     return MFX_ERR_NONE;
-} // mfxStatus GetMaxSizes
+} // mfxStatus CheckIntelDataPrivateReport(...)
+#endif // defined (MFX_VA_WIN)
 
 #endif

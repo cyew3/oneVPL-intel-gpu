@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2001-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2001-2016 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __JPEGBASE_H__
@@ -13,32 +13,16 @@
 
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_MJPEG_VIDEO_DECODER) || defined (UMC_ENABLE_MJPEG_VIDEO_ENCODER)
-//#include <iostream.h>
 #ifdef _OPENMP
 #include <omp.h>
 #endif
-#ifndef __IPPDEFS_H__
 #include "ippdefs.h"
-#endif
-#ifndef __IPPCORE_H__
 #include "ippcore.h"
-#endif
-#ifndef __IPPS_H__
 #include "ipps.h"
-#endif
-#ifndef __IPPI_H__
 #include "ippi.h"
-#endif
-#ifndef __IPPCC_H__
 #include "ippcc.h"
-#endif
-#ifndef __IPPJ_H__
 #include "ippj.h"
-#endif
-#ifndef __VM_STRINGS_H__
 #include "vm_strings.h"
-#endif
-
 
 #ifdef _DEBUG
 #define ENABLE_TRACING

@@ -17,7 +17,6 @@
             return MFX_ERR_DEVICE_FAILED;
 
 
-// aya: cyclic ref
 #include "mfx_h264_encode_hw_utils.h"
 
 #include "mfx_h264_encode_d3d11.h"
@@ -120,9 +119,10 @@ mfxStatus D3D11Encoder::CreateAccelerationService(MfxVideoParam const & par)
     if (extCO2)
         m_skipMode = extCO2->SkipFrame;
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if( IsProtectionPavp(par.Protected) )
     {   
-        Destroy(); //aya: release decoder device
+        Destroy(); //release decoder device
 
         D3D11Interface* pD3d11 = QueryCoreInterface<D3D11Interface>(m_core);
         MFX_CHECK_NULL_PTR1(pD3d11);
@@ -139,6 +139,7 @@ mfxStatus D3D11Encoder::CreateAccelerationService(MfxVideoParam const & par)
 
         MFX_CHECK_STS(sts);
     }
+#endif
 
     decoderExtParam.Function = ENCODE_ENC_CTRL_CAPS_ID;
     decoderExtParam.pPrivateOutputData = &m_capsQuery;
@@ -283,11 +284,6 @@ mfxStatus D3D11Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequ
     request.Info.Height = m_compBufInfo[i].CreationHeight;
     request.Info.FourCC = ownConvertD3DFMT_TO_MFX( (DXGI_FORMAT)(m_compBufInfo[i].CompressedFormats) ); // P8
 
-    // FIXME: !!! aya:  
-    // D3D11_BIND_VIDEO_ENCODER must be used core->AllocFrames()
-    //     Desc.BindFlags = D3D11_BIND_ENCODER;
-    //     hr = pSelf->m_pD11Device->CreateTexture2D(&Desc, NULL, &pSelf->m_SrfPool);
-
     return MFX_ERR_NONE;    
 
 } // mfxStatus D3D11Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequest& request)
@@ -364,9 +360,6 @@ mfxStatus D3D11Encoder::SetEncCtrlCaps(ENCODE_ENC_CTRL_CAPS const & caps)
 
 mfxStatus D3D11Encoder::Register(mfxFrameAllocResponse & response, D3DDDIFORMAT type)
 {   
-    // aya: workarround for d3d11
-    //MFX_CHECK( response.mids, MFX_ERR_NULL_PTR );       
-
     // we should register allocated HW bitstreams and recon surfaces
     std::vector<mfxHDLPair> & queue = (type == D3DDDIFMT_NV12) ? 
         m_reconQueue: (type == D3DDDIFMT_INTELENCODE_MBQPDATA) ? 
@@ -374,7 +367,7 @@ mfxStatus D3D11Encoder::Register(mfxFrameAllocResponse & response, D3DDDIFORMAT 
     
     queue.resize(response.NumFrameActual);
 
-    //aya:wo_d3d11
+    //wo_d3d11
     for (mfxU32 i = 0; i < response.NumFrameActual; i++)
     {   
         mfxHDLPair handlePair;
@@ -794,11 +787,13 @@ mfxStatus D3D11Encoder::QueryStatus(
             task.m_mad[fieldId] = feedback->MAD;
         task.m_resetBRC = !!feedback->reserved0; //WiDi w/a
         //for KBL we need retrive counter from HW instead of incrementing ourselfs.
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         if(m_caps.HWCounterAutoIncrement && (m_forcedCodingFunction & ENCODE_WIDI))
         {
             task.m_aesCounter[0].Count = feedback->aes_counter.Counter;
             task.m_aesCounter[0].IV = feedback->aes_counter.IV;
         }
+#endif
         m_feedbackCached.Remove(task.m_statusReportNumber[fieldId]);
         return MFX_ERR_NONE;
 
@@ -811,9 +806,6 @@ mfxStatus D3D11Encoder::QueryStatus(
         assert(!"bad feedback status");
         return MFX_ERR_DEVICE_FAILED;
     }
-// varistar - warning - see previous switch
-//    return MFX_ERR_NONE;
-
 } // mfxStatus D3D11Encoder::QueryStatus( DdiTask & task, mfxU32    fieldId)
 
 mfxStatus D3D11Encoder::QueryHWGUID(
@@ -997,10 +989,7 @@ mfxStatus D3D11Encoder::Init(
             // MFX_CHECK_STS( mfxSts );
             //}    
 
-            // [2] Calling other D3D11 Video Decoder API (as for normal proc) - aya:FIXME:skipped
-
-            //hRes = CheckVideoDecoderFormat(NV12); //aya???
-            //CHECK_HRES(hRes);
+            // [2] Calling other D3D11 Video Decoder API (as for normal proc)
 
             // [4] CreateVideoDecoder
             // D3D11_VIDEO_DECODER_DESC video_desc;
@@ -1061,7 +1050,7 @@ mfxStatus D3D11Encoder::Init(
 #endif
 
 
-    // [6] specific encoder caps - aya:skipped
+    // [6] specific encoder caps
 
     // [7] Query encode service caps: see QueryCompBufferInfo
 
@@ -1599,7 +1588,6 @@ mfxStatus D3D11SvcEncoder::QueryCompBufferInfo(
 
     size_t i = 0;
     for (; i < m_compBufInfo.size(); i++)
-        //if (m_compBufInfo[i].Type == type) //aya!!!: search bitstream only
         if (m_compBufInfo[i].Type == D3D11_DDI_VIDEO_ENCODER_BUFFER_BITSTREAMDATA)
             break;
 
@@ -1702,8 +1690,6 @@ mfxStatus D3D11SvcEncoder::QueryStatus(
         assert(!"bad feedback status");
         return MFX_ERR_DEVICE_FAILED;
     }
-// varistar - warning - see previous switch
-//    return MFX_ERR_NONE;
 }
 
 mfxStatus D3D11SvcEncoder::Destroy()
@@ -1760,9 +1746,9 @@ mfxStatus D3D11SvcEncoder::Init(
     video_desc.SampleWidth  = width;
     video_desc.SampleHeight = height;
     video_desc.OutputFormat = DXGI_FORMAT_NV12;
-    video_desc.Guid = DXVA2_Intel_Encode_AVC; //aya:???
+    video_desc.Guid = DXVA2_Intel_Encode_AVC;
 
-    D3D11_VIDEO_DECODER_CONFIG video_config = {0}; // aya:!!!!!!!!
+    D3D11_VIDEO_DECODER_CONFIG video_config = {0};
     mfxU32 count;
 
     hRes = m_pVideoDevice->GetVideoDecoderConfigCount(&video_desc, &count);
@@ -1777,10 +1763,7 @@ mfxStatus D3D11SvcEncoder::Init(
         // MFX_CHECK_STS( mfxSts );
     //}    
 
-    // [2] Calling other D3D11 Video Decoder API (as for normal proc) - aya:FIXME:skipped
-
-    //hRes = CheckVideoDecoderFormat(NV12); //aya???
-    //CHECK_HRES(hRes);
+    // [2] Calling other D3D11 Video Decoder API (as for normal proc)
 
     // [4] CreateVideoDecoder
     // D3D11_VIDEO_DECODER_DESC video_desc;
@@ -1790,7 +1773,7 @@ mfxStatus D3D11SvcEncoder::Init(
     video_desc.Guid = DXVA2_Intel_Encode_AVC; 
 
     // D3D11_VIDEO_DECODER_CONFIG video_config;
-    video_config.guidConfigBitstreamEncryption = DXVA_NoEncrypt;// aya: encrypto will be added late
+    video_config.guidConfigBitstreamEncryption = DXVA_NoEncrypt;//encrypto will be added late
     video_config.ConfigDecoderSpecific = m_forcedCodingFunction ? m_forcedCodingFunction : ENCODE_ENC_PAK;
 
     hRes  = m_pVideoDevice->CreateVideoDecoder(&video_desc, &video_config, &m_pDecoder);
@@ -1847,7 +1830,6 @@ mfxStatus D3D11SvcEncoder::QueryHWGUID(
 } // mfxStatus D3D11Encoder::CreateAuxilliaryDevice(...)
 
 
-// aya: temporal solution to fix compiler error
 void D3D11SvcEncoder::PackSlice(
     OutputBitstream & obs,
     DdiTask const &   task,

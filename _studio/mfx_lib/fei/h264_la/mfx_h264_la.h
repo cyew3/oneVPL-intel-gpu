@@ -98,8 +98,8 @@ typedef struct
 typedef struct
 {
     CmBuffer *                  m_cmCurbe;      // control structure for ME & HME kernels
-    SurfaceIndex *              m_cmRefs;       // VmeSurfaceG75 for ME kernelv
-    SurfaceIndex *              m_cmRefsLa;     // VmeSurfaceG75 for 2X kernel
+    SurfaceIndex *              m_cmRefs;       // Surface for ME kernelv
+    SurfaceIndex *              m_cmRefsLa;     // Surface for 2X kernel
     void *                      m_cmMbSys;      // pointer to associated system memory buffer   
     CmEvent *                   m_event; 
     sVMEFrameInfo               m_Curr;    
@@ -296,15 +296,8 @@ private:
     MfxHwH264Encode::MfxFrameAllocResponse          m_curbe;
     MfxHwH264Encode::MfxFrameAllocResponse          m_rawLa;
     MfxHwH264Encode::MfxFrameAllocResponse          m_raw;
-    MfxHwH264Encode::MfxFrameAllocResponse          m_opaqHren;
+    MfxHwH264Encode::MfxFrameAllocResponse          m_opaqResponse;
 };
-
-
-
-
-
-
-
 
 #endif
 #endif

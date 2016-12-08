@@ -249,7 +249,7 @@ inline void FillScalingList8x8(H264ScalingList8x8 *scl_dst, const Ipp8u *coefs_s
         scl_dst->ScalingListCoeffs[i] = coefs_src[i];
 }
 
-inline IppStatus DecodeExpGolombOne_H264_1u32s (Ipp32u **ppBitStream,
+inline bool DecodeExpGolombOne_H264_1u32s (Ipp32u **ppBitStream,
                                                       Ipp32s *pBitOffset,
                                                       Ipp32s *pDst,
                                                       Ipp32s isSigned)
@@ -267,7 +267,7 @@ inline IppStatus DecodeExpGolombOne_H264_1u32s (Ipp32u **ppBitStream,
     if (code)
     {
         *pDst = 0;
-        return ippStsNoErr;
+        return true;
     }
 
     h264GetBits((*ppBitStream), (*pBitOffset), 8, code);
@@ -300,7 +300,7 @@ inline IppStatus DecodeExpGolombOne_H264_1u32s (Ipp32u **ppBitStream,
         *ppBitStream += (dwords + 1);
         *pBitOffset = 31 - length;
         *pDst = 0;
-        return ippStsH263VLCCodeErr;
+        return false;
     }
 
     /* Get info portion of codeword */
@@ -320,8 +320,7 @@ inline IppStatus DecodeExpGolombOne_H264_1u32s (Ipp32u **ppBitStream,
     else
         *pDst = (Ipp32s) sval;
 
-    return ippStsNoErr;
-
+    return true;
 }
 
 inline bool H264BaseBitstream::IsBSLeft(size_t sizeToRead)
@@ -348,9 +347,9 @@ inline Ipp32s H264BaseBitstream::GetVLCElement(bool bIsSigned)
 {
     Ipp32s sval = 0;
 
-    IppStatus ippRes = DecodeExpGolombOne_H264_1u32s(&m_pbs, &m_bitOffset, &sval, bIsSigned);
+    bool res = DecodeExpGolombOne_H264_1u32s(&m_pbs, &m_bitOffset, &sval, bIsSigned);
 
-    if (ippStsNoErr > ippRes)
+    if (!res)
         throw h264_exception(UMC_ERR_INVALID_STREAM);
     return sval;
 }

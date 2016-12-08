@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -211,7 +211,6 @@ public:
     virtual
     mfxStatus GetFrameParam(mfxFrameParam *par);
 
-    using VideoENC::RunFrameVmeENCCheck;
     virtual
     mfxStatus RunFrameVmeENCCheck(mfxENCInput *input, mfxENCOutput *output, MFX_ENTRY_POINT pEntryPoints[], mfxU32 &numEntryPoints);
 

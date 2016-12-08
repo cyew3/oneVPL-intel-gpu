@@ -13,9 +13,6 @@
 
 #include "umc_video_resizing.h"
 #include "umc_deinterlacing.h"
-#ifdef UMC_VA_DXVA
-#include "umc_d3d_video_processing.h"
-#endif
 #include "umc_color_space_conversion.h"
 #include "umc_deinterlacing.h"
 
@@ -37,12 +34,6 @@ VideoProcessing::VideoProcessing()
 
   // order of filters
   numFilters = 0;
-#ifndef UMC_RESTRICTED_CODE_VA
-#ifdef UMC_VA_DXVA
-  iD3DProcessing = numFilters++;
-  pFilter[iD3DProcessing] = new D3DVideoProcessing;
-#endif
-#endif
   iDeinterlacing = numFilters++;
   iColorConv0 = numFilters++;
   iColorConv = numFilters++;
@@ -169,19 +160,6 @@ Status VideoProcessing::GetFrame(MediaData *input, MediaData *output)
   ColorFormat dst_c = out->GetColorFormat();
 
   memset(bFiltering, 0, sizeof(bFiltering));
-#ifndef UMC_RESTRICTED_CODE_VA
-#ifdef UMC_VA_DXVA
-  if (IS_D3D_FORMAT(src_c))
-  {
-      bFiltering[iD3DProcessing] = true;
-      if (!IS_D3D_FORMAT(dst_c))
-      {
-          bFiltering[iResizing] = (src_w != dst_w || src_h != dst_h);
-      }
-  }
-  else
-#endif
-#endif
   {
       bFiltering[iDeinterlacing] =
           (Param.m_DeinterlacingMethod != NO_DEINTERLACING) &&

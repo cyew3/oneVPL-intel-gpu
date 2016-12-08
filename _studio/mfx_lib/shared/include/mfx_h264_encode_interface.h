@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -22,7 +22,7 @@
 
 #include "mfx_h264_enc_common_hw.h"
 
-// AYA: temporal solution. structures will be abstracted (ENCODE_CAPS, D3DDDIFORMAT)
+// structures will be abstracted (ENCODE_CAPS, D3DDDIFORMAT)
 #if   defined(MFX_VA_WIN)
     #include "encoding_ddi.h"
 #elif defined(MFX_VA_LINUX)
@@ -164,7 +164,9 @@ namespace MfxHwH264Encode
     };
 
     DriverEncoder* CreatePlatformH264Encoder( VideoCORE* core ); 
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
     DriverEncoder* CreatePlatformSvcEncoder( VideoCORE* core );
+#endif
 
 }; // namespace
 

@@ -11,8 +11,6 @@
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_H264_VIDEO_DECODER)
 
-#ifndef UMC_RESTRICTED_CODE_VA
-
 #include "umc_h264_va_supplier.h"
 #include "umc_h264_frame_list.h"
 #include "umc_h264_nal_spl.h"
@@ -436,5 +434,4 @@ Ipp32s VATaskSupplier::GetFreeFrameIndex()
 
 } // namespace UMC
 
-#endif // UMC_RESTRICTED_CODE_VA
 #endif // UMC_ENABLE_H264_VIDEO_DECODER

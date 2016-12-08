@@ -67,7 +67,7 @@ namespace UMC
             {
                 Ipp8u* buf = (Ipp8u*)Info.in->GetBufferPointer();
                 Ipp8u* data = (Ipp8u*)Info.in->GetBufferPointer() + (Ipp32u)Info.in->GetDataSize();
-                ippsCopy_8u(data, buf, (Ipp32u)Info.in->GetBufferSize() - (Ipp32u)Info.in->GetDataSize());
+                MFX_INTERNAL_CPY(buf, data, (Ipp32u)Info.in->GetBufferSize() - (Ipp32u)Info.in->GetDataSize());
                 Info.in->SetDataSize((Ipp32u)Info.in->GetBufferSize() - (Ipp32u)Info.in->GetDataSize());
 
                 return UMC_ERR_NOT_ENOUGH_DATA;
@@ -98,7 +98,7 @@ namespace UMC
 
         if(currFrameSize + readBufSize - readDataSize <= frameSize )
         {
-            ippsCopy_8u(readBuf + readDataSize, currFramePos, readBufSize - readDataSize);
+            MFX_INTERNAL_CPY(currFramePos, readBuf + readDataSize, readBufSize - readDataSize);
 
             Info.out->SetDataSize(currFrameSize + readBufSize - readDataSize);
             Info.in->SetDataSize(0);
@@ -106,7 +106,7 @@ namespace UMC
         }
         else
         {
-            ippsCopy_8u(readBuf + readDataSize, currFramePos, frameSize - currFrameSize);
+            MFX_INTERNAL_CPY(currFramePos, readBuf + readDataSize, frameSize - currFrameSize);
 
             Info.out->SetDataSize(frameSize);
             Info.in->SetDataSize(readDataSize + frameSize - currFrameSize);
@@ -313,7 +313,7 @@ namespace UMC
                         if(frameSize + size > frameBufSize)
                             return UMC_ERR_NOT_ENOUGH_BUFFER;
 
-                        ippsCopy_8u(readBuf + readDataSize, currFramePos, size);
+                        MFX_INTERNAL_CPY(currFramePos, readBuf + readDataSize, size);
 
                         currFramePos = currFramePos + size;
                         frameSize = frameSize + size;
@@ -361,7 +361,7 @@ namespace UMC
                         if(frameSize + size > frameBufSize)
                             return UMC_ERR_NOT_ENOUGH_BUFFER;
 
-                        ippsCopy_8u(readBuf + readDataSize, currFramePos, size);
+                        MFX_INTERNAL_CPY(currFramePos, readBuf + readDataSize, size);
                         
                         currFramePos = currFramePos + size;
                         frameSize = frameSize + size;
@@ -388,7 +388,7 @@ namespace UMC
                         {                            
                             size = (Ipp32u)(readPos- readBuf - readDataSize + 1);
 
-                            ippsCopy_8u(readBuf + readDataSize, currFramePos, size);
+                            MFX_INTERNAL_CPY(currFramePos, readBuf + readDataSize, size);
                             Info.out->SetDataSize(frameSize + size);
 
                             Info.in->SetDataSize(Info.in->GetDataSize() + size);
@@ -425,7 +425,7 @@ namespace UMC
                         if(frameSize + size > frameBufSize)
                             return UMC_ERR_NOT_ENOUGH_BUFFER;
 
-                        ippsCopy_8u(readBuf + readDataSize, currFramePos, size);
+                        MFX_INTERNAL_CPY(currFramePos, readBuf + readDataSize, size);
                         frameSize = frameSize + size;
                         currFramePos = currFramePos + size;
                         zeroNum = 0;
@@ -456,7 +456,7 @@ namespace UMC
                         if(frameSize + size > frameBufSize)
                            return UMC_ERR_NOT_ENOUGH_BUFFER;
 
-                        ippsCopy_8u(readBuf + readDataSize, currFramePos, size);
+                        MFX_INTERNAL_CPY(currFramePos, readBuf + readDataSize, size);
                         Info.out->SetDataSize(frameSize + size);
 
                         if (Info.splMode != 2)
@@ -481,7 +481,7 @@ namespace UMC
                         if(frameSize + size > frameBufSize)
                             return UMC_ERR_NOT_ENOUGH_BUFFER;
 
-                        ippsCopy_8u(readBuf + readDataSize, readBuf, readBufSize - readDataSize);
+                        MFX_INTERNAL_CPY(readBuf, readBuf + readDataSize, readBufSize - readDataSize);
                         Info.in->SetDataSize(readBufSize - readDataSize);
                     }
 
@@ -495,7 +495,7 @@ namespace UMC
                     if(frameSize + size > frameBufSize)
                             return UMC_ERR_NOT_ENOUGH_BUFFER;
 
-                    ippsCopy_8u(readBuf + readDataSize, currFramePos, size);
+                    MFX_INTERNAL_CPY(currFramePos, readBuf + readDataSize, size);
                     Info.out->SetDataSize(frameSize + size);
 
                     Info.in->SetDataSize(size);

@@ -16,8 +16,6 @@
 
 #include "umc_va_base.h"
 
-#ifndef UMC_RESTRICTED_CODE_VA
-
 #include <memory>
 #include "umc_h265_segment_decoder_base.h"
 #include "umc_h265_task_broker.h"
@@ -42,8 +40,6 @@ public:
     void SetVideoAccelerator(UMC::VideoAccelerator *va);
 
 protected:
-    //virtual void LoadBuffers(Ipp32s FirstMB, Ipp32s MBToProcess) = 0;
-    //virtual void StoreBuffers() = 0;
 
     TaskSupplier_H265 * m_pTaskSupplier;
 
@@ -202,6 +198,5 @@ protected:
 
 } // namespace UMC_HEVC_DECODER
 
-#endif // UMC_RESTRICTED_CODE_VA
 #endif /* __UMC_H265_SEGMENT_DECODER_DXVA_H */
 #endif // UMC_ENABLE_H265_VIDEO_DECODER

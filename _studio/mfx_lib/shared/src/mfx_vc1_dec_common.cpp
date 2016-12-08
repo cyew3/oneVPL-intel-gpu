@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -132,17 +132,18 @@ mfxStatus MFXVC1DecCommon::Query(VideoCORE* core, mfxVideoParam *in, mfxVideoPar
             if (in->Protected)
             {
                 out->Protected = in->Protected;
+                if (!(in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
+                    sts = MFX_ERR_UNSUPPORTED;
+
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
+                if (in->NumExtParam > 1)
+                    sts = MFX_ERR_UNSUPPORTED;
+
                 if (core->GetHWType() == MFX_HW_UNKNOWN || !IS_PROTECTION_ANY(in->Protected))
                 {
                     sts = MFX_ERR_UNSUPPORTED;
                     out->Protected = 0;
                 }
-
-                if (!(in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
-                    sts = MFX_ERR_UNSUPPORTED;
-
-                if (in->NumExtParam > 1)
-                    sts = MFX_ERR_UNSUPPORTED;
 
                 mfxExtPAVPOption * pavpOptIn = (mfxExtPAVPOption*)GetExtendedBuffer(in->ExtParam, in->NumExtParam, MFX_EXTBUFF_PAVP_OPTION);
                 mfxExtPAVPOption * pavpOptOut = (mfxExtPAVPOption*)GetExtendedBuffer(out->ExtParam, out->NumExtParam, MFX_EXTBUFF_PAVP_OPTION);
@@ -195,6 +196,10 @@ mfxStatus MFXVC1DecCommon::Query(VideoCORE* core, mfxVideoParam *in, mfxVideoPar
                         pavpOptOut->Header = header;
                     }
                 }
+#else // #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
+                if (in->NumExtParam)
+                    sts = MFX_ERR_UNSUPPORTED;
+#endif
             }
             else
             {

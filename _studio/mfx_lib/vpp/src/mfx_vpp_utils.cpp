@@ -64,7 +64,7 @@ const mfxU32 g_TABLE_DO_USE [] =
 };
 
 
-// aya: should be synch with GetConfigSize()
+// should be synch with GetConfigSize()
 const mfxU32 g_TABLE_CONFIG [] =
 {
     MFX_EXTBUFF_VPP_DENOISE,
@@ -87,7 +87,9 @@ const mfxU32 g_TABLE_CONFIG [] =
 const mfxU32 g_TABLE_EXT_PARAM [] =
 {
     MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION,
+#ifdef MFX_ENABLE_VPP_SVC
     MFX_EXTBUFF_SVC_SEQ_DESC,
+#endif
     MFX_EXTBUFF_MVC_SEQ_DESC,
 
     MFX_EXTBUFF_VPP_DONOTUSE,
@@ -110,7 +112,6 @@ const mfxU32 g_TABLE_EXT_PARAM [] =
     MFX_EXTBUFF_VPP_MIRRORING
 };
 
-// in according with spec rev. 22583 VPP uses new PicStruct processing
 PicStructMode GetPicStructMode(mfxU16 inPicStruct, mfxU16 outPicStruct)
 {
     if( (inPicStruct & (MFX_PICSTRUCT_FIELD_BFF | MFX_PICSTRUCT_FIELD_TFF)) &&
@@ -293,377 +294,6 @@ mfxU16 UpdatePicStruct( mfxU16 inPicStruct, mfxU16 outPicStruct, bool bDynamicDe
 
 } // void UpdatePicStruct( mfxU16 inPicStruct, mfxU16& outPicStruct, PicStructMode mode )
 
-
-/* all protection must been done before call */
-mfxStatus SurfaceCopy_ROI(mfxFrameSurface1* out, mfxFrameSurface1* in, bool bROIControl)
-{
-    IppiSize roiSize;
-    IppStatus sts;
-    mfxFrameData* inData  = &(in->Data);
-    mfxFrameData* outData = &(out->Data);
-    mfxFrameInfo* inInfo = &(in->Info);
-    mfxFrameInfo* outInfo= (bROIControl) ? &(out->Info) : &(in->Info);
-    mfxU16  cropX = 0, cropY = 0;
-
-    mfxU32  inOffset0 = 0, inOffset1  = 0;
-    mfxU32  outOffset0= 0, outOffset1 = 0;
-    mfxU32  inPitch;
-    mfxU32  outPitch;
-
-    if( MFX_FOURCC_RGB3 == in->Info.FourCC || MFX_FOURCC_RGB4 == in->Info.FourCC || MFX_FOURCC_A2RGB10 == in->Info.FourCC )
-    {
-        // in case of RGB we process total frame
-        MFX_CHECK_NULL_PTR1(inData->R);
-        MFX_CHECK_NULL_PTR1(inData->G);
-        MFX_CHECK_NULL_PTR1(inData->B);
-
-        mfxU8* ptrInput = IPP_MIN( IPP_MIN(inData->R, inData->G), inData->B );
-
-        MFX_CHECK_NULL_PTR1(outData->R);
-        MFX_CHECK_NULL_PTR1(outData->G);
-        MFX_CHECK_NULL_PTR1(outData->B);
-
-        mfxU8* ptrOutput = IPP_MIN( IPP_MIN(outData->R, outData->G), outData->B );
-
-        VPP_GET_REAL_WIDTH(inInfo, roiSize.width);
-        VPP_GET_REAL_HEIGHT(inInfo, roiSize.height);
-
-        if( MFX_FOURCC_RGB3 == in->Info.FourCC )
-        {
-            roiSize.width *= 3;
-        }
-        else
-        {
-            roiSize.width *= 4;
-        }
-
-        sts = ippiCopy_8u_C1R(ptrInput, inData->Pitch, ptrOutput, outData->Pitch, roiSize);
-        VPP_CHECK_IPP_STS( sts );
-
-        return MFX_ERR_NONE;
-    }
-
-    // in case of YV12/NV12 FRC pay attention cropping process.
-    VPP_GET_CROPX(inInfo,  cropX);
-    VPP_GET_CROPY(inInfo,  cropY);
-    inOffset0  = cropX  + cropY*inData->Pitch;
-
-    if( MFX_FOURCC_YV12 == in->Info.FourCC )
-    {
-        inOffset1  = (cropX >> 1) + (cropY >> 1)*(inData->Pitch >> 1);
-    }
-    else //NV12
-    {
-        inOffset1  = (cropX) + (cropY >> 1)*(inData->Pitch);
-    }
-
-    VPP_GET_CROPX(outInfo, cropX);
-    VPP_GET_CROPY(outInfo, cropY);
-    outOffset0  = cropX + cropY*outData->Pitch;
-
-    if( MFX_FOURCC_YV12 == out->Info.FourCC )
-    {
-        outOffset1  = (cropX >> 1) + (cropY >> 1)*(outData->Pitch >> 1);
-    }
-    else
-    {
-        outOffset1  = (cropX) + (cropY >> 1)*(outData->Pitch);
-    }
-
-    VPP_GET_WIDTH(inInfo, roiSize.width);
-    VPP_GET_HEIGHT(inInfo, roiSize.height);
-
-    inPitch  = inData->Pitch;
-    outPitch = outData->Pitch;
-
-    if ( MFX_FOURCC_P010 == out->Info.FourCC || MFX_FOURCC_P210 == out->Info.FourCC )
-    {
-        roiSize.width <<= 1;
-    }
-
-    sts = ippiCopy_8u_C1R(inData->Y+inOffset0,   inPitch,
-                          outData->Y+outOffset0, outPitch, roiSize);
-    VPP_CHECK_IPP_STS( sts );
-
-    if( MFX_FOURCC_NV12 == in->Info.FourCC || MFX_FOURCC_P010 == in->Info.FourCC )
-    {
-        roiSize.height >>= 1;
-        sts = ippiCopy_8u_C1R(inData->UV+inOffset1,   inPitch,
-                              outData->UV+outOffset1, outPitch, roiSize);
-        VPP_CHECK_IPP_STS( sts );
-    }
-    else if( MFX_FOURCC_NV16 == in->Info.FourCC || MFX_FOURCC_P210 == in->Info.FourCC )
-    {
-        sts = ippiCopy_8u_C1R(inData->UV+inOffset1,   inPitch,
-                              outData->UV+outOffset1, outPitch, roiSize);
-        VPP_CHECK_IPP_STS( sts );
-    }
-    else
-    {
-        roiSize.height >>= 1;
-        roiSize.width  >>= 1;
-        sts = ippiCopy_8u_C1R(inData->V+inOffset1, inData->Pitch>>1,
-                              outData->V+outOffset1, outData->Pitch >> 1, roiSize);
-        VPP_CHECK_IPP_STS( sts );
-
-        sts = ippiCopy_8u_C1R(inData->U+inOffset1, inData->Pitch>>1,
-                              outData->U+outOffset1, outData->Pitch >> 1, roiSize);
-        VPP_CHECK_IPP_STS( sts );
-    }
-
-    if( !bROIControl )
-    {
-        mfxFrameSurface1 localSurface;
-        localSurface.Data = out->Data;
-        localSurface.Info = in->Info;
-
-        mfxStatus mfxSts = SetBackGroundColor( &localSurface );
-        MFX_CHECK_STS( mfxSts );
-    }
-
-    return MFX_ERR_NONE;
-
-} // mfxStatus SurfaceCopy_ROI(mfxFrameSurface1* out, mfxFrameSurface1* in)
-
-
-mfxStatus SetBackGroundColor(mfxFrameSurface1 *ptr)
-{
-    const  Ipp8u BLACK_CLR_Y  = 16;
-    const  Ipp8u BLACK_CLR_UV = 128;
-
-    const mfxI32 BLACK_CLR_YUY2 = MFX_MAKEFOURCC(BLACK_CLR_Y, BLACK_CLR_UV, BLACK_CLR_Y, BLACK_CLR_UV);
-    const mfxI32 BLACK_CLR_RGB4 = 0;//{0, 0, 0, 0}
-
-    IppiSize roiSize;
-    IppStatus sts;
-
-    MFX_CHECK_NULL_PTR1(ptr);
-
-    // in accordance with spec out is [NV12, YUY2] only
-
-    if( (ptr->Info.FourCC != MFX_FOURCC_NV12 ) &&
-        (ptr->Info.FourCC != MFX_FOURCC_YUY2 ) &&
-        (ptr->Info.FourCC != MFX_FOURCC_RGB4 ))
-    {
-            return MFX_ERR_NONE;
-    }
-
-    if( ptr->Info.CropH == ptr->Info.Height &&
-        ptr->Info.CropW == ptr->Info.Width  &&
-        ptr->Info.CropX == 0 && ptr->Info.CropY == 0 ){
-
-            return MFX_ERR_NONE;
-    }
-
-    if( MFX_FOURCC_YUY2 == ptr->Info.FourCC )
-    {
-        /*roiSize.height = ptr->Info.Height;
-        roiSize.width  = ptr->Info.Width >> 1;
-
-        sts = ippiSet_32s_C1R(BLACK_CLR_YUY2, (Ipp32s*)(ptr->Data.Y), ptr->Data.Pitch, roiSize);*/
-        //------------------------------------
-        //       ROI #1 of frame (UP)
-        //------------------------------------
-        if( ptr->Info.CropY > 0 )
-        {
-            // (Y)
-            roiSize.height = ptr->Info.CropY;
-            roiSize.width  = ptr->Info.Width >> 1;
-
-            sts = ippiSet_32s_C1R(BLACK_CLR_YUY2, (Ipp32s*)(ptr->Data.Y), ptr->Data.Pitch, roiSize);
-            VPP_CHECK_IPP_STS( sts );
-        }
-
-        //------------------------------------
-        //       ROI #2 of frame (BOTTOM)
-        //------------------------------------
-        if( ptr->Info.CropY + ptr->Info.CropH < ptr->Info.Height )
-        {
-             // (Y)
-             roiSize.height = ptr->Info.Height - (ptr->Info.CropY + ptr->Info.CropH);
-             roiSize.width  = ptr->Info.Width >> 1;
-
-             int offset = (ptr->Info.CropY + ptr->Info.CropH) * ptr->Data.Pitch;
-             sts = ippiSet_32s_C1R(BLACK_CLR_YUY2, (Ipp32s*)(ptr->Data.Y + offset), ptr->Data.Pitch, roiSize);
-             VPP_CHECK_IPP_STS( sts );
-        }
-
-        //------------------------------------
-        //       ROI #3 of frame (LEFT)
-        //------------------------------------
-        if( ptr->Info.CropX > 0 )
-        {
-             // (Y)
-             roiSize.height = ptr->Info.CropH;
-             roiSize.width  = ptr->Info.CropX >> 1;
-
-             int offset = (ptr->Info.CropY) * ptr->Data.Pitch;
-             sts = ippiSet_32s_C1R(BLACK_CLR_YUY2, (Ipp32s*)(ptr->Data.Y + offset), ptr->Data.Pitch, roiSize);
-             VPP_CHECK_IPP_STS( sts );
-        }
-
-        //------------------------------------
-        //       ROI #4 of frame (RIGHT)
-        //------------------------------------
-        if( ptr->Info.CropX + ptr->Info.CropW < ptr->Info.Width )
-        {
-             // (Y)
-             roiSize.height = ptr->Info.CropH;
-             roiSize.width  = ptr->Info.Width - (ptr->Info.CropX + ptr->Info.CropW);
-             roiSize.width >>= 1;
-
-             int offset = (ptr->Info.CropY) * ptr->Data.Pitch + (ptr->Info.CropX + ptr->Info.CropW)*2;// AYA correct?
-             sts = ippiSet_32s_C1R(BLACK_CLR_YUY2, (Ipp32s*)(ptr->Data.Y + offset), ptr->Data.Pitch, roiSize);
-             VPP_CHECK_IPP_STS( sts );
-        }
-    }
-    else if( MFX_FOURCC_NV12 == ptr->Info.FourCC )
-    {
-        //------------------------------------
-        //       ROI #1 of frame (UP)
-        //------------------------------------
-        if( ptr->Info.CropY > 0 )
-        {
-            // (Y)
-            roiSize.height = ptr->Info.CropY;
-            roiSize.width  = ptr->Info.Width;
-
-            sts = ippiSet_8u_C1R(BLACK_CLR_Y, ptr->Data.Y, ptr->Data.Pitch, roiSize);
-            VPP_CHECK_IPP_STS( sts );
-
-            // (U/V)
-            roiSize.height >>= 1;
-
-            sts = ippiSet_8u_C1R(BLACK_CLR_UV, ptr->Data.UV, ptr->Data.Pitch, roiSize);
-            VPP_CHECK_IPP_STS( sts );
-        }
-
-        //------------------------------------
-        //       ROI #2 of frame (BOTTOM)
-        //------------------------------------
-        if( ptr->Info.CropY + ptr->Info.CropH < ptr->Info.Height )
-        {
-             // (Y)
-             roiSize.height = ptr->Info.Height - (ptr->Info.CropY + ptr->Info.CropH);
-             roiSize.width  = ptr->Info.Width;
-
-             int offset = (ptr->Info.CropY + ptr->Info.CropH) * ptr->Data.Pitch;
-             sts = ippiSet_8u_C1R(BLACK_CLR_Y, ptr->Data.Y + offset, ptr->Data.Pitch, roiSize);
-             VPP_CHECK_IPP_STS( sts );
-
-             // (U/V)
-             roiSize.height  >>= 1;
-
-             offset = ((ptr->Info.CropY + ptr->Info.CropH) >> 1) * ptr->Data.Pitch;
-             sts = ippiSet_8u_C1R(BLACK_CLR_UV, ptr->Data.UV + offset, ptr->Data.Pitch, roiSize);
-             VPP_CHECK_IPP_STS( sts );
-        }
-
-        //------------------------------------
-        //       ROI #3 of frame (LEFT)
-        //------------------------------------
-        if( ptr->Info.CropX > 0 )
-        {
-             // (Y)
-             roiSize.height = ptr->Info.CropH;
-             roiSize.width  = ptr->Info.CropX;
-
-             int offset = (ptr->Info.CropY) * ptr->Data.Pitch;
-             sts = ippiSet_8u_C1R(BLACK_CLR_Y, ptr->Data.Y + offset, ptr->Data.Pitch, roiSize);
-             VPP_CHECK_IPP_STS( sts );
-
-             // (U/V)
-             roiSize.height >>= 1;
-
-             offset = (ptr->Info.CropY >> 1) * ptr->Data.Pitch;
-             sts = ippiSet_8u_C1R(BLACK_CLR_UV, ptr->Data.UV + offset, ptr->Data.Pitch, roiSize);
-             VPP_CHECK_IPP_STS( sts );
-        }
-
-        //------------------------------------
-        //       ROI #4 of frame (RIGHT)
-        //------------------------------------
-        if( ptr->Info.CropX + ptr->Info.CropW < ptr->Info.Width )
-        {
-             // (Y)
-             roiSize.height = ptr->Info.CropH;
-             roiSize.width  = ptr->Info.Width - (ptr->Info.CropX + ptr->Info.CropW);
-
-             int offset = (ptr->Info.CropY) * ptr->Data.Pitch + (ptr->Info.CropX + ptr->Info.CropW);
-             sts = ippiSet_8u_C1R(BLACK_CLR_Y, ptr->Data.Y + offset, ptr->Data.Pitch, roiSize);
-             VPP_CHECK_IPP_STS( sts );
-
-             // (U/V)
-             roiSize.height >>= 1;
-
-             offset = (ptr->Info.CropY >> 1) * ptr->Data.Pitch + (ptr->Info.CropX + ptr->Info.CropW);
-             sts = ippiSet_8u_C1R(BLACK_CLR_UV, ptr->Data.UV + offset, ptr->Data.Pitch, roiSize);
-             VPP_CHECK_IPP_STS( sts );
-        }
-    }
-    else if( MFX_FOURCC_RGB4 == ptr->Info.FourCC)
-    {
-        //------------------------------------
-        //       ROI #1 of frame (UP)
-        //------------------------------------
-        mfxU8* ptrBGRA = IPP_MIN( IPP_MIN(ptr->Data.B, ptr->Data.G), ptr->Data.R );
-        MFX_CHECK_NULL_PTR1(ptrBGRA);
-
-        if( ptr->Info.CropY > 0 )
-        {
-            roiSize.height = ptr->Info.CropY;
-            roiSize.width  = ptr->Info.Width*4;
-
-            sts = ippiSet_8u_C1R(BLACK_CLR_RGB4, ptrBGRA, ptr->Data.Pitch, roiSize);
-            VPP_CHECK_IPP_STS( sts );
-        }
-
-        //------------------------------------
-        //       ROI #2 of frame (BOTTOM)
-        //------------------------------------
-        if( ptr->Info.CropY + ptr->Info.CropH < ptr->Info.Height )
-        {
-             roiSize.height = ptr->Info.Height - (ptr->Info.CropY + ptr->Info.CropH);
-             roiSize.width  = ptr->Info.Width*4;
-
-             int offset = (ptr->Info.CropY + ptr->Info.CropH) * ptr->Data.Pitch;
-             sts = ippiSet_8u_C1R(BLACK_CLR_RGB4, ptrBGRA + offset, ptr->Data.Pitch, roiSize);
-             VPP_CHECK_IPP_STS( sts );
-        }
-
-        //------------------------------------
-        //       ROI #3 of frame (LEFT)
-        //------------------------------------
-        if( ptr->Info.CropX > 0 )
-        {
-             roiSize.height = ptr->Info.CropH;
-             roiSize.width  = ptr->Info.CropX*4;
-
-             int offset = (ptr->Info.CropY) * ptr->Data.Pitch;
-             sts = ippiSet_8u_C1R(BLACK_CLR_RGB4, ptrBGRA + offset, ptr->Data.Pitch, roiSize);
-             VPP_CHECK_IPP_STS( sts );
-        }
-
-        //------------------------------------
-        //       ROI #4 of frame (RIGHT)
-        //------------------------------------
-        if( ptr->Info.CropX + ptr->Info.CropW < ptr->Info.Width )
-        {
-             roiSize.height = ptr->Info.CropH;
-             roiSize.width  = ptr->Info.Width - (ptr->Info.CropX + ptr->Info.CropW);
-             roiSize.width *= 4;
-
-             int offset = (ptr->Info.CropY) * ptr->Data.Pitch + (ptr->Info.CropX + ptr->Info.CropW)*4;
-             sts = ippiSet_8u_C1R(BLACK_CLR_RGB4, ptrBGRA + offset, ptr->Data.Pitch, roiSize);
-             VPP_CHECK_IPP_STS( sts );
-        }
-    }
-
-    return MFX_ERR_NONE;
-
-} // mfxStatus SetBackGroundColor(mfxFrameSurface1 *ptr)
-
-
 // this function requires 0!= FrameRate
 bool IsFrameRatesCorrespondITC(mfxU32  inFrameRateExtN, mfxU32  inFrameRateExtD,
                                mfxU32  outFrameRateExtN, mfxU32  outFrameRateExtD)
@@ -812,44 +442,6 @@ mfxStatus GetFilterParam(mfxVideoParam* par, mfxU32 filterName, mfxExtBuffer** p
     return MFX_ERR_NONE;
 
 } // mfxStatus GetFilterParam(mfxVideoParam* par, mfxU32 filterName, mfxExtBuffer** ppHint)
-
-
-bool IsROIConstant(mfxFrameSurface1* pSrc1, mfxFrameSurface1* pSrc2, mfxFrameSurface1* pSrc3)
-{
-    bool bROIConstant[4] = {false}; // cropX/Y/W/H
-    bool bResult;
-
-    // cropX
-    if( (pSrc1->Info.CropX == pSrc2->Info.CropX) && (pSrc2->Info.CropX == pSrc3->Info.CropX) )
-    {
-        bROIConstant[0] = true;
-    }
-
-    // cropY
-    if( (pSrc1->Info.CropY == pSrc2->Info.CropY) && (pSrc2->Info.CropY == pSrc3->Info.CropY) )
-    {
-        bROIConstant[1] = true;
-    }
-
-    // cropW
-    if( (pSrc1->Info.CropW == pSrc2->Info.CropW) && (pSrc2->Info.CropW == pSrc3->Info.CropW) )
-    {
-        bROIConstant[2] = true;
-    }
-
-    // cropH
-    if( (pSrc1->Info.CropH == pSrc2->Info.CropH) && (pSrc2->Info.CropH == pSrc3->Info.CropH) )
-    {
-        bROIConstant[3] = true;
-    }
-
-    // make decision
-    bResult = bROIConstant[0] && bROIConstant[1] && bROIConstant[2] && bROIConstant[3];
-
-    return bResult;
-
-} // bool IsROIConstant( ... )
-
 
 bool IsRoiDifferent(mfxFrameSurface1 *input, mfxFrameSurface1 *output)
 {
@@ -1201,11 +793,13 @@ void ShowPipeline( std::vector<mfxU32> pipelineList )
             }
 #endif
 
+#ifdef MFX_UNDOCUMENTED_VPP_VARIANCE_REPORT
             case (mfxU32)MFX_EXTBUFF_VPP_VARIANCE_REPORT:
             {
                 fprintf(stderr, "VARIANCE_REP \n");
                 break;
             }
+#endif
 
             case (mfxU32)MFX_EXTBUFF_VPP_COMPOSITE:
             {
@@ -1473,7 +1067,6 @@ void ReorderPipelineListForSpeed(
     mfxVideoParam* videoParam,
     std::vector<mfxU32> & pipelineList)
 {
-// aya: disabled perf optimization since MSDK3.0 beta5
 #if 0
     // optimization in case of RS
     if( IsFilterFound( pList, len, MFX_EXTBUFF_VPP_RESIZE ) )
@@ -1619,8 +1212,7 @@ mfxStatus GetPipelineList(
     else if (!bExtended)
     {
         /* ********************************************************************** */
-        /* aya: hack                                                              */
-        /* RGB32->RGB32 (resize only) is supported to meet MSDK 3.0 requirements  */
+        /* RGB32->RGB32 (resize only)                                             */
         /* ********************************************************************** */
         pipelineList.push_back(MFX_EXTBUFF_VPP_RESIZE);
 
@@ -1859,7 +1451,7 @@ mfxStatus GetPipelineList(
                 !IsFilterFound(&pipelineList[0], (mfxU32)pipelineList.size(), configList[fIdx]) )
         {
             /* Add filter to the list.
-             * Don't care about duplicates, they will be eliminated by Reorder... calls below
+             * Don't care about duplicates, they will be eliminated by Reorder... calls below 
              */
             pipelineList.push_back(configList[fIdx]);
         } /* if( IsFilterFound( g_TABLE_CONFIG */
@@ -1921,6 +1513,7 @@ mfxU32 GetFilterIndex( mfxU32* pList, mfxU32 len, mfxU32 filterName )
 
 } // mfxU32 GetFilterIndex( mfxU32* pList, mfxU32 len, mfxU32 filterName )
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 mfxStatus CheckProtectedMode( mfxU16 mode )
 {
     mfxStatus sts = MFX_ERR_INVALID_VIDEO_PARAM;
@@ -1945,6 +1538,7 @@ mfxStatus CheckProtectedMode( mfxU16 mode )
     return sts;
 
 } // mfxStatus CheckProtectedMode( mfxU16 mode )
+#endif
 
 /* check each field of FrameInfo excluding PicStruct */
 mfxStatus CheckFrameInfo(mfxFrameInfo* info, mfxU32 request)
@@ -2026,7 +1620,7 @@ mfxStatus CheckFrameInfo(mfxFrameInfo* info, mfxU32 request)
         MFX_PICSTRUCT_FIELD_TFF & info->PicStruct ||
         (MFX_PICSTRUCT_UNKNOWN   == info->PicStruct))
     {
-        if ((info->Height  & 15) !=0 ) // in according with internal spec (ISV3b-SNBa rev. 22583)
+        if ((info->Height  & 15) != 0 )
         {
             return MFX_ERR_INVALID_VIDEO_PARAM;
         }
@@ -2332,21 +1926,24 @@ size_t GetConfigSize( mfxU32 filterId )
 mfxStatus CheckTransferMatrix( mfxU16 transferMatrix )
 {
     transferMatrix;
-    //switch( transferMatrix )
-    //{
-    //    case MFX_TRANSFERMATRIX_BT601:
-    //    case MFX_TRANSFERMATRIX_BT709:
-    //    case MFX_TRANSFERMATRIX_XVYCC_BT601:
-    //    case MFX_TRASNFERMATRIX_XVYCC_BT709:
-    //    {
+#if 0
+    switch( transferMatrix )
+    {
+        case MFX_TRANSFERMATRIX_BT601:
+        case MFX_TRANSFERMATRIX_BT709:
+        case MFX_TRANSFERMATRIX_XVYCC_BT601:
+        case MFX_TRASNFERMATRIX_XVYCC_BT709:
+        {
             return MFX_ERR_NONE;
-    //    }
+        }
 
-    //    default:
-    //    {
-    //        return MFX_ERR_INVALID_VIDEO_PARAM;
-    //    }
-    //}
+        default:
+        {
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+        }
+    }
+#endif
+    return MFX_ERR_NONE;
 
 } // mfxStatus CheckTransferMatrix( mfxU16 transferMatrix )
 
@@ -2373,23 +1970,24 @@ mfxGamutMode GetGamutMode( mfxU16 srcTransferMatrix, mfxU16 dstTransferMatrix )
     {
         mode = GAMUT_PASSIVE_MODE;
     }
-    //else if( MFX_TRANSFERMATRIX_XVYCC_BT601 == srcTransferMatrix &&
-    //         MFX_TRANSFERMATRIX_BT601 == dstTransferMatrix )
-    //{
-    //    mode   = GAMUT_COMPRESS_ADVANCED_MODE;
-    //    //m_bBT601 = true;
-    //}
-    //else if( MFX_TRASNFERMATRIX_XVYCC_BT709 == srcTransferMatrix &&
-    //         MFX_TRANSFERMATRIX_BT709 == dstTransferMatrix )
-    //{
-    //    mode   = GAMUT_COMPRESS_ADVANCED_MODE;
-    //    //m_bBT601 = false;
-    //}
-    //else
-    //{
-    //    mode = GAMUT_INVALID_MODE;
-    //}
-
+#if 0
+    else if( MFX_TRANSFERMATRIX_XVYCC_BT601 == srcTransferMatrix &&
+             MFX_TRANSFERMATRIX_BT601 == dstTransferMatrix )
+    {
+        mode   = GAMUT_COMPRESS_ADVANCED_MODE;
+        //m_bBT601 = true;
+    }
+    else if( MFX_TRASNFERMATRIX_XVYCC_BT709 == srcTransferMatrix &&
+             MFX_TRANSFERMATRIX_BT709 == dstTransferMatrix )
+    {
+        mode   = GAMUT_COMPRESS_ADVANCED_MODE;
+        //m_bBT601 = false;
+    }
+    else
+    {
+        mode = GAMUT_INVALID_MODE;
+    }
+#endif
     return mode;
 
 } // mfxGamutMode GetGamutMode( mfxU16 srcTransferMatrix, mfxU16 dstTransferMatrix )
@@ -2654,7 +2252,7 @@ mfxStatus CheckExtParam(VideoCORE * core, mfxExtBuffer** ppExtParam, mfxU16 coun
         mfxExtBuffer* pHint = NULL;
         GetFilterParam( &tmpParam, curId, &pHint);
 
-        //aya: 3 status's could be returned only: MFX_ERR_NONE, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_UNSUPPORTED
+        //3 status's could be returned only: MFX_ERR_NONE, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_UNSUPPORTED
         // AL update: now 4 status, added MFX_WRN_FILTER_SKIPPED
         sts = ExtendedQuery(core, curId, pHint);
 
@@ -2758,7 +2356,7 @@ void SignalPlatformCapabilities(
 
 } // mfxStatus SignalPlatformCapabilities(...)
 
-
+#if !defined (MFX_ENABLE_HW_ONLY_VPP)
 // there are some special cases which couldn't be resolve by using capsList and pipelineList only
 // ex: FRC_Interpolation, RGB4 for HW etc
 mfxStatus CheckLimitationsSW(
@@ -2774,7 +2372,7 @@ mfxStatus CheckLimitationsSW(
     if( param.vpp.In.FourCC == param.vpp.Out.FourCC &&
         MFX_FOURCC_RGB4 == param.vpp.In.FourCC)
     {
-        // [1] RGB4->RGB4 - resize only to provide the best quality. make decision from MSDK 1.3
+        // [1] RGB4->RGB4 - resize only to provide the best quality.
         if(len > 0)
         {
             sts = MFX_WRN_FILTER_SKIPPED;
@@ -2844,7 +2442,7 @@ mfxStatus CheckLimitationsSW(
 
     return sts;
 } // mfxStatus CheckLimitationsSW(...)
-
+#endif // #if !defined (MFX_ENABLE_HW_ONLY_VPP)
 
 void ExtractDoUseList(mfxU32* pSrcList, mfxU32 len, std::vector<mfxU32> & dstList)
 {
@@ -2998,6 +2596,414 @@ void ConvertCaps2ListDoUse(MfxHwVideoProcessing::mfxVppCaps& caps, std::vector<m
     list.push_back(MFX_EXTBUFF_VPP_COMPOSITE);
 
 } // void ConvertCaps2ListDoUse(MfxHwVideoProcessing::mfxVppCaps& caps, std::vector<mfxU32> list)
+
+#if !defined (MFX_ENABLE_HW_ONLY_VPP)
+bool IsROIConstant(mfxFrameSurface1* pSrc1, mfxFrameSurface1* pSrc2, mfxFrameSurface1* pSrc3)
+{
+    bool bROIConstant[4] = {false}; // cropX/Y/W/H
+    bool bResult;
+
+    // cropX
+    if( (pSrc1->Info.CropX == pSrc2->Info.CropX) && (pSrc2->Info.CropX == pSrc3->Info.CropX) )
+    {
+        bROIConstant[0] = true;
+    }
+
+    // cropY
+    if( (pSrc1->Info.CropY == pSrc2->Info.CropY) && (pSrc2->Info.CropY == pSrc3->Info.CropY) )
+    {
+        bROIConstant[1] = true;
+    }
+
+    // cropW
+    if( (pSrc1->Info.CropW == pSrc2->Info.CropW) && (pSrc2->Info.CropW == pSrc3->Info.CropW) )
+    {
+        bROIConstant[2] = true;
+    }
+
+    // cropH
+    if( (pSrc1->Info.CropH == pSrc2->Info.CropH) && (pSrc2->Info.CropH == pSrc3->Info.CropH) )
+    {
+        bROIConstant[3] = true;
+    }
+
+    // make decision
+    bResult = bROIConstant[0] && bROIConstant[1] && bROIConstant[2] && bROIConstant[3];
+
+    return bResult;
+
+} // bool IsROIConstant( ... )
+
+/* all protection must been done before call */
+mfxStatus SurfaceCopy_ROI(mfxFrameSurface1* out, mfxFrameSurface1* in, bool bROIControl)
+{
+    IppiSize roiSize;
+    IppStatus sts;
+    mfxFrameData* inData  = &(in->Data);
+    mfxFrameData* outData = &(out->Data);
+    mfxFrameInfo* inInfo = &(in->Info);
+    mfxFrameInfo* outInfo= (bROIControl) ? &(out->Info) : &(in->Info);
+    mfxU16  cropX = 0, cropY = 0;
+
+    mfxU32  inOffset0 = 0, inOffset1  = 0;
+    mfxU32  outOffset0= 0, outOffset1 = 0;
+    mfxU32  inPitch;
+    mfxU32  outPitch;
+
+    if( MFX_FOURCC_RGB3 == in->Info.FourCC || MFX_FOURCC_RGB4 == in->Info.FourCC || MFX_FOURCC_A2RGB10 == in->Info.FourCC )
+    {
+        // in case of RGB we process total frame
+        MFX_CHECK_NULL_PTR1(inData->R);
+        MFX_CHECK_NULL_PTR1(inData->G);
+        MFX_CHECK_NULL_PTR1(inData->B);
+
+        mfxU8* ptrInput = IPP_MIN( IPP_MIN(inData->R, inData->G), inData->B );
+
+        MFX_CHECK_NULL_PTR1(outData->R);
+        MFX_CHECK_NULL_PTR1(outData->G);
+        MFX_CHECK_NULL_PTR1(outData->B);
+
+        mfxU8* ptrOutput = IPP_MIN( IPP_MIN(outData->R, outData->G), outData->B );
+
+        VPP_GET_REAL_WIDTH(inInfo, roiSize.width);
+        VPP_GET_REAL_HEIGHT(inInfo, roiSize.height);
+
+        if( MFX_FOURCC_RGB3 == in->Info.FourCC )
+        {
+            roiSize.width *= 3;
+        }
+        else
+        {
+            roiSize.width *= 4;
+        }
+
+        sts = ippiCopy_8u_C1R(ptrInput, inData->Pitch, ptrOutput, outData->Pitch, roiSize);
+        VPP_CHECK_IPP_STS( sts );
+
+        return MFX_ERR_NONE;
+    }
+
+    // in case of YV12/NV12 FRC pay attention cropping process.
+    VPP_GET_CROPX(inInfo,  cropX);
+    VPP_GET_CROPY(inInfo,  cropY);
+    inOffset0  = cropX  + cropY*inData->Pitch;
+
+    if( MFX_FOURCC_YV12 == in->Info.FourCC )
+    {
+        inOffset1  = (cropX >> 1) + (cropY >> 1)*(inData->Pitch >> 1);
+    }
+    else //NV12
+    {
+        inOffset1  = (cropX) + (cropY >> 1)*(inData->Pitch);
+    }
+
+    VPP_GET_CROPX(outInfo, cropX);
+    VPP_GET_CROPY(outInfo, cropY);
+    outOffset0  = cropX + cropY*outData->Pitch;
+
+    if( MFX_FOURCC_YV12 == out->Info.FourCC )
+    {
+        outOffset1  = (cropX >> 1) + (cropY >> 1)*(outData->Pitch >> 1);
+    }
+    else
+    {
+        outOffset1  = (cropX) + (cropY >> 1)*(outData->Pitch);
+    }
+
+    VPP_GET_WIDTH(inInfo, roiSize.width);
+    VPP_GET_HEIGHT(inInfo, roiSize.height);
+
+    inPitch  = inData->Pitch;
+    outPitch = outData->Pitch;
+
+    if ( MFX_FOURCC_P010 == out->Info.FourCC || MFX_FOURCC_P210 == out->Info.FourCC )
+    {
+        roiSize.width <<= 1;
+    }
+
+    sts = ippiCopy_8u_C1R(inData->Y+inOffset0,   inPitch,
+                          outData->Y+outOffset0, outPitch, roiSize);
+    VPP_CHECK_IPP_STS( sts );
+
+    if( MFX_FOURCC_NV12 == in->Info.FourCC || MFX_FOURCC_P010 == in->Info.FourCC )
+    {
+        roiSize.height >>= 1;
+        sts = ippiCopy_8u_C1R(inData->UV+inOffset1,   inPitch,
+                              outData->UV+outOffset1, outPitch, roiSize);
+        VPP_CHECK_IPP_STS( sts );
+    }
+    else if( MFX_FOURCC_NV16 == in->Info.FourCC || MFX_FOURCC_P210 == in->Info.FourCC )
+    {
+        sts = ippiCopy_8u_C1R(inData->UV+inOffset1,   inPitch,
+                              outData->UV+outOffset1, outPitch, roiSize);
+        VPP_CHECK_IPP_STS( sts );
+    }
+    else
+    {
+        roiSize.height >>= 1;
+        roiSize.width  >>= 1;
+        sts = ippiCopy_8u_C1R(inData->V+inOffset1, inData->Pitch>>1,
+                              outData->V+outOffset1, outData->Pitch >> 1, roiSize);
+        VPP_CHECK_IPP_STS( sts );
+
+        sts = ippiCopy_8u_C1R(inData->U+inOffset1, inData->Pitch>>1,
+                              outData->U+outOffset1, outData->Pitch >> 1, roiSize);
+        VPP_CHECK_IPP_STS( sts );
+    }
+
+    if( !bROIControl )
+    {
+        mfxFrameSurface1 localSurface;
+        localSurface.Data = out->Data;
+        localSurface.Info = in->Info;
+
+        mfxStatus mfxSts = SetBackGroundColor( &localSurface );
+        MFX_CHECK_STS( mfxSts );
+    }
+
+    return MFX_ERR_NONE;
+
+} // mfxStatus SurfaceCopy_ROI(mfxFrameSurface1* out, mfxFrameSurface1* in)
+
+
+mfxStatus SetBackGroundColor(mfxFrameSurface1 *ptr)
+{
+    const  Ipp8u BLACK_CLR_Y  = 16;
+    const  Ipp8u BLACK_CLR_UV = 128;
+
+    const mfxI32 BLACK_CLR_YUY2 = MFX_MAKEFOURCC(BLACK_CLR_Y, BLACK_CLR_UV, BLACK_CLR_Y, BLACK_CLR_UV);
+    const mfxI32 BLACK_CLR_RGB4 = 0;//{0, 0, 0, 0}
+
+    IppiSize roiSize;
+    IppStatus sts;
+
+    MFX_CHECK_NULL_PTR1(ptr);
+
+    // in accordance with spec out is [NV12, YUY2] only
+
+    if( (ptr->Info.FourCC != MFX_FOURCC_NV12 ) &&
+        (ptr->Info.FourCC != MFX_FOURCC_YUY2 ) &&
+        (ptr->Info.FourCC != MFX_FOURCC_RGB4 ))
+    {
+            return MFX_ERR_NONE;
+    }
+
+    if( ptr->Info.CropH == ptr->Info.Height &&
+        ptr->Info.CropW == ptr->Info.Width  &&
+        ptr->Info.CropX == 0 && ptr->Info.CropY == 0 ){
+
+            return MFX_ERR_NONE;
+    }
+
+    if( MFX_FOURCC_YUY2 == ptr->Info.FourCC )
+    {
+        /*roiSize.height = ptr->Info.Height;
+        roiSize.width  = ptr->Info.Width >> 1;
+
+        sts = ippiSet_32s_C1R(BLACK_CLR_YUY2, (Ipp32s*)(ptr->Data.Y), ptr->Data.Pitch, roiSize);*/
+        //------------------------------------
+        //       ROI #1 of frame (UP)
+        //------------------------------------
+        if( ptr->Info.CropY > 0 )
+        {
+            // (Y)
+            roiSize.height = ptr->Info.CropY;
+            roiSize.width  = ptr->Info.Width >> 1;
+
+            sts = ippiSet_32s_C1R(BLACK_CLR_YUY2, (Ipp32s*)(ptr->Data.Y), ptr->Data.Pitch, roiSize);
+            VPP_CHECK_IPP_STS( sts );
+        }
+
+        //------------------------------------
+        //       ROI #2 of frame (BOTTOM)
+        //------------------------------------
+        if( ptr->Info.CropY + ptr->Info.CropH < ptr->Info.Height )
+        {
+             // (Y)
+             roiSize.height = ptr->Info.Height - (ptr->Info.CropY + ptr->Info.CropH);
+             roiSize.width  = ptr->Info.Width >> 1;
+
+             int offset = (ptr->Info.CropY + ptr->Info.CropH) * ptr->Data.Pitch;
+             sts = ippiSet_32s_C1R(BLACK_CLR_YUY2, (Ipp32s*)(ptr->Data.Y + offset), ptr->Data.Pitch, roiSize);
+             VPP_CHECK_IPP_STS( sts );
+        }
+
+        //------------------------------------
+        //       ROI #3 of frame (LEFT)
+        //------------------------------------
+        if( ptr->Info.CropX > 0 )
+        {
+             // (Y)
+             roiSize.height = ptr->Info.CropH;
+             roiSize.width  = ptr->Info.CropX >> 1;
+
+             int offset = (ptr->Info.CropY) * ptr->Data.Pitch;
+             sts = ippiSet_32s_C1R(BLACK_CLR_YUY2, (Ipp32s*)(ptr->Data.Y + offset), ptr->Data.Pitch, roiSize);
+             VPP_CHECK_IPP_STS( sts );
+        }
+
+        //------------------------------------
+        //       ROI #4 of frame (RIGHT)
+        //------------------------------------
+        if( ptr->Info.CropX + ptr->Info.CropW < ptr->Info.Width )
+        {
+             // (Y)
+             roiSize.height = ptr->Info.CropH;
+             roiSize.width  = ptr->Info.Width - (ptr->Info.CropX + ptr->Info.CropW);
+             roiSize.width >>= 1;
+
+             int offset = (ptr->Info.CropY) * ptr->Data.Pitch + (ptr->Info.CropX + ptr->Info.CropW)*2;
+             sts = ippiSet_32s_C1R(BLACK_CLR_YUY2, (Ipp32s*)(ptr->Data.Y + offset), ptr->Data.Pitch, roiSize);
+             VPP_CHECK_IPP_STS( sts );
+        }
+    }
+    else if( MFX_FOURCC_NV12 == ptr->Info.FourCC )
+    {
+        //------------------------------------
+        //       ROI #1 of frame (UP)
+        //------------------------------------
+        if( ptr->Info.CropY > 0 )
+        {
+            // (Y)
+            roiSize.height = ptr->Info.CropY;
+            roiSize.width  = ptr->Info.Width;
+
+            sts = ippiSet_8u_C1R(BLACK_CLR_Y, ptr->Data.Y, ptr->Data.Pitch, roiSize);
+            VPP_CHECK_IPP_STS( sts );
+
+            // (U/V)
+            roiSize.height >>= 1;
+
+            sts = ippiSet_8u_C1R(BLACK_CLR_UV, ptr->Data.UV, ptr->Data.Pitch, roiSize);
+            VPP_CHECK_IPP_STS( sts );
+        }
+
+        //------------------------------------
+        //       ROI #2 of frame (BOTTOM)
+        //------------------------------------
+        if( ptr->Info.CropY + ptr->Info.CropH < ptr->Info.Height )
+        {
+             // (Y)
+             roiSize.height = ptr->Info.Height - (ptr->Info.CropY + ptr->Info.CropH);
+             roiSize.width  = ptr->Info.Width;
+
+             int offset = (ptr->Info.CropY + ptr->Info.CropH) * ptr->Data.Pitch;
+             sts = ippiSet_8u_C1R(BLACK_CLR_Y, ptr->Data.Y + offset, ptr->Data.Pitch, roiSize);
+             VPP_CHECK_IPP_STS( sts );
+
+             // (U/V)
+             roiSize.height  >>= 1;
+
+             offset = ((ptr->Info.CropY + ptr->Info.CropH) >> 1) * ptr->Data.Pitch;
+             sts = ippiSet_8u_C1R(BLACK_CLR_UV, ptr->Data.UV + offset, ptr->Data.Pitch, roiSize);
+             VPP_CHECK_IPP_STS( sts );
+        }
+
+        //------------------------------------
+        //       ROI #3 of frame (LEFT)
+        //------------------------------------
+        if( ptr->Info.CropX > 0 )
+        {
+             // (Y)
+             roiSize.height = ptr->Info.CropH;
+             roiSize.width  = ptr->Info.CropX;
+
+             int offset = (ptr->Info.CropY) * ptr->Data.Pitch;
+             sts = ippiSet_8u_C1R(BLACK_CLR_Y, ptr->Data.Y + offset, ptr->Data.Pitch, roiSize);
+             VPP_CHECK_IPP_STS( sts );
+
+             // (U/V)
+             roiSize.height >>= 1;
+
+             offset = (ptr->Info.CropY >> 1) * ptr->Data.Pitch;
+             sts = ippiSet_8u_C1R(BLACK_CLR_UV, ptr->Data.UV + offset, ptr->Data.Pitch, roiSize);
+             VPP_CHECK_IPP_STS( sts );
+        }
+
+        //------------------------------------
+        //       ROI #4 of frame (RIGHT)
+        //------------------------------------
+        if( ptr->Info.CropX + ptr->Info.CropW < ptr->Info.Width )
+        {
+             // (Y)
+             roiSize.height = ptr->Info.CropH;
+             roiSize.width  = ptr->Info.Width - (ptr->Info.CropX + ptr->Info.CropW);
+
+             int offset = (ptr->Info.CropY) * ptr->Data.Pitch + (ptr->Info.CropX + ptr->Info.CropW);
+             sts = ippiSet_8u_C1R(BLACK_CLR_Y, ptr->Data.Y + offset, ptr->Data.Pitch, roiSize);
+             VPP_CHECK_IPP_STS( sts );
+
+             // (U/V)
+             roiSize.height >>= 1;
+
+             offset = (ptr->Info.CropY >> 1) * ptr->Data.Pitch + (ptr->Info.CropX + ptr->Info.CropW);
+             sts = ippiSet_8u_C1R(BLACK_CLR_UV, ptr->Data.UV + offset, ptr->Data.Pitch, roiSize);
+             VPP_CHECK_IPP_STS( sts );
+        }
+    }
+    else if( MFX_FOURCC_RGB4 == ptr->Info.FourCC)
+    {
+        //------------------------------------
+        //       ROI #1 of frame (UP)
+        //------------------------------------
+        mfxU8* ptrBGRA = IPP_MIN( IPP_MIN(ptr->Data.B, ptr->Data.G), ptr->Data.R );
+        MFX_CHECK_NULL_PTR1(ptrBGRA);
+
+        if( ptr->Info.CropY > 0 )
+        {
+            roiSize.height = ptr->Info.CropY;
+            roiSize.width  = ptr->Info.Width*4;
+
+            sts = ippiSet_8u_C1R(BLACK_CLR_RGB4, ptrBGRA, ptr->Data.Pitch, roiSize);
+            VPP_CHECK_IPP_STS( sts );
+        }
+
+        //------------------------------------
+        //       ROI #2 of frame (BOTTOM)
+        //------------------------------------
+        if( ptr->Info.CropY + ptr->Info.CropH < ptr->Info.Height )
+        {
+             roiSize.height = ptr->Info.Height - (ptr->Info.CropY + ptr->Info.CropH);
+             roiSize.width  = ptr->Info.Width*4;
+
+             int offset = (ptr->Info.CropY + ptr->Info.CropH) * ptr->Data.Pitch;
+             sts = ippiSet_8u_C1R(BLACK_CLR_RGB4, ptrBGRA + offset, ptr->Data.Pitch, roiSize);
+             VPP_CHECK_IPP_STS( sts );
+        }
+
+        //------------------------------------
+        //       ROI #3 of frame (LEFT)
+        //------------------------------------
+        if( ptr->Info.CropX > 0 )
+        {
+             roiSize.height = ptr->Info.CropH;
+             roiSize.width  = ptr->Info.CropX*4;
+
+             int offset = (ptr->Info.CropY) * ptr->Data.Pitch;
+             sts = ippiSet_8u_C1R(BLACK_CLR_RGB4, ptrBGRA + offset, ptr->Data.Pitch, roiSize);
+             VPP_CHECK_IPP_STS( sts );
+        }
+
+        //------------------------------------
+        //       ROI #4 of frame (RIGHT)
+        //------------------------------------
+        if( ptr->Info.CropX + ptr->Info.CropW < ptr->Info.Width )
+        {
+             roiSize.height = ptr->Info.CropH;
+             roiSize.width  = ptr->Info.Width - (ptr->Info.CropX + ptr->Info.CropW);
+             roiSize.width *= 4;
+
+             int offset = (ptr->Info.CropY) * ptr->Data.Pitch + (ptr->Info.CropX + ptr->Info.CropW)*4;
+             sts = ippiSet_8u_C1R(BLACK_CLR_RGB4, ptrBGRA + offset, ptr->Data.Pitch, roiSize);
+             VPP_CHECK_IPP_STS( sts );
+        }
+    }
+
+    return MFX_ERR_NONE;
+
+} // mfxStatus SetBackGroundColor(mfxFrameSurface1 *ptr)
+
+#endif
 
 #endif // MFX_ENABLE_VPP
 /* EOF */

@@ -22,8 +22,10 @@
 
 #ifdef MFX_VA
 #include "umc_h265_va_supplier.h"
-#include "umc_h265_widevine_supplier.h"
-#include "umc_va_dxva2_protected.h"
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
+    #include "umc_h265_widevine_supplier.h"
+    #include "umc_va_dxva2_protected.h"
+#endif
 #endif
 
 inline
@@ -49,16 +51,9 @@ mfxU32 CalculateNumThread(mfxVideoParam *par, eMFXPlatform platform)
 }
 
 inline
-void mfx_memcpy(void * dst, size_t dstLen, void * src, size_t len)
-{
-    memcpy_s(dst, dstLen, src, len);
-}
-
-inline
 bool IsNeedToUseHWBuffering(eMFXHWType type)
 {
     type;return false;
-    //return (type != MFX_HW_LAKE); // eagle lake has own workaround!
 }
 
 inline
@@ -215,16 +210,17 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
 #if defined (MFX_VA)
         bool useBigSurfacePoolWA = MFX_Utility::IsBugSurfacePoolApplicable(type, par);
 
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
         if (IS_PROTECTION_WIDEVINE(m_vPar.Protected))
             //m_pH265VideoDecoder.reset(useBigSurfacePoolWA ? new VATaskSupplierBigSurfacePool<WidevineTaskSupplier>() : new (WidevineTaskSupplier)); // HW, Widevine version // Not tested yet
             m_pH265VideoDecoder.reset( new (WidevineTaskSupplier)); // HW, Widevine version
         else
+#endif
             m_pH265VideoDecoder.reset(useBigSurfacePoolWA ? new VATaskSupplierBigSurfacePool<VATaskSupplier>() : new VATaskSupplier()); // HW
-
         m_FrameAllocator.reset(new mfx_UMC_FrameAllocator_D3D());
 #else
         return MFX_ERR_UNSUPPORTED;
-#endif
+#endif // defined (MFX_VA)
     }
 
     Ipp32s useInternal = (MFX_PLATFORM_SOFTWARE == m_platform) ?
@@ -413,7 +409,6 @@ mfxStatus VideoDECODEH265::Reset(mfxVideoParam *par)
     if (!IsSameVideoParam(par, &m_vInitPar, type))
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
-    // need to sw acceleration
     if (m_platform != platform)
     {
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
@@ -440,9 +435,9 @@ mfxStatus VideoDECODEH265::Reset(mfxVideoParam *par)
 
     m_vPar.mfx.NumThread = (mfxU16)CalculateNumThread(par, m_platform);
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE) && (defined (MFX_VA_WIN) || defined (MFX_VA_LINUX))
     if (IS_PROTECTION_ANY(m_vFirstPar.Protected))
     {
-#if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
         if (m_va->GetProtectedVA())
         {
 #if defined MFX_VA_WIN
@@ -454,8 +449,8 @@ mfxStatus VideoDECODEH265::Reset(mfxVideoParam *par)
         {
             return MFX_ERR_UNDEFINED_BEHAVIOR;
         }
-#endif
     }
+#endif
 
     m_pH265VideoDecoder->SetVideoParams(&m_vFirstPar);
 
@@ -547,6 +542,7 @@ mfxStatus VideoDECODEH265::GetVideoParam(mfxVideoParam *par)
     par->IOPattern = m_vPar.IOPattern;
     par->AsyncDepth = m_vPar.AsyncDepth;
 
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
     mfxExtPAVPOption * buffer = (mfxExtPAVPOption*)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_PAVP_OPTION);
     if (buffer)
     {
@@ -556,6 +552,7 @@ mfxStatus VideoDECODEH265::GetVideoParam(mfxVideoParam *par)
         mfxExtPAVPOption * bufferInternal = m_vPar.GetExtendedBuffer<mfxExtPAVPOption>(MFX_EXTBUFF_PAVP_OPTION);
         *buffer = *bufferInternal;
     }
+#endif
 
     mfxExtVideoSignalInfo * videoSignal = (mfxExtVideoSignalInfo *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_VIDEO_SIGNAL_INFO);
     if (videoSignal)
@@ -587,8 +584,8 @@ mfxStatus VideoDECODEH265::GetVideoParam(mfxVideoParam *par)
         spsPps->SPSBufSize = spsPpsInternal->SPSBufSize;
         spsPps->PPSBufSize = spsPpsInternal->PPSBufSize;
 
-        mfx_memcpy(spsPps->SPSBuffer, spsPps->SPSBufSize, spsPpsInternal->SPSBuffer, spsPps->SPSBufSize);
-        mfx_memcpy(spsPps->PPSBuffer, spsPps->PPSBufSize, spsPpsInternal->PPSBuffer, spsPps->PPSBufSize);
+        memcpy_s(spsPps->SPSBuffer, spsPps->SPSBufSize, spsPpsInternal->SPSBuffer, spsPps->SPSBufSize);
+        memcpy_s(spsPps->PPSBuffer, spsPps->PPSBufSize, spsPpsInternal->PPSBuffer, spsPps->PPSBufSize);
     }
 
     par->mfx.FrameInfo.FrameRateExtN = m_vFirstPar.mfx.FrameInfo.FrameRateExtN;
@@ -636,7 +633,6 @@ mfxStatus VideoDECODEH265::DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVi
     MFXMediaDataAdapter in(bs);
 
     mfx_UMC_MemAllocator  tempAllocator;
-//    DefaultMemoryAllocator tempAllocator;
     tempAllocator.InitMem(0, core);
 
     UMC::VideoDecoderParams avcInfo;
@@ -671,31 +667,27 @@ mfxStatus VideoDECODEH265::DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVi
 
         if (sps->GetSize())
         {
-            // reserved spsPps->SPSId = (mfxU16)sps->GetID();
             if (spsPps->SPSBufSize < sps->GetSize())
                 return MFX_ERR_NOT_ENOUGH_BUFFER;
 
             spsPps->SPSBufSize = (mfxU16)sps->GetSize();
-            mfx_memcpy(spsPps->SPSBuffer, spsPps->SPSBufSize, sps->GetPointer(), spsPps->SPSBufSize);
+            memcpy_s(spsPps->SPSBuffer, spsPps->SPSBufSize, sps->GetPointer(), spsPps->SPSBufSize);
         }
         else
         {
-            // reserved spsPps->SPSId = 0;
             spsPps->SPSBufSize = 0;
         }
 
         if (pps->GetSize())
         {
-            // reserved spsPps->PPSId = (mfxU16)pps->GetID();
             if (spsPps->PPSBufSize < pps->GetSize())
                 return MFX_ERR_NOT_ENOUGH_BUFFER;
 
             spsPps->PPSBufSize = (mfxU16)pps->GetSize();
-            mfx_memcpy(spsPps->PPSBuffer, spsPps->PPSBufSize, pps->GetPointer(), spsPps->PPSBufSize);
+            memcpy_s(spsPps->PPSBuffer, spsPps->PPSBufSize, pps->GetPointer(), spsPps->PPSBufSize);
         }
         else
         {
-            // reserved spsPps->PPSId = 0;
             spsPps->PPSBufSize = 0;
         }
     }
@@ -801,7 +793,7 @@ mfxStatus VideoDECODEH265::QueryIOSurfInternal(eMFXPlatform platform, eMFXHWType
         dpbSize = par->mfx.MaxDecFrameBuffering;
 
     mfxU32 numMin = dpbSize + 1 + asyncDepth;
-    if (platform != MFX_PLATFORM_SOFTWARE && useDelayedDisplay) // equals if (m_useDelayedDisplay) - workaround
+    if (platform != MFX_PLATFORM_SOFTWARE && useDelayedDisplay) // equals if (m_useDelayedDisplay)
         numMin += NUMBER_OF_ADDITIONAL_FRAMES;
     request->NumFrameMin = (mfxU16)numMin;
 
@@ -876,8 +868,6 @@ mfxStatus VideoDECODEH265::RunThread(void * params, mfxU32 threadNumber)
             return MFX_TASK_DONE;
 
         isDecoded = m_pH265VideoDecoder->CheckDecoding(true, info->pFrame);
-        //if (isDecoded)
-          //  info->pFrame->m_maxUIDWhenWasDisplayed = 0;
     }
 
     if (!isDecoded)
@@ -894,7 +884,6 @@ mfxStatus VideoDECODEH265::RunThread(void * params, mfxU32 threadNumber)
         if (isDecoded)
         {
             info->surface_work = 0;
-            //info->pFrame->m_maxUIDWhenWasDisplayed = 0;
         }
     }
 
@@ -924,7 +913,7 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs,
 
     mfxStatus mfxSts = DecodeFrameCheck(bs, surface_work, surface_out);
 
-    if (MFX_ERR_NONE == mfxSts || (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK == mfxSts) // It can be useful to run threads right after first frame receive
+    if (MFX_ERR_NONE == mfxSts || (mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK == mfxSts) // It can be useful to run threads right after first frame receive
     {
         H265DecoderFrame *frame = 0;
         if (*surface_out)
@@ -981,7 +970,9 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
     MFX_CHECK_NULL_PTR2(surface_work, surface_out);
 
     mfxStatus sts = MFX_ERR_NONE;
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (!IS_PROTECTION_WIDEVINE(m_vPar.Protected))
+#endif
         sts = bs ? CheckBitstream(bs) : MFX_ERR_NONE;
 
     if (sts != MFX_ERR_NONE)
@@ -1023,7 +1014,7 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
 
     sts = MFX_ERR_UNDEFINED_BEHAVIOR;
 
-#ifdef MFX_VA_WIN
+#if defined(MFX_VA_WIN) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (IS_PROTECTION_ANY(m_vPar.Protected) && !IS_PROTECTION_WIDEVINE(m_vPar.Protected) && bs)
     {
         if (!m_va->GetProtectedVA() || !(bs->DataFlag & MFX_BITSTREAM_COMPLETE_FRAME))
@@ -1050,7 +1041,7 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
             }
             else
             {
-#if defined(MFX_VA_WIN) || defined (MFX_VA_LINUX)
+#if (defined(MFX_VA_WIN) || defined (MFX_VA_LINUX)) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
                 if (IS_PROTECTION_WIDEVINE(m_vPar.Protected))
                 {
                     mfxExtDecryptedParam * widevineDecryptParams = bs ? (mfxExtDecryptedParam *)GetExtendedBuffer(bs->ExtParam, bs->NumExtParam, MFX_EXTBUFF_DECRYPTED_PARAM) : NULL;
@@ -1094,10 +1085,12 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
 
             if (umcRes == UMC::UMC_ERR_INVALID_STREAM)
             {
+                umcAddSourceRes = umcFrameRes = umcRes = UMC::UMC_OK;
+
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
                 if (IS_PROTECTION_WIDEVINE(m_vPar.Protected))
                     sts = MFX_ERR_UNDEFINED_BEHAVIOR;
-                else
-                    umcAddSourceRes = umcFrameRes = umcRes = UMC::UMC_OK;
+#endif
             }
 
             if (umcRes == UMC::UMC_NTF_NEW_RESOLUTION)
@@ -1114,7 +1107,7 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
             if (umcRes == UMC::UMC_ERR_NOT_ENOUGH_BUFFER || umcRes == UMC::UMC_WRN_INFO_NOT_READY || umcRes == UMC::UMC_ERR_NEED_FORCE_OUTPUT)
             {
                 force = (umcRes == UMC::UMC_ERR_NEED_FORCE_OUTPUT);
-                sts = umcRes == UMC::UMC_ERR_NOT_ENOUGH_BUFFER ? (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK : MFX_WRN_DEVICE_BUSY;
+                sts = umcRes == UMC::UMC_ERR_NOT_ENOUGH_BUFFER ? (mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK: MFX_WRN_DEVICE_BUSY;
             }
 
             if (umcRes == UMC::UMC_ERR_NOT_ENOUGH_DATA || umcRes == UMC::UMC_ERR_SYNC)
@@ -1134,7 +1127,10 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
                 sts = MFX_ERR_GPU_HANG;
             }
 #endif
+
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
             if (!IS_PROTECTION_WIDEVINE(m_vPar.Protected) || umcRes != UMC::UMC_NTF_NEW_RESOLUTION)
+#endif
             {
                 src.Save(bs);
             }
@@ -1223,25 +1219,21 @@ void VideoDECODEH265::FillVideoParam(mfxVideoParamWrapper *par, bool full)
     {
         if (sps->GetSize())
         {
-            // reserved spsPps->SPSId = (mfxU16)sps->GetID();
             spsPps->SPSBufSize = (mfxU16)sps->GetSize();
             spsPps->SPSBuffer = sps->GetPointer();
         }
         else
         {
-            // reserved spsPps->SPSId = 0;
             spsPps->SPSBufSize = 0;
         }
 
         if (pps->GetSize())
         {
-            // reserved spsPps->PPSId = (mfxU16)pps->GetID();
             spsPps->PPSBufSize = (mfxU16)pps->GetSize();
             spsPps->PPSBuffer = pps->GetPointer();
         }
         else
         {
-            // reserved spsPps->PPSId = 0;
             spsPps->PPSBufSize = 0;
         }
     }
@@ -1429,7 +1421,7 @@ mfxStatus VideoDECODEH265::GetUserData(mfxU8 *ud, mfxU32 *sz, mfxU64 *ts)
 
     *sz = (mfxU32)data.GetDataSize();
     *ts = GetMfxTimeStamp(data.GetTime());
-    mfx_memcpy(ud, *sz, data.GetDataPointer(), data.GetDataSize());
+    memcpy_s(ud, *sz, data.GetDataPointer(), data.GetDataSize());
 
     return MFXSts;
 }
@@ -1458,7 +1450,7 @@ mfxStatus VideoDECODEH265::GetPayload( mfxU64 *ts, mfxPayload *payload )
 
         *ts = GetMfxTimeStamp(msg->timestamp);
 
-        mfx_memcpy(payload->Data, payload->BufSize, msg->data, msg->size);
+        memcpy_s(payload->Data, payload->BufSize, msg->data, msg->size);
 
         payload->CtrlFlags =
             msg->nal_type == NAL_UT_SEI_SUFFIX ? MFX_PAYLOAD_CTRL_SUFFIX : 0;
@@ -1496,12 +1488,6 @@ mfxStatus VideoDECODEH265::SetSkipMode(mfxSkipMode mode)
 
     if (!m_isInit)
         return MFX_ERR_NOT_INITIALIZED;
-
-    if (mode == 0x22)
-    {
-        m_pH265VideoDecoder->PermanentDisableDeblocking(true);
-        return MFX_ERR_NONE;
-    }
 
     Ipp32s test_num = 0;
     m_pH265VideoDecoder->ChangeVideoDecodingSpeed(test_num);

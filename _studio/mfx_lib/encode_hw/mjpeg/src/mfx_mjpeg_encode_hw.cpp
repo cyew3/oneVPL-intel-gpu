@@ -561,7 +561,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Init(mfxVideoParam *par)
 #ifdef MFX_VA_WIN
         request.Type |= MFX_MEMTYPE_SHARED_RESOURCE;
 #endif
-#if defined(LINUX)
+#if defined(LINUX) && !defined(MFX_SURFACE_ENCODER_TARGET_DISABLE)
         request.Type |= MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET; // required for libva especially for RGB32
 #endif
         request.NumFrameMin = surface_num;
@@ -591,7 +591,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Init(mfxVideoParam *par)
 #ifdef MFX_VA_WIN
         request.Type |= MFX_MEMTYPE_SHARED_RESOURCE;
 #endif
-#if defined(LINUX)
+#if defined(LINUX) && !defined(MFX_SURFACE_ENCODER_TARGET_DISABLE)
         request.Type |= MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET; // required for libva especially for RGB32
 #endif
         request.NumFrameMin = surface_num;
@@ -615,7 +615,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Init(mfxVideoParam *par)
 
     // Allocate bitstream surfaces.
     request.Type = MFX_MEMTYPE_VIDEO_INT;
-#if defined(LINUX)
+#if defined(LINUX) && !defined(MFX_SURFACE_ENCODER_TARGET_DISABLE)
     request.Type |= MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET; // required for libva especially for RGB32
 #endif
     request.NumFrameMin = surface_num;

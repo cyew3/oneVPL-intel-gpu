@@ -52,26 +52,26 @@ mfxStatus mfxDefaultAllocatorD3D9::AllocFramesHW(mfxHDL pthis, mfxFrameAllocRequ
     // only NV12 and D3DFMT_P8 buffers are supported by HW
     switch(request->Info.FourCC)
     {
-        case MFX_FOURCC_NV12:
-        case D3DFMT_P8:
-        case MFX_FOURCC_YUY2:
-        case MFX_FOURCC_YV12:
-        case MFX_FOURCC_IMC3:
-        case MFX_FOURCC_RGB4:
-        case MFX_FOURCC_BGR4:
-        case MFX_FOURCC_YUV400:
-        case MFX_FOURCC_YUV411:
-        case MFX_FOURCC_YUV422H:
-        case MFX_FOURCC_YUV422V:
-        case MFX_FOURCC_YUV444:
-        case MFX_FOURCC_RGBP:
-        case MFX_FOURCC_P010:
-        case MFX_FOURCC_A2RGB10:
-        case MFX_FOURCC_AYUV:
+    case MFX_FOURCC_NV12:
+    case D3DFMT_P8:
+    case MFX_FOURCC_YUY2:
+    case MFX_FOURCC_YV12:
+    case MFX_FOURCC_IMC3:
+    case MFX_FOURCC_RGB4:
+    case MFX_FOURCC_BGR4:
+    case MFX_FOURCC_YUV400:
+    case MFX_FOURCC_YUV411:
+    case MFX_FOURCC_YUV422H:
+    case MFX_FOURCC_YUV422V:
+    case MFX_FOURCC_YUV444:
+    case MFX_FOURCC_RGBP:
+    case MFX_FOURCC_P010:
+    case MFX_FOURCC_A2RGB10:
+    case MFX_FOURCC_AYUV:
 #if defined (PRE_SI_TARGET_PLATFORM_GEN11)
-        case MFX_FOURCC_Y210:
-        case MFX_FOURCC_Y216:
-        case MFX_FOURCC_Y410:
+    case MFX_FOURCC_Y210:
+    case MFX_FOURCC_Y216:
+    case MFX_FOURCC_Y410:
 #endif //#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
         break;
 
@@ -129,8 +129,7 @@ mfxStatus mfxDefaultAllocatorD3D9::AllocFramesHW(mfxHDL pthis, mfxFrameAllocRequ
     // allocate frames in cycle
     maxNumFrames = request->NumFrameSuggested;
 
-    IDirect3DSurface9 **pSurfaces = (IDirect3DSurface9**)ippMalloc((Ipp32s)(maxNumFrames*sizeof(IDirect3DSurface9*)));
-    MFX_CHECK(pSurfaces, MFX_ERR_MEMORY_ALLOC);
+    IDirect3DSurface9 ** pSurfaces = new IDirect3DSurface9*[maxNumFrames];
 
     hr = pSelf->pDirectXVideoService->CreateSurface(width,
                                                     height,
@@ -157,10 +156,10 @@ mfxStatus mfxDefaultAllocatorD3D9::AllocFramesHW(mfxHDL pthis, mfxFrameAllocRequ
     }
     else
     {
-        ippFree(pSurfaces);
+        delete[] pSurfaces;
         return MFX_ERR_MEMORY_ALLOC;
     }
-    ippFree(pSurfaces);
+    delete[] pSurfaces;
 
     // check the number of allocated frames
     if (numAllocated < request->NumFrameMin)
@@ -171,28 +170,9 @@ mfxStatus mfxDefaultAllocatorD3D9::AllocFramesHW(mfxHDL pthis, mfxFrameAllocRequ
 
     return MFX_ERR_NONE;
 }
-mfxStatus mfxDefaultAllocatorD3D9::LockFrameHW(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr)
+
+mfxStatus mfxDefaultAllocatorD3D9::SetFrameData(const D3DSURFACE_DESC &desc, const D3DLOCKED_RECT &LockedRect, mfxFrameData *ptr)
 {
-    HRESULT hr = S_OK;
-    // TBD
-    if (!pthis)
-        return MFX_ERR_INVALID_HANDLE;
-
-    mfxWideHWFrameAllocator *pSelf = (mfxWideHWFrameAllocator*)pthis;
-    size_t index =  (size_t)mid - 1;
-
-    D3DSURFACE_DESC desc;
-    D3DLOCKED_RECT LockedRect;
-    IDirect3DSurface9    *RenderTarget = pSelf->m_SrfQueue[index];
-    // Get surface description
-    hr = RenderTarget->GetDesc(&desc);
-    if (S_OK != hr)
-        return MFX_ERR_LOCK_MEMORY;
-    // Lock surface
-    hr = RenderTarget->LockRect(&LockedRect, NULL, D3DLOCK_NOSYSLOCK );
-    if (S_OK !=hr)
-        return MFX_ERR_LOCK_MEMORY;
-
     switch ((DWORD)desc.Format)
     {
     case D3DFMT_P010:
@@ -321,10 +301,38 @@ mfxStatus mfxDefaultAllocatorD3D9::LockFrameHW(mfxHDL pthis, mfxMemId mid, mfxFr
         ptr->A = 0;
         break;
 #endif //#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+    default:
+        return MFX_ERR_LOCK_MEMORY;
     }
 
     return MFX_ERR_NONE;
 }
+
+mfxStatus mfxDefaultAllocatorD3D9::LockFrameHW(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr)
+{
+    HRESULT hr = S_OK;
+    // TBD
+    if (!pthis)
+        return MFX_ERR_INVALID_HANDLE;
+
+    mfxWideHWFrameAllocator *pSelf = (mfxWideHWFrameAllocator*)pthis;
+    size_t index =  (size_t)mid - 1;
+
+    D3DSURFACE_DESC desc;
+    D3DLOCKED_RECT LockedRect;
+    IDirect3DSurface9    *RenderTarget = pSelf->m_SrfQueue[index];
+    // Get surface description
+    hr = RenderTarget->GetDesc(&desc);
+    if (S_OK != hr)
+        return MFX_ERR_LOCK_MEMORY;
+    // Lock surface
+    hr = RenderTarget->LockRect(&LockedRect, NULL, D3DLOCK_NOSYSLOCK );
+    if (S_OK !=hr)
+        return MFX_ERR_LOCK_MEMORY;
+
+    return SetFrameData(desc, LockedRect, ptr);
+}
+
 mfxStatus mfxDefaultAllocatorD3D9::GetHDLHW(mfxHDL pthis, mfxMemId mid, mfxHDL *handle)
 {
     if (!pthis)

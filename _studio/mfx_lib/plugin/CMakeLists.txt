@@ -28,9 +28,10 @@ include_directories( ${MSDK_LIB_ROOT}/fs_det/include )
 list( APPEND umc_dirs
   common
   brc scene_analyzer
-  mpeg2_dec h264_dec h264_enc
-  vc1_common vc1_dec vc1_spl                       ## open-source-cut-line
-  mpeg2_enc jpeg_enc color_space_converter         ## open-source-cut-line
+  mpeg2_dec h264_dec h264_enc 
+  vc1_common vc1_dec vc1_spl
+  mpeg2_enc jpeg_enc color_space_converter
+
   h265_dec
   jpeg_common jpeg_dec )
 
@@ -46,7 +47,7 @@ endforeach( )
 
 list( APPEND vdecs
   h264 mpeg2 mjpeg vp8 vp9
-  vc1                       ## open-source-cut-line
+  vc1
   )
 
 list( APPEND vencs
@@ -54,11 +55,6 @@ list( APPEND vencs
   )
 
 foreach( dec ${vdecs} )
-## open-source-cut-start
-  list( APPEND vdirs
-    brc/${dec}
-    )
-## open-source-cut-end
 
   list( APPEND vdirs_impl
     decode/${dec}
@@ -66,13 +62,12 @@ foreach( dec ${vdecs} )
 endforeach( )
 
 foreach( enc ${vencs} )
-## open-source-cut-start
   list( APPEND vdirs
     enc/${enc} encode/${enc} pak/${enc}
     )
-## open-source-cut-end
+
   list( APPEND vdirs_hw
-    enc_hw/${enc}        ## open-source-cut-line
+    enc_hw/${enc}
     encode_hw/${enc}
     )
 endforeach( )
@@ -197,7 +192,7 @@ else()
   set( hevcd_variants hw )
   if (ENABLE_HEVC)
     set( hevcd_variants
-        sw  ## open-source-cut-line
+        sw
         hw )
   endif()
 endif()
@@ -220,7 +215,7 @@ foreach( variant ${hevcd_variants} )
   set( LIBS "" )
 
   list( APPEND LIBS
-      color_space_converter_sw  ## open-source-cut-line
+      color_space_converter_sw
       umc_h265_${variant} )
 
   if( variant MATCHES sw )
@@ -234,7 +229,7 @@ foreach( variant ${hevcd_variants} )
   endif()
 
   list( APPEND LIBS
-    media_buffers       ## open-source-cut-line
+    media_buffers
     umc_io
     umc
     vm
@@ -277,7 +272,7 @@ endforeach()
 set( hevce_variants "" )
 if (ENABLE_HEVC)
   set( hevce_variants
-       sw  ## open-source-cut-line
+       sw
        hw )
 endif()
 set( defs "" )
@@ -341,7 +336,6 @@ foreach( variant ${hevce_variants} )
   set( description_name ${${variant}_HEVC_ENCODER_DESCRIPTION} )
   set( LIBS "" )
   list( APPEND LIBS
-## open-source-cut-start
     hevc_pp_dispatcher
     hevc_pp_atom
     hevc_pp_avx2
@@ -349,7 +343,6 @@ foreach( variant ${hevce_variants} )
     hevc_pp_sse4
     hevc_pp_ssse3
     media_buffers
-## open-source-cut-end
     umc_io
     umc
     vm
@@ -428,7 +421,7 @@ foreach( prefix ${MSDK_LIB_ROOT}/shared/src )
   list( APPEND sources
     ${prefix}/mfx_enc_common.cpp
     ${prefix}/mfx_brc_common.cpp
-    ${prefix}/mfx_ddi_enc_dump.cpp  ## open-source-cut-line
+    ${prefix}/mfx_ddi_enc_dump.cpp
     ${prefix}/mfx_h264_enc_common_hw.cpp
     ${prefix}/mfx_h264_encode_factory.cpp
     ${prefix}/mfx_h264_encode_vaapi.cpp
@@ -505,10 +498,9 @@ foreach( variant hw )
   set( LIBS "" )
   list( APPEND LIBS
     h264_la
-    brc				## open-source-cut-line
-    color_space_converter_sw    ## open-source-cut-line
+    color_space_converter_sw
     h264_enc_sw
-    media_buffers               ## open-source-cut-line
+    media_buffers
     umc_io
     umc_va_elk_hw
     umc
@@ -603,7 +595,7 @@ if( ENABLE_HEVC_FEI )
 
     set( LIBS "" )
     list( APPEND LIBS
-      media_buffers         ## open-source-cut-line
+      media_buffers
       umc_io
       umc
       vm
@@ -671,12 +663,10 @@ list( APPEND sources ${plugin_common_sources} )
 
 include_directories( ${MSDK_LIB_ROOT}/scheduler/include )
 
-## open-source-cut-start
 include_directories( ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/vp8_libvpx )
 include_directories( ${MSDK_STUDIO_ROOT}/shared/umc/codec/vp8_dec/include )
 
 list( APPEND sources ${MSDK_STUDIO_ROOT}/shared/umc/codec/vp8_dec/src/vp8_tables.cpp )
-## open-source-cut-end
 list( APPEND sources ${MSDK_LIB_ROOT}/shared/src/libmfxsw_decode.cpp )
 
 set( USE_STRICT_NAME TRUE )
@@ -690,7 +680,7 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/src )
 endforeach()
 
 foreach( variant
-         sw  ## open-source-cut-line
+         sw
          hw )
 
   if( __ARCH MATCHES intel64 )
@@ -715,7 +705,7 @@ foreach( variant
     foreach( prefix ${MSDK_LIB_ROOT}/decode/vp8/src )
     list( APPEND sources
       ${prefix}/mfx_vp8_dec_decode_hw.cpp
-      ${prefix}/mfx_vp8_dec_decode.cpp  ## open-source-cut-line
+      ${prefix}/mfx_vp8_dec_decode.cpp
       ${prefix}/mfx_vp8_dec_decode_common.cpp
       ${prefix}/mfx_vp8_dec_decode_hw_vaapi.cpp
       ${prefix}/mfx_vp8_dec_decode_tables.cpp
@@ -731,7 +721,6 @@ foreach( variant
     set( defs "-DAS_VP8D_PLUGIN -DUMC_ENABLE_VP8_VIDEO_DECODER -DMFX_VA -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${VP8_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${vp8_version_defs}")
 
     gen_plugins_cfg("VP8_Decoder_HW" ${VP8_DECODER_HW_GUID} ${plugin_name} "01" "VP8")
-## open-source-cut-start
   else()
     foreach( prefix ${MSDK_LIB_ROOT}/decode/vp8/src )
     list( APPEND sources
@@ -744,13 +733,12 @@ foreach( variant
     set( defs "-DAS_VP8D_PLUGIN -DUMC_ENABLE_VP8_VIDEO_DECODER -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${VP8_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${vp8_version_defs}")
 
     gen_plugins_cfg("VP8_Decoder_SW" ${VP8_DECODER_SW_GUID} ${plugin_name} "01" "VP8")
-## open-source-cut-end
   endif()
 
   list( APPEND LIBS
-    vpx  ## open-source-cut-line
-    color_space_converter_sw  ## open-source-cut-line
-    media_buffers      ## open-source-cut-line
+    vpx
+    color_space_converter_sw
+    media_buffers
     umc_io
     umc
     vm
@@ -810,7 +798,7 @@ set( sources.plus "" )
 list( APPEND sources ${plugin_common_sources} )
 
 include_directories( ${MSDK_LIB_ROOT}/scheduler/include )
-include_directories( ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/libvpx/libvpx )  ## open-source-cut-line
+include_directories( ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/libvpx/libvpx )
 
 include_directories( ${MSDK_STUDIO_ROOT}/shared/umc/codec/vp9_dec/include )
 
@@ -825,7 +813,7 @@ list( APPEND sources.plus
 )
 
 foreach( variant
-         sw  ## open-source-cut-line
+         sw
          hw )
 
   if( __ARCH MATCHES intel64 )
@@ -866,7 +854,6 @@ foreach( variant
     set( defs "-DAS_VP9D_PLUGIN -DUMC_ENABLE_VP9_VIDEO_DECODER -DMFX_VA -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${VP9_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${vp9_version_defs}")
 
     gen_plugins_cfg("VP9_Decoder_HW" ${VP9_DECODER_HW_GUID} ${plugin_name} "01" "VP9")
-## open-source-cut-start
   else()
 
     list( APPEND sources
@@ -882,12 +869,11 @@ foreach( variant
     set( defs "-DAS_VP9D_PLUGIN -DUMC_ENABLE_VP9_VIDEO_DECODER -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${VP9_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${vp9_version_defs}")
 
     gen_plugins_cfg("VP9_Decoder_SW" ${VP9_DECODER_SW_GUID} ${plugin_name} "01" "VP9")
-## open-source-cut-end
   endif()
 
   list( APPEND LIBS
-    vpx  ## open-source-cut-line
-    media_buffers   ## open-source-cut-line
+    vpx
+    media_buffers
     umc_io
     umc
     vm

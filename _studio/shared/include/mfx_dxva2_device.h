@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2016 Intel Corporation. All Rights Reserved.
 //
 
 #if !defined(__MFX_DXVA2_DEVICE_H)
@@ -18,15 +18,6 @@
 #endif
 
 #include <mfxdefs.h>
-
-#ifdef DXVA2DEVICE_LOG
-#include <stdio.h>
-#define DXVA2DEVICE_TRACE(expr) printf expr;
-#define DXVA2DEVICE_TRACE_OPERATION(expr) expr;
-#else
-#define DXVA2DEVICE_TRACE(expr)
-#define DXVA2DEVICE_TRACE_OPERATION(expr) 
-#endif
 
 namespace MFX
 {

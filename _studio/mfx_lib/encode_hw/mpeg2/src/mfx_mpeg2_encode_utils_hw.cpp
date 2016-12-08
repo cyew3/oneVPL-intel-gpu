@@ -176,94 +176,6 @@ namespace MPEG2EncoderHW
         return (num_supported == par->NumExtParam) ? MFX_ERR_NONE : MFX_ERR_UNSUPPORTED;
     }
 
-#define isNONLocked(pSurface) (pSurface->Data.Y == 0)
-
-    mfxStatus CopyFrame(mfxFrameSurface1 *pDst, mfxU16 dstMemType, 
-        mfxFrameSurface1 *pSrc, mfxU16 srcMemType, 
-        VideoCORE* pCore)
-    {
-        mfxStatus sts = MFX_ERR_NONE;
-
-        mfxFrameSurface1 srcTempSurface = {}; 
-        mfxFrameSurface1 dstTempSurface = {};
-
-        srcTempSurface.Info = pSrc->Info;
-        dstTempSurface.Info = pDst->Info;
-
-        bool isSrcLocked = false;
-        bool isDstLocked = false;
-
-
-        if (isNONLocked(pSrc))
-        {    
-            if (srcMemType & MFX_MEMTYPE_EXTERNAL_FRAME)
-            {
-                sts = pCore->LockExternalFrame(pSrc->Data.MemId, &srcTempSurface.Data);
-                MFX_CHECK_STS(sts);
-            }
-            else
-            {
-                sts = pCore->LockFrame(pSrc->Data.MemId, &srcTempSurface.Data);
-                MFX_CHECK_STS(sts);
-            }
-            isSrcLocked = true;
-        }
-        else
-        {
-            srcTempSurface.Data = pSrc->Data;
-        }
-        if (isNONLocked(pDst))
-        {    
-            if (dstMemType & MFX_MEMTYPE_EXTERNAL_FRAME)
-            {
-                sts = pCore->LockExternalFrame(pDst->Data.MemId, &dstTempSurface.Data);
-                MFX_CHECK_STS(sts);
-            }
-            else
-            {
-                sts = pCore->LockFrame(pDst->Data.MemId, &dstTempSurface.Data);
-                MFX_CHECK_STS(sts);
-            }
-            isDstLocked = true;
-        }
-        else
-        {
-            dstTempSurface.Data = pDst->Data;
-        }
-        sts = pCore->DoFastCopy(&dstTempSurface, &srcTempSurface);
-        MFX_CHECK_STS(sts);
-
-        if (true == isSrcLocked)
-        {
-            if (srcMemType & MFX_MEMTYPE_EXTERNAL_FRAME)
-            {
-                sts = pCore->UnlockExternalFrame(pSrc->Data.MemId, &srcTempSurface.Data);
-                MFX_CHECK_STS(sts);
-            }
-            else
-            {
-                sts = pCore->UnlockFrame(pSrc->Data.MemId, &srcTempSurface.Data);
-                MFX_CHECK_STS(sts);
-            }
-        }
-
-        if (true == isDstLocked)
-        {
-            if (dstMemType & MFX_MEMTYPE_EXTERNAL_FRAME)
-            {
-                sts = pCore->UnlockExternalFrame(pDst->Data.MemId, &dstTempSurface.Data);
-                MFX_CHECK_STS(sts);
-            }
-            else 
-            {
-                sts = pCore->UnlockFrame(pDst->Data.MemId, &dstTempSurface.Data);
-                MFX_CHECK_STS(sts);
-            }
-        }
-        return MFX_ERR_NONE;
-    }
-#undef isNONLocked
-
     /*static mfxU16 GetBufferSizeInKB (mfxU16 TargetKbps, double frame_rate, bool bMin = false)
     {
     mfxU32 numFrames = (bMin)? 2:10;
@@ -1004,7 +916,6 @@ namespace MPEG2EncoderHW
                 out->mfx.RateControlMethod != MFX_RATECONTROL_AVBR &&
                 out->mfx.RateControlMethod != MFX_RATECONTROL_VCM &&
                 out->mfx.RateControlMethod != MFX_RATECONTROL_ICQ &&
-                out->mfx.RateControlMethod != MFX_RATECONTROL_VME  &&
                 out->mfx.RateControlMethod != MFX_RATECONTROL_QVBR &&
                 out->mfx.RateControlMethod != MFX_RATECONTROL_LA &&
                 out->mfx.RateControlMethod != MFX_RATECONTROL_LA_ICQ &&
@@ -1467,7 +1378,6 @@ namespace MPEG2EncoderHW
             RateControl != MFX_RATECONTROL_AVBR &&
             RateControl != MFX_RATECONTROL_VCM &&
             RateControl != MFX_RATECONTROL_ICQ &&
-            RateControl != MFX_RATECONTROL_VME  &&
             RateControl != MFX_RATECONTROL_QVBR &&
             RateControl != MFX_RATECONTROL_LA &&
             RateControl != MFX_RATECONTROL_LA_ICQ &&
@@ -1925,7 +1835,7 @@ namespace MPEG2EncoderHW
 
             if (m_InputFrameOrder < m_pWaitingList->GetDelay())
             {          
-                return (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK;
+                return (mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK;
             }
             else
             {
@@ -2223,6 +2133,7 @@ namespace MPEG2EncoderHW
         return MFX_ERR_NONE;
     }
 
+#ifndef OPEN_SOURCE
     mfxStatus MPEG2BRC_HW::SetQuantDCPredAndDelay(mfxFrameCUC *pCUC, mfxI32 recode)
     {
         UMC::FrameType  frType   = ((pCUC->FrameParam->MPEG2.FrameType &  MFX_FRAMETYPE_I) ? 
@@ -2281,6 +2192,8 @@ namespace MPEG2EncoderHW
 
         return MFX_ERR_NONE;
     }
+#endif
+
     mfxStatus MPEG2BRC_HW::SetQuantDCPredAndDelay(mfxFrameParamMPEG2 *pFrameParams, mfxU8 *pQuant)
     {
         UMC::FrameType  frType   = ((pFrameParams->FrameType &  MFX_FRAMETYPE_I) ? 
@@ -2572,8 +2485,13 @@ namespace MPEG2EncoderHW
         m_InputRequest.NumFrameSuggested = m_InputRequest.NumFrameMin = (mfxU16)numinput;
 
         type = bHW ?
-            (mfxU16)(MFX_MEMTYPE_INTERNAL_FRAME |MFX_MEMTYPE_DXVA2_DECODER_TARGET|MFX_MEMTYPE_FROM_ENCODE|MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET):
+            (mfxU16)(MFX_MEMTYPE_INTERNAL_FRAME |MFX_MEMTYPE_DXVA2_DECODER_TARGET|MFX_MEMTYPE_FROM_ENCODE):
             (mfxU16)(MFX_MEMTYPE_INTERNAL_FRAME |MFX_MEMTYPE_SYSTEM_MEMORY|MFX_MEMTYPE_FROM_ENCODE); 
+
+#ifndef MFX_SURFACE_ENCODER_TARGET_DISABLE
+        if (bHW)
+            type = (mfxU16)(type | MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET);
+#endif
 
 #ifdef PAVP_SUPPORT
         MFX_CHECK(bHW||(!bProtected),MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);

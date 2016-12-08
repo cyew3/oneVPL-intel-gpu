@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
 //
 
 #if !defined(_MFX_SESSION_H)
@@ -102,7 +102,7 @@ struct _mfxSession
     std::auto_ptr<VideoVPP> m_pVPP;
     std::auto_ptr<VideoENC> m_pENC;
     std::auto_ptr<VideoPAK> m_pPAK;
-    std::auto_ptr<VideoBRC> m_pBRC;
+    std::auto_ptr<void *>   m_reserved;
     
     std::auto_ptr<VideoCodecUSER> m_plgDec;
     std::auto_ptr<VideoCodecUSER> m_plgEnc;

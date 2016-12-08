@@ -94,7 +94,6 @@ Status VC1ThreadDecoder::Init(VC1Context* pContext,
 
     // save pointer to TaskStore
     m_pStore = pTaskStore;
-#ifndef UMC_RESTRICTED_CODE_VA
 #if defined (UMC_VA_DXVA)
     // create segment decoder
     m_pJobSlice = &m_TaskProcessor;
@@ -105,10 +104,6 @@ Status VC1ThreadDecoder::Init(VC1Context* pContext,
        m_pJobSlice = pExternalProcessor;
 
 #endif
-#else
-     m_pJobSlice = &m_TaskProcessor;
-#endif
-
 
     if (NULL == m_pJobSlice)
         return UMC_ERR_ALLOC;

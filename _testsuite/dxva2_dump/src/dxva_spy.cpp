@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2003-2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -126,7 +126,7 @@ UMC::VideoAccelerationProfile GetProfile(REFGUID Guid)
     {
         profile = MPEG2_VLD;
     }
-    else if (Guid == DXVA2_ModeH264_VLD_NoFGT || Guid == sDXVA2_Intel_EagleLake_ModeH264_VLD_NoFGT || Guid == sDXVA_Intel_ModeH264_VLD_MVC ||
+    else if (Guid == DXVA2_ModeH264_VLD_NoFGT || Guid == sDXVA_Intel_ModeH264_VLD_MVC ||
         Guid == sDXVA2_ModeH264_VLD_NoFGT ||
         Guid == sDXVA_ModeH264_VLD_Multiview_NoFGT || Guid == sDXVA_ModeH264_VLD_Stereo_NoFGT || Guid == sDXVA_ModeH264_VLD_Stereo_Progressive_NoFGT ||
         Guid == sDXVA_ModeH264_VLD_SVC_Scalable_Baseline || Guid == sDXVA_ModeH264_VLD_SVC_Scalable_High || Guid == sDXVA_ModeH264_VLD_SVC_Scalable_Constrained_High ||
@@ -1675,7 +1675,6 @@ static GUID g_guids[] =
     sDXVA2_ModeMPEG2_VLD,
     sDXVA2_ModeH264_VLD_NoFGT,
 
-    sDXVA2_Intel_EagleLake_ModeH264_VLD_NoFGT,
 
     sDXVA_Intel_ModeH264_VLD_MVC,
 
@@ -2217,8 +2216,6 @@ HRESULT STDMETHODCALLTYPE CSpyVideoDecoderService::GetDecoderRenderTargets(
     if (dumpDx9.GetSkipExecute())
     {
         hr = m_pObject->GetDecoderRenderTargets(sDXVA2_ModeH264_VLD_NoFGT, pCount, pFormats);
-        if (FAILED(hr))
-            hr = m_pObject->GetDecoderRenderTargets(sDXVA2_Intel_EagleLake_ModeH264_VLD_NoFGT, pCount, pFormats);
         return hr;
     }
 

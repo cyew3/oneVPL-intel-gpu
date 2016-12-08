@@ -11,8 +11,6 @@
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_H264_VIDEO_DECODER)
 
-#ifndef UMC_RESTRICTED_CODE_VA
-
 #include <algorithm>
 
 #include "umc_h264_segment_decoder_dxva.h"
@@ -22,6 +20,8 @@
 #ifdef UMC_VA_DXVA
 #include "umc_va_dxva2_protected.h"
 #endif
+
+#include "vm_time.h"
 
 namespace UMC
 {
@@ -81,7 +81,7 @@ Status H264_DXVA_SegmentDecoder::ProcessSegment(void)
         {
             return UMC_ERR_NOT_ENOUGH_DATA;
         }
-    }catch(h264_exception ex){
+    }catch(h264_exception &ex){
         return ex.GetStatus();
     }
     return UMC_OK;
@@ -394,5 +394,4 @@ void TaskBrokerSingleThreadDXVA::AwakeThreads()
 
 } // namespace UMC
 
-#endif // UMC_RESTRICTED_CODE_VA
 #endif // UMC_ENABLE_H264_VIDEO_DECODER

@@ -26,9 +26,9 @@
 #include "mfx_h264_encode_hw_utils.h"
 
 #include "mfx_brc_common.h"
-#include "mfx_h264_enc_common.h"
 #include "umc_h264_brc.h"
-#include "umc_h264_core_enc.h"
+#include "mfx_enc_common.h"
+#include "umc_h264_common.h"
 #ifdef MFX_ENABLE_H264_VIDEO_FEI_ENCPAK
 #include "mfxfei.h"
 #endif
@@ -207,8 +207,11 @@ namespace
             IsAvcBaseProfile(profile)       ||
             IsAvcHighProfile(profile)       ||
             (IsMvcProfile(profile) && (profile != MFX_PROFILE_AVC_MULTIVIEW_HIGH)) || // Multiview high isn't supported by MSDK
-            profile == MFX_PROFILE_AVC_MAIN ||
-            IsSvcProfile(profile);
+            profile == MFX_PROFILE_AVC_MAIN
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
+            || IsSvcProfile(profile)
+#endif
+            ;
     }
 
     inline mfxU16 GetMaxSupportedLevel()
@@ -763,12 +766,12 @@ namespace
         mfxU32 numReorderFrames = GetNumReorderFrames(par);
         mfxU32 maxPocDiff = (numReorderFrames * par.mfx.GopRefDist + 1) * 2;
 
-        if (par.calcParam.numTemporalLayer > 0 || par.calcParam.lyncMode)
+        if (par.calcParam.numTemporalLayer > 0 || par.calcParam.tempScalabilityMode)
         {
             mfxU32 maxScale = par.calcParam.scale[par.calcParam.numTemporalLayer - 1];
-            // for Lync number of temporal layers should be changed dynamically w/o IDR insertion
+            // for tempScalabilityMode number of temporal layers should be changed dynamically w/o IDR insertion
             // to assure this first SPS in bitstream should contain maximum possible log2_max_frame_num_minus4
-            if (par.calcParam.lyncMode)
+            if (par.calcParam.tempScalabilityMode)
                 maxScale = 8; // 8 is maximum scale for 4 temporal layers
 
             maxPocDiff = IPP_MAX(maxPocDiff, 2 * maxScale);
@@ -805,11 +808,6 @@ namespace
     {
         if (platform == MFX_HW_IVB || platform == MFX_HW_VLV)
             return 1;
-        else if (platform == MFX_HW_SOFIA)
-        {
-            mfxU16 const DEFAULT_BY_TU[] = { 0, 2, 2, 2, 2, 2, 1, 1 };
-            return DEFAULT_BY_TU[targetUsage];
-        }
         else if (!isLowPower)
         {
             if((info.Width < 3840 && info.Height < 2160) ||
@@ -1198,8 +1196,18 @@ mfxU8 MfxHwH264Encode::DetermineQueryMode(mfxVideoParam * in)
     }
 }
 
-mfxStatus MfxHwH264Encode::QueryHwCaps(VideoCORE* core, ENCODE_CAPS & hwCaps, GUID guid, bool isWiDi, mfxU32 width,  mfxU32 height)
+mfxStatus MfxHwH264Encode::QueryHwCaps(VideoCORE* core, ENCODE_CAPS & hwCaps, mfxVideoParam * par)
 {
+    GUID guid = MSDK_Private_Guid_Encode_AVC_Query;
+
+    if (IsOn(par->mfx.LowPower))
+    {
+        guid = MSDK_Private_Guid_Encode_AVC_LowPower_Query;
+    }
+
+    mfxU32 width  = par->mfx.FrameInfo.Width == 0 ? 1920: par->mfx.FrameInfo.Width;
+    mfxU32 height = par->mfx.FrameInfo.Height == 0 ? 1088: par->mfx.FrameInfo.Height;
+
     EncodeHWCaps* pEncodeCaps = QueryCoreInterface<EncodeHWCaps>(core);
     if (!pEncodeCaps)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -1214,8 +1222,10 @@ mfxStatus MfxHwH264Encode::QueryHwCaps(VideoCORE* core, ENCODE_CAPS & hwCaps, GU
     if (ddi.get() == 0)
         return Error(MFX_ERR_DEVICE_FAILED);
 
-    if (isWiDi)
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
+    if (MfxHwH264Encode::GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_ENCODER_WIDI_USAGE))
         ddi->ForceCodingFunction(ENCODE_ENC_PAK | ENCODE_WIDI);
+#endif
 
     mfxStatus sts = ddi->CreateAuxilliaryDevice(core, guid, width, height, true);
     MFX_CHECK_STS(sts);
@@ -1224,12 +1234,17 @@ mfxStatus MfxHwH264Encode::QueryHwCaps(VideoCORE* core, ENCODE_CAPS & hwCaps, GU
     MFX_CHECK_STS(sts);
 
     return pEncodeCaps->SetHWCaps<ENCODE_CAPS>(guid, &hwCaps);
-
-
 }
 
-mfxStatus MfxHwH264Encode::QueryMbProcRate(VideoCORE* core, mfxVideoParam const & par, mfxU32 (&mbPerSec)[16], GUID guid, bool isWiDi, mfxU32 width,  mfxU32 height)
+mfxStatus MfxHwH264Encode::QueryMbProcRate(VideoCORE* core, mfxVideoParam const & par, mfxU32 (&mbPerSec)[16], const mfxVideoParam * in)
 {
+    mfxU32 width  = in->mfx.FrameInfo.Width == 0 ? 1920: in->mfx.FrameInfo.Width;
+    mfxU32 height = in->mfx.FrameInfo.Height == 0 ? 1088: in->mfx.FrameInfo.Height;
+
+    GUID guid = MSDK_Private_Guid_Encode_AVC_Query;
+    if(IsOn(in->mfx.LowPower))
+        guid = MSDK_Private_Guid_Encode_AVC_LowPower_Query;
+
     EncodeHWCaps* pEncodeCaps = QueryCoreInterface<EncodeHWCaps>(core, MFXIHWMBPROCRATE_GUID);
     if (!pEncodeCaps)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -1246,8 +1261,10 @@ mfxStatus MfxHwH264Encode::QueryMbProcRate(VideoCORE* core, mfxVideoParam const 
     if (ddi.get() == 0)
         return Error(MFX_ERR_DEVICE_FAILED);
 
-    if (isWiDi)
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
+    if (MfxHwH264Encode::GetExtBuffer(in->ExtParam, in->NumExtParam, MFX_EXTBUFF_ENCODER_WIDI_USAGE))
         ddi->ForceCodingFunction(ENCODE_ENC_PAK | ENCODE_WIDI);
+#endif
 
     mfxStatus sts = ddi->CreateAuxilliaryDevice(core, guid, width, height, true);
     MFX_CHECK_STS(sts);
@@ -1405,8 +1422,11 @@ bool MfxHwH264Encode::IsRunTimeOnlyExtBuffer(mfxU32 id)
 #endif
         || id == MFX_EXTBUFF_ENCODED_FRAME_INFO
         || id == MFX_EXTBUFF_MBQP
+#ifndef MFX_PRIVATE_AVC_ENCODE_CTRL_DISABLE
+        || id == MFX_EXTBUFF_AVC_ENCODE_CTRL
+#endif
         || id == MFX_EXTBUFF_MB_DISABLE_SKIP_MAP
-        || id == MFX_EXTBUFF_AVC_ENCODE_CTRL;
+        ;
 }
 
 bool MfxHwH264Encode::IsRunTimeExtBufferIdSupported(mfxU32 id)
@@ -1420,8 +1440,12 @@ bool MfxHwH264Encode::IsRunTimeExtBufferIdSupported(mfxU32 id)
         || id == MFX_EXTBUFF_ENCODER_ROI
         || id == MFX_EXTBUFF_MBQP
         || id == MFX_EXTBUFF_MB_DISABLE_SKIP_MAP
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         || id == MFX_EXTBUFF_ENCODER_WIDI_USAGE
+#endif
+#ifndef MFX_PRIVATE_AVC_ENCODE_CTRL_DISABLE
         || id == MFX_EXTBUFF_AVC_ENCODE_CTRL
+#endif
         || id == MFX_EXTBUFF_PRED_WEIGHT_TABLE
 #if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
         || id == MFX_EXTBUFF_GPU_HANG
@@ -1430,9 +1454,6 @@ bool MfxHwH264Encode::IsRunTimeExtBufferIdSupported(mfxU32 id)
         || id == MFX_EXTBUFF_FEI_ENC_CTRL
         || id == MFX_EXTBUFF_FEI_ENC_MB
         || id == MFX_EXTBUFF_FEI_ENC_MV_PRED
-        || id == MFX_EXTBUFF_FEI_ENC_MB
-        || id == MFX_EXTBUFF_FEI_ENC_MV_PRED
-        || id == MFX_EXTBUFF_FEI_ENC_CTRL
         || id == MFX_EXTBUFF_FEI_ENC_QP
         || id == MFX_EXTBUFF_FEI_SLICE
 
@@ -1451,18 +1472,22 @@ bool MfxHwH264Encode::IsVideoParamExtBufferIdSupported(mfxU32 id)
 #ifdef MFX_UNDOCUMENTED_DUMP_FILES
         || id == MFX_EXTBUFF_DUMP
 #endif
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         || id == MFX_EXTBUFF_PAVP_OPTION
+        || id == MFX_EXTBUFF_ENCODER_WIDI_USAGE
+#endif
         || id == MFX_EXTBUFF_MVC_SEQ_DESC
         || id == MFX_EXTBUFF_VIDEO_SIGNAL_INFO
         || id == MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION
         || id == MFX_EXTBUFF_PICTURE_TIMING_SEI
         || id == MFX_EXTBUFF_AVC_TEMPORAL_LAYERS
         || id == MFX_EXTBUFF_CODING_OPTION2
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
         || id == MFX_EXTBUFF_SVC_SEQ_DESC
         || id == MFX_EXTBUFF_SVC_RATE_CONTROL
+#endif
         || id == MFX_EXTBUFF_ENCODER_RESET_OPTION
         || id == MFX_EXTBUFF_ENCODER_CAPABILITY
-        || id == MFX_EXTBUFF_ENCODER_WIDI_USAGE
         || id == MFX_EXTBUFF_ENCODER_ROI
         || id == MFX_EXTBUFF_CODING_OPTION3
         || id == MFX_EXTBUFF_CHROMA_LOC_INFO
@@ -1544,6 +1569,7 @@ namespace
     }
 };
 
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
 mfxU32 MfxHwH264Encode::GetLastDid(mfxExtSVCSeqDesc const & extSvc)
 {
     mfxI32 i = 7;
@@ -1552,6 +1578,7 @@ mfxU32 MfxHwH264Encode::GetLastDid(mfxExtSVCSeqDesc const & extSvc)
             break;
     return mfxU32(i);
 }
+#endif
 
 mfxStatus MfxHwH264Encode::CheckWidthAndHeight(MfxVideoParam const & par)
 {
@@ -1567,6 +1594,7 @@ mfxStatus MfxHwH264Encode::CheckWidthAndHeight(MfxVideoParam const & par)
     mfxU16 height    = par.mfx.FrameInfo.Height;
     mfxU16 picStruct = par.mfx.FrameInfo.PicStruct;
 
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
     if (IsSvcProfile(par.mfx.CodecProfile))
     {
         mfxExtSVCSeqDesc const * extSvc = GetExtBuffer(par);
@@ -1578,6 +1606,7 @@ mfxStatus MfxHwH264Encode::CheckWidthAndHeight(MfxVideoParam const & par)
         if (width == 0 || height == 0)
             return MFX_ERR_INVALID_VIDEO_PARAM;
     }
+#endif
 
     return ::CheckWidthAndHeight(width, height, picStruct);
 }
@@ -1710,8 +1739,11 @@ mfxStatus MfxHwH264Encode::CheckVideoParam(
 
     if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
         par.mfx.RateControlMethod != MFX_RATECONTROL_ICQ &&
-        par.mfx.RateControlMethod != MFX_RATECONTROL_LA_ICQ &&
-        !IsSvcProfile(par.mfx.CodecProfile))
+        par.mfx.RateControlMethod != MFX_RATECONTROL_LA_ICQ
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
+         && !IsSvcProfile(par.mfx.CodecProfile)
+#endif
+        )
         MFX_CHECK(par.calcParam.targetKbps > 0, MFX_ERR_INVALID_VIDEO_PARAM);
 
     if (extOpt3->NumSliceI || extOpt3->NumSliceP || extOpt3->NumSliceB)
@@ -1847,7 +1879,9 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 
     mfxExtCodingOption *       extOpt       = GetExtBuffer(par);
     mfxExtCodingOptionDDI *    extDdi       = GetExtBuffer(par);
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     mfxExtPAVPOption *         extPavp      = GetExtBuffer(par);
+#endif
     mfxExtVideoSignalInfo *    extVsi       = GetExtBuffer(par);
     mfxExtCodingOptionSPSPPS * extBits      = GetExtBuffer(par);
     mfxExtPictureTimingSEI *   extPt        = GetExtBuffer(par);
@@ -1855,7 +1889,9 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     mfxExtPpsHeader *          extPps       = GetExtBuffer(par);
     mfxExtMVCSeqDesc *         extMvc       = GetExtBuffer(par);
     mfxExtAvcTemporalLayers *  extTemp      = GetExtBuffer(par);
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
     mfxExtSVCSeqDesc *         extSvc       = GetExtBuffer(par);
+#endif
     mfxExtCodingOption2 *      extOpt2      = GetExtBuffer(par);
     mfxExtEncoderROI *         extRoi       = GetExtBuffer(par);
     mfxExtCodingOption3 *      extOpt3      = GetExtBuffer(par);
@@ -1948,6 +1984,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
                 changed = true;
     }
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (par.Protected != 0)
     {
         if (!IsProtectionPavp(par.Protected) && !IsProtectionHdcp(par.Protected))
@@ -1989,6 +2026,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
             }
         }
     }
+#endif // #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 
     if (par.IOPattern != 0)
     {
@@ -2053,7 +2091,6 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         par.mfx.RateControlMethod != MFX_RATECONTROL_WIDI_VBR &&
         par.mfx.RateControlMethod != MFX_RATECONTROL_VCM &&
         par.mfx.RateControlMethod != MFX_RATECONTROL_ICQ &&
-        par.mfx.RateControlMethod != MFX_RATECONTROL_VME  &&
         par.mfx.RateControlMethod != MFX_RATECONTROL_QVBR &&
         !bRateControlLA(par.mfx.RateControlMethod))
     {
@@ -2739,11 +2776,21 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         extOpt->FieldOutput = MFX_CODINGOPTION_UNKNOWN;
     }
 
-    if ((IsMvcProfile(par.mfx.CodecProfile) || IsSvcProfile(par.mfx.CodecProfile)) && par.mfx.RateControlMethod == MFX_RATECONTROL_VCM)
+#ifndef OPEN_SOURCE
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
+    if (IsSvcProfile(par.mfx.CodecProfile) && par.mfx.RateControlMethod == MFX_RATECONTROL_VCM)
     {
         unsupported = true;
         par.mfx.RateControlMethod = 0;
     }
+#endif
+
+    if (IsMvcProfile(par.mfx.CodecProfile) && par.mfx.RateControlMethod == MFX_RATECONTROL_VCM)
+    {
+        unsupported = true;
+        par.mfx.RateControlMethod = 0;
+    }
+#endif
 
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_VCM &&
         par.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE)
@@ -3558,10 +3605,10 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         Zero(par.calcParam.scale);
         Zero(par.calcParam.tid);
         par.calcParam.numTemporalLayer = 0;
-        par.calcParam.lyncMode = 0;
+        par.calcParam.tempScalabilityMode = 0;
     }
 
-    if (par.calcParam.lyncMode && par.mfx.GopRefDist > 1)
+    if (par.calcParam.tempScalabilityMode && par.mfx.GopRefDist > 1)
     {
         changed = true;
         par.mfx.GopRefDist = 1;
@@ -3596,7 +3643,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
             extTemp->Layer[par.calcParam.tid[i]].Scale = 0;
         }
 
-        if (par.calcParam.lyncMode &&
+        if (par.calcParam.tempScalabilityMode &&
             par.calcParam.scale[i] != par.calcParam.scale[i - 1] * 2)
         {
             unsupported = true;
@@ -3604,6 +3651,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         }
     }
 
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
     if (hwCaps.MaxNum_QualityLayer == 0 && hwCaps.MaxNum_DependencyLayer == 0)
     {
         for (mfxU32 i = 0; i < par.calcParam.numDependencyLayer; i++)
@@ -3630,6 +3678,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
             }
         }
     }
+#endif // #ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
 
     if (extOpt2->IntRefType > 2 || (extOpt2->IntRefType && hwCaps.RollingIntraRefresh == 0))
     {
@@ -3649,13 +3698,13 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         changed = true;
     }
 
-    if (extOpt2->IntRefType && par.mfx.NumRefFrame > 1 && par.calcParam.lyncMode == 0)
+    if (extOpt2->IntRefType && par.mfx.NumRefFrame > 1 && par.calcParam.tempScalabilityMode == 0)
     {
         extOpt2->IntRefType = 0;
         changed = true;
     }
 
-    if (extOpt2->IntRefType && par.calcParam.numTemporalLayer && par.calcParam.lyncMode == 0)
+    if (extOpt2->IntRefType && par.calcParam.numTemporalLayer && par.calcParam.tempScalabilityMode == 0)
     {
         extOpt2->IntRefType = 0;
         changed = true;
@@ -3708,11 +3757,13 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         changed = true;
     }
 
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
     if (extOpt2->Trellis && IsSvcProfile(par.mfx.CodecProfile))
     {
         extOpt2->Trellis = 0;
         changed = true;
     }
+#endif
 
     /*if (extOpt2->Trellis && hwCaps.EnhancedEncInput == 0)
     {
@@ -4506,12 +4557,14 @@ void MfxHwH264Encode::InheritDefaultValues(
         InheritOption(extOpt3Init->QVBRQuality,     extOpt3Reset->QVBRQuality);
     }
 
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
     // special encoding modes should be continued after Reset (if new parameters allow this)
     mfxExtSpecialEncodingModes const * extSpecModesInit  = GetExtBuffer(parInit);
     mfxExtSpecialEncodingModes       * extSpecModesReset = GetExtBuffer(parReset);
     // NumRefFrame can't be increased by Reset
     // so WiDi WA for dummy frames is continued after Reset() w/o additional checks
     InheritOption(extSpecModesInit->refDummyFramesForWiDi, extSpecModesReset->refDummyFramesForWiDi);
+#endif
 
     parReset.SyncVideoToCalculableParam();
 
@@ -4558,13 +4611,17 @@ void MfxHwH264Encode::SetDefaults(
     mfxExtCodingOption2 *      extOpt2 = GetExtBuffer(par);
     mfxExtCodingOption3 *      extOpt3 = GetExtBuffer(par);
     mfxExtCodingOptionDDI *    extDdi  = GetExtBuffer(par);
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     mfxExtPAVPOption *         extPavp = GetExtBuffer(par);
+#endif
     mfxExtVideoSignalInfo *    extVsi  = GetExtBuffer(par);
     mfxExtCodingOptionSPSPPS * extBits = GetExtBuffer(par);
     mfxExtSpsHeader *          extSps  = GetExtBuffer(par);
     mfxExtPpsHeader *          extPps  = GetExtBuffer(par);
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
     mfxExtSVCSeqDesc *         extSvc  = GetExtBuffer(par);
     mfxExtSVCRateControl *     extRc   = GetExtBuffer(par);
+#endif
     mfxExtChromaLocInfo*       extCli  = GetExtBuffer(par);
     mfxExtFeiParam* feiParam = (mfxExtFeiParam*)GetExtBuffer(par);
     bool isENCPAK = feiParam && ( (feiParam->Func == MFX_FEI_FUNCTION_ENCODE) ||
@@ -4613,6 +4670,7 @@ void MfxHwH264Encode::SetDefaults(
         }
     }
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (IsProtectionPavp(par.Protected))
     {
         if (extPavp->EncryptionType == 0)
@@ -4624,6 +4682,7 @@ void MfxHwH264Encode::SetDefaults(
         if (extPavp->CounterIncrement == 0)
             extPavp->CounterIncrement = 0xC000;
     }
+#endif
 
     mfxU8 fieldCodingPossible = IsFieldCodingPossible(par);
 
@@ -4678,7 +4737,7 @@ void MfxHwH264Encode::SetDefaults(
     {
         if (IsAvcBaseProfile(par.mfx.CodecProfile) ||
             par.mfx.CodecProfile == MFX_PROFILE_AVC_CONSTRAINED_HIGH ||
-            (par.calcParam.numTemporalLayer > 0 && par.calcParam.lyncMode) ||
+            (par.calcParam.numTemporalLayer > 0 && par.calcParam.tempScalabilityMode) ||
             hwCaps.SliceIPOnly)
         {
             par.mfx.GopRefDist = 1;
@@ -4734,7 +4793,7 @@ void MfxHwH264Encode::SetDefaults(
         extOpt2->SkipFrame = MFX_SKIPFRAME_INSERT_DUMMY;
     }
 
-    //FIXME: WA for MVC quality problem on progressive content.
+    //WA for MVC quality problem on progressive content.
     if(IsMvcProfile(par.mfx.CodecProfile)){
         extDdi->NumActiveRefP = extDdi->NumActiveRefBL0 = extDdi->NumActiveRefBL1 = 1;
     }
@@ -4864,7 +4923,7 @@ void MfxHwH264Encode::SetDefaults(
         extOpt->FieldOutput = MFX_CODINGOPTION_OFF;
 
     if (extOpt->AUDelimiter == MFX_CODINGOPTION_UNKNOWN)
-        extOpt->AUDelimiter = (par.calcParam.lyncMode)
+        extOpt->AUDelimiter = (par.calcParam.tempScalabilityMode)
             ? mfxU16(MFX_CODINGOPTION_OFF)
             : mfxU16(MFX_CODINGOPTION_ON);
 
@@ -4890,7 +4949,8 @@ void MfxHwH264Encode::SetDefaults(
         extOpt->VuiVclHrdParameters = MFX_CODINGOPTION_OFF;
 
     if (extOpt->NalHrdConformance == MFX_CODINGOPTION_UNKNOWN)
-        extOpt->NalHrdConformance = IsOn(extOpt->VuiNalHrdParameters) || IsOn(extOpt->VuiNalHrdParameters)
+        extOpt->NalHrdConformance = IsOn(extOpt->VuiNalHrdParameters) || IsOn(extOpt->VuiVclHrdParameters)
+
             ? mfxU16(MFX_CODINGOPTION_ON)
             : mfxU16(MFX_CODINGOPTION_OFF);
 
@@ -4924,7 +4984,7 @@ void MfxHwH264Encode::SetDefaults(
     {
         if (par.mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ)
             extOpt2->LookAheadDepth = IPP_MAX(10, 2 * par.mfx.GopRefDist);
-        else if (bRateControlLA(par.mfx.RateControlMethod)||par.mfx.RateControlMethod == MFX_RATECONTROL_VME)
+        else if (bRateControlLA(par.mfx.RateControlMethod))
             extOpt2->LookAheadDepth = IPP_MAX(40, 2 * par.mfx.GopRefDist);
 
     }
@@ -5121,7 +5181,7 @@ void MfxHwH264Encode::SetDefaults(
 
         if (par.calcParam.bufferSizeInKB == 0)
         {
-            if ((bRateControlLA(par.mfx.RateControlMethod) && (par.mfx.RateControlMethod != MFX_RATECONTROL_LA_HRD)) || par.mfx.RateControlMethod == MFX_RATECONTROL_VME)
+            if (bRateControlLA(par.mfx.RateControlMethod) && (par.mfx.RateControlMethod != MFX_RATECONTROL_LA_HRD))
             {
                 par.calcParam.bufferSizeInKB = GetMaxCodedFrameSizeInKB(par);
             }
@@ -5195,6 +5255,7 @@ void MfxHwH264Encode::SetDefaults(
 
     par.ApplyDefaultsToMvcSeqDesc();
 
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
     bool svcSupportedByHw = (hwCaps.MaxNum_QualityLayer || hwCaps.MaxNum_DependencyLayer);
     for (mfxU32 i = 0; i < par.calcParam.numDependencyLayer; i++)
     {
@@ -5284,28 +5345,29 @@ void MfxHwH264Encode::SetDefaults(
             break;
         case MFX_RATECONTROL_LA_EXT:
             break;
-        case MFX_RATECONTROL_VME:
-            break;
         default:
             assert(0);
             break;
         }
     }
+#endif // #ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
 
     if (extBits->SPSBuffer == 0)
     {
         mfxFrameInfo const & fi = par.mfx.FrameInfo;
 
 
-        extSps->nalRefIdc                       = par.calcParam.lyncMode ? 3 : 1;
+        extSps->nalRefIdc                       = par.calcParam.tempScalabilityMode ? 3 : 1;
         extSps->nalUnitType                     = 7;
         extSps->profileIdc                      = mfxU8(par.mfx.CodecProfile & MASK_PROFILE_IDC);
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
         if (IsSvcProfile(extSps->profileIdc))
             extSps->profileIdc                  = MFX_PROFILE_AVC_HIGH;
+#endif
         extSps->constraints.set0                = mfxU8(!!(par.mfx.CodecProfile & MASK_CONSTRAINT_SET0_FLAG));
         extSps->constraints.set1                = mfxU8(!!(par.mfx.CodecProfile & MASK_CONSTRAINT_SET1_FLAG));
         if (par.calcParam.numTemporalLayer > 0 && IsAvcBaseProfile(par.mfx.CodecProfile))
-            extSps->constraints.set1            = 1; // Lync requires constraint base profile
+            extSps->constraints.set1            = 1; // tempScalabilityMode requires constraint base profile
         extSps->constraints.set2                = mfxU8(!!(par.mfx.CodecProfile & MASK_CONSTRAINT_SET2_FLAG));
         extSps->constraints.set3                = mfxU8(!!(par.mfx.CodecProfile & MASK_CONSTRAINT_SET3_FLAG));
         extSps->constraints.set4                = mfxU8(!!(par.mfx.CodecProfile & MASK_CONSTRAINT_SET4_FLAG));
@@ -5327,14 +5389,14 @@ void MfxHwH264Encode::SetDefaults(
         extSps->deltaPicOrderAlwaysZeroFlag     = 1;
         extSps->maxNumRefFrames                 = mfxU8(par.mfx.NumRefFrame);
         extSps->gapsInFrameNumValueAllowedFlag  = par.calcParam.numTemporalLayer > 1
-            || par.calcParam.lyncMode; // for Lync change of temporal structure shouldn't change SPS.
+            || par.calcParam.tempScalabilityMode; // for tempScalabilityMode change of temporal structure shouldn't change SPS.
         extSps->frameMbsOnlyFlag                = (fi.PicStruct == MFX_PICSTRUCT_PROGRESSIVE) ? 1 : 0;
         extSps->picWidthInMbsMinus1             = (fi.Width / 16) - 1;
         extSps->picHeightInMapUnitsMinus1       = (fi.Height / 16 / (2 - extSps->frameMbsOnlyFlag)) - 1;
         extSps->direct8x8InferenceFlag          = 1;
 
         mfxU16 cropUnitX = CROP_UNIT_X[fi.ChromaFormat];
-        //Hack!!!! Fix cropping for ARGB and YUY2 formats, need to redesign in case real 444 or 422 support in AVC.
+        //Fix cropping for ARGB and YUY2 formats, need to redesign in case real 444 or 422 support in AVC.
         mfxU16 croma_format = fi.ChromaFormat;
         if(croma_format == MFX_CHROMAFORMAT_YUV444 || croma_format == MFX_CHROMAFORMAT_YUV422)
             croma_format = MFX_CHROMAFORMAT_YUV420;
@@ -5461,7 +5523,7 @@ void MfxHwH264Encode::SetDefaults(
 
     if (extBits->PPSBufSize == 0)
     {
-        extPps->nalRefIdc                             = par.calcParam.lyncMode ? 3 : 1;
+        extPps->nalRefIdc                             = par.calcParam.tempScalabilityMode ? 3 : 1;
         extPps->picParameterSetId                     = mfxU8(extBits->PPSId);
         extPps->seqParameterSetId                     = mfxU8(extBits->SPSId);
         extPps->entropyCodingModeFlag                 = IsOff(extOpt->CAVLC);
@@ -5603,15 +5665,17 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
     }
 
     mfxExtAVCRefListCtrl const * extRefListCtrl = GetExtBuffer(*ctrl);
-    if (extRefListCtrl && video.calcParam.numTemporalLayer > 0 && video.calcParam.lyncMode == 0)
+    if (extRefListCtrl && video.calcParam.numTemporalLayer > 0 && video.calcParam.tempScalabilityMode == 0)
         checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
 
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
     mfxExtSpecialEncodingModes const * extSpecModes = GetExtBuffer(video);
     if (extRefListCtrl && extSpecModes->refDummyFramesForWiDi)
         checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM; // no DPB and ref list manipulations allowed for WA WiDi mode
+#endif
 
     mfxExtAVCRefLists const * extRefLists = GetExtBuffer(*ctrl);
-    if (extRefLists && video.calcParam.numTemporalLayer > 0 && video.calcParam.lyncMode == 0)
+    if (extRefLists && video.calcParam.numTemporalLayer > 0 && video.calcParam.tempScalabilityMode == 0)
         checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
 
     // check timestamp from mfxExtPictureTimingSEI
@@ -5744,33 +5808,6 @@ mfxStatus MfxHwH264Encode::CopyFrameDataBothFields(
     return core->DoFastCopyWrapper(&surfDst,MFX_MEMTYPE_INTERNAL_FRAME|MFX_MEMTYPE_DXVA2_DECODER_TARGET|MFX_MEMTYPE_FROM_ENCODE, &surfSrc, MFX_MEMTYPE_EXTERNAL_FRAME|MFX_MEMTYPE_SYSTEM_MEMORY);
 }
 
-void MfxHwH264Encode::CopyFrameData(
-    const mfxFrameData& dst,
-    const mfxFrameData& src,
-    const mfxFrameInfo& info,
-    mfxU32 fieldId)
-{
-    mfxU32 height = info.Height;
-    mfxU32 srcOffset = 0;
-    mfxU32 dstOffset = 0;
-    mfxU32 srcPitch = src.Pitch;
-    mfxU32 dstPitch = dst.Pitch;
-
-    if ((info.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) == 0)
-    {
-        height /= 2;
-        srcOffset += fieldId * srcPitch;
-        dstOffset += fieldId * dstPitch;
-        srcPitch *= 2;
-        dstPitch *= 2;
-    }
-
-    IppiSize roiLuma = { static_cast<int>(info.Width), static_cast<int>(height) };
-    ippiCopy_8u_C1R(src.Y + srcOffset, srcPitch, dst.Y + dstOffset, dstPitch, roiLuma);
-
-    IppiSize roiChroma = { static_cast<int>(info.Width), static_cast<int>(height / 2) };
-    ippiCopy_8u_C1R(src.UV + srcOffset, srcPitch, dst.UV + dstOffset, dstPitch, roiChroma);
-}
 
 #if 0 // removed dependency from fwrite(). Custom writing to file shouldn't be present in MSDK releases w/o documentation and testing
 void MfxHwH264Encode::WriteFrameData(
@@ -5860,6 +5897,7 @@ mfxExtBuffer* MfxHwH264Encode::GetExtBuffer(mfxExtBuffer** extBuf, mfxU32 numExt
     return 0;
 }
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 mfxEncryptedData* MfxHwH264Encode::GetEncryptedData(mfxBitstream& bs, mfxU32 fieldId)
 {
     return (fieldId == 0)
@@ -5868,6 +5906,7 @@ mfxEncryptedData* MfxHwH264Encode::GetEncryptedData(mfxBitstream& bs, mfxU32 fie
             ? bs.EncryptedData->Next
             : 0;
 }
+#endif
 
 mfxU8 MfxHwH264Encode::ConvertFrameTypeMfx2Ddi(mfxU32 type)
 {
@@ -6079,12 +6118,12 @@ bool SliceDividerHsw::Next(SliceDividerState & state)
     }
 }
 
-SliceDividerLync::SliceDividerLync(
+SliceDividerTemporalScalability::SliceDividerTemporalScalability(
     mfxU32 sliceSizeInMbs,
     mfxU32 widthInMbs,
     mfxU32 heightInMbs)
 {
-    m_pfNext              = &SliceDividerLync::Next;
+    m_pfNext              = &SliceDividerTemporalScalability::Next;
     m_numMbInRow          = 1;
     m_numMbRow            = heightInMbs*widthInMbs;
     m_currSliceFirstMbRow = 0;
@@ -6094,7 +6133,7 @@ SliceDividerLync::SliceDividerLync(
     m_leftSlice           = m_numSlice;
 }
 
-bool SliceDividerLync::Next(SliceDividerState & state)
+bool SliceDividerTemporalScalability::Next(SliceDividerState & state)
 {
     state.m_leftMbRow -= state.m_currSliceNumMbRow;
     state.m_leftSlice -= 1;
@@ -6114,12 +6153,12 @@ bool SliceDividerLync::Next(SliceDividerState & state)
     }
 }
 
-SliceDividerVDEncLync::SliceDividerVDEncLync(
+SliceDividerLowPowerTemporalScalability::SliceDividerLowPowerTemporalScalability(
     mfxU32 sliceSizeInMbs,
     mfxU32 widthInMbs,
     mfxU32 heightInMbs)
 {
-    m_pfNext              = &SliceDividerVDEncLync::Next;
+    m_pfNext              = &SliceDividerLowPowerTemporalScalability::Next;
     m_numMbInRow          = 1;
     m_numMbRow            = heightInMbs*widthInMbs;
     m_currSliceFirstMbRow = 0;
@@ -6129,7 +6168,7 @@ SliceDividerVDEncLync::SliceDividerVDEncLync(
     m_leftSlice           = m_numSlice;
 }
 
-bool SliceDividerVDEncLync::Next(SliceDividerState & state)
+bool SliceDividerLowPowerTemporalScalability::Next(SliceDividerState & state)
 {
     state.m_leftMbRow -= state.m_currSliceNumMbRow;
     state.m_leftSlice -= 1;
@@ -6149,12 +6188,12 @@ bool SliceDividerVDEncLync::Next(SliceDividerState & state)
     }
 }
 
-SliceDividerVDEnc::SliceDividerVDEnc(
+SliceDividerLowPower::SliceDividerLowPower(
     mfxU32 numSlice,
     mfxU32 widthInMbs,
     mfxU32 heightInMbs)
 {
-    m_pfNext              = &SliceDividerVDEnc::Next;
+    m_pfNext              = &SliceDividerLowPower::Next;
     m_numSlice            = IPP_MAX(1, IPP_MIN(heightInMbs, numSlice));
     m_numMbInRow          = widthInMbs;
     m_numMbRow            = heightInMbs;
@@ -6178,7 +6217,7 @@ SliceDividerVDEnc::SliceDividerVDEnc(
     m_leftSlice           = n;
 }
 
-bool SliceDividerVDEnc::Next(SliceDividerState & state)
+bool SliceDividerLowPower::Next(SliceDividerState & state)
 {
     state.m_leftMbRow -= state.m_currSliceNumMbRow;
     state.m_leftSlice -= 1;
@@ -6208,13 +6247,13 @@ SliceDivider MfxHwH264Encode::MakeSliceDivider(
 {
     if(isLowPower){
         if(sliceHwCaps > 0 && sliceSizeInMbs > 0)
-            return SliceDividerVDEncLync(sliceSizeInMbs, widthInMbs, heightInMbs);
+            return SliceDividerLowPowerTemporalScalability(sliceSizeInMbs, widthInMbs, heightInMbs);
 
-        return SliceDividerVDEnc(numSlice, widthInMbs, heightInMbs);
+        return SliceDividerLowPower(numSlice, widthInMbs, heightInMbs);
     }
 
     if(sliceHwCaps > 0 && sliceSizeInMbs > 0)
-        return SliceDividerLync(sliceSizeInMbs, widthInMbs, heightInMbs);
+        return SliceDividerTemporalScalability(sliceSizeInMbs, widthInMbs, heightInMbs);
 
     switch (sliceHwCaps)
     {
@@ -6318,22 +6357,25 @@ void SliceDividerSnb::Test()
     TestSliceDividerWithReport( 8,  480,  320 / 2, 10,  1,  1);
 }
 
-// D3D9Encoder
-
 MfxVideoParam::MfxVideoParam()
     : mfxVideoParam()
     , m_extOpt()
     , m_extOpt2()
     , m_extOpt3()
     , m_extOptSpsPps()
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     , m_extOptPavp()
+    , m_extSpecModes()
+#endif
     , m_extVideoSignal()
     , m_extOpaque()
     , m_extMvcSeqDescr()
     , m_extPicTiming()
     , m_extTempLayers()
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
     , m_extSvcSeqDescr()
     , m_extSvcRateCtrl()
+#endif
     , m_extEncResetOpt()
     , m_extEncRoi()
     , m_extFeiParam()
@@ -6342,12 +6384,11 @@ MfxVideoParam::MfxVideoParam()
     , m_extDirtyRect()
     , m_extMoveRect()
     , m_extOptDdi()
-    #ifdef MFX_UNDOCUMENTED_DUMP_FILES
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
     , m_extDumpFiles()
-    #endif
+#endif
     , m_extSps()
     , m_extPps()
-    , m_extSpecModes()
     , m_extFeiOpt()
     , calcParam()
 {
@@ -6424,6 +6465,7 @@ void MfxVideoParam::SyncVideoToCalculableParam()
         mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT)
         calcParam.WinBRCMaxAvgKbps = m_extOpt3.WinBRCMaxAvgKbps * multiplier;
 
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
     if (IsSvcProfile(mfx.CodecProfile))
     {
         calcParam.numTemporalLayer = 0;
@@ -6449,6 +6491,7 @@ void MfxVideoParam::SyncVideoToCalculableParam()
         }
     }
     else
+#endif
     {
         calcParam.numTemporalLayer = 0;
         calcParam.tid[0]   = 0;
@@ -6464,7 +6507,7 @@ void MfxVideoParam::SyncVideoToCalculableParam()
         }
 
         if (calcParam.numTemporalLayer)
-            calcParam.lyncMode = 1;
+            calcParam.tempScalabilityMode = 1;
 
         calcParam.numDependencyLayer = 1;
         calcParam.numLayersTotal     = 1;
@@ -6492,6 +6535,7 @@ void MfxVideoParam::SyncVideoToCalculableParam()
         calcParam.mvcPerViewPar.codecLevel       = mfx.CodecLevel;
     }
 
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
     if (IsSvcProfile(mfx.CodecProfile))
     {
         calcParam.numLayersTotal     = 0;
@@ -6511,6 +6555,7 @@ void MfxVideoParam::SyncVideoToCalculableParam()
 
         calcParam.dqId1Exists = m_extSvcSeqDescr.DependencyLayer[calcParam.did[0]].QualityNum > 1 ? 1 : 0;
     }
+#endif
 }
 
 void MfxVideoParam::SyncCalculableToVideoParam()
@@ -6594,14 +6639,19 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
 
     CONSTRUCT_EXT_BUFFER(mfxExtCodingOption,         m_extOpt);
     CONSTRUCT_EXT_BUFFER(mfxExtCodingOptionSPSPPS,   m_extOptSpsPps);
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     CONSTRUCT_EXT_BUFFER(mfxExtPAVPOption,           m_extOptPavp);
+    CONSTRUCT_EXT_BUFFER(mfxExtSpecialEncodingModes, m_extSpecModes);
+#endif
     CONSTRUCT_EXT_BUFFER(mfxExtVideoSignalInfo,      m_extVideoSignal);
     CONSTRUCT_EXT_BUFFER(mfxExtOpaqueSurfaceAlloc,   m_extOpaque);
     CONSTRUCT_EXT_BUFFER(mfxExtMVCSeqDesc,           m_extMvcSeqDescr);
     CONSTRUCT_EXT_BUFFER(mfxExtPictureTimingSEI,     m_extPicTiming);
     CONSTRUCT_EXT_BUFFER(mfxExtAvcTemporalLayers,    m_extTempLayers);
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
     CONSTRUCT_EXT_BUFFER(mfxExtSVCSeqDesc,           m_extSvcSeqDescr);
     CONSTRUCT_EXT_BUFFER(mfxExtSVCRateControl,       m_extSvcRateCtrl);
+#endif
     CONSTRUCT_EXT_BUFFER(mfxExtCodingOptionDDI,      m_extOptDdi);
 #ifdef MFX_UNDOCUMENTED_DUMP_FILES
     CONSTRUCT_EXT_BUFFER(mfxExtDumpFiles,            m_extDumpFiles);
@@ -6614,7 +6664,6 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     CONSTRUCT_EXT_BUFFER(mfxExtCodingOption3,        m_extOpt3);
     CONSTRUCT_EXT_BUFFER(mfxExtChromaLocInfo,        m_extChromaLoc);
     CONSTRUCT_EXT_BUFFER(mfxExtFeiParam,             m_extFeiParam);
-    CONSTRUCT_EXT_BUFFER(mfxExtSpecialEncodingModes, m_extSpecModes);
     CONSTRUCT_EXT_BUFFER(mfxExtPredWeightTable,      m_extPwt);
     CONSTRUCT_EXT_BUFFER(mfxExtDirtyRect,            m_extDirtyRect);
     CONSTRUCT_EXT_BUFFER(mfxExtMoveRect,             m_extMoveRect);
@@ -6627,7 +6676,9 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
 #undef CONSTRUCT_EXT_BUFFER_EX
 
     ExtParam = m_extParam;
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE) && defined (MFX_UNDOCUMENTED_DUMP_FILES) && defined(MFX_ENABLE_SVC_VIDEO_ENCODE_HW)
     assert(NumExtParam == mfxU16(sizeof m_extParam / sizeof m_extParam[0]));
+#endif
 }
 
 void MfxVideoParam::ConstructMvcSeqDesc(
@@ -7364,6 +7415,7 @@ namespace
         }
     }
 
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
     void WriteSpsSvcExtension(
         OutputBitstream &          writer,
         mfxExtSpsHeader const &    sps,
@@ -7394,6 +7446,7 @@ namespace
             writer.PutBit(extSvc.adaptiveTcoeffLevelPredictionFlag);        // adaptive_tcoeff_level_prediction_flag
         writer.PutBit(extSvc.sliceHeaderRestrictionFlag);                   // slice_header_restriction_flag
     }
+#endif // #ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
 }
 
 mfxU32 MfxHwH264Encode::WriteSpsHeader(
@@ -7430,6 +7483,7 @@ mfxU32 MfxHwH264Encode::WriteSpsHeader(
 
     WriteSpsData(writer, sps);
 
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
     if (IsSvcProfile(sps.profileIdc))
     {
         assert(spsExt.BufferId == MFX_EXTBUFF_SPS_SVC_HEADER);
@@ -7438,7 +7492,9 @@ mfxU32 MfxHwH264Encode::WriteSpsHeader(
         WriteSpsSvcExtension(writer, sps, extSvc);
         writer.PutBit(0);               // svc_vui_parameters_present_flag
     }
-    else if (IsMvcProfile(sps.profileIdc))
+    else
+#endif
+    if (IsMvcProfile(sps.profileIdc))
     {
         assert(spsExt.BufferId == MFX_EXTBUFF_MVC_SEQ_DESC);
         mfxExtMVCSeqDesc const & extMvc = (mfxExtMVCSeqDesc const &)spsExt;
@@ -7665,12 +7721,14 @@ bool MfxHwH264Encode::IsMvcProfile(mfxU32 profile)
         profile == MFX_PROFILE_AVC_MULTIVIEW_HIGH;
 }
 
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
 bool MfxHwH264Encode::IsSvcProfile(mfxU32 profile)
 {
     return
         profile == MFX_PROFILE_AVC_SCALABLE_BASELINE ||
         profile == MFX_PROFILE_AVC_SCALABLE_HIGH;
 }
+#endif
 
 bool MfxHwH264Encode::operator ==(
     mfxExtSpsHeader const & lhs,
@@ -7764,27 +7822,37 @@ namespace
     void PrepareSpsPpsHeaders(
         MfxVideoParam const &               par,
         std::vector<mfxExtSpsHeader> &      sps,
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
         std::vector<mfxExtSpsSvcHeader> &   subset,
+#endif
         std::vector<mfxExtPpsHeader> &      pps)
     {
         mfxExtSpsHeader const *  extSps = GetExtBuffer(par);
         mfxExtPpsHeader const *  extPps = GetExtBuffer(par);
-        mfxExtSVCSeqDesc const * extSvc = GetExtBuffer(par);
 
         mfxU16 numViews             = extSps->profileIdc == MFX_PROFILE_AVC_STEREO_HIGH ? 2 : 1;
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
         mfxU32 numDep               = par.calcParam.numDependencyLayer;
         mfxU32 firstDid             = par.calcParam.did[0];
         mfxU32 lastDid              = par.calcParam.did[numDep - 1];
-        mfxU32 numQualityAtLastDep  = extSvc->DependencyLayer[lastDid].QualityNum;
 
+        mfxExtSVCSeqDesc const * extSvc = GetExtBuffer(par);
+        mfxU32 numQualityAtLastDep  = extSvc->DependencyLayer[lastDid].QualityNum;
+#endif
         mfxU16 heightMul = 2 - extSps->frameMbsOnlyFlag;
 
         // prepare sps for base layer
         sps[0] = *extSps;
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
         if (IsSvcProfile(par.mfx.CodecProfile)) // force SPS id to 0 for SVC profile only. For other profiles should be able to encode custom SPS id
             sps[0].seqParameterSetId         = 0;
+
         sps[0].picWidthInMbsMinus1       = extSvc->DependencyLayer[firstDid].Width / 16 - 1;
         sps[0].picHeightInMapUnitsMinus1 = extSvc->DependencyLayer[firstDid].Height / 16 / heightMul - 1;
+#else
+        sps[0].picWidthInMbsMinus1       = par.mfx.FrameInfo.Width / 16 - 1;
+        sps[0].picHeightInMapUnitsMinus1 = par.mfx.FrameInfo.Height / 16 / heightMul - 1;
+#endif
 
         if (numViews > 1)
         {
@@ -7808,8 +7876,9 @@ namespace
             return;
         }
 
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
         // prepare sps for enhanced spatial layers
-        for (mfxU32 i = 0, spsidx = 1; i < numDep; i++)
+        for (mfxU32 i = 0, spsidx = 1; i < numDep; i++, spsidx++)
         {
             mfxU32 did = par.calcParam.did[i];
             if (i == 0 && extSvc->DependencyLayer[did].QualityNum == 1)
@@ -7836,9 +7905,12 @@ namespace
             subset[spsidx - 1].sliceHeaderRestrictionFlag                   = 0;
             subset[spsidx - 1].seqTcoeffLevelPredictionFlag                 = mfxU8(extSvc->DependencyLayer[did].QualityLayer[0].TcoeffPredictionFlag);
             subset[spsidx - 1].adaptiveTcoeffLevelPredictionFlag            = 0;
-            spsidx++;
         }
+#endif // #ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
 
+        pps[0] = *extPps;
+
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
         // prepare pps for base and enhanced spatial layers
         for (mfxU32 i = 0; i < numDep; i++)
         {
@@ -7854,6 +7926,7 @@ namespace
                 pps[i].seqParameterSetId = mfxU8(i);
                 pps[i].picParameterSetId = mfxU8(i);
             }
+
             pps[i].constrainedIntraPredFlag = ((i == numDep - 1 && numQualityAtLastDep == 1) || simulcast) ? 0 : 1;
         }
 
@@ -7865,6 +7938,7 @@ namespace
             pps.back().picParameterSetId        = mfxU8(numDep);
             pps.back().constrainedIntraPredFlag = 0;
         }
+#endif // #ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
     }
 };
 
@@ -7874,11 +7948,16 @@ void HeaderPacker::Init(
     bool                  emulPrev)
 {
     mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(par);
-    mfxExtSVCSeqDesc const *      extSvc = GetExtBuffer(par);
     mfxExtSpsHeader const *       extSps = GetExtBuffer(par);
     mfxExtCodingOption2 const *   extOpt2 = GetExtBuffer(par);
 
     mfxU16 numViews = extSps->profileIdc == MFX_PROFILE_AVC_STEREO_HIGH ? 2 : 1;
+
+    mfxU32 numSpsHeaders = numViews;
+    mfxU32 numPpsHeaders = numViews;
+
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
+    mfxExtSVCSeqDesc const *      extSvc = GetExtBuffer(par);
     mfxU32 numDep   = par.calcParam.numDependencyLayer;
     mfxU32 firstDid = par.calcParam.did[0];
     mfxU32 lastDid  = par.calcParam.did[numDep - 1];
@@ -7889,14 +7968,14 @@ void HeaderPacker::Init(
     mfxU32 additionalSpsForFirstSpatialLayer = (numQualityAtFirstDep > 1);
     mfxU32 additionalPpsForLastSpatialLayer  = (numQualityAtLastDep > 1);
 
-    mfxU32 numSpsHeaders = IPP_MAX(numDep + additionalSpsForFirstSpatialLayer, numViews);
-    mfxU32 numPpsHeaders = IPP_MAX(numDep + additionalPpsForLastSpatialLayer,  numViews);
+    numSpsHeaders = IPP_MAX(numDep + additionalSpsForFirstSpatialLayer, numViews);
+    numPpsHeaders = IPP_MAX(numDep + additionalPpsForLastSpatialLayer,  numViews);
+#endif // #ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
 
     mfxU32 maxNumSlices = GetMaxNumSlices(par);
 
     m_sps.resize(numSpsHeaders);
     m_pps.resize(numPpsHeaders);
-    m_subset.resize(numSpsHeaders / numViews - 1);
     m_packedSps.resize(numSpsHeaders);
     m_packedPps.resize(numPpsHeaders);
     m_packedSlices.resize(maxNumSlices);
@@ -7905,7 +7984,7 @@ void HeaderPacker::Init(
 
     Zero(m_sps);
     Zero(m_pps);
-    Zero(m_subset);
+    
     Zero(m_packedAud);
     Zero(m_packedSps);
     Zero(m_packedPps);
@@ -7920,12 +7999,20 @@ void HeaderPacker::Init(
 
     m_numMbPerSlice = extOpt2->NumMbPerSlice;
 
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
+    m_subset.resize(numSpsHeaders / numViews - 1);
+    Zero(m_subset);
     PrepareSpsPpsHeaders(par, m_sps, m_subset, m_pps);
+#else
+    PrepareSpsPpsHeaders(par, m_sps, m_pps);
+#endif
 
     // prepare data for slice level
-    m_needPrefixNalUnit       = (IsSvcProfile(par.mfx.CodecProfile) || (par.calcParam.numTemporalLayer > 0)) && (par.mfx.LowPower != MFX_CODINGOPTION_ON);//VDEnc limitation for temporal scalability we need to patch bitstream with SVC NAL after encoding
-    m_cabacInitIdc            = extDdi->CabacInitIdcPlus1 - 1;
-    m_directSpatialMvPredFlag = extDdi->DirectSpatialMvPredFlag;
+#ifndef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
+    m_needPrefixNalUnit       = (par.calcParam.numTemporalLayer > 0) && (par.mfx.LowPower != MFX_CODINGOPTION_ON);//LowPower limitation for temporal scalability we need to patch bitstream with SVC NAL after encoding
+#else
+    m_needPrefixNalUnit       = (IsSvcProfile(par.mfx.CodecProfile) || (par.calcParam.numTemporalLayer > 0)) && (par.mfx.LowPower != MFX_CODINGOPTION_ON);//LowPower limitation for temporal scalability we need to patch bitstream with SVC NAL after encoding
+
     for (mfxU32 i = 0; i < numDep; i++)
     {
         mfxU32 did     = par.calcParam.did[i];
@@ -7945,9 +8032,13 @@ void HeaderPacker::Init(
             m_ppsIdx[did][qid] = mfxU8(did);
         }
     }
+
     if (additionalPpsForLastSpatialLayer)
         m_ppsIdx[lastDid][numQualityAtLastDep - 1]++;
+#endif // #ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
 
+    m_cabacInitIdc            = extDdi->CabacInitIdcPlus1 - 1;
+    m_directSpatialMvPredFlag = extDdi->DirectSpatialMvPredFlag;
 
     // pack headers
     OutputBitstream obs(Begin(m_headerBuffer), End(m_headerBuffer), m_emulPrev);
@@ -7956,6 +8047,7 @@ void HeaderPacker::Init(
     mfxU8 *                    bufBegin = Begin(m_headerBuffer);
     mfxU32                     numBits  = 0;
 
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
     // pack scalability sei
     Zero(m_packedScalabilitySei);
     if (IsSvcProfile(par.mfx.CodecProfile))
@@ -7965,13 +8057,18 @@ void HeaderPacker::Init(
         m_packedScalabilitySei = MakePackedByteBuffer(bufBegin, numBits / 8, m_emulPrev ? 0 : 4);
         bufBegin += numBits / 8;
     }
+#endif // #ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
 
     // pack sps for base and enhanced spatial layers with did > 0
     for (size_t i = 0; i < m_sps.size(); i++)
     {
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
         numBits = (i == 0 || (numViews > 1))
             ? WriteSpsHeader(obs, m_sps[i])
             : WriteSpsHeader(obs, m_sps[i], m_subset[i - 1].Header);
+#else
+        numBits = WriteSpsHeader(obs, m_sps[i]);
+#endif
         *bufDesc++ = MakePackedByteBuffer(bufBegin, numBits / 8, m_emulPrev ? 0 : 4);
         bufBegin += numBits / 8;
     }
@@ -8166,14 +8263,13 @@ mfxU32 HeaderPacker::WriteSlice(
         firstMbInSlice = divider.GetFirstMbInSlice();
 
     mfxU32 sliceHeaderRestrictionFlag = 0;
-    mfxU32 sliceSkipFlag = 0;
 
     mfxU8 startcode[4] = { 0, 0, 0, 1};
     mfxU8 * pStartCode = startcode;
 #if !defined(ANDROID)
     if (!m_longStartCodes)
     {
-        //to avoid slice header corruption due to VDEnc limitation - we need to pass packed slice without zero byte and patch after encoding
+        //to avoid slice header corruption due to LowPower limitation - we need to pass packed slice without zero byte and patch after encoding
         if (task.m_AUStartsFromSlice[fieldId] == false || m_hwCaps.SliceLevelRateCtrl || sliceId > 0)
             pStartCode++;
     }
@@ -8316,8 +8412,11 @@ mfxU32 HeaderPacker::WriteSlice(
             obs.PutSe(sliceBetaOffsetDiv2);
         }
     }
+
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
     if (nalUnitType == 20)
     {
+        mfxU32 sliceSkipFlag = 0;
         mfxExtSpsSvcHeader const & subset = m_subset[m_spsIdx[task.m_did][task.m_qid] - 1];
 
         if (!noInterLayerPredFlag && task.m_qid == 0)
@@ -8394,9 +8493,9 @@ mfxU32 HeaderPacker::WriteSlice(
             obs.PutBits(scanIdxEnd, 4);
         }
     }
-
+#endif // #ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
     return obs.GetNumBits();
-}// FIXME: add svc extension here
+}
 
 mfxU32 HeaderPacker::WriteSlice(
     OutputBitstream & obs,
@@ -8405,6 +8504,8 @@ mfxU32 HeaderPacker::WriteSlice(
     mfxU32            firstMbInSlice,
     mfxU32            numMbInSlice)
 {
+    numMbInSlice = numMbInSlice;
+
     mfxU32 sliceType    = ConvertMfxFrameType2SliceType(task.m_type[fieldId]) % 5;
     mfxU32 refPicFlag   = !!(task.m_type[fieldId] & MFX_FRAMETYPE_REF);
     mfxU32 idrPicFlag   = !!(task.m_type[fieldId] & MFX_FRAMETYPE_IDR);
@@ -8421,7 +8522,6 @@ mfxU32 HeaderPacker::WriteSlice(
     //mfxU32 picHeightInMBs      = (sps.picHeightInMapUnitsMinus1 + 1) * picHeightMultiplier;
 
     mfxU32 sliceHeaderRestrictionFlag = 0;
-    mfxU32 sliceSkipFlag = 0;
 #if defined(ANDROID)
     mfxU8 startcode[4] = { 0, 0, 0, 1 };
 #else
@@ -8572,8 +8672,11 @@ mfxU32 HeaderPacker::WriteSlice(
             obs.PutSe(sliceBetaOffsetDiv2);
         }
     }
+
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
     if (nalUnitType == 20)
     {
+        mfxU32 sliceSkipFlag = 0;
         mfxExtSpsSvcHeader const & subset = m_subset[m_spsIdx[task.m_did][task.m_qid] - 1];
 
         if (!noInterLayerPredFlag && task.m_qid == 0)
@@ -8650,7 +8753,7 @@ mfxU32 HeaderPacker::WriteSlice(
             obs.PutBits(scanIdxEnd, 4);
         }
     }
-
+#endif // #ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
     return obs.GetNumBits();
 }
 

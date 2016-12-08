@@ -5,12 +5,12 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
 //
 
 // Service function for inverse Transform 32x32 AVX2
 
-//aya: comment from Nablet guys:
+// comment from Nablet guys:
 // This is part of function DCTInverse32x32<_avx2>(). Unfortunately, because of some 
 // bug in Intel Compiler (probably) it can not be included in the same source file. 
 // Even with turned off interprocedural optimization.

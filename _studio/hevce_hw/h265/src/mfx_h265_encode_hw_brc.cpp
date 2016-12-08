@@ -1153,7 +1153,8 @@ mfxBRCStatus H265BRC::UpdateQuantHRD(mfxI32 totalFrameBits, mfxBRCStatus sts, mf
     return sts;
 }
 
-/*mfxStatus H265BRC::GetInitialCPBRemovalDelay(mfxU32 *initial_cpb_removal_delay, mfxI32 recode)
+#if 0
+mfxStatus H265BRC::GetInitialCPBRemovalDelay(mfxU32 *initial_cpb_removal_delay, mfxI32 recode)
 {
     mfxU32 cpb_rem_del_u32;
     mfxU64 cpb_rem_del_u64, temp1_u64, temp2_u64;
@@ -1182,7 +1183,8 @@ mfxBRCStatus H265BRC::UpdateQuantHRD(mfxI32 totalFrameBits, mfxBRCStatus sts, mf
 
     *initial_cpb_removal_delay = cpb_rem_del_u32;
     return MFX_ERR_NONE;
-}*/
+}
+#endif
 
 void  H265BRC::GetMinMaxFrameSize(mfxI32 *minFrameSizeInBits, mfxI32 *maxFrameSizeInBits)
 {

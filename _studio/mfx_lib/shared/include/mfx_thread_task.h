@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
 //
 
 #if !defined(__MFX_THREAD_TASK_H)
@@ -53,14 +53,9 @@ struct MFX_THREAD_TASK_PARAMETERS
         // ENC, PAK parameters
         struct
         {
-            mfxFrameCUC *cuc;                                   // [IN, OUT] pointer to encoding parameters
-            void *pBRC;                                         // [IN] pointer to the BRC object
-        } enc, pak;
-        struct
-        {
             mfxENCInput  *in; 
             mfxENCOutput *out;
-        } enc_ext;
+        } enc;
         struct
         {
             mfxPAKInput  *in;

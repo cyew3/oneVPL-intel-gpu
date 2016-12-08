@@ -154,8 +154,6 @@ struct sFrameBuffer
     sFrameBuffer();
 
     sVideoFrameBuffer     frame_p_c_n[DPB_SIZE*2];    // previous, current and next frames
-    Ipp8u                 *ptr_context_data; // pointer to allocated data
-    MemID                 mid_context_data;  // pointer to allocated data
     Ipp32u                Y_comp_height;
     Ipp32u                Y_comp_pitch;
     Ipp32u                U_comp_pitch;
@@ -212,7 +210,7 @@ struct sPictureHeader
     bool             first_in_sequence;
 };
 
-struct  IppVideoContext
+struct  VideoContext
 {
 //Slice
     Ipp32s       slice_vertical_position;
@@ -240,13 +238,13 @@ DECLALIGN(16) Ipp16s vector[8];
 
 //Block
 DECLALIGN(16)
-    IppiDecodeIntraSpec_MPEG2 decodeIntraSpec;
+    DecodeIntraSpec_MPEG2 decodeIntraSpec;
 DECLALIGN(8)
-    IppiDecodeInterSpec_MPEG2 decodeInterSpec;
+    DecodeInterSpec_MPEG2 decodeInterSpec;
 DECLALIGN(8)
-    IppiDecodeIntraSpec_MPEG2 decodeIntraSpecChroma;
+    DecodeIntraSpec_MPEG2 decodeIntraSpecChroma;
 DECLALIGN(8)
-    IppiDecodeInterSpec_MPEG2 decodeInterSpecChroma;
+    DecodeInterSpec_MPEG2 decodeInterSpecChroma;
 
 //Bitstream
     Ipp8u*       bs_curr_ptr;
@@ -270,21 +268,6 @@ DECLALIGN(8)
     VideoStreamType stream_type;
     ColorFormat color_format;
 
-};
-
-struct DecodeSpec
-{
-//Block
-DECLALIGN(16)
-    IppiDecodeIntraSpec_MPEG2 decodeIntraSpec;
-DECLALIGN(8)
-    IppiDecodeInterSpec_MPEG2 decodeInterSpec;
-DECLALIGN(8)
-    IppiDecodeIntraSpec_MPEG2 decodeIntraSpecChroma;
-DECLALIGN(8)
-    IppiDecodeInterSpec_MPEG2 decodeInterSpecChroma;
-
-Ipp32s      flag;
 };
 
 struct Mpeg2Bitstream

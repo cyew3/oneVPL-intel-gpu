@@ -52,13 +52,6 @@ public:
         VAAPIAdapter(VAAPIVideoCORE *pVAAPICore):m_pVAAPICore(pVAAPICore)
         {
         };
-    //    virtual mfxStatus  GetD3DService(mfxU16 width,
-    //                                     mfxU16 height,
-    //                                     VADisplay** pDisplay = NULL)
-    //    {
-    //        return m_pVAAPICore->GetD3DService(width, height, pDisplay);
-    //    };        
-    //
     protected:
         VAAPIVideoCORE *m_pVAAPICore;
     
@@ -92,7 +85,6 @@ public:
     virtual mfxU32 GetAdapterNumber(void) {return m_adapterNum;}
     virtual eMFXPlatform  GetPlatformType() {return  MFX_PLATFORM_HARDWARE;}
 
-    virtual mfxStatus DoFastCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc);
     virtual mfxStatus DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc);
     virtual mfxStatus DoFastCopyWrapper(mfxFrameSurface1 *pDst, mfxU16 dstMemType, mfxFrameSurface1 *pSrc, mfxU16 srcMemType);
 
@@ -171,22 +163,23 @@ class PointerProxy
 
 inline bool IsSupported__VAEncMiscParameterPrivate(void)
 {
-#if defined(VAAPI_DRIVER_VPG)
+#if !defined(VAAPI_OPEN_SOURCE_DRIVER)
     return true;
 #else
     return false;
 #endif
 }
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 inline bool IsSupported__VAHDCPEncryptionParameterBuffer(void)
 {
-#if defined(ANDROID) && defined(VAAPI_DRIVER_VPG)
+#if defined(ANDROID) && !defined(VAAPI_OPEN_SOURCE_DRIVER)
     return true;
 #else
     return false;
 #endif
 }
-
+#endif
 
 #endif // __LIBMFX_CORE__VAAPI_H__
 #endif // MFX_VA_LINUX

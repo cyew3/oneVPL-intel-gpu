@@ -16,8 +16,6 @@
 
 #include "umc_va_base.h"
 
-#ifndef UMC_RESTRICTED_CODE_VA
-
 #ifdef UMC_VA_DXVA
 #include "umc_hevc_ddi.h"
 #endif
@@ -202,6 +200,7 @@ private:
 
 };
 
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
 class PackerVA_Widevine: public PackerVA
 {
 public:
@@ -213,6 +212,7 @@ public:
 
     virtual void PackAU(const H265DecoderFrame *pCurrentFrame, TaskSupplier_H265 * supplier);
 };
+#endif
 
 #endif // UMC_VA_LINUX
 
@@ -223,6 +223,5 @@ inline bool IsVLDProfile (Ipp32s profile)
 
 } // namespace UMC_HEVC_DECODER
 
-#endif // UMC_RESTRICTED_CODE_VA
 #endif /* __UMC_H265_VA_PACKER_H */
 #endif // UMC_ENABLE_H265_VIDEO_DECODER

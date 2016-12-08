@@ -19,8 +19,6 @@
 #include "umc_h265_task_supplier.h"
 #include "umc_h265_tr_quant.h"
 
-#include "umc_h265_timing.h"
-
 #include "mfx_trace.h"
 #include "umc_h265_debug.h"
 #include "umc_h265_ipplevel.h"
@@ -594,21 +592,17 @@ UMC::Status H265SegmentDecoderMultiThreaded::DecRecSegment(H265Task & task)
 // SAO filter task callback
 UMC::Status H265SegmentDecoderMultiThreaded::SAOFrameTask(H265Task & task)
 {
-    START_TICK
 #ifndef MFX_VA
     m_pCurrentFrame->getCD()->m_SAO.SAOProcess(m_pCurrentFrame, task.m_iFirstMB, task.m_iMBToProcess);
 #endif
-    END_TICK(sao_time)
     return UMC::UMC_OK;
 }
 
 // Deblocking filter task callback
 UMC::Status H265SegmentDecoderMultiThreaded::DeblockSegmentTask(H265Task & task)
 {
-    START_TICK
     // when there is slice groups or threaded deblocking
     DeblockSegment(task);
-    END_TICK(deblocking_time)
     return UMC::UMC_OK;
 
 } // Status H265SegmentDecoderMultiThreaded::DeblockSegmentTask(Ipp32s iCurMBNumber, Ipp32s &iMBToDeblock)
@@ -725,10 +719,8 @@ UMC::Status H265SegmentDecoderMultiThreaded::DecodeSegment(Ipp32s curCUAddr, Ipp
         m_cu = m_pCurrentFrame->getCU(rsCUAddr);
         m_cu->initCU(this, rsCUAddr);
 
-        START_TICK;
         DecodeSAOOneLCU();
         bool is_last = DecodeCodingUnit_CABAC(); //decode CU
-        END_TICK(decode_time);
 
         if (is_last)
         {
@@ -811,9 +803,7 @@ UMC::Status H265SegmentDecoderMultiThreaded::ReconstructSegment(Ipp32s curCUAddr
 
     for (;;)
     {
-        START_TICK1;
         ReconstructCU(0, 0);
-        END_TICK1(reconstruction_time);
 
         curCUAddr++;
         Ipp32s newRSCUAddr = m_pCurrentFrame->m_CodingData->getCUOrderMap(curCUAddr);
@@ -851,14 +841,10 @@ UMC::Status H265SegmentDecoderMultiThreaded::DecodeSegmentCABAC_Single_H265(Ipp3
         m_context->m_coeffsRead = saveBuffer;
         m_context->m_coeffsWrite = saveBuffer;
 
-        START_TICK;
         DecodeSAOOneLCU();
         bool is_last = DecodeCodingUnit_CABAC(); //decode CU
-        END_TICK(decode_time);
 
-        START_TICK1;
         ReconstructCU(0, 0);
-        END_TICK1(reconstruction_time);
 
         if (is_last)
         {

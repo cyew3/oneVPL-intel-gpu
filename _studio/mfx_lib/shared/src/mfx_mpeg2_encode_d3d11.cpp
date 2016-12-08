@@ -21,9 +21,6 @@
 #include "vm_time.h"
 
 
-
-
-// aya: temporal solution
 #ifndef D3DDDIFMT_NV12
 #define D3DDDIFMT_NV12 (D3DDDIFORMAT)(MAKEFOURCC('N', 'V', '1', '2'))
 #endif
@@ -142,10 +139,10 @@ mfxStatus D3D11Encoder::QueryEncodeCaps(ENCODE_CAPS & caps)
         }
 
         D3D11_VIDEO_DECODER_DESC video_desc;
-        video_desc.SampleWidth  = 720;//aya: fake
-        video_desc.SampleHeight = 576;//aya: fake
+        video_desc.SampleWidth  = 720;
+        video_desc.SampleHeight = 576;
         video_desc.OutputFormat = DXGI_FORMAT_NV12;
-        video_desc.Guid = DXVA2_Intel_Encode_MPEG2; //aya:??? guid
+        video_desc.Guid = DXVA2_Intel_Encode_MPEG2;
 
         UINT configCount = 0;
 
@@ -222,10 +219,6 @@ mfxStatus D3D11Encoder::Init_MPEG2_ENC(ExecuteBuffers* pExecuteBuffers, mfxU32 n
     sts = CreateMBDataBuffer(numRefFrames);
     MFX_CHECK_STS(sts);
     
-    // aya
-    //sts = CreateCompBuffers(pExecuteBuffers,numRefFrames);
-    //MFX_CHECK_STS(sts);
-
     sts = QueryMbDataLayout();
     MFX_CHECK_STS(sts);
 
@@ -339,9 +332,9 @@ mfxStatus D3D11Encoder::Init(
     video_desc.SampleWidth  = ((pExecuteBuffers->m_sps.FrameWidth +15)>>4)<<4;
     video_desc.SampleHeight = ((pExecuteBuffers->m_sps.FrameHeight+15)>>4)<<4;
     video_desc.OutputFormat = DXGI_FORMAT_NV12;
-    video_desc.Guid = DXVA2_Intel_Encode_MPEG2; //aya:??? guid
+    video_desc.Guid = DXVA2_Intel_Encode_MPEG2;
 
-    D3D11_VIDEO_DECODER_CONFIG video_config = {0}; // aya:!!!!!!!!
+    D3D11_VIDEO_DECODER_CONFIG video_config = {0};
     mfxU32 count;
 
     {
@@ -359,10 +352,7 @@ mfxStatus D3D11Encoder::Init(
         // MFX_CHECK_STS( mfxSts );
     //}    
 
-    // [2] Calling other D3D11 Video Decoder API (as for normal proc) - aya:FIXME:skipped
-
-    //hRes = CheckVideoDecoderFormat(NV12); //aya???
-    //CHECK_HRES(hRes);
+    // [2] Calling other D3D11 Video Decoder API (as for normal proc)
 
     // [4] CreateVideoDecoder
     // D3D11_VIDEO_DECODER_DESC video_desc;
@@ -426,7 +416,7 @@ mfxStatus D3D11Encoder::Init(
 
  
 
-    // [6] specific encoder caps - aya:skipped
+    // [6] specific encoder caps
 
     // [7] Query encode service caps: see QueryCompBufferInfo
 
@@ -579,12 +569,12 @@ mfxStatus D3D11Encoder::CreateMBDataBuffer(mfxU32 numRefFrames)
     request.NumFrameMin = (request.NumFrameMin < numRefFrames)? (mfxU16)numRefFrames:request.NumFrameMin;
     request.NumFrameSuggested = (request.NumFrameSuggested < request.NumFrameMin)? request.NumFrameMin:request.NumFrameSuggested;
 
-    // aya: d3d11 issue: P8 must be allocated 
+    // d3d11 issue: P8 must be allocated 
     if (m_allocResponseMB.NumFrameActual == 0)
     {
         mfxFrameAllocRequest tmp = request;
         tmp.NumFrameMin = tmp.NumFrameSuggested = 1;
-        // aya: it is wa for d3d11. 
+        // it is wa for d3d11. 
         // because P8 data (bitstream) for h264 encoder should be allocated by CreateBuffer()  
         // but P8 data (MBData) for MPEG2 encoder should be allocated by CreateTexture2D()
         tmp.Info.FourCC = D3DFMT_P8; //MFX_FOURCC_P8_MBDATA;
@@ -706,7 +696,7 @@ mfxStatus D3D11Encoder::Register(
 {
     type;
 
-    // aya: workarround for d3d11
+    // workarround for d3d11
     MFX_CHECK(type == D3D11_DDI_VIDEO_ENCODER_BUFFER_BITSTREAMDATA || type == D3D11_DDI_VIDEO_ENCODER_BUFFER_MBDATA ||type == D3DDDIFMT_NV12, MFX_ERR_NULL_PTR );       
 
     // we should register allocated HW bitstreams and recon surfaces
@@ -718,7 +708,7 @@ mfxStatus D3D11Encoder::Register(
     
     queue.resize(pResponse->NumFrameActual);
 
-    //aya:wo_d3d11
+    //wo_d3d11
     for (mfxU32 i = 0; i < pResponse->NumFrameActual; i++)
     {   
         mfxHDLPair handlePair;        
@@ -901,7 +891,7 @@ mfxStatus D3D11Encoder::Execute(
     mfxU32       RES_ID_MBLOCK      = 0;
     mfxU32       RES_ID_ORIGINAL    = 1;    
     mfxU32       RES_ID_REFERENCE   = 2;          // then goes all reference frames from dpb    
-    // aya: reconIdx == idxMb
+    // reconIdx == idxMb
     mfxU32       idxRecon = pExecuteBuffers->m_idxMb;
     mfxU32       RES_ID_RECONSTRUCT = RES_ID_REFERENCE + idxRecon;    
     
@@ -927,7 +917,7 @@ mfxStatus D3D11Encoder::Execute(
 
 
     // [4]. buffers in system memory (configuration buffers)    
-    mfxU32 compBufferCount = 10;//mfxU32(10 + m_packedSlice.size());    //aya fixme
+    mfxU32 compBufferCount = 10;//mfxU32(10 + m_packedSlice.size());
     std::vector<ENCODE_COMPBUFFERDESC>  encodeCompBufferDesc;
     encodeCompBufferDesc.resize(compBufferCount);
     Zero(encodeCompBufferDesc);
@@ -1233,7 +1223,7 @@ mfxStatus D3D11Encoder::FillMBBufferPointer(ExecuteBuffers* pExecuteBuffers)
         dst.Info.Height = mfxU16(numMB);
         dst.Info.FourCC = MFX_FOURCC_P8;
 
-        sts = m_core->DoFastCopy(&dst, &src);
+        sts = m_core->DoFastCopyExtended(&dst, &src);
         MFX_CHECK_STS(sts);
     }
 
@@ -1294,7 +1284,7 @@ mfxStatus D3D11Encoder::FillBSBuffer(mfxU32 nFeedback,mfxU32 nBitstream, mfxBits
     sts = m_core->LockFrame(Frame.MemId,&Frame);
     MFX_CHECK_STS(sts);
 
-
+    pEncrypt = pEncrypt;
 #ifdef PAVP_SUPPORT
     if (pEncrypt->m_bEncryptionMode)
     {
@@ -1339,7 +1329,7 @@ mfxStatus D3D11Encoder::RegisterRefFrames (const mfxFrameAllocResponse* pRespons
         m_reconFrames.indexes[i] = (mfxU16)i;
     }
 
-    return Register(pResponse, (D3D11_DDI_VIDEO_ENCODER_BUFFER_TYPE)D3DDDIFMT_NV12);// aya: FIXME
+    return Register(pResponse, (D3D11_DDI_VIDEO_ENCODER_BUFFER_TYPE)D3DDDIFMT_NV12);
 
     //return MFX_ERR_NONE;
 

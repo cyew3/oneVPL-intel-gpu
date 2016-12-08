@@ -241,14 +241,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\umc_color_space_conversion.cpp" />
-    <ClCompile Include="src\umc_d3d_video_processing.cpp" />
     <ClCompile Include="src\umc_deinterlacing.cpp" />
     <ClCompile Include="src\umc_video_processing.cpp" />
     <ClCompile Include="src\umc_video_resizing.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\umc_color_space_conversion.h" />
-    <ClInclude Include="include\umc_d3d_video_processing.h" />
     <ClInclude Include="include\umc_data_pointers_copy.h" />
     <ClInclude Include="include\umc_deinterlacing.h" />
     <ClInclude Include="include\umc_video_processing.h" />

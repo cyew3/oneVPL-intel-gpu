@@ -177,7 +177,6 @@ public:
     UMC::VideoDecoderParams m_vdPar;
 
     mfx_UMC_FrameAllocator *m_FrameAllocator;
-    mfx_UMC_FrameAllocator_NV12    *m_FrameAllocator_nv12;
 
     mfxFrameAllocRequest allocRequest;
     mfxFrameAllocResponse allocResponse;
@@ -285,9 +284,10 @@ protected:
 #endif
 
     UMC::MPEG2VideoDecoderHW * m_implUmcHW;
-    mfxExtPAVPOption m_pavpOpt;
 
-    mfx_UMC_FrameAllocator_D3D     *m_FrameAllocator_d3d;
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
+    mfxExtPAVPOption m_pavpOpt;
+#endif
 
     virtual mfxStatus ConstructFrame(mfxBitstream *bs, mfxFrameSurface1 *surface_work);
     mfxStatus PerformStatusCheck(void *pParam);
@@ -349,7 +349,9 @@ public:
 
     virtual mfxStatus GetVideoParam(mfxVideoParam *par);
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     static mfxStatus CheckProtectionSettings(mfxVideoParam *input, mfxVideoParam *output, VideoCORE *core);
+#endif
 
     virtual mfxStatus DecodeFrame(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 *surface_out)
         {bs; surface_work; surface_out;return MFX_ERR_NONE;};

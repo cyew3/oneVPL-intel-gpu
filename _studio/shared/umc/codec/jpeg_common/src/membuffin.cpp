@@ -90,7 +90,7 @@ JERRCODE CMemBuffInput::Read(void* buf,uic_size_t len,uic_size_t* cnt)
 
   rb = (uic_size_t)IPP_MIN((int)len,static_cast<int>(m_buflen - m_currpos));
 
-  ippsCopy_8u(m_buf + m_currpos,(Ipp8u*)buf,rb);
+  MFX_INTERNAL_CPY((Ipp8u*)buf, m_buf + m_currpos,rb);
 
   m_currpos += rb;
 

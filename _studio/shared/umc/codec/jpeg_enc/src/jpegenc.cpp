@@ -872,8 +872,8 @@ JERRCODE CJPEGEncoder::FillACTable(int numTable, Ipp8u* pBits, Ipp8u* pValues)
     const Ipp8u* bits = m_actbl[numTable].m_bits;
     const Ipp8u* values = m_actbl[numTable].m_vals;
 
-    ippsCopy_8u(bits, pBits, 16);
-    ippsCopy_8u(values, pValues, 162);
+    MFX_INTERNAL_CPY(pBits, bits, 16);
+    MFX_INTERNAL_CPY(pValues, values, 162);
 
     return JPEG_OK;
 } // CJPEGEncoder::FillACTable(int numTable, Ipp8u* pBits, Ipp8u* pValues)
@@ -896,8 +896,8 @@ JERRCODE CJPEGEncoder::FillDCTable(int numTable, Ipp8u* pBits, Ipp8u* pValues)
     const Ipp8u* bits = m_dctbl[numTable].m_bits;
     const Ipp8u* values = m_dctbl[numTable].m_vals;
 
-    ippsCopy_8u(bits, pBits, 16);
-    ippsCopy_8u(values, pValues, 12);
+    MFX_INTERNAL_CPY(pBits, bits, 16);
+    MFX_INTERNAL_CPY(pValues, values, 12);
 
     return JPEG_OK;
 } // CJPEGEncoder::FillDCTable(int numTable, Ipp8u* pBits, Ipp8u* pValues)
@@ -3022,7 +3022,7 @@ JERRCODE CJPEGEncoder::DownSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU/
       for(i = 0; i < m_yPadding; i++)
       {
         p1 += curr_comp->m_cc_step;
-        ippsCopy_8u(p,p1,curr_comp->m_cc_step);
+        MFX_INTERNAL_CPY(p1,p,curr_comp->m_cc_step);
       }
     }
 
@@ -3032,7 +3032,7 @@ JERRCODE CJPEGEncoder::DownSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU/
       Ipp8u* pSrc = curr_comp->GetCCBufferPtr(0/*thread_id*/);
       Ipp8u* pDst = curr_comp->GetSSBufferPtr(0/*thread_id*/);
 
-      ippsCopy_8u(pSrc,pDst,curr_comp->m_cc_bufsize);
+      MFX_INTERNAL_CPY(pDst,pSrc,curr_comp->m_cc_bufsize);
     }
 
     // sampling 422
@@ -3244,7 +3244,7 @@ JERRCODE CJPEGEncoder::ProcessBuffer(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU
       for(i = 0; i < yPadd; i++)
       {
         p1 += curr_comp->m_ss_step;
-        ippsCopy_8u(p,p1,srcWidth);
+        MFX_INTERNAL_CPY(p1,p,srcWidth);
       }
     }
   } // for m_jpeg_comp

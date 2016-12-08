@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2010-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2010-2016 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFX_PLATFORM_HEADERS_H__
@@ -20,9 +20,7 @@
 #include <dxva2api.h>
 #include <ddraw.h>
 
-//#if defined(MFX_D3D11_ENABLED)
 #include <d3d11.h>
-//#endif
 
 #ifndef D3DDDIFORMAT
 #define D3DDDIFORMAT        D3DFORMAT
@@ -76,67 +74,7 @@ typedef unsigned long long UINT64;
 #define FALSE               0
 #define TRUE                1
 
-// DXVA2 types
-struct IDirect3DSurface9;
-struct IDirect3DDeviceManager9;
-struct ID3D11Texture2D;
-struct ID3D11Device;
-
 typedef int D3DFORMAT;
-
-typedef struct _DXVA2_Frequency
-{
-    UINT Numerator;
-    UINT Denominator;
-}     DXVA2_Frequency;
-
-typedef struct _DXVA2_ExtendedFormat
-{
-    union 
-    {
-        struct 
-        {
-            UINT SampleFormat    : 8;
-            UINT VideoChromaSubsampling    : 4;
-            UINT NominalRange    : 3;
-            UINT VideoTransferMatrix    : 3;
-            UINT VideoLighting    : 4;
-            UINT VideoPrimaries    : 5;
-            UINT VideoTransferFunction    : 5;
-        }     ;
-        UINT value;
-    }     ;
-}     DXVA2_ExtendedFormat;
-
-typedef struct _DXVA2_VideoDesc
-{
-    UINT SampleWidth;
-    UINT SampleHeight;
-    DXVA2_ExtendedFormat SampleFormat;
-    D3DFORMAT Format;
-    DXVA2_Frequency InputSampleFreq;
-    DXVA2_Frequency OutputFrameFreq;
-    UINT UABProtectionLevel;
-    UINT Reserved;
-}     DXVA2_VideoDesc;
-
-
-typedef struct _D3DAES_CTR_IV
-{
-    UINT64   IV;         // Big-Endian IV
-    UINT64   Count;      // Big-Endian Block Count
-} D3DAES_CTR_IV;
-
-#undef  LOWORD
-#define LOWORD(_dw)     ((_dw) & 0xffff)
-#undef  HIWORD
-#define HIWORD(_dw)     (((_dw) >> 16) & 0xffff)
-
-
-//typedef int GUID;
-
-//static const GUID DXVA2_Intel_Encode_AVC = 0;
-//static const GUID DXVA2_Intel_Encode_MPEG2 = 1;
 
 #endif // #if (defined(_WIN32) || defined(_WIN64)) 
 

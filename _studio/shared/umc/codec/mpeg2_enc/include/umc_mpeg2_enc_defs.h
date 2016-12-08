@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2002-2011 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2002-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -918,8 +918,8 @@ if (picture_structure == MPEG2_FRAME_PICTURE) {              \
       if (var_fld < var) {                                     \
         dct_type = DCT_FIELD;                                  \
         vardiff_res = _vardiff;                                \
-        ippsCopy_8u((Ipp8u*)vardiff_tmp, (Ipp8u*)curr->var, sizeof(curr->var)); \
-        ippsCopy_8u((Ipp8u*)meandiff_tmp, (Ipp8u*)curr->mean, sizeof(curr->mean)); \
+        MFX_INTERNAL_CPY((Ipp8u*)curr->var, (Ipp8u*)vardiff_tmp, sizeof(curr->var)); \
+        MFX_INTERNAL_CPY((Ipp8u*)curr->mean, (Ipp8u*)meandiff_tmp, sizeof(curr->mean)); \
       }                                                        \
     }                                                          \
   }                                                            \
@@ -1128,8 +1128,8 @@ if (picture_structure == MPEG2_FRAME_PICTURE) {              \
       if (var < var_fld) {                                     \
         dct_type = DCT_FRAME;                                  \
         vardiff_fld = _vardiff;                                \
-        ippsCopy_8u((Ipp8u*)vardiff_tmp, (Ipp8u*)curr->var, sizeof(curr->var)); \
-        ippsCopy_8u((Ipp8u*)meandiff_tmp, (Ipp8u*)curr->mean, sizeof(curr->mean)); \
+        MFX_INTERNAL_CPY((Ipp8u*)curr->var, (Ipp8u*)vardiff_tmp, sizeof(curr->var)); \
+        MFX_INTERNAL_CPY((Ipp8u*)curr->mean, (Ipp8u*)meandiff_tmp, sizeof(curr->mean)); \
       }                                                        \
     }                                                          \
     /*if(_vardiff <= vardiff_fld) {                            \

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_platform_headers.h"
@@ -163,15 +163,7 @@ typedef struct tagPAVP_ENCRYPTION_MODE
     UINT    eCounterMode;
 } PAVP_ENCRYPTION_MODE;
 
-typedef struct tagENCODE_CREATEDEVICE
-{
-    DXVADDI_VIDEODESC *     pVideoDesc;
-    USHORT                  CodingFunction;
-    GUID                    EncryptionMode;
-    UINT                    CounterAutoIncrement;
-    D3DAES_CTR_IV *         pInitialCipherCounter;
-    PAVP_ENCRYPTION_MODE *  pPavpEncryptionMode;
-} ENCODE_CREATEDEVICE;
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 
 #if defined  (MFX_D3D11_ENABLED)
 typedef struct tagENCODE_ENCRYPTION_SET
@@ -182,6 +174,34 @@ typedef struct tagENCODE_ENCRYPTION_SET
 } ENCODE_ENCRYPTION_SET;
 #endif
 
+// Available encryption types
+enum
+{
+    PAVP_ENCRYPTION_NONE        = 1,
+    PAVP_ENCRYPTION_AES128_CTR  = 2,
+    PAVP_ENCRYPTION_AES128_CBC  = 4
+};
+
+// Available counter types
+enum
+{
+    PAVP_COUNTER_TYPE_A = 1,
+    PAVP_COUNTER_TYPE_B = 2,
+    PAVP_COUNTER_TYPE_C = 4
+};
+#endif // #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#endif // PAVP_ENCRYPTION_TYPE_AND_COUNTER_DEFINES
+
+typedef struct tagENCODE_CREATEDEVICE
+{
+    DXVADDI_VIDEODESC *     pVideoDesc;
+    USHORT                  CodingFunction;
+    GUID                    EncryptionMode;
+    UINT                    CounterAutoIncrement;
+    D3DAES_CTR_IV *         pInitialCipherCounter;
+    PAVP_ENCRYPTION_MODE *  pPavpEncryptionMode;
+} ENCODE_CREATEDEVICE;
+
 typedef struct tagENCODE_COMPBUFFERDESC
 {
     void*        pCompBuffer;
@@ -190,26 +210,6 @@ typedef struct tagENCODE_COMPBUFFERDESC
     UINT        DataSize;
     void*        pReserved;
 } ENCODE_COMPBUFFERDESC;
-
-//#ifndef PAVP_ENCRYPTION_TYPE_AND_COUNTER_DEFINES
-//#define PAVP_ENCRYPTION_TYPE_AND_COUNTER_DEFINES
-
-    // Available encryption types
-enum
-{
-    PAVP_ENCRYPTION_NONE        = 1,
-    PAVP_ENCRYPTION_AES128_CTR  = 2,
-    PAVP_ENCRYPTION_AES128_CBC  = 4
-};
-
-    // Available counter types
-enum
-{
-    PAVP_COUNTER_TYPE_A = 1,
-    PAVP_COUNTER_TYPE_B = 2,
-    PAVP_COUNTER_TYPE_C = 4
-};
-
 
 typedef struct tagENCODE_EXECUTE_PARAMS
 {
@@ -220,7 +220,7 @@ typedef struct tagENCODE_EXECUTE_PARAMS
 
 } ENCODE_EXECUTE_PARAMS;
 
-#endif // PAVP_ENCRYPTION_TYPE_AND_COUNTER_DEFINES
+
 enum
 {
     CODEC_TYPE_H264 = 0,
@@ -906,7 +906,7 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_H264
             UINT    Reserved0                       : 2;
             UINT    MBBRC                           : 4;
             UINT    Trellis                         : 4;
-            UINT    bTemporalScalability            : 1;//for VDEnc SVC NAL unit insertion will be done after encoding, this flag is to signal driver that it need count SVC NAL unit bits in BRC.
+            UINT    bTemporalScalability            : 1;
             UINT    Reserved1                       :11;
         };
 

@@ -100,7 +100,6 @@ public:
     virtual mfxU32 GetAdapterNumber(void) {return m_adapterNum;}
     virtual eMFXPlatform  GetPlatformType() {return  MFX_PLATFORM_HARDWARE;}
 
-    virtual mfxStatus DoFastCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc);
     virtual mfxStatus DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc);
     virtual mfxStatus DoFastCopyWrapper(mfxFrameSurface1 *pDst, mfxU16 dstMemType, mfxFrameSurface1 *pSrc, mfxU16 srcMemType);
 
@@ -148,7 +147,6 @@ private:
     mfxStatus              InternalInit();
     mfxStatus              GetIntelDataPrivateReport(const GUID guid, DXVA2_ConfigPictureDecode & config);
     void                   ReleaseHandle();
-    mfxStatus              OnDeblockingInWinRegistry(mfxU32 codecId);
     // this function should not be virtual
     mfxStatus SetCmCopyStatus(bool enable);
 

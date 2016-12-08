@@ -77,12 +77,8 @@ ColorFormatInfo FormatInfo[] =
     {Y210,    1, 10, {{2, 1, 4}, }},
     {Y216,    1, 16, {{2, 1, 4}, }},
     {Y410,    1, 10, {{0, 0, 1}, }},
-    {Y416,    1, 16, {{0, 0, 1}, }},
-    {D3D_SURFACE_DEC,   3, 8, {{1, 1, 1}, {1, 1, 1}, {1, 1, 1}}},
-    {D3D_SURFACE,       3, 8, {{1, 1, 1}, {1, 1, 1}, {1, 1, 1}}}
+    {Y416,    1, 16, {{0, 0, 1}, }}
 };
-
-#define D3D_SURFACE_SIZE    256
 
 // Number of entries in the FormatInfo table
 static

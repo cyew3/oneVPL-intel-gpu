@@ -13,434 +13,45 @@
 
 // This file contains defines which switch on/off support of
 // codecs and renderers on application level
-
 /*
-// Windows on IA32
+// Windows
 */
-
-#if defined(WIN32)
-
-    // readers/writers
-    #define UMC_ENABLE_FILE_READER
-    #define UMC_ENABLE_FIO_READER
-    #define UMC_ENABLE_FILE_WRITER
-
-    // video renderers
-    //#define UMC_ENABLE_DX_VIDEO_RENDER
-    //#define UMC_ENABLE_BLT_VIDEO_RENDER
-    //#define UMC_ENABLE_GDI_VIDEO_RENDER
-    #define UMC_ENABLE_FW_VIDEO_RENDER
-
-    // audio renderers
-    //#define UMC_ENABLE_WINMM_AUDIO_RENDER
-    //#define UMC_ENABLE_DSOUND_AUDIO_RENDER
-    #define UMC_ENABLE_FW_AUDIO_RENDER
-
-    // splitters
-    #define UMC_ENABLE_AVI_SPLITTER
-    #define UMC_ENABLE_H264_SPLITTER
-    #define UMC_ENABLE_MPEG2_SPLITTER
-    #define UMC_ENABLE_MP4_SPLITTER
-    #define UMC_ENABLE_VC1_SPLITTER
-    //#define UMC_ENABLE_AVS_SPLITTER
-    #define UMC_ENABLE_FLV_SPLITTER
+#if defined(WIN64) || defined (WIN32)
 
     // video decoders
-    //#define UMC_ENABLE_DV_VIDEO_DECODER
-    //#define UMC_ENABLE_DV50_VIDEO_DECODER
-    //#define UMC_ENABLE_DVHD_VIDEO_DECODER
-    //#define UMC_ENABLE_H261_VIDEO_DECODER
-    //#define UMC_ENABLE_H263_VIDEO_DECODER
     #define UMC_ENABLE_H264_VIDEO_DECODER
     #define UMC_ENABLE_H265_VIDEO_DECODER
     #define UMC_ENABLE_MPEG2_VIDEO_DECODER
-    //#define UMC_ENABLE_MPEG4_VIDEO_DECODER
-    #define UMC_ENABLE_MJPEG_VIDEO_DECODER
-    //#define UMC_ENABLE_VP8_VIDEO_DECODER
-    #define UMC_ENABLE_VP9_VIDEO_DECODER
-    #define UMC_ENABLE_VC1_VIDEO_DECODER
-    //#define UMC_ENABLE_AVS_VIDEO_DECODER
-
-    // video encoders
-    #define UMC_ENABLE_DV_VIDEO_ENCODER
-    #define UMC_ENABLE_DV50_VIDEO_ENCODER
-    #define UMC_ENABLE_DVHD_VIDEO_ENCODER
-    #define UMC_ENABLE_H261_VIDEO_ENCODER
-    #define UMC_ENABLE_H263_VIDEO_ENCODER
-    #define UMC_ENABLE_H264_VIDEO_ENCODER
-    #define UMC_ENABLE_MVC_VIDEO_ENCODER
-    #define UMC_ENABLE_MPEG2_VIDEO_ENCODER
-    #define UMC_ENABLE_MPEG4_VIDEO_ENCODER
-    #define UMC_ENABLE_MJPEG_VIDEO_ENCODER
-    //#define UMC_ENABLE_VC1_VIDEO_ENCODER
-
-    //#define UMC_ENABLE_ME
-
-    #define UMC_ENABLE_UMC_SCENE_ANALYZER
-
-    // audio decoders
-    //#define UMC_ENABLE_AAC_INT_AUDIO_DECODER
-    //#define UMC_ENABLE_MP3_INT_AUDIO_DECODER
-    #define UMC_ENABLE_AAC_AUDIO_DECODER
-    //#define UMC_ENABLE_AC3_AUDIO_DECODER
-    #define UMC_ENABLE_MP3_AUDIO_DECODER
-    //#define UMC_ENABLE_AMR_AUDIO_DECODER
-    //#define UMC_ENABLE_LPCM_AUDIO_DECODER
-    //#define UMC_ENABLE_DTS_AUDIO_DECODER
-
-    // audio encoders
-    //#define UMC_ENABLE_AAC_INT_AUDIO_ENCODER
-    //#define UMC_ENABLE_MP3_INT_AUDIO_ENCODER
-    #define UMC_ENABLE_AAC_AUDIO_ENCODER
-    //#define UMC_ENABLE_AC3_AUDIO_ENCODER
-    #define UMC_ENABLE_MP3_AUDIO_ENCODER
-    //#define UMC_ENABLE_AMR_AUDIO_ENCODER
-
-#endif // Win32 on IA32
-
-
-/*
-// WindowsCE on IA32
-*/
-
-#if defined(_WIN32_WCE) && (defined(x86) || defined(_X86_))
-
-    // readers/writers
-    #define UMC_ENABLE_FILE_READER
-    #define UMC_ENABLE_FILE_WRITER
-
-    // video renderers
-    #define UMC_ENABLE_GDI_VIDEO_RENDER
-    #define UMC_ENABLE_FW_VIDEO_RENDER
-
-//    #define UMC_ENABLE_DXWCE_VIDEO_RENDER
-
-    // audio renderers
-    #define UMC_ENABLE_WINMM_AUDIO_RENDER
-    #define UMC_ENABLE_FW_AUDIO_RENDER
-
-    // splitters
-    #define UMC_ENABLE_AVI_SPLITTER
-    #define UMC_ENABLE_MPEG2_SPLITTER
-    #define UMC_ENABLE_MP4_SPLITTER
-    #define UMC_ENABLE_VC1_SPLITTER
-    #define UMC_ENABLE_AVS_SPLITTER
-    #define UMC_ENABLE_H264_SPLITTER
-    #define UMC_ENABLE_FLV_SPLITTER
-
-    // video decoders
-    #define UMC_ENABLE_DV_VIDEO_DECODER
-    #define UMC_ENABLE_DV50_VIDEO_DECODER
-    #define UMC_ENABLE_DVHD_VIDEO_DECODER
-    #define UMC_ENABLE_H261_VIDEO_DECODER
-    #define UMC_ENABLE_H263_VIDEO_DECODER
-    #define UMC_ENABLE_H264_VIDEO_DECODER
-    #define UMC_ENABLE_MPEG2_VIDEO_DECODER
-    #define UMC_ENABLE_MPEG4_VIDEO_DECODER
     #define UMC_ENABLE_MJPEG_VIDEO_DECODER
     #define UMC_ENABLE_VC1_VIDEO_DECODER
-    #define UMC_ENABLE_AVS_VIDEO_DECODER
-
-    // video encoders
-    #define UMC_ENABLE_DV_VIDEO_ENCODER
-    #define UMC_ENABLE_DV50_VIDEO_ENCODER
-    #define UMC_ENABLE_DVHD_VIDEO_ENCODER
-    #define UMC_ENABLE_H261_VIDEO_ENCODER
-    #define UMC_ENABLE_H263_VIDEO_ENCODER
-    #define UMC_ENABLE_H264_VIDEO_ENCODER
-    #define UMC_ENABLE_MPEG2_VIDEO_ENCODER
-    #define UMC_ENABLE_MPEG4_VIDEO_ENCODER
-    #define UMC_ENABLE_MJPEG_VIDEO_ENCODER
-    //#define UMC_ENABLE_VC1_VIDEO_ENCODER
-
-    #define UMC_ENABLE_UMC_SCENE_ANALYZER
-
-    // audio decoders
-    #define UMC_ENABLE_AAC_INT_AUDIO_DECODER
-    #define UMC_ENABLE_MP3_INT_AUDIO_DECODER
-    #define UMC_ENABLE_AAC_AUDIO_DECODER
-    #define UMC_ENABLE_AC3_AUDIO_DECODER
-    #define UMC_ENABLE_MP3_AUDIO_DECODER
-    #define UMC_ENABLE_LPCM_AUDIO_DECODER
-    #define UMC_ENABLE_DTS_AUDIO_DECODER
-
-    // audio encoders
-    #define UMC_ENABLE_AAC_INT_AUDIO_ENCODER
-    #define UMC_ENABLE_MP3_INT_AUDIO_ENCODER
-    #define UMC_ENABLE_AAC_AUDIO_ENCODER
-    #define UMC_ENABLE_AC3_AUDIO_ENCODER
-    #define UMC_ENABLE_MP3_AUDIO_ENCODER
-#endif // WinCE on IA32
-
-/*
-// Windows on EM64T
-*/
-
-#if defined(WIN64) && defined (_AMD64_)
-
-    // readers/writers
-    #define UMC_ENABLE_FILE_READER
-    #define UMC_ENABLE_FIO_READER
-    #define UMC_ENABLE_FILE_WRITER
-
-    // video renderers
-    #define UMC_ENABLE_GDI_VIDEO_RENDER
-    #define UMC_ENABLE_FW_VIDEO_RENDER
-
-    // audio renderers
-    #define UMC_ENABLE_WINMM_AUDIO_RENDER
-    #define UMC_ENABLE_FW_AUDIO_RENDER
-
-    // splitters
-    #define UMC_ENABLE_AVI_SPLITTER
-    #define UMC_ENABLE_MPEG2_SPLITTER
-    #define UMC_ENABLE_MP4_SPLITTER
-    #define UMC_ENABLE_VC1_SPLITTER
-    #define UMC_ENABLE_AVS_SPLITTER
-    #define UMC_ENABLE_H264_SPLITTER
-    #define UMC_ENABLE_FLV_SPLITTER
-
-    // video decoders
-    #define UMC_ENABLE_DV_VIDEO_DECODER
-    #define UMC_ENABLE_DV50_VIDEO_DECODER
-    #define UMC_ENABLE_DVHD_VIDEO_DECODER
-    #define UMC_ENABLE_H264_VIDEO_DECODER
-    #define UMC_ENABLE_H265_VIDEO_DECODER
-    #define UMC_ENABLE_MPEG2_VIDEO_DECODER
-    #define UMC_ENABLE_MPEG4_VIDEO_DECODER
-    #define UMC_ENABLE_MJPEG_VIDEO_DECODER
-    #define UMC_ENABLE_H263_VIDEO_DECODER
-    #define UMC_ENABLE_H261_VIDEO_DECODER
-    #define UMC_ENABLE_VC1_VIDEO_DECODER
-    #define UMC_ENABLE_AVS_VIDEO_DECODER
     //#define UMC_ENABLE_VP8_VIDEO_DECODER
     #define UMC_ENABLE_VP9_VIDEO_DECODER
 
     // video encoders
-    #define UMC_ENABLE_DV_VIDEO_ENCODER
-    #define UMC_ENABLE_DV50_VIDEO_ENCODER
-    #define UMC_ENABLE_DVHD_VIDEO_ENCODER
     #define UMC_ENABLE_H264_VIDEO_ENCODER
     #define UMC_ENABLE_MVC_VIDEO_ENCODER
     #define UMC_ENABLE_MPEG2_VIDEO_ENCODER
-    #define UMC_ENABLE_MPEG4_VIDEO_ENCODER
     #define UMC_ENABLE_MJPEG_VIDEO_ENCODER
-    #define UMC_ENABLE_H263_VIDEO_ENCODER
-    #define UMC_ENABLE_H261_VIDEO_ENCODER
-    //#define UMC_ENABLE_VC1_VIDEO_ENCODER
 
     #define UMC_ENABLE_UMC_SCENE_ANALYZER
 
-    // audio decoders
-    //#define UMC_ENABLE_AAC_INT_AUDIO_DECODER
-    //#define UMC_ENABLE_MP3_INT_AUDIO_DECODER
-    //#define UMC_ENABLE_AAC_AUDIO_DECODER
-    //#define UMC_ENABLE_AC3_AUDIO_DECODER
-    //#define UMC_ENABLE_MP3_AUDIO_DECODER
-    //#define UMC_ENABLE_LPCM_AUDIO_DECODER
-    //#define UMC_ENABLE_DTS_AUDIO_DECODER
+// audio decoders
+    #define UMC_ENABLE_AAC_AUDIO_DECODER
+    #define UMC_ENABLE_MP3_AUDIO_DECODER
 
     // audio encoders
-    //#define UMC_ENABLE_AAC_INT_AUDIO_ENCODER
-    //#define UMC_ENABLE_MP3_INT_AUDIO_ENCODER
-    //#define UMC_ENABLE_AAC_AUDIO_ENCODER
-    //#define UMC_ENABLE_AC3_AUDIO_ENCODER
-    //#define UMC_ENABLE_MP3_AUDIO_ENCODER
+    #define UMC_ENABLE_AAC_AUDIO_ENCODER
+    #define UMC_ENABLE_MP3_AUDIO_ENCODER
 
 #endif // Winx64 on EM64T
-
-/*
-// Windows on IA64
-*/
-
-#if defined(WIN64) && !defined (_AMD64_)
-
-    // readers/writers
-    #define UMC_ENABLE_FILE_READER
-    #define UMC_ENABLE_FIO_READER
-    #define UMC_ENABLE_FILE_WRITER
-
-    // video renderers
-    //#define UMC_ENABLE_GDI_VIDEO_RENDER
-    #define UMC_ENABLE_FW_VIDEO_RENDER
-
-    // audio renderers
-    //#define UMC_ENABLE_WINMM_AUDIO_RENDER
-    #define UMC_ENABLE_FW_AUDIO_RENDER
-
-    // splitters
-    #define UMC_ENABLE_AVI_SPLITTER
-    #define UMC_ENABLE_MPEG2_SPLITTER
-    #define UMC_ENABLE_MP4_SPLITTER
-    #define UMC_ENABLE_VC1_SPLITTER
-    //#define UMC_ENABLE_AVS_SPLITTER
-    #define UMC_ENABLE_H264_SPLITTER
-    #define UMC_ENABLE_FLV_SPLITTER
-
-    // video decoders
-    //#define UMC_ENABLE_DV_VIDEO_DECODER
-    //#define UMC_ENABLE_DV50_VIDEO_DECODER
-    //#define UMC_ENABLE_DVHD_VIDEO_DECODER
-    //#define UMC_ENABLE_H261_VIDEO_DECODER
-    //#define UMC_ENABLE_H263_VIDEO_DECODER
-    #define UMC_ENABLE_H264_VIDEO_DECODER
-    #define UMC_ENABLE_H265_VIDEO_DECODER
-    #define UMC_ENABLE_MPEG2_VIDEO_DECODER
-    //#define UMC_ENABLE_MPEG4_VIDEO_DECODER
-    #define UMC_ENABLE_MJPEG_VIDEO_DECODER
-    #define UMC_ENABLE_VC1_VIDEO_DECODER
-    //#define UMC_ENABLE_AVS_VIDEO_DECODER
-    //#define UMC_ENABLE_VP8_VIDEO_DECODER
-
-    // video encoders
-    #define UMC_ENABLE_DV_VIDEO_ENCODER
-    #define UMC_ENABLE_DV50_VIDEO_ENCODER
-    #define UMC_ENABLE_DVHD_VIDEO_ENCODER
-    #define UMC_ENABLE_H261_VIDEO_ENCODER
-    #define UMC_ENABLE_H263_VIDEO_ENCODER
-    #define UMC_ENABLE_H264_VIDEO_ENCODER
-    #define UMC_ENABLE_MVC_VIDEO_ENCODER
-    #define UMC_ENABLE_MPEG2_VIDEO_ENCODER
-    #define UMC_ENABLE_MPEG4_VIDEO_ENCODER
-    #define UMC_ENABLE_MJPEG_VIDEO_ENCODER
-    //#define UMC_ENABLE_VC1_VIDEO_ENCODER
-
-    #define UMC_ENABLE_UMC_SCENE_ANALYZER
-
-    // audio decoders
-    //#define UMC_ENABLE_AAC_INT_AUDIO_DECODER
-    //#define UMC_ENABLE_MP3_INT_AUDIO_DECODER
-    #define UMC_ENABLE_AAC_AUDIO_DECODER
-    //#define UMC_ENABLE_AC3_AUDIO_DECODER
-    #define UMC_ENABLE_MP3_AUDIO_DECODER
-    //#define UMC_ENABLE_AMR_AUDIO_DECODER
-    //#define UMC_ENABLE_LPCM_AUDIO_DECODER
-    //#define UMC_ENABLE_DTS_AUDIO_DECODER
-
-    // audio encoders
-    //#define UMC_ENABLE_AAC_INT_AUDIO_ENCODER
-    //#define UMC_ENABLE_MP3_INT_AUDIO_ENCODER
-    #define UMC_ENABLE_AAC_AUDIO_ENCODER
-    //#define UMC_ENABLE_AC3_AUDIO_ENCODER
-    #define UMC_ENABLE_MP3_AUDIO_ENCODER
-    //#define UMC_ENABLE_AMR_AUDIO_ENCODER
-
-#endif // Win64 on IA64
-
-/*
-// WindowsCE on IXP4xx
-*/
-
-#if defined(_WIN32_WCE) && (defined (ARM) || defined(_ARM_))
-
-    // readers/writers
-    #define UMC_ENABLE_FIO_READER
-    #define UMC_ENABLE_FILE_WRITER
-
-    // video renderers
-    #define UMC_ENABLE_MTWGX_VIDEO_RENDER
-    #define UMC_ENABLE_FW_VIDEO_RENDER
-
-    // audio renderers
-    #define UMC_ENABLE_WINMM_AUDIO_RENDER
-    #define UMC_ENABLE_FW_AUDIO_RENDER
-
-    // splitters
-    #define UMC_ENABLE_AVI_SPLITTER
-    #define UMC_ENABLE_MPEG2_SPLITTER
-    #define UMC_ENABLE_MP4_SPLITTER
-    #define UMC_ENABLE_VC1_SPLITTER
-    #define UMC_ENABLE_AVS_SPLITTER
-    #define UMC_ENABLE_H264_SPLITTER
-    #define UMC_ENABLE_FLV_SPLITTER
-
-    // video decoders
-    #define UMC_ENABLE_DV_VIDEO_DECODER
-    #define UMC_ENABLE_DV50_VIDEO_DECODER
-    #define UMC_ENABLE_DVHD_VIDEO_DECODER
-    #define UMC_ENABLE_H261_VIDEO_DECODER
-    #define UMC_ENABLE_H263_VIDEO_DECODER
-    #define UMC_ENABLE_H264_VIDEO_DECODER
-    #define UMC_ENABLE_MPEG2_VIDEO_DECODER
-    #define UMC_ENABLE_MPEG4_VIDEO_DECODER
-    #define UMC_ENABLE_MJPEG_VIDEO_DECODER
-    #define UMC_ENABLE_VC1_VIDEO_DECODER
-    #define UMC_ENABLE_AVS_VIDEO_DECODER
-
-    // video encoders
-    #define UMC_ENABLE_DV_VIDEO_ENCODER
-    #define UMC_ENABLE_DV50_VIDEO_ENCODER
-    #define UMC_ENABLE_DVHD_VIDEO_ENCODER
-    #define UMC_ENABLE_H261_VIDEO_ENCODER
-    #define UMC_ENABLE_H263_VIDEO_ENCODER
-    #define UMC_ENABLE_H264_VIDEO_ENCODER
-    #define UMC_ENABLE_MPEG2_VIDEO_ENCODER
-    #define UMC_ENABLE_MPEG4_VIDEO_ENCODER
-    #define UMC_ENABLE_MJPEG_VIDEO_ENCODER
-    //#define UMC_ENABLE_VC1_VIDEO_ENCODER
-
-    #define UMC_ENABLE_UMC_SCENE_ANALYZER
-
-    // audio decoders
-    #define UMC_ENABLE_AAC_INT_AUDIO_DECODER
-    #define UMC_ENABLE_MP3_INT_AUDIO_DECODER
-    #define UMC_ENABLE_LPCM_AUDIO_DECODER
-
-    // audio encoders
-    #define UMC_ENABLE_AAC_INT_AUDIO_ENCODER
-    #define UMC_ENABLE_MP3_INT_AUDIO_ENCODER
-
-#endif // WinCE on IXP4xx
 
 /*
 // Linux on IA32
 */
 
-#if (defined(LINUX32) || defined(__APPLE__)) && !(defined (_ARM_) || defined(ARM))
-
-    // readers/writers
-    #define UMC_ENABLE_FILE_READER
-    #define UMC_ENABLE_FIO_READER
-    #define UMC_ENABLE_FILE_WRITER
-
-    // video renderers
-#ifdef __APPLE__
-# ifndef OSX64
-   #define UMC_ENABLE_AGL_VIDEO_RENDER
-# endif
-#else
-   #define UMC_ENABLE_FB_VIDEO_RENDER
-//   #define UMC_ENABLE_SDL_VIDEO_RENDER
-#endif /* __APPLE__ */
-    #define UMC_ENABLE_FW_VIDEO_RENDER
-
-    // audio renderers
-#ifdef __APPLE__
-    #define UMC_ENABLE_COREAUDIO_RENDER
-#else
-    #define UMC_ENABLE_ALSA_AUDIO_RENDER
-    #define UMC_ENABLE_OSS_AUDIO_RENDER
-//    #define UMC_ENABLE_SDL_AUDIO_RENDER
-#endif /* __APPLE__ */
-    #define UMC_ENABLE_FW_AUDIO_RENDER
-
-    // splitters
-    #define UMC_ENABLE_AVI_SPLITTER
-    #define UMC_ENABLE_MPEG2_SPLITTER
-    #define UMC_ENABLE_MP4_SPLITTER
-    #define UMC_ENABLE_VC1_SPLITTER
-    //#define UMC_ENABLE_AVS_SPLITTER
-    #define UMC_ENABLE_H264_SPLITTER
-    #define UMC_ENABLE_FLV_SPLITTER
+#if defined(LINUX32) || defined(__APPLE__)
 
     // video decoders
-    //#define UMC_ENABLE_DV_VIDEO_DECODER
-    //#define UMC_ENABLE_DV50_VIDEO_DECODER
-    //#define UMC_ENABLE_DVHD_VIDEO_DECODER
-    //#define UMC_ENABLE_H261_VIDEO_DECODER
-    //#define UMC_ENABLE_H263_VIDEO_DECODER
-
-    //#define UMC_ENABLE_MPEG4_VIDEO_DECODER
     #define UMC_ENABLE_MJPEG_VIDEO_DECODER
     //#define UMC_ENABLE_VP8_VIDEO_DECODER
     #define UMC_ENABLE_VC1_VIDEO_DECODER
@@ -449,118 +60,26 @@
     #define UMC_ENABLE_MPEG2_VIDEO_DECODER
     //#define UMC_ENABLE_VP9_VIDEO_DECODER
 
-    //#define UMC_ENABLE_AVS_VIDEO_DECODER
-
     // video encoders
-    #define UMC_ENABLE_DV_VIDEO_ENCODER
-    #define UMC_ENABLE_DV50_VIDEO_ENCODER
-    #define UMC_ENABLE_DVHD_VIDEO_ENCODER
-    #define UMC_ENABLE_H261_VIDEO_ENCODER
-    #define UMC_ENABLE_H263_VIDEO_ENCODER
     #define UMC_ENABLE_H264_VIDEO_ENCODER
     #define UMC_ENABLE_MVC_VIDEO_ENCODER
     #define UMC_ENABLE_MPEG2_VIDEO_ENCODER
     #define UMC_ENABLE_MPEG4_VIDEO_ENCODER
     #define UMC_ENABLE_MJPEG_VIDEO_ENCODER
-    //#define UMC_ENABLE_VC1_VIDEO_ENCODER
 
     #define UMC_ENABLE_UMC_SCENE_ANALYZER
 
     // audio decoders
-    //#define UMC_ENABLE_AAC_INT_AUDIO_DECODER
-    //#define UMC_ENABLE_MP3_INT_AUDIO_DECODER
     #define UMC_ENABLE_AAC_AUDIO_DECODER
-    //#define UMC_ENABLE_AC3_AUDIO_DECODER
     #define UMC_ENABLE_MP3_AUDIO_DECODER
-    //#define UMC_ENABLE_LPCM_AUDIO_DECODER
-    //#define UMC_ENABLE_DTS_AUDIO_DECODER
 
     // audio encoders
-    //#define UMC_ENABLE_AAC_INT_AUDIO_ENCODER
-    //#define UMC_ENABLE_MP3_INT_AUDIO_ENCODER
     #define UMC_ENABLE_AAC_AUDIO_ENCODER
     //#define UMC_ENABLE_AC3_AUDIO_ENCODER
     //#define UMC_ENABLE_MP3_AUDIO_ENCODER
 
 #endif // Linux on IA32
 
-/*
-// Linux on EM64T
-*/
-
-/*
-// Linux on IA64
-*/
-
-/*
-// Linux on IXP4xx
-*/
-
-#if defined(LINUX32) && (defined (ARM) || defined(_ARM_))
-
-    // readers/writers
-    #define UMC_ENABLE_FIO_READER
-    #define UMC_ENABLE_FILE_WRITER
-
-    // video renderers
-    #define UMC_ENABLE_FB_VIDEO_RENDER
-    #define UMC_ENABLE_FW_VIDEO_RENDER
-//  #define UMC_ENABLE_SDL_VIDEO_RENDER
-
-    // audio renderers
-    #define UMC_ENABLE_ALSA_AUDIO_RENDER
-    #define UMC_ENABLE_OSS_AUDIO_RENDER
-//    #define UMC_ENABLE_SDL_AUDIO_RENDER
-    #define UMC_ENABLE_FW_AUDIO_RENDER
-
-    // splitters
-    #define UMC_ENABLE_AVI_SPLITTER
-    #define UMC_ENABLE_MPEG2_SPLITTER
-    #define UMC_ENABLE_MP4_SPLITTER
-    #define UMC_ENABLE_VC1_SPLITTER
-    #define UMC_ENABLE_AVS_SPLITTER
-    #define UMC_ENABLE_H264_SPLITTER
-    #define UMC_ENABLE_FLV_SPLITTER
-
-    // video decoders
-    #define UMC_ENABLE_DV_VIDEO_DECODER
-    #define UMC_ENABLE_DV50_VIDEO_DECODER
-    #define UMC_ENABLE_DVHD_VIDEO_DECODER
-    #define UMC_ENABLE_H261_VIDEO_DECODER
-    #define UMC_ENABLE_H263_VIDEO_DECODER
-    #define UMC_ENABLE_H264_VIDEO_DECODER
-    #define UMC_ENABLE_H265_VIDEO_DECODER
-    #define UMC_ENABLE_MPEG2_VIDEO_DECODER
-    #define UMC_ENABLE_MPEG4_VIDEO_DECODER
-    #define UMC_ENABLE_MJPEG_VIDEO_DECODER
-    #define UMC_ENABLE_VC1_VIDEO_DECODER
-    #define UMC_ENABLE_AVS_VIDEO_DECODER
-
-    // video encoders
-    #define UMC_ENABLE_DV_VIDEO_ENCODER
-    #define UMC_ENABLE_DV50_VIDEO_ENCODER
-    #define UMC_ENABLE_DVHD_VIDEO_ENCODER
-    #define UMC_ENABLE_H261_VIDEO_ENCODER
-    #define UMC_ENABLE_H263_VIDEO_ENCODER
-    #define UMC_ENABLE_H264_VIDEO_ENCODER
-    #define UMC_ENABLE_MVC_VIDEO_ENCODER
-    #define UMC_ENABLE_MPEG2_VIDEO_ENCODER
-    #define UMC_ENABLE_MPEG4_VIDEO_ENCODER
-    #define UMC_ENABLE_MJPEG_VIDEO_ENCODER
-    //#define UMC_ENABLE_VC1_VIDEO_ENCODER
-
-    #define UMC_ENABLE_UMC_SCENE_ANALYZER
-
-    // audio decoders
-    #define UMC_ENABLE_AAC_INT_AUDIO_DECODER
-    #define UMC_ENABLE_MP3_INT_AUDIO_DECODER
-    #define UMC_ENABLE_LPCM_AUDIO_DECODER
-
-    // audio encoders
-    #define UMC_ENABLE_AAC_INT_AUDIO_ENCODER
-    #define UMC_ENABLE_MP3_INT_AUDIO_ENCODER
-
-#endif // Linux on IXP4xx
 
 #ifdef __cplusplus
 
@@ -571,9 +90,60 @@ namespace UMC
 
 #endif //__cplusplus
 
-#include "ippdefs.h"
+#ifndef OPEN_SOURCE
+
+    // readers/writers
+    #define UMC_ENABLE_FILE_READER
+    #define UMC_ENABLE_FIO_READER
+    #define UMC_ENABLE_FILE_WRITER
+
+    // splitters
+    #define UMC_ENABLE_AVI_SPLITTER
+    #define UMC_ENABLE_MPEG2_SPLITTER
+    #define UMC_ENABLE_MP4_SPLITTER
+    #define UMC_ENABLE_VC1_SPLITTER
+    #define UMC_ENABLE_H264_SPLITTER
+
 #include "ipps.h"
 #define MFX_INTERNAL_CPY(dst, src, size) ippsCopy_8u((const Ipp8u *)(src), (Ipp8u *)(dst), (int)size)
+#define MFX_INTERNAL_CPY_S(dst, dstsize, src, src_size) ippsCopy_8u((const Ipp8u *)(src), (Ipp8u *)(dst), (int)dstsize)
+#else
+#include <stdint.h>
+
+#ifdef __cplusplus
+#include <algorithm>
+#endif //__cplusplus
+
+#define MFX_INTERNAL_CPY_S(dst, dstsize, src, src_size) memcpy_s((Ipp8u *)(dst), (uint8_t)(dstsize), (const Ipp8u *)(src), (int)src_size)
+#define MFX_INTERNAL_CPY(dst, src, size) std::copy((const uint8_t *)(src), (const uint8_t *)(src) + (int)(size), (uint8_t *)(dst))
+
+#define MFX_MAX( a, b ) ( ((a) > (b)) ? (a) : (b) )
+#define MFX_MIN( a, b ) ( ((a) < (b)) ? (a) : (b) )
+
+#define MFX_MAX_32S    ( 2147483647 )
+#define MFX_MAXABS_64F ( 1.7976931348623158e+308 )
+#define MFX_MAX_32U    ( 0xFFFFFFFF )
+
+#if defined( _WIN32 ) || defined ( _WIN64 )
+  #define MFX_MAX_64S  ( 9223372036854775807i64 )
+#else
+  #define MFX_MAX_64S  ( 9223372036854775807LL )
+#endif
+
+typedef struct {
+    int width;
+    int height;
+} mfxSize;
+
+#if defined( _WIN32 ) || defined ( _WIN64 )
+  #define __STDCALL  __stdcall
+  #define __CDECL    __cdecl
+#else
+  #define __STDCALL
+  #define __CDECL
+#endif
+
+#endif
 
 #if defined(_WIN32) || defined(_WIN64)
   #define ALIGN_DECL(X) __declspec(align(X))

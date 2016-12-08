@@ -501,7 +501,7 @@ Status VC1FrameDescriptor::preProcData(VC1Context*            pContext,
     if (isWMV)
         bufferSize += 8;
 
-    ippsCopy_8u(pbufferStart,m_pContext->m_pBufferStart,(bufferSize & 0xFFFFFFF8) + 8); // (bufferSize & 0xFFFFFFF8) + 8 - skip frames
+    MFX_INTERNAL_CPY(m_pContext->m_pBufferStart,pbufferStart,(bufferSize & 0xFFFFFFF8) + 8); // (bufferSize & 0xFFFFFFF8) + 8 - skip frames
     m_pContext->m_bitstream.pBitstream = (Ipp32u*)m_pContext->m_pBufferStart;
 
     if ((m_pContext->m_seqLayerHeader.PROFILE == VC1_PROFILE_ADVANCED)||(!isWMV))

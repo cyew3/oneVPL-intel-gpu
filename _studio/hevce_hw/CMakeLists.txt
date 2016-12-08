@@ -62,7 +62,7 @@ endforeach()
 
   set( LIBS "" )
   list( APPEND LIBS
-    media_buffers      ## open-source-cut-line
+    media_buffers
     umc_io
     umc_va_elk_hw
     umc

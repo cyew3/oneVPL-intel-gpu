@@ -63,17 +63,3 @@ append_property( mfx_common_sw COMPILE_FLAGS " -DMFX_RT" )
 make_library( mfx_common hw static )
 append_property( mfx_common_hw COMPILE_FLAGS " -DMFX_RT" )
 set( defs "" )
-
-## open-source-cut-start
-
-set( sources "" )
-set( sources.plus "" )
-list( APPEND sources
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_vc1_enc_common.cpp
-)
-
-set( defs "${WARNING_FLAGS}" )
-make_library( vc1_shared none static )
-set( defs "" )
-
-## open-source-cut-end

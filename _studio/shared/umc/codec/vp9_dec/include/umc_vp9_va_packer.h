@@ -16,8 +16,6 @@
 
 #include "umc_va_base.h"
 
-#ifndef UMC_RESTRICTED_CODE_VA
-
 #ifdef UMC_VA_DXVA
     #include "umc_vp9_ddi.h"
 #endif
@@ -138,6 +136,5 @@ public:
 
 } // namespace UMC_HEVC_DECODER
 
-#endif // UMC_RESTRICTED_CODE_VA
 #endif /* __UMC_VP9_VA_PACKER_H */
 #endif // UMC_ENABLE_VP9_VIDEO_DECODER

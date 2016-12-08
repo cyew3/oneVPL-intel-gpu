@@ -339,13 +339,13 @@ mfxStatus VideoDECODEVP8_HW::Close()
 
     if(m_frame_info.blContextUp)
     {
-      vp8dec_Free(m_frame_info.blContextUp);
+      free(m_frame_info.blContextUp);
       m_frame_info.blContextUp = 0;
     }
 
     if (m_bs.Data)
     {
-        ippFree(m_bs.Data);
+        delete[] m_bs.Data;
         m_bs.DataLength = 0;
     }
 
@@ -557,11 +557,11 @@ mfxStatus VideoDECODEVP8_HW::ConstructFrame(mfxBitstream *p_in, mfxBitstream *p_
 
     if (p_out->Data)
     {
-        ippFree(p_out->Data);
+        delete[] p_out->Data;
         p_out->DataLength = 0;
     }
 
-    p_out->Data = (Ipp8u*)ippMalloc(p_in->DataLength);
+    p_out->Data = new Ipp8u[p_in->DataLength];
 
     std::copy(p_bs_start, p_bs_start + p_in->DataLength, p_out->Data);
 
@@ -1105,9 +1105,9 @@ void VideoDECODEVP8_HW::DecodeInitDequantization(MFX_VP8_BoolDecoder &dec)
   if (m_frame_info.mbPerRow <  mbPerRow) \
   { \
     if (m_frame_info.blContextUp) \
-      vp8dec_Free(m_frame_info.blContextUp); \
+      free(m_frame_info.blContextUp); \
       \
-    m_frame_info.blContextUp = (Ipp8u*)vp8dec_Malloc(mbPerRow * mbPerCol * sizeof(vp8_MbInfo)); \
+    m_frame_info.blContextUp = (Ipp8u*)malloc(mbPerRow * mbPerCol * sizeof(vp8_MbInfo)); \
   } \
   m_frame_info.mbPerCol = mbPerCol; \
   m_frame_info.mbPerRow = mbPerRow; \

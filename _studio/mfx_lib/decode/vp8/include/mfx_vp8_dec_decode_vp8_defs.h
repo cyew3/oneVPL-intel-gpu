@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -56,9 +56,6 @@ namespace VP8Defs
 #define VP8_MAX_QP 127
 
 #define VP8_MAX_LF_LEVEL 63
-
-#define vp8dec_Malloc ippMalloc
-#define vp8dec_Free   ippFree
 
 enum
 {

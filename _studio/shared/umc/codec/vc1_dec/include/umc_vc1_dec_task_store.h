@@ -228,9 +228,7 @@ namespace UMC
 
         VC1PictureLayerHeader* GetFirstInSecondField(Ipp32u qID);
 
-#ifndef UMC_RESTRICTED_CODE_VA
         bool CreateDSQueue(VC1Context* pContext, VideoAccelerator* va);
-#endif
         bool CreateDSQueue(VC1Context* pContext, bool IsReorder,Ipp16s* pResidBuf); //pResidBuf - memory for residual coeffs
         bool SetNewSHParams(VC1Context* pContext);
         void ResetDSQueue();

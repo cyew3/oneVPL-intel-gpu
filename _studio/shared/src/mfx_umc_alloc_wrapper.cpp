@@ -16,13 +16,9 @@
 #include "mfx_common_int.h"
 #include "mfxfei.h"
 
-#include "ippi.h"
-#include "ippcc.h"
-#include "ipps.h"
 #if defined (MFX_VA_WIN)
 #include "dxgi.h"
 #endif
-#include "vm_file.h"
 
 #if defined (MFX_ENABLE_MJPEG_VIDEO_DECODE) && defined (MFX_VA)
 #include "mfx_vpp_jpeg_d3d9.h"
@@ -343,27 +339,7 @@ UMC::Status mfx_UMC_FrameAllocator::Alloc(UMC::FrameMemID *pNewMemID, const UMC:
         return UMC::UMC_ERR_ALLOC;
     }
 
-    // DEBUG : need to check that VideoDataInfo info same as allocator have
-
-    //if (MFX_HW_D3D11 == GetVAType())
-    //{
-    //    mfxMemId mid = m_frameData[index].first.Data.MemId;
-    //    mfxHDLPair pair;
-    //    // should be external
-    //    if (m_IsUseExternalFrames)
-    //        sts = m_pCore->GetExternalFrameHDL(mid, (mfxHDL*)&pair);
-    //    else
-    //        sts = m_pCore->GetFrameHDL(mid, (mfxHDL*)&pair);
-
-    //    if (sts < MFX_ERR_NONE)
-    //        return UMC::UMC_ERR_FAILED;
-
-    //    *pNewMemID = static_cast<UMC::FrameMemID>((size_t)pair.second);
-    //}
-    //else
-    {
-        *pNewMemID = (UMC::FrameMemID)index;
-    }
+    *pNewMemID = (UMC::FrameMemID)index;
 
     IppiSize allocated = {m_frameData[index].first.Info.Width, m_frameData[index].first.Info.Height};
     IppiSize passed = {static_cast<int>(info->GetWidth()), static_cast<int>(info->GetHeight())};
@@ -646,18 +622,9 @@ mfxStatus mfx_UMC_FrameAllocator::SetCurrentMFXSurface(mfxFrameSurface1 *surf, b
         }
     }
 
-    mfxExtBuffer* extbuf = 
-        GetExtendedBuffer(surf->Data.ExtParam, surf->Data.NumExtParam, MFX_EXTBUFF_FEI_DEC_STREAM_OUT);
+    mfxExtBuffer* extbuf = GetExtendedBuffer(surf->Data.ExtParam, surf->Data.NumExtParam, MFX_EXTBUFF_FEI_DEC_STREAM_OUT);
     if (extbuf && !m_IsUseExternalFrames)
         return MFX_ERR_INVALID_VIDEO_PARAM;
-
-    // device checking
-    {
-        mfxStatus sts;
-        sts = m_pCore->CheckHandle();
-        if (sts < MFX_ERR_NONE && MFX_ERR_NOT_FOUND != sts)
-            return sts;
-    }
 
     if (m_externalFramesResponse && surf->Data.MemId)
     {
@@ -754,7 +721,7 @@ mfxI32 mfx_UMC_FrameAllocator::AddSurface(mfxFrameSurface1 *surface)
     case MFX_FOURCC_AYUV:
     case MFX_FOURCC_P010:
     case MFX_FOURCC_P210:
-    #if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
     case MFX_FOURCC_Y210:
     case MFX_FOURCC_Y216:
     case MFX_FOURCC_Y410:
@@ -990,7 +957,10 @@ mfxStatus mfx_UMC_FrameAllocator::PrepareToOutput(mfxFrameSurface1 *surface_work
 
     return sts;
 }
-#if !defined( AS_HEVCD_PLUGIN ) || defined (AS_VP8D_PLUGIN) // HEVC decode natively supportes NV12 format - no need to make conversion
+
+#if (defined(MFX_ENABLE_MPEG2_VIDEO_DECODE) && !defined(MFX_ENABLE_HW_ONLY_MPEG2_DECODER)) || defined(MFX_ENABLE_VC1_VIDEO_DECODE)
+#include "ippcc.h"
+
 UMC::Status mfx_UMC_FrameAllocator_NV12::InitMfx(UMC::FrameAllocatorParams *pParams,
                                                  VideoCORE* mfxCore,
                                                  const mfxVideoParam * params,

@@ -11,28 +11,28 @@
 #ifndef __MFX_EXT_BUFFERS_H__
 #define __MFX_EXT_BUFFERS_H__
 
+#include "mfxcommon.h"
+#include "mfx_config.h"
 #include "vm_strings.h"
 
-#define MFX_EXTBUFF_GPU_HANG_ENABLE
-#define MFX_UNDOCUMENTED_QUANT_MATRIX
-#define MFX_UNDOCUMENTED_DUMP_FILES
-#define MFX_UNDOCUMENTED_VPP_VARIANCE_REPORT
-#define MFX_UNDOCUMENTED_CO_DDI
-
+#ifdef MFX_DEBUG_TOOLS
 // internal(undocumented) handles for VideoCORE::SetHandle
 #define MFX_HANDLE_TIMING_LOG       ((mfxHandleType)1001)
 #define MFX_HANDLE_EXT_OPTIONS      ((mfxHandleType)1002)
 #define MFX_HANDLE_TIMING_SUMMARY   ((mfxHandleType)1003)
 #define MFX_HANDLE_TIMING_TAL       ((mfxHandleType)1004)
+#endif
 
+#ifndef MFX_ADAPTIVE_PLAYBACK_DISABLE
 #define MFX_EXTBUFF_DEC_ADAPTIVE_PLAYBACK MFX_MAKEFOURCC('A','P','B','K')
+#endif
 
 #define MFX_EXTBUFF_DDI MFX_MAKEFOURCC('D','D','I','P')
 
 typedef struct {
     mfxExtBuffer Header;
 
-    // parameters below exist in DDI but doesn't exist in MediaSDK public API
+    // parameters below doesn't exist in MediaSDK public API
     mfxU16  IntraPredCostType;      // from DDI: 1=SAD, 2=SSD, 4=SATD_HADAMARD, 8=SATD_HARR
     mfxU16  MEInterpolationMethod;  // from DDI: 1=VME4TAP, 2=BILINEAR, 4=WMV4TAP, 8=AVC6TAP
     mfxU16  MEFractionalSearchType; // from DDI: 1=FULL, 2=HALF, 4=SQUARE, 8=HQ, 16=DIAMOND
@@ -47,10 +47,9 @@ typedef struct {
     mfxU16  WeightedPrediction;     // tri-state: 0, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_ON
     mfxU16  MVPrediction;           // tri-state: 0, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_ON
 
-    // parameters below exist in both DDI and MediaSDK but interpetation differs
     struct {
-        mfxU16 IntraPredBlockSize;  // from DDI, mask of 1=4x4, 2=8x8, 4=16x16, 8=PCM
-        mfxU16 InterPredBlockSize;  // from DDI, mask of 1=16x16, 2=16x8, 4=8x16, 8=8x8, 16=8x4, 32=4x8, 64=4x4
+        mfxU16 IntraPredBlockSize;  // mask of 1=4x4, 2=8x8, 4=16x16, 8=PCM
+        mfxU16 InterPredBlockSize;  // mask of 1=16x16, 2=16x8, 4=8x16, 8=8x8, 16=8x4, 32=4x8, 64=4x4
     } DDI;
 
     // MediaSDK parametrization
@@ -123,7 +122,6 @@ typedef struct {
 #endif // #ifdef MFX_UNDOCUMENTED_DUMP_FILES
 
 #ifdef MFX_UNDOCUMENTED_VPP_VARIANCE_REPORT
-// aya: should be moved on MSDK API level after discussion
 #define MFX_EXTBUFF_VPP_VARIANCE_REPORT MFX_MAKEFOURCC('V','R','P','F')
 
 #pragma warning (disable: 4201 ) /* disable nameless struct/union */
@@ -148,7 +146,7 @@ typedef struct {
 } mfxExtVppReport;
 #endif // #ifdef MFX_UNDOCUMENTED_VPP_VARIANCE_REPORT
 
-
+#ifndef OPEN_SOURCE
 #define MFX_EXTBUFF_HEVCENC MFX_MAKEFOURCC('B','2','6','5')
 typedef struct {
     mfxExtBuffer Header;
@@ -244,6 +242,7 @@ typedef struct {
     mfxU16      EnableCmBiref;      // 0-default 1-enables Interpolation and GpuBiref 
     mfxU16      reserved[36];       // 256 bytes total} mfxExtCodingOptionHEVC;
 } mfxExtCodingOptionHEVC;
+#endif // #ifndef OPEN_SOURCE
 
 #if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
 #define MFX_EXTBUFF_GPU_HANG MFX_MAKEFOURCC('H','A','N','G')

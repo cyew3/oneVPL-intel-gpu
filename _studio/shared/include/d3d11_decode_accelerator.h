@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2016 Intel Corporation. All Rights Reserved.
 //
 
 #if defined  (MFX_VA)
@@ -61,7 +61,6 @@ public:
     virtual UMC::Status SyncTask(Ipp32s index, void * error = NULL) { index; error; return UMC::UMC_ERR_UNSUPPORTED;}
     virtual UMC::Status QueryTaskStatus(Ipp32s , void *, void *) { return UMC::UMC_ERR_UNSUPPORTED;}
     
-    virtual UMC::Status ReleaseAllBuffers();
     virtual UMC::Status ReleaseBuffer(Ipp32s type);
     virtual UMC::Status EndFrame(void * handle = 0);
 

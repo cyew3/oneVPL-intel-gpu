@@ -23,9 +23,11 @@
 
 #include "mfx_vpp_defs.h"
 #include "mfx_vpp_base.h"
-#include "mfx_vpp_service.h"
 #include "mfx_task.h"
 
+#if !defined (MFX_ENABLE_HW_ONLY_VPP)
+    #include "mfx_vpp_service.h"
+#endif
 
 /* ******************************************************************** */
 /*                 Core Class of MSDK VPP                               */
@@ -103,7 +105,7 @@ protected:
   // State that keeps Init params. They are changed on Init only
   sErrPrtctState m_InitState;
 
-  // opaque processing (MSDK_3.0)
+  // opaque processing
   bool                  m_bOpaqMode[2];
   mfxFrameAllocRequest  m_requestOpaq[2];
 

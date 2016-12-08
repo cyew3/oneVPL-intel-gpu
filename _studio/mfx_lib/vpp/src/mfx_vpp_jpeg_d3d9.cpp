@@ -29,7 +29,7 @@ static void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )
 {
     memset(&pMfxExecuteParams->targetSurface, 0, sizeof(mfxDrvSurface));
     pMfxExecuteParams->pRefSurfaces = NULL;
-    pMfxExecuteParams->dstRects.clear(); /* NB! Due to STL container memset can not be used */
+    pMfxExecuteParams->dstRects.clear();
     memset(&pMfxExecuteParams->customRateData, 0, sizeof(CustomRateData));
     pMfxExecuteParams->targetTimeStamp = 0;
     pMfxExecuteParams->refCount = 0;

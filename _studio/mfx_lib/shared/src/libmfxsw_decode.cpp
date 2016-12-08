@@ -563,7 +563,7 @@ mfxStatus MFXVideoDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs, 
             }
         }
 
-        if (MFX_ERR_MORE_DATA_RUN_TASK == static_cast<int>(mfxRes))
+        if (MFX_ERR_MORE_DATA_SUBMIT_TASK == static_cast<int>(mfxRes))
         {
             mfxRes = MFX_WRN_DEVICE_BUSY;
         }

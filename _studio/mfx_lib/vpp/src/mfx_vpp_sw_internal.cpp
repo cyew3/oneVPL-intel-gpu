@@ -21,10 +21,8 @@
 #include "mfxpcp.h"
 #endif
 
-//#include "mfx_vpp_main.h"
 #include "mfx_vpp_sw.h"
 #include "mfx_vpp_utils.h"
-#include "mfx_vpp_service.h"
 
 // internal filters
 #include "mfx_denoise_vpp.h"
@@ -34,14 +32,16 @@
 #include "mfx_range_map_vc1_vpp.h"
 #include "mfx_deinterlace_vpp.h"
 #include "mfx_video_analysis_vpp.h"
-#include "mfx_video_signal_conversion_vpp.h"
 #include "mfx_frame_rate_conversion_vpp.h"
 #include "mfx_procamp_vpp.h"
 #include "mfx_detail_enhancement_vpp.h"
-#include "mfx_gamut_compression_vpp.h"
-#include "mfx_image_stabilization_vpp.h"
 
 #if !defined (MFX_ENABLE_HW_ONLY_VPP)
+#include "mfx_gamut_compression_vpp.h"
+#include "mfx_image_stabilization_vpp.h"
+#include "mfx_video_signal_conversion_vpp.h"
+#include "mfx_vpp_service.h"
+
 /* IPP */
 #include "ipps.h"
 #include "ippi.h"
@@ -119,7 +119,7 @@ mfxStatus VideoVPP_SW::CheckProduceOutput(mfxFrameSurface1 *in, mfxFrameSurface1
         }
 
         /* mechanism to produce buffered frames */
-        if( MFX_ERR_MORE_DATA == sts || (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK == sts)
+        if( MFX_ERR_MORE_DATA == sts || (mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK == sts)
         {
             outputSurf = NULL;
         }
@@ -134,15 +134,15 @@ mfxStatus VideoVPP_SW::CheckProduceOutput(mfxFrameSurface1 *in, mfxFrameSurface1
     /* ***************************************************************** */
 
     /* if there are filters before pipeline is broken we should run VPP */
-    if( !(MFX_ERR_NONE == sts || (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK == sts) )
+    if( !(MFX_ERR_NONE == sts || (mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK == sts) )
     {
         if( isPipelineBreak && filterBreakIndex > 0 )
         {
-            sts = (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK;
+            sts = (mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK;
         }
         else if( isPipelineBreak && (NULL != in) ) // DI or FRC broke pipeline
         {
-            sts = (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK;
+            sts = (mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK;
         }
     }
 
@@ -934,7 +934,7 @@ mfxStatus GetExternalFramesCount(mfxVideoParam* pParam,
 #if defined(MFX_ENABLE_IMAGE_STABILIZATION_VPP)
             case (mfxU32)MFX_EXTBUFF_VPP_IMAGE_STABILIZATION:
             {
-                // aya: fake for SW compatibility
+                // fake for SW compatibility
                 inputFramesCount[filterIndex]  = MFXVideoVPPImgStab::GetInFramesCountExt();
                 outputFramesCount[filterIndex] = MFXVideoVPPImgStab::GetOutFramesCountExt();
                 break;
@@ -944,7 +944,7 @@ mfxStatus GetExternalFramesCount(mfxVideoParam* pParam,
 #ifdef MFX_UNDOCUMENTED_VPP_VARIANCE_REPORT
             case (mfxU32)MFX_EXTBUFF_VPP_VARIANCE_REPORT:
             {
-                // aya: fake for SW compatibility
+                // fake for SW compatibility
                 inputFramesCount[filterIndex]  = 2;
                 outputFramesCount[filterIndex] = 1;
                 break;
@@ -984,7 +984,6 @@ mfxStatus GetExternalFramesCount(mfxVideoParam* pParam,
 
             case (mfxU32)MFX_EXTBUFF_VPP_FIELD_PROCESSING:
             {
-                // AL: fake for SW compatibility
                 inputFramesCount[filterIndex]  = 1;
                 outputFramesCount[filterIndex] = 1;
                 break;
@@ -1015,10 +1014,12 @@ mfxStatus GetExternalFramesCount(mfxVideoParam* pParam,
     framesCountSuggested[VPP_IN]  = vppMax_16u(inputFramesCount, len);
     framesCountSuggested[VPP_OUT] = vppMax_16u(outputFramesCount, len);
 
+#if 0
     // arch of SW VPP is complicated.
-    // there is some scenario, when minFrames not enough due to internal MFX_ERR_MORE_DATA_RUN_TASK
-    //framesCountMin[VPP_IN]  = inputFramesCount[0];// input from first filter
-    //framesCountMin[VPP_OUT] = outputFramesCount[len-1];// output from last filter
+    // there is some scenario, when minFrames not enough due to internal MFX_ERR_MORE_DATA_SUBMIT_TASK
+    framesCountMin[VPP_IN]  = inputFramesCount[0];// input from first filter
+    framesCountMin[VPP_OUT] = outputFramesCount[len-1];// output from last filter
+#endif
 
     // so, SW min frames must be equal MAX(filter0, filter1, ..., filterN-1)
     framesCountMin[VPP_IN]  = framesCountSuggested[VPP_IN];
@@ -1070,9 +1071,6 @@ mfxStatus ExtendedQuery(VideoCORE * core, mfxU32 filterName, mfxExtBuffer* pHint
         ( (core->GetHWType() == MFX_HW_IVB) || (core->GetHWType() == MFX_HW_HSW) ||
           (core->GetHWType() == MFX_HW_BDW)) )
     {
-        /* !!! Some features for HSW does not supported in HSW 16.2 release
-         * It was decided HSW functionality for 16.2 will be same as for IVB 16.1 release
-         * */
         bLinuxAndIVB_HSW_BDW = true;
     }
 
@@ -1104,10 +1102,12 @@ mfxStatus ExtendedQuery(VideoCORE * core, mfxU32 filterName, mfxExtBuffer* pHint
         }
     }
 #endif
-    //else if( MFX_EXTBUFF_VPP_GAMUT_MAPPING == filterName )
-    //{
-    //    sts = MFXVideoVPPGamutCompression::Query( pHint );
-    //}
+#if 0
+    else if( MFX_EXTBUFF_VPP_GAMUT_MAPPING == filterName )
+    {
+        sts = MFXVideoVPPGamutCompression::Query( pHint );
+    }
+#endif
     else if( MFX_EXTBUFF_VPP_SCENE_ANALYSIS == filterName )
     {
         sts = MFX_ERR_UNSUPPORTED;

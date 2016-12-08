@@ -1,7 +1,7 @@
 set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
 
 list( APPEND vdirs
-  h264 mpeg2 vc1
+  h264 mpeg2
   )
 list( APPEND cdirs
   mpeg2_enc

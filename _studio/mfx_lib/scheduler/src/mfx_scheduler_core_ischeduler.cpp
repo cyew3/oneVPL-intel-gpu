@@ -553,7 +553,7 @@ mfxStatus mfxSchedulerCore::WaitForTaskCompletion(const void *pOwner)
         }
 
         // wait for a while :-)
-        // varistar - for a while and infinite - diffrent things )
+        // for a while and infinite - diffrent things )
         if (waitHandle.handle)
         {
             Synchronize(waitHandle, MFX_TIME_TO_WAIT);

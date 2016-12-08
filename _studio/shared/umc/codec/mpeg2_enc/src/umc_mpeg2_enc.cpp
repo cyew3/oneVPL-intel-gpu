@@ -599,7 +599,7 @@ Status MPEG2VideoEncoderBase::Init(BaseCodecParams *params)
     threadSpec = MP2_ALLOC(threadSpecificData, encodeInfo.numThreads);
     // copy existing
     if(threadsAllocated) {
-      ippsCopy_8u((Ipp8u*)cur_threadSpec, (Ipp8u*)threadSpec,
+      MFX_INTERNAL_CPY((Ipp8u*)threadSpec, (Ipp8u*)cur_threadSpec, 
         (Ipp32s)(threadsAllocated*sizeof(threadSpecificData)));
       MP2_FREE(cur_threadSpec);
     }
@@ -1267,7 +1267,7 @@ Status MPEG2VideoEncoderBase::PutPicture()
             t = BITPOS(threadSpec[i+1])>>3;
             size += t;
             if (size < output_buffer_size)            {
-                ippsCopy_8u((Ipp8u*)threadSpec[i+1].bBuf.start_pointer, (Ipp8u*)p, t);
+                MFX_INTERNAL_CPY((Ipp8u*)p, (Ipp8u*)threadSpec[i+1].bBuf.start_pointer, t);
                 p += t;
             }
         }

@@ -22,7 +22,6 @@
 #include "mfxpcp.h"
 
 #include "mfx_vpp_utils.h"
-#include "mfx_vpp_service.h"
 #include "mfx_vpp_sw.h"
 
 #include "ipps.h"
@@ -196,9 +195,11 @@ mfxStatus VideoVPPBase::Init(mfxVideoParam *par)
     sts = CheckIOPattern( par );
     MFX_CHECK_STS(sts);
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     /* SW doesn't support of protected processing */
     sts = CheckProtectedMode( par->Protected );
     MFX_CHECK_STS(sts);
+#endif
 
     sts = CheckFrameInfo( &(par->vpp.In), VPP_IN );
     MFX_CHECK_STS( sts );
@@ -494,7 +495,7 @@ mfxStatus VideoVPPBase::GetVideoParam(mfxVideoParam *par)
     par->vpp.In  = m_errPrtctState.In;
     par->vpp.Out = m_errPrtctState.Out;
 
-    par->Protected  = 0;// AYA: should be fixed for HW_VPP
+    par->Protected  = 0;
     par->IOPattern  = m_errPrtctState.IOPattern;
     par->AsyncDepth = m_errPrtctState.AsyncDepth;
 
@@ -608,12 +609,11 @@ mfxStatus VideoVPPBase::QueryCaps(VideoCORE * core, MfxHwVideoProcessing::mfxVpp
 
     if (MFX_PLATFORM_HARDWARE == core->GetPlatformType())
         return MFX_WRN_PARTIAL_ACCELERATION;
-
+    
     return MFX_ERR_NONE;
 #else
     return MFX_ERR_UNSUPPORTED;
 #endif
-
 } // mfxStatus VideoVPPBase::QueryCaps((VideoCORE * core, MfxHwVideoProcessing::mfxVppCaps& caps)
 
 
@@ -651,10 +651,6 @@ mfxStatus VideoVPPBase::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam
         out->IOPattern           = 1;
         /* protected content is not supported. check it */
         out->Protected           = 1;
-
-        /* AsyncDepth doesn't support for ISV3_2p0 Beta.
-        Reason: support by VPP is simple but applications can fails because
-        last day test has been added */
         out->AsyncDepth          = 1;
 
         if (0 == out->NumExtParam)
@@ -692,6 +688,7 @@ mfxStatus VideoVPPBase::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam
             // hardware protected section
             out->Protected = in->Protected;
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
             if (IS_PROTECTION_ANY(out->Protected) || 0 == out->Protected)
             {
                 mfxSts = MFX_ERR_NONE;
@@ -701,6 +698,7 @@ mfxStatus VideoVPPBase::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam
                 out->Protected = 0;
                 mfxSts = MFX_ERR_UNSUPPORTED;
             }
+#endif
         }
 
         /* [IOPattern] section
@@ -798,7 +796,7 @@ mfxStatus VideoVPPBase::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam
                         }
                         else
                         {
-                            ippsCopy_8u( (Ipp8u*)in->ExtParam[i], (Ipp8u*)out->ExtParam[i], (int)GetConfigSize(in->ExtParam[i]->BufferId) );
+                            memcpy_s((Ipp8u*)out->ExtParam[i], (int)GetConfigSize(in->ExtParam[i]->BufferId), (Ipp8u*)in->ExtParam[i], (int)GetConfigSize(in->ExtParam[i]->BufferId));
 
                             mfxStatus extSts = ExtendedQuery(core, in->ExtParam[i]->BufferId, out->ExtParam[i]);
                             if( MFX_ERR_NONE != extSts )
@@ -1051,21 +1049,10 @@ mfxStatus VideoVPPBase::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam
 
         if (out->vpp.In.Height)
         {
-            if (MFX_PICSTRUCT_PROGRESSIVE == out->vpp.In.PicStruct)
+            if ((out->vpp.In.Height  & 15) !=0 )
             {
-                if ((out->vpp.In.Height  & 15) !=0 )
-                {
-                    out->vpp.In.Height = 0;
-                    mfxSts = MFX_ERR_UNSUPPORTED;
-                }
-            }
-            else
-            { // TFF / BFF/ UNKNOWN
-                if ((out->vpp.In.Height  & 15) !=0 )// in according with internal spec rev 22583
-                {
-                    out->vpp.In.Height = 0;
-                    mfxSts = MFX_ERR_UNSUPPORTED;
-                }
+                out->vpp.In.Height = 0;
+                mfxSts = MFX_ERR_UNSUPPORTED;
             }
         }
 
@@ -1118,21 +1105,10 @@ mfxStatus VideoVPPBase::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam
 
         if( out->vpp.Out.Height )
         {
-            if (MFX_PICSTRUCT_PROGRESSIVE == out->vpp.Out.PicStruct)
+            if ((out->vpp.Out.Height  & 15) !=0)
             {
-                if ((out->vpp.Out.Height  & 15) !=0)
-                {
-                    out->vpp.Out.Height = 0;
-                    mfxSts = MFX_ERR_UNSUPPORTED;
-                }
-            }
-            else
-            { // TFF or BFF
-                if ((out->vpp.Out.Height  & 15) !=0) // in according with internal spec (ISV3b-SNBa rev. 22583)
-                {
-                    out->vpp.Out.Height = 0;
-                    mfxSts = MFX_ERR_UNSUPPORTED;
-                }
+                out->vpp.Out.Height = 0;
+                mfxSts = MFX_ERR_UNSUPPORTED;
             }
         }
 
@@ -1159,11 +1135,14 @@ mfxStatus VideoVPPBase::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam
             {
                 return MFX_ERR_UNSUPPORTED;
             }
+
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
             if (MFX_ERR_NONE != hwQuerySts && IS_PROTECTION_ANY(out->Protected))
             {
                 out->Protected = 0;
                 return MFX_ERR_UNSUPPORTED;
             }
+#endif
             if (MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == hwQuerySts || MFX_WRN_FILTER_SKIPPED == hwQuerySts)
             {
                 return hwQuerySts;
@@ -1227,9 +1206,11 @@ mfxStatus VideoVPPBase::Reset(mfxVideoParam *par)
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
     }
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     /* Protected Check */
     sts = CheckProtectedMode( par->Protected );
     MFX_CHECK_STS(sts);
+#endif
 
     /* AsyncDepth */
     if( m_InitState.AsyncDepth < par->AsyncDepth )
@@ -1337,10 +1318,12 @@ mfxStatus VideoVPPBase::CheckPlatformLimitations(
     // compare pipelineList and capsList
     mfxStatus capsSts = GetCrossList(pipelineList, capsList, supportedList, unsupportedList);// this function could return WRN_FILTER_SKIPPED
 
+#if !defined (MFX_ENABLE_HW_ONLY_VPP)
     if (MFX_PLATFORM_SOFTWARE == core->GetPlatformType() )
     {
         sts = CheckLimitationsSW(param, supportedList, bCorrectionEnable);
     }
+#endif
 
     // check unsupported list if we need to reset ext buffer fields
     if(!unsupportedList.empty())
@@ -1398,10 +1381,12 @@ mfxStatus VideoVPP_HW::InternalInit(mfxVideoParam *par)
     }
     MFX_CHECK_STS( sts );
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if ((MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY) != par->IOPattern && IS_PROTECTION_ANY(par->Protected))
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
+#endif
 
     return (bIsFilterSkipped) ? MFX_WRN_FILTER_SKIPPED : MFX_ERR_NONE;
 }
@@ -1413,6 +1398,7 @@ mfxStatus VideoVPP_HW::Reset(mfxVideoParam *par)
 
     sts = m_pHWVPP.get()->Reset(par);
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (MFX_ERR_NONE != sts && IS_PROTECTION_ANY(par->Protected))
     {
         return MFX_ERR_UNSUPPORTED;
@@ -1423,6 +1409,7 @@ mfxStatus VideoVPP_HW::Reset(mfxVideoParam *par)
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
+#endif
 
     MFX_CHECK_STS(sts);
 
@@ -1435,7 +1422,7 @@ mfxStatus VideoVPP_HW::Close(void)
 {
     mfxStatus sts = VideoVPPBase::Close();
     m_pHWVPP.reset(0);
-    return sts;// in according with spec
+    return sts;
 
 } // mfxStatus VideoVPPBase::Close(void)
 
@@ -1465,7 +1452,7 @@ mfxStatus VideoVPP_HW::VppFrameCheck(mfxFrameSurface1 *in, mfxFrameSurface1 *out
 
     if (MFX_ERR_MORE_DATA == internalSts && true == isInverseTelecinedEnabled)
     {
-        //internalSts = (mfxStatus) MFX_ERR_MORE_DATA_RUN_TASK;
+        //internalSts = (mfxStatus) MFX_ERR_MORE_DATA_SUBMIT_TASK;
     }
 
     if( out && (MFX_ERR_NONE == internalSts || MFX_ERR_MORE_SURFACE == internalSts) )
@@ -1757,7 +1744,7 @@ mfxStatus VideoVPP_SW::VppFrameCheck(mfxFrameSurface1 *in, mfxFrameSurface1 *out
     /*              hold  surfaces             */
     /* *************************************** */
     if( in && !bIgnoreInput && (MFX_ERR_NONE == stsReadinessPipeline ||
-        static_cast<int>(MFX_ERR_MORE_DATA_RUN_TASK) == static_cast<int>(stsReadinessPipeline) ||
+        static_cast<int>(MFX_ERR_MORE_DATA_SUBMIT_TASK) == static_cast<int>(stsReadinessPipeline) ||
         MFX_ERR_MORE_SURFACE == stsReadinessPipeline) )
     {
         sts = m_core->IncreaseReference( &(in->Data) );
@@ -1776,7 +1763,7 @@ mfxStatus VideoVPP_SW::VppFrameCheck(mfxFrameSurface1 *in, mfxFrameSurface1 *out
 
     /* initialization for multi threading */
     if (MFX_ERR_NONE == stsReadinessPipeline ||
-        static_cast<int>(MFX_ERR_MORE_DATA_RUN_TASK) == static_cast<int>(stsReadinessPipeline) ||
+        static_cast<int>(MFX_ERR_MORE_DATA_SUBMIT_TASK) == static_cast<int>(stsReadinessPipeline) ||
         MFX_ERR_MORE_SURFACE == stsReadinessPipeline)
     {
         AsyncParams *pAsyncParams = new AsyncParams;

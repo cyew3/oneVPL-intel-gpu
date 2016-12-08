@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -29,6 +29,7 @@ public:
   static mfxU8 GetInFramesCountExt( void ) { return VPP_SHIFT_IN_NUM_FRAMES_REQUIRED; };
   static mfxU8 GetOutFramesCountExt(void) { return VPP_SHIFT_OUT_NUM_FRAMES_REQUIRED; };
 
+#if !defined (MFX_ENABLE_HW_ONLY_VPP)
   MFXVideoVPPShift(VideoCORE *core, mfxStatus* sts);
   virtual ~MFXVideoVPPShift();
 
@@ -57,7 +58,7 @@ protected:
 
 private:
 
-
+#endif
 };
 
 #endif // __MFX_SHIFT_VPP_H

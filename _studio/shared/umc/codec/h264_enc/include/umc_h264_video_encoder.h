@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2012 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -20,6 +20,7 @@
 #include "umc_video_encoder.h"
 #include "umc_h264_config.h"
 #include "umc_video_brc.h"
+#include "umc_h264_common.h"
 
 namespace UMC
 {
@@ -33,20 +34,6 @@ namespace UMC
 #define MAX_TEMP_LEVELS     8
 #define MAX_QUALITY_LEVELS  16
 #define MAX_SVC_LAYERS      MAX_DEP_LAYERS * MAX_TEMP_LEVELS * MAX_QUALITY_LEVELS
-
-    typedef enum {
-        H264_BASE_PROFILE     = 66,
-        H264_MAIN_PROFILE     = 77,
-        H264_SCALABLE_BASELINE_PROFILE  = 83,
-        H264_SCALABLE_HIGH_PROFILE      = 86,
-        H264_EXTENDED_PROFILE = 88,
-        H264_HIGH_PROFILE     = 100,
-        H264_HIGH10_PROFILE   = 110,
-        H264_MULTIVIEWHIGH_PROFILE  = 118,
-        H264_STEREOHIGH_PROFILE  = 128,
-        H264_HIGH422_PROFILE  = 122,
-        H264_HIGH444_PROFILE  = 144
-    } H264_PROFILE_IDC;
 
     typedef Ipp32s H264_Key_Frame_Control_Method;
 
@@ -701,61 +688,6 @@ namespace UMC {
     };
 
 } // namespace UMC
-
-#define ConvertProfileToTable(profile) (profile == H264_BASE_PROFILE) ? H264_LIMIT_TABLE_BASE_PROFILE : \
-    (profile == H264_MAIN_PROFILE) ? H264_LIMIT_TABLE_MAIN_PROFILE : \
-    (profile == H264_EXTENDED_PROFILE) ? H264_LIMIT_TABLE_EXTENDED_PROFILE : \
-    (profile == H264_HIGH_PROFILE) ? H264_LIMIT_TABLE_HIGH_PROFILE : \
-    (profile == H264_MULTIVIEWHIGH_PROFILE) ? H264_LIMIT_TABLE_MULTIVIEWHIGH_PROFILE : \
-    (profile == H264_STEREOHIGH_PROFILE) ? H264_LIMIT_TABLE_STEREOHIGH_PROFILE : \
-    (profile == H264_SCALABLE_BASELINE_PROFILE) ? H264_LIMIT_TABLE_BASE_PROFILE : \
-    (profile == H264_SCALABLE_HIGH_PROFILE) ? H264_LIMIT_TABLE_HIGH_PROFILE : \
-    (profile == H264_HIGH10_PROFILE) ? H264_LIMIT_TABLE_HIGH10_PROFILE : \
-    (profile == H264_HIGH422_PROFILE) ? H264_LIMIT_TABLE_HIGH422_PROFILE : \
-    (profile == H264_HIGH444_PROFILE) ?  H264_LIMIT_TABLE_HIGH444_PROFILE : -1;
-
-#define ConvertProfileFromTable(profile) ((profile == H264_LIMIT_TABLE_BASE_PROFILE) ? H264_BASE_PROFILE : \
-    (profile == H264_LIMIT_TABLE_MAIN_PROFILE) ? H264_MAIN_PROFILE : \
-    (profile == H264_LIMIT_TABLE_EXTENDED_PROFILE) ? H264_EXTENDED_PROFILE : \
-    (profile == H264_LIMIT_TABLE_HIGH_PROFILE) ? H264_HIGH_PROFILE : \
-    (profile == H264_LIMIT_TABLE_STEREOHIGH_PROFILE) ? H264_STEREOHIGH_PROFILE : \
-    (profile == H264_LIMIT_TABLE_MULTIVIEWHIGH_PROFILE) ? H264_MULTIVIEWHIGH_PROFILE : \
-    (profile == H264_LIMIT_TABLE_HIGH10_PROFILE) ? H264_HIGH10_PROFILE : \
-    (profile == H264_LIMIT_TABLE_HIGH422_PROFILE) ? H264_HIGH422_PROFILE : H264_HIGH444_PROFILE);
-
-#define ConvertLevelToTable(level) (level == 10) ? H264_LIMIT_TABLE_LEVEL_1 : \
-    (level == 11) ? H264_LIMIT_TABLE_LEVEL_11 : \
-    (level == 12) ? H264_LIMIT_TABLE_LEVEL_12 : \
-    (level == 13) ? H264_LIMIT_TABLE_LEVEL_13 : \
-    (level == 20) ? H264_LIMIT_TABLE_LEVEL_2 : \
-    (level == 21) ? H264_LIMIT_TABLE_LEVEL_21 : \
-    (level == 22) ? H264_LIMIT_TABLE_LEVEL_22 : \
-    (level == 30) ? H264_LIMIT_TABLE_LEVEL_3 : \
-    (level == 31) ? H264_LIMIT_TABLE_LEVEL_31 : \
-    (level == 32) ? H264_LIMIT_TABLE_LEVEL_32 : \
-    (level == 40) ? H264_LIMIT_TABLE_LEVEL_4 : \
-    (level == 41) ? H264_LIMIT_TABLE_LEVEL_41 : \
-    (level == 42) ? H264_LIMIT_TABLE_LEVEL_42 : \
-    (level == 50) ? H264_LIMIT_TABLE_LEVEL_5 : \
-    (level == 51) ? H264_LIMIT_TABLE_LEVEL_51 : \
-    (level == 52) ? H264_LIMIT_TABLE_LEVEL_52 : -1;
-
-#define ConvertLevelFromTable(level) ((level == H264_LIMIT_TABLE_LEVEL_1) ? 10 : \
-    ((level == H264_LIMIT_TABLE_LEVEL_11) || (level == H264_LIMIT_TABLE_LEVEL_1B)) ? 11 : \
-    (level == H264_LIMIT_TABLE_LEVEL_12) ? 12 : \
-    (level == H264_LIMIT_TABLE_LEVEL_13) ? 13 : \
-    (level == H264_LIMIT_TABLE_LEVEL_2) ? 20 : \
-    (level == H264_LIMIT_TABLE_LEVEL_21) ? 21 : \
-    (level == H264_LIMIT_TABLE_LEVEL_22) ? 22 : \
-    (level == H264_LIMIT_TABLE_LEVEL_3) ? 30 : \
-    (level == H264_LIMIT_TABLE_LEVEL_31) ? 31 : \
-    (level == H264_LIMIT_TABLE_LEVEL_32) ? 32 : \
-    (level == H264_LIMIT_TABLE_LEVEL_4) ? 40 : \
-    (level == H264_LIMIT_TABLE_LEVEL_41) ? 41 : \
-    (level == H264_LIMIT_TABLE_LEVEL_42) ? 42 : \
-    (level == H264_LIMIT_TABLE_LEVEL_5) ? 50 :  \
-    (level == H264_LIMIT_TABLE_LEVEL_51) ? 51 : 52);
-
 
 #endif // __UMC_H264_VIDEO_ENCODER_H__
 

@@ -18,22 +18,6 @@
 #include "vaapi_ext_interface.h"
 #endif
 
-//#define OTLAD
-#ifdef OTLAD
-#include <stdio.h>
-
-    #define MEDIASDK_ROOT "/home/locusr/mfx_linux/"
-    const char* fname_otladka   = MEDIASDK_ROOT"va_otl.txt";
-    const char* fname_matr      = MEDIASDK_ROOT"va_matr.txt";
-    const char* fname_pic       = MEDIASDK_ROOT"va_pic.txt";
-    const char* fname_slice     = MEDIASDK_ROOT"va_slice.txt";
-    #undef MEDIASDK_ROOT
-
-    FILE *otl = fopen(fname_otladka, "w");
-/*extern */int frame_count = 0;
-/*extern*/ int slice_count = 0;
-#endif
-
 #pragma warning(disable: 4244)
 
 using namespace UMC;
@@ -60,7 +44,11 @@ bool PackVA::SetVideoAccelerator(VideoAccelerator * va)
         return false;
     }
     va_mode = m_va->m_Profile;
+    IsProtectedBS = false;
+
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     IsProtectedBS = (m_va->GetProtectedVA() != NULL);
+#endif
 
     return true;
 }
@@ -75,6 +63,7 @@ Status PackVA::InitBuffers(int /*size_bs*/, int /*size_sl*/)
 {
       totalNumCoef = 0;
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
       if (m_SliceNum == 0 && m_va->GetProtectedVA())
       {
           bs = m_va->GetProtectedVA()->GetBitstream();
@@ -83,6 +72,7 @@ Status PackVA::InitBuffers(int /*size_bs*/, int /*size_sl*/)
           is_bs_aligned_16 = true;
           add_to_slice_start = 0;
       }
+#endif
 
       // request picture parameters memory
       vpPictureParam = (DXVA_PictureParameters*)m_va->GetCompBuffer(DXVA_PICTURE_DECODE_BUFFER);
@@ -104,7 +94,7 @@ Status PackVA::InitBuffers(int /*size_bs*/, int /*size_sl*/)
 
       // request slice infromation buffer
       pSliceInfoBuffer = (DXVA_SliceInfo*)m_va->GetCompBuffer(DXVA_SLICE_CONTROL_BUFFER, &CompBuf);
-      
+
       if (NULL == CompBuf)
       {
           return UMC_ERR_FAILED;
@@ -122,16 +112,16 @@ Status PackVA::InitBuffers(int /*size_bs*/, int /*size_sl*/)
           return UMC_ERR_FAILED;
       }
 
+      CompBuf->SetPVPState(NULL, 0);
+
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
       if (NULL != m_va->GetProtectedVA() &&
           IS_PROTECTION_GPUCP_ANY(m_va->GetProtectedVA()->GetProtected()) &&
           curr_bs_encryptedData != NULL)
       {
           CompBuf->SetPVPState(&curr_bs_encryptedData->CipherCounter, sizeof(curr_bs_encryptedData->CipherCounter));
       }
-      else
-      {
-          CompBuf->SetPVPState(NULL, 0);
-      }
+#endif
 
       bs_size_getting = CompBuf->GetBufferSize();
 
@@ -218,13 +208,9 @@ PackVA::SaveVLDParameters(
 {
   if(va_mode == VA_NO) return UMC_OK;
 
-#ifdef OTLAD
-  slice_count = 0;
-  if(otl)fprintf(otl,"frame_count = %d\n",frame_count);
-#endif
-
   if(va_mode == VA_VLD_W)
   {
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         mfxU16 prot = 0;
         if (m_va->GetProtectedVA())
         {
@@ -244,47 +230,25 @@ PackVA::SaveVLDParameters(
                 extensionData.Function = 0;
                 extensionData.pPrivateOutputData = &extensionOutput;
                 extensionData.PrivateOutputDataSize = sizeof(extensionOutput);
-                if (m_va->m_HWPlatform == VA_HW_LAKE)
-                {
-                    DXVA_Intel_Pavp_Protocol  extensionInput = {0};
+                DXVA_Intel_Pavp_Protocol2  extensionInput = {0};
 
-                    extensionInput.EncryptProtocolHeader.dwFunction = 0xffff0001;
-                    if(encryptedData)
-                    {
-                        extensionInput.EncryptProtocolHeader.guidEncryptProtocol = m_va->GetProtectedVA()->GetEncryptionGUID();
-                        extensionInput.dwBufferSize = bs_size;
-                        extensionInput.dwAesCounter = LITTLE_ENDIAN_SWAP32((DWORD)(curr_bs_encryptedData->CipherCounter.Count >> 32));
-                    }
-                    else
-                    {
-                        extensionInput.EncryptProtocolHeader.guidEncryptProtocol = DXVA_NoEncrypt;
-                    }
-                    extensionData.pPrivateInputData = &extensionInput;
-                    extensionData.PrivateInputDataSize = sizeof(extensionInput);
-                    hr = m_va->ExecuteExtensionBuffer(&extensionData);
+                extensionInput.EncryptProtocolHeader.dwFunction = 0xffff0001;
+                if(encryptedData)
+                {
+                    extensionInput.EncryptProtocolHeader.guidEncryptProtocol = m_va->GetProtectedVA()->GetEncryptionGUID();
+                    extensionInput.dwBufferSize = bs_size;
+                    memcpy_s(extensionInput.dwAesCounter, sizeof(curr_bs_encryptedData->CipherCounter),
+                        &curr_bs_encryptedData->CipherCounter, sizeof(curr_bs_encryptedData->CipherCounter));
                 }
                 else
                 {
-                    DXVA_Intel_Pavp_Protocol2  extensionInput = {0};
-
-                    extensionInput.EncryptProtocolHeader.dwFunction = 0xffff0001;
-                    if(encryptedData)
-                    {
-                        extensionInput.EncryptProtocolHeader.guidEncryptProtocol = m_va->GetProtectedVA()->GetEncryptionGUID();
-                        extensionInput.dwBufferSize = bs_size;
-                        memcpy_s(extensionInput.dwAesCounter, sizeof(curr_bs_encryptedData->CipherCounter),
-                            &curr_bs_encryptedData->CipherCounter, sizeof(curr_bs_encryptedData->CipherCounter));
-                    }
-                    else
-                    {
-                        extensionInput.EncryptProtocolHeader.guidEncryptProtocol = DXVA_NoEncrypt;
-                    }
-                    extensionInput.PavpEncryptionMode.eEncryptionType = (PAVP_ENCRYPTION_TYPE) m_va->GetProtectedVA()->GetEncryptionMode();
-                    extensionInput.PavpEncryptionMode.eCounterMode = (PAVP_COUNTER_TYPE) m_va->GetProtectedVA()->GetCounterMode();
-                    extensionData.pPrivateInputData = &extensionInput;
-                    extensionData.PrivateInputDataSize = sizeof(extensionInput);
-                    hr = m_va->ExecuteExtensionBuffer(&extensionData);
+                    extensionInput.EncryptProtocolHeader.guidEncryptProtocol = DXVA_NoEncrypt;
                 }
+                extensionInput.PavpEncryptionMode.eEncryptionType = (PAVP_ENCRYPTION_TYPE) m_va->GetProtectedVA()->GetEncryptionMode();
+                extensionInput.PavpEncryptionMode.eCounterMode = (PAVP_COUNTER_TYPE) m_va->GetProtectedVA()->GetCounterMode();
+                extensionData.pPrivateInputData = &extensionInput;
+                extensionData.PrivateInputDataSize = sizeof(extensionInput);
+                hr = m_va->ExecuteExtensionBuffer(&extensionData);
 
                 if (FAILED(hr) ||
                     (encryptedData && extensionOutput.guidEncryptProtocol != m_va->GetProtectedVA()->GetEncryptionGUID()) ||
@@ -308,7 +272,7 @@ PackVA::SaveVLDParameters(
 
                 if(add_to_slice_start)
                 {
-                    ippsCopy_8u(add_bytes,ptr, add_to_slice_start);
+                    MFX_INTERNAL_CPY(ptr, add_bytes,add_to_slice_start);
                     ptr += add_to_slice_start;
                     pBuf=ptr;
                 }
@@ -320,7 +284,7 @@ PackVA::SaveVLDParameters(
                     if(alignedSize & 0xf)
                         alignedSize = alignedSize+(0x10 - (alignedSize & 0xf));
 
-                    ippsCopy_8u(encryptedData->Data,pBuf, alignedSize);
+                    MFX_INTERNAL_CPY(pBuf, encryptedData->Data,alignedSize);
 
                     diff = (Ipp32u)(ptr - pBuf);
                     ptr += alignedSize - diff;
@@ -352,14 +316,15 @@ PackVA::SaveVLDParameters(
             {
                 bs_size = pSliceInfo[-1].dwSliceDataLocation +
                     pSliceInfo[-1].dwSliceBitsInBuffer/8;
-                ippsCopy_8u(bs_start_ptr, (Ipp8u*)pBitsreamData, bs_size);
+                MFX_INTERNAL_CPY((Ipp8u*)pBitsreamData, bs_start_ptr, bs_size);
             }
         }//if (pack_w.m_va->GetProtectedVA())
         else//not protected
+#endif // !defined(MFX_PROTECTED_FEATURE_DISABLE)
         {
           bs_size = pSliceInfo[-1].dwSliceDataLocation +
                         pSliceInfo[-1].dwSliceBitsInBuffer/8;
-          ippsCopy_8u(bs_start_ptr, (Ipp8u*)pBitsreamData, bs_size);
+          MFX_INTERNAL_CPY((Ipp8u*)pBitsreamData, bs_start_ptr, bs_size);
         }
 
       Ipp32s from, to;
@@ -368,7 +333,7 @@ PackVA::SaveVLDParameters(
         pQmatrixData->bNewQmatrix[from] = QmatrixData.bNewQmatrix[from];
         if(QmatrixData.bNewQmatrix[from])
         {
-          ippsCopy_8u((Ipp8u*)QmatrixData.Qmatrix[from], (Ipp8u*)pQmatrixData->Qmatrix[to],
+          MFX_INTERNAL_CPY((Ipp8u*)pQmatrixData->Qmatrix[to], (Ipp8u*)QmatrixData.Qmatrix[from], 
             sizeof(pQmatrixData->Qmatrix[0]));
           to++;
         }
@@ -475,11 +440,7 @@ PackVA::SaveVLDParameters(
       f |= (PictureHeader->alternate_scan << 6);
       f |= (PictureHeader->repeat_first_field << 5);
 
-#ifdef ELK
       f |= (1 << 4); //chroma_420
-#else
-      f |= (PictureHeader[task_num]->progressive_frame << 4); // chroma420 == prog_frame here
-#endif
       f |= (PictureHeader->progressive_frame << 3);
       pPictureParam->wBitstreamPCEelements = (WORD)f;
     }
@@ -520,7 +481,7 @@ PackVA::~PackVA(void)
 {
     if(pSliceInfoBuffer)
     {
-        ippsFree(pSliceInfoBuffer);
+        free(pSliceInfoBuffer);
         pSliceInfoBuffer = NULL;
     }
 }
@@ -531,14 +492,12 @@ Status PackVA::InitBuffers(int size_bs, int size_sl)
     if(va_mode != VA_VLD_L)
         return UMC_ERR_UNSUPPORTED;
 
-#if !defined(MFX_NO_EXCEPTIONS)
     try
-#endif // #if !defined(MFX_NO_EXCEPTIONS)
     {
         if (NULL == (vpPictureParam = (VAPictureParameterBufferMPEG2*)m_va->GetCompBuffer(VAPictureParameterBufferType, &CompBuf, sizeof (VAPictureParameterBufferMPEG2))))
             return UMC_ERR_ALLOC;
 
-        if (va_mode == VA_VLD_L) // ao: needed?
+        if (va_mode == VA_VLD_L)
         {
             if (NULL == (pQmatrixData = (VAIQMatrixBufferMPEG2*)m_va->GetCompBuffer(VAIQMatrixBufferType, &CompBuf, sizeof (VAIQMatrixBufferMPEG2))))
                 return UMC_ERR_ALLOC;
@@ -546,36 +505,30 @@ Status PackVA::InitBuffers(int size_bs, int size_sl)
             Ipp32s prev_slice_size_getting = slice_size_getting;
             slice_size_getting = sizeof (VASliceParameterBufferMPEG2) * size_sl;
 
-#if 0
-            if (NULL == (pSliceInfoBuffer = (VASliceParameterBufferMPEG2*)m_va->GetCompBuffer(VASliceParameterBufferType, &CompBuf, sizeof (VASliceParameterBufferMPEG2)*size_sl)))
-                return UMC_ERR_ALLOC;
-
-#else
             if(NULL == pSliceInfoBuffer)
-                pSliceInfoBuffer = (VASliceParameterBufferMPEG2*)ippsMalloc_8u(slice_size_getting);
+                pSliceInfoBuffer = (VASliceParameterBufferMPEG2*)malloc(slice_size_getting);
             else if (prev_slice_size_getting < slice_size_getting)
             {
-                ippsFree(pSliceInfoBuffer);
-                pSliceInfoBuffer = (VASliceParameterBufferMPEG2*)ippsMalloc_8u(slice_size_getting);
+                free(pSliceInfoBuffer);
+                pSliceInfoBuffer = (VASliceParameterBufferMPEG2*)malloc(slice_size_getting);
             }
 
             if( NULL == pSliceInfoBuffer)
                 return UMC_ERR_ALLOC;
-#endif
 
             memset(pSliceInfoBuffer, 0, slice_size_getting);
 
             if (NULL == (pBitsreamData = (Ipp8u*)m_va->GetCompBuffer(VASliceDataBufferType, &CompBuf, size_bs)))
                 return UMC_ERR_ALLOC;
 
+            CompBuf->SetPVPState(NULL, 0);
+
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
             if (NULL != m_va->GetProtectedVA())
             {
                 return UMC_ERR_NOT_IMPLEMENTED;
             }
-            else
-            {
-                CompBuf->SetPVPState(NULL, 0);
-            }
+#endif
 
             bs_size_getting = CompBuf->GetBufferSize();
             pSliceInfo = pSliceInfoBuffer;
@@ -594,12 +547,10 @@ Status PackVA::InitBuffers(int size_bs, int size_sl)
 
         }
     }
-#if !defined(MFX_NO_EXCEPTIONS)
     catch(...)
     {
         return UMC_ERR_NOT_ENOUGH_BUFFER;
     }
-#endif //#if !defined(MFX_NO_EXCEPTIONS)
     return UMC_OK;
 }
 
@@ -625,7 +576,7 @@ PackVA::SaveVLDParameters(
         Ipp32s size = 0;
         if(pSliceInfoBuffer < pSliceInfo)
             size = pSliceInfo[-1].slice_data_offset + pSliceInfo[-1].slice_data_size;
-        ippsCopy_8u(bs_start_ptr, (Ipp8u*)pBitsreamData, size);
+        MFX_INTERNAL_CPY((Ipp8u*)pBitsreamData, bs_start_ptr, size);
 
         UMCVACompBuffer* CompBuf;
         m_va->GetCompBuffer(VASliceDataBufferType, &CompBuf);
@@ -638,13 +589,13 @@ PackVA::SaveVLDParameters(
         pQmatrixData->load_chroma_intra_quantiser_matrix = QmatrixData.load_chroma_intra_quantiser_matrix;
         pQmatrixData->load_chroma_non_intra_quantiser_matrix = QmatrixData.load_chroma_non_intra_quantiser_matrix;
 
-        ippsCopy_8u((Ipp8u*)QmatrixData.intra_quantiser_matrix, (Ipp8u*)pQmatrixData->intra_quantiser_matrix,
+        MFX_INTERNAL_CPY((Ipp8u*)pQmatrixData->intra_quantiser_matrix, (Ipp8u*)QmatrixData.intra_quantiser_matrix, 
             sizeof(pQmatrixData->intra_quantiser_matrix));
-        ippsCopy_8u((Ipp8u*)QmatrixData.non_intra_quantiser_matrix, (Ipp8u*)pQmatrixData->non_intra_quantiser_matrix,
+        MFX_INTERNAL_CPY((Ipp8u*)pQmatrixData->non_intra_quantiser_matrix, (Ipp8u*)QmatrixData.non_intra_quantiser_matrix, 
             sizeof(pQmatrixData->non_intra_quantiser_matrix));
-        ippsCopy_8u((Ipp8u*)QmatrixData.chroma_intra_quantiser_matrix, (Ipp8u*)pQmatrixData->chroma_intra_quantiser_matrix,
+        MFX_INTERNAL_CPY((Ipp8u*)pQmatrixData->chroma_intra_quantiser_matrix, (Ipp8u*)QmatrixData.chroma_intra_quantiser_matrix, 
             sizeof(pQmatrixData->chroma_intra_quantiser_matrix));
-        ippsCopy_8u((Ipp8u*)QmatrixData.chroma_non_intra_quantiser_matrix, (Ipp8u*)pQmatrixData->chroma_non_intra_quantiser_matrix,
+        MFX_INTERNAL_CPY((Ipp8u*)pQmatrixData->chroma_non_intra_quantiser_matrix, (Ipp8u*)QmatrixData.chroma_non_intra_quantiser_matrix, 
             sizeof(pQmatrixData->chroma_non_intra_quantiser_matrix));
 
         NumOfItem = (int)(pSliceInfo - pSliceInfoBuffer);
@@ -654,7 +605,7 @@ PackVA::SaveVLDParameters(
             &CompBuf,
             (Ipp32s) (sizeof (VASliceParameterBufferMPEG2))*NumOfItem);
 
-        ippsCopy_8u((Ipp8u*)pSliceInfoBuffer, (Ipp8u*)l_pSliceInfoBuffer,
+        MFX_INTERNAL_CPY((Ipp8u*)l_pSliceInfoBuffer, (Ipp8u*)pSliceInfoBuffer, 
             sizeof(VASliceParameterBufferMPEG2) * NumOfItem);
 
         m_va->GetCompBuffer(VASliceParameterBufferType,&CompBuf);
@@ -723,219 +674,58 @@ PackVA::SaveVLDParameters(
                                             && (field_buffer_index == 1));
     }
 
-#ifdef OTLAD
-    {
-        slice_count = 0;
-        if (frame_count <= 10)
-        {
-            if (otl == NULL)
-            {
-                fprintf(stderr, "Cannot open '%s'", fname_otladka);
-                getchar();
-                exit(-1);
-            }
-            int st = fprintf(otl, "frame_count = %d\n", frame_count);
-            printf("st %x\n", st);
-            st = fprintf(otl, "bs_size = %d\n", bs_size);
-            printf("st %x\n", st);
-            // Print matrix data to file:
-            {
-                static FILE*    matr_data  = fopen(fname_matr, "w");
-                unsigned long*  p          = (unsigned long *)pQmatrixData;
-                int             len        = sizeof(*pQmatrixData);
-                int             num_el     = len / sizeof(unsigned long);
-
-                if (!matr_data)
-                {
-                    fprintf(stderr, "Cannot open '%s'", fname_matr);
-                    getchar();
-                    exit(-1);
-                }
-                if (len % sizeof(unsigned long))
-                {
-                    num_el++;
-                }
-                for (int n = 0; n < num_el; n++)
-                {
-                    if (n == num_el-1)
-                    {
-                        fprintf(matr_data, "0x%x", p[n]);
-                    }
-                    else
-                    {
-                        fprintf(matr_data, "0x%x, ", p[n]);
-                        if (0 == (n+1)%12)
-                            fprintf(matr_data,"\n");
-                    }
-                }
-                //fclose(matr_data);
-            }
-            // Print picture data to file:
-            {
-                static FILE*    pic_data = fopen(fname_pic, "w");
-                unsigned long*  p        = (unsigned long *)vpPictureParam;
-                int             len      = sizeof(*vpPictureParam);
-                int             num_el   = len/sizeof(unsigned long);
-
-                if (!pic_data)
-                {
-                    fprintf(stderr, "Cannot open '%s'", fname_pic);
-                    exit(-1);
-                }
-
-                if (len % sizeof(unsigned long))
-                {
-                    num_el ++;
-                }
-
-                for (int n = 0; n < num_el; n++)
-                {
-                    if (n == num_el-1)
-                    {
-                        fprintf(pic_data, "0x%x", p[n]);
-                    }
-                    else
-                    {
-                        fprintf(pic_data, "0x%x, ", p[n]);
-                        if (0 == (n + 1) % 4)
-                        {
-                            fprintf(pic_data,"\n");
-                        }
-                    }
-                }
-                //fclose(pic_data);
-            }
-
-            //  Print slice data to file:
-            {
-                int             n           = pSliceInfo - pSliceInfoBuffer;
-                unsigned long*  p           = (unsigned long *)pSliceInfoBuffer;
-                int             len         = sizeof(*pSliceInfoBuffer) * n;
-                int             num_el      = len / sizeof(unsigned long);
-                static FILE*    slice_data  = fopen(fname_slice, "w");
-
-                if (!slice_data)
-                {
-                    fprintf(stderr, "Cannot open '%s'", fname_slice);
-                    exit(-1);
-                }
-
-                if (len % sizeof(unsigned long))
-                {
-                    num_el++;
-                }
-                for (int n = 0; n < num_el; n++)
-                {
-                    if (n == num_el-1)
-                    {
-                        fprintf(slice_data, "0x%x", p[n]);
-                    }
-                    else
-                    {
-                        fprintf(slice_data, "0x%x, ", p[n]);
-                        if (0 == (n + 1) % 12)
-                        {
-                            fprintf(slice_data, "\n");
-                        }
-                    }
-                }
-                //fclose(slice_data);
-            }
-
-            VAPictureParameterBufferMPEG2*  pPictureParam  = (VAPictureParameterBufferMPEG2*)vpPictureParam;
-            if (slice_count == 0)
-            {
-                fprintf(otl, "Picture parameters:\n");
-                fprintf(otl, "  horizontal_size = %d\n", pPictureParam->horizontal_size);
-                fprintf(otl, "  vertical_size = %d\n", pPictureParam->vertical_size);
-                fprintf(otl, "  forward_reference_picture = %d\n", pPictureParam->forward_reference_picture);
-                fprintf(otl, "  backward_reference_picture = %d\n", pPictureParam->backward_reference_picture);
-                fprintf(otl, "  picture_coding_type = %d\n", pPictureParam->picture_coding_type);
-                fprintf(otl, "  f_code = %d\n", pPictureParam->f_code);
-                fprintf(otl, "  picture_coding_extension.value = %x\n", pPictureParam->picture_coding_extension.value);
-                fprintf(otl, "\n");
-            }
-
-            int                           n = pSliceInfo - pSliceInfoBuffer;
-            VASliceParameterBufferMPEG2*  p = pSliceInfoBuffer;
-
-            fprintf(otl, "slice_count %d; pSliceInfo %p; pSliceInfoBuffer %p;\n", n, pSliceInfo, pSliceInfoBuffer);
-            for (int i = 0; i < n; i++)
-            {
-                fprintf(otl, "Slice %d\n", slice_count);
-                fprintf(otl, "  slice_data_size = %x\n", p->slice_data_size);
-                fprintf(otl, "  slice_data_offset = %x\n", p->slice_data_offset);
-                fprintf(otl, "  slice_data_flag = %d\n", p->slice_data_flag);
-                fprintf(otl, "  macroblock_offset = %d\n", p->macroblock_offset);
-                fprintf(otl, "  slice_horizontal_position = %d\n", p->slice_horizontal_position);
-                fprintf(otl, "  slice_vertical_position = %d\n", p->slice_vertical_position);
-                fprintf(otl, "  quantiser_scale_code = %d\n", p->quantiser_scale_code);
-                fprintf(otl, "  intra_slice_flag = %d\n", p->intra_slice_flag);
-                fprintf(otl, "\n");
-                slice_count++;
-                p++;
-            }
-        }
-        frame_count++;
-    }
-#endif  //OTLAD
-
     return UMC_OK;
 }
 
 Status
 PackVA::SetBufferSize(
     Ipp32s          numMB,
-    int             size_bs,    //ao: is local bs_size more precize?
+    int             size_bs,
     int             size_sl)
 {
-#if !defined(MFX_NO_EXCEPTIONS)
         try
-#endif // #if !defined(MFX_NO_EXCEPTIONS)
         {
             UMCVACompBuffer*  CompBuf  = NULL;
 
             m_va->GetCompBuffer(
-                VAPictureParameterBufferType,   //DXVA_PICTURE_DECODE_BUFFER
+                VAPictureParameterBufferType,
                 &CompBuf,
-                (Ipp32s)sizeof (VAPictureParameterBufferMPEG2));  //absent in win version
-            CompBuf->SetDataSize((Ipp32s) (sizeof (VAPictureParameterBufferMPEG2))); //DXVA_PictureParameters
+                (Ipp32s)sizeof (VAPictureParameterBufferMPEG2));
+            CompBuf->SetDataSize((Ipp32s) (sizeof (VAPictureParameterBufferMPEG2)));
             CompBuf->FirstMb = 0;
             CompBuf->NumOfMB = 0;
 
             if (va_mode == VA_VLD_W)
             {
                 m_va->GetCompBuffer(
-                    VAIQMatrixBufferType,   //DXVA_INVERSE_QUANTIZATION_MATRIX_BUFFER
+                    VAIQMatrixBufferType,
                     &CompBuf,
-                    (Ipp32s)sizeof(VAIQMatrixBufferMPEG2));  //absent in win version
-                CompBuf->SetDataSize((Ipp32s)sizeof(VAIQMatrixBufferMPEG2));    //ao: need?
+                    (Ipp32s)sizeof(VAIQMatrixBufferMPEG2));
+                CompBuf->SetDataSize((Ipp32s)sizeof(VAIQMatrixBufferMPEG2));
                 CompBuf->FirstMb = 0;
                 CompBuf->NumOfMB = 0;
 
                 m_va->GetCompBuffer(
-                    VASliceParameterBufferType, //DXVA_SLICE_CONTROL_BUFFER,
+                    VASliceParameterBufferType,
                     &CompBuf,
-                    (Ipp32s)sizeof(VASliceParameterBufferMPEG2)*size_sl);  //absent in win version
-                CompBuf->SetDataSize((Ipp32s) ((Ipp8u*)pSliceInfo - (Ipp8u*)pSliceInfoBuffer));    //ao: need?
+                    (Ipp32s)sizeof(VASliceParameterBufferMPEG2)*size_sl);
+                CompBuf->SetDataSize((Ipp32s) ((Ipp8u*)pSliceInfo - (Ipp8u*)pSliceInfoBuffer));
                 CompBuf->FirstMb = 0;
                 CompBuf->NumOfMB = numMB;
 
                 m_va->GetCompBuffer(
-                    VASliceDataBufferType,  //DXVA_BITSTREAM_DATA_BUFFER,
+                    VASliceDataBufferType,
                     &CompBuf,
-                    bs_size);   //ao: or size_bs?!
-                CompBuf->SetDataSize(bs_size);    //ao: need?
+                    bs_size);
+                CompBuf->SetDataSize(bs_size);
                 CompBuf->FirstMb = 0;
                 CompBuf->NumOfMB = numMB;
             }
         }
-#if !defined(MFX_NO_EXCEPTIONS)
         catch (...)
         {
             return UMC_ERR_NOT_ENOUGH_BUFFER;
         }
-#endif // #if !defined(MFX_NO_EXCEPTIONS)
 
     return UMC_OK;
 }

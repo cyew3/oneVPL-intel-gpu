@@ -222,10 +222,6 @@ void H265DecoderFrame::OnDecodingCompleted()
 {
     UpdateErrorWithRefFrameStatus();
 
-#ifdef ENABLE_STAT
-    CUSStat::GetCUStat()->CalculateStat(this);
-#endif
-
     m_Flags.isDecoded = 1;
     DEBUG_PRINT1((VM_STRING("On decoding complete decrement for POC %d, reference = %d\n"), m_PicOrderCnt, m_refCounter));
     DecrementReference();

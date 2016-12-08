@@ -12,11 +12,7 @@
 
 #if defined (UMC_ENABLE_VC1_VIDEO_DECODER)
 
-#ifndef UMC_RESTRICTED_CODE_VA
-
-#ifndef UMC_RESTRICTED_CODE_VA
 #include "umc_va_base.h"
-#endif
 #include "umc_vc1_dec_frame_descr_va.h"
 #include "umc_vc1_dec_frame_descr.h"
 #include "umc_vc1_dec_task_store.h"
@@ -27,9 +23,6 @@ using namespace UMC::VC1Common;
 
 #define DXVA2_VC1PICTURE_PARAMS_EXT_BUFFER 21
 #define DXVA2_VC1BITPLANE_EXT_BUFFER       22
-
-
-
 
 namespace UMC
 {
@@ -763,7 +756,7 @@ namespace UMC
             if (pContext->m_seqLayerHeader.RANGE_MAPUV_FLAG)
                 ptr->bPicOBMC = bit_set(ptr->bPicOBMC, 0, 3, pContext->m_seqLayerHeader.RANGE_MAPUV);
         }
-        else if (pContext->m_picLayerHeader->RANGEREDFRM)//modify i/f by varistar
+        else if (pContext->m_picLayerHeader->RANGEREDFRM)
             ptr->bPicOBMC = bit_set(ptr->bPicOBMC, 0, 3,*pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iCurrIndex].pRANGE_MAPY);
 
 
@@ -4012,8 +4005,10 @@ namespace UMC
 
         Ipp8u* pBitstream = (Ipp8u*)m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &CompBuf);
 
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
         if(NULL != m_va->GetProtectedVA() && IS_PROTECTION_GPUCP_ANY(m_va->GetProtectedVA()->GetProtected()))
             CompBuf->SetPVPState(NULL, 0);
+#endif
 
         Ipp32u DrvBufferSize = CompBuf->GetBufferSize();
         Ipp32u RemainBytes = 0;
@@ -4116,7 +4111,6 @@ namespace UMC
 
 #endif//UMC_VA_DXVA
 }
-#endif //UMC_RESTRICTED_CODE_VA
 #endif //UMC_ENABLE_VC1_VIDEO_DECODER
 
 

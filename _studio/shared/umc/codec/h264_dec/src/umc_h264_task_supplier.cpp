@@ -1009,22 +1009,8 @@ Status DecReferencePictureMarking::UpdateRefPicMarking(ViewItem &view, H264Decod
             view.GetDPBList(0)->countActiveRefs(NumShortTermRefs, NumLongTermRefs);
             const H264SeqParamSet* sps = pSlice->GetSeqParam();
 
-#define H264_DEC_HANDLE_BROKEN_MMCO
             if (NumShortTermRefs + NumLongTermRefs + 1 > sps->num_ref_frames)
             {
-#ifndef H264_DEC_HANDLE_BROKEN_MMCO
-                // mark all reference pictures as unused
-                for (H264DecoderFrame *pCurr = view.GetDPBList(0)->head(); pCurr; pCurr = pCurr->future())
-                {
-                    if (pCurr->isShortTermRef() || pCurr->isLongTermRef())
-                    {
-                        AddItemAndRun(pFrame, pCurr, UNSET_REFERENCE | FULL_FRAME | SHORT_TERM);
-                        AddItemAndRun(pFrame, pCurr, UNSET_REFERENCE | FULL_FRAME | LONG_TERM);
-                    }
-                }
-
-                return UMC_ERR_INVALID_STREAM;
-#else
                 DPBCommandsList::iterator
                     f = m_commandsList.begin(),
                     l = m_commandsList.end();
@@ -1037,7 +1023,6 @@ Status DecReferencePictureMarking::UpdateRefPicMarking(ViewItem &view, H264Decod
                     Undo(&(*f));
                     m_commandsList.erase(f);
                 }
-#endif
             }
         }
 
@@ -1274,15 +1259,6 @@ Status MVC_Extension::SetViewList(const std::vector<Ipp32u> & targetView, const 
     {
         m_viewIDsList.push_back(targetView[i]);
     }
-
-    /*if (std::find(m_viewIDsList.begin(), m_viewIDsList.end(), (int) BASE_VIEW) == m_viewIDsList.end())
-    {
-        ViewItem * viewItem = GetView(BASE_VIEW);
-        if (!viewItem)
-            return UMC_ERR_FAILED;
-
-        viewItem->m_isDisplayable = false;
-    }*/
 
     for (size_t i = 0; i < dependencyList.size(); i++)
     {

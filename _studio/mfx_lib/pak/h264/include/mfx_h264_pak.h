@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2010 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef _MFX_H264_PAK_H_
@@ -33,7 +33,6 @@ public:
     virtual mfxStatus GetVideoParam(mfxVideoParam *par);
     virtual mfxStatus GetFrameParam(mfxFrameParam *par);
 
-    virtual mfxStatus RunSeqHeader(mfxFrameCUC *bs);
     virtual mfxStatus RunFramePAK(mfxFrameCUC *cuc);
 
 private:

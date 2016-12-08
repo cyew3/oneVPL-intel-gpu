@@ -35,7 +35,6 @@ namespace UMC
     class MFXTaskSupplier;
     class MFX_SW_TaskSupplier;
     class VATaskSupplier;
-    class WidevineTaskSupplier;
     class H264DecoderFrame;
     class VideoData;
 } // namespace UMC
@@ -133,7 +132,6 @@ protected:
 
     volatile bool m_globalTask;
     bool m_isFirstRun;
-    bool m_usePostProcessing;
 };
 
 #endif // _MFX_H264_DEC_DECODE_H_

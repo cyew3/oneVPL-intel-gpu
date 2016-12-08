@@ -216,10 +216,10 @@ Status MP4Splitter::Clear_moof(T_moof &moof)
 
   for (i = 0; i < moof.total_tracks; i++) {
     for (j = 0; j < moof.traf[i]->entry_count; j++) {
-      UMC_FREE(moof.traf[i]->trun[j]->table_trun)
-      UMC_FREE(moof.traf[i]->trun[j])
+      delete[] moof.traf[i]->trun[j]->table_trun;
+      delete[] moof.traf[i]->trun[j];
     }
-    UMC_FREE(moof.traf[i])
+    delete[] moof.traf[i];
   }
 
   return UMC_OK;

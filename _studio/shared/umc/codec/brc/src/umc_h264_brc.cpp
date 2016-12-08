@@ -10,8 +10,10 @@
 
 #include <math.h>
 #include "umc_h264_brc.h"
-#include "umc_h264_video_encoder.h"
-#include "umc_h264_tables.h"
+#include "umc_video_data.h"
+#include "umc_h264_common.h"
+
+using namespace UMC_H264_ENCODER;
 
 namespace UMC
 {

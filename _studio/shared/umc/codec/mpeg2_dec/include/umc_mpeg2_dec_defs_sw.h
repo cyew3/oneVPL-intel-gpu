@@ -21,6 +21,16 @@
 
 #include <vector>
 
+#define MISMATCH_INTRA
+//#define USE_INTRINSICS
+//#define IPP_DIRECT_CALLS
+//#define MPEG2_USE_REF_IDCT
+
+#if (defined(IPP_DIRECT_CALLS_W7) || defined(IPP_DIRECT_CALLS_A6))&&(!defined(_WIN32_WCE))
+#define IPP_DIRECT_CALLS
+#endif
+
+
 namespace UMC
 {
 
@@ -723,5 +733,248 @@ void Reference_IDCT(Ipp16s *block, Ipp16s *out, Ipp32s step);
   ippiDCT8x8Inv_AANTransposed_16s8u_C1R(pDstBlock, pSrcDst, srcDstStep, 0)
 
 #endif // MPEG2_USE_REF_IDCT
+
+/***************************************************************/
+
+#ifndef __MPEG2_FUNC__
+#define __MPEG2_FUNC__
+
+#include "ippdefs.h"
+
+#define MP2_API( type,name,arg )        extern type name arg;
+
+#define IPPVC_ZIGZAG_SCAN           0
+#define IPPVC_ALT_SCAN              1
+#define IPPVC_MPEG1_STREAM          2
+#define IPPVC_LEAVE_QUANT_UNCHANGED 4
+#define IPPVC_LEAVE_SCAN_UNCHANGED  8
+
+typedef DecodeIntraSpec_MPEG2 IppiDecodeIntraSpec_MPEG2;
+typedef DecodeInterSpec_MPEG2 IppiDecodeInterSpec_MPEG2;
+
+/* ///////////////////////////////////////////////////////////////////////////
+//  Name:
+//    ippiDecodeInter8x8IDCTAdd_MPEG2_1u8u
+//
+//  Purpose:
+//    Performs VLC decoding of DCT coefficients for one inter 8x8 block,
+//    dequantization of coefficients, inverse DCT and addition of resulted
+//    8x8 block to destination.
+//
+//  Parameters:
+//    ppBitStream      Pointer to the pointer to the current byte in
+//                     the bitstream, it is updated after block decoding.
+//    pBitOffset       Pointer to the bit position in the byte pointed by
+//                     *ppBitStream, it is updated after block decoding.
+//                     Must be in the range [0, 7].
+//    pQuantSpec       Pointer to the structure IppiDecodeInterSpec_MPEG2
+//    QP               Quantization parameter.
+//    pSrcDst          Pointer to the 8x8 block in the destination image
+//    srcDstStep       Step through the destination image
+//
+//  Returns:
+//    ippStsNoErr        No error.
+//    ippStsNullPtrErr   One of the specified pointers is NULL.
+//    ippStsVLCErr       An illegal code is detected through the
+//                       stream processing.
+*/
+
+MP2_API(IppStatus, ippiDecodeInter8x8IDCTAdd_MPEG1_1u8u, (
+    Ipp8u**                            ppBitStream,
+    Ipp32s*                            pBitOffset,
+    IppiDecodeInterSpec_MPEG2*         pQuantSpec,
+    Ipp32s                             QP,
+    Ipp8u*                             pSrcDst,
+    Ipp32s                             srcDstStep))
+
+MP2_API(IppStatus, ippiDecodeInter8x8IDCTAdd_MPEG2_1u8u, (
+    Ipp8u**                            ppBitStream,
+    Ipp32s*                            pBitOffset,
+    IppiDecodeInterSpec_MPEG2*         pQuantSpec,
+    Ipp32s                             QP,
+    Ipp8u*                             pSrcDst,
+    Ipp32s                             srcDstStep))
+
+/* ///////////////////////////////////////////////////////////////////////////
+//  Name:
+//    ippiDecodeIntra8x8IDCT_MPEG2_1u8u
+//
+//  Purpose:
+//    Performs VLC decoding of DCT coefficients for one intra 8x8 block,
+//    dequantization of coefficients, inverse DCT and storing of resulted
+//    8x8 block to destination.
+//
+//  Parameters:
+//    ppBitStream      Pointer to the pointer to the current byte in
+//                     the bitstream, it is updated after block decoding.
+//    pBitOffset       Pointer to the bit position in the byte pointed by
+//                     *ppBitStream, it is updated after block decoding.
+//                     Must be in the range [0, 7].
+//    pQuantSpec       Pointer to the structure IppiDecodeIntraSpec_MPEG2
+//    QP               Quantization parameter.
+//    blockType        Indicates the type of block, takes one of the following
+//                     values:
+//                         IPPVC_BLOCK_LUMA - for luma blocks,
+//                         IPPVC_BLOCK_CHROMA - for chroma blocks
+//                     And in case of MPEG1 D-type block, IPPVC_BLOCK_MPEG1_DTYPE
+//                     have to be added to IPPVC_BLOCK_LUMA or IPPVC_BLOCK_CHROMA.
+//    pDCPred          Pointer to the value to be added to the DC coefficient
+//    pDst             Pointer to the 8x8 block in the destination image
+//    dstStep          Step through the destination image
+//
+//  Returns:
+//    ippStsNoErr        No error.
+//    ippStsNullPtrErr   One of the specified pointers is NULL.
+//    ippStsVLCErr       An illegal code is detected through the
+//                       stream processing.
+*/
+
+MP2_API(IppStatus, ippiDecodeIntra8x8IDCT_MPEG1_1u8u, (
+    Ipp8u**                            ppBitStream,
+    Ipp32s*                            pBitOffset,
+    IppiDecodeIntraSpec_MPEG2*         pQuantSpec,
+    Ipp32s                             QP,
+    Ipp32s                             blockType,
+    Ipp16s*                            pDCPred,
+    Ipp8u*                             pDst,
+    Ipp32s                             dstStep))
+
+MP2_API(IppStatus, ippiDecodeIntra8x8IDCT_MPEG2_1u8u, (
+    Ipp8u**                            ppBitStream,
+    Ipp32s*                            pBitOffset,
+    IppiDecodeIntraSpec_MPEG2*         pQuantSpec,
+    Ipp32s                             QP,
+    Ipp32s                             blockType,
+    Ipp16s*                            pDCPred,
+    Ipp8u*                             pDst,
+    Ipp32s                             dstStep))
+
+/* ///////////////////////////////////////////////////////////////////////////
+//  Name:
+//    ippiDecodeIntraInit_MPEG2
+//    ippiDecodeInterInit_MPEG2
+//
+//  Purpose:
+//    Initialized IppiDecodeIntraSpec_16s(IppiDecodeInterSpec_MPEG2) structure.
+//    If pQuantMatrix is NULL this means default quantization matrix.
+//
+//  Parameters:
+//    pQuantMatrix   Pointer to the quantization matrix size of 64.
+//    scan           Type of the scan, takes one of the following values:
+//                       IPPVC_SCAN_ZIGZAG, indicating the classical zigzag scan,
+//                       IPPVC_SCAN_VERTICAL - alternate-vertical scan
+//    intraVLCFormat 0 or 1, defines one of two VLC tables for decoding intra blocks
+//    intraShiftDC   Integer value for shifting intra DC coefficient after VLC decoding
+//    pSpec          Pointer to the structure IppiDecodeIntraSpec_16s or
+//                   IppiDecodeInterSpec_MPEG2 which will initialized.
+//
+//  Returns:
+//    ippStsNoErr        No error.
+//    ippStsNullPtrErr   Indicates an error when pointer pSpec is NULL.
+*/
+
+MP2_API(IppStatus, ippiDecodeIntraInit_MPEG2, (
+    const Ipp8u*                 pQuantMatrix,
+    Ipp32s                       scan,
+    Ipp32s                       intraVLCFormat,
+    Ipp32s                       intraShiftDC,
+    IppiDecodeIntraSpec_MPEG2*   pSpec))
+
+MP2_API(IppStatus, ippiDecodeInterInit_MPEG2, (
+    const Ipp8u*                 pQuantMatrix,
+    Ipp32s                       flag,
+    IppiDecodeInterSpec_MPEG2*   pSpec))
+
+/* ///////////////////////////////////////////////////////////////////////////
+//  Name:
+//    ippiDecodeIntraGetSize_MPEG2
+//    ippiDecodeInterGetSize_MPEG2
+//
+//  Purpose:
+//    Return size of IppiDecodeIntraSpec_MPEG2 or IppiDecodeInterSpec_MPEG2.
+//
+//  Parameters:
+//    pSpecSize Pointer to the resulting size of the structure
+//    IppiDecodeIntraSpec_MPEG2 or IppiDecodeInterSpec_MPEG2.
+//
+//  Returns:
+//    ippStsNoErr        No error.
+//    ippStsNullPtrErr   Indicates an error when pointer pSpecSize is NULL.
+*/
+
+MP2_API(IppStatus, ippiDecodeIntraGetSize_MPEG2, (
+    Ipp32s* pSpecSize))
+
+MP2_API(IppStatus, ippiDecodeInterGetSize_MPEG2, (
+    Ipp32s* pSpecSize))
+
+#endif /* __MPEG2_FUNC__ */
+
+/***************************************************************/
+
+extern const Ipp16u MPEG2_VLC_TAB1[];
+extern const Ipp8u  MPEG2_DCSIZE_TAB[];
+
+#define UHBITS(code, nbits) (((Ipp32u)(code)) >> (32 - (nbits)))
+#define SHBITS(code, nbits) (((Ipp32s)(code)) >> (32 - (nbits)))
+
+#define TAB1_OFFSET_10BIT 248
+#define TAB1_OFFSET_15BIT 360
+#define TAB1_OFFSET_16BIT 408
+#define TAB1_OFFSET_8BIT_INTRA 432
+#define TAB1_OFFSET_10BIT_INTRA 680
+
+#define UNPACK_VLC1(tab_val, run, val, len) \
+{ \
+  Ipp32u _tab_val = tab_val; \
+  run = _tab_val & 0x1f; \
+  len = (_tab_val >> 5) & 0xf; \
+  val = (_tab_val >> 9); \
+}
+
+#define UNPACK_VLC2(tab_val, run, val, len) \
+{ \
+  Ipp32u _tab_val = tab_val; \
+  run = _tab_val & 0x1f; \
+  len = (_tab_val >> 5) & 0xf; \
+  val = (_tab_val >> 10); \
+}
+
+#define DECODE_DC(val)                                    \
+{                                                         \
+  const Ipp8u *pTab;                                      \
+  Ipp32s dct_dc_size;                                     \
+  SHOW_HI9BITS(BS, code);                                 \
+  pTab = MPEG2_DCSIZE_TAB + (chromaFlag << 6);            \
+  if (code < 0xf8000000) {                                \
+    tbl = pTab[UHBITS(code, 5)];                          \
+    dct_dc_size = tbl & 0xF;                              \
+    len = tbl >> 4;                                       \
+    if (dct_dc_size) {                                    \
+      EXPAND_17BITS(BS, code);                            \
+      code <<= len;                                       \
+      val = UHBITS(code, dct_dc_size) - UHBITS(SHBITS(~code, 1), dct_dc_size); \
+      SKIP_BITS(BS, len + dct_dc_size);                   \
+    } else {                                              \
+      val = 0;                                            \
+      SKIP_BITS(BS, len);                                 \
+    }                                                     \
+  } else {                                                \
+    tbl = pTab[32 + (UHBITS(code, 10) & 0x1f)];           \
+    dct_dc_size = tbl & 0xF;                              \
+    len = tbl >> 4;                                       \
+    EXPAND_17BITS(BS, code);                              \
+    EXPAND_25BITS(BS, code);                              \
+    code <<= len;                                         \
+    val = UHBITS(code, dct_dc_size) - UHBITS(SHBITS(~code, 1), dct_dc_size); \
+    SKIP_BITS(BS, len + dct_dc_size);                     \
+  }                                                       \
+}
+
+/***************************************************************/
+
+#define COPY_BITSTREAM(DST_BS, SRC_BS) \
+  DST_BS##_curr_ptr = SRC_BS##_curr_ptr; \
+  DST_BS##_bit_offset = SRC_BS##_bit_offset;
 
 #endif // UMC_ENABLE_MPEG2_VIDEO_DECODER

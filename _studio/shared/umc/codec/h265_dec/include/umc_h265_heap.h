@@ -66,7 +66,6 @@ public:
     {
         Release();
 
-        // DEBUG : ADB : need to use ExternalMemoryAllocator
         // allocate little more
         m_pSourceBuffer = h265_new_array_throw<Ipp8u>((Ipp32s)nSize);
         m_pDataPointer = m_pSourceBuffer;
@@ -327,8 +326,6 @@ public:
     virtual void Free();
 
 protected:
-    UMC::Mutex mutex;
-
     Ipp8u *m_pbAllocatedBuffer;       // (Ipp8u *) pointer to allocated unaligned buffer
     size_t m_lAllocatedBufferSize;    // (Ipp32s) size of allocated buffer
 
@@ -348,9 +345,6 @@ protected:
     };
 
     BufferInfo *m_pBuffers;           // (Buffer *) queue of filled sample info
-
-    void Lock();
-    void Unlock();
 };
 
 } // namespace UMC_HEVC_DECODER

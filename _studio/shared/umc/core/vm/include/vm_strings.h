@@ -11,9 +11,7 @@
 #ifndef __VM_STRINGS_H__
 #define __VM_STRINGS_H__
 
-#ifndef __IPPDEFS_H__
 #include "ippdefs.h"
-#endif
 
 #if defined(LINUX32) || defined(__APPLE__)
 

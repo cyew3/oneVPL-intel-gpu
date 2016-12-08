@@ -258,7 +258,7 @@ void MPEG2VideoEncoderBase::encodeB(Ipp32s numTh)
 ////skip_macroblock:
 //            //pMBInfo[k].cbp = -1;
 //            macroblock_address_increment++;
-//            ippsCopy_8u((Ipp8u*)threadSpec[numTh].PMV, (Ipp8u*)pMBInfo[k].MV, sizeof(threadSpec[0].PMV));
+//            MFX_INTERNAL_CPY((Ipp8u*)pMBInfo[k].MV, (Ipp8u*)threadSpec[numTh].PMV, sizeof(threadSpec[0].PMV));
 //            k++;
 //            continue;
 //          }
@@ -432,7 +432,7 @@ void MPEG2VideoEncoderBase::encodeB(Ipp32s numTh)
 skip_macroblock:
           //pMBInfo[k].cbp = -1;
           macroblock_address_increment++;
-          ippsCopy_8u((Ipp8u*)threadSpec[numTh].PMV, (Ipp8u*)pMBInfo[k].MV, sizeof(threadSpec[0].PMV));
+          MFX_INTERNAL_CPY((Ipp8u*)pMBInfo[k].MV, (Ipp8u*)threadSpec[numTh].PMV, sizeof(threadSpec[0].PMV));
           pMBInfo[k].skipped = 1;
           k++;
           continue;
@@ -811,7 +811,7 @@ encodeMB:
       }
 
       //pMBInfo[k].cbp = CodedBlockPattern;
-      ippsCopy_8u((Ipp8u*)threadSpec[numTh].PMV, (Ipp8u*)pMBInfo[k].MV, sizeof(threadSpec[0].PMV));
+      MFX_INTERNAL_CPY((Ipp8u*)pMBInfo[k].MV, (Ipp8u*)threadSpec[numTh].PMV, sizeof(threadSpec[0].PMV));
 
 #ifndef UMC_RESTRICTED_CODE
       //size = BITPOS(threadSpec[numTh]) - size;

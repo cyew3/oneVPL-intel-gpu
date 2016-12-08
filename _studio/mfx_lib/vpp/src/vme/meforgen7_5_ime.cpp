@@ -2824,12 +2824,26 @@ void MEforGen75::LoadSrcMB( )
 
     pix += Vsta.SrcMB.x + Vsta.SrcMB.y*w;
     MFX_INTERNAL_CPY(blk,pix,16);
-    for(j=7;j>0;j--) MFX_INTERNAL_CPY((blk+=16),(pix+=w),16);
+    for(j=7;j>0;j--)
+    {
+        blk+=16; pix+=w;
+        MFX_INTERNAL_CPY(blk,pix,16);
+    }
     if(Vsta.SrcType&1){ pix = SrcMB-16; w = 16; } // for 16x8 and 8x8  
-    for(j=8;j>0;j--) MFX_INTERNAL_CPY((blk+=16),(pix+=w),16);
+    for(j=8;j>0;j--)
+    {
+        blk+=16; pix+=w;
+        MFX_INTERNAL_CPY(blk,pix,16);
+    }
     if(Vsta.SrcType&2){    // for 8x16 ans 8x8
-        MFX_INTERNAL_CPY((blk=SrcMB+8),(pix=SrcMB),8);
-        for(j=15;j>0;j--) MFX_INTERNAL_CPY((blk+=16),(pix+=16),8);
+        blk=SrcMB+8;
+        pix=SrcMB;
+        MFX_INTERNAL_CPY(blk,pix,8);
+        for(j=15;j>0;j--)
+        {
+            blk+=16; pix+=16;
+            MFX_INTERNAL_CPY(blk,pix,8);
+        }
     }
     if(Vsta.SrcType&0x0C){ // field search allowed
         blk = SrcMB;
@@ -2844,7 +2858,7 @@ void MEforGen75::LoadSrcMB( )
     // no need to load chroma if this happens
     if ((!(Vsta.SadType&INTER_CHROMA_MODE)) && (VSICsta.IntraComputeType!=INTRA_LUMA_CHROMA)) return;
 
-    // aya: we don't use U/V VME
+    // we don't use U/V VME
     return;
 
     // Chroma

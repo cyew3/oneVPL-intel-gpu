@@ -5,11 +5,10 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2008 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_base_codec.h"
-#include "umc_default_memory_allocator.h"
 
 using namespace UMC;
 
@@ -31,7 +30,6 @@ BaseCodecParams::BaseCodecParams(void)
 BaseCodec::BaseCodec(void)
 {
     m_pMemoryAllocator = 0;
-    m_bOwnAllocator = false;
 }
 
 // Destructor
@@ -47,35 +45,13 @@ Status BaseCodec::Init(BaseCodecParams *init)
   if (init == 0)
     return UMC_ERR_NULL_PTR;
 
-  // care about reentering as well
-  if (init->lpMemoryAllocator) {
-    if (m_bOwnAllocator && m_pMemoryAllocator != init->lpMemoryAllocator) {
-      vm_debug_trace(VM_DEBUG_ERROR, VM_STRING("can't replace external allocator\n"));
-      return UMC_ERR_INIT;
-    }
-    m_pMemoryAllocator = init->lpMemoryAllocator;
-    m_bOwnAllocator = false;
-  } else {
-    if (m_pMemoryAllocator != 0 && !m_bOwnAllocator) {
-      vm_debug_trace(VM_DEBUG_ERROR, VM_STRING("can't replace external allocator\n"));
-      return UMC_ERR_INIT;
-    }
-    if (m_pMemoryAllocator == 0)
-      m_pMemoryAllocator = new DefaultMemoryAllocator;
-    m_bOwnAllocator = true;
-  }
+  m_pMemoryAllocator = init->lpMemoryAllocator;
   return UMC_OK;
 }
 
 // Close all codec resources
 Status BaseCodec::Close(void)
 {
-  if ( m_bOwnAllocator && m_pMemoryAllocator != 0 )
-  {
-    delete m_pMemoryAllocator;
-    m_bOwnAllocator = false;
-    m_pMemoryAllocator = 0;
-  }
   return UMC_OK;
 }
 

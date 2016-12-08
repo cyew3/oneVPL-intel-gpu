@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2012 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -139,7 +139,7 @@ extern const Ipp32s BestOf5EarlyExitThres[52];
 
 //////////////////////////////////////////////////////////
 // scan matrices
-extern Ipp32s dec_single_scan[2][16];
+extern const Ipp32s dec_single_scan[2][16];
 extern const Ipp32s dec_single_scan_p[4];
 extern const Ipp32s dec_single_scan_p422[8];
 extern Ipp16s enc_single_scan[2][16];
@@ -188,50 +188,6 @@ extern const Ipp32s lambda_sq[87];
 extern const Ipp8u transTbl[2][128];
 
 extern const Ipp8u IntraMBTypeOffset[5];
-
-typedef enum {
-    H264_LIMIT_TABLE_BASE_PROFILE     = 0,
-    H264_LIMIT_TABLE_MAIN_PROFILE     = 0,
-    H264_LIMIT_TABLE_EXTENDED_PROFILE = 0,
-    H264_LIMIT_TABLE_HIGH_PROFILE     = 1,
-//#ifdef UMC_ENABLE_MVC_VIDEO_ENCODER
-    H264_LIMIT_TABLE_STEREOHIGH_PROFILE = 1,
-    H264_LIMIT_TABLE_MULTIVIEWHIGH_PROFILE = 1,
-//#endif
-    H264_LIMIT_TABLE_HIGH10_PROFILE   = 2,
-    H264_LIMIT_TABLE_HIGH422_PROFILE  = 3,
-    H264_LIMIT_TABLE_HIGH444_PROFILE  = 3,
-    H264_LIMIT_TABLE_INVALID_PROFILE  = 4
-} H264_LIMIT_TABLE_PROFILE_IDC;
-
-typedef enum {
-    H264_LIMIT_TABLE_LEVEL_1,
-    H264_LIMIT_TABLE_LEVEL_1B,
-    H264_LIMIT_TABLE_LEVEL_11,
-    H264_LIMIT_TABLE_LEVEL_12,
-    H264_LIMIT_TABLE_LEVEL_13,
-    H264_LIMIT_TABLE_LEVEL_2,
-    H264_LIMIT_TABLE_LEVEL_21,
-    H264_LIMIT_TABLE_LEVEL_22,
-    H264_LIMIT_TABLE_LEVEL_3,
-    H264_LIMIT_TABLE_LEVEL_31,
-    H264_LIMIT_TABLE_LEVEL_32,
-    H264_LIMIT_TABLE_LEVEL_4,
-    H264_LIMIT_TABLE_LEVEL_41,
-    H264_LIMIT_TABLE_LEVEL_42,
-    H264_LIMIT_TABLE_LEVEL_5,
-    H264_LIMIT_TABLE_LEVEL_51,
-    H264_LIMIT_TABLE_LEVEL_52,
-    H264_LIMIT_TABLE_LEVEL_MAX = H264_LIMIT_TABLE_LEVEL_52
-} H264_LIMIT_TABLE_LEVEL_IDC;
-
-
-#define H264_LIMIT_TABLE_MAX_MBPS    0
-#define H264_LIMIT_TABLE_MAX_FS      1
-#define H264_LIMIT_TABLE_MAX_DPB     2
-#define H264_LIMIT_TABLE_MAX_BR      3
-#define H264_LIMIT_TABLE_MAX_CPB     4
-#define H264_LIMIT_TABLE_MAX_MVV     5
 
 } //namespace UMC_H264_ENCODER
 

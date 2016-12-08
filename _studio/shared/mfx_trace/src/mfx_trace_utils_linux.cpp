@@ -15,11 +15,12 @@
 #include <iomanip>
 
 #ifdef MFX_TRACE_ENABLE
+#include "vm_sys_info.h"
+
 extern "C"
 {
 
 #include <stdlib.h>
-#include "vm_sys_info.h"
 
 /*------------------------------------------------------------------------------*/
 

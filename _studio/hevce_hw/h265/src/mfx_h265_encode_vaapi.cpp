@@ -759,17 +759,15 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
 
     m_caps.VCMBitRateControl = attrs[1].value & VA_RC_VCM ? 1 : 0; //Video conference mode
     m_caps.RollingIntraRefresh = 0; /* (attrs[3].value & (~VA_ATTRIB_NOT_SUPPORTED))  ? 1 : 0*/
-    m_caps.UserMaxFrameSizeSupport = 1; // no request on support for libVA
-    m_caps.MBBRCSupport = 1;            // starting 16.3 Beta, enabled in driver by default for TU-1,2
+    m_caps.UserMaxFrameSizeSupport = 1;
+    m_caps.MBBRCSupport = 1;
     m_caps.MbQpDataSupport = 1;
     m_caps.Color420Only = 1;// fixme in case VAAPI direct YUY2/RGB support added
-    m_caps.TUSupport = 73;  //
+    m_caps.TUSupport = 73;
 
     vaExtQueryEncCapabilities pfnVaExtQueryCaps = NULL;
     pfnVaExtQueryCaps = (vaExtQueryEncCapabilities)vaGetLibFunc(m_vaDisplay,VPG_EXT_QUERY_ENC_CAPS);
-    /* This is for 16.3.* approach.
-     * It was used private libVA function to get information which feature is supported
-     * */
+
     if (pfnVaExtQueryCaps)
     {
         VAEncQueryCapabilities VaEncCaps;
@@ -786,7 +784,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
         m_caps.MaxNum_Reference0 = VaEncCaps.MaxNum_ReferenceL0;
         m_caps.MaxNum_Reference1 = VaEncCaps.MaxNum_ReferenceL1;
     }
-    else /* this is LibVA legacy approach. Should be supported from 16.4 driver */
+    else
     {
 #ifdef MFX_VA_ANDROID
         // To replace by vaQueryConfigAttributes()
@@ -943,7 +941,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
 #endif
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetFrameRate(par, m_vaDisplay, m_vaContextEncode, VABufferNew(VABID_FrameRate, 1)), MFX_ERR_DEVICE_FAILED);
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetQualityLevelParams(par, m_vaDisplay, m_vaContextEncode, VABufferNew(VABID_QualityLevel, 1)), MFX_ERR_DEVICE_FAILED);
-#ifdef MAX_FRAME_SIZE_SUPPORT
+#ifdef MAX_HEVC_FRAME_SIZE_SUPPORT
     if (par.m_ext.CO2.MaxFrameSize)
         MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetMaxFrameSize(par.m_ext.CO2.MaxFrameSize, m_vaDisplay, m_vaContextEncode, VABufferNew(VABID_MaxFrameSize, 1)), MFX_ERR_DEVICE_FAILED);
 #endif
@@ -982,7 +980,7 @@ mfxStatus VAAPIEncoder::Reset(MfxVideoParam const & par, bool bResetBRC)
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetFrameRate(par, m_vaDisplay, m_vaContextEncode, VABufferNew(VABID_FrameRate, 1)), MFX_ERR_DEVICE_FAILED);
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetQualityLevelParams(par, m_vaDisplay, m_vaContextEncode, VABufferNew(VABID_QualityLevel, 1)), MFX_ERR_DEVICE_FAILED);
 
-#ifdef MAX_FRAME_FRAME_SUPPORT
+#ifdef MAX_HEVC_FRAME_SIZE_SUPPORT
     if (par.m_ext.CO2.MaxFrameSize)
         MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetMaxFrameSize(par.m_ext.CO2.MaxFrameSize, m_vaDisplay, m_vaContextEncode, VABufferNew(VABID_MaxFrameSize, 1)), MFX_ERR_DEVICE_FAILED);
 #endif
@@ -1237,7 +1235,6 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
 #endif
-
 
     {
         // AUD

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2016 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef _MFX_MPEG2_ENC_DEFS_H_
@@ -462,8 +462,8 @@ if (!m_cuc->FrameParam->MPEG2.FieldPicFlag) {  \
       if (var_fld < var) {                                     \
         dct_type = DCT_FIELD;                                  \
         vardiff_res = _vardiff;                                \
-        ippsCopy_8u((Ipp8u*)vardiff_tmp, (Ipp8u*)currpred->var, sizeof(currpred->var)); \
-        ippsCopy_8u((Ipp8u*)meandiff_tmp, (Ipp8u*)currpred->mean, sizeof(currpred->mean)); \
+        MFX_INTERNAL_CPY((Ipp8u*)currpred->var, (Ipp8u*)vardiff_tmp, sizeof(currpred->var)); \
+        MFX_INTERNAL_CPY((Ipp8u*)currpred->mean, (Ipp8u*)meandiff_tmp, sizeof(currpred->mean)); \
       }                                                        \
     }                                                          \
   }                                                            \
@@ -665,8 +665,8 @@ if (!m_cuc->FrameParam->MPEG2.FieldPicFlag) {  \
       if (var < var_fld) {                                     \
         dct_type = DCT_FRAME;                                  \
         vardiff_fld = _vardiff;                                \
-        ippsCopy_8u((Ipp8u*)vardiff_tmp, (Ipp8u*)currpred->var, sizeof(currpred->var)); \
-        ippsCopy_8u((Ipp8u*)meandiff_tmp, (Ipp8u*)currpred->mean, sizeof(currpred->mean)); \
+        MFX_INTERNAL_CPY((Ipp8u*)currpred->var, (Ipp8u*)vardiff_tmp, sizeof(currpred->var)); \
+        MFX_INTERNAL_CPY((Ipp8u*)currpred->mean, (Ipp8u*)meandiff_tmp, sizeof(currpred->mean)); \
       }                                                        \
     }                                                          \
     /*if(_vardiff <= vardiff_fld) {                            \

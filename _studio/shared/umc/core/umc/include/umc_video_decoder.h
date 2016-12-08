@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2010 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_VIDEO_DECODER_H__
@@ -33,9 +33,6 @@ public:
 
     VideoStreamInfo         info;                           // (VideoStreamInfo) compressed video info
     Ipp32u                  lFlags;                         // (Ipp32u) decoding flag(s)
-    Ipp32u                  lTrickModesFlag;                // (Ipp32u) trick modes
-
-    Ipp64f                  dPlaybackRate;
 
     BaseCodec               *pPostProcessing;               // (BaseCodec*) pointer to post processing
 
@@ -70,8 +67,6 @@ public:
     virtual Status SkipVideoFrame(Ipp32s) = 0;
     // Get skip frame counter statistic
     virtual Ipp32u GetNumOfSkippedFrames() = 0;
-    // Preview last decoded frame
-    virtual Status PreviewLastFrame(VideoData *out, BaseCodec *pPostProcessing = NULL);
 
     // returns closed capture data
     virtual Status GetUserData(MediaData* /*pCC*/)
@@ -82,7 +77,6 @@ public:
 protected:
 
     VideoStreamInfo         m_ClipInfo;                         // (VideoStreamInfo) clip info
-    VideoData               m_LastDecodedFrame;                 // (VideoData) last decoded frame
     BaseCodec               *m_PostProcessing;                  // (BaseCodec*) pointer to post processing
     BaseCodec               *m_allocatedPostProcessing;         // (BaseCodec*) pointer to default post processing allocated by decoder
 

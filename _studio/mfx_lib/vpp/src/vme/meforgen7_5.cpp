@@ -48,7 +48,6 @@ Field cases:
 MEforGen75::MEforGen75( )
 /*****************************************************************************************************/
 {
-    // aya
     memset(this, 0, sizeof(MEforGen75));
 
     RefPix[1] = (RefPix[0] = RefCache) + REFWINDOWWIDTH*REFWINDOWHEIGHT;

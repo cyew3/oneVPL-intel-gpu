@@ -507,7 +507,7 @@ mfxStatus VideoENC_LA::Init(mfxVideoParam *par)
         request.Type        = extOpaq->In.Type;
         request.NumFrameMin = extOpaq->In.NumSurface;
 
-        sts = m_opaqHren.Alloc(m_core, request, extOpaq->In.Surfaces, extOpaq->In.NumSurface);
+        sts = m_opaqResponse.Alloc(m_core, request, extOpaq->In.Surfaces, extOpaq->In.NumSurface);
         MFX_CHECK_STS(sts);
 
         if (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)
@@ -802,7 +802,7 @@ static mfxStatus CompleteFrameLARoutine(void *pState, void * pParam , mfxStatus 
     VideoENC_LA *pLa = (VideoENC_LA *)pState;
     if (pParam)
     {
-        delete (sAsyncParams *)pParam;   // NOT SAFE !!!
+        delete (sAsyncParams *)pParam;
     }
     return pLa->ResetTaskCounters();
 } 
@@ -859,7 +859,7 @@ mfxStatus VideoENC_LA::RunFrameVmeENCCheck(
         if (m_LASyncContext.numBuffered < (mfxU32)m_video.mfx.GopRefDist + m_LaControl.LookAheadDepth) 
         {
             m_LASyncContext.numBuffered ++;
-            sts = (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK;
+            sts = (mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK;
             if (m_LASyncContext.numBufferedVME < m_video.mfx.GopRefDist)
             {
                 m_LASyncContext.numBufferedVME ++;
@@ -887,7 +887,7 @@ mfxStatus VideoENC_LA::RunFrameVmeENCCheck(
         sts = (m_LASyncContext.numBuffered--) > 0 ?  MFX_ERR_NONE : MFX_ERR_MORE_DATA;
     }
     if (MFX_ERR_NONE == sts ||
-        MFX_ERR_MORE_DATA_RUN_TASK == static_cast<int>(sts) ||
+        MFX_ERR_MORE_DATA_SUBMIT_TASK == static_cast<int>(sts) ||
         MFX_ERR_MORE_SURFACE == sts)
     {
         mfxFrameSurface1* pReord = 0;
@@ -1575,7 +1575,7 @@ mfxStatus VideoENC_LA::Close(void)
     }
 
     m_core->FreeFrames(&m_raw);
-    m_core->FreeFrames(&m_opaqHren);
+    m_core->FreeFrames(&m_opaqResponse);
 
 
 
@@ -1857,7 +1857,7 @@ void CmContextLA::SetCurbeData(
     curbeData.Intra8x8ModeMask                = 0;
     //DW31
     curbeData.Intra16x16ModeMask              = 0;
-    curbeData.IntraChromaModeMask             = 1; // 0; !sergo: 1 means Luma only
+    curbeData.IntraChromaModeMask             = 1; // 0; 1 means Luma only
     curbeData.IntraComputeType                = 0;
     //DW32
     curbeData.SkipVal                         = skipVal;
@@ -1874,11 +1874,11 @@ void CmContextLA::SetCurbeData(
     curbeData.SmallMbSizeInWord               = 0xFF;
     curbeData.LargeMbSizeInWord               = 0xFF;
     //DW36
-    curbeData.HMECombineOverlap               = 1;  //  0;  !sergo
-    curbeData.HMERefWindowsCombiningThreshold = (frameType & MFX_FRAMETYPE_B) ? 8 : 16; //  0;  !sergo (should be =8 for B frames)
+    curbeData.HMECombineOverlap               = 1;  //  0;
+    curbeData.HMERefWindowsCombiningThreshold = (frameType & MFX_FRAMETYPE_B) ? 8 : 16; //  0; (should be =8 for B frames)
     curbeData.CheckAllFractionalEnable        = 0;
     //DW37
-    curbeData.CurLayerDQId                    = extDdi->LaScaleFactor;  // 0; !sergo use 8 bit as LaScaleFactor
+    curbeData.CurLayerDQId                    = extDdi->LaScaleFactor;  // 0; use 8 bit as LaScaleFactor
     curbeData.TemporalId                      = 0;
     curbeData.NoInterLayerPredictionFlag      = 1;
     curbeData.AdaptivePredictionFlag          = 0;
@@ -2032,7 +2032,7 @@ mfxStatus CmContextLA::QueryVme(sLADdiTask const & task,
 }
 
 
-#endif  // MFX_ENABLE_VPP
+#endif  // MFX_ENABLE_H264_VIDEO_ENCODE_HW && MFX_ENABLE_LA_H264_VIDEO_HW
 #endif  // MFX_VA
 
 /* EOF */

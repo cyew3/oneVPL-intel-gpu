@@ -12,8 +12,6 @@
 
 #if defined (UMC_ENABLE_VC1_VIDEO_DECODER)
 
-#ifndef UMC_RESTRICTED_CODE_VA
-
 #ifndef __UMC_VC1_DEC_FRAME_DESCR_VA_H_
 #define __UMC_VC1_DEC_FRAME_DESCR_VA_H_
 
@@ -2618,33 +2616,18 @@ namespace UMC
                 DXVA2_DecodeExtensionData  extensionData = {0};
                 DXVA_EncryptProtocolHeader extensionOutput = {0};
                 HRESULT hr = S_OK;
-                if (m_va->m_HWPlatform == VA_HW_LAKE)
-                {
-                    DXVA_Intel_Pavp_Protocol  extensionInput = {0};
-                    extensionInput.EncryptProtocolHeader.dwFunction = 0xffff0001;
-                    extensionInput.EncryptProtocolHeader.guidEncryptProtocol = DXVA_NoEncrypt;
+                DXVA_Intel_Pavp_Protocol2  extensionInput = {0};
+                extensionInput.EncryptProtocolHeader.dwFunction = 0xffff0001;
+                extensionInput.EncryptProtocolHeader.guidEncryptProtocol = DXVA_NoEncrypt;
 
-                    extensionData.pPrivateInputData = &extensionInput;
-                    extensionData.pPrivateOutputData = &extensionOutput;
-                    extensionData.PrivateInputDataSize = sizeof(extensionInput);
-                    extensionData.PrivateOutputDataSize = sizeof(extensionOutput);
-                    hr = m_va->ExecuteExtensionBuffer(&extensionData);
-                }
-                else
-                {
-                    DXVA_Intel_Pavp_Protocol2  extensionInput = {0};
-                    extensionInput.EncryptProtocolHeader.dwFunction = 0xffff0001;
-                    extensionInput.EncryptProtocolHeader.guidEncryptProtocol = DXVA_NoEncrypt;
+                extensionInput.PavpEncryptionMode.eEncryptionType = (PAVP_ENCRYPTION_TYPE) m_va->GetProtectedVA()->GetEncryptionMode();
+                extensionInput.PavpEncryptionMode.eCounterMode = (PAVP_COUNTER_TYPE) m_va->GetProtectedVA()->GetCounterMode();
 
-                    extensionInput.PavpEncryptionMode.eEncryptionType = (PAVP_ENCRYPTION_TYPE) m_va->GetProtectedVA()->GetEncryptionMode();
-                    extensionInput.PavpEncryptionMode.eCounterMode = (PAVP_COUNTER_TYPE) m_va->GetProtectedVA()->GetCounterMode();
-
-                    extensionData.pPrivateInputData = &extensionInput;
-                    extensionData.pPrivateOutputData = &extensionOutput;
-                    extensionData.PrivateInputDataSize = sizeof(extensionInput);
-                    extensionData.PrivateOutputDataSize = sizeof(extensionOutput);
-                    hr = m_va->ExecuteExtensionBuffer(&extensionData);
-                }
+                extensionData.pPrivateInputData = &extensionInput;
+                extensionData.pPrivateOutputData = &extensionOutput;
+                extensionData.PrivateInputDataSize = sizeof(extensionInput);
+                extensionData.PrivateOutputDataSize = sizeof(extensionOutput);
+                hr = m_va->ExecuteExtensionBuffer(&extensionData);
 
                 if (FAILED(hr) ||
                     // asomsiko: This is workaround for 15.22 driver that starts returning GUID_NULL instead DXVA_NoEncrypt
@@ -2828,37 +2811,20 @@ namespace UMC
                     DXVA2_DecodeExtensionData  extensionData = {0};
                     DXVA_EncryptProtocolHeader extensionOutput = {0};
                     HRESULT hr = S_OK;
-                    if (m_va->m_HWPlatform == VA_HW_LAKE)
-                    {
-                        DXVA_Intel_Pavp_Protocol  extensionInput = {0};
-                        extensionInput.EncryptProtocolHeader.dwFunction = 0xffff0001;
-                        extensionInput.EncryptProtocolHeader.guidEncryptProtocol = DXVA_NoEncrypt;
-                        extensionInput.dwBufferSize = 0;
-                        extensionInput.dwAesCounter = 0;
-                        extensionData.Function = 0;
 
-                        extensionData.pPrivateInputData = &extensionInput;
-                        extensionData.pPrivateOutputData = &extensionOutput;
-                        extensionData.PrivateInputDataSize = sizeof(extensionInput);
-                        extensionData.PrivateOutputDataSize = sizeof(extensionOutput);
-                        hr = m_va->ExecuteExtensionBuffer(&extensionData);
-                    }
-                    else
-                    {
-                        DXVA_Intel_Pavp_Protocol2  extensionInput = {0};
-                        extensionInput.EncryptProtocolHeader.dwFunction = 0xffff0001;
-                        extensionInput.EncryptProtocolHeader.guidEncryptProtocol = DXVA_NoEncrypt;
-                        extensionInput.dwBufferSize = 0;
+                    DXVA_Intel_Pavp_Protocol2  extensionInput = {0};
+                    extensionInput.EncryptProtocolHeader.dwFunction = 0xffff0001;
+                    extensionInput.EncryptProtocolHeader.guidEncryptProtocol = DXVA_NoEncrypt;
+                    extensionInput.dwBufferSize = 0;
 
-                        extensionInput.PavpEncryptionMode.eEncryptionType = (PAVP_ENCRYPTION_TYPE) m_va->GetProtectedVA()->GetEncryptionMode();
-                        extensionInput.PavpEncryptionMode.eCounterMode = (PAVP_COUNTER_TYPE) m_va->GetProtectedVA()->GetCounterMode();
+                    extensionInput.PavpEncryptionMode.eEncryptionType = (PAVP_ENCRYPTION_TYPE) m_va->GetProtectedVA()->GetEncryptionMode();
+                    extensionInput.PavpEncryptionMode.eCounterMode = (PAVP_COUNTER_TYPE) m_va->GetProtectedVA()->GetCounterMode();
 
-                        extensionData.pPrivateInputData = &extensionInput;
-                        extensionData.pPrivateOutputData = &extensionOutput;
-                        extensionData.PrivateInputDataSize = sizeof(extensionInput);
-                        extensionData.PrivateOutputDataSize = sizeof(extensionOutput);
-                        hr = m_va->ExecuteExtensionBuffer(&extensionData);
-                    }
+                    extensionData.pPrivateInputData = &extensionInput;
+                    extensionData.pPrivateOutputData = &extensionOutput;
+                    extensionData.PrivateInputDataSize = sizeof(extensionInput);
+                    extensionData.PrivateOutputDataSize = sizeof(extensionOutput);
+                    hr = m_va->ExecuteExtensionBuffer(&extensionData);
 
                     if (FAILED(hr) ||
                         // asomsiko: This is workaround for 15.22 driver that starts returning GUID_NULL instead DXVA_NoEncrypt
@@ -3365,38 +3331,20 @@ namespace UMC
                 CheckData();
             if(NULL != m_va->GetProtectedVA() && MFX_PROTECTION_PAVP == m_va->GetProtectedVA()->GetProtected())
             {
-                if (m_va->m_HWPlatform == VA_HW_LAKE)
-                {
-                    DXVA_Intel_Pavp_Protocol  extensionInput = {0};
-                    extensionInput.EncryptProtocolHeader.dwFunction = 0xffff0001;
-                    extensionInput.EncryptProtocolHeader.guidEncryptProtocol = m_va->GetProtectedVA()->GetEncryptionGUID();
-                    extensionInput.dwBufferSize = encryptedBufferSize;
-                    extensionInput.dwAesCounter = LITTLE_ENDIAN_SWAP32((DWORD)(encryptedData->CipherCounter.Count >> 32));
-                    extensionData.Function = 0;
+                DXVA_Intel_Pavp_Protocol2  extensionInput = {0};
+                extensionInput.EncryptProtocolHeader.dwFunction = 0xffff0001;
+                extensionInput.EncryptProtocolHeader.guidEncryptProtocol = m_va->GetProtectedVA()->GetEncryptionGUID();
+                extensionInput.dwBufferSize = encryptedBufferSize;
+                memcpy_s(extensionInput.dwAesCounter, sizeof(encryptedData->CipherCounter), &encryptedData->CipherCounter, sizeof(encryptedData->CipherCounter));
 
-                    extensionData.pPrivateInputData = &extensionInput;
-                    extensionData.pPrivateOutputData = &extensionOutput;
-                    extensionData.PrivateInputDataSize = sizeof(extensionInput);
-                    extensionData.PrivateOutputDataSize = sizeof(extensionOutput);
-                    hr = m_va->ExecuteExtensionBuffer(&extensionData);
-                }
-                else
-                {
-                    DXVA_Intel_Pavp_Protocol2  extensionInput = {0};
-                    extensionInput.EncryptProtocolHeader.dwFunction = 0xffff0001;
-                    extensionInput.EncryptProtocolHeader.guidEncryptProtocol = m_va->GetProtectedVA()->GetEncryptionGUID();
-                    extensionInput.dwBufferSize = encryptedBufferSize;
-                    memcpy_s(extensionInput.dwAesCounter, sizeof(encryptedData->CipherCounter), &encryptedData->CipherCounter, sizeof(encryptedData->CipherCounter));
+                extensionInput.PavpEncryptionMode.eEncryptionType = (PAVP_ENCRYPTION_TYPE) m_va->GetProtectedVA()->GetEncryptionMode();
+                extensionInput.PavpEncryptionMode.eCounterMode = (PAVP_COUNTER_TYPE) m_va->GetProtectedVA()->GetCounterMode();
 
-                    extensionInput.PavpEncryptionMode.eEncryptionType = (PAVP_ENCRYPTION_TYPE) m_va->GetProtectedVA()->GetEncryptionMode();
-                    extensionInput.PavpEncryptionMode.eCounterMode = (PAVP_COUNTER_TYPE) m_va->GetProtectedVA()->GetCounterMode();
-
-                    extensionData.pPrivateInputData = &extensionInput;
-                    extensionData.pPrivateOutputData = &extensionOutput;
-                    extensionData.PrivateInputDataSize = sizeof(extensionInput);
-                    extensionData.PrivateOutputDataSize = sizeof(extensionOutput);
-                    hr = m_va->ExecuteExtensionBuffer(&extensionData);
-                }
+                extensionData.pPrivateInputData = &extensionInput;
+                extensionData.pPrivateOutputData = &extensionOutput;
+                extensionData.PrivateInputDataSize = sizeof(extensionInput);
+                extensionData.PrivateOutputDataSize = sizeof(extensionOutput);
+                hr = m_va->ExecuteExtensionBuffer(&extensionData);
 
                 if (FAILED(hr) ||
                     extensionOutput.guidEncryptProtocol != m_va->GetProtectedVA()->GetEncryptionGUID() ||
@@ -3554,38 +3502,20 @@ namespace UMC
 
                     if(NULL != m_va->GetProtectedVA() && MFX_PROTECTION_PAVP == m_va->GetProtectedVA()->GetProtected())
                     {
-                        if (m_va->m_HWPlatform == VA_HW_LAKE)
-                        {
-                            DXVA_Intel_Pavp_Protocol  extensionInput = {0};
-                            extensionInput.EncryptProtocolHeader.dwFunction = 0xffff0001;
-                            extensionInput.EncryptProtocolHeader.guidEncryptProtocol = m_va->GetProtectedVA()->GetEncryptionGUID();
-                            extensionInput.dwBufferSize = encryptedBufferSize;
-                            extensionInput.dwAesCounter = LITTLE_ENDIAN_SWAP32((DWORD)(encryptedData->CipherCounter.Count >> 32));
-                            extensionData.Function = 0;
+                        DXVA_Intel_Pavp_Protocol2  extensionInput = {0};
+                        extensionInput.EncryptProtocolHeader.dwFunction = 0xffff0001;
+                        extensionInput.EncryptProtocolHeader.guidEncryptProtocol = m_va->GetProtectedVA()->GetEncryptionGUID();
+                        extensionInput.dwBufferSize = encryptedBufferSize;
+                        memcpy_s(extensionInput.dwAesCounter, sizeof(encryptedData->CipherCounter), &encryptedData->CipherCounter, sizeof(encryptedData->CipherCounter));
 
-                            extensionData.pPrivateInputData = &extensionInput;
-                            extensionData.pPrivateOutputData = &extensionOutput;
-                            extensionData.PrivateInputDataSize = sizeof(extensionInput);
-                            extensionData.PrivateOutputDataSize = sizeof(extensionOutput);
-                            hr = m_va->ExecuteExtensionBuffer(&extensionData);
-                        }
-                        else
-                        {
-                            DXVA_Intel_Pavp_Protocol2  extensionInput = {0};
-                            extensionInput.EncryptProtocolHeader.dwFunction = 0xffff0001;
-                            extensionInput.EncryptProtocolHeader.guidEncryptProtocol = m_va->GetProtectedVA()->GetEncryptionGUID();
-                            extensionInput.dwBufferSize = encryptedBufferSize;
-                            memcpy_s(extensionInput.dwAesCounter, sizeof(encryptedData->CipherCounter), &encryptedData->CipherCounter, sizeof(encryptedData->CipherCounter));
+                        extensionInput.PavpEncryptionMode.eEncryptionType = (PAVP_ENCRYPTION_TYPE) m_va->GetProtectedVA()->GetEncryptionMode();
+                        extensionInput.PavpEncryptionMode.eCounterMode = (PAVP_COUNTER_TYPE) m_va->GetProtectedVA()->GetCounterMode();
 
-                            extensionInput.PavpEncryptionMode.eEncryptionType = (PAVP_ENCRYPTION_TYPE) m_va->GetProtectedVA()->GetEncryptionMode();
-                            extensionInput.PavpEncryptionMode.eCounterMode = (PAVP_COUNTER_TYPE) m_va->GetProtectedVA()->GetCounterMode();
-
-                            extensionData.pPrivateInputData = &extensionInput;
-                            extensionData.pPrivateOutputData = &extensionOutput;
-                            extensionData.PrivateInputDataSize = sizeof(extensionInput);
-                            extensionData.PrivateOutputDataSize = sizeof(extensionOutput);
-                            hr = m_va->ExecuteExtensionBuffer(&extensionData);
-                        }
+                        extensionData.pPrivateInputData = &extensionInput;
+                        extensionData.pPrivateOutputData = &extensionOutput;
+                        extensionData.PrivateInputDataSize = sizeof(extensionInput);
+                        extensionData.PrivateOutputDataSize = sizeof(extensionOutput);
+                        hr = m_va->ExecuteExtensionBuffer(&extensionData);
                     }
 
                     m_pPacker.VC1SetSliceBuffer();
@@ -3882,6 +3812,5 @@ namespace UMC
 #endif // #if defined(UMC_VA)
 
 #endif //__UMC_VC1_DEC_FRAME_DESCR_VA_H_
-#endif //UMC_RESTRICTED_CODE_VA
 #endif //UMC_ENABLE_VC1_VIDEO_DECODER
 

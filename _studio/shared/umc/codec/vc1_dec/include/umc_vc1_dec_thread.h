@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2011 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -17,9 +17,7 @@
 #include "vm_types.h"
 #include "umc_structures.h"
 #include "umc_vc1_dec_job.h"
-#ifndef UMC_RESTRICTED_CODE_VA
 #include "umc_va_base.h"
-#endif
 
 #include <new>
 

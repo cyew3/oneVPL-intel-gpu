@@ -9,7 +9,6 @@
 //
 
 #include "mfx_common_decode_int.h"
-//#include "mfx_enc_common.h"
 #include "umc_va_base.h"
 
 MFXMediaDataAdapter::MFXMediaDataAdapter(mfxBitstream *pBitstream)

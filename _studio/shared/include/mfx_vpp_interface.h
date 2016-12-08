@@ -21,7 +21,6 @@
 #include "libmfx_core.h"
 #include "mfx_platform_headers.h"
 
-// AYA: temporal solution. PREPROC_QUERY_STATUS is used only!!!!
 #if   defined(MFX_VA_WIN)
     #include "encoding_ddi.h"
 #elif defined(MFX_VA_LINUX) || defined(MFX_VA_OSX)
@@ -117,12 +116,12 @@ namespace MfxHwVideoProcessing
         mfxU16 GlobalAlphaEnable;
         mfxU16 GlobalAlpha;
         mfxU16 PixelAlphaEnable;
-        /* NB! Experimental part*/
         mfxU16 IOPattern; //sys/video/opaque memory
         mfxU16 ChromaFormat;
         mfxU32 FourCC;
     };
 
+#ifndef MFX_CAMERA_FEATURE_DISABLE
     typedef struct _CameraCaps
     {
         mfxU32 uBlackLevelCorrection;
@@ -249,7 +248,7 @@ namespace MfxHwVideoProcessing
         UINT      Stride;
         CameraVignetteCorrectionElem *pCorrectionMap;
     } CameraVignetteCorrectionParams;
-
+#endif // #ifndef MFX_CAMERA_FEATURE_DISABLE
 
     struct mfxVppCaps
     {
@@ -260,9 +259,10 @@ namespace MfxHwVideoProcessing
         mfxU32 uDetailFilter;
         mfxU32 uProcampFilter;
         mfxU32 uSceneChangeDetection;
+#ifndef MFX_CAMERA_FEATURE_DISABLE
         CameraCaps cameraCaps;
+#endif
 
-        // MSDK 2013
         mfxU32 uFrameRateConversion;
         mfxU32 uDeinterlacing;
         mfxU32 uVideoSignalInfo;
@@ -314,7 +314,9 @@ namespace MfxHwVideoProcessing
             , mFormatSupport()
             , uMirroring(0)
         {
+#ifndef MFX_CAMERA_FEATURE_DISABLE
             memset(&cameraCaps, 0, sizeof(CameraCaps));
+#endif
         };
     };
 
@@ -323,7 +325,7 @@ namespace MfxHwVideoProcessing
     {
         mfxFrameInfo frameInfo;
         mfxHDLPair   hdl;
-        // aya: driver fix
+
         mfxMemId     memId;
         bool         bExternal;
 
@@ -379,6 +381,7 @@ namespace MfxHwVideoProcessing
                ,statusReportID(0)
                ,bFieldWeaving(false)
                ,iFieldProcessingMode(0)
+#ifndef MFX_CAMERA_FEATURE_DISABLE
                ,bCameraPipeEnabled(false)
                ,bCameraBlackLevelCorrection(false)
                ,CameraBlackLevel()
@@ -400,6 +403,7 @@ namespace MfxHwVideoProcessing
                ,CameraLensCorrection()
                ,bCamera3DLUT(false)
                ,Camera3DLUT()
+#endif
                ,rotation(0)
                ,scalingMode(MFX_SCALING_MODE_DEFAULT)
                ,chromaSiting(MFX_CHROMA_SITING_UNKNOWN)
@@ -473,6 +477,7 @@ namespace MfxHwVideoProcessing
 
         mfxU32         iFieldProcessingMode;
 
+#ifndef MFX_CAMERA_FEATURE_DISABLE
         //  Camera Pipe specific params
         bool                     bCameraPipeEnabled;
         bool                     bCameraBlackLevelCorrection;
@@ -497,6 +502,7 @@ namespace MfxHwVideoProcessing
         CameraLensCorrectionParams         CameraLensCorrection;
         bool                     bCamera3DLUT;
         Camera3DLUTParams        Camera3DLUT;
+#endif
         int         rotation;
 
         mfxU16      scalingMode;

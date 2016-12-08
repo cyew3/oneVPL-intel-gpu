@@ -5,13 +5,14 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2005-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2005-2016 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_FRAME_CONSTRUCTOR_H__
 #define __UMC_FRAME_CONSTRUCTOR_H__
 
 #include <ipps.h>
+#include "umc_defs.h"
 #include "umc_media_buffer.h"
 #include "umc_linked_list.h"
 #include "umc_splitter.h"
@@ -207,7 +208,7 @@ namespace UMC
     {
         Ipp8u *pFrom = pBuf + iTo;
         Ipp8u *pTo = pBuf + iFrom;
-        ippsCopy_8u(pFrom, pTo, iLastByte - iTo);
+        MFX_INTERNAL_CPY(pTo, pFrom, iLastByte - iTo);
         UpdateInputSample(sample1, iFrom, iTo, isPure);
         UpdateInputSample(sample2, iFrom, iTo, isPure);
     }

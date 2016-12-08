@@ -248,7 +248,6 @@ Status H264SegmentDecoderMultiThreaded::ProcessSegment(void)
                 Task.m_iMaxMB = Task.m_iFirstMB + Task.m_iMBToProcess;
                 if (m_pSlice)
                     RestoreErrorRect(Task.m_iFirstMB + Task.m_iMBToProcess, m_pSlice->GetMaxMB(), m_pSlice);
-                // break; // DEBUG : ADB should we return if error occur??
             }
 
             EndProcessingSegment(Task);
@@ -2405,7 +2404,7 @@ void H264SegmentDecoderMultiThreaded::DecodeMotionVectors_CAVLC(bool bIsBSlice)
     for (partCtr = 0,sboffset=0; partCtr < numParts; partCtr++)
     {
         pMVDeltaL0 = &m_cur_mb.MVDelta[0]->MotionVectors[sboffset];
-        pRefIndexL0 = &m_cur_mb.GetReferenceIndexStruct(0)->refIndexs[subblock_block_membership[sboffset]]; // DEBUG: ADB
+        pRefIndexL0 = &m_cur_mb.GetReferenceIndexStruct(0)->refIndexs[subblock_block_membership[sboffset]];
 
         if (dirPart == D_DIR_FWD || dirPart == D_DIR_BIDIR)
         {    // L0
@@ -2442,7 +2441,7 @@ void H264SegmentDecoderMultiThreaded::DecodeMotionVectors_CAVLC(bool bIsBSlice)
         if (bIsBSlice)
         {
             pMVDeltaL1 = &m_cur_mb.MVDelta[1]->MotionVectors[sboffset];
-            pRefIndexL1 = &m_cur_mb.GetReferenceIndexStruct(1)->refIndexs[subblock_block_membership[sboffset]];  // DEBUG: ADB
+            pRefIndexL1 = &m_cur_mb.GetReferenceIndexStruct(1)->refIndexs[subblock_block_membership[sboffset]];
 
             if (dirPart == D_DIR_BWD || dirPart == D_DIR_BIDIR)
             {

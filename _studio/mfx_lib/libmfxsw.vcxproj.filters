@@ -35,9 +35,6 @@
     <ClCompile Include="shared\src\libmfxsw_async.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="shared\src\libmfxsw_brc.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="shared\src\libmfxsw_decode.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

@@ -11,15 +11,11 @@
 #ifndef __UMC_VA_BASE_H__
 #define __UMC_VA_BASE_H__
 
-#include <stdio.h>
 #include <vector>
-#include "vm_types.h"
-#include "vm_debug.h"
-#include "vm_time.h"
-#include "ipps.h"
-#include "mfx_common.h"
+#include "mfx_config.h"
+#include "mfxstructures-int.h"
 
-#if defined (UMC_VA) || defined (MFX_VA)
+#if defined (UMC_VA) || defined (MFX_VA) || defined (UMC_VA_DXVA) || defined(UMC_VA_LINUX)
 
 #ifndef UMC_VA
 #   define UMC_VA
@@ -29,7 +25,7 @@
 #   define MFX_VA
 #endif
 
-#if defined(LINUX32) || defined(LINUX64) || defined(LINUX_VA_EMULATION)
+#if defined(LINUX32) || defined(LINUX64)
 #   ifndef UMC_VA_LINUX
 #       define UMC_VA_LINUX          // HW acceleration through Linux VA
 #   endif
@@ -53,9 +49,6 @@
 #endif
 
 #endif //  defined (MFX_VA) || defined (UMC_VA)
-
-#include "ipps.h"
-#include "vm_types.h"
 
 #ifdef  __cplusplus
 #include "umc_structures.h"
@@ -129,16 +122,17 @@ enum VideoAccelerationProfile
     VA_VLD          = 0x00400,
 
     VA_PROFILE                  = 0xff000,
+#ifndef OPEN_SOURCE
     VA_PROFILE_SVC_HIGH         = 0x02000,
     VA_PROFILE_SVC_BASELINE     = 0x03000,
     VA_PROFILE_MVC              = 0x04000,
     VA_PROFILE_MVC_MV           = 0x05000,
     VA_PROFILE_MVC_STEREO       = 0x06000,
     VA_PROFILE_MVC_STEREO_PROG  = 0x07000,
-    VA_PROFILE_INTEL            = 0x08000,
     VA_PROFILE_WIDEVINE         = 0x09000,
     VA_PROFILE_422              = 0x0a000,
     VA_PROFILE_444              = 0x0b000,
+#endif
 
     //profile amendments
     VA_PROFILE_10               = 0x10000,
@@ -158,6 +152,7 @@ enum VideoAccelerationProfile
     HEVC_VLD        = VA_H265 | VA_VLD,
     VP9_VLD         = VA_VP9 | VA_VLD,
 
+#ifndef OPEN_SOURCE
     H264_VLD_MVC            = VA_H264 | VA_VLD | VA_PROFILE_MVC,
     H264_VLD_SVC_BASELINE   = VA_H264 | VA_VLD | VA_PROFILE_SVC_BASELINE,
     H264_VLD_SVC_HIGH       = VA_H264 | VA_VLD | VA_PROFILE_SVC_HIGH,
@@ -181,6 +176,7 @@ enum VideoAccelerationProfile
     VP9_10_VLD_422 = VA_VP9 | VA_VLD | VA_PROFILE_10 | VA_PROFILE_422,
     VP9_10_VLD_444 = VA_VP9 | VA_VLD | VA_PROFILE_10 | VA_PROFILE_444,
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
+#endif // OPEN_SOURCE
 };
 
 #define MAX_BUFFER_TYPES    32
@@ -189,55 +185,13 @@ enum VideoAccelerationPlatform
     VA_UNKNOWN_PLATFORM = 0,
 
     VA_PLATFORM  = 0x0f0000,
-    VA_DXVA1     = 0x010000,
     VA_DXVA2     = 0x020000,
     VA_LINUX     = 0x030000,
-    VA_SOFTWARE  = 0x040000,
-};
-
-enum VideoAccelerationHW
-{
-    VA_HW_UNKNOWN   = 0,
-    VA_HW_LAKE      = 0x010000,
-    VA_HW_LRB       = 0x020000,
-    VA_HW_SNB       = 0x030000,
-
-    VA_HW_IVB       = 0x040000,
-
-    VA_HW_HSW       = 0x050000,
-    VA_HW_HSW_ULT   = 0x050001,
-
-    VA_HW_VLV       = 0x060000,
-
-    VA_HW_BDW       = 0x070000,
-
-    VA_HW_CHV       = 0x080000,
-
-    VA_HW_SCL       = 0x090000,
-
-    VA_HW_KBL       = 0x100000,
-
-    VA_HW_BXT       = 0x110000,
-
-#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
-    VA_HW_CNL       = 0x120000,
-#endif //PRE_SI_TARGET_PLATFORM_GEN10
-    VA_HW_SOFIA     = 0x130000,
-
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-    VA_HW_ICL       = 0x140000,
-    VA_HW_ICL_LP    = VA_HW_ICL + 1,
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
 };
 
 class UMCVACompBuffer;
 class ProtectedVA;
 class VideoProcessingVA;
-
-enum eUMC_DirectX_Status
-{
-    E_FRAME_LOCKED = 0xC0262111
-};
 
 enum eUMC_VA_Status
 {
@@ -284,9 +238,13 @@ public:
     VideoAccelerator() :
         m_Profile(UNKNOWN),
         m_Platform(VA_UNKNOWN_PLATFORM),
-        m_HWPlatform(VA_HW_UNKNOWN),
+        m_HWPlatform(MFX_HW_UNKNOWN),
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         m_protectedVA(0),
+#endif
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
         m_videoProcessingVA(0),
+#endif
         m_allocator(0),
         m_bH264ShortSlice(false),
         m_bH264MVCSupport(false),
@@ -315,15 +273,18 @@ public:
     virtual Status SyncTask(Ipp32s index, void * error = NULL) = 0;
     virtual Status QueryTaskStatus(Ipp32s index, void * status, void * error) = 0;
     virtual Status ReleaseBuffer(Ipp32s type) = 0;   // release buffer
-    virtual Status ReleaseAllBuffers() = 0;
     virtual Status EndFrame     (void * handle = 0) = 0;          // end frame
 
     virtual bool IsIntelCustomGUID() const = 0;
     /* TODO: is used on Linux only? On Linux there are isues with signed/unsigned return value. */
     virtual Ipp32s GetSurfaceID(Ipp32s idx) { return idx; }
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     virtual ProtectedVA * GetProtectedVA() {return m_protectedVA;}
+#endif
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
     virtual VideoProcessingVA * GetVideoProcessingVA() {return m_videoProcessingVA;}
+#endif
 
     bool IsLongSliceControl() const { return (!m_bH264ShortSlice); };
     bool IsMVCSupport() const {return m_bH264MVCSupport; };
@@ -337,17 +298,21 @@ public:
 
     VideoAccelerationProfile    m_Profile;          // entry point
     VideoAccelerationPlatform   m_Platform;         // DXVA, LinuxVA, etc
-    VideoAccelerationHW         m_HWPlatform;
+    eMFXHWType                  m_HWPlatform;
 
 protected:
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     ProtectedVA       *  m_protectedVA;
+#endif
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
     VideoProcessingVA *  m_videoProcessingVA;
+#endif
     FrameAllocator    *  m_allocator;
 
     bool            m_bH264ShortSlice;
     bool            m_bH264MVCSupport;
     bool            m_isUseStatuReport;
-    Ipp32s          m_H265ScalingListScanOrder; //0 - up-right, 1 - raster (derived from DXVA2_ConfigPictureDecode.Config4GroupedCoefs). Default is 1 (raster) to conform old driver beh.
+    Ipp32s          m_H265ScalingListScanOrder; //0 - up-right, 1 - raster . Default is 1 (raster).
 };
 
 ///////////////////////////////////////////////////////////////////////////////////

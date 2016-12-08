@@ -24,6 +24,8 @@
 
 #define ERROR_STATUS(sts) ((sts)<MFX_ERR_NONE)
 
+#define DEFAULT_ALIGNMENT_SIZE 64
+
 // Implementation of Internal allocators
 mfxStatus mfxDefaultAllocator::AllocBuffer(mfxHDL pthis, mfxU32 nbytes, mfxU16 type, mfxHDL *mid)
 {
@@ -32,7 +34,7 @@ mfxStatus mfxDefaultAllocator::AllocBuffer(mfxHDL pthis, mfxU32 nbytes, mfxU16 t
     if(!mid)
         return MFX_ERR_NULL_PTR;
     mfxU32 header_size = ALIGN32(sizeof(BufferStruct));
-    mfxU8 *buffer_ptr=(mfxU8 *)ippMalloc(header_size + nbytes);
+    mfxU8 *buffer_ptr=(mfxU8 *)malloc(header_size + nbytes + DEFAULT_ALIGNMENT_SIZE);
 
     if (!buffer_ptr)
         return MFX_ERR_MEMORY_ALLOC;
@@ -84,7 +86,8 @@ mfxStatus mfxDefaultAllocator::LockBuffer(mfxHDL pthis, mfxHDL mid, mfxU8 **ptr)
         return MFX_ERR_INVALID_HANDLE;
     }
 
-    if (ptr) *ptr=(mfxU8 *)bs+ALIGN32(sizeof(BufferStruct));
+    if (ptr) *ptr = UMC::align_pointer<mfxU8*>((mfxU8 *)bs + ALIGN32(sizeof(BufferStruct)), DEFAULT_ALIGNMENT_SIZE);
+
     return MFX_ERR_NONE;
 }
 mfxStatus mfxDefaultAllocator::UnlockBuffer(mfxHDL pthis, mfxHDL mid)
@@ -128,7 +131,7 @@ mfxStatus mfxDefaultAllocator::FreeBuffer(mfxHDL pthis, mfxMemId mid)
             return MFX_ERR_INVALID_HANDLE;
         if (bs->id!=ID_BUFFER)
             return MFX_ERR_INVALID_HANDLE;
-        ippFree(bs);
+        free(bs);
         return MFX_ERR_NONE;
     }
     catch (...)
@@ -206,7 +209,7 @@ mfxStatus mfxDefaultAllocator::AllocFrames(mfxHDL pthis, mfxFrameAllocRequest *r
             return MFX_ERR_UNSUPPORTED;
         break;
 
-    case MFX_FOURCC_P8: // MBdata for ENC
+    case MFX_FOURCC_P8:
         if ( request->Type & MFX_MEMTYPE_FROM_ENCODE )
         {
             nbytes = Pitch*Height2;
@@ -342,12 +345,6 @@ mfxStatus mfxDefaultAllocator::LockFrame(mfxHDL pthis, mfxHDL mid, mfxFrameData 
         ptr->PitchHigh = (mfxU16)((4*ALIGN32(fs->info.Width)) / (1 << 16));
         ptr->PitchLow  = (mfxU16)((4*ALIGN32(fs->info.Width)) % (1 << 16));
         break;
-    /*case MFX_FOURCC_IMC3:
-        ptr->Pitch = (mfxU16)ALIGN32(fs->info.Width);
-        ptr->Y = sptr;
-        ptr->U = ptr->Y +  ptr->Pitch*Height2;
-        ptr->V = ptr->U + (ptr->Pitch)*(Height2>>1);
-        break;*/
     case MFX_FOURCC_P8:
         ptr->PitchHigh=0;
         ptr->PitchLow=(mfxU16)ALIGN32(fs->info.Width);

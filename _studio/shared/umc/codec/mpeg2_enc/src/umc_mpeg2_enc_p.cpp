@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2002-2011 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2002-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -800,7 +800,7 @@ encodeMB:
       }
 
       //pMBInfo[k].cbp = CodedBlockPattern;
-      ippsCopy_8u((Ipp8u*)threadSpec[numTh].PMV, (Ipp8u*)pMBInfo[k].MV, sizeof(threadSpec[0].PMV));
+      MFX_INTERNAL_CPY((Ipp8u*)pMBInfo[k].MV, (Ipp8u*)threadSpec[numTh].PMV, sizeof(threadSpec[0].PMV));
 #ifndef UMC_RESTRICTED_CODE
 //size = BITPOS(threadSpec[numTh]) - size;
 //pMBInfo[k].pred_quality[0] = size; // for a while

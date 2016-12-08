@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2007 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include <string.h>
@@ -19,14 +19,8 @@ VideoDecoderParams::VideoDecoderParams(void)
     m_pData = NULL;
     memset(&info, 0, sizeof(sVideoStreamInfo));
     lFlags = 0;
-    lTrickModesFlag= UMC_TRICK_MODES_NO;
-
     pPostProcessing = NULL;
-
-    dPlaybackRate = 1;
-
     lpMemoryAllocator = NULL;
-
     pVideoAccelerator = NULL;
 } // VideoDecoderParams::VideoDecoderParams(void)
 
@@ -42,17 +36,6 @@ VideoDecoder::~VideoDecoder(void)
     m_allocatedPostProcessing = NULL;
   }
 } // VideoDecoder::~VideoDecoder(void)
-
-Status VideoDecoder::PreviewLastFrame(VideoData *out, BaseCodec *pPostProcessing)
-{
-  if (!pPostProcessing) {
-    pPostProcessing = m_PostProcessing;
-    if (!pPostProcessing) {
-      return UMC_ERR_NOT_INITIALIZED;
-    }
-  }
-  return pPostProcessing->GetFrame(&m_LastDecodedFrame, out);
-} // void VideoDecoder::PreviewLastFrame()
 
 Status VideoDecoder::GetInfo(BaseCodecParams *info)
 {

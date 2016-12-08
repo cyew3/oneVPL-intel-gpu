@@ -18,7 +18,7 @@
 
 using namespace UMC;
 
-Status MPEG2VideoDecoderSW::DecodeSlice_FrameI_422(IppVideoContext *video, int task_num)
+Status MPEG2VideoDecoderSW::DecodeSlice_FrameI_422(VideoContext *video, int task_num)
 {
   Ipp32s dct_type = 0;
   Ipp32s pitch_l = video->Y_comp_pitch;
@@ -89,7 +89,7 @@ Status MPEG2VideoDecoderSW::DecodeSlice_FrameI_422(IppVideoContext *video, int t
   }
 }//DecodeSlice_FrameI_422
 
-Status MPEG2VideoDecoderSW::DecodeSlice_FramePB_422(IppVideoContext *video, int task_num)
+Status MPEG2VideoDecoderSW::DecodeSlice_FramePB_422(VideoContext *video, int task_num)
 {
   Ipp32s dct_type = 0;
   Ipp32s macroblock_type;
@@ -270,7 +270,7 @@ Status MPEG2VideoDecoderSW::DecodeSlice_FramePB_422(IppVideoContext *video, int 
   }
 }//DecodeSlice_FramePB_422
 
-Status MPEG2VideoDecoderSW::DecodeSlice_FieldPB_422(IppVideoContext *video, int task_num)
+Status MPEG2VideoDecoderSW::DecodeSlice_FieldPB_422(VideoContext *video, int task_num)
 {
   Ipp32s macroblock_type;
   Ipp32s macroblock_address_increment;

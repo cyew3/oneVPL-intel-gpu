@@ -35,9 +35,6 @@
 #include "umc_va_dxva2_protected.h"
 #endif
 
-#define ELK
-//#define OTLAD
-
 #if defined(UMC_VA_DXVA) || defined(UMC_VA_LINUX)
 
 
@@ -64,14 +61,14 @@ public:
         , bs_size_getting(0)
         , slice_size_getting(0)
         , m_SliceNum(0)
-    //Ipp8u  add_bytes[16]()
         , IsProtectedBS(false)
-    //init_count[4]()
         , bs(NULL)
         , add_to_slice_start(0)
         , is_bs_aligned_16(false)
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         , curr_encryptedData(NULL)
         , curr_bs_encryptedData(NULL)
+#endif
         , overlap(0)
         , vpPictureParam(NULL)
         , pMBControl0(NULL)
@@ -104,7 +101,7 @@ public:
 #if defined(UMC_VA_DXVA)
     Status GetStatusReport(DXVA_Status_VC1 *pStatusReport);
 #endif
-    
+
     VideoAccelerationProfile va_mode;
     VideoAccelerator         *m_va;
 
@@ -125,8 +122,10 @@ public:
     mfxBitstream * bs;
     Ipp32s add_to_slice_start;
     bool   is_bs_aligned_16;
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     mfxEncryptedData * curr_encryptedData;
     mfxEncryptedData * curr_bs_encryptedData;
+#endif
     Ipp32u overlap;
 
 #ifdef UMC_VA_DXVA
@@ -171,7 +170,7 @@ public:
         //Level 1 can call level 2 functions or re-implement it
 
         //Slice decode, includes MB decode
-        virtual Status DecodeSlice(IppVideoContext *video, int task_num);
+        virtual Status DecodeSlice(VideoContext *video, int task_num);
 
         ///////////////////////////////////////////////////////
         /////////////Level 3 protected interface///////////////
@@ -179,7 +178,7 @@ public:
         //Level 3 can call level 4 functions or re-implement it
 
         //Slice Header decode
-        virtual Status DecodeSliceHeader(IppVideoContext *video, int task_num);
+        virtual Status DecodeSliceHeader(VideoContext *video, int task_num);
 
         virtual Status ProcessRestFrame(int task_num);
         virtual void           quant_matrix_extension(int task_num);

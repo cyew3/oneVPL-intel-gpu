@@ -27,10 +27,8 @@
 #include "umc_automatic_mutex.h"
 #include "mfx_trace.h"
 
-#ifndef UMC_RESTRICTED_CODE_VA
 #if defined (UMC_VA_DXVA)
 #include "umc_vc1_dec_frame_descr_va.h"
-#endif
 #endif
 
 

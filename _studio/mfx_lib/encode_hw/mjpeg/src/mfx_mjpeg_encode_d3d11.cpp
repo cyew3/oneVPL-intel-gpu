@@ -26,7 +26,7 @@
 #include "libmfx_core_interface.h"
 
 #include "mfx_mjpeg_encode_hw_utils.h"
-
+#include "fast_copy.h"
 
 using namespace MfxHwMJpegEncode;
 
@@ -174,11 +174,6 @@ mfxStatus D3D11Encoder::QueryBitstreamBufferInfo(mfxFrameAllocRequest& request)
     request.Info.Height = m_compBufInfo[bitstreamIndex].CreationHeight;
     request.Info.FourCC = ownConvertD3DFMT_TO_MFX( (DXGI_FORMAT)(m_compBufInfo[bitstreamIndex].CompressedFormats) ); // P8
 
-    // FIXME: !!! aya:  
-    // D3D11_BIND_VIDEO_ENCODER must be used core->AllocFrames()
-    //     Desc.BindFlags = D3D11_BIND_ENCODER;
-    //     hr = pSelf->m_pD11Device->CreateTexture2D(&Desc, NULL, &pSelf->m_SrfPool);
-
     return MFX_ERR_NONE;
 }
 
@@ -229,7 +224,7 @@ mfxStatus D3D11Encoder::RegisterBitstreamBuffer(mfxFrameAllocResponse& response)
 mfxStatus D3D11Encoder::Execute(DdiTask &task, mfxHDL surface)
 {
     HRESULT hr  = S_OK;
-    mfxHDLPair* inputPair = static_cast<mfxHDLPair*>(surface);//aya: has to be corrected
+    mfxHDLPair* inputPair = static_cast<mfxHDLPair*>(surface);
     ID3D11Resource* pInputD3D11Res = static_cast<ID3D11Resource*>(inputPair->first);
     ExecuteBuffers* pExecuteBuffers = task.m_pDdiData;
     // prepare resource list
@@ -428,16 +423,16 @@ mfxStatus D3D11Encoder::UpdateBitstream(
     m_core->LockFrame(MemId, &bitstream);
     MFX_CHECK(bitstream.Y != 0, MFX_ERR_LOCK_MEMORY);
 
-    IppStatus sts = ippiCopyManaged_8u_C1R(
-        (Ipp8u *)bitstream.Y, task.m_bsDataLength,
+    mfxStatus sts = FastCopy::Copy(
         bsData, task.m_bsDataLength,
-        roi, IPP_NONTEMPORAL_LOAD);
-    assert(sts == ippStsNoErr);
+        (Ipp8u *)bitstream.Y, task.m_bsDataLength,
+        roi, COPY_VIDEO_TO_SYS);
+    assert(sts == MFX_ERR_NONE);
 
     task.bs->DataLength += task.m_bsDataLength;
     m_core->UnlockFrame(MemId, &bitstream);
 
-    return (sts != ippStsNoErr) ? MFX_ERR_UNKNOWN : MFX_ERR_NONE;
+    return sts;
 }
 
 mfxStatus D3D11Encoder::Destroy()
@@ -491,7 +486,7 @@ mfxStatus D3D11Encoder::Init(
     video_desc.OutputFormat = DXGI_FORMAT_NV12;
     video_desc.Guid = DXVA2_Intel_Encode_JPEG;
 
-    D3D11_VIDEO_DECODER_CONFIG video_config = {0}; // aya:!!!!!!!!
+    D3D11_VIDEO_DECODER_CONFIG video_config = {0};
     mfxU32 count;
 
     hRes = m_pVideoDevice->GetVideoDecoderConfigCount(&video_desc, &count);
@@ -506,10 +501,7 @@ mfxStatus D3D11Encoder::Init(
         // MFX_CHECK_STS( mfxSts );
     //}    
 
-    // [2] Calling other D3D11 Video Decoder API (as for normal proc) - aya:FIXME:skipped
-
-    //hRes = CheckVideoDecoderFormat(NV12); //aya???
-    //CHECK_HRES(hRes);
+    // [2] Calling other D3D11 Video Decoder API (as for normal proc)
 
     // [4] CreateVideoDecoder
     // D3D11_VIDEO_DECODER_DESC video_desc;
@@ -519,7 +511,7 @@ mfxStatus D3D11Encoder::Init(
     video_desc.Guid = DXVA2_Intel_Encode_JPEG;
 
     // D3D11_VIDEO_DECODER_CONFIG video_config;
-    video_config.guidConfigBitstreamEncryption = DXVA_NoEncrypt;// aya: encrypto will be added late
+    video_config.guidConfigBitstreamEncryption = DXVA_NoEncrypt;
     video_config.ConfigDecoderSpecific = ENCODE_PAK;
 
     hRes  = m_pVideoDevice->CreateVideoDecoder(&video_desc, &video_config, &m_pDecoder);
@@ -541,9 +533,9 @@ mfxStatus D3D11Encoder::Init(
     CHECK_HRES(hRes);
 #endif
 
-    // [5] Set encryption - aya:skipped
+    // [5] Set encryption
 
-    // [6] specific encoder caps - aya:skipped
+    // [6] specific encoder caps
 
 
     return MFX_ERR_NONE;

@@ -663,8 +663,7 @@ Status MP4Splitter::FillMPEGAudioInfo(Ipp32u nTrack)
   umcRes = pIndex->Get(m_Frame);
   UMC_CHECK_STATUS(umcRes)
 
-  p_frame = (Ipp8u *)ippsMalloc_8u(m_Frame.uiSize);
-  UMC_CHECK_PTR(p_frame)
+  p_frame = new Ipp8u[m_Frame.uiSize];
 
   m_ReaderMutex.Lock();
   m_pReader->SetPosition((Ipp64u)m_Frame.stPosition);
@@ -1028,13 +1027,18 @@ Status MP4Splitter::Init(SplitterParams& init)
   if (NULL == m_pTrackIndex)
       return UMC_ERR_ALLOC;
 
-  UMC_ALLOC_ZERO_ARR(m_pInfo->m_ppTrackInfo, TrackInfo*, m_pInfo->m_nOfTracks)
-  UMC_ALLOC_ZERO_ARR(m_ppMediaBuffer, MediaBuffer*, m_pInfo->m_nOfTracks)
-  UMC_ALLOC_ZERO_ARR(m_ppLockedFrame, MediaData*, m_pInfo->m_nOfTracks)
-  UMC_ALLOC_ZERO_ARR(m_pIsLocked, Ipp32s, m_pInfo->m_nOfTracks)
+  m_pInfo->m_ppTrackInfo = new TrackInfo*[m_pInfo->m_nOfTracks];
+  memset(m_pInfo->m_ppTrackInfo, 0, m_pInfo->m_nOfTracks*sizeof(TrackInfo*));
+  m_ppMediaBuffer = new MediaBuffer*[m_pInfo->m_nOfTracks];
+  memset(m_ppMediaBuffer, 0, m_pInfo->m_nOfTracks*sizeof(MediaBuffer*));
+  m_ppLockedFrame = new MediaData*[m_pInfo->m_nOfTracks];
+  memset(m_ppLockedFrame, 0, m_pInfo->m_nOfTracks*sizeof(MediaData*));
+  m_pIsLocked = new Ipp32s[m_pInfo->m_nOfTracks];
+  memset(m_pIsLocked, 0, m_pInfo->m_nOfTracks*sizeof(Ipp32s));
 
   UMC_NEW_ARR(m_pReadESThread, vm_thread, m_pInfo->m_nOfTracks)
-  UMC_ALLOC_ZERO_ARR(m_pLastPTS, Ipp64f, m_pInfo->m_nOfTracks)
+  m_pLastPTS = new Ipp64f[m_pInfo->m_nOfTracks];
+  memset(m_pLastPTS, 0, m_pInfo->m_nOfTracks*sizeof(Ipp64f));
 
   for (iES = 0; iES < m_pInfo->m_nOfTracks; iES++) {
     T_trak_data *pTrak = m_headerMPEG4.moov.trak[iES];
@@ -1176,17 +1180,17 @@ Status MP4Splitter::Close()
   UMC_CHECK_STATUS(umcRes)
 
   for (iES = 0; iES < m_headerMPEG4.moov.mvex.total_tracks; iES++) {
-    UMC_FREE(m_headerMPEG4.moov.mvex.trex[iES])
+    delete[] m_headerMPEG4.moov.mvex.trex[iES];
   }
 
-  UMC_FREE(m_pLastPTS)
+  delete[] m_pLastPTS;
   UMC_DELETE_ARR(m_pReadESThread)
 
-  UMC_FREE(m_pIsLocked)
-  UMC_FREE(m_ppLockedFrame)
-  UMC_FREE(m_ppMediaBuffer)
+  delete[] m_pIsLocked;
+  delete[] m_ppLockedFrame;
+  delete[] m_ppMediaBuffer;
   if (m_pInfo) {
-      UMC_FREE(m_pInfo->m_ppTrackInfo)
+      delete[] m_pInfo->m_ppTrackInfo;
   }
 
   if (m_pTrackIndex) {

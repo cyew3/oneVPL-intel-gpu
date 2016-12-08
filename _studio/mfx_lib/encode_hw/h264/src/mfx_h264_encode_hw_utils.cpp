@@ -25,14 +25,13 @@
 #include "cmrt_cross_platform.h"
 
 #include <assert.h>
-#include "ippi.h"
 #include "vm_time.h"
 #include "umc_automatic_mutex.h"
 #include "mfx_brc_common.h"
 #include "mfx_h264_encode_hw_utils.h"
 #include "libmfx_core.h"
 #include "umc_video_data.h"
-
+#include "fast_copy.h"
 
 using namespace MfxHwH264Encode;
 
@@ -65,6 +64,7 @@ namespace MfxHwH264Encode
             mfxExtMVCSeqDesc * extMvc = GetExtBuffer(par);
             numFrameMin = mfxU16(IPP_MIN(0xffff, numFrameMin       * extMvc->NumView));
         }
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
         if (IsSvcProfile(par.mfx.CodecProfile))//SVC
         {
             if (par.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
@@ -89,6 +89,7 @@ namespace MfxHwH264Encode
 
             numFrameMin = numDependencyLayer * numFrameMin;
         }
+#endif
         if (IsAvcProfile(par.mfx.CodecProfile))//AVC
         {
             mfxExtCodingOption2 *       extOpt2 = GetExtBuffer(par);
@@ -241,7 +242,7 @@ namespace MfxHwH264Encode
 
     bool isBitstreamUpdateRequired(MfxVideoParam const & video,
         ENCODE_CAPS caps,
-        eMFXHWType platform)
+        eMFXHWType )
     {
         if(video.Protected)
         {
@@ -253,7 +254,7 @@ namespace MfxHwH264Encode
             return video.calcParam.numTemporalLayer > 0;
         else if(extOpt2.MaxSliceSize)
             return true;
-        else if(caps.HeaderInsertion == 1 || platform == MFX_HW_SOFIA)
+        else if(caps.HeaderInsertion == 1)
             return true;
         return false;
     }
@@ -707,6 +708,7 @@ void FrameTypeGenerator::Next()
     m_frameOrder = (m_frameOrder + 1) % m_idrDist;
 }
 
+#ifndef OPEN_SOURCE
 void TaskManager::UpdateRefFrames(
     ArrayDpbFrame const & dpb,
     DdiTask const &       task,
@@ -1594,7 +1596,7 @@ namespace
         mfxU32 refPicFlag = !!((task.m_type[0] | task.m_type[1]) & MFX_FRAMETYPE_REF);
 
         if (refPicFlag &&                                   // only ref frames occupy slot in dpb
-            video.calcParam.lyncMode == 0 &&                // no long term refs in lync-mode
+            video.calcParam.tempScalabilityMode == 0 &&     // no long term refs in tempScalabilityMode
             numLayers > 1 && task.m_tidx + 1 != numLayers)  // no dpb commands for last-not-based temporal laeyr
         {
             // find oldest ref frame from the same temporal layer
@@ -1743,8 +1745,11 @@ mfxStatus TaskManager::AssignTask(
         ? m_frameNum
         : m_frameNum * 2 + 1;
 
+    toEncode->m_storeRefBasePicFlag = 0;
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
     mfxExtSVCSeqDesc const * extSvc = GetExtBuffer(m_video);
     toEncode->m_storeRefBasePicFlag = (extSvc->RefBaseDist) ? 1 : 0; // store all base refs if key pictures enabled
+#endif
 
     mfxU8 frameType = toEncode->GetFrameType();
     assert(frameType);
@@ -1812,7 +1817,12 @@ mfxStatus TaskManager::AssignTask(
     mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(m_video);
     if (toEncode->m_ctrl.SkipFrame != 0)
     {
-        toEncode->m_ctrl.SkipFrame = (extOpt2->SkipFrame) ? (1 + (IsProtectionPavp(m_video.Protected) || IsProtectionHdcp(m_video.Protected)) ) : 0;
+        toEncode->m_ctrl.SkipFrame = (extOpt2->SkipFrame) ? 1 : 0;
+
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
+        if (IsProtectionPavp(m_video.Protected) || IsProtectionHdcp(m_video.Protected))
+            toEncode->m_ctrl.SkipFrame = (extOpt2->SkipFrame) ? 2 : 0;
+#endif
 
         if (toEncode->SkipFlag() != 0)
         {
@@ -1839,7 +1849,7 @@ mfxStatus TaskManager::AssignTask(
     toEncode->m_numSlice[!ffid] = (toEncode->m_type[!ffid] & MFX_FRAMETYPE_I) ? extOpt3->NumSliceI :
         (toEncode->m_type[!ffid] & MFX_FRAMETYPE_P) ? extOpt3->NumSliceP : extOpt3->NumSliceB;
 
-    if (m_video.calcParam.lyncMode)
+    if (m_video.calcParam.tempScalabilityMode)
     {
         toEncode->m_insertPps[ ffid] = toEncode->m_insertSps[ ffid];
         toEncode->m_insertPps[!ffid] = toEncode->m_insertSps[!ffid];
@@ -1859,12 +1869,14 @@ mfxStatus TaskManager::AssignTask(
         toEncode->m_nalRefIdc[ ffid] = !!(toEncode->m_type[ ffid] & MFX_FRAMETYPE_REF);
         toEncode->m_nalRefIdc[!ffid] = !!(toEncode->m_type[!ffid] & MFX_FRAMETYPE_REF);
 
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
         mfxExtSpecialEncodingModes const *extSpecModes = GetExtBuffer(m_video);
         if (extSpecModes->refDummyFramesForWiDi &&
             toEncode->m_ctrl.SkipFrame != 0 && extOpt2->SkipFrame == MFX_SKIPFRAME_INSERT_DUMMY && toEncode->SkipFlag())
         {
             toEncode->m_nalRefIdc[ ffid] = toEncode->m_nalRefIdc[!ffid] = 1;
         }
+#endif
     }
 
     toEncode->m_cqpValue[0] = GetQpValue(m_video, toEncode->m_ctrl, toEncode->m_type[0]);
@@ -2201,8 +2213,8 @@ void TaskManager::ModifyRefPicLists(
             std::sort(list0.Begin(), list0.End(), RefPocIsGreater(m_recons, dpb));
             std::sort(list1.Begin(), list1.End(), RefPocIsLess(m_recons, dpb));
 
-            if (m_video.calcParam.lyncMode)
-            { // cut lists to 1 element for lync
+            if (m_video.calcParam.tempScalabilityMode)
+            { // cut lists to 1 element for tempScalabilityMode
                 list0.Resize(IPP_MIN(list0.Size(), 1));
                 list1.Resize(IPP_MIN(list1.Size(), 1));
             }
@@ -2218,6 +2230,7 @@ void TaskManager::ModifyRefPicLists(
         if (numActiveRefL1 > 0 && list1.Size() > numActiveRefL1)
             list1.Resize(numActiveRefL1);
 
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
         mfxExtSVCSeqDesc const * extSvc = GetExtBuffer(m_video);
         if (mfxU32 refBaseDist = extSvc->RefBaseDist)
         {
@@ -2235,6 +2248,7 @@ void TaskManager::ModifyRefPicLists(
                     RefIsShortTerm(m_recons, dpb))),
                 list1.End());
         }
+#endif
     }
 
     initList0.Resize(list0.Size());
@@ -2420,6 +2434,7 @@ mfxU32 TaskManager::CountRunningTasks()
 
     return count;
 }
+#endif
 
 NalUnit MfxHwH264Encode::GetNalUnit(mfxU8 * begin, mfxU8 * end)
 {
@@ -2666,6 +2681,7 @@ mfxU32 MfxHwH264Encode::CalculateSeiSize(
 }
 // MVC BD }
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 AesCounter::AesCounter()
 {
     Zero(*this);
@@ -2729,7 +2745,7 @@ bool AesCounter::Increment()
 {
     return (m_wrapped = MfxHwH264Encode::Increment(*this, m_opt));
 }
-
+#endif // #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 
 namespace
 {
@@ -4196,6 +4212,7 @@ void MfxHwH264Encode::PutSeiMessage(
     }
 }
 
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
 namespace
 {
     mfxU32 PutScalableInfoSeiPayload(
@@ -4301,6 +4318,7 @@ mfxU32 MfxHwH264Encode::PutScalableInfoSeiMessage(
 
     return obs.GetNumBits() - initialNumBits;
 }
+#endif // #ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
 
 // MVC BD {
 void MfxHwH264Encode::PutSeiMessage(
@@ -4667,7 +4685,7 @@ void MfxHwH264Encode::ReleaseResource(
     }
 }
 
-
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 namespace
 {
     mfxStatus CheckEncryptedData(
@@ -4705,7 +4723,7 @@ namespace
         return MFX_ERR_NONE;
     }
 };
-
+#endif // #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 
 mfxStatus MfxHwH264Encode::CheckEncodeFrameParam(
     MfxVideoParam const & video,
@@ -4718,7 +4736,7 @@ mfxStatus MfxHwH264Encode::CheckEncodeFrameParam(
     MFX_CHECK_NULL_PTR1(bs);
 
     if(IsOn(video.mfx.LowPower) && ctrl){
-        //VDEnc can't encode low QPs
+        //LowPower can't encode low QPs
         if(ctrl->QP != 0 && ctrl->QP < 10 ){
             ctrl->QP = 10;
             checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
@@ -4740,6 +4758,7 @@ mfxStatus MfxHwH264Encode::CheckEncodeFrameParam(
             MFX_ERR_NOT_ENOUGH_BUFFER);
         MFX_CHECK_NULL_PTR1(bs->Data);
     }
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     else
     {
         mfxStatus sts = CheckEncryptedBitstream(
@@ -4748,10 +4767,10 @@ mfxStatus MfxHwH264Encode::CheckEncodeFrameParam(
             1000u * video.calcParam.bufferSizeInKB);
         MFX_CHECK_STS(sts);
     }
+#endif
 
     if (video.mfx.EncodedOrder == 1 &&
-        video.mfx.RateControlMethod != MFX_RATECONTROL_LA_EXT &&
-        video.mfx.RateControlMethod != MFX_RATECONTROL_VME)
+        video.mfx.RateControlMethod != MFX_RATECONTROL_LA_EXT)
     {
         MFX_CHECK(surface != 0, MFX_ERR_MORE_DATA);
         MFX_CHECK_NULL_PTR1(ctrl);
@@ -4910,8 +4929,8 @@ void MfxHwH264Encode::FastCopyBufferVid2Sys(void * dstSys, void const * srcVid, 
     assert(srcVid != 0);
 
     IppiSize roi = { bytes, 1 };
-    IppStatus sts = ippiCopyManaged_8u_C1R((Ipp8u *)srcVid, bytes, (Ipp8u *)dstSys, bytes, roi, IPP_NONTEMPORAL_LOAD);
-    assert(sts == ippStsNoErr); sts;
+    mfxStatus sts = FastCopy::Copy((Ipp8u *)dstSys, bytes, (Ipp8u *)srcVid, bytes, roi, COPY_VIDEO_TO_SYS);
+    assert(sts == MFX_ERR_NONE); sts;
 }
 
 void MfxHwH264Encode::FastCopyBufferSys2Vid(void * dstSys, void const * srcVid, mfxI32 bytes)
@@ -6023,7 +6042,7 @@ mfxU8 * MfxHwH264Encode::PatchBitstream(
         else if (nalu->type == 8)
         {
             if (spsPresent ||               // pps always accompanies sps
-                !video.calcParam.lyncMode)   // mfxExtAvcTemporalLayers buffer is not present, pps to every frame
+                !video.calcParam.tempScalabilityMode)   // mfxExtAvcTemporalLayers buffer is not present, pps to every frame
             {
                 mfxU8 * ppsBegin = dbegin;
                 dbegin = copy
@@ -6039,7 +6058,7 @@ mfxU8 * MfxHwH264Encode::PatchBitstream(
         }
         else if (nalu->type == 9)
         {
-            if (!video.calcParam.lyncMode) // mfxExtAvcTemporalLayers buffer is not present, aud to every frame
+            if (!video.calcParam.tempScalabilityMode) // mfxExtAvcTemporalLayers buffer is not present, aud to every frame
             {
                 dbegin = copy
                     ? CheckedMFX_INTERNAL_CPY(dbegin, dend, nalu->begin, nalu->end)
@@ -6182,7 +6201,6 @@ BrcIface * MfxHwH264Encode::CreateBrc(MfxVideoParam const & video)
     case MFX_RATECONTROL_LA_HRD: return new LookAheadBrc2;
     case MFX_RATECONTROL_LA_ICQ: return new LookAheadCrfBrc;
     case MFX_RATECONTROL_LA_EXT: return new VMEBrc;
-    case MFX_RATECONTROL_VME: return new VMEBrc;
     default: return new UmcBrc;
     }
 }

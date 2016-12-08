@@ -249,12 +249,12 @@ void GetCpuUseTime(vm_char* proc_name, vm_tick* process_use, vm_tick* total_use)
 #elif defined(LINUX32)
     struct rusage ru;
 
-    ippsZero_8u((Ipp8u*)&ru, sizeof(rusage));
+    memset((Ipp8u*)&ru, 0, sizeof(rusage));
     getrusage(RUSAGE_SELF, &ru); // values for process
     *process_use  = TIMEVAL_TO_TICK(ru.ru_utime);
     *process_use += TIMEVAL_TO_TICK(ru.ru_stime);
 
-    ippsZero_8u((Ipp8u*)&ru, sizeof(rusage));
+    memset((Ipp8u*)&ru, 0, sizeof(rusage));
     getrusage(RUSAGE_CHILDREN, &ru); // values for dead child processes
     *process_use += TIMEVAL_TO_TICK(ru.ru_utime);
     *process_use += TIMEVAL_TO_TICK(ru.ru_stime);

@@ -25,6 +25,7 @@ public:
 
     virtual ~VideoProcessingVA();
 
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
     virtual Status Init(mfxVideoParam * vpParams, mfxExtDecVideoProcessing * videoProcessing);
 
     virtual void SetOutputSurface(mfxHDL surfHDL);
@@ -47,8 +48,8 @@ protected:
 #endif
 
     mfxHDL m_currentOutputSurface;
+#endif // #ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
 };
 
 }
-
 #endif // __UMC_VA_VIDEO_PROCESSING_H

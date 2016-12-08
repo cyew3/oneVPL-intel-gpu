@@ -23,26 +23,6 @@
 using namespace std;
 using namespace UMC;
 
-VideoAccelerationHW ConvertMFXToUMCType(eMFXHWType type)
-{
-    VideoAccelerationHW umcType = VA_HW_UNKNOWN;
-
-    switch(type)
-    {
-    case MFX_HW_LAKE:
-        umcType = VA_HW_LAKE;
-        break;
-    case MFX_HW_LRB:
-        umcType = VA_HW_LRB;
-        break;
-    case MFX_HW_SNB:
-        umcType = VA_HW_SNB;
-        break;
-    }
-
-    return umcType;
-}
-
 VDAAPIVideoCORE::VDAAPIVideoCORE(
                                  const mfxU32 adapterNum,
                                  const mfxU32 numThreadsAvailable,
@@ -156,15 +136,6 @@ VDAAPIVideoCORE::AllocFrames(
     {
         MFX_CHECK_NULL_PTR2(request, response);
         mfxStatus sts = MFX_ERR_NONE;
-        
-        if (!m_bFastCopy)
-        {
-            // initialize fast copy
-            m_pFastCopy.reset(new FastCopy());
-            m_pFastCopy.get()->Initialize();
-            
-            m_bFastCopy = true;
-        }
         
         // use common core for sw surface allocation
         if (request->Type & MFX_MEMTYPE_SYSTEM_MEMORY)

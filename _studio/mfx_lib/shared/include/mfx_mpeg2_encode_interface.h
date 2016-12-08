@@ -149,13 +149,16 @@ namespace MfxHwMpeg2Encode
         mfxStatus Init (const mfxVideoParamEx_MPEG2* par, mfxU32 funcId, bool bAllowBRC = false);
         mfxStatus Close();
         
-        mfxStatus InitPictureParameters(mfxFrameParamMPEG2* pParams, mfxU32 frameNum);
-        mfxStatus InitPictureParameters(mfxFrameCUC* pCUC);
+        mfxStatus InitPictureParameters(mfxFrameParamMPEG2* pParams, mfxU32 frameNum);        
         void      InitFramesSet(mfxMemId curr, bool bExternal, mfxMemId rec, mfxMemId ref_0,mfxMemId ref_1);
-        mfxStatus InitSliceParameters(mfxFrameCUC* pCUC);
         mfxStatus InitSliceParameters(mfxU8 qp, mfxU16 scale_type, mfxU8 * mbqp, mfxU32 numMB);
+
+#if defined (MFX_ENABLE_MPEG2_VIDEO_ENC)
+        mfxStatus InitPictureParameters(mfxFrameCUC* pCUC);
+        mfxStatus InitSliceParameters(mfxFrameCUC* pCUC);
         mfxStatus GetMBParameters(mfxFrameCUC* pCUC);
         mfxStatus SetMBParameters(mfxFrameCUC* pCUC);
+#endif
  
         ENCODE_ENC_CTRL_CAPS                    m_caps;  
 
@@ -207,7 +210,6 @@ namespace MfxHwMpeg2Encode
     class DriverEncoder
     {
     public:
-        //explicit D3D9Encoder(VideoCORE* core);
         virtual ~DriverEncoder(){}
 
         virtual mfxStatus QueryEncodeCaps(ENCODE_CAPS & caps) = 0;

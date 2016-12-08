@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_asf_spl.h"
@@ -124,12 +124,12 @@ Status ASFSplitter::ReadDataPacket()
             umcRes = m_pDataReader->Get8u(&pECData->firstBType);
             if (umcRes != UMC_OK) {
                 delete pECData;
-                UMC_RET_STATUS(umcRes)
+                return umcRes;
             }
             umcRes = m_pDataReader->Get8u(&pECData->secBCycle);
             if (umcRes != UMC_OK) {
                 delete pECData;
-                UMC_RET_STATUS(umcRes)
+                return umcRes;
             }
             infoSize += 2;
         }
@@ -256,7 +256,7 @@ Status ASFSplitter::ReadDataPacket()
                         umcRes = m_pDataReader->ReadData((Ipp8u *)pIn->GetDataPointer() + stc_len, &frameSize);
                         if (umcRes != UMC_OK) {
                             delete pIn;            
-                            UMC_RET_STATUS(umcRes)
+                            return umcRes;
                         }
                         subPldDataLen += frameSize;
                         umcRes = pIn->SetDataSize(frameSize + stc_len);
@@ -310,7 +310,7 @@ Status ASFSplitter::ReadDataPacket()
                     umcRes = m_pDataReader->ReadData((Ipp8u *)pIn->GetDataPointer() + stc_len, &multiplePld.pldLen);
                     if (umcRes != UMC_OK) {
                         delete pIn;            
-                        UMC_RET_STATUS(umcRes)
+                        return umcRes;
                     }
 
                     infoSize += multiplePld.pldLen;
@@ -394,7 +394,7 @@ Status ASFSplitter::ReadDataPacket()
             umcRes = m_pDataReader->MovePosition(singlePayload.pldLen);
             if (umcRes != UMC_OK) {
                 delete pIn;
-                UMC_RET_STATUS(umcRes)
+                return umcRes;
             }
         } else
         {
@@ -412,7 +412,7 @@ Status ASFSplitter::ReadDataPacket()
             umcRes = m_pDataReader->ReadData((Ipp8u *)pIn->GetDataPointer() + stc_len, &singlePayload.pldLen);
             if (umcRes != UMC_OK) {
                 delete pIn;
-                UMC_RET_STATUS(umcRes)
+                return umcRes;
             }
             umcRes = pIn->SetDataSize(singlePayload.pldLen + stc_len);
             umcRes = pIn->SetTime((Ipp64f)framePTS * 0.001);
@@ -426,7 +426,7 @@ Status ASFSplitter::ReadDataPacket()
             }
             if (umcRes != UMC_OK) {
                 delete pIn;
-                UMC_RET_STATUS(umcRes)
+                return umcRes;
             }
         }
 
@@ -493,7 +493,7 @@ Status ASFSplitter::FillAudioMediaInfo(asf_AudioMediaInfo *pAudioMedia)
     UMC_CHECK_STATUS(umcRes)
     if (pAudioMedia->codecSpecDataSize) {
         len = pAudioMedia->codecSpecDataSize;
-        UMC_ALLOC_ARR(pAudioMedia->pCodecSpecData, Ipp8u, len);
+        pAudioMedia->pCodecSpecData = new Ipp8u[len];
         umcRes = m_pDataReader->GetData(pAudioMedia->pCodecSpecData, &len);
         UMC_CHECK_STATUS(umcRes)
     } else
@@ -542,7 +542,7 @@ Status ASFSplitter::FillVideoMediaInfo(asf_VideoMediaInfo *pVideoSpecData)
     UMC_CHECK_STATUS(umcRes)
     if (pImgFormatData->formatDataSize > VIDEO_SPEC_DATA_LEN) {
         len = pImgFormatData->formatDataSize - VIDEO_SPEC_DATA_LEN;
-        UMC_ALLOC_ARR(pImgFormatData->pCodecSpecData, Ipp8u, len);
+        pImgFormatData->pCodecSpecData = new Ipp8u[len];
         umcRes = m_pDataReader->GetData(pImgFormatData->pCodecSpecData, &len);
         UMC_CHECK_STATUS(umcRes)
     } else
@@ -567,7 +567,7 @@ Status ASFSplitter::FillSpreadAudioData(asf_SpreadAudioData *pSpreadAudioData)
     UMC_CHECK_STATUS(umcRes)
     if (pSpreadAudioData->silenceDataLen) {
         len = pSpreadAudioData->silenceDataLen;
-        UMC_ALLOC_ARR(pSpreadAudioData->pSilenceData, Ipp8u, len);
+        pSpreadAudioData->pSilenceData = new Ipp8u[len];
         umcRes = m_pDataReader->GetData(pSpreadAudioData->pSilenceData, &len);
         UMC_CHECK_STATUS(umcRes)
     } else
@@ -612,7 +612,8 @@ Status ASFSplitter::ReadErrCorrectObject()
   UMC_CHECK_STATUS(umcRes)
 
   if (pErrCorrObj->errCorrectDataLen) {
-    UMC_ALLOC_ZERO_ARR(pErrCorrObj->pErrCorrectData, Ipp8u, pErrCorrObj->errCorrectDataLen)
+    pErrCorrObj->pErrCorrectData = new Ipp8u[pErrCorrObj->errCorrectDataLen];
+    memset(pErrCorrObj->pErrCorrectData, 0, pErrCorrObj->errCorrectDataLen);
     umcRes = m_pDataReader->GetData(&pErrCorrObj->pErrCorrectData, &pErrCorrObj->errCorrectDataLen);
     UMC_CHECK_STATUS(umcRes)
   }
@@ -941,7 +942,7 @@ Status ASFSplitter::CleanHeaderObject()
         if (m_pHeaderObject->pErrCorrectObject)
         {
             if (m_pHeaderObject->pErrCorrectObject->errCorrectDataLen)
-                UMC_FREE(m_pHeaderObject->pErrCorrectObject->pErrCorrectData)
+                delete[] m_pHeaderObject->pErrCorrectObject->pErrCorrectData;
             UMC_DELETE(m_pHeaderObject->pErrCorrectObject);
         }
 
@@ -980,18 +981,18 @@ Status ASFSplitter::CleanHeaderObject()
 
                 if (m_pHeaderObject->ppStreamPropObject[i]->streamType == ASF_Audio_Media)
                 {
-                    UMC_FREE(m_pHeaderObject->ppStreamPropObject[i]->typeSpecData.pAudioSpecData->pCodecSpecData)
+                    delete[] m_pHeaderObject->ppStreamPropObject[i]->typeSpecData.pAudioSpecData->pCodecSpecData;
                     UMC_DELETE(m_pHeaderObject->ppStreamPropObject[i]->typeSpecData.pAudioSpecData);
                 } else
                 if (m_pHeaderObject->ppStreamPropObject[i]->streamType == ASF_Video_Media)
                 {
-                    UMC_FREE(m_pHeaderObject->ppStreamPropObject[i]->typeSpecData.pVideoSpecData->FormatData.pCodecSpecData)
+                    delete[] m_pHeaderObject->ppStreamPropObject[i]->typeSpecData.pVideoSpecData->FormatData.pCodecSpecData;
                     UMC_DELETE(m_pHeaderObject->ppStreamPropObject[i]->typeSpecData.pVideoSpecData);
                 }
 
                 if (m_pHeaderObject->ppStreamPropObject[i]->errCorrectType == ASF_Audio_Spread)
                 {
-                    UMC_FREE(m_pHeaderObject->ppStreamPropObject[i]->pErrCorrectData->pSilenceData)
+                    delete[] m_pHeaderObject->ppStreamPropObject[i]->pErrCorrectData->pSilenceData;
                 }
 
                 UMC_DELETE(m_pHeaderObject->ppStreamPropObject[i]->pErrCorrectData);
@@ -1011,7 +1012,7 @@ Status ASFSplitter::CleanHeaderObject()
 
         UMC_DELETE(m_pHeaderObject->pHeaderExtObject);
         UMC_DELETE(m_pHeaderObject->pFPropObject);
-        UMC_FREE(m_pHeaderObject->ppStreamPropObject);
+        delete[] m_pHeaderObject->ppStreamPropObject;
     }
 
     return UMC_OK;
@@ -1044,7 +1045,8 @@ Status ASFSplitter::ReadHeaderObject()
   umcRes = m_pDataReader->MovePosition(2); /* 2 reserved bytes */
   UMC_CHECK_STATUS(umcRes)
 
-  UMC_ALLOC_ZERO_ARR(m_pHeaderObject->ppStreamPropObject, asf_StreamPropObject*, m_pInfo->m_nOfTracks)
+  m_pHeaderObject->ppStreamPropObject = new asf_StreamPropObject*[m_pInfo->m_nOfTracks];
+  memset(m_pHeaderObject->ppStreamPropObject, 0, m_pInfo->m_nOfTracks*sizeof(asf_StreamPropObject*));
 
   Ipp32u streamNum = 0;
   for (nObj = 0; nObj < m_pHeaderObject->nObjects; nObj++) {

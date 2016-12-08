@@ -1111,7 +1111,7 @@ mfxStatus MFXVideoENCMPEG2::sliceME( MPEG2FrameState* state, mfxU32 mbstart, mfx
           Mb->CodedPattern4x4V = 0;
 
           macroblock_address_increment++;
-          ippsCopy_8u((Ipp8u*)PMV, (Ipp8u*)pMBInfo[k].MV, sizeof(PMV));
+          MFX_INTERNAL_CPY((Ipp8u*)pMBInfo[k].MV, (Ipp8u*)PMV, sizeof(PMV));
           MB_MV(Mb,0,0)[0] = (mfxI16)PMV[0][0].x;
           MB_MV(Mb,0,0)[1] = (mfxI16)PMV[0][0].y;
           MB_MV(Mb,0,1)[0] = (mfxI16)PMV[1][0].x;
@@ -1386,7 +1386,7 @@ encodeMB:
       macroblock_address_increment = 1;
 
       //pMBInfo[k].cbp = CodedBlockPattern;
-      ippsCopy_8u((Ipp8u*)PMV, (Ipp8u*)pMBInfo[k].MV, sizeof(PMV));
+      MFX_INTERNAL_CPY((Ipp8u*)pMBInfo[k].MV, (Ipp8u*)PMV, sizeof(PMV));
       //if (!m_frame.FrameMbsOnlyFlag)
       //  threadSpec[numTh].fieldCount += (pMBInfo[k].dct_type == DCT_FIELD)? 1 : -1;
 
@@ -1891,12 +1891,8 @@ mfxStatus MFXVideoENCMPEG2::preEnc(MPEG2FrameState* state)
     return MFX_ERR_UNSUPPORTED; // not aligned to MB
 
   state->YFrameHSize = surface->Data[curind]->Pitch;
-  if (m_info.FrameInfo.FourCC == MFX_FOURCC_NV12) {
-    state->UVFrameHSize = state->YFrameHSize >> 1; // to optimize in future
-  } else {
-    // now only YV12
-    state->UVFrameHSize = state->YFrameHSize >> 1; // surface->Info.ScaleCPitch;
-  }
+  state->UVFrameHSize = state->YFrameHSize >> 1;
+
   // check pitches. Can be changed, but must be the same in all frames
   for(i=0; i< m_cuc->FrameParam->MPEG2.NumRefFrame; i++) { // forward/backward
     if (state->YFrameHSize != surface->Data[ind[i]]->Pitch)

@@ -8,8 +8,8 @@
 // Copyright(C) 2009-2016 Intel Corporation. All Rights Reserved.
 //
 
-#ifndef _MFX_VC1_ALLOCATOR_H_
-#define _MFX_VC1_ALLOCATOR_H_
+#ifndef _MFX_ALLOC_WRAPPER_H_
+#define _MFX_ALLOC_WRAPPER_H_
 
 #include <vector>
 
@@ -178,8 +178,7 @@ protected:
     mfxU16     m_IOPattern;
 };
 
-#if !defined( AS_HEVCD_PLUGIN ) || defined (AS_VP8D_PLUGIN) // HEVC decode natively supportes NV12 format - no need to make conversion 
-
+#if (defined(MFX_ENABLE_MPEG2_VIDEO_DECODE) && !defined(MFX_ENABLE_HW_ONLY_MPEG2_DECODER)) || defined(MFX_ENABLE_VC1_VIDEO_DECODE)
 #include "umc_default_frame_allocator.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -257,4 +256,4 @@ protected:
 #endif // #if defined (MFX_ENABLE_MJPEG_VIDEO_DECODE) && defined (MFX_VA_WIN)
 #endif // #if defined (MFX_VA)
 
-#endif //_MFX_MEMORY_ALLOCATOR_H_
+#endif //_MFX_ALLOC_WRAPPER_H_

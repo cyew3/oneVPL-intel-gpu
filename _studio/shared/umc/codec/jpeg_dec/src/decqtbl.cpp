@@ -60,7 +60,7 @@ JERRCODE CJPEGDecoderQuantTable::Init(int id,Ipp8u raw[64])
   m_id        = id & 0x0f;
   m_precision = 0; // 8-bit precision
 
-  ippsCopy_8u(raw,m_raw8u,DCTSIZE2);
+  MFX_INTERNAL_CPY(m_raw8u,raw,DCTSIZE2);
 
   status = ippiQuantInvTableInit_JPEG_8u16u(m_raw8u,m_qnt16u);
   if(ippStsNoErr != status)

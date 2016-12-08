@@ -31,7 +31,7 @@ using namespace UMC;
     return UMC_ERR_INVALID_STREAM;                                        \
   }
 
-Status MPEG2VideoDecoderSW::DecodeSlice_MPEG1(IppVideoContext *video, int task_num)
+Status MPEG2VideoDecoderSW::DecodeSlice_MPEG1(VideoContext *video, int task_num)
 {
   Ipp32s pitch_l = video->Y_comp_pitch;
   Ipp32s pitch_c = video->U_comp_pitch;

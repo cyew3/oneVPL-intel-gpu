@@ -1731,7 +1731,7 @@ mfxStatus MFXVideoENCODEMPEG2::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSur
 
         if (m_InputFrameOrder < m_pWaitingList->GetDelay())
         {
-            return (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK;
+            return (mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK;
         }
         else
         {
@@ -2442,7 +2442,7 @@ mfxStatus MPEG2ENCODERoutine(void *pState, void *param, mfxU32 /*n*/, mfxU32 /*c
 
     sts_ret = EncodeFrameCheck(ctrl, pOriginalSurface, bs, reordered_surface, pInternalParams);
 
-    if (sts_ret != MFX_ERR_NONE && sts_ret !=(mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK && sts_ret<0)
+    if (sts_ret != MFX_ERR_NONE && sts_ret !=(mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK && sts_ret<0)
         return sts_ret;
 
     sts = m_pExtTasks->AddTask( pInternalParams,*reordered_surface, bs, &pTask);

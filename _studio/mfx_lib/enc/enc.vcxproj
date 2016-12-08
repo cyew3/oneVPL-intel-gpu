@@ -245,14 +245,12 @@
     <ClCompile Include="h264\src\mfx_h264_enc_enc.cpp" />
     <ClCompile Include="mpeg2\src\mfx_mpeg2_enc.cpp" />
     <ClCompile Include="mpeg2\src\mfx_mpeg2_enc_me.cpp" />
-    <ClCompile Include="vc1\src\mfx_vc1_enc_enc.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="h264\include\mfx_h264_enc_enc.h" />
     <ClInclude Include="mpeg2\include\mfx_mpeg2_enc.h" />
     <ClInclude Include="mpeg2\include\mfx_mpeg2_enc_defs.h" />
     <ClInclude Include="mpeg2\include\mfx_mpeg2_enc_me.h" />
-    <ClInclude Include="vc1\include\mfx_vc1_enc_enc.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

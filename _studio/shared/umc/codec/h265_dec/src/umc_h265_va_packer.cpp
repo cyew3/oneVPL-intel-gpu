@@ -11,8 +11,6 @@
 #include "umc_defs.h"
 #ifdef UMC_ENABLE_H265_VIDEO_DECODER
 
-#ifndef UMC_RESTRICTED_CODE_VA
-
 #include "umc_h265_va_packer.h"
 
 #ifdef UMC_VA
@@ -442,7 +440,6 @@ bool PackerVA::PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastS
         for (Ipp32s i = index; i < max_num_ref; ++i)
             sliceParams->RefPicList[iDir][i] = 0xff;
 
-        //GPU hang WA, see MDP-18041
         //fill gaps between required active references and actual 'Before/After' references we have in DPB
         //NOTE: try to use only 'Foll's
         for (Ipp32s i = index; i < num_active_ref; ++i)
@@ -464,7 +461,7 @@ bool PackerVA::PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastS
     }
 
     sliceParams->LongSliceFlags.fields.LastSliceOfPic = isLastSlice ? 1 : 0;
-    // WA for GPU hang: the first slice can't be a dependent slice
+    // the first slice can't be a dependent slice
     sliceParams->LongSliceFlags.fields.dependent_slice_segment_flag = sliceNum ? sliceHeader->dependent_slice_segment_flag : 0;
     sliceParams->LongSliceFlags.fields.slice_type = sliceHeader->slice_type;
     sliceParams->LongSliceFlags.fields.color_plane_id = sliceHeader->colour_plane_id;
@@ -656,6 +653,7 @@ void PackerVA::EndFrame()
 {
 }
 
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
 /****************************************************************************************************/
 // PAVP Widevine HuC-based implementation
 /****************************************************************************************************/
@@ -911,10 +909,9 @@ void PackerVA_Widevine::PackAU(const H265DecoderFrame *frame, TaskSupplier_H265 
     if(s != UMC_OK)
         throw h265_exception(s);
 }
-
+#endif // #ifndef MFX_PROTECTED_FEATURE_DISABLE
 #endif // #if defined(UMC_VA_LINUX)
 
 } // namespace UMC_HEVC_DECODER
 
-#endif // UMC_RESTRICTED_CODE_VA
 #endif // UMC_ENABLE_H265_VIDEO_DECODER

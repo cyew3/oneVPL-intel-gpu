@@ -16,7 +16,7 @@
     #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
-#include "mfx_common.h" // aya: this is mfx file. mfx defs are of importance!!!
+#include "mfx_common.h" // this is mfx file. mfx defs are of importance!!!
 #if defined (MFX_ENABLE_MVC_VIDEO_ENCODE)
 
 // #include "talx.h"
@@ -1446,7 +1446,7 @@ mfxStatus MFXVideoENCODEMVC::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurfa
 
     if (is_runasync) {
         MVCEncodeTaskInputParams *m_pTaskInputParams = (MVCEncodeTaskInputParams*)H264_Malloc(sizeof(MVCEncodeTaskInputParams));
-        // MFX_ERR_MORE_DATA_RUN_TASK means that frame will be buffered and will be encoded later. Output bitstream isn't required for this task
+        // MFX_ERR_MORE_DATA_SUBMIT_TASK means that frame will be buffered and will be encoded later. Output bitstream isn't required for this task
         m_pTaskInputParams->buffered = is_buffering;
         m_pTaskInputParams->jobs = new std::vector<mvcMVCEncJobDesc>(m_numviews);
 
@@ -1463,7 +1463,7 @@ mfxStatus MFXVideoENCODEMVC::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurfa
             }
         }
         pEntryPoint->pParam = m_pTaskInputParams;
-        status = (is_buffering) ? (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK : status;
+        status = (is_buffering) ? (mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK : status;
 
         if (m_views[0].enc->m_info.m_viewOutput && m_vo_current_view == 0 && (MFX_ERR_NONE == status || MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == status))
             status = MFX_ERR_MORE_BITSTREAM;
@@ -1471,7 +1471,7 @@ mfxStatus MFXVideoENCODEMVC::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurfa
         if (MFX_ERR_NONE == status || MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == status) {
             pEntryPoint->pParam = 0;
             pEntryPoint->requiredNumThreads = 1;
-            status = (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK;
+            status = (mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK;
         }
     }
 

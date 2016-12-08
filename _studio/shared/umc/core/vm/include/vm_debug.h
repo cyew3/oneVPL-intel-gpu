@@ -129,7 +129,6 @@ void vm_debug_trace_ex(Ipp32s level,
 #define vm_trace_GUID(guid) \
 { \
     vm_trace_fourcc(guid.Data1); \
-    vm_trace_GUID_func((const UMC_GUID*)&guid, VM_STRING(#guid)); \
 }
 
 #else /* VM_DEBUG */
@@ -203,21 +202,6 @@ if (PTR) \
         _PRINTABLE(((char*)&(x))[2]),  \
         _PRINTABLE(((char*)&(x))[3]))
 
-typedef struct {
-    unsigned long  Data1;
-    unsigned short Data2;
-    unsigned short Data3;
-    unsigned char  Data4_0;
-    unsigned char  Data4_1;
-    unsigned char  Data4_2;
-    unsigned char  Data4_3;
-    unsigned char  Data4_4;
-    unsigned char  Data4_5;
-    unsigned char  Data4_6;
-    unsigned char  Data4_7;
-} UMC_GUID;
-
-void vm_trace_GUID_func(const UMC_GUID *pGUID, vm_char *descr);
 Ipp32s vm_trace_hresult_func(Ipp32s hr, vm_char *mess, void *pthis, vm_char *func, vm_char *file, Ipp32u line);
 
 /* ///////////////////// */

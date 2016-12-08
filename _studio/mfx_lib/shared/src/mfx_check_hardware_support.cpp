@@ -104,32 +104,26 @@ eMFXHWType GetHardwareType(const mfxU32 adapterNum, mfxU32 platformFromDriver)
         return MFX_HW_HSW_ULT;
     case IGFX_IVYBRIDGE:
         return MFX_HW_IVB;
-    case IGFX_EAGLELAKE_G:
-    case IGFX_IRONLAKE_G:
-        return MFX_HW_LAKE;
     case IGFX_VALLEYVIEW:
         return MFX_HW_VLV;
     case IGFX_SKYLAKE:
         return MFX_HW_SCL;
-    case IGFX_KABYLAKE:
-        return MFX_HW_KBL;
     case IGFX_BROADWELL:
         return MFX_HW_BDW;
     case IGFX_CHERRYVIEW:
-        return MFX_HW_CHV;
+        return MFX_HW_CHT;
+    case IGFX_GT:
+        return MFX_HW_IVB; // sandybridge
+    case IGFX_KABYLAKE:
+        return MFX_HW_KBL;
     case IGFX_BROXTON:
         return MFX_HW_BXT;
     case IGFX_CANNONLAKE:
         return MFX_HW_CNL;
-    case IGFX_GT:
-        return MFX_HW_IVB; // sandybridge
     case IGFX_ICELAKE:
         return MFX_HW_ICL;
     case IGFX_ICELAKE_LP:
         return MFX_HW_ICL_LP;
-    case IGFX_SOFIA_LTE1:
-    case IGFX_SOFIA_LTE2:
-      return MFX_HW_SOFIA;
 #if defined (PRE_SI_TARGET_PLATFORM_GEN11)
     default:
       return MFX_HW_ICL;  // temporarily for pre-si

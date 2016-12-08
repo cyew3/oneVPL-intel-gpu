@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -21,9 +21,7 @@
 #include "umc_media_data_ex.h"
 #include "umc_frame_allocator.h"
 
-#ifndef UMC_RESTRICTED_CODE_VA
 #include "umc_va_base.h"
-#endif
 
 #include "umc_vc1_dec_skipping.h"
 
@@ -42,7 +40,7 @@ class MFXVC1VideoDecoderHW;
 namespace UMC
 {
 
-#if !defined(UMC_RESTRICTED_CODE_VA) && defined(UMC_VA)
+#if defined(UMC_VA)
     template <class T> class VC1VideoDecoderVA;
 #endif
     class VC1TSHeap;
@@ -50,7 +48,7 @@ namespace UMC
     {
         friend class VC1TaskStore;
 
-#if !defined(UMC_RESTRICTED_CODE_VA) && defined(UMC_VA)
+#if defined(UMC_VA)
         template <class T> friend class VC1VideoDecoderVA;
 #endif
 
@@ -99,10 +97,7 @@ namespace UMC
 
         void SetExtFrameAllocator(FrameAllocator*  pFrameAllocator) {m_pExtFrameAllocator = pFrameAllocator;}
 
-#ifndef UMC_RESTRICTED_CODE_VA
         void SetVideoHardwareAccelerator            (VideoAccelerator* va);
-#endif
-
 
     protected:
         friend class ::MFXVC1VideoDecoderHW;

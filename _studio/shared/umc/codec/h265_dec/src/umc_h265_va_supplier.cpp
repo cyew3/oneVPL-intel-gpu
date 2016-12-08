@@ -11,8 +11,6 @@
 #include "umc_defs.h"
 #ifdef UMC_ENABLE_H265_VIDEO_DECODER
 
-#ifndef UMC_RESTRICTED_CODE_VA
-
 #include "umc_h265_bitstream_headers.h"
 #include "umc_h265_va_supplier.h"
 #include "umc_h265_frame_list.h"
@@ -211,5 +209,4 @@ H265Slice * VATaskSupplier::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
 
 } // namespace UMC_HEVC_DECODER
 
-#endif // UMC_RESTRICTED_CODE_VA
 #endif // UMC_ENABLE_H265_VIDEO_DECODER

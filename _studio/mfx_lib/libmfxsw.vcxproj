@@ -624,7 +624,6 @@
     <ClCompile Include="..\shared\src\mfx_static_assert_structs.cpp" />
     <ClCompile Include="shared\src\libmfxsw.cpp" />
     <ClCompile Include="shared\src\libmfxsw_async.cpp" />
-    <ClCompile Include="shared\src\libmfxsw_brc.cpp" />
     <ClCompile Include="shared\src\libmfxsw_decode.cpp" />
     <ClCompile Include="shared\src\libmfxsw_enc.cpp" />
     <ClCompile Include="shared\src\libmfxsw_encode.cpp" />
@@ -762,10 +761,6 @@
       <Project>{8ba23c0c-d2d7-4a5a-b8f9-ba5ca19cbab7}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="brc\brc.vcxproj">
-      <Project>{349fb219-e367-4afd-b43b-36c580d4ed3d}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
     <ProjectReference Include="decode\decode.vcxproj">
       <Project>{bd4d6c31-4c13-44d9-8c6f-9d5aeaf830f3}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
@@ -793,10 +788,6 @@
     </ProjectReference>
     <ProjectReference Include="shared\mfx_common.vcxproj">
       <Project>{7929e69f-b47f-4a1e-a038-6be3343ce855}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="shared\vc1_shared.vcxproj">
-      <Project>{883ef6c5-2631-472d-ac82-d2ac4f948d9d}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="vpp\vpp.vcxproj">

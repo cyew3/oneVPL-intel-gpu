@@ -113,7 +113,7 @@ void MPEG2VideoEncoderBase::meB(Ipp32s numTh)
       //pRef[1] = YRefFrame[1-curr_field][DIR] + cur_offset;
 
       if (bQuantiserChanged && !pMBInfo[k].skipped) {
-        ippsCopy_8u((Ipp8u*)pMBInfo[k].MV, (Ipp8u*)threadSpec[numTh].PMV, sizeof(threadSpec[0].PMV));
+        MFX_INTERNAL_CPY((Ipp8u*)threadSpec[numTh].PMV, (Ipp8u*)pMBInfo[k].MV, sizeof(threadSpec[0].PMV));
         k++;
         continue;
       }
@@ -234,9 +234,9 @@ void MPEG2VideoEncoderBase::meB(Ipp32s numTh)
         if (skip_flag)
         {
           pMBInfo[k].skipped = 1;
-          ippsCopy_8u((Ipp8u*)threadSpec[numTh].PMV, (Ipp8u*)pMBInfo[k].MV, sizeof(threadSpec[0].PMV));
+          MFX_INTERNAL_CPY((Ipp8u*)pMBInfo[k].MV, (Ipp8u*)threadSpec[numTh].PMV, sizeof(threadSpec[0].PMV));
           k++;
-          //ippsCopy_8u((Ipp8u*)threadSpec[numTh].PMV, (Ipp8u*)pMBInfo[k].MV, sizeof(threadSpec[0].PMV));
+          //MFX_INTERNAL_CPY((Ipp8u*)pMBInfo[k].MV, (Ipp8u*)threadSpec[numTh].PMV, sizeof(threadSpec[0].PMV));
           continue;
         }
       } // try skip
@@ -388,7 +388,7 @@ encodeMB:
           threadSpec[numTh].PMV[1][1].y = vector[1][1].y << mv_shift;
         }
       }
-      ippsCopy_8u((Ipp8u*)threadSpec[numTh].PMV, (Ipp8u*)pMBInfo[k].MV, sizeof(threadSpec[0].PMV));
+      MFX_INTERNAL_CPY((Ipp8u*)pMBInfo[k].MV, (Ipp8u*)threadSpec[numTh].PMV, sizeof(threadSpec[0].PMV));
 
       k++;
     } // for(i)
@@ -467,9 +467,9 @@ void MPEG2VideoEncoderBase::putB(Ipp32s numTh)
       {
 skip_macroblock:
         macroblock_address_increment++;
-        ippsCopy_8u((Ipp8u*)threadSpec[numTh].PMV, (Ipp8u*)pMBInfo[k].MV, sizeof(threadSpec[0].PMV));
+        MFX_INTERNAL_CPY((Ipp8u*)pMBInfo[k].MV, (Ipp8u*)threadSpec[numTh].PMV, sizeof(threadSpec[0].PMV));
         k++;
-        //ippsCopy_8u((Ipp8u*)threadSpec[numTh].PMV, (Ipp8u*)pMBInfo[k].MV, sizeof(threadSpec[0].PMV));
+        //MFX_INTERNAL_CPY((Ipp8u*)pMBInfo[k].MV, (Ipp8u*)threadSpec[numTh].PMV, sizeof(threadSpec[0].PMV));
         continue;
       } // try skip
 
@@ -703,7 +703,7 @@ skip_macroblock:
         pMBlock += 64;
       }
 
-      ippsCopy_8u((Ipp8u*)threadSpec[numTh].PMV, (Ipp8u*)pMBInfo[k].MV, sizeof(threadSpec[0].PMV));
+      MFX_INTERNAL_CPY((Ipp8u*)pMBInfo[k].MV, (Ipp8u*)threadSpec[numTh].PMV, sizeof(threadSpec[0].PMV));
 
       k++;
     } // for(i)

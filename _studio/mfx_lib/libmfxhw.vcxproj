@@ -619,7 +619,6 @@
     <ClCompile Include="genx\copy_kernels\src\genx_skl_copy_isa.cpp" />
     <ClCompile Include="shared\src\libmfxsw.cpp" />
     <ClCompile Include="shared\src\libmfxsw_async.cpp" />
-    <ClCompile Include="shared\src\libmfxsw_brc.cpp" />
     <ClCompile Include="shared\src\libmfxsw_decode.cpp" />
     <ClCompile Include="shared\src\libmfxsw_enc.cpp" />
     <ClCompile Include="shared\src\libmfxsw_encode.cpp" />
@@ -664,6 +663,7 @@
     <ClInclude Include="..\shared\include\libmfx_core_interface.h" />
     <ClInclude Include="..\shared\include\libmfx_core_operation.h" />
     <ClInclude Include="..\shared\include\libmfx_core_vaapi.h" />
+    <ClInclude Include="..\shared\include\mfx_config.h" />
     <ClInclude Include="genx\copy_kernels\include\skl_copy_kernel_genx_isa.h" />
     <ClInclude Include="shared\include\mfx_check_hardware_support.h" />
     <ClInclude Include="..\shared\include\mfx_common.h" />
@@ -853,14 +853,6 @@
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
-    <ProjectReference Include="brc\brc.vcxproj">
-      <Project>{349fb219-e367-4afd-b43b-36c580d4ed3d}</Project>
-      <Private>false</Private>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-      <LinkLibraryDependencies>true</LinkLibraryDependencies>
-      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
-    </ProjectReference>
     <ProjectReference Include="cmrt_cross_platform\cmrt_cross_platform.vcxproj">
       <Project>{811626eb-8608-4cac-abee-cd99daec38c4}</Project>
       <Private>false</Private>
@@ -920,14 +912,6 @@
     </ProjectReference>
     <ProjectReference Include="shared\mfx_common_hw.vcxproj">
       <Project>{e275231a-d535-49f3-b140-f3bb6b1ae56f}</Project>
-    </ProjectReference>
-    <ProjectReference Include="shared\vc1_shared.vcxproj">
-      <Project>{883ef6c5-2631-472d-ac82-d2ac4f948d9d}</Project>
-      <Private>false</Private>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-      <LinkLibraryDependencies>true</LinkLibraryDependencies>
-      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="vpp\vpp_hw.vcxproj">
       <Project>{8d456a00-501a-47a9-b3c7-42723a7a82f2}</Project>

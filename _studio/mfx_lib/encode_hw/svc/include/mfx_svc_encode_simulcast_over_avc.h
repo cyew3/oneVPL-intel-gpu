@@ -9,7 +9,7 @@
 //
 
 #include "mfx_common.h"
-#ifdef MFX_ENABLE_H264_VIDEO_ENCODE_HW
+#if defined(MFX_ENABLE_H264_VIDEO_ENCODE_HW) && defined(MFX_ENABLE_SVC_VIDEO_ENCODE_HW)
 
 #include "mfx_h264_encode_interface.h"
 
@@ -89,4 +89,4 @@ namespace MfxHwH264Encode
     };
 };
 
-#endif // MFX_ENABLE_H264_VIDEO_ENCODE_HW
+#endif // #if defined(MFX_ENABLE_H264_VIDEO_ENCODE_HW) && defined(MFX_ENABLE_SVC_VIDEO_ENCODE_HW)

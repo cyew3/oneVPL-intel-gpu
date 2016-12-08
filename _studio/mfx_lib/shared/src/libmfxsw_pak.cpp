@@ -19,12 +19,6 @@
 // sheduling and threading stuff
 #include <mfx_task.h>
 
-#ifdef MFX_ENABLE_VC1_VIDEO_PAK
-#include "mfx_vc1_enc_defs.h"
-#include "mfx_vc1_enc_pak_adv.h"
-#include "mfx_vc1_enc_pak_sm.h"
-#endif
-
 #ifdef MFX_ENABLE_MPEG2_VIDEO_PAK
 #include "mfx_mpeg2_pak.h"
 #endif
@@ -61,19 +55,6 @@ VideoPAK *CreatePAKSpecificClass(mfxVideoParam *par, mfxU32 codecProfile, VideoC
         break;
 #endif // MFX_ENABLE_H264_VIDEO_FEI_PAK
 
-#ifdef MFX_ENABLE_VC1_VIDEO_PAK
-    case MFX_CODEC_VC1:
-        if (codecProfile == MFX_PROFILE_VC1_ADVANCED)
-        {
-            pPAK = new MFXVideoPakVc1ADV(pCore, &mfxRes);
-        }
-        else
-        {
-            pPAK = new MFXVideoPakVc1SM(pCore, &mfxRes);
-        }
-        break;
-#endif // MFX_ENABLE_VC1_VIDEO_PAK
-
 #ifdef MFX_ENABLE_MPEG2_VIDEO_PAK
     case MFX_CODEC_MPEG2:
         pPAK = new MFXVideoPAKMPEG2(pCore, &mfxRes);
@@ -106,18 +87,6 @@ mfxStatus MFXVideoPAK_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam
     {
         switch (out->mfx.CodecId)
         {
-#ifdef MFX_ENABLE_VC1_VIDEO_PAK
-        case MFX_CODEC_VC1:
-            if (out->mfx.CodecProfile == MFX_PROFILE_VC1_ADVANCED)
-            {
-                mfxRes = MFXVideoPakVc1ADV::Query(in, out);
-            }
-            else
-            {
-                mfxRes = MFXVideoPakVc1SM::Query(in, out);
-            }
-            break;
-#endif
 
 #ifdef MFX_ENABLE_H264_VIDEO_PAK
         case MFX_CODEC_AVC:
@@ -153,18 +122,6 @@ mfxStatus MFXVideoPAK_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfxFra
     {
         switch (par->mfx.CodecId)
         {
-#ifdef MFX_ENABLE_VC1_VIDEO_PAK
-        case MFX_CODEC_VC1:
-            if (par->mfx.CodecProfile == MFX_PROFILE_VC1_ADVANCED)
-            {
-                mfxRes = MFXVideoPakVc1ADV::QueryIOSurf(par, request);
-            }
-            else
-            {
-                mfxRes = MFXVideoPakVc1SM::QueryIOSurf(par, request);
-            }
-            break;
-#endif
 
 #ifdef MFX_ENABLE_H264_VIDEO_PAK
         case MFX_CODEC_AVC:
@@ -271,45 +228,7 @@ mfxStatus MFXVideoPAK_Close(mfxSession session)
     return mfxRes;
 
 } // mfxStatus MFXVideoPAK_Close(mfxSession session)
-
-static
-mfxStatus MFXVideoPAKLegacyRoutine(void *pState, void *pParam,
-                                   mfxU32 threadNumber, mfxU32 callNumber)
-{
-    VideoPAK *pPAK = (VideoPAK *) pState;
-    VideoBRC *pBRC;
-    MFX_THREAD_TASK_PARAMETERS *pTaskParam = (MFX_THREAD_TASK_PARAMETERS *) pParam;
-    mfxStatus mfxRes;
-
-    // touch unreferenced parameter(s)
-    callNumber = callNumber;
-
-    // check error(s)
-    if ((NULL == pState) ||
-        (NULL == pParam) ||
-        (0 != threadNumber))
-    {
-        return MFX_ERR_NULL_PTR;
-    }
-
-    // get the BRC pointer
-    pBRC = (VideoBRC *) pTaskParam->pak.pBRC;
-
-    // call the obsolete method
-    mfxRes = pBRC->FramePAKRefine(pTaskParam->pak.cuc);
-    if (MFX_ERR_NONE == mfxRes)
-    {
-        mfxRes = pPAK->RunFramePAK(pTaskParam->pak.cuc);
-    }
-    if (MFX_ERR_NONE == mfxRes)
-    {
-        mfxRes = pBRC->FramePAKRecord(pTaskParam->pak.cuc);
-    }
-
-    return mfxRes;
-
-} // mfxStatus MFXVideoPAKLegacyRoutine(void *pState, void *pParam,
-
+                                   
 enum
 {
     MFX_NUM_ENTRY_POINTS = 2
@@ -338,36 +257,10 @@ mfxStatus MFXVideoPAK_ProcessFrameAsync(mfxSession session , mfxPAKInput *in, mf
          if ((MFX_ERR_NONE == mfxRes) ||
              (MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == mfxRes) ||
              (MFX_WRN_OUT_OF_RANGE == mfxRes) ||
-             (MFX_ERR_MORE_DATA_RUN_TASK == static_cast<int>(mfxRes)) ||
+             (MFX_ERR_MORE_DATA_SUBMIT_TASK == static_cast<int>(mfxRes)) ||
              (MFX_ERR_MORE_BITSTREAM == mfxRes))
          {
-             // prepare the absolete kind of task.
-             // it is absolete and must be removed.
-             if (NULL == entryPoints[0].pRoutine)
-             {
-                 MFX_TASK task;
-                 memset(&task, 0, sizeof(task));
-                 // BEGIN OF OBSOLETE PART
-                 task.bObsoleteTask = true;
-                 // fill task info
-                 task.entryPoint.pRoutine = &MFXVideoPAKLegacyRoutine;
-                 task.entryPoint.pState = pPak;
-                 task.entryPoint.requiredNumThreads = 1;
-
-                 // fill legacy parameters
-                 task.obsolete_params.pak_ext.in = in;
-                 task.obsolete_params.pak_ext.out = out;
-
-                 task.priority = session->m_priority;
-                 task.threadingPolicy = pPak->GetThreadingPolicy();
-                 // fill dependencies
-                 task.pSrc[0] = in;
-                 task.pDst[0] = out;
-                 task.pOwner= pPak;
-                 mfxRes = session->m_pScheduler->AddTask(task, &syncPoint);
-
-             } // END OF OBSOLETE PART
-             else if (1 == numEntryPoints)
+             if (1 == numEntryPoints)
              {
                  MFX_TASK task;
 
@@ -416,7 +309,7 @@ mfxStatus MFXVideoPAK_ProcessFrameAsync(mfxSession session , mfxPAKInput *in, mf
              }
 
              // IT SHOULD BE REMOVED
-             if (MFX_ERR_MORE_DATA_RUN_TASK == static_cast<int>(mfxRes))
+             if (MFX_ERR_MORE_DATA_SUBMIT_TASK == mfxRes)
              {
                  mfxRes = MFX_ERR_MORE_DATA;
                  syncPoint = NULL;
@@ -447,83 +340,7 @@ mfxStatus MFXVideoPAK_ProcessFrameAsync(mfxSession session , mfxPAKInput *in, mf
      }
 
      return mfxRes;
-
-
 }
-
-mfxStatus MFXVideoPAK_RunFramePAKAsync(mfxSession session, mfxFrameCUC *cuc, mfxSyncPoint *syncp)
-{
-    mfxStatus mfxRes;
-
-    MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
-    MFX_CHECK(session->m_pPAK.get(), MFX_ERR_NOT_INITIALIZED);
-    MFX_CHECK(syncp, MFX_ERR_NULL_PTR);
-
-    try
-    {
-        mfxSyncPoint syncPoint = NULL;
-        MFX_TASK task;
-
-        memset(&task, 0, sizeof(MFX_TASK));
-        mfxRes = session->m_pPAK->RunFramePAKCheck(cuc, &task.entryPoint);
-        // source data is OK, go forward
-        if (MFX_ERR_NONE == mfxRes)
-        {
-            // prepare the absolete kind of task.
-            // it is absolete and must be removed.
-            if (NULL == task.entryPoint.pRoutine)
-            {
-                // BEGIN OF OBSOLETE PART
-                task.bObsoleteTask = true;
-                // fill task info
-                task.entryPoint.pRoutine = &MFXVideoPAKLegacyRoutine;
-                task.entryPoint.pState = session->m_pPAK.get();
-                task.entryPoint.requiredNumThreads = 1;
-
-                // fill legacy parameters
-                task.obsolete_params.pak.cuc = cuc;
-                task.obsolete_params.pak.pBRC = session->m_pBRC.get();
-
-            } // END OF OBSOLETE PART
-
-            task.pOwner = session->m_pPAK.get();
-            task.priority = session->m_priority;
-            task.threadingPolicy = session->m_pPAK->GetThreadingPolicy();
-            // fill dependencies
-            task.pSrc[0] = cuc;
-            task.pDst[0] = cuc;
-            task.pDst[1] = cuc->Bitstream;
-
-            // register input and call the task
-            mfxRes = session->m_pScheduler->AddTask(task, &syncPoint);
-
-        }
-
-        // return pointer to synchronization point
-        *syncp = syncPoint;
-    }
-    // handle error(s)
-    catch(MFX_CORE_CATCH_TYPE)
-    {
-        // set the default error value
-        mfxRes = MFX_ERR_UNKNOWN;
-        if (0 == session)
-        {
-            mfxRes = MFX_ERR_INVALID_HANDLE;
-        }
-        else if (0 == session->m_pPAK.get())
-        {
-            mfxRes = MFX_ERR_NOT_INITIALIZED;
-        }
-        else if (0 == syncp)
-        {
-            return MFX_ERR_NULL_PTR;
-        }
-    }
-
-    return mfxRes;
-
-} // mfxStatus MFXVideoPAK_RunFramePAKAsync(mfxSession session, mfxFrameCUC *cuc, mfxSyncPoint *syncp)
 
 //
 // THE OTHER PAK FUNCTIONS HAVE IMPLICIT IMPLEMENTATION
@@ -533,4 +350,3 @@ FUNCTION_RESET_IMPL(PAK, Reset, (mfxSession session, mfxVideoParam *par), (par))
 
 FUNCTION_IMPL(PAK, GetVideoParam, (mfxSession session, mfxVideoParam *par), (par))
 FUNCTION_IMPL(PAK, GetFrameParam, (mfxSession session, mfxFrameParam *par), (par))
-FUNCTION_IMPL(PAK, RunSeqHeader, (mfxSession session, mfxFrameCUC *cuc), (cuc))

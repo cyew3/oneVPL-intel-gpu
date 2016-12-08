@@ -10,10 +10,6 @@
 
 #include <math.h>
 #include "umc_video_brc.h"
-#include "umc_brc.h"
-#include "umc_h264_brc.h"
-#include "umc_mpeg2_brc.h"
-#include "umc_svc_brc.h"
 
 namespace UMC
 {

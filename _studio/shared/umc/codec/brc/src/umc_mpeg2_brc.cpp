@@ -207,9 +207,8 @@ Status MPEG2BRC::CheckHRDParams()
     if (mHRD.bufSize > (Ipp32u)16384 * 0x3fffe)
       mHRD.bufSize = (Ipp32u)16384 * 0x3fffe;
     if(!full_hw)
-    //fix for HSD 5293272; allow initial delay to be different from buffer size
+    //allow initial delay to be different from buffer size
     mHRD.bufFullness = mHRD.bufSize; // vbv_delay = 0xffff in case of VBR. TODO: check the possibility of VBR with vbv_delay != 0xffff
-    //end of fix for HSD 5293272
   } else { // BRC_CBR
     Ipp32u max_buf_size = (Ipp32u)(0xfffe * (Ipp64u)mHRD.maxBitrate / 90000); // vbv_delay is coded with 16 bits:
                                                                               //  it is either 0xffff everywhere (VBR) or < 0xffff
@@ -241,22 +240,6 @@ Status MPEG2BRC::CheckHRDParams()
   return UMC_OK;
 }
 
-/*
-Status MPEG2BRC::CalculatePicTargets()
-{
-  Ipp64f nr;
-  Ipp64f u_len, ip_weight = rc_weight[0];
-
-  nr = mGOPPicSize/mGOPRefDist;
-  gopw = (mGOPRefDist - 1) * rc_weight[2] * nr + rc_weight[1] * (nr - 1) + ip_weight;
-  u_len = mBitsDesiredFrame * mGOPPicSize / gopw;
-  rc_tagsize[0] = rc_tagsize_frame[0] = u_len * rc_weight[0];
-  rc_tagsize[1] = rc_tagsize_frame[1] = u_len * rc_weight[1];
-  rc_tagsize[2] = rc_tagsize_frame[2] = u_len * rc_weight[2];
-  return UMC_OK;
-}
-*/
-
 Status MPEG2BRC::Init(BaseCodecParams *params, Ipp32s no_full_HW)
 {
   Status status = UMC_OK;
@@ -283,8 +266,6 @@ Status MPEG2BRC::Init(BaseCodecParams *params, Ipp32s no_full_HW)
   rc_weight[0] = 120;
   rc_weight[1] = 50;
   rc_weight[2] = 25;
-
-//  CalculatePicTargets();
 
   rc_dev = rc_dev_saved = 0; // deviation from ideal bitrate (should be Ipp32f or renewed)
 
@@ -1038,7 +1019,6 @@ BRCStatus MPEG2BRC::UpdateQuantHRD(Ipp32s bits_encoded, BRCStatus sts)
   quant = ChangeQuant(quant);
 
   if (quant == quant_prev || quant <= mHRD.underflowQuant) {
-    // printf("not enough buffer %d !\n",quant);
     return (sts | BRC_NOT_ENOUGH_BUFFER);
   }
 

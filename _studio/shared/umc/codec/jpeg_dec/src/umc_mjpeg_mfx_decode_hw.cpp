@@ -629,7 +629,7 @@ Status MJPEGVideoDecoderMFX_HW::PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PAR
                 return UMC_ERR_FAILED;
             }
 
-            ippsCopy_8u(m_decBase->m_qntbl[i].m_raw8u, quantTable->Qm, DCTSIZE2);
+            MFX_INTERNAL_CPY(quantTable->Qm, m_decBase->m_qntbl[i].m_raw8u, DCTSIZE2);
 
             /*Ipp16u* invQuantTable = m_dec->m_qntbl[i];
             for (Ipp32s k = 0; k < DCTSIZE2; k++)
@@ -664,8 +664,8 @@ Status MJPEGVideoDecoderMFX_HW::PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PAR
                 huffmanTables->TableClass = (UCHAR)m_decBase->m_dctbl[i].m_hclass;
                 huffmanTables->TableIndex = (UCHAR)m_decBase->m_dctbl[i].m_id;
 
-                ippsCopy_8u(m_decBase->m_dctbl[i].GetBits(),   huffmanTables->BITS,    sizeof(huffmanTables->BITS));
-                ippsCopy_8u(m_decBase->m_dctbl[i].GetValues(), huffmanTables->HUFFVAL, sizeof(huffmanTables->HUFFVAL));
+                MFX_INTERNAL_CPY(huffmanTables->BITS,    m_decBase->m_dctbl[i].GetBits(),   sizeof(huffmanTables->BITS));
+                MFX_INTERNAL_CPY(huffmanTables->HUFFVAL, m_decBase->m_dctbl[i].GetValues(), sizeof(huffmanTables->HUFFVAL));
                 compBuf->SetDataSize(sizeof(JPEG_DECODE_HUFFMAN_TABLE));
 
                 sts = m_va->Execute();
@@ -682,8 +682,8 @@ Status MJPEGVideoDecoderMFX_HW::PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PAR
                 huffmanTables->TableClass = (UCHAR)m_decBase->m_actbl[i].m_hclass;
                 huffmanTables->TableIndex = (UCHAR)m_decBase->m_actbl[i].m_id;
 
-                ippsCopy_8u(m_decBase->m_actbl[i].GetBits(),   huffmanTables->BITS,    sizeof(huffmanTables->BITS));
-                ippsCopy_8u(m_decBase->m_actbl[i].GetValues(), huffmanTables->HUFFVAL, sizeof(huffmanTables->HUFFVAL));
+                MFX_INTERNAL_CPY(huffmanTables->BITS,    m_decBase->m_actbl[i].GetBits(),   sizeof(huffmanTables->BITS));
+                MFX_INTERNAL_CPY(huffmanTables->HUFFVAL, m_decBase->m_actbl[i].GetValues(), sizeof(huffmanTables->HUFFVAL));
                 compBuf->SetDataSize(sizeof(JPEG_DECODE_HUFFMAN_TABLE));
 
                 sts = m_va->Execute();
@@ -703,52 +703,20 @@ Status MJPEGVideoDecoderMFX_HW::PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PAR
 
         if (m_decBase->m_curr_scan->scan_no == m_decBase->m_num_scans-1)
         {
-            if (m_va->m_HWPlatform != VA_HW_SOFIA)
+            // buffer size is enough
+            if (obtainedScanParams->DataLength <= (Ipp32u)compBuf->GetBufferSize())
             {
-                // buffer size is enough
-                if (obtainedScanParams->DataLength <= (Ipp32u)compBuf->GetBufferSize())
-                {
-                    ippsCopy_8u((Ipp8u*)src->GetDataPointer() + obtainedScanParams->DataOffset, bistreamData, obtainedScanParams->DataLength);
-                    compBuf->SetDataSize(obtainedScanParams->DataLength);
-                    shiftDataOffset = true;
-                }
-                // buffer size is not enough
-                else
-                {
-                    ippsCopy_8u((Ipp8u*)src->GetDataPointer() + obtainedScanParams->DataOffset, bistreamData, (Ipp32u)compBuf->GetBufferSize());
-                    compBuf->SetDataSize((Ipp32u)compBuf->GetBufferSize());
-                    bitstreamTile = obtainedScanParams->DataLength - (Ipp32u)compBuf->GetBufferSize();
-                    shiftDataOffset = true;
-                }
+                MFX_INTERNAL_CPY(bistreamData, (Ipp8u*)src->GetDataPointer() + obtainedScanParams->DataOffset, obtainedScanParams->DataLength);
+                compBuf->SetDataSize(obtainedScanParams->DataLength);
+                shiftDataOffset = true;
             }
+            // buffer size is not enough
             else
             {
-                obtainedScanParams->DataLength += 2;
-                // buffer size is enough for MCU data and extra EOI marker
-                if (obtainedScanParams->DataLength <= (Ipp32u)compBuf->GetBufferSize())
-                {
-                    ippsCopy_8u((Ipp8u*)src->GetDataPointer() + obtainedScanParams->DataOffset, bistreamData, obtainedScanParams->DataLength - 2);
-                    bistreamData[obtainedScanParams->DataLength - 2] = 0xFF;
-                    bistreamData[obtainedScanParams->DataLength - 1] = 0xD9;
-                    compBuf->SetDataSize(obtainedScanParams->DataLength);
-                    shiftDataOffset = true;
-                }
-                // buffer size is enough for MCU data only
-                else if (obtainedScanParams->DataLength - 2 <= (Ipp32u)compBuf->GetBufferSize())
-                {
-                    ippsCopy_8u((Ipp8u*)src->GetDataPointer() + obtainedScanParams->DataOffset, bistreamData, obtainedScanParams->DataLength - 2);
-                    compBuf->SetDataSize(obtainedScanParams->DataLength - 2);
-                    bitstreamTile = 2;
-                    shiftDataOffset = true;
-                }
-                // buffer size is not enough 
-                else
-                {
-                    ippsCopy_8u((Ipp8u*)src->GetDataPointer() + obtainedScanParams->DataOffset, bistreamData, (Ipp32u)compBuf->GetBufferSize());
-                    compBuf->SetDataSize((Ipp32u)compBuf->GetBufferSize());
-                    bitstreamTile = obtainedScanParams->DataLength - (Ipp32u)compBuf->GetBufferSize();
-                    shiftDataOffset = true;
-                }
+                MFX_INTERNAL_CPY(bistreamData, (Ipp8u*)src->GetDataPointer() + obtainedScanParams->DataOffset, (Ipp32u)compBuf->GetBufferSize());
+                compBuf->SetDataSize((Ipp32u)compBuf->GetBufferSize());
+                bitstreamTile = obtainedScanParams->DataLength - (Ipp32u)compBuf->GetBufferSize();
+                shiftDataOffset = true;
             }
         }
         else
@@ -756,13 +724,13 @@ Status MJPEGVideoDecoderMFX_HW::PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PAR
             // buffer size is enough to keep all data (headers + 3 scan data)
             if ((Ipp32u)src->GetDataSize() <= (Ipp32u)compBuf->GetBufferSize())
             {
-                ippsCopy_8u((Ipp8u*)src->GetDataPointer(), bistreamData, (int)src->GetDataSize());
+                MFX_INTERNAL_CPY(bistreamData, (Ipp8u*)src->GetDataPointer(), (int)src->GetDataSize());
                 compBuf->SetDataSize((Ipp32s)src->GetDataSize());
             }
             // buffer size is enough to keep pixel data for one scan
             else if (obtainedScanParams->DataLength <= (Ipp32u)compBuf->GetBufferSize())
             {
-                ippsCopy_8u((Ipp8u*)src->GetDataPointer() + obtainedScanParams->DataOffset, bistreamData, obtainedScanParams->DataLength);
+                MFX_INTERNAL_CPY(bistreamData, (Ipp8u*)src->GetDataPointer() + obtainedScanParams->DataOffset, obtainedScanParams->DataLength);
                 compBuf->SetDataSize(obtainedScanParams->DataLength);
                 shiftDataOffset = true;
 
@@ -771,7 +739,7 @@ Status MJPEGVideoDecoderMFX_HW::PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PAR
             // buffer size is not enough
             else
             {
-                ippsCopy_8u((Ipp8u*)src->GetDataPointer() + obtainedScanParams->DataOffset, bistreamData, (Ipp32u)compBuf->GetBufferSize());
+                MFX_INTERNAL_CPY(bistreamData, (Ipp8u*)src->GetDataPointer() + obtainedScanParams->DataOffset, (Ipp32u)compBuf->GetBufferSize());
                 compBuf->SetDataSize((Ipp32u)compBuf->GetBufferSize());
                 bitstreamTile = obtainedScanParams->DataLength - (Ipp32u)compBuf->GetBufferSize();
                 shiftDataOffset = true;
@@ -811,46 +779,17 @@ Status MJPEGVideoDecoderMFX_HW::PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PAR
         if(!bistreamData)
             return UMC_ERR_DEVICE_FAILED;
 
-        if ((m_decBase->m_curr_scan->scan_no == m_decBase->m_num_scans-1) && (m_va->m_HWPlatform == VA_HW_SOFIA))
+        if (bitstreamTile <= (Ipp32u)compBuf->GetBufferSize())
         {
-            if (bitstreamTile <= (Ipp32u)compBuf->GetBufferSize())
-            {
-                if (bitstreamTile != 2)
-                    ippsCopy_8u((Ipp8u*)src->GetDataPointer() + obtainedScanParams->DataOffset + obtainedScanParams->DataLength - bitstreamTile, bistreamData, bitstreamTile - 2);
-                bistreamData[bitstreamTile - 2] = 0xFF;
-                bistreamData[bitstreamTile - 1] = 0xD9;
-                compBuf->SetDataSize(bitstreamTile);
-                bitstreamTile = 0;
-            }
-            // buffer size is enough for MCU data only
-            else if (bitstreamTile - 2 <= (Ipp32u)compBuf->GetBufferSize())
-            {
-                ippsCopy_8u((Ipp8u*)src->GetDataPointer() + obtainedScanParams->DataOffset + obtainedScanParams->DataLength - bitstreamTile, bistreamData, bitstreamTile - 2);
-                compBuf->SetDataSize(bitstreamTile - 2);
-                bitstreamTile = 2;
-            }
-            // buffer size is not enough 
-            else
-            {
-                ippsCopy_8u((Ipp8u*)src->GetDataPointer() + obtainedScanParams->DataOffset + obtainedScanParams->DataLength - bitstreamTile, bistreamData, (Ipp32u)compBuf->GetBufferSize());
-                compBuf->SetDataSize((Ipp32u)compBuf->GetBufferSize());
-                bitstreamTile -= compBuf->GetBufferSize();
-            }
+            MFX_INTERNAL_CPY(bistreamData, (Ipp8u*)src->GetDataPointer() + obtainedScanParams->DataOffset + obtainedScanParams->DataLength - bitstreamTile, bitstreamTile);
+            compBuf->SetDataSize(bitstreamTile);
+            bitstreamTile = 0;
         }
         else
         {
-            if (bitstreamTile <= (Ipp32u)compBuf->GetBufferSize())
-            {
-                ippsCopy_8u((Ipp8u*)src->GetDataPointer() + obtainedScanParams->DataOffset + obtainedScanParams->DataLength - bitstreamTile, bistreamData, bitstreamTile);
-                compBuf->SetDataSize(bitstreamTile);
-                bitstreamTile = 0;
-            }
-            else
-            {
-                ippsCopy_8u((Ipp8u*)src->GetDataPointer() + obtainedScanParams->DataOffset + obtainedScanParams->DataLength - bitstreamTile, bistreamData, compBuf->GetBufferSize());
-                compBuf->SetDataSize(compBuf->GetBufferSize());
-                bitstreamTile = bitstreamTile - compBuf->GetBufferSize();
-            }
+            MFX_INTERNAL_CPY(bistreamData, (Ipp8u*)src->GetDataPointer() + obtainedScanParams->DataOffset + obtainedScanParams->DataLength - bitstreamTile, compBuf->GetBufferSize());
+            compBuf->SetDataSize(compBuf->GetBufferSize());
+            bitstreamTile = bitstreamTile - compBuf->GetBufferSize();
         }
         
         sts = m_va->Execute();
@@ -1032,7 +971,7 @@ Status MJPEGVideoDecoderMFX_HW::PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PAR
     {
         UMCVACompBuffer* compBufBs;
         Ipp8u *bistreamData = (Ipp8u *)m_va->GetCompBuffer(VASliceDataBufferType, &compBufBs, bitstreamTile);
-        ippsCopy_8u((Ipp8u*)src->GetDataPointer() + obtainedScanParams->DataOffset + obtainedScanParams->DataLength - bitstreamTile, bistreamData, bitstreamTile);
+        MFX_INTERNAL_CPY(bistreamData, (Ipp8u*)src->GetDataPointer() + obtainedScanParams->DataOffset + obtainedScanParams->DataLength - bitstreamTile, bitstreamTile);
         bitstreamTile = 0;
     }
 

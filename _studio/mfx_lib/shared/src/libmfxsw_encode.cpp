@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include <mfxvideo.h>
@@ -29,13 +29,6 @@
 #endif
 #if defined(MFX_ENABLE_H264_FEI_ENCPAK)
 #include "mfxfei.h"
-#endif
-#endif
-
-#if defined (MFX_ENABLE_VC1_VIDEO_ENCODE)
-#if defined(MFX_VA)
-#else
-#include "mfx_vc1_enc_encode.h"
 #endif
 #endif
 
@@ -141,12 +134,6 @@ VideoENCODE *CreateENCODESpecificClass(mfxU32 CodecId, VideoCORE *core, mfxSessi
         break;
 #endif // MFX_ENABLE_MPEG2_VIDEO_ENCODE
 
-#if defined(MFX_ENABLE_VC1_VIDEO_ENCODE)
-    case MFX_CODEC_VC1:
-        pENCODE = new MFXVideoENCODEVC1(core, &mfxRes);
-        break;
-#endif
-
 #if defined(MFX_ENABLE_MJPEG_VIDEO_ENCODE)
     case MFX_CODEC_JPEG:
 #if defined(MFX_VA)
@@ -220,12 +207,6 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
 #endif
         switch (out->mfx.CodecId)
         {
-#ifdef MFX_ENABLE_VC1_VIDEO_ENCODE
-        case MFX_CODEC_VC1:
-            mfxRes = MFXVideoENCODEVC1::Query(in, out);
-            break;
-#endif
-
 #ifdef MFX_ENABLE_H264_VIDEO_ENCODE
         case MFX_CODEC_AVC:
 #if defined(MFX_VA) && defined (MFX_ENABLE_H264_VIDEO_ENCODE_HW)
@@ -343,12 +324,6 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
 #endif
         switch (par->mfx.CodecId)
         {
-#ifdef MFX_ENABLE_VC1_VIDEO_ENC
-        case MFX_CODEC_VC1:
-            mfxRes = MFXVideoENCODEVC1::QueryIOSurf(par, request);
-            break;
-#endif // MFX_ENABLE_VC1_VIDEO_ENC
-
 #ifdef MFX_ENABLE_H264_VIDEO_ENCODE
         case MFX_CODEC_AVC:
 #if defined(MFX_VA) && defined (MFX_ENABLE_H264_VIDEO_ENCODE_HW)
@@ -378,7 +353,7 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
 #endif // MFX_ENABLE_H264_VIDEO_ENCODE
 
 
-#ifdef MFX_ENABLE_MPEG2_VIDEO_ENC
+#ifdef MFX_ENABLE_MPEG2_VIDEO_ENCODE
         case MFX_CODEC_MPEG2:
 #if defined(MFX_VA)
             mfxRes = MFXVideoENCODEMPEG2_HW::QueryIOSurf(session->m_pCORE.get(), par, request);
@@ -620,7 +595,7 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
             (MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == mfxRes) ||
             (MFX_WRN_OUT_OF_RANGE == mfxRes) ||
             // WHAT IS IT??? IT SHOULD BE REMOVED
-            ((mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK == mfxRes) ||
+            ((mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK == mfxRes) ||
             (MFX_ERR_MORE_BITSTREAM == mfxRes))
         {
             // prepare the obsolete kind of task.
@@ -649,7 +624,7 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
                 task.threadingPolicy = session->m_pENCODE->GetThreadingPolicy();
                 // fill dependencies
                 task.pSrc[0] = surface;
-                task.pDst[0] = ((mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK == mfxRes) ? 0: bs;
+                task.pDst[0] = ((mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK == mfxRes) ? 0: bs;
 
 // specific plug-in case to run additional task after main task 
 #if !defined(AS_HEVCE_PLUGIN) 
@@ -685,7 +660,7 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
                 }
 #endif
                 task.pSrc[2] = ctrl ? ctrl->ExtParam : 0;
-                task.pDst[0] = ((mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK == mfxRes) ? 0 : bs;
+                task.pDst[0] = ((mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK == mfxRes) ? 0 : bs;
 
 
 #ifdef MFX_TRACE_ENABLE
@@ -723,7 +698,7 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
                 task.threadingPolicy = MFX_TASK_THREADING_DEDICATED_WAIT;
                 // fill dependencies
                 task.pSrc[0] = entryPoints[0].pParam;
-                task.pDst[0] = ((mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK == mfxRes) ? 0: bs;
+                task.pDst[0] = ((mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK == mfxRes) ? 0: bs;
 
 #ifdef MFX_TRACE_ENABLE
                 task.nParentId = MFX_AUTO_TRACE_GETID();
@@ -734,7 +709,7 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
             }
 
             // IT SHOULD BE REMOVED
-            if ((mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK == mfxRes)
+            if ((mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK == mfxRes)
             {
                 mfxRes = MFX_ERR_MORE_DATA;
                 syncPoint = NULL;

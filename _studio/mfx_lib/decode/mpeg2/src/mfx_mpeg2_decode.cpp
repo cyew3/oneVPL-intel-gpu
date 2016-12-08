@@ -30,6 +30,9 @@
 
 #include "umc_mpeg2_dec_hw.h"
 
+enum { MFX_MB_WIDTH = 16 };
+enum { MFX_MB_HEIGHT = 16 };
+
 //#define _status_report_debug
 //#define _threading_deb
 
@@ -283,8 +286,6 @@ void UpdateMfxVideoParam(mfxVideoParam& vPar, const UMC::sSequenceHeader& sh, co
     vPar.mfx.FrameInfo.ChromaFormat = Mpeg2GetMfxChromaFormatFromUmcMpeg2(sh.chroma_format);
     GetMfxFrameRate((mfxU8)sh.frame_rate_code, &vPar.mfx.FrameInfo.FrameRateExtN, &vPar.mfx.FrameInfo.FrameRateExtD);
     
-    //vPar.mfx.FrameInfo.FrameRateExtD *= sh.frame_rate_extension_d + 1;
-    //vPar.mfx.FrameInfo.FrameRateExtN *= sh.frame_rate_extension_n + 1;
     vPar.mfx.FrameInfo.PicStruct = GetMfxPicStruct(sh.progressive_sequence, ph.progressive_frame,
                                                    ph.top_field_first, ph.repeat_first_field, ph.picture_structure,
                                                    vPar.mfx.ExtendedPicStruct);
@@ -333,9 +334,6 @@ static bool DARtoPAR(mfxI32 width, mfxI32 height, mfxI32 dar_h, mfxI32 dar_v,
   }
   *par_h = h;
   *par_v = v;
-  // can don't reach minimum, no problem
- // if(i<sizeof(simple_tab)/sizeof(simple_tab[0]))
- //   return false;
   return true;
 }
 
@@ -649,7 +647,6 @@ mfxStatus VideoDECODEMPEG2::DecodeHeader(VideoCORE *core, mfxBitstream* bs, mfxV
                 return MFX_ERR_MORE_DATA;
 
             ShiftSH = (mfxI32)(ptr - beg);
-           // memset(par, 0, sizeof(mfxVideoParam));
             par->mfx.CodecId = MFX_CODEC_MPEG2;
             par->mfx.FrameInfo.CropX = 0;
             par->mfx.FrameInfo.CropY = 0;
@@ -861,11 +858,6 @@ mfxStatus VideoDECODEMPEG2::DecodeHeader(VideoCORE *core, mfxBitstream* bs, mfxV
             }
         }
 
-        //if (!IsHWSupported(core, par))
-        //{
-        //    return MFX_WRN_PARTIAL_ACCELERATION;
-        //}
-
         return MFX_ERR_NONE;
     }
 
@@ -880,6 +872,7 @@ mfxStatus VideoDECODEMPEG2::DecodeHeader(VideoCORE *core, mfxBitstream* bs, mfxV
     return MFX_ERR_MORE_DATA;
 }
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 mfxStatus VideoDECODEMPEG2::CheckProtectionSettings(mfxVideoParam *input, mfxVideoParam *output, VideoCORE *core)
 {
     if (0 == input->Protected)
@@ -903,7 +896,6 @@ mfxStatus VideoDECODEMPEG2::CheckProtectionSettings(mfxVideoParam *input, mfxVid
         output->Protected = 0;
         return MFX_ERR_UNSUPPORTED;
     }
-
 
     if (IS_PROTECTION_ANY(input->Protected))
     {
@@ -965,8 +957,10 @@ mfxStatus VideoDECODEMPEG2::CheckProtectionSettings(mfxVideoParam *input, mfxVid
 
         return MFX_ERR_UNSUPPORTED;
     }
+
     return MFX_ERR_NONE;
 }
+#endif
 
 mfxStatus VideoDECODEMPEG2::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out)
 {
@@ -1000,6 +994,7 @@ mfxStatus VideoDECODEMPEG2::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoPa
         out->mfx.ExtendedPicStruct = 1;
         out->mfx.TimeStampCalc = 1;
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         if (type >= MFX_HW_SNB)
         {
             out->Protected = MFX_PROTECTION_GPUCP_PAVP;
@@ -1017,6 +1012,9 @@ mfxStatus VideoDECODEMPEG2::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoPa
                 pavpOptOut->CipherCounter.IV = 0;
             }
         }
+#else
+        out->Protected = 0;
+#endif
 
         out->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
 
@@ -1029,21 +1027,15 @@ mfxStatus VideoDECODEMPEG2::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoPa
             out->IOPattern = MFX_IOPATTERN_OUT_VIDEO_MEMORY;
         }
         // DECODE's configurables
-       // out->mfx.ConstructNFrames = 1;
         out->mfx.NumThread = 1;
         out->AsyncDepth = 3;
     }
     else
     { // checking mode
-#if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     mfxStatus sts = CheckProtectionSettings(in, out, core);
     MFX_CHECK_STS(sts);
-
-
-#else
-        if(in->Protected)
-            return MFX_ERR_UNSUPPORTED;
 #endif
 
         if (1 == in->mfx.DecodedOrder)
@@ -1057,24 +1049,19 @@ mfxStatus VideoDECODEMPEG2::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoPa
             return MFX_ERR_UNSUPPORTED;
         }
 
-        if(in->NumExtParam != 0 && (!IS_PROTECTION_ANY(in->Protected)))
+        if (in->NumExtParam != 0 && !in->ExtParam)
+            return MFX_ERR_UNSUPPORTED;
+
+        if (!in->NumExtParam && in->ExtParam)
+            return MFX_ERR_UNSUPPORTED;
+
+        if (in->NumExtParam && !in->Protected)
         {
             mfxExtOpaqueSurfaceAlloc *pOpaq = (mfxExtOpaqueSurfaceAlloc *)GetExtendedBuffer(in->ExtParam, in->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
 
             // ignore opaque extension buffer
             if (in->NumExtParam != 1 || !(in->NumExtParam == 1 && NULL != pOpaq))
                 return MFX_ERR_UNSUPPORTED;
-        }
-
-        if(in->ExtParam != NULL && (!IS_PROTECTION_ANY(in->Protected)))
-        {
-            mfxExtOpaqueSurfaceAlloc *pOpaq = (mfxExtOpaqueSurfaceAlloc *)GetExtendedBuffer(in->ExtParam, in->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
-
-            // ignore opaque extension buffer
-            if (NULL == pOpaq)
-            {
-                return MFX_ERR_UNSUPPORTED;
-            }
         }
 
         mfxExtBuffer **pExtBuffer = out->ExtParam;
@@ -1172,15 +1159,11 @@ mfxStatus VideoDECODEMPEG2::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoPa
         else if (MFX_PLATFORM_SOFTWARE == core->GetPlatformType())
         {
             out->IOPattern = MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
-           // res = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
         }
         else
         {
             out->IOPattern = MFX_IOPATTERN_OUT_VIDEO_MEMORY;
-           // res = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
         }
-
-       // Mpeg2CheckConfigurableCommon(*out);
 
          if (!IsHWSupported(core, in))
          {
@@ -1273,16 +1256,6 @@ mfxStatus VideoDECODEMPEG2::GetVideoParam(mfxVideoParam *par)
 mfxStatus VideoDECODEMPEG2::SetSkipMode(mfxSkipMode mode)
 {
     mfxStatus ret = MFX_ERR_NONE;
-
-    if (mode == 0x23)
-    {
-#if defined MFX_VA_WIN
-        UMC::VideoAccelerator *va;
-        m_pCore->GetVA((mfxHDL*)&va, MFX_MEMTYPE_FROM_DECODE);
-        va->SetStatusReportUsing(false);
-#endif
-        return MFX_ERR_NONE;
-    }
 
     switch(mode)
     {
@@ -1533,7 +1506,7 @@ mfxStatus AppendBitstream(mfxBitstream& bs, const mfxU8* ptr, mfxU32 bytes)
 {
     if (bs.DataOffset + bs.DataLength + bytes > bs.MaxLength)
         return MFX_ERR_NOT_ENOUGH_BUFFER;
-    ippsCopy_8u(ptr, bs.Data + bs.DataOffset + bs.DataLength, bytes);
+    MFX_INTERNAL_CPY(bs.Data + bs.DataOffset + bs.DataLength, ptr, bytes);
     bs.DataLength += bytes;
     return MFX_ERR_NONE;
 }
@@ -1582,8 +1555,7 @@ VideoDECODEMPEG2InternalBase::VideoDECODEMPEG2InternalBase()
         m_frame_in_use[i] = false;
     }
 
-    m_FrameAllocator_nv12 = new mfx_UMC_FrameAllocator_NV12;
-    m_FrameAllocator = m_FrameAllocator_nv12;
+    m_FrameAllocator = 0;
 
     m_isDecodedOrder = false;
     m_reset_done = false;
@@ -1603,16 +1575,19 @@ VideoDECODEMPEG2InternalBase::~VideoDECODEMPEG2InternalBase()
 
 mfxStatus VideoDECODEMPEG2InternalBase::Reset(mfxVideoParam *par)
 {
-    for (mfxU32 i = 0; i < DPB; i++)
+    if (m_FrameAllocator)
     {
-        if (mid[i] >= 0)
+        for (mfxU32 i = 0; i < DPB; i++)
         {
-            m_FrameAllocator->DecreaseReference(mid[i]);
-            mid[i] = -1;
+            if (mid[i] >= 0)
+            {
+                m_FrameAllocator->DecreaseReference(mid[i]);
+                mid[i] = -1;
+            }
         }
-    }
 
-    m_FrameAllocator->Reset();
+        m_FrameAllocator->Reset();
+    }
 
     prev_index      = -1;
     curr_index      = -1;
@@ -1750,12 +1725,7 @@ mfxStatus VideoDECODEMPEG2InternalBase::Close()
     if(m_FrameAllocator)
         m_FrameAllocator->Close();
 
-    if(m_FrameAllocator_nv12)
-    {
-        delete m_FrameAllocator_nv12;
-        m_FrameAllocator_nv12 = 0;
-    }
-
+    delete m_FrameAllocator;
     m_FrameAllocator = 0;
 
     mfxStatus mfxRes = MFX_ERR_NONE;
@@ -2034,15 +2004,12 @@ mfxStatus VideoDECODEMPEG2InternalBase::UpdateCurrVideoParams(mfxFrameSurface1 *
         sts = MFX_WRN_VIDEO_PARAM_CHANGED;
     }
 
-    //if (m_isSWImpl)
-    {
-        pSurface->Info.CropW = m_vPar.mfx.FrameInfo.CropW;
-        pSurface->Info.CropH = m_vPar.mfx.FrameInfo.CropH;
-        pSurface->Info.CropX = m_vPar.mfx.FrameInfo.CropX;
-        pSurface->Info.CropY = m_vPar.mfx.FrameInfo.CropY;
-        pSurface->Info.AspectRatioH = m_vPar.mfx.FrameInfo.AspectRatioH;
-        pSurface->Info.AspectRatioW = m_vPar.mfx.FrameInfo.AspectRatioW;
-    }
+    pSurface->Info.CropW = m_vPar.mfx.FrameInfo.CropW;
+    pSurface->Info.CropH = m_vPar.mfx.FrameInfo.CropH;
+    pSurface->Info.CropX = m_vPar.mfx.FrameInfo.CropX;
+    pSurface->Info.CropY = m_vPar.mfx.FrameInfo.CropY;
+    pSurface->Info.AspectRatioH = m_vPar.mfx.FrameInfo.AspectRatioH;
+    pSurface->Info.AspectRatioW = m_vPar.mfx.FrameInfo.AspectRatioW;
 
     UpdateMfxVideoParam(m_vPar, sh, ph);
 
@@ -2521,7 +2488,7 @@ mfxStatus VideoDECODEMPEG2InternalBase::ConstructFrameImpl(mfxBitstream *in, mfx
 
             if (FcState::FRAME == m_fcState.picHeader)
             {
-                // CQ21432: If buffer contains less than 8 bytes it means there is no full frame in that buffer
+                // If buffer contains less than 8 bytes it means there is no full frame in that buffer
                 // and we need to find next start code
                 // It is possible in case of corruption when start code is found inside of frame
                 if (out->DataLength > 8)
@@ -2601,8 +2568,6 @@ static bool IsStatusReportEnable(VideoCORE * core)
     
     if (true == va->IsUseStatusReport())
     {
-        //eMFXHWType type = core->GetHWType();
-        //return (type == MFX_HW_SNB) || (type == MFX_HW_IVB) || (type == MFX_HW_HSW) || (type == MFX_HW_HSW_ULT) || (type == MFX_HW_VLV) || (type == MFX_HW_BDW) || (type == MFX_HW_SCL);
         return true;
     }
 
@@ -2611,7 +2576,7 @@ static bool IsStatusReportEnable(VideoCORE * core)
 
 mfxStatus VideoDECODEMPEG2Internal_HW::ConstructFrame(mfxBitstream *bs, mfxFrameSurface1 *surface_work)
 {
-#ifdef MFX_VA_WIN
+#if defined(MFX_VA_WIN) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (m_Protected && bs != NULL)
     {
         VM_ASSERT(m_implUmcHW->pack_w.m_va->GetProtectedVA());
@@ -2629,10 +2594,12 @@ mfxStatus VideoDECODEMPEG2Internal_HW::ConstructFrame(mfxBitstream *bs, mfxFrame
     return VideoDECODEMPEG2InternalBase::ConstructFrame(bs, surface_work);
 }
 
-VideoDECODEMPEG2Internal_HW::VideoDECODEMPEG2Internal_HW() : m_pavpOpt()
+VideoDECODEMPEG2Internal_HW::VideoDECODEMPEG2Internal_HW()
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
+ : m_pavpOpt()
+#endif
 {
-    m_FrameAllocator_d3d = new mfx_UMC_FrameAllocator_D3D;
-    m_FrameAllocator = m_FrameAllocator_d3d;
+    m_FrameAllocator = new mfx_UMC_FrameAllocator_D3D;
     m_isSWDecoder = false;
 
 #ifdef UMC_VA_DXVA
@@ -2648,6 +2615,7 @@ mfxStatus VideoDECODEMPEG2Internal_HW::Init(mfxVideoParam *par, VideoCORE * core
     mfxStatus sts = VideoDECODEMPEG2InternalBase::Init(par, core);
     MFX_CHECK_STS(sts);
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (IS_PROTECTION_ANY(par->Protected))
     {
         mfxExtPAVPOption * pavpOpt = (mfxExtPAVPOption*)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_PAVP_OPTION);
@@ -2659,6 +2627,7 @@ mfxStatus VideoDECODEMPEG2Internal_HW::Init(mfxVideoParam *par, VideoCORE * core
         if (pavpOpt)
             memcpy_s(&m_pavpOpt, sizeof(mfxExtPAVPOption), pavpOpt, sizeof(mfxExtPAVPOption));
     }
+#endif
 
     m_vdPar.numThreads = 1;
 
@@ -2676,6 +2645,7 @@ mfxStatus VideoDECODEMPEG2Internal_HW::Reset(mfxVideoParam *par)
 
     m_NumThreads = 1;
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (par && IS_PROTECTION_PAVP_ANY(par->Protected))
     {
         mfxExtPAVPOption * pavpOpt = (mfxExtPAVPOption*)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_PAVP_OPTION);
@@ -2696,10 +2666,10 @@ mfxStatus VideoDECODEMPEG2Internal_HW::Reset(mfxVideoParam *par)
             {
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
             }
-
         }
 #endif
     }
+#endif
 
     return MFX_ERR_NONE;
 }
@@ -2707,12 +2677,6 @@ mfxStatus VideoDECODEMPEG2Internal_HW::Reset(mfxVideoParam *par)
 mfxStatus VideoDECODEMPEG2Internal_HW::Close()
 {
     mfxStatus sts = VideoDECODEMPEG2InternalBase::Close();
-    if (m_FrameAllocator_d3d)
-    {
-        delete m_FrameAllocator_d3d;
-        m_FrameAllocator_d3d = 0;
-    }
-
     return sts;
 }
 
@@ -2721,7 +2685,7 @@ mfxStatus VideoDECODEMPEG2Internal_HW::AllocFrames(mfxVideoParam *par)
     mfxStatus sts = VideoDECODEMPEG2InternalBase::AllocFrames(par);
     MFX_CHECK_STS(sts);
 
-    // create directx video accelerator
+    // create video accelerator
     if (m_pCore->CreateVA(par, &allocRequest, &allocResponse, m_FrameAllocator) != MFX_ERR_NONE)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
@@ -2731,6 +2695,7 @@ mfxStatus VideoDECODEMPEG2Internal_HW::AllocFrames(mfxVideoParam *par)
 
 mfxStatus VideoDECODEMPEG2Internal_HW::GetVideoParam(mfxVideoParam *par)
 {
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     mfxExtPAVPOption * buffer = (mfxExtPAVPOption*)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_PAVP_OPTION);
     if (buffer)
     {
@@ -2739,6 +2704,7 @@ mfxStatus VideoDECODEMPEG2Internal_HW::GetVideoParam(mfxVideoParam *par)
 
         memcpy_s(buffer, sizeof(mfxExtPAVPOption), &m_pavpOpt, sizeof(mfxExtPAVPOption));
     }
+#endif
 
     return VideoDECODEMPEG2InternalBase::GetVideoParam(par);
 }
@@ -3569,6 +3535,7 @@ static const mfxI32 MFX_MPEG2_DECODE_ALIGNMENT = 16;
 
 VideoDECODEMPEG2Internal_SW::VideoDECODEMPEG2Internal_SW()
 {
+    m_FrameAllocator = new mfx_UMC_FrameAllocator_NV12;
     m_implUmcSW = new UMC::MPEG2VideoDecoderSW();
     m_implUmc.reset(m_implUmcSW);
 }

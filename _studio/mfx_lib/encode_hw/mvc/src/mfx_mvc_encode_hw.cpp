@@ -917,7 +917,7 @@ mfxStatus ImplementationMvc::QueryIOSurf(
         MFX_ERR_INVALID_VIDEO_PARAM);
 
     ENCODE_CAPS hwCaps = { 0 };
-    mfxStatus sts = QueryHwCaps(core, hwCaps, MSDK_Private_Guid_Encode_AVC_Query);
+    mfxStatus sts = QueryHwCaps(core, hwCaps, par);
     if (sts != MFX_ERR_NONE)
         return MFX_WRN_PARTIAL_ACCELERATION;
 
@@ -1088,7 +1088,7 @@ mfxStatus ImplementationMvc::Init(mfxVideoParam *par)
         request.Type        = extOpaq->In.Type;
         request.NumFrameMin = extOpaq->In.NumSurface;
 
-        sts = m_opaqHren.Alloc(m_core, request, extOpaq->In.Surfaces, extOpaq->In.NumSurface);
+        sts = m_opaqResponse.Alloc(m_core, request, extOpaq->In.Surfaces, extOpaq->In.NumSurface);
         MFX_CHECK_STS(sts);
 
         if (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)
@@ -1194,8 +1194,10 @@ mfxStatus ImplementationMvc::Reset(mfxVideoParam *par)
 {
     MFX_CHECK_NULL_PTR1(par);
 
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
     mfxExtPAVPOption * optPavp = GetExtBuffer(*par);
     MFX_CHECK(optPavp == 0, MFX_ERR_INVALID_VIDEO_PARAM); // mfxExtPAVPOption should not come to Reset
+#endif
 
     MfxVideoParam newPar(*par);
 
@@ -1420,7 +1422,7 @@ mfxStatus ImplementationMvc::EncodeFrameCheck(
         entryPoints[0].pRoutineName         = "Encode Submit";
         numEntryPoints                      = 1;
 
-        return mfxStatus(MFX_ERR_MORE_DATA_RUN_TASK);
+        return mfxStatus(MFX_ERR_MORE_DATA_SUBMIT_TASK);
     }
     else
     {
@@ -1545,18 +1547,11 @@ mfxStatus ImplementationMvc::TaskRoutineSubmit(
         else
             PrepareSeiMessageBufferDepView(impl.m_video, curTask, firstFieldId, impl.m_sei);
 
-        if (MFX_HW_D3D11 == impl.m_core->GetVAType())
-            sts = impl.m_ddi[0]->Execute(
-                surfaceHDL.first,
-                curTask,
-                firstFieldId,
-                impl.m_sei);
-        else
-            sts = impl.m_ddi[0]->Execute(
-                surfaceHDL.first,
-                curTask,
-                firstFieldId,
-                impl.m_sei);
+        sts = impl.m_ddi[0]->Execute(
+            surfaceHDL.first,
+            curTask,
+            firstFieldId,
+            impl.m_sei);
 
         MFX_CHECK_STS(sts);
 
@@ -1575,18 +1570,11 @@ mfxStatus ImplementationMvc::TaskRoutineSubmit(
             else
                 PrepareSeiMessageBufferDepView(impl.m_video, curTask, !firstFieldId, impl.m_sei);
 
-            if (MFX_HW_D3D11 == impl.m_core->GetVAType()) // use of (mfxHDL)pSurfaceHdl is a hack. Should be fixed!
-                sts = impl.m_ddi[0]->Execute(
-                    surfaceHDL.first,
-                    curTask,
-                    !firstFieldId,
-                    impl.m_sei);
-            else
-                sts = impl.m_ddi[0]->Execute(
-                    surfaceHDL.first,
-                    curTask,
-                    !firstFieldId,
-                    impl.m_sei);
+            sts = impl.m_ddi[0]->Execute(
+                surfaceHDL.first,
+                curTask,
+                !firstFieldId,
+                impl.m_sei);
             MFX_CHECK_STS(sts);
         }
     }
@@ -1701,18 +1689,11 @@ mfxStatus ImplementationMvc::TaskRoutineSubmitOneView(
                     return Error(MFX_ERR_UNDEFINED_BEHAVIOR);
 
                 // submit 'dummy' task to driver
-                if (MFX_HW_D3D11 == impl.m_core->GetVAType())
-                    sts = impl.m_ddi[encIdx]->Execute(
-                        surfaceHDL.first,
-                        dummyTask,
-                        firstFieldId,
-                        impl.m_sei);
-                else
-                    sts = impl.m_ddi[encIdx]->Execute(
-                        surfaceHDL.first,
-                        dummyTask,
-                        firstFieldId,
-                        impl.m_sei);
+                sts = impl.m_ddi[encIdx]->Execute(
+                    surfaceHDL.first,
+                    dummyTask,
+                    firstFieldId,
+                    impl.m_sei);
 
                 MFX_CHECK_STS(sts);
 
@@ -1720,18 +1701,11 @@ mfxStatus ImplementationMvc::TaskRoutineSubmitOneView(
                 // submit 2nd field of 'dummy' task to driver
                 if (interlace)
                 {
-                    if (MFX_HW_D3D11 == impl.m_core->GetVAType())
-                        sts = impl.m_ddi[encIdx]->Execute(
-                            surfaceHDL.first,
-                            dummyTask,
-                            !firstFieldId,
-                            impl.m_sei);
-                    else
-                        sts = impl.m_ddi[encIdx]->Execute(
-                            surfaceHDL.first,
-                            dummyTask,
-                            !firstFieldId,
-                            impl.m_sei);
+                    sts = impl.m_ddi[encIdx]->Execute(
+                        surfaceHDL.first,
+                        dummyTask,
+                        !firstFieldId,
+                        impl.m_sei);
 
                     MFX_CHECK_STS(sts);
                 }
@@ -1837,18 +1811,11 @@ mfxStatus ImplementationMvc::TaskRoutineSubmitOneView(
     realTask.m_addRepackSize[firstFieldId] = task.m_addRepackSize[firstFieldId]; // need to save padding size to remove it from encoded frame
 
     // here is workaround for SNB/IVB. Need to use 1 encoder per view to guarantee HRD conformance for each view
-    if (MFX_HW_D3D11 == impl.m_core->GetVAType())
-        sts = impl.m_ddi[encIdx]->Execute(
-            surfaceHDL.first,
-            task,
-            firstFieldId,
-            impl.m_sei);
-    else
-        sts = impl.m_ddi[encIdx]->Execute(
-            surfaceHDL.first,
-            task,
-            firstFieldId,
-            impl.m_sei);
+    sts = impl.m_ddi[encIdx]->Execute(
+        surfaceHDL.first,
+        task,
+        firstFieldId,
+        impl.m_sei);
 
     MFX_CHECK_STS(sts);
 

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2012 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef _MFX_MPEG2_ENC_H_
@@ -21,8 +21,6 @@
 
 
 #ifndef __SW_ENC
-//#include "mfx_mpeg2_enc_ddi_hw.h"
-//#include "mfx_mpeg2_encode_d3d9.h"
 #include "mfx_mpeg2_encode_interface.h"
 
 #ifdef MPEG2_ENC_HW_PERF

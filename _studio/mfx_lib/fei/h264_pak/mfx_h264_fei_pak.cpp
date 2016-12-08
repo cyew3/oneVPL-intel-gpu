@@ -175,7 +175,7 @@ void ConfigureTask_FEI_PAK(
     task.m_reference[ffid] = task.m_nalRefIdc[ffid] = !!(task.m_type[ffid] & MFX_FRAMETYPE_REF);
     task.m_reference[sfid] = task.m_nalRefIdc[sfid] = !!(task.m_type[sfid] & MFX_FRAMETYPE_REF);
 
-    if (video.calcParam.lyncMode)
+    if (video.calcParam.tempScalabilityMode)
     {
         task.m_insertPps[ffid] = task.m_insertSps[ffid];
         task.m_insertPps[sfid] = task.m_insertSps[sfid];
@@ -609,11 +609,6 @@ mfxStatus VideoPAK_PAK::GetVideoParam(mfxVideoParam *par)
     par->NumExtParam = NumExtParam;
 
     return MFX_ERR_NONE;
-}
-
-mfxStatus VideoPAK_PAK::RunSeqHeader(mfxFrameCUC *cuc)
-{
-    return MFX_ERR_UNSUPPORTED;
 }
 
 mfxStatus VideoPAK_PAK::RunFramePAKCheck(

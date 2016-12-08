@@ -16,11 +16,8 @@
 #ifndef __UMC_H265_BITSTREAM_HEADERS_H_
 #define __UMC_H265_BITSTREAM_HEADERS_H_
 
-#include "ippvc.h"
 #include "umc_structures.h"
-#include "umc_dynamic_cast.h"
 #include "umc_h265_dec_defs.h"
-//#include "umc_h265_tables.h"
 
 // Read N bits from 32-bit array
 #define GetNBits(current_data, offset, nbits, data) \
@@ -376,14 +373,88 @@ inline Ipp32u H265BaseBitstream::GetPredefinedBits()
     return(w);
 }
 
+inline bool DecodeExpGolombOne_H265_1u32s (Ipp32u **ppBitStream,
+                                                      Ipp32s *pBitOffset,
+                                                      Ipp32s *pDst,
+                                                      Ipp32s isSigned)
+{
+    Ipp32u code;
+    Ipp32u info     = 0;
+    Ipp32s length   = 1;            /* for first bit read above*/
+    Ipp32u thisChunksLength = 0;
+    Ipp32u sval;
+
+    /* check error(s) */
+
+    /* Fast check for element = 0 */
+    GetNBits((*ppBitStream), (*pBitOffset), 1, code)
+    if (code)
+    {
+        *pDst = 0;
+        return true;
+    }
+
+    GetNBits((*ppBitStream), (*pBitOffset), 8, code);
+    length += 8;
+
+    /* find nonzero byte */
+    while (code == 0 && 32 > length)
+    {
+        GetNBits((*ppBitStream), (*pBitOffset), 8, code);
+        length += 8;
+    }
+
+    /* find leading '1' */
+    while ((code & 0x80) == 0 && 32 > thisChunksLength)
+    {
+        code <<= 1;
+        thisChunksLength++;
+    }
+    length -= 8 - thisChunksLength;
+
+    UngetNBits((*ppBitStream), (*pBitOffset),8 - (thisChunksLength + 1))
+
+    /* skipping very long codes, let's assume what the code is corrupted */
+    if (32 <= length || 32 <= thisChunksLength)
+    {
+        Ipp32u dwords;
+        length -= (*pBitOffset + 1);
+        dwords = length/32;
+        length -= (32*dwords);
+        *ppBitStream += (dwords + 1);
+        *pBitOffset = 31 - length;
+        *pDst = 0;
+        return false;
+    }
+
+    /* Get info portion of codeword */
+    if (length)
+    {
+        GetNBits((*ppBitStream), (*pBitOffset),length, info)
+    }
+
+    sval = ((1 << (length)) + (info) - 1);
+    if (isSigned)
+    {
+        if (sval & 1)
+            *pDst = (Ipp32s) ((sval + 1) >> 1);
+        else
+            *pDst = -((Ipp32s) (sval >> 1));
+    }
+    else
+        *pDst = (Ipp32s) sval;
+
+    return true;
+}
+
 // Read variable length coded unsigned element
 inline Ipp32u H265BaseBitstream::GetVLCElementU()
 {
     Ipp32s sval = 0;
 
-    IppStatus ippRes = ippiDecodeExpGolombOne_H264_1u32s(&m_pbs, &m_bitOffset, &sval, false);
+    bool res = DecodeExpGolombOne_H265_1u32s(&m_pbs, &m_bitOffset, &sval, false);
 
-    if (ippStsNoErr > ippRes)
+    if (!res)
         throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
     return (Ipp32u)sval;
@@ -394,9 +465,9 @@ inline Ipp32s H265BaseBitstream::GetVLCElementS()
 {
     Ipp32s sval = 0;
 
-    IppStatus ippRes = ippiDecodeExpGolombOne_H264_1u32s(&m_pbs, &m_bitOffset, &sval, true);
+    bool res = DecodeExpGolombOne_H265_1u32s(&m_pbs, &m_bitOffset, &sval, true);
 
-    if (ippStsNoErr > ippRes)
+    if (!res)
         throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
     return sval;

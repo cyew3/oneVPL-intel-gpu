@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -836,8 +836,8 @@ Status MJPEGVideoEncoder::PostProcessing(MediaData* out)
                 size_t offset = m_frame.get()->m_pics[i]->m_scans[j]->m_pieceOffset[k];
                 size_t size = m_frame.get()->m_pics[i]->m_scans[j]->m_pieceSize[k];
 
-                ippsCopy_8u((Ipp8u *)m_pBitstreamBuffer[location]->GetBufferPointer() + offset,
-                            (Ipp8u *)out->GetBufferPointer() + out->GetDataSize(),
+                MFX_INTERNAL_CPY((Ipp8u *)out->GetBufferPointer() + out->GetDataSize(),
+                            (Ipp8u *)m_pBitstreamBuffer[location]->GetBufferPointer() + offset,
                             (Ipp32u)size);
 
                 if(k != m_frame.get()->m_pics[i]->m_scans[j]->GetNumPieces() - 1)

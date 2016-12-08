@@ -21,8 +21,6 @@
 #include "umc_svc_ddi.h"
 #endif
 
-#ifndef UMC_RESTRICTED_CODE_VA
-
 #if defined(_WIN32) || defined(_WIN64)
 #pragma warning( disable : 4100 ) // ignore unreferenced parameters in virtual method declaration
 #endif
@@ -176,7 +174,9 @@ protected:
 
     void FillFrameAsInvalid(VAPictureH264 * pic);
 
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
     void PackProcessingInfo(H264DecoderFrameInfo * sliceInfo);
+#endif
 
     enum
     {
@@ -197,8 +197,8 @@ private:
     bool                       m_enableStreamOut;
 };
 
-class PackerVA_PAVP
-    : public PackerVA
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
+class PackerVA_PAVP : public PackerVA
 {
 
 public:
@@ -231,16 +231,11 @@ private:
     virtual void PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice);
     virtual void PackAU(const H264DecoderFrame *pCurrentFrame, Ipp32s isTop);
 };
+#endif // #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 
 #endif // UMC_VA_LINUX
 
-inline bool IsVLDProfile (Ipp32s profile)
-{
-    return (profile & VA_VLD) != 0;
-}
-
 } // namespace UMC
 
-#endif // UMC_RESTRICTED_CODE_VA
 #endif /* __UMC_H264_VA_PACKER_H */
 #endif // UMC_ENABLE_H264_VIDEO_DECODER

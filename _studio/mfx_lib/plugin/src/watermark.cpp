@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "watermark.h"
@@ -282,7 +282,7 @@ Watermark *Watermark::CreateFromResource(void)
         return NULL;
     }
 
-    ippsCopy_8u(rawImage + header.OffBits, buffer, imageSize);
+    memcpy_s(buffer, imageSize, rawImage + header.OffBits, imageSize);
 
     VM_ASSERT(MFX_ERR_NONE == status);
     if (MFX_ERR_NONE != status)

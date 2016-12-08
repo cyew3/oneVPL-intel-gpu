@@ -12,22 +12,9 @@
 #define __UMC_VIDEO_ENCODER_H__
 
 #include "umc_base_codec.h"
-#include "umc_par_reader.h"
 
 namespace UMC
 {
-#ifndef UMC_RESTRICTED_CODE_PAR_EXT
-#ifdef PARAM_EXTENSION_1
-enum RateControlMode {
-  RC_UNDEFINED = 0,
-  RC_CBR       = 1,      // Constant bit rate
-  RC_VBR       = 2,      // Unrestricted variable bit rate
-  RC_RVBR      = 3,      // Restricted variable bit rate
-  RC_UVBR      = RC_VBR  // Unrestricted variable bit rate
-};
-#define QP_COUNT 3
-#endif // PARAM_EXTENSION_1
-#endif // UMC_RESTRICTED_CODE_PAR_EXT
 
 class VideoEncoderParams : public BaseCodecParams
 {
@@ -50,18 +37,6 @@ public:
       info.stream_type         = UNDEF_VIDEO;
       info.stream_subtype      = UNDEF_VIDEO_SUBTYPE;
       info.streamPID           = 0;
-
-#ifndef UMC_RESTRICTED_CODE_PAR_EXT
-#ifdef PARAM_EXTENSION_1
-      // should be initialized to appropriate in derived classes
-      IPdistance = -1;
-      GOPsize    = -1;
-      maxDelayTime = 500;
-      rcMode     = RC_CBR;
-      Ipp32s i;
-      for ( i=0; i<QP_COUNT; i++ ) quantVBR[i] = -1;
-#endif // PARAM_EXTENSION_1
-#endif // UMC_RESTRICTED_CODE_PAR_EXT
     }
     // Destructor
     virtual ~VideoEncoderParams(void){}
@@ -73,15 +48,6 @@ public:
 
     VideoStreamInfo info;               // (VideoStreamInfo) compressed video info
     Ipp32s          numEncodedFrames;   // (Ipp32s) number of encoded frames
-#ifndef UMC_RESTRICTED_CODE_PAR_EXT
-#ifdef PARAM_EXTENSION_1
-    Ipp32s          IPdistance;         // Distance between reference frames
-    Ipp32s          GOPsize;            // GOP size or maximum key-frame distance
-    Ipp32s          maxDelayTime;       // Hypothetic decoder delay in msec
-    RateControlMode rcMode;             // Rate control mode, default RC_CBR
-    Ipp32s          quantVBR[QP_COUNT]; // Quantizers for VBR modes
-#endif // PARAM_EXTENSION_1
-#endif // UMC_RESTRICTED_CODE_PAR_EXT
 
     // additional controls
     Ipp32s qualityMeasure;      // per cent, represent quantization precision
@@ -98,12 +64,6 @@ public:
 };
 
 /******************************************************************************/
-
-// reads parameters from ParamList to VideoEncoderParams
-Status ReadParamList(VideoEncoderParams* par, ParamList* lst);
-
-// information about parameters for VideoEncoderParams
-extern const ParamList::OptionInfo VideoEncoderOptions[];
 
 } // end namespace UMC
 

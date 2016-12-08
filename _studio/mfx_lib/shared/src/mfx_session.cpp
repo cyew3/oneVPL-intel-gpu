@@ -12,7 +12,6 @@
 #include <mfx_session.h>
 
 #include <vm_time.h>
-#include <mfx_check_hardware_support.h>
 #include <vm_sys_info.h>
 
 #include <libmfx_core_factory.h>
@@ -661,7 +660,6 @@ void _mfxSession::Cleanup(void)
     // do not relay on default deallocation order,
     // somebody could change it.
     m_plgGen.reset();
-    m_pBRC.reset();
     m_pPAK.reset();
     m_pENC.reset();
     m_pVPP.reset();
@@ -679,9 +677,10 @@ mfxStatus _mfxSession::Init(mfxIMPL implInterface, mfxVersion *ver)
     mfxStatus mfxRes;
     MFX_SCHEDULER_PARAM schedParam;
     mfxU32 maxNumThreads;
+#if defined(MFX_VA_WIN)
     bool isExternalThreading = (implInterface & MFX_IMPL_EXTERNAL_THREADING)?true:false;
     implInterface &= ~MFX_IMPL_EXTERNAL_THREADING;
-
+#endif
     // release the object before initialization
     Cleanup();
 
@@ -776,7 +775,11 @@ mfxStatus _mfxSession::Init(mfxIMPL implInterface, mfxVersion *ver)
         return MFX_ERR_UNKNOWN;
     }
     memset(&schedParam, 0, sizeof(schedParam));
-    schedParam.flags = isExternalThreading?MFX_SINGLE_THREAD:MFX_SCHEDULER_DEFAULT;
+    schedParam.flags = MFX_SCHEDULER_DEFAULT;
+#if defined(MFX_VA_WIN)
+    if (isExternalThreading)
+        schedParam.flags = MFX_SINGLE_THREAD;
+#endif
     schedParam.numberOfThreads = maxNumThreads;
     schedParam.pCore = m_pCORE.get();
     mfxRes = m_pScheduler->Initialize(&schedParam);
@@ -913,9 +916,10 @@ mfxStatus _mfxSession_1_10::InitEx(mfxInitParam& par)
 {
     mfxStatus mfxRes;
     mfxU32 maxNumThreads;
+#if defined(MFX_VA_WIN)
     bool isSingleThreadMode = (par.Implementation & MFX_IMPL_EXTERNAL_THREADING) ? true : false;
     par.Implementation &= ~MFX_IMPL_EXTERNAL_THREADING;
-
+#endif
     // release the object before initialization
     Cleanup();
 
@@ -1025,10 +1029,15 @@ mfxStatus _mfxSession_1_10::InitEx(mfxInitParam& par)
     if (par.NumExtParam && !pScheduler2) {
         return MFX_ERR_UNKNOWN;
     }
+
     if (pScheduler2) {
         MFX_SCHEDULER_PARAM2 schedParam;
         memset(&schedParam, 0, sizeof(schedParam));
-        schedParam.flags = isSingleThreadMode ? MFX_SINGLE_THREAD : MFX_SCHEDULER_DEFAULT;
+        schedParam.flags = MFX_SCHEDULER_DEFAULT;
+#if defined(MFX_VA_WIN)
+        if (isSingleThreadMode)
+            schedParam.flags = MFX_SINGLE_THREAD;
+#endif
         schedParam.numberOfThreads = maxNumThreads;
         schedParam.pCore = m_pCORE.get();
         if (par.NumExtParam) {
@@ -1041,11 +1050,16 @@ mfxStatus _mfxSession_1_10::InitEx(mfxInitParam& par)
     else {
         MFX_SCHEDULER_PARAM schedParam;
         memset(&schedParam, 0, sizeof(schedParam));
-        schedParam.flags = isSingleThreadMode ? MFX_SINGLE_THREAD : MFX_SCHEDULER_DEFAULT;
+        schedParam.flags = MFX_SCHEDULER_DEFAULT;
+#if defined(MFX_VA_WIN)
+        if (isSingleThreadMode)
+            schedParam.flags = MFX_SINGLE_THREAD;
+#endif
         schedParam.numberOfThreads = maxNumThreads;
         schedParam.pCore = m_pCORE.get();
         mfxRes = m_pScheduler->Initialize(&schedParam);
     }
+
     if (MFX_ERR_NONE != mfxRes) {
         return mfxRes;
     }

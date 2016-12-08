@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "vm_sys_info.h"
@@ -25,117 +25,6 @@
 /* non-pointer conversion from "unsigned __int64" to "Ipp32s={signed int}" may lose significant bits */
 #pragma warning(disable:2259)
 #endif
-
-
-void vm_sys_info_get_date(vm_char *m_date, DateFormat df)
-{
-    SYSTEMTIME SystemTime;
-
-    /* check error(s) */
-    if (NULL == m_date)
-        return;
-
-    GetLocalTime(&SystemTime );
-
-    switch (df)
-    {
-    case DDMMYY:
-        vm_string_sprintf(m_date,
-                          VM_STRING("%.2d/%.2d/%d"),
-                          SystemTime.wDay,
-                          SystemTime.wMonth,
-                          SystemTime.wYear);
-        break;
-
-    case MMDDYY:
-        vm_string_sprintf(m_date,
-                          VM_STRING("%.2d/%.2d/%d"),
-                          SystemTime.wMonth,
-                          SystemTime.wDay,
-                          SystemTime.wYear);
-        break;
-
-    case YYMMDD:
-        vm_string_sprintf(m_date,
-                          VM_STRING("%d/%.2d/%.2d"),
-                          SystemTime.wYear,
-                          SystemTime.wMonth,
-                          SystemTime.wDay);
-        break;
-
-    default:
-        vm_string_sprintf(m_date,
-                          VM_STRING("%2d/%.2d/%d"),
-                          SystemTime.wMonth,
-                          SystemTime.wDay,
-                          SystemTime.wYear);
-        break;
-    }
-} /* void vm_sys_info_get_date(vm_char *m_date, DateFormat df) */
-
-void vm_sys_info_get_time(vm_char *m_time, TimeFormat tf)
-{
-    SYSTEMTIME SystemTime;
-
-    /* check error(s) */
-    if (NULL == m_time)
-        return;
-
-    GetLocalTime(&SystemTime);
-
-    switch (tf)
-    {
-    case HHMMSS:
-        vm_string_sprintf(m_time,
-                          VM_STRING("%.2d:%.2d:%.2d"),
-                          SystemTime.wHour,
-                          SystemTime.wMinute,
-                          SystemTime.wSecond);
-        break;
-
-    case HHMM:
-        vm_string_sprintf(m_time,
-                          VM_STRING("%.2d:%.2d"),
-                          SystemTime.wHour,
-                          SystemTime.wMinute);
-        break;
-
-    case HHMMSSMS1:
-        vm_string_sprintf(m_time,
-                          VM_STRING("%.2d:%.2d:%.2d.%d"),
-                          SystemTime.wHour,
-                          SystemTime.wMinute,
-                          SystemTime.wSecond,
-                          SystemTime.wMilliseconds / 100);
-        break;
-
-    case HHMMSSMS2:
-        vm_string_sprintf(m_time,
-                          VM_STRING("%.2d:%.2d:%.2d.%d"),
-                          SystemTime.wHour,
-                          SystemTime.wMinute,
-                          SystemTime.wSecond,
-                          SystemTime.wMilliseconds / 10);
-        break;
-
-    case HHMMSSMS3:
-        vm_string_sprintf(m_time,
-                          VM_STRING("%.2d:%.2d:%.2d.%d"),
-                          SystemTime.wHour,
-                          SystemTime.wMinute,
-                          SystemTime.wSecond,
-                          SystemTime.wMilliseconds);
-        break;
-
-    default:
-        vm_string_sprintf(m_time,
-                          VM_STRING("%.2d:%.2d:%.2d"),
-                          SystemTime.wHour,
-                          SystemTime.wMinute,
-                          SystemTime.wSecond);
-        break;
-    }
-} /* void vm_sys_info_get_time(vm_char *m_time, TimeFormat tf) */
 
 void vm_sys_info_get_os_name(vm_char *os_name)
 {
@@ -610,16 +499,5 @@ void vm_sys_info_get_computer_name(vm_char *computer_name)
     return;
 } /* void vm_sys_info_get_computer_name(vm_char* computer_name) */
 #endif /* defined(WIN_TRESHOLD_MOBILE) */
-
-#ifdef UMC_VERSION_INFO
-/* Functions to obtain UMC version information */
-vm_char *vm_get_version_string( void ) {
-  return umc_version_string;
-  }
-
-Ipp64u vm_get_version_number( void ) {
-  return umc_version_number;
-  }
-#endif
 
 #endif /* defined(_WIN32) || defined(_WIN64) */

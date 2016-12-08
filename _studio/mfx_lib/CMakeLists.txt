@@ -7,8 +7,8 @@ mfx_include_dirs( )
 list( APPEND mdirs
   scheduler vpp encode_hw/mjpeg
   decode/h264 decode/mpeg2 decode/mjpeg cmrt_cross_platform encode_hw/h264 encode_hw/mpeg2
-  decode/vc1 encode/h264 enc/mpeg2 pak/mpeg2 enc_hw/mpeg2 encode/mpeg2 encode/mjpeg  ## open-source-cut-line
-  brc/h264 brc/mpeg2 audio_decode/aac audio_decode/mp3 audio_encode/aac  ## open-source-cut-line
+  decode/vc1 encode/h264 enc/mpeg2 pak/mpeg2 enc_hw/mpeg2 encode/mpeg2 encode/mjpeg
+  audio_decode/aac audio_decode/mp3 audio_encode/aac
   )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/fei/h264_preenc )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/fei/h264_pak )
@@ -19,8 +19,8 @@ endforeach( )
 
 list( APPEND cdirs
   brc h264_enc mpeg2_dec
-  color_space_converter mpeg2_enc jpeg_enc vc1_dec vc1_common  ## open-source-cut-line
-  aac_dec common aac_common mp3_common mp3_dec aac_enc  ## open-source-cut-line
+  color_space_converter mpeg2_enc jpeg_enc vc1_dec vc1_common
+  aac_dec common aac_common mp3_common mp3_dec aac_enc
   )
 foreach( dir ${cdirs} )
   include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../shared/umc/codec/${dir}/include )
@@ -38,7 +38,6 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/shared/src )
   list( APPEND sources
     ${prefix}/libmfxsw.cpp
     ${prefix}/libmfxsw_async.cpp
-    ${prefix}/libmfxsw_brc.cpp ## open-source-cut-line
     ${prefix}/libmfxsw_decode.cpp
     ${prefix}/libmfxsw_enc.cpp
     ${prefix}/libmfxsw_encode.cpp
@@ -54,7 +53,7 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/shared/src )
     ${prefix}/mfx_brc_common.cpp
     ${prefix}/mfx_h264_enc_common.cpp
     ${prefix}/mfx_mpeg2_dec_common.cpp
-    ${prefix}/mfx_vc1_dec_common.cpp    ## open-source-cut-line
+    ${prefix}/mfx_vc1_dec_common.cpp
     #=================
   )
 endforeach()
@@ -67,12 +66,12 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src )
     ${prefix}/mfx_vpp_vaapi.cpp
     ${prefix}/libmfx_allocator.cpp
     ${prefix}/libmfx_allocator_vaapi.cpp
-    ${prefix}/libmfx_allocator_vdaapi.cpp  ## open-source-cut-line
+    ${prefix}/libmfx_allocator_vdaapi.cpp
     ${prefix}/libmfx_core.cpp
     ${prefix}/libmfx_core_factory.cpp
     ${prefix}/libmfx_core_hw.cpp
     ${prefix}/libmfx_core_vaapi.cpp
-    ${prefix}/libmfx_core_vdaapi.cpp  ## open-source-cut-line
+    ${prefix}/libmfx_core_vdaapi.cpp
     ${prefix}/mfx_umc_alloc_wrapper.cpp
     ${prefix}/mfx_timing.cpp
     ${prefix}/mfx_dxva2_device.cpp
@@ -84,7 +83,7 @@ set( USE_STRICT_NAME TRUE )
 set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libmfx.map" )
 
 foreach( variant
-         sw  ## open-source-cut-line
+         sw
          hw )
   if( __ARCH MATCHES intel64 )
     set( mfxlibname mfx${variant}64 )
@@ -115,7 +114,6 @@ foreach( variant
     enc_hw
     h264_la
     genx_h264_encode_embeded
-## open-source-cut-start
     vc1_common
     vc1_dec_${variant}
     scene_analyzer
@@ -123,7 +121,6 @@ foreach( variant
     media_buffers
     encode
     vc1_enc
-    brc
     jpeg_enc
     me
     mpeg2_enc
@@ -132,8 +129,6 @@ foreach( variant
     h264_px
     h264_sse3
     pak
-    vc1_shared
-## open-source-cut-end
     mfx_common
     mfx_common_${variant}
     vpp_${variant}
@@ -173,7 +168,7 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src )
     ${prefix}/libmfx_allocator_vaapi.cpp
     ${prefix}/libmfx_core.cpp
     ${prefix}/libmfx_core_vaapi.cpp
-    ${prefix}/libmfx_core_vdaapi.cpp  ## open-source-cut-line
+    ${prefix}/libmfx_core_vdaapi.cpp
     ${prefix}/libmfx_core_factory.cpp
     ${prefix}/libmfx_core_hw.cpp
     ${prefix}/mfx_dxva2_device.cpp
@@ -250,8 +245,8 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/shared/src )
   list( APPEND sources
     ${prefix}/libmfxsw.cpp
     ${prefix}/libmfxsw_async.cpp
-    ${prefix}/libmfxsw_audio_decode.cpp  ## open-source-cut-line
-    ${prefix}/libmfxsw_audio_encode.cpp  ## open-source-cut-line
+    ${prefix}/libmfxsw_audio_decode.cpp
+    ${prefix}/libmfxsw_audio_encode.cpp
     ${prefix}/libmfxsw_ext.cpp
     ${prefix}/libmfxsw_session.cpp
     ${prefix}/mfx_session.cpp
@@ -275,7 +270,6 @@ endforeach()
 # =================================
 file( GLOB_RECURSE srcs "${CMAKE_CURRENT_SOURCE_DIR}/scheduler/src/*.c" "${CMAKE_CURRENT_SOURCE_DIR}/scheduler/src/*.cpp" )
 list( APPEND sources ${srcs})
-## open-source-cut-start
 # =================================
 
 set( USE_STRICT_NAME TRUE )
@@ -296,7 +290,6 @@ foreach( variant sw )
     enc
     encode
     pak
-    brc
     decode_${variant}
     vpp_${variant}
     cmrt_cross_platform_hw
@@ -331,4 +324,3 @@ foreach( variant sw )
 endforeach()
 
 # =============================================================================
-## open-source-cut-end

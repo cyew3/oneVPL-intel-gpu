@@ -10,10 +10,19 @@
 
 #pragma once
 
+#include "mfx_config.h"
+
 #if !defined(OSX)
 
+#if defined(_WIN32) || defined(_WIN64)
+#define CM_WIN
+#else
+#define CM_LINUX
+#endif
+
+
+#if defined(CM_WIN) && (!defined(CM_DX11))
 //Using CM_DX9 by default
-#if (!defined(__GNUC__)) && (!defined(CM_DX11))
 #ifndef CM_DX9
 #define CM_DX9
 #endif
@@ -30,28 +39,23 @@
 #pragma warning(disable: 4201)
 #include "cm_common.h"
 
+typedef void * AbstractSurfaceHandle;
+typedef void * AbstractDeviceHandle;
+
 struct IDirect3DSurface9;
 struct IDirect3DDeviceManager9;
 struct ID3D11Texture2D;
 struct ID3D11Device;
 
-typedef void * AbstractSurfaceHandle;
-typedef void * AbstractDeviceHandle;
-
-#if defined(_WIN32) || defined(_WIN64)
-typedef unsigned int VASurfaceID;
-typedef unsigned int VADisplay;
-#endif
-
-#ifdef __GNUC__
+#if defined(CM_WIN)
+#include "cm_rt_win.h"
+#else
 #define LONG INCORRECT_64BIT_LONG
 #define ULONG INCORRECT_64BIT_ULONG
 #ifdef __int64
 #undef __int64
 #endif
 #include "cm_rt_linux.h"
-#else
-#include "cm_rt_win.h"
 #endif
 
 #define CM_KERNEL_FUNCTION(...) CM_KERNEL_FUNCTION2(__VA_ARGS__)
@@ -135,40 +139,29 @@ typedef unsigned int VADisplay;
 #define CM_INVALID_LIBVA_SURFACE                    -65
 #define CM_INVALID_LIBVA_INITIALIZE                 -66
 
-#define CM_MIN_SURF_WIDTH   1
-#define CM_MIN_SURF_HEIGHT  1
-#define CM_MIN_SURF_DEPTH   2
-
-#define CM_MAX_1D_SURF_WIDTH 0X8000000 // 2^27
-
-//#define CM_MAX_GPUCOPY_SURFACE_WIDTH_IN_BYTE        65408
-//#define CM_MAX_GPUCOPY_SURFACE_HEIGHT               4088
-
-#define CM_DEVICE_CREATE_OPTION_DEFAULT                     0
-#define CM_DEVICE_CREATE_OPTION_SCRATCH_SPACE_DISABLE       1
-
-//SNB
-#define CM_MAX_2D_SURF_WIDTH    8192
-#define CM_MAX_2D_SURF_HEIGHT   8192
-
-//IVB+
-#define CM_MAX_2D_SURF_WIDTH_IVB_PLUS 16384
-#define CM_MAX_2D_SURF_HEIGHT_IVB_PLUS 16384
-
-#define CM_MAX_3D_SURF_WIDTH    2048
-#define CM_MAX_3D_SURF_HEIGHT   2048
-#define CM_MAX_3D_SURF_DEPTH    2048
-
-#define CM_MAX_OPTION_SIZE_IN_BYTE          512
-#define CM_MAX_KERNEL_NAME_SIZE_IN_BYTE     256
-#define CM_MAX_ISA_FILE_NAME_SIZE_IN_BYTE   256
-
+#ifndef OPEN_SOURCE
 #define CM_MAX_THREADSPACE_WIDTH        511
 #define CM_MAX_THREADSPACE_HEIGHT       511
 
-#define IVB_MAX_SLM_SIZE_PER_GROUP   16 // 64KB PER Group on Gen7
+typedef enum _GPU_PLATFORM{
+    PLATFORM_INTEL_UNKNOWN     = 0,
+    PLATFORM_INTEL_SNB         = 1,   //Sandy Bridge
+    PLATFORM_INTEL_IVB         = 2,   //Ivy Bridge
+    PLATFORM_INTEL_HSW         = 3,   //Haswell
+    PLATFORM_INTEL_BDW         = 4,   //Broadwell
+    PLATFORM_INTEL_VLV         = 5,   //ValleyView
+    PLATFORM_INTEL_CHV         = 6,   //CherryView
+    PLATFORM_INTEL_SKL         = 7,   //SKL
+    PLATFORM_INTEL_BXT         = 8,   //Broxton
+    PLATFORM_INTEL_CNL         = 9,   //CNL
+} GPU_PLATFORM;
 
-#define COMPILER_RESERVED_SURFACE_NUM 5
+#endif
+
+#define CM_MAX_1D_SURF_WIDTH 0X8000000 // 2^27
+
+#define CM_DEVICE_CREATE_OPTION_DEFAULT                     0
+#define CM_DEVICE_CREATE_OPTION_SCRATCH_SPACE_DISABLE       1
 
 //Time in seconds before kernel should timeout
 #define CM_MAX_TIMEOUT 2
@@ -193,30 +186,6 @@ typedef struct _CM_SAMPLER_STATE
     CM_TEXTURE_ADDRESS_TYPE addressV;
     CM_TEXTURE_ADDRESS_TYPE addressW;
 } CM_SAMPLER_STATE;
-
-typedef enum _GPU_PLATFORM{
-    PLATFORM_INTEL_UNKNOWN     = 0,
-    PLATFORM_INTEL_SNB         = 1,   //Sandy Bridge
-    PLATFORM_INTEL_IVB         = 2,   //Ivy Bridge
-    PLATFORM_INTEL_HSW         = 3,   //Haswell
-    PLATFORM_INTEL_BDW         = 4,   //Broadwell
-    PLATFORM_INTEL_VLV         = 5,   //ValleyView
-    PLATFORM_INTEL_CHV         = 6,   //CherryView
-    PLATFORM_INTEL_SKL         = 7,	  //SKL
-    PLATFORM_INTEL_BXT         = 8,	  //Broxton
-    PLATFORM_INTEL_CNL         = 9,	  //CNL
-} GPU_PLATFORM;
-
-typedef enum _GPU_GT_PLATFORM{
-    PLATFORM_INTEL_GT_UNKNOWN  = 0,
-    PLATFORM_INTEL_GT1         = 1,
-    PLATFORM_INTEL_GT2         = 2,
-    PLATFORM_INTEL_GT3         = 3,
-    PLATFORM_INTEL_GT4         = 4,
-    PLATFORM_INTEL_GTVLV       = 5,
-    PLATFORM_INTEL_GTVLVPLUS   = 6,
-    PLATFORM_INTEL_GTCHV       = 7
-} GPU_GT_PLATFORM;
 
 typedef enum _CM_DEVICE_CAP_NAME
 {
@@ -404,13 +373,6 @@ typedef enum _CM_DEPENDENCY_PATTERN
     CM_HORIZONTAL_DEPENDENCY    = 4
 } CM_DEPENDENCY_PATTERN;
 
-typedef struct _CM_DEPENDENCY
-{
-    UINT    count;
-    INT     deltaX[CM_MAX_DEPENDENCY_COUNT];
-    INT     deltaY[CM_MAX_DEPENDENCY_COUNT];
-}CM_DEPENDENCY;
-
 typedef enum _CM_BOUNDARY_PIXEL_MODE
 {
      CM_BOUNDARY_NORMAL  = 0x0,
@@ -499,50 +461,6 @@ typedef enum _L3_SUGGEST_CONFIG
     HSW_SLM_PLANE_DEFAULT = HSW_L3_PLANE_9
 } L3_SUGGEST_CONFIG;
 
-static const L3_CONFIG_REGISTER_VALUES IVB_L3_PLANE[IVB_1_L3_CONFIG_NUM]  =
-{                                                                    // SLM    URB   Rest DC     RO     I/S    C    T      Sum
-    {0x01730000, 0x00080040, 0x00000000},     // {0,    256,    0,     0,     256,    0,     0,    0,     512},
-    {0x00730000, 0x02040040, 0x00000000},     //{0,    256,    0,   128,     128,    0,     0,    0,     512},
-    {0x00730000, 0x00800040, 0x00080410},     //{0,    256,    0,    32,       0,   64,    32,  128,     512},
-    {0x00730000, 0x01000038, 0x00080410},     //{0,    224,    0,    64,       0,   64,    32,  128,     512},
-    {0x00730000, 0x02000038, 0x00040410},     //{0,    224,    0,   128,       0,   64,    32,   64,     512},
-    {0x00730000, 0x01000038, 0x00040420},     //{0,    224,    0,    64,       0,  128,    32,   64,     512},
-    {0x01730000, 0x00000038, 0x00080420},     //{0,    224,    0,     0,       0,  128,    32,  128,     512},
-    {0x01730000, 0x00000040, 0x00080020},     //{0,    256,    0,     0,       0,  128,     0,  128,     512},
-    {0x00730000, 0x020400a1, 0x00000000},      //{128,    128,    0,   128,     128,    0,     0,    0,     512},
-    {0x00730000, 0x010000a1, 0x00040810},      // {128,    128,    0,    64,       0,   64,    64,   64,     512},
-    {0x00730000, 0x008000a1, 0x00080410},      //{128,    128,    0,    32,       0,   64,    32,  128,     512},
-    {0x00730000, 0x008000a1, 0x00040420}      //{128,    128,    0,    32,       0,  128,   32,    64,     512}
-};
-
-static const L3_CONFIG_REGISTER_VALUES HSW_L3_PLANE[HSW_L3_CONFIG_NUM]  =
-{                                                                    // SLM    URB   Rest DC     RO     I/S    C    T      Sum
-    {0x01610000, 0x00080040, 0x00000000},     // {0,    256,    0,     0,     256,    0,     0,    0,     512},
-    {0x00610000, 0x02040040, 0x00000000},     //{0,    256,    0,   128,     128,    0,     0,    0,     512},
-    {0x00610000, 0x00800040, 0x00080410},     //{0,    256,    0,    32,       0,   64,    32,  128,     512},
-    {0x00610000, 0x01000038, 0x00080410},     //{0,    224,    0,    64,       0,   64,    32,  128,     512},
-    {0x00610000, 0x02000038, 0x00040410},     //{0,    224,    0,   128,       0,   64,    32,   64,     512},
-    {0x00610000, 0x01000038, 0x00040420},     //{0,    224,    0,    64,       0,  128,    32,   64,     512},
-    {0x01610000, 0x00000038, 0x00080420},     //{0,    224,    0,     0,       0,  128,    32,  128,     512},
-    {0x01610000, 0x00000040, 0x00080020},     //{0,    256,    0,     0,       0,  128,     0,  128,     512},
-    {0x00610000, 0x020400a1, 0x00000000},      //{128,    128,    0,   128,     128,    0,     0,    0,     512},
-    {0x00610000, 0x010000a1, 0x00040810},      // {128,    128,    0,    64,       0,   64,    64,   64,     512},
-    {0x00610000, 0x008000a1, 0x00080410},      //{128,    128,    0,    32,       0,   64,    32,  128,     512},
-    {0x00610000, 0x008000a1, 0x00040420}      //{128,    128,    0,    32,       0,  128,   32,    64,     512}
-};
-
-static const L3_CONFIG_REGISTER_VALUES BDW_L3_PLANE[BDW_L3_CONFIG_NUM]  =
-{                                                                    // SLM    URB   Rest DC     RO     I/S    C    T      Sum
-    {0x01610000, 0x00080040, 0x00000000},     //{0,    48,    48,    0,    0,    0,    0,    0,    96},
-    {0x00610000, 0x02040040, 0x00000000},     //{0,    48,    0,    16,    32,    0,    0,    0,    96},
-    {0x00610000, 0x02040040, 0x00000000},     //{0,    32,    0,    16,    48,    0,    0,    0,    96},
-    {0x00610000, 0x02040040, 0x00000000},     //{0,    32,    0,    0,    64,    0,    0,    0,    96},
-    {0x00610000, 0x02040040, 0x00000000},     //{0,    32,    64,    0,    0,    0,    0,    0,    96},
-    {0x00610000, 0x02040040, 0x00000000},     //{32,    16,    48,    0,    0,    0,    0,    0,    96},
-    {0x00610000, 0x02040040, 0x00000000},     //{32,    16,    0,    16,    32,    0,    0,    0,    96},
-    {0x00610000, 0x02040040, 0x00000000}      //{32,    16,    0,    32,    16,    0,    0,    0,    96}
-};
-
 /***********START SAMPLER8X8******************/
 //Sampler8x8 data structures
 
@@ -552,43 +470,11 @@ typedef enum _CM_SAMPLER8x8_SURFACE_
     CM_VA_SURFACE = 1
 }CM_SAMPLER8x8_SURFACE;
 
-typedef enum _CM_VA_PLUS_SURFACE_
-{
-    CM_VA_PLUS_OTHER = 0,
-    CM_VA_PLUS_CORRECLATION_SEARCH_SURFACE = 1,
-    CM_VA_PLUS_LBP_CORRELATION_SURFACE = 2
-}CM_VA_PLUS_SURFACE;
-
 typedef enum _CM_SURFACE_ADDRESS_CONTROL_MODE_
 {
     CM_SURFACE_CLAMP = 0,
     CM_SURFACE_MIRROR = 1
 }CM_SURFACE_ADDRESS_CONTROL_MODE;
-
-typedef enum _CM_MESSAGE_SEQUENCE_
-{
-    CM_MS_1x1   = 0,
-    CM_MS_16x1  = 1,
-    CM_MS_16x4  = 2,
-    CM_MS_32x1  = 3,
-    CM_MS_32x4  = 4,
-    CM_MS_64x1  = 5,
-    CM_MS_64x4  = 6
-}CM_MESSAGE_SEQUENCE;
-
-typedef enum _CM_MIN_MAX_FILTER_CONTROL_
-{
-    CM_MIN_FILTER   = 0,
-    CM_MAX_FILTER   = 1,
-    CM_BOTH_FILTER  = 3
-}CM_MIN_MAX_FILTER_CONTROL;
-
-typedef enum _CM_VA_FUNCTION_
-{
-    CM_VA_MINMAXFILTER  = 0,
-    CM_VA_DILATE        = 1,
-    CM_VA_ERODE         = 2
-} CM_VA_FUNCTION;
 
 //GT-PIN
 typedef struct _CM_SURFACE_DETAILS{
@@ -936,31 +822,6 @@ typedef struct _CM_SAMPLER_8X8_DESCR{
     };
 } CM_SAMPLER_8X8_DESCR;
 
-typedef  struct _CM_HAL_AVS_PARAM {
-    CM_AVS_STATE_MSG avs;
-    CM_AVS_INTERNEL_NONPIPLINED_STATE avs_nonpipelined;
-} CM_HAL_AVS_PARAM;
-
-typedef struct _CM_SAMPLER_8X8_STATE {
-    CM_SAMPLER_STATE_TYPE stateType;
-    union {
-        CM_HAL_AVS_PARAM           avs_state;
-        CM_CONVOLVE_STATE_MSG convolve_state;
-        CM_MISC_STATE                  misc_state;
-    };
-} CM_SAMPLER_8X8_STATE;
-
-typedef struct _CM_HAL_SAMPLER_8X8_STATE_PARAM{
-    CM_SAMPLER_8X8_STATE    sampler8x8State;
-    DWORD                              dwHandle;                                       // [out] Handle
-} CM_HAL_SAMPLER_8X8_STATE_PARAM;
-
-//GT-PINS urfaceDetails
-typedef struct _CM_HAL_SURFACE_DETAILS{
-    CM_SAMPLER_8X8_STATE    sampler8x8State;
-    DWORD                   dwHandle;                                       // [out] Handle
-} CM_HAL_SURFACE_DETAILS;
-
 //!
 //! CM Sampler8X8
 //!
@@ -1030,20 +891,20 @@ class CmSurface2D
 {
 public:
     CM_RT_API virtual INT GetIndex( SurfaceIndex*& pIndex ) = 0;
-#ifndef __GNUC__
+#ifdef CM_WIN
     CM_RT_API virtual INT GetD3DSurface( AbstractSurfaceHandle & pD3DSurface) = 0;
-#endif //__GNUC__
+#endif //CM_WIN
     CM_RT_API virtual INT ReadSurface( unsigned char* pSysMem, CmEvent* pEvent, UINT64 sysMemSize = 0xFFFFFFFFFFFFFFFFULL ) = 0;
     CM_RT_API virtual INT WriteSurface( const unsigned char* pSysMem, CmEvent* pEvent, UINT64 sysMemSize = 0xFFFFFFFFFFFFFFFFULL ) = 0;
     CM_RT_API virtual INT ReadSurfaceStride( unsigned char* pSysMem, CmEvent* pEvent, const UINT stride, UINT64 sysMemSize = 0xFFFFFFFFFFFFFFFFULL ) = 0;
     CM_RT_API virtual INT WriteSurfaceStride( const unsigned char* pSysMem, CmEvent* pEvent, const UINT stride, UINT64 sysMemSize = 0xFFFFFFFFFFFFFFFFULL ) = 0;
     CM_RT_API virtual INT InitSurface(const DWORD initValue, CmEvent* pEvent) = 0;
-#ifndef __GNUC__
+#ifdef CM_WIN
     CM_RT_API virtual INT QuerySubresourceIndex(UINT& FirstArraySlice, UINT& FirstMipSlice) = 0;
-#endif //__GNUC__
+#endif //CM_WIN
     CM_RT_API virtual INT SetMemoryObjectControl(MEMORY_OBJECT_CONTROL mem_ctrl, MEMORY_TYPE mem_type, UINT  age) = 0;
     CM_RT_API virtual INT SetSurfaceState(UINT iWidth, UINT iHeight, CM_SURFACE_FORMAT Format, CM_BOUNDARY_PIXEL_MODE boundaryMode) = 0;
-#ifdef __GNUC__
+#ifdef CM_LINUX
     CM_RT_API virtual INT GetVaSurfaceID( VASurfaceID  &iVASurface) = 0;
 #endif
 };
@@ -1105,6 +966,7 @@ public:
     CM_RT_API virtual INT GetIndex( VmeIndex* & pIndex ) = 0 ;
 };
 
+#if defined(CM_WIN)
 namespace CmDx9
 {
     class CmDevice
@@ -1224,7 +1086,7 @@ namespace CmDx11
         CM_RT_API virtual INT CreateSurface2DbySubresourceIndex( ID3D11Texture2D* pD3D11Texture2D, UINT FirstArraySlice, UINT FirstMipSlice, CmSurface2D* &pSurface) = 0;
     };
 };
-
+#else // #if defined(CM_WIN)
 namespace CmLinux
 {
     class CmDevice
@@ -1282,7 +1144,7 @@ namespace CmLinux
         CM_RT_API virtual INT FlushPrintBuffer() = 0;
     };
 };
-
+#endif // #if defined(CM_WIN)
 
 class CmDevice
 {
@@ -1366,18 +1228,18 @@ EXTERN_C CM_RT_API INT CMRT_WaitForEventCallback(CmEvent *pEvent);
 EXTERN_C CM_RT_API INT CMRT_SetEventCallback(CmEvent* pEvent, callback_function function, void* user_data);
 EXTERN_C CM_RT_API INT CMRT_Enqueue(CmQueue* pQueue, CmTask* pTask, CmEvent** pEvent, const CmThreadSpace* pTS = NULL);
 
-#ifndef __GNUC__
+#if defined(CM_WIN)
 INT CreateCmDevice(CmDevice* &pD, UINT& version, IDirect3DDeviceManager9 * pD3DDeviceMgr = NULL, UINT mode = CM_DEVICE_CREATE_OPTION_DEFAULT );
 INT CreateCmDevice(CmDevice* &pD, UINT& version, ID3D11Device * pD3D11Device = NULL, UINT mode = CM_DEVICE_CREATE_OPTION_DEFAULT );
 INT CreateCmDeviceEmu(CmDevice* &pDevice, UINT& version, IDirect3DDeviceManager9 * pD3DDeviceMgr = NULL);
 INT CreateCmDeviceEmu(CmDevice* &pDevice, UINT& version, ID3D11Device * pD3D11Device = NULL);
 INT CreateCmDeviceSim(CmDevice* &pDevice, UINT& version, IDirect3DDeviceManager9 * pD3DDeviceMgr = NULL);
 INT CreateCmDeviceSim(CmDevice* &pDevice, UINT& version, ID3D11Device * pD3D11Device = NULL);
-#else //__GNUC__
+#else //#if defined(CM_WIN)
 INT CreateCmDevice(CmDevice* &pD, UINT& version, VADisplay va_dpy = NULL, UINT mode = CM_DEVICE_CREATE_OPTION_DEFAULT );
 INT CreateCmDeviceEmu(CmDevice* &pDevice, UINT& version, VADisplay va_dpy = NULL);
 INT CreateCmDeviceSim(CmDevice* &pDevice, UINT& version);
-#endif //__GNUC__
+#endif //#if defined(CM_WIN)
 
 INT DestroyCmDevice(CmDevice* &pDevice);
 INT DestroyCmDeviceEmu(CmDevice* &pDevice);
@@ -1389,7 +1251,7 @@ int CreateKernel(CmDevice * device, CmProgram * program, const char * kernelName
 
 #pragma warning(pop)
 
-#ifdef __GNUC__
+#if !defined(CM_WIN)
 #undef LONG
 #undef ULONG
 #endif

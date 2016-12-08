@@ -69,8 +69,6 @@ public:
                                        mfxU32 &numEntryPoints);
     virtual mfxStatus RunFramePAK(mfxPAKInput *in, mfxPAKOutput *out);
 
-    virtual mfxStatus RunSeqHeader(mfxFrameCUC *cuc);
-
 private:
 
     bool                                      m_bInit;

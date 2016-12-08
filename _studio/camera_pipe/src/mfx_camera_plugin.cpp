@@ -703,7 +703,7 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
         }
 #endif
 
-        if (FALLBACK_CM == m_fallback || MFX_HW_HSW == m_platform || MFX_HW_HSW_ULT == m_platform || MFX_HW_BDW == m_platform || MFX_HW_CHV == m_platform)
+        if (FALLBACK_CM == m_fallback || MFX_HW_HSW == m_platform || MFX_HW_HSW_ULT == m_platform || MFX_HW_BDW == m_platform || MFX_HW_CHT == m_platform)
         {
             sts = CMCameraProcessor::Query(in, out);
         }
@@ -1340,7 +1340,7 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
     m_PipeParams.VignetteParams = m_VignetteParams;
     m_PipeParams.par         = *par;
 
-    if (FALLBACK_CM == m_fallback || MFX_HW_HSW == m_platform || MFX_HW_HSW_ULT == m_platform || MFX_HW_BDW == m_platform || MFX_HW_CHV == m_platform)
+    if (FALLBACK_CM == m_fallback || MFX_HW_HSW == m_platform || MFX_HW_HSW_ULT == m_platform || MFX_HW_BDW == m_platform || MFX_HW_CHT == m_platform)
     {
         m_CameraProcessor = new CMCameraProcessor();
     }

@@ -12,10 +12,7 @@
 
 #ifdef UMC_VA_LINUX
 
-#if !defined(NDEBUG)
-# include <cstdio>
-#endif
-
+#include "umc_defs.h"
 #include "umc_va_linux.h"
 #include "umc_va_linux_protected.h"
 #include "umc_va_video_processing.h"
@@ -287,15 +284,19 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
         m_allocator         = pParams->m_allocator;
         m_FrameState        = lvaBeforeBegin;
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         if (IS_PROTECTION_ANY(pParams->m_protectedVA))
         {
             m_protectedVA = new ProtectedVA(pParams->m_protectedVA);
         }
+#endif
 
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
         if (pParams->m_needVideoProcessingVA)
         {
             m_videoProcessingVA = new VideoProcessingVA();
         }
+#endif
 
         // profile or stream type should be set
         if (UNKNOWN == (m_Profile & VA_CODEC))
@@ -341,16 +342,12 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
         }
         if (UMC_OK == umcRes)
         {
-            va_profiles    = (VAProfile*)   ippsMalloc_8u(va_max_num_profiles   *sizeof(VAProfile));
-            va_entrypoints = (VAEntrypoint*)ippsMalloc_8u(va_max_num_entrypoints*sizeof(VAEntrypoint));
-            if ((NULL == va_profiles) || (NULL == va_entrypoints))
-                umcRes = UMC_ERR_ALLOC;
-        }
-        if (UMC_OK == umcRes)
-        {
+            va_profiles    = new VAProfile[va_max_num_profiles];
+            va_entrypoints = new VAEntrypoint[va_max_num_entrypoints];
             va_res = vaQueryConfigProfiles(m_dpy, va_profiles, &va_num_profiles);
             umcRes = va_to_umc_res(va_res);
         }
+
         if (UMC_OK == umcRes)
         {
             // checking support of some profile
@@ -431,6 +428,9 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
 
         if (UMC_OK == umcRes)
         {
+            va_attributes[1].value = VA_DEC_SLICE_MODE_NORMAL;
+
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
             if (m_protectedVA && MFX_PROTECTION_PAVP == m_protectedVA->GetProtected())
             {
                 if (va_attributes[1].value & VA_DEC_SLICE_MODE_BASE)
@@ -441,8 +441,7 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
                 else
                     umcRes = UMC_ERR_FAILED;
             }
-            else
-                va_attributes[1].value = VA_DEC_SLICE_MODE_NORMAL;
+#endif
         }
 
         Ipp32s attribsNumber = 2;
@@ -455,6 +454,7 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
                 attribsNumber++;
         }
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         if (UMC_OK == umcRes && m_protectedVA && IS_PROTECTION_WIDEVINE(m_protectedVA->GetProtected()))
         {
             va_attributes[attribsNumber].type = VAConfigAttribEncryption;
@@ -473,6 +473,7 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
 
             attribsNumber++;
         }
+#endif
 
         if (UMC_OK == umcRes)
         {
@@ -485,8 +486,8 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
             }
         }
 
-        UMC_FREE(va_profiles);
-        UMC_FREE(va_entrypoints);
+        delete[] va_profiles;
+        delete[] va_entrypoints;
     }
 
     // creating context
@@ -537,7 +538,8 @@ Status LinuxVideoAccelerator::Close(void)
             }
             UMC_DELETE(m_pCompBuffers[i]);
         }
-        UMC_FREE(m_pCompBuffers);
+        delete[] m_pCompBuffers;
+        m_pCompBuffers = 0;
     }
     if (NULL != m_dpy)
     {
@@ -556,11 +558,15 @@ Status LinuxVideoAccelerator::Close(void)
         m_dpy = NULL;
     }
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     delete m_protectedVA;
     m_protectedVA = 0;
+#endif
 
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
     delete m_videoProcessingVA;
     m_videoProcessingVA = 0;
+#endif
 
     m_FrameState = lvaBeforeBegin;
     m_uiCompBuffersNum  = 0;
@@ -609,12 +615,7 @@ Status LinuxVideoAccelerator::AllocCompBuffers(void)
         if (NULL == m_pCompBuffers)
         {
             m_uiCompBuffersNum = UMC_VA_NUM_OF_COMP_BUFFERS;
-            m_pCompBuffers = (VACompBuffer**)ippsMalloc_8u(m_uiCompBuffersNum * sizeof(VACompBuffer*));
-            if (NULL == m_pCompBuffers)
-            {
-                m_uiCompBuffersNum = 0;
-                umcRes = UMC_ERR_ALLOC;
-            }
+            m_pCompBuffers = new VACompBuffer*[m_uiCompBuffersNum];
         }
         else
         {
@@ -622,19 +623,12 @@ Status LinuxVideoAccelerator::AllocCompBuffers(void)
             VACompBuffer** pNewCompBuffers = NULL;
 
             uiNewCompBuffersNum = m_uiCompBuffersNum + UMC_VA_NUM_OF_COMP_BUFFERS;
-            pNewCompBuffers = (VACompBuffer**)ippsMalloc_8u(uiNewCompBuffersNum * sizeof(VACompBuffer*));
+            pNewCompBuffers = new VACompBuffer*[uiNewCompBuffersNum];
 
-            if (NULL == pNewCompBuffers)
-            {
-                umcRes = UMC_ERR_ALLOC;
-            }
-            else
-            {
-                ippsCopy_8u((const Ipp8u*)m_pCompBuffers, (Ipp8u*)pNewCompBuffers, m_uiCompBuffersNum*sizeof(VACompBuffer*));
-                ippsFree(m_pCompBuffers);
-                m_uiCompBuffersNum = uiNewCompBuffersNum;
-                m_pCompBuffers = pNewCompBuffers;
-            }
+            MFX_INTERNAL_CPY((Ipp8u*)pNewCompBuffers, (const Ipp8u*)m_pCompBuffers, m_uiCompBuffersNum*sizeof(VACompBuffer*));
+            delete[] m_pCompBuffers;
+            m_uiCompBuffersNum = uiNewCompBuffersNum;
+            m_pCompBuffers = pNewCompBuffers;
         }
     }
     return umcRes;
@@ -750,13 +744,10 @@ VACompBuffer* LinuxVideoAccelerator::GetCompBufferHW(Ipp32s type, Ipp32s size, I
     if (VA_STATUS_SUCCESS == va_res)
     {
         pCompBuffer = new VACompBuffer();
-        if (NULL != pCompBuffer)
-        {
-            pCompBuffer->SetBufferPointer(buffer, buffer_size);
-            pCompBuffer->SetDataSize(0);
-            pCompBuffer->SetBufferInfo(type, id, index);
-            pCompBuffer->SetDestroyStatus(true);
-        }
+        pCompBuffer->SetBufferPointer(buffer, buffer_size);
+        pCompBuffer->SetDataSize(0);
+        pCompBuffer->SetBufferInfo(type, id, index);
+        pCompBuffer->SetDestroyStatus(true);
     }
     return pCompBuffer;
 }
@@ -927,14 +918,7 @@ Ipp16u LinuxVideoAccelerator::GetDecodingError()
             {
                 for (int i = 0; pVaDecErr[i].status != -1; ++i)
                 {
-                    if (VADecodeMBError == pVaDecErr[i].decode_error_type)
-                    {
-                        error = MFX_CORRUPTION_MAJOR; // beh expect MAJOR, not MINOR;
-                    }
-                    else
-                    {
-                        error = MFX_CORRUPTION_MAJOR;
-                    }
+                    error = MFX_CORRUPTION_MAJOR;
                 }
             }
             else
@@ -987,9 +971,6 @@ void LinuxVideoAccelerator::SetTraceStrings(Ipp32u umc_codec)
     }
 }
 
-// NOTE This function enables polling synchronization and was replaced by 'SyncTask' which
-// implements blopcking synchronization. If you encounter this function call - something
-// is WRONG!!
 Status LinuxVideoAccelerator::QueryTaskStatus(Ipp32s FrameBufIndex, void * status, void * error)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "QueryTaskStatus");
@@ -1057,7 +1038,6 @@ Status LinuxVideoAccelerator::SyncTask(Ipp32s FrameBufIndex, void *surfCorruptio
     }
     if (VA_STATUS_ERROR_OPERATION_FAILED == va_sts)
     {
-        // WA for HSD10044508
         if (surfCorruption) *(Ipp16u*)surfCorruption = MFX_CORRUPTION_MAJOR;
         return UMC_OK;
     }

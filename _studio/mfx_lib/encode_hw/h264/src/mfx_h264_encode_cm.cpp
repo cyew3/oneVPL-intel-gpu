@@ -519,7 +519,7 @@ namespace MfxHwH264EncodeHW
     {
         mfxU32 base  = val & 0xf;
         mfxU32 shift = (val >> 4) & 0xf;
-        assert((base << shift) < (1 << 12)); // encoded value must fit in 12-bits (Bspec)
+        assert((base << shift) < (1 << 12)); // encoded value must fit in 12-bits
         return base << shift;
     }
 
@@ -552,20 +552,6 @@ namespace MfxHwH264EncodeHW
         for (mfxU32 i = 33; i < 64; i++)
             lutMv[i] = lutMv[32] + ((lutMv[64] - lutMv[32]) * (i - 32) >> 5);
     }
-
-/*
-    mfxU16 GetVmeMvCost(
-        mfxU32 const         lutMv[65],
-        SVCPAKObject const & mb,
-        mfxI16Pair const     mv[32])
-    {
-        mfxU32 diffx = abs(mb.costCenter0X - mv[0].x) >> 2;
-        mfxU32 diffy = abs(mb.costCenter0Y - mv[0].y) >> 2;
-        mfxU32 costx = diffx > 64 ? lutMv[64] + ((diffx - 64) >> 2) : lutMv[diffx];
-        mfxU32 costy = diffy > 64 ? lutMv[64] + ((diffy - 64) >> 2) : lutMv[diffy];
-        return mfxU16(IPP_MIN(0x3ff, costx + costy));
-    }
-*/
 
     mfxU16 GetVmeMvCostP(
         mfxU32 const         lutMv[65],
@@ -837,12 +823,14 @@ void CmContext::Setup(
         m_programHist = ReadProgram(m_device, genx_hsw_histogram, SizeOf(genx_hsw_histogram));
         break;
     case MFX_HW_BDW:
-    case MFX_HW_CHV:
+    case MFX_HW_CHT:
         m_program = ReadProgram(m_device, genx_bdw_simple_me, SizeOf(genx_bdw_simple_me));
         break;
     case MFX_HW_SCL:
+#ifndef MFX_CLOSED_PLATFORMS_DISABLE
     case MFX_HW_BXT:
     case MFX_HW_KBL:
+#endif
         m_program = ReadProgram(m_device, genx_skl_simple_me, SizeOf(genx_skl_simple_me));
         m_programHist = ReadProgram(m_device, genx_skl_histogram, SizeOf(genx_skl_histogram));
         break;
@@ -1593,7 +1581,7 @@ void CmContext::SetCurbeData(
     curbeData.Intra8x8ModeMask                = 0;
     //DW31
     curbeData.Intra16x16ModeMask              = 0;
-    curbeData.IntraChromaModeMask             = 1; // 0; !sergo: 1 means Luma only
+    curbeData.IntraChromaModeMask             = 1; // 0; 1 means Luma only
     curbeData.IntraComputeType                = 0;
     //DW32
     curbeData.SkipVal                         = skipVal;
@@ -1610,11 +1598,11 @@ void CmContext::SetCurbeData(
     curbeData.SmallMbSizeInWord               = 0xFF;
     curbeData.LargeMbSizeInWord               = 0xFF;
     //DW36
-    curbeData.HMECombineOverlap               = 1;  //  0;  !sergo
-    curbeData.HMERefWindowsCombiningThreshold = (task.m_type[ffid] & MFX_FRAMETYPE_B) ? 8 : 16; //  0;  !sergo (should be =8 for B frames)
+    curbeData.HMECombineOverlap               = 1;  //  0;
+    curbeData.HMERefWindowsCombiningThreshold = (task.m_type[ffid] & MFX_FRAMETYPE_B) ? 8 : 16; //  0;  (should be =8 for B frames)
     curbeData.CheckAllFractionalEnable        = 0;
     //DW37
-    curbeData.CurLayerDQId                    = LaDSenumToFactor(extOpt2->LookAheadDS);  // 0; !sergo use 8 bit as LaScaleFactor
+    curbeData.CurLayerDQId                    = LaDSenumToFactor(extOpt2->LookAheadDS);  // 0; use 8 bit as LaScaleFactor
     curbeData.TemporalId                      = 0;
     curbeData.NoInterLayerPredictionFlag      = 1;
     curbeData.AdaptivePredictionFlag          = 0;

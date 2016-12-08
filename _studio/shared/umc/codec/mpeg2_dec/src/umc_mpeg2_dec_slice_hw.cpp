@@ -47,7 +47,7 @@ static const VLCEntry MBAddrIncrTabB1_1[16] = {
 static const VLCEntry MBAddrIncrTabB1_2[104] = {
     {33, 11}, {32, 11}, {31, 11}, {30, 11}, {29, 11}, {28, 11}, {27, 11}, {26, 11}, {25, 11}, {24, 11}, {23, 11}, {22, 11}, {21, 10}, {21, 10}, {20, 10}, {20, 10}, {19, 10}, {19, 10}, {18, 10}, {18, 10}, {17, 10}, {17, 10}, {16, 10}, {16, 10}, {15, 8}, {15, 8}, {15, 8}, {15, 8}, {15, 8}, {15, 8}, {15, 8}, {15, 8}, {14, 8}, {14, 8}, {14, 8}, {14, 8}, {14, 8}, {14, 8}, {14, 8}, {14, 8}, {13, 8}, {13, 8}, {13, 8}, {13, 8}, {13, 8}, {13, 8}, {13, 8}, {13, 8}, {12, 8}, {12, 8}, {12, 8}, {12, 8}, {12, 8}, {12, 8}, {12, 8}, {12, 8}, {11, 8}, {11, 8}, {11, 8}, {11, 8}, {11, 8}, {11, 8}, {11, 8}, {11, 8}, {10, 8}, {10, 8}, {10, 8}, {10, 8}, {10, 8}, {10, 8}, {10, 8}, {10, 8}, {9, 7}, {9, 7}, {9, 7}, {9, 7}, {9, 7}, {9, 7}, {9, 7}, {9, 7}, {9, 7}, {9, 7}, {9, 7}, {9, 7}, {9, 7}, {9, 7}, {9, 7}, {9, 7}, {8, 7}, {8, 7}, {8, 7}, {8, 7}, {8, 7}, {8, 7}, {8, 7}, {8, 7}, {8, 7}, {8, 7}, {8, 7}, {8, 7}, {8, 7}, {8, 7}, {8, 7}, {8, 7}};
 
-Ipp32s DecoderMBInc(IppVideoContext  *video)
+Ipp32s DecoderMBInc(VideoContext  *video)
 {
     Ipp32s macroblock_address_increment = 0;
     Ipp32s cc;
@@ -276,17 +276,12 @@ Status MPEG2VideoDecoderHW::Init(BaseCodecParams *pInit)
     return MPEG2VideoDecoderBase::Init(init);
 }
 
-Status MPEG2VideoDecoderHW::DecodeSliceHeader(IppVideoContext *video, int task_num)
+Status MPEG2VideoDecoderHW::DecodeSliceHeader(VideoContext *video, int task_num)
 {
     Ipp32u extra_bit_slice;
     Ipp32u code;
-#if defined(UMC_VA_DXVA) || defined(UMC_VA_LINUX)
     Ipp32s bytes_remain = 0;
     Ipp32s bit_pos = 0;
-#if defined(UMC_VA_LINUX)
-    Ipp32u start_code;
-#endif
-#endif
     bool isCorrupted = false;
 
     if (!video)
@@ -296,12 +291,11 @@ Status MPEG2VideoDecoderHW::DecodeSliceHeader(IppVideoContext *video, int task_n
 
     FIND_START_CODE(video->bs, code)
 #if defined(UMC_VA_LINUX)
-    start_code = code;
+    Ipp32u start_code = code;
 #endif
 
     if(code == (Ipp32u)UMC_ERR_NOT_ENOUGH_DATA)
     {
-#if defined(UMC_VA_DXVA) || defined(UMC_VA_LINUX)
         if (VA_VLD_W == pack_w.va_mode && false == pack_w.IsProtectedBS)
         {
             // update latest slice information
@@ -328,19 +322,19 @@ Status MPEG2VideoDecoderHW::DecodeSliceHeader(IppVideoContext *video, int task_n
             //fprintf(otl, "slice_data_size %x in DecodeSliceHeader(%d)\n", pack_w.pSliceInfo[-1].slice_data_size, __LINE__);
 #endif
         }
-#endif
 
         SKIP_TO_END(video->bs);
 
         return UMC_ERR_NOT_ENOUGH_DATA;
     }
 
-#if defined(UMC_VA_DXVA) || defined(UMC_VA_LINUX)
     if(pack_w.va_mode == VA_VLD_W) {
         // start of slice code
         bytes_remain = (Ipp32s)GET_REMAINED_BYTES(video->bs);
         bit_pos = (Ipp32s)GET_BIT_OFFSET(video->bs);
 #ifdef UMC_VA_DXVA
+
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
         if(pack_w.IsProtectedBS && pack_w.pSliceInfo == pack_w.pSliceInfoBuffer)
         {
             Status sts=CheckData(pack_w.curr_encryptedData,
@@ -348,25 +342,28 @@ Status MPEG2VideoDecoderHW::DecodeSliceHeader(IppVideoContext *video, int task_n
                 if(sts < 0)
                     return sts;
         }
+#endif
+
         if(pack_w.pSliceInfo > pack_w.pSliceInfoBuffer)
         {
              Ipp32s dsize = 0;
              Ipp32u overlap = pack_w.overlap;
              pack_w.pSliceInfo[-1].dwSliceBitsInBuffer -= bytes_remain*8;
-             if(!pack_w.IsProtectedBS)
-             {
-                dsize = pack_w.pSliceInfo[-1].dwSliceBitsInBuffer/8;
-                pack_w.bs_size = pack_w.pSliceInfo[-1].dwSliceDataLocation + dsize;
-             }
-             else
+
+             dsize = pack_w.pSliceInfo[-1].dwSliceBitsInBuffer/8;
+             pack_w.bs_size = pack_w.pSliceInfo[-1].dwSliceDataLocation + dsize;
+
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
+             if(pack_w.IsProtectedBS)
              {
                 dsize = SliceSize(pack_w.curr_encryptedData,
                      (PAVP_COUNTER_TYPE)(pack_w.m_va->GetProtectedVA())->GetCounterMode(),
                      overlap);
                 overlap = overlap - pack_w.overlap;
                 pack_w.overlap += overlap;
-                 pack_w.bs_size += dsize;
+                pack_w.bs_size += dsize;
              }
+#endif
 
             if(pack_w.bs_size >= pack_w.bs_size_getting ||
                 (Ipp32s)((Ipp8u*)pack_w.pSliceInfo - (Ipp8u*)pack_w.pSliceInfoBuffer) >= (Ipp32s)(pack_w.slice_size_getting-sizeof(DXVA_SliceInfo)))
@@ -384,6 +381,7 @@ Status MPEG2VideoDecoderHW::DecodeSliceHeader(IppVideoContext *video, int task_n
 
                 if(pack_w.pSliceInfoBuffer < pack_w.pSliceInfo)
                 {
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
                     if(pack_w.IsProtectedBS)
                     {
                         Ipp32s NumSlices = pack_w.pSliceInfo - pack_w.pSliceInfoBuffer;
@@ -428,7 +426,7 @@ Status MPEG2VideoDecoderHW::DecodeSliceHeader(IppVideoContext *video, int task_n
                                 alignedSize = alignedSize+(0x10 - (alignedSize & 0xf));
                                 if(i < NumSlices - 1)
                                 {
-                                ippsCopy_8u(encryptedData->Data ,pBuf, alignedSize);
+                                MFX_INTERNAL_CPY(pBuf, encryptedData->Data, alignedSize);
                                 Ipp32u diff = (Ipp32u)(ptr - pBuf);
                                 ptr += alignedSize - diff;
                                 Ipp64u counter1 = encryptedData->CipherCounter.Count;
@@ -456,16 +454,16 @@ Status MPEG2VideoDecoderHW::DecodeSliceHeader(IppVideoContext *video, int task_n
                             }
                             else
                             {
-                                ippsCopy_8u(encryptedData->Data,pBuf, sz_align - sz);
+                                MFX_INTERNAL_CPY(pBuf, encryptedData->Data,sz_align - sz);
                             }
 
                                 encryptedData = encryptedData->Next;
                             }
                             ptr = &buf[0] + sz_align - 16;
-                            ippsCopy_8u(pack_w.add_bytes,ptr, (sz - (sz_align - 16)));
+                            MFX_INTERNAL_CPY(ptr, pack_w.add_bytes,(sz - (sz_align - 16)));
                         }
                     }
-
+#endif
 
 mm:                 Ipp32s numMB = (PictureHeader[task_num].picture_structure == FRAME_PICTURE) ?
                                         sequenceHeader.numMB[task_num] : sequenceHeader.numMB[task_num]/2;
@@ -500,17 +498,17 @@ mm:                 Ipp32s numMB = (PictureHeader[task_num].picture_structure ==
                 memcpy_s(&pack_w.pSliceInfo[0],sizeof(DXVA_SliceInfo),&s_info,sizeof(DXVA_SliceInfo));
                 pack_w.pSliceStart += pack_w.pSliceInfo[0].dwSliceDataLocation;
                 pack_w.pSliceInfo[0].dwSliceDataLocation = 0;
-                if(!pack_w.IsProtectedBS)
+
+                pack_w.bs_size = pack_w.pSliceInfo[0].dwSliceBitsInBuffer/8;
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
+                if (pack_w.IsProtectedBS)
                 {
-                    pack_w.bs_size = pack_w.pSliceInfo[0].dwSliceBitsInBuffer/8;
+                    pack_w.bs_size = pack_w.add_to_slice_start;
+                    pack_w.bs_size += SliceSize(pack_w.curr_encryptedData,
+                        (PAVP_COUNTER_TYPE)(pack_w.m_va->GetProtectedVA())->GetCounterMode(),
+                        pack_w.overlap);
                 }
-                else
-                {
-                        pack_w.bs_size = pack_w.add_to_slice_start;
-                        pack_w.bs_size += SliceSize(pack_w.curr_encryptedData,
-                            (PAVP_COUNTER_TYPE)(pack_w.m_va->GetProtectedVA())->GetCounterMode(),
-                            pack_w.overlap);
-                }
+#endif
 
                 if(pack_w.bs_size >= pack_w.bs_size_getting)
                 {
@@ -532,8 +530,10 @@ mm:                 Ipp32s numMB = (PictureHeader[task_num].picture_structure ==
 
                 pack_w.pSliceInfo++;
             }
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
             if(pack_w.IsProtectedBS)
                 pack_w.curr_encryptedData = pack_w.curr_encryptedData->Next;
+#endif
         }
         else
         {
@@ -558,7 +558,6 @@ mm:                 Ipp32s numMB = (PictureHeader[task_num].picture_structure ==
         }
 #endif
     }
-#endif
 
     if(code == PICTURE_START_CODE ||
        code > 0x1AF)
@@ -632,18 +631,10 @@ mm:                 Ipp32s numMB = (PictureHeader[task_num].picture_structure ==
       pack_w.pSliceInfo->bStartCodeBitOffset = 0;
       pack_w.pSliceInfo->wQuantizerScaleCode = (WORD)video->cur_q_scale;
       pack_w.pSliceInfo->wBadSliceChopping = 0;
-#ifdef ELK
       pack_w.pSliceInfo->wHorizontalPosition = 0;
-#else
-      pack_w.pSliceInfo->wHorizontalPosition = 1;
-#endif
       pack_w.pSliceInfo->dwSliceBitsInBuffer = bytes_remain*8;
       // assume slices are ordered
-#ifdef ELK
       pack_w.pSliceInfo->wNumberMBsInSlice = (WORD)sequenceHeader.mb_width[task_num];
-#else
-      pack_w.pSliceInfo->wNumberMBsInSlice = 0;//sequenceHeader.mb_width;
-#endif
 
       pack_w.pSliceInfo->bReservedBits = 0;
       pack_w.pSliceInfo->wBadSliceChopping = 0;
@@ -709,7 +700,7 @@ mm:                 Ipp32s numMB = (PictureHeader[task_num].picture_structure ==
     return UMC_OK;
 }
 
-Status MPEG2VideoDecoderHW::DecodeSlice(IppVideoContext  *video, int task_num)
+Status MPEG2VideoDecoderHW::DecodeSlice(VideoContext  *video, int task_num)
 {
 #if defined UMC_VA_DXVA
     Ipp32s macroblock_address_increment = 1;
@@ -780,21 +771,17 @@ Status MPEG2VideoDecoderHW::PostProcessFrame(int display_index, int task_num)
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MPEG2VideoDecoderBase::PostProcessFrame");
     Status umcRes = UMC_OK;
 
-#if defined(UMC_VA_DXVA) || defined(UMC_VA_LINUX)
-
       if(pack_w.va_mode != VA_NO)
       {
-          bool executeCalled = false;
           if(pack_w.pSliceInfoBuffer < pack_w.pSliceInfo && pack_w.va_mode == VA_VLD_W)
           {
              // printf("save data at the end of frame\n");
 #   if defined(UMC_VA_DXVA)   // part 1
-             if(!pack_w.IsProtectedBS)
-             {
-                pack_w.bs_size = pack_w.pSliceInfo[-1].dwSliceDataLocation +
-                              pack_w.pSliceInfo[-1].dwSliceBitsInBuffer/8;
-             }
-             else
+             
+             pack_w.bs_size = pack_w.pSliceInfo[-1].dwSliceDataLocation + pack_w.pSliceInfo[-1].dwSliceBitsInBuffer/8;
+
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
+             if(pack_w.IsProtectedBS)
              {
                  pack_w.bs_size += SliceSize(
                      pack_w.curr_encryptedData,
@@ -802,6 +789,7 @@ Status MPEG2VideoDecoderHW::PostProcessFrame(int display_index, int task_num)
                      pack_w.overlap);
                  pack_w.is_bs_aligned_16 = true;
              }
+#endif
 
              // printf("pack_w.bs_size = %d\n", pack_w.bs_size);
              // printf("pack_w.bs_size_getting = %d\n", pack_w.bs_size_getting);
@@ -822,6 +810,7 @@ Status MPEG2VideoDecoderHW::PostProcessFrame(int display_index, int task_num)
                 if(pack_w.pSliceInfoBuffer < pack_w.pSliceInfo)
                 {
 
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
                     if(pack_w.IsProtectedBS)
                     {
                         Ipp32s NumSlices = (Ipp32s)(pack_w.pSliceInfo - pack_w.pSliceInfoBuffer);
@@ -867,7 +856,7 @@ Status MPEG2VideoDecoderHW::PostProcessFrame(int display_index, int task_num)
                                     alignedSize = alignedSize+(0x10 - (alignedSize & 0xf));
                                 if(i < NumSlices - 1)
                                 {
-                                    ippsCopy_8u(encryptedData->Data ,pBuf, alignedSize);
+                                    MFX_INTERNAL_CPY(pBuf, encryptedData->Data ,alignedSize);
                                     Ipp32u diff = (Ipp32u)(ptr - pBuf);
                                     ptr += alignedSize - diff;
 
@@ -876,15 +865,16 @@ Status MPEG2VideoDecoderHW::PostProcessFrame(int display_index, int task_num)
                                 }
                                 else
                                 {
-                                    ippsCopy_8u(encryptedData->Data,pBuf, sz_align - sz);
+                                    MFX_INTERNAL_CPY(pBuf, encryptedData->Data,sz_align - sz);
                                 }
 
                                 encryptedData = encryptedData->Next;
                             }
                             ptr = &buf[0] + sz_align - 16;
-                            ippsCopy_8u(pack_w.add_bytes,ptr, (sz - (sz_align - 16)));
+                            MFX_INTERNAL_CPY(ptr, pack_w.add_bytes,(sz - (sz_align - 16)));
                         }
                     }
+#endif
 #   elif defined UMC_VA_LINUX  // (part1)
 
             pack_w.bs_size = pack_w.pSliceInfo[-1].slice_data_offset
@@ -947,11 +937,9 @@ mm:
                 pack_w.pSliceStart += pack_w.pSliceInfo[0].dwSliceDataLocation;
                 pack_w.pSliceInfo[0].dwSliceDataLocation = 0;
 
-                if(!pack_w.IsProtectedBS)
-                {
-                    pack_w.bs_size = pack_w.pSliceInfo[0].dwSliceBitsInBuffer/8;
-                }
-                else
+                pack_w.bs_size = pack_w.pSliceInfo[0].dwSliceBitsInBuffer/8;
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
+                if(pack_w.IsProtectedBS)
                 {
                     pack_w.bs_size = pack_w.add_to_slice_start;
                     pack_w.bs_size += SliceSize(
@@ -960,6 +948,7 @@ mm:
                         pack_w.overlap);
                     pack_w.curr_encryptedData = pack_w.curr_encryptedData->Next;
                 }
+#endif
 
                 if(pack_w.bs_size >= pack_w.bs_size_getting)
                 {
@@ -1038,13 +1027,6 @@ mm:
                   return UMC_ERR_NOT_ENOUGH_BUFFER;
 
               umcRes = pack_w.m_va->Execute();
-              executeCalled = true;
-              if (UMC_OK != umcRes)
-                  return UMC_ERR_DEVICE_FAILED;
-          }
-          if (!executeCalled)
-          {
-              umcRes = pack_w.m_va->ReleaseAllBuffers();
               if (UMC_OK != umcRes)
                   return UMC_ERR_DEVICE_FAILED;
           }
@@ -1062,8 +1044,6 @@ mm:
 
           return UMC_OK;
       }//if(pack_w.va_mode != VA_NO)
-
-#endif // defined(UMC_VA_DXVA) || defined(UMC_VA_LINUX)
 
     if (PictureHeader[task_num].picture_structure != FRAME_PICTURE &&
           frame_buffer.field_buffer_index[task_num] == 0)
@@ -1085,7 +1065,7 @@ void MPEG2VideoDecoderHW::quant_matrix_extension(int task_num)
 {
     Ipp32s i;
     Ipp32u code;
-    IppVideoContext* video = Video[task_num][0];
+    VideoContext* video = Video[task_num][0];
     Ipp32s load_intra_quantizer_matrix, load_non_intra_quantizer_matrix, load_chroma_intra_quantizer_matrix, load_chroma_non_intra_quantizer_matrix;
     Ipp8u q_matrix[4][64];
 

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFX_COMMON_INT_H__
@@ -132,23 +132,5 @@ private:
     // Deny copy constructor
     mfxVideoParamWrapper(const mfxVideoParamWrapper &);
 };
-
-/*
-#pragma warning(disable: 4127)
-template<typename T1, typename T2>
-#if defined(__GNUC__)
-__attribute__((always_inline))
-#else
-inline
-#endif
-mfxU32 memcpy_s(T1* pDst, T2* pSrc)
-{
-    if (sizeof(T1) != sizeof(T2))
-        return 0;
-
-    ippsCopy_8u((Ipp8u*)pSrc, (Ipp8u*)pDst, sizeof(T1));
-    return sizeof(T1);
-}
-*/
 
 #endif

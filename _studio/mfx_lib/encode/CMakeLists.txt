@@ -1,7 +1,7 @@
 set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
 
 list( APPEND vdirs
-  h264 ih265 mjpeg mpeg2 vc1 
+  h264 ih265 mjpeg mpeg2
   )
 list( APPEND cdirs
   mpeg2_enc h264_enc jpeg_enc color_space_converter brc 

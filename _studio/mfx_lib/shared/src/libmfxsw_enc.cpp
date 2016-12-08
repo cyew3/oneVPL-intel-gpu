@@ -43,11 +43,6 @@
 
 #else //MFX_VA
 
-#ifdef MFX_ENABLE_VC1_VIDEO_ENC
-#include "mfx_vc1_enc_defs.h"
-#include "mfx_vc1_enc_enc.h"
-#endif
-
 #ifdef MFX_ENABLE_MPEG2_VIDEO_ENC
 #include "mfx_mpeg2_enc.h"
 #endif
@@ -97,12 +92,6 @@ VideoENC *CreateENCSpecificClass(mfxVideoParam *par, VideoCORE *pCore)
         break;
 #endif
 
-#ifdef MFX_ENABLE_VC1_VIDEO_ENC
-    case MFX_CODEC_VC1:
-        pENC = new MFXVideoEncVc1(pCore, &mfxRes);
-        break;
-#endif // MFX_ENABLE_VC1_VIDEO_ENC
-
 #if defined (MFX_ENABLE_MPEG2_VIDEO_ENC) && !defined(MFX_VA)
     case MFX_CODEC_MPEG2:
         pENC = new MFXVideoENCMPEG2(pCore, &mfxRes);
@@ -149,12 +138,6 @@ mfxStatus MFXVideoENC_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam
 #endif
         switch (out->mfx.CodecId)
         {
-#ifdef MFX_ENABLE_VC1_VIDEO_ENC
-        case MFX_CODEC_VC1:
-            mfxRes = MFXVideoEncVc1::Query(in, out);
-            break;
-#endif
-
 #if (defined (MFX_ENABLE_H264_VIDEO_ENC) && !defined (MFX_VA)) || \
     (defined (MFX_ENABLE_H264_VIDEO_ENC_HW) || defined(MFX_ENABLE_LA_H264_VIDEO_HW) || defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC))&& defined (MFX_VA)
         case MFX_CODEC_AVC:
@@ -224,12 +207,6 @@ mfxStatus MFXVideoENC_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfxFra
 #endif
         switch (par->mfx.CodecId)
         {
-
-#ifdef MFX_ENABLE_VC1_VIDEO_ENC
-        case MFX_CODEC_VC1:
-            mfxRes = MFXVideoEncVc1::QueryIOSurf(par, request);
-            break;
-#endif
 
 #if defined (MFX_ENABLE_H264_VIDEO_ENC) && !defined (MFX_VA) || (defined (MFX_ENABLE_H264_VIDEO_ENC_HW) || defined(MFX_ENABLE_LA_H264_VIDEO_HW))&& defined (MFX_VA)
         case MFX_CODEC_AVC:
@@ -373,40 +350,6 @@ mfxStatus MFXVideoENC_Close(mfxSession session)
 } // mfxStatus MFXVideoENC_Close(mfxSession session)
 
 static
-mfxStatus MFXVideoENCLegacyRoutine(void *pState, void *pParam,
-                                   mfxU32 threadNumber, mfxU32 callNumber)
-{
-    VideoENC *pENC = (VideoENC *) pState;
-    VideoBRC *pBRC;
-    MFX_THREAD_TASK_PARAMETERS *pTaskParam = (MFX_THREAD_TASK_PARAMETERS *) pParam;
-    mfxStatus mfxRes;
-
-    // touch unreferenced parameter(s)
-    callNumber = callNumber;
-
-    // check error(s)
-    if ((NULL == pState) ||
-        (NULL == pParam) ||
-        (0 != threadNumber))
-    {
-        return MFX_ERR_NULL_PTR;
-    }
-
-    // get the BRC pointer
-    pBRC = (VideoBRC *) pTaskParam->enc.pBRC;
-
-    // call the obsolete method
-    mfxRes = pBRC->FrameENCUpdate(pTaskParam->enc.cuc);
-    if (MFX_ERR_NONE == mfxRes)
-    {
-        mfxRes = pENC->RunFrameVmeENC(pTaskParam->enc.cuc);
-    }
-
-    return mfxRes;
-
-} // mfxStatus MFXVideoENCLegacyRoutine(void *pState, void *pParam,
-
-static
 mfxStatus MFXVideoENCLegacyRoutineExt(void *pState, void *pParam,
                                    mfxU32 threadNumber, mfxU32 callNumber)
 {
@@ -423,91 +366,8 @@ mfxStatus MFXVideoENCLegacyRoutineExt(void *pState, void *pParam,
     {
         return MFX_ERR_NULL_PTR;
     }
-    return pENC->RunFrameVmeENC(pTaskParam->enc_ext.in, pTaskParam->enc_ext.out);
-} // mfxStatus MFXVideoENCLegacyRoutine(void *pState, void *pParam,
-
-
-mfxStatus MFXVideoENC_RunFrameVmeENCAsync(mfxSession session, mfxFrameCUC *cuc, mfxSyncPoint *syncp)
-{
-    mfxStatus mfxRes;
-
-    MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
-    MFX_CHECK(session->m_pENC.get(), MFX_ERR_NOT_INITIALIZED);
-    MFX_CHECK(syncp, MFX_ERR_NULL_PTR);
-
-    try
-    {
-        mfxSyncPoint syncPoint = NULL;
-        MFX_TASK task;
-
-        // unfortunately, we have to check error(s),
-        // because several members are not used in the sync part
-        if (NULL == session->m_pENC.get())
-        {
-            return MFX_ERR_NOT_INITIALIZED;
-        }
-
-        memset(&task, 0, sizeof(MFX_TASK));
-        mfxRes = session->m_pENC->RunFrameVmeENCCheck(cuc, &task.entryPoint);
-        // source data is OK, go forward
-        if (MFX_ERR_NONE == mfxRes)
-        {
-            // prepare the absolete kind of task.
-            // it is absolete and must be removed.
-            if (NULL == task.entryPoint.pRoutine)
-            {
-                // BEGIN OF OBSOLETE PART
-                task.bObsoleteTask = true;
-                // fill task info
-                task.entryPoint.pRoutine = &MFXVideoENCLegacyRoutine;
-                task.entryPoint.pState = session->m_pENC.get();
-                task.entryPoint.requiredNumThreads = 1;
-
-                // fill legacy parameters
-                task.obsolete_params.enc.cuc = cuc;
-                task.obsolete_params.enc.pBRC = session->m_pBRC.get();
-
-            } // END OF OBSOLETE PART
-
-            task.pOwner = session->m_pENC.get();
-            task.priority = session->m_priority;
-            task.threadingPolicy = session->m_pENC->GetThreadingPolicy();
-            // fill dependencies
-            task.pSrc[0] = cuc;
-            task.pDst[0] = cuc;
-
-            // register input and call the task
-            mfxRes = session->m_pScheduler->AddTask(task, &syncPoint);
-
-        }
-
-        // return pointer to synchronization point
-        *syncp = syncPoint;
-    }
-    // handle error(s)
-    catch(MFX_CORE_CATCH_TYPE)
-    {
-        // set the default error value
-        mfxRes = MFX_ERR_UNKNOWN;
-        if (0 == session)
-        {
-            mfxRes = MFX_ERR_INVALID_HANDLE;
-        }
-        else if (0 == session->m_pENC.get())
-        {
-            mfxRes = MFX_ERR_NOT_INITIALIZED;
-        }
-        else if (0 == syncp)
-        {
-            return MFX_ERR_NULL_PTR;
-        }
-    }
-
-    return mfxRes;
-
-} // mfxStatus MFXVideoENC_RunFrameVmeENCAsync(mfxSession session, mfxFrameCUC *cuc, mfxSyncPoint *syncp)
-
-
+    return pENC->RunFrameVmeENC(pTaskParam->enc.in, pTaskParam->enc.out);
+}
 
 enum
 {
@@ -538,7 +398,7 @@ mfxStatus  MFXVideoENC_ProcessFrameAsync(mfxSession session, mfxENCInput *in, mf
         if ((MFX_ERR_NONE == mfxRes) ||
             (MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == mfxRes) ||
             (MFX_WRN_OUT_OF_RANGE == mfxRes) ||
-            (MFX_ERR_MORE_DATA_RUN_TASK == static_cast<int>(mfxRes)) ||
+            (MFX_ERR_MORE_DATA_SUBMIT_TASK == static_cast<int>(mfxRes)) ||
             (MFX_ERR_MORE_BITSTREAM == mfxRes))
         {
             // prepare the absolete kind of task.
@@ -555,8 +415,8 @@ mfxStatus  MFXVideoENC_ProcessFrameAsync(mfxSession session, mfxENCInput *in, mf
                 task.entryPoint.requiredNumThreads = 1;
 
                 // fill legacy parameters
-                task.obsolete_params.enc_ext.in = in;
-                task.obsolete_params.enc_ext.out = out;
+                task.obsolete_params.enc.in = in;
+                task.obsolete_params.enc.out = out;
 
                 task.priority = session->m_priority;
                 task.threadingPolicy = pEnc->GetThreadingPolicy();
@@ -618,7 +478,7 @@ mfxStatus  MFXVideoENC_ProcessFrameAsync(mfxSession session, mfxENCInput *in, mf
             }
 
             // IT SHOULD BE REMOVED
-            if (MFX_ERR_MORE_DATA_RUN_TASK == static_cast<int>(mfxRes))
+            if (MFX_ERR_MORE_DATA_SUBMIT_TASK == static_cast<int>(mfxRes))
             {
                 mfxRes = MFX_ERR_MORE_DATA;
                 syncPoint = NULL;
@@ -650,7 +510,7 @@ mfxStatus  MFXVideoENC_ProcessFrameAsync(mfxSession session, mfxENCInput *in, mf
 
     return mfxRes;
 
-} // mfxStatus MFXVideoENC_RunFrameVmeENCAsync(mfxSession session, mfxFrameCUC *cuc, mfxSyncPoint *syncp)
+} // MFXVideoENC_ProcessFrameAsync
 
 
 //

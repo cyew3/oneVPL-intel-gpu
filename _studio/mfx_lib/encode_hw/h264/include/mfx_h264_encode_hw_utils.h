@@ -69,11 +69,13 @@ namespace MfxHwH264Encode
     static const mfxU16 MFX_MEMTYPE_D3D_EXT =
         MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_EXTERNAL_FRAME;
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     static const mfxU16 MFX_MEMTYPE_D3D_SERPENT_INT =
         MFX_MEMTYPE_D3D_INT | MFX_MEMTYPE_PROTECTED;
 
     static const mfxU16 MFX_MEMTYPE_D3D_SERPENT_EXT =
         MFX_MEMTYPE_D3D_EXT | MFX_MEMTYPE_PROTECTED;
+#endif
 
     mfxU16 CalcNumFrameMin(const MfxHwH264Encode::MfxVideoParam &par);
 
@@ -235,7 +237,7 @@ namespace MfxHwH264Encode
 
     mfxU32 CalculateSeiSize( mfxExtAvcSeiRecPoint const & msg);
     mfxU32 CalculateSeiSize( mfxExtAvcSeiDecRefPicMrkRep const & msg);
-    
+
 // MVC BD {
     mfxU32 CalculateSeiSize( mfxExtAvcSeiBufferingPeriod const & msg);
     mfxU32 CalculateSeiSize(
@@ -288,7 +290,7 @@ namespace MfxHwH264Encode
     PairU16 GetPicStruct(
         MfxVideoParam const & video,
         DdiTask const &       task);
-    
+
     bool isBitstreamUpdateRequired(MfxVideoParam const & video,
         ENCODE_CAPS caps,
         eMFXHWType platform);
@@ -395,6 +397,7 @@ namespace MfxHwH264Encode
         std::vector<T>().swap(v);
     }
 
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
     bool Increment(
         mfxAES128CipherCounter & aesCounter,
         mfxExtPAVPOption const & extPavp);
@@ -420,6 +423,7 @@ namespace MfxHwH264Encode
         mfxExtPAVPOption m_opt;
         bool m_wrapped;
     };
+#endif
 
     template<class T, mfxU32 N>
     struct FixedArray
@@ -648,7 +652,7 @@ namespace MfxHwH264Encode
             , m_frameOrderI(0)
             , m_frameOrder(0)
             , m_baseLayerOrder(0)
-            , m_frameOrderStartLyncStructure(0)
+            , m_frameOrderStartTScalStructure(0)
             , m_frameNum(0)
             , m_frameNumWrap(0)
             , m_picNum(0, 0)
@@ -699,7 +703,7 @@ namespace MfxHwH264Encode
         mfxU32  m_frameOrderI;      // most recent i frame in encoding order
         mfxU32  m_frameOrder;
         mfxU32  m_baseLayerOrder;
-        mfxU32  m_frameOrderStartLyncStructure; // starting point of Lync temporal scalability structure
+        mfxU32  m_frameOrderStartTScalStructure; // starting point of temporal scalability structure
         mfxU16  m_frameNum;
         mfxI32  m_frameNumWrap;
         PairI32 m_picNum;
@@ -929,7 +933,7 @@ namespace MfxHwH264Encode
             , m_idxMBQP(NO_INDEX)
             , m_midMBQP(MID_INVALID)
             , m_isMBQP(false)
-            
+
             , m_cmRawForHist(0)
             , m_cmHist(0)
             , m_cmHistSys(0)
@@ -942,12 +946,12 @@ namespace MfxHwH264Encode
             Zero(m_pwt);
             m_FrameName[0] = 0;
         }
-            
+
         bool operator == (const DdiTask& task)
         {
             if(&task == this) return true;
             return false;
-        }            
+        }
 
         mfxU8 GetFrameType() const
         {
@@ -1018,7 +1022,7 @@ namespace MfxHwH264Encode
         mfxU32  m_pid;                  // priority_id
         PairU32 m_fillerSize;
 // MVC BD {
-        PairU32 m_addRepackSize; // w/a for SNB/IVB: size of padding to compensate re-pack of AVC headers to MVC headers
+        PairU32 m_addRepackSize; // for SNB/IVB: size of padding to compensate re-pack of AVC headers to MVC headers
 // MVC BD }
         mfxU32  m_maxIFrameSize;
         mfxU32  m_maxPBFrameSize;
@@ -1047,7 +1051,9 @@ namespace MfxHwH264Encode
 
         char   m_FrameName[32];
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         Pair<mfxAES128CipherCounter> m_aesCounter;
+#endif
         bool m_notProtected;             // Driver returns not protected data
         DdiTask const * m_nextLayerTask; // set to 0 if no nextLayerResolutionChange
         mfxU32  m_repack;
@@ -1092,7 +1098,7 @@ namespace MfxHwH264Encode
         bool m_resetBRC;
 
         mfxU32   m_idxMBQP;
-        mfxMemId m_midMBQP; 
+        mfxMemId m_midMBQP;
         bool     m_isMBQP;
 
         CmSurface2D *         m_cmRawForHist;
@@ -1109,6 +1115,7 @@ namespace MfxHwH264Encode
     typedef std::list<DdiTask>::iterator DdiTaskIter;
     typedef std::list<DdiTask>::const_iterator DdiTaskCiter;
 
+#ifndef OPEN_SOURCE
     class TaskManagerMvc;
     class TaskManagerSvc;
 
@@ -1223,6 +1230,7 @@ namespace MfxHwH264Encode
         mfxU32    m_numReorderFrames;
         DdiTask * m_pushed;
     };
+#endif // #ifndef OPEN_SOURCE
 
     template <size_t N>
     class Regression
@@ -1279,7 +1287,7 @@ namespace MfxHwH264Encode
         virtual mfxU32 Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 userDataLength, mfxU32 repack, mfxU32 picOrder, mfxU32 maxFrameSize, mfxU32 qp) = 0;
         virtual mfxU32 GetMinFrameSize() = 0;
 
-        virtual mfxStatus SetFrameVMEData(const mfxExtLAFrameStatistics*, mfxU32 , mfxU32 ) {return MFX_ERR_NONE;} 
+        virtual mfxStatus SetFrameVMEData(const mfxExtLAFrameStatistics*, mfxU32 , mfxU32 ) {return MFX_ERR_NONE;}
     };
 
     BrcIface * CreateBrc(MfxVideoParam const & video);
@@ -1382,23 +1390,23 @@ namespace MfxHwH264Encode
             }
             m_MaxBitLimit_strong = m_maxBitLimit - minFrameSize;
         }
-        virtual ~AVGBitrate() 
+        virtual ~AVGBitrate()
         {
-            //printf("------------ AVG Bitrate: %d ( %d), NumberOfErrors %d\n", m_MaxBitReal, m_MaxBitReal_temp, m_NumberOfErrors);        
+            //printf("------------ AVG Bitrate: %d ( %d), NumberOfErrors %d\n", m_MaxBitReal, m_MaxBitReal_temp, m_NumberOfErrors);
         }
         void UpdateSlidingWindow(mfxU32  sizeInBits, mfxU32  FrameOrder)
         {
             if (FrameOrder != m_lastFrameOrder)
             {
                 m_lastFrameOrder = FrameOrder;
-                m_currPosInWindow = (m_currPosInWindow + 1) % m_slidingWindow.size();            
+                m_currPosInWindow = (m_currPosInWindow + 1) % m_slidingWindow.size();
             }
             m_slidingWindow[m_currPosInWindow] = sizeInBits;
         }
         mfxI32 GetBudget(mfxU32 numFrames)
         {
             //printf("GetBudget: num %d sum %d (in %d frames), buget in bits %d\n",numFrames, GetLastFrameBits(m_slidingWindow.size() - numFrames), m_slidingWindow.size() - numFrames, m_maxBitLimit - GetLastFrameBits(m_slidingWindow.size() - numFrames));
-            return ((mfxI32)m_maxBitLimit - (mfxI32)GetLastFrameBits((mfxU32)m_slidingWindow.size() - numFrames));        
+            return ((mfxI32)m_maxBitLimit - (mfxI32)GetLastFrameBits((mfxU32)m_slidingWindow.size() - numFrames));
         }
         bool CheckBitrate(bool bStrong)
         {
@@ -1422,15 +1430,15 @@ namespace MfxHwH264Encode
 
 
 
-    protected:        
-        
+    protected:
+
         mfxU32                      m_maxBitLimit;
         mfxU32                      m_currPosInWindow;
         mfxU32                      m_MaxBitReal;
         mfxU32                      m_MaxBitLimit_strong;
         mfxU32                      m_lastFrameOrder;
         std::vector<mfxU32>         m_slidingWindow;
-        
+
 
         mfxU32 GetLastFrameBits(mfxU32 numFrames)
         {
@@ -1501,7 +1509,7 @@ namespace MfxHwH264Encode
         mfxU16  m_first;
         mfxU16  m_skipped;
 
-        
+
 
         bool        m_bControlMaxFrame;
         AVGBitrate* m_AvgBitrate;
@@ -1532,7 +1540,7 @@ namespace MfxHwH264Encode
         mfxU32 GetMinFrameSize() { return 0; }
 
         mfxStatus SetFrameVMEData(const mfxExtLAFrameStatistics *, mfxU32 widthMB, mfxU32 heightMB );
-        
+
 
     public:
         struct LaFrameData
@@ -1567,7 +1575,7 @@ namespace MfxHwH264Encode
         mfxU16  m_skipped;
 
         AVGBitrate* m_AvgBitrate;
-        
+
         std::list <LaFrameData>     m_laData;
         Regression<20>              m_rateCoeffHistory[52];
     };
@@ -1971,7 +1979,7 @@ namespace MfxHwH264Encode
         MfxVideoParam       m_videoInit;  // m_video may change by Reset, m_videoInit doesn't change
         mfxEncodeStat       m_stat;
 
-        std::list<std::pair<mfxBitstream *, mfxU32> > m_listOfPairsForStupidFieldOutputMode;
+        std::list<std::pair<mfxBitstream *, mfxU32> > m_listOfPairsForFieldOutputMode;
 
         AsyncRoutineEmulator m_emulatorForSyncPart;
         AsyncRoutineEmulator m_emulatorForAsyncPart;
@@ -1993,7 +2001,7 @@ namespace MfxHwH264Encode
         mfxU32      m_frameOrder;
         mfxU32      m_baseLayerOrder;
         mfxU32      m_frameOrderIdrInDisplayOrder;    // frame order of last IDR frame (in display order)
-        mfxU32      m_frameOrderStartLyncStructure; // starting point of Lync temporal scalability structure
+        mfxU32      m_frameOrderStartTScalStructure; // starting point of temporal scalability structure
 
         // parameters for Intra refresh
         mfxI64      m_baseLayerOrderStartIntraRefresh; // starting point of Intra refresh cycles (could be negative)
@@ -2002,12 +2010,14 @@ namespace MfxHwH264Encode
         mfxU32      m_enabledSwBrc;
         Brc         m_brc;
         Hrd         m_hrd;
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
         AesCounter  m_aesCounter;
+#endif
         mfxU32      m_maxBsSize;
 
         std::auto_ptr<DriverEncoder>    m_ddi;
 
-        std::vector<mfxU32>     m_recFrameOrder; // !!! HACK !!!
+        std::vector<mfxU32>     m_recFrameOrder;
 
         mfxU32 m_recNonRef[2];
 
@@ -2025,7 +2035,7 @@ namespace MfxHwH264Encode
         MfxFrameAllocResponse   m_rawSys;
         MfxFrameAllocResponse   m_rec;
         MfxFrameAllocResponse   m_bit;
-        MfxFrameAllocResponse   m_opaqHren;     // hren' for opaq
+        MfxFrameAllocResponse   m_opaqResponse;     // Response for opaq
         MfxFrameAllocResponse   m_histogram;
         ENCODE_CAPS             m_caps;
         mfxStatus               m_failedStatus;
@@ -2040,14 +2050,14 @@ namespace MfxHwH264Encode
 
         eMFXHWType  m_currentPlatform;
         eMFXVAType  m_currentVaType;
-        bool        m_useWAForHighBitrates;  // FIXME: w/a for SNB issue with HRD at high bitrates
+        bool        m_useWAForHighBitrates;
         bool        m_isENCPAK;
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
         bool        m_isWiDi;
+#endif
         bool        m_resetBRC;
 
-        bool        m_sofiaMode;
-
-        // bitrate reset work-around for SNB
+        // bitrate reset for SNB
 
         std::auto_ptr<CmContext>    m_cmCtx;
         std::vector<VmeData>        m_vmeDataStorage;
@@ -2064,9 +2074,11 @@ namespace MfxHwH264Encode
         std::list<DdiTask>  m_adaptiveGOPReady;
         mfxU8 m_bestGOPSequence[MAX_B_FRAMES][MAX_GOP_SEQUENCE+1];
         mfxU32 m_bestGOPCost[MAX_B_FRAMES];
-#endif
         std::vector<SVCPAKObject>       m_mbData;
+#endif
     };
+
+#ifndef OPEN_SOURCE
     class ImplementationAvcAsync : public VideoENCODE
     {
     public:
@@ -2200,7 +2212,9 @@ namespace MfxHwH264Encode
         Hrd                          m_hrd;
         std::auto_ptr<DriverEncoder> m_ddi;
         TaskManager                  m_tasks;
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
         AesCounter                   m_aesCounter;
+#endif
         mfxU32                       m_maxBsSize;
         //SlidingWindowBudgetControl   m_SliWindController;
 
@@ -2210,7 +2224,7 @@ namespace MfxHwH264Encode
         MfxFrameAllocResponse   m_reconSys;
         MfxFrameAllocResponse   m_mb;
         MfxFrameAllocResponse   m_bitstream;
-        MfxFrameAllocResponse   m_opaqHren;     // hren' for opaq
+        MfxFrameAllocResponse   m_opaqResponse;     // Response for opaq
         ENCODE_MBDATA_LAYOUT    m_layout;
         ENCODE_CAPS             m_caps;
         bool                    m_deviceFailed;
@@ -2346,6 +2360,7 @@ namespace MfxHwH264Encode
         mfxU16                   m_baseCtrlFrameType;
         mfxEncodeStat            m_stat;
     };
+#endif // #ifndef OPEN_SOURCE
 
     struct NalUnit
     {
@@ -2439,6 +2454,7 @@ namespace MfxHwH264Encode
         NalUnit slice; // first slice if multi-sliced
     };
 
+#ifdef MFX_ENABLE_MVC_VIDEO_ENCODE_HW
     class ImplementationMvc : public VideoENCODE
     {
     public:
@@ -2592,7 +2608,7 @@ namespace MfxHwH264Encode
         // w/a for SNB/IVB: m_spsSubsetSpsDiff is used to calculate padding size for compensation of re-pack AVC headers to MVC
         mfxU32                      m_spsSubsetSpsDiff;
 // MVC BD }
-        MfxFrameAllocResponse       m_opaqHren;     // hren' for opaq
+        MfxFrameAllocResponse       m_opaqResponse;     // Response for opaq
 
         PreAllocatedVector          m_sei;
         std::vector<mfxU8>          m_sysMemBits;
@@ -2608,6 +2624,7 @@ namespace MfxHwH264Encode
         mfxI32                      m_bufferSizeModifier; // required to obey HRD conformance after 'dummy' run in ViewOutput mode
 #endif // MVC_ADD_REF
     };
+#endif // #ifdef MFX_ENABLE_MVC_VIDEO_ENCODE_HW
 
     class InputBitstream
     {
@@ -2720,6 +2737,7 @@ namespace MfxHwH264Encode
         mfxExtAvcSeiPicTiming const &  msg_pt);
 // MVC BD }
 
+#ifndef OPEN_SOURCE
     template <class TTaskManager, class TTask>
     class CompleteTaskOnExit
     {
@@ -2757,11 +2775,14 @@ namespace MfxHwH264Encode
 // MVC BD {
     typedef CompleteTaskOnExit<TaskManagerMvc, DdiTask> CompleteTaskOnExitMvcOneView;
 // MVC BD }
+#endif // #ifndef OPEN_SOURCE
 
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
     inline vm_file * OpenFile(vm_char const * name, vm_char const * mode)
     {
         return name[0] ? vm_file_fopen(name, mode) : 0;
     }
+#endif
 
     mfxU8 const * SkipStartCode(mfxU8 const * begin, mfxU8 const * end);
     mfxU8 *       SkipStartCode(mfxU8 *       begin, mfxU8 *       end);
@@ -2849,7 +2870,7 @@ namespace MfxHwH264Encode
         mfxU32                fieldId, // 0 - top/progressive, 1 - bottom
         PreAllocatedVector &  sei);
 
-
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
     class SvcTask : public Surface
     {
     public:
@@ -3060,12 +3081,14 @@ namespace MfxHwH264Encode
         std::auto_ptr<DriverEncoder>        m_ddi;
         GUID                                m_guid;
         TaskManagerSvc                      m_manager;
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         AesCounter                          m_aesCounter;
+#endif
         mfxU32                              m_maxBsSize;
         MfxFrameAllocResponse               m_raw;
         MfxFrameAllocResponse               m_recon;
         MfxFrameAllocResponse               m_bitstream;
-        MfxFrameAllocResponse               m_opaqHren;     // hren' for opaq
+        MfxFrameAllocResponse               m_opaqResponse;     // Response for opaq
         ENCODE_MBDATA_LAYOUT                m_layout;
         ENCODE_CAPS                         m_caps;
         bool                                m_deviceFailed;
@@ -3074,6 +3097,7 @@ namespace MfxHwH264Encode
         std::vector<mfxU8>                  m_tmpBsBuf;
         std::vector<mfxU8>                  m_scalabilityInfo;
     };
+#endif // #ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
 
     bool IsInplacePatchNeeded(
         MfxVideoParam const & par,
@@ -3091,14 +3115,14 @@ namespace MfxHwH264Encode
                 mfxU32              fieldId,
                 mfxU8 *             bsData,
                 mfxU32              bsSizeAvail);
-    
-    mfxU32 GetMaxSliceSize(        
+
+    mfxU32 GetMaxSliceSize(
         mfxU8 *               sbegin, // contents of source buffer may be modified
         mfxU8 *               send,
         mfxU32                &num);
 
-    
-    mfxStatus UpdateSliceInfo(        
+
+    mfxStatus UpdateSliceInfo(
         mfxU8 *               sbegin, // contents of source buffer may be modified
         mfxU8 *               send,
         mfxU32                maxSliceSize,
@@ -3120,7 +3144,7 @@ namespace MfxHwH264Encode
         mfxU8 *               send,
         mfxU8 *               dbegin,
         mfxU8 *               dend);
-    
+
     mfxU8 * AddEmulationPreventionAndCopy(
         mfxU8 *               sbegin,
         mfxU8 *               send,
@@ -3128,8 +3152,8 @@ namespace MfxHwH264Encode
         mfxU8 *               dend);
 
     mfxStatus FillSliceInfo(
-        DdiTask &           task, 
-        mfxU32              MaxSliceSize, 
+        DdiTask &           task,
+        mfxU32              MaxSliceSize,
         mfxU32              FrameSize,
         mfxU32              widthLa,
         mfxU32              heightLa);
@@ -3137,12 +3161,12 @@ namespace MfxHwH264Encode
     mfxStatus CorrectSliceInfo(
         DdiTask &           task,
         mfxU32              sliceWeight,
-        mfxU32              widthLa, 
+        mfxU32              widthLa,
         mfxU32              heightLa);
 
     mfxStatus CorrectSliceInfoForsed(
         DdiTask &           task,
-        mfxU32              widthLa, 
+        mfxU32              widthLa,
         mfxU32              heightLa);
 
 
@@ -3237,8 +3261,7 @@ namespace MfxHwH264Encode
     void MarkDecodedRefPictures(
         MfxVideoParam const & video,
         DdiTask &             task,
-        mfxU32                fid,
-        bool                  isSofiaMode = false);
+        mfxU32                fid);
 
     ArrayRefListMod CreateRefListMod(
         ArrayDpbFrame const & dpb,
@@ -3251,8 +3274,7 @@ namespace MfxHwH264Encode
     void ConfigureTask(
         DdiTask &             task,
         DdiTask const &       prevTask,
-        MfxVideoParam const & video,
-        bool const            isSofiaMode = false);
+        MfxVideoParam const & video);
 
     mfxStatus GetNativeHandleToRawSurface(
         VideoCORE &           core,

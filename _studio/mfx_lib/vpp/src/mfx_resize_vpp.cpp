@@ -33,7 +33,6 @@ IppStatus rs_P010( mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxU8* pWorkBuf,
 
 mfxStatus owniResizeGetBufSize_UpEstimation( IppiSize srcSize, IppiSize dstSize, int *pBufferSize );
 
-// aya: msdk 3.0 requirements: rgb32 as output
 IppStatus rs_RGB32( mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxU8* pWorkBuf, mfxU16 picStruct );
 /* ******************************************************************** */
 /*                 implementation of VPP filter [Resize]                */
@@ -158,7 +157,6 @@ mfxStatus MFXVideoVPPResize::RunFrameVPP(mfxFrameSurface1 *in,
       in->Info.CropY == out->Info.CropY &&
       in->Info.CropH && in->Info.CropW*/){
 
-      //mfxSts = m_core->DoFastCopy(out, in);
       mfxSts = SurfaceCopy_ROI(out, in);
 
       pParam->outPicStruct = pParam->inPicStruct;

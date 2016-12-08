@@ -11,7 +11,6 @@
 #include <mfxvideo.h>
 
 #include <mfx_session.h>
-#include <mfx_check_hardware_support.h>
 #include <mfx_trace.h>
 
 #include <ippcore.h>
@@ -150,9 +149,9 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
 
 
     if (!(implInterface & MFX_IMPL_AUDIO) &&
-        !(implInterface & MFX_IMPL_EXTERNAL_THREADING)&&
         (0 != implInterface) &&
 #if defined(MFX_VA_WIN)
+        !(implInterface & MFX_IMPL_EXTERNAL_THREADING)&&
         (MFX_IMPL_VIA_D3D11 != implInterface) &&
         (MFX_IMPL_VIA_D3D9 != implInterface) &&
 #elif defined(MFX_VA_LINUX)
@@ -184,18 +183,6 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
         break;
 
     }
-
-#ifdef MFX_VA
-    // the hardware is not supported,
-    // or the vendor is not Intel.
-    //if (MFX_HW_UNKNOWN == MFX::GetHardwareType())
-    //{
-    //    // if it is a hardware library,
-    //    // reject everything.
-    //    // Do not work under any curcumstances.
-    //    return MFX_ERR_UNSUPPORTED;
-    //}
-#endif // MFX_VA
 
     try
     {
@@ -346,7 +333,9 @@ BOOL APIENTRY DllMain(HMODULE hModule,
     switch (ul_reason_for_call)
     {
     case DLL_PROCESS_ATTACH:
+#ifndef OPEN_SOURCE
         ippInit();
+#endif
         break;
 
     default:
@@ -359,6 +348,8 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 #else // #if defined(_WIN32) || defined(_WIN64)
 void __attribute__ ((constructor)) dll_init(void)
 {
+#ifndef OPEN_SOURCE
     ippInit();
+#endif
 }
 #endif // #if defined(_WIN32) || defined(_WIN64)

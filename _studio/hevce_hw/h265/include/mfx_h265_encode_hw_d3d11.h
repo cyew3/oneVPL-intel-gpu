@@ -91,8 +91,10 @@ private:
     ENCODE_ENC_CTRL_CAPS                        m_capsQuery;
     ENCODE_ENC_CTRL_CAPS                        m_capsGet;
     bool                                        m_infoQueried;
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     bool                                        m_pavp;
     bool                                        m_widi;
+#endif
     mfxU32                                      m_maxSlices;
 
     ENCODE_SET_SEQUENCE_PARAMETERS_HEVC         m_sps;

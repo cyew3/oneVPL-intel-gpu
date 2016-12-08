@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
 //
 
 #if defined(MFX_VA_OSX)
@@ -50,7 +50,6 @@ public:
     virtual eMFXPlatform  GetPlatformType() {return  MFX_PLATFORM_HARDWARE;}
     virtual eMFXVAType   GetVAType() const {return MFX_HW_VDAAPI; };
 
-//    virtual mfxStatus DoFastCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc);
 //    virtual mfxStatus DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc);
 //    virtual mfxStatus DoFastCopyWrapper(mfxFrameSurface1 *pDst, mfxU16 dstMemType, mfxFrameSurface1 *pSrc, mfxU16 srcMemType);
 
@@ -95,7 +94,7 @@ protected:
 //    s_ptr<mfxWideHWFrameAllocator, true> m_pcHWAlloc;
     eMFXHWType                           m_HWType;
     
-public: // aya: FIXME: private???
+public:
     
     std::auto_ptr<VDAAPIAdapter>            m_pAdapter;
     

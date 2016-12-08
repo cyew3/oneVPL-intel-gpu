@@ -29,7 +29,7 @@ mfxStatus MfxHwMJpegEncode::QueryHwCaps(VideoCORE * core, JpegEncCaps & hwCaps)
     hwCaps.MaxPicWidth      = 4096;
     hwCaps.MaxPicHeight     = 4096;
 
-    if (core && core->GetVAType() == MFX_HW_VAAPI && core->GetHWType() < MFX_HW_CHV)
+    if (core && core->GetVAType() == MFX_HW_VAAPI && core->GetHWType() < MFX_HW_CHT)
         return MFX_ERR_UNSUPPORTED;
 
     std::auto_ptr<DriverEncoder> ddi;
