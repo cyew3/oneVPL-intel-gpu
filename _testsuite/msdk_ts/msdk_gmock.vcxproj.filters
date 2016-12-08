@@ -844,5 +844,8 @@
     <ClCompile Include="src\gmock\test_suites\hevcd_frametype.cpp">
       <Filter>Source Files\test_suites\hevcd</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avce_input_rgb_colorspace.cpp">
+      <Filter>Source Files\test_suites\avce</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

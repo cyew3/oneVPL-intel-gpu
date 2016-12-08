@@ -38,6 +38,7 @@ void MfxHwH264Encode::FillSpsBuffer(
     mfxExtCodingOption2 const *   extOpt2 = GetExtBuffer(par);
     mfxExtCodingOption3 const &   extOpt3 = GetExtBufferRef(par);
     mfxExtCodingOptionDDI const * extDdi  = GetExtBuffer(par);
+    mfxExtVideoSignalInfo const * extVsi  = GetExtBuffer(par);
 
     Zero(sps);
 
@@ -97,6 +98,23 @@ void MfxHwH264Encode::FillSpsBuffer(
     sps.EnableSliceLevelRateCtrl                = (extOpt2->MaxSliceSize)?1:0;
     sps.UserMaxIFrameSize                       = extOpt3.MaxFrameSizeI ? extOpt3.MaxFrameSizeI : extOpt2->MaxFrameSize;
     sps.UserMaxPBFrameSize                      = extOpt3.MaxFrameSizeP;
+    if (par.mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4)
+        switch (extVsi->MatrixCoefficients)
+        {
+            case MFX_TRANSFERMATRIX_BT601:
+            {
+                    sps.ARGBInputColor = eColorSpace_P601;
+                    break;
+            }
+            case MFX_TRANSFERMATRIX_BT709:
+            {
+                    sps.ARGBInputColor = eColorSpace_P709;
+                    break;
+            }
+            default:
+                break;
+            //need define in API value for eColorSpace_P2020
+        }
     //Removed AVBR support for this
     //sps.AVBRAccuracy                            = par.mfx.Accuracy;
     //sps.AVBRConvergence                         = par.mfx.Convergence * 100;
