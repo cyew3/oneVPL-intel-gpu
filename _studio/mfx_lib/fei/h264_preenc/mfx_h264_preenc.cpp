@@ -857,11 +857,19 @@ mfxStatus VideoENC_PREENC::RunFrameVmeENCCheck(
     mfxExtFeiPreEncCtrl* feiCtrl = GetExtBufferFEI(input, 0);
     MFX_CHECK_NULL_PTR1(feiCtrl); // this is fatal error
 
+    /* This value have to be initialized here
+     * as we use MfxHwH264Encode::GetPicStruct
+     * (Legacy encoder do initialization  by itself)
+     * */
+    mfxExtCodingOption * extOpt = GetExtBuffer(m_video);
+    extOpt->FieldOutput = 32;
+    PairU16 picStruct    = GetPicStruct(m_video, input->InSurface->Info.PicStruct);
+
     if      (!feiCtrl->RefFrame[0] && !feiCtrl->RefFrame[1]) mtype_first_field = MFX_FRAMETYPE_I;
     else if ( feiCtrl->RefFrame[0] && !feiCtrl->RefFrame[1]) mtype_first_field = MFX_FRAMETYPE_P;
-    else if (                         !feiCtrl->RefFrame[1]) mtype_first_field = MFX_FRAMETYPE_B;
+    else                                                     mtype_first_field = MFX_FRAMETYPE_B;
 
-    if (MFX_PICSTRUCT_PROGRESSIVE != m_video.mfx.FrameInfo.PicStruct)
+    if (MFX_PICSTRUCT_PROGRESSIVE != picStruct[ENC])
     {
         /* same for second field */
         feiCtrl = GetExtBufferFEI(input, 1);
@@ -869,7 +877,7 @@ mfxStatus VideoENC_PREENC::RunFrameVmeENCCheck(
 
         if      (!feiCtrl->RefFrame[0] && !feiCtrl->RefFrame[1]) mtype_second_field = MFX_FRAMETYPE_I;
         else if ( feiCtrl->RefFrame[0] && !feiCtrl->RefFrame[1]) mtype_second_field = MFX_FRAMETYPE_P;
-        else if (                          feiCtrl->RefFrame[1]) mtype_second_field = MFX_FRAMETYPE_B;
+        else                                                     mtype_second_field = MFX_FRAMETYPE_B;
     }
 
     UMC::AutomaticUMCMutex guard(m_listMutex);
@@ -877,27 +885,19 @@ mfxStatus VideoENC_PREENC::RunFrameVmeENCCheck(
     m_free.front().m_yuv = input->InSurface;
     //m_free.front().m_ctrl = 0;
     m_free.front().m_type = Pair<mfxU8>(mtype_first_field, mtype_second_field);
-
-    m_free.front().m_extFrameTag = input->InSurface->Data.FrameOrder;
-    m_free.front().m_frameOrder  = input->InSurface->Data.FrameOrder;
-    m_free.front().m_timeStamp   = input->InSurface->Data.TimeStamp;
+    m_free.front().m_picStruct    = picStruct;
+    m_free.front().m_fieldPicFlag = m_free.front().m_picStruct[ENC] != MFX_PICSTRUCT_PROGRESSIVE;
+    m_free.front().m_fid[0]       = m_free.front().m_picStruct[ENC] == MFX_PICSTRUCT_FIELD_BFF;
+    m_free.front().m_fid[1]       = m_free.front().m_fieldPicFlag - m_free.front().m_fid[0];
+    m_free.front().m_extFrameTag  = input->InSurface->Data.FrameOrder;
+    m_free.front().m_frameOrder   = input->InSurface->Data.FrameOrder;
+    m_free.front().m_timeStamp    = input->InSurface->Data.TimeStamp;
     m_free.front().m_userData.resize(2);
-    m_free.front().m_userData[0] = input;
-    m_free.front().m_userData[1] = output;
+    m_free.front().m_userData[0]  = input;
+    m_free.front().m_userData[1]  = output;
 
     m_incoming.splice(m_incoming.end(), m_free, m_free.begin());
     DdiTask& task = m_incoming.front();
-
-    /* This value have to be initialized here
-     * as we use MfxHwH264Encode::GetPicStruct
-     * (Legacy encoder do initialization  by itself)
-     * */
-    mfxExtCodingOption * extOpt = GetExtBuffer(m_video);
-    extOpt->FieldOutput = 32;
-    task.m_picStruct    = GetPicStruct(m_video, task);
-    task.m_fieldPicFlag = task.m_picStruct[ENC] != MFX_PICSTRUCT_PROGRESSIVE;
-    task.m_fid[0]       = task.m_picStruct[ENC] == MFX_PICSTRUCT_FIELD_BFF;
-    task.m_fid[1]       = task.m_fieldPicFlag - task.m_fid[0];
 
     /* We need to match picture types...
      * (1): If Init() was for "MFX_PICSTRUCT_UNKNOWN", all Picture types is allowed
