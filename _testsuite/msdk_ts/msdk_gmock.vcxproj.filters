@@ -808,5 +808,17 @@
     <ClCompile Include="src\gmock\test_suites\multisession.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avce_interlace.cpp">
+      <Filter>Source Files\test_suites\avce</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avce_repeat_pps.cpp">
+      <Filter>Source Files\test_suites\avce</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avce_trellis.cpp">
+      <Filter>Source Files\test_suites\avce</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avce_trellis_cavlc.cpp">
+      <Filter>Source Files\test_suites\avce</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

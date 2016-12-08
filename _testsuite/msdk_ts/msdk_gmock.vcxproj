@@ -235,6 +235,7 @@
     <ClCompile Include="src\gmock\test_suites\avce_default_ref_lists.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_dynamic_intra_refresh.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_dts.cpp" />
+    <ClCompile Include="src\gmock\test_suites\avce_interlace.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_inter_mbs.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_intra_refresh.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_lookahead_dynres.cpp" />
@@ -249,12 +250,15 @@
     <ClCompile Include="src\gmock\test_suites\avce_mb_per_sec.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_nummbperslice.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_qp_report.cpp" />
+    <ClCompile Include="src\gmock\test_suites\avce_repeat_pps.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_skipframes.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_skipframes_tektronix.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_start_new_sequence.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_constraint_vbr.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_level_profile.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_aspectratio_reset.cpp" />
+    <ClCompile Include="src\gmock\test_suites\avce_trellis.cpp" />
+    <ClCompile Include="src\gmock\test_suites\avce_trellis_cavlc.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_vui_flag.cpp" />
     <ClCompile Include="src\gmock\test_suites\camera_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\camera_reset.cpp" />
