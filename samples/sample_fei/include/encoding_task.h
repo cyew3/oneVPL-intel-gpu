@@ -774,7 +774,7 @@ struct RefInfo
 
 inline mfxU8 GetFirstField(const iTask& task)
 {
-    return (task.PicStruct & MFX_PICSTRUCT_FIELD_BFF) ? 1 : 0;
+    return (task.PicStruct & MFX_PICSTRUCT_FIELD_BFF) && !(task.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) ? 1 : 0;
 }
 
 inline mfxI32 GetPoc(const iTask& task, mfxU32 parity)
