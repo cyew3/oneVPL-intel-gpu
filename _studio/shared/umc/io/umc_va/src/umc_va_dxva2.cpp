@@ -575,6 +575,16 @@ Status DXVA2Accelerator::FindConfiguration(VideoStreamInfo *pVideoInfo)
             m_guidDecoder = GuidProfile::GetGuidProfile(k)->guid;
             vm_trace_GUID(m_guidDecoder);
 
+            //WA for MDP-31636
+            if ((m_Profile & VA_CODEC) == VA_H265)
+            {
+                if (m_HWPlatform >= MFX_HW_ICL &&
+                   (m_guidDecoder == DXVA_ModeHEVC_VLD_Main ||
+                    m_guidDecoder == DXVA_ModeHEVC_VLD_Main10))
+                    //skip MS public guids
+                    continue;
+            }
+
             if (cDecoderGuids)
             { // Look for the decoder GUID we want.
                 UINT iGuid;
