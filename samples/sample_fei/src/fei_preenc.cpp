@@ -482,7 +482,7 @@ mfxStatus FEI_PreencInterface::PreencOneFrame(iTask* eTask)
                 sts = RepackPredictors(eTask);
             else
                 sts = RepackPredictorsPerf(eTask);
-            MSDK_CHECK_STATUS(sts, "PassPreEncMVPred2EncEx failed");
+            MSDK_CHECK_STATUS(sts, "Predictors Repacking failed");
         }
     }
 
