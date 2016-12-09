@@ -268,7 +268,19 @@ namespace vp9e_init
                     sts = MFX_ERR_UNSUPPORTED;
         }
 
-         mfxVideoParam *orig_par = NULL;
+        if (m_pPar->IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
+        {
+            AllocSurfaces();
+
+            m_par.AddExtBuffer(MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION, sizeof(mfxExtOpaqueSurfaceAlloc));
+            mfxExtOpaqueSurfaceAlloc *osa = (mfxExtOpaqueSurfaceAlloc*)m_par.GetExtBuffer(MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
+
+            MFXVideoENCODE_QueryIOSurf(m_session, m_pPar, &m_request);
+
+            AllocOpaque(m_request, *osa);
+        }
+
+        mfxVideoParam *orig_par = NULL;
 
         if (tc.type == CALL_QUERY)
             Query();
