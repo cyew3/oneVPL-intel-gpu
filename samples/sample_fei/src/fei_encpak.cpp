@@ -875,7 +875,7 @@ mfxStatus FEI_EncPakInterface::InitFrameParams(iTask* eTask)
         case MFX_EXTBUFF_FEI_ENC_CTRL:
         {
             mfxExtFeiEncFrameCtrl* feiEncCtrl = reinterpret_cast<mfxExtFeiEncFrameCtrl*>(eTask->in.ExtParam[i]);
-            feiEncCtrl->MVPredictor = (ExtractFrameType(*eTask, encCtrlId) & MFX_FRAMETYPE_I) ? 0 : (m_pMvPred_in != NULL);
+            feiEncCtrl->MVPredictor = (ExtractFrameType(*eTask, encCtrlId) & MFX_FRAMETYPE_I) ? 0 : (m_pMvPred_in != NULL || m_pAppConfig->bPREENC);
 
             // adjust ref window size if search window is 0
             if (m_pAppConfig->SearchWindow == 0 && m_pmfxENC)
