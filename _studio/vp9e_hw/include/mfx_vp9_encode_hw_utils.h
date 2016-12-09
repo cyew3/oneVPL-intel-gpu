@@ -416,7 +416,8 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
     mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
                               mfxU16 forcedFrameType,
                               mfxU32 frameOrder,
-                              VP9FrameLevelParam &frameParam);
+                              VP9FrameLevelParam &frameParam,
+                              mfxCoreInterface const * pCore);
 
     mfxStatus InitVp9SeqLevelParam(VP9MfxVideoParam const &video, VP9SeqLevelParam &param);
 

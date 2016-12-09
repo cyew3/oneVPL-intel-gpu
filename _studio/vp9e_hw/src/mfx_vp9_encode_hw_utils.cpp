@@ -132,7 +132,8 @@ mfxStatus InitVp9SeqLevelParam(VP9MfxVideoParam const &video, VP9SeqLevelParam &
 mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
                           mfxU16 forcedFrameType,
                           mfxU32 frameOrder,
-                          VP9FrameLevelParam &frameParam)
+                          VP9FrameLevelParam &frameParam,
+                          mfxCoreInterface const * pCore)
 {
     Zero(frameParam);
     frameParam.frameType = (mfxU8)((frameOrder % par.mfx.GopPicSize) == 0 || (forcedFrameType & MFX_FRAMETYPE_I) ? KEY_FRAME : INTER_FRAME);
@@ -170,7 +171,22 @@ mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
     frameParam.modeRefDeltaEnabled = 0; // TODO: add support of ref and mode LF deltas
     frameParam.errorResilentMode = 0;
     frameParam.resetFrameContext = 0;
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+    mfxPlatform platform;
+    pCore->QueryPlatform(pCore->pthis, &platform);
+    if (platform.CodeName == MFX_PLATFORM_ICELAKE)
+    {
+        frameParam.refreshFrameContext = 0;  // ICL has a problems with HuC, so it's disabled by default. Need to disable refresh of CABAC contexts untill HuC is fixed.
+    }
+    else
+    {
+        frameParam.refreshFrameContext = 1;
+    }
+#else //PRE_SI_TARGET_PLATFORM_GEN11
+    pCore;
     frameParam.refreshFrameContext = 1;
+#endif //PRE_SI_TARGET_PLATFORM_GEN11
+
     frameParam.allowHighPrecisionMV = 1;
 
     mfxU16 alignedWidth = ALIGN_POWER_OF_TWO(par.mfx.FrameInfo.Width, 3); // align to Mode Info block size (8 pixels)

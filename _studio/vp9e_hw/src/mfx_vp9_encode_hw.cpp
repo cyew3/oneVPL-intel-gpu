@@ -521,7 +521,7 @@ mfxStatus Plugin::ConfigTask(Task &task)
 {
     VP9FrameLevelParam frameParam = { };
     const VP9MfxVideoParam& curMfxPar = *task.m_pParam;
-    mfxStatus sts = SetFramesParams(curMfxPar, task.m_ctrl.FrameType, task.m_frameOrder, frameParam);
+    mfxStatus sts = SetFramesParams(curMfxPar, task.m_ctrl.FrameType, task.m_frameOrder, frameParam, m_pmfxCore);
 
     task.m_pRecFrame = 0;
     task.m_pOutBs = 0;
