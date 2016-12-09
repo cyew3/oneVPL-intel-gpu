@@ -3218,11 +3218,6 @@ mfxStatus MFXDecPipeline::RunDecode(mfxBitstream2 & bs)
                     //always decreasing lock to prevent timeout event happened
                     DecreaseReference(&pDecodedSurface->Data);
                     MFX_CHECK_STS_TRACE_EXPR(sts, RunVPP(pDecodedSurface));
-                    if (pDecodedSurface->Data.ExtParam != NULL && m_inParams.bSwapFieldProcessing)
-                    {
-                        delete [] pDecodedSurface->Data.ExtParam;
-                        pDecodedSurface->Data.ExtParam = NULL;
-                    }
                     //check exiting status
                     if (MFX_ERR_NONE != (sts = CheckExitingCondition()))
                     {
@@ -3345,52 +3340,6 @@ mfxStatus  MFXDecPipeline::RunVPP(mfxFrameSurface1 *pSurface)
                 pSurface->Data.ExtParam = new mfxExtBuffer*[1];
                 pSurface->Data.NumExtParam = 1;
                 pSurface->Data.ExtParam[0] = (mfxExtBuffer*) &m_inParams.m_FieldProcessing;
-                pSurface->Data.NumExtParam = 1;
-            }
-        }
-
-        if (m_inParams.bFieldProcessing && m_inParams.bSwapFieldProcessing)
-        {
-            if (m_inParams.nFieldProcessing == 0)
-            {
-                m_inParams.m_FieldProcessing.Mode = MFX_VPP_COPY_FIELD;
-                m_inParams.m_FieldProcessing.InField  = MFX_PICTYPE_TOPFIELD;
-                m_inParams.m_FieldProcessing.OutField = MFX_PICTYPE_TOPFIELD;
-                m_inParams.nFieldProcessing += 2;
-            }
-            else
-            {
-                if (m_inParams.nFieldProcessing == 1)
-                {
-                    m_inParams.m_FieldProcessing.Mode = MFX_VPP_COPY_FIELD;
-                    m_inParams.m_FieldProcessing.InField  = MFX_PICTYPE_BOTTOMFIELD;
-                    m_inParams.m_FieldProcessing.OutField = MFX_PICTYPE_BOTTOMFIELD;
-                    m_inParams.nFieldProcessing += 1;
-                }
-                else 
-                {
-                    if (m_inParams.nFieldProcessing == 2)
-                    {
-                        if (m_inParams.m_FieldProcessing.InField == MFX_PICTYPE_TOPFIELD)
-                        {
-                            m_inParams.nFieldProcessing -= 2;
-                        }
-                        else
-                        {
-                            m_inParams.nFieldProcessing -= 1;
-                        }
-                        m_inParams.m_FieldProcessing.Mode = MFX_PICTYPE_FRAME;
-                        m_inParams.m_FieldProcessing.InField  = MFX_PICTYPE_FRAME;
-                        m_inParams.m_FieldProcessing.OutField = MFX_PICTYPE_FRAME;
-                    }
-                }
-            }
-            if (NULL != pSurface)
-            {
-                pSurface->Data.ExtParam = new mfxExtBuffer*[1];
-                pSurface->Data.NumExtParam = 1;
-                pSurface->Data.ExtParam[0] = (mfxExtBuffer*) &m_inParams.m_FieldProcessing;
-                pSurface->Data.NumExtParam = 1;
             }
         }
 
@@ -3569,11 +3518,19 @@ mfxStatus  MFXDecPipeline::RunVPP(mfxFrameSurface1 *pSurface)
         {
             MFX_CHECK_STS(RunRender(vppOut.pSurface, vppOut.pCtrl));
         }
+        if (m_inParams.bFieldProcessing && m_inParams.bSwapFieldProcessing)
+        {
+            if (pSurface->Data.ExtParam != NULL)
+            {
+                delete[] pSurface->Data.ExtParam;
+                pSurface->Data.ExtParam = NULL;
+                pSurface->Data.NumExtParam = 0;
+            }
+        }
 
         if (NULL != pSurface && !bOneMoreRunFrame)
             break;
     }
-
     if(NULL == m_pVPP || NULL == pSurface)
     {
         MFX_CHECK_STS(RunRender(pSurface));
