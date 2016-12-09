@@ -450,8 +450,8 @@ mfxStatus VAAPIVideoProcessing::QueryCapabilities(mfxVppCaps& caps)
         caps.uRotation = 1;
     }
 
-    caps.uMaxWidth  = 4096;
-    caps.uMaxHeight = 4096;
+    caps.uMaxWidth  = 8192;
+    caps.uMaxHeight = 8192;
 
 #if defined (MFX_ENABLE_MJPEG_WEAVE_DI_VPP)
     caps.uFieldWeavingControl = 1;

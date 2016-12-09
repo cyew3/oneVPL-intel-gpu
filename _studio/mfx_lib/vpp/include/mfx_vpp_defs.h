@@ -32,7 +32,7 @@
 #if defined(_WIN32) || defined(_WIN64)
     #define MAX_NUM_OF_VPP_COMPOSITE_STREAMS (8)
 #else
-    #define MAX_NUM_OF_VPP_COMPOSITE_STREAMS (64)
+    #define MAX_NUM_OF_VPP_COMPOSITE_STREAMS (72)
 #endif
 
 // (DO_NOT_USE, DO_USE) + (MAX_NUM_OF_VPP_CONFIG_FILTERS)
