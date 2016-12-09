@@ -1150,7 +1150,8 @@ if (m_inParams.bFieldProcessing)
     {
         if (0 == m_inParams.nFieldProcessing || 1 == m_inParams.nFieldProcessing || 2 == m_inParams.nFieldProcessing)
         {
-            m_components[eVPP].m_extParams.push_back(new mfxExtVPPFieldProcessing());
+            mfxExtVPPFieldProcessing tmp = {0};
+            m_components[eVPP].m_extParams.push_back(&tmp);
             MFXExtBufferPtr<mfxExtVPPFieldProcessing> pFieldProc(m_components[eVPP].m_extParams);
             if (m_inParams.nFieldProcessing == 0)
             {
