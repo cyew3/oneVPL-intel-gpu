@@ -56,7 +56,8 @@ public:
 
         //for get video param buffers are passed externally since we cannot know whether they are intended to be included or not
         //TODO: think of it
-        m_extParams_current.push_back(new mfxExtMVCTargetViews());
+        mfxExtMVCTargetViews tmp = {};
+        m_extParams_current.push_back(&tmp);
         par->NumExtParam = (mfxU16)m_extParams_current.size();
         par->ExtParam= &m_extParams_current;
         //encoder cannot understand this buffer: we cannot guarantee certain error code for this
