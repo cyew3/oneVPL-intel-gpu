@@ -66,6 +66,12 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
     // parse input par file
     sts = m_parser.ParseCmdLine(argc, argv);
     MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, sts);
+    if(sts == MFX_WRN_OUT_OF_RANGE)
+    {
+        // There's no error in parameters parsing, but we should not continue further. For instance, in case of -? option
+        return sts;
+    }
+
 
     // get parameters for each session from parser
     while(m_parser.GetNextSessionParams(InputParams))
@@ -664,6 +670,12 @@ int main(int argc, char *argv[])
     mfxStatus sts;
     Launcher transcode;
     sts = transcode.Init(argc, argv);
+    if(sts == MFX_WRN_OUT_OF_RANGE)
+    {
+        // There's no error in parameters parsing, but we should not continue further. For instance, in case of -? option
+        return MFX_ERR_NONE;
+    }
+
     fflush(stdout);
     fflush(stderr);
 

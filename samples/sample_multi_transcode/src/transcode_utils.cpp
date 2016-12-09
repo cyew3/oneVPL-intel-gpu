@@ -367,7 +367,7 @@ mfxStatus CmdProcessor::ParseCmdLine(int argc, msdk_char *argv[])
         else if (0 == msdk_strcmp(argv[0], MSDK_STRING("-?")) )
         {
             PrintHelp();
-            return MFX_ERR_UNSUPPORTED;
+            return MFX_WRN_OUT_OF_RANGE;
         }
         else if (0 == msdk_strcmp(argv[0], MSDK_STRING("-greedy")))
         {
