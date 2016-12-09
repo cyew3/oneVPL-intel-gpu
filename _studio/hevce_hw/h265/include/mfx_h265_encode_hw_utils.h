@@ -794,7 +794,7 @@ public:
     bool isBPyramid() const { return m_ext.CO2.BRefType == MFX_B_REF_PYRAMID; }
     bool isLowDelay() const { return ((m_ext.CO3.PRefType == MFX_P_REF_PYRAMID) && !isTL()); }
     bool isTL()       const { return NumTL() > 1; }
-    bool isSWBRC()    const {return  (m_ext.CO2.ExtBRC && (mfx.RateControlMethod == MFX_RATECONTROL_CBR || mfx.RateControlMethod == MFX_RATECONTROL_VBR))|| mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT ;}
+    bool isSWBRC()    const {return  (IsOn(m_ext.CO2.ExtBRC) && (mfx.RateControlMethod == MFX_RATECONTROL_CBR || mfx.RateControlMethod == MFX_RATECONTROL_VBR))|| mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT ;}
 
 private:
     void Construct(mfxVideoParam const & par);
