@@ -104,6 +104,7 @@ bool parseGUID(const char* src, mfxU8* guid)
 }
 
 PluginConfigParser::PluginConfigParser(const char * name)
+    : sectionStart()
 {
     cfgFile = fopen(name, "rt");
 }

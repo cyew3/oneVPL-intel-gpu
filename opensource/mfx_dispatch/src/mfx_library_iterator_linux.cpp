@@ -261,20 +261,22 @@ mfxStatus SelectImplementationType(const mfxU32 adapterNum, mfxIMPL *pImplInterf
 }
 
 MFXLibraryIterator::MFXLibraryIterator(void)
+    : m_implType(MFX_LIB_PSEUDO)
+    , m_implInterface(MFX_IMPL_UNSUPPORTED)
+    , m_vendorID(0)
+    , m_deviceID(0)
+    , m_bIsSubKeyValid(false)
+    , m_StorageID(0)
+    , m_lastLibIndex(-1)
+    , m_adapters(NULL)
+    , m_selected_adapter(0)
+    , m_libs_num(0)
+    , m_libs(NULL)
 {
-    m_implType = MFX_LIB_PSEUDO;
+    m_SubKeyName[0] = 0;
+    m_path[0] = 0;
 
-    m_vendorID = 0;
-    m_deviceID = 0;
-
-    m_lastLibIndex = -1;
-
-    m_adapters = NULL;
     m_adapters_num = mfx_init_adapters(&m_adapters);
-
-    m_path[0] = '\0';
-    m_libs = NULL;
-    m_libs_num = 0;
 }
 
 MFXLibraryIterator::~MFXLibraryIterator(void)
