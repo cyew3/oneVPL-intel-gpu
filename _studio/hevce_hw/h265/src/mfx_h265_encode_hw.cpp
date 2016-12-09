@@ -906,7 +906,7 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
     }
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
-    if (m_vpar.Protected == 0)
+    if (m_vpar.Protected)
     {
         mfxEncryptedData* ed = bs->EncryptedData;
         MFX_CHECK(ed->DataOffset <= ed->MaxLength, MFX_ERR_UNDEFINED_BEHAVIOR);

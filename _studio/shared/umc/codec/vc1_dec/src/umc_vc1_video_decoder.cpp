@@ -171,6 +171,7 @@ Status VC1VideoDecoder::Init(BaseCodecParams *pInit)
         return UMC_ERR_INIT;
     }
 
+    //m_pMemoryAllocator = init->lpMemoryAllocator;
 
     if (WMV_VIDEO == init->info.stream_type)
     {
@@ -887,6 +888,7 @@ Status VC1VideoDecoder::SMProfilesProcessing(Ipp8u* pBitstream)
         params.info.clip_info.width = m_ClipInfo.clip_info.width;
         params.info.clip_info.height = m_ClipInfo.clip_info.height;
         params.m_SuggestedOutputSize = m_SurfaceNum;
+        params.lpMemoryAllocator = m_pMemoryAllocator;
     
         if(m_allocatedPostProcessing == NULL)
             params.pPostProcessing = m_PostProcessing;
