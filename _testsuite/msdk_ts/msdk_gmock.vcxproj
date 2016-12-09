@@ -260,6 +260,7 @@
     <ClCompile Include="src\gmock\test_suites\avce_trellis.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_trellis_cavlc.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_vui_flag.cpp" />
+    <ClCompile Include="src\gmock\test_suites\avc_sethandle_16.cpp" />
     <ClCompile Include="src\gmock\test_suites\camera_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\camera_reset.cpp" />
     <ClCompile Include="src\gmock\test_suites\camera_query.cpp" />
@@ -332,8 +333,10 @@
     <ClCompile Include="src\gmock\test_suites\mpeg2e_skipframes.cpp" />
     <ClCompile Include="src\gmock\test_suites\mpeg2e_aspectratio_reset.cpp" />
     <ClCompile Include="src\gmock\test_suites\mpeg2e_user_data.cpp" />
+    <ClCompile Include="src\gmock\test_suites\mpeg2_sethandle_16.cpp" />
     <ClCompile Include="src\gmock\test_suites\multisession.cpp" />
     <ClCompile Include="src\gmock\test_suites\mvce_view_output.cpp" />
+    <ClCompile Include="src\gmock\test_suites\mvc_sethandle_16.cpp" />
     <ClCompile Include="src\gmock\test_suites\platform_unsupported.cpp" />
     <ClCompile Include="src\gmock\test_suites\fei_preenc_query_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\fei_encode_init.cpp" />
@@ -356,6 +359,7 @@
     <ClCompile Include="src\gmock\test_suites\trans_opaque.cpp" />
     <ClCompile Include="src\gmock\test_suites\vc1d_bs_dataflag.cpp" />
     <ClCompile Include="src\gmock\test_suites\vc1d_res_change.cpp" />
+    <ClCompile Include="src\gmock\test_suites\vc1_sethandle_16.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp9d_close.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp9d_decode_frame_async.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp9d_decode_header.cpp" />
