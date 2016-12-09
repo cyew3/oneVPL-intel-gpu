@@ -364,16 +364,16 @@ static bool CalcAspectRatio(mfxI32 dar_code, mfxI32 width, mfxI32 height,
 }
 
 VideoDECODEMPEG2::VideoDECODEMPEG2(VideoCORE* core, mfxStatus *sts)
-    : VideoDECODE()
-    , m_pCore(core)
-    , m_isInitialized(false)
-    , m_isSWImpl(false)
+: VideoDECODE()
+, m_pCore(core)
+, m_isInitialized()
+, m_isSWImpl()
+, m_SkipLevel(SKIP_NONE)
 {
     *sts = MFX_ERR_NONE;
+
     if (!m_pCore)
         *sts = MFX_ERR_NULL_PTR;
-
-    m_SkipLevel = SKIP_NONE;
 }
 
 VideoDECODEMPEG2::~VideoDECODEMPEG2()

@@ -17,6 +17,7 @@ namespace UMC
 {
 
     H264_NALU_Stream::H264_NALU_Stream()
+        : m_code(0)
     {
         Init( 0 );
     }

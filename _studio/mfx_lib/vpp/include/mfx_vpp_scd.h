@@ -332,23 +332,26 @@ static mfxF32 TH[4] = { -12.0, -4.0, 4.0, 12.0 };
 class SceneChangeDetector
 {
 public:
-    SceneChangeDetector():
-       m_mfxDeviceHdl(0)
-     , m_pCmDevice(0)
-     , gpustep_w(0)
-     , gpustep_h(0)
-     , m_gpuwidth(0)
-     , m_gpuheight(0)
-     , m_bInited(false)
-     , m_cpuOpt(CPU_NONE)
-     , support(0)
-     , m_dataIn(0)
-     , videoData(0)
-     , dataReady(false)
-     , GPUProc(false)
-     , _width(0)
-     , _height(0)
-     , _pitch(0) {};
+    SceneChangeDetector()
+        : m_mfxDeviceType()
+        , m_mfxDeviceHdl(0)
+        , m_pCmDevice(0)
+        , gpustep_w(0)
+        , gpustep_h(0)
+        , m_gpuwidth(0)
+        , m_gpuheight(0)
+        , m_bInited(false)
+        , m_cpuOpt(CPU_NONE)
+        , support(0)
+        , m_dataIn(0)
+        , videoData(0)
+        , dataReady(false)
+        , GPUProc(false)
+        , _width(0)
+        , _height(0)
+        , _pitch(0) 
+        , m_pCore(NULL)
+    {};
 
     ~SceneChangeDetector()
     {

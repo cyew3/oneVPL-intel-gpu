@@ -430,7 +430,11 @@ mfxStatus VideoPAK_PAK::QueryIOSurf(VideoCORE* , mfxVideoParam *par, mfxFrameAll
 VideoPAK_PAK::VideoPAK_PAK(VideoCORE *core,  mfxStatus * sts)
     : m_bInit(false)
     , m_core(core)
+    , m_caps()
     , m_prevTask()
+    , m_inputFrameType(0)
+    , m_currentPlatform(MFX_HW_UNKNOWN)
+    , m_currentVaType(MFX_HW_NO)
     , m_singleFieldProcessingMode(0)
     , m_firstFieldDone(0)
 {

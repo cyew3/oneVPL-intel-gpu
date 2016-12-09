@@ -65,11 +65,23 @@ static TableInitializer tableInitializer;
 
 H264Bitstream::H264Bitstream(Ipp8u * const pb, const Ipp32u maxsize)
      : H264HeadersBitstream(pb, maxsize)
+     , m_lcodIRange(0)
+     , m_lcodIOffset(0)
+     , m_iMagicBits(0)
+     , m_pMagicBits(0)
+     , startIdx(0)
+     , endIdx(0)
 {
 } // H264Bitstream::H264Bitstream(Ipp8u * const pb,
 
 H264Bitstream::H264Bitstream()
     : H264HeadersBitstream()
+    , m_lcodIRange(0)
+    , m_lcodIOffset(0)
+    , m_iMagicBits(0)
+    , m_pMagicBits(0)
+    , startIdx(0)
+    , endIdx(0)
 {
 } // H264Bitstream::H264Bitstream(void)
 

@@ -31,6 +31,9 @@ MJPEGVideoDecoderMFX::MJPEGVideoDecoderMFX(void)
     m_interleavedScan = false;
     //m_needCloseFrame = false;
     m_needPostProcessing = false;
+
+    m_color = JC_UNKNOWN;
+
     m_rotation    = 0;
     m_frameNo     = 0;
     m_frame       = 0;

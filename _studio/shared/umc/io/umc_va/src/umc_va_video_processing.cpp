@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_va_video_processing.h"
@@ -14,6 +14,14 @@ namespace UMC
 {
 
 VideoProcessingVA::VideoProcessingVA()
+#ifdef UMC_VA_LINUX
+    : m_pipelineParams()
+    , m_surf_region()
+    , m_output_surf_region()
+    , m_currentOutputSurface()
+#else
+    : m_currentOutputSurface()
+#endif
 {
 }
 

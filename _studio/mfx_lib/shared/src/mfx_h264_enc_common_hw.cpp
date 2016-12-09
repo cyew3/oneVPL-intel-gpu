@@ -6390,6 +6390,8 @@ MfxVideoParam::MfxVideoParam()
     , m_extSps()
     , m_extPps()
     , m_extFeiOpt()
+    , m_extFeiSPS()
+    , m_extFeiPPS()
     , calcParam()
 {
     memset(m_extParam, 0, sizeof(m_extParam));

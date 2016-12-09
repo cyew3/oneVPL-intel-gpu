@@ -24,15 +24,12 @@ H265DecYUVBufferPadded::H265DecYUVBufferPadded()
     , m_pMemoryAllocator(0)
     , m_midAllocatedBuffer(0)
     , m_pAllocatedBuffer(0)
+    , m_lumaSize()
+    , m_chromaSize()
     , m_pitch_luma(0)
     , m_pitch_chroma(0)
     , m_color_format(UMC::NV12)
 {
-    m_lumaSize.width = 0;
-    m_lumaSize.height = 0;
-
-    m_chromaSize.width = 0;
-    m_chromaSize.height = 0;
 }
 
 H265DecYUVBufferPadded::H265DecYUVBufferPadded(UMC::MemoryAllocator *pMemoryAllocator)

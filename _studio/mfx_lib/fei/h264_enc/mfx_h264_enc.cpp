@@ -414,7 +414,11 @@ mfxStatus VideoENC_ENC::QueryIOSurf(VideoCORE* , mfxVideoParam *par, mfxFrameAll
 VideoENC_ENC::VideoENC_ENC(VideoCORE *core,  mfxStatus * sts)
     : m_bInit(false)
     , m_core(core)
+    , m_caps()
     , m_prevTask()
+    , m_inputFrameType()
+    , m_currentPlatform(MFX_HW_UNKNOWN)
+    , m_currentVaType(MFX_HW_NO)
     , m_singleFieldProcessingMode(0)
     , m_firstFieldDone(0)
 {

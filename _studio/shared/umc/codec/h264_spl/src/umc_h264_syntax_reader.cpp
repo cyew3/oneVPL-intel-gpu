@@ -15,7 +15,9 @@
 
 namespace UMC
 {
-    H264_SyntaxReader::H264_SyntaxReader( MediaData & p_data ) : PrevH264ByteIterator( p_data )
+    H264_SyntaxReader::H264_SyntaxReader( MediaData & p_data )
+        : PrevH264ByteIterator( p_data )
+        , m_cData(0)
     {
         m_iBitOffset = 8;
     }

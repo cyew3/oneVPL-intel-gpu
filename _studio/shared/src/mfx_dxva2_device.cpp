@@ -308,7 +308,13 @@ mfxU32 DXVA2Device::GetAdapterCount(void) const
 #include "mfx_dxva2_device.h"
 namespace MFX
 {
-    DXDevice::DXDevice(void) {}
+    DXDevice::DXDevice(void)
+        : m_numAdapters(0)
+        , m_vendorID(0)
+        , m_deviceID(0)
+        , m_driverVersion(0)
+        , m_luid (0)
+    {}
     DXDevice::~DXDevice(void) {}
 
     // Obtain graphic card's parameter
@@ -319,16 +325,24 @@ namespace MFX
     mfxU32 DXDevice::GetAdapterCount(void) const { return 0; }
     void DXDevice::LoadDLLModule(const wchar_t *pModuleName) { pModuleName; return; }
     
-    DXVA2Device::DXVA2Device(void) {}   
+    DXVA2Device::DXVA2Device(void)
+        : m_numAdapters(0)
+        , m_vendorID(0)
+        , m_deviceID(0)
+        , m_driverVersion(0)
+    {}
     DXVA2Device::~DXVA2Device(void) {}
     bool DXVA2Device::InitDXGI1(const mfxU32 adapterNum) { adapterNum; return true; }
-    mfxU32 DXVA2Device::GetVendorID(void) const {return 0;}  
-    mfxU32 DXVA2Device::GetDeviceID(void) const {return 0;} 
-    mfxU64 DXVA2Device::GetDriverVersion(void) const {return 0;} 
-    mfxU32 DXVA2Device::GetAdapterCount(void) const {return 1;} 
+    mfxU32 DXVA2Device::GetVendorID(void) const {return 0;} 
+    mfxU32 DXVA2Device::GetDeviceID(void) const {return 0;}
+    mfxU64 DXVA2Device::GetDriverVersion(void) const {return 0;}
+    mfxU32 DXVA2Device::GetAdapterCount(void) const {return 1;}
     void DXVA2Device::Close(void) { }
    
-    DXGI1Device::DXGI1Device(void) {}
+    DXGI1Device::DXGI1Device(void)
+        : m_pDXGIFactory1(0)
+        , m_pDXGIAdapter1(0)
+    {}
     DXGI1Device::~DXGI1Device(void) {}
     bool DXGI1Device::Init(const mfxU32 adapterNum) { adapterNum; return true; }
     void DXGI1Device::Close(void) {}

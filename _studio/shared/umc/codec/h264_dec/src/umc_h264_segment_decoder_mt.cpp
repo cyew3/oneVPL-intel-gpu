@@ -37,6 +37,7 @@ const Ipp8u BlkOrder[16] =
 
 H264SegmentDecoderMultiThreaded::H264SegmentDecoderMultiThreaded(TaskBroker * pTaskBroker)
     : H264SegmentDecoder(pTaskBroker)
+    , m_psBuffer(0)
     , m_SD(0)
 {
 } // H264SegmentDecoderMultiThreaded::H264SegmentDecoderMultiThreaded(H264SliceStore *Store)

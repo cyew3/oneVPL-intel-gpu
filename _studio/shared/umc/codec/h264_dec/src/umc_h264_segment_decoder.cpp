@@ -25,6 +25,7 @@ H264SegmentDecoder::H264SegmentDecoder(TaskBroker * pTaskBroker)
     m_pCoefficientsBuffer = NULL;
 
     m_pSlice = 0;
+    m_pSliceHeader = 0;
 
     // set pointer to backward prediction buffer
     m_pPredictionBuffer = align_pointer<UMC::PlanePtrYCommon>(m_BufferForBackwardPrediction, DEFAULT_ALIGN_VALUE);

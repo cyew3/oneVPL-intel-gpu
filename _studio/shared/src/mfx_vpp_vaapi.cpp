@@ -106,6 +106,7 @@ VAAPIVideoProcessing::VAAPIVideoProcessing():
 , m_frcFilterID(VA_INVALID_ID)
 , m_refCountForADI(0)
 , m_bFakeOutputEnabled(false)
+, m_frcCyclicCounter(0)
 , m_numFilterBufs(0)
 , m_primarySurface4Composition(NULL)
 {

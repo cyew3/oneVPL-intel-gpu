@@ -588,8 +588,8 @@ mfxDefaultAllocatorVAAPI::GetHDLHW(
 mfxDefaultAllocatorVAAPI::mfxWideHWFrameAllocator::mfxWideHWFrameAllocator(
     mfxU16  type,
     mfxHDL  handle)
-    :
-    mfxBaseWideFrameAllocator(type)
+    : mfxBaseWideFrameAllocator(type)
+    , m_DecId(0)
 {
     frameAllocator.Alloc = &mfxDefaultAllocatorVAAPI::AllocFramesHW;
     frameAllocator.Lock = &mfxDefaultAllocatorVAAPI::LockFrameHW;

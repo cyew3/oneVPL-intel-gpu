@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "ipps.h"
@@ -22,11 +22,12 @@
 using namespace UMC;
 
 FileReader::FileReader()
-: m_pBuffer(0)
-, m_iPageSize(vm_mmap_get_alloc_granularity())
-, m_iFileSize(0)
-, m_iOff(0)
-, m_iPortion(0)
+    : m_mmap()
+    , m_pBuffer(0)
+    , m_iPageSize(vm_mmap_get_alloc_granularity())
+    , m_iFileSize(0)
+    , m_iOff(0)
+    , m_iPortion(0)
 {
     vm_mmap_set_invalid(&m_mmap);
 }

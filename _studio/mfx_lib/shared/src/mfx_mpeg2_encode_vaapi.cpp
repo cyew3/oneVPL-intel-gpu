@@ -338,7 +338,9 @@ VAAPIEncoder::VAAPIEncoder(VideoCORE* core)
     , m_vaDisplay(0)
     , m_vaContextEncode(VA_INVALID_ID)
     , m_vaConfig(VA_INVALID_ID)
+    , m_vaSpsBuf()
     , m_spsBufferId(VA_INVALID_ID)
+    , m_vaPpsBuf()
     , m_ppsBufferId(VA_INVALID_ID)
     , m_qmBufferId(VA_INVALID_ID)
     , m_numSliceGroups(0)
@@ -361,6 +363,7 @@ VAAPIEncoder::VAAPIEncoder(VideoCORE* core)
     , m_vbvBufSize(0)
     , m_initFrameWidth(0)
     , m_initFrameHeight(0)
+    , m_layout()
 {
     std::fill_n(m_sliceParamBufferId, sizeof(m_sliceParamBufferId)/sizeof(m_sliceParamBufferId[0]), VA_INVALID_ID);
 

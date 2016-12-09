@@ -28,14 +28,13 @@
 
 
 MJPEGEncodeTask::MJPEGEncodeTask(void)
-: auxInput()
+    : ctrl(NULL)
+    , surface(NULL)
+    , bs(NULL)
+    , auxInput()
+    , m_initialDataLength(0)
+    , encodedPieces(0)
 {
-    m_initialDataLength = 0;
-    encodedPieces = 0;
-    ctrl = NULL;
-    surface = NULL;
-    bs = NULL;
-
 } // MJPEGEncodeTask::MJPEGEncodeTask(void)
 
 MJPEGEncodeTask::~MJPEGEncodeTask(void)
@@ -745,33 +744,29 @@ static mfxStatus CheckExtBuffers(mfxExtBuffer** ebuffers, mfxU32 nbuffers)
 } // static mfxStatus CheckExtBuffers(mfxExtBuffer** ebuffers, mfxU32 nbuffers)
 
 MFXVideoENCODEMJPEG::MFXVideoENCODEMJPEG(VideoCORE *core, mfxStatus *status)
-: VideoENCODE()
-, m_response()
-, m_checkedJpegQT()
-, m_checkedJpegHT()
-, m_checkedOpaqAllocReq()
-
+    : VideoENCODE()
+    , m_core(core)
+    , m_response()
+    , m_tasksCount(0)
+    , pLastTask(NULL)
+    , m_totalBits(0)
+    , m_frameCountSync(0)
+    , m_frameCount(0)
+    , m_encodedFrames(0)
+    , m_useAuxInput(false)
+    , m_isOpaque(false)
+    , m_isInitialized(false)
+    , m_checkedJpegQT()
+    , m_checkedJpegHT()
+    , m_checkedOpaqAllocReq()
 {
-    m_core          = core;
-
-    m_tasksCount = 0;
-    pLastTask = NULL;
-
-    m_totalBits      = 0;
-    m_frameCountSync = 0;
-    m_frameCount     = 0;
-    m_encodedFrames  = 0;
-    m_isInitialized  = false;
-    m_useAuxInput    = false;
-    //m_useSysOpaq     = false;
-    //m_useVideoOpaq   = false;
-    m_isOpaque       = false;
-
     *status = MFX_ERR_NONE;
 
     if(!m_core)
         *status =  MFX_ERR_MEMORY_ALLOC;
 
+    memset(&m_pCheckedExt, 0, sizeof(m_pCheckedExt));
+    
     mfxVideoParam blankParams;
     memset(&blankParams, 0, sizeof(mfxVideoParam));
     m_vFirstParam = blankParams;

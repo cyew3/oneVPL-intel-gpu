@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2007 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_mmap.h"
@@ -13,11 +13,12 @@
 namespace UMC
 {
 
-MMap::MMap(void) :
-    m_address(NULL),
-    m_file_size(0),
-    m_offset(0),
-    m_sizet(0)
+MMap::MMap(void)
+    : m_handle()
+    , m_address(NULL)
+    , m_file_size(0)
+    , m_offset(0)
+    , m_sizet(0)
 {
     vm_mmap_set_invalid(&m_handle);
 

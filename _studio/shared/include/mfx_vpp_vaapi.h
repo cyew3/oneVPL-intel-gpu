@@ -75,7 +75,12 @@ namespace MfxHwVideoProcessing
             BOOL   active;
             mfxU16 x;
             mfxU16 y;
-            _compositionStreamElement(): active(false) {};
+            _compositionStreamElement()
+                : index(0)
+                , active(false) 
+                , x(0)
+                , y(0)
+            {};
         } compStreamElem;
 
         /* Small structure to keep video wall settings. */

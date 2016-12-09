@@ -47,6 +47,7 @@ extern void ConvertFrom_YUV422V_4Y_To_NV12(const Ipp8u *src[3], Ipp32u srcPitch,
 }
 
 CJPEGDecoder::CJPEGDecoder(void)
+    : m_dst()
 {
   Reset();
   return;
@@ -118,6 +119,8 @@ void CJPEGDecoder::Reset(void)
   m_xPadding               = 0;
   m_yPadding               = 0;
   m_rst_go                 = 0;
+  m_mcu_decoded            = 0;
+  m_mcu_to_decode          = 0;
   m_restarts_to_go         = 0;
   m_next_restart_num       = 0;
   m_sos_len                = 0;

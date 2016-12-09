@@ -634,7 +634,11 @@ VAAPIEncoder::VAAPIEncoder()
 : m_core(NULL)
 , m_vaContextEncode(VA_INVALID_ID)
 , m_vaConfig(VA_INVALID_ID)
-
+, m_sps()
+, m_pps()
+, m_width(0)
+, m_height(0)
+, m_caps()
 #if MFX_EXTBUFF_CU_QP_ENABLE
 , m_cuqp_width(0) 
 , m_cuqp_height(0)

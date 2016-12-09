@@ -29,12 +29,13 @@
 using namespace MfxHwH264Encode;
 
 TaskManagerSvc::TaskManagerSvc()
-: m_core(0)
-, m_video(0)
-, m_layerNum(0)
-, m_taskNum(0)
-, m_currentLayerId(0)
-, m_stat()
+    : m_core(0)
+    , m_video(0)
+    , m_layerNum(0)
+    , m_taskNum(0)
+    , m_currentTask(NULL)
+    , m_currentLayerId(0)
+    , m_stat()
 {
     m_currentTask = NULL;
 }

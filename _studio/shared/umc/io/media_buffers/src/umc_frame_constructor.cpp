@@ -3307,6 +3307,7 @@ void H264ParsingCore::Slice::Reset()
     nal_ref_idc = 0;
     idr_flag = 0;
     idr_pic_id = 0;
+    m_pps = 0;
 }
 
 H264FrameConstructor::H264FrameConstructor()
