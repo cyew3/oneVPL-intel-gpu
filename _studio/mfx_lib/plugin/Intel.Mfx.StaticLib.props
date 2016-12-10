@@ -16,8 +16,8 @@
     <Error Text=" Unable to find Windows SDK 8.1 by both MINIDDK_ROOT and registry lookup. Please check if it installed correctly or reinstall it from http://msdn.microsoft.com/en-us/windows/desktop/hh852363.aspx."
        Condition ="!Exists('$(WindowsSdk8Path)')" />
   </Target>
-  <PropertyGroup Condition="'$(Configuration)'=='Release_THM' or '$(Configuration)'=='Debug_THM'">
-    <PlatformToolset>v120</PlatformToolset>
+  <PropertyGroup>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Platform)'=='Win32'">
     <LibraryPath>$(WindowsSdk8Path)\Lib\$(Library_Miniddk_Version)\um\x86;$(LibraryPath)</LibraryPath>

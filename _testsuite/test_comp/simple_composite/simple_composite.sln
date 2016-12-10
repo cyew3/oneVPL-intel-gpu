@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "simple_composite", "simple_composite.vcxproj", "{A6E3D645-0F58-45F4-BDC3-CA457C87D7BC}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmfx", "..\..\..\..\mdp_msdk-api\opensource\mfx_dispatch\libmfx.vcxproj", "{9E7B3527-11AA-46BA-A82F-C58761F9B56F}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmfx_vs2015", "..\..\..\..\mdp_msdk-api\opensource\mfx_dispatch\libmfx_vs2015.vcxproj", "{9E7B3527-11AA-46BA-A82F-C58761F9B56F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

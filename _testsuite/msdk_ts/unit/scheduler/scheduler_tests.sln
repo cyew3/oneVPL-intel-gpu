@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gmock", "..\..\..\..\..\mdp_msdk-contrib\gmock\msvc\2012\gmock.vcxproj", "{34681F0D-CE45-415D-B5F2-5C662DFE3BD5}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gmock", "..\..\..\..\..\mdp_msdk-contrib\gmock\msvc\2015\gmock.vcxproj", "{34681F0D-CE45-415D-B5F2-5C662DFE3BD5}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gmock_main", "..\..\..\..\..\mdp_msdk-contrib\gmock\msvc\2012\gmock_main.vcxproj", "{E4EF614B-30DF-4954-8C53-580A0BF6B589}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gmock_main", "..\..\..\..\..\mdp_msdk-contrib\gmock\msvc\2015\gmock_main.vcxproj", "{E4EF614B-30DF-4954-8C53-580A0BF6B589}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_common", "..\..\..\..\_studio\mfx_lib\shared\mfx_common.vcxproj", "{7929E69F-B47F-4A1E-A038-6BE3343CE855}"
 EndProject

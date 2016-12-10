@@ -27,26 +27,26 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -444,13 +444,13 @@
     <ProjectReference Include="..\..\..\mdp_msdk-api\opensource\mfx_dispatch\mfx_dispatch_trace_lib.vcxproj">
       <Project>{430e22ba-bdf6-497c-bfc5-ec6907f90018}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\mdp_msdk-contrib\gmock\msvc\2012\gmock.vcxproj">
+    <ProjectReference Include="..\..\..\mdp_msdk-contrib\gmock\msvc\2015\gmock">
       <Project>{34681f0d-ce45-415d-b5f2-5c662dfe3bd5}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\mdp_msdk-contrib\gmock\msvc\2012\gmock_main.vcxproj">
+    <ProjectReference Include="..\..\..\mdp_msdk-contrib\gmock\msvc\2015\gmock_main.vcxproj">
       <Project>{e4ef614b-30df-4954-8c53-580a0bf6b589}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\mdp_msdk-samples\samples\sample_common\sample_common_vs2012.vcxproj">
+    <ProjectReference Include="..\..\..\mdp_msdk-samples\samples\sample_common\sample_common_vs2015.vcxproj">
       <Project>{db71b91d-16d8-4339-9621-d81798e46e8f}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\..\mdp_msdk-val-tools\bs_parser\bs_parser.vcxproj">

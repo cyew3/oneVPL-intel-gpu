@@ -7,9 +7,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "hevce_tests", "hevce_tests.
 		{E4EF614B-30DF-4954-8C53-580A0BF6B589} = {E4EF614B-30DF-4954-8C53-580A0BF6B589}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gmock", "..\..\..\..\..\mdp_msdk-contrib\gmock\msvc\2012\gmock.vcxproj", "{34681F0D-CE45-415D-B5F2-5C662DFE3BD5}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gmock", "..\..\..\..\..\mdp_msdk-contrib\gmock\msvc\2015\gmock.vcxproj", "{34681F0D-CE45-415D-B5F2-5C662DFE3BD5}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gmock_main", "..\..\..\..\..\mdp_msdk-contrib\gmock\msvc\2012\gmock_main.vcxproj", "{E4EF614B-30DF-4954-8C53-580A0BF6B589}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gmock_main", "..\..\..\..\..\mdp_msdk-contrib\gmock\msvc\2015\gmock_main.vcxproj", "{E4EF614B-30DF-4954-8C53-580A0BF6B589}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "hevc_pp_avx2", "..\..\..\..\_studio\mfx_lib\optimization\hevc_pp_avx2.vcxproj", "{6EBB14F6-DCA0-485A-89F7-FE803B75D0B9}"
 EndProject

@@ -44,7 +44,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_dispatch_trace", "..\..
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "color_space_converter", "..\..\_studio\shared\umc\codec\color_space_converter\color_space_converter.vcxproj", "{57FE8DAC-C7C4-4DF4-9A36-2FEE040DFF38}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_spl_mux_dispatcher_v11", "..\..\..\mdp_msdk-samples\samples\deprecated\sample_spl_mux\dispatcher\sample_spl_mux_dispatcher_v11.vcxproj", "{BF10BFCB-5080-4E85-93B7-13299DD6C5C2}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_spl_mux_dispatcher_v15", "..\..\..\mdp_msdk-samples\samples\deprecated\sample_spl_mux\dispatcher\sample_spl_mux_dispatcher_v15.vcxproj", "{BF10BFCB-5080-4E85-93B7-13299DD6C5C2}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_trace", "..\..\_studio\shared\mfx_trace\mfx_trace.vcxproj", "{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}"
 EndProject

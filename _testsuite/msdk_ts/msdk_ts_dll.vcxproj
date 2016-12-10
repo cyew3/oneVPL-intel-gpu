@@ -22,6 +22,7 @@
     <ProjectGuid>{44BAA917-9DA7-4BA8-A3BC-2A76285E3F2F}</ProjectGuid>
     <RootNamespace>msdk_ts_dll</RootNamespace>
     <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
@@ -200,6 +201,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <ImportLibrary>$(OutDir)../lib/$(ProjectName).lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
+      <ShowProgress>NotSet</ShowProgress>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -239,14 +241,14 @@
     <ClInclude Include="include\test_trace.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\mdp_msdk-api\opensource\mfx_dispatch\mfx_dispatch_trace_lib.vcxproj">
+    <ProjectReference Include="..\..\..\mdp_msdk-api\opensource\mfx_dispatch\mfx_dispatch_trace_lib_vs2012.vcxproj">
       <Project>{430e22ba-bdf6-497c-bfc5-ec6907f90018}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\_studio\shared\umc\core\vm\vm.vcxproj">
+    <ProjectReference Include="..\..\_studio\shared\umc\core\vm\vm_vs2012.vcxproj">
       <Project>{d41d3178-5c65-4868-bdb1-42c44643274e}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\mdp_msdk-val-tools\bs_parser\bs_parser.vcxproj">
+    <ProjectReference Include="..\..\..\mdp_msdk-val-tools\bs_parser\bs_parser_vs2012.vcxproj">
       <Project>{d08d664e-7245-40f7-9b55-3440ef95f2f7}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>

@@ -5,10 +5,6 @@
   <Import Project=".\Intel.Mfx.Shared.props" Condition=" '$(SharedPropsImported)' != 'true' "/>
   <PropertyGroup>
     <MfxBuildDir>$(MSBuildThisFileDirectory)..\..\..\build\</MfxBuildDir>
-    <PlatformToolset>v110</PlatformToolset>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)'=='Release_THM' or '$(Configuration)'=='Debug_THM'" >
-    <PlatformToolset>v120</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Platform)'=='Win32'" Label="UserMacros" >
     <MfxIppIncludeDir>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include</MfxIppIncludeDir>

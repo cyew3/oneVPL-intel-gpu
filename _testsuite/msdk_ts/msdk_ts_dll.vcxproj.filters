@@ -92,6 +92,9 @@
     <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\avc_spl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\vm\time.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\msdk_ts.h">

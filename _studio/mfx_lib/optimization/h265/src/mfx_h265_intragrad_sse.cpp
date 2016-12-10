@@ -567,7 +567,7 @@ void MAKE_NAME(h265_ComputeRsCs_16u)(const Ipp16u *ySrc, Ipp32s pitchSrc, Ipp32s
 
 
 
-void MAKE_NAME(h265_ImageDiffHistogram_8u)(Ipp8u* pSrc, Ipp8u* pRef, Ipp32s pitch, Ipp32s width, Ipp32s height, Ipp32s histogram[5], Ipp64s *pSrcDC, Ipp64s *pRefDC)
+void H265_FASTCALL MAKE_NAME(h265_ImageDiffHistogram_8u)(Ipp8u* pSrc, Ipp8u* pRef, Ipp32s pitch, Ipp32s width, Ipp32s height, Ipp32s histogram[5], Ipp64s *pSrcDC, Ipp64s *pRefDC)
 {
     enum {HIST_THRESH_LO = 4, HIST_THRESH_HI = 12};
     __m128i sDC = _mm_setzero_si128();
@@ -687,7 +687,7 @@ ALIGN_DECL(16) static const mfxU16 tab_killmask[8][8] = {
         0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0xffff,
     };
 
-void MAKE_NAME(h265_SearchBestBlock8x8_8u)(Ipp8u *pSrc, Ipp8u *pRef, Ipp32s pitch, Ipp32s xrange, Ipp32s yrange, Ipp32u *bestSAD, Ipp32s *bestX, Ipp32s *bestY)
+void H265_FASTCALL MAKE_NAME(h265_SearchBestBlock8x8_8u)(Ipp8u *pSrc, Ipp8u *pRef, Ipp32s pitch, Ipp32s xrange, Ipp32s yrange, Ipp32u *bestSAD, Ipp32s *bestX, Ipp32s *bestY)
 {
     enum {SAD_SEARCH_VSTEP  = 2};  // 1=FS 2=FHS
     __m128i
@@ -736,7 +736,7 @@ void MAKE_NAME(h265_SearchBestBlock8x8_8u)(Ipp8u *pSrc, Ipp8u *pRef, Ipp32s pitc
     }
 }
 
-void MAKE_NAME(h265_ComputeRsCsDiff)(Ipp32f* pRs0, Ipp32f* pCs0, Ipp32f* pRs1, Ipp32f* pCs1, Ipp32s len, Ipp32f* pRsDiff, Ipp32f* pCsDiff)
+void H265_FASTCALL MAKE_NAME(h265_ComputeRsCsDiff)(Ipp32f* pRs0, Ipp32f* pCs0, Ipp32f* pRs1, Ipp32f* pCs1, Ipp32s len, Ipp32f* pRsDiff, Ipp32f* pCsDiff)
     {
         Ipp32s i;//, len = wblocks * hblocks;
         __m128d accRs = _mm_setzero_pd();
@@ -778,7 +778,7 @@ void MAKE_NAME(h265_ComputeRsCsDiff)(Ipp32f* pRs0, Ipp32f* pCs0, Ipp32f* pRs1, I
         _mm_store_ss(pCsDiff, _mm_shuffle_ps(t, t, _MM_SHUFFLE(0,0,0,1)));
     }
 
-void MAKE_NAME(h265_ComputeRsCs4x4_8u)(const Ipp8u* pSrc, Ipp32s srcPitch, Ipp32s wblocks, Ipp32s hblocks, Ipp32f* pRs, Ipp32f* pCs)
+void H265_FASTCALL MAKE_NAME(h265_ComputeRsCs4x4_8u)(const Ipp8u* pSrc, Ipp32s srcPitch, Ipp32s wblocks, Ipp32s hblocks, Ipp32f* pRs, Ipp32f* pCs)
 {
     for (Ipp32s i = 0; i < hblocks; i++)
     {

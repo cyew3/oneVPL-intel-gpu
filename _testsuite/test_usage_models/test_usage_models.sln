@@ -9,7 +9,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vm", "..\..\_studio\shared\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shared_utils", "..\shared\shared_utils.vcxproj", "{0D02568B-3117-47C3-AC2E-D83781259C1D}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_common_vs2012", "..\..\..\mdp_msdk-samples\samples\sample_common\sample_common_vs2012.vcxproj", "{DB71B91D-16D8-4339-9621-D81798E46E8F}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_common_vs2015", "..\..\..\mdp_msdk-samples\samples\sample_common\sample_common_vs2015.vcxproj", "{DB71B91D-16D8-4339-9621-D81798E46E8F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

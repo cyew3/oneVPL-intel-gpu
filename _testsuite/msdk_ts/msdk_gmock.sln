@@ -9,13 +9,13 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "msdk_gmock", "msdk_gmock.vc
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bs_parser", "..\..\..\mdp_msdk-val-tools\bs_parser\bs_parser.vcxproj", "{D08D664E-7245-40F7-9B55-3440EF95F2F7}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gmock", "..\..\..\mdp_msdk-contrib\gmock\msvc\2012\gmock.vcxproj", "{34681F0D-CE45-415D-B5F2-5C662DFE3BD5}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gmock", "..\..\..\mdp_msdk-contrib\gmock\msvc\2015\gmock.vcxproj", "{34681F0D-CE45-415D-B5F2-5C662DFE3BD5}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gmock_main", "..\..\..\mdp_msdk-contrib\gmock\msvc\2012\gmock_main.vcxproj", "{E4EF614B-30DF-4954-8C53-580A0BF6B589}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gmock_main", "..\..\..\mdp_msdk-contrib\gmock\msvc\2015\gmock_main.vcxproj", "{E4EF614B-30DF-4954-8C53-580A0BF6B589}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_dispatch_trace", "..\..\..\mdp_msdk-api\opensource\mfx_dispatch\mfx_dispatch_trace_lib.vcxproj", "{430E22BA-BDF6-497C-BFC5-EC6907F90018}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_common_vs2012", "..\..\..\mdp_msdk-samples\samples\sample_common\sample_common_vs2012.vcxproj", "{DB71B91D-16D8-4339-9621-D81798E46E8F}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_common_vs2015", "..\..\..\mdp_msdk-samples\samples\sample_common\sample_common_vs2015.vcxproj", "{DB71B91D-16D8-4339-9621-D81798E46E8F}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_serializer", "..\mfx_serializer\mfx_serializer.vcxproj", "{E2A5ABAE-F0A8-485C-BA1D-4F3D6567073A}"
 EndProject

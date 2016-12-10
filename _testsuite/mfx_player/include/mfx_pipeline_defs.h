@@ -13,7 +13,7 @@ File Name: .h
 #ifndef __MFX_PIPELINE_DEFS_H
 #define __MFX_PIPELINE_DEFS_H
 
-#include<memory>
+#include <memory>
 #define _ATL_DISABLE_NOTHROW_NEW
 
 #if defined(_WIN32) || defined(_WIN64)

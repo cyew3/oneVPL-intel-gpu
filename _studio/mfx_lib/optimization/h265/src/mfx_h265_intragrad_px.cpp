@@ -181,7 +181,7 @@ void MAKE_NAME(h265_ComputeRsCs)(const PixType *ySrc, Ipp32s pitchSrc, Ipp32s *l
 template void MAKE_NAME(h265_ComputeRsCs)<Ipp8u> (const Ipp8u *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s pitchRsCs, Ipp32s width, Ipp32s height);
 template void MAKE_NAME(h265_ComputeRsCs)<Ipp16u>(const Ipp16u *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s pitchRsCs, Ipp32s width, Ipp32s height);
 
-void MAKE_NAME(h265_ImageDiffHistogram_8u)(Ipp8u* pSrc, Ipp8u* pRef, Ipp32s pitch, Ipp32s width, Ipp32s height, Ipp32s histogram[5], Ipp64s *pSrcDC, Ipp64s *pRefDC)
+void H265_FASTCALL MAKE_NAME(h265_ImageDiffHistogram_8u)(Ipp8u* pSrc, Ipp8u* pRef, Ipp32s pitch, Ipp32s width, Ipp32s height, Ipp32s histogram[5], Ipp64s *pSrcDC, Ipp64s *pRefDC)
 {
     enum {HIST_THRESH_LO = 4, HIST_THRESH_HI = 12};
     Ipp64s srcDC = 0;   
@@ -221,7 +221,7 @@ void MAKE_NAME(h265_ImageDiffHistogram_8u)(Ipp8u* pSrc, Ipp8u* pRef, Ipp32s pitc
 }
 
 
-void MAKE_NAME(h265_SearchBestBlock8x8_8u)(Ipp8u *pSrc, Ipp8u *pRef, Ipp32s pitch, Ipp32s xrange, Ipp32s yrange, Ipp32u *bestSAD, Ipp32s *bestX, Ipp32s *bestY) 
+void H265_FASTCALL MAKE_NAME(h265_SearchBestBlock8x8_8u)(Ipp8u *pSrc, Ipp8u *pRef, Ipp32s pitch, Ipp32s xrange, Ipp32s yrange, Ipp32u *bestSAD, Ipp32s *bestX, Ipp32s *bestY)
 {
     enum {SAD_SEARCH_VSTEP  = 2};  // 1=FS 2=FHS
     for (Ipp32s y = 0; y < yrange; y += SAD_SEARCH_VSTEP) {
@@ -250,7 +250,7 @@ void MAKE_NAME(h265_SearchBestBlock8x8_8u)(Ipp8u *pSrc, Ipp8u *pRef, Ipp32s pitc
     }
 }
 
-void MAKE_NAME(h265_ComputeRsCsDiff)(Ipp32f* pRs0, Ipp32f* pCs0, Ipp32f* pRs1, Ipp32f* pCs1, Ipp32s len, Ipp32f* pRsDiff, Ipp32f* pCsDiff)
+void H265_FASTCALL MAKE_NAME(h265_ComputeRsCsDiff)(Ipp32f* pRs0, Ipp32f* pCs0, Ipp32f* pRs1, Ipp32f* pCs1, Ipp32s len, Ipp32f* pRsDiff, Ipp32f* pCsDiff)
 {
     //Ipp32s len = wblocks * hblocks;
     Ipp64f accRs = 0.0;
@@ -264,7 +264,7 @@ void MAKE_NAME(h265_ComputeRsCsDiff)(Ipp32f* pRs0, Ipp32f* pCs0, Ipp32f* pRs1, I
     *pCsDiff = (Ipp32f)accCs;
 }
 
-void MAKE_NAME(h265_ComputeRsCs4x4_8u)(const Ipp8u* pSrc, Ipp32s srcPitch, Ipp32s wblocks, Ipp32s hblocks, Ipp32f* pRs, Ipp32f* pCs)
+void H265_FASTCALL MAKE_NAME(h265_ComputeRsCs4x4_8u)(const Ipp8u* pSrc, Ipp32s srcPitch, Ipp32s wblocks, Ipp32s hblocks, Ipp32f* pRs, Ipp32f* pCs)
 {
     for (Ipp32s i = 0; i < hblocks; i++) {
         for (Ipp32s j = 0; j < wblocks; j++) {

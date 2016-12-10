@@ -1,6 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test_vpp_multisession", "test_vpp_multisession.vcxproj", "{560053DA-EABE-44B2-B99D-51801A7ABEEB}"
 	ProjectSection(ProjectDependencies) = postProject
 		{9E7B3527-11AA-46BA-A82F-C58761F9B56F} = {9E7B3527-11AA-46BA-A82F-C58761F9B56F}
@@ -8,7 +10,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test_vpp_multisession", "te
 		{0D02568B-3117-47C3-AC2E-D83781259C1D} = {0D02568B-3117-47C3-AC2E-D83781259C1D}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmfx", "..\..\..\mdp_msdk-api\opensource\mfx_dispatch\libmfx.vcxproj", "{9E7B3527-11AA-46BA-A82F-C58761F9B56F}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmfx_vs2015", "..\..\..\mdp_msdk-api\opensource\mfx_dispatch\libmfx_vs2015.vcxproj", "{9E7B3527-11AA-46BA-A82F-C58761F9B56F}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shared_utils", "..\shared\shared_utils.vcxproj", "{0D02568B-3117-47C3-AC2E-D83781259C1D}"
 EndProject
@@ -52,8 +54,8 @@ Global
 		{D41D3178-5C65-4868-BDB1-42C44643274E}.Debug|x64.Build.0 = Debug|x64
 		{D41D3178-5C65-4868-BDB1-42C44643274E}.Release|Win32.ActiveCfg = Release|Win32
 		{D41D3178-5C65-4868-BDB1-42C44643274E}.Release|Win32.Build.0 = Release|Win32
-		{D41D3178-5C65-4868-BDB1-42C44643274E}.Release|x64.ActiveCfg = Debug|x64
-		{D41D3178-5C65-4868-BDB1-42C44643274E}.Release|x64.Build.0 = Debug|x64
+		{D41D3178-5C65-4868-BDB1-42C44643274E}.Release|x64.ActiveCfg = Release|x64
+		{D41D3178-5C65-4868-BDB1-42C44643274E}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -3,16 +3,16 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "msdk_ts_dll", "msdk_ts_dll.vcxproj", "{44BAA917-9DA7-4BA8-A3BC-2A76285E3F2F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bs_parser", "..\..\..\mdp_msdk-val-tools\bs_parser\bs_parser.vcxproj", "{D08D664E-7245-40F7-9B55-3440EF95F2F7}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bs_parser", "..\..\..\mdp_msdk-val-tools\bs_parser\bs_parser_vs2012.vcxproj", "{D08D664E-7245-40F7-9B55-3440EF95F2F7}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vm", "..\..\_studio\shared\umc\core\vm\vm.vcxproj", "{D41D3178-5C65-4868-BDB1-42C44643274E}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vm_2012", "..\..\_studio\shared\umc\core\vm\vm_vs2012.vcxproj ", "{D41D3178-5C65-4868-BDB1-42C44643274E}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{1877958B-2FC5-4726-AC60-E1AB65D7A978}"
 	ProjectSection(SolutionItems) = preProject
 		MsdkTsDll.props = MsdkTsDll.props
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_dispatch_trace", "..\..\..\mdp_msdk-api\opensource\mfx_dispatch\mfx_dispatch_trace_lib.vcxproj", "{430E22BA-BDF6-497C-BFC5-EC6907F90018}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_dispatch_trace_lib_vs2012", "..\..\..\mdp_msdk-api\opensource\mfx_dispatch\mfx_dispatch_trace_lib_vs2012.vcxproj", "{430E22BA-BDF6-497C-BFC5-EC6907F90018}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
