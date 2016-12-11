@@ -4075,10 +4075,10 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
         m_OptProc.Check(argv[0], VM_STRING("-(dec|vpp|enc):latency"), VM_STRING("prints latency for specific Mediasdk component"), OPT_BOOL)||
         m_OptProc.Check(argv[0], VM_STRING("-(dec|vpp|enc):drop_frames"), VM_STRING("drop n frames in end of interval before corresponding component"), OPT_SPECIAL, VM_STRING("DROP INTERVAL"))||
         (0 != (nPattern = m_OptProc.Check(argv[0],
-        VM_STRING("-dec:(")VM_STRING(MFX_FOURCC_PATTERN()VM_STRING(")")),
+        VM_STRING("-dec:(") VM_STRING(MFX_FOURCC_PATTERN() VM_STRING(")")),
         VM_STRING("output fourcc, valid only for YUV input"), OPT_INT_32)))||
         (0 != (nPattern = m_OptProc.Check(argv[0],
-        VM_STRING("-enc:(")VM_STRING(MFX_FOURCC_PATTERN()VM_STRING(")")),
+        VM_STRING("-enc:(") VM_STRING(MFX_FOURCC_PATTERN() VM_STRING(")")),
         VM_STRING("output fourcc, valid only for YUV input"), OPT_INT_32))))
     {
 
@@ -5046,7 +5046,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
               m_inParams.bFieldSplitting = true;
           }
           else HANDLE_INT_OPTION(m_inParams.nDecoderSurfs, VM_STRING("-dec:surfs"), VM_STRING("specifies number of surfaces in decoder's pool"))
-   		  else
+          else
           {
                MFX_TRACE_AT_EXIT_IF( MFX_ERR_UNSUPPORTED
                     , !bReportError

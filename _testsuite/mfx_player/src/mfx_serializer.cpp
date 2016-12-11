@@ -31,7 +31,7 @@ using namespace Formater;
     if (!DeserializeSingleElement(input_strm, m_pStruct->fieldname)){return false;}
 
 #define SERIALIZE_STRUCT(fieldname)\
-    SerializeStruct(VM_STRING(#fieldname)VM_STRING("."), m_pStruct->fieldname);
+    SerializeStruct(VM_STRING(#fieldname) VM_STRING("."), m_pStruct->fieldname);
 
 #define SERIALIZE_POD_ARRAY(fieldname, num)\
     SerializeArrayOfPODs(VM_STRING(#fieldname), m_pStruct->fieldname, num)

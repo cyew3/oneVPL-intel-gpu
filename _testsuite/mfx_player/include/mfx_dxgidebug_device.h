@@ -48,7 +48,7 @@ public:
         m_pGetdxgiDebug = (DXGIGetDebugInterface)GetProcAddress(GetModuleHandle(sDxgiDebugLib), sDxgiDebuInterface);
         if (!m_pGetdxgiDebug)
         {
-            PipelineTrace((VM_STRING("ERROR: Cannot GetProcAdress ")STR_TOKEN()VM_STRING("\n"), sDxgiDebuInterface));
+            PipelineTrace((VM_STRING("ERROR: Cannot GetProcAdress ") STR_TOKEN() VM_STRING("\n"), sDxgiDebuInterface));
             return;
         }
         HRESULT hr = m_pGetdxgiDebug(__uuidof(IDXGIDebug), (void**)&m_dxgidebug);
@@ -91,7 +91,7 @@ public:
                 PipelineTrace((VM_STRING("\n###############################################################################")));
                 PipelineTrace((VM_STRING("\n### DXGIDebug report:\n")));
             }
-            PipelineTrace((VM_STRING("### ")STR_TOKEN()VM_STRING("\n"), pmsg->pDescription));
+            PipelineTrace((VM_STRING("### ") STR_TOKEN() VM_STRING("\n"), pmsg->pDescription));
         }
     }
 };
