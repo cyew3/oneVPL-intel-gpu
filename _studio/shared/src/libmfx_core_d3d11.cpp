@@ -40,6 +40,7 @@ D3D11VideoCORE::D3D11VideoCORE(const mfxU32 adapterNum, const mfxU32 numThreadsA
     ,   m_bCmCopy(false)
     ,   m_bCmCopySwap(false)
     ,   m_bCmCopyAllowed(true)
+    ,   m_VideoDecoderConfigCount(0)
 {
 }
 
@@ -85,6 +86,30 @@ eMFXHWType D3D11VideoCORE::GetHWType()
     return m_HWType;
 }
 
+
+D3D11_VIDEO_DECODER_CONFIG* D3D11VideoCORE::GetConfig(D3D11_VIDEO_DECODER_DESC *video_desc, mfxU32 start, mfxU32 end, const GUID guid)
+{
+    HRESULT hr;
+    for (mfxU32 i = start; i < end; i++)
+    {
+        D3D11_VIDEO_DECODER_CONFIG Config = {0};
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "GetVideoDecoderConfig");
+            hr = m_pD11VideoDevice->GetVideoDecoderConfig(video_desc, i, &Config);
+        }
+        if (FAILED(hr))
+            return NULL;
+
+        m_Configs.push_back(Config);
+
+        if (m_Configs[i].guidConfigBitstreamEncryption == guid)
+        {
+            return &m_Configs[i];
+        }
+    }
+    return NULL;
+}
+
 mfxStatus D3D11VideoCORE::GetIntelDataPrivateReport(const GUID guid, mfxVideoParam *par, D3D11_VIDEO_DECODER_CONFIG & config)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11VideoCORE::GetIntelDataPrivateReport");
@@ -92,7 +117,6 @@ mfxStatus D3D11VideoCORE::GetIntelDataPrivateReport(const GUID guid, mfxVideoPar
     MFX_CHECK_STS(mfxRes);
 
     D3D11_VIDEO_DECODER_DESC video_desc = {0};
-    D3D11_VIDEO_DECODER_CONFIG video_config = {0};
     video_desc.Guid = DXVADDI_Intel_Decode_PrivateData_Report;
     video_desc.SampleWidth = par ? par->mfx.FrameInfo.Width : 640;
     video_desc.SampleHeight = par ? par->mfx.FrameInfo.Height : 480;
@@ -141,50 +165,56 @@ mfxStatus D3D11VideoCORE::GetIntelDataPrivateReport(const GUID guid, mfxVideoPar
     if (!isIntelGuidPresent) // if no required GUID - no acceleration at all
         return MFX_WRN_PARTIAL_ACCELERATION;
 
-    mfxU32  count = 0;
-    HRESULT hr;
+    UMC::AutomaticUMCMutex lock(m_guard); // protects m_Configs
+
+    // NOTE: the following functions GetVideoDecoderConfigCount and GetVideoDecoderConfig
+    // take too much time (~230us and ~560us respectively). So we cache these values.
+    if (0 == m_VideoDecoderConfigCount)
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "GetVideoDecoderConfigCount");
-        hr = m_pD11VideoDevice->GetVideoDecoderConfigCount(&video_desc, &count);
-    }
-    if (FAILED(hr))
-        return MFX_WRN_PARTIAL_ACCELERATION;
-
-    for (mfxU32 i = 0; i < count; i++)
-    {
-        {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "GetVideoDecoderConfig");
-            hr = m_pD11VideoDevice->GetVideoDecoderConfig(&video_desc, i, &video_config);
-        }
+        HRESULT hr = m_pD11VideoDevice->GetVideoDecoderConfigCount(&video_desc, &m_VideoDecoderConfigCount);
         if (FAILED(hr))
             return MFX_WRN_PARTIAL_ACCELERATION;
+    }
 
-        if (video_config.guidConfigBitstreamEncryption == guid)
+    D3D11_VIDEO_DECODER_CONFIG *video_config = NULL;
+
+    for (mfxU32 i=0; i < m_Configs.size(); ++i)
+    {
+        if (m_Configs[i].guidConfigBitstreamEncryption == guid)
         {
-            memcpy_s(&config, sizeof(config), &video_config, sizeof(D3D11_VIDEO_DECODER_CONFIG));
-
-            if (guid == DXVA2_Intel_Encode_AVC && video_config.ConfigSpatialResid8 != INTEL_AVC_ENCODE_DDI_VERSION)
-            {
-                return MFX_WRN_PARTIAL_ACCELERATION;
-            }
-            else if (guid == DXVA2_Intel_Encode_MPEG2 && video_config.ConfigSpatialResid8 != INTEL_MPEG2_ENCODE_DDI_VERSION)
-            {
-                return  MFX_WRN_PARTIAL_ACCELERATION;
-            }
-            else if (guid == DXVA2_Intel_Encode_JPEG  && video_config.ConfigSpatialResid8 != INTEL_MJPEG_ENCODE_DDI_VERSION)
-            {
-                return  MFX_WRN_PARTIAL_ACCELERATION;
-            }/*
-            else if (guid == DXVA2_Intel_Encode_HEVC_Main)
-            {
-                m_HEVCEncodeDDIVersion = video_config.ConfigSpatialResid8;
-            }*/
-            else
-                 return  MFX_ERR_NONE;
+            video_config = &m_Configs[i];
+            break;
         }
     }
 
-    return MFX_WRN_PARTIAL_ACCELERATION;
+    if (!video_config)
+    {
+        video_config = GetConfig(&video_desc, (mfxU32)m_Configs.size(), m_VideoDecoderConfigCount, guid);
+        if (!video_config)
+            return MFX_WRN_PARTIAL_ACCELERATION;
+    }
+
+    memcpy_s(&config, sizeof(config), video_config, sizeof(D3D11_VIDEO_DECODER_CONFIG));
+
+    if (guid == DXVA2_Intel_Encode_AVC && video_config->ConfigSpatialResid8 != INTEL_AVC_ENCODE_DDI_VERSION)
+    {
+        return MFX_WRN_PARTIAL_ACCELERATION;
+    }
+    else if (guid == DXVA2_Intel_Encode_MPEG2 && video_config->ConfigSpatialResid8 != INTEL_MPEG2_ENCODE_DDI_VERSION)
+    {
+        return  MFX_WRN_PARTIAL_ACCELERATION;
+    }
+    else if (guid == DXVA2_Intel_Encode_JPEG  && video_config->ConfigSpatialResid8 != INTEL_MJPEG_ENCODE_DDI_VERSION)
+    {
+        return  MFX_WRN_PARTIAL_ACCELERATION;
+    }
+    /*else if (guid == DXVA2_Intel_Encode_HEVC_Main)
+    {
+    m_HEVCEncodeDDIVersion = video_config->ConfigSpatialResid8;
+    }*/
+
+    return  MFX_ERR_NONE;
 }
 
 mfxStatus D3D11VideoCORE::IsGuidSupported(const GUID guid, mfxVideoParam *par, bool isEncode)

@@ -148,6 +148,8 @@ private:
     mfxStatus ProcessRenderTargets(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response, mfxBaseWideFrameAllocator* pAlloc);
     // this function should not be virtual
     mfxStatus SetCmCopyStatus(bool enable);
+
+    D3D11_VIDEO_DECODER_CONFIG* GetConfig(D3D11_VIDEO_DECODER_DESC *video_desc, mfxU32 start, mfxU32 end, const GUID guid);
     
     bool                                                           m_bUseExtAllocForHWFrames;
     s_ptr<mfxDefaultAllocatorD3D11::mfxWideHWFrameAllocator, true> m_pcHWAlloc; 
@@ -177,6 +179,8 @@ private:
     bool m_bCmCopyAllowed;
     s_ptr<CmCopyWrapper, true>           m_pCmCopy;
     s_ptr<CMEnabledCoreAdapter, true>    m_pCmAdapter;
+    mfxU32                               m_VideoDecoderConfigCount;
+    std::vector<D3D11_VIDEO_DECODER_CONFIG>     m_Configs;
 };
 
 
