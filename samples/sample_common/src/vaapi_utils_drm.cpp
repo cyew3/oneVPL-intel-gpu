@@ -367,19 +367,17 @@ bool drmRenderer::setupConnection(drmModeRes *resource, drmModeConnector* connec
     m_encoderID = connector->encoder_id;
     encoder = m_drmlib.drmModeGetEncoder(m_fd, m_encoderID);
     if (encoder) {
-      if (m_crtcID >= 0) {
-        m_crtcID = encoder->crtc_id;
-        for (int j = 0; j < resource->count_crtcs; ++j)
-        {
-            if (m_crtcID == resource->crtcs[j])
-            {
-                m_crtcIndex = j;
-                break;
-            }
-        }
-        ret = true;
-        msdk_printf(MSDK_STRING("drmrender: selected crtc already attached to connector\n"));
+      m_crtcID = encoder->crtc_id;
+      for (int j = 0; j < resource->count_crtcs; ++j)
+      {
+          if (m_crtcID == resource->crtcs[j])
+          {
+              m_crtcIndex = j;
+              break;
+          }
       }
+      ret = true;
+      msdk_printf(MSDK_STRING("drmrender: selected crtc already attached to connector\n"));
       m_drmlib.drmModeFreeEncoder(encoder);
     }
 

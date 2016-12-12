@@ -855,12 +855,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             pParams->nDstHeight, pParams->dFrameRate);
     }
 
-    // if nv12 option wasn't specified we expect input YUV file in YUV420 color format
-    if (!pParams->FileInputFourCC)
-    {
-        pParams->FileInputFourCC = MFX_FOURCC_YV12;
-    }
-
     if (!pParams->nPicStruct)
     {
         pParams->nPicStruct = MFX_PICSTRUCT_PROGRESSIVE;

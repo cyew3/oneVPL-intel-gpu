@@ -88,6 +88,7 @@ namespace TranscodingSample
 
     enum EFieldCopyMode
     {
+        FC_NONE=0,
         FC_T2T=1,
         FC_T2B=2,
         FC_B2T=4,

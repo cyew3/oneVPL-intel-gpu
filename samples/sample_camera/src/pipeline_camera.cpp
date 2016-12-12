@@ -1185,13 +1185,15 @@ void CCameraPipeline::Close()
         MSDK_SAFE_DELETE(m_pARGB16FileWriter);
     }
 
-    // allocator if used as external for MediaSDK must be deleted after decoder
-    DeleteAllocator();
-
 #if D3D_SURFACES_SUPPORT
    if (m_bIsRender)
        m_d3dRender.Close();
 #endif
+
+    // allocator if used as external for MediaSDK must be deleted after decoder
+    DeleteAllocator();
+
+
 
     return;
 }
