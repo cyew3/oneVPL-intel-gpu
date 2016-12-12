@@ -2709,7 +2709,6 @@ mfxStatus VideoVPPHW::MergeRuntimeParams(const DdiTask *pTask, MfxHwVideoProcess
         inputSurfs[indx] = pTask->m_refList[pTask->bkwdRefCount + i];
     }
 
-    mfxExtIntGPUHang* ht = 0;
     mfxExtVPPVideoSignalInfo *vsi;
     for (i = 0; i < numSamples; i++)
     {
@@ -2737,12 +2736,19 @@ mfxStatus VideoVPPHW::MergeRuntimeParams(const DdiTask *pTask, MfxHwVideoProcess
             execParams->VideoSignalInfo[i].NominalRange   = vsi->NominalRange;
             execParams->VideoSignalInfo[i].TransferMatrix = vsi->TransferMatrix;
         }
-
-        if (!ht)
-            ht = reinterpret_cast<mfxExtIntGPUHang*>( GetExtendedBuffer(inputSurfs[i].pSurf->Data.ExtParam, inputSurfs[i].pSurf->Data.NumExtParam, MFX_EXTBUFF_GPU_HANG));
     }
 
-    execParams->gpuHangTrigger = !!ht;
+#if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
+    execParams->gpuHangTrigger = false;
+    for (i = 0; i < numSamples; i++)
+    {
+        if (GetExtendedBuffer(inputSurfs[i].pSurf->Data.ExtParam, inputSurfs[i].pSurf->Data.NumExtParam, MFX_EXTBUFF_GPU_HANG))
+        {
+            execParams->gpuHangTrigger = true;
+            break;
+        }
+    }
+#endif
 
     ExtSurface outputSurf = pTask->output;
     // Update Video Signal info params for output

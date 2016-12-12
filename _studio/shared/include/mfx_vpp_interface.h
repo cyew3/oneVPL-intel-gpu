@@ -416,7 +416,9 @@ namespace MfxHwVideoProcessing
                ,mirroring(0)
                ,mirroringPosition(0)
                ,scene(VPP_SCENE_NO_CHANGE)
+#if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
                ,gpuHangTrigger(false)
+#endif
             {
                    memset(&targetSurface, 0, sizeof(mfxDrvSurface));
                    dstRects.clear();
@@ -526,7 +528,9 @@ namespace MfxHwVideoProcessing
 
         vppScene    scene;     // Keep information about scene change
 
-         bool       gpuHangTrigger;
+#if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
+        bool       gpuHangTrigger;
+#endif
     };
 
     class DriverVideoProcessing

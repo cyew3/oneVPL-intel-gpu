@@ -752,10 +752,10 @@ public:
 #endif
 #if !defined(MFX_EXT_BRC_DISABLE)
         mfxExtBRC                   extBRC;
+#endif
         mfxExtEncodedSlicesInfo     SliceInfo;
         mfxExtEncoderROI            ROI;
         mfxExtBuffer *              m_extParam[SIZE_OF_ARRAY(ExtBuffer::allowed_buffers)];
-#endif
     } m_ext;
 
     mfxU32 BufferSizeInKB;

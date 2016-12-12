@@ -51,7 +51,9 @@ public:
     PackVA()
         : va_mode(VA_NO)
         , m_va(NULL)
+#if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
         , bTriggerGPUHang(false)
+#endif
         , totalNumCoef(0)
         , pBitsreamData(NULL)
         , va_index(0)
@@ -105,7 +107,10 @@ public:
     VideoAccelerationProfile va_mode;
     VideoAccelerator         *m_va;
 
+#if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
     bool   bTriggerGPUHang;
+#endif
+
     Ipp32s totalNumCoef;
     Ipp8u  *pBitsreamData;
     Ipp32s va_index;

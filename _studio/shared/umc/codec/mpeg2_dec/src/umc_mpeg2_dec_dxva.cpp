@@ -533,6 +533,7 @@ Status PackVA::InitBuffers(int size_bs, int size_sl)
             bs_size_getting = CompBuf->GetBufferSize();
             pSliceInfo = pSliceInfoBuffer;
 
+#if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
             if (bTriggerGPUHang)
             {
                 bTriggerGPUHang = false;
@@ -544,7 +545,7 @@ Status PackVA::InitBuffers(int size_bs, int size_sl)
 
                 *trigger = 1;
             }
-
+#endif
         }
     }
     catch(...)

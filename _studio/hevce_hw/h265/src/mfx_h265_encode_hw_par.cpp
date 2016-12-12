@@ -1411,14 +1411,14 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 
     changed += CheckMax(par.mfx.GopRefDist, (caps.SliceIPOnly || IsOn(par.mfx.LowPower)) ? 1 : (par.mfx.GopPicSize ? par.mfx.GopPicSize - 1 : 0xFFFF));
 
-#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     invalid += CheckOption(par.Protected
-#ifndef MFX_VA_LINUX
+#if !defined(MFX_VA_LINUX) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
         , (mfxU16)MFX_PROTECTION_PAVP
         , (mfxU16)MFX_PROTECTION_GPUCP_PAVP
 #endif
         , 0);
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (par.Protected)
     {
         mfxExtPAVPOption& PAVP = par.m_ext.PAVP;
@@ -1450,7 +1450,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
                 , 0x0C000);
         }
     }
-#endif // !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#endif // #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 
     changed += CheckOption(par.IOPattern
         , (mfxU32)MFX_IOPATTERN_IN_VIDEO_MEMORY

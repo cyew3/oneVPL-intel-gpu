@@ -508,6 +508,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         return mfxSts;
     }
 
+#if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
     struct gpu_hang_trigger
     {
         VADisplay   disp;
@@ -548,6 +549,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
 
     if (trigger.sts != VA_STATUS_SUCCESS)
         return MFX_ERR_DEVICE_FAILED;
+#endif // #if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
 
     /* Now msdk needs intermediate surface for ADI with ref 30i->30p mode*/
     if ((m_primarySurface4Composition == NULL) && (pParams->iDeinterlacingAlgorithm !=0) )
@@ -1151,12 +1153,14 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
 
+#if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
     if (trigger.id != VA_INVALID_ID)
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaRenderPicture");
         vaSts = vaRenderPicture(m_vaDisplay, m_vaContextVPP, &trigger.id, 1);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
+#endif
 
 #if defined(VPP_NO_COLORFILL)
     if(0 == output_region.front().x && 0 == output_region.front().y) // Do not disable colorfill if letterboxing is used

@@ -85,16 +85,21 @@ Packer * Packer::CreatePacker(UMC::VideoAccelerator * va)
     Packer * packer = 0;
 
 #ifdef UMC_VA_DXVA
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
     if (va->GetProtectedVA() && IS_PROTECTION_WIDEVINE(va->GetProtectedVA()->GetProtected()))
         packer = CreatePackerWidevine(va);
-    else if (va->IsIntelCustomGUID())
+    else
+#endif
+        if (va->IsIntelCustomGUID())
         packer = CreatePackerIntel(va);
     else
         packer = CreatePackerMS(va);
 #elif defined(UMC_VA_LINUX)
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
     if (va->GetProtectedVA() && IS_PROTECTION_WIDEVINE(va->GetProtectedVA()->GetProtected()))
         packer = new PackerVA_Widevine(va);
     else
+#endif
         packer = new PackerVA(va);
 #endif
 

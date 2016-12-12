@@ -1272,6 +1272,12 @@ mfxStatus CommonCORE::DoSWFastCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSr
         MFX_CHECK_STS(sts);
         break;
 
+    case MFX_FOURCC_UYVY:
+        roi.width *= 2;
+        sts = pFastCopy->Copy(pDst->Data.U, dstPitch, pSrc->Data.U, srcPitch, roi, copyFlag);
+        MFX_CHECK_STS(sts);
+        break;
+
     case MFX_FOURCC_YUY2:
         roi.width *= 2;
 
@@ -1319,6 +1325,7 @@ mfxStatus CommonCORE::DoSWFastCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSr
             MFX_CHECK_STS(sts);
             break;
         }
+
     case MFX_FOURCC_AYUV:
     case MFX_FOURCC_RGB4:
     case MFX_FOURCC_A2RGB10:

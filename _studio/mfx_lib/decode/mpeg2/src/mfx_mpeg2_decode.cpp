@@ -2938,14 +2938,12 @@ mfxStatus VideoDECODEMPEG2Internal_HW::DecodeFrameCheck(mfxBitstream *bs,
         mfxStatus s = UpdateWorkSurfaceParams(curr_index);
         MFX_CHECK_STS(s);
 
+#if defined (MFX_EXTBUFF_GPU_HANG_ENABLE) && (defined (MFX_VA_WIN) || defined (MFX_VA_LINUX))
         mfxExtIntGPUHang* extBuffer = (mfxExtIntGPUHang*) GetExtendedBuffer(surface_work->Data.ExtParam, surface_work->Data.NumExtParam, MFX_EXTBUFF_GPU_HANG);
-        bool triggerGPUHang = extBuffer != NULL;
+        m_implUmcHW->pack_w.bTriggerGPUHang = extBuffer != NULL;
+#endif // defined (MFX_EXTBUFF_GPU_HANG_ENABLE) && (defined (MFX_VA_WIN) || defined (MFX_VA_LINUX))
 
-#if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
-        m_implUmcHW->pack_w.bTriggerGPUHang = triggerGPUHang;
-#endif
         umcRes = m_implUmc->ProcessRestFrame(m_task_num);
-        triggerGPUHang = false;
 
         if (UMC::UMC_OK != umcRes)
         {
