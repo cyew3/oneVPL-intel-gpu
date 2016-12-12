@@ -446,7 +446,7 @@ protected:
 class CARGB16VideoReader: public CVideoReader
 {
 public :
-    CARGB16VideoReader(): m_fSrc(0), m_bSingleFileMode(false) {};
+    CARGB16VideoReader(): m_fSrc(0), m_bSingleFileMode(false),m_Height(0),m_Width(0),m_FileNum(0) {};
     virtual ~CARGB16VideoReader();
 
     void       Close();

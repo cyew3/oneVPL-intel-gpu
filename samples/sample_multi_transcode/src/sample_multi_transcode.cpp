@@ -412,7 +412,7 @@ mfxStatus Launcher::ProcessResult()
             << m_pSessionArray[i]->working_time << MSDK_STRING(" sec, ") << m_pSessionArray[i]->numTransFrames << MSDK_STRING(" frames") << std::endl
             << m_parser.GetLine(i) << std::endl << std::endl;
 
-        msdk_printf(ss.str().c_str());
+        msdk_printf(MSDK_STRING("%s"),ss.str().c_str());
         if (pPerfFile)
         {
             msdk_fprintf(pPerfFile, ss.str().c_str());
@@ -424,7 +424,7 @@ mfxStatus Launcher::ProcessResult()
     msdk_stringstream ssTest;
     ssTest << std::endl << MSDK_STRING("The test ") << (FinalSts ? msdk_string(MSDK_STRING("FAILED")) : msdk_string(MSDK_STRING("PASSED"))) << std::endl;
 
-    msdk_printf(ssTest.str().c_str());
+    msdk_printf(MSDK_STRING("%s"),ssTest.str().c_str());
     if (pPerfFile)
     {
         msdk_fprintf(pPerfFile, ssTest.str().c_str());
