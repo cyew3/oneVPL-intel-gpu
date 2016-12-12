@@ -116,7 +116,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
                             the encoded data enters the Video Buffering Verifier buffer\n"));
     msdk_printf(MSDK_STRING("   [-timeout]               - encoding in cycle not less than specific time in seconds\n"));
     msdk_printf(MSDK_STRING("   [-membuf]                - size of memory buffer in frames\n"));
-    msdk_printf(MSDK_STRING("   [-uncut]                 - do not insert idr after file writer reset\n"));
+    msdk_printf(MSDK_STRING("   [-uncut]                 - do not cut output file in looped mode (in case of -timeout option)\n"));
 
     msdk_printf(MSDK_STRING("Example: %s h265 -i InputYUVFile -o OutputEncodedFile -w width -h height -hw -p 2fca99749fdb49aeb121a5b63ef568f7\n"), strAppName);
 #if D3D_SURFACES_SUPPORT
