@@ -1102,6 +1102,7 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
             {
                mfxI8 prevQP  = taskForExecute->m_qpY;
                taskForExecute->m_qpY = (mfxI8)m_brc->GetQP(m_vpar,*taskForExecute);
+               MFX_CHECK((taskForExecute->m_qpY <= 51) && (taskForExecute->m_qpY >= 1 - 6*m_vpar.m_sps.bit_depth_luma_minus8), MFX_ERR_UNDEFINED_BEHAVIOR);
                taskForExecute->m_sh.slice_qp_delta = mfxI8(taskForExecute->m_qpY - (m_vpar.m_pps.init_qp_minus26 + 26));
 
                if (taskForExecute->m_recode && prevQP == taskForExecute->m_qpY)
