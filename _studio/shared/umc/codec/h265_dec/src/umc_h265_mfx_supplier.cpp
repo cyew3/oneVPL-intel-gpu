@@ -557,7 +557,7 @@ mfxU32 CalculateFourcc(int codecProfile, mfxFrameInfo const* frameInfo)
         { MFX_FOURCC_NV12, MFX_FOURCC_P010, 0, 0 }, //400
         { MFX_FOURCC_NV12, MFX_FOURCC_P010, 0, 0 }, //420
 #ifdef PRE_SI_TARGET_PLATFORM_GEN11
-        { MFX_FOURCC_YUY2, MFX_FOURCC_Y216, 0, 0 }, //422
+        { MFX_FOURCC_YUY2, MFX_FOURCC_Y210, 0, 0 }, //422
         { MFX_FOURCC_AYUV, MFX_FOURCC_Y410, 0, 0 }  //444
 #endif
     };
