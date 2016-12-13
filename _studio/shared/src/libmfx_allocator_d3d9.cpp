@@ -296,7 +296,7 @@ mfxStatus mfxDefaultAllocatorD3D9::SetFrameData(const D3DSURFACE_DESC &desc, con
         ptr->PitchHigh = (mfxU16)(LockedRect.Pitch / (1 << 16));
         ptr->PitchLow  = (mfxU16)(LockedRect.Pitch % (1 << 16));
         ptr->Y410 = (mfxY410 *)LockedRect.pBits;
-        ptr->U = 0;
+        ptr->Y = 0;
         ptr->V = 0;
         ptr->A = 0;
         break;
