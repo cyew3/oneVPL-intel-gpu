@@ -103,7 +103,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>AS_H265FEI_PLUGIN;MFX_VA;MFX_D3D11_ENABLED;WIN32;_DEBUG;_WINDOWS;_USRDLL;MFXPLUGIN_H265FEI_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.\include;..\shared\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\..\..\mdp_msdk-api\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\shared\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\..\..\mdp_msdk-api\include</AdditionalIncludeDirectories>
       <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
     <Link>
@@ -149,7 +149,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>AS_H265FEI_PLUGIN;MFX_VA;MFX_D3D11_ENABLED;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBMFXHW_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.\include;..\shared\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\..\..\mdp_msdk-api\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\shared\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\..\..\mdp_msdk-api\include</AdditionalIncludeDirectories>
       <TreatWarningAsError>false</TreatWarningAsError>
       <SDLCheck>true</SDLCheck>
     </ClCompile>
@@ -180,7 +180,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>AS_H265FEI_PLUGIN;MFX_VA;MFX_D3D11_ENABLED;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBMFXHW_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.\include;..\shared\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\..\..\mdp_msdk-api\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\shared\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\..\..\mdp_msdk-api\include</AdditionalIncludeDirectories>
       <TreatWarningAsError>false</TreatWarningAsError>
       <SDLCheck>true</SDLCheck>
     </ClCompile>
