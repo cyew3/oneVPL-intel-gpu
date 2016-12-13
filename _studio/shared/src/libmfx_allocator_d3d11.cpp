@@ -414,6 +414,7 @@ mfxStatus mfxDefaultAllocatorD3D11::SetFrameData(const D3D11_TEXTURE2D_DESC &Des
         ptr->Y16 = (mfxU16*)LockedRect.pData;
         ptr->U16 = ptr->Y16 + 1;
         ptr->V16 = ptr->Y16 + 3;
+        break;
 #endif //#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
     default:
         return MFX_ERR_LOCK_MEMORY;
