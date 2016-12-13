@@ -1197,7 +1197,9 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     InitV4L2Pipeline(pParams);
 
     m_nFramesToProcess = pParams->nNumFrames;
-    m_bCutOutput = !pParams->bUncut;
+
+    // If output isn't specified work in performance mode and do not insert idr
+    m_bCutOutput = pParams->dstFileBuff.size() ? !pParams->bUncut : false;
 
     return MFX_ERR_NONE;
 }
@@ -1549,8 +1551,6 @@ mfxStatus CEncodingPipeline::Run()
 
             MSDK_BREAK_ON_ERROR(sts);
 
-            m_nFramesRead++;
-
             m_statFile.StopTimeMeasurement();
             if (MVC_ENABLED & m_MVCflags) currViewNum ^= 1; // Flip between 0 and 1 for ViewId
 
@@ -1564,7 +1564,7 @@ mfxStatus CEncodingPipeline::Run()
             {
                 sts = m_pmfxVPP->RunFrameVPPAsync(&m_pVppSurfaces[nVppSurfIdx], &m_pEncSurfaces[nEncSurfIdx],
                     NULL, &VppSyncPoint);
-                if (m_nMemBuffer && VppSyncPoint)
+                if (m_nMemBuffer)
                 {
                    // increment buffer index
                    nVppSurfIdx++;
@@ -1612,7 +1612,7 @@ mfxStatus CEncodingPipeline::Run()
             sts = m_pmfxENC->EncodeFrameAsync(&m_encCtrl, &m_pEncSurfaces[nEncSurfIdx], &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
             m_bInsertIDR = false;
 
-            if (m_nMemBuffer && pCurrentTask->EncSyncP)
+            if (m_nMemBuffer)
             {
                 // increment buffer index
                 nEncSurfIdx++;
@@ -1805,7 +1805,7 @@ mfxStatus CEncodingPipeline::LoadNextFrame(mfxFrameSurface1* pSurf)
     if (m_nMemBuffer)
     {
         // memoty buffer mode. No file reading required
-        bool bMemBufExceed = !(m_nFramesRead % m_nMemBuffer);
+        bool bMemBufExceed = !(m_nFramesRead % m_nMemBuffer) && m_nFramesRead;
         if (m_bTimeOutExceed && bMemBufExceed )
         {
             sts = MFX_ERR_MORE_DATA;
