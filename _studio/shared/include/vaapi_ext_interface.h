@@ -33,6 +33,69 @@
 #define VA_CODED_BUF_STATUS_BAD_BITSTREAM 0x8000
 #define VA_CODED_BUF_STATUS_HW_TEAR_DOWN 0x4000
 
+/** \brief Attribute value for VAConfigAttribEncROI */
+typedef union _VAConfigAttribValEncROIPrivate {
+    struct {
+        /** \brief The number of ROI regions supported, 0 if ROI is not supported. */
+        unsigned int num_roi_regions        : 8;
+        /** \brief Indicates if ROI priority indication is supported when
+         * VAConfigAttribRateControl != VA_RC_CQP, else only ROI delta QP added on top of
+         * the frame level QP is supported when VAConfigAttribRateControl == VA_RC_CQP.
+         */
+        unsigned int roi_rc_priority_support    : 1;
+        /**
+         * \brief A flag indicates whether ROI delta QP is supported
+         *
+         * \ref roi_rc_qp_delta_support equal to 1 specifies the underlying driver supports
+         * ROI delta QP when VAConfigAttribRateControl != VA_RC_CQP, user can use \c roi_value
+         * in #VAEncROI to set ROI delta QP. \ref roi_rc_qp_delta_support equal to 0 specifies
+         * the underlying driver doesn't support ROI delta QP.
+         *
+         * User should ignore \ref roi_rc_qp_delta_support when VAConfigAttribRateControl == VA_RC_CQP
+         * because ROI delta QP is always required when VAConfigAttribRateControl == VA_RC_CQP.
+         */
+        unsigned int roi_rc_qp_delta_support    : 1;
+        unsigned int reserved                   : 22;
+     } bits;
+     unsigned int value;
+} VAConfigAttribValEncROIPrivate;
+
+typedef struct _VAEncMiscParameterBufferROIPrivate {
+    /** \brief Number of ROIs being sent.*/
+    unsigned int        num_roi;
+
+    /** \brief Valid when VAConfigAttribRateControl != VA_RC_CQP, then the encoder's
+     *  rate control will determine actual delta QPs.  Specifies the max/min allowed delta
+     *  QPs. */
+    char                max_delta_qp;
+    char                min_delta_qp;
+
+   /** \brief Pointer to a VAEncRoi array with num_roi elements.  It is relative to frame
+     *  coordinates for the frame case and to field coordinates for the field case.*/
+    VAEncROI            *roi;
+    union {
+        struct {
+            /**
+             * \brief An indication for roi value.
+             *
+             * \ref roi_value_is_qp_delta equal to 1 indicates \c roi_value in #VAEncROI should
+             * be used as ROI delta QP. \ref roi_value_is_qp_delta equal to 0 indicates \c roi_value
+             * in #VAEncROI should be used as ROI priority.
+             *
+             * \ref roi_value_is_qp_delta is only available when VAConfigAttribRateControl != VA_RC_CQP,
+             * the setting must comply with \c roi_rc_priority_support and \c roi_rc_qp_delta_support in
+             * #VAConfigAttribValEncROI. The underlying driver should ignore this field
+             * when VAConfigAttribRateControl == VA_RC_CQP.
+             */
+            uint32_t  roi_value_is_qp_delta    : 1;
+            uint32_t  reserved                 : 31;
+        } bits;
+        uint32_t value;
+    } roi_flags;
+} VAEncMiscParameterBufferROIPrivate;
+
+#define VAEncMiscParameterTypeROIPrivate        -5
+
 // Private per frame encoder controls, once set they will persist for all future frames
 // until it is updated again.
 typedef struct _VAEncMiscParameterPrivate
