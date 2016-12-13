@@ -1422,10 +1422,10 @@ mfxStatus CommonCORE::CopyFrame(mfxFrameSurface1 *dst, mfxFrameSurface1 *src)
     }
     else if(src->Data.MemId && dst->Data.Y)
     {
-        mfxMemId srcHandle = 0;
+        mfxHDLPair srcHandle = {};
         mfxU16 srcMemType = MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET;
         mfxU16 dstMemType = MFX_MEMTYPE_SYSTEM_MEMORY;
-        mfxStatus sts = GetExternalFrameHDL(src->Data.MemId, &srcHandle);
+        mfxStatus sts = GetExternalFrameHDL(src->Data.MemId, (mfxHDL *)&srcHandle);
         if(MFX_ERR_UNDEFINED_BEHAVIOR == sts)
             srcMemType |= MFX_MEMTYPE_INTERNAL_FRAME;
         else
@@ -1440,10 +1440,10 @@ mfxStatus CommonCORE::CopyFrame(mfxFrameSurface1 *dst, mfxFrameSurface1 *src)
     }
     else if(src->Data.Y && dst->Data.MemId)
     {
-        mfxMemId dstHandle = 0;
+        mfxHDLPair dstHandle = {};
         mfxU16 dstMemType = MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET;
         mfxU16 srcMemType = MFX_MEMTYPE_SYSTEM_MEMORY;
-        mfxStatus sts = GetExternalFrameHDL(dst->Data.MemId, &dstHandle);
+        mfxStatus sts = GetExternalFrameHDL(dst->Data.MemId, (mfxHDL *)&dstHandle);
         if(MFX_ERR_UNDEFINED_BEHAVIOR == sts)
             dstMemType |= MFX_MEMTYPE_INTERNAL_FRAME;
         else
@@ -1457,16 +1457,16 @@ mfxStatus CommonCORE::CopyFrame(mfxFrameSurface1 *dst, mfxFrameSurface1 *src)
     }
     else if(src->Data.MemId && dst->Data.MemId)
     {
-        mfxMemId dstHandle = 0;
-        mfxMemId srcHandle = 0;
+        mfxHDLPair dstHandle = {};
+        mfxHDLPair srcHandle = {};
         mfxU16 dstMemType = MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET;
         mfxU16 srcMemType = MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET;
-        mfxStatus sts = GetExternalFrameHDL(dst->Data.MemId, &dstHandle);
+        mfxStatus sts = GetExternalFrameHDL(dst->Data.MemId, (mfxHDL *)&dstHandle);
         if(MFX_ERR_UNDEFINED_BEHAVIOR == sts)
             dstMemType |= MFX_MEMTYPE_INTERNAL_FRAME;
         else
             dstMemType |= MFX_MEMTYPE_EXTERNAL_FRAME;
-        sts = GetExternalFrameHDL(src->Data.MemId, &srcHandle);
+        sts = GetExternalFrameHDL(src->Data.MemId, (mfxHDL *)&srcHandle);
         if(MFX_ERR_UNDEFINED_BEHAVIOR == sts)
             srcMemType |= MFX_MEMTYPE_INTERNAL_FRAME;
         else
