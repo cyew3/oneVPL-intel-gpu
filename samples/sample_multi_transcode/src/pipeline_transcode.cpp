@@ -160,6 +160,12 @@ CTranscodingPipeline::CTranscodingPipeline():
     m_ExtHEVCParam.Header.BufferId = MFX_EXTBUFF_HEVC_PARAM;
     m_ExtHEVCParam.Header.BufferSz = sizeof(mfxExtHEVCParam);
 
+#ifdef ENABLE_FUTURE_FEATURES
+    MSDK_ZERO_MEMORY(m_ExtBRC);
+    m_ExtBRC.Header.BufferId = MFX_EXTBUFF_BRC;
+    m_ExtBRC.Header.BufferSz = sizeof(m_ExtBRC);
+#endif
+
     m_EncOpaqueAlloc.Header.BufferId = m_VppOpaqueAlloc.Header.BufferId =
         m_DecOpaqueAlloc.Header.BufferId = m_PluginOpaqueAlloc.Header.BufferId =
         m_PreEncOpaqueAlloc.Header.BufferId =
@@ -1875,6 +1881,18 @@ mfxStatus CTranscodingPipeline::InitEncMfxParams(sInputParams *pInParams)
         m_ExtHEVCParam.PicHeightInLumaSamples = m_mfxEncParams.mfx.FrameInfo.CropH;
         m_EncExtParams.push_back((mfxExtBuffer*)&m_ExtHEVCParam);
     }
+
+#ifdef ENABLE_FUTURE_FEATURES
+    if (pInParams->nExtBRC == MFX_CODINGOPTION_ON && pInParams->EncodeId == MFX_CODEC_HEVC)
+    {
+        m_ExtBRC.Init = HEVCExtBRC::Init;
+        m_ExtBRC.Reset= HEVCExtBRC::Reset;
+        m_ExtBRC.Close= HEVCExtBRC::Close;
+        m_ExtBRC.GetFrameCtrl= HEVCExtBRC::GetFrameCtrl;
+        m_ExtBRC.Update= HEVCExtBRC::Update;
+        m_EncExtParams.push_back((mfxExtBuffer *)&m_ExtBRC);
+    }
+#endif
 
     m_mfxEncParams.mfx.FrameInfo.CropX = 0;
     m_mfxEncParams.mfx.FrameInfo.CropY = 0;

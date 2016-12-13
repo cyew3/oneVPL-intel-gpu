@@ -51,6 +51,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include "hw_device.h"
 #include "plugin_loader.h"
+#include "brc_routines.h"
 
 #include "vpp_ext_buffers_storage.h"
 
@@ -208,6 +209,8 @@ namespace TranscodingSample
         mfxI32  monitorType;
         bool shouldUseGreedyFormula;
         bool enableQSVFF;
+
+        mfxU16 nExtBRC;
 
 #if defined(LIBVA_WAYLAND_SUPPORT)
         mfxU16 nRenderWinX;
@@ -598,6 +601,10 @@ namespace TranscodingSample
 
         // HEVC
         mfxExtHEVCParam          m_ExtHEVCParam;
+
+#ifdef ENABLE_FUTURE_FEATURES
+        mfxExtBRC                m_ExtBRC;
+#endif
 
         // for opaque memory
         mfxExtOpaqueSurfaceAlloc m_EncOpaqueAlloc;
