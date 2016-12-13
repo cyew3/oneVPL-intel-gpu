@@ -1279,7 +1279,19 @@ mfxStatus CommonCORE::DoSWFastCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSr
         MFX_CHECK_STS(sts);
 
         break;
+
 #ifndef OPEN_SOURCE
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+    case MFX_FOURCC_Y210:
+    case MFX_FOURCC_Y216:
+
+        MFX_CHECK_NULL_PTR1(pSrc->Data.Y);
+
+        //we use 8u copy, so we need to increase ROI to handle 16 bit samples
+        roi.width *= 4;
+        sts = pFastCopy->Copy(pDst->Data.Y, dstPitch, pSrc->Data.Y, srcPitch, roi, copyFlag);
+        break;
+
     case MFX_FOURCC_Y410:
         {
             MFX_CHECK_NULL_PTR1(pDst->Data.Y410);
@@ -1293,7 +1305,9 @@ mfxStatus CommonCORE::DoSWFastCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSr
             MFX_CHECK_STS(sts);
         }
         break;
+#endif //PRE_SI_TARGET_PLATFORM_GEN11
 #endif
+
     case MFX_FOURCC_RGB3:
         {
             mfxU8* ptrSrc = IPP_MIN(IPP_MIN(pSrc->Data.R, pSrc->Data.G), pSrc->Data.B);
