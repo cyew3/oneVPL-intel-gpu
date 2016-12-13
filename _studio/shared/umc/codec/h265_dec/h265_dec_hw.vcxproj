@@ -257,7 +257,7 @@
     <ClCompile>
       <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\color_space_converter\include;..\..\codec\me\include;..\..\codec\scene_analyzer\include;..\..\codec\vc1_common\include;..\..\io\media_buffers\include;..\..\io\umc_io\include;..\..\..\include;..\..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\mfx_lib\shared\include;..\..\io\umc_va\include;..\..\..\..\mfx_lib\optimization\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_HEVCD_PLUGIN;WIN32;NDEBUG;_LIB;MFX_VA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <TreatWarningAsError>true</TreatWarningAsError>
+      <TreatWarningAsError>false</TreatWarningAsError>
       <GenerateAlternateCodePaths>SSE41</GenerateAlternateCodePaths>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
@@ -303,7 +303,7 @@
     <ClCompile>
       <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\color_space_converter\include;..\..\codec\me\include;..\..\codec\scene_analyzer\include;..\..\codec\vc1_common\include;..\..\io\media_buffers\include;..\..\io\umc_io\include;..\..\..\include;..\..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\mfx_lib\shared\include;..\..\io\umc_va\include;..\..\..\..\mfx_lib\optimization\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_HEVCD_PLUGIN;WIN64;NDEBUG;_LIB;MFX_VA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <TreatWarningAsError>true</TreatWarningAsError>
+      <TreatWarningAsError>false</TreatWarningAsError>
       <GenerateAlternateCodePaths>SSE41</GenerateAlternateCodePaths>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>

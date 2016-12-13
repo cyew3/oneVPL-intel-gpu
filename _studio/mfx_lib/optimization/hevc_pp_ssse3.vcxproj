@@ -271,7 +271,7 @@
       </PrecompiledHeader>
       <AssemblerOutput>AssemblyCode</AssemblerOutput>
       <WarningLevel>Level3</WarningLevel>
-      <TreatWarningAsError>true</TreatWarningAsError>
+      <TreatWarningAsError>false</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
@@ -316,7 +316,7 @@
       <PrecompiledHeader>
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <TreatWarningAsError>true</TreatWarningAsError>
+      <TreatWarningAsError>false</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <AssemblerOutput>AssemblyCode</AssemblerOutput>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>

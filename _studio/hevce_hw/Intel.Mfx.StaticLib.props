@@ -29,7 +29,7 @@
     <ClCompile>
       <AdditionalOptions>$(CPPFLAGS) %(AdditionalOptions)</AdditionalOptions>
       <WarningLevel>Level4</WarningLevel>
-      <TreatWarningAsError>true</TreatWarningAsError>
+      <TreatWarningAsError>false</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ExceptionHandling>Async</ExceptionHandling>
       <PreprocessorDefinitions>MFX_D3D11_ENABLED;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
