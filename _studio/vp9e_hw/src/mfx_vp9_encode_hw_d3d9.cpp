@@ -274,6 +274,58 @@ D3D9Encoder::~D3D9Encoder()
 
 #define MFX_CHECK_WITH_ASSERT(EXPR, ERR) { assert(EXPR); MFX_CHECK(EXPR, ERR); }
 
+// this function is aimed to workaround all CAPS reporting problems in mainline driver
+void HardcodeCaps(ENCODE_CAPS_VP9& caps, mfxCoreInterface* pCore)
+{
+    mfxCoreParam corePar;
+    pCore->GetCoreParam(pCore->pthis, &corePar);
+
+    mfxPlatform platform;
+    pCore->QueryPlatform(pCore->pthis, &platform);
+
+    if ((corePar.Impl & 0xF00) == MFX_IMPL_VIA_D3D11)
+    {
+        // for DX11 driver doesn't report CAPS at all. Need to hardcode them with CAPS from DX9.
+        Zero(caps);
+
+        caps.CodingLimitSet = 1;
+        caps.SegmentationSupport = 1;
+        caps.BRCReset = 1;
+        caps.MBBRCSupport = 1;
+        caps.TemporalLayerRateCtrl = 1;
+        caps.DynamicScaling = 1;
+
+        caps.EncodeFunc = 1;
+        caps.EncFunc = 1;
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+        if (platform.CodeName >= MFX_PLATFORM_ICELAKE)
+        {
+            caps.MaxPicWidth = 7680;
+            caps.MaxPicHeight = 7680;
+        }
+        else
+        {
+            caps.MaxPicWidth = 4096;
+            caps.MaxPicHeight = 4096;
+            caps.Color420Only = 1;
+        }
+#else //PRE_SI_TARGET_PLATFORM_GEN11
+        caps.MaxPicWidth = 4096;
+        caps.MaxPicHeight = 4096;
+#endif //PRE_SI_TARGET_PLATFORM_GEN11
+    }
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    if (platform.CodeName == MFX_PLATFORM_ICELAKE)
+    {
+        // in addition on ICL driver incoprrectly reports CAPS related to REXTs support. Need to fix them.
+        caps.YUV444ReconSupport = 1;
+        caps.MaxEncodedBitDepth = 1;
+    }
+#endif //PRE_SI_TARGET_PLATFORM_GEN11
+}
+
 mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
     mfxCoreInterface* pCore,
     GUID guid,
@@ -313,12 +365,7 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
     MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
     MFX_CHECK(m_caps.EncodeFunc, MFX_ERR_DEVICE_FAILED);
 
-#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
-    if (m_caps.MaxEncodedBitDepth != 1)
-    {
-        m_caps.MaxEncodedBitDepth = 1; // WA: drivers from MAINLINE don't return correct MaxEncodedBitDepth for Gen11
-    }
-#endif // PRE_SI_TARGET_PLATFORM_GEN11
+    HardcodeCaps(m_caps, pCore);
 
     m_width  = width;
     m_height = height;

@@ -501,6 +501,10 @@ void FillPpsBuffer(
     ENCODE_SET_PICTURE_PARAMETERS_VP9 & pps,
     BitOffsets const &offsets);
 
+void HardcodeCaps(
+    ENCODE_CAPS_VP9& caps,
+    mfxCoreInterface* pCore);
+
 class CachedFeedback
 {
 public:

@@ -157,15 +157,11 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
         ext.ResourceCount = 0;
         ext.ppResourceList = 0;
 
-        hr = m_pVContext->DecoderExtension(m_pVDecoder, &ext);
-        MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
-
-#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
-        if (m_caps.MaxEncodedBitDepth != 1)
-        {
-            m_caps.MaxEncodedBitDepth = 1; // WA: drivers from MAINLINE don't return correct MaxEncodedBitDepth for Gen11
-        }
-#endif // PRE_SI_TARGET_PLATFORM_GEN11
+        // mainline driver returns an error on attempt to query CAPS for VP9 encoder for DX11
+        // hardcoded caps are used to workaround this issue
+        //hr = m_pVContext->DecoderExtension(m_pVDecoder, &ext);
+        //MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
+        HardcodeCaps(m_caps, pCore);
     }
 
     VP9_LOG("\n (VP9_LOG) D3D11Encoder::CreateAuxilliaryDevice -");
