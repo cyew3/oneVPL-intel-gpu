@@ -125,8 +125,8 @@ FEI_EncPakInterface::FEI_EncPakInterface(MFXVideoSession* session, iTaskPool* ta
     MSDK_ZERO_MEMORY(m_videoParams_ENC);
     MSDK_ZERO_MEMORY(m_videoParams_PAK);
 
-    m_InitExtParams_ENC.reserve(1);
-    m_InitExtParams_PAK.reserve(1);
+    m_InitExtParams_ENC.reserve(4);
+    m_InitExtParams_PAK.reserve(4);
 
     /* Default values for I-frames */
     memset(&m_tmpMBencMV, 0x8000, sizeof(mfxExtFeiEncMV::mfxExtFeiEncMVMB));
@@ -754,6 +754,17 @@ mfxStatus FEI_EncPakInterface::InitFrameParams(iTask* eTask)
 
     eTask->bufs = m_pExtBuffers->GetFreeSet();
     MSDK_CHECK_POINTER(eTask->bufs, MFX_ERR_NULL_PTR);
+
+    /* Adjust number of MBs in extended buffers */
+    if (m_pAppConfig->PipelineCfg.DRCresetPoint || m_pAppConfig->PipelineCfg.mixedPicstructs)
+    {
+        mfxU32 n_MB = m_pAppConfig->PipelineCfg.DRCresetPoint ? m_pAppConfig->PipelineCfg.numMB_drc_curr :              // DRC
+            ((eTask->in.InSurface->Info.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) ? m_pAppConfig->PipelineCfg.numMB_frame  // Mixed Picstructs : progressive
+            : m_pAppConfig->PipelineCfg.numMB_refPic);                                                                  // Mixed Picstructs : interlaced
+
+        eTask->bufs->ResetMBnum(n_MB, m_pAppConfig->PipelineCfg.DRCresetPoint);
+        eTask->bufs->ResetSlices(m_videoParams_ENC.mfx.FrameInfo.Width >> 4, m_videoParams_ENC.mfx.FrameInfo.Height >> (eTask->m_fieldPicFlag ? 5 : 4));
+    }
 
     sts = FillRefInfo(eTask); // get info to fill reference structures
     MSDK_CHECK_STATUS(sts, "FillRefInfo failed");

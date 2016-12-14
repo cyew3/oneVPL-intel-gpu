@@ -70,10 +70,10 @@ mfxStatus MFX_VppInterface::Reset(mfxU16 width, mfxU16 height, mfxU16 crop_w, mf
 {
     if (width && height && crop_w && crop_h)
     {
-        m_videoParams.vpp.Out.Width = width;
+        m_videoParams.vpp.Out.Width  = width;
         m_videoParams.vpp.Out.Height = height;
-        m_videoParams.vpp.Out.CropW = crop_w;
-        m_videoParams.vpp.Out.CropH = crop_h;
+        m_videoParams.vpp.Out.CropW  = crop_w;
+        m_videoParams.vpp.Out.CropH  = crop_h;
     }
     return m_pmfxVPP->Reset(&m_videoParams);
 }

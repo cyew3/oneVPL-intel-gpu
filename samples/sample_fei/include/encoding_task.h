@@ -116,6 +116,34 @@ struct setElem
         } // for (mfxU16 i = 0; i < NumExtParam; i += increment)
     }
 
+    void ResetSlices(mfxU16 widthMB, mfxU16 heightMB)
+    {
+        for (mfxU16 i = 0; i < buffers.size(); ++i)
+        {
+            switch (buffers[i]->BufferId)
+            {
+                case MFX_EXTBUFF_FEI_SLICE:
+                {
+                    mfxExtFeiSliceHeader* feiSliceHeader = reinterpret_cast<mfxExtFeiSliceHeader*>(buffers[i]);
+                    if (feiSliceHeader && feiSliceHeader->Slice)
+                    {
+                        // TODO: Improve slice divider
+                        mfxU16 nMBrows = (heightMB + feiSliceHeader->NumSlice - 1) / feiSliceHeader->NumSlice,
+                             nMBremain = heightMB;
+                        for (mfxU16 numSlice = 0; numSlice < feiSliceHeader->NumSlice; ++numSlice)
+                        {
+                            feiSliceHeader->Slice[numSlice].MBAddress = numSlice*(nMBrows*widthMB);
+                            feiSliceHeader->Slice[numSlice].NumMBs    = (std::min)(nMBrows, nMBremain)*widthMB;
+
+                            nMBremain -= nMBrows;
+                        }
+                    }
+                }
+                break;
+            }
+        }
+    }
+
     void Destroy(mfxU16 num_of_fields)
     {
         for (mfxU16 i = 0; i < buffers.size(); /*i++*/)
@@ -326,6 +354,12 @@ struct IObuffs
         in.ResetMBnum(new_numMB, increment);
         out.ResetMBnum(new_numMB, increment);
     }
+
+    void ResetSlices(mfxU16 widthMB, mfxU16 heightMB)
+    {
+        in.ResetSlices(widthMB, heightMB);
+        out.ResetSlices(widthMB, heightMB);
+    }
 };
 
 /* This structure holds sets of input and output extended buffers
@@ -355,6 +389,11 @@ struct bufSet
     void ResetMBnum(mfxU32 new_numMB, bool both_fields)
     {
         PB_bufs.ResetMBnum(new_numMB, both_fields ? 1 : num_fields);
+    }
+
+    void ResetSlices(mfxU16 widthMB, mfxU16 heightMB)
+    {
+        PB_bufs.ResetSlices(widthMB, heightMB);
     }
 };
 

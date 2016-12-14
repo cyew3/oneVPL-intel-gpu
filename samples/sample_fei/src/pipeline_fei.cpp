@@ -1769,6 +1769,9 @@ mfxStatus CEncodingPipeline::ResizeFrame(mfxU32 m_frameCount, mfxU16 picstruct)
     MSDK_IGNORE_MFX_STS(sts, MFX_ERR_NOT_FOUND);
     MSDK_CHECK_STATUS(sts, "Buffered frames processing failed");
 
+    // Clear income queue
+    m_inputTasks.Clear();
+
     m_appCfg.PipelineCfg.DRCresetPoint = true;
 
     m_insertIDR = true;
