@@ -179,8 +179,8 @@ CTranscodingPipeline::CTranscodingPipeline():
 
     m_VppCompParams.InputStream = NULL;
 
-    inputStatistics.SetDirection((const msdk_char *)"Input");
-    outputStatistics.SetDirection((const msdk_char *)"Output");
+    inputStatistics.SetDirection(MSDK_STRING("Input"));
+    outputStatistics.SetDirection(MSDK_STRING("Output"));
 
     m_numEncoders = 0;
     m_libvaBackend = 0;
