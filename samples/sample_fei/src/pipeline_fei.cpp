@@ -179,7 +179,7 @@ mfxStatus CEncodingPipeline::Init()
         m_commonFrameInfo = m_pFEI_ENCPAK->GetCommonVideoParams()->mfx.FrameInfo;
     }
 
-    sts = ResetMFXComponents(true);
+    sts = ResetMFXComponents();
     MSDK_CHECK_STATUS(sts, "ResetMFXComponents failed");
 
     sts = SetSequenceParameters();
@@ -191,7 +191,7 @@ mfxStatus CEncodingPipeline::Init()
     return sts;
 }
 
-mfxStatus CEncodingPipeline::ResetMFXComponents(bool realloc_frames)
+mfxStatus CEncodingPipeline::ResetMFXComponents()
 {
     mfxStatus sts = MFX_ERR_NONE;
 
@@ -235,14 +235,10 @@ mfxStatus CEncodingPipeline::ResetMFXComponents(bool realloc_frames)
         MSDK_CHECK_STATUS(sts, "FEI ENCPAK: Close failed");
     }
 
-    // free allocated frames
-    if (realloc_frames)
-    {
-        DeleteFrames();
+    DeleteFrames();
 
-        sts = AllocFrames();
-        MSDK_CHECK_STATUS(sts, "AllocFrames failed");
-    }
+    sts = AllocFrames();
+    MSDK_CHECK_STATUS(sts, "AllocFrames failed");
 
     if (m_pYUVReader)
     {
@@ -1756,16 +1752,9 @@ mfxStatus CEncodingPipeline::doGPUHangRecovery()
 
     msdk_printf(MSDK_STRING("Recreation of pipeline...\n"));
 
-    sts = ResetMFXComponents(false);
-    MSDK_CHECK_STATUS(sts, "ResetMFXComponents failed");
-
-    sts = ResetSessions();
-    MSDK_CHECK_STATUS(sts, "ResetSessions failed");
-
-    sts = ResetIOFiles(m_appCfg);
-    MSDK_CHECK_STATUS(sts, "ResetIOFiles failed");
-
-    m_inputTasks.Clear();
+    Close();
+    sts = Init();
+    MSDK_CHECK_STATUS(sts, "Init failed");
 
     m_frameCount = 0;
 

@@ -52,7 +52,7 @@ public:
     virtual mfxStatus Run();
     virtual mfxStatus ProcessBufferedFrames();
     virtual void Close();
-    virtual mfxStatus ResetMFXComponents(bool realloc_frames);
+    virtual mfxStatus ResetMFXComponents();
     virtual mfxStatus InitSessions();
     virtual mfxStatus ResetSessions();
     virtual mfxStatus ResetDevice();

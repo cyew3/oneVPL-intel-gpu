@@ -626,6 +626,8 @@ mfxStatus FEI_EncodeInterface::EncodeOneFrame(iTask* eTask, mfxFrameSurface1* pS
         return sts;
     }
 
+    MSDK_CHECK_STATUS(sts, "FEI ENCODE: EncodeFrameAsync failed");
+
     sts = m_FileWriter.WriteNextFrame(&m_mfxBS);
     MSDK_CHECK_STATUS(sts, "FEI ENCODE: WriteNextFrame failed");
 

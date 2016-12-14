@@ -1085,7 +1085,7 @@ int main(int argc, char *argv[])
             sts = pPipeline->ResetDevice();
             MSDK_CHECK_STATUS(sts, "pPipeline->ResetDevice failed");
 
-            sts = pPipeline->ResetMFXComponents(true);
+            sts = pPipeline->ResetMFXComponents();
             MSDK_CHECK_STATUS(sts, "pPipeline->ResetMFXComponents failed");
 
             continue;
