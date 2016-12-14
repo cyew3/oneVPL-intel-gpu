@@ -1477,11 +1477,12 @@ void H264BsBase_CopyContextCABAC(
 {
     if (bstrm->pCabacState)
     {
-        Ipp32u from = isFrame ? 105 : 277;
-        ippiCABACGetContextsWrap_H264(&bs->context_array[0],       0, 105, bstrm->pCabacState);
-        ippiCABACGetContextsWrap_H264(&bs->context_array[227],   227,  49, bstrm->pCabacState);
-        ippiCABACGetContextsWrap_H264(&bs->context_array[from], from, 122, bstrm->pCabacState);
-
+       {
+            Ipp32u from = isFrame ? 105 : 277;
+            ippiCABACGetContextsWrap_H264(&bs->context_array[0], 0, 105, bstrm->pCabacState);
+            ippiCABACGetContextsWrap_H264(&bs->context_array[227], 227, 49, bstrm->pCabacState);
+            ippiCABACGetContextsWrap_H264(&bs->context_array[from], from, 122, bstrm->pCabacState);
+        }
         if (is8x8)
         {
             Ipp32u from = isFrame ? 402 : 436;
@@ -1495,10 +1496,12 @@ void H264BsBase_CopyContextCABAC(
     }
     else
     {
-        Ipp32u from = isFrame ? 105 : 277;
-        MFX_INTERNAL_CPY(&bs->context_array[0],    &bstrm->context_array[0],    105);
-        MFX_INTERNAL_CPY(&bs->context_array[227],  &bstrm->context_array[227],   49);
-        MFX_INTERNAL_CPY(&bs->context_array[from], &bstrm->context_array[from], 122);
+        {
+            Ipp32u from = isFrame ? 105 : 277;
+            MFX_INTERNAL_CPY(&bs->context_array[0], &bstrm->context_array[0], 105);
+            MFX_INTERNAL_CPY(&bs->context_array[227], &bstrm->context_array[227], 49);
+            MFX_INTERNAL_CPY(&bs->context_array[from], &bstrm->context_array[from], 122);
+        }
 
         if (is8x8)
         {
