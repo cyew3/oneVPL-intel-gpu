@@ -224,6 +224,9 @@ mfxStatus VideoDECODEVP9_HW::Reset(mfxVideoParam *par)
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
+    if (!CheckHardwareSupport(m_core, par))
+        return MFX_ERR_UNSUPPORTED;
+
     if (!IsSameVideoParam(par, &m_vInitPar))
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
@@ -262,18 +265,16 @@ mfxStatus VideoDECODEVP9_HW::Reset(mfxVideoParam *par)
     memset(&m_stat, 0, sizeof(m_stat));
     memset(&m_firstSizes, 0, sizeof(m_firstSizes));
 
-    m_vInitPar = *par;
+    m_vPar = *par;
 
-    if (0 == m_vInitPar.mfx.FrameInfo.FrameRateExtN || 0 == m_vInitPar.mfx.FrameInfo.FrameRateExtD)
+    if (0 == m_vPar.mfx.FrameInfo.FrameRateExtN || 0 == m_vPar.mfx.FrameInfo.FrameRateExtD)
     {
-        m_vInitPar.mfx.FrameInfo.FrameRateExtD = 1000;
-        m_vInitPar.mfx.FrameInfo.FrameRateExtN = 30000;
+        m_vPar.mfx.FrameInfo.FrameRateExtD = m_vInitPar.mfx.FrameInfo.FrameRateExtD;
+        m_vPar.mfx.FrameInfo.FrameRateExtN = m_vInitPar.mfx.FrameInfo.FrameRateExtN;
     }
 
-    m_in_framerate = (mfxF64) m_vInitPar.mfx.FrameInfo.FrameRateExtD / m_vInitPar.mfx.FrameInfo.FrameRateExtN;
-
-    if (!CheckHardwareSupport(m_core, par))
-        return MFX_ERR_UNSUPPORTED;
+    m_in_framerate = (mfxF64) m_vPar.mfx.FrameInfo.FrameRateExtD / m_vPar.mfx.FrameInfo.FrameRateExtN;
+    m_index = 0;
 
     return MFX_ERR_NONE;
 }
@@ -352,12 +353,12 @@ static bool IsSameVideoParam(mfxVideoParam *newPar, mfxVideoParam *oldPar)
         return false;
     }
 
-    if (newPar->mfx.FrameInfo.Height != oldPar->mfx.FrameInfo.Height)
+    if (newPar->mfx.FrameInfo.Height > oldPar->mfx.FrameInfo.Height)
     {
         return false;
     }
 
-    if (newPar->mfx.FrameInfo.Width != oldPar->mfx.FrameInfo.Width)
+    if (newPar->mfx.FrameInfo.Width > oldPar->mfx.FrameInfo.Width)
     {
         return false;
     }
@@ -792,7 +793,9 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
         if (m_vPar.mfx.FrameInfo.Width > m_vInitPar.mfx.FrameInfo.Width || m_vPar.mfx.FrameInfo.Height > m_vInitPar.mfx.FrameInfo.Height)
             return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
-        if (KEY_FRAME == m_frameInfo.frameType && (m_vPar.mfx.FrameInfo.Width != m_vInitPar.mfx.FrameInfo.Width || m_vPar.mfx.FrameInfo.Height != m_vInitPar.mfx.FrameInfo.Height))
+        if (KEY_FRAME == m_frameInfo.frameType && 
+            (m_vPar.mfx.FrameInfo.Width != m_vInitPar.mfx.FrameInfo.Width || m_vPar.mfx.FrameInfo.Height != m_vInitPar.mfx.FrameInfo.Height) &&
+            1 != m_index)
             return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
     }
 
@@ -878,6 +881,8 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
         (*surface_out)->Info.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
         (*surface_out)->Info.CropW = (mfxU16)m_frameInfo.width;
         (*surface_out)->Info.CropH = (mfxU16)m_frameInfo.height;
+        (*surface_out)->Info.AspectRatioW = m_vPar.mfx.FrameInfo.AspectRatioW;
+        (*surface_out)->Info.AspectRatioH = m_vPar.mfx.FrameInfo.AspectRatioH;
 
         m_frameOrder++;
         return MFX_ERR_NONE;
