@@ -189,6 +189,7 @@ private:
     void operator=(const MSDKThread&);
 };
 
+mfxU32 msdk_get_current_pid();
 mfxStatus msdk_setrlimit_vmem(mfxU64 size);
 mfxStatus msdk_thread_get_schedtype(const msdk_char*, mfxI32 &type);
 void msdk_thread_printf_scheduling_help();

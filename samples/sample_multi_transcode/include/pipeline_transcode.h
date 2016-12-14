@@ -175,6 +175,7 @@ namespace TranscodingSample
         mfxU32 nFPS; // limit transcoding to the number of frames per second
 
         mfxU32 statisticsWindowSize;
+        FILE* statisticsLogFile;
 
         bool bLABRC; // use look ahead bitrate control algorithm
         mfxU16 nLADepth; // depth of the look ahead bitrate control  algorithm
@@ -257,14 +258,27 @@ namespace TranscodingSample
     class CIOStat : public CTimeStatistics
     {
         public:
-            CIOStat() : CTimeStatistics()
+            CIOStat()
+              : CTimeStatistics()
+              , ofile(stdout)
             {
                 MSDK_ZERO_MEMORY(bufDir);
             }
 
-            CIOStat(const msdk_char *dir) : CTimeStatistics()
+            CIOStat(const msdk_char *dir)
+              : CTimeStatistics()
+              , ofile(stdout)
             {
                 msdk_strcopy(bufDir, dir);
+            }
+
+            ~CIOStat()
+            {
+            }
+
+            inline void SetOutputFile(FILE *file)
+            {
+                ofile = file;
             }
 
             inline void SetDirection(const msdk_char *dir)
@@ -273,12 +287,18 @@ namespace TranscodingSample
                     msdk_strcopy(bufDir, dir);
             }
 
-            inline void PrintStatistics(mfxU32 numPipelineid)
+            inline void PrintStatistics(mfxU32 numPipelineid, mfxF64 target_framerate = -1 /*default stands for infinite*/)
             {
-                msdk_printf(MSDK_STRING("stat[%llu]: %s=%d;Total=%.3lf;Samples=%lld;StdDev=%.3lf;Min=%.3lf;Max=%.3lf;Avg=%.3lf\n"),
-                    rdtsc(),bufDir,numPipelineid,totalTime*1000,numMeasurements,GetTimeStdDev()*1000,minTime*1000,maxTime*1000,GetAvgTime()*1000);
+                msdk_fprintf(ofile, MSDK_STRING("stat[%d.%llu]: %s=%d;Framerate=%.3f;Total=%.3lf;Samples=%lld;StdDev=%.3lf;Min=%.3lf;Max=%.3lf;Avg=%.3lf\n"),
+                    msdk_get_current_pid(), rdtsc(),
+                    bufDir, numPipelineid,
+                    target_framerate,
+                    totalTime*1000, numMeasurements,
+                    GetTimeStdDev()*1000, minTime*1000, maxTime*1000, GetAvgTime()*1000);
+                fflush(ofile);
             }
         protected:
+            FILE*     ofile;
             msdk_char bufDir[MAX_PREF_LEN];
     };
 

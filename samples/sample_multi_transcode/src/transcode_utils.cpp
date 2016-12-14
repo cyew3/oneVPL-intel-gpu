@@ -94,6 +94,8 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("  -stat <N>\n"));
     msdk_printf(MSDK_STRING("                Output statistic every N transcoding cycles\n"));
+    msdk_printf(MSDK_STRING("  -stat-log <name>\n"));
+    msdk_printf(MSDK_STRING("                Output statistic to the specified file (opened in append mode)\n"));
     msdk_printf(MSDK_STRING("Options:\n"));
     //                     ("  ............xx
     msdk_printf(MSDK_STRING("  -?            Print this help and exit\n"));
@@ -291,6 +293,7 @@ CmdProcessor::CmdProcessor()
     m_parName = NULL;
     m_nTimeout = 0;
     statisticsWindowSize = 0;
+    statisticsLogFile = NULL;
     shouldUseGreedyFormula=false;
 
 } //CmdProcessor::CmdProcessor()
@@ -302,6 +305,8 @@ CmdProcessor::~CmdProcessor()
     m_encoderPlugins.clear();
     if (m_PerfFILE)
         fclose(m_PerfFILE);
+    if (statisticsLogFile)
+        fclose(statisticsLogFile);
 
 } //CmdProcessor::~CmdProcessor()
 
@@ -406,6 +411,25 @@ mfxStatus CmdProcessor::ParseCmdLine(int argc, msdk_char *argv[])
             if (MFX_ERR_NONE != msdk_opt_read(argv[0], statisticsWindowSize))
             {
                 msdk_printf(MSDK_STRING("error: stat \"%s\" is invalid"), argv[0]);
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if (0 == msdk_strcmp(argv[0], MSDK_STRING("-stat-log")))
+        {
+            if (statisticsLogFile)
+            {
+                msdk_printf(MSDK_STRING("error: only one statistics file is supported"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            --argc;
+            ++argv;
+            if (!argv[0]) {
+                msdk_printf(MSDK_STRING("error: no argument given for 'stat-log' option\n"));
+            }
+            MSDK_FOPEN(statisticsLogFile, argv[0], MSDK_STRING("w"));
+            if (NULL == statisticsLogFile)
+            {
+                msdk_printf(MSDK_STRING("error: statistics file \"%s\" not found"), argv[0]);
                 return MFX_ERR_UNSUPPORTED;
             }
         }
@@ -574,6 +598,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
     InputParams.shouldUseGreedyFormula = shouldUseGreedyFormula;
 
     InputParams.statisticsWindowSize = statisticsWindowSize;
+    InputParams.statisticsLogFile = statisticsLogFile;
 
     if (0 == msdk_strcmp(argv[0], MSDK_STRING("set")))
     {

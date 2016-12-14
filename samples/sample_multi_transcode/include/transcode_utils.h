@@ -118,6 +118,7 @@ namespace TranscodingSample
         FILE                                         *m_PerfFILE;
         msdk_char                                    *m_parName;
         mfxU32                                       statisticsWindowSize;
+        FILE                                         *statisticsLogFile;
         mfxU32                                       m_nTimeout;
         bool                                         shouldUseGreedyFormula;
         std::vector<msdk_string>                     m_lines;

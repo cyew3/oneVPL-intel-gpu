@@ -780,7 +780,6 @@ mfxStatus CTranscodingPipeline::Decode()
                     {
                         inputStatistics.PrintStatistics(GetPipelineID());
                         inputStatistics.ResetStatistics();
-                        fflush(stdout);
                     }
                 }
                 if (sts == MFX_ERR_MORE_DATA && (m_pmfxVPP.get() || m_pmfxPreENC.get()))
@@ -1149,7 +1148,6 @@ mfxStatus CTranscodingPipeline::Encode()
         {
             inputStatistics.PrintStatistics(GetPipelineID());
             outputStatistics.ResetStatistics();
-            fflush(stdout);
         }
 
         m_BSPool.back()->Syncp = VppExtSurface.Syncp;
@@ -1447,10 +1445,12 @@ mfxStatus CTranscodingPipeline::Transcode()
             if (m_nOutputFramesNum && 0 == m_nOutputFramesNum % statisticsWindowSize)
             {
                 inputStatistics.PrintStatistics(GetPipelineID());
-                outputStatistics.PrintStatistics(GetPipelineID());
+                outputStatistics.PrintStatistics(
+                    GetPipelineID(),
+                    (m_mfxEncParams.mfx.FrameInfo.FrameRateExtD)?
+                        (mfxF64)m_mfxEncParams.mfx.FrameInfo.FrameRateExtN/(mfxF64)m_mfxEncParams.mfx.FrameInfo.FrameRateExtD: -1);
                 inputStatistics.ResetStatistics();
                 outputStatistics.ResetStatistics();
-                fflush(stdout);
             }
         }
         else if (0 == (m_nProcessedFramesNum - 1) % 100)
@@ -2756,6 +2756,11 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     m_numEncoders = 0;
 
     statisticsWindowSize = pParams->statisticsWindowSize;
+    if (pParams->statisticsLogFile)
+    {
+        inputStatistics.SetOutputFile(pParams->statisticsLogFile);
+        outputStatistics.SetOutputFile(pParams->statisticsLogFile);
+    }
 
     if (m_bEncodeEnable)
     {

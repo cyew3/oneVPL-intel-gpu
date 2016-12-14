@@ -163,4 +163,9 @@ mfxStatus MSDKThread::GetExitCode()
     return mfx_res;
 }
 
+mfxU32 msdk_get_current_pid()
+{
+    return GetCurrentProcessId();
+}
+
 #endif // #if defined(_WIN32) || defined(_WIN64)
