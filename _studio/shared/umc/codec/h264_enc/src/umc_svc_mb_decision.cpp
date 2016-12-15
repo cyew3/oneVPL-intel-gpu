@@ -582,11 +582,12 @@ Ipp32u SVCBaseMode_MB_Decision(
         H264CoreEncoder_Put_MBHeader_Fake_8u16s(state, curr_slice);
         H264CoreEncoder_Put_MBLuma_Fake_8u16s(state, curr_slice);
 
-        Ipp32s bs = H264BsFake_GetBsOffset_8u16s(curr_slice->fakeBitstream);
-        Ipp32s d = SSD16x16(cur_mb.mbPtr, cur_mb.mbPitchPixels, cur_mb.mbBaseMode.reconstruct, 16)<<5;
-        best_sad = d + cur_mb.lambda * bs;
-        curr_slice->m_pbitstream = pBitstream;
-
+        {
+            Ipp32s bs = H264BsFake_GetBsOffset_8u16s(curr_slice->fakeBitstream);
+            Ipp32s d = SSD16x16(cur_mb.mbPtr, cur_mb.mbPitchPixels, cur_mb.mbBaseMode.reconstruct, 16) << 5;
+            best_sad = d + cur_mb.lambda * bs;
+            curr_slice->m_pbitstream = pBitstream;
+        }
 
         if (check2TransformModes) {
 //        if (ref_intra && (core_enc->m_Analyse & ANALYSE_I_8x8)) {
