@@ -2428,7 +2428,7 @@ inline void ippiCalcNonZero(const Ipp32s *coeffs, Ipp32s  m, Ipp32s *numCoeffs)
     *numCoeffs = (coeffs[0] != 0)? -n: n;
 }
 
-inline void ippiCountCoeffs(const Ipp32s *coeffs, Ipp32s *numCoeffs, const Ipp16s *enc_scan, Ipp32s *lastCoeff, Ipp32s  m)
+inline void ippiCountCoeffs(const Ipp32s *coeffs, Ipp32s *numCoeffs, const Ipp16s *encScan, Ipp32s *lastCoeff, Ipp32s  m)
 {
     // m can take the following values: 16, 64.
     Ipp32s l = 0;
@@ -2436,8 +2436,8 @@ inline void ippiCountCoeffs(const Ipp32s *coeffs, Ipp32s *numCoeffs, const Ipp16
     for(Ipp32s i = 0; i < m; i++) {
         if (coeffs[i] != 0) {
             n ++;
-            if (l < enc_scan[i])
-                l = enc_scan[i];
+            if (l < encScan[i])
+                l = encScan[i];
         }
     }
 
@@ -2445,7 +2445,7 @@ inline void ippiCountCoeffs(const Ipp32s *coeffs, Ipp32s *numCoeffs, const Ipp16
     *lastCoeff = l;
 }
 
-inline void ippiCountCoeffs(const Ipp16s *coeffs, Ipp32s *numCoeffs, const Ipp16s *enc_scan, Ipp32s *lastCoeff, Ipp32s  m)
+inline void ippiCountCoeffs(const Ipp16s *coeffs, Ipp32s *numCoeffs, const Ipp16s *encScan, Ipp32s *lastCoeff, Ipp32s  m)
 {
     // m can take the following values: 16, 64.
     Ipp32s l = 0;
@@ -2453,8 +2453,8 @@ inline void ippiCountCoeffs(const Ipp16s *coeffs, Ipp32s *numCoeffs, const Ipp16
     for(Ipp32s i = 0; i < m; i++) {
         if (coeffs[i] != 0) {
             n ++;
-            if (l < enc_scan[i])
-                l = enc_scan[i];
+            if (l < encScan[i])
+                l = encScan[i];
         }
     }
     *numCoeffs = (coeffs[0] != 0)? -n: n;
