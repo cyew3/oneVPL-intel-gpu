@@ -1355,7 +1355,7 @@ Ipp32u H264CoreEncoder_TransQuant_RD_BaseMode_8u16s(
             ippiDequantTransformResidual_H264_16s_C1I(transRes, 8, NULL, ((iaNumCoeffs[uBlock] < -1) || (iaNumCoeffs[uBlock] > 0)), uMBQP);
             */
 
-            Ipp16s *src1 = pTransRes;
+            src1 = pTransRes;
             for (ii = 0; ii < 8; ii++) {
               for (jj = 0; jj < 8; jj++) {
                 Ipp16s tmp = IPP_MAX(*src1, -255);
@@ -1559,7 +1559,7 @@ Ipp32u H264CoreEncoder_TransQuant_RD_BaseMode_8u16s(
           ippiDequantTransformResidual_H264_16s_C1I(transRes, 8, NULL, ((iaNumCoeffs[uBlock] < -1) || (iaNumCoeffs[uBlock] > 0)), uMBQP);
 */
 
-          Ipp16s *src1 = pTransRes;
+          src1 = pTransRes;
           for (ii = 0; ii < 4; ii++) {
             for (jj = 0; jj < 4; jj++) {
               Ipp16s tmp = IPP_MAX(*src1, -255);
