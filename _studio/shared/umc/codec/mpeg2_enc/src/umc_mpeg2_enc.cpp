@@ -1429,81 +1429,85 @@ toI:
 
       hrdSts = brc->PostPackFrame(frType, size*8, 0, recode);
       /*  Debug  */
-      Ipp32s maxSize = 0, minSize = 0;
-      Ipp64f buffullness;
-      Ipp32s buffullnessbyI;
-      VideoBrcParams brcParams;
-      brc->GetHRDBufferFullness(&buffullness, 0);
-      brc->GetMinMaxFrameSize(&minSize, &maxSize);
-      brc->GetParams(&brcParams);
-//      printf("\n frame # %d / %d hrdSts %d |||||||||| fullness %d bIntraAdded %d \n", encodeInfo.numEncodedFrames, GOP_count, hrdSts, (Ipp32s)buffullness, bIntraAdded);
-      if (hrdSts == BRC_OK && brcParams.maxBitrate!=0) {
-        Ipp32s inputbitsPerPic = m_InputBitsPerFrame;
-        Ipp32s minbitsPerPredPic, minbitsPerIPic;
-        if (picture_structure != MPEG2_FRAME_PICTURE) {
-          minbitsPerPredPic = m_MinFieldSizeBits[1];
-          minbitsPerIPic = m_MinFieldSizeBits[0];
-          inputbitsPerPic >>= 1;
-          framestoI *= 2;
-          if (!second_field)
-            framestoI--;
-        } else {
-          minbitsPerPredPic = m_MinFrameSizeBits[1];
-          minbitsPerIPic = m_MinFrameSizeBits[0];
-        }
-        buffullnessbyI = (Ipp32s)buffullness + framestoI * (inputbitsPerPic - minbitsPerPredPic); /// ??? +- 1, P/B?
-
-        { //  I frame is coming
-//          printf("\n buffullnessbyI %d \n", buffullnessbyI);
-          if (buffullnessbyI < minbitsPerIPic ||
-             (picture_structure != MPEG2_FRAME_PICTURE && !second_field && size*8*2 > inputbitsPerPic + maxSize && picture_coding_type != MPEG2_I_PICTURE)) {
-            if (!nLimitedMBMode) {
-              Ipp32s quant = quantiser_scale_value; // brc->GetQP(frType);
-              changeQuant(quant+2);
-              if (quantiser_scale_value == quant) // ??
-              {
-                nLimitedMBMode++;
-                if ((picture_coding_type == MPEG2_P_PICTURE || picture_coding_type == MPEG2_B_PICTURE) && nLimitedMBMode == 2)
-                {
-                    m_bSkippedMode = 1;
-                    nLimitedMBMode = 3;
-                }
-//                printf ("\n Recalculate 0: Frame %d. Limited mode: %d, max size = %d (current %d), max_size on MB = %d (current %d)\n",frType,nLimitedMBMode,maxSize,bitsize,maxSize/MBcount,bitsize/MBcount);
-
-
+      {
+          Ipp32s maxSize = 0, minSize = 0;
+          Ipp64f buffullness;
+          Ipp32s buffullnessbyI;
+          VideoBrcParams brcParams;
+          brc->GetHRDBufferFullness(&buffullness, 0);
+          brc->GetMinMaxFrameSize(&minSize, &maxSize);
+          brc->GetParams(&brcParams);
+          //      printf("\n frame # %d / %d hrdSts %d |||||||||| fullness %d bIntraAdded %d \n", encodeInfo.numEncodedFrames, GOP_count, hrdSts, (Ipp32s)buffullness, bIntraAdded);
+          if (hrdSts == BRC_OK && brcParams.maxBitrate != 0) {
+              Ipp32s inputbitsPerPic = m_InputBitsPerFrame;
+              Ipp32s minbitsPerPredPic, minbitsPerIPic;
+              if (picture_structure != MPEG2_FRAME_PICTURE) {
+                  minbitsPerPredPic = m_MinFieldSizeBits[1];
+                  minbitsPerIPic = m_MinFieldSizeBits[0];
+                  inputbitsPerPic >>= 1;
+                  framestoI *= 2;
+                  if (!second_field)
+                      framestoI--;
               }
-              brc->SetQP(quantiser_scale_value, frType);
-              recode = 2;
-              bQuantiserChanged = true; // ???
-              continue;
-            } else {
-              if (frType == I_PICTURE && !m_FirstFrame && encodeInfo.gopSize > 1 && (!encodeInfo.strictGOP || bIntraAdded)) {
-                frType = P_PICTURE;
-                picture_coding_type = MPEG2_P_PICTURE;
-                m_GOP_Start = m_GOP_Start_tmp;
-                mp_f_code = pMotionData[0].f_code;
-                bExtendGOP = true;
-                //curr_gop += encodeInfo.IPDistance;
-                GOP_count -= encodeInfo.IPDistance; // add PB..B group
-                ntry = -1;
-                recode = 2;
-                continue;
-              } else if (nLimitedMBMode < 3) {
-                recode = 2;
-                nLimitedMBMode++;
-                if ((picture_coding_type == MPEG2_P_PICTURE || picture_coding_type == MPEG2_B_PICTURE) && nLimitedMBMode == 2)
-                {
-                    m_bSkippedMode = 1;
-                    nLimitedMBMode = 3;
-                }
-//                printf ("\n Recalculate 1: Frame %d. Limited mode: %d, max size = %d (current %d), max_size on MB = %d (current %d)\n",frType,nLimitedMBMode,maxSize,bitsize,maxSize/MBcount,bitsize/MBcount);
-                continue;
+              else {
+                  minbitsPerPredPic = m_MinFrameSizeBits[1];
+                  minbitsPerIPic = m_MinFrameSizeBits[0];
               }
-            } //  else if (maxSize < m_MinFrameSizeBits[0]) - can return with error already
+              buffullnessbyI = (Ipp32s)buffullness + framestoI * (inputbitsPerPic - minbitsPerPredPic); /// ??? +- 1, P/B?
+
+              { //  I frame is coming
+      //          printf("\n buffullnessbyI %d \n", buffullnessbyI);
+                  if (buffullnessbyI < minbitsPerIPic ||
+                      (picture_structure != MPEG2_FRAME_PICTURE && !second_field && size * 8 * 2 > inputbitsPerPic + maxSize && picture_coding_type != MPEG2_I_PICTURE)) {
+                      if (!nLimitedMBMode) {
+                          Ipp32s quant = quantiser_scale_value; // brc->GetQP(frType);
+                          changeQuant(quant + 2);
+                          if (quantiser_scale_value == quant) // ??
+                          {
+                              nLimitedMBMode++;
+                              if ((picture_coding_type == MPEG2_P_PICTURE || picture_coding_type == MPEG2_B_PICTURE) && nLimitedMBMode == 2)
+                              {
+                                  m_bSkippedMode = 1;
+                                  nLimitedMBMode = 3;
+                              }
+                              //                printf ("\n Recalculate 0: Frame %d. Limited mode: %d, max size = %d (current %d), max_size on MB = %d (current %d)\n",frType,nLimitedMBMode,maxSize,bitsize,maxSize/MBcount,bitsize/MBcount);
+
+
+                          }
+                          brc->SetQP(quantiser_scale_value, frType);
+                          recode = 2;
+                          bQuantiserChanged = true; // ???
+                          continue;
+                      }
+                      else {
+                          if (frType == I_PICTURE && !m_FirstFrame && encodeInfo.gopSize > 1 && (!encodeInfo.strictGOP || bIntraAdded)) {
+                              frType = P_PICTURE;
+                              picture_coding_type = MPEG2_P_PICTURE;
+                              m_GOP_Start = m_GOP_Start_tmp;
+                              mp_f_code = pMotionData[0].f_code;
+                              bExtendGOP = true;
+                              //curr_gop += encodeInfo.IPDistance;
+                              GOP_count -= encodeInfo.IPDistance; // add PB..B group
+                              ntry = -1;
+                              recode = 2;
+                              continue;
+                          }
+                          else if (nLimitedMBMode < 3) {
+                              recode = 2;
+                              nLimitedMBMode++;
+                              if ((picture_coding_type == MPEG2_P_PICTURE || picture_coding_type == MPEG2_B_PICTURE) && nLimitedMBMode == 2)
+                              {
+                                  m_bSkippedMode = 1;
+                                  nLimitedMBMode = 3;
+                              }
+                              //                printf ("\n Recalculate 1: Frame %d. Limited mode: %d, max size = %d (current %d), max_size on MB = %d (current %d)\n",frType,nLimitedMBMode,maxSize,bitsize,maxSize/MBcount,bitsize/MBcount);
+                              continue;
+                          }
+                      } //  else if (maxSize < m_MinFrameSizeBits[0]) - can return with error already
+                  }
+              }
           }
-        }
       }
-
 
       /* ------ */
       if (BRC_OK != hrdSts) {
