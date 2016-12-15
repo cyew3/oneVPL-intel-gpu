@@ -289,11 +289,11 @@ static const struct_CodeEntry EncRuns[15][8] = {
     {   {0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{1,11}, {0,0}}  // 14 RunBefore
 };
 
-static const Ipp32s ctx_neq1p1[8] = { 1,2,3,4,0,0,0,0};
-static const Ipp32s ctx_ngt1[8] =   { 5,5,5,5,6,7,8,9};
-static const Ipp32s ctx_id_trans0[8] = {1,2,3,3,4,5,6,7};
-static const Ipp32s ctx_id_trans1[8] = {4,4,4,4,5,6,7,7};
-static const Ipp32s ctx_id_trans13[7] = {4,4,4,4,5,6,6};
+static const Ipp32u ctx_neq1p1[8] = { 1, 2, 3, 4, 0, 0, 0, 0 };
+static const Ipp32u ctx_ngt1[8] = { 5, 5, 5, 5, 6, 7, 8, 9 };
+static const Ipp32u ctx_id_trans0[8] = { 1, 2, 3, 3, 4, 5, 6, 7 };
+static const Ipp32u ctx_id_trans1[8] = { 4, 4, 4, 4, 5, 6, 7, 7 };
+static const Ipp32u ctx_id_trans13[7] = { 4, 4, 4, 4, 5, 6, 6 };
 
 // MSBIT replaces (Ipp32s)(log(float(arg + 1))/log(2.0))
 // TODO - replace by intrinsic ?
@@ -2558,11 +2558,6 @@ Status H264BsReal_ResidualBlock_CABAC(
     }
 
     { // GCC will give compiler errors on variables initialization
-        static const Ipp32u ctx_neq1p1[8]     = { 1, 2, 3, 4, 0, 0, 0, 0 };
-        static const Ipp32u ctx_ngt1[8]       = { 5, 5, 5, 5, 6, 7, 8, 9 };
-        static const Ipp32u ctx_id_trans0[8]  = { 1, 2, 3, 3, 4, 5, 6, 7 };
-        static const Ipp32u ctx_id_trans1[8]  = { 4, 4, 4, 4, 5, 6, 7, 7 };
-        static const Ipp32u ctx_id_trans13[7] = { 4, 4, 4, 4, 5, 6, 6 };
         const Ipp32u* ctx_trans0 = ctx_id_trans0;
         const Ipp32u* ctx_trans1 = ctxBlockCat == BLOCK_CHROMA_DC_LEVELS ? ctx_id_trans13 : ctx_id_trans1;
 
@@ -2765,11 +2760,6 @@ Status H264BsFake_ResidualBlock_CABAC(
         }
     }
 
-    static const Ipp32u ctx_neq1p1[8]     = { 1, 2, 3, 4, 0, 0, 0, 0 };
-    static const Ipp32u ctx_ngt1[8]       = { 5, 5, 5, 5, 6, 7, 8, 9 };
-    static const Ipp32u ctx_id_trans0[8]  = { 1, 2, 3, 3, 4, 5, 6, 7 };
-    static const Ipp32u ctx_id_trans1[8]  = { 4, 4, 4, 4, 5, 6, 7, 7 };
-    static const Ipp32u ctx_id_trans13[7] = { 4, 4, 4, 4, 5, 6, 6 };
     const Ipp32u* ctx_trans0 = ctx_id_trans0;
     const Ipp32u* ctx_trans1 = ctxBlockCat == BLOCK_CHROMA_DC_LEVELS ? ctx_id_trans13 : ctx_id_trans1;
 
