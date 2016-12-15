@@ -71,7 +71,7 @@ VC1Status DecodePictHeaderParams_ProgressivePpicture_Adv    (VC1Context* pContex
                 //01            1 MV
                 //001            1 MV Half-pel
                 //000            Mixed MV
-                Ipp32s bit_count = 1;
+                bit_count = 1;
                 VC1_GET_BITS(1, picLayerHeader->MVMODE);
                 while((picLayerHeader->MVMODE == 0) && (bit_count < 3))
                 {
@@ -143,7 +143,7 @@ VC1Status DecodePictHeaderParams_ProgressivePpicture_Adv    (VC1Context* pContex
                 //01            Mixed MV
                 //001            1 MV Half-pel
                 //000            1 MV Half-pel bilinear
-                Ipp32s bit_count = 1;
+                bit_count = 1;
                 VC1_GET_BITS(1, picLayerHeader->MVMODE);
                 while((picLayerHeader->MVMODE == 0) && (bit_count < 3))
                 {
@@ -497,7 +497,7 @@ VC1Status DecodeFieldHeaderParams_InterlaceFieldPpicture_Adv (VC1Context* pConte
                     //01            1 MV
                     //001           1 MV Half-pel
                     //000           Mixed MV
-                    Ipp32s bit_count = 1;
+                    bit_count = 1;
                     VC1_GET_BITS(1, picLayerHeader->MVMODE);
                     while((picLayerHeader->MVMODE == 0) && (bit_count < 3))
                     {
@@ -617,7 +617,7 @@ VC1Status DecodeFieldHeaderParams_InterlaceFieldPpicture_Adv (VC1Context* pConte
                     Ipp32s index_bottom = pContext->m_frmBuff.m_iPrevIndex;
                     Ipp32s index_top = pContext->m_frmBuff.m_iPrevIndex;
 
-                    Ipp32s bit_count = 1;
+                    bit_count = 1;
                     VC1_GET_BITS(1, picLayerHeader->MVMODE);
                     while((picLayerHeader->MVMODE == 0) && (bit_count < 3))
                     {

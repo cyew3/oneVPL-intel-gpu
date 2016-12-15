@@ -165,7 +165,7 @@ VC1Status DecodePictureLayer_ProgressivePpicture(VC1Context* pContext)
                 //01            1 MV
                 //001            1 MV Half-pel
                 //000            Mixed MV
-                Ipp32s bit_count = 1;
+                bit_count = 1;
                 VC1_GET_BITS(1, picLayerHeader->MVMODE);
                 while((picLayerHeader->MVMODE == 0) && (bit_count < 3))
                 {
@@ -243,7 +243,7 @@ VC1Status DecodePictureLayer_ProgressivePpicture(VC1Context* pContext)
                 //01            Mixed MV
                 //001            1 MV Half-pel
                 //000            1 MV Half-pel bilinear
-                Ipp32s bit_count = 1;
+                bit_count = 1;
                 VC1_GET_BITS(1, picLayerHeader->MVMODE);
                 while((picLayerHeader->MVMODE == 0) && (bit_count < 3))
                 {
