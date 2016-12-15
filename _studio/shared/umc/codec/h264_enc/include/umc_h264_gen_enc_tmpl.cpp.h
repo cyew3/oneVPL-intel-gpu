@@ -1818,18 +1818,20 @@ Status H264ENC_MAKE_NAME(H264CoreEncoder_Init)(
     }
 #endif // SLICE_THREADING_LOAD_BALANCING
 
-    Ipp32s len = (sizeof(H264MacroblockMVs) +
-                  sizeof(H264MacroblockMVs) +
-                  sizeof(H264MacroblockCoeffsInfo) +
-                  sizeof(H264MacroblockLocalInfo) +
-                  sizeof(H264MacroblockIntraTypes) +
-                  sizeof(T_EncodeMBOffsets)
-                 ) * nMBCount + ALIGN_VALUE * 6;
-    len += 3*COEFFICIENTS_BUFFER_SIZE*nMBCount*sizeof(COEFFSTYPE) + ALIGN_VALUE * 3;
-    len += nMBCount*256*sizeof(COEFFSTYPE)*3/2 + ALIGN_VALUE * 3; //420 only
-    len += nMBCount*256*sizeof(COEFFSTYPE)*3/2 + ALIGN_VALUE * 3; //420 only
-    len += nMBCount*256*sizeof(COEFFSTYPE)*3/2 + ALIGN_VALUE * 3; //420 only
-    core_enc->m_pParsedDataNew = (Ipp8u*)H264_Malloc(len);
+    {
+        Ipp32s len = (sizeof(H264MacroblockMVs) +
+            sizeof(H264MacroblockMVs) +
+            sizeof(H264MacroblockCoeffsInfo) +
+            sizeof(H264MacroblockLocalInfo) +
+            sizeof(H264MacroblockIntraTypes) +
+            sizeof(T_EncodeMBOffsets)
+            ) * nMBCount + ALIGN_VALUE * 6;
+        len += 3 * COEFFICIENTS_BUFFER_SIZE*nMBCount * sizeof(COEFFSTYPE) + ALIGN_VALUE * 3;
+        len += nMBCount * 256 * sizeof(COEFFSTYPE) * 3 / 2 + ALIGN_VALUE * 3; //420 only
+        len += nMBCount * 256 * sizeof(COEFFSTYPE) * 3 / 2 + ALIGN_VALUE * 3; //420 only
+        len += nMBCount * 256 * sizeof(COEFFSTYPE) * 3 / 2 + ALIGN_VALUE * 3; //420 only
+        core_enc->m_pParsedDataNew = (Ipp8u*)H264_Malloc(len);
+    }
     if (NULL == core_enc->m_pParsedDataNew)
         return UMC_ERR_ALLOC;
     core_enc->m_mbinfo.MVDeltas[0] = align_pointer<H264MacroblockMVs *> (core_enc->m_pParsedDataNew, ALIGN_VALUE);
