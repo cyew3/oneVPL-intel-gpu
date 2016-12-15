@@ -37,10 +37,18 @@ struct MVP_elem
 
 struct BestMVset
 {
-    BestMVset(mfxU16 num_pred[2][2])
+    BestMVset(iTask* eTask)
     {
-        bestL0.reserve((std::min)((std::max)(num_pred[0][0], num_pred[1][0]), MaxFeiEncMVPNum));
-        bestL1.reserve((std::min)((std::max)(num_pred[0][1], num_pred[1][1]), MaxFeiEncMVPNum));
+        if (eTask)
+        {
+            bestL0.reserve((std::min)((std::max)(GetNumL0MVPs(*eTask, 0), GetNumL0MVPs(*eTask, 1)), MaxFeiEncMVPNum));
+            bestL1.reserve((std::min)((std::max)(GetNumL1MVPs(*eTask, 0), GetNumL1MVPs(*eTask, 1)), MaxFeiEncMVPNum));
+        }
+        else
+        {
+            bestL0.reserve(MaxFeiEncMVPNum);
+            bestL1.reserve(MaxFeiEncMVPNum);
+        }
     }
 
     void Clear()

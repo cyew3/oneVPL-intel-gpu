@@ -505,8 +505,21 @@ mfxStatus FEI_EncodeInterface::InitFrameParams(mfxFrameSurface1* encodeSurface, 
             Driver requires these fields to be zero in case of feiEncCtrl->MVPredictor == false
             but MSDK lib will adjust them to zero if application doesn't
             */
-            feiEncCtrl->NumMVPredictors[0] = feiEncCtrl->MVPredictor * m_pAppConfig->PipelineCfg.numOfPredictors[fieldId][0];
-            feiEncCtrl->NumMVPredictors[1] = feiEncCtrl->MVPredictor * m_pAppConfig->PipelineCfg.numOfPredictors[fieldId][1];
+            feiEncCtrl->NumMVPredictors[0] = feiEncCtrl->NumMVPredictors[1] = 0;
+            if (feiEncCtrl->MVPredictor)
+            {
+                if (eTask)
+                {
+                    feiEncCtrl->NumMVPredictors[0] = GetNumL0MVPs(*eTask, feiEncCtrlId);
+                    feiEncCtrl->NumMVPredictors[1] = GetNumL1MVPs(*eTask, feiEncCtrlId);
+                }
+                else // in case of Encode in display order, default configuration is used
+                {
+                    feiEncCtrl->NumMVPredictors[0] = (frameType[feiEncCtrlId] & MFX_FRAMETYPE_B) ? m_pAppConfig->PipelineCfg.NumMVPredictorsBL0 : m_pAppConfig->PipelineCfg.NumMVPredictorsP;
+                    feiEncCtrl->NumMVPredictors[1] = (frameType[feiEncCtrlId] & MFX_FRAMETYPE_B) ? m_pAppConfig->PipelineCfg.NumMVPredictorsBL1 : 0;
+                }
+            }
+
             fieldId++;
 
             feiEncCtrlId = 1 - feiEncCtrlId; // set to sfid

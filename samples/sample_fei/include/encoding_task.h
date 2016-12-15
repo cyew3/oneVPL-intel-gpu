@@ -467,6 +467,9 @@ struct iTaskParams
     mfxU16 NumRefActiveP;
     mfxU16 NumRefActiveBL0;
     mfxU16 NumRefActiveBL1;
+    mfxU16 NumMVPredictorsP;
+    mfxU16 NumMVPredictorsBL0;
+    mfxU16 NumMVPredictorsBL1;
 
     mfxFrameSurface1 *InputSurf;
     mfxFrameSurface1 *ReconSurf;
@@ -522,6 +525,13 @@ struct iTask
         , m_longTermPicNum(PairU8(0, 0))
         , prevTask(NULL)
     {
+        NumMVPredictorsP[0] = task_params.NumMVPredictorsP;
+        NumMVPredictorsP[1] = task_params.NumMVPredictorsP;
+        NumMVPredictorsBL0[0] = task_params.NumMVPredictorsBL0;
+        NumMVPredictorsBL0[1] = task_params.NumMVPredictorsBL0;
+        NumMVPredictorsBL1[0] = task_params.NumMVPredictorsBL1;
+        NumMVPredictorsBL1[1] = task_params.NumMVPredictorsBL1;
+
         m_list0[0].Fill(0);
         m_list0[1].Fill(0);
         m_list1[0].Fill(0);
@@ -745,6 +755,10 @@ struct iTask
     mfxU16 NumRefActiveBL0; // references for
     mfxU16 NumRefActiveBL1; // reflists management
 
+    mfxU16 NumMVPredictorsP[2];        // first and second fields
+    mfxU16 NumMVPredictorsBL0[2];
+    mfxU16 NumMVPredictorsBL1[2];
+
     //..............................reflist control............................................
     ArrayDpbFrame   m_dpb[2];          // DPB state before encoding first and second fields
     ArrayDpbFrame   m_dpbPostEncoding; // DPB after encoding a frame (or 2 fields)
@@ -853,6 +867,17 @@ inline mfxU16 createType(const iTask& task)
 inline mfxU8 extractType(mfxU16 type, mfxU32 fieldId)
 {
     return fieldId ? (type >> 8) : (type & 255);
+}
+
+
+inline mfxU16 GetNumL0MVPs(const iTask& task, mfxU32 fieldId)
+{
+    return ((ExtractFrameType(task, fieldId) & MFX_FRAMETYPE_B) ? task.NumMVPredictorsBL0[fieldId] : task.NumMVPredictorsP[fieldId]);
+}
+
+inline mfxU16 GetNumL1MVPs(const iTask& task, mfxU32 fieldId)
+{
+    return ((ExtractFrameType(task, fieldId) & MFX_FRAMETYPE_B) ? task.NumMVPredictorsBL1[fieldId] : 0);
 }
 
 inline void InitNewDpbFrame(

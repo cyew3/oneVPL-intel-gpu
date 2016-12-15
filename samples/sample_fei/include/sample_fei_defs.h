@@ -267,6 +267,9 @@ struct AppConfig
         , SubPelMode(0x03)            // quarter-pixel
         , IntraSAD(0x02)              // Haar transform
         , InterSAD(0x02)              // Haar transform
+        , NumMVPredictors_Pl0(1)
+        , NumMVPredictors_Bl0(1)
+        , NumMVPredictors_Bl1(0)
         , GopOptFlag(0)               // None
         , CodecProfile(MFX_PROFILE_AVC_HIGH)
         , CodecLevel(MFX_LEVEL_AVC_41)
@@ -305,7 +308,8 @@ struct AppConfig
         , ConstrainedIntraPredFlag(false)
         , Transform8x8ModeFlag(false)
         , bRepackPreencMV(false)
-        , bNPredSpecified_l0(false)
+        , bNPredSpecified_Pl0(false)
+        , bNPredSpecified_Bl0(false)
         , bNPredSpecified_l1(false)
         , bPreencPredSpecified_l0(false)
         , bPreencPredSpecified_l1(false)
@@ -321,8 +325,6 @@ struct AppConfig
         , repackctrlFile(NULL)
         , decodestreamoutFile(NULL)
     {
-        NumMVPredictors[0] = 1;
-        NumMVPredictors[1] = 0;
         PreencMVPredictors[0] = true;
         PreencMVPredictors[1] = true;
 
@@ -363,7 +365,9 @@ struct AppConfig
     mfxU16 SubPelMode;
     mfxU16 IntraSAD;
     mfxU16 InterSAD;
-    mfxU16 NumMVPredictors[2];    // number of [0] - L0 predictors, [1] - L1 predictors
+    mfxU16 NumMVPredictors_Pl0;
+    mfxU16 NumMVPredictors_Bl0;
+    mfxU16 NumMVPredictors_Bl1;
     bool   PreencMVPredictors[2]; // use PREENC predictor [0] - L0, [1] - L1
     mfxU16 GopOptFlag;            // STRICT | CLOSED, default is OPEN GOP
     mfxU16 CodecProfile;
@@ -414,7 +418,8 @@ struct AppConfig
     bool ConstrainedIntraPredFlag;
     bool Transform8x8ModeFlag;
     bool bRepackPreencMV;
-    bool bNPredSpecified_l0;
+    bool bNPredSpecified_Pl0;
+    bool bNPredSpecified_Bl0;
     bool bNPredSpecified_l1;
     bool bPreencPredSpecified_l0;
     bool bPreencPredSpecified_l1;
@@ -449,7 +454,9 @@ struct AppConfig
         mfxU32 numMB_preenc_frame;  // This field could be different to numMB_frame if PreENC uses downsampling
         mfxU32 numMB_preenc_refPic; // This field could be different to numMB_refPic if PreENC uses downsampling
 
-        mfxU16 numOfPredictors[2][2]; // Number of predictors; idexes means [fieldId][L0L1]
+        mfxU16 NumMVPredictorsP;
+        mfxU16 NumMVPredictorsBL0;
+        mfxU16 NumMVPredictorsBL1;
     } PipelineCfg;
 };
 

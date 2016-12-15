@@ -101,7 +101,8 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-multi_pred_l0] - MVs from neighbor MBs will be used as predictors for L0 prediction list (ENC, ENCODE)\n"));
     msdk_printf(MSDK_STRING("   [-multi_pred_l1] - MVs from neighbor MBs will be used as predictors for L1 prediction list (ENC, ENCODE)\n"));
     msdk_printf(MSDK_STRING("   [-adjust_distortion] - if enabled adds a cost adjustment to distortion, default is RAW distortion (ENC, ENCODE)\n"));
-    msdk_printf(MSDK_STRING("   [-n_mvpredictors_l0 num] - number of MV predictors for l0 list, up to 4 is supported (default is 1) (ENC, ENCODE)\n"));
+    msdk_printf(MSDK_STRING("   [-n_mvpredictors_P_l0 num] - number of MV predictors for l0 list of P frames, up to 4 is supported (default is 1) (ENC, ENCODE)\n"));
+    msdk_printf(MSDK_STRING("   [-n_mvpredictors_B_l0 num] - number of MV predictors for l0 list of B frames, up to 4 is supported (default is 1) (ENC, ENCODE)\n"));
     msdk_printf(MSDK_STRING("   [-n_mvpredictors_l1 num] - number of MV predictors for l1 list, up to 4 is supported (default is 0) (ENC, ENCODE)\n"));
     msdk_printf(MSDK_STRING("   [-preenc_mvpredictors_l0 bit] - enable/disable l0 predictor (default is to use if l0 reference exists) (PREENC only)\n"));
     msdk_printf(MSDK_STRING("   [-preenc_mvpredictors_l1 bit] - enable/disable l1 predictor (default is to use if l1 reference exists) (PREENC only)\n"));
@@ -463,17 +464,23 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
             i++;
             pConfig->InterSAD = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 16);
         }
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-n_mvpredictors_l0")))
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-n_mvpredictors_P_l0")))
         {
             i++;
-            pConfig->bNPredSpecified_l0 = true;
-            pConfig->NumMVPredictors[0] = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
+            pConfig->bNPredSpecified_Pl0 = true;
+            pConfig->NumMVPredictors_Pl0 = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-n_mvpredictors_B_l0")))
+        {
+            i++;
+            pConfig->bNPredSpecified_Bl0 = true;
+            pConfig->NumMVPredictors_Bl0 = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-n_mvpredictors_l1")))
         {
             i++;
             pConfig->bNPredSpecified_l1 = true;
-            pConfig->NumMVPredictors[1] = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
+            pConfig->NumMVPredictors_Bl1 = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-preenc_mvpredictors_l0")))
         {
@@ -947,7 +954,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
         return MFX_ERR_UNSUPPORTED;
     }
 
-    if (pConfig->NumMVPredictors[0] > MaxFeiEncMVPNum || pConfig->NumMVPredictors[1] > MaxFeiEncMVPNum){
+    if (pConfig->NumMVPredictors_Pl0 > MaxFeiEncMVPNum || pConfig->NumMVPredictors_Bl0 > MaxFeiEncMVPNum || pConfig->NumMVPredictors_Bl1 > MaxFeiEncMVPNum){
         if (bAlrShownHelp)
             msdk_printf(MSDK_STRING("\nERROR: Unsupported value number of MV predictors (4 is maximum)!\n"));
         else

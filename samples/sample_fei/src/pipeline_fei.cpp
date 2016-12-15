@@ -762,8 +762,15 @@ mfxStatus CEncodingPipeline::SetSequenceParameters()
     m_taskInitializationParams.NumRefActiveP   = m_numRefActiveP;
     m_taskInitializationParams.NumRefActiveBL0 = m_numRefActiveBL0;
     m_taskInitializationParams.NumRefActiveBL1 = m_numRefActiveBL1;
-    m_taskInitializationParams.BRefType        = m_bRefType;
 
+    m_taskInitializationParams.NumMVPredictorsP = m_appCfg.PipelineCfg.NumMVPredictorsP = m_appCfg.bNPredSpecified_Pl0 ?
+        m_appCfg.NumMVPredictors_Pl0 : (std::min)(mfxU16(m_numRefFrame*m_numOfFields), MaxFeiEncMVPNum);
+    m_taskInitializationParams.NumMVPredictorsBL0 = m_appCfg.PipelineCfg.NumMVPredictorsBL0 = m_appCfg.bNPredSpecified_Bl0 ?
+        m_appCfg.NumMVPredictors_Bl0 : (std::min)(mfxU16(m_numRefFrame*m_numOfFields), MaxFeiEncMVPNum);
+    m_taskInitializationParams.NumMVPredictorsBL1 = m_appCfg.PipelineCfg.NumMVPredictorsBL1 = m_appCfg.bNPredSpecified_l1 ?
+        m_appCfg.NumMVPredictors_Bl1 : (std::min)(mfxU16(m_numRefFrame*m_numOfFields), MaxFeiEncMVPNum);
+
+    m_taskInitializationParams.BRefType        = m_bRefType;
 
     /* Section below calculates number of macroblocks for Extended Buffers allocation */
 
@@ -810,16 +817,6 @@ mfxStatus CEncodingPipeline::SetSequenceParameters()
             m_appCfg.PipelineCfg.numMB_preenc_refPic = m_appCfg.PipelineCfg.numMB_refPic;
         }
     }
-
-    mfxU16 nmvp_l0 = m_appCfg.bNPredSpecified_l0 ?
-        m_appCfg.NumMVPredictors[0] : (std::min)(mfxU16(m_numRefFrame*m_numOfFields), MaxFeiEncMVPNum);
-    mfxU16 nmvp_l1 = m_appCfg.bNPredSpecified_l1 ?
-        m_appCfg.NumMVPredictors[1] : (std::min)(mfxU16(m_numRefFrame*m_numOfFields), MaxFeiEncMVPNum);
-
-    m_appCfg.PipelineCfg.numOfPredictors[0][0] = nmvp_l0;
-    m_appCfg.PipelineCfg.numOfPredictors[1][0] = nmvp_l0;
-    m_appCfg.PipelineCfg.numOfPredictors[0][1] = nmvp_l1;
-    m_appCfg.PipelineCfg.numOfPredictors[1][1] = nmvp_l1;
 
     return sts;
 }
@@ -1154,8 +1151,8 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
                     feiEncCtrl[fieldId].RepartitionCheckEnable = m_appCfg.RepartitionCheckEnable;
                     feiEncCtrl[fieldId].AdaptiveSearch         = m_appCfg.AdaptiveSearch;
                     feiEncCtrl[fieldId].MVPredictor            = MVPredictors;
-                    feiEncCtrl[fieldId].NumMVPredictors[0]     = m_appCfg.PipelineCfg.numOfPredictors[fieldId][0];
-                    feiEncCtrl[fieldId].NumMVPredictors[1]     = m_appCfg.PipelineCfg.numOfPredictors[fieldId][1];
+                    feiEncCtrl[fieldId].NumMVPredictors[0]     = m_taskInitializationParams.NumMVPredictorsP;
+                    feiEncCtrl[fieldId].NumMVPredictors[1]     = m_taskInitializationParams.NumMVPredictorsBL1;
                     feiEncCtrl[fieldId].PerMBQp                = MBQP;
                     feiEncCtrl[fieldId].PerMBInput             = MBCtrl;
                     feiEncCtrl[fieldId].MBSizeCtrl             = m_appCfg.bMBSize;

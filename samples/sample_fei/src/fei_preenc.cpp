@@ -711,22 +711,33 @@ mfxStatus FEI_PreencInterface::ProcessMultiPreenc(iTask* eTask)
     MSDK_CHECK_POINTER(eTask, MFX_ERR_NULL_PTR);
 
     mfxStatus sts = MFX_ERR_NONE;
-    MSDK_ZERO_ARRAY(m_pAppConfig->PipelineCfg.numOfPredictors[0], 2);
-    MSDK_ZERO_ARRAY(m_pAppConfig->PipelineCfg.numOfPredictors[1], 2);
 
-    mfxU32 numOfFields = eTask->m_fieldPicFlag ? 2 : 1;
+    mfxU16 numOfFields = eTask->m_fieldPicFlag ? 2 : 1;
 
     // max possible candidates to L0 / L1
-    mfxU32 total_l0 = (ExtractFrameType(*eTask, eTask->m_fieldPicFlag) & MFX_FRAMETYPE_P) ? ((ExtractFrameType(*eTask) & MFX_FRAMETYPE_IDR) ? 1 : eTask->NumRefActiveP) : ((ExtractFrameType(*eTask) & MFX_FRAMETYPE_I) ? 1 : eTask->NumRefActiveBL0);
-    mfxU32 total_l1 = (ExtractFrameType(*eTask) & MFX_FRAMETYPE_B) ? eTask->NumRefActiveBL1 : 1; // just one iteration here for non-B
+    mfxU16 total_l0 = (ExtractFrameType(*eTask, eTask->m_fieldPicFlag) & MFX_FRAMETYPE_P) ? ((ExtractFrameType(*eTask) & MFX_FRAMETYPE_IDR) ? 1 : eTask->NumRefActiveP) : ((ExtractFrameType(*eTask) & MFX_FRAMETYPE_I) ? 1 : eTask->NumRefActiveBL0);
+    mfxU16 total_l1 = (ExtractFrameType(*eTask) & MFX_FRAMETYPE_B) ? eTask->NumRefActiveBL1 : 1; // just one iteration here for non-B
 
-    total_l0 = (std::min)(total_l0, numOfFields*m_videoParams.mfx.NumRefFrame); // adjust to maximal
-    total_l1 = (std::min)(total_l1, numOfFields*m_videoParams.mfx.NumRefFrame); // number of references
+    total_l0 = (std::min)(total_l0, (mfxU16)(numOfFields*m_videoParams.mfx.NumRefFrame)); // adjust to maximal
+    total_l1 = (std::min)(total_l1, (mfxU16)(numOfFields*m_videoParams.mfx.NumRefFrame)); // number of references
+
+    mfxU16 total_mvp_l0 = (std::max)(GetNumL0MVPs(*eTask, 0), GetNumL0MVPs(*eTask, 1));
+    mfxU16 total_mvp_l1 = (std::max)(GetNumL1MVPs(*eTask, 0), GetNumL1MVPs(*eTask, 1));
+    if (m_pAppConfig->bPerfMode)
+    {
+        // adjust to maximal number of predictors
+        total_l0 = (std::min)(total_l0, total_mvp_l0);
+        total_l1 = (std::min)(total_l1, total_mvp_l1);
+    }
 
     mfxU8 preenc_ref_idx[2][2]; // indexes means [fieldId][L0L1]
     mfxU8 ref_fid[2][2];
     iTask* refTask[2][2];
     bool isDownsamplingNeeded = true;
+
+    MSDK_ZERO_ARRAY(eTask->NumMVPredictorsP, 2);
+    MSDK_ZERO_ARRAY(eTask->NumMVPredictorsBL0, 2);
+    MSDK_ZERO_ARRAY(eTask->NumMVPredictorsBL1, 2);
 
     for (mfxU8 l0_idx = 0, l1_idx = 0; l0_idx < total_l0 || l1_idx < total_l1; l0_idx++, l1_idx++)
     {
@@ -744,8 +755,21 @@ mfxStatus FEI_PreencInterface::ProcessMultiPreenc(iTask* eTask)
 
         for (mfxU32 fieldId = 0; fieldId < numOfFields; fieldId++)
         {
-            if (refTask[fieldId][0]) { m_pAppConfig->PipelineCfg.numOfPredictors[fieldId][0]++; }
-            if (refTask[fieldId][1]) { m_pAppConfig->PipelineCfg.numOfPredictors[fieldId][1]++; }
+            if (refTask[fieldId][0])
+            {
+                if (eTask->NumMVPredictorsP[fieldId] < total_mvp_l0)
+                {
+                    eTask->NumMVPredictorsP[fieldId]++;
+                    eTask->NumMVPredictorsBL0[fieldId]++;
+                }
+            }
+            if (refTask[fieldId][1])
+            {
+                if (eTask->NumMVPredictorsBL1[fieldId] < total_mvp_l1)
+                {
+                    eTask->NumMVPredictorsBL1[fieldId]++;
+                }
+            }
         }
 
         sts = InitFrameParams(eTask, refTask, ref_fid, isDownsamplingNeeded);
@@ -891,7 +915,7 @@ mfxStatus FEI_PreencInterface::RepackPredictors(iTask* eTask)
 
     mfxStatus sts = MFX_ERR_NONE;
 
-    BestMVset BestSet(m_pAppConfig->PipelineCfg.numOfPredictors);
+    BestMVset BestSet(eTask);
 
     mfxU32 i, j, numOfFields = eTask->m_fieldPicFlag ? 2 : 1;
 
@@ -900,8 +924,8 @@ mfxStatus FEI_PreencInterface::RepackPredictors(iTask* eTask)
         MSDK_BREAK_ON_ERROR(sts);
 
         //adjust n of passed pred
-        mfxU32 nPred_actual[2] = { (std::min)(m_pAppConfig->PipelineCfg.numOfPredictors[fieldId][0], MaxFeiEncMVPNum),
-                                   (std::min)(m_pAppConfig->PipelineCfg.numOfPredictors[fieldId][1], MaxFeiEncMVPNum) };
+        mfxU32 nPred_actual[2] = { (std::min)(GetNumL0MVPs(*eTask, fieldId), MaxFeiEncMVPNum),
+                                   (std::min)(GetNumL1MVPs(*eTask, fieldId), MaxFeiEncMVPNum) };
         if (nPred_actual[0] + nPred_actual[1] == 0 || (ExtractFrameType(*eTask, fieldId) & MFX_FRAMETYPE_I))
             continue; // I-field
 
@@ -1040,8 +1064,7 @@ mfxStatus FEI_PreencInterface::RepackPredictorsPerf(iTask* eTask)
 
     for (mfxU32 fieldId = 0; fieldId < numOfFields; fieldId++)
     {
-        nOfPredPairs = (std::min)(MaxFeiEncMVPNum , (std::max)(m_pAppConfig->PipelineCfg.numOfPredictors[fieldId][0],
-                                                               m_pAppConfig->PipelineCfg.numOfPredictors[fieldId][1]));
+        nOfPredPairs = (std::min)(MaxFeiEncMVPNum, (std::max)(GetNumL0MVPs(*eTask, fieldId), GetNumL1MVPs(*eTask, fieldId)));
 
         if (nOfPredPairs == 0 || (ExtractFrameType(*eTask, fieldId) & MFX_FRAMETYPE_I))
             continue; // I-field

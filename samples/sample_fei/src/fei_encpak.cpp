@@ -908,8 +908,8 @@ mfxStatus FEI_EncPakInterface::InitFrameParams(iTask* eTask)
 
             /* Driver requires these fields to be zero in case of feiEncCtrl->MVPredictor == false
             but MSDK lib will adjust them to zero if application doesn't */
-            feiEncCtrl->NumMVPredictors[0] = feiEncCtrl->MVPredictor * m_pAppConfig->PipelineCfg.numOfPredictors[encCtrlId][0];
-            feiEncCtrl->NumMVPredictors[1] = feiEncCtrl->MVPredictor * m_pAppConfig->PipelineCfg.numOfPredictors[encCtrlId][1];
+            feiEncCtrl->NumMVPredictors[0] = feiEncCtrl->MVPredictor * GetNumL0MVPs(*eTask, encCtrlId);
+            feiEncCtrl->NumMVPredictors[1] = feiEncCtrl->MVPredictor * GetNumL1MVPs(*eTask, encCtrlId);
 
             encCtrlId++;
         }
