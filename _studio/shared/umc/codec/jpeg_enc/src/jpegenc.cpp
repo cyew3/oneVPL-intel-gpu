@@ -1263,7 +1263,7 @@ JERRCODE CJPEGEncoder::WriteCOM(
 
     sz = (int)IPP_MIN(strnlen_s(comment, 127),127);
 
-    for(int i = 0; i < sz; i++)
+    for(i = 0; i < sz; i++)
       ptr[len + i] = comment[i];
 
     len += sz + 1;

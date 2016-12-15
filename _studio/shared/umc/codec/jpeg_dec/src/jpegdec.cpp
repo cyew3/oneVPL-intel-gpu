@@ -2948,7 +2948,7 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
 
             for(n = 0; n < srcRoiSize.height / 2; n++)
             { 
-                for(int i = 0; i < srcRoiSize.width; i++)
+                for(i = 0; i < srcRoiSize.width; i++)
                 {
                     pDst[n*dstStep + 2*i  ] = pSrc[2*n*srcStep + i];
                     pDst[n*dstStep + 2*i+1] = pSrc[2*n*srcStep + srcStep + i];
