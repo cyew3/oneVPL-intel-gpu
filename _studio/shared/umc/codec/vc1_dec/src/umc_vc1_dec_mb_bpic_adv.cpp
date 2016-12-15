@@ -843,7 +843,6 @@ static VC1Status MBLayer_InterlaceFrameBpicture_NONDIRECT_Decode(VC1Context* pCo
                     && (VC1_GET_PREDICT(pCurrMB->mbType)==VC1_MB_INTERP))))
     {
         //2MVBP
-        Ipp32s ret;
         ret = ippiDecodeHuffmanOne_1u32s(&pContext->m_bitstream.pBitstream,
                                         &pContext->m_bitstream.bitOffset,
                                         &MVBP2,
@@ -854,7 +853,6 @@ static VC1Status MBLayer_InterlaceFrameBpicture_NONDIRECT_Decode(VC1Context* pCo
     else if((VC1_IS_MVFIELD(pCurrMB->mbType))&& (pCurrMB->mbType&VC1_MB_INTERP))
     {
         //4MVBP
-        Ipp32s ret;
         ret = ippiDecodeHuffmanOne_1u32s(&pContext->m_bitstream.pBitstream,
             &pContext->m_bitstream.bitOffset,
             &MVBP4,
