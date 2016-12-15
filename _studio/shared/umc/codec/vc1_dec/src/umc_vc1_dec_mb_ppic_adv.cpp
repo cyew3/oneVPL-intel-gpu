@@ -937,7 +937,6 @@ VC1Status MBLayer_Frame_InterlacedPpicture(VC1Context* pContext)
             if(tempValue == 1)       //CBPRESENT
             {
                 //CBPCY decoding
-                Ipp32s ret;
                 ret = ippiDecodeHuffmanOne_1u32s(&pContext->m_bitstream.pBitstream,
                     &pContext->m_bitstream.bitOffset,
                     &pCurrMB->m_cbpBits,
@@ -992,7 +991,6 @@ VC1Status MBLayer_Frame_InterlacedPpicture(VC1Context* pContext)
             if(VC1_MB_Mode_PBPic_Transform_Table[sMB->MBMODEIndex] != VC1_NO_CBP_TRANSFORM)
             {
                 //CBPCY decoding
-                Ipp32s ret;
                 ret = ippiDecodeHuffmanOne_1u32s(&pContext->m_bitstream.pBitstream,
                     &pContext->m_bitstream.bitOffset,
                     &pCurrMB->m_cbpBits,
@@ -1008,7 +1006,6 @@ VC1Status MBLayer_Frame_InterlacedPpicture(VC1Context* pContext)
             {
             case VC1_MB_2MV_INTER:
                 {
-                    Ipp32s ret;
                     ret = ippiDecodeHuffmanOne_1u32s(&pContext->m_bitstream.pBitstream,
                         &pContext->m_bitstream.bitOffset,
                         &pCurrMB->MVBP,
@@ -1030,7 +1027,6 @@ VC1Status MBLayer_Frame_InterlacedPpicture(VC1Context* pContext)
                 break;
             case VC1_MB_4MV_INTER:
                 {
-                    Ipp32s ret;
                     ret = ippiDecodeHuffmanOne_1u32s(&pContext->m_bitstream.pBitstream,
                         &pContext->m_bitstream.bitOffset,
                         &pCurrMB->MVBP,
@@ -1049,7 +1045,6 @@ VC1Status MBLayer_Frame_InterlacedPpicture(VC1Context* pContext)
                 break;
             case VC1_MB_4MV_FIELD_INTER:
                 {
-                    Ipp32s ret;
                     ret = ippiDecodeHuffmanOne_1u32s(&pContext->m_bitstream.pBitstream,
                         &pContext->m_bitstream.bitOffset,
                         &pCurrMB->MVBP,
