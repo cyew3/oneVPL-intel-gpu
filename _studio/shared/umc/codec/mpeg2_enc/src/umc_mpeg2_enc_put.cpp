@@ -435,7 +435,7 @@ const IppiPoint MPEG2VideoEncoderBase::MV_ZERO = {0, 0};
 
 Ipp32u MPEG2VideoEncoderBase::PutSequenceHeader2Mem(Ipp32u * buf, Ipp32u len)
 {
-    struct { bitBuffer bBuf; } threadSpec[1] = { { 32, static_cast<mfxI32>(len), (Ipp8u *)buf, buf} };
+    struct { bitBuffer bBuf; } threadSpecific[1] = { { 32, static_cast<mfxI32>(len), (Ipp8u *)buf, buf} };
 
     Ipp32s i=0;
 
@@ -459,14 +459,14 @@ Ipp32u MPEG2VideoEncoderBase::PutSequenceHeader2Mem(Ipp32u * buf, Ipp32u len)
         for(i=0; i < 64; i++)
             PUT_BITS(NonIntraQMatrix[ZigZagScan[i]], 8); // non_intra_quantizer_matrix
 
-    FLUSH_BITSTREAM(threadSpec->bBuf.current_pointer, threadSpec->bBuf.bit_offset);
+    FLUSH_BITSTREAM(threadSpecific->bBuf.current_pointer, threadSpecific->bBuf.bit_offset);
 
-    return Ipp32u((Ipp8u *)threadSpec->bBuf.current_pointer - (Ipp8u *)threadSpec->bBuf.start_pointer) + (32 - threadSpec->bBuf.bit_offset + 7) / 8;
+    return Ipp32u((Ipp8u *)threadSpecific->bBuf.current_pointer - (Ipp8u *)threadSpecific->bBuf.start_pointer) + (32 - threadSpecific->bBuf.bit_offset + 7) / 8;
 }
 
 Ipp32u MPEG2VideoEncoderBase::PutSequenceExt2Mem(Ipp32u * buf, Ipp32u len)
 {
-    struct { bitBuffer bBuf; } threadSpec[1] = { { 32, static_cast<mfxI32>(len), (Ipp8u *)buf, buf} };
+    struct { bitBuffer bBuf; } threadSpecific[1] = { { 32, static_cast<mfxI32>(len), (Ipp8u *)buf, buf} };
 
     Ipp32s chroma_format_code;
     Ipp32s prog_seq = (encodeInfo.info.interlace_type == PROGRESSIVE) ? 1 : 0;
@@ -491,14 +491,14 @@ Ipp32u MPEG2VideoEncoderBase::PutSequenceExt2Mem(Ipp32u * buf, Ipp32u len)
     PUT_BITS(frame_rate_extension_n, 2);
     PUT_BITS(frame_rate_extension_d, 5);
 
-    FLUSH_BITSTREAM(threadSpec->bBuf.current_pointer, threadSpec->bBuf.bit_offset);
+    FLUSH_BITSTREAM(threadSpecific->bBuf.current_pointer, threadSpecific->bBuf.bit_offset);
 
-    return Ipp32u((Ipp8u *)threadSpec->bBuf.current_pointer - (Ipp8u *)threadSpec->bBuf.start_pointer) + (32 - threadSpec->bBuf.bit_offset + 7) / 8;
+    return Ipp32u((Ipp8u *)threadSpecific->bBuf.current_pointer - (Ipp8u *)threadSpecific->bBuf.start_pointer) + (32 - threadSpecific->bBuf.bit_offset + 7) / 8;
 }
 
 Ipp32u MPEG2VideoEncoderBase::PutSequenceDisplayExt2Mem(Ipp32u * buf, Ipp32u len)
 {
-    struct { bitBuffer bBuf; } threadSpec[1] = { { 32, static_cast<mfxI32>(len), (Ipp8u *)buf, buf} };
+    struct { bitBuffer bBuf; } threadSpecific[1] = { { 32, static_cast<mfxI32>(len), (Ipp8u *)buf, buf} };
 
     PUT_START_CODE(EXT_START_CODE); // extension_start_code
     PUT_BITS(DISP_ID, 4);           // extension_start_code_identifier
@@ -516,9 +516,9 @@ Ipp32u MPEG2VideoEncoderBase::PutSequenceDisplayExt2Mem(Ipp32u * buf, Ipp32u len
     PUT_BITS(1, 1);                                 // marker_bit
     PUT_BITS(encodeInfo.info.clip_info.height, 14); // display_vertical_size
 
-    FLUSH_BITSTREAM(threadSpec->bBuf.current_pointer, threadSpec->bBuf.bit_offset);
+    FLUSH_BITSTREAM(threadSpecific->bBuf.current_pointer, threadSpecific->bBuf.bit_offset);
 
-    return Ipp32u((Ipp8u *)threadSpec->bBuf.current_pointer - (Ipp8u *)threadSpec->bBuf.start_pointer) + (32 - threadSpec->bBuf.bit_offset + 7) / 8;
+    return Ipp32u((Ipp8u *)threadSpecific->bBuf.current_pointer - (Ipp8u *)threadSpecific->bBuf.start_pointer) + (32 - threadSpecific->bBuf.bit_offset + 7) / 8;
 }
 
 // generate sequence header (6.2.2.1, 6.3.3)
@@ -963,7 +963,7 @@ static Status mp2PutNonIntraBlock(   Ipp32s numTh,
   return UMC_OK;
 }
 
-void MPEG2VideoEncoderBase::PutIntraBlock(Ipp16s* block, Ipp32s* dc_dct_pred, const IppVCHuffmanSpec_32u* DC_Tbl,Ipp32s count, Ipp32s numTh)
+void MPEG2VideoEncoderBase::PutIntraBlock(Ipp16s* block, Ipp32s* dc_dct_pred, const IppVCHuffmanSpec_32u* DC_Table,Ipp32s count, Ipp32s numTh)
 {
   Ipp32s EOBLen, EOBCode;
   IppVCHuffmanSpec_32s* AC_Tbl;
@@ -980,7 +980,7 @@ void MPEG2VideoEncoderBase::PutIntraBlock(Ipp16s* block, Ipp32s* dc_dct_pred, co
     AC_Tbl = vlcTableB5c_e;
   }
 
-  mp2PutIntraBlock(numTh,threadSpec,block, dc_dct_pred, (IppVCHuffmanSpec_32u*)DC_Tbl, AC_Tbl, scan, EOBLen, EOBCode, count);
+  mp2PutIntraBlock(numTh,threadSpec,block, dc_dct_pred, (IppVCHuffmanSpec_32u*)DC_Table, AC_Tbl, scan, EOBLen, EOBCode, count);
 
 }
 
