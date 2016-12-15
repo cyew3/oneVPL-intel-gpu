@@ -278,13 +278,13 @@ if (me_matrix[YN*me_matrix_w + XN] != me_matrix_id)      \
 //}
 #endif // UMC_RESTRICTED_CODE
 
-void MPEG2VideoEncoderBase::AdjustSearchRange(Ipp32s B_count, Ipp32s direction)
+void MPEG2VideoEncoderBase::AdjustSearchRange(Ipp32s B_index, Ipp32s direction)
 {
   Ipp32s fcRangeMin, fcRangeMax, flRangeMin, flRangeMax, co, ci, cnz, r, i;
 
   fcRangeMax = IPP_MAX(
-    pMotionData[B_count].searchRange[direction][0],
-    pMotionData[B_count].searchRange[direction][1]);
+    pMotionData[B_index].searchRange[direction][0],
+    pMotionData[B_index].searchRange[direction][1]);
   fcRangeMin = -fcRangeMax;
   flRangeMax = fcRangeMax >> 1;
   flRangeMin = -flRangeMax;
@@ -319,15 +319,15 @@ void MPEG2VideoEncoderBase::AdjustSearchRange(Ipp32s B_count, Ipp32s direction)
       //printf("%d: div: %d\n", encodeInfo.numEncodedFrames, fcRangeMax);
     }
   }
-  pMotionData[B_count].searchRange[direction][0] = fcRangeMax;
-  pMotionData[B_count].searchRange[direction][1] = fcRangeMax;
+  pMotionData[B_index].searchRange[direction][0] = fcRangeMax;
+  pMotionData[B_index].searchRange[direction][1] = fcRangeMax;
 
   Ipp32s req_f_code = 1;
   while ((4<<req_f_code) < fcRangeMax) {
     req_f_code++;
   }
-  pMotionData[B_count].f_code[direction][0] = req_f_code;
-  pMotionData[B_count].f_code[direction][1] = req_f_code;
+  pMotionData[B_index].f_code[direction][0] = req_f_code;
+  pMotionData[B_index].f_code[direction][1] = req_f_code;
 }
 
 #ifndef UMC_RESTRICTED_CODE
