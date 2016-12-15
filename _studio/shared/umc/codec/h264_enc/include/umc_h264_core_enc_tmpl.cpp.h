@@ -2291,12 +2291,12 @@ void H264ENC_MAKE_NAME(H264CoreEncoder_Make_MBSlices)(
 
 void H264ENC_MAKE_NAME(H264CoreEncoder_MakeSignificantLists_CABAC)(
     const COEFFSTYPE* coeff,
-    const Ipp32s* dec_single_scan,
+    const Ipp32s* dec_single_scans,
     CabacBlock4x4* cabacData)
 {
     for (Ipp32s i = cabacData->uFirstCoeff; i <= cabacData->uLastSignificant; i++)
     {
-        cabacData->coeff[i - cabacData->uFirstCoeff] = coeff[dec_single_scan[i]];
+        cabacData->coeff[i - cabacData->uFirstCoeff] = coeff[dec_single_scans[i]];
     }
 
     for (Ipp32s i = cabacData->uLastSignificant + 1; i <= cabacData->uLastCoeff; i++)
@@ -2307,12 +2307,12 @@ void H264ENC_MAKE_NAME(H264CoreEncoder_MakeSignificantLists_CABAC)(
 
 void H264ENC_MAKE_NAME(H264CoreEncoder_MakeSignificantLists_CABAC)(
     const COEFFSTYPE* coeff,
-    const Ipp32s* dec_single_scan,
+    const Ipp32s* dec_single_scans,
     CabacBlock8x8* cabacData)
 {
     for (Ipp32s i = cabacData->uFirstCoeff; i <= cabacData->uLastSignificant; i++)
     {
-        cabacData->coeff[i - cabacData->uFirstCoeff] = coeff[dec_single_scan[i]];
+        cabacData->coeff[i - cabacData->uFirstCoeff] = coeff[dec_single_scans[i]];
     }
 
     for (Ipp32s i = cabacData->uLastSignificant + 1; i <= cabacData->uLastCoeff; i++)
@@ -2325,7 +2325,7 @@ void H264ENC_MAKE_NAME(H264CoreEncoder_ScanSignificant_CABAC)(
     COEFFSTYPE coeff[],
     Ipp32s ctxBlockCat,
     Ipp32s numcoeff,
-    const Ipp32s* dec_single_scan,
+    const Ipp32s* dec_single_scans,
     CabacBlock4x4* cabacData)
 {
     Ipp8u start_scan, end_scan, j; j;
@@ -2350,7 +2350,7 @@ void H264ENC_MAKE_NAME(H264CoreEncoder_ScanSignificant_CABAC)(
     cabacData->uNumSigCoeffs = 0;
 
     for (i = start_scan; i <= end_scan; i++) {
-        COEFFSTYPE coef=coeff[dec_single_scan[i]];
+        COEFFSTYPE coef=coeff[dec_single_scans[i]];
 
         if (coef)
         {
@@ -2366,7 +2366,7 @@ void H264ENC_MAKE_NAME(H264CoreEncoder_ScanSignificant_CABAC)(
     COEFFSTYPE coeff[],
     Ipp32s ctxBlockCat,
     Ipp32s numcoeff,
-    const Ipp32s* dec_single_scan,
+    const Ipp32s* dec_single_scans,
     CabacBlock8x8* cabacData)
 {
     Ipp8u start_scan, end_scan, j; j;
@@ -2392,7 +2392,7 @@ void H264ENC_MAKE_NAME(H264CoreEncoder_ScanSignificant_CABAC)(
     cabacData->uNumSigCoeffs = 0;
 
     for (i = start_scan; i <= end_scan; i++) {
-        COEFFSTYPE coef=coeff[dec_single_scan[i]];
+        COEFFSTYPE coef=coeff[dec_single_scans[i]];
 
         if (coef)
         {
