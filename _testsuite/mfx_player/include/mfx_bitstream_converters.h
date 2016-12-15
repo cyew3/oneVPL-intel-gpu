@@ -17,6 +17,7 @@
 #include "mfx_shared_ptr.h"
 #include "mfx_ibitstream_converter.h"
 #include <immintrin.h>
+#include "shared_utils.h"
 
 class BitstreamConverterFactory
     : public IBitstreamConverterFactory
@@ -526,6 +527,48 @@ private:
 };
 
 template <>
+class BSConvert<MFX_FOURCC_YUV444_8, MFX_FOURCC_AYUV>
+    : public BSConvertBase<MFX_FOURCC_YUV444_8, MFX_FOURCC_AYUV>
+{
+    IMPLEMENT_CLONE(BSConvert<MFX_FOURCC_YUV444_8 MFX_PP_COMMA() MFX_FOURCC_AYUV>);
+public:
+    virtual mfxStatus Transform(mfxBitstream * bs, mfxFrameSurface1 *surface)
+    {
+        mfxFrameData &data = surface->Data;
+        mfxFrameInfo &info = surface->Info;
+
+        mfxU32 w, h, i, j, pitch;
+        mfxU8  *ptr;
+
+        w = info.CropW;
+        h = info.CropH;
+        pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
+        ptr = data.V + info.CropX + (info.CropY)*pitch;
+
+        m_line.resize(w);
+
+        for (mfxI32 c = 2; c >= 0; c--) // planar YUV -> packed VUYA
+        {
+            for (i = 0; i < h; i++)
+            {
+                MFX_CHECK_WITH_ERR(w == BSUtil::MoveNBytes(&m_line.front(), bs, w), MFX_ERR_MORE_DATA);
+
+                const mfxU8* p_src = &m_line.front();
+                mfxU8* p_dst = ptr + i*pitch;
+
+                for (j = 0; j < w; j++, p_dst += 4)
+                    p_dst[c] = p_src[j];
+            }
+        }
+
+        return MFX_ERR_NONE;
+    }
+
+private:
+    std::vector<mfxU8> m_line;
+};
+
+template <>
 class BSConvert<MFX_FOURCC_RGB3, MFX_FOURCC_RGB4>
     : public BSConvertBase<MFX_FOURCC_RGB3, MFX_FOURCC_RGB4>
 {
@@ -684,5 +727,28 @@ protected:
         mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
 
         return (mfxU8*)surface->Data.Y410 + info.CropX * m_sample_size + info.CropY * pitch;
+    }
+};
+
+template <>
+class BSConvert<MFX_FOURCC_AYUV, MFX_FOURCC_AYUV>
+    : public BSConverterPacketedCopy<MFX_FOURCC_AYUV, MFX_FOURCC_AYUV>
+{
+    IMPLEMENT_CLONE(BSConvert<MFX_FOURCC_AYUV MFX_PP_COMMA() MFX_FOURCC_AYUV>);
+public:
+    BSConvert()
+    {
+        m_sample_size = 4;
+    }
+
+protected:
+    virtual mfxU8* start_pointer(mfxFrameSurface1 *surface)
+    {
+        mfxFrameData &data = surface->Data;
+        mfxFrameInfo &info = surface->Info;
+
+        mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
+
+        return surface->Data.V + info.CropX * m_sample_size + info.CropY * pitch;
     }
 };

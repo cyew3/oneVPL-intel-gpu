@@ -1521,6 +1521,32 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             MFX_CHECK_STS(mfxres);
         }
     }
+
+#if defined(_WIN32) || defined(_WIN64)
+    //restore after hack for JPEG
+    if (m_EncParams.mfx.CodecId != MFX_CODEC_JPEG)
+    {
+        if (m_inParams.FrameInfo.FourCC == DXGI_FORMAT_AYUV)
+        {
+            m_inParams.FrameInfo.FourCC = MFX_FOURCC_AYUV;
+        }
+
+        ComponentsContainer::iterator component;
+
+        for (component = m_components.begin(); component != m_components.end(); component++)
+        {
+            if (!component->m_ShortName.compare(tstring(VM_STRING("enc")))
+                || !component->m_ShortName.compare(tstring(VM_STRING("dec"))))
+            {
+                if (component->m_params.mfx.FrameInfo.FourCC == DXGI_FORMAT_AYUV)
+                {
+                    component->m_params.mfx.FrameInfo.FourCC = MFX_FOURCC_AYUV;
+                }
+            }
+        }
+    }
+#endif
+
     return MFX_ERR_NONE;
 }
 

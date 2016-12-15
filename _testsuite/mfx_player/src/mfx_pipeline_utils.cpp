@@ -815,6 +815,13 @@ mfxStatus GetMFXFrameInfoFromFOURCCPatternIdx(int idx_in_pattern, mfxFrameInfo &
             info.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
             break;
         }
+#else
+        case 10:
+        {
+            info.FourCC = MFX_FOURCC_AYUV;
+            info.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            break;
+        }
 #endif
         case 11:
         {
