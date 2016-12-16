@@ -145,38 +145,42 @@ mfxStatus InitVp9SeqLevelParam(VP9MfxVideoParam const &video, VP9SeqLevelParam &
 };
 
 mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
-                          mfxU16 forcedFrameType,
-                          mfxU32 frameOrder,
+                          Task const & task,
                           VP9FrameLevelParam &frameParam,
                           mfxCoreInterface const * pCore)
 {
     Zero(frameParam);
-    frameParam.frameType = (mfxU8)((frameOrder % par.mfx.GopPicSize) == 0 || (forcedFrameType & MFX_FRAMETYPE_I) ? KEY_FRAME : INTER_FRAME);
+    mfxU16 forcedFrameType = task.m_ctrl.FrameType;
+    frameParam.frameType = (mfxU8)((task.m_frameOrder % par.mfx.GopPicSize) == 0 || (forcedFrameType & MFX_FRAMETYPE_I) ? KEY_FRAME : INTER_FRAME);
 
     mfxExtCodingOptionVP9 const &opt = GetExtBufferRef(par);
+    mfxExtCodingOptionVP9 const *pOptRuntime = GetExtBuffer(task.m_ctrl);
+    mfxExtCodingOptionVP9 const *pOpt = pOptRuntime ? pOptRuntime : &opt;
 
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
     {
-        frameParam.baseQIndex = mfxU8(frameParam.frameType == KEY_FRAME ? par.mfx.QPI : par.mfx.QPP);
+        frameParam.baseQIndex = mfxU8(task.m_ctrl.QP > 0 ?
+            task.m_ctrl.QP : frameParam.frameType == KEY_FRAME ?
+            par.mfx.QPI : par.mfx.QPP);
     }
 
     frameParam.lfLevel   = (mfxU8)ModifyLoopFilterLevelQPBased(frameParam.baseQIndex, 0); // always 0 is passes since at the moment there is no LF level in MSDK API
-    frameParam.sharpness = (mfxU8)opt.SharpnessLevel;
+    frameParam.sharpness = (mfxU8)pOpt->SharpnessLevel;
 
     frameParam.width  = frameParam.renderWidth = par.mfx.FrameInfo.Width;
     frameParam.height = frameParam.renderHeight = par.mfx.FrameInfo.Height;
 
     for (mfxU8 i = 0; i < 4; i ++)
     {
-        frameParam.lfRefDelta[i] = (mfxI8)opt.LoopFilterRefDelta[i];
+        frameParam.lfRefDelta[i] = (mfxI8)pOpt->LoopFilterRefDelta[i];
     }
 
-    frameParam.lfModeDelta[0] = (mfxI8)opt.LoopFilterModeDelta[0];
-    frameParam.lfModeDelta[1] = (mfxI8)opt.LoopFilterModeDelta[1];
+    frameParam.lfModeDelta[0] = (mfxI8)pOpt->LoopFilterModeDelta[0];
+    frameParam.lfModeDelta[1] = (mfxI8)pOpt->LoopFilterModeDelta[1];
 
-    frameParam.qIndexDeltaLumaDC   = (mfxI8)opt.QIndexDeltaLumaDC;
-    frameParam.qIndexDeltaChromaAC = (mfxI8)opt.QIndexDeltaChromaAC;
-    frameParam.qIndexDeltaChromaDC = (mfxI8)opt.QIndexDeltaChromaDC;
+    frameParam.qIndexDeltaLumaDC   = (mfxI8)pOpt->QIndexDeltaLumaDC;
+    frameParam.qIndexDeltaChromaAC = (mfxI8)pOpt->QIndexDeltaChromaAC;
+    frameParam.qIndexDeltaChromaDC = (mfxI8)pOpt->QIndexDeltaChromaDC;
 
     frameParam.numSegments = 1; // TODO: add segmentation support
 

@@ -52,6 +52,7 @@ namespace MfxHwVP9Encode
 
 #define MAX_Q_INDEX 255
 #define MAX_LF_LEVEL 63
+#define MAX_ABS_Q_INDEX_DELTA 15
 
 #define MAX_TASK_ID 0xffff
 
@@ -415,15 +416,14 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
 
     mfxStatus GetVideoParam(mfxVideoParam * parDst, mfxVideoParam *videoSrc);
 
+    class Task;
     mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
-                              mfxU16 forcedFrameType,
-                              mfxU32 frameOrder,
+                              Task const & task,
                               VP9FrameLevelParam &frameParam,
                               mfxCoreInterface const * pCore);
 
     mfxStatus InitVp9SeqLevelParam(VP9MfxVideoParam const &video, VP9SeqLevelParam &param);
 
-    class Task;
     mfxStatus DecideOnRefListAndDPBRefresh(mfxVideoParam const & par,
                                            Task *pTask,
                                            std::vector<sFrameEx*>&dpb,

@@ -8,7 +8,6 @@
 // Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
 //
 
-#include <limits>
 #include "mfx_common.h"
 
 #include "mfxvp9.h"
@@ -34,23 +33,24 @@ bool IsExtBufferSupportedInInit(mfxU32 id)
 
 bool IsExtBufferSupportedInRuntime(mfxU32 id)
 {
-    id;
-    return false;
+    return id == MFX_EXTBUFF_CODING_OPTION_VP9;
 }
 
-mfxStatus CheckExtBufferHeaders(mfxVideoParam const &par, bool isRuntime)
+mfxStatus CheckExtBufferHeaders(mfxU16 numExtParam, mfxExtBuffer** extParam, bool isRuntime)
 {
-    for (mfxU16 i = 0; i < par.NumExtParam; i++)
+    for (mfxU16 i = 0; i < numExtParam; i++)
     {
-        mfxExtBuffer *pBuf = par.ExtParam[i];
+        MFX_CHECK_NULL_PTR1(extParam);
+
+        mfxExtBuffer *pBuf = extParam[i];
 
         // check that NumExtParam complies with ExtParam
-        MFX_CHECK_NULL_PTR1(par.ExtParam[i]);
+        MFX_CHECK_NULL_PTR1(extParam[i]);
 
         // check that there is no ext buffer duplication in ExtParam
-        for (mfxU16 j = i + 1; j < par.NumExtParam; j++)
+        for (mfxU16 j = i + 1; j < numExtParam; j++)
         {
-            if (par.ExtParam[j]->BufferId == pBuf->BufferId)
+            if (extParam[j]->BufferId == pBuf->BufferId)
             {
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
             }
@@ -173,7 +173,7 @@ mfxStatus SetSupportedParameters(mfxVideoParam & par)
     SetOrCopySupportedParams(&par.mfx);
 
     // extended buffers
-    mfxStatus sts = CheckExtBufferHeaders(par);
+    mfxStatus sts = CheckExtBufferHeaders(par.NumExtParam, par.ExtParam);
     MFX_CHECK_STS(sts);
 
     mfxExtCodingOptionVP9 *pOpt = GetExtBuffer(par);
@@ -341,8 +341,17 @@ bool CheckChromaFormat(mfxU16 format, mfxU32 fourcc)
 
     return true;
 }
-
 #endif // PRE_SI_TARGET_PLATFORM_GEN11
+
+bool CheckFourcc(mfxU32 fourcc)
+{
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    return fourcc == MFX_FOURCC_NV12 || fourcc == MFX_FOURCC_AYUV  // 8 bit
+        || fourcc == MFX_FOURCC_P010 || fourcc != MFX_FOURCC_Y410; // 10 bit
+#else //PRE_SI_TARGET_PLATFORM_GEN11
+    return fourcc == MFX_FOURCC_NV12;
+#endif //PRE_SI_TARGET_PLATFORM_GEN11
+}
 
 mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
 {
@@ -365,6 +374,12 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         unsupported = true;
     }
 
+    if (par.Protected != 0)
+    {
+        par.Protected = 0;
+        unsupported = true;
+    }
+
     // check mfxInfoMfx
     double      frameRate = 0.0;
 
@@ -375,13 +390,22 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         unsupported = true;
     }
 
-    if (par.mfx.FrameInfo.CropX + par.mfx.FrameInfo.CropW > par.mfx.FrameInfo.Width ||
-        par.mfx.FrameInfo.CropY + par.mfx.FrameInfo.CropH > par.mfx.FrameInfo.Height)
+    if (par.mfx.FrameInfo.Width &&
+        (par.mfx.FrameInfo.CropX + par.mfx.FrameInfo.CropW > par.mfx.FrameInfo.Width) ||
+        par.mfx.FrameInfo.Height &&
+        (par.mfx.FrameInfo.CropY + par.mfx.FrameInfo.CropH > par.mfx.FrameInfo.Height))
     {
         par.mfx.FrameInfo.CropX = 0;
         par.mfx.FrameInfo.CropW = 0;
         par.mfx.FrameInfo.CropY = 0;
         par.mfx.FrameInfo.CropH = 0;
+        unsupported = true;
+    }
+
+    if ((par.mfx.FrameInfo.FrameRateExtN == 0) != (par.mfx.FrameInfo.FrameRateExtD == 0))
+    {
+        par.mfx.FrameInfo.FrameRateExtN = 0;
+        par.mfx.FrameInfo.FrameRateExtD = 0;
         unsupported = true;
     }
 
@@ -427,8 +451,7 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         mfxU16& outDepthChroma = opt3.TargetBitDepthLuma;
 
         if (fourcc != 0
-            && fourcc != MFX_FOURCC_NV12 && fourcc != MFX_FOURCC_AYUV  // 8 bit
-            && fourcc != MFX_FOURCC_P010 && fourcc != MFX_FOURCC_Y410) // 10 bit
+            && false == CheckFourcc(fourcc))
         {
             fourcc = 0;
             unsupported = true;
@@ -459,7 +482,11 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
             unsupported = true;
         }
 
-        if (par.mfx.FrameInfo.Shift != 0 && fourcc != MFX_FOURCC_P010)
+        if (par.mfx.FrameInfo.Shift != 0
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+            && fourcc != MFX_FOURCC_P010
+#endif //PRE_SI_TARGET_PLATFORM_GEN11
+            )
         {
             par.mfx.FrameInfo.Shift = 0;
             unsupported = true;
@@ -635,6 +662,21 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         changed = true;
     }
 
+    if (false == CheckRangeDflt(opt.QIndexDeltaLumaDC, -MAX_ABS_Q_INDEX_DELTA, MAX_ABS_Q_INDEX_DELTA, 0))
+    {
+        changed = true;
+    }
+
+    if (false == CheckRangeDflt(opt.QIndexDeltaChromaAC, -MAX_ABS_Q_INDEX_DELTA, MAX_ABS_Q_INDEX_DELTA, 0))
+    {
+        changed = true;
+    }
+
+    if (false == CheckRangeDflt(opt.QIndexDeltaChromaDC, -MAX_ABS_Q_INDEX_DELTA, MAX_ABS_Q_INDEX_DELTA, 0))
+    {
+        changed = true;
+    }
+
     for (mfxU8 i = 0; i < MAX_REF_LF_DELTAS; i++)
     {
         if (false == CheckRangeDflt(opt.LoopFilterRefDelta[i], -MAX_LF_LEVEL, MAX_LF_LEVEL, 0))
@@ -705,16 +747,16 @@ inline mfxU16 GetDefaultBufferSize(VP9MfxVideoParam const &par)
     {
         mfxFrameInfo const &fi = par.mfx.FrameInfo;
 
-        const mfxU16 result_max_value = (mfxU16)-1;
+        const mfxU16 result_max_value = 0xffff;
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
         if(par.mfx.FrameInfo.FourCC == MFX_FOURCC_P010 || par.mfx.FrameInfo.FourCC == MFX_FOURCC_Y410) {
-            mfxU32 result = (fi.Width * fi.Height * 3);
+            mfxU32 result = (fi.Width * fi.Height * 3) / 1000; // size of two uncompressed 420 8bit frames in KB
             return (result < result_max_value ? (mfxU16)result : result_max_value);
         }
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
-        mfxU32 result = (fi.Width * fi.Height * 3) / 2;
-        return (result < result_max_value ? (mfxU16)result : result_max_value); // uncompressed frame size for 420 8 bit
+        mfxU32 result = (fi.Width * fi.Height * 3) / 2 / 1000;
+        return (result < result_max_value ? (mfxU16)result : result_max_value); // uncompressed frame size for 420 8bit in KB
     }
 }
 
@@ -762,7 +804,7 @@ mfxStatus SetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
     SetDefault(par.mfx.NumRefFrame, 1);
     SetDefault(par.mfx.BRCParamMultiplier, 1);
     SetDefault(par.mfx.TargetUsage, MFX_TARGETUSAGE_BALANCED);
-    SetDefault(par.mfx.RateControlMethod, MFX_RATECONTROL_CBR);
+    SetDefault(par.mfx.RateControlMethod, MFX_RATECONTROL_CQP);
     SetDefault(par.mfx.BufferSizeInKB, GetDefaultBufferSize(par));
     if (IsBufferBasedBRC(par.mfx.RateControlMethod))
     {
@@ -794,6 +836,9 @@ mfxStatus SetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
     SetDefault(fi.BitDepthLuma, 8);
     SetDefault(fi.BitDepthChroma, 8);
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
+
+    SetDefault(par.mfx.QPI, 128);
+    SetDefault(par.mfx.QPP, par.mfx.QPI + 5);
 
     // ext buffers
     mfxExtCodingOptionVP9 &opt = GetExtBufferRef(par);
@@ -863,7 +908,13 @@ mfxStatus CheckParametersAndSetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 c
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
-    MFX_CHECK(sts >= 0, sts);
+
+    // check non-mandatory parameters which require return of WARNING if not set
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP &&
+        (par.mfx.QPI == 0 || par.mfx.QPP == 0))
+    {
+        checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+    }
 
     // set defaults for parameters not defined by application
     sts = SetDefaults(par, caps);
@@ -873,30 +924,48 @@ mfxStatus CheckParametersAndSetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 c
 }
 
 mfxStatus CheckEncodeFrameParam(
-    mfxVideoParam const & video,
+    VP9MfxVideoParam const & video,
     mfxEncodeCtrl       * ctrl,
     mfxFrameSurface1    * surface,
-    mfxBitstream        * bs,
-    bool                  isExternalFrameAllocator)
+    mfxBitstream        * bs)
 {
     mfxStatus checkSts = MFX_ERR_NONE;
     MFX_CHECK_NULL_PTR1(bs);
+    MFX_CHECK_NULL_PTR1(bs->Data);
 
+    // check that surface contains valid data
     if (surface != 0)
     {
-        MFX_CHECK((surface->Data.Y == 0) == (surface->Data.UV == 0), MFX_ERR_UNDEFINED_BEHAVIOR);
-        MFX_CHECK(surface->Data.Y != 0 || isExternalFrameAllocator, MFX_ERR_UNDEFINED_BEHAVIOR);
+        MFX_CHECK(CheckFourcc(surface->Info.FourCC), MFX_ERR_INVALID_VIDEO_PARAM);
 
-        if (surface->Info.Width != video.mfx.FrameInfo.Width || surface->Info.Height != video.mfx.FrameInfo.Height)
-            checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+        if (video.m_inMemType == INPUT_SYSTEM_MEMORY)
+        {
+            MFX_CHECK(surface->Data.Y != 0, MFX_ERR_NULL_PTR);
+            MFX_CHECK(surface->Data.U != 0, MFX_ERR_NULL_PTR);
+            MFX_CHECK(surface->Data.V != 0, MFX_ERR_NULL_PTR);
+        }
+        else
+        {
+            MFX_CHECK(surface->Data.MemId != 0, MFX_ERR_INVALID_VIDEO_PARAM);
+        }
+
+        MFX_CHECK(surface->Info.Width <= video.mfx.FrameInfo.Width, MFX_ERR_INVALID_VIDEO_PARAM);
+        MFX_CHECK(surface->Info.Height <= video.mfx.FrameInfo.Height, MFX_ERR_INVALID_VIDEO_PARAM);
+
+        mfxU32 pitch = (surface->Data.PitchHigh << 16) + surface->Data.PitchLow;
+        MFX_CHECK(pitch < 0x8000, MFX_ERR_UNDEFINED_BEHAVIOR);
     }
 
-    MFX_CHECK((mfxU64)bs->MaxLength > ((mfxU64)bs->DataOffset + (mfxU64)bs->DataLength), MFX_ERR_UNDEFINED_BEHAVIOR);
-    MFX_CHECK(((mfxI32)bs->MaxLength - ((mfxI32)bs->DataOffset + (mfxI32)bs->DataLength) >= (mfxI32)video.mfx.BufferSizeInKB*1000), MFX_ERR_NOT_ENOUGH_BUFFER);
+    // check bitstream buffer for enough space
+    MFX_CHECK(bs->MaxLength > 0, MFX_ERR_NOT_ENOUGH_BUFFER);
+    MFX_CHECK(bs->DataOffset < bs->MaxLength, MFX_ERR_UNDEFINED_BEHAVIOR);
+    MFX_CHECK(bs->MaxLength > bs->DataOffset + bs->DataLength, MFX_ERR_NOT_ENOUGH_BUFFER);
+    MFX_CHECK(bs->DataOffset + bs->DataLength + video.mfx.BufferSizeInKB * 1000 <= bs->MaxLength, MFX_ERR_NOT_ENOUGH_BUFFER);
 
+    // check mfxEncodeCtrl for correct parameters
     if (ctrl)
     {
-        MFX_CHECK (ctrl->QP <= 63, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
+        MFX_CHECK (ctrl->QP <= 255, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
         MFX_CHECK (ctrl->FrameType <= MFX_FRAMETYPE_P, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
     }
 

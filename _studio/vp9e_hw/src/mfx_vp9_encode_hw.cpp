@@ -131,9 +131,9 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
         }
 
         // check attached buffers (all are supported by encoder, no duplications, etc.)
-        mfxStatus sts = CheckExtBufferHeaders(*in);
+        mfxStatus sts = CheckExtBufferHeaders(in->NumExtParam, in->ExtParam);
         MFX_CHECK_STS(sts);
-        sts = CheckExtBufferHeaders(*out);
+        sts = CheckExtBufferHeaders(out->NumExtParam, out->ExtParam);
         MFX_CHECK_STS(sts);
 
         VP9MfxVideoParam toValidate = *in;
@@ -186,7 +186,7 @@ mfxStatus Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in, mfxF
 {
     out;
     MFX_CHECK_NULL_PTR2(par,in);
-    mfxStatus sts = CheckExtBufferHeaders(*par);
+    mfxStatus sts = CheckExtBufferHeaders(par->NumExtParam, par->ExtParam);
     MFX_CHECK_STS(sts);
 
     mfxU32 inPattern = par->IOPattern & MFX_IOPATTERN_IN_MASK;
@@ -280,7 +280,7 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
     }
 
     MFX_CHECK_NULL_PTR1(par);
-    mfxStatus sts = CheckExtBufferHeaders(*par);
+    mfxStatus sts = CheckExtBufferHeaders(par->NumExtParam, par->ExtParam);
     MFX_CHECK_STS(sts);
 
     mfxStatus checkSts = MFX_ERR_NONE; // to save warnings ater parameters checking
@@ -494,12 +494,17 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
         return MFX_ERR_NOT_INITIALIZED;
     }
 
+    if (ctrl)
+    {
+        mfxStatus sts = CheckExtBufferHeaders(ctrl->NumExtParam, ctrl->ExtParam, true);
+        MFX_CHECK_STS(sts);
+    }
+
     mfxStatus checkSts = CheckEncodeFrameParam(
         m_video,
         ctrl,
         surface,
-        bs,
-        true);
+        bs);
 
     MFX_CHECK(checkSts >= MFX_ERR_NONE, checkSts);
 
@@ -597,7 +602,7 @@ mfxStatus Plugin::ConfigTask(Task &task)
 {
     VP9FrameLevelParam frameParam = { };
     const VP9MfxVideoParam& curMfxPar = *task.m_pParam;
-    mfxStatus sts = SetFramesParams(curMfxPar, task.m_ctrl.FrameType, task.m_frameOrder, frameParam, m_pmfxCore);
+    mfxStatus sts = SetFramesParams(curMfxPar, task, frameParam, m_pmfxCore);
 
     task.m_pRecFrame = 0;
     task.m_pOutBs = 0;
@@ -796,7 +801,7 @@ mfxStatus Plugin::GetVideoParam(mfxVideoParam *par)
     }
 
     MFX_CHECK_NULL_PTR1(par);
-    mfxStatus sts = CheckExtBufferHeaders(*par);
+    mfxStatus sts = CheckExtBufferHeaders(par->NumExtParam, par->ExtParam);
     MFX_CHECK_STS(sts);
 
     par->AsyncDepth = m_video.AsyncDepth;

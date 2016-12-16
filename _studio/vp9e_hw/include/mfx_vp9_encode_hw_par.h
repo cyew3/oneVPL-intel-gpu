@@ -20,7 +20,7 @@
 namespace MfxHwVP9Encode
 {
 
-mfxStatus CheckExtBufferHeaders(mfxVideoParam const &par, bool isRuntime = false);
+mfxStatus CheckExtBufferHeaders(mfxU16 numExtParam, mfxExtBuffer** extParam, bool isRuntime = false);
 
 mfxStatus SetSupportedParameters(mfxVideoParam & par);
 
@@ -30,11 +30,10 @@ mfxStatus CheckParametersAndSetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 c
 
 mfxStatus SetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps);
 
-mfxStatus CheckEncodeFrameParam(mfxVideoParam const & video,
+mfxStatus CheckEncodeFrameParam(VP9MfxVideoParam const & video,
                                 mfxEncodeCtrl       * ctrl,
                                 mfxFrameSurface1    * surface,
-                                mfxBitstream        * bs,
-                                bool                  isExternalFrameAllocator);
+                                mfxBitstream        * bs);
 
 void SetDefailtsForProfileAndFrameInfo(VP9MfxVideoParam& par);
 } // MfxHwVP9Encode
