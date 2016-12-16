@@ -62,6 +62,7 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
     m_height    = height;
 
     // [0] Get device/context
+    if (!m_vcontext)
     {
         sts = core->GetHandle(MFX_HANDLE_D3D11_DEVICE, (mfxHDL*)&device);
 
@@ -138,6 +139,8 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
         config.ConfigDecoderSpecific         = ENCODE_ENC_PAK;  
         config.guidConfigBitstreamEncryption = DXVA_NoEncrypt;
 #endif
+        if (!!m_vdecoder)
+            m_vdecoder.Release();
 
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "CreateVideoDecoder");
