@@ -1233,19 +1233,28 @@ typedef struct {
     };
 } mfxExtVPPVideoSignalInfo;
 
+/* ROI encoding mode */
+enum {
+    MFX_ROI_MODE_PRIORITY =  0,
+    MFX_ROI_MODE_QP_DELTA =  1
+};
+
 typedef struct {
     mfxExtBuffer    Header;
 
     mfxU16  NumROI;
-    mfxU16  reserved1[11];
+    mfxU16  ROIMode;
+    mfxU16  reserved1[10];
 
     struct  {
         mfxU32  Left;
         mfxU32  Top;
         mfxU32  Right;
         mfxU32  Bottom;
-
-        mfxI16  Priority;
+        union {
+            mfxI16  Priority;
+            mfxI16  DeltaQP;
+        };
         mfxU16  reserved2[7];
     } ROI[256];
 } mfxExtEncoderROI;

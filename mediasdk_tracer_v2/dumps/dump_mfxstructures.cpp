@@ -1149,8 +1149,20 @@ std::string DumpContext::dump(const std::string structName, const mfxExtEncoderR
 {
     std::string str;
     str += dump(structName + ".Header", ExtEncoderROI.Header) + "\n";
-    str += structName + ".Mode=" + ToString(ExtEncoderROI.NumROI) + "\n";
-    str += structName + ".Mode=" + ToString(ExtEncoderROI.ROI) + "\n";
+    str += structName + ".NumROI=" + ToString(ExtEncoderROI.NumROI) + "\n";
+    str += structName + ".ROIMode=" + ToString(ExtEncoderROI.ROIMode) + "\n";
+    for (int i = 0; i < ExtEncoderROI.NumROI; i++) {
+        str += structName + ".ROI[" + ToString(i) + "].Left=" + ToString(ExtEncoderROI.ROI[i].Left) + "\n";
+        str += structName + ".ROI[" + ToString(i) + "].Top=" + ToString(ExtEncoderROI.ROI[i].Top) + "\n";
+        str += structName + ".ROI[" + ToString(i) + "].Right=" + ToString(ExtEncoderROI.ROI[i].Right) + "\n";
+        str += structName + ".ROI[" + ToString(i) + "].Bottom=" + ToString(ExtEncoderROI.ROI[i].Bottom) + "\n";
+        if (ExtEncoderROI.ROIMode == MFX_ROI_MODE_QP_DELTA) {
+            str += structName + ".ROI[" + ToString(i) + "].DeltaQP=" + ToString(ExtEncoderROI.ROI[i].DeltaQP) + "\n";
+        } else {
+            str += structName + ".ROI[" + ToString(i) + "].Priority=" + ToString(ExtEncoderROI.ROI[i].Priority) + "\n";
+        }
+        str += structName + ".ROI[" + ToString(i) + "].reserved2[]=" + DUMP_RESERVED_ARRAY(ExtEncoderROI.ROI[i].reserved2) + "\n";
+    }
     str += structName + ".reserved1[]=" + DUMP_RESERVED_ARRAY(ExtEncoderROI.reserved1) + "\n";
     return str;
 }
