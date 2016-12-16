@@ -30,6 +30,7 @@ private:
         TARGET_USAGE,
         NONE,
         RESOLUTION,
+        MAX_RESOLUTION,
         NOT_ALLIGNED,
         SET_ALLOCK,
         AFTER,
@@ -66,6 +67,9 @@ private:
 
     static const tc_struct test_case[];
 };
+
+#define VP9_VDENC_MAX_RESOL_CNL 4096
+#define VP9_VDENC_MAX_RESOL_ICL 7680
 
 const TestSuite::tc_struct TestSuite::test_case[] =
 {
@@ -134,10 +138,10 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 0 }
         }
     },
-    {/*35 Check too big resolution*/ MFX_ERR_INVALID_VIDEO_PARAM, RESOLUTION, NONE,
+    {/*35 Check too big resolution*/ MFX_ERR_UNSUPPORTED, MAX_RESOLUTION, NONE,
         {
-            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 4096 + 1 },
-            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 4096 + 1 }
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, VP9_VDENC_MAX_RESOL_CNL + 1 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, VP9_VDENC_MAX_RESOL_CNL + 1 }
         }
     },
 
@@ -283,6 +287,15 @@ int TestSuite::RunTest(unsigned int id)
         m_pParOut->NumExtParam = 1;
         m_pPar->ExtParam = NULL;
         m_pParOut->ExtParam = NULL;
+    }
+
+    if (tc.type == MAX_RESOLUTION)
+    {
+        if (g_tsHWtype >= MFX_HW_ICL)
+        {
+            m_par.mfx.FrameInfo.Width = VP9_VDENC_MAX_RESOL_ICL + 1;
+            m_par.mfx.FrameInfo.Height = VP9_VDENC_MAX_RESOL_ICL + 1;
+        }
     }
 
     g_tsStatus.expect(tc.sts);

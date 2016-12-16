@@ -196,10 +196,9 @@ namespace vp9e_cqp
 
                 BS_VP9::Frame* hdr = static_cast<BS_VP9::Frame*>(ptr);
 
-                cycle_counter_encoded++;
                 if(tc.type == REQUEST_QP)
                 {
-                    mfxU16 expected_qp = ((VP9E_CQP_QP_FOR_REQUEST*cycle_counter_encoded)%255) + 1;
+                    mfxU16 expected_qp = ((VP9E_CQP_QP_FOR_REQUEST*cycle_counter_encoded++)%255) + 1;
                     ASSERT_EQ(hdr->uh.quant.base_qindex, expected_qp) << "FAILED: base_q_index=" << (mfxU32)hdr->uh.quant.base_qindex
                             << " in the encoded I-frame header does not match to requested m_pCtrl->QP=" << expected_qp;
                 }
@@ -245,15 +244,15 @@ namespace vp9e_cqp
 
                 if(tc.type == USE_EXT_BUFFER)
                 {
-                    ASSERT_EQ(hdr->uh.quant.y_dc.delta*hdr->uh.quant.y_dc.sign, VP9E_CQP_QIndexDeltaLumaDC) << "FAILED: Global codec-specific params not match (DeltaLumaDC)";
-                    ASSERT_EQ(hdr->uh.quant.uv_ac.delta*hdr->uh.quant.uv_ac.sign, VP9E_CQP_QIndexDeltaChromaAC) << "FAILED: Global codec-specific params not match (DeltaChromaAC)";
-                    ASSERT_EQ(hdr->uh.quant.uv_dc.delta*hdr->uh.quant.uv_dc.sign, VP9E_CQP_QIndexDeltaChromaDC) << "FAILED: Global codec-specific params not match (DeltaChromaDC)";
+                    ASSERT_EQ(hdr->uh.quant.y_dc.delta*(hdr->uh.quant.y_dc.sign ? -1 : 1), VP9E_CQP_QIndexDeltaLumaDC) << "FAILED: Global codec-specific params not match (DeltaLumaDC)";
+                    ASSERT_EQ(hdr->uh.quant.uv_ac.delta*(hdr->uh.quant.uv_ac.sign ? -1 : 1), VP9E_CQP_QIndexDeltaChromaAC) << "FAILED: Global codec-specific params not match (DeltaChromaAC)";
+                    ASSERT_EQ(hdr->uh.quant.uv_dc.delta*(hdr->uh.quant.uv_dc.sign ? -1 : 1), VP9E_CQP_QIndexDeltaChromaDC) << "FAILED: Global codec-specific params not match (DeltaChromaDC)";
                 }
                 else if(tc.type == USE_EXT_BUFFER_FRAME)
                 {
-                    ASSERT_EQ(hdr->uh.quant.y_dc.delta*hdr->uh.quant.y_dc.sign, VP9E_CQP_QIndexDeltaLumaDC+cycle_counter_encoded) << "FAILED: Codec-specific params for a frame not match (DeltaLumaDC)";
-                    ASSERT_EQ(hdr->uh.quant.uv_ac.delta*hdr->uh.quant.uv_ac.sign, VP9E_CQP_QIndexDeltaChromaAC+cycle_counter_encoded) << "FAILED: Codec-specific params for a frame not match (DeltaChromaAC)";
-                    ASSERT_EQ(hdr->uh.quant.uv_dc.delta*hdr->uh.quant.uv_dc.sign, VP9E_CQP_QIndexDeltaChromaDC+cycle_counter_encoded) << "FAILED: Codec-specific params for a frame not match (DeltaChromaDC)";
+                    ASSERT_EQ(hdr->uh.quant.y_dc.delta*(hdr->uh.quant.y_dc.sign ? -1 : 1), VP9E_CQP_QIndexDeltaLumaDC+cycle_counter_encoded) << "FAILED: Codec-specific params for a frame not match (DeltaLumaDC)";
+                    ASSERT_EQ(hdr->uh.quant.uv_ac.delta*(hdr->uh.quant.uv_ac.sign ? -1 : 1), VP9E_CQP_QIndexDeltaChromaAC+cycle_counter_encoded) << "FAILED: Codec-specific params for a frame not match (DeltaChromaAC)";
+                    ASSERT_EQ(hdr->uh.quant.uv_dc.delta*(hdr->uh.quant.uv_dc.sign ? -1 : 1), VP9E_CQP_QIndexDeltaChromaDC+cycle_counter_encoded) << "FAILED: Codec-specific params for a frame not match (DeltaChromaDC)";
                 }
 
                 m_pBitstream->DataLength = m_pBitstream->DataOffset = 0;

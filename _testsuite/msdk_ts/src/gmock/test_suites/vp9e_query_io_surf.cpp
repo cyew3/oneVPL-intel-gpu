@@ -159,6 +159,10 @@ namespace vp9e_query_io_surf
         //check
         if (tc.sts == MFX_ERR_NONE)
         {
+            mfxU16 nFrameMin;
+            mfxU16 nFrameSuggested;
+            nFrameMin = nFrameSuggested = m_pPar->AsyncDepth;
+
             EXPECT_EQ(0, memcmp(&(m_request.Info), &(m_pPar->mfx.FrameInfo), sizeof(mfxFrameInfo)))
                 << "ERROR: QueryIOSurf didn't fill up frame info in returned mfxFrameAllocRequest structure";
 
@@ -174,13 +178,24 @@ namespace vp9e_query_io_surf
                 type = MFX_MEMTYPE_D3D_EXT;
                 break;
             case MFX_IOPATTERN_IN_OPAQUE_MEMORY:
-                type = MFX_MEMTYPE_SYS | MFX_MEMTYPE_OPAQUE_FRAME;
+                type = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET | MFX_MEMTYPE_OPAQUE_FRAME;
                 break;
             default: return MFX_ERR_INVALID_VIDEO_PARAM;
             }
 
             EXPECT_EQ(type, m_request.Type)
                 << "ERROR: Wrong Type";
+
+            if (nFrameMin)
+            {
+                EXPECT_EQ(nFrameMin, m_request.NumFrameMin)
+                    << "ERROR: Wrong NumFrameMin";
+            }
+            if (nFrameSuggested)
+            {
+                EXPECT_EQ(nFrameSuggested, m_request.NumFrameSuggested)
+                    << "ERROR: Wrong NumFrameSuggested";
+            }
         }
 
         TS_END;

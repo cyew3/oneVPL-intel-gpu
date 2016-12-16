@@ -170,24 +170,22 @@ namespace vp9e_goppattern
         {
             if (tc.type == INTRA_REQUEST && i == default_intra_frame_request_position)
             {
-                m_pCtrl->FrameType = MFX_FRAMETYPE_I;
-                // GOP is restarted on Intra-request
-                gop_frame_count = 0;
-            }
-            else if (m_pCtrl)
-            {
-                m_pCtrl->FrameType = 0;
-            }
-
-            //specifying expected frame type
-            if (gop_frame_count++ == 0)
-            {
                 frame_types_expected[i] = MFX_FRAMETYPE_I;
-            } 
+            }
             else
             {
-                frame_types_expected[i] = MFX_FRAMETYPE_P;
+                //specifying expected frame type
+                if (gop_frame_count == 0)
+                {
+                    frame_types_expected[i] = MFX_FRAMETYPE_I;
+                }
+                else
+                {
+                    frame_types_expected[i] = MFX_FRAMETYPE_P;
+                }
             }
+
+            gop_frame_count ++;
 
             //start new GOP
             if (gop_frame_count == m_pPar->mfx.GopPicSize)
@@ -211,8 +209,19 @@ namespace vp9e_goppattern
 
             async = TS_MIN(frames_count, async - 1);
 
+            mfxU32 i = 0;
             while(encoded < frames_count)
             {
+                if (tc.type == INTRA_REQUEST && i == default_intra_frame_request_position)
+                {
+                    m_pCtrl->FrameType = MFX_FRAMETYPE_I;
+                }
+                else if (m_pCtrl)
+                {
+                    m_pCtrl->FrameType = 0;
+                }
+                i++;
+
                 //call test function
                 if(MFX_ERR_MORE_DATA == EncodeFrameAsync())
                 {
