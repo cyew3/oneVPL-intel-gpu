@@ -165,7 +165,8 @@ enum {
     MFX_PLATFORM_BROADWELL      = 5,
     MFX_PLATFORM_CHERRYTRAIL    = 6,
     MFX_PLATFORM_SKYLAKE        = 7,
-    MFX_PLATFORM_BROXTON        = 8,
+    MFX_PLATFORM_BROXTON        = 8, // Deprecated platform name, to be replaced by MFX_PLATFORM_APOLLOLAKE
+    MFX_PLATFORM_APOLLOLAKE     = 8,
     MFX_PLATFORM_KABYLAKE       = 9,
     MFX_PLATFORM_CANNONLAKE     = 10,
     MFX_PLATFORM_ICELAKE        = 11,
