@@ -14,7 +14,7 @@ Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
 #include "gtest/gtest.h"
 
-#include "scheduler_tasks_provider.h"
+#include "tasks_providers.h"
 
 struct TaskConfig
 {
@@ -47,7 +47,7 @@ TEST_P(TasksTest, SingleTask) {
 
     mfxStatus sts;
     mfxSyncPoint syncp;
-    utils::Task task(new utils::TaskParam(task_cfg.sts_));
+    utils::WaitTask task(new utils::TaskParam(task_cfg.sts_));
 
     task.param_->sync_obj_ = std::make_shared<utils::SleepSyncObject>(task_cfg.dur_);
 
@@ -85,7 +85,7 @@ TEST_P(TasksTest, MultipleWaiters) {
 
     mfxStatus sts;
     mfxSyncPoint syncp;
-    utils::Task task(new utils::TaskParam(task_cfg.sts_));
+    utils::WaitTask task(new utils::TaskParam(task_cfg.sts_));
 
     task.param_->sync_obj_ = std::make_shared<utils::SleepSyncObject>(task_cfg.dur_);
 
@@ -135,7 +135,7 @@ TEST_P(TasksTest, SingleThread) {
     mfxStatus sts;
     mfxSyncPoint syncp;
     utils::Semaphore sem;
-    utils::Task task(new utils::TaskParam(task_cfg.sts_));
+    utils::WaitTask task(new utils::TaskParam(task_cfg.sts_));
     MFX_SCHEDULER_PARAM sched_params = { MFX_SINGLE_THREAD, 0, NULL, };
 
     task.param_->sync_obj_ = std::make_shared<utils::SleepSyncObject>(task_cfg.dur_);
