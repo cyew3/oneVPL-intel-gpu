@@ -144,7 +144,7 @@ TEST_P(TasksTest, SingleThread) {
     auto syncf = [&] {
         sem.wait();
         mfxStatus sts = core_->Synchronize(syncp, (std::numeric_limits<mfxU32>::max)());
-        EXPECT_EQ(MFX_ERR_NONE, sts);
+        EXPECT_EQ(task.get_expected_status(), sts);
     };
     std::thread sync_th(syncf);
 
@@ -168,6 +168,23 @@ TEST_P(TasksTest, SingleThread) {
     sts = core_->Reset();
     EXPECT_EQ(MFX_ERR_NONE, sts);
 }
+
+// TODO: Use aggregate initializer (should be supported start from VS2013)
+static const ::TaskConfig succeed_tasks_configs_data[] = {
+    { "Succeeded 100ms Task", MFX_ERR_NONE, std::chrono::milliseconds(100) },
+    { "Succeeded 250ms Task", MFX_ERR_NONE, std::chrono::milliseconds(250) },
+    { "Succeeded 1024ms Task", MFX_ERR_NONE, std::chrono::milliseconds(1024) },
+};
+static std::vector<::TaskConfig> succeed_tasks_configs(std::begin(succeed_tasks_configs_data), std::end(succeed_tasks_configs_data));
+INSTANTIATE_TEST_CASE_P(SucceedingTasks, TasksTest, ::testing::ValuesIn(succeed_tasks_configs));
+
+static const ::TaskConfig failing_tasks_configs_data[] = {
+    { "Failed MFX_ERR_UNKNOWN 100ms Task", MFX_ERR_UNKNOWN, std::chrono::milliseconds(100) },
+    { "Failed MFX_ERR_UNKNOWN 250ms Task", MFX_ERR_UNKNOWN, std::chrono::milliseconds(250) },
+    { "Failed MFX_ERR_UNKNOWN 1024ms Task", MFX_ERR_UNKNOWN, std::chrono::milliseconds(1024) },
+};
+static std::vector<::TaskConfig> failing_tasks_configs(std::begin(failing_tasks_configs_data), std::end(failing_tasks_configs_data));
+INSTANTIATE_TEST_CASE_P(FailingTasks, TasksTest, ::testing::ValuesIn(failing_tasks_configs));
 
 TEST_F(TasksTest, MultiframeHerd) {
     mfxStatus sts;
@@ -232,19 +249,3 @@ TEST_F(TasksTest, TasksLatency) {
     sts = core_->Reset();
     EXPECT_EQ(MFX_ERR_NONE, sts);
 }
-
-static const ::TaskConfig config_data[] = {
-    { "Succeeded 100ms Task", MFX_ERR_NONE, std::chrono::milliseconds(100) },
-    { "Succeeded 250ms Task", MFX_ERR_NONE, std::chrono::milliseconds(250) },
-    { "Succeeded 1024ms Task", MFX_ERR_NONE, std::chrono::milliseconds(1024) },
-    { "Failed MFX_ERR_UNKNOWN 100ms Task", MFX_ERR_UNKNOWN, std::chrono::milliseconds(100) },
-    { "Failed MFX_ERR_UNKNOWN 250ms Task", MFX_ERR_UNKNOWN, std::chrono::milliseconds(250) },
-    { "Failed MFX_ERR_UNKNOWN 1024ms Task", MFX_ERR_UNKNOWN, std::chrono::milliseconds(1024) }
-};
-
-// TODO: Use aggregate initializer (should be supported start from VS2013)
-static std::vector<::TaskConfig> configs (std::begin(config_data), std::end(config_data));
-
-INSTANTIATE_TEST_CASE_P(SingleTask, TasksTest, ::testing::ValuesIn(configs));
-INSTANTIATE_TEST_CASE_P(MultipleWaiters, TasksTest, ::testing::ValuesIn(configs));
-INSTANTIATE_TEST_CASE_P(SingleThread, TasksTest, ::testing::ValuesIn(configs));
