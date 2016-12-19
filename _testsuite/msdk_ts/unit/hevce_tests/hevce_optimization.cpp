@@ -10,6 +10,7 @@
 
 #include "random"
 #include "memory"
+#include "algorithm"
 
 #define MFX_TARGET_OPTIMIZATION_AUTO
 #define MFX_ENABLE_H265_VIDEO_ENCODE
@@ -27,20 +28,20 @@ namespace utils {
     // it seems that gcc doesn't support std::align
     // used implementation of std::align from MS STL
     void *myalign(size_t alignment, size_t size, void *&ptr, size_t &space)
-	{
-	    size_t offset = alignment == 0 ? 0 : (size_t)((uintptr_t)ptr & (alignment - 1));
-	    if (0 < offset)
-		    offset = alignment - offset;	// number of bytes to skip
-	    if (ptr == 0 || space < offset || space - offset < size)
-		    return 0;
-	    else
-		{	// enough room, update
-		    char *ans = (char *)ptr + offset;
-		    ptr = (void *)(ans + size);
-		    space -= offset + size;
-		    return ((void *)ans);
-		}
-	}
+    {
+        size_t offset = alignment == 0 ? 0 : (size_t)((uintptr_t)ptr & (alignment - 1));
+        if (0 < offset)
+            offset = alignment - offset;   // number of bytes to skip
+        if (ptr == 0 || space < offset || space - offset < size)
+            return 0;
+        else
+        {   // enough room, update
+            char *ans = (char *)ptr + offset;
+            ptr = (void *)(ans + size);
+            space -= offset + size;
+            return ((void *)ans);
+        }
+    }
 
     void *AlignedMalloc(size_t size, size_t align)
     {
@@ -93,6 +94,17 @@ namespace utils {
             for (int c = 0; c < width; c++)
                 block[c] = dist(randEngine);
     }
+
+    template<class TRand>
+    void InitRandomBlock(TRand &randEngine, unsigned char* block, int pitch, int width, int height, int minVal, int maxVal)
+    {
+        std::uniform_int_distribution<unsigned int> dist(static_cast<unsigned int>(minVal), static_cast<unsigned int>(maxVal));
+
+        for (int r = 0; r < height; r++, block += pitch)
+            for (int c = 0; c < width; c++)
+                block[c] = static_cast<unsigned char>(dist(randEngine));
+    }
+
 
     template <typename Func, typename... Args> mfxI64 GetMinTicks(int number, Func func, Args&&... args)
     {
