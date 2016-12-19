@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2016 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2017 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -1211,5 +1211,32 @@ std::string DumpContext::dump(const std::string structName, const  mfxExtVPPScal
     str += dump(structName + ".Header", ExtVPPScaling.Header) + "\n";
     str += structName + "ScalingMode.=" + ToString(ExtVPPScaling.ScalingMode) + "\n";
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtVPPScaling.reserved) + "\n";
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const  mfxExtDecVideoProcessing &ExtDecVideoProcessing)
+{
+    std::string str;
+    /* IN structures */
+    str += dump(structName + ".Header", ExtDecVideoProcessing.Header) + "\n";
+    str += structName + "In.CropX=" + ToString(ExtDecVideoProcessing.In.CropX) + "\n";
+    str += structName + "In.CropY=" + ToString(ExtDecVideoProcessing.In.CropY) + "\n";
+    str += structName + "In.CropW=" + ToString(ExtDecVideoProcessing.In.CropW) + "\n";
+    str += structName + "In.CropH=" + ToString(ExtDecVideoProcessing.In.CropH) + "\n";
+    str += structName + "In.reserved[]=" + DUMP_RESERVED_ARRAY(ExtDecVideoProcessing.In.reserved) + "\n";
+    /* Out structures */
+    str += structName + "Out.FourCC=" + ToString(ExtDecVideoProcessing.Out.FourCC) + "\n";
+    str += structName + "Out.ChromaFormat=" + ToString(ExtDecVideoProcessing.Out.ChromaFormat) + "\n";
+    str += structName + "Out.reserved1=" + ToString(ExtDecVideoProcessing.Out.reserved1) + "\n";
+    str += structName + "Out.Width=" + ToString(ExtDecVideoProcessing.Out.Width) + "\n";
+    str += structName + "Out.Height=" + ToString(ExtDecVideoProcessing.Out.Height) + "\n";
+    str += structName + "OutCropX.=" + ToString(ExtDecVideoProcessing.Out.CropX) + "\n";
+    str += structName + "OutCropY.=" + ToString(ExtDecVideoProcessing.Out.CropY) + "\n";
+    str += structName + "OutCropW.=" + ToString(ExtDecVideoProcessing.Out.CropW) + "\n";
+    str += structName + "OutCropH.=" + ToString(ExtDecVideoProcessing.Out.CropH) + "\n";
+    str += structName + "Out.reserved[]=" + DUMP_RESERVED_ARRAY(ExtDecVideoProcessing.Out.reserved) + "\n";
+
+    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtDecVideoProcessing.reserved) + "\n";
+
     return str;
 }

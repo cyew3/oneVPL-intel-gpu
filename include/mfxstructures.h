@@ -1353,7 +1353,7 @@ typedef struct {
     struct mfxOut{
         mfxU32  FourCC;
         mfxU16  ChromaFormat;
-        mfxU16  PicStruct;
+        mfxU16  reserved1;
 
         mfxU16  Width;
         mfxU16  Height;
@@ -1365,21 +1365,7 @@ typedef struct {
         mfxU16  reserved[22];
     }Out;
 
-    /* background color*/
-    mfxU16  FillBackground;
-    union {
-        mfxU16   Y;
-        mfxU16   R;
-    };
-    union {
-        mfxU16   U;
-        mfxU16   G;
-    };
-    union {
-        mfxU16   V;
-        mfxU16   B;
-    };
-    mfxU16  reserved[9];
+    mfxU16  reserved[13];
 } mfxExtDecVideoProcessing;
 
 typedef struct {
