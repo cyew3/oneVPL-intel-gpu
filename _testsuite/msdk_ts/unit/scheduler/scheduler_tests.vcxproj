@@ -189,7 +189,7 @@
     <ClCompile Include="..\..\..\..\_studio\mfx_lib\scheduler\src\mfx_scheduler_core_thread.cpp" />
     <ClCompile Include="scheduler_api.cpp" />
     <ClCompile Include="scheduler_tasks.cpp" />
-    <ClCompile Include="scheduler_tasks.cpp" />
+    <ClCompile Include="test_main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\..\mdp_msdk-contrib\gmock\msvc\2012\gmock.vcxproj">
