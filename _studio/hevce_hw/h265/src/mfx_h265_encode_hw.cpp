@@ -258,12 +258,12 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
     printCaps(MaxNum_WeightedPredL0);
     printCaps(MaxNum_WeightedPredL1);
 #endif
-    mfxExtCodingOptionSPSPPS* pSPSPPS = ExtBuffer::Get(*par);
+    mfxExtCodingOptionSPSPPS* pSPSPPS = ExtBuffer::Get(m_vpar);
 
     sts = LoadSPSPPS(m_vpar, pSPSPPS);
     MFX_CHECK_STS(sts);
     
-    mfxExtEncodedSlicesInfo* pSliceInfo = ExtBuffer::Get(*par);
+    mfxExtEncodedSlicesInfo* pSliceInfo = ExtBuffer::Get(m_vpar);
     if (pSliceInfo && pSliceInfo->SliceSize)
     {
         if (!m_caps.SliceLevelReportSupport)
@@ -272,7 +272,7 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
         }
 
         // MaxSliceSize must be set for SliceSizeReport
-        mfxExtCodingOption2* pCO2 = ExtBuffer::Get(*par);
+        mfxExtCodingOption2* pCO2 = ExtBuffer::Get(m_vpar);
         if (!pCO2 || !pCO2->MaxSliceSize)
         {
             return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;        
@@ -344,22 +344,26 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
     {
         const mfxExtCodingOption3& CO3 = m_vpar.m_ext.CO3;
 
-        if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV444) && CO3.TargetBitDepthLuma == 10)
-        {
+        if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV444) && CO3.TargetBitDepthLuma == 10) {
             request.Info.FourCC = MFX_FOURCC_Y410;
-            request.Info.Width  /= 2;
+            request.Info.Width /= 2;
             request.Info.Height *= 3;
         }
-        else if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV444) && CO3.TargetBitDepthLuma == 8)
-        {
+        else if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV444) && CO3.TargetBitDepthLuma == 8) {
             request.Info.FourCC = MFX_FOURCC_AYUV;
-            request.Info.Width  /= 4;
+            request.Info.Width /= 4;
             request.Info.Height *= 3;
         }
-        else if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV422) && CO3.TargetBitDepthLuma == 10)
-            request.Info.FourCC =  MFX_FOURCC_P210;
-        else if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV422) && CO3.TargetBitDepthLuma == 8)
+        else if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV422) && CO3.TargetBitDepthLuma == 10) {
+            request.Info.FourCC =  MFX_FOURCC_Y210;
+            request.Info.Width /= 2;
+            request.Info.Height *= 2;
+        }
+        else if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV422) && CO3.TargetBitDepthLuma == 8) {
             request.Info.FourCC =  MFX_FOURCC_YUY2;
+            request.Info.Width /= 2;
+            request.Info.Height *= 2;
+        }
         else if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV420) && CO3.TargetBitDepthLuma == 10)
             request.Info.FourCC =  MFX_FOURCC_P010;
         else if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV420) && CO3.TargetBitDepthLuma == 8)

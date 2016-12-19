@@ -121,6 +121,8 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAuxilliaryDevice(
         m_caps.MaxEncodedBitDepth = 1;
     if (!m_caps.Color420Only && !(m_caps.YUV444ReconSupport || m_caps.YUV422ReconSupport))
         m_caps.YUV444ReconSupport = 1;
+    if (!m_caps.Color420Only && !( m_caps.YUV422ReconSupport))   // VPG: caps are not coorect now
+        m_caps.YUV422ReconSupport = 1;
 #endif
 
     return MFX_ERR_NONE;

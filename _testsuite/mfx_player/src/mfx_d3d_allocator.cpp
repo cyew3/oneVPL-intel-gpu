@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -21,6 +21,7 @@ Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 #define D3DFMT_YV12 (D3DFORMAT)MAKEFOURCC('Y','V','1','2')
 #define D3DFMT_P010 (D3DFORMAT)MAKEFOURCC('P','0','1','0')
 #define D3DFMT_Y210 (D3DFORMAT)MFX_FOURCC_Y210
+#define D3DFMT_P210 (D3DFORMAT)MFX_FOURCC_P210
 #define D3DFMT_Y216 (D3DFORMAT)MFX_FOURCC_Y216
 #define D3DFMT_Y410 (D3DFORMAT)MFX_FOURCC_Y410
 #define D3DFMT_AYUV (D3DFORMAT)MFX_FOURCC_AYUV
@@ -53,6 +54,8 @@ D3DFORMAT ConvertMfxFourccToD3dFormat(mfxU32 fourcc)
         return D3DFMT_A16B16G16R16;
     case MFX_FOURCC_Y210:
         return D3DFMT_Y210;
+    case MFX_FOURCC_P210:
+        return D3DFMT_P210;
     case MFX_FOURCC_Y216:
         return D3DFMT_Y216;
     case MFX_FOURCC_Y410:
