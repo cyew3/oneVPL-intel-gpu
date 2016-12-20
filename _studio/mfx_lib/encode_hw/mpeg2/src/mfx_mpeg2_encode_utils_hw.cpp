@@ -768,12 +768,14 @@ namespace MPEG2EncoderHW
             }*/
 
 
-            mfxU32 temp = out->IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_IN_SYSTEM_MEMORY);
-
-            if ((temp==0 && out->IOPattern)|| temp==(MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_IN_SYSTEM_MEMORY))
             {
-                out->IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
-                bWarning = true;
+                mfxU32 temp = out->IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_IN_SYSTEM_MEMORY);
+
+                if ((temp == 0 && out->IOPattern) || temp == (MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_IN_SYSTEM_MEMORY))
+                {
+                    out->IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
+                    bWarning = true;
+                }
             }
             mfxExtCodingOption* ext_in  = GetExtCodingOptions(in->ExtParam, in->NumExtParam);
             mfxExtCodingOption* ext_out = GetExtCodingOptions(out->ExtParam,out->NumExtParam);
@@ -2347,7 +2349,7 @@ namespace MPEG2EncoderHW
             {
                 if (hrdSts & UMC::BRC_ERR_SMALL_FRAME) 
                 {
-                    mfxI32 maxSize = 0, minSize = 0;
+                    maxSize = 0, minSize = 0;
                     Ipp8u *p = pBitsream->Data + pBitsream->DataOffset + pBitsream->DataLength;
                     m_pBRC->GetMinMaxFrameSize(&minSize, &maxSize);
                     if (bitsize < (mfxU32)minSize && pBitsream->DataOffset + 1 + pBitsream->DataLength < pBitsream->MaxLength)
