@@ -347,7 +347,7 @@ bool CheckFourcc(mfxU32 fourcc)
 {
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     return fourcc == MFX_FOURCC_NV12 || fourcc == MFX_FOURCC_AYUV  // 8 bit
-        || fourcc == MFX_FOURCC_P010 || fourcc != MFX_FOURCC_Y410; // 10 bit
+        || fourcc == MFX_FOURCC_P010 || fourcc == MFX_FOURCC_Y410; // 10 bit
 #else //PRE_SI_TARGET_PLATFORM_GEN11
     return fourcc == MFX_FOURCC_NV12;
 #endif //PRE_SI_TARGET_PLATFORM_GEN11

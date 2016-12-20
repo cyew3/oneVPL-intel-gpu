@@ -304,8 +304,10 @@ mfxStatus UpdateDpb(VP9FrameLevelParam &frameParam, sFrameEx *pRecFrame, std::ve
 //---------------------------------------------------------
 
 MfxFrameAllocResponse::MfxFrameAllocResponse()
+    : m_pCore(0)
+    , m_numFrameActualReturnedByAllocFrames(0)
 {
-    Zero(*this);
+    Zero(m_info);
 }
 
 MfxFrameAllocResponse::~MfxFrameAllocResponse()
@@ -384,7 +386,6 @@ mfxStatus MfxFrameAllocResponse::Release()
             mfxStatus sts = m_pCore->FrameAllocator.Free(m_pCore->FrameAllocator.pthis, &m_responseQueue[i]);
             MFX_CHECK_STS(sts);
         }
-
         m_responseQueue.resize(0);
         m_numFrameActualReturnedByAllocFrames = 0;
     }
