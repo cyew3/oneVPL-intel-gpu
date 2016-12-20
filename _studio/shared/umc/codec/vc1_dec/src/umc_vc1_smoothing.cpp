@@ -529,189 +529,186 @@ void Smoothing_I(VC1Context* pContext, Ipp32s Height)
     if(pCurrMB->Overlap == 0)
         return;
 
+    Ipp32s notTop = VC1_IS_NO_TOP_MB(pCurrMB->LeftTopRightPositionFlag);
+    Ipp32s Width = pContext->m_seqLayerHeader.widthMB;
+    Ipp32s MaxWidth = pContext->m_seqLayerHeader.MaxWidthMB;
+    Ipp32u EdgeDisabledFlag = IPPVC_EDGE_HALF_1 | IPPVC_EDGE_HALF_2;
+
+    Ipp16s* CurrBlock = pContext->m_pBlock;
+    Ipp8u* YPlane = pCurrMB->currYPlane;
+    Ipp8u* UPlane = pCurrMB->currUPlane;
+    Ipp8u* VPlane = pCurrMB->currVPlane;
+    Ipp32s YPitch = pCurrMB->currYPitch;
+    Ipp32s UPitch = pCurrMB->currUPitch;
+    Ipp32s VPitch = pCurrMB->currVPitch;
+
+    Ipp32s i, j;
+    //Ipp16s* UpYrow;
+    //Ipp16s* UpUrow;
+    //Ipp16s* UpVrow;
+
+    for (j = 0; j< Height; j++)
     {
-        VC1MB* pCurrMB = pContext->m_pCurrMB;
-        Ipp32s notTop = VC1_IS_NO_TOP_MB(pCurrMB->LeftTopRightPositionFlag);
-        Ipp32s Width = pContext->m_seqLayerHeader.widthMB;
-        Ipp32s MaxWidth = pContext->m_seqLayerHeader.MaxWidthMB;
-        Ipp32u EdgeDisabledFlag = IPPVC_EDGE_HALF_1 | IPPVC_EDGE_HALF_2;
+        notTop = VC1_IS_NO_TOP_MB(pCurrMB->LeftTopRightPositionFlag);
 
-        Ipp16s* CurrBlock = pContext->m_pBlock;
-        Ipp8u* YPlane = pCurrMB->currYPlane;
-        Ipp8u* UPlane = pCurrMB->currUPlane;
-        Ipp8u* VPlane = pCurrMB->currVPlane;
-        Ipp32s YPitch = pCurrMB->currYPitch;
-        Ipp32s UPitch = pCurrMB->currUPitch;
-        Ipp32s VPitch = pCurrMB->currVPitch;
+        if(notTop)
+        {
+            YPlane = pCurrMB->currYPlane;
+            UPlane = pCurrMB->currUPlane;
+            VPlane = pCurrMB->currVPlane;
 
-        Ipp32s i, j;
-        //Ipp16s* UpYrow;
-        //Ipp16s* UpUrow;
-        //Ipp16s* UpVrow;
-
-       for (j = 0; j< Height; j++)
-       {
-           notTop = VC1_IS_NO_TOP_MB(pCurrMB->LeftTopRightPositionFlag);
-
-           if(notTop)
-           {
+            //first MB in row
+            //internal vertical smoothing
+            _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R(CurrBlock + 6, VC1_PIXEL_IN_LUMA*2,
+                                                            CurrBlock + 8, VC1_PIXEL_IN_LUMA*2,
+                                                            YPlane + 8,    YPitch,
+                                                            0,             EdgeDisabledFlag);
+            for (i = 1; i < Width; i++)
+            {
+                CurrBlock  += 8*8*6;
+                pCurrMB++;
                 YPlane = pCurrMB->currYPlane;
                 UPlane = pCurrMB->currUPlane;
                 VPlane = pCurrMB->currVPlane;
 
-                //first MB in row
+                //LUMA
+                //left boundary vertical smoothing
+                _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R(CurrBlock - 8*8*6+14, VC1_PIXEL_IN_LUMA*2,
+                                                                CurrBlock,            VC1_PIXEL_IN_LUMA*2,
+                                                                YPlane,               YPitch,
+                                                                0,                    EdgeDisabledFlag);
                 //internal vertical smoothing
-                _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R(CurrBlock + 6, VC1_PIXEL_IN_LUMA*2,
-                                                             CurrBlock + 8, VC1_PIXEL_IN_LUMA*2,
-                                                             YPlane + 8,    YPitch,
-                                                             0,             EdgeDisabledFlag);
-                for (i = 1; i < Width; i++)
-                {
-                    CurrBlock  += 8*8*6;
-                    pCurrMB++;
-                    YPlane = pCurrMB->currYPlane;
-                    UPlane = pCurrMB->currUPlane;
-                    VPlane = pCurrMB->currVPlane;
-
-                    //LUMA
-                    //left boundary vertical smoothing
-                    _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R(CurrBlock - 8*8*6+14, VC1_PIXEL_IN_LUMA*2,
-                                                                 CurrBlock,            VC1_PIXEL_IN_LUMA*2,
-                                                                 YPlane,               YPitch,
-                                                                 0,                    EdgeDisabledFlag);
-                    //internal vertical smoothing
-                    _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R(CurrBlock + 6,        VC1_PIXEL_IN_LUMA*2,
-                                                                 CurrBlock + 8,        VC1_PIXEL_IN_LUMA*2,
-                                                                 YPlane + 8,           YPitch,
-                                                                 0,                    EdgeDisabledFlag);
+                _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R(CurrBlock + 6,        VC1_PIXEL_IN_LUMA*2,
+                                                                CurrBlock + 8,        VC1_PIXEL_IN_LUMA*2,
+                                                                YPlane + 8,           YPitch,
+                                                                0,                    EdgeDisabledFlag);
 
 
-                    //left MB Upper horizontal edge
-                    _own_ippiSmoothingLuma_HorEdge_VC1_16s8u_C1R(CurrBlock - (MaxWidth+1)*8*8*6 + 64*2 +6*VC1_PIXEL_IN_LUMA,              VC1_PIXEL_IN_LUMA*2,
-                                                                 CurrBlock - 8*8*6,   VC1_PIXEL_IN_LUMA*2,
-                                                                 YPlane - 16,         YPitch,
-                                                                 EdgeDisabledFlag);
+                //left MB Upper horizontal edge
+                _own_ippiSmoothingLuma_HorEdge_VC1_16s8u_C1R(CurrBlock - (MaxWidth+1)*8*8*6 + 64*2 +6*VC1_PIXEL_IN_LUMA,              VC1_PIXEL_IN_LUMA*2,
+                                                                CurrBlock - 8*8*6,   VC1_PIXEL_IN_LUMA*2,
+                                                                YPlane - 16,         YPitch,
+                                                                EdgeDisabledFlag);
 
-                    //left MB internal horizontal edge
-                    _own_ippiSmoothingLuma_HorEdge_VC1_16s8u_C1R(CurrBlock - 8*8*4 - 32, VC1_PIXEL_IN_LUMA*2,
-                                                                 CurrBlock - 8*8*4,      VC1_PIXEL_IN_LUMA*2,
-                                                                 YPlane - 16 + 8*YPitch, YPitch,
-                                                                 EdgeDisabledFlag);
+                //left MB internal horizontal edge
+                _own_ippiSmoothingLuma_HorEdge_VC1_16s8u_C1R(CurrBlock - 8*8*4 - 32, VC1_PIXEL_IN_LUMA*2,
+                                                                CurrBlock - 8*8*4,      VC1_PIXEL_IN_LUMA*2,
+                                                                YPlane - 16 + 8*YPitch, YPitch,
+                                                                EdgeDisabledFlag);
 
-                    //CHROMA
-                    //U vertical smoothing
-                    _own_ippiSmoothingChroma_VerEdge_VC1_16s8u_C1R(CurrBlock - 8*8*2 + 6, VC1_PIXEL_IN_CHROMA*2,
-                                                                   CurrBlock + 8*8*4,     VC1_PIXEL_IN_CHROMA*2,
-                                                                   UPlane,                UPitch);
+                //CHROMA
+                //U vertical smoothing
+                _own_ippiSmoothingChroma_VerEdge_VC1_16s8u_C1R(CurrBlock - 8*8*2 + 6, VC1_PIXEL_IN_CHROMA*2,
+                                                                CurrBlock + 8*8*4,     VC1_PIXEL_IN_CHROMA*2,
+                                                                UPlane,                UPitch);
 
-                    //V vertical smoothing
-                    _own_ippiSmoothingChroma_VerEdge_VC1_16s8u_C1R(CurrBlock - 8*8 + 6, VC1_PIXEL_IN_CHROMA*2,
-                                                                   CurrBlock + 8*8*5,   VC1_PIXEL_IN_CHROMA*2,
-                                                                   VPlane,              VPitch);
-
-                    //U top horizontal smoothing
-                    _own_ippiSmoothingChroma_HorEdge_VC1_16s8u_C1R(CurrBlock - (MaxWidth+1)*8*8*6 + 64*4 +6*VC1_PIXEL_IN_CHROMA,           VC1_PIXEL_IN_CHROMA*2,
-                                                                   CurrBlock - 2*64, VC1_PIXEL_IN_CHROMA*2,
-                                                                   UPlane - 8,       UPitch);
-
-                    //V top horizontal smoothing
-                    _own_ippiSmoothingChroma_HorEdge_VC1_16s8u_C1R(CurrBlock - (MaxWidth+1)*8*8*6 + 64*5 +6*VC1_PIXEL_IN_CHROMA,         VC1_PIXEL_IN_CHROMA*2,
-                                                                   CurrBlock - 64, VC1_PIXEL_IN_CHROMA*2,
-                                                                   VPlane - 8,     VPitch);
-                }
-
-                //MB Upper horizontal edge
-                _own_ippiSmoothingLuma_HorEdge_VC1_16s8u_C1R(CurrBlock - MaxWidth*8*8*6 + 64*2 +6*VC1_PIXEL_IN_LUMA,     VC1_PIXEL_IN_LUMA*2,
-                                                             CurrBlock,  VC1_PIXEL_IN_LUMA*2,
-                                                             YPlane,     YPitch,
-                                                             EdgeDisabledFlag);
-
-                //MB internal horizontal edge
-                _own_ippiSmoothingLuma_HorEdge_VC1_16s8u_C1R(CurrBlock + 8*8*2 - 32, VC1_PIXEL_IN_LUMA*2,
-                                                             CurrBlock + 8*8*2,      VC1_PIXEL_IN_LUMA*2,
-                                                             YPlane + 8*YPitch, YPitch,
-                                                             EdgeDisabledFlag);
+                //V vertical smoothing
+                _own_ippiSmoothingChroma_VerEdge_VC1_16s8u_C1R(CurrBlock - 8*8 + 6, VC1_PIXEL_IN_CHROMA*2,
+                                                                CurrBlock + 8*8*5,   VC1_PIXEL_IN_CHROMA*2,
+                                                                VPlane,              VPitch);
 
                 //U top horizontal smoothing
-                _own_ippiSmoothingChroma_HorEdge_VC1_16s8u_C1R(CurrBlock - MaxWidth*8*8*6 + 64*4 +6*VC1_PIXEL_IN_CHROMA,            VC1_PIXEL_IN_CHROMA*2,
-                                                               CurrBlock + 4*64,  VC1_PIXEL_IN_CHROMA*2,
-                                                               UPlane,            UPitch);
+                _own_ippiSmoothingChroma_HorEdge_VC1_16s8u_C1R(CurrBlock - (MaxWidth+1)*8*8*6 + 64*4 +6*VC1_PIXEL_IN_CHROMA,           VC1_PIXEL_IN_CHROMA*2,
+                                                                CurrBlock - 2*64, VC1_PIXEL_IN_CHROMA*2,
+                                                                UPlane - 8,       UPitch);
 
                 //V top horizontal smoothing
-                _own_ippiSmoothingChroma_HorEdge_VC1_16s8u_C1R(CurrBlock - MaxWidth*8*8*6 + 64*5 +6*VC1_PIXEL_IN_CHROMA,           VC1_PIXEL_IN_CHROMA*2,
-                                                               CurrBlock + 64*5, VC1_PIXEL_IN_CHROMA*2,
-                                                               VPlane,           VPitch);
+                _own_ippiSmoothingChroma_HorEdge_VC1_16s8u_C1R(CurrBlock - (MaxWidth+1)*8*8*6 + 64*5 +6*VC1_PIXEL_IN_CHROMA,         VC1_PIXEL_IN_CHROMA*2,
+                                                                CurrBlock - 64, VC1_PIXEL_IN_CHROMA*2,
+                                                                VPlane - 8,     VPitch);
+            }
 
+            //MB Upper horizontal edge
+            _own_ippiSmoothingLuma_HorEdge_VC1_16s8u_C1R(CurrBlock - MaxWidth*8*8*6 + 64*2 +6*VC1_PIXEL_IN_LUMA,     VC1_PIXEL_IN_LUMA*2,
+                                                            CurrBlock,  VC1_PIXEL_IN_LUMA*2,
+                                                            YPlane,     YPitch,
+                                                            EdgeDisabledFlag);
+
+            //MB internal horizontal edge
+            _own_ippiSmoothingLuma_HorEdge_VC1_16s8u_C1R(CurrBlock + 8*8*2 - 32, VC1_PIXEL_IN_LUMA*2,
+                                                            CurrBlock + 8*8*2,      VC1_PIXEL_IN_LUMA*2,
+                                                            YPlane + 8*YPitch, YPitch,
+                                                            EdgeDisabledFlag);
+
+            //U top horizontal smoothing
+            _own_ippiSmoothingChroma_HorEdge_VC1_16s8u_C1R(CurrBlock - MaxWidth*8*8*6 + 64*4 +6*VC1_PIXEL_IN_CHROMA,            VC1_PIXEL_IN_CHROMA*2,
+                                                            CurrBlock + 4*64,  VC1_PIXEL_IN_CHROMA*2,
+                                                            UPlane,            UPitch);
+
+            //V top horizontal smoothing
+            _own_ippiSmoothingChroma_HorEdge_VC1_16s8u_C1R(CurrBlock - MaxWidth*8*8*6 + 64*5 +6*VC1_PIXEL_IN_CHROMA,           VC1_PIXEL_IN_CHROMA*2,
+                                                            CurrBlock + 64*5, VC1_PIXEL_IN_CHROMA*2,
+                                                            VPlane,           VPitch);
+
+            CurrBlock  += 8*8*6;
+            pCurrMB++;
+
+            CurrBlock += (pContext->m_seqLayerHeader.MaxWidthMB-pContext->m_pSingleMB->widthMB)*8*8*6;
+            pCurrMB += (pContext->m_seqLayerHeader.MaxWidthMB-pContext->m_pSingleMB->widthMB);
+    }
+    else
+    {
+            YPlane = pCurrMB->currYPlane;
+            UPlane = pCurrMB->currUPlane;
+            VPlane = pCurrMB->currVPlane;
+
+            //first MB in row
+            //internal vertical smoothing
+            _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R(CurrBlock + 6,  VC1_PIXEL_IN_LUMA*2,
+                                                            CurrBlock + 8,  VC1_PIXEL_IN_LUMA*2,
+                                                            YPlane + 8,     YPitch,
+                                                            0,              EdgeDisabledFlag);
+
+            for (i = 1; i < Width; i++)
+            {
                 CurrBlock  += 8*8*6;
                 pCurrMB++;
 
-                CurrBlock += (pContext->m_seqLayerHeader.MaxWidthMB-pContext->m_pSingleMB->widthMB)*8*8*6;
-                pCurrMB += (pContext->m_seqLayerHeader.MaxWidthMB-pContext->m_pSingleMB->widthMB);
-        }
-        else
-        {
                 YPlane = pCurrMB->currYPlane;
                 UPlane = pCurrMB->currUPlane;
                 VPlane = pCurrMB->currVPlane;
 
-                //first MB in row
+                //LUMA
+                //left boundary vertical smoothing
+                _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R(CurrBlock - 8*8*6 + 14,  VC1_PIXEL_IN_LUMA*2,
+                                                                CurrBlock,               VC1_PIXEL_IN_LUMA*2,
+                                                                YPlane,                  YPitch,
+                                                                0,                       EdgeDisabledFlag);
                 //internal vertical smoothing
                 _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R(CurrBlock + 6,  VC1_PIXEL_IN_LUMA*2,
-                                                             CurrBlock + 8,  VC1_PIXEL_IN_LUMA*2,
-                                                             YPlane + 8,     YPitch,
-                                                             0,              EdgeDisabledFlag);
+                                                                CurrBlock + 8,  VC1_PIXEL_IN_LUMA*2,
+                                                                YPlane + 8,     YPitch,
+                                                                0,              EdgeDisabledFlag);
 
-                for (i = 1; i < Width; i++)
-                {
-                    CurrBlock  += 8*8*6;
-                    pCurrMB++;
+                //left MB internal horizontal edge
+                _own_ippiSmoothingLuma_HorEdge_VC1_16s8u_C1R(CurrBlock - 8*8*4 - 32,   VC1_PIXEL_IN_LUMA*2,
+                                                                CurrBlock - 8*8*4,        VC1_PIXEL_IN_LUMA*2,
+                                                                YPlane - 16 + 8*YPitch,   YPitch,
+                                                                EdgeDisabledFlag);
 
-                    YPlane = pCurrMB->currYPlane;
-                    UPlane = pCurrMB->currUPlane;
-                    VPlane = pCurrMB->currVPlane;
+                //CHROMA
+                //U vertical smoothing
+                _own_ippiSmoothingChroma_VerEdge_VC1_16s8u_C1R(CurrBlock - 8*8*2 + 6, VC1_PIXEL_IN_CHROMA*2,
+                                                                CurrBlock + 8*8*4,     VC1_PIXEL_IN_CHROMA*2,
+                                                                UPlane,                UPitch);
 
-                    //LUMA
-                    //left boundary vertical smoothing
-                    _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R(CurrBlock - 8*8*6 + 14,  VC1_PIXEL_IN_LUMA*2,
-                                                                 CurrBlock,               VC1_PIXEL_IN_LUMA*2,
-                                                                 YPlane,                  YPitch,
-                                                                 0,                       EdgeDisabledFlag);
-                    //internal vertical smoothing
-                    _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R(CurrBlock + 6,  VC1_PIXEL_IN_LUMA*2,
-                                                                 CurrBlock + 8,  VC1_PIXEL_IN_LUMA*2,
-                                                                 YPlane + 8,     YPitch,
-                                                                 0,              EdgeDisabledFlag);
-
-                    //left MB internal horizontal edge
-                    _own_ippiSmoothingLuma_HorEdge_VC1_16s8u_C1R(CurrBlock - 8*8*4 - 32,   VC1_PIXEL_IN_LUMA*2,
-                                                                 CurrBlock - 8*8*4,        VC1_PIXEL_IN_LUMA*2,
-                                                                 YPlane - 16 + 8*YPitch,   YPitch,
-                                                                 EdgeDisabledFlag);
-
-                    //CHROMA
-                    //U vertical smoothing
-                    _own_ippiSmoothingChroma_VerEdge_VC1_16s8u_C1R(CurrBlock - 8*8*2 + 6, VC1_PIXEL_IN_CHROMA*2,
-                                                                   CurrBlock + 8*8*4,     VC1_PIXEL_IN_CHROMA*2,
-                                                                   UPlane,                UPitch);
-
-                    //V vertical smoothing
-                    _own_ippiSmoothingChroma_VerEdge_VC1_16s8u_C1R(CurrBlock - 8*8 + 6, VC1_PIXEL_IN_CHROMA*2,
-                                                                   CurrBlock +  8*8*5,  VC1_PIXEL_IN_CHROMA*2,
-                                                                    VPlane,             VPitch);
-                }
-
-                //RIGHT MB
-                //MB internal horizontal edge
-                _own_ippiSmoothingLuma_HorEdge_VC1_16s8u_C1R(CurrBlock + 8*8*2 - 32,  VC1_PIXEL_IN_LUMA*2,
-                                                             CurrBlock + 8*8*2,       VC1_PIXEL_IN_LUMA*2,
-                                                             YPlane + 8*YPitch,       YPitch,
-                                                             EdgeDisabledFlag);
-                CurrBlock  += 8*8*6;
-                pCurrMB++;
-
-                CurrBlock += (pContext->m_seqLayerHeader.MaxWidthMB-pContext->m_pSingleMB->widthMB)*8*8*6;
-                pCurrMB += (pContext->m_seqLayerHeader.MaxWidthMB-pContext->m_pSingleMB->widthMB);
+                //V vertical smoothing
+                _own_ippiSmoothingChroma_VerEdge_VC1_16s8u_C1R(CurrBlock - 8*8 + 6, VC1_PIXEL_IN_CHROMA*2,
+                                                                CurrBlock +  8*8*5,  VC1_PIXEL_IN_CHROMA*2,
+                                                                VPlane,             VPitch);
             }
+
+            //RIGHT MB
+            //MB internal horizontal edge
+            _own_ippiSmoothingLuma_HorEdge_VC1_16s8u_C1R(CurrBlock + 8*8*2 - 32,  VC1_PIXEL_IN_LUMA*2,
+                                                            CurrBlock + 8*8*2,       VC1_PIXEL_IN_LUMA*2,
+                                                            YPlane + 8*YPitch,       YPitch,
+                                                            EdgeDisabledFlag);
+            CurrBlock  += 8*8*6;
+            pCurrMB++;
+
+            CurrBlock += (pContext->m_seqLayerHeader.MaxWidthMB-pContext->m_pSingleMB->widthMB)*8*8*6;
+            pCurrMB += (pContext->m_seqLayerHeader.MaxWidthMB-pContext->m_pSingleMB->widthMB);
         }
     }
 }
