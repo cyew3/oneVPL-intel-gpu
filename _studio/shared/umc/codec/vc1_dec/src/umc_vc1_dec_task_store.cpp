@@ -1468,7 +1468,6 @@ STATISTICS_END_TIME(m_timeStatistics->AddPerfomed_StartTime,
                 }
                 else
                 {
-                    Ipp8u* pBuf;
                     pBuf = m_pSHeap->s_alloc<VC1FrameDescriptorVA<VC1PackerDXVA>>();
                     m_pDescriptorQueue[i] = new(pBuf) VC1FrameDescriptorVA<VC1PackerDXVA>(m_pMemoryAllocator,va);
                 }
