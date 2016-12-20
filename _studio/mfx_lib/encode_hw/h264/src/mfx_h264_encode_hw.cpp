@@ -486,7 +486,7 @@ mfxStatus ImplementationAvc::Query(
                             mfxExtMVCSeqDesc & src = *(mfxExtMVCSeqDesc *)corrected;
                             mfxExtMVCSeqDesc & dst = *(mfxExtMVCSeqDesc *)buf;
 
-                            mfxStatus sts = CheckBeforeCopyQueryLike(dst, src);
+                            sts = CheckBeforeCopyQueryLike(dst, src);
                             if (sts != MFX_ERR_NONE)
                                 return MFX_ERR_UNSUPPORTED;
 
@@ -1558,7 +1558,7 @@ mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
 
         if (extOpt2New->IntRefType)
         {
-            mfxStatus sts = UpdateIntraRefreshWithoutIDR(
+            sts = UpdateIntraRefreshWithoutIDR(
                 m_video,
                 newPar,
                 m_baseLayerOrder,
@@ -2507,8 +2507,6 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
         if (bIntRateControlLA(m_video.mfx.RateControlMethod))
         {
-            mfxExtCodingOption2 * extOpt2 = GetExtBuffer(m_video);
-
             int ffid = task->m_fid[0];
             ArrayDpbFrame const & dpb = task->m_dpb[ffid];
             ArrayU8x33 const &    l0  = task->m_list0[ffid];
@@ -2843,7 +2841,6 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
     if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_WAIT_ENCODE)
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "Avc::WAIT_ENCODE");
-        mfxExtCodingOption2 * extOpt2 = GetExtBuffer(m_video);
         DdiTaskIter task = FindFrameToWaitEncode(m_encoding.begin(), m_encoding.end());
         mfxU8*      pBuff[2] ={0,0};
         Hrd hrd = m_hrd;
@@ -2898,7 +2895,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                                else
                                {
                                    size_t old_slice_size = task->m_SliceInfo.size();
-                                   mfxStatus sts = CorrectSliceInfoForsed(*task, m_video.calcParam.widthLa, m_video.calcParam.heightLa);
+                                   sts = CorrectSliceInfoForsed(*task, m_video.calcParam.widthLa, m_video.calcParam.heightLa);
                                    if (sts != MFX_ERR_NONE)
                                         return Error(sts);
                                    if (old_slice_size == task->m_SliceInfo.size() && task->m_repack <4)
@@ -2944,7 +2941,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                         {
                             task->m_panicMode = 1;
                             task->m_repack = 100;
-                            mfxStatus sts = CodeAsSkipFrame(*m_core,m_video,*task, m_rawSkip);
+                            sts = CodeAsSkipFrame(*m_core,m_video,*task, m_rawSkip);
                             if (sts != MFX_ERR_NONE)
                                return Error(sts);
                         }
