@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -249,7 +249,7 @@ namespace UMC
         template <class Descriptor>
         void GetReadyDS(Descriptor** pDS)
         {
-            AutomaticMutex guard(m_mDSGuard);
+            AutomaticMutex guardDS(m_mDSGuard);
             Ipp32u i;
             for (i = 0; i < m_iNumFramesProcessing; i++)
             {
@@ -272,7 +272,7 @@ namespace UMC
         bool GetPerformedDS(Descriptor** pDS)
         {
             Ipp32u i;
-            AutomaticMutex guard(m_mDSGuard);
+            AutomaticMutex guardDS(m_mDSGuard);
             for (i = 0; i < m_iNumFramesProcessing; i++)
             {
                 AutomaticMutex guard(*m_pGuardGet[i]);
@@ -306,7 +306,7 @@ namespace UMC
         void SetFirstBusyDescriptorAsReady()
         {
             Ipp32u i;
-            AutomaticMutex guard(m_mDSGuard);
+            AutomaticMutex guardDS(m_mDSGuard);
             for (i = 0; i < m_iNumFramesProcessing; i++)
             {
                 AutomaticMutex guard(*m_pGuardGet[i]);
@@ -363,7 +363,7 @@ namespace UMC
         bool GetReadySkippedDS(Descriptor** pDS, bool IsSpecialMode)
         {
             Ipp32u i;
-            AutomaticMutex guard(m_mDSGuard);
+            AutomaticMutex guardDS(m_mDSGuard);
             for (i = 0; i < m_iNumFramesProcessing; i++)
             {
                 AutomaticMutex guard(*m_pGuardGet[i]);
