@@ -1540,21 +1540,23 @@ mfxStatus ImplementationMvc::TaskRoutineSubmit(
         // IMPORTANT2: reference frames ordered so that first frames from list0 list1 goes in the beginning of dpb
         // it is important since driver seems to be able to maintain only 4 reference frames
         // PatchTask() function does all required patches to current task
-        DdiTask curTask = *task[i];
-        impl.PatchTask(task, curTask, firstFieldId);
+        {
+            DdiTask curTask = *task[i];
+            impl.PatchTask(task, curTask, firstFieldId);
 
-        if (i == 0)
-            PrepareSeiMessageBuffer(impl.m_video, curTask, firstFieldId, impl.m_sei);
-        else
-            PrepareSeiMessageBufferDepView(impl.m_video, curTask, firstFieldId, impl.m_sei);
+            if (i == 0)
+                PrepareSeiMessageBuffer(impl.m_video, curTask, firstFieldId, impl.m_sei);
+            else
+                PrepareSeiMessageBufferDepView(impl.m_video, curTask, firstFieldId, impl.m_sei);
 
-        sts = impl.m_ddi[0]->Execute(
-            surfaceHDL.first,
-            curTask,
-            firstFieldId,
-            impl.m_sei);
+            sts = impl.m_ddi[0]->Execute(
+                surfaceHDL.first,
+                curTask,
+                firstFieldId,
+                impl.m_sei);
 
-        MFX_CHECK_STS(sts);
+            MFX_CHECK_STS(sts);
+        }
 
         if ((task[0]->GetPicStructForEncode() & MFX_PICSTRUCT_PROGRESSIVE) == 0)
         {
@@ -1607,24 +1609,26 @@ mfxStatus ImplementationMvc::TaskRoutineSubmitOneView(
     DdiTask task = realTask;
 
     /* Aka simple patch task */
-    bool interlace = (task.GetPicStructForEncode() & MFX_PICSTRUCT_PROGRESSIVE) == 0;
-    for (mfxU32 i = 0; i < GetMaxNumSlices(impl.m_video); ++ i)
     {
-        mfxExtCodingOption2 const &     extOpt2        = GetExtBufferRef(impl.m_video);
-        mfxU8 disableDeblockingIdc = mfxU8(extOpt2.DisableDeblockingIdc);
-        task.m_disableDeblockingIdc[firstFieldId].push_back(disableDeblockingIdc);
-        task.m_sliceAlphaC0OffsetDiv2[firstFieldId].push_back( 0);
-        task.m_sliceBetaOffsetDiv2[firstFieldId].push_back(0);
-    }
-    if (interlace)
-    {
-        for (mfxU32 i = 0; i < GetMaxNumSlices(impl.m_video); ++ i)
+        bool interlace = (task.GetPicStructForEncode() & MFX_PICSTRUCT_PROGRESSIVE) == 0;
+        for (mfxU32 i = 0; i < GetMaxNumSlices(impl.m_video); ++i)
         {
-            mfxExtCodingOption2 const &     extOpt2        = GetExtBufferRef(impl.m_video);
+            mfxExtCodingOption2 const &     extOpt2 = GetExtBufferRef(impl.m_video);
             mfxU8 disableDeblockingIdc = mfxU8(extOpt2.DisableDeblockingIdc);
-            task.m_disableDeblockingIdc[!firstFieldId].push_back(disableDeblockingIdc);
-            task.m_sliceAlphaC0OffsetDiv2[!firstFieldId].push_back( 0);
-            task.m_sliceBetaOffsetDiv2[!firstFieldId].push_back(0);
+            task.m_disableDeblockingIdc[firstFieldId].push_back(disableDeblockingIdc);
+            task.m_sliceAlphaC0OffsetDiv2[firstFieldId].push_back(0);
+            task.m_sliceBetaOffsetDiv2[firstFieldId].push_back(0);
+        }
+        if (interlace)
+        {
+            for (mfxU32 i = 0; i < GetMaxNumSlices(impl.m_video); ++i)
+            {
+                mfxExtCodingOption2 const &     extOpt2 = GetExtBufferRef(impl.m_video);
+                mfxU8 disableDeblockingIdc = mfxU8(extOpt2.DisableDeblockingIdc);
+                task.m_disableDeblockingIdc[!firstFieldId].push_back(disableDeblockingIdc);
+                task.m_sliceAlphaC0OffsetDiv2[!firstFieldId].push_back(0);
+                task.m_sliceBetaOffsetDiv2[!firstFieldId].push_back(0);
+            }
         }
     }
 
@@ -2228,28 +2232,30 @@ mfxStatus ImplementationMvc::UpdateBitstream(
 
     mfxU32 nonIdrFlag    = m_bitsDesc[0].slice.type == 0x01;
     mfxU32 anchorPicFlag = m_bitsDesc[0].slice.type == 0x05;
-    mfxU32 nalRefIdc     = (task[0]->m_type[fieldId] & MFX_FRAMETYPE_REF) ? 1 : 0;
-
-    NaluIterator nalu(m_bitsDesc[0].slice, m_bitsDesc[0].end);
-    for (bool firstSlice = true; nalu->type == 1 || nalu->type == 5; ++nalu, firstSlice = false)
     {
-        assert(nalu->type == m_bitsDesc[0].slice.type && "idr and non-idr slices in one au");
+        mfxU32 nalRefIdc = (task[0]->m_type[fieldId] & MFX_FRAMETYPE_REF) ? 1 : 0;
 
-        if (firstSlice)
+        NaluIterator nalu(m_bitsDesc[0].slice, m_bitsDesc[0].end);
+        for (bool firstSlice = true; nalu->type == 1 || nalu->type == 5; ++nalu, firstSlice = false)
         {
-            mvcBitsBegin = PackPrefixNalUnit(
-                mvcBitsBegin,
-                mvcBitsEnd,
-                nalu->numZero,
-                nalRefIdc,
-                14,
-                extMvc->View[0].ViewId,
-                nonIdrFlag,
-                anchorPicFlag,
-                1); // base view always has inter_view_flag = 1
-        }
+            assert(nalu->type == m_bitsDesc[0].slice.type && "idr and non-idr slices in one au");
 
-        mvcBitsBegin = CheckedMFX_INTERNAL_CPY(mvcBitsBegin, mvcBitsEnd, nalu->begin, nalu->end);
+            if (firstSlice)
+            {
+                mvcBitsBegin = PackPrefixNalUnit(
+                    mvcBitsBegin,
+                    mvcBitsEnd,
+                    nalu->numZero,
+                    nalRefIdc,
+                    14,
+                    extMvc->View[0].ViewId,
+                    nonIdrFlag,
+                    anchorPicFlag,
+                    1); // base view always has inter_view_flag = 1
+            }
+
+            mvcBitsBegin = CheckedMFX_INTERNAL_CPY(mvcBitsBegin, mvcBitsEnd, nalu->begin, nalu->end);
+        }
     }
 
     for (mfxU32 viewIdx = 1; viewIdx < extMvc->NumView; viewIdx++)
