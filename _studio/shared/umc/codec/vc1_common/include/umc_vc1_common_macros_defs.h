@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2012 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -81,7 +81,7 @@ namespace UMC
 #define VC1NextNBits( current_data, offset, nbits, data) __VC1NextBits(current_data, offset, nbits, data)
 #define __VC1GetBits(current_data, offset, nbits, data)                 \
 {                                                                       \
-    Ipp32u x;                                                           \
+    Ipp32u _x;                                                           \
                                                                         \
     VM_ASSERT((nbits) >= 0 && (nbits) <= 32);                           \
     VM_ASSERT(offset >= 0 && offset <= 31);                             \
@@ -90,21 +90,21 @@ namespace UMC
                                                                         \
     if(offset >= 0)                                                     \
     {                                                                   \
-        x = current_data[0] >> (offset + 1);                            \
+        _x = current_data[0] >> (offset + 1);                            \
     }                                                                   \
     else                                                                \
     {                                                                   \
         offset += 32;                                                   \
                                                                         \
-        x = current_data[1] >> (offset);                                \
-        x >>= 1;                                                        \
-        x += current_data[0] << (31 - offset);                          \
+        _x = current_data[1] >> (offset);                                \
+        _x >>= 1;                                                        \
+        _x += current_data[0] << (31 - offset);                          \
         current_data++;                                                 \
     }                                                                   \
                                                                         \
     VM_ASSERT(offset >= 0 && offset <= 31);                             \
                                                                         \
-    (data) = x & ((0x00000001 << (nbits&0x1F)) - 1);                    \
+    (data) = _x & ((0x00000001 << (nbits&0x1F)) - 1);                    \
 }
 
 #define VC1CheckDataLen(currLen,nbits)                                  \
