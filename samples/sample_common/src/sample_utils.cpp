@@ -30,7 +30,6 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "mfxcommon.h"
 #include "mfxjpeg.h"
 #include "mfxvp8.h"
-#include "mfxvp9.h"
 
 #pragma warning( disable : 4748 )
 
