@@ -177,12 +177,10 @@ mfxStatus MJPEGVideoDecoderMFX_HW::CheckStatusReportNumber(Ipp32u statusReportFe
             if(queryStatus[i].StatusReportFeedbackNumber==0)numZeroFeedback++;
             if (0 == queryStatus[i].bStatus || 1 == queryStatus[i].bStatus)
             {
-                AutomaticUMCMutex guard(m_guard);
                 m_cachedReadyTaskIndex.insert(queryStatus[i].StatusReportFeedbackNumber);
             }
             else if (2 == queryStatus[i].bStatus)
             {
-                AutomaticUMCMutex guard(m_guard);
                 m_cachedCorruptedTaskIndex.insert(queryStatus[i].StatusReportFeedbackNumber);
             }
             else if (3 == queryStatus[i].bStatus)
