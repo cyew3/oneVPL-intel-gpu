@@ -828,7 +828,6 @@ mfxStatus MFXVideoENCODEMJPEG_HW::EncodeFrameCheck(
     // Check new tables if exists
     if (jpegQT || jpegHT)
     {
-        JpegEncCaps hwCaps = {0};
         mfxVideoParam vPar = m_vParam;
         vPar.ExtParam = ctrl->ExtParam;
         vPar.NumExtParam = ctrl->NumExtParam;
