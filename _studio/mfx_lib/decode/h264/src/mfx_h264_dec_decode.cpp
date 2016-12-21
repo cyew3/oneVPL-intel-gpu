@@ -112,7 +112,7 @@ inline bool AddDependency(Ipp32u dependOnViewId, const ViewIDsList & targetList,
     ViewIDsList::const_iterator view_iter = std::find(targetList.begin(), targetList.end(), dependOnViewId);
     if (view_iter == targetList.end())
     {
-        ViewIDsList::const_iterator view_iter = std::find(dependencyList.begin(), dependencyList.end(), dependOnViewId);
+        view_iter = std::find(dependencyList.begin(), dependencyList.end(), dependOnViewId);
         if (view_iter == dependencyList.end())
         {
             dependencyList.push_back(dependOnViewId);
@@ -1220,7 +1220,7 @@ mfxStatus VideoDECODEH264::RunThread(void * params, mfxU32 threadNumber)
     {
         if (!pFrame->wasDisplayed())
         {
-            mfxStatus sts = DecodeFrame(0, info->surface_work, info->surface_out);
+            sts = DecodeFrame(0, info->surface_work, info->surface_out);
 
             if (sts != MFX_ERR_NONE && sts != MFX_ERR_NOT_FOUND)
                 return sts;
