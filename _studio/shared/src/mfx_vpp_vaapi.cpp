@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -38,7 +38,7 @@ bool SetPlaneROI(T value, T* pDst, int dstStep, IppiSize roiSize)
 
 #if !defined (OPEN_SOURCE)
 template<>
-bool SetPlaneROI<int>(int value, int* pDst, int dstStep, IppiSize roiSize)
+bool SetPlaneROI<Ipp32u>(Ipp32u value, Ipp32u* pDst, int dstStep, IppiSize roiSize)
 {
     const Ipp8u backgroundValues[4] = { (Ipp8u)((value &0x000000ff) >> 0),
                                         (Ipp8u)((value &0x0000ff00) >> 8),
@@ -1983,18 +1983,29 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
             roiSize.height = imagePrimarySurface.height;
 
             /* We need to fill up empty surface by background color...
+             * iBackgroundColor is now U64, with 16 bits per channel (see mfx_vpp_hw.cpp)
              * it is easy for ARGB format as Initial background value ARGB*/
             if (imagePrimarySurface.format.fourcc == VA_FOURCC_ARGB)
             {
-                bool setPlaneSts = SetPlaneROI<int>(pParams->iBackgroundColor, (int *)pPrimarySurfaceBuffer, imagePrimarySurface.pitches[0], roiSize);
+                Ipp32u A, R, G, B;
+                Ipp32u iBackgroundColorRGBA;
+
+                A = (Ipp32u)((pParams->iBackgroundColor >> 48) & 0x00ff);
+                R = (Ipp32u)((pParams->iBackgroundColor >> 32) & 0x00ff);
+                G = (Ipp32u)((pParams->iBackgroundColor >> 16) & 0x00ff);
+                B = (Ipp32u)((pParams->iBackgroundColor >>  0) & 0x00ff);
+
+                iBackgroundColorRGBA = (A << 24) | (R << 16) | (G << 8) | (B << 0);
+
+                bool setPlaneSts = SetPlaneROI<Ipp32u>(iBackgroundColorRGBA, (Ipp32u *)pPrimarySurfaceBuffer, imagePrimarySurface.pitches[0], roiSize);
                 MFX_CHECK(setPlaneSts, MFX_ERR_DEVICE_FAILED);
             }
             /* A bit more complicated for NV12 as you need to do conversion ARGB => NV12 */
             if (imagePrimarySurface.format.fourcc == VA_FOURCC_NV12)
             {
-                Ipp32u Y = (Ipp32u)((pParams->iBackgroundColor &0x00ff0000) >>16);
-                Ipp32u U = (Ipp32u)((pParams->iBackgroundColor &0x0000ff00) >>8);
-                Ipp32u V = (Ipp32u)((pParams->iBackgroundColor &0x000000ff) );
+                Ipp32u Y = (Ipp32u)((pParams->iBackgroundColor >> 32) & 0x00ff);
+                Ipp32u U = (Ipp32u)((pParams->iBackgroundColor >> 16) & 0x00ff);
+                Ipp32u V = (Ipp32u)((pParams->iBackgroundColor >>  0) & 0x00ff);
 
                 Ipp8u valueY = (Ipp8u) Y;
                 Ipp16s valueUV = (Ipp16s)((U<<8)  + V);
