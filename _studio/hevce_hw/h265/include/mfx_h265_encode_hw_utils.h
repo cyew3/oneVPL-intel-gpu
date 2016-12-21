@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -107,6 +107,17 @@ bool CheckRange(T & opt, U0 min, U1 max)
 
     return false;
 }
+template<class T> inline T* AlignPtrL(void* p) { return (T*)(size_t(p) & ~(sizeof(T) - 1)); }
+template<class T> inline T* AlignPtrR(void* p) { return AlignPtrL<T>(p) + !!(size_t(p) & (sizeof(T) - 1)); }
+template<class T> inline bool IsZero(T* pBegin, T* pEnd)
+{
+    assert(((mfxU8*)pEnd - (mfxU8*)pBegin) % sizeof(T) == 0);
+    for (; pBegin < pEnd; pBegin++)
+        if (*pBegin)
+            return false;
+    return true;
+}
+template<class T> inline bool IsZero(T& obj) { return IsZero((mfxU8*)&obj, (mfxU8*)&obj + sizeof(T)); }
 
 
 inline mfxU32 CeilLog2  (mfxU32 x)           { mfxU32 l = 0; while(x > (1U<<l)) l++; return l; }
@@ -149,6 +160,12 @@ enum
     DEFAULT_LTR_INTERVAL    = 16,
 
     MAX_NUM_ROI             = 4 // for Gen10 - Gen12
+};
+
+enum
+{
+    MFX_FOURCC_Y410V = MFX_MAKEFOURCC('Y','4','1','V'),
+    MFX_FOURCC_AYUVV = MFX_MAKEFOURCC('A','Y','V','V'),
 };
 
 enum

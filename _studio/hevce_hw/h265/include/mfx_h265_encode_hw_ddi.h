@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -24,7 +24,7 @@
 //#define DDI_TRACE
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-    #define HEVCE_DDI_VERSION 960
+    #define HEVCE_DDI_VERSION 966
 #else
     #define HEVCE_DDI_VERSION 947
 #endif
@@ -408,6 +408,62 @@ typedef struct tagENCODE_SET_SLICE_HEADER_HEVC
     UINT    SliceSAOFlagBitOffset;
 } ENCODE_SET_SLICE_HEADER_HEVC;
 
+
+#if (HEVCE_DDI_VERSION >= 960)
+
+typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_HEVC_REXT : ENCODE_SET_SEQUENCE_PARAMETERS_HEVC
+{
+    union
+    {
+        struct
+        {
+            UINT    transform_skip_rotation_enabled_flag    : 1;
+            UINT    transform_skip_context_enabled_flag     : 1;
+            UINT    implicit_rdpcm_enabled_flag             : 1;
+            UINT    explicit_rdpcm_enabled_flag             : 1;
+            UINT    extended_precision_processing_flag      : 1;
+            UINT    intra_smoothing_disabled_flag           : 1;
+            UINT    high_precision_offsets_enabled_flag     : 1;
+            UINT    persistent_rice_adaptation_enabled_flag : 1;
+            UINT    cabac_bypass_alignment_enabled_flag     : 2; // 2 ???
+            UINT    ReservedBits : 22;
+        }/* fields*/;
+        UINT RextEncodeTools;
+    } /*RextEncodeTools*/;
+} ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_REXT;
+
+typedef struct tagENCODE_SET_PICTURE_PARAMETERS_HEVC_REXT : ENCODE_SET_PICTURE_PARAMETERS_HEVC
+{
+    union
+    {
+        struct
+        {
+            UINT  cross_component_prediction_enabled_flag : 1;
+            UINT  chroma_qp_offset_list_enabled_flag      : 1;
+            UINT  diff_cu_chroma_qp_offset_depth          : 3;
+            UINT  chroma_qp_offset_list_len_minus1        : 3; // [0..5]
+            UINT  log2_sao_offset_scale_luma              : 3; // [0..6]
+            UINT  log2_sao_offset_scale_chroma            : 3; // [0..6]
+            UINT  ReservedBits5 : 18;
+        } /*fields*/;
+        UINT RangeExtensionPicFlags;
+    } /*RangeExtensionPicFlags*/;
+
+    UCHAR   log2_max_transform_skip_block_size_minus2;
+    CHAR    cb_qp_offset_list[6]; // [-12..12]
+    CHAR    cr_qp_offset_list[6]; // [-12..12]
+} ENCODE_SET_PICTURE_PARAMETERS_HEVC_REXT;
+
+typedef struct tagENCODE_SET_SLICE_HEADER_HEVC_REXT : ENCODE_SET_SLICE_HEADER_HEVC
+{
+    SHORT   luma_offset_l0[15];
+    SHORT   ChromaOffsetL0[15][2];
+    SHORT   luma_offset_l1[15];
+    SHORT   ChromaOffsetL1[15][2];
+} ENCODE_SET_SLICE_HEADER_HEVC_REXT;
+
+#endif //(HEVCE_DDI_VERSION >= 960)
+
 typedef struct tagENCODE_SET_QMATRIX_HEVC
 {
     UCHAR   bScalingLists4x4[3][2][16]; // 2 inter/intra 3: YUV
@@ -416,42 +472,6 @@ typedef struct tagENCODE_SET_QMATRIX_HEVC
     UCHAR   bScalingLists32x32[2][64];
     UCHAR   bScalingListDC[2][3][2];
 } ENCODE_SET_QMATRIX_HEVC;
-/*
-typedef struct tagENCODE_QUERY_STATUS_PARAMS_HEVC_DDI0937  
-{
-    UINT    StatusReportFeedbackNumber;
-
-    ENCODE_PICENTRY CurrOriginalPic;
-    UCHAR   reserved0;
-    UCHAR   bStatus;
-    CHAR    reserved1;
-
-    UINT    Func;
-    UINT    bitstreamSize;
-
-    CHAR    QpY;
-    CHAR    SuggestedQpYDelta;
-    UCHAR   NumberPasses;
-    UCHAR   AverageQP;
-    union
-    {
-        struct
-        {
-              UINT PanicMode                 : 1;
-              UINT SliceSizeOverflow         : 1;
-              UINT NumSlicesNonCompliant     : 1;
-              UINT                           : 29;
-        };
-          UINT QueryStatusFlags;
-    };
-
-    UINT    MAD;
-    UINT    NumberSlices;
-    UINT    PSNRx100[3];
-
-} ENCODE_QUERY_STATUS_PARAMS_HEVC_DDI0937;
-#define ENCODE_QUERY_STATUS_PARAMS_DDI0937 ENCODE_QUERY_STATUS_PARAMS
-*/
 
 #define D3DDDIFMT_HEVC_BUFFER_CUDATA (D3DFORMAT)183
 
@@ -464,7 +484,15 @@ typedef struct tagENCODE_SET_CUDATA_HEVC
 
 class DriverEncoder;
 
-DriverEncoder* CreatePlatformH265Encoder(MFXCoreInterface* core);
+typedef enum tagENCODER_TYPE
+{
+    ENCODER_DEFAULT = 0,
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    ENCODER_REXT
+#endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
+} ENCODER_TYPE;
+
+DriverEncoder* CreatePlatformH265Encoder(MFXCoreInterface* core, ENCODER_TYPE type = ENCODER_DEFAULT);
 mfxStatus QueryHwCaps(MFXCoreInterface* core, GUID guid, ENCODE_CAPS_HEVC & caps);
 mfxStatus CheckHeaders(MfxVideoParam const & par, ENCODE_CAPS_HEVC const & caps);
 
@@ -549,5 +577,125 @@ private:
 
     void NewHeader();
 };
+
+#if defined(_WIN32) || defined(_WIN64)
+
+inline mfxU32 FeedbackSize(ENCODE_QUERY_STATUS_PARAM_TYPE func, mfxU32 maxSlices)
+{
+    if (func == QUERY_STATUS_PARAM_FRAME)
+        return sizeof(ENCODE_QUERY_STATUS_PARAMS);
+    if (func == QUERY_STATUS_PARAM_SLICE)
+        return sizeof(ENCODE_QUERY_STATUS_PARAMS) + sizeof(UINT) * 4 + sizeof(USHORT) * maxSlices;
+    assert(!"unknown query function");
+    return sizeof(ENCODE_QUERY_STATUS_PARAMS);
+}
+
+class FeedbackStorage
+{
+public:
+    FeedbackStorage()
+        :m_size(0)
+    {
+    }
+
+    void Reset(size_t cacheSize, mfxU32 feedbackSize)
+    {
+        m_size = feedbackSize;
+        m_buf.resize(m_size * cacheSize);
+    }
+
+    inline ENCODE_QUERY_STATUS_PARAMS& operator[] (size_t i) const
+    {
+        return *(ENCODE_QUERY_STATUS_PARAMS*)&m_buf[i * m_size];
+    }
+
+    inline size_t size() const
+    {
+        return (m_buf.size() / m_size);
+    }
+
+    inline void copy(size_t dstIdx, FeedbackStorage const & src, size_t srcIdx)
+    {
+        CopyN(&m_buf[dstIdx * m_size], &src.m_buf[srcIdx * src.m_size], Min(m_size, src.m_size));
+    }
+
+    inline mfxU32 feedback_size()
+    {
+        return m_size;
+    }
+
+private:
+    std::vector<mfxU8> m_buf;
+    mfxU32 m_size;
+};
+
+class CachedFeedback
+{
+public:
+    typedef ENCODE_QUERY_STATUS_PARAMS Feedback;
+
+    void Reset(mfxU32 cacheSize, mfxU32 feedbackSize = sizeof(Feedback));
+
+    mfxStatus Update(FeedbackStorage const & update);
+
+    const Feedback * Hit(mfxU32 feedbackNumber) const;
+
+    mfxStatus Remove(mfxU32 feedbackNumber);
+
+private:
+    FeedbackStorage m_cache;
+};
+
+void FillSpsBuffer(
+    MfxVideoParam const & par,
+    ENCODE_CAPS_HEVC const & /*caps*/,
+    ENCODE_SET_SEQUENCE_PARAMETERS_HEVC & sps);
+
+void FillPpsBuffer(
+    MfxVideoParam const & par,
+    ENCODE_SET_PICTURE_PARAMETERS_HEVC & pps);
+
+void FillPpsBuffer(
+    Task const & task,
+    ENCODE_SET_PICTURE_PARAMETERS_HEVC & pps);
+
+void FillSliceBuffer(
+    MfxVideoParam const & par,
+    ENCODE_SET_SEQUENCE_PARAMETERS_HEVC const & sps,
+    ENCODE_SET_PICTURE_PARAMETERS_HEVC const & /*pps*/,
+    std::vector<ENCODE_SET_SLICE_HEADER_HEVC> & slice);
+
+void FillSliceBuffer(
+    Task const & task,
+    ENCODE_SET_SEQUENCE_PARAMETERS_HEVC const & /*sps*/,
+    ENCODE_SET_PICTURE_PARAMETERS_HEVC const & /*pps*/,
+    std::vector<ENCODE_SET_SLICE_HEADER_HEVC> & slice);
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+
+void FillSpsBuffer(
+    MfxVideoParam const & par,
+    ENCODE_CAPS_HEVC const & /*caps*/,
+    ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_REXT & sps);
+
+void FillPpsBuffer(
+    MfxVideoParam const & par,
+    ENCODE_SET_PICTURE_PARAMETERS_HEVC_REXT & pps);
+
+void FillSliceBuffer(
+    MfxVideoParam const & par,
+    ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_REXT const & sps,
+    ENCODE_SET_PICTURE_PARAMETERS_HEVC_REXT const & /*pps*/,
+    std::vector<ENCODE_SET_SLICE_HEADER_HEVC_REXT> & slice);
+
+void FillSliceBuffer(
+    Task const & task,
+    ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_REXT const & /*sps*/,
+    ENCODE_SET_PICTURE_PARAMETERS_HEVC_REXT const & /*pps*/,
+    std::vector<ENCODE_SET_SLICE_HEADER_HEVC_REXT> & slice);
+
+#endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
+
+#endif //defined(_WIN32) || defined(_WIN64)
 
 }; // namespace MfxHwH265Encode

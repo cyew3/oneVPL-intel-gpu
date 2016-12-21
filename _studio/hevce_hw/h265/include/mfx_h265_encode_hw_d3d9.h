@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -43,97 +43,8 @@ public:
     }
 };
 
-void FillSpsBuffer(
-    MfxVideoParam const & par,
-    ENCODE_CAPS_HEVC const & /*caps*/,
-    ENCODE_SET_SEQUENCE_PARAMETERS_HEVC & sps);
 
-void FillPpsBuffer(
-    MfxVideoParam const & par,
-    ENCODE_SET_PICTURE_PARAMETERS_HEVC & pps);
-
-void FillPpsBuffer(
-    Task const & task,
-    ENCODE_SET_PICTURE_PARAMETERS_HEVC & pps);
-
-void FillSliceBuffer(
-    MfxVideoParam const & par,
-    ENCODE_SET_SEQUENCE_PARAMETERS_HEVC const & sps,
-    ENCODE_SET_PICTURE_PARAMETERS_HEVC const & /*pps*/,
-    std::vector<ENCODE_SET_SLICE_HEADER_HEVC> & slice);
-
-void FillSliceBuffer(
-    Task const & task,
-    ENCODE_SET_SEQUENCE_PARAMETERS_HEVC const & /*sps*/,
-    ENCODE_SET_PICTURE_PARAMETERS_HEVC const & /*pps*/,
-    std::vector<ENCODE_SET_SLICE_HEADER_HEVC> & slice);
-
-inline mfxU32 FeedbackSize(ENCODE_QUERY_STATUS_PARAM_TYPE func, mfxU32 maxSlices)
-{
-    if (func == QUERY_STATUS_PARAM_FRAME)
-        return sizeof(ENCODE_QUERY_STATUS_PARAMS);
-    if (func == QUERY_STATUS_PARAM_SLICE)
-        return sizeof(ENCODE_QUERY_STATUS_PARAMS) + sizeof(UINT) * 4 + sizeof(USHORT) * maxSlices;
-    assert(!"unknown query function");
-    return sizeof(ENCODE_QUERY_STATUS_PARAMS);
-}
-
-class FeedbackStorage
-{
-public:
-    FeedbackStorage()
-        :m_size(0)
-    {
-    }
-
-    void Reset(size_t cacheSize, mfxU32 feedbackSize)
-    {
-        m_size = feedbackSize;
-        m_buf.resize(m_size * cacheSize);
-    }
-
-    inline ENCODE_QUERY_STATUS_PARAMS& operator[] (size_t i) const
-    {
-        return *(ENCODE_QUERY_STATUS_PARAMS*)&m_buf[i * m_size];
-    }
-
-    inline size_t size() const
-    {
-        return (m_buf.size() / m_size);
-    }
-
-    inline void copy(size_t dstIdx, FeedbackStorage const & src, size_t srcIdx)
-    {
-        CopyN(&m_buf[dstIdx * m_size], &src.m_buf[srcIdx * src.m_size], Min(m_size, src.m_size));
-    }
-
-    inline mfxU32 feedback_size()
-    {
-        return m_size;
-    }
-
-private:
-    std::vector<mfxU8> m_buf;
-    mfxU32 m_size;
-};
-
-class CachedFeedback
-{
-public:
-    typedef ENCODE_QUERY_STATUS_PARAMS Feedback;
-
-    void Reset(mfxU32 cacheSize, mfxU32 feedbackSize = sizeof(Feedback));
-
-    mfxStatus Update(FeedbackStorage const & update);
-
-    const Feedback * Hit(mfxU32 feedbackNumber) const;
-
-    mfxStatus Remove(mfxU32 feedbackNumber);
-
-private:
-    FeedbackStorage m_cache;
-};
-
+template<class DDI_SPS, class DDI_PPS, class DDI_SLICE>
 class D3D9Encoder : public DriverEncoder, DDIHeaderPacker, DDITracer
 {
 public:
@@ -206,15 +117,20 @@ private:
 #endif
     mfxU32               m_maxSlices;
 
-    ENCODE_SET_SEQUENCE_PARAMETERS_HEVC         m_sps;
-    ENCODE_SET_PICTURE_PARAMETERS_HEVC          m_pps;
-    std::vector<ENCODE_SET_SLICE_HEADER_HEVC>   m_slice;
+    DDI_SPS                                     m_sps;
+    DDI_PPS                                     m_pps;
+    std::vector<DDI_SLICE>                      m_slice;
     std::vector<ENCODE_COMP_BUFFER_INFO>        m_compBufInfo;
     std::vector<D3DDDIFORMAT>                   m_uncompBufInfo;
     std::vector<ENCODE_COMPBUFFERDESC>          m_cbd;
     FeedbackStorage                             m_feedbackUpdate;
     CachedFeedback                              m_feedbackCached;
 };
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+typedef D3D9Encoder<ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_REXT, ENCODE_SET_PICTURE_PARAMETERS_HEVC_REXT, ENCODE_SET_SLICE_HEADER_HEVC_REXT> D3D9EncoderREXT;
+#endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
+typedef D3D9Encoder<ENCODE_SET_SEQUENCE_PARAMETERS_HEVC, ENCODE_SET_PICTURE_PARAMETERS_HEVC, ENCODE_SET_SLICE_HEADER_HEVC> D3D9EncoderDefault;
 
 }; // namespace MfxHwH265Encode
 

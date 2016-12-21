@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -399,6 +399,19 @@ struct SPS : LayersInfo
     mfxU8  extension_flag                      : 1;
     mfxU8  extension_data_flag                 : 1;
 
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    mfxU8 range_extension_flag                    : 1;
+    mfxU8 transform_skip_rotation_enabled_flag    : 1;
+    mfxU8 transform_skip_context_enabled_flag     : 1;
+    mfxU8 implicit_rdpcm_enabled_flag             : 1;
+    mfxU8 explicit_rdpcm_enabled_flag             : 1;
+    mfxU8 extended_precision_processing_flag      : 1;
+    mfxU8 intra_smoothing_disabled_flag           : 1;
+    mfxU8 high_precision_offsets_enabled_flag     : 1;
+    mfxU8 persistent_rice_adaptation_enabled_flag : 1;
+    mfxU8 cabac_bypass_alignment_enabled_flag     : 1;
+#endif // defined(PRE_SI_TARGET_PLATFORM_GEN11)
+
     VUI vui;
 };
 
@@ -454,6 +467,20 @@ struct PPS
     //ScalingListData* sld;
 
     mfxU16 log2_parallel_merge_level_minus2;
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    mfxU32 range_extension_flag                      : 1;
+    mfxU32 cross_component_prediction_enabled_flag   : 1;
+    mfxU32 chroma_qp_offset_list_enabled_flag        : 1;
+    mfxU32 log2_sao_offset_scale_luma                : 3;
+    mfxU32 log2_sao_offset_scale_chroma              : 3;
+    mfxU32 chroma_qp_offset_list_len_minus1          : 3;
+    mfxU32 diff_cu_chroma_qp_offset_depth            : 5;
+    mfxU32 log2_max_transform_skip_block_size_minus2 : 5;
+    mfxU32                                           : 10;
+    mfxI8  cb_qp_offset_list[6];
+    mfxI8  cr_qp_offset_list[6];
+#endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
 };
 
 

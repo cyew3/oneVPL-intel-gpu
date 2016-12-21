@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -20,6 +20,7 @@
 namespace MfxHwH265Encode
 {
 
+template<class DDI_SPS, class DDI_PPS, class DDI_SLICE>
 class D3D11Encoder : public DriverEncoder, DDIHeaderPacker, DDITracer
 {
 public:
@@ -97,9 +98,9 @@ private:
 #endif
     mfxU32                                      m_maxSlices;
 
-    ENCODE_SET_SEQUENCE_PARAMETERS_HEVC         m_sps;
-    ENCODE_SET_PICTURE_PARAMETERS_HEVC          m_pps;
-    std::vector<ENCODE_SET_SLICE_HEADER_HEVC>   m_slice;
+    DDI_SPS                                     m_sps;
+    DDI_PPS                                     m_pps;
+    std::vector<DDI_SLICE>                      m_slice;
     std::vector<ENCODE_COMP_BUFFER_INFO>        m_compBufInfo;
     std::vector<D3DDDIFORMAT>                   m_uncompBufInfo;
     std::vector<ENCODE_COMPBUFFERDESC>          m_cbd;
@@ -108,6 +109,11 @@ private:
     FeedbackStorage                             m_feedbackUpdate;
     CachedFeedback                              m_feedbackCached;
 };
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+typedef D3D11Encoder<ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_REXT, ENCODE_SET_PICTURE_PARAMETERS_HEVC_REXT, ENCODE_SET_SLICE_HEADER_HEVC_REXT> D3D11EncoderREXT;
+#endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
+typedef D3D11Encoder<ENCODE_SET_SEQUENCE_PARAMETERS_HEVC, ENCODE_SET_PICTURE_PARAMETERS_HEVC, ENCODE_SET_SLICE_HEADER_HEVC> D3D11EncoderDefault;
 
 }; // namespace MfxHwH265Encode
 

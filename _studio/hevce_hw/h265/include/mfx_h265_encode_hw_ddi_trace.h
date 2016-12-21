@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -19,8 +19,9 @@ class DDITracer
 {
 private:
     FILE* m_log;
+    ENCODER_TYPE m_type;
 public:
-    DDITracer();
+    DDITracer(ENCODER_TYPE type = ENCODER_DEFAULT);
     ~DDITracer();
 
     template<class T> void Trace(T const &, mfxU32) {};
@@ -34,15 +35,24 @@ public:
     void Trace(ENCODE_PACKEDHEADER_DATA const & b, mfxU32 idx);
     void Trace(ENCODE_EXECUTE_PARAMS const & b, mfxU32 idx);
     void Trace(ENCODE_QUERY_STATUS_PARAMS const & b, mfxU32 idx);
+
+#if (HEVCE_DDI_VERSION >= 960)
+    void Trace(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_REXT const & b, mfxU32 idx);
+    void Trace(ENCODE_SET_PICTURE_PARAMETERS_HEVC_REXT const & b, mfxU32 idx);
+    void Trace(ENCODE_SET_SLICE_HEADER_HEVC_REXT const & b, mfxU32 idx);
+#endif // (HEVCE_DDI_VERSION >= 960)
+
+    static void TraceGUID(GUID const & guid, FILE*);
 };
 #else
 class DDITracer
 {
 public:
-    DDITracer(){};
+    DDITracer(ENCODER_TYPE type = ENCODER_DEFAULT) { type; };
     ~DDITracer(){};
     template<class T> inline void Trace(T const &, mfxU32) {};
     template<class T> inline void TraceArray(T const *, mfxU32) {};
+    static void TraceGUID(GUID const &, FILE*) {};
 };
 #endif
 

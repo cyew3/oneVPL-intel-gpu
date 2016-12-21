@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_h265_encode_hw_ddi_trace.h"
@@ -15,8 +15,9 @@ namespace MfxHwH265Encode
 
 #ifdef DDI_TRACE
 
-DDITracer::DDITracer()
+DDITracer::DDITracer(ENCODER_TYPE type)
     : m_log(0)
+    , m_type(type)
 {
     m_log = fopen("MSDK_HEVCE_HW_DDI_LOG.txt", "w");
 }
@@ -48,7 +49,95 @@ void DDITracer::Trace(type const & b, mfxU32 idx)\
     fprintf(m_log, "\n"); fflush(m_log);         \
 }
 
+void DDITracer::TraceGUID(GUID const & guid, FILE* f)
+{
+    fprintf(f, "GUID = { %08X, %04X, %04X, { %02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X } }\n"
+        , guid.Data1, guid.Data2, guid.Data3
+        , guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3]
+        , guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
+    fflush(f);
+}
+
 #define FIELD_FORMAT "%-24s"
+
+#if (HEVCE_DDI_VERSION >= 960)
+#define TRACE_BUFFER()                                                           \
+    switch((mfxU32)b.CompressedBufferType)                                       \
+    {                                                                            \
+    case D3DDDIFMT_INTELENCODE_SPSDATA:                                          \
+    case D3D11_DDI_VIDEO_ENCODER_BUFFER_SPSDATA:                                 \
+        if (m_type == ENCODER_REXT)                                              \
+            TraceArray((ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_REXT*)pBuf,          \
+                (b.DataSize / sizeof(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_REXT)));\
+        else                                                                     \
+            TraceArray((ENCODE_SET_SEQUENCE_PARAMETERS_HEVC*)pBuf,               \
+                (b.DataSize / sizeof(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC)));     \
+        break;                                                                   \
+    case D3DDDIFMT_INTELENCODE_PPSDATA:                                          \
+    case D3D11_DDI_VIDEO_ENCODER_BUFFER_PPSDATA:                                 \
+        if (m_type == ENCODER_REXT)                                              \
+            TraceArray((ENCODE_SET_PICTURE_PARAMETERS_HEVC_REXT*)pBuf,           \
+                (b.DataSize / sizeof(ENCODE_SET_PICTURE_PARAMETERS_HEVC_REXT))); \
+        else                                                                     \
+            TraceArray((ENCODE_SET_PICTURE_PARAMETERS_HEVC*)pBuf,                \
+                (b.DataSize / sizeof(ENCODE_SET_PICTURE_PARAMETERS_HEVC)));      \
+        break;                                                                   \
+    case D3DDDIFMT_INTELENCODE_SLICEDATA:                                        \
+    case D3D11_DDI_VIDEO_ENCODER_BUFFER_SLICEDATA:                               \
+        if (m_type == ENCODER_REXT)                                              \
+            TraceArray((ENCODE_SET_SLICE_HEADER_HEVC_REXT*)pBuf,                 \
+                (b.DataSize / sizeof(ENCODE_SET_SLICE_HEADER_HEVC_REXT)));       \
+        else                                                                     \
+            TraceArray((ENCODE_SET_SLICE_HEADER_HEVC*)pBuf,                      \
+                (b.DataSize / sizeof(ENCODE_SET_SLICE_HEADER_HEVC)));            \
+        break;                                                                   \
+    case D3DDDIFMT_INTELENCODE_BITSTREAMDATA:                                    \
+    case D3D11_DDI_VIDEO_ENCODER_BUFFER_BITSTREAMDATA:                           \
+        break;                                                                   \
+    case D3DDDIFMT_INTELENCODE_PACKEDHEADERDATA:                                 \
+    case D3DDDIFMT_INTELENCODE_PACKEDSLICEDATA:                                  \
+    case D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA:                        \
+    case D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDSLICEDATA:                         \
+        TraceArray((ENCODE_PACKEDHEADER_DATA*)pBuf,                              \
+                (b.DataSize / sizeof(ENCODE_PACKEDHEADER_DATA)));                \
+        break;                                                                   \
+    default:                                                                     \
+        break;                                                                   \
+    }
+#else //(HEVCE_DDI_VERSION >= 960)
+#define TRACE_BUFFER()                                                  \
+    switch((mfxU32)b.CompressedBufferType)                              \
+    {                                                                   \
+    case D3DDDIFMT_INTELENCODE_SPSDATA:                                 \
+    case D3D11_DDI_VIDEO_ENCODER_BUFFER_SPSDATA:                        \
+        TraceArray((ENCODE_SET_SEQUENCE_PARAMETERS_HEVC*)pBuf,          \
+            (b.DataSize / sizeof(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC)));\
+        break;                                                          \
+    case D3DDDIFMT_INTELENCODE_PPSDATA:                                 \
+    case D3D11_DDI_VIDEO_ENCODER_BUFFER_PPSDATA:                        \
+        TraceArray((ENCODE_SET_PICTURE_PARAMETERS_HEVC*)pBuf,           \
+            (b.DataSize / sizeof(ENCODE_SET_PICTURE_PARAMETERS_HEVC))); \
+        break;                                                          \
+    case D3DDDIFMT_INTELENCODE_SLICEDATA:                               \
+    case D3D11_DDI_VIDEO_ENCODER_BUFFER_SLICEDATA:                      \
+            TraceArray((ENCODE_SET_SLICE_HEADER_HEVC*)pBuf,             \
+                (b.DataSize / sizeof(ENCODE_SET_SLICE_HEADER_HEVC)));   \
+        break;                                                          \
+    case D3DDDIFMT_INTELENCODE_BITSTREAMDATA:                           \
+    case D3D11_DDI_VIDEO_ENCODER_BUFFER_BITSTREAMDATA:                  \
+        break;                                                          \
+    case D3DDDIFMT_INTELENCODE_PACKEDHEADERDATA:                        \
+    case D3DDDIFMT_INTELENCODE_PACKEDSLICEDATA:                         \
+    case D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA:               \
+    case D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDSLICEDATA:                \
+        TraceArray((ENCODE_PACKEDHEADER_DATA*)pBuf,                     \
+                (b.DataSize / sizeof(ENCODE_PACKEDHEADER_DATA)));       \
+        break;                                                          \
+    default:                                                            \
+        break;                                                          \
+    }
+#endif //(HEVCE_DDI_VERSION >= 960)
+
 DECL(ENCODE_COMPBUFFERDESC,
     if (b.CompressedBufferType == D3DDDIFMT_INTELENCODE_BITSTREAMDATA)
     {
@@ -64,34 +153,10 @@ DECL(ENCODE_COMPBUFFERDESC,
 
     void* pBuf = (mfxU8*)b.pCompBuffer + b.DataOffset;
 
-    switch((mfxU32)b.CompressedBufferType)
-    {
-    case D3DDDIFMT_INTELENCODE_SPSDATA:
-    case D3D11_DDI_VIDEO_ENCODER_BUFFER_SPSDATA:
-        TraceArray((ENCODE_SET_SEQUENCE_PARAMETERS_HEVC*)pBuf, (b.DataSize / sizeof(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC)));
-        break;
-    case D3DDDIFMT_INTELENCODE_PPSDATA:
-    case D3D11_DDI_VIDEO_ENCODER_BUFFER_PPSDATA:
-        TraceArray((ENCODE_SET_PICTURE_PARAMETERS_HEVC*)pBuf, (b.DataSize / sizeof(ENCODE_SET_PICTURE_PARAMETERS_HEVC)));
-        break;
-    case D3DDDIFMT_INTELENCODE_SLICEDATA:
-    case D3D11_DDI_VIDEO_ENCODER_BUFFER_SLICEDATA:
-        TraceArray((ENCODE_SET_SLICE_HEADER_HEVC*)pBuf, (b.DataSize / sizeof(ENCODE_SET_SLICE_HEADER_HEVC)));
-        break;
-    case D3DDDIFMT_INTELENCODE_BITSTREAMDATA:
-    case D3D11_DDI_VIDEO_ENCODER_BUFFER_BITSTREAMDATA:
-        break;
-    case D3DDDIFMT_INTELENCODE_PACKEDHEADERDATA:
-    case D3DDDIFMT_INTELENCODE_PACKEDSLICEDATA:
-    case D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA:
-    case D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDSLICEDATA:
-        TraceArray((ENCODE_PACKEDHEADER_DATA*)pBuf, (b.DataSize / sizeof(ENCODE_PACKEDHEADER_DATA)));
-        break;
-    default:
-        break;
-    }
+    TRACE_BUFFER();
 )
 #undef FIELD_FORMAT
+#undef TRACE_BUFFER
 
 #define FIELD_FORMAT "%-32s"
 DECL(ENCODE_CAPS_HEVC,
@@ -432,8 +497,56 @@ DECL(ENCODE_QUERY_STATUS_PARAMS,
     TRACE("%d", AverageQP);
     TRACE("%d", PanicMode);
     TRACE("%d", MAD);
+    TRACE("%llx", aes_counter.IV);
+    TRACE("%llx", aes_counter.Counter);
 )
 #undef FIELD_FORMAT
+
+
+#if (HEVCE_DDI_VERSION >= 960)
+
+#define FIELD_FORMAT "%-38s"
+DECL(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_REXT,
+    Trace((ENCODE_SET_SEQUENCE_PARAMETERS_HEVC const &) b, idx);
+    TRACE("%d", transform_skip_rotation_enabled_flag   );
+    TRACE("%d", transform_skip_context_enabled_flag    );
+    TRACE("%d", implicit_rdpcm_enabled_flag            );
+    TRACE("%d", explicit_rdpcm_enabled_flag            );
+    TRACE("%d", extended_precision_processing_flag     );
+    TRACE("%d", intra_smoothing_disabled_flag          );
+    TRACE("%d", high_precision_offsets_enabled_flag    );
+    TRACE("%d", persistent_rice_adaptation_enabled_flag);
+    TRACE("%d", cabac_bypass_alignment_enabled_flag    );
+)
+#undef FIELD_FORMAT
+
+#define FIELD_FORMAT "%-38s"
+DECL(ENCODE_SET_PICTURE_PARAMETERS_HEVC_REXT,
+    Trace((ENCODE_SET_PICTURE_PARAMETERS_HEVC const &)b, idx);
+    TRACE("%d", cross_component_prediction_enabled_flag  );
+    TRACE("%d", chroma_qp_offset_list_enabled_flag       );
+    TRACE("%d", diff_cu_chroma_qp_offset_depth           );
+    TRACE("%d", chroma_qp_offset_list_len_minus1         );
+    TRACE("%d", log2_sao_offset_scale_luma               );
+    TRACE("%d", log2_sao_offset_scale_chroma             );
+    TRACE("%d", log2_max_transform_skip_block_size_minus2);
+    TRACE_ARRAY_ROW("%d", cb_qp_offset_list, 6);
+    TRACE_ARRAY_ROW("%d", cr_qp_offset_list, 6);
+)
+#undef FIELD_FORMAT
+
+
+#define FIELD_FORMAT "%-38s"
+DECL(ENCODE_SET_SLICE_HEADER_HEVC_REXT,
+    Trace((ENCODE_SET_SLICE_HEADER_HEVC const &)b, idx);
+    TRACE_ARRAY_ROW("%d", luma_offset_l0, 15);
+    //SHORT   ChromaOffsetL0[15][2];
+    TRACE_ARRAY_ROW("%d", luma_offset_l1, 15);
+    //SHORT   ChromaOffsetL1[15][2];
+)
+#undef FIELD_FORMAT
+
+#endif //(HEVCE_DDI_VERSION >= 960)
 
 #endif //#ifdef DDI_TRACE
 }

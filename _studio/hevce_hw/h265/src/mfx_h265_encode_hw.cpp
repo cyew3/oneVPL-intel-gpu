@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_h265_encode_hw.h"
@@ -175,26 +175,34 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Plugin::InitImpl");
     mfxStatus sts = MFX_ERR_NONE, qsts = MFX_ERR_NONE;
     mfxCoreParam coreParams = {};
+    ENCODER_TYPE ddiType = ENCODER_DEFAULT;
 
     if (m_core.GetCoreParam(&coreParams))
        return  MFX_ERR_UNSUPPORTED;
-
-#ifndef MFX_CLOSED_PLATFORMS_DISABLE
-    sts = m_core.QueryPlatform(&m_vpar.m_platform);
-    MFX_CHECK_STS(sts);
-#endif
-
-    m_ddi.reset( CreatePlatformH265Encoder(&m_core) );
-    MFX_CHECK(m_ddi.get(), MFX_ERR_UNSUPPORTED);
 
     sts = ExtBuffer::CheckBuffers(*par);
     MFX_CHECK_STS(sts);
 
     m_vpar = *par;
 
+#ifndef MFX_CLOSED_PLATFORMS_DISABLE
+    sts = m_core.QueryPlatform(&m_vpar.m_platform);
+    MFX_CHECK_STS(sts);
+#endif
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    if (   m_vpar.m_ext.CO3.TargetChromaFormatPlus1 != (MFX_CHROMAFORMAT_YUV420 + 1)
+        || m_vpar.m_ext.CO3.TargetBitDepthLuma > 10
+        || m_vpar.mfx.CodecProfile == MFX_PROFILE_HEVC_REXT)
+        ddiType = ENCODER_REXT;
+#endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
+
+    m_ddi.reset( CreatePlatformH265Encoder(&m_core, ddiType) );
+    MFX_CHECK(m_ddi.get(), MFX_ERR_UNSUPPORTED);
+
     sts = m_ddi->CreateAuxilliaryDevice(
         &m_core,
-        GetGUID(*par),
+        GetGUID(m_vpar),
         m_vpar.m_ext.HEVCParam.PicWidthInLumaSamples,
         m_vpar.m_ext.HEVCParam.PicHeightInLumaSamples);
     MFX_CHECK(MFX_SUCCEEDED(sts), MFX_ERR_DEVICE_FAILED);
@@ -337,9 +345,17 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
         const mfxExtCodingOption3& CO3 = m_vpar.m_ext.CO3;
 
         if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV444) && CO3.TargetBitDepthLuma == 10)
+        {
             request.Info.FourCC = MFX_FOURCC_Y410;
+            request.Info.Width  /= 2;
+            request.Info.Height *= 3;
+        }
         else if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV444) && CO3.TargetBitDepthLuma == 8)
+        {
             request.Info.FourCC = MFX_FOURCC_AYUV;
+            request.Info.Width  /= 4;
+            request.Info.Height *= 3;
+        }
         else if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV422) && CO3.TargetBitDepthLuma == 10)
             request.Info.FourCC =  MFX_FOURCC_P210;
         else if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV422) && CO3.TargetBitDepthLuma == 8)
@@ -432,6 +448,10 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
 #if DEBUG_REC_FRAMES_INFO
     mfxExtDumpFiles * extDump = &m_vpar.m_ext.DumpFiles;
     if (vm_file * file = OpenFile(extDump->ReconFilename, _T("wb")))
+    {
+        vm_file_fclose(file);
+    }
+    if (vm_file * file = OpenFile(extDump->InputFramesFilename, _T("wb")))
     {
         vm_file_fclose(file);
     }
@@ -570,6 +590,11 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
             return MFX_ERR_UNSUPPORTED;
         }
 
+#ifndef MFX_CLOSED_PLATFORMS_DISABLE
+        sts = m_core.QueryPlatform(&tmp.m_platform);
+        MFX_CHECK_STS(sts);
+#endif
+
         MFX_CHECK(in->mfx.CodecId == MFX_CODEC_HEVC, MFX_ERR_UNSUPPORTED);
 
         // matching ExtBuffers
@@ -613,11 +638,6 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
                 return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;        
             }
         }
-
-#ifndef MFX_CLOSED_PLATFORMS_DISABLE
-        sts = m_core.QueryPlatform(&tmp.m_platform);
-        MFX_CHECK_STS(sts);
-#endif
 
         sts = CheckVideoParam(tmp, caps);
         if (sts == MFX_ERR_INVALID_VIDEO_PARAM)
@@ -843,6 +863,10 @@ mfxStatus  Plugin::Reset(mfxVideoParam *par)
 #if DEBUG_REC_FRAMES_INFO
         mfxExtDumpFiles * extDump = &m_vpar.m_ext.DumpFiles;
         if (vm_file * file = OpenFile(extDump->ReconFilename, _T("wb")))
+        {
+            vm_file_fclose(file);
+        }
+        if (vm_file * file = OpenFile(extDump->InputFramesFilename, _T("wb")))
         {
             vm_file_fclose(file);
         }
@@ -1301,14 +1325,20 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
 
         if (vm_file * file = OpenFile(extDump->ReconFilename, _T("ab")))
         {
-            mfxFrameData data = { 0 };
+            mfxFrameData data = {};
+            mfxFrameInfo info = m_vpar.mfx.FrameInfo;
             mfxFrameAllocator & fa = m_core.FrameAllocator();
 
             data.MemId = m_rec.mids[taskForQuery->m_idxRec];
             sts = fa.Lock(fa.pthis,  m_rec.mids[taskForQuery->m_idxRec], &data);
-            MFX_CHECK(data.Y, MFX_ERR_LOCK_MEMORY);
+            MFX_CHECK(data.Y || data.Y410, MFX_ERR_LOCK_MEMORY);
 
-            WriteFrameData(file, data, m_vpar.mfx.FrameInfo);
+            if (info.FourCC == MFX_FOURCC_Y410)
+                info.FourCC = MFX_FOURCC_Y410V;
+            if (info.FourCC == MFX_FOURCC_AYUV)
+                info.FourCC = MFX_FOURCC_AYUVV;
+
+            WriteFrameData(file, data, info);
             fa.Unlock(fa.pthis,  m_rec.mids[taskForQuery->m_idxRec], &data);
 
             vm_file_fclose(file);
@@ -1325,15 +1355,15 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
                 }
                 else
                 {
-                     sts = fa.Lock(fa.pthis,  taskForQuery->m_surf->Data.Y, &data);
-                     MFX_CHECK(data.Y, MFX_ERR_LOCK_MEMORY);
+                     sts = fa.Lock(fa.pthis,  taskForQuery->m_surf->Data.MemId, &data);
+                     MFX_CHECK(data.Y || data.Y410, MFX_ERR_LOCK_MEMORY);
                 }
                 WriteFrameData(file, data, m_vpar.mfx.FrameInfo);
                 vm_file_fclose(file);
 
                 if (!taskForQuery->m_surf->Data.Y)
                 {
-                    fa.Unlock(fa.pthis,  taskForQuery->m_surf->Data.Y, &data);
+                    fa.Unlock(fa.pthis,  taskForQuery->m_surf->Data.MemId, &data);
                 }
             }
         }

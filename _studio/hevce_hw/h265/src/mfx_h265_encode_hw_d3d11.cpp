@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -18,7 +18,8 @@
 
 namespace MfxHwH265Encode
 {
-D3D11Encoder::D3D11Encoder()
+template<class DDI_SPS, class DDI_PPS, class DDI_SLICE>
+D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::D3D11Encoder()
     : m_core(0)
     , m_guid()
     , m_width(0)
@@ -34,15 +35,20 @@ D3D11Encoder::D3D11Encoder()
     , m_maxSlices(0)
     , m_sps()
     , m_pps()
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    , DDITracer(std::is_same<DDI_SPS, ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_REXT>::value ? ENCODER_REXT : ENCODER_DEFAULT)
+#endif defined(PRE_SI_TARGET_PLATFORM_GEN11)
 {
 }
 
-D3D11Encoder::~D3D11Encoder()
+template<class DDI_SPS, class DDI_PPS, class DDI_SLICE>
+D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::~D3D11Encoder()
 {
     Destroy();
 }
 
-mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
+template<class DDI_SPS, class DDI_PPS, class DDI_SLICE>
+mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAuxilliaryDevice(
     MFXCoreInterface * core,
     GUID        guid,
     mfxU32      width,
@@ -179,7 +185,8 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
     return MFX_ERR_NONE;
 }
 
-mfxStatus D3D11Encoder::CreateAccelerationService(MfxVideoParam const & par)
+template<class DDI_SPS, class DDI_PPS, class DDI_SLICE>
+mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAccelerationService(MfxVideoParam const & par)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::CreateAccelerationService");
     MFX_CHECK_WITH_ASSERT(m_vdecoder, MFX_ERR_NOT_INITIALIZED);
@@ -244,7 +251,8 @@ mfxStatus D3D11Encoder::CreateAccelerationService(MfxVideoParam const & par)
     return MFX_ERR_NONE;
 }
 
-mfxStatus D3D11Encoder::Reset(MfxVideoParam const & par, bool bResetBRC)
+template<class DDI_SPS, class DDI_PPS, class DDI_SLICE>
+mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Reset(MfxVideoParam const & par, bool bResetBRC)
 {
     MFX_CHECK_WITH_ASSERT(m_vdecoder, MFX_ERR_NOT_INITIALIZED);
 
@@ -320,7 +328,8 @@ mfxU32 convertDXGIFormatToMFXFourCC(DXGI_FORMAT format)
     }
 }
 
-mfxStatus D3D11Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequest& request)
+template<class DDI_SPS, class DDI_PPS, class DDI_SLICE>
+mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequest& request)
 {
     MFX_CHECK_WITH_ASSERT(m_vdecoder, MFX_ERR_NOT_INITIALIZED);
 
@@ -383,7 +392,8 @@ mfxStatus D3D11Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequ
     return MFX_ERR_NONE;  
 }
 
-mfxStatus D3D11Encoder::QueryEncodeCaps(ENCODE_CAPS_HEVC & caps)
+template<class DDI_SPS, class DDI_PPS, class DDI_SLICE>
+mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryEncodeCaps(ENCODE_CAPS_HEVC & caps)
 {
     MFX_CHECK_WITH_ASSERT(m_vdecoder, MFX_ERR_NOT_INITIALIZED);
 
@@ -392,7 +402,8 @@ mfxStatus D3D11Encoder::QueryEncodeCaps(ENCODE_CAPS_HEVC & caps)
     return MFX_ERR_NONE;
 }
 
-mfxStatus D3D11Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT type)
+template<class DDI_SPS, class DDI_PPS, class DDI_SLICE>
+mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT type)
 {
     MFX_CHECK_WITH_ASSERT(m_core, MFX_ERR_NOT_INITIALIZED);
 
@@ -429,7 +440,8 @@ mfxStatus D3D11Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT t
     m_cbd[executeParams.NumCompBuffers].pCompBuffer = &buf; \
     executeParams.NumCompBuffers++;
 
-mfxStatus D3D11Encoder::Execute(Task const & task, mfxHDL surface)
+template<class DDI_SPS, class DDI_PPS, class DDI_SLICE>
+mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, mfxHDL surface)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::Execute");
     MFX_CHECK_WITH_ASSERT(m_vdecoder, MFX_ERR_NOT_INITIALIZED);
@@ -592,8 +604,8 @@ mfxStatus D3D11Encoder::Execute(Task const & task, mfxHDL surface)
     return MFX_ERR_NONE;
 }
 
-
-mfxStatus D3D11Encoder::QueryStatus(Task & task)
+template<class DDI_SPS, class DDI_PPS, class DDI_SLICE>
+mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryStatus(Task & task)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::QueryStatus");
     MFX_CHECK_WITH_ASSERT(m_vdecoder, MFX_ERR_NOT_INITIALIZED);
@@ -702,10 +714,17 @@ mfxStatus D3D11Encoder::QueryStatus(Task & task)
     }
 }
 
-mfxStatus D3D11Encoder::Destroy()
+template<class DDI_SPS, class DDI_PPS, class DDI_SLICE>
+mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Destroy()
 {
     return MFX_ERR_NONE;
 }
+
+template class D3D11Encoder<ENCODE_SET_SEQUENCE_PARAMETERS_HEVC, ENCODE_SET_PICTURE_PARAMETERS_HEVC, ENCODE_SET_SLICE_HEADER_HEVC>;
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+template class D3D11Encoder<ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_REXT, ENCODE_SET_PICTURE_PARAMETERS_HEVC_REXT, ENCODE_SET_SLICE_HEADER_HEVC_REXT>;
+#endif
 
 }; // namespace MfxHwH265Encode
 

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_h265_encode_hw_bs.h"
@@ -839,8 +839,33 @@ mfxStatus HeaderReader::ReadSPS(BitstreamReader& bs, SPS & sps)
             }
         }
 
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+        sps.extension_flag = bs.GetBit();
+
+        if (sps.extension_flag)
+        {
+            sps.range_extension_flag = bs.GetBit();
+            if (bs.GetBits(7))
+                return MFX_ERR_UNSUPPORTED;
+        }
+
+        if (sps.range_extension_flag)
+        {
+            sps.transform_skip_rotation_enabled_flag = bs.GetBit();
+            sps.transform_skip_context_enabled_flag = bs.GetBit();
+            sps.implicit_rdpcm_enabled_flag = bs.GetBit();
+            sps.explicit_rdpcm_enabled_flag = bs.GetBit();
+            sps.extended_precision_processing_flag = bs.GetBit();
+            sps.intra_smoothing_disabled_flag = bs.GetBit();
+            sps.high_precision_offsets_enabled_flag = bs.GetBit();
+            sps.persistent_rice_adaptation_enabled_flag = bs.GetBit();
+            sps.cabac_bypass_alignment_enabled_flag = bs.GetBit();
+        }
+#else //defined(PRE_SI_TARGET_PLATFORM_GEN11)
         if (bs.GetBit()) //sps.extension_flag
             return MFX_ERR_UNSUPPORTED;
+#endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
     }
     catch (std::exception &)
     {
@@ -932,8 +957,44 @@ mfxStatus HeaderReader::ReadPPS(BitstreamReader& bs, PPS & pps)
         pps.log2_parallel_merge_level_minus2 = (mfxU16)bs.GetUE();
         pps.slice_segment_header_extension_present_flag = bs.GetBit();
 
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+        pps.extension_flag = bs.GetBit();
+
+        if (pps.extension_flag)
+        {
+            pps.range_extension_flag = bs.GetBit();
+            if (bs.GetBits(7))
+                return MFX_ERR_UNSUPPORTED;
+        }
+
+        if (pps.range_extension_flag)
+        {
+            if (pps.transform_skip_enabled_flag)
+                pps.log2_max_transform_skip_block_size_minus2 = bs.GetUE();
+
+            pps.cross_component_prediction_enabled_flag = bs.GetBit();
+            pps.chroma_qp_offset_list_enabled_flag = bs.GetBit();
+
+            if (pps.chroma_qp_offset_list_enabled_flag)
+            {
+                pps.diff_cu_chroma_qp_offset_depth = bs.GetUE();
+                pps.chroma_qp_offset_list_len_minus1 = bs.GetUE();
+
+                for (mfxU32 i = 0; i <= pps.chroma_qp_offset_list_len_minus1; i++)
+                {
+                    pps.cb_qp_offset_list[i] = (mfxI8)bs.GetSE();
+                    pps.cr_qp_offset_list[i] = (mfxI8)bs.GetSE();
+                }
+            }
+
+            pps.log2_sao_offset_scale_luma = bs.GetUE();
+            pps.log2_sao_offset_scale_chroma = bs.GetUE();
+        }
+#else //defined(PRE_SI_TARGET_PLATFORM_GEN11)
         if (bs.GetBit()) //pps.extension_flag
             return MFX_ERR_UNSUPPORTED;
+#endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
     }
     catch (std::exception &)
     {
@@ -1015,8 +1076,17 @@ void HeaderPacker::PackPTL(BitstreamWriter& bs, LayersInfo const & ptl, mfxU16 m
     bs.PutBit(ptl.general.non_packed_constraint_flag);
     bs.PutBit(ptl.general.frame_only_constraint_flag);
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-    bs.PutBits(32, ptl.general.rext_constraint_flags_0_31);
-    bs.PutBits(11, ptl.general.rext_constraint_flags_32_42);
+    bs.PutBit(ptl.general.constraint.max_12bit       );
+    bs.PutBit(ptl.general.constraint.max_10bit       );
+    bs.PutBit(ptl.general.constraint.max_8bit        );
+    bs.PutBit(ptl.general.constraint.max_422chroma   );
+    bs.PutBit(ptl.general.constraint.max_420chroma   );
+    bs.PutBit(ptl.general.constraint.max_monochrome  );
+    bs.PutBit(ptl.general.constraint.intra           );
+    bs.PutBit(ptl.general.constraint.one_picture_only);
+    bs.PutBit(ptl.general.constraint.lower_bit_rate  );
+    bs.PutBits(23, 0);
+    bs.PutBits(11, 0);
     bs.PutBit(ptl.general.inbld_flag);
 #else
     bs.PutBits(24, 0); //general_reserved_zero_44bits
@@ -1048,8 +1118,17 @@ void HeaderPacker::PackPTL(BitstreamWriter& bs, LayersInfo const & ptl, mfxU16 m
             bs.PutBit(ptl.sub_layer[i].non_packed_constraint_flag);
             bs.PutBit(ptl.sub_layer[i].frame_only_constraint_flag);
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-            bs.PutBits(32, ptl.sub_layer[i].rext_constraint_flags_0_31);
-            bs.PutBits(11, ptl.sub_layer[i].rext_constraint_flags_32_42);
+            bs.PutBit(ptl.general.constraint.max_12bit);
+            bs.PutBit(ptl.general.constraint.max_10bit);
+            bs.PutBit(ptl.general.constraint.max_8bit);
+            bs.PutBit(ptl.general.constraint.max_422chroma);
+            bs.PutBit(ptl.general.constraint.max_420chroma);
+            bs.PutBit(ptl.general.constraint.max_monochrome);
+            bs.PutBit(ptl.general.constraint.intra);
+            bs.PutBit(ptl.general.constraint.one_picture_only);
+            bs.PutBit(ptl.general.constraint.lower_bit_rate);
+            bs.PutBits(23, 0);
+            bs.PutBits(11, 0);
             bs.PutBit(ptl.sub_layer[i].inbld_flag);
 #else
             bs.PutBits(24, 0); //general_reserved_zero_44bits
@@ -1370,7 +1449,30 @@ void HeaderPacker::PackSPS(BitstreamWriter& bs, SPS const & sps)
     if (sps.vui_parameters_present_flag)
         PackVUI(bs, sps.vui, sps.max_sub_layers_minus1);
 
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    bs.PutBit(sps.extension_flag);
+
+    if (sps.extension_flag)
+    {
+        bs.PutBit(sps.range_extension_flag);
+        bs.PutBits(7, 0);
+    }
+
+    if (sps.range_extension_flag)
+    {
+        bs.PutBit(sps.transform_skip_rotation_enabled_flag);
+        bs.PutBit(sps.transform_skip_context_enabled_flag);
+        bs.PutBit(sps.implicit_rdpcm_enabled_flag);
+        bs.PutBit(sps.explicit_rdpcm_enabled_flag);
+        bs.PutBit(sps.extended_precision_processing_flag);
+        bs.PutBit(sps.intra_smoothing_disabled_flag);
+        bs.PutBit(sps.high_precision_offsets_enabled_flag);
+        bs.PutBit(sps.persistent_rice_adaptation_enabled_flag);
+        bs.PutBit(sps.cabac_bypass_alignment_enabled_flag);
+    }
+#else //defined(PRE_SI_TARGET_PLATFORM_GEN11)
     bs.PutBit(0); //sps.extension_flag
+#endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
 
     bs.PutTrailingBits();
 }
@@ -1446,7 +1548,42 @@ void HeaderPacker::PackPPS(BitstreamWriter& bs, PPS const &  pps)
     bs.PutBit(pps.lists_modification_present_flag);
     bs.PutUE(pps.log2_parallel_merge_level_minus2);
     bs.PutBit(pps.slice_segment_header_extension_present_flag);
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    bs.PutBit(pps.extension_flag);
+
+    if (pps.extension_flag)
+    {
+        bs.PutBit(pps.range_extension_flag);
+        bs.PutBits(7, 0);
+    }
+
+    if (pps.range_extension_flag)
+    {
+        if (pps.transform_skip_enabled_flag)
+            bs.PutUE(pps.log2_max_transform_skip_block_size_minus2);
+
+        bs.PutBit(pps.cross_component_prediction_enabled_flag);
+        bs.PutBit(pps.chroma_qp_offset_list_enabled_flag);
+
+        if (pps.chroma_qp_offset_list_enabled_flag)
+        {
+            bs.PutUE(pps.diff_cu_chroma_qp_offset_depth);
+            bs.PutUE(pps.chroma_qp_offset_list_len_minus1);
+
+            for (mfxU32 i = 0; i <= pps.chroma_qp_offset_list_len_minus1; i++)
+            {
+                bs.PutSE(pps.cb_qp_offset_list[i]);
+                bs.PutSE(pps.cr_qp_offset_list[i]);
+            }
+        }
+
+        bs.PutUE(pps.log2_sao_offset_scale_luma);
+        bs.PutUE(pps.log2_sao_offset_scale_chroma);
+    }
+#else //defined(PRE_SI_TARGET_PLATFORM_GEN11)
     bs.PutBit(0); //pps.extension_flag
+#endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
 
     bs.PutTrailingBits();
 }

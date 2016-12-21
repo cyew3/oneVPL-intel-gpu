@@ -1807,8 +1807,11 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     {
         mfxI16 QPX = (par.mfx.GopRefDist == 1) ? par.mfx.QPP : par.mfx.QPB;
 
-        for (mfxI16 i = 0; i < 8; i++)
-            changed += CheckRange(CO3.QPOffset[i], minQP - QPX, maxQP - QPX);
+        if (QPX)
+        {
+            for (mfxI16 i = 0; i < 8; i++)
+                changed += CheckRange(CO3.QPOffset[i], minQP - QPX, maxQP - QPX);
+        }
     }
 
     for (mfxU16 i = 0; i < 8; i++)
@@ -2272,7 +2275,7 @@ void SetDefaults(
             mfxI16 QPX = (par.mfx.GopRefDist == 1) ? par.mfx.QPP : par.mfx.QPB;
 
             for (mfxI16 i = 0; i < 8; i++)
-                CO3.QPOffset[i] = Clip3<mfxI16>(minQP - QPX, maxQP - QPX, i + (par.mfx.GopRefDist > 1));
+                CO3.QPOffset[i] = Clip3<mfxI16>((mfxI16)minQP - QPX, (mfxI16)maxQP - QPX, i + (par.mfx.GopRefDist > 1));
         }
         else
             CO3.EnableQPOffset = MFX_CODINGOPTION_OFF;
@@ -2338,17 +2341,19 @@ void SetDefaults(
     {
         mfxU64& constr = par.m_ext.HEVCParam.GeneralConstraintFlags;
 
-        if (CO3.TargetChromaFormatPlus1 - 1 == MFX_CHROMAFORMAT_YUV420)
-            constr |= MFX_HEVC_CONSTR_REXT_MAX_420CHROMA;
-        else if (CO3.TargetChromaFormatPlus1 - 1 == MFX_CHROMAFORMAT_YUV422)
+        if (CO3.TargetChromaFormatPlus1 - 1 <= MFX_CHROMAFORMAT_YUV422)
             constr |= MFX_HEVC_CONSTR_REXT_MAX_422CHROMA;
+        if (CO3.TargetChromaFormatPlus1 - 1 <= MFX_CHROMAFORMAT_YUV420)
+            constr |= MFX_HEVC_CONSTR_REXT_MAX_420CHROMA;
 
-        if (CO3.TargetBitDepthLuma == 8)
-            constr |= MFX_HEVC_CONSTR_REXT_MAX_8BIT;
-        else if (CO3.TargetBitDepthLuma == 10)
-            constr |= MFX_HEVC_CONSTR_REXT_MAX_10BIT;
-        else if (CO3.TargetBitDepthLuma == 12)
+        if (CO3.TargetBitDepthLuma <= 12)
             constr |= MFX_HEVC_CONSTR_REXT_MAX_12BIT;
+        if (CO3.TargetBitDepthLuma <= 10)
+            constr |= MFX_HEVC_CONSTR_REXT_MAX_10BIT;
+        if (CO3.TargetBitDepthLuma <= 8)
+            constr |= MFX_HEVC_CONSTR_REXT_MAX_8BIT;
+
+        constr |= MFX_HEVC_CONSTR_REXT_LOWER_BIT_RATE;
     }
 #endif
 }

@@ -1601,6 +1601,35 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
         cpb0.cbr_flag              = (mfx.RateControlMethod == MFX_RATECONTROL_CBR);
     }
 
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    if (mfx.CodecProfile == MFX_PROFILE_HEVC_REXT)
+    {
+        //TBD
+        m_sps.transform_skip_rotation_enabled_flag    = 0;
+        m_sps.transform_skip_context_enabled_flag     = 0;
+        m_sps.implicit_rdpcm_enabled_flag             = 0;
+        m_sps.explicit_rdpcm_enabled_flag             = 0;
+        m_sps.extended_precision_processing_flag      = 0;
+        m_sps.intra_smoothing_disabled_flag           = 0;
+        m_sps.high_precision_offsets_enabled_flag     = 0;
+        m_sps.persistent_rice_adaptation_enabled_flag = 0;
+        m_sps.cabac_bypass_alignment_enabled_flag     = 0;
+
+        m_sps.range_extension_flag = 
+               m_sps.transform_skip_rotation_enabled_flag
+            || m_sps.transform_skip_context_enabled_flag
+            || m_sps.implicit_rdpcm_enabled_flag
+            || m_sps.explicit_rdpcm_enabled_flag
+            || m_sps.extended_precision_processing_flag
+            || m_sps.intra_smoothing_disabled_flag
+            || m_sps.high_precision_offsets_enabled_flag
+            || m_sps.persistent_rice_adaptation_enabled_flag
+            || m_sps.cabac_bypass_alignment_enabled_flag;
+
+        m_sps.extension_flag |= m_sps.range_extension_flag;
+    }
+#endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
+
     Zero(m_pps);
     m_pps.seq_parameter_set_id = m_sps.seq_parameter_set_id;
 
@@ -1629,7 +1658,7 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
         (m_platform.CodeName == MFX_PLATFORM_ICELAKE))
     {
         m_pps.diff_cu_qp_delta_depth = 2;
-        if (mfx.LowPower)
+        if (IsOn(mfx.LowPower))
             m_pps.diff_cu_qp_delta_depth = 3;
     }
 #endif
@@ -1678,7 +1707,12 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
             m_pps.row_height[j] = ((j + 1) * nRow) / nTRow - (j * nRow) / nTRow;
     }
 
-    m_pps.loop_filter_across_slices_enabled_flag      = 0;
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    if (m_platform.CodeName >= MFX_PLATFORM_CANNONLAKE)
+        m_pps.loop_filter_across_slices_enabled_flag = 1;
+    else
+#endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
+        m_pps.loop_filter_across_slices_enabled_flag = 0;
 
     m_pps.deblocking_filter_control_present_flag  = 1;
     m_pps.deblocking_filter_disabled_flag = !!m_ext.CO2.DisableDeblockingIdc;
@@ -1689,6 +1723,34 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
     m_pps.log2_parallel_merge_level_minus2            = 0;
     m_pps.slice_segment_header_extension_present_flag = 0;
 
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    if (mfx.CodecProfile == MFX_PROFILE_HEVC_REXT)
+    {
+        //TBD
+        m_pps.cross_component_prediction_enabled_flag   = 0;
+        m_pps.chroma_qp_offset_list_enabled_flag        = 0;
+        m_pps.log2_sao_offset_scale_luma                = 0;
+        m_pps.log2_sao_offset_scale_chroma              = 0;
+        m_pps.chroma_qp_offset_list_len_minus1          = 0;
+        m_pps.diff_cu_chroma_qp_offset_depth            = 0;
+        m_pps.log2_max_transform_skip_block_size_minus2 = 0;
+        Zero(m_pps.cb_qp_offset_list);
+        Zero(m_pps.cr_qp_offset_list);
+
+        m_pps.range_extension_flag =
+               m_pps.cross_component_prediction_enabled_flag
+            || m_pps.chroma_qp_offset_list_enabled_flag
+            || m_pps.log2_sao_offset_scale_luma
+            || m_pps.log2_sao_offset_scale_chroma
+            || m_pps.chroma_qp_offset_list_len_minus1
+            || m_pps.diff_cu_chroma_qp_offset_depth
+            || m_pps.log2_max_transform_skip_block_size_minus2
+            || !IsZero(m_pps.cb_qp_offset_list)
+            || !IsZero(m_pps.cr_qp_offset_list);
+
+        m_pps.extension_flag |= m_pps.range_extension_flag;
+    }
+#endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
 }
 
 mfxU16 FrameType2SliceType(mfxU32 ft)
@@ -3265,20 +3327,148 @@ void WriteFrameData(
     mfxFrameInfo const & info)
 {
     mfxFrameData data = fdata;
-    if (file != 0 && data.Y != 0 && data.UV != 0)
+    mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
+
+    if (!file)
+        return;
+
+    switch (info.FourCC)
     {
+    case MFX_FOURCC_NV12:
+        if (data.Y == 0 || data.UV == 0)
+            return;
+
         for (mfxU32 i = 0; i < info.Height; i++)
-            vm_file_fwrite(data.Y + i * data.Pitch, 1, info.Width, file);
+            vm_file_fwrite(data.Y + i * pitch, 1, info.Width, file);
 
         for (mfxI32 y = 0; y < info.Height / 2; y++)
             for (mfxI32 x = 0; x < info.Width; x += 2)
-                vm_file_fwrite(data.UV + y * data.Pitch + x, 1, 1, file);
+                vm_file_fwrite(data.UV + y * pitch + x, 1, 1, file);
 
         for (mfxI32 y = 0; y < info.Height / 2; y++)
             for (mfxI32 x = 1; x < info.Width; x += 2)
-                vm_file_fwrite(data.UV + y * data.Pitch + x, 1, 1, file);
+                vm_file_fwrite(data.UV + y * pitch + x, 1, 1, file);
 
-        vm_file_fflush(file);
+        break;
+    case MFX_FOURCC_AYUV: //write as I444
+        if (data.Y == 0 || data.U == 0 || data.V == 0)
+            return;
+
+        {
+            std::vector<mfxU8> buf(info.Width);
+            mfxU8* pBuf = &buf[0];
+
+            for (mfxI32 y = 0; y < info.Height; y++)
+            {
+                mfxU8* dst = pBuf;
+                mfxU8* src = data.Y + y * pitch;
+
+                for (mfxI32 x = 0; x < info.Width; x++, dst++, src += 4)
+                    *dst = *src;
+
+                vm_file_fwrite(pBuf, 1, info.Width, file);
+            }
+
+            for (mfxI32 y = 0; y < info.Height; y++)
+            {
+                mfxU8* dst = pBuf;
+                mfxU8* src = data.U + y * pitch;
+
+                for (mfxI32 x = 0; x < info.Width; x++, dst++, src += 4)
+                    *dst = *src;
+
+                vm_file_fwrite(pBuf, 1, info.Width, file);
+            }
+
+            for (mfxI32 y = 0; y < info.Height; y++)
+            {
+                mfxU8* dst = pBuf;
+                mfxU8* src = data.V + y * pitch;
+
+                for (mfxI32 x = 0; x < info.Width; x++, dst++, src += 4)
+                    *dst = *src;
+
+                vm_file_fwrite(pBuf, 1, info.Width, file);
+            }
+        }
+        break;
+    case MFX_FOURCC_Y410:  //write as I410
+        if (data.Y410 == 0)
+            return;
+
+        {
+            std::vector<mfxU16> buf(info.Width);
+            mfxU16* pBuf = &buf[0];
+
+            for (mfxI32 y = 0; y < info.Height; y++)
+            {
+                mfxU16* dst = pBuf;
+                mfxY410* src = (mfxY410*)((mfxU8*)data.Y410 + y * pitch);
+
+                for (mfxI32 x = 0; x < info.Width; x++, dst++, src++)
+                    *dst = (mfxU16)src->Y;
+
+                vm_file_fwrite(pBuf, 2, info.Width, file);
+            }
+
+            for (mfxI32 y = 0; y < info.Height; y++)
+            {
+                mfxU16* dst = pBuf;
+                mfxY410* src = (mfxY410*)((mfxU8*)data.Y410 + y * pitch);
+
+                for (mfxI32 x = 0; x < info.Width; x++, dst++, src++)
+                    *dst = (mfxU16)src->U;
+
+                vm_file_fwrite(pBuf, 2, info.Width, file);
+            }
+
+            for (mfxI32 y = 0; y < info.Height; y++)
+            {
+                mfxU16* dst = pBuf;
+                mfxY410* src = (mfxY410*)((mfxU8*)data.Y410 + y * pitch);
+
+                for (mfxI32 x = 0; x < info.Width; x++, dst++, src++)
+                    *dst = (mfxU16)src->V;
+
+                vm_file_fwrite(pBuf, 2, info.Width, file);
+            }
+        }
+        break;
+    case MFX_FOURCC_AYUVV: //write as I444
+        if (data.Y == 0 || data.U == 0 || data.V == 0)
+            return;
+
+        for (mfxI32 y = 0; y < info.Height * 3; y++)
+            vm_file_fwrite(data.Y + y * pitch, 1, info.Width, file);
+
+        break;
+    case MFX_FOURCC_Y410V:  //write as I410
+        if (data.Y410 == 0)
+            return;
+
+        {
+            std::vector<mfxU8> buf(info.Width * 2);
+            mfxU8* pBuf = &buf[0];
+
+            for (mfxI32 y = 0; y < info.Height * 3; y++)
+            {
+                mfxU8* msb = (mfxU8*)data.Y410 + y * pitch;
+                mfxU8* lsb = msb + info.Width;
+                mfxU16* dst = (mfxU16*)pBuf;
+
+                for (mfxI32 x = 0; x < info.Width; x++, dst++, lsb++, msb++)
+                {
+                    *dst = (mfxU16(*msb) << 8) | mfxU16(*lsb);
+                    *dst >>= 6;
+                }
+
+                vm_file_fwrite(pBuf, 1, info.Width * 2, file);
+            }
+        }
+        break;
+    default:
+        assert(!"unsupported FourCC");
+        break;
     }
 }
 #endif // removed dependency from fwrite(). Custom writing to file shouldn't be present in MSDK releases w/o documentation and testing
