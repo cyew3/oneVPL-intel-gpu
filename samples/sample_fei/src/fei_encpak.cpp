@@ -742,6 +742,13 @@ mfxStatus FEI_EncPakInterface::InitFrameParams(iTask* eTask)
 
     mfxStatus sts = MFX_ERR_NONE;
 
+    // In case of preenc + ds pass full-res surface to ENC/PAK
+    if (m_pAppConfig->preencDSstrength)
+    {
+        SAFE_DEC_LOCKER(eTask->in.InSurface);
+        eTask->in.InSurface = eTask->fullResSurface;
+    }
+
     /* Alloc temporal buffers */
     if (m_pAppConfig->bRepackPreencMV && !m_tmpForReading.size())
     {
@@ -982,14 +989,6 @@ mfxStatus FEI_EncPakInterface::EncPakOneFrame(iTask* eTask)
     mfxStatus sts = InitFrameParams(eTask);
     MSDK_CHECK_STATUS(sts, "FEI ENCPAK: InitFrameParams failed");
 
-    // In case of preenc + ds, store downscaled surface poiner and pass full-res surface to ENC/PAK
-    mfxFrameSurface1* ds_preenc_surf_tmp = NULL;
-    if (m_pAppConfig->preencDSstrength)
-    {
-        ds_preenc_surf_tmp = eTask->in.InSurface;
-        eTask->in.InSurface = eTask->fullResSurface;
-    }
-
     for (;;)
     {
         mdprintf(stderr, "frame: %d  t:%d %d : submit ", eTask->m_frameOrder, eTask->m_type[eTask->m_fid[0]], eTask->m_type[eTask->m_fid[1]]);
@@ -1078,12 +1077,6 @@ mfxStatus FEI_EncPakInterface::EncPakOneFrame(iTask* eTask)
     {
         sts = FlushOutput(eTask);
         MSDK_CHECK_STATUS(sts, "DropENCPAKoutput failed");
-    }
-
-    // Restore surface for preenc references
-    if (m_pAppConfig->preencDSstrength)
-    {
-        eTask->in.InSurface = ds_preenc_surf_tmp;
     }
 
     return sts;

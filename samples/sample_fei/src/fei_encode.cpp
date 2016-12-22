@@ -499,7 +499,7 @@ mfxStatus FEI_EncodeInterface::InitFrameParams(mfxFrameSurface1* encodeSurface, 
                 feiEncCtrl->RefWidth  = adjust_window ? 32 : m_pAppConfig->RefWidth;
             }
 
-            feiEncCtrl->MVPredictor = (!(frameType[feiEncCtrlId] & MFX_FRAMETYPE_I) && (m_pAppConfig->mvinFile != NULL || m_pAppConfig->bPREENC)) ? 1 : 0;
+            feiEncCtrl->MVPredictor = (frameType[feiEncCtrlId] & MFX_FRAMETYPE_I) ? 0 : (m_pAppConfig->mvinFile != NULL || m_pAppConfig->bPREENC);
 
             /* Set number to actual ref number for each field.
             Driver requires these fields to be zero in case of feiEncCtrl->MVPredictor == false

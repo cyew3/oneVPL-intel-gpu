@@ -89,7 +89,7 @@ mfxStatus MFX_VppInterface::FillParameters()
 
     m_pAppConfig->PipelineCfg.pVppVideoParam = &m_videoParams;
 
-    m_videoParams.AllocId = m_allocId;
+    m_videoParams.AllocId   = m_allocId;
     // specify memory type
     m_videoParams.IOPattern = mfxU16(m_pAppConfig->bUseHWmemory ? (MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY)
         : (MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY));
@@ -106,9 +106,9 @@ mfxStatus MFX_VppInterface::FillParameters()
         /* No other instances before PreENC DownSampling. Fill VideoParams */
 
         // input frame info
-        m_videoParams.vpp.In.FourCC = MFX_FOURCC_NV12;
+        m_videoParams.vpp.In.FourCC       = MFX_FOURCC_NV12;
         m_videoParams.vpp.In.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-        m_videoParams.vpp.In.PicStruct = m_pAppConfig->nPicStruct;
+        m_videoParams.vpp.In.PicStruct    = m_pAppConfig->nPicStruct;
 
         sts = ConvertFrameRate(m_pAppConfig->dFrameRate, &m_videoParams.vpp.In.FrameRateExtN, &m_videoParams.vpp.In.FrameRateExtD);
         MSDK_CHECK_STATUS(sts, "ConvertFrameRate failed");

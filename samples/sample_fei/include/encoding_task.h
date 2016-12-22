@@ -586,6 +586,11 @@ struct iTask
             // surfaces are reused and VPP may change this parameter in certain configurations
             in.InSurface->Info.PicStruct = fullResSurface->Info.PicStruct & 0xf;
         }
+
+        // This surface will be used for PreENC's lookup for references
+        // If PreENC is absent in pipeline, this pointer is not used
+        pPreENCSurface = task_params.DSsurface ? task_params.DSsurface : task_params.InputSurf;
+        if (pPreENCSurface) { pPreENCSurface->Data.Locked++; }
     }
 
     ~iTask()
@@ -601,6 +606,7 @@ struct iTask
         SAFE_DEC_LOCKER(fullResSurface);
         SAFE_DEC_LOCKER(out.OutSurface);
         SAFE_DEC_LOCKER(outPAK.OutSurface);
+        SAFE_DEC_LOCKER(pPreENCSurface);
     }
 
     /* This operator is used to store only necessary information from previous encoding */
@@ -730,6 +736,7 @@ struct iTask
     bufSet* preenc_bufs;
     std::list<PreEncOutput> preenc_output;
     mfxFrameSurface1 *fullResSurface;
+    mfxFrameSurface1 *pPreENCSurface;
 
     mfxU16 PicStruct;
     mfxU16 BRefType;

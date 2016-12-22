@@ -583,8 +583,8 @@ mfxStatus FEI_PreencInterface::InitFrameParams(iTask* eTask, iTask* refTask[2][2
     {
         bool is_I_frame = ExtractFrameType(*eTask, fieldId) & MFX_FRAMETYPE_I;
 
-        refSurf0[fieldId] = refTask[fieldId][0] ? refTask[fieldId][0]->in.InSurface : NULL;
-        refSurf1[fieldId] = refTask[fieldId][1] ? refTask[fieldId][1]->in.InSurface : NULL;
+        refSurf0[fieldId] = refTask[fieldId][0] ? refTask[fieldId][0]->pPreENCSurface : NULL;
+        refSurf1[fieldId] = refTask[fieldId][1] ? refTask[fieldId][1]->pPreENCSurface : NULL;
 
         eTask->in.NumFrameL0 = !!refSurf0[fieldId];
         eTask->in.NumFrameL1 = !!refSurf1[fieldId];
@@ -966,8 +966,8 @@ mfxStatus FEI_PreencInterface::RepackPredictors(iTask* eTask)
     MBindex_DS  - index of current MB
     mvp         - motion vectors predictors array for full-resolution frame
     predIdx     - index of current predictor [0-3] (up to 4 is supported)
-    refIdx      - indef of current reference (for which predictor is applicable) in reference list
-    L0L1        - indicates list of referrences being processed [0-1] (0 - L0 list, 1- L1 list)
+    refIdx      - index of current reference (for which predictor is applicable) in reference list
+    L0L1        - indicates list of references being processed [0-1] (0 - L0 list, 1- L1 list)
 */
 void FEI_PreencInterface::UpsampleMVP(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB * preenc_MVMB, mfxU32 MBindex_DS, mfxExtFeiEncMVPredictors* mvp, mfxU32 predIdx, mfxU8 refIdx, mfxU32 L0L1)
 {

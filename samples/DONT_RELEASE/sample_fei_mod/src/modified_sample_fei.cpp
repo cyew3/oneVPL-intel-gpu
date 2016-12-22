@@ -33,14 +33,16 @@ mfxStatus PakOneStreamoutFrame(mfxU32 m_numOfFields, iTask *eTask, mfxU8 QP, iTa
     MSDK_CHECK_POINTER(eTask,                  MFX_ERR_NULL_PTR);
     MSDK_CHECK_POINTER(eTask->inPAK.InSurface, MFX_ERR_NULL_PTR);
 
-    mfxExtFeiDecStreamOut* m_pExtBufDecodeStreamout = NULL;
-    for (int i = 0; i < eTask->inPAK.InSurface->Data.NumExtParam; i++)
+    mfxExtFeiDecStreamOut* pExtBufDecodeStreamout = NULL;
+    for (mfxU16 i = 0; i < eTask->inPAK.InSurface->Data.NumExtParam; ++i)
+    {
         if (eTask->inPAK.InSurface->Data.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_DEC_STREAM_OUT)
         {
-            m_pExtBufDecodeStreamout = (mfxExtFeiDecStreamOut*)eTask->inPAK.InSurface->Data.ExtParam[i];
+            pExtBufDecodeStreamout = reinterpret_cast<mfxExtFeiDecStreamOut*>(eTask->inPAK.InSurface->Data.ExtParam[i]);
             break;
         }
-    MSDK_CHECK_POINTER(m_pExtBufDecodeStreamout, MFX_ERR_NULL_PTR);
+    }
+    MSDK_CHECK_POINTER(pExtBufDecodeStreamout, MFX_ERR_NULL_PTR);
 
     mfxStatus sts = MFX_ERR_NONE;
 
@@ -65,13 +67,13 @@ mfxStatus PakOneStreamoutFrame(mfxU32 m_numOfFields, iTask *eTask, mfxU8 QP, iTa
         for (mfxU32 i = 0; i < feiEncMBCode->NumMBAlloc; i++)
         {
             /* temporary, this flag is not set at all by driver */
-            (m_pExtBufDecodeStreamout->MB + fieldId*feiEncMBCode->NumMBAlloc + i)->IsLastMB = (i == (feiEncMBCode->NumMBAlloc-1));
+            (pExtBufDecodeStreamout->MB + fieldId*feiEncMBCode->NumMBAlloc + i)->IsLastMB = (i == (feiEncMBCode->NumMBAlloc-1));
 
             /* NOTE: streamout holds data for both fields in MB array (first NumMBAlloc for first field data, second NumMBAlloc for second field) */
-            sts = RepackStremoutMB2PakMB(m_pExtBufDecodeStreamout->MB + fieldId*feiEncMBCode->NumMBAlloc + i, feiEncMBCode->MB + i, QP);
+            sts = RepackStremoutMB2PakMB(pExtBufDecodeStreamout->MB + fieldId*feiEncMBCode->NumMBAlloc + i, feiEncMBCode->MB + i, QP);
             MSDK_BREAK_ON_ERROR(sts);
 
-            sts = RepackStreamoutMV(m_pExtBufDecodeStreamout->MB + fieldId*feiEncMBCode->NumMBAlloc + i, feiEncMV->MB + i);
+            sts = RepackStreamoutMV(pExtBufDecodeStreamout->MB + fieldId*feiEncMBCode->NumMBAlloc + i, feiEncMV->MB + i);
             MSDK_BREAK_ON_ERROR(sts);
         }
         sts = ResetDirect (eTask, pTaskList);
