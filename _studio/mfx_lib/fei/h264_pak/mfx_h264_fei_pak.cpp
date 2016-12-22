@@ -317,6 +317,8 @@ void ConfigureTask_FEI_PAK(
 
 mfxStatus VideoPAK_PAK::RunFramePAK(mfxPAKInput *in, mfxPAKOutput *out)
 {
+    mdprintf(stderr, "VideoPAK_PAK::RunFramePAK\n");
+
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VideoPAK_PAK::RunFramePAK");
 
     mfxStatus sts = MFX_ERR_NONE;
@@ -357,7 +359,7 @@ static mfxStatus AsyncQuery(void * state, void * param, mfxU32 /*threadNumber*/,
 
 mfxStatus VideoPAK_PAK::Query(DdiTask& task)
 {
-    mdprintf(stderr,"query\n");
+    mdprintf(stderr,"VideoPAK_PAK::Query\n");
     mfxStatus sts = MFX_ERR_NONE;
 
     mfxU32 f_start = 0, fieldCount = task.m_fieldPicFlag;
@@ -621,6 +623,8 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
                     MFX_ENTRY_POINT pEntryPoints[],
                     mfxU32 &numEntryPoints)
 {
+    mdprintf(stderr, "VideoPAK_PAK::RunFramePAKCheck\n");
+
     // Check that all appropriate parameters passed
 
     MFX_CHECK(m_bInit, MFX_ERR_UNDEFINED_BEHAVIOR);

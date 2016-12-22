@@ -849,9 +849,9 @@ mfxStatus VAAPIFEIENCEncoder::Destroy()
 
     mfxStatus sts = MFX_ERR_NONE;
 
-    MFX_DESTROY_VABUFFER(m_statParamsId, m_vaDisplay);
-    MFX_DESTROY_VABUFFER(m_statMVId,     m_vaDisplay);
-    MFX_DESTROY_VABUFFER(m_statOutId,    m_vaDisplay);
+    MFX_DESTROY_VABUFFER(m_statParamsId,  m_vaDisplay);
+    MFX_DESTROY_VABUFFER(m_statMVId,      m_vaDisplay);
+    MFX_DESTROY_VABUFFER(m_statOutId,     m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_codedBufferId, m_vaDisplay);
 
     sts = VAAPIEncoder::Destroy();
@@ -1000,7 +1000,8 @@ mfxStatus VAAPIFEIENCEncoder::Register(mfxFrameAllocResponse& response, D3DDDIFO
     if (D3DDDIFMT_INTELENCODE_BITSTREAMDATA == type)
     {
         pQueue = &m_bsQueue;
-    } else
+    }
+    else
     {
         pQueue = &m_reconQueue;
     }
@@ -1603,7 +1604,7 @@ mfxStatus VAAPIFEIENCEncoder::QueryStatus(
     VAStatus vaSts;
     mfxStatus sts = MFX_ERR_NONE;
 
-    mdprintf(stderr, "query_vaapi status: %d\n", task.m_frameOrder);
+    mdprintf(stderr, "VAAPIFEIENCEncoder::QueryStatus frame: %d\n", task.m_frameOrder);
     //------------------------------------------
     // (1) mapping feedbackNumber -> surface & bs
     VASurfaceID waitSurface     = VA_INVALID_SURFACE;
@@ -2471,11 +2472,10 @@ mfxStatus VAAPIFEIPAKEncoder::QueryStatus(
     VAStatus vaSts;
     mfxStatus sts = MFX_ERR_NONE;
 
-    mdprintf(stderr, "query_vaapi status: %d\n", task.m_frameOrder);
+    mdprintf(stderr, "VAAPIFEIPAKEncoder::QueryStatus frame: %d\n", task.m_frameOrder);
     //------------------------------------------
     // (1) mapping feedbackNumber -> surface & bs
     VASurfaceID waitSurface     = VA_INVALID_SURFACE;
-    VABufferID vaFeiMBStatId    = VA_INVALID_ID;
     VABufferID vaFeiMBCODEOutId = VA_INVALID_ID;
     VABufferID vaFeiMVOutId     = VA_INVALID_ID;
     mfxU32 indxSurf;

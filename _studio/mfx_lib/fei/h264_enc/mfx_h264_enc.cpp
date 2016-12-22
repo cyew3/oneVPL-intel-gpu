@@ -305,6 +305,8 @@ void ConfigureTask_FEI_ENC(
 
 mfxStatus VideoENC_ENC::RunFrameVmeENC(mfxENCInput *in, mfxENCOutput *out)
 {
+    mdprintf(stderr, "VideoENC_ENC::RunFrameVmeENC\n");
+
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VideoENC_ENC::RunFrameVmeENC");
 
     mfxStatus sts = MFX_ERR_NONE;
@@ -345,7 +347,8 @@ static mfxStatus AsyncQuery(void * state, void * param, mfxU32 /*threadNumber*/,
 
 mfxStatus VideoENC_ENC::Query(DdiTask& task)
 {
-    mdprintf(stderr,"query\n");
+    mdprintf(stderr, "VideoENC_ENC::Query\n");
+
     mfxStatus sts = MFX_ERR_NONE;
 
     mfxU32 f_start = 0, fieldCount = task.m_fieldPicFlag;
@@ -567,6 +570,7 @@ mfxStatus VideoENC_ENC::Init(mfxVideoParam *par)
     m_bInit = true;
     return checkStatus;
 }
+
 mfxStatus VideoENC_ENC::Reset(mfxVideoParam *par)
 {
     Close();
@@ -606,6 +610,8 @@ mfxStatus VideoENC_ENC::RunFrameVmeENCCheck(
                     MFX_ENTRY_POINT pEntryPoints[],
                     mfxU32 &numEntryPoints)
 {
+    mdprintf(stderr, "VideoENC_ENC::RunFrameVmeENCCheck\n");
+
     // Check that all appropriate parameters passed
 
     MFX_CHECK(m_bInit, MFX_ERR_UNDEFINED_BEHAVIOR);
