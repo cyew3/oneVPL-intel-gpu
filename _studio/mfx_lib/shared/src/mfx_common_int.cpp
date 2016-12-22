@@ -894,10 +894,10 @@ void mfxVideoParamWrapper::CopyVideoParam(const mfxVideoParam & par)
                     memcpy_s(points->OP, mvcPoints->NumOP * sizeof(mfxMVCOperationPoint), mvcPoints->OP, mvcPoints->NumOP * sizeof(mfxMVCOperationPoint));
 
                     mfxU16 * targetView = points->ViewId;
-                    for (mfxU32 i = 0; i < points->NumOP; i++)
+                    for (mfxU32 j = 0; j < points->NumOP; j++)
                     {
-                        points->OP[i].TargetViewId = targetView;
-                        targetView += points->OP[i].NumTargetViews;
+                        points->OP[j].TargetViewId = targetView;
+                        targetView += points->OP[j].NumTargetViews;
                     }
                 }
             }
