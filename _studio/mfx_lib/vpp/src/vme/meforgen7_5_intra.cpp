@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -513,7 +513,7 @@ int MEforGen75::Intra8x8ChromaSearchUnit( )
     // Load top-neighboring pixels
     if(Vsta.IntraAvail & INTRA_AVAIL_B) 
     {
-        for(int i=0; i<8; i++){
+        for(i=0; i<8; i++){
             top[0][i] = VSICsta.TopChromaPels[i*2+0];
             top[1][i] = VSICsta.TopChromaPels[i*2+1];
         }
