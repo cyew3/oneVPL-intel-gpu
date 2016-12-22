@@ -106,7 +106,7 @@ mfxU32 MJPEGEncodeTask::NumPiecesCollected(void)
     return m_pMJPEGVideoEncoder.get()->NumPiecesCollected();
 }
 
-mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* surface, mfxFrameInfo* frameInfo, bool useAuxInput)
+mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* frameSurface, mfxFrameInfo* frameInfo, bool useAuxInput)
 {
     Ipp32u  width       = frameInfo->CropW - frameInfo->CropX;
     Ipp32u  height      = frameInfo->CropH - frameInfo->CropY;
@@ -159,36 +159,36 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* surface, mfxFrameInfo* fr
         }
 
         UMC::VideoData* pDataIn = p->m_sourceData.get();
-        mfxU32 pitch = surface->Data.PitchLow + ((mfxU32)surface->Data.PitchHigh << 16);
+        mfxU32 pitch = frameSurface->Data.PitchLow + ((mfxU32)frameSurface->Data.PitchHigh << 16);
 
         // color image
-        if(MFX_CHROMAFORMAT_YUV400 != surface->Info.ChromaFormat)
+        if(MFX_CHROMAFORMAT_YUV400 != frameSurface->Info.ChromaFormat)
         {
-            if(surface->Info.FourCC == MFX_FOURCC_NV12)
+            if(frameSurface->Info.FourCC == MFX_FOURCC_NV12)
             {
                 fieldOffset = pitch * isBottom;
                 pDataIn->Init(alignedWidth, alignedHeight, UMC::NV12, 8);
                 pDataIn->SetImageSize(width, height);
 
-                pDataIn->SetPlanePointer(surface->Data.Y + frameInfo->CropX + fieldOffset, 0);
+                pDataIn->SetPlanePointer(frameSurface->Data.Y + frameInfo->CropX + fieldOffset, 0);
                 pDataIn->SetPlanePitch(pitch * numFields, 0);
-                pDataIn->SetPlanePointer(surface->Data.UV + ((frameInfo->CropX >> 1) << 1) + fieldOffset, 1);
+                pDataIn->SetPlanePointer(frameSurface->Data.UV + ((frameInfo->CropX >> 1) << 1) + fieldOffset, 1);
                 pDataIn->SetPlanePitch(pitch * numFields, 1);
             }
-            else if(surface->Info.FourCC == MFX_FOURCC_YV12)
+            else if(frameSurface->Info.FourCC == MFX_FOURCC_YV12)
             {
                 fieldOffset = pitch * isBottom;
                 pDataIn->Init(alignedWidth, alignedHeight, UMC::YV12, 8);
                 pDataIn->SetImageSize(width, height);
 
-                pDataIn->SetPlanePointer(surface->Data.Y + frameInfo->CropX + fieldOffset, 0);
+                pDataIn->SetPlanePointer(frameSurface->Data.Y + frameInfo->CropX + fieldOffset, 0);
                 pDataIn->SetPlanePitch(pitch * numFields, 0);
-                pDataIn->SetPlanePointer(surface->Data.V + (frameInfo->CropX >> 1) + (fieldOffset >> 1), 1);
+                pDataIn->SetPlanePointer(frameSurface->Data.V + (frameInfo->CropX >> 1) + (fieldOffset >> 1), 1);
                 pDataIn->SetPlanePitch((pitch >> 1) * numFields, 1);
-                pDataIn->SetPlanePointer(surface->Data.U + (frameInfo->CropX >> 1) + (fieldOffset >> 1), 2);
+                pDataIn->SetPlanePointer(frameSurface->Data.U + (frameInfo->CropX >> 1) + (fieldOffset >> 1), 2);
                 pDataIn->SetPlanePitch((pitch >> 1) * numFields, 2);
             }
-            else if(surface->Info.FourCC == MFX_FOURCC_YUY2)
+            else if(frameSurface->Info.FourCC == MFX_FOURCC_YUY2)
             {
                 UMC::VideoData* cvt = new UMC::VideoData();
 
@@ -202,22 +202,22 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* surface, mfxFrameInfo* fr
                     return MFX_ERR_MEMORY_ALLOC;
                 }
 
-                if(MFX_CHROMAFORMAT_YUV422H == surface->Info.ChromaFormat)
+                if(MFX_CHROMAFORMAT_YUV422H == frameSurface->Info.ChromaFormat)
                 {
                     fieldOffset = pitch * isBottom;
                     pDataIn->Init(alignedWidth, alignedHeight, UMC::YUY2, 8);
                     pDataIn->SetImageSize(width, height);
 
-                    pDataIn->SetPlanePointer(surface->Data.Y + ((frameInfo->CropX >> 1) << 2) + fieldOffset, 0);
+                    pDataIn->SetPlanePointer(frameSurface->Data.Y + ((frameInfo->CropX >> 1) << 2) + fieldOffset, 0);
                     pDataIn->SetPlanePitch(pitch * numFields, 0);
                     
                     UMC::VideoProcessing proc;
                     proc.GetFrame(pDataIn, cvt);
                 }
-                else if(MFX_CHROMAFORMAT_YUV422V == surface->Info.ChromaFormat)
+                else if(MFX_CHROMAFORMAT_YUV422V == frameSurface->Info.ChromaFormat)
                 {
                     fieldOffset = pitch * isBottom;
-                    Ipp8u* src = surface->Data.Y + ((frameInfo->CropX >> 1) << 2) + fieldOffset;
+                    Ipp8u* src = frameSurface->Data.Y + ((frameInfo->CropX >> 1) << 2) + fieldOffset;
                     Ipp32u srcPitch = pitch * numFields;
 
                     Ipp8u* dst[3] = {(Ipp8u*)cvt->GetPlanePointer(0), 
@@ -245,13 +245,13 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* surface, mfxFrameInfo* fr
                 p->m_sourceData.reset(cvt);
                 p->m_release_source_data = true;
             }
-            else if(surface->Info.FourCC == MFX_FOURCC_RGB4)
+            else if(frameSurface->Info.FourCC == MFX_FOURCC_RGB4)
             {
                 fieldOffset = pitch * isBottom;
                 pDataIn->Init(alignedWidth, alignedHeight, UMC::RGB32, 8);
                 pDataIn->SetImageSize(width, height);
 
-                pDataIn->SetPlanePointer(surface->Data.B + frameInfo->CropX * 4 + fieldOffset, 0);
+                pDataIn->SetPlanePointer(frameSurface->Data.B + frameInfo->CropX * 4 + fieldOffset, 0);
                 pDataIn->SetPlanePitch(pitch * numFields, 0);
             }
             else
@@ -304,25 +304,25 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* surface, mfxFrameInfo* fr
         // gray image
         else
         {
-            if(surface->Info.FourCC == MFX_FOURCC_NV12)
+            if(frameSurface->Info.FourCC == MFX_FOURCC_NV12)
             {
                 fieldOffset = pitch * isBottom;
                 pDataIn->Init(alignedWidth, alignedHeight, UMC::GRAY, 8);
                 pDataIn->SetImageSize(width, height);
 
-                pDataIn->SetPlanePointer(surface->Data.Y + frameInfo->CropX + fieldOffset, 0);
+                pDataIn->SetPlanePointer(frameSurface->Data.Y + frameInfo->CropX + fieldOffset, 0);
                 pDataIn->SetPlanePitch(pitch * numFields, 0);
             }
-            else if(surface->Info.FourCC == MFX_FOURCC_YV12)
+            else if(frameSurface->Info.FourCC == MFX_FOURCC_YV12)
             {
                 fieldOffset = pitch * isBottom;
                 pDataIn->Init(alignedWidth, alignedHeight, UMC::GRAY, 8);
                 pDataIn->SetImageSize(width, height);
 
-                pDataIn->SetPlanePointer(surface->Data.Y + frameInfo->CropX + fieldOffset, 0);
+                pDataIn->SetPlanePointer(frameSurface->Data.Y + frameInfo->CropX + fieldOffset, 0);
                 pDataIn->SetPlanePitch(pitch * numFields, 0);
             }
-            else if(surface->Info.FourCC == MFX_FOURCC_YUY2)
+            else if(frameSurface->Info.FourCC == MFX_FOURCC_YUY2)
             {
                 UMC::VideoData* cvt = new UMC::VideoData();
 
@@ -336,7 +336,7 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* surface, mfxFrameInfo* fr
                     return MFX_ERR_MEMORY_ALLOC;
                 }
 
-                Ipp8u* src = surface->Data.Y;
+                Ipp8u* src = frameSurface->Data.Y;
                 Ipp32u srcPitch = pitch;
                 Ipp8u* dst = (Ipp8u*)cvt->GetPlanePointer(0);
                 Ipp32u dstPitch = (Ipp32u)cvt->GetPlanePitch(0);
@@ -356,7 +356,7 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* surface, mfxFrameInfo* fr
                 return MFX_ERR_UNSUPPORTED;
             }
 
-            if((surface->Info.FourCC == MFX_FOURCC_NV12 || surface->Info.FourCC == MFX_FOURCC_YV12) && useAuxInput)
+            if((frameSurface->Info.FourCC == MFX_FOURCC_NV12 || frameSurface->Info.FourCC == MFX_FOURCC_YV12) && useAuxInput)
             {            
                 UMC::VideoData* cvt = new UMC::VideoData();
 
@@ -378,15 +378,15 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* surface, mfxFrameInfo* fr
             }
         }
 
-        p->m_sourceData.get()->SetTime((Ipp64f)surface->Data.TimeStamp);
+        p->m_sourceData.get()->SetTime((Ipp64f)frameSurface->Data.TimeStamp);
 
-        if(MFX_SCANTYPE_INTERLEAVED == params.interleaved || MFX_CHROMAFORMAT_YUV400 == surface->Info.ChromaFormat)
+        if(MFX_SCANTYPE_INTERLEAVED == params.interleaved || MFX_CHROMAFORMAT_YUV400 == frameSurface->Info.ChromaFormat)
         {
             UMC::MJPEGEncoderScan *s = new UMC::MJPEGEncoderScan();
 
             if(params.restart_interval)
             {
-                switch(surface->Info.ChromaFormat)
+                switch(frameSurface->Info.ChromaFormat)
                 {
                     case MFX_CHROMAFORMAT_YUV444:
                         mcuWidth = mcuHeight = 8;
@@ -442,7 +442,7 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* surface, mfxFrameInfo* fr
                     // U,V
                     if(i != 0)
                     {
-                        switch(surface->Info.ChromaFormat)
+                        switch(frameSurface->Info.ChromaFormat)
                         {
                             case MFX_CHROMAFORMAT_YUV422H:
                             {
@@ -485,7 +485,7 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* surface, mfxFrameInfo* fr
 
 } // mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* surface, mfxFrameInfo* frameInfo, bool useAuxInput)
 
-mfxU32 MJPEGEncodeTask::CalculateNumPieces(mfxFrameSurface1* surface, mfxFrameInfo* frameInfo)
+mfxU32 MJPEGEncodeTask::CalculateNumPieces(mfxFrameSurface1* frameSurface, mfxFrameInfo* frameInfo)
 {
     Ipp32u  width       = frameInfo->CropW - frameInfo->CropX;
     Ipp32u  height      = frameInfo->CropH - frameInfo->CropY;
@@ -522,11 +522,11 @@ mfxU32 MJPEGEncodeTask::CalculateNumPieces(mfxFrameSurface1* surface, mfxFrameIn
     // create an entry in the array
     for(Ipp32u i=0; i<numFields; i++)
     {
-        if(MFX_SCANTYPE_INTERLEAVED == params.interleaved || MFX_CHROMAFORMAT_YUV400 == surface->Info.ChromaFormat)
+        if(MFX_SCANTYPE_INTERLEAVED == params.interleaved || MFX_CHROMAFORMAT_YUV400 == frameSurface->Info.ChromaFormat)
         {
             if(params.restart_interval)
             {
-                switch(surface->Info.ChromaFormat)
+                switch(frameSurface->Info.ChromaFormat)
                 {
                     case MFX_CHROMAFORMAT_YUV444:
                         mcuWidth = mcuHeight = 8;
@@ -574,7 +574,7 @@ mfxU32 MJPEGEncodeTask::CalculateNumPieces(mfxFrameSurface1* surface, mfxFrameIn
                     // U,V
                     if(j != 0)
                     {
-                        switch(surface->Info.ChromaFormat)
+                        switch(frameSurface->Info.ChromaFormat)
                         {
                             case MFX_CHROMAFORMAT_YUV422H:
                             {
