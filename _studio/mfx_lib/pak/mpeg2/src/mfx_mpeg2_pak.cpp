@@ -278,15 +278,15 @@ typedef mfxI16 DctCoef;
 #define MB_FSEL(pmb,dir,i) ((mfxMbCodeAVC*)pmb)->RefPicSelect[dir][i] // tmp cast
 #define MB_MV(pmb,dir,num) (pmb)->MV[(dir)*4+(num)]
 #define MB_COMP_CBP(pmb, cbp) { \
-  mfxI32 bb; \
-  for(bb=0, cbp=0; bb<4; bb++) \
-    if(pmb->CodedPattern4x4Y & (0xf<<bb*4)) \
-      cbp |= 1 << bb; \
-  for( ; bb<m_block_count; bb+=2) { \
+  mfxI32 b; \
+  for(b=0, cbp=0; b<4; b++) \
+    if(pmb->CodedPattern4x4Y & (0xf<<b*4)) \
+      cbp |= 1 << b; \
+  for( ; b<m_block_count; b+=2) { \
     cbp <<= 2; \
-    if(pmb->CodedPattern4x4U & (0xf<<((m_block_count-2-bb)>>1)*4)) \
+    if(pmb->CodedPattern4x4U & (0xf<<((m_block_count-2-b)>>1)*4)) \
       cbp |= 2; \
-    if(pmb->CodedPattern4x4V & (0xf<<((m_block_count-2-bb)>>1)*4)) \
+    if(pmb->CodedPattern4x4V & (0xf<<((m_block_count-2-b)>>1)*4)) \
       cbp |= 1; \
   } \
 }
@@ -2338,14 +2338,14 @@ mfxStatus MFXVideoPAKMPEG2::sliceCoef( MPEG2FrameState* state, mfxU32 mbstart, m
         // no 422 QM support
         ippiQuantIntra_MPEG2_16s_C1I(pDiff, quant_scale_value, InvIntraQM, &Count[blk]);
 
-        mfxI32 i, tofind;
-        for(i=0; i<64; i++) pcoeff[i] = 0;
+        mfxI32 m, tofind;
+        for(m=0; m<64; m++) pcoeff[m] = 0;
         pcoeff[0] = pDiff[0];
-        for(i=1, tofind = Count[blk]; i<64 && tofind>0; i++) {
-          Ipp16s val = pDiff[scan[i]];
+        for(m=1, tofind = Count[blk]; m<64 && tofind>0; m++) {
+          Ipp16s val = pDiff[scan[m]];
           if(val) {
             tofind--;
-            pcoeff[i] = val;
+            pcoeff[m] = val;
           }
         }
         // reconstruction
