@@ -833,10 +833,12 @@ mfxStatus GetExternalFramesCount(mfxVideoParam* pParam,
                 break;
             }
 
+#ifndef MFX_FUTURE_FEATURE_DISABLE
             case (mfxU32)MFX_EXTBUFF_VPP_COLOR_CONVERSION:
             {
                 break;
             }
+#endif
 
             case (mfxU32)MFX_EXTBUFF_VPP_MIRRORING:
             {

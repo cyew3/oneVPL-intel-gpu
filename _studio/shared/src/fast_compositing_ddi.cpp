@@ -1202,6 +1202,7 @@ mfxStatus FastCompositingDDI::Execute(mfxExecuteParams *pParams)
     //}
 
     //{
+#ifndef MFX_FUTURE_FEATURE_DISABLE
         FASTCOMP_CHROMASUBSAMPLING_PARAMS_V1_0 chromaSitingParams = { 0 };
         FASTCOMP_BLT_PARAMS_OBJECT chromaSitingObject;
         bool  bExternalChromeSiting = true;
@@ -1271,6 +1272,7 @@ mfxStatus FastCompositingDDI::Execute(mfxExecuteParams *pParams)
         }
 
         bltParams.ChromaSitingObject = chromaSitingObject;
+#endif // #ifndef MFX_FUTURE_FEATURE_DISABLE
     //}
     sts = ExecuteBlt( &bltParams );
     MFX_CHECK_STS(sts);

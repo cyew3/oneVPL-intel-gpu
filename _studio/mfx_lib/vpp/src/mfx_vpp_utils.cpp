@@ -35,7 +35,9 @@ const mfxU32 g_TABLE_DO_NOT_USE [] =
     MFX_EXTBUFF_VPP_COMPOSITE,
     MFX_EXTBUFF_VPP_ROTATION,
     MFX_EXTBUFF_VPP_SCALING,
+#ifndef MFX_FUTURE_FEATURE_DISABLE
     MFX_EXTBUFF_VPP_COLOR_CONVERSION,
+#endif
     MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO,
     MFX_EXTBUFF_VPP_FIELD_PROCESSING,
     MFX_EXTBUFF_VPP_MIRRORING
@@ -53,7 +55,9 @@ const mfxU32 g_TABLE_DO_USE [] =
     MFX_EXTBUFF_VPP_COMPOSITE,
     MFX_EXTBUFF_VPP_ROTATION,
     MFX_EXTBUFF_VPP_SCALING,
+#ifndef MFX_FUTURE_FEATURE_DISABLE
     MFX_EXTBUFF_VPP_COLOR_CONVERSION,
+#endif
 #ifdef MFX_UNDOCUMENTED_VPP_VARIANCE_REPORT
     MFX_EXTBUFF_VPP_VARIANCE_REPORT,
 #endif
@@ -79,7 +83,9 @@ const mfxU32 g_TABLE_CONFIG [] =
     MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO,
     MFX_EXTBUFF_VPP_FIELD_PROCESSING,
     MFX_EXTBUFF_VPP_SCALING,
+#ifndef MFX_FUTURE_FEATURE_DISABLE
     MFX_EXTBUFF_VPP_COLOR_CONVERSION,
+#endif
     MFX_EXTBUFF_VPP_MIRRORING
 };
 
@@ -108,7 +114,9 @@ const mfxU32 g_TABLE_EXT_PARAM [] =
     MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO,
     MFX_EXTBUFF_VPP_FIELD_PROCESSING,
     MFX_EXTBUFF_VPP_SCALING,
+#ifndef MFX_FUTURE_FEATURE_DISABLE
     MFX_EXTBUFF_VPP_COLOR_CONVERSION,
+#endif
     MFX_EXTBUFF_VPP_MIRRORING
 };
 
@@ -637,12 +645,14 @@ void ShowPipeline( std::vector<mfxU32> pipelineList )
                 break;
             }
 
+#ifndef MFX_FUTURE_FEATURE_DISABLE
             case (mfxU32)MFX_EXTBUFF_VPP_COLOR_CONVERSION:
             {
                 sprintf_s(cStr, sizeof(cStr), "%s \n", "MFX_EXTBUFF_VPP_COLOR_CONVERSION");
                 OutputDebugStringA(cStr);
                 break;
             }
+#endif
              case (mfxU32)MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO:
             {
                 sprintf_s(cStr, sizeof(cStr), "%s \n", "MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO");
@@ -822,11 +832,13 @@ void ShowPipeline( std::vector<mfxU32> pipelineList )
                 fprintf(stderr,"MFX_EXTBUFF_VPP_SCALING\n");
                 break;
             }
+#ifndef MFX_FUTURE_FEATURE_DISABLE
             case (mfxU32)MFX_EXTBUFF_VPP_COLOR_CONVERSION:
             {
                 fprintf(stderr,"MFX_EXTBUFF_VPP_COLOR_CONVERSION\n");
                 break;
             }
+#endif
              case (mfxU32)MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO:
             {
                 fprintf(stderr,"MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO\n");
@@ -1042,11 +1054,13 @@ void ReorderPipelineListForQuality( std::vector<mfxU32> & pipelineList )
         index++;
     }
 
+#ifndef MFX_FUTURE_FEATURE_DISABLE
     if (IsFilterFound(&pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_COLOR_CONVERSION))
     {
         newList[index] = MFX_EXTBUFF_VPP_COLOR_CONVERSION;
         index++;
     }
+#endif
 
     if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_MIRRORING ) )
     {
@@ -1419,6 +1433,7 @@ mfxStatus GetPipelineList(
         }
     }
 
+#ifndef MFX_FUTURE_FEATURE_DISABLE
     if (IsFilterFound(&configList[0], configCount, MFX_EXTBUFF_VPP_COLOR_CONVERSION) && !IsFilterFound(&pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_COLOR_CONVERSION))
     {
         if (!IsFilterFound(&pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_COLOR_CONVERSION))
@@ -1426,6 +1441,7 @@ mfxStatus GetPipelineList(
             pipelineList.push_back(MFX_EXTBUFF_VPP_COLOR_CONVERSION);
         }
     }
+#endif
 
     if( IsFilterFound( &configList[0], configCount, MFX_EXTBUFF_VPP_MIRRORING ) && !IsFilterFound(&pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_MIRRORING) )
     {
@@ -2582,10 +2598,13 @@ void ConvertCaps2ListDoUse(MfxHwVideoProcessing::mfxVppCaps& caps, std::vector<m
         list.push_back(MFX_EXTBUFF_VPP_SCALING);
     }
 
+#ifndef MFX_FUTURE_FEATURE_DISABLE
     if (caps.uChromaSiting)
     {
         list.push_back(MFX_EXTBUFF_VPP_COLOR_CONVERSION);
     }
+#endif
+
     /* FIELD Copy is always present*/
     list.push_back(MFX_EXTBUFF_VPP_FIELD_PROCESSING);
     /* Field weaving is always present*/

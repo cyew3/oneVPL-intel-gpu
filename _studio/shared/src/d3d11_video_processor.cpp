@@ -2008,6 +2008,7 @@ mfxStatus D3D11VideoProcessor::SetStreamScalingMode(UINT streamIndex, VPE_VPREP_
     return MFX_ERR_NONE;
 }
 
+#ifndef MFX_FUTURE_FEATURE_DISABLE
 mfxStatus D3D11VideoProcessor::SetStreamChromaSiting(UINT streamIndex, VPE_VPREP_CHROMASITING_PARAM param)
 {
     HRESULT hRes;
@@ -2026,6 +2027,8 @@ mfxStatus D3D11VideoProcessor::SetStreamChromaSiting(UINT streamIndex, VPE_VPREP
 
     return MFX_ERR_NONE;
 }
+#endif
+
 mfxStatus D3D11VideoProcessor::ExecuteCameraPipe(mfxExecuteParams *pParams)
 {
     MFX_CHECK_NULL_PTR1(pParams);
@@ -2272,6 +2275,7 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         MFX_CHECK_STS(sts);
     }
 
+#ifndef MFX_FUTURE_FEATURE_DISABLE
     if (m_vpreCaps.bChromaSitingControl)
     {
         VPE_VPREP_CHROMASITING_PARAM chromaSitingParams = { 0 };
@@ -2332,6 +2336,8 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
             MFX_CHECK_STS(sts);
         }
     }
+#endif // #ifndef MFX_FUTURE_FEATURE_DISABLE
+
     // [4] ProcAmp
     if(pParams->bEnableProcAmp)
     {

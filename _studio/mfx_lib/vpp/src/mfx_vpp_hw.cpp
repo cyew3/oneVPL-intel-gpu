@@ -1573,12 +1573,14 @@ mfxStatus VideoVPPHW::GetVideoParams(mfxVideoParam *par) const
             MFX_CHECK_NULL_PTR1(bufSc);
             bufSc->ScalingMode = m_executeParams.scalingMode;
         }
+#ifndef MFX_FUTURE_FEATURE_DISABLE
         else if (MFX_EXTBUFF_VPP_COLOR_CONVERSION == bufferId)
         {
             mfxExtColorConversion *bufSc = reinterpret_cast<mfxExtColorConversion *>(par->ExtParam[i]);
             MFX_CHECK_NULL_PTR1(bufSc);
             bufSc->ChromaSiting = m_executeParams.chromaSiting;
         }
+#endif
         else if (MFX_EXTBUFF_VPP_MIRRORING == bufferId)
         {
             mfxExtVPPMirroring *bufMir = reinterpret_cast<mfxExtVPPMirroring *>(par->ExtParam[i]);
@@ -3815,6 +3817,7 @@ mfxStatus ConfigureExecuteParams(
 
                 break;
             }
+#ifndef MFX_FUTURE_FEATURE_DISABLE
             case MFX_EXTBUFF_VPP_COLOR_CONVERSION:
             {
                 if (caps.uChromaSiting )
@@ -3852,6 +3855,7 @@ mfxStatus ConfigureExecuteParams(
 
                 break;
             }
+#endif // #ifndef MFX_FUTURE_FEATURE_DISABLE
             case MFX_EXTBUFF_VPP_MIRRORING:
             {
                 if (caps.uMirroring)
@@ -4455,10 +4459,12 @@ mfxStatus ConfigureExecuteParams(
                 {
                     executeParams.scalingMode = MFX_SCALING_MODE_DEFAULT;
                 }
+#ifndef MFX_FUTURE_FEATURE_DISABLE
                 else if (MFX_EXTBUFF_VPP_COLOR_CONVERSION == bufferId)
                 {
                     executeParams.chromaSiting = MFX_CHROMA_SITING_UNKNOWN;
                 }
+#endif
                 else if (MFX_EXTBUFF_VPP_MIRRORING == bufferId)
                 {
                     executeParams.mirroring = MFX_MIRRORING_DISABLED;

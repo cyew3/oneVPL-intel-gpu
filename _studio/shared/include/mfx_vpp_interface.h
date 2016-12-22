@@ -411,7 +411,9 @@ namespace MfxHwVideoProcessing
 #endif
                ,rotation(0)
                ,scalingMode(MFX_SCALING_MODE_DEFAULT)
+#ifndef MFX_FUTURE_FEATURE_DISABLE
                ,chromaSiting(MFX_CHROMA_SITING_UNKNOWN)
+#endif
                ,bEOS(false)
                ,mirroring(0)
                ,mirroringPosition(0)
