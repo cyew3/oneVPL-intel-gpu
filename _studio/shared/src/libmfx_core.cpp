@@ -818,7 +818,8 @@ mfxStatus CommonCORE::QueryPlatform(mfxPlatform* platform)
     case MFX_HW_BXT    : platform->CodeName = MFX_PLATFORM_BROXTON;     break;
     case MFX_HW_KBL    : platform->CodeName = MFX_PLATFORM_KABYLAKE;    break;
     case MFX_HW_CNL    : platform->CodeName = MFX_PLATFORM_CANNONLAKE;  break;
-    case MFX_HW_ICL    : platform->CodeName = MFX_PLATFORM_ICELAKE;     break;
+    case MFX_HW_ICL    :
+    case MFX_HW_ICL_LP : platform->CodeName = MFX_PLATFORM_ICELAKE;     break;
 #endif
     default:             platform->CodeName = MFX_PLATFORM_UNKNOWN;     break;
     }
