@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include <assert.h>
@@ -2657,19 +2657,19 @@ void SetUMCFrame(H264EncoderFrame_8u16s* umcFrame, mfxExtAvcRefFrameParam* cucFr
             for (mfxU32 ref = 0; ref < 32; ref++)
             {
                 mfxU32 idx = sliceInfo.RefPicList[0][ref] & 0x7f;
-                mfxI8 field = sliceInfo.RefPicList[0][ref] >> 7;
+                mfxI8 field_index = sliceInfo.RefPicList[0][ref] >> 7;
                 if (idx < 16)
                 {
-                    poc0[ref] = refPicInfo.FieldOrderCntList[idx][static_cast<int>(field)];
-                    fld0[ref] = field;
+                    poc0[ref] = refPicInfo.FieldOrderCntList[idx][static_cast<int>(field_index)];
+                    fld0[ref] = field_index;
                 }
 
                 idx = sliceInfo.RefPicList[1][ref] & 0x7f;
-                field = sliceInfo.RefPicList[1][ref] >> 7;
+                field_index = sliceInfo.RefPicList[1][ref] >> 7;
                 if (idx < 16)
                 {
-                    poc1[ref] = refPicInfo.FieldOrderCntList[idx][static_cast<int>(field)];
-                    fld1[ref] = field;
+                    poc1[ref] = refPicInfo.FieldOrderCntList[idx][static_cast<int>(field_index)];
+                    fld1[ref] = field_index;
                 }
             }
         }
