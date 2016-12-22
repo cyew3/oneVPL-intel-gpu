@@ -585,7 +585,7 @@ mfxStatus D3D11Encoder::CreateMBDataBuffer(mfxU32 numRefFrames)
 
         for (int i = 0; i < request.NumFrameMin; i++)
         {             
-            mfxStatus sts = m_core->AllocFrames(&tmp, &m_realResponseMB[i]);
+            sts = m_core->AllocFrames(&tmp, &m_realResponseMB[i]);
             MFX_CHECK_STS(sts);
             m_midMB[i] = m_realResponseMB[i].mids[0];
         }
@@ -631,7 +631,7 @@ mfxStatus D3D11Encoder::CreateBSBuffer(mfxU32 numRefFrames)
 
         for (int i = 0; i < request.NumFrameMin; i++)
         {             
-            mfxStatus sts = m_core->AllocFrames(&tmp, &m_realResponseBS[i]);
+            sts = m_core->AllocFrames(&tmp, &m_realResponseBS[i]);
             MFX_CHECK_STS(sts);
             m_midBS[i] = m_realResponseBS[i].mids[0];
         }
