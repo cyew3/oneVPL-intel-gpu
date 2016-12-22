@@ -920,7 +920,7 @@ mfxStatus ResMngr::FillTask(
 
     // fwd
     pTask->fwdRefCount = m_fwdRefCount;
-    for(mfxU32 refIndx = 0; refIndx < pTask->fwdRefCount; refIndx++)
+    for(refIndx = 0; refIndx < pTask->fwdRefCount; refIndx++)
     {
         mfxU32 fwdIdx = pTask->bkwdRefCount + 1 + refIndx;
         ExtSurface fwdSurf = m_surfQueue[fwdIdx];
@@ -1175,7 +1175,7 @@ mfxStatus TaskManager::CompleteTask(DdiTask* pTask)
     }
     else // simple mode
     {
-        mfxU32 freeIdx = pTask->input.resIdx;
+        freeIdx = pTask->input.resIdx;
         if(NO_INDEX != freeIdx && m_resMngr.m_surf[VPP_IN].size() > 0)
         {
             m_resMngr.m_surf[VPP_IN][freeIdx].SetFree(true);
@@ -2408,7 +2408,7 @@ mfxStatus VideoVPPHW::PreWorkInputSurface(std::vector<ExtSurface> & surfQueue)
                     if (MFX_FOURCC_P010 == inputVidSurf.Info.FourCC && 0 == inputVidSurf.Info.Shift)
                         inputVidSurf.Info.Shift = 1; // internal memory`s shift should be configured to 1 to call CopyShift CM kernel
 
-                    mfxStatus sts = m_pCore->DoFastCopyWrapper(
+                    sts = m_pCore->DoFastCopyWrapper(
                         &inputVidSurf,
                         MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET,
                         surfQueue[i].pSurf,
@@ -2541,7 +2541,7 @@ mfxStatus VideoVPPHW::PostWorkOutSurface(ExtSurface & output)
             if (MFX_FOURCC_P010 == d3dSurf.Info.FourCC && 0 == d3dSurf.Info.Shift)
                 d3dSurf.Info.Shift = 1; // internal memory`s shift should be configured to 1 to call CopyShift CM kernel
 
-            mfxStatus sts = m_pCore->DoFastCopyWrapper(
+            sts = m_pCore->DoFastCopyWrapper(
                 output.pSurf,
                 MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY,
                 &d3dSurf,
@@ -3602,9 +3602,9 @@ mfxStatus ConfigureExecuteParams(
     }
 
     //-----------------------------------------------------
-    for (mfxU32 i = 0; i < pipelineList.size(); i += 1)
+    for (mfxU32 j = 0; j < pipelineList.size(); j += 1)
     {
-        mfxU32 curFilterId = pipelineList[i];
+        mfxU32 curFilterId = pipelineList[j];
 
         switch(curFilterId)
         {
