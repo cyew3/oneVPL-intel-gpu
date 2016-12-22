@@ -941,7 +941,7 @@ mfxStatus D3D9Encoder::FillBSBuffer(mfxU32 nFeedback,mfxU32 nBitstream, mfxBitst
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "CopyBitsream");        
         MFX_CHECK(pBitstream->DataLength + pBitstream->DataOffset + queryStatus.bitstreamSize < pBitstream->MaxLength, MFX_ERR_NOT_ENOUGH_BUFFER);
 
-        IppiSize roi = {queryStatus.bitstreamSize, 1 };
+        IppiSize roi = {static_cast<int>(queryStatus.bitstreamSize), 1 };
 
         sts = FastCopy::Copy(
             pBitstream->Data + pBitstream->DataLength + pBitstream->DataOffset, 
