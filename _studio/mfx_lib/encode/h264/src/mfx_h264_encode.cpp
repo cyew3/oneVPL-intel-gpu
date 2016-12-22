@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -581,7 +581,7 @@ mfxStatus CheckAndSetLayerBitrates(struct LayerHRDParams HRDParams[MAX_DEP_LAYER
     for (ii = maxDid; ii >= 0; ii--) {
         if (svcInfo->DependencyLayer[ii].Active) {
             for (qid = svcInfo->DependencyLayer[ii].QualityNum - 1; qid >= 0; qid--) {
-                mfxI32 rightvalue = IPP_MAX_32S;
+                rightvalue = IPP_MAX_32S;
                 for (tid = svcInfo->DependencyLayer[ii].TemporalNum - 1; tid >= 0; tid--) {
                     if (HRDParams[ii][qid][tid].TargetKbps >= (mfxU32)rightvalue)
                         HRDParams[ii][qid][tid].TargetKbps = 0;
@@ -5944,7 +5944,6 @@ mfxStatus MFXVideoENCODEH264::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
         }
 
         mfxVideoInternalParam checked = *out;
-        mfxStatus st;
         //checked.NumExtParam = 0; checked.ExtParam = 0; // to prevent modifications and exposure
         st = CheckProfileLevelLimits_H264enc(&checked, true);
         if (st == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM) {
@@ -8832,12 +8831,12 @@ Status MFXVideoENCODEH264::H264CoreEncoder_CompressFrame(
                 if (status != UMC_OK) goto done;
 
                 if (core_enc->m_svc_layer.isActive) {
-                    sNALUnitHeaderSVCExtension *svc_header = &core_enc->m_svc_layer.svc_ext;
-                    Ipp8u TID = m_svc_layers[svc_header->dependency_id]->m_InterLayerParam.TemporalId[core_enc->m_pCurrentFrame->m_temporalId];
-                    nal_header_ext[0] = 0x80 | (svc_header->idr_flag << 6) | svc_header->priority_id;
-                    nal_header_ext[1] = (svc_header->no_inter_layer_pred_flag << 7) | (svc_header->dependency_id << 4) | svc_header->quality_id;
-                    nal_header_ext[2] = (TID << 5) | (svc_header->use_ref_base_pic_flag << 4) |
-                        (svc_header->discardable_flag << 3) | (svc_header->output_flag << 2) | svc_header->reserved_three_2bits;
+                    sNALUnitHeaderSVCExtension *svc_header_ext = &core_enc->m_svc_layer.svc_ext;
+                    Ipp8u TID = m_svc_layers[svc_header_ext->dependency_id]->m_InterLayerParam.TemporalId[core_enc->m_pCurrentFrame->m_temporalId];
+                    nal_header_ext[0] = 0x80 | (svc_header_ext->idr_flag << 6) | svc_header_ext->priority_id;
+                    nal_header_ext[1] = (svc_header_ext->no_inter_layer_pred_flag << 7) | (svc_header_ext->dependency_id << 4) | svc_header_ext->quality_id;
+                    nal_header_ext[2] = (TID << 5) | (svc_header_ext->use_ref_base_pic_flag << 4) |
+                        (svc_header_ext->discardable_flag << 3) | (svc_header_ext->output_flag << 2) | svc_header_ext->reserved_three_2bits;
                 } else {
                     nal_header_ext[2] = nal_header_ext[1] = nal_header_ext[0] = 0;
                 }
@@ -10468,7 +10467,7 @@ Status MFXVideoENCODEH264::H264CoreEncoder_encodeSEI(
     if (sei_inserted && m_separateSEI == false)
     {
         H264BsBase_WriteTrailingBits(&bs->m_base);
-        size_t oldsize = dst->GetDataSize();
+        oldsize = dst->GetDataSize();
 
         dst->SetDataSize( oldsize +
             H264BsReal_EndOfNAL_8u16s( bs, (Ipp8u*)dst->GetDataPointer() + oldsize, 0, NAL_UT_SEI, startPicture, 0));
@@ -11194,7 +11193,6 @@ mfxStatus MFXVideoENCODEH264::InitSVCLayer(const mfxExtSVCRateControl* rc, mfxU1
                             bit_rate += lower_vui->nal_hrd_parameters.bit_rate_value_minus1[0] + 1;
                             init_delay +=  lower_vui->initial_delay_bytes;
 */
-                        VideoBrcParams  brcParams;
                         layer->m_brc[qid]->GetParams(&brcParams, tid);
                         bit_rate += brcParams.maxBitrate >> (6 + vui->nal_hrd_parameters.bit_rate_scale);
                         cpb_size += brcParams.HRDBufferSizeBytes >> (1 + vui->nal_hrd_parameters.cpb_size_scale);
