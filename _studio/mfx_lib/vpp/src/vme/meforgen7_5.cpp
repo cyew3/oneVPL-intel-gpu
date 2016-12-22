@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -414,7 +414,7 @@ Status MEforGen75::RunIME(mfxVME7_5UNIOutput *uni_out, mfxVME7_5IMEOutput *ime_o
 
     // get correct ref ids for fetching
     // IME only uses 1st blk
-    for(int i = 0; i < 10; i++){
+    for(i = 0; i < 10; i++){
         BestRef[0][i] = Vsta.BlockRefId[0]&0xf; // foward, 1st blk
         BestRef[1][i] = Vsta.BlockRefId[0]>>4; // backward, 1st blk
     }
@@ -687,7 +687,7 @@ Status MEforGen75::RunSIC(mfxVME7_5UNIOutput *uni_out)
     SubBlockMaxSad = 0; // HSW overloading: 16x16 dist OR max 4x4 dist OR max 8x8 dist
 
     memset(&RefID, 0, 8*sizeof(RefID[0][0]));
-    for (int i = 0; i < 4; i++) // load RefIDs regardless of mode
+    for (i = 0; i < 4; i++) // load RefIDs regardless of mode
     {
         RefID[0][i] = Vsta.BlockRefId[i]&0xF;
         RefID[1][i] = Vsta.BlockRefId[i]>>4;
