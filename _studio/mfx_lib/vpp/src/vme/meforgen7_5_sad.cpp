@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2017 Intel Corporation. All Rights Reserved.
 //
 
 #pragma warning( disable : 4702 )
@@ -659,7 +659,7 @@ int MEforGen75::GetSad4x4(U8 *src, U8 *blk, int blkw)
         d >>= (12-DISTBIT4X4);
         return ((d > DISTMAX4X4)? DISTMAX4X4 : d);
     default:    //MSE
-        for(int i=0; i<4; i++){
+        for(i=0; i<4; i++){
             d += (src[0]-blk[0])*(src[0]-blk[0]) 
                + (src[1]-blk[1])*(src[1]-blk[1]) 
                + (src[2]-blk[2])*(src[2]-blk[2]) 
