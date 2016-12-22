@@ -125,7 +125,7 @@ typedef struct tagFASTCOPY_BLT_PARAMS
 
 } FASTCOPY_BLT_PARAMS;
 
-typedef enum REGISTRATION_OP
+enum REGISTRATION_OP
 {
     REG_IGNORE      = 0,
     REG_REGISTER    = 1,
