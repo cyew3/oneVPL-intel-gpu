@@ -401,7 +401,7 @@ void FillPWT(
          return;
 
     mfxU32 maxWeights[2] = { hwCaps.MaxNum_WeightedPredL0, hwCaps.MaxNum_WeightedPredL1 };
-    mfxU32 numRef[2] = { slice.num_ref_idx_l0_active_minus1 + 1, slice.num_ref_idx_l1_active_minus1 + 1 };
+    mfxU32 numRef[2] = { static_cast<mfxU32>(slice.num_ref_idx_l0_active_minus1 + 1), static_cast<mfxU32>(slice.num_ref_idx_l1_active_minus1 + 1) };
     const mfxU32 iWeight = 0, iOffset = 1, iY = 0, iCb = 1, iCr = 2;
 
     slice.luma_log2_weight_denom = (mfxU8)pwt.LumaLog2WeightDenom;
@@ -610,11 +610,11 @@ namespace
         if (nalUnitType == 14)
         {
             mfxU8 nalRefIdc   = (task.m_type[fieldId] & MFX_FRAMETYPE_REF) ? 1 : 0;
-            mfxU8 nalUnitType = (task.m_type[fieldId] & MFX_FRAMETYPE_IDR) ? 5 : 1;
+            mfxU8 nalUnitTypeU8 = (task.m_type[fieldId] & MFX_FRAMETYPE_IDR) ? 5 : 1;
             *begin++ = 0;
             *begin++ = 0;
             *begin++ = 1;
-            *begin++ = (nalRefIdc << 5) + nalUnitType;
+            *begin++ = (nalRefIdc << 5) + nalUnitTypeU8;
         }
 
         return begin;
@@ -2785,9 +2785,9 @@ namespace
 
     void Dump(ENCODE_EXECUTE_PARAMS const & params, GUID guid)
     {
-        for (mfxU32 i = 0; i < params.NumCompBuffers; i++)
+        for (mfxU32 j = 0; j < params.NumCompBuffers; j++)
         {
-            ENCODE_COMPBUFFERDESC const & buffer = params.pCompressedBuffers[i];
+            ENCODE_COMPBUFFERDESC const & buffer = params.pCompressedBuffers[j];
             switch ((mfxU32)buffer.CompressedBufferType)
             {
             case D3DDDIFMT_INTELENCODE_SPSDATA:
