@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2010-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2010-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -1457,7 +1457,7 @@ mfxStatus MFXVideoENCODEMVC::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurfa
         }
         else
         {
-            for(mfxI16 voidx = 0; voidx <(mfxI16)m_numviews; voidx++) {
+            for(voidx = 0; voidx <(mfxI16)m_numviews; voidx++) {
                 (*m_pTaskInputParams->jobs)[voidx] = m_mvcjobs[voidx].front();
                 m_mvcjobs[voidx].pop();
             }
@@ -2783,13 +2783,13 @@ mfxStatus MFXVideoENCODEMVC::Init(mfxVideoParam* par_in)
     m_taskParams.single_thread_selected = 0;
     m_taskParams.thread_number = 0;
     m_taskParams.parallel_encoding_finished = false;
-    for (mfxI32 i = 0; i < m_views[0].enc->m_info.numThreads; i++)
+    for (mfxI32 j = 0; j < m_views[0].enc->m_info.numThreads; j++)
     {
-        m_taskParams.threads_data[i].core_enc = NULL;
-        m_taskParams.threads_data[i].state = NULL;
-        m_taskParams.threads_data[i].slice = 0;
-        m_taskParams.threads_data[i].slice_qp_delta_default = 0;
-        m_taskParams.threads_data[i].default_slice_type = INTRASLICE;
+        m_taskParams.threads_data[j].core_enc = NULL;
+        m_taskParams.threads_data[j].state = NULL;
+        m_taskParams.threads_data[j].slice = 0;
+        m_taskParams.threads_data[j].slice_qp_delta_default = 0;
+        m_taskParams.threads_data[j].default_slice_type = INTRASLICE;
     }
     m_taskParams.single_thread_done = false;
 #else
