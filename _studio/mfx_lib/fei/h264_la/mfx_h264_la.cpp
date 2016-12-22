@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_h264_la.h"
@@ -634,7 +634,7 @@ mfxStatus VideoENC_LA::InsertTaskWithReordenigBPyr(sLAInputTask &newTask, bool b
     if (m_miniGop.size() >1 && bReference(m_miniGop[last_index].InputFrame.frameType ))
     {
         MFX_CHECK(m_miniGop.size() <= 9, MFX_ERR_UNDEFINED_BEHAVIOR);
-        size_t last_index = m_miniGop.size()  - 1;
+        last_index = m_miniGop.size()  - 1;
         mfxU32 numB = (mfxU32) (last_index - 1);        
 
         static mfxU32 frame_num[8][9] = {{0,1},
@@ -1420,16 +1420,16 @@ mfxStatus VideoENC_LA::QueryFrameLA(mfxENCOutput *output)
                 // zero propCost fields for last DependencyDepth tasks
                 {
                     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "ZeroVmeData");
-                    std::list<sLASummaryTask>::iterator currTask = m_OutputTasks.end();
+                    currTask = m_OutputTasks.end();
                     for (int i = 0; i < m_LaControl.DependencyDepth; i++)
                     {
                         //MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "LA::xx");
                         currTask--;
                         MfxHwH264Encode::VmeData *vme = (*currTask).m_vmeData; 
                         vme->propCost = 0;
-                        for (mfxU32  i = 0 ;i< vme->mb.size(); i++)
+                        for (mfxU32  k = 0 ;k< vme->mb.size(); k++)
                         {
-                            vme->mb[i].propCost = 0;                       
+                            vme->mb[k].propCost = 0;
                         }
                     }
                 }
