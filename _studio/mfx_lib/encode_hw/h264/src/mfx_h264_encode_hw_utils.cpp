@@ -4814,11 +4814,11 @@ mfxStatus MfxHwH264Encode::CheckEncodeFrameParam(
                     type == (MFX_FRAMETYPE_I | MFX_FRAMETYPE_xP),
                     MFX_ERR_INVALID_VIDEO_PARAM);
             }
-
-            if (ctrl->NumExtParam)
-                checkSts = CheckRunTimeExtBuffers(video, ctrl);
         }
     }
+
+    if (ctrl && ctrl->NumExtParam)
+        checkSts = CheckRunTimeExtBuffers(video, ctrl);
 
     if (surface != 0)
     {
