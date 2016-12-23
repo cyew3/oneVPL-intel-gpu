@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -289,7 +289,7 @@ mfxStatus FastCompositingDDI::Initialize(
     VideoDesc.UABProtectionLevel = 0;
     VideoDesc.Reserved = 0;
 
-    FASTCOMP_CREATEDEVICE sCreateStruct = {&VideoDesc, (D3DFORMAT)MAKEFOURCC('N','V','1','2'), 0, m_iMode};
+    FASTCOMP_CREATEDEVICE sCreateStruct = {&VideoDesc, (D3DFORMAT)MAKEFOURCC('N','V','1','2'), 0, static_cast<UINT>(m_iMode)};
     UINT  uCreateSize = sizeof(sCreateStruct);
 
     hRes = m_pAuxDevice->CreateAccelerationService(DXVA2_FastCompositing, &sCreateStruct, uCreateSize);
