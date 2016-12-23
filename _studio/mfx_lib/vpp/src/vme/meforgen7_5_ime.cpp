@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -2770,13 +2770,13 @@ void MEforGen75::GetDistortionSUChroma(U8 *srcU, U8 *srcV, U8 *refU, U8 *refV, I
 
     dif[0] = GetSad4x4(src,ref,REFWINDOWWIDTH) + GetSad4x4(src+4,ref+4,REFWINDOWWIDTH);
     dif[1] = GetSad4x4(src+8,ref+8,REFWINDOWWIDTH) + GetSad4x4(src+12,ref+12,REFWINDOWWIDTH);
-    src += 64; ref += REFWINDOWWIDTH<<2;    
+    src += 64; ref += REFWINDOWWIDTH<<2;
     dif[4] = GetSad4x4(src,ref,REFWINDOWWIDTH) + GetSad4x4(src+4,ref+4,REFWINDOWWIDTH);
     dif[5] = GetSad4x4(src+8,ref+8,REFWINDOWWIDTH) + GetSad4x4(src+12,ref+12,REFWINDOWWIDTH);
-    
+
     dif[2] = MBMAXDIST;
     dif[3] = MBMAXDIST;
-    for(int i = 6; i < 16; i++)
+    for(i = 6; i < 16; i++)
         dif[i] = MBMAXDIST;
 }
 
