@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include <mfx_scheduler_core.h>
@@ -260,10 +260,10 @@ void mfxSchedulerCore::SetThreadsAffinityMask(void)
 #if defined(MFX_EXTERNAL_THREADING)
             if (m_ppThreadCtx[i])
             {
-                vm_set_thread_affinity_mask(&(m_ppThreadCtx[i]->threadHandle), 1 << i);
+                vm_set_thread_affinity_mask(&(m_ppThreadCtx[i]->threadHandle), 1LL << i);
             }
 #else
-            vm_set_thread_affinity_mask(&(m_pThreadCtx[i].threadHandle), 1 << i);
+            vm_set_thread_affinity_mask(&(m_pThreadCtx[i].threadHandle), 1LL << i);
 #endif
         }
     }
@@ -278,11 +278,11 @@ void mfxSchedulerCore::SetThreadsAffinityMask(void)
             if (m_ppThreadCtx[i])
             {
                 vm_set_thread_affinity_mask(&(m_ppThreadCtx[i]->threadHandle),
-                    1 << (mfxU32)(cpuPerThread * i));
+                    1LL << (mfxU32)(cpuPerThread * i));
             }
 #else
             vm_set_thread_affinity_mask(&(m_pThreadCtx[i].threadHandle),
-                1 << (mfxU32)(cpuPerThread * i));
+                1LL << (mfxU32)(cpuPerThread * i));
 #endif
         }
     }
