@@ -1345,6 +1345,9 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 
     changed +=  par.CheckExtBufferParam();  // todo: check ROI?? check SliceInfo??
 
+    if (par.mfx.CodecLevel !=0 && par.mfx.CodecLevel != MFX_LEVEL_HEVC_1 && LevelIdx(par.mfx.CodecLevel) == 0)
+        invalid += CheckOption(par.mfx.CodecLevel, 0); // invalid level
+    
     if (par.mfx.CodecLevel)
     {
         maxFR  = GetMaxFrByLevel(par);
