@@ -1041,9 +1041,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     attrs.push_back( createVAConfigAttrib(VAConfigAttribEncMaxRefFrames, 0));
     attrs.push_back( createVAConfigAttrib(VAConfigAttribEncSliceStructure, 0));
     attrs.push_back( createVAConfigAttrib(VAConfigAttribEncROI, 0));
-#ifdef SKIP_FRAME_SUPPORT
     attrs.push_back( createVAConfigAttrib(VAConfigAttribEncSkipFrame, 0));
-#endif
 
     VAEntrypoint entrypoint = VAEntrypointEncSlice;
     if ((MSDK_Private_Guid_Encode_AVC_LowPower_Query == guid) ||
@@ -1062,9 +1060,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     m_caps.vaTrellisQuantization = attrs[2].value;
     m_caps.RollingIntraRefresh = (attrs[3].value & (~VA_ATTRIB_NOT_SUPPORTED)) ? 1 : 0 ;
     m_caps.vaRollingIntraRefresh = attrs[3].value;
-#ifdef SKIP_FRAME_SUPPORT
     m_caps.SkipFrame = (attrs[10].value & (~VA_ATTRIB_NOT_SUPPORTED)) ? 1 : 0 ;
-#endif
 
     m_caps.UserMaxFrameSizeSupport = 1;
     m_caps.MBBRCSupport = 1;
