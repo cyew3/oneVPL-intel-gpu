@@ -204,20 +204,20 @@ void MEforGen75::FractionalMESearchUnit(U8 mode, U8 submbshape, U8 subpredmode, 
 }
 
 
-void MEforGen75::ScaleDist(I32& Dist)
+void MEforGen75::ScaleDist(I32& meDist)
 {
-    if(Dist == MBINVALID_DIST)
+    if(meDist == MBINVALID_DIST)
     {
         return;
     }
 
     if(Vsta.SrcType&1)
     {
-        Dist>>=1;
+        meDist>>=1;
     }
     if(Vsta.SrcType&2)
     {
-        Dist>>=1;
+        meDist>>=1;
     }
 }
 
