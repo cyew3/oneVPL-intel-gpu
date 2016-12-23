@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -228,23 +228,23 @@ mfxStatus D3D9VideoCORE::IsGuidSupported(const GUID guid, mfxVideoParam *par, bo
     mfxStatus sts = MFX_ERR_NONE;
     if (!m_pDirectXVideoService)
     {
-        mfxStatus sts = InternalInit();
-        if (sts < MFX_ERR_NONE)
+        mfxStatus status = InternalInit();
+        if (status < MFX_ERR_NONE)
             return MFX_WRN_PARTIAL_ACCELERATION;
 
-        sts = InitializeService(true);
-        if (sts < MFX_ERR_NONE)
+        status = InitializeService(true);
+        if (status < MFX_ERR_NONE)
             return MFX_WRN_PARTIAL_ACCELERATION;
 
         AuxiliaryDevice                      auxDevice;
         // to be sure about SG case need to check Intel Auxialary device
-        sts = auxDevice.Initialize(0, m_pDirectXVideoService);
-        if (MFX_ERR_NONE != sts)
+        status = auxDevice.Initialize(0, m_pDirectXVideoService);
+        if (MFX_ERR_NONE != status)
             return MFX_WRN_PARTIAL_ACCELERATION;
 
         if (isEncoder)
         {
-            sts = auxDevice.IsAccelerationServiceExist(guid);
+            status = auxDevice.IsAccelerationServiceExist(guid);
         }
     }
     if (sts != MFX_ERR_NONE)
@@ -979,7 +979,7 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
     {
         if (canUseCMCopy)
         {
-            mfxStatus sts = MFX_ERR_NONE;
+            sts = MFX_ERR_NONE;
             mfxU32 counter = 0;
             do
             {
@@ -1044,7 +1044,7 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
             hRes |= pSurface->LockRect(&sLockRect, NULL, D3DLOCK_NOSYSLOCK | D3DLOCK_READONLY);
             MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_LOCK_MEMORY);
 
-            Ipp32u srcPitch = sLockRect.Pitch;
+            srcPitch = sLockRect.Pitch;
 
             MFX_CHECK(srcPitch < 0x8000 || pSrc->Info.FourCC == MFX_FOURCC_RGB4 || pSrc->Info.FourCC == MFX_FOURCC_YUY2, MFX_ERR_UNDEFINED_BEHAVIOR);
 
@@ -1099,7 +1099,7 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
             hRes |= pSurface->LockRect(&sLockRect, NULL, NULL);
             MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_LOCK_MEMORY);
 
-            Ipp32u dstPitch = sLockRect.Pitch;
+            dstPitch = sLockRect.Pitch;
 
             MFX_CHECK(dstPitch < 0x8000 || pDst->Info.FourCC == MFX_FOURCC_RGB4 || pDst->Info.FourCC == MFX_FOURCC_YUY2, MFX_ERR_UNDEFINED_BEHAVIOR);
 
