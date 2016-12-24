@@ -147,6 +147,7 @@
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;$(SolutionDir)..\..\_studio\shared\umc\core\vm\include;$(SolutionDir)..\..\_studio\shared\umc\core\vm_plus\include;$(SolutionDir)..\..\_studio\shared\umc\io\umc_io\include;$(SolutionDir)..\..\_studio\shared\include;$(SolutionDir)..\..\include;$(SolutionDir)pcdp\samples/sample_protected/include;..\..\pavp/include;..\..\pavp/samples/pavp_sample_common;..\..\pavp/samples/pavp_video/pavp_video_lib;..\..\pavp/samples/win8ui_video/win8ui_video_lib;$(SolutionDir)..\mfx_pavp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ControlFlowGuard>Guard</ControlFlowGuard>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -168,6 +169,7 @@
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;$(SolutionDir)..\..\_studio\shared\umc\core\vm\include;$(SolutionDir)..\..\_studio\shared\umc\core\vm_plus\include;$(SolutionDir)..\..\_studio\shared\umc\io\umc_io\include;$(SolutionDir)..\..\_studio\shared\include;$(SolutionDir)..\..\include;$(SolutionDir)pcdp\samples/sample_protected/include;..\..\pavp/include;..\..\pavp/samples/pavp_sample_common;..\..\pavp/samples/pavp_video/pavp_video_lib;..\..\pavp/samples/win8ui_video/win8ui_video_lib;$(SolutionDir)..\mfx_pavp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ControlFlowGuard>Guard</ControlFlowGuard>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

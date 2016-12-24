@@ -149,6 +149,7 @@
       <AdditionalIncludeDirectories>..\..\..\mdp_msdk-contrib\igfx_s3dcontrol\external\\include;common\include\vm;common\include;include;..\..\..\mdp_msdk-api\include;..\shared\include;..\..\_studio\shared\umc\core\vm\include;..\..\_studio\shared\include;..\..\_studio\mfx_lib\shared\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <UseFullPaths>true</UseFullPaths>
+      <ControlFlowGuard>Guard</ControlFlowGuard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -171,6 +172,7 @@
       <AdditionalIncludeDirectories>common\include\vm;common\include;include;..\..\..\mdp_msdk-contrib\igfx_s3dcontrol\external\\include;..\..\..\mdp_msdk-api\include;..\shared\include;..\..\_studio\shared\umc\core\vm\include;..\..\_studio\shared\include;..\..\_studio\mfx_lib\shared\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <UseFullPaths>true</UseFullPaths>
+      <ControlFlowGuard>Guard</ControlFlowGuard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

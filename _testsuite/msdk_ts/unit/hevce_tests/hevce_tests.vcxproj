@@ -144,6 +144,7 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <Cpp0xSupport>true</Cpp0xSupport>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
+      <ControlFlowGuard>Guard</ControlFlowGuard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -168,6 +169,7 @@
       <AdditionalIncludeDirectories>..\..\..\..\_studio\mfx_lib\fs_det\include\;..\..\..\..\..\mdp_msdk-contrib\gmock\include;..\..\..\..\..\mdp_msdk-contrib\gmock\gtest\include;..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\_studio\mfx_lib\encode\h265\include;..\..\..\..\_studio\mfx_lib\optimization\h265\include;..\..\..\..\_studio\shared\include;..\..\..\..\_studio\mfx_lib\shared\include;..\..\..\..\_studio\shared\umc\core\umc\include;..\..\..\..\_studio\shared\umc\core\vm\include;..\..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\..\_studio\mfx_lib\fei\h265\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <Cpp0xSupport>true</Cpp0xSupport>
+      <ControlFlowGuard>Guard</ControlFlowGuard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

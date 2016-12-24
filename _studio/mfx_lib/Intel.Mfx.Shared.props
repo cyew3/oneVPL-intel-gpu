@@ -13,8 +13,14 @@
   <ItemDefinitionGroup Condition="'$(PreSiliconGen)' != 0">
     <ClCompile>
       <PreprocessorDefinitions>PRE_SI_GEN=$(PreSiliconGen);%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
   </ItemDefinitionGroup>
+    <ItemDefinitionGroup>
+    <ClCompile>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <ControlFlowGuard>Guard</ControlFlowGuard>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
   <ItemGroup />
 </Project>

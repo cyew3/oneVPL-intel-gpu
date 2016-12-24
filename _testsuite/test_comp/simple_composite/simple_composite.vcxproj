@@ -152,6 +152,7 @@
       <TreatWarningAsError>false</TreatWarningAsError>
       <DebugInformationFormat>
       </DebugInformationFormat>
+      <ControlFlowGuard>Guard</ControlFlowGuard>
     </ClCompile>
     <Link>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
@@ -182,6 +183,7 @@
       <TreatWarningAsError>false</TreatWarningAsError>
       <DebugInformationFormat>
       </DebugInformationFormat>
+      <ControlFlowGuard>Guard</ControlFlowGuard>
     </ClCompile>
     <Link>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
