@@ -716,7 +716,8 @@ typedef struct {
 
     mfxU16      BRCPanicMode;              /* tri-state option */
 
-    mfxU16      reserved[173];
+    mfxU16      LowDelayBRC;               /* tri-state option */
+    mfxU16      reserved[172];
 } mfxExtCodingOption3;
 
 /* IntraPredBlockSize/InterPredBlockSize */
