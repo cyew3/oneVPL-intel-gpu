@@ -7,12 +7,12 @@
     <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Platform)'=='Win32'" Label="UserMacros" >
-    <MfxIppIncludeDir>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include</MfxIppIncludeDir>
-    <MfxIppLibraryDir>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\lib</MfxIppLibraryDir>
+    <MfxIppIncludeDir>$(MEDIASDK_ROOT)\ipp\ipp81goldGuard\windows\ia32\include</MfxIppIncludeDir>
+    <MfxIppLibraryDir>$(MEDIASDK_ROOT)\ipp\ipp81goldGuard\windows\ia32\lib</MfxIppLibraryDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Platform)'=='x64'" Label="UserMacros" >
-    <MfxIppIncludeDir>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include</MfxIppIncludeDir>
-    <MfxIppLibraryDir>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\lib</MfxIppLibraryDir>
+    <MfxIppIncludeDir>$(MEDIASDK_ROOT)\ipp\ipp81goldGuard\windows\em64t\include</MfxIppIncludeDir>
+    <MfxIppLibraryDir>$(MEDIASDK_ROOT)\ipp\ipp81goldGuard\windows\em64t\lib</MfxIppLibraryDir>
   </PropertyGroup>
   <Target Name="MediaSdkRootCheck" BeforeTargets="Build">
     <Warning Text="Unable to find MEDIASDK_ROOT environment variable. Build may fail due to missing IPP libraries."
