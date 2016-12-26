@@ -384,6 +384,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_EXT_OPTION3(TargetBitDepthLuma,         OPT_UINT_32,   "Encoding target bit depth for luma samples (by default same as source one)"),
         HANDLE_EXT_OPTION3(TargetBitDepthChroma,       OPT_UINT_32,   "Encoding target bit depth for chroma samples (by default same as source one)"),
         HANDLE_EXT_OPTION3(BRCPanicMode,               OPT_TRI_STATE, "BRC panic mode control"),
+        HANDLE_EXT_OPTION3(LowDelayBRC,                OPT_TRI_STATE, ""),
 
         // mfxExtCodingOptionDDI
         HANDLE_DDI_OPTION(IntraPredCostType,       OPT_UINT_16,    "1=SAD, 2=SSD, 4=SATD_HADAMARD, 8=SATD_HARR"),
@@ -953,6 +954,37 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             pExt->MaxFrameSizeP = val;
             m_ExtBuffers.get()->push_back(pExt);
 
+            argv++;
+        }
+        else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-LowDelayBRC"), VM_STRING("0 - OFF, 1 - ON")))
+        {
+            mfxU32 on;
+            //file name that will be used for input after reseting encoder
+            MFX_CHECK(1 + argv != argvEnd);
+            MFX_PARSE_INT(on, argv[1]);
+
+            mfxExtCodingOption3 *pExt = NULL;
+            if (1 == on || 0 == on)
+            {
+                MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_CODING_OPTION3);
+
+                if (!ppExt)
+                {
+                    pExt = new mfxExtCodingOption3();
+
+                    pExt->Header.BufferId = MFX_EXTBUFF_CODING_OPTION3;
+                    pExt->Header.BufferSz = sizeof(mfxExtCodingOption3);
+                }
+                else
+                {
+                    pExt = reinterpret_cast<mfxExtCodingOption3 *>(ppExt->get());
+                }
+            }
+            else
+                return MFX_ERR_UNKNOWN;
+
+            pExt->LowDelayBRC = (mfxU16)(on ? MFX_CODINGOPTION_ON : MFX_CODINGOPTION_OFF);
+            m_ExtBuffers.get()->push_back(pExt);
             argv++;
         }
         else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-MaxSliceSize"), VM_STRING("")))

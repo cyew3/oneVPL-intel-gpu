@@ -72,9 +72,12 @@ void MfxHwH264Encode::FillSpsBuffer(
     sps.num_ref_frames_in_pic_order_cnt_cycle   = extSps->numRefFramesInPicOrderCntCycle;
     sps.offset_for_non_ref_pic                  = extSps->offsetForNonRefPic;
     sps.offset_for_top_to_bottom_field          = extSps->offsetForTopToBottomField;
-
+#ifndef OPEN_SOURCE
+    sps.FrameSizeTolerance = ConvertLowDelayBRCMfx2Ddi(extOpt3.LowDelayBRC);
+#endif
     if ((par.mfx.RateControlMethod == MFX_RATECONTROL_VBR || par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR) && extOpt3.WinBRCSize)
         sps.FrameSizeTolerance = eFrameSizeTolerance_Low;
+
 
     Copy(sps.offset_for_ref_frame,                extSps->offsetForRefFrame);
 
@@ -98,6 +101,7 @@ void MfxHwH264Encode::FillSpsBuffer(
     sps.EnableSliceLevelRateCtrl                = (extOpt2->MaxSliceSize)?1:0;
     sps.UserMaxIFrameSize                       = extOpt3.MaxFrameSizeI ? extOpt3.MaxFrameSizeI : extOpt2->MaxFrameSize;
     sps.UserMaxPBFrameSize                      = extOpt3.MaxFrameSizeP;
+    
     if (par.mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4)
         switch (extVsi->MatrixCoefficients)
         {

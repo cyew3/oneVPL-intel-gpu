@@ -2428,6 +2428,31 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         }
     }
 
+#ifndef OPEN_SOURCE
+    if (extOpt3->LowDelayBRC == MFX_CODINGOPTION_ON) {
+        if (par.mfx.RateControlMethod != MFX_RATECONTROL_VBR && par.mfx.RateControlMethod != MFX_RATECONTROL_QVBR &&
+            par.mfx.RateControlMethod != MFX_RATECONTROL_VCM) {
+            extOpt3->LowDelayBRC = MFX_CODINGOPTION_OFF;
+            changed = true;
+        }
+        else {
+            if (extOpt3->WinBRCMaxAvgKbps || extOpt3->WinBRCSize) {
+                extOpt3->WinBRCMaxAvgKbps = 0;
+                extOpt3->WinBRCSize = 0;
+                changed = true;
+            }
+            if (!extOpt2->MaxFrameSize) {
+                extOpt2->MaxFrameSize = par.mfx.MaxKbps ? par.mfx.MaxKbps : par.mfx.TargetKbps;
+                changed = true;
+            }
+            if (par.mfx.GopRefDist != 0 && par.mfx.GopRefDist != 1) {
+                par.mfx.GopRefDist = 1;
+                changed = true;
+            }
+        }
+    }
+#endif
+
     if (par.mfx.NumSlice         != 0 &&
         par.mfx.FrameInfo.Width  != 0 &&
         par.mfx.FrameInfo.Height != 0)
@@ -5240,6 +5265,9 @@ void MfxHwH264Encode::SetDefaults(
     SetDefaultOff(extOpt3->LowDelayHrd);
     SetDefaultOn(extOpt3->BitstreamRestriction);
     SetDefaultOff(extOpt->RecoveryPointSEI);
+#ifndef OPEN_SOURCE
+    SetDefaultOff(extOpt3->LowDelayBRC);
+#endif
 
     CheckVideoParamQueryLike(par, hwCaps, platform, vaType);
 
@@ -6136,6 +6164,17 @@ mfxU8 MfxHwH264Encode::ConvertFrameTypeMfx2Ddi(mfxU32 type)
     }
 }
 
+#ifndef OPEN_SOURCE
+ENCODE_FRAME_SIZE_TOLERANCE MfxHwH264Encode::ConvertLowDelayBRCMfx2Ddi(mfxU16 type)
+{
+    switch (type) {
+        case MFX_CODINGOPTION_ON:
+            return eFrameSizeTolerance_ExtremelyLow;
+        default:
+            return eFrameSizeTolerance_Normal;
+    }
+}
+#endif
 
 mfxU8 MfxHwH264Encode::ConvertMfxFrameType2SliceType(mfxU8 type)
 {

@@ -859,6 +859,9 @@
     <ClCompile Include="src\gmock\test_suites\avce_input_rgb_colorspace.cpp">
       <Filter>Source Files\test_suites\avce</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avce_lowdelay_brc.cpp">
+      <Filter>Source Files\test_suites\avce</Filter>
+    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\vp9e_reset.cpp">
       <Filter>Source Files\test_suites\vp9e</Filter>
     </ClCompile>

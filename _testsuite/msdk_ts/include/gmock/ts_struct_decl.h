@@ -3,7 +3,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2014 - 2016 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2014 - 2017 Intel Corporation. All Rights Reserved.
 //
 
 STRUCT(mfxI16Pair,
@@ -596,21 +596,21 @@ STRUCT(mfxExtCamBlackLevelCorrection,
     FIELD_T(mfxU32,       reserved ) /* Fixed size array */
 )
  STRUCT(mfxExtCamTotalColorControl,
-	FIELD_S(mfxExtBuffer, Header)
-	FIELD_T(mfxU8, R)
-	FIELD_T(mfxU8, G)
-	FIELD_T(mfxU8, B)
-	FIELD_T(mfxU8, C)
-	FIELD_T(mfxU8, M)
-	FIELD_T(mfxU8, Y)
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU8, R)
+    FIELD_T(mfxU8, G)
+    FIELD_T(mfxU8, B)
+    FIELD_T(mfxU8, C)
+    FIELD_T(mfxU8, M)
+    FIELD_T(mfxU8, Y)
 )
 
 STRUCT(mfxExtCamCscYuvRgb,
-	FIELD_S(mfxExtBuffer, Header)
-	FIELD_T(mfxF32, PreOffset)
-	FIELD_T(mfxF32, Matrix)
-	FIELD_T(mfxF32, PostOffset)
-	FIELD_T(mfxU16, reserved)
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxF32, PreOffset)
+    FIELD_T(mfxF32, Matrix)
+    FIELD_T(mfxF32, PostOffset)
+    FIELD_T(mfxU16, reserved)
 )
 
 STRUCT(mfxCamVignetteCorrectionParam,
@@ -697,6 +697,7 @@ STRUCT(mfxExtCodingOption3,
     FIELD_T(mfxU16      , NumRefActiveP                 )
     FIELD_T(mfxU16      , NumRefActiveBL0               )
     FIELD_T(mfxU16      , NumRefActiveBL1               )
+    FIELD_T(mfxU16      , LowDelayBRC                   )
 )
 
 STRUCT(mfxExtLAControl,
