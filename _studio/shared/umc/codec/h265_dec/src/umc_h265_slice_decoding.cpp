@@ -452,7 +452,7 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
         }
     }
 
-    for(Ipp32u i = getRPS()->getNumberOfNegativePictures() + getRPS()->getNumberOfPositivePictures();
+    for(i = getRPS()->getNumberOfNegativePictures() + getRPS()->getNumberOfPositivePictures();
         i < getRPS()->getNumberOfNegativePictures() + getRPS()->getNumberOfPositivePictures() + getRPS()->getNumberOfLongtermPictures(); i++)
     {
         if(getRPS()->getUsed(i))
@@ -482,15 +482,15 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
     }
 
     Ipp32s cIdx = 0;
-    for (Ipp32u i = 0; i < NumPocStCurr0; cIdx++, i++)
+    for (i = 0; i < NumPocStCurr0; cIdx++, i++)
     {
         refPicListTemp0[cIdx] = RefPicSetStCurr0[i];
     }
-    for (Ipp32u i = 0; i < NumPocStCurr1; cIdx++, i++)
+    for (i = 0; i < NumPocStCurr1; cIdx++, i++)
     {
         refPicListTemp0[cIdx] = RefPicSetStCurr1[i];
     }
-    for (Ipp32u i = 0; i < NumPocLtCurr; cIdx++, i++)
+    for (i = 0; i < NumPocLtCurr; cIdx++, i++)
     {
         refPicListTemp0[cIdx] = RefPicSetLtCurr[i];
     }
@@ -498,15 +498,15 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
     if (GetSliceHeader()->slice_type == B_SLICE)
     {
         cIdx = 0;
-        for (Ipp32u i = 0; i < NumPocStCurr1; cIdx++, i++)
+        for (i = 0; i < NumPocStCurr1; cIdx++, i++)
         {
             refPicListTemp1[cIdx] = RefPicSetStCurr1[i];
         }
-        for (Ipp32u i = 0; i < NumPocStCurr0; cIdx++, i++)
+        for (i = 0; i < NumPocStCurr0; cIdx++, i++)
         {
             refPicListTemp1[cIdx] = RefPicSetStCurr0[i];
         }
-        for (Ipp32u i = 0; i < NumPocLtCurr; cIdx++, i++)
+        for (i = 0; i < NumPocLtCurr; cIdx++, i++)
         {
             refPicListTemp1[cIdx] = RefPicSetLtCurr[i];
         }
@@ -559,9 +559,9 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
 
         H265DecoderFrame *missedReference = 0;
 
-        for (Ipp32s i = 0; !missedReference && i < numPocTotalCurr; i++)
+        for (Ipp32s k = 0; !missedReference && k < numPocTotalCurr; k++)
         {
-            missedReference = refPicListTemp0[i];
+            missedReference = refPicListTemp0[k];
         }
 
         for (Ipp32s k = 0; k < getNumRefIdx(REF_PIC_LIST_0) && bLowDelay; k++)
