@@ -275,10 +275,11 @@ void DecryptParametersWrapper::parsePTL(H265ProfileTierLevel *rpcPTL, int maxNum
 {
     parseProfileTier(rpcPTL->GetGeneralPTL(), &SeqParams.sps_profile_tier_level.general_ptl);
 
-    Ipp32s level_idc = SeqParams.sps_profile_tier_level.general_ptl.layer_level_idc;
-    level_idc = ((level_idc*10) / 30);
-    rpcPTL->GetGeneralPTL()->level_idc = level_idc;
-
+    {
+        Ipp32s level_idc = SeqParams.sps_profile_tier_level.general_ptl.layer_level_idc;
+        level_idc = ((level_idc * 10) / 30);
+        rpcPTL->GetGeneralPTL()->level_idc = level_idc;
+    }
     //for(int i = 0; i < maxNumSubLayersMinus1; i++)
     //{
     //    if (Get1Bit())
@@ -1033,6 +1034,7 @@ void DecryptParametersWrapper::decodeSlice(H265WidevineSlice *pSlice, const H265
         //    {
         //        size_t bitsDecoded = BitsDecoded();
 
+            {
                 ReferencePictureSet* rps = pSlice->getRPS();
                 parseRefPicSet(rps);
 
@@ -1047,6 +1049,7 @@ void DecryptParametersWrapper::decodeSlice(H265WidevineSlice *pSlice, const H265
                     rps->num_positive_pics = 0;
                     rps->num_pics = 0;
                 }
+            }
 
         //        sliceHdr->wNumBitsForShortTermRPSInSlice = (Ipp32s)(BitsDecoded() - bitsDecoded);
         //    }
