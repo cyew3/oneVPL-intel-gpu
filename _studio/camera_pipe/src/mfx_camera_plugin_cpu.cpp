@@ -251,7 +251,7 @@ int CPUCameraProcessor::CPU_GoodPixelCheck(unsigned short *pSrcBayer16bpp, int m
 
     if(firstflag == true)
     {
-            int index = 0;
+            index = 0;
             for(int y=0;y<m_Height;y++)
             for(int x=0;x<m_Width;x++)
             {
