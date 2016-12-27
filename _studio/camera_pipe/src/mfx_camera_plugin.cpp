@@ -771,11 +771,11 @@ mfxStatus MFXCamera_Plugin::GetVideoParam(mfxVideoParam *par)
     {
         return MFX_ERR_NONE;
     }
-    for( mfxU32 i = 0; i < par->NumExtParam; i++ )
+    for( mfxU32 j = 0; j < par->NumExtParam; j++ )
     {
-        if( MFX_EXTBUFF_VPP_DOUSE == par->ExtParam[i]->BufferId )
+        if( MFX_EXTBUFF_VPP_DOUSE == par->ExtParam[j]->BufferId )
         {
-            mfxExtVPPDoUse* pVPPHint = (mfxExtVPPDoUse*)(par->ExtParam[i]);
+            mfxExtVPPDoUse* pVPPHint = (mfxExtVPPDoUse*)(par->ExtParam[j]);
             mfxU32 numUsedFilters = m_Caps.GetFiltersNum();
             mfxU32 i = 0;
 
@@ -919,12 +919,12 @@ mfxStatus MFXCamera_Plugin::ProcessExtendedBuffers(mfxVideoParam *par)
                     {
                         gammaset = true;
                         m_GammaParams.NumSegments = MFX_CAM_GAMMA_NUM_POINTS_SKL;
-                        for (int i = 0; i < MFX_CAM_GAMMA_NUM_POINTS_SKL; i++)
+                        for (int k = 0; k < MFX_CAM_GAMMA_NUM_POINTS_SKL; k++)
                         {
-                            m_GammaParams.Segment[i].Pixel = gammaExtBufParams->Segment[i].Pixel;
-                            m_GammaParams.Segment[i].Green = gammaExtBufParams->Segment[i].Green;
-                            m_GammaParams.Segment[i].Red   = gammaExtBufParams->Segment[i].Red;
-                            m_GammaParams.Segment[i].Blue  = gammaExtBufParams->Segment[i].Blue;
+                            m_GammaParams.Segment[k].Pixel = gammaExtBufParams->Segment[k].Pixel;
+                            m_GammaParams.Segment[k].Green = gammaExtBufParams->Segment[k].Green;
+                            m_GammaParams.Segment[k].Red   = gammaExtBufParams->Segment[k].Red;
+                            m_GammaParams.Segment[k].Blue  = gammaExtBufParams->Segment[k].Blue;
                         }
                     }
                 }
@@ -945,12 +945,12 @@ mfxStatus MFXCamera_Plugin::ProcessExtendedBuffers(mfxVideoParam *par)
                         {
                             gammaset = true;
                             m_GammaParams.NumSegments = MFX_CAM_GAMMA_NUM_POINTS_SKL;
-                            for (int i = 0; i < MFX_CAM_GAMMA_NUM_POINTS_SKL; i++)
+                            for (int k = 0; k < MFX_CAM_GAMMA_NUM_POINTS_SKL; k++)
                             {
-                                m_GammaParams.Segment[i].Pixel = gammaExtBufParams->GammaPoint[i];
-                                m_GammaParams.Segment[i].Green = gammaExtBufParams->GammaCorrected[i];
-                                m_GammaParams.Segment[i].Red   = gammaExtBufParams->GammaCorrected[i];
-                                m_GammaParams.Segment[i].Blue  = gammaExtBufParams->GammaCorrected[i];
+                                m_GammaParams.Segment[k].Pixel = gammaExtBufParams->GammaPoint[k];
+                                m_GammaParams.Segment[k].Green = gammaExtBufParams->GammaCorrected[k];
+                                m_GammaParams.Segment[k].Red   = gammaExtBufParams->GammaCorrected[k];
+                                m_GammaParams.Segment[k].Blue  = gammaExtBufParams->GammaCorrected[k];
                             }
                         }
                     }
@@ -1009,15 +1009,15 @@ mfxStatus MFXCamera_Plugin::ProcessExtendedBuffers(mfxVideoParam *par)
                 {
                     rgbtoyuvset = true;
                     m_RGBToYUVParams.bActive = true;
-                    for (int i = 0; i < 3; i++) {
-                        m_RGBToYUVParams.PreOffset[i] = rgbToYuvExtBufParams->PreOffset[i];
-                        m_RGBToYUVParams.PostOffset[i] = rgbToYuvExtBufParams->PostOffset[i];
+                    for (int k = 0; k < 3; k++) {
+                        m_RGBToYUVParams.PreOffset[k] = rgbToYuvExtBufParams->PreOffset[k];
+                        m_RGBToYUVParams.PostOffset[k] = rgbToYuvExtBufParams->PostOffset[k];
                     }
-                    for (int i = 0; i < 3; i++)
+                    for (int k = 0; k < 3; k++)
                     {
-                        for (int j = 0; j < 3; j++)
+                        for (int m = 0; m < 3; m++)
                         {
-                            m_RGBToYUVParams.Matrix[i][j] = rgbToYuvExtBufParams->Matrix[i][j];
+                            m_RGBToYUVParams.Matrix[k][m] = rgbToYuvExtBufParams->Matrix[k][m];
                         }
                     }
                 }
