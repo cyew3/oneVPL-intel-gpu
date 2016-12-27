@@ -7,7 +7,7 @@
     <MfxBuildDir>$(MSBuildThisFileDirectory)..\..\..\build\</MfxBuildDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Platform)'=='Win32'" Label="UserMacros" >
-    <MfxIppIncludeDir>$(MEDIASDK_ROOT)\ipp\ipp81goldGuard\ia32\include</MfxIppIncludeDir>
+    <MfxIppIncludeDir>$(MEDIASDK_ROOT)\ipp\ipp81goldGuard\windows\ia32\include</MfxIppIncludeDir>
     <MfxIppLibraryDir>$(MEDIASDK_ROOT)\ipp\ipp81goldGuard\windows\ia32\lib</MfxIppLibraryDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Platform)'=='x64'" Label="UserMacros" >
