@@ -266,8 +266,8 @@ public:
         {
             if (item->m_isTyped)
             {
-                HeapObject * obj = reinterpret_cast<HeapObject *>(item->m_Ptr);
-                obj->Reset();
+                HeapObject * object = reinterpret_cast<HeapObject *>(item->m_Ptr);
+                object->Reset();
             }
         }
 
