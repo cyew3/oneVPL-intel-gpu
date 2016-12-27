@@ -475,7 +475,7 @@ void H265HeadersBitstream::parsePTL(H265ProfileTierLevel *rpcPTL, int maxNumSubL
 
         if (rpcPTL->sub_layer_level_present_flag & (1 << i))
         {
-            Ipp32s level_idc = GetBits(8);
+            level_idc = GetBits(8);
             level_idc = ((level_idc*10) / 30);
             rpcPTL->GetSubLayerPTL(i)->level_idc = level_idc;
         }
