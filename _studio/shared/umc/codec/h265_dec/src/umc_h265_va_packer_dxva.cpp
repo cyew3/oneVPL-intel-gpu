@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -84,7 +84,7 @@ namespace UMC_HEVC_DECODER
                         UMCVACompBuffer *headVABffr = 0;
 
                         m_va->GetCompBuffer(DXVA_SLICE_CONTROL_BUFFER, &headVABffr);
-                        size_t headerSize = m_va->IsLongSliceControl() ? sizeof(DXVA_Intel_Slice_HEVC_Long) : sizeof(DXVA_Slice_HEVC_Short);
+                        Ipp32s headerSize = m_va->IsLongSliceControl() ? sizeof(DXVA_Intel_Slice_HEVC_Long) : sizeof(DXVA_Slice_HEVC_Short);
                         headVABffr->SetDataSize(headVABffr->GetDataSize() - headerSize); //remove one slice
 
                         n--;
