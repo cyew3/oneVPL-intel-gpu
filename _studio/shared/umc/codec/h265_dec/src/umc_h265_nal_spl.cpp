@@ -137,7 +137,7 @@ public:
     Ipp32s GetNALUnitInternal(UMC::MediaData * pSource, UMC::MediaData * pDst)
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "GetNALUnitInternal");
-        static const Ipp8u start_code_prefix[] = {0, 0, 1};
+        static const Ipp8u startCodePrefix[] = {0, 0, 1};
 
         if (m_code == -1)
             m_prev.clear();
@@ -228,7 +228,7 @@ public:
             }
 
             if (!m_prev.size())
-                m_prev.insert(m_prev.end(), start_code_prefix, start_code_prefix + sizeof(start_code_prefix));
+                m_prev.insert(m_prev.end(), startCodePrefix, startCodePrefix + sizeof(startCodePrefix));
             m_prev.insert(m_prev.end(), (Ipp8u *)pSource->GetDataPointer(), (Ipp8u *)pSource->GetDataPointer() + sz);
             pSource->MoveDataPointer((Ipp32s)szToMove);
             return -1;
