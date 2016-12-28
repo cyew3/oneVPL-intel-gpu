@@ -1004,8 +1004,8 @@ mfxStatus Plugin::PrepareTask(Task& input_task)
             {
                 mfxExtLAFrameStatistics *vmeData = ExtBuffer::Get(task->m_ctrl);
                 MFX_CHECK_NULL_PTR1(vmeData);
-                mfxStatus sts = m_brc->SetFrameVMEData(vmeData, m_vpar.mfx.FrameInfo.Width, m_vpar.mfx.FrameInfo.Height);
-                MFX_CHECK_STS(sts);
+                mfxStatus status = m_brc->SetFrameVMEData(vmeData, m_vpar.mfx.FrameInfo.Width, m_vpar.mfx.FrameInfo.Height);
+                MFX_CHECK_STS(status);
                 mfxLAFrameInfo *pInfo = &vmeData->FrameStat[0];
                 task->m_frameType = (mfxU16)pInfo->FrameType;
                 m_frameOrder = pInfo->FrameDisplayOrder;
