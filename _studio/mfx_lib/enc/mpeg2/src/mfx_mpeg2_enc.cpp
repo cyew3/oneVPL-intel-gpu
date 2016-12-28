@@ -892,7 +892,7 @@ mfxStatus MFXVideoENCMPEG2::sliceME( MPEG2FrameState* state, mfxU32 mbstart, mfx
       Ipp32s goodpred = 0;
       Ipp32s cur_offset = i + j * YFrameHSize;
       Ipp32s cur_offset_c = ic + jc * UVFrameHSize;
-      mfxMbCodeMPEG2 *Mb = &m_cuc->MbParam->Mb[k].MPEG2;
+      Mb = &m_cuc->MbParam->Mb[k].MPEG2;
       mfxI32 q_scale_value = mfx_mpeg2_Val_QScale[m_cuc->FrameParam->MPEG2.QuantScaleType][Mb->QpScaleCode];
       varThreshold = q_scale_value;// + qq/32;
       meanThreshold = q_scale_value * 8;// + qq/32;
@@ -1003,7 +1003,6 @@ mfxStatus MFXVideoENCMPEG2::sliceME( MPEG2FrameState* state, mfxU32 mbstart, mfx
         && (!(pMBInfo[k - 1].mb_type & MB_BACKWARD)
         || (((i+((PMV[0][1].x+1)>>1)+15) < MBcountH*16) && ((j+((PMV[0][1].y+1)>>1)+15) < MBcountV*16))) )
       {
-        Ipp32s blk;
         Ipp32s var, mean;
         Ipp32s mb_type;
 
@@ -1808,14 +1807,14 @@ mfxStatus MFXVideoENCMPEG2::sliceCoef( MPEG2FrameState* state, mfxU32 mbstart, m
         // no 422 QM support
         ippiQuantIntra_MPEG2_16s_C1I(pDiff, quant_scale_value, InvIntraQM, &Count[blk]);
 
-        mfxI32 i, tofind;
-        for(i=0; i<64; i++) pcoeff[i] = 0;
+        mfxI32 m, tofind;
+        for(m=0; m<64; m++) pcoeff[m] = 0;
         pcoeff[0] = pDiff[0];
-        for(i=1, tofind = Count[blk]; i<64 && tofind>0; i++) {
-          Ipp16s val = pDiff[scan[i]];
+        for(m=1, tofind = Count[blk]; m<64 && tofind>0; m++) {
+          Ipp16s val = pDiff[scan[m]];
           if(val) {
             tofind--;
-            pcoeff[i] = val;
+            pcoeff[m] = val;
           }
         }
         // reconstruction
