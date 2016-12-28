@@ -286,20 +286,20 @@ mfxStatus VideoDECODEVP8::Init(mfxVideoParam *p_params)
                 }
                 else
                 {
-                    mfxStatus sts;
+                    mfxStatus status;
                     mfxFrameAllocRequest trequest = m_request;
                     trequest.Type =  (mfxU16)p_opq_ext->Out.Type;
                     trequest.NumFrameMin = trequest.NumFrameSuggested = (mfxU16)p_opq_ext->Out.NumSurface;
 
-                    sts = m_p_core->AllocFrames(&trequest,
+                    status = m_p_core->AllocFrames(&trequest,
                                                 &m_opaque_response,
                                                 p_opq_ext->In.Surfaces,
                                                 p_opq_ext->In.NumSurface);
 
-                    if (MFX_ERR_NONE != sts && MFX_ERR_UNSUPPORTED != sts)
+                    if (MFX_ERR_NONE != status && MFX_ERR_UNSUPPORTED != status)
                     {
                         // unsupported means that current core couldn;t allocate the surfaces
-                        return sts;
+                        return status;
                     }
                 }
             }
