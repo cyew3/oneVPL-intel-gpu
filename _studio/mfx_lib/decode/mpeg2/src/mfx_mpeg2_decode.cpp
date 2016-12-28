@@ -3579,7 +3579,7 @@ mfxStatus VideoDECODEMPEG2Internal_SW::DecodeFrameCheck(mfxBitstream *bs,
                                mfxFrameSurface1 **surface_disp,
                                MFX_ENTRY_POINT *pEntryPoint)
 {
-    int display_index = -1;
+    int disp_index = -1;
 
     m_in[m_task_num].SetBufferPointer(m_frame[m_frame_curr].Data + m_frame[m_frame_curr].DataOffset, m_frame[m_frame_curr].DataLength);
     m_in[m_task_num].SetDataSize(m_frame[m_frame_curr].DataLength);
@@ -3617,9 +3617,9 @@ mfxStatus VideoDECODEMPEG2Internal_SW::DecodeFrameCheck(mfxBitstream *bs,
 
                 if (NULL == bs)
                 {
-                    display_index = m_implUmc->GetDisplayIndex();
+                    disp_index = m_implUmc->GetDisplayIndex();
                         
-                    if (0 > display_index)
+                    if (0 > disp_index)
                     {
                         res = m_implUmc->GetPictureHeader(NULL,m_task_num,m_prev_task_num);
                             
@@ -3628,22 +3628,22 @@ mfxStatus VideoDECODEMPEG2Internal_SW::DecodeFrameCheck(mfxBitstream *bs,
                             return MFX_ERR_UNKNOWN;
                         }
 
-                        display_index = m_implUmc->GetDisplayIndex();
+                        disp_index = m_implUmc->GetDisplayIndex();
                     }
-                    if (0 <= display_index)
+                    if (0 <= disp_index)
                     {
-                        *surface_disp = m_FrameAllocator->GetSurface(mid[display_index], surface_work, &m_vPar);
+                        *surface_disp = m_FrameAllocator->GetSurface(mid[disp_index], surface_work, &m_vPar);
                             
                         if (true == m_isDecodedOrder)
                         {
                             (*surface_disp)->Data.FrameOrder = 0xffffffff;
                         }
 
-                        mfxStatus sts = m_FrameAllocator->PrepareToOutput(surface_work, mid[display_index], &m_vPar, m_isOpaqueMemory);
+                        mfxStatus sts = m_FrameAllocator->PrepareToOutput(surface_work, mid[disp_index], &m_vPar, m_isOpaqueMemory);
                         MFX_CHECK_STS(sts);
 
-                        (*surface_disp)->Data.TimeStamp = GetMfxTimeStamp(m_implUmc->GetCurrDecodedTime(display_index));
-                        (*surface_disp)->Data.DataFlag = (mfxU16)((m_implUmc->isOriginalTimeStamp(display_index)) ? MFX_FRAMEDATA_ORIGINAL_TIMESTAMP : 0);
+                        (*surface_disp)->Data.TimeStamp = GetMfxTimeStamp(m_implUmc->GetCurrDecodedTime(disp_index));
+                        (*surface_disp)->Data.DataFlag = (mfxU16)((m_implUmc->isOriginalTimeStamp(disp_index)) ? MFX_FRAMEDATA_ORIGINAL_TIMESTAMP : 0);
 
                         if (true == m_isDecodedOrder)
                         {
@@ -3657,13 +3657,13 @@ mfxStatus VideoDECODEMPEG2Internal_SW::DecodeFrameCheck(mfxBitstream *bs,
 
                         display_frame_count++;
 
-                        m_FrameAllocator->Unlock(mid[display_index]);
-                        m_FrameAllocator->DecreaseReference(mid[display_index]);
-                        mid[display_index] = -1;
+                        m_FrameAllocator->Unlock(mid[disp_index]);
+                        m_FrameAllocator->DecreaseReference(mid[disp_index]);
+                        mid[disp_index] = -1;
 
                         {
                             UMC::AutomaticUMCMutex guard(m_guard);
-                            m_implUmc->UnLockTask(display_index);
+                            m_implUmc->UnLockTask(disp_index);
                         }
 
                         pEntryPoint->requiredNumThreads = m_NumThreads;
@@ -3673,7 +3673,7 @@ mfxStatus VideoDECODEMPEG2Internal_SW::DecodeFrameCheck(mfxBitstream *bs,
                         pEntryPoint->pCompleteProc = &MPEG2CompleteTasks;
                         pEntryPoint->pRoutineName = (char *)"DecodeMPEG2";
 
-                        m_implUmc->PostProcessUserData(display_index);
+                        m_implUmc->PostProcessUserData(disp_index);
 
                         return MFX_ERR_NONE;
                     }
@@ -3769,13 +3769,13 @@ mfxStatus VideoDECODEMPEG2Internal_SW::DecodeFrameCheck(mfxBitstream *bs,
 
         m_implUmcSW->SetOutputPointers(&m_out, m_task_num);
 
-        display_index = m_implUmc->GetDisplayIndex();
+        disp_index = m_implUmc->GetDisplayIndex();
 
         UMC::Status umcSts = m_implUmc->ProcessRestFrame(m_task_num);
 
-        if (umcSts == UMC::UMC_OK && display_index >= 0)
+        if (umcSts == UMC::UMC_OK && disp_index >= 0)
         {
-            last_timestamp = GetMfxTimeStamp(m_implUmc->GetCurrDecodedTime(display_index));
+            last_timestamp = GetMfxTimeStamp(m_implUmc->GetCurrDecodedTime(disp_index));
         }
 
         if (true == isField)
@@ -3790,17 +3790,17 @@ mfxStatus VideoDECODEMPEG2Internal_SW::DecodeFrameCheck(mfxBitstream *bs,
 
         dec_frame_count++;
 
-        if (0 <= display_index)
+        if (0 <= disp_index)
         {
-            mfxStatus sts = GetOutputSurface(surface_disp, surface_work, mid[display_index]);
-            if (sts < MFX_ERR_NONE)
-                return sts;
+            mfxStatus status = GetOutputSurface(surface_disp, surface_work, mid[disp_index]);
+            if (status < MFX_ERR_NONE)
+                return status;
 
             if (true == m_isDecodedOrder)
             {
                 (*surface_disp)->Data.FrameOrder = 0xffffffff;
 
-                if (m_implUmc->GetFrameType(display_index) == B_PICTURE)
+                if (m_implUmc->GetFrameType(disp_index) == B_PICTURE)
                 {
                     (*surface_disp)->Data.FrameOrder = display_order;
 
@@ -3808,7 +3808,7 @@ mfxStatus VideoDECODEMPEG2Internal_SW::DecodeFrameCheck(mfxBitstream *bs,
                 }
                 else //I or P
                 {
-                    Ipp32s p_index = m_implUmc->GetPrevDecodingIndex(display_index);
+                    Ipp32s p_index = m_implUmc->GetPrevDecodingIndex(disp_index);
                         
                     if (0 <= p_index)
                     {
@@ -3861,7 +3861,7 @@ mfxStatus VideoDECODEMPEG2Internal_SW::DecodeFrameCheck(mfxBitstream *bs,
         m_task_param[m_task_num].last_frame_count = last_frame_count;
         m_task_param[m_task_num].surface_out = GetOriginalSurface(*surface_disp);
         m_task_param[m_task_num].surface_work = surface_work;
-        m_task_param[m_task_num].display_index = display_index;
+        m_task_param[m_task_num].display_index = disp_index;
         m_task_param[m_task_num].m_FrameAllocator = m_FrameAllocator;
         m_task_param[m_task_num].mid = mid;
         m_task_param[m_task_num].in = &m_in[m_task_num];
@@ -3878,7 +3878,7 @@ mfxStatus VideoDECODEMPEG2Internal_SW::DecodeFrameCheck(mfxBitstream *bs,
         if (NULL != *surface_disp)
         {
             (*surface_disp)->Data.TimeStamp = last_timestamp;
-            (*surface_disp)->Data.DataFlag = (mfxU16)((m_implUmc->isOriginalTimeStamp(display_index)) ? MFX_FRAMEDATA_ORIGINAL_TIMESTAMP : 0);
+            (*surface_disp)->Data.DataFlag = (mfxU16)((m_implUmc->isOriginalTimeStamp(disp_index)) ? MFX_FRAMEDATA_ORIGINAL_TIMESTAMP : 0);
         }
 
         m_implUmc->LockTask(m_task_num);
@@ -3895,9 +3895,9 @@ mfxStatus VideoDECODEMPEG2Internal_SW::DecodeFrameCheck(mfxBitstream *bs,
             m_task_num += DPB;
         }
 
-        if (0 <= display_index)
+        if (0 <= disp_index)
         {
-            m_implUmc->PostProcessUserData(display_index);
+            m_implUmc->PostProcessUserData(disp_index);
 
             return sts;
         }
@@ -3920,14 +3920,14 @@ mfxStatus VideoDECODEMPEG2Internal_SW::DecodeFrameCheck(mfxBitstream *bs,
             return MFX_ERR_UNKNOWN;
         }
 
-        display_index = m_implUmc->GetDisplayIndex();
+        disp_index = m_implUmc->GetDisplayIndex();
             
-        if (0 <= display_index)
+        if (0 <= disp_index)
         {
             if (false == m_isDecodedOrder)
             {
-                last_timestamp = GetMfxTimeStamp(m_implUmc->GetCurrDecodedTime(display_index));
-                mfxStatus sts = GetOutputSurface(surface_disp, surface_work, mid[display_index]);
+                last_timestamp = GetMfxTimeStamp(m_implUmc->GetCurrDecodedTime(disp_index));
+                mfxStatus sts = GetOutputSurface(surface_disp, surface_work, mid[disp_index]);
                 if (sts < MFX_ERR_NONE)
                     return sts;
 
@@ -3953,7 +3953,7 @@ mfxStatus VideoDECODEMPEG2Internal_SW::DecodeFrameCheck(mfxBitstream *bs,
                 m_task_param[m_task_num].last_frame_count = last_frame_count;
                 m_task_param[m_task_num].surface_out = GetOriginalSurface(*surface_disp);
                 m_task_param[m_task_num].surface_work = surface_work;
-                m_task_param[m_task_num].display_index = display_index;
+                m_task_param[m_task_num].display_index = disp_index;
                 m_task_param[m_task_num].m_FrameAllocator = m_FrameAllocator;
                 m_task_param[m_task_num].mid = mid;
                 m_task_param[m_task_num].in = NULL;
@@ -3967,7 +3967,7 @@ mfxStatus VideoDECODEMPEG2Internal_SW::DecodeFrameCheck(mfxBitstream *bs,
 
                 m_prev_task_num = m_task_num;
 
-                m_implUmc->PostProcessUserData(display_index);
+                m_implUmc->PostProcessUserData(disp_index);
 
                 (*surface_disp)->Data.TimeStamp = last_timestamp;
 
@@ -3976,7 +3976,7 @@ mfxStatus VideoDECODEMPEG2Internal_SW::DecodeFrameCheck(mfxBitstream *bs,
             else
             {
                 mfxFrameSurface1 *pSurface;
-                pSurface = m_FrameAllocator->GetSurface(mid[display_index], surface_work, &m_vPar);
+                pSurface = m_FrameAllocator->GetSurface(mid[disp_index], surface_work, &m_vPar);
                     
                 if (NULL == pSurface)
                 {
@@ -4004,26 +4004,26 @@ mfxStatus VideoDECODEMPEG2Internal_SW::CompleteTasks(void *pParam)
         "(THREAD %x) CompleteTasks: task %x number, task num %d, curr thr idx %d, compl thr %d\n",
         GetCurrentThreadId(), pParam, parameters->task_num, parameters->m_curr_thread_idx, parameters->m_thread_completed)
 
-    Ipp32s display_index = parameters->display_index;
+    Ipp32s disp_index = parameters->display_index;
 
-    if (0 <= display_index)
+    if (0 <= disp_index)
     {
         THREAD_DEBUG_PRINTF("(THREAD %x) Dumping\n", GetCurrentThreadId())
 
-        if (B_PICTURE == m_implUmc->GetFrameType(display_index))
+        if (B_PICTURE == m_implUmc->GetFrameType(disp_index))
         {
-            parameters->m_FrameAllocator->Unlock(parameters->mid[display_index]);
-            parameters->m_FrameAllocator->DecreaseReference(parameters->mid[display_index]);
-            parameters->mid[display_index] = -1;
+            parameters->m_FrameAllocator->Unlock(parameters->mid[disp_index]);
+            parameters->m_FrameAllocator->DecreaseReference(parameters->mid[disp_index]);
+            parameters->mid[disp_index] = -1;
 
-            m_implUmc->UnLockTask(display_index);
+            m_implUmc->UnLockTask(disp_index);
         }
         else // I or P picture
         {
-            bool isCorrupted = m_implUmc->GetCorruptionFlag(display_index);
+            bool isCorrupted = m_implUmc->GetCorruptionFlag(disp_index);
 
-            mfxU32 frameType = m_implUmc->GetFrameType(display_index);
-            Ipp32s prev_index = m_implUmc->GetPrevDecodingIndex(display_index);
+            mfxU32 frameType = m_implUmc->GetFrameType(disp_index);
+            Ipp32s previous_index = m_implUmc->GetPrevDecodingIndex(disp_index);
                 
             parameters->surface_out->Data.Corrupted = 0;
                 
@@ -4040,30 +4040,30 @@ mfxStatus VideoDECODEMPEG2Internal_SW::CompleteTasks(void *pParam)
                     
                 default: // P_PICTURE
 
-                    if (P_PICTURE == m_implUmc->GetFrameType(prev_index))
+                    if (P_PICTURE == m_implUmc->GetFrameType(previous_index))
                     {
                         //prev_index = m_implUmc.GetPrevDecodingIndex(prev_index);
                     }
 
-                    if (true == m_implUmc->GetCorruptionFlag(prev_index))
+                    if (true == m_implUmc->GetCorruptionFlag(previous_index))
                     {
-                        m_implUmc->SetCorruptionFlag(display_index);
+                        m_implUmc->SetCorruptionFlag(disp_index);
                         parameters->surface_out->Data.Corrupted = MFX_CORRUPTION_REFERENCE_FRAME;
                     }
             }
 
-            if (0 <= prev_index && true == parameters->m_isDecodedOrder)
+            if (0 <= previous_index && true == parameters->m_isDecodedOrder)
             {
-                prev_index = m_implUmc->GetPrevDecodingIndex(prev_index);
+                previous_index = m_implUmc->GetPrevDecodingIndex(previous_index);
             }
 
-            if (0 <= prev_index)
+            if (0 <= previous_index)
             {
-                parameters->m_FrameAllocator->Unlock(parameters->mid[prev_index]);
-                parameters->m_FrameAllocator->DecreaseReference(parameters->mid[prev_index]);
-                parameters->mid[prev_index] = -1;
+                parameters->m_FrameAllocator->Unlock(parameters->mid[previous_index]);
+                parameters->m_FrameAllocator->DecreaseReference(parameters->mid[previous_index]);
+                parameters->mid[previous_index] = -1;
 
-                m_implUmc->UnLockTask(prev_index);
+                m_implUmc->UnLockTask(previous_index);
             }
         }
     }
@@ -4090,13 +4090,13 @@ mfxStatus VideoDECODEMPEG2Internal_SW::TaskRoutine(void *pParam)
     if (0 < parameters->last_frame_count && 0 == parameters->m_thread_completed)
     {
 
-        Ipp32s display_index = parameters->display_index;
+        Ipp32s disp_index = parameters->display_index;
 
-        if (0 <= display_index)
+        if (0 <= disp_index)
         {
-            m_implUmc->PostProcessUserData(display_index);
+            m_implUmc->PostProcessUserData(disp_index);
 
-            mfxStatus sts = parameters->m_FrameAllocator->PrepareToOutput(parameters->surface_work,parameters->mid[display_index],&parameters->m_vPar, m_isOpaqueMemory);
+            mfxStatus sts = parameters->m_FrameAllocator->PrepareToOutput(parameters->surface_work,parameters->mid[disp_index],&parameters->m_vPar, m_isOpaqueMemory);
 
             if (MFX_ERR_NONE > sts)
             {
@@ -4147,17 +4147,17 @@ mfxStatus VideoDECODEMPEG2Internal_SW::TaskRoutine(void *pParam)
 
     if (parameters->m_thread_completed == parameters->NumThreads)
     {
-        Ipp32s display_index = parameters->display_index;
+        Ipp32s disp_index = parameters->display_index;
 
         parameters->m_frame[parameters->m_frame_curr].DataLength = 0;
         parameters->m_frame[parameters->m_frame_curr].DataOffset = 0;
 
-        if (0 <= display_index)
+        if (0 <= disp_index)
         {
             THREAD_DEBUG_PRINTF("(THREAD %x): dump frame\n", GetCurrentThreadId())
 
             mfxStatus sts = parameters->m_FrameAllocator->PrepareToOutput(parameters->surface_out,
-                                                                          parameters->mid[display_index],
+                                                                          parameters->mid[disp_index],
                                                                           &parameters->m_vPar,
                                                                           m_isOpaqueMemory);
 
