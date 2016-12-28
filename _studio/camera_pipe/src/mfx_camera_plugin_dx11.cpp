@@ -80,20 +80,22 @@ mfxStatus D3D11CameraProcessor::Init(CameraParams *CameraParams)
     m_width  = m_params.vpp.In.CropW;
     m_height = (m_params.vpp.In.CropH/2)*2;  // WA for driver bug: crash in case of odd height
 
-    mfxFrameAllocRequest request;
-    request.Info        = m_params.vpp.In;
-    request.Info.CropX  = request.Info.CropY = 0;
-    request.Info.Width  = m_width;
-    request.Info.Height = m_height;
+    {
+        mfxFrameAllocRequest request;
+        request.Info = m_params.vpp.In;
+        request.Info.CropX = request.Info.CropY = 0;
+        request.Info.Width = m_width;
+        request.Info.Height = m_height;
 
-    // Initial frameinfo contains just R16 that should be updated to the
-    // internal FourCC representing
-    request.Info.FourCC = m_params.vpp.In.FourCC == MFX_FOURCC_R16 ? BayerToFourCC(CameraParams->Caps.BayerPatternType) : m_params.vpp.In.FourCC;
-    request.Type        = MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET | MFX_MEMTYPE_FROM_VPPIN | MFX_MEMTYPE_INTERNAL_FRAME;
-    request.NumFrameMin = request.NumFrameSuggested = m_AsyncDepth;
+        // Initial frameinfo contains just R16 that should be updated to the
+        // internal FourCC representing
+        request.Info.FourCC = m_params.vpp.In.FourCC == MFX_FOURCC_R16 ? BayerToFourCC(CameraParams->Caps.BayerPatternType) : m_params.vpp.In.FourCC;
+        request.Type = MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET | MFX_MEMTYPE_FROM_VPPIN | MFX_MEMTYPE_INTERNAL_FRAME;
+        request.NumFrameMin = request.NumFrameSuggested = m_AsyncDepth;
 
-    sts = m_InSurfacePool->AllocateSurfaces(m_core, request);
-    MFX_CHECK_STS( sts );
+        sts = m_InSurfacePool->AllocateSurfaces(m_core, request);
+        MFX_CHECK_STS(sts);
+    }
 
     m_systemMemIn = false;
     if ( CameraParams->par.IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY )
