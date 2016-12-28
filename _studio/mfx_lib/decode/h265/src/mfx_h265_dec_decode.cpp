@@ -893,10 +893,10 @@ mfxStatus VideoDECODEH265::RunThread(void * params, mfxU32 threadNumber)
     {
         if (!info->pFrame->wasDisplayed() && info->surface_out)
         {
-            mfxStatus sts = DecodeFrame(info->surface_out, info->pFrame);
+            mfxStatus status = DecodeFrame(info->surface_out, info->pFrame);
 
-            if (sts != MFX_ERR_NONE && sts != MFX_ERR_NOT_FOUND)
-                return sts;
+            if (status != MFX_ERR_NONE && status != MFX_ERR_NOT_FOUND)
+                return status;
         }
 
         return MFX_TASK_DONE;
@@ -925,7 +925,7 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs,
         }
         else
         {
-            UMC::AutomaticUMCMutex guard(m_mGuardRunThread);
+            UMC::AutomaticUMCMutex mGuard(m_mGuardRunThread);
             H265DecoderFrame *pFrame = m_pH265VideoDecoder->GetDPBList()->head();
             for (; pFrame; pFrame = pFrame->future())
             {
