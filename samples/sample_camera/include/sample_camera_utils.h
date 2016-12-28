@@ -189,6 +189,14 @@ typedef struct _resetParams
     mfxF64 white_balance_G1;
     mfxF64 white_balance_R;
 
+    bool  bTCC;
+    mfxU8 tcc_red;
+    mfxU8 tcc_green;
+    mfxU8 tcc_blue;
+    mfxU8 tcc_cyan;
+    mfxU8 tcc_magenta;
+    mfxU8 tcc_yellow;
+
     bool   bCCM;
     mfxF64 CCM[3][3];
 
@@ -210,12 +218,18 @@ typedef struct _resetParams
     {
         bHP           = false;
         bBlackLevel   = false;
+        bTCC          = false;
         bWhiteBalance = false;
         bCCM          = false;
         bDenoise      = false;
         bVignette     = false;
         width = height = cropX = cropY = cropW = cropH = 0;
-
+        tcc_red = 255;
+        tcc_green = 255;
+        tcc_blue = 255;
+        tcc_cyan = 255;
+        tcc_magenta = 255;
+        tcc_yellow = 255;
         MSDK_ZERO_MEMORY(strSrcFile);
         MSDK_ZERO_MEMORY(strDstFile);
         MSDK_ZERO_MEMORY(strVignetteMaskFile);
@@ -266,6 +280,13 @@ struct sInputParams
     mfxU16 black_level_G1;
     mfxU16 black_level_R;
 
+    bool  bTCC;
+    mfxU8 tcc_red;
+    mfxU8 tcc_green;
+    mfxU8 tcc_blue;
+    mfxU8 tcc_cyan;
+    mfxU8 tcc_magenta;
+    mfxU8 tcc_yellow;
     bool   bWhiteBalance;
     mfxF64 white_balance_B;
     mfxF64 white_balance_G0;
@@ -390,7 +411,13 @@ struct sInputParams
         bVignette     = false;
         bLens         = false;
         b3DLUT        = false;
-
+        bTCC          = false;
+        tcc_red = 255;
+        tcc_green = 255;
+        tcc_blue = 255;
+        tcc_cyan = 255;
+        tcc_magenta = 255;
+        tcc_yellow = 255;
         alphaValue = -1;
         resetInterval = 7;
         bExternalGammaLUT = false;

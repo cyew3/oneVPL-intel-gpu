@@ -100,6 +100,7 @@ protected:
     mfxExtCamHotPixelRemoval      m_HP;
     mfxExtCamGammaCorrection      m_GammaCorrection;
     mfxExtCamFwdGamma             m_3DLUT_GammaCorrection;
+    mfxExtCamTotalColorControl    m_TotalColorControl;
     mfxExtCamBlackLevelCorrection m_BlackLevelCorrection;
     mfxExtCamWhiteBalance         m_WhiteBalance;
     mfxExtCamColorCorrection3x3   m_CCM;
@@ -166,6 +167,7 @@ protected:
     virtual mfxStatus AllocAndInitCamWhiteBalance(sInputParams *pParams);
     virtual mfxStatus AllocAndInitCamCCM(sInputParams *pParams);
     virtual mfxStatus AllocAndInitCamLens(sInputParams *pParams);
+    virtual mfxStatus AllocAndInitCamTotalColorControl(sInputParams *pParams);
     virtual mfxStatus AllocAndInitCamBlackLevelCorrection(sInputParams *pParams);
     virtual mfxStatus AllocAndInitCamHotPixelRemoval(sInputParams *pParams);
     virtual void FreeCamGammaCorrection();

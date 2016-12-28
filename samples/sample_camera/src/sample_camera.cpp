@@ -43,6 +43,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-bdn threshold] / [-bayerDenoise threshold]        - bayer denoise on\n"));
     msdk_printf(MSDK_STRING("   [-hot_pixel Diff Num]                               - bayer hot pixel removal\n"));
     msdk_printf(MSDK_STRING("   [-bbl B G0 G1 R] / [-bayerBlackLevel B G0 G1 R]     - bayer black level correction\n"));
+    msdk_printf(MSDK_STRING("   [-tcc R G B C M Y] / [-totalColorControl R G B C M Y]  - total color control \n"));
     msdk_printf(MSDK_STRING("   [-bwb B G0 G1 R] / [-bayerWhiteBalance B G0 G1 R]   - bayer white balance\n"));
     msdk_printf(MSDK_STRING("   [-ccm n00 n01 ... n33 ]                             - color correction 3x3 matrix\n"));
     msdk_printf(MSDK_STRING("   [-vignette maskfile ]                               - enable vignette correction using mask from specified file\n"));
@@ -227,6 +228,20 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             msdk_opt_read(strInput[++i], pParams->black_level_G0);
             msdk_opt_read(strInput[++i], pParams->black_level_G1);
             msdk_opt_read(strInput[++i], pParams->black_level_R);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-tcc")) || 0 == msdk_strcmp(strInput[i], MSDK_STRING("-totalColorControl"))) {
+            if (i + 6 >= nArgNum)
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -tcc key"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            pParams->bTCC = true;
+            msdk_opt_read(strInput[++i], pParams->tcc_red);
+            msdk_opt_read(strInput[++i], pParams->tcc_green);
+            msdk_opt_read(strInput[++i], pParams->tcc_blue);
+            msdk_opt_read(strInput[++i], pParams->tcc_cyan);
+            msdk_opt_read(strInput[++i], pParams->tcc_magenta);
+            msdk_opt_read(strInput[++i], pParams->tcc_yellow);
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-hot_pixel")))
         {
@@ -461,6 +476,19 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                     msdk_opt_read(strInput[++i], resPar.black_level_G0);
                     msdk_opt_read(strInput[++i], resPar.black_level_G1);
                     msdk_opt_read(strInput[++i], resPar.black_level_R);
+                } else if(0 == msdk_strcmp(strInput[i], MSDK_STRING("-tcc")) || 0 == msdk_strcmp(strInput[i], MSDK_STRING("-totalColorControl"))) {
+                    if (i + 6 >= nArgNum)
+                    {
+                        PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -tcc key"));
+                        return MFX_ERR_UNSUPPORTED;
+                    }
+                    pParams->bTCC = true;
+                    msdk_opt_read(strInput[++i], pParams->tcc_red);
+                    msdk_opt_read(strInput[++i], pParams->tcc_green);
+                    msdk_opt_read(strInput[++i], pParams->tcc_blue);
+                    msdk_opt_read(strInput[++i], pParams->tcc_cyan);
+                    msdk_opt_read(strInput[++i], pParams->tcc_magenta);
+                    msdk_opt_read(strInput[++i], pParams->tcc_yellow);
                 }
                 else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-hot_pixel")))
                 {
@@ -687,6 +715,12 @@ int main(int argc, char *argv[])
             pParams->white_balance_G0= Params.resetParams[resetNum].white_balance_G0;
             pParams->white_balance_G1= Params.resetParams[resetNum].white_balance_G1;
             pParams->white_balance_R = Params.resetParams[resetNum].white_balance_R;
+            pParams->tcc_red = Params.resetParams[resetNum].tcc_red;
+            pParams->tcc_blue = Params.resetParams[resetNum].tcc_blue;
+            pParams->tcc_green = Params.resetParams[resetNum].tcc_green;
+            pParams->tcc_cyan = Params.resetParams[resetNum].tcc_cyan;
+            pParams->tcc_magenta = Params.resetParams[resetNum].tcc_magenta;
+            pParams->tcc_yellow = Params.resetParams[resetNum].tcc_yellow;
             pParams->bCCM = Params.resetParams[resetNum].bCCM;
             for (int k = 0; k < 3; k++)
                 for (int z = 0; z < 3; z++)
