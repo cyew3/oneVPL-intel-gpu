@@ -677,6 +677,7 @@ ImplementationAvc::ImplementationAvc(VideoCORE * core)
 : m_core(core)
 , m_video()
 , m_stat()
+, m_sliceDivider()
 , m_stagesToGo(0)
 , m_fieldCounter(0)
 , m_1stFieldStatus(MFX_ERR_NONE)
@@ -1207,8 +1208,15 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     // initialization of parameters for Intra refresh
     if (extOpt2->IntRefType)
     {
-        mfxU16 refreshDimension = extOpt2->IntRefType == HORIZ_REFRESH ? m_video.mfx.FrameInfo.Height >> 4 : m_video.mfx.FrameInfo.Width >> 4;
-        m_intraStripeWidthInMBs = (refreshDimension + extOpt2->IntRefCycleSize - 1) / extOpt2->IntRefCycleSize;
+        if (extOpt2->IntRefType == MFX_REFRESH_SLICE)
+        {
+            m_intraStripeWidthInMBs = 0;
+        }
+        else
+        {
+            mfxU16 refreshDimension = extOpt2->IntRefType == MFX_REFRESH_HORIZONTAL ? m_video.mfx.FrameInfo.Height >> 4 : m_video.mfx.FrameInfo.Width >> 4;
+            m_intraStripeWidthInMBs = (refreshDimension + extOpt2->IntRefCycleSize - 1) / extOpt2->IntRefCycleSize;
+        }
         m_baseLayerOrderStartIntraRefresh = 0;
     }
     Zero(m_stat);
@@ -1239,6 +1247,14 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         m_bestGOPCost[i] = MAX_SEQUENCE_COST;
     }
 #endif
+    // init slice divider
+    bool fieldCoding = (m_video.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) == 0;
+    m_sliceDivider = MakeSliceDivider(
+        (m_caps.SliceLevelRateCtrl) ? 4 : m_caps.SliceStructure,
+        extOpt2->NumMbPerSlice,
+        m_video.mfx.NumSlice,
+        m_video.mfx.FrameInfo.Width / 16,
+        m_video.mfx.FrameInfo.Height / 16 / (fieldCoding ? 2 : 1));
 
     if (m_isENCPAK)
     {
@@ -1435,6 +1451,19 @@ mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
     if (checkStatus < MFX_ERR_NONE)
         return checkStatus;
 
+    mfxExtCodingOption3 * extOpt3New = GetExtBuffer(newPar);
+    mfxExtCodingOption3 * extOpt3Old = GetExtBuffer(m_video);
+    if (extOpt3New->NumSliceP != extOpt3Old->NumSliceP) // reset slice divider
+    {
+        bool fieldCoding = (newPar.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) == 0;
+        m_sliceDivider = MakeSliceDivider(
+            (m_caps.SliceLevelRateCtrl) ? 4 : m_caps.SliceStructure,
+            extOpt2New->NumMbPerSlice,
+            extOpt3New->NumSliceP,
+            newPar.mfx.FrameInfo.Width / 16,
+            newPar.mfx.FrameInfo.Height / 16 / (fieldCoding ? 2 : 1));
+    }
+
     // m_encoding contains few submitted and not queried tasks, wait for their completion
     for (DdiTaskIter i = m_encoding.begin(); i != m_encoding.end(); ++i)
         for (mfxU32 f = 0; f <= i->m_fieldPicFlag; f++)
@@ -1512,8 +1541,15 @@ mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
         // reset of Intra refresh
         if (extOpt2New->IntRefType)
         {
-            mfxU16 refreshDimension = extOpt2New->IntRefType == HORIZ_REFRESH ? m_video.mfx.FrameInfo.Height >> 4 : m_video.mfx.FrameInfo.Width >> 4;
-            m_intraStripeWidthInMBs = (refreshDimension + extOpt2New->IntRefCycleSize - 1) / extOpt2New->IntRefCycleSize;
+            if (extOpt2New->IntRefType == MFX_REFRESH_SLICE)
+            {
+                m_intraStripeWidthInMBs = 0;
+            }
+            else
+            {
+                mfxU16 refreshDimension = extOpt2New->IntRefType == MFX_REFRESH_HORIZONTAL ? m_video.mfx.FrameInfo.Height >> 4 : m_video.mfx.FrameInfo.Width >> 4;
+                m_intraStripeWidthInMBs = (refreshDimension + extOpt2New->IntRefCycleSize - 1) / extOpt2New->IntRefCycleSize;
+            }
             m_baseLayerOrderStartIntraRefresh = 0;
         }
     }
@@ -1526,7 +1562,7 @@ mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
             m_frameOrderStartTScalStructure = m_frameOrder;
         }
 
-        if (extOpt2New->IntRefType)
+        if ((extOpt2New->IntRefType) && (extOpt2New->IntRefType != MFX_REFRESH_SLICE))
         {
             sts = UpdateIntraRefreshWithoutIDR(
                 m_video,
@@ -1534,7 +1570,9 @@ mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
                 m_baseLayerOrder,
                 m_baseLayerOrderStartIntraRefresh,
                 m_baseLayerOrderStartIntraRefresh,
-                m_intraStripeWidthInMBs);
+                m_intraStripeWidthInMBs,
+                m_sliceDivider,
+                m_caps);
             MFX_CHECK_STS(sts);
         }
     }
@@ -2471,7 +2509,9 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                 m_video,
                 mfxU32(task->m_baseLayerOrder - m_baseLayerOrderStartIntraRefresh),
                 &(task->m_ctrl),
-                m_intraStripeWidthInMBs);
+                m_intraStripeWidthInMBs,
+                m_sliceDivider,
+                m_caps);
             m_baseLayerOrder ++;
         }
 

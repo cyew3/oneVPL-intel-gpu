@@ -1997,6 +1997,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     mfxExtPredWeightTable *    extPwt       = GetExtBuffer(par);
     mfxExtFeiParam *           feiParam     = GetExtBuffer(par);
     bool isENCPAK = feiParam && (MFX_FEI_FUNCTION_ENCODE == feiParam->Func);
+    bool sliceRowAlligned = true;
 
     // check hw capabilities
     if (par.mfx.FrameInfo.Width  > hwCaps.MaxPicWidth ||
@@ -2451,6 +2452,14 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
             changed = true;
             par.mfx.NumSlice = (mfxU16)divider.GetNumSlice();
         }
+        if (extOpt3->NumSliceP == 0)
+        {
+            do
+            {
+                if (divider.GetNumMbInSlice() % (par.mfx.FrameInfo.Width / 16) != 0)
+                    sliceRowAlligned = false;
+            } while (divider.Next());
+        }
     }
 
     if (extOpt3->NumSliceI       != 0 &&
@@ -2503,6 +2512,12 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
             changed = true;
             extOpt3->NumSliceP = (mfxU16)divider.GetNumSlice();
         }
+
+        do
+        {
+            if (divider.GetNumMbInSlice() % (par.mfx.FrameInfo.Width / 16) != 0)
+                sliceRowAlligned = false;
+        } while (divider.Next());
     }
 
     if (extOpt3->NumSliceB       != 0 &&
@@ -3776,12 +3791,12 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     }
 #endif // #ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
 
-    if (extOpt2->IntRefType > 2 || (extOpt2->IntRefType && hwCaps.RollingIntraRefresh == 0))
+    if (extOpt2->IntRefType > 3 || (extOpt2->IntRefType && hwCaps.RollingIntraRefresh == 0))
     {
         extOpt2->IntRefType = 0;
         unsupported = true;
     }
-    if((extOpt2->IntRefType == 2) &&
+    if((extOpt2->IntRefType >= 2) &&
         (platform < MFX_HW_BDW))
     {
         extOpt2->IntRefType = 0;
@@ -3839,6 +3854,32 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         // refresh period shouldn't be greater than refresh cycle size
         extOpt3->IntRefCycleDist = 0;
         changed = true;
+    }
+
+    if (extOpt2->IntRefType == MFX_REFRESH_SLICE)
+    {
+        if (extOpt2->IntRefCycleSize && extOpt3->NumSliceP && (extOpt2->IntRefCycleSize != extOpt3->NumSliceP))
+        {
+            extOpt2->IntRefCycleSize = extOpt3->NumSliceP;
+            changed = true;
+        }
+        if ((extOpt3->NumSliceP != 0) && (par.mfx.GopPicSize != 0) && (extOpt3->NumSliceP > par.mfx.GopPicSize))
+        {
+            extOpt2->IntRefType = 0;
+            changed = true;
+        }
+        if ((extOpt3->IntRefCycleDist != 0) && (extOpt3->NumSliceP != 0) && (extOpt3->NumSliceP > extOpt3->IntRefCycleDist))
+        {
+            // refresh period shouldn't be greater than refresh cycle size
+            extOpt3->IntRefCycleDist = 0;
+            changed = true;
+        }
+        if ((extOpt2->MaxSliceSize) || (extOpt2->NumMbPerSlice) || (!sliceRowAlligned))
+        {
+            extOpt2->IntRefType = 0;
+            extOpt2->IntRefCycleSize = 0;
+            unsupported = true;
+        }
     }
 
     if (extOpt2->Trellis & ~(MFX_TRELLIS_OFF | MFX_TRELLIS_I | MFX_TRELLIS_P | MFX_TRELLIS_B))
@@ -5222,9 +5263,16 @@ void MfxHwH264Encode::SetDefaults(
 
     if (extOpt2->IntRefType && extOpt2->IntRefCycleSize == 0)
     {
-        // set intra refresh cycle to 1 sec by default
-        extOpt2->IntRefCycleSize =
-            (mfxU16)((par.mfx.FrameInfo.FrameRateExtN + par.mfx.FrameInfo.FrameRateExtD - 1) / par.mfx.FrameInfo.FrameRateExtD);
+        if (extOpt2->IntRefType == MFX_REFRESH_SLICE)
+        {
+            extOpt2->IntRefCycleSize = extOpt3->NumSliceP;
+        }
+        else
+        {
+            // set intra refresh cycle to 1 sec by default
+            extOpt2->IntRefCycleSize =
+                (mfxU16)((par.mfx.FrameInfo.FrameRateExtN + par.mfx.FrameInfo.FrameRateExtD - 1) / par.mfx.FrameInfo.FrameRateExtD);
+        }
     }
 
     if (par.calcParam.mvcPerViewPar.codecLevel == MFX_LEVEL_UNKNOWN)

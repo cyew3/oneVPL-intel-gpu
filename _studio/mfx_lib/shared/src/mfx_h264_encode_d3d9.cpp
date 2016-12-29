@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -272,10 +272,14 @@ void MfxHwH264Encode::FillVaringPartOfPpsBuffer(
     pps.CurrFieldOrderCnt[1]                    = task.GetPoc(BFIELD);
     //pps.bDisableHeaderPacking                   = task.m_insertSps[fieldId] ? 0 : 1;
 //  Intra refresh {
-    pps.bEnableRollingIntraRefresh              = task.m_IRState.refrType;
-    pps.IntraInsertionLocation                  = task.m_IRState.IntraLocation;
-    pps.IntraInsertionSize                      = task.m_IRState.IntraSize;
-    pps.QpDeltaForInsertedIntra                 = mfxU8(task.m_IRState.IntRefQPDelta);
+    {
+        pps.bEnableRollingIntraRefresh = task.m_IRState.refrType;
+        if (task.m_IRState.refrType == MFX_REFRESH_SLICE)
+            pps.bEnableRollingIntraRefresh = MFX_REFRESH_HORIZONTAL;
+        pps.IntraInsertionLocation = task.m_IRState.IntraLocation;
+        pps.IntraInsertionSize = task.m_IRState.IntraSize;
+        pps.QpDeltaForInsertedIntra = mfxU8(task.m_IRState.IntRefQPDelta);
+    }
 //  Intra refresh }
 
     if (extOpt2)
@@ -1464,6 +1468,7 @@ mfxStatus D3D9Encoder::Execute(
             FillVaringPartOfSliceBufferSizeLimited(m_caps, task, fieldId, m_sps, m_pps, m_slice);
         else
             FillVaringPartOfSliceBuffer(m_caps, task, fieldId, m_sps, m_pps,m_slice);
+
 
         if (slice_size_old != m_slice.size())
         {

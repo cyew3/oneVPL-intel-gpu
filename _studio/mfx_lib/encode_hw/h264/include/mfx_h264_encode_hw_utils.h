@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -601,12 +601,15 @@ namespace MfxHwH264Encode
         mfxU32 m_idrDist;
     };
 
-    enum
-    {
-        NO_REFRESH             = 0,
-        VERT_REFRESH           = 1,
-        HORIZ_REFRESH          = 2
+#if defined(OPEN_SOURCE)
+    /* Intra refresh types */
+    enum {
+        MFX_REFRESH_NO = 0,
+        MFX_REFRESH_VERTICAL = 1,
+        MFX_REFRESH_HORIZONTAL = 2,
+        MFX_REFRESH_SLICE = 3
     };
+#endif
 
     struct IntraRefreshState
     {
@@ -1984,6 +1987,8 @@ namespace MfxHwH264Encode
         AsyncRoutineEmulator m_emulatorForSyncPart;
         AsyncRoutineEmulator m_emulatorForAsyncPart;
 
+        SliceDivider        m_sliceDivider;
+
         std::list<DdiTask>  m_free;
         std::list<DdiTask>  m_incoming;
         std::list<DdiTask>  m_reordering;
@@ -2062,6 +2067,7 @@ namespace MfxHwH264Encode
         std::auto_ptr<CmContext>    m_cmCtx;
         std::vector<VmeData>        m_vmeDataStorage;
         std::vector<VmeData *>      m_tmpVmeData;
+
 
 #if USE_AGOP
         mfxI32        m_agopBestIdx;
@@ -3230,7 +3236,9 @@ namespace MfxHwH264Encode
         MfxVideoParam const & video,
         mfxU32                frameOrderInGop,
         mfxEncodeCtrl const * ctrl,
-        mfxU16                intraStripeWidthInMBs);
+        mfxU16                intraStripeWidthInMBs,
+        SliceDivider &  divider,
+        ENCODE_CAPS     caps);
 
     mfxStatus UpdateIntraRefreshWithoutIDR(
         MfxVideoParam const & oldPar,
@@ -3238,7 +3246,9 @@ namespace MfxHwH264Encode
         mfxU32                frameOrder,
         mfxI64                oldStartFrame,
         mfxI64 &              updatedStartFrame,
-        mfxU16 &              updatedStripeWidthInMBs);
+        mfxU16 &              updatedStripeWidthInMBs,
+        SliceDivider &  divider,
+        ENCODE_CAPS     caps);
 
     BiFrameLocation GetBiFrameLocation(
         MfxVideoParam const & video,

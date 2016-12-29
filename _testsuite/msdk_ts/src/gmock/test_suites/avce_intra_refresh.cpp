@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
 
 File Name: avce_intra_refresh.cpp
 \* ****************************************************************************** */
@@ -132,42 +132,60 @@ namespace avce_intra_refresh{
         {{CDO2_PAR, &tsStruct::mfxExtCodingOption2.IntRefType, 2},
          {CDO2_PAR, &tsStruct::mfxExtCodingOption2.IntRefCycleSize, 2},
          {CDO2_PAR, &tsStruct::mfxExtCodingOption2.IntRefQPDelta, 4}}},
-        //VALID WITH NEGATIVE IntRefQPDelta
+        //VALID SLICE PARMAS (UNSUPPORTED FOR snb, ivb, vlv, hsw, bdw)
         {/*02*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE,
-        {{CDO2_PAR, &tsStruct::mfxExtCodingOption2.IntRefType, 1},
+         { { CDO2_PAR, &tsStruct::mfxExtCodingOption2.IntRefType, 3},
+         { CDO2_PAR, &tsStruct::mfxExtCodingOption2.IntRefCycleSize, 0},
+         { CDO2_PAR, &tsStruct::mfxExtCodingOption2.IntRefQPDelta, 4 }}},
+        //VALID WITH NEGATIVE IntRefQPDelta
+        {/*03*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE,
+         {{CDO2_PAR, &tsStruct::mfxExtCodingOption2.IntRefType, 1},
          {CDO2_PAR, &tsStruct::mfxExtCodingOption2.IntRefCycleSize, 2},
-        {CDO2_PAR, &tsStruct::mfxExtCodingOption2.IntRefQPDelta, (mfxI16)-24}}},
-        //INVALID IntRefType = 3
-        {/*03*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM,
-        {{CDO2_PAR, &tsStruct::mfxExtCodingOption2.IntRefType, 3},
+         {CDO2_PAR, &tsStruct::mfxExtCodingOption2.IntRefQPDelta, (mfxI16)-24}}},
+        //INVALID IntRefType = 4
+        {/*04*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM,
+         {{CDO2_PAR, &tsStruct::mfxExtCodingOption2.IntRefType, 4},
          {CDO2_PAR, &tsStruct::mfxExtCodingOption2.IntRefCycleSize, 2},
          {CDO2_PAR, &tsStruct::mfxExtCodingOption2.IntRefQPDelta, 4}}},
         //INVALID IntRefQPDelta = 53
-        {/*04*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
-        {{CDO2_PAR, &tsStruct::mfxExtCodingOption2.IntRefType, 1},
+        {/*05*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
+         {{CDO2_PAR, &tsStruct::mfxExtCodingOption2.IntRefType, 1},
          {CDO2_PAR, &tsStruct::mfxExtCodingOption2.IntRefCycleSize, 2},
          {CDO2_PAR, &tsStruct::mfxExtCodingOption2.IntRefQPDelta, 53}}},
         //INVALID IntRefQPDelta = -53
-        {/*05*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
-        {{CDO2_PAR, &tsStruct::mfxExtCodingOption2.IntRefType, 1},
+        {/*06*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
+         {{CDO2_PAR, &tsStruct::mfxExtCodingOption2.IntRefType, 1},
          {CDO2_PAR, &tsStruct::mfxExtCodingOption2.IntRefCycleSize, 2},
          {CDO2_PAR, &tsStruct::mfxExtCodingOption2.IntRefQPDelta,(mfxI16) -53}}},
         //VALID ALL ZEROES
-        {/*06*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE,
-        {{CDO2_PAR, &tsStruct::mfxExtCodingOption2.IntRefType, 0},
+        {/*07*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE,
+         {{CDO2_PAR, &tsStruct::mfxExtCodingOption2.IntRefType, 0},
          {CDO2_PAR, &tsStruct::mfxExtCodingOption2.IntRefCycleSize, 0},
          {CDO2_PAR, &tsStruct::mfxExtCodingOption2.IntRefQPDelta, 0}}},
         //INVALID ALL -1
-        {/*07*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM,
-        {{CDO2_PAR, &tsStruct::mfxExtCodingOption2.IntRefType,(mfxI16) -1},
+        {/*08*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM,
+         {{CDO2_PAR, &tsStruct::mfxExtCodingOption2.IntRefType,(mfxI16) -1},
          {CDO2_PAR, &tsStruct::mfxExtCodingOption2.IntRefCycleSize, (mfxI16)-1},
          {CDO2_PAR, &tsStruct::mfxExtCodingOption2.IntRefQPDelta,(mfxI16) -1}}},
+        //INVALID NOT ZEROES RefCicleSize
+        {/*09*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
+         {{ CDO2_PAR, &tsStruct::mfxExtCodingOption2.IntRefType, 3},
+         {CDO2_PAR, &tsStruct::mfxExtCodingOption2.IntRefCycleSize, 2},
+         {CDO2_PAR, &tsStruct::mfxExtCodingOption2.IntRefQPDelta, 0 }}},
+        //INVALID NOT ZEROES NumMbPerSlice
+        {/*10*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM,
+         {{CDO2_PAR, &tsStruct::mfxExtCodingOption2.IntRefType, 3},
+         {CDO2_PAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, 1}}},
+        //INVALID NOT ZEROES NumMbPerSlice
+        {/*11*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM,
+         {{CDO2_PAR, &tsStruct::mfxExtCodingOption2.IntRefType, 3},
+         {CDO2_PAR, &tsStruct::mfxExtCodingOption2.MaxSliceSize, 1}}},
         //VALID
-        {/*08*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE,
-        {{CDO2_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 0}}},
+        {/*12*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE,
+         {{CDO2_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 0}}},
         //INVALID
-        {/*09*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
-        {{CDO2_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 10}}},
+        {/*13*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+         {{CDO2_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 10}}},
     };
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::test_case[0]);
 
@@ -179,8 +197,10 @@ namespace avce_intra_refresh{
         mfxStatus i_sts = tc.i_sts;
         mfxStatus r_sts = tc.r_sts;
 
-
-       if (id == 2)//Horizontal intra refresh is unsupported 
+        m_par = initParams();
+        SETPARS(&m_par, CDO2_PAR);
+        mfxExtCodingOption2* m_co2 = (mfxExtCodingOption2*)m_par.GetExtBuffer(MFX_EXTBUFF_CODING_OPTION2);
+        if ((m_co2->IntRefType == 2) || (m_co2->IntRefType == 3))//Horizontal intra refresh is unsupported 
             if (g_tsHWtype <= MFX_HW_BDW)
             {
                 q_sts = MFX_ERR_UNSUPPORTED;
@@ -190,17 +210,13 @@ namespace avce_intra_refresh{
 
         MFXInit();
 
-        m_par = initParams();
-        SETPARS(&m_par, CDO2_PAR);
-
-        mfxExtCodingOption2* m_co2 = (mfxExtCodingOption2*) m_par.GetExtBuffer(MFX_EXTBUFF_CODING_OPTION2);
         mfxI32 bef_IntRefType      = -100;
         mfxI32 bef_IntRefCycleSize = -100;
         mfxI32 bef_IntRefQPDelta   = -100;
 
         mfxI32* check_value;
         if (q_sts != MFX_ERR_NONE){
-            if (m_co2->IntRefType < 0 || m_co2->IntRefType > 2)
+            if (m_co2->IntRefType < 0 || m_co2->IntRefType > 3)
                 bef_IntRefType = m_co2->IntRefType;
             if (m_co2->IntRefCycleSize < 0)
                 bef_IntRefCycleSize = (m_co2->IntRefCycleSize);

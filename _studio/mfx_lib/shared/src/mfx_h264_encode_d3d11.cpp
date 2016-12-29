@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -421,6 +421,7 @@ mfxStatus D3D11Encoder::Execute(
         SkipFlag = 0; // encode current frame as normal
         m_numSkipFrames += (mfxU8)task.m_ctrl.SkipFrame;
     }
+
 
     // Execute()
     
