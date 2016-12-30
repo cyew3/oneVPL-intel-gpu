@@ -23,6 +23,7 @@
 #include "mfx_ext_buffers.h"
 #include "mfxwidi.h"
 #include "mfxfei.h"
+#include "mfxbrc.h"
 
 #if defined(MFX_VA_WIN)
 #include "encoding_ddi.h"
@@ -237,6 +238,9 @@ namespace MfxHwH264Encode
     BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiRepackCtrl,        MFX_EXTBUFF_FEI_REPACK_CTRL          );
 #if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
     BIND_EXTBUF_TYPE_TO_ID (mfxExtIntGPUHang,           MFX_EXTBUFF_GPU_HANG                 );
+#endif
+#if defined (__MFXBRC_H__)
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtBRC,        MFX_EXTBUFF_BRC          );
 #endif
 
 #undef BIND_EXTBUF_TYPE_TO_ID
@@ -590,7 +594,7 @@ namespace MfxHwH264Encode
         void ConstructMvcSeqDesc(mfxExtMVCSeqDesc const & desc);
 
     private:
-        mfxExtBuffer *              m_extParam[29];
+        mfxExtBuffer *              m_extParam[30];
         // external, documented
         mfxExtCodingOption          m_extOpt;
         mfxExtCodingOption2         m_extOpt2;
@@ -630,6 +634,9 @@ namespace MfxHwH264Encode
         mfxExtFeiSPS                m_extFeiSPS;
         mfxExtFeiPPS                m_extFeiPPS;
 
+#if defined(__MFXBRC_H__)
+        mfxExtBRC                   m_extBRC;
+#endif
         std::vector<mfxMVCViewDependency> m_storageView;
         std::vector<mfxMVCOperationPoint> m_storageOp;
         std::vector<mfxU16>               m_storageViewId;

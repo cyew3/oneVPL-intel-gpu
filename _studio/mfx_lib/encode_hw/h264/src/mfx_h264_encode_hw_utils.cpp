@@ -33,6 +33,7 @@
 #include "umc_video_data.h"
 #include "fast_copy.h"
 
+
 using namespace MfxHwH264Encode;
 
 static char chFrameType[] = "?IP?B???";
@@ -2772,7 +2773,7 @@ namespace
     }
 };
 
-void UmcBrc::Init(MfxVideoParam const & video)
+void UmcBrc::Init(MfxVideoParam  & video)
 {
     assert(
         video.mfx.RateControlMethod == MFX_RATECONTROL_CBR ||
@@ -2803,46 +2804,57 @@ void UmcBrc::Close()
     m_impl.Close();
 }
 
-mfxU8 UmcBrc::GetQp(mfxU32 frameType, mfxU32 picStruct, mfxU32 /* encOrder */)
+mfxU8 UmcBrc::GetQp(const BRCFrameParams& par)
 {
+    mfxU32 frameType = par.FrameType;
     if (m_lookAhead >= 5 && (frameType & MFX_FRAMETYPE_B))
         frameType = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
     UMC::FrameType umcFrameType = ConvertFrameTypeMfx2Umc(frameType);
-    m_impl.SetPictureFlags(umcFrameType, ConvertPicStructMfx2Umc(picStruct));
-    return mfxU8(m_impl.GetQP(umcFrameType));
+    m_impl.SetPictureFlags(umcFrameType, ConvertPicStructMfx2Umc(par.picStruct));
+
+    return (mfxU8)m_impl.GetQP(umcFrameType);
 }
 
-mfxF32 UmcBrc::GetFractionalQp(mfxU32 frameType, mfxU32 picStruct)
+mfxU8 UmcBrc::GetQpForRecode(const BRCFrameParams& par, mfxU8 curQP)
 {
+    mfxU8 qp = curQP + (mfxU8)par.NumRecode;
+    qp = CLIPVAL(1,51,qp);
+    return qp;
+}
+
+mfxF32 UmcBrc::GetFractionalQp(const BRCFrameParams& par)
+{
+    mfxU32 frameType = par.FrameType;
     if (m_lookAhead >= 5 && (frameType & MFX_FRAMETYPE_B))
         frameType = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
     UMC::FrameType umcFrameType = ConvertFrameTypeMfx2Umc(frameType);
-    m_impl.SetPictureFlags(umcFrameType, ConvertPicStructMfx2Umc(picStruct));
+    m_impl.SetPictureFlags(umcFrameType, ConvertPicStructMfx2Umc(par.picStruct));
     return 0.f;//m_impl.GetFractionalQP(umcFrameType);
 }
 
-void UmcBrc::SetQp(mfxU32 qp, mfxU32 frameType)
+void UmcBrc::SetQp(const BRCFrameParams& par, mfxU32 qp)
 {
+    mfxU32 frameType = par.FrameType;
     if (m_lookAhead >= 5 && (frameType & MFX_FRAMETYPE_B))
         frameType = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
     m_impl.SetQP(qp, ConvertFrameTypeMfx2Umc(frameType));
 }
 
-void UmcBrc::PreEnc(mfxU32 frameType, std::vector<VmeData *> const & vmeData, mfxU32 curEncOrder)
+void UmcBrc::PreEnc(const BRCFrameParams& par, std::vector<VmeData *> const & vmeData)
 {
     for (size_t i = 0; i < vmeData.size(); i++)
     {
-        if (vmeData[i]->encOrder == curEncOrder)
+        if (vmeData[i]->encOrder == par.EncodedOrder)
         {
-            m_impl.PreEncFrame(ConvertFrameTypeMfx2Umc(frameType), vmeData[i]->intraCost, vmeData[i]->interCost);
+            m_impl.PreEncFrame(ConvertFrameTypeMfx2Umc(par.FrameType), vmeData[i]->intraCost, vmeData[i]->interCost);
             break;
         }
     }
 }
 
-mfxU32 UmcBrc::Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 userDataLength, mfxU32 repack, mfxU32 picOrder, mfxU32 /* maxFrameSize */, mfxU32 /* qp */)
+mfxU32 UmcBrc::Report(const BRCFrameParams& par, mfxU32 dataLength, mfxU32 userDataLength,  mfxU32 /* maxFrameSize */, mfxU32 /* qp */)
 {
-    return m_impl.PostPackFrame(ConvertFrameTypeMfx2Umc(frameType), 8 * dataLength, userDataLength * 8, repack, picOrder);
+    return m_impl.PostPackFrame(ConvertFrameTypeMfx2Umc(par.FrameType), 8 * dataLength, userDataLength * 8, par.NumRecode, par.EncodedOrder);
 }
 
 mfxU32 UmcBrc::GetMinFrameSize()
@@ -2947,7 +2959,7 @@ namespace MfxHwH264EncodeHW
 }
 using namespace MfxHwH264EncodeHW;
 
-void LookAheadBrc2::Init(MfxVideoParam const & video)
+void LookAheadBrc2::Init(MfxVideoParam  & video)
 {
     mfxExtCodingOptionDDI const * extDdi  = GetExtBuffer(video);
     mfxExtCodingOption2 const *   extOpt2 = GetExtBuffer(video);
@@ -3000,7 +3012,7 @@ void LookAheadBrc2::Close()
 }
 
 
-void VMEBrc::Init(MfxVideoParam const & video)
+void VMEBrc::Init(MfxVideoParam  & video)
 {
     mfxExtCodingOptionDDI const * extDdi    = GetExtBuffer(video);
     mfxExtCodingOption2  const * extOpt2    = GetExtBuffer(video);
@@ -3217,12 +3229,13 @@ mfxU8 GetFrameTypeLetter(mfxU32 frameType)
     return 'x';
 }
 
-mfxU8 LookAheadBrc2::GetQp(mfxU32 frameType, mfxU32 /*picStruct*/, mfxU32 /* encOrder */)
+mfxU8 LookAheadBrc2::GetQp(const BRCFrameParams& par)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "LookAheadBrc2::GetQp");
     brcprintf("\r%4d: do=%4d type=%c Rt=%7.3f-%7.3f curc=%4d numc=%2d ", m_laData[0].encOrder, m_laData[0].poc/2,
-        GetFrameTypeLetter(frameType), m_targetRateMin, m_targetRateMax, m_laData[0].interCost / m_totNumMb, mfxU32(m_laData.size()));
+        GetFrameTypeLetter(par.FrameType), m_targetRateMin, m_targetRateMax, m_laData[0].interCost / m_totNumMb, mfxU32(m_laData.size()));
 
+    
     mfxF64 totalEstRate[52] = { 0.0 };
 
     for (mfxU32 qp = 0; qp < 52; qp++)
@@ -3297,18 +3310,24 @@ mfxU8 LookAheadBrc2::GetQp(mfxU32 frameType, mfxU32 /*picStruct*/, mfxU32 /* enc
         m_curBaseQp = CLIPVAL(m_curBaseQp - MAX_QP_CHANGE, m_curBaseQp + MAX_QP_CHANGE, maxQp);
     else
         ; // do not change qp if last qp guarantees target rate interval
-    m_curQp = CLIPVAL(1, 51, m_curBaseQp + m_laData[m_first].deltaQp); // driver doesn't support qp=0
+    m_curQp = CLIPVAL(1, 51, m_curBaseQp + m_laData[m_first].deltaQp ); // driver doesn't support qp=0
 
     //printf("bqp=%2d qp=%2d dqp=%2d erate=%7.3f ", m_curBaseQp, m_curQp, m_laData[0].deltaQp, m_laData[0].estRateTotal[m_curQp]);
 
     return mfxU8(m_curQp);
 }
-void  LookAheadBrc2::SetQp(mfxU32 qp, mfxU32 /* frameType */)
+mfxU8 LookAheadBrc2::GetQpForRecode(const BRCFrameParams& par, mfxU8 curQP)
+{
+    mfxU8 qp = curQP + (mfxU8)par.NumRecode;
+    qp = CLIPVAL(1,51,qp);
+    return qp;
+}
+void  LookAheadBrc2::SetQp(const BRCFrameParams& /*par*/, mfxU32 qp)
 {
     m_curQp = CLIPVAL(1, 51, qp);
 }
 
-void LookAheadBrc2::PreEnc(mfxU32 /*frameType*/, std::vector<VmeData *> const & vmeData, mfxU32 curEncOrder)
+void LookAheadBrc2::PreEnc(const BRCFrameParams& par, std::vector<VmeData *> const & vmeData)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "LookAheadBrc2::PreEnc");
 
@@ -3316,7 +3335,7 @@ void LookAheadBrc2::PreEnc(mfxU32 /*frameType*/, std::vector<VmeData *> const & 
 
     size_t i = 0;
     for (; i < m_laData.size(); i++)
-        if (m_laData[i].encOrder == curEncOrder)
+        if (m_laData[i].encOrder == par.EncodedOrder)
         {
             break;
         }
@@ -3328,8 +3347,8 @@ void LookAheadBrc2::PreEnc(mfxU32 /*frameType*/, std::vector<VmeData *> const & 
     m_laData.erase(m_laData.begin(), m_laData.begin() + i);
 
 
-    mfxU32 firstNewFrame = m_laData.empty() ? curEncOrder : m_laData.back().encOrder + 1;
-    mfxU32 lastNewFrame  = curEncOrder + m_lookAhead;
+    mfxU32 firstNewFrame = m_laData.empty() ? par.EncodedOrder : m_laData.back().encOrder + 1;
+    mfxU32 lastNewFrame  = par.EncodedOrder + m_lookAhead;
 
     for (size_t i = 0; i < vmeData.size(); i++)
     {
@@ -3367,21 +3386,21 @@ void LookAheadBrc2::PreEnc(mfxU32 /*frameType*/, std::vector<VmeData *> const & 
 }
 
 
-void VMEBrc::PreEnc(mfxU32 /*frameType*/, std::vector<VmeData *> const & /*vmeData*/, mfxU32 /*curEncOrder*/)
+void VMEBrc::PreEnc(const BRCFrameParams& /*par*/, std::vector<VmeData *> const & /*vmeData*/)
 {
 }
 
-mfxU32 LookAheadBrc2::Report(mfxU32 frameType , mfxU32 dataLength, mfxU32 /* userDataLength */, mfxU32  repack, mfxU32 picOrder, mfxU32 maxFrameSize, mfxU32 qp)
+mfxU32 LookAheadBrc2::Report(const BRCFrameParams& par , mfxU32 dataLength, mfxU32 /* userDataLength */,  mfxU32 maxFrameSize, mfxU32 qp)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "LookAheadBrc2::Report");
     mfxF64 realRatePerMb = 8 * dataLength / mfxF64(m_totNumMb);
 
     qp = CLIPVAL(1, 51, qp);
 
-    if ((m_skipped == 1) && ((frameType & MFX_FRAMETYPE_B)!=0) && repack < 100)
+    if ((m_skipped == 1) && ((par.FrameType & MFX_FRAMETYPE_B)!=0) && par.NumRecode < 100)
         return 3;  // skip mode for this frame
 
-    m_skipped = (repack < 100) ? 0 : 1;  //frame was skipped (panic mode)
+    m_skipped = (par.NumRecode < 100) ? 0 : 1;  //frame was skipped (panic mode)
                                          //we will skip all frames until next reference]
 
     if (m_bControlMaxFrame && ((8 * dataLength + 24) > maxFrameSize))
@@ -3390,8 +3409,8 @@ mfxU32 LookAheadBrc2::Report(mfxU32 frameType , mfxU32 dataLength, mfxU32 /* use
     }
     if (m_AvgBitrate)
     {
-        m_AvgBitrate->UpdateSlidingWindow(8 * dataLength, picOrder);
-        if (!m_AvgBitrate->CheckBitrate(!m_skipped && !((frameType & MFX_FRAMETYPE_I) && (qp == 51))) )
+        m_AvgBitrate->UpdateSlidingWindow(8 * dataLength, par.EncodedOrder);
+        if (!m_AvgBitrate->CheckBitrate(!m_skipped && !((par.FrameType & MFX_FRAMETYPE_I) && (qp == 51))) )
         {
              return 1;
         }
@@ -3440,22 +3459,21 @@ mfxU32 LookAheadBrc2::Report(mfxU32 frameType , mfxU32 dataLength, mfxU32 /* use
     return 0;
 }
 
-mfxU32 VMEBrc::Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 /*userDataLength*/, mfxU32 repack, mfxU32 picOrder, mfxU32  /* maxFrameSize */, mfxU32 qp )
+mfxU32 VMEBrc::Report(const BRCFrameParams& par, mfxU32 dataLength, mfxU32 /*userDataLength*/, mfxU32  /* maxFrameSize */, mfxU32 qp )
 {
-    frameType; // unused
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "LookAheadBrc2::Report");
     mfxF64 realRatePerMb = 8 * dataLength / mfxF64(m_totNumMb);
 
-    if ((m_skipped == 1) && ((frameType & MFX_FRAMETYPE_B)!=0) && repack < 100)
+    if ((m_skipped == 1) && ((par.FrameType & MFX_FRAMETYPE_B)!=0) && par.NumRecode < 100)
         return 3;  // skip mode for this frame
 
-    m_skipped = (repack < 100) ? 0 : 1;  //frame was skipped (panic mode)
+    m_skipped = (par.NumRecode < 100) ? 0 : 1;  //frame was skipped (panic mode)
                                          //we will skip all frames until next reference]
 
     if (m_AvgBitrate)
     {
-        m_AvgBitrate->UpdateSlidingWindow(8 * dataLength, picOrder);
-        if (!m_AvgBitrate->CheckBitrate(!m_skipped && !((frameType & MFX_FRAMETYPE_I) && (qp == 51))) )
+        m_AvgBitrate->UpdateSlidingWindow(8 * dataLength, par.EncodedOrder);
+        if (!m_AvgBitrate->CheckBitrate(!m_skipped && !((par.FrameType & MFX_FRAMETYPE_I) && (qp == 51))) )
         {
              return 1;
         }
@@ -3467,7 +3485,7 @@ mfxU32 VMEBrc::Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 /*userDataLeng
     std::list<LaFrameData>::iterator start = m_laData.begin();
     for(;start != m_laData.end(); ++start)
     {
-        if ((*start).dispOrder == picOrder)
+        if ((*start).dispOrder == par.DisplayOrder)
             break;
     }
     mfxU32 numFrames = 0;
@@ -3519,10 +3537,9 @@ mfxU32 VMEBrc::Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 /*userDataLeng
     return 0;
 }
 
-mfxU8 VMEBrc::GetQp(mfxU32 frameType, mfxU32 /*picStruct*/, mfxU32 encOrder)
+mfxU8 VMEBrc::GetQp(const BRCFrameParams& par)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "VMEBrc::GetQp");
-    frameType;
 
     mfxF64 totalEstRate[52] = { 0.0 };
     if (!m_laData.size())
@@ -3531,12 +3548,12 @@ mfxU8 VMEBrc::GetQp(mfxU32 frameType, mfxU32 /*picStruct*/, mfxU32 encOrder)
     std::list<LaFrameData>::iterator start = m_laData.begin();
     while (start != m_laData.end())
     {
-        if ((*start).encOrder == encOrder)
+        if ((*start).encOrder == par.EncodedOrder)
             break;
         ++start;
     }
 
-    MFX_CHECK(start != m_laData.end(), 0);
+    //MFX_CHECK(start != m_laData.end(), 0);
     std::list<LaFrameData>::iterator it = start;
     mfxU32 numberOfFrames = 0;
     for(it = start;it != m_laData.end(); ++it)
@@ -3634,8 +3651,14 @@ mfxU8 VMEBrc::GetQp(mfxU32 frameType, mfxU32 /*picStruct*/, mfxU32 encOrder)
 
     return mfxU8(m_curQp);
 }
+mfxU8 VMEBrc::GetQpForRecode(const BRCFrameParams& par, mfxU8 curQP)
+{
+    mfxU8 qp = curQP + (mfxU8)par.NumRecode;
+    qp = CLIPVAL(1,51,qp);
+    return qp;
+}
 
-void LookAheadCrfBrc::Init(MfxVideoParam const & video)
+void LookAheadCrfBrc::Init(MfxVideoParam  & video)
 {
     mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(video);
 
@@ -3648,7 +3671,7 @@ void LookAheadCrfBrc::Init(MfxVideoParam const & video)
     m_propCost  = 0;
 }
 
-mfxU8 LookAheadCrfBrc::GetQp(mfxU32 /*frameType*/, mfxU32 /*picStruct*/, mfxU32 /* encOrder */)
+mfxU8 LookAheadCrfBrc::GetQp(const BRCFrameParams& /*par*/)
 {
     mfxF64 strength = 0.03 * m_crfQuality + .75;
     mfxF64 ratio    = 1.0;
@@ -3662,12 +3685,18 @@ mfxU8 LookAheadCrfBrc::GetQp(mfxU32 /*frameType*/, mfxU32 /*picStruct*/, mfxU32 
 
     return mfxU8(m_curQp);
 }
+mfxU8 LookAheadCrfBrc::GetQpForRecode(const BRCFrameParams& par, mfxU8 curQP)
+{
+    mfxU8 qp = curQP + (mfxU8)par.NumRecode;
+    qp = CLIPVAL(1,51,qp);
+    return qp;
+}
 
-void LookAheadCrfBrc::PreEnc(mfxU32 /*frameType*/, std::vector<VmeData *> const & vmeData, mfxU32 curEncOrder)
+void LookAheadCrfBrc::PreEnc(const BRCFrameParams& par, std::vector<VmeData *> const & vmeData)
 {
     for (size_t i = 0; i < vmeData.size(); i++)
     {
-        if (vmeData[i]->encOrder == curEncOrder)
+        if (vmeData[i]->encOrder == par.EncodedOrder)
         {
             m_intraCost = vmeData[i]->intraCost;
             m_interCost = vmeData[i]->interCost;
@@ -3676,7 +3705,7 @@ void LookAheadCrfBrc::PreEnc(mfxU32 /*frameType*/, std::vector<VmeData *> const 
     }
 }
 
-mfxU32 LookAheadCrfBrc::Report(mfxU32 /*frameType*/, mfxU32 /*dataLength*/, mfxU32 /*userDataLength*/, mfxU32 /*repack*/, mfxU32 /*picOrder*/, mfxU32 /* maxFrameSize */, mfxU32 /* qp */)
+mfxU32 LookAheadCrfBrc::Report(const BRCFrameParams& /*par*/, mfxU32 /*dataLength*/, mfxU32 /*userDataLength*/, mfxU32 /* maxFrameSize */, mfxU32 /* qp */)
 {
     return 0;
 }
@@ -4933,14 +4962,22 @@ void MfxHwH264Encode::FastCopyBufferVid2Sys(void * dstSys, void const * srcVid, 
     assert(sts == MFX_ERR_NONE); sts;
 }
 
-void MfxHwH264Encode::FastCopyBufferSys2Vid(void * dstSys, void const * srcVid, mfxI32 bytes)
+void MfxHwH264Encode::FastCopyBufferSys2Vid(void * dstVid, void const * srcSys, mfxI32 bytes)
 {
-    assert(dstSys != 0);
-    assert(srcVid != 0);
+    assert(dstVid != 0);
+    assert(srcSys != 0);
 
     IppiSize roi = { bytes, 1 };
-    mfxStatus sts = FastCopy::Copy((Ipp8u *)dstSys, bytes, (Ipp8u *)srcVid, bytes, roi, COPY_SYS_TO_VIDEO);
+#if defined(IPP_NONTEMPORAL_STORE)
+    IppStatus sts = ippiCopyManaged_8u_C1R((Ipp8u *)srcSys, bytes, (Ipp8u *)dstVid, bytes, roi, IPP_NONTEMPORAL_STORE);
+    assert(sts == ippStsNoErr); sts;
+#else
+    mfxStatus sts = FastCopy::Copy((Ipp8u *)dstVid, bytes, (Ipp8u *)srcSys, bytes, roi, COPY_SYS_TO_VIDEO);
     assert(sts == MFX_ERR_NONE); sts;
+#endif
+
+
+    
 }
 
 void CyclicTaskPool::Init(mfxU32 size)
@@ -6201,6 +6238,12 @@ BrcIface * MfxHwH264Encode::CreateBrc(MfxVideoParam const & video)
     case MFX_RATECONTROL_LA_HRD: return new LookAheadBrc2;
     case MFX_RATECONTROL_LA_ICQ: return new LookAheadCrfBrc;
     case MFX_RATECONTROL_LA_EXT: return new VMEBrc;
+
+#if defined(MFX_ENABLE_VIDEO_BRC_COMMON_1)
+    case MFX_RATECONTROL_CBR:
+    case MFX_RATECONTROL_VBR:
+        return new H264SWBRC;
+#endif
     default: return new UmcBrc;
     }
 }

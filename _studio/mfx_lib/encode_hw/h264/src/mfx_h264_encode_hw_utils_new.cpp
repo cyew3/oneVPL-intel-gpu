@@ -1790,21 +1790,23 @@ DdiTaskIter MfxHwH264Encode::FindFrameToWaitEncodeNext(
 
 namespace
 {
-    mfxU32 GetEncodingOrder(mfxU32 displayOrder, mfxU32 begin, mfxU32 end, mfxU32 counter, bool & ref)
-    {
-        assert(displayOrder >= begin);
-        assert(displayOrder <  end);
+mfxU32 GetEncodingOrder(mfxU32 displayOrder, mfxU32 begin, mfxU32 end, mfxU32 &level, mfxU32 before, bool & ref)
+{
+    assert(displayOrder >= begin);
+    assert(displayOrder <  end);
 
-        ref = (end - begin > 1);
+    ref = (end - begin > 1);
 
-        mfxU32 pivot = (begin + end) / 2;
-        if (displayOrder == pivot)
-            return counter;
-        else if (displayOrder < pivot)
-            return GetEncodingOrder(displayOrder, begin, pivot, counter + 1, ref);
-        else
-            return GetEncodingOrder(displayOrder, pivot + 1, end, counter + 1 + pivot - begin, ref);
-    }
+    mfxU32 pivot = (begin + end) / 2;
+    if (displayOrder == pivot)
+        return level + before;
+
+    level ++;
+    if (displayOrder < pivot)
+        return GetEncodingOrder(displayOrder, begin, pivot,  level , before, ref);
+    else
+        return GetEncodingOrder(displayOrder, pivot + 1, end, level, before + pivot - begin, ref);
+}
 };
 
 
@@ -1827,8 +1829,8 @@ BiFrameLocation MfxHwH264Encode::GetBiFrameLocation(
     {
         bool ref = false;
         mfxU32 orderInMiniGop = frameOrder % gopPicSize % gopRefDist - 1;
-
-        loc.encodingOrder = GetEncodingOrder(orderInMiniGop, 0, gopRefDist - 1, 0, ref);
+        loc.level = 1;
+        loc.encodingOrder = GetEncodingOrder(orderInMiniGop, 0, gopRefDist - 1, loc.level ,0, ref);
         loc.miniGopCount  = frameOrder % gopPicSize / gopRefDist;
         loc.refFrameFlag  = mfxU16(ref ? MFX_FRAMETYPE_REF : 0);
     }

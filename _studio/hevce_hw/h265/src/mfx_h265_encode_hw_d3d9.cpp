@@ -8,6 +8,9 @@
 // Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
+#include "mfx_config.h"
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
+
 #if defined(_WIN32) || defined(_WIN64)
 
 #include "mfx_common.h"
@@ -598,3 +601,4 @@ template class D3D9Encoder<ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_REXT, ENCODE_SET_
 }; // namespace MfxHwH265Encode
 
 #endif // #if defined(_WIN32) || defined(_WIN64)
+#endif

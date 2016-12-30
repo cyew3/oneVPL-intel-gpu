@@ -807,7 +807,11 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
     // CQP enabled
     mfxExtCodingOption2 * extOpt2 = GetExtBuffer(m_video);
+#if defined(MFX_ENABLE_VIDEO_BRC_COMMON_1)
+    m_enabledSwBrc = bRateControlLA(m_video.mfx.RateControlMethod) || (IsOn(extOpt2->ExtBRC) && (m_video.mfx.RateControlMethod == MFX_RATECONTROL_CBR || m_video.mfx.RateControlMethod == MFX_RATECONTROL_VBR));
+#else
     m_enabledSwBrc = bRateControlLA(m_video.mfx.RateControlMethod);
+#endif
 
 #ifndef MFX_PROTECTED_FEATURE_DISABLE
     // enable special modes which W/A HW limitations and bugs
@@ -827,11 +831,9 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     mfxExtPAVPOption * extOptPavp = GetExtBuffer(m_video);
     m_aesCounter.Init(*extOptPavp);
 #endif
-
-    m_brc.SetImpl(CreateBrc(m_video));
-
     if (m_enabledSwBrc)
     {
+        m_brc.SetImpl(CreateBrc(m_video));
         mfxU16 storedRateControlMethod = m_video.mfx.RateControlMethod;
         mfxU16 storedLookAheadDepth = extOpt2->LookAheadDepth;
         mfxU16 storedMaxKbps = m_video.mfx.MaxKbps;
@@ -935,7 +937,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         }
     }
     mfxExtCodingOption3 & extOpt3 = GetExtBufferRef(m_video);
-    bool bPanicModeSupport = ((extOpt3.WinBRCSize > 0 && (m_video.mfx.RateControlMethod != MFX_RATECONTROL_VBR && m_video.mfx.RateControlMethod != MFX_RATECONTROL_QVBR)) || (m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD));
+    bool bPanicModeSupport = ((extOpt3.WinBRCSize > 0 && (m_video.mfx.RateControlMethod != MFX_RATECONTROL_VBR && m_video.mfx.RateControlMethod != MFX_RATECONTROL_QVBR)) || (m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD) || IsOn(extOpt2->ExtBRC));
     if (m_raw.NumFrameActual == 0 && bPanicModeSupport )
     {
         request.Type        = MFX_MEMTYPE_D3D_INT;
@@ -2217,7 +2219,9 @@ void ImplementationAvc::BrcPreEnc(
     for (size_t i = 0; i < m_tmpVmeData.size(); ++i, ++j)
         m_tmpVmeData[i] = j->m_vmeData;
 
-    m_brc.PreEnc(task.GetFrameType(), m_tmpVmeData, task.m_encOrder);
+    BRCFrameParams par;
+    InitFrameParams(par, &task);
+    m_brc.PreEnc(par, m_tmpVmeData);
 }
 
 struct FindNonSkip
@@ -2751,10 +2755,12 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                   if (sts != MFX_ERR_NONE)
                       return Error(sts);
             }
-            else
-                return MFX_ERR_UNDEFINED_BEHAVIOR;
 
-            task->m_cqpValue[0] = task->m_cqpValue[1] = m_brc.GetQp(task->m_type[task->m_fid[0]], task->m_picStruct[ENC], task->m_encOrder);
+
+             BRCFrameParams par;
+             InitFrameParams(par, &(*task));
+
+            task->m_cqpValue[0] = task->m_cqpValue[1] = m_brc.GetQp(par);
 
             if (extOpt2 ->MaxSliceSize)
             {
@@ -2942,26 +2948,40 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                 }
                 if (!bRecoding)
                 {
-                    mfxU32 res = m_brc.Report(task->m_type[task->m_fid[0]], bsDataLength, 0, extOpt2->MaxSliceSize ? 0 : task->m_repack, task->m_frameOrder, hrd.GetMaxFrameSize((task->m_type[task->m_fid[0]] & MFX_FRAMETYPE_IDR)), task->m_cqpValue[0]);
-                    if ((res & 1) && !extOpt2->MaxSliceSize)
+                    BRCFrameParams par;
+                    InitFrameParams(par, &(*task)); 
+                    par.NumRecode = extOpt2->MaxSliceSize ? 0 : par.NumRecode;
+                    mfxU32 res = m_brc.Report(par, bsDataLength, 0, hrd.GetMaxFrameSize((task->m_type[task->m_fid[0]] & MFX_FRAMETYPE_IDR)), task->m_cqpValue[0]);
+                    MFX_CHECK((mfxI32)res != UMC::BRC_ERROR, MFX_ERR_UNDEFINED_BEHAVIOR);
+                    if ((res != 0) && (!extOpt2->MaxSliceSize))
                     {
                         if (task->m_panicMode)
+                        {
                             return MFX_ERR_UNDEFINED_BEHAVIOR;
-                        if (task->m_cqpValue[0] ==  51 || res == 3)
+                        }
+                        if ((task->m_cqpValue[0] ==  51 || (res & UMC::BRC_NOT_ENOUGH_BUFFER)) && (res & UMC::BRC_ERR_BIG_FRAME ))
                         {
                             task->m_panicMode = 1;
                             task->m_repack = 100;
                             sts = CodeAsSkipFrame(*m_core,m_video,*task, m_rawSkip);
                             if (sts != MFX_ERR_NONE)
                                return Error(sts);
+                            bRecoding = true;
+                        }
+                        else if (((res & UMC::BRC_NOT_ENOUGH_BUFFER) || (task->m_repack >2))&& (res & UMC::BRC_ERR_SMALL_FRAME ))
+                        {
+                            par.NumRecode ++;
+                            task->m_minFrameSize = m_brc.GetMinFrameSize()/8;
+                            m_brc.Report(par, m_brc.GetMinFrameSize()/8, 0, hrd.GetMaxFrameSize((task->m_type[task->m_fid[0]] & MFX_FRAMETYPE_IDR)), task->m_cqpValue[0]);
+
+                            bRecoding = false; //Padding is in update bitstream                        
                         }
                         else
                         {
-                            task->m_cqpValue[0]= task->m_cqpValue[0] + 1;
-                            task->m_cqpValue[1]= task->m_cqpValue[0];
+                            task->m_cqpValue[0]= task->m_cqpValue[1]= m_brc.GetQpForRecode(par, task->m_cqpValue[0]);
+                             bRecoding = true;
                         }
-                        // printf("Recoding 1: frame %d, qp %d\n", task->m_frameOrder, task->m_cqpValue[0]);
-                        bRecoding = true;
+
                     }
                 }
                 if (bRecoding)
@@ -3571,7 +3591,7 @@ mfxStatus ImplementationAvc::UpdateBitstream(
 
     if (m_enabledSwBrc)
     {
-        mfxU32 minFrameSize = m_brc.GetMinFrameSize();
+        mfxU32 minFrameSize = task.m_minFrameSize;
         mfxU32 frameSize = *dataLength - initialDataLength;
         bsData      += frameSize;
         bsSizeAvail -= frameSize;
@@ -3579,9 +3599,6 @@ mfxStatus ImplementationAvc::UpdateBitstream(
         {
             CheckedMemset(bsData, bsData + bsSizeAvail, 0, minFrameSize - frameSize);
             *dataLength += minFrameSize - frameSize;
-            mfxU32 brcStatus = m_brc.Report(task.m_type[fid], minFrameSize, minFrameSize - frameSize, 1, task.m_frameOrder * 2 + 0, m_hrd.GetMaxFrameSize(0), task.m_cqpValue[0]);
-            brcStatus;
-            assert(brcStatus == 0);
         }
         else
         {

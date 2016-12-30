@@ -9,6 +9,8 @@
 //
 
 #pragma once
+#include "mfx_config.h"
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
 
 #include "mfx_h264_encode_struct_vaapi.h"
 #include "encoding_ddi.h"
@@ -699,3 +701,4 @@ void FillSliceBuffer(
 #endif //defined(_WIN32) || defined(_WIN64)
 
 }; // namespace MfxHwH265Encode
+#endif

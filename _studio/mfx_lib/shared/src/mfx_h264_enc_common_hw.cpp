@@ -6891,6 +6891,11 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     CONSTRUCT_EXT_BUFFER_EX(mfxExtFeiSliceHeader,    m_extFeiSlice, 1);
     CONSTRUCT_EXT_BUFFER(mfxExtFeiSPS,               m_extFeiSPS);
     CONSTRUCT_EXT_BUFFER(mfxExtFeiPPS,               m_extFeiPPS);
+
+#if defined(__MFXBRC_H__)
+    CONSTRUCT_EXT_BUFFER(mfxExtBRC,                  m_extBRC);
+#endif
+
 #undef CONSTRUCT_EXT_BUFFER
 #undef CONSTRUCT_EXT_BUFFER_EX
 

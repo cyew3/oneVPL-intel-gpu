@@ -5,10 +5,14 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
+
+#include "mfx_config.h"
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
+
 #include <memory>
 #include <list>
 #include "mfx_h265_encode_hw_ddi.h"
@@ -141,3 +145,5 @@ protected:
 };
 
 } //MfxHwH265Encode
+
+#endif

@@ -9,6 +9,8 @@
 //
 
 #pragma once
+#include "mfx_config.h"
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
 
 #if defined(_WIN32) || defined(_WIN64)
 
@@ -118,3 +120,4 @@ typedef D3D11Encoder<ENCODE_SET_SEQUENCE_PARAMETERS_HEVC, ENCODE_SET_PICTURE_PAR
 }; // namespace MfxHwH265Encode
 
 #endif // #if defined(_WIN32) || defined(_WIN64)
+#endif
