@@ -113,8 +113,6 @@ CDecodingPipeline::CDecodingPipeline()
     m_startTick = 0;
     m_delayTicks = 0;
 
-    m_vLatency.reserve(1000); // reserve some space to reduce dynamic reallocation impact on pipeline execution
-
     MSDK_ZERO_MEMORY(m_VppDoNotUse);
     m_VppDoNotUse.Header.BufferId = MFX_EXTBUFF_VPP_DONOTUSE;
     m_VppDoNotUse.Header.BufferSz = sizeof(m_VppDoNotUse);
@@ -133,6 +131,7 @@ CDecodingPipeline::CDecodingPipeline()
 
 #ifdef LIBVA_SUPPORT
     m_export_mode = vaapiAllocatorParams::DONOT_EXPORT;
+    m_libvaBackend = 0;
     m_bPerfMode = false;
 #endif
 
@@ -141,7 +140,7 @@ CDecodingPipeline::CDecodingPipeline()
 #endif
 
     m_monitorType = 0;
-
+    m_vLatency.reserve(1000); // reserve some space to reduce dynamic reallocation impact on pipeline execution
 }
 
 CDecodingPipeline::~CDecodingPipeline()

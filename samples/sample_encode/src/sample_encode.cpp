@@ -116,7 +116,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
                             the encoded data enters the Video Buffering Verifier buffer\n"));
     msdk_printf(MSDK_STRING("   [-timeout]               - encoding in cycle not less than specific time in seconds\n"));
     msdk_printf(MSDK_STRING("   [-membuf]                - size of memory buffer in frames\n"));
-    msdk_printf(MSDK_STRING("   [-uncut]                 - do not insert idr after file writer reset\n"));
+    msdk_printf(MSDK_STRING("   [-uncut]                 - do not cut output file in looped mode (in case of -timeout option)\n"));
 
 #ifdef ENABLE_FUTURE_FEATURES
     msdk_printf(MSDK_STRING("   [-extbrc:<on,off>]       - External BRC for HEVC encoder"));
@@ -867,12 +867,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     {
         pParams->nBitRate = CalculateDefaultBitrate(pParams->CodecId, pParams->nTargetUsage, pParams->nDstWidth,
             pParams->nDstHeight, pParams->dFrameRate);
-    }
-
-    // if nv12 option wasn't specified we expect input YUV file in YUV420 color format
-    if (!pParams->FileInputFourCC)
-    {
-        pParams->FileInputFourCC = MFX_FOURCC_YV12;
     }
 
     if (!pParams->nPicStruct)

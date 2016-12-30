@@ -100,23 +100,23 @@ void CEncodingPipeline::Close()
 {
     msdk_printf(MSDK_STRING("Frames processed: %u\r"), m_frameCount);
 
-    MSDK_SAFE_DELETE(m_pFEI_PreENC);
-    MSDK_SAFE_DELETE(m_pFEI_ENCODE);
-    MSDK_SAFE_DELETE(m_pFEI_ENCPAK);
-    MSDK_SAFE_DELETE(m_pVPP);
-    MSDK_SAFE_DELETE(m_pDECODE);
-    MSDK_SAFE_DELETE(m_pYUVReader);
+    ReleaseResources();
+    DeleteFrames();
 
     m_mfxSession.Close();
     if (m_bSeparatePreENCSession){
         m_preenc_mfxSession.Close();
     }
 
-    ReleaseResources();
-    DeleteFrames();
-
-    // external allocator should be deleted after SDK components
+    // allocator if used as external for MediaSDK must be deleted after SDK components
     DeleteAllocator();
+
+    MSDK_SAFE_DELETE(m_pFEI_PreENC);
+    MSDK_SAFE_DELETE(m_pFEI_ENCODE);
+    MSDK_SAFE_DELETE(m_pFEI_ENCPAK);
+    MSDK_SAFE_DELETE(m_pVPP);
+    MSDK_SAFE_DELETE(m_pDECODE);
+    MSDK_SAFE_DELETE(m_pYUVReader);
 }
 
 mfxStatus CEncodingPipeline::Init()

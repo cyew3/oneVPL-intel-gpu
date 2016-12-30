@@ -243,7 +243,6 @@
     <ClInclude Include="include\avc_spl.h" />
     <ClInclude Include="include\avc_structures.h" />
     <ClInclude Include="include\base_allocator.h" />
-    <ClInclude Include="include\brc_routines.h" />
     <ClInclude Include="include\d3d11_allocator.h" />
     <ClInclude Include="include\d3d11_device.h" />
     <ClInclude Include="include\d3d_allocator.h" />

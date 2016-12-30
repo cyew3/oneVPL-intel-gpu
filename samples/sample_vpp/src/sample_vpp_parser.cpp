@@ -159,6 +159,7 @@ msdk_printf(MSDK_STRING("                                  LumaKeyMax=255\n"));
 msdk_printf(MSDK_STRING("   Video Enhancement Algorithms\n"));
 
 msdk_printf(MSDK_STRING("   [-di_mode (mode)] - set type of deinterlace algorithm\n"));
+msdk_printf(MSDK_STRING("                        12 - advanced with Scene Change Detection (SCD) \n"));
 msdk_printf(MSDK_STRING("                        8 - reverse telecine for a selected telecine pattern (use -tc_pattern). For PTIR plug-in\n"));
 msdk_printf(MSDK_STRING("                        2 - advanced or motion adaptive (default)\n"));
 msdk_printf(MSDK_STRING("                        1 - simple or BOB\n\n"));

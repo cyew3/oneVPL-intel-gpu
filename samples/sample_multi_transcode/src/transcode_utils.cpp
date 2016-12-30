@@ -148,6 +148,7 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("  -la           Use the look ahead bitrate control algorithm (LA BRC) for H.264 encoder. Supported only with -hw option on 4th Generation Intel Core processors. \n"));
     msdk_printf(MSDK_STRING("  -lad depth    Depth parameter for the LA BRC, the number of frames to be analyzed before encoding. In range [10,100]. \n"));
     msdk_printf(MSDK_STRING("                May be 1 in the case when -mss option is specified \n"));
+    msdk_printf(MSDK_STRING("  -la_ext       Use external LA plugin (compatible with h264 & hevc encoders)\n"));
     msdk_printf(MSDK_STRING("  -vbr          Variable bitrate control\n"));
     msdk_printf(MSDK_STRING("  -hrd <KB>     Maximum possible size of any compressed frames \n"));
     msdk_printf(MSDK_STRING("  -wb <KBps>    Maximum bitrate for sliding window \n"));
@@ -187,7 +188,7 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("     NOTE: -FRC filters do not work with -i::sink pipelines !!!\n"));
     msdk_printf(MSDK_STRING("  -ec::nv12|rgb4|yuy2|nv16|p010|p210   Forces encoder input to use provided chroma mode\n"));
     msdk_printf(MSDK_STRING("  -dc::nv12|rgb4|yuy2   Forces decoder output to use provided chroma mode\n"));
-    msdk_printf(MSDK_STRING("     NOTE: chroma transform VPP may be automatically enabled if -ec/-dc parameters are provided\n"));
+    msdk_printf(MSDK_STRING("     NOTE: chroma transform VPP may be automatically enabled if -ec/-dc parameters are provide d\n"));
     msdk_printf(MSDK_STRING("  -angle 180    Enables 180 degrees picture rotation user module before encoding\n"));
     msdk_printf(MSDK_STRING("  -opencl       Uses implementation of rotation plugin (enabled with -angle option) through Intel(R) OpenCL\n"));
     msdk_printf(MSDK_STRING("  -w            Destination picture width, invokes VPP resize\n"));
@@ -375,7 +376,7 @@ mfxStatus CmdProcessor::ParseCmdLine(int argc, msdk_char *argv[])
         else if (0 == msdk_strcmp(argv[0], MSDK_STRING("-?")) )
         {
             PrintHelp();
-            return MFX_ERR_UNSUPPORTED;
+            return MFX_WRN_OUT_OF_RANGE;
         }
         else if (0 == msdk_strcmp(argv[0], MSDK_STRING("-greedy")))
         {

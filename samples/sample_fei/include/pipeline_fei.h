@@ -87,7 +87,9 @@ protected:
 
     mfxU16 m_maxQueueLength;
     mfxU16 m_log2frameNumMax;
-    mfxU32 m_frameCount, m_frameOrderIdrInDisplayOrder, m_frameCountInEncodedOrder;
+    mfxU32 m_frameCount;
+    mfxU32 m_frameCountInEncodedOrder;
+    mfxU32 m_frameOrderIdrInDisplayOrder;
     PairU8 m_frameType;
 
     mfxFrameInfo m_commonFrameInfo; // setting for ENCODE (VPP / PreENC with DS may have own FrameInfo settings)

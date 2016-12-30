@@ -394,7 +394,7 @@ mfxStatus InitParamsVPP(mfxVideoParam* pParams, sInputParams* pInParams, mfxU32 
 mfxStatus CreateFrameProcessor(sFrameProcessor* pProcessor, mfxVideoParam* pParams, sInputParams* pInParams)
 {
     mfxStatus  sts = MFX_ERR_NONE;
-    mfxVersion version = {MFX_VERSION_MINOR, MFX_VERSION_MAJOR};
+    mfxVersion version = {10, 1};
     mfxIMPL    impl    = pInParams->ImpLib;
 
     MSDK_CHECK_POINTER(pProcessor, MFX_ERR_NULL_PTR);

@@ -37,7 +37,6 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "mfxvideo++.h"
 #include "mfxplugin.h"
 #include "mfxplugin++.h"
-#include "brc_routines.h"
 
 #include <vector>
 #include <memory>
@@ -46,6 +45,10 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #if defined (ENABLE_V4L2_SUPPORT)
 #include "v4l2_util.h"
+#endif
+
+#ifdef ENABLE_FUTURE_FEATURES
+#include "brc_routines.h"
 #endif
 
 msdk_tick time_get_tick(void);
@@ -258,7 +261,6 @@ protected:
 #ifdef ENABLE_FUTURE_FEATURES
     mfxExtBRC           m_ExtBRC;
 #endif
-
 
     // external parameters for each component are stored in a vector
     std::vector<mfxExtBuffer*> m_VppExtParams;

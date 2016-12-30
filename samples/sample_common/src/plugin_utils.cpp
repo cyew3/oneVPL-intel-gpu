@@ -21,7 +21,6 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include "plugin_utils.h"
 #include "mfxvp8.h"
-#include "mfxvp9.h"
 
 bool AreGuidsEqual(const mfxPluginUID& guid1, const mfxPluginUID& guid2)
 {

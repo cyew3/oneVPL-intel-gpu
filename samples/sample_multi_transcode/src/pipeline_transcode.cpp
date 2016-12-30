@@ -191,6 +191,8 @@ CTranscodingPipeline::CTranscodingPipeline():
     m_numEncoders = 0;
     m_libvaBackend = 0;
     statisticsWindowSize=0;
+    m_bIsFieldWeaving = false;
+    m_bIsFieldSplitting = false;
 } //CTranscodingPipeline::CTranscodingPipeline()
 
 CTranscodingPipeline::~CTranscodingPipeline()
@@ -311,6 +313,8 @@ mfxStatus CTranscodingPipeline::VPPPreInit(sInputParams *pParams)
 {
     mfxStatus sts = MFX_ERR_NONE;
     bool bVppCompInitRequire = false;
+    m_bIsFieldWeaving = false;
+    m_bIsFieldSplitting = false;
 
     if (((pParams->eModeExt == VppComp) || (pParams->eModeExt == VppCompOnly)) &&
         (pParams->eMode == Source))
@@ -332,7 +336,24 @@ mfxStatus CTranscodingPipeline::VPPPreInit(sInputParams *pParams)
             sts = InitVppMfxParams(pParams);
             MSDK_CHECK_STATUS(sts, "InitVppMfxParams failed");
         }
-
+        else
+        {
+            if (m_mfxDecParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_SINGLE)
+            {
+                m_bIsFieldWeaving = true;
+                m_bIsVpp = true;
+                sts = InitVppMfxParams(pParams);
+                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+            }
+            if (m_mfxDecParams.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE && pParams->EncodeId == MFX_CODEC_HEVC)
+            {
+                m_bIsFieldSplitting = true;
+                m_bIsVpp = true;
+                m_mfxVppParams.vpp.In.PicStruct = MFX_PICSTRUCT_UNKNOWN;
+                sts = InitVppMfxParams(pParams);
+                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+            }
+        }
         if (pParams->nRotationAngle) // plugin was requested
         {
             m_bIsPlugin = true;
@@ -1362,11 +1383,64 @@ mfxStatus CTranscodingPipeline::Transcode()
             }
             MSDK_CHECK_STATUS(sts, "Decode<One|Last>Frame failed");
         }
-
+        if (m_bIsFieldWeaving && DecExtSurface.pSurface != NULL)
+        {
+            m_mfxDecParams.mfx.FrameInfo.PicStruct = DecExtSurface.pSurface->Info.PicStruct;
+        }
+        if (m_bIsFieldSplitting && DecExtSurface.pSurface != NULL)
+        {
+            m_mfxDecParams.mfx.FrameInfo.PicStruct = DecExtSurface.pSurface->Info.PicStruct;
+        }
         // pre-process a frame
         if (m_pmfxVPP.get())
         {
-            sts = VPPOneFrame(&DecExtSurface, &VppExtSurface);
+            if (m_bIsFieldWeaving)
+            {
+                if (!(m_nProcessedFramesNum % 2))
+                {
+                    if (DecExtSurface.pSurface)
+                    {
+                        if ((DecExtSurface.pSurface->Info.PicStruct & MFX_PICSTRUCT_FIELD_TFF))
+                        {
+                            m_mfxVppParams.vpp.Out.PicStruct = MFX_PICSTRUCT_FIELD_TFF;
+                        }
+                        if (DecExtSurface.pSurface->Info.PicStruct & MFX_PICSTRUCT_FIELD_BFF)
+                        {
+                            m_mfxVppParams.vpp.Out.PicStruct = MFX_PICSTRUCT_FIELD_BFF;
+                        }
+                    }
+                }
+                sts = VPPOneFrame(&DecExtSurface, &VppExtSurface);
+            }
+            else
+            {
+                if (m_bIsFieldSplitting)
+                {
+                    if (DecExtSurface.pSurface)
+                    {
+                        if (DecExtSurface.pSurface->Info.PicStruct & MFX_PICSTRUCT_FIELD_TFF || DecExtSurface.pSurface->Info.PicStruct & MFX_PICSTRUCT_FIELD_BFF)
+                        {
+                            m_mfxVppParams.vpp.Out.PicStruct = MFX_PICSTRUCT_FIELD_SINGLE;
+                            sts = VPPOneFrame(&DecExtSurface, &VppExtSurface);
+                        }
+                        else
+                        {
+                            VppExtSurface.pSurface = DecExtSurface.pSurface;
+                            VppExtSurface.pCtrl = DecExtSurface.pCtrl;
+                            VppExtSurface.Syncp = DecExtSurface.Syncp;
+                        }
+                    }
+                    else
+                    {
+                        sts = VPPOneFrame(&DecExtSurface, &VppExtSurface);
+                    }
+                }
+                else
+                {
+                    sts = VPPOneFrame(&DecExtSurface, &VppExtSurface);
+                }
+            }
+            // check for interlaced stream
         }
         else // no VPP - just copy pointers
         {
@@ -2183,6 +2257,19 @@ mfxStatus CTranscodingPipeline::AddLaStreams(mfxU16 width, mfxU16 height)
     MSDK_MEMCPY_VAR(m_mfxVppParams.vpp.Out, &m_mfxVppParams.vpp.In, sizeof(mfxFrameInfo));
 
 
+    if(m_bIsFieldWeaving)
+    {
+        m_mfxVppParams.vpp.Out.PicStruct = MFX_PICSTRUCT_UNKNOWN;
+        m_mfxVppParams.vpp.Out.Height = m_mfxVppParams.vpp.In.Height << 1;
+        m_mfxVppParams.vpp.Out.CropH = m_mfxVppParams.vpp.In.CropH << 1;
+    }
+
+    if(m_bIsFieldSplitting)
+    {
+        m_mfxVppParams.vpp.Out.PicStruct = MFX_PICSTRUCT_FIELD_SINGLE;
+        m_mfxVppParams.vpp.Out.Height = m_mfxVppParams.vpp.In.Height >> 1;
+        m_mfxVppParams.vpp.Out.CropH = m_mfxVppParams.vpp.In.CropH >> 1;
+    }
     if (pInParams->bEnableDeinterlacing)
         m_mfxVppParams.vpp.Out.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
 
@@ -3064,7 +3151,7 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     // LA initialization
     if (m_pmfxPreENC.get())
     {
-        sts = m_pmfxPreENC->Init(&m_mfxEncParams);
+        sts = m_pmfxPreENC->Init(&m_mfxPreEncParams);
         MSDK_CHECK_STATUS(sts, "m_pmfxPreENC->Init failed");
     }
     // Init encode

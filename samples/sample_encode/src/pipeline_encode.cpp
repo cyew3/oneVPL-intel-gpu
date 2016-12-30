@@ -455,12 +455,11 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     }
 
     // configure the depth of the look ahead BRC if specified in command line
-    if (pInParams->nLADepth || pInParams->nMaxSliceSize || pInParams->nBRefType || (pInParams->nExtBRC && pInParams->CodecId == MFX_CODEC_HEVC))
+    if (pInParams->nLADepth || pInParams->nMaxSliceSize || pInParams->nBRefType)
     {
         m_CodingOption2.LookAheadDepth = pInParams->nLADepth;
         m_CodingOption2.MaxSliceSize   = pInParams->nMaxSliceSize;
         m_CodingOption2.BRefType = pInParams->nBRefType;
-        m_CodingOption2.ExtBRC = pInParams->CodecId == MFX_CODEC_HEVC ? pInParams->nExtBRC : 0;
         m_EncExtParams.push_back((mfxExtBuffer *)&m_CodingOption2);
     }
 
@@ -955,10 +954,7 @@ CEncodingPipeline::CEncodingPipeline()
     m_ExtBRC.Header.BufferId = MFX_EXTBUFF_BRC;
     m_ExtBRC.Header.BufferSz = sizeof(m_ExtBRC);
 #endif
-
-#if D3D_SURFACES_SUPPORT
     m_hwdev = NULL;
-#endif
 
     MSDK_ZERO_MEMORY(m_mfxEncParams);
     MSDK_ZERO_MEMORY(m_mfxVppParams);
@@ -1218,7 +1214,9 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     InitV4L2Pipeline(pParams);
 
     m_nFramesToProcess = pParams->nNumFrames;
-    m_bCutOutput = !pParams->bUncut;
+
+    // If output isn't specified work in performance mode and do not insert idr
+    m_bCutOutput = pParams->dstFileBuff.size() ? !pParams->bUncut : false;
 
     return MFX_ERR_NONE;
 }
@@ -1570,8 +1568,6 @@ mfxStatus CEncodingPipeline::Run()
 
             MSDK_BREAK_ON_ERROR(sts);
 
-            m_nFramesRead++;
-
             m_statFile.StopTimeMeasurement();
             if (MVC_ENABLED & m_MVCflags) currViewNum ^= 1; // Flip between 0 and 1 for ViewId
 
@@ -1585,7 +1581,7 @@ mfxStatus CEncodingPipeline::Run()
             {
                 sts = m_pmfxVPP->RunFrameVPPAsync(&m_pVppSurfaces[nVppSurfIdx], &m_pEncSurfaces[nEncSurfIdx],
                     NULL, &VppSyncPoint);
-                if (m_nMemBuffer && VppSyncPoint)
+                if (m_nMemBuffer)
                 {
                    // increment buffer index
                    nVppSurfIdx++;
@@ -1633,7 +1629,7 @@ mfxStatus CEncodingPipeline::Run()
             sts = m_pmfxENC->EncodeFrameAsync(&m_encCtrl, &m_pEncSurfaces[nEncSurfIdx], &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
             m_bInsertIDR = false;
 
-            if (m_nMemBuffer && pCurrentTask->EncSyncP)
+            if (m_nMemBuffer)
             {
                 // increment buffer index
                 nEncSurfIdx++;
@@ -1826,7 +1822,7 @@ mfxStatus CEncodingPipeline::LoadNextFrame(mfxFrameSurface1* pSurf)
     if (m_nMemBuffer)
     {
         // memoty buffer mode. No file reading required
-        bool bMemBufExceed = !(m_nFramesRead % m_nMemBuffer);
+        bool bMemBufExceed = !(m_nFramesRead % m_nMemBuffer) && m_nFramesRead;
         if (m_bTimeOutExceed && bMemBufExceed )
         {
             sts = MFX_ERR_MORE_DATA;
@@ -1918,10 +1914,10 @@ void CEncodingPipeline::PrintInfo()
     GetFirstSession().QueryIMPL(&impl);
 
     const msdk_char* sImpl = (MFX_IMPL_VIA_D3D11 == MFX_IMPL_VIA_MASK(impl)) ? MSDK_STRING("hw_d3d11")
-                     : (MFX_IMPL_HARDWARE  & impl) ? MSDK_STRING("hw")
-                     : (MFX_IMPL_HARDWARE2 & impl) ? MSDK_STRING("hw2")
-                     : (MFX_IMPL_HARDWARE3 & impl) ? MSDK_STRING("hw3")
-                     : (MFX_IMPL_HARDWARE4 & impl) ? MSDK_STRING("hw4")
+                     : (MFX_IMPL_HARDWARE  == MFX_IMPL_BASETYPE(impl)) ? MSDK_STRING("hw")
+                     : (MFX_IMPL_HARDWARE2 == MFX_IMPL_BASETYPE(impl)) ? MSDK_STRING("hw2")
+                     : (MFX_IMPL_HARDWARE3 == MFX_IMPL_BASETYPE(impl)) ? MSDK_STRING("hw3")
+                     : (MFX_IMPL_HARDWARE4 == MFX_IMPL_BASETYPE(impl)) ? MSDK_STRING("hw4")
                                                    : MSDK_STRING("sw");
     msdk_printf(MSDK_STRING("Media SDK impl\t\t%s\n"), sImpl);
 

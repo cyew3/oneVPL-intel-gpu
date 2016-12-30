@@ -47,7 +47,6 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "mfxjpeg.h"
 #include "mfxla.h"
 #include "mfxvp8.h"
-#include "mfxvp9.h"
 
 #include "hw_device.h"
 #include "plugin_loader.h"
@@ -89,6 +88,7 @@ namespace TranscodingSample
 
     enum EFieldCopyMode
     {
+        FC_NONE=0,
         FC_T2T=1,
         FC_T2B=2,
         FC_B2T=4,
@@ -580,6 +580,8 @@ namespace TranscodingSample
         mfxVideoParam                  m_mfxVppParams;
         mfxVideoParam                  m_mfxPluginParams;
         bool                           m_bIsVpp; // true if there's VPP in the pipeline
+        bool                           m_bIsFieldWeaving;
+        bool                           m_bIsFieldSplitting;
         bool                           m_bIsPlugin; //true if there's Plugin in the pipeline
         RotateParam                    m_RotateParam;
         mfxVideoParam                  m_mfxPreEncParams;

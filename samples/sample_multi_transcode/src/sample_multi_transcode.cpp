@@ -66,6 +66,12 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
     // parse input par file
     sts = m_parser.ParseCmdLine(argc, argv);
     MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, sts);
+    if(sts == MFX_WRN_OUT_OF_RANGE)
+    {
+        // There's no error in parameters parsing, but we should not continue further. For instance, in case of -? option
+        return sts;
+    }
+
 
     // get parameters for each session from parser
     while(m_parser.GetNextSessionParams(InputParams))
@@ -383,7 +389,7 @@ mfxStatus Launcher::ProcessResult()
 
     m_parser.PrintParFileName();
 
-    msdk_printf(ssTranscodingTime.str().c_str());
+    msdk_printf(MSDK_STRING("%s"),ssTranscodingTime.str().c_str());
     if (pPerfFile)
     {
         msdk_fprintf(pPerfFile, MSDK_STRING("%s"), ssTranscodingTime.str().c_str());
@@ -406,7 +412,7 @@ mfxStatus Launcher::ProcessResult()
             << m_pSessionArray[i]->working_time << MSDK_STRING(" sec, ") << m_pSessionArray[i]->numTransFrames << MSDK_STRING(" frames") << std::endl
             << m_parser.GetLine(i) << std::endl << std::endl;
 
-        msdk_printf(ss.str().c_str());
+        msdk_printf(MSDK_STRING("%s"),ss.str().c_str());
         if (pPerfFile)
         {
             msdk_fprintf(pPerfFile, ss.str().c_str());
@@ -418,7 +424,7 @@ mfxStatus Launcher::ProcessResult()
     msdk_stringstream ssTest;
     ssTest << std::endl << MSDK_STRING("The test ") << (FinalSts ? msdk_string(MSDK_STRING("FAILED")) : msdk_string(MSDK_STRING("PASSED"))) << std::endl;
 
-    msdk_printf(ssTest.str().c_str());
+    msdk_printf(MSDK_STRING("%s"),ssTest.str().c_str());
     if (pPerfFile)
     {
         msdk_fprintf(pPerfFile, ssTest.str().c_str());
@@ -624,11 +630,16 @@ void Launcher::Close()
     {
         delete m_pSessionArray[m_pSessionArray.size()-1];
         m_pSessionArray[m_pSessionArray.size() - 1] = NULL;
-        delete m_pAllocArray[m_pSessionArray.size()-1];
-        m_pAllocArray[m_pSessionArray.size() - 1] = NULL;
-        m_pAllocArray.pop_back();
         m_pSessionArray.pop_back();
     }
+
+    while(m_pAllocArray.size())
+    {
+        delete m_pAllocArray[m_pAllocArray.size()-1];
+        m_pAllocArray[m_pAllocArray.size() - 1] = NULL;
+        m_pAllocArray.pop_back();
+    }
+
     while(m_pBufferArray.size())
     {
         delete m_pBufferArray[m_pBufferArray.size()-1];
@@ -659,8 +670,15 @@ int main(int argc, char *argv[])
     mfxStatus sts;
     Launcher transcode;
     sts = transcode.Init(argc, argv);
+    if(sts == MFX_WRN_OUT_OF_RANGE)
+    {
+        // There's no error in parameters parsing, but we should not continue further. For instance, in case of -? option
+        return MFX_ERR_NONE;
+    }
+
     fflush(stdout);
     fflush(stderr);
+
     MSDK_CHECK_STATUS(sts, "transcode.Init failed");
 
     transcode.Run();
