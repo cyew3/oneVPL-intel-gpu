@@ -327,7 +327,7 @@ unsigned int const TestSuiteExt<MFX_FOURCC_P010>::n_cases = TestSuite::n_cases +
 
 /* 10b 422 */
 template <>
-TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_Y216>::test_cases[] =
+TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_Y210>::test_cases[] =
 {
     {/* 0*/ MFX_ERR_NONE, {"conformance/hevc/10bit/inter_422_10.bin", ""},
     {{INIT|ALLOCATOR, 0, {frame_allocator::SOFTWARE, frame_allocator::ALLOC_MAX}},
@@ -341,7 +341,7 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_Y216>::test_cases[] =
     {/* 2*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, {"conformance/hevc/10bit/inter_422_10.bin", "conformance/hevc/itu/RPS_B_qualcomm_5.bit"}},
 };
 template <>
-unsigned int const TestSuiteExt<MFX_FOURCC_Y216>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_Y216>::test_cases) / sizeof(TestSuite::tc_struct);
+unsigned int const TestSuiteExt<MFX_FOURCC_Y210>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_Y210>::test_cases) / sizeof(TestSuite::tc_struct);
 
 /* 10b 444 */
 template <>
@@ -377,6 +377,6 @@ TS_REG_TEST_SUITE(hevcd_422_reset, TestSuiteExt<MFX_FOURCC_YUY2>::RunTest, TestS
 TS_REG_TEST_SUITE(hevcd_444_reset, TestSuiteExt<MFX_FOURCC_AYUV>::RunTest, TestSuiteExt<MFX_FOURCC_AYUV>::n_cases);
 
 TS_REG_TEST_SUITE(hevc10d_reset,     TestSuiteExt<MFX_FOURCC_P010>::RunTest, TestSuiteExt<MFX_FOURCC_P010>::n_cases);
-TS_REG_TEST_SUITE(hevc10d_422_reset, TestSuiteExt<MFX_FOURCC_Y216>::RunTest, TestSuiteExt<MFX_FOURCC_Y216>::n_cases);
+TS_REG_TEST_SUITE(hevc10d_422_reset, TestSuiteExt<MFX_FOURCC_Y210>::RunTest, TestSuiteExt<MFX_FOURCC_Y210>::n_cases);
 TS_REG_TEST_SUITE(hevc10d_444_reset, TestSuiteExt<MFX_FOURCC_Y410>::RunTest, TestSuiteExt<MFX_FOURCC_Y410>::n_cases);
 }

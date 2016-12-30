@@ -254,7 +254,7 @@ TestSuite::tc_struct const& query_case(unsigned int id, std::integral_constant<u
     return cases[id];
 }
 
-TestSuite::tc_struct const& query_case(unsigned int id, std::integral_constant<unsigned, MFX_FOURCC_Y216>)
+TestSuite::tc_struct const& query_case(unsigned int id, std::integral_constant<unsigned, MFX_FOURCC_Y210>)
 {
     static TestSuite::tc_struct const cases[] =
     {
@@ -321,7 +321,7 @@ TS_REG_TEST_SUITE(hevcd_422_frametype, TestSuiteEx<MFX_FOURCC_YUY2>::RunTest, 1)
 TS_REG_TEST_SUITE(hevcd_444_frametype, TestSuiteEx<MFX_FOURCC_AYUV>::RunTest, 1);
 
 TS_REG_TEST_SUITE(hevc10d_frametype,     TestSuiteEx<MFX_FOURCC_P010>::RunTest, 1);
-TS_REG_TEST_SUITE(hevc10d_422_frametype, TestSuiteEx<MFX_FOURCC_Y216>::RunTest, 1);
+TS_REG_TEST_SUITE(hevc10d_422_frametype, TestSuiteEx<MFX_FOURCC_Y210>::RunTest, 1);
 TS_REG_TEST_SUITE(hevc10d_444_frametype, TestSuiteEx<MFX_FOURCC_Y410>::RunTest, 1);
 
 }

@@ -254,7 +254,7 @@ char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOUR
 /* 10 bit */
 char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_P010>)
 { return "conformance/hevc/10bit/WP_A_MAIN10_Toshiba_3.bit"; }
-char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_Y216>)
+char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_Y210>)
 { return "conformance/hevc/10bit/inter_422_10.bin"; }
 char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_Y410>)
 { return "conformance/hevc/StressBitstreamEncode/rext444_10b/Stress_HEVC_Rext444_10bHT62_432x240_30fps_302_inter_stress_2.2.hevc"; }
@@ -280,6 +280,6 @@ TS_REG_TEST_SUITE(hevcd_422_decode_frame_async, TestSuite<MFX_FOURCC_YUY2>::RunT
 TS_REG_TEST_SUITE(hevcd_444_decode_frame_async, TestSuite<MFX_FOURCC_AYUV>::RunTest, TestSuite<MFX_FOURCC_AYUV>::n_cases);
 
 TS_REG_TEST_SUITE(hevc10d_decode_frame_async,     TestSuite<MFX_FOURCC_P010>::RunTest, TestSuite<MFX_FOURCC_P010>::n_cases);
-TS_REG_TEST_SUITE(hevc10d_422_decode_frame_async, TestSuite<MFX_FOURCC_Y216>::RunTest, TestSuite<MFX_FOURCC_Y216>::n_cases);
+TS_REG_TEST_SUITE(hevc10d_422_decode_frame_async, TestSuite<MFX_FOURCC_Y210>::RunTest, TestSuite<MFX_FOURCC_Y210>::n_cases);
 TS_REG_TEST_SUITE(hevc10d_444_decode_frame_async, TestSuite<MFX_FOURCC_Y410>::RunTest, TestSuite<MFX_FOURCC_Y410>::n_cases);
 }

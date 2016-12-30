@@ -429,7 +429,7 @@ int TestSuite::RunTest(unsigned int id)
             }
             else if (m_par.mfx.FrameInfo.BitDepthLuma == 10)
             {
-                EXPECT_EQ(MFX_FOURCC_Y216, m_par.mfx.FrameInfo.FourCC);
+                EXPECT_EQ(MFX_FOURCC_Y210, m_par.mfx.FrameInfo.FourCC);
             }
             else
             {
