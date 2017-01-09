@@ -455,22 +455,19 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     }
 
     // configure the depth of the look ahead BRC if specified in command line
-    if (pInParams->nLADepth || pInParams->nMaxSliceSize || pInParams->nBRefType)
+    if (pInParams->nLADepth || pInParams->nMaxSliceSize || pInParams->nBRefType || (pInParams->nExtBRC && (pInParams->CodecId == MFX_CODEC_HEVC || pInParams->CodecId == MFX_CODEC_AVC)))
     {
         m_CodingOption2.LookAheadDepth = pInParams->nLADepth;
         m_CodingOption2.MaxSliceSize   = pInParams->nMaxSliceSize;
         m_CodingOption2.BRefType = pInParams->nBRefType;
+        m_CodingOption2.ExtBRC = (pInParams->CodecId == MFX_CODEC_HEVC || pInParams->CodecId == MFX_CODEC_AVC)? pInParams->nExtBRC : 0;
         m_EncExtParams.push_back((mfxExtBuffer *)&m_CodingOption2);
     }
 
 #ifdef ENABLE_FUTURE_FEATURES
-    if (pInParams->nExtBRC == MFX_CODINGOPTION_ON && pInParams->CodecId == MFX_CODEC_HEVC)
+    if (pInParams->nExtBRC == MFX_CODINGOPTION_ON && (pInParams->CodecId == MFX_CODEC_HEVC || pInParams->CodecId == MFX_CODEC_AVC))
     {
-        m_ExtBRC.Init = HEVCExtBRC::Init;
-        m_ExtBRC.Reset= HEVCExtBRC::Reset;
-        m_ExtBRC.Close= HEVCExtBRC::Close;
-        m_ExtBRC.GetFrameCtrl= HEVCExtBRC::GetFrameCtrl;
-        m_ExtBRC.Update= HEVCExtBRC::Update;
+       HEVCExtBRC::Create(m_ExtBRC);
        m_EncExtParams.push_back((mfxExtBuffer *)&m_ExtBRC);
     }
 #endif
@@ -970,6 +967,10 @@ CEncodingPipeline::CEncodingPipeline()
     m_bCutOutput = false;
     m_bTimeOutExceed = false;
     m_bInsertIDR = false;
+
+#ifdef ENABLE_FUTURE_FEATURES
+    HEVCExtBRC::Destroy(m_ExtBRC);
+#endif
 }
 
 CEncodingPipeline::~CEncodingPipeline()

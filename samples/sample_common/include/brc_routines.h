@@ -51,13 +51,17 @@ public:
     mfxU32 bufferSizeInBytes;
     mfxU32 initialDelayInBytes;
 
+    // Sliding window parameters
+    mfxU16  WinBRCMaxAvgKbps;
+    mfxU16  WinBRCSize;
+
     // RC params
     mfxU32 targetbps;
     mfxU32 maxbps;
     mfxF64 frameRate;
-    mfxU32 inputBitsPerFrame;
-    mfxU32 maxInputBitsPerFrame;
-    mfxU32 maxFrameSizeInBytes;
+    mfxF64 inputBitsPerFrame;
+    mfxF64 maxInputBitsPerFrame;
+    mfxU32 maxFrameSizeInBits;
 
     // Frame size params
     mfxU16 width;
@@ -68,6 +72,7 @@ public:
     // GOP params
     mfxU16 gopPicSize;
     mfxU16 gopRefDist;
+    bool   bPyr;
 
     //BRC accurancy params
     mfxF64 fAbPeriodLong;   // number on frames to calculate abberation from target frame
@@ -77,8 +82,12 @@ public:
 
     //QP parameters
     mfxI32   quantOffset;
-    mfxI32   quantMax;
-    mfxI32   quantMin;
+    mfxI32   quantMaxI;
+    mfxI32   quantMinI;
+    mfxI32   quantMaxP;
+    mfxI32   quantMinP;
+    mfxI32   quantMaxB;
+    mfxI32   quantMinB;
 
 public:
     cBRCParams():
@@ -88,26 +97,32 @@ public:
         bPanic(0),
         bufferSizeInBytes(0),
         initialDelayInBytes(0),
+        WinBRCMaxAvgKbps(0),
+        WinBRCSize(0),
         targetbps(0),
         maxbps(0),
         frameRate(0),
         inputBitsPerFrame(0),
         maxInputBitsPerFrame(0),
-        maxFrameSizeInBytes(0),
+        maxFrameSizeInBits(0),
         width(0),
         height(0),
         chromaFormat(0),
         bitDepthLuma(0),
         gopPicSize(0),
         gopRefDist(0),
+        bPyr(0),
         fAbPeriodLong(0),
         fAbPeriodShort(0),
         dqAbPeriod(0),
         bAbPeriod(0),
         quantOffset(0),
-        quantMax(0),
-        quantMin(0)
-
+        quantMaxI(0),
+        quantMinI(0),
+        quantMaxP(0),
+        quantMinP(0),
+        quantMaxB(0),
+        quantMinB(0)
     {}
 
     mfxStatus Init(mfxVideoParam* par);
@@ -129,7 +144,7 @@ public:
         m_bCBR (false)
     {}
 
-    void      Init(mfxU32 buffSizeInBytes, mfxU32 delayInBytes, mfxU32 inputBitsPerFrame, bool cbr);
+    void      Init(mfxU32 buffSizeInBytes, mfxU32 delayInBytes, mfxF64 inputBitsPerFrame, bool cbr);
     mfxU16    UpdateAndCheckHRD(mfxI32 frameBits, mfxI32 recode, mfxI32 minQuant, mfxI32 maxQuant);
     mfxStatus UpdateMinMaxQPForRec(mfxU32 brcSts, mfxI32 qp);
     mfxI32    GetTargetSize(mfxU32 brcSts);
@@ -153,7 +168,7 @@ private:
 private:
     mfxI32 m_buffSizeInBits;
     mfxI32 m_delayInBits;
-    mfxU32 m_inputBitsPerFrame;
+    mfxF64 m_inputBitsPerFrame;
     bool   m_bCBR;
 
 };
@@ -182,6 +197,69 @@ struct BRC_Ctx
     mfxI32 totalDiviation;   // divation from  target bitrate (total)
 
     mfxF64 eRate;               // eRate of last encoded frame, this parameter is used for scene change calculation
+    mfxF64 eRateSH;             // eRate of last encoded scene change frame, this parameter is used for scene change calculation
+};
+class AVGBitrate
+{
+public:
+    AVGBitrate(mfxU32 windowSize, mfxU32 maxBitLimitPerFrame):
+        m_maxWinBits(maxBitLimitPerFrame*windowSize),
+        m_maxWinBitsStrong(0),
+        m_currPosInWindow(0),
+        m_lastFrameOrder(0)
+    {
+        mfxU32 minFrameSize = maxBitLimitPerFrame / 10;
+        windowSize = windowSize > 0 ? windowSize: 1; // kw
+        m_slidingWindow.resize(windowSize);
+        for (mfxU32 i = 0; i < windowSize; i++)
+        {
+            m_slidingWindow[i] = minFrameSize;
+        }
+        m_maxWinBitsStrong = m_maxWinBits - minFrameSize;
+        //printf("AVGBitrat: %d, %d, %d, %d\n", m_maxWinBits,m_maxWinBitsStrong, minFrameSize, windowSize);
+    }
+    virtual ~AVGBitrate()
+    {
+        //printf("------------ AVG Bitrate: %d ( %d), NumberOfErrors %d\n", m_MaxBitReal, m_MaxBitReal_temp, m_NumberOfErrors);
+    }
+    void UpdateSlidingWindow(mfxU32  sizeInBits, mfxU32  FrameOrder)
+    {
+        if (FrameOrder != m_lastFrameOrder)
+        {
+            m_lastFrameOrder = FrameOrder;
+            m_currPosInWindow = (m_currPosInWindow + 1) % m_slidingWindow.size();
+        }
+        m_slidingWindow[m_currPosInWindow] = sizeInBits;
+    }
+    mfxU32 GetMaxFrameSize(bool bStrong)
+    {
+        mfxU32 maxWindowSize = bStrong ? m_maxWinBitsStrong : m_maxWinBits;
+        return maxWindowSize - GetLastFrameBits((mfxU32)m_slidingWindow.size() - 1);
+    }
+    mfxU32 GetWindowSize()
+    {
+        return (mfxU32)m_slidingWindow.size();
+    }
+
+protected:
+    mfxU32                      m_maxWinBits;
+    mfxU32                      m_maxWinBitsStrong;
+
+    mfxU32                      m_currPosInWindow;
+    mfxU32                      m_lastFrameOrder;
+    std::vector<mfxU32>         m_slidingWindow;
+
+    mfxU32 GetLastFrameBits(mfxU32 numFrames)
+    {
+        mfxU32 size = 0;
+        numFrames = numFrames < m_slidingWindow.size() ? numFrames : (mfxU32)m_slidingWindow.size() ;
+        for(mfxU32 i = 0; i < numFrames; i ++)
+        {
+            size += m_slidingWindow[(m_currPosInWindow + m_slidingWindow.size() - i) % m_slidingWindow.size() ];
+            //printf("GetLastFrames: %d) %d sum %d\n",i,m_slidingWindow[(m_currPosInWindow + m_slidingWindow.size() - i) % m_slidingWindow.size() ], size);
+        }
+        return size;
+    }
 };
 class ExtBRC
 {
@@ -190,6 +268,7 @@ private:
     cHRD       m_hrd;
     bool       m_bInit;
     BRC_Ctx    m_ctx;
+    std::auto_ptr<AVGBitrate> m_avg;
 
 public:
     ExtBRC():
@@ -205,6 +284,8 @@ public:
     mfxStatus Close () {m_bInit = false; return MFX_ERR_NONE;}
     mfxStatus GetFrameCtrl (mfxBRCFrameParam* par, mfxBRCFrameCtrl* ctrl);
     mfxStatus Update (mfxBRCFrameParam* par, mfxBRCFrameCtrl* ctrl, mfxBRCFrameStatus* status);
+protected:
+    mfxI32 GetCurQP (mfxU32 type, mfxI32 layer);
 };
 
 namespace HEVCExtBRC
@@ -247,7 +328,7 @@ namespace HEVCExtBRC
     }
     inline mfxStatus Destroy(mfxExtBRC & m_BRC)
     {
-        MFX_CHECK(m_BRC.pthis == NULL, MFX_ERR_NONE);
+        MFX_CHECK(m_BRC.pthis != NULL, MFX_ERR_NONE);
         delete (ExtBRC*)m_BRC.pthis;
         m_BRC.Init = 0;
         m_BRC.Reset = 0;
