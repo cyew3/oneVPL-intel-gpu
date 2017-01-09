@@ -1429,8 +1429,13 @@ bool MfxHwH264Encode::IsRunTimeOnlyExtBuffer(mfxU32 id)
         ;
 }
 
-bool MfxHwH264Encode::IsRunTimeExtBufferIdSupported(mfxU32 id)
+bool MfxHwH264Encode::IsRunTimeExtBufferIdSupported(MfxVideoParam const & video, mfxU32 id)
 {
+#if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
+    mfxExtFeiParam const * feiParam = (mfxExtFeiParam*)GetExtBuffer(video);
+    bool isFeiENCPAK = feiParam && (feiParam->Func == MFX_FEI_FUNCTION_ENCODE);
+#endif
+
     return
           (id == MFX_EXTBUFF_AVC_REFLIST_CTRL
         || id == MFX_EXTBUFF_AVC_REFLISTS
@@ -1451,14 +1456,60 @@ bool MfxHwH264Encode::IsRunTimeExtBufferIdSupported(mfxU32 id)
         || id == MFX_EXTBUFF_GPU_HANG
 #endif
 #if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
-        || id == MFX_EXTBUFF_FEI_ENC_CTRL
-        || id == MFX_EXTBUFF_FEI_ENC_MB
-        || id == MFX_EXTBUFF_FEI_ENC_MV_PRED
-        || id == MFX_EXTBUFF_FEI_ENC_QP
-        || id == MFX_EXTBUFF_FEI_SLICE
-
+        || (isFeiENCPAK &&
+           (   id == MFX_EXTBUFF_FEI_ENC_CTRL
+            || id == MFX_EXTBUFF_FEI_ENC_MB
+            || id == MFX_EXTBUFF_FEI_ENC_MV_PRED
+            || id == MFX_EXTBUFF_FEI_ENC_QP
+            || id == MFX_EXTBUFF_FEI_SLICE
+           ))
 #endif
         );
+}
+
+bool MfxHwH264Encode::IsRunTimeExtBufferPairAllowed(MfxVideoParam const & video, mfxU32 id)
+{
+#if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
+    mfxExtFeiParam const * feiParam = (mfxExtFeiParam*)GetExtBuffer(video);
+    bool isFeiENCPAK = feiParam && (feiParam->Func == MFX_FEI_FUNCTION_ENCODE);
+#endif
+
+    return (id == MFX_EXTBUFF_AVC_REFLISTS)
+#if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
+           || (isFeiENCPAK &&
+                (  id == MFX_EXTBUFF_FEI_SLICE
+                || id == MFX_EXTBUFF_FEI_ENC_CTRL
+                || id == MFX_EXTBUFF_FEI_ENC_MV_PRED
+                || id == MFX_EXTBUFF_FEI_REPACK_CTRL
+                || id == MFX_EXTBUFF_FEI_ENC_MB
+                || id == MFX_EXTBUFF_FEI_ENC_QP
+                || id == MFX_EXTBUFF_FEI_ENC_MB_STAT
+                || id == MFX_EXTBUFF_FEI_ENC_MV
+                || id == MFX_EXTBUFF_FEI_PAK_CTRL
+           ))
+#endif
+           ;
+}
+
+bool MfxHwH264Encode::IsRunTimeExtBufferPairRequired(MfxVideoParam const & video, mfxU32 id)
+{
+#if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
+    mfxExtFeiParam const * feiParam = (mfxExtFeiParam*)GetExtBuffer(video);
+    bool isFeiENCPAK = feiParam && (feiParam->Func == MFX_FEI_FUNCTION_ENCODE);
+
+    return (isFeiENCPAK &&
+            (  id == MFX_EXTBUFF_FEI_SLICE
+            || id == MFX_EXTBUFF_FEI_ENC_CTRL
+            || id == MFX_EXTBUFF_FEI_ENC_MV_PRED
+            || id == MFX_EXTBUFF_FEI_REPACK_CTRL
+            || id == MFX_EXTBUFF_FEI_ENC_MB
+            || id == MFX_EXTBUFF_FEI_ENC_QP
+            || id == MFX_EXTBUFF_FEI_ENC_MB_STAT
+            || id == MFX_EXTBUFF_FEI_ENC_MV
+            || id == MFX_EXTBUFF_FEI_PAK_CTRL
+           ));
+#endif
+    return false;
 }
 
 bool MfxHwH264Encode::IsVideoParamExtBufferIdSupported(mfxU32 id)
@@ -5640,36 +5691,43 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
     MfxVideoParam const & video,
     mfxEncodeCtrl *       ctrl)
 {
+    MFX_CHECK_NULL_PTR1(ctrl);
     mfxStatus checkSts = MFX_ERR_NONE;
-    mfxExtFeiParam const * feiParam = (mfxExtFeiParam*)GetExtBuffer(video);
-    bool isFeiENCPAK = feiParam && (feiParam->Func == MFX_FEI_FUNCTION_ENCODE);
-
-    for (mfxU32 i = 0; i < ctrl->NumExtParam; i++)
-        MFX_CHECK_NULL_PTR1(ctrl->ExtParam[i]);
-
 
     for (mfxU32 i = 0; i < ctrl->NumExtParam; i++)
     {
-        if (ctrl->ExtParam[i])
-        {
-            if (false == IsRunTimeExtBufferIdSupported(ctrl->ExtParam[i]->BufferId))
-                checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM; // don't return error in runtime, just ignore unsupported ext buffer and return warning
+        MFX_CHECK_NULL_PTR1(ctrl->ExtParam[i]);
 
-            if (MfxHwH264Encode::GetExtBuffer(
-                ctrl->ExtParam + i + 1,
-                ctrl->NumExtParam - i - 1,
-                ctrl->ExtParam[i]->BufferId) != 0)
-            {
-                if ((!(ctrl->ExtParam[i]->BufferId == MFX_EXTBUFF_AVC_REFLISTS && video.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE)) &&
-                     !isFeiENCPAK)
-                {
-                    // if buffer is attached twice, ignore second one and return warning
-                    // the only exception is MFX_EXTBUFF_AVC_REFLISTS (it can be attached twice for interlace case)
-                    checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-                }
-            }
+        if (!IsRunTimeExtBufferIdSupported(video, ctrl->ExtParam[i]->BufferId))
+            checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM; // don't return error in runtime, just ignore unsupported ext buffer and return warning
+
+        bool buffer_pair = MfxHwH264Encode::GetExtBuffer(
+                            ctrl->ExtParam + i + 1,
+                            ctrl->NumExtParam - i - 1,
+                            ctrl->ExtParam[i]->BufferId)
+                            ||
+                           MfxHwH264Encode::GetExtBuffer(
+                            ctrl->ExtParam,
+                            i,
+                            ctrl->ExtParam[i]->BufferId);
+
+        bool buffer_pair_allowed  = IsRunTimeExtBufferPairAllowed(video, ctrl->ExtParam[i]->BufferId);
+        bool buffer_pair_required = video.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE && IsRunTimeExtBufferPairRequired(video, ctrl->ExtParam[i]->BufferId);
+
+        if (buffer_pair && !buffer_pair_allowed)
+        {
+            // Ignore second buffer and return warning
+            checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+        }
+        else if (!buffer_pair && buffer_pair_required)
+        {
+            // Return error if only one per-field buffer provided
+            return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
         }
     }
+
+    checkSts = CheckFEIRunTimeExtBuffersContent(video, ctrl);
+    MFX_CHECK(checkSts >= MFX_ERR_NONE, checkSts);
 
     mfxExtAVCRefListCtrl const * extRefListCtrl = GetExtBuffer(*ctrl);
     if (extRefListCtrl && video.calcParam.numTemporalLayer > 0 && video.calcParam.tempScalabilityMode == 0)
@@ -5744,6 +5802,62 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
                checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
         }
     }
+
+    return checkSts;
+}
+
+mfxStatus MfxHwH264Encode::CheckFEIRunTimeExtBuffersContent(
+    MfxVideoParam const & video,
+    mfxEncodeCtrl *       ctrl)
+{
+    MFX_CHECK_NULL_PTR1(ctrl);
+    mfxStatus checkSts = MFX_ERR_NONE;
+
+#if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
+    mfxExtFeiParam const * feiParam = (mfxExtFeiParam*)GetExtBuffer(video);
+    bool isFeiENCPAK = feiParam && (feiParam->Func == MFX_FEI_FUNCTION_ENCODE);
+
+    if (!isFeiENCPAK) return MFX_ERR_NONE;
+
+    for (mfxU32 i = 0; i < ctrl->NumExtParam; ++i)
+    {
+        MFX_CHECK_NULL_PTR1(ctrl->ExtParam[i]);
+
+        switch (ctrl->ExtParam[i]->BufferId)
+        {
+        case MFX_EXTBUFF_FEI_SLICE:
+            break;
+        case MFX_EXTBUFF_FEI_ENC_CTRL:
+        {
+            mfxExtFeiEncFrameCtrl* feiEncCtrl = reinterpret_cast<mfxExtFeiEncFrameCtrl*>(ctrl->ExtParam[i]);
+
+            if (feiEncCtrl->SearchWindow == 0) { return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM; }
+
+            mfxExtCodingOption const* extOpt = GetExtBuffer(video);
+            if (extOpt && (MFX_BLOCKSIZE_MIN_16X16 == extOpt->IntraPredBlockSize) && !(feiEncCtrl->IntraPartMask & 0x02))
+            {
+                // For Main and Baseline profiles 8x8 transform is prohibited
+                return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+            }
+        }
+            break;
+        case MFX_EXTBUFF_FEI_ENC_MV_PRED:
+            break;
+        case MFX_EXTBUFF_FEI_REPACK_CTRL:
+            break;
+        case MFX_EXTBUFF_FEI_ENC_MB:
+            break;
+        case MFX_EXTBUFF_FEI_ENC_QP:
+            break;
+        case MFX_EXTBUFF_FEI_ENC_MB_STAT:
+            break;
+        case MFX_EXTBUFF_FEI_ENC_MV:
+            break;
+        case MFX_EXTBUFF_FEI_PAK_CTRL:
+            break;
+        }
+    }
+#endif
 
     return checkSts;
 }

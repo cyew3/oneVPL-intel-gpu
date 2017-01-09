@@ -746,7 +746,13 @@ namespace MfxHwH264Encode
         mfxU32 id);
 
     bool IsRunTimeExtBufferIdSupported(
-        mfxU32 id);
+        MfxVideoParam const & video, mfxU32 id);
+
+    bool IsRunTimeExtBufferPairAllowed(
+        MfxVideoParam const & video, mfxU32 id);
+
+    bool IsRunTimeExtBufferPairRequired(
+        MfxVideoParam const & video, mfxU32 id);
 
     bool IsVideoParamExtBufferIdSupported(
         mfxU32 id);
@@ -817,6 +823,10 @@ namespace MfxHwH264Encode
         mfxU16                     numPayload);
 
     mfxStatus CheckRunTimeExtBuffers(
+        MfxVideoParam const & video,
+        mfxEncodeCtrl *       ctrl);
+
+    mfxStatus CheckFEIRunTimeExtBuffersContent(
         MfxVideoParam const & video,
         mfxEncodeCtrl *       ctrl);
 
