@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -119,7 +119,7 @@ void mfx_UMC_FrameAllocator::FrameInformation::Reset()
 mfx_UMC_FrameAllocator::mfx_UMC_FrameAllocator()
     : m_curIndex(-1),
       m_IsUseExternalFrames(true),
-      m_doNotNeedToCopy(false),
+      m_sfcVideoPostProcessing(false),
       m_pCore(0),
       m_externalFramesResponse(0),
       m_isSWDecode(false),
@@ -384,7 +384,7 @@ UMC::Status mfx_UMC_FrameAllocator::Alloc(UMC::FrameMemID *pNewMemID, const UMC:
     if (sts < MFX_ERR_NONE)
         return UMC::UMC_ERR_FAILED;
 
-    if (m_IsUseExternalFrames)
+    if ((m_IsUseExternalFrames) || (m_sfcVideoPostProcessing))
     {
         if (m_extSurfaces[index].FrameSurface)
         {
@@ -582,7 +582,7 @@ UMC::Status mfx_UMC_FrameAllocator::Free(UMC::FrameMemID mid)
     if (sts < MFX_ERR_NONE)
         return UMC::UMC_ERR_FAILED;
 
-    if (m_IsUseExternalFrames)
+    if ((m_IsUseExternalFrames) || (m_sfcVideoPostProcessing))
     {
         sts = m_pCore->DecreaseReference(&m_extSurfaces[index].FrameSurface->Data);
         if (sts < MFX_ERR_NONE)
@@ -655,8 +655,31 @@ mfxStatus mfx_UMC_FrameAllocator::SetCurrentMFXSurface(mfxFrameSurface1 *surf, b
 
     m_curIndex = -1;
 
-    if (!m_IsUseExternalFrames)
+    if ((!m_IsUseExternalFrames) && (!m_sfcVideoPostProcessing))
         m_curIndex = FindFreeSurface();
+    else if ((!m_IsUseExternalFrames) && (m_sfcVideoPostProcessing))
+    {
+        for (mfxU32 i = 0; i < m_extSurfaces.size(); i++)
+        {
+            if (NULL == m_extSurfaces[i].FrameSurface)
+            {
+                /* new surface */
+                m_curIndex = i;
+                m_extSurfaces[m_curIndex].FrameSurface = surf;
+                break;
+            }
+            if ( (NULL != m_extSurfaces[i].FrameSurface) &&
+                  (0 == m_extSurfaces[i].FrameSurface->Data.Locked) &&
+                  (m_extSurfaces[i].FrameSurface->Data.MemId == surf->Data.MemId) &&
+                  (0 == m_frameData[i].first.Data.Locked) )
+            {
+                /* surfaces filled already */
+                m_curIndex = i;
+                m_extSurfaces[m_curIndex].FrameSurface = surf;
+                break;
+            }
+        } // for (mfxU32 i = 0; i < m_extSurfaces.size(); i++)
+    }
     else
     {
         m_curIndex = FindSurface(surf, isOpaq);
@@ -793,7 +816,7 @@ mfxI32 mfx_UMC_FrameAllocator::FindFreeSurface()
 {
     UMC::AutomaticUMCMutex guard(m_guard);
 
-    if (m_IsUseExternalFrames)
+    if ((m_IsUseExternalFrames) || (m_sfcVideoPostProcessing))
     {
         return m_curIndex;
     }
@@ -844,9 +867,9 @@ mfxFrameSurface1 * mfx_UMC_FrameAllocator::GetSurfaceByIndex(UMC::FrameMemID ind
     return m_IsUseExternalFrames ? m_extSurfaces[index].FrameSurface : &m_frameData[index].first;
 }
 
-void mfx_UMC_FrameAllocator::SetDoNotNeedToCopyFlag(bool doNotNeedToCopy)
+void mfx_UMC_FrameAllocator::SetSfcPostProcessingFlag(bool flagToSet)
 {
-    m_doNotNeedToCopy = doNotNeedToCopy;
+    m_sfcVideoPostProcessing = flagToSet;
 }
 
 mfxFrameSurface1 * mfx_UMC_FrameAllocator::GetSurface(UMC::FrameMemID index, mfxFrameSurface1 *surface, const mfxVideoParam * videoPar)
@@ -856,7 +879,7 @@ mfxFrameSurface1 * mfx_UMC_FrameAllocator::GetSurface(UMC::FrameMemID index, mfx
     if (!surface || !videoPar || 0 > index)
         return 0;
 
-    if (m_IsUseExternalFrames)
+    if ((m_IsUseExternalFrames) || (m_sfcVideoPostProcessing))
     {
         if ((Ipp32u)index >= m_frameData.size())
             return 0;
@@ -1256,7 +1279,7 @@ mfxStatus   mfx_UMC_FrameAllocator_D3D::PrepareToOutput(mfxFrameSurface1 *surfac
     }
     else
     {
-        if (!m_doNotNeedToCopy)
+        if (!m_sfcVideoPostProcessing)
         {
             UMC::VideoDataInfo VInfo;
 
@@ -1276,8 +1299,11 @@ mfxStatus   mfx_UMC_FrameAllocator_D3D::PrepareToOutput(mfxFrameSurface1 *surfac
 
         if (!m_IsUseExternalFrames)
         {
-            m_pCore->DecreaseReference(&surface_work->Data);
-            m_extSurfaces[index].FrameSurface = 0;
+            if (!m_sfcVideoPostProcessing)
+            {
+                m_pCore->DecreaseReference(&surface_work->Data);
+                m_extSurfaces[index].FrameSurface = 0;
+            }
         }
 
         return sts;

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include <iostream>
@@ -773,7 +773,16 @@ VAAPIVideoCORE::CreateVideoAccelerator(
     params.m_protectedVA = param->Protected;
 
 #ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
-    if (GetExtBuffer(param->ExtParam, param->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING))
+    /* There are following conditions for SFC post processing:
+     * (1): AVC
+     * (2): Progressive only
+     * (3): Tested on BXT platform only
+     * (4): Only video memory supported (so, OPAQ memory does not supported!)
+     * */
+    if ( (GetExtBuffer(param->ExtParam, param->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING)) &&
+         (MFX_PICSTRUCT_PROGRESSIVE == param->mfx.FrameInfo.PicStruct) &&
+         (MFX_HW_BXT == GetHWType()) &&
+         (param->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
     {
         params.m_needVideoProcessingVA = true;
     }

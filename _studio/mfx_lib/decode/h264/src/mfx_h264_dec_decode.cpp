@@ -333,8 +333,19 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
 
 #ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
     mfxExtDecVideoProcessing * videoProcessing = (mfxExtDecVideoProcessing *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
-    if (videoProcessing)
+    /* There are following conditions for SFC post processing:
+     * (1): AVC
+     * (2): Progressive only
+     * (3): Tested on BXT platform only
+     * (4): Only video memory supported (so, OPAQ memory does not supported!)
+     * */
+    if ((videoProcessing) &&
+        (MFX_PICSTRUCT_PROGRESSIVE == m_vPar.mfx.FrameInfo.PicStruct) &&
+        (MFX_HW_BXT == m_core->GetHWType()) &&
+        (m_vPar.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
         useInternal = 1;
+    else /* SFC can't be used */
+        videoProcessing = NULL;
 #endif
 
 #if defined (MFX_VA_OSX)
@@ -413,29 +424,6 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
         if (mfxSts < MFX_ERR_NONE)
             return mfxSts;
 
-#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
-        if (videoProcessing)
-        {
-            // need to substitute output format
-            // number of surfaces is same
-            request.Info.FourCC = videoProcessing->Out.FourCC;
-
-            request.Info.ChromaFormat = videoProcessing->Out.ChromaFormat;
-            request.Info.PicStruct = videoProcessing->Out.PicStruct;
-            request.Info.Width = videoProcessing->Out.Width;
-            request.Info.Height = videoProcessing->Out.Height;
-            request.Info.CropX = videoProcessing->Out.CropX;
-            request.Info.CropY = videoProcessing->Out.CropY;
-            request.Info.CropW = videoProcessing->Out.CropW;
-            request.Info.CropH = videoProcessing->Out.CropH;
-            request.Type = request_type;
-            request.Type |= MFX_MEMTYPE_EXTERNAL_FRAME;
-
-            mfxSts = m_core->AllocFrames(&request_internal, &m_response, true);
-            if (mfxSts < MFX_ERR_NONE)
-                return mfxSts;
-        }
-#endif
     }
     else
     {
@@ -466,7 +454,7 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
 #ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
     if (videoProcessing)
     {
-        m_FrameAllocator->SetDoNotNeedToCopyFlag(true);
+        m_FrameAllocator->SetSfcPostProcessingFlag(true);
     }
 #endif
 
@@ -1008,11 +996,6 @@ mfxStatus VideoDECODEH264::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxF
     if (sts != MFX_ERR_NONE)
         return sts;
 
-#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
-    bool isVideoProcessing = GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING) != 0;
-    if (isVideoProcessing)
-        request->NumFrameSuggested = request->NumFrameMin = (mfxU16)CalculateAsyncDepth(platform, par);
-#endif
 
     if (isInternalManaging)
     {

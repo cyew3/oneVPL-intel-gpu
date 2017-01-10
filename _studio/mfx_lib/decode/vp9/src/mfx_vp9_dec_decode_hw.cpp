@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -627,10 +627,10 @@ mfxStatus MFX_CDECL VP9DECODERoutine(void *p_state, void * /* pp_param */, mfxU3
         mfxStatus sts = decoder.m_core->DoFastCopyWrapper(&surfaceDst, dstMemType, surfaceSrc, srcMemType);
         MFX_CHECK_STS(sts);
 
-        decoder.m_FrameAllocator->SetDoNotNeedToCopyFlag(true);
+        decoder.m_FrameAllocator->SetSfcPostProcessingFlag(true);
         sts = decoder.m_FrameAllocator->PrepareToOutput(data.surface_work, data.copyFromFrame, 0, false);
         MFX_CHECK_STS(sts);
-        decoder.m_FrameAllocator->SetDoNotNeedToCopyFlag(false);
+        decoder.m_FrameAllocator->SetSfcPostProcessingFlag(false);
 
         if (data.currFrameId != -1)
            decoder.m_FrameAllocator->DecreaseReference(data.currFrameId);

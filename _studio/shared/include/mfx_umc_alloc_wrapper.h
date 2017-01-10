@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef _MFX_ALLOC_WRAPPER_H_
@@ -112,7 +112,7 @@ public:
     mfxI32 FindSurface(mfxFrameSurface1 *surf, bool isOpaq);
     mfxI32 FindFreeSurface();
 
-    void SetDoNotNeedToCopyFlag(bool doNotNeedToCopy);
+    void SetSfcPostProcessingFlag(bool flagToSet);
 
     void SetExternalFramesResponse(mfxFrameAllocResponse *response);
     mfxFrameSurface1 * GetInternalSurface(UMC::FrameMemID index);
@@ -164,7 +164,7 @@ protected:
     mfxI32        m_curIndex;
 
     bool m_IsUseExternalFrames;
-    bool m_doNotNeedToCopy;
+    bool m_sfcVideoPostProcessing;
 
     mfxFrameSurface1 m_surface;  // for copying
 
