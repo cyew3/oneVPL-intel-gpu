@@ -18,13 +18,14 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 \**********************************************************************************/
 
 #include "pipeline_fei.h"
+#include "version.h"
 
 mfxStatus CheckOptions(AppConfig* pConfig);
 mfxStatus CheckDRCParams(AppConfig* pConfig);
 
 void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
 {
-    msdk_printf(MSDK_STRING("AVC FEI Encoding Sample Version %s\n\n"), MSDK_SAMPLE_VERSION);
+    msdk_printf(MSDK_STRING("AVC FEI Encoding Sample Version %s\n\n"), GetMSDKSampleVersion().c_str());
 
     if (strErrorMessage)
     {

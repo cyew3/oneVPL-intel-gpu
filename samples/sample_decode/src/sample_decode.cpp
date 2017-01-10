@@ -21,10 +21,11 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include "pipeline_decode.h"
 #include <sstream>
+#include "version.h"
 
 void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
 {
-    msdk_printf(MSDK_STRING("Decoding Sample Version %s\n\n"), MSDK_SAMPLE_VERSION);
+    msdk_printf(MSDK_STRING("Decoding Sample Version %s\n\n"), GetMSDKSampleVersion().c_str());
 
     if (strErrorMessage)
     {

@@ -34,6 +34,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "sysmem_allocator.h"
 #include "transcode_utils.h"
 
+#include "version.h"
 using namespace TranscodingSample;
 
 // parsing defines
@@ -86,7 +87,7 @@ void TranscodingSample::PrintError(const msdk_char *strErrorMessage, ...)
 
 void TranscodingSample::PrintHelp()
 {
-    msdk_printf(MSDK_STRING("Multi Transcoding Sample Version %s\n\n"), MSDK_SAMPLE_VERSION);
+    msdk_printf(MSDK_STRING("Multi Transcoding Sample Version %s\n\n"), GetMSDKSampleVersion().c_str());
     msdk_printf(MSDK_STRING("Command line parameters\n"));
 
     msdk_printf(MSDK_STRING("Usage: sample_multi_transcode [options] [--] pipeline-description\n"));
@@ -446,7 +447,7 @@ mfxStatus CmdProcessor::ParseCmdLine(int argc, msdk_char *argv[])
         ++argv;
     }
 
-    msdk_printf(MSDK_STRING("Multi Transcoding Sample Version %s\n\n"), MSDK_SAMPLE_VERSION);
+    msdk_printf(MSDK_STRING("Multi Transcoding Sample Version %s\n\n"), GetMSDKSampleVersion().c_str());
 
     //Read pipeline from par file
     if (m_parName && !argv[0])

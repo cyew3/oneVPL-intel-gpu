@@ -48,6 +48,8 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "class_wayland.h"
 #endif
 
+#include "version.h"
+
 #pragma warning(disable : 4100)
 
 #define __SYNC_WA // avoid sync issue on Media SDK side
@@ -1867,7 +1869,7 @@ mfxStatus CDecodingPipeline::RunDecoding()
 
 void CDecodingPipeline::PrintInfo()
 {
-    msdk_printf(MSDK_STRING("Decoding Sample Version %s\n\n"), MSDK_SAMPLE_VERSION);
+    msdk_printf(MSDK_STRING("Decoding Sample Version %s\n\n"), GetMSDKSampleVersion().c_str());
     msdk_printf(MSDK_STRING("\nInput video\t%s\n"), CodecIdToStr(m_mfxVideoParams.mfx.CodecId).c_str());
     if (m_bVppIsUsed)
     {

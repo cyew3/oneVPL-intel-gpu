@@ -42,6 +42,8 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include <pthread.h>
 #endif
 
+#include "version.h"
+
 /* obtain the clock tick of an uninterrupted master clock */
 msdk_tick time_get_tick(void)
 {
@@ -1895,7 +1897,7 @@ mfxStatus CEncodingPipeline::LoadNextFrame(mfxFrameSurface1* pSurf)
 
 void CEncodingPipeline::PrintInfo()
 {
-    msdk_printf(MSDK_STRING("Encoding Sample Version %s\n"), MSDK_SAMPLE_VERSION);
+    msdk_printf(MSDK_STRING("Encoding Sample Version %s\n"), GetMSDKSampleVersion().c_str());
     msdk_printf(MSDK_STRING("\nInput file format\t%s\n"), ColorFormatToStr(m_FileReader.m_ColorFormat));
     msdk_printf(MSDK_STRING("Output video\t\t%s\n"), CodecIdToStr(m_mfxEncParams.mfx.CodecId).c_str());
 

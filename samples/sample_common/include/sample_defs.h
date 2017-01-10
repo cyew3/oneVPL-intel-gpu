@@ -155,12 +155,6 @@ enum LibVABackend
 #define UNREFERENCED_PARAMETER(par) (par)
 #endif
 
-#ifndef MFX_PRODUCT_VERSION
-#define MFX_PRODUCT_VERSION "1.0.0.0"
-#endif
-
-#define MSDK_SAMPLE_VERSION MSDK_STRING(MFX_PRODUCT_VERSION)
-
 #define MFX_IMPL_VIA_MASK(x) (0x0f00 & (x))
 
 // Deprecated

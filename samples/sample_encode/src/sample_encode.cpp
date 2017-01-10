@@ -25,6 +25,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "pipeline_region_encode.h"
 #include <stdarg.h>
 #include <string>
+#include "version.h"
 
 #define VAL_CHECK(val, argIdx, argName) \
 { \
@@ -46,7 +47,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
 {
-    msdk_printf(MSDK_STRING("Encoding Sample Version %s\n\n"), MSDK_SAMPLE_VERSION);
+    msdk_printf(MSDK_STRING("Encoding Sample Version %s\n\n"), GetMSDKSampleVersion().c_str());
 
     if (strErrorMessage)
     {

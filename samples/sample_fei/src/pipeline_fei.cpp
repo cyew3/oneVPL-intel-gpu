@@ -18,6 +18,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 \**********************************************************************************/
 
 #include "pipeline_fei.h"
+#include "version.h"
 
 CEncodingPipeline::CEncodingPipeline(AppConfig* pAppConfig)
     : m_appCfg(*pAppConfig)
@@ -1822,7 +1823,7 @@ void CEncodingPipeline::ClearDecoderBuffers()
 
 void CEncodingPipeline::PrintInfo()
 {
-    msdk_printf(MSDK_STRING("Intel(R) Media SDK FEI Sample Version %s\n"), MSDK_SAMPLE_VERSION);
+    msdk_printf(MSDK_STRING("Intel(R) Media SDK FEI Sample Version %s\n"), GetMSDKSampleVersion().c_str());
     if (!m_pDECODE)
         msdk_printf(MSDK_STRING("\nInput file format\t%s\n"), ColorFormatToStr(m_pYUVReader->m_FileReader.m_ColorFormat));
     else

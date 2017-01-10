@@ -34,6 +34,8 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "d3d11_device.h"
 #endif
 
+#include "version.h"
+
 #pragma warning(disable : 4100)
 #pragma warning(disable : 4996)
 
@@ -1847,7 +1849,7 @@ mfxStatus CCameraPipeline::Run()
 
 void CCameraPipeline::PrintInfo()
 {
-    msdk_printf(MSDK_STRING("Intel(R) Camera SDK Sample Version %s\n\n"), MSDK_SAMPLE_VERSION);
+    msdk_printf(MSDK_STRING("Intel(R) Camera SDK Sample Version %s\n\n"), GetMSDKSampleVersion().c_str());
 
     mfxFrameInfo Info = m_mfxVideoParams.vpp.In;
     msdk_printf(MSDK_STRING("Input format\t%s\n"), FourCC2Str( Info.FourCC ));
