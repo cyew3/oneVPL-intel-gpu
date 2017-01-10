@@ -592,6 +592,9 @@
     <ClCompile Include="src\gmock\test_suites\fei_encode_oversized_surfaces.cpp">
       <Filter>Source Files\test_suites\FEI</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\fei_encode_enablembqp.cpp">
+      <Filter>Source Files\test_suites\FEI</Filter>
+    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\mpeg2e_ratecontrol.cpp">
       <Filter>Source Files\test_suites\mpeg2e</Filter>
     </ClCompile>
