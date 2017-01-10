@@ -846,7 +846,7 @@ mfxStatus VideoENC_PREENC::GetVideoParam(mfxVideoParam *par)
 }
 
 mfxStatus VideoENC_PREENC::RunFrameVmeENCCheck(
-                    mfxENCInput *input,
+                    mfxENCInput  *input,
                     mfxENCOutput *output,
                     MFX_ENTRY_POINT pEntryPoints[],
                     mfxU32 &numEntryPoints)
@@ -867,11 +867,30 @@ mfxStatus VideoENC_PREENC::RunFrameVmeENCCheck(
      * */
     mfxExtCodingOption * extOpt = GetExtBuffer(m_video);
     extOpt->FieldOutput = 32;
-    PairU16 picStruct    = GetPicStruct(m_video, input->InSurface->Info.PicStruct);
+    PairU16 picStruct   = GetPicStruct(m_video, input->InSurface->Info.PicStruct);
 
     if      (!feiCtrl->RefFrame[0] && !feiCtrl->RefFrame[1]) mtype_first_field = MFX_FRAMETYPE_I;
     else if ( feiCtrl->RefFrame[0] && !feiCtrl->RefFrame[1]) mtype_first_field = MFX_FRAMETYPE_P;
     else                                                     mtype_first_field = MFX_FRAMETYPE_B;
+
+    MFX_CHECK((feiCtrl->PictureType == MFX_PICTYPE_TOPFIELD    && picStruct[ENC] == MFX_PICSTRUCT_FIELD_TFF) ||
+              (feiCtrl->PictureType == MFX_PICTYPE_BOTTOMFIELD && picStruct[ENC] == MFX_PICSTRUCT_FIELD_BFF) ||
+              (feiCtrl->PictureType == MFX_PICTYPE_FRAME       && picStruct[ENC] == MFX_PICSTRUCT_PROGRESSIVE),
+              MFX_ERR_INVALID_VIDEO_PARAM);
+
+    if (feiCtrl->RefFrame[0])
+    {
+        MFX_CHECK(feiCtrl->RefPictureType[0] == MFX_PICTYPE_TOPFIELD    ||
+                  feiCtrl->RefPictureType[0] == MFX_PICTYPE_BOTTOMFIELD ||
+                  feiCtrl->RefPictureType[0] == MFX_PICTYPE_FRAME, MFX_ERR_INVALID_VIDEO_PARAM);
+    }
+
+    if (feiCtrl->RefFrame[1])
+    {
+        MFX_CHECK(feiCtrl->RefPictureType[1] == MFX_PICTYPE_TOPFIELD    ||
+                  feiCtrl->RefPictureType[1] == MFX_PICTYPE_BOTTOMFIELD ||
+                  feiCtrl->RefPictureType[1] == MFX_PICTYPE_FRAME, MFX_ERR_INVALID_VIDEO_PARAM);
+    }
 
     if (MFX_PICSTRUCT_PROGRESSIVE != picStruct[ENC])
     {
@@ -882,6 +901,24 @@ mfxStatus VideoENC_PREENC::RunFrameVmeENCCheck(
         if      (!feiCtrl->RefFrame[0] && !feiCtrl->RefFrame[1]) mtype_second_field = MFX_FRAMETYPE_I;
         else if ( feiCtrl->RefFrame[0] && !feiCtrl->RefFrame[1]) mtype_second_field = MFX_FRAMETYPE_P;
         else                                                     mtype_second_field = MFX_FRAMETYPE_B;
+
+        MFX_CHECK((feiCtrl->PictureType == MFX_PICTYPE_TOPFIELD    && picStruct[ENC] == MFX_PICSTRUCT_FIELD_BFF) ||
+                  (feiCtrl->PictureType == MFX_PICTYPE_BOTTOMFIELD && picStruct[ENC] == MFX_PICSTRUCT_FIELD_TFF),
+                  MFX_ERR_INVALID_VIDEO_PARAM);
+
+        if (feiCtrl->RefFrame[0])
+        {
+            MFX_CHECK(feiCtrl->RefPictureType[0] == MFX_PICTYPE_TOPFIELD    ||
+                      feiCtrl->RefPictureType[0] == MFX_PICTYPE_BOTTOMFIELD ||
+                      feiCtrl->RefPictureType[0] == MFX_PICTYPE_FRAME, MFX_ERR_INVALID_VIDEO_PARAM);
+        }
+
+        if (feiCtrl->RefFrame[1])
+        {
+            MFX_CHECK(feiCtrl->RefPictureType[1] == MFX_PICTYPE_TOPFIELD    ||
+                      feiCtrl->RefPictureType[1] == MFX_PICTYPE_BOTTOMFIELD ||
+                      feiCtrl->RefPictureType[1] == MFX_PICTYPE_FRAME, MFX_ERR_INVALID_VIDEO_PARAM);
+        }
     }
 
     UMC::AutomaticUMCMutex guard(m_listMutex);
@@ -908,10 +945,7 @@ mfxStatus VideoENC_PREENC::RunFrameVmeENCCheck(
      * (2): Else allowed only picture type which was on Init() stage
      *  */
     mfxU16 picStructTask = task.GetPicStructForEncode(), picStructInit = m_video.mfx.FrameInfo.PicStruct;
-    if (! ((MFX_PICSTRUCT_UNKNOWN == picStructInit) || (picStructInit == picStructTask)) )
-    {
-        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-    }
+    MFX_CHECK(MFX_PICSTRUCT_UNKNOWN == picStructInit || picStructInit == picStructTask, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM)
 
     if (task.m_picStruct[ENC] == MFX_PICSTRUCT_FIELD_BFF)
         std::swap(task.m_type.top, task.m_type.bot);

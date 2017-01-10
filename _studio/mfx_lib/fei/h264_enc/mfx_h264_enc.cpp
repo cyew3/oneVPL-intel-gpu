@@ -633,7 +633,7 @@ mfxStatus VideoENC_ENC::RunFrameVmeENCCheck(
         // Driver need both buffer to generate bitstream
         mfxExtFeiEncMV     * mvout     = GetExtBufferFEI(output, fieldParity);
         mfxExtFeiPakMBCtrl * mbcodeout = GetExtBufferFEI(output, fieldParity);
-        MFX_CHECK(mvout && mbcodeout, MFX_ERR_INVALID_VIDEO_PARAM);
+        MFX_CHECK(!!mvout == !!mbcodeout, MFX_ERR_INVALID_VIDEO_PARAM);
 
         mfxExtFeiSliceHeader * extFeiSliceInRintime = GetExtBufferFEI(input, fieldParity);
         MFX_CHECK(extFeiSliceInRintime,           MFX_ERR_UNDEFINED_BEHAVIOR);
@@ -688,6 +688,20 @@ mfxStatus VideoENC_ENC::RunFrameVmeENCCheck(
         else
         {
             mtype_second_field = type;
+        }
+
+        mfxExtFeiEncFrameCtrl const * frameCtrl = GetExtBufferFEI(input, fieldParity);
+        if (frameCtrl)
+        {
+            MFX_CHECK(frameCtrl->SearchWindow != 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+            mfxExtCodingOption const * extOpt = GetExtBuffer(m_video);
+            if ((m_video.mfx.CodecProfile == MFX_PROFILE_AVC_BASELINE || m_video.mfx.CodecProfile == MFX_PROFILE_AVC_MAIN || (extOpt && extOpt->IntraPredBlockSize == MFX_BLOCKSIZE_MIN_16X16))
+                && !(frameCtrl->IntraPartMask & 0x02))
+            {
+                // For Main and Baseline profiles 8x8 transform is prohibited
+                return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+            }
         }
     }
     if (!mtype_second_field){ mtype_second_field = mtype_first_field & ~MFX_FRAMETYPE_IDR; }

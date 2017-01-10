@@ -698,8 +698,8 @@ void UpdatePPS(
         for( size_t i = 0; i < slice.size(); ++i, divider.Next() )
         {
             slice[i].macroblock_address = divider.GetFirstMbInSlice();
-            slice[i].num_macroblocks = divider.GetNumMbInSlice();
-            slice[i].macroblock_info = VA_INVALID_ID;
+            slice[i].num_macroblocks    = divider.GetNumMbInSlice();
+            slice[i].macroblock_info    = VA_INVALID_ID;
 
             for (ref = 0; ref < list0.Size(); ref++)
             {
@@ -738,7 +738,7 @@ void UpdatePPS(
                         slice[i].num_ref_idx_l0_active_minus1 != pps.num_ref_idx_l0_active_minus1 ||
                         slice[i].num_ref_idx_l1_active_minus1 != pps.num_ref_idx_l1_active_minus1;
 
-            slice[i].idr_pic_id = task.m_idrPicId;
+            slice[i].idr_pic_id        = task.m_idrPicId;
             slice[i].pic_order_cnt_lsb = mfxU16(task.GetPoc(fieldId));
 
             slice[i].delta_pic_order_cnt_bottom         = 0;
@@ -750,9 +750,9 @@ void UpdatePPS(
             slice[i].cabac_init_idc                     = extDdi ? (mfxU8)extDdi->CabacInitIdcPlus1 - 1 : 0;
             slice[i].slice_qp_delta                     = mfxI8(task.m_cqpValue[fieldId] - pps.pic_init_qp);
 
-            slice[i].disable_deblocking_filter_idc = (extFeiSlice->Slice ? extFeiSlice->Slice[i].DisableDeblockingFilterIdc : extOpt2->DisableDeblockingIdc);
-            slice[i].slice_alpha_c0_offset_div2    = (extFeiSlice->Slice ? extFeiSlice->Slice[i].SliceAlphaC0OffsetDiv2     : 0);
-            slice[i].slice_beta_offset_div2        = (extFeiSlice->Slice ? extFeiSlice->Slice[i].SliceBetaOffsetDiv2        : 0);
+            slice[i].disable_deblocking_filter_idc = (extFeiSlice && extFeiSlice->Slice ? extFeiSlice->Slice[i].DisableDeblockingFilterIdc : extOpt2->DisableDeblockingIdc);
+            slice[i].slice_alpha_c0_offset_div2    = (extFeiSlice && extFeiSlice->Slice ? extFeiSlice->Slice[i].SliceAlphaC0OffsetDiv2     : 0);
+            slice[i].slice_beta_offset_div2        = (extFeiSlice && extFeiSlice->Slice ? extFeiSlice->Slice[i].SliceBetaOffsetDiv2        : 0);
         }
 
     } // void UpdateSlice(...)

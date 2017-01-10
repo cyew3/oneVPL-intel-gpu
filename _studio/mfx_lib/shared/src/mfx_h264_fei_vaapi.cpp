@@ -93,9 +93,11 @@ mfxStatus VAAPIFEIPREENCEncoder::CreateAccelerationService(MfxVideoParam const &
     const mfxExtFeiParam* params = GetExtBuffer(par);
     if (params)
     {
-        m_codingFunction = params->Func;
-        if (MFX_FEI_FUNCTION_PREENC == m_codingFunction)
+        if (MFX_FEI_FUNCTION_PREENC == params->Func)
+        {
+            m_codingFunction = params->Func;
             return CreatePREENCAccelerationService(par);
+        }
     }
 
     return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -499,16 +501,19 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
         MFX_CHECK_STS(mfxSts);
 
         l0surfs->picture_id = *(VASurfaceID*)handle;
-        //surfPastIndexInList = GetSurfaceIndexFromList(m_reconQueue,l0surfs->picture_id);
-        /* Important!
-         * We always have queue: {frame/top field, bottom buffer} ...!
-         * So, attach buffers accordingly */
-        //surfPastIndexInList = 2*surfPastIndexInList;
-        if      (MFX_PICTYPE_TOPFIELD    == feiCtrl->RefPictureType[0]) l0surfs->flags = VA_PICTURE_FEI_TOP_FIELD;
-        else if (MFX_PICTYPE_BOTTOMFIELD == feiCtrl->RefPictureType[0]) l0surfs->flags = VA_PICTURE_FEI_BOTTOM_FIELD;
-        else if (MFX_PICTYPE_FRAME       == feiCtrl->RefPictureType[0]) l0surfs->flags = VA_PICTURE_FEI_PROGRESSIVE;
-        else
-            return MFX_ERR_INVALID_VIDEO_PARAM;
+
+        switch (feiCtrl->RefPictureType[0])
+        {
+        case MFX_PICTYPE_TOPFIELD:
+            l0surfs->flags = VA_PICTURE_FEI_TOP_FIELD;
+            break;
+        case MFX_PICTYPE_BOTTOMFIELD:
+            l0surfs->flags = VA_PICTURE_FEI_BOTTOM_FIELD;
+            break;
+        case MFX_PICTYPE_FRAME:
+            l0surfs->flags = VA_PICTURE_FEI_PROGRESSIVE;
+            break;
+        }
 
         if (IsOn(feiCtrl->DownsampleReference[0]))
             l0surfs->flags |= VA_PICTURE_FEI_CONTENT_UPDATED;
@@ -529,17 +534,19 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
         MFX_CHECK_STS(mfxSts);
 
         l1surfs->picture_id = *(VASurfaceID*)handle;
-        //surfFutureIndexInList = GetSurfaceIndexFromList(m_reconQueue,l1surfs->picture_id);
-        /* Important!
-         * We always have queue: {frame/top field, bottom buffer} ...!
-         * So, attach buffers accordingly */
-        //surfFutureIndexInList = 2*surfFutureIndexInList;
 
-        if      (MFX_PICTYPE_TOPFIELD    == feiCtrl->RefPictureType[1]) l1surfs->flags = VA_PICTURE_FEI_TOP_FIELD;
-        else if (MFX_PICTYPE_BOTTOMFIELD == feiCtrl->RefPictureType[1]) l1surfs->flags = VA_PICTURE_FEI_BOTTOM_FIELD;
-        else if (MFX_PICTYPE_FRAME       == feiCtrl->RefPictureType[1]) l1surfs->flags = VA_PICTURE_FEI_PROGRESSIVE;
-        else
-            return MFX_ERR_INVALID_VIDEO_PARAM;
+        switch (feiCtrl->RefPictureType[1])
+        {
+        case MFX_PICTYPE_TOPFIELD:
+            l1surfs->flags = VA_PICTURE_FEI_TOP_FIELD;
+            break;
+        case MFX_PICTYPE_BOTTOMFIELD:
+            l1surfs->flags = VA_PICTURE_FEI_BOTTOM_FIELD;
+            break;
+        case MFX_PICTYPE_FRAME:
+            l1surfs->flags = VA_PICTURE_FEI_PROGRESSIVE;
+            break;
+        }
 
         if (IsOn(feiCtrl->DownsampleReference[1]))
             l1surfs->flags |= VA_PICTURE_FEI_CONTENT_UPDATED;
@@ -565,13 +572,11 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
     *  */
     if (!statParams.disable_statistics_output)
     {
-        //surfInputIndexInList = GetSurfaceIndexFromList(m_reconQueue,*inputSurface);
         /* Important!
          * We always have queue: {frame/top field, bottom buffer} ...!
          * So, attach buffers accordingly */
-        //surfInputIndexInList = 2*surfInputIndexInList;
-        outBuffers[numOutBufs++]      = m_statOutId[0];// [surfInputIndexInList];
-        configBuffers[buffersCount++] = m_statOutId[0];// [surfInputIndexInList];
+        outBuffers[numOutBufs++]      = m_statOutId[0];
+        configBuffers[buffersCount++] = m_statOutId[0];
 
         mdprintf(stderr, "m_statOutId[%u]=%d\n", 0, m_statOutId[0]);
 
@@ -592,13 +597,22 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
      * task.m_fieldPicFlag - actually value from mfxVideoParams from Init()
      * And this values should be matched
      * */
-    if (NULL != feiCtrl)
+    if (feiCtrl)
     {
-        if      ((MFX_PICTYPE_TOPFIELD    == feiCtrl->PictureType) && ( task.m_fieldPicFlag)) statParams.input.flags = VA_PICTURE_FEI_TOP_FIELD;
-        else if ((MFX_PICTYPE_BOTTOMFIELD == feiCtrl->PictureType) && ( task.m_fieldPicFlag)) statParams.input.flags = VA_PICTURE_FEI_BOTTOM_FIELD;
-        else if ((MFX_PICTYPE_FRAME       == feiCtrl->PictureType) && (!task.m_fieldPicFlag)) statParams.input.flags = VA_PICTURE_FEI_PROGRESSIVE;
-        else /* This is disallowed to mix, surface types should be on Init() and within runtime */
-            return MFX_ERR_INVALID_VIDEO_PARAM;
+        switch (feiCtrl->PictureType)
+        {
+        case MFX_PICTYPE_TOPFIELD:
+            statParams.input.flags = VA_PICTURE_FEI_TOP_FIELD;
+            break;
+
+        case MFX_PICTYPE_BOTTOMFIELD:
+            statParams.input.flags = VA_PICTURE_FEI_BOTTOM_FIELD;
+            break;
+
+        case MFX_PICTYPE_FRAME:
+            statParams.input.flags = VA_PICTURE_FEI_PROGRESSIVE;
+            break;
+        }
 
         if (!IsOff(feiCtrl->DownsampleInput) && (0 == feiFieldId))
             statParams.input.flags |= VA_PICTURE_FEI_CONTENT_UPDATED;
@@ -872,9 +886,11 @@ mfxStatus VAAPIFEIENCEncoder::CreateAccelerationService(MfxVideoParam const & pa
     const mfxExtFeiParam* params = GetExtBuffer(par);
     if (params)
     {
-        m_codingFunction = params->Func;
-        if (MFX_FEI_FUNCTION_ENC == m_codingFunction)
+        if (MFX_FEI_FUNCTION_ENC == params->Func)
+        {
+            m_codingFunction = params->Func;
             return CreateENCAccelerationService(par);
+        }
     }
 
     return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -1300,15 +1316,6 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
         vaFeiFrameControl->sub_mb_part_mask         = frameCtrl->SubMBPartMask;
         vaFeiFrameControl->sub_pel_mode             = frameCtrl->SubPelMode;
 
-        /*Correction for Main and Baseline profiles: prohibited 8x8 transform */
-        if ((MFX_PROFILE_AVC_BASELINE == m_videoParam.mfx.CodecProfile) ||
-            (MFX_PROFILE_AVC_MAIN     == m_videoParam.mfx.CodecProfile))
-        {
-            vaFeiFrameControl->intra_part_mask |= 0x02;
-        }
-
-        MFX_CHECK(frameCtrl->SearchWindow != 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
-
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
             vaUnmapBuffer(m_vaDisplay, vaFeiFrameControlId);  //check for deletions
@@ -1424,7 +1431,7 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
     for (size_t i = 0; i < m_slice.size(); ++i)
     {
         // Small correction: legacy use 5,6,7 type values, but for FEI 0,1,2
-        m_slice[i].slice_type -= 5;
+        m_slice[i].slice_type %= 5;
 
         m_slice[i].macroblock_address            = pDataSliceHeader->Slice[i].MBAddress;
         m_slice[i].num_macroblocks               = pDataSliceHeader->Slice[i].NumMBs;
@@ -1813,9 +1820,11 @@ mfxStatus VAAPIFEIPAKEncoder::CreateAccelerationService(MfxVideoParam const & pa
     const mfxExtFeiParam* params = GetExtBuffer(par);
     if (params)
     {
-        m_codingFunction = params->Func;
-        if (MFX_FEI_FUNCTION_PAK == m_codingFunction)
+        if (MFX_FEI_FUNCTION_PAK == params->Func)
+        {
+            m_codingFunction = params->Func;
             return CreatePAKAccelerationService(par);
+        }
     }
 
     return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -2292,7 +2301,7 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
     for (size_t i = 0; i < m_slice.size(); ++i)
     {
         /* Small correction: legacy use 5,6,7 type values, but for FEI 0,1,2 */
-        m_slice[i].slice_type -= 5;
+        m_slice[i].slice_type %= 5;
 
         m_slice[i].macroblock_address            = pDataSliceHeader->Slice[i].MBAddress;
         m_slice[i].num_macroblocks               = pDataSliceHeader->Slice[i].NumMBs;
