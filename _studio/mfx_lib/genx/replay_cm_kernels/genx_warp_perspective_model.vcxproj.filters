@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="src\genx_warp_perspective_model.cpp">
+      <Filter>Kernels</Filter>
+    </ClCompile>
+    <ClCompile Include="src\genx_warp_perspective_model_skl_isa.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="src\test_warp_perspective_model.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\genx_warp_skl_isa .h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\test_common.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Headers">
+      <UniqueIdentifier>{bbcea4ce-1196-443b-822f-57f857b7cb40}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sources">
+      <UniqueIdentifier>{bbec68f5-d622-4032-b56e-af8c7a402162}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Kernels">
+      <UniqueIdentifier>{b90db4cb-3fad-4f26-b5c3-dcd9042a8d64}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

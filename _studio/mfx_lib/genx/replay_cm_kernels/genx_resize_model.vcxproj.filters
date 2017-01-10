@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="src\test_resize_model.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="src\genx_resize_model.cpp">
+      <Filter>Kernels</Filter>
+    </ClCompile>
+    <ClCompile Include="src\genx_resize_model_skl_isa.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\genx_resize_model_skl_isa .h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\test_common.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Headers">
+      <UniqueIdentifier>{f902e7af-5e60-446b-ab1c-c2099743f765}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sources">
+      <UniqueIdentifier>{232fecdc-3dba-4348-b35d-29820372864f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Kernels">
+      <UniqueIdentifier>{c011ee8f-4e34-4286-a834-177cea76b003}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
