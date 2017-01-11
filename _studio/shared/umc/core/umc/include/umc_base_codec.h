@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_BASE_CODEC_H__
@@ -69,6 +69,7 @@ public:
 
 protected:
     MemoryAllocator *m_pMemoryAllocator; // (MemoryAllocator*) pointer to memory allocator
+    bool             m_bOwnAllocator;    // True when default allocator is used
 };
 
 } // end namespace UMC
