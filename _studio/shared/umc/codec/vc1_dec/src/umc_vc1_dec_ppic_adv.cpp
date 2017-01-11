@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -414,8 +414,6 @@ VC1Status DecodeFieldHeaderParams_InterlaceFieldPpicture_Adv (VC1Context* pConte
                                             VM_STRING("P frame type  \n"));
 #endif
 
-    picLayerHeader->INTCOMFIELD = 0;
-
     VC1_GET_BITS(5,picLayerHeader->PQINDEX);
 
     if(picLayerHeader->PQINDEX<=8)
@@ -458,6 +456,7 @@ VC1Status DecodeFieldHeaderParams_InterlaceFieldPpicture_Adv (VC1Context* pConte
     DMVRangeDecode(pContext);
 
     picLayerHeader->INTCOMFIELD = 0;
+    pContext->m_bIntensityCompensation = 0;
 
     //motion vector mode
     if(picLayerHeader->PQUANT > 12)
