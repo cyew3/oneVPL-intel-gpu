@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -496,7 +496,10 @@ namespace ExtBuffer
     {
         if (!Construct<mfxVideoParam, mfxExtCodingOption3>(par, buf, pBuffers, numbuffers))
         {
-            buf.TargetChromaFormatPlus1 = Clip3<mfxU16>(MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV444, par.mfx.FrameInfo.ChromaFormat) + 1;
+            if (par.mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4)
+                buf.TargetChromaFormatPlus1 = MFX_CHROMAFORMAT_YUV420 + 1; //For RGB4 use illogical default 420 for backward compatibility
+            else
+                buf.TargetChromaFormatPlus1 = Clip3<mfxU16>(MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV444, par.mfx.FrameInfo.ChromaFormat) + 1;
             buf.TargetBitDepthLuma      = CorrectBitDepth(par.mfx.FrameInfo.BitDepthLuma, par.mfx.FrameInfo.FourCC);
             buf.TargetBitDepthChroma    = Min(CorrectBitDepth(par.mfx.FrameInfo.BitDepthChroma, par.mfx.FrameInfo.FourCC), buf.TargetBitDepthLuma);
 
@@ -504,7 +507,12 @@ namespace ExtBuffer
         }
 
         if (!buf.TargetChromaFormatPlus1)
-            buf.TargetChromaFormatPlus1 = Clip3<mfxU16>(MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV444, par.mfx.FrameInfo.ChromaFormat) + 1;
+        {
+            if (par.mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4)
+                buf.TargetChromaFormatPlus1 = MFX_CHROMAFORMAT_YUV420 + 1; //For RGB4 use illogical default 420 for backward compatibility
+            else
+                buf.TargetChromaFormatPlus1 = Clip3<mfxU16>(MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV444, par.mfx.FrameInfo.ChromaFormat) + 1;
+        }
         if (!buf.TargetBitDepthLuma)
             buf.TargetBitDepthLuma = CorrectBitDepth(par.mfx.FrameInfo.BitDepthLuma, par.mfx.FrameInfo.FourCC);
         if (!buf.TargetBitDepthChroma)
