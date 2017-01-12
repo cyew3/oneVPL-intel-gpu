@@ -38,6 +38,8 @@
 #define bRateControlLA(RCMethod) ((RCMethod == MFX_RATECONTROL_LA)||(RCMethod == MFX_RATECONTROL_LA_ICQ)||(RCMethod == MFX_RATECONTROL_LA_EXT)||(RCMethod == MFX_RATECONTROL_LA_HRD))
 #define bIntRateControlLA(RCMethod) ((RCMethod == MFX_RATECONTROL_LA)||(RCMethod == MFX_RATECONTROL_LA_ICQ)||(RCMethod == MFX_RATECONTROL_LA_HRD))
 
+#define MFX_H264ENC_HW_TASK_TIMEOUT 2000
+
 #if USE_AGOP
 #define MAX_B_FRAMES 10
 #define MAX_GOP_SEQUENCE 255
@@ -945,6 +947,7 @@ namespace MfxHwH264Encode
             , m_cmHist(0)
             , m_cmHistSys(0)
             , m_isENCPAK(false)
+            , m_startTime(0)
         {
             Zero(m_ctrl);
             Zero(m_internalListCtrl);
@@ -1118,6 +1121,8 @@ namespace MfxHwH264Encode
 
         std::vector<void*> m_userData;
         std::vector<SliceStructInfo> m_SliceInfo;
+
+        mfxU32 m_startTime;
     };
 
     typedef std::list<DdiTask>::iterator DdiTaskIter;

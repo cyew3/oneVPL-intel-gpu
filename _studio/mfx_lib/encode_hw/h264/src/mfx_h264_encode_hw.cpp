@@ -2104,6 +2104,10 @@ void ImplementationAvc::OnEncodingSubmitted(DdiTaskIter task)
 {
     m_stagesToGo &= ~AsyncRoutineEmulator::STG_BIT_START_ENCODE;
 
+    task->m_startTime = vm_time_get_current_time();
+
+    MFX_TRACE_D(task->m_startTime);
+
     m_encoding.splice(m_encoding.end(), m_lookaheadFinished, task);
 }
 
@@ -3384,7 +3388,22 @@ mfxStatus ImplementationAvc::QueryStatus(
         mfxStatus sts = m_ddi->QueryStatus(task, fid);
         //printf("m_ddi->QueryStatus 1: %d, %d\n", task.m_encOrder, sts);
         if (sts == MFX_WRN_DEVICE_BUSY)
+        {
+#if defined(MFX_VA_WIN)
+            mfxU32 curTime = vm_time_get_current_time();
+            MFX_TRACE_D(curTime);
+            MFX_TRACE_D(task.m_startTime);
+
+            if (task.m_startTime && (curTime - task.m_startTime) > MFX_H264ENC_HW_TASK_TIMEOUT)
+            {
+                MFX_TRACE_S("Possible TDR, returning MFX_ERR_GPU_HANG");
+                MFX_TRACE_D(((curTime - task.m_startTime) > MFX_H264ENC_HW_TASK_TIMEOUT));
+                return MFX_ERR_GPU_HANG;
+            }
+            else
+#endif // defined(MFX_VA_WIN)
             return MFX_TASK_BUSY;
+        }
         if (sts != MFX_ERR_NONE)
             return Error(sts);
 
