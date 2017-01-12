@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include <algorithm> /* for std::find on Linux/Android */
@@ -1916,6 +1916,27 @@ UMC::H264DecoderFrame * VideoDECODEH264::GetFrameToDisplay(bool force)
 
     return pFrame;
 }
+#ifndef OPEN_SOURCE
+namespace impl
+{
+    enum
+    {
+        MFX_SKIPMODE_NODEBLOCK = 0x22,
+        MFX_SKIPMODE_NOSTATUSREPORT = 0x23,
+    };
+
+    inline
+        int check_private_mode(int mode)
+    {
+        switch (mode)
+        {
+        case 0x22: return MFX_SKIPMODE_NODEBLOCK;
+        case 0x23: return MFX_SKIPMODE_NOSTATUSREPORT;
+        default:   return mode;
+        }
+    }
+}
+#endif //OPEN SOURCE
 
 mfxStatus VideoDECODEH264::SetSkipMode(mfxSkipMode mode)
 {
@@ -1941,9 +1962,35 @@ mfxStatus VideoDECODEH264::SetSkipMode(mfxSkipMode mode)
         case MFX_SKIPMODE_LESS:
             num = -1;
             break;
-
         default:
-            return MFX_ERR_UNSUPPORTED;
+            {
+#if !defined OPEN_SOURCE
+                int const pmode =
+                    impl::check_private_mode(mode);
+                if (pmode == impl::MFX_SKIPMODE_NODEBLOCK)
+                {
+                    m_pH264VideoDecoder->PermanentDisableDeblocking(true);
+                    return MFX_ERR_NONE;
+                }
+                else if (pmode == impl::MFX_SKIPMODE_NOSTATUSREPORT)
+                {
+
+#if defined MFX_VA_WIN
+                    UMC::VideoAccelerator *va;
+                    m_core->GetVA((mfxHDL*)&va, MFX_MEMTYPE_FROM_DECODE);
+                    if (va)
+                        va->SetStatusReportUsing(false);
+#endif
+                    return MFX_ERR_NONE;
+                }
+                else
+                    return MFX_ERR_UNSUPPORTED;
+#else
+                return MFX_ERR_UNSUPPORTED;
+#endif // OPEN SOURCE
+
+            }
+
     }
 
     m_pH264VideoDecoder->ChangeVideoDecodingSpeed(num);
