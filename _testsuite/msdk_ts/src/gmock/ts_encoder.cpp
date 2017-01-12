@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -374,6 +374,34 @@ mfxStatus tsVideoEncoder::EncodeFrameAsync()
     mfxStatus mfxRes = EncodeFrameAsync(m_session, m_pSurf ? m_pCtrl : 0, m_pSurf, m_pBitstream, m_pSyncPoint);
 
     return mfxRes;
+}
+
+mfxStatus tsVideoEncoder::DrainEncodedBitstream()
+{
+    mfxStatus mfxRes = MFX_ERR_NONE;
+
+    while (mfxRes == MFX_ERR_NONE)
+    {
+        mfxRes = EncodeFrameAsync(m_session, 0, NULL, m_pBitstream, m_pSyncPoint);
+        if (mfxRes == MFX_ERR_NONE)
+        {
+            mfxStatus mfxResSync = SyncOperation(*m_pSyncPoint);
+            if (mfxResSync != MFX_ERR_NONE)
+            {
+                return mfxResSync;
+            }
+        }
+    }
+
+    if (mfxRes == MFX_ERR_MORE_DATA)
+    {
+        // MORE_DATA code means everything was drained from the encoder
+        return MFX_ERR_NONE;
+    }
+    else
+    {
+        return mfxRes;
+    }
 }
 
 mfxStatus tsVideoEncoder::EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxSyncPoint *syncp)

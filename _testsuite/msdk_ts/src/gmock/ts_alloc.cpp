@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -230,3 +230,32 @@ mfxFrameSurface1* tsSurfacePool::GetSurface(mfxU32 ind)
     return &m_pool[ind];
 }
 
+mfxStatus tsSurfacePool::UpdateSurfaceResolutionInfo(const mfxU16 &new_width, const mfxU16 &new_height)
+{
+    std::vector<mfxFrameSurface1>::iterator it = m_pool.begin();
+
+    while (it != m_pool.end())
+    {
+        if (!it->Data.Locked)
+        {
+            if (new_width > it->Info.Width || new_height > it->Info.Height)
+            {
+                // the new size cannot be bigger then the old one, because no memory reallocation here
+                return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+            }
+            else
+            {
+                it->Info.Width = new_width;
+                it->Info.Height = new_height;
+            }
+        }
+        else
+        {
+            // some surface is locked and cannot be updated - continue processing does not make sence
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+        }
+        it++;
+    }
+
+    return MFX_ERR_NONE;
+}

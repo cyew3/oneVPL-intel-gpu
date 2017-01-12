@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2017 Intel Corporation. All Rights Reserved.
 
 File Name: vp9e_init.cpp
 
@@ -201,6 +201,23 @@ namespace vp9e_init
 
         //call query
         {/*41*/ MFX_ERR_NONE, CALL_QUERY, NONE, {} },
+        {/*42 Check async 1*/ MFX_ERR_NONE, NONE, NONE,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.AsyncDepth, 1 },
+            }
+        },
+        {/*43 Check async 10*/ MFX_ERR_NONE, NONE, NONE,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.AsyncDepth, 10 },
+            }
+        },
+        /* Check this on Post-Si (on Pre-Si long hanging)
+        {MFX_ERR_MEMORY_ALLOC, NONE, NONE,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.AsyncDepth, 0xffff },
+            }
+        },
+        */
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);

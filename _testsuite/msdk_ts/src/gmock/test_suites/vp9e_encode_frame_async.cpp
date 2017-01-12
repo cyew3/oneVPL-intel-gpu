@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -132,17 +132,26 @@ namespace vp9e_encode_frame_async
         {/*17*/ MFX_ERR_NONE, NONE,
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 7 },
         },
+        {/*18*/ MFX_ERR_NONE, NONE,
+            { MFX_PAR, &tsStruct::mfxVideoParam.AsyncDepth, 1 },
+        },
+        {/*19*/ MFX_ERR_NONE, NONE,
+            { MFX_PAR, &tsStruct::mfxVideoParam.AsyncDepth, 5 },
+        },
+        {/*20*/ MFX_ERR_NONE, NONE,
+            { MFX_PAR, &tsStruct::mfxVideoParam.AsyncDepth, 10 },
+        },
     };
 
     const TestSuite::tc_struct TestSuite::test_case_nv12[] =
     {
-        {/*18*/ MFX_ERR_NULL_PTR, NONE,
+        {/*21*/ MFX_ERR_NULL_PTR, NONE,
             { MFX_SURF, &tsStruct::mfxFrameSurface1.Data.Y, 0 }
         },
-        {/*19*/ MFX_ERR_NULL_PTR, NONE,
+        {/*22*/ MFX_ERR_NULL_PTR, NONE,
             { MFX_SURF, &tsStruct::mfxFrameSurface1.Data.U, 0 }
         },
-        {/*20*/ MFX_ERR_NULL_PTR, NONE,
+        {/*23*/ MFX_ERR_NULL_PTR, NONE,
             { MFX_SURF, &tsStruct::mfxFrameSurface1.Data.V, 0 }
         },
     };
@@ -150,13 +159,13 @@ namespace vp9e_encode_frame_async
 
     const TestSuite::tc_struct TestSuite::test_case_p010[] =
     {
-        {/*18*/ MFX_ERR_NULL_PTR, NONE,
+        {/*21*/ MFX_ERR_NULL_PTR, NONE,
             { MFX_SURF, &tsStruct::mfxFrameSurface1.Data.Y16, 0 }
         },
-        {/*19*/ MFX_ERR_NULL_PTR, NONE,
+        {/*22*/ MFX_ERR_NULL_PTR, NONE,
             { MFX_SURF, &tsStruct::mfxFrameSurface1.Data.U16, 0 }
         },
-        {/*20*/ MFX_ERR_NULL_PTR, NONE,
+        {/*23*/ MFX_ERR_NULL_PTR, NONE,
             { MFX_SURF, &tsStruct::mfxFrameSurface1.Data.V16, 0 }
         },
     };
@@ -253,13 +262,6 @@ namespace vp9e_encode_frame_async
                 Query();
                 return 0;
             }
-
-            if(fourcc_id == MFX_FOURCC_P010)
-            {
-                // P010 requires alignment 64
-                m_par.mfx.FrameInfo.Width = ((m_par.mfx.FrameInfo.Width + 64 - 1) & ~(64 - 1));
-                m_par.mfx.FrameInfo.Height = ((m_par.mfx.FrameInfo.Height + 64 - 1) & ~(64 - 1));
-            }
         } else {
             g_tsLog << "WARNING: loading encoder from plugin failed!\n";
             return 0;
@@ -290,7 +292,7 @@ namespace vp9e_encode_frame_async
                     m_pSurf = m_filler->ProcessSurface(m_pSurf, m_pFrameAllocator);
                 }
             }
-            
+
             SETPARS(m_pSurf, MFX_SURF);
         }
 
@@ -306,8 +308,9 @@ namespace vp9e_encode_frame_async
 
         if (tc.sts >= MFX_ERR_NONE)
         {
-            int encoded = 0;
-            while (encoded < 1)
+            unsigned  encoded = 0;
+            const unsigned encode_frames_count = m_pPar->AsyncDepth > 1 ? m_pPar->AsyncDepth + 2 : 1;
+            while (encoded < encode_frames_count)
             {
                 m_pBitstream->DataLength = m_pBitstream->DataOffset = 0;
                 if (MFX_ERR_MORE_DATA == EncodeFrameAsync())
@@ -357,17 +360,8 @@ namespace vp9e_encode_frame_async
                 }
                 /*
                 const int encoded_size = m_pBitstream->DataLength;
-                static FILE *fp = nullptr;
-                if(fourcc_id == MFX_FOURCC_NV12)
-                {
-                    fp = fopen("vp9e_nv12_encoded.ivf", "wb");
-                } 
-                else if(fourcc_id == MFX_FOURCC_P010)
-                {
-                    fp = fopen("c:/TEMP/vp9e_p010_encoded.ivf", "wb");
-                }
-                fwrite(m_pBitstream->Data, encoded_size, 1, fp);
-                fflush(fp);
+                static FILE *fp_vp9 = fopen("vp9e_encoded.vp9", "wb");
+                fwrite(m_pBitstream->Data, encoded_size, 1, fp_vp9);
                 */
                 encoded++;
             }

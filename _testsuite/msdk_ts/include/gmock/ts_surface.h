@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -104,6 +104,27 @@ public:
     inline mfxU8& Y(mfxU32 w, mfxU32 h) { return m_y[h * m_pitch + w * 2]; }
     inline mfxU8& U(mfxU32 w, mfxU32 h) { return m_u[h * m_pitch + (w / 2) * 4]; }
     inline mfxU8& V(mfxU32 w, mfxU32 h) { return m_v[h * m_pitch + (w / 2) * 4]; }
+};
+
+class tsFrameP010 : public tsFrameAbstract
+{
+private:
+    mfxU32 m_pitch;
+    mfxU16* m_y;
+    mfxU16* m_uv;
+public:
+    tsFrameP010(mfxFrameData d)
+        : m_pitch( mfxU32(d.PitchHigh << 16) + d.PitchLow)
+        , m_y(d.Y16)
+        , m_uv(d.U16)
+    {}
+
+    virtual ~tsFrameP010() { }
+
+    inline bool isYUV16() {return true;};
+    inline mfxU16& Y16(mfxU32 w, mfxU32 h) { return m_y[h * (m_pitch/2) + w]; }
+    inline mfxU16& U16(mfxU32 w, mfxU32 h) { return m_uv[(h/2) * (m_pitch/2) + (w%2==0?w:(w-1))]; }
+    inline mfxU16& V16(mfxU32 w, mfxU32 h) { return m_uv[(h/2) * (m_pitch/2) + (w%2==0?w:(w-1)) + 1]; }
 };
 
 class tsFrameRGB4 : public tsFrameAbstract

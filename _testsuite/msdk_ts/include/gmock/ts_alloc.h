@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -50,4 +50,6 @@ public:
     virtual mfxFrameSurface1* GetSurface();
 
     mfxFrameSurface1* GetSurface(mfxU32 ind);
+
+    mfxStatus UpdateSurfaceResolutionInfo(const mfxU16 &new_width, const mfxU16 &new_height);
 };

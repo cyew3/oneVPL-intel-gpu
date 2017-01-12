@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -20,6 +20,7 @@ tsFrame::tsFrame(mfxFrameSurface1 s)
     case MFX_FOURCC_NV12: m_pFrame = new tsFrameNV12(s.Data); break;
     case MFX_FOURCC_YV12: m_pFrame = new tsFrameYV12(s.Data); break;
     case MFX_FOURCC_YUY2: m_pFrame = new tsFrameYUY2(s.Data); break;
+    case MFX_FOURCC_P010: m_pFrame = new tsFrameP010(s.Data); break;
     case MFX_FOURCC_BGR4: std::swap(s.Data.B, s.Data.R);
     case MFX_FOURCC_RGB4: m_pFrame = new tsFrameRGB4(s.Data); break;
     case MFX_FOURCC_R16:  m_pFrame = new tsFrameR16(s.Data); break;
@@ -259,6 +260,12 @@ void tsRawReader::Init(mfxFrameInfo fi)
     if(MFX_FOURCC_R16 == m_surf.Info.FourCC)
         m_fsz = m_fsz * 2;
 
+    if(MFX_FOURCC_P010 == m_surf.Info.FourCC)
+    {
+        fsz = fsz * 2;
+        m_fsz = m_fsz * 2;
+    }
+
     m_buf = new mfxU8[m_fsz];
 
     switch(fi.FourCC)
@@ -278,6 +285,11 @@ void tsRawReader::Init(mfxFrameInfo fi)
         m_data.Y     = m_buf;
         m_data.U     = m_data.Y + 1;
         m_data.V     = m_data.U + 3;
+        pitch        = fi.Width * 2;
+        break;
+    case MFX_FOURCC_P010:
+        m_data.Y16     = (mfxU16*) m_buf;
+        m_data.U16    = (mfxU16*) (m_data.Y + fsz);
         pitch        = fi.Width * 2;
         break;
     case MFX_FOURCC_RGB4:
@@ -316,6 +328,18 @@ tsRawReader::~tsRawReader()
 mfxStatus tsRawReader::ProcessSurface(mfxFrameSurface1& s)
 {
     m_eos = (m_fsz != Read(m_buf, m_fsz));
+
+    if(m_surf.Info.Shift > 0)
+    {
+        if(m_surf.Info.FourCC == MFX_FOURCC_P010)
+        {
+            mfxU16 *ptr = (mfxU16 *)m_buf;
+            for(mfxU32 i = 0; i < m_fsz/2; i ++)
+            {
+                ptr[i] = (ptr[i] << 6) & ~0x3F;
+            }
+        }
+    }
 
     if(!m_eos)
     {
