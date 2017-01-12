@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -754,33 +754,9 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     if ((NULL != feiParam) && (feiParam->Func != MFX_FEI_FUNCTION_ENCODE))
             return MFX_ERR_INVALID_VIDEO_PARAM;
 
-    m_video = *par;
-
-    mfxExtCodingOption3 * extCodingOpt3 = GetExtBuffer(m_video);
-
-    if (m_isENCPAK && IsOn(extCodingOpt3->EnableMBQP))
-    {
-        extCodingOpt3->EnableMBQP = MFX_CODINGOPTION_OFF;
-        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-    }
-
-    /* FEI works with CQP only */
-    if ((m_isENCPAK) && (MFX_RATECONTROL_CQP != par->mfx.RateControlMethod)){
-        m_video.mfx.RateControlMethod =  MFX_RATECONTROL_CQP;
-    }
-    /* One more checking for FEI */
-    if ((m_isENCPAK) &&
-        ((MFX_PROFILE_AVC_BASELINE == m_video.mfx.CodecProfile) ||(MFX_PROFILE_AVC_MAIN == m_video.mfx.CodecProfile)) )
-    {
-        mfxExtCodingOption *       extOpt  = GetExtBuffer(m_video);
-        extOpt->InterPredBlockSize = MFX_BLOCKSIZE_MIN_16X16;
-    }
-
-    /*!!! This is WA for number of references frames for FEI case*/
-    if ((m_isENCPAK) && (par->mfx.NumRefFrame >4))
-        m_video.mfx.NumRefFrame = 4;
 
     m_video = *par;
+
     sts = ReadSpsPpsHeaders(m_video);
     MFX_CHECK_STS(sts);
 
@@ -1354,13 +1330,7 @@ mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
     mfxExtSpsHeader const * extSpsOld = GetExtBuffer(m_video);
     mfxExtCodingOption2 const * extOpt2New = GetExtBuffer(newPar);
     mfxExtCodingOption2 const * extOpt2Old = GetExtBuffer(m_video);
-    mfxExtCodingOption3 * extOpt3New = GetExtBuffer(newPar);
-
-    if (m_isENCPAK && IsOn(extOpt3New->EnableMBQP))
-    {
-        extOpt3New->EnableMBQP = MFX_CODINGOPTION_OFF;
-        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-    }
+    mfxExtCodingOption3 const * extOpt3New = GetExtBuffer(newPar);
 
     if(!IsOn(m_video.mfx.LowPower))
     {
@@ -2820,7 +2790,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                 task->m_bsDataLength[0] = task->m_bsDataLength[1] = 0;
 
                 if ((sts = QueryStatus(*task, task->m_fid[f])) != MFX_ERR_NONE)
-                    return sts;
+                    return Error(sts);
 
                 if ((NULL == task->m_bs) && (bs != NULL))
                     task->m_bs = bs;

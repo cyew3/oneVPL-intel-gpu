@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFX_H264_ENC_COMMON_HW_H__
@@ -793,6 +793,9 @@ namespace MfxHwH264Encode
         bool                setExtAlloc,
         eMFXHWType          platform = MFX_HW_UNKNOWN,
         eMFXVAType          vaType = MFX_HW_NO);
+
+    mfxStatus CheckVideoParamFEI(
+        MfxVideoParam &     par);
 
     mfxStatus CheckVideoParamQueryLike(
         MfxVideoParam &     par,

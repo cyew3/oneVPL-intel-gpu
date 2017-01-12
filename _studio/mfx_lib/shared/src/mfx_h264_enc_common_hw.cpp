@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -1820,9 +1820,46 @@ mfxStatus MfxHwH264Encode::CheckVideoParam(
         MFX_CHECK(extOpaq->In.NumSurface >= numFrameMin, MFX_ERR_INVALID_VIDEO_PARAM);
     }
 
+    checkSts = CheckVideoParamFEI(par);
+
     return checkSts;
 }
 
+mfxStatus MfxHwH264Encode::CheckVideoParamFEI(
+    MfxVideoParam &     par)
+{
+    mfxStatus checkSts = MFX_ERR_NONE;
+
+    mfxExtFeiParam* feiParam = (mfxExtFeiParam*)MfxHwH264Encode::GetExtBuffer(par.ExtParam, par.NumExtParam, MFX_EXTBUFF_FEI_PARAM);
+    if (!feiParam) return checkSts;
+
+    switch (feiParam->Func)
+    {
+    case MFX_FEI_FUNCTION_PREENC:
+    case MFX_FEI_FUNCTION_ENCODE:
+    case MFX_FEI_FUNCTION_ENC:
+    case MFX_FEI_FUNCTION_PAK:
+    case MFX_FEI_FUNCTION_DEC:
+        break;
+    default:
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+    }
+
+    mfxExtCodingOption3 * extCodingOpt3 = GetExtBuffer(par);
+
+    if (IsOn(extCodingOpt3->EnableMBQP))
+    {
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+    }
+
+    /* FEI works with CQP only */
+    if (MFX_RATECONTROL_CQP != par.mfx.RateControlMethod)
+    {
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+    }
+
+    return checkSts;
+}
 /*
  * utils for debug purposes
  */
