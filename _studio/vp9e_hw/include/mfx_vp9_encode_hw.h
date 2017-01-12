@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2016-2017 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -132,6 +132,9 @@ protected:
     mfxU32 m_taskIdForDriver; // should be unique among all the frames submitted to driver
 
     mfxI32 m_numBufferedFrames;
+
+    mfxU16 m_initWidth;
+    mfxU16 m_initHeight;
 };
 
 } // MfxHwVP9Encode

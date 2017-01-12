@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2016-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfxvideo++int.h"
@@ -34,6 +34,8 @@ Plugin::Plugin(bool CreateByDispatcher)
     , m_drainState(false)
     , m_taskIdForDriver(0)
     , m_numBufferedFrames(0)
+    , m_initWidth(0)
+    , m_initHeight(0)
 {
     m_PluginParam.ThreadPolicy = MFX_THREADPOLICY_SERIAL;
     m_PluginParam.MaxThreadNum = 1;
@@ -303,6 +305,10 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
     checkSts = CheckParametersAndSetDefaults(m_video, caps);
     MFX_CHECK(checkSts >= 0, checkSts);
 
+    // save WxH from Init to check resolution change in Reset
+    m_initWidth = m_video.mfx.FrameInfo.Width;
+    m_initHeight = m_video.mfx.FrameInfo.Height;
+
     sts = m_ddi->CreateAccelerationService(m_video);
     MFX_CHECK_STS(sts);
 
@@ -392,6 +398,8 @@ mfxStatus Plugin::Reset(mfxVideoParam *par)
     mfxStatus checkSts = MFX_ERR_NONE;
 
     MFX_CHECK_NULL_PTR1(par);
+    sts = CheckExtBufferHeaders(par->NumExtParam, par->ExtParam);
+    MFX_CHECK_STS(sts);
     MFX_CHECK(par->IOPattern == m_video.IOPattern, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
     VP9MfxVideoParam parBeforeReset = m_video;
@@ -405,15 +413,17 @@ mfxStatus Plugin::Reset(mfxVideoParam *par)
     }
 
     // get validated and properly initialized set of parameters for encoding
-    checkSts = CheckParametersAndSetDefaults(m_video, caps);
+    checkSts = CheckParametersAndSetDefaults(parAfterReset, caps);
     MFX_CHECK(checkSts >= 0, checkSts);
 
     // check that no re-allocation is required
     MFX_CHECK(parBeforeReset.mfx.CodecProfile == parAfterReset.mfx.CodecProfile
         && parBeforeReset.AsyncDepth == parAfterReset.AsyncDepth
         && parBeforeReset.m_inMemType == parAfterReset.m_inMemType
-        && m_reconFrames.Width() >= parAfterReset.mfx.FrameInfo.Width
-        && m_reconFrames.Height() >= parAfterReset.mfx.FrameInfo.Height
+        && m_initWidth >= parAfterReset.mfx.FrameInfo.Width
+        && m_initHeight >= parAfterReset.mfx.FrameInfo.Height
+        && m_initWidth >= parAfterReset.mfx.FrameInfo.CropW
+        && m_initHeight >= parAfterReset.mfx.FrameInfo.CropH
         && (parAfterReset.m_inMemType == INPUT_VIDEO_MEMORY
             || m_rawLocalFrames.Num() >= CalcNumSurfRaw(parAfterReset))
         && m_reconFrames.Num() >= CalcNumSurfRecon(parAfterReset)
