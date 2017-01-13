@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -129,21 +129,16 @@ void ConfigureTask_FEI_PAK(
     MfxVideoParam const &           video,
     std::map<mfxU32, mfxU32> &      frameOrder_frameNum)
 {
-    mfxExtCodingOption  const &    extOpt         = GetExtBufferRef(video);
     mfxExtCodingOption2 const &    extOpt2        = GetExtBufferRef(video);
-    mfxExtCodingOption2 const *    extOpt2Runtime = GetExtBuffer(task.m_ctrl);
     mfxExtSpsHeader     const &    extSps         = GetExtBufferRef(video);
 
     mfxU32 const FRAME_NUM_MAX = 1 << (extSps.log2MaxFrameNumMinus4 + 4);
 
-    //mfxU32 numReorderFrames = GetNumReorderFrames(video);
-    mfxU32 prevsfid         = prevTask.m_fid[1];
     mfxU8  idrPicFlag       = !!(task.GetFrameType() & MFX_FRAMETYPE_IDR);
     mfxU8  intraPicFlag     = !!(task.GetFrameType() & MFX_FRAMETYPE_I);
     mfxU8  prevIdrFrameFlag = !!(prevTask.GetFrameType() & MFX_FRAMETYPE_IDR);
     mfxU8  prevIFrameFlag   = !!(prevTask.GetFrameType() & MFX_FRAMETYPE_I);
     mfxU8  prevRefPicFlag   = !!(prevTask.GetFrameType() & MFX_FRAMETYPE_REF);
-    mfxU8  prevIdrPicFlag   = !!(prevTask.m_type[prevsfid] & MFX_FRAMETYPE_IDR);
 
     mfxU8  frameNumIncrement = (prevRefPicFlag || prevTask.m_nalRefIdc[0]) ? 1 : 0;
 
@@ -185,8 +180,6 @@ void ConfigureTask_FEI_PAK(
 
     task.m_cqpValue[0] = GetQpValue(video, task.m_ctrl, task.m_type[0]);
     task.m_cqpValue[1] = GetQpValue(video, task.m_ctrl, task.m_type[1]);
-
-    const mfxExtCodingOption2* extOpt2Cur = (extOpt2Runtime ? extOpt2Runtime : &extOpt2);
 
     mfxENCInput*  inParams  = reinterpret_cast<mfxENCInput* >(task.m_userData[0]);
     mfxPAKOutput* outParams = reinterpret_cast<mfxPAKOutput*>(task.m_userData[1]);
