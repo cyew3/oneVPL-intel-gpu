@@ -5,8 +5,10 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2017 Intel Corporation. All Rights Reserved.
 //
+
+#include <assert.h>
 
 #include "mfxpcp.h"
 
@@ -340,6 +342,28 @@ mfxStatus CommonCORE::FreeFrames(mfxFrameAllocResponse *response, bool ExtendedS
                     {
                         delete ref_it->first;
                         m_RefCtrTbl.erase(ref_it);
+                        for (mfxU32 i = 0; i < response->NumFrameActual; i++)
+                        {
+                            OpqTbl_MemId::iterator memIdTbl_it = m_OpqTbl_MemId.find(response->mids[i]);
+                            assert(m_OpqTbl_MemId.end() != memIdTbl_it);
+                            if (m_OpqTbl_MemId.end() != memIdTbl_it)
+                            {
+                                mfxFrameSurface1* surf = memIdTbl_it->second;
+                                OpqTbl::iterator opqTbl_it = m_OpqTbl.find(surf);
+                                assert(m_OpqTbl.end() != opqTbl_it);
+                                if (m_OpqTbl.end() != opqTbl_it)
+                                {
+                                    OpqTbl_FrameData::iterator frameDataTbl_it = m_OpqTbl_FrameData.find(&opqTbl_it->second.Data);
+                                    assert(m_OpqTbl_FrameData.end() != frameDataTbl_it);
+                                    if (m_OpqTbl_FrameData.end() != frameDataTbl_it)
+                                    {
+                                        m_OpqTbl_FrameData.erase(frameDataTbl_it);
+                                    }
+                                    m_OpqTbl.erase(opqTbl_it);
+                                }
+                                m_OpqTbl_MemId.erase(memIdTbl_it);
+                            }
+                        }
                         return InternalFreeFrames(response);
                     }
                     return sts;
