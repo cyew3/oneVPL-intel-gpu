@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -2540,17 +2540,15 @@ mfxStatus H265FrameEncoder::PerformThreadingTask(ThreadingTaskSpecifier action, 
         if (doSao) {
             m_bsf[bsf_id].CtxRestore(m_bs[bs_id].m_base.context_array);
             // here should be slice lambda always ?? Why?
-#ifndef AMT_DQP_FIX
             cu_ithread->m_rdLambda = m_frame->m_slices[curr_slice_id].rd_lambda_slice;
-#else
+#ifdef AMT_DQP_FIX
 #ifdef AMT_HROI_PSY_AQ
             if (m_videoParam.UseDQP && (m_videoParam.numRoi > 0 || (m_videoParam.DeltaQpMode & AMT_DQP_PSY_HROI))) {
 #else
             if (m_videoParam.UseDQP && m_videoParam.numRoi > 0) {
 #endif
                 cu_ithread->SetCuLambdaRoi(m_frame);
-            } 
-            else if(m_videoParam.UseDQP && m_videoParam.DeltaQpMode) {
+            } else if(m_videoParam.UseDQP && m_videoParam.DeltaQpMode) {
                 cu_ithread->SetCuLambda(m_frame);
             }
 #endif
