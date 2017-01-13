@@ -13,6 +13,8 @@ option( ENABLE_DRM "Build DRM versions of the targets?" ON )
 option( ENABLE_X11 "Build X11 versions of the targets?" ON )
 option( ENABLE_X11_DRI3 "Build X11 DRI3 versions of the targets?" OFF )
 option( ENABLE_WAYLAND "Build WAYLAND versions of the targets?" OFF )
+option( ENABLE_PRE_SI_FEATURES "Enable pre-silicon features?" ON )
+option( ENABLE_FUTURE_FEATURES "Enable future features?" ON )
 endif()
 
 option( ENABLE_FFMPEG "Build targets dependent on FFmpeg?" ON )
@@ -27,9 +29,6 @@ include( ../builder/FindVTune.cmake )
 set( NOT_CONFIGURED "" CACHE INTERNAL "" )
 set( SKIPPING "" CACHE INTERNAL "" )
 set( BUILDING "" CACHE INTERNAL "" )
-
-add_definitions(-DENABLE_PRE_SI_FEATURES)
-add_definitions(-DENABLE_FUTURE_FEATURES)
 
 create_build( )
 

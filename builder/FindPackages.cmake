@@ -1,5 +1,5 @@
 ##******************************************************************************
-##  Copyright(C) 2012-2015 Intel Corporation. All Rights Reserved.
+##  Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 ##
 ##  The source code, information  and  material ("Material") contained herein is
 ##  owned  by Intel Corporation or its suppliers or licensors, and title to such
@@ -135,6 +135,14 @@ function(configure_universal_target target)
 
   if(ENABLE_MONDELLO)
     set(LOCAL_CFLAGS "${LOCAL_CFLAGS} -DENABLE_MONDELLO_SUPPORT" )
+  endif()
+
+  if(ENABLE_PRE_SI_FEATURES)
+    set(LOCAL_CFLAGS "${LOCAL_CFLAGS} -DENABLE_PRE_SI_FEATURES" )
+  endif()
+
+  if(ENABLE_FUTURE_FEATURES)
+    set(LOCAL_CFLAGS "${LOCAL_CFLAGS} -DENABLE_FUTURE_FEATURES" )
   endif()
 
   if(PKG_LIBVA_FOUND)
