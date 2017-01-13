@@ -11,10 +11,12 @@
   <PropertyGroup Condition=" ('$(Configuration)'=='Release_THM' or '$(Configuration)'=='Debug_THM' ) and '$(Platform)'=='Win32'">
     <OutDir>$(MfxBuildDir)win_thm32\bin\</OutDir>
     <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <LibraryPath>$(VCInstallDir)lib\onecore;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="( '$(Configuration)'=='Release_THM' or '$(Configuration)'=='Debug_THM' ) and '$(Platform)'=='x64'">
     <OutDir>$(MfxBuildDir)win_thm64\bin\</OutDir>
     <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <LibraryPath>$(VCInstallDir)lib\onecore\amd64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Release_THM' or '$(Configuration)'=='Debug_THM'">
     <Link>
