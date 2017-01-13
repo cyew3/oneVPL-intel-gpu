@@ -1434,6 +1434,8 @@ bool MfxHwH264Encode::IsRunTimeExtBufferIdSupported(MfxVideoParam const & video,
 #if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
     mfxExtFeiParam const * feiParam = (mfxExtFeiParam*)GetExtBuffer(video);
     bool isFeiENCPAK = feiParam && (feiParam->Func == MFX_FEI_FUNCTION_ENCODE);
+#else
+    (void)video;
 #endif
 
     return
@@ -1472,6 +1474,8 @@ bool MfxHwH264Encode::IsRunTimeExtBufferPairAllowed(MfxVideoParam const & video,
 #if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
     mfxExtFeiParam const * feiParam = (mfxExtFeiParam*)GetExtBuffer(video);
     bool isFeiENCPAK = feiParam && (feiParam->Func == MFX_FEI_FUNCTION_ENCODE);
+#else
+    (void)video;
 #endif
 
     return (id == MFX_EXTBUFF_AVC_REFLISTS)
@@ -1508,6 +1512,9 @@ bool MfxHwH264Encode::IsRunTimeExtBufferPairRequired(MfxVideoParam const & video
             || id == MFX_EXTBUFF_FEI_ENC_MV
             || id == MFX_EXTBUFF_FEI_PAK_CTRL
            ));
+#else
+    (void)id;
+    (void)video;
 #endif
     return false;
 }
@@ -5895,6 +5902,8 @@ mfxStatus MfxHwH264Encode::CheckFEIRunTimeExtBuffersContent(
             break;
         }
     }
+#else
+    (void)video;
 #endif
 
     return checkSts;
