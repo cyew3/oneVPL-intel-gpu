@@ -1111,6 +1111,7 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
         mfxExtFeiEncQP*           feiEncMbQp         = NULL;
         mfxExtFeiPakMBCtrl*       feiEncMBCode       = NULL;
         mfxExtFeiRepackCtrl*      feiRepack          = NULL;
+        mfxExtPredWeightTable*    feiWeights         = NULL;
 
         bool MVPredictors = (m_appCfg.mvinFile   != NULL) || m_appCfg.bPREENC; //couple with PREENC
         bool MBCtrl       = m_appCfg.mbctrinFile != NULL;
@@ -1120,6 +1121,7 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
         bool MVOut        = m_appCfg.mvoutFile      != NULL;
         bool MBCodeOut    = m_appCfg.mbcodeoutFile  != NULL;
         bool RepackCtrl   = m_appCfg.repackctrlFile != NULL;
+        bool Weights      = m_appCfg.weightsFile    != NULL;
 
 
         int num_buffers = m_maxQueueLength + (m_appCfg.bDECODE ? m_decodePoolSize : 0) + (m_pVPP ? 2 : 0);
@@ -1291,6 +1293,17 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
                     MSDK_ZERO_ARRAY(feiEncMbQp[fieldId].QP, feiEncMbQp[fieldId].NumQPAlloc);
                 }
 
+                if (Weights)
+                {
+                    if (fieldId == 0){
+                        feiWeights = new mfxExtPredWeightTable[m_numOfFields];
+                        MSDK_ZERO_ARRAY(feiWeights, m_numOfFields);
+                    }
+
+                    feiWeights[fieldId].Header.BufferId = MFX_EXTBUFF_PRED_WEIGHT_TABLE;
+                    feiWeights[fieldId].Header.BufferSz = sizeof(mfxExtPredWeightTable);
+                }
+
                 //Open output files if any
                 //distortion buffer have to be always provided - current limitation
                 if (MBStatOut)
@@ -1382,6 +1395,12 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
                 for (fieldId = 0; fieldId < m_numOfFields; fieldId++){
                     tmpForInit-> I_bufs.in.Add(reinterpret_cast<mfxExtBuffer*>(&feiRepack[fieldId]));
                     tmpForInit->PB_bufs.in.Add(reinterpret_cast<mfxExtBuffer*>(&feiRepack[fieldId]));
+                }
+            }
+            if (Weights){
+                for (fieldId = 0; fieldId < m_numOfFields; fieldId++){
+                    //weight table is never for I frame
+                    tmpForInit->PB_bufs.in.Add(reinterpret_cast<mfxExtBuffer*>(&feiWeights[fieldId]));
                 }
             }
             if (MBStatOut){

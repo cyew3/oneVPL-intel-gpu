@@ -81,6 +81,7 @@ public:
     FILE* m_pENC_MBCtrl_in;
     FILE* m_pMbQP_in;
     FILE* m_pRepackCtrl_in;
+    FILE* m_pWeights_in;
     FILE* m_pMBstat_out;
     FILE* m_pMV_out;
     FILE* m_pMBcode_out;

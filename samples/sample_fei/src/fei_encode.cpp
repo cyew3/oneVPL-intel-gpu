@@ -31,6 +31,7 @@ FEI_EncodeInterface::FEI_EncodeInterface(MFXVideoSession* session, mfxU32 allocI
     , m_pENC_MBCtrl_in(NULL)
     , m_pMbQP_in(NULL)
     , m_pRepackCtrl_in(NULL)
+    , m_pWeights_in(NULL)
     , m_pMBstat_out(NULL)
     , m_pMV_out(NULL)
     , m_pMBcode_out(NULL)
@@ -96,6 +97,7 @@ FEI_EncodeInterface::~FEI_EncodeInterface()
     SAFE_FCLOSE(m_pENC_MBCtrl_in);
     SAFE_FCLOSE(m_pMbQP_in);
     SAFE_FCLOSE(m_pRepackCtrl_in);
+    SAFE_FCLOSE(m_pWeights_in);
     SAFE_FCLOSE(m_pMBstat_out);
     SAFE_FCLOSE(m_pMV_out);
     SAFE_FCLOSE(m_pMBcode_out);
@@ -228,7 +230,7 @@ mfxStatus FEI_EncodeInterface::FillParameters()
     pCodingOption2->Trellis   = m_pAppConfig->Trellis;
     m_InitExtParams.push_back(reinterpret_cast<mfxExtBuffer *>(pCodingOption2));
 
-    // configure P/B reference number
+    // configure P/B reference number, explicit weighted prediction
     mfxExtCodingOption3* pCodingOption3 = new mfxExtCodingOption3;
     MSDK_ZERO_MEMORY(*pCodingOption3);
     pCodingOption3->Header.BufferId = MFX_EXTBUFF_CODING_OPTION3;
@@ -236,6 +238,8 @@ mfxStatus FEI_EncodeInterface::FillParameters()
     pCodingOption3->NumRefActiveP[0]   = m_pAppConfig->NumRefActiveP;
     pCodingOption3->NumRefActiveBL0[0] = m_pAppConfig->NumRefActiveBL0;
     pCodingOption3->NumRefActiveBL1[0] = m_pAppConfig->NumRefActiveBL1;
+    // weight table file is provided, so explicit weight prediction is enabled.
+    pCodingOption3->WeightedPred       = m_pAppConfig->weightsFile ? MFX_WEIGHTED_PRED_EXPLICIT : MFX_WEIGHTED_PRED_UNKNOWN;
 
     /* values stored in m_CodingOption3 required to fill encoding task for PREENC/ENC/PAK*/
     m_InitExtParams.push_back(reinterpret_cast<mfxExtBuffer *>(pCodingOption3));
@@ -373,6 +377,17 @@ mfxStatus FEI_EncodeInterface::FillParameters()
         }
     }
 
+    if (m_pWeights_in == NULL && m_pAppConfig->weightsFile != NULL)
+    {
+        printf("Using Prediction Weights Table input file: %s\n", m_pAppConfig->weightsFile);
+
+        MSDK_FOPEN(m_pWeights_in, m_pAppConfig->weightsFile, MSDK_CHAR("rb"));
+        if (m_pWeights_in == NULL) {
+            mdprintf(stderr, "Can't open file %s\n", m_pAppConfig->weightsFile);
+            exit(-1);
+        }
+    }
+
     sts = m_FileWriter.Init(m_pAppConfig->dstFileBuff[0]);
     MSDK_CHECK_STATUS(sts, "FEI ENCODE: FileWriter.Init failed");
 
@@ -428,7 +443,7 @@ mfxStatus FEI_EncodeInterface::InitFrameParams(mfxFrameSurface1* encodeSurface, 
     }
 
     /* Load input Buffer for FEI ENCODE */
-    mfxU32 feiEncCtrlId = ffid, pMvPredId = ffid, encMBID = 0, mbQPID = 0, fieldId = 0;
+    mfxU32 feiEncCtrlId = ffid, pMvPredId = ffid, pWeightsId = ffid, encMBID = 0, mbQPID = 0, fieldId = 0;
     for (std::vector<mfxExtBuffer*>::iterator it = freeSet->PB_bufs.in.buffers.begin();
         it != freeSet->PB_bufs.in.buffers.end(); ++it)
     {
@@ -538,6 +553,35 @@ mfxStatus FEI_EncodeInterface::InitFrameParams(mfxFrameSurface1* encodeSurface, 
                     msdk_printf(MSDK_STRING("WARNING: NumPasses should be less than or equal to 4\n"));
                 }
             }
+            break;
+
+        case MFX_EXTBUFF_PRED_WEIGHT_TABLE:
+            if (m_pWeights_in)
+            {
+                if (m_pAppConfig->PipelineCfg.mixedPicstructs && (encodeSurface->Info.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) && pWeightsId != ffid)
+                    continue;
+
+                mfxExtPredWeightTable* feiWeightTable = reinterpret_cast<mfxExtPredWeightTable*>(*it);
+                if ((frameType[pWeightsId] & MFX_FRAMETYPE_P) || (frameType[pWeightsId] & MFX_FRAMETYPE_B))
+                {
+                    SAFE_FREAD(&(feiWeightTable->LumaLog2WeightDenom),   sizeof(mfxU16),
+                               1, m_pWeights_in, MFX_ERR_MORE_DATA);
+                    SAFE_FREAD(&(feiWeightTable->ChromaLog2WeightDenom), sizeof(mfxU16),
+                               1, m_pWeights_in, MFX_ERR_MORE_DATA);
+                    SAFE_FREAD(feiWeightTable->LumaWeightFlag,           sizeof(mfxU16) * 2 * 32,         //[list][list entry]
+                               1, m_pWeights_in, MFX_ERR_MORE_DATA);
+                    SAFE_FREAD(feiWeightTable->ChromaWeightFlag,         sizeof(mfxU16) * 2 * 32,         //[list][list entry]
+                               1, m_pWeights_in, MFX_ERR_MORE_DATA);
+                    SAFE_FREAD(feiWeightTable->Weights,                  sizeof(mfxI16) * 2 * 32 * 3 * 2, //[list][list entry][Y, Cb, Cr][weight, offset]
+                               1, m_pWeights_in, MFX_ERR_MORE_DATA);
+                }
+                else{
+                    unsigned int seek_size = sizeof(mfxU16) + sizeof(mfxU16) + sizeof(mfxU16) * 2 * 32
+                                             + sizeof(mfxU16) * 2 * 32 + sizeof(mfxI16) * 2 * 32 * 3 * 2;
+                    SAFE_FSEEK(m_pWeights_in, seek_size, SEEK_CUR, MFX_ERR_MORE_DATA);
+                }
+            }
+            pWeightsId = 1 - pWeightsId; // set to sfid
             break;
         } // switch (freeSet->PB_bufs.in.ExtParam[i]->BufferId)
     } // for (int i = 0; i<freeSet->PB_bufs.in.NumExtParam; i++)
@@ -724,6 +768,7 @@ mfxStatus FEI_EncodeInterface::ResetState()
     SAFE_FSEEK(m_pENC_MBCtrl_in, 0, SEEK_SET, MFX_ERR_MORE_DATA);
     SAFE_FSEEK(m_pMbQP_in,       0, SEEK_SET, MFX_ERR_MORE_DATA);
     SAFE_FSEEK(m_pRepackCtrl_in, 0, SEEK_SET, MFX_ERR_MORE_DATA);
+    SAFE_FSEEK(m_pWeights_in,    0, SEEK_SET, MFX_ERR_MORE_DATA);
     SAFE_FSEEK(m_pMBstat_out,    0, SEEK_SET, MFX_ERR_MORE_DATA);
     SAFE_FSEEK(m_pMV_out,        0, SEEK_SET, MFX_ERR_MORE_DATA);
     SAFE_FSEEK(m_pMBcode_out,    0, SEEK_SET, MFX_ERR_MORE_DATA);

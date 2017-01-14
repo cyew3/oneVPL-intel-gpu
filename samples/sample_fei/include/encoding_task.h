@@ -300,6 +300,14 @@ struct setElem
                 }
                 break;
 
+                case MFX_EXTBUFF_PRED_WEIGHT_TABLE:
+                {
+                    mfxExtPredWeightTable* feiWeightTable = reinterpret_cast<mfxExtPredWeightTable*>(buffers[i]);
+                    MSDK_SAFE_DELETE_ARRAY(feiWeightTable);
+                    i += num_of_fields;
+                }
+                break;
+
                 default:
                     ++i;
                     break;

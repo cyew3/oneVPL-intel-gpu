@@ -326,6 +326,7 @@ struct AppConfig
         , mbQpFile(NULL)
         , repackctrlFile(NULL)
         , decodestreamoutFile(NULL)
+        , weightsFile(NULL)
     {
         PreencMVPredictors[0] = true;
         PreencMVPredictors[1] = true;
@@ -438,6 +439,7 @@ struct AppConfig
     msdk_char* mbQpFile;
     msdk_char* repackctrlFile;
     msdk_char* decodestreamoutFile;
+    msdk_char* weightsFile;
 
     struct{
         mfxVideoParam* pEncodeVideoParam;

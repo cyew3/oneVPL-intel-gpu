@@ -2238,7 +2238,7 @@ mfxU16 FourCCToChroma(mfxU32 fourCC)
 
     return MFX_CHROMAFORMAT_YUV420;
 }
- 
+
 #define SERIALIZE_FIELD(name) (sstr<<MSDK_STRING(#name)<<MSDK_STRING(":")<<params.name<<std::endl)
 #define SERIALIZE_INFO(name) (sstr<<prefix<<MSDK_STRING(#name)<<MSDK_STRING(":")<<info.name<<std::endl)
 
