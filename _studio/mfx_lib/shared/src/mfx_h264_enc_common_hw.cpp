@@ -1831,7 +1831,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamFEI(
     mfxStatus checkSts = MFX_ERR_NONE;
 
     mfxExtFeiParam* feiParam = (mfxExtFeiParam*)MfxHwH264Encode::GetExtBuffer(par.ExtParam, par.NumExtParam, MFX_EXTBUFF_FEI_PARAM);
-    if (!feiParam) return checkSts;
+    if ((!feiParam) || (!feiParam->Func)) return checkSts;
 
     switch (feiParam->Func)
     {
