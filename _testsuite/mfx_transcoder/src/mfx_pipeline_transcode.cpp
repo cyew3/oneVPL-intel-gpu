@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -987,7 +987,39 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
 
             argv++;
         }
-        else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-IntRefCycleSize "), VM_STRING("")))
+        else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-IntRefCycleDist"), VM_STRING("")))
+        {
+            mfxU32 val;
+            //file name that will be used for input after reseting encoder
+            MFX_CHECK(1 + argv != argvEnd);
+            MFX_PARSE_INT(val, argv[1]);
+
+            mfxExtCodingOption3 *pExt = NULL;
+
+            if (0 != val)
+            {
+                MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_CODING_OPTION3);
+                if (!ppExt)
+                {
+                    pExt = new mfxExtCodingOption3();
+
+                    pExt->Header.BufferId = MFX_EXTBUFF_CODING_OPTION3;
+                    pExt->Header.BufferSz = sizeof(mfxExtCodingOption3);
+                }
+                else
+                {
+                    pExt = reinterpret_cast<mfxExtCodingOption3 *>(ppExt->get());
+                }
+            }
+            else
+                return MFX_ERR_UNKNOWN;
+
+            pExt->IntRefCycleDist = val;
+            m_ExtBuffers.get()->push_back(pExt);
+
+            argv++;
+        }
+        else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-IntRefCycleSize"), VM_STRING("")))
         {
             mfxU32 val;
             //file name that will be used for input after reseting encoder
@@ -1028,7 +1060,6 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
 
             mfxExtCodingOption2 *pExt = NULL;
 
-            if (0 != val)
             {
                 MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_CODING_OPTION2);
                 if (!ppExt)
@@ -1043,8 +1074,6 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
                     pExt = reinterpret_cast<mfxExtCodingOption2 *>(ppExt->get());
                 }
             }
-            else
-                return MFX_ERR_UNKNOWN;
 
             pExt->IntRefType = val;
             m_ExtBuffers.get()->push_back(pExt);
