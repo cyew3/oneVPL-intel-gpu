@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2016-2017 Intel Corporation. All Rights Reserved.
 //
 */
 #include "ts_preenc.h"
@@ -107,7 +107,7 @@ private:
         {/*14*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {MFXPAR, &tsStruct::mfxVideoParam.AsyncDepth, 4}},
 
         /* invalid values for each field for Init() function */
-        {/*15*/ MFX_ERR_NONE, MFX_ERR_MEMORY_ALLOC, 0, {MFXPAR, &tsStruct::mfxVideoParam.AsyncDepth, 0xffff}},
+//        {/*15*/ MFX_ERR_NONE, MFX_ERR_MEMORY_ALLOC, 0, {MFXPAR, &tsStruct::mfxVideoParam.AsyncDepth, 0xffff}}, - this field shouldn't be tested for PreENC. PreENC doesn't use internal allocation
 //        {/*16*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFXPAR, &tsStruct::mfxVideoParam.Protected, 0xffff}},
         {/*17*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFXPAR, &tsStruct::mfxVideoParam.IOPattern, 0x50}},
 //        {/*18*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.LowPower, 0x40}},
