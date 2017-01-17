@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 // This file should be included by exactly one cpp in each MediaSDK plugin
@@ -30,7 +30,7 @@
 
 
 const char* g_MfxProductName = "mediasdk_product_name: " MFX_PLUGIN_PRODUCT_NAME;
-const char* g_MfxCopyright = "mediasdk_copyright: Copyright(c) 2007-2016 Intel Corporation";
+const char* g_MfxCopyright = "mediasdk_copyright: Copyright(c) 2007-2017 Intel Corporation";
 
 #if defined(HEVCD_EVALUATION) || defined(HEVCE_EVALUATION)
 const char* g_MfxProductVersion = "mediasdk_product_version: " MFX_PLUGIN_PRODUCT_VERSION " Evaluation version";
