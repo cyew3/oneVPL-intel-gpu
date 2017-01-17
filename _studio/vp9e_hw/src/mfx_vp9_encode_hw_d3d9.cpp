@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2016-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_vp9_encode_hw_d3d9.h"
@@ -49,10 +49,28 @@ mfxU16 MapChromaFormatToDDI(mfxU16 format)
     }
 }
 
+mfxU8 MapRateControlMethodToDDI(mfxU16 brcMethod)
+{
+    switch (brcMethod)
+    {
+    case MFX_RATECONTROL_CBR:
+        return 1;
+    case MFX_RATECONTROL_VBR:
+        return 2;
+    case MFX_RATECONTROL_CQP:
+        return 3;
+    case MFX_RATECONTROL_ICQ:
+        return 15;
+    default:
+        return 0;
+    }
+}
+
 void FillSpsBuffer(
     VP9MfxVideoParam const & par,
     ENCODE_CAPS_VP9 const & /*caps*/,
-    ENCODE_SET_SEQUENCE_PARAMETERS_VP9 & sps)
+    ENCODE_SET_SEQUENCE_PARAMETERS_VP9 & sps,
+    Task const & task)
 {
     Zero(sps);
 
@@ -60,7 +78,7 @@ void FillSpsBuffer(
     sps.wMaxFrameHeight   = par. mfx.FrameInfo.Height;
     sps.GopPicSize        = par.mfx.GopPicSize;
     sps.TargetUsage       = (UCHAR)par.mfx.TargetUsage;
-    sps.RateControlMethod = (UCHAR)par.mfx.RateControlMethod; // TODO: make correct mapping for mfx->DDI
+    sps.RateControlMethod = MapRateControlMethodToDDI(par.mfx.RateControlMethod);
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     mfxExtCodingOption3 opt3 = GetExtBufferRef(par);
     sps.SeqFlags.fields.SourceBitDepth = MapBitDepthToDDI(par.mfx.FrameInfo.BitDepthLuma);
@@ -69,12 +87,27 @@ void FillSpsBuffer(
     sps.SeqFlags.fields.EncodedFormat = MapChromaFormatToDDI(opt3.TargetChromaFormatPlus1 - 1);
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
 
-    if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+    sps.SeqFlags.fields.bResetBRC = task.m_resetBrc;
+
+    if (IsBitrateBasedBRC(par.mfx.RateControlMethod))
     {
-        sps.TargetBitRate[0]           = par.mfx.TargetKbps; // no support for temporal scalability. TODO: add support for temporal scalability
-        sps.MaxBitRate                 = par.mfx.MaxKbps; // TODO: understand how to use MaxBitRate for temporal scalability
-        sps.VBVBufferSizeInBit         = par.mfx.BufferSizeInKB * 8000; // TODO: understand how to use for temporal scalability
-        sps.InitVBVBufferFullnessInBit = par.mfx.InitialDelayInKB * 8000; // TODO: understand how to use for temporal scalability
+        mfxExtCodingOption2 opt2 = GetExtBufferRef(par);
+        sps.TargetBitRate[0] = par.m_targetKbps; // no support for temporal scalability. TODO: add support for temporal scalability
+        sps.MaxBitRate = par.m_maxKbps; // TODO: understand how to use MaxBitRate for temporal scalability
+        if (IsOn(opt2.MBBRC))
+        {
+            assert(task.m_frameParam.allowSegmentation == 1);
+            sps.SeqFlags.fields.MBBRC = 1;
+        }
+        if (IsBufferBasedBRC(par.mfx.RateControlMethod))
+        {
+            sps.VBVBufferSizeInBit = par.m_bufferSizeInKb * 8000; // TODO: understand how to use for temporal scalability
+            sps.InitVBVBufferFullnessInBit = par.m_initialDelayInKb * 8000; // TODO: understand how to use for temporal scalability
+        }
+    }
+    else if (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ)
+    {
+        sps.ICQQualityFactor = (mfxU8)par.mfx.ICQQuality; // it's guaranteed that ICQQuality is within range [0, 255]
     }
 
     sps.FrameRate[0].Numerator   =  par.mfx.FrameInfo.FrameRateExtN; // no support for temporal scalability. TODO: add support for temporal scalability
@@ -155,7 +188,8 @@ void FillPpsBuffer(
     pps.PicFlags.fields.intra_only           = framePar.intraOnly;
     pps.PicFlags.fields.refresh_frame_context = framePar.refreshFrameContext;
     pps.PicFlags.fields.allow_high_precision_mv = framePar.allowHighPrecisionMV;
-    pps.PicFlags.fields.segmentation_enabled = 0; // segmentation isn't supported for now. TODO: enable segmentation
+
+    pps.PicFlags.fields.segmentation_enabled = framePar.allowSegmentation; // app level segmentation isn't supported for now. TODO: enable segmentation
 
     pps.LumaACQIndex        = framePar.baseQIndex;
     pps.LumaDCQIndexDelta   = framePar.qIndexDeltaLumaDC;
@@ -396,8 +430,6 @@ mfxStatus D3D9Encoder::CreateAccelerationService(VP9MfxVideoParam const & par)
     HRESULT hr = m_auxDevice->Execute(AUXDEV_CREATE_ACCEL_SERVICE, m_guid, encodeCreateDevice);
     MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
-    FillSpsBuffer(par, m_caps, m_sps);
-
     m_frameHeaderBuf.resize(VP9_MAX_UNCOMPRESSED_HEADER_SIZE + MAX_IVF_HEADER_SIZE);
     InitVp9SeqLevelParam(par, m_seqParam);
 
@@ -528,7 +560,7 @@ mfxStatus D3D9Encoder::Execute(
 
     const VP9MfxVideoParam& curMfxPar = *task.m_pParam;
 
-    FillSpsBuffer(curMfxPar, m_caps, m_sps);
+    FillSpsBuffer(curMfxPar, m_caps, m_sps, task);
 
     compBufferDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)D3DDDIFMT_INTELENCODE_SPSDATA;
     compBufferDesc[bufCnt].DataSize = mfxU32(sizeof(m_sps));

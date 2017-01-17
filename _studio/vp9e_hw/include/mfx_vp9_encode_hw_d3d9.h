@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2016-2017 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -493,7 +493,8 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_VP9
 void FillSpsBuffer(
     VP9MfxVideoParam const & par,
     ENCODE_CAPS_VP9 const & /*caps*/,
-    ENCODE_SET_SEQUENCE_PARAMETERS_VP9 & sps);
+    ENCODE_SET_SEQUENCE_PARAMETERS_VP9 & sps,
+    Task const & task);
 
 void FillPpsBuffer(
     VP9MfxVideoParam const & par,

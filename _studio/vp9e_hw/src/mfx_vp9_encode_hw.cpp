@@ -32,6 +32,7 @@ Plugin::Plugin(bool CreateByDispatcher)
     , m_initialized(false)
     , m_frameArrivalOrder(0)
     , m_drainState(false)
+    , m_resetBrc(false)
     , m_taskIdForDriver(0)
     , m_numBufferedFrames(0)
     , m_initWidth(0)
@@ -336,7 +337,7 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
         {
             request.NumFrameMin = request.NumFrameSuggested = opaq.In.NumSurface;
             sts = m_rawLocalFrames.Init(m_pmfxCore, &request);
-            MFX_CHECK_STS(sts);
+MFX_CHECK_STS(sts);
         }
     }
 
@@ -375,6 +376,7 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
     m_bStartIVFSequence = true;
 
     m_initialized = true;
+    m_resetBrc = false;
 
     m_frameArrivalOrder = 0;
     m_taskIdForDriver = 0;
@@ -394,7 +396,7 @@ mfxStatus Plugin::Reset(mfxVideoParam *par)
         return MFX_ERR_NOT_INITIALIZED;
     }
 
-    mfxStatus sts  = MFX_ERR_NONE;
+    mfxStatus sts = MFX_ERR_NONE;
     mfxStatus checkSts = MFX_ERR_NONE;
 
     MFX_CHECK_NULL_PTR1(par);
@@ -411,6 +413,9 @@ mfxStatus Plugin::Reset(mfxVideoParam *par)
     {
         return MFX_ERR_UNSUPPORTED;
     }
+
+    InheritDefaults(parAfterReset, parBeforeReset);
+    parAfterReset.CalculateInternalParams();
 
     // get validated and properly initialized set of parameters for encoding
     checkSts = CheckParametersAndSetDefaults(parAfterReset, caps);
@@ -431,6 +436,7 @@ mfxStatus Plugin::Reset(mfxVideoParam *par)
         MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
     m_video = parAfterReset;
+    m_resetBrc = isBrcResetRequired(parBeforeReset, parAfterReset);
 
     if (IsResetOfPipelineRequired(parBeforeReset, parAfterReset))
     {
@@ -578,6 +584,9 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
             newFrame.m_taskIdForDriver = m_taskIdForDriver;
 
             newFrame.m_pParam = &m_videoForParamChange.back(); // always use latest encoding parameters
+
+            newFrame.m_resetBrc = m_resetBrc;
+            m_resetBrc = false; // BRC reset is triggered only once.
 
             m_accepted.splice(m_accepted.end(), m_free, m_free.begin());
 

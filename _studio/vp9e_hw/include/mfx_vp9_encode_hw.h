@@ -128,6 +128,7 @@ protected:
     mfxU32 m_frameArrivalOrder;
 
     bool m_drainState;
+    bool m_resetBrc;
 
     mfxU32 m_taskIdForDriver; // should be unique among all the frames submitted to driver
 

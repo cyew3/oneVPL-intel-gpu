@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2016-2017 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -37,6 +37,10 @@ namespace MfxHwVP9Encode
 #define ALIGN_POWER_OF_TWO(value, n) \
     (((value)+((1 << (n)) - 1)) & ~((1 << (n)) - 1))
 #define MFX_CHECK_WITH_ASSERT(EXPR, ERR) { assert(EXPR); MFX_CHECK(EXPR, ERR); }
+#ifndef OPEN_SOURCE
+    #define MFX_MAX( a, b ) ( ((a) > (b)) ? (a) : (b) )
+    #define MFX_MIN( a, b ) ( ((a) < (b)) ? (a) : (b) )
+#endif
 
 #define DPB_SIZE 8
 #define MAX_SEGMENTS 8
@@ -51,6 +55,7 @@ namespace MfxHwVP9Encode
 #define MAX_IVF_HEADER_SIZE IVF_SEQ_HEADER_SIZE_BYTES + IVF_PIC_HEADER_SIZE_BYTES
 
 #define MAX_Q_INDEX 255
+#define MAX_ICQ_QUALITY_INDEX 255
 #define MAX_LF_LEVEL 63
 #define MAX_ABS_Q_INDEX_DELTA 15
 
@@ -170,7 +175,7 @@ enum // identifies memory type at encoder input w/o any details
         mfxU8  modeRefDeltaUpdate;
 
         mfxU8  sharpness;
-        mfxU8  numSegments;
+        mfxU8  allowSegmentation;
         mfxU8  errorResilentMode;
         mfxU8  interpFilter;
         mfxU8  frameContextIdx;
@@ -222,6 +227,8 @@ enum // identifies memory type at encoder input w/o any details
         memcpy_s(&dst, sizeof(dst), &src, sizeof(dst));
     }
 
+    inline mfxU32 CeilDiv(mfxU32 x, mfxU32 y) { return (x + y - 1) / y; }
+
     inline bool IsOn(mfxU16 opt)
     {
         return opt == MFX_CODINGOPTION_ON;
@@ -237,6 +244,7 @@ enum // identifies memory type at encoder input w/o any details
 #define BIND_EXTBUF_TYPE_TO_ID(TYPE, ID) template<> struct ExtBufTypeToId<TYPE> { enum { id = ID }; }
     BIND_EXTBUF_TYPE_TO_ID (mfxExtCodingOptionVP9,  MFX_EXTBUFF_CODING_OPTION_VP9 );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtOpaqueSurfaceAlloc,MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtCodingOption2, MFX_EXTBUFF_CODING_OPTION2);
     BIND_EXTBUF_TYPE_TO_ID (mfxExtCodingOption3, MFX_EXTBUFF_CODING_OPTION3);
 #undef BIND_EXTBUF_TYPE_TO_ID
 
@@ -389,7 +397,7 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
         mfxU32             m_status;
     };
 
-#define NUM_OF_SUPPORTED_EXT_BUFFERS 3 // mfxExtCodingOptionVP9, mfxExtOpaqueSurfaceAlloc, mfxExtCodingOption3
+#define NUM_OF_SUPPORTED_EXT_BUFFERS 4 // mfxExtCodingOptionVP9, mfxExtOpaqueSurfaceAlloc, mfxExtCodingOption2, mfxExtCodingOption3
 
     class VP9MfxVideoParam : public mfxVideoParam
     {
@@ -402,7 +410,13 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
         VP9MfxVideoParam & operator = (mfxVideoParam const &);
 
         mfxU16 m_inMemType;
+        mfxU32 m_targetKbps;
+        mfxU32 m_maxKbps;
+        mfxU32 m_bufferSizeInKb;
+        mfxU32 m_initialDelayInKb;
+
         void CalculateInternalParams();
+        void SyncInternalParamToExternal();
 
     protected:
         void Construct(mfxVideoParam const & par);
@@ -411,10 +425,9 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
         mfxExtBuffer *              m_extParam[NUM_OF_SUPPORTED_EXT_BUFFERS];
         mfxExtCodingOptionVP9       m_extOpt;
         mfxExtOpaqueSurfaceAlloc    m_extOpaque;
+        mfxExtCodingOption2         m_extOpt2;
         mfxExtCodingOption3         m_extOpt3;
     };
-
-    mfxStatus GetVideoParam(mfxVideoParam * parDst, mfxVideoParam *videoSrc);
 
     class Task;
     mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
@@ -524,6 +537,7 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
         VP9MfxVideoParam* m_pParam;
 
         bool m_insertIVFSeqHeader;
+        bool m_resetBrc;
 
         Task ():
               m_pRawFrame(NULL),
@@ -536,7 +550,8 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
               m_taskIdForDriver(0),
               m_bsDataLength(0),
               m_pParam(NULL),
-              m_insertIVFSeqHeader(false)
+              m_insertIVFSeqHeader(false),
+            m_resetBrc(false)
           {
               Zero(m_pRecRefFrames);
               Zero(m_frameParam);
@@ -563,9 +578,45 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
         return MFX_ERR_NONE;
     }
 
+    inline bool IsBufferBasedBRC(mfxU16 brcMethod)
+    {
+        return brcMethod == MFX_RATECONTROL_CBR
+            || brcMethod == MFX_RATECONTROL_VBR;
+    }
+
+    inline bool IsBitrateBasedBRC(mfxU16 brcMethod)
+    {
+        return IsBufferBasedBRC(brcMethod);
+    }
+
     inline bool IsResetOfPipelineRequired(const mfxVideoParam& oldPar, const mfxVideoParam& newPar)
     {
         return oldPar.mfx.GopPicSize != newPar.mfx.GopPicSize;
+    }
+
+    inline bool isBrcResetRequired(VP9MfxVideoParam const & parBefore, VP9MfxVideoParam const & parAfter)
+    {
+        mfxU16 brc = parAfter.mfx.RateControlMethod;
+        if (brc == MFX_RATECONTROL_CQP)
+        {
+            return false;
+        }
+
+        double frameRateBefore = (double)parBefore.mfx.FrameInfo.FrameRateExtN / (double)parBefore.mfx.FrameInfo.FrameRateExtD;
+        double frameRateAfter = (double)parAfter.mfx.FrameInfo.FrameRateExtN / (double)parAfter.mfx.FrameInfo.FrameRateExtD;
+
+        if (parBefore.m_targetKbps != parAfter.m_targetKbps
+            || (brc == MFX_RATECONTROL_VBR) && (parBefore.m_maxKbps != parAfter.m_maxKbps)
+            || frameRateBefore != frameRateAfter
+            || IsBufferBasedBRC(brc) && (parBefore.m_bufferSizeInKb != parAfter.m_bufferSizeInKb)
+            || (brc == MFX_RATECONTROL_ICQ) && (parBefore.mfx.ICQQuality != parAfter.mfx.ICQQuality))
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 
     mfxStatus GetRealSurface(

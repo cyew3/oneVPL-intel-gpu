@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2016-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_vp9_encode_hw_utils.h"
@@ -279,27 +279,30 @@ namespace MfxHwVP9Encode
                 offsets.BitOffsetForLFRefDelta = (mfxU16)localBuf.bitOffset;
                 for (mfxI8 i = 0; i < MAX_REF_LF_DELTAS; i++)
                 {
-                    //const mfxI8 delta = framePar.lfRefDelta[i];
-                    const mfxU8 delatChanged = 0; // TODO: add support for changing delta
-                    WriteBit(localBuf, delatChanged);
-                    /*if (delatChanged)
-                    {
-                        WriteLiteral(localBuf, abs(delta) & 0x3F, 6);
-                        WriteBit(localBuf, delta < 0);
-                    }*/
+                    // always write deltas explicitly to allow BRC modify them
+                    const mfxI8 delta = framePar.lfRefDelta[i];
+                    WriteBit(localBuf, 1);
+                    WriteLiteral(localBuf, abs(delta) & 0x3F, 6);
+                    WriteBit(localBuf, delta < 0);
                 }
 
                 offsets.BitOffsetForLFModeDelta = (mfxU16)localBuf.bitOffset;
                 for (mfxI8 i = 0; i < MAX_MODE_LF_DELTAS; i++)
                 {
-                    //const mfxI8 delta = framePar.lfModeDelta[i];
-                    const mfxU8 delatChanged = false; // TODO: add support for changing delta
-                    WriteBit(localBuf, delatChanged);
-                    /*if (delatChanged)
+                    // always write deltas explicitly to allow BRC modify them
+                    const mfxI8 delta = framePar.lfModeDelta[i];
+                    if (framePar.frameType == KEY_FRAME && i == 1)
                     {
+                        // it's WA for problem with incorrect packing of compressed header if LF delts for Inter mode is set for Intra frame.
+                        // by some reason driver is packing corrupted compressed header in this case.
+                        WriteBit(localBuf, 0);
+                    }
+                    else
+                    {
+                        WriteBit(localBuf, 1);
                         WriteLiteral(localBuf, abs(delta) & 0x3F, 6);
                         WriteBit(localBuf, delta < 0);
-                    }*/
+                    }
                 }
             }
         }
@@ -315,7 +318,12 @@ namespace MfxHwVP9Encode
         offsets.BitOffsetForSegmentation = (mfxU16)localBuf.bitOffset;
 
         //segmentation
-        WriteBit(localBuf, 0); // TODO: add support
+        WriteBit(localBuf, framePar.allowSegmentation);
+        if (framePar.allowSegmentation)
+        {
+            WriteBit(localBuf, 0); // no segment map update for now
+            WriteBit(localBuf, 0); // no segment features update for now
+        }
 
         offsets.BitSizeForSegmentation = (mfxU16)localBuf.bitOffset - offsets.BitOffsetForSegmentation;
 

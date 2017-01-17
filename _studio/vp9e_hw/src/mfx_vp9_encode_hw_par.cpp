@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2016-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -28,6 +28,7 @@ bool IsExtBufferSupportedInInit(mfxU32 id)
 {
     return id == MFX_EXTBUFF_CODING_OPTION_VP9
         || id == MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION
+        || id == MFX_EXTBUFF_CODING_OPTION2
         || id == MFX_EXTBUFF_CODING_OPTION3;
 }
 
@@ -68,93 +69,126 @@ mfxStatus CheckExtBufferHeaders(mfxU16 numExtParam, mfxExtBuffer** extParam, boo
     return MFX_ERR_NONE;
 }
 
-#define _CopyPar(pDst, pSrc, PAR) pDst->PAR = pSrc->PAR;
-#define _SetOrCopyPar(PAR)\
+// below code allows to do 3 things:
+// 1) Set 1 to parameters which are configurable (supported) by the encoder.
+// 2) Copy only supported parameters:
+//    a) During input paramerets validation to check if all parameters passed by app are supported.
+//    b) In Reset() API function to inherrit all defaults from configuration that was actual prior to Reset() call.
+#define COPY_PAR_IF_ZERO(pDst, pSrc, PAR)\
+if (pDst->PAR == 0)\
+{\
+    pDst->PAR = pSrc->PAR;\
+}
+
+#define SET_OR_COPY_PAR(PAR)\
 if (pSrc)\
 {\
-    _CopyPar(pDst, pSrc, PAR); \
+    COPY_PAR_IF_ZERO(pDst, pSrc, PAR); \
 }\
 else\
 {\
     pDst->PAR = 1; \
 }
 
-inline mfxStatus SetOrCopySupportedParams(mfxInfoMFX *pDst, mfxInfoMFX *pSrc = 0)
+inline mfxStatus SetOrCopySupportedParams(mfxInfoMFX *pDst, mfxInfoMFX const *pSrc = 0, bool zeroDst = true)
 {
-    Zero(*pDst);
+    if (zeroDst)
+    {
+        Zero(*pDst);
+    }
 
     MFX_CHECK_NULL_PTR1(pDst);
 
-    _SetOrCopyPar(FrameInfo.Width);
-    _SetOrCopyPar(FrameInfo.Height);
-    _SetOrCopyPar(FrameInfo.CropW);
-    _SetOrCopyPar(FrameInfo.CropH);
-    _SetOrCopyPar(FrameInfo.CropX);
-    _SetOrCopyPar(FrameInfo.CropY);
-    _SetOrCopyPar(FrameInfo.FrameRateExtN);
-    _SetOrCopyPar(FrameInfo.FrameRateExtD);
-    _SetOrCopyPar(FrameInfo.AspectRatioW);
-    _SetOrCopyPar(FrameInfo.AspectRatioH);
-    _SetOrCopyPar(FrameInfo.ChromaFormat);
-    _SetOrCopyPar(FrameInfo.BitDepthLuma);
-    _SetOrCopyPar(FrameInfo.BitDepthChroma);
-    _SetOrCopyPar(FrameInfo.Shift);
-    _SetOrCopyPar(FrameInfo.PicStruct);
-    _SetOrCopyPar(FrameInfo.FourCC);
+    SET_OR_COPY_PAR(FrameInfo.Width);
+    SET_OR_COPY_PAR(FrameInfo.Height);
+    SET_OR_COPY_PAR(FrameInfo.CropW);
+    SET_OR_COPY_PAR(FrameInfo.CropH);
+    SET_OR_COPY_PAR(FrameInfo.CropX);
+    SET_OR_COPY_PAR(FrameInfo.CropY);
+    SET_OR_COPY_PAR(FrameInfo.FrameRateExtN);
+    SET_OR_COPY_PAR(FrameInfo.FrameRateExtD);
+    SET_OR_COPY_PAR(FrameInfo.AspectRatioW);
+    SET_OR_COPY_PAR(FrameInfo.AspectRatioH);
+    SET_OR_COPY_PAR(FrameInfo.ChromaFormat);
+    SET_OR_COPY_PAR(FrameInfo.BitDepthLuma);
+    SET_OR_COPY_PAR(FrameInfo.BitDepthChroma);
+    SET_OR_COPY_PAR(FrameInfo.Shift);
+    SET_OR_COPY_PAR(FrameInfo.PicStruct);
+    SET_OR_COPY_PAR(FrameInfo.FourCC);
 
-    _SetOrCopyPar(LowPower);
-    _SetOrCopyPar(CodecId);
-    _SetOrCopyPar(CodecProfile);
-    _SetOrCopyPar(TargetUsage);
-    _SetOrCopyPar(GopPicSize);
-    _SetOrCopyPar(GopRefDist);
-    _SetOrCopyPar(RateControlMethod);
-    _SetOrCopyPar(BufferSizeInKB);
-    _SetOrCopyPar(InitialDelayInKB);
-    _SetOrCopyPar(QPI);
-    _SetOrCopyPar(TargetKbps);
-    _SetOrCopyPar(MaxKbps);
-    _SetOrCopyPar(BRCParamMultiplier);
-    _SetOrCopyPar(NumRefFrame);
+    SET_OR_COPY_PAR(LowPower);
+    SET_OR_COPY_PAR(CodecId);
+    SET_OR_COPY_PAR(CodecProfile);
+    SET_OR_COPY_PAR(TargetUsage);
+    SET_OR_COPY_PAR(GopPicSize);
+    SET_OR_COPY_PAR(GopRefDist);
+    SET_OR_COPY_PAR(RateControlMethod);
+    SET_OR_COPY_PAR(BufferSizeInKB);
+    SET_OR_COPY_PAR(InitialDelayInKB);
+    SET_OR_COPY_PAR(QPI);
+    SET_OR_COPY_PAR(TargetKbps);
+    SET_OR_COPY_PAR(MaxKbps);
+    SET_OR_COPY_PAR(BRCParamMultiplier);
+    SET_OR_COPY_PAR(NumRefFrame);
 
     return MFX_ERR_NONE;
 }
 
-inline mfxStatus SetOrCopySupportedParams(mfxExtCodingOptionVP9 *pDst, mfxExtCodingOptionVP9 *pSrc = 0)
+inline mfxStatus SetOrCopySupportedParams(mfxExtCodingOptionVP9 *pDst, mfxExtCodingOptionVP9 const *pSrc = 0, bool zeroDst = true)
 {
     MFX_CHECK_NULL_PTR1(pDst);
 
-    ZeroExtBuffer(*pDst);
+    if (zeroDst)
+    {
+        ZeroExtBuffer(*pDst);
+    }
 
-    _SetOrCopyPar(SharpnessLevel);
-    _SetOrCopyPar(WriteIVFHeaders);
-    _SetOrCopyPar(QIndexDeltaLumaDC);
-    _SetOrCopyPar(QIndexDeltaChromaAC);
-    _SetOrCopyPar(QIndexDeltaChromaDC);
+    SET_OR_COPY_PAR(SharpnessLevel);
+    SET_OR_COPY_PAR(WriteIVFHeaders);
+    SET_OR_COPY_PAR(QIndexDeltaLumaDC);
+    SET_OR_COPY_PAR(QIndexDeltaChromaAC);
+    SET_OR_COPY_PAR(QIndexDeltaChromaDC);
 
     for (mfxU8 i = 0; i < MAX_REF_LF_DELTAS; i++)
     {
-        _SetOrCopyPar(LoopFilterRefDelta[i]);
+        SET_OR_COPY_PAR(LoopFilterRefDelta[i]);
     }
     for (mfxU8 i = 0; i < MAX_MODE_LF_DELTAS; i++)
     {
-        _SetOrCopyPar(LoopFilterModeDelta[i]);
+        SET_OR_COPY_PAR(LoopFilterModeDelta[i]);
     }
 
     return MFX_ERR_NONE;
 }
 
-inline mfxStatus SetOrCopySupportedParams(mfxExtCodingOption3 *pDst, mfxExtCodingOption3 *pSrc = 0)
+inline mfxStatus SetOrCopySupportedParams(mfxExtCodingOption2 *pDst, mfxExtCodingOption2 const *pSrc = 0, bool zeroDst = true)
+{
+    MFX_CHECK_NULL_PTR1(pDst);
+
+    if (zeroDst)
+    {
+        ZeroExtBuffer(*pDst);
+    }
+
+    SET_OR_COPY_PAR(MBBRC);
+
+    return MFX_ERR_NONE;
+}
+
+inline mfxStatus SetOrCopySupportedParams(mfxExtCodingOption3 *pDst, mfxExtCodingOption3 const *pSrc = 0, bool zeroDst = true)
 {
     pSrc;
     MFX_CHECK_NULL_PTR1(pDst);
 
-    ZeroExtBuffer(*pDst);
+    if (zeroDst)
+    {
+        ZeroExtBuffer(*pDst);
+    }
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-    _SetOrCopyPar(TargetChromaFormatPlus1);
-    _SetOrCopyPar(TargetBitDepthLuma);
-    _SetOrCopyPar(TargetBitDepthChroma);
+    SET_OR_COPY_PAR(TargetChromaFormatPlus1);
+    SET_OR_COPY_PAR(TargetBitDepthLuma);
+    SET_OR_COPY_PAR(TargetBitDepthChroma);
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
 
     return MFX_ERR_NONE;
@@ -182,6 +216,12 @@ mfxStatus SetSupportedParameters(mfxVideoParam & par)
         SetOrCopySupportedParams(pOpt);
     }
 
+    mfxExtCodingOption2 *pOpt2 = GetExtBuffer(par);
+    if (pOpt2 != 0)
+    {
+        SetOrCopySupportedParams(pOpt2);
+    }
+
     mfxExtCodingOption3 *pOpt3 = GetExtBuffer(par);
     if (pOpt3 != 0)
     {
@@ -189,6 +229,16 @@ mfxStatus SetSupportedParameters(mfxVideoParam & par)
     }
 
     return MFX_ERR_NONE;
+}
+
+inline bool IsOn(mfxU32 opt)
+{
+    return opt == MFX_CODINGOPTION_ON;
+}
+
+inline bool IsOff(mfxU32 opt)
+{
+    return opt == MFX_CODINGOPTION_OFF;
 }
 
 struct Bool
@@ -233,6 +283,27 @@ bool CheckRangeDflt(T & opt, U min, U max, U deflt)
     return true;
 }
 
+void InheritDefaults(VP9MfxVideoParam& defaultsDst, VP9MfxVideoParam const & defaultsSrc)
+{
+    // inherit default from mfxInfoMfx
+    SetOrCopySupportedParams(&defaultsDst.mfx, &defaultsSrc.mfx, false);
+
+    // inherit defaults from mfxExtCodingOptionVP9
+    mfxExtCodingOptionVP9* pOptDst = GetExtBuffer(defaultsDst);
+    mfxExtCodingOptionVP9* pOptSrc = GetExtBuffer(defaultsSrc);
+    SetOrCopySupportedParams(pOptDst, pOptSrc, false);
+
+    // inherit defaults from mfxExtCodingOption2
+    mfxExtCodingOption2* pOpt2Dst = GetExtBuffer(defaultsDst);
+    mfxExtCodingOption2* pOpt2Src = GetExtBuffer(defaultsSrc);
+    SetOrCopySupportedParams(pOpt2Dst, pOpt2Src, false);
+
+    // inherit defaults from mfxExtCodingOption3
+    mfxExtCodingOption3* pOpt3Dst = GetExtBuffer(defaultsDst);
+    mfxExtCodingOption3* pOpt3Src = GetExtBuffer(defaultsSrc);
+    SetOrCopySupportedParams(pOpt3Dst, pOpt3Src, false);
+}
+
 mfxStatus CleanOutUnsupportedParameters(VP9MfxVideoParam &par)
 {
     VP9MfxVideoParam tmp = par;
@@ -252,6 +323,14 @@ mfxStatus CleanOutUnsupportedParameters(VP9MfxVideoParam &par)
     }
 
     return sts;
+}
+
+bool IsBrcModeSupported(mfxU16 brc)
+{
+    return brc == MFX_RATECONTROL_CBR
+        || brc == MFX_RATECONTROL_VBR
+        || brc == MFX_RATECONTROL_CQP
+        || brc == MFX_RATECONTROL_ICQ;
 }
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
@@ -383,68 +462,70 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
     // check mfxInfoMfx
     double      frameRate = 0.0;
 
-    if ((par.mfx.FrameInfo.Width & 0x0f) != 0 || (par.mfx.FrameInfo.Height & 0x0f) != 0)
+    mfxFrameInfo& fi = par.mfx.FrameInfo;
+
+    if ((fi.Width & 0x0f) != 0 || (fi.Height & 0x0f) != 0)
     {
-        par.mfx.FrameInfo.Width = 0;
-        par.mfx.FrameInfo.Height = 0;
+        fi.Width = 0;
+        fi.Height = 0;
         unsupported = true;
     }
 
-    if (par.mfx.FrameInfo.Width &&
-        (par.mfx.FrameInfo.CropX + par.mfx.FrameInfo.CropW > par.mfx.FrameInfo.Width) ||
-        par.mfx.FrameInfo.Height &&
-        (par.mfx.FrameInfo.CropY + par.mfx.FrameInfo.CropH > par.mfx.FrameInfo.Height))
+    if (fi.Width &&
+        (fi.CropX + fi.CropW > fi.Width) ||
+        fi.Height &&
+        (fi.CropY + fi.CropH > fi.Height))
     {
-        par.mfx.FrameInfo.CropX = 0;
-        par.mfx.FrameInfo.CropW = 0;
-        par.mfx.FrameInfo.CropY = 0;
-        par.mfx.FrameInfo.CropH = 0;
+        fi.CropX = 0;
+        fi.CropW = 0;
+        fi.CropY = 0;
+        fi.CropH = 0;
         unsupported = true;
     }
 
-    if ((par.mfx.FrameInfo.FrameRateExtN == 0) != (par.mfx.FrameInfo.FrameRateExtD == 0))
+    if ((fi.FrameRateExtN == 0) != (fi.FrameRateExtD == 0))
     {
-        par.mfx.FrameInfo.FrameRateExtN = 0;
-        par.mfx.FrameInfo.FrameRateExtD = 0;
+        fi.FrameRateExtN = 0;
+        fi.FrameRateExtD = 0;
         unsupported = true;
     }
 
-    if (par.mfx.FrameInfo.FrameRateExtD != 0)
+    if (fi.FrameRateExtD != 0)
     {
-        frameRate = (double)par.mfx.FrameInfo.FrameRateExtN / (double)par.mfx.FrameInfo.FrameRateExtD;
+        frameRate = (double)fi.FrameRateExtN / (double)fi.FrameRateExtD;
     }
 
-    if (par.mfx.FrameInfo.FrameRateExtD != 0 &&
+    if (fi.FrameRateExtD != 0 &&
         (frameRate < 1.0 || frameRate > 180.0))
     {
-        par.mfx.FrameInfo.FrameRateExtN = 0;
-        par.mfx.FrameInfo.FrameRateExtD = 0;
+        fi.FrameRateExtN = 0;
+        fi.FrameRateExtD = 0;
         unsupported = true;
     }
 
-    if (par.mfx.FrameInfo.AspectRatioH != 0 || par.mfx.FrameInfo.AspectRatioW != 0)
+    if (fi.AspectRatioH != 0 || fi.AspectRatioW != 0)
     {
-        if (!(par.mfx.FrameInfo.AspectRatioH == 1 && par.mfx.FrameInfo.AspectRatioW == 1))
+        if (!(fi.AspectRatioH == 1 && fi.AspectRatioW == 1))
         {
-            par.mfx.FrameInfo.AspectRatioH = 1;
-            par.mfx.FrameInfo.AspectRatioW = 1;
+            fi.AspectRatioH = 1;
+            fi.AspectRatioW = 1;
             changed = true;
         }
     }
 
-    if (par.mfx.FrameInfo.PicStruct > MFX_PICSTRUCT_PROGRESSIVE)
+    if (fi.PicStruct > MFX_PICSTRUCT_PROGRESSIVE)
     {
-        par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+        fi.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
         unsupported = true;
     }
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     {
         mfxExtCodingOption3& opt3 = GetExtBufferRef(par);
-        mfxU32& fourcc         = par.mfx.FrameInfo.FourCC;
-        mfxU16& inFormat       = par.mfx.FrameInfo.ChromaFormat;
-        mfxU16& inDepthLuma    = par.mfx.FrameInfo.BitDepthLuma;
-        mfxU16& inDepthChroma  = par.mfx.FrameInfo.BitDepthLuma;
+        mfxU32& fourcc         = fi.FourCC;
+        mfxU16& inFormat       = fi.ChromaFormat;
+        mfxU16& inDepthLuma    = fi.BitDepthLuma;
+        mfxU16& inDepthChroma  = fi.BitDepthLuma;
         mfxU16& profile        = par.mfx.CodecProfile;
         mfxU16& outFormatP1    = opt3.TargetChromaFormatPlus1;
         mfxU16& outDepthLuma   = opt3.TargetBitDepthLuma;
@@ -482,13 +563,13 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
             unsupported = true;
         }
 
-        if (par.mfx.FrameInfo.Shift != 0
+        if (fi.Shift != 0
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
             && fourcc != MFX_FOURCC_P010
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
             )
         {
-            par.mfx.FrameInfo.Shift = 0;
+            fi.Shift = 0;
             unsupported = true;
         }
 
@@ -546,33 +627,33 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         unsupported = true;
     }
 
-    if (par.mfx.FrameInfo.ChromaFormat > MFX_CHROMAFORMAT_YUV420)
+    if (fi.ChromaFormat > MFX_CHROMAFORMAT_YUV420)
     {
-        par.mfx.FrameInfo.ChromaFormat = 0;
+        fi.ChromaFormat = 0;
         unsupported = true;
     }
 
-    if (par.mfx.FrameInfo.FourCC != 0 && par.mfx.FrameInfo.FourCC != MFX_FOURCC_NV12)
+    if (fi.FourCC != 0 && fi.FourCC != MFX_FOURCC_NV12)
     {
-        par.mfx.FrameInfo.FourCC = 0;
+        fi.FourCC = 0;
         unsupported = true;
     }
 
-    if (par.mfx.FrameInfo.BitDepthLuma != 0 && par.mfx.FrameInfo.BitDepthLuma != 8)
+    if (fi.BitDepthLuma != 0 && fi.BitDepthLuma != 8)
     {
-        par.mfx.FrameInfo.BitDepthLuma = 0;
+        fi.BitDepthLuma = 0;
         unsupported = true;
     }
 
-    if (par.mfx.FrameInfo.BitDepthChroma != 0 && par.mfx.FrameInfo.BitDepthChroma != 8)
+    if (fi.BitDepthChroma != 0 && fi.BitDepthChroma != 8)
     {
-        par.mfx.FrameInfo.BitDepthChroma = 0;
+        fi.BitDepthChroma = 0;
         unsupported = true;
     }
 
-    if (par.mfx.FrameInfo.Shift != 0)
+    if (fi.Shift != 0)
     {
-        par.mfx.FrameInfo.Shift = 0;
+        fi.Shift = 0;
         unsupported = true;
     }
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
@@ -595,36 +676,54 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         changed = true;
     }
 
-    if (par.mfx.RateControlMethod != 0)
+    mfxU16& brcMode = par.mfx.RateControlMethod;
+
+    if (brcMode == MFX_RATECONTROL_AVBR)
     {
-        if (par.mfx.RateControlMethod > MFX_RATECONTROL_CQP)
+        brcMode = MFX_RATECONTROL_VBR;
+        par.mfx.Accuracy = 0;
+        par.mfx.Convergence = 0;
+        changed = true;
+    }
+
+    mfxExtCodingOption2& opt2 = GetExtBufferRef(par);
+
+    if (brcMode != 0)
+    {
+        if (false == IsBrcModeSupported(brcMode))
         {
-            par.mfx.RateControlMethod = 0;
-            par.mfx.InitialDelayInKB = 0;
-            par.mfx.BufferSizeInKB = 0;
-            par.mfx.TargetKbps = 0;
-            par.mfx.MaxKbps = 0;
+            brcMode = 0;
+            par.m_initialDelayInKb = 0;
+            par.m_bufferSizeInKb = 0;
+            par.m_targetKbps = 0;
+            par.m_maxKbps = 0;
             par.mfx.BRCParamMultiplier = 0;
             unsupported = true;
         }
-        else if (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR
-                || par.mfx.RateControlMethod == MFX_RATECONTROL_VBR)
+        else if (brcMode == MFX_RATECONTROL_CBR
+                || brcMode == MFX_RATECONTROL_VBR)
         {
-            if ((par.mfx.RateControlMethod == MFX_RATECONTROL_CBR  && par.mfx.MaxKbps != par.mfx.TargetKbps) ||
-                (par.mfx.RateControlMethod == MFX_RATECONTROL_VBR  && par.mfx.MaxKbps < par.mfx.TargetKbps))
+            if ((brcMode == MFX_RATECONTROL_CBR  && par.m_maxKbps != par.m_targetKbps) ||
+                (brcMode == MFX_RATECONTROL_VBR  && par.m_maxKbps < par.m_targetKbps))
             {
-                par.mfx.MaxKbps = 0;
+                par.m_maxKbps = par.m_targetKbps;
                 changed = true;
             }
 
-            if (par.mfx.InitialDelayInKB > par.mfx.BufferSizeInKB)
+            if (par.m_initialDelayInKb > par.m_bufferSizeInKb)
             {
-                par.mfx.InitialDelayInKB = 0;
+                par.m_initialDelayInKb = 0;
                 unsupported = true;
             }
         }
-        else if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+        else if (brcMode == MFX_RATECONTROL_CQP)
         {
+            if (opt2.MBBRC != 0)
+            {
+                opt2.MBBRC = 0;
+                changed = true;
+            }
+
             if (par.mfx.QPI > MAX_Q_INDEX)
             {
                 par.mfx.QPI = MAX_Q_INDEX;
@@ -643,6 +742,14 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
                 changed = true;
             }
         }
+        else if (brcMode == MFX_RATECONTROL_ICQ)
+        {
+            if (par.mfx.ICQQuality > MAX_ICQ_QUALITY_INDEX)
+            {
+                par.mfx.ICQQuality = MAX_ICQ_QUALITY_INDEX;
+                changed = true;
+            }
+        }
     }
 
     if (par.mfx.NumRefFrame > 3)
@@ -651,7 +758,7 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         changed = true;
     }
 
-    // check extended buffers
+    // check mfxExtCodingOptionVP9
     mfxExtCodingOptionVP9 &opt = GetExtBufferRef(par);
     if (false == CheckTriStateOption(opt.EnableMultipleSegments))
     {
@@ -693,6 +800,18 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         }
     }
 
+    // check mfxExtCodingOption2
+    if (false == CheckTriStateOption(opt2.MBBRC))
+    {
+        changed = true;
+    }
+
+    if (IsOn(opt2.MBBRC) && caps.MBBRCSupport == 0)
+    {
+        opt2.MBBRC = MFX_CODINGOPTION_OFF;
+        unsupported = true;
+    }
+
     if (unsupported == true)
     {
         return MFX_ERR_UNSUPPORTED;
@@ -730,18 +849,12 @@ inline bool SetTwoDefaults(T &par1, T &par2, int defaultValue1, int defaultValue
     return defaultsSet;
 }
 
-inline bool IsBufferBasedBRC(mfxU16 brcMethod)
-{
-    return brcMethod == MFX_RATECONTROL_CBR
-        || brcMethod == MFX_RATECONTROL_VBR;
-}
-
 inline mfxU16 GetDefaultBufferSize(VP9MfxVideoParam const &par)
 {
     if (IsBufferBasedBRC(par.mfx.RateControlMethod))
     {
         const mfxU8 defaultBufferInSec = 2;
-        return defaultBufferInSec * ((par.mfx.TargetKbps + 7) / 8);
+        return defaultBufferInSec * ((par.m_targetKbps + 7) / 8);
     }
     else
     {
@@ -804,15 +917,32 @@ mfxStatus SetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
     SetDefault(par.mfx.NumRefFrame, 1);
     SetDefault(par.mfx.BRCParamMultiplier, 1);
     SetDefault(par.mfx.TargetUsage, MFX_TARGETUSAGE_BALANCED);
-    SetDefault(par.mfx.RateControlMethod, MFX_RATECONTROL_CQP);
-    SetDefault(par.mfx.BufferSizeInKB, GetDefaultBufferSize(par));
+    SetDefault(par.mfx.RateControlMethod, MFX_RATECONTROL_CBR);
+    SetDefault(par.m_bufferSizeInKb, GetDefaultBufferSize(par));
     if (IsBufferBasedBRC(par.mfx.RateControlMethod))
     {
-        SetDefault(par.mfx.InitialDelayInKB, par.mfx.BufferSizeInKB / 2);
+        SetDefault(par.m_initialDelayInKb, par.m_bufferSizeInKb / 2);
     }
-    if (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR)
+    if (IsBitrateBasedBRC(par.mfx.RateControlMethod))
     {
-        SetDefault(par.mfx.MaxKbps, par.mfx.TargetKbps);
+        SetDefault(par.m_maxKbps, par.m_targetKbps);
+    }
+
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+    {
+        SetDefault(par.mfx.QPI, 128);
+        SetDefault(par.mfx.QPP, par.mfx.QPI + 5);
+    }
+
+    mfxExtCodingOption2 opt2 = GetExtBufferRef(par);
+    if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
+        caps.MBBRCSupport)
+    {
+        SetDefault(opt2.MBBRC, MFX_CODINGOPTION_ON);
+    }
+    else
+    {
+        SetDefault(opt2.MBBRC, MFX_CODINGOPTION_OFF);
     }
 
     // mfxInfomfx.FrameInfo
@@ -836,9 +966,6 @@ mfxStatus SetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
     SetDefault(fi.BitDepthLuma, 8);
     SetDefault(fi.BitDepthChroma, 8);
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
-
-    SetDefault(par.mfx.QPI, 128);
-    SetDefault(par.mfx.QPP, par.mfx.QPI + 5);
 
     // ext buffers
     mfxExtCodingOptionVP9 &opt = GetExtBufferRef(par);
@@ -868,12 +995,10 @@ mfxStatus CheckParametersAndSetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 c
     }
 
     // (3) target and max bitrates
-    if (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR && par.mfx.TargetKbps == 0)
-    {
-        return MFX_ERR_INVALID_VIDEO_PARAM;
-    }
-    if (par.mfx.RateControlMethod == MFX_RATECONTROL_VBR &&
-        (par.mfx.TargetKbps == 0 || par.mfx.MaxKbps == 0))
+    if ((par.mfx.RateControlMethod == MFX_RATECONTROL_CBR
+        || par.mfx.RateControlMethod == MFX_RATECONTROL_VBR
+        || par.mfx.RateControlMethod == MFX_RATECONTROL_AVBR)
+        && par.m_targetKbps == 0)
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
@@ -920,6 +1045,10 @@ mfxStatus CheckParametersAndSetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 c
     sts = SetDefaults(par, caps);
     MFX_CHECK(sts >= 0, sts);
 
+    // during parameters validation we worked with internal parameter versions
+    // now need to update external (API) versions of these parameters
+    par.SyncInternalParamToExternal();
+
     return checkSts;
 }
 
@@ -960,7 +1089,7 @@ mfxStatus CheckEncodeFrameParam(
     MFX_CHECK(bs->MaxLength > 0, MFX_ERR_NOT_ENOUGH_BUFFER);
     MFX_CHECK(bs->DataOffset < bs->MaxLength, MFX_ERR_UNDEFINED_BEHAVIOR);
     MFX_CHECK(bs->MaxLength > bs->DataOffset + bs->DataLength, MFX_ERR_NOT_ENOUGH_BUFFER);
-    MFX_CHECK(bs->DataOffset + bs->DataLength + video.mfx.BufferSizeInKB * 1000 <= bs->MaxLength, MFX_ERR_NOT_ENOUGH_BUFFER);
+    MFX_CHECK(bs->DataOffset + bs->DataLength + video.m_bufferSizeInKb * 1000 <= bs->MaxLength, MFX_ERR_NOT_ENOUGH_BUFFER);
 
     // check mfxEncodeCtrl for correct parameters
     if (ctrl)

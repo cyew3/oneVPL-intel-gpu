@@ -1,12 +1,12 @@
-/*//////////////////////////////////////////////////////////////////////////////
 //
-//                  INTEL CORPORATION PROPRIETARY INFORMATION
-//     This software is supplied under the terms of a license agreement or
-//     nondisclosure agreement with Intel Corporation and may not be copied
-//     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+// INTEL CORPORATION PROPRIETARY INFORMATION
 //
-*/
+// This software is supplied under the terms of a license agreement or
+// nondisclosure agreement with Intel Corporation and may not be copied
+// or disclosed except in accordance with the terms of that agreement.
+//
+// Copyright(C) 2016-2017 Intel Corporation. All Rights Reserved.
+//
 
 #if defined (_WIN32) || defined (_WIN64)
 
@@ -175,8 +175,6 @@ mfxStatus D3D11Encoder::CreateAccelerationService(VP9MfxVideoParam const & par)
     VP9_LOG("\n (VP9_LOG) D3D11Encoder::CreateAccelerationService +");
 
     m_infoQueried = false;
-
-    FillSpsBuffer(par, m_caps, m_sps);
 
     m_frameHeaderBuf.resize(VP9_MAX_UNCOMPRESSED_HEADER_SIZE + MAX_IVF_HEADER_SIZE);
     InitVp9SeqLevelParam(par, m_seqParam);
@@ -402,7 +400,7 @@ mfxStatus D3D11Encoder::Execute(
 
     const VP9MfxVideoParam& curMfxPar = *task.m_pParam;
 
-    FillSpsBuffer(curMfxPar, m_caps, m_sps);
+    FillSpsBuffer(curMfxPar, m_caps, m_sps, task);
 
     compBufferDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)(D3D11_DDI_VIDEO_ENCODER_BUFFER_SPSDATA);
     compBufferDesc[bufCnt].DataSize = mfxU32(sizeof(m_sps));

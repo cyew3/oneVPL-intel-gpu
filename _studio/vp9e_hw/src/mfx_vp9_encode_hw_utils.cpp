@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2016-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "math.h"
@@ -47,16 +47,60 @@ VP9MfxVideoParam& VP9MfxVideoParam::operator=(mfxVideoParam const & par)
 
 void VP9MfxVideoParam::CalculateInternalParams()
 {
-    mfxVideoParam & base = *this;
-
-    if (base.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
-        (base.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (m_extOpaque.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)))
+    if (IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
+        (IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (m_extOpaque.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)))
     {
         m_inMemType = INPUT_SYSTEM_MEMORY;
     }
     else
     {
         m_inMemType = INPUT_VIDEO_MEMORY;
+    }
+
+    m_targetKbps = m_maxKbps = m_bufferSizeInKb = m_initialDelayInKb = 0;
+
+    if (IsBitrateBasedBRC(mfx.RateControlMethod))
+    {
+        mfxU16 mult = MFX_MAX(mfx.BRCParamMultiplier, 1);
+        m_targetKbps = mult * mfx.TargetKbps;
+        m_maxKbps = mult * mfx.MaxKbps;
+
+        if (IsBufferBasedBRC(mfx.RateControlMethod))
+        {
+            m_bufferSizeInKb = mult * mfx.BufferSizeInKB;
+            m_initialDelayInKb = mult * mfx.InitialDelayInKB;
+        }
+    }
+}
+
+void VP9MfxVideoParam::SyncInternalParamToExternal()
+{
+    mfxU32 maxBrcVal32 = mfx.BufferSizeInKB; // buffer size is set by encoder for any BRC method
+
+    if (IsBitrateBasedBRC(mfx.RateControlMethod))
+    {
+        maxBrcVal32 = MFX_MAX(m_maxKbps, MFX_MAX(maxBrcVal32, m_targetKbps));
+
+        if (IsBufferBasedBRC(mfx.RateControlMethod))
+        {
+            maxBrcVal32 = MFX_MAX(maxBrcVal32, m_initialDelayInKb);
+        }
+    }
+
+    assert(maxBrcVal32);
+
+    mfxU16 mult = mfx.BRCParamMultiplier = mfxU16((maxBrcVal32 + 0x10000) / 0x10000);
+    mfx.BufferSizeInKB = (mfxU16)CeilDiv(m_bufferSizeInKb, mult);
+
+    if (IsBitrateBasedBRC(mfx.RateControlMethod))
+    {
+        mfx.TargetKbps = (mfxU16)CeilDiv(m_targetKbps, mult);
+        mfx.MaxKbps = (mfxU16)CeilDiv(m_maxKbps, mult);
+
+        if (IsBufferBasedBRC(mfx.RateControlMethod))
+        {
+            mfx.InitialDelayInKB = (mfxU16)CeilDiv(m_initialDelayInKb, mult);
+        }
     }
 }
 
@@ -69,6 +113,7 @@ void VP9MfxVideoParam::Construct(mfxVideoParam const & par)
 
     InitExtBufHeader(m_extOpt);
     InitExtBufHeader(m_extOpaque);
+    InitExtBufHeader(m_extOpt2);
     InitExtBufHeader(m_extOpt3);
 
     if (mfxExtCodingOptionVP9 * opts = GetExtBuffer(par))
@@ -77,12 +122,16 @@ void VP9MfxVideoParam::Construct(mfxVideoParam const & par)
     if (mfxExtOpaqueSurfaceAlloc * opts = GetExtBuffer(par))
         m_extOpaque = *opts;
 
+    if (mfxExtCodingOption2 * opts = GetExtBuffer(par))
+        m_extOpt2 = *opts;
+
     if (mfxExtCodingOption3 * opts = GetExtBuffer(par))
         m_extOpt3 = *opts;
 
     m_extParam[0] = &m_extOpt.Header;
     m_extParam[1] = &m_extOpaque.Header;
-    m_extParam[2] = &m_extOpt3.Header;
+    m_extParam[2] = &m_extOpt2.Header;
+    m_extParam[3] = &m_extOpt3.Header;
 
     ExtParam = m_extParam;
     NumExtParam = mfxU16(sizeof m_extParam / sizeof m_extParam[0]);
@@ -182,12 +231,23 @@ mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
     frameParam.qIndexDeltaChromaAC = (mfxI8)pOpt->QIndexDeltaChromaAC;
     frameParam.qIndexDeltaChromaDC = (mfxI8)pOpt->QIndexDeltaChromaDC;
 
-    frameParam.numSegments = 1; // TODO: add segmentation support
+    mfxExtCodingOption2 const & opt2 = GetExtBufferRef(par);
+    if (IsOn(opt2.MBBRC))
+    {
+        // MBBRC requires enabled segmentation to vary quantizer on per-segment basis
+        frameParam.allowSegmentation = 1;
+    }
 
     frameParam.showFarme = 1;
     frameParam.intraOnly = 0;
 
-    frameParam.modeRefDeltaEnabled = 0; // TODO: add support of ref and mode LF deltas
+    if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+    {
+        // in BRC mode driver may update LF level and mode/ref LF deltas
+        frameParam.modeRefDeltaEnabled = 1;
+        frameParam.modeRefDeltaUpdate = 1;
+    }
+
     frameParam.errorResilentMode = 0;
     frameParam.resetFrameContext = 0;
 #if defined (PRE_SI_TARGET_PLATFORM_GEN11)
