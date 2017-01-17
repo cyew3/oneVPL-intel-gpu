@@ -14,9 +14,13 @@ Copyright(c) 2005-2016 Intel Corporation. All Rights Reserved.
 #include "modified_sample_fei.h"
 
 static mfxU32 mv_data_length_offset = 0;
+// Intra types remapped to cases with set cbp. H.264 Table 7-11.
 static const int mb_type_remap[26] = {0, 21, 22, 23, 24, 21, 22, 23, 24, 21, 22, 23, 24, 21, 22, 23, 24, 21, 22, 23, 24, 21, 22, 23, 24, 25};
+// Luma intra pred mode for H.264 Table 7-11.
 static const int intra_16x16[26]   = {2,  0,  1,  2,  3,  0,  1,  2,  3,  0,  1,  2,  3,  0,  1,  2,  3,  0,  1,  2,  3,  0,  1,  2,  3,  2};
+// Inter mb split mode for H.264 Table 7-14.
 static const int inter_mb_mode[1+22] = {-1, 0,  0,  0,  1,  2,  1,  2,  1,  2,  1,  2,  1,  2,  1,  2,  1,  2,  1,  2,  1,  2,  3};
+// Prediction directions for 8x8 blocks for H.264 Table 7-14.
 static const mfxU8 sub_mb_type[1+22][4] = {
     {0xff,},   {0,0,0,0}, {1,1,1,1}, {2,2,2,2}, // 0-3
     {0,0,0,0}, {0,0,0,0}, {1,1,1,1}, {1,1,1,1}, // 4-7
@@ -82,6 +86,12 @@ mfxStatus PakOneStreamoutFrame(mfxU32 m_numOfFields, iTask *eTask, mfxU8 QP, iTa
     return sts;
 }
 
+// Repack is neccessary because
+// 1. DSO has MV for 8x8 blocks, not for 4x4
+// 2. To let PAK decide on cbp, all cbp and related vars are set
+// 3. Because of MV are changed, directMV and skip conditions have to be recomputed
+// 4. After MV elimination some splits can be enlarged
+
 inline mfxStatus RepackStremoutMB2PakMB(mfxFeiDecStreamOutMBCtrl* dsoMB, mfxFeiPakMBCtrl* pakMB, mfxU8 QP)
 {
     MSDK_CHECK_POINTER(dsoMB, MFX_ERR_NULL_PTR);
@@ -97,57 +107,47 @@ inline mfxStatus RepackStremoutMB2PakMB(mfxFeiDecStreamOutMBCtrl* dsoMB, mfxFeiP
     pakMB->MVFormat            = dsoMB->IntraMbFlag ? 0 : 6;
 
     pakMB->InterMbMode         = dsoMB->InterMbMode;
-    pakMB->MBSkipFlag          = 0;//dsoMB->MBSkipFlag;
+    pakMB->MBSkipFlag          = 0; // skip to be decided in PAK after quantization
     pakMB->IntraMbMode         = dsoMB->IntraMbMode;
     pakMB->FieldMbPolarityFlag = dsoMB->FieldMbPolarityFlag;
     pakMB->IntraMbFlag         = dsoMB->IntraMbFlag;
-    pakMB->MbType              = pakMB->IntraMbFlag? mb_type_remap[dsoMB->MbType]: dsoMB->MbType;
+    pakMB->MbType              = pakMB->IntraMbFlag? mb_type_remap[dsoMB->MbType]: dsoMB->MbType; // intra remapped to cases with set cbp
     pakMB->FieldMbFlag         = dsoMB->FieldMbFlag;
     pakMB->Transform8x8Flag    = dsoMB->Transform8x8Flag;
-    pakMB->DcBlockCodedCrFlag  = 1;//dsoMB->DcBlockCodedCrFlag;
-    pakMB->DcBlockCodedCbFlag  = 1;//dsoMB->DcBlockCodedCbFlag;
-    pakMB->DcBlockCodedYFlag   = 1;//dsoMB->DcBlockCodedYFlag;
+    pakMB->DcBlockCodedCrFlag  = 1; // all cbp decided by PAK
+    pakMB->DcBlockCodedCbFlag  = 1;
+    pakMB->DcBlockCodedYFlag   = 1;
     pakMB->HorzOrigin          = dsoMB->HorzOrigin;
     pakMB->VertOrigin          = dsoMB->VertOrigin;
-    pakMB->CbpY                = 0xffff;//dsoMB->CbpY;
-    pakMB->CbpCb               = 0xf;//dsoMB->CbpCb;
-    pakMB->CbpCr               = 0xf;//dsoMB->CbpCr;
+    pakMB->CbpY                = 0xffff; // all cbp decided by PAK
+    pakMB->CbpCb               = 0xf;
+    pakMB->CbpCr               = 0xf;
     pakMB->QpPrimeY            = QP;//dsoMB->QpPrimeY;
     pakMB->IsLastMB            = dsoMB->IsLastMB;
-    pakMB->Direct8x8Pattern    = 0;//dsoMB->Direct8x8Pattern;
+    pakMB->Direct8x8Pattern    = 0; // to be recomputed in RepackStreamoutMV
     pakMB->MbSkipConvDisable   = 0;
 
     memcpy(&pakMB->InterMB, &dsoMB->InterMB, sizeof(pakMB->InterMB)); // this part is common
 
-    if (pakMB->IntraMbFlag){
-        if (dsoMB->MbType){
+    if (pakMB->IntraMbFlag ){
+        if (dsoMB->MbType) { // for intra 16x16 populate the type to each of 16 4-bit field
             pakMB->IntraMB.LumaIntraPredModes[0] =
             pakMB->IntraMB.LumaIntraPredModes[1] =
             pakMB->IntraMB.LumaIntraPredModes[2] =
             pakMB->IntraMB.LumaIntraPredModes[3] = intra_16x16[dsoMB->MbType] * 0x1111;
         }
-        else{
-            if (pakMB->Transform8x8Flag){
+        else {
+            if (pakMB->Transform8x8Flag) { // for intra 8x8: in DSO 4 types are packed in single dw. Populate each type in separate dw.
                 pakMB->IntraMB.LumaIntraPredModes[0] =  (dsoMB->IntraMB.LumaIntraPredModes[0]&0x000f)      * 0x1111;
                 pakMB->IntraMB.LumaIntraPredModes[1] = ((dsoMB->IntraMB.LumaIntraPredModes[0]&0x00f0)>>4)  * 0x1111;
                 pakMB->IntraMB.LumaIntraPredModes[2] = ((dsoMB->IntraMB.LumaIntraPredModes[0]&0x0f00)>>8)  * 0x1111;
                 pakMB->IntraMB.LumaIntraPredModes[3] = ((dsoMB->IntraMB.LumaIntraPredModes[0]&0xf000)>>12) * 0x1111;
             }
-            /*
-             * this is already done during memcpy
-            else
-            {
-                pakMB->IntraMB.LumaIntraPredModes[0] = dsoMB->IntraMB.LumaIntraPredModes[0];
-                pakMB->IntraMB.LumaIntraPredModes[1] = dsoMB->IntraMB.LumaIntraPredModes[1];
-                pakMB->IntraMB.LumaIntraPredModes[2] = dsoMB->IntraMB.LumaIntraPredModes[2];
-                pakMB->IntraMB.LumaIntraPredModes[3] = dsoMB->IntraMB.LumaIntraPredModes[3];
-            }*/
         }
     }
-    else
-    {
-        pakMB->InterMB.SubMbShapes = 0;
-        pakMB->InterMbMode = inter_mb_mode[dsoMB->MbType];
+    else {
+        pakMB->InterMB.SubMbShapes = 0; // no sub shapes after dso
+        pakMB->InterMbMode = inter_mb_mode[dsoMB->MbType]; // derive split mode from mbtype
     }
 
     pakMB->TargetSizeInWord = 0xff;
@@ -193,7 +193,11 @@ const mfxI16Pair zeroMv = {0,0};
         mvn[neib] = &mvs->MB[umb].MV[nbl*5][list]; \
         isRefDif[neib] = (ref_idx != mbCode->MB[umb].InterMB.RefIdx[list][nbl]); \
     }
+// pmode==2 means bidirectional; nbl*5 makes z-index for corner 4x4 subblock of 8x8 block
 
+
+// MV prediction according to chapter 8.4.1 of H.264 spec
+//
 void MVPrediction(mfxI32 uMB, mfxI32 wmb, mfxI32 uMBx, mfxI32 uMBy, mfxU8 list, mfxU8 ref_idx,
     const mfxExtFeiEncMV* mvs, const mfxExtFeiPakMBCtrl* mbCode, mfxI16Pair *mvPred)
 {
@@ -234,6 +238,7 @@ void MVPrediction(mfxI32 uMB, mfxI32 wmb, mfxI32 uMBx, mfxI32 uMBy, mfxU8 list, 
     }
 }
 
+// Ref prediction according to chapter 8.4.1 of H.264 spec
 // for B 16x16
 void RefPrediction(mfxI32 uMB, mfxI32 wmb, mfxI32 uMBx, mfxI32 uMBy,
     const mfxExtFeiPakMBCtrl* mbCode, mfxU8* refs)
@@ -354,7 +359,6 @@ mfxStatus ResetDirect(iTask * task, iTaskPool *pTaskList)
     mfxI32 wmb = (fi->Width +15)>>4;
     mfxI32 hmb = (fi->Height+15)>>4;
 
-    //const mfxExtFeiSPS* sps = (mfxExtFeiSPS*)GetExtBuffer(task->outPAK.ExtParam, task->outPAK.NumExtParam, MFX_EXTBUFF_FEI_SPS);
     const mfxExtFeiPPS* pps = (mfxExtFeiPPS*)GetExtBuffer(task->outPAK.ExtParam, task->outPAK.NumExtParam, MFX_EXTBUFF_FEI_PPS);
     const mfxExtFeiSliceHeader* sliceHeader = (mfxExtFeiSliceHeader*)GetExtBuffer(task->outPAK.ExtParam, task->outPAK.NumExtParam, MFX_EXTBUFF_FEI_SLICE);
 
@@ -386,7 +390,7 @@ mfxStatus ResetDirect(iTask * task, iTaskPool *pTaskList)
             if (reftask) {
                 refmvs    = (mfxExtFeiEncMV*)GetExtBuffer(reftask->inPAK.ExtParam, reftask->inPAK.NumExtParam, MFX_EXTBUFF_FEI_ENC_MV);
                 refmbCode = (mfxExtFeiPakMBCtrl*)GetExtBuffer(reftask->inPAK.ExtParam, reftask->inPAK.NumExtParam, MFX_EXTBUFF_FEI_PAK_CTRL);
-                //if (!refmbCode && !refmvs) return MFX_ERR_INVALID_VIDEO_PARAM; // need it?
+                //if (!refmbCode && !refmvs) return MFX_ERR_INVALID_VIDEO_PARAM; // shouldn't happen
             }
         }
         if (slice >= sliceHeader->NumSlice) return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -406,7 +410,7 @@ mfxStatus ResetDirect(iTask * task, iTaskPool *pTaskList)
             mvSkip[0] = mvSkip[1] = zeroMv;
             refSkip[0] = 0;
             refSkip[1] = P_SLICE(sliceHeader->Slice[slice].SliceType) ? 255 :0;
-            // fill unused refidx unless fixed
+            // fill unused refidx with -1
             for (int sb=0; sb<4; sb++) {
                 mfxI32 modes = (smodes >> sb*2) & 3;
                 if (modes == 0) mbCode->MB[uMB].InterMB.RefIdx[1][sb] = (P_SLICE(sliceHeader->Slice[slice].SliceType)) ? 0 : 255;
@@ -419,7 +423,7 @@ mfxStatus ResetDirect(iTask * task, iTaskPool *pTaskList)
                         (mvs->MB[uMB-1].MV[5][0].x | mvs->MB[uMB-1].MV[5][0].y) != 0) &&
                     (mbCode->MB[uMB-wmb].IntraMbFlag || mbCode->MB[uMB-wmb].InterMB.RefIdx[0][2] != 0 ||
                         (mvs->MB[uMB-wmb].MV[10][0].x | mvs->MB[uMB-wmb].MV[10][0].y) != 0) )
-                {
+                { // left and top neighbour MVs are !0
                     MVPrediction(uMB, wmb, uMBx, uMBy, 0, 0, mvs, mbCode, &mvSkip[0]);
                     refSkip[1] = 255;
                     canSkip = (mbCode->MB[uMB].InterMbMode == 0 && mbCode->MB[uMB].InterMB.RefIdx[0][0] == 0 &&
@@ -460,7 +464,6 @@ mfxStatus ResetDirect(iTask * task, iTaskPool *pTaskList)
                             {
                                 zeroPred[0] = (refSkip[0] == 0);
                                 zeroPred[1] = (refSkip[1] == 0);
-                                //refine->sbTypeDirect[sb] = 3; // 4x4
                             }
                         }
                         mvDirect[0][bl] = (refSkip[0] < 32 && !zeroPred[0]) ? mvSkip[0] : zeroMv;
@@ -484,6 +487,7 @@ mfxStatus ResetDirect(iTask * task, iTaskPool *pTaskList)
 
             } // direct predictors for B
 
+            // for 8x8 mode populate MV inside 8x8 block from 1st subblock, if there were subshapes
             mfxFeiPakMBCtrl& mb = mbCode->MB[uMB];
             mfxExtFeiEncMV::mfxExtFeiEncMVMB& mv = mvs->MB[uMB];
             if ( mb.InterMbMode == 3 && mb.InterMB.SubMbShapes != 0) {
@@ -496,19 +500,23 @@ mfxStatus ResetDirect(iTask * task, iTaskPool *pTaskList)
             mb.InterMB.SubMbShapes = 0;
 
             // mark directs
-            mb.Direct8x8Pattern = 0;
+            mb.Direct8x8Pattern = 0; // used only with B_8x8
             if (B_SLICE(sliceHeader->Slice[slice].SliceType)) {
-                if (canSkip) { // to be direct
+                if (canSkip) {
+                    // to be 16x16 direct (all sb are direct)
+                    // for PAK we set it as B_8x8 and all 4 sb marked as direct
+                    // PAK will code it as direct16x16 or skip16x16
                     mb.MbType = 22;
                     mb.InterMbMode = 3;
                     mb.Direct8x8Pattern = 15;
                 } else if (mb.InterMbMode == 3) for (int bl = 0; bl < 4; bl++) {
+                    // for B_8x8 mark direct sb
                     if (canSkipSb[bl])
                         mb.Direct8x8Pattern |= 1 << bl;
                 }
             }
 
-            // TODO: try recombination, at least after sub-shapes changed to 0, better to count coded MV
+            // recombination: after sub-shapes changed to 0, some splits can be eliminated
             if (mb.InterMbMode != 0 && mb.Direct8x8Pattern != 15) {
                 mfxU32 newmode = mb.InterMbMode;
                 bool difx0 = (mb.InterMB.RefIdx[0][0] != mb.InterMB.RefIdx[0][1]) || (mv.MV[0][0].x != mv.MV[4][0].x)  ||  (mv.MV[0][0].y != mv.MV[4][0].y);
@@ -525,20 +533,21 @@ mfxStatus ResetDirect(iTask * task, iTaskPool *pTaskList)
                     if (!dify0 && !dify1) newmode = 0; //16x16
                     else newmode = 1; //16x8
                 else if (!dify0 && !dify1) newmode = 2; //8x16
-                if (newmode != mb.InterMbMode) {
-                    mb.Direct8x8Pattern = 0; // anyway not 8x8
+
+                if (newmode != mb.InterMbMode) { // changed to bigger partitions. Have to derive MbType
+                    mb.Direct8x8Pattern = 0;     // anyway not 8x8
                     if (P_SLICE(sliceHeader->Slice[slice].SliceType) || (mb.InterMB.RefIdx[1][0]>=32 && mb.InterMB.RefIdx[1][3]>=32)) // L0 only
-                        mb.MbType = newmode==0 ? 1 : newmode + 3; // 012 -> 145
+                        mb.MbType = newmode==0 ? 1 : newmode + 3; // 012 -> 145 (P types mapped to B types)
                     else { // B-modes
-                        int p0 = (mb.InterMB.RefIdx[0][0]<32) + 2*(mb.InterMB.RefIdx[1][0]<32);
-                        int p1 = (mb.InterMB.RefIdx[0][3]<32) + 2*(mb.InterMB.RefIdx[1][3]<32);
-                        if (newmode==0)
+                        int p0 = (mb.InterMB.RefIdx[0][0]<32) + 2*(mb.InterMB.RefIdx[1][0]<32); // 1st partition type
+                        int p1 = (mb.InterMB.RefIdx[0][3]<32) + 2*(mb.InterMB.RefIdx[1][3]<32); // 2nd partition type
+                        if (newmode==0) // 16x16
                             mb.MbType = p0;
-                        else if (p0==1)
+                        else if (p0==1) // 1st partition is fwd
                             mb.MbType = p1 * 4 + newmode-1;
-                        else if (p0==3)
+                        else if (p0==3) // 1st partition is bidir
                             mb.MbType = p1 * 2 + newmode-1 + 14;
-                        else // p0==2
+                        else // p0==2 // bwd
                             mb.MbType = ((p1==1) ? 10 : ((p1==2) ? 6 : 14)) + newmode-1;
                     }
                 }
@@ -559,18 +568,18 @@ mfxStatus ResetDirect(iTask * task, iTaskPool *pTaskList)
             int smodes = mbCode->MB[uMB].InterMB.SubMbPredModes, newsmodes = smodes;
             switch (mbCode->MB[uMB].InterMbMode) {
                 case 0:
-                    newsmodes = smodes&3;
+                    newsmodes = smodes&3; // Aaaa
                     break;
                 case 1:
-                    newsmodes = (smodes>>2)&15;
+                    newsmodes = (smodes>>2)&15; // aABb
                     break;
                 case 2:
-                    newsmodes = smodes&15;
+                    newsmodes = smodes&15; // ABab
                     break;
-                default: break;
+                default: break; // nothing to do for 8x8 // ABCD
             }
-            if (smodes != newsmodes)
-                mbCode->MB[uMB].InterMB.SubMbPredModes = (mfxU8)newsmodes;
+            //if (smodes != newsmodes)
+            mbCode->MB[uMB].InterMB.SubMbPredModes = (mfxU8)newsmodes;
         }
     }
 
