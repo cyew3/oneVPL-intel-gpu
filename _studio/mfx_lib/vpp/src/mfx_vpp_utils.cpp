@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include <math.h>
@@ -1359,6 +1359,16 @@ mfxStatus GetPipelineList(
         pipelineList.push_back(MFX_EXTBUFF_VPP_DI_WEAVE);
     }
 
+    /* Field weaving/splitting cases:
+     */
+    if ((par->In.PicStruct & MFX_PICSTRUCT_FIELD_SINGLE) && !(par->Out.PicStruct & MFX_PICSTRUCT_FIELD_SINGLE))
+    {
+        pipelineList.push_back(MFX_EXTBUFF_VPP_FIELD_WEAVING);
+    }
+    else if (!(par->In.PicStruct & MFX_PICSTRUCT_FIELD_SINGLE) && (par->Out.PicStruct & MFX_PICSTRUCT_FIELD_SINGLE))
+    {
+        pipelineList.push_back(MFX_EXTBUFF_VPP_FIELD_SPLITTING);
+    }
 
     /* ********************************************************************** */
     /* 2. optional filters, enabled by default, disabled by DO_NOT_USE        */
@@ -1467,7 +1477,7 @@ mfxStatus GetPipelineList(
                 !IsFilterFound(&pipelineList[0], (mfxU32)pipelineList.size(), configList[fIdx]) )
         {
             /* Add filter to the list.
-             * Don't care about duplicates, they will be eliminated by Reorder... calls below 
+             * Don't care about duplicates, they will be eliminated by Reorder... calls below
              */
             pipelineList.push_back(configList[fIdx]);
         } /* if( IsFilterFound( g_TABLE_CONFIG */
