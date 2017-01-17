@@ -1025,7 +1025,6 @@ mfxStatus VideoDECODEH264::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxF
         request->Info.FourCC = videoProcessing->Out.FourCC;
 
         request->Info.ChromaFormat = videoProcessing->Out.ChromaFormat;
-        request->Info.PicStruct = videoProcessing->Out.PicStruct;
         request->Info.Width = videoProcessing->Out.Width;
         request->Info.Height = videoProcessing->Out.Height;
         request->Info.CropX = videoProcessing->Out.CropX;

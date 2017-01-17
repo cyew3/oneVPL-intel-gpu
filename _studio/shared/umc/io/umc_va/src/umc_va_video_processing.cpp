@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_va_video_processing.h"
@@ -69,9 +69,10 @@ Status VideoProcessingVA::Init(mfxVideoParam * vpParams, mfxExtDecVideoProcessin
 
     pipelineBuf->output_region = &m_output_surf_region;
 
-    if (videoProcessing->FillBackground)
-        pipelineBuf->output_background_color = videoProcessing->V | (videoProcessing->U << 8) | (videoProcessing->Y << 16);
-    else
+    /* SFC does not support output_background_color for a while */
+    //if (videoProcessing->FillBackground)
+    //    pipelineBuf->output_background_color = videoProcessing->V | (videoProcessing->U << 8) | (videoProcessing->Y << 16);
+    //else
         pipelineBuf->output_background_color = 0;
 
     pipelineBuf->output_color_standard = VAProcColorStandardBT601;
