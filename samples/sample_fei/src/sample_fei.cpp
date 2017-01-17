@@ -111,10 +111,10 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-dblk_idc value] - value of DisableDeblockingIdc (default is 0), in range [0,2]\n"));
     msdk_printf(MSDK_STRING("   [-dblk_alpha value] - value of SliceAlphaC0OffsetDiv2 (default is 0), in range [-6,6]\n"));
     msdk_printf(MSDK_STRING("   [-dblk_beta value] - value of SliceBetaOffsetDiv2 (default is 0), in range [-6,6]\n"));
-    msdk_printf(MSDK_STRING("   [-chroma_qpi_offset first_offset] - first offset used for chroma qp in range [-12, 12] (used in PPS, pass_headers should be set)\n"));
-    msdk_printf(MSDK_STRING("   [-s_chroma_qpi_offset second_offset] - second offset used for chroma qp in range [-12, 12] (used in PPS, pass_headers should be set)\n"));
-    msdk_printf(MSDK_STRING("   [-constrained_intra_pred_flag] - use constrained intra prediction (default is off, used in PPS, pass_headers should be set)\n"));
-    msdk_printf(MSDK_STRING("   [-transform_8x8_mode_flag] - enables 8x8 transform, by default only 4x4 is used (used in PPS, pass_headers should be set)\n"));
+    msdk_printf(MSDK_STRING("   [-chroma_qpi_offset first_offset] - first offset used for chroma qp in range [-12, 12] (used in PPS)\n"));
+    msdk_printf(MSDK_STRING("   [-s_chroma_qpi_offset second_offset] - second offset used for chroma qp in range [-12, 12] (used in PPS)\n"));
+    msdk_printf(MSDK_STRING("   [-constrained_intra_pred_flag] - use constrained intra prediction (default is off, used in PPS)\n"));
+    msdk_printf(MSDK_STRING("   [-transform_8x8_mode_flag] - enables 8x8 transform, by default only 4x4 is used (used in PPS)\n"));
     msdk_printf(MSDK_STRING("   [-dstw width]  - destination picture width, invokes VPP resizing\n"));
     msdk_printf(MSDK_STRING("   [-dsth height] - destination picture height, invokes VPP resizing\n"));
     msdk_printf(MSDK_STRING("   [-perf] - switch on performance mode (disabled file operations, simplified predictors repacking)\n"));
@@ -1037,12 +1037,49 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
         pConfig->decodestreamoutFile = NULL;
     }
 
-    if (pConfig->bENCODE || pConfig->bENCPAK || pConfig->bOnlyENC || pConfig->bOnlyPAK){
+    if (pConfig->bENCODE || pConfig->bENCPAK || pConfig->bOnlyENC || pConfig->bOnlyPAK)
+    {
         if (!pConfig->CodecProfile)
-            pConfig->CodecProfile = 100; // MFX_PROFILE_AVC_HIGH
+            pConfig->CodecProfile = MFX_PROFILE_AVC_HIGH;
 
         if (!pConfig->CodecLevel)
-            pConfig->CodecLevel = 41;    // MFX_LEVEL_AVC_41
+            pConfig->CodecLevel = MFX_LEVEL_AVC_41;
+    }
+
+    /* The following three settings affects partitions: Transform8x8ModeFlag, IntraPartMask, CodecProfile.
+       Code below adjusts these parameters to avoid contradictions.
+
+       If Transform8x8ModeFlag is set to true it has priority, else Profile settings have top priority.
+    */
+
+    bool is_8x8part_present_profile = !(pConfig->CodecProfile == MFX_PROFILE_AVC_MAIN || (pConfig->CodecProfile & MFX_PROFILE_AVC_BASELINE));
+    bool is_8x8part_present_custom  = !(pConfig->IntraPartMask & 0x06);
+
+    if (is_8x8part_present_profile != is_8x8part_present_custom || is_8x8part_present_custom != pConfig->Transform8x8ModeFlag)
+    {
+        bool part_to_set = pConfig->Transform8x8ModeFlag || is_8x8part_present_profile;
+        const msdk_char* transfType = part_to_set ? MSDK_STRING("8x8 present") : MSDK_STRING("8x8 not present");
+        msdk_printf(MSDK_STRING("\nWARNING: Partitions settings are contradictory!\n"));
+        msdk_printf(MSDK_STRING("           Intra partition is set to: %s.\n"), transfType);
+
+        /*
+        IntraPartMask description from manual
+            This value specifies what block and sub - block partitions are enabled for intra MBs.
+            0x01 - 16x16 is disabled
+            0x02 - 8x8   is disabled
+            0x04 - 4x4   is disabled
+        */
+        if (!part_to_set)
+            pConfig->IntraPartMask |= 0x06;
+        else
+            pConfig->IntraPartMask ^= pConfig->IntraPartMask & 0x06;
+
+        pConfig->Transform8x8ModeFlag = part_to_set;
+
+        if (part_to_set && !is_8x8part_present_profile)
+        {
+            pConfig->CodecProfile = MFX_PROFILE_AVC_HIGH;
+        }
     }
 
     /* One slice by default */

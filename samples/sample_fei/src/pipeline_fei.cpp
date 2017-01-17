@@ -41,8 +41,8 @@ CEncodingPipeline::CEncodingPipeline(AppConfig* pAppConfig)
     , m_maxQueueLength(0)
     , m_log2frameNumMax(8)
     , m_frameCount(0)
-    , m_frameOrderIdrInDisplayOrder(0)
     , m_frameCountInEncodedOrder(0)
+    , m_frameOrderIdrInDisplayOrder(0)
     , m_frameType(PairU8((mfxU8)MFX_FRAMETYPE_UNKNOWN, (mfxU8)MFX_FRAMETYPE_UNKNOWN))
 
     , m_preencBufs(bufList(m_numOfFields))
@@ -1118,7 +1118,6 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
 
         int num_buffers = m_maxQueueLength + (m_appCfg.bDECODE ? m_decodePoolSize : 0) + (m_pVPP ? 2 : 0);
 
-        bool is_8x8tranform_forced = false;
         for (int k = 0; k < num_buffers; k++)
         {
             tmpForInit = new bufSet(m_numOfFields);
@@ -1189,21 +1188,6 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
                     feiPPS[fieldId].ChromaQPIndexOffset       = m_appCfg.ChromaQPIndexOffset;
                     feiPPS[fieldId].SecondChromaQPIndexOffset = m_appCfg.SecondChromaQPIndexOffset;
                     feiPPS[fieldId].Transform8x8ModeFlag      = m_appCfg.Transform8x8ModeFlag;
-                    /*
-                    IntraPartMask description from manual
-                    This value specifies what block and sub-block partitions are enabled for intra MBs.
-                    0x01 - 16x16 is disabled
-                    0x02 - 8x8 is disabled
-                    0x04 - 4x4 is disabled
-
-                    So on, there is additional condition for Transform8x8ModeFlag:
-                    If partitions below 16x16 present Transform8x8ModeFlag flag should be ON
-                     * */
-                    if (!(m_appCfg.IntraPartMask & 0x02) || !(m_appCfg.IntraPartMask & 0x04))
-                    {
-                        feiPPS[fieldId].Transform8x8ModeFlag = 1;
-                        is_8x8tranform_forced = true;
-                    }
 
                     memset(feiPPS[fieldId].ReferenceFrames, 0xffff, 16 * sizeof(mfxU16));
                 }
@@ -1416,11 +1400,6 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
             m_encodeBufs.AddSet(tmpForInit);
 
         } // for (int k = 0; k < num_buffers; k++)
-
-        if (is_8x8tranform_forced){
-            msdk_printf(MSDK_STRING("\nWARNING: Transform8x8ModeFlag enforced!\n"));
-            msdk_printf(MSDK_STRING("           Reason: IntraPartMask = %u, does not disable partitions below 16x16\n"), m_appCfg.IntraPartMask);
-        }
 
     } // if (m_appCfg.bENCODE)
 
