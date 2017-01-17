@@ -1827,7 +1827,8 @@ mfxStatus MfxHwH264Encode::CheckVideoParam(
         MFX_CHECK(extOpaq->In.NumSurface >= numFrameMin, MFX_ERR_INVALID_VIDEO_PARAM);
     }
 
-    checkSts = CheckVideoParamFEI(par);
+    sts = CheckVideoParamFEI(par);
+    MFX_CHECK(sts >= MFX_ERR_NONE, sts);
 
     return checkSts;
 }
