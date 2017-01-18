@@ -115,7 +115,7 @@ mfxStatus CommonCORE::FreeBuffer(mfxHDL mid)
 
 mfxStatus CommonCORE::AllocFrames(mfxFrameAllocRequest *request,
                                   mfxFrameAllocResponse *response,
-                                  mfxFrameSurface1 **pOpaqueSurface, 
+                                  mfxFrameSurface1 **pOpaqueSurface,
                                   mfxU32 NumOpaqueSurface)
 {
     m_bIsOpaqMode = true;
@@ -279,7 +279,7 @@ mfxStatus CommonCORE::LockFrame(mfxHDL mid, mfxFrameData *ptr)
 mfxStatus CommonCORE::GetFrameHDL(mfxHDL mid, mfxHDL* handle, bool ExtendedSearch)
 {
     mfxStatus sts;
-    try 
+    try
     {
         MFX_CHECK_HDL(mid);
         MFX_CHECK_NULL_PTR1(handle);
@@ -498,7 +498,7 @@ mfxStatus  CommonCORE::LockExternalFrame(mfxMemId mid, mfxFrameData *ptr, bool E
 mfxStatus  CommonCORE::GetExternalFrameHDL(mfxMemId mid, mfxHDL *handle, bool ExtendedSearch)
 {
     mfxStatus sts;
-    try 
+    try
     {
         MFX_CHECK_NULL_PTR1(handle);
 
@@ -527,7 +527,7 @@ mfxStatus  CommonCORE::UnlockExternalFrame(mfxMemId mid, mfxFrameData *ptr, bool
     mfxStatus sts;
     if(!ptr)
         return MFX_ERR_NULL_PTR;
-    try 
+    try
     {
         {
             UMC::AutomaticUMCMutex guard(m_guard);
@@ -616,16 +616,14 @@ mfxStatus CommonCORE::FreeMidArray(mfxFrameAllocator* pAlloc, mfxFrameAllocRespo
     MemIDMap::iterator it = m_RespMidQ.find(response->mids);
     if (m_RespMidQ.end() == it)
         return MFX_ERR_INVALID_HANDLE;
-    else
-    {
-        mfxFrameAllocResponse sResponse = *response;
-        mfxStatus sts;
-        sResponse.mids = it->second;
-        sts = (*pAlloc->Free)(pAlloc->pthis, &sResponse);
-        MFX_CHECK_STS(sts);
-        m_RespMidQ.erase(it);
-        return sts;
-    }
+
+    mfxFrameAllocResponse sResponse = *response;
+    mfxStatus sts;
+    sResponse.mids = it->second;
+    sts = (*pAlloc->Free)(pAlloc->pthis, &sResponse);
+    MFX_CHECK_STS(sts);
+    m_RespMidQ.erase(it);
+    return sts;
 }
 
 mfxStatus CommonCORE::RegisterMids(mfxFrameAllocResponse *response, mfxU16 memType, bool IsDefaultAlloc, mfxBaseWideFrameAllocator* pAlloc)
@@ -717,7 +715,7 @@ mfxStatus CommonCORE::GetHandle(mfxHandleType type, mfxHDL *handle)
 
 #if defined(_WIN32) || defined(_WIN64)
     // check error(s)
-    if (MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9 == type || 
+    if (MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9 == type ||
         MFX_HANDLE_D3D11_DEVICE == type)
     {
         if (m_hdl)
@@ -1416,7 +1414,7 @@ mfxStatus CommonCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurface
     bool isDstLocked = false;
 
     int copyFlag = COPY_SYS_TO_SYS;
-    
+
     if (NULL != pSrc->Data.MemId)
     {
         // lock external frame
@@ -1455,7 +1453,7 @@ mfxStatus CommonCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurface
     return MFX_ERR_NONE;
 }
 
-mfxStatus CommonCORE::CopyFrame(mfxFrameSurface1 *dst, mfxFrameSurface1 *src) 
+mfxStatus CommonCORE::CopyFrame(mfxFrameSurface1 *dst, mfxFrameSurface1 *src)
 {
     if(!dst || !src)
         return MFX_ERR_NULL_PTR;
@@ -1478,7 +1476,6 @@ mfxStatus CommonCORE::CopyFrame(mfxFrameSurface1 *dst, mfxFrameSurface1 *src)
             srcMemType |= MFX_MEMTYPE_EXTERNAL_FRAME;
 
         dstMemType |= MFX_MEMTYPE_EXTERNAL_FRAME;
-        
 
         sts = DoFastCopyWrapper(dst, dstMemType, src, srcMemType);
         MFX_CHECK_STS(sts);
@@ -1608,7 +1605,7 @@ bool CommonCORE::CheckOpaqueRequest(mfxFrameAllocRequest *request,
 
 }
 bool CommonCORE::IsOpaqSurfacesAlreadyMapped(mfxFrameSurface1 **pOpaqueSurface,
-                                             mfxU32 NumOpaqueSurface, 
+                                             mfxU32 NumOpaqueSurface,
                                              mfxFrameAllocResponse *response,
                                              bool ExtendedSearch)
 {
@@ -1622,29 +1619,20 @@ bool CommonCORE::IsOpaqSurfacesAlreadyMapped(mfxFrameSurface1 **pOpaqueSurface,
         // consistent already checked in CheckOpaqueRequest function
         if (oqp_it != m_OpqTbl.end())
         {
-            CorrespTbl::iterator ctbl_it;
-
-            m_pMemId.reset(new mfxMemId[2*NumOpaqueSurface]);
+            m_pMemId.reset(new mfxMemId[NumOpaqueSurface]);
             response->mids = m_pMemId.get();
             m_pMemId.pop();
 
             for (; i < NumOpaqueSurface; i++)
             {
                 oqp_it = m_OpqTbl.find(pOpaqueSurface[i]);
-                if (oqp_it != m_OpqTbl.end())
-                {
-                    ctbl_it = m_CTbl.find(oqp_it->second.Data.MemId);
-                    if (m_CTbl.end() == ctbl_it)
-                        return false;
-                    response->mids[i] = oqp_it->second.Data.MemId;
-                    response->mids[i+NumOpaqueSurface] = ctbl_it->second.InternalMid;
-                }
-                else
+                if (oqp_it == m_OpqTbl.end())
                     return false;
+
+                response->mids[i] = oqp_it->second.Data.MemId;
             }
 
             response->NumFrameActual = (mfxU16)NumOpaqueSurface;
-
 
             RefCtrTbl::iterator ref_it;
             for (ref_it = m_RefCtrTbl.begin(); ref_it != m_RefCtrTbl.end(); ref_it++)
@@ -1652,7 +1640,16 @@ bool CommonCORE::IsOpaqSurfacesAlreadyMapped(mfxFrameSurface1 **pOpaqueSurface,
                 if (IsEqual(*ref_it->first, *response))
                 {
                     ref_it->second++;
-                    m_RespMidQ.insert(pair<mfxMemId*, mfxMemId*>(response->mids, response->mids+NumOpaqueSurface));
+
+                    mfxFrameAllocResponse* opaq_response = ref_it->first;
+
+                    MemIDMap::iterator it = m_RespMidQ.find(opaq_response->mids);
+                    if (m_RespMidQ.end() == it)
+                        return false;
+
+                    mfxMemId * native_mids = it->second;
+
+                    m_RespMidQ.insert(pair<mfxMemId*, mfxMemId*>(response->mids, native_mids));
                     return true;
                 }
             }
@@ -1689,13 +1686,13 @@ bool CommonCORE::GetUniqID(mfxMemId& id)
             id = (mfxMemId)(count | (m_CoreId << 15));
             return true;
         }
-    }          
+    }
     return false;
 }
 
-bool  CommonCORE::SetCoreId(mfxU32 Id) 
+bool  CommonCORE::SetCoreId(mfxU32 Id)
 {
-    if (m_CoreId < (1 << 15)) 
+    if (m_CoreId < (1 << 15))
     {
         m_CoreId = Id;
         return true;
@@ -1707,7 +1704,7 @@ void* CommonCORE::QueryCoreInterface(const MFX_GUID &guid)
 {
     if (MFXIVideoCORE_GUID == guid)
         return (void*) this;
-    
+
     if (MFXIEXTERNALLOC_GUID == guid && m_bSetExtFrameAlloc)
         return &m_FrameAllocator.frameAllocator;
 
@@ -1724,7 +1721,7 @@ void CommonCORE::SetWrapper(void* pWrp)
     m_pWrp = (mfx_UMC_FrameAllocator *)pWrp;
 }
 
-mfxU16 CommonCORE::GetAutoAsyncDepth() 
+mfxU16 CommonCORE::GetAutoAsyncDepth()
 {
     return (mfxU16)vm_sys_info_get_cpu_num();
 }
