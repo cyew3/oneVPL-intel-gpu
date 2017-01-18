@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2017 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -1613,7 +1613,6 @@ mfxStatus MFXDecPipeline::DecodeHeader()
     // FourCC and picstruct must be the same as in decoded frame
     if (!m_extDecVideoProcessing.IsZero())
     {
-        m_extDecVideoProcessing->Out.PicStruct    = m_components[eDEC].m_params.mfx.FrameInfo.PicStruct;
         m_extDecVideoProcessing->Out.ChromaFormat = m_components[eDEC].m_params.mfx.FrameInfo.ChromaFormat;
         m_extDecVideoProcessing->Out.FourCC       = m_components[eDEC].m_params.mfx.FrameInfo.FourCC;
         m_inParams.FrameInfo.Width  = m_extDecVideoProcessing->Out.CropW;
@@ -4957,16 +4956,6 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 MFX_PARSE_INT(m_extDecVideoProcessing->Out.CropW, argv[0]);
                 argv ++;
                 MFX_PARSE_INT(m_extDecVideoProcessing->Out.CropH, argv[0]);
-            }
-            else if (m_OptProc.Check(argv[0], VM_STRING("-sfc_background"), VM_STRING("background params for SFC")))
-            {
-                MFX_CHECK(3 + argv < argvEnd);
-                argv ++;
-                MFX_PARSE_INT(m_extDecVideoProcessing->R, argv[0]);
-                argv ++;
-                MFX_PARSE_INT(m_extDecVideoProcessing->G, argv[0]);
-                argv ++;
-                MFX_PARSE_INT(m_extDecVideoProcessing->B, argv[0]);
             }
             else HANDLE_INT_OPTION(m_inParams.nInputBitdepth, VM_STRING("-i_bitdepth"), VM_STRING("bitdepth of input raw stream"))
             else HANDLE_BOOL_OPTION(m_inParams.bDisableIpFieldPair, VM_STRING("-disable_ip_field_pair"), VM_STRING("disable i/p field pair"));
