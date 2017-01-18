@@ -66,8 +66,8 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("   If codecid is jpeg, -q option is mandatory.)\n"));
     msdk_printf(MSDK_STRING("Options: \n"));
     MOD_ENC_PRINT_HELP;
-    msdk_printf(MSDK_STRING("   [-nv12|yuy2|p010|rgb4] - input color format (by default YUV420 is expected). YUY2 is for JPEG encode only\n"));
-    msdk_printf(MSDK_STRING("   [-ec::p010] - force P010 surfaces for encoder. Use for 10 bit HEVC encoding\n"));
+    msdk_printf(MSDK_STRING("   [-nv12|yuy2|p010|rgb4] - input color format (by default YUV420 is expected). YUY2 is for JPEG encode only.\n"));
+    msdk_printf(MSDK_STRING("   [-ec::p010] - force usage of P010 surfaces for encoder (conversion will be made if necessary). Use for 10 bit HEVC encoding\n"));
     msdk_printf(MSDK_STRING("   [-tff|bff] - input stream is interlaced, top|bottom fielf first, if not specified progressive is expected\n"));
     msdk_printf(MSDK_STRING("   [-bref] - arrange B frames in B pyramid reference structure\n"));
     msdk_printf(MSDK_STRING("   [-nobref] -  do not use B-pyramid (by default the decision is made by library)\n"));
@@ -951,9 +951,8 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         if (pParams->nWidth  != pParams->nDstWidth ||
             pParams->nHeight != pParams->nDstHeight ||
             pParams->nRotationAngle!=0)
-
         {
-            msdk_printf(MSDK_STRING("Region encode option is not compatible with VPP processing.\nRegion encoding is disabled\n"));
+            msdk_printf(MSDK_STRING("Region encode option is not compatible with VPP processing and rotation plugin.\nRegion encoding is disabled\n"));
             pParams->UseRegionEncode=false;
         }
     }

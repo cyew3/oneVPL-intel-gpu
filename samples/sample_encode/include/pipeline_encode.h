@@ -136,7 +136,8 @@ struct sInputParams
     mfxU16 InitialDelayInKB;
     mfxU16 GopOptFlag;
 
-    bool   bUncut;
+    bool bUncut;
+    bool isHEVCHW;
 
 #if defined (ENABLE_V4L2_SUPPORT)
     msdk_char DeviceName[MSDK_MAX_FILENAME_LEN];

@@ -424,6 +424,7 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     m_mfxEncParams.mfx.FrameInfo.FourCC       = pInParams->EncodeFourCC;
     m_mfxEncParams.mfx.FrameInfo.ChromaFormat = FourCCToChroma(pInParams->EncodeFourCC);
     m_mfxEncParams.mfx.FrameInfo.PicStruct    = pInParams->nPicStruct;
+    m_mfxEncParams.mfx.FrameInfo.Shift = (pInParams->isHEVCHW && m_mfxEncParams.mfx.FrameInfo.FourCC==MFX_FOURCC_P010) ? 1 : 0;
 
     // width must be a multiple of 16
     // height must be a multiple of 16 in case of frame picture and a multiple of 32 in case of field picture
@@ -524,7 +525,7 @@ mfxStatus CEncodingPipeline::InitMfxVppParams(sInputParams *pInParams)
         m_mfxVppParams.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
     }
 
-    m_mfxVppParams.vpp.In.PicStruct = pInParams->nPicStruct;;
+    m_mfxVppParams.vpp.In.PicStruct = pInParams->nPicStruct;
     ConvertFrameRate(pInParams->dFrameRate, &m_mfxVppParams.vpp.In.FrameRateExtN, &m_mfxVppParams.vpp.In.FrameRateExtD);
 
     // width must be a multiple of 16
@@ -544,6 +545,13 @@ mfxStatus CEncodingPipeline::InitMfxVppParams(sInputParams *pInParams)
     m_mfxVppParams.vpp.Out.FourCC    = pInParams->EncodeFourCC;
     m_mfxVppParams.vpp.In.ChromaFormat =  FourCCToChroma(m_mfxVppParams.vpp.In.FourCC);
     m_mfxVppParams.vpp.Out.ChromaFormat = FourCCToChroma(m_mfxVppParams.vpp.Out.FourCC);
+
+    //In case of HEVCHW 10-bits, we have to shift data to high bits
+    if(pInParams->isHEVCHW && m_mfxVppParams.vpp.Out.FourCC==MFX_FOURCC_P010)
+    {
+        m_mfxVppParams.vpp.Out.Shift = 1;
+        m_mfxVppParams.vpp.In.Shift = 0;
+    }
 
     // input frame info
 #if defined (ENABLE_V4L2_SUPPORT)
@@ -633,13 +641,16 @@ mfxStatus CEncodingPipeline::AllocFrames()
     MSDK_ZERO_MEMORY(VppRequest[0]);
     MSDK_ZERO_MEMORY(VppRequest[1]);
 
+    // Querying encoder
+    sts = GetFirstEncoder()->Query(&m_mfxEncParams, &m_mfxEncParams);
+    MSDK_CHECK_STATUS(sts, "Query (for encoder) failed");
+
     // Calculate the number of surfaces for components.
     // QueryIOSurf functions tell how many surfaces are required to produce at least 1 output.
     // To achieve better performance we provide extra surfaces.
     // 1 extra surface at input allows to get 1 extra output.
-
     sts = GetFirstEncoder()->QueryIOSurf(&m_mfxEncParams, &EncRequest);
-    MSDK_CHECK_STATUS(sts, "GetFirstEncoder failed");
+    MSDK_CHECK_STATUS(sts, "QueryIOSurf (for encoder) failed");
 
     if (!m_pmfxVPP)
     {
@@ -654,6 +665,10 @@ mfxStatus CEncodingPipeline::AllocFrames()
 
     if (m_pmfxVPP)
     {
+        // Querying VPP
+        sts = m_pmfxVPP->Query(&m_mfxVppParams, &m_mfxVppParams);
+        MSDK_CHECK_STATUS(sts, "m_pmfxVPP->Query failed");
+
         // VppRequest[0] for input frames request, VppRequest[1] for output frames request
         sts = m_pmfxVPP->QueryIOSurf(&m_mfxVppParams, VppRequest);
         MSDK_CHECK_STATUS(sts, "m_pmfxVPP->QueryIOSurf failed");
@@ -1174,6 +1189,9 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
         MSDK_CHECK_STATUS(sts, "LoadPlugin failed");
     }
 
+    // Check if we're working wiht HEVC_HW, we'll need that information in case of 10-bits mode 
+    pParams->isHEVCHW = AreGuidsEqual(pParams->pluginParams.pluginGuid, MFX_PLUGINID_HEVCE_HW);
+
     // set memory type
     m_memType = pParams->memType;
     m_nMemBuffer = pParams->nMemBuf;
@@ -1203,10 +1221,16 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     // or if different FourCC is set in InitMfxVppParams
     if (pParams->nWidth  != pParams->nDstWidth ||
         pParams->nHeight != pParams->nDstHeight ||
-        m_mfxVppParams.vpp.In.FourCC != m_mfxVppParams.vpp.Out.FourCC)
+        m_mfxVppParams.vpp.In.FourCC != m_mfxVppParams.vpp.Out.FourCC ||
+        (pParams->isHEVCHW && m_mfxVppParams.vpp.Out.FourCC==MFX_FOURCC_P010))
     {
         m_pmfxVPP = new MFXVideoVPP(m_mfxSession);
         MSDK_CHECK_POINTER(m_pmfxVPP, MFX_ERR_MEMORY_ALLOC);
+    }
+
+    if(pParams->isHEVCHW && m_mfxVppParams.vpp.Out.FourCC==MFX_FOURCC_P010)
+    {
+        msdk_printf(MSDK_STRING("Bitshifting is enabled because output format is HEVC 10bit and HW plugin is used\n"));
     }
 
     sts = ResetMFXComponents(pParams);
@@ -1582,6 +1606,7 @@ mfxStatus CEncodingPipeline::Run()
             {
                 sts = m_pmfxVPP->RunFrameVPPAsync(&m_pVppSurfaces[nVppSurfIdx], &m_pEncSurfaces[nEncSurfIdx],
                     NULL, &VppSyncPoint);
+
                 if (m_nMemBuffer)
                 {
                    // increment buffer index

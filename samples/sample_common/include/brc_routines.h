@@ -328,13 +328,15 @@ namespace HEVCExtBRC
     }
     inline mfxStatus Destroy(mfxExtBRC & m_BRC)
     {
-        MFX_CHECK(m_BRC.pthis != NULL, MFX_ERR_NONE);
-        delete (ExtBRC*)m_BRC.pthis;
-        m_BRC.Init = 0;
-        m_BRC.Reset = 0;
-        m_BRC.Close = 0;
-        m_BRC.GetFrameCtrl = 0;
-        m_BRC.Update = 0;
+        if(m_BRC.pthis != NULL)
+        {
+            delete (ExtBRC*)m_BRC.pthis;
+            m_BRC.Init = 0;
+            m_BRC.Reset = 0;
+            m_BRC.Close = 0;
+            m_BRC.GetFrameCtrl = 0;
+            m_BRC.Update = 0;
+        }
         return MFX_ERR_NONE;
     }
 }
