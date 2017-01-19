@@ -1957,13 +1957,10 @@ mfxStatus CTranscodingPipeline::InitEncMfxParams(sInputParams *pInParams)
     }
 
 #ifdef ENABLE_FUTURE_FEATURES
-    if (pInParams->nExtBRC == MFX_CODINGOPTION_ON && pInParams->EncodeId == MFX_CODEC_HEVC)
+    if (pInParams->nExtBRC == MFX_CODINGOPTION_ON &&
+        (pInParams->EncodeId == MFX_CODEC_HEVC || pInParams->EncodeId == MFX_CODEC_AVC))
     {
-        m_ExtBRC.Init = HEVCExtBRC::Init;
-        m_ExtBRC.Reset= HEVCExtBRC::Reset;
-        m_ExtBRC.Close= HEVCExtBRC::Close;
-        m_ExtBRC.GetFrameCtrl= HEVCExtBRC::GetFrameCtrl;
-        m_ExtBRC.Update= HEVCExtBRC::Update;
+        HEVCExtBRC::Create(m_ExtBRC);
         m_EncExtParams.push_back((mfxExtBuffer *)&m_ExtBRC);
     }
 #endif
@@ -1997,11 +1994,13 @@ MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
     }
 
     // configure and attach external parameters
-    if (pInParams->bLABRC || pInParams->nMaxSliceSize || pInParams->nBRefType)
+    if (pInParams->bLABRC || pInParams->nMaxSliceSize || pInParams->nBRefType
+        || (pInParams->nExtBRC && (pInParams->EncodeId == MFX_CODEC_HEVC || pInParams->EncodeId == MFX_CODEC_AVC)))
     {
         m_CodingOption2.LookAheadDepth = pInParams->nLADepth;
         m_CodingOption2.MaxSliceSize = pInParams->nMaxSliceSize;
         m_CodingOption2.BRefType = pInParams->nBRefType;
+        m_CodingOption2.ExtBRC = (pInParams->EncodeId == MFX_CODEC_HEVC || pInParams->EncodeId == MFX_CODEC_AVC) ? pInParams->nExtBRC : 0;
         m_EncExtParams.push_back((mfxExtBuffer *)&m_CodingOption2);
     }
 
