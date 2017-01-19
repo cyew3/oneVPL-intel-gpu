@@ -450,6 +450,7 @@
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\fei_encode_default_ref_lists.cpp">
       <Filter>Source Files\test_suites\FEI</Filter>
+    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\fei_encode_timestamp.cpp">
       <Filter>Source Files\test_suites\FEI</Filter>
     </ClCompile>
