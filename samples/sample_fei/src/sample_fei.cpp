@@ -1056,7 +1056,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
        If Transform8x8ModeFlag is set to true it has priority, else Profile settings have top priority.
     */
 
-    bool is_8x8part_present_profile = !(pConfig->CodecProfile == MFX_PROFILE_AVC_MAIN || (pConfig->CodecProfile & MFX_PROFILE_AVC_BASELINE));
+    bool is_8x8part_present_profile = !(pConfig->CodecProfile == MFX_PROFILE_AVC_MAIN || (pConfig->CodecProfile & MFX_PROFILE_AVC_BASELINE) == MFX_PROFILE_AVC_BASELINE);
     bool is_8x8part_present_custom  = !(pConfig->IntraPartMask & 0x06);
 
     if (is_8x8part_present_profile != is_8x8part_present_custom || is_8x8part_present_custom != pConfig->Transform8x8ModeFlag)
