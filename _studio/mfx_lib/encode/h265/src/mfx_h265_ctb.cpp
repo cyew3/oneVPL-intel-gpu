@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -5879,8 +5879,8 @@ void H265CU<PixType>::MeSubPelBatchedDia(const H265MEInfo *meInfo, const AmvpInf
 
 #define CompareFastCosts(costFast, bestFastCost, testPos, shift, bestPos, bestmvCost, bestmv) { \
    if(costFast<bestFastCost) {                                                                  \
-        H265MV tmpMv = {mvCenter.mvx+((Ipp16s)tab_mePatternSelector[1][testPos+1][0]<<shift),   \
-                        mvCenter.mvy+((Ipp16s)tab_mePatternSelector[1][testPos+1][1]<<shift)};  \
+        H265MV tmpMv = {(Ipp16s)(mvCenter.mvx+((Ipp16s)tab_mePatternSelector[1][testPos+1][0]<<shift)),   \
+                        (Ipp16s)(mvCenter.mvy+((Ipp16s)tab_mePatternSelector[1][testPos+1][1]<<shift))};  \
         Ipp32s tmpMvCost = MvCost1RefLog(tmpMv.mvx, tmpMv.mvy, predInfo, m_rdLambdaSqrt);       \
         costFast += tmpMvCost;                                                                  \
         if(costFast<bestFastCost) {                                                             \
@@ -8317,11 +8317,11 @@ Ipp32s H265CU<PixType>::MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx)
                     for (Ipp32s sadIdx0 = 0; sadIdx0 < 9; sadIdx0++) {
                         Ipp16s dx = DXDY[sadIdx0].x;
                         Ipp16s dy = DXDY[sadIdx0].y;
-                        H265MV mv0 = {cmMv32[0].x + dx, cmMv32[0].y + dy};
+                        H265MV mv0 = {(Ipp16s)(cmMv32[0].x + dx), (Ipp16s)(cmMv32[0].y + dy)};
                         cmDist64[sadIdx0] = cmDist32[0][sadIdx0];
 
                         for (Ipp32s i = 1; i < 4; i++) {
-                            H265MV mv = {cmMv32[i].x - 1, cmMv32[i].y - 1};
+                            H265MV mv = {(Ipp16s)(cmMv32[i].x - 1), (Ipp16s)(cmMv32[i].y - 1)};
                             Ipp32s dmvx = mv0.mvx - mv.mvx;
                             Ipp32s dmvy = mv0.mvy - mv.mvy;
                             if (dmvx > 2 || dmvx < 0 || dmvy > 2 || dmvy < 0) {
