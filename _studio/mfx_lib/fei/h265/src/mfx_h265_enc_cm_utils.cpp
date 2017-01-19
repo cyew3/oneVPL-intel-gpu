@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -316,7 +316,7 @@ CmDevice * TryCreateCmDevicePtr(MFXCoreInterface * core, mfxU32 * version)
     CmDevice * device = 0;
 
     int result = CM_SUCCESS;
-	mfxU32 impl = par.Impl & 0x0700;
+    mfxU32 impl = par.Impl & 0x0700;
     if (impl == MFX_IMPL_VIA_D3D9)
     {
 #if defined(_WIN32) || defined(_WIN64)
@@ -494,19 +494,6 @@ mfxU8 ToU4U4(mfxU16 val) {
 
 void SetupMeControl(MeControl &ctrl, int width, int height, double lambda)
 {
-    const mfxU8 Diamond[56] = {
-        0x0F,0xF1,0x0F,0x12,//5
-        0x0D,0xE2,0x22,0x1E,//9
-        0x10,0xFF,0xE2,0x20,//13
-        0xFC,0x06,0xDD,//16
-        0x2E,0xF1,0x3F,0xD3,0x11,0x3D,0xF3,0x1F,//24
-        0xEB,0xF1,0xF1,0xF1,//28
-        0x4E,0x11,0x12,0xF2,0xF1,//33
-        0xE0,0xFF,0xFF,0x0D,0x1F,0x1F,//39
-        0x20,0x11,0xCF,0xF1,0x05,0x11,//45
-        0x00,0x00,0x00,0x00,0x00,0x00,//51
-    };
-
     small_memcpy(ctrl.longSp, Diamond, IPP_MIN(sizeof(Diamond), sizeof(ctrl.longSp)));
     ctrl.longSpLenSp = 16;
     ctrl.longSpMaxNumSu = 57;
