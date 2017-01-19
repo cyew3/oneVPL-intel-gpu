@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -1321,9 +1321,9 @@ struct isEqualRefFrame
 
 
 void H265Enc::DetermineQpMap_IFrame(FrameIter curr, FrameIter end, H265VideoParam& videoParam)
-{  
+{
     static const Ipp32f lmt_sc2[10] = { // lower limit of SFM(Rs,Cs) range for spatial classification
-        4.0, 9.0, 15.0, 23.0, 32.0, 42.0, 53.0, 65.0, 78, INT_MAX};
+        4.0, 9.0, 15.0, 23.0, 32.0, 42.0, 53.0, 65.0, 78, static_cast<Ipp32f>(INT_MAX)};
     const Ipp32s futr_qp = MAX_DQP;
 
     Frame* inFrame = *curr;
@@ -1437,7 +1437,7 @@ void H265Enc::DetermineQpMap_IFrame(FrameIter curr, FrameIter end, H265VideoPara
 void H265Enc::DetermineQpMap_PFrame(FrameIter begin, FrameIter curr, FrameIter end, H265VideoParam & videoParam)
 {
     static const Ipp32f lmt_sc2[10] = { // lower limit of SFM(Rs,Cs) range for spatial classification
-        4.0, 9.0, 15.0, 23.0, 32.0, 42.0, 53.0, 65.0, 78, INT_MAX};
+        4.0, 9.0, 15.0, 23.0, 32.0, 42.0, 53.0, 65.0, 78, static_cast<Ipp32f>(INT_MAX)};
     FrameIter itCurr = curr;
     Frame* inFrame = *curr;
     Frame* past_frame = *begin;
