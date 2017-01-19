@@ -41,7 +41,9 @@ CEncodingPipeline::CEncodingPipeline(AppConfig* pAppConfig)
     , m_maxQueueLength(0)
     , m_log2frameNumMax(8)
     , m_frameCount(0)
+#ifdef ENABLE_FUTURE_FEATURES
     , m_frameCountInEncodedOrder(0)
+#endif
     , m_frameOrderIdrInDisplayOrder(0)
     , m_frameType(PairU8((mfxU8)MFX_FRAMETYPE_UNKNOWN, (mfxU8)MFX_FRAMETYPE_UNKNOWN))
 
@@ -179,27 +181,30 @@ mfxStatus CEncodingPipeline::Init()
         MSDK_CHECK_STATUS(sts, "ENCPAK: Parameters initialization failed");
         m_commonFrameInfo = m_pFEI_ENCPAK->GetCommonVideoParams()->mfx.FrameInfo;
     }
+
+#ifdef ENABLE_FUTURE_FEATURES
     //BRC for PAK only
     if (m_appCfg.bOnlyPAK && m_appCfg.RateControlMethod == MFX_RATECONTROL_VBR)
     {
         //prepare mfxVideoParam for BRC
-        mfxVideoParam tmp =  *m_appCfg.PipelineCfg.pPakVideoParam;
+        mfxVideoParam tmp = *m_appCfg.PipelineCfg.pPakVideoParam;
         tmp.mfx.RateControlMethod = m_appCfg.RateControlMethod;
-        tmp.mfx.TargetKbps = m_appCfg.TargetKbps;
+        tmp.mfx.TargetKbps        = m_appCfg.TargetKbps;
 
         mfxExtCodingOption CO;
         MSDK_ZERO_MEMORY(CO);
         CO.Header.BufferId = MFX_EXTBUFF_CODING_OPTION;
         CO.Header.BufferSz = sizeof(mfxExtCodingOption);
         CO.NalHrdConformance = MFX_CODINGOPTION_OFF;
+
         mfxExtBuffer *ext = &CO.Header;
-        tmp.ExtParam = &ext; //ignor all other buffers
+        tmp.ExtParam    = &ext; //ignore all other buffers
         tmp.NumExtParam = 1;
 
         sts = m_BRC.Init(&tmp);
         MSDK_CHECK_STATUS(sts, "BRC initialization failed");
     }
-
+#endif
 
     sts = ResetMFXComponents();
     MSDK_CHECK_STATUS(sts, "ResetMFXComponents failed");
@@ -1213,10 +1218,10 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
                     for (mfxU16 numSlice = 0; numSlice < feiSliceHeader[fieldId].NumSlice; numSlice++)
                     {
                         feiSliceHeader[fieldId].Slice[numSlice].MBAddress = numSlice*(nMBrows*m_widthMB);
-                        feiSliceHeader[fieldId].Slice[numSlice].NumMBs     = (std::min)(nMBrows, nMBremain)*m_widthMB;
-                        feiSliceHeader[fieldId].Slice[numSlice].SliceType  = 0;
-                        feiSliceHeader[fieldId].Slice[numSlice].PPSId      = feiPPS ? feiPPS[fieldId].PPSId : 0;
-                        feiSliceHeader[fieldId].Slice[numSlice].IdrPicId   = 0;
+                        feiSliceHeader[fieldId].Slice[numSlice].NumMBs    = (std::min)(nMBrows, nMBremain)*m_widthMB;
+                        feiSliceHeader[fieldId].Slice[numSlice].SliceType = 0;
+                        feiSliceHeader[fieldId].Slice[numSlice].PPSId     = feiPPS ? feiPPS[fieldId].PPSId : 0;
+                        feiSliceHeader[fieldId].Slice[numSlice].IdrPicId  = 0;
 
                         feiSliceHeader[fieldId].Slice[numSlice].CabacInitIdc = 0;
                         mfxU32 initQP = (m_appCfg.QP != 0) ? m_appCfg.QP : 26;
@@ -1536,6 +1541,7 @@ mfxStatus CEncodingPipeline::Run()
 
         if (m_appCfg.bENCPAK || m_appCfg.bOnlyPAK || m_appCfg.bOnlyENC)
         {
+#ifdef ENABLE_FUTURE_FEATURES
             mfxBRCFrameParam BRCPar;
             mfxBRCFrameCtrl BRCCtrl;
             MSDK_ZERO_MEMORY(BRCPar);
@@ -1550,6 +1556,7 @@ mfxStatus CEncodingPipeline::Run()
                 MSDK_BREAK_ON_ERROR(sts);
                 m_appCfg.QP = BRCCtrl.QpY;
             }
+#endif
 
             sts = m_pFEI_ENCPAK->EncPakOneFrame(eTask);
             if (sts == MFX_ERR_GPU_HANG)
@@ -1560,6 +1567,7 @@ mfxStatus CEncodingPipeline::Run()
             }
             MSDK_BREAK_ON_ERROR(sts);
 
+#ifdef ENABLE_FUTURE_FEATURES
             if (m_appCfg.RateControlMethod == MFX_RATECONTROL_VBR){
                 //update QP
                 BRCPar.CodedFrameSize = eTask->EncodedFrameSize;
@@ -1571,6 +1579,7 @@ mfxStatus CEncodingPipeline::Run()
                     break;
                 }
             }
+#endif
         }
 
         if (m_appCfg.bENCODE)

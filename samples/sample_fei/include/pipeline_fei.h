@@ -34,7 +34,9 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include "mfx_itt_trace.h"
 
+#ifdef ENABLE_FUTURE_FEATURES
 #include "brc_routines.h"
+#endif
 
 // Extensions for internal use, normally these macros are blank
 #ifdef MOD_FEI
@@ -64,8 +66,8 @@ public:
 protected:
     AppConfig   m_appCfg; // this structure holds information about current pipeline setup
 
-    iTaskPool   m_inputTasks; // pool of input tasks, used for reordering and reflists mnagement
-    iTaskParams m_taskInitializationParams; // holds all necessery data for task initializing
+    iTaskPool   m_inputTasks; // pool of input tasks, used for reordering and reflists management
+    iTaskParams m_taskInitializationParams; // holds all necessary data for task initializing
 
     mfxU16 m_nAsyncDepth; // depth of asynchronous pipeline (FEI supports only AsyncDepth = 1 fro current limitations)
     mfxU16 m_picStruct;
@@ -88,7 +90,9 @@ protected:
     mfxU16 m_maxQueueLength;
     mfxU16 m_log2frameNumMax;
     mfxU32 m_frameCount;
+#ifdef ENABLE_FUTURE_FEATURES
     mfxU32 m_frameCountInEncodedOrder;
+#endif
     mfxU32 m_frameOrderIdrInDisplayOrder;
     PairU8 m_frameType;
 
@@ -102,7 +106,7 @@ protected:
 
     // Dynamic Resolution Change workflow
     mfxU32 m_nDRC_idx;
-    bool m_bNeedDRC;   //True if Dynamic Resolution Change requied
+    bool m_bNeedDRC;   //True if Dynamic Resolution Change required
     std::vector<DRCblock> m_DRCqueue;
 
     bool m_insertIDR; // indicates forced-IDR
@@ -121,7 +125,9 @@ protected:
     MFX_DecodeInterface* m_pDECODE;
     YUVreader*           m_pYUVReader;
 
+#ifdef ENABLE_FUTURE_FEATURES
     ExtBRC               m_BRC;
+#endif
 
     MFXFrameAllocator*  m_pMFXAllocator;
     mfxAllocatorParams* m_pmfxAllocatorParams;

@@ -245,8 +245,10 @@ struct AppConfig
         , refDist(1)             // Only I frames
         , gopSize(1)             // Only I frames
         , QP(26)
+#ifdef ENABLE_FUTURE_FEATURES
         , RateControlMethod(MFX_RATECONTROL_CQP)
         , TargetKbps(0)
+#endif
         , numSlices(1)
         , numRef(1)              // One ref by default
         , NumRefActiveP(0)
@@ -343,8 +345,10 @@ struct AppConfig
     mfxU16 refDist; //number of frames to next I,P
     mfxU16 gopSize; //number of frames to next I
     mfxU8  QP;
+#ifdef ENABLE_FUTURE_FEATURES
     mfxU16 RateControlMethod;
     mfxU16 TargetKbps;
+#endif
     mfxU16 numSlices;
     mfxU16 numRef;           // number of reference frames (DPB size)
     mfxU16 NumRefActiveP;    // maximal number of references for P frames
@@ -355,7 +359,7 @@ struct AppConfig
     mfxU8  preencDSstrength; // downsample input before passing to preenc (2/4/8x are supported)
     bool   bDynamicRC;
 
-    mfxU16 SearchWindow; // search window size and search path from predifined presets
+    mfxU16 SearchWindow; // search window size and search path from predefined presets
     mfxU16 LenSP;        // search path length
     mfxU16 SearchPath;   // search path type
     mfxU16 RefWidth;     // search window width
