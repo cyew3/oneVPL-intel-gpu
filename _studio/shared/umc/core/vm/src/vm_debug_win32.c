@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 #if _MSC_VER >= 1600
@@ -202,7 +202,7 @@ void vm_debug_trace_ex(Ipp32s level,
 
     /* print 'this' pointer if needed */
     if ((vm_DebugLevel & VM_DEBUG_SHOW_THIS) && ptr_this) {
-        vm_string_sprintf(tmp + vm_string_strlen(tmp), VM_STRING("%08x, "), ptr_this);
+        vm_string_sprintf(tmp + vm_string_strlen(tmp), VM_STRING("%p, "), ptr_this);
     }
 
     /* print func_name if needed */
