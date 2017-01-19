@@ -345,7 +345,7 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
         (m_vPar.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
         useInternal = 1;
     else /* SFC can't be used */
-        videoProcessing = NULL;
+        return MFX_ERR_UNSUPPORTED;
 #endif
 
 #if defined (MFX_VA_OSX)
