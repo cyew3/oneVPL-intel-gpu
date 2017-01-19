@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -315,6 +315,8 @@ int TestSuite::RunTest_fourcc(const unsigned int id)
 
     if(MFX_FOURCC_P010 == fourcc || MFX_FOURCC_Y410 == fourcc)
         m_par.mfx.FrameInfo.BitDepthChroma = m_par.mfx.FrameInfo.BitDepthLuma = 10;
+    if (MFX_FOURCC_P010 == fourcc)
+        m_par.mfx.FrameInfo.Shift = 1;
     m_par_set = true; //we are not testing DecodeHeader here
 
     const tc_struct& tc = test_case[id];
