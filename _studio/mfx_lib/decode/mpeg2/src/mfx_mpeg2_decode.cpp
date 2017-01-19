@@ -2377,17 +2377,17 @@ mfxStatus VideoDECODEMPEG2InternalBase::ConstructFrameImpl(mfxBitstream *in, mfx
                 {
                     Ipp32u len = in->DataLength;
 
-                    const mfxU8* head = in->Data + in->DataOffset;
-                    const mfxU8* curr = FindStartCode(head, tail);
+                    head = in->Data + in->DataOffset;
+                    curr = FindStartCode(head, tail);
 
                     MFX_CHECK(curr >= head, MFX_ERR_UNDEFINED_BEHAVIOR);
 
                     // if start code found
                     if( (tail - curr) > 3 && 
-                        (curr[3] == eSEQ || 
-                         curr[3] == eEXT || 
-                         curr[3] == ePIC || 
-                         curr[3] == eEND || 
+                        (curr[3] == eSEQ ||
+                         curr[3] == eEXT ||
+                         curr[3] == ePIC ||
+                         curr[3] == eEND ||
                          curr[3] == eGROUP)
                       )
                     {
@@ -2515,8 +2515,8 @@ mfxStatus VideoDECODEMPEG2InternalBase::ConstructFrameImpl(mfxBitstream *in, mfx
 
                     Ipp32u len = in->DataLength;
 
-                    const mfxU8* head = in->Data + in->DataOffset;
-                    const mfxU8* curr = FindStartCode(head, tail);
+                    head = in->Data + in->DataOffset;
+                    curr = FindStartCode(head, tail);
 
                     MFX_CHECK(curr >= head, MFX_ERR_UNDEFINED_BEHAVIOR);
 
@@ -3476,11 +3476,11 @@ mfxStatus VideoDECODEMPEG2Internal_HW::PerformStatusCheck(void *pParam)
     MFX_CHECK_NULL_PTR1(pParam);
     MParam *parameters = (MParam *)pParam;
     Ipp32s disp_index = parameters->display_index;
-    Ipp32s curr_index    = parameters->curr_index;
+    Ipp32s current_index    = parameters->curr_index;
 
     if (disp_index < 0)
     {
-        GetStatusReport(parameters->surface_work, parameters->mid[curr_index]);
+        GetStatusReport(parameters->surface_work, parameters->mid[current_index]);
         return MFX_ERR_NONE;
     }
 
@@ -3499,7 +3499,7 @@ mfxStatus VideoDECODEMPEG2Internal_HW::PerformStatusCheck(void *pParam)
 
     mfxU16 isCorrupted = parameters->surface_out->Data.Corrupted;
     mfxU32 frameType = m_implUmc->GetFrameType(disp_index);
-    Ipp32s prev_index = m_implUmc->GetPrevDecodingIndex(disp_index);
+    Ipp32s previous_index = m_implUmc->GetPrevDecodingIndex(disp_index);
 
     if (isCorrupted && I_PICTURE == frameType)
         m_implUmc->SetCorruptionFlag(disp_index);
@@ -3517,7 +3517,7 @@ mfxStatus VideoDECODEMPEG2Internal_HW::PerformStatusCheck(void *pParam)
 
         default: // P_PICTURE
 
-            if (true == m_implUmc->GetCorruptionFlag(prev_index))
+            if (true == m_implUmc->GetCorruptionFlag(previous_index))
             {
                 m_implUmc->SetCorruptionFlag(disp_index);
                 parameters->surface_out->Data.Corrupted = MFX_CORRUPTION_REFERENCE_FRAME;
