@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_camera_plugin.h"
@@ -1587,7 +1587,8 @@ mfxStatus MFXCamera_Plugin::VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFram
         return MFX_ERR_MORE_DATA;
     if (!surface_out)
         return MFX_ERR_NULL_PTR;
-
+    m_core->IncreaseReference(&surface_in->Data);
+    m_core->IncreaseReference(&surface_out->Data);
     if(m_mfxVideoParam.IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY)
     {
         if(MFX_FOURCC_R16 == surface_in->Info.FourCC)

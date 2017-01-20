@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #if defined (_WIN32) || defined (_WIN64)
@@ -174,8 +174,6 @@ mfxStatus D3D11CameraProcessor::AsyncRoutine(AsyncParams *pParam)
 #ifdef CAMP_PIPE_ITT
     __itt_task_begin(CamPipeDX11, __itt_null, __itt_null, ASYNC);
 #endif    
-    m_core->IncreaseReference(&(pParam->surf_out->Data));
-    m_core->IncreaseReference(&(pParam->surf_in->Data));
 
     MfxHwVideoProcessing::mfxDrvSurface    tmpSurf   = {0};
     mfxU32 surfInIndex;
@@ -413,7 +411,10 @@ mfxStatus D3D11CameraProcessor::CompleteRoutine(AsyncParams * pParam)
         m_InSurfacePool->Unlock(pParam->surfInIndex );
         m_OutSurfacePool->Unlock(pParam->surfOutIndex);
         m_core->DecreaseReference(&(pParam->surf_out->Data));
-        m_core->DecreaseReference(&(pParam->surf_in->Data));
+        if (m_systemMemIn == false) 
+        {
+            m_core->DecreaseReference(&(pParam->surf_in->Data));
+        }
 #ifdef CAMP_PIPE_ITT
     __itt_task_end(CamPipeDX11);
 #endif
@@ -530,6 +531,7 @@ mfxStatus D3D11CameraProcessor::PreWorkInSurface(mfxFrameSurface1 *surf, mfxU32 
                                         MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET,
                                         &appInputSurface,
                                         MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY);
+        m_core->DecreaseReference(&surf->Data);
         MFX_CHECK_STS(sts);
         #ifdef CAMP_PIPE_ITT
             __itt_task_end(CamPipeDX11);
