@@ -410,6 +410,11 @@ mfxStatus CRegionEncodingPipeline::Init(sInputParams *pParams)
 
     // set memory type
     m_memType = pParams->memType;
+    m_nMemBuffer = pParams->nMemBuf;
+    m_nTimeout = pParams->nTimeout;
+
+    // If output isn't specified work in performance mode and do not insert idr
+    m_bCutOutput = pParams->dstFileBuff.size() ? !pParams->bUncut : false;
 
     // create and init frame allocator
     sts = CreateAllocator();
@@ -417,9 +422,6 @@ mfxStatus CRegionEncodingPipeline::Init(sInputParams *pParams)
 
     sts = InitMfxEncParams(pParams);
     MSDK_CHECK_STATUS(sts, "InitMfxEncParams failed");
-
-    sts = InitMfxVppParams(pParams);
-    MSDK_CHECK_STATUS(sts, "InitMfxVppParams failed");
 
     // MVC specific options
     if (MVC_ENABLED & m_MVCflags)
@@ -431,16 +433,6 @@ mfxStatus CRegionEncodingPipeline::Init(sInputParams *pParams)
     // create encoder
     sts = m_resources.CreateEncoders();
     MSDK_CHECK_STATUS(sts, "m_resources.CreateEncoders failed");
-
-    // create preprocessor if resizing was requested from command line
-    // or if different FourCC is set in InitMfxVppParams
-    if (pParams->nWidth  != pParams->nDstWidth ||
-        pParams->nHeight != pParams->nDstHeight ||
-        m_mfxVppParams.vpp.In.FourCC != m_mfxVppParams.vpp.Out.FourCC)
-    {
-        m_pmfxVPP = new MFXVideoVPP(m_resources[0].Session);
-        MSDK_CHECK_POINTER(m_pmfxVPP, MFX_ERR_MEMORY_ALLOC);
-    }
 
     sts = ResetMFXComponents(pParams);
     MSDK_CHECK_STATUS(sts, "ResetMFXComponents failed");
@@ -457,10 +449,7 @@ void CRegionEncodingPipeline::Close()
         msdk_printf(MSDK_STRING("\nEncode fps: %.2lf\n"), m_timeAll ? frameNum*((double)time_get_frequency())/m_timeAll : 0);
     }
 
-    MSDK_SAFE_DELETE(m_pmfxVPP);
-
     FreeMVCSeqDesc();
-    FreeVppDoNotUse();
 
     DeleteFrames();
 
@@ -485,13 +474,6 @@ mfxStatus CRegionEncodingPipeline::ResetMFXComponents(sInputParams* pParams)
             MSDK_IGNORE_MFX_STS(sts, MFX_ERR_NOT_INITIALIZED);
             MSDK_CHECK_STATUS(sts, "m_resources[i].pEncoder->Close failed");
         }
-    }
-
-    if (m_pmfxVPP)
-    {
-        sts = m_pmfxVPP->Close();
-        MSDK_IGNORE_MFX_STS(sts, MFX_ERR_NOT_INITIALIZED);
-        MSDK_CHECK_STATUS(sts, "m_pmfxVPP->Close failed");
     }
 
     // free allocated frames
@@ -519,21 +501,13 @@ mfxStatus CRegionEncodingPipeline::ResetMFXComponents(sInputParams* pParams)
         MSDK_CHECK_STATUS(sts, "m_resources[regId].pEncoder->Init failed");
     }
 
-    if (m_pmfxVPP)
-    {
-        sts = m_pmfxVPP->Init(&m_mfxVppParams);
-        if (MFX_WRN_PARTIAL_ACCELERATION == sts)
-        {
-            msdk_printf(MSDK_STRING("WARNING: partial acceleration\n"));
-            MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
-        }
-        MSDK_CHECK_STATUS(sts, "m_pmfxVPP->Init failed");
-    }
-
     mfxU32 nEncodedDataBufferSize = m_mfxEncParams.mfx.FrameInfo.Width * m_mfxEncParams.mfx.FrameInfo.Height * 4;
 
     sts = m_resources.InitTaskPools(m_FileWriters.first, m_mfxEncParams.AsyncDepth, nEncodedDataBufferSize, m_FileWriters.second);
     MSDK_CHECK_STATUS(sts, "m_resources.InitTaskPools failed");
+
+    sts = FillBuffers();
+    MSDK_CHECK_STATUS(sts, "FillBuffers failed");
 
     return MFX_ERR_NONE;
 }
@@ -552,51 +526,57 @@ mfxStatus CRegionEncodingPipeline::Run()
     sTask *pCurrentTask = NULL; // a pointer to the current task
     mfxU16 nEncSurfIdx = 0;     // index of free surface for encoder input (vpp output)
 
-//    mfxSyncPoint VppSyncPoint = NULL; // a sync point associated with an asynchronous vpp call
-    bool bVppMultipleOutput = false;  // this flag is true if VPP produces more frames at output
-                                      // than consumes at input. E.g. framerate conversion 30 fps -> 60 fps
-
-
     // Since in sample we support just 2 views
     // we will change this value between 0 and 1 in case of MVC
     mfxU16 currViewNum = 0;
 
     sts = MFX_ERR_NONE;
+    m_statOverall.StartTimeMeasurement();
 
     // main loop, preprocessing and encoding
     while (MFX_ERR_NONE <= sts || MFX_ERR_MORE_DATA == sts)
     {
         // find free surface for encoder input
-        nEncSurfIdx = GetFreeSurface(m_pEncSurfaces, m_EncResponse.NumFrameActual);
+        if (m_nMemBuffer)
+        {
+            nEncSurfIdx %= m_nMemBuffer;
+        }
+        else
+        {
+            nEncSurfIdx = GetFreeSurface(m_pEncSurfaces, m_EncResponse.NumFrameActual);
+        }
         MSDK_CHECK_ERROR(nEncSurfIdx, MSDK_INVALID_SURF_IDX, MFX_ERR_MEMORY_ALLOC);
 
         // point pSurf to encoder surface
         pSurf = &m_pEncSurfaces[nEncSurfIdx];
-        if (!bVppMultipleOutput)
-        {
-            // load frame from file to surface data
-            // if we share allocator with Media SDK we need to call Lock to access surface data and...
-            if (m_bExternalAlloc)
-            {
-                // get YUV pointers
-                sts = m_pMFXAllocator->Lock(m_pMFXAllocator->pthis, pSurf->Data.MemId, &(pSurf->Data));
-                MSDK_BREAK_ON_ERROR(sts);
-            }
+        pSurf->Info.FrameId.ViewId = currViewNum;
 
-            pSurf->Info.FrameId.ViewId = currViewNum;
-            sts = m_FileReader.LoadNextFrame(pSurf);
-            MSDK_BREAK_ON_ERROR(sts);
-            if (MVC_ENABLED & m_MVCflags) currViewNum ^= 1; // Flip between 0 and 1 for ViewId
+        m_statFile.StartTimeMeasurement();
+        sts = LoadNextFrame(pSurf);
+        m_statFile.StopTimeMeasurement();
 
-            // ... after we're done call Unlock
-            if (m_bExternalAlloc)
-            {
-                sts = m_pMFXAllocator->Unlock(m_pMFXAllocator->pthis, pSurf->Data.MemId, &(pSurf->Data));
-                MSDK_BREAK_ON_ERROR(sts);
-            }
-        }
+        if ( (MFX_ERR_MORE_DATA == sts) && !m_bTimeOutExceed)
+            continue;
+        if (MVC_ENABLED & m_MVCflags) currViewNum ^= 1; // Flip between 0 and 1 for ViewId
+        MSDK_BREAK_ON_ERROR(sts);
+
+        m_statFile.StopTimeMeasurement();
 
         timeCurMax = 0;
+        if (m_bFileWriterReset)
+        {
+            if (m_FileWriters.first)
+            {
+                sts = m_FileWriters.first->Reset();
+                MSDK_CHECK_STATUS(sts, "m_FileWriters.first->Reset failed");
+            }
+            if (m_FileWriters.second)
+            {
+                sts = m_FileWriters.second->Reset();
+                MSDK_CHECK_STATUS(sts, "m_FileWriters.second->Reset failed");
+            }
+            m_bFileWriterReset = false;
+        }
         for (int regId = 0; regId < m_resources.GetSize(); regId++)
         {
             // get a pointer to a free task (bit stream and sync point for encoder)
@@ -606,8 +586,15 @@ mfxStatus CRegionEncodingPipeline::Run()
             for (;;)
             {
                 timeCurStart = time_get_tick();
-                // at this point surface for encoder contains either a frame from file or a frame processed by vpp
-                sts = m_resources[regId].pEncoder->EncodeFrameAsync(NULL, &m_pEncSurfaces[nEncSurfIdx], &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
+                // at this point surface for encoder contains a frame from a file
+                InsertIDR(m_bInsertIDR);
+                sts = m_resources[regId].pEncoder->EncodeFrameAsync(&m_encCtrl, &m_pEncSurfaces[nEncSurfIdx], &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
+                m_bInsertIDR = false;
+
+                if ((sts != MFX_ERR_NOT_ENOUGH_BUFFER) && m_nMemBuffer)
+                {
+                    nEncSurfIdx++;
+                }
 
                 if (MFX_ERR_NONE < sts && !pCurrentTask->EncSyncP) // repeat the call if warning and no output
                 {
@@ -661,7 +648,9 @@ mfxStatus CRegionEncodingPipeline::Run()
             for (;;)
             {
                 timeCurStart = time_get_tick();
-                sts = m_resources[regId].pEncoder->EncodeFrameAsync(NULL, NULL, &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
+                InsertIDR(m_bInsertIDR);
+                sts = m_resources[regId].pEncoder->EncodeFrameAsync(&m_encCtrl, NULL, &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
+                m_bInsertIDR = false;
 
                 if (MFX_ERR_NONE < sts && !pCurrentTask->EncSyncP) // repeat the call if warning and no output
                 {
@@ -712,5 +701,6 @@ mfxStatus CRegionEncodingPipeline::Run()
     // report any errors that occurred in asynchronous part
     MSDK_CHECK_STATUS(sts, "Unexpected error!!");
 
+    m_statOverall.StopTimeMeasurement();
     return sts;
 }
