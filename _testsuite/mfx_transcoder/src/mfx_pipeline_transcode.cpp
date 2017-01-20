@@ -958,7 +958,6 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
         else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-MaxSliceSize"), VM_STRING("")))
         {
             mfxU32 val;
-            //file name that will be used for input after reseting encoder
             MFX_CHECK(1 + argv != argvEnd);
             MFX_PARSE_INT(val, argv[1]);
 
@@ -990,29 +989,22 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
         else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-IntRefCycleDist"), VM_STRING("")))
         {
             mfxU32 val;
-            //file name that will be used for input after reseting encoder
             MFX_CHECK(1 + argv != argvEnd);
             MFX_PARSE_INT(val, argv[1]);
 
             mfxExtCodingOption3 *pExt = NULL;
-
-            if (0 != val)
+            MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_CODING_OPTION3);
+            if (!ppExt)
             {
-                MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_CODING_OPTION3);
-                if (!ppExt)
-                {
-                    pExt = new mfxExtCodingOption3();
+                pExt = new mfxExtCodingOption3();
 
-                    pExt->Header.BufferId = MFX_EXTBUFF_CODING_OPTION3;
-                    pExt->Header.BufferSz = sizeof(mfxExtCodingOption3);
-                }
-                else
-                {
-                    pExt = reinterpret_cast<mfxExtCodingOption3 *>(ppExt->get());
-                }
+                pExt->Header.BufferId = MFX_EXTBUFF_CODING_OPTION3;
+                pExt->Header.BufferSz = sizeof(mfxExtCodingOption3);
             }
             else
-                return MFX_ERR_UNKNOWN;
+            {
+                pExt = reinterpret_cast<mfxExtCodingOption3 *>(ppExt->get());
+            }
 
             pExt->IntRefCycleDist = val;
             m_ExtBuffers.get()->push_back(pExt);
@@ -1022,29 +1014,23 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
         else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-IntRefCycleSize"), VM_STRING("")))
         {
             mfxU32 val;
-            //file name that will be used for input after reseting encoder
             MFX_CHECK(1 + argv != argvEnd);
             MFX_PARSE_INT(val, argv[1]);
 
             mfxExtCodingOption2 *pExt = NULL;
 
-            if (0 != val)
+            MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_CODING_OPTION2);
+            if (!ppExt)
             {
-                MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_CODING_OPTION2);
-                if (!ppExt)
-                {
-                    pExt = new mfxExtCodingOption2();
+                pExt = new mfxExtCodingOption2();
 
-                    pExt->Header.BufferId = MFX_EXTBUFF_CODING_OPTION2;
-                    pExt->Header.BufferSz = sizeof(mfxExtCodingOption2);
-                }
-                else
-                {
-                    pExt = reinterpret_cast<mfxExtCodingOption2 *>(ppExt->get());
-                }
+                pExt->Header.BufferId = MFX_EXTBUFF_CODING_OPTION2;
+                pExt->Header.BufferSz = sizeof(mfxExtCodingOption2);
             }
             else
-                return MFX_ERR_UNKNOWN;
+            {
+                pExt = reinterpret_cast<mfxExtCodingOption2 *>(ppExt->get());
+            }
 
             pExt->IntRefCycleSize = val;
             m_ExtBuffers.get()->push_back(pExt);
@@ -1054,7 +1040,6 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
         else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-IntRefType"), VM_STRING("")))
         {
             mfxU32 val;
-            //file name that will be used for input after reseting encoder
             MFX_CHECK(1 + argv != argvEnd);
             MFX_PARSE_INT(val, argv[1]);
 
@@ -1076,6 +1061,44 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             }
 
             pExt->IntRefType = val;
+            m_ExtBuffers.get()->push_back(pExt);
+
+            argv++;
+        }
+        else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-RecoveryPointSEI "), VM_STRING("")))
+        {
+            MFX_CHECK(1 + argv != argvEnd);
+
+            mfxU16 value = MFX_CODINGOPTION_UNKNOWN;
+            if (!vm_string_stricmp(argv[1], VM_STRING("on")) || !vm_string_stricmp(argv[1], VM_STRING("1")) || !vm_string_stricmp(argv[1], VM_STRING("16")))
+            {
+                value = MFX_CODINGOPTION_ON;
+            }
+            else if (!vm_string_stricmp(argv[1], VM_STRING("off")) || !vm_string_stricmp(argv[1], VM_STRING("0")) || !vm_string_stricmp(argv[1], VM_STRING("32")))
+            {
+                value = MFX_CODINGOPTION_OFF;
+            }
+            else
+            {
+                MFX_CHECK_SET_ERR(!VM_STRING("Wrong OPT_TRI_STATE"), PE_CHECK_PARAMS, MFX_ERR_UNKNOWN);
+            }
+
+            mfxExtCodingOption *pExt = NULL;
+            MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_CODING_OPTION);
+
+            if (!ppExt)
+            {
+                pExt = new mfxExtCodingOption();
+
+                pExt->Header.BufferId = MFX_EXTBUFF_CODING_OPTION;
+                pExt->Header.BufferSz = sizeof(mfxExtCodingOption);
+            }
+            else
+            {
+                pExt = reinterpret_cast<mfxExtCodingOption *>(ppExt->get());
+            }
+
+            pExt->RecoveryPointSEI = value;
             m_ExtBuffers.get()->push_back(pExt);
 
             argv++;
