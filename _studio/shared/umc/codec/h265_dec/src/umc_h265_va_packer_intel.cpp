@@ -354,7 +354,10 @@ namespace UMC_HEVC_DECODER
         for (int iDir = 0; iDir < 2; iDir++)
         {
             int index = 0;
-            const H265DecoderRefPicList::ReferenceInformation* pRefPicList = pCurrentFrame->GetRefPicList(sliceNum, iDir)->m_refPicList;
+            const UMC_HEVC_DECODER::H265DecoderRefPicList *pStartRefPicList = pCurrentFrame->GetRefPicList(sliceNum, iDir);
+            if (!pStartRefPicList)
+                return;
+            const H265DecoderRefPicList::ReferenceInformation* pRefPicList = pStartRefPicList->m_refPicList;
 
             EnumRefPicList eRefPicList = (iDir == 1 ? REF_PIC_LIST_1 : REF_PIC_LIST_0);
             for (int i = 0; i < pSlice->getNumRefIdx(eRefPicList); i++)
