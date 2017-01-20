@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -1069,7 +1069,7 @@ bool H265CU<PixType>::tryIntraRD(Ipp32s absPartIdx, Ipp32s depth, IntraLumaMode 
     for(Ipp32s ic=0; ic<numCand1; ic++) {
         Ipp32s mode = modes[ic].mode;
         PixType *pred = m_predIntraAll + mode * widthCu * widthCu;
-        float dc=0;
+        Ipp32f dc=0;
         if (mode < 2 || mode >= 18 || m_cuIntraAngMode == INTRA_ANG_MODE_GRADIENT && mode == 10)
             dc = h265_DiffDc(pSrc, m_pitchSrcLuma, pred, widthCu, widthCu);
         else
@@ -1100,7 +1100,7 @@ Ipp32s H265CU<PixType>::GetNumIntraRDModes(Ipp32s absPartIdx, Ipp32s depth, Ipp3
     } else if (widthPu == 8)  {
         if(m_SCid[depth][absPartIdx]>=5) NumModesForFullRD = 4;
     } else {
-                      NumModesForFullRD = 6;
+                                         NumModesForFullRD = 6;
     }
 
     if(numModes>1 && m_cslice->slice_type != I_SLICE && m_STC[depth][absPartIdx]<3 )
@@ -1123,6 +1123,7 @@ Ipp32s H265CU<PixType>::GetNumIntraRDModes(Ipp32s absPartIdx, Ipp32s depth, Ipp3
         
         numCand = MIN(numModes, NumModesForFullRD);
     }
+
     return numCand;
 }
 
@@ -1151,7 +1152,11 @@ void H265CU<PixType>::CheckIntraLuma(Ipp32s absPartIdx, Ipp32s depth)
     Ipp32s numModes = InitIntraLumaModes(absPartIdx, depth, 0, modes);
     numModes = FilterIntraLumaModesBySatd(absPartIdx, depth, 0, modes, numModes);
     bool tryIntra = true;
+#ifdef AMT_NEW_ICRA
+    if(m_par->TryIntra>=2 && m_cslice->slice_type != I_SLICE && !IsForceIntraIEF()) {
+#else
     if(m_par->TryIntra>=2 && m_cslice->slice_type != I_SLICE) {
+#endif
         tryIntra = tryIntraRD(absPartIdx, depth, modes);
     }
     if(m_par->TryIntra>=2 && tryIntra)

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -42,6 +42,10 @@
 #include "mfxdefs.h"
 #include "mfxla.h"
 #include "mfx_ext_buffers.h"
+
+#if defined(MFX_VA)
+#define AMT_NEW_ICRA
+#endif
 
 #define AMT_DQP_FIX
 #define AMT_HROI_PSY_AQ

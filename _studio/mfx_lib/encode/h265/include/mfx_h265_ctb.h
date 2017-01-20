@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -188,6 +188,7 @@ public:
 
     Ipp32s m_isRdoq;
 
+
     typedef typename GetHistogramType<PixType>::type HistType;
 
     H265VideoParam *m_par;
@@ -340,6 +341,19 @@ public:
     Ipp32s  m_SCid[5][MAX_NUM_PARTITIONS];
     Ipp32f  m_SCpp[5][MAX_NUM_PARTITIONS];
     Ipp32s  m_STC[5][MAX_NUM_PARTITIONS];
+    Ipp32f  m_bestInterSADpp;
+    Ipp32s  m_colocSTC;
+#ifdef AMT_NEW_ICRA
+    struct {
+        Ipp32s  sadBest[(MAX_CU_SIZE>>3)*(MAX_CU_SIZE>>3)];
+        Ipp32s  mvd[(MAX_CU_SIZE>>3)*(MAX_CU_SIZE>>3)];
+        bool    superPred;
+        bool    goodPred;
+        bool    badPred;
+        Ipp32s  splitHist[5];
+        bool    done;
+    } m_ief;
+#endif
     Ipp32s  m_mvdMax;
     Ipp32s  m_mvdCost;
     bool    m_bIntraCandInBuf;
@@ -882,9 +896,26 @@ public:
 
     void GetSpatialComplexity(Ipp32s absPartIdx, Ipp32s depth, Ipp32s partAddr, Ipp32s partDepth);
     Ipp32s GetSpatialComplexity(Ipp32s absPartIdx, Ipp32s depth, Ipp32s partAddr, Ipp32s partDepth, Ipp32f& SCpp) const;
-    Ipp32s GetSpatioTemporalComplexity(Ipp32s absPartIdx, Ipp32s depth, Ipp32s partAddr, Ipp32s partDepth);
-    Ipp32s GetSpatioTemporalComplexity(Ipp32s absPartIdx, Ipp32s depth, Ipp32s partAddr, Ipp32s partDepth, Ipp32s& scVal);
+    Ipp32s GetSpatioTemporalComplexity(Ipp32s absPartIdx, Ipp32s depth, Ipp32f *retSADpp = NULL) const;
+    Ipp32s GetSpatioTemporalComplexityPartAndScVal(Ipp32s absPartIdx, Ipp32s depth, Ipp32s partAddr, Ipp32s partDepth, Ipp32s& scVal) const;
     Ipp32s GetSpatioTemporalComplexityColocated(Ipp32s absPartIdx, Ipp32s depth, Ipp32s partAddr, Ipp32s partDepth, FrameData *ref) const;
+
+#ifdef AMT_NEW_ICRA
+    // IEFs
+    bool IsGoodPred(Ipp32f SCpp, Ipp32f SADpp, Ipp32f mvdAvg, Ipp32s hl, Ipp32s sub) const;
+    bool IsBadPred(Ipp32f SCpp, Ipp32f SADpp, Ipp32f mvdAvg) const;
+    // Support
+    void CmMvPred(mfxI16Pair *mv, Ipp32s p, Ipp32s x, Ipp32s y,  Ipp32s best_list, Ipp32s best_ref, Ipp32s puSize, Frame *colPic, mfxI16Pair &mvd_best) const;
+    void BestCmBlockDist(Ipp32s x, Ipp32s bX, Ipp32s y, Ipp32s bY, Ipp32s puSize, Ipp32s& dist_best, Ipp32s& best_list, Ipp32s& best_ref) const;
+    // Main
+    void InitIEFs();
+    bool HasIEF() const;
+    bool IsForceIntraIEF() const;
+    bool IsDisableIntraIEF() const;
+    bool IsDisableSkipIEF() const;
+    void CalcIEFs(Ipp32s absPartIdx, Ipp32s depth, Ipp32s partAddr, Ipp32s partDepth, Ipp8s qp, Ipp8u& splitMode);
+#endif
+    
     Ipp8u EncInterLumaTuGetBaseCBF(Ipp32u absPartIdx, Ipp32s offset, Ipp32s width, Ipp8s qp);
     void EncInterChromaTuGetBaseCBF(Ipp32u absPartIdx, Ipp32s offset, Ipp32s width, Ipp8u *nz, Ipp8s qp);
     bool TuMaxSplitInterHasNonZeroCoeff(Ipp32u absPartIdx, Ipp8u trIdxMax);
@@ -923,7 +954,8 @@ public:
     void SaveBestInterPredAndResid(Ipp32s absPartIdx, Ipp32s depth);
     void LoadBestInterPredAndResid(Ipp32s absPartIdx, Ipp32s depth);
 
-    Ipp8u GetAdaptiveIntraMinDepth(Ipp32s absPartIdx, Ipp32s depth, Ipp32s& maxSC);
+    Ipp8u GetIntraVar(Ipp32s absPartIdx, Ipp32s depth, Ipp32s& maxSC);
+    Ipp8u GetAdaptiveIntraMinDepth(Ipp32s absPartIdx, Ipp32s depth, Ipp8u IntraMinDepthSC, Ipp32s& maxSC);
 
     void GetAdaptiveMinDepth(Ipp32s absPartIdx, Ipp32s depth);
 

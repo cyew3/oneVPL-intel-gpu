@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -651,6 +651,11 @@ static void TaskLogDump()
         intParam.inputVideoMem = (mfxParam.IOPattern == VIDMEM) || (mfxParam.IOPattern == OPAQMEM && (opaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY) == 0);
 
         intParam.randomRepackThreshold = Ipp32s(optHevc.RepackProb / 100.0 * MYRAND_MAX);
+        intParam.bCalcIEFs = false;
+#ifdef AMT_NEW_ICRA
+        if (intParam.enableCmFlag && intParam.fastSkip && intParam.bitDepthLuma == 8 && intParam.BiPyramidLayers == 4)
+            intParam.bCalcIEFs = true;
+#endif
 
 #if defined(DUMP_COSTS_CU) || defined (DUMP_COSTS_TU)
         char fname[100];

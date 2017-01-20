@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
@@ -257,6 +257,8 @@ namespace H265Enc {
         // priority ROI
         Ipp16u numRoi;
         H265PriorityRoi roi[256];
+
+        bool   bCalcIEFs;
 
 #if defined(DUMP_COSTS_CU) || defined (DUMP_COSTS_TU)
         FILE *fp_cu;
