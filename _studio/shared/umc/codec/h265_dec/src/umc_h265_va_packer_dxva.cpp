@@ -53,6 +53,8 @@ namespace UMC_HEVC_DECODER
             return;
 
         H265Slice *pSlice = sliceInfo->GetSlice(0);
+        if (!pSlice)
+            return;
         const H265SeqParamSet *pSeqParamSet = pSlice->GetSeqParam();
         H265DecoderFrame *pCurrentFrame = pSlice->GetCurrentFrame();
 
