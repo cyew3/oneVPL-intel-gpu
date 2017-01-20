@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -1930,7 +1930,7 @@ mfxStatus VideoVPPHW::QueryIOSurf(
     caps = vpp_ddi->GetCaps();
 
     sts = ValidateParams(par, &caps, core);
-    if( MFX_WRN_FILTER_SKIPPED == sts )
+    if( MFX_WRN_FILTER_SKIPPED == sts || MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)
     {
         sts = MFX_ERR_NONE;
     }
