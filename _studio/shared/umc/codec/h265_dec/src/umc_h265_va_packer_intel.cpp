@@ -99,6 +99,8 @@ namespace UMC_HEVC_DECODER
     void PackerDXVA2intel::PackPicParams(const H265DecoderFrame *pCurrentFrame, H265DecoderFrameInfo * pSliceInfo, TaskSupplier_H265 *supplier)
     {
         H265Slice *pSlice = pSliceInfo->GetSlice(0);
+        if (!pSlice)
+            return;
         H265SliceHeader * sliceHeader = pSlice->GetSliceHeader();
         const H265SeqParamSet *pSeqParamSet = pSlice->GetSeqParam();
         const H265PicParamSet *pPicParamSet = pSlice->GetPicParam();
