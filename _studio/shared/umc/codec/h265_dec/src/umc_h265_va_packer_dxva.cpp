@@ -26,6 +26,7 @@ namespace UMC_HEVC_DECODER
     PackerDXVA2::PackerDXVA2(VideoAccelerator * va)
         : Packer(va)
         , m_statusReportFeedbackCounter(1)
+        , m_refFrameListCacheSize(0)
     {
     }
 
