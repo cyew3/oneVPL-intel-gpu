@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -14,7 +14,7 @@ Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
 namespace hevcd_query
 {
 
-class TestSuite : tsVideoDecoder
+class TestSuite : public tsVideoDecoder
 {
     static const mfxU32 max_num_ctrl     = 5;
     static const mfxU32 max_num_ctrl_par = 4;
