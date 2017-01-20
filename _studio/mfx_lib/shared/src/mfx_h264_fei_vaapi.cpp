@@ -1326,19 +1326,13 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
     UpdatePPS(task, fieldId, m_pps, m_reconQueue);
 
 
-    /* ENC & PAK has issue with reconstruct surface.
-     * How does it work right now?
-     * ENC & PAK has same surface pool, both for source and reconstructed surfaces,
-     * this surface pool should be passed to component when vaCreateContext() called on Init() stage.
-     * (1): Current source surface is equal to reconstructed surface. (src = recon surface)
-     * and this surface should be unchanged within ENC call.
-     * (2): ENC does not generate real reconstruct surface, but driver use surface ID to store
+    /* ENC & PAK surfaces management notes:
+     * (1): ENC does not generate real reconstruct surface, but driver use surface ID to store
      * additional internal information.
-     * (3): PAK generate real reconstruct surface. So, after PAK call content of source surfaces
-     * changed, inside already reconstructed surface. For me this is incorrect behavior.
-     * (4): Generated reconstructed surfaces become references and managed accordingly by application.
-     * (5): Library does not manage reference by itself.
-     * (6): And of course main rule: ENC (N number call) and PAK (N number call) should have same exactly
+     * (2): PAK generate real reconstruct surface.
+     * (3): Generated reconstructed surfaces become references and managed accordingly by application.
+     * (4): Library does not manage reference by itself.
+     * (5): And of course main rule: ENC (N number call) and PAK (N number call) should have same exactly
      * same reference /reconstruct list !
      * */
 
@@ -2200,21 +2194,15 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
     // Fill PPS
     UpdatePPS(task, fieldId, m_pps, m_reconQueue);
 
-    /* ENC & PAK has issue with reconstruct surface.
-     * How does it work right now?
-     * ENC & PAK has same surface pool, both for source and reconstructed surfaces,
-     * this surface pool should be passed to component when vaCreateContext() called on Init() stage.
-     * (1): Current source surface is equal to reconstructed surface. (src = recon surface)
-     * and this surface should be unchanged within ENC call.
-     * (2): ENC does not generate real reconstruct surface, but driver use surface ID to store
-     * additional internal information.
-     * (3): PAK generate real reconstruct surface. So, after PAK call content of source surfaces
-     * changed, inside already reconstructed surface. For me this is incorrect behavior.
-     * (4): Generated reconstructed surfaces become references and managed accordingly by application.
-     * (5): Library does not manage reference by itself.
-     * (6): And of course main rule: ENC (N number call) and PAK (N number call) should have same exactly
-     * same reference /reconstruct list !
-     * */
+    /* ENC & PAK surfaces management notes:
+    * (1): ENC does not generate real reconstruct surface, but driver use surface ID to store
+    * additional internal information.
+    * (2): PAK generate real reconstruct surface.
+    * (3): Generated reconstructed surfaces become references and managed accordingly by application.
+    * (4): Library does not manage reference by itself.
+    * (5): And of course main rule: ENC (N number call) and PAK (N number call) should have same exactly
+    * same reference /reconstruct list !
+    * */
 
     mfxHDL recon_handle;
     mfxSts = m_core->GetExternalFrameHDL(out->OutSurface->Data.MemId, &recon_handle);

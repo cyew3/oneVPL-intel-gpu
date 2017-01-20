@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -604,31 +604,32 @@ void UpdatePPS(
 {
     pps.frame_num = task.m_frameNum;
 
-    pps.pic_fields.bits.idr_pic_flag = (task.m_type[fieldId] & MFX_FRAMETYPE_IDR) ? 1 : 0;
+    pps.pic_fields.bits.idr_pic_flag       = (task.m_type[fieldId] & MFX_FRAMETYPE_IDR) ? 1 : 0;
     pps.pic_fields.bits.reference_pic_flag = (task.m_type[fieldId] & MFX_FRAMETYPE_REF) ? 1 : 0;
 
-    pps.CurrPic.TopFieldOrderCnt = task.GetPoc(TFIELD);
+    pps.CurrPic.TopFieldOrderCnt    = task.GetPoc(TFIELD);
     pps.CurrPic.BottomFieldOrderCnt = task.GetPoc(BFIELD);
     if (task.GetPicStructForEncode() != MFX_PICSTRUCT_PROGRESSIVE)
         pps.CurrPic.flags = TFIELD == fieldId ? VA_PICTURE_H264_TOP_FIELD : VA_PICTURE_H264_BOTTOM_FIELD;
     else
         pps.CurrPic.flags = 0;
 
-    mfxU32 i = 0;
+    mfxU32 i   = 0;
     mfxU32 idx = 0;
-    mfxU32 ref = 0;
+
 #if 1
     for( i = 0; i < task.m_dpb[fieldId].Size(); i++ )
     {
-        pps.ReferenceFrames[i].frame_idx = idx  = task.m_dpb[fieldId][i].m_frameIdx & 0x7f;
-        pps.ReferenceFrames[i].picture_id       = reconQueue[idx].surface;
-        pps.ReferenceFrames[i].flags            = task.m_dpb[fieldId][i].m_longterm ? VA_PICTURE_H264_LONG_TERM_REFERENCE : VA_PICTURE_H264_SHORT_TERM_REFERENCE;
-        pps.ReferenceFrames[i].TopFieldOrderCnt = task.m_dpb[fieldId][i].m_poc[0];
+        pps.ReferenceFrames[i].frame_idx = idx     = task.m_dpb[fieldId][i].m_frameIdx & 0x7f;
+        pps.ReferenceFrames[i].picture_id          = reconQueue[idx].surface;
+        pps.ReferenceFrames[i].flags               = task.m_dpb[fieldId][i].m_longterm ? VA_PICTURE_H264_LONG_TERM_REFERENCE : VA_PICTURE_H264_SHORT_TERM_REFERENCE;
+        pps.ReferenceFrames[i].TopFieldOrderCnt    = task.m_dpb[fieldId][i].m_poc[0];
         pps.ReferenceFrames[i].BottomFieldOrderCnt = task.m_dpb[fieldId][i].m_poc[1];
     }
 #else
     // [sefremov] Below RefPicList formation algo (based on active reference lists) shouldn't be used. For every frame MSDK should pass to driver whole DPB, not just active refs.
     // [sefremov] Driver immidiately releases DPB frame if it wasn't passed with RefPicList.
+    mfxU32 ref = 0;
     ArrayDpbFrame const & dpb = task.m_dpb[fieldId];
     ArrayU8x33 const & list0 = task.m_list0[fieldId];
     ArrayU8x33 const & list1 = task.m_list1[fieldId];
@@ -652,13 +653,14 @@ void UpdatePPS(
         pps.ReferenceFrames[i].BottomFieldOrderCnt = dpb[list1[ref] & 0x7f].m_poc[1];
     }
 #endif
+
     for (; i < 16; i++)
     {
-        pps.ReferenceFrames[i].picture_id = VA_INVALID_ID;
-        pps.ReferenceFrames[i].frame_idx = 0xff;
-        pps.ReferenceFrames[i].flags = VA_PICTURE_H264_INVALID;
-        pps.ReferenceFrames[i].TopFieldOrderCnt   = 0;
-        pps.ReferenceFrames[i].BottomFieldOrderCnt   = 0;
+        pps.ReferenceFrames[i].picture_id          = VA_INVALID_ID;
+        pps.ReferenceFrames[i].frame_idx           = 0xff;
+        pps.ReferenceFrames[i].flags               = VA_PICTURE_H264_INVALID;
+        pps.ReferenceFrames[i].TopFieldOrderCnt    = 0;
+        pps.ReferenceFrames[i].BottomFieldOrderCnt = 0;
     }
 } // void UpdatePPS(...)
 
@@ -681,8 +683,9 @@ void UpdatePPS(
         mfxExtCodingOptionDDI * extDdi      = GetExtBuffer(par);
         mfxExtCodingOption2   * extOpt2     = GetExtBuffer(par);
         mfxExtFeiSliceHeader  * extFeiSlice = GetExtBuffer(par, fieldId);
-        assert(extDdi != 0);
-        assert(extOpt2 != 0);
+        assert(extDdi      != 0);
+        assert(extOpt2     != 0);
+        assert(extFeiSlice != 0);
 
         SliceDivider divider = MakeSliceDivider(
             hwCaps.SliceStructure,

@@ -520,7 +520,7 @@ mfxStatus VideoPAK_PAK::Init(mfxVideoParam *par)
 
     m_recFrameOrder.resize(m_rec.NumFrameActual, 0xffffffff);
 
-    // Controlls for slice number through CO3 is not allowed
+    // Slice number control through CO3 is not allowed
     mfxExtCodingOption3 const * extOpt3 = GetExtBuffer(m_video);
     if (extOpt3)
     {
@@ -699,16 +699,6 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
     if (!mtype_second_field){ mtype_second_field = mtype_first_field & ~MFX_FRAMETYPE_IDR; }
 
     UMC::AutomaticUMCMutex guard(m_listMutex);
-
-    if ((mtype_first_field & MFX_FRAMETYPE_IDR) || (mtype_second_field & MFX_FRAMETYPE_IDR))
-    {
-        m_free.front().m_frameOrderIdr = input->InSurface->Data.FrameOrder;
-    }
-
-    if ((mtype_first_field & MFX_FRAMETYPE_I) || (mtype_second_field & MFX_FRAMETYPE_I))
-    {
-        m_free.front().m_frameOrderI = input->InSurface->Data.FrameOrder;
-    }
 
     m_free.front().m_yuv         = input->InSurface;
     //m_free.front().m_ctrl      = 0;
