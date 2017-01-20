@@ -65,6 +65,8 @@ namespace UMC_HEVC_DECODER
         compBuf->SetDataSize(sizeof(DXVA_PicParams_HEVC));
 
         H265Slice *pSlice = sliceInfo->GetSlice(0);
+        if (!pSlice)
+            return;
         H265SliceHeader *sliceHeader = pSlice->GetSliceHeader();
         const H265SeqParamSet *pSeqParamSet = pSlice->GetSeqParam();
         const H265PicParamSet *pPicParamSet = pSlice->GetPicParam();
