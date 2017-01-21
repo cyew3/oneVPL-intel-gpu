@@ -339,13 +339,15 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
      * (3): Tested on BXT platform only
      * (4): Only video memory supported (so, OPAQ memory does not supported!)
      * */
-    if ((videoProcessing) &&
-        (MFX_PICSTRUCT_PROGRESSIVE == m_vPar.mfx.FrameInfo.PicStruct) &&
-        (MFX_HW_BXT == m_core->GetHWType()) &&
-        (m_vPar.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
-        useInternal = 1;
-    else /* SFC can't be used */
-        return MFX_ERR_UNSUPPORTED;
+    if (videoProcessing)
+    {
+        if ((MFX_PICSTRUCT_PROGRESSIVE == m_vPar.mfx.FrameInfo.PicStruct) &&
+            (MFX_HW_BXT == m_core->GetHWType()) &&
+            (m_vPar.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
+            useInternal = 1;
+        else /* SFC can't be used */
+            return MFX_ERR_UNSUPPORTED;
+    }
 #endif
 
 #if defined (MFX_VA_OSX)
