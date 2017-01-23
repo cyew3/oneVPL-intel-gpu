@@ -75,7 +75,7 @@ void VP9MfxVideoParam::CalculateInternalParams()
 
 void VP9MfxVideoParam::SyncInternalParamToExternal()
 {
-    mfxU32 maxBrcVal32 = mfx.BufferSizeInKB; // buffer size is set by encoder for any BRC method
+    mfxU32 maxBrcVal32 = m_bufferSizeInKb; // buffer size is set by encoder for any BRC method
 
     if (IsBitrateBasedBRC(mfx.RateControlMethod))
     {
