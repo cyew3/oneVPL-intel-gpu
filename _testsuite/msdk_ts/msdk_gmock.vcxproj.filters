@@ -181,9 +181,6 @@
     <ClCompile Include="src\gmock\ts_vpp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\hevcd_res_change.cpp">
-      <Filter>Source Files\test_suites\hevcd</Filter>
-    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\hevcd_decode_frame_async.cpp">
       <Filter>Source Files\test_suites\hevcd</Filter>
     </ClCompile>
@@ -882,6 +879,9 @@
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\vp9e_multiref.cpp">
       <Filter>Source Files\test_suites\vp9e</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\hevcd_stream_change.cpp">
+      <Filter>Source Files\test_suites\hevcd</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

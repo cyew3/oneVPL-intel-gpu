@@ -296,6 +296,7 @@
     <ClCompile Include="src\gmock\test_suites\hevcd_frametype.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevcd_get_payload.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevcd_low_latency.cpp" />
+    <ClCompile Include="src\gmock\test_suites\hevcd_stream_change.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_close.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_encode_frame_async.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_gaa_close.cpp" />
@@ -404,7 +405,6 @@
     <ClCompile Include="src\gmock\test_suites\hevcd_pts.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevcd_query.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevcd_reset.cpp" />
-    <ClCompile Include="src\gmock\test_suites\hevcd_res_change.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevcd_corruption.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_close.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_composition.cpp" />
