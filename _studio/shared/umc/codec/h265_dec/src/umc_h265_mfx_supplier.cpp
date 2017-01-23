@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -539,10 +539,12 @@ mfxU32 CalculateFourcc(int codecProfile, mfxFrameInfo const* frameInfo)
     if (codecProfile > MFX_PROFILE_HEVC_REXT)
         return 0;
 
-#ifndef PRE_SI_TARGET_PLATFORM_GEN11
+#ifndef MFX_VA
     if (frameInfo->ChromaFormat > MFX_CHROMAFORMAT_YUV422)
-#else
+#elif defined(PRE_SI_TARGET_PLATFORM_GEN11)
     if (frameInfo->ChromaFormat > MFX_CHROMAFORMAT_YUV444)
+#else
+    if (frameInfo->ChromaFormat > MFX_CHROMAFORMAT_YUV420)
 #endif
         return 0;
 
@@ -556,7 +558,9 @@ mfxU32 CalculateFourcc(int codecProfile, mfxFrameInfo const* frameInfo)
             /* 8 bit */      /* 10 bit */
         { MFX_FOURCC_NV12, MFX_FOURCC_P010, 0, 0 }, //400
         { MFX_FOURCC_NV12, MFX_FOURCC_P010, 0, 0 }, //420
-#ifdef PRE_SI_TARGET_PLATFORM_GEN11
+#ifndef MFX_VA
+        { MFX_FOURCC_NV16, MFX_FOURCC_P210, 0, 0 }, //422
+#elif defined(PRE_SI_TARGET_PLATFORM_GEN11)
         { MFX_FOURCC_YUY2, MFX_FOURCC_Y210, 0, 0 }, //422
         { MFX_FOURCC_AYUV, MFX_FOURCC_Y410, 0, 0 }  //444
 #endif
@@ -672,6 +676,7 @@ bool CheckFourcc(mfxU32 fourcc, int codecProfile, mfxFrameInfo const* frameInfo)
                 break;
 
             case MFX_FOURCC_NV16:
+            case MFX_FOURCC_P210:
 #ifdef PRE_SI_TARGET_PLATFORM_GEN11
             case MFX_FOURCC_YUY2:
             case MFX_FOURCC_Y210:
@@ -1503,8 +1508,9 @@ bool MFX_CDECL MFX_Utility::CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType t
 #endif
 
     if (in->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12 &&
+        in->mfx.FrameInfo.FourCC != MFX_FOURCC_NV16 &&
         in->mfx.FrameInfo.FourCC != MFX_FOURCC_P010 &&
-        in->mfx.FrameInfo.FourCC != MFX_FOURCC_NV16
+        in->mfx.FrameInfo.FourCC != MFX_FOURCC_P210
 #ifdef PRE_SI_TARGET_PLATFORM_GEN11
         && in->mfx.FrameInfo.FourCC != MFX_FOURCC_YUY2
         && in->mfx.FrameInfo.FourCC != MFX_FOURCC_AYUV
