@@ -12,21 +12,6 @@
 #include "mfx_session.h"
 #include "mfx_task.h"
 
-#ifdef CAMP_PIPE_ITT
-#include "ittnotify.h"
-__itt_domain* CamPipe = __itt_domain_create(L"CamPipe");
-__itt_string_handle* task1 = __itt_string_handle_create(L"CreateEnqueueTasks");
-__itt_string_handle* taske = __itt_string_handle_create(L"WaitEvent");
-__itt_string_handle* tasks = __itt_string_handle_create(L"SetExtSurf");
-__itt_string_handle* task_destroy_surfup = __itt_string_handle_create(L"task_destroy_surfup");
-__itt_string_handle* destroyevent = __itt_string_handle_create(L"destroyevent");
-__itt_string_handle* destroyeventwowait = __itt_string_handle_create(L"destroyevenwowait");
-__itt_string_handle* VPPFrameSubmitmark = __itt_string_handle_create(L"VPPFrameSubmit");
-__itt_string_handle* VPPExecuteMark = __itt_string_handle_create(L"VPPExecute");
-__itt_string_handle* VPPAsyncRoutineMark = __itt_string_handle_create(L"VPPAsyncRoutine");
-__itt_string_handle* VPPCompleteRoutineMark = __itt_string_handle_create(L"VPPCompleteRoutine");
-#endif
-
 #include "mfx_plugin_module.h"
 #if defined(LINUX32) || defined(LINUX64)
 #include "plugin_version_linux.h"
@@ -38,6 +23,8 @@ PluginModuleTemplate g_PluginModule = {
     &MFXCamera_Plugin::Create,
     &MFXCamera_Plugin::CreateByDispatcher
 };
+
+#include <mfx_trace.h>
 
 #ifndef UNIFIED_PLUGIN
 MSDK_PLUGIN_API(MFXVPPPlugin*) mfxCreateVPPPlugin()
@@ -140,7 +127,8 @@ MFXCamera_Plugin::~MFXCamera_Plugin()
 
 mfxStatus MFXCamera_Plugin::PluginInit(mfxCoreInterface *core)
 {
-    CAMERA_DEBUG_LOG("PluginInit core = %p \n", core);
+    MFX_TRACE_INIT();
+    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_API);
 
     MFX_CHECK_NULL_PTR1(core);
     mfxCoreParam par;
@@ -201,6 +189,8 @@ mfxStatus MFXCamera_Plugin::PluginClose()
     {
         delete m_CameraProcessor;
     }
+
+    MFX_TRACE_CLOSE();
 
     if (m_createdByDispatcher)
     {
@@ -1520,9 +1510,7 @@ mfxStatus MFXCamera_Plugin::CameraRoutine(void *pState, void *pParam, mfxU32 thr
 
 mfxStatus MFXCamera_Plugin::CameraAsyncRoutine(AsyncParams *pParam)
 {
-#ifdef CAMP_PIPE_ITT
-    __itt_task_begin(CamPipe, __itt_null, __itt_null, VPPAsyncRoutineMark);
-#endif
+    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_API);
     mfxStatus sts = MFX_ERR_NONE;
     MFX_CHECK(m_isInitialized,   MFX_ERR_UNDEFINED_BEHAVIOR);
     MFX_CHECK(m_CameraProcessor, MFX_ERR_UNDEFINED_BEHAVIOR);
@@ -1532,17 +1520,13 @@ mfxStatus MFXCamera_Plugin::CameraAsyncRoutine(AsyncParams *pParam)
     MFX_CHECK_STS(sts);
 
     sts = m_CameraProcessor->AsyncRoutine(pParam);
-#ifdef CAMP_PIPE_ITT
-    __itt_task_end(CamPipe);
-#endif
+
     return sts;
 }
 
 mfxStatus MFXCamera_Plugin::CompleteCameraRoutine(void *pState, void *pParam, mfxStatus taskRes)
 {
-#ifdef CAMP_PIPE_ITT
-    __itt_task_begin(CamPipe, __itt_null, __itt_null, VPPCompleteRoutineMark);
-#endif
+    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_API);
     mfxStatus sts;
     taskRes;
     pState;
@@ -1553,10 +1537,8 @@ mfxStatus MFXCamera_Plugin::CompleteCameraRoutine(void *pState, void *pParam, mf
 
     if (pParam)
         delete (AsyncParams *)pParam; // not safe !!! ???
-#ifdef CAMP_PIPE_ITT
-    __itt_task_end(CamPipe);
-#endif
-     return sts;
+
+    return sts;
 }
 
 mfxStatus MFXCamera_Plugin::CompleteCameraAsyncRoutine(AsyncParams *pParam)
@@ -1576,9 +1558,7 @@ mfxStatus MFXCamera_Plugin::CompleteCameraAsyncRoutine(AsyncParams *pParam)
 
 mfxStatus MFXCamera_Plugin::VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFrameSurface1 *surface_out, mfxExtVppAuxData* /*aux*/, mfxThreadTask *mfxthreadtask)
 {
-#ifdef CAMP_PIPE_ITT
-    __itt_task_begin(CamPipe, __itt_null, __itt_null, VPPFrameSubmitmark);
-#endif
+    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_API);
     UMC::AutomaticUMCMutex guard(m_guard1);
     mfxStatus mfxRes = MFX_ERR_NONE;
     MFX_CHECK(m_isInitialized, MFX_ERR_NOT_INITIALIZED);
@@ -1668,17 +1648,13 @@ mfxStatus MFXCamera_Plugin::VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFram
     pParams->TCCParams        = m_TCCParams;
     pParams->RGBToYUVParams   = m_RGBToYUVParams;
     *mfxthreadtask = (mfxThreadTask*) pParams;
-#ifdef CAMP_PIPE_ITT
-    __itt_task_end(CamPipe);
-#endif
+
     return mfxRes;
 }
 
 mfxStatus MFXCamera_Plugin::Execute(mfxThreadTask task, mfxU32 uid_p, mfxU32 uid_a)
 {
-#ifdef CAMP_PIPE_ITT
-    __itt_task_begin(CamPipe, __itt_null, __itt_null, VPPExecuteMark);
-#endif
+    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_API);
     MFX_CHECK(m_isInitialized, MFX_ERR_NOT_INITIALIZED);
     MFX_CHECK(task, MFX_ERR_NULL_PTR);
 
@@ -1687,9 +1663,6 @@ mfxStatus MFXCamera_Plugin::Execute(mfxThreadTask task, mfxU32 uid_p, mfxU32 uid
     sts = CameraRoutine(this, task, uid_p, uid_a);
     MFX_CHECK_STS(sts);
     
-#ifdef CAMP_PIPE_ITT
-    __itt_task_end(CamPipe);
-#endif
     return sts;
 }
 

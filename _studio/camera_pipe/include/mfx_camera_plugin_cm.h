@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -201,6 +201,7 @@ public:
 
     int DestroyEvent( CmEvent*& e )
     {
+        MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_API);
         if(m_queue)
         {
             if (e)
@@ -214,6 +215,7 @@ public:
 
     int DestroyEventWithoutWait( CmEvent*& e )
     {
+        MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_API);
         if(m_queue)
         {
             return m_queue->DestroyEvent(e);

@@ -5,21 +5,11 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #if defined (_WIN32) || defined (_WIN64)
 #include "mfx_camera_plugin_dx9.h"
-
-#ifdef CAMP_PIPE_ITT
-#include "ittnotify.h"
-__itt_domain* CamPipeDX9         = __itt_domain_create(L"CamPipeDX9");
-__itt_string_handle* GPUCOPYDX9  = __itt_string_handle_create(L"GPUCOPY");
-__itt_string_handle* DDIEXECDX9  = __itt_string_handle_create(L"DDIEXEC");
-__itt_string_handle* STALLDX9    = __itt_string_handle_create(L"STALL");
-__itt_string_handle* ASYNCDX9    = __itt_string_handle_create(L"ASYNC");
-__itt_string_handle* COMPLETEDX9 = __itt_string_handle_create(L"COMPLETE");
-#endif
 
 mfxStatus DXVAHDVideoProcessor::EnumerateCaps()
 {
@@ -1327,14 +1317,11 @@ mfxStatus DXVAHDVideoProcessor::Execute(MfxHwVideoProcessing::mfxExecuteParams *
     IDirect3DSurface9 *output = (IDirect3DSurface9 *)executeParams->targetSurface.hdl.first;
     MFX_CHECK_NULL_PTR1(output);
     MFX_CHECK_NULL_PTR1(pStream);
-#ifdef CAMP_PIPE_ITT
-    __itt_task_begin(CamPipeDX9, __itt_null, __itt_null, DDIEXECDX9);
-#endif 
-    hr = m_pDXVAVideoProcessor->VideoProcessBltHD(output, executeParams->statusReportID, 1, pStream);
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "VideoProcessBltHD");
+        hr = m_pDXVAVideoProcessor->VideoProcessBltHD(output, executeParams->statusReportID, 1, pStream);
+    }
     CHECK_HRES(hr);
- #ifdef CAMP_PIPE_ITT
-    __itt_task_end(CamPipeDX9);
-#endif 
 
     return MFX_ERR_NONE;
 }
@@ -1629,9 +1616,7 @@ mfxStatus D3D9CameraProcessor::Reset(mfxVideoParam *par, CameraParams * FramePar
 
 mfxStatus D3D9CameraProcessor::AsyncRoutine(AsyncParams *pParam)
 {
-#ifdef CAMP_PIPE_ITT
-    __itt_task_begin(CamPipeDX9, __itt_null, __itt_null, ASYNCDX9);
-#endif  
+    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_HOTSPOTS);
     mfxStatus sts;
 
     m_core->IncreaseReference(&(pParam->surf_out->Data));
@@ -1762,9 +1747,6 @@ mfxStatus D3D9CameraProcessor::AsyncRoutine(AsyncParams *pParam)
         MFX_CHECK_STS(sts);
     }
 
-#ifdef CAMP_PIPE_ITT
-    __itt_task_end(CamPipeDX9);
-#endif
     return sts;
 }
 
@@ -1867,13 +1849,8 @@ mfxStatus D3D9CameraProcessor::PreWorkOutSurface(mfxFrameSurface1 *surf, mfxU32 
             }
             if(output_index == m_AsyncDepth ) 
             {
-#ifdef CAMP_PIPE_ITT
-    __itt_task_begin(CamPipeDX9, __itt_null, __itt_null, STALLDX9);
-#endif 
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "sleep");
                 vm_time_sleep(10);
-#ifdef CAMP_PIPE_ITT
-    __itt_task_end(CamPipeDX9);
-#endif
             }
         }
         *poolIndex = output_index;
@@ -1928,13 +1905,8 @@ mfxStatus D3D9CameraProcessor::PreWorkInSurface(mfxFrameSurface1 *surf, mfxU32 *
         }
         if(input_index == m_AsyncDepth ) 
         {
-#ifdef CAMP_PIPE_ITT
-    __itt_task_begin(CamPipeDX9, __itt_null, __itt_null, STALLDX9);
-#endif 
-        vm_time_sleep(10);
-#ifdef CAMP_PIPE_ITT
-    __itt_task_end(CamPipeDX9);
-#endif
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "sleep");
+            vm_time_sleep(10);
         }
     }
     *poolIndex = input_index;

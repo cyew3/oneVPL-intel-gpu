@@ -5,31 +5,12 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_camera_plugin_utils.h"
 #include "mfx_camera_plugin.h"
-
 #include "ippi.h"
-
-#ifdef CAMP_PIPE_ITT
-#include "ittnotify.h"
-
-
-__itt_domain* CamPipeAccel = __itt_domain_create(L"CamPipeAccel");
-
-//__itt_string_handle* CPU_file_fread;
-//__itt_string_handle* CPU_raw_unpack_;
-__itt_string_handle* task2 = __itt_string_handle_create(L"GPU_DM_Gamma");;
-__itt_string_handle* task3 = __itt_string_handle_create(L"ColorConv");;
-__itt_string_handle* taskc = __itt_string_handle_create(L"CPUGPUCopy");
-
-__itt_string_handle* task21 = __itt_string_handle_create(L"21");
-__itt_string_handle* task22 = __itt_string_handle_create(L"22");
-__itt_string_handle* task23 = __itt_string_handle_create(L"23");
-
-#endif
 
 using namespace MfxCameraPlugin;
 

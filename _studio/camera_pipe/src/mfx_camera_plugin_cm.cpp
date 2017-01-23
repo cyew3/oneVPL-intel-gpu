@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 //#include "ipps.h"
@@ -216,17 +216,9 @@ mfxStatus CMCameraProcessor::AsyncRoutine(AsyncParams *pParam)
     m_core->IncreaseReference(&surfIn->Data);
     m_core->IncreaseReference(&surfOut->Data);
 
-#ifdef CAMP_PIPE_ITT
-    __itt_task_begin(CamPipe, __itt_null, __itt_null, task1);
-#endif
-
     sts  = CreateEnqueueTasks(pParam);
     if (sts != MFX_ERR_NONE)
         return sts;
-
-#ifdef CAMP_PIPE_ITT
-    __itt_task_end(CamPipe);
-#endif
 
     return MFX_ERR_NONE;
 }
@@ -418,6 +410,7 @@ mfxStatus CMCameraProcessor::SetExternalSurfaces(AsyncParams *pParam)
 
 mfxStatus CMCameraProcessor::CreateEnqueueTasks(AsyncParams *pParam)
 {
+    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_HOTSPOTS);
     { // Guarded section start
 
     UMC::AutomaticUMCMutex guard(m_guard);
@@ -426,9 +419,6 @@ mfxStatus CMCameraProcessor::CreateEnqueueTasks(AsyncParams *pParam)
     SurfaceIndex *pInputSurfaceIndex;
     //bool  firstTile = false;
     mfxU32 out_pitch = pParam->surf_out->Data.PitchLow + ((mfxU32)pParam->surf_out->Data.PitchHigh << 16); 
-#ifdef CAMP_PIPE_ITT
-    __itt_task_begin(CamPipeAccel, __itt_null, __itt_null, task21);
-#endif
     for ( mfxU16 tileIDVert  = pParam->FrameSizeExtra.tileNumVer; tileIDVert  > 0 ; tileIDVert--) // Going over vertical tiles
     {
     for ( mfxU16 tileIDHor = 0; tileIDHor < pParam->FrameSizeExtra.tileNumHor;  tileIDHor++) // Goint over horizontal tiles
@@ -792,9 +782,6 @@ mfxStatus CMCameraProcessor::CreateEnqueueTasks(AsyncParams *pParam)
             e = m_cmCtx->EnqueueTask_ARGB();
         }
 
-#ifdef CAMP_PIPE_ITT
-        __itt_task_end(CamPipeAccel);
-#endif
 
         if (pParam->Caps.OutputMemoryOperationMode == MEM_GPUSHARED && !pParam->outSurf2DUP)
         {
@@ -911,57 +898,33 @@ mfxStatus CMCameraProcessor::Reset(mfxVideoParam *par, CameraParams *pipeParams)
 
 mfxStatus CMCameraProcessor::CompleteRoutine(AsyncParams *pParams)
 {
+    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_HOTSPOTS);
     UMC::AutomaticUMCMutex guard(m_guard);
     m_raw16aligned.Unlock();
     m_raw16padded.Unlock();
     m_aux8.Unlock();
 
-#ifdef CAMP_PIPE_ITT
-    __itt_task_begin(CamPipe, __itt_null, __itt_null, taske);
-#endif
     CmEvent *e = (CmEvent *)pParams->pEvent;
     CAMERA_DEBUG_LOG("CompleteCameraAsyncRoutine e=%p device %p \n", e, m_cmDevice);
 
     if (m_isInitialized)
     {
-#ifdef CAMP_PIPE_ITT
-    __itt_task_begin(CamPipe, __itt_null, __itt_null, destroyevent);
-#endif
         m_cmCtx->DestroyEvent(e);
-#ifdef CAMP_PIPE_ITT
-    __itt_task_end(CamPipe, __itt_null, __itt_null, destroyevent);
-#endif
     }
     else
     {
-#ifdef CAMP_PIPE_ITT
-    __itt_task_begin(CamPipe, __itt_null, __itt_null, destroyeventwowait);
-#endif
         m_cmCtx->DestroyEventWithoutWait(e);
-#ifdef CAMP_PIPE_ITT
-    __itt_task_begin(CamPipe, __itt_null, __itt_null, destroyeventwowait);
-#endif
     }
     CAMERA_DEBUG_LOG("CompleteCameraAsyncRoutine Destroyed event e=%p \n", e);
 
     if (pParams->inSurf2DUP)
     {
-#ifdef CAMP_PIPE_ITT
-    __itt_task_begin(CamPipe, __itt_null, __itt_null, task_destroy_surfup);
-#endif
         CmSurface2DUP *surf = (CmSurface2DUP *)pParams->inSurf2DUP;
         m_cmDevice->DestroySurface2DUP(surf);
         pParams->inSurf2DUP = 0;
-#ifdef CAMP_PIPE_ITT
-    __itt_task_end(CamPipe, __itt_null, __itt_null, task_destroy_surfup);
-#endif
     }
 
     m_core->DecreaseReference(&pParams->surf_in->Data);
-
-#ifdef CAMP_PIPE_ITT
-    __itt_task_end(CamPipe);
-#endif
 
     if (pParams->outSurf2DUP)
     {

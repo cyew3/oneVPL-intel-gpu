@@ -10,17 +10,6 @@
 
 #if defined (_WIN32) || defined (_WIN64)
 #include "mfx_camera_plugin_dx11.h"
-//#define CAMP_PIPE_ITT
-#ifdef CAMP_PIPE_ITT
-#include "ittnotify.h"
-__itt_domain* CamPipeDX11     = __itt_domain_create(L"CamPipeDX11");
-__itt_string_handle* GPUCOPY  = __itt_string_handle_create(L"GPUCOPY");
-__itt_string_handle* DDIEXEC  = __itt_string_handle_create(L"DDIEXEC");
-__itt_string_handle* STALL    = __itt_string_handle_create(L"STALL");
-__itt_string_handle* ASYNC    = __itt_string_handle_create(L"ASYNC");
-__itt_string_handle* COMPLETE = __itt_string_handle_create(L"COMPLETE");
-__itt_string_handle* QUERY = __itt_string_handle_create(L"QueryStatus");
-#endif
 
 mfxStatus D3D11CameraProcessor::Init(CameraParams *CameraParams)
 {
@@ -172,10 +161,11 @@ mfxStatus D3D11CameraProcessor::Reset(mfxVideoParam *par, CameraParams * FramePa
 
 mfxStatus D3D11CameraProcessor::AsyncRoutine(AsyncParams *pParam)
 {
+    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_HOTSPOTS);
     mfxStatus sts;
-#ifdef CAMP_PIPE_ITT
-    __itt_task_begin(CamPipeDX11, __itt_null, __itt_null, ASYNC);
-#endif    
+
+    m_core->IncreaseReference(&(pParam->surf_out->Data));
+    m_core->IncreaseReference(&(pParam->surf_in->Data));
 
     MfxHwVideoProcessing::mfxDrvSurface    tmpSurf   = {0};
     mfxU32 surfInIndex;
@@ -323,50 +313,34 @@ mfxStatus D3D11CameraProcessor::AsyncRoutine(AsyncParams *pParam)
     pParam->surfInIndex  = surfInIndex;
     pParam->surfOutIndex = surfOutIndex;
     {
-        #ifdef CAMP_PIPE_ITT
-            __itt_task_begin(CamPipeDX11, __itt_null, __itt_null, DDIEXEC);
-        #endif
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "Execute");
         // DDI execs
         sts = m_ddi->Execute(&m_executeParams[surfInIndex]);
-        #ifdef CAMP_PIPE_ITT
-            __itt_task_end(CamPipeDX11);
-        #endif
     }
 
-#ifdef CAMP_PIPE_ITT
-    __itt_task_end(CamPipeDX11);
-#endif
     return sts;
 }
 
 mfxStatus D3D11CameraProcessor::CompleteRoutine(AsyncParams * pParam)
 {
-#ifdef CAMP_PIPE_ITT
-    __itt_task_begin(CamPipeDX11, __itt_null, __itt_null, COMPLETE);
-#endif
+    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_HOTSPOTS);
     MFX_CHECK_NULL_PTR1(pParam);
     mfxStatus sts   = MFX_TASK_DONE;
     
     mfxU32 ddiIndex = pParam->surfInIndex;
     
     mfxU16 queryAttempt = 5;
-    while ( queryAttempt )
+    while (queryAttempt)
     {
-        #ifdef CAMP_PIPE_ITT
-        __itt_task_begin(CamPipeDX11, __itt_null, __itt_null, QUERY);
-        #endif
-        sts = m_ddi->QueryTaskStatus(m_executeParams[ddiIndex].statusReportID);
-        #ifdef CAMP_PIPE_ITT
-            __itt_task_end(CamPipeDX11);
-        #endif
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "QueyTaskStatus");
+            sts = m_ddi->QueryTaskStatus(m_executeParams[ddiIndex].statusReportID);
+        }
 
         if ( MFX_TASK_DONE == sts )
         {
             break;
         }
-        #ifdef CAMP_PIPE_ITT
-            __itt_task_end(CamPipeDX11);
-        #endif
         queryAttempt--;
         vm_time_sleep(10);
     }
@@ -390,25 +364,18 @@ mfxStatus D3D11CameraProcessor::CompleteRoutine(AsyncParams * pParam)
 
         OutSurf.Info.Width  = m_width;
         OutSurf.Info.Height = m_height;
-        #ifdef CAMP_PIPE_ITT
-            __itt_task_begin(CamPipeDX11, __itt_null, __itt_null, GPUCOPY);
-        #endif
+
         // [1] Copy from system mem to the internal video frame
         sts = m_core->DoFastCopyWrapper(pParam->surf_out,
-                                        MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY,
-                                        &OutSurf,
-                                        MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET
-                                        );
-        #ifdef CAMP_PIPE_ITT
-            __itt_task_end(CamPipeDX11);
-        #endif
+            MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY,
+            &OutSurf,
+            MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET
+        );
         MFX_CHECK_STS(sts);
     }
 
     {
-#ifdef CAMP_PIPE_ITT
-    __itt_task_begin(CamPipeDX11, __itt_null, __itt_null, STALL);
-#endif
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "Unlock");
         UMC::AutomaticUMCMutex guard(m_guard_exec);
         m_InSurfacePool->Unlock(pParam->surfInIndex );
         m_OutSurfacePool->Unlock(pParam->surfOutIndex);
@@ -417,13 +384,7 @@ mfxStatus D3D11CameraProcessor::CompleteRoutine(AsyncParams * pParam)
         {
             m_core->DecreaseReference(&(pParam->surf_in->Data));
         }
-#ifdef CAMP_PIPE_ITT
-    __itt_task_end(CamPipeDX11);
-#endif
     }
-#ifdef CAMP_PIPE_ITT
-    __itt_task_end(CamPipeDX11);
-#endif
     return sts;
 }
 
@@ -493,13 +454,8 @@ mfxStatus D3D11CameraProcessor::PreWorkInSurface(mfxFrameSurface1 *surf, mfxU32 
         UMC::AutomaticUMCMutex guard(m_guard);
         while( (memIdIn = AcquireResource(*m_InSurfacePool, poolIndex)) == 0 )
         {
-#ifdef CAMP_PIPE_ITT
-    __itt_task_begin(CamPipeDX11, __itt_null, __itt_null, STALL);
-#endif
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "sleep");
             vm_time_sleep(10);
-#ifdef CAMP_PIPE_ITT
-    __itt_task_end(CamPipeDX11);
-#endif
         }
     }
 
@@ -525,19 +481,13 @@ mfxStatus D3D11CameraProcessor::PreWorkInSurface(mfxFrameSurface1 *surf, mfxU32 
         appInputSurface.Data.Y += appInputSurface.Data.Pitch*appInputSurface.Info.CropY + (appInputSurface.Info.CropX<<1);
         appInputSurface.Info.Height -= appInputSurface.Info.CropY;
 
-        #ifdef CAMP_PIPE_ITT
-            __itt_task_begin(CamPipeDX11, __itt_null, __itt_null, GPUCOPY);
-        #endif
         // [1] Copy from system mem to the internal video frame
         sts = m_core->DoFastCopyWrapper(&InSurf,
-                                        MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET,
-                                        &appInputSurface,
-                                        MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY);
+            MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET,
+            &appInputSurface,
+            MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY);
         m_core->DecreaseReference(&surf->Data);
         MFX_CHECK_STS(sts);
-        #ifdef CAMP_PIPE_ITT
-            __itt_task_end(CamPipeDX11);
-        #endif
         // [2] Get surface handle
         sts = m_core->GetFrameHDL(memIdIn, (mfxHDL *)&hdl);
         MFX_CHECK_STS(sts);

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #if !defined(__MFX_CAMERA_PLUGIN_INCLUDED__)
@@ -16,7 +16,7 @@
 #include <memory>
 #include <iostream>
 #include <ippi.h>
-//#define CAMP_PIPE_ITT
+
 #include "mfx_camera_plugin_utils.h"
 #include "mfx_camera_plugin_cpu.h"
 #include "mfx_camera_plugin_cm.h"
