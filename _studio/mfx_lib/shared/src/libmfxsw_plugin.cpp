@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2010-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2010-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include <mfxplugin.h>
@@ -337,6 +337,7 @@ mfxStatus MFXVideoUSER_ProcessFrameAsync(mfxSession session,
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
     MFX_CHECK(session->m_plgGen.get(), MFX_ERR_NOT_INITIALIZED);
     MFX_CHECK(syncp, MFX_ERR_NULL_PTR);
+    MFX_CHECK(in_num <= MFX_TASK_NUM_DEPENDENCIES && out_num <= MFX_TASK_NUM_DEPENDENCIES, MFX_ERR_UNSUPPORTED);
     try
     {
         //generic plugin function
