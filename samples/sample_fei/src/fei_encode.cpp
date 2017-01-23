@@ -510,8 +510,9 @@ mfxStatus FEI_EncodeInterface::InitFrameParams(mfxFrameSurface1* encodeSurface, 
             {
                 if (eTask)
                 {
-                    feiEncCtrl->NumMVPredictors[0] = GetNumL0MVPs(*eTask, feiEncCtrlId);
-                    feiEncCtrl->NumMVPredictors[1] = GetNumL1MVPs(*eTask, feiEncCtrlId);
+                    // feiEncCtrlId tracks id in term of field parity, GetNumMVP accepts fieldId
+                    feiEncCtrl->NumMVPredictors[0] = GetNumL0MVPs(*eTask, feiEncCtrlId != ffid);
+                    feiEncCtrl->NumMVPredictors[1] = GetNumL1MVPs(*eTask, feiEncCtrlId != ffid);
                 }
                 else // in case of Encode in display order, default configuration is used
                 {
