@@ -594,6 +594,7 @@ namespace ExtBuffer
 
     template <class P> Proxy Get(P & par)
     {
+        static_assert(!std::is_same<MfxVideoParam, P>::value, "MfxVideoParam is invalid for this template!");
         return Proxy(par.ExtParam, par.NumExtParam);
     }
 

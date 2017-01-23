@@ -259,22 +259,19 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
     printCaps(MaxNum_WeightedPredL0);
     printCaps(MaxNum_WeightedPredL1);
 #endif
-    mfxExtCodingOptionSPSPPS* pSPSPPS = ExtBuffer::Get(m_vpar);
 
+    mfxExtCodingOptionSPSPPS* pSPSPPS = ExtBuffer::Get(*par);
     sts = LoadSPSPPS(m_vpar, pSPSPPS);
     MFX_CHECK_STS(sts);
     
-    mfxExtEncodedSlicesInfo* pSliceInfo = ExtBuffer::Get(m_vpar);
-    if (pSliceInfo && pSliceInfo->SliceSize)
+    if (m_vpar.m_ext.SliceInfo.SliceSize)
     {
         if (!m_caps.SliceLevelReportSupport)
         {
             return MFX_ERR_UNSUPPORTED;        
         }
 
-        // MaxSliceSize must be set for SliceSizeReport
-        mfxExtCodingOption2* pCO2 = ExtBuffer::Get(m_vpar);
-        if (!pCO2 || !pCO2->MaxSliceSize)
+        if (!m_vpar.m_ext.CO2.MaxSliceSize)
         {
             return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;        
         }
