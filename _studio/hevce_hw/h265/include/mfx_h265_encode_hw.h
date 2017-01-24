@@ -53,6 +53,7 @@ public:
         }
         catch(...)
         {
+            delete tmp_pplg;
             return MFX_ERR_UNKNOWN;
         }
 

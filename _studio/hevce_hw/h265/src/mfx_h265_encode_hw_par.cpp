@@ -1650,7 +1650,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         else if (   par.mfx.RateControlMethod != MFX_RATECONTROL_CQP
                  && par.mfx.RateControlMethod != MFX_RATECONTROL_ICQ)
         {
-            mfxF64 fr = par.mfx.FrameInfo.FrameRateExtD ? (mfxF64)par.mfx.FrameInfo.FrameRateExtN / par.mfx.FrameInfo.FrameRateExtD : 30.;
+            mfxF64 fr = par.mfx.FrameInfo.FrameRateExtD !=0 && par.mfx.FrameInfo.FrameRateExtN!=0 ? (mfxF64)par.mfx.FrameInfo.FrameRateExtN / (mfxF64)par.mfx.FrameInfo.FrameRateExtD : 30.;
             mfxU32 avgFS = Ceil((mfxF64)par.TargetKbps / fr / 8);
 
             changed += CheckRange(par.BufferSizeInKB, avgFS * 2 + 1, maxBuf);
