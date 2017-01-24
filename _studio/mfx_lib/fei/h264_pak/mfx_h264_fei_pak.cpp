@@ -452,11 +452,6 @@ mfxStatus VideoPAK_PAK::Init(mfxVideoParam *par)
 
     MfxVideoParam tmp(*par);
 
-    if (par->mfx.NumRefFrame > 4)
-    {
-        m_video.mfx.NumRefFrame = tmp.mfx.NumRefFrame = 4;
-    }
-
     sts = ReadSpsPpsHeaders(tmp);
     MFX_CHECK_STS(sts);
 
