@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "vm_sys_info.h"
@@ -292,6 +292,11 @@ void vm_sys_info_get_vga_card(vm_char *vga_card)
                                                  (PBYTE) vga_card,
                                                  _MAX_LEN,
                                                  NULL);
+            }
+
+            if (pLib)
+            {
+                FreeLibrary(pLib);
             }
 
             break;
