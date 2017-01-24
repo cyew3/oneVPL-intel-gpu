@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -57,6 +57,7 @@ static void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )
     pMfxExecuteParams->statusReportID = 0;
     pMfxExecuteParams->bFieldWeaving = false;
     pMfxExecuteParams->iFieldProcessingMode = 0;
+#ifndef MFX_CAMERA_FEATURE_DISABLE
     pMfxExecuteParams->bCameraPipeEnabled = false;
     pMfxExecuteParams->bCameraBlackLevelCorrection =false;
     pMfxExecuteParams->bCameraGammaCorrection = false;
@@ -64,6 +65,7 @@ static void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )
     pMfxExecuteParams->bCameraWhiteBalaceCorrection = false;
     pMfxExecuteParams->bCCM = false;
     pMfxExecuteParams->bCameraLensCorrection = false;
+#endif // #ifndef MFX_CAMERA_FEATURE_DISABLE
     pMfxExecuteParams->rotation = 0;
     pMfxExecuteParams->scalingMode = MFX_SCALING_MODE_DEFAULT;
     pMfxExecuteParams->bEOS = false;

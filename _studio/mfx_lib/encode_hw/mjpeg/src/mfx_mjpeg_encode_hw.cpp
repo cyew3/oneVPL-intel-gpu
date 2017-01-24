@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -16,12 +16,82 @@
 #include "mfx_enc_common.h"
 #include "mfx_task.h"
 #include "umc_defs.h"
-#include "ipps.h"
-#include "ippi.h"
 
 using namespace MfxHwMJpegEncode;
 
+template<typename T>
+bool setPlaneROI(T value, T* pDst, int dstStep, IppiSize roiSize)
+{
+    if (!pDst || roiSize.width < 0 || roiSize.height < 0)
+        return false;
 
+    for (int h = 0; h < roiSize.height; h++) {
+        std::fill(pDst, pDst + roiSize.width, value);
+        pDst = (T *)((unsigned char*)pDst + dstStep);
+    }
+
+    return true;
+}
+
+template<typename T>
+bool swapChannels(const T* pSrc, int srcStep,
+    T* pDst, int dstStep, IppiSize roiSize, const int dstOrder[3])
+{
+    const T *src0, *src1, *src2;
+    T *dst = pDst;
+    int width = roiSize.width * 4, height = roiSize.height;
+    int h;
+    int s;
+
+    if (!pSrc || !pDst || srcStep <= 0 || dstStep <= 0 || roiSize.width <= 0 || roiSize.height <= 0)
+        return false;
+
+    if ((dstOrder[0] < 0) || (dstOrder[0] > 2)) return false;
+    if ((dstOrder[1] < 0) || (dstOrder[1] > 2)) return false;
+    if ((dstOrder[2] < 0) || (dstOrder[2] > 2)) return false;
+
+    src0 = (T*)(pSrc + dstOrder[0]);
+    src1 = (T*)(pSrc + dstOrder[1]);
+    src2 = (T*)(pSrc + dstOrder[2]);
+
+    if ((srcStep == dstStep) && (srcStep == width)) {
+        width *= height;
+        height = 1;
+    }
+
+    for (h = 0; h < height; h++) {
+        for (s = 0; s < width; s += 4) {
+            T x0 = src0[s];
+            T x1 = src1[s];
+            T x2 = src2[s];
+            dst[s] = x0;
+            dst[s + 1] = x1;
+            dst[s + 2] = x2;
+        }
+        src0 += srcStep, src1 += srcStep, src2 += srcStep;
+        dst += dstStep;
+    }
+
+    return true;
+}
+
+#if !defined (OPEN_SOURCE)
+#include "ipps.h"
+#include "ippi.h"
+
+template<>
+bool setPlaneROI<Ipp8u>(Ipp8u value, Ipp8u* pDst, int dstStep, IppiSize roiSize)
+{
+    return ippiSet_8u_C1R(value, (Ipp8u*)pDst, dstStep, roiSize) == ippStsNoErr;
+}
+
+template<>
+bool swapChannels<mfxU8>(const mfxU8* pSrc, int srcStep,
+    mfxU8* pDst, int dstStep, IppiSize roiSize, const int dstOrder[3])
+{
+    return ippiSwapChannels_8u_AC4R(pSrc, srcStep, pDst, dstStep, roiSize, dstOrder) == ippStsNoErr;
+}
+#endif // #if !defined (OPEN_SOURCE)
 
 
 MfxFrameAllocResponse::MfxFrameAllocResponse()
@@ -941,7 +1011,6 @@ mfxStatus MFXVideoENCODEMJPEG_HW::CheckEncodeFrameParam(
     return sts;
 }
 
-
 // Routine to submit task to HW.  asyncronous part of encdoing
 mfxStatus MFXVideoENCODEMJPEG_HW::TaskRoutineSubmitFrame(
     void * state,
@@ -1000,15 +1069,12 @@ mfxStatus MFXVideoENCODEMJPEG_HW::TaskRoutineSubmitFrame(
 
             mfxU32 srsPitch = nativeSurf->Data.PitchLow + ((mfxU32)nativeSurf->Data.PitchHigh << 16);
             mfxU32 dstPitch = dstSurf.PitchLow + ((mfxU32)dstSurf.PitchHigh << 16);
-            IppStatus ippRes = ippiSet_8u_C1R(0xff,dstSurf.R,dstPitch,setroi);
-            MFX_CHECK(ippRes == ippStsNoErr, MFX_ERR_UNDEFINED_BEHAVIOR);
-            ippRes = ippiSwapChannels_8u_AC4R(nativeSurf->Data.B,
-                                                        srsPitch,
-                                                        dstSurf.R,
-                                                        dstPitch,
-                                                        roi,
-                                                        dstOrder);
-            MFX_CHECK(ippRes == ippStsNoErr, MFX_ERR_UNDEFINED_BEHAVIOR);
+            bool res = setPlaneROI<mfxU8>(0xff, dstSurf.R, dstPitch, setroi);
+            MFX_CHECK(res, MFX_ERR_UNDEFINED_BEHAVIOR);
+            res = swapChannels<mfxU8>(nativeSurf->Data.B, srsPitch,
+                                    dstSurf.R, dstPitch,
+                                    roi, dstOrder);
+            MFX_CHECK(res, MFX_ERR_UNDEFINED_BEHAVIOR);
         
             if (bExternalFrameLocked)
             {

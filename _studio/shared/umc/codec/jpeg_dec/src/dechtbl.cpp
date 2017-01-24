@@ -5,32 +5,28 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2001-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2001-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_MJPEG_VIDEO_DECODER)
 
-#ifndef __JPEGBASE_H__
 #include "jpegbase.h"
-#endif
-#ifndef __DECHTBL_H__
 #include "dechtbl.h"
-#endif
-
-
-
+#include <cstdlib>
 
 CJPEGDecoderHuffmanTable::CJPEGDecoderHuffmanTable(void)
 {
   m_id     = 0;
   m_hclass = 0;
+#ifdef ALLOW_JPEG_SW_FALLBACK
   m_table  = 0;
+#endif
   m_bEmpty = 1;
   m_bValid = 0;
 
-  ippsZero_8u(m_bits,sizeof(m_bits));
-  ippsZero_8u(m_vals,sizeof(m_vals));
+  memset(m_bits, 0, sizeof(m_bits));
+  memset(m_vals, 0, sizeof(m_vals));
 
   return;
 } // ctor
@@ -45,6 +41,7 @@ CJPEGDecoderHuffmanTable::~CJPEGDecoderHuffmanTable(void)
 
 JERRCODE CJPEGDecoderHuffmanTable::Create(void)
 {
+#ifdef ALLOW_JPEG_SW_FALLBACK
   int       size;
   IppStatus status;
 
@@ -57,17 +54,17 @@ JERRCODE CJPEGDecoderHuffmanTable::Create(void)
 
   if(0 != m_table)
   {
-    ippFree(m_table);
+    free(m_table);
     m_table = 0;
   }
 
-  m_table = (IppiDecodeHuffmanSpec*)ippMalloc(size);
+  m_table = (IppiDecodeHuffmanSpec*)malloc(size);
   if(0 == m_table)
   {
-    LOG0("IPP Error: ippMalloc() failed");
+    LOG0("IPP Error: malloc() failed");
     return JPEG_ERR_ALLOC;
   }
-
+#endif
   m_bEmpty = 0;
   m_bValid = 0;
 
@@ -80,15 +77,16 @@ JERRCODE CJPEGDecoderHuffmanTable::Destroy(void)
   m_id     = 0;
   m_hclass = 0;
 
-  ippsZero_8u(m_bits,sizeof(m_bits));
-  ippsZero_8u(m_vals,sizeof(m_vals));
+  memset(m_bits, 0, sizeof(m_bits));
+  memset(m_vals, 0, sizeof(m_vals));
 
+#ifdef ALLOW_JPEG_SW_FALLBACK
   if(0 != m_table)
   {
-    ippFree(m_table);
+    free(m_table);
     m_table = 0;
   }
-
+#endif
   m_bValid = 0;
   m_bEmpty = 1;
 
@@ -106,13 +104,14 @@ JERRCODE CJPEGDecoderHuffmanTable::Init(int id,int hclass,Ipp8u* bits,Ipp8u* val
   MFX_INTERNAL_CPY(m_bits,bits,16);
   MFX_INTERNAL_CPY(m_vals,vals,256);
 
+#ifdef ALLOW_JPEG_SW_FALLBACK
   status = ippiDecodeHuffmanSpecInit_JPEG_8u(m_bits,m_vals,m_table);
   if(ippStsNoErr != status)
   {
     LOG1("IPP Error: ippiDecodeHuffmanSpecInit_JPEG_8u() failed - ",status);
     return JPEG_ERR_DHT_DATA;
   }
-
+#endif
   m_bValid = 1;
   m_bEmpty = 0;
 
@@ -121,7 +120,7 @@ JERRCODE CJPEGDecoderHuffmanTable::Init(int id,int hclass,Ipp8u* bits,Ipp8u* val
 
 
 
-
+#ifdef ALLOW_JPEG_SW_FALLBACK
 CJPEGDecoderHuffmanState::CJPEGDecoderHuffmanState(void)
 {
   m_state = 0;
@@ -150,14 +149,14 @@ JERRCODE CJPEGDecoderHuffmanState::Create(void)
 
   if(0 != m_state)
   {
-    ippFree(m_state);
+    free(m_state);
     m_state = 0;
   }
 
-  m_state = (IppiDecodeHuffmanState*)ippMalloc(size);
+  m_state = (IppiDecodeHuffmanState*)malloc(size);
   if(0 == m_state)
   {
-    LOG0("IPP Error: ippMalloc() failed");
+    LOG0("IPP Error: malloc() failed");
     return JPEG_ERR_ALLOC;
   }
 
@@ -169,7 +168,7 @@ JERRCODE CJPEGDecoderHuffmanState::Destroy(void)
 {
   if(0 != m_state)
   {
-    ippFree(m_state);
+    free(m_state);
     m_state = 0;
   }
 
@@ -190,5 +189,6 @@ JERRCODE CJPEGDecoderHuffmanState::Init(void)
 
   return JPEG_OK;
 } // CJPEGDecoderHuffmanState::Init()
+#endif // #ifdef ALLOW_JPEG_SW_FALLBACK
 
 #endif // UMC_ENABLE_MJPEG_VIDEO_DECODER

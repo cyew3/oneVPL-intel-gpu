@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include <limits>
@@ -1047,6 +1047,7 @@ bool MFX_JPEG_Utility::IsNeedPartialAcceleration(VideoCORE * core, mfxVideoParam
     //    return true;
 
 #if defined (MFX_VA_LINUX)
+#ifndef MFX_CLOSED_PLATFORMS_DISABLE    
     // BXT SW fallback definition
     if (core->GetHWType() == MFX_HW_BXT) {
         if (par->mfx.InterleavedDec == MFX_SCANTYPE_NONINTERLEAVED) {
@@ -1081,6 +1082,8 @@ bool MFX_JPEG_Utility::IsNeedPartialAcceleration(VideoCORE * core, mfxVideoParam
             }
         }
     }
+#endif // MFX_CLOSED_PLATFORMS_DISABLE
+
     // NV12 is supported on Linux HW at the moment
     if (par->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12 &&
         par->mfx.FrameInfo.FourCC != MFX_FOURCC_RGB4)
@@ -1790,10 +1793,9 @@ mfxU32 VideoDECODEMJPEGBase_HW::AdjustFrameAllocRequest(mfxFrameAllocRequest *re
 
 void VideoDECODEMJPEGBase_HW::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxInfoMFX *info, eMFXHWType hwType, eMFXVAType vaType, bool *needVpp)
 {
-
     if (info->JPEGColorFormat == MFX_JPEG_COLORFORMAT_UNKNOWN || info->JPEGColorFormat == MFX_JPEG_COLORFORMAT_YCbCr)
     {
-        #if defined (MFX_VA_LINUX)
+        #if defined (MFX_VA_LINUX) && !defined(MFX_CLOSED_PLATFORMS_DISABLE)
             if (hwType == MFX_HW_BXT) return;
         #endif
         switch(info->JPEGChromaFormat)

@@ -2015,7 +2015,7 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
 
                 // NV12 format -> need to divide height 2 times less
                 roiSize.height = roiSize.height/2;
-                // "UV" this is short (16 bit) value already, have to use ippiSet_16s_C1R
+                // "UV" this is short (16 bit) value already
                 // so need to divide width 2 times less too!
                 roiSize.width = roiSize.width/2;
                 setPlaneSts = SetPlaneROI<Ipp16s>(valueUV, (Ipp16s *)(pPrimarySurfaceBuffer + imagePrimarySurface.offsets[1]),

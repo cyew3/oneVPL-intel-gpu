@@ -5,21 +5,18 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2001-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2001-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
+#include "umc_structures.h"
+
 #if defined (UMC_ENABLE_MJPEG_VIDEO_DECODER)
 #if defined(__GNUC__)
     #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
-#ifndef __DECQTBL_H__
 #include "decqtbl.h"
-#endif
-
-
-
 
 CJPEGDecoderQuantTable::CJPEGDecoderQuantTable(void)
 {
@@ -28,14 +25,16 @@ CJPEGDecoderQuantTable::CJPEGDecoderQuantTable(void)
   m_initialized = 0;
 
   // align for max performance
-  m_raw8u  = (Ipp8u*) OWN_ALIGN_PTR(m_rbf,CPU_CACHE_LINE);
-  m_raw16u = (Ipp16u*)OWN_ALIGN_PTR(m_rbf,CPU_CACHE_LINE);
-  m_qnt16u = (Ipp16u*)OWN_ALIGN_PTR(m_qbf,CPU_CACHE_LINE);
-  m_qnt32f = (Ipp32f*)OWN_ALIGN_PTR(m_qbf,CPU_CACHE_LINE);
+  m_raw8u  = UMC::align_pointer<Ipp8u *>(m_rbf, CPU_CACHE_LINE);
+  m_raw16u = UMC::align_pointer<Ipp16u *>(m_rbf,CPU_CACHE_LINE);
+  memset(m_rbf, 0, sizeof(m_rbf));
 
-  ippsZero_8u(m_rbf,sizeof(m_rbf));
-  ippsZero_8u(m_qbf,sizeof(m_qbf));
+#ifdef ALLOW_JPEG_SW_FALLBACK
+  m_qnt16u = UMC::align_pointer<Ipp16u *>(m_qbf,CPU_CACHE_LINE);
+  m_qnt32f = UMC::align_pointer<Ipp32f *>(m_qbf,CPU_CACHE_LINE);
 
+  memset(m_qbf, 0, sizeof(m_qbf));
+#endif
   return;
 } // ctor
 
@@ -46,35 +45,35 @@ CJPEGDecoderQuantTable::~CJPEGDecoderQuantTable(void)
   m_precision   = 0;
   m_initialized = 0;
 
-  ippsZero_8u(m_rbf,sizeof(m_rbf));
-  ippsZero_8u(m_qbf,sizeof(m_qbf));
-
+  memset(m_rbf, 0, sizeof(m_rbf));
+#ifdef ALLOW_JPEG_SW_FALLBACK   
+  memset(m_qbf, 0, sizeof(m_qbf));
+#endif
   return;
 } // dtor
 
 
 JERRCODE CJPEGDecoderQuantTable::Init(int id,Ipp8u raw[64])
 {
-  IppStatus status;
-
   m_id        = id & 0x0f;
   m_precision = 0; // 8-bit precision
 
   MFX_INTERNAL_CPY(m_raw8u,raw,DCTSIZE2);
 
-  status = ippiQuantInvTableInit_JPEG_8u16u(m_raw8u,m_qnt16u);
+#ifdef ALLOW_JPEG_SW_FALLBACK
+  IppStatus status = ippiQuantInvTableInit_JPEG_8u16u(m_raw8u,m_qnt16u);
   if(ippStsNoErr != status)
   {
     LOG1("IPP Error: ippiQuantInvTableInit_JPEG_8u16u() failed - ",status);
     return JPEG_ERR_INTERNAL;
   }
-
+#endif
   m_initialized = 1;
 
   return JPEG_OK;
 } // CJPEGDecoderQuantTable::Init()
 
-
+#ifdef ALLOW_JPEG_SW_FALLBACK
 static
 IppStatus ippiQuantInvTableInit_JPEG_16u32f(
   Ipp16u* raw,
@@ -94,34 +93,29 @@ IppStatus ippiQuantInvTableInit_JPEG_16u32f(
 
   return ippStsNoErr;
 } // ippiQuantInvTableInit_JPEG_16u32f()
-
+#endif
 
 JERRCODE CJPEGDecoderQuantTable::Init(int id,Ipp16u raw[64])
 {
-  IppStatus status;
-
   m_id        = id & 0x0f;
   m_precision = 1; // 16-bit precision
 
-  status = ippsCopy_16s((Ipp16s*)raw,(Ipp16s*)m_raw16u,DCTSIZE2);
-  if(ippStsNoErr != status)
-  {
-    return JPEG_ERR_INTERNAL;
-  }
-
-  status = ippiQuantInvTableInit_JPEG_16u32f(m_raw16u,m_qnt32f);
+  MFX_INTERNAL_CPY((Ipp16s*)m_raw16u, (Ipp16s*)raw, DCTSIZE2*sizeof(Ipp16s));
+#ifdef ALLOW_JPEG_SW_FALLBACK
+  IppStatus status = ippiQuantInvTableInit_JPEG_16u32f(m_raw16u,m_qnt32f);
   if(ippStsNoErr != status)
   {
     LOG1("IPP Error: ippiQuantInvTableInit_JPEG_16u32f() failed - ",status);
     return JPEG_ERR_INTERNAL;
   }
+#endif
 
   m_initialized = 1;
 
   return JPEG_OK;
 } // CJPEGDecoderQuantTable::Init()
 
-
+#ifdef ALLOW_JPEG_SW_FALLBACK
 JERRCODE CJPEGDecoderQuantTable::ConvertToLowPrecision(void)
 {
   IppStatus status;
@@ -171,5 +165,6 @@ JERRCODE CJPEGDecoderQuantTable::ConvertToHighPrecision(void)
 
   return JPEG_OK;
 } // CJPEGDecoderQuantTable::ConvertToHighPrecision()
+#endif
 
 #endif // UMC_ENABLE_MJPEG_VIDEO_DECODER

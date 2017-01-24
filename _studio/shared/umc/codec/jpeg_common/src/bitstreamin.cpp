@@ -5,25 +5,15 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2006-2012 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2006-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_MJPEG_VIDEO_DECODER)
-#ifndef __JPEGBASE_H__
 #include "jpegbase.h"
-#endif
-#ifndef __BASESTREAM_H__
 #include "basestream.h"
-#endif
-#ifndef __BASESTREAMIN_H__
 #include "basestreamin.h"
-#endif
-#ifndef __BITSTREAMIN_H__
 #include "bitstreamin.h"
-#endif
-
-
 
 
 CBitStreamInput::CBitStreamInput(void)
@@ -61,7 +51,7 @@ JERRCODE CBitStreamInput::Detach(void)
   if(0 != m_pData)
   {
     // deallocate internal memory
-    ippFree(m_pData);
+    delete[] m_pData;
     m_pData = 0;
   }
 
@@ -80,17 +70,12 @@ JERRCODE CBitStreamInput::Init(int bufSize)
 {
   m_DataLen = (int)bufSize;
 
-  if(0 != m_pData)
+  if (m_pData)
   {
-    ippFree(m_pData);
-    m_pData = 0;
+    delete[] m_pData;
   }
 
-  m_pData = (Ipp8u*)ippMalloc(m_DataLen);
-  if(0 == m_pData)
-  {
-    return JPEG_ERR_ALLOC;
-  }
+  m_pData = new Ipp8u[m_DataLen];
 
   m_currPos    = m_DataLen; // no data yet
   m_nUsedBytes = 0;
@@ -114,7 +99,7 @@ JERRCODE CBitStreamInput::FillBuffer(int nMinBytes)
 
   if(remainder && !m_eod)
   {
-    ippsMove_8u(&m_pData[m_currPos],m_pData,remainder);
+    memmove(m_pData, &m_pData[m_currPos], remainder);
     m_currPos = 0;
   }
 

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -58,10 +58,6 @@ Status MJPEGVideoDecoderMFX_HW::Init(BaseCodecParams* lpInit)
     m_va = pDecoderParams->pVideoAccelerator;
 
     m_decoder.reset(new CJPEGDecoderBase());
-    if (NULL == m_decoder.get())
-    {
-        return UMC_ERR_ALLOC;
-    }
 
     m_decBase = m_decoder.get();
 

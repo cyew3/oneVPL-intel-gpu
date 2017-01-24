@@ -5,10 +5,12 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2001-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2001-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
+#include "umc_structures.h"
+
 #if defined (UMC_ENABLE_MJPEG_VIDEO_ENCODER)
 #if defined(__GNUC__)
     #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
@@ -24,13 +26,13 @@ CJPEGEncoderQuantTable::CJPEGEncoderQuantTable(void)
   m_initialized = false;
 
   // align for max performance
-  m_raw8u  = (Ipp8u*) OWN_ALIGN_PTR(m_rbf,CPU_CACHE_LINE);
-  m_raw16u = (Ipp16u*)OWN_ALIGN_PTR(m_rbf,CPU_CACHE_LINE);
-  m_qnt16u = (Ipp16u*)OWN_ALIGN_PTR(m_qbf,CPU_CACHE_LINE);
-  m_qnt32f = (Ipp32f*)OWN_ALIGN_PTR(m_qbf,CPU_CACHE_LINE);
+  m_raw8u  = UMC::align_pointer<Ipp8u *>(m_rbf,CPU_CACHE_LINE);
+  m_raw16u = UMC::align_pointer<Ipp16u *>(m_rbf,CPU_CACHE_LINE);
+  m_qnt16u = UMC::align_pointer<Ipp16u *>(m_qbf,CPU_CACHE_LINE);
+  m_qnt32f = UMC::align_pointer<Ipp32f *>(m_qbf,CPU_CACHE_LINE);
 
-  ippsZero_8u(m_rbf,sizeof(m_rbf));
-  ippsZero_8u(m_qbf,sizeof(m_qbf));
+  memset(m_rbf, 0, sizeof(m_rbf));
+  memset(m_qbf, 0, sizeof(m_qbf));
 
   return;
 } // ctor
@@ -42,8 +44,8 @@ CJPEGEncoderQuantTable::~CJPEGEncoderQuantTable(void)
   m_precision   = 0;
   m_initialized = false;
 
-  ippsZero_8u(m_rbf,sizeof(m_rbf));
-  ippsZero_8u(m_qbf,sizeof(m_qbf));
+  memset(m_rbf, 0, sizeof(m_rbf));
+  memset(m_qbf, 0, sizeof(m_qbf));
 
   return;
 } // dtor

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFXVIDEOPLUSPLUS_INTERNAL_H
@@ -91,9 +91,6 @@ static const GUID DXVA_Intel_Decode_Elementary_Stream_HEVC =
 static const GUID DXVA2_Intel_Encode_VP8 =
 { 0x2364d06a, 0xf67f, 0x4186, { 0xae, 0xd0, 0x62, 0xb9, 0x9e, 0x17, 0x84, 0xf1 } };
 
-static const GUID sDXVA2_Intel_IVB_ModeJPEG_VLD_NoFGT =
-{ 0x91cd2d6e, 0x897b, 0x4fa1, { 0xb0, 0xd7, 0x51, 0xdc, 0x88, 0x01, 0x0e, 0x0a } };
-
 static const GUID sDXVA2_Intel_ModeVC1_D_Super =
 { 0xE07EC519, 0xE651, 0x4cd6, { 0xAC, 0x84, 0x13, 0x70, 0xCC, 0xEE, 0xC8, 0x51 } };
 
@@ -119,6 +116,9 @@ static const GUID DXVA_ModeHEVC_VLD_Main10 =
 // {1424D4DC-7CF5-4BB1-9CD7-B63717A72A6B}
 static const GUID DXVA2_INTEL_LOWPOWERENCODE_AVC =
 {0x1424d4dc, 0x7cf5, 0x4bb1, { 0x9c, 0xd7, 0xb6, 0x37, 0x17, 0xa7, 0x2a, 0x6b} };
+
+static const GUID sDXVA2_Intel_IVB_ModeJPEG_VLD_NoFGT =
+{ 0x91cd2d6e, 0x897b, 0x4fa1,{ 0xb0, 0xd7, 0x51, 0xdc, 0x88, 0x01, 0x0e, 0x0a } };
 
 #endif
 

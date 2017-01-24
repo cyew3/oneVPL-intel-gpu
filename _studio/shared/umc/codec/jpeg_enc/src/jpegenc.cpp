@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2001-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2001-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -2462,7 +2462,7 @@ JERRCODE CJPEGEncoder::Init(void)
 
     m_block_buffer_size = tr_buf_size;
 
-    ippsZero_8u((Ipp8u*)m_block_buffer,tr_buf_size);
+    memset((Ipp8u*)m_block_buffer, 0, tr_buf_size);
   }
 
   int buflen;

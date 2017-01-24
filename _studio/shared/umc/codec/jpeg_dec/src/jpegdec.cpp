@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2001-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2001-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -17,19 +17,11 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifndef __IPPI_H__
 #include "ippi.h"
-#endif
-
-#ifndef __IPPJ_H__
 #include "ippj.h"
-#endif
-#ifndef __JPEGBASE_H__
 #include "jpegbase.h"
-#endif
-#ifndef __JPEGDEC_H__
 #include "jpegdec.h"
-#endif
+#include <cstdlib>
 
 #include "vm_debug.h"
 
@@ -183,7 +175,7 @@ JERRCODE CJPEGDecoder::Clean(void)
 
   if(0 != m_jpeg_comment)
   {
-    ippFree(m_jpeg_comment);
+    free(m_jpeg_comment);
     m_jpeg_comment = 0;
     m_jpeg_comment_size = 0;
   }
@@ -201,7 +193,7 @@ JERRCODE CJPEGDecoder::Clean(void)
 
   if(0 != m_exif_app1_data)
   {
-    ippFree(m_exif_app1_data);
+    free(m_exif_app1_data);
     m_exif_app1_data = 0;
   }
 
@@ -214,12 +206,12 @@ JERRCODE CJPEGDecoder::Clean(void)
   {
     if(0 != m_ccomp[i].m_curr_row)
     {
-      ippFree(m_ccomp[i].m_curr_row);
+      free(m_ccomp[i].m_curr_row);
       m_ccomp[i].m_curr_row = 0;
     }
     if(0 != m_ccomp[i].m_prev_row)
     {
-      ippFree(m_ccomp[i].m_prev_row);
+      free(m_ccomp[i].m_prev_row);
       m_ccomp[i].m_prev_row = 0;
     }
   }
@@ -232,7 +224,7 @@ JERRCODE CJPEGDecoder::Clean(void)
 
   if(0 != m_block_buffer)
   {
-    ippFree(m_block_buffer);
+    free(m_block_buffer);
     m_block_buffer = 0;
   }
 
@@ -451,11 +443,11 @@ JERRCODE CJPEGDecoder::ParseAPP1(void)
 
     if(m_exif_app1_data != 0)
     {
-      ippFree(m_exif_app1_data);
+      free(m_exif_app1_data);
       m_exif_app1_data = 0;
     }
 
-    m_exif_app1_data = (Ipp8u*)ippMalloc(len);
+    m_exif_app1_data = (Ipp8u*)malloc(len);
     if(0 == m_exif_app1_data)
       return JPEG_ERR_ALLOC;
 
@@ -502,10 +494,10 @@ JERRCODE CJPEGDecoder::ParseCOM(void)
 
   if(m_jpeg_comment != 0)
   {
-    ippFree(m_jpeg_comment);
+    free(m_jpeg_comment);
   }
 
-  m_jpeg_comment = (Ipp8u*)ippMalloc(len+1);
+  m_jpeg_comment = (Ipp8u*)malloc(len+1);
   if(0 == m_jpeg_comment)
     return JPEG_ERR_ALLOC;
 
@@ -1403,11 +1395,11 @@ JERRCODE CJPEGDecoder::Init(void)
         else
           tr_buf_size = m_numxMCU * m_numyMCU * m_nblock * sizeof(Ipp16s);
 
-        curr_comp->m_curr_row = (Ipp16s*)ippMalloc(curr_comp->m_cc_step * sizeof(Ipp16s));
+        curr_comp->m_curr_row = (Ipp16s*)malloc(curr_comp->m_cc_step * sizeof(Ipp16s));
         if(0 == curr_comp->m_curr_row)
           return JPEG_ERR_ALLOC;
 
-        curr_comp->m_prev_row = (Ipp16s*)ippMalloc(curr_comp->m_cc_step * sizeof(Ipp16s));
+        curr_comp->m_prev_row = (Ipp16s*)malloc(curr_comp->m_cc_step * sizeof(Ipp16s));
         if(0 == curr_comp->m_prev_row)
           return JPEG_ERR_ALLOC;
 
@@ -1435,13 +1427,13 @@ JERRCODE CJPEGDecoder::Init(void)
 
   if(0 == m_block_buffer)
   {
-    m_block_buffer = (Ipp16s*)ippMalloc(tr_buf_size);
+    m_block_buffer = (Ipp16s*)malloc(tr_buf_size);
     if(0 == m_block_buffer)
     {
       return JPEG_ERR_ALLOC;
     }
 
-    ippsZero_8u((Ipp8u*)m_block_buffer,tr_buf_size);
+    memset((Ipp8u*)m_block_buffer, 0, tr_buf_size);
   }
 
   m_state.Create();
@@ -2662,7 +2654,7 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
           // set the pointer to source buffer
           pSrc = curr_comp->GetSSBufferPtr<Ipp8u> (0) + 8 * colMCU * curr_comp->m_scan_hsampling;
           // set the pointer to temporary buffer
-          pTmp = (Ipp8u*) ippMalloc(2 * srcWidth / m_dd_factor);
+          pTmp = (Ipp8u*)malloc(2 * srcWidth / m_dd_factor);
           // set the pointer to destination buffer
           pDst = curr_comp->GetCCBufferPtr<Ipp8u> (0) + 8 * colMCU * curr_comp->m_h_factor;
          
@@ -2683,7 +2675,7 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
                   status = ippiSampleUpRowH2V1_Triangle_JPEG_8u_C1(pSrc + j, pixelToProcess, pTmp + j * 2);
                   if(ippStsNoErr != status)
                   {
-                    ippFree(pTmp);
+                    free(pTmp);
                     LOG0("Error: ippiSampleUpRowH2V1_Triangle_JPEG_8u_C1() failed!");
                     return JPEG_ERR_INTERNAL;
                   }
@@ -2698,7 +2690,7 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
                   status = ippiSampleUpRowH2V1_Triangle_JPEG_8u_C1(pTmp + j, pixelToProcess, pDst + j * 2);
                   if(ippStsNoErr != status)
                   {
-                    ippFree(pTmp);
+                    free(pTmp);
                     LOG0("Error: ippiSampleUpRowH2V1_Triangle_JPEG_8u_C1() failed!");
                     return JPEG_ERR_INTERNAL;
                   }
@@ -2709,7 +2701,7 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
               pSrc += srcStep;
               pDst += dstStep;
           }
-          ippFree(pTmp);
+          free(pTmp);
 
         } // 411
 
@@ -2793,7 +2785,7 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
             // set the pointer to source buffer
             pSrc = curr_comp->GetCCBufferPtr<Ipp8u> (0) + 8 * colMCU;
             // set the pointer to temporary buffer
-            pTmp = (Ipp8u*) ippMalloc(tmpStep * m_curr_scan->mcuHeight / 2);
+            pTmp = (Ipp8u*)malloc(tmpStep * m_curr_scan->mcuHeight / 2);
             // set the pointer to destination buffer
             pDst = curr_comp->GetCCBufferPtr<Ipp8u> (0) + 8 * colMCU / 2;  
 
@@ -2808,7 +2800,7 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
             status = ippiSampleDownH2V2_JPEG_8u_C1R(pSrc, srcStep, srcRoiSize, pTmp, tmpStep, tmpRoiSize);
             if(ippStsNoErr != status)
             {
-                ippFree(pTmp);
+                free(pTmp);
                 LOG0("Error: ippiSampleDownH2V2_JPEG_8u_C1R() failed!");
                 return JPEG_ERR_INTERNAL;
             }
@@ -2816,12 +2808,12 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
             status = ippsCopy_8u(pTmp, pDst, tmpStep * m_curr_scan->mcuHeight / 2);
             if(ippStsNoErr != status)
             {
-                ippFree(pTmp);
+                free(pTmp);
                 LOG0("Error: ippsCopy_8u() failed!");
                 return JPEG_ERR_INTERNAL;
             }
 
-            ippFree(pTmp);
+            free(pTmp);
         }
 
         // vertical downsampling 

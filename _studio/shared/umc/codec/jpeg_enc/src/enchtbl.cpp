@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2001-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2001-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -22,8 +22,8 @@ CJPEGEncoderHuffmanTable::CJPEGEncoderHuffmanTable(void)
   m_table  = 0;
   m_bValid = false;
 
-  ippsZero_8u(m_bits,sizeof(m_bits));
-  ippsZero_8u(m_vals,sizeof(m_vals));
+  memset(m_bits, 0, sizeof(m_bits));
+  memset(m_vals, 0, sizeof(m_vals));
 
   return;
 } // ctor
@@ -73,8 +73,8 @@ JERRCODE CJPEGEncoderHuffmanTable::Destroy(void)
   m_hclass = 0;
   m_bValid = false;
 
-  ippsZero_8u(m_bits,sizeof(m_bits));
-  ippsZero_8u(m_vals,sizeof(m_vals));
+  memset(m_bits, 0, sizeof(m_bits));
+  memset(m_vals, 0, sizeof(m_vals));
 
   if(0 != m_table)
   {

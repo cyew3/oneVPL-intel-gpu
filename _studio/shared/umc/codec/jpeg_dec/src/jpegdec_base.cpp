@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2001-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2001-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -16,27 +16,14 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "ippi.h"
 #include "ippj.h"
 #include "jpegbase.h"
 #include "jpegdec_base.h"
 
-
 #include "vm_debug.h"
-
-extern void ConvertFrom_YUV444_To_YV12(const Ipp8u *src[3], Ipp32u srcPitch, Ipp8u * dst[2], Ipp32u dstPitch, IppiSize size);
-extern void ConvertFrom_YUV422V_To_YV12(Ipp8u *src[3], Ipp32u srcPitch, Ipp8u * dst[2], Ipp32u dstPitch, IppiSize size);
-extern void ConvertFrom_YUV422H_4Y_To_NV12(const Ipp8u *src[3], Ipp32u srcPitch, Ipp8u * dst[2], Ipp32u dstPitch, IppiSize size);
-extern void ConvertFrom_YUV422V_4Y_To_NV12(const Ipp8u *src[3], Ipp32u srcPitch, Ipp8u * dst[2], Ipp32u dstPitch, IppiSize size);
-
-#define HUFF_ROW_API // enable new huffman functions, to improve performance
-
-#define DCT_QUANT_INV8x8To1x1LS(pMCUBuf, dst, qtbl)\
-{\
-  int val = (((pMCUBuf[0] * qtbl[0]) >> 3) + 128);\
-  dst[0] = (Ipp8u)(val > 255 ? 255 : (val < 0 ? 0 : val));\
-}
 
 CJPEGDecoderBase::CJPEGDecoderBase(void)
 {
@@ -141,12 +128,12 @@ JERRCODE CJPEGDecoderBase::Clean(void)
   {
     if(0 != m_ccomp[i].m_curr_row)
     {
-      ippFree(m_ccomp[i].m_curr_row);
+      free(m_ccomp[i].m_curr_row);
       m_ccomp[i].m_curr_row = 0;
     }
     if(0 != m_ccomp[i].m_prev_row)
     {
-      ippFree(m_ccomp[i].m_prev_row);
+      free(m_ccomp[i].m_prev_row);
       m_ccomp[i].m_prev_row = 0;
     }
   }

@@ -5,15 +5,13 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2001-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2001-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_MJPEG_VIDEO_DECODER) || defined (UMC_ENABLE_MJPEG_VIDEO_ENCODER)
 
-#ifndef __JPEGBASE_H__
 #include "jpegbase.h"
-#endif
 
 
 // raw quant tables must be in zigzag order
@@ -199,12 +197,7 @@ JERRCODE CMemoryBuffer::Allocate(int size)
 
   m_buffer_size = size;
 
-  m_buffer = (Ipp8u*)ippMalloc(m_buffer_size);
-  if(0 == m_buffer)
-  {
-    m_buffer_size = 0;
-    return JPEG_ERR_ALLOC;
-  }
+  m_buffer = new Ipp8u[m_buffer_size];
 
   return JPEG_OK;
 } // CMemoryBuffer::Allocate()
@@ -212,8 +205,8 @@ JERRCODE CMemoryBuffer::Allocate(int size)
 
 JERRCODE CMemoryBuffer::Delete(void)
 {
-  if(m_buffer != 0)
-    ippFree(m_buffer);
+  if(m_buffer)
+    delete[] m_buffer;
 
   m_buffer_size = 0;
   m_buffer      = 0;
