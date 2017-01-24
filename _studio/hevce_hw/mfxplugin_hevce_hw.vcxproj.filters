@@ -15,6 +15,9 @@
     <ClCompile Include="h265\src\mfx_h265_encode_hw_ddi_trace.cpp" />
     <ClCompile Include="h265\src\mfx_h265_encode_vaapi.cpp" />
     <ClCompile Include="h265\src\mfx_h265_encode_hw_brc.cpp" />
+    <ClCompile Include="..\mfx_lib\shared\src\mfx_brc_common.cpp">
+      <Filter>External</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="h265\include\mfx_h265_encode_hw.h" />
@@ -30,6 +33,9 @@
     <ClInclude Include="h265\include\mfx_h265_encode_hw_ddi_trace.h" />
     <ClInclude Include="h265\include\mfx_h265_encode_vaapi.h" />
     <ClInclude Include="h265\include\mfx_h265_encode_hw_brc.h" />
+    <ClInclude Include="..\mfx_lib\shared\include\mfx_brc_common.h">
+      <Filter>External</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="External">
