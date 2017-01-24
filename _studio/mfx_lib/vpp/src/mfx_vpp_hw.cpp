@@ -1195,11 +1195,10 @@ mfxStatus TaskManager::CompleteTask(DdiTask* pTask)
 
 DdiTask* TaskManager::GetTask(void)
 {
-    //DdiTask *pTask = new DdiTask;
     mfxU32 indx = FindFreeSurface(m_tasks);
     if(NO_INDEX == indx) return NULL;
 
-    //memset(m_tasks[indx], 0, sizeof(DdiTask));
+    m_tasks[indx].skipQueryStatus = false;
 
     return &(m_tasks[indx]);
 
@@ -1290,8 +1289,6 @@ mfxStatus TaskManager::FillTask(
     MFX_CHECK_STS(sts);
 
     pTask->SetFree(false);
-
-    pTask->skipQueryStatus = false;
 
     return MFX_ERR_NONE;
 
@@ -2437,7 +2434,7 @@ mfxStatus VideoVPPHW::PreWorkInputSurface(std::vector<ExtSurface> & surfQueue)
             }
             in = hdl;
 
-            
+
             memId     = surfQueue[i].pSurf->Data.MemId;
         }
 
@@ -3002,7 +2999,6 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
     }
 #endif
 
-    pTask->skipQueryStatus = false;
     sts = PreWorkOutSurface(pTask->output);
     MFX_CHECK_STS(sts);
 
