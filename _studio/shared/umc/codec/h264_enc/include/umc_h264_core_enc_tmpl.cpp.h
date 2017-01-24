@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #if PIXBITS == 8
@@ -910,7 +910,7 @@ Status H264ENC_MAKE_NAME(H264CoreEncoder_Compress_Slice)(
 ////    //}
 ////////
 #ifdef SLICE_THREADING_LOAD_BALANCING
-        if (core_enc->slice_load_balancing_enabled)
+        if (ticks && core_enc->slice_load_balancing_enabled)
             ticks[uMB] = vm_time_get_tick();
 #endif // SLICE_THREADING_LOAD_BALANCING
 
@@ -1139,7 +1139,7 @@ Status H264ENC_MAKE_NAME(H264CoreEncoder_Compress_Slice)(
         }
 
 #ifdef SLICE_THREADING_LOAD_BALANCING
-        if (core_enc->slice_load_balancing_enabled)
+        if (ticks && core_enc->slice_load_balancing_enabled)
         {
             ticks[uMB] = vm_time_get_tick() - ticks[uMB];
             curr_slice->m_ticks_per_slice += ticks[uMB];
