@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -612,6 +612,7 @@ MPEG2VideoDecoderBase::MPEG2VideoDecoderBase()
     , b_curr_number_backup(0)
     , first_i_occure_backup(0)
     , frame_count_backup(0)
+    , video_ptr(NULL)
     , m_lFlags(0)
     , m_nNumberOfThreads(1)
     , m_nNumberOfAllocatedThreads(1)
