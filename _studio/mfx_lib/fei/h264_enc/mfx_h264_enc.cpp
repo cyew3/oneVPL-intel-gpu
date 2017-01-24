@@ -358,8 +358,11 @@ mfxStatus VideoENC_ENC::Query(DdiTask& task)
         MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
     }
 
-    mfxENCInput *input = reinterpret_cast<mfxENCInput *>(task.m_userData[0]);
-    m_core->DecreaseReference(&(input->InSurface->Data));
+    mfxENCInput  *input  = reinterpret_cast<mfxENCInput  *>(task.m_userData[0]);
+    mfxENCOutput *output = reinterpret_cast<mfxENCOutput *>(task.m_userData[1]);
+
+    m_core->DecreaseReference(&input->InSurface->Data);
+    m_core->DecreaseReference(&output->OutSurface->Data);
 
     UMC::AutomaticUMCMutex guard(m_listMutex);
     //move that task to free tasks from m_incoming
@@ -644,7 +647,7 @@ mfxStatus VideoENC_ENC::RunFrameVmeENCCheck(
         mfxExtFeiPPS* extFeiPPSinRuntime = GetExtBufferFEI(input, fieldParity);
         MFX_CHECK(extFeiPPSinRuntime, MFX_ERR_UNDEFINED_BEHAVIOR);
 
-        // Check that parameters from previos init kept unchanged
+        // Check that parameters from previous init kept unchanged
         {
             mfxExtPpsHeader* extPps = GetExtBuffer(m_video);
             MFX_CHECK(extPps, MFX_ERR_INVALID_VIDEO_PARAM);
@@ -726,6 +729,7 @@ mfxStatus VideoENC_ENC::RunFrameVmeENCCheck(
     }
 
     m_core->IncreaseReference(&input->InSurface->Data);
+    m_core->IncreaseReference(&output->OutSurface->Data);
 
     // Configure current task
     //if (m_firstFieldDone == 0)

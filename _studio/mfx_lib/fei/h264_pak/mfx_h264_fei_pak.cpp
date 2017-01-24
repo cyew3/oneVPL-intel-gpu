@@ -369,8 +369,11 @@ mfxStatus VideoPAK_PAK::Query(DdiTask& task)
         MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
     }
 
-    mfxPAKInput *input = reinterpret_cast<mfxPAKInput *>(task.m_userData[0]);
-    m_core->DecreaseReference(&(input->InSurface->Data));
+    mfxPAKInput  *input  = reinterpret_cast<mfxPAKInput  *>(task.m_userData[0]);
+    mfxPAKOutput *output = reinterpret_cast<mfxPAKOutput *>(task.m_userData[1]);
+
+    m_core->DecreaseReference(&input->InSurface->Data);
+    m_core->DecreaseReference(&output->OutSurface->Data);
 
     UMC::AutomaticUMCMutex guard(m_listMutex);
     //move that task to free tasks from m_incoming
@@ -723,6 +726,7 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
     }
 
     m_core->IncreaseReference(&input->InSurface->Data);
+    m_core->IncreaseReference(&output->OutSurface->Data);
 
     // Configure current task
     //if (m_firstFieldDone == 0)
