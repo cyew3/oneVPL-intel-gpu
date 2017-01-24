@@ -311,7 +311,7 @@ mfxStatus InitParamsVPP(mfxVideoParam* pParams, sInputParams* pInParams, mfxU32 
     pParams->vpp.In.CropY = pInParams->frameInfoIn[paramID].CropY;
     pParams->vpp.In.CropW = pInParams->frameInfoIn[paramID].CropW;
     pParams->vpp.In.CropH = pInParams->frameInfoIn[paramID].CropH;
-    pParams->vpp.In.Width = pInParams->frameInfoIn[paramID].nWidth;
+    pParams->vpp.In.Width = MSDK_ALIGN16(pInParams->frameInfoIn[paramID].nWidth);
     pParams->vpp.In.Height = (MFX_PICSTRUCT_PROGRESSIVE == pInParams->frameInfoIn[paramID].PicStruct)?
                 MSDK_ALIGN16(pInParams->frameInfoIn[paramID].nHeight) : MSDK_ALIGN32(pInParams->frameInfoIn[paramID].nHeight);
 
