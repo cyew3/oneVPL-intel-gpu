@@ -480,6 +480,20 @@ mfxStatus VAAPIVideoProcessing::QueryCapabilities(mfxVppCaps& caps)
 
 } // mfxStatus VAAPIVideoProcessing::QueryCapabilities(mfxVppCaps& caps)
 
+/// Setup VPP VAAPI driver parameters
+/*!
+ Setup VPP surfaces and VPP VAAPI parameters.
+
+ \param[in] pParams
+ structure with VPP parameters and associated input and reference surfaces.
+ \param[out] deint
+ VAProcFilterParameterBufferDeinterlacing structure containing deinterlace information (scene change, which field to display).
+ \param[out] m_pipelineParam
+ VAProcPipelineParameterBuffer structure containing input and reference frames.
+
+ return mfxStatus
+ MFX_ERR_NONE id successful
+ */
 mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VAAPIVideoProcessing::Execute");
@@ -607,21 +621,35 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
 
             mfxDrvSurface* pRefSurf_frameInfo = &(pParams->pRefSurfaces[0]);
 
-            // PicStruc = MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_REPEATED=0x10
+            // PicStruc can take values: MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_REPEATED=0x10
             // default deint.flags = 0 is for top field in TFF frame.
             if (pRefSurf_frameInfo->frameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE)
                 deint.flags = VA_DEINTERLACING_ONE_FIELD;
             else if (pRefSurf_frameInfo->frameInfo.PicStruct & MFX_PICSTRUCT_FIELD_BFF)
                 deint.flags = VA_DEINTERLACING_BOTTOM_FIELD_FIRST | VA_DEINTERLACING_BOTTOM_FIELD;
 
+            /* Deinterlacer:
+             * BOB is used in first output frame (pParams->refCount = 1) and
+             * when scene change flag is set (pParams->scene > 0) ADI is
+             * used otherwise.
+             * ADI output is late by one field. Current and reference field
+             * are fed into de-interlacer. reference BSPEC for VEBOX
+             * https://gfxspecs.intel.com/Predator/Home/Index/13539
+             **/
+
+            // ADI 30i->30p: To get first field of current frame , set deint.flags second output field.
+            if(deint.algorithm == VAProcDeinterlacingMotionAdaptive && (pParams->refCount > 1))
+            {
+                if (MFX_PICSTRUCT_FIELD_TFF & pRefSurf_frameInfo->frameInfo.PicStruct)
+                    deint.flags = VA_DEINTERLACING_BOTTOM_FIELD;
+                else /* For BFF, second field is Top */
+                    deint.flags = VA_DEINTERLACING_BOTTOM_FIELD_FIRST;
+            }
+
             /* For ADI 30i->60p case with reference frames we have to indicate
-             * to driver which field Top or Bottom
-             * we a going to send now. Or which filed will be used by driver from source
-             * (not from reference) for current iteration.
-             * So on, if APP set "-spic 0" which is means MFX_PICSTRUCT_FIELD_TFF, in second iteration
-             * we should set "deint.flags = VA_DEINTERLACING_BOTTOM_FIELD" to indicate what now we processing
-             * Bottom field at this moment. Third iteration again TFF... and etc.
-             * if APP set "-spic 2" which is means MFX_PICSTRUCT_FIELD_BFF all is vice versa.
+             * to driver which field Top or Bottom we a going to send.
+             * For Scene Change Detection (SCD) decision, a new input frame
+             * is processed on frame 0 then every odd frames.
              *  */
             if (((pParams->bFMDEnable == true) && (pParams->refCount > 1)) || bForceADI)
             {
@@ -639,22 +667,56 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
                     else /**/
                         deint.flags = VA_DEINTERLACING_BOTTOM_FIELD_FIRST;
                 }
-            } //  if ((pParams->bFMDEnable == true) && (pParams->refCount > 1)) /* For 30i->60p mode only*/
+            } //  if ((pParams->bFMDEnable == true) && (pParams->refCount > 1)) /* 30i->60p mode only*/
 
+            /* BOB is used when scene change occur */
             if ( MFX_DEINTERLACING_ADVANCED_SCD == pParams->iDeinterlacingAlgorithm &&
-                 VPP_SCENE_NEW == pParams->scene)
+                ( pParams->scene != VPP_SCENE_NO_CHANGE))
             {
-                // This frame is a beginning of the new scene. Need to pass this info
-                // to the driver
-                // Use first field only as reference
-                if (MFX_PICSTRUCT_FIELD_TFF & pRefSurf_frameInfo->frameInfo.PicStruct)
-                    deint.flags = 0;
-                else /* Frame is BFF */
-                    deint.flags = VA_DEINTERLACING_BOTTOM_FIELD_FIRST | VA_DEINTERLACING_BOTTOM_FIELD;
 
-                deint.flags |= 0x0010; // There will be a special define in va_vpp.h
+                /* 30i->60p mode: For new scene, use BOB instead of ADI to avoid artifacts.
+                 * To keep synchronization, current input frame is used twice as \
+                 * DI input.
+                 * The parity of true current output frame number =
+                 * pParams->statusReportID will be used to determine the field
+                 * to be used.
+                 **/
+                if(pParams->bFMDEnable) // BOB 30i->60p
+                {
+                    if((0 == (pParams->statusReportID % 2))) // Process First Field
+                    {
+                        if (MFX_PICSTRUCT_FIELD_TFF & pRefSurf_frameInfo->frameInfo.PicStruct)
+                            deint.flags = 0;
+                        else /* BFF */
+                            deint.flags = VA_DEINTERLACING_BOTTOM_FIELD_FIRST | VA_DEINTERLACING_BOTTOM_FIELD;
+                    }
+                    else // Process Second Field
+                    {
+                        if (MFX_PICSTRUCT_FIELD_TFF & pRefSurf_frameInfo->frameInfo.PicStruct)
+                            deint.flags = VA_DEINTERLACING_BOTTOM_FIELD;
+                        else /**/
+                            deint.flags = VA_DEINTERLACING_BOTTOM_FIELD_FIRST;
+                    }
+
+                    // BOB use twice first field in case of multiple scene changes to avoid out of frame order
+                    if(VPP_MORE_SCENE_CHANGE_DETECTED == pParams->scene)
+                    {
+                        if (MFX_PICSTRUCT_FIELD_TFF & pRefSurf_frameInfo->frameInfo.PicStruct)
+                            deint.flags = 0;
+                        else /* BFF */
+                            deint.flags = VA_DEINTERLACING_BOTTOM_FIELD_FIRST | VA_DEINTERLACING_BOTTOM_FIELD;
+                    }
+                }
+                else /* BOB 30i->30p use First Field to generate output*/
+                {
+                    if (MFX_PICSTRUCT_FIELD_TFF & pRefSurf_frameInfo->frameInfo.PicStruct)
+                        deint.flags = 0;
+                    else /* Frame is BFF */
+                        deint.flags = VA_DEINTERLACING_BOTTOM_FIELD_FIRST | VA_DEINTERLACING_BOTTOM_FIELD;
+                }
+
+                deint.flags |= 0x0010; // Use BOB when Scene Change occur.  There will be a special define in va_vpp.h
             }
-
             vaSts = vaCreateBuffer(m_vaDisplay,
                                    m_vaContextVPP,
                                    VAProcFilterParameterBufferType,
@@ -888,8 +950,8 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
              * then current src surface
              * and only after this is forward references
              * */
-            pRefSurf_1 = &(pParams->pRefSurfaces[0]);
-            VASurfaceID* ref_srf = (VASurfaceID*) (pRefSurf_1->hdl.first);
+            pRefSurf_1 = &(pParams->pRefSurfaces[0]); // point to previous frame
+            VASurfaceID *ref_srf = (VASurfaceID *)(pRefSurf_1->hdl.first);
             m_pipelineParam[refIdx].backward_references = ref_srf;
         }
         /* FRC Interpolated case */
@@ -934,6 +996,15 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
 
         /* SRC surface */
         mfxDrvSurface* pSrcInputSurf = &pRefSurf[pParams->bkwdRefCount];
+        /* in 30i->60p mode, when scene change occurs, BOB is used and needs current input frame.
+         * Current frame = ADI reference for odd output frames
+         * Current frame = ADI input for even output frames
+        **/
+        if(pParams->bFMDEnable && (VPP_SCENE_NEW == pParams->scene))
+        {
+            if(pParams->statusReportID % 2)
+                pSrcInputSurf = &(pParams->pRefSurfaces[0]); // point to reference frame
+        }
         VASurfaceID* srf = (VASurfaceID*)(pSrcInputSurf->hdl.first);
         m_pipelineParam[refIdx].surface = *srf;
 

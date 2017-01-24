@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -339,9 +339,11 @@ namespace MfxHwVideoProcessing
 
     } mfxDrvSurface;
 
+    // Scene change detection
     typedef enum {
         VPP_SCENE_NO_CHANGE  = 0,
-        VPP_SCENE_NEW        = 1
+        VPP_MORE_SCENE_CHANGE_DETECTED = 2, // BOB display only first field to avoid out of frame order
+        VPP_SCENE_NEW        = 1            // BOB display current field to generate output
     } vppScene;
 
     class mfxExecuteParams

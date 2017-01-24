@@ -71,16 +71,13 @@ enum
     FROM_RUNTIME_EXTBUFF_FIELD_PROC = 0x100,
     FROM_RUNTIME_PICSTRUCT = 0x200,
 };
-// enum for m_scene_change
+
+// enum for m_scene_change states
 enum
 {
     NO_SCENE_CHANGE = 0x0,
-    SCENE_CHANGE = 0x1,
-    SCENE_CHANGE_PLUS_1 = 2,
-    SCENE_CHANGE_PLUS_2 = 3,
-    REPEAT = 4,
-    REPEAT1 = 5, // Max according to Sebastian
-    REPEAT2 = 6,
+    SCENE_CHANGE = 0x1, // Clean scene change
+    MORE_SCENE_CHANGE_DETECTED = 0x2, // Back to back scene change detected
 };
 ////////////////////////////////////////////////////////////////////////////////////
 // Utils
@@ -2785,6 +2782,22 @@ mfxStatus VideoVPPHW::MergeRuntimeParams(const DdiTask *pTask, MfxHwVideoProcess
     return sts;
 }
 
+/// Main VPP processing entry point
+/*!
+  This is where all VPP processing happen.
+  This function prepares input/output surface and parameters to pass to driver.
+
+  DEINTERLACE:
+  ADI with Scene change detector uses SceneChangeDetector::Get_frame_shot_Decision() and SceneChangeDetector::Get_frame_last_in_scene() to detect scene change.
+  It sets up the variable m_executeParams.scene to notify the scene change status to vaapi interface VAAPIVideoProcessing::Execute() function.
+
+  \param[in] pTask
+  Pointer to task thread
+  \param[out] m_executeParams
+  structure passed to driver VAAPI interface
+  \return[out] mfxStatus
+  MFX_ERR_NONE if there is no error
+ */
 mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
 {
     mfxStatus sts = MFX_ERR_NONE;
@@ -3006,37 +3019,42 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
     MFX_CHECK_STS(sts);
 
 #if defined(MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP) && defined(MFX_VA)
-    m_frame_num++;
-
+    /* In MFX_DEINTERLACING_ADVANCED_SCD (also called ADI_SCD) the current field
+     * uses information from previous field and next field (if it is
+     * present in current frame) in ADI mode.
+     * BOB is used when previous or next field can not be used
+     *   1. To deinterlace first frame
+     *   2. When scene change occur
+     *   3. To deinterlace last frame for 30i->60p mode
+     */
     if (MFX_DEINTERLACING_ADVANCED_SCD == m_executeParams.iDeinterlacingAlgorithm)
     {
         BOOL analysisReady = false;
 
         /* Feed scene change detector with input rame */
         mfxFrameSurface1 * inFrame = surfQueue[pTask->bkwdRefCount].pSurf;
+
         MFX_CHECK_NULL_PTR1(inFrame);
 
         mfxU32 scene_change = 0;
-        BOOL repeat_frame = 0;
         mfxU32 sc_in_first_field = 0;
         mfxU32 sc_in_second_field = 0;
         mfxU32  sc_detected = 0;
+        BOOL is30i60pConversion = 0;
+        mfxU32 LastSceneInframe = 0;
+        mfxU32 sc_shot_in_second_field = 0;
+        mfxU32 repeat_field = 0;
 
-        // WA to mark consecutive frames after scene change with SCENE_NEW flag
-        if(m_scene_change >= 2)
-            scene_change = m_scene_change/2;
-
-        if (m_executeParams.bFMDEnable && m_frame_num % 2 != 0 && m_frame_num > 1)
-        {
-            // This frame was analyzed already, so just re-use data.
-            scene_change = m_scene_change;
-        }
-        else
         {
             mfxHDL frameHandle;
             mfxFrameSurface1 frameSurface;
             memset(&frameSurface, 0, sizeof(mfxFrameSurface1));
             frameSurface.Info = inFrame->Info;
+
+            if (m_executeParams.bFMDEnable)
+            {
+                is30i60pConversion = 1;
+            }
 
             if (SYS_TO_D3D == m_ioMode || SYS_TO_SYS == m_ioMode)
             {
@@ -3070,31 +3088,94 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
             }
 
             // Check for scene change
-            analysisReady = m_SCD.ProcessField(); // First field
-            sc_in_first_field = m_SCD.Get_frame_shot_Decision() + m_SCD.Get_frame_last_in_scene();
+            // Do it only when new input frame are fed to deinterlacer.
+            // For 30i->60p, this happens every odd frames as:
+            // m_frame_num = 0: input0 -> BOB -> ouput0 but we need to feed SCD engine with first reference frame
+            // m_frame_num = 1: input1 + reference input 0 -> ADI -> output1
+            // m_frame_num = 2: input1 + referemce input 0 -> ADI -> output2 (no need to check as same input is used)
+            // m_frame_num = 3: input2 + reference input 1 -> ADI -> output3
 
-            analysisReady = m_SCD.ProcessField(); // Second field
-            sc_in_second_field += m_SCD.Get_frame_shot_Decision() + m_SCD.Get_frame_last_in_scene();
+            if (is30i60pConversion == 0 || (m_frame_num % 2) == 1 || m_frame_num == 0)
+            {
+                // SCD detects scene change for first field to be display.
+                // for 30i->60p, check happend on odd output frame 2N +1
+                // input fiels to SCD detection engine are field 2N + 2 and 2N + 3
 
-            sc_detected = sc_in_first_field + sc_in_second_field;
-            scene_change += sc_detected;
+                // Decision on first field is done for field 2N + 1
+                analysisReady = m_SCD.ProcessField();
+                sc_in_first_field = m_SCD.Get_frame_shot_Decision() + m_SCD.Get_frame_last_in_scene(); //takes care of bad parity info
+                LastSceneInframe += m_SCD.Get_frame_last_in_scene();
 
-            // Check for repeat frame
-            repeat_frame = m_SCD.Query_is_frame_repeated();
+                // Decision on second field is done for field 2N + 2
+                analysisReady = m_SCD.ProcessField();
+                sc_in_second_field = m_SCD.Get_frame_shot_Decision() + m_SCD.Get_frame_last_in_scene(); //Dima
+                LastSceneInframe += m_SCD.Get_frame_last_in_scene();
+                sc_shot_in_second_field = m_SCD.Get_frame_shot_Decision(); // 30i->60p will display new field in 2 frames
 
-            // WA: if scene change is detected, force next 2 frames to be processed with BOB.
-            // Same for repeat frame after scene change.
-            // This may be removed after frame counts get synchronized with BOB and m_refCountForADI
-            // in mfx_vpp_vaapi.cpp
-            if (sc_detected || (repeat_frame && scene_change)){
-                m_scene_change = 4;
-            } else {
-                m_scene_change /= 2;
+                sc_detected = sc_in_first_field + sc_in_second_field;
+                scene_change += sc_detected;
+
+                /* Check next state depending on value of previous
+                 * m_scene_change and detected scene change.
+                 * Typically, use BOB for last field before scene change and
+                 * first field of a new scene.
+                 * For 30i->30p: use BOB + first field of input frame to compute
+                 * output. For 30i->60p: use BOB + field location when scene
+                 * change occurs for the first time. Use BOB and first field
+                 * only for reference when more scene change are detected to
+                 * avoid out of frame order.
+                 */
+                switch (m_scene_change) // previous status
+                {
+                    case NO_SCENE_CHANGE:
+                        if (scene_change)
+                            m_scene_change = SCENE_CHANGE;
+                        break;
+                    case SCENE_CHANGE:
+                        if (scene_change)
+                            m_scene_change = MORE_SCENE_CHANGE_DETECTED;
+                        else
+                            m_scene_change = NO_SCENE_CHANGE;
+                        break;
+                    case MORE_SCENE_CHANGE_DETECTED:
+                        if (scene_change)
+                            m_scene_change = MORE_SCENE_CHANGE_DETECTED;
+                        else
+                            m_scene_change = NO_SCENE_CHANGE;
+                        break;
+                    default:
+                        break;
+                } //end switch
+
+            } // end (is30i60pConversion == 0 || m_frame_num % 2 == 1)
+
+            // Use BOB for last frame in 30i->60p mode to avoid display previous reference frame.
+            if ((is30i60pConversion == 1) && (pTask->bEOS))
+            {
+                m_scene_change = VPP_SCENE_NEW;
             }
+
         }
 
-        m_executeParams.scene = scene_change ? VPP_SCENE_NEW : VPP_SCENE_NO_CHANGE;
-    }
+        // set up m_executeParams.scene for vaapi interface;
+        switch (m_scene_change)
+        {
+            case NO_SCENE_CHANGE:
+                m_executeParams.scene = VPP_SCENE_NO_CHANGE;
+                break;
+            case SCENE_CHANGE:
+                m_executeParams.scene = VPP_SCENE_NEW;
+                break;
+            case MORE_SCENE_CHANGE_DETECTED:
+                m_executeParams.scene = VPP_MORE_SCENE_CHANGE_DETECTED;
+                break;
+            default:
+                break;
+        } //end switch
+    }  // if (MFX_DEINTERLACING_ADVANCED_SCD == m_executeParams.iDeinterlacingAlgorithm)
+
+    // increment ADI frame number
+    m_frame_num++;
 #endif
 
     m_executeParams.refCount     = numSamples;

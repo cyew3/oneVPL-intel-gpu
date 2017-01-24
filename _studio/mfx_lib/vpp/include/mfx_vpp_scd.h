@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -57,7 +57,8 @@
 #define TSCSTATBUFFER     3
 
 #define EXTRANEIGHBORS
-#define SAD_SEARCH_VSTEP 2  // 1=FS 2=FHS
+#define SAD_SEARCH_VSTEP  2  // 1=FS 2=FHS
+#define DECISION_THR      6 //Total number of trees is 13, decision has to be bigger than 6 to say it is a scene change.
 
 //using namespace MfxHwVideoProcessing;
 
@@ -200,6 +201,7 @@ typedef struct frameBuffer
     MVector *pInteger;
     mfxF32   CsVal;
     mfxF32   RsVal;
+    mfxF32   avgval;
     mfxU32   *SAD;
     mfxF32   *Cs;
     mfxF32   *Rs;
@@ -235,6 +237,7 @@ typedef struct stats_structure
     mfxF64 negBalance;
     mfxF64 ssDCval;
     mfxF64 refDCval;
+    mfxF64 avgVal;
     mfxI64 ssDCint;
     mfxI64 refDCint;
     BOOL   Gchg;
@@ -263,6 +266,7 @@ typedef struct extended_storage {
     mfxI32      *PDistanceTable;
     Layers      size;
     BOOL        firstFrame;
+    imageData   gainCorrection;
 } VidRead;
 
 typedef mfxU8*             pmfxU8;
