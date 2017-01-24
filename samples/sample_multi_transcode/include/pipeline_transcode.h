@@ -188,6 +188,10 @@ namespace TranscodingSample
         mfxU16 nQPP;
         mfxU16 nQPB;
 
+#ifdef ENABLE_FUTURE_FEATURES_EMBEDDED
+        std::vector<mfxExtEncoderROI> m_ROIData;
+#endif
+
         bool bOpenCL;
         mfxU16 reserved[4];
 
@@ -475,6 +479,10 @@ namespace TranscodingSample
         virtual mfxStatus EncodeOneFrame(ExtendedSurface *pExtSurface, mfxBitstream *pBS);
         virtual mfxStatus PreEncOneFrame(ExtendedSurface *pInSurface, ExtendedSurface *pOutSurface);
 
+#ifdef ENABLE_FUTURE_FEATURES_EMBEDDED
+        mfxStatus AddExtRoiBufferToCtrl(mfxEncodeCtrl **ppCtrl);
+#endif
+
         virtual mfxStatus DecodePreInit(sInputParams *pParams);
         virtual mfxStatus VPPPreInit(sInputParams *pParams);
         virtual mfxStatus EncodePreInit(sInputParams *pParams);
@@ -671,6 +679,13 @@ namespace TranscodingSample
         CIOStat outputStatistics;
 
         bool shouldUseGreedyFormula;
+
+#ifdef ENABLE_FUTURE_FEATURES_EMBEDDED
+        // roi data
+        std::vector<mfxExtEncoderROI> m_ROIData;
+        mfxEncodeCtrl auxCtrl;
+        mfxExtBuffer *ext_params1[1];
+#endif
     private:
         DISALLOW_COPY_AND_ASSIGN(CTranscodingPipeline);
 

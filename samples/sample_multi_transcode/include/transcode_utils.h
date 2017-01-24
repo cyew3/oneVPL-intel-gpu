@@ -107,6 +107,13 @@ namespace TranscodingSample
     protected:
         mfxStatus ParseParFile(FILE* file);
         mfxStatus TokenizeLine(msdk_char *pLine, mfxU32 length);
+
+#ifdef ENABLE_FUTURE_FEATURES_EMBEDDED
+        static bool isspace(char a);
+        static bool is_not_allowed_char(char a);
+        bool ParseROIFile(msdk_char const *roi_file_name, std::vector<mfxExtEncoderROI>& m_ROIData);
+#endif
+
         mfxStatus ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[]);
         mfxStatus ParseOption__set(msdk_char* strCodecType, msdk_char* strPluginPath);
         sPluginParams ParsePluginParameter(msdk_char* strPluginPath);

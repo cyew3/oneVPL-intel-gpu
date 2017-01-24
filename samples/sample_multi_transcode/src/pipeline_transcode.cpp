@@ -29,6 +29,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "mfx_vpp_plugin.h"
 #include "mfx_itt_trace.h"
 #include <algorithm>
+#include <cstring>
 
 #include "plugin_loader.h"
 
@@ -169,6 +170,11 @@ CTranscodingPipeline::CTranscodingPipeline():
     MSDK_ZERO_MEMORY(m_ExtBRC);
     m_ExtBRC.Header.BufferId = MFX_EXTBUFF_BRC;
     m_ExtBRC.Header.BufferSz = sizeof(m_ExtBRC);
+#endif
+
+#ifdef ENABLE_FUTURE_FEATURES_EMBEDDED
+    MSDK_ZERO_MEMORY(auxCtrl);
+    ext_params1[0] = NULL;
 #endif
 
     m_EncOpaqueAlloc.Header.BufferId = m_VppOpaqueAlloc.Header.BufferId =
@@ -664,10 +670,64 @@ mfxStatus CTranscodingPipeline::VPPOneFrame(ExtendedSurface *pSurfaceIn, Extende
 
 } // mfxStatus CTranscodingPipeline::DecodeOneFrame(ExtendedSurface *pExtSurface)
 
+#ifdef ENABLE_FUTURE_FEATURES_EMBEDDED
+mfxStatus CTranscodingPipeline::AddExtRoiBufferToCtrl(mfxEncodeCtrl **ppCtrl)
+{
+    if (!ppCtrl) return MFX_ERR_NULL_PTR;
+    mfxEncodeCtrl *pCtrl = *ppCtrl;
+
+    mfxU32 frame_num = m_nProcessedFramesNum;
+
+    if (m_ROIData.size() > frame_num) {
+        mfxU16 roi_buf_ind = 0;
+        if(pCtrl) {
+            bool is_reallocate = true;
+            for (mfxU16 i = 0; i < pCtrl->NumExtParam; ++i) {
+                if (pCtrl->ExtParam[i]->BufferId == MFX_EXTBUFF_ENCODER_ROI) {
+                    is_reallocate = false;
+                    roi_buf_ind = i;
+                    break;
+                }
+            }
+            if(is_reallocate) {
+                mfxExtBuffer **ext_params;
+                // reallocate (mfxExtBuffer*) array to add roi buffer
+                ext_params = new mfxExtBuffer* [pCtrl->NumExtParam + 1];
+                for(unsigned int i = 0; i < pCtrl->NumExtParam; i++) {
+                    ext_params[i] = pCtrl->ExtParam[i];
+                }
+                roi_buf_ind = pCtrl->NumExtParam;
+                delete pCtrl->ExtParam;
+                pCtrl->ExtParam = ext_params;
+                pCtrl->NumExtParam++;
+            }
+        } else {
+           // prepare auxiliary ctrl with the single ext buffer to store roi data
+           std::memset(&auxCtrl, 0, sizeof(auxCtrl));
+           auxCtrl.ExtParam = ext_params1;
+           auxCtrl.NumExtParam = 1;
+
+           *ppCtrl = &auxCtrl;
+           pCtrl = &auxCtrl;
+           roi_buf_ind = 0;
+        }
+        pCtrl->ExtParam[roi_buf_ind] = (mfxExtBuffer *)&m_ROIData[frame_num];
+    }
+
+    return MFX_ERR_NONE;
+}
+#endif
+
 mfxStatus CTranscodingPipeline::EncodeOneFrame(ExtendedSurface *pExtSurface, mfxBitstream *pBS)
 {
     mfxStatus sts = MFX_ERR_NONE;
     mfxEncodeCtrl *pCtrl = (pExtSurface->pCtrl) ? &pExtSurface->pCtrl->encCtrl : NULL;
+
+#ifdef ENABLE_FUTURE_FEATURES_EMBEDDED
+    // add ext roi buffer to ctrl
+    sts = AddExtRoiBufferToCtrl(&pCtrl);
+    if (sts != MFX_ERR_NONE) return sts;
+#endif
 
     for (;;)
     {
@@ -2891,6 +2951,10 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     m_AsyncDepth = (0 == pParams->nAsyncDepth)? 1: pParams->nAsyncDepth;
     m_FrameNumberPreference = pParams->FrameNumberPreference;
     m_numEncoders = 0;
+
+#ifdef ENABLE_FUTURE_FEATURES_EMBEDDED
+    m_ROIData = pParams->m_ROIData;
+#endif
 
     statisticsWindowSize = pParams->statisticsWindowSize;
     if (pParams->statisticsLogFile)

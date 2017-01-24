@@ -35,6 +35,17 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "transcode_utils.h"
 
 #include "version.h"
+
+#include <vector>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <cctype>
+#include <iterator>
+#include <cstring>
+#include <cstdlib>
+#include <algorithm>
+
 using namespace TranscodingSample;
 
 // parsing defines
@@ -117,6 +128,10 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("                      -hw - platform-specific on default display adapter (default)\n"));
     msdk_printf(MSDK_STRING("                      -hw_d3d11 - platform-specific via d3d11\n"));
     msdk_printf(MSDK_STRING("                      -sw - software\n"));
+#ifdef ENABLE_FUTURE_FEATURES_EMBEDDED
+    msdk_printf(MSDK_STRING("  -roi_file <roi-file-name>\n"));
+    msdk_printf(MSDK_STRING("                Set Regions of Interest for each frame from <roi-file-name>\n"));
+#endif
     msdk_printf(MSDK_STRING("  -async        Depth of asynchronous pipeline. default value 1\n"));
     msdk_printf(MSDK_STRING("  -join         Join session with other session(s), by default sessions are not joined\n"));
     msdk_printf(MSDK_STRING("  -priority     Use priority for join sessions. 0 - Low, 1 - Normal, 2 - High. Normal by default\n"));
@@ -591,6 +606,96 @@ mfxStatus CmdProcessor::TokenizeLine(msdk_char *pLine, mfxU32 length)
     return ParseParamsForOneSession(argc, argv);
 }
 
+#ifdef ENABLE_FUTURE_FEATURES_EMBEDDED
+bool CmdProcessor::isspace(char a) { return (std::isspace(a) != 0); }
+
+bool CmdProcessor::is_not_allowed_char(char a) {
+    return (std::isdigit(a) != 0) && (std::isspace(a) != 0) && (a != ';') && (a != '-');
+}
+
+bool CmdProcessor::ParseROIFile(const msdk_char *roi_file_name, std::vector<mfxExtEncoderROI>& m_ROIData)
+{
+    FILE *roi_file = NULL;
+    MSDK_FOPEN(roi_file, roi_file_name, MSDK_STRING("r"));
+
+    m_ROIData.clear();
+
+    if (roi_file)
+    {
+
+        // read file to buffer
+        fseek(roi_file, 0, SEEK_END);
+        int file_size = (int) ftell(roi_file);
+        rewind (roi_file);
+        std::auto_ptr<char> roi_data_ptr(new char[file_size]);
+        char *roi_data = roi_data_ptr.get();
+        if (file_size != fread(roi_data, 1, file_size, roi_file)) {
+            fclose(roi_file);
+            return false;
+        }
+        fclose(roi_file);
+
+        // search for not allowed characters
+        char *not_allowed_char = std::find_if(roi_data, roi_data + file_size,
+            is_not_allowed_char);
+        if (not_allowed_char != (roi_data + file_size)) return false;
+
+        // get unformatted roi data
+        std::string unformatted_roi_data;
+        unformatted_roi_data.clear();
+        std::remove_copy_if(roi_data, roi_data + file_size,
+            std::inserter(unformatted_roi_data, unformatted_roi_data.end()),
+            isspace);
+
+        // split data to items
+        std::stringstream unformatted_roi_data_ss(unformatted_roi_data);
+        std::vector<std::string> items;
+        items.clear();
+        std::string item;
+        while (std::getline(unformatted_roi_data_ss, item, ';')) {
+            items.push_back(item);
+        }
+
+        // parse data and store roi data for each frame
+        unsigned int item_ind = 0;
+        while (1) {
+            if (item_ind >= items.size()) break;
+
+            mfxExtEncoderROI frame_roi;
+            std::memset(&frame_roi, 0, sizeof(frame_roi));
+            frame_roi.Header.BufferId = MFX_EXTBUFF_ENCODER_ROI;
+            frame_roi.ROIMode = MFX_ROI_MODE_QP_DELTA;
+
+            int roi_num = std::atoi(items[item_ind].c_str());
+            if (roi_num < 0 || roi_num > sizeof(frame_roi.ROI) / sizeof(frame_roi.ROI[0])){
+                m_ROIData.clear();
+                return false;
+            }
+            if ((item_ind + 5 * roi_num) >= items.size()) {
+                m_ROIData.clear();
+                return false;
+            }
+
+            for (int i = 0; i < roi_num; i++) {
+                // do not handle out of range integer errors
+                frame_roi.ROI[i].Left = std::atoi(items[item_ind + i * 5 + 1].c_str());
+                frame_roi.ROI[i].Top = std::atoi(items[item_ind + i * 5 + 2].c_str());
+                frame_roi.ROI[i].Right = std::atoi(items[item_ind + i * 5 + 3].c_str());
+                frame_roi.ROI[i].Bottom = std::atoi(items[item_ind + i * 5 + 4].c_str());
+                frame_roi.ROI[i].DeltaQP = (mfxI16) std::atoi(items[item_ind +i * 5 + 5].c_str());
+            }
+            frame_roi.NumROI = (mfxU16) roi_num;
+            m_ROIData.push_back(frame_roi);
+            item_ind = item_ind + roi_num * 5 + 1;
+        }
+    }
+    else {
+        return false;
+    }
+    return true;
+}
+#endif
+
 mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
 {
     mfxStatus sts = MFX_ERR_NONE;
@@ -703,6 +808,22 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
                 InputParams.bIsMVC = true;
             }
         }
+#ifdef ENABLE_FUTURE_FEATURES_EMBEDDED
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-roi_file")))
+        {
+            VAL_CHECK(i+1 == argc, i, argv[i]);
+            i++;
+
+            msdk_char strRoiFile[MSDK_MAX_FILENAME_LEN];
+            SIZE_CHECK((msdk_strlen(argv[i])+1) > MSDK_ARRAY_LEN(strRoiFile));
+            msdk_opt_read(argv[i], strRoiFile);
+
+            if(!ParseROIFile(strRoiFile, InputParams.m_ROIData)) {
+                PrintError(MSDK_STRING("Incorrect ROI file: \"%s\" "), argv[i]);
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+#endif
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-sw")))
         {
             InputParams.libType = MFX_IMPL_SOFTWARE;
