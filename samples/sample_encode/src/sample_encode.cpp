@@ -118,6 +118,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("   [-timeout]               - encoding in cycle not less than specific time in seconds\n"));
     msdk_printf(MSDK_STRING("   [-membuf]                - size of memory buffer in frames\n"));
     msdk_printf(MSDK_STRING("   [-uncut]                 - do not cut output file in looped mode (in case of -timeout option)\n"));
+    msdk_printf(MSDK_STRING("   [-dump fileName]         - dump MSDK components configuration to the file in text form\n"));
 
 #ifdef ENABLE_FUTURE_FEATURES
     msdk_printf(MSDK_STRING("   [-extbrc:<on,off>]       - External BRC for HEVC encoder"));
@@ -443,6 +444,15 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-gpucopy::off")))
         {
             pParams->gpuCopy = MFX_GPUCOPY_OFF;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dump")))
+        {
+            VAL_CHECK(i+1 >= nArgNum, i, strInput[i]);
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->DumpFileName))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("File Name for dumping MSDK library configuration should be provided"));
+                return MFX_ERR_UNSUPPORTED;
+            }
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-cqp")))
         {

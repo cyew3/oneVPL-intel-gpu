@@ -138,6 +138,7 @@ struct sInputParams
 
     bool bUncut;
     bool isHEVCHW;
+    msdk_char DumpFileName[MSDK_MAX_FILENAME_LEN];
 
 #if defined (ENABLE_V4L2_SUPPORT)
     msdk_char DeviceName[MSDK_MAX_FILENAME_LEN];

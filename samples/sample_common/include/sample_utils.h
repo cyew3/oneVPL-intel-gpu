@@ -704,4 +704,7 @@ void WaitForDeviceToBecomeFree(MFXVideoSession& session, mfxSyncPoint& syncPoint
 
 mfxU16 FourCCToChroma(mfxU32 fourCC);
 
+void SerializeVideoParamStruct(msdk_ostream& sstr,msdk_string sectionName,mfxVideoParam& params,bool shouldUseVPPSection=false);
+mfxStatus DumpLibraryConfiguration(msdk_string fileName, mfxVideoParam* pDecoderParams,mfxVideoParam* pVPPParams,mfxVideoParam* pEncoderParams);
+
 #endif //__SAMPLE_UTILS_H__

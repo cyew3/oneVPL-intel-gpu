@@ -322,7 +322,7 @@ mfxStatus CRegionEncodingPipeline::Init(sInputParams *pParams)
 
     // FileReader can convert yv12->nv12 without vpp
     m_InputFourCC = (pParams->FileInputFourCC == MFX_FOURCC_YV12) ? MFX_FOURCC_NV12 : pParams->FileInputFourCC;
-    
+
     sts = InitFileWriters(pParams);
     MSDK_CHECK_STATUS(sts, "InitFileWriters failed");
 

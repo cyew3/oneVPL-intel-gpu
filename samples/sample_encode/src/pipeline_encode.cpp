@@ -1191,7 +1191,7 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
         MSDK_CHECK_STATUS(sts, "LoadPlugin failed");
     }
 
-    // Check if we're working wiht HEVC_HW, we'll need that information in case of 10-bits mode 
+    // Check if we're working wiht HEVC_HW, we'll need that information in case of 10-bits mode
     pParams->isHEVCHW = AreGuidsEqual(pParams->pluginParams.pluginGuid, MFX_PLUGINID_HEVCE_HW);
 
     // set memory type
@@ -1244,6 +1244,26 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
 
     // If output isn't specified work in performance mode and do not insert idr
     m_bCutOutput = pParams->dstFileBuff.size() ? !pParams->bUncut : false;
+
+    // Dumping components configuration if required
+    if(*pParams->DumpFileName)
+    {
+        mfxVideoParam encoderParams={};
+        sts=m_pmfxENC->GetVideoParam(&encoderParams);
+        MSDK_CHECK_STATUS(sts, "Cannot read configuration from encoder: GetVideoParam failed");
+
+        if(m_pmfxVPP)
+        {
+            mfxVideoParam vppParams={};
+            m_pmfxVPP->GetVideoParam(&vppParams);
+            MSDK_CHECK_STATUS(sts, "Cannot read configuration from VPP: GetVideoParam failed");
+            DumpLibraryConfiguration(pParams->DumpFileName,NULL,&vppParams,&encoderParams);
+        }
+        else
+        {
+            DumpLibraryConfiguration(pParams->DumpFileName,NULL,NULL,&encoderParams);
+        }
+    }
 
     return MFX_ERR_NONE;
 }
