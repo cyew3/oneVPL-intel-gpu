@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -14,7 +14,6 @@
 
 #include "umc_vc1_dec_seq.h"
 #include "umc_vc1_dec_debug.h"
-#include "umc_vc1_dec_time_statistics.h"
 
 static const Ipp32u bc_lut_1[] = {2,0,1,3};
 static const Ipp32u bc_lut_2[] = {0,1,2,3};
@@ -32,9 +31,6 @@ VC1Status DecodePictureLayer_ProgressivePpicture(VC1Context* pContext)
     seqLayerHeader->RNDCTRL = 1 - seqLayerHeader->RNDCTRL;
     picLayerHeader->RNDCTRL = seqLayerHeader->RNDCTRL;
 
-
-    pContext->interp_params_luma.roundControl = pContext->m_picLayerHeader->RNDCTRL;
-    pContext->interp_params_chroma.roundControl = pContext->m_picLayerHeader->RNDCTRL;
 
     //PQINDEX is a 5-bit field that signals the quantizer scale index
     //for the entire frame. It is present in all picture types.  If the
@@ -81,7 +77,6 @@ VC1Status DecodePictureLayer_ProgressivePpicture(VC1Context* pContext)
     }
 
     CalculatePQuant(pContext);
-    ChooseTTMB_TTBLK_SBP(pContext);
 
     MVRangeDecode(pContext);
 
@@ -194,13 +189,9 @@ VC1Status DecodePictureLayer_ProgressivePpicture(VC1Context* pContext)
                 //intensity compensation.
                 VC1_GET_BITS(6, picLayerHeader->LUMSHIFT);
 
-                STATISTICS_START_TIME(m_timeStatistics->intensity_StartTime);
-
+#ifdef ALLOW_SW_VC1_FALLBACK
                 FillTablesForIntensityCompensation(pContext, picLayerHeader->LUMSCALE,picLayerHeader->LUMSHIFT);
-
-                STATISTICS_END_TIME(m_timeStatistics->intensity_StartTime,
-                                m_timeStatistics->intensity_EndTime,
-                                m_timeStatistics->intensity_TotalTime);
+#endif
             }
 
         picLayerHeader->MVMODE2 = pContext->m_picLayerHeader->MVMODE;
@@ -272,14 +263,9 @@ VC1Status DecodePictureLayer_ProgressivePpicture(VC1Context* pContext)
                 //intensity compensation.
                 VC1_GET_BITS(6, picLayerHeader->LUMSHIFT);
 
-                STATISTICS_START_TIME(m_timeStatistics->intensity_StartTime);
-
+#ifdef ALLOW_SW_VC1_FALLBACK
                 FillTablesForIntensityCompensation(pContext, picLayerHeader->LUMSCALE,picLayerHeader->LUMSHIFT);
-
-                STATISTICS_END_TIME(m_timeStatistics->intensity_StartTime,
-                                m_timeStatistics->intensity_EndTime,
-                                m_timeStatistics->intensity_TotalTime);
-
+#endif
 
                 picLayerHeader->MVMODE2 = pContext->m_picLayerHeader->MVMODE;
             }
@@ -319,8 +305,6 @@ VC1Status DecodePictureLayer_ProgressivePpicture(VC1Context* pContext)
     //The motion vector Huffman tables are listed in section 5.7.
     VC1_GET_BITS(2, picLayerHeader->MVTAB);       //MVTAB
 
-    picLayerHeader->m_pCurrMVDifftbl =  pContext->m_vlcTbl->MVDIFF_PB_TABLES[picLayerHeader->MVTAB];      //MVTAB
-
     //The CBPTAB field is a 2 bit value present only in P frames.
     //This field signals the Huffman table used to decode the CBPCY
     //field (described in section 4.4.5.2) for each coded macroblock in
@@ -332,9 +316,6 @@ VC1Status DecodePictureLayer_ProgressivePpicture(VC1Context* pContext)
     //01    CBP Table 2
     //11    CBP Table 3
     VC1_GET_BITS(2,picLayerHeader->CBPTAB);       //CBPTAB
-
-    picLayerHeader->m_pCurrCBPCYtbl =  pContext->m_vlcTbl->CBPCY_PB_TABLES[picLayerHeader->CBPTAB];       //CBPTAB
-
 
     vc1Res = VOPDQuant(pContext);
 
@@ -383,14 +364,22 @@ VC1Status DecodePictureLayer_ProgressivePpicture(VC1Context* pContext)
         picLayerHeader->TRANSACFRM++;
     }
 
-    ChooseACTable(pContext, picLayerHeader->TRANSACFRM, picLayerHeader->TRANSACFRM);//TRANSACFRM
-
     //TRANSDCTAB is a one-bit field that signals which of two Huffman tables
     //is used to decode the Transform DC coefficients in intra-coded blocks.
     //If TRANSDCTAB = 0 then the low motion huffman table is used.
     //If TRANSDCTAB = 1 then the high motion huffman table is used.
     VC1_GET_BITS(1, picLayerHeader->TRANSDCTAB);       //TRANSDCTAB
+
+#ifdef ALLOW_SW_VC1_FALLBACK
+    pContext->interp_params_luma.roundControl = pContext->m_picLayerHeader->RNDCTRL;
+    pContext->interp_params_chroma.roundControl = pContext->m_picLayerHeader->RNDCTRL;
+
+    ChooseTTMB_TTBLK_SBP(pContext);
+    picLayerHeader->m_pCurrMVDifftbl = pContext->m_vlcTbl->MVDIFF_PB_TABLES[picLayerHeader->MVTAB];      //MVTAB
+    picLayerHeader->m_pCurrCBPCYtbl = pContext->m_vlcTbl->CBPCY_PB_TABLES[picLayerHeader->CBPTAB];       //CBPTAB
+    ChooseACTable(pContext, picLayerHeader->TRANSACFRM, picLayerHeader->TRANSACFRM);//TRANSACFRM
     ChooseDCTable(pContext, picLayerHeader->TRANSDCTAB);       //TRANSDCTAB
+#endif
 
     return vc1Res;
 }

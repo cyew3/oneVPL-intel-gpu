@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -62,17 +62,8 @@ public:
     virtual Status Init(VC1Context* pContext,
                         Ipp32s iNumber,
                         VC1TaskStore* pTaskStore,
-                        VideoAccelerator* va,
                         MemoryAllocator* pMemoryAllocator,
                         VC1TaskProcessor* pExternalProcessor);
-
-    // Start decoding asynchronously
-    Status StartProcessing(void);
-    // Wait for end of asynchronous decoding
-    Status WaitForEndOfProcessing(void);
-
-    // wait (if thread already worked) and stop thread
-    Status WaitAndStop(void);
 
     // Decode picture segment
     virtual Status process(void);
@@ -89,13 +80,8 @@ protected:
     // Threading tools
     //
 
-    // Starting routine for decoding thread
-    static
-    Ipp32u DecodingThreadRoutine(void *p);
 
     vm_thread m_hThread;                                        // (vm_thread) handle to asynchronously working thread
-    vm_event m_hStartProcessing;                                // (vm_event) event to start asynchronous processing
-    vm_event m_hDoneProcessing;                                 // (vm_event) event to show end of processing
 
     Ipp32s m_iNumber;                                           // (Ipp32s) ordinal number of decoder
 

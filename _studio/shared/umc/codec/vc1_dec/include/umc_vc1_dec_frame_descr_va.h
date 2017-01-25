@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -74,10 +74,7 @@ namespace UMC
                                                 Ipp32u ByteOffset,
                                                 Ipp8u& Flag_03)
         {
-            //if (VC1_PROFILE_ADVANCED == pContext->m_seqLayerHeader.PROFILE)
-                return VC1PackBitStreamAdv(pContext, Size, pOriginalData, OriginalSize, ByteOffset, Flag_03);
-            //else
-            //    return 0;
+            return VC1PackBitStreamAdv(pContext, Size, pOriginalData, OriginalSize, ByteOffset, Flag_03);
         }
 
          Ipp32u VC1PackBitStreamAdv (VC1Context* pContext, Ipp32u& Size,Ipp8u* pOriginalData,
@@ -91,7 +88,7 @@ namespace UMC
         void   VC1SetBitplaneBuffer(Ipp32s size);
         void   VC1SetPictureBuffer();
 
-        void   VC1SetBuffersSize                    (Ipp32u SliceBufIndex, Ipp32u PicBuffIndex);
+        void   VC1SetBuffersSize                    (Ipp32u SliceBufIndex);
         void   VC1SetBuffersSize() {};
 
         void   SetVideoAccelerator                  (VideoAccelerator*  va)
@@ -172,37 +169,6 @@ namespace UMC
         VAPictureParameterBufferVC1*   m_pPicPtr;
         bool m_bIsPreviousSkip;
     };
-    class VC1UnPackerLVA
-    {
-    public:
-        VC1UnPackerLVA():m_va(NULL),
-                         m_pSliceInfo(NULL),
-                         m_pPicPtr(NULL)
-        {
-        }
-        ~VC1UnPackerLVA(){};
-        void         VC1UnPackPicParams                   (VC1Context* pContext, Ipp8u picIndex) {};
-        void         VC1UnPackBitplaneBuffers             (VC1Context* pContext) {};
-        Ipp32u       VC1UnPackOneSlice                    (VC1Context* pContext, SliceParams* slparams) {return 0;} ;
-        Ipp8u*       VC1GetBitsream                       (){return 0;};
-        Ipp32u       VC1GetNumOfSlices                    (){return 0;};
-        void         VC1SetSliceBuffer                    (){};
-        void         SetVideoAccelerator                  (VideoAccelerator*  va)
-        {
-            if (va)
-                m_va = va;
-        };
-     private:
-        // we sure about our types
-        template <class T>
-        T bit_get(T value, Ipp32u offset, Ipp32u count)
-        {
-            return (T)( (value & (((1<<count)-1) << offset)) >> offset);
-        };
-        VideoAccelerator*              m_va;
-        VASliceParameterBufferVC1*     m_pSliceInfo;
-        VAPictureParameterBufferVC1*   m_pPicPtr;
-    };
 #endif
 
 
@@ -226,14 +192,9 @@ namespace UMC
                                       VideoAccelerator*              va);
         void VC1PackPicParamsForOneSlice(VC1Context* pContext)
         {
-            //UMCVACompBuffer* CompBuf;
-            //m_pPicPtr = (DXVA_PictureParameters*)m_va->GetCompBuffer(DXVA_PICTURE_DECODE_BUFFER, &CompBuf,sizeof(DXVA_PictureParameters));
-            // _MAY_BE need to check sizes
             VC1PackPicParams(pContext,m_pPicPtr,m_va);
             if (VC1_IS_REFERENCE(pContext->m_picLayerHeader->PTYPE))
                 m_bIsPreviousSkip = false;
-            //if (m_bIsPreviousSkip)
-            //    m_pPicPtr->wBackwardRefPictureIndex = m_pPicPtr->wForwardRefPictureIndex;
         }
 
         void VC1PackOneSlice                      (VC1Context* pContext,
@@ -254,11 +215,11 @@ namespace UMC
                                                        Ipp32u Size,
                                                        Ipp8u* pOriginalData,
                                                        Ipp32u ByteOffset,
-                                                       Ipp32u isNeedToAddSC,
-                                                       Ipp8u& Flag_03)
+                                                       Ipp32u ,
+                                                       Ipp8u& )
         {
             if (VC1_PROFILE_ADVANCED != pContext->m_seqLayerHeader.PROFILE)
-                return VC1PackBitStreamSM(pContext, Size, pOriginalData, ByteOffset, false);
+                return VC1PackBitStreamSM(Size, pOriginalData, ByteOffset);
             else
                 return VC1PackBitStreamAdv(pContext, Size, pOriginalData, ByteOffset);
         }
@@ -269,8 +230,7 @@ namespace UMC
         void   VC1SetPictureBuffer();
 
         void   VC1SetExtPictureBuffer() {};
-        void   VC1SetBuffersSize                    (Ipp32u SliceBufIndex,Ipp32u PicBuffIndex);
-        //void   VC1SetBuffersSize();
+        void   VC1SetBuffersSize                    (Ipp32u SliceBufIndex);
 
         void   SetVideoAccelerator                  (VideoAccelerator*  va)
         {
@@ -286,7 +246,7 @@ namespace UMC
         void MarkFrameAsSkip() {m_bIsPreviousSkip = true;}
         bool IsPrevFrameIsSkipped() {return m_bIsPreviousSkip;}
 
-        Ipp32u VC1GetPicHeaderSize(Ipp8u* pOriginalData, Ipp32u Offset, Ipp8u& Flag_03)
+        Ipp32u VC1GetPicHeaderSize(Ipp8u* , Ipp32u , Ipp8u& )
         {
             // compatibility only
             return 0;
@@ -294,11 +254,9 @@ namespace UMC
 
     protected:
 
-       Ipp32u VC1PackBitStreamSM (VC1Context* pContext,
-                                              Ipp32u Size,
+       Ipp32u VC1PackBitStreamSM (Ipp32u Size,
                                               Ipp8u* pOriginalData,
-                                              Ipp32u ByteOffset,
-                                              bool   isNeedToAddSC = false);
+                                              Ipp32u ByteOffset);
 
        Ipp32u VC1PackBitStreamAdv (VC1Context* pContext,
                                    Ipp32u Size,
@@ -338,8 +296,6 @@ namespace UMC
 
             if (VC1_IS_REFERENCE(pContext->m_picLayerHeader->PTYPE))
                 m_bIsPreviousSkip = false;
-            //if (m_bIsPreviousSkip)
-            //    m_pPicPtr->wBackwardRefPictureIndex = m_pPicPtr->wForwardRefPictureIndex;
         }
 
         virtual void VC1PackerDXVA_EagleLake::VC1PackOneSlice  (VC1Context* pContext,
@@ -351,7 +307,7 @@ namespace UMC
                                           Ipp32u ChoppingType);
 
         virtual void   VC1SetExtPictureBuffer();
-        virtual void   VC1SetBuffersSize                    (Ipp32u SliceBufIndex,Ipp32u PicBuffIndex);
+        virtual void   VC1SetBuffersSize                    (Ipp32u SliceBufIndex);
         Ipp32u VC1GetPicHeaderSize(Ipp8u* pOriginalData, size_t Offset, Ipp8u& Flag_03)
         {
             Ipp32u i = 0;
@@ -415,10 +371,7 @@ namespace UMC
                                                        Ipp32u ByteOffset,
                                                        Ipp8u& Flag_03)
         {
-            //if (VC1_PROFILE_ADVANCED == pContext->m_seqLayerHeader.PROFILE)
-                return VC1PackBitStreamAdv(pContext, Size, pOriginalData, OriginalSize, ByteOffset, Flag_03);
-            //else
-            //    return 0;
+            return VC1PackBitStreamAdv(pContext, Size, pOriginalData, OriginalSize, ByteOffset, Flag_03);
         }
 
        virtual Ipp32u VC1PackBitStreamAdv (VC1Context* pContext, Ipp32u& Size,Ipp8u* pOriginalData,
@@ -459,8 +412,6 @@ namespace UMC
 
             if (VC1_IS_REFERENCE(pContext->m_picLayerHeader->PTYPE))
                 m_bIsPreviousSkip = false;
-            /*if (m_bIsPreviousSkip)
-                m_pPicPtr->wBackwardRefPictureIndex = m_pPicPtr->wForwardRefPictureIndex;*/
         }
 
         virtual void VC1PackerDXVA_Protected::VC1PackOneSlice  (VC1Context* pContext,
@@ -472,7 +423,7 @@ namespace UMC
             Ipp32u ChoppingType);
 
         virtual void   VC1SetExtPictureBuffer();
-        virtual void   VC1SetBuffersSize                    (Ipp32u SliceBufIndex,Ipp32u PicBuffIndex);
+        virtual void   VC1SetBuffersSize                    (Ipp32u SliceBufIndex);
 
          virtual Ipp32u   VC1PackBitStream(VC1Context* pContext,
                                                        Ipp32u& Size,
@@ -578,24 +529,17 @@ namespace UMC
                                                        m_bIsItarativeMode(false),
                                                        m_pBufferStart(NULL)
         {
-//#ifdef UMC_VA_LINUX
-            //m_bIsItarativeMode = true;
-//#endif
-
-            m_bBframeDelay = true;
         }
 
         virtual bool Init                        (Ipp32u         DescriporID,
                                                   VC1Context*    pContext,
                                                   VC1TaskStore*  pStore,
-                                                  bool IsReoreder = true,
-                                                  Ipp16s*        pResidBuf = 0)
+                                                  Ipp16s*)
         {
             VC1SequenceLayerHeader* seqLayerHeader = &pContext->m_seqLayerHeader;
             m_pStore = pStore;
             m_pPacker.SetVideoAccelerator(m_va);
 
-            //need to think about DBL profile
             if (m_va->m_Profile == VC1_VLD)
             {
                 Ipp32u buffSize =  (seqLayerHeader->heightMB*VC1_PIXEL_IN_LUMA + 128)*
@@ -618,16 +562,13 @@ namespace UMC
                         return false;
                     }
                 }
-                //m_pContext = (VC1Context*)ippsMalloc_8u(sizeof(VC1Context));
-                //if(!m_pContext)
-                //    return false;
+
                 memset(m_pContext, 0, sizeof(VC1Context));
 
 
                 //buf size should be divisible by 4
                 if(buffSize & 0x00000003)
                     buffSize = (buffSize&0xFFFFFFFC) + 4;
-
 
                 if(m_pContext->m_pBufferStart == NULL)
                 {
@@ -643,11 +584,7 @@ namespace UMC
                         return false;
                     }
                 }
-                //m_pContext->m_pBufferStart = (Ipp8u*)ippsMalloc_8u(buffSize*sizeof(Ipp8u));
-                //if(m_pContext->m_pBufferStart==NULL)
-                //{
-                //    return false;
-                //}
+
                 memset(m_pContext->m_pBufferStart, 0, buffSize);
 
                 m_pContext->m_vlcTbl = pContext->m_vlcTbl;
@@ -848,7 +785,7 @@ namespace UMC
                                                      StartCodeOffset,
                                                      chopType);
 
-                            m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1,m_iPicBufIndex);
+                            m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1);
 
                             m_va->Execute();
                             BytesAlreadyExecuted += ByteFilledInSlice;
@@ -878,7 +815,7 @@ namespace UMC
                             StartCodeOffset,
                             2);
 
-                        m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1,m_iPicBufIndex);
+                        m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1);
 
                         m_pPacker.VC1PackPicParamsForOneSlice(m_pContext);
                         if (UMC_OK != m_va->Execute())
@@ -897,7 +834,7 @@ namespace UMC
                             SliceSize,
                             StartCodeOffset,
                             Flag_03);
-                        m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1,m_iPicBufIndex);
+                        m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1);
                         if (UMC_OK != m_va->Execute())
                             throw VC1Exceptions::vc1_exception(VC1Exceptions::internal_pipeline_error);
 
@@ -953,7 +890,7 @@ namespace UMC
                                                   StartCodeOffset,
                                                   chopType);
 
-                        m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1,m_iPicBufIndex);
+                        m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1);
 
                         if (UMC_OK != m_va->Execute())
                             throw VC1Exceptions::vc1_exception(VC1Exceptions::internal_pipeline_error);
@@ -984,7 +921,7 @@ namespace UMC
                                               StartCodeOffset,
                                               2);
 
-                    m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1,m_iPicBufIndex);
+                    m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1);
 
                     m_pPacker.VC1PackPicParamsForOneSlice(m_pContext);
                     if (UMC_OK != m_va->Execute())
@@ -1015,7 +952,7 @@ namespace UMC
                         // Execute first slice
                         if (m_va->m_Platform == VA_LINUX)
                             m_pPacker.VC1PackBitplaneBuffers(m_pContext);
-                        m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex + 1,m_iPicBufIndex);
+                        m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex + 1);
 
                         if (UMC_OK != m_va->Execute())
                             throw VC1Exceptions::vc1_exception(VC1Exceptions::internal_pipeline_error);
@@ -1120,7 +1057,7 @@ namespace UMC
                                     StartCodeOffset,
                                     chopType);
 
-                                m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1,m_iPicBufIndex);
+                                m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1);
 
                                 m_va->Execute();
                                 BytesAlreadyExecuted += ByteFilledInSlice;
@@ -1150,7 +1087,7 @@ namespace UMC
                                 StartCodeOffset,
                                 2);
 
-                            m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1,m_iPicBufIndex);
+                            m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1);
 
                             m_pPacker.VC1PackPicParamsForOneSlice(m_pContext);
                             if (UMC_OK != m_va->Execute())
@@ -1259,7 +1196,7 @@ namespace UMC
                                                           StartCodeOffset,
                                                           chopType);
 
-                                m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1,m_iPicBufIndex);
+                                m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1);
 
                                 if (UMC_OK != m_va->Execute())
                                     throw VC1Exceptions::vc1_exception(VC1Exceptions::internal_pipeline_error);
@@ -1291,7 +1228,7 @@ namespace UMC
                                                       SliceSize - BytesAlreadyExecuted,
                                                       StartCodeOffset,
                                                       2);
-                            m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1,m_iPicBufIndex);
+                            m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1);
                             m_pPacker.VC1PackPicParamsForOneSlice(m_pContext);
                             if (UMC_OK != m_va->Execute())
                                 throw VC1Exceptions::vc1_exception(VC1Exceptions::internal_pipeline_error);
@@ -1322,7 +1259,7 @@ namespace UMC
                                 if (m_va->m_Platform == VA_LINUX)
                                     m_pPacker.VC1PackBitplaneBuffers(m_pContext);
 
-                                m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex + 1,m_iPicBufIndex);
+                                m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex + 1);
 
                                 if (UMC_OK != m_va->Execute())
                                     throw VC1Exceptions::vc1_exception(VC1Exceptions::internal_pipeline_error);
@@ -1353,7 +1290,7 @@ namespace UMC
             //need to execute last slice
             if (MBEndRowOfAlreadyExec != m_pContext->m_seqLayerHeader.heightMB)
             {
-                m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex,m_iPicBufIndex); // +1 !!!!!!!1
+                m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex);
                 if (m_va->m_Platform == VA_LINUX)
                     m_pPacker.VC1PackBitplaneBuffers(m_pContext);
                 if (UMC_OK != m_va->Execute())
@@ -1408,7 +1345,6 @@ namespace UMC
         virtual Status preProcData(VC1Context*            pContext,
                                    Ipp32u                 bufferSize,
                                    Ipp64u                 frameCount,
-                                   bool                   isWMV,
                                    bool& skip)
         {
             Status vc1Sts = UMC_OK;
@@ -1434,12 +1370,11 @@ namespace UMC
             }
 
 
-            ippsCopy_8u(pbufferStart,m_pContext->m_pBufferStart,(bufferSize & 0xFFFFFFF8) + 8); // (bufferSize & 0xFFFFFFF8) + 8 - skip frames
+            MFX_INTERNAL_CPY(m_pContext->m_pBufferStart, pbufferStart, (bufferSize & 0xFFFFFFF8) + 8); // (bufferSize & 0xFFFFFFF8) + 8 - skip frames
 
             m_pContext->m_bitstream.pBitstream = (Ipp32u*)m_pContext->m_pBufferStart;
 
-            if ((m_pContext->m_seqLayerHeader.PROFILE == VC1_PROFILE_ADVANCED) || (!isWMV))
-                m_pContext->m_bitstream.pBitstream += 1;
+            m_pContext->m_bitstream.pBitstream += 1;
 
             m_pContext->m_bitstream.bitOffset = 31;
             m_pContext->m_picLayerHeader = m_pContext->m_InitPicLayer;
@@ -1449,7 +1384,6 @@ namespace UMC
 
             if (m_pContext->m_seqLayerHeader.PROFILE == VC1_PROFILE_ADVANCED)
             {
-                m_pContext->m_bNeedToUseCompBuffer = 0;
                 m_pBufferStart = m_pContext->m_bitstream.pBitstream;
                 vc1Sts = GetNextPicHeader_Adv(m_pContext);
                 UMC_CHECK_STATUS(vc1Sts);
@@ -1461,11 +1395,10 @@ namespace UMC
             }
             else
             {
-                if (!isWMV)
-                    m_pContext->m_bitstream.pBitstream = (Ipp32u*)m_pContext->m_pBufferStart + 2;
+                m_pContext->m_bitstream.pBitstream = (Ipp32u*)m_pContext->m_pBufferStart + 2;
 
                 m_pBufferStart = m_pContext->m_bitstream.pBitstream;
-                vc1Sts = GetNextPicHeader(m_pContext, isWMV);
+                vc1Sts = GetNextPicHeader(m_pContext, false);
                 UMC_CHECK_STATUS(vc1Sts);
                 vc1Sts = SetPictureIndices(m_pContext->m_picLayerHeader->PTYPE,skip);
                 UMC_CHECK_STATUS(vc1Sts);
@@ -1479,7 +1412,7 @@ namespace UMC
             m_pContext->m_bIntensityCompensation = 0;
             return vc1Sts;
         }
-        virtual bool isVADescriptor() {return true;}
+
     protected:
         VideoAccelerator*     m_va;
         Ipp8u*                m_pBitstream;
@@ -1667,7 +1600,7 @@ namespace UMC
                 {
                     // Execute first slice
                     this->m_pPacker.VC1PackBitplaneBuffers(this->m_pContext);
-                    this->m_pPacker.VC1SetBuffersSize(this->m_iSliceBufIndex + 1,this->m_iPicBufIndex);
+                    this->m_pPacker.VC1SetBuffersSize(this->m_iSliceBufIndex + 1);
 
                     if (UMC_OK != this->m_va->Execute())
                         throw VC1Exceptions::vc1_exception(VC1Exceptions::internal_pipeline_error);
@@ -1867,7 +1800,7 @@ namespace UMC
                             // Execute first slice
                             this->m_pPacker.VC1PackBitplaneBuffers(this->m_pContext);
 
-                            this->m_pPacker.VC1SetBuffersSize(this->m_iSliceBufIndex + 1,this->m_iPicBufIndex);
+                            this->m_pPacker.VC1SetBuffersSize(this->m_iSliceBufIndex + 1);
 
                             if (UMC_OK != this->m_va->Execute())
                                 throw VC1Exceptions::vc1_exception(VC1Exceptions::internal_pipeline_error);
@@ -1908,7 +1841,7 @@ namespace UMC
             if (MBEndRowOfAlreadyExec != this->m_pContext->m_seqLayerHeader.heightMB)
             {
                 this->m_pPacker.VC1PackBitplaneBuffers(this->m_pContext);
-                this->m_pPacker.VC1SetBuffersSize(this->m_iSliceBufIndex,this->m_iPicBufIndex);
+                this->m_pPacker.VC1SetBuffersSize(this->m_iSliceBufIndex);
                 if (UMC_OK != this->m_va->Execute())
                     throw VC1Exceptions::vc1_exception(VC1Exceptions::internal_pipeline_error);
             }
@@ -2001,10 +1934,6 @@ namespace UMC
             slparams.MBEndRow = m_pContext->m_seqLayerHeader.heightMB;
             m_pContext->m_picLayerHeader->CurrField = 0;
 
-           // VM_ASSERT(VC1_PROFILE_ADVANCED == m_pContext->m_seqLayerHeader.PROFILE);
-
-            //if (VC1_PROFILE_ADVANCED != m_pContext->m_seqLayerHeader.PROFILE)
-            //    return;
 #ifdef VC1_DEBUG_ON_LOG
             static Ipp32u Num = 0;
             Num++;
@@ -2109,7 +2038,7 @@ namespace UMC
                         m_pPacker.VC1PackOneSlice(m_pContext, &slparams, m_iSliceBufIndex,
                                                   0, DataSize,  0,  chopType);
 
-                        m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1,m_iPicBufIndex);
+                        m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1);
 
                         if (UMC_OK != m_va->Execute())
                             throw VC1Exceptions::vc1_exception(VC1Exceptions::internal_pipeline_error);
@@ -2139,7 +2068,7 @@ namespace UMC
                                               m_iSliceBufIndex,  0,
                                               DataSize, 0, chopType);
 
-                    m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1,m_iPicBufIndex);
+                    m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1);
 
                     m_pPacker.VC1PackPicParamsForOneSlice(m_pContext);
                     if (UMC_OK != m_va->Execute())
@@ -2164,7 +2093,7 @@ namespace UMC
                     {
                         // Execute first slice
                         m_pPacker.VC1PackBitplaneBuffers(m_pContext);
-                        m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex + 1,m_iPicBufIndex);
+                        m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex + 1);
 
                         if (UMC_OK != m_va->Execute())
                             throw VC1Exceptions::vc1_exception(VC1Exceptions::internal_pipeline_error);
@@ -2282,7 +2211,7 @@ namespace UMC
                                 m_pPacker.VC1PackOneSlice(m_pContext,   &slparams,   m_iSliceBufIndex,
                                                           0, DataSize, 0,   chopType);
 
-                                m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1,m_iPicBufIndex);
+                                m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1);
 
                                 if (UMC_OK != m_va->Execute())
                                     throw VC1Exceptions::vc1_exception(VC1Exceptions::internal_pipeline_error);
@@ -2305,7 +2234,7 @@ namespace UMC
                             m_pPacker.VC1PackOneSlice(m_pContext, &slparams,  m_iSliceBufIndex,
                                                       0, DataSize, 0, 2);
 
-                            m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1,m_iPicBufIndex);
+                            m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1);
 
                             m_pPacker.VC1PackPicParamsForOneSlice(m_pContext);
                             if (UMC_OK != m_va->Execute())
@@ -2422,7 +2351,7 @@ namespace UMC
                                                           m_iSliceBufIndex,  0,
                                                           DataSize,          0,   chopType);
 
-                                m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1,m_iPicBufIndex);
+                                m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1);
 
                                 m_va->Execute();
                                 BytesAlreadyExecuted += DataSize;
@@ -2447,7 +2376,7 @@ namespace UMC
                             m_pPacker.VC1PackOneSlice(m_pContext,       &slparams,
                                                       m_iSliceBufIndex, 0,
                                                       DataSize,         0, 2);
-                            m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1,m_iPicBufIndex);
+                            m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1);
                             m_pPacker.VC1PackPicParamsForOneSlice(m_pContext);
                             m_va->Execute();
 
@@ -2480,7 +2409,7 @@ namespace UMC
                                 // Execute first slice
                                 m_pPacker.VC1PackBitplaneBuffers(m_pContext);
 
-                                m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex + 1,m_iPicBufIndex);
+                                m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex + 1);
 
                                 if (UMC_OK != m_va->Execute())
                                     throw VC1Exceptions::vc1_exception(VC1Exceptions::internal_pipeline_error);
@@ -2522,7 +2451,7 @@ namespace UMC
             if (MBEndRowOfAlreadyExec != m_pContext->m_seqLayerHeader.heightMB)
             {
                 m_pPacker.VC1PackBitplaneBuffers(m_pContext);
-                m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex,m_iPicBufIndex); // +1 !!!!!!!1
+                m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex);
                 if (UMC_OK != m_va->Execute())
                     throw VC1Exceptions::vc1_exception(VC1Exceptions::internal_pipeline_error);
 
@@ -2731,7 +2660,7 @@ namespace UMC
                         m_pPacker.VC1PackOneSlice(m_pContext, &slparams, m_iSliceBufIndex,
                                                   0, DataSize,  0,  chopType);
 
-                        m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1,m_iPicBufIndex);
+                        m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1);
 
                         if (UMC_OK != m_va->Execute())
                             throw VC1Exceptions::vc1_exception(VC1Exceptions::internal_pipeline_error);
@@ -2761,7 +2690,7 @@ namespace UMC
                                               m_iSliceBufIndex,  0,
                                               DataSize, 0, chopType);
 
-                    m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1,m_iPicBufIndex);
+                    m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1);
 
                     m_pPacker.VC1PackPicParamsForOneSlice(m_pContext);
                     if (UMC_OK != m_va->Execute())
@@ -2786,7 +2715,7 @@ namespace UMC
                     {
                         // Execute first slice
                         m_pPacker.VC1PackBitplaneBuffers(m_pContext);
-                        m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex + 1,m_iPicBufIndex);
+                        m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex + 1);
 
                         if (UMC_OK != m_va->Execute())
                             throw VC1Exceptions::vc1_exception(VC1Exceptions::internal_pipeline_error);
@@ -2910,7 +2839,7 @@ namespace UMC
                                 m_pPacker.VC1PackOneSlice(m_pContext,   &slparams,   m_iSliceBufIndex,
                                                           0, DataSize, 0,   chopType);
 
-                                m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1,m_iPicBufIndex);
+                                m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1);
 
                                 if (UMC_OK != m_va->Execute())
                                     throw VC1Exceptions::vc1_exception(VC1Exceptions::internal_pipeline_error);
@@ -2933,7 +2862,7 @@ namespace UMC
                             m_pPacker.VC1PackOneSlice(m_pContext, &slparams,  m_iSliceBufIndex,
                                                       0, DataSize, 0, 2);
 
-                            m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1,m_iPicBufIndex);
+                            m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1);
 
                             m_pPacker.VC1PackPicParamsForOneSlice(m_pContext);
                             if (UMC_OK != m_va->Execute())
@@ -3037,7 +2966,7 @@ namespace UMC
                                                           m_iSliceBufIndex,  0,
                                                           DataSize,          0,   chopType);
 
-                                m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1,m_iPicBufIndex);
+                                m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1);
 
                                 m_va->Execute();
                                 BytesAlreadyExecuted += DataSize;
@@ -3062,7 +2991,7 @@ namespace UMC
                             m_pPacker.VC1PackOneSlice(m_pContext,       &slparams,
                                                       m_iSliceBufIndex, 0,
                                                       DataSize,         0, 2);
-                            m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1,m_iPicBufIndex);
+                            m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex+1);
                             m_pPacker.VC1PackPicParamsForOneSlice(m_pContext);
                             m_va->Execute();
 
@@ -3087,7 +3016,7 @@ namespace UMC
                                 // Execute first slice
                                 m_pPacker.VC1PackBitplaneBuffers(m_pContext);
 
-                                m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex + 1,m_iPicBufIndex);
+                                m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex + 1);
 
                                 if (UMC_OK != m_va->Execute())
                                     throw VC1Exceptions::vc1_exception(VC1Exceptions::internal_pipeline_error);
@@ -3118,7 +3047,7 @@ namespace UMC
             if (MBEndRowOfAlreadyExec != m_pContext->m_seqLayerHeader.heightMB)
             {
                 m_pPacker.VC1PackBitplaneBuffers(m_pContext);
-                m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex,m_iPicBufIndex); // +1 !!!!!!!1
+                m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex);
                 if (UMC_OK != m_va->Execute())
                     throw VC1Exceptions::vc1_exception(VC1Exceptions::internal_pipeline_error);
 
@@ -3230,22 +3159,12 @@ namespace UMC
         }
 
 
-       virtual void VC1PackSlices_Encrypt   (Ipp32u*  pOffsets,Ipp32u*  pValues, Ipp8u* pOriginalData,MediaDataEx::_MediaDataEx* pOrigStCodes)
+       virtual void VC1PackSlices_Encrypt   (Ipp32u*  pOffsets,Ipp32u*  pValues, Ipp8u* ,MediaDataEx::_MediaDataEx* pOrigStCodes)
         {
             VM_ASSERT(VC1_PROFILE_ADVANCED == m_pContext->m_seqLayerHeader.PROFILE);
 
             if (VC1_PROFILE_ADVANCED != m_pContext->m_seqLayerHeader.PROFILE)
                 return;
-
-#ifdef VC1_DEBUG_ON_LOG
-            static Ipp32u Num = 0;
-
-            printf("\n\n\nPicture type %d  %d\n\n\n", m_pContext->m_picLayerHeader->PTYPE, Num);
-            Num++;
-
-        static FILE* f = 0;
-        static int num = 0;
-#endif
 
             if (m_pContext->m_picLayerHeader->PTYPE == VC1_SKIPPED_FRAME)
             {
@@ -3404,7 +3323,7 @@ namespace UMC
                     if(alignedSize & 0xf)
                         alignedSize = alignedSize+(0x10 - (alignedSize & 0xf));
 
-                    ippsCopy_8u(encryptedData->Data, pBuf, alignedSize);
+                    MFX_INTERNAL_CPY(pBuf, encryptedData->Data, alignedSize);
 #ifdef VC1_DEBUG_ON_LOG
                     {
                         if(!f)
@@ -3464,7 +3383,7 @@ namespace UMC
                     {
                         // Execute first slice
                         m_pPacker.VC1PackBitplaneBuffers(m_pContext);
-                        m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex + 1,m_iPicBufIndex);
+                        m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex + 1);
 
                         if (UMC_OK != m_va->Execute())
                             throw VC1Exceptions::vc1_exception(VC1Exceptions::internal_pipeline_error);
@@ -3574,7 +3493,7 @@ namespace UMC
                             if(alignedSize & 0xf)
                                 alignedSize = alignedSize+(0x10 - (alignedSize & 0xf));
 
-                            ippsCopy_8u(encryptedData->Data, pBuf, alignedSize);
+                            MFX_INTERNAL_CPY(pBuf, encryptedData->Data, alignedSize);
 #ifdef VC1_DEBUG_ON_LOG
                             {
                                 if(!f)
@@ -3698,7 +3617,7 @@ namespace UMC
                             if(alignedSize & 0xf)
                                 alignedSize = alignedSize+(0x10 - (alignedSize & 0xf));
 
-                            ippsCopy_8u(encryptedData->Data, pBuf, alignedSize);
+                            MFX_INTERNAL_CPY(pBuf, encryptedData->Data, alignedSize);
 #ifdef VC1_DEBUG_ON_LOG
                             {
                                 if(!f)
@@ -3760,7 +3679,7 @@ namespace UMC
                                 // Execute first slice
                                 m_pPacker.VC1PackBitplaneBuffers(m_pContext);
 
-                                m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex + 1,m_iPicBufIndex);
+                                m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex + 1);
 
                                 if (UMC_OK != m_va->Execute())
                                     throw VC1Exceptions::vc1_exception(VC1Exceptions::internal_pipeline_error);
@@ -3792,13 +3711,12 @@ namespace UMC
             if (MBEndRowOfAlreadyExec != m_pContext->m_seqLayerHeader.heightMB)
             {
                 m_pPacker.VC1PackBitplaneBuffers(m_pContext);
-                m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex,m_iPicBufIndex); // +1 !!!!!!!1
+                m_pPacker.VC1SetBuffersSize(m_iSliceBufIndex);
                 if (UMC_OK != m_va->Execute())
                     throw VC1Exceptions::vc1_exception(VC1Exceptions::internal_pipeline_error);
 
                 if (m_pContext->m_seqLayerHeader.RANGE_MAPY_FLAG ||
-                    m_pContext->m_seqLayerHeader.RANGE_MAPUV_FLAG/* ||
-                                                                 pContext->m_picLayerHeader->RANGEREDFRM*/)
+                    m_pContext->m_seqLayerHeader.RANGE_MAPUV_FLAG)
                 {
                     if (UMC_OK != m_va->EndFrame())
                         throw VC1Exceptions::vc1_exception(VC1Exceptions::internal_pipeline_error);

@@ -30,9 +30,6 @@ void AssignCodedBlockPattern(VC1MB * pMB,VC1SingletonMB* sMB)
 
         if (!Coded && (pBlk->blkType < VC1_BLK_INTRA_TOP))
             pBlk->blkType = VC1_BLK_INTER8X8;
-        //if (!Coded && (pBlk->blkType & 0xF))
-        //    pBlk->blkType = VC1_BLK_INTER8X8;
-
         pBlk->SBlkPattern = SubBlockPattern(pBlk,&sMB->m_pSingleBlock[Count]);
 
     }

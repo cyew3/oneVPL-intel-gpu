@@ -16,7 +16,6 @@
 
 #include "umc_vc1_dec_seq.h"
 #include "umc_vc1_common_defs.h"
-#include "ipps.h"
 #include "assert.h"
 
 #ifdef _OWN_FUNCTION

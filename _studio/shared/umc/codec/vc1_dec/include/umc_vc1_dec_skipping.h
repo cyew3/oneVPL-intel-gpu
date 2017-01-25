@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2012 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -14,8 +14,6 @@
 
 #ifndef __UMC_VC1_DEC_SKIPPING_H_
 #define __UMC_VC1_DEC_SKIPPING_H_
-
-#include "ipps.h"
 
 namespace UMC
 {
@@ -72,12 +70,8 @@ namespace UMC
             void SetSkipPeriod(bool ForRefFrames, Ipp32u period);
             void SetPerformMode(bool ForRefFrames, Ipp32u perfomMode);
 
-
-            void SetVideoDecodingSpeed(SkippingMode skip_mode);
             bool IsDeblockingOn();
             bool ChangeVideoDecodingSpeed(Ipp32s& speed_shift);
-            // may be useful
-            void EnablePostProcessing(void){};
 
             bool IsNeedSkipFrame(Ipp32u picType);
             bool IsNeedPostProcFrame(Ipp32u picType);

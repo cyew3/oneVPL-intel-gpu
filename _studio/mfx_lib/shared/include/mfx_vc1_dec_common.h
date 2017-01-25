@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2011 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -19,8 +19,6 @@
 #include "mfxvideo.h"
 #include "umc_video_decoder.h"
 #include "umc_vc1_common_defs.h"
-#include "umc_vc1_dec_job.h"
-
 
 namespace MFXVC1DecCommon
 {
@@ -63,100 +61,8 @@ namespace MFXVC1DecCommon
     mfxStatus ParseSeqHeader(mfxBitstream *bs, mfxVideoParam *par, mfxExtVideoSignalInfo *pVideoSignal, mfxExtCodingOptionSPSPPS *pSPS);
     mfxStatus PrepareSeqHeader(mfxBitstream *bs_in, mfxBitstream *bs_out);
 
-    mfxStatus FillmfxVideoParams(VC1Context* pContext, mfxVideoParam* pVideoParams);
-    mfxStatus FillmfxPictureParams(VC1Context* pContext, mfxFrameParam* pFrameParam);
-    
     mfxStatus Query(VideoCORE* core, mfxVideoParam *in, mfxVideoParam *out);
-
-
 }
-
-class MfxVC1ThreadUnitParams
-{
-public:
-    Ipp16u                   MBStartRow;
-    Ipp16u                   MBEndRow;
-    Ipp16u                   MBRowsToDecode;
-    bool                     isFirstInSlice;
-    bool                     isLastInSlice;
-    bool                     isFullMode;
-    VC1Context*              pContext;
-    mfxFrameCUC*             pCUC;
-};
-// base Task
-class VC1TaskMfxBase //similar to VC1Task. Own processing Context
-{
-public:
-    VC1TaskMfxBase();
-    virtual ~VC1TaskMfxBase();
-
-    mfxStatus Init(MfxVC1ThreadUnitParams*  pUnitParams,
-                   MfxVC1ThreadUnitParams*  pPrevUnitParams,
-                   Ipp32s                   threadOwn,
-                   bool                     isReadyToProcess);
-
-    bool    IsReadyToWork()  {return m_bIsReady;}
-    bool    IsDone()         {return m_bIsDone;}
-    Ipp32s  GetThreadOwner() {return m_ThreadOwner;}
-    bool    IsProcess()      {return m_bIsProcess;}
-    void    SetTaskAsDone()  {m_bIsDone = true;}
-    mfxStatus virtual ProcessJob() = 0;
-
-protected:
-    Ipp16u                   m_MBStartRow;
-    Ipp16u                   m_MBEndRow;
-    Ipp16u                   m_MBRowsToDecode;
-    bool                     m_bIsFirstInSlice;
-    bool                     m_bIsLastInSlice;
-    bool                     m_bIsReady;
-    bool                     m_bIsProcess;
-    bool                     m_bIsDone;
-    bool                     m_bIsFullMode;
-    Ipp32s                   m_ThreadOwner;
-    VC1SingletonMB           m_SingleMB;
-
-    VC1Context*              m_pContext;
-    mfxFrameCUC*             m_pCUC;
-};
-
-
-//queue of tasks
-class VC1MfxTQueueBase
-{
-public:
-    VC1MfxTQueueBase():m_iTasksInQueue(0),
-                       m_iCurrentTaskID(0)
-    {
-    };
-    virtual ~VC1MfxTQueueBase()
-    {
-    };
-    virtual mfxStatus Init() = 0;
-    virtual VC1TaskMfxBase* GetNextStaticTask(Ipp32s threadID) = 0;
-    virtual VC1TaskMfxBase* GetNextDynamicTask(Ipp32s threadID) = 0;
-
-    virtual bool IsFuncComplte() = 0;
-
-protected:
-    Ipp32s m_iTasksInQueue;
-    Ipp32s m_iCurrentTaskID;
-};
-
-//task processor
-class MfxVC1TaskProcessor:  public UMC::VC1TaskProcessor
-{
-public:
-    MfxVC1TaskProcessor(VC1MfxTQueueBase* pStore):m_pStore(pStore)
-    {
-    };
-    virtual ~MfxVC1TaskProcessor()
-    {
-    };
-    virtual UMC::Status process();
-protected:
-    VC1MfxTQueueBase* m_pStore;
-
-};
 
 #endif
 #endif

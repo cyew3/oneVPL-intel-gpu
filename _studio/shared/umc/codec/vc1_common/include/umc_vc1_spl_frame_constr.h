@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -17,7 +17,6 @@
 
 #include "umc_media_data_ex.h"
 #include "umc_structures.h"
-#include "umc_splitter.h"
 
 namespace UMC
 {
@@ -37,8 +36,7 @@ namespace UMC
             virtual Status GetNextFrame(VC1FrameConstrInfo& pInfo) = 0;  //return 1 frame, 1 header....
             virtual Status GetFirstSeqHeader(VC1FrameConstrInfo& pInfo) = 0;
             virtual Status GetData(VC1FrameConstrInfo& pInfo) = 0;
-            virtual Status ParseVC1SeqHeader (Ipp8u *data, Ipp32u* bufferSize,SplitterInfo* info) = 0;
-            //virtual Status GetPicType(MediaDataEx* data, Ipp32u& picType) = 0;
+            virtual Status ParseVC1SeqHeader (Ipp8u *data, Ipp32u* bufferSize, VideoStreamInfo* info) = 0;
             virtual void Reset() = 0;
     };
 
@@ -52,8 +50,7 @@ namespace UMC
             Status GetData(VC1FrameConstrInfo& Info);
             Status GetFirstSeqHeader(VC1FrameConstrInfo& Info);
             void Reset();
-            Status ParseVC1SeqHeader (Ipp8u *data, Ipp32u* bufferSize,SplitterInfo* info);
-            //Status GetPicType(MediaDataEx* data, Ipp32u& picType);
+            Status ParseVC1SeqHeader (Ipp8u *data, Ipp32u* bufferSize, VideoStreamInfo* info);
     };
 
     class vc1_frame_constructor_vc1: public vc1_frame_constructor
@@ -66,8 +63,7 @@ namespace UMC
             Status GetData(VC1FrameConstrInfo& Info);
             Status GetFirstSeqHeader(VC1FrameConstrInfo& Info);
             void Reset();
-            Status ParseVC1SeqHeader (Ipp8u *data, Ipp32u* bufferSize,SplitterInfo* info);
-           //Status GetPicType(MediaDataEx* data, Ipp32u& picType);
+            Status ParseVC1SeqHeader (Ipp8u *data, Ipp32u* bufferSize, VideoStreamInfo* info);
     };
 }
 

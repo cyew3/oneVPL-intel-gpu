@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2012 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -339,7 +339,7 @@ namespace UMC
                 SwapData(m_frameBuf, m_frameSize);
                 umcSts = m_frame_constructor->ParseVC1SeqHeader((Ipp8u*)data->GetDataPointer() + 4,
                                                &m_frameBufSize,
-                                               &m_info);
+                                               (VideoStreamInfo*)m_info.m_ppTrackInfo[0]->m_pStreamInfo);
                 if((m_info.m_splitter_flags & FLAG_VSPL_4BYTE_ACCESS) != FLAG_VSPL_4BYTE_ACCESS)
                       SwapData(m_frameBuf, m_frameSize);
                 break;
@@ -547,14 +547,14 @@ namespace UMC
                 SwapData(m_frameBuf, m_frameSize);
                 umcSts = m_frame_constructor->ParseVC1SeqHeader((Ipp8u*)mediaData->GetDataPointer() + 4,
                     &m_frameBufSize,
-                    &m_info);
+                    (VideoStreamInfo*)m_info.m_ppTrackInfo[0]->m_pStreamInfo);
             }
             else
             {
                 SwapData(m_frameBuf, m_frameSize);
                 umcSts = m_frame_constructor->ParseVC1SeqHeader((Ipp8u*)mediaData->GetDataPointer() + 4,
                     &m_frameBufSize,
-                    &m_info);
+                    (VideoStreamInfo*)m_info.m_ppTrackInfo[0]->m_pStreamInfo);
                 SwapData(m_frameBuf, m_frameSize);
             }
 
@@ -593,14 +593,14 @@ namespace UMC
             {
                 umcSts = m_frame_constructor->ParseVC1SeqHeader((Ipp8u*)mediaData->GetDataPointer() + 8,
                     &m_frameBufSize,
-                    &m_info);
+                    (VideoStreamInfo*)m_info.m_ppTrackInfo[0]->m_pStreamInfo);
             }
             else
             {
                 SwapData(m_frameBuf, m_frameSize);
                 umcSts = m_frame_constructor->ParseVC1SeqHeader((Ipp8u*)mediaData->GetDataPointer() + 8,
                     &m_frameBufSize,
-                    &m_info);
+                    (VideoStreamInfo*)m_info.m_ppTrackInfo[0]->m_pStreamInfo);
                 SwapData(m_frameBuf, m_frameSize);
             }
 

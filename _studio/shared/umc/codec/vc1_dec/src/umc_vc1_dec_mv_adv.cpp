@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -15,6 +15,7 @@
 #include "umc_vc1_dec_seq.h"
 #include "umc_vc1_dec_debug.h"
 #include "umc_vc1_common_mvdiff_tbl.h"
+#include "umc_vc1_huffman.h"
 
 void ApplyMVPredictionCalculate( VC1Context* pContext,
                                 Ipp16s* pMVx,
@@ -348,8 +349,6 @@ void CalculateProgressive1MV_B_Adv  (VC1Context* pContext,
 
     x = PullBack_PredMV(&x,(sMB->m_currMBXpos<<6), -60,(sMB->widthMB<<6)-4);
     y = PullBack_PredMV(&y,(sMB->m_currMBYpos<<6), -60,(sMB->heightMB<<6)-4);
-    //VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_BFRAMES,
-    //VM_STRING("1.predict MV (%d,%d), back = %d\n"),x,y,Back);
     *pPredMVx=x;
     *pPredMVy=y;
 }
@@ -1878,7 +1877,7 @@ void CalculateInterlace4MV_BottomField_Adv(VC1MVPredictors* MVPredictors,
 
 void DecodeMVDiff_Adv(VC1Context* pContext,Ipp16s* pdmv_x, Ipp16s* pdmv_y)
 {
-    IppStatus ret;
+    int ret;
     Ipp32s index;
     Ipp16s dmv_x = 0;
     Ipp16s dmv_y = 0;
@@ -1890,14 +1889,14 @@ void DecodeMVDiff_Adv(VC1Context* pContext,Ipp16s* pdmv_x, Ipp16s* pdmv_y)
                                        {0, 1, 3, 7, 15, 31, 63, 127, 255}};
     static const Ipp8u* curr_offset;
 
-    ret = ippiDecodeHuffmanOne_1u32s (
+    ret = DecodeHuffmanOne(
         &pContext->m_bitstream.pBitstream,
         &pContext->m_bitstream.bitOffset,
         &val,
         picHeader->m_pCurrMVDifftbl
         );
 
-    VM_ASSERT(ret == ippStsNoErr);
+    VM_ASSERT(ret == 0);
 
     index = val & 0x000000FF;
 
@@ -1947,7 +1946,6 @@ void DecodeMVDiff_Adv(VC1Context* pContext,Ipp16s* pdmv_x, Ipp16s* pdmv_y)
         dmv_x = (Ipp16s)tmp_dmv_x;
         dmv_y = (Ipp16s)tmp_dmv_y;
     }
-   // VM_Debug::GetInstance().vm_debug_frame(-1,VC1_MV,VM_STRING("DMV [X,Y] = [%d, %d]\n"), dmv_x, dmv_y);
 
     //dMV scaling in case of fields and Half pel resolution
     if (pContext->m_picLayerHeader->FCM == VC1_FieldInterlace)
@@ -1967,7 +1965,7 @@ void DecodeMVDiff_Adv(VC1Context* pContext,Ipp16s* pdmv_x, Ipp16s* pdmv_y)
 Ipp8u DecodeMVDiff_TwoReferenceField_Adv(VC1Context* pContext,
                                          Ipp16s* pdmv_x, Ipp16s* pdmv_y)
 {
-    IppStatus ret;
+    int ret;
     Ipp32s index;
     Ipp16s dmv_x = 0;
     Ipp16s dmv_y = 0;
@@ -1983,14 +1981,14 @@ Ipp8u DecodeMVDiff_TwoReferenceField_Adv(VC1Context* pContext,
     static Ipp8u size_table[16]   = {0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7};
     Ipp8u* curr_offset;
 
-    ret = ippiDecodeHuffmanOne_1u32s (
+    ret = DecodeHuffmanOne(
         &pContext->m_bitstream.pBitstream,
         &pContext->m_bitstream.bitOffset,
         &val,
         picHeader->m_pCurrMVDifftbl
         );
 
-    VM_ASSERT(ret == ippStsNoErr);
+    VM_ASSERT(ret == 0);
 
     index = val & 0x000000FF;
 
@@ -2046,8 +2044,6 @@ Ipp8u DecodeMVDiff_TwoReferenceField_Adv(VC1Context* pContext,
         dmv_y = (dmv_y + 1) >> 1; // differ from standard dmv_y = (dmv_y + predictor_flag) >> 1;
     }
 
-   // VM_Debug::GetInstance().vm_debug_frame(-1,VC1_MV,VM_STRING("DMV [X,Y] = [%d, %d]\n"), dmv_x, dmv_y);
-
     if (picHeader->MVMODE==VC1_MVMODE_HPELBI_1MV || picHeader->MVMODE==VC1_MVMODE_HPEL_1MV)
     {
         dmv_x <<=1;
@@ -2065,7 +2061,6 @@ void DeriveSecondStageChromaMV_Interlace(VC1Context* pContext, Ipp16s* xMV, Ipp1
     Ipp32s IX, IY;
     static const Ipp8u RndTbl[4] = {0, 0, 0, 1};
     static const Ipp8u RndTblField[16]   = {0, 0, 1, 2, 4, 4, 5, 6, 2, 2, 3, 8, 6, 6, 7, 12};
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_MV_BBL,VM_STRING("MV(%d,%d)\n"),*xMV,*yMV);
 
     if(((*xMV) == VC1_MVINTRA) || ((*yMV) == VC1_MVINTRA))
     {
@@ -2773,7 +2768,6 @@ void CalculateField1MVOneReferencePPic(VC1Context* pContext,
     }
 
 #ifdef VC1_DEBUG_ON
-//    VM_Debug::GetInstance().vm_debug_frame(-1,VC1_MV_FIELD,VM_STRING("PredFlag = %d\n"), 1 - *PredFlag);
     VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_MV_FIELD,
         VM_STRING("CurrFlag = %d\n"), pContext->m_pCurrMB->fieldFlag[0]);
 
@@ -3012,7 +3006,6 @@ void CalculateField4MVOneReferencePPic(VC1Context* pContext, Ipp16s *pPredMVx,Ip
     }
 
 #ifdef VC1_DEBUG_ON
-//    VM_Debug::GetInstance().vm_debug_frame(-1,VC1_MV_FIELD,VM_STRING("PredFlag = %d\n"), 1 - *PredFlag);
     VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_MV_FIELD,
         VM_STRING("CurrFlag = %d\n"), pContext->m_pCurrMB->fieldFlag[0]);
 

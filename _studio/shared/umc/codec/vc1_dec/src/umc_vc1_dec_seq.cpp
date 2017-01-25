@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -15,41 +15,17 @@
     #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
-#include "ipps.h"
-
-#include "string.h"
 #include "ippcore.h"
 
 #include "umc_vc1_dec_seq.h"
-#include "umc_vc1_common_dc_tbl.h"
-#include "umc_vc1_common_cbpcy_tbl.h"
-#include "umc_vc1_dec_run_level_tbl.h"
-#include "umc_vc1_common_tables.h"
-#include "umc_vc1_common_mvdiff_tbl.h"
-#include "umc_vc1_common_ttmb_tbl.h"
-#include "umc_vc1_common_interlace_mb_mode_tables.h"
-#include "umc_vc1_common_interlace_mv_tables.h"
-#include "umc_vc1_common_interlaced_cbpcy_tables.h"
-#include "umc_vc1_common_mv_block_pattern_tables.h"
-#include "umc_vc1_common_tables_adv.h"
 #include "umc_vc1_common_defs.h"
-
-#include "umc_vc1_dec_task.h"
-
-#include "umc_vc1_dec_time_statistics.h"
 #include "umc_vc1_common.h"
 #include "umc_structures.h"
 
-#include "umc_vc1_common_acintra.h"
-#include "umc_vc1_common_acinter.h"
-
-#include "assert.h"
-
-
-#ifdef BSWAP
-#undef BSWAP
-#define BSWAP(x)    (Ipp32u)(((x) << 24) + (((x)&0xff00) << 8) + (((x) >> 8)&0xff00) + ((x) >> 24))
+#ifdef ALLOW_SW_VC1_FALLBACK
+#include "umc_vc1_common_mvdiff_tbl.h"
 #endif
+
 using namespace UMC;
 using namespace UMC::VC1Common;
 
@@ -70,7 +46,6 @@ VC1Status SequenceLayer(VC1Context* pContext)
     Ipp32u i=0;
     Ipp32u tempValue;
 
-    pContext->m_seqInit = 0;
     pContext->m_seqLayerHeader.ColourDescriptionPresent = 0;
 
     VC1_GET_BITS(2, pContext->m_seqLayerHeader.PROFILE);
@@ -254,7 +229,6 @@ VC1Status SequenceLayer(VC1Context* pContext)
         VC1_GET_BITS(32,tempValue);// HRD_RATE
         VC1_GET_BITS(32,tempValue);// FRAME_RATE
     }
-    pContext->m_seqInit = 1;
 
     return VC1_OK;
 
@@ -356,894 +330,6 @@ VC1Status EntryPointLayer(VC1Context* pContext)
     return VC1_OK;
 
 }
-void SetDecodingTables(VC1Context* pContext)
-{
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////Intra Decoding Sets/////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    pContext->m_vlcTbl->LowMotionIntraACDecodeSet.pRLTable = 0;
-    pContext->m_vlcTbl->LowMotionIntraACDecodeSet.pDeltaLevelLast0 = VC1_LowMotionIntraDeltaLevelLast0;
-    pContext->m_vlcTbl->LowMotionIntraACDecodeSet.pDeltaLevelLast1 = VC1_LowMotionIntraDeltaLevelLast1;
-    pContext->m_vlcTbl->LowMotionIntraACDecodeSet.pDeltaRunLast0 = VC1_LowMotionIntraDeltaRunLast0;
-    pContext->m_vlcTbl->LowMotionIntraACDecodeSet.pDeltaRunLast1 = VC1_LowMotionIntraDeltaRunLast1;
-
- 
-    pContext->m_vlcTbl->HighMotionIntraACDecodeSet.pRLTable = 0;
-    pContext->m_vlcTbl->HighMotionIntraACDecodeSet.pDeltaLevelLast0 = VC1_HighMotionIntraDeltaLevelLast0;
-    pContext->m_vlcTbl->HighMotionIntraACDecodeSet.pDeltaLevelLast1 = VC1_HighMotionIntraDeltaLevelLast1;
-    pContext->m_vlcTbl->HighMotionIntraACDecodeSet.pDeltaRunLast0 = VC1_HighMotionIntraDeltaRunLast0;
-    pContext->m_vlcTbl->HighMotionIntraACDecodeSet.pDeltaRunLast1 = VC1_HighMotionIntraDeltaRunLast1;
-
-    pContext->m_vlcTbl->MidRateIntraACDecodeSet.pRLTable = 0;
-    pContext->m_vlcTbl->MidRateIntraACDecodeSet.pDeltaLevelLast0 = VC1_MidRateIntraDeltaLevelLast0;
-    pContext->m_vlcTbl->MidRateIntraACDecodeSet.pDeltaLevelLast1 = VC1_MidRateIntraDeltaLevelLast1;
-    pContext->m_vlcTbl->MidRateIntraACDecodeSet.pDeltaRunLast0 = VC1_MidRateIntraDeltaRunLast0;
-    pContext->m_vlcTbl->MidRateIntraACDecodeSet.pDeltaRunLast1 = VC1_MidRateIntraDeltaRunLast1;
-
-    pContext->m_vlcTbl->HighRateIntraACDecodeSet.pRLTable = 0;
-    pContext->m_vlcTbl->HighRateIntraACDecodeSet.pDeltaLevelLast0 = VC1_HighRateIntraDeltaLevelLast0;
-    pContext->m_vlcTbl->HighRateIntraACDecodeSet.pDeltaLevelLast1 = VC1_HighRateIntraDeltaLevelLast1;
-    pContext->m_vlcTbl->HighRateIntraACDecodeSet.pDeltaRunLast0 = VC1_HighRateIntraDeltaRunLast0;
-    pContext->m_vlcTbl->HighRateIntraACDecodeSet.pDeltaRunLast1 = VC1_HighRateIntraDeltaRunLast1;
-
-
-
-    pContext->m_vlcTbl->IntraACDecodeSetPQINDEXle7[0] = &pContext->m_vlcTbl->HighRateIntraACDecodeSet;
-    pContext->m_vlcTbl->IntraACDecodeSetPQINDEXle7[1] = &pContext->m_vlcTbl->HighMotionIntraACDecodeSet;
-    pContext->m_vlcTbl->IntraACDecodeSetPQINDEXle7[2] = &pContext->m_vlcTbl->MidRateIntraACDecodeSet;
-
-
-
-    pContext->m_vlcTbl->IntraACDecodeSetPQINDEXgt7[0] = &pContext->m_vlcTbl->LowMotionIntraACDecodeSet;
-    pContext->m_vlcTbl->IntraACDecodeSetPQINDEXgt7[1] = &pContext->m_vlcTbl->HighMotionIntraACDecodeSet;
-    pContext->m_vlcTbl->IntraACDecodeSetPQINDEXgt7[2] = &pContext->m_vlcTbl->MidRateIntraACDecodeSet;
-
-
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////Inter Decoding Sets/////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    pContext->m_vlcTbl->LowMotionInterACDecodeSet.pRLTable = 0;
-    pContext->m_vlcTbl->LowMotionInterACDecodeSet.pDeltaLevelLast0 = VC1_LowMotionInterDeltaLevelLast0;
-    pContext->m_vlcTbl->LowMotionInterACDecodeSet.pDeltaLevelLast1 = VC1_LowMotionInterDeltaLevelLast1;
-    pContext->m_vlcTbl->LowMotionInterACDecodeSet.pDeltaRunLast0 = VC1_LowMotionInterDeltaRunLast0;
-    pContext->m_vlcTbl->LowMotionInterACDecodeSet.pDeltaRunLast1 = VC1_LowMotionInterDeltaRunLast1;
-
-    pContext->m_vlcTbl->HighMotionInterACDecodeSet.pRLTable = 0;
-    pContext->m_vlcTbl->HighMotionInterACDecodeSet.pDeltaLevelLast0 = VC1_HighMotionInterDeltaLevelLast0;
-    pContext->m_vlcTbl->HighMotionInterACDecodeSet.pDeltaLevelLast1 = VC1_HighMotionInterDeltaLevelLast1;
-    pContext->m_vlcTbl->HighMotionInterACDecodeSet.pDeltaRunLast0 =  VC1_HighMotionInterDeltaRunLast0;
-    pContext->m_vlcTbl->HighMotionInterACDecodeSet.pDeltaRunLast1 = VC1_HighMotionInterDeltaRunLast1;
-
-    pContext->m_vlcTbl->MidRateInterACDecodeSet.pRLTable = 0;
-    pContext->m_vlcTbl->MidRateInterACDecodeSet.pDeltaLevelLast0 = VC1_MidRateInterDeltaLevelLast0;
-    pContext->m_vlcTbl->MidRateInterACDecodeSet.pDeltaLevelLast1 = VC1_MidRateInterDeltaLevelLast1;
-    pContext->m_vlcTbl->MidRateInterACDecodeSet.pDeltaRunLast0 =  VC1_MidRateInterDeltaRunLast0;
-    pContext->m_vlcTbl->MidRateInterACDecodeSet.pDeltaRunLast1 = VC1_MidRateInterDeltaRunLast1;
-
-    pContext->m_vlcTbl->HighRateInterACDecodeSet.pRLTable = 0;
-    pContext->m_vlcTbl->HighRateInterACDecodeSet.pDeltaLevelLast0 = VC1_HighRateInterDeltaLevelLast0;
-    pContext->m_vlcTbl->HighRateInterACDecodeSet.pDeltaLevelLast1 = VC1_HighRateInterDeltaLevelLast1;
-    pContext->m_vlcTbl->HighRateInterACDecodeSet.pDeltaRunLast0 =  VC1_HighRateInterDeltaRunLast0;
-    pContext->m_vlcTbl->HighRateInterACDecodeSet.pDeltaRunLast1 = VC1_HighRateInterDeltaRunLast1;
-
-    pContext->m_vlcTbl->InterACDecodeSetPQINDEXle7[0] = &pContext->m_vlcTbl->HighRateInterACDecodeSet;
-    pContext->m_vlcTbl->InterACDecodeSetPQINDEXle7[1] = &pContext->m_vlcTbl->HighMotionInterACDecodeSet;
-    pContext->m_vlcTbl->InterACDecodeSetPQINDEXle7[2] = &pContext->m_vlcTbl->MidRateInterACDecodeSet;
-
-
-
-    pContext->m_vlcTbl->InterACDecodeSetPQINDEXgt7[0] = &pContext->m_vlcTbl->LowMotionInterACDecodeSet;
-    pContext->m_vlcTbl->InterACDecodeSetPQINDEXgt7[1] = &pContext->m_vlcTbl->HighMotionInterACDecodeSet;
-    pContext->m_vlcTbl->InterACDecodeSetPQINDEXgt7[2] = &pContext->m_vlcTbl->MidRateInterACDecodeSet;
-
-
-
-};
-
-Ipp32s InitCommonTables(VC1Context* pContext)
-{
-    //MOTION DC DIFF
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_LowMotionLumaDCDiff, &pContext->m_vlcTbl->m_pLowMotionLumaDCDiff))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_HighMotionLumaDCDiff, &pContext->m_vlcTbl->m_pHighMotionLumaDCDiff))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_LowMotionChromaDCDiff, &pContext->m_vlcTbl->m_pLowMotionChromaDCDiff))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_HighMotionChromaDCDiff, &pContext->m_vlcTbl->m_pHighMotionChromaDCDiff))
-        return 0;
-
-    //CBPCY
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_CBPCY_Ipic, &pContext->m_vlcTbl->m_pCBPCY_Ipic))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_CBPCY_PBpic_tbl0,
-        &pContext->m_vlcTbl->CBPCY_PB_TABLES[0]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_CBPCY_PBpic_tbl1,
-        &pContext->m_vlcTbl->CBPCY_PB_TABLES[1]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_CBPCY_PBpic_tbl2,
-        &pContext->m_vlcTbl->CBPCY_PB_TABLES[2]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_CBPCY_PBpic_tbl3,
-        &pContext->m_vlcTbl->CBPCY_PB_TABLES[3]))
-        return 0;
-
-    //DEDCODE INDEX TABLES
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_LowMotionIntraAC,
-        &pContext->m_vlcTbl->LowMotionIntraACDecodeSet.pRLTable))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_HighMotionIntraAC,
-        &pContext->m_vlcTbl->HighMotionIntraACDecodeSet.pRLTable))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_LowMotionInterAC,
-        &pContext->m_vlcTbl->LowMotionInterACDecodeSet.pRLTable))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_HighMotionInterAC,
-        &pContext->m_vlcTbl->HighMotionInterACDecodeSet.pRLTable))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_MidRateIntraAC,
-        &pContext->m_vlcTbl->MidRateIntraACDecodeSet.pRLTable))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_MidRateInterAC,
-        &pContext->m_vlcTbl->MidRateInterACDecodeSet.pRLTable))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_HighRateIntraAC,
-        &pContext->m_vlcTbl->HighRateIntraACDecodeSet.pRLTable))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_HighRateInterAC,
-        &pContext->m_vlcTbl->HighRateInterACDecodeSet.pRLTable))
-        return 0;
-
-    //BITPLANE
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_Bitplane_IMODE_tbl,
-        &pContext->m_vlcTbl->m_Bitplane_IMODE))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_BitplaneTaledbitsTbl,
-        &pContext->m_vlcTbl->m_BitplaneTaledbits))
-        return 0;
-
-    //BFRACTION
-    if (ippStsNoErr != ippiHuffmanRunLevelTableInitAlloc_32s(
-        VC1_BFraction_tbl,
-        &pContext->m_vlcTbl->BFRACTION))
-        return 0;
-
-    //MV DIFF PB TABLES
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_Progressive_MV_Diff_tbl0,
-        &pContext->m_vlcTbl->MVDIFF_PB_TABLES[0]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_Progressive_MV_Diff_tbl1,
-        &pContext->m_vlcTbl->MVDIFF_PB_TABLES[1]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_Progressive_MV_Diff_tbl2,
-        &pContext->m_vlcTbl->MVDIFF_PB_TABLES[2]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_Progressive_MV_Diff_tbl3,
-        &pContext->m_vlcTbl->MVDIFF_PB_TABLES[3]))
-        return 0;
-
-    //TTMB PB TABLES
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_LowRateTTMB,
-        &pContext->m_vlcTbl->TTMB_PB_TABLES[0]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_MediumRateTTMB,
-        &pContext->m_vlcTbl->TTMB_PB_TABLES[1]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_HighRateTTMB,
-        &pContext->m_vlcTbl->TTMB_PB_TABLES[2]))
-        return 0;
-
-    //TTBLK PB TABLES
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_LowRateTTBLK,
-        &pContext->m_vlcTbl->TTBLK_PB_TABLES[0]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_MediumRateTTBLK,
-        &pContext->m_vlcTbl->TTBLK_PB_TABLES[1]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_HighRateTTBLK,
-        &pContext->m_vlcTbl->TTBLK_PB_TABLES[2]))
-        return 0;
-
-    //SUB BLOCK PATTERN
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_HighRateSBP,
-        &pContext->m_vlcTbl->SBP_PB_TABLES[0]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_MediumRateSBP,
-        &pContext->m_vlcTbl->SBP_PB_TABLES[1]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_LowRateSBP,
-        &pContext->m_vlcTbl->SBP_PB_TABLES[2]))
-        return 0;
-
-return 1;
-}
-
-Ipp32s InitInterlacedTables (VC1Context* pContext)
-{
-    //MB MODE
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_4MV_MB_Mode_PBPic_Table0,
-        &pContext->m_vlcTbl->MBMODE_INTERLACE_FRAME_TABLES[0]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_4MV_MB_Mode_PBPic_Table1,
-        &pContext->m_vlcTbl->MBMODE_INTERLACE_FRAME_TABLES[1]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_4MV_MB_Mode_PBPic_Table2,
-        &pContext->m_vlcTbl->MBMODE_INTERLACE_FRAME_TABLES[2]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_4MV_MB_Mode_PBPic_Table3,
-        &pContext->m_vlcTbl->MBMODE_INTERLACE_FRAME_TABLES[3]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_Non4MV_MB_Mode_PBPic_Table0,
-        &pContext->m_vlcTbl->MBMODE_INTERLACE_FRAME_TABLES[4]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_Non4MV_MB_Mode_PBPic_Table1,
-        &pContext->m_vlcTbl->MBMODE_INTERLACE_FRAME_TABLES[5]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_Non4MV_MB_Mode_PBPic_Table2,
-        &pContext->m_vlcTbl->MBMODE_INTERLACE_FRAME_TABLES[6]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_Non4MV_MB_Mode_PBPic_Table3,
-        &pContext->m_vlcTbl->MBMODE_INTERLACE_FRAME_TABLES[7]))
-        return 0;
-
-    //MV TABLES
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_InterlacedMVDifTable0,
-        &pContext->m_vlcTbl->MV_INTERLACE_TABLES[0]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_InterlacedMVDifTable1,
-        &pContext->m_vlcTbl->MV_INTERLACE_TABLES[1]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_InterlacedMVDifTable2,
-        &pContext->m_vlcTbl->MV_INTERLACE_TABLES[2]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_InterlacedMVDifTable3,
-        &pContext->m_vlcTbl->MV_INTERLACE_TABLES[3]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_InterlacedMVDifTable4,
-        &pContext->m_vlcTbl->MV_INTERLACE_TABLES[4]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_InterlacedMVDifTable5,
-        &pContext->m_vlcTbl->MV_INTERLACE_TABLES[5]))
-        return 0;
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_InterlacedMVDifTable6,
-        &pContext->m_vlcTbl->MV_INTERLACE_TABLES[6]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_InterlacedMVDifTable7,
-        &pContext->m_vlcTbl->MV_INTERLACE_TABLES[7]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_InterlacedMVDifTable8,
-        &pContext->m_vlcTbl->MV_INTERLACE_TABLES[8]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_InterlacedMVDifTable9,
-        &pContext->m_vlcTbl->MV_INTERLACE_TABLES[9]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_InterlacedMVDifTable10,
-        &pContext->m_vlcTbl->MV_INTERLACE_TABLES[10]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_InterlacedMVDifTable11,
-        &pContext->m_vlcTbl->MV_INTERLACE_TABLES[11]))
-        return 0;
-
-    //CBPCY
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_InterlacedCBPCYTable0,
-        &pContext->m_vlcTbl->CBPCY_PB_INTERLACE_TABLES[0]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_InterlacedCBPCYTable1,
-        &pContext->m_vlcTbl->CBPCY_PB_INTERLACE_TABLES[1]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_InterlacedCBPCYTable2,
-        &pContext->m_vlcTbl->CBPCY_PB_INTERLACE_TABLES[2]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_InterlacedCBPCYTable3,
-        &pContext->m_vlcTbl->CBPCY_PB_INTERLACE_TABLES[3]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_InterlacedCBPCYTable4,
-        &pContext->m_vlcTbl->CBPCY_PB_INTERLACE_TABLES[4]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_InterlacedCBPCYTable5,
-        &pContext->m_vlcTbl->CBPCY_PB_INTERLACE_TABLES[5]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_InterlacedCBPCYTable6,
-        &pContext->m_vlcTbl->CBPCY_PB_INTERLACE_TABLES[6]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_InterlacedCBPCYTable7,
-        &pContext->m_vlcTbl->CBPCY_PB_INTERLACE_TABLES[7]))
-        return 0;
-
-    //2 MV BLOCK PATTERN P,B PICTURES
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_MV2BlockPatternTable0,
-        &pContext->m_vlcTbl->MV2BP_TABLES[0]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_MV2BlockPatternTable1,
-        &pContext->m_vlcTbl->MV2BP_TABLES[1]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_MV2BlockPatternTable2,
-        &pContext->m_vlcTbl->MV2BP_TABLES[2]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_MV2BlockPatternTable3,
-        &pContext->m_vlcTbl->MV2BP_TABLES[3]))
-        return 0;
-
-    //4 MV BLOCK PATTERN
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_MV4BlockPatternTable0,
-        &pContext->m_vlcTbl->MV4BP_TABLES[0]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_MV4BlockPatternTable1,
-        &pContext->m_vlcTbl->MV4BP_TABLES[1]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_MV4BlockPatternTable2,
-        &pContext->m_vlcTbl->MV4BP_TABLES[2]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_MV4BlockPatternTable3,
-        &pContext->m_vlcTbl->MV4BP_TABLES[3]))
-        return 0;
-
-    //MB MODE TABLES
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_1MV_MB_ModeTable0,
-        &pContext->m_vlcTbl->MBMODE_INTERLACE_FIELD_TABLES[0]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_1MV_MB_ModeTable1,
-        &pContext->m_vlcTbl->MBMODE_INTERLACE_FIELD_TABLES[1]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_1MV_MB_ModeTable2,
-        &pContext->m_vlcTbl->MBMODE_INTERLACE_FIELD_TABLES[2]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_1MV_MB_ModeTable3,
-        &pContext->m_vlcTbl->MBMODE_INTERLACE_FIELD_TABLES[3]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_1MV_MB_ModeTable4,
-        &pContext->m_vlcTbl->MBMODE_INTERLACE_FIELD_TABLES[4]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_1MV_MB_ModeTable5,
-        &pContext->m_vlcTbl->MBMODE_INTERLACE_FIELD_TABLES[5]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_1MV_MB_ModeTable6,
-        &pContext->m_vlcTbl->MBMODE_INTERLACE_FIELD_TABLES[6]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_1MV_MB_ModeTable7,
-        &pContext->m_vlcTbl->MBMODE_INTERLACE_FIELD_TABLES[7]))
-        return 0;
-
-    //MIXEDMV MB TABLES
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_Mixed_MV_MB_ModeTable0,
-        &pContext->m_vlcTbl->MBMODE_INTERLACE_FIELD_MIXED_TABLES[0]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_Mixed_MV_MB_ModeTable1,
-        &pContext->m_vlcTbl->MBMODE_INTERLACE_FIELD_MIXED_TABLES[1]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_Mixed_MV_MB_ModeTable2,
-        &pContext->m_vlcTbl->MBMODE_INTERLACE_FIELD_MIXED_TABLES[2]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_Mixed_MV_MB_ModeTable3,
-        &pContext->m_vlcTbl->MBMODE_INTERLACE_FIELD_MIXED_TABLES[3]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_Mixed_MV_MB_ModeTable4,
-        &pContext->m_vlcTbl->MBMODE_INTERLACE_FIELD_MIXED_TABLES[4]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_Mixed_MV_MB_ModeTable5,
-        &pContext->m_vlcTbl->MBMODE_INTERLACE_FIELD_MIXED_TABLES[5]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_Mixed_MV_MB_ModeTable6,
-        &pContext->m_vlcTbl->MBMODE_INTERLACE_FIELD_MIXED_TABLES[6]))
-        return 0;
-
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_Mixed_MV_MB_ModeTable7,
-        &pContext->m_vlcTbl->MBMODE_INTERLACE_FIELD_MIXED_TABLES[7]))
-        return 0;
-
-    //REFDIST
-    if (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(
-        VC1_FieldRefdistTable,
-        &pContext->m_vlcTbl->REFDIST_TABLE))
-        return 0;
-
-    return 1;
-}
-
-bool InitTables(VC1Context* pContext)
-{
-    ippStaticInit();
-
-    SetDecodingTables(pContext);
-
-    if(!InitCommonTables(pContext))
-        return false;
-
-    if(pContext->m_seqLayerHeader.INTERLACE)
-        if(!InitInterlacedTables(pContext))
-            return false;
-    return true;
-}
-
-
-void FreeTables(VC1Context* pContext)
-{
-    Ipp32s i;
-
-    if(pContext->m_vlcTbl->m_pLowMotionLumaDCDiff)
-    {
-        ippiHuffmanTableFree_32s(pContext->m_vlcTbl->m_pLowMotionLumaDCDiff);
-        pContext->m_vlcTbl->m_pLowMotionLumaDCDiff = NULL;
-    }
-
-    if(pContext->m_vlcTbl->m_pHighMotionLumaDCDiff)
-    {
-        ippiHuffmanTableFree_32s(pContext->m_vlcTbl->m_pHighMotionLumaDCDiff);
-        pContext->m_vlcTbl->m_pHighMotionLumaDCDiff = NULL;
-    }
-
-    if(pContext->m_vlcTbl->m_pLowMotionChromaDCDiff)
-    {
-        ippiHuffmanTableFree_32s(pContext->m_vlcTbl->m_pLowMotionChromaDCDiff);
-        pContext->m_vlcTbl->m_pLowMotionChromaDCDiff = NULL;
-    }
-
-    if(pContext->m_vlcTbl->m_pHighMotionChromaDCDiff)
-    {
-        ippiHuffmanTableFree_32s(pContext->m_vlcTbl->m_pHighMotionChromaDCDiff);
-        pContext->m_vlcTbl->m_pHighMotionChromaDCDiff = NULL;
-    }
-
-    if(pContext->m_vlcTbl->m_pCBPCY_Ipic)
-    {
-        ippiHuffmanTableFree_32s(pContext->m_vlcTbl->m_pCBPCY_Ipic);
-        pContext->m_vlcTbl->m_pCBPCY_Ipic = NULL;
-    }
-
-    if(pContext->m_vlcTbl->LowMotionInterACDecodeSet.pRLTable)
-    {
-        ippiHuffmanTableFree_32s(pContext->m_vlcTbl->LowMotionInterACDecodeSet.pRLTable);
-        pContext->m_vlcTbl->LowMotionInterACDecodeSet.pRLTable = NULL;
-    }
-
-    if(pContext->m_vlcTbl->HighMotionInterACDecodeSet.pRLTable)
-    {
-        ippiHuffmanTableFree_32s(pContext->m_vlcTbl->HighMotionInterACDecodeSet.pRLTable);
-        pContext->m_vlcTbl->HighMotionInterACDecodeSet.pRLTable = NULL;
-    }
-
-    if(pContext->m_vlcTbl->LowMotionIntraACDecodeSet.pRLTable)
-    {
-        ippiHuffmanTableFree_32s(pContext->m_vlcTbl->LowMotionIntraACDecodeSet.pRLTable);
-        pContext->m_vlcTbl-> LowMotionIntraACDecodeSet.pRLTable = NULL;
-    }
-
-    if(pContext->m_vlcTbl->HighMotionIntraACDecodeSet.pRLTable)
-    {
-        ippiHuffmanTableFree_32s(pContext->m_vlcTbl->HighMotionIntraACDecodeSet.pRLTable);
-        pContext->m_vlcTbl->HighMotionIntraACDecodeSet.pRLTable = NULL;
-    }
-
-
-    if(pContext->m_vlcTbl->MidRateIntraACDecodeSet.pRLTable)
-    {
-        ippiHuffmanTableFree_32s(pContext->m_vlcTbl->MidRateIntraACDecodeSet.pRLTable);
-        pContext->m_vlcTbl->MidRateIntraACDecodeSet.pRLTable = NULL;
-    }
-
-    if(pContext->m_vlcTbl->MidRateInterACDecodeSet.pRLTable)
-    {
-        ippiHuffmanTableFree_32s(pContext->m_vlcTbl->MidRateInterACDecodeSet.pRLTable);
-        pContext->m_vlcTbl->MidRateInterACDecodeSet.pRLTable = NULL;
-    }
-
-    if(pContext->m_vlcTbl->HighRateIntraACDecodeSet.pRLTable)
-    {
-        ippiHuffmanTableFree_32s(pContext->m_vlcTbl->HighRateIntraACDecodeSet.pRLTable);
-        pContext->m_vlcTbl->HighRateIntraACDecodeSet.pRLTable = NULL;
-    }
-
-    if(pContext->m_vlcTbl->HighRateInterACDecodeSet.pRLTable)
-    {
-        ippiHuffmanTableFree_32s(pContext->m_vlcTbl->HighRateInterACDecodeSet.pRLTable);
-        pContext->m_vlcTbl->HighRateInterACDecodeSet.pRLTable = NULL;
-    }
-
-    if(pContext->m_vlcTbl->m_Bitplane_IMODE)
-    {
-        ippiHuffmanTableFree_32s(pContext->m_vlcTbl->m_Bitplane_IMODE);
-        pContext->m_vlcTbl->m_Bitplane_IMODE = NULL;
-    }
-
-    if(pContext->m_vlcTbl->m_BitplaneTaledbits)
-    {
-        ippiHuffmanTableFree_32s(pContext->m_vlcTbl->m_BitplaneTaledbits);
-        pContext->m_vlcTbl->m_BitplaneTaledbits = NULL;
-    }
-
-    if(pContext->m_vlcTbl->REFDIST_TABLE)
-    {
-        ippiHuffmanTableFree_32s(pContext->m_vlcTbl->REFDIST_TABLE);
-        pContext->m_vlcTbl->REFDIST_TABLE = NULL;
-    }
-
-
-    {
-        for(i = 0; i < 4; i++)
-        {
-            if(pContext->m_vlcTbl->MVDIFF_PB_TABLES[i])
-            {
-                ippiHuffmanTableFree_32s(pContext->m_vlcTbl->MVDIFF_PB_TABLES[i]);
-                pContext->m_vlcTbl->MVDIFF_PB_TABLES[i] = NULL;
-            }
-        }
-    }
-
-    {
-        for(i = 0; i < 4; i++)
-        {
-            if(pContext->m_vlcTbl->CBPCY_PB_TABLES[i])
-            {
-                ippiHuffmanTableFree_32s(pContext->m_vlcTbl->CBPCY_PB_TABLES[i]);
-                pContext->m_vlcTbl->CBPCY_PB_TABLES[i] = NULL;
-            }
-        }
-    }
-
-    {
-        for(i = 0; i < 3; i++)
-        {
-            if(pContext->m_vlcTbl->TTMB_PB_TABLES[i])
-            {
-                ippiHuffmanTableFree_32s(pContext->m_vlcTbl->TTMB_PB_TABLES[i]);
-                pContext->m_vlcTbl->TTMB_PB_TABLES[i] = NULL;
-            }
-        }
-    }
-
-    {
-        for(i = 0; i < 8; i++)
-        {
-            if(pContext->m_vlcTbl->MBMODE_INTERLACE_FRAME_TABLES[i])
-            {
-                ippiHuffmanTableFree_32s(pContext->m_vlcTbl->MBMODE_INTERLACE_FRAME_TABLES[i]);
-                pContext->m_vlcTbl->MBMODE_INTERLACE_FRAME_TABLES[i] = NULL;
-            }
-        }
-    }
-
-    {
-        for(i = 0; i < 4; i++)
-        {
-            if(pContext->m_vlcTbl->MV2BP_TABLES[i])
-            {
-                ippiHuffmanTableFree_32s(pContext->m_vlcTbl->MV2BP_TABLES[i]);
-                pContext->m_vlcTbl->MV2BP_TABLES[i] = NULL;
-            }
-        }
-    }
-
-    {
-        for(i = 0; i < 3; i++)
-        {
-            if(pContext->m_vlcTbl->TTBLK_PB_TABLES[i])
-            {
-                ippiHuffmanTableFree_32s(pContext->m_vlcTbl->TTBLK_PB_TABLES[i]);
-                pContext->m_vlcTbl->TTBLK_PB_TABLES[i] = NULL;
-            }
-        }
-    }
-
-    {
-        for(i = 0; i < 3; i++)
-        {
-            if(pContext->m_vlcTbl->SBP_PB_TABLES[i])
-            {
-                ippiHuffmanTableFree_32s(pContext->m_vlcTbl->SBP_PB_TABLES[i]);
-                pContext->m_vlcTbl->SBP_PB_TABLES[i] = NULL;
-            }
-        }
-    }
-
-    {
-        for(i = 0; i < 4; i++)
-        {
-            if(pContext->m_vlcTbl->MV4BP_TABLES[i])
-            {
-                ippiHuffmanTableFree_32s(pContext->m_vlcTbl->MV4BP_TABLES[i]);
-                pContext->m_vlcTbl->MV4BP_TABLES[i] = NULL;
-            }
-        }
-    }
-
-    {
-        for(i = 0; i < 8; i++)
-        {
-            if(pContext->m_vlcTbl->CBPCY_PB_INTERLACE_TABLES[i])
-            {
-                ippiHuffmanTableFree_32s(pContext->m_vlcTbl->CBPCY_PB_INTERLACE_TABLES[i]);
-                pContext->m_vlcTbl->CBPCY_PB_INTERLACE_TABLES[i] = NULL;
-            }
-        }
-    }
-
-    {
-        for(i = 0; i < 8; i++)
-        {
-            if(pContext->m_vlcTbl->MBMODE_INTERLACE_FIELD_TABLES[i])
-            {
-                ippiHuffmanTableFree_32s(pContext->m_vlcTbl->MBMODE_INTERLACE_FIELD_TABLES[i]);
-                pContext->m_vlcTbl->MBMODE_INTERLACE_FIELD_TABLES[i] = NULL;
-            }
-        }
-    }
-
-    {
-        for(i = 0; i < 8; i++)
-        {
-            if(pContext->m_vlcTbl->MBMODE_INTERLACE_FIELD_MIXED_TABLES[i])
-            {
-                ippiHuffmanTableFree_32s(pContext->m_vlcTbl->MBMODE_INTERLACE_FIELD_MIXED_TABLES[i]);
-                pContext->m_vlcTbl->MBMODE_INTERLACE_FIELD_MIXED_TABLES[i] = NULL;
-            }
-        }
-    }
-
-    {
-        for(i = 0; i < 12; i++)
-        {
-            if(pContext->m_vlcTbl->MV_INTERLACE_TABLES[i])
-            {
-                ippiHuffmanTableFree_32s(pContext->m_vlcTbl->MV_INTERLACE_TABLES[i]);
-                pContext->m_vlcTbl->MV_INTERLACE_TABLES[i] = 0;
-            }
-        }
-    }
-
-    if(pContext->m_vlcTbl->BFRACTION)
-    {
-        ippiHuffmanTableFree_32s(pContext->m_vlcTbl->BFRACTION);
-        pContext->m_vlcTbl->BFRACTION = NULL;
-    }
-}
-
-Ipp32u DecodeBegin(VC1Context* pContext, Ipp32u stream_subtype)
-{
-    VM_ASSERT(pContext != NULL);
-    Ipp32u width = 0;
-    Ipp32u height = 0;
-    Ipp32s temp_value;
-    Ipp32s seq_size = 0;
-    Ipp8u* seqStart = NULL;
-    //!!!!!!!!!
-    Ipp32u frame_size = 1;
-    Ipp8u* ptr = NULL;
-    Ipp32u StartCode = 0;
-
-    if ((stream_subtype == VC1_VIDEO_VC1)||
-        (stream_subtype == WVC1_VIDEO))
-    {
-        //read start code
-        VC1_GET_BITS(32,temp_value);
-
-        //StartCode = *((Ipp32u*)(pContext->m_pBufferStart));
-        StartCode = ((*(pContext->m_pBufferStart+3))<<24) + ((*(pContext->m_pBufferStart+2))<<16) +
-                    ((*(pContext->m_pBufferStart+1))<<8) + *(pContext->m_pBufferStart);
-
-        // advance profile
-        pContext->m_seqLayerHeader.PROFILE = 3;
-
-        if(StartCode != (VC1_SequenceHeader|0x00000100))
-        {
-            return frame_size;
-        }
-
-        SequenceLayer(pContext);
-
-        width  = (pContext->m_seqLayerHeader.CODED_WIDTH+1)*2;
-        height = (pContext->m_seqLayerHeader.CODED_HEIGHT+1)*2;
-
-        pContext->m_seqLayerHeader.widthMB = (Ipp16u)((width+15)/VC1_PIXEL_IN_LUMA);
-        pContext->m_seqLayerHeader.heightMB = (Ipp16u)((height+15)/VC1_PIXEL_IN_LUMA);
-
-        ptr = (Ipp8u*)pContext->m_bitstream.pBitstream;
-        //StartCode = (*((Ipp32u*)(ptr)))&0xFFFFFF00;
-
-        StartCode = ((*(ptr+3))<<24) + ((*(ptr+2))<<16) + ((*(ptr+1))<<8) + *(ptr);
-        StartCode &= 0xFFFFFF00;
-
-        while((StartCode != 0x00000100) && (ptr < pContext->m_pBufferStart + pContext->m_FrameSize))
-        {
-            ptr++;
-            //StartCode = (*((Ipp32u*)(ptr)))&0xFFFFFF00;
-            StartCode = ((*(ptr+3))<<24) + ((*(ptr+2))<<16) + ((*(ptr+1))<<8) + *(ptr);
-            StartCode &= 0xFFFFFF00;
-        }
-        pContext->m_FrameSize = (Ipp32u)(ptr - pContext->m_pBufferStart);
-    }
-    else
-    {
-        //read sequence header size
-        SwapData(pContext->m_pBufferStart, pContext->m_FrameSize);
-
-        if (stream_subtype != WMV3_VIDEO)
-        {
-            seqStart = pContext->m_pBufferStart + 4;
-            seq_size  = ((*(seqStart+3))<<24) + ((*(seqStart+2))<<16) + ((*(seqStart+1))<<8) + *(seqStart);
-
-            assert(seq_size > 0);
-            assert(seq_size < 100);
-
-            seqStart = pContext->m_pBufferStart + 8 + seq_size;
-            height  = ((*(seqStart+3))<<24) + ((*(seqStart+2))<<16) + ((*(seqStart+1))<<8) + *(seqStart);
-            seqStart+=4;
-            width  = ((*(seqStart+3))<<24) + ((*(seqStart+2))<<16) + ((*(seqStart+1))<<8) + *(seqStart);
-
-            VC1_GET_BITS(32,temp_value); //!!!!!!!
-            VC1_GET_BITS(32,temp_value); //!!!!!
-            pContext->m_seqLayerHeader.widthMB  = (Ipp16u)((width+15)/VC1_PIXEL_IN_LUMA);
-            pContext->m_seqLayerHeader.heightMB = (Ipp16u)((height+15)/VC1_PIXEL_IN_LUMA);
-            pContext->m_seqLayerHeader.MAX_CODED_HEIGHT = height/2 - 1;
-            pContext->m_seqLayerHeader.MAX_CODED_WIDTH = width/2 - 1;
-            pContext->m_seqLayerHeader.MaxWidthMB = pContext->m_seqLayerHeader.widthMB;
-            pContext->m_seqLayerHeader.MaxHeightMB = pContext->m_seqLayerHeader.heightMB;
-        }
-        SwapData(pContext->m_pBufferStart, pContext->m_FrameSize);
-        SequenceLayer(pContext);
-    }
-    if (stream_subtype == WMV3_VIDEO)
-        return 1;
-
-    height = pContext->m_seqLayerHeader.heightMB*VC1_PIXEL_IN_LUMA;
-    width = (pContext->m_seqLayerHeader.widthMB * VC1_PIXEL_IN_LUMA);
-
-    frame_size = (height + 128)*(width + 128)
-                + ((height / 2 + 64)*(width / 2 + 64))*2;
-
-    return frame_size; //!!!!!
-}
 
 VC1Status GetNextPicHeader_Adv(VC1Context* pContext)
 {
@@ -1292,16 +378,6 @@ void _own_ippiRangeMap_VC1_8u_C1R(Ipp8u* pSrc, Ipp32s srcStep,
     }
 }
 #endif
-
-
-VC1Status DecodeFrame (VC1Context* pContext)
-{
-    VC1Status vc1Sts = VC1_OK;
-
-    vc1Sts = Decode_PictureLayer(pContext);
-
-    return vc1Sts;
-}
 
 //frame rate calculation
 void MapFrameRateIntoMfx(Ipp32u& ENR, Ipp32u& EDR, Ipp16u FCode)
@@ -1437,8 +513,208 @@ Ipp64f MapFrameRateIntoUMC(Ipp32u ENR,Ipp32u EDR, Ipp32u& FCode)
     EDRf = EDR;
     frate = FCode * ENRf/EDRf;
     return frate;
-
-
-
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#ifdef ALLOW_SW_VC1_FALLBACK
+VC1Status FillTablesForIntensityCompensation(VC1Context* pContext,
+    Ipp32u scale,
+    Ipp32u shift)
+{
+    //Ipp32u index = pContext->m_frmBuff.m_iPrevIndex;
+    /*scale, shift parameters are in [0,63]*/
+    Ipp32s i;
+    Ipp32s iscale = (scale) ? scale + 32 : -64;
+    Ipp32s ishift = (scale) ? shift * 64 : (255 - 2 * shift) * 64;
+    Ipp32s z = (scale) ? -1 : 2;
+    Ipp32s j;
+
+
+    ishift += (shift>31) ? z << 12 : 0;
+#ifdef VC1_DEBUG_ON
+    VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1, VC1_INTENS,
+        VM_STRING("shift=%d, scale=%d, iscale=%d, ishift=%d\n"),
+        shift, scale, iscale, ishift);
+#endif
+
+    for (i = 0; i<256; i++)
+    {
+        j = (i*iscale + ishift + 32) >> 6;
+        pContext->LumaTable[0][i] = (Ipp8u)VC1_CLIP(j);
+        pContext->LumaTable[1][i] = (Ipp8u)VC1_CLIP(j);
+        j = ((i - 128)*iscale + 128 * 64 + 32) >> 6;
+        pContext->ChromaTable[0][i] = (Ipp8u)VC1_CLIP(j);
+        pContext->ChromaTable[1][i] = (Ipp8u)VC1_CLIP(j);
+
+#ifdef VC1_DEBUG_ON
+        VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1, VC1_INTENS,
+            VM_STRING("LumaTable[i]=%d, ChromaTable[i]=%d\n"),
+            pContext->LumaTable[0][i], pContext->ChromaTable[0][i]);
+#endif
+    }
+
+    return VC1_OK;
+}
+
+VC1Status FillTablesForIntensityCompensation_Adv(VC1Context* pContext,
+    Ipp32u scale,
+    Ipp32u shift,
+    Ipp32u bottom_field,
+    Ipp32s index)
+{
+    /*scale, shift parameters are in [0,63]*/
+    Ipp32s i;
+    Ipp32s iscale = (scale) ? scale + 32 : -64;
+    Ipp32s ishift = (scale) ? shift * 64 : (255 - 2 * shift) * 64;
+    Ipp32s z = (scale) ? -1 : 2;
+    Ipp32s j;
+    Ipp8u *pY, *pU, *pV;
+    IppiSize roiSize;
+
+    roiSize.width = (pContext->m_seqLayerHeader.CODED_WIDTH + 1) << 1;
+    roiSize.height = (pContext->m_seqLayerHeader.CODED_HEIGHT + 1) << 1;
+
+    Ipp32s YPitch = pContext->m_frmBuff.m_pFrames[index].m_iYPitch;
+    Ipp32s UPitch = pContext->m_frmBuff.m_pFrames[index].m_iUPitch;
+    Ipp32s VPitch = pContext->m_frmBuff.m_pFrames[index].m_iVPitch;
+
+    pY = pContext->m_frmBuff.m_pFrames[index].m_pY;
+    pU = pContext->m_frmBuff.m_pFrames[index].m_pU;
+    pV = pContext->m_frmBuff.m_pFrames[index].m_pV;
+
+    if (pContext->m_picLayerHeader->FCM == VC1_FieldInterlace)
+    {
+        if (bottom_field)
+        {
+            pY += YPitch;
+            pU += UPitch;
+            pV += VPitch;
+        }
+        YPitch <<= 1;
+        UPitch <<= 1;
+        VPitch <<= 1;
+
+        roiSize.height >>= 1;
+    }
+
+    ishift += (shift>31) ? z * 64 * 64 : 0;
+#ifdef VC1_DEBUG_ON
+    VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1, VC1_INTENS,
+        VM_STRING("shift=%d, scale=%d, iscale=%d, ishift=%d\n"),
+        shift, scale, iscale, ishift);
+#endif
+    Ipp32u LUTindex = bottom_field + (pContext->m_picLayerHeader->CurrField << 1);
+
+    if (pContext->m_picLayerHeader->FCM == VC1_FieldInterlace)
+    {
+        for (i = 0; i<256; i++)
+        {
+            j = (i*iscale + ishift + 32) >> 6;
+            pContext->LumaTable[LUTindex][i] = (Ipp8u)VC1_CLIP(j);
+            j = ((i - 128)*iscale + 128 * 64 + 32) >> 6;
+            pContext->ChromaTable[LUTindex][i] = (Ipp8u)VC1_CLIP(j);
+#ifdef VC1_DEBUG_ON
+            VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1, VC1_INTENS,
+                VM_STRING("LumaTable[i]=%d, ChromaTable[i]=%d\n"),
+                pContext->LumaTable[LUTindex][i], pContext->ChromaTable[LUTindex][i]);
+#endif
+        }
+    }
+    else
+    {
+        for (i = 0; i<256; i++)
+        {
+            j = (i*iscale + ishift + 32) >> 6;
+            pContext->LumaTable[0][i] = (Ipp8u)VC1_CLIP(j);
+            pContext->LumaTable[1][i] = (Ipp8u)VC1_CLIP(j);
+            j = ((i - 128)*iscale + 128 * 64 + 32) >> 6;
+            pContext->ChromaTable[0][i] = (Ipp8u)VC1_CLIP(j);
+            pContext->ChromaTable[1][i] = (Ipp8u)VC1_CLIP(j);
+#ifdef VC1_DEBUG_ON
+            VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1, VC1_INTENS,
+                VM_STRING("LumaTable[i]=%d, ChromaTable[i]=%d\n"),
+                pContext->LumaTable[LUTindex][i], pContext->ChromaTable[LUTindex][i]);
+#endif
+        }
+    }
+    return VC1_OK;
+}
+#endif
+
+VC1Status MVRangeDecode(VC1Context* pContext)
+{
+    VC1PictureLayerHeader* picLayerHeader = pContext->m_picLayerHeader;
+
+    if (pContext->m_seqLayerHeader.EXTENDED_MV == 1)
+    {
+        //MVRANGE;
+        //0   256 128
+        //10  512 256
+        //110 2048 512
+        //111 4096 1024
+
+        VC1_GET_BITS(1, picLayerHeader->MVRANGE);
+
+        if (picLayerHeader->MVRANGE)
+        {
+            VC1_GET_BITS(1, picLayerHeader->MVRANGE);
+            if (picLayerHeader->MVRANGE)
+            {
+                VC1_GET_BITS(1, picLayerHeader->MVRANGE);
+                picLayerHeader->MVRANGE += 1;
+            }
+            picLayerHeader->MVRANGE += 1;
+        }
+    }
+    else
+    {
+        picLayerHeader->MVRANGE = 0;
+    }
+    
+#ifdef ALLOW_SW_VC1_FALLBACK
+    picLayerHeader->m_pCurrMVRangetbl = &VC1_MVRangeTbl[picLayerHeader->MVRANGE];
+#endif
+    return VC1_OK;
+}
+
+VC1Status DMVRangeDecode(VC1Context* pContext)
+{
+    if (pContext->m_seqLayerHeader.EXTENDED_DMV == 1)
+    {
+        VC1_GET_BITS(1, pContext->m_picLayerHeader->DMVRANGE);
+        if (pContext->m_picLayerHeader->DMVRANGE == 0)
+        {
+            //binary code 0
+            pContext->m_picLayerHeader->DMVRANGE = VC1_DMVRANGE_NONE;
+        }
+        else
+        {
+            VC1_GET_BITS(1, pContext->m_picLayerHeader->DMVRANGE);
+            if (pContext->m_picLayerHeader->DMVRANGE == 0)
+            {
+                //binary code 10
+                pContext->m_picLayerHeader->DMVRANGE = VC1_DMVRANGE_HORIZONTAL_RANGE;
+            }
+            else
+            {
+                VC1_GET_BITS(1, pContext->m_picLayerHeader->DMVRANGE);
+                if (pContext->m_picLayerHeader->DMVRANGE == 0)
+                {
+                    //binary code 110
+                    pContext->m_picLayerHeader->DMVRANGE = VC1_DMVRANGE_VERTICAL_RANGE;
+                }
+                else
+                {
+                    //binary code 111
+                    pContext->m_picLayerHeader->DMVRANGE = VC1_DMVRANGE_HORIZONTAL_VERTICAL_RANGE;
+                }
+            }
+        }
+    }
+
+    return VC1_OK;
+}
+
 #endif //UMC_ENABLE_VC1_VIDEO_DECODER

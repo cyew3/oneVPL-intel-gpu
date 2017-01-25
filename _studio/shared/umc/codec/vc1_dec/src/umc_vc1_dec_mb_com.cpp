@@ -16,7 +16,6 @@
 #include "umc_vc1_dec_debug.h"
 #include "umc_vc1_common_blk_order_tbl.h"
 #include "umc_vc1_dec_run_level_tbl.h"
-#include "umc_vc1_dec_time_statistics.h"
 
 
 inline

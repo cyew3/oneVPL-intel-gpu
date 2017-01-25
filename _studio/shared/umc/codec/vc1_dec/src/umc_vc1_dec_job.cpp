@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -13,12 +13,9 @@
 #if defined (UMC_ENABLE_VC1_VIDEO_DECODER)
 
 #include "umc_vc1_dec_job.h"
-//#include "umc_vc1_dec_seq.h"
 #include "umc_vc1_common_acintra.h"
 #include "umc_vc1_common_acinter.h"
 #include "umc_vc1_dec_frame_descr.h"
-
-#include "umc_vc1_dec_time_statistics.h"
 
 #include "umc_vc1_dec_task_store.h"
 #include "umc_vc1_dec_debug.h"
@@ -35,7 +32,6 @@
 using namespace UMC;
 using namespace UMC::VC1Common;
 using namespace UMC::VC1Exceptions;
-
 
 MBLayerDecode MBLayerDecode_tbl_Adv[12] = {
     //I pic
@@ -140,11 +136,7 @@ MotionComp MotionComp_Adv[6] = {
 };
 
 typedef void (*SaveMV)(VC1Context* pContext);
-//SaveMV SaveMV_tbl[3] = {
-//    (save_MV),
-//    (save_MV_InterlaceFrame),
-//    (save_MV_InterlaceField)
-//};
+
 typedef VC1Status (*B_MB_DECODE)(VC1Context* pContext);
 static B_MB_DECODE B_MB_Dispatch_table[] = {
         (MBLayer_ProgressiveBpicture_NONDIRECT_Prediction),
@@ -245,12 +237,8 @@ VC1Status VC1TaskProcessorUMC::VC1MVCalculation(VC1Context* pContext, VC1Task* p
     {
         for (Ipp32s j = 0; j <pContext->m_seqLayerHeader.widthMB; j++)
         {
-            STATISTICS_START_TIME(m_timeStatistics->motion_vector_decoding_StartTime);
             if (pContext->m_pCurrMB->mbType != VC1_MB_INTRA)
                 currMVtable[pContext->m_pCurrMB->SkipAndDirectFlag](pContext);
-            STATISTICS_END_TIME(m_timeStatistics->motion_vector_decoding_StartTime,
-                                m_timeStatistics->motion_vector_decoding_EndTime,
-                                m_timeStatistics->motion_vector_decoding_TotalTime);
 
             ++pContext->m_pCurrMB;
             ++pContext->m_pSingleMB->m_currMBXpos;
@@ -261,6 +249,7 @@ VC1Status VC1TaskProcessorUMC::VC1MVCalculation(VC1Context* pContext, VC1Task* p
     }
     return VC1_OK;
 }
+
 VC1Status VC1TaskProcessorUMC::VC1Decoding (VC1Context* pContext, VC1Task* pTask)
 {
     volatile MBLayerDecode* pCurrMBTable = MBLayerDecode_tbl_Adv;
@@ -322,12 +311,6 @@ VC1Status VC1TaskProcessorUMC::VC1Decoding (VC1Context* pContext, VC1Task* pTask
                                                   pContext,
                                                   pTask,
                                                   pContext->m_pCurrMB);
-                            // we already decode it
-                            //if (mbGroupLevel == vc1_except_profiler::GetEnvDescript().m_SmartLevel)
-                            //{
-                            //    i = pTask->m_pSlice->MBRowsToDecode;
-                            //    j = pContext->m_pSingleMB->widthMB;
-                            //}
                         }
                         else
                             throw ex;
@@ -388,8 +371,6 @@ VC1Status VC1TaskProcessorUMC::VC1ProcessDiff (VC1Context* pContext, VC1Task* pT
                 if (pContext->m_pCurrMB->mbType == VC1_MB_INTRA)
                 {
                     //write to plane
-                    STATISTICS_START_TIME(m_timeStatistics->write_plane_StartTime);
-
                     if (pContext->m_picLayerHeader->FCM == VC1_FrameInterlace)
                         write_Intraluma_to_interlace_frame_Adv(pContext->m_pCurrMB, pContext->m_pBlock);
                     else
@@ -419,10 +400,6 @@ VC1Status VC1TaskProcessorUMC::VC1ProcessDiff (VC1Context* pContext, VC1Task* pT
                         pContext->m_pCurrMB->currVPlane,
                         pContext->m_pCurrMB->currVPitch,
                         roiSize);
-
-                    STATISTICS_END_TIME(m_timeStatistics->write_plane_StartTime,
-                        m_timeStatistics->write_plane_EndTime,
-                        m_timeStatistics->write_plane_TotalTime);
                 }
                 else
                 {
@@ -430,8 +407,6 @@ VC1Status VC1TaskProcessorUMC::VC1ProcessDiff (VC1Context* pContext, VC1Task* pT
                     roiSize.width = 8;
 
                     //write to plane
-                    STATISTICS_START_TIME(m_timeStatistics->write_plane_StartTime);
-
                     IntraFlag = pContext->m_pCurrMB->IntraFlag;
                     for (Ipp32s blk_num = 0; blk_num<4 ;blk_num++)
                     {
@@ -460,10 +435,6 @@ VC1Status VC1TaskProcessorUMC::VC1ProcessDiff (VC1Context* pContext, VC1Task* pT
                         pContext->m_pCurrMB->currVPlane,
                             pContext->m_pCurrMB->currVPitch,
                             roiSize);
-
-                        STATISTICS_END_TIME(m_timeStatistics->write_plane_StartTime,
-                            m_timeStatistics->write_plane_EndTime,
-                            m_timeStatistics->write_plane_TotalTime);
                     }
                 }
                 ++pContext->m_pSingleMB->m_currMBXpos;
@@ -496,8 +467,6 @@ VC1Status VC1TaskProcessorUMC::VC1ProcessDiff (VC1Context* pContext, VC1Task* pT
                             pReconstructTbl[1](pContext,blk_num);
 
                     //write to plane
-                    STATISTICS_START_TIME(m_timeStatistics->write_plane_StartTime);
-
                     if (pContext->m_picLayerHeader->FCM == VC1_FrameInterlace)
                         write_Intraluma_to_interlace_frame_Adv(pContext->m_pCurrMB, pContext->m_pBlock);
                     else
@@ -527,10 +496,6 @@ VC1Status VC1TaskProcessorUMC::VC1ProcessDiff (VC1Context* pContext, VC1Task* pT
                         pContext->m_pCurrMB->currVPlane,
                         pContext->m_pCurrMB->currVPitch,
                         roiSize);
-
-                        STATISTICS_END_TIME(m_timeStatistics->write_plane_StartTime,
-                            m_timeStatistics->write_plane_EndTime,
-                            m_timeStatistics->write_plane_TotalTime);
                     }
                     else
                     {
@@ -566,8 +531,6 @@ VC1Status VC1TaskProcessorUMC::VC1ProcessDiff (VC1Context* pContext, VC1Task* pT
                     pReconstructTbl[1](pContext,blk_num);
 
                 //write to plane
-                STATISTICS_START_TIME(m_timeStatistics->write_plane_StartTime);
-
                 if (pContext->m_picLayerHeader->FCM == VC1_FrameInterlace)
                     write_Intraluma_to_interlace_frame_Adv(pContext->m_pCurrMB, pContext->m_pBlock);
                 else
@@ -598,10 +561,6 @@ VC1Status VC1TaskProcessorUMC::VC1ProcessDiff (VC1Context* pContext, VC1Task* pT
                     pContext->m_pCurrMB->currVPitch,
                     roiSize);
 
-                STATISTICS_END_TIME(m_timeStatistics->write_plane_StartTime,
-                    m_timeStatistics->write_plane_EndTime,
-                    m_timeStatistics->write_plane_TotalTime);
-
                 ++pContext->m_pSingleMB->m_currMBXpos;
                 pContext->m_pBlock += 8*8*6;
                 ++pContext->m_pCurrMB;
@@ -624,7 +583,6 @@ VC1Status VC1TaskProcessorUMC::VC1ProcessDiff (VC1Context* pContext, VC1Task* pT
 
 VC1Status VC1TaskProcessorUMC::VC1MotionCompensation(VC1Context* pContext,VC1Task* pTask)
 {
-    STATISTICS_START_TIME(m_timeStatistics->interpolation_StartTime);
     {
     pContext->interp_params_luma.srcStep   = pContext->m_pSingleMB->currYPitch;
     pContext->interp_params_chroma.srcStep = pContext->m_pSingleMB->currUPitch;
@@ -669,9 +627,6 @@ VC1Status VC1TaskProcessorUMC::VC1MotionCompensation(VC1Context* pContext,VC1Tas
         pContext->m_pCurrMB += (pContext->m_seqLayerHeader.MaxWidthMB-pContext->m_pSingleMB->widthMB);
     }
 
-    STATISTICS_END_TIME(m_timeStatistics->interpolation_StartTime,
-        m_timeStatistics->interpolation_EndTime,
-        m_timeStatistics->interpolation_TotalTime);
     return VC1_OK;
 }
 
@@ -686,8 +641,6 @@ VC1Status VC1TaskProcessorUMC::VC1PrepPlane(VC1Context* pContext,VC1Task* pTask)
     roiSize_16.height = 16;
     roiSize_16.width = 16;
 
-    //VC1MB* pStartMB = pContext->m_pCurrMB;
-
     if (pContext->m_picLayerHeader->FCM == VC1_FrameInterlace)
     {
         if(pContext->m_picLayerHeader->PTYPE == VC1_P_FRAME)
@@ -697,7 +650,6 @@ VC1Status VC1TaskProcessorUMC::VC1PrepPlane(VC1Context* pContext,VC1Task* pTask)
      }
     else
     {
-    STATISTICS_START_TIME(m_timeStatistics->mc_StartTime);
     if(pContext->m_picLayerHeader->PTYPE == VC1_P_FRAME)
     {
         for (Ipp32s i = 0; i < pTask->m_pSlice->MBRowsToDecode;i++)
@@ -804,10 +756,6 @@ VC1Status VC1TaskProcessorUMC::VC1PrepPlane(VC1Context* pContext,VC1Task* pTask)
             pContext->m_pCurrMB += (pContext->m_seqLayerHeader.MaxWidthMB-pContext->m_pSingleMB->widthMB);
             pContext->m_pBlock += (pContext->m_seqLayerHeader.MaxWidthMB-pContext->m_pSingleMB->widthMB)*8*8*6;
         }
-
-    STATISTICS_END_TIME(m_timeStatistics->mc_StartTime,
-        m_timeStatistics->mc_EndTime,
-        m_timeStatistics->mc_TotalTime);
     }
 
     else //B Frames
@@ -946,14 +894,10 @@ VC1Status VC1TaskProcessorUMC::VC1PrepPlane(VC1Context* pContext,VC1Task* pTask)
                 pContext->m_pCurrMB += (pContext->m_seqLayerHeader.MaxWidthMB-pContext->m_pSingleMB->widthMB);
                 pContext->m_pBlock += (pContext->m_seqLayerHeader.MaxWidthMB-pContext->m_pSingleMB->widthMB)*8*8*6;
         }
-    STATISTICS_END_TIME(m_timeStatistics->mc_StartTime,
-                        m_timeStatistics->mc_EndTime,
-                        m_timeStatistics->mc_TotalTime);
     }
     }
 
     // Smoothing
-    STATISTICS_START_TIME(m_timeStatistics->smoothing_StartTime);
     pContext->m_pSingleMB->m_currMBXpos = 0;
     pContext->m_pSingleMB->m_currMBYpos = pTask->m_pSlice->MBStartRow;
     pContext->m_pBlock = pTask->m_pBlock;
@@ -963,64 +907,6 @@ VC1Status VC1TaskProcessorUMC::VC1PrepPlane(VC1Context* pContext,VC1Task* pTask)
     {
        MBSmooth_tbl[pContext->m_seqLayerHeader.PROFILE*4 + pContext->m_picLayerHeader->PTYPE](pContext,pTask->m_pSlice->MBRowsToDecode);
     }
-    STATISTICS_END_TIME(m_timeStatistics->smoothing_StartTime,
-            m_timeStatistics->smoothing_EndTime,
-            m_timeStatistics->smoothing_TotalTime);
-
-    ////set 0 on not coded part of outbut in case if MAX coded size != coded size
-    //if((pContext->m_seqLayerHeader.MaxWidthMB != pContext->m_seqLayerHeader.widthMB) || 
-    //    (pContext->m_seqLayerHeader.MaxHeightMB != pContext->m_seqLayerHeader.heightMB))
-    //{
-    //    Ipp32u i = 0;
-    //    Ipp32u j = 0;
-    //    Ipp8u* Yptr = pStartMB->currYPlane;
-    //    Ipp8u* Uptr = pStartMB->currUPlane;
-    //    Ipp8u* Vptr = pStartMB->currVPlane;
-
-    //    Ipp32u YPitch = pStartMB->currYPitch;
-    //    Ipp32u UPitch = pStartMB->currUPitch;
-    //    Ipp32u VPitch = pStartMB->currVPitch;
-
-    //    Ipp32u codedWidth =  2 * (pContext->m_seqLayerHeader.CODED_WIDTH +1);
-    //            
-    //    for(i = 0; i < pTask->m_pSlice->MBRowsToDecode; i++)
-    //    {
-    //        for(j = 0; j < VC1_PIXEL_IN_LUMA; j++)
-    //        {
-    //            memset(Yptr +  codedWidth, 0,   YPitch -  codedWidth);
-    //            Yptr += YPitch;
-    //        }
-    //        for(j = 0; j < VC1_PIXEL_IN_CHROMA; j++)
-    //        {
-    //            memset(Uptr +  codedWidth/2, 0, UPitch -  codedWidth/2);
-    //            memset(Vptr +  codedWidth/2, 0, VPitch -  codedWidth/2);
-
-    //            Uptr += UPitch;
-    //            Vptr += VPitch;
-    //        }
-    //    }
-    //    if (pContext->m_pSingleMB->m_currMBYpos + pTask->m_pSlice->MBRowsToDecode 
-    //        == pContext->m_seqLayerHeader.heightMB)
-    //    {
-    //        for(i = pContext->m_seqLayerHeader.heightMB; i < pContext->m_seqLayerHeader.MaxHeightMB; i++)
-    //        {
-    //            for(j = 0; j < VC1_PIXEL_IN_LUMA; j++)
-    //            {
-    //                memset(Yptr, 0,   YPitch);
-    //                Yptr += YPitch;
-    //            }
-    //            for(j = 0; j < VC1_PIXEL_IN_CHROMA; j++)
-    //           {
-    //                memset(Uptr, 0, UPitch);
-    //                memset(Vptr, 0, VPitch);
-
-    //                Uptr += UPitch;
-    //                Vptr += VPitch;
-    //            }
-    //        }
-    //    }
-
-    //}
 
 #ifdef VC1_DEBUG_ON
     pContext->m_pSingleMB->m_currMBXpos = 0;
@@ -1082,13 +968,7 @@ VC1Status VC1TaskProcessorUMC::VC1Deblocking (VC1Context* pContext, VC1Task* pTa
             ++MBHeight;
         }
 
-STATISTICS_START_TIME(m_timeStatistics->deblocking_StartTime);
-
         pDeblock[pContext->m_picLayerHeader->PTYPE*3 + pContext->m_picLayerHeader->FCM](pContext);
-
-STATISTICS_END_TIME(m_timeStatistics->deblocking_StartTime,
-                    m_timeStatistics->deblocking_EndTime,
-                    m_timeStatistics->deblocking_TotalTime);
     }
 
     return VC1_OK;
@@ -1096,7 +976,7 @@ STATISTICS_END_TIME(m_timeStatistics->deblocking_StartTime,
 
 Status VC1TaskProcessorUMC::Init(VC1Context* pContext,
                               Ipp32s iNumber,
-                              VC1TaskStore*      pStore,
+                              VC1TaskStoreSW*      pStore,
                               MemoryAllocator* pMemoryAllocator)
 {
     m_iNumber = iNumber;
@@ -1157,10 +1037,6 @@ Status VC1TaskProcessorUMC::process()
 {
     VC1Task* task;
     VC1FrameDescriptor*    pFrameDS;
-    //VC1TaskStore* pStore = VC1TaskStore::GetInstance(VC1Routine);
-#ifdef  VC1_THREAD_STATISTIC
-    task->pJob = this;
-#endif
     bool isFrameComplete = false;
 
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "VC1Dec_work");
@@ -1169,20 +1045,18 @@ Status VC1TaskProcessorUMC::process()
     {
         if (task)
         {
-            ippsCopy_8u((Ipp8u*)pFrameDS->m_pContext,(Ipp8u*)m_pContext,sizeof(VC1Context));
+            MFX_INTERNAL_CPY((Ipp8u*)m_pContext, (Ipp8u*)pFrameDS->m_pContext, sizeof(VC1Context));
             // we don't copy this field from pFrameDS
             m_pContext->m_pSingleMB =  m_pSingleMB;
 
             // coded sizes differs from max sizes
             if (m_pContext->m_seqLayerHeader.widthMB != m_pContext->m_pSingleMB->widthMB)
             {
-                //printf("changed\n");
                 m_pContext->m_pSingleMB->widthMB = m_pContext->m_seqLayerHeader.widthMB;
                 m_pContext->m_pSingleMB->MaxWidthMB = m_pContext->m_seqLayerHeader.MaxWidthMB;
             }
             if (m_pContext->m_seqLayerHeader.heightMB != m_pContext->m_pSingleMB->heightMB)
             {
-                //printf("changed\n");
                 m_pContext->m_pSingleMB->heightMB    = m_pContext->m_seqLayerHeader.heightMB;
                 m_pContext->m_pSingleMB->MaxHeightMB = m_pContext->m_seqLayerHeader.MaxHeightMB;
             }
@@ -1259,6 +1133,7 @@ Status VC1TaskProcessorUMC::process()
     }
     return (isFrameComplete)?UMC_OK:UMC_ERR_NOT_ENOUGH_DATA;
 }
+
 void VC1TaskProcessorUMC::Release() // free mem
 {
    if(m_pMemoryAllocator)
@@ -1272,6 +1147,7 @@ void VC1TaskProcessorUMC::Release() // free mem
 
    }
 }
+
 void   VC1TaskProcessorUMC::WriteDiffs(VC1Context* pContext)
 {
     IppiSize  roiSize;
@@ -1282,8 +1158,6 @@ void   VC1TaskProcessorUMC::WriteDiffs(VC1Context* pContext)
     if (pContext->m_pCurrMB->mbType == VC1_MB_INTRA)
     {
         //write to plane
-        STATISTICS_START_TIME(m_timeStatistics->write_plane_StartTime);
-
         if (pContext->m_picLayerHeader->FCM == VC1_FrameInterlace)
             write_Intraluma_to_interlace_frame_Adv(pContext->m_pCurrMB, pContext->m_pBlock);
         else
@@ -1313,10 +1187,6 @@ void   VC1TaskProcessorUMC::WriteDiffs(VC1Context* pContext)
             pContext->m_pCurrMB->currVPlane,
             pContext->m_pCurrMB->currVPitch,
             roiSize);
-
-        STATISTICS_END_TIME(m_timeStatistics->write_plane_StartTime,
-            m_timeStatistics->write_plane_EndTime,
-            m_timeStatistics->write_plane_TotalTime);
     }
     else
     {
@@ -1324,8 +1194,6 @@ void   VC1TaskProcessorUMC::WriteDiffs(VC1Context* pContext)
         roiSize.width = 8;
 
         //write to plane
-        STATISTICS_START_TIME(m_timeStatistics->write_plane_StartTime);
-
         IntraFlag = pContext->m_pCurrMB->IntraFlag;
         for (Ipp32s blk_num = 0; blk_num<4 ;blk_num++)
         {
@@ -1354,12 +1222,9 @@ void   VC1TaskProcessorUMC::WriteDiffs(VC1Context* pContext)
             pContext->m_pCurrMB->currVPlane,
             pContext->m_pCurrMB->currVPitch,
             roiSize);
-
-        STATISTICS_END_TIME(m_timeStatistics->write_plane_StartTime,
-            m_timeStatistics->write_plane_EndTime,
-            m_timeStatistics->write_plane_TotalTime);
     }
 }
+
 void VC1TaskProcessorUMC::ProcessSmartException (SmartLevel exLevel, VC1Context* pContext, VC1Task* pTask, VC1MB* pCurrMB)
 {
     if (VC1_IS_PRED(pContext->m_picLayerHeader->PTYPE))
@@ -1393,6 +1258,7 @@ void VC1TaskProcessorUMC::ProcessSmartException (SmartLevel exLevel, VC1Context*
         }
     }
 }
+
 void VC1TaskProcessorUMC::CompensateInterlacePFrame(VC1Context* pContext, VC1Task *pTask)
 {
     static IppiSize  roiSize_8;
@@ -1400,7 +1266,6 @@ void VC1TaskProcessorUMC::CompensateInterlacePFrame(VC1Context* pContext, VC1Tas
     roiSize_8.height = 8;
     roiSize_8.width = 8;
 
-    STATISTICS_START_TIME(m_timeStatistics->mc_StartTime);
     for (Ipp32s i = 0; i < pTask->m_pSlice->MBRowsToDecode;i++)
     {
         for (Ipp32s j = 0; j < pContext->m_pSingleMB->widthMB; j++)
@@ -1461,29 +1326,8 @@ void VC1TaskProcessorUMC::CompensateInterlacePFrame(VC1Context* pContext, VC1Tas
         pContext->m_pCurrMB += (pContext->m_seqLayerHeader.MaxWidthMB-pContext->m_pSingleMB->widthMB);
         pContext->m_pBlock += (pContext->m_seqLayerHeader.MaxWidthMB-pContext->m_pSingleMB->widthMB)*8*8*6;
     }
-
-
-    STATISTICS_END_TIME(m_timeStatistics->mc_StartTime,
-        m_timeStatistics->mc_EndTime,
-        m_timeStatistics->mc_TotalTime);
-
-    STATISTICS_END_TIME(m_timeStatistics->mc_StartTime,
-        m_timeStatistics->mc_EndTime,
-        m_timeStatistics->mc_TotalTime);
-    //STATISTICS_START_TIME(m_timeStatistics->smoothing_StartTime);
-    //pContext->m_pSingleMB->m_currMBXpos = 0;
-    //pContext->m_pSingleMB->m_currMBYpos = pTask->m_pSlice->MBStartRow;
-    //pContext->m_pBlock = pTask->m_pBlock;
-    //pContext->m_pCurrMB = &pContext->m_MBs[pTask->m_pSlice->MBStartRow*pContext->m_seqLayerHeader.widthMB];
-
-    //if (m_pStore->IsNeedPostProcFrame(pTask->m_pSlice->m_picLayerHeader->PTYPE))
-    //{
-    //    MBSmooth_tbl[pContext->m_seqLayerHeader.PROFILE*4 + pContext->m_picLayerHeader->PTYPE](pContext,pTask->m_pSlice->MBRowsToDecode);
-    //}
-    //STATISTICS_END_TIME(m_timeStatistics->smoothing_StartTime,
-    //    m_timeStatistics->smoothing_EndTime,
-    //    m_timeStatistics->smoothing_TotalTime);
 }
+
 void VC1TaskProcessorUMC::CompensateInterlaceBFrame(VC1Context* pContext, VC1Task *pTask)
 {
     static IppiSize  roiSize_8;
@@ -1491,7 +1335,6 @@ void VC1TaskProcessorUMC::CompensateInterlaceBFrame(VC1Context* pContext, VC1Tas
     roiSize_8.height = 8;
     roiSize_8.width = 8;
 
-    STATISTICS_START_TIME(m_timeStatistics->mc_StartTime);
     for (Ipp32s i = 0; i < pTask->m_pSlice->MBRowsToDecode;i++)
     {
         for (Ipp32s j = 0; j < pContext->m_pSingleMB->widthMB; j++)
@@ -1607,9 +1450,6 @@ void VC1TaskProcessorUMC::CompensateInterlaceBFrame(VC1Context* pContext, VC1Tas
          pContext->m_pCurrMB += (pContext->m_seqLayerHeader.MaxWidthMB-pContext->m_pSingleMB->widthMB);
          pContext->m_pBlock += (pContext->m_seqLayerHeader.MaxWidthMB-pContext->m_pSingleMB->widthMB)*8*8*6;
     }
-    STATISTICS_END_TIME(m_timeStatistics->mc_StartTime,
-        m_timeStatistics->mc_EndTime,
-        m_timeStatistics->mc_TotalTime);
 }
 
 #endif

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -14,8 +14,7 @@
 
 #include "umc_vc1_dec_seq.h"
 #include "umc_vc1_dec_debug.h"
-
-#include "umc_vc1_dec_time_statistics.h"
+#include "umc_vc1_huffman.h"
 
 static const Ipp32u bc_lut_2[] = {0,1,2,3};
 static const Ipp32u bc_lut_1[] = {4,0,1,3};
@@ -37,7 +36,6 @@ VC1Status DecodePictHeaderParams_ProgressiveBpicture_Adv (VC1Context* pContext)
     VC1Status vc1Res = VC1_OK;
     VC1PictureLayerHeader* picLayerHeader = pContext->m_picLayerHeader;
     VC1SequenceLayerHeader* seqLayerHeader = &pContext->m_seqLayerHeader;
-    ChooseTTMB_TTBLK_SBP(pContext);
 
 #ifdef VC1_DEBUG_ON
     VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_BFRAMES,
@@ -63,12 +61,8 @@ VC1Status DecodePictHeaderParams_ProgressiveBpicture_Adv (VC1Context* pContext)
     //motion vector table
     VC1_GET_BITS(2, picLayerHeader->MVTAB);       //MVTAB
 
-    picLayerHeader->m_pCurrMVDifftbl = pContext->m_vlcTbl->MVDIFF_PB_TABLES[picLayerHeader->MVTAB];    //MVTAB
-
-
     //coded block pattern table
     VC1_GET_BITS(2,picLayerHeader->CBPTAB);       //CBPTAB
-    picLayerHeader->m_pCurrCBPCYtbl =  pContext->m_vlcTbl->CBPCY_PB_TABLES[picLayerHeader->CBPTAB];       //CBPTAB
 
     vc1Res = VOPDQuant(pContext);
 
@@ -101,12 +95,15 @@ VC1Status DecodePictHeaderParams_ProgressiveBpicture_Adv (VC1Context* pContext)
         picLayerHeader->TRANSACFRM++;
     }
 
-    ChooseACTable(pContext, picLayerHeader->TRANSACFRM, picLayerHeader->TRANSACFRM);//TRANSACFRM
-
     VC1_GET_BITS(1, picLayerHeader->TRANSDCTAB);       //TRANSDCTAB
 
+#ifdef ALLOW_SW_VC1_FALLBACK
+    ChooseTTMB_TTBLK_SBP(pContext);
+    picLayerHeader->m_pCurrMVDifftbl = pContext->m_vlcTbl->MVDIFF_PB_TABLES[picLayerHeader->MVTAB];    //MVTAB
+    picLayerHeader->m_pCurrCBPCYtbl = pContext->m_vlcTbl->CBPCY_PB_TABLES[picLayerHeader->CBPTAB];       //CBPTAB
+    ChooseACTable(pContext, picLayerHeader->TRANSACFRM, picLayerHeader->TRANSACFRM);//TRANSACFRM
     ChooseDCTable(pContext, picLayerHeader->TRANSDCTAB);       //TRANSDCTAB
-
+#endif
     return vc1Res;
 }
 
@@ -119,8 +116,6 @@ VC1Status DecodePictHeaderParams_InterlaceBpicture_Adv(VC1Context* pContext)
 
     Ipp32u tempValue;
 
-    ChooseTTMB_TTBLK_SBP(pContext);
-
 #ifdef VC1_DEBUG_ON
     VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_BFRAMES,
                                             VM_STRING("B frame type  \n"));
@@ -130,7 +125,7 @@ VC1Status DecodePictHeaderParams_InterlaceBpicture_Adv(VC1Context* pContext)
         //B picture fraction
         Ipp8s  z1;
         Ipp16s z2;
-        ippiDecodeHuffmanPair_1u16s(&pContext->m_bitstream.pBitstream,
+        DecodeHuffmanPair(&pContext->m_bitstream.pBitstream,
                                     &pContext->m_bitstream.bitOffset,
                                     pContext->m_vlcTbl->BFRACTION,
                                     &z1, &z2);
@@ -201,22 +196,17 @@ VC1Status DecodePictHeaderParams_InterlaceBpicture_Adv(VC1Context* pContext)
 
     //motion vector table
     VC1_GET_BITS(2, picLayerHeader->MBMODETAB);       //MBMODETAB
-    ChooseMBModeInterlaceFrame(pContext, 0, picLayerHeader->MBMODETAB);
 
     //motion vector table
     VC1_GET_BITS(2, picLayerHeader->MVTAB);       //MVTAB
-    picLayerHeader->m_pCurrMVDifftbl = pContext->m_vlcTbl->MV_INTERLACE_TABLES[8 + picLayerHeader->MVTAB]; //MVTAB
 
 
     //coded block pattern table
     VC1_GET_BITS(3,picLayerHeader->CBPTAB);       //CBPTAB
-    picLayerHeader->m_pCurrCBPCYtbl = pContext->m_vlcTbl->CBPCY_PB_INTERLACE_TABLES[picLayerHeader->CBPTAB];       //CBPTAB
 
     VC1_GET_BITS(2, picLayerHeader->MV2BPTAB);       //MV2BPTAB
-    picLayerHeader->m_pMV2BP = pContext->m_vlcTbl->MV2BP_TABLES[picLayerHeader->MV2BPTAB];
 
     VC1_GET_BITS(2, picLayerHeader->MV4BPTAB)        //MV4BPTAB;
-    picLayerHeader->m_pMV4BP =  pContext->m_vlcTbl->MV4BP_TABLES[picLayerHeader->MV4BPTAB];
 
     vc1Res = VOPDQuant(pContext);
 
@@ -249,10 +239,18 @@ VC1Status DecodePictHeaderParams_InterlaceBpicture_Adv(VC1Context* pContext)
         picLayerHeader->TRANSACFRM++;
     }
 
-    ChooseACTable(pContext, picLayerHeader->TRANSACFRM, picLayerHeader->TRANSACFRM);//TRANSACFRM
-
     VC1_GET_BITS(1, picLayerHeader->TRANSDCTAB);       //TRANSDCTAB
+
+#ifdef ALLOW_SW_VC1_FALLBACK
+    ChooseTTMB_TTBLK_SBP(pContext);
+    ChooseMBModeInterlaceFrame(pContext, 0, picLayerHeader->MBMODETAB);
+    ChooseACTable(pContext, picLayerHeader->TRANSACFRM, picLayerHeader->TRANSACFRM);//TRANSACFRM
     ChooseDCTable(pContext, picLayerHeader->TRANSDCTAB);       //TRANSDCTAB
+    picLayerHeader->m_pMV2BP = pContext->m_vlcTbl->MV2BP_TABLES[picLayerHeader->MV2BPTAB];
+    picLayerHeader->m_pMV4BP = pContext->m_vlcTbl->MV4BP_TABLES[picLayerHeader->MV4BPTAB];
+    picLayerHeader->m_pCurrCBPCYtbl = pContext->m_vlcTbl->CBPCY_PB_INTERLACE_TABLES[picLayerHeader->CBPTAB];       //CBPTAB
+    picLayerHeader->m_pCurrMVDifftbl = pContext->m_vlcTbl->MV_INTERLACE_TABLES[8 + picLayerHeader->MVTAB]; //MVTAB
+#endif
 
     return vc1Res;
 }
@@ -289,7 +287,6 @@ VC1Status DecodeFieldHeaderParams_InterlaceFieldBpicture_Adv (VC1Context* pConte
     }
         
     CalculatePQuant(pContext);
-    ChooseTTMB_TTBLK_SBP(pContext);
 
     if(seqLayerHeader->POSTPROCFLAG)
     {
@@ -360,17 +357,15 @@ VC1Status DecodeFieldHeaderParams_InterlaceFieldBpicture_Adv (VC1Context* pConte
 
     //motion vector table
     VC1_GET_BITS(3, picLayerHeader->MBMODETAB);       //MBMODETAB
-    ChooseMBModeInterlaceField(pContext, picLayerHeader->MBMODETAB);
+
     VC1_GET_BITS(3, picLayerHeader->MVTAB);       //MVTAB
-    picLayerHeader->m_pCurrMVDifftbl = pContext->m_vlcTbl->MV_INTERLACE_TABLES[picLayerHeader->MVTAB]; //MVTAB
+
     //coded block pattern table
     VC1_GET_BITS(3, picLayerHeader->CBPTAB);       //CBPTAB
-    picLayerHeader->m_pCurrCBPCYtbl = pContext->m_vlcTbl->CBPCY_PB_INTERLACE_TABLES[picLayerHeader->CBPTAB];     //CBPTAB
 
     if(picLayerHeader->MVMODE == VC1_MVMODE_MIXED_MV)
     {
         VC1_GET_BITS(2, picLayerHeader->MV4BPTAB)        //MV4BPTAB;
-       picLayerHeader->m_pMV4BP = pContext->m_vlcTbl->MV4BP_TABLES[picLayerHeader->MV4BPTAB];
     }
 
     vc1Res = VOPDQuant(pContext);
@@ -402,19 +397,30 @@ VC1Status DecodeFieldHeaderParams_InterlaceFieldBpicture_Adv (VC1Context* pConte
         picLayerHeader->TRANSACFRM++;
     }
 
-    ChooseACTable(pContext, picLayerHeader->TRANSACFRM, picLayerHeader->TRANSACFRM); //TRANSACFRM
-
     VC1_GET_BITS(1, picLayerHeader->TRANSDCTAB);       //TRANSDCTAB
 
-    ChooseDCTable(pContext, picLayerHeader->TRANSDCTAB);       //TRANSDCTAB
 
     picLayerHeader->REFDIST = *pContext->pRefDist;
 
+#ifdef ALLOW_SW_VC1_FALLBACK
+    ChooseTTMB_TTBLK_SBP(pContext);
+    picLayerHeader->m_pCurrMVDifftbl = pContext->m_vlcTbl->MV_INTERLACE_TABLES[picLayerHeader->MVTAB]; //MVTAB
+    picLayerHeader->m_pCurrCBPCYtbl = pContext->m_vlcTbl->CBPCY_PB_INTERLACE_TABLES[picLayerHeader->CBPTAB];     //CBPTAB
+    if (picLayerHeader->MVMODE == VC1_MVMODE_MIXED_MV)
+    {
+        picLayerHeader->m_pMV4BP = pContext->m_vlcTbl->MV4BP_TABLES[picLayerHeader->MV4BPTAB];
+    }
+
+    ChooseMBModeInterlaceField(pContext, picLayerHeader->MBMODETAB);
+    ChooseACTable(pContext, picLayerHeader->TRANSACFRM, picLayerHeader->TRANSACFRM); //TRANSACFRM
+    ChooseDCTable(pContext, picLayerHeader->TRANSDCTAB);       //TRANSDCTAB
     ChoosePredScaleValueBPictbl(picLayerHeader);
+#endif
 
     return vc1Res;
 }
 
+#ifdef ALLOW_SW_VC1_FALLBACK
 VC1Status Decode_InterlaceFieldBpicture_Adv (VC1Context* pContext)
 {
     Ipp32s i,j;
@@ -456,15 +462,11 @@ VC1Status Decode_InterlaceFieldBpicture_Adv (VC1Context* pContext)
         pContext->DeblockInfo.start_pos = pContext->DeblockInfo.start_pos+pContext->DeblockInfo.HeightMB-deblock_offset;
         pContext->DeblockInfo.HeightMB = sMB->slice_currMBYpos+1;
 
-        STATISTICS_START_TIME(m_timeStatistics->deblocking_StartTime);
         Deblocking_InterlaceFieldBpicture_Adv(pContext);
-        STATISTICS_END_TIME(m_timeStatistics->deblocking_StartTime,
-                            m_timeStatistics->deblocking_EndTime,
-                            m_timeStatistics->deblocking_TotalTime);
     }
 
     pContext->m_picLayerHeader->is_slice = 0;
     return vc1Res;
 }
-
+#endif // #ifdef ALLOW_SW_VC1_FALLBACK
 #endif //UMC_ENABLE_VC1_VIDEO_DECODER

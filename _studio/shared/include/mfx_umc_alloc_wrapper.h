@@ -178,7 +178,7 @@ protected:
     mfxU16     m_IOPattern;
 };
 
-#if (defined(MFX_ENABLE_MPEG2_VIDEO_DECODE) && !defined(MFX_ENABLE_HW_ONLY_MPEG2_DECODER)) || defined(MFX_ENABLE_VC1_VIDEO_DECODE)
+#if (defined(MFX_ENABLE_MPEG2_VIDEO_DECODE) && !defined(MFX_ENABLE_HW_ONLY_MPEG2_DECODER)) || (defined(MFX_ENABLE_VC1_VIDEO_DECODE) && defined(ALLOW_SW_VC1_FALLBACK))
 #include "umc_default_frame_allocator.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

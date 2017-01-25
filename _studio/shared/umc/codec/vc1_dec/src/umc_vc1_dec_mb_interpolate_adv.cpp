@@ -16,12 +16,8 @@
 #include "umc_vc1_dec_debug.h"
 #include "umc_vc1_common_defs.h"
 #include "assert.h"
-#include "ippvc.h"
 
-//#define INTERDEBUG
-//#define INTERDEBUG3
 #define NEW_INTERPOLATION
-
 
 static const Ipp32s blk_table[] = {0,0,0,0,1,1};
 
@@ -1936,8 +1932,6 @@ static VC1Status InterpolateBlock_ProgressivePictureLuma1MV_P(VC1Context* pConte
 
     CalcMVInterpolateProgLuma(pContext, &xMV, &yMV);
 
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_BFRAMES,VM_STRING("interpolation(%d block)MV(%d,%d) back=%d\n"),blk_num,xMV,yMV,back);
-
     interp_params->pSrc = pContext->m_frmBuff.m_pFrames[index].m_pY;
     interp_params->pDst = pDst;
     interp_params->dstStep = dstStep;
@@ -1948,65 +1942,17 @@ static VC1Status InterpolateBlock_ProgressivePictureLuma1MV_P(VC1Context* pConte
     interp_params->dy = yMV&3;
     interp_params->pSrc += ((xMV>>2) + (yMV>>2) * interp_params->srcStep);
 
-
-//#ifdef VC1_DEBUG_ON
-//    VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_PRED,VM_STRING("Before Interpolation Progressive luma %d, %d\n"),X,Y);
-//#endif
-    //if((interp_params->dx + interp_params->dy == 0))
-    //{
-    //    pMB->pInterpolLumaSrc[0] = interp_params->pSrc;
-    //    pMB->InterpolsrcLumaStep[0] = interp_params->srcStep;
-    //}
-    //else
         switch(pContext->m_picLayerHeader->MVMODE)
         {
         case VC1_MVMODE_1MV:
         case VC1_MVMODE_MIXED_MV:
-            //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING(" vc1_MVMode1MV\n"));
-
-            //if(interp_params->dx + interp_params->dy == 0)
-            //{
-            //    pMB->pInterpolSrc[0] = interp_params->pSrc;
-            //    pMB->InterpolsrcStep[0] = interp_params->srcStep;
-            //}
-            //else
-                _own_ippiInterpolateQPBicubicIC_VC1_8u_C1R(interp_params);
-
+            _own_ippiInterpolateQPBicubicIC_VC1_8u_C1R(interp_params);
             break;
         case VC1_MVMODE_HPEL_1MV:
-    //#ifdef VC1_DEBUG_ON
-    //        VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_PRED,VM_STRING(" MVMode1MVHalfPel\n"));
-    //#endif
-            //interp_params->dx = xMV&2;
-            //interp_params->dy = yMV&2;
-
-            //interp_params->pSrc += ( (xMV>>2) + (yMV>>2) * interp_params->srcStep);
-
-            //if((interp_params->dx + interp_params->dy == 0))
-            //{
-            //    pMB->pInterpolSrc[0] = interp_params->pSrc;
-            //    pMB->InterpolsrcStep[0] = interp_params->srcStep;
-            //}
-            //else
-                _own_ippiInterpolateQPBicubicIC_VC1_8u_C1R(interp_params);
+            _own_ippiInterpolateQPBicubicIC_VC1_8u_C1R(interp_params);
             break;
         case VC1_MVMODE_HPELBI_1MV:
-    //#ifdef VC1_DEBUG_ON
-    //        VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_PRED,VM_STRING(" MVMode1MVHalfPelBilinear\n"));
-    //#endif
-            //interp_params->dx = xMV&2;
-            //interp_params->dy = yMV&2;
-
-            //interp_params->pSrc += ( (xMV>>2) + (yMV>>2) * interp_params->srcStep);
-
-            //if((interp_params->dx + interp_params->dy == 0))
-            //{
-            //    pMB->pInterpolSrc[0] = interp_params->pSrc;
-            //    pMB->InterpolsrcStep[0] = interp_params->srcStep;
-            //}
-            //else
-                _own_ippiInterpolateQPBilinearIC_VC1_8u_C1R(interp_params);
-
+            _own_ippiInterpolateQPBilinearIC_VC1_8u_C1R(interp_params);
             break;
         default:
             VM_ASSERT(0);
@@ -2030,13 +1976,6 @@ static VC1Status InterpolateBlock_ProgressivePictureLuma1MV_B(VC1Context* pConte
 
     CalcMVInterpolateProgLuma(pContext, &xMV, &yMV);
 
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_BFRAMES,VM_STRING("interpolation(%d block)MV(%d,%d) back=%d\n"),blk_num,xMV,yMV,back);
-    //if(((xMV&3) + (yMV&3)) == 0)
-    //{
-    //    pMB->pInterpolLumaSrc[back] = pContext->m_frmBuff.m_pFrames[index].m_pY + ((xMV>>2) + (yMV>>2) * interp_params->srcStep);
-    //    pMB->InterpolsrcLumaStep[back] = interp_params->srcStep;
-    //}
-    //else
     {
         interp_params->pSrc = pContext->m_frmBuff.m_pFrames[index].m_pY;
         interp_params->pDst = pDst;
@@ -2053,49 +1992,13 @@ static VC1Status InterpolateBlock_ProgressivePictureLuma1MV_B(VC1Context* pConte
         {
         case VC1_MVMODE_1MV:
         case VC1_MVMODE_MIXED_MV:
-            //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING(" vc1_MVMode1MV\n"));
-
-            //if((interp_params->dx + interp_params->dy == 0))
-            //{
-            //    pMB->pInterpolSrc[back] = interp_params->pSrc;
-            //    pMB->InterpolsrcStep[back] = interp_params->srcStep;
-            //}
-            //else
             _own_ippiInterpolateQPBicubicIC_VC1_8u_C1R(interp_params);
-
             break;
         case VC1_MVMODE_HPEL_1MV:
-            //#ifdef VC1_DEBUG_ON
-            //        VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_PRED,VM_STRING(" MVMode1MVHalfPel\n"));
-            //#endif
-            //interp_params->dx = xMV&2;
-            //interp_params->dy = yMV&2;
-
-            //interp_params->pSrc += ( (xMV>>2) + (yMV>>2) * interp_params->srcStep);
-            //if((interp_params->dx + interp_params->dy == 0))
-            //{
-            //    pMB->pInterpolSrc[back] = interp_params->pSrc;
-            //    pMB->InterpolsrcStep[back] = interp_params->srcStep;
-            //}
-            //else
             _own_ippiInterpolateQPBicubicIC_VC1_8u_C1R(interp_params);
             break;
         case VC1_MVMODE_HPELBI_1MV:
-            //#ifdef VC1_DEBUG_ON
-            //        VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_PRED,VM_STRING(" MVMode1MVHalfPelBilinear\n"));
-            //#endif
-            //interp_params->dx = xMV&2;
-            //interp_params->dy = yMV&2;
-
-            //interp_params->pSrc += ( (xMV>>2) + (yMV>>2) * interp_params->srcStep);
-            //if((interp_params->dx + interp_params->dy == 0))
-            //{
-            //    pMB->pInterpolSrc[back] = interp_params->pSrc;
-            //    pMB->InterpolsrcStep[back] = interp_params->srcStep;
-            //}
-            //else
             _own_ippiInterpolateQPBilinearIC_VC1_8u_C1R(interp_params);
-
             break;
         default:
             VM_ASSERT(0);
@@ -2119,8 +2022,6 @@ static VC1Status InterpolateBlock_ProgressivePictureLuma4MV(VC1Context* pContext
     VM_ASSERT (index>-1);
 
     CalcMVInterpolateProgLuma(pContext, &xMV, &yMV);
-
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_BFRAMES,VM_STRING("interpolation(%d block)MV(%d,%d) back=%d\n"),blk_num,xMV,yMV,back);
 
     xMV = xMV + offset_table_x[blk_num];
     yMV = yMV + offset_table_y[blk_num];
@@ -2159,14 +2060,7 @@ static VC1Status InterpolateBlock_ProgressivePictureChroma1MV(VC1Context* pConte
 
     VM_ASSERT (index>-1);
 
-#ifdef VC1_DEBUG_ON
-//    VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_PRED,VM_STRING("Before Interpolation progressive chroma1%d, %d\n"),X,Y);
-#endif
-
     CalcMVInterpolateProgChroma1MV(pContext, &xMV, &yMV);
-
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("%block number %d \n"),blk_num );
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_BFRAMES,VM_STRING("interpolation(%d block)MV(%d,%d) back=%d\n"),blk_num,xMV,yMV,back);
 
     interp_params->roiSize.width = 8;
     interp_params->roiSize.height = 8;
@@ -2174,20 +2068,6 @@ static VC1Status InterpolateBlock_ProgressivePictureChroma1MV(VC1Context* pConte
     interp_params->dy = yMV&3;
     PlaneOffset = ((xMV>>2) + (yMV>>2) * interp_params->srcStep);
 
-
-    //if((interp_params->dx + interp_params->dy == 0))
-    //{
-    //    //U channel
-    //    interp_params->pSrc    = pUPlaneRef + PlaneOffset;
-    //    pCurrMB->pInterpolChromaUSrc[back] = interp_params->pSrc;
-    //    pCurrMB->InterpolsrcChromaUStep[back] = interp_params->srcStep;
-
-    //    //V channel
-    //    interp_params->pSrc    = pVPlaneRef + PlaneOffset;
-    //    pCurrMB->pInterpolChromaVSrc[back] = interp_params->pSrc;
-    //    pCurrMB->InterpolsrcChromaVStep[back] = interp_params->srcStep;
-    //}
-    //else
     {
         //U channel
         interp_params->pSrc    = pUPlaneRef + PlaneOffset;
@@ -2223,14 +2103,8 @@ static VC1Status InterpolateBlock_ProgressivePictureChroma4MV(VC1Context* pConte
     Ipp16s xMV, yMV;
     VM_ASSERT (index>-1);
 
-#ifdef VC1_DEBUG_ON
-//    VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_PRED,VM_STRING("Before Interpolation progressive chroma1%d, %d\n"),X,Y);
-#endif
-
     interp_params->roiSize.width = 8;
     interp_params->roiSize.height = 8;
-
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("%block number %d \n"),blk_num );
 
     //U channel
     xMV = pCurrMB->m_pBlocks[4].mv[back][0];
@@ -2249,11 +2123,6 @@ static VC1Status InterpolateBlock_ProgressivePictureChroma4MV(VC1Context* pConte
     }
 
     CalcMVInterpolateProgChroma4MV(pContext, &xMV, &yMV);
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_BFRAMES,VM_STRING("interpolation(%d block)MV(%d,%d) back=%d\n"),blk_num,xMV,yMV,back);
-
-#ifdef VC1_DEBUG_ON
-//    VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_PRED,VM_STRING("Before Interpolation progressive chroma%d, %d\n"),X,Y);
-#endif
 
     interp_params->pSrc = pUPlaneRef + ((xMV>>2) + (yMV>>2) * interp_params->srcStep);
     interp_params->pDst = pDst1;
@@ -2268,10 +2137,6 @@ static VC1Status InterpolateBlock_ProgressivePictureChroma4MV(VC1Context* pConte
     yMV = pCurrMB->m_pBlocks[5].mv[back][1];
 
     CalcMVInterpolateProgChroma4MV(pContext, &xMV, &yMV);
-
-#ifdef VC1_DEBUG_ON
-//    VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_PRED,VM_STRING("Before Interpolation progressive chroma%d, %d\n"),X,Y);
-#endif
 
     interp_params->pSrc = pVPlaneRef + ((xMV>>2) + (yMV>>2) * interp_params->srcStep);
     interp_params->pDst = pDst2;
@@ -2299,12 +2164,8 @@ static VC1Status InterpolateBlock_InterlacePictureLuma2MV(VC1Context* pContext, 
     interp_params->roiSize.width = 16;
     interp_params->roiSize.height = 8;
 
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("%block number %d \n"),blk_num );
-
     xMV = pMB->m_pBlocks[0].mv[back1][0];
     yMV = pMB->m_pBlocks[0].mv[back1][1];
-
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_BFRAMES,VM_STRING("interpolation(%d block)MV(%d,%d) back=%d\n"),blk_num,xMV,yMV,back);
 
     f = CalcMVInterpolateInterlacedLuma(pContext, &xMV, &yMV);
 
@@ -2318,11 +2179,7 @@ static VC1Status InterpolateBlock_InterlacePictureLuma2MV(VC1Context* pContext, 
     interp_params->dx = xMV&3;
     interp_params->dy = yMV&3;
 
-#ifdef VC1_DEBUG_ON
-    //VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_PRED,VM_STRING("Before Interpolation interlace luma%d, %d\n"),X,Y);
-#endif
-
-     _own_ippiInterpolateQPBicubicIC_VC1_8u_C1R(interp_params);
+    _own_ippiInterpolateQPBicubicIC_VC1_8u_C1R(interp_params);
 
 
      //second field
@@ -2366,8 +2223,6 @@ static VC1Status InterpolateBlock_InterlacePictureLuma(VC1Context* pContext, Ipp
 
     Ipp32s f = 0;
 
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("%block number %d \n"),blk_num );
-
     xMV = pMB->m_pBlocks[blk_num].mv[0][0];
     yMV = pMB->m_pBlocks[blk_num].mv[0][1];
 
@@ -2388,13 +2243,7 @@ static VC1Status InterpolateBlock_InterlacePictureLuma(VC1Context* pContext, Ipp
     interp_params->dx = xMV&3;
     interp_params->dy = yMV&3;
 
-#ifdef VC1_DEBUG_ON
-    //VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_PRED,VM_STRING("Before Interpolation interlace luma%d, %d\n"),X,Y);
-#endif
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING(" vc1_MVMode1MV\n"));
-
     _own_ippiInterpolateQPBicubicIC_VC1_8u_C1R(interp_params);
-
 
     //second field
     xMV = pMB->m_pBlocks[blk_num + 2].mv_bottom[0][0];
@@ -2454,7 +2303,6 @@ static VC1Status InterpolateBlock_InterlacePictureChroma2MV_P(VC1Context* pConte
     //TOP FIELD
     xMV = pMB->m_pBlocks[0].mv[0][0];
     yMV = pMB->m_pBlocks[0].mv[0][1];
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_BFRAMES,VM_STRING("interpolation(%d block)MV(%d,%d) back=%d\n"),blk_num,xMV,yMV,back);
 
     f = CalcMVInterpolateInterlacedChroma2MV(pContext, &xMV, &yMV);
 
@@ -2474,9 +2322,6 @@ static VC1Status InterpolateBlock_InterlacePictureChroma2MV_P(VC1Context* pConte
     interp_params->dx = xMV&3;
     interp_params->dy = yMV&3;
 
-#ifdef VC1_DEBUG_ON
-//    VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_PRED,VM_STRING("Before Interpolation interlace chroma%d, %d\n"),X,Y);
-#endif
     ippiInterpolateQPBilinear_VC1_8u_C1R(interp_params);
 
     //5 BLOCK
@@ -2564,8 +2409,6 @@ static VC1Status InterpolateBlock_InterlacePictureChroma2MV_B(VC1Context* pConte
     pRefData  = pContext->m_frmBuff.m_pFrames[index].m_pU;
     refPitch  = pContext->m_frmBuff.m_pFrames[index].m_iUPitch;
 
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_BFRAMES,VM_STRING("interpolation(%d block)MV(%d,%d) back=%d\n"),blk_num,xMV,yMV,back);
-
     //TOP FIELD
     xMV = pMB->m_pBlocks[0].mv[back1][0];
     yMV = pMB->m_pBlocks[0].mv[back1][1];
@@ -2587,9 +2430,6 @@ static VC1Status InterpolateBlock_InterlacePictureChroma2MV_B(VC1Context* pConte
     interp_params->dx = xMV&3;
     interp_params->dy = yMV&3;
 
-#ifdef VC1_DEBUG_ON
-//    VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_PRED,VM_STRING("Before Interpolation interlace chroma%d, %d\n"),X,Y);
-#endif
     ippiInterpolateQPBilinear_VC1_8u_C1R(interp_params);
 
     //BLOCK 5
@@ -2635,10 +2475,6 @@ static VC1Status InterpolateBlock_InterlacePictureChroma2MV_B(VC1Context* pConte
     interp_params->dx = xMV&3;
     interp_params->dy = yMV&3;
 
-#ifdef VC1_DEBUG_ON
-//    VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_PRED,VM_STRING("Before Interpolation interlace chroma%d, %d\n"),X,Y);
-#endif
-
     ippiInterpolateQPBilinear_VC1_8u_C1R(interp_params);
 
     //BLOCK 5
@@ -2679,8 +2515,6 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureLuma1MV_P(VC1Context* pCo
     Ipp16s xMV = pMB->m_pBlocks[0].mv[0][0];
     Ipp16s yMV = pMB->m_pBlocks[0].mv[0][1];
 
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("Before Interpolation field xMv, yMv %d, %d\n"),xMV,yMV);
-
     if ((pPicHeader->CurrField == 1) &&
         (((pPicHeader->NUMREF + pPicHeader->REFFIELD) ==0) ||
          (pPicHeader->NUMREF == 1) && (!pMB->m_pBlocks[0].mv_s_polarity[0])))
@@ -2690,11 +2524,6 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureLuma1MV_P(VC1Context* pCo
 
     pRefData = pContext->m_frmBuff.m_pFrames[index].m_pY;
     refPitch = pContext->m_frmBuff.m_pFrames[index].m_iYPitch;
-
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("Before Interpolation field X, Y %d, %d\n"),X,Y);
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("%block number %d \n"),blk_num );
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_BFRAMES,VM_STRING("interpolation(%d block)MV(%d,%d) back=%d\n"),blk_num,xMV,yMV,back);
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("Before Interpolation field f %d\n"),f);
 
     f = CalcMVInterpolateFieldLuma(pContext, pMB->m_pBlocks[0].mv_s_polarity[0], &xMV, &yMV);
 
@@ -2712,12 +2541,6 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureLuma1MV_P(VC1Context* pCo
 
     interp_params->pSrc += ( (xMV>>2) + (yMV>>2) * refPitch);
 
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("Before Interpolation field size %d, %d\n"),
-        //interp_params->srcStep, interp_params->dstStep);
-
-#ifdef VC1_DEBUG_ON
-//    VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_PRED,VM_STRING("Before Interpolation field luma%d, %d\n"),X,Y);
-#endif
  switch(pContext->m_picLayerHeader->MVMODE)
         {
         case VC1_MVMODE_HPELBI_1MV:
@@ -2727,13 +2550,7 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureLuma1MV_P(VC1Context* pCo
             interp_params->dx = xMV&2;
             interp_params->dy = yMV&2;
 
-            //if((interp_params->dx + interp_params->dy == 0))
-            //{
-            //    pMB->pInterpolLumaSrc[0]    = interp_params->pSrc;
-            //    pMB->InterpolsrcLumaStep[0] = interp_params->srcStep;
-            //}
-            //else
-                ippiInterpolateQPBilinear_VC1_8u_C1R(interp_params);
+            ippiInterpolateQPBilinear_VC1_8u_C1R(interp_params);
           break;
 
         case VC1_MVMODE_HPEL_1MV:
@@ -2743,27 +2560,13 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureLuma1MV_P(VC1Context* pCo
             interp_params->dx = xMV&2;
             interp_params->dy = yMV&2;
 
-            //if((interp_params->dx + interp_params->dy == 0))
-            //{
-            //    pMB->pInterpolLumaSrc[0] = interp_params->pSrc;
-            //    pMB->InterpolsrcLumaStep[0] = interp_params->srcStep;
-            //}
-            //else
-                _own_ippiInterpolateQPBicubicIC_VC1_8u_C1R(interp_params);
+            _own_ippiInterpolateQPBicubicIC_VC1_8u_C1R(interp_params);
             break;
 
         case VC1_MVMODE_1MV:
         case VC1_MVMODE_MIXED_MV:
-            //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING(" vc1_MVMode1MV\n"));
-
             interp_params->dx = xMV&3;
             interp_params->dy = yMV&3;
-            //if((interp_params->dx + interp_params->dy == 0))
-            //{
-            //    pMB->pInterpolLumaSrc[0] = interp_params->pSrc;
-            //    pMB->InterpolsrcLumaStep[0] = interp_params->srcStep;
-            //}
-            //else
             _own_ippiInterpolateQPBicubicIC_VC1_8u_C1R(interp_params);
              break;
         default:
@@ -2786,8 +2589,6 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureLuma1MV_B(VC1Context* pCo
     Ipp16s xMV = pMB->m_pBlocks[0].mv[back][0];
     Ipp16s yMV = pMB->m_pBlocks[0].mv[back][1];
 
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("Before Interpolation field xMv, yMv %d, %d\n"),xMV,yMV);
-
     if ((pPicHeader->CurrField == 1) &&
         (((pPicHeader->NUMREF + pPicHeader->REFFIELD) ==0) ||
          (pPicHeader->NUMREF == 1) && (!pMB->m_pBlocks[0].mv_s_polarity[back]) && (!back)))
@@ -2797,11 +2598,6 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureLuma1MV_B(VC1Context* pCo
 
     pRefData = pContext->m_frmBuff.m_pFrames[index].m_pY;
     refPitch = pContext->m_frmBuff.m_pFrames[index].m_iYPitch;
-
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("Before Interpolation field X, Y %d, %d\n"),X,Y);
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("%block number %d \n"),blk_num );
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_BFRAMES,VM_STRING("interpolation(%d block)MV(%d,%d) back=%d\n"),blk_num,xMV,yMV,back);
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("Before Interpolation field f %d\n"),f);
 
     f = CalcMVInterpolateFieldLuma(pContext, pMB->m_pBlocks[0].mv_s_polarity[back], &xMV, &yMV);
 
@@ -2819,12 +2615,6 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureLuma1MV_B(VC1Context* pCo
 
     interp_params->pSrc += ( (xMV>>2) + (yMV>>2) * refPitch);
 
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("Before Interpolation field size %d, %d\n"),
-        //interp_params->srcStep, interp_params->dstStep);
-
-#ifdef VC1_DEBUG_ON
-//    VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_PRED,VM_STRING("Before Interpolation field luma%d, %d\n"),X,Y);
-#endif
  switch(pContext->m_picLayerHeader->MVMODE)
         {
         case VC1_MVMODE_HPELBI_1MV:
@@ -2833,13 +2623,6 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureLuma1MV_B(VC1Context* pCo
 #endif
             interp_params->dx = xMV&2;
             interp_params->dy = yMV&2;
-
-            //if((interp_params->dx + interp_params->dy == 0))
-            //{
-            //    pMB->pInterpolLumaSrc[back] = interp_params->pSrc;
-            //    pMB->InterpolsrcLumaStep[back] = interp_params->srcStep;
-            //}
-            //else
             ippiInterpolateQPBilinear_VC1_8u_C1R(interp_params);
           break;
 
@@ -2849,28 +2632,13 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureLuma1MV_B(VC1Context* pCo
 #endif
             interp_params->dx = xMV&2;
             interp_params->dy = yMV&2;
-            //if((interp_params->dx + interp_params->dy == 0))
-            //{
-            //    pMB->pInterpolLumaSrc[back] = interp_params->pSrc;
-            //    pMB->InterpolsrcLumaStep[back] = interp_params->srcStep;
-            //}
-            //else
             _own_ippiInterpolateQPBicubicIC_VC1_8u_C1R(interp_params);
             break;
 
         case VC1_MVMODE_1MV:
         case VC1_MVMODE_MIXED_MV:
-            //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING(" vc1_MVMode1MV\n"));
-
             interp_params->dx = xMV&3;
             interp_params->dy = yMV&3;
-
-            //if((interp_params->dx + interp_params->dy == 0))
-            //{
-            //    pMB->pInterpolLumaSrc[back] = interp_params->pSrc;
-            //    pMB->InterpolsrcLumaStep[back] = interp_params->srcStep;
-            //}
-            //else
             _own_ippiInterpolateQPBicubicIC_VC1_8u_C1R(interp_params);
              break;
         default:
@@ -2896,9 +2664,6 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureLuma4MV(VC1Context* pCont
     Ipp16s xMV = pMB->m_pBlocks[blk_num].mv[back][0];
     Ipp16s yMV = pMB->m_pBlocks[blk_num].mv[back][1];
 
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("Before Interpolation field xMv, yMv %d, %d\n"),xMV,yMV);
-
-
     if ((pPicHeader->CurrField == 1) &&
         (((pPicHeader->NUMREF + pPicHeader->REFFIELD) ==0) ||
          (pPicHeader->NUMREF == 1) && (!pMB->m_pBlocks[blk_num].mv_s_polarity[back]) && (!back)))
@@ -2910,11 +2675,6 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureLuma4MV(VC1Context* pCont
     refPitch = pContext->m_frmBuff.m_pFrames[index].m_iYPitch;
 
     f = CalcMVInterpolateFieldLuma(pContext, pMB->m_pBlocks[blk_num].mv_s_polarity[back], &xMV, &yMV);
-
-  //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("Before Interpolation field X, Y %d, %d\n"),X,Y);
-  //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("%block number %d \n"),blk_num );
-  //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_BFRAMES,VM_STRING("interpolation(%d block)MV(%d,%d) back=%d\n"),blk_num,xMV,yMV,back);
-  //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("Before Interpolation field f %d\n"),f);
 
     xMV = xMV + offset_table_x[blk_num];
     yMV = yMV + offset_table_y[blk_num];
@@ -2928,18 +2688,12 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureLuma4MV(VC1Context* pCont
     interp_params->pDst = pDst;
     interp_params->dstStep = dstStep;
 
-#ifdef VC1_DEBUG_ON
-//    VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_PRED,VM_STRING("Before Interpolation field luma%d, %d\n"),X,Y);
-#endif
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING(" vc1_MVMode1MV\n"));
-
     interp_params->dx = xMV&3;
     interp_params->dy = yMV&3;
     interp_params->pSrc += ( (xMV>>2) +( yMV>>2) * refPitch);
 
     interp_params->roiSize.width = 8;
     interp_params->roiSize.height = 8;
-
 
     _own_ippiInterpolateQPBicubicIC_VC1_8u_C1R(interp_params);
     return VC1_OK;
@@ -2979,8 +2733,6 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureChroma1MV(VC1Context* pCo
     pMB->m_pBlocks[4].mv_s_polarity[back] = pMB->m_pBlocks[0].mv_s_polarity[back];
     pMB->m_pBlocks[5].mv_s_polarity[back] = pMB->m_pBlocks[0].mv_s_polarity[back];
 
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_BFRAMES,VM_STRING("interpolation(%d block)MV(%d,%d) back=%d\n"),blk_num,xMV,yMV,back);
-
     refPitch  = pContext->m_frmBuff.m_pFrames[index].m_iUPitch;
     pRefData  = pContext->m_frmBuff.m_pFrames[index].m_pU;
 
@@ -2990,9 +2742,6 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureChroma1MV(VC1Context* pCo
         pRefData += refPitch;
     refPitch  <<= 1;
 
-#ifdef VC1_DEBUG_ON
-//    VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_PRED,VM_STRING("Before Interpolation field chroma%d, %d\n"),X,Y);
-#endif
     interp_params->roiSize.width = 8;
     interp_params->roiSize.height = 8;
     interp_params->dx = xMV&3;
@@ -3153,8 +2902,6 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureChroma4MV(VC1Context* pCo
     }
 
 
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_BFRAMES,VM_STRING("interpolation(%d block)MV(%d,%d) back=%d\n"),blk_num,xMV,yMV,back);
-
     refPitch  = pContext->m_frmBuff.m_pFrames[index].m_iUPitch;
     pRefData  = pContext->m_frmBuff.m_pFrames[index].m_pU;
 
@@ -3164,33 +2911,9 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureChroma4MV(VC1Context* pCo
         pRefData += refPitch;
     refPitch  <<= 1;
 
-#ifdef VC1_DEBUG_ON
-//    VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_PRED,VM_STRING("Before Interpolation field chroma%d, %d\n"),X,Y);
-#endif
     interp_params->dx = xMV&3;
     interp_params->dy = yMV&3;
 
-    //if((interp_params->dx + interp_params->dy == 0))
-    //{
-    //    //U channel
-    //    interp_params->pSrc = pRefData + ((xMV>>2) + (yMV>>2) * refPitch);
-    //    pMB->pInterpolChromaUSrc[back] = interp_params->pSrc;
-    //    pMB->InterpolsrcChromaUStep[back] = interp_params->srcStep;
-
-    //    //V channel
-    //    refPitch  = pContext->m_frmBuff.m_pFrames[index].m_iVPitch;
-    //    pRefData  = pContext->m_frmBuff.m_pFrames[index].m_pV;
-
-    //    if (f)
-    //        pRefData += refPitch;
-    //    refPitch  <<= 1;
-
-    //    interp_params->pSrc = pRefData + ((xMV>>2) + (yMV>>2) * refPitch);
-
-    //    pMB->pInterpolChromaVSrc[back] = interp_params->pSrc;
-    //    pMB->InterpolsrcChromaVStep[back] = interp_params->srcStep;
-    //}
-    //else
     {
         interp_params->roiSize.width = 8;
         interp_params->roiSize.height = 8;
@@ -3488,7 +3211,6 @@ VC1Status PredictBlock_B(VC1Context* pContext)
                                                          1);
 
             // we should average and save data to plane
-            //if (pCurrMB->pInterpolLumaSrc[0] == pPredBlock)
             if (pCurrMB->pInterpolLumaSrc[1] == pPredBlock)
             {
                 pCurrMB->pInterpolLumaSrc[1] = NULL;
@@ -3507,7 +3229,6 @@ VC1Status PredictBlock_B(VC1Context* pContext)
                                                          pCurrMB->currYPitch,
                                                          1);
 
-            //if(pCurrMB->pInterpolLumaSrc[1] == pCurrMB->currYPlane)
             if(pCurrMB->pInterpolLumaSrc[1] == pPredBlock)
             {
                 pCurrMB->pInterpolLumaSrc[1] = pCurrMB->currYPlane;
@@ -3698,8 +3419,6 @@ VC1Status PredictBlock_InterlaceFieldPPicture(VC1Context* pContext)
 VC1Status PredictBlock_InterlaceBPicture(VC1Context* pContext)
 {
     VC1MB* pCurrMB = pContext->m_pCurrMB;
-    //Ipp8u* pPredBlock = pContext->m_pPredBlock;
-    //assert(pPredBlock != NULL);
 
     //prediction phase: Derive MV and interpolation blocks
     switch(pCurrMB->mbType)
@@ -3764,41 +3483,6 @@ VC1Status PredictBlock_InterlaceBPicture(VC1Context* pContext)
     case  VC1_MB_DIRECT|VC1_MB_1MV_INTER:
     case  VC1_MB_INTERP|VC1_MB_1MV_INTER:
         {
-            //pCurrMB->pInterpolLumaSrc[0] = pCurrMB->currYPlane;
-            //pCurrMB->InterpolsrcLumaStep[0] = pCurrMB->currYPitch;
-
-            //pCurrMB->pInterpolLumaSrc[1] = pPredBlock;
-            //pCurrMB->InterpolsrcLumaStep[1] = VC1_PIXEL_IN_LUMA;
-
-            //pCurrMB->pInterpolChromaUSrc[0] = pCurrMB->currUPlane;
-            //pCurrMB->InterpolsrcChromaUStep[0] = pCurrMB->currUPitch;
-
-            //pCurrMB->pInterpolChromaVSrc[0] = pCurrMB->currVPlane;
-            //pCurrMB->InterpolsrcChromaVStep[0] = pCurrMB->currVPitch;
-
-            //pCurrMB->pInterpolChromaUSrc[1] = pPredBlock + 64*4;
-            //pCurrMB->InterpolsrcChromaUStep[1] = VC1_PIXEL_IN_CHROMA;
-
-            //pCurrMB->pInterpolChromaVSrc[1] = pPredBlock + 64*5;
-            //pCurrMB->InterpolsrcChromaVStep[1] = VC1_PIXEL_IN_CHROMA;
-
-            ////luma
-            ////forward
-            //InterpolateBlock_ProgressivePictureLuma1MV_B(pContext, pCurrMB->currYPlane,
-            //                                                   pCurrMB->currYPitch, 0);
-
-            //InterpolateBlock_ProgressivePictureChroma1MV(pContext, pCurrMB->currUPlane,
-            //                                                    pCurrMB->currUPitch,
-            //                                                    pCurrMB->currVPlane,
-            //                                                    pCurrMB->currVPitch, 0);
-            ////backward
-            //InterpolateBlock_ProgressivePictureLuma1MV_B(pContext,   pPredBlock, VC1_PIXEL_IN_LUMA, 1);
-
-            //InterpolateBlock_ProgressivePictureChroma1MV(pContext, pPredBlock + 64*4,
-            //                                                       VC1_PIXEL_IN_CHROMA,
-            //                                                       pPredBlock + 64*5,
-            //                                                       VC1_PIXEL_IN_CHROMA, 1);
-
             Ipp8u pPredBlock[384];
 
             pCurrMB->pInterpolLumaSrc[0] = pCurrMB->currYPlane;
@@ -4024,9 +3708,6 @@ VC1Status PredictBlock_InterlaceFieldBPicture(VC1Context* pContext)
 {
     VC1MB* pCurrMB = pContext->m_pCurrMB;
     Ipp32u _predict_type = pCurrMB->mbType;
-    //Ipp8u* pPredBlock = pContext->m_pPredBlock;
-
-    //assert(pPredBlock != NULL);
 
     Ipp32u predict_type = _predict_type >> 4;
     Ipp32u count = 0;
@@ -4064,40 +3745,6 @@ VC1Status PredictBlock_InterlaceFieldBPicture(VC1Context* pContext)
         }
         else
         {
-            //pCurrMB->pInterpolLumaSrc[0] = pCurrMB->currYPlane;
-            //pCurrMB->InterpolsrcLumaStep[0] = pCurrMB->currYPitch;
-
-            //pCurrMB->pInterpolLumaSrc[1] = pPredBlock;
-            //pCurrMB->InterpolsrcLumaStep[1] = VC1_PIXEL_IN_LUMA;
-
-            //pCurrMB->pInterpolChromaUSrc[1] = pPredBlock + 64*4;
-            //pCurrMB->InterpolsrcChromaUStep[1] = VC1_PIXEL_IN_CHROMA;
-
-            //pCurrMB->pInterpolChromaVSrc[1] = pPredBlock + 64*5;
-            //pCurrMB->InterpolsrcChromaVStep[1] = VC1_PIXEL_IN_CHROMA;
-
-            //pCurrMB->pInterpolChromaUSrc[0] = pCurrMB->currUPlane;
-            //pCurrMB->InterpolsrcChromaUStep[0] = pCurrMB->currUPitch;
-
-            //pCurrMB->pInterpolChromaVSrc[0] = pCurrMB->currVPlane;
-            //pCurrMB->InterpolsrcChromaVStep[0] = pCurrMB->currVPitch;
-
-
-            ////luma
-            //InterpolateBlock_InterlaceFieldPictureLuma1MV_B(pContext, pCurrMB->currYPlane,
-            //                                                       pCurrMB->currYPitch, 0);
-
-            //InterpolateBlock_InterlaceFieldPictureLuma1MV_B(pContext, pPredBlock, 16, 1);
-
-            ////chroma
-            //InterpolateBlock_InterlaceFieldPictureChroma1MV(pContext,  pCurrMB->currUPlane,
-            //                                                           pCurrMB->currUPitch,
-            //                                                           pCurrMB->currVPlane,
-            //                                                           pCurrMB->currVPitch, 0);
-
-            //InterpolateBlock_InterlaceFieldPictureChroma1MV(pContext,  pPredBlock + 64*4, 8,
-            //                                                           pPredBlock + 64*5, 8, 1);
-
             Ipp8u pPredBlock[384];
 
             pCurrMB->pInterpolLumaSrc[0] = pCurrMB->currYPlane;
@@ -4134,7 +3781,6 @@ VC1Status PredictBlock_InterlaceFieldBPicture(VC1Context* pContext)
                     1);
 
                 // we should average and save data to plane
-                //if (pCurrMB->pInterpolLumaSrc[0] == pPredBlock)
                 if (pCurrMB->pInterpolLumaSrc[1] == pPredBlock)
                 {
                     pCurrMB->pInterpolLumaSrc[1] = NULL;
@@ -4153,7 +3799,6 @@ VC1Status PredictBlock_InterlaceFieldBPicture(VC1Context* pContext)
                     pCurrMB->currYPitch,
                     1);
 
-                //if(pCurrMB->pInterpolLumaSrc[1] == pCurrMB->currYPlane)
                 if(pCurrMB->pInterpolLumaSrc[1] == pPredBlock)
                 {
                     pCurrMB->pInterpolLumaSrc[1] = pCurrMB->currYPlane;

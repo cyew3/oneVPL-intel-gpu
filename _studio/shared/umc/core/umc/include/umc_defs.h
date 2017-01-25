@@ -11,6 +11,7 @@
 #ifndef __UMC_DEFS_H__
 #define __UMC_DEFS_H__
 
+#define ALLOW_SW_VC1_FALLBACK
 // This file contains defines which switch on/off support of
 // codecs and renderers on application level
 /*

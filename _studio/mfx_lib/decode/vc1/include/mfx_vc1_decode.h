@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -21,6 +21,13 @@
 #include <memory>
 
 #include "umc_vc1_video_decoder.h"
+#ifdef MFX_VA
+#include "umc_vc1_video_decoder_hw.h"
+#endif
+#ifdef ALLOW_SW_VC1_FALLBACK
+#include "umc_vc1_video_decoder_sw.h"
+#endif
+
 #include "mfx_umc_alloc_wrapper.h"
 #include "umc_vc1_spl_frame_constr.h"
 #include "umc_mutex.h"
@@ -32,50 +39,6 @@ typedef struct
     mfxU64  pts;
     bool    isOriginal;
 }VC1TSDescriptor;
-
-class MFXVC1VideoDecoder : public UMC::VC1VideoDecoder
-{
-public:
-    MFXVC1VideoDecoder();
-    //virtual UMC::Status VC1DecodeFrame (UMC::VC1VideoDecoder* pDec, UMC::MediaData* in, UMC::VideoData* out_data);
-    virtual UMC::FrameMemID     ProcessQueuesForNextFrame(bool& isSkip, mfxU16& Corrupted);
-    UMC::FrameMemID             GetDisplayIndex(bool isDecodeOrder, bool isSamePolarSurf);
-    UMC::FrameMemID             GetSkippedIndex(bool isSW, bool isIn = true);
-
-    virtual UMC::FrameMemID     GetLastDisplayIndex();
-    virtual UMC::Status         SetRMSurface();
-    virtual bool                CanFillOneMoreTask();
-    virtual UMC::FrameMemID     GetAsyncLastDisplayIndex() {return -1;}
-
-    void GetDecodeStat(mfxDecodeStat *stat);
-    void SetFrameOrder(mfx_UMC_FrameAllocator* pFrameAlloc, mfxVideoParam* par, bool isLast, VC1TSDescriptor tsd, bool isSamePolar);
-    void UnlockSurfaces();
-    bool IsFrameSkipped();
-
-    void FillVideoSignalInfo(mfxExtVideoSignalInfo *pVideoSignal);
-    void SetCorrupted(UMC::VC1FrameDescriptor *pCurrDescriptor, mfxU16& Corrupted);
-
-    
-
-protected:
-    friend class MFXVideoDECODEVC1;
-    virtual UMC::Status GetAndProcessPerformedDS(UMC::MediaData* in, UMC::VideoData* out_data, UMC::VC1FrameDescriptor **pPerfDescriptor);
-    virtual UMC::Status ProcessPrevFrame(UMC::VC1FrameDescriptor *pCurrDescriptor, UMC::MediaData* in, UMC::VideoData* out_dat);
-    UMC::VC1FrameDescriptor* m_pDescrToDisplay;
-    mfxU32                   m_frameOrder;
-    UMC::FrameMemID               m_RMIndexToFree;
-    UMC::FrameMemID               m_CurrIndexToFree;
-};
-class MFXVC1VideoDecoderHW : public MFXVC1VideoDecoder
-{
-public:
-    virtual UMC::FrameMemID     ProcessQueuesForNextFrame(bool& isSkip, mfxU16& Corrupted);
-    //virtual UMC::FrameMemID     GetLastDisplayIndex();
-    virtual UMC::Status         SetRMSurface();
-    //virtual UMC::FrameMemID     GetAsyncLastDisplayIndex();
-    // only 1 thread for HW
-    //virtual bool                CanFillOneMoreTask();
-};
 
 class VideoDECODE;
 class MFXVideoDECODEVC1 : public VideoDECODE, public MfxCriticalErrorHandler
@@ -92,9 +55,7 @@ public:
         mfxFrameSurface1 *surface_out;
         mfxU32            taskID;         // for task ordering
         bool              isFrameSkipped; // for status reporting
-        //bool              isLastFrame;
     };
-
 
     static mfxStatus Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out);
     static mfxStatus QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request);
@@ -129,8 +90,7 @@ public:
     mfxStatus RunThread(mfxFrameSurface1 *surface_work, 
                         mfxFrameSurface1 *surface_disp, 
                         mfxU32 threadNumber, 
-                        mfxU32 taskID,
-                        bool isSkip);
+                        mfxU32 taskID);
 
 
 protected:
@@ -138,27 +98,21 @@ protected:
 
     static mfxStatus SetAllocRequestInternal(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request);
     static mfxStatus SetAllocRequestExternal(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request);
-    static void      CalculateFramesNumber(bool isSW, mfxFrameAllocRequest *request, mfxVideoParam *par, bool isBufMode);
+    static void      CalculateFramesNumber(mfxFrameAllocRequest *request, mfxVideoParam *par, bool isBufMode);
 
+#ifdef ALLOW_SW_VC1_FALLBACK
     // update Frame Descriptors, copy frames to external memory
-    mfxStatus PostProcessFrame(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 *surface_disp);
+    mfxStatus PostProcessFrame(mfxFrameSurface1 *surface_work, mfxFrameSurface1 *surface_disp);
+#endif
 
     // update Frame Descriptors, copy frames to external memory in case of HW decoder
-    mfxStatus PostProcessFrameHW(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 *surface_disp);
+    mfxStatus PostProcessFrameHW(mfxFrameSurface1 *surface_work, mfxFrameSurface1 *surface_disp);
 
 
     //need for initialization UMC::VC1Decoder
     mfxStatus ConvertMfxToCodecParams(mfxVideoParam *par);
-    //Support of Mfx::GetVideoParam
-    mfxStatus ConvertCodecParamsToMfx(mfxVideoParam *par);
-     //Support of Mfx::GetFrameParam
-    mfxStatus ConvertCodecParamsToMfxFrameParams(mfxFrameParam *par);
 
-
-
-    mfxStatus ConvertMfxBSToMediaData(mfxBitstream    *pBitstream);
     mfxStatus ConvertMfxBSToMediaDataForFconstr(mfxBitstream    *pBitstream);
-    mfxStatus ConvertMediaDataToMfxBS(mfxBitstream    *pBitstream);
     mfxStatus ConvertMfxPlaneToMediaData(mfxFrameSurface1 *surface);
 
     mfxStatus CheckInput(mfxVideoParam *in);
@@ -190,9 +144,9 @@ protected:
                                 bool &Polar);
 
     // frame buffering 
-    mfxStatus           IsDisplayFrameReady(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_disp);
+    mfxStatus           IsDisplayFrameReady(mfxFrameSurface1 **surface_disp);
 
-    mfxStatus GetStatusReport(mfxFrameSurface1 *surface_disp);
+    mfxStatus GetStatusReport();
     mfxStatus ProcessSkippedFrame();
 
 
@@ -208,6 +162,9 @@ protected:
     bool                NeedToGetStatus(UMC::VC1FrameDescriptor *pCurrDescriptor);
 #endif
 
+    void SetFrameOrder(mfx_UMC_FrameAllocator* pFrameAlloc, mfxVideoParam* par, bool isLast, VC1TSDescriptor tsd, bool isSamePolar);
+    void FillVideoSignalInfo(mfxExtVideoSignalInfo *pVideoSignal);
+
     static const        mfxU16 disp_queue_size = 2; // looks enough for Linux now and disable on Windows.
 
 
@@ -219,9 +176,7 @@ protected:
     mfx_UMC_MemAllocator       m_MemoryAllocator;
     // TBD
     std::auto_ptr<mfx_UMC_FrameAllocator>    m_pFrameAlloc;
-    std::auto_ptr<MFXVC1VideoDecoder>        m_pVC1VideoDecoder;
-
-    mfxU16                          m_iFrameBCounter;
+    std::auto_ptr<UMC::VC1VideoDecoder>      m_pVC1VideoDecoder;
 
     UMC::vc1_frame_constructor*     m_frame_constructor;
     Ipp8u*                          m_pReadBuffer;
@@ -236,7 +191,6 @@ protected:
     Ipp32u                           m_FrameSize;
     bool                             m_bIsInit; // need for sm profile - construct frame
 
-    bool                             m_bIsWMVMS;
     UMC::VC1FrameConstrInfo          m_FCInfo;
     VideoCORE*                       m_pCore;
     bool                             m_bIsNeedToProcFrame;
@@ -254,10 +208,6 @@ protected:
     mfxFrameAllocResponse            m_response;
     mfxFrameAllocResponse            m_response_op;
 
-
-#if defined (ELK_WORKAROUND)
-    mfxFrameAllocResponse            m_fakeresponse;
-#endif
     Ipp32u                           m_SHSize;
     mfxU8                            m_pSaveBytes[4];  // 4 bytes enough 
     mfxU32                           m_SaveBytesSize;
@@ -265,7 +215,6 @@ protected:
     mfxU32                           m_CurrentBufFrame;
     std::vector<mfxFrameSurface1*>   m_DisplayList;
     std::vector<mfxFrameSurface1*>   m_DisplayListAsync;
-    bool                             m_bNeedToRunAsyncPart;
     bool                             m_bTakeBufferedFrame;
     bool                             m_bIsBuffering;
     bool                             m_isSWPlatform;
@@ -277,9 +226,11 @@ protected:
     // to synchronize async and sync parts
     UMC::Mutex                       m_guard;
 
+#ifdef MFX_VA_WIN
     // for StatusReporting
     DXVA_Status_VC1                  m_pStatusReport[MAX_NUM_STATUS_REPORTS];
     std::list<DXVA_Status_VC1>       m_pStatusQueue;
+#endif
 
     mfxU32                           m_ProcessedFrames;
     mfxU32                           m_SubmitFrame;

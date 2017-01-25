@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -15,8 +15,7 @@
 #include "umc_vc1_dec_seq.h"
 #include "umc_vc1_dec_debug.h"
 #include "umc_vc1_common_zigzag_tbl.h"
-
-#include "umc_vc1_dec_time_statistics.h"
+#include "umc_vc1_huffman.h"
 
 typedef void (*DCPrediction)(VC1Context* pContext);
 
@@ -62,7 +61,7 @@ static VC1Status MBLayer_ProgressivePskipped(VC1Context* pContext)
 
 static VC1Status MBLayer_ProgressivePpicture1MV(VC1Context* pContext)
 {
-    IppStatus ret;
+    int ret;
     Ipp16s dmv_x;
     Ipp16s dmv_y;
     Ipp16u last_intra_flag = 0;
@@ -109,12 +108,12 @@ static VC1Status MBLayer_ProgressivePpicture1MV(VC1Context* pContext)
             VC1_GET_BITS(1, pContext->m_pSingleMB->ACPRED);
 
             //CBPCY decoding
-            ret = ippiDecodeHuffmanOne_1u32s(&pContext->m_bitstream.pBitstream,
+            ret = DecodeHuffmanOne(&pContext->m_bitstream.pBitstream,
                 &pContext->m_bitstream.bitOffset,
                 &pCurrMB->m_cbpBits,
                 picLayerHeader->m_pCurrCBPCYtbl);
 
-            VM_ASSERT(ret == ippStsNoErr);
+            VM_ASSERT(ret == 0);
 
 
             //MB quant calculations
@@ -134,12 +133,12 @@ static VC1Status MBLayer_ProgressivePpicture1MV(VC1Context* pContext)
         if(last_intra_flag&0x10)
         {
             //CBPCY decoding
-            ret = ippiDecodeHuffmanOne_1u32s(&pContext->m_bitstream.pBitstream,
+            ret = DecodeHuffmanOne(&pContext->m_bitstream.pBitstream,
                 &pContext->m_bitstream.bitOffset,
                 &pCurrMB->m_cbpBits,
                 picLayerHeader->m_pCurrCBPCYtbl);
 
-            VM_ASSERT(ret == ippStsNoErr);
+            VM_ASSERT(ret == 0);
 
 
             //MB quant calculations
@@ -166,7 +165,7 @@ static VC1Status MBLayer_ProgressivePpicture4MV(VC1Context* pContext)
     VC1PictureLayerHeader* picLayerHeader = pContext->m_picLayerHeader;
 
     Ipp32s i;
-    IppStatus ret;
+    int ret;
     Ipp32s Count_inter=0;
     Ipp32s n_block=0;
     Ipp16s dmv_x = 0;
@@ -174,11 +173,11 @@ static VC1Status MBLayer_ProgressivePpicture4MV(VC1Context* pContext)
 
     Ipp32u LeftTopRightPositionFlag = pCurrMB->LeftTopRightPositionFlag;
 
-    ret = ippiDecodeHuffmanOne_1u32s(&pContext->m_bitstream.pBitstream,
+    ret = DecodeHuffmanOne(&pContext->m_bitstream.pBitstream,
                                      &pContext->m_bitstream.bitOffset,
                                      &pCurrMB->m_cbpBits,
                                      picLayerHeader->m_pCurrCBPCYtbl);
-    VM_ASSERT(ret == ippStsNoErr);
+    VM_ASSERT(ret == 0);
 
     if (ret!=ippStsNoErr)
         return VC1_FAIL;
@@ -307,22 +306,19 @@ VC1Status MBLayer_ProgressivePpicture(VC1Context* pContext)
 
     pCurrMB->LeftTopRightPositionFlag = CalculateLeftTopRightPositionFlag(sMB);
 
-    //memset(pContext->m_pBlock, 0, sizeof(Ipp16s)*8*8*VC1_NUM_OF_BLOCKS);
-
       //Y
     pCurrMB->currYPitch = sMB->currYPitch;
-    pCurrMB->currYPlane = sMB->currYPlane + pCurrMB->currYPitch * (sMB->m_currMBYpos << 4)//*VC1_PIXEL_IN_LUMA
-                                          + (sMB->m_currMBXpos << 4); //*VC1_PIXEL_IN_LUMA;
-
+    pCurrMB->currYPlane = sMB->currYPlane + pCurrMB->currYPitch * (sMB->m_currMBYpos << 4)
+                                          + (sMB->m_currMBXpos << 4);
     //U
     pCurrMB->currUPitch = sMB->currUPitch;
-    pCurrMB->currUPlane = sMB->currUPlane   + pCurrMB->currUPitch*(sMB->m_currMBYpos << 3) // * VC1_PIXEL_IN_CHROMA
-                                            + (sMB->m_currMBXpos << 3); //* VC1_PIXEL_IN_CHROMA;
+    pCurrMB->currUPlane = sMB->currUPlane   + pCurrMB->currUPitch*(sMB->m_currMBYpos << 3)
+                                            + (sMB->m_currMBXpos << 3);
 
     //V
     pCurrMB->currVPitch = sMB->currVPitch;
-    pCurrMB->currVPlane = sMB->currVPlane + pCurrMB->currVPitch*(sMB->m_currMBYpos << 3) // * VC1_PIXEL_IN_CHROMA
-                                          + (sMB->m_currMBXpos << 3); //* VC1_PIXEL_IN_CHROMA;
+    pCurrMB->currVPlane = sMB->currVPlane + pCurrMB->currVPitch*(sMB->m_currMBYpos << 3)
+                                          + (sMB->m_currMBXpos << 3);
 
     pCurrMB->mbType = VC1_MB_1MV_INTER | VC1_MB_FORWARD;
 
@@ -359,19 +355,8 @@ VC1Status MBLayer_ProgressivePpicture(VC1Context* pContext)
 
     if(SKIPMBBIT == 1)
     {
-
-        STATISTICS_START_TIME(m_timeStatistics->motion_vector_decoding_StartTime);
-
         MBLayer_ProgressivePskipped(pContext);
-
-        STATISTICS_END_TIME(m_timeStatistics->motion_vector_decoding_StartTime,
-            m_timeStatistics->motion_vector_decoding_EndTime,
-            m_timeStatistics->motion_vector_decoding_TotalTime);
-
         CalculateIntraFlag(pContext);
-
-        //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_QUANT, VM_STRING("MB Quant = %d\n"), pContext->m_pCurrMB->MQUANT);
-        // VM_Debug::GetInstance().vm_debug_frame(-1,VC1_QUANT, VM_STRING("HalfQ = %d\n"), pContext->m_pCurrMB->HALFQP);
     }
     else
     {
@@ -379,17 +364,10 @@ VC1Status MBLayer_ProgressivePpicture(VC1Context* pContext)
 
         if((VC1_GET_MBTYPE(pCurrMB->mbType))==VC1_MB_1MV_INTER)//1 MV mode
         {
-            STATISTICS_START_TIME(m_timeStatistics->motion_vector_decoding_StartTime);
-
             MBLayer_ProgressivePpicture1MV(pContext);
-
-            STATISTICS_END_TIME(m_timeStatistics->motion_vector_decoding_StartTime,
-                m_timeStatistics->motion_vector_decoding_EndTime,
-                m_timeStatistics->motion_vector_decoding_TotalTime);
         }
         else //(4 MV Mode)
         {
-            STATISTICS_START_TIME(m_timeStatistics->motion_vector_decoding_StartTime);
             //3.2.2.3
             //CBPCY is a variable-length field present in both I picture and P
             //picture macroblock layers. Section 4.1.2.1 describes the CBPCY field
@@ -397,10 +375,6 @@ VC1Status MBLayer_ProgressivePpicture(VC1Context* pContext)
             //in P picture macroblocks.
             //CBPCY decoding
             MBLayer_ProgressivePpicture4MV(pContext);
-
-            STATISTICS_END_TIME(m_timeStatistics->motion_vector_decoding_StartTime,
-                m_timeStatistics->motion_vector_decoding_EndTime,
-                m_timeStatistics->motion_vector_decoding_TotalTime);
         }
         //end 4mv mode
 
@@ -422,9 +396,6 @@ VC1Status MBLayer_ProgressivePpicture(VC1Context* pContext)
         }
 
             CalculateIntraFlag(pContext);
-
-            // VM_Debug::GetInstance().vm_debug_frame(-1,VC1_QUANT, VM_STRING("MB Quant = %d\n"), pContext->m_pCurrMB->MQUANT);
-            // VM_Debug::GetInstance().vm_debug_frame(-1,VC1_QUANT, VM_STRING("HalfQ = %d\n"), pContext->m_pCurrMB->HALFQP);
 
             Ipp32u IntraFlag = pCurrMB->IntraFlag;
 
@@ -475,10 +446,7 @@ VC1Status MBLayer_ProgressivePpicture(VC1Context* pContext)
 
     }//skipmb
 
-    // VM_Debug::GetInstance().vm_debug_frame(-1,VC1_POSITION,VM_STRING("Macroblock Type: %d\n"), pContext->m_pCurrMB->mbType);
-
-    //if (pContext->m_seqLayerHeader.LOOPFILTER)
-        AssignCodedBlockPattern(pCurrMB,sMB);
+    AssignCodedBlockPattern(pCurrMB,sMB);
 
     return vc1Res;
 }

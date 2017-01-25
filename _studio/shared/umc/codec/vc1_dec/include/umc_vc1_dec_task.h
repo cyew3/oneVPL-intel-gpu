@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2010 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -14,8 +14,6 @@
 
 #ifndef __UMC_VC1_DEC_TASK_H_
 #define __UMC_VC1_DEC_TASK_H_
-
-#include <ipps.h>
 
 #include "vm_types.h"
 #include "umc_structures.h"
@@ -32,23 +30,6 @@ namespace UMC
 
     class VC1TaskProcessorUMC;
 
-    typedef struct
-    {
-        Ipp16u                   MBStartRow;
-        Ipp16u                   MBEndRow;
-        Ipp16u                   MBRowsToDecode;
-        Ipp32u*                  m_pstart;
-        Ipp32s                   m_bitOffset;
-        VC1PictureLayerHeader*   m_picLayerHeader;
-        VC1VLCTables*            m_vlcTbl;
-        bool                     is_continue;
-        Ipp32u                   slice_settings;
-        IppiEscInfo_VC1          EscInfo;
-        bool                     is_NewInSlice;
-        bool                     is_LastInSlice;
-        Ipp32s                   iPrevDblkStartPos; //need to interlace frames
-    } SliceParams;
-
     typedef enum
     {
         VC1Decode        = 1,
@@ -58,30 +39,8 @@ namespace UMC
         VC1MC            = 8,
         VC1PreparePlane  = 16,
         VC1Deblock       = 32,
-#ifdef VC1_THREAD_STATISTIC
-        VC1Sleep         = 128,
-        VC1WakeUp        = 256,
-#endif
         VC1Complete      = 64
     } VC1TaskTypes;
-
-#ifdef VC1_THREAD_STATISTIC
-    typedef enum
-    {
-        _Stat_VC1Decode        = 0,
-        _Stat_VC1Dequant       = 1,
-        _Stat_VC1Reconstruct   = 2,
-        _Stat_VC1MVCalculate   = 3,
-        _Stat_VC1MC            = 4,
-        _Stat_VC1PreparePlane  = 5,
-        _Stat_VC1Deblock       = 6,
-        _Stat_VC1RangeMap      = 7,
-        _Stat_VC1Complete      = 8,
-        _Stat_VC1Sleep         = 9,
-        _Stat_VC1WakeUp        = 10
-    } _Stat_VC1TaskTypes;
-#endif
-
 
 #pragma pack(16)
 
@@ -117,23 +76,16 @@ namespace UMC
           {
           };
 
-          ~VC1Task()
-          {
-              if (m_pSlice)
-                  ippsFree(m_pSlice);
-              m_pSlice = NULL;
-          }
-
           Ipp32u IsDecoding (Ipp32u _task_settings) {return _task_settings&VC1Decode;}
           Ipp32u IsDeblocking(Ipp32u _task_settings) {return _task_settings&VC1Deblock;}
           void setSliceParams(VC1Context* pContext);
 
+#ifdef ALLOW_SW_VC1_FALLBACK
           VC1TaskTypes switch_task();
+#endif // #ifdef ALLOW_SW_VC1_FALLBACK
+
           SliceParams* m_pSlice;                                        //
 
-#ifdef VC1_THREAD_STATISTIC
-          VC1TaskProcessor*    pJob;
-#endif
           Ipp32s m_iThreadNumber;                                     // (Ipp32s) owning thread number
           Ipp32s m_iTaskID;                                           // (Ipp32s) task identificator
           VC1TaskTypes m_eTasktype;

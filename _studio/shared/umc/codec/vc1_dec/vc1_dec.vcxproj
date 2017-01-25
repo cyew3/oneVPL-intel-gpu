@@ -283,11 +283,12 @@
     <ClCompile Include="src\umc_vc1_dec_skipping.cpp" />
     <ClCompile Include="src\umc_vc1_dec_task_store.cpp" />
     <ClCompile Include="src\umc_vc1_dec_thread.cpp" />
-    <ClCompile Include="src\umc_vc1_dec_time_statistics.cpp" />
     <ClCompile Include="src\umc_vc1_dec_vopdq.cpp" />
+    <ClCompile Include="src\umc_vc1_huffman.cpp" />
     <ClCompile Include="src\umc_vc1_smoothing.cpp" />
     <ClCompile Include="src\umc_vc1_smoothing_adv.cpp" />
     <ClCompile Include="src\umc_vc1_video_decoder.cpp" />
+    <ClCompile Include="src\umc_vc1_video_decoder_sw.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\umc_vc1_dec_debug.h" />
@@ -302,10 +303,10 @@
     <ClInclude Include="include\umc_vc1_dec_task.h" />
     <ClInclude Include="include\umc_vc1_dec_task_store.h" />
     <ClInclude Include="include\umc_vc1_dec_thread.h" />
-    <ClInclude Include="include\umc_vc1_dec_time_statistics.h" />
-    <ClInclude Include="include\umc_vc1_dec_va.h" />
     <ClInclude Include="include\umc_vc1_dec_va_defs.h" />
+    <ClInclude Include="include\umc_vc1_huffman.h" />
     <ClInclude Include="include\umc_vc1_video_decoder.h" />
+    <ClInclude Include="include\umc_vc1_video_decoder_sw.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\core\umc\base_classes.vcxproj">

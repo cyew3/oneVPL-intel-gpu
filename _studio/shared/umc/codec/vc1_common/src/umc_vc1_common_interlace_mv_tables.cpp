@@ -1305,6 +1305,7 @@ const extern Ipp32s VC1_InterlacedMVDifTable11[] =
     -1 /* end of table */
 };
 
+#ifdef ALLOW_SW_VC1_FALLBACK
 //Table 113
 const extern VC1PredictScaleValuesPPic VC1_PredictScaleValuesPPicTbl1[16] =
 {
@@ -1368,4 +1369,5 @@ const extern VC1PredictScaleValuesBPic VC1_PredictScaleValuesBPicTbl1[16] =
     {228, 288, 246, 57, 14, 10, 3},
 };
 
+#endif // #ifdef ALLOW_SW_VC1_FALLBACK
 #endif //UMC_ENABLE_VC1_VIDEO_DECODER

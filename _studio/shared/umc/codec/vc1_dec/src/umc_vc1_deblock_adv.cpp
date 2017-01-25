@@ -371,7 +371,6 @@ inline static void HorizontalDeblockingBlkB(Ipp8u* pUUpBlock,
 {
     Ipp32s SBP = _pBlk->SBlkPattern;
     Ipp32s flag_ver = IPPVC_EDGE_ALL;
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_MV_BBL,VM_STRING("Edge = %d\n"),Edge);
 
     _own_FilterDeblockingChroma_HorEdge_VC1(pUUpBlock + 8*Pitch, Pquant,Pitch, 0);
     if ((_pBlk->blkType==VC1_BLK_INTER8X4) || (_pBlk->blkType==VC1_BLK_INTER4X4))
@@ -418,7 +417,7 @@ inline static void VerticalDeblockingBlkB(Ipp8u* pUUpLBlock,
 {
     Ipp32s SBP = _pBlk->SBlkPattern;
     Ipp32s flag_ver = IPPVC_EDGE_ALL;
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_MV_BBL,VM_STRING("Edge = %d\n"),Edge);
+
     _own_FilterDeblockingChroma_VerEdge_VC1(pUUpLBlock + 8, Pquant,Pitch,0);
     if ((_pBlk->blkType==VC1_BLK_INTER4X8) || (_pBlk->blkType==VC1_BLK_INTER4X4))
     {
@@ -625,7 +624,6 @@ void Deblocking_ProgressivePpicture_Adv(VC1Context* pContext)
     Ipp32s MaxWidthMB = pContext->m_seqLayerHeader.MaxWidthMB;
 
     Ipp32s HeightMB   = pContext->DeblockInfo.HeightMB;
-    //VC1MB* m_CurrMB = pContext->m_pCurrMB - WidthMB*(HeightMB);
     VC1MB* m_CurrMB = pContext->m_pCurrMB;
     Ipp32s YPitch = m_CurrMB->currYPitch;
     Ipp32s UPitch = m_CurrMB->currUPitch;
@@ -636,7 +634,6 @@ void Deblocking_ProgressivePpicture_Adv(VC1Context* pContext)
     {
         for (curX=0; curX<WidthMB; curX++)
         {
-            //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_MV_BBL, VM_STRING("MB number is %d MB type %d\n"), WidthMB*curY+curX, m_CurrMB->mbType);
             /* Top luma blocks */
             HorizontalDeblockingLumaP(m_CurrMB->currYPlane,
                                         PQuant,YPitch,
@@ -661,8 +658,6 @@ void Deblocking_ProgressivePpicture_Adv(VC1Context* pContext)
                                          VPitch,
                                          &m_CurrMB->m_pBlocks[5],
                                          &(m_CurrMB+MaxWidthMB)->m_pBlocks[5]);
-            /*  VM_Debug::GetInstance().vm_debug_frame(-1,VC1_MV_BBL,VM_STRING("Number of NZC coeffs in Macroblock =%d\n Block[0].NZC[0]=%d\n Block[0].NZC[1]=%d\n Block[0].NZC[2]=%d\n Block[0].NZC[3]=%d\n"),
-            WidthMB*curY+curX,m_CurrMB->m_pBlocks[0].numCoeffs[0],m_CurrMB->m_pBlocks[0].numCoeffs[1], m_CurrMB->m_pBlocks[0].numCoeffs[2],m_CurrMB->m_pBlocks[0].numCoeffs[3]);*/
             ++m_CurrMB;
         }
         m_CurrMB += (MaxWidthMB - WidthMB);
@@ -702,15 +697,11 @@ void Deblocking_ProgressivePpicture_Adv(VC1Context* pContext)
 
     m_CurrMB   -= MaxWidthMB*(HeightMB);
 
-    //printf("Vertical Deblocking \n");
-
     /* Deblock vertical edges */
     for (curY=0; curY<HeightMB; curY++)
     {
         for (curX=0; curX<WidthMB-1; curX++)
         {
-            //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_MV_BBL, VM_STRING("MB number is %d MB type %d\n"), WidthMB*curY+curX, m_CurrMB->mbType);
-
             /* Left luma blocks */
             VerticalDeblockingLumaP(m_CurrMB->currYPlane,
                                     PQuant,
@@ -786,7 +777,6 @@ void Deblocking_InterlaceFieldBpicture_Adv(VC1Context* pContext)
     {
         for (curX=0; curX<WidthMB; curX++)
         {
-            //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_MV_BBL, VM_STRING("MB number is %d MB type %d\n"), WidthMB*curY+curX, m_CurrMB->mbType);
             /* Top luma blocks */
             HorizontalDeblockingBlkB((m_CurrMB->currYPlane),
                                       PQuant,YPitch,
@@ -814,8 +804,6 @@ void Deblocking_InterlaceFieldBpicture_Adv(VC1Context* pContext)
                 PQuant,
                 VPitch,
                 &m_CurrMB->m_pBlocks[5]);
-            /*  VM_Debug::GetInstance().vm_debug_frame(-1,VC1_MV_BBL,VM_STRING("Number of NZC coeffs in Macroblock =%d\n Block[0].NZC[0]=%d\n Block[0].NZC[1]=%d\n Block[0].NZC[2]=%d\n Block[0].NZC[3]=%d\n"),
-            WidthMB*curY+curX,m_CurrMB->m_pBlocks[0].numCoeffs[0],m_CurrMB->m_pBlocks[0].numCoeffs[1], m_CurrMB->m_pBlocks[0].numCoeffs[2],m_CurrMB->m_pBlocks[0].numCoeffs[3]);*/
             ++m_CurrMB;
         }
         m_CurrMB += (MaxWidthMB - WidthMB);
@@ -867,7 +855,6 @@ void Deblocking_InterlaceFieldBpicture_Adv(VC1Context* pContext)
     {
         for (curX=0; curX<WidthMB-1; curX++)
         {
-            //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_MV_BBL, VM_STRING("MB number is %d MB type %d\n"), WidthMB*curY+curX, m_CurrMB->mbType);
             /* Top luma blocks */
             VerticalDeblockingBlkB((m_CurrMB->currYPlane),
                 PQuant,
@@ -1038,9 +1025,7 @@ void Deblocking_InterlaceFrameIpicture_Adv(VC1Context* pContext)
         HeightMB -=1;
 
     
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_MV_BBL,VM_STRING("Vertical Deblock\n"));
      m_CurrMB -= MaxWidthMB*(HeightMB);
-
      
     /* Deblock vertical edges */
     for (curY=0; curY<HeightMB; curY++)
@@ -1168,9 +1153,6 @@ void Deblocking_InterlaceFramePpicture_Adv(VC1Context* pContext)
             else
                 is_intern_deblock = 0;
 
-            //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_MV, VM_STRING("m_CurrMB->FIELDTX %d\n"), m_CurrMB->FIELDTX);
-
-
             HorizontalDeblockingBlkInterlaceP((m_CurrMB->currYPlane),
                 PQuant,
                 YPitch,
@@ -1223,11 +1205,6 @@ void Deblocking_InterlaceFramePpicture_Adv(VC1Context* pContext)
                 is_intern_deblock = 1;
             else
                 is_intern_deblock = 0;
-
-            //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_MV, VM_STRING("m_CurrMB->FIELDTX %d\n"), m_CurrMB->FIELDTX);
-
-
-
 
             if (!m_CurrMB->FIELDTX)
             {
@@ -1294,10 +1271,6 @@ void Deblocking_InterlaceFramePpicture_Adv(VC1Context* pContext)
     {
         for (curX=0; curX<WidthMB-1; curX++)
         {
-
-            //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_MV, VM_STRING("m_CurrMB->FIELDTX %d\n"), m_CurrMB->FIELDTX);
-
-
             VerticalDeblockingBlkInterlaceP((m_CurrMB->currYPlane),
                                              PQuant,
                                              YPitch,
@@ -1376,9 +1349,6 @@ void Deblocking_InterlaceFramePpicture_Adv(VC1Context* pContext)
     {
         for (curX=0; curX<WidthMB-1; curX++)
         {
-
-            //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_MV, VM_STRING("m_CurrMB->FIELDTX %d\n"), m_CurrMB->FIELDTX);
-
 
             VerticalDeblockingBlkInterlaceP((m_CurrMB->currYPlane),
                                              PQuant,

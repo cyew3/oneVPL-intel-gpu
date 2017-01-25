@@ -115,9 +115,6 @@ Status MPEG2VideoDecoderBase::Init(BaseCodecParams *pInit)
     if(!init)
         return UMC_ERR_INIT;
 
-    if((init->lFlags & FLAG_VDEC_4BYTE_ACCESS) != 0)
-      return UMC_ERR_UNSUPPORTED;
-
     Reset();
 
     m_ClipInfo = init->info;

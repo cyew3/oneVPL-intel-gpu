@@ -981,7 +981,7 @@ mfxStatus mfx_UMC_FrameAllocator::PrepareToOutput(mfxFrameSurface1 *surface_work
     return sts;
 }
 
-#if (defined(MFX_ENABLE_MPEG2_VIDEO_DECODE) && !defined(MFX_ENABLE_HW_ONLY_MPEG2_DECODER)) || defined(MFX_ENABLE_VC1_VIDEO_DECODE)
+#if (defined(MFX_ENABLE_MPEG2_VIDEO_DECODE) && !defined(MFX_ENABLE_HW_ONLY_MPEG2_DECODER)) || (defined(MFX_ENABLE_VC1_VIDEO_DECODE) && defined(ALLOW_SW_VC1_FALLBACK))
 #include "ippcc.h"
 
 UMC::Status mfx_UMC_FrameAllocator_NV12::InitMfx(UMC::FrameAllocatorParams *pParams,

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -14,7 +14,7 @@
 
 #include <string.h>
 #include "umc_vc1_dec_seq.h"
-
+#include "umc_vc1_huffman.h"
 #include "umc_vc1_dec_debug.h"
 
 // need for VA structures filling
@@ -88,7 +88,7 @@ VC1Status DecodePictureHeader (VC1Context* pContext,  bool isExtHeader)
     {
         Ipp8s  z1;
         Ipp16s z2;
-        ippiDecodeHuffmanPair_1u16s(&pContext->m_bitstream.pBitstream,
+        DecodeHuffmanPair(&pContext->m_bitstream.pBitstream,
                                     &pContext->m_bitstream.bitOffset,
                                     pContext->m_vlcTbl->BFRACTION,
                                     &z1,
@@ -105,9 +105,6 @@ VC1Status DecodePictureHeader (VC1Context* pContext,  bool isExtHeader)
         picLayerHeader->ScaleFactor = ((256+z2/2)/z2)*z1;
         picLayerHeader->BFRACTION_orig = VC1_VA_Bfraction_tbl[z1-1][z2-2];
     }
-
-    //pContext->m_pCurrMB = &pContext->m_MBs[0];
-    //pContext->CurrDC = pContext->DCACParams;
 
     return vc1Sts;
 }

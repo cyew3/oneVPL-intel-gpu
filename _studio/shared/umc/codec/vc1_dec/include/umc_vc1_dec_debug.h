@@ -57,8 +57,11 @@ class VM_Debug
 public:
 
     void vm_debug_frame(Ipp32s _cur_frame, Ipp32s level, const vm_char *format, ...);
+
+#ifdef ALLOW_SW_VC1_FALLBACK
     void _print_macroblocks(VC1Context* pContext);
     void _print_blocks(VC1Context* pContext);
+#endif
     void print_bitplane(VC1Bitplane* pBitplane, Ipp32s width, Ipp32s height);
     static VM_Debug& GetInstance(VC1DebugWork typeWork)
     {

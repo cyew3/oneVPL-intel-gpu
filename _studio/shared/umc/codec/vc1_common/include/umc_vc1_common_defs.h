@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -21,27 +21,12 @@
 #include "umc_vc1_common_macros_defs.h"
 #include "umc_structures.h"
 
-//#define _OWN_FUNCTION
-#ifndef UMC_RESTRICTED_CODE
-   //#define   _VC1_ENC_OWN_FUNCTIONS_
-#endif
-
 #define VC1_ENC_RECODING_MAX_NUM 3
 #define START_CODE_NUMBER 600
 //frame header size in case of SM profiles
 #define  VC1FHSIZE 8
 //start code size in case of Advance profile
 #define  VC1SCSIZE 4
-
-typedef enum
-{
-    VC1_ERR_NOSIGNAL = 0,
-    VC1_ERR_SIGNAL   = 1
-
-} VC1_ERROR;
-
-#define VC1_SIGNAL     0
-#define VC1_DEC_ERR(value) (value & VC1_ERR_SIGNAL)
 
 typedef enum
 {
@@ -71,15 +56,6 @@ typedef enum
     VC1_EntryPointLevelUserData    = 0x1E,
     VC1_SequenceLevelUserData      = 0x1F
 } VC1StartCode;
-
-//input file format
-enum
-{
-    RCVFileFormat               = 0,
-    VC1FileFormat               = 1,
-    VC1_UnknownFileFormat       = 10
-};
-
 
 //frame coding mode
 enum
@@ -121,7 +97,6 @@ enum
 #define VC1_PIXEL_IN_LUMA 16
 #define VC1_PIXEL_IN_CHROMA 8
 #define VC1_PIXEL_IN_BLOCK  8
-#define VC1_PIXEL_IN_MB VC1_PIXEL_IN_BLOCK*VC1_PIXEL_IN_BLOCK*VC1_NUM_OF_BLOCKS
 
 enum
 {
@@ -135,6 +110,7 @@ enum
     VC1_BLK_INTRA      = 0x30
 };
 
+#ifdef ALLOW_SW_VC1_FALLBACK
 #define VC1_IS_BLKINTRA(value) (value & 0x30)
 enum
 {
@@ -154,11 +130,10 @@ enum
 #define VC1_GET_PREDICT(value) (value&56)
 
 #define VC1MBQUANT 2
+#endif // ALLOW_SW_VC1_FALLBACK
+
 #define VC1SLICEINPARAL 512
-//#define VC1MBALLOCSIZE 1024
 #define VC1FRAMEPARALLELPAIR 2
-//#define CREATE_ES
-//#define VC1_THREAD_STATISTIC
 
 enum
 {
@@ -225,6 +200,7 @@ enum //quantizer deadzone definitions
     VC1_QUANTIZER_NONUNIFORM = 1
 };
 
+#ifdef ALLOW_SW_VC1_FALLBACK
 enum //prediction directions definitions
 {
     VC1_ESCAPEMODE3_Conservative    = 0,
@@ -298,7 +274,6 @@ enum
 #define VC1_IS_TOP_RIGHT_MB(value)   (value&0x80)&&(value&0x1)&&(!(value&0x800))
 
 #define VC1_IS_LEFT_RIGHT_MB(value)  (value&0x800)&&(value&0x1)&&(!(value&0x80))
-//#define VC1_IS_NOT_TOP_LEFT_MB(value) (!(value&0x80))&&(!(value&0x800))
 
 //for IntraFlag
 enum
@@ -320,6 +295,7 @@ enum
 
 
 #define VC1_IS_INTER_MB(value)  ((value == 0x00)||(value == 0x01)||(value == 0x02)||(value == 0x04)||(value == 0x08))
+#endif // #ifdef ALLOW_SW_VC1_FALLBACK
 
 //for extended differantial MV range flag(inerlace P picture)
 enum
@@ -346,11 +322,6 @@ enum
 #define VC1_BRACTION_INVALID 0
 #define VC1_BRACTION_BI 9
 
-
-#define VC1_PADDING_SIZE       64
-#define VC1_HORIZONTAL_PADDING 64
-
-
 #define VC1_MAX_SLICE_NUM  512
 
 typedef struct
@@ -370,6 +341,7 @@ typedef struct
 #define VC1_NEXT_BITS(num_bits, value) VC1NextNBits(pContext->m_bitstream.pBitstream, pContext->m_bitstream.bitOffset, num_bits, value);
 #define VC1_GET_BITS(num_bits, value)  VC1GetNBits(pContext->m_bitstream.pBitstream, pContext->m_bitstream.bitOffset, num_bits, value);
 
+#ifdef ALLOW_SW_VC1_FALLBACK
 typedef struct
 {
    Ipp32u HRD_NUM_LEAKY_BUCKETS; //5
@@ -381,6 +353,7 @@ typedef struct
    Ipp32u HRD_BUFFER[32];    //16
    Ipp32u HRD_FULLNESS[32];  //16
 }VC1_HRD_PARAMS;
+#endif // #ifdef ALLOW_SW_VC1_FALLBACK
 
 typedef struct
 {
@@ -396,7 +369,6 @@ typedef struct
 
     //Advanced profile fields
     Ipp32u LEVEL;              //3
-  //  Ipp32u CHROMAFORMAT;     //2
 
     //common fields
     Ipp32u FRMRTQ_POSTPROC;  //3
@@ -430,19 +402,10 @@ typedef struct
 
     //common fields
     Ipp32u FINTERPFLAG;        //1
-    //Ipp32u DISPLAY_EXT;        //1
     Ipp32u HRD_PARAM_FLAG;     //1
 
     //HRD PARAMS
    Ipp32u HRD_NUM_LEAKY_BUCKETS; //5
-   //Ipp32u BIT_RATE_EXPONENT;     //4
-   //Ipp32u BUFFER_SIZE_EXPONENT;  //4
-
-   // 32 - max size see Standard, p32
- //  Ipp32u HRD_RATE[32];   //16
- //  Ipp32u HRD_BUFFER[32]; //16
-
-   //Ipp8u m_ubRoundCtl;
 
     Ipp16u widthMB;
     Ipp16u heightMB;
@@ -476,6 +439,7 @@ typedef struct
 
 }VC1SequenceLayerHeader;
 
+#ifdef ALLOW_SW_VC1_FALLBACK
 typedef struct
 {
     Ipp8u  k_x;
@@ -505,23 +469,14 @@ typedef struct
     Ipp16u   zone1offset_x;
     Ipp16u   zone1offset_y;
 }VC1PredictScaleValuesBPic;
-
-//typedef struct
-//{
-//    Ipp32u PS_HOFFSET;        //18                pan scan window horizontaloffset
-//    Ipp32u PS_VOFFSET;        //18                pan scan vertical window
-//    Ipp32u PS_WIDTH;          //14                pan scan window width
-//    Ipp32u PS_HEIGHT;         //14                pan scan window width
-//}PanScanWindow;
+#endif
 
 typedef struct
 {
   //common fields
-    //Ipp32u  INTERPFRM;
     Ipp32u  PTYPE;
     Ipp32u  PQINDEX;
     Ipp32u  HALFQP;
-    //Ipp32u  POSTPROC;       // 2 post processing
 //common fields.Slice parameters
     Ipp32u  is_slice;
 
@@ -537,28 +492,17 @@ typedef struct
     //range reduce simple/main profile
     Ipp32s RANGEREDFRM;      //1
 
-//I P B picture
-    //Ipp32u TRANSACFRM;
-    //Ipp32u TRANSACFRM2;
 //I P B picture. VopDQuant
     Ipp32u  m_DQProfile;
     Ipp32u  m_DQuantFRM;
     Ipp32u  m_DQBILevel;
-    //Ipp32u  m_PQDiff;
     Ipp32u  m_AltPQuant;
     Ipp32u  PQUANT;
     Ipp32u  m_PQuant_mode;
-    //Ipp32u  m_curQPDeadZone;
     Ipp32u  QuantizationType;      //0 - uniform, 1 - nonuniform
 
 //only for advanced profile
     Ipp32u  FCM;           // variable size frame coding mode
-
-//practically not used
-    //Ipp32u  RPTFRM;        // 2 repeat frame count
-    //Ipp32u  UVSAMP;
-    //Ipp32u  m_number_of_pan_scan_window;
-    //PanScanWindow m_PanScanWindows[4];
 
 //I BI picture
     VC1Bitplane    ACPRED;    // variable size  AC Prediction
@@ -580,13 +524,9 @@ typedef struct
 // P B picture. Interlace field
     Ipp32s   REFDIST;               //variable size  P Reference Distance
 
-
-//P only. Interlace frame
- //   Ipp32u MV4SWITCH;             //1     4 motion vector switch
 //P only. Interlace field
     Ipp32u NUMREF;                //1     Number of reference picture
     Ipp32u REFFIELD;              //1     Reference field picture indicator
-
 
 //B only
     Ipp32u     BFRACTION;
@@ -597,6 +537,7 @@ typedef struct
     VC1Bitplane      FORWARDMB;         //variable size B Field forward mode
                                         //MB bit syntax element
 // tables
+#ifdef ALLOW_SW_VC1_FALLBACK
     const IppiACDecodeSet_VC1* m_pCurrIntraACDecSet;
     const IppiACDecodeSet_VC1* m_pCurrInterACDecSet;
     Ipp32s*             m_pCurrCBPCYtbl;
@@ -614,7 +555,7 @@ typedef struct
     const VC1PredictScaleValuesPPic*      m_pCurrPredScaleValuePPictbl;
     const VC1PredictScaleValuesBPic*      m_pCurrPredScaleValueB_BPictbl;
     const VC1PredictScaleValuesPPic*      m_pCurrPredScaleValueP_BPictbl[2];//0 - forward, 1 - back
-
+#endif // #ifdef ALLOW_SW_VC1_FALLBACK
     Ipp32u RNDCTRL;     // 1 rounding control bit
 
     Ipp32u TRANSDCTAB;
@@ -646,25 +587,27 @@ typedef struct
 
 typedef struct
 {
+    Ipp32s *m_Bitplane_IMODE;
+    Ipp32s *m_BitplaneTaledbits;
+    Ipp32s *BFRACTION;
+    Ipp32s *REFDIST_TABLE;
+
+#ifdef ALLOW_SW_VC1_FALLBACK
     Ipp32s *m_pLowMotionLumaDCDiff;
     Ipp32s *m_pHighMotionLumaDCDiff;
     Ipp32s *m_pLowMotionChromaDCDiff;
     Ipp32s *m_pHighMotionChromaDCDiff;
     Ipp32s *m_pCBPCY_Ipic;
-    Ipp32s *m_Bitplane_IMODE;
-    Ipp32s *m_BitplaneTaledbits;
     Ipp32s *MVDIFF_PB_TABLES[4];
     Ipp32s *CBPCY_PB_TABLES[4];
     Ipp32s *TTMB_PB_TABLES[3];
     Ipp32s *TTBLK_PB_TABLES[3];
     Ipp32s *SBP_PB_TABLES[3];
-    Ipp32s *BFRACTION;
     Ipp32s *MBMODE_INTERLACE_FRAME_TABLES[8];
     Ipp32s *MV_INTERLACE_TABLES[12];
     Ipp32s *CBPCY_PB_INTERLACE_TABLES[8];
     Ipp32s *MV2BP_TABLES[4];
     Ipp32s *MV4BP_TABLES[4];
-    Ipp32s *REFDIST_TABLE;
     Ipp32s *MBMODE_INTERLACE_FIELD_TABLES[8];
     Ipp32s *MBMODE_INTERLACE_FIELD_MIXED_TABLES[8];
 
@@ -687,9 +630,11 @@ typedef struct
     IppiACDecodeSet_VC1 HighRateInterACDecodeSet;
     IppiACDecodeSet_VC1* InterACDecodeSetPQINDEXle7[3];
     IppiACDecodeSet_VC1* InterACDecodeSetPQINDEXgt7[3];
+#endif
 
-}VC1VLCTables;
+} VC1VLCTables;
 
+#ifdef ALLOW_SW_VC1_FALLBACK
 typedef struct
 {
     Ipp16s          DC;
@@ -747,18 +692,13 @@ typedef struct
     Ipp8u   Coded;
     Ipp8u numCoef; //subblocks in inter;
 }VC1SingletonBlock;
+
 typedef struct
 {
     Ipp32u      bEscapeMode3Tbl;
     Ipp32s      levelSize;
     Ipp32s      runSize;
 } IppiEscInfo_VC1;
-
-typedef struct
-{
-    Ipp32u*     pBitstream;
-    Ipp32s      bitOffset;
-} IppiBitstream;
 
 typedef struct
 {
@@ -839,6 +779,7 @@ typedef struct
     const Ipp8u* pInterpolChromaVSrc[2];    //forward/backward or top/bottom
     Ipp32s       InterpolsrcChromaVStep[2]; //forward/backward or top/bottom
 }VC1MB;
+
 typedef struct
 {
     VC1Block* AMVPred[4];
@@ -846,6 +787,14 @@ typedef struct
     VC1Block* CMVPred[4];
     Ipp8u     FieldMB[4][3]; //4 blocks, A, B, C
 }VC1MVPredictors;
+#endif // #ifdef ALLOW_SW_VC1_FALLBACK
+
+typedef struct
+{
+    Ipp32u*     pBitstream;
+    Ipp32s      bitOffset;
+} IppiBitstream;
+
 //1.3.3    The decoder dynamically allocates memory for frame
 //buffers and other structures. Following are the size requirements.
 //For the frame buffer, the following formula indicates the memory requirement:
@@ -854,7 +803,12 @@ typedef struct
 
 struct Frame
 {
-    Frame():m_pAllocatedMemory(NULL),
+    Frame():m_bIsExpanded(0),
+            FCM(0),
+            ICFieldMask(0),
+            corrupted(0)
+#ifdef ALLOW_SW_VC1_FALLBACK
+            ,m_pAllocatedMemory(NULL),
             m_pY(NULL),
             m_pU(NULL),
             m_pV(NULL),
@@ -865,17 +819,24 @@ struct Frame
             m_iUPitch(0),
             m_iVPitch(0),
             m_AllocatedMemorySize(0),
-            m_bIsExpanded(0),
-            FCM(0),
             TFF(0),
-            ICFieldMask(0),
-            isIC(0),
-            corrupted(0)
+            isIC(0)
+#endif
     {
     }
 
+    Ipp8u       m_bIsExpanded;
+    Ipp32u      FCM;
 
+    //1000  - IC for Top First Field
+    //0100  - IC for Bottom First Field
+    //0010  - IC for Top Second Field
+    //0001  - IC for Bottom Second Field
+    Ipp32u      ICFieldMask;
 
+    Ipp16u      corrupted;
+
+#ifdef ALLOW_SW_VC1_FALLBACK
     Ipp8u*      m_pAllocatedMemory;
     Ipp8u*      m_pY;
     Ipp8u*      m_pU;
@@ -890,8 +851,6 @@ struct Frame
     Ipp32u      m_iVPitch;
     Ipp32s      m_AllocatedMemorySize;
 
-    Ipp8u       m_bIsExpanded;
-    Ipp32u      FCM;
     Ipp8u      LumaTable[4][256]; //0,1 - top/bottom fields of first field. 2,3 of second field
     Ipp8u      ChromaTable[4][256];
 
@@ -902,15 +861,8 @@ struct Frame
     Ipp8u*     ChromaTableCurr[2];
     Ipp32u      TFF;
 
-    //1000  - IC for Top First Field
-    //0100  - IC for Bottom First Field
-    //0010  - IC for Top Second Field
-    //0001  - IC for Bottom Second Field
-    Ipp32u      ICFieldMask;
-
     Ipp32u      isIC;
-
-    Ipp16u      corrupted;
+#endif // #ifdef ALLOW_SW_VC1_FALLBACK
 };
 
 #define VC1MAXFRAMENUM 9*VC1FRAMEPARALLELPAIR + 9 // for <= 8 threads. Change if numThreads > 8
@@ -930,7 +882,6 @@ struct VC1FrameBuffer
     // for skipping processing
     Ipp32s        m_iToSkipCoping;
 
-
     // for external index set up
     Ipp32s        m_iBFrameIndex;
 
@@ -943,19 +894,11 @@ struct VC1FrameBuffer
 
 typedef struct
 {
-    Ipp16s**        SmoothUpperYRows;   //   Y:[MBwidth+1][16*2]
-    Ipp16s**        SmoothUpperURows;   //   U:[MBwidth+1][8*2]
-    Ipp16s**        SmoothUpperVRows;   //   V:[MBwidth+1][8*2]
-}VC1Smoothing;
-
-typedef struct
-{
     Ipp32u start_pos;
     Ipp32u HeightMB;
     Ipp32u is_last_deblock;
     Ipp32u isNeedDbl;
 }VC1DeblockInfo;
-
 
 struct VC1Context
 {
@@ -968,22 +911,19 @@ struct VC1Context
 
     VC1FrameBuffer             m_frmBuff;
 
-    //Ipp32u*                m_pbs;
-    //Ipp32s                 m_bitOffset;
     IppiBitstream          m_bitstream;
+
     Ipp8u*                 m_pBufferStart;
     Ipp32u                 m_FrameSize;
     //start codes
     Ipp32u*                m_Offsets;
     Ipp32u*                m_values;
 
-    Ipp32s                 m_seqInit;
-
+#ifdef ALLOW_SW_VC1_FALLBACK
     VC1MB*                 m_pCurrMB;
     VC1MB*                 m_MBs;         //MBwidth*MBheight
     VC1DCMBParam*          CurrDC;
 
-    VC1Smoothing*          SmoothingInfo;
     Ipp16s*                savedMV;       //MBwidth*MBheight*4*2*2
                                           //(4 luma blocks, 2 coordinates,Top/Bottom),
                                           //MVs which are used for Direct mode
@@ -991,23 +931,24 @@ struct VC1Context
                                           // in B frame
     Ipp16s*                savedMV_Curr;     //pointer to current array of MVs. Need for inter-frame threading
     Ipp8u*                 savedMVSamePolarity_Curr; //pointer to current array of MVPolars. Need for inter-frame threading
+
+    IppVCInterpolateBlockIC_8u interp_params_luma;
+    IppVCInterpolateBlockIC_8u interp_params_chroma;
+#endif
+
     VC1Bitplane            m_pBitplane;
     VC1DeblockInfo         DeblockInfo;
     Ipp32u                 RefDist;
     Ipp32u*                pRefDist;
 
-    IppVCInterpolateBlockIC_8u interp_params_luma;
-    IppVCInterpolateBlockIC_8u interp_params_chroma;
-
-
     // Intensity compensation: lookup tables only for P-frames
     Ipp8u          m_bIntensityCompensation;
-    Ipp8u          m_bNeedToUseCompBuffer;
 
-    Ipp32u typeOfPreviousFrame;
+#ifdef ALLOW_SW_VC1_FALLBACK
     VC1SingletonMB*                m_pSingleMB;
 
     Ipp32s                         iNumber; /*thread number*/
+
     Ipp16s*                        m_pBlock; //memory for diffrences
     Ipp32s                         iPrevDblkStartPos;
     VC1DCMBParam*                  DCACParams;
@@ -1015,13 +956,13 @@ struct VC1Context
     VC1MVPredictors                MVPred;
     Ipp8u*                        LumaTable[4]; //0,1 - top/bottom fields of first field. 2,3 of second field
     Ipp8u*                        ChromaTable[4];
+#endif
 
     Ipp32u                        PrevFCM;
     Ipp32u                        NextFCM;
 
     Ipp32s                        bp_round_count;
 };
-
 
 #endif //__umc_vc1_common_defs_H__
 #endif //UMC_ENABLE_VC1_VIDEO_DECODER

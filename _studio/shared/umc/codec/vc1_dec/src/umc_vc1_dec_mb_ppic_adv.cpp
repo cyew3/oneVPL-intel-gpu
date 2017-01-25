@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -17,9 +17,7 @@
 #include "umc_vc1_common_blk_order_tbl.h"
 #include "umc_vc1_common_interlace_mb_mode_tables.h"
 #include "umc_vc1_common_zigzag_tbl.h"
-
-
-#include "umc_vc1_dec_time_statistics.h"
+#include "umc_vc1_huffman.h"
 
 typedef void (*MV_PREDICT_4MV)(VC1MB* pCurrMB,
                                Ipp16s pPredMV[4][2],
@@ -73,7 +71,7 @@ static VC1Status MBLayer_ProgressivePskipped(VC1Context* pContext)
 
 static VC1Status MBLayer_ProgressivePpicture1MV(VC1Context* pContext)
 {
-    IppStatus ret;
+    int ret;
     Ipp16s dmv_x;
     Ipp16s dmv_y;
     Ipp16u last_intra_flag = 0;
@@ -135,12 +133,12 @@ static VC1Status MBLayer_ProgressivePpicture1MV(VC1Context* pContext)
         if(pCurrMB->mbType == VC1_MB_INTRA)
             VC1_GET_BITS(1, pContext->m_pSingleMB->ACPRED);
         //CBPCY decoding
-        ret = ippiDecodeHuffmanOne_1u32s(&pContext->m_bitstream.pBitstream,
+        ret = DecodeHuffmanOne(&pContext->m_bitstream.pBitstream,
             &pContext->m_bitstream.bitOffset,
             &pCurrMB->m_cbpBits,
             picLayerHeader->m_pCurrCBPCYtbl);
 
-        VM_ASSERT(ret == ippStsNoErr);
+        VM_ASSERT(ret == 0);
 
         //MB quant calculations
         if (picLayerHeader->m_PQuant_mode >= VC1_ALTPQUANT_MB_LEVEL)
@@ -163,7 +161,7 @@ static VC1Status MBLayer_ProgressivePpicture4MV(VC1Context* pContext)
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
     VC1PictureLayerHeader* picLayerHeader = pContext->m_picLayerHeader;
 
-    IppStatus ret;
+    int ret;
     Ipp32s Count_inter=0;
     Ipp32s n_block=0;
     Ipp16s dmv_x = 0;
@@ -171,11 +169,11 @@ static VC1Status MBLayer_ProgressivePpicture4MV(VC1Context* pContext)
 
     Ipp32u LeftTopRightPositionFlag = pCurrMB->LeftTopRightPositionFlag;
 
-    ret = ippiDecodeHuffmanOne_1u32s(&pContext->m_bitstream.pBitstream,
+    ret = DecodeHuffmanOne(&pContext->m_bitstream.pBitstream,
                                     &pContext->m_bitstream.bitOffset,
                                     &pCurrMB->m_cbpBits,
                                     picLayerHeader->m_pCurrCBPCYtbl);
-    VM_ASSERT(ret == ippStsNoErr);
+    VM_ASSERT(ret == 0);
 
     if (ret!=ippStsNoErr)
         return VC1_FAIL;
@@ -320,7 +318,6 @@ static VC1Status MBLayer_InterlacePpicture1MV(VC1Context* pContext)
     Ipp32s blk_num;
     Ipp16s X =0;
     Ipp16s Y = 0;
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_MV,VM_STRING("Interlace 1 MV\n"));
 
     if(VC1_MB_Mode_PBPic_MVPresent_Table[pContext->m_pSingleMB->MBMODEIndex])
         DecodeMVDiff_Adv(pContext,&dmv_x,&dmv_y);
@@ -354,7 +351,6 @@ static VC1Status MBLayer_InterlacePpicture2MV(VC1Context* pContext)
 
     Ipp32s blk_num;
     Ipp32s BlkMVP;
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_MV,VM_STRING("Interlace 2 MV\n"));
 
     BlkMVP = ((0 != ( (1 << 3) & pCurrMB->MVBP) ) ? 1 : 0);
     if (BlkMVP)
@@ -403,8 +399,6 @@ static VC1Status MBLayer_InterlacePpicture4MVField(VC1Context* pContext)
     Ipp16s Y = 0;
 
     VC1MB* pCurrMB = pContext->m_pCurrMB;
-
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_MV,VM_STRING("Interlace 4 MV Field\n"));
 
     for(blk_num = 0;  blk_num < VC1_NUM_OF_LUMA;  blk_num++)
     {
@@ -459,8 +453,6 @@ static VC1Status MBLayer_InterlacePpicture4MV(VC1Context* pContext)
     Ipp16s Y = 0;
     VC1MB* pCurrMB = pContext->m_pCurrMB;
 
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_MV,VM_STRING("Interlace 4 MV\n"));
-
     PredictInterlace4MVFrame_Adv(pContext);
     for( blk_num = 0;  blk_num < VC1_NUM_OF_LUMA; blk_num++)
     {
@@ -500,7 +492,6 @@ static VC1Status MBLayer_InterlaceFieldPpicture1MV(VC1Context* pContext)
     Ipp16s Y = 0;
     Ipp8u predictor_flag = 0;
 
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_MV,VM_STRING("Interlace 1 MV\n"));
     Field1MVPrediction(pContext);
 
     if (0 == picLayerHeader->NUMREF)
@@ -555,7 +546,7 @@ static VC1Status MBLayer_InterlaceFieldPpicture4MV(VC1Context* pContext)
     VC1PictureLayerHeader* picLayerHeader = pContext->m_picLayerHeader;
 
     Ipp32s BlkMVP;
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_MV,VM_STRING("Interlace 1 MV\n"));
+
     if (0 == picLayerHeader->NUMREF && 0 == picLayerHeader->REFFIELD)
     {
             predictor_flag = 1;
@@ -639,20 +630,19 @@ VC1Status MBLayer_ProgressivePpicture_Adv(VC1Context* pContext)
 
     //Y
     pCurrMB->currYPitch = sMB->currYPitch;
-    pCurrMB->currYPlane = sMB->currYPlane + pCurrMB->currYPitch * (sMB->m_currMBYpos << 4)//*VC1_PIXEL_IN_LUMA
-                                          + (sMB->m_currMBXpos << 4); //*VC1_PIXEL_IN_LUMA;
+    pCurrMB->currYPlane = sMB->currYPlane + pCurrMB->currYPitch * (sMB->m_currMBYpos << 4)
+                                          + (sMB->m_currMBXpos << 4);
 
     //U
     pCurrMB->currUPitch = sMB->currUPitch;
-    pCurrMB->currUPlane = sMB->currUPlane   + pCurrMB->currUPitch*(sMB->m_currMBYpos << 3) // * VC1_PIXEL_IN_CHROMA
-                                            + (sMB->m_currMBXpos << 3); //* VC1_PIXEL_IN_CHROMA;
+    pCurrMB->currUPlane = sMB->currUPlane   + pCurrMB->currUPitch*(sMB->m_currMBYpos << 3)
+                                            + (sMB->m_currMBXpos << 3);
 
     //V
     pCurrMB->currVPitch = sMB->currVPitch;
-    pCurrMB->currVPlane = sMB->currVPlane + pCurrMB->currVPitch*(sMB->m_currMBYpos << 3) // * VC1_PIXEL_IN_CHROMA
-                                          + (sMB->m_currMBXpos << 3); //* VC1_PIXEL_IN_CHROMA;
+    pCurrMB->currVPlane = sMB->currVPlane + pCurrMB->currVPitch*(sMB->m_currMBYpos << 3)
+                                          + (sMB->m_currMBXpos << 3);
 
-    //memset(pContext->m_pBlock, 0,sizeof(Ipp16s)*VC1_PIXEL_IN_BLOCK*VC1_PIXEL_IN_BLOCK*VC1_NUM_OF_BLOCKS);
     pCurrMB->FIELDTX = 0;
 
     for(blk_num = 0; blk_num < VC1_NUM_OF_BLOCKS; blk_num++)
@@ -696,14 +686,7 @@ VC1Status MBLayer_ProgressivePpicture_Adv(VC1Context* pContext)
 
     if(SKIPMBBIT == 1)
     {
-        STATISTICS_START_TIME(m_timeStatistics->motion_vector_decoding_StartTime);
-
         MBLayer_ProgressivePskipped(pContext);
-
-        STATISTICS_END_TIME(m_timeStatistics->motion_vector_decoding_StartTime,
-            m_timeStatistics->motion_vector_decoding_EndTime,
-            m_timeStatistics->motion_vector_decoding_TotalTime);
-
         CalculateIntraFlag(pContext);
     }
     else
@@ -711,23 +694,11 @@ VC1Status MBLayer_ProgressivePpicture_Adv(VC1Context* pContext)
         memset(pContext->m_pBlock, 0,sizeof(Ipp16s)*VC1_PIXEL_IN_BLOCK*VC1_PIXEL_IN_BLOCK*VC1_NUM_OF_BLOCKS);
         if((VC1_GET_MBTYPE(pCurrMB->mbType))==VC1_MB_1MV_INTER)//1 MV mode
         {
-            STATISTICS_START_TIME(m_timeStatistics->motion_vector_decoding_StartTime);
-
             MBLayer_ProgressivePpicture1MV(pContext);
-
-            STATISTICS_END_TIME(m_timeStatistics->motion_vector_decoding_StartTime,
-                m_timeStatistics->motion_vector_decoding_EndTime,
-                m_timeStatistics->motion_vector_decoding_TotalTime);
         }
         else //(4 MV Mode)
         {
-            STATISTICS_START_TIME(m_timeStatistics->motion_vector_decoding_StartTime);
-
             MBLayer_ProgressivePpicture4MV(pContext);
-
-            STATISTICS_END_TIME(m_timeStatistics->motion_vector_decoding_StartTime,
-                m_timeStatistics->motion_vector_decoding_EndTime,
-                m_timeStatistics->motion_vector_decoding_TotalTime);
         }
 
         //end 4mv mode
@@ -856,22 +827,20 @@ VC1Status MBLayer_Frame_InterlacedPpicture(VC1Context* pContext)
 
     pCurrMB->LeftTopRightPositionFlag = CalculateLeftTopRightPositionFlag(sMB);
 
-    //memset(pContext->m_pBlock, 0, sizeof(Ipp16s)*8*8*6);
-
     //Y
     pCurrMB->currYPitch = sMB->currYPitch;
-    pCurrMB->currYPlane = sMB->currYPlane + pCurrMB->currYPitch * (sMB->m_currMBYpos << 4)//*VC1_PIXEL_IN_LUMA
-                                          + (sMB->m_currMBXpos << 4); //*VC1_PIXEL_IN_LUMA;
+    pCurrMB->currYPlane = sMB->currYPlane + pCurrMB->currYPitch * (sMB->m_currMBYpos << 4)
+                                          + (sMB->m_currMBXpos << 4);
 
     //U
     pCurrMB->currUPitch = sMB->currUPitch;
-    pCurrMB->currUPlane = sMB->currUPlane   + pCurrMB->currUPitch*(sMB->m_currMBYpos << 3) // * VC1_PIXEL_IN_CHROMA
-                                            + (sMB->m_currMBXpos << 3); //* VC1_PIXEL_IN_CHROMA;
+    pCurrMB->currUPlane = sMB->currUPlane   + pCurrMB->currUPitch*(sMB->m_currMBYpos << 3)
+                                            + (sMB->m_currMBXpos << 3);
 
     //V
     pCurrMB->currVPitch = sMB->currVPitch;
-    pCurrMB->currVPlane = sMB->currVPlane + pCurrMB->currVPitch*(sMB->m_currMBYpos << 3) // * VC1_PIXEL_IN_CHROMA
-                                          + (sMB->m_currMBXpos << 3); //* VC1_PIXEL_IN_CHROMA;
+    pCurrMB->currVPlane = sMB->currVPlane + pCurrMB->currVPitch*(sMB->m_currMBYpos << 3)
+                                          + (sMB->m_currMBXpos << 3);
 
     pCurrMB->mbType = VC1_MB_1MV_INTER | VC1_MB_FORWARD;
 
@@ -899,13 +868,13 @@ VC1Status MBLayer_Frame_InterlacedPpicture(VC1Context* pContext)
     {
         memset(pContext->m_pBlock, 0, sizeof(Ipp16s)*8*8*6);
         Ipp32s ret;
-        ret = ippiDecodeHuffmanOne_1u32s (
+        ret = DecodeHuffmanOne(
             &pContext->m_bitstream.pBitstream,
             &pContext->m_bitstream.bitOffset,
             &sMB->MBMODEIndex,
             picLayerHeader->m_pMBMode
             );
-        VM_ASSERT(ret == ippStsNoErr);
+        VM_ASSERT(ret == 0);
 
         pCurrMB->mbType = VC1_MB_Mode_PBPic_MBtype_Table[sMB->MBMODEIndex];
 
@@ -937,12 +906,12 @@ VC1Status MBLayer_Frame_InterlacedPpicture(VC1Context* pContext)
             if(tempValue == 1)       //CBPRESENT
             {
                 //CBPCY decoding
-                ret = ippiDecodeHuffmanOne_1u32s(&pContext->m_bitstream.pBitstream,
+                ret = DecodeHuffmanOne(&pContext->m_bitstream.pBitstream,
                     &pContext->m_bitstream.bitOffset,
                     &pCurrMB->m_cbpBits,
                     picLayerHeader->m_pCurrCBPCYtbl);
 
-                VM_ASSERT(ret == ippStsNoErr);
+                VM_ASSERT(ret == 0);
             }
             else
             {
@@ -991,12 +960,12 @@ VC1Status MBLayer_Frame_InterlacedPpicture(VC1Context* pContext)
             if(VC1_MB_Mode_PBPic_Transform_Table[sMB->MBMODEIndex] != VC1_NO_CBP_TRANSFORM)
             {
                 //CBPCY decoding
-                ret = ippiDecodeHuffmanOne_1u32s(&pContext->m_bitstream.pBitstream,
+                ret = DecodeHuffmanOne(&pContext->m_bitstream.pBitstream,
                     &pContext->m_bitstream.bitOffset,
                     &pCurrMB->m_cbpBits,
                     picLayerHeader->m_pCurrCBPCYtbl);
 
-                VM_ASSERT(ret == ippStsNoErr);
+                VM_ASSERT(ret == 0);
             }
             else
                 pCurrMB->m_cbpBits = 0;
@@ -1006,70 +975,45 @@ VC1Status MBLayer_Frame_InterlacedPpicture(VC1Context* pContext)
             {
             case VC1_MB_2MV_INTER:
                 {
-                    ret = ippiDecodeHuffmanOne_1u32s(&pContext->m_bitstream.pBitstream,
+                    ret = DecodeHuffmanOne(&pContext->m_bitstream.pBitstream,
                         &pContext->m_bitstream.bitOffset,
                         &pCurrMB->MVBP,
                         picLayerHeader->m_pMV2BP);
 
-                    VM_ASSERT(ret == ippStsNoErr);
+                    VM_ASSERT(ret == 0);
 
                     pCurrMB->MVBP = (((pCurrMB->MVBP & 2) << 2) | ((pCurrMB->MVBP & 1) << 1));
 
-
-                    STATISTICS_START_TIME(m_timeStatistics->motion_vector_decoding_StartTime);
-
                     MBLayer_InterlacePpicture2MV(pContext);
-
-                    STATISTICS_END_TIME(m_timeStatistics->motion_vector_decoding_StartTime,
-                        m_timeStatistics->motion_vector_decoding_EndTime,
-                        m_timeStatistics->motion_vector_decoding_TotalTime);
                 }
                 break;
             case VC1_MB_4MV_INTER:
                 {
-                    ret = ippiDecodeHuffmanOne_1u32s(&pContext->m_bitstream.pBitstream,
+                    ret = DecodeHuffmanOne(&pContext->m_bitstream.pBitstream,
                         &pContext->m_bitstream.bitOffset,
                         &pCurrMB->MVBP,
                         picLayerHeader->m_pMV4BP);
 
-                    VM_ASSERT(ret == ippStsNoErr);
-
-                    STATISTICS_START_TIME(m_timeStatistics->motion_vector_decoding_StartTime);
+                    VM_ASSERT(ret == 0);
 
                     MBLayer_InterlacePpicture4MV(pContext);
-
-                    STATISTICS_END_TIME(m_timeStatistics->motion_vector_decoding_StartTime,
-                        m_timeStatistics->motion_vector_decoding_EndTime,
-                        m_timeStatistics->motion_vector_decoding_TotalTime);
                 }
                 break;
             case VC1_MB_4MV_FIELD_INTER:
                 {
-                    ret = ippiDecodeHuffmanOne_1u32s(&pContext->m_bitstream.pBitstream,
+                    ret = DecodeHuffmanOne(&pContext->m_bitstream.pBitstream,
                         &pContext->m_bitstream.bitOffset,
                         &pCurrMB->MVBP,
                         picLayerHeader->m_pMV4BP);
 
-                    VM_ASSERT(ret == ippStsNoErr);
-
-                    STATISTICS_START_TIME(m_timeStatistics->motion_vector_decoding_StartTime);
+                    VM_ASSERT(ret == 0);
 
                     MBLayer_InterlacePpicture4MVField(pContext);
-
-                    STATISTICS_END_TIME(m_timeStatistics->motion_vector_decoding_StartTime,
-                        m_timeStatistics->motion_vector_decoding_EndTime,
-                        m_timeStatistics->motion_vector_decoding_TotalTime);
                 }
                 break;
             case VC1_MB_1MV_INTER:
                 {
-                    STATISTICS_START_TIME(m_timeStatistics->motion_vector_decoding_StartTime);
-
                     MBLayer_InterlacePpicture1MV(pContext);
-
-                    STATISTICS_END_TIME(m_timeStatistics->motion_vector_decoding_StartTime,
-                        m_timeStatistics->motion_vector_decoding_EndTime,
-                        m_timeStatistics->motion_vector_decoding_TotalTime);
                 }
                 break;
             default:
@@ -1150,12 +1094,12 @@ VC1Status MBLayer_Field_InterlacedPpicture(VC1Context* pContext)
 
     {
         Ipp32s ret;
-        ret = ippiDecodeHuffmanOne_1u32s (
+        ret = DecodeHuffmanOne(
             &pContext->m_bitstream.pBitstream,
             &pContext->m_bitstream.bitOffset,
             &sMB->MBMODEIndex,
             picLayerHeader->m_pMBMode);
-        VM_ASSERT(ret == ippStsNoErr);
+        VM_ASSERT(ret == 0);
     }
 
     pCurrMB->mbType = VC1_MB_Mode_PBFieldPic_MBtype_Table[sMB->MBMODEIndex];
@@ -1195,8 +1139,6 @@ VC1Status MBLayer_Field_InterlacedPpicture(VC1Context* pContext)
     if(pCurrMB->mbType == VC1_MB_INTRA)
     {
         //INTRA
-        //  VM_Debug::GetInstance().vm_debug_frame(-1,VC1_MV,VM_STRING("Interlace Intra P\n"));
-
         for(blk_num = 0; blk_num < VC1_NUM_OF_BLOCKS; blk_num++)
         {
             pCurrMB->m_pBlocks[blk_num].blkType = VC1_BLK_INTRA;
@@ -1215,12 +1157,12 @@ VC1Status MBLayer_Field_InterlacedPpicture(VC1Context* pContext)
         {
             //CBPCY decoding
             Ipp32s ret;
-            ret = ippiDecodeHuffmanOne_1u32s(&pContext->m_bitstream.pBitstream,
+            ret = DecodeHuffmanOne(&pContext->m_bitstream.pBitstream,
                                             &pContext->m_bitstream.bitOffset,
                                             &pCurrMB->m_cbpBits,
                                             picLayerHeader->m_pCurrCBPCYtbl);
 
-            VM_ASSERT(ret == ippStsNoErr);
+            VM_ASSERT(ret == 0);
         }
         else
             pCurrMB->m_cbpBits = 0;
@@ -1268,31 +1210,18 @@ VC1Status MBLayer_Field_InterlacedPpicture(VC1Context* pContext)
 
         if(VC1_GET_MBTYPE(pCurrMB->mbType) == VC1_MB_1MV_INTER)
         {
-            STATISTICS_START_TIME(m_timeStatistics->motion_vector_decoding_StartTime);
-
             MBLayer_InterlaceFieldPpicture1MV(pContext);
-
-            STATISTICS_END_TIME(m_timeStatistics->motion_vector_decoding_StartTime,
-                m_timeStatistics->motion_vector_decoding_EndTime,
-                m_timeStatistics->motion_vector_decoding_TotalTime);
         }
         else
         {
             //4MV
             Ipp32s ret;
-            ret = ippiDecodeHuffmanOne_1u32s(&pContext->m_bitstream.pBitstream,
+            ret = DecodeHuffmanOne(&pContext->m_bitstream.pBitstream,
                                             &pContext->m_bitstream.bitOffset,
                                             &pCurrMB->MVBP,
                                             picLayerHeader->m_pMV4BP);
-            VM_ASSERT(ret == ippStsNoErr);
-
-            STATISTICS_START_TIME(m_timeStatistics->motion_vector_decoding_StartTime);
-
+            VM_ASSERT(ret == 0);
             MBLayer_InterlaceFieldPpicture4MV(pContext);
-
-            STATISTICS_END_TIME(m_timeStatistics->motion_vector_decoding_StartTime,
-                m_timeStatistics->motion_vector_decoding_EndTime,
-                m_timeStatistics->motion_vector_decoding_TotalTime);
         }
 
         if(VC1_MB_Mode_PBFieldPic_CBPPresent_Table[sMB->MBMODEIndex] != 0)
@@ -1300,12 +1229,12 @@ VC1Status MBLayer_Field_InterlacedPpicture(VC1Context* pContext)
 
             //CBPCY decoding
             Ipp32s ret;
-            ret = ippiDecodeHuffmanOne_1u32s(&pContext->m_bitstream.pBitstream,
+            ret = DecodeHuffmanOne(&pContext->m_bitstream.pBitstream,
                                             &pContext->m_bitstream.bitOffset,
                                             &pCurrMB->m_cbpBits,
                                             picLayerHeader->m_pCurrCBPCYtbl);
 
-            VM_ASSERT(ret == ippStsNoErr);
+            VM_ASSERT(ret == 0);
         }
         else
             pCurrMB->m_cbpBits = 0;

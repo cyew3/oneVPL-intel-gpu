@@ -419,7 +419,6 @@ void Deblocking_ProgressivePpicture(VC1Context* pContext)
     {
         for (curX=0; curX<WidthMB; curX++)
         {
-            //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_MV_BBL, VM_STRING("MB number is %d MB type %d\n"), WidthMB*curY+curX, m_CurrMB->mbType);
             if ((m_CurrMB->mbType&VC1_MB_4MV_INTER) == VC1_MB_4MV_INTER)
                 type_current =  LFilterMainPFrame;
 
@@ -490,7 +489,6 @@ void Deblocking_ProgressivePpicture(VC1Context* pContext)
     {
         for (curX=0; curX<WidthMB-1; curX++)
         {
-            //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_MV_BBL, VM_STRING("MB number is %d MB type %d\n"), WidthMB*curY+curX, m_CurrMB->mbType);
             if ((m_CurrMB->mbType&VC1_MB_4MV_INTER) == VC1_MB_4MV_INTER)
                 type_current =  LFilterMainPFrame;
 

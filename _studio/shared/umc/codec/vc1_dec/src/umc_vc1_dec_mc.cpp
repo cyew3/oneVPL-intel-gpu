@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -16,131 +16,8 @@
 #include "umc_vc1_dec_debug.h"
 #include "umc_vc1_common_defs.h"
 #include "umc_vc1_dec_intens_comp_tbl.h"
-#include "umc_vc1_dec_time_statistics.h"
 
-VC1Status FillTablesForIntensityCompensation(VC1Context* pContext,
-                                             Ipp32u scale,
-                                             Ipp32u shift)
-{
-    //Ipp32u index = pContext->m_frmBuff.m_iPrevIndex;
-    /*scale, shift parameters are in [0,63]*/
-    Ipp32s i;
-    Ipp32s iscale = (scale)? scale+32 : -64;
-    Ipp32s ishift = (scale)? shift*64 : (255-2*shift)*64;
-    Ipp32s z      = (scale)? -1:2;
-    Ipp32s j ;
-
-
-    ishift += (shift>31)? z<<12: 0;
-#ifdef VC1_DEBUG_ON
-    VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_INTENS,
-                                            VM_STRING("shift=%d, scale=%d, iscale=%d, ishift=%d\n"),
-                                            shift, scale, iscale, ishift);
-#endif
-
-    for (i=0;i<256;i++)
-    {
-        j = (i*iscale+ishift+32)>>6;
-        pContext->LumaTable[0][i] = (Ipp8u)VC1_CLIP(j);
-        pContext->LumaTable[1][i] = (Ipp8u)VC1_CLIP(j);
-        j = ((i-128)*iscale+128*64+32)>>6;
-        pContext->ChromaTable[0][i] = (Ipp8u)VC1_CLIP(j);
-        pContext->ChromaTable[1][i] = (Ipp8u)VC1_CLIP(j);
-
-#ifdef VC1_DEBUG_ON
-        VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_INTENS,
-            VM_STRING("LumaTable[i]=%d, ChromaTable[i]=%d\n"),
-            pContext->LumaTable[0][i],pContext->ChromaTable[0][i]);
-#endif
-    }
-
-    return VC1_OK;
-}
-
-VC1Status FillTablesForIntensityCompensation_Adv(VC1Context* pContext,
-                                                 Ipp32u scale,
-                                                 Ipp32u shift,
-                                                 Ipp32u bottom_field,
-                                                 Ipp32s index)
-{
-    /*scale, shift parameters are in [0,63]*/
-    Ipp32s i;
-    Ipp32s iscale = (scale)? scale+32 : -64;
-    Ipp32s ishift = (scale)? shift*64 : (255-2*shift)*64;
-    Ipp32s z      = (scale)? -1:2;
-    Ipp32s j ;
-    Ipp8u *pY, *pU, *pV;
-    IppiSize roiSize;
-
-    roiSize.width = (pContext->m_seqLayerHeader.CODED_WIDTH+1) << 1;
-    roiSize.height = (pContext->m_seqLayerHeader.CODED_HEIGHT+1) << 1;
-
-    Ipp32s YPitch =  pContext->m_frmBuff.m_pFrames[index].m_iYPitch;
-    Ipp32s UPitch = pContext->m_frmBuff.m_pFrames[index].m_iUPitch;
-    Ipp32s VPitch = pContext->m_frmBuff.m_pFrames[index].m_iVPitch;
-
-    pY = pContext->m_frmBuff.m_pFrames[index].m_pY;
-    pU = pContext->m_frmBuff.m_pFrames[index].m_pU;
-    pV = pContext->m_frmBuff.m_pFrames[index].m_pV;
-
-    if (pContext->m_picLayerHeader->FCM == VC1_FieldInterlace)
-    {
-        if (bottom_field)
-        {
-            pY += YPitch;
-            pU += UPitch;
-            pV += VPitch;
-        }
-        YPitch <<= 1;
-        UPitch <<= 1;
-        VPitch <<= 1;
-
-        roiSize.height >>= 1;
-    }
-
-    ishift += (shift>31)? z*64*64: 0;
-#ifdef VC1_DEBUG_ON
-    VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_INTENS,
-                                            VM_STRING("shift=%d, scale=%d, iscale=%d, ishift=%d\n"),
-                                            shift, scale, iscale, ishift);
-#endif
-    Ipp32u LUTindex = bottom_field + (pContext->m_picLayerHeader->CurrField << 1);
-
-    if (pContext->m_picLayerHeader->FCM == VC1_FieldInterlace)
-    {
-        for (i=0;i<256;i++)
-        {
-            j = (i*iscale+ishift+32)>>6;
-            pContext->LumaTable[LUTindex][i] = (Ipp8u)VC1_CLIP(j);
-            j = ((i-128)*iscale+128*64+32)>>6;
-            pContext->ChromaTable[LUTindex][i] = (Ipp8u)VC1_CLIP(j);
-#ifdef VC1_DEBUG_ON
-            VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_INTENS,
-                VM_STRING("LumaTable[i]=%d, ChromaTable[i]=%d\n"),
-                pContext->LumaTable[LUTindex][i],pContext->ChromaTable[LUTindex][i]);
-#endif
-        }
-    }
-    else
-    {
-        for (i=0;i<256;i++)
-        {
-            j = (i*iscale+ishift+32)>>6;
-            pContext->LumaTable[0][i] = (Ipp8u)VC1_CLIP(j);
-            pContext->LumaTable[1][i] = (Ipp8u)VC1_CLIP(j);
-            j = ((i-128)*iscale+128*64+32)>>6;
-            pContext->ChromaTable[0][i] = (Ipp8u)VC1_CLIP(j);
-            pContext->ChromaTable[1][i] = (Ipp8u)VC1_CLIP(j);
-#ifdef VC1_DEBUG_ON
-            VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_INTENS,
-                VM_STRING("LumaTable[i]=%d, ChromaTable[i]=%d\n"),
-                pContext->LumaTable[LUTindex][i],pContext->ChromaTable[LUTindex][i]);
-#endif
-        }
-    }
-    return VC1_OK;
-}
-
+#ifdef ALLOW_SW_VC1_FALLBACK
 void SZTables(VC1Context* pContext)
 {
     Ipp32s CurrIndex = pContext->m_frmBuff.m_iCurrIndex;
@@ -161,7 +38,6 @@ void CreateComplexICTablesForFields(VC1Context* pContext)
     Ipp32s CurrIndex = pContext->m_frmBuff.m_iCurrIndex;
     Ipp32s i;
     {
-        //if (pContext->m_picLayerHeader->TFF)
         {
             if (pContext->m_frmBuff.m_pFrames[CurrIndex].ICFieldMask & 4) // top of first
             {
@@ -180,32 +56,7 @@ void CreateComplexICTablesForFields(VC1Context* pContext)
                 pContext->m_frmBuff.m_pFrames[CurrIndex].LumaTableCurr[0] = pContext->LumaTable[2];
                 pContext->m_frmBuff.m_pFrames[CurrIndex].ChromaTableCurr[0] = pContext->ChromaTable[2];
             }
-            if (pContext->m_frmBuff.m_pFrames[CurrIndex].ICFieldMask & 2) // bottom of second
-            {
-
-                //if (pContext->m_frmBuff.m_pFrames[CurrIndex].ICFieldMask & 8) // bottom of first
-                //{
-                //    for (i = 0; i < 256; i++)
-                //    {
-                //        pContext->LumaTable[3][i] = pContext->LumaTable[3][pContext->LumaTable[1][i]];
-                //        pContext->ChromaTable[3][i] = pContext->ChromaTable[3][pContext->ChromaTable[1][i]];
-                //    }
-                //}
-
-            }
-
-
-                            ////need to twice IC
-                //if (pContext->m_frmBuff.m_pFrames[CurrIndex].ICFieldMask & 4)
-                //{
-                //    for (i = 0; i < 256; i++)
-                //    {
-                //        pContext->LumaTable[3][i] = pContext->LumaTable[3][pContext->LumaTable[1][i]];
-                //        pContext->ChromaTable[3][i] = pContext->ChromaTable[3][pContext->ChromaTable[1][i]];
-                //    }
-                //}
         }
-        // else
     }
 
     if (pContext->m_frmBuff.m_pFrames[PrevIndex].FCM == VC1_FieldInterlace)
@@ -226,10 +77,6 @@ void CreateComplexICTablesForFields(VC1Context* pContext)
                         temp_chroma[i] = pContext->m_frmBuff.m_pFrames[CurrIndex].ChromaTablePrev[j][pContext->m_frmBuff.m_pFrames[PrevIndex].ChromaTableCurr[j][i]];
                     }
 
-                    //pContext->m_frmBuff.m_pFrames[CurrIndex].LumaTablePrev[j] = pContext->LumaTable[1];
-                    //pContext->m_frmBuff.m_pFrames[CurrIndex].ChromaTablePrev[j] = pContext->ChromaTable[1];
-
-
                     for (i = 0; i < 256; i++)
                     {
                         pContext->m_frmBuff.m_pFrames[CurrIndex].LumaTablePrev[j][i] = temp_luma[i];
@@ -241,13 +88,6 @@ void CreateComplexICTablesForFields(VC1Context* pContext)
             {
                 pContext->m_frmBuff.m_pFrames[CurrIndex].LumaTablePrev[j] = pContext->m_frmBuff.m_pFrames[PrevIndex].LumaTableCurr[j];
                 pContext->m_frmBuff.m_pFrames[CurrIndex].ChromaTablePrev[j] = pContext->m_frmBuff.m_pFrames[PrevIndex].ChromaTableCurr[j];
-                //pContext->m_frmBuff.m_pFrames[CurrIndex].LumaTablePrev[j] = pContext->LumaTable[j];
-                //pContext->m_frmBuff.m_pFrames[CurrIndex].ChromaTablePrev[j] = pContext->ChromaTable[j];
-                //for (i = 0; i < 256; i++)
-                //{
-                //    pContext->m_frmBuff.m_pFrames[CurrIndex].LumaTablePrev[j][i] = pContext->m_frmBuff.m_pFrames[PrevIndex].LumaTableCurr[j][i];
-                //    pContext->m_frmBuff.m_pFrames[CurrIndex].ChromaTablePrev[j][i] = pContext->m_frmBuff.m_pFrames[PrevIndex].ChromaTableCurr[j][i];
-                //}
             }
         }
     }
@@ -312,13 +152,6 @@ void CreateComplexICTablesForFrame(VC1Context* pContext)
                 {
                     pContext->m_frmBuff.m_pFrames[CurrIndex].LumaTablePrev[j] = pContext->m_frmBuff.m_pFrames[PrevIndex].LumaTableCurr[j];
                     pContext->m_frmBuff.m_pFrames[CurrIndex].ChromaTablePrev[j] = pContext->m_frmBuff.m_pFrames[PrevIndex].ChromaTableCurr[j];
-/*                    pContext->m_frmBuff.m_pFrames[CurrIndex].LumaTablePrev[j] = pContext->LumaTable[j];
-                    pContext->m_frmBuff.m_pFrames[CurrIndex].ChromaTablePrev[j] = pContext->ChromaTable[j]*/;
-                    //for (i = 0; i < 256; i++)
-                    //{
-                    //    pContext->m_frmBuff.m_pFrames[CurrIndex].LumaTablePrev[j][i] = pContext->m_frmBuff.m_pFrames[PrevIndex].LumaTableCurr[j][i];
-                    //    pContext->m_frmBuff.m_pFrames[CurrIndex].ChromaTablePrev[j][i] = pContext->m_frmBuff.m_pFrames[PrevIndex].ChromaTableCurr[j][i];
-                    //}
                 }
             }
         }
@@ -352,8 +185,8 @@ void UpdateICTablesForSecondField(VC1Context* pContext)
         pContext->m_frmBuff.m_pFrames[CurrIndex].ChromaTablePrev[1] = pContext->ChromaTable[3];
 
     }
-
-
-
 }
+
+#endif // #ifdef ALLOW_SW_VC1_FALLBACK
+
 #endif //UMC_ENABLE_VC1_VIDEO_DECODER

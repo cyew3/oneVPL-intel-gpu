@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -15,6 +15,7 @@
 #include "umc_vc1_dec_seq.h"
 #include "umc_vc1_dec_debug.h"
 #include "umc_vc1_common_mvdiff_tbl.h"
+#include "umc_vc1_huffman.h"
 
 static Ipp8u size_table[6] = {0, 2, 3, 4, 5, 8};
 static Ipp8u offset_table[6] = {0, 1, 3, 7, 15, 31};
@@ -22,7 +23,7 @@ static Ipp8u offset_table[6] = {0, 1, 3, 7, 15, 31};
 Ipp16u DecodeMVDiff(VC1Context* pContext,Ipp32s hpelfl,
                   Ipp16s* pdmv_x, Ipp16s* pdmv_y)
 {
-    IppStatus ret;
+    int ret;
     Ipp32s data;
     Ipp16s index;
     Ipp16s dmv_x = 0;
@@ -30,11 +31,11 @@ Ipp16u DecodeMVDiff(VC1Context* pContext,Ipp32s hpelfl,
     Ipp16u last_intra = 0;
     VC1PictureLayerHeader* picHeader = pContext->m_picLayerHeader;
 
-    ret = ippiDecodeHuffmanOne_1u32s(&pContext->m_bitstream.pBitstream,
+    ret = DecodeHuffmanOne(&pContext->m_bitstream.pBitstream,
                                      &pContext->m_bitstream.bitOffset,
                                      &data,
                                      picHeader->m_pCurrMVDifftbl);
-    VM_ASSERT(ret == ippStsNoErr);
+    VM_ASSERT(ret == 0);
 
     index = (Ipp16s)(data & 0x000000FF);
     data = data>>8;
@@ -273,11 +274,10 @@ void CalculateProgressive1MV_B(VC1Context* pContext, Ipp16s *pPredMVx,Ipp16s *pP
                             MVPred->CMVPred[0],
                             &x, &y,
                             Back);
-  //  VM_Debug::GetInstance().vm_debug_frame(-1,VC1_BFRAMES,VM_STRING("predict MV (%d,%d), back = %d\n"),x,y,Back);
+
      x = PullBack_PredMV(&x,(sMB->m_currMBXpos<<5), -28,(sMB->widthMB<<5)-4);
      y = PullBack_PredMV(&y,(sMB->m_currMBYpos<<5), -28,(sMB->heightMB<<5)-4);
 
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_BFRAMES,VM_STRING("1.predict MV (%d,%d), back = %d\n"),x,y,Back);
     *pPredMVx=x;
     *pPredMVy=y;
 }
@@ -307,8 +307,6 @@ void Scale_Direct_MV(VC1PictureLayerHeader* picHeader, Ipp16s X, Ipp16s Y,
     Ipp32s hpelfl = (Ipp32s)((picHeader->MVMODE==VC1_MVMODE_HPEL_1MV) ||
                             (picHeader->MVMODE==VC1_MVMODE_HPELBI_1MV));
     Ipp32s ScaleFactor = picHeader->ScaleFactor;
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_MV,VM_STRING("MVMode = %d\n"),pContext->m_picLayerHeader->MVMODE);
-
 
     if (hpelfl)
     {
@@ -328,8 +326,6 @@ void Scale_Direct_MV(VC1PictureLayerHeader* picHeader, Ipp16s X, Ipp16s Y,
         * Xb =(Ipp16s)((X*ScaleFactor + 128)>>8);
         * Yb =(Ipp16s)((Y*ScaleFactor + 128)>>8);
     }
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_BFRAMES,VM_STRING("ScaleFactor %d, forw (%d,%d), back (%d,%d)\n"),ScaleFactor+256,* Xf,* Yf,* Xb,* Yb);
-
 }
 void Scale_Direct_MV_Interlace(VC1PictureLayerHeader* picHeader,
                                Ipp16s X, Ipp16s Y,
@@ -350,7 +346,6 @@ void DeriveSecondStageChromaMV(VC1Context* pContext, Ipp16s* xMV, Ipp16s* yMV)
 {
     VC1MB *pMB = pContext->m_pCurrMB;
     Ipp16s IX, IY;
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_MV_BBL,VM_STRING("MV(%d,%d)\n"),*xMV,*yMV);
 
     if(((*xMV) == VC1_MVINTRA) || ((*yMV) == VC1_MVINTRA))
     {

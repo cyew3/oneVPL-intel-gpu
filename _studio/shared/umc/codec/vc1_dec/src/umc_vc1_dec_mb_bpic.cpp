@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -14,8 +14,8 @@
 
 #include "umc_vc1_dec_seq.h"
 #include "umc_vc1_dec_debug.h"
-#include "umc_vc1_dec_time_statistics.h"
 #include "umc_vc1_common_zigzag_tbl.h"
+#include "umc_vc1_huffman.h"
 
 typedef VC1Status (*B_MB_DECODE)(VC1Context* pContext);
 typedef void (*DCPrediction)(VC1Context* pContext);
@@ -58,7 +58,6 @@ VC1Status MBLayer_ProgressiveBpicture_SKIP_NONDIRECT_Prediction(VC1Context* pCon
             Ipp16s* savedMV = pContext->savedMV_Curr
                               + (pContext->m_seqLayerHeader.MaxWidthMB*sMB->m_currMBYpos + sMB->m_currMBXpos)*2*2;
 
-            //CalculateMV(savedMV, savedMV+4,&X, &Y);
             X = savedMV[0];
             Y = savedMV[1];
 
@@ -88,7 +87,6 @@ VC1Status MBLayer_ProgressiveBpicture_SKIP_NONDIRECT_Prediction(VC1Context* pCon
             X = savedMV[0];
             Y = savedMV[1];
 
-            //CalculateMV(savedMV, savedMV+4,&X, &Y);
             if ((Ipp16u)X!=VC1_MVINTRA)
             {
                 PullBack_BDirect(pContext,  &X, &Y);
@@ -136,15 +134,10 @@ VC1Status MBLayer_ProgressiveBpicture_SKIP_DIRECT_Prediction(VC1Context* pContex
     X = savedMV[0];
     Y = savedMV[1];
 
-    // VM_Debug::GetInstance().vm_debug_frame(-1,VC1_BFRAMES,VM_STRING("SKIP=%d, DIRECT=%d \n"),1,1);
-    // VM_Debug::GetInstance().vm_debug_frame(-1,VC1_BFRAMES,VM_STRING("stream = %d\n"),pContext->m_bitOffset);
-
     pCurrMB->m_cbpBits = 0;
     pCurrMB->mbType= VC1_MB_1MV_INTER|VC1_MB_DIRECT;
     for (i=0;i<VC1_NUM_OF_BLOCKS;i++)
         pCurrMB->m_pBlocks[i].blkType = (Ipp8u)pContext->m_picLayerHeader->TTFRM;
-
-    //CalculateMV(savedMV, savedMV+4,&X, &Y);
 
     if ((Ipp16u)X!=VC1_MVINTRA)
     {
@@ -178,7 +171,7 @@ static VC1Status MBLayer_ProgressiveBpicture_NONDIRECT_Decode(VC1Context* pConte
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
     VC1MB* pCurrMB = pContext->m_pCurrMB;
     VC1PictureLayerHeader* picLayerHeader = pContext->m_picLayerHeader;
-    Ipp32s ret = ippStsNoErr;
+    Ipp32s ret = 0;
 
     pCurrMB->dmv_x[0][0]= 0;
     pCurrMB->dmv_x[1][0]= 0;
@@ -192,9 +185,6 @@ static VC1Status MBLayer_ProgressiveBpicture_NONDIRECT_Decode(VC1Context* pConte
         (picLayerHeader->MVMODE==VC1_MVMODE_HPELBI_1MV));
 
     // decodes BMV1 (variable size)
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_BFRAMES,VM_STRING("SKIP=%d, DIRECT=%d \n"),0,0);
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_BFRAMES,VM_STRING("stream = %d\n"),pContext->m_bitOffset);
-
     last_intra_flag = DecodeMVDiff(pContext,hpelfl,&tmp_dx,&tmp_dy);
 
     pCurrMB->m_cbpBits = (!(last_intra_flag&0x10))?0:pCurrMB->m_cbpBits;
@@ -246,12 +236,12 @@ static VC1Status MBLayer_ProgressiveBpicture_NONDIRECT_Decode(VC1Context* pConte
     if (last_intra_flag&0x10) //intra or inter
     {
         //CBPCY
-        ret = ippiDecodeHuffmanOne_1u32s(&pContext->m_bitstream.pBitstream,
+        ret = DecodeHuffmanOne(&pContext->m_bitstream.pBitstream,
             &pContext->m_bitstream.bitOffset,
             &pCurrMB->m_cbpBits,
             picLayerHeader->m_pCurrCBPCYtbl);
 
-        VM_ASSERT(ret == ippStsNoErr);
+        VM_ASSERT(ret == 0);
 
         //MQUANT
         if (picLayerHeader->m_PQuant_mode>=VC1_ALTPQUANT_MB_LEVEL)
@@ -287,7 +277,6 @@ VC1Status MBLayer_ProgressiveBpicture_NONDIRECT_Prediction(VC1Context* pContext)
             X = savedMV[0];
             Y = savedMV[1];
 
-            //CalculateMV(savedMV, savedMV+4,&X, &Y);
             if ((Ipp16u)X!=VC1_MVINTRA)
             {
                 PullBack_BDirect(pContext,  &X, &Y);
@@ -316,7 +305,6 @@ VC1Status MBLayer_ProgressiveBpicture_NONDIRECT_Prediction(VC1Context* pContext)
             X = savedMV[0];
             Y = savedMV[1];
 
-            //CalculateMV(savedMV, savedMV+4,&X, &Y);
             if ((Ipp16u)X!=VC1_MVINTRA)
             {
                 PullBack_BDirect(pContext,  &X, &Y);
@@ -359,7 +347,6 @@ VC1Status MBLayer_ProgressiveBpicture_DIRECT_Prediction(VC1Context* pContext)
     VC1MB* pCurrMB = pContext->m_pCurrMB;
     VC1PictureLayerHeader* picLayerHeader = pContext->m_picLayerHeader;
 
-    //CalculateMV(savedMV,savedMV+4, &X, &Y);
     if ((Ipp16u)X!=VC1_MVINTRA)
     {
         PullBack_BDirect(pContext,  &X, &Y);
@@ -387,7 +374,7 @@ VC1Status MBLayer_ProgressiveBpicture_DIRECT_Prediction(VC1Context* pContext)
 static VC1Status MBLayer_ProgressiveBpicture_DIRECT_Decode(VC1Context* pContext)
 {
     Ipp32s i;
-    Ipp32s ret = ippStsNoErr;
+    Ipp32s ret = 0;
     VC1MB* pCurrMB = pContext->m_pCurrMB;
     VC1PictureLayerHeader* picLayerHeader = pContext->m_picLayerHeader;
 
@@ -395,12 +382,12 @@ static VC1Status MBLayer_ProgressiveBpicture_DIRECT_Decode(VC1Context* pContext)
         pCurrMB->m_pBlocks[i].blkType = (Ipp8u)pContext->m_picLayerHeader->TTFRM;
     pCurrMB->mbType=(VC1_MB_1MV_INTER|VC1_MB_DIRECT);
     //CBPCY
-    ret = ippiDecodeHuffmanOne_1u32s(&pContext->m_bitstream.pBitstream,
+    ret = DecodeHuffmanOne(&pContext->m_bitstream.pBitstream,
         &pContext->m_bitstream.bitOffset,
         &pCurrMB->m_cbpBits,
         pContext->m_picLayerHeader->m_pCurrCBPCYtbl);
 
-    VM_ASSERT(ret == ippStsNoErr);
+    VM_ASSERT(ret == 0);
 
     //MQUANT
     if (picLayerHeader->m_PQuant_mode>=VC1_ALTPQUANT_MB_LEVEL)
@@ -465,35 +452,29 @@ VC1Status MBLayer_ProgressiveBpicture(VC1Context* pContext)
 
     pCurrMB->SkipAndDirectFlag = (DIRECTBBIT+(SKIPMBBIT<<1));
 
-    STATISTICS_START_TIME(m_timeStatistics->motion_vector_decoding_StartTime);
     if (!DIRECTBBIT)
         B_MB_Dispatch_table[SKIPMBBIT](pContext);
     else if (!SKIPMBBIT)
         MBLayer_ProgressiveBpicture_DIRECT_Decode(pContext);
     else
         MBLayer_ProgressiveBpicture_SKIP_DIRECT_Decode(pContext);
-    STATISTICS_END_TIME(m_timeStatistics->motion_vector_decoding_StartTime,
-        m_timeStatistics->motion_vector_decoding_EndTime,
-        m_timeStatistics->motion_vector_decoding_TotalTime);
 
     CalculateIntraFlag(pContext);
 
     //Y
     pCurrMB->currYPitch = sMB->currYPitch;
-    pCurrMB->currYPlane = sMB->currYPlane + pCurrMB->currYPitch * (sMB->m_currMBYpos << 4)//*VC1_PIXEL_IN_LUMA
-                                          + (sMB->m_currMBXpos << 4); //*VC1_PIXEL_IN_LUMA;
+    pCurrMB->currYPlane = sMB->currYPlane + pCurrMB->currYPitch * (sMB->m_currMBYpos << 4)
+                                          + (sMB->m_currMBXpos << 4);
 
     //U
     pCurrMB->currUPitch = sMB->currUPitch;
-    pCurrMB->currUPlane = sMB->currUPlane   + pCurrMB->currUPitch*(sMB->m_currMBYpos << 3) // * VC1_PIXEL_IN_CHROMA
-                                            + (sMB->m_currMBXpos << 3); //* VC1_PIXEL_IN_CHROMA;
+    pCurrMB->currUPlane = sMB->currUPlane   + pCurrMB->currUPitch*(sMB->m_currMBYpos << 3)
+                                            + (sMB->m_currMBXpos << 3);
 
     //V
     pCurrMB->currVPitch = sMB->currVPitch;
-    pCurrMB->currVPlane = sMB->currVPlane + pCurrMB->currVPitch*(sMB->m_currMBYpos << 3) // * VC1_PIXEL_IN_CHROMA
-                                          + (sMB->m_currMBXpos << 3); //* VC1_PIXEL_IN_CHROMA;
-
-    //memset(pContext->m_pBlock, 0, sizeof(Ipp16s)*8*8*VC1_NUM_OF_BLOCKS);
+    pCurrMB->currVPlane = sMB->currVPlane + pCurrMB->currVPitch*(sMB->m_currMBYpos << 3)
+                                          + (sMB->m_currMBXpos << 3);
 
     if(SKIPMBBIT == 0)
     {

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2012 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -91,12 +91,6 @@ void VC1SkipMaster::Reset()
     m_RefPerfMode = VC1Routine;
     m_BPerfMode = VC1Routine;
     //m_SpeedMode = Normal;
-}
-void VC1SkipMaster::SetVideoDecodingSpeed(SkippingMode skip_mode)
-{
-    Reset();
-    m_SpeedMode = skip_mode;
-    MoveToNextState();
 }
 
 bool VC1SkipMaster::IsDeblockingOn()

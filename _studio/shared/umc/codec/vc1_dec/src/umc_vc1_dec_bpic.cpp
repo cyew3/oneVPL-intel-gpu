@@ -14,8 +14,6 @@
 
 #include "umc_vc1_dec_seq.h"
 
-#include "umc_vc1_dec_time_statistics.h"
-
 VC1Status DecodePictureLayer_ProgressiveBpicture(VC1Context* pContext)
 {
     VC1Status vc1Res = VC1_OK;
@@ -66,7 +64,6 @@ VC1Status DecodePictureLayer_ProgressiveBpicture(VC1Context* pContext)
     }
 
     CalculatePQuant(pContext);
-    ChooseTTMB_TTBLK_SBP(pContext);
 
     MVRangeDecode(pContext);
 
@@ -92,11 +89,7 @@ VC1Status DecodePictureLayer_ProgressiveBpicture(VC1Context* pContext)
                    seqLayerHeader->widthMB,seqLayerHeader->heightMB,0);
 
     VC1_GET_BITS(2, picLayerHeader->MVTAB);       //MVTAB
-    picLayerHeader->m_pCurrMVDifftbl = pContext->m_vlcTbl->MVDIFF_PB_TABLES[picLayerHeader->MVTAB]; //MVTAB
     VC1_GET_BITS(2, picLayerHeader->CBPTAB);       //CBPTAB
-
-    picLayerHeader->m_pCurrCBPCYtbl = pContext->m_vlcTbl->CBPCY_PB_TABLES[picLayerHeader->CBPTAB];       //CBPTAB
-
 
     vc1Res = VOPDQuant(pContext);
     if (seqLayerHeader->VSTRANSFORM == 1)
@@ -125,11 +118,16 @@ VC1Status DecodePictureLayer_ProgressiveBpicture(VC1Context* pContext)
         picLayerHeader->TRANSACFRM++;
     }
 
-    ChooseACTable(pContext, picLayerHeader->TRANSACFRM, picLayerHeader->TRANSACFRM);//TRANSACFRM
 
     VC1_GET_BITS(1, picLayerHeader->TRANSDCTAB);       //TRANSDCTAB
-    ChooseDCTable(pContext, picLayerHeader->TRANSDCTAB);       //TRANSDCTAB
 
+#ifdef ALLOW_SW_VC1_FALLBACK
+    ChooseTTMB_TTBLK_SBP(pContext);
+    picLayerHeader->m_pCurrMVDifftbl = pContext->m_vlcTbl->MVDIFF_PB_TABLES[picLayerHeader->MVTAB]; //MVTAB
+    picLayerHeader->m_pCurrCBPCYtbl = pContext->m_vlcTbl->CBPCY_PB_TABLES[picLayerHeader->CBPTAB];       //CBPTAB
+    ChooseACTable(pContext, picLayerHeader->TRANSACFRM, picLayerHeader->TRANSACFRM);//TRANSACFRM
+    ChooseDCTable(pContext, picLayerHeader->TRANSDCTAB);       //TRANSDCTAB
+#endif
 
     return vc1Res;
 }

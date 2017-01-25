@@ -13,7 +13,6 @@
 #if defined (UMC_ENABLE_VC1_VIDEO_DECODER)
 
 #include "umc_vc1_dec_seq.h"
-#include "ipps.h"
 #include "umc_vc1_dec_run_level_tbl.h"
 #include "umc_vc1_common_mvdiff_tbl.h"
 #include "umc_vc1_common_interlace_mv_tables.h"
@@ -199,58 +198,6 @@ void ChooseTTMB_TTBLK_SBP(VC1Context* pContext)
         picLayerHeader->m_pCurrTTBLKtbl = VLCTables->TTBLK_PB_TABLES[0];
         picLayerHeader->m_pCurrSBPtbl = VLCTables->SBP_PB_TABLES[2];
     }
-}
-void ExpandRows(Ipp8u* StartPtr,
-                 Ipp32s width,
-                 Ipp32s height,
-                 Ipp32s pitch,
-                 Ipp32s padSize,
-                 Ipp8u  isFirstOrLastRow) // 0 - NoFirst/NoLast, 0x01 - First, 0x10 - Last
-{
-    Ipp32s i, m;
-    Ipp8u *p, *p1, *pc;
-    IppiSize roiSize;
-    Ipp32s AddPad = 0;
-    roiSize.height = padSize;
-
-
-    if (2 & isFirstOrLastRow)
-    {
-
-        //Area (1)
-        p = StartPtr + pitch * (height - 1);
-        pc = p + pitch;
-
-        roiSize.height = padSize;
-        roiSize.width = width;
-        ippiCopy_8u_C1R(p, 0, pc, pitch, roiSize);
-        AddPad = padSize;
-    }
-
-    //Area (2)
-    p = StartPtr;
-    p1 = StartPtr + width;
-    m = height + AddPad;
-
-    for(i = 0; i < m; i++)
-    {
-        ippsSet_8u(p[0], p-padSize, padSize);
-        ippsSet_8u(p1[-1], p1, padSize);
-        p  += pitch;
-        p1 += pitch;
-    }
-
-    if (1 & isFirstOrLastRow)
-    {
-
-        //Area (3)
-        p = StartPtr - padSize;
-        pc = p - pitch;
-        m = width + 2*padSize;
-        roiSize.width = m;
-        ippiCopy_8u_C1R(p, 0, pc, -pitch, roiSize);
-    }
-
 }
 
 void ChooseMBModeInterlaceFrame(VC1Context* pContext,

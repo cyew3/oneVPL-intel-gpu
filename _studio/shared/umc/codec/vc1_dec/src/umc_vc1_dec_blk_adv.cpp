@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -23,8 +23,7 @@
 #include "umc_vc1_dec_run_level_tbl.h"
 
 #include "umc_vc1_dec_debug.h"
-#include "umc_vc1_dec_time_statistics.h"
-
+#include "umc_vc1_huffman.h"
 #include "umc_vc1_dec_exception.h"
 using namespace UMC::VC1Exceptions;
 
@@ -602,22 +601,18 @@ VC1Status BLKLayer_Intra_Luma_Adv(VC1Context* pContext, Ipp32s blk_num, Ipp32u A
     VC1DCBlkParam* CurrBlk = &CurrDC->DCBlkPred[blk_num];
     VC1DCPredictors* DCPred = &pContext->DCPred;
 
-    IppStatus ret;
+    int ret;
     Ipp32s DCCOEF;
     Ipp32s DCSIGN;
     Ipp32u i = 0;
 
-    STATISTICS_START_TIME(m_timeStatistics->decoding_Intra_StartTime);
-
 // need to calculate bits for residual data
-    ret = ippiDecodeHuffmanOne_1u32s(&pContext->m_bitstream.pBitstream,
+    ret = DecodeHuffmanOne(&pContext->m_bitstream.pBitstream,
                                      &pContext->m_bitstream.bitOffset,
                                      &DCCOEF,
                                      pContext->m_picLayerHeader->m_pCurrLumaDCDiff);
-    //VM_ASSERT(ret == ippStsNoErr);
-
 #ifdef VC1_VLD_CHECK
-    if (ret != ippStsNoErr)
+    if (ret != 0)
         throw vc1_exception(vld);
 #endif
 
@@ -686,12 +681,6 @@ VC1Status BLKLayer_Intra_Luma_Adv(VC1Context* pContext, Ipp32s blk_num, Ipp32u A
         CurrBlk->ACTOP[i]  = m_pBlock[i];
     }
 
-
-   STATISTICS_END_TIME(m_timeStatistics->decoding_Intra_StartTime,
-                        m_timeStatistics->decoding_Intra_EndTime,
-                        m_timeStatistics->decoding_Intra_TotalTime);
-
-
 #ifdef VC1_DEBUG_ON
     VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_COEFFS,
                                             VM_STRING("DC = %d\n"),
@@ -722,22 +711,18 @@ VC1Status BLKLayer_Intra_Chroma_Adv(VC1Context* pContext, Ipp32s blk_num,Ipp32u 
 
     VC1DCPredictors* DCPred = &pContext->DCPred;
 
-    IppStatus ret;
+    int ret;
     Ipp32s DCCOEF;
     Ipp32s DCSIGN;
     Ipp32u i = 0;
 
-    STATISTICS_START_TIME(m_timeStatistics->decoding_Intra_StartTime);
-
     // need to calculate bits for residual data
-    ret = ippiDecodeHuffmanOne_1u32s(&pContext->m_bitstream.pBitstream,
+    ret = DecodeHuffmanOne(&pContext->m_bitstream.pBitstream,
                                      &pContext->m_bitstream.bitOffset,
                                      &DCCOEF,
                                      pContext->m_picLayerHeader->m_pCurrChromaDCDiff);
-    //VM_ASSERT(ret == ippStsNoErr);
-
 #ifdef VC1_VLD_CHECK
-    if (ret != ippStsNoErr)
+    if (ret != 0)
         throw vc1_exception(vld);
 #endif
 
@@ -807,9 +792,6 @@ VC1Status BLKLayer_Intra_Chroma_Adv(VC1Context* pContext, Ipp32s blk_num,Ipp32u 
         CurrBlk->ACTOP[i]  = m_pBlock[i];
     }
 
-STATISTICS_END_TIME(m_timeStatistics->decoding_Intra_StartTime,
-                        m_timeStatistics->decoding_Intra_EndTime,
-                        m_timeStatistics->decoding_Intra_TotalTime);
 #ifdef VC1_DEBUG_ON
     VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_COEFFS,
                                             VM_STRING("DC = %d\n"),
@@ -831,99 +813,6 @@ STATISTICS_END_TIME(m_timeStatistics->decoding_Intra_StartTime,
     return VC1_OK;
 }
 
-//VC1Status VC1ProcessDiffIntra(VC1Context* pContext, Ipp32s blk_num)
-//{
-//    IppiSize  roiSize;
-//    roiSize.height = VC1_PIXEL_IN_BLOCK;
-//    roiSize.width = VC1_PIXEL_IN_BLOCK;
-//    static Ipp16s bias = 128;
-//    IppiSize  DstSizeNZ;
-//    Ipp16s* pBlock = pContext->m_pBlock + VC1_BlkStart[blk_num];
-//    Ipp32u srcstep = VC1_pixel_table[blk_num]*2;
-//
-//
-//    if ((pContext->m_seqLayerHeader.PROFILE != VC1_PROFILE_ADVANCED)&&
-//        ((pContext->m_picLayerHeader->PTYPE == VC1_I_FRAME)||
-//         (pContext->m_picLayerHeader->PTYPE == VC1_BI_FRAME)))
-//         bias = pContext->m_pCurrMB->bias;
-//
-//STATISTICS_START_TIME(m_timeStatistics->reconstruction_StartTime);
-//
-//     *(pContext->m_pBlock+VC1_BlkStart[blk_num]) = *pBlock
-//                                                   *(Ipp16s)pContext->CurrDC->DCStepSize;
-//
-//     if(pContext->m_picLayerHeader->QuantizationType == VC1_QUANTIZER_UNIFORM)
-//     {
-//         ippiQuantInvIntraUniform_VC1_16s_C1IR(pBlock,
-//                                               srcstep,
-//                                               pContext->CurrDC->DoubleQuant,
-//                                               &DstSizeNZ);
-//     }
-//     else
-//     {
-//          ippiQuantInvIntraNonuniform_VC1_16s_C1IR(pBlock,
-//                                                   srcstep,
-//                                                   pContext->CurrDC->DoubleQuant,
-//                                                   &DstSizeNZ);
-//     }
-//
-//     //transformation
-//     ippiTransform8x8Inv_VC1_16s_C1IR(pBlock,
-//                                      srcstep,
-//                                      DstSizeNZ);
-//
-//     ippiAddC_16s_C1IRSfs(bias, pBlock, srcstep, roiSize, 0);
-//
-//
-//     //write to plane
-//     STATISTICS_START_TIME(m_timeStatistics->write_plane_StartTime);
-//
-//
-//     //if ((blk_num < 4)&&(pContext->m_picLayerHeader->FCM != VC1_FrameInterlace))
-//     //{
-//     //    Ipp32u plane_offset = (blk_num&1)*8 + (blk_num&2)*4*pContext->m_pCurrMB->currYPitch;
-//     //    ippiConvert_16s8u_C1R(pBlock,
-//     //                          32,
-//     //                          pContext->m_pCurrMB->currYPlane + plane_offset,
-//     //                          pContext->m_pCurrMB->currYPitch,
-//     //                          roiSize);
-//     //}
-//     //else
-//     if (blk_num == 5)
-//     {
-//         ippiConvert_16s8u_C1R(pContext->m_pBlock + 256,
-//                               16,
-//                               pContext->m_pCurrMB->currUPlane,
-//                               pContext->m_pCurrMB->currUPitch,
-//                               roiSize);
-//
-//         ippiConvert_16s8u_C1R(pContext->m_pBlock + 320,
-//                               16,
-//                               pContext->m_pCurrMB->currVPlane,
-//                               pContext->m_pCurrMB->currVPitch,
-//                               roiSize);
-//
-//         if (pContext->m_picLayerHeader->FCM == VC1_FrameInterlace)
-//             write_Intraluma_to_interlace_frame_Adv(pContext->m_pCurrMB, pContext->m_pBlock);
-//         else
-//         {
-//             roiSize.height = 16;
-//             roiSize.width = 16;
-//
-//             ippiConvert_16s8u_C1R(pContext->m_pBlock,
-//                                   32,
-//                                   pContext->m_pCurrMB->currYPlane,
-//                                   pContext->m_pCurrMB->currYPitch,
-//                                   roiSize);
-//         }
-//     }
-//
-//     STATISTICS_END_TIME(m_timeStatistics->reconstruction_StartTime,
-//                         m_timeStatistics->reconstruction_EndTime,
-//                         m_timeStatistics->reconstruction_TotalTime);
-//     return VC1_OK;
-//}
-
 VC1Status VC1ProcessDiffIntra(VC1Context* pContext, Ipp32s blk_num)
 {
     Ipp16s*   m_pBlock  = pContext->m_pBlock; //memory for 16s diffs
@@ -937,8 +826,6 @@ VC1Status VC1ProcessDiffIntra(VC1Context* pContext, Ipp32s blk_num)
         ((pContext->m_picLayerHeader->PTYPE == VC1_I_FRAME)||
          (pContext->m_picLayerHeader->PTYPE == VC1_BI_FRAME)))
          bias = pContext->m_pCurrMB->bias;
-
-STATISTICS_START_TIME(m_timeStatistics->reconstruction_StartTime);
 
      *(pContext->m_pBlock+VC1_BlkStart[blk_num]) = *(pContext->m_pBlock+VC1_BlkStart[blk_num])
                                                    * (Ipp16s)pContext->CurrDC->DCStepSize;
@@ -957,9 +844,6 @@ STATISTICS_START_TIME(m_timeStatistics->reconstruction_StartTime);
 
         ippiAddC_16s_C1IRSfs(bias, m_pBlock + VC1_BlkStart[blk_num],
                                     2*VC1_pixel_table[blk_num], roiSize, 0);
-STATISTICS_END_TIME(m_timeStatistics->reconstruction_StartTime,
-                    m_timeStatistics->reconstruction_EndTime,
-                    m_timeStatistics->reconstruction_TotalTime);
     return VC1_OK;
 }
 
@@ -971,8 +855,6 @@ VC1Status BLKLayer_Inter_Luma_Adv(VC1Context* pContext, Ipp32s blk_num)
     Ipp32u numCoef = 0;
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
     VC1PictureLayerHeader * picHeader = pContext->m_picLayerHeader;
-
-    STATISTICS_START_TIME(m_timeStatistics->decoding_Inter_StartTime);
 
     if(pContext->m_pCurrMB->m_cbpBits & (1<<(5-blk_num)))
     {
@@ -1128,11 +1010,6 @@ VC1Status BLKLayer_Inter_Luma_Adv(VC1Context* pContext, Ipp32s blk_num)
         default:
             VM_ASSERT(0);
         }
-
-STATISTICS_END_TIME(m_timeStatistics->decoding_Inter_StartTime,
-                        m_timeStatistics->decoding_Inter_EndTime,
-                        m_timeStatistics->decoding_Inter_TotalTime);
-
     }
 #ifdef VC1_DEBUG_ON
 
@@ -1161,8 +1038,6 @@ VC1Status BLKLayer_Inter_Chroma_Adv(VC1Context* pContext, Ipp32s blk_num)
     Ipp32u numCoef = 0;
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
     VC1PictureLayerHeader * picHeader = pContext->m_picLayerHeader;
-
-    STATISTICS_START_TIME(m_timeStatistics->decoding_Inter_StartTime);
 
     if(pContext->m_pCurrMB->m_cbpBits & (1<<(5-blk_num)))
     {
@@ -1313,10 +1188,6 @@ VC1Status BLKLayer_Inter_Chroma_Adv(VC1Context* pContext, Ipp32s blk_num)
         default:
             VM_ASSERT(0);
         }
-
-STATISTICS_END_TIME(m_timeStatistics->decoding_Inter_StartTime,
-                        m_timeStatistics->decoding_Inter_EndTime,
-                        m_timeStatistics->decoding_Inter_TotalTime);
     }
 #ifdef VC1_DEBUG_ON
     //NEED!
@@ -1343,14 +1214,10 @@ VC1Status VC1ProcessDiffInter(VC1Context* pContext,Ipp32s blk_num)
     if(pContext->m_pCurrMB->m_cbpBits & (1<<(5-blk_num)))
     {
         //quantization and transformation
-STATISTICS_START_TIME(m_timeStatistics->reconstruction_StartTime);
         Reconstruct_table[pContext->m_picLayerHeader->QuantizationType](m_pBlock,
                                                                         VC1_pixel_table[blk_num]*2,
                                                                         pContext->CurrDC->DoubleQuant,
                                                                         pContext->m_pCurrMB->m_pBlocks[blk_num].blkType);
-STATISTICS_END_TIME(m_timeStatistics->reconstruction_StartTime,
-                    m_timeStatistics->reconstruction_EndTime,
-                    m_timeStatistics->reconstruction_TotalTime);
     }
     return VC1_OK;
 }

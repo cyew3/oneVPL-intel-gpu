@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -18,10 +18,8 @@
 #include "umc_vc1_common_zigzag_tbl.h"
 #include "umc_vc1_common_blk_order_tbl.h"
 #include "umc_vc1_dec_run_level_tbl.h"
-
+#include "umc_vc1_huffman.h"
 #include "umc_vc1_dec_debug.h"
-
-#include "umc_vc1_dec_time_statistics.h"
 
 typedef Ipp8u (*DCPrediction)(VC1DCBlkParam* CurrBlk, VC1DCPredictors* PredData,
                                Ipp32s blk_num, Ipp16s* pBlock,Ipp16s defaultDC, Ipp32u PTYPE);
@@ -323,20 +321,18 @@ VC1Status BLKLayer_Intra_Luma(VC1Context* pContext, Ipp32s blk_num, Ipp32u bias,
     VC1DCBlkParam* CurrBlk = &CurrDC->DCBlkPred[blk_num];
     VC1DCPredictors* DCPred = &pContext->DCPred;
 
-    IppStatus ret;
+    int ret;
     Ipp32s DCCOEF;
     Ipp32s DCSIGN;
     Ipp32u i = 0;
 
     Ipp32u quant = CurrDC->DoubleQuant>>1;
 
-    STATISTICS_START_TIME(m_timeStatistics->decoding_Intra_StartTime);
-
-    ret = ippiDecodeHuffmanOne_1u32s(&pContext->m_bitstream.pBitstream,
+    ret = DecodeHuffmanOne(&pContext->m_bitstream.pBitstream,
                                      &pContext->m_bitstream.bitOffset,
                                      &DCCOEF,
                                      pContext->m_picLayerHeader->m_pCurrLumaDCDiff);
-    VM_ASSERT(ret == ippStsNoErr);
+    VM_ASSERT(ret == 0);
 
     if(DCCOEF != 0)
     {
@@ -371,8 +367,6 @@ VC1Status BLKLayer_Intra_Luma(VC1Context* pContext, Ipp32s blk_num, Ipp32u bias,
         }
 
         VC1_GET_BITS(1, DCSIGN);
-        //if (DCSIGN == 1)
-        //    DCCOEF = -DCCOEF;
         DCCOEF = (1 - (DCSIGN<<1))* DCCOEF;
     }
 
@@ -410,11 +404,6 @@ VC1Status BLKLayer_Intra_Luma(VC1Context* pContext, Ipp32s blk_num, Ipp32u bias,
         CurrBlk->ACTOP[i]  = m_pBlock[i];
     }
 
-   STATISTICS_END_TIME(m_timeStatistics->decoding_Intra_StartTime,
-                        m_timeStatistics->decoding_Intra_EndTime,
-                        m_timeStatistics->decoding_Intra_TotalTime);
-
-
 #ifdef VC1_DEBUG_ON
     VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_COEFFS,
         VM_STRING("DC = %d\n"),pContext->CurrDC->DCBlkPred[blk_num].DC);
@@ -443,20 +432,18 @@ VC1Status BLKLayer_Intra_Chroma(VC1Context* pContext, Ipp32s blk_num, Ipp32u bia
 
     VC1DCPredictors* DCPred = &pContext->DCPred;
 
-    IppStatus ret;
+    int ret;
     Ipp32s DCCOEF;
     Ipp32s DCSIGN;
     Ipp32u i = 0;
 
     Ipp32u quant =  CurrDC->DoubleQuant>>1;
 
-    STATISTICS_START_TIME(m_timeStatistics->decoding_Intra_StartTime);
-
-    ret = ippiDecodeHuffmanOne_1u32s(&pContext->m_bitstream.pBitstream,
+    ret = DecodeHuffmanOne(&pContext->m_bitstream.pBitstream,
                                      &pContext->m_bitstream.bitOffset,
                                      &DCCOEF,
                                      pContext->m_picLayerHeader->m_pCurrChromaDCDiff);
-    VM_ASSERT(ret == ippStsNoErr);
+    VM_ASSERT(ret == 0);
 
     if(DCCOEF != 0)
     {
@@ -490,8 +477,6 @@ VC1Status BLKLayer_Intra_Chroma(VC1Context* pContext, Ipp32s blk_num, Ipp32u bia
            }
         }
         VC1_GET_BITS(1, DCSIGN);
-        //if (DCSIGN == 1)
-        //    DCCOEF = -DCCOEF;
         DCCOEF = (1 - (DCSIGN<<1))* DCCOEF;
     }
 
@@ -530,9 +515,6 @@ VC1Status BLKLayer_Intra_Chroma(VC1Context* pContext, Ipp32s blk_num, Ipp32u bia
         CurrBlk->ACTOP[i]  = m_pBlock[i];
     }
 
-STATISTICS_END_TIME(m_timeStatistics->decoding_Intra_StartTime,
-                        m_timeStatistics->decoding_Intra_EndTime,
-                        m_timeStatistics->decoding_Intra_TotalTime);
 #ifdef VC1_DEBUG_ON
     VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_COEFFS,
             VM_STRING("DC = %d\n"),pContext->CurrDC->DCBlkPred[blk_num].DC);
@@ -562,7 +544,6 @@ VC1Status BLKLayer_Inter_Luma(VC1Context* pContext, Ipp32s blk_num)
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
     VC1PictureLayerHeader * picHeader = pContext->m_picLayerHeader;
 
-    STATISTICS_START_TIME(m_timeStatistics->decoding_Inter_StartTime);
     if(pContext->m_pCurrMB->m_cbpBits & (1<<(5-blk_num)))
     {
         switch (pBlock->blkType)
@@ -708,10 +689,6 @@ VC1Status BLKLayer_Inter_Luma(VC1Context* pContext, Ipp32s blk_num)
             VM_ASSERT(0);
         }
 
-STATISTICS_END_TIME(m_timeStatistics->decoding_Inter_StartTime,
-                        m_timeStatistics->decoding_Inter_EndTime,
-                        m_timeStatistics->decoding_Inter_TotalTime);
-
     }
 #ifdef VC1_DEBUG_ON
 
@@ -738,8 +715,6 @@ VC1Status BLKLayer_Inter_Chroma(VC1Context* pContext, Ipp32s blk_num)
     Ipp8u numCoef = 0;
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
     VC1PictureLayerHeader * picHeader = pContext->m_picLayerHeader;
-
-    STATISTICS_START_TIME(m_timeStatistics->decoding_Inter_StartTime);
 
     if(pContext->m_pCurrMB->m_cbpBits & (1<<(5-blk_num)))
     {
@@ -843,10 +818,6 @@ VC1Status BLKLayer_Inter_Chroma(VC1Context* pContext, Ipp32s blk_num)
         default:
             VM_ASSERT(0);
         }
-
-STATISTICS_END_TIME(m_timeStatistics->decoding_Inter_StartTime,
-                        m_timeStatistics->decoding_Inter_EndTime,
-                        m_timeStatistics->decoding_Inter_TotalTime);
     }
 #ifdef VC1_DEBUG_ON
     //NEED!

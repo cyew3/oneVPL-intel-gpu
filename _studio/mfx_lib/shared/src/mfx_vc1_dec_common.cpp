@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -14,21 +14,17 @@
 
 #include "mfx_vc1_dec_common.h"
 #include "umc_vc1_common.h"
-
 #include "mfxpcp.h"
-
 #include "mfx_common_int.h"
+#include "umc_vc1_dec_seq.h"
 
 mfxStatus MFXVC1DecCommon::ConvertMfxToCodecParams(mfxVideoParam *par, UMC::BaseCodecParams* pVideoParams)
 {
     UMC::VideoDecoderParams *init = DynamicCast<UMC::VideoDecoderParams, UMC::BaseCodecParams>(pVideoParams);
     if (init)
     {
-
         init->info.clip_info.height = par->mfx.FrameInfo.Height;
         init->info.clip_info.width = par->mfx.FrameInfo.Width;
-
-        //init->lFlags |= UMC::FLAG_VDEC_REORDER;
 
         if (MFX_PROFILE_VC1_ADVANCED == par->mfx.CodecProfile)
         {
@@ -46,6 +42,7 @@ mfxStatus MFXVC1DecCommon::ConvertMfxToCodecParams(mfxVideoParam *par, UMC::Base
     else
         return MFX_ERR_UNKNOWN;
 }
+
 mfxStatus MFXVC1DecCommon::Query(VideoCORE* core, mfxVideoParam *in, mfxVideoParam *out)
 {
     mfxStatus sts = MFX_ERR_NONE;
@@ -54,8 +51,6 @@ mfxStatus MFXVC1DecCommon::Query(VideoCORE* core, mfxVideoParam *in, mfxVideoPar
 
     if (in)
     {
-        //out->Version = in->Version;
-        //out->mfx.CodingLimits = in->mfx.CodingLimits;
         // frame info
         {
             // mfxFrameInfo
@@ -64,14 +59,12 @@ mfxStatus MFXVC1DecCommon::Query(VideoCORE* core, mfxVideoParam *in, mfxVideoPar
             else
                 sts = MFX_ERR_UNSUPPORTED;
 
-            if ((in->mfx.FrameInfo.Width % 16 == 0)/*&&
-                (in->mfx.FrameInfo.Width <= 4096)*/)
+            if ((in->mfx.FrameInfo.Width % 16 == 0))
                 out->mfx.FrameInfo.Width = in->mfx.FrameInfo.Width;
             else
                 sts = MFX_ERR_UNSUPPORTED;
 
-            if ((in->mfx.FrameInfo.Height % 16 == 0)/*&&
-                (in->mfx.FrameInfo.Height <= 4096)*/)
+            if ((in->mfx.FrameInfo.Height % 16 == 0))
                 out->mfx.FrameInfo.Height = in->mfx.FrameInfo.Height;
             else
                 sts = MFX_ERR_UNSUPPORTED;
@@ -102,8 +95,6 @@ mfxStatus MFXVC1DecCommon::Query(VideoCORE* core, mfxVideoParam *in, mfxVideoPar
             out->mfx.FrameInfo.AspectRatioW = in->mfx.FrameInfo.AspectRatioW;
             out->mfx.FrameInfo.AspectRatioH = in->mfx.FrameInfo.AspectRatioH;
 
-            //out->mfx.FrameInfo.ChromaDelta = in->mfx.FrameInfo.ChromaDelta;
-
             switch (in->mfx.FrameInfo.PicStruct)
             {
             case MFX_PICSTRUCT_UNKNOWN:
@@ -124,10 +115,6 @@ mfxStatus MFXVC1DecCommon::Query(VideoCORE* core, mfxVideoParam *in, mfxVideoPar
                 if (mask != MFX_IOPATTERN_OUT_VIDEO_MEMORY || mask != MFX_IOPATTERN_OUT_SYSTEM_MEMORY || mask != MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
                     out->IOPattern = in->IOPattern;
             }
-
-
-            //if (in->mfx.FrameInfo.Step == 1)
-            //    out->mfx.FrameInfo.Step = in->mfx.FrameInfo.Step;
 
             if (in->Protected)
             {
@@ -275,9 +262,7 @@ mfxStatus MFXVC1DecCommon::Query(VideoCORE* core, mfxVideoParam *in, mfxVideoPar
         out->mfx.CodecId = MFX_CODEC_VC1;
         out->mfx.CodecProfile = 1;
         out->mfx.CodecLevel = 1;
-        //out->mfx.NumThread = 1;
         out->mfx.NumSlice = 1;
-        //out->mfx.CodingLimits = 1;
         out->mfx.ExtendedPicStruct = 1;
         out->mfx.TimeStampCalc = 1;
         out->mfx.SliceGroupsPresent = 0;
@@ -371,7 +356,6 @@ mfxStatus MFXVC1DecCommon::ParseSeqHeader(mfxBitstream *bs,
 
         VC1CheckDataLen(SHLen,32);
         
-        //MFX_INTERNAL_CPY(pTemp,bs_out.Data + 4,19);
         UMC::VC1Common::SwapData(pTemp,19);
 
         pbs = (mfxU32*)pTemp;
@@ -877,7 +861,7 @@ mfxStatus MFXVC1DecCommon::PrepareSeqHeader(mfxBitstream *bs_in, mfxBitstream *b
                     if(size + bs_out->DataOffset > bs_out->MaxLength)
                         return MFX_ERR_NOT_ENOUGH_BUFFER;
 
-                    ippsCopy_8u(readBuf + readDataSize, bs_out->Data + bs_out->DataOffset, size);
+                    MFX_INTERNAL_CPY(bs_out->Data + bs_out->DataOffset, readBuf + readDataSize, size);
                     bs_out->DataLength = size;
                     return MFX_ERR_NONE;
                 }
@@ -897,7 +881,7 @@ mfxStatus MFXVC1DecCommon::PrepareSeqHeader(mfxBitstream *bs_in, mfxBitstream *b
                     if(size + bs_out->DataOffset > bs_out->MaxLength)
                         return MFX_ERR_NOT_ENOUGH_BUFFER;
 
-                    ippsCopy_8u(readBuf + readDataSize, bs_out->Data + bs_out->DataOffset, size);
+                    MFX_INTERNAL_CPY(bs_out->Data + bs_out->DataOffset, readBuf + readDataSize, size);
                     bs_out->DataOffset +=  size;
                     readDataSize = readDataSize + size + 1;
                 }
@@ -931,7 +915,7 @@ mfxStatus MFXVC1DecCommon::PrepareSeqHeader(mfxBitstream *bs_in, mfxBitstream *b
                     if(size + bs_out->DataOffset > bs_out->MaxLength)
                         return MFX_ERR_NOT_ENOUGH_BUFFER;
 
-                    ippsCopy_8u(readBuf + readDataSize, bs_out->Data + bs_out->DataOffset, size);
+                    MFX_INTERNAL_CPY(bs_out->Data + bs_out->DataOffset, readBuf + readDataSize, size);
                     bs_out->DataLength = size;
                     return MFX_ERR_NONE;
                 }

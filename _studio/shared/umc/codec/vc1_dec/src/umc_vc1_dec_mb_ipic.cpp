@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -15,10 +15,7 @@
 #include "umc_vc1_dec_seq.h"
 #include "umc_vc1_dec_debug.h"
 #include "umc_vc1_common_zigzag_tbl.h"
-
-#include "umc_vc1_dec_time_statistics.h"
-#include "umc_vc1_common_zigzag_tbl.h"
-
+#include "umc_vc1_huffman.h"
 
 typedef void (*IntraPrediction)(VC1Context* pContext);
 static const IntraPrediction IntraPredictionTable[] =
@@ -34,7 +31,7 @@ VC1Status MBLayer_ProgressiveIpicture(VC1Context* pContext)
 {
     Ipp32s i;
     Ipp32s CBPCY;//decoded_cbpy
-    IppStatus ret;
+    int ret;
     VC1Status vc1Res = VC1_OK;
     Ipp32u ACPRED = 0;
     VC1MB* pCurrMB = pContext->m_pCurrMB;
@@ -63,12 +60,12 @@ VC1Status MBLayer_ProgressiveIpicture(VC1Context* pContext)
 
     //CBPCY is a variable-length field present in both I picture and P
     //picture macroblock layers.
-    ret = ippiDecodeHuffmanOne_1u32s(&pContext->m_bitstream.pBitstream,
+    ret = DecodeHuffmanOne(&pContext->m_bitstream.pBitstream,
                                      &pContext->m_bitstream.bitOffset,
                                      &CBPCY,
                                      pContext->m_vlcTbl->m_pCBPCY_Ipic);
 
-    VM_ASSERT(ret == ippStsNoErr);
+    VM_ASSERT(ret == 0);
 
     pCurrMB->LeftTopRightPositionFlag = CalculateLeftTopRightPositionFlag(sMB);
 
@@ -146,13 +143,6 @@ VC1Status MBLayer_ProgressiveIpicture(VC1Context* pContext)
             break;
         }
     }
-
-#ifdef VC1_DEBUG_ON
-    //if (VC1_DEBUG&VC1_RESPEL)
-    //    VM_Debug::GetInstance()._print_blocks(pContext);
-    //if (VC1_DEBUG&VC1_SMOOTHINT)
-    //    VM_Debug::GetInstance()._print_macroblocks(pContext);
-#endif
 
     return vc1Res;
 }

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -13,8 +13,8 @@
 #if defined (UMC_ENABLE_VC1_VIDEO_DECODER)
 
 #include "umc_vc1_dec_seq.h"
-#include "umc_vc1_dec_job.h"
 #include "umc_vc1_dec_debug.h"
+#include "umc_vc1_huffman.h"
 
 static const Ipp32s VC1_VA_Bfraction_tbl[7][7] =
 {
@@ -27,6 +27,7 @@ static const Ipp32s VC1_VA_Bfraction_tbl[7][7] =
     0, 0, 0, 0,    0,   0, 125
 };
 
+#ifdef ALLOW_SW_VC1_FALLBACK
 void PrepareForNextFrame(VC1Context*pContext)
 {
 
@@ -63,7 +64,7 @@ void PrepareForNextFrame(VC1Context*pContext)
 
     }
 }
-
+#endif // #ifdef ALLOW_SW_VC1_FALLBACK
 
 VC1Status DecodePictureHeader_Adv(VC1Context* pContext)
 {
@@ -236,7 +237,7 @@ VC1Status DecodePictureHeader_Adv(VC1Context* pContext)
                 //B picture fraction
                 Ipp8s  z1;
                 Ipp16s z2;
-                ippiDecodeHuffmanPair_1u16s(&pContext->m_bitstream.pBitstream,
+                DecodeHuffmanPair(&pContext->m_bitstream.pBitstream,
                                             &pContext->m_bitstream.bitOffset,
                                             pContext->m_vlcTbl->BFRACTION,
                                             &z1, &z2);
@@ -330,13 +331,12 @@ VC1Status DecodePicHeader(VC1Context* pContext)
 
 VC1Status DecodeSkippicture(VC1Context* pContext)
 {
-    VC1Status vc1Sts = VC1_OK;
-
-    ippsCopy_8u(pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iPrevIndex].m_pAllocatedMemory,
-                pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iToSkipCoping].m_pAllocatedMemory,
+#ifdef ALLOW_SW_VC1_FALLBACK
+    MFX_INTERNAL_CPY(pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iToSkipCoping].m_pAllocatedMemory,
+                pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iPrevIndex].m_pAllocatedMemory,
                 pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iPrevIndex].m_AllocatedMemorySize);
-
-    return vc1Sts;
+#endif
+    return VC1_OK;
 }
 
 VC1Status DecodePictHeaderParams_InterlaceFieldPicture_Adv (VC1Context* pContext)
@@ -465,23 +465,15 @@ VC1Status DecodePictHeaderParams_InterlaceFieldPicture_Adv (VC1Context* pContext
 
         if(seqLayerHeader->REFDIST_FLAG == 1 &&
             (picLayerHeader->PTypeField1 < VC1_B_FRAME &&
-             picLayerHeader->PTypeField2 < VC1_B_FRAME
-           /* (picLayerHeader->PTypeField1 == VC1_I_FRAME) &&
-            (picLayerHeader->PTypeField2 == VC1_I_FRAME) ||
-            (picLayerHeader->PTypeField1 == VC1_I_FRAME) &&
-            (picLayerHeader->PTypeField2 == VC1_P_FRAME) ||
-            (picLayerHeader->PTypeField1 == VC1_P_FRAME) &&
-            (picLayerHeader->PTypeField2 == VC1_I_FRAME) ||
-            (m_picLayerHeader->PTypeField1 == VC1_P_FRAME) &&
-            (picLayerHeader->PTypeField2 == VC1_P_FRAME) */))
+             picLayerHeader->PTypeField2 < VC1_B_FRAME))
         {
                 Ipp32s ret;
-                ret = ippiDecodeHuffmanOne_1u32s (
+                ret = DecodeHuffmanOne(
                                     &pContext->m_bitstream.pBitstream,
                                     &pContext->m_bitstream.bitOffset,
                                     &picLayerHeader->REFDIST,
                                     pContext->m_vlcTbl->REFDIST_TABLE);
-                VM_ASSERT(ret == ippStsNoErr);
+                VM_ASSERT(ret == 0);
 
                 *pContext->pRefDist = picLayerHeader->REFDIST;
         }
@@ -501,7 +493,7 @@ VC1Status DecodePictHeaderParams_InterlaceFieldPicture_Adv (VC1Context* pContext
            //B picture fraction
            Ipp8s  z1;
            Ipp16s z2;
-           ippiDecodeHuffmanPair_1u16s(&pContext->m_bitstream.pBitstream,
+           DecodeHuffmanPair(&pContext->m_bitstream.pBitstream,
                                         &pContext->m_bitstream.bitOffset,
                                          pContext->m_vlcTbl->BFRACTION,
                                         &z1, &z2);
@@ -526,87 +518,6 @@ VC1Status DecodePictHeaderParams_InterlaceFieldPicture_Adv (VC1Context* pContext
         picLayerHeader->PTYPE = picLayerHeader->PTypeField2;
     }
     return vc1Sts;
-}
-
-VC1Status Decode_FirstField_Adv(VC1Context* pContext)
-{
-    VC1Status vc1Sts = VC1_OK;
-    VC1PictureLayerHeader* picLayerHeader = pContext->m_picLayerHeader;
-
-    picLayerHeader->BottomField = (Ipp8u)(1 - picLayerHeader->TFF);
-    picLayerHeader->CurrField = 0;
-
-    pContext->m_pSingleMB->slice_currMBYpos = 0;
-    pContext->m_pSingleMB->m_currMBXpos = 0;
-
-    picLayerHeader->PTYPE = picLayerHeader->PTypeField1;
-    switch(picLayerHeader->PTypeField1)
-    {
-    case VC1_I_FRAME:
-#ifdef VC1_DEBUG_ON
-        VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_BFRAMES,
-                                                VM_STRING("I frame type  \n"));
-#endif
-        Decode_InterlaceFieldIpicture_Adv(pContext);
-        break;
-
-    case VC1_P_FRAME:
-#ifdef VC1_DEBUG_ON
-        VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_BFRAMES,
-                                                VM_STRING("P frame type  \n"));
-#endif
-        Decode_InterlaceFieldPpicture_Adv(pContext);
-        break;
-
-    case VC1_B_FRAME:
-#ifdef VC1_DEBUG_ON
-        VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_BFRAMES,
-                                                VM_STRING("B frame type  \n"));
-#endif
-        Decode_InterlaceFieldBpicture_Adv(pContext);
-        break;
-
-    case VC1_BI_FRAME:
-#ifdef VC1_DEBUG_ON
-        VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_BFRAMES,
-                                                VM_STRING("BI frame type  \n"));
-#endif
-        Decode_InterlaceFieldIpicture_Adv(pContext);
-        break;
-    default:
-        break;
-    }
-
-    return vc1Sts;
-}
-
-VC1Status Decode_SecondField_Adv(VC1Context* pContext)
-{
-    VC1Status vc1Sts = VC1_OK;
-    VC1PictureLayerHeader* picLayerHeader = pContext->m_picLayerHeader;
-
-    picLayerHeader->BottomField = (Ipp8u)picLayerHeader->TFF;
-    picLayerHeader->PTYPE = picLayerHeader->PTypeField2;
-
-    picLayerHeader->CurrField = 1;
-
-    return vc1Sts;
-
-}
-VC1Status Decode_FieldPictureLayer_Adv(VC1Context* pContext)
-{
-    VC1Status vc1Sts = VC1_OK;
-    Ipp32u temp_value;
-
-    VC1_GET_BITS(1,temp_value);
-
-    while(!(pContext->m_bitstream.bitOffset == 7||
-            pContext->m_bitstream.bitOffset == 15 ||
-            pContext->m_bitstream.bitOffset == 23 ||
-            pContext->m_bitstream.bitOffset == 31 ))
-            VC1_GET_BITS(1,temp_value);
-
-   return vc1Sts;
 }
 
 #endif //UMC_ENABLE_VC1_VIDEO_DECODER

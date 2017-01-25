@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -16,6 +16,7 @@
 
 #include "umc_vc1_dec_seq.h"
 #include "umc_vc1_dec_debug.h"
+#include "umc_vc1_huffman.h"
 
 //4.10    Bitplane Coding
 //Certain macroblock-specific information can be encoded in one bit per
@@ -152,7 +153,7 @@ static void Norm2ModeDecode(VC1Context* pContext,VC1Bitplane* pBitplane, Ipp32s 
 
 static void Norm6ModeDecode(VC1Context* pContext, VC1Bitplane* pBitplane, Ipp32s width, Ipp32s height,Ipp32s MaxWidthMB)
 {
-    IppStatus ret;
+    int ret;
     Ipp32s i, j;
     Ipp32s k;
     Ipp32s ResidualX = 0;
@@ -177,13 +178,13 @@ static void Norm6ModeDecode(VC1Context* pContext, VC1Bitplane* pBitplane, Ipp32s
 
             for(j = 0; j < sizeW; j++)
             {
-                ret = ippiDecodeHuffmanOne_1u32s (
+                ret = DecodeHuffmanOne(
                             &pContext->m_bitstream.pBitstream,
                             &pContext->m_bitstream.bitOffset,
                             &k,
                             pContext->m_vlcTbl->m_BitplaneTaledbits
                             );
-                VM_ASSERT(ret == ippStsNoErr);
+                VM_ASSERT(ret == 0);
 
                 currRowTails[0] = (Ipp8u)(k&1);
                 currRowTails[1] = (Ipp8u)((k&2)>>1);
@@ -219,7 +220,7 @@ static void Norm6ModeDecode(VC1Context* pContext, VC1Bitplane* pBitplane, Ipp32s
 
             for(j = 0; j < sizeW; j++)
             {
-                ret = ippiDecodeHuffmanOne_1u32s (
+                ret = DecodeHuffmanOne(
                             &pContext->m_bitstream.pBitstream,
                             &pContext->m_bitstream.bitOffset,
                             &k,
@@ -298,7 +299,7 @@ void DecodeBitplane(VC1Context* pContext, VC1Bitplane* pBitplane, Ipp32s width, 
 {
     Ipp32s tmp;
     Ipp32s i, j;
-    IppStatus ret;
+    int ret;
     Ipp32s tmp_invert = 0;
     Ipp32s tmp_databits = 0;
 
@@ -309,7 +310,6 @@ void DecodeBitplane(VC1Context* pContext, VC1Bitplane* pBitplane, Ipp32s width, 
         pContext->bp_round_count = 0;
 
     Ipp32u HeightMB = pContext->m_seqLayerHeader.heightMB;
-    //if(pContext->m_picLayerHeader->FCM == VC1_FieldInterlace)
     if(pContext->m_seqLayerHeader.INTERLACE)
         HeightMB = HeightMB + (HeightMB & 1);
     
@@ -338,13 +338,13 @@ void DecodeBitplane(VC1Context* pContext, VC1Bitplane* pBitplane, Ipp32s width, 
     //Diff-6        0001
     //Rowskip        010
     //Colskip        011
-    ret = ippiDecodeHuffmanOne_1u32s (
+    ret = DecodeHuffmanOne(
                 &pContext->m_bitstream.pBitstream,
                 &pContext->m_bitstream.bitOffset,
                 &pBitplane->m_imode,
                 pContext->m_vlcTbl->m_Bitplane_IMODE
                 );
-    VM_ASSERT(ret == ippStsNoErr);
+    VM_ASSERT(ret == 0);
 
 #ifdef VC1_DEBUG_ON
     VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_BITBLANES,

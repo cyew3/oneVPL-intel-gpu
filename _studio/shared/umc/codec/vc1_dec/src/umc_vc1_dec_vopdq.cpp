@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -202,6 +202,7 @@ VC1Status CalculatePQuant(VC1Context* pContext)
     return VC1_OK;
 }
 
+#ifdef ALLOW_SW_VC1_FALLBACK
 VC1Status Set_MQuant(VC1Context* pContext)
 {
     Ipp32s heightMB = pContext->m_pSingleMB->heightMB;
@@ -310,7 +311,6 @@ VC1Status Set_MQuant_Field(VC1Context* pContext)
     return VC1_OK;
 }
 
-
 void GetMQUANT(VC1Context* pContext)
 {
     Ipp32s z;
@@ -355,5 +355,6 @@ void GetMQUANT(VC1Context* pContext)
                                     VM_STRING("HalfQ = %d\n"), HALFQP);
 #endif
 }
+#endif // #ifdef ALLOW_SW_VC1_FALLBACK
 
 #endif //UMC_ENABLE_VC1_VIDEO_DECODER

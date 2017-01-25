@@ -16,8 +16,6 @@
 
 #include "umc_vc1_dec_seq.h"
 
-#include "umc_vc1_dec_time_statistics.h"
-
 //Simplw/Main profiles I picture
 VC1Status DecodePictureLayer_ProgressiveIpicture(VC1Context* pContext)
 {
@@ -27,14 +25,7 @@ VC1Status DecodePictureLayer_ProgressiveIpicture(VC1Context* pContext)
     VC1PictureLayerHeader* picLayerHeader = pContext->m_picLayerHeader;
     VC1SequenceLayerHeader* seqLayerHeader = &pContext->m_seqLayerHeader;
 
-
     seqLayerHeader->RNDCTRL = 1;
-    pContext->interp_params_luma.roundControl = seqLayerHeader->RNDCTRL;
-    pContext->interp_params_chroma.roundControl = seqLayerHeader->RNDCTRL;
-
-
-    //if (picLayerHeader->PTYPE == VC1_I_FRAME)
-    //    memset(pContext->savedMV,VC1_MVINTRA,sizeof(Ipp16s)*seqLayerHeader->heightMB*seqLayerHeader->widthMB*4*2);
 
     //4.1.1.1 The BF field is currently undefined
     //3.2.1.6 BF is a 7-bit field that is only present in I-picture
@@ -145,6 +136,16 @@ VC1Status DecodePictureLayer_ProgressiveIpicture(VC1Context* pContext)
     }
 
 
+    //TRANSDCTAB is a one-bit field that signals which of two Huffman tables
+    //is used to decode the Transform DC coefficients in intra-coded blocks.
+    //If TRANSDCTAB = 0 then the low motion huffman table is used.
+    //If TRANSDCTAB = 1 then the high motion huffman table is used.
+    VC1_GET_BITS(1, picLayerHeader->TRANSDCTAB);         //TRANSDCTAB
+
+#ifdef ALLOW_SW_VC1_FALLBACK
+    pContext->interp_params_luma.roundControl = seqLayerHeader->RNDCTRL;
+    pContext->interp_params_chroma.roundControl = seqLayerHeader->RNDCTRL;
+
     //Whether the index is specified at the picture or macroblock
     //level is signaled by the value of DCTACMBF specified in the
     //picture layer (see section 4.1.1.2 for a description). If the
@@ -154,15 +155,10 @@ VC1Status DecodePictureLayer_ProgressiveIpicture(VC1Context* pContext)
     //the coding set index for Cr and Cb blocks. If the index is signaled
     //at the macroblock level then the value decoded from the DCTTAB field
     //is used as the index for both inter and intra sets.
-    ChooseACTable(pContext,picLayerHeader->TRANSACFRM, picLayerHeader->TRANSACFRM2);
-
-    //TRANSDCTAB is a one-bit field that signals which of two Huffman tables
-    //is used to decode the Transform DC coefficients in intra-coded blocks.
-    //If TRANSDCTAB = 0 then the low motion huffman table is used.
-    //If TRANSDCTAB = 1 then the high motion huffman table is used.
-    VC1_GET_BITS(1, picLayerHeader->TRANSDCTAB);         //TRANSDCTAB
-
+    ChooseACTable(pContext, picLayerHeader->TRANSACFRM, picLayerHeader->TRANSACFRM2);
     ChooseDCTable(pContext, picLayerHeader->TRANSDCTAB);         //TRANSDCTAB
+#endif
+
     return vc1Res;
 }
 

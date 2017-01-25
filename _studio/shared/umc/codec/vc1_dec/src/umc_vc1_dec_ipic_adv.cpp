@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -14,8 +14,6 @@
 
 #include "umc_vc1_dec_seq.h"
 #include "umc_vc1_dec_debug.h"
-
-#include "umc_vc1_dec_time_statistics.h"
 
 VC1Status DecodePictHeaderParams_ProgressiveIpicture_Adv(VC1Context* pContext)
 {
@@ -78,16 +76,17 @@ VC1Status DecodePictHeaderParams_ProgressiveIpicture_Adv(VC1Context* pContext)
         VC1_GET_BITS(1,picLayerHeader->TRANSACFRM2);
         picLayerHeader->TRANSACFRM2++;
     }
-    ChooseACTable(pContext, picLayerHeader->TRANSACFRM, picLayerHeader->TRANSACFRM2);
-
 
     //intra transform DC table
     VC1_GET_BITS(1,picLayerHeader->TRANSDCTAB);        //TRANSDCTAB
-    ChooseDCTable(pContext, picLayerHeader->TRANSDCTAB);        //TRANSDCTAB
-
 
     //macroblock quantization
     vc1Res = VOPDQuant(pContext);
+
+#ifdef ALLOW_SW_VC1_FALLBACK
+    ChooseACTable(pContext, picLayerHeader->TRANSACFRM, picLayerHeader->TRANSACFRM2);
+    ChooseDCTable(pContext, picLayerHeader->TRANSDCTAB);        //TRANSDCTAB
+#endif
 
     return vc1Res;
 }
@@ -154,15 +153,17 @@ VC1Status DecodePictHeaderParams_InterlaceIpicture_Adv(VC1Context* pContext)
         VC1_GET_BITS(1,picLayerHeader->TRANSACFRM2);
         picLayerHeader->TRANSACFRM2++;
     }
-    ChooseACTable(pContext, picLayerHeader->TRANSACFRM, picLayerHeader->TRANSACFRM2);
-
 
     //intra transform DC table
     VC1_GET_BITS(1,picLayerHeader->TRANSDCTAB);        //TRANSDCTAB
-    ChooseDCTable(pContext, picLayerHeader->TRANSDCTAB);        //TRANSDCTAB
 
     //macroblock quantization
     vc1Res = VOPDQuant(pContext);
+
+#ifdef ALLOW_SW_VC1_FALLBACK
+    ChooseACTable(pContext, picLayerHeader->TRANSACFRM, picLayerHeader->TRANSACFRM2);
+    ChooseDCTable(pContext, picLayerHeader->TRANSDCTAB);        //TRANSDCTAB
+#endif
 
     return vc1Res;
 }
@@ -175,8 +176,10 @@ VC1Status DecodeFieldHeaderParams_InterlaceFieldIpicture_Adv(VC1Context* pContex
 
     Ipp32u tempValue;
 
+#ifdef VC1_DEBUG_ON
     VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_BFRAMES,
                                             VM_STRING("I frame type  \n"));
+#endif
 
     VC1_GET_BITS(5,picLayerHeader->PQINDEX);
     
@@ -262,21 +265,21 @@ VC1Status DecodeFieldHeaderParams_InterlaceFieldIpicture_Adv(VC1Context* pContex
         picLayerHeader->TRANSACFRM2++;
     }
 
-    ChooseACTable(pContext, picLayerHeader->TRANSACFRM, picLayerHeader->TRANSACFRM2);
-
     //intra transform DC table
     VC1_GET_BITS(1,picLayerHeader->TRANSDCTAB);        //TRANSDCTAB
-    ChooseDCTable(pContext, picLayerHeader->TRANSDCTAB);        //TRANSDCTAB
 
     //macroblock quantization
     vc1Res = VOPDQuant(pContext);
-    //if (picLayerHeader->PTYPE == VC1_I_FRAME) // It can be BI frame
-    //    pContext->m_bIntensityCompensation = 0;
+
+#ifdef ALLOW_SW_VC1_FALLBACK
+    ChooseACTable(pContext, picLayerHeader->TRANSACFRM, picLayerHeader->TRANSACFRM2);
+    ChooseDCTable(pContext, picLayerHeader->TRANSDCTAB);        //TRANSDCTAB
+#endif
 
     return vc1Res;
 }
 
-
+#ifdef ALLOW_SW_VC1_FALLBACK
 VC1Status Decode_InterlaceFieldIpicture_Adv(VC1Context* pContext)
 {
     Ipp32s i, j;
@@ -298,7 +301,7 @@ VC1Status Decode_InterlaceFieldIpicture_Adv(VC1Context* pContext)
                 VM_ASSERT(0);
                 break;
             }
-            //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_POSITION,VM_STRING("Macroblock Type: %d\n"), pContext->m_pCurrMB->mbType);
+
             sMB->m_currMBXpos++;
             pContext->m_pBlock += 8*8*6;
 
@@ -324,15 +327,10 @@ VC1Status Decode_InterlaceFieldIpicture_Adv(VC1Context* pContext)
 
         pContext->DeblockInfo.is_last_deblock = 1;
 
-
-        STATISTICS_START_TIME(m_timeStatistics->deblocking_StartTime);
         Deblocking_ProgressiveIpicture_Adv(pContext);
-        STATISTICS_END_TIME(m_timeStatistics->deblocking_StartTime,
-                            m_timeStatistics->deblocking_EndTime,
-                            m_timeStatistics->deblocking_TotalTime);
     }
 
     return vc1Res;
 };
-
+#endif // #ifdef ALLOW_SW_VC1_FALLBACK
 #endif //UMC_ENABLE_VC1_VIDEO_DECODER

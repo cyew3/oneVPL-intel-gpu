@@ -53,13 +53,14 @@ const extern Ipp32s VC1_InterlacedMVDifTable10[];
 //VC-1 Table 144: 1-Field reference interlace MV table 3
 const extern Ipp32s VC1_InterlacedMVDifTable11[];
 
-
+#ifdef ALLOW_SW_VC1_FALLBACK
 //for scaling mv predictors P picture
 const extern VC1PredictScaleValuesPPic VC1_PredictScaleValuesPPicTbl1[16];
 const extern VC1PredictScaleValuesPPic VC1_PredictScaleValuesPPicTbl2[16];
 
 //for scaling mv predictors B picture
 const extern VC1PredictScaleValuesBPic VC1_PredictScaleValuesBPicTbl1[16];
+#endif
 
 #endif //__umc_vc1_common_interlace_mv_tables_H__
 #endif //UMC_ENABLE_VC1_VIDEO_DECODER

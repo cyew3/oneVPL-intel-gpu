@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -16,10 +16,7 @@
 #include "umc_vc1_dec_debug.h"
 #include "umc_vc1_common_defs.h"
 #include "umc_vc1_common_blk_order_tbl.h"
-
-//#define INTERDEBUG
-//#define INTERDEBUG2
-//#define INTERDEBUG3
+#include "umc_vc1_huffman.h"
 
 static const Ipp8u esbp_lut[] = {1,2,2,2,4,4,4,8};
 
@@ -94,43 +91,12 @@ static IppStatus ippiInterpolate16x16QPBicubicIC_VC1_8u_C1R (const Ipp8u* pSrc,
     Fx2          = FP[2];
     Fx3          = FP[3];
 
-
-#ifdef INTERDEBUG
-    printf("New Source Block \n");
-    for(j = -1; j < 18; j++)
-    {
-        for(i = -1; i < 18; i++)
-        {
-            printf(" %d ",pSrc[i  + j*srcStep]);
-        }
-        printf(" \n");
-    }
-#endif
-
-
-
     switch(choose_int)
     {
     case 0:
 
         Shift           = BicubicVertFilterShift[(dx)][(dy) - 1];
         Abs             = 1 << (Shift - 1);
-#ifdef VC1_DEBUG_ON
-        //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("PelBicubicDiag\n") );
-        //       VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("%d\t %d\t %d\n"),*pSource,X>>2,Y>>2);
-        //       VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("Source\n" ));
-        //  for(j = -1; j < 16+2; j++)
-        //   {
-        //      for(i = -1; i < 16+2; i++)
-        //      {
-        //      VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("%d "), pSrc[i  + j*srcStep]);
-        //      }
-        //   VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("\n"));
-        //  }
-        //   VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("F(%d, %d, %d, %d) abs=%d r=%d shift=%d\n") ,Fy0,Fy1,Fy2,Fy3,Abs,R,Shift);
-        //  VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("after interpolate\n") );
-        //  VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("\n"));
-#endif
 
         /* vertical filter */
         for(j = 0; j < 16; j++)
@@ -158,23 +124,14 @@ static IppStatus ippiInterpolate16x16QPBicubicIC_VC1_8u_C1R (const Ipp8u* pSrc,
                     pDst16[i-3] * Fx1 +
                     pDst16[i-2] * Fx2 +
                     pDst16[i-1] * Fx3 + 64 - R) >> 7);
-#ifdef VC1_DEBUG_ON
-                //                VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("%d  "), pDst[i-3] );
-#endif
             }
             pDst[i-3] = CLIP((pDst16[i-4] * Fx0 +
                 pDst16[i-3] * Fx1 +
                 pDst16[i-2] * Fx2 +
                 pDst16[i-1] * Fx3 + 64 - R) >> 7);
-#ifdef VC1_DEBUG_ON
-            //          VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("%d  "), pDst[i-3] );
-#endif
             pDst   += dstStep;
             pSrc   += srcStep;
             pDst16 += PBPL;
-#ifdef VC1_DEBUG_ON
-            //        VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("\n") );
-#endif
         }
 
         break;
@@ -182,10 +139,6 @@ static IppStatus ippiInterpolate16x16QPBicubicIC_VC1_8u_C1R (const Ipp8u* pSrc,
 
         Shift           = BicubicVertFilterShift[0][(dy) - 1];
         Abs             = 1 << (Shift - 1);
-#ifdef VC1_DEBUG_ON
-        //        VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("PelBicubicVert\n") );
-#endif
-
 
         for(j = 0; j < 16; j++)
         {
@@ -197,24 +150,15 @@ static IppStatus ippiInterpolate16x16QPBicubicIC_VC1_8u_C1R (const Ipp8u* pSrc,
                     pSrc[i + srcStep]   * Fy2 +
                     pSrc[i + 2*srcStep] * Fy3 +
                     Abs - 1 + R) >> Shift);
-#ifdef VC1_DEBUG_ON
-                //            VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("%d  "), pDst[i] );
-#endif
             }
             pSrc += srcStep;
             pDst += dstStep;
-#ifdef VC1_DEBUG_ON
-            //            VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("\n") );
-#endif
         }
         break;
 
     case 2:
         Shift           = BicubicHorizFilterShift[(dx) - 1][0];
         Abs             = 1 << (Shift - 1);
-#ifdef VC1_DEBUG_ON
-        //       VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("PelBicubicHoriz\n") );
-#endif
 
         for(j = 0; j < 16; j++)
         {
@@ -225,13 +169,9 @@ static IppStatus ippiInterpolate16x16QPBicubicIC_VC1_8u_C1R (const Ipp8u* pSrc,
                     pSrc[i+1]   * Fx2 +
                     pSrc[i + 2] * Fx3 +
                     Abs - R) >> Shift);
-#ifdef VC1_DEBUG_ON
-                //                VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("%d  "), pDst[i] );
-#endif
             }
             pSrc += srcStep;
             pDst += dstStep;
-            //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("\n") );
         }
         break;
     case 3:
@@ -240,14 +180,7 @@ static IppStatus ippiInterpolate16x16QPBicubicIC_VC1_8u_C1R (const Ipp8u* pSrc,
             for(i = 0; i < 16; i++)
             {
                 pDst[i] = pSrc[i];
-#ifdef VC1_DEBUG_ON
-                //              VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("%d  "), pDst[i] );
-#endif
-
             }
-#ifdef VC1_DEBUG_ON
-            //            VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("\n") );
-#endif
             pSrc += srcStep;
             pDst += dstStep;
         }
@@ -294,42 +227,12 @@ static IppStatus ippiInterpolate16x8QPBicubicIC_VC1_8u_C1R (const Ipp8u* pSrc,
     Fx2          =  FP[2];
     Fx3          =  FP[3];
 
-#ifdef INTERDEBUG
-    printf("New Source Block \n");
-    for(j = -1; j < 10; j++)
-    {
-        for(i = -1; i < 18; i++)
-        {
-            printf(" %d ",pSrc[i  + j*srcStep]);
-        }
-        printf(" \n");
-    }
-#endif
-
-
     switch(choose_int)
     {
     case 0:
 
         Shift           = BicubicVertFilterShift[(dx)][(dy) - 1];
         Abs             = 1 << (Shift - 1);
-#ifdef VC1_DEBUG_ON
-        //         VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("PelBicubicDiag\n") );
-        //         VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("%d\t %d\t %d\n"),*pSource,X>>2,Y>>2);
-        //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("Source\n" ));
-        //        for(j = -1; j < 8+2; j++)
-        //        {
-        //            for(i = -1; i < 16+2; i++)
-        //{
-        //                VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("%d "), pSrc[i  + j*srcStep]);
-        //            }
-        //            VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("\n"));
-        //        }
-        //        VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("F(%d, %d, %d, %d) abs=%d r=%d shift=%d\n") ,Fy0,Fy1,Fy2,Fy3,Abs,R,Shift);
-        //        VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("after interpolate\n") );
-        //        VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("\n"));
-#endif
-
         /* vertical filter */
 
         for(j = 0; j < 8; j++)
@@ -357,33 +260,20 @@ static IppStatus ippiInterpolate16x8QPBicubicIC_VC1_8u_C1R (const Ipp8u* pSrc,
                     pDst16[i-3] * Fx1 +
                     pDst16[i-2] * Fx2 +
                     pDst16[i-1] * Fx3 + 64 - R) >> 7);
-#ifdef VC1_DEBUG_ON
-                //                    VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("%d  "), pDst[i-3] );
-#endif
             }
             pDst[i-3] = CLIP((pDst16[i-4] * Fx0 +
                 pDst16[i-3] * Fx1 +
                 pDst16[i-2] * Fx2 +
                 pDst16[i-1] * Fx3 + 64 - R) >> 7);
-#ifdef VC1_DEBUG_ON
-            //               VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("%d  "), pDst[i-3] );
-#endif
             pDst   += dstStep;
             pSrc   += srcStep;
             pDst16 += PBPL;
-#ifdef VC1_DEBUG_ON
-            //              VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("\n") );
-#endif
         }
         break;
     case 1:
 
         Shift           = BicubicVertFilterShift[0][(dy) - 1];
         Abs             = 1 << (Shift - 1);
-#ifdef VC1_DEBUG_ON
-        //        VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("PelBicubicVert\n") );
-#endif
-
 
         for(j = 0; j < 8; j++)
         {
@@ -395,25 +285,15 @@ static IppStatus ippiInterpolate16x8QPBicubicIC_VC1_8u_C1R (const Ipp8u* pSrc,
                     pSrc[i + srcStep]   * Fy2 +
                     pSrc[i + 2*srcStep] * Fy3 +
                     Abs - 1 + R) >> Shift);
-#ifdef VC1_DEBUG_ON
-                //                    VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("%d  "), pDst[i] );
-#endif
             }
             pSrc += srcStep;
             pDst += dstStep;
-#ifdef VC1_DEBUG_ON
-            //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("\n") );
-#endif
         }
 
         break;
     case 2:
         Shift           = BicubicHorizFilterShift[(dx) - 1][0];
         Abs             = 1 << (Shift - 1);
-#ifdef VC1_DEBUG_ON
-        //        VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("PelBicubicHoriz\n") );
-#endif
-
 
         for(j = 0; j < 8; j++)
         {
@@ -424,15 +304,9 @@ static IppStatus ippiInterpolate16x8QPBicubicIC_VC1_8u_C1R (const Ipp8u* pSrc,
                     pSrc[i+1]   * Fx2 +
                     pSrc[i + 2] * Fx3 +
                     Abs - R) >> Shift);
-#ifdef VC1_DEBUG_ON
-                //                    VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("%d  "), pDst[i] );
-#endif
             }
             pSrc += srcStep;
             pDst += dstStep;
-#ifdef VC1_DEBUG_ON
-            //                VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("\n") );
-#endif
         }
         break;
 
@@ -442,16 +316,9 @@ static IppStatus ippiInterpolate16x8QPBicubicIC_VC1_8u_C1R (const Ipp8u* pSrc,
         {
             for(i = 0; i < 16; i++)
             {
-                //pPixels[I] = IC_SCAN(pSource[I], IC_matrix);
                 pDst[i] = pSrc[i];
-#ifdef VC1_DEBUG_ON
-                //                    VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("%d  "), pDst[i] );
-#endif
 
             }
-#ifdef VC1_DEBUG_ON
-            //                VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("\n") );
-#endif
             pSrc += srcStep;
             pDst += dstStep;
         }
@@ -496,48 +363,18 @@ static IppStatus ippiInterpolate8x8QPBicubicIC_VC1_8u_C1R (const Ipp8u* pSrc,
     Fx2          = FP[2];
     Fx3          = FP[3];
 
-
-#ifdef INTERDEBUG
-    printf("New Source Block \n");
-    for(j = -1; j < 10; j++)
-    {
-        for(i = -1; i < 10; i++)
-        {
-            printf(" %d ",pSrc[i  + j*srcStep]);
-        }
-        printf(" \n");
-    }
-#endif
-
     switch(choose_int)
     {
     case 0:
 
         Shift           = BicubicVertFilterShift[(dx)][(dy) - 1];
         Abs             = 1 << (Shift - 1);
-#ifdef VC1_DEBUG_ON
-        //        VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("PelBicubicDiag\n") );
-#endif
+
         FP = BicubicFilterParams[dx - 1];
         Fx0          = (int)FP[0];
         Fx1          = (int)FP[1];
         Fx2          = (int)FP[2];
         Fx3          = (int)FP[3];
-
-#ifdef VC1_DEBUG_ON
-        //        VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("Source\n" ));
-        //        for(j = -1; j < 8+2; j++)
-        //        {
-        //            for(i = -1; i < 8+2; i++)
-        //            {
-        //                VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("%d "), pSrc[i  + j*srcStep]);
-        //            }
-        //            VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("\n"));
-        //        }
-        //        VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("F(%d, %d, %d, %d) abs=%d r=%d shift=%d\n") ,Fy0,Fy1,Fy2,Fy3,Abs,R,Shift);
-        //        VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("after interpolate\n") );
-        //        VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("\n"));
-#endif
 
         /* vertical filter */
 
@@ -566,33 +403,20 @@ static IppStatus ippiInterpolate8x8QPBicubicIC_VC1_8u_C1R (const Ipp8u* pSrc,
                     pDst16[i-3] * Fx1 +
                     pDst16[i-2] * Fx2 +
                     pDst16[i-1] * Fx3 + 64 - R) >> 7);
-#ifdef VC1_DEBUG_ON
-                //                    VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("%d  "), pDst[i-3] );
-#endif
             }
             pDst[i-3] = CLIP((pDst16[i-4] * Fx0 +
                 pDst16[i-3] * Fx1 +
                 pDst16[i-2] * Fx2 +
                 pDst16[i-1] * Fx3 + 64 - R) >> 7);
-#ifdef VC1_DEBUG_ON
-            //               VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("%d  "), pDst[i-3] );
-#endif
             pDst   += dstStep;
             pSrc   += srcStep;
             pDst16 += PBPL;
-#ifdef VC1_DEBUG_ON
-            //                VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("\n") );
-#endif
         }
         break;
     case 1:
 
         Shift           = BicubicVertFilterShift[0][(dy) - 1];
         Abs             = 1 << (Shift - 1);
-#ifdef VC1_DEBUG_ON
-        //       VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("PelBicubicVert\n") );
-#endif
-
 
         for(j = 0; j < 8; j++)
         {
@@ -603,27 +427,14 @@ static IppStatus ippiInterpolate8x8QPBicubicIC_VC1_8u_C1R (const Ipp8u* pSrc,
                     pSrc[i + srcStep]   * Fy2 +
                     pSrc[i + 2*srcStep] * Fy3 +
                     Abs - 1 + R) >> Shift);
-                //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("Source\n"));
-                //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("%d  \n"), pSrc[i - srcStep] );
-                //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("%d  \n"), pSrc[i] );
-                //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("%d  \n"), pSrc[i + srcStep] );
-                //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("%d  \n"), pSrc[i + 2*srcStep] );
-
-                //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("%d  \n"), pDst[i] );
             }
             pSrc += srcStep;
             pDst += dstStep;
-#ifdef VC1_DEBUG_ON
-            //              VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("\n") );
-#endif
         }
         break;
     case 2:
         Shift           = BicubicHorizFilterShift[(dx) - 1][0];
         Abs             = 1 << (Shift - 1);
-#ifdef VC1_DEBUG_ON
-        //       VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("PelBicubicHoriz\n") );
-#endif
 
         for(j = 0; j < 8; j++)
         {
@@ -634,15 +445,9 @@ static IppStatus ippiInterpolate8x8QPBicubicIC_VC1_8u_C1R (const Ipp8u* pSrc,
                     pSrc[i+1]   * Fx2 +
                     pSrc[i + 2] * Fx3 +
                     Abs - R) >> Shift);
-#ifdef VC1_DEBUG_ON
-                //                  VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("%d  "), pDst[i] );
-#endif
             }
             pSrc += srcStep;
             pDst += dstStep;
-#ifdef VC1_DEBUG_ON
-            //               VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("\n") );
-#endif
         }
         break;
     case 3:
@@ -651,14 +456,8 @@ static IppStatus ippiInterpolate8x8QPBicubicIC_VC1_8u_C1R (const Ipp8u* pSrc,
         {
             for(i = 0; i < 8; i++)
             {
-                //pPixels[I] = IC_SCAN(pSource[I], IC_matrix);
                 pDst[i] = pSrc[i];
-#ifdef VC1_DEBUG_ON
-                //                  VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("%d  "), pDst[i] );
-#endif
-
             }
-            //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("\n") );
             pSrc += srcStep;
             pDst += dstStep;
         }
@@ -717,16 +516,11 @@ void DecodeTransformInfo(VC1Context* pContext)
 
         }
     }
-    //else
-    //{
-    //    for (i=0;i<VC1_NUM_OF_BLOCKS;i++)
-    //        pContext->m_pCurrMB->m_pBlocks[i].blkType = (Ipp8u)pContext->m_picLayerHeader->TTFRM;
-    //}
 }
 
 VC1Status GetTTMB(VC1Context* pContext)
 {
-    IppStatus ret;
+    int ret;
     VC1MB *pMB = pContext->m_pCurrMB;
     Ipp32s eSBP;
     Ipp8u Count, Limit, FirstBlock = 0;
@@ -744,13 +538,11 @@ VC1Status GetTTMB(VC1Context* pContext)
         return VC1_OK;
     }
 
-    ret = ippiDecodeHuffmanOne_1u32s(  &pContext->m_bitstream.pBitstream,
+    ret = DecodeHuffmanOne(  &pContext->m_bitstream.pBitstream,
         &pContext->m_bitstream.bitOffset,
         &eSBP,
         pContext->m_picLayerHeader->m_pCurrTTMBtbl);
-    VM_ASSERT(ret == ippStsNoErr);
-
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_TT,VM_STRING("TTMB = %d\n"), eSBP);
+    VM_ASSERT(ret == 0);
 
     Limit = VC1_NUM_OF_BLOCKS;
 
@@ -762,9 +554,6 @@ VC1Status GetTTMB(VC1Context* pContext)
     {
         eSBP -= VC1_SBP_8X8_MB;
     }
-
-    //printf("eSBP = %d\n",eSBP);
-    //printf("offset = %d\n", pContext->m_bitOffset);
 
     pContext->m_pSingleMB->m_ubNumFirstCodedBlk = FirstBlock;
 
@@ -881,9 +670,6 @@ IppStatus ippiPXInterpolatePXICBicubicBlock_VC1_8u_C1R(const IppVCInterpolateBlo
     Ipp32u isPredBottom;
     Ipp32s frameHeightShifted;
     Ipp32s OutOfBoundaryFlag = 0; //all block out of boundary flag
-
-    //IPP_BAD_PTR1_RET(interpolateInfo);
-    //IPP_BAD_PTR2_RET(interpolateInfo->pSrc, interpolateInfo->pDst);
 
     shift = (interpolateInfo->fieldPrediction)? 1:0;
     SCoef = (interpolateInfo->fieldPrediction)? 1:0; // in case of interlace fields we should use half of frame height
@@ -1113,7 +899,7 @@ IppStatus ippiPXInterpolatePXICBicubicBlock_VC1_8u_C1R(const IppVCInterpolateBlo
                     }
                 } else {
                     for (i = nfield; i < tmpBlkSize.height; i+=2) {
-                        ippsCopy_8u(&(pRefBlock[i*RefBlockStep]),&(pTmpBlkData[i*tmpBlkStep]),tmpBlkSize.width);
+                        MFX_INTERNAL_CPY(&(pTmpBlkData[i*tmpBlkStep]), &(pRefBlock[i*RefBlockStep]), tmpBlkSize.width);
                     }                
                 }
             }
@@ -1133,7 +919,7 @@ IppStatus ippiPXInterpolatePXICBicubicBlock_VC1_8u_C1R(const IppVCInterpolateBlo
                             pTmpBlkData[i*tmpBlkStep+j] = pLUT[0][interpolateInfo->pSrc[serv+j]];
                         }
                     } else {
-                        ippsCopy_8u(&(interpolateInfo->pSrc[serv]),&(pTmpBlkData[i*tmpBlkStep]),tmpBlkSize.width);
+                        MFX_INTERNAL_CPY(&(pTmpBlkData[i*tmpBlkStep]), &(interpolateInfo->pSrc[serv]), tmpBlkSize.width);
                     }
                 }
                 // bottom
@@ -1145,7 +931,7 @@ IppStatus ippiPXInterpolatePXICBicubicBlock_VC1_8u_C1R(const IppVCInterpolateBlo
                             pTmpBlkData[(tmpBlkSize.height+i)*tmpBlkStep+j] = pLUT[1][interpolateInfo->pSrc[serv+j]];
                         }
                     } else {
-                        ippsCopy_8u(&(interpolateInfo->pSrc[serv]),&(pTmpBlkData[(tmpBlkSize.height+i)*tmpBlkStep]),tmpBlkSize.width);
+                        MFX_INTERNAL_CPY(&(pTmpBlkData[(tmpBlkSize.height+i)*tmpBlkStep]), &(interpolateInfo->pSrc[serv]), tmpBlkSize.width);
                     }
                 }
             }
@@ -1161,7 +947,7 @@ IppStatus ippiPXInterpolatePXICBicubicBlock_VC1_8u_C1R(const IppVCInterpolateBlo
                             pTmpBlkData[i*tmpBlkStep+j] = interpolateInfo->pLUTTop[interpolateInfo->pSrc[serv+j]];
                         }
                     } else {
-                        ippsCopy_8u(&(interpolateInfo->pSrc[serv]),&(pTmpBlkData[i*tmpBlkStep]),tmpBlkSize.width);
+                        MFX_INTERNAL_CPY(&(pTmpBlkData[i*tmpBlkStep]), &(interpolateInfo->pSrc[serv]), tmpBlkSize.width);
                     }
                 }
                 // bottom
@@ -1173,7 +959,7 @@ IppStatus ippiPXInterpolatePXICBicubicBlock_VC1_8u_C1R(const IppVCInterpolateBlo
                             pTmpBlkData[(tmpBlkSize.height+i)*tmpBlkStep+j] = interpolateInfo->pLUTBottom[interpolateInfo->pSrc[serv+j]];
                         }
                     } else {
-                        ippsCopy_8u(&(interpolateInfo->pSrc[serv]),&(pTmpBlkData[(tmpBlkSize.height+i)*tmpBlkStep]),tmpBlkSize.width);
+                        MFX_INTERNAL_CPY(&(pTmpBlkData[(tmpBlkSize.height+i)*tmpBlkStep]), &(interpolateInfo->pSrc[serv]), tmpBlkSize.width);
                     }
                 }
             }
@@ -1192,7 +978,7 @@ IppStatus ippiPXInterpolatePXICBicubicBlock_VC1_8u_C1R(const IppVCInterpolateBlo
                             pTmpBlkData[-i*tmpBlkStep+j] = pLUT[0][interpolateInfo->pSrc[serv+j]];
                         }
                     } else {
-                        ippsCopy_8u(&(interpolateInfo->pSrc[serv]),&(pTmpBlkData[-i*tmpBlkStep]),tmpBlkSize.width);
+                        MFX_INTERNAL_CPY(&(pTmpBlkData[-i*tmpBlkStep]), &(interpolateInfo->pSrc[serv]), tmpBlkSize.width);
                     }
                 }
                 for (i = 1; i <= paddingTop; i +=2)
@@ -1203,7 +989,7 @@ IppStatus ippiPXInterpolatePXICBicubicBlock_VC1_8u_C1R(const IppVCInterpolateBlo
                             pTmpBlkData[-i*tmpBlkStep+j] = pLUT[1][interpolateInfo->pSrc[serv+j]];
                         }
                     } else {
-                        ippsCopy_8u(&(interpolateInfo->pSrc[serv]),&(pTmpBlkData[-i*tmpBlkStep]),tmpBlkSize.width);
+                        MFX_INTERNAL_CPY(&(pTmpBlkData[-i*tmpBlkStep]), &(interpolateInfo->pSrc[serv]), tmpBlkSize.width);
                     }
                 }
             }
@@ -1224,7 +1010,7 @@ IppStatus ippiPXInterpolatePXICBicubicBlock_VC1_8u_C1R(const IppVCInterpolateBlo
                             pTmpBlkData[(tmpBlkSize.height+i)*tmpBlkStep+j] = pLUT[1][interpolateInfo->pSrc[serv+j]];
                         }
                     } else {
-                        ippsCopy_8u(&(interpolateInfo->pSrc[serv]),&(pTmpBlkData[(tmpBlkSize.height+i)*tmpBlkStep]),tmpBlkSize.width);
+                        MFX_INTERNAL_CPY(&(pTmpBlkData[(tmpBlkSize.height+i)*tmpBlkStep]), &(interpolateInfo->pSrc[serv]), tmpBlkSize.width);
                     }
                 }
                 for (i = 1; i < paddingBottom; i +=2)
@@ -1235,7 +1021,7 @@ IppStatus ippiPXInterpolatePXICBicubicBlock_VC1_8u_C1R(const IppVCInterpolateBlo
                             pTmpBlkData[(tmpBlkSize.height+i)*tmpBlkStep+j] = pLUT[0][interpolateInfo->pSrc[serv+j]];
                         }
                     } else {
-                        ippsCopy_8u(&(interpolateInfo->pSrc[serv]),&(pTmpBlkData[(tmpBlkSize.height+i)*tmpBlkStep]),tmpBlkSize.width);
+                        MFX_INTERNAL_CPY(&(pTmpBlkData[(tmpBlkSize.height+i)*tmpBlkStep]), &(interpolateInfo->pSrc[serv]), tmpBlkSize.width);
                     }
                 }
             }
@@ -1321,9 +1107,6 @@ IppStatus ippiPXInterpolatePXICBilinearBlock_VC1_8u_C1R(const IppVCInterpolateBl
     Ipp32u isPredBottom;
     Ipp32s frameHeightShifted;
     Ipp32s OutOfBoundaryFlag = 0; //all block out of boundary flag
-
-    //IPP_BAD_PTR1_RET(interpolateInfo);
-    //IPP_BAD_PTR2_RET(interpolateInfo->pSrc, interpolateInfo->pDst);
 
     shift = (interpolateInfo->fieldPrediction)? 1:0;
     SCoef = (interpolateInfo->fieldPrediction)? 1:0; // in case of interlace fields we should use half of frame height
@@ -1554,7 +1337,7 @@ IppStatus ippiPXInterpolatePXICBilinearBlock_VC1_8u_C1R(const IppVCInterpolateBl
                     }
                 } else {
                     for (i = nfield; i < tmpBlkSize.height; i+=2) {
-                        ippsCopy_8u(&(pRefBlock[i*RefBlockStep]),&(pTmpBlkData[i*tmpBlkStep]),tmpBlkSize.width);
+                        MFX_INTERNAL_CPY(&(pTmpBlkData[i*tmpBlkStep]), &(pRefBlock[i*RefBlockStep]), tmpBlkSize.width);
                     }                
                 }
             }
@@ -1574,7 +1357,7 @@ IppStatus ippiPXInterpolatePXICBilinearBlock_VC1_8u_C1R(const IppVCInterpolateBl
                             pTmpBlkData[i*tmpBlkStep+j] = pLUT[0][interpolateInfo->pSrc[serv+j]];
                         }
                     } else {
-                        ippsCopy_8u(&(interpolateInfo->pSrc[serv]),&(pTmpBlkData[i*tmpBlkStep]),tmpBlkSize.width);
+                        MFX_INTERNAL_CPY(&(pTmpBlkData[i*tmpBlkStep]), &(interpolateInfo->pSrc[serv]), tmpBlkSize.width);
                     }
                 }
                 // bottom
@@ -1586,7 +1369,7 @@ IppStatus ippiPXInterpolatePXICBilinearBlock_VC1_8u_C1R(const IppVCInterpolateBl
                             pTmpBlkData[(tmpBlkSize.height+i)*tmpBlkStep+j] = pLUT[1][interpolateInfo->pSrc[serv+j]];
                         }
                     } else {
-                        ippsCopy_8u(&(interpolateInfo->pSrc[serv]),&(pTmpBlkData[(tmpBlkSize.height+i)*tmpBlkStep]),tmpBlkSize.width);
+                        MFX_INTERNAL_CPY(&(pTmpBlkData[(tmpBlkSize.height+i)*tmpBlkStep]), &(interpolateInfo->pSrc[serv]), tmpBlkSize.width);
                     }
                 }
             }
@@ -1602,7 +1385,7 @@ IppStatus ippiPXInterpolatePXICBilinearBlock_VC1_8u_C1R(const IppVCInterpolateBl
                             pTmpBlkData[i*tmpBlkStep+j] = interpolateInfo->pLUTTop[interpolateInfo->pSrc[serv+j]];
                         }
                     } else {
-                        ippsCopy_8u(&(interpolateInfo->pSrc[serv]),&(pTmpBlkData[i*tmpBlkStep]),tmpBlkSize.width);
+                        MFX_INTERNAL_CPY(&(pTmpBlkData[i*tmpBlkStep]), &(interpolateInfo->pSrc[serv]), tmpBlkSize.width);
                     }
                 }
                 // bottom
@@ -1614,7 +1397,7 @@ IppStatus ippiPXInterpolatePXICBilinearBlock_VC1_8u_C1R(const IppVCInterpolateBl
                             pTmpBlkData[(tmpBlkSize.height+i)*tmpBlkStep+j] = interpolateInfo->pLUTBottom[interpolateInfo->pSrc[serv+j]];
                         }
                     } else {
-                        ippsCopy_8u(&(interpolateInfo->pSrc[serv]),&(pTmpBlkData[(tmpBlkSize.height+i)*tmpBlkStep]),tmpBlkSize.width);
+                        MFX_INTERNAL_CPY(&(pTmpBlkData[(tmpBlkSize.height+i)*tmpBlkStep]), &(interpolateInfo->pSrc[serv]), tmpBlkSize.width);
                     }
                 }
             }
@@ -1633,7 +1416,7 @@ IppStatus ippiPXInterpolatePXICBilinearBlock_VC1_8u_C1R(const IppVCInterpolateBl
                             pTmpBlkData[-i*tmpBlkStep+j] = pLUT[0][interpolateInfo->pSrc[serv+j]];
                         }
                     } else {
-                        ippsCopy_8u(&(interpolateInfo->pSrc[serv]),&(pTmpBlkData[-i*tmpBlkStep]),tmpBlkSize.width);
+                        MFX_INTERNAL_CPY(&(pTmpBlkData[-i*tmpBlkStep]), &(interpolateInfo->pSrc[serv]), tmpBlkSize.width);
                     }
                 }
                 for (i = 1; i <= paddingTop; i +=2)
@@ -1644,7 +1427,7 @@ IppStatus ippiPXInterpolatePXICBilinearBlock_VC1_8u_C1R(const IppVCInterpolateBl
                             pTmpBlkData[-i*tmpBlkStep+j] = pLUT[1][interpolateInfo->pSrc[serv+j]];
                         }
                     } else {
-                        ippsCopy_8u(&(interpolateInfo->pSrc[serv]),&(pTmpBlkData[-i*tmpBlkStep]),tmpBlkSize.width);
+                        MFX_INTERNAL_CPY(&(pTmpBlkData[-i*tmpBlkStep]), &(interpolateInfo->pSrc[serv]), tmpBlkSize.width);
                     }
                 }
             }
@@ -1665,7 +1448,7 @@ IppStatus ippiPXInterpolatePXICBilinearBlock_VC1_8u_C1R(const IppVCInterpolateBl
                             pTmpBlkData[(tmpBlkSize.height+i)*tmpBlkStep+j] = pLUT[1][interpolateInfo->pSrc[serv+j]];
                         }
                     } else {
-                        ippsCopy_8u(&(interpolateInfo->pSrc[serv]),&(pTmpBlkData[(tmpBlkSize.height+i)*tmpBlkStep]),tmpBlkSize.width);
+                        MFX_INTERNAL_CPY(&(pTmpBlkData[(tmpBlkSize.height+i)*tmpBlkStep]), &(interpolateInfo->pSrc[serv]), tmpBlkSize.width);
                     }
                 }
                 for (i = 1; i < paddingBottom; i +=2)
@@ -1676,7 +1459,7 @@ IppStatus ippiPXInterpolatePXICBilinearBlock_VC1_8u_C1R(const IppVCInterpolateBl
                             pTmpBlkData[(tmpBlkSize.height+i)*tmpBlkStep+j] = pLUT[0][interpolateInfo->pSrc[serv+j]];
                         }
                     } else {
-                        ippsCopy_8u(&(interpolateInfo->pSrc[serv]),&(pTmpBlkData[(tmpBlkSize.height+i)*tmpBlkStep]),tmpBlkSize.width);
+                        MFX_INTERNAL_CPY(&(pTmpBlkData[(tmpBlkSize.height+i)*tmpBlkStep]), &(interpolateInfo->pSrc[serv]), tmpBlkSize.width);
                     }
                 }
             }

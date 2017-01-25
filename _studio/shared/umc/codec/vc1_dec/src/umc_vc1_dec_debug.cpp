@@ -15,8 +15,10 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include "umc_vc1_dec_debug.h"
-#include "umc_vc1_dec_thread.h"
 
+#ifdef VC1_DEBUG_ON
+#include "umc_vc1_dec_thread.h"
+#endif
 
 
 const Ipp32u  VC1_POSITION  = 0x00000001; // MB, Block positions, skip info
@@ -61,7 +63,6 @@ void VM_Debug::vm_debug_frame(Ipp32s _cur_frame, Ipp32s level, const vm_char *fo
             va_start(args, format);
             vm_string_vsprintf(line, format, args);
             vm_string_fprintf(Logthread0, line);
-            //printf(line);
         }
         else
         {
@@ -79,7 +80,6 @@ void VM_Debug::vm_debug_frame(Ipp32s _cur_frame, Ipp32s level, const vm_char *fo
                 va_start(args, format);
                 vm_string_vsprintf(line, format, args);
                 vm_string_fprintf(Logthread0, line);
-                //printf(line);
             }
         }
     }
@@ -93,7 +93,6 @@ void VM_Debug::vm_debug_frame(Ipp32s _cur_frame, Ipp32s level, const vm_char *fo
             va_start(args, format);
             vm_string_vsprintf(line, format, args);
             vm_string_fprintf(Logthread1, line);
-           // printf(line);
         }
         else
         {
@@ -111,7 +110,6 @@ void VM_Debug::vm_debug_frame(Ipp32s _cur_frame, Ipp32s level, const vm_char *fo
                 va_start(args, format);
                 vm_string_vsprintf(line, format, args);
                 vm_string_fprintf(Logthread1, line);
-                //printf(line);
             }
         }
     }
@@ -121,7 +119,7 @@ void VM_Debug::vm_debug_frame(Ipp32s _cur_frame, Ipp32s level, const vm_char *fo
 void VM_Debug::vm_debug_frame(Ipp32s _cur_frame, Ipp32s level, const vm_char *format,...) {}
 #endif
 
-
+#ifdef ALLOW_SW_VC1_FALLBACK
 void VM_Debug::_print_macroblocks(VC1Context* pContext)
 {
     Ipp32s i,j;
@@ -388,6 +386,8 @@ void VM_Debug::_print_blocks(VC1Context* pContext)
         }
     }
 }
+#endif // #ifdef ALLOW_SW_VC1_FALLBACK
+
 void VM_Debug::print_bitplane(VC1Bitplane* pBitplane, Ipp32s width, Ipp32s height)
 {
     Ipp32s i,j;

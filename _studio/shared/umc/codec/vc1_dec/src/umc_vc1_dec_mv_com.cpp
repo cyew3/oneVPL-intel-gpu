@@ -316,8 +316,6 @@ void CalculateMV(Ipp16s x[],Ipp16s y[], Ipp16s *X, Ipp16s* Y)
         (((Ipp16u)(x[2])== VC1_MVINTRA)<<2) +
         (((Ipp16u)(x[3])== VC1_MVINTRA)<<3);
 
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_BFRAMES,VM_STRING("history MVs(%d,%d) (%d,%d) (%d,%d) (%d,%d)\n"),x[0],y[0],x[1],y[1],x[2],y[2],x[3],y[3]);
-
     switch(n_intra)
     {
     case 0x00: //all blocks are inter
@@ -382,8 +380,6 @@ void CalculateMV(Ipp16s x[],Ipp16s y[], Ipp16s *X, Ipp16s* Y)
         (*Y)=VC1_MVINTRA;
         break;
     }
-    //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_BFRAMES,VM_STRING("calculated history MVs(%d,%d)\n"),*X,*Y);
-
 }
 void CalculateMV_Interlace(Ipp16s x[],Ipp16s y[], Ipp16s x_bottom[],Ipp16s y_bottom[],Ipp16s *Xt, Ipp16s* Yt,Ipp16s *Xb, Ipp16s* Yb )
 {
@@ -498,81 +494,6 @@ void Decode_BMVTYPE(VC1Context* pContext)
             VC1_MB_1MV_INTER|VC1_MB_BACKWARD:VC1_MB_1MV_INTER|VC1_MB_FORWARD;
     }
 }
-
-VC1Status MVRangeDecode(VC1Context* pContext)
-{
-    VC1PictureLayerHeader* picLayerHeader = pContext->m_picLayerHeader;
-
-    if (pContext->m_seqLayerHeader.EXTENDED_MV == 1)
-    {
-        //Ipp32s MVRANGE;
-        //0   256 128
-        //10  512 256
-        //110 2048 512
-        //111 4096 1024
-
-        VC1_GET_BITS(1, picLayerHeader->MVRANGE);
-
-        if(picLayerHeader->MVRANGE)
-        {
-            VC1_GET_BITS(1, picLayerHeader->MVRANGE);
-            if(picLayerHeader->MVRANGE)
-            {
-                VC1_GET_BITS(1, picLayerHeader->MVRANGE);
-                picLayerHeader->MVRANGE += 1;
-            }
-            picLayerHeader->MVRANGE += 1;
-        }
-        picLayerHeader->m_pCurrMVRangetbl = &VC1_MVRangeTbl[picLayerHeader->MVRANGE];
-    }
-    else
-    {
-        picLayerHeader->m_pCurrMVRangetbl = &VC1_MVRangeTbl[0];
-//#ifdef DXVA_SIM
-        picLayerHeader->MVRANGE = 0;
-//#endif
-    }
-    return VC1_OK;
-}
-
-VC1Status DMVRangeDecode(VC1Context* pContext)
-{
-    if(pContext->m_seqLayerHeader.EXTENDED_DMV == 1)
-    {
-        VC1_GET_BITS(1, pContext->m_picLayerHeader->DMVRANGE);
-        if(pContext->m_picLayerHeader->DMVRANGE==0)
-        {
-            //binary code 0
-            pContext->m_picLayerHeader->DMVRANGE = VC1_DMVRANGE_NONE;
-        }
-        else
-        {
-            VC1_GET_BITS(1, pContext->m_picLayerHeader->DMVRANGE);
-            if(pContext->m_picLayerHeader->DMVRANGE==0)
-            {
-               //binary code 10
-               pContext->m_picLayerHeader->DMVRANGE = VC1_DMVRANGE_HORIZONTAL_RANGE;
-            }
-            else
-            {
-                VC1_GET_BITS(1, pContext->m_picLayerHeader->DMVRANGE);
-                if(pContext->m_picLayerHeader->DMVRANGE==0)
-                {
-                    //binary code 110
-                    pContext->m_picLayerHeader->DMVRANGE = VC1_DMVRANGE_VERTICAL_RANGE;
-                }
-                else
-                {
-                    //binary code 111
-                    pContext->m_picLayerHeader->DMVRANGE = VC1_DMVRANGE_HORIZONTAL_VERTICAL_RANGE;
-                }
-            }
-        }
-    }
-
-    return VC1_OK;
-}
-
 
 void PullBack_PPred4MV(VC1SingletonMB* sMB, Ipp16s *pMVx, Ipp16s* pMVy, Ipp32s blk_num)
 {

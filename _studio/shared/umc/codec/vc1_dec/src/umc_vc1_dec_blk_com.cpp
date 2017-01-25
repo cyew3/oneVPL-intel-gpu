@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2011 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -15,9 +15,9 @@
 #include "umc_vc1_dec_seq.h"
 #include "umc_vc1_dec_debug.h"
 #include "umc_vc1_common_blk_order_tbl.h"
-#include "umc_vc1_dec_time_statistics.h"
 #include "assert.h"
 #include "umc_vc1_dec_exception.h"
+#include "umc_vc1_huffman.h"
 
 using namespace UMC;
 using namespace UMC::VC1Exceptions;
@@ -29,7 +29,7 @@ inline Ipp32s DecodeSymbol(IppiBitstream* pBitstream,
                            const IppiACDecodeSet_VC1 * decodeSet,
                            IppiEscInfo_VC1* EscInfo)
 {
-    IppStatus ret;
+    int ret;
     Ipp32s sign = 0;
     Ipp32s code = 0;
     Ipp32s escape_mode = 0;
@@ -39,11 +39,11 @@ inline Ipp32s DecodeSymbol(IppiBitstream* pBitstream,
     Ipp32s tmp_level = 0;
     Ipp32s last = 0;
 
-    ret = ippiDecodeHuffmanOne_1u32s (&pBitstream->pBitstream,
+    ret = DecodeHuffmanOne(&pBitstream->pBitstream,
                                       &pBitstream->bitOffset,
                                       &code, decodeSet->pRLTable);
 #ifdef VC1_VLD_CHECK
-    if (ret != ippStsNoErr)
+    if (ret != 0)
         throw vc1_exception(vld);
 #endif
 
@@ -52,15 +52,6 @@ inline Ipp32s DecodeSymbol(IppiBitstream* pBitstream,
         if(code == IPPVC_ESCAPE)
             VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_COEFFS,
                                                     VM_STRING("Index = ESCAPE\n"));
-        //else
-        //{
-        //    VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,
-        //    VC1_COEFFS,VM_STRING("Index = %d\n"), code);
-        //
-        //    VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,
-        //    VC1_COEFFS,VM_STRING("Offset = %d\n"), pContext->m_bitOffset);
-
-        //}
     #endif
 
     if(code != IPPVC_ESCAPE)
@@ -84,11 +75,11 @@ inline Ipp32s DecodeSymbol(IppiBitstream* pBitstream,
                                             VM_STRING("Index = ESCAPE Mode 1\n"));
 #endif
 
-            ret = ippiDecodeHuffmanOne_1u32s ((&pBitstream->pBitstream), (&pBitstream->bitOffset), &code,
+            ret = DecodeHuffmanOne((&pBitstream->pBitstream), (&pBitstream->bitOffset), &code,
                                               decodeSet->pRLTable);
 
 #ifdef VC1_VLD_CHECK
-            if (ret != ippStsNoErr)
+            if (ret != 0)
                 throw vc1_exception(vld);
 #endif
 
@@ -115,11 +106,11 @@ inline Ipp32s DecodeSymbol(IppiBitstream* pBitstream,
                                                 VM_STRING("Index = ESCAPE Mode 2\n"));
 #endif
 
-                ret = ippiDecodeHuffmanOne_1u32s ((&pBitstream->pBitstream), (&pBitstream->bitOffset),
+                ret = DecodeHuffmanOne((&pBitstream->pBitstream), (&pBitstream->bitOffset),
                                                     &code, decodeSet->pRLTable);
 
 #ifdef VC1_VLD_CHECK
-                if (ret != ippStsNoErr)
+                if (ret != 0)
                     throw vc1_exception(vld);
 #endif
 
@@ -612,17 +603,16 @@ Ipp8u GetSubBlockPattern_8x4_4x8(VC1Context* pContext,Ipp32s blk_num)
 
 Ipp8u GetSubBlockPattern_4x4(VC1Context* pContext,Ipp32s blk_num)
 {
-    IppStatus ret;
+    int ret;
     Ipp32s   Value;
 
-    ret = ippiDecodeHuffmanOne_1u32s(   &pContext->m_bitstream.pBitstream,
+    ret = DecodeHuffmanOne(   &pContext->m_bitstream.pBitstream,
         &pContext->m_bitstream.bitOffset,
         &Value,
         pContext->m_picLayerHeader->m_pCurrSBPtbl);
-    //VM_ASSERT(ret == ippStsNoErr);
 
 #ifdef VC1_VLD_CHECK
-    if (ret != ippStsNoErr)
+    if (ret != 0)
         throw vc1_exception(vld);
 #endif
 
@@ -639,20 +629,18 @@ Ipp8u GetSubBlockPattern_4x4(VC1Context* pContext,Ipp32s blk_num)
 
 Ipp8u GetTTBLK(VC1Context* pContext, Ipp32s blk_num)
 {
-    IppStatus ret;
+    int ret;
     Ipp32s Value;
     VC1MB *pMB = pContext->m_pCurrMB;
     VC1Block *pBlock = &pMB->m_pBlocks[blk_num];
     Ipp8u numCoef = 0;
 
-    ret = ippiDecodeHuffmanOne_1u32s(   &pContext->m_bitstream.pBitstream,
+    ret = DecodeHuffmanOne(   &pContext->m_bitstream.pBitstream,
                                         &pContext->m_bitstream.bitOffset,
                                         &Value,
                                         pContext->m_picLayerHeader->m_pCurrTTBLKtbl);
-    //VM_ASSERT(ret == ippStsNoErr);
-
 #ifdef VC1_VLD_CHECK
-    if (ret != ippStsNoErr)
+    if (ret != 0)
         throw vc1_exception(vld);
 #endif
 

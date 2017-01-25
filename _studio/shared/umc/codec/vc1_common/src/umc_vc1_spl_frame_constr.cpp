@@ -5,20 +5,18 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
 
 #if defined (UMC_ENABLE_VC1_SPLITTER) || defined (UMC_ENABLE_VC1_VIDEO_DECODER)
-#include "ipps.h"
 
 #include "umc_vc1_spl_frame_constr.h"
 #include "umc_vc1_spl_tbl.h"
 #include "umc_vc1_common_macros_defs.h"
 #include "umc_vc1_common.h"
 #include "umc_vc1_common_defs.h"
-
 
 namespace UMC
 {
@@ -53,7 +51,6 @@ namespace UMC
             if((Ipp32u)Info.in->GetDataSize() < (Ipp32u)Info.in->GetBufferSize() - 4)
             {
                 Ipp8u* curr_pos = ((Ipp8u*)Info.in->GetBufferPointer()+(Ipp32u)Info.in->GetDataSize());
-                //frameSize = *(Ipp32u*)((Ipp8u*)in->GetBufferPointer()+(Ipp32u)in->GetDataSize());
                 frameSize  = ((*(curr_pos+3))<<24) + ((*(curr_pos+2))<<16) + ((*(curr_pos+1))<<8) + *(curr_pos);
                 frameSize &= 0x0fffffff;
                 frameSize += 8;
@@ -81,7 +78,7 @@ namespace UMC
 
         return umcSts;
     }
-// Unification interface
+
 #pragma warning(disable : 4100)
     Status vc1_frame_constructor_rcv::GetData(VC1FrameConstrInfo& Info)
     {
@@ -115,10 +112,9 @@ namespace UMC
     }
 
     Status vc1_frame_constructor_rcv::ParseVC1SeqHeader (Ipp8u *data,
-                                        Ipp32u* bufferSize,SplitterInfo* info)
+                                        Ipp32u* bufferSize, VideoStreamInfo* video_info)
     {
         UMC::Status umcSts = UMC_OK;
-        VideoStreamInfo* video_info = (VideoStreamInfo *)info->m_ppTrackInfo[0]->m_pStreamInfo;
 
         Ipp32u tempData;
         Ipp32u *  pbs;
@@ -234,14 +230,6 @@ namespace UMC
 
         return umcSts;
     }
-
-    //Status vc1_frame_constructor_rcv::GetPicType(MediaDataEx* data, Ipp32u& picType)
-    //{
-    //    Ipp32u Ipp32u*   pbs = (Ipp32u*)data->GetDataPointer();
-    //    Ipp32s  bitOffset = 31;
-    //    Ipp32u tempData = 0;
-    //    return UMC_OK;
-    //}
 
 ///////////////////////////////////////////////////////////////////////////////////////////
     vc1_frame_constructor_vc1::vc1_frame_constructor_vc1()
@@ -461,7 +449,6 @@ namespace UMC
 
                         if (Info.splMode != 2)
                         {
-
                             ptr = readBuf;
                             *ptr = *(readPos - 4);
                             ptr++;
@@ -525,10 +512,9 @@ namespace UMC
     }
 
     Status vc1_frame_constructor_vc1::ParseVC1SeqHeader (Ipp8u *data,
-                                  Ipp32u* bufferSize,SplitterInfo* info)
+                                  Ipp32u* bufferSize, VideoStreamInfo* video_info)
     {
         UMC::Status umcSts = UMC_OK;
-        VideoStreamInfo* video_info = (VideoStreamInfo *)info->m_ppTrackInfo[0]->m_pStreamInfo;
 
         Ipp32u tempData;
         Ipp32u tempData1;
@@ -824,109 +810,6 @@ namespace UMC
 
         return umcSts;
     }
-
-    //Status vc1_frame_constructor_vc1::GetPicType(MediaDataEx* data, Ipp32u& picType)
-    //{
-    //    Ipp32u Ipp32u*   pbs = (Ipp32u*)data->GetDataPointer();
-    //    Ipp32s  bitOffset = 31;
-    //    Ipp32u tempData = 0;
-
-    //    if(data->GetExData()->values[0]>>24 == FrameHeader)
-    //    {
-    //        if(m_videoStreamInfo.interlace_type)
-    //        {
-    //            //Frame Coding mode
-    //            //0 - progressive; 10 - Frame-interlace; 11 - Field-interlace
-    //            ippiGetNBits(pbs,bitOffset,1,tempData); //FCM
-
-    //            if(tempData)
-    //            {
-    //                ippiGetNBits(pbs,bitOffset,1,tempData); //FCM
-    //                tempData = tempData + 2;
-    //            }
-    //        }
-
-
-    //        if(tempData != FieldInterlace)
-    //        {
-    //            //picture type
-    //            //110 - I picture; 0 - P picture; 10 - B picture; 1110 - BI picture; 1111 - skipped
-    //            ippiGetNBits(pbs,bitOffset,1,tempData);
-    //            if(tempData)
-    //            {
-    //                ippiGetNBits(pbs,bitOffset,1,tempData);
-
-    //                if(tempData)
-    //                {
-    //                    ippiGetNBits(pbs,bitOffset,1,tempData);
-
-    //                    if(tempData)
-    //                    {
-    //                        ippiGetNBits(pbs,bitOffset,1,tempData);
-
-    //                        if(tempData)
-    //                            picType = SKIPPED_FRAME; //1111
-    //                        else
-    //                            picType = BI_FRAME; //1110
-    //                    }
-    //                    else
-    //                        picType = I_FRAME; //110
-    //                }
-    //                else
-    //                    picType = B_FRAME; //10
-    //            }
-    //            else
-    //                picType = P_FRAME; //0
-    //        }
-    //        else
-    //        {
-    //            //interlace field frame
-    //            ippiGetNBits(pbs,bitOffset,3,tempData);
-    //
-    //            switch(tempData)
-    //            {
-    //            case 0:
-    //                //000  - I,I
-    //                picType = I_I_FIELD_FRAME;
-    //                break;
-    //            case 1:
-    //                //001 - I,P
-    //                picType = I_P_FIELD_FRAME;
-    //                break;
-    //            case 2:
-    //                //010 - P,I
-    //                picType = P_I_FIELD_FRAME;
-    //                break;
-    //            case 3:
-    //                //011 - P,P
-    //                picType = P_P_FIELD_FRAME;
-    //                break;
-    //            case 4:
-    //                //100 - B,B
-    //                picType = B_B_FIELD_FRAME;
-    //                break;
-    //            case 5:
-    //                //101 - B,BI
-    //                picType = B_BI_FIELD_FRAME;
-    //                break;
-    //            case 6:
-    //                //110 - BI,B
-    //                picType = BI_B_FIELD_FRAME;
-    //                break;
-    //            case 7:
-    //                //111 - BI,BI
-    //                picType = BI_BI_FIELD_FRAME;
-    //                break;
-    //            default:
-    //                break;
-    //            }
-    //        }
-    //    }
-    //    else
-    //      return UMC_ERR_INVALID_STREAM;
-
-    //      return UMC_OK;
-    //}
 }
 
 #endif //UMC_ENABLE_VC1_SPLITTER || UMC_ENABLE_VC1_VIDEO_DECODER

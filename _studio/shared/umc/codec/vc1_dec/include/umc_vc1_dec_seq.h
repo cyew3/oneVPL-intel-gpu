@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -16,41 +16,40 @@
 #define __UMC_VC1_DEC_SEQ_H__
 
 #include "umc_vc1_common_defs.h"
-#include "umc_vc1_dec_task.h"
 #include "umc_frame_allocator.h"
 
-//#ifdef DXVA_SIM
-//#include "vc1_dxva2_struct.h"
-//#endif
-
-Ipp32u          DecodeBegin                           (VC1Context* pContext,
-                                                       Ipp32u stream_type);
+typedef struct
+{
+    Ipp16u                   MBStartRow;
+    Ipp16u                   MBEndRow;
+    Ipp16u                   MBRowsToDecode;
+    Ipp32u*                  m_pstart;
+    Ipp32s                   m_bitOffset;
+    VC1PictureLayerHeader*   m_picLayerHeader;
+    VC1VLCTables*            m_vlcTbl;
+    bool                     is_continue;
+    Ipp32u                   slice_settings;
+#ifdef ALLOW_SW_VC1_FALLBACK
+    IppiEscInfo_VC1          EscInfo;
+#endif
+    bool                     is_NewInSlice;
+    bool                     is_LastInSlice;
+    Ipp32s                   iPrevDblkStartPos; //need to interlace frames
+} SliceParams;
 
 //sequence layer
 VC1Status SequenceLayer                               (VC1Context* pContext);
-bool InitTables                                     (VC1Context* pContext);
-Ipp32s InitCommonTables                               (VC1Context* pContext);
-Ipp32s InitInterlacedTables                           (VC1Context* pContext);
-void SetDecodingTables                              (VC1Context* pContext);
-
-void FreeTables                                       (VC1Context* pContext);
-
 
 //picture layer
 //Simple/main
 VC1Status GetNextPicHeader                            (VC1Context* pContext, bool isExtHeader);
 VC1Status DecodePictureHeader                         (VC1Context* pContext,  bool isExtHeader);
-//VC1Status SetDisplayIndex                             (VC1Context* pContext,VC1FrameBuffer*        pfrmBuff);
 VC1Status Decode_PictureLayer                         (VC1Context* pContext);
-VC1Status DecodeFrame                                 (VC1Context* pContext);
 
 //Advanced
 VC1Status DecodePictureHeader_Adv                     (VC1Context* pContext);
 VC1Status GetNextPicHeader_Adv                        (VC1Context* pContext);
 
-
-//for threading
-void PrepareForNextFrame                         (VC1Context*pContext);
 
 //frame rate calculation
 void MapFrameRateIntoMfx(Ipp32u& ENR,Ipp32u& EDR, Ipp16u FCode);
@@ -59,13 +58,10 @@ Ipp64f MapFrameRateIntoUMC(Ipp32u ENR,Ipp32u EDR, Ipp32u& FCode);
 //I,P,B headers
 VC1Status DecodePicHeader                             (VC1Context* pContext);
 
-VC1Status Decode_FieldPictureLayer_Adv                (VC1Context* pContext);
-
 VC1Status DecodePictHeaderParams_InterlaceFieldPicture_Adv (VC1Context* pContext);
-VC1Status Decode_FirstField_Adv                        (VC1Context* pContext);
-VC1Status Decode_SecondField_Adv                       (VC1Context* pContext);
 VC1Status DecodeSkippicture                       (VC1Context* pContext);
 
+#ifdef ALLOW_SW_VC1_FALLBACK
 void      ChooseDCTable                               (VC1Context* pContext,
                                                        Ipp32s transDCtableIndex);
 
@@ -84,6 +80,8 @@ void ChoosePredScaleValuePPictbl                      (VC1PictureLayerHeader* pi
 void ChoosePredScaleValueBPictbl                      (VC1PictureLayerHeader* picLayerHeader);
 Ipp8u GetTTBLK                                        (VC1Context* pContext,
                                                        Ipp32s blk_num);
+#endif
+
 // Simple/Main
 VC1Status DecodePictureLayer_ProgressiveIpicture            (VC1Context* pContext);
 // Advanced
@@ -111,9 +109,33 @@ VC1Status DecodeFieldHeaderParams_InterlaceFieldBpicture_Adv(VC1Context* pContex
 VC1Status MVRangeDecode                                (VC1Context* pContext);
 VC1Status DMVRangeDecode                               (VC1Context* pContext);
 
+//DeQuantization
+VC1Status VOPDQuant(VC1Context* pContext);
+VC1Status CalculatePQuant(VC1Context* pContext);
+
+//Bitplane decoding
+void  DecodeBitplane(VC1Context* pContext, VC1Bitplane* pBitplane, Ipp32s rowMB, Ipp32s colMB, Ipp32s offset);
+
+VC1Status EntryPointLayer(VC1Context* m_pContext);
+
+
+#ifdef ALLOW_SW_VC1_FALLBACK
+
+VC1Status FillTablesForIntensityCompensation(VC1Context* pContext,
+    Ipp32u scale,
+    Ipp32u shift);
+
+VC1Status FillTablesForIntensityCompensation_Adv(VC1Context* pContext,
+    Ipp32u scale,
+    Ipp32u shift,
+    Ipp32u bottom_field,
+    Ipp32s index);
+
+//for threading
+void PrepareForNextFrame(VC1Context*pContext);
+
 //I picture MB Layer
 VC1Status MBLayer_ProgressiveIpicture                  (VC1Context* pContext);
-VC1Status MBLayer_IntraField_InterlasedIpicture        (VC1Context* pContext);
 VC1Status MBLayer_ProgressiveIpicture_Adv              (VC1Context* pContext);
 VC1Status MBLayer_Frame_InterlaceIpicture              (VC1Context* pContext);
 VC1Status MBLayer_Field_InterlaceIpicture              (VC1Context* pContext);
@@ -208,7 +230,6 @@ Ipp32s CalculateLeftTopRightPositionFlag (VC1SingletonMB* sMB)
 }
 void CalculateIntraFlag                                (VC1Context* pContext);
 
-
 //Block layer
 VC1Status BLKLayer_Intra_Luma                          (VC1Context* pContext,
                                                         Ipp32s blk_num,
@@ -237,16 +258,6 @@ VC1Status BLKLayer_Inter_Chroma_Adv                   (VC1Context* pContext,
 Ipp32s CalculateCBP                                    (VC1MB* pCurrMB,
                                                         Ipp32u decoded_cbpy,
                                                         Ipp32s width);
-Ipp32s CalculateDC                                     (VC1Context* pContext,
-                                                        Ipp32s DCDiff, Ipp32s blk_num);
-
-//DeQuantization
-VC1Status VOPDQuant            (VC1Context* pContext);
-VC1Status CalculatePQuant      (VC1Context* pContext);
-
-//Bitplane decoding
-void  DecodeBitplane        (VC1Context* pContext, VC1Bitplane* pBitplane, Ipp32s rowMB, Ipp32s colMB, Ipp32s offset);
-
 
 Ipp16u DecodeMVDiff                      (VC1Context* pContext,Ipp32s hpelfl,
                                           Ipp16s *dmv_x, Ipp16s *dmv_y);
@@ -255,6 +266,7 @@ void DecodeMVDiff_Adv                    (VC1Context* pContext,Ipp16s* pdmv_x, I
 Ipp8u DecodeMVDiff_TwoReferenceField_Adv  (VC1Context* pContext,
                                            Ipp16s* pdmv_x,
                                            Ipp16s* pdmv_y);
+
 
 void Progressive1MVPrediction                               (VC1Context* pContext);
 void Progressive4MVPrediction                               (VC1Context* pContext);
@@ -275,25 +287,10 @@ inline void ApplyMVPrediction  ( VC1Context* pContext,
     RangeX = pMVRange->r_x;
     RangeY = pMVRange->r_y;
 
-//#ifdef VC1_DEBUG_ON
-//    VM_Debug::GetInstance().vm_debug_frame(-1,VC1_MV,VM_STRING("DMV_X  = %d, DMV_Y  = %d, PredictorX = %d, PredictorY = %d\n"),
-//        dmv_x, dmv_y, *pMVx,*pMVy);
-//#endif
-
     dmv_x = (Ipp16s) (dmv_x + *pMVx);
     dmv_y = (Ipp16s) (dmv_y + *pMVy);
 
-//#ifdef VC1_DEBUG_ON
-//    VM_Debug::GetInstance().vm_debug_frame(-1,VC1_MV,VM_STRING("DMV_X  = %d, DMV_Y  = %d, RangeX = %d, RangeY = %d\n"),
-//        dmv_x, dmv_y, RangeX,RangeY);
-//#endif
-
-    // (dmv_x + predictor_x) smod range_x
-    //MVx = ((DMV_X + RangeX) & (2 * RangeX - 1)) - RangeX;
     MVx = (Ipp16s) (((dmv_x + RangeX) & ((RangeX << 1) - 1)) - RangeX);
-
-    // (dmv_y + predictor_y) smod range_y
-    //MVy = ((DMV_Y + RangeY - YBias) & (2 * RangeY - 1)) - RangeY + YBias;
     MVy = (Ipp16s) (((dmv_y + RangeY - YBias) & ( (RangeY <<1) - 1)) - RangeY + YBias);
 
     if((pMB->mbType&0x03) == VC1_MB_1MV_INTER)
@@ -319,10 +316,6 @@ inline void ApplyMVPrediction  ( VC1Context* pContext,
     }
     *pMVx = MVx;
     *pMVy = MVy;
-
-//#ifdef VC1_DEBUG_ON
-//    VM_Debug::GetInstance().vm_debug_frame(-1,VC1_MV,VM_STRING("ApplyPred : MV_X  = %d, MV_Y  = %d\n"),MVx, MVy);
-//#endif
 }
 
 /* Apply MVPrediction need to lead to ApplyMVPredictionCalculate*/
@@ -427,9 +420,6 @@ void DeriveSecondStageChromaMV_Interlace              (VC1Context* pContext,
                                                        Ipp16s* yMV);
 
 
-//void save_MV                                          (VC1Context* pContext);
-//void save_MV_InterlaceField                           (VC1Context* pContext);
-//void save_MV_InterlaceFrame                           (VC1Context* pContext);
 void PackDirectMVProgressive(VC1MB* pCurrMB, Ipp16s* pSavedMV);
 void PackDirectMVIField(VC1MB* pCurrMB, Ipp16s* pSavedMV, bool isBottom, Ipp8u* bRefField);
 void PackDirectMVIFrame(VC1MB* pCurrMB, Ipp16s* pSavedMV);
@@ -501,10 +491,6 @@ void CalculateMV                                     (Ipp16s x[],
 void Decode_BMVTYPE                                  (VC1Context* pContext);
 void Decode_InterlaceFrame_BMVTYPE                   (VC1Context* pContext);
 
-VC1Status MVRangeDecode                              (VC1Context* pContext);
-
-
-
 VC1Status PredictBlock_P                            (VC1Context* pContext);
 VC1Status PredictBlock_B                            (VC1Context* pContext);
 
@@ -514,31 +500,16 @@ VC1Status PredictBlock_InterlaceBPicture            (VC1Context* pContext);
 VC1Status PredictBlock_InterlaceFieldPPicture       (VC1Context* pContext);
 VC1Status PredictBlock_InterlaceFieldBPicture       (VC1Context* pContext);
 
-
 void CropLumaPullBack                                 (VC1Context* pContext,
                                                        Ipp16s* xMV, Ipp16s* yMV);
 void CropChromaPullBack                               (VC1Context* pContext,
                                                        Ipp16s* xMV, Ipp16s* yMV);
 #define PullBack_BDirect CropChromaPullBack // same algorithm
 
-VC1Status EntryPointLayer                              (VC1Context* m_pContext);
-
-
-VC1Status FillTablesForIntensityCompensation           (VC1Context* pContext,
-                                                        Ipp32u scale,
-                                                        Ipp32u shift);
-
-VC1Status FillTablesForIntensityCompensation_Adv        (VC1Context* pContext,
-                                                         Ipp32u scale,
-                                                         Ipp32u shift,
-                                                         Ipp32u bottom_field,
-                                                         Ipp32s index);
-
 void SZTables                                           (VC1Context* pContext);
 void CreateComplexICTablesForFields                     (VC1Context* pContext);
 void CreateComplexICTablesForFrame                      (VC1Context* pContext);
 void UpdateICTablesForSecondField                       (VC1Context* pContext);
-
 
 VC1Status Set_MQuant                                  (VC1Context* pContext);
 VC1Status Set_MQuant_Field                            (VC1Context* pContext);
@@ -677,6 +648,7 @@ void HybridFieldMV                                     (VC1Context* pContext,
                                                         Ipp16s *pPredMVy,
                                                         Ipp16s MV_px[3],
                                                         Ipp16s MV_py[3]);
+
 VC1Status MBLayer_ProgressiveBpicture_NONDIRECT_Prediction                  (VC1Context* pContext);
 VC1Status MBLayer_ProgressiveBpicture_DIRECT_Prediction                     (VC1Context* pContext);
 VC1Status MBLayer_ProgressiveBpicture_SKIP_NONDIRECT_Prediction             (VC1Context* pContext);
@@ -773,21 +745,6 @@ IppStatus _own_ippiQuantInvInterNonuniform_VC1_16s_C1IR(Ipp16s* pSrcDst, Ipp32s 
 #define _own_ippiQuantInvInterNonuniform_VC1_16s_C1IR  ippiQuantInvInterNonuniform_VC1_16s_C1IR
 #endif
 
-//IppStatus ippiICInterpolateQPBilinearBlock_VC1_8u_P1R(const IppVCInterpolateBlock_8u* interpolateInfo,
-//                                                      const   Ipp8u*                  pLUTTop,
-//                                                      const   Ipp8u*                  pLUTBottom,
-//                                                      Ipp32u                          OppositePadding,
-//                                                      Ipp32u                          fieldPrediction,
-//                                                      Ipp32u                          RoundControl,
-//                                                      Ipp32u                          isPredBottom);
-//
-//IppStatus ippiICInterpolateQPBicubicBlock_VC1_8u_P1R(const IppVCInterpolateBlock_8u* interpolateInfo,
-//                                                     const Ipp8u*                    pLUTTop,
-//                                                     const Ipp8u*                    pLUTBottom,
-//                                                     Ipp32u                          OppositePadding,
-//                                                     Ipp32u                          fieldPrediction,
-//                                                     Ipp32u                          RoundControl,
-//                                                     Ipp32u                          isPredBottom);
 IppStatus ippiPXInterpolatePXICBicubicBlock_VC1_8u_C1R(const IppVCInterpolateBlockIC_8u* interpolateInfo);
 IppStatus ippiPXInterpolatePXICBilinearBlock_VC1_8u_C1R(const IppVCInterpolateBlockIC_8u* interpolateInfo);
 
@@ -796,9 +753,6 @@ IppStatus _own_ippiReconstructIntraUniform_VC1_16s_C1IR    (Ipp16s* pSrcDst, Ipp
 IppStatus _own_ippiReconstructIntraNonuniform_VC1_16s_C1IR (Ipp16s* pSrcDst, Ipp32s srcDstStep, Ipp32s doubleQuant);
 IppStatus _own_ippiReconstructInterUniform_VC1_16s_C1IR    (Ipp16s* pSrcDst, Ipp32s srcDstStep, Ipp32s doubleQuant,Ipp32u BlkType);
 IppStatus _own_ippiReconstructInterNonuniform_VC1_16s_C1IR (Ipp16s* pSrcDst, Ipp32s srcDstStep, Ipp32s doubleQuant,Ipp32u BlkType);
-
-
-
 
 inline Ipp32s SubBlockPattern(VC1Block* _pBlk, VC1SingletonBlock* _sBlk)
 {
@@ -878,6 +832,7 @@ void VerticalDeblockingBlkInterlaceI                  (Ipp8u*pUUpLBlock,
                                                        Ipp32s Pitch,
                                                        Ipp32s foffset_1);
 
+
 #ifdef _OWN_FUNCTION
 //range mape
 void _own_ippiRangeMap_VC1_8u_C1R                     (Ipp8u* pSrc,
@@ -944,6 +899,7 @@ inline Ipp16s PullBack_PredMV(Ipp16s *pMV,Ipp32s pos,
 
     return MV;
 }
+#endif // #ifdef ALLOW_SW_VC1_FALLBACK
 
 #endif //__umc_vc1_dec_seq_H__
 #endif //UMC_ENABLE_VC1_VIDEO_DECODER
