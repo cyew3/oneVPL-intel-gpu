@@ -1097,6 +1097,90 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
 
             argv++;
         }
+        else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-NumSliceI"), VM_STRING("")))
+        {
+            mfxU32 val;
+            MFX_CHECK(1 + argv != argvEnd);
+            MFX_PARSE_INT(val, argv[1]);
+
+            mfxExtCodingOption3 *pExt = NULL;
+
+            {
+                MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_CODING_OPTION3);
+                if (!ppExt)
+                {
+                    pExt = new mfxExtCodingOption3();
+
+                    pExt->Header.BufferId = MFX_EXTBUFF_CODING_OPTION2;
+                    pExt->Header.BufferSz = sizeof(mfxExtCodingOption3);
+                }
+                else
+                {
+                    pExt = reinterpret_cast<mfxExtCodingOption3 *>(ppExt->get());
+                }
+            }
+
+            pExt->NumSliceI = val;
+            m_ExtBuffers.get()->push_back(pExt);
+
+            argv++;
+        }
+        else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-NumSliceP"), VM_STRING("")))
+        {
+            mfxU32 val;
+            MFX_CHECK(1 + argv != argvEnd);
+            MFX_PARSE_INT(val, argv[1]);
+
+            mfxExtCodingOption3 *pExt = NULL;
+
+            {
+                MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_CODING_OPTION3);
+                if (!ppExt)
+                {
+                    pExt = new mfxExtCodingOption3();
+
+                    pExt->Header.BufferId = MFX_EXTBUFF_CODING_OPTION2;
+                    pExt->Header.BufferSz = sizeof(mfxExtCodingOption3);
+                }
+                else
+                {
+                    pExt = reinterpret_cast<mfxExtCodingOption3 *>(ppExt->get());
+                }
+            }
+
+            pExt->NumSliceP = val;
+            m_ExtBuffers.get()->push_back(pExt);
+
+            argv++;
+        }
+        else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-NumSliceB"), VM_STRING("")))
+        {
+            mfxU32 val;
+            MFX_CHECK(1 + argv != argvEnd);
+            MFX_PARSE_INT(val, argv[1]);
+
+            mfxExtCodingOption3 *pExt = NULL;
+
+            {
+                MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_CODING_OPTION3);
+                if (!ppExt)
+                {
+                    pExt = new mfxExtCodingOption3();
+
+                    pExt->Header.BufferId = MFX_EXTBUFF_CODING_OPTION2;
+                    pExt->Header.BufferSz = sizeof(mfxExtCodingOption3);
+                }
+                else
+                {
+                    pExt = reinterpret_cast<mfxExtCodingOption3 *>(ppExt->get());
+                }
+            }
+
+            pExt->NumSliceB = val;
+            m_ExtBuffers.get()->push_back(pExt);
+
+            argv++;
+        }
         else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-RecoveryPointSEI "), VM_STRING("")))
         {
             MFX_CHECK(1 + argv != argvEnd);
