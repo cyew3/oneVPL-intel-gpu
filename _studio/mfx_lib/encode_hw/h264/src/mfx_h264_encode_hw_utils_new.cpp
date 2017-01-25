@@ -1599,7 +1599,7 @@ IntraRefreshState MfxHwH264Encode::GetIntraRefreshState(
                 divider = MakeSliceDivider(
                     (caps.SliceLevelRateCtrl) ? 4 : caps.SliceStructure,
                     extOpt2Init->NumMbPerSlice,
-                    video.mfx.NumSlice,
+                    extOpt3Init->NumSliceP,
                     video.mfx.FrameInfo.Width / 16,
                     video.mfx.FrameInfo.Height / 16 / (fieldCoding ? 2 : 1));
             }

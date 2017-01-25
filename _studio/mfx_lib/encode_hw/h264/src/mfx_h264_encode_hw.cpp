@@ -1254,7 +1254,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     m_sliceDivider = MakeSliceDivider(
         (m_caps.SliceLevelRateCtrl) ? 4 : m_caps.SliceStructure,
         extOpt2->NumMbPerSlice,
-        m_video.mfx.NumSlice,
+        extOpt3.NumSliceP,
         m_video.mfx.FrameInfo.Width / 16,
         m_video.mfx.FrameInfo.Height / 16 / (fieldCoding ? 2 : 1));
 
