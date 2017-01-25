@@ -1455,7 +1455,8 @@ mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
 
     mfxExtCodingOption3 * extOpt3New = GetExtBuffer(newPar);
     mfxExtCodingOption3 * extOpt3Old = GetExtBuffer(m_video);
-    if (extOpt3New->NumSliceP != extOpt3Old->NumSliceP) // reset slice divider
+    if (extOpt3New->NumSliceP != extOpt3Old->NumSliceP
+        || ((extOpt2New->IntRefType != extOpt2Old->IntRefType) && (extOpt2New->IntRefType != 0))) // reset slice divider
     {
         bool fieldCoding = (newPar.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) == 0;
         m_sliceDivider = MakeSliceDivider(
