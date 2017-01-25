@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "math.h"
@@ -1056,6 +1056,11 @@ mfxStatus VideoVPPBase::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam
             }
         }
 
+        MFX_CHECK_STS(mfxSts);
+
+        mfxSts = CheckCropParam(&(out->vpp.In));
+        MFX_CHECK_STS(mfxSts);
+
         /* [OUT VPP] data */
         if( out->vpp.Out.FourCC != MFX_FOURCC_YV12 &&
             out->vpp.Out.FourCC != MFX_FOURCC_NV12 &&
@@ -1112,6 +1117,9 @@ mfxStatus VideoVPPBase::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam
             }
         }
 
+        MFX_CHECK_STS(mfxSts);
+
+        mfxSts = CheckCropParam(&(out->vpp.Out));
         MFX_CHECK_STS(mfxSts);
 
         //-------------------------------------------------
