@@ -140,7 +140,7 @@ public:
     {
         for (std::list<iTask*>::iterator it = task_pool.begin(); it != task_pool.end(); ++it)
         {
-            if ((*it)->outPAK.OutSurface == surface)
+            if ((*it)->PAK_out.OutSurface == surface)
                 return *it;
         }
 

@@ -503,7 +503,6 @@ struct iTask
           encoded(false)
         , bufs(NULL)
         , preenc_bufs(NULL)
-        , fullResSurface(NULL)
         , PicStruct(task_params.PicStruct)
         , BRefType(task_params.BRefType)
         , NumRefActiveP(task_params.NumRefActiveP)
@@ -545,10 +544,14 @@ struct iTask
         m_initSizeList1[0] = 0;
         m_initSizeList1[1] = 0;
 
-        memset(&in,     0, sizeof(in));
-        memset(&out,    0, sizeof(out));
-        memset(&inPAK,  0, sizeof(inPAK));
-        memset(&outPAK, 0, sizeof(outPAK));
+        MSDK_ZERO_MEMORY(PREENC_in);
+        MSDK_ZERO_MEMORY(PREENC_out);
+
+        MSDK_ZERO_MEMORY(ENC_in);
+        MSDK_ZERO_MEMORY(ENC_out);
+
+        MSDK_ZERO_MEMORY(PAK_in);
+        MSDK_ZERO_MEMORY(PAK_out);
 
         /* Below initialized structures required for frames reordering */
         if (m_type[m_fid[0]] & MFX_FRAMETYPE_B)
@@ -564,46 +567,44 @@ struct iTask
         m_poc[0] = 2 * ((m_frameOrder - m_frameOrderIdr) & 0x7fffffff) + (TFIELD != m_fid[0]);
         m_poc[1] = 2 * ((m_frameOrder - m_frameOrderIdr) & 0x7fffffff) + (BFIELD != m_fid[0]);
 
+        /* Section below sets surfaces for all interfaces and increase locker each time (some of the surfaces get several increments).
+           In destructor all of of the surfaces' lockers will be decremented.
+        */
 
-        /* Fill information required for encoding */
-        if (task_params.InputSurf)
+        // PreENC with DownSampling present in pipeline
+        if (task_params.DSsurface && task_params.InputSurf)
         {
-            in.InSurface = task_params.InputSurf;
-            in.InSurface->Data.Locked++;
-        }
-
-        /* ENC and/or PAK */
-        if (task_params.ReconSurf && in.InSurface)
-        {
-            inPAK.InSurface = in.InSurface;
-            inPAK.InSurface->Data.Locked++;
-
-            /* ENC & PAK share same reconstructed/reference surface */
-            out.OutSurface = task_params.ReconSurf;
-            out.OutSurface->Data.Locked++;
-            outPAK.OutSurface = task_params.ReconSurf;
-            outPAK.OutSurface->Data.Locked++;
-        }
-
-        /* PreENC on downsampled surface */
-        if (task_params.DSsurface && in.InSurface)
-        {
-            // PREENC needs to be performed on downscaled surface
-            // For simplicity, let's just replace the original surface
-            fullResSurface = in.InSurface;
-
-            in.InSurface = task_params.DSsurface;
-            in.InSurface->Data.Locked++;
-
             // make sure picture structure has the initial value
             // surfaces are reused and VPP may change this parameter in certain configurations
-            in.InSurface->Info.PicStruct = fullResSurface->Info.PicStruct & 0xf;
+            task_params.DSsurface->Info.PicStruct = task_params.InputSurf->Info.PicStruct & 0xf;
+
+            PREENC_in.InSurface = task_params.DSsurface;
+            PREENC_in.InSurface->Data.Locked++;
+        }
+        // PreENC on full-res surface
+        else if (task_params.InputSurf)
+        {
+            PREENC_in.InSurface = task_params.InputSurf;
+            PREENC_in.InSurface->Data.Locked++;
         }
 
-        // This surface will be used for PreENC's lookup for references
-        // If PreENC is absent in pipeline, this pointer is not used
-        pPreENCSurface = task_params.DSsurface ? task_params.DSsurface : task_params.InputSurf;
-        if (pPreENCSurface) { pPreENCSurface->Data.Locked++; }
+        if (task_params.InputSurf)
+        {
+            ENC_in.InSurface = task_params.InputSurf;
+            ENC_in.InSurface->Data.Locked++;
+
+            PAK_in.InSurface = task_params.InputSurf;
+            PAK_in.InSurface->Data.Locked++;
+        }
+
+        if (task_params.ReconSurf)
+        {
+            ENC_out.OutSurface = task_params.ReconSurf;
+            ENC_out.OutSurface->Data.Locked++;
+
+            PAK_out.OutSurface = task_params.ReconSurf;
+            PAK_out.OutSurface->Data.Locked++;
+        }
     }
 
     ~iTask()
@@ -613,13 +614,12 @@ struct iTask
 
         ReleasePreEncOutput();
 
-        SAFE_DEC_LOCKER(in.InSurface);
-        /* In case of preenc + enc (+ pak) pipeline we need to do decrement manually for both interfaces*/
-        SAFE_DEC_LOCKER(inPAK.InSurface);
-        SAFE_DEC_LOCKER(fullResSurface);
-        SAFE_DEC_LOCKER(out.OutSurface);
-        SAFE_DEC_LOCKER(outPAK.OutSurface);
-        SAFE_DEC_LOCKER(pPreENCSurface);
+        // Locker was set to each of the surfaces, so decrease every locker
+        SAFE_DEC_LOCKER(PREENC_in.InSurface);
+        SAFE_DEC_LOCKER(ENC_in.InSurface);
+        SAFE_DEC_LOCKER(PAK_in.InSurface);
+        SAFE_DEC_LOCKER(ENC_out.OutSurface);
+        SAFE_DEC_LOCKER(PAK_out.OutSurface);
     }
 
     /* This operator is used to store only necessary information from previous encoding */
@@ -738,10 +738,15 @@ struct iTask
         }
     }
 
-    mfxENCInput  in;
-    mfxENCOutput out;
-    mfxPAKInput  inPAK;
-    mfxPAKOutput outPAK;
+    mfxENCInput  PREENC_in;
+    mfxENCOutput PREENC_out;
+
+    mfxENCInput  ENC_in;
+    mfxENCOutput ENC_out;
+
+    mfxPAKInput  PAK_in;
+    mfxPAKOutput PAK_out;
+
 #ifdef ENABLE_FUTURE_FEATURES
     mfxU32 EncodedFrameSize; //for BRC
 #endif
@@ -750,8 +755,6 @@ struct iTask
     bufSet* bufs;
     bufSet* preenc_bufs;
     std::list<PreEncOutput> preenc_output;
-    mfxFrameSurface1 *fullResSurface;
-    mfxFrameSurface1 *pPreENCSurface;
 
     mfxU16 PicStruct;
     mfxU16 BRefType;
@@ -800,10 +803,10 @@ struct iTask
     mfxI32  m_frameNumWrap;
 
     mfxU32  m_tid;              // temporal_id
-    mfxU32  m_tidx;             // temporal layer index (in acsending order of temporal_id)
+    mfxU32  m_tidx;             // temporal layer index (in ascending order of temporal_id)
 
     PairU8  m_longTermPicNum;
-    PairU8  m_reference;        // is refrence (short or long term) or not
+    PairU8  m_reference;        // is reference (short or long term) or not
     //.........................................................................................
 
     iTask* prevTask;
@@ -836,7 +839,7 @@ struct RefInfo
     }
 };
 
-/* Group of functions below implements some usefull operations for current frame / field of the task:
+/* Group of functions below implements some useful operations for current frame / field of the task:
    Frame type extraction, field parity, POC */
 
 inline mfxU8 GetFirstField(const iTask& task)

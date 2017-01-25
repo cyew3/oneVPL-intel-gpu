@@ -658,7 +658,7 @@ mfxStatus FEI_EncPakInterface::FillRefInfo(iTask* eTask)
             ref_task = m_inputTasks->GetTaskByFrameOrder(instance->m_frameOrder);
             MSDK_CHECK_POINTER(ref_task, MFX_ERR_NULL_PTR);
 
-            ref_surface = ref_task->out.OutSurface; // this is shared output surface for ENC reference / PAK reconstruct
+            ref_surface = ref_task->PAK_out.OutSurface; // this is shared output surface for ENC reference / PAK reconstruct
             MSDK_CHECK_POINTER(ref_surface, MFX_ERR_NULL_PTR);
 
             rslt = std::find(m_RefInfo.reference_frames.begin(), m_RefInfo.reference_frames.end(), ref_surface);
@@ -692,7 +692,7 @@ mfxStatus FEI_EncPakInterface::FillRefInfo(iTask* eTask)
             ref_task = m_inputTasks->GetTaskByFrameOrder(eTask->m_dpb[fid][*instance & 127].m_frameOrder);
             MSDK_CHECK_POINTER(ref_task, MFX_ERR_NULL_PTR);
 
-            ref_surface = ref_task->out.OutSurface; // this is shared output surface for ENC reference / PAK reconstruct
+            ref_surface = ref_task->PAK_out.OutSurface; // this is shared output surface for ENC reference / PAK reconstruct
             MSDK_CHECK_POINTER(ref_surface, MFX_ERR_NULL_PTR);
 
             rslt = std::find(m_RefInfo.reference_frames.begin(), m_RefInfo.reference_frames.end(), ref_surface);
@@ -715,7 +715,7 @@ mfxStatus FEI_EncPakInterface::FillRefInfo(iTask* eTask)
             ref_task = m_inputTasks->GetTaskByFrameOrder(eTask->m_dpb[fid][*instance & 127].m_frameOrder);
             MSDK_CHECK_POINTER(ref_task, MFX_ERR_NULL_PTR);
 
-            ref_surface = ref_task->out.OutSurface; // this is shared output surface for ENC reference / PAK reconstruct
+            ref_surface = ref_task->PAK_out.OutSurface; // this is shared output surface for ENC reference / PAK reconstruct
             MSDK_CHECK_POINTER(ref_surface, MFX_ERR_NULL_PTR);
 
             rslt = std::find(m_RefInfo.reference_frames.begin(), m_RefInfo.reference_frames.end(), ref_surface);
@@ -742,13 +742,6 @@ mfxStatus FEI_EncPakInterface::InitFrameParams(iTask* eTask)
 
     mfxStatus sts = MFX_ERR_NONE;
 
-    // In case of preenc + ds pass full-res surface to ENC/PAK
-    if (m_pAppConfig->preencDSstrength)
-    {
-        SAFE_DEC_LOCKER(eTask->in.InSurface);
-        eTask->in.InSurface = eTask->fullResSurface;
-    }
-
     /* Alloc temporal buffers */
     if (m_pAppConfig->bRepackPreencMV && !m_tmpForReading.size())
     {
@@ -756,7 +749,7 @@ mfxStatus FEI_EncPakInterface::InitFrameParams(iTask* eTask)
         m_tmpForReading.resize(n_MB);
     }
 
-    eTask->outPAK.Bs = &m_mfxBS;
+    eTask->PAK_out.Bs = &m_mfxBS;
 
 #ifdef ENABLE_FUTURE_FEATURES
     eTask->EncodedFrameSize = 0;
@@ -768,9 +761,9 @@ mfxStatus FEI_EncPakInterface::InitFrameParams(iTask* eTask)
     /* Adjust number of MBs in extended buffers */
     if (m_pAppConfig->PipelineCfg.DRCresetPoint || m_pAppConfig->PipelineCfg.mixedPicstructs)
     {
-        mfxU32 n_MB = m_pAppConfig->PipelineCfg.DRCresetPoint ? m_pAppConfig->PipelineCfg.numMB_drc_curr :              // DRC
-            ((eTask->in.InSurface->Info.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) ? m_pAppConfig->PipelineCfg.numMB_frame  // Mixed Picstructs : progressive
-            : m_pAppConfig->PipelineCfg.numMB_refPic);                                                                  // Mixed Picstructs : interlaced
+        mfxU32 n_MB = m_pAppConfig->PipelineCfg.DRCresetPoint ? m_pAppConfig->PipelineCfg.numMB_drc_curr :                  // DRC
+            ((eTask->ENC_in.InSurface->Info.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) ? m_pAppConfig->PipelineCfg.numMB_frame  // Mixed Picstructs : progressive
+            : m_pAppConfig->PipelineCfg.numMB_refPic);                                                                      // Mixed Picstructs : interlaced
 
         eTask->bufs->ResetMBnum(n_MB, m_pAppConfig->PipelineCfg.DRCresetPoint);
         eTask->bufs->ResetSlices(m_videoParams_ENC.mfx.FrameInfo.Width >> 4, m_videoParams_ENC.mfx.FrameInfo.Height >> (eTask->m_fieldPicFlag ? 5 : 4));
@@ -783,26 +776,26 @@ mfxStatus FEI_EncPakInterface::InitFrameParams(iTask* eTask)
 
     if (m_pmfxENC)
     {
-        eTask->in.NumFrameL0 = (mfxU16)m_RefInfo.reference_frames.size();
-        eTask->in.NumFrameL1 = 0;
-        eTask->in.L0Surface = &m_RefInfo.reference_frames[0];
-        eTask->in.L1Surface = NULL;
-        eTask->in.NumExtParam  = is_I_frame ? eTask->bufs->I_bufs.in.NumExtParam()  : eTask->bufs->PB_bufs.in.NumExtParam();
-        eTask->in.ExtParam     = is_I_frame ? eTask->bufs->I_bufs.in.ExtParam()     : eTask->bufs->PB_bufs.in.ExtParam();
-        eTask->out.NumExtParam = is_I_frame ? eTask->bufs->I_bufs.out.NumExtParam() : eTask->bufs->PB_bufs.out.NumExtParam();
-        eTask->out.ExtParam    = is_I_frame ? eTask->bufs->I_bufs.out.ExtParam()    : eTask->bufs->PB_bufs.out.ExtParam();
+        eTask->ENC_in.NumFrameL0 = (mfxU16)m_RefInfo.reference_frames.size();
+        eTask->ENC_in.NumFrameL1 = 0;
+        eTask->ENC_in.L0Surface = &m_RefInfo.reference_frames[0];
+        eTask->ENC_in.L1Surface = NULL;
+        eTask->ENC_in.NumExtParam  = is_I_frame ? eTask->bufs->I_bufs.in.NumExtParam()  : eTask->bufs->PB_bufs.in.NumExtParam();
+        eTask->ENC_in.ExtParam     = is_I_frame ? eTask->bufs->I_bufs.in.ExtParam()     : eTask->bufs->PB_bufs.in.ExtParam();
+        eTask->ENC_out.NumExtParam = is_I_frame ? eTask->bufs->I_bufs.out.NumExtParam() : eTask->bufs->PB_bufs.out.NumExtParam();
+        eTask->ENC_out.ExtParam    = is_I_frame ? eTask->bufs->I_bufs.out.ExtParam()    : eTask->bufs->PB_bufs.out.ExtParam();
     }
 
     if (m_pmfxPAK)
     {
-        eTask->inPAK.NumFrameL0 = (mfxU16)m_RefInfo.reference_frames.size();
-        eTask->inPAK.NumFrameL1 = 0;
-        eTask->inPAK.L0Surface = &m_RefInfo.reference_frames[0];
-        eTask->inPAK.L1Surface = NULL;
-        eTask->inPAK.NumExtParam  = is_I_frame ? eTask->bufs->I_bufs.out.NumExtParam() : eTask->bufs->PB_bufs.out.NumExtParam();
-        eTask->inPAK.ExtParam     = is_I_frame ? eTask->bufs->I_bufs.out.ExtParam()    : eTask->bufs->PB_bufs.out.ExtParam();
-        eTask->outPAK.NumExtParam = is_I_frame ? eTask->bufs->I_bufs.in.NumExtParam()  : eTask->bufs->PB_bufs.in.NumExtParam();
-        eTask->outPAK.ExtParam    = is_I_frame ? eTask->bufs->I_bufs.in.ExtParam()     : eTask->bufs->PB_bufs.in.ExtParam();
+        eTask->PAK_in.NumFrameL0 = (mfxU16)m_RefInfo.reference_frames.size();
+        eTask->PAK_in.NumFrameL1 = 0;
+        eTask->PAK_in.L0Surface = &m_RefInfo.reference_frames[0];
+        eTask->PAK_in.L1Surface = NULL;
+        eTask->PAK_in.NumExtParam  = is_I_frame ? eTask->bufs->I_bufs.out.NumExtParam() : eTask->bufs->PB_bufs.out.NumExtParam();
+        eTask->PAK_in.ExtParam     = is_I_frame ? eTask->bufs->I_bufs.out.ExtParam()    : eTask->bufs->PB_bufs.out.ExtParam();
+        eTask->PAK_out.NumExtParam = is_I_frame ? eTask->bufs->I_bufs.in.NumExtParam()  : eTask->bufs->PB_bufs.in.NumExtParam();
+        eTask->PAK_out.ExtParam    = is_I_frame ? eTask->bufs->I_bufs.in.ExtParam()     : eTask->bufs->PB_bufs.in.ExtParam();
     }
 
     /* SPS, PPS, SliceHeader processing */
@@ -891,12 +884,12 @@ mfxStatus FEI_EncPakInterface::InitFrameParams(iTask* eTask)
 
     /* the rest ext buffers */
     int encCtrlId = 0;
-    for (int i = 0; i < eTask->in.NumExtParam; i++)
+    for (int i = 0; i < eTask->ENC_in.NumExtParam; i++)
     {
-        switch (eTask->in.ExtParam[i]->BufferId){
+        switch (eTask->ENC_in.ExtParam[i]->BufferId){
         case MFX_EXTBUFF_FEI_ENC_CTRL:
         {
-            mfxExtFeiEncFrameCtrl* feiEncCtrl = reinterpret_cast<mfxExtFeiEncFrameCtrl*>(eTask->in.ExtParam[i]);
+            mfxExtFeiEncFrameCtrl* feiEncCtrl = reinterpret_cast<mfxExtFeiEncFrameCtrl*>(eTask->ENC_in.ExtParam[i]);
             feiEncCtrl->MVPredictor = (ExtractFrameType(*eTask, encCtrlId) & MFX_FRAMETYPE_I) ? 0 : (m_pMvPred_in != NULL || m_pAppConfig->bPREENC);
 
             // adjust ref window size if search window is 0
@@ -921,7 +914,7 @@ mfxStatus FEI_EncPakInterface::InitFrameParams(iTask* eTask)
         case MFX_EXTBUFF_FEI_ENC_MB:
             if (m_pENC_MBCtrl_in)
             {
-                mfxExtFeiEncMBCtrl* pMbEncCtrl = reinterpret_cast<mfxExtFeiEncMBCtrl*>(eTask->in.ExtParam[i]);
+                mfxExtFeiEncMBCtrl* pMbEncCtrl = reinterpret_cast<mfxExtFeiEncMBCtrl*>(eTask->ENC_in.ExtParam[i]);
                 SAFE_FREAD(pMbEncCtrl->MB, sizeof(pMbEncCtrl->MB[0])*pMbEncCtrl->NumMBAlloc, 1, m_pENC_MBCtrl_in, MFX_ERR_MORE_DATA);
             }
             break;
@@ -929,7 +922,7 @@ mfxStatus FEI_EncPakInterface::InitFrameParams(iTask* eTask)
         case MFX_EXTBUFF_FEI_ENC_QP:
             if (m_pMbQP_in)
             {
-                mfxExtFeiEncQP* pMbQP = reinterpret_cast<mfxExtFeiEncQP*>(eTask->in.ExtParam[i]);
+                mfxExtFeiEncQP* pMbQP = reinterpret_cast<mfxExtFeiEncQP*>(eTask->ENC_in.ExtParam[i]);
                 SAFE_FREAD(pMbQP->QP, sizeof(pMbQP->QP[0])*pMbQP->NumQPAlloc, 1, m_pMbQP_in, MFX_ERR_MORE_DATA);
             }
             break;
@@ -946,23 +939,23 @@ mfxStatus FEI_EncPakInterface::ReadPAKdata(iTask* eTask)
 
     mfxStatus sts = MFX_ERR_NONE;
 
-    for (int i = 0; i < eTask->inPAK.NumExtParam; i++){
-        switch (eTask->inPAK.ExtParam[i]->BufferId){
+    for (int i = 0; i < eTask->PAK_in.NumExtParam; i++){
+        switch (eTask->PAK_in.ExtParam[i]->BufferId){
         case MFX_EXTBUFF_FEI_ENC_MV:
             if (m_pMV_out){
-                mfxExtFeiEncMV* mvBuf = reinterpret_cast<mfxExtFeiEncMV*>(eTask->inPAK.ExtParam[i]);
+                mfxExtFeiEncMV* mvBuf = reinterpret_cast<mfxExtFeiEncMV*>(eTask->PAK_in.ExtParam[i]);
                 SAFE_FREAD(mvBuf->MB, sizeof(mvBuf->MB[0])*mvBuf->NumMBAlloc, 1, m_pMV_out, MFX_ERR_MORE_DATA);
             }
             break;
 
         case MFX_EXTBUFF_FEI_PAK_CTRL:
             if (m_pMBcode_out){
-                mfxExtFeiPakMBCtrl* mbcodeBuf = reinterpret_cast<mfxExtFeiPakMBCtrl*>(eTask->inPAK.ExtParam[i]);
+                mfxExtFeiPakMBCtrl* mbcodeBuf = reinterpret_cast<mfxExtFeiPakMBCtrl*>(eTask->PAK_in.ExtParam[i]);
                 SAFE_FREAD(mbcodeBuf->MB, sizeof(mbcodeBuf->MB[0])*mbcodeBuf->NumMBAlloc, 1, m_pMBcode_out, MFX_ERR_MORE_DATA);
             }
             break;
-        } // switch (eTask->inPAK.ExtParam[i]->BufferId)
-    } // for (int i = 0; i < eTask->inPAK.NumExtParam; i++)
+        } // switch (eTask->PAK_in.ExtParam[i]->BufferId)
+    } // for (int i = 0; i < eTask->PAK_in.NumExtParam; i++)
 
     return sts;
 }
@@ -1000,7 +993,7 @@ mfxStatus FEI_EncPakInterface::EncPakOneFrame(iTask* eTask)
         {
             if (m_pmfxENC)
             {
-                sts = m_pmfxENC->ProcessFrameAsync(&eTask->in, &eTask->out, &m_SyncPoint);
+                sts = m_pmfxENC->ProcessFrameAsync(&eTask->ENC_in, &eTask->ENC_out, &m_SyncPoint);
                 if (sts == MFX_ERR_GPU_HANG)
                 {
                     return MFX_ERR_GPU_HANG;
@@ -1029,7 +1022,7 @@ mfxStatus FEI_EncPakInterface::EncPakOneFrame(iTask* eTask)
 
             if (m_pmfxPAK)
             {
-                sts = m_pmfxPAK->ProcessFrameAsync(&eTask->inPAK, &eTask->outPAK, &m_SyncPoint);
+                sts = m_pmfxPAK->ProcessFrameAsync(&eTask->PAK_in, &eTask->PAK_out, &m_SyncPoint);
                 if (sts == MFX_ERR_GPU_HANG)
                 {
                     return MFX_ERR_GPU_HANG;
@@ -1072,7 +1065,7 @@ mfxStatus FEI_EncPakInterface::EncPakOneFrame(iTask* eTask)
     if (m_pmfxPAK)
     {
 #ifdef ENABLE_FUTURE_FEATURES
-        eTask->EncodedFrameSize = eTask->outPAK.Bs->DataLength; //save frame size for BRC
+        eTask->EncodedFrameSize = eTask->PAK_out.Bs->DataLength; //save frame size for BRC
 #endif
         sts = m_FileWriter.WriteNextFrame(&m_mfxBS);
         MSDK_CHECK_STATUS(sts, "FEI ENCODE: WriteNextFrame failed");
@@ -1092,14 +1085,14 @@ mfxStatus FEI_EncPakInterface::FlushOutput(iTask* eTask)
     MSDK_CHECK_POINTER(eTask, MFX_ERR_NULL_PTR);
 
     int mvBufId = 0;
-    for (int i = 0; i < eTask->out.NumExtParam; i++)
+    for (int i = 0; i < eTask->ENC_out.NumExtParam; i++)
     {
-        switch (eTask->out.ExtParam[i]->BufferId)
+        switch (eTask->ENC_out.ExtParam[i]->BufferId)
         {
         case MFX_EXTBUFF_FEI_ENC_MV:
             if (m_pMV_out)
             {
-                mfxExtFeiEncMV* mvBuf = reinterpret_cast<mfxExtFeiEncMV*>(eTask->out.ExtParam[i]);
+                mfxExtFeiEncMV* mvBuf = reinterpret_cast<mfxExtFeiEncMV*>(eTask->ENC_out.ExtParam[i]);
 
                 if (!(ExtractFrameType(*eTask, mvBufId) & MFX_FRAMETYPE_I)){
                     SAFE_FWRITE(mvBuf->MB, sizeof(mvBuf->MB[0])*mvBuf->NumMBAlloc, 1, m_pMV_out, MFX_ERR_MORE_DATA);
@@ -1117,14 +1110,14 @@ mfxStatus FEI_EncPakInterface::FlushOutput(iTask* eTask)
 
         case MFX_EXTBUFF_FEI_ENC_MB_STAT:
             if (m_pMBstat_out){
-                mfxExtFeiEncMBStat* mbstatBuf = reinterpret_cast<mfxExtFeiEncMBStat*>(eTask->out.ExtParam[i]);
+                mfxExtFeiEncMBStat* mbstatBuf = reinterpret_cast<mfxExtFeiEncMBStat*>(eTask->ENC_out.ExtParam[i]);
                 SAFE_FWRITE(mbstatBuf->MB, sizeof(mbstatBuf->MB[0])*mbstatBuf->NumMBAlloc, 1, m_pMBstat_out, MFX_ERR_MORE_DATA);
             }
             break;
 
         case MFX_EXTBUFF_FEI_PAK_CTRL:
             if (m_pMBcode_out){
-                mfxExtFeiPakMBCtrl* mbcodeBuf = reinterpret_cast<mfxExtFeiPakMBCtrl*>(eTask->out.ExtParam[i]);
+                mfxExtFeiPakMBCtrl* mbcodeBuf = reinterpret_cast<mfxExtFeiPakMBCtrl*>(eTask->ENC_out.ExtParam[i]);
                 SAFE_FWRITE(mbcodeBuf->MB, sizeof(mbcodeBuf->MB[0])*mbcodeBuf->NumMBAlloc, 1, m_pMBcode_out, MFX_ERR_MORE_DATA);
             }
             break;

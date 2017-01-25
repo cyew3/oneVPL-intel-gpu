@@ -577,7 +577,8 @@ mfxStatus FEI_EncodeInterface::EncodeOneFrame(iTask* eTask, mfxFrameSurface1* pS
 
     mfxStatus sts = MFX_ERR_NONE;
 
-    mfxFrameSurface1* encodeSurface = eTask ? (eTask->fullResSurface ? eTask->fullResSurface : eTask->in.InSurface) : pSurf;
+    // ENC_in.InSurface always holds full-res surface
+    mfxFrameSurface1* encodeSurface = eTask ? eTask->ENC_in.InSurface : pSurf;
     if (encodeSurface) // no need to do this for buffered frames
     {
         PairU8 frameType = eTask ? eTask->m_type : runtime_frameType;

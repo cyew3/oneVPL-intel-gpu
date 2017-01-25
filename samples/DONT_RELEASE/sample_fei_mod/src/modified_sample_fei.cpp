@@ -35,14 +35,14 @@ mfxStatus PakOneStreamoutFrame(mfxU32 m_numOfFields, iTask *eTask, mfxU8 QP, iTa
     MFX_ITT_TASK("PakOneStreamoutFrame");
 
     MSDK_CHECK_POINTER(eTask,                  MFX_ERR_NULL_PTR);
-    MSDK_CHECK_POINTER(eTask->inPAK.InSurface, MFX_ERR_NULL_PTR);
+    MSDK_CHECK_POINTER(eTask->PAK_in.InSurface, MFX_ERR_NULL_PTR);
 
     mfxExtFeiDecStreamOut* pExtBufDecodeStreamout = NULL;
-    for (mfxU16 i = 0; i < eTask->inPAK.InSurface->Data.NumExtParam; ++i)
+    for (mfxU16 i = 0; i < eTask->PAK_in.InSurface->Data.NumExtParam; ++i)
     {
-        if (eTask->inPAK.InSurface->Data.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_DEC_STREAM_OUT)
+        if (eTask->PAK_in.InSurface->Data.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_DEC_STREAM_OUT)
         {
-            pExtBufDecodeStreamout = reinterpret_cast<mfxExtFeiDecStreamOut*>(eTask->inPAK.InSurface->Data.ExtParam[i]);
+            pExtBufDecodeStreamout = reinterpret_cast<mfxExtFeiDecStreamOut*>(eTask->PAK_in.InSurface->Data.ExtParam[i]);
             break;
         }
     }
@@ -287,17 +287,17 @@ void StartDumpMB(const msdk_char* fname, int frameNum, int newFile)
 
 void DumpMB(const msdk_char* fname, struct iTask* task, int uMB)
 {
-    //const mfxExtFeiEncFrameCtrl* encCtrl = (mfxExtFeiEncFrameCtrl*)GetExtBuffer(task->in.ExtParam, task->in.NumExtParam, MFX_EXTBUFF_FEI_ENC_CTRL);
-    //const mfxExtFeiEncMVPredictors* mvPreds = (mfxExtFeiEncMVPredictors*)GetExtBuffer(task->in.ExtParam, task->in.NumExtParam, MFX_EXTBUFF_FEI_ENC_MV_PRED);
-    //const mfxExtFeiEncMBCtrl* mbCtrl = (mfxExtFeiEncMBCtrl*)GetExtBuffer(task->in.ExtParam, task->in.NumExtParam, MFX_EXTBUFF_FEI_ENC_MB);
-    //const mfxExtFeiSPS* sps = (mfxExtFeiSPS*)GetExtBuffer(task->in.ExtParam, task->in.NumExtParam, MFX_EXTBUFF_FEI_SPS);
-    //const mfxExtFeiPPS* pps = (mfxExtFeiPPS*)GetExtBuffer(task->in.ExtParam, task->in.NumExtParam, MFX_EXTBUFF_FEI_PPS);
-    //const mfxExtFeiSliceHeader* sliceHeader = (mfxExtFeiSliceHeader*)GetExtBuffer(task->in.ExtParam, task->in.NumExtParam, MFX_EXTBUFF_FEI_SLICE);
-    //const mfxExtFeiEncQP* qps = (mfxExtFeiEncQP*)GetExtBuffer(task->in.ExtParam, task->in.NumExtParam, MFX_EXTBUFF_FEI_PREENC_QP);
+    //const mfxExtFeiEncFrameCtrl* encCtrl = (mfxExtFeiEncFrameCtrl*)GetExtBuffer(task->ENC_in.ExtParam, task->ENC_in.NumExtParam, MFX_EXTBUFF_FEI_ENC_CTRL);
+    //const mfxExtFeiEncMVPredictors* mvPreds = (mfxExtFeiEncMVPredictors*)GetExtBuffer(task->ENC_in.ExtParam, task->ENC_in.NumExtParam, MFX_EXTBUFF_FEI_ENC_MV_PRED);
+    //const mfxExtFeiEncMBCtrl* mbCtrl = (mfxExtFeiEncMBCtrl*)GetExtBuffer(task->ENC_in.ExtParam, task->ENC_in.NumExtParam, MFX_EXTBUFF_FEI_ENC_MB);
+    //const mfxExtFeiSPS* sps = (mfxExtFeiSPS*)GetExtBuffer(task->ENC_in.ExtParam, task->inENC_in.NumExtParam, MFX_EXTBUFF_FEI_SPS);
+    //const mfxExtFeiPPS* pps = (mfxExtFeiPPS*)GetExtBuffer(task->ENC_in.ExtParam, task->ENC_in.NumExtParam, MFX_EXTBUFF_FEI_PPS);
+    //const mfxExtFeiSliceHeader* sliceHeader = (mfxExtFeiSliceHeader*)GetExtBuffer(task->ENC_in.ExtParam, task->ENC_in.NumExtParam, MFX_EXTBUFF_FEI_SLICE);
+    //const mfxExtFeiEncQP* qps = (mfxExtFeiEncQP*)GetExtBuffer(task->ENC_in.ExtParam, task->ENC_in.NumExtParam, MFX_EXTBUFF_FEI_PREENC_QP);
 
     //const mfxExtFeiEncMBStat* mbdata = (mfxExtFeiEncMBStat*)GetExtBuffer(task->out.ExtParam, task->out.NumExtParam, MFX_EXTBUFF_FEI_ENC_MB_STAT);
-    const mfxExtFeiEncMV* mvs = ( mfxExtFeiEncMV*)GetExtBuffer(task->inPAK.ExtParam, task->inPAK.NumExtParam, MFX_EXTBUFF_FEI_ENC_MV);
-    const mfxExtFeiPakMBCtrl* mbCode = (mfxExtFeiPakMBCtrl*)GetExtBuffer(task->inPAK.ExtParam, task->inPAK.NumExtParam, MFX_EXTBUFF_FEI_PAK_CTRL);
+    const mfxExtFeiEncMV* mvs = ( mfxExtFeiEncMV*)GetExtBuffer(task->PAK_in.ExtParam, task->PAK_in.NumExtParam, MFX_EXTBUFF_FEI_ENC_MV);
+    const mfxExtFeiPakMBCtrl* mbCode = (mfxExtFeiPakMBCtrl*)GetExtBuffer(task->PAK_in.ExtParam, task->PAK_in.NumExtParam, MFX_EXTBUFF_FEI_PAK_CTRL);
 
     FILE *f;
     MSDK_FOPEN(f, fname, MSDK_CHAR("at"));
@@ -352,18 +352,18 @@ mfxStatus ResetDirect(iTask * task, iTaskPool *pTaskList)
 {
     if (!task || !pTaskList)
         return MFX_ERR_NULL_PTR;
-    if (!task->in.InSurface)
+    if (!task->ENC_in.InSurface)
         return MFX_ERR_NULL_PTR;
-    mfxFrameInfo* fi = &task->in.InSurface->Info;
+    mfxFrameInfo* fi = &task->ENC_in.InSurface->Info;
 
     mfxI32 wmb = (fi->Width +15)>>4;
     mfxI32 hmb = (fi->Height+15)>>4;
 
-    const mfxExtFeiPPS* pps = (mfxExtFeiPPS*)GetExtBuffer(task->outPAK.ExtParam, task->outPAK.NumExtParam, MFX_EXTBUFF_FEI_PPS);
-    const mfxExtFeiSliceHeader* sliceHeader = (mfxExtFeiSliceHeader*)GetExtBuffer(task->outPAK.ExtParam, task->outPAK.NumExtParam, MFX_EXTBUFF_FEI_SLICE);
+    const mfxExtFeiPPS         * pps         = (mfxExtFeiPPS*)GetExtBuffer(task->PAK_out.ExtParam, task->PAK_out.NumExtParam, MFX_EXTBUFF_FEI_PPS);
+    const mfxExtFeiSliceHeader * sliceHeader = (mfxExtFeiSliceHeader*)GetExtBuffer(task->PAK_out.ExtParam, task->PAK_out.NumExtParam, MFX_EXTBUFF_FEI_SLICE);
 
-    const mfxExtFeiEncMV* mvs = ( mfxExtFeiEncMV*)GetExtBuffer(task->inPAK.ExtParam, task->inPAK.NumExtParam, MFX_EXTBUFF_FEI_ENC_MV);
-    const mfxExtFeiPakMBCtrl* mbCode = (mfxExtFeiPakMBCtrl*)GetExtBuffer(task->inPAK.ExtParam, task->inPAK.NumExtParam, MFX_EXTBUFF_FEI_PAK_CTRL);
+    const mfxExtFeiEncMV     * mvs    = ( mfxExtFeiEncMV*)GetExtBuffer(task->PAK_in.ExtParam, task->PAK_in.NumExtParam, MFX_EXTBUFF_FEI_ENC_MV);
+    const mfxExtFeiPakMBCtrl * mbCode = (mfxExtFeiPakMBCtrl*)GetExtBuffer(task->PAK_in.ExtParam, task->PAK_in.NumExtParam, MFX_EXTBUFF_FEI_PAK_CTRL);
 
     if (sliceHeader && sliceHeader->NumSlice == 0)
         return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -382,14 +382,14 @@ mfxStatus ResetDirect(iTask * task, iTaskPool *pTaskList)
 
             int ridx = sliceHeader->Slice[slice].RefL1[0].Index;
             int fidx = pps->ReferenceFrames[ridx];
-            mfxFrameSurface1 *refSurface = task->inPAK.L0Surface[fidx];
+            mfxFrameSurface1 *refSurface = task->PAK_in.L0Surface[fidx];
 
             // find iTask of L1[0]
             iTask * reftask = pTaskList->GetTaskByPAKOutputSurface(refSurface);
 
             if (reftask) {
-                refmvs    = (mfxExtFeiEncMV*)GetExtBuffer(reftask->inPAK.ExtParam, reftask->inPAK.NumExtParam, MFX_EXTBUFF_FEI_ENC_MV);
-                refmbCode = (mfxExtFeiPakMBCtrl*)GetExtBuffer(reftask->inPAK.ExtParam, reftask->inPAK.NumExtParam, MFX_EXTBUFF_FEI_PAK_CTRL);
+                refmvs    = (mfxExtFeiEncMV*)GetExtBuffer(reftask->PAK_in.ExtParam, reftask->PAK_in.NumExtParam, MFX_EXTBUFF_FEI_ENC_MV);
+                refmbCode = (mfxExtFeiPakMBCtrl*)GetExtBuffer(reftask->PAK_in.ExtParam, reftask->PAK_in.NumExtParam, MFX_EXTBUFF_FEI_PAK_CTRL);
                 //if (!refmbCode && !refmvs) return MFX_ERR_INVALID_VIDEO_PARAM; // shouldn't happen
             }
         }
@@ -535,7 +535,7 @@ mfxStatus ResetDirect(iTask * task, iTaskPool *pTaskList)
                 else if (!dify0 && !dify1) newmode = 2; //8x16
 
                 if (newmode != mb.InterMbMode) { // changed to bigger partitions. Have to derive MbType
-                    mb.Direct8x8Pattern = 0;     // anyway not 8x8
+                    mb.Direct8x8Pattern = 0; // anyway not 8x8
                     if (P_SLICE(sliceHeader->Slice[slice].SliceType) || (mb.InterMB.RefIdx[1][0]>=32 && mb.InterMB.RefIdx[1][3]>=32)) // L0 only
                         mb.MbType = newmode==0 ? 1 : newmode + 3; // 012 -> 145 (P types mapped to B types)
                     else { // B-modes
@@ -579,7 +579,7 @@ mfxStatus ResetDirect(iTask * task, iTaskPool *pTaskList)
                 default: break; // nothing to do for 8x8 // ABCD
             }
             //if (smodes != newsmodes)
-            mbCode->MB[uMB].InterMB.SubMbPredModes = (mfxU8)newsmodes;
+                mbCode->MB[uMB].InterMB.SubMbPredModes = (mfxU8)newsmodes;
         }
     }
 
@@ -587,7 +587,7 @@ mfxStatus ResetDirect(iTask * task, iTaskPool *pTaskList)
 
 #define DUMPOUT MSDK_STRING("/home/dumpfilename.txt")
 
-    int num = task->in.InSurface->Data.FrameOrder;
+    int num = task->ENC_in.InSurface->Data.FrameOrder;
     if (num == 2) {
     StartDumpMB(DUMPOUT, num, 1);
         DumpMB(DUMPOUT, task, 2365);
