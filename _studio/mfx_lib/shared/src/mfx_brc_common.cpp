@@ -910,14 +910,11 @@ mfxStatus ExtBRC::Reset(mfxVideoParam *par )
     mfxStatus sts = MFX_ERR_NONE;
     MFX_CHECK_NULL_PTR1(par);
     MFX_CHECK(m_bInit, MFX_ERR_NOT_INITIALIZED);
-    MFX_CHECK (m_par.bHRDConformance == 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
     MFX_CHECK (m_par.rateControlMethod == MFX_RATECONTROL_VBR, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
     sts = m_par.Init(par);
     MFX_CHECK_STS(sts);
 
-    MFX_CHECK (m_par.bHRDConformance == 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
-    MFX_CHECK (m_par.rateControlMethod == MFX_RATECONTROL_VBR, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
     m_ctx.Quant = (mfxI32)(1./m_ctx.dQuantAb * pow(m_ctx.fAbLong/m_par.inputBitsPerFrame, 0.32) + 0.5); 
     BRC_CLIP(m_ctx.Quant, m_par.quantMinI, m_par.quantMaxI); 
