@@ -129,31 +129,52 @@ void ConfigureTask_FEI_PAK(
     MfxVideoParam const &           video,
     std::map<mfxU32, mfxU32> &      frameOrder_frameNum)
 {
+    bool FrameRepacking = frameOrder_frameNum.size() && task.m_frameOrder == prevTask.m_frameOrder;
+
     mfxExtCodingOption2 const &    extOpt2        = GetExtBufferRef(video);
     mfxExtSpsHeader     const &    extSps         = GetExtBufferRef(video);
 
     mfxU32 const FRAME_NUM_MAX = 1 << (extSps.log2MaxFrameNumMinus4 + 4);
 
-    mfxU8  idrPicFlag       = !!(task.GetFrameType() & MFX_FRAMETYPE_IDR);
-    mfxU8  intraPicFlag     = !!(task.GetFrameType() & MFX_FRAMETYPE_I);
-    mfxU8  prevIdrFrameFlag = !!(prevTask.GetFrameType() & MFX_FRAMETYPE_IDR);
-    mfxU8  prevIFrameFlag   = !!(prevTask.GetFrameType() & MFX_FRAMETYPE_I);
-    mfxU8  prevRefPicFlag   = !!(prevTask.GetFrameType() & MFX_FRAMETYPE_REF);
+    mfxU8  idrPicFlag   = !!(task.GetFrameType() & MFX_FRAMETYPE_IDR);
+    mfxU8  intraPicFlag = !!(task.GetFrameType() & MFX_FRAMETYPE_I);
 
-    mfxU8  frameNumIncrement = (prevRefPicFlag || prevTask.m_nalRefIdc[0]) ? 1 : 0;
+    if (!FrameRepacking)
+    {
+        mfxU8  prevIdrFrameFlag = !!(prevTask.GetFrameType() & MFX_FRAMETYPE_IDR);
+        mfxU8  prevIFrameFlag   = !!(prevTask.GetFrameType() & MFX_FRAMETYPE_I);
+        mfxU8  prevRefPicFlag   = !!(prevTask.GetFrameType() & MFX_FRAMETYPE_REF);
 
-    task.m_frameOrderIdr = idrPicFlag   ? task.m_frameOrder : prevTask.m_frameOrderIdr;
-    task.m_frameOrderI   = intraPicFlag ? task.m_frameOrder : prevTask.m_frameOrderI;
-    task.m_encOrder      = prevTask.m_encOrder + 1;
-    task.m_encOrderIdr   = prevIdrFrameFlag ? prevTask.m_encOrder : prevTask.m_encOrderIdr;
-    task.m_encOrderI     = prevIFrameFlag   ? prevTask.m_encOrder : prevTask.m_encOrderI;
+        mfxU8  frameNumIncrement = (prevRefPicFlag || prevTask.m_nalRefIdc[0]) ? 1 : 0;
+
+        task.m_frameOrderIdr = idrPicFlag   ? task.m_frameOrder : prevTask.m_frameOrderIdr;
+        task.m_frameOrderI   = intraPicFlag ? task.m_frameOrder : prevTask.m_frameOrderI;
+        task.m_encOrder      = prevTask.m_encOrder + 1;
+        task.m_encOrderIdr   = prevIdrFrameFlag ? prevTask.m_encOrder : prevTask.m_encOrderIdr;
+        task.m_encOrderI     = prevIFrameFlag   ? prevTask.m_encOrder : prevTask.m_encOrderI;
 
 
-    task.m_frameNum = idrPicFlag ? 0 : mfxU16((prevTask.m_frameNum + frameNumIncrement) % FRAME_NUM_MAX);
+        task.m_frameNum = idrPicFlag ? 0 : mfxU16((prevTask.m_frameNum + frameNumIncrement) % FRAME_NUM_MAX);
 
-    task.m_picNum[1] = task.m_picNum[0] = task.m_frameNum * (task.m_fieldPicFlag + 1) + task.m_fieldPicFlag;
+        task.m_picNum[1] = task.m_picNum[0] = task.m_frameNum * (task.m_fieldPicFlag + 1) + task.m_fieldPicFlag;
 
-    task.m_idrPicId = prevTask.m_idrPicId + idrPicFlag;
+        task.m_idrPicId = prevTask.m_idrPicId + idrPicFlag;
+    }
+    else
+    {
+        task.m_frameOrderIdr = prevTask.m_frameOrderIdr;
+        task.m_frameOrderI   = prevTask.m_frameOrderI;
+        task.m_encOrder      = prevTask.m_encOrder;
+        task.m_encOrderIdr   = prevTask.m_encOrderIdr;
+        task.m_encOrderI     = prevTask.m_encOrderI;
+
+
+        task.m_frameNum = prevTask.m_frameNum;
+
+        task.m_picNum[1] = task.m_picNum[0] = task.m_frameNum;
+
+        task.m_idrPicId = prevTask.m_idrPicId;
+    }
 
     mfxU32 ffid = task.m_fid[0];
     mfxU32 sfid = !ffid;
