@@ -180,33 +180,20 @@ namespace vp9e_init
         {/*26 Incorrect denominator for frame rate*/ MFX_ERR_INVALID_VIDEO_PARAM, FRAME_RATE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 0 } },
         {/*27 Empty ext_buffer*/ MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, NONE, {} },
 
-        //Rate Control Metod
-        {/*28*/ MFX_ERR_NONE, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR } },
-        {/*29*/ MFX_ERR_NONE, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR } },
-        {/*30*/ MFX_ERR_NONE, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP } },
-        {/*31*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR } },
-        {/*32*/ MFX_ERR_INVALID_VIDEO_PARAM, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED1 } },
-        {/*33*/ MFX_ERR_INVALID_VIDEO_PARAM, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED2 } },
-        {/*34*/ MFX_ERR_INVALID_VIDEO_PARAM, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED3 } },
-        {/*35*/ MFX_ERR_INVALID_VIDEO_PARAM, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED4 } },
-        {/*36*/ MFX_ERR_INVALID_VIDEO_PARAM, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA } },
-        {/*37*/ MFX_ERR_INVALID_VIDEO_PARAM, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_ICQ } },
-        {/*38*/ MFX_ERR_INVALID_VIDEO_PARAM, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, 16 } },
-
         //encoded order
-        {/*39*/ MFX_ERR_NONE, NONE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.EncodedOrder, 1 } },
+        {/*28*/ MFX_ERR_NONE, NONE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.EncodedOrder, 1 } },
 
         //native
-        {/*40*/ MFX_ERR_INVALID_VIDEO_PARAM, NOT_LOAD_PLUGIN, NONE, {} },
+        {/*29*/ MFX_ERR_INVALID_VIDEO_PARAM, NOT_LOAD_PLUGIN, NONE, {} },
 
         //call query
-        {/*41*/ MFX_ERR_NONE, CALL_QUERY, NONE, {} },
-        {/*42 Check async 1*/ MFX_ERR_NONE, NONE, NONE,
+        {/*30*/ MFX_ERR_NONE, CALL_QUERY, NONE, {} },
+        {/*31 Check async 1*/ MFX_ERR_NONE, NONE, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.AsyncDepth, 1 },
             }
         },
-        {/*43 Check async 10*/ MFX_ERR_NONE, NONE, NONE,
+        {/*32 Check async 10*/ MFX_ERR_NONE, NONE, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.AsyncDepth, 10 },
             }

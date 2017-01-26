@@ -379,6 +379,7 @@
     <ClCompile Include="src\gmock\test_suites\vp9d_res_change.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp9d_query_io_surf.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp9d_reset.cpp" />
+    <ClCompile Include="src\gmock\test_suites\vp9e_brc.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp9e_close.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp9e_cqp.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp9e_encode_frame_async.cpp" />

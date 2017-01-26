@@ -865,5 +865,8 @@
     <ClCompile Include="src\gmock\test_suites\vp9e_reset.cpp">
       <Filter>Source Files\test_suites\vp9e</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vp9e_brc.cpp">
+      <Filter>Source Files\test_suites\vp9e</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
