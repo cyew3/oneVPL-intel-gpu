@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -65,9 +65,8 @@ void TaskManagerSvc::Init(
         m_layer[i].Init(core, video, 0);
 
     m_dqid.resize(m_layerNum);
-    mfxU32 i = 0;
     for (mfxU32 did = 0; did < video.calcParam.numDependencyLayer; did++)
-        for (mfxU32 qid = 0; qid < extSvc->DependencyLayer[did].QualityNum; qid++, i++)
+        for (mfxU32 qid = 0, i = 0; qid < extSvc->DependencyLayer[did].QualityNum; qid++, i++)
             m_dqid[i] = std::make_pair(did, qid);
 
     for (mfxU32 i = 0; i < m_taskNum; i++)
@@ -123,7 +122,7 @@ mfxStatus TaskManagerSvc::AssignTask(
     {
         for (; m_currentLayerId < m_layerNum; ++m_currentLayerId)
         {
-            mfxStatus sts = AssignAndConfirmAvcTask(ctrl, 0, bs, m_currentLayerId);
+            sts = AssignAndConfirmAvcTask(ctrl, 0, bs, m_currentLayerId);
             MFX_CHECK_STS(sts);
         }
     }
@@ -928,7 +927,7 @@ mfxStatus ImplementationSvc::CopyRawSurface(
         frameInfo.CropW  = extSvc->DependencyLayer[task.m_did].CropW;
         frameInfo.CropH  = extSvc->DependencyLayer[task.m_did].CropH;
 
-        mfxStatus sts = CopyFrameDataBothFields(m_core, d3dSurf, sysSurf, frameInfo);
+        sts = CopyFrameDataBothFields(m_core, d3dSurf, sysSurf, frameInfo);
         MFX_CHECK_STS(sts);
 
         sts = lock2.Unlock();
