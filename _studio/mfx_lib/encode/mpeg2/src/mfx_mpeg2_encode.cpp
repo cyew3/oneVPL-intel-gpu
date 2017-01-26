@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -396,12 +396,14 @@ mfxStatus MFXVideoENCODEMPEG2::Query(mfxVideoParam *in, mfxVideoParam *out)
         }
 
 
-        mfxU32 temp = out->IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_IN_SYSTEM_MEMORY);
-
-        if ((temp==0 && out->IOPattern)|| temp==(MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_IN_SYSTEM_MEMORY))
         {
-            out->IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
-            bWarning = true;
+            mfxU32 temp = out->IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_IN_SYSTEM_MEMORY);
+
+            if ((temp == 0 && out->IOPattern) || temp == (MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_IN_SYSTEM_MEMORY))
+            {
+                out->IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
+                bWarning = true;
+            }
         }
         mfxExtCodingOption* ext_in  = GetExtCodingOptions(in->ExtParam, in->NumExtParam);
         mfxExtCodingOption* ext_out = GetExtCodingOptions(out->ExtParam,out->NumExtParam);
@@ -1220,7 +1222,6 @@ mfxStatus MFXVideoENCODEMPEG2::ResetImpl(mfxVideoParam *par_input)
 //virtual mfxStatus Close(void); // same name
 mfxStatus MFXVideoENCODEMPEG2::Close(void)
 {
-    mfxI32 i;
     mfxStatus sts = MFX_ERR_NONE;
     if(!is_initialized())
         return MFX_ERR_NOT_INITIALIZED;
@@ -1232,7 +1233,7 @@ mfxStatus MFXVideoENCODEMPEG2::Close(void)
         delete pSHEx;
         pSHEx = 0;  
     }
-    for (i=0; i<2; i++)
+    for (mfxI32 i=0; i<2; i++)
     {
         frames.buf_ref[i] = 0;
 #ifdef ME_REF_ORIGINAL
@@ -1348,11 +1349,13 @@ mfxStatus MFXVideoENCODEMPEG2::GetVideoParam(mfxVideoParam *par)
         return MFX_ERR_NULL_PTR; // lack of return codes;
 
     //  par->mfx.FramePicture= encodeInfo.FieldPicture ? 0 : 1;
-    mfxExtCodingOption* ext = GetExtCodingOptions(par->ExtParam, par->NumExtParam);
-    if (ext)
     {
-        ext->FramePicture  = (mfxU16)(encodeInfo.FieldPicture ? MFX_CODINGOPTION_OFF : MFX_CODINGOPTION_ON);
-        ext->EndOfSequence = (mfxU16)(m_bAddEOS ?   MFX_CODINGOPTION_ON:MFX_CODINGOPTION_OFF);
+        mfxExtCodingOption* ext = GetExtCodingOptions(par->ExtParam, par->NumExtParam);
+        if (ext)
+        {
+            ext->FramePicture = (mfxU16)(encodeInfo.FieldPicture ? MFX_CODINGOPTION_OFF : MFX_CODINGOPTION_ON);
+            ext->EndOfSequence = (mfxU16)(m_bAddEOS ? MFX_CODINGOPTION_ON : MFX_CODINGOPTION_OFF);
+        }
     }
 
     if (mfxExtCodingOptionSPSPPS* ext = SHParametersEx::GetExtCodingOptionsSPSPPS(par->ExtParam, par->NumExtParam))
@@ -2657,65 +2660,67 @@ mfxStatus MFXVideoENCODEMPEG2::PutPicture(mfxPayload **pPayloads, mfxU32 numPayl
    m_core->INeedMoreThreadsInside(this); 
 
 
-   Ipp8u* p = m_codec.out_pointer;
-   size = 0;
-
-
-   for (mfxU32 i = 0; i < m_IntTasks.m_NumTasks; i++)
    {
-       if (VM_TIMEOUT != vm_event_timed_wait(&m_IntTasks.m_exit_event, 0))
+       Ipp8u* p = m_codec.out_pointer;
+       size = 0;
+
+
+       for (mfxU32 i = 0; i < m_IntTasks.m_NumTasks; i++)
        {
-           return MFX_ERR_ABORTED;
-       }
-       while (VM_TIMEOUT == vm_event_timed_wait(&m_IntTasks.m_TaskInfo[i].task_ready_event, 0))
-       {
-           mfxU32 nTask;
-           if (MFX_ERR_NONE == m_IntTasks.GetIntTask(nTask))
+           if (VM_TIMEOUT != vm_event_timed_wait(&m_IntTasks.m_exit_event, 0))
            {
-                StartIntTask(nTask);
+               return MFX_ERR_ABORTED;
+           }
+           while (VM_TIMEOUT == vm_event_timed_wait(&m_IntTasks.m_TaskInfo[i].task_ready_event, 0))
+           {
+               mfxU32 nTask;
+               if (MFX_ERR_NONE == m_IntTasks.GetIntTask(nTask))
+               {
+                   StartIntTask(nTask);
+               }
+               else
+               {
+                   MFX::AutoTimer timer2;
+                   timer2.Start("MPEG2Enc_wait0");
+                   vm_time_sleep(0);
+                   timer2.Stop(0);
+               }
+           }
+           if (i == 0)
+           {
+               if (UMC::UMC_OK != m_codec.threadSpec[i].sts)
+               {
+                   status = m_codec.threadSpec[i].sts;
+               }
+               else
+               {
+                   FLUSH_BITSTREAM(m_codec.threadSpec[0].bBuf.current_pointer, m_codec.threadSpec[0].bBuf.bit_offset);
+                   size += BITPOS(m_codec.threadSpec[0]) >> 3;
+                   p += size;
+               }
            }
            else
            {
-               MFX::AutoTimer timer2;
-               timer2.Start("MPEG2Enc_wait0");
-               vm_time_sleep(0);
-               timer2.Stop(0);
+               if (UMC::UMC_OK != m_codec.threadSpec[i].sts) {
+                   status = m_codec.threadSpec[i].sts;
+               }
+               if (status == UMC::UMC_OK && size < m_codec.output_buffer_size) {
+                   MFX::AutoTimer timer1;
+                   timer1.Start("MPEG2Enc_CopyPic");
+                   Ipp32s t = 0;
+                   FLUSH_BITSTREAM(m_codec.threadSpec[i].bBuf.current_pointer, m_codec.threadSpec[i].bBuf.bit_offset);
+                   t = BITPOS(m_codec.threadSpec[i]) >> 3;
+                   size += t;
+                   if (size < m_codec.output_buffer_size) {
+                       memcpy_s(p, m_codec.output_buffer_size - size + t, m_codec.threadSpec[i].bBuf.start_pointer, t);
+                       p += t;
+                   }
+                   timer1.Stop(0);
+               }
+
            }
-       }
-       if (i == 0)
-       {
-            if (UMC::UMC_OK != m_codec.threadSpec[i].sts)
-            {
-               status = m_codec.threadSpec[i].sts;
-            }
-            else
-            {
-                FLUSH_BITSTREAM(m_codec.threadSpec[0].bBuf.current_pointer, m_codec.threadSpec[0].bBuf.bit_offset);
-                size += BITPOS(m_codec.threadSpec[0])>>3;
-                p += size;
-            }
-       }
-       else
-       {
-           if (UMC::UMC_OK != m_codec.threadSpec[i].sts){
-               status = m_codec.threadSpec[i].sts;
-            }
-            if (status == UMC::UMC_OK && size < m_codec.output_buffer_size){
-                MFX::AutoTimer timer1;
-                timer1.Start("MPEG2Enc_CopyPic");
-                Ipp32s t = 0;
-                FLUSH_BITSTREAM(m_codec.threadSpec[i].bBuf.current_pointer, m_codec.threadSpec[i].bBuf.bit_offset);
-                t = BITPOS(m_codec.threadSpec[i])>>3;
-                size += t;
-                if (size < m_codec.output_buffer_size)            {
-                    memcpy_s(p, m_codec.output_buffer_size - size +t, m_codec.threadSpec[i].bBuf.start_pointer, t);
-                    p += t;
-                }
-                timer1.Stop(0);
-            }
 
        }
-
    }
 
     if (status == UMC::UMC_ERR_NOT_ENOUGH_BUFFER || size >= m_codec.output_buffer_size - 8){
@@ -2875,80 +2880,82 @@ toI:
 
       hrdSts = m_codec.brc->PostPackFrame(frType, size*8, 0, recode);
       /*  Debug  */
-      Ipp32s maxSize = 0, minSize = 0;
-      Ipp64f buffullness;
-      Ipp32s buffullnessbyI;
-      UMC::VideoBrcParams brcParams;
-      m_codec.brc->GetHRDBufferFullness(&buffullness, 0);
-      m_codec.brc->GetMinMaxFrameSize(&minSize, &maxSize);
-      m_codec.brc->GetParams(&brcParams);
-//      printf("\n frame # %d / %d hrdSts %d |||||||||| fullness %d bIntraAdded %d \n", encodeInfo.numEncodedFrames, GOP_count, hrdSts, (Ipp32s)buffullness, bIntraAdded);
-      if (hrdSts == UMC::BRC_OK && !m_bConstantQuant) {
-        Ipp32s inputbitsPerPic = m_codec.m_InputBitsPerFrame;
-        Ipp32s minbitsPerPredPic, minbitsPerIPic;
-        if (m_codec.picture_structure != MPEG2_FRAME_PICTURE) {
-          minbitsPerPredPic = m_codec.m_MinFieldSizeBits[1];
-          minbitsPerIPic = m_codec.m_MinFieldSizeBits[0];
-          inputbitsPerPic >>= 1;
-          framestoI *= 2;
-          if (!m_codec.second_field)
-            framestoI--;
-        } else {
-          minbitsPerPredPic = m_codec.m_MinFrameSizeBits[1];
-          minbitsPerIPic = m_codec.m_MinFrameSizeBits[0];
-        }
-        buffullnessbyI = (Ipp32s)buffullness + framestoI * (inputbitsPerPic - minbitsPerPredPic); /// ??? +- 1, P/B?
-
-        { //  I frame is coming
-//          printf("\n buffullnessbyI %d \n", buffullnessbyI);
-          if (buffullnessbyI < minbitsPerIPic ||
-            (m_codec.picture_structure != MPEG2_FRAME_PICTURE && !m_codec.second_field && size*8*2 > inputbitsPerPic + maxSize && m_codec.picture_coding_type != UMC::MPEG2_I_PICTURE)) {
-            if (!m_codec.nLimitedMBMode) {
-              Ipp32s quant = m_codec.quantiser_scale_value; // brc->GetQP(frType);
-              m_codec.changeQuant(quant+2);
-              recode = UMC::BRC_RECODE_EXT_QP;
-              if (m_codec.quantiser_scale_value == quant) // ??
-              {
-                m_codec.nLimitedMBMode++;
-                if ((m_codec.picture_coding_type == UMC::MPEG2_P_PICTURE || m_codec.picture_coding_type == UMC::MPEG2_B_PICTURE) && m_codec.nLimitedMBMode == 2)
-                {
-                    m_codec.m_bSkippedMode = 1;
-                    m_codec.nLimitedMBMode = 3;
-                }
-                recode = UMC::BRC_RECODE_EXT_PANIC;
-//                printf ("\n Recalculate 0: Frame %d. Limited mode: %d, max size = %d (current %d), max_size on MB = %d (current %d)\n",frType,nLimitedMBMode,maxSize,bitsize,maxSize/MBcount,bitsize/MBcount);
-
-
+      {
+          Ipp32s maxSize = 0, minSize = 0;
+          Ipp64f buffullness;
+          Ipp32s buffullnessbyI;
+          UMC::VideoBrcParams brcParams;
+          m_codec.brc->GetHRDBufferFullness(&buffullness, 0);
+          m_codec.brc->GetMinMaxFrameSize(&minSize, &maxSize);
+          m_codec.brc->GetParams(&brcParams);
+          //      printf("\n frame # %d / %d hrdSts %d |||||||||| fullness %d bIntraAdded %d \n", encodeInfo.numEncodedFrames, GOP_count, hrdSts, (Ipp32s)buffullness, bIntraAdded);
+          if (hrdSts == UMC::BRC_OK && !m_bConstantQuant) {
+              Ipp32s inputbitsPerPic = m_codec.m_InputBitsPerFrame;
+              Ipp32s minbitsPerPredPic, minbitsPerIPic;
+              if (m_codec.picture_structure != MPEG2_FRAME_PICTURE) {
+                  minbitsPerPredPic = m_codec.m_MinFieldSizeBits[1];
+                  minbitsPerIPic = m_codec.m_MinFieldSizeBits[0];
+                  inputbitsPerPic >>= 1;
+                  framestoI *= 2;
+                  if (!m_codec.second_field)
+                      framestoI--;
+              } else {
+                  minbitsPerPredPic = m_codec.m_MinFrameSizeBits[1];
+                  minbitsPerIPic = m_codec.m_MinFrameSizeBits[0];
               }
-              m_codec.brc->SetQP(m_codec.quantiser_scale_value, frType);
-              m_codec.bQuantiserChanged = true; // ???
-              continue;
-            } else {
-               if (frType == UMC::I_PICTURE && !m_codec.m_FirstFrame && m_codec.encodeInfo.gopSize > 1 && (!m_codec.encodeInfo.strictGOP || bIntraAdded)) {
-                frType = UMC::P_PICTURE;
-                m_codec.picture_coding_type = UMC::MPEG2_P_PICTURE;
-                m_codec.m_GOP_Start = m_codec.m_GOP_Start_tmp;
-                m_codec.mp_f_code = m_codec.pMotionData[0].f_code;
-                m_codec.bExtendGOP = true;
-                //curr_gop += encodeInfo.IPDistance;
-                m_codec.GOP_count -= m_codec.encodeInfo.IPDistance; // add PB..B group
-                ntry = -1;
-                recode = UMC::BRC_RECODE_EXT_QP;
-                continue;
-              } else if (m_codec.nLimitedMBMode < 3) {
-                recode = UMC::BRC_RECODE_EXT_PANIC;
-                m_codec.nLimitedMBMode++;
-                if ((m_codec.picture_coding_type == UMC::MPEG2_P_PICTURE || m_codec.picture_coding_type == UMC::MPEG2_B_PICTURE) && m_codec.nLimitedMBMode == 2)
-                {
-                    m_codec.m_bSkippedMode = 1;
-                    m_codec.nLimitedMBMode = 3;
-                }
-//                printf ("\n Recalculate 1: Frame %d. Limited mode: %d, max size = %d (current %d), max_size on MB = %d (current %d)\n",frType,nLimitedMBMode,maxSize,bitsize,maxSize/MBcount,bitsize/MBcount);
-                continue;
+              buffullnessbyI = (Ipp32s)buffullness + framestoI * (inputbitsPerPic - minbitsPerPredPic); /// ??? +- 1, P/B?
+
+              { //  I frame is coming
+      //          printf("\n buffullnessbyI %d \n", buffullnessbyI);
+                  if (buffullnessbyI < minbitsPerIPic ||
+                      (m_codec.picture_structure != MPEG2_FRAME_PICTURE && !m_codec.second_field && size * 8 * 2 > inputbitsPerPic + maxSize && m_codec.picture_coding_type != UMC::MPEG2_I_PICTURE)) {
+                      if (!m_codec.nLimitedMBMode) {
+                          Ipp32s quant = m_codec.quantiser_scale_value; // brc->GetQP(frType);
+                          m_codec.changeQuant(quant + 2);
+                          recode = UMC::BRC_RECODE_EXT_QP;
+                          if (m_codec.quantiser_scale_value == quant) // ??
+                          {
+                              m_codec.nLimitedMBMode++;
+                              if ((m_codec.picture_coding_type == UMC::MPEG2_P_PICTURE || m_codec.picture_coding_type == UMC::MPEG2_B_PICTURE) && m_codec.nLimitedMBMode == 2)
+                              {
+                                  m_codec.m_bSkippedMode = 1;
+                                  m_codec.nLimitedMBMode = 3;
+                              }
+                              recode = UMC::BRC_RECODE_EXT_PANIC;
+                              //                printf ("\n Recalculate 0: Frame %d. Limited mode: %d, max size = %d (current %d), max_size on MB = %d (current %d)\n",frType,nLimitedMBMode,maxSize,bitsize,maxSize/MBcount,bitsize/MBcount);
+
+
+                          }
+                          m_codec.brc->SetQP(m_codec.quantiser_scale_value, frType);
+                          m_codec.bQuantiserChanged = true; // ???
+                          continue;
+                      } else {
+                          if (frType == UMC::I_PICTURE && !m_codec.m_FirstFrame && m_codec.encodeInfo.gopSize > 1 && (!m_codec.encodeInfo.strictGOP || bIntraAdded)) {
+                              frType = UMC::P_PICTURE;
+                              m_codec.picture_coding_type = UMC::MPEG2_P_PICTURE;
+                              m_codec.m_GOP_Start = m_codec.m_GOP_Start_tmp;
+                              m_codec.mp_f_code = m_codec.pMotionData[0].f_code;
+                              m_codec.bExtendGOP = true;
+                              //curr_gop += encodeInfo.IPDistance;
+                              m_codec.GOP_count -= m_codec.encodeInfo.IPDistance; // add PB..B group
+                              ntry = -1;
+                              recode = UMC::BRC_RECODE_EXT_QP;
+                              continue;
+                          } else if (m_codec.nLimitedMBMode < 3) {
+                              recode = UMC::BRC_RECODE_EXT_PANIC;
+                              m_codec.nLimitedMBMode++;
+                              if ((m_codec.picture_coding_type == UMC::MPEG2_P_PICTURE || m_codec.picture_coding_type == UMC::MPEG2_B_PICTURE) && m_codec.nLimitedMBMode == 2)
+                              {
+                                  m_codec.m_bSkippedMode = 1;
+                                  m_codec.nLimitedMBMode = 3;
+                              }
+                              //                printf ("\n Recalculate 1: Frame %d. Limited mode: %d, max size = %d (current %d), max_size on MB = %d (current %d)\n",frType,nLimitedMBMode,maxSize,bitsize,maxSize/MBcount,bitsize/MBcount);
+                              continue;
+                          }
+                      } //  else if (maxSize < m_MinFrameSizeBits[0]) - can return with error already
+                  }
               }
-            } //  else if (maxSize < m_MinFrameSizeBits[0]) - can return with error already
           }
-        }
       }
 
 
