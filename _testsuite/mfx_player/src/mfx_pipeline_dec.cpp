@@ -1154,7 +1154,7 @@ mfxStatus MFXDecPipeline::CreateVPP()
         MFXExtBufferPtr<mfxExtVPPDetail> pDetail(m_components[eVPP].m_extParams);
         pDetail->DetailFactor = m_inParams.nDetailFactorPlus1 - 1;
     }
-if (m_inParams.bFieldProcessing)
+    if (m_inParams.bFieldProcessing)
     {
         if (0 == m_inParams.nFieldProcessing || 1 == m_inParams.nFieldProcessing || 2 == m_inParams.nFieldProcessing)
         {
@@ -1177,7 +1177,7 @@ if (m_inParams.bFieldProcessing)
             {
                 pFieldProc->Mode     = MFX_PICTYPE_FRAME;
                 pFieldProc->InField  = MFX_PICTYPE_FRAME;
-                pFieldProc->OutField = MFX_PICTYPE_FRAME; 
+                pFieldProc->OutField = MFX_PICTYPE_FRAME;
             }
         }
         else
@@ -3266,6 +3266,52 @@ mfxStatus  MFXDecPipeline::RunVPP(mfxFrameSurface1 *pSurface)
     MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_HOTSPOTS);
     bool bInSupplied = false;
 
+    if (pSurface != NULL)
+    {
+        if (m_inParams.bFieldProcessing && m_inParams.bSwapFieldProcessing)
+        {
+            if (m_inParams.nFieldProcessing == 0)
+            {
+                m_inParams.m_FieldProcessing.Mode = MFX_VPP_COPY_FIELD;
+                m_inParams.m_FieldProcessing.InField  = MFX_PICTYPE_TOPFIELD;
+                m_inParams.m_FieldProcessing.OutField = MFX_PICTYPE_TOPFIELD;
+                m_inParams.nFieldProcessing += 2;
+            }
+            else
+            {
+                if (m_inParams.nFieldProcessing == 1)
+                {
+                    m_inParams.m_FieldProcessing.Mode = MFX_VPP_COPY_FIELD;
+                    m_inParams.m_FieldProcessing.InField  = MFX_PICTYPE_BOTTOMFIELD;
+                    m_inParams.m_FieldProcessing.OutField = MFX_PICTYPE_BOTTOMFIELD;
+                    m_inParams.nFieldProcessing += 1;
+                }
+                else
+                {
+                    if (m_inParams.nFieldProcessing == 2)
+                    {
+                        if (m_inParams.m_FieldProcessing.InField == MFX_PICTYPE_TOPFIELD)
+                        {
+                            m_inParams.nFieldProcessing -= 2;
+                        }
+                        else
+                        {
+                            m_inParams.nFieldProcessing -= 1;
+                        }
+                        m_inParams.m_FieldProcessing.Mode = MFX_PICTYPE_FRAME;
+                        m_inParams.m_FieldProcessing.InField  = MFX_PICTYPE_FRAME;
+                        m_inParams.m_FieldProcessing.OutField = MFX_PICTYPE_FRAME;
+                    }
+                }
+            }
+            if (!pSurface->Data.ExtParam)
+            {
+                pSurface->Data.ExtParam = new mfxExtBuffer*[1];
+                pSurface->Data.NumExtParam = 1;
+            }
+            pSurface->Data.ExtParam[0] = (mfxExtBuffer*) &m_inParams.m_FieldProcessing;
+        }
+    }
     if ( m_inParams.bExtendedFpsStat )
         m_time_stampts.push_back(m_statTimer.CurrentTiming());
     if (NULL != pSurface)
@@ -3306,50 +3352,6 @@ mfxStatus  MFXDecPipeline::RunVPP(mfxFrameSurface1 *pSurface)
         mfxSyncPoint  syncp            = NULL;
         mfxStatus     sts              = MFX_ERR_MORE_SURFACE;
         bool          bOneMoreRunFrame = false;
-
-        if (m_inParams.bFieldProcessing && m_inParams.bSwapFieldProcessing)
-        {
-            if (m_inParams.nFieldProcessing == 0)
-            {
-                m_inParams.m_FieldProcessing.Mode = MFX_VPP_COPY_FIELD;
-                m_inParams.m_FieldProcessing.InField  = MFX_PICTYPE_TOPFIELD;
-                m_inParams.m_FieldProcessing.OutField = MFX_PICTYPE_TOPFIELD;
-                m_inParams.nFieldProcessing += 2;
-            }
-            else
-            {
-                if (m_inParams.nFieldProcessing == 1)
-                {
-                    m_inParams.m_FieldProcessing.Mode = MFX_VPP_COPY_FIELD;
-                    m_inParams.m_FieldProcessing.InField  = MFX_PICTYPE_BOTTOMFIELD;
-                    m_inParams.m_FieldProcessing.OutField = MFX_PICTYPE_BOTTOMFIELD;
-                    m_inParams.nFieldProcessing += 1;
-                }
-                else 
-                {
-                    if (m_inParams.nFieldProcessing == 2)
-                    {
-                        if (m_inParams.m_FieldProcessing.InField == MFX_PICTYPE_TOPFIELD)
-                        {
-                            m_inParams.nFieldProcessing -= 2;
-                        }
-                        else
-                        {
-                            m_inParams.nFieldProcessing -= 1;
-                        }
-                        m_inParams.m_FieldProcessing.Mode = MFX_PICTYPE_FRAME;
-                        m_inParams.m_FieldProcessing.InField  = MFX_PICTYPE_FRAME;
-                        m_inParams.m_FieldProcessing.OutField = MFX_PICTYPE_FRAME;
-                    }
-                }
-            }
-            if (NULL != pSurface)
-            {
-                pSurface->Data.ExtParam = new mfxExtBuffer*[1];
-                pSurface->Data.NumExtParam = 1;
-                pSurface->Data.ExtParam[0] = (mfxExtBuffer*) &m_inParams.m_FieldProcessing;
-            }
-        }
 
         if( m_inParams.bExtVppApi )
         {
@@ -3515,7 +3517,6 @@ mfxStatus  MFXDecPipeline::RunVPP(mfxFrameSurface1 *pSurface)
                         DecreaseReference(&pVpp->Data);
                     }
                 }
-
                 if (NULL != pSurface)
                 {
                     break;
@@ -3525,15 +3526,6 @@ mfxStatus  MFXDecPipeline::RunVPP(mfxFrameSurface1 *pSurface)
         else
         {
             MFX_CHECK_STS(RunRender(vppOut.pSurface, vppOut.pCtrl));
-        }
-        if (m_inParams.bFieldProcessing && m_inParams.bSwapFieldProcessing)
-        {
-            if (pSurface->Data.ExtParam != NULL)
-            {
-                delete[] pSurface->Data.ExtParam;
-                pSurface->Data.ExtParam = NULL;
-                pSurface->Data.NumExtParam = 0;
-            }
         }
 
         if (NULL != pSurface && !bOneMoreRunFrame)

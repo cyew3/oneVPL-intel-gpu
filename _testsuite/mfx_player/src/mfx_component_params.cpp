@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2017 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -184,13 +184,20 @@ mfxStatus ComponentParams::DestroySurfaces()
             if (!m_bExternalAlloc)
             {
                 MFX_CHECK( i->surfaces.end() == std::find_if( i->surfaces.begin()
-                    , i->surfaces.end() 
+                    , i->surfaces.end()
                     , bind1st(SrfUnlocker(), *(mfxFrameAllocator*)m_pAllocator)));
             }
 
             MFX_CHECK_STS(m_pAllocator->FreeFrames(&i->allocResponce));
-        } 
-
+        }
+        for (int surface_count = 0; surface_count < int(i->surfaces.size()); surface_count++)
+        {
+            if (i->surfaces[surface_count].pSurface->Data.ExtParam)
+            {
+                MFX_DELETE_ARRAY(i->surfaces[surface_count].pSurface->Data.ExtParam);
+                i->surfaces[surface_count].pSurface->Data.NumExtParam = 0;
+            }
+        }
         for_each(i->surfaces.begin(), i->surfaces.end(), SrfEncCtlDelete());
         i->surfaces.clear();
         i->surfacesLinear.clear();
