@@ -3350,7 +3350,7 @@ void LookAheadBrc2::PreEnc(const BRCFrameParams& par, std::vector<VmeData *> con
     mfxU32 firstNewFrame = m_laData.empty() ? par.EncodedOrder : m_laData.back().encOrder + 1;
     mfxU32 lastNewFrame  = par.EncodedOrder + m_lookAhead;
 
-    for (size_t i = 0; i < vmeData.size(); i++)
+    for (i = 0; i < vmeData.size(); i++)
     {
         if (vmeData[i]->encOrder < firstNewFrame || vmeData[i]->encOrder >= lastNewFrame)
             continue;
@@ -5493,42 +5493,43 @@ void MfxHwH264Encode::PrepareSeiMessageBuffer(
         writer.PutRawBytes(SEI_STARTCODE, SEI_STARTCODE + sizeof(SEI_STARTCODE));
 
     mfxExtAvcSeiBufferingPeriod msgBufferingPeriod = { 0 };
-    mfxExtAvcSeiPicTiming msgPicTiming;
-
-    mfxU32 sps_id = extSps->seqParameterSetId;
-    sps_id = ((sps_id + !!task.m_viewIdx) & 0x1f);  // use appropriate sps id for dependent views
-
-    if (needBufferingPeriod)
     {
-        PrepareSeiMessage(
-            task,
-            IsOn(extOpt->VuiNalHrdParameters),
-            IsOn(extOpt->VuiVclHrdParameters),
-            sps_id,
-            msgBufferingPeriod);
+        mfxExtAvcSeiPicTiming msgPicTiming;
+
+        mfxU32 sps_id = extSps->seqParameterSetId;
+        sps_id = ((sps_id + !!task.m_viewIdx) & 0x1f);  // use appropriate sps id for dependent views
+
+        if (needBufferingPeriod)
+        {
+            PrepareSeiMessage(
+                task,
+                IsOn(extOpt->VuiNalHrdParameters),
+                IsOn(extOpt->VuiVclHrdParameters),
+                sps_id,
+                msgBufferingPeriod);
 
             if (IsOff(extOpt->SingleSeiNalUnit))
                 writer.PutRawBytes(SEI_STARTCODE, SEI_STARTCODE + sizeof(SEI_STARTCODE));
             PutSeiMessage(writer, msgBufferingPeriod);
             if (IsOff(extOpt->SingleSeiNalUnit))
                 writer.PutTrailingBits();
+        }
+
+        if (needPicTimingSei)
+        {
+            PrepareSeiMessage(
+                task,
+                fieldId,
+                IsOn(extOpt->VuiNalHrdParameters) || IsOn(extOpt->VuiVclHrdParameters),
+                msgPicTiming);
+
+            if (IsOff(extOpt->SingleSeiNalUnit))
+                writer.PutRawBytes(SEI_STARTCODE, SEI_STARTCODE + sizeof(SEI_STARTCODE));
+            PutSeiMessage(writer, *extPt, msgPicTiming);
+            if (IsOff(extOpt->SingleSeiNalUnit))
+                writer.PutTrailingBits();
+        }
     }
-
-    if (needPicTimingSei)
-    {
-        PrepareSeiMessage(
-            task,
-            fieldId,
-            IsOn(extOpt->VuiNalHrdParameters) || IsOn(extOpt->VuiVclHrdParameters),
-            msgPicTiming);
-
-        if (IsOff(extOpt->SingleSeiNalUnit))
-            writer.PutRawBytes(SEI_STARTCODE, SEI_STARTCODE + sizeof(SEI_STARTCODE));
-        PutSeiMessage(writer, *extPt, msgPicTiming);
-        if (IsOff(extOpt->SingleSeiNalUnit))
-            writer.PutTrailingBits();
-    }
-
     // user-defined messages
     for (mfxU32 i = secondFieldPicFlag; i < task.m_ctrl.NumPayload; i = i + 1 + fieldPicFlag)
     {
