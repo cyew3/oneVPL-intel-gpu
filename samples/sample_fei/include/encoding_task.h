@@ -345,6 +345,8 @@ struct IObuffs
     setElem in;
     setElem out;
 
+    std::vector<mfxExtBuffer*> PAK_buffers;
+
     void Destroy(mfxU16 n_fields)
     {
         in.Destroy(n_fields);
@@ -367,6 +369,41 @@ struct IObuffs
     {
         in.ResetSlices(widthMB, heightMB);
         out.ResetSlices(widthMB, heightMB);
+    }
+
+    mfxExtBuffer ** GetPAKBuffers()
+    {
+        PAK_buffers.clear();
+
+        // PAK input buffers includes MV, MBcode buffers from ENC output
+        // and PPS, SliceHeader from ENC input
+        for (int k = 0; k < 2; ++k)
+        {
+            std::vector<mfxExtBuffer*> & buffers = k ? in.buffers : out.buffers;
+
+            for (mfxU16 i = 0; i < buffers.size(); ++i)
+            {
+                switch (buffers[i]->BufferId)
+                {
+                case MFX_EXTBUFF_FEI_ENC_MV:
+                case MFX_EXTBUFF_FEI_PAK_CTRL:
+                case MFX_EXTBUFF_FEI_PPS:
+                case MFX_EXTBUFF_FEI_SLICE:
+                    PAK_buffers.push_back(buffers[i]);
+                    break;
+
+                default:
+                    break;
+                }
+            }
+        }
+
+        return PAK_buffers.size() ? &PAK_buffers[0] : NULL;
+    }
+
+    mfxU16 GetPAKBuffersNum()
+    {
+        return mfxU16(PAK_buffers.size());
     }
 };
 

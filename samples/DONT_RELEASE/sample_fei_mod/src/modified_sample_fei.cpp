@@ -359,11 +359,11 @@ mfxStatus ResetDirect(iTask * task, iTaskPool *pTaskList)
     mfxI32 wmb = (fi->Width +15)>>4;
     mfxI32 hmb = (fi->Height+15)>>4;
 
-    const mfxExtFeiPPS         * pps         = (mfxExtFeiPPS*)GetExtBuffer(task->PAK_out.ExtParam, task->PAK_out.NumExtParam, MFX_EXTBUFF_FEI_PPS);
-    const mfxExtFeiSliceHeader * sliceHeader = (mfxExtFeiSliceHeader*)GetExtBuffer(task->PAK_out.ExtParam, task->PAK_out.NumExtParam, MFX_EXTBUFF_FEI_SLICE);
+    const mfxExtFeiPPS         * pps         = (mfxExtFeiPPS*)        GetExtBuffer(task->PAK_in.ExtParam, task->PAK_in.NumExtParam, MFX_EXTBUFF_FEI_PPS);
+    const mfxExtFeiSliceHeader * sliceHeader = (mfxExtFeiSliceHeader*)GetExtBuffer(task->PAK_in.ExtParam, task->PAK_in.NumExtParam, MFX_EXTBUFF_FEI_SLICE);
 
-    const mfxExtFeiEncMV     * mvs    = ( mfxExtFeiEncMV*)GetExtBuffer(task->PAK_in.ExtParam, task->PAK_in.NumExtParam, MFX_EXTBUFF_FEI_ENC_MV);
-    const mfxExtFeiPakMBCtrl * mbCode = (mfxExtFeiPakMBCtrl*)GetExtBuffer(task->PAK_in.ExtParam, task->PAK_in.NumExtParam, MFX_EXTBUFF_FEI_PAK_CTRL);
+    const mfxExtFeiEncMV       * mvs         = (mfxExtFeiEncMV*)      GetExtBuffer(task->PAK_in.ExtParam, task->PAK_in.NumExtParam, MFX_EXTBUFF_FEI_ENC_MV);
+    const mfxExtFeiPakMBCtrl   * mbCode      = (mfxExtFeiPakMBCtrl*)  GetExtBuffer(task->PAK_in.ExtParam, task->PAK_in.NumExtParam, MFX_EXTBUFF_FEI_PAK_CTRL);
 
     if (sliceHeader && sliceHeader->NumSlice == 0)
         return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -388,7 +388,7 @@ mfxStatus ResetDirect(iTask * task, iTaskPool *pTaskList)
             iTask * reftask = pTaskList->GetTaskByPAKOutputSurface(refSurface);
 
             if (reftask) {
-                refmvs    = (mfxExtFeiEncMV*)GetExtBuffer(reftask->PAK_in.ExtParam, reftask->PAK_in.NumExtParam, MFX_EXTBUFF_FEI_ENC_MV);
+                refmvs    = (mfxExtFeiEncMV*)    GetExtBuffer(reftask->PAK_in.ExtParam, reftask->PAK_in.NumExtParam, MFX_EXTBUFF_FEI_ENC_MV);
                 refmbCode = (mfxExtFeiPakMBCtrl*)GetExtBuffer(reftask->PAK_in.ExtParam, reftask->PAK_in.NumExtParam, MFX_EXTBUFF_FEI_PAK_CTRL);
                 //if (!refmbCode && !refmvs) return MFX_ERR_INVALID_VIDEO_PARAM; // shouldn't happen
             }

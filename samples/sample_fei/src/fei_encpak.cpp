@@ -778,7 +778,7 @@ mfxStatus FEI_EncPakInterface::InitFrameParams(iTask* eTask)
     {
         eTask->ENC_in.NumFrameL0 = (mfxU16)m_RefInfo.reference_frames.size();
         eTask->ENC_in.NumFrameL1 = 0;
-        eTask->ENC_in.L0Surface = &m_RefInfo.reference_frames[0];
+        eTask->ENC_in.L0Surface = eTask->ENC_in.NumFrameL0 ? &m_RefInfo.reference_frames[0] : NULL;
         eTask->ENC_in.L1Surface = NULL;
         eTask->ENC_in.NumExtParam  = is_I_frame ? eTask->bufs->I_bufs.in.NumExtParam()  : eTask->bufs->PB_bufs.in.NumExtParam();
         eTask->ENC_in.ExtParam     = is_I_frame ? eTask->bufs->I_bufs.in.ExtParam()     : eTask->bufs->PB_bufs.in.ExtParam();
@@ -790,12 +790,12 @@ mfxStatus FEI_EncPakInterface::InitFrameParams(iTask* eTask)
     {
         eTask->PAK_in.NumFrameL0 = (mfxU16)m_RefInfo.reference_frames.size();
         eTask->PAK_in.NumFrameL1 = 0;
-        eTask->PAK_in.L0Surface = &m_RefInfo.reference_frames[0];
+        eTask->PAK_in.L0Surface = eTask->PAK_in.NumFrameL0 ? &m_RefInfo.reference_frames[0] : NULL;
         eTask->PAK_in.L1Surface = NULL;
-        eTask->PAK_in.NumExtParam  = is_I_frame ? eTask->bufs->I_bufs.out.NumExtParam() : eTask->bufs->PB_bufs.out.NumExtParam();
-        eTask->PAK_in.ExtParam     = is_I_frame ? eTask->bufs->I_bufs.out.ExtParam()    : eTask->bufs->PB_bufs.out.ExtParam();
-        eTask->PAK_out.NumExtParam = is_I_frame ? eTask->bufs->I_bufs.in.NumExtParam()  : eTask->bufs->PB_bufs.in.NumExtParam();
-        eTask->PAK_out.ExtParam    = is_I_frame ? eTask->bufs->I_bufs.in.ExtParam()     : eTask->bufs->PB_bufs.in.ExtParam();
+
+        // We need to form PAK buffers manually, because they consist of subset of both: ENC input and output buffers
+        eTask->PAK_in.ExtParam    = is_I_frame ? eTask->bufs->I_bufs.GetPAKBuffers()    : eTask->bufs->PB_bufs.GetPAKBuffers();
+        eTask->PAK_in.NumExtParam = is_I_frame ? eTask->bufs->I_bufs.GetPAKBuffersNum() : eTask->bufs->PB_bufs.GetPAKBuffersNum();
     }
 
     /* SPS, PPS, SliceHeader processing */
