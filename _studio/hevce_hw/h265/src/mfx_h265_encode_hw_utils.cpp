@@ -558,7 +558,7 @@ MfxVideoParam::MfxVideoParam()
     , TargetKbps      (0)
     , MaxKbps         (0)
     , LTRInterval     (0)
-    , LCUSize         (DEFAULT_LCU_SIZE)
+    , LCUSize         (0)
     , InsertHRDInfo   (false)
     , RawRef          (false)
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
@@ -588,7 +588,7 @@ MfxVideoParam::MfxVideoParam(mfxVideoParam const & par)
     , TargetKbps      (0)
     , MaxKbps         (0)
     , LTRInterval     (0)
-    , LCUSize         (DEFAULT_LCU_SIZE)
+    , LCUSize         (0)
     , InsertHRDInfo   (false)
     , RawRef          (false)
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
@@ -789,7 +789,6 @@ void MfxVideoParam::SyncVideoToCalculableParam()
 
     BufferSizeInKB = mfx.BufferSizeInKB * multiplier;
     LTRInterval    = 0;
-    //LCUSize        = DEFAULT_LCU_SIZE;
 
     if (mfx.RateControlMethod != MFX_RATECONTROL_CQP)
     {

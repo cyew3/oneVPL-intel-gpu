@@ -74,6 +74,53 @@ static const GUID DXVA2_Intel_LowpowerEncode_HEVC_Main444_10 =
 
 GUID GetGUID(MfxVideoParam const & par);
 
+#ifndef OPEN_SOURCE
+const GUID GuidTable[2][2][3] = 
+{
+    // LowPower = OFF
+    {
+        // BitDepthLuma = 8
+        {
+            /*420*/ DXVA2_Intel_Encode_HEVC_Main,
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+            /*422*/ DXVA2_Intel_Encode_HEVC_Main422,
+            /*444*/ DXVA2_Intel_Encode_HEVC_Main444
+#endif
+        },
+        // BitDepthLuma = 10
+        {
+            /*420*/ DXVA2_Intel_Encode_HEVC_Main10,
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+            /*422*/ DXVA2_Intel_Encode_HEVC_Main422_10,
+            /*444*/ DXVA2_Intel_Encode_HEVC_Main444_10
+#endif
+        }
+    },
+    // LowPower = ON
+    
+#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
+    {
+        // BitDepthLuma = 8
+        {
+            /*420*/ DXVA2_Intel_LowpowerEncode_HEVC_Main,
+    #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+            /*422*/ DXVA2_Intel_LowpowerEncode_HEVC_Main422,
+            /*444*/ DXVA2_Intel_LowpowerEncode_HEVC_Main444
+    #endif
+        },
+        // BitDepthLuma = 10
+        {
+            /*420*/ DXVA2_Intel_LowpowerEncode_HEVC_Main10,
+    #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+            /*422*/ DXVA2_Intel_LowpowerEncode_HEVC_Main422_10,
+            /*444*/ DXVA2_Intel_LowpowerEncode_HEVC_Main444_10
+    #endif
+        }
+    }
+#endif
+};
+#endif
+
 typedef struct tagENCODE_CAPS_HEVC
 {
     union
@@ -149,6 +196,8 @@ typedef struct tagENCODE_CAPS_HEVC
     UCHAR    MaxNum_WeightedPredL0;
     UCHAR    MaxNum_WeightedPredL1;
 } ENCODE_CAPS_HEVC;
+
+mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, MFXCoreInterface* pCore, GUID guid);
 
 typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_HEVC
 {

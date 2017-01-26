@@ -25,53 +25,6 @@
 namespace MfxHwH265Encode
 {
 
-#ifndef OPEN_SOURCE
-const GUID GuidTable[2][2][3] = 
-{
-    // LowPower = OFF
-    {
-        // BitDepthLuma = 8
-        {
-            /*420*/ DXVA2_Intel_Encode_HEVC_Main,
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-            /*422*/ DXVA2_Intel_Encode_HEVC_Main422,
-            /*444*/ DXVA2_Intel_Encode_HEVC_Main444
-#endif
-        },
-        // BitDepthLuma = 10
-        {
-            /*420*/ DXVA2_Intel_Encode_HEVC_Main10,
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-            /*422*/ DXVA2_Intel_Encode_HEVC_Main422_10,
-            /*444*/ DXVA2_Intel_Encode_HEVC_Main444_10
-#endif
-        }
-    },
-    // LowPower = ON
-    
-#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
-    {
-        // BitDepthLuma = 8
-        {
-            /*420*/ DXVA2_Intel_LowpowerEncode_HEVC_Main,
-    #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-            /*422*/ DXVA2_Intel_LowpowerEncode_HEVC_Main422,
-            /*444*/ DXVA2_Intel_LowpowerEncode_HEVC_Main444
-    #endif
-        },
-        // BitDepthLuma = 10
-        {
-            /*420*/ DXVA2_Intel_LowpowerEncode_HEVC_Main10,
-    #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-            /*422*/ DXVA2_Intel_LowpowerEncode_HEVC_Main422_10,
-            /*444*/ DXVA2_Intel_LowpowerEncode_HEVC_Main444_10
-    #endif
-        }
-    }
-#endif
-};
-#endif
-
 GUID GetGUID(MfxVideoParam const & par)
 {
     GUID guid = DXVA2_Intel_Encode_HEVC_Main;
@@ -137,6 +90,52 @@ DriverEncoder* CreatePlatformH265Encoder(MFXCoreInterface* core, ENCODER_TYPE ty
     }
 
     return 0;
+}
+
+#ifndef OPEN_SOURCE
+bool IsEncPak(GUID guid)
+{
+    // search among ENC+PAK guids GuidTable[0]
+
+    for (mfxU32 i = 0; i < 2; i++) {   // 8/10 bit
+        for (mfxU32 j = 0; j < sizeof(GuidTable[0][i]) / sizeof(GuidTable[0][0][0]); j++) {
+            if (guid == GuidTable[0][i][j])
+                return true;
+        }
+    }
+    return false;
+}
+#endif
+
+// this function is aimed to workaround all CAPS reporting problems in mainline driver
+mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, MFXCoreInterface* core, GUID guid)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    if (!caps.BitDepth8Only && !caps.MaxEncodedBitDepth)
+        caps.MaxEncodedBitDepth = 1;
+    if (!caps.Color420Only && !(caps.YUV444ReconSupport || caps.YUV422ReconSupport))
+        caps.YUV444ReconSupport = 1;
+    if (!caps.Color420Only && !(caps.YUV422ReconSupport))   // VPG: caps are not correct now
+        caps.YUV422ReconSupport = 1;
+#endif
+#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
+    mfxPlatform pltfm;
+    sts = core->QueryPlatform(&pltfm);
+    MFX_CHECK_STS(sts);
+
+    if (pltfm.CodeName < MFX_PLATFORM_CANNONLAKE) {
+        if (!caps.LCUSizeSupported)     // not set until CNL now
+            caps.LCUSizeSupported = 0b10;   // 32x32 lcu is only supported
+    }
+    else {
+#ifndef OPEN_SOURCE
+        if (IsEncPak(guid))
+            caps.LCUSizeSupported |= 0b10;   // add support of 32x32 lcu for ENC+PAK
+#endif
+    }
+#endif
+    return sts;
 }
 
 mfxStatus QueryHwCaps(MFXCoreInterface* core, GUID guid, ENCODE_CAPS_HEVC & caps)

@@ -762,6 +762,29 @@ bool CheckTU(mfxU8 support, mfxU16& tu)
     return changed;
 }
 
+mfxU32 GetDefaultLCUSize(MfxVideoParam const & par,
+                         ENCODE_CAPS_HEVC const & hwCaps)
+{
+    mfxU32 LCUSize = 32;
+
+#ifdef PRE_SI_TARGET_PLATFORM_GEN10
+
+    if (par.m_platform.CodeName >= MFX_PLATFORM_CANNONLAKE) {
+        if (IsOn(par.mfx.LowPower))
+            LCUSize = 64;
+        else
+            LCUSize = (1 << (CeilLog2(hwCaps.LCUSizeSupported + 1) + 3)); // set max supported
+    }
+
+#endif // PRE_SI_TARGET_PLATFORM_GEN10
+
+    assert((LCUSize >> 4) & hwCaps.LCUSizeSupported);
+
+    return LCUSize;
+}
+
+#ifdef PRE_SI_TARGET_PLATFORM_GEN10
+
 bool CheckLCUSize(mfxU32 LCUSizeSupported, mfxU32& LCUSize)
 {
     /*
@@ -772,18 +795,18 @@ bool CheckLCUSize(mfxU32 LCUSizeSupported, mfxU32& LCUSize)
     */
     assert(LCUSizeSupported > 0);
 
-    if ((LCUSize & (LCUSize - 1)) || LCUSize < 16)
-        LCUSize = 0;
+    if (LCUSize == 0) { // default behavior
+        LCUSize = (1 << (CeilLog2(LCUSizeSupported + 1) + 3)); // set max supported
+        return true;
+    }
+    
+    if ((LCUSize == 16) || (LCUSize == 32) || (LCUSize == 64)) {    // explicitly assigned lcusize
+        if ((LCUSize >> 4) & LCUSizeSupported)
+            return true;
+    }
 
-    if (LCUSize && ((1 << CeilLog2(LCUSize >> 4)) & LCUSizeSupported))
-        return false;
-
-    LCUSize = (1 << (CeilLog2(LCUSizeSupported + 1) + 3)); // set max supported
-
-    return true;
+    return false;
 }
-
-#ifdef PRE_SI_TARGET_PLATFORM_GEN10
 
 void CheckAndFixRect(MfxVideoParam const & par,
                      RectData *rect,
@@ -1163,11 +1186,16 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 
     changed += CheckTriStateOption(par.mfx.LowPower);
 
-    CheckLCUSize(caps.LCUSizeSupported ? caps.LCUSizeSupported : IsOn(par.mfx.LowPower) ? (64 >> 4) : (32 >> 4), par.LCUSize);
-    if ((par.m_ext.DDI.LCUSize == 32) || (par.m_ext.DDI.LCUSize == 64))
+#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
+    if (par.m_ext.DDI.LCUSize)  // LCUSize from input params
         par.LCUSize = par.m_ext.DDI.LCUSize;
 
+    if (!CheckLCUSize(caps.LCUSizeSupported, par.LCUSize))
+        invalid++;
+#endif //PRE_SI_TARGET_PLATFORM_GEN10
+
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+
     mfxU16 maxBitDepth = GetMaxBitDepth(par, caps.MaxEncodedBitDepth);
     mfxU16 maxChroma = GetMaxChroma(par);
 
@@ -1990,7 +2018,8 @@ void SetDefaults(
     if (!par.mfx.LowPower)
         par.mfx.LowPower = MFX_CODINGOPTION_OFF;
 
-    CheckLCUSize(hwCaps.LCUSizeSupported ? hwCaps.LCUSizeSupported : IsOn(par.mfx.LowPower) ? (64 >> 4) : (32 >> 4), par.LCUSize);
+    if (!par.LCUSize)
+        par.LCUSize = GetDefaultLCUSize(par, hwCaps);
 
     if (par.mfx.CodecLevel)
     {

@@ -178,14 +178,8 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAuxilliaryDevice(
 
     Trace(m_caps, 0);
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-    if (!m_caps.BitDepth8Only && !m_caps.MaxEncodedBitDepth)
-        m_caps.MaxEncodedBitDepth = 1;
-    if (!m_caps.Color420Only && !(m_caps.YUV444ReconSupport || m_caps.YUV422ReconSupport))
-        m_caps.YUV444ReconSupport = 1;
-    if (!m_caps.Color420Only && !(m_caps.YUV422ReconSupport))   // VPG: caps are not coorect now
-        m_caps.YUV422ReconSupport = 1;
-#endif
+    sts = HardcodeCaps(m_caps, core, guid);
+    MFX_CHECK_STS(sts);
 
     return MFX_ERR_NONE;
 }
