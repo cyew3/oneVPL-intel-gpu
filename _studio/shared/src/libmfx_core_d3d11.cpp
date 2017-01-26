@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2017 Intel Corporation. All Rights Reserved.
 //
 
 #if defined  (MFX_VA)
@@ -908,8 +908,6 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
             desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
             desc.BindFlags = 0;
 
-            mfxStatus sts = MFX_ERR_NONE;
-
             ID3D11Texture2D *pStaging;
             
             if ( DXGI_FORMAT_R16_TYPELESS == sSurfDesc.Format )
@@ -941,7 +939,7 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
 
             MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
 
-            Ipp32u srcPitch = sLockRect.RowPitch;
+            srcPitch = sLockRect.RowPitch;
 
             MFX_CHECK(srcPitch < 0x8000 || pDst->Info.FourCC == MFX_FOURCC_ARGB16 || pSrc->Info.FourCC == MFX_FOURCC_RGB4 || pSrc->Info.FourCC == MFX_FOURCC_YUY2, MFX_ERR_UNDEFINED_BEHAVIOR);
 
@@ -1043,7 +1041,7 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
             while (DXGI_ERROR_WAS_STILL_DRAWING == hRes);
 
             MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
-            Ipp32u dstPitch = sLockRect.RowPitch;
+            dstPitch = sLockRect.RowPitch;
 
             MFX_CHECK(dstPitch < 0x8000 || pDst->Info.FourCC == MFX_FOURCC_RGB4 || pDst->Info.FourCC == MFX_FOURCC_YUY2, MFX_ERR_UNDEFINED_BEHAVIOR);
 
