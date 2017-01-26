@@ -249,35 +249,41 @@ int TestSuite::RunTest(unsigned int id)
     //Or else, it needs to set m_ctrl in ProcessSurface();
     std::vector<mfxExtBuffer*> in_buffs;
 
-    mfxExtFeiEncFrameCtrl in_efc = {};
-    in_efc.Header.BufferId = MFX_EXTBUFF_FEI_ENC_CTRL;
-    in_efc.Header.BufferSz = sizeof(mfxExtFeiEncFrameCtrl);
-    in_efc.SearchPath = 2;
-    in_efc.LenSP = 57;
-    in_efc.SubMBPartMask = 0;
-    in_efc.MultiPredL0 = 0;
-    in_efc.MultiPredL1 = 0;
-    in_efc.SubPelMode = 3;
-    in_efc.InterSAD = 2;
-    in_efc.IntraSAD = 2;
-    in_efc.DistortionType = 0;
-    in_efc.RepartitionCheckEnable = 0;
-    in_efc.AdaptiveSearch = 0;
-    in_efc.MVPredictor = 0;
-    in_efc.NumMVPredictors[0] = 0;
-    in_efc.NumMVPredictors[1] = 0;
-    in_efc.PerMBQp = 0;
-    in_efc.PerMBInput = 0;
-    in_efc.MBSizeCtrl = 0;
-    in_efc.RefHeight = 32;
-    in_efc.RefWidth = 32;
-    in_efc.SearchWindow = 5;
-    in_buffs.push_back((mfxExtBuffer*)&in_efc);
+    // Interlaced case requires two control buffers to be passed
+    mfxExtFeiEncFrameCtrl in_efc[2];
+    memset(in_efc, 0, 2 * sizeof(in_efc[0]));
+
+    for (int i = 0; i < 2; ++i)
+    {
+        in_efc[i].Header.BufferId = MFX_EXTBUFF_FEI_ENC_CTRL;
+        in_efc[i].Header.BufferSz = sizeof(mfxExtFeiEncFrameCtrl);
+        in_efc[i].SearchPath             = 2;
+        in_efc[i].LenSP                  = 57;
+        in_efc[i].SubMBPartMask          = 0;
+        in_efc[i].MultiPredL0            = 0;
+        in_efc[i].MultiPredL1            = 0;
+        in_efc[i].SubPelMode             = 3;
+        in_efc[i].InterSAD               = 2;
+        in_efc[i].IntraSAD               = 2;
+        in_efc[i].DistortionType         = 0;
+        in_efc[i].RepartitionCheckEnable = 0;
+        in_efc[i].AdaptiveSearch         = 0;
+        in_efc[i].MVPredictor            = 0;
+        in_efc[i].NumMVPredictors[0]     = 0;
+        in_efc[i].NumMVPredictors[1]     = 0;
+        in_efc[i].PerMBQp                = 0;
+        in_efc[i].PerMBInput             = 0;
+        in_efc[i].MBSizeCtrl             = 0;
+        in_efc[i].RefHeight              = 32;
+        in_efc[i].RefWidth               = 32;
+        in_efc[i].SearchWindow           = 5;
+        in_buffs.push_back((mfxExtBuffer*)(&in_efc[i]));
+    }
 
     if (!in_buffs.empty())
     {
-        m_ctrl.ExtParam = &in_buffs[0];
-        m_ctrl.NumExtParam = (mfxU16)in_buffs.size();
+        m_ctrl.ExtParam    = &in_buffs[0];
+        m_ctrl.NumExtParam = mfxU16(1 + (m_par.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE));
     }
 
     Init();
