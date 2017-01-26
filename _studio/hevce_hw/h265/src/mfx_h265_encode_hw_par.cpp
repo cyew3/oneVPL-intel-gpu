@@ -382,8 +382,7 @@ mfxU16 AddTileSlices(
 
     par.m_slice.resize(nSlicePrev + nSlice);
 
-    /*
-    mfxU32 f = (nSlice < 2 || (nLCU % nSlice == 0)) ? 0 : (nLCU % nSlice);
+    mfxU32 f = (nSlice < 2 || (nLCU % nSlice == 0) || par.m_ext.CO2.NumMbPerSlice) ? 0 : (nLCU % nSlice);
     bool   s = false;
 
     if (f == 0)
@@ -405,16 +404,12 @@ mfxU16 AddTileSlices(
         f = nSlice / f;
     }
 
-    */
-    mfxF64 k = (par.m_ext.CO2.NumMbPerSlice != 0) ? (mfxF64)nLcuPerSlice : (mfxF64)nLCU / (mfxF64) nSlice;
-
     mfxU32 i = nSlicePrev;
     for ( ; i < par.m_slice.size(); i ++)
     {
-        //par.m_slice[i].NumLCU = (i == nSlicePrev + nSlice-1) ? nLCU : nLcuPerSlice + s * (f && i % f == 0) - !s * (f && i % f == 0);
-        //par.m_slice[i].SegmentAddress = (i > 0) ? (par.m_slice[i-1].SegmentAddress + par.m_slice[i-1].NumLCU) : 0;
+        par.m_slice[i].NumLCU = (i == nSlicePrev + nSlice-1) ? nLCU : nLcuPerSlice + s * (f && i % f == 0) - !s * (f && i % f == 0);
+        par.m_slice[i].SegmentAddress = (i > 0) ? (par.m_slice[i-1].SegmentAddress + par.m_slice[i-1].NumLCU) : 0;
 
-        par.m_slice[i].SegmentAddress = (mfxU32)(k*(mfxF64)i);
         if (i != 0)
             par.m_slice[i - 1].NumLCU = par.m_slice[i].SegmentAddress - par.m_slice[i - 1].SegmentAddress;
     }
@@ -450,6 +445,20 @@ mfxU16 MakeSlices(MfxVideoParam& par, mfxU32 SliceStructure)
     mfxU32 nTile  = nTCol * nTRow;
     mfxU32 nLCU   = nCol * nRow;
     mfxU32 nSlice = Min(Min<mfxU32>(nLCU, MAX_SLICES), Max<mfxU32>(par.mfx.NumSlice, 1));
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    /*
+        A tile must wholly contain all the slices within it. Slices cannot cross tile boundaries.
+        If a slice contains more than one tile, it must contain all the tiles in the frame, i.e. there can only be one slice in the frame. (Upto Gen12, Intel HW does not support this scenario.)
+        Normally, each tile will contain a single slice. So  2x2 and 4 slices is normal. 
+        Fewer slices than tiles is illegal (e.g. 3 slice, 2x2 tiles)
+        More slices than tiles is legal as long as the slices do not cross tile boundaries; the app needs to use the slice segment address and number of LCUs in the slice to define the slices within the tiles.  
+    */
+    if (par.m_platform.CodeName <= MFX_PLATFORM_ICELAKE)
+    {
+        nSlice = Max(nSlice, nTile);
+    }
+#endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
 
     par.m_slice.resize(0);
     if (par.m_ext.CO2.NumMbPerSlice != 0)
@@ -1141,6 +1150,8 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     mfxU16 maxQP   = 51;
     mfxU16 surfAlignW = HW_SURF_ALIGN_W;
     mfxU16 surfAlignH = HW_SURF_ALIGN_H;
+    mfxU16 MaxTileColumns = MAX_NUM_TILE_COLUMNS;
+    mfxU16 MaxTileRows    = MAX_NUM_TILE_ROWS;
 
     mfxExtCodingOption2& CO2 = par.m_ext.CO2;
     mfxExtCodingOption3& CO3 = par.m_ext.CO3;
@@ -1404,16 +1415,26 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     }
 #endif
 
-    if (   (caps.TileSupport == 0 || IsOn(par.mfx.LowPower))
-        && (par.m_ext.HEVCTiles.NumTileColumns > 1 || par.m_ext.HEVCTiles.NumTileRows > 1))
+    if (!caps.TileSupport)
     {
-        par.m_ext.HEVCTiles.NumTileColumns = 1;
-        par.m_ext.HEVCTiles.NumTileRows    = 1;
-        invalid ++;
+        MaxTileColumns = 1;
+        MaxTileRows    = 1;
     }
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    else
+    {
+        mfxU16 nLcuCol = (mfxU16)CeilDiv(par.m_ext.HEVCParam.PicWidthInLumaSamples, par.LCUSize);
+        mfxU16 nLcuRow = (mfxU16)CeilDiv(par.m_ext.HEVCParam.PicHeightInLumaSamples, par.LCUSize);
 
-    invalid += CheckMax(par.m_ext.HEVCTiles.NumTileColumns, (mfxU32)MAX_NUM_TILE_COLUMNS);
-    invalid += CheckMax(par.m_ext.HEVCTiles.NumTileRows, (mfxU32)MAX_NUM_TILE_ROWS);
+        changed += CheckMax(par.m_ext.HEVCTiles.NumTileColumns, nLcuCol);
+        changed += CheckMax(par.m_ext.HEVCTiles.NumTileRows, nLcuRow);
+
+        MaxTileColumns = (mfxU16)caps.MaxNumOfTileColumnsMinus1 + 1;
+    }
+#endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
+
+    invalid += CheckMax(par.m_ext.HEVCTiles.NumTileColumns, MaxTileColumns);
+    invalid += CheckMax(par.m_ext.HEVCTiles.NumTileRows, MaxTileRows);
 
     changed += CheckMax(par.mfx.TargetUsage, (mfxU32)MFX_TARGETUSAGE_BEST_SPEED);
 

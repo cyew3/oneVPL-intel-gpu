@@ -1708,6 +1708,8 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
 
         for (mfxU16 j = 0; j < nTRow - 1; j ++)
             m_pps.row_height[j] = ((j + 1) * nRow) / nTRow - (j * nRow) / nTRow;
+
+        m_pps.loop_filter_across_tiles_enabled_flag = 1;
     }
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)

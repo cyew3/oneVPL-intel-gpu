@@ -180,6 +180,13 @@ mfxStatus CheckHeaders(
       !(   (!caps.YUV444ReconSupport && (par.m_sps.chroma_format_idc == 3))
         || (!caps.YUV422ReconSupport && (par.m_sps.chroma_format_idc == 2))
         || (caps.Color420Only && (par.m_sps.chroma_format_idc != 1))));
+
+    MFX_CHECK_COND(par.m_pps.num_tile_columns_minus1 <= caps.MaxNumOfTileColumnsMinus1);
+
+    if (par.m_pps.tiles_enabled_flag)
+    {
+        MFX_CHECK_COND(par.m_pps.loop_filter_across_tiles_enabled_flag);
+    }
 #else
     MFX_CHECK_COND(par.m_sps.chroma_format_idc == 1);
 #endif

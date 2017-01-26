@@ -88,6 +88,8 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAuxilliaryDevice(
     m_caps.MaxNum_Reference1        = 1;
     m_caps.MBBRCSupport             = 1;
     m_caps.TUSupport                = 73;
+    m_caps.TileSupport              = 1;
+    m_caps.MaxNumOfTileColumnsMinus1= 3;
 #else
     IDirect3DDeviceManager9 *device = 0;
     mfxStatus sts = MFX_ERR_NONE;

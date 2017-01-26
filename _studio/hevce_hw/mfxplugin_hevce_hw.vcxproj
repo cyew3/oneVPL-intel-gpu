@@ -251,6 +251,15 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxbrc.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxcommon.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxdefs.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxplugin++.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxplugin.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxsession.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxstructures.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxvideo++.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxvideo.h" />
     <ClInclude Include="..\mfx_lib\shared\include\mfx_brc_common.h" />
     <ClInclude Include="..\shared\include\auxiliary_device.h" />
     <ClInclude Include="h265\include\mfx_h265_encode_hw.h" />
