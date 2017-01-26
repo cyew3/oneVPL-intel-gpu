@@ -1997,7 +1997,7 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
 
     mfxU16 buffersCount = 0;
 
-    /* hrd parameter */
+    /* HRD parameter */
     /* it was done on the init stage */
     //SetHRD(par, m_vaDisplay, m_vaContextEncode, m_hrdBufferId);
     mdprintf(stderr, "m_hrdBufferId=%d\n", m_hrdBufferId);
@@ -2009,23 +2009,14 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
     mdprintf(stderr, "m_frameRateId=%d\n", m_frameRateId);
     configBuffers[buffersCount++] = m_frameRateId;
 
-    // Input PAK buffers
     mfxPAKInput*  in  = reinterpret_cast<mfxPAKInput* >(task.m_userData[0]);
     mfxPAKOutput* out = reinterpret_cast<mfxPAKOutput*>(task.m_userData[1]);
-
-    mfxHDL handle_inp;
-    mfxSts = m_core->GetExternalFrameHDL(in->InSurface->Data.MemId, &handle_inp);
-    MFX_CHECK(MFX_ERR_NONE == mfxSts, MFX_ERR_INVALID_HANDLE);
-
-    VASurfaceID *inputSurface = (VASurfaceID*)handle_inp; //id in the memory by ptr
 
     VABufferID vaFeiFrameControlId = VA_INVALID_ID;
     VABufferID vaFeiMVPredId       = VA_INVALID_ID;
 
-    /* input buffers */
-    mfxExtFeiSliceHeader  * pDataSliceHeader = GetExtBufferFEI(out, feiFieldId);
-
-    /* output buffers */
+    // Extension buffers
+    mfxExtFeiSliceHeader  * pDataSliceHeader = GetExtBufferFEI(in, feiFieldId);
     mfxExtFeiEncMV        * mvout            = GetExtBufferFEI(in, feiFieldId);
     mfxExtFeiPakMBCtrl    * mbcodeout        = GetExtBufferFEI(in, feiFieldId);
 
@@ -2375,6 +2366,12 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
     }
 
     assert(buffersCount <= configBuffers.size());
+
+
+    mfxHDL handle_inp;
+    mfxSts = m_core->GetExternalFrameHDL(in->InSurface->Data.MemId, &handle_inp);
+    MFX_CHECK(MFX_ERR_NONE == mfxSts, MFX_ERR_INVALID_HANDLE);
+    VASurfaceID *inputSurface = (VASurfaceID*)handle_inp; //id in the memory by ptr
 
     //------------------------------------------------------------------
     // Rendering

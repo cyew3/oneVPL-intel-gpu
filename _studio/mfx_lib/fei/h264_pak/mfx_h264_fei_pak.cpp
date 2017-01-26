@@ -181,8 +181,7 @@ void ConfigureTask_FEI_PAK(
     task.m_cqpValue[0] = GetQpValue(video, task.m_ctrl, task.m_type[0]);
     task.m_cqpValue[1] = GetQpValue(video, task.m_ctrl, task.m_type[1]);
 
-    mfxENCInput*  inParams  = reinterpret_cast<mfxENCInput* >(task.m_userData[0]);
-    mfxPAKOutput* outParams = reinterpret_cast<mfxPAKOutput*>(task.m_userData[1]);
+    mfxENCInput* inParams = reinterpret_cast<mfxENCInput* >(task.m_userData[0]);
 
     frameOrder_frameNum[task.m_frameOrder] = task.m_frameNum;
 
@@ -192,7 +191,7 @@ void ConfigureTask_FEI_PAK(
     {
         mfxU32 fieldParity = (video.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_BFF)? (1 - field) : field;
 
-        mfxExtFeiSliceHeader * extFeiSlice = GetExtBufferFEI(outParams, field);
+        mfxExtFeiSliceHeader * extFeiSlice = GetExtBufferFEI(inParams, field);
 
         for (size_t i = 0; i < GetMaxNumSlices(video); ++i)
         {
@@ -214,7 +213,7 @@ void ConfigureTask_FEI_PAK(
         } // for (size_t i = 0; i < GetMaxNumSlices(video); i++)
 
         // Fill DPB
-        mfxExtFeiPPS * pDataPPS = GetExtBufferFEI(outParams, field);
+        mfxExtFeiPPS * pDataPPS = GetExtBufferFEI(inParams, field);
 
         std::vector<mfxFrameSurface1*> dpb_frames;
 
@@ -623,8 +622,11 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
     MFX_CHECK_NULL_PTR2(input, output);
     MFX_CHECK_NULL_PTR2(input->InSurface, output->OutSurface);
 
+    // For now PAK doesn't have output extension buffers
+    MFX_CHECK(!output->NumExtParam, MFX_ERR_UNDEFINED_BEHAVIOR);
+
     // SPS at runtime is not allowed
-    mfxExtFeiSPS* extFeiSPSinRuntime = GetExtBufferFEI(output, 0);
+    mfxExtFeiSPS* extFeiSPSinRuntime = GetExtBufferFEI(input, 0);
     MFX_CHECK(!extFeiSPSinRuntime, MFX_ERR_UNDEFINED_BEHAVIOR);
 
     mfxU8 mtype_first_field = 0, mtype_second_field = 0;
@@ -639,7 +641,7 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
         mfxExtFeiPakMBCtrl * mbcodeout = GetExtBufferFEI(input, fieldParity);
         MFX_CHECK(mvout && mbcodeout, MFX_ERR_INVALID_VIDEO_PARAM);
 
-        mfxExtFeiSliceHeader * extFeiSliceInRintime = GetExtBufferFEI(output, fieldParity);
+        mfxExtFeiSliceHeader * extFeiSliceInRintime = GetExtBufferFEI(input, fieldParity);
         MFX_CHECK(extFeiSliceInRintime,           MFX_ERR_UNDEFINED_BEHAVIOR);
         MFX_CHECK(extFeiSliceInRintime->Slice,    MFX_ERR_UNDEFINED_BEHAVIOR);
         MFX_CHECK(extFeiSliceInRintime->NumSlice, MFX_ERR_UNDEFINED_BEHAVIOR);
@@ -652,10 +654,10 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
             MFX_CHECK(extFeiSliceInRintime->NumSlice == m_video.mfx.NumSlice, MFX_ERR_UNDEFINED_BEHAVIOR);
         }
 
-        mfxExtFeiPPS* extFeiPPSinRuntime = GetExtBufferFEI(output, fieldParity);
+        mfxExtFeiPPS* extFeiPPSinRuntime = GetExtBufferFEI(input, fieldParity);
         MFX_CHECK(extFeiPPSinRuntime, MFX_ERR_UNDEFINED_BEHAVIOR);
 
-        // Check that parameters from previos init kept unchanged
+        // Check that parameters from previous init kept unchanged
         {
             mfxExtPpsHeader* extPps = GetExtBuffer(m_video);
             MFX_CHECK(extPps, MFX_ERR_INVALID_VIDEO_PARAM);
