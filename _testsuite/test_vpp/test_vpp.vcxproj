@@ -253,8 +253,8 @@
     <ClCompile Include="src\test_vpp_utils.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\mdp_msdk-api\opensource\mfx_dispatch\libmfx.vcxproj">
-      <Project>{9e7b3527-11aa-46ba-a82f-c58761f9b56f}</Project>
+    <ProjectReference Include="..\..\..\mdp_msdk-api\opensource\mfx_dispatch\libmfx_vs2015.vcxproj">
+      <Project>{9f891d3d-62bf-43b2-a6b9-c19f37ccf00d}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\_studio\shared\umc\core\vm\vm.vcxproj">
       <Project>{d41d3178-5c65-4868-bdb1-42c44643274e}</Project>
