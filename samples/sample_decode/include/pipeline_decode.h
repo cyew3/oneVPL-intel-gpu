@@ -77,6 +77,11 @@ struct sInputParams
     mfxU32  nWallH; //number of windows located in each column
     mfxU32  nWallMonitor; //monitor id, 0,1,.. etc
     bool    bWallNoTitle; //whether to show title for each window with fps value
+#ifdef ENABLE_FUTURE_FEATURES_EMBEDDED
+    bool    bSfcResizeInDecoder;
+    mfxU16  sfcReSizeWidth;
+    mfxU16  sfcReSizeHeight;
+#endif //ENABLE_FUTURE_FEATURES_EMBEDDED
 
     mfxU32  numViews; // number of views for Multi-View Codec
     mfxU32  nRotation; // rotation for Motion JPEG Codec
@@ -223,6 +228,9 @@ protected: // variables
     std::auto_ptr<MFXVideoUSER>  m_pUserModule;
     std::auto_ptr<MFXPlugin> m_pPlugin;
     std::vector<mfxExtBuffer *> m_ExtBuffers;
+#ifdef ENABLE_FUTURE_FEATURES_EMBEDDED
+    mfxExtDecVideoProcessing m_SfcVideoProcessing;
+#endif //ENABLE_FUTURE_FEATURES_EMBEDDED
 
     GeneralAllocator*       m_pGeneralAllocator;
     mfxAllocatorParams*     m_pmfxAllocatorParams;

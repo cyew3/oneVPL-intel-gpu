@@ -127,6 +127,12 @@ CDecodingPipeline::CDecodingPipeline()
     m_VppVideoSignalInfo.Header.BufferId = MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO;
     m_VppVideoSignalInfo.Header.BufferSz = sizeof(m_VppVideoSignalInfo);
 
+#ifdef ENABLE_FUTURE_FEATURES_EMBEDDED
+    MSDK_ZERO_MEMORY(m_SfcVideoProcessing);
+    m_SfcVideoProcessing.Header.BufferId = MFX_EXTBUFF_DEC_VIDEO_PROCESSING;
+    m_SfcVideoProcessing.Header.BufferSz = sizeof(mfxExtDecVideoProcessing);
+#endif //ENABLE_FUTURE_FEATURES_EMBEDDED
+
     m_hwdev = NULL;
 
     m_bOutI420 = false;
@@ -772,6 +778,31 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
             m_mfxVideoParams.mfx.JPEGColorFormat = pParams->chromaType;
         }
     }
+
+#ifdef ENABLE_FUTURE_FEATURES_EMBEDDED
+    /* SFC usage if enabled */
+    if ((pParams->bSfcResizeInDecoder) &&
+        (MFX_CODEC_AVC == m_mfxVideoParams.mfx.CodecId) && /* Only for AVC */
+        (MFX_PICSTRUCT_PROGRESSIVE == m_mfxVideoParams.mfx.FrameInfo.PicStruct)) /* ...And only for progressive!*/
+    {
+        m_SfcVideoProcessing.In.CropX = 0;
+        m_SfcVideoProcessing.In.CropY = 0;
+        m_SfcVideoProcessing.In.CropW = m_mfxVideoParams.mfx.FrameInfo.Width;
+        m_SfcVideoProcessing.In.CropH = m_mfxVideoParams.mfx.FrameInfo.Height;
+
+        m_SfcVideoProcessing.Out.FourCC = m_mfxVideoParams.mfx.FrameInfo.FourCC;
+        m_SfcVideoProcessing.Out.ChromaFormat = m_mfxVideoParams.mfx.FrameInfo.ChromaFormat;
+        m_SfcVideoProcessing.Out.Width = MSDK_ALIGN16(pParams->sfcReSizeWidth);
+        m_SfcVideoProcessing.Out.Height = MSDK_ALIGN16(pParams->sfcReSizeHeight);
+        m_SfcVideoProcessing.Out.CropX = 0;
+        m_SfcVideoProcessing.Out.CropY = 0;
+        m_SfcVideoProcessing.Out.CropW = pParams->sfcReSizeWidth;
+        m_SfcVideoProcessing.Out.CropH = pParams->sfcReSizeHeight;
+
+        m_ExtBuffers.push_back((mfxExtBuffer *)&m_SfcVideoProcessing);
+        AttachExtParam();
+    }
+#endif //ENABLE_FUTURE_FEATURES_EMBEDDED
 
     // If MVC mode we need to detect number of views in stream
     if (m_bIsMVC)

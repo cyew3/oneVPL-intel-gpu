@@ -195,7 +195,9 @@ namespace TranscodingSample
         mfxU16 nVppCompDstY;
         mfxU16 nVppCompDstW;
         mfxU16 nVppCompDstH;
-
+#ifdef ENABLE_FUTURE_FEATURES_EMBEDDED
+        bool bSfcResizeInDecoder;
+#endif //ENABLE_FUTURE_FEATURES_EMBEDDED
         mfxU32 DecoderFourCC;
         mfxU32 EncoderFourCC;
 
@@ -595,6 +597,9 @@ namespace TranscodingSample
         bool m_bOwnMVCSeqDescMemory; // true if the pipeline owns memory allocated for MVCSeqDesc structure fields
 
         mfxExtVPPComposite       m_VppCompParams;
+#ifdef ENABLE_FUTURE_FEATURES_EMBEDDED
+        mfxExtDecVideoProcessing m_SfcVideoProcessing;
+#endif //ENABLE_FUTURE_FEATURES_EMBEDDED
 
         mfxExtLAControl          m_ExtLAControl;
         // for setting MaxSliceSize

@@ -208,6 +208,9 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("  -vpp_comp_dst_y             Y position of this stream in composed stream (should be used in decoder session)\n"));
     msdk_printf(MSDK_STRING("  -vpp_comp_dst_h             Height of this stream in composed stream (should be used in decoder session)\n"));
     msdk_printf(MSDK_STRING("  -vpp_comp_dst_w             Width of this stream in composed stream (should be used in decoder session)\n"));
+#ifdef ENABLE_FUTURE_FEATURES_EMBEDDED
+    msdk_printf(MSDK_STRING("   [-sfc_resize               Fixed function resize after decoder using direct pipe connection\n"));
+#endif // ENABLE_FUTURE_FEATURES_EMBEDDED
     msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("ParFile format:\n"));
     msdk_printf(MSDK_STRING("  ParFile is extension of what can be achieved by setting pipeline in the command\n"));
@@ -1135,6 +1138,14 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
             if (InputParams.eModeExt != VppComp)
                 InputParams.eModeExt = VppComp;
         }
+#ifdef ENABLE_FUTURE_FEATURES_EMBEDDED
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-sfc_resize")))
+        {
+            InputParams.bSfcResizeInDecoder = true;
+            if (InputParams.eModeExt != VppComp)
+                InputParams.eModeExt = VppComp;
+        }
+#endif //ENABLE_FUTURE_FEATURES_EMBEDDED
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-n")))
         {
             VAL_CHECK(i+1 == argc, i, argv[i]);

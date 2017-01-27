@@ -150,6 +150,11 @@ CTranscodingPipeline::CTranscodingPipeline():
     MSDK_ZERO_MEMORY(m_CodingOption2);
     MSDK_ZERO_MEMORY(m_CodingOption3);
     MSDK_ZERO_MEMORY(m_ExtHEVCParam);
+#ifdef ENABLE_FUTURE_FEATURES_EMBEDDED
+    MSDK_ZERO_MEMORY(m_SfcVideoProcessing);
+    m_SfcVideoProcessing.Header.BufferId = MFX_EXTBUFF_DEC_VIDEO_PROCESSING;
+    m_SfcVideoProcessing.Header.BufferSz = sizeof(mfxExtDecVideoProcessing);
+#endif //ENABLE_FUTURE_FEATURES_EMBEDDED
 
     m_MVCSeqDesc.Header.BufferId = MFX_EXTBUFF_MVC_SEQ_DESC;
     m_MVCSeqDesc.Header.BufferSz = sizeof(mfxExtMVCSeqDesc);
@@ -1873,6 +1878,31 @@ mfxStatus CTranscodingPipeline::InitDecMfxParams(sInputParams *pInParams)
         m_mfxDecParams.mfx.FrameInfo.FourCC=pInParams->DecoderFourCC;
         m_mfxDecParams.mfx.FrameInfo.ChromaFormat=FourCCToChroma(pInParams->DecoderFourCC);
     }
+#ifdef ENABLE_FUTURE_FEATURES_EMBEDDED
+    /* SFC usage if enabled */
+    if ((pInParams->bSfcResizeInDecoder) &&
+        (MFX_CODEC_AVC == m_mfxDecParams.mfx.CodecId) && /* Only for AVC */
+        (MFX_PICSTRUCT_PROGRESSIVE == m_mfxDecParams.mfx.FrameInfo.PicStruct)) /* ...And only for progressive!*/
+    {
+        m_SfcVideoProcessing.In.CropX = 0;
+        m_SfcVideoProcessing.In.CropY = 0;
+        m_SfcVideoProcessing.In.CropW = m_mfxDecParams.mfx.FrameInfo.Width;
+        m_SfcVideoProcessing.In.CropH = m_mfxDecParams.mfx.FrameInfo.Height;
+
+        m_SfcVideoProcessing.Out.FourCC = m_mfxDecParams.mfx.FrameInfo.FourCC;
+        m_SfcVideoProcessing.Out.ChromaFormat = m_mfxDecParams.mfx.FrameInfo.ChromaFormat;
+        m_SfcVideoProcessing.Out.Width = MSDK_ALIGN16(pInParams->nVppCompDstW);
+        m_SfcVideoProcessing.Out.Height = MSDK_ALIGN16(pInParams->nVppCompDstH);
+        m_SfcVideoProcessing.Out.CropX = 0;
+        m_SfcVideoProcessing.Out.CropY = 0;
+        m_SfcVideoProcessing.Out.CropW = pInParams->nVppCompDstW;
+        m_SfcVideoProcessing.Out.CropH = pInParams->nVppCompDstH;
+
+        m_DecExtParams.push_back((mfxExtBuffer *)&m_SfcVideoProcessing);
+        m_mfxDecParams.ExtParam = &m_DecExtParams[0]; // vector is stored linearly in memory
+        m_mfxDecParams.NumExtParam = (mfxU16)m_DecExtParams.size();
+    }
+#endif //ENABLE_FUTURE_FEATURES_EMBEDDED
     return MFX_ERR_NONE;
 }// mfxStatus CTranscodingPipeline::InitDecMfxParams()
 
