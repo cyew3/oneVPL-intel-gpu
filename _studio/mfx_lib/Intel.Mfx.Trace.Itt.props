@@ -3,6 +3,9 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
+    <TraceIttPropsImported>true</TraceIttPropsImported>
+  </PropertyGroup>
+  <PropertyGroup>
     <UseITT>false</UseITT>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(UseITT)'=='true'">
