@@ -741,9 +741,9 @@ mfxStatus VideoENC_ENC::RunFrameVmeENCCheck(
         sts = m_core->GetExternalFrameHDL(output->OutSurface->Data.MemId, &handle_src);
         MFX_CHECK(sts == MFX_ERR_NONE, MFX_ERR_INVALID_HANDLE);
 
-        mfxU32* src_surf_id = (mfxU32 *)handle_src, *rec_surf_id;
+        mfxU32 *src_surf_id = (mfxU32 *)handle_src, *rec_surf_id, i;
 
-        for (mfxU32 i = 0; i < m_rec.NumFrameActual; ++i)
+        for (i = 0; i < m_rec.NumFrameActual; ++i)
         {
             task.m_midRec = AcquireResource(m_rec, i);
 
@@ -759,6 +759,7 @@ mfxStatus VideoENC_ENC::RunFrameVmeENCCheck(
             else
                 ReleaseResource(m_rec, task.m_midRec);
         }
+        MFX_CHECK(task.m_idxRecon != MfxHwH264Encode::NO_INDEX && i != m_rec.NumFrameActual, MFX_ERR_UNDEFINED_BEHAVIOR);
 
         ConfigureTask_FEI_ENC(task, m_prevTask, m_video, m_frameOrder_frameNum);
 
