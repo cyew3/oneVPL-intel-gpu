@@ -343,7 +343,8 @@ void FEI_EncPakInterface::GetRefInfo(
             mfxU16 & numRefActiveP,
             mfxU16 & numRefActiveBL0,
             mfxU16 & numRefActiveBL1,
-            mfxU16 & bRefType)
+            mfxU16 & bRefType,
+            bool   & bSigleFieldProcessing)
 {
     numRefActiveP   = m_pAppConfig->NumRefActiveP;
     numRefActiveBL0 = m_pAppConfig->NumRefActiveBL0;
@@ -355,21 +356,31 @@ void FEI_EncPakInterface::GetRefInfo(
     {
         switch (InitExtParams[i]->BufferId)
         {
-        case MFX_EXTBUFF_CODING_OPTION2:
-        {
-            mfxExtCodingOption2* ptr = reinterpret_cast<mfxExtCodingOption2*>(InitExtParams[i]);
-            bRefType = ptr->BRefType;
-        }
-        break;
+            case MFX_EXTBUFF_CODING_OPTION2:
+            {
+                mfxExtCodingOption2* ptr = reinterpret_cast<mfxExtCodingOption2*>(InitExtParams[i]);
+                bRefType = ptr->BRefType;
+            }
+            break;
 
-        case MFX_EXTBUFF_CODING_OPTION3:
-        {
-            mfxExtCodingOption3* ptr = reinterpret_cast<mfxExtCodingOption3*>(InitExtParams[i]);
-            numRefActiveP   = ptr->NumRefActiveP[0];
-            numRefActiveBL0 = ptr->NumRefActiveBL0[0];
-            numRefActiveBL1 = ptr->NumRefActiveBL1[0];
-        }
-        break;
+            case MFX_EXTBUFF_CODING_OPTION3:
+            {
+                mfxExtCodingOption3* ptr = reinterpret_cast<mfxExtCodingOption3*>(InitExtParams[i]);
+                numRefActiveP   = ptr->NumRefActiveP[0];
+                numRefActiveBL0 = ptr->NumRefActiveBL0[0];
+                numRefActiveBL1 = ptr->NumRefActiveBL1[0];
+            }
+            break;
+
+            case MFX_EXTBUFF_FEI_PARAM:
+            {
+                mfxExtFeiParam* ptr = reinterpret_cast<mfxExtFeiParam*>(InitExtParams[i]);
+                bSigleFieldProcessing = ptr->SingleFieldProcessing == MFX_CODINGOPTION_ON;
+            }
+            break;
+
+            default:
+                break;
         }
     }
 

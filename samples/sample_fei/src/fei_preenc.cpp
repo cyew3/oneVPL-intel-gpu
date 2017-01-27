@@ -196,7 +196,8 @@ void FEI_PreencInterface::GetRefInfo(
                 mfxU16 & numRefActiveP,
                 mfxU16 & numRefActiveBL0,
                 mfxU16 & numRefActiveBL1,
-                mfxU16 & bRefType)
+                mfxU16 & bRefType,
+                bool   & bSigleFieldProcessing)
 {
     numRefActiveP   = m_pAppConfig->NumRefActiveP;
     numRefActiveBL0 = m_pAppConfig->NumRefActiveBL0;
@@ -210,6 +211,22 @@ void FEI_PreencInterface::GetRefInfo(
     gopSize     = m_videoParams.mfx.GopPicSize;
     gopOptFlag  = m_videoParams.mfx.GopOptFlag;
     idrInterval = m_videoParams.mfx.IdrInterval;
+
+    for (mfxU32 i = 0; i < m_InitExtParams.size(); ++i)
+    {
+        switch (m_InitExtParams[i]->BufferId)
+        {
+            case MFX_EXTBUFF_FEI_PARAM:
+            {
+                mfxExtFeiParam* ptr = reinterpret_cast<mfxExtFeiParam*>(m_InitExtParams[i]);
+                bSigleFieldProcessing = ptr->SingleFieldProcessing == MFX_CODINGOPTION_ON;
+            }
+            break;
+
+            default:
+                break;
+        }
+    }
 }
 
 mfxStatus FEI_PreencInterface::FillDSVideoParams()

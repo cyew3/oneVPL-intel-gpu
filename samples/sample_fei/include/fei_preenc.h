@@ -81,7 +81,8 @@ public:
                     mfxU16 & numRefActiveP,
                     mfxU16 & numRefActiveBL0,
                     mfxU16 & numRefActiveBL1,
-                    mfxU16 & bRefType);
+                    mfxU16 & bRefType,
+                    bool   & bSigleFieldProcessing);
 
     mfxStatus FillDSVideoParams();
     mfxStatus FillParameters();

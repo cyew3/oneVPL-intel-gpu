@@ -145,7 +145,8 @@ public:
                     mfxU16 & numRefActiveP,
                     mfxU16 & numRefActiveBL0,
                     mfxU16 & numRefActiveBL1,
-                    mfxU16 & bRefType);
+                    mfxU16 & bRefType,
+                    bool   & bSigleFieldProcessing);
 
     mfxStatus FillParameters();
     mfxStatus InitFrameParams(mfxFrameSurface1* encodeSurface, PairU8 frameType, iTask* eTask);

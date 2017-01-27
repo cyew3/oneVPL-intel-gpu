@@ -115,7 +115,8 @@ void FEI_EncodeInterface::GetRefInfo(
     mfxU16 & numRefActiveP,
     mfxU16 & numRefActiveBL0,
     mfxU16 & numRefActiveBL1,
-    mfxU16 & bRefType)
+    mfxU16 & bRefType,
+    bool   & bSigleFieldProcessing)
 {
     for (mfxU32 i = 0; i < m_InitExtParams.size(); ++i)
     {
@@ -136,6 +137,16 @@ void FEI_EncodeInterface::GetRefInfo(
                 numRefActiveBL1 = ptr->NumRefActiveBL1[0];
             }
             break;
+
+            case MFX_EXTBUFF_FEI_PARAM:
+            {
+                mfxExtFeiParam* ptr = reinterpret_cast<mfxExtFeiParam*>(m_InitExtParams[i]);
+                bSigleFieldProcessing = ptr->SingleFieldProcessing == MFX_CODINGOPTION_ON;
+            }
+            break;
+
+            default:
+                break;
         }
     }
 

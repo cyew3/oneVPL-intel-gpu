@@ -46,10 +46,10 @@ CEncodingPipeline::CEncodingPipeline(AppConfig* pAppConfig)
     , m_frameCountInEncodedOrder(0)
 #endif
     , m_frameOrderIdrInDisplayOrder(0)
-    , m_frameType(PairU8((mfxU8)MFX_FRAMETYPE_UNKNOWN, (mfxU8)MFX_FRAMETYPE_UNKNOWN))
+    , m_frameType((mfxU8)MFX_FRAMETYPE_UNKNOWN, (mfxU8)MFX_FRAMETYPE_UNKNOWN)
 
-    , m_preencBufs(bufList(m_numOfFields))
-    , m_encodeBufs(bufList(m_numOfFields))
+    , m_preencBufs(m_numOfFields)
+    , m_encodeBufs(m_numOfFields)
 
     , m_pExtBufDecodeStreamout(NULL)
 
@@ -735,6 +735,10 @@ mfxStatus CEncodingPipeline::SetSequenceParameters()
 {
     mfxStatus sts = MFX_ERR_NONE;
 
+    // Adjustment interlaced -> progressive by MSDK lib is possible.
+    // So keep this value to fit resulting number of MBs to surface passed on Init stage.
+    mfxU16 cached_numOfFields = m_numOfFields;
+
     if (m_bParametersAdjusted)
     {
         sts = UpdateVideoParam(); // update settings according to those that exposed by MSDK library
@@ -743,15 +747,18 @@ mfxStatus CEncodingPipeline::SetSequenceParameters()
         /* Get BRef type and active P/B refs */
         if (m_pFEI_ENCODE)
         {
-            m_pFEI_ENCODE->GetRefInfo(m_picStruct, m_refDist, m_numRefFrame, m_gopSize, m_gopOptFlag, m_idrInterval, m_numRefActiveP, m_numRefActiveBL0, m_numRefActiveBL1, m_bRefType);
+            m_pFEI_ENCODE->GetRefInfo(m_picStruct, m_refDist, m_numRefFrame, m_gopSize, m_gopOptFlag, m_idrInterval,
+                m_numRefActiveP, m_numRefActiveBL0, m_numRefActiveBL1, m_bRefType, m_appCfg.bFieldProcessingMode);
         }
         else if (m_pFEI_ENCPAK)
         {
-            m_pFEI_ENCPAK->GetRefInfo(m_picStruct, m_refDist, m_numRefFrame, m_gopSize, m_gopOptFlag, m_idrInterval, m_numRefActiveP, m_numRefActiveBL0, m_numRefActiveBL1, m_bRefType);
+            m_pFEI_ENCPAK->GetRefInfo(m_picStruct, m_refDist, m_numRefFrame, m_gopSize, m_gopOptFlag, m_idrInterval,
+                m_numRefActiveP, m_numRefActiveBL0, m_numRefActiveBL1, m_bRefType, m_appCfg.bFieldProcessingMode);
         }
         else if (m_pFEI_PreENC)
         {
-            m_pFEI_PreENC->GetRefInfo(m_picStruct, m_refDist, m_numRefFrame, m_gopSize, m_gopOptFlag, m_idrInterval, m_numRefActiveP, m_numRefActiveBL0, m_numRefActiveBL1, m_bRefType);
+            m_pFEI_PreENC->GetRefInfo(m_picStruct, m_refDist, m_numRefFrame, m_gopSize, m_gopOptFlag, m_idrInterval,
+                m_numRefActiveP, m_numRefActiveBL0, m_numRefActiveBL1, m_bRefType, m_appCfg.bFieldProcessingMode);
         }
 
         m_numOfFields = m_preencBufs.num_of_fields = m_encodeBufs.num_of_fields = (m_picStruct & MFX_PICSTRUCT_PROGRESSIVE) ? 1 : 2;
@@ -771,8 +778,10 @@ mfxStatus CEncodingPipeline::SetSequenceParameters()
 
     m_taskInitializationParams.NumMVPredictorsP = m_appCfg.PipelineCfg.NumMVPredictorsP = m_appCfg.bNPredSpecified_Pl0 ?
         m_appCfg.NumMVPredictors_Pl0 : (std::min)(mfxU16(m_numRefFrame*m_numOfFields), MaxFeiEncMVPNum);
+
     m_taskInitializationParams.NumMVPredictorsBL0 = m_appCfg.PipelineCfg.NumMVPredictorsBL0 = m_appCfg.bNPredSpecified_Bl0 ?
         m_appCfg.NumMVPredictors_Bl0 : (std::min)(mfxU16(m_numRefFrame*m_numOfFields), MaxFeiEncMVPNum);
+
     m_taskInitializationParams.NumMVPredictorsBL1 = m_appCfg.PipelineCfg.NumMVPredictorsBL1 = m_appCfg.bNPredSpecified_l1 ?
         m_appCfg.NumMVPredictors_Bl1 : (std::min)(mfxU16(m_numRefFrame*m_numOfFields), MaxFeiEncMVPNum);
 
@@ -791,7 +800,7 @@ mfxStatus CEncodingPipeline::SetSequenceParameters()
     }
 
     m_widthMB  = MSDK_ALIGN16(m_appCfg.nDstWidth);
-    m_heightMB = m_numOfFields == 2 ? MSDK_ALIGN32(m_appCfg.nDstHeight) : MSDK_ALIGN16(m_appCfg.nDstHeight);
+    m_heightMB = cached_numOfFields == 2 ? MSDK_ALIGN32(m_appCfg.nDstHeight) : MSDK_ALIGN16(m_appCfg.nDstHeight);
 
     m_appCfg.PipelineCfg.numMB_refPic  = m_appCfg.PipelineCfg.numMB_frame = (m_widthMB * m_heightMB) >> 8;
     m_appCfg.PipelineCfg.numMB_refPic /= m_numOfFields;
@@ -1304,8 +1313,6 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
                     feiWeights[fieldId].Header.BufferSz = sizeof(mfxExtPredWeightTable);
                 }
 
-                //Open output files if any
-                //distortion buffer have to be always provided - current limitation
                 if (MBStatOut)
                 {
                     if (fieldId == 0){
