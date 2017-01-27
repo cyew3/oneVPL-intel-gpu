@@ -188,9 +188,11 @@ namespace TranscodingSample
         mfxU16 nQPP;
         mfxU16 nQPB;
 
-#ifdef ENABLE_FUTURE_FEATURES_EMBEDDED
+#if _MSDK_API >= MSDK_API(1,22)
         std::vector<mfxExtEncoderROI> m_ROIData;
-#endif
+
+        bool bSfcResizeInDecoder;
+#endif //_MSDK_API >= MSDK_API(1,22)
 
         bool bOpenCL;
         mfxU16 reserved[4];
@@ -199,9 +201,7 @@ namespace TranscodingSample
         mfxU16 nVppCompDstY;
         mfxU16 nVppCompDstW;
         mfxU16 nVppCompDstH;
-#ifdef ENABLE_FUTURE_FEATURES_EMBEDDED
-        bool bSfcResizeInDecoder;
-#endif //ENABLE_FUTURE_FEATURES_EMBEDDED
+
         mfxU32 DecoderFourCC;
         mfxU32 EncoderFourCC;
 
@@ -479,9 +479,9 @@ namespace TranscodingSample
         virtual mfxStatus EncodeOneFrame(ExtendedSurface *pExtSurface, mfxBitstream *pBS);
         virtual mfxStatus PreEncOneFrame(ExtendedSurface *pInSurface, ExtendedSurface *pOutSurface);
 
-#ifdef ENABLE_FUTURE_FEATURES_EMBEDDED
+#if _MSDK_API >= MSDK_API(1,22)
         mfxStatus AddExtRoiBufferToCtrl(mfxEncodeCtrl **ppCtrl);
-#endif
+#endif // _MSDK_API >= MSDK_API(1,22)
 
         virtual mfxStatus DecodePreInit(sInputParams *pParams);
         virtual mfxStatus VPPPreInit(sInputParams *pParams);
@@ -605,9 +605,9 @@ namespace TranscodingSample
         bool m_bOwnMVCSeqDescMemory; // true if the pipeline owns memory allocated for MVCSeqDesc structure fields
 
         mfxExtVPPComposite       m_VppCompParams;
-#ifdef ENABLE_FUTURE_FEATURES_EMBEDDED
+#if _MSDK_API >= MSDK_API(1,22)
         mfxExtDecVideoProcessing m_SfcVideoProcessing;
-#endif //ENABLE_FUTURE_FEATURES_EMBEDDED
+#endif //_MSDK_API >= MSDK_API(1,22)
 
         mfxExtLAControl          m_ExtLAControl;
         // for setting MaxSliceSize
@@ -680,12 +680,12 @@ namespace TranscodingSample
 
         bool shouldUseGreedyFormula;
 
-#ifdef ENABLE_FUTURE_FEATURES_EMBEDDED
+#if _MSDK_API >= MSDK_API(1,22)
         // roi data
         std::vector<mfxExtEncoderROI> m_ROIData;
         mfxEncodeCtrl auxCtrl;
         mfxExtBuffer *ext_params1[1];
-#endif
+#endif //_MSDK_API >= MSDK_API(1,22)
     private:
         DISALLOW_COPY_AND_ASSIGN(CTranscodingPipeline);
 

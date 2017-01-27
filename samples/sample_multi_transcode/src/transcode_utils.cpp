@@ -128,10 +128,10 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("                      -hw - platform-specific on default display adapter (default)\n"));
     msdk_printf(MSDK_STRING("                      -hw_d3d11 - platform-specific via d3d11\n"));
     msdk_printf(MSDK_STRING("                      -sw - software\n"));
-#ifdef ENABLE_FUTURE_FEATURES_EMBEDDED
+#if _MSDK_API >= MSDK_API(1,22)
     msdk_printf(MSDK_STRING("  -roi_file <roi-file-name>\n"));
     msdk_printf(MSDK_STRING("                Set Regions of Interest for each frame from <roi-file-name>\n"));
-#endif
+#endif //_MSDK_API >= MSDK_API(1,22)
     msdk_printf(MSDK_STRING("  -async        Depth of asynchronous pipeline. default value 1\n"));
     msdk_printf(MSDK_STRING("  -join         Join session with other session(s), by default sessions are not joined\n"));
     msdk_printf(MSDK_STRING("  -priority     Use priority for join sessions. 0 - Low, 1 - Normal, 2 - High. Normal by default\n"));
@@ -223,9 +223,9 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("  -vpp_comp_dst_y             Y position of this stream in composed stream (should be used in decoder session)\n"));
     msdk_printf(MSDK_STRING("  -vpp_comp_dst_h             Height of this stream in composed stream (should be used in decoder session)\n"));
     msdk_printf(MSDK_STRING("  -vpp_comp_dst_w             Width of this stream in composed stream (should be used in decoder session)\n"));
-#ifdef ENABLE_FUTURE_FEATURES_EMBEDDED
+#if _MSDK_API >= MSDK_API(1,22)
     msdk_printf(MSDK_STRING("   [-sfc_resize               Fixed function resize after decoder using direct pipe connection\n"));
-#endif // ENABLE_FUTURE_FEATURES_EMBEDDED
+#endif //_MSDK_API >= MSDK_API(1,22)
     msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("ParFile format:\n"));
     msdk_printf(MSDK_STRING("  ParFile is extension of what can be achieved by setting pipeline in the command\n"));
@@ -606,7 +606,7 @@ mfxStatus CmdProcessor::TokenizeLine(msdk_char *pLine, mfxU32 length)
     return ParseParamsForOneSession(argc, argv);
 }
 
-#ifdef ENABLE_FUTURE_FEATURES_EMBEDDED
+#if _MSDK_API >= MSDK_API(1,22)
 bool CmdProcessor::isspace(char a) { return (std::isspace(a) != 0); }
 
 bool CmdProcessor::is_not_allowed_char(char a) {
@@ -694,7 +694,7 @@ bool CmdProcessor::ParseROIFile(const msdk_char *roi_file_name, std::vector<mfxE
     }
     return true;
 }
-#endif
+#endif //_MSDK_API >= MSDK_API(1,22)
 
 mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
 {
@@ -808,7 +808,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
                 InputParams.bIsMVC = true;
             }
         }
-#ifdef ENABLE_FUTURE_FEATURES_EMBEDDED
+#if _MSDK_API >= MSDK_API(1,22)
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-roi_file")))
         {
             VAL_CHECK(i+1 == argc, i, argv[i]);
@@ -823,7 +823,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
                 return MFX_ERR_UNSUPPORTED;
             }
         }
-#endif
+#endif //_MSDK_API >= MSDK_API(1,22)
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-sw")))
         {
             InputParams.libType = MFX_IMPL_SOFTWARE;
@@ -1259,14 +1259,14 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
             if (InputParams.eModeExt != VppComp)
                 InputParams.eModeExt = VppComp;
         }
-#ifdef ENABLE_FUTURE_FEATURES_EMBEDDED
+#if _MSDK_API >= MSDK_API(1,22)
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-sfc_resize")))
         {
             InputParams.bSfcResizeInDecoder = true;
             if (InputParams.eModeExt != VppComp)
                 InputParams.eModeExt = VppComp;
         }
-#endif //ENABLE_FUTURE_FEATURES_EMBEDDED
+#endif //_MSDK_API >= MSDK_API(1,22)
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-n")))
         {
             VAL_CHECK(i+1 == argc, i, argv[i]);

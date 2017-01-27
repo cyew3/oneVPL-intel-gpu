@@ -151,11 +151,11 @@ CTranscodingPipeline::CTranscodingPipeline():
     MSDK_ZERO_MEMORY(m_CodingOption2);
     MSDK_ZERO_MEMORY(m_CodingOption3);
     MSDK_ZERO_MEMORY(m_ExtHEVCParam);
-#ifdef ENABLE_FUTURE_FEATURES_EMBEDDED
+#if _MSDK_API >= MSDK_API(1,22)
     MSDK_ZERO_MEMORY(m_SfcVideoProcessing);
     m_SfcVideoProcessing.Header.BufferId = MFX_EXTBUFF_DEC_VIDEO_PROCESSING;
     m_SfcVideoProcessing.Header.BufferSz = sizeof(mfxExtDecVideoProcessing);
-#endif //ENABLE_FUTURE_FEATURES_EMBEDDED
+#endif //_MSDK_API >= MSDK_API(1,22)
 
     m_MVCSeqDesc.Header.BufferId = MFX_EXTBUFF_MVC_SEQ_DESC;
     m_MVCSeqDesc.Header.BufferSz = sizeof(mfxExtMVCSeqDesc);
@@ -172,10 +172,10 @@ CTranscodingPipeline::CTranscodingPipeline():
     m_ExtBRC.Header.BufferSz = sizeof(m_ExtBRC);
 #endif
 
-#ifdef ENABLE_FUTURE_FEATURES_EMBEDDED
+#if _MSDK_API >= MSDK_API(1,22)
     MSDK_ZERO_MEMORY(auxCtrl);
     ext_params1[0] = NULL;
-#endif
+#endif //_MSDK_API >= MSDK_API(1,22)
 
     m_EncOpaqueAlloc.Header.BufferId = m_VppOpaqueAlloc.Header.BufferId =
         m_DecOpaqueAlloc.Header.BufferId = m_PluginOpaqueAlloc.Header.BufferId =
@@ -670,7 +670,7 @@ mfxStatus CTranscodingPipeline::VPPOneFrame(ExtendedSurface *pSurfaceIn, Extende
 
 } // mfxStatus CTranscodingPipeline::DecodeOneFrame(ExtendedSurface *pExtSurface)
 
-#ifdef ENABLE_FUTURE_FEATURES_EMBEDDED
+#if _MSDK_API >= MSDK_API(1,22)
 mfxStatus CTranscodingPipeline::AddExtRoiBufferToCtrl(mfxEncodeCtrl **ppCtrl)
 {
     if (!ppCtrl) return MFX_ERR_NULL_PTR;
@@ -716,18 +716,18 @@ mfxStatus CTranscodingPipeline::AddExtRoiBufferToCtrl(mfxEncodeCtrl **ppCtrl)
 
     return MFX_ERR_NONE;
 }
-#endif
+#endif //_MSDK_API >= MSDK_API(1,22)
 
 mfxStatus CTranscodingPipeline::EncodeOneFrame(ExtendedSurface *pExtSurface, mfxBitstream *pBS)
 {
     mfxStatus sts = MFX_ERR_NONE;
     mfxEncodeCtrl *pCtrl = (pExtSurface->pCtrl) ? &pExtSurface->pCtrl->encCtrl : NULL;
 
-#ifdef ENABLE_FUTURE_FEATURES_EMBEDDED
+#if _MSDK_API >= MSDK_API(1,22)
     // add ext roi buffer to ctrl
     sts = AddExtRoiBufferToCtrl(&pCtrl);
     if (sts != MFX_ERR_NONE) return sts;
-#endif
+#endif //_MSDK_API >= MSDK_API(1,22)
 
     for (;;)
     {
@@ -1938,7 +1938,7 @@ mfxStatus CTranscodingPipeline::InitDecMfxParams(sInputParams *pInParams)
         m_mfxDecParams.mfx.FrameInfo.FourCC=pInParams->DecoderFourCC;
         m_mfxDecParams.mfx.FrameInfo.ChromaFormat=FourCCToChroma(pInParams->DecoderFourCC);
     }
-#ifdef ENABLE_FUTURE_FEATURES_EMBEDDED
+#if _MSDK_API >= MSDK_API(1,22)
     /* SFC usage if enabled */
     if ((pInParams->bSfcResizeInDecoder) &&
         (MFX_CODEC_AVC == m_mfxDecParams.mfx.CodecId) && /* Only for AVC */
@@ -1962,7 +1962,7 @@ mfxStatus CTranscodingPipeline::InitDecMfxParams(sInputParams *pInParams)
         m_mfxDecParams.ExtParam = &m_DecExtParams[0]; // vector is stored linearly in memory
         m_mfxDecParams.NumExtParam = (mfxU16)m_DecExtParams.size();
     }
-#endif //ENABLE_FUTURE_FEATURES_EMBEDDED
+#endif //_MSDK_API >= MSDK_API(1,22)
     return MFX_ERR_NONE;
 }// mfxStatus CTranscodingPipeline::InitDecMfxParams()
 
@@ -2952,9 +2952,9 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     m_FrameNumberPreference = pParams->FrameNumberPreference;
     m_numEncoders = 0;
 
-#ifdef ENABLE_FUTURE_FEATURES_EMBEDDED
+#if _MSDK_API >= MSDK_API(1,22)
     m_ROIData = pParams->m_ROIData;
-#endif
+#endif //_MSDK_API >= MSDK_API(1,22)
 
     statisticsWindowSize = pParams->statisticsWindowSize;
     if (pParams->statisticsLogFile)

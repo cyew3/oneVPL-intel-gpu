@@ -127,11 +127,11 @@ CDecodingPipeline::CDecodingPipeline()
     m_VppVideoSignalInfo.Header.BufferId = MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO;
     m_VppVideoSignalInfo.Header.BufferSz = sizeof(m_VppVideoSignalInfo);
 
-#ifdef ENABLE_FUTURE_FEATURES_EMBEDDED
+#if _MSDK_API >= MSDK_API(1,22)
     MSDK_ZERO_MEMORY(m_SfcVideoProcessing);
     m_SfcVideoProcessing.Header.BufferId = MFX_EXTBUFF_DEC_VIDEO_PROCESSING;
     m_SfcVideoProcessing.Header.BufferSz = sizeof(mfxExtDecVideoProcessing);
-#endif //ENABLE_FUTURE_FEATURES_EMBEDDED
+#endif //_MSDK_API >= MSDK_API(1,22)
 
     m_hwdev = NULL;
 
@@ -779,7 +779,7 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
         }
     }
 
-#ifdef ENABLE_FUTURE_FEATURES_EMBEDDED
+#if _MSDK_API >= MSDK_API(1,22)
     /* SFC usage if enabled */
     if ((pParams->bSfcResizeInDecoder) &&
         (MFX_CODEC_AVC == m_mfxVideoParams.mfx.CodecId) && /* Only for AVC */
@@ -802,7 +802,7 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
         m_ExtBuffers.push_back((mfxExtBuffer *)&m_SfcVideoProcessing);
         AttachExtParam();
     }
-#endif //ENABLE_FUTURE_FEATURES_EMBEDDED
+#endif //_MSDK_API >= MSDK_API(1,22)
 
     // If MVC mode we need to detect number of views in stream
     if (m_bIsMVC)
