@@ -132,7 +132,7 @@ mfxStatus VideoDECODEMJPEG::Init(mfxVideoParam *par)
         m_vPar.mfx.NumThread = 1;
 
     Ipp32s useInternal = (MFX_PLATFORM_SOFTWARE == m_platform) ?
-        (m_vPar.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) : 
+        (m_vPar.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) :
         (m_vPar.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
 
     // allocate memory
@@ -210,8 +210,8 @@ mfxStatus VideoDECODEMJPEG::Init(mfxVideoParam *par)
 
         VideoDECODEMJPEGBase_HW * dec = new VideoDECODEMJPEGBase_HW;
         decoder.reset(dec);
-        useInternal |= dec->AdjustFrameAllocRequest(&request_internal, 
-                                                  &m_vPar.mfx, 
+        useInternal |= dec->AdjustFrameAllocRequest(&request_internal,
+                                                  &m_vPar.mfx,
                                                   m_core->GetHWType(),
                                                   m_core->GetVAType());
 
@@ -573,7 +573,7 @@ mfxStatus VideoDECODEMJPEG::QueryIOSurfInternal(VideoCORE *core, mfxVideoParam *
         std::swap(request->Info.CropH, request->Info.CropW);
         std::swap(request->Info.CropY, request->Info.CropX);
     }
-    
+
     request->Info.Width = UMC::align_value<mfxU16>(request->Info.Width, 0x10);
     request->Info.Height = UMC::align_value<mfxU16>(request->Info.Height,
         (request->Info.PicStruct == MFX_PICSTRUCT_PROGRESSIVE) ? 0x10 : 0x20);
@@ -583,7 +583,7 @@ mfxStatus VideoDECODEMJPEG::QueryIOSurfInternal(VideoCORE *core, mfxVideoParam *
         request->Type |= MFX_MEMTYPE_SYSTEM_MEMORY;
     }
     else
-    {       
+    {
 #if defined (MFX_VA)
 #if defined(UMC_VA_LINUX)
     // large pictures are not supported on Linux so far
@@ -599,12 +599,12 @@ mfxStatus VideoDECODEMJPEG::QueryIOSurfInternal(VideoCORE *core, mfxVideoParam *
         }
 
         bool needVpp = false;
-        if(par->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_TFF || 
+        if(par->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_TFF ||
            par->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_BFF)
         {
             needVpp = true;
         }
-        
+
         mfxFrameAllocRequest request_internal = *request;
         VideoDECODEMJPEGBase_HW::AdjustFourCC(&request_internal.Info, &par->mfx, core->GetHWType(), core->GetVAType(), &needVpp);
 
@@ -656,7 +656,7 @@ mfxStatus VideoDECODEMJPEG::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 
 
     if (MFX_ERR_NONE != mfxSts) // It can be useful to run threads right after first frame receive
         return mfxSts;
-        
+
     UMC::FrameData *dst;
     mfxSts = decoder->AllocateFrameData(dst);
     if (MFX_ERR_NONE != mfxSts)
@@ -710,7 +710,7 @@ mfxStatus VideoDECODEMJPEG::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 
 
         (*surface_out)->Data.FrameOrder = m_frameOrder;
         m_frameOrder++;
-            
+
         (*surface_out)->Data.Corrupted = 0;
     }
 
@@ -1042,24 +1042,37 @@ bool MFX_JPEG_Utility::IsNeedPartialAcceleration(VideoCORE * core, mfxVideoParam
     if (!par)
         return false;
 
-    //max & min supported resolution should be checked with JPEG_DECODING_CAPS
-    //if (par->mfx.FrameInfo.Width > 4096 || par->mfx.FrameInfo.Height > 4096)
-    //    return true;
+    if (par->mfx.JPEGColorFormat == MFX_JPEG_COLORFORMAT_RGB &&
+        par->mfx.JPEGChromaFormat != MFX_CHROMAFORMAT_YUV444)
+        return true;
 
 #if defined (MFX_VA_LINUX)
-#ifndef MFX_CLOSED_PLATFORMS_DISABLE    
+    if (par->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12 &&
+        par->mfx.FrameInfo.FourCC != MFX_FOURCC_RGB4)
+        return true;
+
+    /* on Linux in case of multiscan turn off HW support until because some functionality is missed so far */
+    if (par->mfx.InterleavedDec == MFX_SCANTYPE_NONINTERLEAVED)
+        return true;
+
+#ifndef MFX_CLOSED_PLATFORMS_DISABLE
     // BXT SW fallback definition
-    if (core->GetHWType() == MFX_HW_BXT) {
-        if (par->mfx.InterleavedDec == MFX_SCANTYPE_NONINTERLEAVED) {
+    if (core->GetHWType() == MFX_HW_BXT)
+    {
+        if (par->mfx.FrameInfo.Width > 4096 || par->mfx.FrameInfo.Height > 4096)
+        {
             return true;
-        } else if (par->mfx.FrameInfo.Width>4096 || par->mfx.FrameInfo.Height>4096) {
-            return true;
-        } else {
-            switch (par->mfx.FrameInfo.FourCC) {
+        }
+        else
+        {
+            switch (par->mfx.FrameInfo.FourCC)
+            {
                 case MFX_FOURCC_NV12:
-                    if ( par->mfx.JPEGColorFormat == MFX_JPEG_COLORFORMAT_YCbCr &&
-                        (par->mfx.JPEGChromaFormat == MFX_CHROMAFORMAT_YUV420 || par->mfx.JPEGChromaFormat == MFX_CHROMAFORMAT_YUV422H || par->mfx.JPEGChromaFormat == MFX_CHROMAFORMAT_YUV422V)
-                       ) return false;
+                    if (par->mfx.JPEGColorFormat == MFX_JPEG_COLORFORMAT_YCbCr &&
+                            (par->mfx.JPEGChromaFormat == MFX_CHROMAFORMAT_YUV420  ||
+                             par->mfx.JPEGChromaFormat == MFX_CHROMAFORMAT_YUV422H ||
+                             par->mfx.JPEGChromaFormat == MFX_CHROMAFORMAT_YUV422V))
+                        return false;
                     else
                         return true;
 /*
@@ -1083,23 +1096,33 @@ bool MFX_JPEG_Utility::IsNeedPartialAcceleration(VideoCORE * core, mfxVideoParam
         }
     }
 #endif // MFX_CLOSED_PLATFORMS_DISABLE
-
-    // NV12 is supported on Linux HW at the moment
-    if (par->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12 &&
-        par->mfx.FrameInfo.FourCC != MFX_FOURCC_RGB4)
-        return true;
-/* on Linux in case of multiscan turn off HW support until because some functionality is missed so far */
-    if (par->mfx.InterleavedDec == MFX_SCANTYPE_NONINTERLEAVED)
+    if (core->GetHWType() == MFX_HW_BDW || core->GetHWType() == MFX_HW_SCL)
+    {
+        if (par->mfx.FrameInfo.Width > 8192 || par->mfx.FrameInfo.Height > 8192)
             return true;
+
+        if (par->mfx.JPEGChromaFormat == MFX_CHROMAFORMAT_YUV444)
+            return true;
+
+        if (par->mfx.JPEGColorFormat  == MFX_JPEG_COLORFORMAT_YCbCr &&
+            par->mfx.JPEGChromaFormat == MFX_CHROMAFORMAT_MONOCHROME)
+            return true;
+
+        if (par->mfx.FrameInfo.FourCC == MFX_FOURCC_NV12 &&
+            par->mfx.JPEGColorFormat  == MFX_JPEG_COLORFORMAT_RGB &&
+            par->mfx.JPEGChromaFormat == MFX_CHROMAFORMAT_YUV420)
+            return true;
+
+        if (par->mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4 &&
+            par->mfx.JPEGColorFormat  == MFX_JPEG_COLORFORMAT_YCbCr &&
+            par->mfx.JPEGChromaFormat == MFX_CHROMAFORMAT_YUV420)
+            return true;
+    }
+    if (core->GetHWType() == MFX_HW_VLV)
+    {
+        if (par->mfx.JPEGColorFormat == MFX_JPEG_COLORFORMAT_RGB) return true;
+    }
 #endif
-
-    if (par->mfx.JPEGColorFormat == MFX_JPEG_COLORFORMAT_RGB &&
-        par->mfx.JPEGChromaFormat != MFX_CHROMAFORMAT_YUV444)
-        return true;
-
-    if (par->mfx.JPEGColorFormat == MFX_JPEG_COLORFORMAT_RGB &&
-        core->GetHWType() == MFX_HW_VLV)
-        return true;
 
     return false;
 }
@@ -1128,7 +1151,7 @@ eMFXPlatform MFX_JPEG_Utility::GetPlatform(VideoCORE * core, mfxVideoParam * par
 #endif
 
         bool needVpp = false;
-        if(par->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_TFF || 
+        if(par->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_TFF ||
            par->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_BFF)
         {
             needVpp = true;
@@ -1142,6 +1165,7 @@ eMFXPlatform MFX_JPEG_Utility::GetPlatform(VideoCORE * core, mfxVideoParam * par
 
         if(needVpp)
         {
+
             if (MFX_ERR_NONE != VideoDECODEMJPEGBase_HW::CheckVPPCaps(core, par))
             {
                 return MFX_PLATFORM_SOFTWARE;
@@ -1223,9 +1247,9 @@ mfxStatus MFX_JPEG_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoPa
 
         out->mfx.FrameInfo.Width = UMC::align_value<mfxU16>(in->mfx.FrameInfo.Width, 0x10);
 
-        out->mfx.FrameInfo.Height = UMC::align_value<mfxU16>(in->mfx.FrameInfo.Height, 
+        out->mfx.FrameInfo.Height = UMC::align_value<mfxU16>(in->mfx.FrameInfo.Height,
             (in->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE) ? 0x10 : 0x20);
-        
+
         if (in->mfx.FrameInfo.CropX <= out->mfx.FrameInfo.Width)
             out->mfx.FrameInfo.CropX = in->mfx.FrameInfo.CropX;
 
@@ -1311,7 +1335,7 @@ mfxStatus MFX_JPEG_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoPa
             break;
         }
 
-        if(in->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE && 
+        if(in->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE &&
            in->mfx.Rotation != MFX_ROTATION_0)
             sts = MFX_ERR_UNSUPPORTED;
 
@@ -1411,7 +1435,7 @@ bool MFX_JPEG_Utility::CheckVideoParam(mfxVideoParam *in, eMFXHWType )
         return false;
     }
 
-    if(in->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE && 
+    if(in->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE &&
        in->mfx.Rotation != MFX_ROTATION_0)
         return false;
 
@@ -1486,7 +1510,7 @@ mfxStatus VideoDECODEMJPEG::UpdateAllocRequest(mfxVideoParam *par,
         request->Type |= MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET;
         break;
     default:
-        return MFX_ERR_INVALID_VIDEO_PARAM;        
+        return MFX_ERR_INVALID_VIDEO_PARAM;
     }
     request->NumFrameMin = request->NumFrameSuggested = pOpaqAlloc->Out.NumSurface;
     mapping = true;
@@ -1668,7 +1692,7 @@ mfxStatus VideoDECODEMJPEGBase_HW::CheckVPPCaps(VideoCORE * core, mfxVideoParam 
     mfxStatus sts = MFX_ERR_NONE;
 
     VideoVppJpegD3D9 *pCc = new VideoVppJpegD3D9(core, false, (par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)?true:false);
-    
+
     if(pCc != NULL)
     {
         sts = pCc->Init(par);
@@ -1685,7 +1709,7 @@ mfxStatus VideoDECODEMJPEGBase_HW::CheckVPPCaps(VideoCORE * core, mfxVideoParam 
 
 mfxU32 VideoDECODEMJPEGBase_HW::AdjustFrameAllocRequest(mfxFrameAllocRequest *request,
                                                mfxInfoMFX *info,
-                                               eMFXHWType hwType, 
+                                               eMFXHWType hwType,
                                                eMFXVAType vaType)
 {
     bool needVpp = false;
@@ -1697,7 +1721,7 @@ mfxU32 VideoDECODEMJPEGBase_HW::AdjustFrameAllocRequest(mfxFrameAllocRequest *re
         request->Info.CropH >>= 1;
         request->NumFrameMin <<= 1;
         request->NumFrameSuggested <<= 1;
-        
+
         needVpp = true;
     }
 
@@ -2114,7 +2138,7 @@ mfxStatus VideoDECODEMJPEGBase_HW::CheckDecodeCaps(VideoCORE * core, mfxVideoPar
         IDirectXVideoDecoderService *pDecoderService;
         DXVA2_ConfigPictureDecode   *pConfig = NULL;
         UINT cConfigurations = 0;
-        
+
         D3D9Interface *pID3D = QueryCoreInterface<D3D9Interface>(core, MFXICORED3D_GUID);
 
         sts = pID3D->GetD3DService(par->mfx.FrameInfo.Width, par->mfx.FrameInfo.Height, &pDecoderService, true);
@@ -2384,7 +2408,7 @@ mfxStatus VideoDECODEMJPEGBase_HW::AllocateFrameData(UMC::FrameData *&data)
     return MFX_ERR_NONE;
 }
 
-mfxStatus VideoDECODEMJPEGBase_HW::FillEntryPoint(MFX_ENTRY_POINT *pEntryPoint, mfxFrameSurface1 *surface_work, mfxFrameSurface1 *surface_out) 
+mfxStatus VideoDECODEMJPEGBase_HW::FillEntryPoint(MFX_ENTRY_POINT *pEntryPoint, mfxFrameSurface1 *surface_work, mfxFrameSurface1 *surface_out)
 {
     mfxU16 taskId = 0;
 
@@ -2427,7 +2451,7 @@ mfxStatus VideoDECODEMJPEGBase_HW::FillEntryPoint(MFX_ENTRY_POINT *pEntryPoint, 
 mfxStatus VideoDECODEMJPEGBase_HW::CheckTaskAvailability(mfxU32 maxTaskNumber)
 {
     UMC::AutomaticUMCMutex guard(m_guard);
-        
+
     if (m_dsts.size() >= maxTaskNumber)
     {
         return MFX_WRN_DEVICE_BUSY;
@@ -2442,7 +2466,7 @@ mfxStatus VideoDECODEMJPEGBase_HW::CompleteTask(void *pParam, mfxStatus )
 
     UMC::AutomaticUMCMutex guard(m_guard);
 
-    mfxI32 index = -1;        
+    mfxI32 index = -1;
     for (size_t i = 0; i < m_dsts.size(); i++)
         if(m_dsts[i]->GetFrameMID() == info->dst->GetFrameMID())
         {
@@ -2590,7 +2614,7 @@ mfxStatus VideoDECODEMJPEGBase_SW::FillEntryPoint(MFX_ENTRY_POINT *pEntryPoint, 
                                                 pLastTask->NumPiecesCollected());
     pEntryPoint->pParam = pLastTask;
 
-    
+
     // remove the ready task from the queue
     {
         UMC::AutomaticUMCMutex guard(m_guard);
