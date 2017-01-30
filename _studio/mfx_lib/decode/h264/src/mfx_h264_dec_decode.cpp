@@ -697,6 +697,20 @@ mfxStatus VideoDECODEH264::Reset(mfxVideoParam *par)
         return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
     }
 
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
+#ifdef  MFX_VA_LINUX
+    /* in case of mfxExtDecVideoProcessing (SFC) usage
+     * required to set new params for UMC::VideoProcessingVA
+     * is mfxExtDecVideoProcessing attached or not - checked in IsSameVideoParam */
+    mfxExtDecVideoProcessing * videoProcessing = (mfxExtDecVideoProcessing *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
+    if (m_va->GetVideoProcessingVA())
+    {
+        if (m_va->GetVideoProcessingVA()->Init(par, videoProcessing) != UMC::UMC_OK)
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+    }
+#endif //MFX_VA_LINUX
+#endif //MFX_DEC_VIDEO_POSTPROCESS_DISABLE
+
     return MFX_ERR_NONE;
 }
 
@@ -781,6 +795,15 @@ mfxStatus VideoDECODEH264::GetVideoParam(mfxVideoParam *par)
         mfxExtVideoSignalInfo * videoSignalInternal = m_vPar.GetExtendedBuffer<mfxExtVideoSignalInfo>(MFX_EXTBUFF_VIDEO_SIGNAL_INFO);
         *videoSignal = *videoSignalInternal;
     }
+
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
+    mfxExtDecVideoProcessing * videoProcessing = (mfxExtDecVideoProcessing *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
+    if (videoProcessing)
+    {
+        mfxExtDecVideoProcessing * videoProcessingInternal = m_vPar.GetExtendedBuffer<mfxExtDecVideoProcessing>(MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
+        *videoProcessing = *videoProcessingInternal;
+    }
+#endif
 
     // mvc headers
     mfxExtMVCSeqDesc * mvcSeqDesc = (mfxExtMVCSeqDesc *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_MVC_SEQ_DESC);
@@ -2118,6 +2141,40 @@ bool VideoDECODEH264::IsSameVideoParam(mfxVideoParam * newPar, mfxVideoParam * o
             return false;
     }
 #endif
+
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
+    mfxExtDecVideoProcessing * newVideoProcessing = (mfxExtDecVideoProcessing *)GetExtendedBuffer(newPar->ExtParam, newPar->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
+    mfxExtDecVideoProcessing * oldVideoProcessing = (mfxExtDecVideoProcessing *)GetExtendedBuffer(oldPar->ExtParam, oldPar->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
+
+    if ( ((newVideoProcessing) && (!oldVideoProcessing)) ||
+         ((!newVideoProcessing) && (oldVideoProcessing)) )
+        return false;
+    else if (newVideoProcessing && oldVideoProcessing)
+    {
+        if (newVideoProcessing->Out.Width > oldVideoProcessing->Out.Width)
+            return false;
+        if (newVideoProcessing->Out.Height > oldVideoProcessing->Out.Height)
+            return false;
+        /* Check Input cropping */
+        if (!((newVideoProcessing->In.CropX <= newVideoProcessing->In.CropW) &&
+             (newVideoProcessing->In.CropW <= newPar->mfx.FrameInfo.CropW) &&
+             (newVideoProcessing->In.CropY <= newVideoProcessing->In.CropH) &&
+             (newVideoProcessing->In.CropH <= newPar->mfx.FrameInfo.CropH) ))
+            return false;
+
+        /* Check output cropping */
+        if (!((newVideoProcessing->Out.CropX <= newVideoProcessing->Out.CropW) &&
+             (newVideoProcessing->Out.CropW <= newVideoProcessing->Out.Width) &&
+             ((newVideoProcessing->Out.CropX + newVideoProcessing->Out.CropH)
+                                                <= newVideoProcessing->Out.Width) &&
+             (newVideoProcessing->Out.CropY <= newVideoProcessing->Out.CropH) &&
+             (newVideoProcessing->Out.CropH <= newVideoProcessing->Out.Height) &&
+             ((newVideoProcessing->Out.CropY + newVideoProcessing->Out.CropH )
+                                                 <= newVideoProcessing->Out.Height) ))
+            return false;
+
+    }
+#endif //MFX_DEC_VIDEO_POSTPROCESS_DISABLE
 
     return true;
 }

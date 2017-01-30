@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -1702,6 +1702,43 @@ mfxStatus MFX_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *
             VM_ASSERT(GetPlatform(core, out) == MFX_PLATFORM_SOFTWARE);
             sts = MFX_WRN_PARTIAL_ACCELERATION;
         }
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
+        /*SFC*/
+        mfxExtDecVideoProcessing * videoProcessingTargetIn = (mfxExtDecVideoProcessing *)GetExtendedBuffer(in->ExtParam, in->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
+        mfxExtDecVideoProcessing * videoProcessingTargetOut = (mfxExtDecVideoProcessing *)GetExtendedBuffer(out->ExtParam, out->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
+        if (videoProcessingTargetIn && videoProcessingTargetOut)
+        {
+            if ( (MFX_HW_VAAPI == (core->GetVAType())) &&
+                  (MFX_PICSTRUCT_PROGRESSIVE == in->mfx.FrameInfo.PicStruct) &&
+                  (in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) )
+            {
+                /* Check Input cropping */
+                if (!((videoProcessingTargetIn->In.CropX <= videoProcessingTargetIn->In.CropW) &&
+                     (videoProcessingTargetIn->In.CropW <= in->mfx.FrameInfo.CropW) &&
+                     (videoProcessingTargetIn->In.CropY <= videoProcessingTargetIn->In.CropH) &&
+                     (videoProcessingTargetIn->In.CropH <= in->mfx.FrameInfo.CropH) ))
+                    sts = MFX_ERR_UNSUPPORTED;
+
+                /* Check output cropping */
+                if (!((videoProcessingTargetIn->Out.CropX <= videoProcessingTargetIn->Out.CropW) &&
+                     (videoProcessingTargetIn->Out.CropW <= videoProcessingTargetIn->Out.Width) &&
+                     ((videoProcessingTargetIn->Out.CropX + videoProcessingTargetIn->Out.CropW)
+                                                        <= videoProcessingTargetIn->Out.Width) &&
+                     (videoProcessingTargetIn->Out.CropY <= videoProcessingTargetIn->Out.CropH) &&
+                     (videoProcessingTargetIn->Out.CropH <= videoProcessingTargetIn->Out.Height) &&
+                     ((videoProcessingTargetIn->Out.CropY + videoProcessingTargetIn->Out.CropH )
+                                                         <= videoProcessingTargetIn->Out.Width) ))
+                    sts = MFX_ERR_UNSUPPORTED;
+                if (MFX_ERR_UNSUPPORTED != sts)
+                    *videoProcessingTargetOut = *videoProcessingTargetIn;
+            }
+            else
+            {
+                sts = MFX_ERR_UNSUPPORTED;
+            }
+        }
+#endif //MFX_DEC_VIDEO_POSTPROCESS_DISABLE
+
     }
     else
     {
