@@ -460,14 +460,6 @@ mfxStatus VideoENC_ENC::Init(mfxVideoParam *par)
 
     MFX_CHECK(sts == MFX_ERR_NONE, MFX_WRN_PARTIAL_ACCELERATION);
 
-    const mfxExtFeiParam* params = GetExtBuffer(m_video);
-    MFX_CHECK(params, MFX_ERR_INVALID_VIDEO_PARAM);
-
-    if ((MFX_CODINGOPTION_ON == params->SingleFieldProcessing) &&
-         ((MFX_PICSTRUCT_FIELD_TFF == m_video.mfx.FrameInfo.PicStruct) ||
-          (MFX_PICSTRUCT_FIELD_BFF == m_video.mfx.FrameInfo.PicStruct)) )
-        m_singleFieldProcessingMode = MFX_CODINGOPTION_ON;
-
     sts = m_ddi->QueryEncodeCaps(m_caps);
     MFX_CHECK(sts == MFX_ERR_NONE, MFX_WRN_PARTIAL_ACCELERATION);
 
@@ -482,6 +474,11 @@ mfxStatus VideoENC_ENC::Init(mfxVideoParam *par)
 
     if (checkStatus == MFX_ERR_NONE)
         checkStatus = spsppsSts;
+
+    const mfxExtFeiParam* params = GetExtBuffer(m_video);
+
+    if (MFX_CODINGOPTION_ON == params->SingleFieldProcessing)
+        m_singleFieldProcessingMode = MFX_CODINGOPTION_ON;
 
     //raw surfaces should be created before accel service
     mfxFrameAllocRequest request = { };

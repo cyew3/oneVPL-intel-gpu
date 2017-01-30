@@ -1996,7 +1996,9 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     mfxExtMoveRect *           extMoveRect  = GetExtBuffer(par);
     mfxExtPredWeightTable *    extPwt       = GetExtBuffer(par);
     mfxExtFeiParam *           feiParam     = GetExtBuffer(par);
-    bool isENCPAK = feiParam && (MFX_FEI_FUNCTION_ENCODE == feiParam->Func);
+    bool isENCPAK = feiParam && ( (feiParam->Func == MFX_FEI_FUNCTION_ENCODE) ||
+                                  (feiParam->Func == MFX_FEI_FUNCTION_ENC)    ||
+                                  (feiParam->Func == MFX_FEI_FUNCTION_PAK) );
     bool sliceRowAlligned = true;
 
     // check hw capabilities
@@ -2197,10 +2199,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     if ((isENCPAK) && (MFX_RATECONTROL_CQP != par.mfx.RateControlMethod))
         unsupported = true;
 
-    if ((isENCPAK) && !(
-            (MFX_CODINGOPTION_UNKNOWN == feiParam->SingleFieldProcessing) ||
-            (MFX_CODINGOPTION_ON == feiParam->SingleFieldProcessing) ||
-            (MFX_CODINGOPTION_OFF == feiParam->SingleFieldProcessing)) )
+    if ((isENCPAK) && !CheckTriStateOption(feiParam->SingleFieldProcessing))
         unsupported = true;
 
     if(MFX_HW_VAAPI == vaType &&
@@ -4245,6 +4244,12 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 
     if (!CheckTriStateOption(extOpt3->FadeDetection)) changed = true;
 
+    if (isENCPAK && (par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) && IsOn(feiParam->SingleFieldProcessing))
+    {
+        feiParam->SingleFieldProcessing = MFX_CODINGOPTION_OFF;
+        changed = true;
+    }
+
     return unsupported
         ? MFX_ERR_UNSUPPORTED
         : (changed || warning)
@@ -4794,7 +4799,7 @@ void MfxHwH264Encode::SetDefaults(
     mfxExtChromaLocInfo*       extCli  = GetExtBuffer(par);
     mfxExtFeiParam* feiParam = (mfxExtFeiParam*)GetExtBuffer(par);
     bool isENCPAK = feiParam && ( (feiParam->Func == MFX_FEI_FUNCTION_ENCODE) ||
-                                  (feiParam->Func == MFX_FEI_FUNCTION_ENC) ||
+                                  (feiParam->Func == MFX_FEI_FUNCTION_ENC)    ||
                                   (feiParam->Func == MFX_FEI_FUNCTION_PAK) );
 
     if (extOpt2->UseRawRef)
