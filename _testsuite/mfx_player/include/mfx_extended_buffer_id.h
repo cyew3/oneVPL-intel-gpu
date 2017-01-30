@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2017 Intel Corporation. All Rights Reserved.
 
 File Name: mfx_extended_buffer_id.h
 
@@ -86,6 +86,7 @@ DECL_BUFFER_TYPE(mfxExtVPPDetail, MFX_EXTBUFF_VPP_DETAIL);
 DECL_BUFFER_TYPE(mfxExtVPPRotation, MFX_EXTBUFF_VPP_ROTATION);
 DECL_BUFFER_TYPE(mfxExtVPPMirroring, MFX_EXTBUFF_VPP_MIRRORING);
 DECL_BUFFER_TYPE(mfxExtVPPScaling, MFX_EXTBUFF_VPP_SCALING);
+DECL_BUFFER_TYPE(mfxExtColorConversion, MFX_EXTBUFF_VPP_COLOR_CONVERSION);
 DECL_BUFFER_TYPE(mfxExtVPPProcAmp, MFX_EXTBUFF_VPP_PROCAMP);
 DECL_BUFFER_TYPE(mfxExtVPPFieldProcessing, MFX_EXTBUFF_VPP_FIELD_PROCESSING);
 DECL_BUFFER_TYPE(mfxExtCamPipeControl,          MFX_EXTBUF_CAM_PIPECONTROL     );

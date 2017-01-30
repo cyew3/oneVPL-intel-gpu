@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2017 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -78,6 +78,8 @@ struct sCommandlineParams
   mfxU16         nInputBitdepth;
   bool           bVppScaling;
   mfxU16         uVppScalingMode;
+  bool           bVppChromaSiting;
+  mfxU16         uVppChromaSiting;
   bool           isDefaultFC;
   bool           bVerbose;
   bool           bSkipUselessOutput;
@@ -314,6 +316,9 @@ struct sCommandlineParams
 
       bVppScaling = false;
       uVppScalingMode = MFX_SCALING_MODE_DEFAULT;
+
+      bVppChromaSiting = false;
+      uVppChromaSiting = MFX_CHROMA_SITING_UNKNOWN;
 
       nTestId = NOT_ASSIGNED_VALUE;
 

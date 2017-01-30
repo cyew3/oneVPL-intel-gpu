@@ -1126,6 +1126,13 @@ mfxStatus MFXDecPipeline::CreateVPP()
         pScaling->ScalingMode = m_inParams.uVppScalingMode;
     }
 
+    if (m_inParams.bVppChromaSiting)
+    {
+        m_components[eVPP].m_extParams.push_back(new mfxExtColorConversion());
+        MFXExtBufferPtr<mfxExtColorConversion> pECC(m_components[eVPP].m_extParams);
+        pECC->ChromaSiting = m_inParams.uVppChromaSiting;
+    }
+
     //turnoff default filter if they are not present in cmd line
     if ( ! m_inParams.bUseCameraPipe && ! m_inParams.bExtVppApi )
     {
@@ -4910,6 +4917,25 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 m_inParams.bVppScaling = true;
                 MFX_PARSE_INT(m_inParams.uVppScalingMode,  argv[1]);
                 argv+=1;
+            }
+            else if (m_OptProc.Check(argv[0], VM_STRING("-vpp_chroma_siting"), VM_STRING("specify chroma siting mode for VPP color conversion, allowwed values: vtop|vcen|vbot hleft|hcen"), OPT_INT_32))
+            {
+                MFX_CHECK(2 + argv != argvEnd);
+                argv++;
+                bool bVfound = false;
+                bool bHfound = false;
+                for (int j = 0; j < 2; j++)
+                {
+                    /* ChromaSiting */
+                    if (vm_string_strcmp(argv[j], VM_STRING("vtop")) == 0) { m_inParams.uVppChromaSiting |= MFX_CHROMA_SITING_VERTICAL_TOP; bVfound = true; }
+                    else if (vm_string_strcmp(argv[j], VM_STRING("vcen")) == 0) { m_inParams.uVppChromaSiting |= MFX_CHROMA_SITING_VERTICAL_CENTER; bVfound = true; }
+                    else if (vm_string_strcmp(argv[j], VM_STRING("vbot")) == 0) { m_inParams.uVppChromaSiting |= MFX_CHROMA_SITING_VERTICAL_BOTTOM; bVfound = true; }
+                    else if (vm_string_strcmp(argv[j], VM_STRING("hleft")) == 0) { m_inParams.uVppChromaSiting |= MFX_CHROMA_SITING_HORIZONTAL_LEFT; bHfound = true; }
+                    else if (vm_string_strcmp(argv[j], VM_STRING("hcen")) == 0) { m_inParams.uVppChromaSiting |= MFX_CHROMA_SITING_HORIZONTAL_CENTER; bHfound = true; }
+                    else vm_string_printf(VM_STRING("Unknown Chroma siting flag %s"), argv[j]);
+                }
+                m_inParams.bVppChromaSiting = bVfound && bHfound;
+                argv++;
             }
             else if (m_OptProc.Check(argv[0], VM_STRING("-mediasdk_splitter"), VM_STRING("split stream from media container with MediaSDK splitter (ts, mp4)"), OPT_BOOL))
             {
