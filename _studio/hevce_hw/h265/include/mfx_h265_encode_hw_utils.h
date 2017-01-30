@@ -26,6 +26,7 @@
 #ifdef DEBUG_REC_FRAMES_INFO
 #include "vm_file.h"
 #endif
+#include <typeinfo>
 #include <vector>
 #include <list>
 #include <assert.h>
@@ -47,6 +48,16 @@
 
 namespace MfxHwH265Encode
 {
+
+
+template <class Class1, class Class2>
+    struct is_same
+    { enum { value = false }; };
+
+template<class Class1>
+    struct is_same<Class1, Class1>
+    { enum { value = true }; };
+
 
 
 template<class T> inline bool Equal(T const & l, T const & r) { return memcmp(&l, &r, sizeof(T)) == 0; }
@@ -378,6 +389,8 @@ struct remove_const<const T>
     typedef T type;
 };
 
+class MfxVideoParam;
+
 namespace ExtBuffer
 {
     #define SIZE_OF_ARRAY(ARR) (sizeof(ARR) / sizeof(ARR[0]))
@@ -594,9 +607,10 @@ namespace ExtBuffer
 
     template <class P> Proxy Get(P & par)
     {
-        static_assert(!std::is_same<MfxVideoParam, P>::value, "MfxVideoParam is invalid for this template!");
+        STATIC_ASSERT(!(is_same<P, MfxVideoParam>::value), MfxVideoParam_is_invalid_for_this_template);
         return Proxy(par.ExtParam, par.NumExtParam);
     }
+
 
     template<class T> inline void Add(T& buf, mfxExtBuffer* pBuffers[], mfxU16 &numbuffers)
     {

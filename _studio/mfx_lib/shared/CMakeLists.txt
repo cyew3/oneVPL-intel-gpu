@@ -37,16 +37,6 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/src )
     ${prefix}/mfx_mpeg2_dec_common.cpp
     ${prefix}/mfx_vc1_dec_common.cpp                ## open-source-cut-line
     ${prefix}/mfx_critical_error_handler.cpp
-  )
-endforeach()
-
-set( defs "${WARNING_FLAGS}" )
-make_library( mfx_common none static )
-append_property( mfx_common COMPILE_FLAGS " -DMFX_RT" )
-set( defs "" )
-
-foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/src )
-  list( APPEND sources
     ${prefix}/mfx_ddi_enc_dump.cpp
     ${prefix}/mfx_h264_enc_common_hw.cpp
     ${prefix}/mfx_h264_encode_vaapi.cpp
@@ -61,5 +51,5 @@ set( defs "${WARNING_FLAGS}" )
 make_library( mfx_common sw static )
 append_property( mfx_common_sw COMPILE_FLAGS " -DMFX_RT" )
 make_library( mfx_common hw static )
-append_property( mfx_common_hw COMPILE_FLAGS " -DMFX_RT" )
+#append_property( mfx_common_hw COMPILE_FLAGS " -DMFX_RT" )
 set( defs "" )

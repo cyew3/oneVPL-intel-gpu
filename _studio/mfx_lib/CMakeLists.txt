@@ -129,7 +129,6 @@ foreach( variant
     h264_px
     h264_sse3
     pak
-    mfx_common
     mfx_common_${variant}
     vpp_${variant}
     h264_preenc
@@ -225,7 +224,6 @@ list( APPEND LIBS
   umc
   vm
   vm_plus
-  mfx_common
   mfx_common_hw
   ${ITT_LIBS}
   ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
