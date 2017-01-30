@@ -1161,9 +1161,11 @@ mfxStatus MFXDecPipeline::CreateVPP()
         MFXExtBufferPtr<mfxExtVPPDetail> pDetail(m_components[eVPP].m_extParams);
         pDetail->DetailFactor = m_inParams.nDetailFactorPlus1 - 1;
     }
+
+    //turn on field processing
     if (m_inParams.bFieldProcessing)
     {
-        if (0 == m_inParams.nFieldProcessing || 1 == m_inParams.nFieldProcessing || 2 == m_inParams.nFieldProcessing)
+        if (0 == m_inParams.nFieldProcessing || 1 == m_inParams.nFieldProcessing || 2 == m_inParams.nFieldProcessing  || 3 == m_inParams.nFieldProcessing)
         {
             mfxExtVPPFieldProcessing tmp = {0};
             m_components[eVPP].m_extParams.push_back(&tmp);
@@ -1181,6 +1183,12 @@ mfxStatus MFXDecPipeline::CreateVPP()
                 pFieldProc->OutField = MFX_PICTYPE_BOTTOMFIELD;
             }
             if (m_inParams.nFieldProcessing == 2)
+            {
+                pFieldProc->Mode     = MFX_PICTYPE_FRAME;
+                pFieldProc->InField  = MFX_PICTYPE_FRAME;
+                pFieldProc->OutField = MFX_PICTYPE_FRAME;
+            }
+            if (m_inParams.nFieldProcessing == 3)
             {
                 pFieldProc->Mode     = MFX_PICTYPE_FRAME;
                 pFieldProc->InField  = MFX_PICTYPE_FRAME;
@@ -3291,23 +3299,26 @@ mfxStatus  MFXDecPipeline::RunVPP(mfxFrameSurface1 *pSurface)
                     m_inParams.m_FieldProcessing.Mode = MFX_VPP_COPY_FIELD;
                     m_inParams.m_FieldProcessing.InField  = MFX_PICTYPE_BOTTOMFIELD;
                     m_inParams.m_FieldProcessing.OutField = MFX_PICTYPE_BOTTOMFIELD;
-                    m_inParams.nFieldProcessing += 1;
+                    m_inParams.nFieldProcessing += 2;
                 }
                 else
                 {
                     if (m_inParams.nFieldProcessing == 2)
                     {
-                        if (m_inParams.m_FieldProcessing.InField == MFX_PICTYPE_TOPFIELD)
-                        {
-                            m_inParams.nFieldProcessing -= 2;
-                        }
-                        else
-                        {
-                            m_inParams.nFieldProcessing -= 1;
-                        }
+                        m_inParams.nFieldProcessing -= 2;
                         m_inParams.m_FieldProcessing.Mode = MFX_PICTYPE_FRAME;
                         m_inParams.m_FieldProcessing.InField  = MFX_PICTYPE_FRAME;
                         m_inParams.m_FieldProcessing.OutField = MFX_PICTYPE_FRAME;
+                    }
+                    else
+                    {
+                        if (m_inParams.nFieldProcessing == 3)
+                        {
+                            m_inParams.nFieldProcessing -= 2;
+                            m_inParams.m_FieldProcessing.Mode = MFX_PICTYPE_FRAME;
+                            m_inParams.m_FieldProcessing.InField  = MFX_PICTYPE_FRAME;
+                            m_inParams.m_FieldProcessing.OutField = MFX_PICTYPE_FRAME;
+                        }
                     }
                 }
             }
