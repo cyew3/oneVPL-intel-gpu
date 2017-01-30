@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2017 Intel Corporation. All Rights Reserved.
 
 File Name: hevce_reset.cpp
 
@@ -442,6 +442,7 @@ namespace hevce_reset
         tsSurfaceProcessor *reader;
         mfxHDL hdl;
         mfxHandleType type;
+        mfxEncryptedData ed;
         mfxStatus init_fail = MFX_ERR_INVALID_VIDEO_PARAM;
         const char* stream0 = g_tsStreamPool.Get(tc.stream[0]);
         const char* stream1 = g_tsStreamPool.Get(tc.stream[1] == "" ? tc.stream[0] : tc.stream[1]);
@@ -576,7 +577,6 @@ namespace hevce_reset
             {
                 if (tc.type == PROTECTED)
                 {
-                    mfxEncryptedData ed;
                     ed.DataLength = m_bitstream.DataLength;
                     ed.DataOffset = m_bitstream.DataOffset;
                     ed.MaxLength = m_bitstream.MaxLength;
