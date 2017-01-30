@@ -375,7 +375,7 @@ void FEI_EncPakInterface::GetRefInfo(
             case MFX_EXTBUFF_FEI_PARAM:
             {
                 mfxExtFeiParam* ptr = reinterpret_cast<mfxExtFeiParam*>(InitExtParams[i]);
-                bSigleFieldProcessing = ptr->SingleFieldProcessing == MFX_CODINGOPTION_ON;
+                m_bSingleFieldMode = bSigleFieldProcessing = ptr->SingleFieldProcessing == MFX_CODINGOPTION_ON;
             }
             break;
 
