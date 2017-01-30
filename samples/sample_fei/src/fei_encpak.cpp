@@ -356,32 +356,32 @@ void FEI_EncPakInterface::GetRefInfo(
     {
         switch (InitExtParams[i]->BufferId)
         {
-            case MFX_EXTBUFF_CODING_OPTION2:
-            {
-                mfxExtCodingOption2* ptr = reinterpret_cast<mfxExtCodingOption2*>(InitExtParams[i]);
-                bRefType = ptr->BRefType;
-            }
-            break;
+        case MFX_EXTBUFF_CODING_OPTION2:
+        {
+            mfxExtCodingOption2* ptr = reinterpret_cast<mfxExtCodingOption2*>(InitExtParams[i]);
+            bRefType = ptr->BRefType;
+        }
+        break;
 
-            case MFX_EXTBUFF_CODING_OPTION3:
-            {
-                mfxExtCodingOption3* ptr = reinterpret_cast<mfxExtCodingOption3*>(InitExtParams[i]);
-                numRefActiveP   = ptr->NumRefActiveP[0];
-                numRefActiveBL0 = ptr->NumRefActiveBL0[0];
-                numRefActiveBL1 = ptr->NumRefActiveBL1[0];
-            }
-            break;
+        case MFX_EXTBUFF_CODING_OPTION3:
+        {
+            mfxExtCodingOption3* ptr = reinterpret_cast<mfxExtCodingOption3*>(InitExtParams[i]);
+            numRefActiveP   = ptr->NumRefActiveP[0];
+            numRefActiveBL0 = ptr->NumRefActiveBL0[0];
+            numRefActiveBL1 = ptr->NumRefActiveBL1[0];
+        }
+        break;
 
             case MFX_EXTBUFF_FEI_PARAM:
             {
                 mfxExtFeiParam* ptr = reinterpret_cast<mfxExtFeiParam*>(InitExtParams[i]);
                 m_bSingleFieldMode = bSigleFieldProcessing = ptr->SingleFieldProcessing == MFX_CODINGOPTION_ON;
-            }
+        }
             break;
 
             default:
                 break;
-        }
+    }
     }
 
     picStruct   = m_pmfxENC ? m_videoParams_ENC.mfx.FrameInfo.PicStruct : m_videoParams_PAK.mfx.FrameInfo.PicStruct;
@@ -940,33 +940,31 @@ mfxStatus FEI_EncPakInterface::InitFrameParams(iTask* eTask)
         } // switch (eTask->in.ExtParam[i]->BufferId)
     } // for (int i = 0; i<eTask->in.NumExtParam; i++)
 
-    mdprintf(stderr, "enc: %d t: %d %d\n", eTask->m_frameOrder, (eTask->m_type[0] & MFX_FRAMETYPE_IPB), (eTask->m_type[1] & MFX_FRAMETYPE_IPB));
-    return sts;
-}
+    // Read external PAK input in case of PAK only pipeline
+    if (!m_pAppConfig->bDECODESTREAMOUT && m_pAppConfig->bOnlyPAK)
+    {
+        for (int i = 0; i < eTask->PAK_in.NumExtParam; i++)
+        {
+            switch (eTask->PAK_in.ExtParam[i]->BufferId)
+            {
+            case MFX_EXTBUFF_FEI_ENC_MV:
+                if (m_pMV_out)
+                {
+                    mfxExtFeiEncMV* mvBuf = reinterpret_cast<mfxExtFeiEncMV*>(eTask->PAK_in.ExtParam[i]);
+                    SAFE_FREAD(mvBuf->MB, sizeof(mvBuf->MB[0])*mvBuf->NumMBAlloc, 1, m_pMV_out, MFX_ERR_MORE_DATA);
+                }
+                break;
 
-mfxStatus FEI_EncPakInterface::ReadPAKdata(iTask* eTask)
-{
-    MSDK_CHECK_POINTER(eTask, MFX_ERR_NULL_PTR);
-
-    mfxStatus sts = MFX_ERR_NONE;
-
-    for (int i = 0; i < eTask->PAK_in.NumExtParam; i++){
-        switch (eTask->PAK_in.ExtParam[i]->BufferId){
-        case MFX_EXTBUFF_FEI_ENC_MV:
-            if (m_pMV_out){
-                mfxExtFeiEncMV* mvBuf = reinterpret_cast<mfxExtFeiEncMV*>(eTask->PAK_in.ExtParam[i]);
-                SAFE_FREAD(mvBuf->MB, sizeof(mvBuf->MB[0])*mvBuf->NumMBAlloc, 1, m_pMV_out, MFX_ERR_MORE_DATA);
-            }
-            break;
-
-        case MFX_EXTBUFF_FEI_PAK_CTRL:
-            if (m_pMBcode_out){
-                mfxExtFeiPakMBCtrl* mbcodeBuf = reinterpret_cast<mfxExtFeiPakMBCtrl*>(eTask->PAK_in.ExtParam[i]);
-                SAFE_FREAD(mbcodeBuf->MB, sizeof(mbcodeBuf->MB[0])*mbcodeBuf->NumMBAlloc, 1, m_pMBcode_out, MFX_ERR_MORE_DATA);
-            }
-            break;
-        } // switch (eTask->PAK_in.ExtParam[i]->BufferId)
-    } // for (int i = 0; i < eTask->PAK_in.NumExtParam; i++)
+            case MFX_EXTBUFF_FEI_PAK_CTRL:
+                if (m_pMBcode_out)
+                {
+                    mfxExtFeiPakMBCtrl* mbcodeBuf = reinterpret_cast<mfxExtFeiPakMBCtrl*>(eTask->PAK_in.ExtParam[i]);
+                    SAFE_FREAD(mbcodeBuf->MB, sizeof(mbcodeBuf->MB[0])*mbcodeBuf->NumMBAlloc, 1, m_pMBcode_out, MFX_ERR_MORE_DATA);
+                }
+                break;
+            } // switch (eTask->PAK_in.ExtParam[i]->BufferId)
+        } // for (int i = 0; i < eTask->PAK_in.NumExtParam; i++)
+    }
 
     return sts;
 }
@@ -1020,15 +1018,11 @@ mfxStatus FEI_EncPakInterface::EncPakOneFrame(iTask* eTask)
                 mdprintf(stderr, "synced : %d\n", sts);
             }
 
-            if (i == 0)
+            // Prepare PAK-object from streamout buffer if requested
+            if (i == 0 && m_pAppConfig->bDECODESTREAMOUT && m_pAppConfig->bOnlyPAK)
             {
-                MSDK_DEBUG
-                /* In case of PAK only we need to read data from file */
-                if (m_pAppConfig->bOnlyPAK)
-                {
-                    sts = ReadPAKdata(eTask);
-                    MSDK_CHECK_STATUS(sts, "ReadPAKdata failed");
-                }
+                sts = PakOneStreamoutFrame(eTask, m_pAppConfig->QP, m_inputTasks);
+                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
             }
 
             if (m_pmfxPAK)

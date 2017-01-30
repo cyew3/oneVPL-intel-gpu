@@ -1,17 +1,23 @@
-/*********************************************************************************
+/******************************************************************************\
+Copyright (c) 2005-2017, Intel Corporation
+All rights reserved.
 
-INTEL CORPORATION PROPRIETARY INFORMATION
-This software is supplied under the terms of a license agreement or nondisclosure
-agreement with Intel Corporation and may not be copied or disclosed except in
-accordance with the terms of that agreement.
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+
+3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 This sample was distributed or derived from the Intel's Media Samples package.
 The original version of this sample may be obtained from https://software.intel.com/en-us/intel-media-server-studio
 or https://software.intel.com/en-us/media-client-solutions-support.
-Copyright(c) 2005-2016 Intel Corporation. All Rights Reserved.
+\**********************************************************************************/
 
-**********************************************************************************/
-
-#include "modified_sample_fei.h"
+#include "fei_encpak.h"
 
 static mfxU32 mv_data_length_offset = 0;
 // Intra types remapped to cases with set cbp. H.264 Table 7-11.
@@ -30,61 +36,6 @@ static const mfxU8 sub_mb_type[1+22][4] = {
     {2,2,2,2}, {2,2,2,2}, {0xff,}               // 20-22
 };
 
-mfxStatus PakOneStreamoutFrame(mfxU32 m_numOfFields, iTask *eTask, mfxU8 QP, iTaskPool *pTaskList)
-{
-    MFX_ITT_TASK("PakOneStreamoutFrame");
-
-    MSDK_CHECK_POINTER(eTask,                  MFX_ERR_NULL_PTR);
-    MSDK_CHECK_POINTER(eTask->PAK_in.InSurface, MFX_ERR_NULL_PTR);
-
-    mfxExtFeiDecStreamOut* pExtBufDecodeStreamout = NULL;
-    for (mfxU16 i = 0; i < eTask->PAK_in.InSurface->Data.NumExtParam; ++i)
-    {
-        if (eTask->PAK_in.InSurface->Data.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_DEC_STREAM_OUT)
-        {
-            pExtBufDecodeStreamout = reinterpret_cast<mfxExtFeiDecStreamOut*>(eTask->PAK_in.InSurface->Data.ExtParam[i]);
-            break;
-        }
-    }
-    MSDK_CHECK_POINTER(pExtBufDecodeStreamout, MFX_ERR_NULL_PTR);
-
-    mfxStatus sts = MFX_ERR_NONE;
-
-    mfxExtFeiPakMBCtrl* feiEncMBCode = NULL;
-    mfxExtFeiEncMV*     feiEncMV     = NULL;
-
-    for (mfxU32 fieldId = 0; fieldId < m_numOfFields; fieldId++)
-    {
-        MSDK_BREAK_ON_ERROR(sts);
-
-        mv_data_length_offset = 0;
-
-        /* get mfxExtFeiPakMBCtrl buffer */
-        feiEncMBCode = reinterpret_cast<mfxExtFeiPakMBCtrl*>(eTask->bufs->PB_bufs.out.getBufById(MFX_EXTBUFF_FEI_PAK_CTRL, fieldId));
-        MSDK_CHECK_POINTER(feiEncMBCode, MFX_ERR_NULL_PTR);
-
-        /* get mfxExtFeiEncMV buffer */
-        feiEncMV = reinterpret_cast<mfxExtFeiEncMV*>(eTask->bufs->PB_bufs.out.getBufById(MFX_EXTBUFF_FEI_ENC_MV, fieldId));
-        MSDK_CHECK_POINTER(feiEncMV, MFX_ERR_NULL_PTR);
-
-        /* repack streamout output to PAK input */
-        for (mfxU32 i = 0; i < feiEncMBCode->NumMBAlloc; i++)
-        {
-            /* temporary, this flag is not set at all by driver */
-            (pExtBufDecodeStreamout->MB + fieldId*feiEncMBCode->NumMBAlloc + i)->IsLastMB = (i == (feiEncMBCode->NumMBAlloc-1));
-
-            /* NOTE: streamout holds data for both fields in MB array (first NumMBAlloc for first field data, second NumMBAlloc for second field) */
-            sts = RepackStremoutMB2PakMB(pExtBufDecodeStreamout->MB + fieldId*feiEncMBCode->NumMBAlloc + i, feiEncMBCode->MB + i, QP);
-            MSDK_BREAK_ON_ERROR(sts);
-
-            sts = RepackStreamoutMV(pExtBufDecodeStreamout->MB + fieldId*feiEncMBCode->NumMBAlloc + i, feiEncMV->MB + i);
-            MSDK_BREAK_ON_ERROR(sts);
-        }
-        sts = ResetDirect (eTask, pTaskList);
-    }
-
-    return sts;
-}
 
 // Repack is neccessary because
 // 1. DSO has MV for 8x8 blocks, not for 4x4
@@ -388,9 +339,11 @@ mfxStatus ResetDirect(iTask * task, iTaskPool *pTaskList)
             iTask * reftask = pTaskList->GetTaskByPAKOutputSurface(refSurface);
 
             if (reftask) {
-                refmvs    = (mfxExtFeiEncMV*)    GetExtBuffer(reftask->PAK_in.ExtParam, reftask->PAK_in.NumExtParam, MFX_EXTBUFF_FEI_ENC_MV);
+                refmvs    = (mfxExtFeiEncMV*)GetExtBuffer(reftask->PAK_in.ExtParam, reftask->PAK_in.NumExtParam, MFX_EXTBUFF_FEI_ENC_MV);
+                MSDK_CHECK_POINTER(refmvs, MFX_ERR_NULL_PTR);
+
                 refmbCode = (mfxExtFeiPakMBCtrl*)GetExtBuffer(reftask->PAK_in.ExtParam, reftask->PAK_in.NumExtParam, MFX_EXTBUFF_FEI_PAK_CTRL);
-                //if (!refmbCode && !refmvs) return MFX_ERR_INVALID_VIDEO_PARAM; // shouldn't happen
+                MSDK_CHECK_POINTER(refmbCode, MFX_ERR_NULL_PTR);
             }
         }
         if (slice >= sliceHeader->NumSlice) return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -599,4 +552,62 @@ mfxStatus ResetDirect(iTask * task, iTaskPool *pTaskList)
 #endif //DUMP_MB_DSO
 
     return MFX_ERR_NONE;
+}
+
+mfxStatus FEI_EncPakInterface::PakOneStreamoutFrame(iTask *eTask, mfxU8 QP, iTaskPool *pTaskList)
+{
+    MFX_ITT_TASK("PakOneStreamoutFrame");
+
+    MSDK_CHECK_POINTER(eTask,                   MFX_ERR_NULL_PTR);
+    MSDK_CHECK_POINTER(eTask->PAK_in.InSurface, MFX_ERR_NULL_PTR);
+
+    mfxU32 numOfFields = eTask->m_fieldPicFlag ? 2 : 1;
+
+    mfxExtFeiDecStreamOut* pExtBufDecodeStreamout = NULL;
+    for (mfxU16 i = 0; i < eTask->PAK_in.InSurface->Data.NumExtParam; ++i)
+    {
+        if (eTask->PAK_in.InSurface->Data.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_DEC_STREAM_OUT)
+        {
+            pExtBufDecodeStreamout = reinterpret_cast<mfxExtFeiDecStreamOut*>(eTask->PAK_in.InSurface->Data.ExtParam[i]);
+            break;
+        }
+    }
+    MSDK_CHECK_POINTER(pExtBufDecodeStreamout, MFX_ERR_NULL_PTR);
+
+    mfxStatus sts = MFX_ERR_NONE;
+
+    mfxExtFeiPakMBCtrl* feiEncMBCode = NULL;
+    mfxExtFeiEncMV*     feiEncMV     = NULL;
+
+    for (mfxU32 fieldId = 0; fieldId < numOfFields; ++fieldId)
+    {
+        mv_data_length_offset = 0;
+
+        /* get mfxExtFeiPakMBCtrl buffer */
+        feiEncMBCode = reinterpret_cast<mfxExtFeiPakMBCtrl*>(eTask->bufs->PB_bufs.out.getBufById(MFX_EXTBUFF_FEI_PAK_CTRL, fieldId));
+        MSDK_CHECK_POINTER(feiEncMBCode, MFX_ERR_NULL_PTR);
+
+        /* get mfxExtFeiEncMV buffer */
+        feiEncMV = reinterpret_cast<mfxExtFeiEncMV*>(eTask->bufs->PB_bufs.out.getBufById(MFX_EXTBUFF_FEI_ENC_MV, fieldId));
+        MSDK_CHECK_POINTER(feiEncMV, MFX_ERR_NULL_PTR);
+
+        /* repack streamout output to PAK input */
+        for (mfxU32 i = 0; i < feiEncMBCode->NumMBAlloc; ++i)
+        {
+            /* temporary, this flag is not set at all by driver */
+            (pExtBufDecodeStreamout->MB + fieldId*feiEncMBCode->NumMBAlloc + i)->IsLastMB = (i == (feiEncMBCode->NumMBAlloc - 1));
+
+            /* NOTE: streamout holds data for both fields in MB array (first NumMBAlloc for first field data, second NumMBAlloc for second field) */
+            sts = RepackStremoutMB2PakMB(pExtBufDecodeStreamout->MB + fieldId*feiEncMBCode->NumMBAlloc + i, feiEncMBCode->MB + i, QP);
+            MSDK_CHECK_STATUS(sts, "Decode StreamOut to PAK-object repacking: RepackStremoutMB2PakMB failed");
+
+            sts = RepackStreamoutMV(pExtBufDecodeStreamout->MB + fieldId*feiEncMBCode->NumMBAlloc + i, feiEncMV->MB + i);
+            MSDK_CHECK_STATUS(sts, "Decode StreamOut to PAK-object repacking: RepackStreamoutMV failed");
+        }
+
+        sts = ResetDirect(eTask, pTaskList);
+        MSDK_CHECK_STATUS(sts, "Decode StreamOut to PAK-object repacking: ResetDirect failed");
+    }
+
+    return sts;
 }

@@ -38,13 +38,6 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "brc_routines.h"
 #endif
 
-// Extensions for internal use, normally these macros are blank
-#ifdef MOD_FEI
-#include "extension_macros.h"
-#else
-    #define MSDK_DEBUG
-#endif
-
 /* This class implements a FEI pipeline */
 class CEncodingPipeline
 {

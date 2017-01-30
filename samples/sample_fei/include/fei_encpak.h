@@ -23,13 +23,6 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "encoding_task_pool.h"
 #include "predictors_repacking.h"
 
-// Extensions for internal use, normally these macros are blank
-#ifdef MOD_FEI
-#include "extension_macros.h"
-#else
-    #define MSDK_DEBUG
-#endif
-
 class FEI_EncPakInterface
 {
 private:
@@ -96,10 +89,13 @@ public:
     mfxStatus FillParameters();
     mfxStatus FillRefInfo(iTask* eTask);
     mfxStatus InitFrameParams(iTask* eTask);
-    mfxStatus ReadPAKdata(iTask* eTask);
     mfxStatus AllocateSufficientBuffer();
     mfxStatus EncPakOneFrame(iTask* eTask);
     mfxStatus FlushOutput(iTask* eTask);
     mfxStatus ResetState();
+
+    // Decode StreamOut -> PAK
+    mfxStatus PakOneStreamoutFrame(iTask *eTask, mfxU8 QP, iTaskPool *pTaskList);
 };
+
 #endif // __SAMPLE_FEI_ENCPAK_INTERFACE_H__
