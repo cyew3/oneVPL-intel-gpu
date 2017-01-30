@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2008 - 2016 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2008 - 2017 Intel Corporation. All Rights Reserved.
 //
 
 #include <vector>
@@ -102,6 +102,9 @@ void vppDefaultInitParams( sInputParams* pParams, sFiltersParam* pDefaultFilters
     pParams->rotate.clear(); pParams->rotate.push_back(0);
     pParams->bScaling     = false;
     pParams->scalingMode  = MFX_SCALING_MODE_DEFAULT;
+    pParams->bChromaSiting = false;
+    pParams->uChromaSiting = 0;
+
     pParams->numFrames    = 0;
 
     // Optional video processing features

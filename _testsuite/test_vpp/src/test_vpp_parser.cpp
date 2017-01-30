@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2010 - 2016 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2010 - 2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "test_vpp_utils.h"
@@ -79,6 +79,7 @@ void vppPrintHelp(const vm_char *strAppName, const vm_char *strErrorMessage)
     vm_string_printf(VM_STRING("   [-idetect]          - enable picstruct detection algorithm \n"));
     vm_string_printf(VM_STRING("   [-rotate (angle)]   - enable rotation. Supported angles: 0, 90, 180, 270.\n"));
     vm_string_printf(VM_STRING("   [-scaling_mode (mode)] - specify type of scaling to be used for resize.\n"));
+    vm_string_printf(VM_STRING("   [-chroma_siting (vmode hmode)] - specify chroma siting mode for VPP color conversion, allowwed values: vtop|vcen|vbot hleft|hcen\n"));
     vm_string_printf(VM_STRING("   [-denoise (level)]  - enable denoise algorithm. Level is optional \n"));
     vm_string_printf(VM_STRING("                         range of  noise level is [0, 100]\n"));
     vm_string_printf(VM_STRING("   [-detail  (level)]  - enable detail enhancement algorithm. Level is optional \n"));
@@ -993,6 +994,25 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
                 i++;
                 pParams->bScaling = true;
                 vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->scalingMode);
+            }
+            else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-chroma_siting")))
+            {
+                VAL_CHECK(2 + i == nArgNum);
+                bool bVfound = false;
+                bool bHfound = false;
+                i++;
+                for (int ii = 0; ii < 2; ii++)
+                {
+                    /* ChromaSiting */
+                    if (vm_string_strcmp(strInput[i + ii], VM_STRING("vtop")) == 0)           { pParams->uChromaSiting |= MFX_CHROMA_SITING_VERTICAL_TOP; bVfound = true; }
+                    else if (vm_string_strcmp(strInput[i + ii], VM_STRING("vcen")) == 0)      { pParams->uChromaSiting |= MFX_CHROMA_SITING_VERTICAL_CENTER; bVfound = true; }
+                    else if (vm_string_strcmp(strInput[i + ii], VM_STRING("vbot")) == 0)      { pParams->uChromaSiting |= MFX_CHROMA_SITING_VERTICAL_BOTTOM; bVfound = true; }
+                    else if (vm_string_strcmp(strInput[i + ii], VM_STRING("hleft")) == 0)      { pParams->uChromaSiting |= MFX_CHROMA_SITING_HORIZONTAL_LEFT; bHfound = true; }
+                    else if (vm_string_strcmp(strInput[i + ii], VM_STRING("hcen")) == 0)      { pParams->uChromaSiting |= MFX_CHROMA_SITING_HORIZONTAL_CENTER; bHfound = true; }
+                    else vm_string_printf(VM_STRING("Unknown Chroma siting flag %s"), strInput[i + ii]);
+                }
+                pParams->bChromaSiting = bVfound && bHfound;
+                i++;
             }
             else if(0 == vm_string_strcmp(strInput[i], VM_STRING("-variance")))
             {

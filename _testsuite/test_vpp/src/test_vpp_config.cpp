@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2011-2016 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2011-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "test_vpp_utils.h"
@@ -157,6 +157,16 @@ mfxStatus ConfigVideoEnhancementFilters( sInputParams* pParams, sAppResources* p
 
         pVppParam->ExtParam[pVppParam->NumExtParam++] = (mfxExtBuffer*)&(pResources->scalingConfig);
     }
+
+    if (pParams->bChromaSiting)
+    {
+        pResources->chromaSitingConfig.Header.BufferId = MFX_EXTBUFF_VPP_COLOR_CONVERSION;
+        pResources->chromaSitingConfig.Header.BufferSz = sizeof(mfxExtColorConversion);
+        pResources->chromaSitingConfig.ChromaSiting  = pParams->uChromaSiting;
+
+        pVppParam->ExtParam[pVppParam->NumExtParam++] = (mfxExtBuffer*)&(pResources->chromaSitingConfig);
+    }
+
     //if( VPP_FILTER_ENABLED_CONFIGURED == pParams->gamutParam.mode )
     //{
     //    pResources->gamutConfig.Header.BufferId = MFX_EXTBUFF_VPP_GAMUT_MAPPING;
