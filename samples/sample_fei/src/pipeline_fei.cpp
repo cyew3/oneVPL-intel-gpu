@@ -733,36 +733,36 @@ mfxStatus CEncodingPipeline::ResetIOFiles(const AppConfig & Config)
 
 mfxStatus CEncodingPipeline::SetSequenceParameters()
 {
-    mfxStatus sts = MFX_ERR_NONE;
+    mfxStatus sts = UpdateVideoParam(); // update settings according to those that exposed by MSDK library
+    MSDK_CHECK_STATUS(sts, "UpdateVideoParam failed");
 
-    // Adjustment interlaced -> progressive by MSDK lib is possible.
+    /* Get BRef type and active P/B refs */
+    if (m_pFEI_PreENC)
+    {
+        m_pFEI_PreENC->GetRefInfo(m_picStruct, m_refDist, m_numRefFrame, m_gopSize, m_gopOptFlag, m_idrInterval,
+            m_numRefActiveP, m_numRefActiveBL0, m_numRefActiveBL1, m_bRefType, m_appCfg.bFieldProcessingMode);
+    }
+
+    if (m_pFEI_ENCPAK)
+    {
+        m_pFEI_ENCPAK->GetRefInfo(m_picStruct, m_refDist, m_numRefFrame, m_gopSize, m_gopOptFlag, m_idrInterval,
+            m_numRefActiveP, m_numRefActiveBL0, m_numRefActiveBL1, m_bRefType, m_appCfg.bFieldProcessingMode);
+    }
+
+    if (m_pFEI_ENCODE)
+    {
+        m_pFEI_ENCODE->GetRefInfo(m_picStruct, m_refDist, m_numRefFrame, m_gopSize, m_gopOptFlag, m_idrInterval,
+            m_numRefActiveP, m_numRefActiveBL0, m_numRefActiveBL1, m_bRefType, m_appCfg.bFieldProcessingMode);
+    }
+
+    // Adjustment interlaced to progressive by MSDK lib is possible.
     // So keep this value to fit resulting number of MBs to surface passed on Init stage.
     mfxU16 cached_numOfFields = m_numOfFields;
 
+    m_numOfFields = m_preencBufs.num_of_fields = m_encodeBufs.num_of_fields = (m_picStruct & MFX_PICSTRUCT_PROGRESSIVE) ? 1 : 2;
+
     if (m_bParametersAdjusted)
     {
-        sts = UpdateVideoParam(); // update settings according to those that exposed by MSDK library
-        MSDK_CHECK_STATUS(sts, "UpdateVideoParam failed");
-
-        /* Get BRef type and active P/B refs */
-        if (m_pFEI_ENCODE)
-        {
-            m_pFEI_ENCODE->GetRefInfo(m_picStruct, m_refDist, m_numRefFrame, m_gopSize, m_gopOptFlag, m_idrInterval,
-                m_numRefActiveP, m_numRefActiveBL0, m_numRefActiveBL1, m_bRefType, m_appCfg.bFieldProcessingMode);
-        }
-        else if (m_pFEI_ENCPAK)
-        {
-            m_pFEI_ENCPAK->GetRefInfo(m_picStruct, m_refDist, m_numRefFrame, m_gopSize, m_gopOptFlag, m_idrInterval,
-                m_numRefActiveP, m_numRefActiveBL0, m_numRefActiveBL1, m_bRefType, m_appCfg.bFieldProcessingMode);
-        }
-        else if (m_pFEI_PreENC)
-        {
-            m_pFEI_PreENC->GetRefInfo(m_picStruct, m_refDist, m_numRefFrame, m_gopSize, m_gopOptFlag, m_idrInterval,
-                m_numRefActiveP, m_numRefActiveBL0, m_numRefActiveBL1, m_bRefType, m_appCfg.bFieldProcessingMode);
-        }
-
-        m_numOfFields = m_preencBufs.num_of_fields = m_encodeBufs.num_of_fields = (m_picStruct & MFX_PICSTRUCT_PROGRESSIVE) ? 1 : 2;
-
         msdk_printf(MSDK_STRING("\nWARNING: Incompatible video parameters adjusted by MSDK library!\n"));
     }
 
