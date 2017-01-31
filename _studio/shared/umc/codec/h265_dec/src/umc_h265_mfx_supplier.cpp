@@ -1273,6 +1273,7 @@ mfxStatus MFX_CDECL MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, 
         {
         case MFX_PICSTRUCT_UNKNOWN:
         case MFX_PICSTRUCT_PROGRESSIVE:
+        case MFX_PICSTRUCT_FIELD_SINGLE:
             out->mfx.FrameInfo.PicStruct = in->mfx.FrameInfo.PicStruct;
             break;
         default:
