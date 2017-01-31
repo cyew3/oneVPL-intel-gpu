@@ -720,6 +720,15 @@ ImplementationAvc::ImplementationAvc(VideoCORE * core)
 ImplementationAvc::~ImplementationAvc()
 {
     DestroyDanglingCmResources();
+
+    mfxExtCodingOption2 const & extOpt2 = GetExtBufferRef(m_video);
+    if (IsOn(extOpt2.UseRawRef) && (m_inputFrameType == MFX_IOPATTERN_IN_VIDEO_MEMORY))
+    {
+        // in case of raw references and external frame allocation, encoder needs to unlock DPB surfaces
+        ArrayDpbFrame const & finDpb = m_lastTask.m_dpbPostEncoding;
+        for (mfxU32 i = 0; i < finDpb.Size(); i++)
+            m_core->DecreaseReference(&finDpb[i].m_yuvRaw->Data);
+    }
 }
 void ImplementationAvc::DestroyDanglingCmResources()
 {
