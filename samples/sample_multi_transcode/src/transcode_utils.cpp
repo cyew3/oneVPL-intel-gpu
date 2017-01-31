@@ -1555,7 +1555,7 @@ mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputPar
         return MFX_ERR_UNSUPPORTED;
     }
 
-    if((!InputParams.FRCAlgorithm && !InputParams.DeinterlacingMode) && InputParams.dVPPOutFramerate)
+    if((!InputParams.FRCAlgorithm && !InputParams.bEnableDeinterlacing) && InputParams.dVPPOutFramerate)
     {
         msdk_printf(MSDK_STRING("-f option is ignored, it can be used with FRC or deinterlace options only. \n"));
         InputParams.dVPPOutFramerate=0;
