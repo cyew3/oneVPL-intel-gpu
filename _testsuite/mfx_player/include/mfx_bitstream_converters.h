@@ -754,6 +754,29 @@ protected:
 };
 
 template <>
+class BSConvert<MFX_FOURCC_A2RGB10, MFX_FOURCC_A2RGB10>
+    : public BSConverterPacketedCopy<MFX_FOURCC_A2RGB10, MFX_FOURCC_A2RGB10>
+{
+    IMPLEMENT_CLONE(BSConvert<MFX_FOURCC_A2RGB10 MFX_PP_COMMA() MFX_FOURCC_A2RGB10>);
+public:
+    BSConvert()
+    {
+        m_sample_size = 4;
+    }
+
+protected:
+    virtual mfxU8* start_pointer(mfxFrameSurface1 *surface)
+    {
+        mfxFrameData &data = surface->Data;
+        mfxFrameInfo &info = surface->Info;
+
+        mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
+
+        return (mfxU8*)surface->Data.A2RGB10 + info.CropX * m_sample_size + info.CropY * pitch;
+    }
+};
+
+template <>
 class BSConvert<MFX_FOURCC_AYUV, MFX_FOURCC_AYUV>
     : public BSConverterPacketedCopy<MFX_FOURCC_AYUV, MFX_FOURCC_AYUV>
 {

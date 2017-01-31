@@ -499,6 +499,7 @@ mfxStatus MFXDecPipeline::BuildPipeline()
          MFX_FOURCC_Y210 == m_inParams.FrameInfo.FourCC ||
          MFX_FOURCC_YUY2 == m_inParams.FrameInfo.FourCC ||
          MFX_FOURCC_Y410 == m_inParams.FrameInfo.FourCC ||
+         MFX_FOURCC_A2RGB10 == m_inParams.FrameInfo.FourCC ||
          MFX_FOURCC_AYUV == m_inParams.FrameInfo.FourCC ||
          MFX_FOURCC_NV16 == m_inParams.FrameInfo.FourCC ||
          MFX_FOURCC_R16  == m_inParams.FrameInfo.FourCC) {
@@ -513,6 +514,7 @@ mfxStatus MFXDecPipeline::BuildPipeline()
     }
 
     if ( MFX_FOURCC_Y410 == m_inParams.FrameInfo.FourCC ||
+         MFX_FOURCC_A2RGB10 == m_inParams.FrameInfo.FourCC ||
          MFX_FOURCC_AYUV == m_inParams.FrameInfo.FourCC) {
          m_components[eDEC].m_params.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
     }
