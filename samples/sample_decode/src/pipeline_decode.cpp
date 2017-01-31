@@ -279,7 +279,8 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     }
 
     // Init session
-    if (pParams->bUseHWLib) {
+    if (pParams->bUseHWLib)
+    {
         // try searching on all display adapters
         initPar.Implementation = MFX_IMPL_HARDWARE_ANY;
 
@@ -289,14 +290,11 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
         if (D3D11_MEMORY == pParams->memType)
             initPar.Implementation |= MFX_IMPL_VIA_D3D11;
 
+        // Library should pick first available compatible adapter during InitEx call with MFX_IMPL_HARDWARE_ANY
         sts = m_mfxSession.InitEx(initPar);
-
-        // MSDK API version may not support multiple adapters - then try initialize on the default
-        if (MFX_ERR_NONE != sts) {
-            initPar.Implementation = (initPar.Implementation & !MFX_IMPL_HARDWARE_ANY) | MFX_IMPL_HARDWARE;
-            sts = m_mfxSession.InitEx(initPar);
-        }
-    } else {
+    }
+    else
+    {
         initPar.Implementation = MFX_IMPL_SOFTWARE;
         sts = m_mfxSession.InitEx(initPar);
     }

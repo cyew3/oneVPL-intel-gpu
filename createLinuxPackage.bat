@@ -12,7 +12,7 @@ IF "%~2%"=="" (
 )
 
 IF "%~3%"=="" (
-	echo Binary Source Dir is not set
+	echo Docs Source Dir is not set
 	echo usage: createLinuxPackage.bat ^<TargetDir^> ^<BinarySourceDir^> ^<DocSourceDir^>
 	exit /b
 )

@@ -1897,7 +1897,7 @@ mfxStatus CTranscodingPipeline::InitDecMfxParams(sInputParams *pInParams)
         msdk_printf(MSDK_STRING("WARNING: partial acceleration\n"));
         MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
     }
-    MSDK_CHECK_STATUS(sts, "CorrectAsyncDepth failed");
+    MSDK_CHECK_STATUS(sts, "m_pmfxDEC->DecodeHeader failed");
 
     // set memory pattern
     if (m_bUseOpaqueMemory)
@@ -3085,20 +3085,8 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     // init session
     m_pmfxSession.reset(new MFXVideoSession);
 
-    if (initPar.Implementation & MFX_IMPL_HARDWARE_ANY)
-    {
-        // try search for MSDK on all display adapters
-        sts = m_pmfxSession->InitEx(initPar);
-
-        // MSDK API version may have no support for multiple adapters - then try initialize on the default
-        if (MFX_ERR_NONE != sts) {
-            initPar.Implementation = (initPar.Implementation & (!MFX_IMPL_HARDWARE_ANY)) | MFX_IMPL_HARDWARE;
-            sts = m_pmfxSession->InitEx(initPar);
-        }
-    }
-    else
-        sts = m_pmfxSession->InitEx(initPar);
-
+    // Initializing library
+    sts = m_pmfxSession->InitEx(initPar);
     MSDK_CHECK_STATUS(sts, "m_pmfxSession->InitEx failed");
 
     // check the API version of actually loaded library
