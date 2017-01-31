@@ -734,8 +734,62 @@ mfxStatus CRawVideoWriter::Init(sInputParams* pParams)
     return MFX_ERR_NONE;
 }
 
+mfxStatus CRawVideoWriter::WriteFrameNV12(mfxFrameData* pData, const msdk_char *fileId, mfxFrameInfo* pInfo) {
+    msdk_char fname[MSDK_MAX_FILENAME_LEN];
+    FILE *f;
+    mfxU32 i = 0, j = 0;
+    mfxU32 h = 0, cx = 0, cy = 0, cw = 0, ch = 0;
+    mfxU8* buf = pData->Y;
+    mfxU32 p = pData->Pitch;
 
-mfxStatus CRawVideoWriter::WriteFrame(mfxFrameData* pData, const msdk_char *fileId, mfxFrameInfo* pInfo)
+    MSDK_CHECK_POINTER(pData, MFX_ERR_NOT_INITIALIZED);
+    MSDK_CHECK_POINTER(pInfo, MFX_ERR_NOT_INITIALIZED);
+
+    #if defined(_WIN32) || defined(_WIN64)
+        if (fileId)
+            msdk_sprintf(fname, MSDK_MAX_FILENAME_LEN, MSDK_STRING("%s%s.nv12"), m_FileNameBase, fileId);
+        else
+            msdk_sprintf(fname, MSDK_MAX_FILENAME_LEN, MSDK_STRING("%s%d.nv12"), m_FileNameBase, m_FileNum);
+    #else
+        if (fileId)
+            msdk_sprintf(fname, MSDK_STRING("%s%s.argb16"), m_FileNameBase, fileId);
+        else
+            msdk_sprintf(fname, MSDK_STRING("%s%d.argb16"), m_FileNameBase, m_FileNum);
+    #endif
+
+    m_FileNum++;
+
+    MSDK_FOPEN(f, fname, MSDK_STRING("wb"));
+    MSDK_CHECK_POINTER(f, MFX_ERR_NULL_PTR);
+
+    h = pInfo->Height;
+    cx = pInfo->CropX;
+    cy = pInfo->CropY;
+    cw = pInfo->CropW;
+    ch = pInfo->CropH;
+
+    for (i = 0; i < ch; ++i)
+    {
+        fwrite(buf + cx + (cy + i)*p, 1, cw, f);
+        fflush(f);
+    }
+    buf += p*h + cx + cy*p / 2;
+    for (i = 0; i < ch / 2; ++i)
+        for (j = 1; j <= cw / 2; ++j)
+        {
+            fwrite(buf + p*i + 2 * j - 2, 1, 1, f);
+            fwrite(buf + p*i + 2 * j - 1, 1, 1, f);
+        }
+
+    fclose(f);
+
+    return MFX_ERR_NONE;
+
+}
+
+
+
+mfxStatus CRawVideoWriter::WriteFrameARGB16(mfxFrameData* pData, const msdk_char *fileId, mfxFrameInfo* pInfo)
 {
     mfxU32 i, h, w, pitch;
     mfxU16* ptr;

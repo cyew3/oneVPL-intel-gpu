@@ -83,7 +83,7 @@ protected:
     mfxCam3DLutEntry*       m_3dlut_65;
     CBmpWriter*             m_pBmpWriter;
     CVideoReader*           m_pFileReader;
-    CRawVideoWriter*        m_pARGB16FileWriter;
+    CRawVideoWriter*        m_pRawFileWriter;
     mfxU32                  m_nInputFileIndex;
     mfxU32                  m_nFrameIndex; // index of processed frame
     mfxU32                  m_nFrameLimit; // limit number of frames to proceed
@@ -101,6 +101,7 @@ protected:
     mfxExtCamGammaCorrection      m_GammaCorrection;
     mfxExtCamFwdGamma             m_3DLUT_GammaCorrection;
     mfxExtCamTotalColorControl    m_TotalColorControl;
+    mfxExtCamCscYuvRgb             m_RGBToYUV;
     mfxExtCamBlackLevelCorrection m_BlackLevelCorrection;
     mfxExtCamWhiteBalance         m_WhiteBalance;
     mfxExtCamColorCorrection3x3   m_CCM;
@@ -168,6 +169,7 @@ protected:
     virtual mfxStatus AllocAndInitCamCCM(sInputParams *pParams);
     virtual mfxStatus AllocAndInitCamLens(sInputParams *pParams);
     virtual mfxStatus AllocAndInitCamTotalColorControl(sInputParams *pParams);
+    virtual mfxStatus AllocAndInitCamRGBtoYUV(sInputParams *pParams);
     virtual mfxStatus AllocAndInitCamBlackLevelCorrection(sInputParams *pParams);
     virtual mfxStatus AllocAndInitCamHotPixelRemoval(sInputParams *pParams);
     virtual void FreeCamGammaCorrection();

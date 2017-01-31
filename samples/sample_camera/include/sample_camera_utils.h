@@ -268,6 +268,7 @@ struct sInputParams
 
     bool   bGamma;
     bool   b3DLUTGamma;
+    bool   bRGBToYUV;
     bool   bExternalGammaLUT;
     mfxU16 gamma_point[64];
     mfxU16 gamma_corrected[64];
@@ -306,6 +307,10 @@ struct sInputParams
     mfxF32 lens_bB;
     mfxF32 lens_cB;
     mfxF32 lens_dB;
+
+    bool offset;
+    mfxF32 pre[3];
+    mfxF32 post[3];
 
     bool   bCCM;
     mfxF64 CCM[3][3];
@@ -418,6 +423,13 @@ struct sInputParams
         tcc_cyan = 255;
         tcc_magenta = 255;
         tcc_yellow = 255;
+        bRGBToYUV     = false;
+        offset = false;
+        for (int i = 0; i < 3; i++)
+            pre[i] = 0;
+        post[0] = 2048;
+        post[1] = 16384;
+        post[2] = 16384;
         alphaValue = -1;
         resetInterval = 7;
         bExternalGammaLUT = false;
@@ -525,7 +537,8 @@ public :
   //~CRawVideoWriter();
 
   mfxStatus  Init(sInputParams *pParams);
-  mfxStatus  WriteFrame(mfxFrameData* pData, const msdk_char *fileExt, mfxFrameInfo* pInfo);
+  mfxStatus  WriteFrameARGB16(mfxFrameData* pData, const msdk_char *fileExt, mfxFrameInfo* pInfo);
+  mfxStatus  WriteFrameNV12(mfxFrameData* pData, const msdk_char *fileExt, mfxFrameInfo* pInfo);
 
 protected:
     msdk_char    m_FileNameBase[MSDK_MAX_FILENAME_LEN];

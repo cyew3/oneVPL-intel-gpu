@@ -35,7 +35,8 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-a asyncDepth] / [-asyncDepth asyncDepth]          - set async depth, default %d \n"), CAM_SAMPLE_ASYNC_DEPTH);
     msdk_printf(MSDK_STRING("   [-b bitDepth] / [-bitDepth bitDepth]                - set bit depth, default 10 \n"));
     msdk_printf(MSDK_STRING("   [-f format] / [-format format]                      - input Bayer format: rggb, bggr, grbg or gbrg\n"));
-    msdk_printf(MSDK_STRING("   [-of format] / [-outFormat format]                  - output format: of argb16 or 16 meaning 16 bit ARGB, 8 bit ARGB otherwise\n"));
+    msdk_printf(MSDK_STRING("   [-of format] / [-outFormat format]                  - output format: of argb16 or 16 meaning 16 bit ARGB, 8 bit ARGB, NV12\n"));
+    msdk_printf(MSDK_STRING("   [-offset pre1 pre2 pre3 post1 post2 post3]          - In case of NV12 output, offset set color pre and post offsets\n"));
     msdk_printf(MSDK_STRING("   [-3DLUT_gamma]                                      - use 3D LUT gamma correction\n"));
     msdk_printf(MSDK_STRING("   [-ng] / [-noGamma]                                  - no gamma correction\n"));
     msdk_printf(MSDK_STRING("   [-gamma_points]                                     - set specific gamma points (64 points expected)\n"));
@@ -202,6 +203,24 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-ng")) || 0 == msdk_strcmp(strInput[i], MSDK_STRING("-noGamma")))
         {
             pParams->bGamma = false;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-offset")))
+        {
+
+            if (i + 6>= nArgNum)
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for offset key"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            pParams->offset = true;
+
+            msdk_opt_read(strInput[++i], pParams->pre[0]);
+            msdk_opt_read(strInput[++i], pParams->pre[1]);
+            msdk_opt_read(strInput[++i], pParams->pre[2]);
+            msdk_opt_read(strInput[++i], pParams->post[0]);
+            msdk_opt_read(strInput[++i], pParams->post[1]);
+            msdk_opt_read(strInput[++i], pParams->post[2]);
+
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-3DLUT_gamma")))
         {
@@ -399,7 +418,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 pParams->frameInfo[VPP_OUT].FourCC = MFX_FOURCC_ARGB16;
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("abgr16")))
                 pParams->frameInfo[VPP_OUT].FourCC = MFX_FOURCC_ABGR16;
-            else
+            else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("nv12"))) {
+                pParams->frameInfo[VPP_OUT].FourCC = MFX_FOURCC_NV12;
+                pParams->bRGBToYUV = true;
+            } else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("rgb4")))
                 pParams->frameInfo[VPP_OUT].FourCC = MFX_FOURCC_RGB4;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-w")) || 0 == msdk_strcmp(strInput[i], MSDK_STRING("-width")))

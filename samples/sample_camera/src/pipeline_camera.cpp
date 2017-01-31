@@ -106,14 +106,14 @@ mfxStatus CCameraPipeline::InitMfxParams(sInputParams *pParams)
 
     // Width and height values must be aligned in order to arhive maximum paerfromance
     m_mfxVideoParams.vpp.In.Width  = align_32(m_mfxVideoParams.vpp.In.Width);
-    m_mfxVideoParams.vpp.In.Height = align(m_mfxVideoParams.vpp.In.Height);
+    m_mfxVideoParams.vpp.In.Height = align_32(m_mfxVideoParams.vpp.In.Height);
 
     m_mfxVideoParams.vpp.In.CropW = (mfxU16)pParams->frameInfo[VPP_IN].CropW;
     m_mfxVideoParams.vpp.In.CropH = (mfxU16)pParams->frameInfo[VPP_IN].CropH;
 
     // Add additional CropX,CropY if any
-    m_mfxVideoParams.vpp.In.CropX += align((mfxU16)pParams->frameInfo[VPP_IN].CropX);
-    m_mfxVideoParams.vpp.In.CropY += (mfxU16)pParams->frameInfo[VPP_IN].CropY;
+    m_mfxVideoParams.vpp.In.CropX += align_32((mfxU16)pParams->frameInfo[VPP_IN].CropX);
+    m_mfxVideoParams.vpp.In.CropY += align_32((mfxU16)pParams->frameInfo[VPP_IN].CropY);
     m_mfxVideoParams.vpp.In.FourCC = pParams->frameInfo[VPP_IN].FourCC;
     //Only R16 input supported now, should use chroma format monochrome
     m_mfxVideoParams.vpp.In.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
@@ -130,15 +130,20 @@ mfxStatus CCameraPipeline::InitMfxParams(sInputParams *pParams)
     m_mfxVideoParams.vpp.Out.CropH = (mfxU16)pParams->frameInfo[VPP_OUT].CropH;
 
     m_mfxVideoParams.vpp.Out.Width  = align_32((mfxU16)pParams->frameInfo[VPP_OUT].nWidth);
-    m_mfxVideoParams.vpp.Out.Height = align((mfxU16)pParams->frameInfo[VPP_OUT].nHeight);
-    m_mfxVideoParams.vpp.Out.CropX  = align((mfxU16)pParams->frameInfo[VPP_OUT].CropX);
-    m_mfxVideoParams.vpp.Out.CropY  = (mfxU16)pParams->frameInfo[VPP_OUT].CropY;
+    m_mfxVideoParams.vpp.Out.Height = align_32((mfxU16)pParams->frameInfo[VPP_OUT].nHeight);
+    m_mfxVideoParams.vpp.Out.CropX  = align_32((mfxU16)pParams->frameInfo[VPP_OUT].CropX);
+    m_mfxVideoParams.vpp.Out.CropY  = align_32((mfxU16)pParams->frameInfo[VPP_OUT].CropY);
     m_mfxVideoParams.vpp.Out.FourCC = pParams->frameInfo[VPP_OUT].FourCC;
-    //Only ARGB onput supported now, should use chroma format 444
-    m_mfxVideoParams.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
 
-    m_mfxVideoParams.vpp.Out.BitDepthLuma = pParams->frameInfo[VPP_OUT].FourCC == MFX_FOURCC_RGB4 ? 8 : m_mfxVideoParams.vpp.In.BitDepthLuma;
-
+    if (m_mfxVideoParams.vpp.Out.FourCC == MFX_FOURCC_NV12) {
+        m_mfxVideoParams.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+        m_mfxVideoParams.vpp.Out.BitDepthLuma = 8;
+    }
+    else {
+        //Only ARGB onput supported now, should use chroma format 444
+        m_mfxVideoParams.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+        m_mfxVideoParams.vpp.Out.BitDepthLuma = pParams->frameInfo[VPP_OUT].FourCC == MFX_FOURCC_RGB4 ? 8 : m_mfxVideoParams.vpp.In.BitDepthLuma;
+    }
     ConvertFrameRate(pParams->frameInfo[VPP_IN].dFrameRate, &m_mfxVideoParams.vpp.In.FrameRateExtN, &m_mfxVideoParams.vpp.In.FrameRateExtD);
     ConvertFrameRate(pParams->frameInfo[VPP_OUT].dFrameRate, &m_mfxVideoParams.vpp.Out.FrameRateExtN, &m_mfxVideoParams.vpp.Out.FrameRateExtD);
 
@@ -273,6 +278,12 @@ mfxStatus CCameraPipeline::InitMfxParams(sInputParams *pParams)
         sts = AllocAndInitCamTotalColorControl(pParams);
         MSDK_CHECK_STATUS(sts, "AllocAndInitCamTotalColorControl failed");
         m_ExtBuffers.push_back((mfxExtBuffer *)&m_TotalColorControl);
+    }
+    if (pParams->bRGBToYUV)
+    {
+        sts = AllocAndInitCamRGBtoYUV(pParams);
+        MSDK_CHECK_STATUS(sts, "AllocAndInitCamRGBToYUV failed");
+        m_ExtBuffers.push_back((mfxExtBuffer *)&m_RGBToYUV);
     }
     if (pParams->bHP)
     {
@@ -713,7 +724,7 @@ CCameraPipeline::CCameraPipeline()
     m_pmfxSurfacesAux = NULL;
     m_pFileReader = NULL;
     m_pBmpWriter = NULL;
-    m_pARGB16FileWriter = NULL;
+    m_pRawFileWriter = NULL;
     m_bIsExtBuffers = false;
     m_bIsRender = false;
     m_bOutput = true;
@@ -747,6 +758,10 @@ CCameraPipeline::CCameraPipeline()
     MSDK_ZERO_MEMORY(m_TotalColorControl);
     m_TotalColorControl.Header.BufferId = MFX_EXTBUF_CAM_TOTAL_COLOR_CONTROL;
     m_TotalColorControl.Header.BufferSz = sizeof(m_TotalColorControl);
+
+    MSDK_ZERO_MEMORY(m_RGBToYUV);
+    m_RGBToYUV.Header.BufferId = MFX_EXTBUF_CAM_CSC_YUV_RGB;
+    m_RGBToYUV.Header.BufferSz = sizeof(m_RGBToYUV);
 
     MSDK_ZERO_MEMORY(m_BlackLevelCorrection);
     m_BlackLevelCorrection.Header.BufferId = MFX_EXTBUF_CAM_BLACK_LEVEL_CORRECTION;
@@ -956,11 +971,12 @@ mfxStatus CCameraPipeline::Init(sInputParams *pParams)
     if (m_bOutput)
     {
         // prepare bmp file writer
-        if (pParams->frameInfo[VPP_OUT].FourCC != MFX_FOURCC_RGB4)
+        if (pParams->frameInfo[VPP_OUT].FourCC == MFX_FOURCC_ARGB16 || pParams->frameInfo[VPP_OUT].FourCC == MFX_FOURCC_NV12)
         {
-            m_pARGB16FileWriter = new CRawVideoWriter;
-            sts = m_pARGB16FileWriter->Init(pParams);
-        } else
+            m_pRawFileWriter = new CRawVideoWriter;
+            sts = m_pRawFileWriter->Init(pParams);
+        }
+        else if (pParams->frameInfo[VPP_OUT].FourCC == MFX_FOURCC_RGB4)
         {
             m_pBmpWriter = new CBmpWriter;
             sts = m_pBmpWriter->Init(pParams->strDstFile, m_mfxVideoParams.vpp.Out.CropW, m_mfxVideoParams.vpp.Out.CropH, pParams->maxNumBmpFiles);
@@ -1031,6 +1047,25 @@ mfxStatus CCameraPipeline::AllocAndInitCamBlackLevelCorrection(sInputParams *pPa
     m_BlackLevelCorrection.G0 = pParams->black_level_G0;
     m_BlackLevelCorrection.G1 = pParams->black_level_G1;
     m_BlackLevelCorrection.R  = pParams->black_level_R;
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus CCameraPipeline::AllocAndInitCamRGBtoYUV(sInputParams *pParams) {
+    for (int i = 0; i < 3; i++)
+        m_RGBToYUV.PreOffset[i] = pParams->pre[i];
+    for (int i = 0; i < 3; i++)
+        m_RGBToYUV.PostOffset[i] = pParams->post[i];
+    //Coefs of CSC (RGB to YUV) are hardcoded but they can be handled by app through command line as pre and post offsets if it will be needed
+    m_RGBToYUV.Matrix[0][0] = 0.299f;
+    m_RGBToYUV.Matrix[0][1] = 0.587f;
+    m_RGBToYUV.Matrix[0][2] = 0.114f;
+    m_RGBToYUV.Matrix[1][0] = -0.147f;
+    m_RGBToYUV.Matrix[1][1] = -0.289f;
+    m_RGBToYUV.Matrix[1][2] = 0.436f;
+    m_RGBToYUV.Matrix[2][0] = 0.615f;
+    m_RGBToYUV.Matrix[2][1] = -0.515f;
+    m_RGBToYUV.Matrix[2][2] = -0.100f;
 
     return MFX_ERR_NONE;
 }
@@ -1204,8 +1239,8 @@ void CCameraPipeline::Close()
         MSDK_SAFE_DELETE(m_pBmpWriter);
     }
 
-    if (m_pARGB16FileWriter) {
-        MSDK_SAFE_DELETE(m_pARGB16FileWriter);
+    if (m_pRawFileWriter) {
+        MSDK_SAFE_DELETE(m_pRawFileWriter);
     }
 
 #if D3D_SURFACES_SUPPORT
@@ -1302,8 +1337,8 @@ mfxStatus CCameraPipeline::Reset(sInputParams *pParams)
     if (m_bOutput)
     {
         // prepare bmp file writer
-        if (pParams->frameInfo[VPP_OUT].FourCC == MFX_FOURCC_ARGB16) {
-            sts = m_pARGB16FileWriter->Init(pParams);
+        if (pParams->frameInfo[VPP_OUT].FourCC == MFX_FOURCC_ARGB16 || pParams->frameInfo[VPP_OUT].FourCC == MFX_FOURCC_NV12) {
+            sts = m_pRawFileWriter->Init(pParams);
         } else {
             sts = m_pBmpWriter->Init(pParams->strDstFile, m_mfxVideoParams.vpp.Out.CropW, m_mfxVideoParams.vpp.Out.CropH, pParams->maxNumBmpFiles);
         }
@@ -1594,7 +1629,7 @@ mfxStatus CCameraPipeline::Run()
                                 *(ppOutSurf[asdepth]->Data.V16 + 3 + j*4 + i*stride) = (mfxU16)m_alphaValue;
                             }
                         }
-                    } else {
+                    } else if (ppOutSurf[asdepth]->Info.FourCC == MFX_FOURCC_RGB4) {
                         int stride = ppOutSurf[asdepth]->Data.Pitch;
                         for (int i = 0; i < ppOutSurf[asdepth]->Info.Height; i++) {
                             for (int j = 0; j < ppOutSurf[asdepth]->Info.Width; j++) {
@@ -1603,16 +1638,18 @@ mfxStatus CCameraPipeline::Run()
                         }
                     }
                 }
-
 #ifdef CAMP_PIPE_ITT
     __itt_task_begin(CamPipeAccel, __itt_null, __itt_null, task2);
 #endif
 
                 camera_printf("writing frame %d \n", ppOutSurf[asdepth]->Data.FrameOrder);
 
-                if (m_pARGB16FileWriter)
-                    m_pARGB16FileWriter->WriteFrame(&ppOutSurf[asdepth]->Data, 0, &ppOutSurf[asdepth]->Info);
-                else if (m_pBmpWriter)
+                if (m_pRawFileWriter) {
+                    if (ppOutSurf[asdepth]->Info.FourCC == MFX_FOURCC_ARGB16)
+                        m_pRawFileWriter->WriteFrameARGB16(&ppOutSurf[asdepth]->Data, 0, &ppOutSurf[asdepth]->Info);
+                    else if (ppOutSurf[asdepth]->Info.FourCC == MFX_FOURCC_NV12)
+                        m_pRawFileWriter->WriteFrameNV12(&ppOutSurf[asdepth]->Data, 0, &ppOutSurf[asdepth]->Info);
+                } else if (m_pBmpWriter)
                     m_pBmpWriter->WriteFrame(&ppOutSurf[asdepth]->Data, 0, &ppOutSurf[asdepth]->Info);
 
 #ifdef CAMP_PIPE_ITT
@@ -1799,7 +1836,8 @@ mfxStatus CCameraPipeline::Run()
                                 *(ppOutSurf[tail_asdepth]->Data.V16 + 3 + j*4 + i*stride) = (mfxU16)m_alphaValue;
                             }
                         }
-                    } else {
+                    }
+                    else if (ppOutSurf[tail_asdepth]->Info.FourCC == MFX_FOURCC_RGB4) {
                         int stride = ppOutSurf[tail_asdepth]->Data.Pitch;
                         for (int i = 0; i < ppOutSurf[tail_asdepth]->Info.Height; i++) {
                             for (int j = 0; j < ppOutSurf[tail_asdepth]->Info.Width; j++) {
@@ -1808,8 +1846,12 @@ mfxStatus CCameraPipeline::Run()
                         }
                     }
                 }
-                if (m_pARGB16FileWriter)
-                    m_pARGB16FileWriter->WriteFrame(&ppOutSurf[tail_asdepth]->Data, 0, &ppOutSurf[tail_asdepth]->Info);
+                if (m_pRawFileWriter) {
+                    if (ppOutSurf[tail_asdepth]->Info.FourCC == MFX_FOURCC_ARGB16)
+                        m_pRawFileWriter->WriteFrameARGB16(&ppOutSurf[tail_asdepth]->Data, 0, &ppOutSurf[tail_asdepth]->Info);
+                    else if (ppOutSurf[tail_asdepth]->Info.FourCC == MFX_FOURCC_NV12)
+                        m_pRawFileWriter->WriteFrameNV12(&ppOutSurf[tail_asdepth]->Data, 0, &ppOutSurf[tail_asdepth]->Info);
+                }
                 else if (m_pBmpWriter)
                     m_pBmpWriter->WriteFrame(&ppOutSurf[tail_asdepth]->Data, 0, &ppOutSurf[tail_asdepth]->Info);
 
