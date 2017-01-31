@@ -50,7 +50,7 @@ static mfxStatus ApplyTargetUsage (mfxVideoParam* par, UMC::MPEG2EncoderParams* 
   static Ipp32s MAX_RANGE_X [4]= {512, 1024, 2048, 2048};
   static Ipp32s MAX_RANGE_Y [4]= {64,  128,  128,  128};
 
-  int t =    (umcpar->profile == SP)?  0 : 
+  int t =    (umcpar->profile == SP)?  0 :
             ((umcpar->profile == MP)?  1:
             ((umcpar->profile == H14)? 2: 3));
 
@@ -282,7 +282,7 @@ mfxStatus MFXVideoENCODEMPEG2::Query(mfxVideoParam *in, mfxVideoParam *out)
             memset ((mfxU8*)(ext_out) + bufOffset,0, bufSize);
 
             ext_out->EndOfSequence     = 1;
-            ext_out->FramePicture      = 1;    
+            ext_out->FramePicture      = 1;
         }
         mfxExtCodingOptionSPSPPS* pSPSPPS_out = SHParametersEx::GetExtCodingOptionsSPSPPS (out->ExtParam, out->NumExtParam);
         if (pSPSPPS_out)
@@ -329,7 +329,7 @@ mfxStatus MFXVideoENCODEMPEG2::Query(mfxVideoParam *in, mfxVideoParam *out)
                 {
                     if (real_size <= pSPSPPS_out->SPSBufSize)
                     {
-                        memcpy_s(pSPSPPS_out->SPSBuffer, real_size * sizeof(mfxU8), pSPSPPS_in->SPSBuffer, real_size * sizeof(mfxU8));  
+                        memcpy_s(pSPSPPS_out->SPSBuffer, real_size * sizeof(mfxU8), pSPSPPS_in->SPSBuffer, real_size * sizeof(mfxU8));
                         memset(pSPSPPS_out->SPSBuffer + real_size, 0, pSPSPPS_out->SPSBufSize - real_size);
                     }
                     else
@@ -343,17 +343,17 @@ mfxStatus MFXVideoENCODEMPEG2::Query(mfxVideoParam *in, mfxVideoParam *out)
                 {
                     memset(pSPSPPS_out->SPSBuffer, 0, pSPSPPS_out->SPSBufSize);
                     bUnsupported   = true;
-                }        
+                }
             }
             else if (pSPSPPS_in->SPSBuffer || pSPSPPS_out->SPSBuffer || pSPSPPS_out->SPSBufSize || pSPSPPS_in->SPSBufSize)
             {
-                bUnsupported   = true;                
+                bUnsupported   = true;
 
             }
         }
         else if (!(pSPSPPS_in == 0 && pSPSPPS_out ==0))
         {
-            bUnsupported   = true;  
+            bUnsupported   = true;
         }
 
         if (out->Protected)
@@ -395,16 +395,25 @@ mfxStatus MFXVideoENCODEMPEG2::Query(mfxVideoParam *in, mfxVideoParam *out)
             bUnsupported = true;
         }
 
-
+        switch(out->IOPattern)
         {
-            mfxU32 temp = out->IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_IN_SYSTEM_MEMORY);
-
-            if ((temp == 0 && out->IOPattern) || temp == (MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_IN_SYSTEM_MEMORY))
-            {
-                out->IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
+            case 0:
+            case MFX_IOPATTERN_IN_VIDEO_MEMORY:
+            case MFX_IOPATTERN_IN_SYSTEM_MEMORY:
+            case MFX_IOPATTERN_IN_OPAQUE_MEMORY:
+                break;
+            default:
                 bWarning = true;
-            }
+                if (out->IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY)
+                    out->IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
+                else if (in->IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY)
+                    out->IOPattern = MFX_IOPATTERN_IN_OPAQUE_MEMORY;
+                else if (out->IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY)
+                    out->IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
+                else
+                    out->IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
         }
+
         mfxExtCodingOption* ext_in  = GetExtCodingOptions(in->ExtParam, in->NumExtParam);
         mfxExtCodingOption* ext_out = GetExtCodingOptions(out->ExtParam,out->NumExtParam);
 
@@ -422,7 +431,7 @@ mfxStatus MFXVideoENCODEMPEG2::Query(mfxVideoParam *in, mfxVideoParam *out)
                 memset ((mfxU8*)(ext_out) + bufOffset,0, bufSize);
 
                 ext_out->EndOfSequence     = temp.EndOfSequence;
-                ext_out->FramePicture      = temp.FramePicture;  
+                ext_out->FramePicture      = temp.FramePicture;
 
                 bWarning = bWarning || (memcmp((mfxU8*)(ext_out) + bufOffset,(mfxU8*)(&temp) + bufOffset, bufSize)!= 0);
                 bUnsupported = bUnsupported || (temp.FieldOutput == MFX_CODINGOPTION_ON);
@@ -469,8 +478,8 @@ mfxStatus MFXVideoENCODEMPEG2::Query(mfxVideoParam *in, mfxVideoParam *out)
             sts = CheckFrameRateMPEG2(out->mfx.FrameInfo.FrameRateExtD, out->mfx.FrameInfo.FrameRateExtN);
             if (sts != MFX_ERR_NONE)
             {
-                bWarning = true;            
-            }        
+                bWarning = true;
+            }
         }
         else
         {
@@ -499,8 +508,8 @@ mfxStatus MFXVideoENCODEMPEG2::Query(mfxVideoParam *in, mfxVideoParam *out)
         }
 
         sts = CheckAspectRatioMPEG2 (out->mfx.FrameInfo.AspectRatioW,
-            out->mfx.FrameInfo.AspectRatioH, 
-            out->mfx.FrameInfo.Width, 
+            out->mfx.FrameInfo.AspectRatioH,
+            out->mfx.FrameInfo.Width,
             out->mfx.FrameInfo.Height,
             out->mfx.FrameInfo.CropW,
             out->mfx.FrameInfo.CropH);
@@ -511,7 +520,7 @@ mfxStatus MFXVideoENCODEMPEG2::Query(mfxVideoParam *in, mfxVideoParam *out)
             if (sts < MFX_ERR_NONE)
             {
                 out->mfx.FrameInfo.AspectRatioW = 1;
-                out->mfx.FrameInfo.AspectRatioH = 1; 
+                out->mfx.FrameInfo.AspectRatioH = 1;
             }
         }
 
@@ -589,7 +598,7 @@ mfxStatus MFXVideoENCODEMPEG2::QueryIOSurf(mfxVideoParam *par_input, mfxFrameAll
         MFX_CHECK(!pSPSPPS->PPSBuffer, MFX_ERR_INVALID_VIDEO_PARAM);
 
         if  (!SHParametersEx::CheckSHParameters(pSPSPPS->SPSBuffer, pSPSPPS->SPSBufSize, real_len, par, 0))
-            return MFX_ERR_INVALID_VIDEO_PARAM;   
+            return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
     if (par->mfx.FrameInfo.Width > 0x1fff || (par->mfx.FrameInfo.Width & 0x0f) != 0)
@@ -729,7 +738,7 @@ mfxStatus MFXVideoENCODEMPEG2::ResetImpl(mfxVideoParam *par_input)
         delete pSHEx;
         pSHEx = 0;
     }
-    pSHEx = new SHParametersEx;  
+    pSHEx = new SHParametersEx;
 
     if (pSPSPPS)
     {
@@ -772,18 +781,18 @@ mfxStatus MFXVideoENCODEMPEG2::ResetImpl(mfxVideoParam *par_input)
     m_Height = par->mfx.FrameInfo.Height;
 
 
-    
+
     sts = CheckFrameRateMPEG2(par->mfx.FrameInfo.FrameRateExtD, par->mfx.FrameInfo.FrameRateExtN);
-    
+
     if (sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)
     {
-        warning = true;        
+        warning = true;
     }
     else if (sts == MFX_ERR_INVALID_VIDEO_PARAM)
     {
         invalid = true;
     }
-    
+
     if ((par->mfx.FrameInfo.Width  & 15) !=0)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
@@ -807,10 +816,10 @@ mfxStatus MFXVideoENCODEMPEG2::ResetImpl(mfxVideoParam *par_input)
         mfxU32 bufOffset = sizeof(mfxExtBuffer);
         mfxU32 bufSize   = sizeof(mfxExtCodingOption) - bufOffset;
         temp.EndOfSequence = ext->EndOfSequence;
-        temp.FramePicture  = ext->FramePicture;  
+        temp.FramePicture  = ext->FramePicture;
 
         warning  = warning || (memcmp((mfxU8*)(ext) + bufOffset,(mfxU8*)(&temp) + bufOffset, bufSize)!= 0);
-        invalid  = invalid || (ext->FieldOutput == MFX_CODINGOPTION_ON);   
+        invalid  = invalid || (ext->FieldOutput == MFX_CODINGOPTION_ON);
 
     }
 
@@ -863,22 +872,22 @@ mfxStatus MFXVideoENCODEMPEG2::ResetImpl(mfxVideoParam *par_input)
 
     sts = CheckAspectRatioMPEG2(
         par->mfx.FrameInfo.AspectRatioW,
-        par->mfx.FrameInfo.AspectRatioH, 
-        params.info.clip_info.width, 
+        par->mfx.FrameInfo.AspectRatioH,
+        params.info.clip_info.width,
         params.info.clip_info.height,
-        0, 
+        0,
         0);
 
     if (sts == MFX_ERR_INCOMPATIBLE_VIDEO_PARAM)
     {
-        warning = true;  
+        warning = true;
         par->mfx.FrameInfo.AspectRatioW = 1;
         par->mfx.FrameInfo.AspectRatioH = 1;
     }
     else if (sts < 0)
     {
         par->mfx.FrameInfo.AspectRatioW = 0;
-        par->mfx.FrameInfo.AspectRatioH = 0; 
+        par->mfx.FrameInfo.AspectRatioH = 0;
         invalid = true;
     }
 
@@ -981,10 +990,10 @@ mfxStatus MFXVideoENCODEMPEG2::ResetImpl(mfxVideoParam *par_input)
         {
             //Default HRD buffer must be limited by 300 frames.
 
-            mfxF64 frameSize = brcParams.maxBitrate != 0 
+            mfxF64 frameSize = brcParams.maxBitrate != 0
                              ? brcParams.maxBitrate / brcParams.info.framerate / 8
                              : brcParams.targetBitrate / brcParams.info.framerate / 8;
-            
+
             brcParams.HRDBufferSizeBytes = (mfxU32)(frameSize * 100);
         }
         brcParams.info.interlace_type = params.info.interlace_type;
@@ -1145,9 +1154,9 @@ mfxStatus MFXVideoENCODEMPEG2::ResetImpl(mfxVideoParam *par_input)
         MFX_CHECK(sts >=0, sts);
         sts = m_InputSurfaces.Reset (par, request.NumFrameMin);
         MFX_CHECK_STS(sts);
-    } 
-    // Alloc reconstructed frames: 
-    {        
+    }
+    // Alloc reconstructed frames:
+    {
         m_request.NumFrameMin       = m_InputSurfaces.isSysMemFrames() ? 2 : 3;
         m_request.NumFrameSuggested = m_request.NumFrameMin;
         m_request.Type              = MFX_MEMTYPE_FROM_ENCODE|MFX_MEMTYPE_INTERNAL_FRAME|MFX_MEMTYPE_SYSTEM_MEMORY;
@@ -1158,7 +1167,7 @@ mfxStatus MFXVideoENCODEMPEG2::ResetImpl(mfxVideoParam *par_input)
     }
     m_IOPattern = par->IOPattern;
     if (m_response.NumFrameActual>0)
-    {        
+    {
         if (m_response.NumFrameActual < m_request.NumFrameMin)
         {
             return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
@@ -1231,7 +1240,7 @@ mfxStatus MFXVideoENCODEMPEG2::Close(void)
     if (pSHEx)
     {
         delete pSHEx;
-        pSHEx = 0;  
+        pSHEx = 0;
     }
     for (mfxI32 i=0; i<2; i++)
     {
@@ -1464,7 +1473,7 @@ mfxStatus MFXVideoENCODEMPEG2::GetVideoParam(mfxVideoParam *par)
         mfxU16 mult = IPP_MAX((mfxU16)((m_BufferSizeInKB + 0xffff) / 0x10000), 1);
         par->mfx.BRCParamMultiplier = mult;
         par->mfx.BufferSizeInKB = (mfxU16)((m_BufferSizeInKB  + mult - 1) / mult);
-    }    
+    }
 
     par->mfx.NumThread         = (mfxU8)encodeInfo.numThreads;
 
@@ -1695,8 +1704,8 @@ mfxStatus MFXVideoENCODEMPEG2::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSur
 
         if (surface->Data.Y)
         {
-            MFX_CHECK(surface->Data.Pitch < 0x8000, MFX_ERR_UNDEFINED_BEHAVIOR);        
-            CHECK_VERSION(surface->Version);        
+            MFX_CHECK(surface->Data.Pitch < 0x8000, MFX_ERR_UNDEFINED_BEHAVIOR);
+            CHECK_VERSION(surface->Version);
         }
         sts = m_core->IncreaseReference(&surface->Data);
         MFX_CHECK_STS(sts);
@@ -1769,7 +1778,7 @@ mfxStatus MFXVideoENCODEMPEG2::EncodeFrame(mfxEncodeCtrl* /*ctrl*/, mfxEncodeInt
   {
     mfxU16 type = pInputInternalParams->FrameType & (MFX_FRAMETYPE_I|MFX_FRAMETYPE_P|MFX_FRAMETYPE_B);
     if (m_codec.encodeInfo.lFlags & UMC::FLAG_VENC_REORDER)
-    {      
+    {
       if (type != MFX_FRAMETYPE_I)
       {
           GetFrameTypeMpeg2 (m_nFrameInGOP,
@@ -1779,7 +1788,7 @@ mfxStatus MFXVideoENCODEMPEG2::EncodeFrame(mfxEncodeCtrl* /*ctrl*/, mfxEncodeInt
               &pInputInternalParams->FrameType);
       }
       m_nFrameInGOP = (pInputInternalParams->FrameType & MFX_FRAMETYPE_I) ? 1 : m_nFrameInGOP + 1;
-    } 
+    }
     else
     {
       MFX_CHECK((type == MFX_FRAMETYPE_I || type == MFX_FRAMETYPE_P || type == MFX_FRAMETYPE_B), MFX_ERR_UNDEFINED_BEHAVIOR);
@@ -1810,7 +1819,7 @@ mfxStatus MFXVideoENCODEMPEG2::EncodeFrame(mfxEncodeCtrl* /*ctrl*/, mfxEncodeInt
     }
   }
 
- 
+
 
   m_codec.repeat_first_field = 0;
   m_codec.top_field_first = 0;
@@ -1935,7 +1944,7 @@ mfxStatus MFXVideoENCODEMPEG2::EncodeFrame(mfxEncodeCtrl* /*ctrl*/, mfxEncodeInt
   }
 
   ret = GetFrame(pInternalParams, surface, bs);
-  
+
   if(ret != MFX_ERR_NONE)
     return ret;
 
@@ -2036,7 +2045,7 @@ mfxStatus MFXVideoENCODEMPEG2::GetFrame(mfxEncodeInternalParams *pInternalParams
       sts = m_core->IncreaseReference(&pCpy->Data);
       MFX_CHECK_STS(sts);
 
-      sts = m_core->DoFastCopyWrapper(pCpy, 
+      sts = m_core->DoFastCopyWrapper(pCpy,
                                       MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY,
                                       pInp,
                                       mfxU16((m_IOPattern & MFX_MEMTYPE_OPAQUE_FRAME) ? MFX_MEMTYPE_INTERNAL_FRAME : MFX_MEMTYPE_EXTERNAL_FRAME) | MFX_MEMTYPE_DXVA2_DECODER_TARGET);
@@ -2191,7 +2200,7 @@ mfxStatus MFXVideoENCODEMPEG2::GetFrame(mfxEncodeInternalParams *pInternalParams
 
   bs->DataLength += m_codec.mEncodedSize;
   bs->TimeStamp = curenc->Data.TimeStamp;
-  bs->DecodeTimeStamp = (m_codec.picture_coding_type == UMC::MPEG2_B_PICTURE)? 
+  bs->DecodeTimeStamp = (m_codec.picture_coding_type == UMC::MPEG2_B_PICTURE)?
       CalcDTSForNonRefFrameMpeg2(bs->TimeStamp):
       CalcDTSForRefFrameMpeg2(bs->TimeStamp,m_codec.P_distance, m_codec.encodeInfo.IPDistance, m_codec.encodeInfo.info.framerate);
 
@@ -2240,7 +2249,7 @@ mfxStatus MFXVideoENCODEMPEG2::EncodeFrameReordered(mfxEncodeInternalParams *pIn
       else if  (m_codec.picture_coding_type == UMC::MPEG2_B_PICTURE)
          m_codec.brc->SetQP(pInternalParams->QP, UMC::B_PICTURE);
     }
-  }  
+  }
   m_codec.ipflag = 0;
 
   if (m_codec.picture_structure == MPEG2_FRAME_PICTURE) {
@@ -2515,7 +2524,7 @@ mfxStatus MFXVideoENCODEMPEG2::PutPicture(mfxPayload **pPayloads, mfxU32 numPayl
   {
     m_codec.curr_frame_pred = 1;
     m_codec.curr_frame_dct    = 1;
-  
+
   }
   if(m_codec.curr_frame_dct == 1)
     m_codec.curr_scan = m_codec.encodeInfo.altscan_tab[m_codec.picture_coding_type - 1] = (m_codec.picture_structure == MPEG2_FRAME_PICTURE)? 0:1;
@@ -2543,7 +2552,7 @@ mfxStatus MFXVideoENCODEMPEG2::PutPicture(mfxPayload **pPayloads, mfxU32 numPayl
             mfxU8 *pBuff = 0;
             mfxU32 len = 0;
             pSHEx->GetSH(&pBuff,&len);
-           
+
             if (!pBuff || len == 0)
             {
                 m_codec.PutSequenceHeader();
@@ -2554,7 +2563,7 @@ mfxStatus MFXVideoENCODEMPEG2::PutPicture(mfxPayload **pPayloads, mfxU32 numPayl
             else
             {
                 m_codec.PutSequenceHeader(pBuff,len);
-                
+
             }
 
             // optionally output some text data
@@ -2626,10 +2635,10 @@ mfxStatus MFXVideoENCODEMPEG2::PutPicture(mfxPayload **pPayloads, mfxU32 numPayl
             {
                 if(pPayloads[i]!=0 && pPayloads[i]->Type == USER_START_CODE)
                 {
-                    m_codec.setUserData(pPayloads[i]->Data, (pPayloads[i]->NumBit+7)>>3);           
+                    m_codec.setUserData(pPayloads[i]->Data, (pPayloads[i]->NumBit+7)>>3);
                     m_codec.PutUserData(2);
                 }
-            }           
+            }
         }
     }
     catch (MPEG2_Exceptions exception)
@@ -2650,14 +2659,14 @@ mfxStatus MFXVideoENCODEMPEG2::PutPicture(mfxPayload **pPayloads, mfxU32 numPayl
 #ifdef MPEG2_USE_DUAL_PRIME
     m_codec.dpflag=m_codec.encodeInfo.enable_Dual_prime && (m_codec.P_distance==1) && !m_codec.progressive_frame && !m_codec.curr_frame_pred && !m_codec.ipflag && !m_codec.bQuantiserChanged && m_codec.is_interlaced_queue;
 #endif //MPEG2_USE_DUAL_PRIME
-    //logi(encodeInfo.numThreads);       
-    
+    //logi(encodeInfo.numThreads);
+
 
    m_IntTasks.m_CurrTask = 0;
    for (mfxU32 i = 0; i < m_IntTasks.m_NumTasks; i++) {
         vm_event_signal(&m_IntTasks.m_TaskInfo[i].task_prepared_event);
    }
-   m_core->INeedMoreThreadsInside(this); 
+   m_core->INeedMoreThreadsInside(this);
 
 
    {
@@ -2971,7 +2980,7 @@ toI:
             Ipp8u *p = m_codec.out_pointer + size;
             m_codec.brc->GetMinMaxFrameSize(&minSize, &maxSize);
             Ipp32s nBytes = (minSize - bitsize + 7) >> 3;
-            if (nBytes < 0) 
+            if (nBytes < 0)
               nBytes = 0; // just in case
             if (size + nBytes <= m_codec.output_buffer_size) {
               memset(p,0,nBytes);
@@ -3083,7 +3092,7 @@ mfxStatus MFXVideoENCODEMPEG2::CreateTaskInfo()
         num_tasks = (2*m_codec.encodeInfo.numThreads >= m_codec.MBcountV)? m_codec.MBcountV/2 : m_codec.MBcountV/4 ;
         if (m_codec.encodeInfo.info.interlace_type != UMC::PROGRESSIVE) {
             num_tasks= (2*m_codec.encodeInfo.numThreads >= m_codec.MBcountV) ? m_codec.MBcountV/2 : ((4*m_codec.encodeInfo.numThreads > m_codec.MBcountV) ? m_codec.MBcountV/4: m_codec.MBcountV/8);
-        }  
+        }
     }
   }
   num_tasks = num_tasks!=0 ? num_tasks : 1;
@@ -3104,7 +3113,7 @@ mfxStatus MFXVideoENCODEMPEG2::CreateTaskInfo()
             else
             {
                 m_IntTasks.m_TaskSpec[i].dstSz = ((m_codec.MBcountV + num_tasks - 1)/num_tasks)*m_codec.MBcountH*64*6*3;
-                m_IntTasks.m_TaskSpec[i].pDst  = MP2_ALLOC(Ipp8u, m_IntTasks.m_TaskSpec[i].dstSz);                
+                m_IntTasks.m_TaskSpec[i].pDst  = MP2_ALLOC(Ipp8u, m_IntTasks.m_TaskSpec[i].dstSz);
             }
             m_IntTasks.m_TaskSpec[i].pDiff   = MP2_ALLOC(Ipp16s, 3*256);
             m_IntTasks.m_TaskSpec[i].pDiff1  = MP2_ALLOC(Ipp16s, 3*256);
@@ -3131,7 +3140,7 @@ mfxStatus MFXVideoENCODEMPEG2::CreateTaskInfo()
               return MFX_ERR_MEMORY_ALLOC;
         }
   }
-  else 
+  else
   {
       MFX_CHECK_NULL_PTR1(m_IntTasks.m_TaskSpec);
 
@@ -3185,7 +3194,7 @@ void MFXVideoENCODEMPEG2::DeleteTaskInfo()
             {
                 MP2_FREE(m_IntTasks.m_TaskSpec[i].me_matrix_buff);
             }
-        }    
+        }
         delete [] m_IntTasks.m_TaskSpec;
         m_IntTasks.m_TaskSpec = 0;
 
@@ -3194,12 +3203,12 @@ void MFXVideoENCODEMPEG2::DeleteTaskInfo()
     {
         for (mfxU32 i=0; i< m_IntTasks.m_NumTasks; i++)
         {
-            if (vm_event_is_valid(&m_IntTasks.m_TaskInfo[i].task_prepared_event)) 
+            if (vm_event_is_valid(&m_IntTasks.m_TaskInfo[i].task_prepared_event))
             {
                 vm_event_destroy(&m_IntTasks.m_TaskInfo[i].task_prepared_event);
                 vm_event_set_invalid(&m_IntTasks.m_TaskInfo[i].task_prepared_event);
             }
-            if (vm_event_is_valid(&m_IntTasks.m_TaskInfo[i].task_ready_event)) 
+            if (vm_event_is_valid(&m_IntTasks.m_TaskInfo[i].task_ready_event))
             {
                 vm_event_destroy(&m_IntTasks.m_TaskInfo[i].task_ready_event);
                 vm_event_set_invalid(&m_IntTasks.m_TaskInfo[i].task_ready_event);
