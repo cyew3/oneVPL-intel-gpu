@@ -224,7 +224,7 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("  -vpp_comp_dst_h             Height of this stream in composed stream (should be used in decoder session)\n"));
     msdk_printf(MSDK_STRING("  -vpp_comp_dst_w             Width of this stream in composed stream (should be used in decoder session)\n"));
 #if _MSDK_API >= MSDK_API(1,22)
-    msdk_printf(MSDK_STRING("   [-sfc_resize               Fixed function resize after decoder using direct pipe connection\n"));
+    msdk_printf(MSDK_STRING("  -dec_postproc               Resize after decoder using direct pipe (should be used in decoder session)\n"));
 #endif //_MSDK_API >= MSDK_API(1,22)
     msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("ParFile format:\n"));
@@ -1260,9 +1260,9 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
                 InputParams.eModeExt = VppComp;
         }
 #if _MSDK_API >= MSDK_API(1,22)
-        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-sfc_resize")))
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-dec_postproc")))
         {
-            InputParams.bSfcResizeInDecoder = true;
+            InputParams.bDecoderPostProcessing = true;
             if (InputParams.eModeExt != VppComp)
                 InputParams.eModeExt = VppComp;
         }

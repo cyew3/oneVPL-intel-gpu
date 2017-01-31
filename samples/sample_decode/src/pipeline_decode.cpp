@@ -128,9 +128,9 @@ CDecodingPipeline::CDecodingPipeline()
     m_VppVideoSignalInfo.Header.BufferSz = sizeof(m_VppVideoSignalInfo);
 
 #if _MSDK_API >= MSDK_API(1,22)
-    MSDK_ZERO_MEMORY(m_SfcVideoProcessing);
-    m_SfcVideoProcessing.Header.BufferId = MFX_EXTBUFF_DEC_VIDEO_PROCESSING;
-    m_SfcVideoProcessing.Header.BufferSz = sizeof(mfxExtDecVideoProcessing);
+    MSDK_ZERO_MEMORY(m_DecoderPostProcessing);
+    m_DecoderPostProcessing.Header.BufferId = MFX_EXTBUFF_DEC_VIDEO_PROCESSING;
+    m_DecoderPostProcessing.Header.BufferSz = sizeof(mfxExtDecVideoProcessing);
 #endif //_MSDK_API >= MSDK_API(1,22)
 
     m_hwdev = NULL;
@@ -470,6 +470,20 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
 bool CDecodingPipeline::IsVppRequired(sInputParams *pParams)
 {
     bool bVppIsUsed = false;
+    /* Re-size */
+    if ( (m_mfxVideoParams.mfx.FrameInfo.CropW != pParams->Width) ||
+        (m_mfxVideoParams.mfx.FrameInfo.CropH != pParams->Height) )
+    {
+        bVppIsUsed |= pParams->Width && pParams->Height;
+#if _MSDK_API >= MSDK_API(1,22)
+        if ((MODE_DECODER_POSTPROC_AUTO == pParams->nDecoderPostProcessing) ||
+            (MODE_DECODER_POSTPROC_FORCE == pParams->nDecoderPostProcessing) )
+        {
+            /* Decoder will make decision about internal post-processing usage slightly later */
+            bVppIsUsed = false;
+        }
+#endif //_MSDK_API >= MSDK_API(1,22)
+    }
     // JPEG and Capture decoders can provide output in nv12 and rgb4 formats
     if ((pParams->videoType == MFX_CODEC_JPEG) ||
         ((pParams->videoType == MFX_CODEC_CAPTURE)) )
@@ -479,12 +493,6 @@ bool CDecodingPipeline::IsVppRequired(sInputParams *pParams)
     else
     {
         bVppIsUsed = m_fourcc && (m_fourcc != m_mfxVideoParams.mfx.FrameInfo.FourCC);
-    }
-
-    if ( (m_mfxVideoParams.mfx.FrameInfo.CropW != pParams->Width) ||
-        (m_mfxVideoParams.mfx.FrameInfo.CropH != pParams->Height) )
-    {
-        bVppIsUsed |= pParams->Width && pParams->Height;
     }
 
     if (pParams->eDeinterlace)
@@ -780,27 +788,54 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
     }
 
 #if _MSDK_API >= MSDK_API(1,22)
-    /* SFC usage if enabled */
-    if ((pParams->bSfcResizeInDecoder) &&
-        (MFX_CODEC_AVC == m_mfxVideoParams.mfx.CodecId) && /* Only for AVC */
-        (MFX_PICSTRUCT_PROGRESSIVE == m_mfxVideoParams.mfx.FrameInfo.PicStruct)) /* ...And only for progressive!*/
+    /* Lets make final decision how to use VPP...*/
+    if (!m_bVppIsUsed)
     {
-        m_SfcVideoProcessing.In.CropX = 0;
-        m_SfcVideoProcessing.In.CropY = 0;
-        m_SfcVideoProcessing.In.CropW = m_mfxVideoParams.mfx.FrameInfo.Width;
-        m_SfcVideoProcessing.In.CropH = m_mfxVideoParams.mfx.FrameInfo.Height;
 
-        m_SfcVideoProcessing.Out.FourCC = m_mfxVideoParams.mfx.FrameInfo.FourCC;
-        m_SfcVideoProcessing.Out.ChromaFormat = m_mfxVideoParams.mfx.FrameInfo.ChromaFormat;
-        m_SfcVideoProcessing.Out.Width = MSDK_ALIGN16(pParams->sfcReSizeWidth);
-        m_SfcVideoProcessing.Out.Height = MSDK_ALIGN16(pParams->sfcReSizeHeight);
-        m_SfcVideoProcessing.Out.CropX = 0;
-        m_SfcVideoProcessing.Out.CropY = 0;
-        m_SfcVideoProcessing.Out.CropW = pParams->sfcReSizeWidth;
-        m_SfcVideoProcessing.Out.CropH = pParams->sfcReSizeHeight;
+        if ( (m_mfxVideoParams.mfx.FrameInfo.CropW != pParams->Width) ||
+            (m_mfxVideoParams.mfx.FrameInfo.CropH != pParams->Height) )
+        {
+            /* By default VPP used for resize */
+            m_bVppIsUsed = true;
+            /* But... lets try to use decoder's post processing */
+            if ( ((MODE_DECODER_POSTPROC_AUTO == pParams->nDecoderPostProcessing) ||
+                  (MODE_DECODER_POSTPROC_FORCE == pParams->nDecoderPostProcessing)) &&
+                 (MFX_CODEC_AVC == m_mfxVideoParams.mfx.CodecId) && /* Only for AVC */
+                 (MFX_PICSTRUCT_PROGRESSIVE == m_mfxVideoParams.mfx.FrameInfo.PicStruct)) /* ...And only for progressive!*/
+            {   /* it is possible to use decoder's post-processing */
+                m_bVppIsUsed = false;
+                m_DecoderPostProcessing.In.CropX = 0;
+                m_DecoderPostProcessing.In.CropY = 0;
+                m_DecoderPostProcessing.In.CropW = m_mfxVideoParams.mfx.FrameInfo.Width;
+                m_DecoderPostProcessing.In.CropH = m_mfxVideoParams.mfx.FrameInfo.Height;
 
-        m_ExtBuffers.push_back((mfxExtBuffer *)&m_SfcVideoProcessing);
-        AttachExtParam();
+                m_DecoderPostProcessing.Out.FourCC = m_mfxVideoParams.mfx.FrameInfo.FourCC;
+                m_DecoderPostProcessing.Out.ChromaFormat = m_mfxVideoParams.mfx.FrameInfo.ChromaFormat;
+                m_DecoderPostProcessing.Out.Width = MSDK_ALIGN16(pParams->Width);
+                m_DecoderPostProcessing.Out.Height = MSDK_ALIGN16(pParams->Height);
+                m_DecoderPostProcessing.Out.CropX = 0;
+                m_DecoderPostProcessing.Out.CropY = 0;
+                m_DecoderPostProcessing.Out.CropW = pParams->Width;
+                m_DecoderPostProcessing.Out.CropH = pParams->Height;
+
+                m_ExtBuffers.push_back((mfxExtBuffer *)&m_DecoderPostProcessing);
+                AttachExtParam();
+                msdk_printf(MSDK_STRING("Decoder's post-processing is used for resizing\n") );
+            }
+            /* POSTPROC_FORCE */
+            if (MODE_DECODER_POSTPROC_FORCE == pParams->nDecoderPostProcessing)
+            {
+               if ((MFX_CODEC_AVC != m_mfxVideoParams.mfx.CodecId) ||
+                   (MFX_PICSTRUCT_PROGRESSIVE != m_mfxVideoParams.mfx.FrameInfo.PicStruct))
+               {
+                   /* it is impossible to use decoder's post-processing */
+                   msdk_printf(MSDK_STRING("ERROR: decoder postprocessing (-dec_postproc forced) cannot resize this stream!\n") );
+                   return MFX_ERR_UNSUPPORTED;
+               }
+            }
+            if ((m_bVppIsUsed) && (MODE_DECODER_POSTPROC_AUTO == pParams->nDecoderPostProcessing))
+                msdk_printf(MSDK_STRING("Decoder post-processing is unsupported for this stream, VPP is used for resizing\n") );
+        }
     }
 #endif //_MSDK_API >= MSDK_API(1,22)
 

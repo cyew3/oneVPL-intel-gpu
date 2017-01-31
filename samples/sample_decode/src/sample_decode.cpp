@@ -103,7 +103,12 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-gpucopy::<on,off>] Enable or disable GPU copy mode\n"));
     msdk_printf(MSDK_STRING("   [-timeout]                - timeout in seconds\n"));
 #if _MSDK_API >= MSDK_API(1,22)
-    msdk_printf(MSDK_STRING("   [-sfc_resize valueW valueH - fixed function resize after decoder using direct pipe connection\n"));
+    msdk_printf(MSDK_STRING("   [-dec_postproc force/auto] - resize after decoder using direct pipe\n"));
+    msdk_printf(MSDK_STRING("                  force: instruct to use decoder-based post processing\n"));
+    msdk_printf(MSDK_STRING("                         or fail if the decoded stream is unsupported\n"));
+    msdk_printf(MSDK_STRING("                  auto: instruct to use decoder-based post processing for supported streams \n"));
+    msdk_printf(MSDK_STRING("                        or perform VPP operation through separate pipeline component for unsupported streams\n"));
+
 #endif //_MSDK_API >= MSDK_API(1,22)
 #if !defined(_WIN32) && !defined(_WIN64)
     msdk_printf(MSDK_STRING("   [-threads_num]            - number of mediasdk task threads\n"));
@@ -435,22 +440,30 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         }
 #endif // #if !defined(_WIN32) && !defined(_WIN64)
 #if _MSDK_API >= MSDK_API(1,22)
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-sfc_resize")))
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dec_postproc")))
         {
-            pParams->bSfcResizeInDecoder = true;
-            if(i + 2 >= nArgNum)
+            if(i + 1 >= nArgNum)
             {
-                PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for \"-sfc_resize\", right is  \"-sfc_resize value_Width value_Height\""));
+                PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for \"-dec_postproc\", right is  \"--dec_postproc force//auto\""));
                 return MFX_ERR_UNSUPPORTED;
             }
-            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->sfcReSizeWidth))
+            msdk_char postProcMode[6] = {};
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], postProcMode))
             {
-                PrintHelp(strInput[0], MSDK_STRING("sfc_resize: parameter is invalid"));
+                PrintHelp(strInput[0], MSDK_STRING("dec_postproc value is not set"));
                 return MFX_ERR_UNSUPPORTED;
             }
-            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->sfcReSizeHeight))
+            if (0 == msdk_strcmp(postProcMode, MSDK_STRING("auto")))
             {
-                PrintHelp(strInput[0], MSDK_STRING("sfc_resize: parameter is invalid"));
+                pParams->nDecoderPostProcessing = MODE_DECODER_POSTPROC_AUTO;
+            }
+            else if (0 == msdk_strcmp(postProcMode, MSDK_STRING("force")))
+            {
+                pParams->nDecoderPostProcessing = MODE_DECODER_POSTPROC_FORCE;
+            }
+            else
+            {
+                PrintHelp(strInput[0], MSDK_STRING("dec_postproc is invalid"));
                 return MFX_ERR_UNSUPPORTED;
             }
         }

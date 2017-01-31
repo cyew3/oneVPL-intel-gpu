@@ -191,7 +191,7 @@ namespace TranscodingSample
 #if _MSDK_API >= MSDK_API(1,22)
         std::vector<mfxExtEncoderROI> m_ROIData;
 
-        bool bSfcResizeInDecoder;
+        bool bDecoderPostProcessing;
 #endif //_MSDK_API >= MSDK_API(1,22)
 
         bool bOpenCL;
@@ -606,7 +606,7 @@ namespace TranscodingSample
 
         mfxExtVPPComposite       m_VppCompParams;
 #if _MSDK_API >= MSDK_API(1,22)
-        mfxExtDecVideoProcessing m_SfcVideoProcessing;
+        mfxExtDecVideoProcessing m_decPostProcessing;
 #endif //_MSDK_API >= MSDK_API(1,22)
 
         mfxExtLAControl          m_ExtLAControl;

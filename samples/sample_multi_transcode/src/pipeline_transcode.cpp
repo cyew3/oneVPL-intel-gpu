@@ -152,9 +152,9 @@ CTranscodingPipeline::CTranscodingPipeline():
     MSDK_ZERO_MEMORY(m_CodingOption3);
     MSDK_ZERO_MEMORY(m_ExtHEVCParam);
 #if _MSDK_API >= MSDK_API(1,22)
-    MSDK_ZERO_MEMORY(m_SfcVideoProcessing);
-    m_SfcVideoProcessing.Header.BufferId = MFX_EXTBUFF_DEC_VIDEO_PROCESSING;
-    m_SfcVideoProcessing.Header.BufferSz = sizeof(mfxExtDecVideoProcessing);
+    MSDK_ZERO_MEMORY(m_decPostProcessing);
+    m_decPostProcessing.Header.BufferId = MFX_EXTBUFF_DEC_VIDEO_PROCESSING;
+    m_decPostProcessing.Header.BufferSz = sizeof(mfxExtDecVideoProcessing);
 #endif //_MSDK_API >= MSDK_API(1,22)
 
     m_MVCSeqDesc.Header.BufferId = MFX_EXTBUFF_MVC_SEQ_DESC;
@@ -1940,25 +1940,25 @@ mfxStatus CTranscodingPipeline::InitDecMfxParams(sInputParams *pInParams)
     }
 #if _MSDK_API >= MSDK_API(1,22)
     /* SFC usage if enabled */
-    if ((pInParams->bSfcResizeInDecoder) &&
+    if ((pInParams->bDecoderPostProcessing) &&
         (MFX_CODEC_AVC == m_mfxDecParams.mfx.CodecId) && /* Only for AVC */
         (MFX_PICSTRUCT_PROGRESSIVE == m_mfxDecParams.mfx.FrameInfo.PicStruct)) /* ...And only for progressive!*/
     {
-        m_SfcVideoProcessing.In.CropX = 0;
-        m_SfcVideoProcessing.In.CropY = 0;
-        m_SfcVideoProcessing.In.CropW = m_mfxDecParams.mfx.FrameInfo.Width;
-        m_SfcVideoProcessing.In.CropH = m_mfxDecParams.mfx.FrameInfo.Height;
+        m_decPostProcessing.In.CropX = 0;
+        m_decPostProcessing.In.CropY = 0;
+        m_decPostProcessing.In.CropW = m_mfxDecParams.mfx.FrameInfo.Width;
+        m_decPostProcessing.In.CropH = m_mfxDecParams.mfx.FrameInfo.Height;
 
-        m_SfcVideoProcessing.Out.FourCC = m_mfxDecParams.mfx.FrameInfo.FourCC;
-        m_SfcVideoProcessing.Out.ChromaFormat = m_mfxDecParams.mfx.FrameInfo.ChromaFormat;
-        m_SfcVideoProcessing.Out.Width = MSDK_ALIGN16(pInParams->nVppCompDstW);
-        m_SfcVideoProcessing.Out.Height = MSDK_ALIGN16(pInParams->nVppCompDstH);
-        m_SfcVideoProcessing.Out.CropX = 0;
-        m_SfcVideoProcessing.Out.CropY = 0;
-        m_SfcVideoProcessing.Out.CropW = pInParams->nVppCompDstW;
-        m_SfcVideoProcessing.Out.CropH = pInParams->nVppCompDstH;
+        m_decPostProcessing.Out.FourCC = m_mfxDecParams.mfx.FrameInfo.FourCC;
+        m_decPostProcessing.Out.ChromaFormat = m_mfxDecParams.mfx.FrameInfo.ChromaFormat;
+        m_decPostProcessing.Out.Width = MSDK_ALIGN16(pInParams->nVppCompDstW);
+        m_decPostProcessing.Out.Height = MSDK_ALIGN16(pInParams->nVppCompDstH);
+        m_decPostProcessing.Out.CropX = 0;
+        m_decPostProcessing.Out.CropY = 0;
+        m_decPostProcessing.Out.CropW = pInParams->nVppCompDstW;
+        m_decPostProcessing.Out.CropH = pInParams->nVppCompDstH;
 
-        m_DecExtParams.push_back((mfxExtBuffer *)&m_SfcVideoProcessing);
+        m_DecExtParams.push_back((mfxExtBuffer *)&m_decPostProcessing);
         m_mfxDecParams.ExtParam = &m_DecExtParams[0]; // vector is stored linearly in memory
         m_mfxDecParams.NumExtParam = (mfxU16)m_DecExtParams.size();
     }
