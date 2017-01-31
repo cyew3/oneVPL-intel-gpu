@@ -1578,11 +1578,24 @@ IntraRefreshState MfxHwH264Encode::GetIntraRefreshState(
     }
     if (extOpt2Init->IntRefType == MFX_REFRESH_SLICE)
     {
-        state.firstFrameInCycle = extOpt3Init->IntRefCycleDist ? (((frameOrderInGopDispOrder - 1) % extOpt3Init->IntRefCycleDist == 0) && frameOrderInGopDispOrder) : (((frameOrderInGopDispOrder - 1) % extOpt3Init->NumSliceP == 0) && frameOrderInGopDispOrder);
+        if (mfxI32(frameOrderInGopDispOrder - 1) < 0)
+        {
+            // reset divider on I frames
+            bool fieldCoding = (video.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) == 0;
+            divider = MakeSliceDivider(
+                (caps.SliceLevelRateCtrl) ? 4 : caps.SliceStructure,
+                extOpt2Init->NumMbPerSlice,
+                extOpt3Init->NumSliceP,
+                video.mfx.FrameInfo.Width / 16,
+                video.mfx.FrameInfo.Height / 16 / (fieldCoding ? 2 : 1));
+            return state;
+        }
 
         if (mfxI32(frameOrderInGopDispOrder - 1) < 0)
             return state;
-        
+
+        state.firstFrameInCycle = extOpt3Init->IntRefCycleDist ? (((frameOrderInGopDispOrder - 1) % extOpt3Init->IntRefCycleDist == 0) && frameOrderInGopDispOrder) : (((frameOrderInGopDispOrder - 1) % extOpt3Init->NumSliceP == 0) && frameOrderInGopDispOrder);
+
         state.IntraSize = ((USHORT)divider.GetNumMbInSlice() / (video.mfx.FrameInfo.Width >> 4)) - 1;
         state.IntraLocation = ((USHORT)divider.GetFirstMbInSlice() / (video.mfx.FrameInfo.Width >> 4));
         

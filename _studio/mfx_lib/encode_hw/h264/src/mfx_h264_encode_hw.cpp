@@ -1465,6 +1465,9 @@ mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
             extOpt3New->NumSliceP,
             newPar.mfx.FrameInfo.Width / 16,
             newPar.mfx.FrameInfo.Height / 16 / (fieldCoding ? 2 : 1));
+
+        if (extOpt2New->IntRefType == MFX_REFRESH_SLICE)
+            m_baseLayerOrderStartIntraRefresh = m_baseLayerOrder - 1;
     }
 
     // m_encoding contains few submitted and not queried tasks, wait for their completion
