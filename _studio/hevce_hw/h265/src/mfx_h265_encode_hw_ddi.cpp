@@ -638,7 +638,8 @@ void FillSpsBuffer(
     case  8: sps.SourceBitDepth = 0; break;
     }
 
-    if (par.mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4)
+    if (   par.mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4
+        || par.mfx.FrameInfo.FourCC == MFX_FOURCC_A2RGB10)
     {
         sps.SourceFormat = 3;
     }
@@ -785,6 +786,9 @@ void FillPpsBuffer(
     // pps.NonRectROIDeltaQpList[0..pps.NumDeltaQpForNonRectROI-1] // delta QPs for non-rect ROI
 #endif
 
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    pps.DisplayFormatSwizzle = (par.mfx.FrameInfo.FourCC == MFX_FOURCC_A2RGB10);
+#endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
 }
 
 void FillPpsBuffer(
