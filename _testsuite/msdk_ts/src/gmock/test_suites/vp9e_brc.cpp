@@ -185,17 +185,9 @@ namespace vp9e_brc
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPP, VP9E_MAX_QP_VALUE },
             }
         },
-        {/*15 AVBR maps to VBR with a warning*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR },
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.MaxKbps, VP9E_DEFAULT_BITRATE * 2 },
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 0 },
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.BufferSizeInKB, 0 },
-            }
-        },
 
         // Check all unsupported brc methods
+        {/*15*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE,{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR } },
         {/*16*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED1 } },
         {/*17*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED2 } },
         {/*18*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED3 } },
