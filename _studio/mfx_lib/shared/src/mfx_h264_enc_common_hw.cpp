@@ -1321,9 +1321,9 @@ mfxStatus MfxHwH264Encode::ReadSpsPpsHeaders(MfxVideoParam & par)
 
             if (extBits->PPSBuffer)
             {
-                InputBitstream reader(extBits->PPSBuffer, extBits->PPSBufSize);
+                InputBitstream pps_reader(extBits->PPSBuffer, extBits->PPSBufSize);
                 mfxExtPpsHeader * extPps = GetExtBuffer(par);
-                ReadPpsHeader(reader, *extSps, *extPps);
+                ReadPpsHeader(pps_reader, *extSps, *extPps);
             }
         }
     }
@@ -8426,7 +8426,7 @@ void HeaderPacker::Init(
     Zero(m_packedScalabilitySei);
     if (IsSvcProfile(par.mfx.CodecProfile))
     {
-        mfxU32 numBits = PutScalableInfoSeiMessage(obs, par);
+        numBits = PutScalableInfoSeiMessage(obs, par);
         assert(numBits % 8 == 0);
         m_packedScalabilitySei = MakePackedByteBuffer(bufBegin, numBits / 8, m_emulPrev ? 0 : 4);
         bufBegin += numBits / 8;
@@ -8790,7 +8790,7 @@ mfxU32 HeaderPacker::WriteSlice(
 
         if (!noInterLayerPredFlag)
         {
-            mfxU32 sliceSkipFlag                     = 0;
+            sliceSkipFlag = 0;
             mfxU32 adaptiveBaseModeFlag              = !m_simulcast[task.m_did];
             mfxU32 defaultBaseModeFlag               = 0;
             mfxU32 adaptiveMotionPredictionFlag      = !m_simulcast[task.m_did];
@@ -9012,7 +9012,7 @@ mfxU32 HeaderPacker::WriteSlice(
 
         if (!noInterLayerPredFlag)
         {
-            mfxU32 sliceSkipFlag                     = 0;
+            sliceSkipFlag = 0;
             mfxU32 adaptiveBaseModeFlag              = !m_simulcast[task.m_did];
             mfxU32 defaultBaseModeFlag               = 0;
             mfxU32 adaptiveMotionPredictionFlag      = !m_simulcast[task.m_did];
