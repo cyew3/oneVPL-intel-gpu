@@ -1815,7 +1815,11 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     if (CheckOption(par.m_ext.VSI.VideoFullRange, 0))                     changed +=1;
     if (CheckOption(par.m_ext.VSI.ColourDescriptionPresent, 0))           changed +=1;
 
+#if defined(LINUX32) || defined(LINUX64)
+    changed += CheckOption(CO3.GPB, (mfxU16)MFX_CODINGOPTION_UNKNOWN, (mfxU16)MFX_CODINGOPTION_ON, (mfxU16)MFX_CODINGOPTION_OFF);
+#else
     changed += CheckOption(CO3.GPB, (mfxU16)MFX_CODINGOPTION_UNKNOWN, (mfxU16)MFX_CODINGOPTION_ON);
+#endif
     changed += CheckTriStateOption(par.m_ext.CO.AUDelimiter);
     changed += CheckTriStateOption(CO2.RepeatPPS);
     changed += CheckTriStateOption(CO3.EnableQPOffset);
@@ -2291,10 +2295,8 @@ void SetDefaults(
 
     if (!par.m_ext.CO2.RepeatPPS)
         par.m_ext.CO2.RepeatPPS = MFX_CODINGOPTION_OFF;
-
     if (!CO3.GPB)
         CO3.GPB = MFX_CODINGOPTION_ON;
-
     if (!CO3.EnableQPOffset)
     {
         if (   par.mfx.RateControlMethod == MFX_RATECONTROL_CQP

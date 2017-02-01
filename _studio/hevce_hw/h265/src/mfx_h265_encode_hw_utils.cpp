@@ -3111,8 +3111,7 @@ void ConfigureTask(
     }
     else if (par.mfx.RateControlMethod != MFX_RATECONTROL_LA_EXT)
         task.m_qpY = 0;
-
-    if (isP)
+    if (IsOn(CO3.GPB) && isP)
     {
         // encode P as GPB
         task.m_frameType &= ~MFX_FRAMETYPE_P;
