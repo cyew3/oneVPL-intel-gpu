@@ -678,14 +678,6 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
 
     mfxU16& brcMode = par.mfx.RateControlMethod;
 
-    if (brcMode == MFX_RATECONTROL_AVBR)
-    {
-        brcMode = MFX_RATECONTROL_VBR;
-        par.mfx.Accuracy = 0;
-        par.mfx.Convergence = 0;
-        changed = true;
-    }
-
     mfxExtCodingOption2& opt2 = GetExtBufferRef(par);
 
     if (brcMode != 0)
@@ -996,8 +988,7 @@ mfxStatus CheckParametersAndSetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 c
 
     // (3) target and max bitrates
     if ((par.mfx.RateControlMethod == MFX_RATECONTROL_CBR
-        || par.mfx.RateControlMethod == MFX_RATECONTROL_VBR
-        || par.mfx.RateControlMethod == MFX_RATECONTROL_AVBR)
+        || par.mfx.RateControlMethod == MFX_RATECONTROL_VBR)
         && par.m_targetKbps == 0)
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;
