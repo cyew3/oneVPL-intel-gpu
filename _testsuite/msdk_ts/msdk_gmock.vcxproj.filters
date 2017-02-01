@@ -137,6 +137,9 @@
     <ClInclude Include="include\gmock\ts_mvc_warning.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\gmock\ts_typedef.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\test_sample_allocator.cpp">

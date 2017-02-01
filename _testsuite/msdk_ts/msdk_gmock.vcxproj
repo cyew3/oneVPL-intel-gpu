@@ -209,6 +209,7 @@
     <ClInclude Include="include\gmock\ts_surface.h" />
     <ClInclude Include="include\gmock\ts_trace.h" />
     <ClInclude Include="include\gmock\ts_transcoder.h" />
+    <ClInclude Include="include\gmock\ts_typedef.h" />
     <ClInclude Include="include\gmock\ts_vpp.h" />
     <ClInclude Include="include\test_sample_allocator.h" />
   </ItemGroup>
