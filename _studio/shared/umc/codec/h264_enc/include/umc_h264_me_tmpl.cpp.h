@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #if defined (__ICL)
@@ -7067,7 +7067,7 @@ Ipp32s H264ENC_MAKE_NAME(H264CoreEncoder_ME_P)(
         Ipp32s sad8x8[4];
         if (meInfo.residualPredictionFlag)
         {
-            Ipp32s b, i, j;
+            Ipp32s b, j;
             for (b = 0; b < 4; b++) {
                 Ipp32s sad = 0;
                 Ipp16s *pRes = resPredBuf + (b & 1)*8 + (b & 2)*4*16;
@@ -7241,7 +7241,7 @@ Ipp32s H264ENC_MAKE_NAME(H264CoreEncoder_ME_P)(
 #endif // NO_PADDING
                     Ipp32s sad4x4[4];
                     if (meInfo.residualPredictionFlag) {
-                      Ipp32s bl, i, j;
+                      Ipp32s bl, j;
                       for (bl = 0; bl < 4; bl++) {
                         Ipp32s sad = 0;
                         Ipp16s *pRes4x4 = pRes + (bl & 1)*4 + (bl & 2)*2*16;
@@ -7851,7 +7851,7 @@ Ipp32s H264ENC_MAKE_NAME(H264CoreEncoder_ME_P)(
             }
             else
             {
-                Ipp32s i, j;
+                Ipp32s j;
                 for (i = 0; i < 16; i++)
                     for (j = 0; j < 16; j++)
                         diffBuff[i][j] = resPredBuf[i*16 + j] - mcBlock[i*16 + j];
@@ -11449,7 +11449,7 @@ Ipp32s H264ENC_MAKE_NAME(H264CoreEncoder_ME_B)(
             }
             else
             {
-                Ipp32s i, j;
+                Ipp32s j;
                 for (i = 0; i < 16; i++)
                     for (j = 0; j < 16; j++)
                         diffBuff[i][j] = resPredBuf[i*16 + j] - mcBlock[i*16 + j];
