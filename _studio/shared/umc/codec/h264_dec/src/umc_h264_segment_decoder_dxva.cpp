@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -63,7 +63,8 @@ void H264_DXVA_SegmentDecoder::PackAllHeaders(H264DecoderFrame * pFrame, Ipp32s 
     if (!m_Packer.get())
     {
         m_Packer.reset(Packer::CreatePacker(m_va, m_pTaskSupplier));
-        VM_ASSERT(m_Packer.get());
+        if (!m_Packer.get())
+            throw h264_exception(UMC_ERR_FAILED);
     }
 
     m_Packer->BeginFrame(pFrame, field);
