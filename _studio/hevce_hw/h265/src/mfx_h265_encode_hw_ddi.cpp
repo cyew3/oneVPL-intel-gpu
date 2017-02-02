@@ -195,7 +195,7 @@ mfxStatus CheckHeaders(
       !(   par.m_sps.pic_width_in_luma_samples > caps.MaxPicWidth
         || par.m_sps.pic_height_in_luma_samples > caps.MaxPicHeight
         || (UINT)(((par.m_pps.num_tile_columns_minus1 + 1) * (par.m_pps.num_tile_rows_minus1 + 1)) > 1) > caps.TileSupport));
-
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     MFX_CHECK_COND(
       !(   (caps.MaxEncodedBitDepth == 0 || caps.BitDepth8Only)
         && (par.m_sps.bit_depth_luma_minus8 != 0 || par.m_sps.bit_depth_chroma_minus8 != 0)));
@@ -206,7 +206,16 @@ mfxStatus CheckHeaders(
             || par.m_sps.bit_depth_luma_minus8 == 2)
           || !(par.m_sps.bit_depth_chroma_minus8 == 0
             || par.m_sps.bit_depth_chroma_minus8 == 2))));
+#else
+    MFX_CHECK_COND(
+        !(  caps.BitDepth8Only == 1 // 8 bit only
+            && (par.m_sps.bit_depth_luma_minus8 != 0 || par.m_sps.bit_depth_chroma_minus8 != 0))); // not 8 bit 
 
+    MFX_CHECK_COND(
+        !(  caps.BitDepth8Only == 0 // 10 or 8 bit only
+            && (!(par.m_sps.bit_depth_luma_minus8 == 0 || par.m_sps.bit_depth_luma_minus8 == 2)
+                || !(par.m_sps.bit_depth_chroma_minus8 == 0 || par.m_sps.bit_depth_chroma_minus8 == 2))));
+#endif
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     MFX_CHECK_COND(
       !(   caps.MaxEncodedBitDepth == 2
