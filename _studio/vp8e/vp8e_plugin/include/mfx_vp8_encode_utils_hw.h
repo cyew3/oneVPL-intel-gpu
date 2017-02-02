@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -630,7 +630,7 @@ namespace MFX_VP8ENC
               {
                   m_frameNum = 0;
                   ReleaseDpbFrames();
-                  memset(&m_dpb, 0, sizeof(m_dpb));
+                  Zero(m_dpb);
                   sts = FreeTasks(m_Tasks);
                   MFX_CHECK_STS(sts);
               }
