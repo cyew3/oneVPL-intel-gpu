@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include <limits>
@@ -1593,6 +1593,9 @@ mfxStatus MFX_VP9_Utility::DecodeHeader(VideoCORE* core, mfxBitstream* bs, mfxVi
             else
                 params->mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
+            params->mfx.FrameInfo.BitDepthLuma = 0;
+            params->mfx.FrameInfo.BitDepthChroma = 0;
+            params->mfx.FrameInfo.Shift = 0;
             break;
 
         case 10:
