@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -452,7 +452,7 @@ mfxStatus D3D9Encoder::UpdateBitstream(
     DdiTask      & task)
 {
     mfxU8      * bsData    = task.bs->Data + task.bs->DataOffset + task.bs->DataLength;
-    IppiSize     roi       = {task.m_bsDataLength, 1};
+    IppiSize     roi       = {(int)(task.m_bsDataLength), 1};
     mfxFrameData bitstream = {0};
 
     m_core->LockFrame(MemId, &bitstream);
