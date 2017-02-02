@@ -1031,6 +1031,19 @@ mfxStatus TaskManager::Close(void)
 {
     m_actualNumber = m_taskIndex = 0;
 
+    /* In case of ADI needa to clear task properly:
+     * ADI locked input frame as reference for next one frame
+     * So, it should be unlocked if Reset() happends */
+    for (mfxU32 i = 0; i < m_tasks.size(); i++)
+    {
+        if ((m_tasks[i].bkwdRefCount > 0) &&
+            (NULL != m_tasks[i].input.pSurf) &&
+            (0 != m_tasks[i].input.pSurf->Data.Locked))
+        {
+            mfxStatus sts = m_core->DecreaseReference( &(m_tasks[i].input.pSurf->Data) );
+            MFX_CHECK_STS(sts);
+        }
+    }
     Clear(m_tasks);
 
     m_core     = NULL;
