@@ -1122,6 +1122,8 @@ bool MFX_JPEG_Utility::IsNeedPartialAcceleration(VideoCORE * core, mfxVideoParam
     {
         if (par->mfx.JPEGColorFormat == MFX_JPEG_COLORFORMAT_RGB) return true;
     }
+#else
+    (void)core;
 #endif
 
     return false;
