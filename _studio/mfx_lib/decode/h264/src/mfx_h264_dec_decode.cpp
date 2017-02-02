@@ -375,9 +375,6 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
     if (mfxSts != MFX_ERR_NONE)
         return mfxSts;
 
-#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
-    mfxU16 request_type = request.Type;
-#endif
     request.Type |= useInternal ? MFX_MEMTYPE_INTERNAL_FRAME : MFX_MEMTYPE_EXTERNAL_FRAME;
     request_internal = request;
 
