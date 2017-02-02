@@ -452,16 +452,16 @@ mfxStatus CCameraPipeline::AllocFrames()
 #endif
     if (m_memTypeOut == SYSTEM_MEMORY && m_bIsRender) {
 
-        mfxFrameAllocRequest Request;
-        MSDK_ZERO_MEMORY(Request);
+        mfxFrameAllocRequest req;
+        MSDK_ZERO_MEMORY(req);
 
-        Request.Info = m_mfxVideoParams.vpp.Out;
-        Request.NumFrameMin = Request.NumFrameSuggested = 1;
-        Request.Type = MFX_MEMTYPE_FROM_VPPOUT | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET;
+        req.Info = m_mfxVideoParams.vpp.Out;
+        req.NumFrameMin = req.NumFrameSuggested = 1;
+        req.Type = MFX_MEMTYPE_FROM_VPPOUT | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET;
 
         sMemoryAllocator allocator = {m_pMFXd3dAllocator, m_pmfxd3dAllocatorParams, &m_pmfxSurfacesAux, &m_mfxResponseAux};
 
-        sts = InitSurfaces(&allocator, &Request, &(m_mfxVideoParams.vpp.Out), true);
+        sts = InitSurfaces(&allocator, &req, &(m_mfxVideoParams.vpp.Out), true);
         MSDK_CHECK_STATUS(sts, "InitSurfaces failed");
     }
 
@@ -1775,7 +1775,7 @@ mfxStatus CCameraPipeline::Run()
 
             camera_printf("sync tail --- %d %p %d %d \n", tail_asdepth, ppInSurf[tail_asdepth]->Data.Y16, ppInSurf[tail_asdepth]->Data.Locked, ppInSurf[tail_asdepth]->Data.FrameOrder);
 
-            mfxStatus sts = m_mfxSession.SyncOperation(syncpoints[tail_asdepth], MSDK_VPP_WAIT_INTERVAL);
+            sts = m_mfxSession.SyncOperation(syncpoints[tail_asdepth], MSDK_VPP_WAIT_INTERVAL);
             MSDK_BREAK_ON_ERROR(sts);
             syncFlags[tail_asdepth] = 0;
 

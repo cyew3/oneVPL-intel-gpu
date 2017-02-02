@@ -1,15 +1,13 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
-MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vpp_plugin", "vpp_plugin\vpp_plugin.vcxproj", "{D6D9A3B9-5DC0-4025-B27A-751F91AA462D}"
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vpp_plugin", "vpp_plugin\vpp_plugin_2010.vcxproj", "{D6D9A3B9-5DC0-4025-B27A-751F91AA462D}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_common", "..\sample_common\sample_common.vcxproj", "{DB71B91D-16D8-4339-9621-D81798E46E8F}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_common", "..\sample_common\sample_common_2010.vcxproj", "{DB71B91D-16D8-4339-9621-D81798E46E8F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_rotate_plugin", "rotate_cpu\sample_rotate_plugin.vcxproj", "{1119372D-BA13-4730-AFF6-1994B26EFF6C}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_rotate_plugin", "rotate_cpu\sample_rotate_plugin_2010.vcxproj", "{1119372D-BA13-4730-AFF6-1994B26EFF6C}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_plugin_opencl", "rotate_opencl\sample_plugin_opencl.vcxproj", "{D5CCF0C0-32F6-4777-AA6C-6A249016DB26}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_plugin_opencl", "rotate_opencl\sample_plugin_opencl_2010.vcxproj", "{D5CCF0C0-32F6-4777-AA6C-6A249016DB26}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

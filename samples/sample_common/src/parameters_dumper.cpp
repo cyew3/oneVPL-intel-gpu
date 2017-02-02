@@ -601,9 +601,9 @@ void CParametersDumper::SerializeExtensionBuffer(msdk_ostream& sstr,msdk_string 
             SERIALIZE_INFO(NumInputStream);
             for(int i=0;i<info.NumInputStream;i++)
             {
-                msdk_char name[32];
-                msdk_sprintf(name,MSDK_STRING("InputStream[%d]."),i);
-                SerializeVPPCompInputStream(sstr,prefix+name,info.InputStream[i]);
+                msdk_char streamName[32];
+                msdk_sprintf(streamName,MSDK_STRING("InputStream[%d]."),i);
+                SerializeVPPCompInputStream(sstr,prefix+streamName,info.InputStream[i]);
             }
         }
         break;

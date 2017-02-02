@@ -627,11 +627,12 @@ bool CmdProcessor::ParseROIFile(const msdk_char *roi_file_name, std::vector<mfxE
 
         // read file to buffer
         fseek(roi_file, 0, SEEK_END);
-        int file_size = (int) ftell(roi_file);
+        long file_size = ftell(roi_file);
         rewind (roi_file);
         std::vector<char> buffer(file_size);
         char *roi_data = &buffer[0];
-        if (file_size != fread(roi_data, 1, file_size, roi_file)) {
+        if (file_size<0 || (size_t)file_size != fread(roi_data, 1, file_size, roi_file))
+        {
             fclose(roi_file);
             return false;
         }
@@ -640,7 +641,10 @@ bool CmdProcessor::ParseROIFile(const msdk_char *roi_file_name, std::vector<mfxE
         // search for not allowed characters
         char *not_allowed_char = std::find_if(roi_data, roi_data + file_size,
             is_not_allowed_char);
-        if (not_allowed_char != (roi_data + file_size)) return false;
+        if (not_allowed_char != (roi_data + file_size))
+        {
+            return false;
+        }
 
         // get unformatted roi data
         std::string unformatted_roi_data;
@@ -654,13 +658,15 @@ bool CmdProcessor::ParseROIFile(const msdk_char *roi_file_name, std::vector<mfxE
         std::vector<std::string> items;
         items.clear();
         std::string item;
-        while (std::getline(unformatted_roi_data_ss, item, ';')) {
+        while (std::getline(unformatted_roi_data_ss, item, ';'))
+        {
             items.push_back(item);
         }
 
         // parse data and store roi data for each frame
         unsigned int item_ind = 0;
-        while (1) {
+        while (1)
+        {
             if (item_ind >= items.size()) break;
 
             mfxExtEncoderROI frame_roi;
@@ -669,16 +675,19 @@ bool CmdProcessor::ParseROIFile(const msdk_char *roi_file_name, std::vector<mfxE
             frame_roi.ROIMode = MFX_ROI_MODE_QP_DELTA;
 
             int roi_num = std::atoi(items[item_ind].c_str());
-            if (roi_num < 0 || roi_num > sizeof(frame_roi.ROI) / sizeof(frame_roi.ROI[0])){
+            if (roi_num < 0 || roi_num > sizeof(frame_roi.ROI) / sizeof(frame_roi.ROI[0]))
+            {
                 m_ROIData.clear();
                 return false;
             }
-            if ((item_ind + 5 * roi_num) >= items.size()) {
+            if ((item_ind + 5 * roi_num) >= items.size())
+            {
                 m_ROIData.clear();
                 return false;
             }
 
-            for (int i = 0; i < roi_num; i++) {
+            for (int i = 0; i < roi_num; i++)
+            {
                 // do not handle out of range integer errors
                 frame_roi.ROI[i].Left = std::atoi(items[item_ind + i * 5 + 1].c_str());
                 frame_roi.ROI[i].Top = std::atoi(items[item_ind + i * 5 + 2].c_str());

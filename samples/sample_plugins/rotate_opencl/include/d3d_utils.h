@@ -112,7 +112,7 @@ inline void DumpRect(IDirect3DSurface9 *pSurf, const std::string &file)
     D3DSURFACE_DESC desc;
     pSurf->GetDesc(&desc);
 
-    RECT rect = {0, 0, desc.Width, desc.Height};
+    RECT rect = {0, 0, (LONG)desc.Width, (LONG)desc.Height};
     D3DLOCKED_RECT locked_rect;
     pSurf->LockRect(&locked_rect, &rect, D3DLOCK_READONLY);
     out.write(reinterpret_cast<const char *>(locked_rect.pBits), locked_rect.Pitch * desc.Height);

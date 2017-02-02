@@ -1763,8 +1763,8 @@ mfxStatus CDecodingPipeline::RunDecoding()
                 sts = m_pmfxDEC->DecodeFrameAsync(pBitstream, &(m_pCurrentFreeSurface->frame), &pOutSurface, &(m_pCurrentFreeOutputSurface->syncp));
                 if (pBitstream && MFX_ERR_MORE_DATA == sts && pBitstream->MaxLength == pBitstream->DataLength)
                 {
-                    mfxStatus sts = ExtendMfxBitstream(pBitstream, pBitstream->MaxLength * 2);
-                    MSDK_CHECK_STATUS_SAFE(sts, "ExtendMfxBitstream failed", MSDK_SAFE_DELETE(pDeliverThread));
+                    mfxStatus stsExt = ExtendMfxBitstream(pBitstream, pBitstream->MaxLength * 2);
+                    MSDK_CHECK_STATUS_SAFE(stsExt, "ExtendMfxBitstream failed", MSDK_SAFE_DELETE(pDeliverThread));
                 }
 
                 if (MFX_WRN_DEVICE_BUSY == sts) {

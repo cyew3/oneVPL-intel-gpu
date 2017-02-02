@@ -38,10 +38,10 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #pragma warning(disable : 4290)
 #define __CL_ENABLE_EXCEPTIONS
 
-#define _interlockedbittestandset      fake_set
-#define _interlockedbittestandreset    fake_reset
-#define _interlockedbittestandset64    fake_set64
-#define _interlockedbittestandreset64  fake_reset64
+//#define _interlockedbittestandset      fake_set
+//#define _interlockedbittestandreset    fake_reset
+//#define _interlockedbittestandset64    fake_set64
+//#define _interlockedbittestandreset64  fake_reset64
 
 #if !defined(_WIN32) && !defined(_WIN64)
 #include <X11/Xlib.h>

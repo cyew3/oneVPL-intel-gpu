@@ -378,13 +378,13 @@ void Launcher::Run()
 
         if (sts <= 0)
         {
-            for (int j = 0; j < m_HDLArray.size(); j++ )
+            for (mfxU32 j = 0; j < m_HDLArray.size(); j++ )
                 m_pSessionArray[j]->pPipeline->SignalStop();
             break;
         }
     }
 
-    for (int i= 0; i< m_HDLArray.size(); i++)
+    for (mfxU32 i= 0; i< m_HDLArray.size(); i++)
         m_HDLArray[i]->Wait();
 
     msdk_printf(MSDK_STRING("\nTranscoding finished\n"));
@@ -479,12 +479,17 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
                 {
                     msdk_printf(MSDK_STRING("\"-timeout\" option isn't compatible with \"-n\". \"-n\" will be ignored.\n"));
                     for (mfxU32 k = 0; k < m_InputParamsArray.size(); k++)
+                    {
                         m_InputParamsArray[k].MaxFrameNumber = MFX_INFINITE;
+                    }
+                    break;
                 }
             }
             msdk_printf(MSDK_STRING("Timeout %d seconds has been set to all sessions\n"), m_InputParamsArray[i].nTimeout);
             for (mfxU32 j = 0; j < m_InputParamsArray.size(); j++)
+            {
                 m_InputParamsArray[j].nTimeout = m_InputParamsArray[i].nTimeout;
+            }
         }
 
         if (Source == m_InputParamsArray[i].eMode)
