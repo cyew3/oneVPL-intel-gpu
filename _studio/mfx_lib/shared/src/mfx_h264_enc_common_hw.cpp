@@ -8616,45 +8616,7 @@ mfxU32 HeaderPacker::WriteSlice(
             (pps.weightedBipredIdc == 1 && sliceType == SLICE_TYPE_B))
         {
             mfxU32 chromaArrayType = sps.separateColourPlaneFlag ? 0 : sps.chromaFormatIdc;
-            mfxI32 numRefIdxL0ActiveMinus1 = IPP_MAX(1, task.m_list0[fieldId].Size()) - 1;
-            //mfxI32 numRefIdxL1ActiveMinus1 = IPP_MAX(1, task.m_list1[fieldId].Size()) - 1;
-
-            if(sliceType == SLICE_TYPE_P)
-            {
-                obs.PutUe(task.m_lumaLog2WeightDenom[fieldId]);
-                if( chromaArrayType != 0 )
-                {
-                    obs.PutUe(task.m_chromaLog2WeightDenom[fieldId]);
-                }
-
-                for(int i=0; i<=numRefIdxL0ActiveMinus1; i++)
-                {
-                    const mfxU8 lumaFlag = task.m_weightTab[fieldId][i].m_lumaWeightL0Flag;
-                    obs.PutBit(lumaFlag);
-                    if( lumaFlag )
-                    {
-                        obs.PutSe(task.m_weightTab[fieldId][i].m_lumaWeightL0);
-                        obs.PutSe(task.m_weightTab[fieldId][i].m_lumaOffsetL0);
-                    }
-                    if( chromaArrayType != 0 )
-                    {
-                        const mfxU8 chromaFlag = task.m_weightTab[fieldId][i].m_chromaWeightL0Flag;
-                        obs.PutBit(chromaFlag);
-                        if( chromaFlag )
-                        {
-                            for(int j=0; j<2; j++)
-                            {
-                                obs.PutSe(task.m_weightTab[fieldId][i].m_chromaWeightL0[j]);
-                                obs.PutSe(task.m_weightTab[fieldId][i].m_chromaOffsetL0[j]);
-                            }
-                        }
-                    }
-                }
-            }
-            else if( sliceType == SLICE_TYPE_B)
-            {
-                assert(!"explicit weighted prediction for B slices is unsupported");
-            }
+            WritePredWeightTable(obs, m_hwCaps, task, fieldId, chromaArrayType);
         }
         if (refPicFlag || task.m_nalRefIdc[fieldId])
         {
@@ -8872,45 +8834,7 @@ mfxU32 HeaderPacker::WriteSlice(
             (pps.weightedBipredIdc == 1 && sliceType == SLICE_TYPE_B))
         {
             mfxU32 chromaArrayType = sps.separateColourPlaneFlag ? 0 : sps.chromaFormatIdc;
-            mfxI32 numRefIdxL0ActiveMinus1 = IPP_MAX(1, task.m_list0[fieldId].Size()) - 1;
-            //mfxI32 numRefIdxL1ActiveMinus1 = IPP_MAX(1, task.m_list1[fieldId].Size()) - 1;
-
-            if(sliceType == SLICE_TYPE_P)
-            {
-                obs.PutUe(task.m_lumaLog2WeightDenom[fieldId]);
-                if( chromaArrayType != 0 )
-                {
-                    obs.PutUe(task.m_chromaLog2WeightDenom[fieldId]);
-                }
-
-                for(int i=0; i<=numRefIdxL0ActiveMinus1; i++)
-                {
-                    const mfxU8 lumaFlag = task.m_weightTab[fieldId][i].m_lumaWeightL0Flag;
-                    obs.PutBit(lumaFlag);
-                    if( lumaFlag )
-                    {
-                        obs.PutSe(task.m_weightTab[fieldId][i].m_lumaWeightL0);
-                        obs.PutSe(task.m_weightTab[fieldId][i].m_lumaOffsetL0);
-                    }
-                    if( chromaArrayType != 0 )
-                    {
-                        const mfxU8 chromaFlag = task.m_weightTab[fieldId][i].m_chromaWeightL0Flag;
-                        obs.PutBit(chromaFlag);
-                        if( chromaFlag )
-                        {
-                            for(int j=0; j<2; j++)
-                            {
-                                obs.PutSe(task.m_weightTab[fieldId][i].m_chromaWeightL0[j]);
-                                obs.PutSe(task.m_weightTab[fieldId][i].m_chromaOffsetL0[j]);
-                            }
-                        }
-                    }
-                }
-            }
-            else if( sliceType == SLICE_TYPE_B)
-            {
-                assert(!"explicit weighted prediction for B slices is unsupported");
-            }
+            WritePredWeightTable(obs, m_hwCaps, task, fieldId, chromaArrayType);
         }
         if (refPicFlag)
         {
