@@ -851,10 +851,10 @@ mfxStatus Plugin::GetVideoParam(mfxVideoParam *par)
     return MFX_ERR_NONE;
 }
 
-inline void UpdatePictureHeader(unsigned int frameLen, unsigned int frameNum, unsigned char *pPictureHeader)
+inline void UpdatePictureHeader(mfxU32 frameLen, mfxU32 frameNum, mfxU8* pPictureHeader, mfxU32 bufferSize)
 {
     mfxU32 ivf_frame_header[3] = {frameLen, frameNum << 1, 0x00000000};
-    memcpy(pPictureHeader, ivf_frame_header, sizeof (ivf_frame_header));
+    memcpy_s(pPictureHeader, bufferSize, ivf_frame_header, sizeof (ivf_frame_header));
 };
 
 mfxStatus Plugin::UpdateBitstream(
@@ -896,7 +896,7 @@ mfxStatus Plugin::UpdateBitstream(
     }
 
     mfxU8 * pIVFPicHeader = task.m_insertIVFSeqHeader ? bsData + IVF_SEQ_HEADER_SIZE_BYTES : bsData;
-    UpdatePictureHeader(bsSizeToCopy - IVF_PIC_HEADER_SIZE_BYTES - (task.m_insertIVFSeqHeader ? IVF_SEQ_HEADER_SIZE_BYTES : 0), (mfxU32)task.m_frameOrder, pIVFPicHeader);
+    UpdatePictureHeader(bsSizeToCopy - IVF_PIC_HEADER_SIZE_BYTES - (task.m_insertIVFSeqHeader ? IVF_SEQ_HEADER_SIZE_BYTES : 0), (mfxU32)task.m_frameOrder, pIVFPicHeader, bsSizeAvail - IVF_SEQ_HEADER_SIZE_BYTES);
 
     task.m_pBitsteam->DataLength += bsSizeToCopy;
 

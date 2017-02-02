@@ -194,7 +194,7 @@ void FillPpsBuffer(
     pps.LumaACQIndex        = framePar.baseQIndex;
     pps.LumaDCQIndexDelta   = framePar.qIndexDeltaLumaDC;
     pps.ChromaACQIndexDelta = framePar.qIndexDeltaChromaAC;
-    pps.ChromaACQIndexDelta = framePar.qIndexDeltaChromaDC;
+    pps.ChromaDCQIndexDelta = framePar.qIndexDeltaChromaDC;
 
     pps.filter_level = framePar.lfLevel;
     pps.sharpness_level = framePar.sharpness;

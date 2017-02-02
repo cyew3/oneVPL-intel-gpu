@@ -248,8 +248,9 @@ namespace MfxHwVP9Encode
                 // interpolation filter syntax
                 const mfxU8 filterToLiteralMap[] = { 1, 0, 2, 3 };
 
+                assert(framePar.interpFilter <= SWITCHABLE);
                 WriteBit(localBuf, framePar.interpFilter == SWITCHABLE);
-                if (framePar.interpFilter != SWITCHABLE)
+                if (framePar.interpFilter < SWITCHABLE)
                 {
                     WriteLiteral(localBuf, filterToLiteralMap[framePar.interpFilter], 2);
                 }
@@ -395,11 +396,12 @@ namespace MfxHwVP9Encode
                     par.mfx.FrameInfo.FrameRateExtN,
                     par.mfx.FrameInfo.FrameRateExtD,
                     opt.NumFramesForIVF,
-                    localBuf.pBuffer);
+                    localBuf.pBuffer,
+                    bufferSizeBytes);
                 ivfHeaderSize += IVF_SEQ_HEADER_SIZE_BYTES;
             }
 
-            AddPictureHeader(localBuf.pBuffer + ivfHeaderSize);
+            AddPictureHeader(localBuf.pBuffer + ivfHeaderSize, bufferSizeBytes - ivfHeaderSize);
             ivfHeaderSize += IVF_PIC_HEADER_SIZE_BYTES;
         }
 

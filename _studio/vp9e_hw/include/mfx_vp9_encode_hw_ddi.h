@@ -239,21 +239,22 @@ typedef struct tagENCODE_CAPS_VP9
         mfxU16 BitSizeForSegmentation;
     };
 
-    inline void AddSeqHeader(unsigned int width,
-        unsigned int   height,
-        unsigned int   FrameRateN,
-        unsigned int   FrameRateD,
-        unsigned int   numFramesInFile,
-        unsigned char *pBitstream)
+    inline void AddSeqHeader(mfxU32 width,
+        mfxU32 height,
+        mfxU32 FrameRateN,
+        mfxU32 FrameRateD,
+        mfxU32 numFramesInFile,
+        mfxU8* pBitstream,
+        mfxU32 bufferSize)
     {
         mfxU32   ivf_file_header[8] = { 0x46494B44, 0x00200000, 0x30395056, width + (height << 16), FrameRateN, FrameRateD, numFramesInFile, 0x00000000 };
-        memcpy(pBitstream, ivf_file_header, sizeof (ivf_file_header));
+        memcpy_s(pBitstream, bufferSize, ivf_file_header, sizeof (ivf_file_header));
     };
 
-    inline void AddPictureHeader(unsigned char *pBitstream)
+    inline void AddPictureHeader(mfxU8* pBitstream, mfxU32 bufferSize)
     {
         mfxU32 ivf_frame_header[3] = { 0x00000000, 0x00000000, 0x00000000 };
-        memcpy(pBitstream, ivf_frame_header, sizeof (ivf_frame_header));
+        memcpy_s(pBitstream, bufferSize, ivf_frame_header, sizeof (ivf_frame_header));
     };
 
     inline ENCODE_PACKEDHEADER_DATA MakePackedByteBuffer(mfxU8 * data, mfxU32 size)
