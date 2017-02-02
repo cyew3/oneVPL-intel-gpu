@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2006-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2006-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include <umc_va_base.h>
@@ -309,12 +309,10 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
 
     bool needAllocatedSurfaces =    (((m_Profile & VA_CODEC) != UMC::VA_H264)
                                   && ((m_Profile & VA_CODEC) != UMC::VA_H265)
-#if defined(ANDROID)
-                                  && ((m_Profile & VA_CODEC) != UMC::VA_VP8)
-#else
-                                  && ((m_Profile & VA_CODEC) != UMC::VA_MPEG2)
                                   && ((m_Profile & VA_CODEC) != UMC::VA_VP8)
                                   && ((m_Profile & VA_CODEC) != UMC::VA_VP9)
+#ifndef ANDROID
+                                  && ((m_Profile & VA_CODEC) != UMC::VA_MPEG2)
                                   && ((m_Profile & VA_CODEC) != UMC::VA_JPEG)
                                   && ((m_Profile & VA_CODEC) != UMC::VA_VC1)
 #endif
