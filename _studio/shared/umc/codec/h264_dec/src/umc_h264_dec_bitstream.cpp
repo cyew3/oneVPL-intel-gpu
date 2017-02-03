@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -513,7 +513,7 @@ Ipp8u iCtxIdxIncTable[64][2] =
     {4, 0}
 };
 
-Ipp32s H264Bitstream::DecodeSignedLevel_CABAC(Ipp32u ctxIdxOffset,
+Ipp32s H264Bitstream::DecodeSignedLevel_CABAC(Ipp32u localCtxIdxOffset,
                                               Ipp32u &numDecodAbsLevelEq1,
                                               Ipp32u &numDecodAbsLevelGt1,
                                               Ipp32u max_value)
@@ -529,7 +529,7 @@ Ipp32s H264Bitstream::DecodeSignedLevel_CABAC(Ipp32u ctxIdxOffset,
     {
         ctxIdxInc = iCtxIdxIncTable[numDecodAbsLevelEq1][((Ipp32u) -((Ipp32s) numDecodAbsLevelGt1)) >> 31];
 
-        if (0 == DecodeSingleBin_CABAC(ctxIdxOffset + ctxIdxInc))
+        if (0 == DecodeSingleBin_CABAC(localCtxIdxOffset + ctxIdxInc))
         {
             numDecodAbsLevelEq1 += 1;
             binIdx = 1;
@@ -543,7 +543,7 @@ Ipp32s H264Bitstream::DecodeSignedLevel_CABAC(Ipp32u ctxIdxOffset,
             ctxIdxInc = 5 + numDecodAbsLevelGt1;
             binIdx = 1;
 
-            binVal = DecodeSingleBinOnes_CABAC(ctxIdxOffset + ctxIdxInc, binIdx);
+            binVal = DecodeSingleBinOnes_CABAC(localCtxIdxOffset + ctxIdxInc, binIdx);
 
             // SUFFIX BIN(S) STRING DECODING
 
@@ -572,7 +572,7 @@ Ipp32s H264Bitstream::DecodeSignedLevel_CABAC(Ipp32u ctxIdxOffset,
     }
     else
     {
-        if (0 == DecodeSingleBin_CABAC(ctxIdxOffset + 0))
+        if (0 == DecodeSingleBin_CABAC(localCtxIdxOffset + 0))
         {
             numDecodAbsLevelEq1 += 1;
             binIdx = 1;
@@ -585,7 +585,7 @@ Ipp32s H264Bitstream::DecodeSignedLevel_CABAC(Ipp32u ctxIdxOffset,
             // we use Truncated Unary binarization with cMax = uCoff;
             binIdx = 1;
 
-            binVal = DecodeSingleBinOnes_CABAC(ctxIdxOffset + max_value, binIdx);
+            binVal = DecodeSingleBinOnes_CABAC(localCtxIdxOffset + max_value, binIdx);
 
             // SUFFIX BIN(S) STRING DECODING
 
@@ -651,7 +651,7 @@ Ipp32s H264Bitstream::DecodeSignedLevel_CABAC(Ipp32u ctxIdxOffset,
 // this is a limited version of the DecodeSignedLevel_CABAC function.
 // it decodes single value per block.
 //
-Ipp32s H264Bitstream::DecodeSingleSignedLevel_CABAC(Ipp32u ctxIdxOffset)
+Ipp32s H264Bitstream::DecodeSingleSignedLevel_CABAC(Ipp32u localCtxIdxOffset)
 {
     // See subclause 9.3.2.3 of H.264
     Ipp32u ctxIdxInc;
@@ -663,7 +663,7 @@ Ipp32s H264Bitstream::DecodeSingleSignedLevel_CABAC(Ipp32u ctxIdxOffset)
     {
         ctxIdxInc = iCtxIdxIncTable[0][0];
 
-        if (0 == DecodeSingleBin_CABAC(ctxIdxOffset + ctxIdxInc))
+        if (0 == DecodeSingleBin_CABAC(localCtxIdxOffset + ctxIdxInc))
         {
             binIdx = 1;
         }
@@ -676,7 +676,7 @@ Ipp32s H264Bitstream::DecodeSingleSignedLevel_CABAC(Ipp32u ctxIdxOffset)
             ctxIdxInc = 5;
             binIdx = 1;
 
-            binVal = DecodeSingleBinOnes_CABAC(ctxIdxOffset + ctxIdxInc, binIdx);
+            binVal = DecodeSingleBinOnes_CABAC(localCtxIdxOffset + ctxIdxInc, binIdx);
 
             // SUFFIX BIN(S) STRING DECODING
 
