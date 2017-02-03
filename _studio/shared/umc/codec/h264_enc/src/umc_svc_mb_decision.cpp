@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "ippdefs.h"
@@ -982,7 +982,6 @@ Ipp32u SVC_MB_Decision(void* state,
     if (tryBaseMode == 0) {
         H264CoreEncoder_MB_Decision_8u16s(state, curr_slice);
     } else if (tryBaseMode == 1) {
-        H264CurrentMacroblockDescriptor_8u16s &cur_mb = curr_slice->m_cur_mb;
         H264MacroblockLocalInfo sLocalMBinfo, *pLocalMBinfo;
         H264MacroblockGlobalInfo sGlobalMBinfo, *pGlobalMBinfo;
         H264MacroblockMVs bmMVs[4];         //MV L0,L1, MVDeltas 0,1
