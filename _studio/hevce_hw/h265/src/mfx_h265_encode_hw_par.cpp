@@ -1379,16 +1379,16 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         invalid++;
     }
 #else
-    if (par.mfx.FrameInfo.BitDepthLuma > 8)
+    if (caps.BitDepth8Only == 0) // 10-bit supported
     {
-        maxQP += 6 * (par.mfx.FrameInfo.BitDepthLuma - 8);
+        // For 10 bit encode we need adjust min/max QP
+        mfxU16 BitDepthLuma = par.mfx.FrameInfo.BitDepthLuma;
 
-        if (IsOn(par.mfx.LowPower)
-#ifndef MFX_CLOSED_PLATFORMS_DISABLE
-            || par.m_platform.CodeName == MFX_PLATFORM_KABYLAKE
-#endif
-            )
-            minQP = 6 * (par.mfx.FrameInfo.BitDepthLuma - 8);
+        if (BitDepthLuma == 0 ) 
+            BitDepthLuma = (par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10 || par.mfx.FrameInfo.FourCC == MFX_FOURCC_P010) ? 10 : 8;
+
+        maxQP += 6 * (BitDepthLuma - 8);
+        minQP = 6 * (BitDepthLuma - 8);
     }
 #endif
 
