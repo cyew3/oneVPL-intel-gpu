@@ -265,6 +265,7 @@
     <ClCompile Include="src\gmock\test_suites\avce_trellis.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_trellis_cavlc.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_vui_flag.cpp" />
+    <ClCompile Include="src\gmock\test_suites\avce_weight_prediction.cpp" />
     <ClCompile Include="src\gmock\test_suites\avc_sethandle_16.cpp" />
     <ClCompile Include="src\gmock\test_suites\camera_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\camera_reset.cpp" />
