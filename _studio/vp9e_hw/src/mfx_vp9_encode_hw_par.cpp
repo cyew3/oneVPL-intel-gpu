@@ -986,9 +986,9 @@ mfxStatus CheckParametersAndSetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 c
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
-    // (3) target and max bitrates
-    if ((par.mfx.RateControlMethod == MFX_RATECONTROL_CBR
-        || par.mfx.RateControlMethod == MFX_RATECONTROL_VBR)
+    // (3) target bitrate
+    if ((IsBitrateBasedBRC(par.mfx.RateControlMethod)
+        || par.mfx.RateControlMethod == 0)
         && par.m_targetKbps == 0)
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;
