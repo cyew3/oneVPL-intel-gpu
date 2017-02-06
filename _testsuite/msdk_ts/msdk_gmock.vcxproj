@@ -324,6 +324,7 @@
     <ClCompile Include="src\gmock\test_suites\jpegd_res_change.cpp" />
     <ClCompile Include="src\gmock\test_suites\lookahead_1N.cpp" />
     <ClCompile Include="src\gmock\test_suites\mjpegd_bs_dataflag.cpp" />
+    <ClCompile Include="src\gmock\test_suites\mjpegd_colorformat.cpp" />
     <ClCompile Include="src\gmock\test_suites\mjpegd_corruption.cpp" />
     <ClCompile Include="src\gmock\test_suites\mjpegd_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\mjpegd_payload.cpp" />
