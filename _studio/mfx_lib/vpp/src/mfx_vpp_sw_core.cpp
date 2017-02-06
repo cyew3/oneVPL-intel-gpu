@@ -1056,11 +1056,6 @@ mfxStatus VideoVPPBase::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam
             }
         }
 
-        MFX_CHECK_STS(mfxSts);
-
-        mfxSts = CheckCropParam(&(out->vpp.In));
-        MFX_CHECK_STS(mfxSts);
-
         /* [OUT VPP] data */
         if( out->vpp.Out.FourCC != MFX_FOURCC_YV12 &&
             out->vpp.Out.FourCC != MFX_FOURCC_NV12 &&
@@ -1117,9 +1112,6 @@ mfxStatus VideoVPPBase::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam
             }
         }
 
-        MFX_CHECK_STS(mfxSts);
-
-        mfxSts = CheckCropParam(&(out->vpp.Out));
         MFX_CHECK_STS(mfxSts);
 
         //-------------------------------------------------

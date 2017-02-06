@@ -1621,9 +1621,6 @@ mfxStatus CheckFrameInfo(mfxFrameInfo* info, mfxU32 request)
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
-    mfxSts = CheckCropParam(info);
-    MFX_CHECK_STS(mfxSts);
-
 #if 0
     /* AspectRatio */
     if ((info->AspectRatioW || info->AspectRatioH) && !(info->AspectRatioW && info->AspectRatioH))
