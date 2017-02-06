@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2017 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_vpp.h"
 #include "ts_struct.h"
 
@@ -40,6 +50,7 @@ private:
     {
         mfxStatus sts;
         mfxU32 mode;
+        mfxU32 impl;
     };
 
     static const tc_struct test_case[];
@@ -47,8 +58,10 @@ private:
 
 const TestSuite::tc_struct TestSuite::test_case[] =
 {
-    {/* 0*/ MFX_ERR_NONE, 0},
-    {/* 1*/ MFX_ERR_NONE, MFXCLOSE}
+    {/* 0*/ MFX_ERR_NONE, 0, MFX_IMPL_VIA_D3D11},
+    {/* 1*/ MFX_ERR_NONE, MFXCLOSE, MFX_IMPL_VIA_D3D11},
+    {/* 2*/ MFX_ERR_NONE, 0, MFX_IMPL_VIA_D3D9},
+    {/* 3*/ MFX_ERR_NONE, MFXCLOSE, MFX_IMPL_VIA_D3D9}
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -57,7 +70,7 @@ int TestSuite::RunTest(unsigned int id)
 {
     TS_START;
     const tc_struct& tc = test_case[id];
-
+    m_impl = tc.impl;
     MFXInit();
 
     if(m_uid)
