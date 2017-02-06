@@ -30,6 +30,7 @@
 #include "mfx_h264_encode_interface.h"
 #include "mfx_h264_encode_cm.h"
 #include "ippi.h"
+#include "vm_time.h"
 
 #ifndef _MFX_H264_ENCODE_HW_UTILS_H_
 #define _MFX_H264_ENCODE_HW_UTILS_H_
@@ -976,6 +977,23 @@ namespace MfxHwH264Encode
                 || (m_type.bot & MFX_FRAMETYPE_I))
                 return 0;
             return (mfxU8)m_ctrl.SkipFrame;
+        }
+
+        // Checking timeout for TDR hang detection
+        bool CheckForTDRHang() const
+        {
+            mfxU32 curTime = vm_time_get_current_time();
+            MFX_TRACE_D(curTime);
+            MFX_TRACE_D(m_startTime);
+
+            if (m_startTime && (curTime - m_startTime) > MFX_H264ENC_HW_TASK_TIMEOUT)
+            {
+                MFX_TRACE_S("Possible TDR hang:");
+                MFX_TRACE_D(((curTime - m_startTime) > MFX_H264ENC_HW_TASK_TIMEOUT));
+                return true;
+            }
+
+            return false;
         }
 
         mfxEncodeCtrl   m_ctrl;

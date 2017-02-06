@@ -799,7 +799,10 @@ mfxStatus D3D11Encoder::QueryStatus(
         return MFX_ERR_NONE;
 
     case ENCODE_NOTREADY:
-        return MFX_WRN_DEVICE_BUSY;
+        if (task.CheckForTDRHang())
+            return MFX_ERR_GPU_HANG;
+        else
+            return MFX_WRN_DEVICE_BUSY;
 
     case ENCODE_NOTAVAILABLE:
     case ENCODE_ERROR:
