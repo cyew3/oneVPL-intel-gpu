@@ -1619,9 +1619,6 @@ mfxStatus D3D9CameraProcessor::AsyncRoutine(AsyncParams *pParam)
     MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_HOTSPOTS);
     mfxStatus sts;
 
-    m_core->IncreaseReference(&(pParam->surf_out->Data));
-    m_core->IncreaseReference(&(pParam->surf_in->Data));
-
     MfxHwVideoProcessing::mfxDrvSurface    tmpSurf   = {0};
     
     mfxU32 surfInIndex;
