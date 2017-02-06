@@ -90,16 +90,7 @@ namespace vp9e_brc
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.BufferSizeInKB, 0 },
             }
         },
-        {/*04 too small bitrate*/ MFX_ERR_NONE, NONE,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 1 },
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.MaxKbps, 1 },
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 0 },
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.BufferSizeInKB, 0 },
-            }
-        },
-        {/*05 too small 'InitialDelayInKB'*/ MFX_ERR_NONE, NONE,
+        {/*04 too small 'InitialDelayInKB'*/ MFX_ERR_NONE, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
@@ -108,7 +99,7 @@ namespace vp9e_brc
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.BufferSizeInKB, 0 },
             }
         },
-        {/*06 too small 'BufferSizeInKB'*/ MFX_ERR_NONE, NONE,
+        {/*05 too small 'BufferSizeInKB'*/ MFX_ERR_NONE, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
@@ -117,7 +108,7 @@ namespace vp9e_brc
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.BufferSizeInKB, 10 },
             }
         },
-        {/*07 'BufferSizeInKB' smaller than 'InitialDelayInKB'*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE,
+        {/*06 'BufferSizeInKB' smaller than 'InitialDelayInKB'*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
@@ -126,7 +117,7 @@ namespace vp9e_brc
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.BufferSizeInKB, 10 },
             }
         },
-        {/*08 check Multiplier for normal values*/ MFX_ERR_NONE, MULTIPLIER_CHECK,
+        {/*07 check Multiplier for normal values*/ MFX_ERR_NONE, MULTIPLIER_CHECK,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
@@ -136,7 +127,7 @@ namespace vp9e_brc
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.BRCParamMultiplier, 2 },
             }
         },
-        {/*09 check Multiplier for out-of-range values*/ MFX_ERR_NONE, MULTIPLIER_CHECK,
+        {/*08 check Multiplier for out-of-range values*/ MFX_ERR_NONE, MULTIPLIER_CHECK,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 30000 },
@@ -146,7 +137,7 @@ namespace vp9e_brc
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.BRCParamMultiplier, 4 },
             }
         },
-        {/*10*/ MFX_ERR_NONE, NONE,
+        {/*09*/ MFX_ERR_NONE, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
@@ -155,7 +146,7 @@ namespace vp9e_brc
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.BufferSizeInKB, 0 },
             }
         },
-        {/*11 'MaxKbps' is smaller than 'TargetKbps'*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE,
+        {/*10 'MaxKbps' is smaller than 'TargetKbps'*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
@@ -164,21 +155,21 @@ namespace vp9e_brc
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.BufferSizeInKB, 0 },
             }
         },
-        {/*12*/ MFX_ERR_NONE, NONE,
+        {/*11*/ MFX_ERR_NONE, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 150 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPP, 150 },
             }
         },
-        {/*13*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE,
+        {/*12*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 0 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPP, 0 },
             }
         },
-        {/*14 QP out of range*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE,
+        {/*13 QP out of range*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, VP9E_MAX_QP_VALUE + 1 },
@@ -187,30 +178,50 @@ namespace vp9e_brc
         },
 
         // Check all unsupported brc methods
-        {/*15*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE,{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR } },
-        {/*16*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED1 } },
-        {/*17*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED2 } },
-        {/*18*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED3 } },
-        {/*19*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED4 } },
-        {/*20*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA } },
-        {/*21*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VCM } },
-        {/*22*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_ICQ } },
-        {/*23*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_EXT } },
-        {/*24*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_HRD } },
-        {/*25*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_QVBR } },
-        {/*26*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VME } },
-        {/*27*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, 16 } },
+        {/*14*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE,{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR } },
+        {/*15*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED1 } },
+        {/*16*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED2 } },
+        {/*17*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED3 } },
+        {/*18*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED4 } },
+        {/*19*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA } },
+        {/*20*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VCM } },
+        {/*21*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_ICQ } },
+        {/*22*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_EXT } },
+        {/*23*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_HRD } },
+        {/*24*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_QVBR } },
+        {/*25*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VME } },
+        {/*26*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, 16 } },
 
-        {/*28 default brc-type(=unspecified brc type)*/ MFX_ERR_NONE, NONE,
+        {/*27 unspecified both brc-type and kbps)*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, 0 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 0 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.BufferSizeInKB, 0 },
             }
         },
+        {/*28 unspecified brc type, but correct kbps => map to CBR)*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, 0 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 0 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.BufferSizeInKB, 0 },
+            }
+        },
 /*
-ICQ-based brc causes hanging of the encoding, so it is disabled until the issue solve
+// This case is working on the first post-Si CNL-hardware, but there are issues on CNL-Simics (switched off until post-Si validations)
+        {too small bitrate MFX_ERR_NONE, NONE,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 1 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.MaxKbps, 1 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 0 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.BufferSizeInKB, 0 },
+            }
+        },
+*/
 
+/*
+ICQ-based brc is not supported by the driver now, cases are left for the future using
         { MFX_ERR_NONE, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_ICQ },
