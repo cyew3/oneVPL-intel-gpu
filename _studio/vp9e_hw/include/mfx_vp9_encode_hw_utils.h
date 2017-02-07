@@ -42,7 +42,8 @@ namespace MfxHwVP9Encode
     #define MFX_MIN( a, b ) ( ((a) < (b)) ? (a) : (b) )
 #endif
 
-#define DPB_SIZE 8
+#define DPB_SIZE 8 // DPB size by VP9 spec
+#define DPB_SIZE_REAL 3 // DPB size really used by encoder
 #define MAX_SEGMENTS 8
 #define REF_FRAMES_LOG2 3
 #define REF_FRAMES (1 << REF_FRAMES_LOG2)
@@ -437,9 +438,9 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
 
     mfxStatus InitVp9SeqLevelParam(VP9MfxVideoParam const &video, VP9SeqLevelParam &param);
 
-    mfxStatus DecideOnRefListAndDPBRefresh(mfxVideoParam const & par,
+    mfxStatus DecideOnRefListAndDPBRefresh(VP9MfxVideoParam const & par,
                                            Task *pTask,
-                                           std::vector<sFrameEx*>&dpb,
+                                           std::vector<sFrameEx*>& dpb,
                                            VP9FrameLevelParam &frameParam);
 
     mfxStatus UpdateDpb(VP9FrameLevelParam &frameParam,
@@ -529,6 +530,7 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
         mfxU32            m_frameOrder;
         mfxU64            m_timeStamp;
         mfxU32            m_taskIdForDriver;
+        mfxU32            m_frameOrderInGop;
 
         mfxEncodeCtrl     m_ctrl;
 
@@ -548,6 +550,7 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
               m_frameOrder(0),
               m_timeStamp(0),
               m_taskIdForDriver(0),
+              m_frameOrderInGop(0),
               m_bsDataLength(0),
               m_pParam(NULL),
               m_insertIVFSeqHeader(false),

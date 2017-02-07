@@ -37,6 +37,7 @@ Plugin::Plugin(bool CreateByDispatcher)
     , m_numBufferedFrames(0)
     , m_initWidth(0)
     , m_initHeight(0)
+    , m_frameOrderInGop(0)
 {
     m_PluginParam.ThreadPolicy = MFX_THREADPOLICY_SERIAL;
     m_PluginParam.MaxThreadNum = 1;
@@ -380,6 +381,7 @@ MFX_CHECK_STS(sts);
 
     m_frameArrivalOrder = 0;
     m_taskIdForDriver = 0;
+    m_frameOrderInGop = 0;
 
     m_videoForParamChange.push_back(m_video);
 
@@ -441,6 +443,7 @@ mfxStatus Plugin::Reset(mfxVideoParam *par)
     if (IsResetOfPipelineRequired(parBeforeReset, parAfterReset))
     {
         m_frameArrivalOrder = 0;
+        m_frameOrderInGop = 0;
         // below commented code is to completely reset encoding pipeline
         /*
         // release all the reconstructed frames
@@ -623,6 +626,13 @@ mfxStatus Plugin::ConfigTask(Task &task)
     const VP9MfxVideoParam& curMfxPar = *task.m_pParam;
     mfxStatus sts = SetFramesParams(curMfxPar, task, frameParam, m_pmfxCore);
 
+    if (frameParam.frameType == KEY_FRAME)
+    {
+        m_frameOrderInGop = 0;
+    }
+
+    task.m_frameOrderInGop = m_frameOrderInGop;
+
     task.m_pRecFrame = 0;
     task.m_pOutBs = 0;
     task.m_pRawLocalFrame = 0;
@@ -726,6 +736,8 @@ mfxStatus Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
                 UMC::AutomaticUMCMutex guard(m_taskMutex);
                 m_submitted.splice(m_submitted.end(), m_accepted, m_accepted.begin());
             }
+
+            m_frameOrderInGop++;
 
             VP9_LOG("\n (VP9_LOG) Frame %d Plugin::SubmitFrame -", newFrame.m_frameOrder);
         }

@@ -136,6 +136,8 @@ protected:
 
     mfxU16 m_initWidth;
     mfxU16 m_initHeight;
+
+    mfxU32 m_frameOrderInGop;
 };
 
 } // MfxHwVP9Encode

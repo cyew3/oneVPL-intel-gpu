@@ -744,9 +744,12 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         }
     }
 
-    if (par.mfx.NumRefFrame > 3)
+    // VP9 spec allows to store up to 8 reference frames.
+    // this VP9 implementation use maximum 3 of 8 so far.
+    // we don't need to allocate more if really only 3 are used.
+    if (par.mfx.NumRefFrame > DPB_SIZE_REAL)
     {
-        par.mfx.NumRefFrame = 3;
+        par.mfx.NumRefFrame = DPB_SIZE_REAL;
         changed = true;
     }
 

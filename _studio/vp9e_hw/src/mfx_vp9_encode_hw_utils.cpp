@@ -277,62 +277,55 @@ mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
     return MFX_ERR_NONE;
 }
 
-mfxStatus DecideOnRefListAndDPBRefresh(mfxVideoParam const & par, Task *pTask, std::vector<sFrameEx*>&dpb, VP9FrameLevelParam &frameParam)
+mfxStatus DecideOnRefListAndDPBRefresh(VP9MfxVideoParam const & par, Task *pTask, std::vector<sFrameEx*>& dpb, VP9FrameLevelParam &frameParam)
 {
-    dpb; par;
-    bool multiref = (par.mfx.NumRefFrame == 3);
+    if (frameParam.frameType == KEY_FRAME)
+    {
+        memset(frameParam.refreshRefFrames, 1, DPB_SIZE);
+        return MFX_ERR_NONE;
+    }
+
+    mfxU8 dpbSize = (mfxU8)dpb.size();
+
+    bool multiref = dpbSize > 1;
     if (multiref == true)
     {
-#if 0
-        // idx 2 is dedicated to GOLD, idxs 0 and 1 are for LAST and ALT in round robin mode
-        mfxU8 prevLastRefIdx = 1;
-        frameParam.refList[REF_GOLD] = 2;
-        frameParam.refList[REF_ALT] = prevLastRefIdx;
-        frameParam.refList[REF_LAST] = 1 - prevLastRefIdx;
-        prevLastRefIdx = frameParam.refList[REF_LAST];
-#else
-        mfxU8 frameCount = pTask->m_frameOrder % 8;
-        frameParam.refList[REF_ALT] = 0;
-        frameParam.refList[REF_GOLD] = frameParam.refList[REF_LAST] = frameCount;
-        if (frameCount)
+        frameParam.refList[REF_GOLD] = dpbSize - 1; // last DPB intry is always for LTR (= GOLD)
+        mfxU32 frameOrder = pTask->m_frameOrderInGop;
+        // for DPB size 2 LAST and ALT are both DBP[0]
+        // for DPB size 3 LAST and ALT alternate between DPB[0] and DPB[1]
+        if (dpbSize == 2)
         {
-            frameParam.refList[REF_LAST] = frameParam.refList[REF_GOLD] = frameCount - 1;
-            if (frameCount > 1)
-            {
-                frameParam.refList[REF_GOLD] = frameCount - 2;
-            }
-        }
-#endif
-
-        if (frameParam.frameType == KEY_FRAME)
-        {
-            memset(frameParam.refreshRefFrames, 1, DPB_SIZE);
+            frameParam.refList[REF_LAST] = frameParam.refList[REF_ALT] = 0;
         }
         else
         {
-            /*if((pTask->m_frameOrder & 0x7) == 0)
-            {
-                frameParam.refreshRefFrames[frameParam.refList[REF_GOLD]] = 1;
-            }*/
-            frameParam.refreshRefFrames[frameCount] = 1;
+            frameParam.refList[REF_LAST] = 1 - frameOrder % 2;
+            frameParam.refList[REF_ALT] = frameOrder % 2;
         }
-        frameCount = (frameCount + 1) % 8;
+
+        // DPB entry pointed by ALT is always refreshed with current frame
+        frameParam.refreshRefFrames[frameParam.refList[REF_ALT]] = 1;
+
+        mfxU32 frameRate = par.mfx.FrameInfo.FrameRateExtN / par.mfx.FrameInfo.FrameRateExtD;
+
+        if ((frameOrder % (frameRate / 2)) == 0 ||
+            (frameOrder % (frameRate / 2)) == frameRate / 4)
+        {
+            // behavior aligned with driver - 4 LTRs per second
+            frameParam.refreshRefFrames[frameParam.refList[REF_GOLD]] = 1;
+        }
     }
     else
     {
-        // single ref
+        // single ref:
+        // Last, Gold, Alt are pointing to DPB[0]
+        // current frame refreshes DPB[0]
         frameParam.refList[REF_GOLD] = frameParam.refList[REF_ALT] = frameParam.refList[REF_LAST] = 0;
-        if (frameParam.frameType == KEY_FRAME)
-        {
-            memset(frameParam.refreshRefFrames, 1, DPB_SIZE);
-        }
-        else
-        {
-            frameParam.refreshRefFrames[0] = 1;
-        }
-
-        memset(&frameParam.refBiases[0], 0, REF_TOTAL);
+        frameParam.refreshRefFrames[0] = 1;
     }
+
+    memset(&frameParam.refBiases[0], 0, REF_TOTAL);
 
     return MFX_ERR_NONE;
 }
