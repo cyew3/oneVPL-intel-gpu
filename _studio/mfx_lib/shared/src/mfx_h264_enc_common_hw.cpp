@@ -6759,6 +6759,9 @@ MfxVideoParam::MfxVideoParam()
     , m_extFeiOpt()
     , m_extFeiSPS()
     , m_extFeiPPS()
+#if defined(__MFXBRC_H__)
+    , m_extBRC()
+#endif
     , calcParam()
 {
     memset(m_extParam, 0, sizeof(m_extParam));
