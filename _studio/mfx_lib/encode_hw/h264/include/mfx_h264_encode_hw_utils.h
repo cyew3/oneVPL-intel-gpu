@@ -1011,11 +1011,6 @@ namespace MfxHwH264Encode
         Pair<mfxU32>          m_initSizeList0;
         Pair<mfxU32>          m_initSizeList1;
 
-        //weight table support
-        Pair<mfxU8> m_lumaLog2WeightDenom;
-        Pair<mfxU8> m_chromaLog2WeightDenom;
-        Pair<ArrayWeightTab>  m_weightTab;
-
         // currently used for dpb control when svc temporal layers enabled
         mfxExtAVCRefListCtrl  m_internalListCtrl;
         bool                  m_internalListCtrlPresent;

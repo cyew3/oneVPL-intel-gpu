@@ -664,6 +664,135 @@ void UpdatePPS(
     }
 } // void UpdatePPS(...)
 
+void FillPWT(
+    ENCODE_CAPS const &                         hwCaps,
+    VAEncPictureParameterBufferH264 const &     pps,
+    mfxExtPredWeightTable const &               pwt,
+    VAEncSliceParameterBufferH264 &             slice)
+{
+    mfxU32 iNumRefL0 = 0;
+    mfxU32 iNumRefL1 = 0;
+    const mfxU32 iWeight = 0, iOffset = 1, iY = 0, iCb = 1, iCr = 2;
+    mfxU32 ref = 0;
+
+    // check parameter
+    if (!((pps.pic_fields.bits.weighted_pred_flag == 1 && slice.slice_type % 5 == SLICE_TYPE_P) ||
+          (pps.pic_fields.bits.weighted_bipred_idc == 1 && slice.slice_type % 5 == SLICE_TYPE_B)))
+        return;
+
+    iNumRefL0 = hwCaps.MaxNum_WeightedPredL0 < slice.num_ref_idx_l0_active_minus1 + 1 ? hwCaps.MaxNum_WeightedPredL0 : slice.num_ref_idx_l0_active_minus1 + 1;
+    iNumRefL1 = hwCaps.MaxNum_WeightedPredL1 < slice.num_ref_idx_l1_active_minus1 + 1 ? hwCaps.MaxNum_WeightedPredL1 : slice.num_ref_idx_l1_active_minus1 + 1;
+
+    // initialize
+    Zero(slice.luma_log2_weight_denom);
+    Zero(slice.chroma_log2_weight_denom);
+    Zero(slice.luma_weight_l0_flag);
+    Zero(slice.luma_weight_l1_flag);
+    Zero(slice.chroma_weight_l0_flag);
+    Zero(slice.chroma_weight_l1_flag);
+    Zero(slice.luma_weight_l0);
+    Zero(slice.luma_weight_l1);
+    Zero(slice.luma_offset_l0);
+    Zero(slice.luma_offset_l1);
+    Zero(slice.chroma_weight_l0);
+    Zero(slice.chroma_weight_l1);
+    Zero(slice.chroma_offset_l0);
+    Zero(slice.chroma_offset_l1);
+
+    slice.luma_log2_weight_denom = (mfxU8)pwt.LumaLog2WeightDenom;
+    slice.chroma_log2_weight_denom = (mfxU8)pwt.ChromaLog2WeightDenom;
+
+    if (hwCaps.LumaWeightedPred)
+    {
+        // Set Luma L0
+        if ((slice.slice_type % 5) == SLICE_TYPE_P || (slice.slice_type % 5) == SLICE_TYPE_B)
+        {
+            for (ref = 0; ref < iNumRefL0; ref++)
+            {
+                if (pwt.LumaWeightFlag[0][ref])
+                {
+                    slice.luma_weight_l0_flag |= 1 << ref;
+                    Copy(slice.luma_weight_l0[ref], pwt.Weights[0][ref][iY][iWeight]);
+                    Copy(slice.luma_offset_l0[ref], pwt.Weights[0][ref][iY][iOffset]);
+                }
+                else
+                {
+                    slice.luma_weight_l0[ref] = (1 << slice.luma_log2_weight_denom);
+                    slice.luma_offset_l0[ref] = 0;
+                }
+            }
+        }
+
+        // Set Luma L1
+        if ((slice.slice_type % 5) == SLICE_TYPE_B)
+        {
+            for (ref = 0; ref < iNumRefL1; ref++)
+            {
+                if (pwt.LumaWeightFlag[1][ref])
+                {
+                    slice.luma_weight_l1_flag |= 1 << ref;
+                    Copy(slice.luma_weight_l1[ref], pwt.Weights[1][ref][iY][iWeight]);
+                    Copy(slice.luma_offset_l1[ref], pwt.Weights[1][ref][iY][iOffset]);
+                }
+                else
+                {
+                    slice.luma_weight_l1[ref] = (1 << slice.luma_log2_weight_denom);
+                    slice.luma_offset_l1[ref] = 0;
+                }
+            }
+        }
+    }
+
+    if (hwCaps.ChromaWeightedPred)
+    {
+        // Set Chroma L0
+        if ((slice.slice_type % 5) == SLICE_TYPE_P || (slice.slice_type % 5) == SLICE_TYPE_B)
+        {
+            for (ref = 0; ref < iNumRefL0; ref++)
+            {
+                if (pwt.ChromaWeightFlag[0][ref])
+                {
+                    slice.chroma_weight_l0_flag |= 1 << ref;
+                    Copy(slice.chroma_weight_l0[ref][iCb], pwt.Weights[0][ref][iCb][iWeight]);
+                    Copy(slice.chroma_weight_l0[ref][iCr], pwt.Weights[0][ref][iCr][iWeight]);
+                    Copy(slice.chroma_offset_l0[ref][iCb], pwt.Weights[0][ref][iCb][iOffset]);
+                    Copy(slice.chroma_offset_l0[ref][iCr], pwt.Weights[0][ref][iCr][iOffset]);
+                }
+                else
+                {
+                    slice.chroma_weight_l0[ref][iCb] = (1 << slice.chroma_log2_weight_denom);
+                    slice.chroma_weight_l0[ref][iCr] = (1 << slice.chroma_log2_weight_denom);
+                    slice.chroma_offset_l0[ref][iCb] = 0;
+                    slice.chroma_offset_l0[ref][iCr] = 0;
+                }
+            }
+        }
+
+        // Set Chroma L1
+        if ((slice.slice_type % 5) == SLICE_TYPE_B)
+        {
+            for (ref = 0; ref < iNumRefL1; ref++)
+            {
+                if (pwt.ChromaWeightFlag[1][ref])
+                {
+                    slice.chroma_weight_l1_flag |= 1 << ref;
+                    Copy(slice.chroma_weight_l1[ref][iCb], pwt.Weights[1][ref][iCb][iWeight]);
+                    Copy(slice.chroma_weight_l1[ref][iCr], pwt.Weights[1][ref][iCr][iWeight]);
+                    Copy(slice.chroma_offset_l1[ref][iCb], pwt.Weights[1][ref][iCb][iOffset]);
+                    Copy(slice.chroma_offset_l1[ref][iCr], pwt.Weights[1][ref][iCr][iOffset]);
+                }
+                else
+                {
+                    slice.chroma_weight_l1[ref][iCb] = (1 << slice.chroma_log2_weight_denom);
+                    slice.chroma_weight_l1[ref][iCr] = (1 << slice.chroma_log2_weight_denom);
+                    slice.chroma_offset_l1[ref][iCb] = 0;
+                    slice.chroma_offset_l1[ref][iCr] = 0;
+                }
+            }
+        }
+    }
+}
+
     void UpdateSlice(
         ENCODE_CAPS const &                         hwCaps,
         DdiTask const &                             task,
@@ -686,6 +815,10 @@ void UpdatePPS(
         assert(extDdi      != 0);
         assert(extOpt2     != 0);
         assert(extFeiSlice != 0);
+
+        mfxExtPredWeightTable const * pPWT = GetExtBuffer(task.m_ctrl, fieldId);
+        if (!pPWT)
+            pPWT = &task.m_pwt[fieldId];
 
         SliceDivider divider = MakeSliceDivider(
             hwCaps.SliceStructure,
@@ -756,6 +889,9 @@ void UpdatePPS(
             slice[i].disable_deblocking_filter_idc = (extFeiSlice && extFeiSlice->Slice ? extFeiSlice->Slice[i].DisableDeblockingFilterIdc : extOpt2->DisableDeblockingIdc);
             slice[i].slice_alpha_c0_offset_div2    = (extFeiSlice && extFeiSlice->Slice ? extFeiSlice->Slice[i].SliceAlphaC0OffsetDiv2     : 0);
             slice[i].slice_beta_offset_div2        = (extFeiSlice && extFeiSlice->Slice ? extFeiSlice->Slice[i].SliceBetaOffsetDiv2        : 0);
+
+            if (pPWT)
+                FillPWT(hwCaps, pps, *pPWT, slice[i]);
         }
 
     } // void UpdateSlice(...)
@@ -779,6 +915,10 @@ void UpdateSliceSizeLimited(
     mfxExtFeiSliceHeader * extFeiSlice = GetExtBuffer(par, fieldId);
     assert(extDdi != 0);
     assert(extOpt2 != 0);
+
+    mfxExtPredWeightTable const * pPWT = GetExtBuffer(task.m_ctrl, fieldId);
+    if (!pPWT)
+        pPWT = &task.m_pwt[fieldId];
 
     size_t numSlices = task.m_SliceInfo.size();
     if (numSlices != slice.size())
@@ -854,6 +994,9 @@ void UpdateSliceSizeLimited(
         slice[i].disable_deblocking_filter_idc = (extFeiSlice->Slice ? extFeiSlice->Slice[i].DisableDeblockingFilterIdc : extOpt2->DisableDeblockingIdc);
         slice[i].slice_alpha_c0_offset_div2 = (extFeiSlice->Slice ? extFeiSlice->Slice[i].SliceAlphaC0OffsetDiv2 : 0);
         slice[i].slice_beta_offset_div2 = (extFeiSlice->Slice ? extFeiSlice->Slice[i].SliceBetaOffsetDiv2 : 0);
+
+        if (pPWT)
+            FillPWT(hwCaps, pps, *pPWT, slice[i]);
     }
 
 } // void UpdateSlice(...)
@@ -1070,7 +1213,11 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     m_caps.UserMaxFrameSizeSupport = 1;
     m_caps.MBBRCSupport = 1;
     m_caps.MbQpDataSupport = 1;
-    m_caps.NoWeightedPred = 1;
+    m_caps.NoWeightedPred = 0;
+    m_caps.LumaWeightedPred = 1;
+    m_caps.ChromaWeightedPred = 1;
+    m_caps.MaxNum_WeightedPredL0 = 4;
+    m_caps.MaxNum_WeightedPredL1 = 2;
     m_caps.Color420Only = 1;
 
     vaExtQueryEncCapabilities pfnVaExtQueryCaps = NULL;
