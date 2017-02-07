@@ -1527,6 +1527,7 @@ bool MfxHwH264Encode::IsVideoParamExtBufferIdSupported(mfxU32 id)
         || id == MFX_EXTBUFF_CODING_OPTION_SPSPPS
 #ifdef MFX_UNDOCUMENTED_CO_DDI
         || id == MFX_EXTBUFF_DDI
+        || id == MFX_EXTBUFF_BRC
 #endif
 #ifdef MFX_UNDOCUMENTED_DUMP_FILES
         || id == MFX_EXTBUFF_DUMP
