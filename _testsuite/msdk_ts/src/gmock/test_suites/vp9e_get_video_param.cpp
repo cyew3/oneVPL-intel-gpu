@@ -70,11 +70,10 @@ namespace vp9e_get_video_param
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 0},
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 0},
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.IdrInterval, 0},
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, 0},
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 0},
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPP, 0},
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, 0 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 0 },
             }
-        }
+        },
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
@@ -86,6 +85,7 @@ namespace vp9e_get_video_param
 #define DEFAULT_BRC MFX_RATECONTROL_CBR
 #define DEFAULT_QPI 128
 #define DEFAULT_QPP 133
+#define DEFAULT_TARGET_USAGE MFX_TARGETUSAGE_BALANCED
 
     int TestSuite::RunTest(unsigned int id)
     {
@@ -199,10 +199,8 @@ namespace vp9e_get_video_param
                     << "ERROR: Default GopRefDist isn't actual to " << DEFAULT_GOP_REF_DIST;
                 EXPECT_EQ(new_par.mfx.RateControlMethod, DEFAULT_BRC)
                     << "ERROR: Default RateControlMethod isn't actual to " << DEFAULT_BRC;
-                EXPECT_EQ(new_par.mfx.QPI, DEFAULT_QPI)
-                    << "ERROR: Default QPI isn't actual to" << DEFAULT_QPI;
-                EXPECT_EQ(new_par.mfx.QPP, DEFAULT_QPP)
-                    << "ERROR: Default QPP isn't actual to " << DEFAULT_QPP;
+                EXPECT_EQ(new_par.mfx.TargetUsage, DEFAULT_TARGET_USAGE)
+                    << "ERROR: Default TargetUsage isn't actual to " << DEFAULT_TARGET_USAGE;
             }
         }
         TS_END;

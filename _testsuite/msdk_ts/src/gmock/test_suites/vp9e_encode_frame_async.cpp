@@ -122,36 +122,25 @@ namespace vp9e_encode_frame_async
         },
 
         {/*15*/ MFX_ERR_NONE, NONE,
-            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 1 },
-        },
-
-        {/*16*/ MFX_ERR_NONE, NONE,
-            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 4 },
-        },
-
-        {/*17*/ MFX_ERR_NONE, NONE,
-            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 7 },
-        },
-        {/*18*/ MFX_ERR_NONE, NONE,
             { MFX_PAR, &tsStruct::mfxVideoParam.AsyncDepth, 1 },
         },
-        {/*19*/ MFX_ERR_NONE, NONE,
+        {/*16*/ MFX_ERR_NONE, NONE,
             { MFX_PAR, &tsStruct::mfxVideoParam.AsyncDepth, 5 },
         },
-        {/*20*/ MFX_ERR_NONE, NONE,
+        {/*17*/ MFX_ERR_NONE, NONE,
             { MFX_PAR, &tsStruct::mfxVideoParam.AsyncDepth, 10 },
         },
     };
 
     const TestSuite::tc_struct TestSuite::test_case_nv12[] =
     {
-        {/*21*/ MFX_ERR_NULL_PTR, NONE,
+        {/*18*/ MFX_ERR_NULL_PTR, NONE,
             { MFX_SURF, &tsStruct::mfxFrameSurface1.Data.Y, 0 }
         },
-        {/*22*/ MFX_ERR_NULL_PTR, NONE,
+        {/*19*/ MFX_ERR_NULL_PTR, NONE,
             { MFX_SURF, &tsStruct::mfxFrameSurface1.Data.U, 0 }
         },
-        {/*23*/ MFX_ERR_NULL_PTR, NONE,
+        {/*20*/ MFX_ERR_NULL_PTR, NONE,
             { MFX_SURF, &tsStruct::mfxFrameSurface1.Data.V, 0 }
         },
     };
@@ -159,13 +148,13 @@ namespace vp9e_encode_frame_async
 
     const TestSuite::tc_struct TestSuite::test_case_p010[] =
     {
-        {/*21*/ MFX_ERR_NULL_PTR, NONE,
+        {/*18*/ MFX_ERR_NULL_PTR, NONE,
             { MFX_SURF, &tsStruct::mfxFrameSurface1.Data.Y16, 0 }
         },
-        {/*22*/ MFX_ERR_NULL_PTR, NONE,
+        {/*19*/ MFX_ERR_NULL_PTR, NONE,
             { MFX_SURF, &tsStruct::mfxFrameSurface1.Data.U16, 0 }
         },
-        {/*23*/ MFX_ERR_NULL_PTR, NONE,
+        {/*20*/ MFX_ERR_NULL_PTR, NONE,
             { MFX_SURF, &tsStruct::mfxFrameSurface1.Data.V16, 0 }
         },
     };

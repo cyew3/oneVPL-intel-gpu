@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -276,7 +276,6 @@ namespace vp9e_cqp
         m_par.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
         m_par.mfx.QPI = VP9E_CQP_DEFAULT_QPI;
         m_par.mfx.QPP = VP9E_CQP_DEFAULT_QPP;
-        m_par.mfx.TargetUsage = 1;
         m_par.mfx.FrameInfo.Width  = m_par.mfx.FrameInfo.CropW = 176;
         m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 144;
 
