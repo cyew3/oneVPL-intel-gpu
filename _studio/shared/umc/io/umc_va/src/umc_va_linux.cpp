@@ -407,17 +407,21 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
         }
         if (UMC_OK == umcRes)
         {
+            int nattr = 0;
             // Assuming finding VLD, find out the format for the render target
-            va_attributes[0].type = VAConfigAttribRTFormat;
+            va_attributes[nattr++].type = VAConfigAttribRTFormat;
 
-            va_attributes[1].type = VAConfigAttribDecSliceMode;
-            va_attributes[1].value = VA_DEC_SLICE_MODE_NORMAL;
+            va_attributes[nattr].type = VAConfigAttribDecSliceMode;
+            va_attributes[nattr].value = VA_DEC_SLICE_MODE_NORMAL;
+            nattr++;
 
-            va_attributes[2].type = (VAConfigAttribType)VAConfigAttribDecProcessing;
+#ifndef MFX_VAAPI_UPSTREAM
+            va_attributes[nattr++].type = (VAConfigAttribType)VAConfigAttribDecProcessing;
+#endif
 
-            va_attributes[3].type = VAConfigAttribEncryption;
+            va_attributes[nattr++].type = VAConfigAttribEncryption;
 
-            va_res = vaGetConfigAttributes(m_dpy, va_profile, va_entrypoint, va_attributes, 4);
+            va_res = vaGetConfigAttributes(m_dpy, va_profile, va_entrypoint, va_attributes, nattr);
             umcRes = va_to_umc_res(va_res);
         }
 
@@ -446,10 +450,14 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
 
         if (UMC_OK == umcRes && pParams->m_needVideoProcessingVA)
         {
+#ifndef MFX_VAAPI_UPSTREAM
             if (va_attributes[2].value == VA_DEC_PROCESSING_NONE)
                 umcRes = UMC_ERR_FAILED;
             else
                 attribsNumber++;
+#else
+            umcRes = UMC_ERR_FAILED;
+#endif
         }
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
@@ -691,8 +699,10 @@ VACompBuffer* LinuxVideoAccelerator::GetCompBufferHW(Ipp32s type, Ipp32s size, I
             case UMC::VA_H264:
                 if (m_bH264ShortSlice)
                 {
+#ifndef MFX_VAAPI_UPSTREAM
                     va_size         = sizeof(VASliceParameterBufferH264Base);
                     va_num_elements = size/sizeof(VASliceParameterBufferH264Base);
+#endif
                 }
                 else
                 {

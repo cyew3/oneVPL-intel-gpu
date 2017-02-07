@@ -88,16 +88,18 @@ Status VideoProcessingVA::Init(mfxVideoParam * vpParams, mfxExtDecVideoProcessin
     pipelineBuf->backward_references = 0;
     pipelineBuf->num_backward_references = 0;
 
+    output_surface_array[0] = 0;
+
+#ifndef MFX_VAAPI_UPSTREAM
     pipelineBuf->rotation_state = VA_ROTATION_NONE;
     pipelineBuf->blend_state = 0;
     pipelineBuf->mirror_state = 0;
-
-    output_surface_array[0] = 0;
 
     pipelineBuf->additional_outputs = output_surface_array;
     pipelineBuf->num_additional_outputs = 1;
 
     pipelineBuf->input_surface_flag = 0;
+#endif
 
     return UMC_OK;
 }

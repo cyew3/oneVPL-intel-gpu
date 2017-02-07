@@ -5,16 +5,22 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2016-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2016-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef _MFX_CONFIG_H_
 #define _MFX_CONFIG_H_
 
+#ifdef LINUX_TARGET_PLATFORM_UPSTREAM
+    #define MFX_VAAPI_UPSTREAM
+#endif
+
 #ifndef OPEN_SOURCE
 // disable additional features
-//#define MFX_FADE_DETECTION_FEATURE_DISABLE 
-//#define MFX_PROTECTED_FEATURE_DISABLE 
+//#define MFX_FADE_DETECTION_FEATURE_DISABLE
+#ifdef MFX_VAAPI_UPSTREAM
+    #define MFX_PROTECTED_FEATURE_DISABLE
+#endif
 //#define MFX_PRIVATE_AVC_ENCODE_CTRL_DISABLE
 //#define MFX_DEC_VIDEO_POSTPROCESS_DISABLE
 //#define MFX_EXT_BRC_DISABLE
@@ -293,7 +299,10 @@
     #endif
 
 #else // LINUX_TARGET_PLATFORM
-    #if defined(LINUX_TARGET_PLATFORM_BXTMIN)
+    #if defined(LINUX_TARGET_PLATFORM_UPSTREAM)
+        // mfx_common_linux_upstream.h was derived from mfx_common_linux_bdw.h
+        #include "mfx_common_linux_upstream.h"
+    #elif defined(LINUX_TARGET_PLATFORM_BXTMIN)
         #include "mfx_common_linux_bxtmin.h"
     #elif defined(LINUX_TARGET_PLATFORM_BXT)
         #include "mfx_common_linux_bxt.h"
