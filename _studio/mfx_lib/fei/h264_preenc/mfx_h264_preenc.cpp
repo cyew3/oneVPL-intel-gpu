@@ -11,8 +11,7 @@
 #include "mfx_common.h"
 #include "mfx_h264_preenc.h"
 
-#ifdef MFX_VA
-#if defined(MFX_ENABLE_H264_VIDEO_ENCODE_HW) && defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC)
+#if defined(MFX_VA) && defined(MFX_ENABLE_H264_VIDEO_ENCODE_HW) && defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC)
 
 #include <algorithm>
 #include <numeric>
@@ -41,8 +40,7 @@
 #define mdprintf(...)
 #endif
 
-using namespace MfxEncPREENC;
-//using namespace MfxHwH264Encode;
+using namespace MfxHwH264Encode;
 
 namespace MfxEncPREENC
 {
@@ -666,10 +664,10 @@ mfxStatus VideoENC_PREENC::Query(VideoCORE* core, mfxVideoParam *in, mfxVideoPar
         return MFX_ERR_NONE;
     }
 
-    MfxVideoParam tmp = *in; // deep copy, to cteare all ext buffers
+    MfxVideoParam tmp = *in; // deep copy, to create all ext buffers
 
     std::auto_ptr<DriverEncoder> ddi;
-    ddi.reset( new MfxHwH264Encode::VAAPIFEIPREENCEncoder );
+    ddi.reset( new VAAPIFEIPREENCEncoder );
 
     sts = ddi->CreateAuxilliaryDevice(
         core,
@@ -682,7 +680,7 @@ mfxStatus VideoENC_PREENC::Query(VideoCORE* core, mfxVideoParam *in, mfxVideoPar
     sts = ddi->QueryEncodeCaps(hwCaps);
     MFX_CHECK(sts == MFX_ERR_NONE, MFX_WRN_PARTIAL_ACCELERATION);
 
-    mfxStatus checkSts = CheckVideoParamQueryLikePreEnc(tmp, hwCaps, core->GetHWType(), core->GetVAType());
+    mfxStatus checkSts = MfxEncPREENC::CheckVideoParamQueryLikePreEnc(tmp, hwCaps, core->GetHWType(), core->GetVAType());
     MFX_CHECK(checkSts != MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION);
     
     if (checkSts == MFX_ERR_INCOMPATIBLE_VIDEO_PARAM)
@@ -704,7 +702,7 @@ mfxStatus VideoENC_PREENC::QueryIOSurf(VideoCORE* , mfxVideoParam *par, mfxFrame
     MFX_CHECK(pControl,                 MFX_ERR_UNDEFINED_BEHAVIOR);
     MFX_CHECK(pControl->LookAheadDepth, MFX_ERR_UNDEFINED_BEHAVIOR);
 
-    mfxU32 inPattern = par->IOPattern & MfxHwH264Encode::MFX_IOPATTERN_IN_MASK;
+    mfxU32 inPattern = par->IOPattern & MFX_IOPATTERN_IN_MASK;
     MFX_CHECK(
         inPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
         inPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY ||
@@ -764,7 +762,7 @@ mfxStatus VideoENC_PREENC::Init(mfxVideoParam *par)
     /* Check W & H*/
     MFX_CHECK((par->mfx.FrameInfo.Width > 0 && par->mfx.FrameInfo.Height > 0), MFX_ERR_INVALID_VIDEO_PARAM);
 
-    m_ddi.reset( new MfxHwH264Encode::VAAPIFEIPREENCEncoder );
+    m_ddi.reset( new VAAPIFEIPREENCEncoder );
 
     sts = m_ddi->CreateAuxilliaryDevice(
         m_core,
@@ -777,7 +775,7 @@ mfxStatus VideoENC_PREENC::Init(mfxVideoParam *par)
     sts = m_ddi->QueryEncodeCaps(m_caps);
     MFX_CHECK(sts == MFX_ERR_NONE, MFX_WRN_PARTIAL_ACCELERATION);
 
-    mfxStatus checkStatus = CheckVideoParamPreEncInit(m_video, m_caps, m_currentPlatform, m_currentVaType);
+    mfxStatus checkStatus = MfxEncPREENC::CheckVideoParamPreEncInit(m_video, m_caps, m_currentPlatform, m_currentVaType);
     switch (checkStatus)
     {
     case MFX_ERR_UNSUPPORTED:
@@ -822,9 +820,17 @@ mfxStatus VideoENC_PREENC::GetVideoParam(mfxVideoParam *par)
 {
     MFX_CHECK_NULL_PTR1(par);
 
-    for (mfxU32 i = 0; i < par->NumExtParam; i++)
+    // For buffers which are field-based
+    std::map<mfxU32, mfxU32> buffers_offsets;
+
+    for (mfxU32 i = 0; i < par->NumExtParam; ++i)
     {
-        if (mfxExtBuffer * buf = MfxEncPREENC::GetExtBuffer(m_video.ExtParam, m_video.NumExtParam, par->ExtParam[i]->BufferId))
+        if (buffers_offsets.find(par->ExtParam[i]->BufferId) == buffers_offsets.end())
+            buffers_offsets[par->ExtParam[i]->BufferId] = 0;
+        else
+            buffers_offsets[par->ExtParam[i]->BufferId]++;
+
+        if (mfxExtBuffer * buf = MfxHwH264Encode::GetExtBuffer(m_video.ExtParam, m_video.NumExtParam, par->ExtParam[i]->BufferId, buffers_offsets[par->ExtParam[i]->BufferId]))
         {
             MFX_INTERNAL_CPY(par->ExtParam[i], buf, par->ExtParam[i]->BufferSz);
         }
@@ -971,7 +977,7 @@ mfxStatus VideoENC_PREENC::RunFrameVmeENCCheck(
 }
 
 static mfxStatus CopyRawSurfaceToVideoMemory(VideoCORE &  core,
-                                        MfxHwH264Encode::MfxVideoParam const & video,
+                                        MfxVideoParam const & video,
                                         mfxFrameSurface1 *  src_sys, 
                                         mfxMemId            dst_d3d,
                                         mfxHDL&             handle)
@@ -986,12 +992,12 @@ static mfxStatus CopyRawSurfaceToVideoMemory(VideoCORE &  core,
         mfxFrameData sysSurf = src_sys->Data;
         d3dSurf.MemId = dst_d3d;
 
-        MfxHwH264Encode::FrameLocker lock2(&core, sysSurf, true);
+        FrameLocker lock2(&core, sysSurf, true);
 
         MFX_CHECK_NULL_PTR1(sysSurf.Y)
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "Copy input (sys->d3d)");
-            MFX_CHECK_STS(MfxHwH264Encode::CopyFrameDataBothFields(&core, d3dSurf, sysSurf, video.mfx.FrameInfo));
+            MFX_CHECK_STS(CopyFrameDataBothFields(&core, d3dSurf, sysSurf, video.mfx.FrameInfo));
         }
 
         MFX_CHECK_STS(lock2.Unlock());
@@ -1021,7 +1027,5 @@ mfxStatus VideoENC_PREENC::Close(void)
     return MFX_ERR_NONE;
 } 
 
-#endif
-#endif  // MFX_VA
 
-/* EOF */
+#endif  // defined(MFX_VA) && defined(MFX_ENABLE_H264_VIDEO_ENCODE_HW) && defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC)
