@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -1038,8 +1038,8 @@ struct H265PicParamSetBase
     Ipp32u  num_tile_columns;
     Ipp32u  num_tile_rows;
     Ipp32u  uniform_spacing_flag;
-    Ipp32u* column_width;
-    Ipp32u* row_height;
+    std::vector<Ipp32u> column_width;
+    std::vector<Ipp32u> row_height;
     Ipp8u   loop_filter_across_tiles_enabled_flag;
 
     Ipp8u   pps_loop_filter_across_slices_enabled_flag;
@@ -1074,12 +1074,12 @@ struct H265PicParamSetBase
     // calculated params
     // These fields are calculated from values above.  They are not written to the bitstream
     ///////////////////////////////////////////////////////
-    Ipp32u getColumnWidth(Ipp32u columnIdx) { return *( column_width + columnIdx ); }
-    Ipp32u getRowHeight(Ipp32u rowIdx)    { return *( row_height + rowIdx ); }
+    Ipp32u getColumnWidth(Ipp32u columnIdx) { return column_width[columnIdx]; }
+    Ipp32u getRowHeight(Ipp32u rowIdx)    { return row_height[rowIdx]; }
 
-    Ipp32u* m_CtbAddrRStoTS;
-    Ipp32u* m_CtbAddrTStoRS;
-    Ipp32u* m_TileIdx;
+    std::vector<Ipp32u> m_CtbAddrRStoTS;
+    std::vector<Ipp32u> m_CtbAddrTStoRS;
+    std::vector<Ipp32u> m_TileIdx;
 
     void Reset()
     {
@@ -1097,31 +1097,16 @@ struct H265PicParamSet : public HeapObject, public H265PicParamSetBase
     H265PicParamSet()
         : H265PicParamSetBase()
     {
-        column_width = 0;
-        row_height = 0;
-        m_CtbAddrRStoTS = 0;
-        m_CtbAddrTStoRS = 0;
-        m_TileIdx = 0;
-
         Reset();
     }
 
     void Reset()
     {
-        delete[] column_width;
-        column_width = 0;
-
-        delete[] row_height;
-        row_height = 0;
-
-        delete[] m_CtbAddrRStoTS;
-        m_CtbAddrRStoTS = 0;
-
-        delete[] m_CtbAddrTStoRS;
-        m_CtbAddrTStoRS = 0;
-
-        delete[] m_TileIdx;
-        m_TileIdx = 0;
+        column_width.clear();
+        row_height.clear();
+        m_CtbAddrRStoTS.clear();
+        m_CtbAddrTStoRS.clear();
+        m_TileIdx.clear();
 
         H265PicParamSetBase::Reset();
 

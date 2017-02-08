@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -423,12 +423,12 @@ void H265DecoderFrame::allocateCodingData(const H265SeqParamSet* sps, const H265
                 m_buOffsetY[(buRow << MaxCUDepth) + buCol] *= pixelSize;
                 m_buOffsetC[(buRow << MaxCUDepth) + buCol] *= pixelSize;
             }
-        }    
+        }
     }
 
-    m_CodingData->m_CUOrderMap = pps->m_CtbAddrTStoRS;
-    m_CodingData->m_InverseCUOrderMap = pps->m_CtbAddrRStoTS;
-    m_CodingData->m_TileIdxMap = pps->m_TileIdx;
+    m_CodingData->m_CUOrderMap = const_cast<Ipp32u*>(&pps->m_CtbAddrTStoRS[0]);
+    m_CodingData->m_InverseCUOrderMap = const_cast<Ipp32u*>(&pps->m_CtbAddrRStoTS[0]);
+    m_CodingData->m_TileIdxMap = const_cast<Ipp32u*>(&pps->m_TileIdx[0]);
 
     m_CodingData->initSAO(sps);
 }
@@ -444,7 +444,7 @@ void H265DecoderFrame::deallocateCodingData()
 }
 
 // Returns a CTB by its raster address
-H265CodingUnit* H265DecoderFrame::getCU(Ipp32u CUaddr) const 
+H265CodingUnit* H265DecoderFrame::getCU(Ipp32u CUaddr) const
 {
     return m_CodingData->getCU(CUaddr);
 }
@@ -487,7 +487,7 @@ PlanePtrUV H265DecoderFrame::GetCbCrAddr(Ipp32s CUAddr) const
 }
 
 //  Access starting position of original picture for specific coding unit (CU) and partition unit (PU)
-// ML: OPT: TODO: Make these functions available for inlining 
+// ML: OPT: TODO: Make these functions available for inlining
 PlanePtrY H265DecoderFrame::GetLumaAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const
 {
     return m_pYPlane + m_cuOffsetY[CUAddr] + m_buOffsetY[getCD()->m_partitionInfo.m_zscanToRaster[AbsZorderIdx]];

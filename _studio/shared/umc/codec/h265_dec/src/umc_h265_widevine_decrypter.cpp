@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -816,13 +816,13 @@ UMC::Status DecryptParametersWrapper::GetPictureParamSetFull(H265PicParamSet *pc
 
         if (!pcPPS->uniform_spacing_flag)
         {
-            pcPPS->column_width = h265_new_array_throw<Ipp32u>(pcPPS->num_tile_columns);
+            pcPPS->column_width.resize(pcPPS->num_tile_columns);
             for (Ipp32u i=0; i < pcPPS->num_tile_columns - 1; i++)
             {
                 pcPPS->column_width[i] = PicParams.pps_column_width_minus1[i] + 1;
             }
 
-            pcPPS->row_height = h265_new_array_throw<Ipp32u>(pcPPS->num_tile_rows);
+            pcPPS->row_height.resize(pcPPS->num_tile_rows);
 
             for (Ipp32u i=0; i < pcPPS->num_tile_rows - 1; i++)
             {

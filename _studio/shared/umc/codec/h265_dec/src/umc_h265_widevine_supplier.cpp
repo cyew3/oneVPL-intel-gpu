@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -240,26 +240,9 @@ UMC::Status WidevineTaskSupplier::ParseWidevineVPSSPSPPS(DecryptParametersWrappe
             Ipp32u WidthInLCU = sps->WidthInCU;
             Ipp32u HeightInLCU = sps->HeightInCU;
 
-            pps.m_CtbAddrRStoTS = h265_new_array_throw<Ipp32u>(WidthInLCU * HeightInLCU + 1);
-            if (NULL == pps.m_CtbAddrRStoTS)
-            {
-                pps.Reset();
-                return UMC::UMC_ERR_ALLOC;
-            }
-
-            pps.m_CtbAddrTStoRS = h265_new_array_throw<Ipp32u>(WidthInLCU * HeightInLCU + 1);
-            if (NULL == pps.m_CtbAddrTStoRS)
-            {
-                pps.Reset();
-                return UMC::UMC_ERR_ALLOC;
-            }
-
-            pps.m_TileIdx = h265_new_array_throw<Ipp32u>(WidthInLCU * HeightInLCU + 1);
-            if (NULL == pps.m_TileIdx)
-            {
-                pps.Reset();
-                return UMC::UMC_ERR_ALLOC;
-            }
+            pps.m_CtbAddrRStoTS.resize(WidthInLCU * HeightInLCU + 1);
+            pps.m_CtbAddrTStoRS.resize(WidthInLCU * HeightInLCU + 1);
+            pps.m_TileIdx.resize(WidthInLCU * HeightInLCU + 1);
 
             // Calculate tiles rows and columns coordinates
             if (pps.tiles_enabled_flag)
@@ -277,8 +260,8 @@ UMC::Status WidevineTaskSupplier::ParseWidevineVPSSPSPPS(DecryptParametersWrappe
                 {
                     Ipp32u lastDiv, i;
 
-                    pps.column_width = h265_new_array_throw<Ipp32u>(columns);
-                    pps.row_height = h265_new_array_throw<Ipp32u>(rows);
+                    pps.column_width.resize(columns);
+                    pps.row_height.resize(rows);
 
                     lastDiv = 0;
                     for (i = 0; i < columns; i++)
@@ -401,7 +384,7 @@ UMC::Status WidevineTaskSupplier::ParseWidevineVPSSPSPPS(DecryptParametersWrappe
                     pps.m_CtbAddrTStoRS[i] = i;
                     pps.m_CtbAddrRStoTS[i] = i;
                 }
-                memset(pps.m_TileIdx, 0, sizeof(Ipp32u) * WidthInLCU * HeightInLCU);
+                fill(pps.m_TileIdx.begin(), pps.m_TileIdx.end(), 0);
             }
 
             Ipp32s numberOfTiles = pps.tiles_enabled_flag ? pps.getNumTiles() : 0;
