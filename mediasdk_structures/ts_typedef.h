@@ -29,3 +29,4 @@ TYPEDEF_MEMBER(mfxExtMoveRect,            Rect[0],             mfxExtMoveRect_En
 typedef union { mfxU32 n; char c[4]; } mfx4CC;
 typedef mfxExtAVCRefLists::mfxRefPic mfxExtAVCRefLists_mfxRefPic;
 typedef mfxExtFeiEncMV::mfxExtFeiEncMVMB mfxExtFeiEncMV_MB;
+typedef mfxExtFeiEncMBCtrl::mfxExtFeiEncMBCtrlMB mfxExtFeiEncMBCtrl_MB;

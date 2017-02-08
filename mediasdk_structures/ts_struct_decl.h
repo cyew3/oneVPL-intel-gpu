@@ -546,7 +546,7 @@ STRUCT(mfxExtFeiEncMV,
 STRUCT(mfxExtFeiEncMBCtrl,
     FIELD_S(mfxExtBuffer,    Header)
     FIELD_T(mfxU32,  NumMBAlloc)
-    //FIELD_S(mfxMB, MB)
+    FIELD_T(mfxExtFeiEncMBCtrl_MB*, MB)
 )
 STRUCT(mfxExtFeiEncMBStat,
     FIELD_S(mfxExtBuffer,    Header)
