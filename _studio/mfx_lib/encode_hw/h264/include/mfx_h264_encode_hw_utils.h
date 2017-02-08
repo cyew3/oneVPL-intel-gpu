@@ -823,6 +823,13 @@ namespace MfxHwH264Encode
             value.PushBack(param1);
         }
 
+        void Clear()
+        {
+            mmco.Resize(0);
+            value.Resize(0);
+            value.Resize(0);
+        }
+
         mfxU8       no_output_of_prior_pics_flag;
         mfxU8       long_term_reference_flag;
         ArrayU8x32  mmco;       // memory management control operation id
@@ -3498,6 +3505,8 @@ namespace MfxHwH264Encode
 
         mfxU32 m_frameOrder;
     };
+
+    bool OrderByFrameNumWrap(DpbFrame const & lhs, DpbFrame const & rhs);
 
     template <class T, class P> typename T::pointer find_if_ptr(T & container, P pred)
     {

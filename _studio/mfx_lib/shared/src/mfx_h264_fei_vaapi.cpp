@@ -33,7 +33,15 @@ using namespace MfxHwH264Encode;
 //#include <va/vendor/va_intel_statistics.h>
 #include "mfx_h264_preenc.h"
 
+/*
+mfxU32 GetSurfaceIndexFromList(std::vector<ExtVASurface> &m_reconQueue, mfxU32 surface)
+{
+    for(mfxU32 i = 0; i < m_reconQueue.size(); i++)
+        if (m_reconQueue[i].surface == surface)
+            return i;
 
+    return VA_INVALID_SURFACE;
+} */
 
 VAAPIFEIPREENCEncoder::VAAPIFEIPREENCEncoder()
 : VAAPIEncoder()
@@ -452,7 +460,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
     statParams.num_past_references = 0;
     statParams.past_references     = NULL;
 
-    if (feiCtrl && feiCtrl->RefFrame[0])
+    if (feiCtrl->RefFrame[0])
     {
         statParams.num_past_references = 1;
         mfxHDL handle;
@@ -485,7 +493,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
     statParams.num_future_references = 0;
     statParams.future_references     = NULL;
 
-    if (feiCtrl && feiCtrl->RefFrame[1])
+    if (feiCtrl->RefFrame[1])
     {
         statParams.num_future_references = 1;
         mfxHDL handle;
@@ -557,26 +565,24 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
      * task.m_fieldPicFlag - actually value from mfxVideoParams from Init()
      * And this values should be matched
      * */
-    if (feiCtrl)
+
+    switch (feiCtrl->PictureType)
     {
-        switch (feiCtrl->PictureType)
-        {
-        case MFX_PICTYPE_TOPFIELD:
-            statParams.input.flags = VA_PICTURE_FEI_TOP_FIELD;
-            break;
+    case MFX_PICTYPE_TOPFIELD:
+        statParams.input.flags = VA_PICTURE_FEI_TOP_FIELD;
+        break;
 
-        case MFX_PICTYPE_BOTTOMFIELD:
-            statParams.input.flags = VA_PICTURE_FEI_BOTTOM_FIELD;
-            break;
+    case MFX_PICTYPE_BOTTOMFIELD:
+        statParams.input.flags = VA_PICTURE_FEI_BOTTOM_FIELD;
+        break;
 
-        case MFX_PICTYPE_FRAME:
-            statParams.input.flags = VA_PICTURE_FEI_PROGRESSIVE;
-            break;
-        }
-
-        if (!IsOff(feiCtrl->DownsampleInput) && (0 == feiFieldId))
-            statParams.input.flags |= VA_PICTURE_FEI_CONTENT_UPDATED;
+    case MFX_PICTYPE_FRAME:
+        statParams.input.flags = VA_PICTURE_FEI_PROGRESSIVE;
+        break;
     }
+
+    if (!IsOff(feiCtrl->DownsampleInput) && (0 == feiFieldId))
+        statParams.input.flags |= VA_PICTURE_FEI_CONTENT_UPDATED;
 
     /* Link output va buffers */
     statParams.outputs = &outBuffers[0]; //bufIDs for outputs
@@ -740,7 +746,6 @@ mfxStatus VAAPIFEIPREENCEncoder::QueryStatus(
                 }
                 MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-                //copy to output in task here MVs
                 FastCopyBufferVid2Sys(mvsOut->MB, mvs, 16 * sizeof (VAMotionVectorIntel) * mvsOut->NumMBAlloc);
 
                 {
@@ -1317,9 +1322,8 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
     }
     m_pps.coded_buf = m_codedBufferId;
 
-    if ((MFX_PROFILE_AVC_BASELINE == m_videoParam.mfx.CodecProfile) ||
-        (MFX_PROFILE_AVC_MAIN     == m_videoParam.mfx.CodecProfile) ||
-        (frameCtrl->IntraPartMask & 0x2))
+    if ( (MFX_PROFILE_AVC_BASELINE & m_videoParam.mfx.CodecProfile) == MFX_PROFILE_AVC_BASELINE ||
+         (MFX_PROFILE_AVC_MAIN    == m_videoParam.mfx.CodecProfile) || (frameCtrl->IntraPartMask & 0x2) )
     {
         m_pps.pic_fields.bits.transform_8x8_mode_flag = 0;
     }
@@ -2020,35 +2024,35 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MV");
         vaSts = vaCreateBuffer(m_vaDisplay,
-                        m_vaContextEncode,
-                        (VABufferType)VAEncFEIMVBufferTypeIntel,
-                        sizeof (VAMotionVectorIntel)*16*mvout->NumMBAlloc,
-                        //limitation from driver, num elements should be 1
-                        1,
+                                m_vaContextEncode,
+                                (VABufferType)VAEncFEIMVBufferTypeIntel,
+                                sizeof (VAMotionVectorIntel)*16*mvout->NumMBAlloc,
+                                //limitation from driver, num elements should be 1
+                                1,
                         mvout->MB,
                         &m_vaFeiMVOutId[0]);
 
-        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
         mdprintf(stderr, "MV Out bufId[%d]=%d\n", 0, m_vaFeiMVOutId[0]);
-    }
+        }
 
     // Create buffer for PAKobj input
-    {
+        {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MBcode");
 
         vaSts = vaCreateBuffer(m_vaDisplay,
-                        m_vaContextEncode,
-                        (VABufferType)VAEncFEIModeBufferTypeIntel,
-                        sizeof (VAEncFEIModeBufferH264Intel)*mbcodeout->NumMBAlloc,
-                        //limitation from driver, num elements should be 1
-                        1,
+                                m_vaContextEncode,
+                                (VABufferType)VAEncFEIModeBufferTypeIntel,
+                                sizeof (VAEncFEIModeBufferH264Intel)*mbcodeout->NumMBAlloc,
+                                //limitation from driver, num elements should be 1
+                                1,
                         mbcodeout->MB,
                         &m_vaFeiMCODEOutId[0]);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
         mdprintf(stderr, "MCODE Out bufId[%d]=%d\n", 0, m_vaFeiMCODEOutId[0]);
-    }
+        }
 
-    {
+        {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "FrameCtrl");
         VAEncMiscParameterBuffer *miscParam;
         vaSts = vaCreateBuffer(m_vaDisplay,
@@ -2379,7 +2383,7 @@ mfxStatus VAAPIFEIPAKEncoder::QueryStatus(
 
         if (currentFeedback.number == task.m_statusReportNumber[feiFieldId])
         {
-            waitSurface = currentFeedback.surface;
+            waitSurface      = currentFeedback.surface;
             break;
         }
     }

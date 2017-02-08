@@ -10,6 +10,7 @@ list( APPEND mdirs
   decode/vc1 encode/h264 enc/mpeg2 pak/mpeg2 enc_hw/mpeg2 encode/mpeg2 encode/mjpeg
   audio_decode/aac audio_decode/mp3 audio_encode/aac
   )
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/fei/h264_common )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/fei/h264_preenc )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/fei/h264_pak )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/fei/h264_enc )
@@ -131,6 +132,7 @@ foreach( variant
     pak
     mfx_common_${variant}
     vpp_${variant}
+    h264_common
     h264_preenc
     h264_enc
     h264_pak
