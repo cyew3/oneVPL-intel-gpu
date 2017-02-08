@@ -37,8 +37,11 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include "plugin_loader.h"
 
-#include <pthread.h>
 #include "class_wayland.h"
+
+#include "version.h"
+
+static camera_buffer_t *buffers;
 
 /* obtain the clock tick of an uninterrupted master clock */
 msdk_tick time_get_tick(void)
@@ -519,9 +522,6 @@ mfxStatus CEncodingPipeline::InitMfxVppParams(sInputParams *pInParams)
 
     m_mfxVppParams.vpp.In.PicStruct = pInParams->nPicStruct;
 
-    if (pInParams->MondelloPicStruct == GPU_WEAVED)
-        pInParams->dFrameRate = pInParams->dFrameRate * 2;
-
     ConvertFrameRate(pInParams->dFrameRate, &m_mfxVppParams.vpp.In.FrameRateExtN, &m_mfxVppParams.vpp.In.FrameRateExtD);
 
     // width must be a multiple of 16
@@ -555,8 +555,7 @@ mfxStatus CEncodingPipeline::InitMfxVppParams(sInputParams *pInParams)
     AllocAndInitVppDoNotUse();
     m_VppExtParams.push_back((mfxExtBuffer *)&m_VppDoNotUse);
 
-    if ((pInParams->MondelloPicStruct != PROGRESSIVE) &&
-            (pInParams->eDeinterlace > 0))
+    if (pInParams->eDeinterlace > 0)
     {
         m_VppDeinterlacing.Mode = pInParams->eDeinterlace;
         m_VppExtParams.push_back((mfxExtBuffer*)&m_VppDeinterlacing);
@@ -977,6 +976,7 @@ CEncodingPipeline::CEncodingPipeline()
 
 CEncodingPipeline::~CEncodingPipeline()
 {
+    free(buffers);
     Close();
 }
 
@@ -1228,14 +1228,14 @@ void CEncodingPipeline::InitMondelloPipeline(sInputParams *pParams)
 {
     if (m_isMondelloInputEnabled)
     {
-        int i, count = m_VppResponse.NumFrameActual;
+        int i, BufferSize = m_VppResponse.NumFrameActual;
         mfxFrameSurface1* pSurf = &m_pVppSurfaces[0];
 
         // The scenario here is when MSDK-mondello receives a RGB-8888 signal and wants to
         // render straight away without going through any vpp operation
         if (!m_pmfxVPP && m_isMondelloRender)
         {
-            count = m_EncResponse.NumFrameActual;
+            BufferSize = m_EncResponse.NumFrameActual;
             pSurf = &m_pEncSurfaces[0];
         }
 
@@ -1244,53 +1244,41 @@ void CEncodingPipeline::InitMondelloPipeline(sInputParams *pParams)
         if (m_hwdev && pParams->MondelloFormat == RGB4)
             m_hwdev->SetMondelloInput(m_isMondelloInputEnabled);
 
-        if (pParams->MondelloPicStruct == GPU_WEAVED)
-            pParams->nHeight =  pParams->nHeight * 2;
-
         MondelloPipeline.Init(pParams->nWidth,
             pParams->nHeight,
             pParams->MondelloFormat,
-            count,
+            BufferSize,
             pParams->MondelloPicStruct,
             pParams->isMondelloRender,
             pParams->Printfps);
 
-        MondelloPipeline.MondelloAlloc();
+        buffers = (camera_buffer_t *)calloc(1, sizeof(camera_buffer_t) * (int)BufferSize);
 
-        for(i = 0; i < count; i++, pSurf++)
+        for(i = 0; i < BufferSize; i++, pSurf++)
         {
             struct vaapiMemId *vaapi = (struct vaapiMemId *)pSurf->Data.MemId;
             buffers[i].dmafd = vaapi->m_buffer_info.handle;
             buffers[i].index = i;
             buffers[i].flags = 0;
+            mBufferList[buffers[i].dmafd] = i;
         }
 
-        MondelloPipeline.MondelloSetup();
+        MondelloPipeline.MondelloSetup(buffers);
     }
 }
 
-mfxStatus CEncodingPipeline::CaptureStartMondelloPipeline()
+void CEncodingPipeline::CaptureStartMondelloPipeline()
 {
     if (m_isMondelloInputEnabled)
     {
         MondelloPipeline.MondelloStartCapture();
-
-        MondelloDevice *m_MondelloDisplay = &MondelloPipeline;
-        if (pthread_create(&m_PollThread, NULL, PollingThread, (void *)m_MondelloDisplay))
-        {
-            msdk_printf(MSDK_STRING("Couldn't create Mondello polling thread\n"));
-            return MFX_ERR_UNKNOWN;
-        }
     }
-
-    return MFX_ERR_NONE;
 }
 
 void CEncodingPipeline::CaptureStopMondelloPipeline()
 {
     if (m_isMondelloInputEnabled)
     {
-        pthread_join(m_PollThread, NULL);
         MondelloPipeline.MondelloStopCapture();
     }
 }
@@ -1493,6 +1481,12 @@ mfxStatus CEncodingPipeline::Run()
     MSDK_CHECK_POINTER(m_pmfxENC, MFX_ERR_NOT_INITIALIZED);
 
     bool bInsertIDR = false;
+    camera_buffer_t *buf;
+
+    struct timeval dqbuf_start_tm_count, dqbuf_tm_start,qbuf_tm_end;
+    double buf_count = 0, last_buf_count = 0;
+    double max_fps = 0, min_fps = 0;
+    double av_fps = 0, sum_time = 0, tm_interval = 0, init_max_min_fps = true;
 
     mfxStatus sts = MFX_ERR_NONE;
 
@@ -1542,7 +1536,10 @@ mfxStatus CEncodingPipeline::Run()
         MSDK_CHECK_ERROR(nEncSurfIdx, MSDK_INVALID_SURF_IDX, MFX_ERR_MEMORY_ALLOC);
 
         if (!m_pmfxVPP && m_isMondelloRender)
-            nEncSurfIdx = MondelloPipeline.GetOffQ();
+        {
+            buf = MondelloPipeline.MondelloDQbuf();
+            nEncSurfIdx = mBufferList[buf->dmafd];
+        }
 
         // point pSurf to encoder surface
         pSurf = &m_pEncSurfaces[nEncSurfIdx];
@@ -1552,11 +1549,60 @@ mfxStatus CEncodingPipeline::Run()
             if (m_pmfxVPP)
             {
                 if (m_isMondelloInputEnabled)
-                    nVppSurfIdx = MondelloPipeline.GetOffQ();
+                {
+                    buf = MondelloPipeline.MondelloDQbuf();
+                    nVppSurfIdx = mBufferList[buf->dmafd];
+                    DEBUG_PRINT("[sample_mondello] [DQBUF] index = %d, sequence = %d\n", buf->index, buf->sequence);
+                }
                 else
                     nVppSurfIdx = GetFreeSurface(m_pVppSurfaces, m_VppResponse.NumFrameActual);
 
                 MSDK_CHECK_ERROR(nVppSurfIdx, MSDK_INVALID_SURF_IDX, MFX_ERR_MEMORY_ALLOC);
+
+
+                if (MondelloPipeline.GetPrintFPSMode())
+                {
+                    buf_count++;
+                    if (buf_count == FPS_BUF_COUNT_START)
+                    {
+                        gettimeofday(&dqbuf_start_tm_count, NULL);
+                        dqbuf_tm_start = dqbuf_start_tm_count;
+                        last_buf_count = buf_count;
+                    }
+                    else if (buf_count > FPS_BUF_COUNT_START)
+                    {
+                         gettimeofday(&qbuf_tm_end, NULL);
+                         double div = (qbuf_tm_end.tv_sec-dqbuf_tm_start.tv_sec) *
+                                          1000000 + qbuf_tm_end.tv_usec - dqbuf_tm_start.tv_usec;
+
+                         sum_time += div;
+                         tm_interval += div;
+                         dqbuf_tm_start = qbuf_tm_end;
+
+                         if (tm_interval >= (FPS_TIME_INTERVAL*1000000))
+                         {
+                             double interval_fps = (buf_count - last_buf_count) /
+                                                       (tm_interval/1000000);
+
+                             msdk_printf("fps:%.4f\n",interval_fps);
+
+                             if (init_max_min_fps)
+                             {
+                                 max_fps = interval_fps;
+                                 min_fps = interval_fps;
+                                 init_max_min_fps = false;
+                             }
+
+                             if (interval_fps >= max_fps)
+                                 max_fps = interval_fps;
+                             else if (interval_fps < min_fps)
+                                min_fps = interval_fps;
+
+                             tm_interval = 0;
+                             last_buf_count = buf_count;
+                         }
+                     }
+                }
 
                 pSurf = &m_pVppSurfaces[nVppSurfIdx];
             }
@@ -1631,6 +1677,7 @@ mfxStatus CEncodingPipeline::Run()
             continue;
         }
 
+        DEBUG_PRINT("[sample_mondello] [VPP IN] index = %d sequence = %d\n", nVppSurfIdx, buf->sequence);
         // perform preprocessing if required
         if (m_pmfxVPP)
         {
@@ -1673,17 +1720,39 @@ mfxStatus CEncodingPipeline::Run()
             }
         }
 
+        DEBUG_PRINT("[sample_mondello] [VPP OUT] index = %d sequence = %d\n",nEncSurfIdx ,buf->sequence);
+
         // save the id of preceding vpp task which will produce input data for the encode task
         if (VppSyncPoint)
         {
-            VppSyncPoint = NULL;
-
             if (m_isMondelloRender)
             {
+                while (1)
+                {
+                    sts = m_mfxSession.SyncOperation(VppSyncPoint, MSDK_WAIT_INTERVAL);
+
+                    if (sts == MFX_ERR_NONE)
+                    {
+                        DEBUG_PRINT("[sample_mondello] sync done!\n");
+                        break;
+                    }
+                    else
+                        DEBUG_PRINT("[sample_mondello] sync NOT done! - Resync again\n");
+                }
+
+                MondelloPipeline.MondelloQbuf(buf);
+                DEBUG_PRINT("[sample_mondello] [Render] index = %d sequence = %d\n",nEncSurfIdx ,buf->sequence);
                 m_hwdev->RenderFrame(&m_pEncSurfaces[nEncSurfIdx], m_pMFXAllocator);
+                VppSyncPoint = NULL;
                 continue;
             }
+            else
+            {
+                if (m_isMondelloInputEnabled)
+                    MondelloPipeline.MondelloQbuf(buf);
+            }
 
+            VppSyncPoint = NULL;
             pCurrentTask->DependentVppTasks.push_back(VppSyncPoint);
         }
 
@@ -1728,6 +1797,21 @@ mfxStatus CEncodingPipeline::Run()
     MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
     // exit in case of other errors
     MSDK_CHECK_STATUS(sts, "Unexpected error!!");
+
+    if (MondelloPipeline.GetPrintFPSMode())
+    {
+        av_fps = (buf_count - FPS_BUF_COUNT_START) / (sum_time / 1000000);
+
+        if (buf_count <= FPS_BUF_COUNT_START)
+            msdk_printf("num-buffers value is too low, should be at least %d\n\n", FPS_BUF_COUNT_START);
+        else if (max_fps == 0 || min_fps == 0)
+            msdk_printf("Average fps is:%.4f\n\n",av_fps);
+        else
+            msdk_printf("\nTotal frame is:%g\n",buf_count);
+
+        msdk_printf("\nMax fps is:%.4f,Minimum fps is:%.4f,Average fps is:%.4f\n\n",
+                                                             max_fps, min_fps, av_fps);
+    }
 
     if (m_isMondelloRender)
         return sts;
@@ -1879,7 +1963,7 @@ mfxStatus CEncodingPipeline::Run()
 
 void CEncodingPipeline::PrintInfo()
 {
-    msdk_printf(MSDK_STRING("Encoding Sample Version %s\n"), MSDK_SAMPLE_VERSION);
+    msdk_printf(MSDK_STRING("Encoding Sample Version %s\n"), GetMSDKSampleVersion().c_str());
 
     mfxFrameInfo SrcPicInfo = m_mfxVppParams.vpp.In;
     mfxFrameInfo DstPicInfo = m_mfxEncParams.mfx.FrameInfo;

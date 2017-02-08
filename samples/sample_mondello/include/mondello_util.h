@@ -23,6 +23,10 @@
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 #define ERRSTR strerror(errno)
+#define DEBUG 0 // for debugging purposes
+
+#define FPS_TIME_INTERVAL 2
+#define FPS_BUF_COUNT_START 10
 
 #define BYE_ON(cond, ...) \
     do { \
@@ -36,6 +40,13 @@
     } \
     } while(0)
 
+#define DEBUG_PRINT(...) \
+    do { \
+    if (DEBUG) { \
+        fprintf(stderr,  __VA_ARGS__); \
+    } \
+    } while(0)
+
 using namespace icamera;
 
 enum MondelloPixelFormat
@@ -45,12 +56,10 @@ enum MondelloPixelFormat
 
 enum MondelloPicStructType
 {
-    PROGRESSIVE = 0, GPU_WEAVED, IPU_WEAVED
+    PROGRESSIVE = 0, IPU_WEAVED
 };
 
-extern camera_buffer_t *buffers;
 int ConvertToMFXFourCC(enum MondelloPixelFormat MondelloFormat);
-void *PollingThread(void *data);
 
 class MondelloDevice
 {
@@ -76,11 +85,9 @@ public:
     const char* GetCurrentCameraName();
     int GetCurrentCameraId();
     int ConvertToV4L2FourCC();
-    void PutOnQ(int x);
-    int GetOffQ();
+    void SignalSetup();
     void MondelloInit();
-    void MondelloAlloc();
-    void MondelloSetup();
+    void MondelloSetup(camera_buffer_t *buffers);
     void MondelloStartCapture();
     void MondelloStopCapture();
     int GetMondelloTerminationSignal();
@@ -88,6 +95,8 @@ public:
     int GetDeviceId() { return m_device_id; }
     bool GetPrintFPSMode() { return m_printfps; }
     enum MondelloPicStructType GetMondelloPicStructType() { return m_mondelloPicStruct; }
+    void MondelloQbuf(camera_buffer_t *buf);
+    camera_buffer_t *MondelloDQbuf();
 
 protected:
     const char *m_device_name;
@@ -97,6 +106,7 @@ protected:
     uint32_t m_num_buffers;
     stream_t m_streams[1];
     stream_config_t m_StreamList;
+    camera_buffer_t *CurBuffers;
     int m_stream_id;
     enum MondelloPixelFormat m_mondelloFormat;
     enum MondelloPicStructType m_mondelloPicStruct;

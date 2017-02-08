@@ -24,6 +24,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "pipeline_user.h"
 #include <stdarg.h>
 #include <string>
+#include "version.h"
 
 #define VAL_CHECK(val, argIdx, argName) \
 { \
@@ -45,7 +46,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
 {
-    msdk_printf(MSDK_STRING("Encoding Sample Version %s\n\n"), MSDK_SAMPLE_VERSION);
+    msdk_printf(MSDK_STRING("Encoding Sample Version %s\n\n"), GetMSDKSampleVersion().c_str());
 
     if (strErrorMessage)
     {
@@ -118,7 +119,6 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("   [-i::mondello]     - To enable Mondello option\n"));
     msdk_printf(MSDK_STRING("   [-dcc format]      - Format (FourCC) of dst video (support nv12|rgb4)\n"));
     msdk_printf(MSDK_STRING("   [-rwld]            - Render to Wayland\n"));
-    msdk_printf(MSDK_STRING("   [-I::gpu_weaving]  - MSDK does GPU weaving (only applicable for interlace stream)\n"));
     msdk_printf(MSDK_STRING("   [-I::ipu_weaving]  - Weaving done by IPU (only applicable for interlace stream)\n"));
     msdk_printf(MSDK_STRING("   [-di adi/BOB]      - Enable deinterlacing for ADI/BOB\n"));
     msdk_printf(MSDK_STRING("   [-fps]             - Print out fps\n"));
@@ -465,12 +465,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->Printfps = true;
         }
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-I::gpu_weaving")))
-        {
-            pParams->MondelloPicStruct = GPU_WEAVED;
-            pParams->nPicStruct = MFX_PICSTRUCT_FIELD_TFF;
-            pParams->eDeinterlace = MFX_DEINTERLACING_FIELD_WEAVING;
-        }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-I::ipu_weaving")))
         {
             pParams->MondelloPicStruct = IPU_WEAVED;
@@ -660,12 +654,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         return MFX_ERR_UNSUPPORTED;
     }
 
-    if (pParams->MondelloPicStruct == GPU_WEAVED && pParams->eDeinterlace != MFX_DEINTERLACING_FIELD_WEAVING)
-    {
-        PrintHelp(strInput[0], MSDK_STRING("-I::gpu_weaving option can not pair ADI/BOB\n"));
-        return MFX_ERR_UNSUPPORTED;
-    }
-
     // check if all mandatory parameters were set
     if (!pParams->InputFiles.size() &&
         !pParams->isMondelloInputEnabled)
@@ -753,11 +741,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     if (pParams->nDstHeight == 0)
     {
         pParams->nDstHeight = pParams->nHeight;
-    }
-
-    if (pParams->MondelloPicStruct == GPU_WEAVED)
-    {
-        pParams->nHeight = pParams->nHeight / 2;
     }
 
     // calculate default bitrate based on the resolution (a parameter for encoder, so Dst resolution is used)
@@ -892,11 +875,7 @@ int main(int argc, char *argv[])
 
     msdk_printf(MSDK_STRING("Processing started\n"));
 
-    if (pPipeline->CaptureStartMondelloPipeline() != MFX_ERR_NONE)
-    {
-        msdk_printf(MSDK_STRING("Mondello failure terminating the program\n"));
-        return 0;
-    }
+    pPipeline->CaptureStartMondelloPipeline();
 
     for (;;)
     {

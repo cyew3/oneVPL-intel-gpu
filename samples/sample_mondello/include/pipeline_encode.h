@@ -42,6 +42,8 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include <vector>
 #include <memory>
 
+#include <map>
+
 #include "plugin_loader.h"
 
 #include "mondello_util.h"
@@ -188,7 +190,7 @@ public:
     virtual void  PrintInfo();
 
     void InitMondelloPipeline(sInputParams *pParams);
-    mfxStatus CaptureStartMondelloPipeline();
+    void CaptureStartMondelloPipeline();
     void CaptureStopMondelloPipeline();
 
     void InsertIDR(bool bIsNextFrameIDR);
@@ -252,6 +254,8 @@ protected:
 
     bool m_isMondelloInputEnabled;
     bool m_isMondelloRender;
+
+    std::map <int, int> mBufferList;
 
     mfxU32 m_nTimeout;
 
