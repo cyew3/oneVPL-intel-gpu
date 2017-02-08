@@ -789,22 +789,6 @@ LinuxVideoAccelerator::Execute()
                 if (VA_STATUS_SUCCESS == va_res) va_res = va_sts;
             }
         }
-#if 0
-        /* NOTE:
-        *  That code was used once and was invoked by setting lvaNeedUnmap in BeginFrame (see trunk@r36835).
-        *
-        */
-        if ((UMC_OK == umcRes) && (lvaNeedUnmap == m_FrameState))
-        {
-            for (i = 0; i < m_uiCompBuffersUsed; ++i)
-            {
-                pCompBuf = m_pCompBuffers[i];
-
-                va_sts = vaUnmapBuffer(m_dpy, pCompBuf->GetID());
-                if (VA_STATUS_SUCCESS == va_res) va_res = va_sts;
-            }
-        }
-#endif
     }
 
     vm_mutex_unlock(&m_SyncMutex);
@@ -818,64 +802,36 @@ LinuxVideoAccelerator::Execute()
 Status LinuxVideoAccelerator::EndFrame(void*)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "EndFrame");
-    Status   umcRes = UMC_OK;
-    VAStatus va_res = VA_STATUS_SUCCESS, va_sts = VA_STATUS_SUCCESS;
+    VAStatus va_res = VA_STATUS_SUCCESS;
     Ipp32u i;
-    VACompBuffer* pCompBuf = NULL;
 
     vm_mutex_lock(&m_SyncMutex);
-#if 0
-    /* NOTE:
-    *  That code was used once and was invoked by setting lvaNeedUnmap in BeginFrame (see trunk@r36835).
-    *
-    */
-    if ((UMC_OK == umcRes) && (lvaNeedUnmap == m_FrameState))
+
     {
-        for (i = 0; i < m_uiCompBuffersUsed; ++i)
-        {
-            pCompBuf = m_pCompBuffers[i];
-            va_sts = vaUnmapBuffer(m_dpy, pCompBuf->GetID());
-            if (VA_STATUS_SUCCESS == va_sts) va_res = va_sts;
-        }
-    }
-#endif
-    if (UMC_OK == umcRes)
-    {
-        {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaEndPicture");
-            va_sts = vaEndPicture(m_dpy, *m_pContext);
-            MFX_LTRACE_2(MFX_TRACE_LEVEL_EXTCALL, m_sDecodeTraceEnd, "%d|%d", *m_pContext, 0);
-        }
-        if (VA_STATUS_SUCCESS != va_sts) va_res = va_sts;
-        m_FrameState = lvaBeforeBegin;
-    }
-    if (UMC_OK == umcRes)
-    {
-        for (i = 0; i < m_uiCompBuffersUsed; ++i)
-        {
-            pCompBuf = m_pCompBuffers[i];
-            if (pCompBuf->NeedDestroy())
-            {
-                va_sts = vaDestroyBuffer(m_dpy, pCompBuf->GetID());
-                pCompBuf->SetDestroyStatus(false);
-                if (VA_STATUS_SUCCESS == va_sts) va_res = va_sts;
-            }
-        }
-    }
-    if (UMC_OK == umcRes)
-    {
-        for (i = 0; i < m_uiCompBuffersUsed; ++i)
-        {
-            UMC_DELETE(m_pCompBuffers[i]);
-        }
-        m_uiCompBuffersUsed = 0;
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaEndPicture");
+        va_res = vaEndPicture(m_dpy, *m_pContext);
+        MFX_LTRACE_2(MFX_TRACE_LEVEL_EXTCALL, m_sDecodeTraceEnd, "%d|%d", *m_pContext, 0);
     }
 
-    if (VA_STATUS_SUCCESS != va_sts) va_res = va_sts;
+    m_FrameState = lvaBeforeBegin;
+
+    VACompBuffer* pCompBuf = NULL;
+    for (i = 0; i < m_uiCompBuffersUsed; ++i)
+    {
+        pCompBuf = m_pCompBuffers[i];
+        if (pCompBuf->NeedDestroy())
+        {
+            VAStatus va_sts = vaDestroyBuffer(m_dpy, pCompBuf->GetID());
+            if (VA_STATUS_SUCCESS == va_res)
+                va_res = va_sts;
+            pCompBuf->SetDestroyStatus(false);
+        }
+        UMC_DELETE(pCompBuf);
+    }
+    m_uiCompBuffersUsed = 0;
 
     vm_mutex_unlock(&m_SyncMutex);
-    if (UMC_OK == umcRes) umcRes = va_to_umc_res(va_res);
-    return umcRes;
+    return va_to_umc_res(va_res);
 }
 
 /* TODO: need to rewrite return value type (possible problems with signed/unsigned) */
