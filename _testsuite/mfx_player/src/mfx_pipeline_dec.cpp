@@ -315,7 +315,6 @@ mfxStatus MFXDecPipeline::BuildMFXPart()
             std::swap(m_components[eREN].m_params.mfx.FrameInfo.Width, m_components[eREN].m_params.mfx.FrameInfo.Height);
             std::swap(m_components[eREN].m_params.mfx.FrameInfo.CropW, m_components[eREN].m_params.mfx.FrameInfo.CropH);
         }
-
         m_components[eVPP].m_params.vpp.Out = m_components[eREN].m_params.mfx.FrameInfo;
         if ( m_components[eVPP].m_params.vpp.In.FourCC == MFX_FOURCC_R16 )
         {
@@ -323,6 +322,11 @@ mfxStatus MFXDecPipeline::BuildMFXPart()
             m_components[eVPP].m_params.vpp.In.ChromaFormat  = MFX_CHROMAFORMAT_MONOCHROME;
             m_components[eVPP].m_params.vpp.Out.FourCC       = m_components[eREN].m_params.mfx.FrameInfo.FourCC;
             m_components[eVPP].m_params.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+        }
+        if (m_inParams.bFieldWeaving)
+        {
+            m_components[eVPP].m_params.vpp.In.PicStruct  = MFX_PICSTRUCT_UNKNOWN;
+            m_components[eVPP].m_params.vpp.Out.PicStruct = MFX_PICSTRUCT_UNKNOWN;
         }
     }
     //overwriting vpp output picstruct if -vpp:picstruct  happened
@@ -1246,6 +1250,22 @@ mfxStatus MFXDecPipeline::CreateVPP()
         m_components[eVPP].m_extParams.push_back(m_extExtColorCorrection3x3);
     }
 
+    //turn on field weaving
+    if (m_inParams.bFieldWeaving)
+    {
+        m_components[eVPP].m_params.vpp.Out.CropH  = m_inParams.FrameInfo.CropH << 1;
+        m_components[eVPP].m_params.vpp.Out.Height = m_inParams.FrameInfo.Height << 1;
+    }
+
+    //turn on field splitting
+    if (m_inParams.bFieldSplitting)
+    {
+        m_components[eVPP].m_params.vpp.Out.PicStruct = MFX_PICSTRUCT_FIELD_SINGLE;
+        m_inParams.FrameInfo.PicStruct                = MFX_PICSTRUCT_FIELD_SINGLE;
+        m_components[eVPP].m_params.vpp.Out.CropH     = m_inParams.FrameInfo.CropH >> 1;
+        m_components[eVPP].m_params.vpp.Out.Height    = m_inParams.FrameInfo.Height >> 1;
+    }
+
     if (m_components[eVPP].m_params.vpp.Out.CropW != 0)
     {
         m_inParams.FrameInfo.Width = m_components[eVPP].m_params.vpp.Out.CropW + m_inParams.FrameInfo.CropX;
@@ -1255,25 +1275,7 @@ mfxStatus MFXDecPipeline::CreateVPP()
     if (m_components[eVPP].m_params.vpp.Out.CropH != 0)
     {
         m_inParams.FrameInfo.Height = m_components[eVPP].m_params.vpp.Out.CropH + m_inParams.FrameInfo.CropY;
-        m_inParams.FrameInfo.CropH = m_components[eVPP].m_params.vpp.Out.CropH;
-    }
-
-    //turn on field weaving
-    if (m_inParams.bFieldWeaving)
-    {
-        m_components[eVPP].m_params.vpp.Out.PicStruct = MFX_PICSTRUCT_UNKNOWN;
-        m_inParams.FrameInfo.PicStruct = MFX_PICSTRUCT_UNKNOWN;
-        m_inParams.FrameInfo.Height = m_inParams.FrameInfo.Height << 1;
-        m_inParams.FrameInfo.CropH = m_inParams.FrameInfo.CropH << 1;
-    }
-
-    //turn on field splitting
-    if (m_inParams.bFieldSplitting)
-    {
-        m_components[eVPP].m_params.vpp.Out.PicStruct = MFX_PICSTRUCT_FIELD_SINGLE;
-        m_inParams.FrameInfo.PicStruct = MFX_PICSTRUCT_FIELD_SINGLE;
-        m_inParams.FrameInfo.Height = m_inParams.FrameInfo.Height >> 1;
-        m_inParams.FrameInfo.CropH = m_inParams.FrameInfo.CropH >> 1;
+        m_inParams.FrameInfo.CropH  = m_components[eVPP].m_params.vpp.Out.CropH;
     }
 
     if (m_components[eVPP].m_zoomx != 0)
