@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2016 Intel Corporation.  All rights reserved.
+Copyright (C) 2016-2017 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -121,7 +121,7 @@ namespace fei_encode_memory_init
         encode_init.Header.BufferId = MFX_EXTBUFF_FEI_PARAM;
         encode_init.Header.BufferSz = sizeof (mfxExtFeiParam);
         encode_init.Func = MFX_FEI_FUNCTION_ENCODE;
-        encode_init.SingleFieldProcessing = MFX_CODINGOPTION_ON;
+        encode_init.SingleFieldProcessing = MFX_CODINGOPTION_OFF;
 
         mfxExtBuffer* buf[1];
         buf[0] = (mfxExtBuffer*)&encode_init;
