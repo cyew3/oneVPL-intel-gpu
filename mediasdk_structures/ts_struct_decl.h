@@ -698,6 +698,7 @@ STRUCT(mfxExtCodingOption3,
     FIELD_T(mfxU16      , NumRefActiveBL0               )
     FIELD_T(mfxU16      , NumRefActiveBL1               )
     FIELD_T(mfxU16      , LowDelayBRC                   )
+    FIELD_T(mfxU16      , EnableMBForceIntra            )
 )
 
 STRUCT(mfxExtLAControl,

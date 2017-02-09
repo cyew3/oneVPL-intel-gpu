@@ -717,7 +717,8 @@ typedef struct {
     mfxU16      BRCPanicMode;              /* tri-state option */
 
     mfxU16      LowDelayBRC;               /* tri-state option */
-    mfxU16      reserved[172];
+    mfxU16      EnableMBForceIntra;        /* tri-state option */
+    mfxU16      reserved[171];
 } mfxExtCodingOption3;
 
 /* IntraPredBlockSize/InterPredBlockSize */
@@ -783,6 +784,7 @@ enum {
     MFX_EXTBUFF_CODING_OPTION3             = MFX_MAKEFOURCC('C','D','O','3'),
     MFX_EXTBUFF_CHROMA_LOC_INFO            = MFX_MAKEFOURCC('C','L','I','N'),
     MFX_EXTBUFF_MBQP                       = MFX_MAKEFOURCC('M','B','Q','P'),
+    MFX_EXTBUFF_MB_FORCE_INTRA             = MFX_MAKEFOURCC('M','B','F','I'),
     MFX_EXTBUFF_HEVC_TILES                 = MFX_MAKEFOURCC('2','6','5','T'),
     MFX_EXTBUFF_MB_DISABLE_SKIP_MAP        = MFX_MAKEFOURCC('M','D','S','M'),
     MFX_EXTBUFF_DPB                        = MFX_MAKEFOURCC('E','D','P','B'),
@@ -1396,6 +1398,17 @@ typedef struct {
         mfxU64 reserved2;
     };
 } mfxExtMBQP;
+
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU32 reserved[11];
+    mfxU32 MapSize;
+    union {
+        mfxU8  *Map;
+        mfxU64  reserved2;
+    };
+} mfxExtMBForceIntra;
 
 typedef struct {
     mfxExtBuffer Header;
