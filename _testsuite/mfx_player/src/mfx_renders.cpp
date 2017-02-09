@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2017 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -230,10 +230,20 @@ public:
         return copier;
     }
 
+    static void UnloadGenericPlugin(HWtoSYSCopier *copier)
+    {
+        if (!copier)
+            return;
+        mfxPlugin plg = make_mfx_plugin_adapter((MFXGenericPlugin*)copier);
+        MFXVideoUSER_Unregister(copier->GetSession(), MFX_PLUGINTYPE_VIDEO_GENERAL);
+        delete copier;
+    }
+
     virtual mfxStatus Close();
 
     mfxStatus Copy(mfxFrameSurface1 * in, mfxFrameSurface1 **out);
 
+    mfxSession GetSession() { return m_session; }
 protected:
     bool m_bInited;
     MFXCoreInterface m_mfxCore;
@@ -416,6 +426,7 @@ MFXFileWriteRender::MFXFileWriteRender(const FileWriterRenderInputParams &params
     , m_nFourCC(params.info.FourCC)
     , m_pOpenMode(VM_STRING("wb"))
     , m_yv12Surface()
+    , m_copier(0)
 {
     //m_fDest = NULL;
     m_nTimesClosed = 0;
@@ -446,6 +457,8 @@ MFXFileWriteRender::~MFXFileWriteRender()
         }
     }
 #endif
+
+    HWtoSYSCopier::UnloadGenericPlugin(m_copier);
 }
 
 MFXFileWriteRender * MFXFileWriteRender::Clone()
