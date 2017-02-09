@@ -7,6 +7,7 @@ include_directories (
   ${CMAKE_HOME_DIRECTORY}/mdp_msdk-samples/samples/sample_common/include/vm
   ${CMAKE_HOME_DIRECTORY}/mdp_msdk-samples/samples/sample_common/include
   ${CMAKE_HOME_DIRECTORY}/mdp_msdk-val-tools/bs_parser/include
+  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-api/mediasdk_structures
 # ${CMAKE_HOME_DIRECTORY}/igfx_s3dcontrol/include
   ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/gmock
   ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/gmock/gtest/include
