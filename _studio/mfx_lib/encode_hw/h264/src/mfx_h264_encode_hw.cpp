@@ -1600,16 +1600,8 @@ mfxStatus ImplementationAvc::GetVideoParam(mfxVideoParam *par)
 {
     MFX_CHECK_NULL_PTR1(par);
 
-    // For buffers which are field-based
-    std::map<mfxU32, mfxU32> buffers_offsets;
-
     for (mfxU32 i = 0; i < par->NumExtParam; i++)
     {
-        if (buffers_offsets.find(par->ExtParam[i]->BufferId) == buffers_offsets.end())
-            buffers_offsets[par->ExtParam[i]->BufferId] = 0;
-        else
-            buffers_offsets[par->ExtParam[i]->BufferId]++;
-
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         if (par->ExtParam[i]->BufferId == MFX_EXTBUFF_ENCODER_WIDI_USAGE)
         {
@@ -1620,7 +1612,7 @@ mfxStatus ImplementationAvc::GetVideoParam(mfxVideoParam *par)
         }
 #endif
 
-        if (mfxExtBuffer * buf = GetExtBuffer(m_video.ExtParam, m_video.NumExtParam, par->ExtParam[i]->BufferId, buffers_offsets[par->ExtParam[i]->BufferId]))
+        if (mfxExtBuffer * buf = GetExtBuffer(m_video.ExtParam, m_video.NumExtParam, par->ExtParam[i]->BufferId))
         {
             if (par->ExtParam[i]->BufferId == MFX_EXTBUFF_CODING_OPTION_SPSPPS)
             {
