@@ -1218,7 +1218,7 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
                     //padding is needed
                     m_brc->GetMinMaxFrameSize(&minSize, &maxSize);
                    taskForQuery->m_minFrameSize = (mfxU32) ((minSize + 7) >> 3);
-                   brcStatus = m_brc->PostPackFrame(m_vpar,*taskForQuery, minSize,0,++taskForQuery->m_recode);
+                   brcStatus = m_brc->PostPackFrame(m_vpar,*taskForQuery, taskForQuery->m_minFrameSize<<3,0,++taskForQuery->m_recode);
                    MFX_CHECK(brcStatus != MFX_BRC_ERROR,  MFX_ERR_UNDEFINED_BEHAVIOR);
                 }
                 else
