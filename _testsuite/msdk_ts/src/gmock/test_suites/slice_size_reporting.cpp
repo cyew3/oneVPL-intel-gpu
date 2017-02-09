@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2017 Intel Corporation. All Rights Reserved.
 
 File Name: slice_size_reporting.cpp
 
@@ -88,13 +88,13 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
 
 static const tc_struct test_case[] =
 {
-    {/* 0*/ MFX_ERR_NONE, MFXQUERY, 0},
+    {/* 0*/ MFX_ERR_UNSUPPORTED, MFXQUERY, 0},
     {/* 1*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, MFXQUERY, NOCO2},
     {/* 2*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, MFXQUERY, NOCO2MAXSLICESIZE},
-    {/* 3*/ MFX_ERR_NONE, MFXINIT, 0},
+    {/* 3*/ MFX_ERR_UNSUPPORTED, MFXINIT, 0},
     {/* 4*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, MFXINIT, NOCO2},
     {/* 5*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, MFXINIT, NOCO2MAXSLICESIZE},
-    {/* 6*/ MFX_ERR_NONE, MFXENCODE, 0}
+    {/* 6*/ MFX_ERR_UNSUPPORTED, MFXENCODE, 0}
 };
 
 const unsigned int n_cases = sizeof(test_case)/sizeof(tc_struct);
