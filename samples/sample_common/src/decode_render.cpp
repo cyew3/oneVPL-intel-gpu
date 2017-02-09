@@ -194,7 +194,7 @@ mfxStatus CDecodeD3DRender::RenderFrame(mfxFrameSurface1 *pSurface, mfxFrameAllo
     //--- In case of 10 bit surfaces and SW library we have to copy it and shift its data
     if(pSurface->Info.FourCC == MFX_FOURCC_P010 && !pSurface->Info.Shift)
     {
-        mfxStatus sts = AllocateShiftedSurfaceIfNeeded(pSurface,pmfxAlloc);
+        sts = AllocateShiftedSurfaceIfNeeded(pSurface,pmfxAlloc);
         MSDK_CHECK_STATUS(sts, "AllocateShiftedSurfaceIfNeeded failed");
 
         sts = pAllocator->Lock(pAllocator->pthis,shiftedSurface.Data.MemId,&shiftedSurface.Data);

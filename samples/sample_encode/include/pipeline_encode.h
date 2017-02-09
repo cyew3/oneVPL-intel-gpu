@@ -135,6 +135,7 @@ struct sInputParams
     mfxU16 BufferSizeInKB;
     mfxU16 InitialDelayInKB;
     mfxU16 GopOptFlag;
+    mfxU32 nMaxFrameSize;
 
     bool bUncut;
     bool isHEVCHW;

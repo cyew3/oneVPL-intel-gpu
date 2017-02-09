@@ -57,12 +57,12 @@ mfxStatus CResourcesPool::GetFreeTask(int resourceNum,sTask **ppTask)
     return sts;
 }
 
-mfxStatus CResourcesPool::Init(int size,mfxIMPL impl, mfxVersion *pVer)
+mfxStatus CResourcesPool::Init(int sz,mfxIMPL impl, mfxVersion *pVer)
 {
     MSDK_CHECK_NOT_EQUAL(m_resources, NULL , MFX_ERR_INVALID_HANDLE);
-    this->size=size;
-    m_resources = new CMSDKResource[size];
-    for (int i = 0; i < size; i++)
+    this->size= sz;
+    m_resources = new CMSDKResource[sz];
+    for (int i = 0; i < sz; i++)
     {
         mfxStatus sts = m_resources[i].Session.Init(impl, pVer);
         MSDK_CHECK_STATUS(sts, "m_resources[i].Session.Init failed");

@@ -216,13 +216,13 @@ mfxStatus CUserPipeline::Init(sInputParams *pParams)
 
         // in case of HW library (-hw key) we will firstly try to load HW plugin
         // in case of failure - we will try SW one
-        mfxIMPL impl = pParams->bUseHWLib ? MFX_IMPL_HARDWARE : MFX_IMPL_SOFTWARE;
+        mfxIMPL imp = pParams->bUseHWLib ? MFX_IMPL_HARDWARE : MFX_IMPL_SOFTWARE;
 
         if (AreGuidsEqual(MSDK_PLUGINGUID_NULL,pParams->pluginParams.pluginGuid))
         {
-            pParams->pluginParams.pluginGuid = msdkGetPluginUID(impl, MSDK_VENCODE, pParams->CodecId);
+            pParams->pluginParams.pluginGuid = msdkGetPluginUID(imp, MSDK_VENCODE, pParams->CodecId);
         }
-        if (AreGuidsEqual(pParams->pluginParams.pluginGuid, MSDK_PLUGINGUID_NULL) && impl == MFX_IMPL_HARDWARE)
+        if (AreGuidsEqual(pParams->pluginParams.pluginGuid, MSDK_PLUGINGUID_NULL) && imp == MFX_IMPL_HARDWARE)
             pParams->pluginParams.pluginGuid = msdkGetPluginUID(MFX_IMPL_SOFTWARE, MSDK_VENCODE, pParams->CodecId);
         if (!AreGuidsEqual(pParams->pluginParams.pluginGuid, MSDK_PLUGINGUID_NULL))
         {

@@ -105,6 +105,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("   [-num_slice]             - number of slices in each video frame. 0 by default.\n"));
     msdk_printf(MSDK_STRING("                              If num_slice equals zero, the encoder may choose any slice partitioning allowed by the codec standard.\n"));
     msdk_printf(MSDK_STRING("   [-mss]                   - maximum slice size in bytes. Supported only with -hw and h264 codec. This option is not compatible with -num_slice option.\n"));
+    msdk_printf(MSDK_STRING("   [-mfs]                   - maximum frame size in bytes. Supported only with h264 and hevc codec for VBR mode.\n"));
     msdk_printf(MSDK_STRING("   [-re]                    - enable region encode mode. Works only with h265 encoder\n"));
     msdk_printf(MSDK_STRING("   [-CodecProfile]          - specifies codec profile\n"));
     msdk_printf(MSDK_STRING("   [-CodecLevel]            - specifies codec level\n"));
@@ -334,6 +335,15 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 return MFX_ERR_UNSUPPORTED;
             }
         }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-mfs")))
+       {
+            VAL_CHECK(i + 1 >= nArgNum, i, strInput[i]);
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nMaxFrameSize))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("MaxFrameSize is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+       }
 #if D3D_SURFACES_SUPPORT
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-d3d")))
         {
