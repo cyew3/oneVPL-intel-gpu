@@ -21,6 +21,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include "pipeline_encode.h"
 #include "sysmem_allocator.h"
+#include "parameters_dumper.h"
 
 #if D3D_SURFACES_SUPPORT
 #include "d3d_allocator.h"
@@ -1255,11 +1256,11 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
             mfxVideoParam vppParams={};
             m_pmfxVPP->GetVideoParam(&vppParams);
             MSDK_CHECK_STATUS(sts, "Cannot read configuration from VPP: GetVideoParam failed");
-            DumpLibraryConfiguration(pParams->DumpFileName,NULL,&vppParams,&encoderParams);
+            CParametersDumper::DumpLibraryConfiguration(pParams->DumpFileName,NULL,&vppParams,&encoderParams);
         }
         else
         {
-            DumpLibraryConfiguration(pParams->DumpFileName,NULL,NULL,&encoderParams);
+            CParametersDumper::DumpLibraryConfiguration(pParams->DumpFileName,NULL,NULL,&encoderParams);
         }
     }
 

@@ -541,7 +541,7 @@ mfxStatus InitMemoryAllocator(
         }
         else if((pInParams->ImpLib & IMPL_VIA_MASK) == MFX_IMPL_VIA_D3D11)
         {
-#ifdef MFX_D3D11_SUPPORT
+#if MFX_D3D11_SUPPORT
             pAllocator->pDevice = new CD3D11Device();
 
             sts = pAllocator->pDevice->Init(0, 1, MSDKAdapter::GetNumber(pProcessor->mfxSession));

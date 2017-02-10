@@ -548,6 +548,7 @@ mfxStatus CCameraPipeline::CreateAllocator()
 
     if (m_memTypeIn != SYSTEM_MEMORY || m_memTypeOut != SYSTEM_MEMORY)
     {
+#if MFX_D3D11_SUPPORT
         // create D3D allocator
         if (D3D11_MEMORY == m_memTypeIn || D3D11_MEMORY == m_memTypeOut)
         {
@@ -560,6 +561,7 @@ mfxStatus CCameraPipeline::CreateAllocator()
 
             m_pmfxd3dAllocatorParams = pd3dAllocParams;
         }
+#endif
 
         if (D3D9_MEMORY == m_memTypeIn || D3D9_MEMORY == m_memTypeOut)
         {
@@ -630,8 +632,8 @@ mfxStatus CCameraPipeline::CreateAllocator()
         MSDK_CHECK_POINTER(pd3dAllocParams, MFX_ERR_MEMORY_ALLOC);
         pd3dAllocParams->pDevice = reinterpret_cast<ID3D11Device *>(hdl);
 #else
-        m_pMFXAllocatorAux = new D3DFrameAllocator;
-        MSDK_CHECK_POINTER(m_pMFXAllocatorAux, MFX_ERR_MEMORY_ALLOC);
+        m_pMFXd3dAllocator =  new D3DFrameAllocator;
+        MSDK_CHECK_POINTER(m_pMFXd3dAllocator, MFX_ERR_MEMORY_ALLOC);
 
         D3DAllocatorParams *pd3dAllocParams = new D3DAllocatorParams;
         MSDK_CHECK_POINTER(pd3dAllocParams, MFX_ERR_MEMORY_ALLOC);

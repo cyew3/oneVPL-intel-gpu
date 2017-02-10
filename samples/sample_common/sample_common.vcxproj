@@ -252,6 +252,7 @@
     <ClInclude Include="include\hw_device.h" />
     <ClInclude Include="include\mfx_buffering.h" />
     <ClInclude Include="include\mfx_samples_config.h" />
+    <ClInclude Include="include\parameters_dumper.h" />
     <ClInclude Include="include\plugin_loader.h" />
     <ClInclude Include="include\plugin_utils.h" />
     <ClInclude Include="include\sample_defs.h" />
@@ -283,6 +284,7 @@
     <ClCompile Include="src\decode_render.cpp" />
     <ClCompile Include="src\general_allocator.cpp" />
     <ClCompile Include="src\mfx_buffering.cpp" />
+    <ClCompile Include="src\parameters_dumper.cpp" />
     <ClCompile Include="src\plugin_utils.cpp" />
     <ClCompile Include="src\sample_utils.cpp" />
     <ClCompile Include="src\sysmem_allocator.cpp" />
