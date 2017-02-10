@@ -153,7 +153,7 @@ mfxStatus MFX_VppInterface::FillParameters()
     m_VppDoNotUse->AlgList[3] = MFX_EXTBUFF_VPP_PROCAMP;        // turn off processing amplified (on by default)
     m_InitExtParams.push_back(reinterpret_cast<mfxExtBuffer *>(m_VppDoNotUse));
 
-    m_videoParams.ExtParam = &m_InitExtParams[0]; // vector is stored linearly in memory
+    m_videoParams.ExtParam    = &m_InitExtParams[0]; // vector is stored linearly in memory
     m_videoParams.NumExtParam = (mfxU16)m_InitExtParams.size();
 
     return sts;

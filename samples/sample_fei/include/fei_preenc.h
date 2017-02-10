@@ -50,7 +50,7 @@ public:
 
     mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB m_tmpMVMB;
 
-    /* For I/O operations with extended buffers */
+    /* For I/O operations with extension buffers */
     FILE* m_pMvPred_in;
     FILE* m_pMbQP_in;
     FILE* m_pMBstat_out;

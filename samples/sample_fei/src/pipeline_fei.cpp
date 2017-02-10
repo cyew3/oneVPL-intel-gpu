@@ -505,11 +505,9 @@ mfxStatus CEncodingPipeline::AllocFrames()
         MSDK_CHECK_STATUS(sts, "FillSurfacePool failed");
     }
 
-    /* ENC use input source surfaces only & does not need real reconstructed surfaces.
-     * But source surfaces index is always equal to reconstructed surface index.
-     * PAK generate real reconstructed surfaces (instead of source surfaces)Alloc reconstructed surfaces for PAK
-     * So, after PAK call source surface changed on reconstructed surface
-     * This is important limitation for PAK
+    /* ENC use input source surfaces only & does not generate real reconstructed surfaces.
+     * But surface form reconstruct pool is required by driver for ENC and the same surface should also be passed to PAK.
+     * PAK generate real reconstructed surfaces.
      * */
     if (m_pFEI_ENCPAK)
     {
@@ -590,7 +588,7 @@ mfxStatus CEncodingPipeline::CreateAllocator()
 
         /* In case of video memory we must provide MediaSDK with external allocator
         thus we demonstrate "external allocator" usage model.
-        Call SetAllocator to pass allocator to mediasdk */
+        Call SetAllocator to pass allocator to MediaSDK */
         sts = m_mfxSession.SetFrameAllocator(m_pMFXAllocator);
         MSDK_CHECK_STATUS(sts, "m_mfxSession.SetFrameAllocator failed");
         if (m_bSeparatePreENCSession){
@@ -785,9 +783,9 @@ mfxStatus CEncodingPipeline::SetSequenceParameters()
     m_taskInitializationParams.NumMVPredictorsBL1 = m_appCfg.PipelineCfg.NumMVPredictorsBL1 = m_appCfg.bNPredSpecified_l1 ?
         m_appCfg.NumMVPredictors_Bl1 : (std::min)(mfxU16(m_numRefFrame*m_numOfFields), MaxFeiEncMVPNum);
 
-    m_taskInitializationParams.BRefType        = m_bRefType;
+    m_taskInitializationParams.BRefType           = m_bRefType;
 
-    /* Section below calculates number of macroblocks for Extended Buffers allocation */
+    /* Section below calculates number of macroblocks for extension buffers allocation */
 
     // Copy source frame size from decoder
     if (m_pDECODE)
@@ -980,7 +978,7 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
 
             for (fieldId = 0; fieldId < m_numOfFields; fieldId++)
             {
-                /* We allocate buffer of progressive frame size for the first field if mixed pixstructs are used */
+                /* We allocate buffer of progressive frame size for the first field if mixed picstructs are used */
                 mfxU32 numMB = (m_appCfg.PipelineCfg.mixedPicstructs && !fieldId) ? m_appCfg.PipelineCfg.numMB_preenc_frame : m_appCfg.PipelineCfg.numMB_preenc_refPic;
 
                 if (fieldId == 0){
@@ -994,7 +992,7 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
                 preENCCtr[fieldId].RefPictureType[0]       = preENCCtr[fieldId].PictureType;
                 preENCCtr[fieldId].RefPictureType[1]       = preENCCtr[fieldId].PictureType;
                 preENCCtr[fieldId].DownsampleInput         = MFX_CODINGOPTION_ON;  // Default is ON
-                preENCCtr[fieldId].DownsampleReference[0]  = MFX_CODINGOPTION_OFF; // In sample_fei preenc works only in encoded order
+                preENCCtr[fieldId].DownsampleReference[0]  = MFX_CODINGOPTION_OFF; // In sample_fei PreENC works only in encoded order
                 preENCCtr[fieldId].DownsampleReference[1]  = MFX_CODINGOPTION_OFF; // so all references would be already downsampled
                 preENCCtr[fieldId].DisableMVOutput         = disableMVoutPreENC;
                 preENCCtr[fieldId].DisableStatisticsOutput = disableMBStatPreENC;

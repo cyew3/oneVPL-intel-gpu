@@ -47,7 +47,7 @@ public:
     /* Bitstream writer */
     CSmplBitstreamWriter m_FileWriter;
 
-    /* For I/O operations with extended buffers */
+    /* For I/O operations with extension buffers */
     FILE* m_pMvPred_in;
     FILE* m_pENC_MBCtrl_in;
     FILE* m_pMbQP_in;

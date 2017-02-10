@@ -407,7 +407,7 @@ struct IObuffs
     }
 };
 
-/* This structure holds sets of input and output extended buffers
+/* This structure holds sets of input and output extension buffers
    required for frame processing by one of the FEI interfaces */
 
 struct bufSet
@@ -825,8 +825,8 @@ struct iTask
     bool            m_fieldPicFlag;    // is interlaced frame
     PairI32         m_poc;             // POC of first and second field
 
-    mfxU32  m_frameOrderIdr;           // most recent idr frame in display order
-    mfxU32  m_frameOrderI;             // most recent i frame in display order
+    mfxU32  m_frameOrderIdr;           // most recent IDR frame in display order
+    mfxU32  m_frameOrderI;             // most recent I frame in display order
     mfxU32  m_frameOrder;              // current frame order in display order
     mfxU16  m_frameIdrCounter;         // number of IDR frames encoded
 

@@ -78,7 +78,7 @@ inline mfxStatus RepackStremoutMB2PakMB(mfxFeiDecStreamOutMBCtrl* dsoMB, mfxFeiP
     pakMB->Direct8x8Pattern    = 0; // to be recomputed in RepackStreamoutMV
     pakMB->MbSkipConvDisable   = 0;
 
-    memcpy(&pakMB->InterMB, &dsoMB->InterMB, sizeof(pakMB->InterMB)); // this part is common
+    MSDK_MEMCPY_VAR(pakMB->InterMB, &dsoMB->InterMB, sizeof(pakMB->InterMB)); // this part is common
 
     if (pakMB->IntraMbFlag ){
         if (dsoMB->MbType) { // for intra 16x16 populate the type to each of 16 4-bit field

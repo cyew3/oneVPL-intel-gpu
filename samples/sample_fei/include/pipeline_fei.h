@@ -91,7 +91,7 @@ protected:
 
     mfxFrameInfo m_commonFrameInfo; // setting for ENCODE (VPP / PreENC with DS may have own FrameInfo settings)
 
-    bufList m_preencBufs, m_encodeBufs; // sets of extended buffers for PreENC and ENCODE(ENC+PAK)
+    bufList m_preencBufs, m_encodeBufs; // sets of extension buffers for PreENC and ENCODE(ENC+PAK)
 
     // decode streamout
     std::vector<mfxExtFeiDecStreamOut*> m_StreamoutBufs;

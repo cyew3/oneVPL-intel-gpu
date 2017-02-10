@@ -401,7 +401,7 @@ mfxStatus FEI_PreencInterface::FillParameters()
         MSDK_MEMCPY_VAR(m_FullResParams.mfx.FrameInfo, &m_DSParams.vpp.In, sizeof(mfxFrameInfo));
     }
 
-    /* Create extended buffer to Init FEI PREENC */
+    /* Create extension buffer to Init FEI PREENC */
     mfxExtFeiParam* pExtBufInit = new mfxExtFeiParam;
     MSDK_ZERO_MEMORY(*pExtBufInit);
 
@@ -586,7 +586,7 @@ mfxStatus FEI_PreencInterface::InitFrameParams(iTask* eTask, iTask* refTask[2][2
     eTask->preenc_bufs = m_pExtBuffers->GetFreeSet();
     MSDK_CHECK_POINTER(eTask->preenc_bufs, MFX_ERR_NULL_PTR);
 
-    /* Adjust number of MBs in extended buffers */
+    /* Adjust number of MBs in extension buffers */
     if (m_pAppConfig->PipelineCfg.DRCresetPoint || m_pAppConfig->PipelineCfg.mixedPicstructs)
     {
         mfxU32 n_MB = m_pAppConfig->PipelineCfg.DRCresetPoint ?
@@ -1112,7 +1112,7 @@ mfxStatus FEI_PreencInterface::RepackPredictorsPerf(iTask* eTask)
 
                 if (!m_pAppConfig->preencDSstrength)
                 {
-                    memcpy(mvp->MB[i].MV[j], mvs_v[j]->MB[i].MV[0], 2 * sizeof(mfxI16Pair));
+                    MSDK_MEMCPY_VAR(*mvp->MB[i].MV[j], mvs_v[j]->MB[i].MV[0], 2 * sizeof(mfxI16Pair));
                 }
                 else
                 {
@@ -1145,7 +1145,7 @@ mfxStatus FEI_PreencInterface::RepackPredictorsPerf(iTask* eTask)
                         break;
                     }
 
-                    memcpy(mvp->MB[i].MV[j], mvs_v[j]->MB[preencMBidx].MV[MVZigzagOrder[preencMBMVidx]], 2 * sizeof(mfxI16Pair));
+                    MSDK_MEMCPY_VAR(*mvp->MB[i].MV[j], mvs_v[j]->MB[preencMBidx].MV[MVZigzagOrder[preencMBMVidx]], 2 * sizeof(mfxI16Pair));
 
                     mvp->MB[i].MV[j][0].x *= m_pAppConfig->preencDSstrength;
                     mvp->MB[i].MV[j][0].y *= m_pAppConfig->preencDSstrength;

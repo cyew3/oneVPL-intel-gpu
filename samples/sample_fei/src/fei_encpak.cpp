@@ -510,7 +510,7 @@ mfxStatus FEI_EncPakInterface::FillParameters()
     * */
     feiPPS->Transform8x8ModeFlag      = ((m_pAppConfig->IntraPartMask & 0x06) != 0x06) ? 1 : m_pAppConfig->Transform8x8ModeFlag;
 
-    /* Create extended buffer to Init FEI ENCPAK */
+    /* Create extension buffer to Init FEI ENCPAK */
     if (m_pmfxENC)
     {
         mfxExtFeiParam* pExtBufInit = new mfxExtFeiParam;
@@ -769,7 +769,7 @@ mfxStatus FEI_EncPakInterface::InitFrameParams(iTask* eTask)
     eTask->bufs = m_pExtBuffers->GetFreeSet();
     MSDK_CHECK_POINTER(eTask->bufs, MFX_ERR_NULL_PTR);
 
-    /* Adjust number of MBs in extended buffers */
+    /* Adjust number of MBs in extension buffers */
     if (m_pAppConfig->PipelineCfg.DRCresetPoint || m_pAppConfig->PipelineCfg.mixedPicstructs)
     {
         mfxU32 n_MB = m_pAppConfig->PipelineCfg.DRCresetPoint ? m_pAppConfig->PipelineCfg.numMB_drc_curr :                  // DRC

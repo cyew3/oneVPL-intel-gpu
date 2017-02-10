@@ -256,7 +256,7 @@ mfxStatus FEI_EncodeInterface::FillParameters()
     m_InitExtParams.push_back(reinterpret_cast<mfxExtBuffer *>(pCodingOption3));
 
 
-    /* Create extended buffer to Init FEI ENCODE */
+    /* Create extension buffer to Init FEI ENCODE */
     mfxExtFeiParam* pExtBufInit = new mfxExtFeiParam;
     MSDK_ZERO_MEMORY(*pExtBufInit);
 
@@ -267,7 +267,7 @@ mfxStatus FEI_EncodeInterface::FillParameters()
     pExtBufInit->SingleFieldProcessing = mfxU16(m_bSingleFieldMode ? MFX_CODINGOPTION_ON : MFX_CODINGOPTION_OFF);
     m_InitExtParams.push_back(reinterpret_cast<mfxExtBuffer *>(pExtBufInit));
 
-    /* Create extended buffer to init deblocking parameters */
+    /* Create extension buffer to init deblocking parameters */
     if (m_pAppConfig->DisableDeblockingIdc || m_pAppConfig->SliceAlphaC0OffsetDiv2 || m_pAppConfig->SliceBetaOffsetDiv2)
     {
         mfxU16 numFields = (m_videoParams.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) ? 1 : 2;
@@ -301,7 +301,7 @@ mfxStatus FEI_EncodeInterface::FillParameters()
         m_videoParams.NumExtParam = (mfxU16)m_InitExtParams.size();
     }
 
-    /* Init filepointers if some input buffers are specified */
+    /* Init file pointers if some input buffers are specified */
 
     if (!m_pAppConfig->bPREENC && m_pMvPred_in == NULL && m_pAppConfig->mvinFile != NULL) //not load if we couple with PREENC
     {
@@ -419,7 +419,7 @@ mfxStatus FEI_EncodeInterface::InitFrameParams(mfxFrameSurface1* encodeSurface, 
     bufSet * freeSet = m_pExtBuffers->GetFreeSet();
     MSDK_CHECK_POINTER(freeSet, MFX_ERR_NULL_PTR);
 
-    /* Adjust number of MBs in extended buffers */
+    /* Adjust number of MBs in extension buffers */
     if (m_pAppConfig->PipelineCfg.DRCresetPoint || m_pAppConfig->PipelineCfg.mixedPicstructs)
     {
         mfxU32 n_MB = m_pAppConfig->PipelineCfg.DRCresetPoint ? m_pAppConfig->PipelineCfg.numMB_drc_curr :        // DRC
