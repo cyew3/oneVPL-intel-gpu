@@ -87,7 +87,6 @@ public:
                     bool   & bSigleFieldProcessing);
 
     mfxStatus FillParameters();
-    mfxStatus FillRefInfo(iTask* eTask);
     mfxStatus InitFrameParams(iTask* eTask);
     mfxStatus AllocateSufficientBuffer();
     mfxStatus EncPakOneFrame(iTask* eTask);
