@@ -1635,9 +1635,6 @@ mfxStatus CEncodingPipeline::Run()
     // report any errors that occurred in asynchronous part
     MSDK_CHECK_STATUS(sts, "Buffered frames processing failed");
 
-    // release runtime resources
-    ReleaseResources();
-
     return sts;
 }
 
