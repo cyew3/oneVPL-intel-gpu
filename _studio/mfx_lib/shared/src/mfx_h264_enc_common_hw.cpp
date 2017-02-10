@@ -6236,13 +6236,18 @@ mfxStatus MfxHwH264Encode::ReadFrameData(
     return MFX_ERR_NONE;
 }
 
-mfxExtBuffer* MfxHwH264Encode::GetExtBuffer(mfxExtBuffer** extBuf, mfxU32 numExtBuf, mfxU32 id)
+mfxExtBuffer* MfxHwH264Encode::GetExtBuffer(mfxExtBuffer** extBuf, mfxU32 numExtBuf, mfxU32 id, mfxU32 offset)
 {
     if (extBuf != 0)
     {
-        for (mfxU16 i = 0; i < numExtBuf; i++)
-            if (extBuf[i] != 0 && extBuf[i]->BufferId == id) // assuming aligned buffers
+        mfxU32 count = 0;
+        for (mfxU32 i = 0; i < numExtBuf; ++i)
+        {
+            if (extBuf[i] != 0 && extBuf[i]->BufferId == id && count++ == offset) // assuming aligned buffers
+            {
                 return (extBuf[i]);
+            }
+        }
     }
 
     return 0;

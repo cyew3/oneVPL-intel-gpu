@@ -873,7 +873,8 @@ namespace MfxHwH264Encode
     mfxExtBuffer * GetExtBuffer(
         mfxExtBuffer ** extBuf,
         mfxU32          numExtBuf,
-        mfxU32          id);
+        mfxU32          id,
+        mfxU32          offset = 0);
 
     struct mfxExtBufferProxy
     {
