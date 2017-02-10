@@ -621,14 +621,25 @@ mfxStatus VideoENC_ENC::RunFrameVmeENCCheck(
     mfxU32 fieldMaxCount = (m_video.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) ? 1 : 2;
     for (mfxU32 field = 0; field < fieldMaxCount; field++)
     {
-        mfxU32 fieldParity = (m_video.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_BFF)? (1 - field) : field;
+        // Check FrameCtrl settings
+        mfxExtFeiEncFrameCtrl * frameCtrl = GetExtBufferFEI(input, field);
+        MFX_CHECK(frameCtrl,                    MFX_ERR_UNDEFINED_BEHAVIOR);
+        MFX_CHECK(frameCtrl->SearchWindow != 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+        mfxExtCodingOption const * extOpt = GetExtBuffer(m_video);
+        if ( ( ((m_video.mfx.CodecProfile & MFX_PROFILE_AVC_BASELINE) == MFX_PROFILE_AVC_BASELINE) || (m_video.mfx.CodecProfile == MFX_PROFILE_AVC_MAIN)
+            || (extOpt && extOpt->IntraPredBlockSize == MFX_BLOCKSIZE_MIN_16X16) ) && !(frameCtrl->IntraPartMask & 0x02) )
+        {
+            // For Main and Baseline profiles 8x8 transform is prohibited
+            return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+        }
 
         // Driver need both buffer to generate bitstream
-        mfxExtFeiEncMV     * mvout     = GetExtBufferFEI(output, fieldParity);
-        mfxExtFeiPakMBCtrl * mbcodeout = GetExtBufferFEI(output, fieldParity);
+        mfxExtFeiEncMV     * mvout     = GetExtBufferFEI(output, field);
+        mfxExtFeiPakMBCtrl * mbcodeout = GetExtBufferFEI(output, field);
         MFX_CHECK(!!mvout == !!mbcodeout, MFX_ERR_INVALID_VIDEO_PARAM);
 
-        mfxExtFeiSliceHeader * extFeiSliceInRintime = GetExtBufferFEI(input, fieldParity);
+        mfxExtFeiSliceHeader * extFeiSliceInRintime = GetExtBufferFEI(input, field);
         MFX_CHECK(extFeiSliceInRintime,           MFX_ERR_UNDEFINED_BEHAVIOR);
         MFX_CHECK(extFeiSliceInRintime->Slice,    MFX_ERR_UNDEFINED_BEHAVIOR);
         MFX_CHECK(extFeiSliceInRintime->NumSlice, MFX_ERR_UNDEFINED_BEHAVIOR);
@@ -641,7 +652,7 @@ mfxStatus VideoENC_ENC::RunFrameVmeENCCheck(
             MFX_CHECK(extFeiSliceInRintime->NumSlice == m_video.mfx.NumSlice, MFX_ERR_UNDEFINED_BEHAVIOR);
         }
 
-        mfxExtFeiPPS* extFeiPPSinRuntime = GetExtBufferFEI(input, fieldParity);
+        mfxExtFeiPPS* extFeiPPSinRuntime = GetExtBufferFEI(input, field);
         MFX_CHECK(extFeiPPSinRuntime, MFX_ERR_UNDEFINED_BEHAVIOR);
 
         // Check that parameters from previous init kept unchanged
@@ -674,27 +685,13 @@ mfxStatus VideoENC_ENC::RunFrameVmeENCCheck(
             break;
         }
 
-        if (fieldParity == 0)
+        if (field == 0)
         {
             mtype_first_field  = type;
         }
         else
         {
             mtype_second_field = type;
-        }
-
-        mfxExtFeiEncFrameCtrl const * frameCtrl = GetExtBufferFEI(input, fieldParity);
-        if (frameCtrl)
-        {
-            MFX_CHECK(frameCtrl->SearchWindow != 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
-
-            mfxExtCodingOption const * extOpt = GetExtBuffer(m_video);
-            if ((m_video.mfx.CodecProfile == MFX_PROFILE_AVC_BASELINE || m_video.mfx.CodecProfile == MFX_PROFILE_AVC_MAIN || (extOpt && extOpt->IntraPredBlockSize == MFX_BLOCKSIZE_MIN_16X16))
-                && !(frameCtrl->IntraPartMask & 0x02))
-            {
-                // For Main and Baseline profiles 8x8 transform is prohibited
-                return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-            }
         }
     }
     if (!mtype_second_field){ mtype_second_field = mtype_first_field & ~MFX_FRAMETYPE_IDR; }

@@ -652,14 +652,12 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
     mfxU32 fieldMaxCount = m_video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
     for (mfxU32 field = 0; field < fieldMaxCount; field++)
     {
-        mfxU32 fieldParity = (m_video.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_BFF) ? (1 - field) : field;
-
         // Driver need both buffer to generate bitstream
-        mfxExtFeiEncMV     * mvout     = GetExtBufferFEI(input, fieldParity);
-        mfxExtFeiPakMBCtrl * mbcodeout = GetExtBufferFEI(input, fieldParity);
+        mfxExtFeiEncMV     * mvout     = GetExtBufferFEI(input, field);
+        mfxExtFeiPakMBCtrl * mbcodeout = GetExtBufferFEI(input, field);
         MFX_CHECK(mvout && mbcodeout, MFX_ERR_INVALID_VIDEO_PARAM);
 
-        mfxExtFeiSliceHeader * extFeiSliceInRintime = GetExtBufferFEI(input, fieldParity);
+        mfxExtFeiSliceHeader * extFeiSliceInRintime = GetExtBufferFEI(input, field);
         MFX_CHECK(extFeiSliceInRintime,           MFX_ERR_UNDEFINED_BEHAVIOR);
         MFX_CHECK(extFeiSliceInRintime->Slice,    MFX_ERR_UNDEFINED_BEHAVIOR);
         MFX_CHECK(extFeiSliceInRintime->NumSlice, MFX_ERR_UNDEFINED_BEHAVIOR);
@@ -672,7 +670,7 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
             MFX_CHECK(extFeiSliceInRintime->NumSlice == m_video.mfx.NumSlice, MFX_ERR_UNDEFINED_BEHAVIOR);
         }
 
-        mfxExtFeiPPS* extFeiPPSinRuntime = GetExtBufferFEI(input, fieldParity);
+        mfxExtFeiPPS* extFeiPPSinRuntime = GetExtBufferFEI(input, field);
         MFX_CHECK(extFeiPPSinRuntime, MFX_ERR_UNDEFINED_BEHAVIOR);
 
         // Check that parameters from previous init kept unchanged
@@ -705,7 +703,7 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
             break;
         }
 
-        if (fieldParity == 0)
+        if (field == 0)
         {
             mtype_first_field  = type;
         }
