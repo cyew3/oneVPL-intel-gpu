@@ -445,7 +445,7 @@ mfxStatus vppParseResetPar(msdk_char* strInput[], mfxU8 nArgNum, mfxU8& curArg, 
                 pParams->videoSignalInfoParam[paramID].mode = VPP_FILTER_ENABLED_CONFIGURED;
 
                 i++;
-                msdk_sscanf(strInput[i], MSDK_STRING("%hd"), &pParams->videoSignalInfoParam[paramID].In.NominalRange);
+                msdk_sscanf(strInput[i], MSDK_STRING("%hu"), &pParams->videoSignalInfoParam[paramID].In.NominalRange);
             }
             else if ( 0 == msdk_strcmp(strInput[i], MSDK_STRING("-dsinr")) )
             {
@@ -454,7 +454,7 @@ mfxStatus vppParseResetPar(msdk_char* strInput[], mfxU8 nArgNum, mfxU8& curArg, 
                 pParams->videoSignalInfoParam[paramID].mode = VPP_FILTER_ENABLED_CONFIGURED;
 
                 i++;
-                msdk_sscanf(strInput[i], MSDK_STRING("%hd"), &pParams->videoSignalInfoParam[paramID].Out.NominalRange);
+                msdk_sscanf(strInput[i], MSDK_STRING("%hu"), &pParams->videoSignalInfoParam[paramID].Out.NominalRange);
             }
             else if ( 0 == msdk_strcmp(strInput[i], MSDK_STRING("-ssitm")) )
             {
@@ -463,7 +463,7 @@ mfxStatus vppParseResetPar(msdk_char* strInput[], mfxU8 nArgNum, mfxU8& curArg, 
                 pParams->videoSignalInfoParam[paramID].mode = VPP_FILTER_ENABLED_CONFIGURED;
 
                 i++;
-                msdk_sscanf(strInput[i], MSDK_STRING("%hd"), &pParams->videoSignalInfoParam[paramID].In.TransferMatrix);
+                msdk_sscanf(strInput[i], MSDK_STRING("%hu"), &pParams->videoSignalInfoParam[paramID].In.TransferMatrix);
             }
             else if ( 0 == msdk_strcmp(strInput[i], MSDK_STRING("-dsitm")) )
             {
@@ -472,7 +472,7 @@ mfxStatus vppParseResetPar(msdk_char* strInput[], mfxU8 nArgNum, mfxU8& curArg, 
                 pParams->videoSignalInfoParam[paramID].mode = VPP_FILTER_ENABLED_CONFIGURED;
 
                 i++;
-                msdk_sscanf(strInput[i], MSDK_STRING("%hd"), &pParams->videoSignalInfoParam[paramID].Out.TransferMatrix);
+                msdk_sscanf(strInput[i], MSDK_STRING("%hu"), &pParams->videoSignalInfoParam[paramID].Out.TransferMatrix);
             }
             else if ( 0 == msdk_strcmp(strInput[i], MSDK_STRING("-mirror")) )
             {
@@ -481,31 +481,31 @@ mfxStatus vppParseResetPar(msdk_char* strInput[], mfxU8 nArgNum, mfxU8& curArg, 
                 pParams->mirroringParam[paramID].mode = VPP_FILTER_ENABLED_CONFIGURED;
 
                 i++;
-                msdk_sscanf(strInput[i], MSDK_STRING("%hd"), &pParams->mirroringParam[paramID].Type);
+                msdk_sscanf(strInput[i], MSDK_STRING("%hu"), &pParams->mirroringParam[paramID].Type);
             }
             else if ( 0 == msdk_strcmp(strInput[i], MSDK_STRING("-sw")) )
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                msdk_sscanf(strInput[i], MSDK_STRING("%hd"), &pParams->frameInfoIn.back().nWidth);
+                msdk_sscanf(strInput[i], MSDK_STRING("%hu"), &pParams->frameInfoIn.back().nWidth);
             }
             else if ( 0 == msdk_stricmp(strInput[i], MSDK_STRING("-dw")) )
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                msdk_sscanf(strInput[i], MSDK_STRING("%hd"), &pParams->frameInfoOut.back().nWidth);
+                msdk_sscanf(strInput[i], MSDK_STRING("%hu"), &pParams->frameInfoOut.back().nWidth);
             }
             else if ( 0 == msdk_strcmp(strInput[i], MSDK_STRING("-sh")) )
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                msdk_sscanf(strInput[i], MSDK_STRING("%hd"), &pParams->frameInfoIn.back().nHeight);
+                msdk_sscanf(strInput[i], MSDK_STRING("%hu"), &pParams->frameInfoIn.back().nHeight);
             }
             else if ( 0 == msdk_stricmp(strInput[i], MSDK_STRING("-dh")) )
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                msdk_sscanf(strInput[i], MSDK_STRING("%hd"), &pParams->frameInfoOut.back().nHeight);
+                msdk_sscanf(strInput[i], MSDK_STRING("%hu"), &pParams->frameInfoOut.back().nHeight);
             }
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-denoise")))
             {
@@ -582,7 +582,7 @@ mfxStatus vppParseResetPar(msdk_char* strInput[], mfxU8 nArgNum, mfxU8& curArg, 
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                msdk_sscanf(strInput[i], MSDK_STRING("%hd"), &pParams->rotate[paramID]);
+                msdk_sscanf(strInput[i], MSDK_STRING("%hu"), &pParams->rotate[paramID]);
             }
             // different modes of MFX FRC
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-frc:advanced")))
@@ -636,7 +636,7 @@ mfxStatus vppParseResetPar(msdk_char* strInput[], mfxU8 nArgNum, mfxU8& curArg, 
                 i++;
 
                 mfxU16 viewCount;
-                msdk_sscanf(strInput[i], MSDK_STRING("%hd"), &viewCount);
+                msdk_sscanf(strInput[i], MSDK_STRING("%hu"), &viewCount);
                 if( viewCount > 1 )
                 {
                     pParams->multiViewParam[paramID].viewCount = (mfxU16)viewCount;

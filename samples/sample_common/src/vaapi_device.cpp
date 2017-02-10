@@ -225,7 +225,7 @@ mfxStatus CVAAPIDeviceX11::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllo
     drm_intel_bo *bo = NULL;
     unsigned int border, depth, stride, size,
                 width, height;
-    int fd = 0, bpp, x, y;
+    int fd = 0, bpp = 0, x, y;
 
     MfxLoader::Xcb_Proxy & xcblib = m_X11LibVA.GetXcbX11();
     MfxLoader::XLib_Proxy & x11lib = m_X11LibVA.GetX11();
@@ -242,7 +242,7 @@ mfxStatus CVAAPIDeviceX11::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllo
         if (!memId || !memId->m_surface) mfx_res = MFX_ERR_NULL_PTR;
     }
 
-    if(memId->m_buffer_info.mem_type != VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME){
+    if(memId && memId->m_buffer_info.mem_type != VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME){
         msdk_printf(MSDK_STRING("Memory type invalid!\n"));
         return MFX_ERR_UNSUPPORTED;
     }

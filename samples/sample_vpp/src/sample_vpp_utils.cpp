@@ -1294,6 +1294,7 @@ mfxStatus  CRawVideoReader::PreAllocateFrameChunk(mfxVideoParam* pVideoParam,
         surface.Data.Locked = 0;
         surface.Data.MemId = response.mids[m_SurfacesList.size()];
         surface.Info = pVideoParam->vpp.In;
+        memset(surface.reserved, 0, sizeof(surface.reserved));
         sts = pAllocator->Lock(pAllocator->pthis, surface.Data.MemId, &surface.Data);
         MFX_CHECK_STS(sts);
         sts = LoadNextFrame(&surface.Data, &pVideoParam->vpp.In);

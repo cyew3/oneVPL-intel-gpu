@@ -66,6 +66,7 @@ FRCAdvancedChecker::FRCAdvancedChecker()
     m_bReadyOutput = false;
     m_defferedInputTimeStamp = 0;
 
+    memset(&m_videoParam, 0, sizeof(m_videoParam));
 } // FRCAdvancedChecker::FRCAdvancedChecker()
 
 

@@ -629,8 +629,8 @@ bool CmdProcessor::ParseROIFile(const msdk_char *roi_file_name, std::vector<mfxE
         fseek(roi_file, 0, SEEK_END);
         int file_size = (int) ftell(roi_file);
         rewind (roi_file);
-        std::auto_ptr<char> roi_data_ptr(new char[file_size]);
-        char *roi_data = roi_data_ptr.get();
+        std::vector<char> buffer(file_size);
+        char *roi_data = &buffer[0];
         if (file_size != fread(roi_data, 1, file_size, roi_file)) {
             fclose(roi_file);
             return false;
