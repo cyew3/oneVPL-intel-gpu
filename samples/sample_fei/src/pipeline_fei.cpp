@@ -151,7 +151,7 @@ mfxStatus CEncodingPipeline::Init()
         m_pYUVReader = new YUVreader(&m_appCfg, m_bVPPneeded ? &m_VppSurfaces : &m_EncSurfaces, m_pMFXAllocator);
     }
 
-    // create preprocessor if resizing was requested from command line
+    // Сreate preprocessor if resizing was requested from command line
     if (m_bVPPneeded)
     {
         m_pVPP = new MFX_VppInterface(&m_mfxSession, m_BaseAllocID, &m_appCfg);
@@ -506,7 +506,7 @@ mfxStatus CEncodingPipeline::AllocFrames()
     }
 
     /* ENC use input source surfaces only & does not generate real reconstructed surfaces.
-     * But surface form reconstruct pool is required by driver for ENC and the same surface should also be passed to PAK.
+     * But surface from reconstruct pool is required by driver for ENC and the same surface should also be passed to PAK.
      * PAK generate real reconstructed surfaces.
      * */
     if (m_pFEI_ENCPAK)
@@ -1225,7 +1225,12 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
                     feiPPS[fieldId].SecondChromaQPIndexOffset = m_appCfg.SecondChromaQPIndexOffset;
                     feiPPS[fieldId].Transform8x8ModeFlag      = m_appCfg.Transform8x8ModeFlag;
 
+#if MFX_VERSION >= 1023
+                    memset(feiPPS[fieldId].DpbBefore, 0xffff, sizeof(feiPPS[fieldId].DpbBefore));
+                    memset(feiPPS[fieldId].DpbAfter,  0xffff, sizeof(feiPPS[fieldId].DpbAfter));
+#else
                     memset(feiPPS[fieldId].ReferenceFrames, 0xffff, 16 * sizeof(mfxU16));
+#endif // MFX_VERSION >= 1023
                 }
 
                 /* Slice Header */

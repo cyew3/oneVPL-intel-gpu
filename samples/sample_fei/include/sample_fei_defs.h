@@ -87,16 +87,31 @@ inline mfxU16 FrameTypeToSliceType(mfxU8 frameType)
     }
 }
 
-/*
-enum
+#if MFX_VERSION >= 1023
+inline mfxU16 PicStructToFrameType(mfxU16 picstruct)
 {
-    RPLM_ST_PICNUM_SUB = 0,
-    RPLM_ST_PICNUM_ADD = 1,
-    RPLM_LT_PICNUM     = 2,
-    RPLM_END           = 3,
-    RPLM_INTERVIEW_SUB = 4,
-    RPLM_INTERVIEW_ADD = 5,
-};*/
+    switch (picstruct & 0x0f)
+    {
+    case MFX_PICSTRUCT_PROGRESSIVE:
+        return MFX_PICTYPE_FRAME;
+        break;
+
+    case MFX_PICSTRUCT_FIELD_TFF:
+    case MFX_PICSTRUCT_FIELD_BFF:
+        return MFX_PICTYPE_TOPFIELD | MFX_PICTYPE_BOTTOMFIELD;
+        break;
+
+    default:
+        return MFX_PICTYPE_UNKNOWN;
+        break;
+    }
+}
+
+inline mfxU16 PicStructToFrameTypeFieldBased(mfxU16 picstruct, mfxU16 is_interlaced, mfxU16 parity)
+{
+    return mfxU16((!!(picstruct & MFX_PICSTRUCT_PROGRESSIVE) == is_interlaced) ? MFX_PICTYPE_UNKNOWN : (is_interlaced ? (parity ? MFX_PICTYPE_BOTTOMFIELD : MFX_PICTYPE_TOPFIELD) : MFX_PICTYPE_FRAME));
+}
+#endif // MFX_VERSION >= 1023
 
 enum
 {

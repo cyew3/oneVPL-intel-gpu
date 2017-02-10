@@ -649,6 +649,7 @@ mfxStatus FEI_EncPakInterface::FillParameters()
     return sts;
 }
 
+#if MFX_VERSION < 1023
 mfxStatus FEI_EncPakInterface::FillRefInfo(iTask* eTask)
 {
     MSDK_CHECK_POINTER(eTask, MFX_ERR_NULL_PTR);
@@ -746,6 +747,7 @@ mfxStatus FEI_EncPakInterface::FillRefInfo(iTask* eTask)
 
     return sts;
 }
+#endif // MFX_VERSION < 1023
 
 mfxStatus FEI_EncPakInterface::InitFrameParams(iTask* eTask)
 {
@@ -780,8 +782,14 @@ mfxStatus FEI_EncPakInterface::InitFrameParams(iTask* eTask)
         eTask->bufs->ResetSlices(m_videoParams_ENC.mfx.FrameInfo.Width >> 4, m_videoParams_ENC.mfx.FrameInfo.Height >> (eTask->m_fieldPicFlag ? 5 : 4));
     }
 
+#if MFX_VERSION >= 1023
+    // Fill information about DPB states and reference lists
+    sts = m_RefInfo.Fill(eTask, m_inputTasks);
+    MSDK_CHECK_STATUS(sts, "RefInfo.Fill failed");
+#else
     sts = FillRefInfo(eTask); // get info to fill reference structures
     MSDK_CHECK_STATUS(sts, "FillRefInfo failed");
+#endif // MFX_VERSION >= 1023
 
     bool is_I_frame = ExtractFrameType(*eTask, eTask->m_fieldPicFlag) & MFX_FRAMETYPE_I;
 
@@ -804,9 +812,16 @@ mfxStatus FEI_EncPakInterface::InitFrameParams(iTask* eTask)
         eTask->PAK_in.L0Surface = eTask->PAK_in.NumFrameL0 ? &m_RefInfo.reference_frames[0] : NULL;
         eTask->PAK_in.L1Surface = NULL;
 
+#if MFX_VERSION >= 1023
         // We need to form PAK buffers manually, because they consist of subset of both: ENC input and output buffers
         eTask->PAK_in.ExtParam    = is_I_frame ? eTask->bufs->I_bufs.GetPAKBuffers()    : eTask->bufs->PB_bufs.GetPAKBuffers();
         eTask->PAK_in.NumExtParam = is_I_frame ? eTask->bufs->I_bufs.GetPAKBuffersNum() : eTask->bufs->PB_bufs.GetPAKBuffersNum();
+#else
+        eTask->PAK_in.NumExtParam  = is_I_frame ? eTask->bufs->I_bufs.out.NumExtParam() : eTask->bufs->PB_bufs.out.NumExtParam();
+        eTask->PAK_in.ExtParam     = is_I_frame ? eTask->bufs->I_bufs.out.ExtParam()    : eTask->bufs->PB_bufs.out.ExtParam();
+        eTask->PAK_out.NumExtParam = is_I_frame ? eTask->bufs->I_bufs.in.NumExtParam()  : eTask->bufs->PB_bufs.in.NumExtParam();
+        eTask->PAK_out.ExtParam    = is_I_frame ? eTask->bufs->I_bufs.in.ExtParam()     : eTask->bufs->PB_bufs.in.ExtParam();
+#endif // MFX_VERSION >= 1023
     }
 
     /* SPS, PPS, SliceHeader processing */
@@ -853,45 +868,83 @@ mfxStatus FEI_EncPakInterface::InitFrameParams(iTask* eTask)
         } // switch (eTask->bufs->PB_bufs.in.ExtParam[i]->BufferId)
     } // for (int i = 0; i < eTask->bufs->PB_bufs.in.NumExtParam; i++)
 
+    // These buffers required for ENC & PAK
+    MSDK_CHECK_POINTER(feiPPS && feiSliceHeader, MFX_ERR_NULL_PTR);
+
+#if MFX_VERSION >= 1023
     for (mfxU32 fieldId = 0; fieldId < mfxU32(eTask->m_fieldPicFlag ? 2 : 1); fieldId++)
     {
-        if (feiPPS)
-        {
-            feiPPS[fieldId].PictureType = ExtractFrameType(*eTask, fieldId);
+        feiPPS[fieldId].FrameType = ExtractFrameType(*eTask, fieldId);
 
-            memset(feiPPS[fieldId].ReferenceFrames, 0xffff, 16 * sizeof(mfxU16));
-            memcpy(feiPPS[fieldId].ReferenceFrames, &m_RefInfo.state[fieldId].dpb_idx[0], sizeof(mfxU16)*m_RefInfo.state[fieldId].dpb_idx.size());
+        memset(feiPPS[fieldId].DpbBefore, 0xffff, sizeof(feiPPS[fieldId].DpbBefore));
+
+        std::vector<mfxExtFeiPPS::mfxExtFeiPpsDPB> & DPB_before_to_use = fieldId ? m_RefInfo.DPB_after : m_RefInfo.DPB_before;
+        if (!DPB_before_to_use.empty())
+        {
+            MSDK_MEMCPY_VAR(*feiPPS[fieldId].DpbBefore, &DPB_before_to_use[0], DPB_before_to_use.size() * sizeof(DPB_before_to_use[0]));
         }
 
-        if (feiSliceHeader)
+        memset(feiPPS[fieldId].DpbAfter, 0xffff, sizeof(feiPPS[fieldId].DpbAfter));
+        if (!m_RefInfo.DPB_after.empty())
         {
-            MSDK_CHECK_POINTER(feiSliceHeader[fieldId].Slice, MFX_ERR_NULL_PTR);
+            MSDK_MEMCPY_VAR(*feiPPS[fieldId].DpbAfter, &m_RefInfo.DPB_after[0], m_RefInfo.DPB_after.size() * sizeof(m_RefInfo.DPB_after[0]));
+        }
 
-            for (mfxU32 i = 0; i < feiSliceHeader[fieldId].NumSlice; i++)
-            {
-                MSDK_ZERO_ARRAY(feiSliceHeader[fieldId].Slice[i].RefL0, 32);
-                MSDK_ZERO_ARRAY(feiSliceHeader[fieldId].Slice[i].RefL1, 32);
+        MSDK_CHECK_POINTER(feiSliceHeader[fieldId].Slice, MFX_ERR_NULL_PTR);
 
-                feiSliceHeader[fieldId].Slice[i].SliceType         = FrameTypeToSliceType(ExtractFrameType(*eTask, fieldId));
-                feiSliceHeader[fieldId].Slice[i].NumRefIdxL0Active = (mfxU16)m_RefInfo.state[fieldId].l0_idx.size();
-                feiSliceHeader[fieldId].Slice[i].NumRefIdxL1Active = (mfxU16)m_RefInfo.state[fieldId].l1_idx.size();
-                feiSliceHeader[fieldId].Slice[i].IdrPicId          = eTask->m_frameIdrCounter;
+        for (mfxU32 i = 0; i < feiSliceHeader[fieldId].NumSlice; ++i)
+        {
+            MSDK_ZERO_ARRAY(feiSliceHeader[fieldId].Slice[i].RefL0, 32);
+            MSDK_ZERO_ARRAY(feiSliceHeader[fieldId].Slice[i].RefL1, 32);
 
-                for (mfxU32 k = 0; k < m_RefInfo.state[fieldId].l0_idx.size(); k++)
-                {
-                    feiSliceHeader[fieldId].Slice[i].RefL0[k].Index       = m_RefInfo.state[fieldId].l0_idx[k];
-                    feiSliceHeader[fieldId].Slice[i].RefL0[k].PictureType = (mfxU16)(!eTask->m_fieldPicFlag ? MFX_PICTYPE_FRAME :
-                        (m_RefInfo.state[fieldId].l0_parity[k] ? MFX_PICTYPE_BOTTOMFIELD : MFX_PICTYPE_TOPFIELD));
-                }
-                for (mfxU32 k = 0; k < m_RefInfo.state[fieldId].l1_idx.size(); k++)
-                {
-                    feiSliceHeader[fieldId].Slice[i].RefL1[k].Index       = m_RefInfo.state[fieldId].l1_idx[k];
-                    feiSliceHeader[fieldId].Slice[i].RefL1[k].PictureType = (mfxU16)(!eTask->m_fieldPicFlag ? MFX_PICTYPE_FRAME :
-                        (m_RefInfo.state[fieldId].l1_parity[k] ? MFX_PICTYPE_BOTTOMFIELD : MFX_PICTYPE_TOPFIELD));
-                }
-            }
-        } // if (feiSliceHeader)
+            feiSliceHeader[fieldId].Slice[i].SliceType         = FrameTypeToSliceType(ExtractFrameType(*eTask, fieldId));
+            feiSliceHeader[fieldId].Slice[i].NumRefIdxL0Active = mfxU16(m_RefInfo.L0[fieldId].size());
+            feiSliceHeader[fieldId].Slice[i].NumRefIdxL1Active = mfxU16(m_RefInfo.L1[fieldId].size());
+            feiSliceHeader[fieldId].Slice[i].IdrPicId          = eTask->m_frameIdrCounter;
+
+            if (feiSliceHeader[fieldId].Slice[i].NumRefIdxL0Active)
+                MSDK_MEMCPY_VAR(*feiSliceHeader[fieldId].Slice[i].RefL0, &m_RefInfo.L0[fieldId][0], m_RefInfo.L0[fieldId].size() * sizeof(m_RefInfo.L0[fieldId][0]));
+
+            if (feiSliceHeader[fieldId].Slice[i].NumRefIdxL1Active)
+                MSDK_MEMCPY_VAR(*feiSliceHeader[fieldId].Slice[i].RefL1, &m_RefInfo.L1[fieldId][0], m_RefInfo.L1[fieldId].size() * sizeof(m_RefInfo.L1[fieldId][0]));
+        }
     }
+#else
+    for (mfxU32 fieldId = 0; fieldId < mfxU32(eTask->m_fieldPicFlag ? 2 : 1); fieldId++)
+    {
+        feiPPS[fieldId].PictureType = ExtractFrameType(*eTask, fieldId);
+
+        memset(feiPPS[fieldId].ReferenceFrames, 0xffff, 16 * sizeof(mfxU16));
+        memcpy(feiPPS[fieldId].ReferenceFrames, &m_RefInfo.state[fieldId].dpb_idx[0], sizeof(mfxU16)*m_RefInfo.state[fieldId].dpb_idx.size());
+
+
+        MSDK_CHECK_POINTER(feiSliceHeader[fieldId].Slice, MFX_ERR_NULL_PTR);
+
+        for (mfxU32 i = 0; i < feiSliceHeader[fieldId].NumSlice; i++)
+        {
+            MSDK_ZERO_ARRAY(feiSliceHeader[fieldId].Slice[i].RefL0, 32);
+            MSDK_ZERO_ARRAY(feiSliceHeader[fieldId].Slice[i].RefL1, 32);
+
+            feiSliceHeader[fieldId].Slice[i].SliceType         = FrameTypeToSliceType(ExtractFrameType(*eTask, fieldId));
+            feiSliceHeader[fieldId].Slice[i].NumRefIdxL0Active = (mfxU16)m_RefInfo.state[fieldId].l0_idx.size();
+            feiSliceHeader[fieldId].Slice[i].NumRefIdxL1Active = (mfxU16)m_RefInfo.state[fieldId].l1_idx.size();
+            feiSliceHeader[fieldId].Slice[i].IdrPicId          = eTask->m_frameIdrCounter;
+
+            for (mfxU32 k = 0; k < m_RefInfo.state[fieldId].l0_idx.size(); k++)
+            {
+                feiSliceHeader[fieldId].Slice[i].RefL0[k].Index       = m_RefInfo.state[fieldId].l0_idx[k];
+                feiSliceHeader[fieldId].Slice[i].RefL0[k].PictureType = (mfxU16)(!eTask->m_fieldPicFlag ? MFX_PICTYPE_FRAME :
+                    (m_RefInfo.state[fieldId].l0_parity[k] ? MFX_PICTYPE_BOTTOMFIELD : MFX_PICTYPE_TOPFIELD));
+            }
+            for (mfxU32 k = 0; k < m_RefInfo.state[fieldId].l1_idx.size(); k++)
+            {
+                feiSliceHeader[fieldId].Slice[i].RefL1[k].Index       = m_RefInfo.state[fieldId].l1_idx[k];
+                feiSliceHeader[fieldId].Slice[i].RefL1[k].PictureType = (mfxU16)(!eTask->m_fieldPicFlag ? MFX_PICTYPE_FRAME :
+                    (m_RefInfo.state[fieldId].l1_parity[k] ? MFX_PICTYPE_BOTTOMFIELD : MFX_PICTYPE_TOPFIELD));
+            }
+        }
+    }
+#endif // MSDK_API >= 1023
 
     /* the rest ext buffers */
     int encCtrlId = 0;

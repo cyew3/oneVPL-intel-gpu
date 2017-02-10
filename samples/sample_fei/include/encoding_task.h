@@ -860,6 +860,7 @@ struct iTask
     iTask* prevTask;
 };
 
+#if MFX_VERSION < 1023
 /* This structure represents state of DPB and reference lists of the task being processed */
 struct RefInfo
 {
@@ -886,6 +887,7 @@ struct RefInfo
         }
     }
 };
+#endif // MFX_VERSION < 1023
 
 /* Group of functions below implements some useful operations for current frame / field of the task:
    Frame type extraction, field parity, POC */
