@@ -23,6 +23,9 @@
 #include "libmfx_core_interface.h"
 #include "encoder_ddi.hpp"
 
+#include "vm_time.h"
+#include "mfx_session.h"
+
 DEFINE_GUID(DXVADDI_Intel_Decode_PrivateData_Report, 
 0x49761bec, 0x4b63, 0x4349, 0xa5, 0xff, 0x87, 0xff, 0xdf, 0x8, 0x84, 0x66);
 
@@ -70,6 +73,7 @@ D3D11Encoder::D3D11Encoder()
 , m_caps()
 , m_capsQuery()
 , m_capsGet()
+, m_timeoutForTDR(0)
 {
 }
 
@@ -103,6 +107,13 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
         height,
         NULL); // no encryption
 
+
+    MFX_SCHEDULER_PARAM schedule_Param;
+    mfxStatus paramsts = m_core->GetSession()->m_pScheduler->GetParam(&schedule_Param);
+    if (paramsts == MFX_ERR_NONE && schedule_Param.flags == MFX_SINGLE_THREAD)
+    {
+        m_timeoutForTDR = MFX_H264ENC_HW_TASK_TIMEOUT;
+    }
 
     return sts;
 
@@ -718,6 +729,8 @@ mfxStatus D3D11Encoder::QueryStatus(
     mfxU32    fieldId)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::QueryStatus");
+
+    mfxU32 curTime = vm_time_get_current_time();
     // After SNB once reported ENCODE_OK for a certain feedbackNumber
     // it will keep reporting ENCODE_NOTAVAILABLE for same feedbackNumber.
     // As we won't get all bitstreams we need to cache all other statuses. 
@@ -799,7 +812,7 @@ mfxStatus D3D11Encoder::QueryStatus(
         return MFX_ERR_NONE;
 
     case ENCODE_NOTREADY:
-        if (task.CheckForTDRHang())
+        if (m_timeoutForTDR && task.CheckForTDRHang(curTime, m_timeoutForTDR))
             return MFX_ERR_GPU_HANG;
         else
             return MFX_WRN_DEVICE_BUSY;

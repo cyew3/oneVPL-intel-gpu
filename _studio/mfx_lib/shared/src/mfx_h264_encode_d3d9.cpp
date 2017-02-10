@@ -17,6 +17,9 @@
 
 #include "mfx_h264_encode_hw_utils.h"
 
+#include "vm_time.h"
+#include "mfx_session.h"
+
 using namespace MfxHwH264Encode;
 
 void Dump(ENCODE_EXECUTE_PARAMS const & params, GUID guid);
@@ -1056,6 +1059,7 @@ D3D9Encoder::D3D9Encoder()
 , m_caps()
 , m_capsQuery()
 , m_capsGet()
+, m_timeoutForTDR(0)
 {
 }
 
@@ -1132,6 +1136,14 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
     }
     // WA end
+
+    MFX_SCHEDULER_PARAM schedule_Param;
+    mfxStatus paramsts = m_core->GetSession()->m_pScheduler->GetParam(&schedule_Param);
+    if (paramsts == MFX_ERR_NONE && schedule_Param.flags == MFX_SINGLE_THREAD)
+    {
+        m_timeoutForTDR = MFX_H264ENC_HW_TASK_TIMEOUT;
+    }
+
     return MFX_ERR_NONE;
 }
 
@@ -1737,6 +1749,8 @@ mfxStatus D3D9Encoder::QueryStatus(
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9Encoder::QueryStatus");
     MFX_CHECK_WITH_ASSERT(m_auxDevice.get(), MFX_ERR_NOT_INITIALIZED);
 
+    mfxU32 curTime = vm_time_get_current_time();
+
     // After SNB once reported ENCODE_OK for a certain feedbackNumber
     // it will keep reporting ENCODE_NOTAVAILABLE for same feedbackNumber.
     // As we won't get all bitstreams we need to cache all other statuses.
@@ -1809,7 +1823,8 @@ mfxStatus D3D9Encoder::QueryStatus(
         return MFX_ERR_NONE;
 
     case ENCODE_NOTREADY:
-        if (task.CheckForTDRHang())
+
+        if (m_timeoutForTDR && task.CheckForTDRHang(curTime, m_timeoutForTDR))
             return MFX_ERR_GPU_HANG;
         else
             return MFX_WRN_DEVICE_BUSY;

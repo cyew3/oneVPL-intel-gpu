@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFX_H264_ENCODE_D3D11__H
@@ -170,6 +170,7 @@ namespace MfxHwH264Encode
         mfxU8                                       m_numSkipFrames;
         mfxU32                                      m_sizeSkipFrames;
         mfxU32                                      m_skipMode;
+        mfxU32                                      m_timeoutForTDR;
 
         std::vector<ENCODE_RECT>                    m_dirtyRects;
         std::vector<MOVE_RECT>                      m_movingRects;

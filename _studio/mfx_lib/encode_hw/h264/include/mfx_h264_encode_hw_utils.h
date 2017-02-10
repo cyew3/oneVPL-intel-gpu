@@ -980,16 +980,16 @@ namespace MfxHwH264Encode
         }
 
         // Checking timeout for TDR hang detection
-        bool CheckForTDRHang() const
+        bool CheckForTDRHang(mfxU32 curTime, mfxU32 timeout) const
         {
-            mfxU32 curTime = vm_time_get_current_time();
             MFX_TRACE_D(curTime);
             MFX_TRACE_D(m_startTime);
+            MFX_TRACE_D(timeout);
 
-            if (m_startTime && (curTime - m_startTime) > MFX_H264ENC_HW_TASK_TIMEOUT)
+            if (m_startTime && timeout && (curTime - m_startTime) > timeout)
             {
                 MFX_TRACE_S("Possible TDR hang:");
-                MFX_TRACE_D(((curTime - m_startTime) > MFX_H264ENC_HW_TASK_TIMEOUT));
+                MFX_TRACE_D(((curTime - m_startTime) > timeout));
                 return true;
             }
 
