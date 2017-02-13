@@ -844,7 +844,7 @@ inline bool SetTwoDefaults(T &par1, T &par2, int defaultValue1, int defaultValue
     return defaultsSet;
 }
 
-inline mfxU16 GetDefaultBufferSize(VP9MfxVideoParam const &par)
+inline mfxU32 GetDefaultBufferSize(VP9MfxVideoParam const &par)
 {
     if (IsBufferBasedBRC(par.mfx.RateControlMethod))
     {
@@ -855,16 +855,12 @@ inline mfxU16 GetDefaultBufferSize(VP9MfxVideoParam const &par)
     {
         mfxFrameInfo const &fi = par.mfx.FrameInfo;
 
-        const mfxU16 result_max_value = 0xffff;
-
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-        if(par.mfx.FrameInfo.FourCC == MFX_FOURCC_P010 || par.mfx.FrameInfo.FourCC == MFX_FOURCC_Y410) {
-            mfxU32 result = (fi.Width * fi.Height * 3) / 1000; // size of two uncompressed 420 8bit frames in KB
-            return (result < result_max_value ? (mfxU16)result : result_max_value);
+        if (par.mfx.FrameInfo.FourCC == MFX_FOURCC_P010 || par.mfx.FrameInfo.FourCC == MFX_FOURCC_Y410) {
+            return (fi.Width * fi.Height * 3) / 1000; // size of two uncompressed 420 8bit frames in KB
         }
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
-        mfxU32 result = (fi.Width * fi.Height * 3) / 2 / 1000;
-        return (result < result_max_value ? (mfxU16)result : result_max_value); // uncompressed frame size for 420 8bit in KB
+        return (fi.Width * fi.Height * 3) / 2 / 1000;  // size of uncompressed 420 8bit frame in KB
     }
 }
 
