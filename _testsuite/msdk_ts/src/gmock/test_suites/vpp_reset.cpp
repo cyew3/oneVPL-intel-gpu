@@ -5,7 +5,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2016 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2016-2017 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -269,34 +269,19 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         },
         {}
     },
-    {/*24*/
-#if defined(LINUX32)
-        MFX_ERR_INVALID_VIDEO_PARAM,
-#else
-        MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
-#endif
+    {/*24*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
         {
             {RESET, &tsStruct::mfxVideoParam.vpp.In.FourCC,     MFX_FOURCC_AYUV},
         },
         {}
     },
-    {/*25*/
-#if defined(LINUX32)
-        MFX_ERR_INVALID_VIDEO_PARAM,
-#else
-        MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
-#endif
+    {/*25*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
         {
             {RESET, &tsStruct::mfxVideoParam.vpp.Out.FourCC,    MFX_FOURCC_Y210},
         },
         {}
     },
-    {/*26*/
-#if defined(LINUX32)
-        MFX_ERR_INVALID_VIDEO_PARAM,
-#else
-        MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
-#endif
+    {/*26*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
         {
             {RESET, &tsStruct::mfxVideoParam.vpp.Out.FourCC,    MFX_FOURCC_Y410},
         },
