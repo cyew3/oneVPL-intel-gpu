@@ -13,7 +13,6 @@
 #include "mfx_vp9_encode_hw.h"
 #include "mfx_vp9_encode_hw_par.h"
 #include "mfx_vp9_encode_hw_ddi.h"
-#include "mfx_vp9_encode_hw_utils.h"
 #include "ippi.h"
 #include "ipps.h"
 #include "fast_copy.h"

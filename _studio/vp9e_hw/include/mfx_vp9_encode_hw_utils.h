@@ -37,8 +37,10 @@ namespace MfxHwVP9Encode
 #define ALIGN_POWER_OF_TWO(value, n) \
     (((value)+((1 << (n)) - 1)) & ~((1 << (n)) - 1))
 #define MFX_CHECK_WITH_ASSERT(EXPR, ERR) { assert(EXPR); MFX_CHECK(EXPR, ERR); }
-#ifndef OPEN_SOURCE
+#ifndef MFX_MAX // this macro is defined in HEVC encoder as well. Unified plugin includes both this header and HEVC headers. So need to check to avoid re-definition.
     #define MFX_MAX( a, b ) ( ((a) > (b)) ? (a) : (b) )
+#endif
+#ifndef MFX_MIN // this macro is defined in HEVC encoder as well. Unified plugin includes both this header and HEVC headers. So need to check to avoid re-definition.
     #define MFX_MIN( a, b ) ( ((a) < (b)) ? (a) : (b) )
 #endif
 
