@@ -28,6 +28,33 @@
 
 using namespace MfxHwH264Encode;
 
+static mfxU8 ConvertMfxFrameType2VaapiSliceType(mfxU8 type)
+{
+    // convert mfx frame type to mfx slice type
+    mfxU8 st = ConvertMfxFrameType2SliceType(type);
+
+#ifdef MFX_VAAPI_UPSTREAM
+    // remap to vaapi slice type if needed
+    switch (st)
+    {
+    case SLICE_TYPE_I + 5:
+        st = SLICE_TYPE_I;
+        break;
+    case SLICE_TYPE_P + 5:
+        st = SLICE_TYPE_P;
+        break;
+    case SLICE_TYPE_B + 5:
+        st = SLICE_TYPE_B;
+        break;
+    default:
+        assert("bad codingType");
+        break;
+    }
+#endif
+
+    return st;
+}
+
 mfxU8 ConvertRateControlMFX2VAAPI(mfxU8 rateControl)
 {
     switch (rateControl)
@@ -65,8 +92,10 @@ mfxU8 ConvertSliceStructureVAAPIToMFX(mfxU8 structure)
     {
         case VA_ENC_SLICE_STRUCTURE_POWER_OF_TWO_ROWS:
             return 1;
+#ifndef MFX_VAAPI_UPSTREAM
         case VA_ENC_SLICE_STRUCTURE_EQUAL_ROWS:
             return 2;
+#endif
         case VA_ENC_SLICE_STRUCTURE_ARBITRARY_ROWS:
             return 3;
         case VA_ENC_SLICE_STRUCTURE_ARBITRARY_MACROBLOCKS:
@@ -168,7 +197,9 @@ mfxStatus SetRateControl(
     rate_param->window_size     = par.mfx.Convergence * 100;
 
     rate_param->min_qp = minQP;
+#ifndef MFX_VAAPI_UPSTREAM
     rate_param->max_qp = maxQP;
+#endif
 
     if(par.calcParam.maxKbps)
         rate_param->target_percentage = (unsigned int)(100.0 * (mfxF64)par.calcParam.targetKbps / (mfxF64)par.calcParam.maxKbps);
@@ -259,6 +290,7 @@ static mfxStatus SetMaxFrameSize(
     return MFX_ERR_NONE;
 }
 
+#ifndef MFX_VAAPI_UPSTREAM
 static mfxStatus SetTrellisQuantization(
     mfxU32       trellis,
     VADisplay    vaDisplay,
@@ -335,6 +367,7 @@ static mfxStatus SetRollingIntraRefresh(
 
     return MFX_ERR_NONE;
 } // void SetRollingIntraRefresh(...)
+#endif
 
 mfxStatus SetPrivateParams(
     MfxVideoParam const & par,
@@ -864,7 +897,7 @@ void FillPWT(
             }
 
             slice[i].pic_parameter_set_id = pps.pic_parameter_set_id;
-            slice[i].slice_type = ConvertMfxFrameType2SliceType( task.m_type[fieldId] );
+            slice[i].slice_type = ConvertMfxFrameType2VaapiSliceType( task.m_type[fieldId] );
 
             slice[i].direct_spatial_mv_pred_flag = 1;
 
@@ -969,7 +1002,7 @@ void UpdateSliceSizeLimited(
         }
 
         slice[i].pic_parameter_set_id = pps.pic_parameter_set_id;
-        slice[i].slice_type = ConvertMfxFrameType2SliceType( task.m_type[fieldId] );
+        slice[i].slice_type = ConvertMfxFrameType2VaapiSliceType( task.m_type[fieldId] );
 
         slice[i].direct_spatial_mv_pred_flag = 1;
 
@@ -1063,7 +1096,9 @@ VAAPIEncoder::VAAPIEncoder()
     , m_isENCPAK(false)
     , m_vaBrcPar()
     , m_vaFrameRate()
+#ifndef MFX_VAAPI_UPSTREAM
     , m_mbqp_buffer()
+#endif
     , m_mb_noskip_buffer()
 {
     m_videoParam.mfx.CodecProfile = MFX_PROFILE_AVC_HIGH; // QueryHwCaps will use this value
@@ -1180,10 +1215,12 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     VAConfigAttribType attr_types[] = {
         VAConfigAttribRTFormat,
         VAConfigAttribRateControl,
+#ifndef MFX_VAAPI_UPSTREAM
         VAConfigAttribEncQuantization,
         VAConfigAttribEncIntraRefresh,
         VAConfigAttribMaxPictureHeight,
         VAConfigAttribMaxPictureWidth,
+#endif
         VAConfigAttribEncInterlaced,
         VAConfigAttribEncMaxRefFrames,
         VAConfigAttribEncSliceStructure,
@@ -1212,6 +1249,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
 
     m_caps.VCMBitrateControl =
         attrs[idx_map[VAConfigAttribRateControl]].value & VA_RC_VCM ? 1 : 0; //Video conference mode
+#ifndef MFX_VAAPI_UPSTREAM
     m_caps.TrelisQuantization =
         (attrs[idx_map[VAConfigAttribEncQuantization]].value & (~VA_ATTRIB_NOT_SUPPORTED));
     m_caps.vaTrellisQuantization =
@@ -1220,6 +1258,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
         (attrs[idx_map[VAConfigAttribEncIntraRefresh]].value & (~VA_ATTRIB_NOT_SUPPORTED)) ? 1 : 0 ;
     m_caps.vaRollingIntraRefresh =
         attrs[idx_map[VAConfigAttribEncIntraRefresh]].value;
+#endif
     m_caps.SkipFrame =
         (attrs[idx_map[VAConfigAttribEncSkipFrame]].value & (~VA_ATTRIB_NOT_SUPPORTED)) ? 1 : 0 ;
 
@@ -1256,6 +1295,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
         m_caps.MaxPicWidth = 1920;
         m_caps.MaxPicHeight = 1088;
 
+#ifndef MFX_VAAPI_UPSTREAM
         if ((attrs[idx_map[VAConfigAttribMaxPictureWidth]].value != VA_ATTRIB_NOT_SUPPORTED) &&
             (attrs[idx_map[VAConfigAttribMaxPictureWidth]].value != 0))
             m_caps.MaxPicWidth  = attrs[idx_map[VAConfigAttribMaxPictureWidth]].value;
@@ -1263,6 +1303,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
         if ((attrs[idx_map[VAConfigAttribMaxPictureHeight]].value != VA_ATTRIB_NOT_SUPPORTED) &&
             (attrs[idx_map[VAConfigAttribMaxPictureHeight]].value != 0))
             m_caps.MaxPicHeight = attrs[idx_map[VAConfigAttribMaxPictureHeight]].value;
+#endif
 
         const eMFXHWType hwtype = m_core->GetHWType();
         if (attrs[idx_map[VAConfigAttribEncSliceStructure]].value != VA_ATTRIB_NOT_SUPPORTED)
@@ -1387,10 +1428,12 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
             return MFX_ERR_DEVICE_FAILED;
         }
     }
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCPAK) || defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC)
     else
     {
         entryPoint = (VAEntrypoint) VAEntrypointEncFEIIntel;
     }
+#endif
 
     // Configuration
     VAConfigAttrib attrib[4];
@@ -1434,6 +1477,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
     if ((attrib[1].value & vaRCType) == 0)
         return MFX_ERR_DEVICE_FAILED;
 
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCPAK) || defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC)
     if(m_isENCPAK)
     {
         //check function
@@ -1443,6 +1487,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
         }
         attrib[2].value = VA_ENC_FUNCTION_ENC_PAK_INTEL;
     }
+#endif
 
     attrib[0].value = VA_RT_FORMAT_YUV420;
     attrib[1].value = vaRCType;
@@ -1538,8 +1583,10 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
 
     if (extOpt3)
     {
+#ifndef MFX_VAAPI_UPSTREAM
         if (IsOn(extOpt3->EnableMBQP))
             m_mbqp_buffer.resize(((m_width / 16 + 63) & ~63) * ((m_height / 16 + 7) & ~7));
+#endif
 
         if (IsOn(extOpt3->MBDisableSkipMap))
             m_mb_noskip_buffer.resize(((m_width / 16 + 63) & ~63) * ((m_height / 16 + 7) & ~7));
@@ -1585,8 +1632,10 @@ mfxStatus VAAPIEncoder::Reset(MfxVideoParam const & par)
 
     if (extOpt3)
     {
+#ifndef MFX_VAAPI_UPSTREAM
         if (IsOn(extOpt3->EnableMBQP))
             m_mbqp_buffer.resize(((m_width / 16 + 63) & ~63) * ((m_height / 16 + 7) & ~7));
+#endif
 
         if (IsOn(extOpt3->MBDisableSkipMap))
             m_mb_noskip_buffer.resize(((m_width / 16 + 63) & ~63) * ((m_height / 16 + 7) & ~7));
@@ -1634,6 +1683,7 @@ mfxStatus VAAPIEncoder::QueryEncodeCaps(ENCODE_CAPS& caps)
 
 } // mfxStatus VAAPIEncoder::QueryEncodeCaps(ENCODE_CAPS& caps)
 
+#ifndef MFX_VAAPI_UPSTREAM
 mfxStatus VAAPIEncoder::QueryMbPerSec(mfxVideoParam const & par, mfxU32 (&mbPerSec)[16])
 {
     VAConfigID config = VA_INVALID_ID;
@@ -1668,6 +1718,12 @@ mfxStatus VAAPIEncoder::QueryMbPerSec(mfxVideoParam const & par, mfxU32 (&mbPerS
 
     return MFX_ERR_NONE;
 }
+#else
+mfxStatus VAAPIEncoder::QueryMbPerSec(mfxVideoParam const & par, mfxU32 (&mbPerSec)[16])
+{
+    return MFX_ERR_UNSUPPORTED;
+}
+#endif
 
 mfxStatus VAAPIEncoder::QueryInputTilingSupport(mfxVideoParam const & par, mfxU32 &inputTiling)
 {
@@ -2485,7 +2541,7 @@ mfxStatus VAAPIEncoder::Execute(
                                                           m_vaContextEncode, m_maxFrameSizeId), MFX_ERR_DEVICE_FAILED);
     configBuffers[buffersCount++] = m_maxFrameSizeId;
 
-#ifndef MFX_VA_ANDROID
+#if !defined(MFX_VA_ANDROID) && !defined(MFX_VAAPI_UPSTREAM)
 /*
  *  By default (0) - driver will decide.
  *  1 - disable trellis quantization
@@ -2503,6 +2559,7 @@ mfxStatus VAAPIEncoder::Execute(
  /*
  *   RollingIntraRefresh
  */
+#ifndef MFX_VAAPI_UPSTREAM
     if (memcmp(&task.m_IRState, &m_RIRState, sizeof(m_RIRState)))
     {
         m_RIRState = task.m_IRState;
@@ -2510,6 +2567,7 @@ mfxStatus VAAPIEncoder::Execute(
                                                                      m_vaContextEncode, m_rirId), MFX_ERR_DEVICE_FAILED);
         configBuffers[buffersCount++] = m_rirId;
     }
+#endif
 
     if (task.m_numRoi)
     {
@@ -2518,6 +2576,7 @@ mfxStatus VAAPIEncoder::Execute(
         configBuffers[buffersCount++] = m_roiBufferId;
     }
 
+#ifndef MFX_VAAPI_UPSTREAM
     /*FEI has its own interface for MBQp*/
     if ((task.m_isMBQP) && (!m_isENCPAK))
     {
@@ -2552,6 +2611,7 @@ mfxStatus VAAPIEncoder::Execute(
             configBuffers[buffersCount++] = m_mbqpBufferId;
         }
     }
+#endif
 
     if (ctrlNoSkipMap)
     {

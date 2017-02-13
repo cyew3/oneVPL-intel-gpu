@@ -287,7 +287,9 @@ namespace MfxHwH264Encode
 
         VAEncMiscParameterRateControl  m_vaBrcPar;
         VAEncMiscParameterFrameRate    m_vaFrameRate;
+#ifndef MFX_VAAPI_UPSTREAM
         std::vector<VAEncQpBufferH264> m_mbqp_buffer;
+#endif
         std::vector<mfxU8>             m_mb_noskip_buffer;
     };
 
