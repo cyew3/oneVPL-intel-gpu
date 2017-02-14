@@ -819,6 +819,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
             m_caps.MaxNum_Reference0 = 3;
             m_caps.MaxNum_Reference1 = 1;
         }
+        m_caps.LCUSizeSupported = 2;
 
     //printf("LibVA legacy: MaxPicWidth %d (%d), MaxPicHeight %d (%d), SliceStructure %d (%d), NumRef %d  %d (%x)\n", m_caps.MaxPicWidth, attrs[5].value,  m_caps.MaxPicHeight,attrs[4].value, m_caps.SliceStructure, attrs[8].value, m_caps.MaxNum_Reference0, m_caps.MaxNum_Reference1, attrs[7].value);
     }    
