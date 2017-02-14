@@ -907,8 +907,13 @@ mfxStatus Plugin::UpdateBitstream(
         FastCopy::Copy(bsData, bsSizeToCopy, bitstream.Y, bitstream.Pitch, roi, COPY_VIDEO_TO_SYS);
     }
 
-    mfxU8 * pIVFPicHeader = task.m_insertIVFSeqHeader ? bsData + IVF_SEQ_HEADER_SIZE_BYTES : bsData;
-    UpdatePictureHeader(bsSizeToCopy - IVF_PIC_HEADER_SIZE_BYTES - (task.m_insertIVFSeqHeader ? IVF_SEQ_HEADER_SIZE_BYTES : 0), (mfxU32)task.m_frameOrder, pIVFPicHeader, bsSizeAvail - IVF_SEQ_HEADER_SIZE_BYTES);
+    mfxExtCodingOptionVP9 &opt = GetExtBufferRef(m_video);
+
+    if (opt.WriteIVFHeaders != MFX_CODINGOPTION_OFF)
+    {
+        mfxU8 * pIVFPicHeader = task.m_insertIVFSeqHeader ? bsData + IVF_SEQ_HEADER_SIZE_BYTES : bsData;
+        UpdatePictureHeader(bsSizeToCopy - IVF_PIC_HEADER_SIZE_BYTES - (task.m_insertIVFSeqHeader ? IVF_SEQ_HEADER_SIZE_BYTES : 0), (mfxU32)task.m_frameOrder, pIVFPicHeader, bsSizeAvail - IVF_SEQ_HEADER_SIZE_BYTES);
+    }
 
     task.m_pBitsteam->DataLength += bsSizeToCopy;
 
