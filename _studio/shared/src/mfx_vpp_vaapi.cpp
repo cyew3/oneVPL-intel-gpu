@@ -118,7 +118,9 @@ VAAPIVideoProcessing::VAAPIVideoProcessing():
     memset( (void*)&m_denoiseCaps, 0, sizeof(m_denoiseCaps));
     memset( (void*)&m_detailCaps, 0, sizeof(m_detailCaps));
     memset( (void*)&m_deinterlacingCaps, 0, sizeof(m_deinterlacingCaps));
+#ifdef MFX_ENABLE_VPP_FRC
     memset( (void*)&m_frcCaps, 0, sizeof(m_frcCaps));
+#endif
     memset( (void*)&m_procampCaps, 0, sizeof(m_procampCaps));
     m_videoWallParams.elemHeight = 0;
     m_videoWallParams.elemWidth = 0;
@@ -331,8 +333,6 @@ mfxStatus VAAPIVideoProcessing::QueryCapabilities(mfxVppCaps& caps)
 
     VAProcFilterType filters[VAProcFilterCount];
     mfxU32 num_filters = VAProcFilterCount;
-    VAProcFilterCapFrameRateConversion tempFRC_Caps;
-    mfxU32 num_frc_caps = 1;
 
     vaSts = vaQueryVideoProcFilters(m_vaDisplay, m_vaContextVPP, filters, &num_filters);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
@@ -365,8 +365,12 @@ mfxStatus VAAPIVideoProcessing::QueryCapabilities(mfxVppCaps& caps)
                                &m_deinterlacingCaps, &num_deinterlacing_caps);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
+#ifdef MFX_ENABLE_VPP_FRC
     /* to check is FRC enabled or not*/
     /* first need to get number of modes supported by driver*/
+    VAProcFilterCapFrameRateConversion tempFRC_Caps;
+    mfxU32 num_frc_caps = 1;
+
     tempFRC_Caps.bget_custom_rates = 1;
     vaSts = vaQueryVideoProcFilterCaps(m_vaDisplay,
                                m_vaContextVPP,
@@ -401,8 +405,8 @@ mfxStatus VAAPIVideoProcessing::QueryCapabilities(mfxVppCaps& caps)
             /*input frame rate */
             caps.frcCaps.customRateData[ii].customRate.FrameRateExtD = m_frcCaps[ii].input_fps;
         }
-
     }
+#endif // #ifdef MFX_ENABLE_VPP_FRC
 
     for( mfxU32 filtersIndx = 0; filtersIndx < num_filters; filtersIndx++ )
     {
@@ -436,6 +440,7 @@ mfxStatus VAAPIVideoProcessing::QueryCapabilities(mfxVppCaps& caps)
         }
     }
 
+#ifdef MFX_ENABLE_VPP_ROTATION
     memset(&m_pipelineCaps,  0, sizeof(VAProcPipelineCaps));
     vaSts = vaQueryVideoProcPipelineCaps(m_vaDisplay,
                                  m_vaContextVPP,
@@ -449,6 +454,7 @@ mfxStatus VAAPIVideoProcessing::QueryCapabilities(mfxVppCaps& caps)
     {
         caps.uRotation = 1;
     }
+#endif
 
     caps.uMaxWidth  = 8192;
     caps.uMaxHeight = 8192;
@@ -889,6 +895,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
     {
         if (pParams->bFRCEnable)
         {
+#ifdef MFX_ENABLE_VPP_FRC
           VAProcFilterParameterBufferFrameRateConversion frcParams;
 
           memset(&frcParams, 0, sizeof(VAProcFilterParameterBufferFrameRateConversion));
@@ -922,6 +929,9 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
           MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
           m_filterBufs[m_numFilterBufs++] = m_frcFilterID;
+#else
+          return MFX_ERR_UNSUPPORTED;
+#endif
         }
     }
 
@@ -1012,6 +1022,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         VASurfaceID* srf = (VASurfaceID*)(pSrcInputSurf->hdl.first);
         m_pipelineParam[refIdx].surface = *srf;
 
+#ifdef MFX_ENABLE_VPP_ROTATION
         switch (pParams->rotation)
         {
         case MFX_ANGLE_90:
@@ -1033,6 +1044,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             }
             break;
         }
+#endif
 
         // source cropping
         mfxFrameInfo *inInfo = &(pRefSurf->frameInfo);
@@ -1052,17 +1064,24 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
 
         m_pipelineParam[refIdx].output_background_color = 0xff000000; // black for ARGB
 
+#ifdef MFX_ENABLE_VPP_VIDEO_SIGNAL
+    #define ENABLE_VPP_VIDEO_SIGNAL(X) X
+#else
+    #define ENABLE_VPP_VIDEO_SIGNAL(X)
+#endif
+
+
         mfxU32  refFourcc = pRefSurf->frameInfo.FourCC;
         switch (refFourcc)
         {
         case MFX_FOURCC_RGB4:
             m_pipelineParam[refIdx].surface_color_standard = VAProcColorStandardNone;
-            m_pipelineParam[refIdx].input_surface_flag     = VA_SOURCE_RANGE_FULL;
+            ENABLE_VPP_VIDEO_SIGNAL(m_pipelineParam[refIdx].input_surface_flag     = VA_SOURCE_RANGE_FULL);
             break;
         case MFX_FOURCC_NV12:
         default:
             m_pipelineParam[refIdx].surface_color_standard = VAProcColorStandardBT601;
-            m_pipelineParam[refIdx].input_surface_flag     = VA_SOURCE_RANGE_REDUCED;
+            ENABLE_VPP_VIDEO_SIGNAL(m_pipelineParam[refIdx].input_surface_flag     = VA_SOURCE_RANGE_REDUCED);
             break;
         }
 
@@ -1071,12 +1090,12 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         {
         case MFX_FOURCC_RGB4:
             m_pipelineParam[refIdx].output_color_standard = VAProcColorStandardNone;
-            m_pipelineParam[refIdx].output_surface_flag   = VA_SOURCE_RANGE_FULL;
+            ENABLE_VPP_VIDEO_SIGNAL(m_pipelineParam[refIdx].output_surface_flag   = VA_SOURCE_RANGE_FULL);
             break;
         case MFX_FOURCC_NV12:
         default:
             m_pipelineParam[refIdx].output_color_standard = VAProcColorStandardBT601;
-            m_pipelineParam[refIdx].output_surface_flag   = VA_SOURCE_RANGE_REDUCED;
+            ENABLE_VPP_VIDEO_SIGNAL(m_pipelineParam[refIdx].output_surface_flag   = VA_SOURCE_RANGE_REDUCED);
             break;
         }
 
@@ -1125,6 +1144,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         size_t index = refIdx < pParams->VideoSignalInfo.size() ? refIdx : (pParams->VideoSignalInfo.size() - 1);
         if(pParams->VideoSignalInfo[index].enabled)
         {
+#ifdef MFX_ENABLE_VPP_VIDEO_SIGNAL
             if(pParams->VideoSignalInfo[index].TransferMatrix != MFX_TRANSFERMATRIX_UNKNOWN)
             {
                 m_pipelineParam[refIdx].surface_color_standard = (MFX_TRANSFERMATRIX_BT709 == pParams->VideoSignalInfo[index].TransferMatrix ? VAProcColorStandardBT709 : VAProcColorStandardBT601);
@@ -1147,6 +1167,9 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             {
                 m_pipelineParam[refIdx].output_surface_flag = (MFX_NOMINALRANGE_0_255 == pParams->VideoSignalInfoOut.NominalRange) ? VA_SOURCE_RANGE_FULL : VA_SOURCE_RANGE_REDUCED;
             }
+#else
+            return MFX_ERR_UNSUPPORTED;
+#endif // #ifdef MFX_ENABLE_VPP_VIDEO_SIGNAL
         }
 
         /* Scaling params */
@@ -1741,6 +1764,7 @@ BOOL    VAAPIVideoProcessing::isVideoWall(mfxExecuteParams *pParams)
     return result;
 }
 
+#ifdef MFX_ENABLE_VPP_COMPOSITION
 mfxStatus VAAPIVideoProcessing::Execute_Composition_VideoWall(mfxExecuteParams *pParams)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VAAPIVideoProcessing::Execute_Composition_VideoWall");
@@ -2492,8 +2516,17 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
 
     return MFX_ERR_NONE;
 } // mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
+#else
+mfxStatus VAAPIVideoProcessing::Execute_Composition_VideoWall(mfxExecuteParams *pParams)
+{
+    return MFX_ERR_UNSUPPORTED;
+}
 
-
+mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
+{
+    return MFX_ERR_UNSUPPORTED;
+}
+#endif //#ifdef MFX_ENABLE_VPP_COMPOSITION
 
 mfxStatus VAAPIVideoProcessing::QueryTaskStatus(mfxU32 taskIndex)
 {

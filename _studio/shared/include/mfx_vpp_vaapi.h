@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -120,7 +120,9 @@ namespace MfxHwVideoProcessing
         VAProcPipelineCaps           m_pipelineCaps;
         VAProcFilterCapColorBalance  m_procampCaps[VAProcColorBalanceCount];
         VAProcFilterCapDeinterlacing m_deinterlacingCaps[VAProcDeinterlacingCount];
+#ifdef MFX_ENABLE_VPP_FRC
         VAProcFilterCapFrameRateConversion m_frcCaps[2]; /* only two modes, 24p->60p and 30p->60p */
+#endif
 
         VABufferID m_denoiseFilterID;
         VABufferID m_detailFilterID;
