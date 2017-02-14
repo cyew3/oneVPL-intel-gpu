@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include <mfxvideo.h>
@@ -39,7 +39,7 @@
 #include "mfx_mjpeg_dec_decode.h"
 #endif
 
-#if defined (MFX_ENABLE_VP8_VIDEO_DECODE)
+#if defined (MFX_ENABLE_VP8_VIDEO_DECODE) ||  defined(MFX_ENABLE_VP8_VIDEO_DECODE_HW)
 #include "mfx_vp8_dec_decode_common.h"
 #if defined(MFX_VA) && defined(MFX_ENABLE_VP8_VIDEO_DECODE_HW)
 #include "mfx_vp8_dec_decode_hw.h"
@@ -105,7 +105,7 @@ VideoDECODE *CreateDECODESpecificClass(mfxU32 CodecId, VideoCORE *core, mfxSessi
         break;
 #endif
 
-#if defined (MFX_ENABLE_VP8_VIDEO_DECODE)
+#if defined (MFX_ENABLE_VP8_VIDEO_DECODE) || defined(MFX_ENABLE_VP8_VIDEO_DECODE_HW)
      case MFX_CODEC_VP8:
 #if defined(MFX_VA) && defined(MFX_ENABLE_VP8_VIDEO_DECODE_HW)
         pDECODE = new VideoDECODEVP8_HW(core, &mfxRes);
@@ -210,7 +210,7 @@ mfxStatus MFXVideoDECODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
             break;
 #endif
 
-#ifdef MFX_ENABLE_VP8_VIDEO_DECODE
+#if defined(MFX_ENABLE_VP8_VIDEO_DECODE) || defined(MFX_ENABLE_VP8_VIDEO_DECODE_HW)
         case MFX_CODEC_VP8:
 #if defined(MFX_VA) && defined (MFX_ENABLE_VP8_VIDEO_DECODE_HW)
             mfxRes = VideoDECODEVP8_HW::Query(session->m_pCORE.get(), in, out);
@@ -298,7 +298,7 @@ mfxStatus MFXVideoDECODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
             break;
 #endif
 
-#ifdef MFX_ENABLE_VP8_VIDEO_DECODE
+#if defined(MFX_ENABLE_VP8_VIDEO_DECODE) || defined(MFX_ENABLE_VP8_VIDEO_DECODE_HW)
         case MFX_CODEC_VP8:
 #if defined(MFX_VA) && defined (MFX_ENABLE_VP8_VIDEO_DECODE_HW)
             mfxRes = VideoDECODEVP8_HW::QueryIOSurf(session->m_pCORE.get(), par, request);
@@ -389,7 +389,7 @@ mfxStatus MFXVideoDECODE_DecodeHeader(mfxSession session, mfxBitstream *bs, mfxV
             break;
 #endif
 
-#ifdef MFX_ENABLE_VP8_VIDEO_DECODE
+#if defined(MFX_ENABLE_VP8_VIDEO_DECODE) || defined(MFX_ENABLE_VP8_VIDEO_DECODE_HW)
         case MFX_CODEC_VP8:
             mfxRes = VP8DecodeCommon::DecodeHeader(session->m_pCORE.get(), bs, par);
             break;
