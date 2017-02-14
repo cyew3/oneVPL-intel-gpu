@@ -436,6 +436,13 @@ namespace mjpegd_colorformat
         mfxStatus i_exp = tc.i_sts_exp;
         mfxStatus r_exp = tc.r_sts_exp;
 
+        Query();
+        Init();
+        SETPARS(&m_par, MFX_PAR);
+        g_tsStatus.expect(r_exp);
+        Reset();
+        Close();
+
         if(g_tsOSFamily == MFX_OS_FAMILY_LINUX && m_par.mfx.FrameInfo.FourCC == MFX_FOURCC_YUY2) {
             if(q_exp == MFX_ERR_NONE) {
                 q_exp = MFX_WRN_PARTIAL_ACCELERATION;
@@ -444,13 +451,6 @@ namespace mjpegd_colorformat
                 i_exp = MFX_WRN_PARTIAL_ACCELERATION;
             }
         }
-
-        Query();
-        Init();
-        SETPARS(&m_par, MFX_PAR);
-        g_tsStatus.expect(r_exp);
-        Reset();
-        Close();
 
         g_tsStatus.expect(i_exp);
         Init();
