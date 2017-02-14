@@ -218,7 +218,7 @@ int DecodeHuffmanOne(Ipp32u**  pBitStream, int* pOffset,
     register Ipp32u  pos;
     register Ipp32s  val;
 
-    if (!pBitStream || !pOffset || !pDecodeTable || !*pBitStream || pDst)
+    if (!pBitStream || !pOffset || !pDecodeTable || !*pBitStream || !pDst)
         return -1;
 
     table_bits = *pDecodeTable;
