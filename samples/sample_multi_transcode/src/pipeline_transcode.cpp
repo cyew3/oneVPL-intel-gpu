@@ -204,6 +204,8 @@ CTranscodingPipeline::CTranscodingPipeline():
     statisticsWindowSize=0;
     m_bIsFieldWeaving = false;
     m_bIsFieldSplitting = false;
+    m_bUseOverlay = false;
+    m_bForceStop = false;
 } //CTranscodingPipeline::CTranscodingPipeline()
 
 CTranscodingPipeline::~CTranscodingPipeline()
@@ -287,7 +289,10 @@ mfxStatus CTranscodingPipeline::DecodePreInit(sInputParams *pParams)
         }
 
         // create decoder
-        m_pmfxDEC.reset(new MFXVideoDECODE(*m_pmfxSession.get()));
+        if (!m_bUseOverlay)
+        {
+            m_pmfxDEC.reset(new MFXVideoDECODE(*m_pmfxSession.get()));
+        }
 
         // set video type in parameters
         m_mfxDecParams.mfx.CodecId = pParams->DecodeId;
@@ -822,6 +827,12 @@ void CTranscodingPipeline::NoMoreFramesSignal()
     }
 }
 
+void CTranscodingPipeline::SignalStop()
+{
+    AutomaticMutex guard(m_mSignalStop);
+    m_bForceStop = true;
+}
+
 mfxStatus CTranscodingPipeline::Decode()
 {
     mfxStatus sts = MFX_ERR_NONE;
@@ -835,6 +846,23 @@ mfxStatus CTranscodingPipeline::Decode()
     bool bEndOfFile = false;
     bool bLastCycle = false;
     time_t start = time(0);
+
+    if (m_bUseOverlay)
+    {
+        AutomaticMutex guard(m_mSignalStop);
+        if (m_bForceStop)
+        {
+            // add surfaces in queue for all sinks
+            NoMoreFramesSignal();
+            return MFX_WRN_VALUE_NOT_CHANGED;
+        }
+        PreEncExtSurface.pSurface = m_pSurfaceDecPool[0];
+
+        // add surfaces in queue for all sinks
+        pNextBuffer->AddSurface(PreEncExtSurface);
+        return MFX_ERR_NONE;
+    }
+
     while (MFX_ERR_NONE == sts)
     {
         pNextBuffer = m_pBuffer;
@@ -853,11 +881,20 @@ mfxStatus CTranscodingPipeline::Decode()
             {
                 if (!bEndOfFile)
                 {
-                    sts = DecodeOneFrame(&DecExtSurface);
-                    if (MFX_ERR_MORE_DATA == sts)
+                    if (!m_bUseOverlay)
                     {
-                        sts = bLastCycle ? DecodeLastFrame(&DecExtSurface) : MFX_ERR_MORE_DATA;
-                        bEndOfFile = bLastCycle ? true : false;
+                        sts = DecodeOneFrame(&DecExtSurface);
+                        if (MFX_ERR_MORE_DATA == sts)
+                        {
+                            sts = bLastCycle ? DecodeLastFrame(&DecExtSurface) : MFX_ERR_MORE_DATA;
+                            bEndOfFile = bLastCycle ? true : false;
+                        }
+                    }
+                    else
+                    {
+                        // Use preloaded overlay frame
+                        DecExtSurface.pSurface = m_pSurfaceDecPool[0];
+                        sts = MFX_ERR_NONE;
                     }
                 }
                 else
@@ -1839,65 +1876,89 @@ mfxStatus CTranscodingPipeline::InitDecMfxParams(sInputParams *pInParams)
         m_mfxDecParams.NumExtParam = (mfxU16)m_DecExtParams.size();
     }
 
-    // read a portion of data for DecodeHeader function
-    sts = m_pBSProcessor->GetInputBitstream(&m_pmfxBS);
-    if (MFX_ERR_MORE_DATA == sts)
-        return sts;
-    else
-        MSDK_CHECK_STATUS(sts, "m_pBSProcessor->GetInputBitstream failed");
-
-    // try to find a sequence header in the stream
-    // if header is not found this function exits with error (e.g. if device was lost and there's no header in the remaining stream)
-    for(;;)
+    if (!m_bUseOverlay)
     {
-        // trying to find PicStruct information in AVI headers
-        if ( pInParams->DecodeId == MFX_CODEC_JPEG )
-            MJPEG_AVI_ParsePicStruct(m_pmfxBS);
 
-        // parse bit stream and fill mfx params
-        sts = m_pmfxDEC->DecodeHeader(m_pmfxBS, &m_mfxDecParams);
-
+        // read a portion of data for DecodeHeader function
+        sts = m_pBSProcessor->GetInputBitstream(&m_pmfxBS);
         if (MFX_ERR_MORE_DATA == sts)
-        {
-            if (m_pmfxBS->MaxLength == m_pmfxBS->DataLength)
-            {
-                sts = ExtendMfxBitstream(m_pmfxBS, m_pmfxBS->MaxLength * 2);
-                MSDK_CHECK_STATUS(sts, "ExtendMfxBitstream failed");
-            }
-
-            // read a portion of data for DecodeHeader function
-            sts = m_pBSProcessor->GetInputBitstream(&m_pmfxBS);
-            if (MFX_ERR_MORE_DATA == sts)
-                return sts;
-            else
-                MSDK_CHECK_STATUS(sts, "m_pBSProcessor->GetInputBitstream failed");
-
-
-            continue;
-        }
-        else if (MFX_ERR_NOT_ENOUGH_BUFFER == sts && pInParams->bIsMVC)
-        {
-            sts = AllocMVCSeqDesc();
-            MSDK_CHECK_STATUS(sts, "m_pmfxDEC->DecodeHeader failed");
-
-            continue;
-        }
+            return sts;
         else
-            break;
+            MSDK_CHECK_STATUS(sts, "m_pBSProcessor->GetInputBitstream failed");
+
+        // try to find a sequence header in the stream
+        // if header is not found this function exits with error (e.g. if device was lost and there's no header in the remaining stream)
+        for (;;)
+        {
+            // trying to find PicStruct information in AVI headers
+            if (pInParams->DecodeId == MFX_CODEC_JPEG)
+                MJPEG_AVI_ParsePicStruct(m_pmfxBS);
+
+            // parse bit stream and fill mfx params
+            sts = m_pmfxDEC->DecodeHeader(m_pmfxBS, &m_mfxDecParams);
+
+            if (MFX_ERR_MORE_DATA == sts)
+            {
+                if (m_pmfxBS->MaxLength == m_pmfxBS->DataLength)
+                {
+                    sts = ExtendMfxBitstream(m_pmfxBS, m_pmfxBS->MaxLength * 2);
+                    MSDK_CHECK_STATUS(sts, "ExtendMfxBitstream failed");
+                }
+
+                // read a portion of data for DecodeHeader function
+                sts = m_pBSProcessor->GetInputBitstream(&m_pmfxBS);
+                if (MFX_ERR_MORE_DATA == sts)
+                    return sts;
+                else
+                    MSDK_CHECK_STATUS(sts, "m_pBSProcessor->GetInputBitstream failed");
+
+
+                continue;
+            }
+            else if (MFX_ERR_NOT_ENOUGH_BUFFER == sts && pInParams->bIsMVC)
+            {
+                sts = AllocMVCSeqDesc();
+                MSDK_CHECK_STATUS(sts, "m_pmfxDEC->DecodeHeader failed");
+
+                continue;
+            }
+            else
+                break;
+        }
+
+        // to enable decorative flags, has effect with 1.3 API libraries only
+        // (in case of JPEG decoder - it is not valid to use this field)
+        if (m_mfxDecParams.mfx.CodecId != MFX_CODEC_JPEG)
+            m_mfxDecParams.mfx.ExtendedPicStruct = 1;
+
+        // check DecodeHeader status
+        if (MFX_WRN_PARTIAL_ACCELERATION == sts)
+        {
+            msdk_printf(MSDK_STRING("WARNING: partial acceleration\n"));
+            MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
+        }
+        MSDK_CHECK_STATUS(sts, "m_pmfxDEC->DecodeHeader failed");
+
+        // if input is interlaced JPEG stream
+        if (((pInParams->DecodeId == MFX_CODEC_JPEG) && (m_pmfxBS->PicStruct == MFX_PICSTRUCT_FIELD_TFF))
+            || (m_pmfxBS->PicStruct == MFX_PICSTRUCT_FIELD_BFF))
+        {
+            m_mfxDecParams.mfx.FrameInfo.CropH *= 2;
+            m_mfxDecParams.mfx.FrameInfo.Height = MSDK_ALIGN16(m_mfxDecParams.mfx.FrameInfo.CropH);
+            m_mfxDecParams.mfx.FrameInfo.PicStruct = m_pmfxBS->PicStruct;
+        }
     }
-
-    // to enable decorative flags, has effect with 1.3 API libraries only
-    // (in case of JPEG decoder - it is not valid to use this field)
-    if (m_mfxDecParams.mfx.CodecId != MFX_CODEC_JPEG)
-        m_mfxDecParams.mfx.ExtendedPicStruct = 1;
-
-    // check DecodeHeader status
-    if (MFX_WRN_PARTIAL_ACCELERATION == sts)
+    else
     {
-        msdk_printf(MSDK_STRING("WARNING: partial acceleration\n"));
-        MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
+        m_mfxDecParams.mfx.FrameInfo.Width = MSDK_ALIGN32(pInParams->nVppCompSrcW);
+        m_mfxDecParams.mfx.FrameInfo.Height = MSDK_ALIGN32(pInParams->nVppCompSrcH);
+        m_mfxDecParams.mfx.FrameInfo.CropW = pInParams->nVppCompSrcW;
+        m_mfxDecParams.mfx.FrameInfo.CropH = pInParams->nVppCompSrcH;
+
+        m_mfxDecParams.mfx.FrameInfo.AspectRatioW = m_mfxDecParams.mfx.FrameInfo.AspectRatioH = 1;
+        m_mfxDecParams.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+        m_mfxDecParams.mfx.FrameInfo.FourCC = MFX_FOURCC_RGB4;
     }
-    MSDK_CHECK_STATUS(sts, "m_pmfxDEC->DecodeHeader failed");
 
     // set memory pattern
     if (m_bUseOpaqueMemory)
@@ -1906,15 +1967,6 @@ mfxStatus CTranscodingPipeline::InitDecMfxParams(sInputParams *pInParams)
         m_mfxDecParams.IOPattern = MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
     else
         m_mfxDecParams.IOPattern = MFX_IOPATTERN_OUT_VIDEO_MEMORY;
-
-    // if input is interlaced JPEG stream
-    if (((pInParams->DecodeId == MFX_CODEC_JPEG) && (m_pmfxBS->PicStruct == MFX_PICSTRUCT_FIELD_TFF))
-        || (m_pmfxBS->PicStruct == MFX_PICSTRUCT_FIELD_BFF))
-    {
-        m_mfxDecParams.mfx.FrameInfo.CropH *= 2;
-        m_mfxDecParams.mfx.FrameInfo.Height = MSDK_ALIGN16(m_mfxDecParams.mfx.FrameInfo.CropH);
-        m_mfxDecParams.mfx.FrameInfo.PicStruct = m_pmfxBS->PicStruct;
-    }
 
     // if frame rate specified by user set it for decoder output
     if (pInParams->dDecoderFrameRateOverride)
@@ -2229,6 +2281,21 @@ void CTranscodingPipeline::FreePreEncAuxPool()
          }
      }
      m_pPreEncAuxPool.resize(0);
+}
+
+mfxStatus TranscodingSample::CTranscodingPipeline::LoadStaticSurface()
+{
+    if (m_bUseOverlay)
+    {
+        mfxFrameSurface1* pSurf = m_pSurfaceDecPool[0];
+        mfxStatus sts = m_pMFXAllocator->LockFrame(pSurf->Data.MemId, &pSurf->Data);
+        MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->LockFrame failed");
+        sts = m_YUVReader->LoadNextFrame(pSurf);
+        MSDK_CHECK_STATUS(sts, "m_YUVReader->LoadNextFrame failed");
+        sts = m_pMFXAllocator->UnlockFrame(pSurf->Data.MemId, &pSurf->Data);
+        MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->UnlockFrame failed");
+    }
+    return MFX_ERR_NONE;
 }
 
 mfxStatus CTranscodingPipeline::InitPreEncMfxParams(sInputParams *pInParams)
@@ -2748,10 +2815,18 @@ mfxStatus CTranscodingPipeline::CalculateNumberOfReqFrames(mfxFrameAllocRequest 
         MSDK_CHECK_STATUS(sts, "m_pmfxDEC.get failed");
 
         if (!CheckAsyncDepth(DecRequest, m_mfxDecParams.AsyncDepth))
-                return MFX_ERR_MEMORY_ALLOC;
-
+            return MFX_ERR_MEMORY_ALLOC;
         SumAllocRequest(*pSumRequest, DecRequest);
     }
+    else if (m_bUseOverlay)
+    {
+        // It takes 1 surface for overlay
+        DecRequest.NumFrameMin = DecRequest.NumFrameSuggested = 1;
+        DecRequest.Type = MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET | MFX_MEMTYPE_EXTERNAL_FRAME;
+        MSDK_MEMCPY(&DecRequest.Info, &m_mfxDecParams.mfx.FrameInfo, sizeof(mfxFrameInfo));
+        SumAllocRequest(*pSumRequest, DecRequest);
+    }
+
     if (m_pmfxVPP.get())
     {
         mfxFrameAllocRequest VppRequest[2];
@@ -2948,9 +3023,20 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     shouldUseGreedyFormula = pParams->shouldUseGreedyFormula;
 
     m_nTimeout = pParams->nTimeout;
+    m_bUseOverlay = pParams->nVppCompSrcH || pParams->nVppCompSrcW ? true : false;
+
     m_AsyncDepth = (0 == pParams->nAsyncDepth)? 1: pParams->nAsyncDepth;
     m_FrameNumberPreference = pParams->FrameNumberPreference;
     m_numEncoders = 0;
+    if (m_bUseOverlay)
+    {
+        // Init YUV reader for RGB4 overlay
+        m_YUVReader.reset(new CSmplYUVReader());
+        std::list<msdk_string> input;
+        input.push_back(pParams->strSrcFile);
+        sts = m_YUVReader->Init(input, MFX_FOURCC_RGB4);
+        MSDK_CHECK_STATUS(sts, "m_YUVReader->Init failed");
+    }
 
 #if _MSDK_API >= MSDK_API(1,22)
     m_ROIData = pParams->m_ROIData;
@@ -3262,6 +3348,8 @@ mfxStatus CTranscodingPipeline::CompleteInit()
     {
         sts = AllocFrames();
         MSDK_CHECK_STATUS(sts, "AllocFrames failed");
+        LoadStaticSurface();
+        MSDK_CHECK_STATUS(sts, "LoadStaticSurface failed");
     }
 
     // after surfaces arrays are allocated configure mfxOpaqueAlloc buffers to be passed to components' Inits

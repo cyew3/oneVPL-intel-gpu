@@ -223,6 +223,8 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("  -vpp_comp_dst_y             Y position of this stream in composed stream (should be used in decoder session)\n"));
     msdk_printf(MSDK_STRING("  -vpp_comp_dst_h             Height of this stream in composed stream (should be used in decoder session)\n"));
     msdk_printf(MSDK_STRING("  -vpp_comp_dst_w             Width of this stream in composed stream (should be used in decoder session)\n"));
+    msdk_printf(MSDK_STRING("  -vpp_comp_src_h             Width of this stream in composed stream (should be used in decoder session)\n"));
+    msdk_printf(MSDK_STRING("  -vpp_comp_src_w             Width of this stream in composed stream (should be used in decoder session)\n"));
 #if _MSDK_API >= MSDK_API(1,22)
     msdk_printf(MSDK_STRING("  -dec_postproc               Resize after decoder using direct pipe (should be used in decoder session)\n"));
 #endif //_MSDK_API >= MSDK_API(1,22)
@@ -1249,6 +1251,30 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
             if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.nVppCompDstH))
             {
                 PrintError(MSDK_STRING("-vpp_comp_dst_h %s is invalid"), argv[i]);
+                return MFX_ERR_UNSUPPORTED;
+            }
+            if (InputParams.eModeExt != VppComp)
+                InputParams.eModeExt = VppComp;
+        }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-vpp_comp_src_w")))
+        {
+            VAL_CHECK(i + 1 == argc, i, argv[i]);
+            i++;
+            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.nVppCompSrcW))
+            {
+                PrintError(MSDK_STRING("-vpp_comp_src_w %s is invalid"), argv[i]);
+                return MFX_ERR_UNSUPPORTED;
+            }
+            if (InputParams.eModeExt != VppComp)
+                InputParams.eModeExt = VppComp;
+        }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-vpp_comp_src_h")))
+        {
+            VAL_CHECK(i + 1 == argc, i, argv[i]);
+            i++;
+            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.nVppCompSrcH))
+            {
+                PrintError(MSDK_STRING("-vpp_comp_src_h %s is invalid"), argv[i]);
                 return MFX_ERR_UNSUPPORTED;
             }
             if (InputParams.eModeExt != VppComp)

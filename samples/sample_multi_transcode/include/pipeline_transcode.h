@@ -201,6 +201,8 @@ namespace TranscodingSample
         mfxU16 nVppCompDstY;
         mfxU16 nVppCompDstW;
         mfxU16 nVppCompDstH;
+        mfxU16 nVppCompSrcW;
+        mfxU16 nVppCompSrcH;
 
         mfxU32 DecoderFourCC;
         mfxU32 EncoderFourCC;
@@ -465,7 +467,7 @@ namespace TranscodingSample
         { MSDK_CHECK_POINTER(m_pmfxSession.get(), MFX_ERR_NULL_PTR); return m_pmfxSession->QueryVersion(version); };
         inline mfxU32 GetPipelineID(){return m_nID;}
         inline void SetPipelineID(mfxU32 id){m_nID = id;}
-
+        void SignalStop();
     protected:
         virtual mfxStatus CheckRequiredAPIVersion(mfxVersion& version, sInputParams *pParams);
         virtual mfxStatus CheckExternalBSProcessor(BitstreamProcessor   *pBSProc);
@@ -506,6 +508,7 @@ namespace TranscodingSample
         void      FreeFrames();
 
         void      FreePreEncAuxPool();
+        mfxStatus LoadStaticSurface();
 
         mfxFrameSurface1* GetFreeSurface(bool isDec, mfxU64 timeout);
         mfxU32 GetFreeSurfacesCount(bool isDec);
@@ -559,6 +562,8 @@ namespace TranscodingSample
         std::auto_ptr<MFXPlugin>        m_pUserEncoderPlugin;
         std::auto_ptr<MFXPlugin>        m_pUserEncPlugin;
 
+        std::auto_ptr<CSmplYUVReader>   m_YUVReader;
+
         mfxFrameAllocResponse           m_mfxDecResponse;  // memory allocation response for decoder
         mfxFrameAllocResponse           m_mfxEncResponse;  // memory allocation response for encoder
 
@@ -586,6 +591,8 @@ namespace TranscodingSample
         typedef std::list<ExtendedBS*>       BSList;
         BSList  m_BSPool;
 
+        bool                           m_bForceStop;
+
         mfxVideoParam                  m_mfxDecParams;
         mfxVideoParam                  m_mfxEncParams;
         mfxVideoParam                  m_mfxVppParams;
@@ -597,6 +604,7 @@ namespace TranscodingSample
         RotateParam                    m_RotateParam;
         mfxVideoParam                  m_mfxPreEncParams;
         mfxU32                         m_nTimeout;
+        bool                           m_bUseOverlay;
         // various external buffers
         // for disabling VPP algorithms
         mfxExtVPPDoNotUse m_VppDoNotUse;
@@ -659,6 +667,7 @@ namespace TranscodingSample
 
         mfxU32          m_NumFramesForReset;
         MSDKMutex       m_mReset;
+        MSDKMutex       m_mSignalStop;
 
         bool isHEVCSW;
 

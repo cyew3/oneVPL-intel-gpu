@@ -359,22 +359,33 @@ void Launcher::Run()
     // get parallel sessions parameters
     totalSessions = (mfxU32) m_pSessionArray.size();
 
-    mfxU32 i;
     mfxStatus sts;
 
     MSDKThread * pthread = NULL;
 
-    for (i = 0; i < totalSessions; i++)
+    for (mfxU32 i = 0; i < totalSessions; i++)
     {
         pthread = new MSDKThread(sts, ThranscodeRoutine, (void *)m_pSessionArray[i]);
 
         m_HDLArray.push_back(pthread);
     }
 
-    for (i = 0; i < m_pSessionArray.size(); i++)
+
+    for (int i = 0; ; i++)
     {
-        m_HDLArray[i]->Wait();
+        i %= m_HDLArray.size();
+        sts = m_HDLArray[i]->TimedWait(100);
+
+        if (sts <= 0)
+        {
+            for (int j = 0; j < m_HDLArray.size(); j++ )
+                m_pSessionArray[j]->pPipeline->SignalStop();
+            break;
+        }
     }
+
+    for (int i= 0; i< m_HDLArray.size(); i++)
+        m_HDLArray[i]->Wait();
 
     msdk_printf(MSDK_STRING("\nTranscoding finished\n"));
 
@@ -452,7 +463,9 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
 
         if (m_InputParamsArray[i].bOpenCL ||
             m_InputParamsArray[i].EncoderFourCC ||
-            m_InputParamsArray[i].DecoderFourCC)
+            m_InputParamsArray[i].DecoderFourCC ||
+            m_InputParamsArray[i].nVppCompSrcH ||
+            m_InputParamsArray[i].nVppCompSrcW)
         {
             bUseExternalAllocator = true;
         }
@@ -465,8 +478,8 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
                 if (m_InputParamsArray[j].MaxFrameNumber != MFX_INFINITE)
                 {
                     msdk_printf(MSDK_STRING("\"-timeout\" option isn't compatible with \"-n\". \"-n\" will be ignored.\n"));
-                    for (mfxU32 j = 0; j < m_InputParamsArray.size(); j++)
-                        m_InputParamsArray[j].MaxFrameNumber = MFX_INFINITE;
+                    for (mfxU32 k = 0; k < m_InputParamsArray.size(); k++)
+                        m_InputParamsArray[k].MaxFrameNumber = MFX_INFINITE;
                 }
             }
             msdk_printf(MSDK_STRING("Timeout %d seconds has been set to all sessions\n"), m_InputParamsArray[i].nTimeout);
