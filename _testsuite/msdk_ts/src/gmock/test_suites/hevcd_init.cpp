@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2017 Intel Corporation. All Rights Reserved.
 
 File Name: hevcd_init.cpp
 
@@ -64,34 +64,35 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/* 4*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, true, NONE, 1},
     {/* 5*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
     {/* 6*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, true, NONE, 1, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
-    {/* 7*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1, {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_YV12}},
-    {/* 8*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1, {
+    {/* 7*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, true, NONE, 1, {&tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_SINGLE}},
+    {/* 8*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1, {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_YV12}},
+    {/* 9*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1, {
         {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY},
         {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_YV12}}},
-    {/* 9*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, true, NONE, 1, {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_YV12}},
-    {/* 10*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, true, NONE, 1, {
+    {/* 10*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, true, NONE, 1, {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_YV12}},
+    {/* 11*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, true, NONE, 1, {
         {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY},
         {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_YV12}}},
-    {/* 11*/ MFX_ERR_MEMORY_ALLOC, frame_allocator::ALLOC_MIN_MINUS_1, true, NONE, 1, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
-    {/*12*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 1, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
-    {/*13*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, true, NONE, 1, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
-    {/*14*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MIN_MINUS_1, false, NONE, 1, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
-    {/*15*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MIN_MINUS_1, true, NONE, 1, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
-    {/*16*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 1, {&tsStruct::mfxVideoParam.AsyncDepth, 1}},
-    {/*17*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 1, {&tsStruct::mfxVideoParam.AsyncDepth, 10}},
-    {/*18*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1, {
+    {/* 12*/ MFX_ERR_MEMORY_ALLOC, frame_allocator::ALLOC_MIN_MINUS_1, true, NONE, 1, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
+    {/*13*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 1, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
+    {/*14*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, true, NONE, 1, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
+    {/*15*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MIN_MINUS_1, false, NONE, 1, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
+    {/*16*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MIN_MINUS_1, true, NONE, 1, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
+    {/*17*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 1, {&tsStruct::mfxVideoParam.AsyncDepth, 1}},
+    {/*18*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 1, {&tsStruct::mfxVideoParam.AsyncDepth, 10}},
+    {/*19*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1, {
         {&tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  0},
         {&tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 0},
         {&tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,  0},
         {&tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,  0}}},
-    {/*19*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1, {
+    {/*20*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1, {
         {&tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  4106},
         {&tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 4106},
         {&tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,  4106},
         {&tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,  4106}}},
-    {/*20*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 4},
-    {/*21*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 5},
-    {/*22*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 6},
+    {/*21*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 4},
+    {/*22*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 5},
+    {/*23*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 6},
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -236,14 +237,14 @@ template <
 >
 TestSuite::tc_struct const TestSuiteExt<profile, fourcc, bits(b1, b2, b3), chromas(c1, c2, c3)>::test_cases[] =
 {
-    {/*23*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 1, {{FourCC, fourcc}, {BitDepthLuma, b1::value}}},
-    {/*24*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 1, {{FourCC, fourcc}, {BitDepthLuma, b2::value}}},
-    {/*25*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 1, {{FourCC, fourcc}, {ChromaFormat, c1::value}}},
+    {/*24*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 1, {{FourCC, fourcc}, {BitDepthLuma, b1::value}}},
+    {/*25*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 1, {{FourCC, fourcc}, {BitDepthLuma, b2::value}}},
+    {/*26*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 1, {{FourCC, fourcc}, {ChromaFormat, c1::value}}},
 
-    {/*26*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1, {{FourCC, fourcc}, {BitDepthLuma, b3::value}}},
+    {/*27*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1, {{FourCC, fourcc}, {BitDepthLuma, b3::value}}},
 
-    {/*27*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1, {{FourCC, fourcc}, {ChromaFormat, c2::value}}},
-    {/*28*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1, {{FourCC, fourcc}, {ChromaFormat, c3::value}}},
+    {/*28*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1, {{FourCC, fourcc}, {ChromaFormat, c2::value}}},
+    {/*29*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1, {{FourCC, fourcc}, {ChromaFormat, c3::value}}},
 };
 
 template <

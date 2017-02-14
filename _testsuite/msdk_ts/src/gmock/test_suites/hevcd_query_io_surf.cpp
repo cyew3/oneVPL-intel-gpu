@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 #include "ts_decoder.h"
@@ -16,7 +16,8 @@ enum
 {
     ZERO_SESSION = 1,
     ZERO_PARAM = 2,
-    ZERO_REQUEST = 3
+    ZERO_REQUEST = 3,
+    PICSTRUCT_SINGLE = 4
 };
 
 typedef struct
@@ -131,6 +132,24 @@ const tc_struct TestSuite::test_case[] =
         1,
         MFX_ERR_INVALID_VIDEO_PARAM
     },
+    {// 15
+        PICSTRUCT_SINGLE,
+        MFX_IOPATTERN_OUT_SYSTEM_MEMORY,
+        5,
+        MFX_ERR_NONE
+    },
+    {// 16
+        PICSTRUCT_SINGLE,
+        MFX_IOPATTERN_OUT_VIDEO_MEMORY,
+        5,
+        MFX_ERR_NONE
+    },
+    {// 17
+        PICSTRUCT_SINGLE,
+        MFX_IOPATTERN_OUT_OPAQUE_MEMORY,
+        5,
+        MFX_ERR_NONE
+    },
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(tc_struct);
@@ -156,6 +175,11 @@ int TestSuite::RunTest(unsigned int id)
         QueryIOSurf(m_session, NULL, m_pRequest);
     else if (tc.set_par == ZERO_REQUEST)
         QueryIOSurf(m_session, m_pPar, NULL);
+    else if (tc.set_par == PICSTRUCT_SINGLE)
+    {
+        m_pPar->mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_FIELD_SINGLE;
+        QueryIOSurf(m_session, m_pPar, m_pRequest);
+    }
     else
         QueryIOSurf(m_session, m_pPar, m_pRequest);
 
