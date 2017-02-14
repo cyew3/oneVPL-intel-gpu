@@ -804,15 +804,31 @@ mfxStatus CRawVideoWriter::WriteFrameARGB16(mfxFrameData* pData, const msdk_char
     MSDK_CHECK_POINTER(pInfo, MFX_ERR_NOT_INITIALIZED);
 
 #if defined(_WIN32) || defined(_WIN64)
-    if (fileId)
-        msdk_sprintf(fname, MSDK_MAX_FILENAME_LEN, MSDK_STRING("%s%s.argb16"), m_FileNameBase, fileId);
-    else
-        msdk_sprintf(fname, MSDK_MAX_FILENAME_LEN, MSDK_STRING("%s%d.argb16"), m_FileNameBase, m_FileNum);
+    if (fileId) {
+        if (pInfo->FourCC == MFX_FOURCC_ARGB16)
+            msdk_sprintf(fname, MSDK_MAX_FILENAME_LEN, MSDK_STRING("%s%s.argb16"), m_FileNameBase, fileId);
+        else if (pInfo->FourCC == MFX_FOURCC_ABGR16)
+            msdk_sprintf(fname, MSDK_MAX_FILENAME_LEN, MSDK_STRING("%s%s.abgr16"), m_FileNameBase, fileId);
+    }
+    else {
+        if (pInfo->FourCC == MFX_FOURCC_ARGB16)
+            msdk_sprintf(fname, MSDK_MAX_FILENAME_LEN, MSDK_STRING("%s%d.argb16"), m_FileNameBase, m_FileNum);
+        else if (pInfo->FourCC == MFX_FOURCC_ABGR16)
+            msdk_sprintf(fname, MSDK_MAX_FILENAME_LEN, MSDK_STRING("%s%d.abgr16"), m_FileNameBase, m_FileNum);
+    }
 #else
-    if (fileId)
-        msdk_sprintf(fname, MSDK_STRING("%s%s.argb16"), m_FileNameBase, fileId);
-    else
-        msdk_sprintf(fname, MSDK_STRING("%s%d.argb16"), m_FileNameBase, m_FileNum);
+    if (fileId) {
+        if (pInfo->FourCC == MFX_FOURCC_ARGB16)
+            msdk_sprintf(fname, MSDK_STRING("%s%s.argb16"), m_FileNameBase, fileId);
+        else if (pInfo->FourCC == MFX_FOURCC_ABGR16)
+            msdk_sprintf(fname, MSDK_STRING("%s%s.abgr16"), m_FileNameBase, fileId);
+    }
+    else {
+        if (pInfo->FourCC == MFX_FOURCC_ARGB16)
+            msdk_sprintf(fname, MSDK_STRING("%s%d.argb16"), m_FileNameBase, m_FileNum);
+        else if (pInfo->FourCC == MFX_FOURCC_ABGR16)
+            msdk_sprintf(fname, MSDK_STRING("%s%d.abgr16"), m_FileNameBase, m_FileNum);
+    }
 #endif
 
     m_FileNum++;

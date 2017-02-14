@@ -977,7 +977,9 @@ mfxStatus CCameraPipeline::Init(sInputParams *pParams)
     if (m_bOutput)
     {
         // prepare bmp file writer
-        if (pParams->frameInfo[VPP_OUT].FourCC == MFX_FOURCC_ARGB16 || pParams->frameInfo[VPP_OUT].FourCC == MFX_FOURCC_NV12)
+        if (pParams->frameInfo[VPP_OUT].FourCC == MFX_FOURCC_ARGB16 ||
+            pParams->frameInfo[VPP_OUT].FourCC == MFX_FOURCC_ABGR16 ||
+            pParams->frameInfo[VPP_OUT].FourCC == MFX_FOURCC_NV12)
         {
             m_pRawFileWriter = new CRawVideoWriter;
             sts = m_pRawFileWriter->Init(pParams);
@@ -1346,7 +1348,9 @@ mfxStatus CCameraPipeline::Reset(sInputParams *pParams)
     if (m_bOutput)
     {
         // prepare bmp file writer
-        if (pParams->frameInfo[VPP_OUT].FourCC == MFX_FOURCC_ARGB16 || pParams->frameInfo[VPP_OUT].FourCC == MFX_FOURCC_NV12) {
+        if (pParams->frameInfo[VPP_OUT].FourCC == MFX_FOURCC_ARGB16 ||
+            pParams->frameInfo[VPP_OUT].FourCC == MFX_FOURCC_ABGR16 ||
+            pParams->frameInfo[VPP_OUT].FourCC == MFX_FOURCC_NV12) {
             sts = m_pRawFileWriter->Init(pParams);
         } else {
             sts = m_pBmpWriter->Init(pParams->strDstFile, m_mfxVideoParams.vpp.Out.CropW, m_mfxVideoParams.vpp.Out.CropH, pParams->maxNumBmpFiles);
@@ -1638,7 +1642,16 @@ mfxStatus CCameraPipeline::Run()
                                 *(ppOutSurf[asdepth]->Data.V16 + 3 + j*4 + i*stride) = (mfxU16)m_alphaValue;
                             }
                         }
-                    } else if (ppOutSurf[asdepth]->Info.FourCC == MFX_FOURCC_RGB4) {
+                    }
+                    else if (ppOutSurf[asdepth]->Info.FourCC == MFX_FOURCC_ABGR16) {
+                        int stride = ppOutSurf[asdepth]->Data.Pitch >> 1;
+                        for (int i = 0; i < ppOutSurf[asdepth]->Info.Height; i++) {
+                            for (int j = 0; j < ppOutSurf[asdepth]->Info.Width; j++) {
+                                *(ppOutSurf[asdepth]->Data.Y16 + 3 + j * 4 + i*stride) = (mfxU16)m_alphaValue;
+                            }
+                        }
+                    }
+                    else if (ppOutSurf[asdepth]->Info.FourCC == MFX_FOURCC_RGB4) {
                         int stride = ppOutSurf[asdepth]->Data.Pitch;
                         for (int i = 0; i < ppOutSurf[asdepth]->Info.Height; i++) {
                             for (int j = 0; j < ppOutSurf[asdepth]->Info.Width; j++) {
@@ -1654,7 +1667,8 @@ mfxStatus CCameraPipeline::Run()
                 camera_printf("writing frame %d \n", ppOutSurf[asdepth]->Data.FrameOrder);
 
                 if (m_pRawFileWriter) {
-                    if (ppOutSurf[asdepth]->Info.FourCC == MFX_FOURCC_ARGB16)
+                    if (ppOutSurf[asdepth]->Info.FourCC == MFX_FOURCC_ARGB16 ||
+                        ppOutSurf[asdepth]->Info.FourCC == MFX_FOURCC_ABGR16)
                         m_pRawFileWriter->WriteFrameARGB16(&ppOutSurf[asdepth]->Data, 0, &ppOutSurf[asdepth]->Info);
                     else if (ppOutSurf[asdepth]->Info.FourCC == MFX_FOURCC_NV12)
                         m_pRawFileWriter->WriteFrameNV12(&ppOutSurf[asdepth]->Data, 0, &ppOutSurf[asdepth]->Info);
@@ -1846,6 +1860,14 @@ mfxStatus CCameraPipeline::Run()
                             }
                         }
                     }
+                    else if (ppOutSurf[tail_asdepth]->Info.FourCC == MFX_FOURCC_ABGR16) {
+                        int stride = ppOutSurf[tail_asdepth]->Data.Pitch >> 1;
+                        for (int i = 0; i < ppOutSurf[tail_asdepth]->Info.Height; i++) {
+                            for (int j = 0; j < ppOutSurf[tail_asdepth]->Info.Width; j++) {
+                                *(ppOutSurf[tail_asdepth]->Data.Y16 + 3 + j * 4 + i*stride) = (mfxU16)m_alphaValue;
+                            }
+                        }
+                    }
                     else if (ppOutSurf[tail_asdepth]->Info.FourCC == MFX_FOURCC_RGB4) {
                         int stride = ppOutSurf[tail_asdepth]->Data.Pitch;
                         for (int i = 0; i < ppOutSurf[tail_asdepth]->Info.Height; i++) {
@@ -1856,7 +1878,8 @@ mfxStatus CCameraPipeline::Run()
                     }
                 }
                 if (m_pRawFileWriter) {
-                    if (ppOutSurf[tail_asdepth]->Info.FourCC == MFX_FOURCC_ARGB16)
+                    if (ppOutSurf[tail_asdepth]->Info.FourCC == MFX_FOURCC_ARGB16 ||
+                        ppOutSurf[tail_asdepth]->Info.FourCC == MFX_FOURCC_ABGR16)
                         m_pRawFileWriter->WriteFrameARGB16(&ppOutSurf[tail_asdepth]->Data, 0, &ppOutSurf[tail_asdepth]->Info);
                     else if (ppOutSurf[tail_asdepth]->Info.FourCC == MFX_FOURCC_NV12)
                         m_pRawFileWriter->WriteFrameNV12(&ppOutSurf[tail_asdepth]->Data, 0, &ppOutSurf[tail_asdepth]->Info);
