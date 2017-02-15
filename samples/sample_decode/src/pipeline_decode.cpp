@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2016, Intel Corporation
+Copyright (c) 2005-2017, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -879,7 +879,12 @@ mfxStatus CDecodingPipeline::AllocAndInitVppFilters()
 {
     m_VppDoNotUse.NumAlg = 4;
 
-    m_VppDoNotUse.AlgList = new mfxU32 [m_VppDoNotUse.NumAlg];
+    /* In case of Reset() this code called twice!
+     * But required to have only one allocation to prevent memleaks
+     * Deallocation done in Close() */
+    if (NULL == m_VppDoNotUse.AlgList)
+        m_VppDoNotUse.AlgList = new mfxU32 [m_VppDoNotUse.NumAlg];
+
     if (!m_VppDoNotUse.AlgList) return MFX_ERR_NULL_PTR;
 
     m_VppDoNotUse.AlgList[0] = MFX_EXTBUFF_VPP_DENOISE; // turn off denoising (on by default)
