@@ -1176,20 +1176,27 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     m_caps.BRCReset = 1; // no bitrate resolution control
     m_caps.HeaderInsertion = 0; // we will privide headers (SPS, PPS) in binary format to the driver
 
-    //VAConfigAttrib attrs[5];
+    std::map<VAConfigAttribType, int> idx_map;
+    VAConfigAttribType attr_types[] = {
+        VAConfigAttribRTFormat,
+        VAConfigAttribRateControl,
+        VAConfigAttribEncQuantization,
+        VAConfigAttribEncIntraRefresh,
+        VAConfigAttribMaxPictureHeight,
+        VAConfigAttribMaxPictureWidth,
+        VAConfigAttribEncInterlaced,
+        VAConfigAttribEncMaxRefFrames,
+        VAConfigAttribEncSliceStructure,
+        VAConfigAttribEncROI,
+        VAConfigAttribEncSkipFrame
+    };
     std::vector<VAConfigAttrib> attrs;
 
-    attrs.push_back( createVAConfigAttrib(VAConfigAttribRTFormat, 0));
-    attrs.push_back( createVAConfigAttrib(VAConfigAttribRateControl, 0));
-    attrs.push_back( createVAConfigAttrib(VAConfigAttribEncQuantization, 0));
-    attrs.push_back( createVAConfigAttrib(VAConfigAttribEncIntraRefresh, 0));
-    attrs.push_back( createVAConfigAttrib(VAConfigAttribMaxPictureHeight, 0));
-    attrs.push_back( createVAConfigAttrib(VAConfigAttribMaxPictureWidth, 0));
-    attrs.push_back( createVAConfigAttrib(VAConfigAttribEncInterlaced, 0));
-    attrs.push_back( createVAConfigAttrib(VAConfigAttribEncMaxRefFrames, 0));
-    attrs.push_back( createVAConfigAttrib(VAConfigAttribEncSliceStructure, 0));
-    attrs.push_back( createVAConfigAttrib(VAConfigAttribEncROI, 0));
-    attrs.push_back( createVAConfigAttrib(VAConfigAttribEncSkipFrame, 0));
+    for (size_t i=0; i < sizeof(attr_types)/sizeof(attr_types[0]); ++i)
+    {
+        attrs.push_back( createVAConfigAttrib(attr_types[i], 0) );
+        idx_map[ attr_types[i] ] = i;
+    }
 
     VAEntrypoint entrypoint = VAEntrypointEncSlice;
     if ((MSDK_Private_Guid_Encode_AVC_LowPower_Query == guid) ||
@@ -1203,12 +1210,18 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
                           Begin(attrs), attrs.size());
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-    m_caps.VCMBitrateControl = attrs[1].value & VA_RC_VCM ? 1 : 0; //Video conference mode
-    m_caps.TrelisQuantization  = (attrs[2].value & (~VA_ATTRIB_NOT_SUPPORTED));
-    m_caps.vaTrellisQuantization = attrs[2].value;
-    m_caps.RollingIntraRefresh = (attrs[3].value & (~VA_ATTRIB_NOT_SUPPORTED)) ? 1 : 0 ;
-    m_caps.vaRollingIntraRefresh = attrs[3].value;
-    m_caps.SkipFrame = (attrs[10].value & (~VA_ATTRIB_NOT_SUPPORTED)) ? 1 : 0 ;
+    m_caps.VCMBitrateControl =
+        attrs[idx_map[VAConfigAttribRateControl]].value & VA_RC_VCM ? 1 : 0; //Video conference mode
+    m_caps.TrelisQuantization =
+        (attrs[idx_map[VAConfigAttribEncQuantization]].value & (~VA_ATTRIB_NOT_SUPPORTED));
+    m_caps.vaTrellisQuantization =
+        attrs[idx_map[VAConfigAttribEncQuantization]].value;
+    m_caps.RollingIntraRefresh =
+        (attrs[idx_map[VAConfigAttribEncIntraRefresh]].value & (~VA_ATTRIB_NOT_SUPPORTED)) ? 1 : 0 ;
+    m_caps.vaRollingIntraRefresh =
+        attrs[idx_map[VAConfigAttribEncIntraRefresh]].value;
+    m_caps.SkipFrame =
+        (attrs[idx_map[VAConfigAttribEncSkipFrame]].value & (~VA_ATTRIB_NOT_SUPPORTED)) ? 1 : 0 ;
 
     m_caps.UserMaxFrameSizeSupport = 1;
     m_caps.MBBRCSupport = 1;
@@ -1240,35 +1253,37 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     }
     else
     {
-        if ((attrs[5].value != VA_ATTRIB_NOT_SUPPORTED) && (attrs[5].value != 0))
-            m_caps.MaxPicWidth  = attrs[5].value;
-        else
-            m_caps.MaxPicWidth = 1920;
+        m_caps.MaxPicWidth = 1920;
+        m_caps.MaxPicHeight = 1088;
 
-        if ((attrs[4].value != VA_ATTRIB_NOT_SUPPORTED) && (attrs[4].value != 0))
-            m_caps.MaxPicHeight = attrs[4].value;
-        else
-            m_caps.MaxPicHeight = 1088;
+        if ((attrs[idx_map[VAConfigAttribMaxPictureWidth]].value != VA_ATTRIB_NOT_SUPPORTED) &&
+            (attrs[idx_map[VAConfigAttribMaxPictureWidth]].value != 0))
+            m_caps.MaxPicWidth  = attrs[idx_map[VAConfigAttribMaxPictureWidth]].value;
+
+        if ((attrs[idx_map[VAConfigAttribMaxPictureHeight]].value != VA_ATTRIB_NOT_SUPPORTED) &&
+            (attrs[idx_map[VAConfigAttribMaxPictureHeight]].value != 0))
+            m_caps.MaxPicHeight = attrs[idx_map[VAConfigAttribMaxPictureHeight]].value;
 
         const eMFXHWType hwtype = m_core->GetHWType();
-        if (attrs[8].value != VA_ATTRIB_NOT_SUPPORTED)
+        if (attrs[idx_map[VAConfigAttribEncSliceStructure]].value != VA_ATTRIB_NOT_SUPPORTED)
         {
-            m_caps.SliceStructure = ConvertSliceStructureVAAPIToMFX(attrs[8].value);
+            m_caps.SliceStructure =
+                ConvertSliceStructureVAAPIToMFX(attrs[idx_map[VAConfigAttribEncSliceStructure]].value);
         }
         else
         {
             m_caps.SliceStructure = (hwtype != MFX_HW_VLV && hwtype >= MFX_HW_HSW) ? 4 : 1; // 1 - SliceDividerSnb; 2 - SliceDividerHsw;
         }                                                                                   // 3 - SliceDividerBluRay; 4 - arbitrary slice size in MBs; the other - SliceDividerOneSlice
 
-        if (attrs[6].value != VA_ATTRIB_NOT_SUPPORTED)
-            m_caps.NoInterlacedField = attrs[6].value;
+        if (attrs[idx_map[VAConfigAttribEncInterlaced]].value != VA_ATTRIB_NOT_SUPPORTED)
+            m_caps.NoInterlacedField = attrs[idx_map[VAConfigAttribEncInterlaced]].value;
         else
             m_caps.NoInterlacedField = 0;
 
-        if (attrs[7].value != VA_ATTRIB_NOT_SUPPORTED)
+        if (attrs[idx_map[VAConfigAttribEncMaxRefFrames]].value != VA_ATTRIB_NOT_SUPPORTED)
         {
-            m_caps.MaxNum_Reference = attrs[7].value & 0xffff;
-            m_caps.MaxNum_Reference1 = (attrs[7].value >>16) & 0xffff;
+            m_caps.MaxNum_Reference = attrs[idx_map[VAConfigAttribEncMaxRefFrames]].value & 0xffff;
+            m_caps.MaxNum_Reference1 = (attrs[idx_map[VAConfigAttribEncMaxRefFrames]].value >>16) & 0xffff;
         }
         else
         {
@@ -1277,9 +1292,10 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
         }
     } /* if (pfnVaExtQueryCaps) */
 
-    if (attrs[9].value != VA_ATTRIB_NOT_SUPPORTED)
+    if (attrs[idx_map[VAConfigAttribEncROI]].value != VA_ATTRIB_NOT_SUPPORTED)
     {
-        VAConfigAttribValEncROI *VaEncROIValPtr = reinterpret_cast<VAConfigAttribValEncROI *>(&attrs[9].value);
+        VAConfigAttribValEncROI *VaEncROIValPtr =
+            reinterpret_cast<VAConfigAttribValEncROI *>(&attrs[idx_map[VAConfigAttribEncROI]].value);
         assert(VaEncROIValPtr->bits.num_roi_regions < 32);
         m_caps.MaxNumOfROI = VaEncROIValPtr->bits.num_roi_regions;
         m_caps.ROIBRCPriorityLevelSupport = VaEncROIValPtr->bits.roi_rc_priority_support;
