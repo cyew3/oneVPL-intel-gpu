@@ -20,11 +20,6 @@
 #include "mfx_h264_encode_hw_utils.h"
 #include "ippi.h"
 
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC)
-//#include <va/vendor/va_intel_statistics.h>
-#include "mfx_h264_preenc.h"
-#endif // #if defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC)
-
 #if defined(_DEBUG)
 //#define mdprintf fprintf
 #define mdprintf(...)
@@ -35,15 +30,10 @@
 using namespace MfxHwH264Encode;
 
 #if defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC)
+//#include <va/vendor/va_intel_statistics.h>
+#include "mfx_h264_preenc.h"
 
-mfxU32 GetSurfaceIndexFromList(std::vector<ExtVASurface> &m_reconQueue, mfxU32 surface)
-{
-    for(mfxU32 i = 0; i < m_reconQueue.size(); i++)
-        if (m_reconQueue[i].surface == surface)
-            return i;
 
-    return VA_INVALID_SURFACE;
-}
 
 VAAPIFEIPREENCEncoder::VAAPIFEIPREENCEncoder()
 : VAAPIEncoder()
@@ -189,9 +179,11 @@ mfxStatus VAAPIFEIPREENCEncoder::CreatePREENCAccelerationService(MfxVideoParam c
 
     mfxU32 currNumMbsW = ((m_videoParam.mfx.FrameInfo.Width  + 15) >> 4) << 4;
     mfxU32 currNumMbsH = ((m_videoParam.mfx.FrameInfo.Height + 15) >> 4) << 4;
+
     /* Interlaced case requires 32 height alignment */
     if (MFX_PICSTRUCT_PROGRESSIVE != m_videoParam.mfx.FrameInfo.PicStruct)
         currNumMbsH = ((m_videoParam.mfx.FrameInfo.Height + 31) >> 5) << 5;
+
     mfxU32 currNumMbs = (currNumMbsW * currNumMbsH) >> 8;
     mfxU32 currNumMbs_first_buff = currNumMbs;
 
@@ -328,14 +320,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Register(mfxFrameAllocResponse& response, D3DDD
             pQueue->push_back(extSurf);
         }
     }
-/*
-#if 0
-    if (D3DDDIFMT_INTELENCODE_BITSTREAMDATA != type) {
-        sts = CreateAccelerationService(m_videoParam);
-        MFX_CHECK_STS(sts);
-    }
-#endif
-*/
+
     return MFX_ERR_NONE;
 
 } // mfxStatus VAAPIFEIPREENCEncoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT type)
@@ -392,56 +377,31 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
     memset(&statParams, 0, sizeof (VAStatsStatisticsParameter16x16Intel));
     VABufferID statParamsId = VA_INVALID_ID;
 
-    if (feiCtrl != NULL)
-    {
-        statParams.adaptive_search = feiCtrl->AdaptiveSearch;
-        statParams.disable_statistics_output = /*(mbstatOut == NULL) ||*/ feiCtrl->DisableStatisticsOutput;
-        /* There is a limitation from driver for now:
-         * MSDK need to provide stat buffers for I- frame.
-         * MSDK always attach statistic buffer for PreEnc right now
-         * (But does not copy buffer to user if it is not required)
-         * */
-        //statParams.disable_statistics_output = 0;
-        statParams.disable_mv_output         = (mvsOut == NULL) || feiCtrl->DisableMVOutput;
-        statParams.mb_qp                     = (feiQP == NULL) && feiCtrl->MBQp;
-        statParams.mv_predictor_ctrl         = (feiMVPred != NULL) ? feiCtrl->MVPredictor : 0;
-        statParams.frame_qp                  = feiCtrl->Qp;
-        statParams.ft_enable                 = feiCtrl->FTEnable;
-        statParams.inter_sad                 = feiCtrl->InterSAD;
-        statParams.intra_sad                 = feiCtrl->IntraSAD;
-        statParams.len_sp                    = feiCtrl->LenSP;
-        statParams.search_path               = feiCtrl->SearchPath;
-        //statParams.outputs = &outBuffers[0]; //bufIDs for outputs
-        statParams.sub_pel_mode              = feiCtrl->SubPelMode;
-        statParams.sub_mb_part_mask          = feiCtrl->SubMBPartMask;
-        statParams.ref_height                = feiCtrl->RefHeight;
-        statParams.ref_width                 = feiCtrl->RefWidth;
-        statParams.search_window             = feiCtrl->SearchWindow;
-        statParams.enable_8x8statistics      = feiCtrl->Enable8x8Stat;
-        statParams.intra_part_mask           = feiCtrl->IntraPartMask;
-    }
-    else
-    {
-        statParams.adaptive_search           = 0;
-        statParams.disable_statistics_output = 1;
-        statParams.disable_mv_output         = 1;
-        statParams.mb_qp                     = 0;
-        statParams.mv_predictor_ctrl         = 0;
-        statParams.frame_qp                  = 26;
-        statParams.ft_enable                 = 0;
-        statParams.inter_sad                 = 2;
-        statParams.intra_sad                 = 2;
-        statParams.len_sp                    = 57;
-        statParams.search_path               = 2;
-        //statParams.outputs = &outBuffers[0]; //bufIDs for outputs
-        statParams.sub_pel_mode              = 3;
-        statParams.sub_mb_part_mask          = 0;
-        statParams.ref_height                = 32;
-        statParams.ref_width                 = 32;
-        statParams.search_window             = 5;
-        statParams.enable_8x8statistics      = 0;
-        statParams.intra_part_mask           = 0;
-    } // if (feiCtrl != NULL)
+    statParams.adaptive_search = feiCtrl->AdaptiveSearch;
+    statParams.disable_statistics_output = /*(mbstatOut == NULL) ||*/ feiCtrl->DisableStatisticsOutput;
+    /* There is a limitation from driver for now:
+     * MSDK need to provide stat buffers for I- frame.
+     * MSDK always attach statistic buffer for PreEnc right now
+     * (But does not copy buffer to user if it is not required)
+     * */
+    //statParams.disable_statistics_output = 0;
+    statParams.disable_mv_output         = (mvsOut == NULL) || feiCtrl->DisableMVOutput;
+    statParams.mb_qp                     = (feiQP == NULL) && feiCtrl->MBQp;
+    statParams.mv_predictor_ctrl         = (feiMVPred != NULL) ? feiCtrl->MVPredictor : 0;
+    statParams.frame_qp                  = feiCtrl->Qp;
+    statParams.ft_enable                 = feiCtrl->FTEnable;
+    statParams.inter_sad                 = feiCtrl->InterSAD;
+    statParams.intra_sad                 = feiCtrl->IntraSAD;
+    statParams.len_sp                    = feiCtrl->LenSP;
+    statParams.search_path               = feiCtrl->SearchPath;
+    //statParams.outputs = &outBuffers[0]; //bufIDs for outputs
+    statParams.sub_pel_mode              = feiCtrl->SubPelMode;
+    statParams.sub_mb_part_mask          = feiCtrl->SubMBPartMask;
+    statParams.ref_height                = feiCtrl->RefHeight;
+    statParams.ref_width                 = feiCtrl->RefWidth;
+    statParams.search_window             = feiCtrl->SearchWindow;
+    statParams.enable_8x8statistics      = feiCtrl->Enable8x8Stat;
+    statParams.intra_part_mask           = feiCtrl->IntraPartMask;
 
 
     VABufferID outBuffers[3] = { VA_INVALID_ID, VA_INVALID_ID, VA_INVALID_ID };
@@ -688,10 +648,6 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
     MFX_DESTROY_VABUFFER(mvPredid,     m_vaDisplay);
     MFX_DESTROY_VABUFFER(statParamsId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(qpid,         m_vaDisplay);
-    /* these allocated buffers will be destroyed in QueryStatus()
-     * when driver returned result of preenc processing  */
-    //MFX_DESTROY_VABUFFER(statMVid, m_vaDisplay);
-    //MFX_DESTROY_VABUFFER(statOUTid, m_vaDisplay);
 
     mdprintf(stderr, "submit_vaapi done: %d\n", task.m_frameOrder);
     return MFX_ERR_NONE;
@@ -712,10 +668,8 @@ mfxStatus VAAPIFEIPREENCEncoder::QueryStatus(
     VASurfaceID waitSurface = VA_INVALID_SURFACE;
     VABufferID statMVid     = VA_INVALID_ID;
     VABufferID statOUTid    = VA_INVALID_ID;
-    mfxU32 indxSurf;
-    mfxU32 numMB = 0;
 
-    mfxU32 feiFieldId = (task.GetPicStructForEncode() & MFX_PICSTRUCT_FIELD_BFF) ? (1 - fieldId) : fieldId;
+    mfxU32 indxSurf, feiFieldId = (task.GetPicStructForEncode() & MFX_PICSTRUCT_FIELD_BFF) ? (1 - fieldId) : fieldId;
 
     UMC::AutomaticUMCMutex guard(m_guard);
 
@@ -772,8 +726,10 @@ mfxStatus VAAPIFEIPREENCEncoder::QueryStatus(
             mfxExtFeiPreEncMV*     mvsOut    = GetExtBufferFEI(out, feiFieldId);
             mfxExtFeiPreEncMBStat* mbstatOut = GetExtBufferFEI(out, feiFieldId);
 
-            if (feiCtrl && !feiCtrl->DisableMVOutput && mvsOut && (VA_INVALID_ID != statMVid))
+            if (!feiCtrl->DisableMVOutput && mvsOut && (VA_INVALID_ID != statMVid))
             {
+                // Copy back MVs
+
                 MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MV");
                 {
                     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaMapBuffer");
@@ -793,8 +749,10 @@ mfxStatus VAAPIFEIPREENCEncoder::QueryStatus(
                 }
             }
 
-            if (VA_INVALID_ID != statOUTid)
+            if (!feiCtrl->DisableStatisticsOutput && mbstatOut && VA_INVALID_ID != statOUTid)
             {
+                // Copy back statistics
+
                 MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MBstat");
                 {
                     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaMapBuffer");
@@ -804,11 +762,9 @@ mfxStatus VAAPIFEIPREENCEncoder::QueryStatus(
                             (void **) (&mbstat));
                 }
                 MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-                /* MSDK copy data back only if application requested statistic */
-                if (feiCtrl && !feiCtrl->DisableStatisticsOutput && mbstatOut)
-                {
-                    FastCopyBufferVid2Sys(mbstatOut->MB, mbstat, sizeof (VAStatsStatistics16x16Intel) * mbstatOut->NumMBAlloc);
-                }
+
+                FastCopyBufferVid2Sys(mbstatOut->MB, mbstat, sizeof (VAStatsStatistics16x16Intel) * mbstatOut->NumMBAlloc);
+
                 {
                     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
                     vaUnmapBuffer(m_vaDisplay, statOUTid);
@@ -910,11 +866,11 @@ mfxStatus VAAPIFEIENCEncoder::CreateENCAccelerationService(MfxVideoParam const &
     int num_entrypoints, slice_entrypoint;
     VAConfigAttrib attrib[4];
 
-    vaSts = vaQueryConfigEntrypoints( m_vaDisplay, profile,
-                                entrypoints,&num_entrypoints);
+    vaSts = vaQueryConfigEntrypoints(m_vaDisplay, profile, entrypoints, &num_entrypoints);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-    for (slice_entrypoint = 0; slice_entrypoint < num_entrypoints; slice_entrypoint++) {
+    for (slice_entrypoint = 0; slice_entrypoint < num_entrypoints; ++slice_entrypoint)
+    {
         if (entrypoints[slice_entrypoint] == VAEntrypointEncFEIIntel)
             break;
     }
@@ -978,11 +934,11 @@ mfxStatus VAAPIFEIENCEncoder::CreateENCAccelerationService(MfxVideoParam const &
     std::fill(m_packeSliceHeaderBufferId.begin(), m_packeSliceHeaderBufferId.end(), VA_INVALID_ID);
     std::fill(m_packedSliceBufferId.begin(),      m_packedSliceBufferId.end(),      VA_INVALID_ID);
 
-    /* driver need only 16 buffer for statistic */
-    mfxU32 numBuffers = m_reconQueue.size();
-    if (MFX_PICSTRUCT_PROGRESSIVE != m_videoParam.mfx.FrameInfo.PicStruct)
-        numBuffers = 2*numBuffers;
-    m_vaFeiMBStatId.resize(2);
+    // Reserve buffers for each reconstructed surface (one per field)
+    mfxU32 n_fields   = 1 + !(m_videoParam.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE);
+    mfxU32 numBuffers = m_reconQueue.size() * n_fields;
+
+    m_vaFeiMBStatId.resize(n_fields);
     m_vaFeiMVOutId.resize(numBuffers);
     m_vaFeiMCODEOutId.resize(numBuffers);
 
@@ -1069,6 +1025,9 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
 
     mfxU32 feiFieldId = (MFX_PICSTRUCT_FIELD_BFF & task.GetPicStructForEncode()) ? (1 - fieldId) : fieldId;
 
+    // Offset to choose correct buffers
+    mfxU32 idxRecon = task.m_idxRecon * (1 + task.m_fieldPicFlag);
+
     std::vector<VABufferID> configBuffers(MAX_CONFIG_BUFFERS_COUNT + m_slice.size() * 2);
     std::fill(configBuffers.begin(), configBuffers.end(), VA_INVALID_ID);
 
@@ -1088,12 +1047,6 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
 
     mfxENCInput*  in  = reinterpret_cast<mfxENCInput* >(task.m_userData[0]);
     mfxENCOutput* out = reinterpret_cast<mfxENCOutput*>(task.m_userData[1]);
-
-    mfxU32 idxRecon = task.m_idxRecon;
-    MFX_CHECK(idxRecon < m_reconQueue.size(), MFX_ERR_UNKNOWN);
-
-    if (MFX_PICSTRUCT_PROGRESSIVE != task.GetPicStructForEncode())
-        idxRecon *= 2;
 
     VABufferID vaFeiFrameControlId = VA_INVALID_ID;
     VABufferID vaFeiMVPredId       = VA_INVALID_ID;
@@ -1258,7 +1211,7 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
         mdprintf(stderr, "MCODE Out bufId[%d]=%d\n", idxRecon+feiFieldId, m_vaFeiMCODEOutId[idxRecon+feiFieldId]);
     }
 
-    if (frameCtrl != NULL)
+    // Configure FrameControl buffer
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "FrameCtrl");
         VAEncMiscParameterBuffer *miscParam;
@@ -1366,7 +1319,7 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
 
     if ((MFX_PROFILE_AVC_BASELINE == m_videoParam.mfx.CodecProfile) ||
         (MFX_PROFILE_AVC_MAIN     == m_videoParam.mfx.CodecProfile) ||
-        ((frameCtrl != NULL) && (0x2 == frameCtrl->IntraPartMask)) )
+        (frameCtrl->IntraPartMask & 0x2))
     {
         m_pps.pic_fields.bits.transform_8x8_mode_flag = 0;
     }
@@ -1878,7 +1831,7 @@ mfxStatus VAAPIFEIPAKEncoder::CreatePAKAccelerationService(MfxVideoParam const &
 
     std::vector<VASurfaceID> rawSurf;
     rawSurf.reserve(m_reconQueue.size());
-    for (mfxU32 i = 0; i < m_reconQueue.size(); i++)
+    for (mfxU32 i = 0; i < m_reconQueue.size(); ++i)
         rawSurf.push_back(m_reconQueue[i].surface);
 
 
@@ -1906,12 +1859,9 @@ mfxStatus VAAPIFEIPAKEncoder::CreatePAKAccelerationService(MfxVideoParam const &
     std::fill(m_packeSliceHeaderBufferId.begin(), m_packeSliceHeaderBufferId.end(), VA_INVALID_ID);
     std::fill(m_packedSliceBufferId.begin(),      m_packedSliceBufferId.end(),      VA_INVALID_ID);
 
-    /* driver need only 16 buffer for statistic */
-    m_vaFeiMBStatId.resize(2);
-    m_vaFeiMVOutId.resize(2);
-    m_vaFeiMCODEOutId.resize(2);
+    m_vaFeiMVOutId.resize(1);
+    m_vaFeiMCODEOutId.resize(1);
 
-    std::fill(m_vaFeiMBStatId.begin(),   m_vaFeiMBStatId.end(),   VA_INVALID_ID);
     std::fill(m_vaFeiMVOutId.begin(),    m_vaFeiMVOutId.end(),    VA_INVALID_ID);
     std::fill(m_vaFeiMCODEOutId.begin(), m_vaFeiMCODEOutId.end(), VA_INVALID_ID);
 
@@ -1941,7 +1891,8 @@ mfxStatus VAAPIFEIPAKEncoder::Register(mfxFrameAllocResponse& response, D3DDDIFO
     if (D3DDDIFMT_INTELENCODE_BITSTREAMDATA == type)
     {
         pQueue = &m_bsQueue;
-    } else
+    }
+    else
     {
         pQueue = &m_reconQueue;
     }
@@ -1964,14 +1915,7 @@ mfxStatus VAAPIFEIPAKEncoder::Register(mfxFrameAllocResponse& response, D3DDDIFO
             pQueue->push_back(extSurf);
         }
     }
-/*
-#if 0
-    if (D3DDDIFMT_INTELENCODE_BITSTREAMDATA != type) {
-        sts = CreateAccelerationService(m_videoParam);
-        MFX_CHECK_STS(sts);
-    }
-#endif
-*/
+
     return MFX_ERR_NONE;
 
 } // mfxStatus VAAPIFEIPAKEncoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT type)
@@ -2013,7 +1957,6 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
     mfxPAKOutput* out = reinterpret_cast<mfxPAKOutput*>(task.m_userData[1]);
 
     VABufferID vaFeiFrameControlId = VA_INVALID_ID;
-    VABufferID vaFeiMVPredId       = VA_INVALID_ID;
 
     // Extension buffers
     mfxExtFeiSliceHeader  * pDataSliceHeader = GetExtBufferFEI(in, feiFieldId);
@@ -2073,76 +2016,36 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
         configBuffers[buffersCount++] = m_spsBufferId;
     }
 
-    if ((NULL != mvout) && (VA_INVALID_ID == m_vaFeiMVOutId[feiFieldId]))
+    // Create buffer for MV input
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MV");
-        VAMotionVectorIntel* mvs;
-
-        // allocate all MV buffers
         vaSts = vaCreateBuffer(m_vaDisplay,
-                                m_vaContextEncode,
-                                (VABufferType)VAEncFEIMVBufferTypeIntel,
-                                sizeof (VAMotionVectorIntel)*16*mvout->NumMBAlloc,
-                                //limitation from driver, num elements should be 1
-                                1,
-                                NULL, //will be mapped later
-                                &m_vaFeiMVOutId[feiFieldId]);
+                        m_vaContextEncode,
+                        (VABufferType)VAEncFEIMVBufferTypeIntel,
+                        sizeof (VAMotionVectorIntel)*16*mvout->NumMBAlloc,
+                        //limitation from driver, num elements should be 1
+                        1,
+                        mvout->MB,
+                        &m_vaFeiMVOutId[0]);
+
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-        mdprintf(stderr, "MV Out bufId[%d]=%d\n", feiFieldId, m_vaFeiMVOutId[feiFieldId]);
-
-        {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaMapBuffer");
-            vaSts = vaMapBuffer(
-                    m_vaDisplay,
-                    m_vaFeiMVOutId[feiFieldId],
-                    (void **) (&mvs));
-            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-        }
-
-        //copy input MV data to buffer
-        FastCopyBufferSys2Vid(mvs, mvout->MB, sizeof (VAMotionVectorIntel) * 16 * mvout->NumMBAlloc);
-
-        {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
-            vaSts = vaUnmapBuffer(m_vaDisplay, m_vaFeiMVOutId[feiFieldId]);
-            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-        }
+        mdprintf(stderr, "MV Out bufId[%d]=%d\n", 0, m_vaFeiMVOutId[0]);
     }
 
-    if ((NULL != mbcodeout) && (VA_INVALID_ID == m_vaFeiMCODEOutId[feiFieldId]) )
+    // Create buffer for PAKobj input
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MBcode");
-        VAEncFEIModeBufferH264Intel* mbcs;
-        // Allocate all output buffer for MBCODE (Pak object cmds)
+
         vaSts = vaCreateBuffer(m_vaDisplay,
-                                m_vaContextEncode,
-                                (VABufferType)VAEncFEIModeBufferTypeIntel,
-                                sizeof (VAEncFEIModeBufferH264Intel)*mbcodeout->NumMBAlloc,
-                                //limitation from driver, num elements should be 1
-                                1,
-                                NULL, //will be mapped later
-                                &m_vaFeiMCODEOutId[feiFieldId]);
+                        m_vaContextEncode,
+                        (VABufferType)VAEncFEIModeBufferTypeIntel,
+                        sizeof (VAEncFEIModeBufferH264Intel)*mbcodeout->NumMBAlloc,
+                        //limitation from driver, num elements should be 1
+                        1,
+                        mbcodeout->MB,
+                        &m_vaFeiMCODEOutId[0]);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-        mdprintf(stderr, "MCODE Out bufId[%d]=%d\n", feiFieldId, m_vaFeiMCODEOutId[feiFieldId]);
-
-        /* Copy input data into MB CODE buffer */
-        {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaMapBuffer");
-            vaSts = vaMapBuffer(
-                    m_vaDisplay,
-                    m_vaFeiMCODEOutId[feiFieldId],
-                    (void **) (&mbcs));
-            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-        }
-
-        //copy to output in task here MVs
-        FastCopyBufferSys2Vid(mbcs, mbcodeout->MB, sizeof (VAEncFEIModeBufferH264Intel) * mbcodeout->NumMBAlloc);
-
-        {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
-            vaUnmapBuffer(m_vaDisplay, m_vaFeiMCODEOutId[feiFieldId]);
-            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-        }
+        mdprintf(stderr, "MCODE Out bufId[%d]=%d\n", 0, m_vaFeiMCODEOutId[0]);
     }
 
     {
@@ -2171,8 +2074,8 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
 
         vaFeiFrameControl->function     = VA_ENC_FUNCTION_PAK_INTEL;
 
-        vaFeiFrameControl->mv_data      = m_vaFeiMVOutId[feiFieldId];
-        vaFeiFrameControl->mb_code_data = m_vaFeiMCODEOutId[feiFieldId];
+        vaFeiFrameControl->mv_data      = m_vaFeiMVOutId[0];
+        vaFeiFrameControl->mb_code_data = m_vaFeiMCODEOutId[0];
 
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
@@ -2426,15 +2329,13 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
         ExtVASurface currentFeedback;
         currentFeedback.number    = task.m_statusReportNumber[feiFieldId];
         currentFeedback.surface   = *inputSurface;
-        currentFeedback.mv        = m_vaFeiMVOutId[feiFieldId];
-        //currentFeedback.mbstat    = vaFeiMBStatId;
-        currentFeedback.mbcode    = m_vaFeiMCODEOutId[feiFieldId];
+
         m_statFeedbackCache.push_back(currentFeedback);
-        //m_feedbackCache.push_back(currentFeedback);
     }
 
+    MFX_DESTROY_VABUFFER(m_vaFeiMVOutId[0],         m_vaDisplay);
+    MFX_DESTROY_VABUFFER(m_vaFeiMCODEOutId[0],      m_vaDisplay);
     MFX_DESTROY_VABUFFER(vaFeiFrameControlId,       m_vaDisplay);
-    MFX_DESTROY_VABUFFER(vaFeiMVPredId,             m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_packedSpsHeaderBufferId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_packedSpsBufferId,       m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_spsBufferId,             m_vaDisplay);
@@ -2467,29 +2368,23 @@ mfxStatus VAAPIFEIPAKEncoder::QueryStatus(
     //------------------------------------------
     // (1) mapping feedbackNumber -> surface & bs
     VASurfaceID waitSurface     = VA_INVALID_SURFACE;
-    VABufferID vaFeiMBCODEOutId = VA_INVALID_ID;
-    VABufferID vaFeiMVOutId     = VA_INVALID_ID;
-    mfxU32 indxSurf;
 
-    mfxU32 feiFieldId = (MFX_PICSTRUCT_FIELD_BFF & task.GetPicStructForEncode()) ? (1 - fieldId) : fieldId;
+    mfxU32 indxSurf, feiFieldId = (MFX_PICSTRUCT_FIELD_BFF & task.GetPicStructForEncode()) ? (1 - fieldId) : fieldId;
 
     UMC::AutomaticUMCMutex guard(m_guard);
 
-    for (indxSurf = 0; indxSurf < m_statFeedbackCache.size(); indxSurf++)
+    for (indxSurf = 0; indxSurf < m_statFeedbackCache.size(); ++indxSurf)
     {
         ExtVASurface currentFeedback = m_statFeedbackCache[indxSurf];
 
         if (currentFeedback.number == task.m_statusReportNumber[feiFieldId])
         {
-            waitSurface      = currentFeedback.surface;
-            vaFeiMBCODEOutId = currentFeedback.mbcode;
-            vaFeiMVOutId     = currentFeedback.mv;
+            waitSurface = currentFeedback.surface;
             break;
         }
     }
     MFX_CHECK(indxSurf != m_statFeedbackCache.size(), MFX_ERR_UNKNOWN);
 
-    VASurfaceStatus surfSts = VASurfaceSkipped;
 
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaSyncSurface");
@@ -2500,6 +2395,8 @@ mfxStatus VAAPIFEIPAKEncoder::QueryStatus(
     if (vaSts == VA_STATUS_ERROR_DECODING_ERROR)
         vaSts = VA_STATUS_SUCCESS;
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    VASurfaceStatus surfSts = VASurfaceSkipped;
 
     vaSts = vaQuerySurfaceStatus(m_vaDisplay, waitSurface, &surfSts);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
@@ -2533,8 +2430,6 @@ mfxStatus VAAPIFEIPAKEncoder::QueryStatus(
                 MFX_DESTROY_VABUFFER(m_codedBufferId[feiFieldId], m_vaDisplay);
             }
 
-            MFX_DESTROY_VABUFFER(m_vaFeiMVOutId[feiFieldId],    m_vaDisplay);
-            MFX_DESTROY_VABUFFER(m_vaFeiMCODEOutId[feiFieldId], m_vaDisplay);
             // remove task
             m_statFeedbackCache.erase(m_statFeedbackCache.begin() + indxSurf);
         }

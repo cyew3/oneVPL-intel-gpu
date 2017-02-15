@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -42,6 +42,7 @@
 #endif
 
 using namespace MfxEncPREENC;
+//using namespace MfxHwH264Encode;
 
 namespace MfxEncPREENC
 {
@@ -57,11 +58,14 @@ static bool IsVideoParamExtBufferIdSupported(mfxU32 id)
 
 mfxExtBuffer* GetExtBuffer(mfxExtBuffer** ebuffers, mfxU32 nbuffers, mfxU32 BufferId)
 {
-    if (!ebuffers) return NULL;
-    for (mfxU32 i = 0; i<nbuffers; ++i) {
-        if (!ebuffers[i]) continue;
-        if (ebuffers[i]->BufferId == BufferId) {
-            return ebuffers[i];
+    if (ebuffers)
+    {
+        for (mfxU32 i = 0; i < nbuffers; ++i)
+        {
+            if (ebuffers[i] && ebuffers[i]->BufferId == BufferId)
+            {
+                return ebuffers[i];
+            }
         }
     }
     return NULL;
@@ -82,7 +86,7 @@ static mfxStatus CheckExtBufferId(mfxVideoParam const & par)
     return MFX_ERR_NONE;
 }
 
-bool CheckTriStateOptionPreEnc(mfxU16 & opt)
+bool CheckTriStateOption(mfxU16 & opt)
 {
     if (opt != MFX_CODINGOPTION_UNKNOWN &&
         opt != MFX_CODINGOPTION_ON &&
@@ -127,7 +131,7 @@ mfxStatus CheckVideoParamQueryLikePreEnc(
         hwCaps.MaxNum_TemporalLayer < par.calcParam.numTemporalLayer)
         return Error(MFX_WRN_PARTIAL_ACCELERATION);
 
-    if (!CheckTriStateOptionPreEnc(par.mfx.LowPower))
+    if (!CheckTriStateOption(par.mfx.LowPower))
         changed = true;
 
     if (IsOn(par.mfx.LowPower))
@@ -317,9 +321,9 @@ mfxStatus CheckVideoParamPreEncInit(
     bool warning(false);
 
     mfxExtFeiParam * feiParam = GetExtBuffer(par);
-    bool isPREENC = feiParam && (MFX_FEI_FUNCTION_PREENC == feiParam->Func);
+    MFX_CHECK(feiParam, Error(MFX_ERR_UNSUPPORTED));
 
-    if (feiParam && (MFX_FEI_FUNCTION_PREENC != feiParam->Func))
+    if (MFX_FEI_FUNCTION_PREENC != feiParam->Func)
         unsupported = true;
 
     // check hw capabilities
@@ -341,7 +345,7 @@ mfxStatus CheckVideoParamPreEncInit(
         hwCaps.MaxNum_TemporalLayer < par.calcParam.numTemporalLayer)
         return Error(MFX_WRN_PARTIAL_ACCELERATION);
 
-    if (!CheckTriStateOptionPreEnc(par.mfx.LowPower))
+    if (!CheckTriStateOption(par.mfx.LowPower))
         changed = true;
 
     if (IsOn(par.mfx.LowPower))
@@ -500,6 +504,16 @@ mfxStatus CheckVideoParamPreEncInit(
         par.mfx.FrameInfo.ChromaFormat = 0;
     }
 
+    if (!CheckTriStateOption(feiParam->SingleFieldProcessing))
+    {
+        unsupported = true;
+    }
+
+    if (IsOn(feiParam->SingleFieldProcessing) && (par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE))
+    {
+        unsupported = true;
+    }
+
 //    if (par.mfx.NumRefFrame == 0)
 //    {
 //        changed = true;
@@ -512,12 +526,6 @@ mfxStatus CheckVideoParamPreEncInit(
 //        changed = true;
 //        par.AsyncDepth = 1;
 //    }
-
-    if ((isPREENC) && !(
-            (MFX_CODINGOPTION_UNKNOWN == feiParam->SingleFieldProcessing) ||
-            (MFX_CODINGOPTION_ON      == feiParam->SingleFieldProcessing) ||
-            (MFX_CODINGOPTION_OFF     == feiParam->SingleFieldProcessing)) )
-        unsupported = true;
 
     return unsupported
         ? MFX_ERR_UNSUPPORTED
@@ -535,10 +543,13 @@ bool bEnc_PREENC(mfxVideoParam *par)
     mfxExtFeiParam *pControl = NULL;
 
     for (mfxU16 i = 0; i < par->NumExtParam; ++i)
-        if (par->ExtParam[i] != 0 && par->ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PARAM){ // assuming aligned buffers
+    {
+        if (par->ExtParam[i] != 0 && par->ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PARAM)
+        {
             pControl = reinterpret_cast<mfxExtFeiParam *>(par->ExtParam[i]);
             break;
         }
+    }
 
     return pControl ? (pControl->Func == MFX_FEI_FUNCTION_PREENC) : false;
 }
@@ -557,8 +568,6 @@ mfxStatus VideoENC_PREENC::RunFrameVmeENC(mfxENCInput *in, mfxENCOutput *out)
     DdiTask & task = m_incoming.front();
     mfxU32 f = 0, f_start = 0;
     mfxU32 fieldCount = task.m_fieldPicFlag;
-    mfxENCInput* inEncBuf = (mfxENCInput*)task.m_userData[0];
-    mfxExtFeiPreEncCtrl* feiCtrl = GetExtBufferFEI(inEncBuf, 0);
 
     task.m_idx    = FindFreeResourceIndex(m_raw);
     task.m_midRaw = AcquireResource(m_raw, task.m_idx);
@@ -600,8 +609,6 @@ mfxStatus VideoENC_PREENC::QueryStatus(DdiTask& task)
     mfxStatus sts = MFX_ERR_NONE;
     mfxU32 f = 0, f_start = 0;
     mfxU32 fieldCount = task.m_fieldPicFlag;
-    mfxENCInput* in = (mfxENCInput*)task.m_userData[0];
-    mfxExtFeiPreEncCtrl* feiCtrl = GetExtBufferFEI(in, 0);
 
     if (MFX_CODINGOPTION_ON == m_singleFieldProcessingMode)
     {
@@ -786,12 +793,8 @@ mfxStatus VideoENC_PREENC::Init(mfxVideoParam *par)
         break;
     }
 
-    const mfxExtFeiParam* params = GetExtBuffer(m_video);
-    MFX_CHECK(params, MFX_ERR_INVALID_VIDEO_PARAM);
-
-    if ((MFX_CODINGOPTION_ON == params->SingleFieldProcessing) &&
-         ((MFX_PICSTRUCT_FIELD_TFF == m_video.mfx.FrameInfo.PicStruct) ||
-          (MFX_PICSTRUCT_FIELD_BFF == m_video.mfx.FrameInfo.PicStruct)) )
+    mfxExtFeiParam * feiParam = GetExtBuffer(m_video);
+    if (IsOn(feiParam->SingleFieldProcessing))
         m_singleFieldProcessingMode = MFX_CODINGOPTION_ON;
 
     m_currentPlatform = m_core->GetHWType();

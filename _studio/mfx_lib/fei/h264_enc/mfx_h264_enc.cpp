@@ -248,14 +248,8 @@ void ConfigureTask_FEI_ENC(
         // Fill reflists
         mfxExtFeiSliceHeader * pDataSliceHeader = extFeiSlice;
         /* Number of reference handling */
-        mfxU32 maxNumRefL0 = 1, maxNumRefL1 = 1;
-        if (pDataSliceHeader && pDataSliceHeader->Slice)
-        {
-            maxNumRefL0 = pDataSliceHeader->Slice[0].NumRefIdxL0Active;
-            maxNumRefL1 = pDataSliceHeader->Slice[0].NumRefIdxL1Active;
-            if ((maxNumRefL1 > 2) && task.m_fieldPicFlag)
-                maxNumRefL1 = 2;
-        }
+        mfxU32 maxNumRefL0 = pDataSliceHeader->Slice[0].NumRefIdxL0Active;
+        mfxU32 maxNumRefL1 = pDataSliceHeader->Slice[0].NumRefIdxL1Active;
 
         mfxU16 indexFromSliceHeader;
 

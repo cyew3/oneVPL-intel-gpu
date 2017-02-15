@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFX_H264_ENCODE_VAAPI__H
@@ -256,8 +256,8 @@ namespace MfxHwH264Encode
         mfxU32 m_mbbrc;
         ENCODE_CAPS m_caps;
 /*
- * Current RollingIntraRefresh state, as it came throught the task state and passing to DDI in PPS
- * for Windows we keep it here to send update by VAMapBuffer as happend.
+ * Current RollingIntraRefresh state, as it came through the task state and passing to DDI in PPS
+ * for Windows we keep it here to send update by VAMapBuffer as happened.
  */
         IntraRefreshState m_RIRState;
 
