@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2001-2012 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2001-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __COLORCOMP_H__
@@ -13,13 +13,8 @@
 
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_MJPEG_VIDEO_DECODER) || defined (UMC_ENABLE_MJPEG_VIDEO_ENCODER)
-#ifndef __IPPJ_H__
 #include "ippj.h"
-#endif
-#ifndef __JPEGBASE_H__
 #include "jpegbase.h"
-#endif
-
 
 
 

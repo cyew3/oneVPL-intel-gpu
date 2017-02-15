@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2006-2012 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2006-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MEMBUFFOUT_H__
@@ -14,12 +14,8 @@
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_MJPEG_VIDEO_DECODER) || defined (UMC_ENABLE_MJPEG_VIDEO_ENCODER)
 #include <stdio.h>
-#ifndef __BASESTREAM_H__
 #include "basestream.h"
-#endif
-#ifndef __BASESTREAMOUT_H__
 #include "basestreamout.h"
-#endif
 
 
 class CMemBuffOutput : public CBaseStreamOutput

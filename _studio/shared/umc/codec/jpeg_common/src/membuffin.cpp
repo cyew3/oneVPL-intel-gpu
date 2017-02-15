@@ -5,14 +5,12 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2005-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2005-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_MJPEG_VIDEO_DECODER)
-#ifndef __MEMBUFFIN_H__
 #include "membuffin.h"
-#endif
 
 
 CMemBuffInput::CMemBuffInput(void)
