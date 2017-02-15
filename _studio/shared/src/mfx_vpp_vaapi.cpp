@@ -580,18 +580,22 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         attrib.type = VASurfaceAttribPixelFormat;
         attrib.value.type = VAGenericValueTypeInteger;
 
+        unsigned int rt_format;
+
         // default format is NV12
         if (inInfo->FourCC == MFX_FOURCC_RGB4)
         {
             attrib.value.value.i = VA_FOURCC_ARGB;
+            rt_format = VA_RT_FORMAT_RGB32;
         }
         else
         {
             attrib.value.value.i = VA_FOURCC_NV12;
+	    rt_format = VA_RT_FORMAT_YUV420;
         }
         attrib.flags = VA_SURFACE_ATTRIB_SETTABLE;
 
-        vaSts = vaCreateSurfaces(m_vaDisplay, attrib.value.value.i, inInfo->Width, inInfo->Height,
+        vaSts = vaCreateSurfaces(m_vaDisplay, rt_format, inInfo->Width, inInfo->Height,
                 m_primarySurface4Composition, 1, &attrib, 1);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
@@ -2019,14 +2023,18 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
         attrib.type = VASurfaceAttribPixelFormat;
         attrib.value.type = VAGenericValueTypeInteger;
 
+        unsigned int rt_format;
+
         // default format is NV12
         if (inInfo->FourCC == MFX_FOURCC_RGB4)
         {
             attrib.value.value.i = VA_FOURCC_ARGB;
+            rt_format = VA_RT_FORMAT_RGB32;
         }
         else
         {
             attrib.value.value.i = VA_FOURCC_NV12;
+            rt_format = VA_RT_FORMAT_YUV420;
         }
         attrib.flags = VA_SURFACE_ATTRIB_SETTABLE;
 
@@ -2037,7 +2045,7 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
         mfxU32 width  = hasResize ? VPP_COMP_BACKGROUND_SURFACE_WIDTH  : inInfo->Width;
         mfxU32 height = hasResize ? VPP_COMP_BACKGROUND_SURFACE_HEIGHT : inInfo->Height;
 
-        vaSts = vaCreateSurfaces(m_vaDisplay, attrib.value.value.i, width, height,
+        vaSts = vaCreateSurfaces(m_vaDisplay, rt_format, width, height,
                 m_primarySurface4Composition, 1, &attrib, 1);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
