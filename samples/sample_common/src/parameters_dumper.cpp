@@ -130,7 +130,7 @@ void CParametersDumper::SerializeMfxInfoMFXStruct(msdk_ostream& sstr,msdk_string
 }
 
 void CParametersDumper::SerializeExtensionBuffer(msdk_ostream& sstr,msdk_string prefix,mfxExtBuffer* pExtBuffer)
-{   
+{
     char name[6]="    .";
     MSDK_MEMCPY(name,&pExtBuffer->BufferId,4);
     std::string strName(name);
@@ -201,7 +201,7 @@ void CParametersDumper::SerializeExtensionBuffer(msdk_ostream& sstr,msdk_string 
             SERIALIZE_INFO_ARRAY(reserved);
             SERIALIZE_INFO(NumStream);
             SERIALIZE_INFO(NumFrame);
-            //DO_MANUALLY:     mfxLAFrameInfo   *FrameStat; //frame statistics 
+            //DO_MANUALLY:     mfxLAFrameInfo   *FrameStat; //frame statistics
             //DO_MANUALLY:     mfxFrameSurface1 *OutSurface; //reordered surface
         }
         break;
@@ -866,12 +866,12 @@ void CParametersDumper::SerializeExtensionBuffer(msdk_ostream& sstr,msdk_string 
             SERIALIZE_INFO(Type);
             SERIALIZE_INFO_ARRAY(reserved);
             SERIALIZE_INFO_ARRAY(ScalingListPresent);
-			SERIALIZE_INFO_ARRAY(ScalingList4x4[0]);
-			SERIALIZE_INFO_ARRAY(ScalingList4x4[1]);
-			SERIALIZE_INFO_ARRAY(ScalingList4x4[2]);
-			SERIALIZE_INFO_ARRAY(ScalingList4x4[3]);
-			SERIALIZE_INFO_ARRAY(ScalingList4x4[4]);
-			SERIALIZE_INFO_ARRAY(ScalingList4x4[5]);
+            SERIALIZE_INFO_ARRAY(ScalingList4x4[0]);
+            SERIALIZE_INFO_ARRAY(ScalingList4x4[1]);
+            SERIALIZE_INFO_ARRAY(ScalingList4x4[2]);
+            SERIALIZE_INFO_ARRAY(ScalingList4x4[3]);
+            SERIALIZE_INFO_ARRAY(ScalingList4x4[4]);
+            SERIALIZE_INFO_ARRAY(ScalingList4x4[5]);
 
             SERIALIZE_INFO_ARRAY(ScalingList8x8[0]);
             SERIALIZE_INFO_ARRAY(ScalingList8x8[1]);
