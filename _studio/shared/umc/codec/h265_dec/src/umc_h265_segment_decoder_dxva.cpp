@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -79,12 +79,14 @@ void H265_DXVA_SegmentDecoder::PackAllHeaders(H265DecoderFrame * pFrame)
 UMC::Status H265_DXVA_SegmentDecoder::ProcessSegment(void)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "H265_DXVA_SegmentDecoder::ProcessSegment");
-    if (m_pTaskBroker->GetNextTask(0))
+    try
     {
+        if (!m_pTaskBroker->GetNextTask(0))
+            return UMC::UMC_ERR_NOT_ENOUGH_DATA;
     }
-    else
+    catch (h265_exception const& e)
     {
-        return UMC::UMC_ERR_NOT_ENOUGH_DATA;
+        return e.GetStatus();
     }
 
     return UMC::UMC_OK;
@@ -192,6 +194,9 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H265Task *)
                     au->m_pFrame->SetErrorFlagged(UMC::ERROR_FRAME_MINOR);
                     break;
             }
+
+        if (sts != UMC::UMC_OK)
+            throw h265_exception(sts);
     }
 
     SwitchCurrentAU();

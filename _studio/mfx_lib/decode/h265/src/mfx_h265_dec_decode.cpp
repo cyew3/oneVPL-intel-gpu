@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_h265_dec_decode.h"
@@ -1358,7 +1358,13 @@ mfxStatus VideoDECODEH265::DecodeFrame(mfxFrameSurface1 *surface_out, H265Decode
     Ipp32s const error = pFrame->GetError();
 
     if (error & UMC::ERROR_FRAME_DEVICE_FAILURE)
+    {
         surface_out->Data.Corrupted |= MFX_CORRUPTION_MAJOR;
+        if (error == UMC::UMC_ERR_GPU_HANG)
+            return MFX_ERR_GPU_HANG;
+        else
+            return MFX_ERR_DEVICE_FAILED;
+    }
     else
     {
         if (error & UMC::ERROR_FRAME_MINOR)
