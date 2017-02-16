@@ -10,9 +10,6 @@ Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
 
 #pragma once
 
-#include "mfxfei.h"
-#include <iostream>
-
 #define TYPEDEF_MEMBER(base, member, name) typedef std::remove_reference<decltype(((base*)0)->member)>::type name;
 TYPEDEF_MEMBER(mfxExtOpaqueSurfaceAlloc,  In,                  mfxExtOpaqueSurfaceAlloc_InOut)
 TYPEDEF_MEMBER(mfxExtAVCRefListCtrl,      PreferredRefList[0], mfxExtAVCRefListCtrl_Entry)
