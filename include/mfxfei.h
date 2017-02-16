@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2013-2016 Intel Corporation.  All rights reserved.
+Copyright (C) 2013-2017 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -413,14 +413,20 @@ typedef struct {
     mfxU16    SPSId;
     mfxU16    PPSId;
 
-    mfxU16    PictureType;
+    mfxU16    FrameType;
     mfxU16    PicInitQP;
     mfxU16    NumRefIdxL0Active;
     mfxU16    NumRefIdxL1Active;
-    mfxU16    ReferenceFrames[16]; /* index in mfxPAKInput::L0Surface array */
     mfxI16    ChromaQPIndexOffset;
     mfxI16    SecondChromaQPIndexOffset;
     mfxU16    Transform8x8ModeFlag;
+
+    struct mfxExtFeiPpsDPB {
+        mfxU16    Index;    /* index in mfxPAKInput::L0Surface array */
+        mfxU16    PicType;
+        mfxI32    FrameNumWrap;
+        mfxU16    LongTermFrameIdx;
+    } DpbBefore[16], DpbAfter[16];
 } mfxExtFeiPPS;
 
 typedef struct {
