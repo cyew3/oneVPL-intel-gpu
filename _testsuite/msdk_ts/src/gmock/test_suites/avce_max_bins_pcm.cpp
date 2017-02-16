@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -153,8 +153,8 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
                 {
                     if (mb.NumBits > 128 + RawMbBits / max_bits_per_mb_denom) {
                         if (check_max_bins) {
-                            g_tsLog << "ERROR: ";
                             EXPECT_LE( mb.NumBits, 128 + RawMbBits / max_bits_per_mb_denom );
+                            g_tsLog << "ERROR: ";
                         } else {
                             g_tsLog << "ERROR_SKIPPED: ";
                         }
