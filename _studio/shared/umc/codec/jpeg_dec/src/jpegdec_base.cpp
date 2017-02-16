@@ -660,7 +660,7 @@ JERRCODE CJPEGDecoderBase::ParseDQT(void)
     TRC1("  id        - ",(id & 0x0f));
     TRC1("  precision - ",precision);
 
-    if((id & 0x0f) > MAX_QUANT_TABLES)
+    if((id & 0x0f) >= MAX_QUANT_TABLES)
     {
       return JPEG_ERR_DQT_DATA;
     }
