@@ -79,6 +79,13 @@ enum
     SCENE_CHANGE = 0x1, // Clean scene change
     MORE_SCENE_CHANGE_DETECTED = 0x2, // Back to back scene change detected
 };
+
+// enum for m_surfQueue with 1 reference
+enum
+{
+    PREVIOUS_INPUT   = 0,
+    CURRENT_INPUT     = 1,
+};
 ////////////////////////////////////////////////////////////////////////////////////
 // Utils
 ////////////////////////////////////////////////////////////////////////////////////
@@ -605,7 +612,7 @@ mfxStatus ResMngr::DoMode30i60p(
             if(0 == m_inputIndex)
             {
                 *intSts = MFX_ERR_NONE;
-                m_outputIndexCountPerCycle = 3;
+                m_outputIndexCountPerCycle = 3; //was 3
                 m_bkwdRefCount = 0;
             }
             else
@@ -765,6 +772,7 @@ ReleaseResource* ResMngr::CreateSubResourceForMode30i60p(void)
 
 
 //---------------------------------------------------------
+/// Sets up reference, current input and corresponding timeStamp
 mfxStatus ResMngr::FillTaskForMode30i60p(
     DdiTask* pTask,
     mfxFrameSurface1 *pInSurface,
@@ -777,6 +785,8 @@ mfxStatus ResMngr::FillTaskForMode30i60p(
     // bkwd
     pTask->bkwdRefCount = m_bkwdRefCount;
     mfxU32 actualNumber = m_actualNumber;
+
+    // sets up reference frame
     for(refIndx = 0; refIndx < pTask->bkwdRefCount; refIndx++)
     {
         ExtSurface bkwdSurf = m_surfQueue[refIndx];
@@ -791,15 +801,25 @@ mfxStatus ResMngr::FillTaskForMode30i60p(
                 m_surf[VPP_IN][m_surfQueue[refIndx].resIdx].SetFree(false);
             }
         }
-        //
 
         pTask->m_refList.push_back(bkwdSurf);
         actualNumber++;
     }
 
-    // input
+    // Current input
     {
         pTask->input = m_surfQueue[pTask->bkwdRefCount];
+
+        // BOB uses previous input for odd frames and current input for even frames
+        if (pTask->bkwdRefCount == 0 && pTask->taskIndex > 0)
+        {
+            actualNumber++; // increase for BOB as there are no reference frame
+            if ((pTask->taskIndex % 2) == 0)
+            {
+                pTask->input = m_surfQueue[CURRENT_INPUT];
+            }
+        }
+        
         pTask->input.timeStamp     = CURRENT_TIME_STAMP + actualNumber * FRAME_INTERVAL;
         pTask->input.endTimeStamp  = CURRENT_TIME_STAMP + (actualNumber + 1) * FRAME_INTERVAL;
         if(m_surf[VPP_IN].size() > 0) // input in system memory
@@ -849,6 +869,7 @@ mfxStatus ResMngr::FillTaskForMode30i60p(
     {
         m_actualNumber++;
     }
+
 
     return MFX_ERR_NONE;
 
@@ -3187,6 +3208,13 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
         } //end switch
     }  // if (MFX_DEINTERLACING_ADVANCED_SCD == m_executeParams.iDeinterlacingAlgorithm)
 
+    // TRY - Snow
+    // Use BOB for last frame in 30i->60p mode to avoid display previous reference frame.
+            if (pTask->bEOS)
+            {
+                m_executeParams.scene = VPP_SCENE_NEW;
+            }
+
     // increment ADI frame number
     m_frame_num++;
 #endif
@@ -3813,6 +3841,7 @@ mfxStatus ConfigureExecuteParams(
                     config.m_surfCount[VPP_IN]  = IPP_MAX(1, config.m_surfCount[VPP_IN]);
                     config.m_surfCount[VPP_OUT] = IPP_MAX(2, config.m_surfCount[VPP_OUT]);
                     executeParams.bFMDEnable = false;
+                    executeParams.bFMDEnable = true; // Snow try this !
                 }
                 else if (MFX_DEINTERLACING_ADVANCED_NOREF == executeParams.iDeinterlacingAlgorithm)
                 {
