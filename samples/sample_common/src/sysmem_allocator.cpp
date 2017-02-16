@@ -157,10 +157,10 @@ mfxStatus SysMemFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->Pitch = Width2 * 2;
         break;
     case MFX_FOURCC_AYUV:
-        ptr->Y = ptr->B;
-        ptr->U = ptr->Y + 1;
-        ptr->V = ptr->Y + 2;
-        ptr->A = ptr->Y + 3;
+        ptr->V = ptr->B;
+        ptr->U = ptr->V + 1;
+        ptr->Y = ptr->V + 2;
+        ptr->A = ptr->V + 3;
         ptr->Pitch = 4 * Width2;
         break;
 #ifdef ENABLE_PRE_SI_FEATURES
