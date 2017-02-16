@@ -806,8 +806,8 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
                 m_bVppIsUsed = false;
                 m_DecoderPostProcessing.In.CropX = 0;
                 m_DecoderPostProcessing.In.CropY = 0;
-                m_DecoderPostProcessing.In.CropW = m_mfxVideoParams.mfx.FrameInfo.Width;
-                m_DecoderPostProcessing.In.CropH = m_mfxVideoParams.mfx.FrameInfo.Height;
+                m_DecoderPostProcessing.In.CropW = m_mfxVideoParams.mfx.FrameInfo.CropW;
+                m_DecoderPostProcessing.In.CropH = m_mfxVideoParams.mfx.FrameInfo.CropH;
 
                 m_DecoderPostProcessing.Out.FourCC = m_mfxVideoParams.mfx.FrameInfo.FourCC;
                 m_DecoderPostProcessing.Out.ChromaFormat = m_mfxVideoParams.mfx.FrameInfo.ChromaFormat;

@@ -1981,8 +1981,8 @@ mfxStatus CTranscodingPipeline::InitDecMfxParams(sInputParams *pInParams)
     {
         m_decPostProcessing.In.CropX = 0;
         m_decPostProcessing.In.CropY = 0;
-        m_decPostProcessing.In.CropW = m_mfxDecParams.mfx.FrameInfo.Width;
-        m_decPostProcessing.In.CropH = m_mfxDecParams.mfx.FrameInfo.Height;
+        m_decPostProcessing.In.CropW = m_mfxDecParams.mfx.FrameInfo.CropW;
+        m_decPostProcessing.In.CropH = m_mfxDecParams.mfx.FrameInfo.CropH;
 
         m_decPostProcessing.Out.FourCC = m_mfxDecParams.mfx.FrameInfo.FourCC;
         m_decPostProcessing.Out.ChromaFormat = m_mfxDecParams.mfx.FrameInfo.ChromaFormat;
