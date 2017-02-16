@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -423,34 +423,64 @@ int TestSuite::RunTest(unsigned int id)
         }
         else if (m_par.mfx.FrameInfo.ChromaFormat == 2)
         {
-            if (m_par.mfx.FrameInfo.BitDepthLuma == 8)
+            if ((g_tsHWtype >= MFX_HW_ICL) || (g_tsImpl == MFX_IMPL_SOFTWARE))//Gen11 or SW
             {
-                EXPECT_EQ(MFX_FOURCC_YUY2, m_par.mfx.FrameInfo.FourCC);
-            }
-            else if (m_par.mfx.FrameInfo.BitDepthLuma == 10)
-            {
-                EXPECT_EQ(MFX_FOURCC_Y210, m_par.mfx.FrameInfo.FourCC);
+                if (m_par.mfx.FrameInfo.BitDepthLuma == 8)
+                {
+                    EXPECT_EQ(MFX_FOURCC_YUY2, m_par.mfx.FrameInfo.FourCC);
+                }
+                else if (m_par.mfx.FrameInfo.BitDepthLuma == 10)
+                {
+                    EXPECT_EQ(MFX_FOURCC_Y216, m_par.mfx.FrameInfo.FourCC);
+                }
+                else
+                {
+                    ADD_FAILURE() << "FAILED: Non supported bitdepth = " << m_par.mfx.FrameInfo.BitDepthLuma << " for chroma_format = "
+                        << m_par.mfx.FrameInfo.ChromaFormat;
+                }
             }
             else
             {
-                ADD_FAILURE() << "FAILED: Non supported bitdepth = " << m_par.mfx.FrameInfo.BitDepthLuma << " for chroma_format = " 
-                    << m_par.mfx.FrameInfo.ChromaFormat;
+                if ((m_par.mfx.FrameInfo.BitDepthLuma == 8) || (m_par.mfx.FrameInfo.BitDepthLuma == 10))
+                {
+                    EXPECT_EQ(0, m_par.mfx.FrameInfo.FourCC);//Gen9 unsupport chroma formats 422
+                }
+                else
+                {
+                    ADD_FAILURE() << "FAILED: Non supported bitdepth = " << m_par.mfx.FrameInfo.BitDepthLuma << " for chroma_format = "
+                        << m_par.mfx.FrameInfo.ChromaFormat;
+                }
             }
-        }
+         }
         else if (m_par.mfx.FrameInfo.ChromaFormat == 3)
         {
-            if (m_par.mfx.FrameInfo.BitDepthLuma == 8)
+            if (g_tsHWtype >= MFX_HW_ICL)//Gen11
             {
-                EXPECT_EQ(MFX_FOURCC_AYUV, m_par.mfx.FrameInfo.FourCC);
-            }
-            else if (m_par.mfx.FrameInfo.BitDepthLuma == 10)
-            {
-                EXPECT_EQ(MFX_FOURCC_Y410, m_par.mfx.FrameInfo.FourCC);
+                if (m_par.mfx.FrameInfo.BitDepthLuma == 8)
+                {
+                    EXPECT_EQ(MFX_FOURCC_AYUV, m_par.mfx.FrameInfo.FourCC);
+                }
+                else if (m_par.mfx.FrameInfo.BitDepthLuma == 10)
+                {
+                    EXPECT_EQ(MFX_FOURCC_Y410, m_par.mfx.FrameInfo.FourCC);
+                }
+                else
+                {
+                    ADD_FAILURE() << "FAILED: Non supported bitdepth = " << m_par.mfx.FrameInfo.BitDepthLuma << " for chroma_format = "
+                        << m_par.mfx.FrameInfo.ChromaFormat;
+                }
             }
             else
             {
-                ADD_FAILURE() << "FAILED: Non supported bitdepth = " << m_par.mfx.FrameInfo.BitDepthLuma << " for chroma_format = " 
-                    << m_par.mfx.FrameInfo.ChromaFormat;
+                if ((m_par.mfx.FrameInfo.BitDepthLuma == 8) || (m_par.mfx.FrameInfo.BitDepthLuma == 10))
+                {
+                    EXPECT_EQ(0, m_par.mfx.FrameInfo.FourCC);//Gen9 unsupport chroma formats 444
+                }
+                else
+                {
+                    ADD_FAILURE() << "FAILED: Non supported bitdepth = " << m_par.mfx.FrameInfo.BitDepthLuma << " for chroma_format = "
+                        << m_par.mfx.FrameInfo.ChromaFormat;
+                }
             }
         }
         if((mfxExtCodingOptionSPSPPS*)m_par)
