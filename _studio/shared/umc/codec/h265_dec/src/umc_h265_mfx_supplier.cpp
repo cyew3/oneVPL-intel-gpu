@@ -1157,9 +1157,11 @@ mfxStatus MFX_CDECL MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, 
         }
 
         if (in->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV400 ||
-            in->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV420 ||
-            in->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422
-#ifdef PRE_SI_TARGET_PLATFORM_GEN11
+            in->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV420
+#ifndef MFX_VA
+            || in->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422
+#elif defined(PRE_SI_TARGET_PLATFORM_GEN11)
+            || in->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422
             || in->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV444
 #endif
             )
