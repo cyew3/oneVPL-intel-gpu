@@ -390,6 +390,7 @@
     <ClCompile Include="src\gmock\test_suites\vp9e_get_video_param.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp9e_goppattern.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp9e_init.cpp" />
+    <ClCompile Include="src\gmock\test_suites\vp9e_multiref.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp9e_query.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp9e_query_io_surf.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp9e_reset.cpp" />
