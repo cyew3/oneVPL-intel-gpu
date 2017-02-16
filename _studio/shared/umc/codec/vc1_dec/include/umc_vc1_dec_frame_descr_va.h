@@ -19,19 +19,16 @@
 
 #if defined(UMC_VA)
 #include "umc_vc1_dec_frame_descr.h"
-#include "umc_vc1_dec_va_defs.h"
 #include "umc_vc1_dec_exception.h"
 #include "umc_vc1_dec_task_store.h"
 
 #ifdef UMC_VA_DXVA
+#include "umc_vc1_dec_va_defs.h"
 #include "umc_va_dxva2_protected.h"
 #endif
 
-//#define PRINT_VA_DEBUG
 namespace UMC
 {
-
-//#define bit_get(value, offset, count)      ( (value & (((1<<count)-1) << offset)) >> offset);
 
 #if defined (UMC_VA_LINUX)
     class VC1PackerLVA

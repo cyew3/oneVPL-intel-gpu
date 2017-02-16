@@ -554,9 +554,6 @@ namespace UMC
         UMCVACompBuffer* CompBuf;
         m_va->GetCompBuffer(VASliceParameterBufferType,&CompBuf);
         CompBuf->SetDataSize(SliceBufIndex*sizeof(VASliceParameterBufferVC1));
-#ifdef PRINT_VA_DEBUG
-        printf("SliceBufIndex = %d \n",SliceBufIndex);
-#endif
         CompBuf->SetNumOfItem(SliceBufIndex);
         m_va->GetCompBuffer(VAPictureParameterBufferType,&CompBuf);
         CompBuf->SetDataSize(sizeof(VAPictureParameterBufferVC1));
@@ -896,13 +893,6 @@ namespace UMC
         ptr->picture_fields.bits.is_first_field = ! pContext->m_picLayerHeader->CurrField;
         ptr->picture_fields.bits.intensity_compensation = pContext->m_bIntensityCompensation;
 
-#ifdef NO_INTERLACED_STREAMS
-        if(pContext->m_seqLayerHeader.INTERLACE == 1 && pContext->m_picLayerHeader->FCM != 0)
-        {
-            throw VC1Exceptions::vc1_exception(VC1Exceptions::internal_pipeline_error);
-        }
-#endif
-
         ptr->bitplane_present.value = 0;
         VC1Bitplane* check_bitplane = 0;
         VC1Bitplane* lut_bitplane[3];
@@ -1016,14 +1006,6 @@ namespace UMC
         m_pSliceInfo->slice_vertical_position = slparams->MBStartRow;
         m_pSliceInfo->slice_data_flag = VA_SLICE_DATA_FLAG_ALL;
         m_pSliceInfo->slice_data_size = SliceDataSize;
-
-#ifdef PRINT_VA_DEBUG
-        printf("macroblock_offset = %d \n",m_pSliceInfo->macroblock_offset);
-        printf("slice_data_offset = %d \n",m_pSliceInfo->slice_data_offset);
-        printf("slice_vertical_position = %d \n",m_pSliceInfo->slice_vertical_position);
-        printf("slice_data_size = %d \n",m_pSliceInfo->slice_data_size);
-#endif
-
     }
     void VC1PackerLVA::VC1PackWholeSliceSM (VC1Context* pContext,
         Ipp32u MBOffset,
