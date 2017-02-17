@@ -324,14 +324,10 @@ void CParametersDumper::SerializeExtensionBuffer(msdk_ostream& sstr,msdk_string 
             SERIALIZE_INFO(BitstreamRestriction);
             SERIALIZE_INFO(LowDelayHrd);
             SERIALIZE_INFO(MotionVectorsOverPicBoundaries);
-            SERIALIZE_INFO(Log2MaxMvLengthHorizontal);
-            SERIALIZE_INFO(Log2MaxMvLengthVertical);
             SERIALIZE_INFO(ScenarioInfo);
             SERIALIZE_INFO(ContentInfo);
             SERIALIZE_INFO(PRefType);
             SERIALIZE_INFO(FadeDetection);
-            SERIALIZE_INFO(DeblockingAlphaTcOffset);
-            SERIALIZE_INFO(DeblockingBetaOffset);
             SERIALIZE_INFO(GPB);
             SERIALIZE_INFO(MaxFrameSizeI);
             SERIALIZE_INFO(MaxFrameSizeP);
@@ -341,11 +337,6 @@ void CParametersDumper::SerializeExtensionBuffer(msdk_ostream& sstr,msdk_string 
             SERIALIZE_INFO_ARRAY(NumRefActiveP);
             SERIALIZE_INFO_ARRAY(NumRefActiveBL0);
             SERIALIZE_INFO_ARRAY(NumRefActiveBL1);
-            SERIALIZE_INFO(ConstrainedIntraPredFlag);
-            SERIALIZE_INFO(TransformSkip);
-            SERIALIZE_INFO(TargetChromaFormatPlus1);
-            SERIALIZE_INFO(TargetBitDepthLuma);
-            SERIALIZE_INFO(TargetBitDepthChroma);
             SERIALIZE_INFO(BRCPanicMode);
             SERIALIZE_INFO_ARRAY(reserved);
         }
@@ -570,7 +561,6 @@ void CParametersDumper::SerializeExtensionBuffer(msdk_ostream& sstr,msdk_string 
         {
             mfxExtEncoderCapability& info = *(mfxExtEncoderCapability*)pExtBuffer;
             SERIALIZE_INFO(MBPerSec);
-            SERIALIZE_INFO(InputMemoryTiling);
             SERIALIZE_INFO_ARRAY(reserved);
         }
         break;
@@ -721,11 +711,8 @@ void CParametersDumper::SerializeExtensionBuffer(msdk_ostream& sstr,msdk_string 
         {
             mfxExtMBQP& info = *(mfxExtMBQP*)pExtBuffer;
             SERIALIZE_INFO_ARRAY(reserved);
-            SERIALIZE_INFO(Mode);
-            SERIALIZE_INFO(BlockSize);
             SERIALIZE_INFO(NumQPAlloc);
             SERIALIZE_INFO_MEMORY(QP,NumQPAlloc);
-            SERIALIZE_INFO_MEMORY(DeltaQP,NumQPAlloc);
             SERIALIZE_INFO(reserved2);
         }
         break;
@@ -746,27 +733,12 @@ void CParametersDumper::SerializeExtensionBuffer(msdk_ostream& sstr,msdk_string 
             SERIALIZE_INFO(reserved2);
         }
         break;
-    case MFX_EXTBUFF_DPB:
-        {
-            mfxExtDPB& info = *(mfxExtDPB*)pExtBuffer;
-            SERIALIZE_INFO(DPBSize);
-            SERIALIZE_INFO_ARRAY(reserved);
-
-            START_PROC_ARRAY(DPB)
-                SERIALIZE_INFO_ELEMENT(DPB,FrameOrder);
-                SERIALIZE_INFO_ELEMENT(DPB,PicType);
-                SERIALIZE_INFO_ELEMENT(DPB,LongTermIdx);
-                SERIALIZE_INFO_ARRAY(reserved);
-            END_PROC_ARRAY
-        }
-        break;
     case MFX_EXTBUFF_HEVC_PARAM:
         {
             mfxExtHEVCParam& info = *(mfxExtHEVCParam*)pExtBuffer;
             SERIALIZE_INFO(PicWidthInLumaSamples);
             SERIALIZE_INFO(PicHeightInLumaSamples);
             SERIALIZE_INFO(GeneralConstraintFlags);
-            SERIALIZE_INFO(SampleAdaptiveOffset);
             SERIALIZE_INFO_ARRAY(reserved);
         }
         break;
@@ -810,24 +782,6 @@ void CParametersDumper::SerializeExtensionBuffer(msdk_ostream& sstr,msdk_string 
             SERIALIZE_INFO_ARRAY(reserved);
         }
         break;
-    case MFX_EXTBUFF_TEMPORAL_LAYERS:
-        {
-            mfxExtTemporalLayers& info = *(mfxExtTemporalLayers*)pExtBuffer;
-            SERIALIZE_INFO_ARRAY(reserved);
-
-            START_PROC_ARRAY(Layer)
-                SERIALIZE_INFO_ELEMENT(Layer,Scale);
-                SERIALIZE_INFO_ELEMENT(Layer,QPI);
-                SERIALIZE_INFO_ELEMENT(Layer,QPP);
-                SERIALIZE_INFO_ELEMENT(Layer,QPB);
-                SERIALIZE_INFO_ELEMENT(Layer,TargetKbps);
-                SERIALIZE_INFO_ELEMENT(Layer,MaxKbps);
-                SERIALIZE_INFO_ELEMENT(Layer,BufferSizeInKB);
-                SERIALIZE_INFO_ELEMENT(Layer,InitialDelayInKB);
-                SERIALIZE_INFO_ARRAY_ELEMENT(Layer,reserved1);
-            END_PROC_ARRAY
-        }
-        break;
     case MFX_EXTBUFF_DIRTY_RECTANGLES:
         {
             mfxExtDirtyRect& info = *(mfxExtDirtyRect*)pExtBuffer;
@@ -860,35 +814,6 @@ void CParametersDumper::SerializeExtensionBuffer(msdk_ostream& sstr,msdk_string 
             END_PROC_ARRAY
         }
         break;
-    case MFX_EXTBUFF_AVC_SCALING_MATRIX:
-        {
-            mfxExtAVCScalingMatrix& info = *(mfxExtAVCScalingMatrix*)pExtBuffer;
-            SERIALIZE_INFO(Type);
-            SERIALIZE_INFO_ARRAY(reserved);
-            SERIALIZE_INFO_ARRAY(ScalingListPresent);
-            SERIALIZE_INFO_ARRAY(ScalingList4x4[0]);
-            SERIALIZE_INFO_ARRAY(ScalingList4x4[1]);
-            SERIALIZE_INFO_ARRAY(ScalingList4x4[2]);
-            SERIALIZE_INFO_ARRAY(ScalingList4x4[3]);
-            SERIALIZE_INFO_ARRAY(ScalingList4x4[4]);
-            SERIALIZE_INFO_ARRAY(ScalingList4x4[5]);
-
-            SERIALIZE_INFO_ARRAY(ScalingList8x8[0]);
-            SERIALIZE_INFO_ARRAY(ScalingList8x8[1]);
-            SERIALIZE_INFO_ARRAY(ScalingList8x8[2]);
-            SERIALIZE_INFO_ARRAY(ScalingList8x8[3]);
-            SERIALIZE_INFO_ARRAY(ScalingList8x8[4]);
-            SERIALIZE_INFO_ARRAY(ScalingList8x8[5]);
-        }
-        break;
-    case MFX_EXTBUFF_MPEG2_QUANT_MATRIX:
-        {
-            mfxExtMPEG2QuantMatrix& info = *(mfxExtMPEG2QuantMatrix*)pExtBuffer;
-            SERIALIZE_INFO_ARRAY(reserved);
-            SERIALIZE_INFO_ARRAY(LoadMatrix);
-            SERIALIZE_INFO_ARRAY(Matrix[4]);
-        }
-        break;
     case MFX_EXTBUFF_VPP_ROTATION:
         {
             mfxExtVPPRotation& info = *(mfxExtVPPRotation*)pExtBuffer;
@@ -915,13 +840,6 @@ void CParametersDumper::SerializeExtensionBuffer(msdk_ostream& sstr,msdk_string 
             SERIALIZE_INFO_ARRAY(reserved);
         }
         break;
-    case MFX_EXTBUFF_VPP_SCENE_ANALYSIS:
-        {
-            mfxExtSceneChange& info = *(mfxExtSceneChange*)pExtBuffer;
-            SERIALIZE_INFO(Type);
-            SERIALIZE_INFO_ARRAY(reserved);
-        }
-        break;
     case MFX_EXTBUFF_VPP_MIRRORING:
         {
             mfxExtVPPMirroring& info = *(mfxExtVPPMirroring*)pExtBuffer;
@@ -943,13 +861,6 @@ void CParametersDumper::SerializeExtensionBuffer(msdk_ostream& sstr,msdk_string 
         {
             mfxExtVPPColorFill& info = *(mfxExtVPPColorFill*)pExtBuffer;
             SERIALIZE_INFO(Enable);
-            SERIALIZE_INFO_ARRAY(reserved);
-        }
-        break;
-    case MFX_EXTBUFF_VPP_COLOR_CONVERSION:
-        {
-            mfxExtColorConversion& info = *(mfxExtColorConversion*)pExtBuffer;
-            SERIALIZE_INFO(ChromaSiting);
             SERIALIZE_INFO_ARRAY(reserved);
         }
         break;
@@ -1030,7 +941,7 @@ mfxStatus CParametersDumper::DumpLibraryConfiguration(msdk_string fileName, mfxV
     try
     {
         msdk_fstream sstr(fileName.c_str(),std::fstream::out);
-        sstr<<MSDK_STRING("Configuration settings (fields from API 1.21)\n");
+        sstr<<MSDK_STRING("Configuration settings (fields from API 1.22)\n");
 
         if(pDecoderParams)
         {

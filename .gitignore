@@ -10,3 +10,6 @@ __cmake
 /.project
 /.gitreview
 /samples/include
+/content
+*.ipch
+*.opensdf

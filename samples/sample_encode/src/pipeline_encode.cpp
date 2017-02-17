@@ -351,8 +351,8 @@ mfxStatus CEncodingPipeline::AllocAndInitVppDoNotUse()
 {
     m_VppDoNotUse.NumAlg = 4;
 
-	if(m_VppDoNotUse.AlgList)
-		delete[] m_VppDoNotUse.AlgList;
+    if(m_VppDoNotUse.AlgList)
+        delete[] m_VppDoNotUse.AlgList;
     m_VppDoNotUse.AlgList = new mfxU32 [m_VppDoNotUse.NumAlg];
     MSDK_CHECK_POINTER(m_VppDoNotUse.AlgList,  MFX_ERR_MEMORY_ALLOC);
 
@@ -429,7 +429,7 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     m_mfxEncParams.mfx.FrameInfo.FourCC       = pInParams->EncodeFourCC;
     m_mfxEncParams.mfx.FrameInfo.ChromaFormat = FourCCToChroma(pInParams->EncodeFourCC);
     m_mfxEncParams.mfx.FrameInfo.PicStruct    = pInParams->nPicStruct;
-	m_mfxEncParams.mfx.FrameInfo.Shift = pInParams->shouldUseShiftedP010Enc;
+    m_mfxEncParams.mfx.FrameInfo.Shift = pInParams->shouldUseShiftedP010Enc;
 
     // width must be a multiple of 16
     // height must be a multiple of 16 in case of frame picture and a multiple of 32 in case of field picture
@@ -545,16 +545,16 @@ mfxStatus CEncodingPipeline::InitMfxVppParams(sInputParams *pInParams)
     m_mfxVppParams.vpp.In.CropW = pInParams->nWidth;
     m_mfxVppParams.vpp.In.CropH = pInParams->nHeight;
 
-    // fill output frame info		
+    // fill output frame info
     MSDK_MEMCPY_VAR(m_mfxVppParams.vpp.Out,&m_mfxVppParams.vpp.In, sizeof(mfxFrameInfo));
     m_mfxVppParams.vpp.In.FourCC    = m_InputFourCC;
     m_mfxVppParams.vpp.Out.FourCC    = pInParams->EncodeFourCC;
     m_mfxVppParams.vpp.In.ChromaFormat =  FourCCToChroma(m_mfxVppParams.vpp.In.FourCC);
     m_mfxVppParams.vpp.Out.ChromaFormat = FourCCToChroma(m_mfxVppParams.vpp.Out.FourCC);
 
-	// Fill Shift bit
-	m_mfxVppParams.vpp.In.Shift = pInParams->shouldUseShiftedP010VPP;
-	m_mfxVppParams.vpp.Out.Shift = pInParams->shouldUseShiftedP010Enc; // This output should correspond to Encoder settings
+    // Fill Shift bit
+    m_mfxVppParams.vpp.In.Shift = pInParams->shouldUseShiftedP010VPP;
+    m_mfxVppParams.vpp.Out.Shift = pInParams->shouldUseShiftedP010Enc; // This output should correspond to Encoder settings
 
     // input frame info
 #if defined (ENABLE_V4L2_SUPPORT)
@@ -1193,28 +1193,28 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
         MSDK_CHECK_POINTER(m_pmfxVPP, MFX_ERR_MEMORY_ALLOC);
     }
 
-	// Determine if we should shift P010 surfaces
-	pParams->shouldUseShiftedP010VPP = m_pmfxVPP && pParams->memType != SYSTEM_MEMORY && 
-		pParams->FileInputFourCC == MFX_FOURCC_P010;
+    // Determine if we should shift P010 surfaces
+    pParams->shouldUseShiftedP010VPP = m_pmfxVPP && pParams->memType != SYSTEM_MEMORY &&
+        pParams->FileInputFourCC == MFX_FOURCC_P010;
 
-	pParams->shouldUseShiftedP010Enc = pParams->memType != SYSTEM_MEMORY &&		
-		pParams->FileInputFourCC == MFX_FOURCC_P010 && 
-		AreGuidsEqual(pParams->pluginParams.pluginGuid, MFX_PLUGINID_HEVCE_HW);
-	bool readerShift = m_pmfxVPP ? pParams->shouldUseShiftedP010VPP  : pParams->shouldUseShiftedP010Enc;
+    pParams->shouldUseShiftedP010Enc = pParams->memType != SYSTEM_MEMORY &&
+        pParams->FileInputFourCC == MFX_FOURCC_P010 &&
+        AreGuidsEqual(pParams->pluginParams.pluginGuid, MFX_PLUGINID_HEVCE_HW);
+    bool readerShift = m_pmfxVPP ? pParams->shouldUseShiftedP010VPP  : pParams->shouldUseShiftedP010Enc;
 
-	if(readerShift)
-	{
-		msdk_printf(MSDK_STRING("P010 frames data will be shifted to MSB area to be compatible with HEVC HW input format\n"));
-	}
+    if(readerShift)
+    {
+        msdk_printf(MSDK_STRING("P010 frames data will be shifted to MSB area to be compatible with HEVC HW input format\n"));
+    }
 
-	if(m_pmfxVPP && !pParams->shouldUseShiftedP010Enc && pParams->bUseHWLib)
-	{
-		msdk_printf(MSDK_STRING("ERROR: Encoder requires P010 LSB format. VPP currently supports only MSB encoding for P010 format. Sample cannot combine both of them in one pipeline.\n"));
-		return MFX_ERR_UNSUPPORTED;
-	}
+    if(m_pmfxVPP && !pParams->shouldUseShiftedP010Enc && pParams->bUseHWLib)
+    {
+        msdk_printf(MSDK_STRING("ERROR: Encoder requires P010 LSB format. VPP currently supports only MSB encoding for P010 format. Sample cannot combine both of them in one pipeline.\n"));
+        return MFX_ERR_UNSUPPORTED;
+    }
 
     // Preparing readers and writers
-	if (!isV4L2InputEnabled)
+    if (!isV4L2InputEnabled)
     {
         // prepare input file reader
         sts = m_FileReader.Init(pParams->InputFiles,
@@ -1222,7 +1222,7 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
         MSDK_CHECK_STATUS(sts, "m_FileReader.Init failed");
     }
 
-	sts = InitFileWriters(pParams);
+    sts = InitFileWriters(pParams);
     MSDK_CHECK_STATUS(sts, "InitFileWriters failed");
 
 
@@ -1275,7 +1275,7 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
         else
         {
             CParametersDumper::DumpLibraryConfiguration(pParams->DumpFileName,NULL,NULL,&encoderParams);
-        }	
+        }
     }
 
     return MFX_ERR_NONE;

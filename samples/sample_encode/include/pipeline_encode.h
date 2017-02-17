@@ -138,8 +138,8 @@ struct sInputParams
     mfxU32 nMaxFrameSize;
 
     bool bUncut;
-	bool shouldUseShiftedP010Enc;
-	bool shouldUseShiftedP010VPP;
+    bool shouldUseShiftedP010Enc;
+    bool shouldUseShiftedP010VPP;
 
     msdk_char DumpFileName[MSDK_MAX_FILENAME_LEN];
 

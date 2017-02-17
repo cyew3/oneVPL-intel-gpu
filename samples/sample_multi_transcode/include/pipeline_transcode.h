@@ -50,7 +50,10 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include "hw_device.h"
 #include "plugin_loader.h"
+
+#ifdef ENABLE_FUTURE_FEATURES
 #include "brc_routines.h"
+#endif
 
 #include "vpp_ext_buffers_storage.h"
 

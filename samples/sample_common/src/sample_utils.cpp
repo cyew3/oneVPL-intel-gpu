@@ -71,7 +71,7 @@ CSmplYUVReader::CSmplYUVReader()
 {
     m_bInited = false;
     m_ColorFormat = MFX_FOURCC_YV12;
-	shouldShiftP010High  = false;
+    shouldShiftP010High  = false;
 }
 
 mfxStatus CSmplYUVReader::Init(std::list<msdk_string> inputs, mfxU32 ColorFormat, bool shouldShiftP010)
@@ -88,10 +88,10 @@ mfxStatus CSmplYUVReader::Init(std::list<msdk_string> inputs, mfxU32 ColorFormat
         return MFX_ERR_UNSUPPORTED;
     }
 
-	if(MFX_FOURCC_P010 == ColorFormat)
-	{
-		shouldShiftP010High = shouldShiftP010;
-	}
+    if(MFX_FOURCC_P010 == ColorFormat)
+    {
+        shouldShiftP010High = shouldShiftP010;
+    }
 
     if (!inputs.size())
     {
@@ -224,15 +224,15 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
                 return MFX_ERR_MORE_DATA;
             }
 
-			// Shifting data if required
-			if(MFX_FOURCC_P010 == pInfo.FourCC && shouldShiftP010High)
-			{
-				mfxU16* shortPtr = (mfxU16*)(ptr + i * pitch);
-				for(int idx = 0; idx < w; idx++)
-				{
-					shortPtr[idx]<<=6;
-				}
-			}
+            // Shifting data if required
+            if(MFX_FOURCC_P010 == pInfo.FourCC && shouldShiftP010High)
+            {
+                mfxU16* shortPtr = (mfxU16*)(ptr + i * pitch);
+                for(int idx = 0; idx < w; idx++)
+                {
+                    shortPtr[idx]<<=6;
+                }
+            }
         }
 
         // read chroma planes
@@ -327,15 +327,15 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
                     return MFX_ERR_MORE_DATA;
                 }
 
-				// Shifting data if required
-				if(MFX_FOURCC_P010 == pInfo.FourCC && shouldShiftP010High)
-				{
-					mfxU16* shortPtr = (mfxU16*)(ptr + i * pitch);
-					for(int idx = 0; idx < w; idx++)
-					{
-						shortPtr[idx]<<=6;
-					}
-				}
+                // Shifting data if required
+                if(MFX_FOURCC_P010 == pInfo.FourCC && shouldShiftP010High)
+                {
+                    mfxU16* shortPtr = (mfxU16*)(ptr + i * pitch);
+                    for(int idx = 0; idx < w; idx++)
+                    {
+                        shortPtr[idx]<<=6;
+                    }
+                }
             }
 
             break;
