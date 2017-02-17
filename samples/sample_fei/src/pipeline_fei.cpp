@@ -506,7 +506,7 @@ mfxStatus CEncodingPipeline::AllocFrames()
     }
 
     /* ENC use input source surfaces only & does not generate real reconstructed surfaces.
-     * But surface from reconstruct pool is required by driver for ENC and the same surface should also be passed to PAK.
+     * But surface form reconstruct pool is required by driver for ENC and the same surface should also be passed to PAK.
      * PAK generate real reconstructed surfaces.
      * */
     if (m_pFEI_ENCPAK)
@@ -1204,8 +1204,7 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
                     feiPPS[fieldId].SecondChromaQPIndexOffset = m_appCfg.SecondChromaQPIndexOffset;
                     feiPPS[fieldId].Transform8x8ModeFlag      = m_appCfg.Transform8x8ModeFlag;
 
-                    memset(feiPPS[fieldId].DpbBefore, 0xffff, sizeof(feiPPS[fieldId].DpbBefore));
-                    memset(feiPPS[fieldId].DpbAfter,  0xffff, sizeof(feiPPS[fieldId].DpbAfter));
+                    memset(feiPPS[fieldId].ReferenceFrames, 0xffff, 16 * sizeof(mfxU16));
                 }
 
                 /* Slice Header */

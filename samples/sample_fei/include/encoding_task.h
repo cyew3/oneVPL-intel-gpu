@@ -860,6 +860,33 @@ struct iTask
     iTask* prevTask;
 };
 
+/* This structure represents state of DPB and reference lists of the task being processed */
+struct RefInfo
+{
+    std::vector<mfxFrameSurface1*> reference_frames;
+    struct{
+        std::vector<mfxU16> dpb_idx;
+        std::vector<mfxU16> l0_idx;
+        std::vector<mfxU16> l1_idx;
+        std::vector<mfxU16> l0_parity;
+        std::vector<mfxU16> l1_parity;
+    } state[2];
+
+    void Clear()
+    {
+        reference_frames.clear();
+
+        for (mfxU32 fieldId = 0; fieldId < 2; ++fieldId)
+        {
+            state[fieldId].dpb_idx.clear();
+            state[fieldId].l0_idx.clear();
+            state[fieldId].l1_idx.clear();
+            state[fieldId].l0_parity.clear();
+            state[fieldId].l1_parity.clear();
+        }
+    }
+};
+
 /* Group of functions below implements some useful operations for current frame / field of the task:
    Frame type extraction, field parity, POC */
 

@@ -332,7 +332,7 @@ mfxStatus ResetDirect(iTask * task, iTaskPool *pTaskList)
             if (!B_SLICE(sliceHeader->Slice[slice].SliceType)) break;
 
             int ridx = sliceHeader->Slice[slice].RefL1[0].Index;
-            int fidx = pps->DpbBefore[ridx].Index;
+            int fidx = pps->ReferenceFrames[ridx];
             mfxFrameSurface1 *refSurface = task->PAK_in.L0Surface[fidx];
 
             // find iTask of L1[0]
