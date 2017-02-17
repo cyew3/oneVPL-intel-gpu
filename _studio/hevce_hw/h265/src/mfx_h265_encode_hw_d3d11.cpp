@@ -448,7 +448,9 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, 
     ENCODE_PACKEDHEADER_DATA * pPH = 0;
     ENCODE_INPUT_DESC ein = {};
     ENCODE_EXECUTE_PARAMS executeParams = {};
-
+#if defined(MFX_SKIP_FRAME_SUPPORT)
+    HevcSkipMode skipMode(task.m_SkipMode);
+#endif
     executeParams.pCompressedBuffers = &m_cbd[0];
     Zero(m_cbd);
 
@@ -529,8 +531,48 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, 
 
     for (mfxU32 i = 0; i < m_slice.size(); i ++)
     {
+#if defined(MFX_SKIP_FRAME_SUPPORT)
+        if (skipMode.NeedSkipSliceGen())
+        {
+            // pack skip slice 
+            pPH = PackSkippedSlice(task, i, &m_slice[i].SliceQpDeltaBitOffset); assert(pPH);
+            ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDSLICEDATA, *pPH, 1);
+            if (!skipMode.NeedDriverCall())
+            {
+                // copy packed sliced into bitstream
+
+                //ENCODE_QUERY_STATUS_PARAMS feedback = { task.m_statusReportNumber, 0, };
+                mfxFrameData bs = { 0 };
+                
+                FrameLocker lock(m_core, task.m_midBs);
+                assert(bs.Y);
+                
+                
+                mfxU8 *  bsDataStart = bs.Y;
+                mfxU8 *  bsEnd = bs.Y + m_width * m_height;
+                mfxU8 *  bsDataEnd = bsDataStart;
+
+                for (UINT i = 0; i < executeParams.NumCompBuffers; i++)
+                {
+                    if (m_cbd[i].CompressedBufferType == (D3DDDIFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA)
+                    {
+                        ENCODE_PACKEDHEADER_DATA const & data = *(ENCODE_PACKEDHEADER_DATA*)m_cbd[i].pCompBuffer;
+                        mfxU8 * sbegin = data.pData + data.DataOffset;
+                        bsDataEnd += AddEmulationPreventionAndCopy(sbegin, data.DataLength, bsDataEnd, bsEnd, !!m_pps.bEmulationByteInsertion);
+                    }
+                }
+                //feedback.bitstreamSize = mfxU32(bsDataEnd - bsDataStart);
+            }
+
+        }
+        else {
+            pPH = PackSliceHeader(task, i, &m_slice[i].SliceQpDeltaBitOffset); assert(pPH);
+            ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDSLICEDATA, *pPH, 1);
+        }
+#else
         pPH = PackSliceHeader(task, i, &m_slice[i].SliceQpDeltaBitOffset); assert(pPH);
         ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDSLICEDATA, *pPH, 1);
+#endif
     }
 
     /*if (task.m_ctrl.NumPayload > 0)
@@ -573,6 +615,34 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, 
         m_feedbackCached.Update(m_feedbackUpdate);
 
 #else
+#if defined(MFX_SKIP_FRAME_SUPPORT)
+        if (skipMode.NeedDriverCall())
+        {
+            HRESULT hr;
+            D3D11_VIDEO_DECODER_EXTENSION ext = {};
+
+            m_pps.SkipFrameFlag = skipMode.GetMode() != 0? UCHAR(skipMode.GetMode()) : 0;
+            m_pps.NumSkipFrames = 0;
+            m_pps.SizeSkipFrames = 0;
+            
+
+            ext.Function              = ENCODE_ENC_PAK_ID;
+            ext.pPrivateInputData     = &executeParams;
+            ext.PrivateInputDataSize  = sizeof(ENCODE_EXECUTE_PARAMS);
+            ext.ResourceCount         = (UINT)resourceList.size(); 
+            ext.ppResourceList        = &resourceList[0];
+            {
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "DecoderExtension");
+                hr = m_vcontext->DecoderExtension(m_vdecoder, &ext);
+            }
+            MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
+            {
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "DecoderEndFrame");
+                hr = m_vcontext->DecoderEndFrame(m_vdecoder);
+            }
+            MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
+        }
+#else
         HRESULT hr;
         D3D11_VIDEO_DECODER_EXTENSION ext = {};
 
@@ -591,6 +661,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, 
             hr = m_vcontext->DecoderEndFrame(m_vdecoder);
         }
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
+#endif
 #endif
     }
     catch (...)
@@ -614,6 +685,11 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryStatus(Task & task)
     // As we won't get all bitstreams we need to cache all other statuses. 
 
     // first check cache.
+#if defined(MFX_SKIP_FRAME_SUPPORT)
+    HevcSkipMode skipMode(task.m_SkipMode);
+    if (!skipMode.NeedDriverCall())
+        return MFX_ERR_NONE;
+#endif
     const ENCODE_QUERY_STATUS_PARAMS* feedback = m_feedbackCached.Hit(task.m_statusReportNumber);
 
     // if task is not in cache then query its status

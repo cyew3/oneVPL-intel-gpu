@@ -19,12 +19,317 @@
 namespace MfxHwH265Encode
 {
 
+const mfxU8 tab_cabacRangeTabLps[128][4] =
+{
+    { 128, 176, 208, 240 },
+    { 128, 167, 197, 227 },
+    { 128, 158, 187, 216 },
+    { 123, 150, 178, 205 },
+    { 116, 142, 169, 195 },
+    { 111, 135, 160, 185 },
+    { 105, 128, 152, 175 },
+    { 100, 122, 144, 166 },
+    { 95, 116, 137, 158 },
+    { 90, 110, 130, 150 },
+    { 85, 104, 123, 142 },
+    { 81, 99, 117, 135 },
+    { 77, 94, 111, 128 },
+    { 73, 89, 105, 122 },
+    { 69, 85, 100, 116 },
+    { 66, 80, 95, 110 },
+    { 62, 76, 90, 104 },
+    { 59, 72, 86, 99 },
+    { 56, 69, 81, 94 },
+    { 53, 65, 77, 89 },
+    { 51, 62, 73, 85 },
+    { 48, 59, 69, 80 },
+    { 46, 56, 66, 76 },
+    { 43, 53, 63, 72 },
+    { 41, 50, 59, 69 },
+    { 39, 48, 56, 65 },
+    { 37, 45, 54, 62 },
+    { 35, 43, 51, 59 },
+    { 33, 41, 48, 56 },
+    { 32, 39, 46, 53 },
+    { 30, 37, 43, 50 },
+    { 29, 35, 41, 48 },
+    { 27, 33, 39, 45 },
+    { 26, 31, 37, 43 },
+    { 24, 30, 35, 41 },
+    { 23, 28, 33, 39 },
+    { 22, 27, 32, 37 },
+    { 21, 26, 30, 35 },
+    { 20, 24, 29, 33 },
+    { 19, 23, 27, 31 },
+    { 18, 22, 26, 30 },
+    { 17, 21, 25, 28 },
+    { 16, 20, 23, 27 },
+    { 15, 19, 22, 25 },
+    { 14, 18, 21, 24 },
+    { 14, 17, 20, 23 },
+    { 13, 16, 19, 22 },
+    { 12, 15, 18, 21 },
+    { 12, 14, 17, 20 },
+    { 11, 14, 16, 19 },
+    { 11, 13, 15, 18 },
+    { 10, 12, 15, 17 },
+    { 10, 12, 14, 16 },
+    { 9, 11, 13, 15 },
+    { 9, 11, 12, 14 },
+    { 8, 10, 12, 14 },
+    { 8, 9, 11, 13 },
+    { 7, 9, 11, 12 },
+    { 7, 9, 10, 12 },
+    { 7, 8, 10, 11 },
+    { 6, 8, 9, 11 },
+    { 6, 7, 9, 10 },
+    { 6, 7, 8, 9 },
+    { 2, 2, 2, 2 },
+    //The same for valMPS=1
+    { 128, 176, 208, 240 },
+    { 128, 167, 197, 227 },
+    { 128, 158, 187, 216 },
+    { 123, 150, 178, 205 },
+    { 116, 142, 169, 195 },
+    { 111, 135, 160, 185 },
+    { 105, 128, 152, 175 },
+    { 100, 122, 144, 166 },
+    { 95, 116, 137, 158 },
+    { 90, 110, 130, 150 },
+    { 85, 104, 123, 142 },
+    { 81, 99, 117, 135 },
+    { 77, 94, 111, 128 },
+    { 73, 89, 105, 122 },
+    { 69, 85, 100, 116 },
+    { 66, 80, 95, 110 },
+    { 62, 76, 90, 104 },
+    { 59, 72, 86, 99 },
+    { 56, 69, 81, 94 },
+    { 53, 65, 77, 89 },
+    { 51, 62, 73, 85 },
+    { 48, 59, 69, 80 },
+    { 46, 56, 66, 76 },
+    { 43, 53, 63, 72 },
+    { 41, 50, 59, 69 },
+    { 39, 48, 56, 65 },
+    { 37, 45, 54, 62 },
+    { 35, 43, 51, 59 },
+    { 33, 41, 48, 56 },
+    { 32, 39, 46, 53 },
+    { 30, 37, 43, 50 },
+    { 29, 35, 41, 48 },
+    { 27, 33, 39, 45 },
+    { 26, 31, 37, 43 },
+    { 24, 30, 35, 41 },
+    { 23, 28, 33, 39 },
+    { 22, 27, 32, 37 },
+    { 21, 26, 30, 35 },
+    { 20, 24, 29, 33 },
+    { 19, 23, 27, 31 },
+    { 18, 22, 26, 30 },
+    { 17, 21, 25, 28 },
+    { 16, 20, 23, 27 },
+    { 15, 19, 22, 25 },
+    { 14, 18, 21, 24 },
+    { 14, 17, 20, 23 },
+    { 13, 16, 19, 22 },
+    { 12, 15, 18, 21 },
+    { 12, 14, 17, 20 },
+    { 11, 14, 16, 19 },
+    { 11, 13, 15, 18 },
+    { 10, 12, 15, 17 },
+    { 10, 12, 14, 16 },
+    { 9, 11, 13, 15 },
+    { 9, 11, 12, 14 },
+    { 8, 10, 12, 14 },
+    { 8, 9, 11, 13 },
+    { 7, 9, 11, 12 },
+    { 7, 9, 10, 12 },
+    { 7, 8, 10, 11 },
+    { 6, 8, 9, 11 },
+    { 6, 7, 9, 10 },
+    { 6, 7, 8, 9 },
+    { 2, 2, 2, 2 }
+};
+/* CABAC trans tables: state (MPS and LPS ) + valMPS in 6th bit */
+const mfxU8 tab_cabacTransTbl[2][128] = {
+    { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,
+    15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
+    27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38,
+    39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50,
+    51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62,
+    62, 63, 0, 64, 65, 66, 66, 68, 68, 69, 70, 71,
+    72, 73, 73, 75, 75, 76, 77, 77, 79, 79, 80, 80,
+    82, 82, 83, 83, 85, 85, 86, 86, 87, 88, 88, 89,
+    90, 90, 91, 91, 92, 93, 93, 94, 94, 94, 95, 96,
+    96, 97, 97, 97, 98, 98, 99, 99, 99, 100, 100,
+    100, 101, 101, 101, 102, 102, 127
+    },
+    { 64, 0, 1, 2, 2, 4, 4, 5, 6, 7, 8, 9, 9, 11, 11,
+    12, 13, 13, 15, 15, 16, 16, 18, 18, 19, 19, 21,
+    21, 22, 22, 23, 24, 24, 25, 26, 26, 27, 27, 28,
+    29, 29, 30, 30, 30, 31, 32, 32, 33, 33, 33, 34,
+    34, 35, 35, 35, 36, 36, 36, 37, 37, 37, 38, 38,
+    63, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75,
+    76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87,
+    88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99,
+    100, 101, 102, 103, 104, 105, 106, 107, 108, 109,
+    110, 111, 112, 113, 114, 115, 116, 117, 118, 119,
+    120, 121, 122, 123, 124, 125, 126, 126, 127
+    }
+};
+
+const
+    mfxU32 tab_ctxIdxOffset[MAIN_SYNTAX_ELEMENT_NUMBER_HEVC] =
+{
+    0,      // QT_CBF_HEVC
+    10,     // QT_ROOT_CBF_HEVC
+    11,     // LAST_X_HEVC
+    41,     // LAST_Y_HEVC
+    71,     // SIG_COEFF_GROUP_FLAG_HEVC
+    75,     // SIG_FLAG_HEVC
+    117,    // ONE_FLAG_HEVC
+    141,    // ABS_FLAG_HEVC
+    147,    // TRANS_SUBDIV_FLAG_HEVC
+    150,    // TRANSFORMSKIP_FLAG_HEVC
+    152,    // CU_TRANSQUANT_BYPASS_FLAG_CTX
+    153,    // SPLIT_CODING_UNIT_FLAG_HEVC
+    156,    // SKIP_FLAG_HEVC
+    159,    // MERGE_FLAG_HEVC
+    160,    // MERGE_IDX_HEVC
+    161,    // PART_SIZE_HEVC
+    165,    // AMP_SPLIT_POSITION_HEVC
+    166,    // PRED_MODE_HEVC
+    167,    // INTRA_LUMA_PRED_MODE_HEVC
+    168,    // INTRA_CHROMA_PRED_MODE_HEVC
+    170,    // INTER_DIR_HEVC
+    175,    // MVD_HEVC
+    177,    // REF_FRAME_IDX_HEVC
+    179,    // DQP_HEVC
+    183,    // MVP_IDX_HEVC
+    185,    // SAO_MERGE_FLAG_HEVC
+    186,    // SAO_TYPE_IDX_HEVC
+    187,    // END_OF_SLICE_FLAG_HEVC
+};
+
+const mfxU32 tab_ctxIdxSize[MAIN_SYNTAX_ELEMENT_NUMBER_HEVC] =
+{
+    10,     // QT_CBF_HEVC
+    1,      // QT_ROOT_CBF_HEVC
+    30,     // LAST_X_HEVC
+    30,     // LAST_Y_HEVC
+    4,      // SIG_COEFF_GROUP_FLAG_HEVC
+    42,     // SIG_FLAG_HEVC
+    24,     // ONE_FLAG_HEVC
+    6,      // ABS_FLAG_HEVC
+    3,      // TRANS_SUBDIV_FLAG_HEVC
+    2,      // TRANSFORMSKIP_FLAG_HEVC
+    1,      // CU_TRANSQUANT_BYPASS_FLAG_CTX
+    3,      // SPLIT_CODING_UNIT_FLAG_HEVC
+    3,      // SKIP_FLAG_HEVC
+    1,      // MERGE_FLAG_HEVC
+    1,      // MERGE_IDX_HEVC
+    4,      // PART_SIZE_HEVC
+    1,      // AMP_SPLIT_POSITION_HEVC
+    1,      // PRED_MODE_HEVC
+    1,      // INTRA_LUMA_PRED_MODE_HEVC
+    2,      // INTRA_CHROMA_PRED_MODE_HEVC
+    5,      // INTER_DIR_HEVC
+    2,      // MVD_HEVC
+    2,      // REF_FRAME_IDX_HEVC
+    4,      // DQP_HEVC
+    2,      // MVP_IDX_HEVC
+    1,      // SAO_MERGE_FLAG_HEVC
+    1,      // SAO_TYPE_IDX_HEVC
+    1,      // END_OF_SLICE_FLAG_HEVC
+};
+
+const
+    mfxU8 initVal_for_transquant_bypass_flag[3][1] =
+{
+    { 154 },
+    { 154 },
+    { 154 }
+};
+
+//split_coding_unit_flag   INIT_SPLIT_FLAG
+const
+    mfxU8 initVal_for_split_coding_unit_flag[3][3] =
+{
+    { 139, 141, 157, },
+    { 107, 139, 126, },
+    { 107, 139, 126, }
+};
+
+//skip_flag  INIT_SKIP_FLAG
+const
+    mfxU8 initVal_for_skip_flag[3][3] =
+{
+    { 154, 154, 154, },
+    { 197, 185, 201, },
+    { 197, 185, 201, }
+};
+
+const
+    mfxU8 initVal_for_merge_idx[3][1] =
+{
+    { 154, },
+    { 122, },
+    { 137, }
+};
+
+
+static
+    void InitializeContext(mfxU8 *pContext, mfxU8 initVal, mfxI32 SliceQPy)
+{
+    SliceQPy = MFX_MIN(MFX_MAX(0, SliceQPy), 51);
+
+    mfxI32 slope = (initVal >> 4) * 5 - 45;
+    mfxI32 offset = ((initVal & 15) << 3) - 16;
+    mfxI32 initState = MFX_MIN(MFX_MAX(1, (((slope * SliceQPy) >> 4) + offset)), 126);
+    mfxU32 mpState = (initState >= 64);
+    *pContext = mfxU8(((mpState ? (initState - 64) : (63 - initState)) << 0) + (mpState << 6));
+} //void InitializeContext(CABAC_CONTEXT_H265 *pContext, mfxU8 initVal, mfxI32 SliceQPy)
+
+
+mfxU32 AddEmulationPreventionAndCopy(
+    mfxU8* data,
+    mfxU32 length,
+    mfxU8*                           bsDataStart,
+    mfxU8*                           bsEnd,
+    bool                             bEmulationByteInsertion)
+{
+    mfxU8 * sbegin = data;
+    mfxU8 * send = sbegin + length;
+    mfxU32  len = bEmulationByteInsertion ? 4 : length;
+    assert(mfxU32(bsEnd - bsDataStart) > length);
+
+    if (len)
+    {
+        memcpy(bsDataStart, sbegin, len);
+        bsDataStart += len;
+        sbegin += len;
+    }
+
+    mfxU8 * bsDataEnd = bsDataStart;
+    mfxU32 size = mfxU32(bsEnd - bsDataStart);
+    HeaderPacker::PackRBSP(bsDataStart, sbegin, size, length);
+    len += size;
+    return len;
+}
+
+
 BitstreamWriter::BitstreamWriter(mfxU8* bs, mfxU32 size, mfxU8 bitOffset)
     : m_bsStart(bs)
     , m_bsEnd(bs + size)
     , m_bs(bs)
     , m_bitStart(bitOffset & 7)
     , m_bitOffset(bitOffset & 7)
+    , m_codILow(0)// cabac variables
+    , m_codIRange(510)
+    , m_bitsOutstanding(0)
+    , m_BinCountsInNALunits(0)
+    , m_firstBitFlag(true)
 {
     assert(bitOffset < 8);
     *m_bs &= 0xFF << (8 - m_bitOffset);
@@ -216,6 +521,107 @@ void BitstreamWriter::PutTrailingBits(bool bCheckAligened)
         *(++m_bs)   = 0;
         m_bitOffset = 0;
     }
+}
+
+void BitstreamWriter::PutBitC(mfxU32 B)
+{
+    if (m_firstBitFlag)
+        m_firstBitFlag = false;
+    else
+        PutBit(B);
+
+    while (m_bitsOutstanding > 0)
+    {
+        PutBit(1 - B);
+        m_bitsOutstanding--;
+    }
+}
+void BitstreamWriter::RenormE()
+{
+    while (m_codIRange < 256)
+    {
+        if (m_codILow < 256)
+        {
+            PutBitC(0);
+        }
+        else if (m_codILow >= 512)
+        {
+            m_codILow -= 512;
+            PutBitC(1);
+        }
+        else
+        {
+            m_codILow -= 256;
+            m_bitsOutstanding++;
+        }
+        m_codIRange <<= 1;
+        m_codILow <<= 1;
+    }
+}
+
+void BitstreamWriter::EncodeBin(mfxU8 * ctx, mfxU8 binVal)
+{
+    mfxU8  pStateIdx = (*ctx) & 0x3F;
+    mfxU8  valMPS = ((*ctx) >> 6);
+    mfxU32 qCodIRangeIdx = (m_codIRange >> 6) & 3;
+    mfxU32 codIRangeLPS = tab_cabacRangeTabLps[pStateIdx][qCodIRangeIdx];
+
+    m_codIRange -= codIRangeLPS;
+
+    if (binVal != valMPS)
+    {
+        m_codILow += m_codIRange;
+        m_codIRange = codIRangeLPS;
+
+        if (pStateIdx == 0)
+            valMPS = 1 - valMPS;
+
+        pStateIdx = tab_cabacTransTbl[1][pStateIdx];//transIdxLPS[pStateIdx];
+    }
+    else
+    {
+        pStateIdx = tab_cabacTransTbl[0][pStateIdx];//transIdxMPS[pStateIdx];
+    }
+    *ctx = ((valMPS << 6) | pStateIdx);
+    //*ctx = tab_cabacTransTbl[binVal][pStateIdx];
+
+    RenormE();
+    m_BinCountsInNALunits++;
+}
+
+void BitstreamWriter::EncodeBinEP(mfxU8 binVal)
+{
+    if (binVal == 1) {
+        m_codILow += m_codILow + m_codIRange;
+    }
+    else {
+        m_codILow += m_codILow;
+    }
+    RenormE();
+    m_BinCountsInNALunits++;
+}
+
+void BitstreamWriter::SliceFinish()
+{
+    m_codIRange -= 2;
+    m_codILow += m_codIRange;
+    m_codIRange = 2;
+
+    RenormE();
+    PutBitC((m_codILow >> 9) & 1);
+    PutBit(m_codILow >> 8);
+    PutTrailingBits();
+
+    m_BinCountsInNALunits++;
+}
+
+void BitstreamWriter::cabacInit()
+{
+    m_codILow = 0;
+    m_codIRange = 510;
+    m_bitsOutstanding = 0;
+    m_BinCountsInNALunits = 0;
+    m_firstBitFlag = true;
 }
 
 BitstreamReader::BitstreamReader(mfxU8* bs, mfxU32 size, mfxU8 bitOffset)
@@ -2375,6 +2781,188 @@ void HeaderPacker::GetSSH(Task const & task, mfxU32 id, mfxU8*& buf, mfxU32& siz
     sizeInBytes = CeilDiv(rbsp.GetOffset(), 8) - (mfxU32)(buf - m_bs.GetStart());
 }
 
+void HeaderPacker::codingTree(mfxU32 xCtu, mfxU32 yCtu, mfxU32 log2CtuSize, BitstreamWriter& bs, const Slice& slice, mfxU32 x0, mfxU32 y0, mfxU8* tabl)
+{
+    bool mbA = (yCtu == y0) ? xCtu > x0 : xCtu > 0; //is left MB available
+    bool mbB = (yCtu == y0) ? false : ((xCtu >= x0) ? yCtu > y0 : yCtu > y0 + (1 << log2CtuSize));   //is above MB available
+    bool boundary = ((xCtu + (1 << log2CtuSize) > m_par->m_sps.pic_width_in_luma_samples) || (yCtu + (1 << log2CtuSize) > m_par->m_sps.pic_height_in_luma_samples)) && (log2CtuSize > m_par->m_sps.log2_min_luma_coding_block_size_minus3 + 3);
+    mfxU32 ctx = 0;
+    mfxU32 split_flag = 0;
+    mfxU32 symbol = 0;
+
+    if (!boundary){
+        bs.EncodeBin(CONTEXT(tabl, SPLIT_CODING_UNIT_FLAG_HEVC) + ctx, split_flag);
+    }
+    else
+    {
+        split_flag = (log2CtuSize > m_par->m_sps.log2_min_luma_coding_block_size_minus3 + 3) ? 1 : 0;
+    }
+
+    if (split_flag)
+    {
+        mfxU32 x1 = xCtu + (1 << (log2CtuSize - 1));
+        mfxU32 y1 = yCtu + (1 << (log2CtuSize - 1));
+        codingTree(xCtu, yCtu, log2CtuSize - 1, bs, slice, x0, y0, tabl);
+        if (x1 < m_par->m_sps.pic_width_in_luma_samples)
+        {
+            codingTree(x1, yCtu, log2CtuSize - 1, bs, slice, x0, y0, tabl);
+        }
+        if (y1 < m_par->m_sps.pic_height_in_luma_samples)
+        {
+            codingTree(xCtu, y1, log2CtuSize - 1, bs, slice, x0, y0, tabl);
+        }
+        if (x1 < m_par->m_sps.pic_width_in_luma_samples && y1 < m_par->m_sps.pic_height_in_luma_samples)
+        {
+            codingTree(x1, y1, log2CtuSize - 1, bs, slice, x0, y0, tabl);
+        }
+    }
+    else
+    {
+        if (m_par->m_pps.transquant_bypass_enabled_flag)
+        {
+            symbol = 0;
+            bs.EncodeBin(CONTEXT(tabl, CU_TRANSQUANT_BYPASS_FLAG_CTX), symbol);
+        }
+
+        symbol = 1;
+        mfxU32 ctx_skip = mbA ? 1 : 0;
+        ctx_skip += mbB ? 1 : 0;
+
+        bs.EncodeBin(CONTEXT(tabl, SKIP_FLAG_HEVC) + ctx_skip, symbol);
+
+        mfxU32 num_cand = 5 - slice.five_minus_max_num_merge_cand;
+        mfxU32 unary_idx = 0;
+        if (num_cand > 1)
+        {
+            for (mfxU32 i = 0; i < num_cand - 1; ++i)
+            {
+                const mfxU32 symbol = i == unary_idx ? 0 : 1;
+                if (i == 0)
+                {
+                    bs.EncodeBin(CONTEXT(tabl, MERGE_IDX_HEVC), symbol);
+                }
+                else
+                {
+                    bs.EncodeBinEP(symbol);
+                }
+                if (symbol == 0)
+                {
+                    break;
+                }
+            }
+        }
+    }
+}
+
+
+void HeaderPacker::GetSkipSlice(Task const & task, mfxU32 id, mfxU8*& buf, mfxU32& sizeInBytes, mfxU32* qpd_offset)
+{
+    BitstreamWriter& rbsp = m_bs;
+    bool LongStartCode = (id == 0 && task.m_insertHeaders == 0) || IsOn(m_par->m_ext.DDI.LongStartCodes);
+    NALU nalu = { mfxU16(LongStartCode), task.m_shNUT, 0, mfxU16(task.m_tid + 1) };
+
+    assert(m_par);
+    assert(id < m_par->m_slice.size());
+
+    if (id == 0 && !(task.m_insertHeaders & INSERT_SEI) && task.m_ctrl.NumPayload == 0)
+        rbsp.Reset(m_bs_ssh, sizeof(m_bs_ssh));
+
+    Slice sh = task.m_sh;
+    sh.first_slice_segment_in_pic_flag = (id == 0);
+    sh.segment_address = m_par->m_slice[id].SegmentAddress;
+
+    buf = m_bs.GetStart() + CeilDiv(rbsp.GetOffset(), 8);
+
+    PackSSH(rbsp, nalu, m_par->m_sps, m_par->m_pps, sh, qpd_offset);
+    const mfxU32 MaxCU = (1 << (m_par->m_sps.log2_min_luma_coding_block_size_minus3 + 3 + m_par->m_sps.log2_diff_max_min_luma_coding_block_size));
+    const mfxU32 picWidthInMB = CeilDiv(m_par->m_sps.pic_width_in_luma_samples, MaxCU);
+    //cabac init
+    mfxI8 SliceQPy = mfxI8(m_par->m_pps.init_qp_minus26 + 26 + sh.slice_qp_delta);//task.m_qpY;
+
+    mfxU32 l = 0;
+    SliceQPy = MFX_MAX(0, SliceQPy);
+    m_bs.cabacInit();
+    mfxU8 frameType = 0;
+    switch (sh.type){
+    case 2:
+    {
+        frameType = 0;
+        break;
+    }
+    case 1:
+    {
+        frameType = 1;
+        break;
+    }
+    case 0:
+    {
+        frameType = 2;
+        break;
+    }
+    default:
+        frameType = 2;
+    }
+    mfxU8 initializationType = mfxU8(frameType);
+
+    mfxU8 context_array[NUM_CABAC_CONTEXT];
+
+    //transquant_bypass_flag
+    for (l = 0; l < tab_ctxIdxSize[CU_TRANSQUANT_BYPASS_FLAG_CTX]; l++)
+    {
+        InitializeContext(context_array + tab_ctxIdxOffset[CU_TRANSQUANT_BYPASS_FLAG_CTX] + l,
+            initVal_for_transquant_bypass_flag[initializationType][l], SliceQPy);
+    }
+
+    //split_coding_unit_flag
+    for (l = 0; l < tab_ctxIdxSize[SPLIT_CODING_UNIT_FLAG_HEVC]; l++)
+    {
+        InitializeContext(context_array + tab_ctxIdxOffset[SPLIT_CODING_UNIT_FLAG_HEVC] + l,
+            initVal_for_split_coding_unit_flag[initializationType][l], SliceQPy);
+    }
+
+    //skip_flag
+    for (l = 0; l < tab_ctxIdxSize[SKIP_FLAG_HEVC]; l++)
+    {
+        InitializeContext(context_array + tab_ctxIdxOffset[SKIP_FLAG_HEVC] + l,
+            initVal_for_skip_flag[initializationType][l], SliceQPy);
+    }
+
+    //merge_idx
+    for (l = 0; l < tab_ctxIdxSize[MERGE_IDX_HEVC]; l++)
+    {
+        InitializeContext(context_array + tab_ctxIdxOffset[MERGE_IDX_HEVC] + l,
+            initVal_for_merge_idx[initializationType][l], SliceQPy);
+    }
+
+    context_array[tab_ctxIdxOffset[END_OF_SLICE_FLAG_HEVC]] = 63;
+    const mfxU32 log2CtuSize = m_par->m_sps.log2_min_luma_coding_block_size_minus3 + 3 + m_par->m_sps.log2_diff_max_min_luma_coding_block_size;
+    mfxU32 xCtu0 = (m_par->m_slice[id].SegmentAddress % picWidthInMB) << log2CtuSize;
+    mfxU32 yCtu0 = (m_par->m_slice[id].SegmentAddress / picWidthInMB) << log2CtuSize;
+    mfxU32 ctuAdrr = m_par->m_slice[id].SegmentAddress + m_par->m_slice[id].NumLCU;
+    for (mfxU32 ctu = m_par->m_slice[id].SegmentAddress; ctu < ctuAdrr - 1; ++ctu){
+        mfxU32 xCtu = (ctu % picWidthInMB) << log2CtuSize;
+        mfxU32 yCtu = (ctu / picWidthInMB) << log2CtuSize;
+
+        codingTree(xCtu, yCtu, log2CtuSize, m_bs, sh, xCtu0, yCtu0, &context_array[0]);
+
+        m_bs.EncodeBin(CONTEXT(&context_array[0], END_OF_SLICE_FLAG_HEVC), 0);
+    }
+    mfxU32 ctu = ctuAdrr - 1;//PicSizeInCtbsY - 1;
+    mfxU32 xCtu = (ctu % picWidthInMB) << log2CtuSize;
+    mfxU32 yCtu = (ctu / picWidthInMB) << log2CtuSize;
+
+    codingTree(xCtu, yCtu, log2CtuSize, m_bs, sh, xCtu0, yCtu0, &context_array[0]);
+
+    m_bs.EncodeBin(CONTEXT(&context_array[0], END_OF_SLICE_FLAG_HEVC), 1);
+
+    m_bs.SliceFinish();
+
+
+    if (qpd_offset)
+        *qpd_offset -= (mfxU32)(buf - m_bs.GetStart()) * 8;
+
+    sizeInBytes = CeilDiv(rbsp.GetOffset(), 8) - (mfxU32)(buf - m_bs.GetStart());
+}
 
 } //MfxHwH265Encode
 #endif

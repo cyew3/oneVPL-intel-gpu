@@ -70,6 +70,7 @@ public:
         , VABID_PACKED_Slice
         , VABID_PACKED_SkippedSlice_H
         , VABID_PACKED_SkippedSlice
+        , VABID_PACKED_SkipBuffer
     } IdType;
 
     VABuffersHandler()
@@ -132,11 +133,20 @@ mfxStatus SetFrameRate(
     VAContextID  vaContextEncode,
     VABufferID & frameRateBuf_id);
 
+mfxStatus SetSkipFrame(
+    VADisplay    vaDisplay,
+    VAContextID  vaContextEncode,
+    VABufferID&  skipParam_id,
+    mfxU8 skipFlag,
+    mfxU8 numSkipFrames,
+    mfxU32 sizeSkipFrames);
+
     typedef struct
     {
         VASurfaceID surface;
         mfxU32 number;
         mfxU32 idxBs;
+        mfxU32 size;
     } ExtVASurface;
 
     class VAAPIEncoder : public DriverEncoder, DDIHeaderPacker, VABuffersHandler
@@ -207,7 +217,8 @@ mfxStatus SetFrameRate(
 
         MFXCoreInterface*    m_core;
         MfxVideoParam m_videoParam;
-
+        mfxU8  m_numSkipFrames;
+        mfxU32 m_sizeSkipFrames;
         VAContextID  m_vaContextEncode;
         VAConfigID   m_vaConfig;
 

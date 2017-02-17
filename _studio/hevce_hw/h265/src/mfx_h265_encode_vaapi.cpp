@@ -635,6 +635,8 @@ void UpdateSlice(
 
 VAAPIEncoder::VAAPIEncoder()
 : m_core(NULL)
+, m_numSkipFrames(0)
+, m_sizeSkipFrames(0)
 , m_vaContextEncode(VA_INVALID_ID)
 , m_vaConfig(VA_INVALID_ID)
 , m_sps()
@@ -1127,6 +1129,44 @@ mfxStatus FillCUQPDataVA(Task const & task, MfxVideoParam &par, std::vector<mfxI
 }
 #endif
 
+mfxStatus SetSkipFrame(
+    VADisplay    vaDisplay,
+    VAContextID  vaContextEncode,
+    VABufferID&  skipParam_id,
+    mfxU8 skipFlag,
+    mfxU8 numSkipFrames,
+    mfxU32 sizeSkipFrames)
+{
+    VAStatus vaSts;
+    VAEncMiscParameterBuffer *misc_param;
+    VAEncMiscParameterSkipFrame *skipParam;
+
+    vaSts = vaCreateBuffer(vaDisplay,
+        vaContextEncode,
+        VAEncMiscParameterBufferType,
+        sizeof(VAEncMiscParameterBuffer) + sizeof(VAEncMiscParameterSkipFrame),
+        1,
+        NULL,
+        &skipParam_id);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    vaSts = vaMapBuffer(vaDisplay,
+        skipParam_id,
+        (void **)&misc_param);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    misc_param->type = (VAEncMiscParameterType)VAEncMiscParameterTypeSkipFrame;
+    skipParam = (VAEncMiscParameterSkipFrame *)misc_param->data;
+
+    skipParam->skip_frame_flag = skipFlag;
+    skipParam->num_skip_frames = numSkipFrames;
+    skipParam->size_skip_frames = sizeSkipFrames;
+
+    vaUnmapBuffer(vaDisplay, skipParam_id);
+
+    return MFX_ERR_NONE;
+}
+
 mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VAAPIEncoder::Execute");
@@ -1141,6 +1181,7 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
 
     VABuffersDestroyPool(0);
     VABuffersDestroyPool(2);
+    VABuffersDestroyPool(3);
 
     // update params
     UpdatePPS(task, m_pps, m_reconQueue);
@@ -1149,7 +1190,8 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
 #if MFX_EXTBUFF_CU_QP_ENABLE
     FillCUQPDataVA(task, m_videoParam, m_cuqp_buffer, m_cuqp_width, m_cuqp_height, m_cuqp_pitch);
 #endif
-
+    mfxU8 skipFlag = ((task.m_ctrl.SkipFrame == 0) || (task.m_frameType & MFX_FRAMETYPE_I)) ? 0 : task.m_ctrl.SkipFrame;
+    HevcSkipMode skipMode(task.m_SkipMode);
     //------------------------------------------------------------------
     // find bitstream
     mfxU32 idxBs = task.m_idxBs;
@@ -1252,14 +1294,14 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
                     sizeof(packed_header_param_buffer),
                     1,
                     &packed_header_param_buffer,
-                    &VABufferNew(VABID_PACKED_AUD_H, 0));
+                    &VABufferNew(VABID_PACKED_AUD_H, 3));
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
             vaSts = vaCreateBuffer(m_vaDisplay,
                                 m_vaContextEncode,
                                 VAEncPackedHeaderDataBufferType,
                                 packedAud->DataLength, 1, packedAud->pData,
-                                &VABufferNew(VABID_PACKED_AUD, 0));
+                                &VABufferNew(VABID_PACKED_AUD, 3));
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
             packedDataSize += packed_header_param_buffer.bit_length;
@@ -1280,14 +1322,14 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
                     sizeof(packed_header_param_buffer),
                     1,
                     &packed_header_param_buffer,
-                    &VABufferNew(VABID_PACKED_VPS_H, 0));
+                    &VABufferNew(VABID_PACKED_VPS_H, 3));
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
             vaSts = vaCreateBuffer(m_vaDisplay,
                                 m_vaContextEncode,
                                 VAEncPackedHeaderDataBufferType,
                                 packedVps->DataLength, 1, packedVps->pData,
-                                &VABufferNew(VABID_PACKED_VPS, 0));
+                                &VABufferNew(VABID_PACKED_VPS, 3));
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
             packedDataSize += packed_header_param_buffer.bit_length;
@@ -1307,14 +1349,14 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
                     sizeof(packed_header_param_buffer),
                     1,
                     &packed_header_param_buffer,
-                    &VABufferNew(VABID_PACKED_SPS_H, 0));
+                    &VABufferNew(VABID_PACKED_SPS_H, 3));
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
             vaSts = vaCreateBuffer(m_vaDisplay,
                                 m_vaContextEncode,
                                 VAEncPackedHeaderDataBufferType,
                                 packedSps->DataLength, 1, packedSps->pData,
-                                &VABufferNew(VABID_PACKED_SPS, 0));
+                                &VABufferNew(VABID_PACKED_SPS, 3));
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
             packedDataSize += packed_header_param_buffer.bit_length;
@@ -1334,14 +1376,14 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
                     sizeof(packed_header_param_buffer),
                     1,
                     &packed_header_param_buffer,
-                    &VABufferNew(VABID_PACKED_PPS_H, 0));
+                    &VABufferNew(VABID_PACKED_PPS_H, 3));
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
             vaSts = vaCreateBuffer(m_vaDisplay,
                                 m_vaContextEncode,
                                 VAEncPackedHeaderDataBufferType,
                                 packedPps->DataLength, 1, packedPps->pData,
-                                &VABufferNew(VABID_PACKED_PPS, 0));
+                                &VABufferNew(VABID_PACKED_PPS, 3));
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
             packedDataSize += packed_header_param_buffer.bit_length;
@@ -1363,14 +1405,14 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
                         sizeof(packed_header_param_buffer),
                         1,
                         &packed_header_param_buffer,
-                        &VABufferNew(VABID_PACKED_SEI_H, 0));
+                        &VABufferNew(VABID_PACKED_SEI_H, 3));
                 MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
                 vaSts = vaCreateBuffer(m_vaDisplay,
                                     m_vaContextEncode,
                                     VAEncPackedHeaderDataBufferType,
                                     packedSei->DataLength, 1, packedSei->pData,
-                                    &VABufferNew(VABID_PACKED_SEI, 0));
+                                    &VABufferNew(VABID_PACKED_SEI, 3));
                 MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
                 packedDataSize += packed_header_param_buffer.bit_length;
@@ -1378,8 +1420,37 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
         }
 
         //Slice headers only
-        VABufferID* sliceBufferId = &VABuffersNew(VABID_PACKED_Slice, 0, m_slice.size() * 2);
+        VABufferID* sliceBufferId = &VABuffersNew(VABID_PACKED_Slice, 3, m_slice.size() * 2);
+      if (!!skipFlag && skipMode.NeedSkipSliceGen()){
+         for (size_t i = 0; i < m_slice.size() * 2; i += 2)
+         {
+            mfxU32 sliceQpDeltaBitOffset = 0;
+            ENCODE_PACKEDHEADER_DATA * packedSlice = PackSkippedSlice(task, i / 2, &sliceQpDeltaBitOffset);
 
+            packed_header_param_buffer.type = VAEncPackedHeaderHEVC_Slice;
+            packed_header_param_buffer.has_emulation_bytes = 0;
+            packed_header_param_buffer.bit_length = packedSlice->DataLength;
+
+            vaSts = vaCreateBuffer(m_vaDisplay,
+               m_vaContextEncode,
+               VAEncPackedHeaderParameterBufferType,
+               sizeof(packed_header_param_buffer),
+               1,
+               &packed_header_param_buffer,
+               &sliceBufferId[i]);
+            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+            vaSts = vaCreateBuffer(m_vaDisplay,
+               m_vaContextEncode,
+               VAEncPackedHeaderDataBufferType,
+               (packedSlice->DataLength + 7) / 8, 1, packedSlice->pData,
+               &sliceBufferId[i + 1]);
+            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+            packedDataSize += packed_header_param_buffer.bit_length;
+         }
+      }
+      else
+      {
         for (size_t i = 0; i < m_slice.size() * 2; i += 2)
         {
             mfxU32 sliceQpDeltaBitOffset = 0;
@@ -1408,8 +1479,17 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
             packedDataSize += packed_header_param_buffer.bit_length;
         }
     }
+   }
+   mfxU32 storedSize = 0;
 
-
+   if (skipMode.NeedDriverCall()){
+       if (skipMode.NeedNumSkipAdding()){
+           MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetSkipFrame(m_vaDisplay, m_vaContextEncode, VABufferNew(VABID_PACKED_SkipBuffer, 0),
+           skipFlag ? skipFlag : !!m_numSkipFrames,
+           m_numSkipFrames, 0), MFX_ERR_DEVICE_FAILED);
+       }
+      m_numSkipFrames = 0;
+      m_sizeSkipFrames = 0;
     MFX_LTRACE_2(MFX_TRACE_LEVEL_HOTSPOTS, "A|ENCODE|AVC|PACKET_START|", "%p|%d", m_vaContextEncode, task.m_statusReportNumber);
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaBeginPicture");
@@ -1427,6 +1507,13 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
             m_vaContextEncode,
             VABuffersBegin(0),
             VABuffersEnd(1) - VABuffersBegin(0));
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+        vaSts = vaRenderPicture(
+            m_vaDisplay,
+            m_vaContextEncode,
+            VABuffersBegin(3),
+            VABuffersEnd(3) - VABuffersBegin(3));
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
         VABufferID* sliceBufferId = VABuffersBegin(2);
@@ -1448,7 +1535,68 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
     MFX_LTRACE_2(MFX_TRACE_LEVEL_HOTSPOTS, "A|ENCODE|AVC|PACKET_END|", "%d|%d", m_vaContextEncode, task.m_statusReportNumber);
+   }
+   else{
+      VACodedBufferSegment *codedBufferSegment;
+      codedBuffer = m_bsQueue[idxBs].surface;
+      {
+         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaMapBuffer");
+         vaSts = vaMapBuffer(
+            m_vaDisplay,
+            codedBuffer,
+            (void **)(&codedBufferSegment));
+         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+      }
+      codedBufferSegment->next = 0;
+      codedBufferSegment->reserved = 0;
+      codedBufferSegment->status = 0;
+      
+      MFX_CHECK_WITH_ASSERT(codedBufferSegment->buf, MFX_ERR_DEVICE_FAILED);
 
+      mfxU8 *  bsDataStart = (mfxU8 *)codedBufferSegment->buf;
+      mfxU8 *  bsDataEnd = bsDataStart;
+
+      if (skipMode.NeedSkipSliceGen())
+      {
+          VABufferID* buf_id = VABuffersBegin(3);
+          int num_buffers = VABuffersEnd(3) - VABuffersBegin(3);
+          for (int i = 0; i < num_buffers; i += 2)
+          {
+              void *pBufferHeader;
+              vaSts = vaMapBuffer(m_vaDisplay, buf_id[i], &pBufferHeader);
+              MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+              void *pData;
+              vaSts = vaMapBuffer(m_vaDisplay, buf_id[i + 1], &pData);
+              MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+              if (pBufferHeader && pData)
+              {
+                  VAEncPackedHeaderParameterBuffer const & header = *(VAEncPackedHeaderParameterBuffer const *)pBufferHeader;
+
+                  mfxU32 length = (header.bit_length + 7) / 8;
+
+                  assert(mfxU32(bsDataStart + m_width*m_height - bsDataEnd) > length);
+                  assert(header.has_emulation_bytes);
+                  MFX_CHECK_WITH_ASSERT(mfxU32(bsDataStart + m_width*m_height - bsDataEnd) > length, MFX_ERR_NOT_ENOUGH_BUFFER);
+                  mfxU8* bsEnd = bsDataStart + m_width*m_height;
+                  bsDataEnd += AddEmulationPreventionAndCopy((mfxU8*)pData, length, bsDataEnd, bsEnd, 1);
+              }
+              vaSts = vaUnmapBuffer(m_vaDisplay, buf_id[i]);
+              MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+              vaSts = vaUnmapBuffer(m_vaDisplay, buf_id[i + 1]);
+              MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+          }
+      }
+      storedSize = mfxU32(bsDataEnd - bsDataStart);
+      codedBufferSegment->size = storedSize;
+      m_numSkipFrames++;
+      m_sizeSkipFrames += (skipMode.GetMode() != HEVC_SKIPFRAME_INSERT_NOTHING) ? storedSize : 0;
+      {
+         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
+         vaUnmapBuffer(m_vaDisplay, codedBuffer);
+      }
+   }
     //------------------------------------------------------------------
     // PostStage
     //------------------------------------------------------------------
@@ -1458,7 +1606,8 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
 
         ExtVASurface currentFeedback;
         currentFeedback.number  = task.m_statusReportNumber;
-        currentFeedback.surface = *inputSurface;
+        currentFeedback.surface = (!skipMode.NeedDriverCall()) ? VA_INVALID_SURFACE : *inputSurface;//*inputSurface;
+        currentFeedback.size = storedSize;
         currentFeedback.idxBs   = task.m_idxBs;
         m_feedbackCache.push_back(currentFeedback);
     }
@@ -1477,6 +1626,7 @@ mfxStatus VAAPIEncoder::QueryStatus(Task & task)
     VASurfaceID waitSurface;
     mfxU32 waitIdxBs;
     mfxU32 indxSurf;
+    mfxU32 waitSize(0);
 
     UMC::AutomaticUMCMutex guard(m_guard);
 
@@ -1488,6 +1638,7 @@ mfxStatus VAAPIEncoder::QueryStatus(Task & task)
         {
             waitSurface = currentFeedback.surface;
             waitIdxBs   = currentFeedback.idxBs;
+            waitSize = currentFeedback.size;
             isFound  = true;
             break;
         }
@@ -1495,6 +1646,14 @@ mfxStatus VAAPIEncoder::QueryStatus(Task & task)
 
     if (!isFound)
         return MFX_ERR_UNKNOWN;
+
+    if (waitSurface == VA_INVALID_SURFACE) //skipped frame
+    {
+        task.m_bsDataLength = waitSize;
+        m_feedbackCache.erase(m_feedbackCache.begin() + indxSurf);
+
+        return MFX_ERR_NONE;
+    }
 
     // find used bitstream
     VABufferID codedBuffer;
@@ -1587,7 +1746,6 @@ mfxStatus VAAPIEncoder::Destroy()
     }
 
     VABuffersDestroy();
-
     return MFX_ERR_NONE;
 } // mfxStatus VAAPIEncoder::Destroy()
 

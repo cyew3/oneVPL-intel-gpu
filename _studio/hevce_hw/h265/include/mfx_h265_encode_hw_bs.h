@@ -47,13 +47,24 @@ public:
     inline mfxU8* GetStart () { return m_bsStart; }
 
     void Reset(mfxU8* bs = 0, mfxU32 size = 0, mfxU8 bitOffset = 0);
-
+    void cabacInit();
+    void EncodeBin(mfxU8 * ctx, mfxU8 binVal);
+    void EncodeBinEP(mfxU8 binVal);
+    void SliceFinish();
+    void PutBitC(mfxU32 B);
 private:
+    void RenormE();
     mfxU8* m_bsStart;
     mfxU8* m_bsEnd;
     mfxU8* m_bs;
     mfxU8  m_bitStart;
     mfxU8  m_bitOffset;
+
+    mfxU32 m_codILow;
+    mfxU32 m_codIRange;
+    mfxU32 m_bitsOutstanding;
+    mfxU32 m_BinCountsInNALunits;
+    bool   m_firstBitFlag;
 };
 
 class BitstreamReader
@@ -84,6 +95,52 @@ private:
     bool   m_emulation;
 };
 
+#define NUM_CABAC_CONTEXT ((188+63)&~63)
+
+enum // Syntax element type for HEVC
+{
+    QT_CBF_HEVC = 0,
+    QT_ROOT_CBF_HEVC = 1,
+    LAST_X_HEVC = 2,
+    LAST_Y_HEVC = 3,
+    SIG_COEFF_GROUP_FLAG_HEVC = 4,
+    SIG_FLAG_HEVC = 5,
+    ONE_FLAG_HEVC = 6,
+    ABS_FLAG_HEVC = 7,
+    TRANS_SUBDIV_FLAG_HEVC = 8,
+    TRANSFORMSKIP_FLAG_HEVC = 9,
+    CU_TRANSQUANT_BYPASS_FLAG_CTX = 10,
+    SPLIT_CODING_UNIT_FLAG_HEVC = 11,
+    SKIP_FLAG_HEVC = 12,
+    MERGE_FLAG_HEVC = 13,
+    MERGE_IDX_HEVC = 14,
+    PART_SIZE_HEVC = 15,
+    AMP_SPLIT_POSITION_HEVC = 16,
+    PRED_MODE_HEVC = 17,
+    INTRA_LUMA_PRED_MODE_HEVC = 18,
+    INTRA_CHROMA_PRED_MODE_HEVC = 19,
+    INTER_DIR_HEVC = 20,
+    MVD_HEVC = 21,
+    REF_FRAME_IDX_HEVC = 22,
+    DQP_HEVC = 23,
+    MVP_IDX_HEVC = 24,
+    SAO_MERGE_FLAG_HEVC = 25,
+    SAO_TYPE_IDX_HEVC = 26,
+    END_OF_SLICE_FLAG_HEVC = 27,
+
+    MAIN_SYNTAX_ELEMENT_NUMBER_HEVC
+};
+/////
+mfxU32 AddEmulationPreventionAndCopy(
+    mfxU8* data,
+    mfxU32 lenght,
+    mfxU8*                           bsDataStart,
+    mfxU8*                           bsEnd,
+    bool                             bEmulationByteInsertion);
+
+
+extern const mfxU32 tab_ctxIdxOffset[MAIN_SYNTAX_ELEMENT_NUMBER_HEVC];
+#define CONTEXT(context_array,a) (context_array+tab_ctxIdxOffset[a])
 class HeaderReader
 {
 public:
@@ -112,7 +169,8 @@ public:
     void GetPrefixSEI(Task const & task, mfxU8*& buf, mfxU32& len);
     void GetSuffixSEI(Task const & task, mfxU8*& buf, mfxU32& len);
     void GetSSH(Task const & task, mfxU32 id, mfxU8*& buf, mfxU32& len, mfxU32* qpd_offset = 0);
-
+    void GetSkipSlice(Task const & task, mfxU32 id, mfxU8*& buf, mfxU32& len, mfxU32* qpd_offset = 0);
+    void codingTree(mfxU32 xCtu, mfxU32 yCtu, mfxU32 log2CtuSize, BitstreamWriter& bs, const Slice& slice, mfxU32 x0, mfxU32 y0, mfxU8* tabl);
     static void PackNALU (BitstreamWriter& bs, NALU  const &  nalu);
     static void PackAUD  (BitstreamWriter& bs, mfxU8 pic_type);
     static void PackVPS  (BitstreamWriter& bs, VPS   const &  vps);

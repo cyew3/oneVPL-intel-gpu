@@ -366,6 +366,8 @@ typedef struct _Task : DpbFrame
     RoiData         m_roi[MAX_NUM_ROI];
     mfxU16          m_numRoi;
 
+    mfxU16        m_SkipMode;
+
 }Task;
 
 enum
@@ -520,6 +522,7 @@ namespace ExtBuffer
         _CopyPar1(MaxQPP);
         _CopyPar1(MinQPB);
         _CopyPar1(MaxQPB);
+        _CopyPar1(SkipFrame);
     }
 
     inline void  CopySupportedParams(mfxExtCodingOption3& buf_dst, mfxExtCodingOption3& buf_src)
@@ -1071,5 +1074,73 @@ mfxStatus CheckAndFixRoi(
         mfxFrameData const & data,
         mfxFrameInfo const & info);
 #endif // removed dependency from fwrite(). Custom writing to file shouldn't be present in MSDK releases w/o documentation and testing
+
+
+enum
+{
+    HEVC_SKIPFRAME_NO                        = 0,
+    HEVC_SKIPFRAME_INSERT_DUMMY              = 1,
+    HEVC_SKIPFRAME_INSERT_DUMMY_PROTECTED    = 2,
+    HEVC_SKIPFRAME_INSERT_NOTHING            = 3,
+    HEVC_SKIPFRAME_BRC_ONLY                  = 4,
+    HEVC_SKIPFRAME_EXT_PSEUDO                = 5,
+};
+
+class HevcSkipMode
+{
+public:
+    HevcSkipMode(): m_mode(0) 
+    {};
+    HevcSkipMode(mfxU16 mode): m_mode(mode) 
+    {};
+private:
+    mfxU16 m_mode;
+public:
+    void SetMode(mfxU16 skipModeMFX, bool bProtected)
+    {
+        switch (skipModeMFX)
+        {
+        case MFX_SKIPFRAME_INSERT_DUMMY :
+            m_mode = (mfxU16)(bProtected ? HEVC_SKIPFRAME_INSERT_DUMMY_PROTECTED : HEVC_SKIPFRAME_INSERT_DUMMY);
+            break;
+        case MFX_SKIPFRAME_INSERT_NOTHING:
+            m_mode = HEVC_SKIPFRAME_INSERT_NOTHING;
+            break;
+        case MFX_SKIPFRAME_BRC_ONLY:
+            m_mode = HEVC_SKIPFRAME_BRC_ONLY;
+            break;
+        default:
+            m_mode = HEVC_SKIPFRAME_NO;
+            break;        
+        }  
+    }
+    void SetPseudoSkip ()
+    {
+        m_mode = HEVC_SKIPFRAME_EXT_PSEUDO;    
+    }
+    mfxU16 GetMode() {return m_mode;}
+
+    bool NeedInputReplacement()
+    {
+        return m_mode == HEVC_SKIPFRAME_EXT_PSEUDO;
+    }
+    bool NeedDriverCall()
+    {
+        return m_mode == HEVC_SKIPFRAME_INSERT_DUMMY_PROTECTED || m_mode == HEVC_SKIPFRAME_EXT_PSEUDO || m_mode == HEVC_SKIPFRAME_NO || m_mode == HEVC_SKIPFRAME_EXT_PSEUDO;
+    }
+    bool NeedSkipSliceGen()
+    {
+        return m_mode == HEVC_SKIPFRAME_INSERT_DUMMY_PROTECTED || m_mode == HEVC_SKIPFRAME_INSERT_DUMMY ;
+    }
+    bool NeedCurrentFrameSkipping()
+    {
+        return m_mode == HEVC_SKIPFRAME_INSERT_DUMMY_PROTECTED || m_mode == HEVC_SKIPFRAME_INSERT_DUMMY || m_mode == HEVC_SKIPFRAME_INSERT_NOTHING;
+    }
+    bool NeedNumSkipAdding()
+    {
+         return m_mode == HEVC_SKIPFRAME_BRC_ONLY;
+    }
+};
+
 }; //namespace MfxHwH265Encode
 #endif

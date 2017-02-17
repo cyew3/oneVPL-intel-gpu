@@ -3014,7 +3014,24 @@ void ConfigureTask(
     mfxExtAVCRefListCtrl*   pExtListCtrl = ExtBuffer::Get(task.m_ctrl);
 
     mfxU16 IntRefType = par.m_ext.CO2.IntRefType;
+    task.m_SkipMode = 0;
 
+    if (task.m_ctrl.SkipFrame)
+    {
+        mfxExtCodingOption2 *CO2RT = ExtBuffer::Get(task.m_ctrl);
+        HevcSkipMode mode;
+        mode.SetMode((CO2RT && CO2RT->SkipFrame) ? CO2RT->SkipFrame : par.m_ext.CO2.SkipFrame, par.Protected != 0);
+        if (mode.NeedCurrentFrameSkipping() && (!(task.m_frameType & MFX_FRAMETYPE_REF) || (par.mfx.GopRefDist == 1 && (task.m_frameType & MFX_FRAMETYPE_P))))
+        {
+            task.m_SkipMode = mode.GetMode();
+            task.m_frameType &= ~MFX_FRAMETYPE_REF;
+        }
+        else
+        {
+            task.m_ctrl.SkipFrame = 0;
+            task.m_SkipMode = 0;
+        }
+    }
 #ifdef PRE_SI_TARGET_PLATFORM_GEN10
     // process roi
     mfxExtEncoderROI const * pRoi = &par.m_ext.ROI;
