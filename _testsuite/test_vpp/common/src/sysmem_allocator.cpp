@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -139,10 +139,10 @@ mfxStatus SysMemFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->Pitch = 2 * Width2;
         break;
     case MFX_FOURCC_AYUV:
-        ptr->Y = ptr->B;
-        ptr->U = ptr->Y + 1;
-        ptr->V = ptr->Y + 2;
-        ptr->A = ptr->Y + 3;
+        ptr->V = ptr->B;
+        ptr->U = ptr->V + 1;
+        ptr->Y = ptr->V + 2;
+        ptr->A = ptr->V + 3;
         ptr->Pitch = 4 * Width2;
         break;
     case MFX_FOURCC_Y210:
