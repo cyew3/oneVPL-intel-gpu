@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2016, Intel Corporation
+Copyright (c) 2005-2017, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -157,6 +157,29 @@ public:
         MSDK_SAFE_DELETE_ARRAY(SurfacesPool);
         PoolSize   = 0;
         LastPicked = 0xffff;
+    }
+
+    mfxStatus UpdatePicStructs(mfxU16 picstruct)
+    {
+        MSDK_CHECK_POINTER(SurfacesPool, MFX_ERR_NULL_PTR);
+
+        switch (picstruct & 0xf)
+        {
+        case MFX_PICSTRUCT_PROGRESSIVE:
+        case MFX_PICSTRUCT_FIELD_TFF:
+        case MFX_PICSTRUCT_FIELD_BFF:
+            break;
+
+        default:
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+        }
+
+        for (mfxU16 i = 0; i < PoolSize; ++i)
+        {
+            SurfacesPool[i].Info.PicStruct = picstruct;
+        }
+
+        return MFX_ERR_NONE;
     }
 
     mfxFrameSurface1* GetFreeSurface_FEI()

@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2016, Intel Corporation
+Copyright (c) 2005-2017, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -734,7 +734,9 @@ mfxStatus CEncodingPipeline::SetSequenceParameters()
     mfxStatus sts = UpdateVideoParam(); // update settings according to those that exposed by MSDK library
     MSDK_CHECK_STATUS(sts, "UpdateVideoParam failed");
 
-    /* Get BRef type and active P/B refs */
+    mfxU16 cached_picstruct = m_picStruct;
+
+    // Get adjusted BRef type, active P/B refs, picstruct and other
     if (m_pFEI_PreENC)
     {
         m_pFEI_PreENC->GetRefInfo(m_picStruct, m_refDist, m_numRefFrame, m_gopSize, m_gopOptFlag, m_idrInterval,
@@ -764,6 +766,25 @@ mfxStatus CEncodingPipeline::SetSequenceParameters()
         msdk_printf(MSDK_STRING("\nWARNING: Incompatible video parameters adjusted by MSDK library!\n"));
     }
 
+    // Update picstruct in allocated frames
+    if (cached_picstruct != m_picStruct)
+    {
+        sts = m_DecSurfaces.UpdatePicStructs(m_picStruct);
+        MSDK_CHECK_STATUS(sts, "m_DecSurfaces.UpdatePicStructs failed");
+
+        sts = m_DSSurfaces.UpdatePicStructs(m_picStruct);
+        MSDK_CHECK_STATUS(sts, "m_DSSurfaces.UpdatePicStructs failed");
+
+        sts = m_VppSurfaces.UpdatePicStructs(m_picStruct);
+        MSDK_CHECK_STATUS(sts, "m_VppSurfaces.UpdatePicStructs failed");
+
+        sts = m_EncSurfaces.UpdatePicStructs(m_picStruct);
+        MSDK_CHECK_STATUS(sts, "m_EncSurfaces.UpdatePicStructs failed");
+
+        sts = m_ReconSurfaces.UpdatePicStructs(m_picStruct);
+        MSDK_CHECK_STATUS(sts, "m_ReconSurfaces.UpdatePicStructs failed");
+    }
+
     /* Initialize task pool */
     m_inputTasks.Init(m_refDist, m_gopOptFlag, m_numRefFrame, m_numRefFrame + 1, m_log2frameNumMax);
 
@@ -774,7 +795,7 @@ mfxStatus CEncodingPipeline::SetSequenceParameters()
     m_taskInitializationParams.NumRefActiveBL0 = m_numRefActiveBL0;
     m_taskInitializationParams.NumRefActiveBL1 = m_numRefActiveBL1;
 
-    m_taskInitializationParams.NumMVPredictorsP = m_appCfg.PipelineCfg.NumMVPredictorsP = m_appCfg.bNPredSpecified_Pl0 ?
+    m_taskInitializationParams.NumMVPredictorsP   = m_appCfg.PipelineCfg.NumMVPredictorsP = m_appCfg.bNPredSpecified_Pl0 ?
         m_appCfg.NumMVPredictors_Pl0 : (std::min)(mfxU16(m_numRefFrame*m_numOfFields), MaxFeiEncMVPNum);
 
     m_taskInitializationParams.NumMVPredictorsBL0 = m_appCfg.PipelineCfg.NumMVPredictorsBL0 = m_appCfg.bNPredSpecified_Bl0 ?
