@@ -10,7 +10,13 @@ Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
 
 #pragma once
 
+#if defined(_WIN32) || defined(_WIN64) || __cplusplus >= 201103L
 #define TYPEDEF_MEMBER(base, member, name) typedef std::remove_reference<decltype(((base*)0)->member)>::type name;
+#else
+#if defined(__GNUC__)
+#define TYPEDEF_MEMBER(base, member, name) typedef typeof(((base*)0)->member) name;
+#endif
+#endif
 TYPEDEF_MEMBER(mfxExtOpaqueSurfaceAlloc,  In,                  mfxExtOpaqueSurfaceAlloc_InOut)
 TYPEDEF_MEMBER(mfxExtAVCRefListCtrl,      PreferredRefList[0], mfxExtAVCRefListCtrl_Entry)
 TYPEDEF_MEMBER(mfxExtPictureTimingSEI,    TimeStamp[0],        mfxExtPictureTimingSEI_TimeStamp)
