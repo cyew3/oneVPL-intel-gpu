@@ -550,7 +550,6 @@ std::string DumpContext::dump(const std::string structName, const mfxPAKInput &_
 {
     std::string str;
 
-    DUMP_FIELD_RESERVED(reserved);
     if (_struct.InSurface)
     {
         str += dump(structName + ".InSurface", *_struct.InSurface) + "\n";
@@ -590,6 +589,23 @@ std::string DumpContext::dump(const std::string structName, const mfxPAKInput &_
         }
     }
     str += dump_mfxExtParams(structName, _struct) + "\n";
+    DUMP_FIELD(NumPayload);
+    if (_struct.Payload)
+    {
+        for (int i = 0; i < _struct.NumPayload; i++)
+        {
+            if (_struct.Payload[i])
+            {
+                str += dump(structName + ".Payload[" + ToString(i) + "]", *_struct.Payload[i]) + "\n";
+            }
+            else
+            {
+                str += structName + ".Payload[" + ToString(i) +"]=NULL\n";
+            }
+        }
+    }
+
+    DUMP_FIELD_RESERVED(reserved);
 
     return str;
 }

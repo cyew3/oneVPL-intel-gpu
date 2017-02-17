@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2014-2016 Intel Corporation.  All rights reserved.
+Copyright (C) 2014-2017 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -38,8 +38,6 @@ extern "C"
 #endif /* __cplusplus */
 
 typedef struct {
-    mfxU32  reserved[32];
-
     mfxFrameSurface1 *InSurface;
 
     mfxU16  NumFrameL0;
@@ -49,10 +47,15 @@ typedef struct {
 
     mfxU16  NumExtParam;
     mfxExtBuffer    **ExtParam;
+
+    mfxU16 NumPayload;
+    mfxPayload      **Payload;
+
+    mfxU32 reserved[32];
 } mfxPAKInput;
 
 typedef struct {
-    mfxBitstream     *Bs; 
+    mfxBitstream     *Bs;
 
     mfxFrameSurface1 *OutSurface;
 
