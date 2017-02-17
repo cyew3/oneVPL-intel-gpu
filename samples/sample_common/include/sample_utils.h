@@ -105,7 +105,7 @@ public :
     virtual ~CSmplYUVReader();
 
     virtual void Close();
-    virtual mfxStatus Init(std::list<msdk_string> inputs, mfxU32 ColorFormat);
+    virtual mfxStatus Init(std::list<msdk_string> inputs, mfxU32 ColorFormat, bool shouldShiftP010=false);
     virtual mfxStatus LoadNextFrame(mfxFrameSurface1* pSurface);
     virtual void Reset();
     mfxU32 m_ColorFormat; // color format of input YUV data, YUV420 or NV12
@@ -114,6 +114,7 @@ protected:
 
     std::vector<FILE*> m_files;
 
+	bool shouldShiftP010High;
     bool m_bInited;
 };
 

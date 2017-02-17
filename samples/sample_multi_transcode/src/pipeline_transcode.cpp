@@ -3558,6 +3558,8 @@ mfxStatus CTranscodingPipeline::AllocAndInitVppDoNotUse(sInputParams *pInParams)
 
     m_VppDoNotUse.NumAlg = (mfxU32)filtersDisabled.size();
 
+	if(m_VppDoNotUse.AlgList)
+		delete[] m_VppDoNotUse.AlgList;
     m_VppDoNotUse.AlgList = new mfxU32 [m_VppDoNotUse.NumAlg];
     MSDK_CHECK_POINTER(m_VppDoNotUse.AlgList,  MFX_ERR_MEMORY_ALLOC);
     MSDK_MEMCPY(m_VppDoNotUse.AlgList,&filtersDisabled[0],sizeof(mfxU32)*filtersDisabled.size());

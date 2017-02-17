@@ -138,7 +138,9 @@ struct sInputParams
     mfxU32 nMaxFrameSize;
 
     bool bUncut;
-    bool isHEVCHW;
+	bool shouldUseShiftedP010Enc;
+	bool shouldUseShiftedP010VPP;
+
     msdk_char DumpFileName[MSDK_MAX_FILENAME_LEN];
 
 #if defined (ENABLE_V4L2_SUPPORT)
