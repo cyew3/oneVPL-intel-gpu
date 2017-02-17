@@ -1432,8 +1432,8 @@ bool MfxHwH264Encode::IsRunTimeOnlyExtBuffer(mfxU32 id)
 bool MfxHwH264Encode::IsRunTimeExtBufferIdSupported(MfxVideoParam const & video, mfxU32 id)
 {
 #if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
-    mfxExtFeiParam const * feiParam = (mfxExtFeiParam*)GetExtBuffer(video);
-    bool isFeiENCPAK = feiParam && (feiParam->Func == MFX_FEI_FUNCTION_ENCODE);
+    mfxExtFeiParam const * feiParam = GetExtBuffer(video);
+    bool isFeiENCPAK = feiParam->Func == MFX_FEI_FUNCTION_ENCODE;
 #else
     (void)video;
 #endif
@@ -1459,11 +1459,16 @@ bool MfxHwH264Encode::IsRunTimeExtBufferIdSupported(MfxVideoParam const & video,
 #endif
 #if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
         || (isFeiENCPAK &&
-           (   id == MFX_EXTBUFF_FEI_ENC_CTRL
-            || id == MFX_EXTBUFF_FEI_ENC_MB
-            || id == MFX_EXTBUFF_FEI_ENC_MV_PRED
-            || id == MFX_EXTBUFF_FEI_ENC_QP
-            || id == MFX_EXTBUFF_FEI_SLICE
+             (  id == MFX_EXTBUFF_FEI_SLICE
+             || id == MFX_EXTBUFF_FEI_ENC_CTRL
+             || id == MFX_EXTBUFF_FEI_ENC_MV_PRED
+             || id == MFX_EXTBUFF_FEI_REPACK_CTRL
+             || id == MFX_EXTBUFF_FEI_ENC_MB
+             || id == MFX_EXTBUFF_FEI_ENC_QP
+             || id == MFX_EXTBUFF_FEI_ENC_MB_STAT
+             || id == MFX_EXTBUFF_FEI_ENC_MV
+             || id == MFX_EXTBUFF_FEI_PAK_CTRL
+             || id == MFX_EXTBUFF_PRED_WEIGHT_TABLE
            ))
 #endif
         );
@@ -1472,8 +1477,8 @@ bool MfxHwH264Encode::IsRunTimeExtBufferIdSupported(MfxVideoParam const & video,
 bool MfxHwH264Encode::IsRunTimeExtBufferPairAllowed(MfxVideoParam const & video, mfxU32 id)
 {
 #if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
-    mfxExtFeiParam const * feiParam = (mfxExtFeiParam*)GetExtBuffer(video);
-    bool isFeiENCPAK = feiParam && (feiParam->Func == MFX_FEI_FUNCTION_ENCODE);
+    mfxExtFeiParam const * feiParam = GetExtBuffer(video);
+    bool isFeiENCPAK = feiParam->Func == MFX_FEI_FUNCTION_ENCODE;
 #else
     (void)video;
 #endif
@@ -1499,8 +1504,8 @@ bool MfxHwH264Encode::IsRunTimeExtBufferPairAllowed(MfxVideoParam const & video,
 bool MfxHwH264Encode::IsRunTimeExtBufferPairRequired(MfxVideoParam const & video, mfxU32 id)
 {
 #if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
-    mfxExtFeiParam const * feiParam = (mfxExtFeiParam*)GetExtBuffer(video);
-    bool isFeiENCPAK = feiParam && (feiParam->Func == MFX_FEI_FUNCTION_ENCODE);
+    mfxExtFeiParam const * feiParam = GetExtBuffer(video);
+    bool isFeiENCPAK = feiParam->Func == MFX_FEI_FUNCTION_ENCODE;
 
     return (isFeiENCPAK &&
             (  id == MFX_EXTBUFF_FEI_SLICE
@@ -1512,6 +1517,7 @@ bool MfxHwH264Encode::IsRunTimeExtBufferPairRequired(MfxVideoParam const & video
             || id == MFX_EXTBUFF_FEI_ENC_MB_STAT
             || id == MFX_EXTBUFF_FEI_ENC_MV
             || id == MFX_EXTBUFF_FEI_PAK_CTRL
+            || id == MFX_EXTBUFF_PRED_WEIGHT_TABLE
            ));
 #else
     (void)id;
@@ -1998,12 +2004,12 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     mfxExtMoveRect *           extMoveRect  = GetExtBuffer(par);
     mfxExtPredWeightTable *    extPwt       = GetExtBuffer(par);
     mfxExtFeiParam *           feiParam     = GetExtBuffer(par);
-    bool isENCPAK = feiParam && ( (feiParam->Func == MFX_FEI_FUNCTION_ENCODE) ||
-                                  (feiParam->Func == MFX_FEI_FUNCTION_ENC)    ||
-                                  (feiParam->Func == MFX_FEI_FUNCTION_PAK) );
+    bool isENCPAK = (feiParam->Func == MFX_FEI_FUNCTION_ENCODE) ||
+                    (feiParam->Func == MFX_FEI_FUNCTION_ENC)    ||
+                    (feiParam->Func == MFX_FEI_FUNCTION_PAK);
     bool sliceRowAlligned = true;
 
-    // check hw capabilities
+    // check HW capabilities
     if (par.mfx.FrameInfo.Width  > hwCaps.MaxPicWidth ||
         par.mfx.FrameInfo.Height > hwCaps.MaxPicHeight)
         return Error(MFX_WRN_PARTIAL_ACCELERATION);
@@ -5980,8 +5986,8 @@ mfxStatus MfxHwH264Encode::CheckFEIRunTimeExtBuffersContent(
     mfxStatus checkSts = MFX_ERR_NONE;
 
 #if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
-    mfxExtFeiParam const * feiParam = (mfxExtFeiParam*)GetExtBuffer(video);
-    bool isFeiENCPAK = feiParam && (feiParam->Func == MFX_FEI_FUNCTION_ENCODE);
+    mfxExtFeiParam const * feiParam = GetExtBuffer(video);
+    bool isFeiENCPAK = feiParam->Func == MFX_FEI_FUNCTION_ENCODE;
 
     if (!isFeiENCPAK) return MFX_ERR_NONE;
 
@@ -5992,26 +5998,38 @@ mfxStatus MfxHwH264Encode::CheckFEIRunTimeExtBuffersContent(
         switch (ctrl->ExtParam[i]->BufferId)
         {
         case MFX_EXTBUFF_FEI_SLICE:
+        {
+            mfxExtFeiSliceHeader* pSliceHeader = reinterpret_cast<mfxExtFeiSliceHeader*>(ctrl->ExtParam[i]);
+            MFX_CHECK_NULL_PTR1(pSliceHeader->Slice);
+        }
             break;
+
         case MFX_EXTBUFF_FEI_ENC_CTRL:
         {
             mfxExtFeiEncFrameCtrl* feiEncCtrl = reinterpret_cast<mfxExtFeiEncFrameCtrl*>(ctrl->ExtParam[i]);
 
-            if (feiEncCtrl->SearchWindow == 0) { return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM; }
+            MFX_CHECK(feiEncCtrl->SearchWindow != 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
             mfxExtCodingOption const* extOpt = GetExtBuffer(video);
-            if (((extOpt && extOpt->IntraPredBlockSize == MFX_BLOCKSIZE_MIN_16X16) || video.mfx.CodecProfile == MFX_PROFILE_AVC_BASELINE || video.mfx.CodecProfile == MFX_PROFILE_AVC_MAIN)
-                && !(feiEncCtrl->IntraPartMask & 0x02))
+            if ( ( extOpt->IntraPredBlockSize == MFX_BLOCKSIZE_MIN_16X16 || (video.mfx.CodecProfile & MFX_PROFILE_AVC_BASELINE) == MFX_PROFILE_AVC_BASELINE
+                || video.mfx.CodecProfile == MFX_PROFILE_AVC_MAIN ) && !(feiEncCtrl->IntraPartMask & 0x02))
             {
                 // For Main and Baseline profiles 8x8 transform is prohibited
                 return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
             }
         }
             break;
+
         case MFX_EXTBUFF_FEI_ENC_MV_PRED:
             break;
+
         case MFX_EXTBUFF_FEI_REPACK_CTRL:
+        {
+            mfxExtFeiRepackCtrl* feiRepackCtrl = reinterpret_cast<mfxExtFeiRepackCtrl*>(ctrl->ExtParam[i]);
+            MFX_CHECK(feiRepackCtrl->NumPasses <= 4, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+        }
             break;
+
         case MFX_EXTBUFF_FEI_ENC_MB:
             break;
         case MFX_EXTBUFF_FEI_ENC_QP:
@@ -6022,6 +6040,7 @@ mfxStatus MfxHwH264Encode::CheckFEIRunTimeExtBuffersContent(
             break;
         case MFX_EXTBUFF_FEI_PAK_CTRL:
             break;
+
         case MFX_EXTBUFF_PRED_WEIGHT_TABLE:
         {
             mfxExtPredWeightTable* feiWeightTable = reinterpret_cast<mfxExtPredWeightTable*>(ctrl->ExtParam[i]);
@@ -6031,14 +6050,14 @@ mfxStatus MfxHwH264Encode::CheckFEIRunTimeExtBuffersContent(
             {
                 // out_of_scope, set default value 6
                 feiWeightTable->LumaLog2WeightDenom = 6;
-                checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+                return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
             }
 
             if (feiWeightTable->ChromaLog2WeightDenom > 7)
             {
                 // for FEI Encode, chrome weight pred is not supported
                 feiWeightTable->ChromaLog2WeightDenom = 0;
-                //checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+                return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
             }
 
             // Validate weights & offset. Currently for P frame only.
@@ -6052,7 +6071,7 @@ mfxStatus MfxHwH264Encode::CheckFEIRunTimeExtBuffersContent(
                     {
                         // out_of_scope, use default value pow(2, Denom)
                         feiWeightTable->Weights[iL0][n][iY][iWeight] = (1 << feiWeightTable->LumaLog2WeightDenom);
-                        checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+                        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
                     }
 
                     // check luma offset
@@ -6061,7 +6080,7 @@ mfxStatus MfxHwH264Encode::CheckFEIRunTimeExtBuffersContent(
                     {
                         // out_of_scope, use default value 0
                         feiWeightTable->Weights[iL0][n][iY][iOffset] = 0;
-                        checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+                        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
                     }
                 }
 
@@ -6075,7 +6094,7 @@ mfxStatus MfxHwH264Encode::CheckFEIRunTimeExtBuffersContent(
                                 feiWeightTable->Weights[iL0][n][x][y] < -128)
                             {
                                 feiWeightTable->Weights[iL0][n][x][y] = 0;
-                                //checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+                                return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
                             }
                         }
                     }

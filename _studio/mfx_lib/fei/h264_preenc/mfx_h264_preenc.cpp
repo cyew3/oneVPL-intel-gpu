@@ -109,8 +109,8 @@ mfxStatus CheckVideoParamQueryLikePreEnc(
     bool changed(false);
     bool warning(false);
 
-    mfxExtFeiParam *           feiParam     = GetExtBuffer(par);
-    bool isPREENC = feiParam && (MFX_FEI_FUNCTION_PREENC == feiParam->Func);
+    mfxExtFeiParam * feiParam = GetExtBuffer(par);
+    bool isPREENC = MFX_FEI_FUNCTION_PREENC == feiParam->Func;
 
     // check hw capabilities
     if (par.mfx.FrameInfo.Width  > hwCaps.MaxPicWidth ||
@@ -118,7 +118,7 @@ mfxStatus CheckVideoParamQueryLikePreEnc(
         return Error(MFX_ERR_UNSUPPORTED);
 
     if ((par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PART1 )!= MFX_PICSTRUCT_PROGRESSIVE && hwCaps.NoInterlacedField){
-        if(par.mfx.LowPower == MFX_CODINGOPTION_ON)
+        if(IsOn(par.mfx.LowPower))
         {
             par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
             changed = true;
@@ -297,10 +297,7 @@ mfxStatus CheckVideoParamQueryLikePreEnc(
         par.mfx.FrameInfo.ChromaFormat = 0;
     }
 
-    if ((isPREENC) && !(
-            (MFX_CODINGOPTION_UNKNOWN == feiParam->SingleFieldProcessing) ||
-            (MFX_CODINGOPTION_ON      == feiParam->SingleFieldProcessing) ||
-            (MFX_CODINGOPTION_OFF     == feiParam->SingleFieldProcessing)) )
+    if (isPREENC && !CheckTriStateOption(feiParam->SingleFieldProcessing))
         unsupported = true;
 
     return unsupported
