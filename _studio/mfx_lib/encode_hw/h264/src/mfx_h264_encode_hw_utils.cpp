@@ -1202,7 +1202,7 @@ DdiTask * TaskManager::FindFrameToEncode()
     return toEncode;
 }
 
-namespace HwUtils
+namespace
 {
     struct FindInDpbByExtFrameTag
     {
@@ -1237,7 +1237,7 @@ namespace HwUtils
                 if (m_recons[lhs.m_frameIdx].m_frameNumWrap < m_recons[rhs.m_frameIdx].m_frameNumWrap)
                     return lhs.m_refBase > rhs.m_refBase;
                 else
-                    return false;
+                    return m_recons[lhs.m_frameIdx].m_frameNumWrap < m_recons[rhs.m_frameIdx].m_frameNumWrap;
             else if (!lhs.m_longterm && rhs.m_longterm)
                 return true;
             else if (lhs.m_longterm && !rhs.m_longterm)
@@ -1344,8 +1344,8 @@ void TaskManager::UpdateDpb(
                 usedLtIdx[m_recons[initDpb[i].m_frameIdx].m_longTermFrameIdx] = 1;
 
         // check longterm list
-        // when frameOrder is sent first time corresponding 'short-term' reference is marked 'long-term'
-        // when frameOrder is sent second time corresponding 'long-term' reference is marked 'unused'
+        // when frameOrder is sent first time corresponsing 'short-term' reference is marked 'long-term'
+        // when frameOrder is sent second time corresponsing 'long-term' reference is marked 'unused'
         if (ctrl)
         {
             // adaptive marking is supported only for progressive encoding
@@ -1356,7 +1356,7 @@ void TaskManager::UpdateDpb(
                 DpbFrame * ref = std::find_if(
                     currDpb.Begin(),
                     currDpb.End(),
-                    HwUtils::FindInDpbByExtFrameTag(m_recons, ctrl->RejectedRefList[i].FrameOrder));
+                    FindInDpbByExtFrameTag(m_recons, ctrl->RejectedRefList[i].FrameOrder));
 
                 if (ref != currDpb.End())
                 {
@@ -1380,7 +1380,7 @@ void TaskManager::UpdateDpb(
                 DpbFrame * dpbFrame = std::find_if(
                     currDpb.Begin(),
                     currDpb.End(),
-                    HwUtils::FindInDpbByExtFrameTag(m_recons, ctrl->LongTermRefList[i].FrameOrder));
+                    FindInDpbByExtFrameTag(m_recons, ctrl->LongTermRefList[i].FrameOrder));
 
                 if (dpbFrame != currDpb.End() && dpbFrame->m_longterm == 0)
                 {
@@ -1414,7 +1414,7 @@ void TaskManager::UpdateDpb(
                     // first make free space in dpb if it is full
                     if (currDpb.Size() == m_video.mfx.NumRefFrame)
                     {
-                        DpbFrame * toRemove = std::min_element(currDpb.Begin(), currDpb.End(), HwUtils::OrderByFrameNumWrap(m_recons));
+                        DpbFrame * toRemove = std::min_element(currDpb.Begin(), currDpb.End(), OrderByFrameNumWrap(m_recons));
 
                         assert(toRemove != currDpb.End());
                         if (toRemove == currDpb.End())
@@ -1427,7 +1427,7 @@ void TaskManager::UpdateDpb(
                             toRemove = std::min_element(
                                 currDpb.Begin(),
                                 currDpb.End(),
-                                HwUtils::OrderByDisplayOrder(m_recons));
+                                OrderByDisplayOrder(m_recons));
                             assert(toRemove->m_longterm == 1); // must be longterm ref
 
                             Reconstruct const & ref = m_recons[toRemove->m_frameIdx];
@@ -1481,7 +1481,7 @@ void TaskManager::UpdateDpb(
             {
                 if (currDpb.Size() == m_video.mfx.NumRefFrame)
                 {
-                    DpbFrame * toRemove = std::min_element(currDpb.Begin(), currDpb.End(), HwUtils::OrderByFrameNumWrap(m_recons));
+                    DpbFrame * toRemove = std::min_element(currDpb.Begin(), currDpb.End(), OrderByFrameNumWrap(m_recons));
                     assert(toRemove != currDpb.End());
                     if (toRemove == currDpb.End())
                         return;
@@ -1493,7 +1493,7 @@ void TaskManager::UpdateDpb(
                         toRemove = std::min_element(
                             currDpb.Begin(),
                             currDpb.End(),
-                            HwUtils::OrderByDisplayOrder(m_recons));
+                            OrderByDisplayOrder(m_recons));
                         assert(toRemove->m_longterm == 1); // must be longterm ref
 
                         Reconstruct const & ref = m_recons[toRemove->m_frameIdx];

@@ -5,22 +5,28 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
 //
+
+#include "mfx_common.h"
 
 #ifndef _MFX_H264_PAK_H_
 #define _MFX_H264_PAK_H_
 
 #if defined(MFX_ENABLE_H264_VIDEO_ENCODE_HW) && defined(MFX_ENABLE_H264_VIDEO_FEI_PAK)
 
-#include "fei_common.h"
 #include "mfx_pak_ext.h"
-//#include "mfxpak.h"
-//#include "mfx_h264_encode_hw_utils.h"
+#include "mfx_h264_encode_hw_utils.h"
+#include "mfxfei.h"
+#include "mfxpak.h"
 
+#include <memory>
+#include <list>
+#include <vector>
+#include <map>
 
-//using namespace MfxHwH264Encode;
-/*
+using namespace MfxHwH264Encode;
+
 namespace MfxEncPAK
 {
 
@@ -32,7 +38,7 @@ public:
      mfxPAKInput  *in;
      mfxPAKOutput *out;
 };
-*/
+
 bool bEnc_PAK(mfxVideoParam *par);
 
 class VideoPAK_PAK:  public VideoPAK_Ext
@@ -51,7 +57,7 @@ public:
 
     mfxStatus Submit(mfxEncodeInternalParams * iParams);
 
-    mfxStatus Query(MfxHwH264Encode::DdiTask& task);
+    mfxStatus Query(DdiTask& task);
 
     static mfxStatus QueryIOSurf(VideoCORE*, mfxVideoParam *par, mfxFrameAllocRequest *request);
 
@@ -61,37 +67,37 @@ public:
                                        mfxPAKOutput *out,
                                        MFX_ENTRY_POINT pEntryPoints[],
                                        mfxU32 &numEntryPoints);
-
     virtual mfxStatus RunFramePAK(mfxPAKInput *in, mfxPAKOutput *out);
 
 private:
 
-    bool                                          m_bInit;
-    VideoCORE*                                    m_core;
+    bool                                      m_bInit;
+    VideoCORE*                                m_core;
 
-    std::list <mfxFrameSurface1*>                 m_SurfacesForOutput;
+    std::list <mfxFrameSurface1*>             m_SurfacesForOutput;
 
-    std::auto_ptr<MfxHwH264Encode::DriverEncoder> m_ddi;
-    std::vector<mfxU32>                           m_recFrameOrder; // !!! HACK !!!
-    ENCODE_CAPS                                   m_caps;
+    std::auto_ptr<DriverEncoder>              m_ddi;
+    std::vector<mfxU32>                       m_recFrameOrder; // !!! HACK !!!
+    std::map<mfxU32, mfxU32>                  m_frameOrder_frameNum;
+    ENCODE_CAPS                               m_caps;
 
-    MfxHwH264Encode::MfxVideoParam                m_video;
-    MfxHwH264Encode::PreAllocatedVector           m_sei;
+    MfxHwH264Encode::MfxVideoParam            m_video;
+    PreAllocatedVector                        m_sei;
 
-    MfxHwH264Encode::MfxFrameAllocResponse        m_rec;
-    MfxHwH264Encode::MfxFrameAllocResponse        m_opaqHren;
+    MfxHwH264Encode::MfxFrameAllocResponse    m_rec;
+    MfxHwH264Encode::MfxFrameAllocResponse    m_opaqHren;
 
-    std::list<MfxHwH264Encode::DdiTask>           m_free;
-    std::list<MfxHwH264Encode::DdiTask>           m_incoming;
-    std::list<MfxHwH264Encode::DdiTask>           m_encoding;
-    MfxHwH264Encode::DdiTask                      m_prevTask;
-    UMC::Mutex                                    m_listMutex;
+    std::list<DdiTask>                        m_free;
+    std::list<DdiTask>                        m_incoming;
+    std::list<DdiTask>                        m_encoding;
+    DdiTask                                   m_prevTask;
+    UMC::Mutex                                m_listMutex;
 
-    mfxU32                                        m_inputFrameType;
-    eMFXHWType                                    m_currentPlatform;
-    eMFXVAType                                    m_currentVaType;
-    mfxU32                                        m_singleFieldProcessingMode;
-    mfxU32                                        m_firstFieldDone;
+    mfxU32                                    m_inputFrameType;
+    eMFXHWType                                m_currentPlatform;
+    eMFXVAType                                m_currentVaType;
+    mfxU32                                    m_singleFieldProcessingMode;
+    mfxU32                                    m_firstFieldDone;
 };
 
 #endif

@@ -936,7 +936,7 @@ namespace
         }
     }
 
-
+    
     DpbFrame const * FindOldestRef(
         ArrayDpbFrame const & dpb,
         mfxU32                tid)
@@ -999,15 +999,14 @@ namespace
 
         mfxU32 m_LongTermIdx;
     };
-};
 
-    bool MfxHwH264Encode::OrderByFrameNumWrap(DpbFrame const & lhs, DpbFrame const & rhs)
+    bool OrderByFrameNumWrap(DpbFrame const & lhs, DpbFrame const & rhs)
     {
         if (!lhs.m_longterm && !rhs.m_longterm)
             if (lhs.m_frameNumWrap < rhs.m_frameNumWrap)
                 return lhs.m_refBase > rhs.m_refBase;
             else
-                return false;
+                return lhs.m_frameNumWrap < rhs.m_frameNumWrap;
         else if (!lhs.m_longterm && rhs.m_longterm)
             return true;
         else if (lhs.m_longterm && !rhs.m_longterm)
@@ -1016,8 +1015,7 @@ namespace
             return lhs.m_longTermPicNum[0] < rhs.m_longTermPicNum[0];
     }
 
-namespace
-{
+
     bool OrderByDisplayOrder(DpbFrame const & lhs, DpbFrame const & rhs)
     {
         return lhs.m_frameOrder < rhs.m_frameOrder;
@@ -1149,7 +1147,7 @@ namespace
 
         if (video.calcParam.numTemporalLayer > 0 &&
             false == ValidateLtrForTemporalScalability(video, task))
-            ctrl = 0; // requested changes in dpb conflict with temporal scalability. Ignore requested dpb changes
+            ctrl = 0; // requested changes in dpb conflict with temporal scalability. Ingore requested dpb changes
 
 #ifndef MFX_PROTECTED_FEATURE_DISABLE
         mfxExtSpecialEncodingModes const * extSpeModes = GetExtBuffer(video);
@@ -1157,6 +1155,8 @@ namespace
 
         if (type & MFX_FRAMETYPE_IDR)
         {
+            bool currFrameIsLongTerm = false;
+
             currDpb.Resize(0);
             UpdateMaxLongTermFrameIdxPlus1(maxLtIdx, 0, 0);
 
@@ -1173,6 +1173,7 @@ namespace
                     if (ctrl->LongTermRefList[i].FrameOrder == task.m_extFrameTag)
                     {
                         marking.long_term_reference_flag = 1;
+                        currFrameIsLongTerm = true;
                         task.m_longTermFrameIdx = 0;
                         break;
                     }
@@ -1203,7 +1204,7 @@ namespace
                     usedLtIdx[initDpb[i].m_longTermIdxPlus1 - 1] = 1;
 
             // check longterm list
-            // when frameOrder is sent first time corresponding 'short-term' reference is marked 'long-term'
+            // when frameOrder is sent first time corresponsing 'short-term' reference is marked 'long-term'
             if (ctrl
 #ifndef MFX_PROTECTED_FEATURE_DISABLE
                 && extSpeModes->refDummyFramesForWiDi == 0  // no explicit DBP modifications for WA WiDi mode
@@ -1600,7 +1601,7 @@ IntraRefreshState MfxHwH264Encode::GetIntraRefreshState(
         
         if ((state.IntraLocation == 0) && (!state.firstFrameInCycle))
         {
-            state.IntraSize = 0; // no refresh between cycles
+            state.IntraSize = 0; // no refresh beetwen cycles
         }
         else
         {
@@ -1756,7 +1757,7 @@ DdiTaskIter MfxHwH264Encode::FindFrameToStartEncode(
         video.AsyncDepth == 1)
         return begin;
 
-    // in case of CQP optimization is applied
+    // in case of CQP optmization is applied
     // dependency between ENC and PAK is removed by encoding reference P frame earlier
     DdiTaskIter first = begin;
     DdiTaskIter second = ++begin;
@@ -2603,7 +2604,7 @@ namespace FadeDetectionHistLSE
         CurPeakPos = GetSegments(curHist, SegmentDivider, SegmentMultiplier, y, numSegments, range, &NumSamples);
 
         if (NumSamples == 0 || NumSamples != NumSamplesRef)
-            return; // invalid or incomparable histograms
+            return; // invalid or uncomparable histograms
 
         for (mfxU16 i = 0; i < numSegments; i++)
         {

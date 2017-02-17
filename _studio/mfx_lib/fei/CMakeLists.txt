@@ -4,7 +4,6 @@ mfx_include_dirs( )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../cmrt_cross_platform/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../encode_hw/h264/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/umc/codec/brc/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/h264_common )
 
 # =============================================================================
 set( sources "" )
@@ -16,18 +15,6 @@ endforeach()
 
 set( defs "-DMFX_VA -DAS_H264LA_PLUGIN ${WARNING_FLAGS}" )
 make_library( h264_la none static )
-
-set( defs "" )
-
-# =============================================================================
-set( sources "" )
-set( sources.plus "" )
-foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/h264_common )
-  file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
-  list( APPEND sources ${srcs})
-endforeach()
-set( defs "-DMFX_VA ${WARNING_FLAGS}" )
-make_library( h264_common none static )
 
 set( defs "" )
 
