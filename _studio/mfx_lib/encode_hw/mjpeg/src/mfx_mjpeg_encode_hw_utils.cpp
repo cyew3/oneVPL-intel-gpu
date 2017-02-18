@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -17,6 +17,8 @@
 #include "jpegbase.h"
 #include "mfx_enc_common.h"
 #include "mfx_mjpeg_encode_interface.h"
+
+#include "umc_automatic_mutex.h"
 
 using namespace MfxHwMJpegEncode;
 
@@ -717,11 +719,15 @@ TaskManager::TaskManager()
 
 TaskManager::~TaskManager()
 {
+    UMC::AutomaticUMCMutex guard(m_mutex);
+
     Close();
 }
 
 mfxStatus TaskManager::Init(mfxU32 maxTaskNum)
 {
+    UMC::AutomaticUMCMutex guard(m_mutex);
+
     if (maxTaskNum > 0 &&
         maxTaskNum < JPEG_DDITASK_MAX_NUM)
     {
@@ -745,6 +751,8 @@ mfxStatus TaskManager::Init(mfxU32 maxTaskNum)
 
 mfxStatus TaskManager::Reset()
 {
+    UMC::AutomaticUMCMutex guard(m_mutex);
+
     if (m_pTaskList)
     {
         for (mfxU32 i = 0; i < m_TaskNum; i++)
@@ -786,6 +794,8 @@ mfxStatus TaskManager::Close()
 
 mfxStatus TaskManager::AssignTask(DdiTask *& newTask)
 {
+    UMC::AutomaticUMCMutex guard(m_mutex);
+
     if (m_pTaskList)
     {
         mfxU32 i;
@@ -813,6 +823,8 @@ mfxStatus TaskManager::AssignTask(DdiTask *& newTask)
 
 mfxStatus TaskManager::RemoveTask(DdiTask & task)
 {
+    UMC::AutomaticUMCMutex guard(m_mutex);
+
     if (m_pTaskList)
     {
         vm_interlocked_xchg32(&task.lInUse, 0);

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFX_MJPEG_ENCODE_HW_UTILS_H__
@@ -34,6 +34,7 @@
 #include <assert.h>
 
 #include "vm_interlocked.h"
+#include "umc_mutex.h"
 
 #include "mfxstructures.h"
 #include "mfxjpeg.h"
@@ -184,6 +185,8 @@ namespace MfxHwMJpegEncode
     private:
         DdiTask * m_pTaskList;
         mfxU32    m_TaskNum;
+
+        UMC::Mutex    m_mutex;
     };
 
 }; // namespace MfxHwMJpegEncode
