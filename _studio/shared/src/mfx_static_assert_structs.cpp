@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfxstructures.h"
@@ -14,6 +14,7 @@
 #include "mfxpak.h"
 #include "mfxfei.h"
 #include "mfxcamera.h"
+#include "mfxvideo.h"
 
 /* .cpp instead of .h to avoid changing of include files dependencies graph
     and not to include unnecessary includes into libmfx library             */
@@ -161,7 +162,11 @@
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtFeiPakMBCtrl         ,72 )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxFeiFunction             ,4  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtFeiParam             ,128)
+#if (MFX_VERSION >= 1023)
+        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxPAKInput                ,200)
+#else
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxPAKInput                ,184)
+#endif
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxPAKOutput               ,32)
     #elif defined(_WIN32) || defined(LINUX32)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtFeiPreEncCtrl        ,120 )
@@ -178,7 +183,11 @@
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtFeiPakMBCtrl         ,68 )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxFeiFunction             ,4  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtFeiParam             ,128)
+#if (MFX_VERSION >= 1023)
+        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxPAKInput                ,164)
+#else
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxPAKInput                ,156)
+#endif
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxPAKOutput               ,16 )
     #endif
 #endif //defined (__MFXFEI_H__)
