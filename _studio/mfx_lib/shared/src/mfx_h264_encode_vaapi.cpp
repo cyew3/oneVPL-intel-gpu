@@ -1294,11 +1294,17 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
 
     if (attrs[idx_map[VAConfigAttribEncROI]].value != VA_ATTRIB_NOT_SUPPORTED)
     {
-        VAConfigAttribValEncROI *VaEncROIValPtr =
-            reinterpret_cast<VAConfigAttribValEncROI *>(&attrs[idx_map[VAConfigAttribEncROI]].value);
-        assert(VaEncROIValPtr->bits.num_roi_regions < 32);
-        m_caps.MaxNumOfROI = VaEncROIValPtr->bits.num_roi_regions;
-        m_caps.ROIBRCPriorityLevelSupport = VaEncROIValPtr->bits.roi_rc_priority_support;
+        // BDW, SKL officially don't support ROI. Let's forbit ROI via setting zero caps
+#ifndef MFX_CLOSED_PLATFORMS_DISABLE
+        if (core->GetHWType() == MFX_HW_BXT)
+        {
+            VAConfigAttribValEncROI *VaEncROIValPtr =
+                reinterpret_cast<VAConfigAttribValEncROI *>(&attrs[idx_map[VAConfigAttribEncROI]].value);
+            assert(VaEncROIValPtr->bits.num_roi_regions < 32);
+            m_caps.MaxNumOfROI = VaEncROIValPtr->bits.num_roi_regions;
+            m_caps.ROIBRCPriorityLevelSupport = VaEncROIValPtr->bits.roi_rc_priority_support;
+        }
+#endif
     }
     else
     {
