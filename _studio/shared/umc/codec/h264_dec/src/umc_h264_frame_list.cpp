@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -275,7 +275,7 @@ H264DecoderFrame * H264DBPList::findDisplayableByDPBDelay(void)
     Ipp32s count = 0;
     while (pCurr)
     {
-        if ((pCurr->isDisplayable() || (!pCurr->IsDecoded() && pCurr->IsFullFrame())) && !pCurr->wasOutputted() && !pCurr->m_dpb_output_delay)
+        if (pCurr->IsFullFrame() && !pCurr->wasOutputted() && !pCurr->m_dpb_output_delay)
         {
             // corresponding frame
             if (pCurr->RefPicListResetCount(0) > LargestRefPicListResetCount)
@@ -326,7 +326,7 @@ H264DecoderFrame * H264DBPList::findOldestDisplayable(Ipp32s /*dbpSize*/ )
     Ipp32s count = 0;
     while (pCurr)
     {
-        if ((pCurr->isDisplayable() || (!pCurr->IsDecoded() && pCurr->IsFullFrame())) && !pCurr->wasOutputted())
+        if (pCurr->IsFullFrame() && !pCurr->wasOutputted())
         {
             // corresponding frame
             if (pCurr->RefPicListResetCount(0) > LargestRefPicListResetCount)
@@ -363,23 +363,6 @@ H264DecoderFrame * H264DBPList::findOldestDisplayable(Ipp32s /*dbpSize*/ )
 
 }    // findOldestDisplayable
 
-H264DecoderFrame * H264DBPList::findFirstDisplayable()
-{
-    H264DecoderFrame *pCurr = m_pHead;
-
-    while (pCurr)
-    {
-        if ((pCurr->isDisplayable() || !pCurr->IsDecoded()) && !pCurr->wasOutputted())
-        {
-            return pCurr;
-        }
-
-        pCurr = pCurr->future();
-    }
-
-    return 0;
-}    // findFirstDisplayable
-
 Ipp32u H264DBPList::countAllFrames()
 {
     H264DecoderFrame *pCurr = head();
@@ -394,10 +377,6 @@ Ipp32u H264DBPList::countAllFrames()
     return count;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// countNumDisplayable
-//  Return number of displayable frames.
-///////////////////////////////////////////////////////////////////////////////
 Ipp32u H264DBPList::countNumDisplayable()
 {
     H264DecoderFrame *pCurr = head();
@@ -405,13 +384,13 @@ Ipp32u H264DBPList::countNumDisplayable()
 
     while (pCurr)
     {
-        if (((pCurr->isShortTermRef() || pCurr->isLongTermRef()) && pCurr->IsFullFrame()) || ((pCurr->isDisplayable() || (!pCurr->IsDecoded() && pCurr->IsFullFrame())) && !pCurr->wasOutputted()))
+        if (pCurr->IsFullFrame() && (pCurr->isShortTermRef() || pCurr->isLongTermRef() || !pCurr->wasOutputted()))
             NumDisplayable++;
         pCurr = pCurr->future();
     }
 
     return NumDisplayable;
-}    // countNumDisplayable
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // countActiveRefs
@@ -870,7 +849,7 @@ H264DecoderFrame *H264DBPList::findInterViewRef(Ipp32s auIndex, Ipp32u bottomFie
     H264DecoderFrame *pCurr = m_pHead;
     while (pCurr)
     {
-        if (pCurr->m_auIndex == auIndex && pCurr->m_Flags.isActive)
+        if (pCurr->m_auIndex == auIndex && pCurr->m_isActive)
         {
             Ipp32u fieldIdx = pCurr->GetNumberByParity(bottomFieldFlag);
             return pCurr->isInterViewRef(fieldIdx) ? pCurr : 0;

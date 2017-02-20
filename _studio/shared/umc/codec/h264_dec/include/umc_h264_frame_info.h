@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -15,12 +15,54 @@
 #define __UMC_H264_FRAME_INFO_H
 
 #include <vector>
-#include "umc_h264_frame.h"
 
 namespace UMC
 {
 
 class H264DecoderFrame;
+
+extern H264DecoderFrame g_GlobalFakeFrame;
+
+// Struct containing list 0 and list 1 reference picture lists for one slice.
+// Length is plus 1 to provide for null termination.
+class H264DecoderRefPicList
+{
+public:
+    H264DecoderFrame **m_RefPicList;
+    ReferenceFlags    *m_Flags;
+
+    H264DecoderRefPicList()
+    {
+        memset(this, 0, sizeof(H264DecoderRefPicList));
+
+        m_RefPicList = &(m_refPicList1[1]);
+        m_Flags = &(m_flags1[1]);
+        m_flags1[0].field = 0;
+        m_flags1[0].isShortReference = 1;
+
+        m_refPicList1[0] = &g_GlobalFakeFrame;
+    }
+
+    H264DecoderRefPicList(const H264DecoderRefPicList& copy)
+    {
+        m_RefPicList = &(m_refPicList1[1]);
+        m_Flags = &(m_flags1[1]);
+
+        MFX_INTERNAL_CPY(&m_refPicList1, &copy.m_refPicList1, sizeof(m_refPicList1));
+        MFX_INTERNAL_CPY(&m_flags1, &copy.m_flags1, sizeof(m_flags1));
+    }
+
+    H264DecoderRefPicList& operator=(const H264DecoderRefPicList & copy)
+    {
+        MFX_INTERNAL_CPY(&m_refPicList1, &copy.m_refPicList1, sizeof(m_refPicList1));
+        MFX_INTERNAL_CPY(&m_flags1, &copy.m_flags1, sizeof(m_flags1));
+        return *this;
+    }
+
+private:
+    H264DecoderFrame *m_refPicList1[MAX_NUM_REF_FRAMES + 3];
+    ReferenceFlags    m_flags1[MAX_NUM_REF_FRAMES + 3];
+};
 
 class H264DecoderLayer
 {
@@ -332,28 +374,7 @@ public:
         return &m_refPicList[sliceNumber].m_refPicList[list];
     };
 
-    bool CheckReferenceFrameError()
-    {
-        Ipp32u checkedErrorMask = ERROR_FRAME_MINOR | ERROR_FRAME_MAJOR | ERROR_FRAME_REFERENCE_FRAME;
-        for (size_t i = 0; i < m_refPicList.size(); i ++)
-        {
-            H264DecoderRefPicList* list = &m_refPicList[i].m_refPicList[LIST_0];
-            for (size_t k = 0; list->m_RefPicList[k]; k++)
-            {
-                if (list->m_RefPicList[k]->GetError() & checkedErrorMask)
-                    return true;
-            }
-
-            list = &m_refPicList[i].m_refPicList[LIST_1];
-            for (size_t k = 0; list->m_RefPicList[k]; k++)
-            {
-                if (list->m_RefPicList[k]->GetError() & checkedErrorMask)
-                    return true;
-            }
-        }
-
-        return false;
-    }
+    bool CheckReferenceFrameError();
 
     H264DecoderFrameInfo * GetNextAU() {return m_NextAU;}
     H264DecoderFrameInfo * GetPrevAU() {return m_PrevAU;}

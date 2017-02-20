@@ -205,7 +205,7 @@ void MFXTaskSupplier::Reset()
         m_pTaskBroker->Init(m_iThreadNum);
 }
 
-bool MFXTaskSupplier::CheckDecoding(bool should_additional_check, H264DecoderFrame * outputFrame)
+bool MFXTaskSupplier::CheckDecoding(H264DecoderFrame * outputFrame)
 {
     ViewItem &view = GetView(outputFrame->m_viewId);
 
@@ -214,9 +214,6 @@ bool MFXTaskSupplier::CheckDecoding(bool should_additional_check, H264DecoderFra
 
     if (!outputFrame->IsDecodingCompleted())
         return false;
-
-    if (!should_additional_check)
-        return true;
 
     AutomaticUMCMutex guard(m_mGuard);
 
@@ -228,7 +225,7 @@ bool MFXTaskSupplier::CheckDecoding(bool should_additional_check, H264DecoderFra
             !pTmp->m_isShortTermRef[1] &&
             !pTmp->m_isLongTermRef[0] &&
             !pTmp->m_isLongTermRef[1] &&
-            ((pTmp->m_wasOutputted != 0) || (pTmp->m_isDisplayable == 0)))
+            ((pTmp->m_wasOutputted != 0) || (pTmp->IsDecoded() == 0)))
         {
             count++;
             break;

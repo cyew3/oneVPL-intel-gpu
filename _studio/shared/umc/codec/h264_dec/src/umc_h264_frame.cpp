@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -34,8 +34,8 @@ H264DecoderFrame::H264DecoderFrame(MemoryAllocator *pMemoryAllocator, H264_Heap_
     , m_TopSliceCount(0)
     , m_frameOrder(0)
     , m_ErrorType(0)
-    , m_pSlicesInfo(0)
-    , m_pSlicesInfoBottom(0)
+    , m_pSlicesInfo(this, pObjHeap)
+    , m_pSlicesInfoBottom(this, pObjHeap)
     , m_pPreviousFrame(0)
     , m_pFutureFrame(0)
     , m_dFrameTime(-1.0)
@@ -81,21 +81,17 @@ H264DecoderFrame::H264DecoderFrame(MemoryAllocator *pMemoryAllocator, H264_Heap_
 
     ResetRefCounter();
 
-    m_pSlicesInfo = new H264DecoderFrameInfo(this, m_pObjHeap);
-    m_pSlicesInfoBottom = new H264DecoderFrameInfo(this, m_pObjHeap);
-
     m_ID[0] = (Ipp32s) ((Ipp8u *) this - (Ipp8u *) 0);
     m_ID[1] = m_ID[0] + 1;
 
     m_PictureStructureForRef = FRM_STRUCTURE;
 
-    m_Flags.isFull = 0;
-    m_Flags.isDecoded = 0;
-    m_Flags.isDecodingStarted = 0;
-    m_Flags.isDecodingCompleted = 0;
-    m_isDisplayable = 0;
-    m_Flags.isSkipped = 0;
-    m_Flags.isActive = 0;
+    m_isFull = 0;
+    m_isDecoded = 0;
+    m_isDecodingStarted = 0;
+    m_isDecodingCompleted = 0;
+    m_isSkipped = 0;
+    m_isActive = 0;
     m_wasOutputted = 0;
     m_wasDisplayed = 0;
     prepared[0] = false;
@@ -106,14 +102,6 @@ H264DecoderFrame::H264DecoderFrame(MemoryAllocator *pMemoryAllocator, H264_Heap_
 
 H264DecoderFrame::~H264DecoderFrame()
 {
-    if (m_pSlicesInfo)
-    {
-        delete m_pSlicesInfo;
-        delete m_pSlicesInfoBottom;
-        m_pSlicesInfo = 0;
-        m_pSlicesInfoBottom = 0;
-    }
-
     // Just to be safe.
     m_pPreviousFrame = 0;
     m_pFutureFrame = 0;
@@ -152,11 +140,8 @@ void H264DecoderFrame::Reset()
 {
     m_TopSliceCount = 0;
 
-    if (m_pSlicesInfo)
-    {
-        m_pSlicesInfo->Reset();
-        m_pSlicesInfoBottom->Reset();
-    }
+    m_pSlicesInfo.Reset();
+    m_pSlicesInfoBottom.Reset();
 
     ResetRefCounter();
 
@@ -176,13 +161,12 @@ void H264DecoderFrame::Reset()
     m_viewId = 0;
     m_LongTermFrameIdx = -1;
     m_FrameNumWrap = m_FrameNum  = -1;
-    m_Flags.isFull = 0;
-    m_Flags.isDecoded = 0;
-    m_Flags.isDecodingStarted = 0;
-    m_Flags.isDecodingCompleted = 0;
-    m_isDisplayable = 0;
-    m_Flags.isSkipped = 0;
-    m_Flags.isActive = 0;
+    m_isFull = 0;
+    m_isDecoded = 0;
+    m_isDecodingStarted = 0;
+    m_isDecodingCompleted = 0;
+    m_isSkipped = 0;
+    m_isActive = 0;
     m_wasOutputted = 0;
     m_wasDisplayed = 0;
     m_dpb_output_delay = INVALID_DPB_OUTPUT_DELAY;
@@ -217,39 +201,39 @@ void H264DecoderFrame::Reset()
 
 bool H264DecoderFrame::IsFullFrame() const
 {
-    return (m_Flags.isFull == 1);
+    return (m_isFull == 1);
 }
 
 void H264DecoderFrame::SetFullFrame(bool isFull)
 {
-    m_Flags.isFull = (Ipp8u) (isFull ? 1 : 0);
+    m_isFull = (Ipp8u) (isFull ? 1 : 0);
 }
 
 bool H264DecoderFrame::IsDecoded() const
 {
-    return m_Flags.isDecoded == 1;
+    return m_isDecoded == 1;
 }
 
 void H264DecoderFrame::FreeResources()
 {
     FreeReferenceFrames();
 
-    if (m_pSlicesInfo && IsDecoded())
+    if (IsDecoded())
     {
-        m_pSlicesInfo->Free();
-        m_pSlicesInfoBottom->Free();
+        m_pSlicesInfo.Free();
+        m_pSlicesInfoBottom.Free();
     }
 }
 
 void H264DecoderFrame::CompleteDecoding()
 {
-    m_Flags.isDecodingCompleted = 1;
     UpdateErrorWithRefFrameStatus();
+    m_isDecodingCompleted = 1;
 }
 
 void H264DecoderFrame::UpdateErrorWithRefFrameStatus()
 {
-    if (m_pSlicesInfo->CheckReferenceFrameError() || m_pSlicesInfoBottom->CheckReferenceFrameError())
+    if (m_pSlicesInfo.CheckReferenceFrameError() || m_pSlicesInfoBottom.CheckReferenceFrameError())
     {
         SetErrorFlagged(ERROR_FRAME_REFERENCE_FRAME);
     }
@@ -259,9 +243,7 @@ void H264DecoderFrame::OnDecodingCompleted()
 {
     UpdateErrorWithRefFrameStatus();
 
-    SetisDisplayable();
-
-    m_Flags.isDecoded = 1;
+    m_isDecoded = 1;
     FreeResources();
     DecrementReference();
 }
@@ -428,6 +410,30 @@ void H264DecoderFrame::UpdateLongTermPicNum(Ipp32s CurrPicStruct)
         }
     }
 }    // updateLongTermPicNum
+
+
+bool H264DecoderFrameInfo::CheckReferenceFrameError()
+{
+    Ipp32u checkedErrorMask = ERROR_FRAME_MINOR | ERROR_FRAME_MAJOR | ERROR_FRAME_REFERENCE_FRAME;
+    for (size_t i = 0; i < m_refPicList.size(); i++)
+    {
+        H264DecoderRefPicList* list = &m_refPicList[i].m_refPicList[LIST_0];
+        for (size_t k = 0; list->m_RefPicList[k]; k++)
+        {
+            if (list->m_RefPicList[k]->GetError() & checkedErrorMask)
+                return true;
+        }
+
+        list = &m_refPicList[i].m_refPicList[LIST_1];
+        for (size_t k = 0; list->m_RefPicList[k]; k++)
+        {
+            if (list->m_RefPicList[k]->GetError() & checkedErrorMask)
+                return true;
+        }
+    }
+
+    return false;
+}
 
 } // end namespace UMC
 #endif // UMC_ENABLE_H264_VIDEO_DECODER

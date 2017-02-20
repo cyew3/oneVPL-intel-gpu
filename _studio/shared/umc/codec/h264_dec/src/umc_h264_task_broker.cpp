@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -260,22 +260,11 @@ H264DecoderFrameInfo * TaskBroker::FindAU()
 
         H264DecoderFrameInfo *slicesInfo = frame->GetAU(0);
 
-        if (slicesInfo->GetSliceCount())
-        {
-            if (slicesInfo->IsField())
-            {
-                if (slicesInfo->GetStatus() == H264DecoderFrameInfo::STATUS_FILLED)
-                    return slicesInfo;
+        if (slicesInfo->GetStatus() == H264DecoderFrameInfo::STATUS_FILLED)
+            return slicesInfo;
 
-                if (frame->GetAU(1)->GetStatus() == H264DecoderFrameInfo::STATUS_FILLED)
-                    return frame->GetAU(1);
-            }
-            else
-            {
-                if (slicesInfo->GetStatus() == H264DecoderFrameInfo::STATUS_FILLED)
-                    return slicesInfo;
-            }
-        }
+        if (slicesInfo->IsField() && frame->GetAU(1)->GetStatus() == H264DecoderFrameInfo::STATUS_FILLED)
+            return frame->GetAU(1);
     }
 
     return 0;

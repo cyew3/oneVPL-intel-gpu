@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -3063,11 +3063,11 @@ Status TaskSupplier::ProcessFrameNumGap(H264Slice *pSlice, Ipp32s field, Ipp32s 
             frame_num = 0;
 
         // Set current as displayable and was outputted.
-        pFrame->SetisDisplayable();
+        pFrame->SetFullFrame(true);
         pFrame->SetSkipped(true);
         pFrame->SetFrameExistFlag(false);
+        pFrame->m_isDecoded = 1;
         pFrame->DecrementReference();
-        //pFrame->OnDecodingCompleted();
 
         if (dId != maxDId)
         {
@@ -4466,7 +4466,7 @@ H264DecoderFrame * TaskSupplier::AllocateNewFrame(const H264Slice *slice)
         return NULL;
     }
 
-    pFrame->m_Flags.isActive = 1;
+    pFrame->m_isActive = 1;
 
     Status umcRes = InitFreeFrame(pFrame, slice);
     if (umcRes != UMC_OK)

@@ -1977,7 +1977,7 @@ void PackerVA::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSli
 
             reference = pFrm->isShortTermRef() ? 1 : (pFrm->isLongTermRef() ? 2 : 0);
 
-            if (pFrm == pCurrentFrame && pCurrentFrame->m_pSlicesInfo != pSliceInfo)
+            if ((pFrm == pCurrentFrame) && ((&pCurrentFrame->m_pSlicesInfo) != pSliceInfo))
             {
                 FillFrame(&(pPicParams_H264->ReferenceFrames[j]), pFrm, 0, reference, defaultIndex);
             }
@@ -2637,7 +2637,7 @@ void PackerVA_Widevine::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Sli
 
             reference = pFrm->isShortTermRef() ? 1 : (pFrm->isLongTermRef() ? 2 : 0);
 
-            if (pFrm == pCurrentFrame && pCurrentFrame->m_pSlicesInfo != pSliceInfo)
+            if ((pFrm == pCurrentFrame) && ((&pCurrentFrame->m_pSlicesInfo) != pSliceInfo))
             {
                 FillFrame(&(pPicParams_H264->ReferenceFrames[j]), pFrm, 0, reference, defaultIndex);
             }

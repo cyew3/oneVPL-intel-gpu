@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -20,7 +20,7 @@
 #include "umc_h264_segment_decoder_base.h"
 #include "umc_h264_task_broker.h"
 #include "umc_h264_va_packer.h"
-#include "umc_h264_frame_info.h"
+#include "umc_h264_frame.h"
 
 #define UMC_VA_MAX_FRAME_BUFFER 32 //max number of uncompressed buffers
 

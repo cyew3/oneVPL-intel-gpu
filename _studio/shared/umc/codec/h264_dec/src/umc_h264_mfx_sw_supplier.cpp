@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -377,8 +377,10 @@ void MFX_SW_TaskSupplier::AddFakeReferenceFrame(H264Slice * pSlice)
     pFrame->SetisShortTermRef(true, 1);
 
     pFrame->SetSkipped(true);
+    pFrame->SetFullFrame(true);
     pFrame->SetFrameExistFlag(false);
-    pFrame->SetisDisplayable();
+    pFrame->m_isDecoded = 1;
+    pFrame->DecrementReference();
 
     DefaultFill(pFrame, 2, false);
 
@@ -451,12 +453,6 @@ H264DecoderFrame * MFX_SW_TaskSupplier::GetFreeFrame(const H264Slice *pSlice)
 
     DecReferencePictureMarking::Remove(pFrame);
     pFrame->Reset();
-
-    // Set current as not displayable (yet) and not outputted. Will be
-    // updated to displayable after successful decode.
-    pFrame->unsetWasOutputted();
-    pFrame->unSetisDisplayable();
-    pFrame->SetSkipped(false);
     pFrame->SetFrameExistFlag(true);
     pFrame->IncrementReference();
 

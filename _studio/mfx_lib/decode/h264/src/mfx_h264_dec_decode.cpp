@@ -1173,6 +1173,7 @@ mfxStatus VideoDECODEH264::RunThread(void * params, mfxU32 threadNumber)
             sts = m_pH264VideoDecoder->RunThread(threadNumber);
         }
 
+        UMC::AutomaticUMCMutex guard(m_mGuard);
         if (sts == MFX_TASK_BUSY && !m_pH264VideoDecoder->GetTaskBroker()->IsEnoughForStartDecoding(true))
             m_globalTask = false;
 
@@ -1196,7 +1197,7 @@ mfxStatus VideoDECODEH264::RunThread(void * params, mfxU32 threadNumber)
             return MFX_ERR_NOT_FOUND;
         }
 
-        isDecoded = m_pH264VideoDecoder->CheckDecoding(true, pFrame);
+        isDecoded = m_pH264VideoDecoder->CheckDecoding(pFrame);
     }
 
     if (!isDecoded)
@@ -1212,7 +1213,7 @@ mfxStatus VideoDECODEH264::RunThread(void * params, mfxU32 threadNumber)
         if (!info->surface_work)
             return MFX_TASK_DONE;
 
-        isDecoded = m_pH264VideoDecoder->CheckDecoding(true, pFrame);
+        isDecoded = m_pH264VideoDecoder->CheckDecoding(pFrame);
         if (isDecoded)
         {
             info->surface_work = 0;
@@ -1817,6 +1818,7 @@ mfxStatus VideoDECODEH264::DecodeFrame(mfxFrameSurface1 *surface_out, UMC::H264D
 
     mfxStatus sts = m_FrameAllocator->PrepareToOutput(surface_out, index, &m_vPar, m_isOpaq);
 
+    UMC::AutomaticUMCMutex guard(m_mGuard);
     pFrame->setWasDisplayed();
     return sts;
 }

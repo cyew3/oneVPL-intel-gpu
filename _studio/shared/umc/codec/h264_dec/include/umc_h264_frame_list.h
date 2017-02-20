@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -129,8 +129,6 @@ public:
 
     void countActiveRefs(Ipp32u &numShortTerm, Ipp32u &numLongTerm);
     // Return number of active Ipp16s and long term reference frames.
-
-    H264DecoderFrame * findFirstDisplayable();
 
     H264DecoderFrame * findDisplayableByDPBDelay();
 

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -16,54 +16,12 @@
 
 #include "umc_h264_dec_defs_yuv.h"
 #include "umc_h264_slice_decoding.h"
+#include "umc_h264_frame_info.h"
 
 namespace UMC
 {
 class H264DecoderFrameInfo;
 class H264StreamOut;
-
-extern H264DecoderFrame g_GlobalFakeFrame;
-
-// Struct containing list 0 and list 1 reference picture lists for one slice.
-// Length is plus 1 to provide for null termination.
-class H264DecoderRefPicList
-{
-public:
-    H264DecoderFrame **m_RefPicList;
-    ReferenceFlags    *m_Flags;
-
-    H264DecoderRefPicList()
-    {
-        memset(this, 0, sizeof(H264DecoderRefPicList));
-
-        m_RefPicList = &(m_refPicList1[1]);
-        m_Flags = &(m_flags1[1]);
-        m_flags1[0].field = 0;
-        m_flags1[0].isShortReference = 1;
-
-        m_refPicList1[0] = &g_GlobalFakeFrame;
-    }
-
-    H264DecoderRefPicList (const H264DecoderRefPicList& copy)
-    {
-        m_RefPicList = &(m_refPicList1[1]);
-        m_Flags = &(m_flags1[1]);
-
-        MFX_INTERNAL_CPY(&m_refPicList1, &copy.m_refPicList1, sizeof(m_refPicList1));
-        MFX_INTERNAL_CPY(&m_flags1, &copy.m_flags1, sizeof(m_flags1));
-    }
-
-    H264DecoderRefPicList& operator=(const H264DecoderRefPicList & copy)
-    {
-        MFX_INTERNAL_CPY(&m_refPicList1, &copy.m_refPicList1, sizeof(m_refPicList1));
-        MFX_INTERNAL_CPY(&m_flags1, &copy.m_flags1, sizeof(m_flags1));
-        return *this;
-    }
-
-private:
-    H264DecoderFrame *m_refPicList1[MAX_NUM_REF_FRAMES + 3];
-    ReferenceFlags    m_flags1[MAX_NUM_REF_FRAMES + 3];
-};
 
 enum BusyStates
 {
@@ -95,17 +53,19 @@ class H264DecoderFrame
     Ipp32s  m_frameOrder;
     Ipp32s  m_ErrorType;
 
-    H264DecoderFrameInfo * m_pSlicesInfo;
-    H264DecoderFrameInfo * m_pSlicesInfoBottom;
+    H264DecoderFrameInfo m_pSlicesInfo;
+    H264DecoderFrameInfo m_pSlicesInfoBottom;
 
     bool prepared[2];
 
-    H264DecoderFrameInfo * GetAU(Ipp32s field = 0) const
+    H264DecoderFrameInfo * GetAU(Ipp32s field = 0)
     {
-        if (field)
-            return m_pSlicesInfoBottom;
-        else
-            return m_pSlicesInfo;
+        return (field) ? &m_pSlicesInfoBottom : &m_pSlicesInfo;
+    }
+
+    const H264DecoderFrameInfo * GetAU(Ipp32s field = 0) const
+    {
+        return (field) ? &m_pSlicesInfoBottom : &m_pSlicesInfo;
     }
 
     H264DecoderFrame *m_pPreviousFrame;
@@ -159,17 +119,13 @@ class H264DecoderFrame
     bool IsFullFrame() const;
     void SetFullFrame(bool isFull);
 
-    struct
-    {
-        Ipp8u  isFull    : 1;
-        Ipp8u  isDecoded : 1;
-        Ipp8u  isDecodingStarted : 1;
-        Ipp8u  isDecodingCompleted : 1;
-        Ipp8u  isSkipped : 1;
-        Ipp8u  isActive : 1;
-    } m_Flags;
+    Ipp8u  m_isFull;
+    Ipp8u  m_isDecoded;
+    Ipp8u  m_isDecodingStarted;
+    Ipp8u  m_isDecodingCompleted;
+    Ipp8u  m_isSkipped;
+    Ipp8u  m_isActive;
 
-    Ipp8u  m_isDisplayable;
     Ipp8u  m_wasDisplayed;
     Ipp8u  m_wasOutputted;
 
@@ -194,12 +150,12 @@ public:
 
     void SetSkipped(bool isSkipped)
     {
-        m_Flags.isSkipped = (Ipp8u) (isSkipped ? 1 : 0);
+        m_isSkipped = (Ipp8u) (isSkipped ? 1 : 0);
     }
 
     bool IsSkipped() const
     {
-        return m_Flags.isSkipped != 0;
+        return m_isSkipped != 0;
     }
 
     bool IsDecoded() const;
@@ -243,37 +199,21 @@ public:
         m_pFutureFrame = pFut;
     }
 
-    bool        isDisplayable() const { return m_isDisplayable != 0; }
+    bool IsDecodingStarted() const { return m_isDecodingStarted != 0;}
+    void StartDecoding() { m_isDecodingStarted = 1;}
 
-    void        SetisDisplayable()
-    {
-        m_isDisplayable = 1;
-    }
-
-    bool IsDecodingStarted() const { return m_Flags.isDecodingStarted != 0;}
-    void StartDecoding() { m_Flags.isDecodingStarted = 1;}
-
-    bool IsDecodingCompleted() const { return m_Flags.isDecodingCompleted != 0;}
+    bool IsDecodingCompleted() const { return m_isDecodingCompleted != 0;}
     void CompleteDecoding();
 
     void UpdateErrorWithRefFrameStatus();
 
-    void        unSetisDisplayable() { m_isDisplayable = 0; }
-
     bool        wasDisplayed()    { return m_wasDisplayed != 0; }
     void        setWasDisplayed() { m_wasDisplayed = 1; }
-    void        unsetWasDisplayed() { m_wasDisplayed = 0; }
 
     bool        wasOutputted()    { return m_wasOutputted != 0; }
     void        setWasOutputted();
-    void        unsetWasOutputted() { m_wasOutputted = 0; }
 
-    bool        isDisposable()    { return (!m_isShortTermRef[0] &&
-                                            !m_isShortTermRef[1] &&
-                                            !m_isLongTermRef[0] &&
-                                            !m_isLongTermRef[1] &&
-                                            ((m_wasOutputted != 0 && m_wasDisplayed != 0) || (m_isDisplayable == 0)) &&
-                                            !GetRefCounter()); }
+    bool        isDisposable()    { return (!IsFullFrame() || (m_wasOutputted && m_wasDisplayed)) && !GetRefCounter(); }
 
     // A decoded frame can be "disposed" if it is not an active reference
     // and it is not locked by the calling application and it has been
@@ -489,12 +429,7 @@ protected:
 
 inline bool isAlmostDisposable(H264DecoderFrame * pTmp)
 {
-    return (!pTmp->m_isShortTermRef[0] &&
-        !pTmp->m_isShortTermRef[1] &&
-        !pTmp->m_isLongTermRef[0] &&
-        !pTmp->m_isLongTermRef[1] &&
-        ((pTmp->m_wasOutputted != 0) || (pTmp->m_isDisplayable == 0)) &&
-        !pTmp->GetRefCounter());
+    return (pTmp->m_wasOutputted || !pTmp->IsFullFrame())&& !pTmp->GetRefCounter();
 }
 
 } // end namespace UMC
