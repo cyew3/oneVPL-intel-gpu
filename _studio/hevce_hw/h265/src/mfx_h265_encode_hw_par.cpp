@@ -1192,7 +1192,10 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 
     if (!CheckLCUSize(caps.LCUSizeSupported, par.LCUSize))
         invalid++;
-#endif //PRE_SI_TARGET_PLATFORM_GEN10
+#else //PRE_SI_TARGET_PLATFORM_GEN10
+    if (!par.LCUSize)
+        par.LCUSize = GetDefaultLCUSize(par, caps);
+#endif
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
 
