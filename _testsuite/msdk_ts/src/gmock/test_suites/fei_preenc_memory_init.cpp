@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2016 Intel Corporation.  All rights reserved.
+Copyright (C) 2016-2017 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -122,7 +122,7 @@ namespace fei_preenc_memory_init
         preenc_init.Header.BufferId = MFX_EXTBUFF_FEI_PARAM;
         preenc_init.Header.BufferSz = sizeof (mfxExtFeiParam);
         preenc_init.Func = MFX_FEI_FUNCTION_PREENC;
-        preenc_init.SingleFieldProcessing = MFX_CODINGOPTION_ON;
+        preenc_init.SingleFieldProcessing = MFX_CODINGOPTION_OFF;
 
         mfxExtBuffer* buf[1];
         buf[0] = (mfxExtBuffer*)&preenc_init;
