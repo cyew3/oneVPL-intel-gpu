@@ -46,7 +46,6 @@ struct D3DAllocatorParams;
 
 namespace TranscodingSample
 {
-
     struct sInputParams;
 
     msdk_tick GetTick();

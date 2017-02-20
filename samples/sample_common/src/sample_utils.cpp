@@ -372,8 +372,10 @@ void CSmplBitstreamWriter::Close()
 
 mfxStatus CSmplBitstreamWriter::Init(const msdk_char *strFileName)
 {
-    MSDK_CHECK_POINTER(strFileName, MFX_ERR_NULL_PTR);
-    MSDK_CHECK_ERROR(msdk_strlen(strFileName), 0, MFX_ERR_NOT_INITIALIZED);
+    if (!msdk_strlen(strFileName))
+        return MFX_ERR_NONE;
+
+    MSDK_CHECK_ERROR(msdk_strlen(strFileName), 0, MFX_ERR_NONE);
 
     Close();
 
@@ -504,13 +506,17 @@ void CSmplBitstreamReader::Close()
 
 void CSmplBitstreamReader::Reset()
 {
+    if (!m_bInited)
+        return;
+
     fseek(m_fSource, 0, SEEK_SET);
 }
 
 mfxStatus CSmplBitstreamReader::Init(const msdk_char *strFileName)
 {
     MSDK_CHECK_POINTER(strFileName, MFX_ERR_NULL_PTR);
-    MSDK_CHECK_ERROR(msdk_strlen(strFileName), 0, MFX_ERR_NOT_INITIALIZED);
+    if (!msdk_strlen(strFileName))
+        return MFX_ERR_NONE;
 
     Close();
 
@@ -524,6 +530,9 @@ mfxStatus CSmplBitstreamReader::Init(const msdk_char *strFileName)
 
 mfxStatus CSmplBitstreamReader::ReadNextFrame(mfxBitstream *pBS)
 {
+    if (!m_bInited)
+        return MFX_ERR_NOT_INITIALIZED;
+
     MSDK_CHECK_POINTER(pBS, MFX_ERR_NULL_PTR);
     MSDK_CHECK_ERROR(m_bInited, false, MFX_ERR_NOT_INITIALIZED);
 
@@ -1944,6 +1953,14 @@ mfxStatus StrFormatToCodecFormatFourCC(msdk_char* strInput, mfxU32 &codecFormat)
         else if (0 == msdk_strcmp(strInput, MSDK_STRING("capture")))
         {
             codecFormat = MFX_CODEC_CAPTURE;
+        }
+        else if ((0 == msdk_strcmp(strInput, MSDK_STRING("raw"))))
+        {
+            codecFormat = MFX_CODEC_DUMP;
+        }
+        else if ((0 == msdk_strcmp(strInput, MSDK_STRING("rgb4"))))
+        {
+            codecFormat = MFX_CODEC_RGB4;
         }
         else
             sts = MFX_ERR_UNSUPPORTED;

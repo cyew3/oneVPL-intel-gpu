@@ -72,7 +72,6 @@ or https://software.intel.com/en-us/media-client-solutions-support.
     #define MSDK_OCL_ROTATE_PLUGIN  MSDK_STRING("libsample_plugin_opencl.so")
 #endif
 
-#define MFX_FOURCC_DUMP MFX_MAKEFOURCC('D','U','M','P')
 #define MAX_PREF_LEN    256
 
 namespace TranscodingSample
@@ -399,46 +398,28 @@ namespace TranscodingSample
         DISALLOW_COPY_AND_ASSIGN(SafetySurfaceBuffer);
     };
 
-    // External bitstream processing support
-    class BitstreamProcessor
-    {
-    public:
-        BitstreamProcessor() {}
-        virtual ~BitstreamProcessor() {}
-        virtual mfxStatus PrepareBitstream() = 0;
-        virtual mfxStatus GetInputBitstream(mfxBitstream **pBitstream) = 0;
-        virtual mfxStatus ProcessOutputBitstream(mfxBitstream* pBitstream) = 0;
-    };
-
-    class FileBitstreamProcessor : public BitstreamProcessor
+    class FileBitstreamProcessor
     {
     public:
         FileBitstreamProcessor();
         virtual ~FileBitstreamProcessor();
-        virtual mfxStatus Init(msdk_char  *pStrSrcFile, msdk_char  *pStrDstFile);
-        virtual mfxStatus PrepareBitstream() {return MFX_ERR_NONE;}
+        virtual mfxStatus SetReader(std::auto_ptr<CSmplBitstreamReader>& reader);
+        virtual mfxStatus SetReader(std::auto_ptr<CSmplYUVReader>& reader);
+        virtual mfxStatus SetWriter(std::auto_ptr<CSmplBitstreamWriter>& writer);
         virtual mfxStatus GetInputBitstream(mfxBitstream **pBitstream);
+        virtual mfxStatus GetInputFrame(mfxFrameSurface1 *pSurface);
         virtual mfxStatus ProcessOutputBitstream(mfxBitstream* pBitstream);
+        virtual mfxStatus ResetInput();
+        virtual mfxStatus ResetOutput();
 
     protected:
         std::auto_ptr<CSmplBitstreamReader> m_pFileReader;
+        std::auto_ptr<CSmplYUVReader> m_pYUVFileReader;
         // for performance options can be zero
         std::auto_ptr<CSmplBitstreamWriter> m_pFileWriter;
         mfxBitstream m_Bitstream;
     private:
         DISALLOW_COPY_AND_ASSIGN(FileBitstreamProcessor);
-    };
-
-    // Bitstream processing with reset input and output files support
-    class FileBitstreamProcessor_WithReset : public FileBitstreamProcessor
-    {
-    public:
-        virtual mfxStatus Init(msdk_char *pStrSrcFile, msdk_char *pStrDstFile);
-        virtual mfxStatus ResetInput();
-        virtual mfxStatus ResetOutput();
-    protected:
-        std::vector<msdk_char> m_pSrcFile;
-        std::vector<msdk_char> m_pDstFile;
     };
 
     // Bitstream is external via BitstreamProcessor
@@ -453,7 +434,7 @@ namespace TranscodingSample
                                void* hdl,
                                CTranscodingPipeline *pParentPipeline,
                                SafetySurfaceBuffer  *pBuffer,
-                               BitstreamProcessor   *pBSProc);
+                               FileBitstreamProcessor   *pBSProc);
 
         // frames allocation is suspended for heterogeneous pipeline
         virtual mfxStatus CompleteInit();
@@ -473,7 +454,6 @@ namespace TranscodingSample
         void SignalStop();
     protected:
         virtual mfxStatus CheckRequiredAPIVersion(mfxVersion& version, sInputParams *pParams);
-        virtual mfxStatus CheckExternalBSProcessor(BitstreamProcessor   *pBSProc);
 
         virtual mfxStatus Decode();
         virtual mfxStatus Encode();
@@ -564,8 +544,6 @@ namespace TranscodingSample
         std::auto_ptr<MFXPlugin>        m_pUserDecoderPlugin;
         std::auto_ptr<MFXPlugin>        m_pUserEncoderPlugin;
         std::auto_ptr<MFXPlugin>        m_pUserEncPlugin;
-
-        std::auto_ptr<CSmplYUVReader>   m_YUVReader;
 
         mfxFrameAllocResponse           m_mfxDecResponse;  // memory allocation response for decoder
         mfxFrameAllocResponse           m_mfxEncResponse;  // memory allocation response for encoder
@@ -680,7 +658,7 @@ namespace TranscodingSample
         mfxU32                                m_MaxFramesForTranscode;
 
         // pointer to already extended bs processor
-        BitstreamProcessor                   *m_pBSProcessor;
+        FileBitstreamProcessor                   *m_pBSProcessor;
 
         msdk_tick m_nReqFrameTime; // time required to transcode one frame
 
@@ -708,7 +686,7 @@ namespace TranscodingSample
         // Pointer to the session's pipeline
         std::auto_ptr<CTranscodingPipeline> pPipeline;
         // Pointer to bitstream handling object
-        BitstreamProcessor *pBSProcessor;
+        FileBitstreamProcessor *pBSProcessor;
         // Session implementation type
         mfxIMPL implType;
 

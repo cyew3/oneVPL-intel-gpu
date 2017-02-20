@@ -49,23 +49,6 @@ mfxU32 MFX_STDCALL TranscodingSample::ThranscodeRoutine(void   *pObj)
         {
             pContext->transcodingSts = pContext->pPipeline->Run();
         }
-        if (MFX_ERR_MORE_DATA == pContext->transcodingSts)
-        {
-            // get next coded data
-            mfxStatus bs_sts = pContext->pBSProcessor->PrepareBitstream();
-            // we can continue transcoding if input bistream presents
-            if (MFX_ERR_NONE == bs_sts)
-            {
-                MSDK_IGNORE_MFX_STS(pContext->transcodingSts, MFX_ERR_MORE_DATA);
-                continue;
-            }
-            // no need more data, need to get last transcoded frames
-            else if (MFX_ERR_MORE_DATA == bs_sts)
-            {
-                pContext->transcodingSts = pContext->pPipeline->FlushLastFrames();
-            }
-        }
-
         break; // exit loop
     }
 
@@ -412,7 +395,7 @@ mfxStatus CTranscodingPipeline::EncodePreInit(sInputParams *pParams)
 
     if (m_bEncodeEnable)
     {
-        if(pParams->EncodeId != MFX_FOURCC_DUMP)
+        if(pParams->EncodeId != MFX_CODEC_DUMP)
         {
             if (CheckVersion(&m_Version, MSDK_FEATURE_PLUGIN_API) && (m_pUserEncPlugin.get() == NULL))
             {
@@ -918,7 +901,7 @@ mfxStatus CTranscodingPipeline::Decode()
                 }
                 if (!bLastCycle && (DecExtSurface.pSurface == NULL) )
                 {
-                    static_cast<FileBitstreamProcessor_WithReset*>(m_pBSProcessor)->ResetInput();
+                    m_pBSProcessor->ResetInput();
 
                     if (!GetNumFramesForReset())
                         SetNumFramesForReset(m_nProcessedFramesNum);
@@ -1225,7 +1208,7 @@ mfxStatus CTranscodingPipeline::Encode()
         mfxU32 NumFramesForReset = m_pParentPipeline ? m_pParentPipeline->GetNumFramesForReset() : 0;
         if (NumFramesForReset && !(m_nProcessedFramesNum % NumFramesForReset))
         {
-            static_cast<FileBitstreamProcessor_WithReset*>(m_pBSProcessor)->ResetOutput();
+            m_pBSProcessor->ResetOutput();
         }
 
         SetSurfaceAuxIDR(VppExtSurface, &encAuxCtrl, bInsertIDR);
@@ -1233,7 +1216,7 @@ mfxStatus CTranscodingPipeline::Encode()
 
         if ((m_nVPPCompEnable != VppCompOnly) || (m_nVPPCompEnable == VppCompOnlyEncode))
         {
-            if(m_mfxEncParams.mfx.CodecId != MFX_FOURCC_DUMP)
+            if(m_mfxEncParams.mfx.CodecId != MFX_CODEC_DUMP)
             {
                 sts = EncodeOneFrame(&VppExtSurface, &m_BSPool.back()->Bitstream);
                 if (!sts)
@@ -1458,8 +1441,8 @@ mfxStatus CTranscodingPipeline::Transcode()
                     {
                         bInsertIDR = true;
 
-                        static_cast<FileBitstreamProcessor_WithReset*>(m_pBSProcessor)->ResetInput();
-                        static_cast<FileBitstreamProcessor_WithReset*>(m_pBSProcessor)->ResetOutput();
+                        m_pBSProcessor->ResetInput();
+                        m_pBSProcessor->ResetOutput();
                         bNeedDecodedFrames = true;
 
                         bEndOfFile = false;
@@ -1589,7 +1572,7 @@ mfxStatus CTranscodingPipeline::Transcode()
 
         if(bNeedDecodedFrames)
         {
-            if(m_mfxEncParams.mfx.CodecId != MFX_FOURCC_DUMP)
+            if(m_mfxEncParams.mfx.CodecId != MFX_CODEC_DUMP)
             {
                 sts = EncodeOneFrame(&VppExtSurface, &m_BSPool.back()->Bitstream);
             }
@@ -2290,7 +2273,7 @@ mfxStatus TranscodingSample::CTranscodingPipeline::LoadStaticSurface()
         mfxFrameSurface1* pSurf = m_pSurfaceDecPool[0];
         mfxStatus sts = m_pMFXAllocator->LockFrame(pSurf->Data.MemId, &pSurf->Data);
         MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->LockFrame failed");
-        sts = m_YUVReader->LoadNextFrame(pSurf);
+        sts = m_pBSProcessor->GetInputFrame(pSurf);
         MSDK_CHECK_STATUS(sts, "m_YUVReader->LoadNextFrame failed");
         sts = m_pMFXAllocator->UnlockFrame(pSurf->Data.MemId, &pSurf->Data);
         MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->UnlockFrame failed");
@@ -2711,7 +2694,7 @@ mfxStatus CTranscodingPipeline::AllocFrames()
         }
 
         // Do not correct anything if we're using raw output - we'll need those surfaces for storing data for writer
-        if(m_mfxEncParams.mfx.CodecId != MFX_FOURCC_DUMP)
+        if(m_mfxEncParams.mfx.CodecId != MFX_CODEC_DUMP)
         {
            // In case of rendering enabled we need to add 1 additional surface for renderer
            if((m_nVPPCompEnable == VppCompOnly) || (m_nVPPCompEnable == VppCompOnlyEncode))
@@ -2754,7 +2737,7 @@ mfxStatus CTranscodingPipeline::AllocFrames()
 
         if (m_bDecodeEnable)
         {
-            if(0 == m_nVPPCompEnable && m_mfxEncParams.mfx.CodecId != MFX_FOURCC_DUMP)
+            if(0 == m_nVPPCompEnable && m_mfxEncParams.mfx.CodecId != MFX_CODEC_DUMP)
             {
                 //--- Make correction to number of surfaces only if composition is not enabled. In case of composition we need all the surfaces QueryIOSurf has requested to pass them to another session's VPP
                 // In other inter-session cases, other sessions request additional surfaces using additional calls to AllocFrames
@@ -3010,33 +2993,26 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
                                      void* hdl,
                                      CTranscodingPipeline *pParentPipeline,
                                      SafetySurfaceBuffer  *pBuffer,
-                                     BitstreamProcessor   *pBSProc)
+                                     FileBitstreamProcessor   *pBSProc)
 {
     MSDK_CHECK_POINTER(pParams, MFX_ERR_NULL_PTR);
     MSDK_CHECK_POINTER(pMFXAllocator, MFX_ERR_NULL_PTR);
+    MSDK_CHECK_POINTER(pBSProc, MFX_ERR_NULL_PTR);
     mfxStatus sts = MFX_ERR_NONE;
     m_MaxFramesForTranscode = pParams->MaxFrameNumber;
     // use external allocator
     m_pMFXAllocator = pMFXAllocator;
+    m_pBSProcessor = pBSProc;
 
     m_pParentPipeline = pParentPipeline;
     shouldUseGreedyFormula = pParams->shouldUseGreedyFormula;
 
     m_nTimeout = pParams->nTimeout;
-    m_bUseOverlay = pParams->nVppCompSrcH || pParams->nVppCompSrcW ? true : false;
 
     m_AsyncDepth = (0 == pParams->nAsyncDepth)? 1: pParams->nAsyncDepth;
     m_FrameNumberPreference = pParams->FrameNumberPreference;
     m_numEncoders = 0;
-    if (m_bUseOverlay)
-    {
-        // Init YUV reader for RGB4 overlay
-        m_YUVReader.reset(new CSmplYUVReader());
-        std::list<msdk_string> input;
-        input.push_back(pParams->strSrcFile);
-        sts = m_YUVReader->Init(input, MFX_FOURCC_RGB4);
-        MSDK_CHECK_STATUS(sts, "m_YUVReader->Init failed");
-    }
+    m_bUseOverlay = pParams->DecodeId == MFX_CODEC_RGB4 ? true : false;
 
 #if _MSDK_API >= MSDK_API(1,22)
     m_ROIData = pParams->m_ROIData;
@@ -3052,17 +3028,6 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     if (m_bEncodeEnable)
     {
         m_pBSStore.reset(new ExtendedBSStore(m_AsyncDepth));
-    }
-
-    if (pBSProc)
-    {
-        sts = CheckExternalBSProcessor(pBSProc);
-        MSDK_CHECK_STATUS(sts, "CheckExternalBSProcessor failed");
-        m_pBSProcessor = pBSProc;
-    }
-    else
-    {
-        return MFX_ERR_UNSUPPORTED;
     }
 
     // Determine processing mode
@@ -3193,7 +3158,7 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
         m_bUseOpaqueMemory = true;
     }
 
-    if (!pParams->bUseOpaqueMemory || pParams->EncodeId==MFX_FOURCC_DUMP) // Don't use opaque in case of yuv output or if it was specified explicitly
+    if (!pParams->bUseOpaqueMemory || pParams->EncodeId==MFX_CODEC_DUMP) // Don't use opaque in case of yuv output or if it was specified explicitly
         m_bUseOpaqueMemory = false;
 
     // Media SDK session doesn't require external allocator if the application uses opaque memory
@@ -3627,15 +3592,6 @@ mfxStatus CTranscodingPipeline::Run()
         return MFX_ERR_UNSUPPORTED;
 }
 
-mfxStatus CTranscodingPipeline::CheckExternalBSProcessor(BitstreamProcessor   *pBSProc)
-{
-    FileBitstreamProcessor *pProc = dynamic_cast<FileBitstreamProcessor*>(pBSProc);
-    if (!pProc)
-        return MFX_ERR_UNSUPPORTED;
-
-    return MFX_ERR_NONE;
-}//  mfxStatus CTranscodingPipeline::CheckExternalBSProcessor()
-
 void IncreaseReference(mfxFrameData *ptr)
 {
     msdk_atomic_inc16((volatile mfxU16 *)(&ptr->Locked));
@@ -3775,32 +3731,35 @@ FileBitstreamProcessor::~FileBitstreamProcessor()
     WipeMfxBitstream(&m_Bitstream);
 } // FileBitstreamProcessor::~FileBitstreamProcessor()
 
-mfxStatus FileBitstreamProcessor::Init(msdk_char *pStrSrcFile, msdk_char *pStrDstFile)
+mfxStatus FileBitstreamProcessor::SetReader(std::auto_ptr<CSmplYUVReader>& reader)
 {
-    mfxStatus sts;
-    if (pStrSrcFile)
-    {
-        m_pFileReader.reset(new CSmplBitstreamReader());
-        sts = m_pFileReader->Init(pStrSrcFile);
-        MSDK_CHECK_STATUS(sts, "m_pFileReader->Init failed");
-    }
+    m_pYUVFileReader = reader;
 
-    if (pStrDstFile && *pStrDstFile)
-    {
-        m_pFileWriter.reset(new CSmplBitstreamWriter);
-        sts = m_pFileWriter->Init(pStrDstFile);
-        MSDK_CHECK_STATUS(sts, "m_pFileWriter->Init failed");
-    }
+    return MFX_ERR_NONE;
+}
 
-    sts = InitMfxBitstream(&m_Bitstream, 1024 * 1024);
+mfxStatus FileBitstreamProcessor::SetReader(std::auto_ptr<CSmplBitstreamReader>& reader)
+{
+    m_pFileReader = reader;
+    mfxStatus sts = InitMfxBitstream(&m_Bitstream, 1024 * 1024);
     MSDK_CHECK_STATUS(sts, "InitMfxBitstream failed");
 
     return MFX_ERR_NONE;
+}
 
-} // FileBitstreamProcessor::Init(msdk_char *pStrSrcFile, msdk_char *pStrDstFile)
+mfxStatus FileBitstreamProcessor::SetWriter(std::auto_ptr<CSmplBitstreamWriter>& writer)
+{
+    m_pFileWriter = writer;
+
+    return MFX_ERR_NONE;
+}
 
 mfxStatus FileBitstreamProcessor::GetInputBitstream(mfxBitstream **pBitstream)
 {
+    if (!m_pFileReader.get())
+    {
+        return MFX_ERR_UNSUPPORTED;
+    }
     mfxStatus sts = m_pFileReader->ReadNextFrame(&m_Bitstream);
     if (MFX_ERR_NONE == sts)
     {
@@ -3811,6 +3770,16 @@ mfxStatus FileBitstreamProcessor::GetInputBitstream(mfxBitstream **pBitstream)
 
 } //  FileBitstreamProcessor::GetInputBitstream(mfxBitstream* pBitstream)
 
+mfxStatus FileBitstreamProcessor::GetInputFrame(mfxFrameSurface1 * pSurface)
+{
+    //MSDK_CHECK_POINTER(pSurface);
+    if (!m_pYUVFileReader.get())
+    {
+        return MFX_ERR_UNSUPPORTED;
+    }
+    return m_pYUVFileReader->LoadNextFrame(pSurface);
+}
+
 mfxStatus FileBitstreamProcessor::ProcessOutputBitstream(mfxBitstream* pBitstream)
 {
     if (m_pFileWriter.get())
@@ -3820,51 +3789,24 @@ mfxStatus FileBitstreamProcessor::ProcessOutputBitstream(mfxBitstream* pBitstrea
 
 } // mfxStatus FileBitstreamProcessor::ProcessOutputBitstream(mfxBitstream* pBitstream)
 
-mfxStatus FileBitstreamProcessor_WithReset::Init(msdk_char *pStrSrcFile, msdk_char *pStrDstFile)
+mfxStatus FileBitstreamProcessor::ResetInput()
 {
-    mfxStatus sts;
-    if (pStrSrcFile)
+    if (m_pFileReader.get())
     {
-        size_t SrcFileNameSize = msdk_strlen(pStrSrcFile);
-        m_pSrcFile.assign(pStrSrcFile, pStrSrcFile + SrcFileNameSize + 1);
-        m_pFileReader.reset(new CSmplBitstreamReader());
-        sts = m_pFileReader->Init(pStrSrcFile);
-        MSDK_CHECK_STATUS(sts, "m_pFileReader->Init failed");
-    } else
-    {
-        m_pSrcFile.resize(1, 0);
+        m_pFileReader->Reset();
     }
-
-    if (pStrDstFile)
+    if (m_pYUVFileReader.get())
     {
-        size_t DstFileNameSize = msdk_strlen(pStrDstFile);
-        m_pDstFile.assign(pStrDstFile, pStrDstFile + DstFileNameSize + 1);
-        m_pFileWriter.reset(new CSmplBitstreamWriter);
-        sts = m_pFileWriter->Init(pStrDstFile);
-        MSDK_CHECK_STATUS(sts, "m_pFileWriter->Init failed");
+        m_pYUVFileReader->Reset();
     }
-    else
-    {
-        m_pDstFile.resize(1, 0);
-    }
-
-    sts = InitMfxBitstream(&m_Bitstream, 1024 * 1024);
-    MSDK_CHECK_STATUS(sts, "InitMfxBitstream failed");
-
     return MFX_ERR_NONE;
+}
 
-} // FileBitstreamProcessor_Benchmark::Init(msdk_char *pStrSrcFile, msdk_char *pStrDstFile)
-
-mfxStatus FileBitstreamProcessor_WithReset::ResetInput()
+mfxStatus FileBitstreamProcessor::ResetOutput()
 {
-    mfxStatus sts = m_pFileReader->Init(&m_pSrcFile.front());
-    MSDK_CHECK_STATUS(sts, "m_pFileReader->Init failed");
+    if (m_pFileWriter.get())
+    {
+        m_pFileWriter.reset();
+    }
     return MFX_ERR_NONE;
-} // FileBitstreamProcessor_Benchmark::ResetInput()
-
-mfxStatus FileBitstreamProcessor_WithReset::ResetOutput()
-{
-    mfxStatus sts = m_pFileWriter->Init(&m_pDstFile.front());
-    MSDK_CHECK_STATUS(sts, "m_pFileWriter->Init failed");
-    return MFX_ERR_NONE;
-} // FileBitstreamProcessor_Benchmark::ResetOutput()
+}

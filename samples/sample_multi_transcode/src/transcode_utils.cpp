@@ -780,15 +780,8 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         else if ( (0 == msdk_strncmp(MSDK_STRING("-o::"), argv[i], msdk_strlen(MSDK_STRING("-o::"))))
                && (0 != msdk_strncmp(argv[i]+4, MSDK_STRING("sink"), msdk_strlen(MSDK_STRING("sink")))) )
         {
-            if(0 == msdk_strcmp(argv[i], MSDK_STRING("-o::raw")))
-            {
-                InputParams.EncodeId = MFX_FOURCC_DUMP;
-                sts = MFX_ERR_NONE;
-            }
-            else
-            {
-                sts = StrFormatToCodecFormatFourCC(argv[i]+4, InputParams.EncodeId);
-            }
+
+            sts = StrFormatToCodecFormatFourCC(argv[i]+4, InputParams.EncodeId);
 
             if (sts != MFX_ERR_NONE)
             {
@@ -806,7 +799,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
                     case MFX_CODEC_HEVC:
                     case MFX_CODEC_AVC:
                     case MFX_CODEC_JPEG:
-                    case MFX_FOURCC_DUMP:
+                    case MFX_CODEC_DUMP:
                         return MFX_ERR_UNSUPPORTED;
                 }
             }
@@ -1571,7 +1564,7 @@ mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputPar
 
     if (MFX_CODEC_JPEG != InputParams.EncodeId && MFX_CODEC_MPEG2 != InputParams.EncodeId &&
         MFX_CODEC_AVC != InputParams.EncodeId && MFX_CODEC_HEVC != InputParams.EncodeId &&
-        MFX_CODEC_VP9 != InputParams.EncodeId && MFX_FOURCC_DUMP != InputParams.EncodeId &&
+        MFX_CODEC_VP9 != InputParams.EncodeId && MFX_CODEC_DUMP != InputParams.EncodeId &&
         InputParams.eMode != Sink && InputParams.eModeExt != VppCompOnly)
     {
         PrintError(MSDK_STRING("Unknown encoder\n"));
@@ -1584,9 +1577,18 @@ mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputPar
        MFX_CODEC_VC1 != InputParams.DecodeId &&
        MFX_CODEC_JPEG != InputParams.DecodeId &&
        MFX_CODEC_VP9 != InputParams.DecodeId &&
+       MFX_CODEC_RGB4 != InputParams.DecodeId &&
        InputParams.eMode != Source)
     {
         PrintError(MSDK_STRING("Unknown decoder\n"));
+        return MFX_ERR_UNSUPPORTED;
+    }
+
+    if (MFX_CODEC_RGB4 == InputParams.DecodeId &&
+        ( !InputParams.nVppCompSrcH ||
+         !InputParams.nVppCompSrcW ))
+    {
+        PrintError(MSDK_STRING("VppCompSrcH and VppCompSrcW must be specified in case of -i::rgb4\n"));
         return MFX_ERR_UNSUPPORTED;
     }
 
@@ -1741,7 +1743,7 @@ mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputPar
 
     if(InputParams.EncoderFourCC && InputParams.EncoderFourCC != MFX_FOURCC_NV12 &&
         InputParams.EncoderFourCC != MFX_FOURCC_RGB4 && InputParams.EncoderFourCC != MFX_FOURCC_YUY2 &&
-        InputParams.EncodeId == MFX_FOURCC_DUMP)
+        InputParams.EncodeId == MFX_CODEC_DUMP)
     {
         PrintError(MSDK_STRING("-o::raw option can be used with NV12, RGB4 and YUY2 color formats only.\n"));
         return MFX_ERR_UNSUPPORTED;

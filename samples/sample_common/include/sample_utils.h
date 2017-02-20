@@ -82,6 +82,9 @@ enum {
     CODEC_MVC = MFX_MAKEFOURCC('M','V','C',' '),
 };
 
+#define MFX_CODEC_DUMP MFX_MAKEFOURCC('D','U','M','P')
+#define MFX_CODEC_RGB4 MFX_FOURCC_RGB4
+
 enum
 {
     MFX_FOURCC_IMC3         = MFX_MAKEFOURCC('I','M','C','3'),

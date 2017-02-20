@@ -237,11 +237,51 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
 
         std::auto_ptr<ThreadTranscodeContext> pThreadPipeline(new ThreadTranscodeContext);
         // extend BS processing init
-        m_InputParamsArray[i].nTimeout == 0 ? m_pExtBSProcArray.push_back(new FileBitstreamProcessor) :
-                                        m_pExtBSProcArray.push_back(new FileBitstreamProcessor_WithReset);
+        m_pExtBSProcArray.push_back(new FileBitstreamProcessor);
+
         pThreadPipeline->pPipeline.reset(CreatePipeline());
 
         pThreadPipeline->pBSProcessor = m_pExtBSProcArray.back();
+
+        std::auto_ptr<CSmplBitstreamReader> reader;
+        std::auto_ptr<CSmplYUVReader> yuvreader;
+        if (m_InputParamsArray[i].DecodeId == MFX_CODEC_VP9)
+        {
+            reader.reset(new CIVFFrameReader());
+        }
+        else if (m_InputParamsArray[i].DecodeId == MFX_CODEC_RGB4)
+        {
+            // YUV reader for RGB4 overlay
+            yuvreader.reset(new CSmplYUVReader());
+        }
+        else
+        {
+            reader.reset(new CSmplBitstreamReader());
+        }
+
+        if (reader.get())
+        {
+            sts = reader->Init(m_InputParamsArray[i].strSrcFile);
+            MSDK_CHECK_STATUS(sts, "reader->Init failed");
+            sts = m_pExtBSProcArray.back()->SetReader(reader);
+            MSDK_CHECK_STATUS(sts, "m_pExtBSProcArray.back()->SetReader failed");
+        }
+        else if (yuvreader.get())
+        {
+            std::list<msdk_string> input;
+            input.push_back(m_InputParamsArray[i].strSrcFile);
+            sts = yuvreader->Init(input, MFX_FOURCC_RGB4);
+            MSDK_CHECK_STATUS(sts, "m_YUVReader->Init failed");
+            sts = m_pExtBSProcArray.back()->SetReader(yuvreader);
+            MSDK_CHECK_STATUS(sts, "m_pExtBSProcArray.back()->SetReader failed");
+        }
+
+        std::auto_ptr<CSmplBitstreamWriter> writer(new CSmplBitstreamWriter());
+        sts = writer->Init(m_InputParamsArray[i].strDstFile);
+
+        sts = m_pExtBSProcArray.back()->SetWriter(writer);
+        MSDK_CHECK_STATUS(sts, "m_pExtBSProcArray.back()->SetWriter failed");
+
         if (Sink == m_InputParamsArray[i].eMode)
         {
             /* N_to_1 mode */
@@ -258,8 +298,6 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
                 pBuffer = m_pBufferArray[m_pBufferArray.size() - 1];
             }
             pSinkPipeline = pThreadPipeline->pPipeline.get();
-            sts = m_pExtBSProcArray.back()->Init(m_InputParamsArray[i].strSrcFile, NULL);
-            MSDK_CHECK_STATUS(sts, "m_pExtBSProcArray.back failed");
         }
         else if (Source == m_InputParamsArray[i].eMode)
         {
@@ -274,13 +312,9 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
                 pBuffer = m_pBufferArray[BufCounter];
                 BufCounter++;
             }
-            sts = m_pExtBSProcArray.back()->Init(NULL, m_InputParamsArray[i].strDstFile);
-            MSDK_CHECK_STATUS(sts, "m_pExtBSProcArray.back failed");
         }
         else
         {
-            sts = m_pExtBSProcArray.back()->Init(m_InputParamsArray[i].strSrcFile, m_InputParamsArray[i].strDstFile);
-            MSDK_CHECK_STATUS(sts, "m_pExtBSProcArray.back failed");
             pBuffer = NULL;
         }
 
