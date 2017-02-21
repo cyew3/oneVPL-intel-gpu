@@ -46,7 +46,17 @@ namespace
 #ifdef DEBUG
         printf("\rDecoderExtension: context=%p decoder=%p function=%d\n", context, decoder, param.Function); fflush(stdout);
 #endif 
-        HRESULT hr = context->DecoderExtension(decoder, &param);
+        HRESULT hr = S_OK;
+        try
+        {
+            hr = context->DecoderExtension(decoder, &param);
+        }
+        catch (...)
+        {
+            MFX_LTRACE((MFX_TRACE_PARAMS, MFX_TRACE_LEVEL_EXTCALL, "", "Exception at DecoderExtension: context=%p decoder=%p function=%d", context, decoder, param.Function));
+            throw;
+        };
+
 #ifdef DEBUG
         printf("\rDecoderExtension: hresult=%d\n", hr); fflush(stdout);
 #endif 
