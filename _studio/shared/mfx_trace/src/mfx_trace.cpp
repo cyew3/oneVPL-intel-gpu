@@ -5,10 +5,17 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2010-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2010-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_trace.h"
+
+static mfxTraceU32      g_OutputMode = MFX_TRACE_OUTPUT_TRASH;
+
+mfxTraceU32 MFXTrace_GetOutputMode()
+{
+    return g_OutputMode;
+}
 
 #ifdef MFX_TRACE_ENABLE
 
@@ -75,7 +82,6 @@ struct mfxTraceAlgorithm
 
 /*------------------------------------------------------------------------------*/
 
-static mfxTraceU32      g_OutputMode = MFX_TRACE_OUTPUT_TRASH;
 static mfxTraceU32      g_Level      = MFX_TRACE_LEVEL_DEFAULT;
 static volatile Ipp32u  g_refCounter = 0;
 

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2010-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2010-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFX_TRACE_H__
@@ -287,6 +287,8 @@ mfxTraceU32 MFXTrace_EndTask(mfxTraceStaticHandle *static_handle,
 #define MFX_TRACE_CLOSE_RES(res)
 #define MFX_LTRACE(_trace_all_params)
 #endif
+
+mfxTraceU32 MFXTrace_GetOutputMode();
 
 /*------------------------------------------------------------------------------*/
 // standard formats

@@ -42,6 +42,7 @@ if( Linux OR Darwin )
 
   # required:
   include_directories( $ENV{MFX_HOME}/mdp_msdk-api/include )
+  include_directories( $ENV{MFX_HOME}/mdp_msdk-api/mediasdk_structures )
   link_directories( $ENV{MFX_HOME}/lib/${os_arch} )
 
 else()

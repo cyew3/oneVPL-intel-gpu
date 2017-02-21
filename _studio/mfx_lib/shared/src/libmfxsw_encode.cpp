@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include <mfxvideo.h>
@@ -13,6 +13,8 @@
 #include <mfx_session.h>
 #include <mfx_tools.h>
 #include <mfx_common.h>
+
+#include "mfx_reflect.h"
 
 // sheduling and threading stuff
 #include <mfx_task.h>
@@ -291,6 +293,31 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
     {
         mfxRes = MFX_WRN_PARTIAL_ACCELERATION;
     }
+
+    if (MFXTrace_GetOutputMode() & (MFX_TRACE_OUTPUT_ETW | MFX_TRACE_OUTPUT_TEXTLOG))
+    {
+        if (mfxRes == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM || mfxRes == MFX_ERR_INCOMPATIBLE_VIDEO_PARAM)
+        {
+            try
+            {
+                static mfx_reflect::AccessibleTypesCollection g_Reflection; //TODO: store in Core
+                if (0 == g_Reflection.m_KnownTypes.size())
+                {
+                    g_Reflection.DeclareMsdkStructs();
+                }
+                CompareStructsAndPrintResult(g_Reflection.Access(in), g_Reflection.Access(out));
+            }
+            catch (const std::exception& e)
+            {
+                MFX_LTRACE_MSG(MFX_TRACE_LEVEL_INTERNAL, e.what());
+            }
+            catch (...) 
+            { 
+                MFX_LTRACE_MSG(MFX_TRACE_LEVEL_INTERNAL, "Unknown exception was caught while comparing In and Out VideoParams.");
+            }
+        }
+    }
+
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, out);
     MFX_LTRACE_I(MFX_TRACE_LEVEL_API, mfxRes);
     return mfxRes;
