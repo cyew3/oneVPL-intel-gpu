@@ -17,7 +17,6 @@
   </ItemDefinitionGroup>
     <ItemDefinitionGroup>
     <ClCompile>
-      <TreatWarningAsError>false</TreatWarningAsError>
       <ControlFlowGuard>Guard</ControlFlowGuard>
     </ClCompile>
   </ItemDefinitionGroup>
