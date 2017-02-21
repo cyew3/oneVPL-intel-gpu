@@ -23,6 +23,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include <cctype>
 #include <sstream>
 #include <fstream>
+#include "version.h"
 
 #define VAL_CHECK(val) {if (val) return MFX_ERR_UNKNOWN;}
 
@@ -33,7 +34,7 @@ void vppPrintHelp(const msdk_char *strAppName, const msdk_char *strErrorMessage)
 }
 else
 {
-    msdk_printf(MSDK_STRING("Intel(R) Media SDK VPP Sample\n"));
+    msdk_printf(MSDK_STRING("Intel(R) Media SDK VPP Sample version %s\n"), GetMSDKSampleVersion().c_str());
 }
 
 msdk_printf(MSDK_STRING("Usage: %s [Options] -i InputFile -o OutputFile\n"), strAppName);
