@@ -2448,7 +2448,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
                 extOpt3->WinBRCSize = 0;
                 changed = true;
             }
-            if (!extOpt2->MaxFrameSize) {
+            if (!extOpt2->MaxFrameSize && !extOpt3->MaxFrameSizeI) {
                 extOpt2->MaxFrameSize = par.mfx.MaxKbps ? par.mfx.MaxKbps : par.mfx.TargetKbps;
                 changed = true;
             }
