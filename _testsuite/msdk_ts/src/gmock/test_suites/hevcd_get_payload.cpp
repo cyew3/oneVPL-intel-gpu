@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -240,9 +240,9 @@ namespace hevcd_get_payload
     char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_P010>)
     { return "conformance/hevc/StressBitstreamEncode/main10/Syntax_HEVC_Main10HT62_432x240_30fps_203_inter_sei_1.7.2.hevc"; }
     char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_Y210>)
-    { return "conformance/hevc/StressBitstreamEncode/SBE_HEVC_Rext422-10b-HT62_2.2.0/Syntax_HEVC_Rext422_10bHT62_432x240_30fps_203_inter_sei_2.2.hevc"; }
+    { return "conformance/hevc/StressBitstreamEncode/rext422_10b/Syntax_HEVC_Rext422_10bHT62_432x240_30fps_203_inter_sei_2.2.hevc"; }
     char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_Y410>)
-    { return "conformance/hevc/StressBitstreamEncode/SBE_HEVC_Rext444-10b-HT62_2.2.0/Syntax_HEVC_Rext444_10bHT62_432x240_30fps_203_inter_sei_2.2.hevc"; }
+    { return "conformance/hevc/StressBitstreamEncode/rext444_10b/Syntax_HEVC_Rext444_10bHT62_432x240_30fps_203_inter_sei_2.2.hevc"; }
 
     template <unsigned fourcc>
     struct TestSuiteEx
