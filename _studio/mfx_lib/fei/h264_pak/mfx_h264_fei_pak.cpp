@@ -361,12 +361,12 @@ static mfxStatus AsyncQuery(void * state, void * param, mfxU32 /*threadNumber*/,
 {
     VideoPAK_PAK & impl = *(VideoPAK_PAK *)state;
     DdiTask& task = *(DdiTask *)param;
-    return impl.Query(task);
+    return impl.QueryStatus(task);
 }
 
-mfxStatus VideoPAK_PAK::Query(DdiTask& task)
+mfxStatus VideoPAK_PAK::QueryStatus(DdiTask& task)
 {
-    mdprintf(stderr,"VideoPAK_PAK::Query\n");
+    mdprintf(stderr,"VideoPAK_PAK::QueryStatus\n");
     mfxStatus sts = MFX_ERR_NONE;
 
     mfxU32 f_start = 0, fieldCount = task.m_fieldPicFlag;

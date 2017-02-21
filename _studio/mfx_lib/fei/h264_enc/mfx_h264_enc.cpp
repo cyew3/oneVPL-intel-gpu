@@ -329,12 +329,12 @@ static mfxStatus AsyncQuery(void * state, void * param, mfxU32 /*threadNumber*/,
 {
     VideoENC_ENC & impl = *(VideoENC_ENC *)state;
     DdiTask& task = *(DdiTask *)param;
-    return impl.Query(task);
+    return impl.QueryStatus(task);
 }
 
-mfxStatus VideoENC_ENC::Query(DdiTask& task)
+mfxStatus VideoENC_ENC::QueryStatus(DdiTask& task)
 {
-    mdprintf(stderr, "VideoENC_ENC::Query\n");
+    mdprintf(stderr, "VideoENC_ENC::QueryStatus\n");
 
     mfxStatus sts = MFX_ERR_NONE;
 
