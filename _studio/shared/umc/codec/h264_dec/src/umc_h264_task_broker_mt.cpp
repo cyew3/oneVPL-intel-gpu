@@ -951,7 +951,12 @@ bool TaskBrokerSingleThread::GetNextSliceToDeblocking(H264DecoderFrameInfo * inf
 {
     // this is guarded function, safe to touch any variable
     Ipp32s sliceCount = info->GetSliceCount();
-    bool bSliceGroups = info->GetSlice(sliceCount - 1)->IsSliceGroups();
+    H264Slice* slice = info->GetSlice(sliceCount - 1);
+    VM_ASSERT(slice);
+    if (!slice)
+       return false;
+
+    bool bSliceGroups = slice->IsSliceGroups();
 
     // slice group deblocking
     if (bSliceGroups)
