@@ -776,6 +776,9 @@ mfxU32 GetDefaultLCUSize(MfxVideoParam const & par,
             LCUSize = (1 << (CeilLog2(hwCaps.LCUSizeSupported + 1) + 3)); // set max supported
     }
 
+#else
+    (void)par;
+    (void)hwCaps;
 #endif // PRE_SI_TARGET_PLATFORM_GEN10
 
     assert((LCUSize >> 4) & hwCaps.LCUSizeSupported);
