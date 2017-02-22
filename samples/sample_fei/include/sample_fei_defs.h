@@ -161,6 +161,8 @@ public:
 
     mfxStatus UpdatePicStructs(mfxU16 picstruct)
     {
+        if (PoolSize == 0) { return MFX_ERR_NONE; }
+
         MSDK_CHECK_POINTER(SurfacesPool, MFX_ERR_NULL_PTR);
 
         switch (picstruct & 0xf)
