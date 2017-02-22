@@ -4831,26 +4831,34 @@ mfxStatus MfxHwH264Encode::CheckEncodeFrameParam(
     }
     else if (video.mfx.EncodedOrder != 1)
     {
-        if (ctrl)
+        if (ctrl != 0 && ctrl->FrameType)
         {
-            if (ctrl->FrameType)
-            {
-                // check FrameType for forced key-frame generation
-                mfxU16 type = ctrl->FrameType & (MFX_FRAMETYPE_IPB | MFX_FRAMETYPE_xIPB);
-                MFX_CHECK(
-                    type == (MFX_FRAMETYPE_I)                    ||
-                    type == (MFX_FRAMETYPE_I | MFX_FRAMETYPE_xI) ||
-                    type == (MFX_FRAMETYPE_I | MFX_FRAMETYPE_xP),
-                    MFX_ERR_INVALID_VIDEO_PARAM);
-            }
+            // check FrameType for forced key-frame generation
+            mfxU16 type = ctrl->FrameType & (MFX_FRAMETYPE_IPB | MFX_FRAMETYPE_xIPB);
+            MFX_CHECK(
+                type == (MFX_FRAMETYPE_I)                    ||
+                type == (MFX_FRAMETYPE_I | MFX_FRAMETYPE_xI) ||
+                type == (MFX_FRAMETYPE_I | MFX_FRAMETYPE_xP),
+                MFX_ERR_INVALID_VIDEO_PARAM);
         }
     }
 
-    if (ctrl && ctrl->NumExtParam)
-        checkSts = CheckRunTimeExtBuffers(video, ctrl);
-
     if (surface != 0)
     {
+        // Check Runtime extension buffers if not buffered frames processing
+        if (ctrl != 0 && ctrl->NumExtParam)
+        {
+            checkSts = CheckRunTimeExtBuffers(video, ctrl);
+            if (checkSts < MFX_ERR_NONE) { return checkSts; }
+        }
+        else
+        {
+            // FEI frame control buffer is mandatory for encoding
+            mfxExtFeiParam const * feiParam = GetExtBuffer(video);
+            // FEI encoding without any extension buffers provided is impossible
+            MFX_CHECK(feiParam->Func != MFX_FEI_FUNCTION_ENCODE, MFX_ERR_UNDEFINED_BEHAVIOR);
+        }
+
         mfxExtOpaqueSurfaceAlloc * extOpaq = GetExtBuffer(video);
         bool opaq = extOpaq->In.Surfaces != 0;
 

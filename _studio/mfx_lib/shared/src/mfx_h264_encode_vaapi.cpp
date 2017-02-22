@@ -1998,7 +1998,7 @@ mfxStatus VAAPIEncoder::Execute(
             mbcodeout = GetExtBufferFEI(task.m_bs, feiFieldId);
         }
 
-        if (frameCtrl != NULL && frameCtrl->MVPredictor && mvpred != NULL)
+        if (frameCtrl->MVPredictor && mvpred != NULL)
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaCreateBuffer (MVP)");
             vaSts = vaCreateBuffer(m_vaDisplay,
@@ -2013,7 +2013,7 @@ mfxStatus VAAPIEncoder::Execute(
             configBuffers[buffersCount++] = vaFeiMVPredId;
         }
 
-        if (frameCtrl != NULL && frameCtrl->PerMBInput && mbctrl != NULL)
+        if (frameCtrl->PerMBInput && mbctrl != NULL)
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaCreateBuffer (MBctrl)");
             vaSts = vaCreateBuffer(m_vaDisplay,
@@ -2028,7 +2028,7 @@ mfxStatus VAAPIEncoder::Execute(
             configBuffers[buffersCount++] = vaFeiMBControlId;
         }
 
-        if (frameCtrl != NULL && frameCtrl->PerMBQp && mbqp != NULL)
+        if (frameCtrl->PerMBQp && mbqp != NULL)
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaCreateBuffer (MBqp)");
             vaSts = vaCreateBuffer(m_vaDisplay,

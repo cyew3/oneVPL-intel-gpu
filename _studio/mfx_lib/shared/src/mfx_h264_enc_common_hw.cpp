@@ -5898,6 +5898,15 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
         }
     }
 
+    // FEI frame control buffer is mandatory for encoding
+    mfxExtFeiParam const * feiParam = GetExtBuffer(video);
+
+    if (feiParam->Func == MFX_FEI_FUNCTION_ENCODE)
+    {
+        mfxExtBuffer * frameCtrl = MfxHwH264Encode::GetExtBuffer(ctrl->ExtParam, ctrl->NumExtParam, MFX_EXTBUFF_FEI_ENC_CTRL);
+        MFX_CHECK(frameCtrl, MFX_ERR_UNDEFINED_BEHAVIOR);
+    }
+
     checkSts = CheckFEIRunTimeExtBuffersContent(video, ctrl);
     MFX_CHECK(checkSts >= MFX_ERR_NONE, checkSts);
 
