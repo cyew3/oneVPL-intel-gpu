@@ -59,6 +59,8 @@ public:
 
     mfxStatus QueryStatus(DdiTask& task);
 
+    static mfxStatus Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out);
+
     static mfxStatus QueryIOSurf(VideoCORE*, mfxVideoParam *par, mfxFrameAllocRequest *request);
 
     virtual mfxStatus GetVideoParam(mfxVideoParam *par);

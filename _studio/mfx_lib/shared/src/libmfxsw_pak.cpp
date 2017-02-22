@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include <mfxvideo.h>
@@ -92,6 +92,13 @@ mfxStatus MFXVideoPAK_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam
         case MFX_CODEC_AVC:
             mfxRes = MFXVideoPAKH264::Query(in, out);
             break;
+#elif defined(MFX_VA_LINUX) && defined(MFX_ENABLE_H264_VIDEO_ENCODE_HW) && defined(MFX_ENABLE_H264_VIDEO_FEI_PAK)
+        case MFX_CODEC_AVC:
+            if (bEnc_PAK(in))
+                mfxRes = VideoPAK_PAK::Query(session->m_pCORE.get(), in, out);
+            else
+                mfxRes = MFX_ERR_UNSUPPORTED;
+            break;
 #endif
 
 #ifdef MFX_ENABLE_MPEG2_VIDEO_PAK
@@ -126,6 +133,13 @@ mfxStatus MFXVideoPAK_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfxFra
 #ifdef MFX_ENABLE_H264_VIDEO_PAK
         case MFX_CODEC_AVC:
             mfxRes = MFXVideoPAKH264::QueryIOSurf(par, request);
+            break;
+#elif defined(MFX_VA_LINUX) && defined(MFX_ENABLE_H264_VIDEO_ENCODE_HW) && defined(MFX_ENABLE_H264_VIDEO_FEI_PAK)
+        case MFX_CODEC_AVC:
+            if (bEnc_PAK(par))
+                mfxRes = VideoPAK_PAK::QueryIOSurf(session->m_pCORE.get(), par, request);
+            else
+                mfxRes = MFX_ERR_UNSUPPORTED;
             break;
 #endif
 

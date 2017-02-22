@@ -402,6 +402,15 @@ mfxStatus VideoPAK_PAK::QueryStatus(DdiTask& task)
     return MFX_ERR_NONE;
 }
 
+mfxStatus VideoPAK_PAK::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out)
+{
+    mdprintf(stderr, "VideoPAK_PAK::Query\n");
+
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VideoPAK_PAK::Query");
+
+    return MFX_ERR_NONE;
+}
+
 mfxStatus VideoPAK_PAK::QueryIOSurf(VideoCORE* , mfxVideoParam *par, mfxFrameAllocRequest *request)
 {
     MFX_CHECK_NULL_PTR2(par,request);
