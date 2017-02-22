@@ -56,7 +56,12 @@ void MFX_SW_TaskSupplier::CreateTaskBroker()
 void MFX_SW_TaskSupplier::SetMBMap(const H264Slice * slice, H264DecoderFrame *frame, LocalResources * localRes)
 {
     if (!slice)
+    {
         slice = frame->GetAU(0)->GetSlice(0);
+        VM_ASSERT(slice);
+        if (!slice)
+            return;
+    }
 
     const H264PicParamSet *pps = slice->GetPicParam();
     VM_ASSERT(frame->m_iResourceNumber >= 0);
