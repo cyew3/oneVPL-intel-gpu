@@ -137,6 +137,8 @@ mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, MFXCoreInterface* core, GUID guid
 #else
     if (!caps.LCUSizeSupported)
         caps.LCUSizeSupported = 2;
+    (void)core;
+    (void)guid;
 #endif
     return sts;
 }
