@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -325,7 +325,7 @@ public:
                                     Ipp32s startCoeff)
     {
         // See subclause 7.3.5.3.2 of H.264 standard
-        Ipp32u ctxIdxOffset, ctxIdxInc, ctxIdxOffsetLast;
+        Ipp32u localCtxIdxOffset, ctxIdxInc, ctxIdxOffsetLast;
         Ipp32u numDecodAbsLevelEq1 = 0, numDecodAbsLevelGt1 = 0;
         const Ipp32u *ctxIdxBase;
         const Ipp32s* pHPFF = hp_CtxIdxInc_sig_coeff_flag[field_decoding_flag];
@@ -345,7 +345,7 @@ public:
         else
             ctxIdxBase = ctxIdxOffset8x8FrameCoded;
 
-        ctxIdxOffset = ctxIdxBase[SIGNIFICANT_COEFF_FLAG] +
+        localCtxIdxOffset = ctxIdxBase[SIGNIFICANT_COEFF_FLAG] +
             ctxIdxBlockCatOffset[SIGNIFICANT_COEFF_FLAG][BLOCK_LUMA8X8_LEVELS];
         ctxIdxOffsetLast = ctxIdxBase[LAST_SIGNIFICANT_COEFF_FLAG] +
             ctxIdxBlockCatOffset[LAST_SIGNIFICANT_COEFF_FLAG][BLOCK_LUMA8X8_LEVELS];
@@ -354,7 +354,7 @@ public:
         {
             ctxIdxInc = pHPFF[i];
             // get significant_coeff_flag
-            if (DecodeSingleBin_CABAC(ctxIdxOffset+ctxIdxInc))
+            if (DecodeSingleBin_CABAC(localCtxIdxOffset+ctxIdxInc))
             {
                 // store position of non-zero coeff
                 coeffRuns[ncoefs] = (Ipp16s) i;
@@ -373,12 +373,12 @@ public:
         }
 
         // calculate last coefficient in block
-        ctxIdxOffset = ctxIdxBase[COEFF_ABS_LEVEL_MINUS1] +
+        localCtxIdxOffset = ctxIdxBase[COEFF_ABS_LEVEL_MINUS1] +
             ctxIdxBlockCatOffset[COEFF_ABS_LEVEL_MINUS1][BLOCK_LUMA8X8_LEVELS];
 
         for (; ncoefs > 0; ncoefs--)
         {
-            Ipp32s level = DecodeSignedLevel_CABAC(ctxIdxOffset,
+            Ipp32s level = DecodeSignedLevel_CABAC(localCtxIdxOffset,
                                                    numDecodAbsLevelEq1,
                                                    numDecodAbsLevelGt1,9);
 
@@ -427,10 +427,10 @@ public:
 
         // decode coefficient(s)
         {
-            Ipp32u ctxIdxOffset, ctxIdxOffsetLast;
+            Ipp32u localCtxIdxOffset, ctxIdxOffsetLast;
             Ipp32s i = startCoeff;
 
-            ctxIdxOffset = ctxIdxBase[SIGNIFICANT_COEFF_FLAG] +
+            localCtxIdxOffset = ctxIdxBase[SIGNIFICANT_COEFF_FLAG] +
                            ctxIdxBlockCatOffset[SIGNIFICANT_COEFF_FLAG][ctxBlockCat];
             ctxIdxOffsetLast = ctxIdxBase[LAST_SIGNIFICANT_COEFF_FLAG] +
                                ctxIdxBlockCatOffset[LAST_SIGNIFICANT_COEFF_FLAG][ctxBlockCat];
@@ -441,7 +441,7 @@ public:
                 do
                 {
                     // get significant_coeff_flag
-                    if (DecodeSingleBin_CABAC(ctxIdxOffset + i - shiftContentIdx))
+                    if (DecodeSingleBin_CABAC(localCtxIdxOffset + i - shiftContentIdx))
                     {
                         // store position of non-zero coeff
                         coeffRuns[iNumCoeffs] = (Ipp16s) i;
@@ -466,14 +466,14 @@ public:
 no_more_coefficients_label:
 
         // calculate last coefficient in block
-        Ipp32u ctxIdxOffset = ctxIdxBase[COEFF_ABS_LEVEL_MINUS1] +
+        Ipp32u localCtxIdxOffset = ctxIdxBase[COEFF_ABS_LEVEL_MINUS1] +
                        ctxIdxBlockCatOffset[COEFF_ABS_LEVEL_MINUS1][ctxBlockCat];
 
         if (1 == iNumCoeffs)
         {
             // store coeff to coeff buffer
             Ipp32s pos = pScan[coeffRuns[0]];
-            pPosCoefbuf[pos] = (Coeffs) DecodeSingleSignedLevel_CABAC(ctxIdxOffset);
+            pPosCoefbuf[pos] = (Coeffs) DecodeSingleSignedLevel_CABAC(localCtxIdxOffset);
 
         }
         // reorder coefficient(s)
@@ -483,7 +483,7 @@ no_more_coefficients_label:
 
             do
             {
-                Ipp32s level = DecodeSignedLevel_CABAC(ctxIdxOffset,
+                Ipp32s level = DecodeSignedLevel_CABAC(localCtxIdxOffset,
                                                        numDecodAbsLevelEq1,
                                                        numDecodAbsLevelGt1,
                                                        9);
@@ -579,7 +579,7 @@ public:
         // See subclause 7.3.5.3.2 of H.264 standard
         Ipp32s coef_ctr=-1;
         Ipp32s maxNumCoeffminus1;
-        Ipp32u ctxIdxOffset, ctxIdxOffsetLast;
+        Ipp32u localCtxIdxOffset, ctxIdxOffsetLast;
         Ipp32u numDecodAbsLevelEq1 = 0, numDecodAbsLevelGt1 = 0;
         Ipp16s coeffRuns[18];
 
@@ -604,7 +604,7 @@ public:
         memset(pPosCoefbuf, 0, sizeof(Coeffs) * numOfCoeffs);
         maxNumCoeffminus1 = numOfCoeffs - 1;
 
-        ctxIdxOffset = ctxIdxBase[SIGNIFICANT_COEFF_FLAG] +
+        localCtxIdxOffset = ctxIdxBase[SIGNIFICANT_COEFF_FLAG] +
             ctxIdxBlockCatOffset[SIGNIFICANT_COEFF_FLAG][BLOCK_CHROMA_DC_LEVELS + color_format];
         ctxIdxOffsetLast = ctxIdxBase[LAST_SIGNIFICANT_COEFF_FLAG] +
             ctxIdxBlockCatOffset[LAST_SIGNIFICANT_COEFF_FLAG][BLOCK_CHROMA_DC_LEVELS + color_format];
@@ -621,7 +621,7 @@ public:
                 k = IPP_MIN(i >> (3 & (color_format - 1)), 2);
 
             // get significant_coeff_flag
-            if (bs->DecodeSingleBin_CABAC(ctxIdxOffset+k))
+            if (bs->DecodeSingleBin_CABAC(localCtxIdxOffset+k))
             {
                 // store position of non-zero coeff
                 coeffRuns[ncoefs] = (Ipp16s) i;
@@ -640,12 +640,12 @@ public:
         }
 
         // calculate last coefficient in block
-        ctxIdxOffset = ctxIdxBase[COEFF_ABS_LEVEL_MINUS1] +
+        localCtxIdxOffset = ctxIdxBase[COEFF_ABS_LEVEL_MINUS1] +
             ctxIdxBlockCatOffset[COEFF_ABS_LEVEL_MINUS1][BLOCK_CHROMA_DC_LEVELS + color_format];
 
         for (; ncoefs > 0; ncoefs--)
         {
-            Ipp32s level = bs->DecodeSignedLevel_CABAC(ctxIdxOffset,
+            Ipp32s level = bs->DecodeSignedLevel_CABAC(localCtxIdxOffset,
                                                        numDecodAbsLevelEq1,
                                                        numDecodAbsLevelGt1,8);
 
