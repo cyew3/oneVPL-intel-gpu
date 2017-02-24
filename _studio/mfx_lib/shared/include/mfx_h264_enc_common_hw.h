@@ -834,7 +834,8 @@ namespace MfxHwH264Encode
 
     mfxStatus CheckRunTimeExtBuffers(
         MfxVideoParam const & video,
-        mfxEncodeCtrl *       ctrl);
+        mfxEncodeCtrl *       ctrl,
+        mfxFrameSurface1 *    surface);
 
     mfxStatus CheckFEIRunTimeExtBuffersContent(
         MfxVideoParam const & video,

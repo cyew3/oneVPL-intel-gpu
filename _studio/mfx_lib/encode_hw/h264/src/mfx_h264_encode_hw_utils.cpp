@@ -4848,7 +4848,7 @@ mfxStatus MfxHwH264Encode::CheckEncodeFrameParam(
         // Check Runtime extension buffers if not buffered frames processing
         if (ctrl != 0 && ctrl->NumExtParam)
         {
-            checkSts = CheckRunTimeExtBuffers(video, ctrl);
+            checkSts = CheckRunTimeExtBuffers(video, ctrl, surface);
             if (checkSts < MFX_ERR_NONE) { return checkSts; }
         }
         else

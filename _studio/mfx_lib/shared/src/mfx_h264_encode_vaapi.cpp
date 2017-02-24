@@ -892,7 +892,7 @@ void FillPWT(
                 slice[i].RefPicList1[ref].frame_idx    = idx  = dpb[list1[ref] & 0x7f].m_frameIdx & 0x7f;
                 slice[i].RefPicList1[ref].picture_id          = reconQueue[idx].surface;
                 if (task.GetPicStructForEncode() != MFX_PICSTRUCT_PROGRESSIVE)
-                    slice[i].RefPicList1[ref].flags               = list0[ref] >> 7 ? VA_PICTURE_H264_BOTTOM_FIELD : VA_PICTURE_H264_TOP_FIELD;
+                    slice[i].RefPicList1[ref].flags               = list1[ref] >> 7 ? VA_PICTURE_H264_BOTTOM_FIELD : VA_PICTURE_H264_TOP_FIELD;
             }
             for (; ref < 32; ref++)
             {
@@ -997,7 +997,7 @@ void UpdateSliceSizeLimited(
             slice[i].RefPicList1[ref].frame_idx    = idx  = dpb[list1[ref] & 0x7f].m_frameIdx & 0x7f;
             slice[i].RefPicList1[ref].picture_id          = reconQueue[idx].surface;
             if (task.GetPicStructForEncode() != MFX_PICSTRUCT_PROGRESSIVE)
-                slice[i].RefPicList1[ref].flags               = list0[ref] >> 7 ? VA_PICTURE_H264_BOTTOM_FIELD : VA_PICTURE_H264_TOP_FIELD;
+                slice[i].RefPicList1[ref].flags               = list1[ref] >> 7 ? VA_PICTURE_H264_BOTTOM_FIELD : VA_PICTURE_H264_TOP_FIELD;
         }
         for (; ref < 32; ref++)
         {

@@ -5861,9 +5861,10 @@ mfxStatus MfxHwH264Encode::CheckPayloads(
 
 mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
     MfxVideoParam const & video,
-    mfxEncodeCtrl *       ctrl)
+    mfxEncodeCtrl *       ctrl,
+    mfxFrameSurface1 *    surface)
 {
-    MFX_CHECK_NULL_PTR1(ctrl);
+    MFX_CHECK_NULL_PTR2(ctrl, surface);
     mfxStatus checkSts = MFX_ERR_NONE;
 
     for (mfxU32 i = 0; i < ctrl->NumExtParam; i++)
@@ -5884,7 +5885,28 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
                             ctrl->ExtParam[i]->BufferId);
 
         bool buffer_pair_allowed  = IsRunTimeExtBufferPairAllowed(video, ctrl->ExtParam[i]->BufferId);
-        bool buffer_pair_required = video.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE && IsRunTimeExtBufferPairRequired(video, ctrl->ExtParam[i]->BufferId);
+
+        // if initialized PicStruct is UNKNOWN, to check runtime PicStruct
+        bool buffer_pair_required = IsRunTimeExtBufferPairRequired(video, ctrl->ExtParam[i]->BufferId);
+        if (buffer_pair_required)
+        {
+            switch (video.mfx.FrameInfo.PicStruct)
+            {
+            case MFX_PICSTRUCT_PROGRESSIVE:
+                buffer_pair_required = false;
+                break;
+            case MFX_PICSTRUCT_UNKNOWN:
+                // for runtime PicStruct, it may be set as (MFX_PICSTRUCT_PROGRESSIVE |
+                // MFX+PICSTRUCT_FIELD_TFF/BFF) for progressive frames
+                if (surface->Info.PicStruct & MFX_PICSTRUCT_PROGRESSIVE)
+                {
+                    buffer_pair_required = false;
+                }
+                break;
+            default:
+                break;
+            }
+        }
 
         if (buffer_pair && !buffer_pair_allowed)
         {
