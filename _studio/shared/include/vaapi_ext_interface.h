@@ -5,15 +5,13 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __VAAPI_EXT_INTERFACE_H__
 #define __VAAPI_EXT_INTERFACE_H__
 
 #include "mfx_config.h"
-
-//#define VAAPI_OPEN_SOURCE_DRIVER
 
 #ifdef MFX_EXTBUFF_GPU_HANG_ENABLE
 #define VATriggerCodecHangBufferType ((VABufferType)-16)

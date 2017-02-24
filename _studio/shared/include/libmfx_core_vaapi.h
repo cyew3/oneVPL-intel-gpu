@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -163,7 +163,7 @@ class PointerProxy
 
 inline bool IsSupported__VAEncMiscParameterPrivate(void)
 {
-#if !defined(VAAPI_OPEN_SOURCE_DRIVER)
+#if !defined(MFX_VAAPI_UPSTREAM)
     return true;
 #else
     return false;
@@ -173,7 +173,7 @@ inline bool IsSupported__VAEncMiscParameterPrivate(void)
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 inline bool IsSupported__VAHDCPEncryptionParameterBuffer(void)
 {
-#if defined(ANDROID) && !defined(VAAPI_OPEN_SOURCE_DRIVER)
+#if defined(ANDROID) && !defined(MFX_VAAPI_UPSTREAM)
     return true;
 #else
     return false;
