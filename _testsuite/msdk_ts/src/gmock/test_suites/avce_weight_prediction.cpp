@@ -150,6 +150,7 @@ namespace avce_weight_prediction
         mfxU16 WeightPredP;
         mfxU16 WeightPredB;
         std::vector<mfxExtPredWeightTable*> pwt;
+        mfxExtBuffer* tmp_buf;
 #ifdef DEBUG
         tsSurfaceWriter m_swriter;
 #endif
@@ -174,6 +175,7 @@ namespace avce_weight_prediction
             fn = 0;
             len = 0;
             buffer = new mfxU8[1000000];
+            tmp_buf = NULL;
 
             for (mfxU16 i = 0; i <= (NumFrames + 1); i++)
             {
@@ -272,7 +274,7 @@ namespace avce_weight_prediction
         }
         if ((WeightPredP == MFX_WEIGHTED_PRED_EXPLICIT) || (WeightPredB == EXP_WEIGHT_PEREDICTION))
         {
-            mfxExtBuffer* tmp_buf = (mfxExtBuffer*)(pwt[fn]);
+            tmp_buf = (mfxExtBuffer*)(pwt[fn]);
             m_ctrl.ExtParam = &tmp_buf;
             m_ctrl.NumExtParam = 1;
         }
@@ -488,7 +490,6 @@ namespace avce_weight_prediction
             dec.Close();
         }
 
-        delete m_ctrl.ExtParam;
         TS_END;
         return 0;
     }
