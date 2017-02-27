@@ -653,7 +653,9 @@ mfxStatus Plugin::ConfigTask(Task &task)
 
     task.m_pRecFrame->pSurface->Data.FrameOrder = task.m_frameOrder;
 
-    mfxExtCodingOptionVP9& opt = GetExtBufferRef(curMfxPar);
+    // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
+    //mfxExtVP9CodingOption& opt = GetExtBufferRef(curMfxPar);
+    mfxExtCodingOptionDDI& opt = GetExtBufferRef(curMfxPar);
     if (opt.WriteIVFHeaders != MFX_CODINGOPTION_OFF)
     {
         task.m_insertIVFSeqHeader = (task.m_frameOrder == 0 && m_bStartIVFSequence);
@@ -906,7 +908,9 @@ mfxStatus Plugin::UpdateBitstream(
         FastCopy::Copy(bsData, bsSizeToCopy, bitstream.Y, bitstream.Pitch, roi, COPY_VIDEO_TO_SYS);
     }
 
-    mfxExtCodingOptionVP9 &opt = GetExtBufferRef(m_video);
+    // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
+    // mfxExtVP9CodingOption &opt = GetExtBufferRef(m_video);
+    mfxExtCodingOptionDDI& opt = GetExtBufferRef(m_video);
 
     if (opt.WriteIVFHeaders != MFX_CODINGOPTION_OFF)
     {

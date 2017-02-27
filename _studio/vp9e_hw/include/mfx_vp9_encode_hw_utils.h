@@ -245,10 +245,12 @@ enum // identifies memory type at encoder input w/o any details
     template<class T> struct ExtBufTypeToId {};
 
 #define BIND_EXTBUF_TYPE_TO_ID(TYPE, ID) template<> struct ExtBufTypeToId<TYPE> { enum { id = ID }; }
-    BIND_EXTBUF_TYPE_TO_ID (mfxExtCodingOptionVP9,  MFX_EXTBUFF_CODING_OPTION_VP9 );
+    // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
+    // BIND_EXTBUF_TYPE_TO_ID (mfxExtVP9CodingOption,  MFX_EXTBUFF_VP9_CODING_OPTION);
     BIND_EXTBUF_TYPE_TO_ID (mfxExtOpaqueSurfaceAlloc,MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
     BIND_EXTBUF_TYPE_TO_ID (mfxExtCodingOption2, MFX_EXTBUFF_CODING_OPTION2);
     BIND_EXTBUF_TYPE_TO_ID (mfxExtCodingOption3, MFX_EXTBUFF_CODING_OPTION3);
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtCodingOptionDDI, MFX_EXTBUFF_DDI);
 #undef BIND_EXTBUF_TYPE_TO_ID
 
     template <class T> inline void InitExtBufHeader(T & extBuf)
@@ -400,7 +402,9 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
         mfxU32             m_status;
     };
 
-#define NUM_OF_SUPPORTED_EXT_BUFFERS 4 // mfxExtCodingOptionVP9, mfxExtOpaqueSurfaceAlloc, mfxExtCodingOption2, mfxExtCodingOption3
+// TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
+// #define NUM_OF_SUPPORTED_EXT_BUFFERS 5 // mfxExtVP9CodingOption, mfxExtOpaqueSurfaceAlloc, mfxExtCodingOption2, mfxExtCodingOption3, mfxExtCodingOptionDDI
+#define NUM_OF_SUPPORTED_EXT_BUFFERS 4 // mfxExtOpaqueSurfaceAlloc, mfxExtCodingOption2, mfxExtCodingOption3, mfxExtCodingOptionDDI
 
     class VP9MfxVideoParam : public mfxVideoParam
     {
@@ -426,10 +430,12 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
 
     private:
         mfxExtBuffer *              m_extParam[NUM_OF_SUPPORTED_EXT_BUFFERS];
-        mfxExtCodingOptionVP9       m_extOpt;
+        // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
+        // mfxExtVP9CodingOption    m_extOpt;
         mfxExtOpaqueSurfaceAlloc    m_extOpaque;
         mfxExtCodingOption2         m_extOpt2;
         mfxExtCodingOption3         m_extOpt3;
+        mfxExtCodingOptionDDI       m_extOptDDI;
     };
 
     class Task;

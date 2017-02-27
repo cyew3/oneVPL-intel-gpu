@@ -147,10 +147,12 @@ namespace vp9e_cqp
 
             if(tc.type == USE_EXT_BUFFER_FRAME)
             {
+                /*
+                // Check how to extract QIndex-s with new VP9-API
                 ((mfxExtCodingOptionVP9*)m_ExtBuff.get())->QIndexDeltaLumaDC = VP9E_CQP_QIndexDeltaLumaDC+cycle_counter;
                 ((mfxExtCodingOptionVP9*)m_ExtBuff.get())->QIndexDeltaChromaAC = VP9E_CQP_QIndexDeltaChromaAC+cycle_counter;
                 ((mfxExtCodingOptionVP9*)m_ExtBuff.get())->QIndexDeltaChromaDC = VP9E_CQP_QIndexDeltaChromaDC+cycle_counter;
-
+                */
 
                 m_pCtrl->NumExtParam = 1;
                 m_pCtrl->ExtParam = (mfxExtBuffer **)&m_ExtBuff;
@@ -283,6 +285,8 @@ namespace vp9e_cqp
 
         if(tc.type == USE_EXT_BUFFER || tc.type == USE_EXT_BUFFER_FRAME)
         {
+            /*
+            // Check how to extract QIndex-s with new VP9-API
             m_ExtBuff.reset((mfxExtBuffer*)(new mfxExtCodingOptionVP9()));
             memset(m_ExtBuff.get(), 0, sizeof(mfxExtCodingOptionVP9));
             m_ExtBuff->BufferId = MFX_EXTBUFF_CODING_OPTION_VP9;
@@ -297,6 +301,7 @@ namespace vp9e_cqp
                 m_pPar->NumExtParam = 1;
                 m_pPar->ExtParam = (mfxExtBuffer **)&m_ExtBuff;
             }
+            */
         }
 
         InitAndSetAllocator();

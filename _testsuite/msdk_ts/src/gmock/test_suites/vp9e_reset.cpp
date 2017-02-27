@@ -76,8 +76,11 @@ namespace vp9e_reset
         void COVP9(tc_par& arg)
         {
             tsExtBufType<mfxVideoParam>* p = (arg.p0 == MFX_INIT) ? &m_par : m_resetPar.pPar;
+            /*
+            // Check how to extract Segmentation params with new VP9-API
             mfxExtCodingOptionVP9& co = *p;
             co.EnableMultipleSegments = arg.p3;
+            */
         }
         void Size(tc_par& arg)
         {

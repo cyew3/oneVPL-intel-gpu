@@ -384,7 +384,9 @@ namespace MfxHwVP9Encode
         localBuf.pBuffer = pBuf;
         localBuf.bitOffset = 0;
 
-        mfxExtCodingOptionVP9 &opt = GetExtBufferRef(par);
+        // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
+        // mfxExtVP9CodingOption &opt = GetExtBufferRef(par);
+        mfxExtCodingOptionDDI &opt = GetExtBufferRef(par);
         mfxU16 ivfHeaderSize = 0;
 
         if (opt.WriteIVFHeaders != MFX_CODINGOPTION_OFF)
@@ -395,7 +397,7 @@ namespace MfxHwVP9Encode
                     par.mfx.FrameInfo.Height,
                     par.mfx.FrameInfo.FrameRateExtN,
                     par.mfx.FrameInfo.FrameRateExtD,
-                    opt.NumFramesForIVF,
+                    0,
                     localBuf.pBuffer,
                     bufferSizeBytes);
                 ivfHeaderSize += IVF_SEQ_HEADER_SIZE_BYTES;

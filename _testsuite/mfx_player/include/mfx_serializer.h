@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2010-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2010-2017 Intel Corporation. All Rights Reserved.
 
 File Name: mfxstructures.h
 
@@ -608,25 +608,25 @@ protected:
     virtual void ConstructValues () const;
 };
 
-
-template<>
-class MFXStructureRef <mfxExtCodingOptionVP9>
-    : public MFXStructureBase<mfxExtCodingOptionVP9>
+// TODO: uncomment when buffer will be added to API
+/*template<>
+class MFXStructureRef <mfxExtVP9CodingOption>
+    : public MFXStructureBase<mfxExtVP9CodingOption>
 {
 public:
     MFXStructureRef(mfxExtBuffer & refStruct, int flags = 0)
-        : MFXStructureBase<mfxExtCodingOptionVP9>((mfxExtCodingOptionVP9 &)refStruct, flags)
+        : MFXStructureBase<mfxExtVP9CodingOption>((mfxExtVP9CodingOption &)refStruct, flags)
     {
     }
 
-    MFXStructureRef(mfxExtCodingOptionVP9 & refStruct, int flags = 0)
-        :MFXStructureBase<mfxExtCodingOptionVP9>(refStruct, flags)
+    MFXStructureRef(mfxExtVP9CodingOption & refStruct, int flags = 0)
+        :MFXStructureBase<mfxExtVP9CodingOption>(refStruct, flags)
     {
     }
 
 protected:
     virtual void ConstructValues () const;
-};
+};*/
 
 template<>
 class MFXStructureRef <mfxFrameInfo>
@@ -662,21 +662,6 @@ class MFXStructureRef <mfxInfoVPP>
 public:
     MFXStructureRef(mfxInfoVPP & refStruct, int flags = 0)
         : MFXStructureBase<mfxInfoVPP>(refStruct, flags)
-    {
-    }
-
-protected:
-    virtual void ConstructValues () const;
-};
-
-//!!
-template<>
-class MFXStructureRef <mfxSegmentParamVP9>
-    : public MFXStructureBase<mfxSegmentParamVP9>
-{
-public:
-    MFXStructureRef(mfxSegmentParamVP9 & refStruct, int flags = 0)
-        : MFXStructureBase<mfxSegmentParamVP9>(refStruct, flags)
     {
     }
 

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFX_EXT_BUFFERS_H__
@@ -85,6 +85,8 @@ typedef struct {
     mfxU16 Hme;                     // tri-state
 
     mfxU16 LCUSize;                 // 32 or 64 - overrides default value of Largest Coding Unit
+
+    mfxU16 WriteIVFHeaders;         // tri-state
 
 } mfxExtCodingOptionDDI;
 

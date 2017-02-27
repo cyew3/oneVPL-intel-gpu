@@ -134,7 +134,8 @@ inline mfxStatus SetOrCopySupportedParams(mfxInfoMFX *pDst, mfxInfoMFX const *pS
     return MFX_ERR_NONE;
 }
 
-inline mfxStatus SetOrCopySupportedParams(mfxExtCodingOptionVP9 *pDst, mfxExtCodingOptionVP9 const *pSrc = 0, bool zeroDst = true)
+// TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
+/*inline mfxStatus SetOrCopySupportedParams(mfxExtVP9CodingOption *pDst, mfxExtVP9CodingOption const *pSrc = 0, bool zeroDst = true)
 {
     MFX_CHECK_NULL_PTR1(pDst);
 
@@ -159,7 +160,7 @@ inline mfxStatus SetOrCopySupportedParams(mfxExtCodingOptionVP9 *pDst, mfxExtCod
     }
 
     return MFX_ERR_NONE;
-}
+}*/
 
 inline mfxStatus SetOrCopySupportedParams(mfxExtCodingOption2 *pDst, mfxExtCodingOption2 const *pSrc = 0, bool zeroDst = true)
 {
@@ -210,11 +211,12 @@ mfxStatus SetSupportedParameters(mfxVideoParam & par)
     mfxStatus sts = CheckExtBufferHeaders(par.NumExtParam, par.ExtParam);
     MFX_CHECK_STS(sts);
 
-    mfxExtCodingOptionVP9 *pOpt = GetExtBuffer(par);
+    // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
+    /*mfxExtVP9CodingOption *pOpt = GetExtBuffer(par);
     if (pOpt != 0)
     {
         SetOrCopySupportedParams(pOpt);
-    }
+    }*/
 
     mfxExtCodingOption2 *pOpt2 = GetExtBuffer(par);
     if (pOpt2 != 0)
@@ -288,10 +290,11 @@ void InheritDefaults(VP9MfxVideoParam& defaultsDst, VP9MfxVideoParam const & def
     // inherit default from mfxInfoMfx
     SetOrCopySupportedParams(&defaultsDst.mfx, &defaultsSrc.mfx, false);
 
-    // inherit defaults from mfxExtCodingOptionVP9
-    mfxExtCodingOptionVP9* pOptDst = GetExtBuffer(defaultsDst);
-    mfxExtCodingOptionVP9* pOptSrc = GetExtBuffer(defaultsSrc);
-    SetOrCopySupportedParams(pOptDst, pOptSrc, false);
+    // inherit defaults from mfxExtVP9CodingOption
+    // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
+    /*mfxExtVP9CodingOption* pOptDst = GetExtBuffer(defaultsDst);
+    mfxExtVP9CodingOption* pOptSrc = GetExtBuffer(defaultsSrc);
+    SetOrCopySupportedParams(pOptDst, pOptSrc, false);*/
 
     // inherit defaults from mfxExtCodingOption2
     mfxExtCodingOption2* pOpt2Dst = GetExtBuffer(defaultsDst);
@@ -314,13 +317,14 @@ mfxStatus CleanOutUnsupportedParameters(VP9MfxVideoParam &par)
         sts = MFX_ERR_UNSUPPORTED;
     }
 
-    mfxExtCodingOptionVP9 &optTmp = GetExtBufferRef(tmp);
-    mfxExtCodingOptionVP9 &optPar = GetExtBufferRef(par);
+    // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
+    /*mfxExtVP9CodingOption &optTmp = GetExtBufferRef(tmp);
+    mfxExtVP9CodingOption &optPar = GetExtBufferRef(par);
     SetOrCopySupportedParams(&optPar, &optTmp);
     if (memcmp(&optPar, &optTmp, sizeof(mfxExtCodingOptionVP9)))
     {
         sts = MFX_ERR_UNSUPPORTED;
-    }
+    }*/
 
     return sts;
 }
@@ -753,13 +757,16 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         changed = true;
     }
 
-    // check mfxExtCodingOptionVP9
-    mfxExtCodingOptionVP9 &opt = GetExtBufferRef(par);
-    if (false == CheckTriStateOption(opt.EnableMultipleSegments))
+    // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
+    // mfxExtVP9CodingOption &opt = GetExtBufferRef(par);
+    mfxExtCodingOptionDDI &opt = GetExtBufferRef(par);
+    if (false == CheckTriStateOption(opt.WriteIVFHeaders))
     {
         changed = true;
     }
-    if (false == CheckTriStateOption(opt.WriteIVFHeaders))
+
+    // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
+    /*if (false == CheckTriStateOption(opt.EnableMultipleSegments))
     {
         changed = true;
     }
@@ -793,7 +800,7 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         {
             changed = true;
         }
-    }
+    }*/
 
     // check mfxExtCodingOption2
     if (false == CheckTriStateOption(opt2.MBBRC))
@@ -959,7 +966,9 @@ mfxStatus SetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
 
     // ext buffers
-    mfxExtCodingOptionVP9 &opt = GetExtBufferRef(par);
+    // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
+    // mfxExtVP9CodingOption &opt = GetExtBufferRef(par);
+    mfxExtCodingOptionDDI &opt = GetExtBufferRef(par);
     SetDefault(opt.WriteIVFHeaders, MFX_CODINGOPTION_ON);
 
     // check final set of parameters

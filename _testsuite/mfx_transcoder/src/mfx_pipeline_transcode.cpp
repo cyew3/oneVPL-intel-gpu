@@ -83,7 +83,8 @@ Copyright(c) 2008-2017 Intel Corporation. All Rights Reserved.
 #define HANDLE_HEVC_TILES(member, OPT_TYPE, description)      HANDLE_OPTION_FOR_EXT_BUFFER(m_extHEVCTiles, member, OPT_TYPE, description)
 #define HANDLE_HEVC_PARAM(member, OPT_TYPE, description)      HANDLE_OPTION_FOR_EXT_BUFFER(m_extHEVCParam, member, OPT_TYPE, description)
 #define HANDLE_VP8_OPTION(member, OPT_TYPE, description) HANDLE_OPTION_FOR_EXT_BUFFER(m_extVP8CodingOptions, member, OPT_TYPE, description)
-#define HANDLE_VP9_OPTION(member, OPT_TYPE, description) HANDLE_OPTION_FOR_EXT_BUFFER(m_extVP9CodingOptions, member, OPT_TYPE, description)
+// TODO: uncomment when buffer will be added to API
+// #define HANDLE_VP9_OPTION(member, OPT_TYPE, description) HANDLE_OPTION_FOR_EXT_BUFFER(m_extVP9CodingOptions, member, OPT_TYPE, description)
 #define HANDLE_ENCRESET_OPTION(member, OPT_TYPE, description) HANDLE_OPTION_FOR_EXT_BUFFER(m_extEncoderReset, member, OPT_TYPE, description)
 
 
@@ -120,7 +121,8 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
     , m_extHEVCTiles(new mfxExtHEVCTiles())
     , m_extHEVCParam(new mfxExtHEVCParam())
     , m_extVP8CodingOptions(new mfxExtVP8CodingOption())
-    , m_extVP9CodingOptions(new mfxExtCodingOptionVP9())
+    // TODO: uncomment when buffer will be added to API
+    //, m_extVP9CodingOptions(new mfxExtVP9CodingOption())
     , m_extEncoderRoi(new mfxExtEncoderROI())
     , m_extDirtyRect(new mfxExtDirtyRect())
     , m_extMoveRect(new mfxExtMoveRect())
@@ -319,14 +321,6 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_VP8_OPTION(WriteIVFHeaders,       OPT_UINT_16,   "0-maxU16"),
         HANDLE_VP8_OPTION(NumFramesForIVFHeader, OPT_UINT_32,   "0-maxU32"),
 
-        HANDLE_VP9_OPTION(QIndexDeltaLumaDC,     OPT_UINT_16,   "0-maxU16"),
-        HANDLE_VP9_OPTION(WriteIVFHeaders,       OPT_UINT_16,   "0-maxU16"),
-        HANDLE_VP9_OPTION(NumFramesForIVF,       OPT_UINT_16,   "0-maxU16"),
-        HANDLE_VP9_OPTION(QIndexDeltaLumaDC,     OPT_UINT_16,   "0-maxU16"),
-        HANDLE_VP9_OPTION(QIndexDeltaChromaAC,   OPT_UINT_16,   "0-maxU16"),
-        HANDLE_VP9_OPTION(QIndexDeltaChromaDC,   OPT_UINT_16,   "0-maxU16"),
-        HANDLE_VP9_OPTION(EnableMultipleSegments,OPT_UINT_16,   "0-maxU16"),
-
         // mfxExtCodingOption2
         HANDLE_EXT_OPTION2(IntRefType,             OPT_UINT_16,   ""),
         HANDLE_EXT_OPTION2(IntRefCycleSize,        OPT_UINT_16,   ""),
@@ -423,6 +417,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_DDI_OPTION(DirectSpatialMvPredFlag, OPT_TRI_STATE,  "on=spatial, off=temporal"),
         HANDLE_DDI_OPTION(CabacInitIdcPlus1,       OPT_UINT_16,    "0-to use default value (depends on Target Usaeg), 1-cabacinitidc=0, 2-cabacinitidc=1,  etc"),
         HANDLE_DDI_OPTION(LCUSize,                 OPT_UINT_16,    "32 or 64 - overrides default value of Largest Coding Unit"),
+        HANDLE_DDI_OPTION(WriteIVFHeaders,         OPT_TRI_STATE,    ""),
 
         //mfxExtEncoderCapability
         HANDLE_CAP_OPTION(MBPerSec,                OPT_BOOL,       "Query Encoder for Max MB Per Second"),
@@ -1444,55 +1439,6 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             argv ++;
             MFX_PARSE_INT(m_extVP8CodingOptions->Version, argv[0]);
         }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-VP9Version"), VM_STRING("Set provided value for Version in mfxExtVP9CodingOption structure"), OPT_INT_32, VM_STRING("")))
-        {
-            MFX_CHECK(1 + argv < argvEnd);
-            argv ++;
-            MFX_PARSE_INT(m_extVP9CodingOptions->Version, argv[0]);
-        }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-VP9SharpnessLevel"), VM_STRING("Set SharpnessLevel parameter for VP9 encoder"), OPT_INT_32, VM_STRING("")))
-        {
-            MFX_CHECK(1 + argv < argvEnd);
-            argv ++;
-            MFX_PARSE_INT(m_extVP9CodingOptions->SharpnessLevel, argv[0]);
-        }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-LoopFilterRefDelta"), VM_STRING("Set LoopFilterRefDelta array for VP9 encoder (LoopFilterRefDelta[0] LoopFilterRefDelta[1] LoopFilterRefDelta[2] LoopFilterRefDelta[3])"), OPT_SPECIAL, VM_STRING("array")))
-        {
-            MFX_CHECK(4 + argv < argvEnd);
-            argv ++;
-            for (mfxU8 i = 0; i < 4; i ++)
-            {
-                MFX_PARSE_INT(m_extVP9CodingOptions->LoopFilterRefDelta[i], argv[0]);
-                argv ++;
-            }
-            argv--;
-        }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-LoopFilterModeDelta"), VM_STRING("Set LoopFilterModeDelta array for VP9 encoder (LoopFilterModeDelta[0] LoopFilterModeDelta[1])"), OPT_SPECIAL, VM_STRING("array")))
-        {
-            MFX_CHECK(2 + argv < argvEnd);
-            argv ++;
-            for (mfxU8 i = 0; i < 2; i ++)
-            {
-                MFX_PARSE_INT(m_extVP9CodingOptions->LoopFilterModeDelta[i], argv[0]);
-                argv ++;
-            }
-            argv--;
-        }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-mfxSegmentParamVP9"), VM_STRING("Set corresponding mfxSegmentParamVP9 structure (struct_index ReferenceAndSkipCtrl LoopFilterLevelDelta QIndexDelta)"), OPT_SPECIAL, VM_STRING("struct array")))
-        {
-            MFX_CHECK(4 + argv < argvEnd);
-            argv ++;
-            mfxU16 struct_index = 0;
-            MFX_PARSE_INT(struct_index, argv[0]);
-            argv ++;
-            MFX_PARSE_INT(m_extVP9CodingOptions->Segment[struct_index].ReferenceAndSkipCtrl, argv[0]);
-            MFX_PARSE_INT(m_extVP9CodingOptions->Segment[struct_index].LoopFilterLevelDelta, argv[1]);
-            MFX_PARSE_INT(m_extVP9CodingOptions->Segment[struct_index].QIndexDelta, argv[2]);
-
-            argv += 3;
-
-            argv--;
-        }
         else if (m_OptProc.Check(argv[0], VM_STRING("-roi"), VM_STRING(""), OPT_SPECIAL, VM_STRING("")))
         {
             MFX_CHECK(1 + argv < argvEnd);
@@ -2024,8 +1970,9 @@ mfxStatus MFXTranscodingPipeline::CheckParams()
     if (!m_extVP8CodingOptions.IsZero())
         m_components[eREN].m_extParams.push_back(m_extVP8CodingOptions);
 
-    if (!m_extVP9CodingOptions.IsZero())
-        m_components[eREN].m_extParams.push_back(m_extVP9CodingOptions);
+    // TODO: uncomment when buffer will be added to API
+    /*if (!m_extVP9CodingOptions.IsZero())
+        m_components[eREN].m_extParams.push_back(m_extVP9CodingOptions);*/
 
     if (!m_extEncoderRoi.IsZero())
         m_components[eREN].m_extParams.push_back(m_extEncoderRoi);

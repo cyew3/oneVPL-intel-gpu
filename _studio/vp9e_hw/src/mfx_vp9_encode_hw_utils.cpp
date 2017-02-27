@@ -111,13 +111,16 @@ void VP9MfxVideoParam::Construct(mfxVideoParam const & par)
 
     Zero(m_extParam);
 
-    InitExtBufHeader(m_extOpt);
+    // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
+    // InitExtBufHeader(m_extOpt);
     InitExtBufHeader(m_extOpaque);
     InitExtBufHeader(m_extOpt2);
     InitExtBufHeader(m_extOpt3);
+    InitExtBufHeader(m_extOptDDI);
 
-    if (mfxExtCodingOptionVP9 * opts = GetExtBuffer(par))
-        m_extOpt = *opts;
+    // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
+    /*if (mfxExtVP9CodingOption * opts = GetExtBuffer(par))
+        m_extOpt = *opts;*/
 
     if (mfxExtOpaqueSurfaceAlloc * opts = GetExtBuffer(par))
         m_extOpaque = *opts;
@@ -128,7 +131,12 @@ void VP9MfxVideoParam::Construct(mfxVideoParam const & par)
     if (mfxExtCodingOption3 * opts = GetExtBuffer(par))
         m_extOpt3 = *opts;
 
-    m_extParam[0] = &m_extOpt.Header;
+    if (mfxExtCodingOptionDDI * opts = GetExtBuffer(par))
+        m_extOptDDI = *opts;
+
+    // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
+    // m_extParam[0] = &m_extOpt.Header;
+    m_extParam[0] = &m_extOptDDI.Header;
     m_extParam[1] = &m_extOpaque.Header;
     m_extParam[2] = &m_extOpt2.Header;
     m_extParam[3] = &m_extOpt3.Header;
@@ -202,9 +210,10 @@ mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
     mfxU16 forcedFrameType = task.m_ctrl.FrameType;
     frameParam.frameType = (mfxU8)((task.m_frameOrder % par.mfx.GopPicSize) == 0 || (forcedFrameType & MFX_FRAMETYPE_I) ? KEY_FRAME : INTER_FRAME);
 
-    mfxExtCodingOptionVP9 const &opt = GetExtBufferRef(par);
-    mfxExtCodingOptionVP9 const *pOptRuntime = GetExtBuffer(task.m_ctrl);
-    mfxExtCodingOptionVP9 const *pOpt = pOptRuntime ? pOptRuntime : &opt;
+    // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
+    /*mfxExtVP9CodingOption const &opt = GetExtBufferRef(par);
+    mfxExtVP9CodingOption const *pOptRuntime = GetExtBuffer(task.m_ctrl);
+    mfxExtVP9CodingOption const *pOpt = pOptRuntime ? pOptRuntime : &opt;*/
 
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
     {
@@ -214,10 +223,12 @@ mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
     }
 
     frameParam.lfLevel   = (mfxU8)ModifyLoopFilterLevelQPBased(frameParam.baseQIndex, 0); // always 0 is passes since at the moment there is no LF level in MSDK API
-    frameParam.sharpness = (mfxU8)pOpt->SharpnessLevel;
 
     frameParam.width  = frameParam.renderWidth = par.mfx.FrameInfo.Width;
     frameParam.height = frameParam.renderHeight = par.mfx.FrameInfo.Height;
+
+    // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
+    /*frameParam.sharpness = (mfxU8)pOpt->SharpnessLevel;
 
     for (mfxU8 i = 0; i < 4; i ++)
     {
@@ -229,7 +240,7 @@ mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
 
     frameParam.qIndexDeltaLumaDC   = (mfxI8)pOpt->QIndexDeltaLumaDC;
     frameParam.qIndexDeltaChromaAC = (mfxI8)pOpt->QIndexDeltaChromaAC;
-    frameParam.qIndexDeltaChromaDC = (mfxI8)pOpt->QIndexDeltaChromaDC;
+    frameParam.qIndexDeltaChromaDC = (mfxI8)pOpt->QIndexDeltaChromaDC;*/
 
     mfxExtCodingOption2 const & opt2 = GetExtBufferRef(par);
     if (IsOn(opt2.MBBRC))

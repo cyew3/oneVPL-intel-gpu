@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2010 - 2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2010 - 2017 Intel Corporation. All Rights Reserved.
 
 File Name: mfx_serializer.cpp
 
@@ -259,6 +259,7 @@ void MFXStructureRef <mfxExtCodingOptionDDI>::ConstructValues () const
     SERIALIZE_INT(CabacInitIdcPlus1);
 
     SERIALIZE_INT(LCUSize);
+    SERIALIZE_INT(WriteIVFHeaders);
 
 }
 
@@ -377,37 +378,10 @@ void MFXStructureRef <mfxExtVP8CodingOption>::ConstructValues() const
     SERIALIZE_INT(NumFramesForIVFHeader);
 }
 
-void MFXStructureRef<mfxSegmentParamVP9>::ConstructValues () const
+// TODO: uncomment when buffer will be added to API
+/*void MFXStructureRef <mfxExtVP9CodingOption>::ConstructValues() const
 {
-    SERIALIZE_INT(ReferenceAndSkipCtrl);
-    SERIALIZE_INT(LoopFilterLevelDelta);
-    SERIALIZE_INT(QIndexDelta);
-    SERIALIZE_POD_ARRAY(reserved, 13);
-}
-
-void MFXStructureRef <mfxExtCodingOptionVP9>::ConstructValues() const
-{
-    SERIALIZE_INT(Version);
-    SERIALIZE_INT(SharpnessLevel);
-    SERIALIZE_INT(QIndexDeltaLumaDC);
-    SERIALIZE_INT(WriteIVFHeaders);
-    SERIALIZE_INT(NumFramesForIVF);
-    SERIALIZE_POD_ARRAY(LoopFilterRefDelta,4);
-    SERIALIZE_POD_ARRAY(LoopFilterModeDelta,2);
-    SERIALIZE_INT(QIndexDeltaLumaDC);
-    SERIALIZE_INT(QIndexDeltaChromaAC);
-    SERIALIZE_INT(QIndexDeltaChromaDC);
-
-    SERIALIZE_INT(Log2TileRows);
-    SERIALIZE_INT(Log2TileColumns);
-
-    SERIALIZE_INT(reserved1);
-    SERIALIZE_INT(EnableMultipleSegments);
-
-    SERIALIZE_STRUCTS_ARRAY(Segment, 8);
-
-    SERIALIZE_POD_ARRAY(reserved,106);
-}
+}*/
 
 void MFXStructureRef <mfxFrameInfo>::ConstructValues () const
 {
@@ -884,10 +858,11 @@ void MFXStructureRef <mfxExtBuffer>:: ConstructValues () const {
             SerializeStruct(VM_STRING("VP8."), *(mfxExtVP8CodingOption*)m_pStruct);
             break;
         }
-        case MFX_EXTBUFF_CODING_OPTION_VP9 :{
-            SerializeStruct(VM_STRING("VP9."), *(mfxExtCodingOptionVP9*)m_pStruct);
+        // TODO: uncomment when buffer will be added to API
+        /*case MFX_EXTBUFF_CODING_OPTION_VP9 :{
+            SerializeStruct(VM_STRING("VP9."), *(mfxExtVP9CodingOption*)m_pStruct);
             break;
-        }
+        }*/
         case MFX_EXTBUFF_MVC_SEQ_DESC : {
             SerializeStruct(VM_STRING("MVC."), *(mfxExtMVCSeqDesc*)m_pStruct);
             break;
