@@ -135,7 +135,7 @@
       <SubSystem>Console</SubSystem>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(SolutionDir)6fadc791a0c2eb479ab6dcd5ea9da347\plugin_for_debug.cfg" "$(OutDir)plugin.cfg" /y </Command>
+      <Command>cmd /c $(ProjectDir)\make_plugin_cfg.bat 1 $(ProjectName) 02 0 "$(OutDir)" "..\..\..\mdp_msdk-api\include\" _d</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>
@@ -165,7 +165,7 @@
       <SubSystem>Console</SubSystem>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(SolutionDir)6fadc791a0c2eb479ab6dcd5ea9da347\plugin_for_debug.cfg" "$(OutDir)plugin.cfg" /y</Command>
+      <Command>cmd /c $(ProjectDir)\make_plugin_cfg.bat 1 $(ProjectName) 02 0 "$(OutDir)" "..\..\..\mdp_msdk-api\include\" _d</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>
@@ -196,7 +196,7 @@
       <ImportLibrary>$(OutDir)\..\..\lib\$(TargetName).lib</ImportLibrary>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(SolutionDir)6fadc791a0c2eb479ab6dcd5ea9da347\plugin.cfg" "$(OutDir)plugin.cfg" /y</Command>
+      <Command>cmd /c $(ProjectDir)\make_plugin_cfg.bat 1 $(ProjectName) 02 0 "$(OutDir)" "..\..\..\mdp_msdk-api\include\"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>
@@ -226,7 +226,7 @@
       <ImportLibrary>$(OutDir)\..\..\lib\$(TargetName).lib</ImportLibrary>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(SolutionDir)6fadc791a0c2eb479ab6dcd5ea9da347\plugin.cfg" "$(OutDir)plugin.cfg" /y</Command>
+      <Command>cmd /c $(ProjectDir)\make_plugin_cfg.bat 1 $(ProjectName) 02 0 "$(OutDir)" "..\..\..\mdp_msdk-api\include\"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>
