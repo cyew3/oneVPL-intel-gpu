@@ -777,6 +777,7 @@
     <ClCompile Include="..\..\hevce_hw\h265\src\mfx_h265_encode_hw_d3d11.cpp" />
     <ClCompile Include="..\..\hevce_hw\h265\src\mfx_h265_encode_hw_d3d9.cpp" />
     <ClCompile Include="..\..\hevce_hw\h265\src\mfx_h265_encode_hw_ddi.cpp" />
+    <ClCompile Include="..\..\hevce_hw\h265\src\mfx_h265_encode_hw_ddi_trace.cpp" />
     <ClCompile Include="..\..\hevce_hw\h265\src\mfx_h265_encode_hw_par.cpp" />
     <ClCompile Include="..\..\hevce_hw\h265\src\mfx_h265_encode_hw_utils.cpp" />
     <ClCompile Include="..\..\shared\src\auxiliary_device.cpp" />
