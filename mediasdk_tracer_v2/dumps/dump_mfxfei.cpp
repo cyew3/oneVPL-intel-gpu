@@ -644,14 +644,39 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiPPS &
     DUMP_FIELD(SPSId);
     DUMP_FIELD(PPSId);
     DUMP_FIELD(PictureType);
+    DUMP_FIELD(FrameType);
     DUMP_FIELD(PicInitQP);
     DUMP_FIELD(NumRefIdxL0Active);
     DUMP_FIELD(NumRefIdxL1Active);
-    for (unsigned int i = 0; i < GET_ARRAY_SIZE(_struct.ReferenceFrames); i++)
-        str += structName + ".ReferenceFrames[" + ToString(i) + "]=" + ToString(_struct.ReferenceFrames[i]) + "\n";
     DUMP_FIELD(ChromaQPIndexOffset);
     DUMP_FIELD(SecondChromaQPIndexOffset);
     DUMP_FIELD(Transform8x8ModeFlag);
+
+    str += structName + ".DpbBefore[]={\n";
+    for (unsigned int i = 0; i < GET_ARRAY_SIZE(_struct.DpbBefore); i++)
+    {
+        str += "    [" + ToString(i) + "]\n";
+        str += "    {\n";
+        str += "        .Index"            + ToString(_struct.DpbBefore[i].Index)            + "\n";
+        str += "        .PicType"          + ToString(_struct.DpbBefore[i].PicType)          + "\n";
+        str += "        .FrameNumWrap"     + ToString(_struct.DpbBefore[i].FrameNumWrap)     + "\n";
+        str += "        .LongTermFrameIdx" + ToString(_struct.DpbBefore[i].LongTermFrameIdx) + "\n";
+        str += "    }\n";
+    }
+    str += "}\n";
+
+    str += structName + ".DpbAfter[]={\n";
+    for (unsigned int i = 0; i < GET_ARRAY_SIZE(_struct.DpbAfter); i++)
+    {
+        str += "    [" + ToString(i) + "]\n";
+        str += "    {\n";
+        str += "        .Index"            + ToString(_struct.DpbAfter[i].Index)            + "\n";
+        str += "        .PicType"          + ToString(_struct.DpbAfter[i].PicType)          + "\n";
+        str += "        .FrameNumWrap"     + ToString(_struct.DpbAfter[i].FrameNumWrap)     + "\n";
+        str += "        .LongTermFrameIdx" + ToString(_struct.DpbAfter[i].LongTermFrameIdx) + "\n";
+        str += "    }\n";
+    }
+    str += "}\n";
 
     return str;
 }
