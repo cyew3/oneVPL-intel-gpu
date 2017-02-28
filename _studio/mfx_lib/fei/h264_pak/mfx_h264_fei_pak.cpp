@@ -133,6 +133,7 @@ void ConfigureTask_FEI_PAK(
 
     mfxExtCodingOption2 const &    extOpt2        = GetExtBufferRef(video);
     mfxExtSpsHeader     const &    extSps         = GetExtBufferRef(video);
+    mfxExtCodingOption  const &    extOpt         = GetExtBufferRef(video);
 
     mfxU32 const FRAME_NUM_MAX = 1 << (extSps.log2MaxFrameNumMinus4 + 4);
 
@@ -181,8 +182,8 @@ void ConfigureTask_FEI_PAK(
 
     task.m_pid = 0;
 
-    //task.m_insertAud[ffid] = IsOn(extOpt.AUDelimiter);
-    //task.m_insertAud[sfid] = IsOn(extOpt.AUDelimiter);
+    task.m_insertAud[ffid] = IsOn(extOpt.AUDelimiter);
+    task.m_insertAud[sfid] = IsOn(extOpt.AUDelimiter);
     task.m_insertSps[ffid] = intraPicFlag;
     task.m_insertSps[sfid] = 0;
     task.m_insertPps[ffid] = task.m_insertSps[ffid] || IsOn(extOpt2.RepeatPPS);

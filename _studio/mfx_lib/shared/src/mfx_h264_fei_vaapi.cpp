@@ -1971,6 +1971,37 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
 
     VAEncPackedHeaderParameterBuffer packed_header_param_buffer;
 
+    // AUD
+    if (task.m_insertAud[fieldId])
+    {
+        ENCODE_PACKEDHEADER_DATA const & packedAud = m_headerPacker.PackAud(task, fieldId);
+
+        packed_header_param_buffer.type = VAEncPackedHeaderRawData;
+        packed_header_param_buffer.has_emulation_bytes = !packedAud.SkipEmulationByteCount;
+        packed_header_param_buffer.bit_length = packedAud.DataLength * 8;
+
+        MFX_DESTROY_VABUFFER(m_packedAudHeaderBufferId, m_vaDisplay);
+        vaSts = vaCreateBuffer(m_vaDisplay,
+                                m_vaContextEncode,
+                                VAEncPackedHeaderParameterBufferType,
+                                sizeof(packed_header_param_buffer),
+                                1,
+                                &packed_header_param_buffer,
+                                &m_packedAudHeaderBufferId);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+        MFX_DESTROY_VABUFFER(m_packedAudBufferId, m_vaDisplay);
+        vaSts = vaCreateBuffer(m_vaDisplay,
+                                m_vaContextEncode,
+                                VAEncPackedHeaderDataBufferType,
+                                packedAud.DataLength, 1, packedAud.pData,
+                                &m_packedAudBufferId);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+        configBuffers[buffersCount++] = m_packedAudHeaderBufferId;
+        configBuffers[buffersCount++] = m_packedAudBufferId;
+    }
+
     // SPS
     if (task.m_insertSps[fieldId])
     {
@@ -2335,6 +2366,8 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
 
     MFX_DESTROY_VABUFFER(m_vaFeiMVOutId[0],         m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_vaFeiMCODEOutId[0],      m_vaDisplay);
+    MFX_DESTROY_VABUFFER(m_packedAudHeaderBufferId, m_vaDisplay);
+    MFX_DESTROY_VABUFFER(m_packedAudBufferId,       m_vaDisplay);
     MFX_DESTROY_VABUFFER(vaFeiFrameControlId,       m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_packedSpsHeaderBufferId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_packedSpsBufferId,       m_vaDisplay);
