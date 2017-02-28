@@ -121,7 +121,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("   [-uncut]                 - do not cut output file in looped mode (in case of -timeout option)\n"));
     msdk_printf(MSDK_STRING("   [-dump fileName]         - dump MSDK components configuration to the file in text form\n"));
 
-#ifdef ENABLE_FUTURE_FEATURES
+#ifdef ENABLE_FF
     msdk_printf(MSDK_STRING("   [-extbrc:<on,off>]       - External BRC for HEVC encoder"));
 #endif
 
@@ -503,7 +503,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->nGPB = MFX_CODINGOPTION_OFF;
         }
-#ifdef ENABLE_FUTURE_FEATURES
+#ifdef ENABLE_FF
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-extbrc:on")))
         {
             pParams->nExtBRC= MFX_CODINGOPTION_ON;

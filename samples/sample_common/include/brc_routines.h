@@ -16,7 +16,7 @@ This sample was distributed or derived from the Intel's Media Samples package.
 The original version of this sample may be obtained from https://software.intel.com/en-us/intel-media-server-studio
 or https://software.intel.com/en-us/media-client-solutions-support.
 \**********************************************************************************/
-#ifdef ENABLE_FUTURE_FEATURES
+#ifdef ENABLE_FF
 
 #include "sample_defs.h"
 #include "mfxbrc.h"

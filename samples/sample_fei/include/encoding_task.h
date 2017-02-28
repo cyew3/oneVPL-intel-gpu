@@ -545,7 +545,7 @@ struct iTask
 {
     explicit iTask(const iTaskParams & task_params)
         :
-#ifdef ENABLE_FUTURE_FEATURES
+#ifdef ENABLE_FF
         EncodedFrameSize(0),
 #endif
           encoded(false)
@@ -795,7 +795,7 @@ struct iTask
     mfxPAKInput  PAK_in;
     mfxPAKOutput PAK_out;
 
-#ifdef ENABLE_FUTURE_FEATURES
+#ifdef ENABLE_FF
     mfxU32 EncodedFrameSize; //for BRC
 #endif
     BiFrameLocation m_loc;

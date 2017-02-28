@@ -214,7 +214,7 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("  -h            Destination picture height, invokes VPP resize\n"));
     msdk_printf(MSDK_STRING("  -field_processing t2t|t2b|b2t|b2b|fr2fr - Field Copy feature\n"));
 
-#ifdef ENABLE_FUTURE_FEATURES
+#ifdef ENABLE_FF
     msdk_printf(MSDK_STRING("  -extbrc::<on,off>           Enables external BRC for HEVC encoder"));
 #endif
     msdk_printf(MSDK_STRING("  -vpp_comp <sourcesNum>      Enables composition from several decoding sessions. Result is written to the file\n"));
@@ -1441,7 +1441,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         {
             InputParams.enableQSVFF=true;
         }
-#ifdef ENABLE_FUTURE_FEATURES
+#ifdef ENABLE_FF
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-extbrc::on")))
         {
             InputParams.nExtBRC= MFX_CODINGOPTION_ON;

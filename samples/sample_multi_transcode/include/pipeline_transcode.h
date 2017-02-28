@@ -51,7 +51,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "hw_device.h"
 #include "plugin_loader.h"
 
-#ifdef ENABLE_FUTURE_FEATURES
+#ifdef ENABLE_FF
 #include "brc_routines.h"
 #endif
 
@@ -607,7 +607,7 @@ namespace TranscodingSample
         // HEVC
         mfxExtHEVCParam          m_ExtHEVCParam;
 
-#ifdef ENABLE_FUTURE_FEATURES
+#ifdef ENABLE_FF
         mfxExtBRC                m_ExtBRC;
 #endif
 

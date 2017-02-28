@@ -273,7 +273,7 @@ mfxStatus CCameraPipeline::InitMfxParams(sInputParams *pParams)
         MSDK_CHECK_STATUS(sts, "AllocAndInitCamBlackLevelCorrection failed");
         m_ExtBuffers.push_back((mfxExtBuffer *)&m_BlackLevelCorrection);
     }
-#ifdef FUTURE_FEATURES
+#ifdef ENABLE_FF
     if (pParams->bTCC)
     {
         sts = AllocAndInitCamTotalColorControl(pParams);
@@ -759,7 +759,7 @@ CCameraPipeline::CCameraPipeline()
     m_3DLUT_GammaCorrection.Header.BufferId = MFX_EXTBUF_CAM_FORWARD_GAMMA_CORRECTION;
     m_3DLUT_GammaCorrection.Header.BufferSz = sizeof(m_3DLUT_GammaCorrection);
 
-#ifdef FUTURE_FEATURES
+#ifdef ENABLE_FF
     MSDK_ZERO_MEMORY(m_TotalColorControl);
     m_TotalColorControl.Header.BufferId = MFX_EXTBUF_CAM_TOTAL_COLOR_CONTROL;
     m_TotalColorControl.Header.BufferSz = sizeof(m_TotalColorControl);
@@ -1057,7 +1057,7 @@ mfxStatus CCameraPipeline::AllocAndInitCamBlackLevelCorrection(sInputParams *pPa
     return MFX_ERR_NONE;
 }
 
-#ifdef FUTURE_FEATURES
+#ifdef ENABLE_FF
 mfxStatus CCameraPipeline::AllocAndInitCamRGBtoYUV(sInputParams *pParams)
 {
     for (int i = 0; i < 3; i++)

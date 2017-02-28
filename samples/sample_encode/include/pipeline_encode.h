@@ -47,7 +47,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "v4l2_util.h"
 #endif
 
-#ifdef ENABLE_FUTURE_FEATURES
+#ifdef ENABLE_FF
 #include "brc_routines.h"
 #endif
 
@@ -263,7 +263,7 @@ protected:
     mfxExtHEVCParam m_ExtHEVCParam;
     mfxExtCodingOption3 m_CodingOption3;
 
-#ifdef ENABLE_FUTURE_FEATURES
+#ifdef ENABLE_FF
     mfxExtBRC           m_ExtBRC;
 #endif
 

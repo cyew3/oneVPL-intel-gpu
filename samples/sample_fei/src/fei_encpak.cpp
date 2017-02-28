@@ -762,7 +762,7 @@ mfxStatus FEI_EncPakInterface::InitFrameParams(iTask* eTask)
 
     eTask->PAK_out.Bs = &m_mfxBS;
 
-#ifdef ENABLE_FUTURE_FEATURES
+#ifdef ENABLE_FF
     eTask->EncodedFrameSize = 0;
 #endif
 
@@ -1069,7 +1069,7 @@ mfxStatus FEI_EncPakInterface::EncPakOneFrame(iTask* eTask)
 
     if (m_pmfxPAK)
     {
-#ifdef ENABLE_FUTURE_FEATURES
+#ifdef ENABLE_FF
         eTask->EncodedFrameSize = eTask->PAK_out.Bs->DataLength; //save frame size for BRC
 #endif
         sts = m_FileWriter.WriteNextFrame(&m_mfxBS);

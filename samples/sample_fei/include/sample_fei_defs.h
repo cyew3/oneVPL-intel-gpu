@@ -270,7 +270,7 @@ struct AppConfig
         , refDist(1)             // Only I frames
         , gopSize(1)             // Only I frames
         , QP(26)
-#ifdef ENABLE_FUTURE_FEATURES
+#ifdef ENABLE_FF
         , RateControlMethod(MFX_RATECONTROL_CQP)
         , TargetKbps(0)
 #endif
@@ -371,7 +371,7 @@ struct AppConfig
     mfxU16 refDist; //number of frames to next I,P
     mfxU16 gopSize; //number of frames to next I
     mfxU8  QP;
-#ifdef ENABLE_FUTURE_FEATURES
+#ifdef ENABLE_FF
     mfxU16 RateControlMethod;
     mfxU16 TargetKbps;
 #endif

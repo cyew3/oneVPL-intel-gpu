@@ -34,7 +34,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include "mfx_itt_trace.h"
 
-#ifdef ENABLE_FUTURE_FEATURES
+#ifdef ENABLE_FF
 #include "brc_routines.h"
 #endif
 
@@ -83,7 +83,7 @@ protected:
     mfxU16 m_maxQueueLength;
     mfxU16 m_log2frameNumMax;
     mfxU32 m_frameCount;
-#ifdef ENABLE_FUTURE_FEATURES
+#ifdef ENABLE_FF
     mfxU32 m_frameCountInEncodedOrder;
 #endif
     mfxU32 m_frameOrderIdrInDisplayOrder;
@@ -118,7 +118,7 @@ protected:
     MFX_DecodeInterface* m_pDECODE;
     YUVreader*           m_pYUVReader;
 
-#ifdef ENABLE_FUTURE_FEATURES
+#ifdef ENABLE_FF
     ExtBRC               m_BRC;
 #endif
 

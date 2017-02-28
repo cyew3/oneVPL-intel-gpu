@@ -100,7 +100,7 @@ protected:
     mfxExtCamHotPixelRemoval      m_HP;
     mfxExtCamGammaCorrection      m_GammaCorrection;
     mfxExtCamFwdGamma             m_3DLUT_GammaCorrection;
-#ifdef FUTURE_FEATURES
+#ifdef ENABLE_FF
     mfxExtCamTotalColorControl    m_TotalColorControl;
     mfxExtCamCscYuvRgb             m_RGBToYUV;
 #endif
@@ -170,7 +170,7 @@ protected:
     virtual mfxStatus AllocAndInitCamWhiteBalance(sInputParams *pParams);
     virtual mfxStatus AllocAndInitCamCCM(sInputParams *pParams);
     virtual mfxStatus AllocAndInitCamLens(sInputParams *pParams);
-#ifdef FUTURE_FEATURES
+#ifdef ENABLE_FF
     virtual mfxStatus AllocAndInitCamTotalColorControl(sInputParams *pParams);
     virtual mfxStatus AllocAndInitCamRGBtoYUV(sInputParams *pParams);
 #endif
