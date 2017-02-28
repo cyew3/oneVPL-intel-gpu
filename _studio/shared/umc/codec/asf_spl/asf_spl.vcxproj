@@ -153,6 +153,7 @@
     <ClCompile>
       <AdditionalIncludeDirectories>include;$(MfxIppIncludeDir);$(MfxIppIncludeDir);include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\io\media_buffers\include;..\..\..\..\..\..\mdp_msdk-api\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
     <Lib />
   </ItemDefinitionGroup>
@@ -160,6 +161,7 @@
     <ClCompile>
       <AdditionalIncludeDirectories>include;$(MfxIppIncludeDir);$(MfxIppIncludeDir);include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\io\media_buffers\include;..\..\..\..\..\..\mdp_msdk-api\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
     <Lib />
   </ItemDefinitionGroup>
@@ -170,6 +172,7 @@
     <ClCompile>
       <AdditionalIncludeDirectories>include;$(MfxIppIncludeDir);$(MfxIppIncludeDir);include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\io\media_buffers\include;..\..\..\..\..\..\mdp_msdk-api\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
     <Lib />
   </ItemDefinitionGroup>
@@ -180,6 +183,7 @@
     <ClCompile>
       <AdditionalIncludeDirectories>include;$(MfxIppIncludeDir);$(MfxIppIncludeDir);include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\io\media_buffers\include;..\..\..\..\..\..\mdp_msdk-api\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
     <Lib />
   </ItemDefinitionGroup>
