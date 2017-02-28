@@ -47,7 +47,7 @@
       <PreprocessorDefinitions>WIN_TRESHOLD_MOBILE;_ATL_NO_WIN_SUPPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>mincore.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>OneCoreUAP.Lib;%(AdditionalDependencies)</AdditionalDependencies>
 	  <IgnoreSpecificDefaultLibraries>winmm.lib; psapi.lib;;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>

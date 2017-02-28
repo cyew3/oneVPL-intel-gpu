@@ -395,7 +395,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <TargetMachine>MachineX86</TargetMachine>
       <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>mincore.lib;bcrypt.lib;ippcoremt.lib;ippccmt.lib;ippcpmt.lib;ippdcmt.lib;ippmsdkmt.lib;ippimt.lib;ippsmt.lib;ippsrmt.lib;ippvcmt.lib;ippjmt.lib;ippcvmt.lib;user32.lib;uuid.lib</AdditionalDependencies>
+      <AdditionalDependencies>OneCoreUAP.lib;bcrypt.lib;ippcoremt.lib;ippccmt.lib;ippcpmt.lib;ippdcmt.lib;ippmsdkmt.lib;ippimt.lib;ippsmt.lib;ippsrmt.lib;ippvcmt.lib;ippjmt.lib;ippcvmt.lib;user32.lib;uuid.lib</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>kernel32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;winmm.lib;psapi.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
@@ -411,7 +411,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <TargetMachine>MachineX86</TargetMachine>
       <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>mincore.lib;bcrypt.lib;ippcoremt.lib;ippccmt.lib;ippcpmt.lib;ippdcmt.lib;ippmsdkmt.lib;ippimt.lib;ippsmt.lib;ippsrmt.lib;ippvcmt.lib;ippjmt.lib;ippcvmt.lib;user32.lib;uuid.lib</AdditionalDependencies>
+      <AdditionalDependencies>OneCoreUAP.lib;bcrypt.lib;ippcoremt.lib;ippccmt.lib;ippcpmt.lib;ippdcmt.lib;ippmsdkmt.lib;ippimt.lib;ippsmt.lib;ippsrmt.lib;ippvcmt.lib;ippjmt.lib;ippcvmt.lib;user32.lib;uuid.lib</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>kernel32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;winmm.lib;psapi.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
@@ -487,7 +487,7 @@
       <TargetMachine>MachineX86</TargetMachine>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>mincore.lib;bcrypt.lib;ippcoremt.lib;ippccmt.lib;ippcpmt.lib;ippdcmt.lib;ippmsdkmt.lib;ippimt.lib;ippsmt.lib;ippsrmt.lib;ippvcmt.lib;ippjmt.lib;ippcvmt.lib;uuid.lib</AdditionalDependencies>
+      <AdditionalDependencies>OneCoreUAP.lib;bcrypt.lib;ippcoremt.lib;ippccmt.lib;ippcpmt.lib;ippdcmt.lib;ippmsdkmt.lib;ippimt.lib;ippsmt.lib;ippsrmt.lib;ippvcmt.lib;ippjmt.lib;ippcvmt.lib;uuid.lib</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>kernel32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;winmm.lib;psapi.lib;user32.lib%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
