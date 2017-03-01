@@ -157,27 +157,41 @@ private:
     {
         while (!m_sync_points.empty())
         {
-            if (m_frames_synced >= m_frame_to_hang)
-            {
-                g_tsStatus.expect(MFX_ERR_GPU_HANG);
-                g_tsStatus.disable_next_check();
-            }
-            SyncOperation(m_sync_points.back());
+            g_tsStatus.disable_next_check(); // check statuses manually below
+            auto status = SyncOperation(m_sync_points.back());
 
-            if (m_frames_synced >= m_frame_to_hang)
+            if (m_check_sync_operation)
             {
-                if (m_check_sync_operation)
+                if (status == MFX_ERR_GPU_HANG)
                 {
-                    g_tsStatus.check();
-                    g_tsStatus.expect(MFX_ERR_NONE);
-                    throw tsOK;
+                    // due to surfaces caching (e.g. in MPEG2d) GPU hang may be reported for
+                    // submitted and not yet synced frames which came to decoder before
+                    // triggering GPU hang
+                    if (m_frames_submitted >= m_frame_to_hang)
+                        throw tsOK;
+                    else
+                    {
+                        assert(m_frames_synced < m_frames_submitted);
+                        g_tsStatus.expect(MFX_ERR_NONE);
+                        g_tsStatus.check(status);
+                    }
+                }
+                else if (status == MFX_ERR_NONE)
+                {
+                    if (m_frames_synced >= m_frame_to_hang)
+                    {
+                        g_tsStatus.expect(MFX_ERR_GPU_HANG);
+                        g_tsStatus.check(status);
+                    }
                 }
                 else
                 {
-                    g_tsStatus.disable_next_check();
-                    g_tsStatus.check();
+                    // unexpected failure
+                    g_tsStatus.expect(MFX_ERR_NONE);
+                    g_tsStatus.check(status);
                 }
             }
+
             m_sync_points.pop_back();
             ++m_frames_synced;
         }
