@@ -188,6 +188,8 @@ struct sCommandlineParams
   bool           bFieldWeaving;
   bool           bFieldSplitting;
 
+  bool           bUsePrivateDDI;
+
   bool bUseProcAmp;
   mfxExtVPPProcAmp m_ProcAmp;
   mfxExtVPPFieldProcessing m_FieldProcessing;

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -16,6 +16,7 @@
 #include "mfx_common_decode_int.h"
 #include "mfx_enc_common.h"
 #include "mfxpcp.h"
+#include "mfx_ext_buffers.h"
 
 using namespace UMC;
 
@@ -134,6 +135,15 @@ mfxU32 ChooseProfile(mfxVideoParam * param, eMFXHWType )
     default:
         return 0;
     }
+
+#ifdef MFX_EXTBUFF_FORCE_PRIVATE_DDI_ENABLE
+    {
+        mfxExtBuffer* extbuf =
+             GetExtendedBuffer(param->ExtParam, param->NumExtParam, MFX_EXTBUFF_FORCE_PRIVATE_DDI);
+         if (extbuf)
+            profile |= VA_PROFILE_INTEL;
+    }
+#endif
 
     return profile;
 }

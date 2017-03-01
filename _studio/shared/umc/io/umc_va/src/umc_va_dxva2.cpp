@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2006-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2006-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifdef _DEBUG
@@ -374,55 +374,55 @@ Status DXVA2Accelerator::ExecuteStatusReportBuffer(void * buffer, Ipp32s size)
 //////////////////////////////////////////////////////////////
 static const GuidProfile guidProfiles[] =
 {
-    { MPEG2_VLD,        sDXVA2_ModeMPEG2_VLD },
-    { H264_VLD,         sDXVA2_ModeH264_VLD_NoFGT },
+    { MPEG2_VLD,                                                                sDXVA2_ModeMPEG2_VLD },
+    { H264_VLD,                                                                 sDXVA2_ModeH264_VLD_NoFGT },
 
-    { VC1_VLD,   sDXVA2_Intel_ModeVC1_D_Super},
+    { VC1_VLD,                                                                  sDXVA2_Intel_ModeVC1_D_Super},
 
-    { JPEG_VLD,  sDXVA2_Intel_IVB_ModeJPEG_VLD_NoFGT},
-    { VP8_VLD,   sDXVA_Intel_ModeVP8_VLD},
+    { JPEG_VLD,                                                                 sDXVA2_Intel_IVB_ModeJPEG_VLD_NoFGT},
+    { VP8_VLD,                                                                  sDXVA_Intel_ModeVP8_VLD},
 
 #if defined(NTDDI_WIN10_TH2)
-    { VP9_VLD,                                    DXVA_ModeVP9_VLD_Profile0},
-    { VP9_VLD | VA_PROFILE_10,                    DXVA_ModeVP9_VLD_10bit_Profile2_private_copy},
+    { VP9_VLD,                                                                  DXVA_ModeVP9_VLD_Profile0},
+    { VP9_VLD | VA_PROFILE_10,                                                  DXVA_ModeVP9_VLD_10bit_Profile2_private_copy},
 #endif
-    { VP9_VLD,                                    DXVA_Intel_ModeVP9_Profile0_VLD },
-    { VP9_VLD | VA_PROFILE_10,                    DXVA_Intel_ModeVP9_Profile2_10bit_VLD },
+    { VP9_VLD,                                                                  DXVA_Intel_ModeVP9_Profile0_VLD },
+    { VP9_VLD | VA_PROFILE_10,                                                  DXVA_Intel_ModeVP9_Profile2_10bit_VLD },
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-    //{ VP9_VLD_422,                                DXVA_Intel_ModeVP9_Profile1_YUV422_VLD },
-    { VP9_VLD_444,                                DXVA_Intel_ModeVP9_Profile1_YUV444_VLD },
-    //{ VP9_10_VLD_422,                             DXVA_Intel_ModeVP9_Profile3_YUV422_10bit_VLD },
-    { VP9_10_VLD_444,                             DXVA_Intel_ModeVP9_Profile3_YUV444_10bit_VLD },
+    //{ VP9_VLD_422,                                                              DXVA_Intel_ModeVP9_Profile1_YUV422_VLD },
+    { VP9_VLD_444,                                                              DXVA_Intel_ModeVP9_Profile1_YUV444_VLD },
+    //{ VP9_10_VLD_422,                                                           DXVA_Intel_ModeVP9_Profile3_YUV422_10bit_VLD },
+    { VP9_10_VLD_444,                                                           DXVA_Intel_ModeVP9_Profile3_YUV444_10bit_VLD },
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
 
-    { VA_H264 | VA_VLD | VA_PROFILE_SVC_HIGH,     sDXVA_ModeH264_VLD_SVC_Scalable_Constrained_High },
-    { VA_H264 | VA_VLD | VA_PROFILE_SVC_BASELINE, sDXVA_ModeH264_VLD_SVC_Scalable_Constrained_Baseline },
+    { H264_VLD        | VA_PROFILE_SVC_HIGH,                                    sDXVA_ModeH264_VLD_SVC_Scalable_Constrained_High },
+    { H264_VLD        | VA_PROFILE_SVC_BASELINE,                                sDXVA_ModeH264_VLD_SVC_Scalable_Constrained_Baseline },
 
-    { VA_H264 | VA_VLD | VA_PROFILE_MVC,     sDXVA_Intel_ModeH264_VLD_MVC },
+    { H264_VLD        | VA_PROFILE_MVC,                                         sDXVA_Intel_ModeH264_VLD_MVC },
 
-    { VA_H264 | VA_VLD | VA_PROFILE_MVC_MV,            sDXVA_ModeH264_VLD_Multiview_NoFGT },
-    { VA_H264 | VA_VLD | VA_PROFILE_MVC_STEREO,        sDXVA_ModeH264_VLD_Stereo_NoFGT },
-    { VA_H264 | VA_VLD | VA_PROFILE_MVC_STEREO_PROG,   sDXVA_ModeH264_VLD_Stereo_Progressive_NoFGT },
+    { H264_VLD        | VA_PROFILE_MVC_MV,                                      sDXVA_ModeH264_VLD_Multiview_NoFGT },
+    { H264_VLD        | VA_PROFILE_MVC_STEREO,                                  sDXVA_ModeH264_VLD_Stereo_NoFGT },
+    { H264_VLD        | VA_PROFILE_MVC_STEREO_PROG,                             sDXVA_ModeH264_VLD_Stereo_Progressive_NoFGT },
 
-    { VA_H264 | VA_VLD | VA_PROFILE_MVC_MV | VA_LONG_SLICE_MODE,            sDXVA2_ModeH264_VLD_NoFGT },
-    { VA_H264 | VA_VLD | VA_PROFILE_MVC_STEREO | VA_LONG_SLICE_MODE,        sDXVA2_ModeH264_VLD_NoFGT },
-    { VA_H264 | VA_VLD | VA_PROFILE_MVC_STEREO_PROG | VA_LONG_SLICE_MODE,   sDXVA2_ModeH264_VLD_NoFGT },
+    { H264_VLD        | VA_PROFILE_MVC_MV          | VA_LONG_SLICE_MODE,        sDXVA2_ModeH264_VLD_NoFGT },
+    { H264_VLD        | VA_PROFILE_MVC_STEREO      | VA_LONG_SLICE_MODE,        sDXVA2_ModeH264_VLD_NoFGT },
+    { H264_VLD        | VA_PROFILE_MVC_STEREO_PROG | VA_LONG_SLICE_MODE,        sDXVA2_ModeH264_VLD_NoFGT },
 
-    { VA_H264 | VA_VLD | VA_PROFILE_WIDEVINE,   DXVA_Intel_Decode_Elementary_Stream_AVC },
+    { H264_VLD        | VA_PROFILE_WIDEVINE,                                    DXVA_Intel_Decode_Elementary_Stream_AVC },
 
-    { VA_H265 | VA_VLD, DXVA_ModeHEVC_VLD_Main }, // MS
-    { VA_H265 | VA_VLD | VA_LONG_SLICE_MODE, DXVA_Intel_ModeHEVC_VLD_MainProfile },
-    { VA_H265 | VA_VLD | VA_PROFILE_10, DXVA_ModeHEVC_VLD_Main10  }, // MS
-    { VA_H265 | VA_VLD | VA_PROFILE_10 | VA_LONG_SLICE_MODE, DXVA_Intel_ModeHEVC_VLD_Main10Profile },
+    { H265_VLD,                                                                 DXVA_ModeHEVC_VLD_Main }, // MS
+    { H265_VLD        | VA_PROFILE_INTEL | VA_LONG_SLICE_MODE,                  DXVA_Intel_ModeHEVC_VLD_MainProfile },
+    { H265_VLD        | VA_PROFILE_10,                                          DXVA_ModeHEVC_VLD_Main10  }, // MS
+    { H265_VLD        | VA_PROFILE_INTEL | VA_PROFILE_10 | VA_LONG_SLICE_MODE,  DXVA_Intel_ModeHEVC_VLD_Main10Profile },
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-    { H265_VLD_422 | VA_LONG_SLICE_MODE, DXVA_Intel_ModeHEVC_VLD_Main422_10Profile },
-    { H265_VLD_444 | VA_LONG_SLICE_MODE, DXVA_Intel_ModeHEVC_VLD_Main444_10Profile },
-    { H265_10_VLD_422 | VA_LONG_SLICE_MODE, DXVA_Intel_ModeHEVC_VLD_Main422_10Profile },
-    { H265_10_VLD_444 | VA_LONG_SLICE_MODE, DXVA_Intel_ModeHEVC_VLD_Main444_10Profile },
+    { H265_VLD_422    | VA_PROFILE_INTEL | VA_LONG_SLICE_MODE,                  DXVA_Intel_ModeHEVC_VLD_Main422_10Profile },
+    { H265_VLD_444    | VA_PROFILE_INTEL | VA_LONG_SLICE_MODE,                  DXVA_Intel_ModeHEVC_VLD_Main444_10Profile },
+    { H265_10_VLD_422 | VA_PROFILE_INTEL | VA_LONG_SLICE_MODE,                  DXVA_Intel_ModeHEVC_VLD_Main422_10Profile },
+    { H265_10_VLD_444 | VA_PROFILE_INTEL | VA_LONG_SLICE_MODE,                  DXVA_Intel_ModeHEVC_VLD_Main444_10Profile },
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
 
-    { VA_H265 | VA_VLD | VA_PROFILE_WIDEVINE,   DXVA_Intel_Decode_Elementary_Stream_HEVC },
+    { VA_H265 | VA_VLD | VA_PROFILE_WIDEVINE,                                   DXVA_Intel_Decode_Elementary_Stream_HEVC },
 
 };
 

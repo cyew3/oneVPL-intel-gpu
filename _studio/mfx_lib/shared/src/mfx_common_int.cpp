@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common_int.h"
@@ -594,6 +594,9 @@ mfxStatus CheckDecodersExtendedBuffers(mfxVideoParam* par)
 
     static const mfxU32 g_decoderSupportedExtBuffersHEVC[]  = {
                                                                MFX_EXTBUFF_HEVC_PARAM
+#ifdef MFX_EXTBUFF_FORCE_PRIVATE_DDI_ENABLE
+                                                               , MFX_EXTBUFF_FORCE_PRIVATE_DDI
+#endif
                                                                };
 
     static const mfxU32 g_decoderSupportedExtBuffersVC1[]   = {MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION,
@@ -827,6 +830,9 @@ void mfxVideoParamWrapper::CopyVideoParam(const mfxVideoParam & par)
     {
         switch(par.ExtParam[i]->BufferId)
         {
+#ifdef MFX_EXTBUFF_FORCE_PRIVATE_DDI_ENABLE
+        case MFX_EXTBUFF_FORCE_PRIVATE_DDI:
+#endif
 #ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
         case MFX_EXTBUFF_DEC_VIDEO_PROCESSING:
 #endif

@@ -128,7 +128,11 @@ DECL_BUFFER_TYPE(mfxExtSvcTargetLayer, MFX_EXTBUFF_SVC_TARGET_LAYER);
 
 DECL_BUFFER_TYPE(mfxExtPAVPOption, MFX_EXTBUFF_PAVP_OPTION);
 DECL_BUFFER_TYPE(mfxExtDecVideoProcessing, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
-    
+
+#ifdef MFX_EXTBUFF_FORCE_PRIVATE_DDI_ENABLE
+DECL_BUFFER_TYPE(mfxExtForcePrivateDDI, MFX_EXTBUFF_FORCE_PRIVATE_DDI);
+#endif
+
 //init helper
 template <class T>
 T& mfx_init_ext_buffer(T & buffer)

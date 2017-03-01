@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2006-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2006-2017 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -195,6 +195,7 @@ protected:
 template <typename T>
 bool CheckDXVAConfig(Ipp32s profile_flags, T *config, ProtectedVA * protectedVA)
 {
+    profile_flags &= ~VA_PROFILE_INTEL;
     Ipp32s const profile = 
         (profile_flags & (VA_ENTRY_POINT | VA_CODEC));
 

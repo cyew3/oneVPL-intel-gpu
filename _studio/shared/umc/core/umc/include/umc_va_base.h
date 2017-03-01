@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2006-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2006-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_VA_BASE_H__
@@ -129,6 +129,7 @@ enum VideoAccelerationProfile
     VA_PROFILE_MVC_MV           = 0x05000,
     VA_PROFILE_MVC_STEREO       = 0x06000,
     VA_PROFILE_MVC_STEREO_PROG  = 0x07000,
+    VA_PROFILE_INTEL            = 0x08000,
     VA_PROFILE_WIDEVINE         = 0x09000,
     VA_PROFILE_422              = 0x0a000,
     VA_PROFILE_444              = 0x0b000,

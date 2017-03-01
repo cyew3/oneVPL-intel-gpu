@@ -2454,6 +2454,16 @@ mfxStatus MFXDecPipeline::InitYUVSource()
         m_components[eDEC].m_params.mfx.ExtendedPicStruct = 1;
     }
 
+#ifdef MFX_EXTBUFF_FORCE_PRIVATE_DDI_ENABLE
+    {
+        if (m_inParams.bUsePrivateDDI)
+        {
+            m_components[eDEC].m_extParams.push_back(new mfxExtForcePrivateDDI());
+            m_components[eDEC].AssignExtBuffers();
+        }
+    }
+#endif
+
     // init decoder
     MFX_CHECK_STS(sts = m_pYUVSource->Init(&m_components[eDEC].m_params));
 
@@ -5080,6 +5090,10 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
               m_inParams.bFieldSplitting = true;
           }
           else HANDLE_INT_OPTION(m_inParams.nDecoderSurfs, VM_STRING("-dec:surfs"), VM_STRING("specifies number of surfaces in decoder's pool"))
+#ifdef MFX_EXTBUFF_FORCE_PRIVATE_DDI_ENABLE
+          else if(m_OptProc.Check(argv[0], VM_STRING("-dec:private_ddi"), VM_STRING("Use private DDI for decoder (HW only)"), OPT_UINT_32))
+              m_inParams.bUsePrivateDDI = true;
+#endif
           else
           {
                MFX_TRACE_AT_EXIT_IF( MFX_ERR_UNSUPPORTED
