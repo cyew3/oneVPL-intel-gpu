@@ -1,9 +1,11 @@
 //
-//               INTEL CORPORATION PROPRIETARY INFORMATION
-//  This software is supplied under the terms of a license agreement or
-//  nondisclosure agreement with Intel Corporation and may not be copied
-//  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2014-2016 Intel Corporation. All Rights Reserved.
+// INTEL CORPORATION PROPRIETARY INFORMATION
+//
+// This software is supplied under the terms of a license agreement or
+// nondisclosure agreement with Intel Corporation and may not be copied
+// or disclosed except in accordance with the terms of that agreement.
+//
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 /********************************************************************************
 * 
@@ -39,6 +41,7 @@ void BuildSkinMap_dyn_C(BYTE* skinProb, BYTE* src, Dim* dim, uint bg, uint yTh, 
     case 0: hysto = histoYrg;  break;
     case 1: hysto = histoYrg2; break;
     case 2: hysto = histoYrg3; break;
+    default: hysto = histoYrg;  break;
     }
 
     //compute skin probability map
@@ -74,6 +77,7 @@ void BuildSkinMap_dyn_slice_C(BYTE* skinProb, BYTE* src, Dim *dim, uint bg, uint
     case 0: hysto = histoYrg;  break;
     case 1: hysto = histoYrg2; break;
     case 2: hysto = histoYrg3; break;
+    default: hysto = histoYrg;  break;
     }
 
     //compute skin probability map
@@ -158,6 +162,7 @@ void BuildSkinMap_dyn_SSE4(BYTE* skinProb, BYTE* src, Dim* dim, uint bg, uint yT
     case 0: hysto = histoYrg;  break;
     case 1: hysto = histoYrg2; break;
     case 2: hysto = histoYrg3; break;
+    default: hysto = histoYrg;  break;
     }
 
     //compute skin probability map
@@ -225,6 +230,7 @@ void BuildSkinMap_dyn_AVX2(BYTE* skinProb, BYTE* src, Dim* dim, uint bg, uint yT
     case 0: hysto = histoYrg;  break;
     case 1: hysto = histoYrg2; break;
     case 2: hysto = histoYrg3; break;
+    default: hysto = histoYrg;  break;
     }
 
     //compute skin probability map
@@ -283,6 +289,7 @@ void BuildSkinMap_dyn_slice_AVX2(BYTE* skinProb, BYTE* src, Dim* dim, uint bg, u
     case 0: hysto = histoYrg;  break;
     case 1: hysto = histoYrg2; break;
     case 2: hysto = histoYrg3; break;
+    default: hysto = histoYrg;  break;
     }
 
     //compute skin probability map
@@ -505,7 +512,7 @@ static void get_histogram_statistics(BYTE *frm, int w, int h, int *spread, int *
     FS_UNREFERENCED_PARAMETER(mode);
     int i, j, ii, jj, x, y, a, n;
     int count, min_count;
-    BYTE blk[16*16];
+    BYTE blk[16*16]={0};
     int w16 = w/16;
     int h16 = h/16;
 
@@ -526,7 +533,7 @@ static void get_histogram_statistics(BYTE *frm, int w, int h, int *spread, int *
                 }
             }
 
-            blk[y*16 + x] = a/n;
+            blk[y*16 + x] = (n)?(a/n):0;
             //binarize
             if (blk[y*16 + x] > 16) blk[y*16 + x] = 255;
             else blk[y*16 + x] = 0;
@@ -621,6 +628,7 @@ int SelSkinMap(BYTE *skinProb, BYTE *src, Dim *dim, int EnableHystoDynEnh, int m
         case 0: hysto = histoYrg;  break;
         case 1: hysto = histoYrg2; break;
         case 2: hysto = histoYrg3; break;
+        default: hysto = histoYrg;  break;
         }
         for (k=0, x=xS, y=yS; k < (uint) uoff; k++, x++, y++) {
             pos  = src[y] * 256 + src[x];		

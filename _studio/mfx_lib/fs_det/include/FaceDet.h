@@ -1,9 +1,11 @@
 //
-//               INTEL CORPORATION PROPRIETARY INFORMATION
-//  This software is supplied under the terms of a license agreement or
-//  nondisclosure agreement with Intel Corporation and may not be copied
-//  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2014-2016 Intel Corporation. All Rights Reserved.
+// INTEL CORPORATION PROPRIETARY INFORMATION
+//
+// This software is supplied under the terms of a license agreement or
+// nondisclosure agreement with Intel Corporation and may not be copied
+// or disclosed except in accordance with the terms of that agreement.
+//
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 /********************************************************************************
 * 
@@ -130,11 +132,7 @@ void normalize_contrast(BYTE *src, BYTE *dst, int w, int h);
 int init_haar_classifier(haarclass_cascade **res, const haar_cascade *cascade);
 
 //round double to int
-static const double magic_double = 6755399441055744.0;  // 2^52 + 2^51
-inline int round_double(double x) {
-    x += magic_double;
-    return reinterpret_cast<int&>(x);
-}
+inline int round_double(double x) { return (int) (x+0.5); }
 
 //face detection
 void do_face_detection(std::vector<Rct> &faces, BYTE *frm, int w, int h, haar_cascade *cascade, haarclass_cascade *class_cascade, int *sum, double *sqsum, int mwin_w, int mwin_h, int min_nboors);

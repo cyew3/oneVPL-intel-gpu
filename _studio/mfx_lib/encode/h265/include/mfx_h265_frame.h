@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -38,8 +38,6 @@ namespace H265Enc {
 #define NUM_HROI_CLASS  3
     typedef struct Struct_RoiDataPic {
         Ipp32f luminanceAvg;
-        Ipp32f spatAvgCmplx;
-        Ipp32f spatAvgMinQCmplx;
         Ipp32s numCtbRoi[NUM_HROI_CLASS];
         Ipp64f cmplx[NUM_HROI_CLASS];
     } RoiDataPic;
@@ -91,9 +89,6 @@ namespace H265Enc {
 
     struct Statistics : public RefCounter
     {
-        Ipp32s m_PicWidthInBlks;
-        Ipp32s m_PicHeightInBlks;
-        Ipp32s m_RoiPitch;
         std::vector<Ipp32s> m_interSad;
         std::vector<Ipp32s> m_interSad_pdist_past;
         std::vector<Ipp32s> m_interSad_pdist_future;
@@ -113,6 +108,7 @@ namespace H265Enc {
         std::vector<Ipp32s> m_interSatd;
 
 #ifdef AMT_HROI_PSY_AQ
+        Ipp32s m_RoiPitch;
         std::vector<Ipp8u>  roi_map_8x8;
         std::vector<Ipp8u>  lum_avg_8x8;
         RoiDataPic roi_pic;
@@ -148,6 +144,7 @@ namespace H265Enc {
             m_avgInterSatd = 0.f;
             m_intraRatio = 0.f;
             m_sceneCut = 0;
+            m_sceneChange = 0;
             m_metric = 0;
         }
 
@@ -158,6 +155,15 @@ namespace H265Enc {
             m_pitchRsCs4 = 0;
             Zero(m_rs);
             Zero(m_cs);
+#ifdef AMT_HROI_PSY_AQ
+            m_RoiPitch = 0;
+            ctbStats = NULL;
+            roi_pic.luminanceAvg = 128;
+            for(Ipp32s i = 0; i < NUM_HROI_CLASS; i++) {
+                roi_pic.numCtbRoi[i] = 0;
+                roi_pic.cmplx[i] = 0.0;
+            }
+#endif
         };
         void Create(const AllocInfo &allocInfo);
         ~Statistics() { Destroy(); }

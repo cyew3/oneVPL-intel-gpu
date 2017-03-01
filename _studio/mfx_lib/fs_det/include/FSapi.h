@@ -1,9 +1,11 @@
 //
-//               INTEL CORPORATION PROPRIETARY INFORMATION
-//  This software is supplied under the terms of a license agreement or
-//  nondisclosure agreement with Intel Corporation and may not be copied
-//  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2014-2016 Intel Corporation. All Rights Reserved.
+// INTEL CORPORATION PROPRIETARY INFORMATION
+//
+// This software is supplied under the terms of a license agreement or
+// nondisclosure agreement with Intel Corporation and may not be copied
+// or disclosed except in accordance with the terms of that agreement.
+//
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 /********************************************************************************
  * 
@@ -41,11 +43,11 @@ int  FS_get_NumSlice(FS *fs);
 
 void FS_ProcessMode1_Slice_start(FS *fs, FrameBuffElement *in, unsigned char *pOutY);
 void FS_ProcessMode1_Slice_main (FS *fs, int sliceId);
-void FS_ProcessMode1_Slice_end  (FS *fs, unsigned char *pOutY, unsigned char *pOutLum);
+void FS_ProcessMode1_Slice_end  (FS *fs, unsigned char *pOutY, unsigned char *pOutLum, int outSize);
 
 void FS_Luma_Slice_start(FS *fs, FrameBuffElement *in);
 void FS_Luma_Slice_main(FS *fs, int sliceId);
-void FS_Luma_Slice_end(FS *fs, unsigned char *pOutLum);
+void FS_Luma_Slice_end(FS *fs, unsigned char *pOutLum, int outSize);
 
 void FS_Free(FSP *fsp);
 

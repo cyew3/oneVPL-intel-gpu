@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -103,8 +103,7 @@ namespace H265Enc {
         Ipp32s PicWidthInBlk  = (width  + blkSize - 1) / blkSize;
         Ipp32s PicHeightInBlk = (height + blkSize - 1) / blkSize;
         Ipp32s numBlk = PicWidthInBlk * PicHeightInBlk;
-        m_PicWidthInBlks = PicWidthInBlk;
-        m_PicHeightInBlks = PicHeightInBlk;
+
         // for BRC
         m_intraSatd.resize(numBlk);
         m_interSatd.resize(numBlk);

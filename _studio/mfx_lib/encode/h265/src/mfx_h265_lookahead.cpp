@@ -2985,9 +2985,9 @@ mfxStatus Lookahead::Execute(ThreadingTask& task)
 #ifdef AMT_HROI_PSY_AQ
             if(m_videoParam.DeltaQpMode & AMT_DQP_PSY_HROI) {
                 if((m_videoParam.DeltaQpMode & AMT_DQP_HROI) == 0) {
-                    FS_Luma_Slice_end (m_enc.m_faceSkinDet, &(in[0]->m_stats[0]->lum_avg_8x8[0]));
+                    FS_Luma_Slice_end (m_enc.m_faceSkinDet, &(in[0]->m_stats[0]->lum_avg_8x8[0]), in[0]->m_stats[0]->lum_avg_8x8.size());
                 } else {
-                    FS_ProcessMode1_Slice_end (m_enc.m_faceSkinDet, &(in[0]->m_stats[0]->roi_map_8x8[0]), &(in[0]->m_stats[0]->lum_avg_8x8[0]));
+                    FS_ProcessMode1_Slice_end (m_enc.m_faceSkinDet, &(in[0]->m_stats[0]->roi_map_8x8[0]), &(in[0]->m_stats[0]->lum_avg_8x8[0]), in[0]->m_stats[0]->lum_avg_8x8.size());
                 }
                 // set seg map and complexity of ctb
                 setCtb_SegMap_Cmplx(in[0], &m_videoParam);

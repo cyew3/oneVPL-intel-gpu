@@ -691,8 +691,6 @@ namespace H265Enc {
 
         if(numAct) avgMinblkRsCs /= numAct;
         else       avgMinblkRsCs = 1.0;
-        stats->roi_pic.spatAvgMinQCmplx = avgMinblkRsCs;
-        stats->roi_pic.spatAvgCmplx = ((numAct)? avgRsCs / (numAct*nRsCs*4.0f) : 1.0f);
 
         // Control
         Ipp32s maxFq = -1, minBq = 0;

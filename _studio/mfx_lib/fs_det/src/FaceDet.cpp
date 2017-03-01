@@ -1,9 +1,11 @@
 //
-//               INTEL CORPORATION PROPRIETARY INFORMATION
-//  This software is supplied under the terms of a license agreement or
-//  nondisclosure agreement with Intel Corporation and may not be copied
-//  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2014-2016 Intel Corporation. All Rights Reserved.
+// INTEL CORPORATION PROPRIETARY INFORMATION
+//
+// This software is supplied under the terms of a license agreement or
+// nondisclosure agreement with Intel Corporation and may not be copied
+// or disclosed except in accordance with the terms of that agreement.
+//
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 /********************************************************************************
 * 
@@ -141,11 +143,11 @@ void integral_image(BYTE *src, size_t src_step, int *sum, size_t sum_step, doubl
 //preprocess integral image sums
 void preprocess_integral_image_sums(haar_cascade *mcascade, haarclass_cascade *class_cascade, const int *sum, size_t sum_step, const double *sqsum, size_t sqsum_step, double scl) 
 {
-    int ex, ey, ew, eh, i, j, k, l, n;
+    int ex, ey, ew, eh, i, j, k, l, n=1;
     double wt_scl, s;
     const haar_feature *feat;
     haarclass_feature *cls_feat;
-    int rx[3], ry[3], rw[3], rh[3];
+    int rx[3]={0}, ry[3]={0}, rw[3]={0}, rh[3]={0};
     int ax, ay, sx, sy, x, y;
     int bw, bh, sbw, sbh;
     int tx, ty, tw, th;
@@ -191,7 +193,8 @@ void preprocess_integral_image_sums(haar_cascade *mcascade, haarclass_cascade *c
                 bh = (int)FMIN((uint)bh, (uint)(ry[k] - ry[0] - 1));
             }
             bw++; bh++;
-
+            if(!bw) bw = 1;
+            if(!bh) bh = 1;
             sx = sy = sbw = sbh = 0;
             ax = rw[0]/bw; ay = rh[0]/bh;
             if (ax <= 0) { sbw = round_double(rw[0]*scl) / ax; x = round_double(rx[0] * scl); sx = 1; }
@@ -418,7 +421,12 @@ int split_seq(const std::vector<Rct>& seq, std::vector<int>& inds)
     //allocate working arrays
     n  = (int)seq.size();
     n1 = (int*)malloc(sizeof(int) * n);
+    if(!n1) return 0;
     n2 = (int*)malloc(sizeof(int) * n);
+    if(!n2) {
+        if(n1) free(n1);
+        return 0;
+    }
 
     //initialize working arrays
     list = &(seq[0]);

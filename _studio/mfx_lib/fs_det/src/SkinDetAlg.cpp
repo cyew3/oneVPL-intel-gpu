@@ -1,9 +1,11 @@
 //
-//               INTEL CORPORATION PROPRIETARY INFORMATION
-//  This software is supplied under the terms of a license agreement or
-//  nondisclosure agreement with Intel Corporation and may not be copied
-//  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2014-2016 Intel Corporation. All Rights Reserved.
+// INTEL CORPORATION PROPRIETARY INFORMATION
+//
+// This software is supplied under the terms of a license agreement or
+// nondisclosure agreement with Intel Corporation and may not be copied
+// or disclosed except in accordance with the terms of that agreement.
+//
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 /********************************************************************************
  * 
@@ -69,11 +71,11 @@ void InitCentersProb(BYTE* buf, Dim* dim, int mode) {
     }
     //upper border
     for (y = 0; y < pyh; y++) {
-        memcpy(buf + (h - 1 - y)*w, buf + (y + (pyl - pyh))*w, w);
+        memcpy_byte_p(buf + (h - 1 - y)*w, buf + (y + (pyl - pyh))*w, w);
     }
     //left/right border
     for (y = pyl; y < h - pyh; y++) {
-        memcpy(buf + y*w, buf + (pyl-1)*w, w);
+        memcpy_byte_p(buf + y*w, buf + (pyl-1)*w, w);
     }
 }
 
@@ -172,8 +174,14 @@ int FDet_Alloc(FDet *fd, int w, int h, int bsf)
     if (!fd->sum) return 1;
     fd->sqsum     = (double*)malloc(sizeof(double)*(((h/bsf)+1)*((w/bsf)+1)));
     if (!fd->sqsum) return 1;
-    fd->mat       = (BYTE*  )malloc(sizeof(BYTE  )*((h/bsf)*(w/bsf)));
-    if (!fd->mat) return 1;
+    
+    fd->mat_size  = sizeof(BYTE  )*((h/bsf)*(w/bsf));
+    fd->mat       = (BYTE*  )malloc(fd->mat_size);
+    if (!fd->mat) {
+        fd->mat_size = 0;
+        return 1;
+    }
+
     fd->mat_norm  = (BYTE*  )malloc(sizeof(BYTE  )*((h/bsf)*(w/bsf)));
     if (!fd->mat_norm) return 1;
     
@@ -202,10 +210,13 @@ void FDet_Free(FDet *fd)
         free(fd->mat); 
     }
     fd->mat = NULL;
+    fd->mat_size = 0;
+    
     if(fd->mat_norm) {
         free(fd->mat_norm);
     } 
     fd->mat_norm = NULL;
+    
     if(fd->class_cascade) {
         free(fd->class_cascade);
     }
@@ -217,7 +228,7 @@ void FDet_Free(FDet *fd)
     if(fd->prevfc) {
         delete fd->prevfc;
     }
-    fd->prevfc;
+    fd->prevfc = NULL;
 }
 
 //
@@ -394,7 +405,7 @@ template <int Y0, int Y1, int Y2, int Y3, int Y4>
 static void RowFastMedian_5x5_SSE4(const BYTE* pSrc, BYTE* pDst, int width, int height)
 {
     FS_UNREFERENCED_PARAMETER(height);
-    __m128i r[5], s[5], sum;
+    __m128i r[5], s[5]={0}, sum;
     __m128i borderLeft = _mm_setr_epi8(0,0,0,1,2,3,4,5,6,7,8,9,10,11,12,13);
     __m128i borderRight = _mm_setr_epi8(0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1);
 
@@ -2112,7 +2123,7 @@ static void MixMotionSkinMask(BYTE* dst, BYTE* motion, BYTE* skin, BYTE* tmp1, B
         }
     }
 
-    memcpy(prvProb, dst, sizeof(BYTE) * dim->blTotal);
+    memcpy_byte_s(prvProb, sizeof(BYTE) * dim->blTotal, dst, sizeof(BYTE) * dim->blTotal);
 }
 
 //performs face detection
@@ -2128,8 +2139,9 @@ static void DetectFaces(FrameBuffElementPtr* frm, int w, int h, FDet *fd)
         }
     }
     else { 
-        for(int i=0; i<h; i++)
-            memcpy(fd->mat+i*w, frm->frameY+i*frm->p, sizeof(BYTE)*w);
+        for(int i=0; i<h; i++) {
+            memcpy_byte_p(fd->mat+i*w, frm->frameY+i*frm->p, sizeof(BYTE)*w);
+        }
     }
 
     //equalize histogram
@@ -2162,7 +2174,7 @@ static int init_New_Skin_Map_from_face_mode1_NV12(FrameBuffElementPtr *in, BYTE 
 {
     FS_UNREFERENCED_PARAMETER(hb);
     int i, j, x_start, x_end, y_start, y_end;
-    int max_val, max_i, max_j, c, k;
+    int max_val, max_i = 0, max_j = 0, c, k;
     int ath_limits[] = {  3	,   4,   5,   6,   7,   8,   9,  10};
     int ath_values[] = {255, 224, 192, 160, 128,  96,  64,  32};
     int ath_num = 8, s[9] = {0};
@@ -2272,6 +2284,7 @@ static int Update_skinProbB_mode1(BYTE *frmY, BYTE *skinProbB, BYTE *skinProbNew
             }
         }
     }
+    if(!tot) tot = 1;
     faceskin_perc1 = (faceskin_perc1*100) / tot;
 
     tot = 0;
@@ -2279,6 +2292,7 @@ static int Update_skinProbB_mode1(BYTE *frmY, BYTE *skinProbB, BYTE *skinProbNew
         if (skinProbB[i] > 30) frm_skin_perc1++;
         tot++;
     }
+    if(!tot) tot = 1;
     frm_skin_perc1 = (frm_skin_perc1*100) / tot;
 
     tot = 0;
@@ -2294,6 +2308,7 @@ static int Update_skinProbB_mode1(BYTE *frmY, BYTE *skinProbB, BYTE *skinProbNew
             }
         }
     }
+    if(!tot) tot = 1;
     faceskin_perc2 = (faceskin_perc2*100) / tot;
 
     tot = 0;
@@ -2303,6 +2318,7 @@ static int Update_skinProbB_mode1(BYTE *frmY, BYTE *skinProbB, BYTE *skinProbNew
             tot++;
         }
     }
+    if(!tot) tot = 1;
     frm_skin_perc2 = (frm_skin_perc2*100) / tot;
 
     //for (size_t n=0; n<faces.size(); n++) {	
@@ -2341,6 +2357,7 @@ static void mark_face_regions(BYTE *tmp, int w, int h, int bs, std::vector<Rct> 
                             tot++;
                         }
                     }
+                    if(!tot) tot = 1;
                     if ((two*100 / tot) > 45) { col = 192; fn = (int)(n); break; } //condition for face region
                 }
 
@@ -2481,7 +2498,7 @@ static int drop_segments_fast(BYTE *mask, BYTE *prob, BYTE *centersProb, BYTE *s
             if (mask[ind]==1) {
 
                 flood_fill4_sz_bb_sum(j, i, 255, mask[ind], w, h, mask, &sz, &min_x, &max_x, &min_y, &max_y, prob, &amp, skinprob, &asp, stack, stackptr, blTotal);
-
+                if(!sz) sz = 1;
                 amp = (amp + sz/2) / sz;			//average segment mixed probability
                 asp = (asp + sz/2) / sz;			//average segment skin probability
                 cx = (min_x + max_x) / 2;			//segment center x-coord
@@ -2691,7 +2708,7 @@ static void fill_holes(BYTE *mask, BYTE *tmp, int w, int h, FrmSegmFeat *fseg, i
         frm = mask + (sf->min_y * w) + sf->min_x;
         buf = tmp;
         for (i=0; i<bh; i++) {
-            memcpy(buf, frm, sizeof(BYTE)*bw);
+            memcpy_byte_p(buf, frm, sizeof(BYTE)*bw);
             frm+= w;
             buf+= bw;
         }
@@ -2881,6 +2898,9 @@ static void smooth_histogr(int square[][256], BYTE hist[][256])
             }
         }
     }
+    
+    if(!max_val) max_val = 1;
+
     for (i=0; i<256; i++) {
         for (j=0; j<256; j++) {
             hist[i][j] = MIN((255 * square[i][j]) / max_val, 255);
@@ -3059,7 +3079,7 @@ void SkinDetectionMode1_NV12_slice_end(SDet *sd, FDet* fd, FrameBuffElementPtr *
     }
 
     //smooth block skin regions
-    memcpy(tmp1, sd->skinProbB, dim->blTotal * sizeof(BYTE));
+    memcpy_byte_s(tmp1, wb*hb, sd->skinProbB, dim->blTotal * sizeof(BYTE));
     Median_5x5(tmp1, sd->skinProbB, dim->blHNum, dim->blVNum);
 
     //smooth motion cues
@@ -3108,7 +3128,7 @@ void SkinDetectionMode1_NV12_slice_end(SDet *sd, FDet* fd, FrameBuffElementPtr *
     do_face_tracking(w, h, bs, &sd->fsg[MIN(sd->frameNum-1, NUM_SEG_TRACK_FRMS-1)], fd->faces, fd->prevfc);
 
     //finalizing
-    memcpy(sd->prvMask, tmp1, dim->blTotal);
+    memcpy_byte_s(sd->prvMask, dim->blTotal, tmp1, dim->blTotal);
 
     SwapFrameSegFeatures(sd->fsg, sd->frameNum); //swapping segment features
     sd->frameNum++;

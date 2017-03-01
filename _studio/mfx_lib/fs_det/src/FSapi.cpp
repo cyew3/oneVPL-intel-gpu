@@ -1,9 +1,11 @@
 //
-//               INTEL CORPORATION PROPRIETARY INFORMATION
-//  This software is supplied under the terms of a license agreement or
-//  nondisclosure agreement with Intel Corporation and may not be copied
-//  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2014-2016 Intel Corporation. All Rights Reserved.
+// INTEL CORPORATION PROPRIETARY INFORMATION
+//
+// This software is supplied under the terms of a license agreement or
+// nondisclosure agreement with Intel Corporation and may not be copied
+// or disclosed except in accordance with the terms of that agreement.
+//
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 /********************************************************************************
  * 
@@ -225,9 +227,9 @@ void FS_ProcessMode1_Slice_main(FS *fs, int sliceId)
     SkinDetectionMode1_NV12_slice_main(&fs->sd_struct, &fs->fd, fs->fbpT, fs->sd_buf.pInYUV, fs->sd_buf.pYCbCr, &fs->sliceData, sliceId);
 }
 
-void FS_ProcessMode1_Slice_end(FS *fs, BYTE *pOutY, BYTE *pOutLum)
+void FS_ProcessMode1_Slice_end(FS *fs, BYTE *pOutY, BYTE *pOutLum, int outLumSize)
 {
-    memcpy(pOutLum, fs->sd_buf.pInYUV, fs->wb*fs->hb);
+    memcpy_byte_s(pOutLum, outLumSize, fs->sd_buf.pInYUV, fs->wb*fs->hb);
     // core slice-based processes 
     SkinDetectionMode1_NV12_slice_end(&fs->sd_struct, &fs->fd, fs->fbpT, fs->sd_buf.pInYUV, fs->sd_buf.pYCbCr, pOutY);
     SwapFrameBuffPtrStackPointers(fs->fbpT, fs->sd_struct.dim.numFr); //swapping frame pointers
@@ -260,7 +262,7 @@ void FS_Luma_Slice_main(FS *fs, int sliceId)
     AvgLuma_slice(fs->fbpT[0]->frameY, fs->sd_buf.pInYUV, fs->fbpT[0]->w, fs->fbpT[0]->h, fs->fbpT[0]->p, &fs->sliceData, sliceId);
 }
 
-void FS_Luma_Slice_end(FS *fs, BYTE *pOutLum)
+void FS_Luma_Slice_end(FS *fs, BYTE *pOutLum, int outSize)
 {
-    memcpy(pOutLum, fs->sd_buf.pInYUV, fs->wb*fs->hb);
+    memcpy_byte_s(pOutLum, outSize, fs->sd_buf.pInYUV, fs->wb*fs->hb);
 }

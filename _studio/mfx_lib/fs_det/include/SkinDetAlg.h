@@ -1,9 +1,11 @@
 //
-//               INTEL CORPORATION PROPRIETARY INFORMATION
-//  This software is supplied under the terms of a license agreement or
-//  nondisclosure agreement with Intel Corporation and may not be copied
-//  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2014-2016 Intel Corporation. All Rights Reserved.
+// INTEL CORPORATION PROPRIETARY INFORMATION
+//
+// This software is supplied under the terms of a license agreement or
+// nondisclosure agreement with Intel Corporation and may not be copied
+// or disclosed except in accordance with the terms of that agreement.
+//
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 /********************************************************************************
 * 
@@ -73,6 +75,7 @@ typedef struct {
     haarclass_cascade *class_cascade;   //Face detection classifier helper
     int *sum;                           //Integral image buffer
     double *sqsum;                      //Squared integral image buffer
+    int  mat_size;                      //Alloc size
     BYTE *mat;                          //Face detection input frame data buffer
     BYTE *mat_norm;                     //Face detection normalized input frame data buffer
     std::vector<Rct> *faces;            //Face detection classification results

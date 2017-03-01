@@ -1,9 +1,11 @@
 //
-//               INTEL CORPORATION PROPRIETARY INFORMATION
-//  This software is supplied under the terms of a license agreement or
-//  nondisclosure agreement with Intel Corporation and may not be copied
-//  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2014-2016 Intel Corporation. All Rights Reserved.
+// INTEL CORPORATION PROPRIETARY INFORMATION
+//
+// This software is supplied under the terms of a license agreement or
+// nondisclosure agreement with Intel Corporation and may not be copied
+// or disclosed except in accordance with the terms of that agreement.
+//
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 /********************************************************************************
  * 
@@ -17,6 +19,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include "ipps.h"
 
 //Define number of slices per frame for slice-based processing
 #define NSLICES			8
@@ -112,5 +115,22 @@ typedef unsigned short WORD;
 extern int g_FS_OPT_init;
 extern int g_FS_OPT_AVX2;
 extern int g_FS_OPT_SSE4;
+
+// Use for all memcpy (secure)
+static inline int memcpy_byte_s(void* pDst, size_t nDstSize, const void* pSrc, size_t nCount) 
+{
+#if defined(_WIN32) || defined(_WIN64)
+    return memcpy_s(pDst, nDstSize, pSrc, nCount);
+#else
+    ippsCopy_8u((Ipp8u*)pSrc, (Ipp8u*)pDst, nCount);
+    return 0;
+#endif
+}
+
+// Use only for small memcpy (performance)
+static inline void memcpy_byte_p( void* dst, const void* src, int len )
+{
+    ippsCopy_8u((const Ipp8u*)src, (Ipp8u*)dst, len);
+}
 
 #endif
