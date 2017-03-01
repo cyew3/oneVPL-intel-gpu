@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2005-2008 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2005-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_STREAM_PARSER_H__
@@ -22,8 +22,8 @@
 
 #define CACHE_N_BYTES_FROM_READER(READER, PTR, N, OFFSET) {                     \
     Ipp32u size = (Ipp32u)(N);                                                  \
-    Status umcRes = READER->CheckData((void *)(PTR), &size, (Ipp32s)(OFFSET));  \
-    if (UMC_OK != umcRes || size != (Ipp32u)(N))                                \
+    Status umcSts = READER->CheckData((void *)(PTR), &size, (Ipp32s)(OFFSET));  \
+    if (UMC_OK != umcSts || size != (Ipp32u)(N))                                \
     {                                                                           \
         m_ParserState = END_OF_STREAM;                                          \
         return UMC_ERR_END_OF_STREAM;                                           \
