@@ -59,7 +59,7 @@ UMC::Status va_to_umc_res(VAStatus va_res)
         umcRes = UMC::UMC_ERR_INVALID_PARAMS;
         break;
     case VA_STATUS_ERROR_DECODING_ERROR:
-        umcRes = UMC::UMC_ERR_INVALID_STREAM;
+        umcRes = UMC::UMC_ERR_DEVICE_FAILED;
         break;
     case VA_STATUS_ERROR_HW_BUSY:
         umcRes = UMC::UMC_ERR_GPU_HANG;
@@ -813,7 +813,6 @@ Status LinuxVideoAccelerator::EndFrame(void*)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "EndFrame");
     VAStatus va_res = VA_STATUS_SUCCESS;
-    Ipp32u i;
 
     vm_mutex_lock(&m_SyncMutex);
 
@@ -826,7 +825,7 @@ Status LinuxVideoAccelerator::EndFrame(void*)
     m_FrameState = lvaBeforeBegin;
 
     VACompBuffer* pCompBuf = NULL;
-    for (i = 0; i < m_uiCompBuffersUsed; ++i)
+    for (Ipp32u i = 0; i < m_uiCompBuffersUsed; ++i)
     {
         pCompBuf = m_pCompBuffers[i];
         if (pCompBuf->NeedDestroy())
@@ -834,7 +833,6 @@ Status LinuxVideoAccelerator::EndFrame(void*)
             VAStatus va_sts = vaDestroyBuffer(m_dpy, pCompBuf->GetID());
             if (VA_STATUS_SUCCESS == va_res)
                 va_res = va_sts;
-            pCompBuf->SetDestroyStatus(false);
         }
         UMC_DELETE(pCompBuf);
     }
