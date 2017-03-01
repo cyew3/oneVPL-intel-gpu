@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2015-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2015-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_screen_capture_cm_dirty_rect.h"
@@ -333,8 +333,8 @@ mfxStatus CmDirtyRectFilter::RunFrameVPP(mfxFrameSurface1& in, mfxFrameSurface1&
     Ipp16s* distRight = task->roiMap.distRight;
     if(!distUpper || !distLower || !distLeft || !distRight) return MFX_ERR_UNDEFINED_BEHAVIOR;
 
-    const IppiSize roiMapSize = {task->roiMap.width, task->roiMap.height};
-    const IppiSize roiPhysBufferSize = {task->roiMap.physBufferPitch / 4, task->roiMap.physBufferSz / task->roiMap.physBufferPitch / 4};
+    const IppiSize roiMapSize = {(int)(task->roiMap.width), (int)(task->roiMap.height)};
+    const IppiSize roiPhysBufferSize = {(int)(task->roiMap.physBufferPitch / 4), (int)(task->roiMap.physBufferSz / task->roiMap.physBufferPitch / 4)};
 
     std::vector <intRect>& dirtyRects = task->roiMap.dirtyRects;
     dirtyRects.clear();
