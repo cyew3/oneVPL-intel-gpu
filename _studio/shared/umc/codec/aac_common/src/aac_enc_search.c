@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -230,7 +230,6 @@ void tree_build(Ipp32s sfb_bit_len[MAX_SFB][12],
 #if 0
     ippsMinIndx_32s(sfb_bit_len[sfb], 12, &min_value, &index);
 #else
-    int i;
     min_value = sfb_bit_len[sfb][0];
     index = 0;
     for ( i = 1; i < 12; i++ ) {
