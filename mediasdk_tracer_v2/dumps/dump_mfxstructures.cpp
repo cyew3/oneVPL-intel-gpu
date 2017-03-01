@@ -1241,3 +1241,40 @@ std::string DumpContext::dump(const std::string structName, const  mfxExtDecVide
 
     return str;
 }
+
+std::string DumpContext::dump(const std::string structName, const  mfxVP9SegmentParam &_struct)
+{
+    std::string str;
+    DUMP_FIELD(FeatureEnabled);
+    DUMP_FIELD(QIndexDelta);
+    DUMP_FIELD(LoopFilterLevelDelta);
+    DUMP_FIELD(ReferenceFrame);
+    return str;
+}
+
+
+std::string DumpContext::dump(const std::string structName, const  mfxExtVP9Segmentation &_struct)
+{
+    std::string str;
+    str += dump(structName + ".Header", _struct.Header) + "\n";
+    DUMP_FIELD(NumSegments);
+
+    for (mfxU16 i = 0; i < 8 && i < _struct.NumSegments; i++)
+    {
+        str += dump(structName + ".Segment[" + ToString(i) + "]", _struct.Segment[i]) + "\n";
+    }
+
+    DUMP_FIELD(SegmentIdBlockSize);
+    DUMP_FIELD(NumSegmentIdAlloc);
+
+    if (_struct.SegmentId)
+    {
+        str += dump_array_with_cast<mfxU8, mfxU16>(_struct.SegmentId, _struct.NumSegmentIdAlloc);
+    }
+    else
+    {
+        DUMP_FIELD(SegmentId);
+    }
+
+    return str;
+}

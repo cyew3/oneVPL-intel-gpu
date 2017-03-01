@@ -140,6 +140,20 @@ public:
         return result.str();
     }
 
+    template<typename T0, typename T1>
+    std::string dump_array_with_cast(T0* data, size_t size)
+    {
+        std::stringstream result;
+
+        result << "{ ";
+        for (size_t i = 0; i < size; ++i) {
+            result << (T1)data[i];
+            if (i < (size - 1)) result << ", ";
+        }
+        result << " }";
+        return result.str();
+    }
+
     template<typename T>
     inline const char* get_type(){ return typeid(T).name(); }
 
@@ -395,6 +409,9 @@ public:
                         case MFX_EXTBUFF_DEC_VIDEO_PROCESSING:
                             str += dump(name, *((mfxExtDecVideoProcessing*)_struct.ExtParam[i])) + "\n";
                             break;
+                        case MFX_EXTBUFF_VP9_SEGMENTATION:
+                            str += dump(name, *((mfxExtVP9Segmentation*)_struct.ExtParam[i])) + "\n";
+                            break;
                         default:
                             str += dump(name, *(_struct.ExtParam[i])) + "\n";
                             break;
@@ -496,6 +513,8 @@ public:
     DEFINE_DUMP_FUNCTION(mfxExtMVOverPicBoundaries);
     DEFINE_DUMP_FUNCTION(mfxExtVPPColorFill);
     DEFINE_DUMP_FUNCTION(mfxExtDecVideoProcessing);
+    DEFINE_DUMP_FUNCTION(mfxVP9SegmentParam);
+    DEFINE_DUMP_FUNCTION(mfxExtVP9Segmentation);
 
 
     //mfxsession

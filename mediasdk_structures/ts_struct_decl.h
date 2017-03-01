@@ -850,25 +850,24 @@ STRUCT(mfxExtHEVCRegion,
     FIELD_T(mfxU16      , RegionEncoding)
 )
 
-STRUCT(mfxExtCodingOptionVP9,
-    FIELD_S(mfxExtBuffer       , Header                )
-    FIELD_T(mfxU16             , Version               )
-    FIELD_T(mfxU16             , SharpnessLevel        )
-    FIELD_T(mfxU16             , WriteIVFHeaders       )
-    FIELD_T(mfxU32             , NumFramesForIVF       )
-    FIELD_T(mfxI16             , LoopFilterRefDelta    )
-    FIELD_T(mfxI16             , LoopFilterModeDelta   )
-    FIELD_T(mfxI16             , QIndexDeltaLumaDC     )
-    FIELD_T(mfxI16             , QIndexDeltaChromaAC   )
-    FIELD_T(mfxI16             , QIndexDeltaChromaDC   )
-    FIELD_T(mfxU16             , Log2TileRows          )
-    FIELD_T(mfxU16             , Log2TileColumns       )
-    FIELD_T(mfxU16             , EnableMultipleSegments)
-    //FIELD_S(mfxSegmentParamVP9 , Segment               )
-)
-
 STRUCT(mfxExtVP9DecodedFrameInfo,
     FIELD_S(mfxExtBuffer, Header )
     //FIELD_T(mfxU16      , DisplayWidth)
     //FIELD_T(mfxU16      , DisplayHeight)
+)
+
+STRUCT(mfxVP9SegmentParam,
+    FIELD_T(mfxU16,  FeatureEnabled)
+    FIELD_T(mfxI16,  QIndexDelta)
+    FIELD_T(mfxI16,  LoopFilterLevelDelta)
+    FIELD_T(mfxU16,  ReferenceFrame)
+)
+
+STRUCT(mfxExtVP9Segmentation,
+    FIELD_S(mfxExtBuffer      , Header)
+    FIELD_T(mfxU16            , NumSegments)
+    FIELD_S(mfxVP9SegmentParam, Segment)
+    FIELD_T(mfxU16            , SegmentIdBlockSize)
+    FIELD_T(mfxU32            , NumSegmentIdAlloc)
+    FIELD_T(mfxU8*            , SegmentId)
 )

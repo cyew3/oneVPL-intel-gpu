@@ -808,7 +808,8 @@ enum {
     MFX_EXTBUFF_VPP_MIRRORING              = MFX_MAKEFOURCC('M','I','R','R'),
     MFX_EXTBUFF_MV_OVER_PIC_BOUNDARIES     = MFX_MAKEFOURCC('M','V','P','B'),
     MFX_EXTBUFF_VPP_COLORFILL              = MFX_MAKEFOURCC('V','C','L','F'),
-    MFX_EXTBUFF_VPP_COLOR_CONVERSION       = MFX_MAKEFOURCC('V','C','S','C')
+    MFX_EXTBUFF_VPP_COLOR_CONVERSION       = MFX_MAKEFOURCC('V','C','S','C'),
+    MFX_EXTBUFF_VP9_SEGMENTATION           = MFX_MAKEFOURCC('9','S','E','G')
 };
 
 /* VPP Conf: Do not use certain algorithms  */
@@ -1724,6 +1725,52 @@ typedef struct {
     mfxU16 ChromaSiting;
     mfxU16 reserved[27];
 } mfxExtColorConversion;
+
+/* VP9ReferenceFrame */
+enum {
+    MFX_VP9_REF_INTRA   = 0,
+    MFX_VP9_REF_LAST    = 1,
+    MFX_VP9_REF_GOLDEN  = 2,
+    MFX_VP9_REF_ALTREF  = 3
+};
+
+/* SegmentIdBlockSize */
+enum {
+    MFX_VP9_SEGMENT_ID_BLOCK_SIZE_UNKNOWN =  0,
+    MFX_VP9_SEGMENT_ID_BLOCK_SIZE_8x8     =  8,
+    MFX_VP9_SEGMENT_ID_BLOCK_SIZE_16x16   = 16,
+    MFX_VP9_SEGMENT_ID_BLOCK_SIZE_32x32   = 32,
+    MFX_VP9_SEGMENT_ID_BLOCK_SIZE_64x64   = 64,
+};
+
+/* SegmentFeature */
+enum {
+    MFX_VP9_SEGMENT_FEATURE_QINDEX      = 0x0001,
+    MFX_VP9_SEGMENT_FEATURE_LOOP_FILTER = 0x0002,
+    MFX_VP9_SEGMENT_FEATURE_REFERENCE   = 0x0004,
+    MFX_VP9_SEGMENT_FEATURE_SKIP        = 0x0008 /* (0,0) MV, no residual */
+};
+
+typedef struct {
+    mfxU16  FeatureEnabled;         /* see enum SegmentFeature */
+    mfxI16  QIndexDelta;
+    mfxI16  LoopFilterLevelDelta;
+    mfxU16  ReferenceFrame;        /* see enum VP9ReferenceFrame */
+    mfxU16  reserved[12];
+} mfxVP9SegmentParam;
+
+typedef struct {
+    mfxExtBuffer        Header;
+    mfxU16              NumSegments;            /* 0..8 */
+    mfxVP9SegmentParam  Segment[8];
+    mfxU16              SegmentIdBlockSize;     /* see enum SegmentIdBlockSize */
+    mfxU32              NumSegmentIdAlloc;      /* >= (Ceil(Width / SegmentIdBlockSize) * Ceil(Height / SegmentIdBlockSize)) */
+    union {
+        mfxU8           *SegmentId;             /*[NumSegmentIdAlloc] = 0..7, index in Segment array, blocks of SegmentIdBlockSize map */
+        mfxU64          reserved1;
+    };
+    mfxU16  reserved[52];
+} mfxExtVP9Segmentation;
 
 #ifdef __cplusplus
 } // extern "C"
