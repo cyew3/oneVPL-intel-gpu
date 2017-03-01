@@ -1467,7 +1467,7 @@ mfxStatus MFXDecPipeline::DecodeHeader()
         MFX_CHECK_STS_SKIP(sts = m_pYUVSource->DecodeHeader(&m_inBSFrame, &m_components[eDEC].m_params)
             , MFX_ERR_MORE_DATA);
 
-        if ((MFX_ERR_MORE_DATA == sts) && !(m_inBSFrame.DataFlag & MFX_BITSTREAM_EOS))
+        if (MFX_ERR_MORE_DATA == sts)
         {
             if (m_inBSFrame.MaxLength == m_inBSFrame.DataLength)
             {
