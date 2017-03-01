@@ -1262,6 +1262,18 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     {
         mfxVideoParam encoderParams={};
 
+        std::vector<mfxExtBuffer*> paramsArray;
+        for (int paramNum = 0; paramNum < m_mfxEncParams.NumExtParam; paramNum++)
+        {
+            mfxExtBuffer* buf = m_mfxEncParams.ExtParam[paramNum];
+            mfxExtBuffer* newBuf = (mfxExtBuffer*)new mfxU8[buf->BufferSz];
+            newBuf->BufferId = buf->BufferId;
+            newBuf->BufferSz = buf->BufferSz;
+            paramsArray.push_back(newBuf);
+        }
+        encoderParams.NumExtParam = (mfxU16)paramsArray.size();
+        encoderParams.ExtParam = &paramsArray[0];
+
         sts=m_pmfxENC->GetVideoParam(&encoderParams);
         MSDK_CHECK_STATUS(sts, "Cannot read configuration from encoder: GetVideoParam failed");
 
@@ -1276,6 +1288,13 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
         {
             CParametersDumper::DumpLibraryConfiguration(pParams->DumpFileName,NULL,NULL,&encoderParams);
         }
+
+        // Cleaning params array
+        for (int paramNum = 0; paramNum < m_mfxEncParams.NumExtParam; paramNum++)
+        {
+            delete[] paramsArray[paramNum];
+        }
+
     }
 
     return MFX_ERR_NONE;
