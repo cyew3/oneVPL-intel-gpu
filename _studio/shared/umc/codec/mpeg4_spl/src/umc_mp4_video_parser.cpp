@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_mp4_video_parser.h"
@@ -342,7 +342,7 @@ mp4_Status mp4_Parse_VideoObject(mp4_Info* pInfo)
                     return MP4_STATUS_PARSE_ERROR;
             }
             if (VOL->shape == MP4_SHAPE_TYPE_GRAYSCALE) {
-                Ipp32s   ac, i;
+                Ipp32s   ac;
 
                 ac = mp4_aux_comp_count[VOL->shape_extension];
                 for (i = 0; i < ac; i ++) {
