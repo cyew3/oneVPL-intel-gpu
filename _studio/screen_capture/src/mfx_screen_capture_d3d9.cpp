@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2015-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2015-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_screen_capture_d3d9.h"
@@ -115,49 +115,51 @@ mfxStatus D3D9_Capturer::CreateVideoAccelerator( mfxVideoParam const & par, cons
     MFX_CHECK(SUCCEEDED(hres), MFX_ERR_DEVICE_FAILED);
 
     // obtain number of supported guid
-    DXVA2_DecodeExecuteParams dec_exec = {0};
-    DXVA2_DecodeExtensionData dec_ext =  {0};
-    dec_exec.pExtensionData = &dec_ext;
-
-    mfxU32 count = 0;
-    dec_ext.Function = AUXDEV_GET_ACCEL_GUID_COUNT;
-    dec_ext.pPrivateOutputData =  &count;
-    dec_ext.PrivateOutputDataSize = sizeof(count);
-    hres = m_pDecoder->Execute(&dec_exec);
-    MFX_CHECK(SUCCEEDED(hres), MFX_ERR_DEVICE_FAILED);
-    MFX_CHECK(count, MFX_ERR_DEVICE_FAILED);
-
-    dec_ext.Function = AUXDEV_GET_ACCEL_GUIDS;
-    pGuids =  new(std::nothrow) GUID[count];
-    if(!pGuids) return MFX_ERR_MEMORY_ALLOC;
-    dec_ext.pPrivateOutputData = pGuids;
-    dec_ext.PrivateOutputDataSize = sizeof(GUID)*count;
-    hres = m_pDecoder->Execute(&dec_exec);
-    MFX_CHECK(SUCCEEDED(hres), MFX_ERR_DEVICE_FAILED);
-    MFX_CHECK(count, MFX_ERR_DEVICE_FAILED);
-
-    bool isRequestedGuidPresent = false;
-    for (mfxU32 i = 0; i < count; i++)
     {
-        if (DXVADDI_Intel_GetDesktopScreen == pGuids[i])
-            isRequestedGuidPresent = true;
+        DXVA2_DecodeExecuteParams dec_exec = { 0 };
+        DXVA2_DecodeExtensionData dec_ext = { 0 };
+        dec_exec.pExtensionData = &dec_ext;
+
+        mfxU32 count = 0;
+        dec_ext.Function = AUXDEV_GET_ACCEL_GUID_COUNT;
+        dec_ext.pPrivateOutputData = &count;
+        dec_ext.PrivateOutputDataSize = sizeof(count);
+        hres = m_pDecoder->Execute(&dec_exec);
+        MFX_CHECK(SUCCEEDED(hres), MFX_ERR_DEVICE_FAILED);
+        MFX_CHECK(count, MFX_ERR_DEVICE_FAILED);
+
+        dec_ext.Function = AUXDEV_GET_ACCEL_GUIDS;
+        pGuids = new(std::nothrow) GUID[count];
+        if (!pGuids) return MFX_ERR_MEMORY_ALLOC;
+        dec_ext.pPrivateOutputData = pGuids;
+        dec_ext.PrivateOutputDataSize = sizeof(GUID)*count;
+        hres = m_pDecoder->Execute(&dec_exec);
+        MFX_CHECK(SUCCEEDED(hres), MFX_ERR_DEVICE_FAILED);
+        MFX_CHECK(count, MFX_ERR_DEVICE_FAILED);
+
+        bool isRequestedGuidPresent = false;
+        for (mfxU32 i = 0; i < count; i++)
+        {
+            if (DXVADDI_Intel_GetDesktopScreen == pGuids[i])
+                isRequestedGuidPresent = true;
+        }
+        delete[] pGuids;
+        MFX_CHECK(isRequestedGuidPresent, MFX_ERR_UNSUPPORTED);
+
+        dec_ext.Function = AUXDEV_CREATE_ACCEL_SERVICE;
+        GUID GetDesktopScreenGUID = DXVADDI_Intel_GetDesktopScreen;
+        dec_ext.pPrivateInputData = &GetDesktopScreenGUID;
+        dec_ext.PrivateInputDataSize = sizeof(GetDesktopScreenGUID);
+
+        video_desc.SampleWidth = width;
+        video_desc.SampleHeight = height;
+        video_desc.Format = format;
+        DXVA2_VideoDesc* pDesk = &video_desc;
+        dec_ext.pPrivateOutputData = &pDesk;
+        dec_ext.PrivateOutputDataSize = sizeof(video_desc);
+        hres = m_pDecoder->Execute(&dec_exec);
+        MFX_CHECK(SUCCEEDED(hres), MFX_ERR_DEVICE_FAILED);
     }
-    delete[] pGuids;
-    MFX_CHECK(isRequestedGuidPresent, MFX_ERR_UNSUPPORTED);
-
-    dec_ext.Function = AUXDEV_CREATE_ACCEL_SERVICE;
-    GUID GetDesktopScreenGUID = DXVADDI_Intel_GetDesktopScreen;
-    dec_ext.pPrivateInputData = &GetDesktopScreenGUID;
-    dec_ext.PrivateInputDataSize = sizeof(GetDesktopScreenGUID);
-
-    video_desc.SampleWidth = width;
-    video_desc.SampleHeight = height;
-    video_desc.Format = format;
-    DXVA2_VideoDesc* pDesk = &video_desc;
-    dec_ext.pPrivateOutputData = &pDesk;
-    dec_ext.PrivateOutputDataSize = sizeof(video_desc);
-    hres = m_pDecoder->Execute(&dec_exec);
-    MFX_CHECK(SUCCEEDED(hres), MFX_ERR_DEVICE_FAILED);
 
     dummy_surf->Release();
 
