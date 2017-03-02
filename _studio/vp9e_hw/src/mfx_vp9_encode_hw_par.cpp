@@ -26,15 +26,19 @@ namespace MfxHwVP9Encode
 
 bool IsExtBufferSupportedInInit(mfxU32 id)
 {
-    return id == MFX_EXTBUFF_CODING_OPTION_VP9
-        || id == MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION
+    // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
+    //return id == MFX_EXTBUFF_VP9_CODING_OPTION
+    return id == MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION
         || id == MFX_EXTBUFF_CODING_OPTION2
         || id == MFX_EXTBUFF_CODING_OPTION3;
 }
 
 bool IsExtBufferSupportedInRuntime(mfxU32 id)
 {
-    return id == MFX_EXTBUFF_CODING_OPTION_VP9;
+    id;
+    return false;
+    // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
+    // return id == MFX_EXTBUFF_VP9_CODING_OPTION;
 }
 
 mfxStatus CheckExtBufferHeaders(mfxU16 numExtParam, mfxExtBuffer** extParam, bool isRuntime)
