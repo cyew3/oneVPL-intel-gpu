@@ -440,6 +440,25 @@ bool CheckFourcc(mfxU32 fourcc)
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
 }
 
+mfxU16 MapTUToSupportedRange(mfxU16 tu)
+{
+    switch (tu)
+    {
+    case MFX_TARGETUSAGE_1:
+    case MFX_TARGETUSAGE_2:
+        return MFX_TARGETUSAGE_BEST_QUALITY;
+    case MFX_TARGETUSAGE_3:
+    case MFX_TARGETUSAGE_4:
+    case MFX_TARGETUSAGE_5:
+        return MFX_TARGETUSAGE_BALANCED;
+    case MFX_TARGETUSAGE_6:
+    case MFX_TARGETUSAGE_7:
+        return MFX_TARGETUSAGE_BEST_SPEED;
+    default:
+        return MFX_TARGETUSAGE_UNKNOWN;
+    }
+}
+
 mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
 {
     caps;
@@ -672,10 +691,13 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         unsupported = true;
     }
 
-    if (par.mfx.TargetUsage > MFX_TARGETUSAGE_BEST_SPEED)
+    if (par.mfx.TargetUsage)
     {
-        par.mfx.TargetUsage = MFX_TARGETUSAGE_UNKNOWN;
-        unsupported = true;
+        par.mfx.TargetUsage = MapTUToSupportedRange(par.mfx.TargetUsage);
+        if (par.mfx.TargetUsage == MFX_TARGETUSAGE_UNKNOWN)
+        {
+            unsupported = true;
+        }
     }
 
     if (par.mfx.GopRefDist > 1)
@@ -759,6 +781,16 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
     {
         par.mfx.NumRefFrame = DPB_SIZE_REAL;
         changed = true;
+    }
+
+    if (par.mfx.TargetUsage)
+    {
+        if (par.mfx.TargetUsage != MFX_TARGETUSAGE_BEST_QUALITY &&
+            par.mfx.NumRefFrame > 2)
+        {
+            par.mfx.NumRefFrame = 2;
+            changed = true;
+        }
     }
 
     // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
@@ -914,11 +946,11 @@ mfxStatus SetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
     SetDefault(par.AsyncDepth, GetDefaultAsyncDepth(par));
 
     // mfxInfoMfx
+    SetDefault(par.mfx.TargetUsage, MFX_TARGETUSAGE_BALANCED);
     SetDefault(par.mfx.GopPicSize, DEFAULT_GOP_SIZE);
     SetDefault(par.mfx.GopRefDist, 1);
     SetDefault(par.mfx.NumRefFrame, 1);
     SetDefault(par.mfx.BRCParamMultiplier, 1);
-    SetDefault(par.mfx.TargetUsage, MFX_TARGETUSAGE_BALANCED);
     SetDefault(par.mfx.RateControlMethod, MFX_RATECONTROL_CBR);
     SetDefault(par.m_bufferSizeInKb, GetDefaultBufferSize(par));
     if (IsBufferBasedBRC(par.mfx.RateControlMethod))
