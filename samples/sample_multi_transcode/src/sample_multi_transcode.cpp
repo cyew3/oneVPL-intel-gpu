@@ -404,22 +404,25 @@ void Launcher::Run()
         m_HDLArray.push_back(pthread);
     }
 
-
-    for (int i = 0; ; i++)
+    for (size_t i = 0; ; i = (i+1) % m_HDLArray.size())
     {
-        i %= m_HDLArray.size();
         sts = m_HDLArray[i]->TimedWait(100);
 
         if (sts <= 0)
         {
-            for (mfxU32 j = 0; j < m_HDLArray.size(); j++ )
-                m_pSessionArray[j]->pPipeline->SignalStop();
+            // we need to exclude the thread which returned sts <= 0
+            // from stopping and joining, because 2nd joining of the
+            // thread causes undefined behavior on some platforms
+            // resulting in segmentation faults
+            for (size_t j = 0; j < m_HDLArray.size(); j++) {
+                if (j != i) m_pSessionArray[j]->pPipeline->SignalStop();
+            }
+            for (size_t j = 0; j < m_HDLArray.size(); j++)
+                if (j != i) m_HDLArray[i]->Wait();
+
             break;
         }
     }
-
-    for (mfxU32 i= 0; i< m_HDLArray.size(); i++)
-        m_HDLArray[i]->Wait();
 
     msdk_printf(MSDK_STRING("\nTranscoding finished\n"));
 
