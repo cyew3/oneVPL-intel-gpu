@@ -58,6 +58,13 @@ mfxStatus SetPrivateParams(
     VABufferID & privateParams_id,
     mfxEncodeCtrl const * pCtrl = 0);
 
+mfxStatus SetQualityLevelParams(
+    MfxHwH264Encode::MfxVideoParam const & par,
+    VADisplay    vaDisplay,
+    VAContextID  vaContextEncode,
+    VABufferID & privateParams_id,
+    mfxEncodeCtrl const * pCtrl = 0);
+
 void FillConstPartOfPps(
     MfxHwH264Encode::MfxVideoParam const & par,
     VAEncPictureParameterBufferH264 & pps);
@@ -214,6 +221,7 @@ namespace MfxHwH264Encode
         VABufferID m_hrdBufferId;
         VABufferID m_rateParamBufferId; // VAEncMiscParameterRateControl
         VABufferID m_frameRateId; // VAEncMiscParameterFrameRate
+        VABufferID m_qualityLevelId;  // VAEncMiscParameterBufferQualityLevel
         VABufferID m_maxFrameSizeId; // VAEncMiscParameterFrameRate
         VABufferID m_quantizationId;  // VAEncMiscParameterQuantization
         VABufferID m_rirId;           // VAEncMiscParameterRIR

@@ -486,6 +486,46 @@ mfxStatus SetPrivateParams(
     return MFX_ERR_NONE;
 } // void SetPrivateParams(...)
 
+mfxStatus SetQualityLevelParams(
+    MfxVideoParam const & par,
+    VADisplay    vaDisplay,
+    VAContextID  vaContextEncode,
+    VABufferID & qualityParams_id,
+    mfxEncodeCtrl const * pCtrl)
+{
+    VAStatus vaSts;
+    VAEncMiscParameterBuffer *misc_param;
+    VAEncMiscParameterBufferQualityLevel *quality_param;
+
+    if ( qualityParams_id != VA_INVALID_ID)
+    {
+        vaDestroyBuffer(vaDisplay, qualityParams_id);
+    }
+
+    vaSts = vaCreateBuffer(vaDisplay,
+                   vaContextEncode,
+                   VAEncMiscParameterBufferType,
+                   sizeof(VAEncMiscParameterBuffer) + sizeof(VAEncMiscParameterBufferQualityLevel),
+                   1,
+                   NULL,
+                   &qualityParams_id);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    vaSts = vaMapBuffer(vaDisplay,
+                 qualityParams_id,
+                (void **)&misc_param);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    misc_param->type = (VAEncMiscParameterType)VAEncMiscParameterTypeQualityLevel;
+    quality_param = (VAEncMiscParameterBufferQualityLevel *)misc_param->data;
+
+    quality_param->quality_level = (unsigned int)(par.mfx.TargetUsage);
+
+    vaUnmapBuffer(vaDisplay, qualityParams_id);
+
+    return MFX_ERR_NONE;
+} // SetQualityLevelParams
+
 mfxStatus SetSkipFrame(
     VADisplay    vaDisplay,
     VAContextID  vaContextEncode,
@@ -1078,6 +1118,7 @@ VAAPIEncoder::VAAPIEncoder()
     , m_hrdBufferId(VA_INVALID_ID)
     , m_rateParamBufferId(VA_INVALID_ID)
     , m_frameRateId(VA_INVALID_ID)
+    , m_qualityLevelId(VA_INVALID_ID)
     , m_maxFrameSizeId(VA_INVALID_ID)
     , m_quantizationId(VA_INVALID_ID)
     , m_rirId(VA_INVALID_ID)
@@ -1587,6 +1628,9 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetHRD(par, m_vaDisplay, m_vaContextEncode, m_hrdBufferId), MFX_ERR_DEVICE_FAILED);
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetRateControl(par, m_mbbrc, 0, 0, m_vaDisplay, m_vaContextEncode, m_rateParamBufferId), MFX_ERR_DEVICE_FAILED);
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetFrameRate(par, m_vaDisplay, m_vaContextEncode, m_frameRateId), MFX_ERR_DEVICE_FAILED);
+#ifdef MFX_VAAPI_UPSTREAM
+    MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetQualityLevelParams(par, m_vaDisplay, m_vaContextEncode, m_qualityLevelId), MFX_ERR_DEVICE_FAILED);
+#endif
     if (IsSupported__VAEncMiscParameterPrivate()) {
         MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetPrivateParams(par, m_vaDisplay, m_vaContextEncode, m_privateParamsId), MFX_ERR_DEVICE_FAILED);
     }
@@ -1649,6 +1693,9 @@ mfxStatus VAAPIEncoder::Reset(MfxVideoParam const & par)
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetHRD(par, m_vaDisplay, m_vaContextEncode, m_hrdBufferId), MFX_ERR_DEVICE_FAILED);
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetRateControl(par, m_mbbrc, 0, 0, m_vaDisplay, m_vaContextEncode, m_rateParamBufferId, isBrcResetRequired), MFX_ERR_DEVICE_FAILED);
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetFrameRate(par, m_vaDisplay, m_vaContextEncode, m_frameRateId), MFX_ERR_DEVICE_FAILED);
+#ifdef MFX_VAAPI_UPSTREAM
+    MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetQualityLevelParams(par, m_vaDisplay, m_vaContextEncode, m_qualityLevelId), MFX_ERR_DEVICE_FAILED);
+#endif
     if (IsSupported__VAEncMiscParameterPrivate()) {
         MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetPrivateParams(par, m_vaDisplay, m_vaContextEncode, m_privateParamsId), MFX_ERR_DEVICE_FAILED);
     }
@@ -2554,6 +2601,9 @@ mfxStatus VAAPIEncoder::Execute(
                                                          m_vaDisplay, m_vaContextEncode, m_rateParamBufferId), MFX_ERR_DEVICE_FAILED);
     configBuffers[buffersCount++] = m_rateParamBufferId;
     configBuffers[buffersCount++] = m_frameRateId;
+#ifdef MFX_VAAPI_UPSTREAM
+    configBuffers[buffersCount++] = m_qualityLevelId;
+#endif
 
 /*
  * Limit frame size by application/user level
@@ -3154,6 +3204,7 @@ mfxStatus VAAPIEncoder::Destroy()
     MFX_DESTROY_VABUFFER(m_hrdBufferId,               m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_rateParamBufferId,         m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_frameRateId,               m_vaDisplay);
+    MFX_DESTROY_VABUFFER(m_qualityLevelId,            m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_maxFrameSizeId,            m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_quantizationId,            m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_rirId,                     m_vaDisplay);
