@@ -466,7 +466,12 @@ DECL_START(ENCODE_QUERY_STATUS_PARAMS)
     TRACE("%d", NumberPasses);
     TRACE("%d", AverageQP);
     TRACE("%d", PanicMode);
+    TRACE("%d", SliceSizeOverflow);
+    TRACE("%d", NumSlicesNonCompliant);
+    TRACE("%d", LongTermReference);
+    TRACE("%d", FrameSkipped);
     TRACE("%d", MAD);
+    TRACE("%d", NumberSlices);
     TRACE("%llx", aes_counter.IV);
     TRACE("%llx", aes_counter.Counter);
 DECL_END

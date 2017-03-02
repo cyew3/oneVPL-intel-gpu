@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __ENCODING_DDI_H__
@@ -162,7 +162,7 @@ typedef struct tagENCODE_QUERY_STATUS_PARAMS
     ENCODE_PICENTRY CurrOriginalPic; 
     UCHAR   field_pic_flag; 
     UCHAR   bStatus;
-    CHAR    reserved0;
+    UCHAR   reserved0;
     UINT    Func;
     UINT    bitstreamSize;
     CHAR    QpY;
@@ -174,20 +174,20 @@ typedef struct tagENCODE_QUERY_STATUS_PARAMS
     {
         struct
         {
-              UINT PanicMode            : 1;
-              UINT SliceSizeOverflow    : 1;
-              UINT NumSliceNonCompliant : 1;
-              UINT LongTermReference    : 1;
-              UINT                      : 28;
+              UINT PanicMode                : 1;
+              UINT SliceSizeOverflow        : 1;
+              UINT NumSlicesNonCompliant    : 1;
+              UINT LongTermReference        : 1;
+              UINT FrameSkipped             : 1;
+              UINT                          : 27;
         };
         UINT QueryStatusFlags;
     };
     UINT    MAD;
-    USHORT    NumberSlices;
-
-    USHORT    PSNRx100[3];
-    USHORT    NextFrameWidthMinus1;
-    USHORT    NextFrameHeightMinus1;
+    USHORT  NumberSlices;
+    USHORT  PSNRx100[3];
+    USHORT  NextFrameWidthMinus1;
+    USHORT  NextFrameHeightMinus1;
 
     ENCODE_AES128_CIPHER_COUNTER aes_counter;
 
@@ -204,8 +204,9 @@ typedef struct tagENCODE_QUERY_STATUS_PARAMS
 typedef struct tagENCODE_QUERY_STATUS_SLICE_PARAMS
 {
     ENCODE_QUERY_STATUS_PARAMS FrameLevelStatus;
-    UINT reserved[4];
-    USHORT *SliceSizes;
+    UINT    SizeOfSliceSizesBuffer;
+    UINT    reserved[4];
+    USHORT  *SliceSizes;
 } ENCODE_QUERY_STATUS_SLICE_PARAMS, *PENCODE_QUERY_STATUS_SLICE_PARAMS;
 
 // from "Intel DXVA Encoding DDI for Vista rev 0.77"

@@ -134,6 +134,7 @@ mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, MFXCoreInterface* core, GUID guid
             caps.LCUSizeSupported |= 0b10;   // add support of 32x32 lcu for ENC+PAK
 #endif
     }
+    caps.SliceStructure = 2;    // default 4 is not supported now
 #else
     if (!caps.LCUSizeSupported)
         caps.LCUSizeSupported = 2;

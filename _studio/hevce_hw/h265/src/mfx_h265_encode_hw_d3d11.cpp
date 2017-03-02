@@ -687,7 +687,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryStatus(Task & task)
             if (pESI)
             {
                 pESI->NumEncodedSlice     = feedback->NumberSlices;
-                pESI->NumSliceNonCopliant = feedback->NumSliceNonCompliant;
+                pESI->NumSliceNonCopliant = feedback->NumSlicesNonCompliant;
                 pESI->SliceSizeOverflow   = feedback->SliceSizeOverflow;
 
                 if (pESI->NumSliceSizeAlloc && pESI->SliceSize && m_caps.SliceLevelReportSupport)
