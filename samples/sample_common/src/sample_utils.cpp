@@ -372,10 +372,9 @@ void CSmplBitstreamWriter::Close()
 
 mfxStatus CSmplBitstreamWriter::Init(const msdk_char *strFileName)
 {
+    MSDK_CHECK_POINTER(strFileName, MFX_ERR_NULL_PTR);
     if (!msdk_strlen(strFileName))
         return MFX_ERR_NONE;
-
-    MSDK_CHECK_ERROR(msdk_strlen(strFileName), 0, MFX_ERR_NONE);
 
     Close();
 
