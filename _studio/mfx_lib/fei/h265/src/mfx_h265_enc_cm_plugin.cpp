@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -517,7 +517,7 @@ mfxStatus VideoENC_H265FEI::RunFrameVmeENCCheck(mfxENCInput *input, mfxENCOutput
 
     pOut->feiOut->IntraDist       = m_IntraDist[m_feiInIdx];        pOut->feiOut->IntraPitch      = m_feiAlloc.IntraDist.pitch / sizeof(mfxFEIH265IntraDist);
 
-    for (Ipp32s k = MFX_FEI_H265_BLK_32x32; k <= MFX_FEI_H265_BLK_8x8; k++) {
+    for (k = MFX_FEI_H265_BLK_32x32; k <= MFX_FEI_H265_BLK_8x8; k++) {
         pOut->feiOut->Dist[pIn->RefIdx][k] = m_InterDist[m_feiInIdx][pIn->RefIdx][k];
         pOut->feiOut->MV[pIn->RefIdx][k]   = m_InterMV[m_feiInIdx][pIn->RefIdx][k];
 
@@ -525,7 +525,7 @@ mfxStatus VideoENC_H265FEI::RunFrameVmeENCCheck(mfxENCInput *input, mfxENCOutput
         pOut->feiOut->PitchDist[k] = m_feiAlloc.InterDist[k].pitch / sizeof(mfxU32);
     }
 
-    for (Ipp32s k = 0; k < 3; k++) {
+    for (k = 0; k < 3; k++) {
         pOut->feiOut->Interp[pIn->RefIdx][k] = m_Interp[m_feiInIdx][pIn->RefIdx][k];
         pOut->feiOut->InterpolatePitch  = m_feiAlloc.Interpolate[k].pitch;
     }
