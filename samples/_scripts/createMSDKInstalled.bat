@@ -37,9 +37,9 @@ mkdir %TargetDir%\igfx_s3dcontrol\include
 mkdir %TargetDir%\igfx_s3dcontrol\lib\win32
 mkdir %TargetDir%\igfx_s3dcontrol\lib\x64
 
-copy %SamplesDir%\igfx_s3dcontrol\include\API\*.* %TargetDir%\igfx_s3dcontrol\include\*.*
-copy %SamplesDir%\igfx_s3dcontrol\_build\lib\win32\*.* %TargetDir%\igfx_s3dcontrol\lib\win32\*.*
-copy %SamplesDir%\igfx_s3dcontrol\_build\lib\x64\*.* %TargetDir%\igfx_s3dcontrol\lib\x64\*.*
+copy %SamplesDir%\..\igfx_s3dcontrol\include\API\*.* %TargetDir%\igfx_s3dcontrol\include\*.*
+copy %SamplesDir%\..\igfx_s3dcontrol\_build\lib\win32\*.* %TargetDir%\igfx_s3dcontrol\lib\win32\*.*
+copy %SamplesDir%\..\igfx_s3dcontrol\_build\lib\x64\*.* %TargetDir%\igfx_s3dcontrol\lib\x64\*.*
 
 
 mkdir %TargetDir%\include

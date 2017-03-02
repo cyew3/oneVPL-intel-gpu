@@ -19,24 +19,24 @@ IF "%~3%"=="" (
 
 xcopy /S builder\*.* %1\builder\
 
-xcopy /S samples\*.c %1\samples\ /EXCLUDE:exclusions.txt
-xcopy /S samples\*.cl %1\samples\ /EXCLUDE:exclusions.txt
-xcopy /S samples\*.cmake %1\samples\ /EXCLUDE:exclusions.txt
-xcopy /S samples\*.cpp %1\samples\ /EXCLUDE:exclusions.txt
-xcopy /S samples\*.cproject %1\samples\ /EXCLUDE:exclusions.txt
-xcopy /S samples\*.def %1\samples\ /EXCLUDE:exclusions.txt
-xcopy /S samples\*.h %1\samples\ /EXCLUDE:exclusions.txt
-xcopy /S samples\*.hpp %1\samples\ /EXCLUDE:exclusions.txt
-xcopy /S samples\*.map %1\samples\ /EXCLUDE:exclusions.txt
-xcopy /S samples\*.pl %1\samples\ /EXCLUDE:exclusions.txt
-rem xcopy /S samples\*.project %1\samples\ /EXCLUDE:exclusions.txt
-xcopy /S samples\*.txt %1\samples\ /EXCLUDE:exclusions.txt
+xcopy /S ..\*.c %1\samples\ /EXCLUDE:exclusions.txt
+xcopy /S ..\*.cl %1\samples\ /EXCLUDE:exclusions.txt
+xcopy /S ..\*.cmake %1\samples\ /EXCLUDE:exclusions.txt
+xcopy /S ..\*.cpp %1\samples\ /EXCLUDE:exclusions.txt
+xcopy /S ..\*.cproject %1\samples\ /EXCLUDE:exclusions.txt
+xcopy /S ..\*.def %1\samples\ /EXCLUDE:exclusions.txt
+xcopy /S ..\*.h %1\samples\ /EXCLUDE:exclusions.txt
+xcopy /S ..\*.hpp %1\samples\ /EXCLUDE:exclusions.txt
+xcopy /S ..\*.map %1\samples\ /EXCLUDE:exclusions.txt
+xcopy /S ..\*.pl %1\samples\ /EXCLUDE:exclusions.txt
+rem xcopy /S ..\*.project %1\samples\ /EXCLUDE:exclusions.txt
+xcopy /S ..\*.txt %1\samples\ /EXCLUDE:exclusions.txt
 
 
 FOR /f %%f IN ('dir "%1\" /s /b /a-D') DO (dos2unix "%%f")
 
-xcopy /S samples\*.pdf %1\samples\ /EXCLUDE:exclusions.txt
-xcopy /S samples\*.so %1\samples\ /EXCLUDE:exclusions.txt
+xcopy /S ..\*.pdf %1\samples\ /EXCLUDE:exclusions.txt
+xcopy /S ..\*.so %1\samples\ /EXCLUDE:exclusions.txt
 
 xcopy %2\sample_decode %1\samples\_bin\x64\*
 xcopy %2\sample_encode %1\samples\_bin\x64\*
