@@ -1,4 +1,4 @@
-include( ${CMAKE_HOME_DIRECTORY}/../builder/FindFFmpeg.cmake )
+include( ${CMAKE_HOME_DIRECTORY}/../builder_s/FindFFmpeg.cmake )
 
 include_directories(
   ${CMAKE_SOURCE_DIR}/sample_common/include
