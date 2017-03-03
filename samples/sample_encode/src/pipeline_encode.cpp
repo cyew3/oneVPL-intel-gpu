@@ -1207,7 +1207,7 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
         msdk_printf(MSDK_STRING("P010 frames data will be shifted to MSB area to be compatible with HEVC HW input format\n"));
     }
 
-    if(m_pmfxVPP && !pParams->shouldUseShiftedP010Enc && pParams->bUseHWLib)
+    if(m_pmfxVPP && pParams->shouldUseShiftedP010Enc && !pParams->shouldUseShiftedP010Enc && pParams->bUseHWLib)
     {
         msdk_printf(MSDK_STRING("ERROR: Encoder requires P010 LSB format. VPP currently supports only MSB encoding for P010 format. Sample cannot combine both of them in one pipeline.\n"));
         return MFX_ERR_UNSUPPORTED;
@@ -1257,45 +1257,45 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     // If output isn't specified work in performance mode and do not insert idr
     m_bCutOutput = pParams->dstFileBuff.size() ? !pParams->bUncut : false;
 
-    // Dumping components configuration if required
-    if(*pParams->DumpFileName)
-    {
-        mfxVideoParam encoderParams={};
+    //// Dumping components configuration if required
+    //if(*pParams->DumpFileName)
+    //{
+    //    mfxVideoParam encoderParams={};
 
-        std::vector<mfxExtBuffer*> paramsArray;
-        for (int paramNum = 0; paramNum < m_mfxEncParams.NumExtParam; paramNum++)
-        {
-            mfxExtBuffer* buf = m_mfxEncParams.ExtParam[paramNum];
-            mfxExtBuffer* newBuf = (mfxExtBuffer*)new mfxU8[buf->BufferSz];
-            newBuf->BufferId = buf->BufferId;
-            newBuf->BufferSz = buf->BufferSz;
-            paramsArray.push_back(newBuf);
-        }
-        encoderParams.NumExtParam = (mfxU16)paramsArray.size();
-        encoderParams.ExtParam = &paramsArray[0];
+    //    std::vector<mfxExtBuffer*> paramsArray;
+    //    for (int paramNum = 0; paramNum < m_mfxEncParams.NumExtParam; paramNum++)
+    //    {
+    //        mfxExtBuffer* buf = m_mfxEncParams.ExtParam[paramNum];
+    //        mfxExtBuffer* newBuf = (mfxExtBuffer*)new mfxU8[buf->BufferSz];
+    //        newBuf->BufferId = buf->BufferId;
+    //        newBuf->BufferSz = buf->BufferSz;
+    //        paramsArray.push_back(newBuf);
+    //    }
+    //    encoderParams.NumExtParam = (mfxU16)paramsArray.size();
+    //    encoderParams.ExtParam = &paramsArray[0];
 
-        sts=m_pmfxENC->GetVideoParam(&encoderParams);
-        MSDK_CHECK_STATUS(sts, "Cannot read configuration from encoder: GetVideoParam failed");
+    //    sts=m_pmfxENC->GetVideoParam(&encoderParams);
+    //    MSDK_CHECK_STATUS(sts, "Cannot read configuration from encoder: GetVideoParam failed");
 
-        if(m_pmfxVPP)
-        {
-            mfxVideoParam vppParams={};
-            m_pmfxVPP->GetVideoParam(&vppParams);
-            MSDK_CHECK_STATUS(sts, "Cannot read configuration from VPP: GetVideoParam failed");
-            CParametersDumper::DumpLibraryConfiguration(pParams->DumpFileName,NULL,&vppParams,&encoderParams);
-        }
-        else
-        {
-            CParametersDumper::DumpLibraryConfiguration(pParams->DumpFileName,NULL,NULL,&encoderParams);
-        }
+    //    if(m_pmfxVPP)
+    //    {
+    //        mfxVideoParam vppParams={};
+    //        m_pmfxVPP->GetVideoParam(&vppParams);
+    //        MSDK_CHECK_STATUS(sts, "Cannot read configuration from VPP: GetVideoParam failed");
+    //        CParametersDumper::DumpLibraryConfiguration(pParams->DumpFileName,NULL,&vppParams,&encoderParams);
+    //    }
+    //    else
+    //    {
+    //        CParametersDumper::DumpLibraryConfiguration(pParams->DumpFileName,NULL,NULL,&encoderParams);
+    //    }
 
-        // Cleaning params array
-        for (int paramNum = 0; paramNum < m_mfxEncParams.NumExtParam; paramNum++)
-        {
-            delete[] paramsArray[paramNum];
-        }
+    //    // Cleaning params array
+    //    for (int paramNum = 0; paramNum < m_mfxEncParams.NumExtParam; paramNum++)
+    //    {
+    //        delete[] paramsArray[paramNum];
+    //    }
 
-    }
+    //}
 
     return MFX_ERR_NONE;
 }
