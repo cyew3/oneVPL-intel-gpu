@@ -30,6 +30,7 @@ Makefile text eol=lf
 
 # binary files which should not be modified
 *.docx binary
+*.rtf binary
 *.pdf binary
 *.jpg binary
 *.jpeg binary

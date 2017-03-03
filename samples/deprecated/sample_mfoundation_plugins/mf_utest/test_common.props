@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup />
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>include;$(SolutionDir)\mf_utils\include;..\..\$(INTELMEDIASDKROOT)\include;res;..\..\common\include;$(ProjectDir)..\..\..\sample_common\include;..\mfx_trace\include;$(MEDIASDK_TRS_MODULE_PATH)\mediasdk_drop_x86win7\inc;$(SolutionDir)..\..\..\thirdparty\gmock\include;$(SolutionDir)..\..\..\thirdparty\gmock\gtest\include;$(SolutionDir)\mf_buffers\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup />
+</Project>

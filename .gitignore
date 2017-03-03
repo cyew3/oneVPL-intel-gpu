@@ -8,5 +8,8 @@
 _build
 # CMake intermidiate files
 __cmake
-/.project
+.project
 .gitreview
+*.ipch
+/samples/include
+content

@@ -1,0 +1,11 @@
+\_build\
+\deprecated\
+\sample_camera\
+\DONT_RELEASE\
+\sample_decvpp\
+\tutorial_multisession\
+\mock_encoder_plugin\
+\sample_fei\
+\sample_mondello\
+\sample_h265_gaa\
+\_scripts\
