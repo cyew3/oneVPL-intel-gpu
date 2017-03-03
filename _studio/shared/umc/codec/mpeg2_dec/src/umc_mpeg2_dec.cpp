@@ -901,8 +901,14 @@ void MPEG2VideoDecoderBase::LockTask(int index)
 
 void MPEG2VideoDecoderBase::UnLockTask(int index)
 {
+    if (index >= DPB_SIZE)
+        index -= DPB_SIZE;
+
+    if (index < 0 || index >= DPB_SIZE)
+        return;
+
     task_locked[index] = -1;
-    task_locked[index+DPB_SIZE] = -1;
+    task_locked[index + DPB_SIZE] = -1;
 }
 
 void MPEG2VideoDecoderBase::SetCorruptionFlag(int index)
