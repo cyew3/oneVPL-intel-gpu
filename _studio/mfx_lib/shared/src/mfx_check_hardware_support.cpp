@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
 //
 
 #if defined (MFX_VA_WIN)
@@ -32,7 +32,7 @@ namespace
 const
 mfxU32 IntelVendorID = 0x08086;
 
-enum 
+enum
 {
     EAGLELAKE_G45_ID0  = 0x02e20,
     EAGLELAKE_G45_ID1  = 0x02e21,
@@ -73,7 +73,7 @@ enum PRODUCT_FAMILY
     IGFX_SKYLAKE,
     IGFX_KABYLAKE,
     IGFX_WILLOWVIEW,
-    IGFX_BROXTON, 
+    IGFX_APOLLOLAKE,
     IGFX_GEMINILAKE,
     IGFX_GLENVIEW,
     IGFX_GOLDWATERLAKE,
@@ -116,8 +116,8 @@ eMFXHWType GetHardwareType(const mfxU32 adapterNum, mfxU32 platformFromDriver)
         return MFX_HW_IVB; // sandybridge
     case IGFX_KABYLAKE:
         return MFX_HW_KBL;
-    case IGFX_BROXTON:
-        return MFX_HW_BXT;
+    case IGFX_APOLLOLAKE:
+        return MFX_HW_APL;
     case IGFX_CANNONLAKE:
         return MFX_HW_CNL;
     case IGFX_ICELAKE:
@@ -152,37 +152,37 @@ eMFXHWType GetHardwareType(const mfxU32 adapterNum, mfxU32 platformFromDriver)
 #ifdef MFX_SNB_PLATFORM
     if (DEFAULT_HW_TYPE == type)
         return MFX_HW_SNB;
-    else // something wrong in pipeline  
+    else // something wrong in pipeline
         return MFX_HW_UNKNOWN;
-#endif 
+#endif
 
 #ifdef MFX_IVB_PLATFORM
     if (DEFAULT_HW_TYPE == type)
         return MFX_HW_IVB;
-    else // something wrong in pipeline  
+    else // something wrong in pipeline
         return MFX_HW_UNKNOWN;
-#endif 
+#endif
 
 #ifdef MFX_HSW_PLATFORM
     if (DEFAULT_HW_TYPE == type)
         return MFX_HW_HSW;
-    else // something wrong in pipeline  
+    else // something wrong in pipeline
         return MFX_HW_UNKNOWN;
-#endif 
+#endif
 
 #ifdef MFX_HSW_ULT_PLATFORM
     if (DEFAULT_HW_TYPE == type)
         return MFX_HW_HSW_ULT;
-    else // something wrong in pipeline  
+    else // something wrong in pipeline
         return MFX_HW_UNKNOWN;
-#endif 
+#endif
 
 #ifdef MFX_VLV_PLATFORM
     if (DEFAULT_HW_TYPE == type)
         return MFX_HW_VLV;
-    else // something wrong in pipeline  
+    else // something wrong in pipeline
         return MFX_HW_UNKNOWN;
-#endif 
+#endif
 
 // HSW by default for trunk
     type = MFX_HW_HSW_ULT;

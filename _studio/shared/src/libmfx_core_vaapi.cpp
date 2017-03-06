@@ -204,14 +204,14 @@ typedef struct {
     { 0x193D, MFX_HW_SCL }, // WKS
 
 #ifndef MFX_CLOSED_PLATFORMS_DISABLE
-    /* BXT */
-    { 0x0A84, MFX_HW_BXT},
-    { 0x0A85, MFX_HW_BXT},
-    { 0x0A86, MFX_HW_BXT},
-    { 0x0A87, MFX_HW_BXT},
-    { 0x1A84, MFX_HW_BXT}, //BXT-PRO?
-    { 0x5A84, MFX_HW_BXT}, //BXT-P 18EU
-    { 0x5A85, MFX_HW_BXT}, //BXT-P 12EU
+    /* APL */
+    { 0x0A84, MFX_HW_APL},
+    { 0x0A85, MFX_HW_APL},
+    { 0x0A86, MFX_HW_APL},
+    { 0x0A87, MFX_HW_APL},
+    { 0x1A84, MFX_HW_APL},
+    { 0x5A84, MFX_HW_APL},
+    { 0x5A85, MFX_HW_APL},
 
     /* CNL */
     /* SImulation */
@@ -776,12 +776,12 @@ VAAPIVideoCORE::CreateVideoAccelerator(
     /* There are following conditions for SFC post processing:
      * (1): AVC
      * (2): Progressive only
-     * (3): Tested on BXT platform only
+     * (3): Tested on APL platform only
      * (4): Only video memory supported (so, OPAQ memory does not supported!)
      * */
     if ( (GetExtBuffer(param->ExtParam, param->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING)) &&
          (MFX_PICSTRUCT_PROGRESSIVE == param->mfx.FrameInfo.PicStruct) &&
-         (MFX_HW_BXT == GetHWType()) &&
+         (MFX_HW_APL == GetHWType()) &&
          (param->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
     {
         params.m_needVideoProcessingVA = true;

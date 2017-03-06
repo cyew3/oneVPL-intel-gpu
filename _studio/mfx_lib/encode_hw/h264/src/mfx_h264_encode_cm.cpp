@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "ipps.h"
@@ -828,7 +828,7 @@ void CmContext::Setup(
         break;
     case MFX_HW_SCL:
 #ifndef MFX_CLOSED_PLATFORMS_DISABLE
-    case MFX_HW_BXT:
+    case MFX_HW_APL:
     case MFX_HW_KBL:
 #endif
         m_program = ReadProgram(m_device, genx_skl_simple_me, SizeOf(genx_skl_simple_me));

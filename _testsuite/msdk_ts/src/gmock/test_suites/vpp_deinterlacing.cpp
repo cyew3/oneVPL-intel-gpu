@@ -5,7 +5,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2016 Intel Corporation. All Rights Reserved.
+//     Copyright (c) 2016-2017 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -117,7 +117,7 @@ int TestSuite::RunTest(unsigned int id)
         if (MFX_OS_FAMILY_WINDOWS == g_tsOSFamily)
             sts = MFX_ERR_UNSUPPORTED; // only linux supports SCD mode
 
-        if (MFX_OS_FAMILY_LINUX == g_tsOSFamily && MFX_HW_BXT == g_tsHWtype)
+        if (MFX_OS_FAMILY_LINUX == g_tsOSFamily && MFX_HW_APL == g_tsHWtype)
             sts = MFX_ERR_UNSUPPORTED; // only Linux for BDW & SKL supports SCD mode for now
     }
 

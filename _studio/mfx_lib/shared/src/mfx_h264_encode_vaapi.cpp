@@ -1341,7 +1341,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     {
         // BDW, SKL officially don't support ROI. Let's forbit ROI via setting zero caps
 #ifndef MFX_CLOSED_PLATFORMS_DISABLE
-        if (core->GetHWType() == MFX_HW_BXT)
+        if (core->GetHWType() == MFX_HW_APL)
         {
             VAConfigAttribValEncROI *VaEncROIValPtr =
                 reinterpret_cast<VAConfigAttribValEncROI *>(&attrs[idx_map[VAConfigAttribEncROI]].value);

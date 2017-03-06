@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFXSTRUCTURES_INT_H__
@@ -53,7 +53,7 @@ enum eMFXHWType
     MFX_HW_SCL       = 0x900000,
 
 #ifndef MFX_CLOSED_PLATFORMS_DISABLE
-    MFX_HW_BXT       = 0x1000000,
+    MFX_HW_APL       = 0x1000000,
 
     MFX_HW_KBL       = 0x1100000,
 

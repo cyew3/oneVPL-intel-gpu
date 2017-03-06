@@ -1057,7 +1057,7 @@ bool MFX_JPEG_Utility::IsNeedPartialAcceleration(VideoCORE * core, mfxVideoParam
 
 #ifndef MFX_CLOSED_PLATFORMS_DISABLE
     // BXT SW fallback definition
-    if (core->GetHWType() == MFX_HW_BXT)
+    if (core->GetHWType() == MFX_HW_APL)
     {
         if (par->mfx.FrameInfo.Width > 4096 || par->mfx.FrameInfo.Height > 4096)
         {
@@ -1822,7 +1822,7 @@ void VideoDECODEMJPEGBase_HW::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxIn
     if (info->JPEGColorFormat == MFX_JPEG_COLORFORMAT_UNKNOWN || info->JPEGColorFormat == MFX_JPEG_COLORFORMAT_YCbCr)
     {
         #if defined (MFX_VA_LINUX) && !defined(MFX_CLOSED_PLATFORMS_DISABLE)
-            if (hwType == MFX_HW_BXT) return;
+            if (hwType == MFX_HW_APL) return;
         #endif
         switch(info->JPEGChromaFormat)
         {

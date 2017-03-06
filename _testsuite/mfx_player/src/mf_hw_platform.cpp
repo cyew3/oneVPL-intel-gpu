@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
 
 File Name: mf_hw_platform.cpp
 
@@ -288,8 +288,8 @@ PLATFORM_TYPE HWPlatform::GetPlatformType(const mfxU32 adapterNum)
     //case IGFX_CANNONLAKE:
     //    MFX_LTRACE_S(MF_TL_GENERAL, "[HWPlatform] Type().ProductFamily = CANNONLAKE");
     //    break;
-    //case IGFX_BROXTON:
-    //    MFX_LTRACE_S(MF_TL_GENERAL, "[HWPlatform] Type().ProductFamily = BROXTON");
+    //case IGFX_APOLLOLAKE:
+    //    MFX_LTRACE_S(MF_TL_GENERAL, "[HWPlatform] Type().ProductFamily = APOLLOLAKE");
     //    break;
     //case IGFX_WILLOWVIEW:
     //    MFX_LTRACE_S(MF_TL_GENERAL, "[HWPlatform] Type().ProductFamily = WILLOWVIEW");

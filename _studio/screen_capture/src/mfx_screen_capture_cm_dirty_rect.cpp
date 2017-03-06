@@ -172,7 +172,7 @@ mfxStatus CmDirtyRectFilter::Init(const mfxVideoParam* par, bool isSysMem, bool 
             break;
 
         case PLATFORM_INTEL_SKL:
-        case PLATFORM_INTEL_BXT:
+        case PLATFORM_INTEL_APL:
             jit = false;
             buffer = dirty_rect_genx_skl;
             len = sizeof(dirty_rect_genx_skl);

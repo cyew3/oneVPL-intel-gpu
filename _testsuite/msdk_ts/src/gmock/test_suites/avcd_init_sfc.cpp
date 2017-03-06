@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -237,11 +237,11 @@ int TestSuite::RunTest(unsigned int id)
     }
 
     g_tsStatus.expect(tc.sts);
-    /* Only BXT support SFC
+    /* Only APL support SFC
      * and only for AVC
      * and only for progressive */
     if ( (MFX_OS_FAMILY_LINUX != g_tsOSFamily) ||
-         (MFX_HW_BXT != g_tsHWtype) ||
+         (MFX_HW_APL != g_tsHWtype) ||
          ( MFX_PICSTRUCT_PROGRESSIVE != m_pPar->mfx.FrameInfo.PicStruct))
         g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
 

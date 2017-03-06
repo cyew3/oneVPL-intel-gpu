@@ -336,13 +336,13 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
     /* There are following conditions for SFC post processing:
      * (1): AVC
      * (2): Progressive only
-     * (3): Tested on BXT platform only
+     * (3): Tested on APL platform only
      * (4): Only video memory supported (so, OPAQ memory does not supported!)
      * */
     if (videoProcessing)
     {
         if ((MFX_PICSTRUCT_PROGRESSIVE == m_vPar.mfx.FrameInfo.PicStruct) &&
-            (MFX_HW_BXT == m_core->GetHWType()) &&
+            (MFX_HW_APL == m_core->GetHWType()) &&
             (m_vPar.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
             useInternal = 1;
         else /* SFC can't be used */

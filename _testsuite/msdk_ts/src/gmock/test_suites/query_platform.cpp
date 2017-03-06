@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2017 Intel Corporation. All Rights Reserved.
 
 File Name: query_platform.cpp
 
@@ -47,9 +47,9 @@ mfxStatus CheckPlatform(mfxPlatform platform)
             {
                 return ((g_tsHWtype == MFX_HW_SKL) || (g_tsHWtype == MFX_HW_UNKNOWN)) ? MFX_ERR_NONE : MFX_ERR_UNKNOWN;
             }
-        case MFX_PLATFORM_BROXTON:
+        case MFX_PLATFORM_APOLLOLAKE:
             {
-                return ((g_tsHWtype == MFX_HW_BXT) || (g_tsHWtype == MFX_HW_UNKNOWN)) ? MFX_ERR_NONE : MFX_ERR_UNKNOWN;
+                return ((g_tsHWtype == MFX_HW_APL) || (g_tsHWtype == MFX_HW_UNKNOWN)) ? MFX_ERR_NONE : MFX_ERR_UNKNOWN;
             }
         case MFX_PLATFORM_KABYLAKE:
             {
