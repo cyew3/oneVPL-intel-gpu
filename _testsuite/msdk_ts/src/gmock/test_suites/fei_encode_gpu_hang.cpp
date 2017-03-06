@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2016 Intel Corporation.  All rights reserved.
+Copyright (C) 2016-2017 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -61,6 +61,9 @@ int test(mfxU32 codecId)
     enc.m_request.NumFrameMin ++;
     enc.m_request.NumFrameSuggested ++;
     enc.AllocSurfaces();
+
+    // reserve a space for 2 buffers to avoid dynamic reallocation of std::vector
+    enc.m_ctrl.ReserveBuffers(2);
 
     //to add mfxExtFeiEncFrameCtrl buffer for FEI ENCODE
     enc.m_ctrl.AddExtBuffer(MFX_EXTBUFF_FEI_ENC_CTRL, sizeof(mfxExtFeiEncFrameCtrl));
