@@ -276,7 +276,7 @@ mfxStatus VideoENC_ENC::Init(mfxVideoParam *par)
      * (3): And main rule: ENC (N number call) and PAK (N number call) should have same exactly
      * same reference /reconstruct list !
      * */
-    request.Type              = MFX_MEMTYPE_FROM_ENC | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_EXTERNAL_FRAME;
+    request.Type              = MFX_MEMTYPE_FROM_ENC | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_INTERNAL_FRAME;
     request.NumFrameMin       = m_video.mfx.GopRefDist * 2 + (m_video.AsyncDepth-1) + 1 + m_video.mfx.NumRefFrame + 1;
     request.NumFrameSuggested = request.NumFrameMin;
     request.AllocId           = par->AllocId;

@@ -282,8 +282,8 @@ mfxStatus VideoPAK_PAK::Init(mfxVideoParam *par)
     /* The entire recon surface pool should be passed to vaContexCreat() finction on Init() stage.
      * And only these surfaces should be passed to driver within Execute() call.
      * The size of recon pool is limited to 127 surfaces. */
-    request.Type              = MFX_MEMTYPE_FROM_PAK | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_EXTERNAL_FRAME;
-    request.NumFrameMin       = m_video.mfx.GopRefDist * 2 + (m_video.AsyncDepth-1) + 1 +m_video.mfx.NumRefFrame + 1;
+    request.Type              = MFX_MEMTYPE_FROM_PAK | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_INTERNAL_FRAME;
+    request.NumFrameMin       = m_video.mfx.GopRefDist * 2 + (m_video.AsyncDepth-1) + 1 + m_video.mfx.NumRefFrame + 1;
     request.NumFrameSuggested = request.NumFrameMin;
     request.AllocId           = par->AllocId;
 

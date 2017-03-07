@@ -84,7 +84,6 @@ CEncodingPipeline::CEncodingPipeline(AppConfig* pAppConfig)
     , m_ReconSurfaces(m_surfPoolStrategy)
 
     , m_BaseAllocID(0)
-    , m_EncPakReconAllocID(0)
 {
     MSDK_ZERO_MEMORY(m_commonFrameInfo);
 
@@ -133,7 +132,6 @@ mfxStatus CEncodingPipeline::Init()
 
     mfxSession akaSession = m_mfxSession.operator mfxSession();
     m_BaseAllocID = (mfxU64)&akaSession & 0xffffffff;
-    m_EncPakReconAllocID = m_BaseAllocID + 1;
 
     // create and init frame allocator
     sts = CreateAllocator();
@@ -177,7 +175,7 @@ mfxStatus CEncodingPipeline::Init()
 
     if (m_appCfg.bENCPAK || m_appCfg.bOnlyENC || m_appCfg.bOnlyPAK)
     {
-        m_pFEI_ENCPAK = new FEI_EncPakInterface(&m_mfxSession, &m_inputTasks, m_EncPakReconAllocID, &m_encodeBufs, &m_appCfg);
+        m_pFEI_ENCPAK = new FEI_EncPakInterface(&m_mfxSession, &m_inputTasks, m_BaseAllocID, &m_encodeBufs, &m_appCfg);
         sts = m_pFEI_ENCPAK->FillParameters();
         MSDK_CHECK_STATUS(sts, "ENCPAK: Parameters initialization failed");
         m_commonFrameInfo = m_pFEI_ENCPAK->GetCommonVideoParams()->mfx.FrameInfo;
@@ -514,11 +512,11 @@ mfxStatus CEncodingPipeline::AllocFrames()
         mfxFrameAllocRequest ReconRequest;
         MSDK_ZERO_MEMORY(ReconRequest);
 
-        ReconRequest.AllocId = m_EncPakReconAllocID;
+        ReconRequest.AllocId = m_BaseAllocID;
         MSDK_MEMCPY_VAR(ReconRequest.Info, &m_commonFrameInfo, sizeof(mfxFrameInfo));
         ReconRequest.NumFrameMin       = m_appCfg.nReconSurf ? m_appCfg.nReconSurf : m_maxQueueLength;
         ReconRequest.NumFrameSuggested = m_appCfg.nReconSurf ? m_appCfg.nReconSurf : m_maxQueueLength;
-        ReconRequest.Type = EncRequest.Type;
+        ReconRequest.Type = (EncRequest.Type & 0xfff0) | MFX_MEMTYPE_INTERNAL_FRAME;
 
         sts = m_pMFXAllocator->Alloc(m_pMFXAllocator->pthis, &ReconRequest, &m_ReconResponse);
         MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->Alloc failed");
