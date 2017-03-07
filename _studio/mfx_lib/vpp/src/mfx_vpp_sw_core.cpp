@@ -1602,7 +1602,9 @@ mfxStatus VideoVPP_SW::InternalInit(mfxVideoParam *par)
 
     // important!!! this function uses OPAQUE information (m_bOpaqMode/m_requestOpaq)
     sts = CreateInternalSystemFramesPool( par );
-    return sts;
+    MFX_CHECK_STS( sts );
+
+    return ConfigureExecuteParams( par );
 }
 
 mfxStatus VideoVPP_SW::Close(void)
@@ -1626,6 +1628,17 @@ mfxStatus VideoVPP_SW::Reset(mfxVideoParam *par)
 {
     mfxStatus sts = VideoVPPBase::Reset(par);
     MFX_CHECK_STS( sts );
+
+    sts = ConfigureExecuteParams(par);
+
+    VPP_RESET;
+
+    return sts;
+}
+
+mfxStatus VideoVPP_SW::ConfigureExecuteParams(mfxVideoParam *par)
+{
+    mfxStatus sts = MFX_ERR_NONE;
 
     /* ExtParam */
     mfxVideoParam filtParam;
@@ -1718,7 +1731,7 @@ mfxStatus VideoVPP_SW::Reset(mfxVideoParam *par)
     {
         sts = MFX_ERR_INVALID_VIDEO_PARAM;
     }
-    VPP_RESET;
+
     return sts;
 }
 
