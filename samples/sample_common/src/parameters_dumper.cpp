@@ -647,7 +647,9 @@ void CParametersDumper::SerializeExtensionBuffer(msdk_ostream& sstr,msdk_string 
         {
             mfxExtEncoderROI& info = *(mfxExtEncoderROI*)pExtBuffer;
             SERIALIZE_INFO(NumROI);
+#if _MSDK_API >= MSDK_API(1,22)
             SERIALIZE_INFO(ROIMode);
+#endif //_MSDK_API >= MSDK_API(1,22)
             SERIALIZE_INFO_ARRAY(reserved1);
             START_PROC_ARRAY_SIZE(ROI,NumROI)
                 SERIALIZE_INFO_ELEMENT(ROI,Left);
@@ -655,7 +657,10 @@ void CParametersDumper::SerializeExtensionBuffer(msdk_ostream& sstr,msdk_string 
                 SERIALIZE_INFO_ELEMENT(ROI,Right);
                 SERIALIZE_INFO_ELEMENT(ROI,Bottom);
                 SERIALIZE_INFO_ELEMENT(ROI,Priority);
+#if _MSDK_API >= MSDK_API(1,22)
                 SERIALIZE_INFO_ELEMENT(ROI,DeltaQP);
+#endif //_MSDK_API >= MSDK_API(1,22)
+
                 SERIALIZE_INFO_ARRAY_ELEMENT(ROI,reserved2);
             END_PROC_ARRAY
         }
@@ -698,6 +703,7 @@ void CParametersDumper::SerializeExtensionBuffer(msdk_ostream& sstr,msdk_string 
             SERIALIZE_INFO_ARRAY(reserved);
         }
         break;
+#if _MSDK_API >= MSDK_API(1,22)
     case MFX_EXTBUFF_DEC_VIDEO_PROCESSING:
         {
             mfxExtDecVideoProcessing& info = *(mfxExtDecVideoProcessing*)pExtBuffer;
@@ -717,6 +723,7 @@ void CParametersDumper::SerializeExtensionBuffer(msdk_ostream& sstr,msdk_string 
             SERIALIZE_INFO_ARRAY(Out.reserved);
         }
         break;
+#endif //_MSDK_API >= MSDK_API(1,22)
     case MFX_EXTBUFF_CHROMA_LOC_INFO:
         {
             mfxExtChromaLocInfo& info = *(mfxExtChromaLocInfo*)pExtBuffer;
@@ -960,7 +967,8 @@ mfxStatus CParametersDumper::DumpLibraryConfiguration(msdk_string fileName, mfxV
     try
     {
         msdk_fstream sstr(fileName.c_str(),std::fstream::out);
-        sstr<<MSDK_STRING("Configuration settings (fields from API 1.22)\n");
+        sstr<<MSDK_STRING("Configuration settings (fields from API ") <<
+            MFX_VERSION_MAJOR << MSDK_STRING(".") << MFX_VERSION_MINOR << MSDK_STRING(")\n");
 
         if(pDecoderParams)
         {
