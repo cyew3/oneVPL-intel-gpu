@@ -6072,6 +6072,48 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
         }
     }
 
+    mfxExtDirtyRect const * extDirtyRect = GetExtBuffer(*ctrl);
+
+    if (extDirtyRect) {
+        mfxU16 actualNumRect = extDirtyRect->NumRect;
+        if (extDirtyRect->NumRect)
+        {
+            if (extDirtyRect->NumRect == 0)
+            {
+                checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+            }
+        }
+        for (mfxU16 i = 0; i < actualNumRect; i++)
+        {
+            mfxStatus sts = CheckAndFixRectQueryLike(video, (mfxRectDesc*)(&(extDirtyRect->Rect[i])));
+            if (sts < MFX_ERR_NONE)
+                checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+            else if (sts != MFX_ERR_NONE)
+                checkSts = MFX_ERR_UNSUPPORTED;
+        }
+    }
+
+    mfxExtMoveRect const * extMoveRect = GetExtBuffer(*ctrl);
+
+    if (extMoveRect) {
+        mfxU16 actualNumRect = extMoveRect->NumRect;
+        if (extMoveRect->NumRect)
+        {
+            if (extMoveRect->NumRect == 0)
+            {
+                checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+            }
+        }
+        for (mfxU16 i = 0; i < actualNumRect; i++)
+        {
+            mfxStatus sts = CheckAndFixMovingRectQueryLike(video, (mfxMovingRectDesc*)(&(extMoveRect->Rect[i])));
+            if (sts < MFX_ERR_NONE)
+                checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+            else if (sts != MFX_ERR_NONE)
+                checkSts = MFX_ERR_UNSUPPORTED;
+        }
+    }
+
     return checkSts;
 }
 
