@@ -550,7 +550,7 @@ namespace MfxHwH264Encode
         mfxU32  Right;
         mfxU32  Bottom;
 
-        mfxI16  Priority;
+        mfxI16  ROIValue;
     };
 
     struct mfxRectDesc{
@@ -787,7 +787,8 @@ namespace MfxHwH264Encode
 
     mfxStatus CheckAndFixRoiQueryLike(
         MfxVideoParam const & par,
-        mfxRoiDesc *          roi);
+        mfxRoiDesc *          roi,
+        mfxU16                roiMode);
 
     mfxStatus CheckAndFixMovingRectQueryLike(
         MfxVideoParam const & par,
@@ -835,7 +836,8 @@ namespace MfxHwH264Encode
     mfxStatus CheckRunTimeExtBuffers(
         MfxVideoParam const & video,
         mfxEncodeCtrl *       ctrl,
-        mfxFrameSurface1 *    surface);
+        mfxFrameSurface1 *    surface,
+        ENCODE_CAPS const &   caps);
 
     mfxStatus CheckFEIRunTimeExtBuffersContent(
         MfxVideoParam const & video,

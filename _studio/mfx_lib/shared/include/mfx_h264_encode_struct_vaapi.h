@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2017 Intel Corporation. All Rights Reserved.
 //
 
 //#include "mfx_common.h"
@@ -281,8 +281,9 @@ typedef struct tagENCODE_CAPS
     union {
         struct {
             UCHAR MaxNumOfROI                : 5; // [0..16]
-            UCHAR                            : 2;
+            UCHAR                            : 1;
             UCHAR ROIBRCPriorityLevelSupport : 1;
+            UCHAR ROIBRCDeltaQPLevelSupport  : 1;
         };
         UCHAR ROICaps;
     };

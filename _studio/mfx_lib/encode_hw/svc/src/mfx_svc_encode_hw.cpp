@@ -835,7 +835,7 @@ mfxStatus ImplementationSvc::EncodeFrameCheck(
         ctrl,
         surface,
         bs,
-        m_core->IsExternalFrameAllocator());
+        m_core->IsExternalFrameAllocator(), m_caps);
     MFX_CHECK(checkSts >= MFX_ERR_NONE, checkSts);
 
     SvcTask * task = 0;

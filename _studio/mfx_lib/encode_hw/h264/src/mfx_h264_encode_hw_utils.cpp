@@ -4759,7 +4759,8 @@ mfxStatus MfxHwH264Encode::CheckEncodeFrameParam(
     mfxEncodeCtrl *       ctrl,
     mfxFrameSurface1 *    surface,
     mfxBitstream *        bs,
-    bool                  isExternalFrameAllocator)
+    bool                  isExternalFrameAllocator,
+    ENCODE_CAPS const &   caps)
 {
     mfxStatus checkSts = MFX_ERR_NONE;
     MFX_CHECK_NULL_PTR1(bs);
@@ -4848,7 +4849,7 @@ mfxStatus MfxHwH264Encode::CheckEncodeFrameParam(
         // Check Runtime extension buffers if not buffered frames processing
         if (ctrl != 0 && ctrl->NumExtParam)
         {
-            checkSts = CheckRunTimeExtBuffers(video, ctrl, surface);
+            checkSts = CheckRunTimeExtBuffers(video, ctrl, surface, caps);
             if (checkSts < MFX_ERR_NONE) { return checkSts; }
         }
         else

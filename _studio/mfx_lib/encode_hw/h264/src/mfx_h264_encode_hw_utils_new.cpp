@@ -1853,7 +1853,8 @@ BiFrameLocation MfxHwH264Encode::GetBiFrameLocation(
 void MfxHwH264Encode::ConfigureTask(
     DdiTask &             task,
     DdiTask const &       prevTask,
-    MfxVideoParam const & video)
+    MfxVideoParam const & video,
+    ENCODE_CAPS const &   caps)
 {
     mfxExtCodingOption const &      extOpt         = GetExtBufferRef(video);
     mfxExtCodingOption2 const &     extOpt2        = GetExtBufferRef(video);
@@ -1974,7 +1975,7 @@ void MfxHwH264Encode::ConfigureTask(
     }
 #endif
 
-// process roi
+    // process roi
     mfxExtEncoderROI const * pRoi = &extRoi;
     if (extRoiRuntime)
     {
@@ -1987,18 +1988,55 @@ void MfxHwH264Encode::ConfigureTask(
     {
         mfxU16 numRoi = pRoi->NumROI <= task.m_roi.Capacity() ? pRoi->NumROI : (mfxU16)task.m_roi.Capacity();
 
+
+        if (numRoi > caps.MaxNumOfROI)
+        {
+            numRoi = caps.MaxNumOfROI;
+        }
+
+#if MFX_VERSION > 1021
+        task.m_roiMode = pRoi->ROIMode;
+
+        if (pRoi->ROIMode != MFX_ROI_MODE_QP_DELTA && pRoi->ROIMode != MFX_ROI_MODE_PRIORITY)
+        {
+            numRoi = 0;
+        }
+
+        if (video.mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
+            pRoi->ROIMode == MFX_ROI_MODE_QP_DELTA && caps.ROIBRCDeltaQPLevelSupport == 0)
+        {
+            numRoi = 0;
+        }
+
+        if (video.mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
+            pRoi->ROIMode == MFX_ROI_MODE_PRIORITY && caps.ROIBRCPriorityLevelSupport == 0)
+        {
+            numRoi = 0;
+        }
+#endif // MFX_VERSION > 1021
+
         for (mfxU16 i = 0; i < numRoi; i ++)
         {
-            memcpy_s(&task.m_roi[task.m_numRoi], sizeof(mfxRoiDesc), &pRoi->ROI[i], sizeof(mfxRoiDesc));
             if (extRoiRuntime)
             {
+                mfxRoiDesc task_roi = {};
+                memcpy_s(&task_roi, sizeof(mfxRoiDesc), &pRoi->ROI[i], sizeof(mfxRoiDesc));
                 // check runtime ROI
-                mfxStatus sts = CheckAndFixRoiQueryLike(video, &(task.m_roi[task.m_numRoi]));
-                if (sts != MFX_ERR_UNSUPPORTED)
-                    task.m_numRoi ++;
+#if MFX_VERSION > 1021
+                mfxStatus sts = CheckAndFixRoiQueryLike(video, &task_roi, extRoiRuntime->ROIMode);
+#else
+                mfxStatus sts = CheckAndFixRoiQueryLike(video, &task_roi, 0);
+#endif // MFX_VERSION > 1021
+                if (sts != MFX_ERR_UNSUPPORTED) {
+                    memcpy_s(&task.m_roi[task.m_numRoi], sizeof(mfxRoiDesc), &task_roi, sizeof(mfxRoiDesc));
+                    task.m_numRoi++;
+                }
             }
             else
+            {
+                memcpy_s(&task.m_roi[task.m_numRoi], sizeof(mfxRoiDesc), &pRoi->ROI[i], sizeof(mfxRoiDesc));
                 task.m_numRoi ++;
+            }
         }
     }
 

@@ -384,6 +384,9 @@ mfxStatus ImplementationAvc::Query(
         if (mfxExtEncoderROI * extRoi = GetExtBuffer(*out))
         {
             extRoi->NumROI          = 1;
+#if MFX_VERSION > 1021
+            extRoi->ROIMode         = MFX_ROI_MODE_PRIORITY;
+#endif // MFX_VERSION > 1021
             extRoi->ROI[0].Left     = 1;
             extRoi->ROI[0].Right    = 1;
             extRoi->ROI[0].Top      = 1;
@@ -2527,7 +2530,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         if (m_isENCPAK && (NULL != bs))
             task->m_bs = bs;
 
-        ConfigureTask(*task, m_lastTask, m_video);
+        ConfigureTask(*task, m_lastTask, m_video, m_caps);
 
         Zero(task->m_IRState);
         if (task->m_tidx == 0)
@@ -3281,7 +3284,7 @@ mfxStatus ImplementationAvc::EncodeFrameCheckNormalWay(
 
     mfxStatus checkSts = CheckEncodeFrameParam(
         m_video, ctrl, surface, bs,
-        m_core->IsExternalFrameAllocator());
+        m_core->IsExternalFrameAllocator(), m_caps);
     if (checkSts < MFX_ERR_NONE)
         return checkSts;
 

@@ -395,7 +395,8 @@ namespace MfxHwH264Encode
         mfxEncodeCtrl *       ctrl,
         mfxFrameSurface1 *    surface,
         mfxBitstream *        bs,
-        bool                  isExternalFrameAllocator);
+        bool                  isExternalFrameAllocator,
+        ENCODE_CAPS const &   caps);
 
     template<typename T> void Clear(std::vector<T> & v)
     {
@@ -906,6 +907,9 @@ namespace MfxHwH264Encode
             , m_numMbPerSlice(0)
             , m_numSlice(0, 0)
             , m_numRoi(0)
+#if MFX_VERSION > 1021
+            , m_roiMode(MFX_ROI_MODE_PRIORITY)
+#endif // #if MFX_VERSION > 1021
             , m_numDirtyRect(0)
             , m_numMovingRect(0)
             , m_did(0)
@@ -1062,6 +1066,9 @@ namespace MfxHwH264Encode
 
         ArrayRoi        m_roi;
         mfxU16          m_numRoi;
+#if MFX_VERSION > 1021
+        mfxU16          m_roiMode;
+#endif // MFX_VERSION > 1021
         ArrayRect       m_dirtyRect;
         mfxU16          m_numDirtyRect;
         ArrayMovingRect m_movingRect;
@@ -3461,7 +3468,8 @@ namespace MfxHwH264Encode
     void ConfigureTask(
         DdiTask &             task,
         DdiTask const &       prevTask,
-        MfxVideoParam const & video);
+        MfxVideoParam const & video,
+        ENCODE_CAPS const &   caps);
 
     mfxStatus GetNativeHandleToRawSurface(
         VideoCORE &           core,

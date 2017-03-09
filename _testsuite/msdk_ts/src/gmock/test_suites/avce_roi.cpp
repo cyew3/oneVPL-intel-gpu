@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -96,6 +96,11 @@ void ROI_1(tsVideoEncoder& enc, mfxVideoParam* , mfxU32 p0, mfxU32 p1, mfxU32 p2
 {
     mfxExtEncoderROI& roi = enc.m_par;
     roi.NumROI            = p0;
+#if MFX_VERSION > 1022
+#if defined(LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN)
+    roi.ROIMode           = MFX_ROI_MODE_QP_DELTA;
+#endif  // defined(LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN)
+#endif // #if  MFX_VERSION > 1022
     mfxU32 k = (p2 == 0) ? 16 : p2;
     for(mfxU32 i = 0; i < p0; ++i)
     {
@@ -103,13 +108,26 @@ void ROI_1(tsVideoEncoder& enc, mfxVideoParam* , mfxU32 p0, mfxU32 p1, mfxU32 p2
         roi.ROI[i].Top        = 0+i*k;
         roi.ROI[i].Right      = k+i*k;
         roi.ROI[i].Bottom     = k+i*k;
+#if defined(LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN)
+#if MFX_VERSION > 1022
+        roi.ROI[i].DeltaQP    = p1;
+#else
         roi.ROI[i].Priority   = p1;
+#endif // MFX_VERSION > 1022
+#else
+        roi.ROI[i].Priority   = p1;
+#endif  // defined(LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN)
     }
 }
 void ROI_ctrl(tsVideoEncoder& enc, mfxVideoParam* , mfxU32 p0, mfxU32 p1, mfxU32 p2)
 {
     mfxExtEncoderROI& roi = enc.m_ctrl;
     roi.NumROI            = p0;
+#if defined(LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN)
+#if MFX_VERSION > 1022
+    roi.ROIMode           = MFX_ROI_MODE_QP_DELTA;
+#endif // MFX_VERSION > 1022
+#endif  // defined(LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN)
     mfxU32 k = (p2 == 0) ? 16 : p2;
     for(mfxU32 i = 0; i < p0; ++i)
     {
@@ -117,7 +135,15 @@ void ROI_ctrl(tsVideoEncoder& enc, mfxVideoParam* , mfxU32 p0, mfxU32 p1, mfxU32
         roi.ROI[i].Top        = 0+i*k;
         roi.ROI[i].Right      = k+i*k;
         roi.ROI[i].Bottom     = k+i*k;
+#if defined(LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN)
+#if MFX_VERSION > 1022
+        roi.ROI[i].DeltaQP    = p1;
+#else
         roi.ROI[i].Priority   = p1;
+#endif // MFX_VERSION > 1022
+#else
+        roi.ROI[i].Priority   = p1;
+#endif  // defined(LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN)
     }
 }
 
@@ -214,6 +240,81 @@ tc_struct test_case[] =
 //    {/*61*/ EncodeFrameAsync|WithROIInit|WOBuf,   MFX_ERR_NONE, AVBR,  4, 5000,    5,  ROI_1, 3,   2, 0 },
     {/*62*/ EncodeFrameAsync|WithROIInit|WOBuf,   MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 3, -25, 0 },
 };
+#elif defined(LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN)
+tc_struct test_case[] =
+{
+    //Query function
+    {/*00*/ Query|Inplace, MFX_ERR_UNSUPPORTED,  CQP, 24,   24,   24,  ROI_1, 2, -25, 0 },
+    {/*01*/ Query|InOut,   MFX_ERR_UNSUPPORTED,  CQP, 24,   24,   24,  ROI_1, 2, -25, 0 },
+    {/*02*/ Query|DifIO,   MFX_ERR_UNSUPPORTED,  CQP, 24,   24,   24,  ROI_1, 2, -25, 0 },
+    {/*03*/ Query|NullIn,  MFX_ERR_NONE,         CQP, 24,   24,   24,  ROI_1, 2, -25, 0 },
+    {/*04*/ Query|NullIn,  MFX_ERR_NONE,         CQP, 24,   24,   24,  ROI_1, 2, -25, 15 },
+    {/*05*/ Query|Max,     MFX_ERR_UNSUPPORTED,  CQP, 24,   24,   24,  ROI_1, 0, -22, 0 },
+    {/*06*/ Query|Inplace, MFX_ERR_NONE,  CBR,  0, 2000,    0,  ROI_1, 2,   2, 0 },
+    {/*07*/ Query|Inplace, MFX_ERR_NONE,  CBR,  0, 5000,    0,  ROI_1, 2,   2, 0 },
+    {/*08*/ Query|Inplace, MFX_ERR_NONE,  VBR,  0, 5000, 6000,  ROI_1, 2,   2, 0 },
+    {/*09*/ Query|Inplace, MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 2, -22, 0 },
+    {/*10*/ Query|InOut,   MFX_ERR_NONE,  CBR,  0, 5000,    0,  ROI_1, 2,   2, 0 },
+    {/*11*/ Query|InOut,   MFX_ERR_NONE,  VBR,  0, 5000, 6000,  ROI_1, 2,   2, 0 },
+    {/*12*/ Query|InOut,   MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 2, -22, 0 },
+    {/*13*/ Query|DifIO,   MFX_ERR_UNSUPPORTED,  CBR,  0, 5000,    0,  ROI_1, 2,   2, 0 },
+    {/*14*/ Query|DifIO,   MFX_ERR_UNSUPPORTED,  VBR,  0, 5000, 6000,  ROI_1, 2,   2, 0 },
+    {/*15*/ Query|DifIO,   MFX_ERR_UNSUPPORTED,  CQP, 24,   24,   24,  ROI_1, 2, -25, 0 },
+    {/*16*/ Query|NullIn,  MFX_ERR_NONE,  CBR,  0, 5000,    0,  ROI_1, 2,   2, 0 },
+    {/*17*/ Query|NullIn,  MFX_ERR_NONE,  VBR,  0, 5000, 6000,  ROI_1, 2,   2, 0 },
+    {/*18*/ Query|NullIn,  MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 2, -25, 0 },
+    {/*19*/ Query|Inplace, MFX_ERR_UNSUPPORTED,  CBR,  0, 5000,    0,  ROI_1, 2,   2, 15 },
+    {/*20*/ Query|NullIn,  MFX_ERR_NONE,         CQP, 24,   24,   24,  ROI_1, 2, -25, 15 },
+    {/*21*/ Query|Max,  MFX_ERR_NONE,  CBR,  0, 5000,    0,  ROI_1, 0, 2, 0 },
+    {/*22*/ Query|Max,  MFX_ERR_NONE,  VBR,  0, 5000, 6000,  ROI_1, 0, 3, 0 },
+    {/*23*/ Query|Max,  MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 0, -22, 0 },
+
+    //QueryIOSurf - Just check that won't fail
+    {/*24*/ QueryIOSurf,   MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 1, -22, 0 },
+    {/*25*/ QueryIOSurf,   MFX_ERR_NONE,  CBR,  0, 5000,    0,  ROI_1, 1,   3, 0 },
+    {/*26*/ QueryIOSurf,   MFX_ERR_NONE,  VBR,  0, 5000, 6000,  ROI_1, 1,   3, 0 },
+
+    //Init function
+    {/*27*/ Init,          MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 2, -22, 0 },
+    {/*28*/ Init,          MFX_ERR_INVALID_VIDEO_PARAM,  CQP, 24,   24,   24,  ROI_1, 4, -25, 0 },
+    {/*29*/ Init,          MFX_ERR_INVALID_VIDEO_PARAM,  CQP, 24,   24,   24,  ROI_1, 2, -25, 15 },
+    {/*30*/ Init,          MFX_ERR_NONE,  CBR,  0, 5000,    0,  ROI_1, 1,   3, 0 },
+    {/*31*/ Init,          MFX_ERR_NONE,  VBR,  0, 5000, 6000,  ROI_1, 1,   3, 0 },
+    {/*32*/ Init,          MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 2, -22, 0 },
+    {/*33*/ Init,          MFX_ERR_NONE,  CBR,  0, 5000,    0,  ROI_1, 3,   2, 0 },
+    {/*34*/ Init,          MFX_ERR_NONE,  VBR,  0, 5000, 6000,  ROI_1, 3,   2, 0 },
+    {/*35*/ Init,          MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 4, -22, 0 },
+    {/*36*/ Init,          MFX_ERR_INVALID_VIDEO_PARAM,  CBR,  0, 5000,    0,  ROI_1, 2,   2, 15 },
+    {/*37*/ Init,          MFX_ERR_INVALID_VIDEO_PARAM,  CQP, 24,   24,   24,  ROI_1, 2, -25, 15 },
+
+    //Reset function
+    {/*38*/ Reset|WithROIInit, MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 3, -22, 0 },
+    {/*39*/ Reset|WoROIInit,   MFX_ERR_INVALID_VIDEO_PARAM,  CQP, 24,   24,   24,  ROI_1, 3, -25, 0 },
+    {/*40*/ Reset|WithROIInit, MFX_ERR_NONE,  CBR,  0, 5000,    0,  ROI_1, 1,   3, 0 },
+    {/*41*/ Reset|WithROIInit, MFX_ERR_NONE,  VBR,  0, 5000, 6000,  ROI_1, 1,   3, 0 },
+    {/*42*/ Reset|WithROIInit, MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 3, -22, 0 },
+    {/*43*/ Reset|WoROIInit,   MFX_ERR_NONE,  CBR,  0, 5000,    0,  ROI_1, 2,   2, 0 },
+    {/*44*/ Reset|WoROIInit,   MFX_ERR_NONE,  VBR,  0, 5000, 6000,  ROI_1, 2,   2, 0 },
+    {/*45*/ Reset|WoROIInit,   MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 3, -22, 0 },
+
+    //EncodeFrameAsync function
+    {/*46*/ EncodeFrameAsync|WithROIInit, MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 3, -22, 0 },
+    {/*47*/ EncodeFrameAsync|WoROIInit,   MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,  CQP, 24,   24,   24,  ROI_1, 3, -25, 0 },
+    {/*48*/ EncodeFrameAsync|WoROIInit,   MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,  CQP, 24,   24,   24,  ROI_1, 3, -25, 15 },
+    {/*49*/ EncodeFrameAsync|WithROIInit|WOBuf,   MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 3, -22, 0 },
+    {/*50*/ EncodeFrameAsync|WithROIInit, MFX_ERR_NONE,  CBR,  0, 5000,    0,  ROI_1, 1,   3, 0 },
+    {/*51*/ EncodeFrameAsync|WithROIInit, MFX_ERR_NONE,  VBR,  0, 5000, 6000,  ROI_1, 1,   3, 0 },
+    {/*53*/ EncodeFrameAsync|WithROIInit, MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 3, -22, 0 },
+    {/*54*/ EncodeFrameAsync|WoROIInit,   MFX_ERR_NONE,  CBR,  0, 5000,    0,  ROI_1, 2,   2, 0 },
+    {/*55*/ EncodeFrameAsync|WoROIInit,   MFX_ERR_NONE,  VBR,  0, 5000, 6000,  ROI_1, 2,   2, 0 },
+    {/*57*/ EncodeFrameAsync|WoROIInit,   MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 3, -25, 0 },
+    {/*58*/ EncodeFrameAsync|WoROIInit,   MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,  CBR,  0, 5000,    0,  ROI_1, 2,   2, 15 },
+    {/*59*/ EncodeFrameAsync|WoROIInit,   MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,  VBR,  0, 5000, 6000,  ROI_1, 2,   2, 15 },
+    {/*61*/ EncodeFrameAsync|WoROIInit,   MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,  CQP, 24,   24,   24,  ROI_1, 3, -25, 15 },
+    {/*62*/ EncodeFrameAsync|WithROIInit|WOBuf,   MFX_ERR_NONE,  CBR,  0, 5000,    0,  ROI_1, 2,   2, 0 },
+    {/*63*/ EncodeFrameAsync|WithROIInit|WOBuf,   MFX_ERR_NONE,  VBR,  0, 5000, 6000,  ROI_1, 2,   2, 0 },
+    {/*65*/ EncodeFrameAsync|WithROIInit|WOBuf,   MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 3, -25, 0 },
+};
 #else
 tc_struct test_case[] = 
 {
@@ -239,7 +340,6 @@ tc_struct test_case[] =
     {/*11*/ EncodeFrameAsync|WoROIInit,   MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,  CQP, 24,   24,   24,  ROI_1, 3, -25, 15 },
     //{/*12*/ EncodeFrameAsync|WithROIInit|WOBuf,   MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 3, -25, 0 },
 };
-
 #endif //#if defined(_WIN32) || defined(_WIN64)
 
 int test(unsigned int id)

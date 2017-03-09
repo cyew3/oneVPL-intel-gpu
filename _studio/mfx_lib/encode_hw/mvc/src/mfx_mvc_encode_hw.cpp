@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "ipps.h"
@@ -1334,7 +1334,7 @@ mfxStatus ImplementationMvc::EncodeFrameCheck(
         ctrl,
         surface,
         bs,
-        m_core->IsExternalFrameAllocator());
+        m_core->IsExternalFrameAllocator(), m_ddiCaps);
     MFX_CHECK(checkSts >= MFX_ERR_NONE, checkSts);
 
     if (surface && m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)

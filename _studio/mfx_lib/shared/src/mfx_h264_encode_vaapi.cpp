@@ -538,7 +538,13 @@ static mfxStatus SetROI(
 {
     VAStatus vaSts;
     VAEncMiscParameterBuffer *misc_param;
+#if defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT)
+    VAEncMiscParameterBufferROIPrivate *roi_Param;
+    unsigned int roi_buffer_size = sizeof(VAEncMiscParameterBufferROIPrivate);
+#else
     VAEncMiscParameterBufferROI *roi_Param;
+    unsigned int roi_buffer_size = sizeof(VAEncMiscParameterBufferROI);
+#endif  // defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT)
 
     if (roiParam_id != VA_INVALID_ID)
     {
@@ -548,7 +554,7 @@ static mfxStatus SetROI(
     vaSts = vaCreateBuffer(vaDisplay,
         vaContextEncode,
         VAEncMiscParameterBufferType,
-        sizeof(VAEncMiscParameterBuffer) + sizeof(VAEncMiscParameterBufferROI),
+        sizeof(VAEncMiscParameterBuffer) + roi_buffer_size,
         1,
         NULL,
         &roiParam_id);
@@ -559,9 +565,14 @@ static mfxStatus SetROI(
         (void **)&misc_param);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
+#if defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT)
+    misc_param->type = (VAEncMiscParameterType)VAEncMiscParameterTypeROIPrivate;
+    roi_Param = (VAEncMiscParameterBufferROIPrivate *)misc_param->data;
+#else
     misc_param->type = (VAEncMiscParameterType)VAEncMiscParameterTypeROI;
     roi_Param = (VAEncMiscParameterBufferROI *)misc_param->data;
-    memset(roi_Param, 0, sizeof(VAEncMiscParameterBufferROI));
+#endif  // defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT)
+    memset(roi_Param, 0, roi_buffer_size);
 
     if (task.m_numRoi)
     {
@@ -580,10 +591,18 @@ static mfxStatus SetROI(
             roi_Param->roi[i].roi_rectangle.y = task.m_roi[i].Top;
             roi_Param->roi[i].roi_rectangle.width = task.m_roi[i].Right - task.m_roi[i].Left;
             roi_Param->roi[i].roi_rectangle.height = task.m_roi[i].Bottom - task.m_roi[i].Top;
-            roi_Param->roi[i].roi_value = task.m_roi[i].Priority;
+            roi_Param->roi[i].roi_value = task.m_roi[i].ROIValue;
         }
         roi_Param->max_delta_qp = 51;
         roi_Param->min_delta_qp = -51;
+#if defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT)
+        roi_Param->roi_flags.bits.roi_value_is_qp_delta = 0;
+#if MFX_VERSION > 1021
+        if (task.m_roiMode == MFX_ROI_MODE_QP_DELTA) {
+            roi_Param->roi_flags.bits.roi_value_is_qp_delta = 1;
+        }
+#endif // MFX_VERSION > 1021
+#endif // defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT)
     }
     vaUnmapBuffer(vaDisplay, roiParam_id);
 
@@ -1339,17 +1358,19 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
 
     if (attrs[idx_map[VAConfigAttribEncROI]].value != VA_ATTRIB_NOT_SUPPORTED)
     {
-        // BDW, SKL officially don't support ROI. Let's forbit ROI via setting zero caps
-#ifndef MFX_CLOSED_PLATFORMS_DISABLE
-        if (core->GetHWType() == MFX_HW_APL)
-        {
-            VAConfigAttribValEncROI *VaEncROIValPtr =
-                reinterpret_cast<VAConfigAttribValEncROI *>(&attrs[idx_map[VAConfigAttribEncROI]].value);
-            assert(VaEncROIValPtr->bits.num_roi_regions < 32);
-            m_caps.MaxNumOfROI = VaEncROIValPtr->bits.num_roi_regions;
-            m_caps.ROIBRCPriorityLevelSupport = VaEncROIValPtr->bits.roi_rc_priority_support;
-        }
-#endif
+#if defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT)
+        VAConfigAttribValEncROIPrivate *VaEncROIValPtr = reinterpret_cast<VAConfigAttribValEncROIPrivate *>(&attrs[idx_map[VAConfigAttribEncROI]].value);
+#else
+        VAConfigAttribValEncROI *VaEncROIValPtr = reinterpret_cast<VAConfigAttribValEncROI *>(&attrs[idx_map[VAConfigAttribEncROI]].value);
+#endif  // defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT)
+        assert(VaEncROIValPtr->bits.num_roi_regions < 32);
+        m_caps.MaxNumOfROI = VaEncROIValPtr->bits.num_roi_regions;
+        m_caps.ROIBRCPriorityLevelSupport = VaEncROIValPtr->bits.roi_rc_priority_support;
+#if defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT)
+        m_caps.ROIBRCDeltaQPLevelSupport = VaEncROIValPtr->bits.roi_rc_qp_delta_support;
+#else
+        m_caps.ROIBRCDeltaQPLevelSupport = 0;
+#endif  // defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT)
     }
     else
     {
