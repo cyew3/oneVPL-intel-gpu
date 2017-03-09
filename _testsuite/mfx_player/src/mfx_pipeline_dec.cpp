@@ -4906,12 +4906,22 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 mfxU32 gp_max = pow(2.0, (double) m_inParams.nInputBitdepth) - 1;
                 for (int i = 0; i < 64; i++)
                 {
-                    if (i == 0) {
+                    if (i == 0)
+                    {
                         gamma_point[i] = 0;
-                    } else {
-                        gamma_point[i] = gp_max - gp_max/i;
+                    } else
+                    {
+                        //The points on the x axis must be unique and divided by 4 (https://gfxspecs.intel.com/Predator/Home/Index/3533)
+                        //We need to cover all 64 points with such values. First of all we need to multiply 4 to
+                        //some x. We also know that last point are to equal to MAX_VALUE, so
+                        //4 * x = MAX_VALUE (is power of 2) -> x = 2^(bit_depth - 2). We can expand x as
+                        //(2^6)^z, where z is (bit_depth + y) / l and 2^6 is the last point, so (2^6)^((bit_depth + y) / l) = 2^(bit_depth - 2)
+                        //Solving system of equations for several bit_depths we can find y and l = -2 and 6.
+                        //At the end we have formula 4 * (i)^((bit_depth - 2)/6) that is correct for any i (we just proved it for last point = 2^6)
+                        //due of mathematical induction method.
+                        gamma_point[i] = 4 * (int) pow((double)i, (m_inParams.nInputBitdepth - 2) / (double)6);
                     }
-                    gamma_correct[i] = (int)(pow((double)gamma_point[i] / (double)max_input_level, (double)1/value) * (double)max_input_level);
+                    gamma_correct[i] = (int)(pow((double)gamma_point[i] / (double)max_input_level, (double)1 / value) * (double)max_input_level);
                     if ( i==63 ) {
                         gamma_point[i] = gp_max;
                         gamma_correct[i] = gp_max;
