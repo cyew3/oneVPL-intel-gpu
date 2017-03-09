@@ -1257,45 +1257,11 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     // If output isn't specified work in performance mode and do not insert idr
     m_bCutOutput = pParams->dstFileBuff.size() ? !pParams->bUncut : false;
 
-    //// Dumping components configuration if required
-    //if(*pParams->DumpFileName)
-    //{
-    //    mfxVideoParam encoderParams={};
-
-    //    std::vector<mfxExtBuffer*> paramsArray;
-    //    for (int paramNum = 0; paramNum < m_mfxEncParams.NumExtParam; paramNum++)
-    //    {
-    //        mfxExtBuffer* buf = m_mfxEncParams.ExtParam[paramNum];
-    //        mfxExtBuffer* newBuf = (mfxExtBuffer*)new mfxU8[buf->BufferSz];
-    //        newBuf->BufferId = buf->BufferId;
-    //        newBuf->BufferSz = buf->BufferSz;
-    //        paramsArray.push_back(newBuf);
-    //    }
-    //    encoderParams.NumExtParam = (mfxU16)paramsArray.size();
-    //    encoderParams.ExtParam = &paramsArray[0];
-
-    //    sts=m_pmfxENC->GetVideoParam(&encoderParams);
-    //    MSDK_CHECK_STATUS(sts, "Cannot read configuration from encoder: GetVideoParam failed");
-
-    //    if(m_pmfxVPP)
-    //    {
-    //        mfxVideoParam vppParams={};
-    //        m_pmfxVPP->GetVideoParam(&vppParams);
-    //        MSDK_CHECK_STATUS(sts, "Cannot read configuration from VPP: GetVideoParam failed");
-    //        CParametersDumper::DumpLibraryConfiguration(pParams->DumpFileName,NULL,&vppParams,&encoderParams);
-    //    }
-    //    else
-    //    {
-    //        CParametersDumper::DumpLibraryConfiguration(pParams->DumpFileName,NULL,NULL,&encoderParams);
-    //    }
-
-    //    // Cleaning params array
-    //    for (int paramNum = 0; paramNum < m_mfxEncParams.NumExtParam; paramNum++)
-    //    {
-    //        delete[] paramsArray[paramNum];
-    //    }
-
-    //}
+    // Dumping components configuration if required
+    if(*pParams->DumpFileName)
+    {
+        CParametersDumper::DumpLibraryConfiguration(pParams->DumpFileName, NULL, m_pmfxVPP, m_pmfxENC, NULL, &m_mfxVppParams,&m_mfxEncParams);
+    }
 
     return MFX_ERR_NONE;
 }

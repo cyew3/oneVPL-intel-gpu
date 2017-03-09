@@ -962,7 +962,8 @@ void CParametersDumper::SerializeVideoParamStruct(msdk_ostream& sstr,msdk_string
     SERIALIZE_INFO(reserved2);
 }
 
-mfxStatus CParametersDumper::DumpLibraryConfiguration(msdk_string fileName, mfxVideoParam* pDecoderParams,mfxVideoParam* pVPPParams,mfxVideoParam* pEncoderParams)
+mfxStatus CParametersDumper::DumpLibraryConfiguration(msdk_string fileName, MFXVideoDECODE* pMfxDec, MFXVideoVPP* pMfxVPP, MFXVideoENCODE* pMfxEnc,
+    const mfxVideoParam* pDecoderPresetParams, const mfxVideoParam* pVPPPresetParams, const mfxVideoParam* pEncoderPresetParams)
 {
     try
     {
@@ -970,17 +971,30 @@ mfxStatus CParametersDumper::DumpLibraryConfiguration(msdk_string fileName, mfxV
         sstr<<MSDK_STRING("Configuration settings (fields from API ") <<
             MFX_VERSION_MAJOR << MSDK_STRING(".") << MFX_VERSION_MINOR << MSDK_STRING(")\n");
 
-        if(pDecoderParams)
+        mfxVideoParam params;
+        if(pMfxDec)
         {
-            SerializeVideoParamStruct(sstr,MSDK_STRING("*** Decoder ***"),*pDecoderParams,false);
+            if (GetUnitParams(pMfxDec, pDecoderPresetParams,&params) == MFX_ERR_NONE)
+            {
+                SerializeVideoParamStruct(sstr, MSDK_STRING("*** Decoder ***"), params, false);
+                ClearExtBuffs(&params);
+            }
         }
-        if(pVPPParams)
+        if(pMfxVPP)
         {
-            SerializeVideoParamStruct(sstr,MSDK_STRING("*** VPP ***"),*pVPPParams,true);
+            if (GetUnitParams(pMfxVPP, pVPPPresetParams, &params) == MFX_ERR_NONE)
+            {
+                SerializeVideoParamStruct(sstr, MSDK_STRING("*** VPP ***"), params, true);
+                ClearExtBuffs(&params);
+            }
         }
-        if(pEncoderParams)
+        if(pMfxEnc)
         {
-            SerializeVideoParamStruct(sstr,MSDK_STRING("*** Encoder ***"),*pEncoderParams,false);
+            if (GetUnitParams(pMfxEnc, pEncoderPresetParams, &params) == MFX_ERR_NONE)
+            {
+                SerializeVideoParamStruct(sstr, MSDK_STRING("*** Encoder ***"), params, false);
+                ClearExtBuffs(&params);
+            }
         }
         sstr.close();
     }
