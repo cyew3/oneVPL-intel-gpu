@@ -268,7 +268,7 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
     {
         if (!m_caps.SliceLevelReportSupport)
         {
-            return MFX_ERR_UNSUPPORTED;        
+            return MFX_ERR_INVALID_VIDEO_PARAM;        
         }
 
         if (!m_vpar.m_ext.CO2.MaxSliceSize)

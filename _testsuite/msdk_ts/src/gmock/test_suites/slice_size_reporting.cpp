@@ -86,6 +86,21 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
         mfxU32 mode;
     };
 
+/*
+// correct statuses. Change when feature will be developed
+
+static const tc_struct test_case[] =
+{
+    { MFX_ERR_NONE, MFXQUERY, 0},
+    { MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, MFXQUERY, NOCO2},
+    { MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, NOCO2MAXSLICESIZE},
+    { MFX_ERR_NONE, MFXINIT, 0},
+    { MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, MFXINIT, NOCO2},
+    { MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, MFXINIT, NOCO2MAXSLICESIZE},
+    { MFX_ERR_NONE, MFXENCODE, 0}
+};
+*/
+
 static const tc_struct test_case[] =
 {
     {/* 0*/ MFX_ERR_UNSUPPORTED, MFXQUERY, 0},
@@ -172,8 +187,10 @@ int RunTest (mfxU32 codecId, unsigned int id)
 
         enc.m_bitstream.ExtParam = pBuf;    //set ext buff in bs
         enc.m_bitstream.NumExtParam = 2;
-
-        enc.EncodeFrames(1);
+        //Delete when feature will be developed
+        enc.EncodeFrameAsync(enc.m_session, enc.m_pCtrl, enc.m_pSurf, enc.m_pBitstream, enc.m_pSyncPoint);
+        //Uncomment when feature will be developed
+        //enc.EncodeFrames(1);
     }
 
     TS_END;
