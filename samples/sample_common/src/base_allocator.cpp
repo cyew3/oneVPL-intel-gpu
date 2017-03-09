@@ -152,7 +152,7 @@ mfxStatus BaseFrameAllocator::AllocFrames(mfxFrameAllocRequest *request, mfxFram
             if (sts == MFX_ERR_NONE)
             {
                 response->AllocId = request->AllocId;
-                m_ExtResponses.push_back(UniqueResponse(*response, request->Info.Width, request->Info.Height, request->Type & MEMTYPE_FROM_MASK));
+                m_ExtResponses.push_back(UniqueResponse(*response, request->Info.Width, request->Info.Height, UniqueResponse::CropMemoryTypeToStore(request->Type)));
             }
         }
     }
