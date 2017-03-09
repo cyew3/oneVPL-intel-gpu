@@ -955,6 +955,10 @@ namespace MfxHwH264Encode
             , m_midMBQP(MID_INVALID)
             , m_isMBQP(false)
 
+            , m_isMBControl(false)
+            , m_midMBControl(MID_INVALID)
+            , m_idxMBControl(NO_INDEX)
+
             , m_cmRawForHist(0)
             , m_cmHist(0)
             , m_cmHistSys(0)
@@ -1143,6 +1147,10 @@ namespace MfxHwH264Encode
         mfxU32   m_idxMBQP;
         mfxMemId m_midMBQP;
         bool     m_isMBQP;
+
+        bool     m_isMBControl;
+        mfxMemId m_midMBControl;
+        mfxU32   m_idxMBControl;
 
         CmSurface2D *         m_cmRawForHist;
         CmBufferUP *          m_cmHist;     // Histogram data, kernel output
@@ -2238,6 +2246,9 @@ namespace MfxHwH264Encode
 
         MfxFrameAllocResponse   m_mbqp;
         bool                    m_useMBQPSurf;
+
+        MfxFrameAllocResponse   m_mbControl;
+        bool                    m_useMbControlSurfs;
 
         std::vector<mfxU8>  m_tmpBsBuf;
         PreAllocatedVector  m_sei;

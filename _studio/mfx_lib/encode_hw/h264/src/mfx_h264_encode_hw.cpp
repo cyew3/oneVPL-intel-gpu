@@ -698,6 +698,7 @@ ImplementationAvc::ImplementationAvc(VideoCORE * core)
 , m_inputFrameType(0)
 , m_NumSlices(0)
 , m_useMBQPSurf(false)
+, m_useMbControlSurfs(false)
 , m_currentPlatform(MFX_HW_UNKNOWN)
 , m_currentVaType(MFX_HW_NO)
 , m_useWAForHighBitrates(false)
@@ -1034,6 +1035,30 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     }
 #endif
 
+#ifdef ENABLE_H264_MBFORCE_INTRA
+    #ifdef MFX_VA_WIN
+    if (IsOn(extOpt3.EnableMBForceIntra) && !IsOn(m_video.mfx.LowPower) && (m_video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE))
+    {
+        m_useMbControlSurfs = true;
+
+        //Allocated surfaces for MB QP data
+        // skip so  far
+        sts = m_ddi->QueryCompBufferInfo(D3DDDIFMT_INTELENCODE_MBCONTROL, request);
+        MFX_CHECK_STS(sts);
+
+        request.Type =  MFX_MEMTYPE_SYS_INT;
+        request.NumFrameMin = mfxU16(m_emulatorForSyncPart.GetStageGreediness(AsyncRoutineEmulator::STG_WAIT_ENCODE) + bParallelEncPak);
+
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MfxFrameAllocResponse Alloc");
+            sts = m_mbControl.Alloc(m_core, request, false);
+        }
+        MFX_CHECK_STS(sts);
+    }
+    #else
+        #error "unimplemented code"
+    #endif
+#endif
     // Allocate surfaces for bitstreams.
     // Need at least one such surface and more for async-mode.
     sts = m_ddi->QueryCompBufferInfo(D3DDDIFMT_INTELENCODE_BITSTREAMDATA, request);
@@ -1419,6 +1444,13 @@ mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
     if (IsOn(extOpt3New->EnableMBQP) && !m_useMBQPSurf)
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 #endif
+
+#if MFX_VERSION >= 1023
+    // we can use feature only if sufs was allocated on init
+    if (IsOn(extOpt3New->EnableMBForceIntra) && m_useMbControlSurfs == false)
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+#endif
+
 
     if (    extOpt3New && IsOn(extOpt3New->FadeDetection)
         && !(m_cmCtx.get() && m_cmCtx->isHistogramSupported()))
@@ -2167,6 +2199,9 @@ void ImplementationAvc::OnEncodingQueried(DdiTaskIter task)
     if(m_useMBQPSurf && task->m_isMBQP)
         ReleaseResource(m_mbqp, task->m_midMBQP);
 
+    if (m_useMbControlSurfs && task->m_isMBControl)
+        ReleaseResource(m_mbControl, task->m_midMBControl);
+
     mfxU32 numBits = 8 * (task->m_bsDataLength[0] + task->m_bsDataLength[1]);
     *task = DdiTask();
 
@@ -2799,6 +2834,41 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                 task->m_midMBQP = AcquireResource(m_mbqp, task->m_idxMBQP);
             }
         }
+
+#ifdef ENABLE_H264_MBFORCE_INTRA
+        {
+            if (IsOn(extOpt3.EnableMBForceIntra) && m_useMbControlSurfs )
+            {
+                const mfxExtMBForceIntra *mbct = GetExtBuffer(task->m_ctrl);
+                mfxU32 wMB = (m_video.mfx.FrameInfo.CropW + 15) / 16;
+                mfxU32 hMB = (m_video.mfx.FrameInfo.CropH + 15) / 16;
+
+                task->m_isMBControl = mbct && mbct->Map && mbct->MapSize >= wMB * hMB;
+
+                if (task->m_isMBControl)
+                {
+                    task->m_idxMBControl = FindFreeResourceIndex(m_mbControl);
+                    task->m_midMBControl = AcquireResource(m_mbControl, task->m_idxMBControl);
+
+                    mfxFrameData mbsurf = {};
+                    FrameLocker lock(m_core, mbsurf, task->m_midMBControl);
+
+                    MFX_CHECK_WITH_ASSERT(mbsurf.Y, MFX_ERR_LOCK_MEMORY);
+
+    #ifdef MFX_VA_WIN
+                    for (mfxU32 y = 0; y < hMB; y++)
+                    {
+                        ENCODE_MBCONTROL* line = ((ENCODE_MBCONTROL*)mbsurf.Y) + y *wMB;
+                        for (mfxU32 x = 0; x < wMB; x++)
+                            line[x].MBParams.fields.bForceIntra = mbct->Map[y * wMB + x];
+                    }
+    #else
+         #error "unimplemented code"
+    #endif
+                }
+            }
+        }
+#endif
 
         //if(FILE *dump = fopen("dump1.txt", "a"))
         //{

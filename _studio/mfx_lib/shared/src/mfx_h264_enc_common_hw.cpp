@@ -1425,6 +1425,9 @@ bool MfxHwH264Encode::IsRunTimeOnlyExtBuffer(mfxU32 id)
 #ifndef MFX_PRIVATE_AVC_ENCODE_CTRL_DISABLE
         || id == MFX_EXTBUFF_AVC_ENCODE_CTRL
 #endif
+#if MFX_VERSION >= 1023
+        || id == MFX_EXTBUFF_MB_FORCE_INTRA
+#endif
         || id == MFX_EXTBUFF_MB_DISABLE_SKIP_MAP
         ;
 }
@@ -1447,6 +1450,9 @@ bool MfxHwH264Encode::IsRunTimeExtBufferIdSupported(MfxVideoParam const & video,
         || id == MFX_EXTBUFF_CODING_OPTION3
         || id == MFX_EXTBUFF_ENCODER_ROI
         || id == MFX_EXTBUFF_MBQP
+#if MFX_VERSION >= 1023
+        || id == MFX_EXTBUFF_MB_FORCE_INTRA
+#endif
         || id == MFX_EXTBUFF_MB_DISABLE_SKIP_MAP
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         || id == MFX_EXTBUFF_ENCODER_WIDI_USAGE
@@ -4316,6 +4322,28 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         changed = true;
     }
 
+#if MFX_VERSION >= 1023
+    if (!CheckTriStateOption(extOpt3->EnableMBForceIntra)) changed = true;
+
+    #ifdef ENABLE_H264_MBFORCE_INTRA
+    if ( IsOn(extOpt3->EnableMBForceIntra) && 
+       ( IsOn(par.mfx.LowPower) || // LowPower ON
+       (par.mfx.FrameInfo.PicStruct != 0 && par.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE ) // Not Progressive stream
+       ))
+    {
+        extOpt3->EnableMBForceIntra = 0;
+        changed = true;
+    }
+    #else
+    // at the moment LINUX , IOTG, OPEN SRC -  feature unsupported
+    if (IsOn(extOpt3->EnableMBForceIntra))
+    {
+        extOpt3->EnableMBForceIntra = 0;
+        changed = true;
+    }
+    #endif
+#endif
+
     if (!CheckTriStateOption(extOpt3->MBDisableSkipMap)) changed = true;
 
     if (IsOn(extOpt3->MBDisableSkipMap) && vaType != MFX_HW_VAAPI)
@@ -5505,6 +5533,11 @@ void MfxHwH264Encode::SetDefaults(
 
     if (extOpt3->MBDisableSkipMap == MFX_CODINGOPTION_UNKNOWN)
         extOpt3->MBDisableSkipMap = MFX_CODINGOPTION_OFF;
+
+#if MFX_VERSION >= 1023
+    if (extOpt3->EnableMBForceIntra == MFX_CODINGOPTION_UNKNOWN)
+        extOpt3->EnableMBForceIntra = MFX_CODINGOPTION_OFF;
+#endif
 
     CheckVideoParamMvcQueryLike(par);
 

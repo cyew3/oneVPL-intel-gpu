@@ -112,13 +112,20 @@
 
 #if !defined(LINUX_TARGET_PLATFORM)
     #if !defined(ANDROID)
-        // h264
+        // h264d
         #define MFX_ENABLE_H264_VIDEO_DECODE
+        // h265d
         #if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN)
             #define MFX_ENABLE_H265_VIDEO_DECODE
         #endif
 
+        //h264e
         #define MFX_ENABLE_H264_VIDEO_ENCODE
+        #if defined(MFX_VA_WIN) && MFX_VERSION >= 1023
+            #define ENABLE_H264_MBFORCE_INTRA
+        #endif
+
+        //h265e
         #if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN)
             #define MFX_ENABLE_H265_VIDEO_ENCODE
         #endif

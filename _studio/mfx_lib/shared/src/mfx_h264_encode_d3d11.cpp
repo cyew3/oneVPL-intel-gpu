@@ -585,6 +585,20 @@ mfxStatus D3D11Encoder::Execute(
         bufCnt++;
     }
 
+    if (task.m_isMBControl)
+    {
+        mfxU32 wMB = (m_sps.FrameWidth + 15) / 16;
+        mfxU32 hMB = (m_sps.FrameHeight + 15) / 16;
+
+        mfxFrameData mbsurf = {};
+        FrameLocker lock(m_core, mbsurf, task.m_midMBControl);
+
+        m_compBufDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)convertDX9TypeToDX11Type(D3DDDIFMT_INTELENCODE_MBCONTROL);
+        m_compBufDesc[bufCnt].DataSize = wMB*hMB * sizeof(ENCODE_MBCONTROL);
+        m_compBufDesc[bufCnt].pCompBuffer = mbsurf.Y;
+        bufCnt++;
+    }
+
     if (task.m_insertAud[fieldId])
     {
         m_compBufDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA;
