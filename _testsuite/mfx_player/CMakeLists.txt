@@ -8,7 +8,7 @@ include_directories (
   ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/shared/umc/test_suite/spy_test_component/include
   ${CMAKE_CURRENT_SOURCE_DIR}/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../shared/include
-  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-samples/samples/deprecated/sample_spl_mux/api
+  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/samples/deprecated/sample_spl_mux/api
 )
 
 # =============================================================================

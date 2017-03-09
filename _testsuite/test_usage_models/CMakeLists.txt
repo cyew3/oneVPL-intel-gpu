@@ -3,7 +3,7 @@ mfx_include_dirs( )
 include_directories (
   ${CMAKE_CURRENT_SOURCE_DIR}/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../shared/include
-  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-samples/samples/sample_common/include
+  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/samples/sample_common/include
 )
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
