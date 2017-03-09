@@ -300,7 +300,6 @@ mfxU32 AddEmulationPreventionAndCopy(
     bool                             bEmulationByteInsertion)
 {
     mfxU8 * sbegin = data;
-    mfxU8 * send = sbegin + length;
     mfxU32  len = bEmulationByteInsertion ? 4 : length;
     assert(mfxU32(bsEnd - bsDataStart) > length);
 
@@ -311,7 +310,6 @@ mfxU32 AddEmulationPreventionAndCopy(
         sbegin += len;
     }
 
-    mfxU8 * bsDataEnd = bsDataStart;
     mfxU32 size = mfxU32(bsEnd - bsDataStart);
     HeaderPacker::PackRBSP(bsDataStart, sbegin, size, length);
     len += size;
@@ -2787,8 +2785,8 @@ void HeaderPacker::codingTree(mfxU32 xCtu, mfxU32 yCtu, mfxU32 log2CtuSize, Bits
     bool mbB = (yCtu == y0) ? false : ((xCtu >= x0) ? yCtu > y0 : yCtu > y0 + (1 << log2CtuSize));   //is above MB available
     bool boundary = ((xCtu + (1 << log2CtuSize) > m_par->m_sps.pic_width_in_luma_samples) || (yCtu + (1 << log2CtuSize) > m_par->m_sps.pic_height_in_luma_samples)) && (log2CtuSize > m_par->m_sps.log2_min_luma_coding_block_size_minus3 + 3);
     mfxU32 ctx = 0;
-    mfxU32 split_flag = 0;
-    mfxU32 symbol = 0;
+    mfxU8 split_flag = 0;
+    mfxU8 symbol = 0;
 
     if (!boundary){
         bs.EncodeBin(CONTEXT(tabl, SPLIT_CODING_UNIT_FLAG_HEVC) + ctx, split_flag);
@@ -2836,7 +2834,7 @@ void HeaderPacker::codingTree(mfxU32 xCtu, mfxU32 yCtu, mfxU32 log2CtuSize, Bits
         {
             for (mfxU32 i = 0; i < num_cand - 1; ++i)
             {
-                const mfxU32 symbol = i == unary_idx ? 0 : 1;
+                symbol = i == unary_idx ? 0 : 1;
                 if (i == 0)
                 {
                     bs.EncodeBin(CONTEXT(tabl, MERGE_IDX_HEVC), symbol);
