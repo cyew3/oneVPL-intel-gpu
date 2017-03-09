@@ -258,6 +258,7 @@
     <ClCompile Include="src\gmock\test_suites\avce_repeat_pps.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_skipframes.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_skipframes_tektronix.cpp" />
+    <ClCompile Include="src\gmock\test_suites\avce_sliding_window.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_start_new_sequence.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_constraint_vbr.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_level_profile.cpp" />
