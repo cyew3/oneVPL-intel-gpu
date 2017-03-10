@@ -728,6 +728,12 @@ void VAAPIEncoder::FillSps(
     sps.max_bits_per_min_cu_denom = par.m_sps.vui.max_bits_per_min_cu_denom;
 }
 
+static VAConfigAttrib createVAConfigAttrib(VAConfigAttribType type, unsigned int value)
+{
+    VAConfigAttrib tmp = {type, value};
+    return tmp;
+}
+
 mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     MFXCoreInterface * core,
     GUID /*guid*/,
@@ -746,27 +752,33 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
 
     m_caps.BRCReset = 1; // no bitrate resolution control
 
-    VAConfigAttrib attrs[9];
-    
-    memset(attrs, 0, sizeof(attrs));
+    std::map<VAConfigAttribType, int> idx_map;
+    VAConfigAttribType attr_types[] = {
+        VAConfigAttribRTFormat,
+        VAConfigAttribRateControl,
+        VAConfigAttribEncQuantization,
+        VAConfigAttribEncIntraRefresh,
+        VAConfigAttribMaxPictureHeight,
+        VAConfigAttribMaxPictureWidth,
+        VAConfigAttribEncParallelRateControl,
+        VAConfigAttribEncMaxRefFrames,
+        VAConfigAttribEncSliceStructure
+    };
+    std::vector<VAConfigAttrib> attrs;
 
-    attrs[0].type  =VAConfigAttribRTFormat;
-    attrs[1].type  =VAConfigAttribRateControl;
-    attrs[2].type  =VAConfigAttribEncQuantization;
-    attrs[3].type  =VAConfigAttribEncIntraRefresh;
-    attrs[4].type  =VAConfigAttribMaxPictureHeight;
-    attrs[5].type  =VAConfigAttribMaxPictureWidth;
-    attrs[6].type  =VAConfigAttribEncParallelRateControl;
-    attrs[7].type  =VAConfigAttribEncMaxRefFrames;
-    attrs[8].type  =VAConfigAttribEncSliceStructure;
+    for (size_t i = 0; i < sizeof(attr_types) / sizeof(attr_types[0]); i++) {
+        attrs.push_back(createVAConfigAttrib(attr_types[i], 0));
+        idx_map[ attr_types[i] ] = i;
+    }
 
     VAStatus vaSts = vaGetConfigAttributes(m_vaDisplay,
                           ConvertProfileTypeMFX2VAAPI(m_videoParam.mfx.CodecProfile),
                           VAEntrypointEncSlice,
-                           attrs, sizeof(attrs)/sizeof(attrs[0]));
+                          Begin(attrs), attrs.size());
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-    m_caps.VCMBitRateControl = attrs[1].value & VA_RC_VCM ? 1 : 0; //Video conference mode
+    m_caps.VCMBitRateControl =
+        attrs[ idx_map[VAConfigAttribRateControl] ].value & VA_RC_VCM ? 1 : 0; //Video conference mode
     m_caps.RollingIntraRefresh = 0; /* (attrs[3].value & (~VA_ATTRIB_NOT_SUPPORTED))  ? 1 : 0*/
     m_caps.UserMaxFrameSizeSupport = 1;
     m_caps.MBBRCSupport = 1;
@@ -795,13 +807,15 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     }
     else
     {
-        if ((attrs[5].value != VA_ATTRIB_NOT_SUPPORTED) && (attrs[5].value != 0))
-            m_caps.MaxPicWidth  = attrs[5].value;
+        if ((attrs[ idx_map[VAConfigAttribMaxPictureWidth] ].value != VA_ATTRIB_NOT_SUPPORTED) &&
+            (attrs[ idx_map[VAConfigAttribMaxPictureWidth] ].value != 0))
+            m_caps.MaxPicWidth  = attrs[idx_map[VAConfigAttribMaxPictureWidth] ].value;
         else
             m_caps.MaxPicWidth = 1920;
 
-        if ((attrs[4].value != VA_ATTRIB_NOT_SUPPORTED) && (attrs[4].value != 0))
-            m_caps.MaxPicHeight = attrs[4].value;
+        if ((attrs[ idx_map[VAConfigAttribMaxPictureHeight] ].value != VA_ATTRIB_NOT_SUPPORTED) &&
+            (attrs[ idx_map[VAConfigAttribMaxPictureHeight] ].value != 0))
+            m_caps.MaxPicHeight = attrs[ idx_map[VAConfigAttribMaxPictureHeight] ].value;
         else
             m_caps.MaxPicHeight = 1088;
         
@@ -811,10 +825,12 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
             m_caps.SliceStructure = 4;
 
 
-        if (attrs[7].value != VA_ATTRIB_NOT_SUPPORTED)
+        if (attrs[ idx_map[VAConfigAttribEncMaxRefFrames] ].value != VA_ATTRIB_NOT_SUPPORTED)
         {
-            m_caps.MaxNum_Reference0 = attrs[7].value & 0xffff;
-            m_caps.MaxNum_Reference1 = (attrs[7].value >>16) & 0xffff;
+            m_caps.MaxNum_Reference0 =
+                attrs[ idx_map[VAConfigAttribEncMaxRefFrames] ].value & 0xffff;
+            m_caps.MaxNum_Reference1 =
+                (attrs[ idx_map[VAConfigAttribEncMaxRefFrames] ].value >>16) & 0xffff;
         }
         else
         {
