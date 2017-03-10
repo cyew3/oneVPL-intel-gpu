@@ -404,23 +404,41 @@ void Launcher::Run()
         m_HDLArray.push_back(pthread);
     }
 
-    for (size_t i = 0; ; i = (i+1) % m_HDLArray.size())
+    // Need to determine overlay threads count first
+    size_t nOverlayThreads = 0;
+    for (size_t i = 0; i < m_pSessionArray.size(); i++)
     {
-        sts = m_HDLArray[i]->TimedWait(100);
+        if (m_pSessionArray[i]->pPipeline->IsOverlayUsed())
+            nOverlayThreads++;
+    }
 
-        if (sts <= 0)
+    // Transcoding threads waiting cycle
+    while (m_HDLArray.size())
+    {
+        for (MSDKThreadsIterator it = m_HDLArray.begin(); it != m_HDLArray.end(); it++)
         {
-            // we need to exclude the thread which returned sts <= 0
-            // from stopping and joining, because 2nd joining of the
-            // thread causes undefined behavior on some platforms
-            // resulting in segmentation faults
-            for (size_t j = 0; j < m_HDLArray.size(); j++) {
-                if (j != i) m_pSessionArray[j]->pPipeline->SignalStop();
+            sts = (*it)->TimedWait(1);
+            if (sts <= 0)
+            {
+                MSDK_SAFE_DELETE(*it);
+                m_HDLArray.remove(*it);
+                break;
             }
-            for (size_t j = 0; j < m_HDLArray.size(); j++)
-                if (j != i) m_HDLArray[j]->Wait();
+        }
 
-            break;
+        // Overlay threads stop last (in N:1 case we have an encoding thread + overlay threads
+        if (m_HDLArray.size() <= nOverlayThreads + 1)
+        {
+            for (size_t i = 0; i < m_pSessionArray.size(); i++)
+            {
+                m_pSessionArray[i]->pPipeline->StopOverlay();
+            }
+            for (MSDKThreadsIterator it = m_HDLArray.begin(); it != m_HDLArray.end(); it++)
+            {
+                (*it)->Wait();
+                MSDK_SAFE_DELETE(*it);
+            }
+            m_HDLArray.clear();
         }
     }
 
@@ -707,12 +725,6 @@ void Launcher::Close()
         delete m_pExtBSProcArray[m_pExtBSProcArray.size() - 1];
         m_pExtBSProcArray[m_pExtBSProcArray.size() - 1] = NULL;
         m_pExtBSProcArray.pop_back();
-    }
-
-    while (m_HDLArray.size())
-    {
-        delete m_HDLArray[m_HDLArray.size()-1];
-        m_HDLArray.pop_back();
     }
 } // void Launcher::Close()
 

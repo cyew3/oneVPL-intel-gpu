@@ -451,7 +451,8 @@ namespace TranscodingSample
         { MSDK_CHECK_POINTER(m_pmfxSession.get(), MFX_ERR_NULL_PTR); return m_pmfxSession->QueryVersion(version); };
         inline mfxU32 GetPipelineID(){return m_nID;}
         inline void SetPipelineID(mfxU32 id){m_nID = id;}
-        void SignalStop();
+        void StopOverlay();
+        bool IsOverlayUsed();
     protected:
         virtual mfxStatus CheckRequiredAPIVersion(mfxVersion& version, sInputParams *pParams);
 
@@ -572,7 +573,7 @@ namespace TranscodingSample
         typedef std::list<ExtendedBS*>       BSList;
         BSList  m_BSPool;
 
-        bool                           m_bForceStop;
+        bool                           m_bStopOverlay;
 
         mfxVideoParam                  m_mfxDecParams;
         mfxVideoParam                  m_mfxEncParams;
@@ -648,7 +649,7 @@ namespace TranscodingSample
 
         mfxU32          m_NumFramesForReset;
         MSDKMutex       m_mReset;
-        MSDKMutex       m_mSignalStop;
+        MSDKMutex       m_mStopOverlay;
 
         bool isHEVCSW;
 

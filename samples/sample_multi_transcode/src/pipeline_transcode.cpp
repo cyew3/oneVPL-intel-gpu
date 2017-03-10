@@ -188,7 +188,7 @@ CTranscodingPipeline::CTranscodingPipeline():
     m_bIsFieldWeaving = false;
     m_bIsFieldSplitting = false;
     m_bUseOverlay = false;
-    m_bForceStop = false;
+    m_bStopOverlay = false;
 } //CTranscodingPipeline::CTranscodingPipeline()
 
 CTranscodingPipeline::~CTranscodingPipeline()
@@ -810,10 +810,15 @@ void CTranscodingPipeline::NoMoreFramesSignal()
     }
 }
 
-void CTranscodingPipeline::SignalStop()
+void CTranscodingPipeline::StopOverlay()
 {
-    AutomaticMutex guard(m_mSignalStop);
-    m_bForceStop = true;
+    AutomaticMutex guard(m_mStopOverlay);
+    m_bStopOverlay = true;
+}
+
+bool CTranscodingPipeline::IsOverlayUsed()
+{
+    return m_bUseOverlay;
 }
 
 mfxStatus CTranscodingPipeline::Decode()
@@ -832,8 +837,8 @@ mfxStatus CTranscodingPipeline::Decode()
 
     if (m_bUseOverlay)
     {
-        AutomaticMutex guard(m_mSignalStop);
-        if (m_bForceStop)
+        AutomaticMutex guard(m_mStopOverlay);
+        if (m_bStopOverlay)
         {
             // add surfaces in queue for all sinks
             NoMoreFramesSignal();
