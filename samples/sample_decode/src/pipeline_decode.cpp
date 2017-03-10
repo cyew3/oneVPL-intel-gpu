@@ -951,6 +951,12 @@ mfxStatus CDecodingPipeline::InitVppParams()
         m_VppSurfaceExtParams.push_back((mfxExtBuffer*)&m_VppVideoSignalInfo);
     }
 
+    // P010 video surfaces should be shifted
+    if (m_mfxVppVideoParams.vpp.Out.FourCC == MFX_FOURCC_P010 && m_memType != SYSTEM_MEMORY)
+    {
+        m_mfxVppVideoParams.vpp.Out.Shift = 1;
+    }
+
     return MFX_ERR_NONE;
 }
 

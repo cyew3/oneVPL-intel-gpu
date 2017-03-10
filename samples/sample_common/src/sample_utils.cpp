@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2016, Intel Corporation
+Copyright (c) 2005-2017, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -794,8 +794,18 @@ mfxStatus CSmplYUVWriter::WriteNextFrame(mfxFrameSurface1 *pSurface)
         case MFX_FOURCC_P010:
             for (i = 0; i < pInfo.CropH; i++)
             {
+                mfxU16* shortPtr = (mfxU16*) (pData.Y + (pInfo.CropY * pData.Pitch + pInfo.CropX) + i * pData.Pitch);
+                // Shifting data if required
+                if (pInfo.Shift)
+                {
+                    for (int idx = 0; idx < pInfo.CropW; idx++)
+                    {
+                        shortPtr[idx] >>= 6;
+                    }
+                }
+
                 MSDK_CHECK_NOT_EQUAL(
-                    fwrite(pData.Y + (pInfo.CropY * pData.Pitch + pInfo.CropX)+ i * pData.Pitch, 1, (mfxU32)pInfo.CropW*2, m_fDest),
+                    fwrite(shortPtr, 1, (mfxU32)pInfo.CropW*2, m_fDest),
                     (mfxU32)pInfo.CropW*2, MFX_ERR_UNDEFINED_BEHAVIOR);
             }
         break;
@@ -867,16 +877,26 @@ mfxStatus CSmplYUVWriter::WriteNextFrame(mfxFrameSurface1 *pSurface)
         {
             for (i = 0; i < (mfxU32)pInfo.CropH/2; i++)
             {
+                mfxU16* shortPtr = (mfxU16*) (pData.UV + (pInfo.CropY * pData.Pitch / 2 + pInfo.CropX) + i * pData.Pitch);
+                // Shifting data if required
+                if (pInfo.Shift)
+                {
+                    for (int idx = 0; idx < pInfo.CropW; idx++)
+                    {
+                        shortPtr[idx] >>= 6;
+                    }
+                }
+
                 if (!m_bIsMultiView)
                 {
                     MSDK_CHECK_NOT_EQUAL(
-                        fwrite(pData.UV + (pInfo.CropY * pData.Pitch / 2 + pInfo.CropX) + i * pData.Pitch, 1, (mfxU32)pInfo.CropW*2, m_fDest),
+                        fwrite(shortPtr, 1, (mfxU32)pInfo.CropW*2, m_fDest),
                         (mfxU32)pInfo.CropW*2, MFX_ERR_UNDEFINED_BEHAVIOR);
                 }
                 else
                 {
                     MSDK_CHECK_NOT_EQUAL(
-                        fwrite(pData.UV + (pInfo.CropY * pData.Pitch / 2 + pInfo.CropX) + i * pData.Pitch, 1, (mfxU32)pInfo.CropW*2, m_fDestMVC[vid]),
+                        fwrite(shortPtr, 1, (mfxU32)pInfo.CropW*2, m_fDestMVC[vid]),
                         (mfxU32)pInfo.CropW*2, MFX_ERR_UNDEFINED_BEHAVIOR);
                 }
             }
