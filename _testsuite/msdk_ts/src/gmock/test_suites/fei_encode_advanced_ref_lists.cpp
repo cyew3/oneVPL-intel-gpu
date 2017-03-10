@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2016 Intel Corporation.  All rights reserved.
+Copyright (C) 2016-2017 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -31,9 +31,15 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ts_struct.h"
 #include "ts_fei_warning.h"
 
+// This test verified the ref list reordering in slice header; there is no check for quality.
+// Swith "DEBUG" on to have encoded stream stored in file, we may manually verify if there is
+// quality issue in encoded stream.
+//#define DEBUG
+
 namespace fei_encode_advanced_ref_lists
 {
 
+typedef std::vector<mfxExtBuffer*> InBuf;
 class TestSuite : tsVideoEncoder
 {
 public:
@@ -41,7 +47,8 @@ public:
     ~TestSuite() { }
     int RunTest(unsigned int id);
     static const unsigned int n_cases;
-    static const mfxU16 max_rl = 12;
+    static const mfxU16 max_rl = 20;
+    static const mfxU16 max_fn = 60; // encode 60 frames at most;
     static const mfxU16 max_mfx_pars = 5;
 
     enum
@@ -68,8 +75,11 @@ public:
         struct _rl{
             mfxU16 poc;
             ctrl f[18];
-
         }rl[max_rl];
+        struct _ps{
+            mfxU16 fo; //frame order
+            mfxU16 ps;
+        }ps[max_fn]; //pic struct specified per frame, to support PAFF
     };
 
     static const tc_struct test_case[];
@@ -132,26 +142,68 @@ mfxStatus ClearRefLists(mfxExtAVCRefLists& lists)
 class SFiller : public tsSurfaceProcessor
 {
 private:
-    mfxU32 m_c;
-    mfxU32 m_i;
-    mfxU32 m_buf_idx;
-    mfxU32 m_num_buffers;
-    mfxU32 m_pic_struct;
+    mfxU32 m_c; // frame order
+    mfxU32 m_i; // index to rl
+    mfxU32 m_buf_idx; // index to buf sets
+    mfxU32 m_num_buffer_sets;
+    mfxU32 m_pic_struct; // pic struct specified during initialization
     mfxVideoParam& m_par;
     mfxEncodeCtrl& m_ctrl;
     const TestSuite::tc_struct & m_tc;
-    std::vector<mfxExtAVCRefLists> m_list;
-    std::vector<mfxExtBuffer*> m_pbuf;
+    std::vector<mfxExtAVCRefLists> m_ref_list;
+    std::vector<mfxExtFeiEncFrameCtrl> m_frm_ctl_list;
+    std::vector<InBuf> m_InBufs;
+    std::vector<mfxU16> m_ps_frm; // pic struct specified per frame, to support PAFF
+    tsRawReader* m_reader;
 
 public:
-    SFiller(const TestSuite::tc_struct & tc, mfxEncodeCtrl& ctrl, mfxVideoParam& par) : m_c(0), m_i(0), m_buf_idx(0), m_par(par), m_ctrl(ctrl), m_tc(tc)
+    SFiller(const TestSuite::tc_struct & tc, mfxEncodeCtrl& ctrl, mfxVideoParam& par)
+        : m_c(0)
+        , m_i(0)
+        , m_buf_idx(0)
+        , m_par(par)
+        , m_ctrl(ctrl)
+        , m_tc(tc)
+        , m_reader(0)
     {
-        mfxExtAVCRefLists rlb = {{MFX_EXTBUFF_AVC_REFLISTS, sizeof(mfxExtAVCRefLists)}, };
+#ifdef DEBUG
+        m_par.mfx.FrameInfo.Width     = 352;
+        m_par.mfx.FrameInfo.Height    = 288;
+        m_par.mfx.FrameInfo.CropW     = 352;
+        m_par.mfx.FrameInfo.CropH     = 288;
 
-        m_num_buffers = 2 * (TS_MAX(m_par.AsyncDepth, m_par.mfx.GopRefDist) + 1);
-        // 2 free ext buffers will be available for every EncodeFrameAsync call
-        m_list.resize(m_num_buffers, rlb);
-        m_pbuf.resize(m_num_buffers, 0  );
+        m_reader = new tsRawReader(g_tsStreamPool.Get("forBehaviorTest/foreman_cif.nv12"), m_par.mfx.FrameInfo, 30);
+        g_tsStreamPool.Reg();
+#endif
+
+        // set default value for mfxExtAVCRefLists, mfxExtFeiEncFrameCtrl
+        mfxExtAVCRefLists     rlb = {{MFX_EXTBUFF_AVC_REFLISTS, sizeof(mfxExtAVCRefLists)}, };
+        mfxExtFeiEncFrameCtrl fcb = {{MFX_EXTBUFF_FEI_ENC_CTRL, sizeof(mfxExtFeiEncFrameCtrl)}, };
+        fcb.SearchPath = 0;
+        fcb.LenSP = 57;
+        fcb.SubMBPartMask = 0;
+        fcb.MultiPredL0 = 0;
+        fcb.MultiPredL1 = 0;
+        fcb.SubPelMode = 3;
+        fcb.InterSAD = 2;
+        fcb.IntraSAD = 2;
+        fcb.DistortionType = 0;
+        fcb.RepartitionCheckEnable = 0;
+        fcb.AdaptiveSearch = 0;
+        fcb.MVPredictor = 0;
+        fcb.NumMVPredictors[0] = 0;
+        fcb.NumMVPredictors[1] = 0;
+        fcb.PerMBQp = 0;
+        fcb.PerMBInput = 0;
+        fcb.MBSizeCtrl = 0;
+        fcb.RefHeight = 32;
+        fcb.RefWidth = 32;
+        fcb.SearchWindow = 5;
+
+        m_num_buffer_sets = tc.nFrames;
+        // 2 - paired ext buf for interlaced frame
+        m_ref_list.resize(2 * m_num_buffer_sets, rlb);
+        m_frm_ctl_list.resize(2 * m_num_buffer_sets, fcb);
 
         for (auto& ctrl : tc.mfx)
         {
@@ -161,65 +213,120 @@ public:
                 break;
             }
         }
+
+        m_max = tc.nFrames;
+
+        // specify pic struct per frame. For MIXED, set default value "PROGRESSIVE" which by default
+        // may no be explicitely specified in cases
+        if (m_pic_struct == MFX_PICSTRUCT_UNKNOWN)
+        {
+            m_ps_frm.resize(tc.nFrames, MFX_PICSTRUCT_PROGRESSIVE);
+
+            // specify the pic struct per frame
+            for (auto& set : tc.ps)
+            {
+                if (set.ps > MFX_PICSTRUCT_UNKNOWN) // MFX_PICSTRUCT_UNKNOWN is invalid entry
+                {
+                    m_ps_frm[set.fo] = set.ps;
+                }
+            }
+        }
+        else
+        {
+            m_ps_frm.resize(tc.nFrames, m_pic_struct);
+        }
     };
+
+    ~SFiller()
+    {
+#ifdef DEBUG
+        if (m_reader)
+        {
+            delete m_reader;
+            m_reader = NULL;
+        }
+#endif
+    };
+
     mfxStatus ProcessSurface(mfxFrameSurface1& s);
 };
 
  mfxStatus SFiller::ProcessSurface(mfxFrameSurface1& s)
  {
-    bool field = (m_pic_struct == MFX_PICSTRUCT_FIELD_TFF || m_pic_struct == MFX_PICSTRUCT_FIELD_BFF);
-    bool bff   = (m_pic_struct == MFX_PICSTRUCT_FIELD_BFF);
+    mfxU16 pic_struct = m_ps_frm[m_c];
+    bool field = (pic_struct == MFX_PICSTRUCT_FIELD_TFF || pic_struct == MFX_PICSTRUCT_FIELD_BFF);
+    bool bff   = (pic_struct == MFX_PICSTRUCT_FIELD_BFF);
 
+    mfxU8 ffid = !(pic_struct & MFX_PICSTRUCT_PROGRESSIVE) && (pic_struct & MFX_PICSTRUCT_FIELD_BFF);
+
+    // PAFF requires per-frame setting of s.Info.PicStruct
+    s.Info.PicStruct = pic_struct;
     s.Data.FrameOrder = m_c;
     memset(&m_ctrl, 0, sizeof(m_ctrl));
 
-    m_pbuf[m_buf_idx+0] = &m_list[m_buf_idx+0].Header;
-    m_pbuf[m_buf_idx+1] = &m_list[m_buf_idx+1].Header;
-
     // clear ext buffers for ref lists
-    ClearRefLists(m_list[m_buf_idx]);
-    ClearRefLists(m_list[m_buf_idx + 1]);
+    ClearRefLists(m_ref_list[m_buf_idx * 2]);
+    ClearRefLists(m_ref_list[m_buf_idx * 2 + 1]);
 
-    m_ctrl.ExtParam = &m_pbuf[m_buf_idx];
+    InBuf in_buffs;
+
+    // attach mfxExtFeiEncFrameCtrl
+    in_buffs.push_back((mfxExtBuffer *)&m_frm_ctl_list[m_buf_idx * 2 + 0]);
+    if (field)
+        in_buffs.push_back((mfxExtBuffer *)&m_frm_ctl_list[m_buf_idx * 2 + 1]);
 
     if (m_tc.controlFlags & TestSuite::SET_RPL_EXPLICITLY)
     {
+        // indicates if there is user-defined ref list
+        bool bAtt = false;
+
         // get ref lists from description of test cases
         if (m_c * 2 == m_tc.rl[m_i].poc)
         {
-            m_ctrl.NumExtParam = 1;
-
             for (auto& f : m_tc.rl[m_i].f)
+            {
                 if (f.field)
-                    tsStruct::set(m_pbuf[m_buf_idx], *f.field, f.value);
+                {
+                    tsStruct::set(&m_ref_list[m_buf_idx * 2 + ffid], *f.field, f.value);
+                    bAtt = true;
+                }
+            }
             m_i ++;
         }
 
         if (m_c * 2 + 1 == m_tc.rl[m_i].poc)
         {
-            m_ctrl.NumExtParam = 2;
-
             for (auto& f : m_tc.rl[m_i].f)
+            {
                 if (f.field)
-                    tsStruct::set(m_pbuf[m_buf_idx + 1], *f.field, f.value);
-
-            if (bff)
-                std::swap(m_ctrl.ExtParam[0], m_ctrl.ExtParam[1]);
-
+                {
+                    tsStruct::set(&m_ref_list[m_buf_idx * 2 + 1 - ffid], *f.field, f.value);
+                    bAtt = true;
+                }
+            }
             m_i ++;
+        }
+
+        if (bAtt)
+        {
+            in_buffs.push_back((mfxExtBuffer *)&m_ref_list[m_buf_idx * 2 + 0]);
+            if (field)
+            {
+                in_buffs.push_back((mfxExtBuffer *)&m_ref_list[m_buf_idx * 2 + 1]);
+            }
         }
     }
     else if (m_tc.controlFlags & TestSuite::CALCULATE_RPL_IN_TEST)
     {
         // calculate ref lists using requested logic
-        CreateRefLists(m_par, s.Data.FrameOrder, m_tc.controlFlags, m_list[m_buf_idx], m_list[m_buf_idx + 1]);
-        if (m_list[m_buf_idx].RefPicList0[0].FrameOrder != (mfxU32)MFX_FRAMEORDER_UNKNOWN ||
-            m_list[m_buf_idx].RefPicList1[0].FrameOrder != (mfxU32)MFX_FRAMEORDER_UNKNOWN)
-            m_ctrl.NumExtParam = 1;
+        CreateRefLists(m_par, s.Data.FrameOrder, m_tc.controlFlags, m_ref_list[m_buf_idx * 2], m_ref_list[m_buf_idx * 2 + 1]);
+        if (m_ref_list[m_buf_idx * 2].RefPicList0[0].FrameOrder != (mfxU32)MFX_FRAMEORDER_UNKNOWN ||
+            m_ref_list[m_buf_idx * 2].RefPicList1[0].FrameOrder != (mfxU32)MFX_FRAMEORDER_UNKNOWN)
+            in_buffs.push_back((mfxExtBuffer *)&m_ref_list[m_buf_idx * 2]);
 
-        if (m_list[m_buf_idx + 1].RefPicList0[0].FrameOrder != (mfxU32)MFX_FRAMEORDER_UNKNOWN ||
-            m_list[m_buf_idx + 1].RefPicList1[0].FrameOrder != (mfxU32)MFX_FRAMEORDER_UNKNOWN)
-            m_ctrl.NumExtParam = 1;
+        if (m_ref_list[m_buf_idx * 2 + 1].RefPicList0[0].FrameOrder != (mfxU32)MFX_FRAMEORDER_UNKNOWN ||
+            m_ref_list[m_buf_idx * 2 + 1].RefPicList1[0].FrameOrder != (mfxU32)MFX_FRAMEORDER_UNKNOWN)
+            in_buffs.push_back((mfxExtBuffer *)&m_ref_list[m_buf_idx * 2 + 1]);
     }
     else
     {
@@ -227,13 +334,21 @@ public:
         return MFX_ERR_ABORTED;
     }
 
+    m_InBufs.push_back(in_buffs);
+    m_ctrl.ExtParam = &(m_InBufs[m_c])[0];
+    m_ctrl.NumExtParam = (mfxU16)in_buffs.size();
+
     if (m_ctrl.NumExtParam)
     {
         // if buffer is used, move forward
-        m_buf_idx = (m_buf_idx + 2) % m_num_buffers;
+        m_buf_idx = (m_buf_idx + 1) % m_num_buffer_sets;
     }
+
     m_c ++;
 
+#ifdef DEBUG
+    m_reader->ProcessSurface(s);
+#endif
     return MFX_ERR_NONE;
 }
 
@@ -245,6 +360,10 @@ private:
     mfxVideoParam& m_par;
     const TestSuite::tc_struct & m_tc;
     mfxU32 m_IdrCnt;
+    std::vector<mfxU16> m_ps_frm; // pic struct specified per frame, to support PAFF
+#ifdef DEBUG
+    tsBitstreamWriter m_writer;
+#endif
 public:
     BitstreamChecker(const TestSuite::tc_struct & tc, mfxVideoParam& par)
         : tsParserH264AU()
@@ -252,6 +371,9 @@ public:
         , m_par(par)
         , m_tc(tc)
         , m_IdrCnt(0)
+#ifdef DEBUG
+        , m_writer("/tmp/debug.264")
+#endif
     {
         set_trace_level(BS_H264_TRACE_LEVEL_REF_LIST);
 
@@ -263,6 +385,25 @@ public:
                 break;
             }
         }
+
+        // specify pic struct per frame. For MIXED, set default value of PROGRESSIVE
+        if (m_pic_struct == MFX_PICSTRUCT_UNKNOWN)
+        {
+            m_ps_frm.resize(tc.nFrames, MFX_PICSTRUCT_PROGRESSIVE);
+
+            // specify the pic struct per frame
+            for (auto& set : tc.ps)
+            {
+                if (set.ps > MFX_PICSTRUCT_UNKNOWN) // MFX_PICSTRUCT_UNKNOWN is invalid entry
+                {
+                    m_ps_frm[set.fo] = set.ps;
+                }
+            }
+        }
+        else
+        {
+            m_ps_frm.resize(tc.nFrames, m_pic_struct);
+        }
     }
 
     mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames);
@@ -270,9 +411,10 @@ public:
     mfxU32 GetPOC(mfxExtAVCRefLists::mfxRefPic rp, mfxU32 IdrCnt)
     {
         mfxU32 frameOrderInGOP = rp.FrameOrder - ((m_IdrCnt - 1) * m_par.mfx.GopPicSize);
-        if (rp.PicStruct == MFX_PICSTRUCT_PROGRESSIVE)
+        mfxU16 pic_struct = m_ps_frm[rp.FrameOrder];
+        if (rp.PicStruct == MFX_PICSTRUCT_PROGRESSIVE || pic_struct == MFX_PICSTRUCT_PROGRESSIVE)
             return (2 * frameOrderInGOP);
-        return (2 * frameOrderInGOP + (rp.PicStruct != m_pic_struct));
+        return (2 * frameOrderInGOP + (rp.PicStruct != pic_struct));
     }
 
     mfxU32 GetFrameOrder(mfxI32 POC)
@@ -286,7 +428,10 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
     mfxU32 checked = 0;
     SetBuffer(bs);
 
-    nFrames *= 1 + (m_pic_struct != MFX_PICSTRUCT_PROGRESSIVE);
+    nFrames *= 1 + !(bs.PicStruct & MFX_PICSTRUCT_PROGRESSIVE);
+#ifdef DEBUG
+    m_writer.ProcessBitstream(bs, nFrames);
+#endif
 
     while (checked++ < nFrames)
     {
@@ -410,6 +555,7 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
 #define PROGR MFX_PICSTRUCT_PROGRESSIVE
 #define TFF   MFX_PICSTRUCT_FIELD_TFF
 #define BFF   MFX_PICSTRUCT_FIELD_BFF
+#define MIXED MFX_PICSTRUCT_UNKNOWN
 
 #define FRM MFX_PICSTRUCT_PROGRESSIVE
 #define TF  MFX_PICSTRUCT_FIELD_TFF
@@ -483,6 +629,128 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         CALCULATE_RPL_IN_TEST | REORDER_FOm2, 40, 1,
         MFX_PARS(/*PicStruct*/ PROGR, /*GopPicSize*/ 20, /*GopRefDist*/ 1, /*NumRefFrame*/ 2, /*TU*/ 7),
     },
+    // Added cases below for arbitrary field polarity ref order
+    {/*7, TFF, no B*/
+        SET_RPL_EXPLICITLY, 2, 1,
+        MFX_PARS(/*PicStruct*/ TFF, /*GopPicSize*/ 30, /*GopRefDist*/ 1, /*NumRefFrame*/ 4, /*TU*/ 0),
+        {
+            { 1,  {NRAL0(1), RPL0(0, 0, TF)} },
+            { 2,  {NRAL0(2), RPL0(0, 0, BF), RPL0(1, 0, TF)}},
+            { 3,  {NRAL0(3), RPL0(0, 1, TF), RPL0(1, 0, TF), RPL0(2, 0, BF)}}
+        }
+    },
+    {/*8, BFF, B, no B-Pyramid, simulate telecine_1920x1080_BDWTU4_20_BFF.264 by Ryan*/
+        SET_RPL_EXPLICITLY, 7, 1,
+        MFX_PARS(/*PicStruct*/ BFF, /*GopPicSize*/ 30, /*GopRefDist*/ 3, /*NumRefFrame*/ 4, /*TU*/ 0),
+        {
+            { 1,  {NRAL0(1), RPL0(0, 0, BF)} },
+            { 2,  {NRAL0(4), RPL0(0, 0, TF), RPL0(1, 0, BF), RPL0(2, 3, BF), RPL0(3, 3, TF), NRAL1(2), RPL1(0, 3, BF), RPL1(1, 3, TF)}},
+            { 3,  {NRAL0(4), RPL0(0, 0, TF), RPL0(1, 0, BF), RPL0(2, 3, BF), RPL0(3, 3, TF), NRAL1(2), RPL1(0, 3, BF), RPL1(1, 3, TF)}},
+            { 4,  {NRAL0(4), RPL0(0, 0, TF), RPL0(1, 0, BF), RPL0(2, 3, BF), RPL0(3, 3, TF), NRAL1(2), RPL1(0, 3, BF), RPL1(1, 3, TF)}},
+            { 5,  {NRAL0(4), RPL0(0, 0, TF), RPL0(1, 0, BF), RPL0(2, 3, BF), RPL0(3, 3, TF), NRAL1(2), RPL1(0, 3, BF), RPL1(1, 3, TF)}},
+            { 6,  {NRAL0(2), RPL0(0, 0, TF), RPL0(1, 0, BF)}},
+            { 7,  {NRAL0(3), RPL0(0, 3, BF), RPL0(1, 0, TF), RPL0(2, 0, BF)}},
+            { 8,  {NRAL0(4), RPL0(0, 3, TF), RPL0(1, 3, BF), RPL0(2, 0, TF), RPL0(3, 0, BF), NRAL1(2), RPL1(0, 6, BF), RPL1(1, 6, TF)}},
+            { 9,  {NRAL0(4), RPL0(0, 3, TF), RPL0(1, 3, BF), RPL0(2, 0, TF), RPL0(3, 0, BF), NRAL1(2), RPL1(0, 6, BF), RPL1(1, 6, TF)}},
+            {10,  {NRAL0(4), RPL0(0, 3, TF), RPL0(1, 3, BF), RPL0(2, 0, TF), RPL0(3, 0, BF), NRAL1(2), RPL1(0, 6, BF), RPL1(1, 6, TF)}},
+            {11,  {NRAL0(4), RPL0(0, 3, TF), RPL0(1, 3, BF), RPL0(2, 0, TF), RPL0(3, 0, BF), NRAL1(2), RPL1(0, 6, BF), RPL1(1, 6, TF)}},
+            {12,  {NRAL0(4), RPL0(0, 3, TF), RPL0(1, 3, BF), RPL0(2, 0, TF), RPL0(3, 0, BF)}},
+            {13,  {NRAL0(4), RPL0(0, 6, BF), RPL0(1, 3, TF), RPL0(2, 3, BF), RPL0(3, 0, TF)}},
+        }
+    },
+    {/*9, TFF, B, no B-Pyramid, simulate telecine_1920x1080_BDWTU4_20_TFF.264 by Ryan*/
+        SET_RPL_EXPLICITLY, 7, 1,
+        MFX_PARS(/*PicStruct*/ TFF, /*GopPicSize*/ 30, /*GopRefDist*/ 3, /*NumRefFrame*/ 4, /*TU*/ 0),
+        {
+            { 1,  {NRAL0(1), RPL0(0, 0, TF)} },
+            { 2,  {NRAL0(4), RPL0(0, 0, BF), RPL0(1, 0, TF), RPL0(2, 3, TF), RPL0(3, 3, BF), NRAL1(2), RPL1(0, 3, TF), RPL1(1, 3, BF)}},
+            { 3,  {NRAL0(4), RPL0(0, 0, BF), RPL0(1, 0, TF), RPL0(2, 3, TF), RPL0(3, 3, BF), NRAL1(2), RPL1(0, 3, TF), RPL1(1, 3, BF)}},
+            { 4,  {NRAL0(4), RPL0(0, 0, BF), RPL0(1, 0, TF), RPL0(2, 3, TF), RPL0(3, 3, BF), NRAL1(2), RPL1(0, 3, TF), RPL1(1, 3, BF)}},
+            { 5,  {NRAL0(4), RPL0(0, 0, BF), RPL0(1, 0, TF), RPL0(2, 3, TF), RPL0(3, 3, BF), NRAL1(2), RPL1(0, 3, TF), RPL1(1, 3, BF)}},
+            { 6,  {NRAL0(2), RPL0(0, 0, BF), RPL0(1, 0, TF)}},
+            { 7,  {NRAL0(3), RPL0(0, 3, TF), RPL0(1, 0, BF), RPL0(2, 0, TF)}},
+            { 8,  {NRAL0(4), RPL0(0, 3, BF), RPL0(1, 3, TF), RPL0(2, 0, BF), RPL0(3, 0, TF), NRAL1(2), RPL1(0, 6, TF), RPL1(1, 6, BF)}},
+            { 9,  {NRAL0(4), RPL0(0, 3, BF), RPL0(1, 3, TF), RPL0(2, 0, BF), RPL0(3, 0, TF), NRAL1(2), RPL1(0, 6, TF), RPL1(1, 6, BF)}},
+            {10,  {NRAL0(4), RPL0(0, 3, BF), RPL0(1, 3, TF), RPL0(2, 0, BF), RPL0(3, 0, TF), NRAL1(2), RPL1(0, 6, TF), RPL1(1, 6, BF)}},
+            {11,  {NRAL0(4), RPL0(0, 3, BF), RPL0(1, 3, TF), RPL0(2, 0, BF), RPL0(3, 0, TF), NRAL1(2), RPL1(0, 6, TF), RPL1(1, 6, BF)}},
+            {12,  {NRAL0(4), RPL0(0, 3, BF), RPL0(1, 3, TF), RPL0(2, 0, BF), RPL0(3, 0, TF)}},
+            {13,  {NRAL0(4), RPL0(0, 6, TF), RPL0(1, 3, BF), RPL0(2, 3, TF), RPL0(3, 0, BF)}},
+        }
+    },
+    {/*10, BFF, B-Pyramid*/
+        SET_RPL_EXPLICITLY, 10, 2,
+        MFX_PARS(/*PicStruct*/ BFF, /*GopPicSize*/ 0, /*GopRefDist*/ 4, /*NumRefFrame*/ 4, /*TU*/ 0),
+        {
+            {10, {NRAL0(4), RPL0(0, 2, TF), RPL0(1, 2, BF), RPL0(2, 4, TF), RPL0(3, 4, BF), NRAL1(2), RPL1(0, 6, TF), RPL1(1, 6, BF)}},
+            {11, {NRAL0(4), RPL0(0, 2, BF), RPL0(1, 2, TF), RPL0(2, 4, BF), RPL0(3, 4, TF), NRAL1(2), RPL1(0, 6, BF), RPL1(1, 6, TF)}},
+        }
+    },
+    {/*11, PAFF, no B*/
+        SET_RPL_EXPLICITLY, 2, 1,
+        MFX_PARS(/*PicStruct*/ MIXED, /*GopPicSize*/ 30, /*GopRefDist*/ 1, /*NumRefFrame*/ 4, /*TU*/ 0),
+        {
+            { 2,  {NRAL0(1), RPL0(0, 0, TF)}},
+            { 3,  {NRAL0(2), RPL0(0, 1, TF), RPL0(1, 0, BF)}}
+        },
+        {
+            { 0, FRM},
+            { 1, TFF}
+        }
+    },
+    {/*12, PAFF, no B, simulate telecine_1920x1080_BDWTU4_20_PAFF.264*/
+        SET_RPL_EXPLICITLY, 10, 1,
+        MFX_PARS(/*PicStruct*/ MIXED, /*GopPicSize*/ 30, /*GopRefDist*/ 3, /*NumRefFrame*/ 4, /*TU*/ 0),
+        {
+            { 8,  {NRAL0(4), RPL0(0, 3, BF), RPL0(1, 3, TF), RPL0(2, 0, BF), RPL0(3, 0, TF), NRAL1(2), RPL1(0, 6, TF), RPL1(1, 6, BF)}},
+            { 9,  {NRAL0(4), RPL0(0, 3, BF), RPL0(1, 3, TF), RPL0(2, 0, BF), RPL0(3, 0, TF), NRAL1(2), RPL1(0, 6, TF), RPL1(1, 6, BF)}},
+            {10,  {NRAL0(4), RPL0(0, 3, BF), RPL0(1, 3, TF), RPL0(2, 0, BF), RPL0(3, 0, TF), NRAL1(2), RPL1(0, 6, TF), RPL1(1, 6, BF)}},
+            {11,  {NRAL0(4), RPL0(0, 3, BF), RPL0(1, 3, TF), RPL0(2, 0, BF), RPL0(3, 0, TF), NRAL1(2), RPL1(0, 6, TF), RPL1(1, 6, BF)}},
+            {12,  {NRAL0(4), RPL0(0, 3, BF), RPL0(1, 3, TF), RPL0(2, 0, BF), RPL0(3, 0, TF)}},
+            {13,  {NRAL0(4), RPL0(0, 6, TF), RPL0(1, 3, BF), RPL0(2, 3, TF), RPL0(3, 0, BF)}},
+            {16,  {NRAL0(4), RPL0(0, 6, BF), RPL0(1, 6, TF), RPL0(2, 3, BF), RPL0(3, 3, TF), NRAL1(2), RPL1(0, 9, TF), RPL1(1, 9, BF)}},
+            {17,  {NRAL0(4), RPL0(0, 6, BF), RPL0(1, 6, TF), RPL0(2, 3, BF), RPL0(3, 3, TF), NRAL1(2), RPL1(0, 9, TF), RPL1(1, 9, BF)}},
+        },
+        {
+            { 4, BFF},
+            { 5, BFF},
+            { 6, TFF},
+            { 8, TFF},
+        }
+    },
+    {/*13, one variable to #11, the first frame be interlaced*/
+        SET_RPL_EXPLICITLY, 10, 1,
+        MFX_PARS(/*PicStruct*/ MIXED, /*GopPicSize*/ 30, /*GopRefDist*/ 3, /*NumRefFrame*/ 4, /*TU*/ 0),
+        {
+            { 8,  {NRAL0(4), RPL0(0, 3, BF), RPL0(1, 3, TF), RPL0(2, 0, BF), RPL0(3, 0, TF), NRAL1(2), RPL1(0, 6, TF), RPL1(1, 6, BF)}},
+            { 9,  {NRAL0(4), RPL0(0, 3, BF), RPL0(1, 3, TF), RPL0(2, 0, BF), RPL0(3, 0, TF), NRAL1(2), RPL1(0, 6, TF), RPL1(1, 6, BF)}},
+            {10,  {NRAL0(4), RPL0(0, 3, BF), RPL0(1, 3, TF), RPL0(2, 0, BF), RPL0(3, 0, TF), NRAL1(2), RPL1(0, 6, TF), RPL1(1, 6, BF)}},
+            {11,  {NRAL0(4), RPL0(0, 3, BF), RPL0(1, 3, TF), RPL0(2, 0, BF), RPL0(3, 0, TF), NRAL1(2), RPL1(0, 6, TF), RPL1(1, 6, BF)}},
+            {12,  {NRAL0(4), RPL0(0, 3, BF), RPL0(1, 3, TF), RPL0(2, 0, BF), RPL0(3, 0, TF)}},
+            {13,  {NRAL0(4), RPL0(0, 6, TF), RPL0(1, 3, BF), RPL0(2, 3, TF), RPL0(3, 0, BF)}},
+            {16,  {NRAL0(4), RPL0(0, 6, BF), RPL0(1, 6, TF), RPL0(2, 3, BF), RPL0(3, 3, TF), NRAL1(2), RPL1(0, 9, TF), RPL1(1, 9, BF)}},
+            {17,  {NRAL0(4), RPL0(0, 6, BF), RPL0(1, 6, TF), RPL0(2, 3, BF), RPL0(3, 3, TF), NRAL1(2), RPL1(0, 9, TF), RPL1(1, 9, BF)}},
+        },
+        {
+            { 0, TFF},
+            { 4, BFF},
+            { 5, BFF},
+            { 6, TFF},
+            { 8, TFF},
+        }
+    },
+    {/*14, one case for existing features*/
+        CALCULATE_RPL_IN_TEST | REORDER_FOm1, 2, 1,
+        MFX_PARS(/*PicStruct*/ TFF, /*GopPicSize*/ 30, /*GopRefDist*/ 1, /*NumRefFrame*/ 4, /*TU*/ 0),
+    },
+    {/*15, used as benchmark, similar to #7, but no arbitrary ref order specified*/
+        SET_RPL_EXPLICITLY, 2, 1,
+        MFX_PARS(/*PicStruct*/ TFF, /*GopPicSize*/ 30, /*GopRefDist*/ 1, /*NumRefFrame*/ 4, /*TU*/ 0),
+        {
+            { 1,  {NRAL0(1), RPL0(0, 0, TF)} },
+            { 2,  {NRAL0(2), RPL0(0, 0, TF), RPL0(1, 0, BF)}},
+            { 3,  {NRAL0(3), RPL0(0, 0, BF), RPL0(1, 1, TF), RPL0(2, 0, TF)}}
+        }
+    },
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -496,60 +764,6 @@ int TestSuite::RunTest(unsigned int id)
     const tc_struct& tc = test_case[id];
 
     mfxU32 num_mb = mfxU32(m_par.mfx.FrameInfo.Width / 16) * mfxU32(m_par.mfx.FrameInfo.Height / 16);
-
-    ///////////////////////////////////////////////////////////////////////////
-    /// FEI buffers (start)
-    ///////////////////////////////////////////////////////////////////////////
-    // Attach input structures
-    std::vector<mfxExtBuffer*> in_buffs;
-
-    mfxExtFeiEncFrameCtrl in_efc = {};
-    in_efc.Header.BufferId = MFX_EXTBUFF_FEI_ENC_CTRL;
-    in_efc.Header.BufferSz = sizeof(mfxExtFeiEncFrameCtrl);
-    in_efc.SearchPath = 57;
-    in_efc.LenSP = 57;
-    in_efc.SubMBPartMask = 0x77;
-    in_efc.MultiPredL0 = 0;
-    in_efc.MultiPredL1 = 0;
-    in_efc.SubPelMode = 3;
-    in_efc.InterSAD = 2;
-    in_efc.IntraSAD = 2;
-    in_efc.DistortionType = 2;
-    in_efc.RepartitionCheckEnable = 0;
-    in_efc.AdaptiveSearch = 1;
-    in_efc.MVPredictor = 0;
-    in_efc.NumMVPredictors[0] = 1; //always 4 predictors
-    in_efc.PerMBQp = 0;
-    in_efc.PerMBInput = 0;
-    in_efc.MBSizeCtrl = 0;
-    in_efc.RefHeight = 40;
-    in_efc.RefWidth = 48;
-    in_efc.SearchWindow = 0;
-    in_buffs.push_back((mfxExtBuffer*)&in_efc);
-
-    mfxExtFeiEncMVPredictors in_mvp = {};
-    in_mvp.Header.BufferId = MFX_EXTBUFF_FEI_ENC_MV_PRED;
-    in_mvp.Header.BufferSz = sizeof(mfxExtFeiEncMVPredictors);
-    in_mvp.MB = new mfxExtFeiEncMVPredictors::mfxExtFeiEncMVPredictorsMB[num_mb];
-    in_buffs.push_back((mfxExtBuffer*)&in_mvp);
-    in_efc.MVPredictor = 1;
-    in_efc.NumMVPredictors[0] = 1;
-
-    mfxExtFeiEncMBCtrl in_mbc = {};
-    in_mbc.Header.BufferId = MFX_EXTBUFF_FEI_ENC_MB;
-    in_mbc.Header.BufferSz = sizeof(mfxExtFeiEncMBCtrl);
-    in_mbc.MB = new mfxExtFeiEncMBCtrl::mfxExtFeiEncMBCtrlMB[num_mb];
-    in_buffs.push_back((mfxExtBuffer*)&in_mbc);
-    in_efc.PerMBInput = 1;
-
-    if (!in_buffs.empty())
-    {
-        m_ctrl.ExtParam = &in_buffs[0];
-        m_ctrl.NumExtParam = (mfxU16)in_buffs.size();
-    }
-    ///////////////////////////////////////////////////////////////////////////
-    /// FEI buffers (end)
-    ///////////////////////////////////////////////////////////////////////////
 
     m_par.AsyncDepth   = 1;
     m_par.mfx.NumSlice = 1;
