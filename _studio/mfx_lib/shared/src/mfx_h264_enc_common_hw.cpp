@@ -3762,8 +3762,17 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
                     return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
         }
     }
+#if MFX_VERSION >= 1023
+    if (!CheckTriStateOption(extOpt3->AdaptiveMaxFrameSize)) changed = true;
 
-    if (hwCaps.UserMaxFrameSizeSupport == 0 && ((extOpt2->MaxFrameSize) || (extOpt3->MaxFrameSizeI) ||(extOpt3->MaxFrameSizeP)))
+    if (hwCaps.UserMaxFrameSizeSupport == 0 &&  IsOn(extOpt3->AdaptiveMaxFrameSize) )
+    {
+        extOpt3->AdaptiveMaxFrameSize = 0;
+        changed = true;
+    }
+#endif
+
+    if (hwCaps.UserMaxFrameSizeSupport == 0 && ((extOpt2->MaxFrameSize) || (extOpt3->MaxFrameSizeI) || (extOpt3->MaxFrameSizeP)))
     {
         extOpt2->MaxFrameSize = 0;
         extOpt3->MaxFrameSizeI = 0;
@@ -4322,6 +4331,23 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         extOpt3->WeightedBiPred = MFX_WEIGHTED_PRED_DEFAULT;
         unsupported = true;
     }
+
+#if MFX_VERSION >= 1023
+    #if defined(MFX_VA_WIN)
+    if (hwCaps.UserMaxFrameSizeSupport == 1 && extOpt3->MaxFrameSizeP == 0 && IsOn(extOpt3->AdaptiveMaxFrameSize))
+    {
+        extOpt3->AdaptiveMaxFrameSize = 0;
+        changed = true;
+    }
+    #else // i.e. NOT defined(MFX_VA_WIN)
+    //  LINUX DO NOT SUPPORT AdaptiveMaxFrameSize so reset it to zero if it is set
+    if ( IsOn(extOpt3->AdaptiveMaxFrameSize) )
+    {
+        extOpt3->AdaptiveMaxFrameSize = 0;
+        changed = true;
+    }
+    #endif
+#endif
 
     if (!CheckTriStateOption(extOpt3->FadeDetection)) changed = true;
 
@@ -5556,6 +5582,11 @@ void MfxHwH264Encode::SetDefaults(
 
     if (hwCaps.UserMaxFrameSizeSupport && extOpt2->MaxFrameSize == 0)
         extOpt2->MaxFrameSize = IPP_MIN(GetMaxFrameSize(par), GetFirstMaxFrameSize(par));
+
+#if MFX_VERSION >= 1023
+    if ( extOpt3->AdaptiveMaxFrameSize == MFX_CODINGOPTION_UNKNOWN)
+        extOpt3->AdaptiveMaxFrameSize = MFX_CODINGOPTION_OFF;
+#endif
 
     par.ApplyDefaultsToMvcSeqDesc();
 

@@ -104,6 +104,7 @@ void MfxHwH264Encode::FillSpsBuffer(
     sps.EnableSliceLevelRateCtrl                = (extOpt2->MaxSliceSize)?1:0;
     sps.UserMaxIFrameSize                       = extOpt3.MaxFrameSizeI ? extOpt3.MaxFrameSizeI : extOpt2->MaxFrameSize;
     sps.UserMaxPBFrameSize                      = extOpt3.MaxFrameSizeP;
+    sps.bAutoMaxPBFrameSizeForSceneChange       = IsOn(extOpt3.AdaptiveMaxFrameSize) ? 1 : 0;
     
     if (par.mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4)
         switch (extVsi->MatrixCoefficients)
