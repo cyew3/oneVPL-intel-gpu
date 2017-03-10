@@ -922,6 +922,7 @@ void InheritDefaultValues(
 
     if (parInit.mfx.RateControlMethod == MFX_RATECONTROL_VCM && parReset.mfx.RateControlMethod == MFX_RATECONTROL_VCM)
     {
+        InheritOption(parInit.mfx.InitialDelayInKB, parReset.mfx.InitialDelayInKB);
         InheritOption(parInit.mfx.TargetKbps,       parReset.mfx.TargetKbps);
         InheritOption(parInit.mfx.MaxKbps,          parReset.mfx.MaxKbps);
     }

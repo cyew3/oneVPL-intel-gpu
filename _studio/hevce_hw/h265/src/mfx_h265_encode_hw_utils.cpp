@@ -828,6 +828,7 @@ void MfxVideoParam::SyncCalculableToVideoParam()
     if (mfx.RateControlMethod == MFX_RATECONTROL_CBR ||
         mfx.RateControlMethod == MFX_RATECONTROL_VBR ||
         mfx.RateControlMethod == MFX_RATECONTROL_AVBR||
+        mfx.RateControlMethod == MFX_RATECONTROL_VCM ||
         mfx.RateControlMethod == MFX_RATECONTROL_QVBR ||
         mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT)
     {
@@ -1569,7 +1570,7 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
     if (IsOn(m_ext.CO.PicTimingSEI))
         m_sps.vui.frame_field_info_present_flag = 0; // temp: disable frame field info
 
-    if (InsertHRDInfo && (mfx.RateControlMethod == MFX_RATECONTROL_CBR || mfx.RateControlMethod == MFX_RATECONTROL_VBR))
+    if (InsertHRDInfo && (mfx.RateControlMethod == MFX_RATECONTROL_CBR || mfx.RateControlMethod == MFX_RATECONTROL_VBR || mfx.RateControlMethod == MFX_RATECONTROL_VCM))
     {
         HRDInfo& hrd = m_sps.vui.hrd;
         HRDInfo::SubLayer& sl0 = hrd.sl[0];

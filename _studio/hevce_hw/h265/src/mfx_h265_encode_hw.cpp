@@ -780,7 +780,8 @@ mfxStatus  Plugin::Reset(mfxVideoParam *par)
         ,  MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
     if (m_vpar.mfx.RateControlMethod == MFX_RATECONTROL_CBR ||
-        m_vpar.mfx.RateControlMethod == MFX_RATECONTROL_VBR)
+        m_vpar.mfx.RateControlMethod == MFX_RATECONTROL_VBR || 
+        m_vpar.mfx.RateControlMethod == MFX_RATECONTROL_VCM)
     {
         MFX_CHECK(
             m_vpar.InitialDelayInKB == parNew.InitialDelayInKB &&
@@ -847,7 +848,7 @@ mfxStatus  Plugin::Reset(mfxVideoParam *par)
              m_vpar.m_ext.CO2.MaxFrameSize != parNew.m_ext.CO2.MaxFrameSize)
              brcReset = true;
     }
-    if (m_vpar.mfx.RateControlMethod == MFX_RATECONTROL_VBR)
+    if (m_vpar.mfx.RateControlMethod == MFX_RATECONTROL_VBR || m_vpar.mfx.RateControlMethod == MFX_RATECONTROL_VCM)
     {
         if (m_vpar.MaxKbps != parNew.MaxKbps)  brcReset = true;
     }
