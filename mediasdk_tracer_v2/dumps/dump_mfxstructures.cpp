@@ -189,6 +189,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCodingOp
     DUMP_FIELD(ConstrainedIntraPredFlag);
     DUMP_FIELD(TransformSkip);
     DUMP_FIELD(EnableMBForceIntra);
+    DUMP_FIELD(AdaptiveMaxFrameSize);
     DUMP_FIELD_RESERVED(reserved);
     return str;
 }

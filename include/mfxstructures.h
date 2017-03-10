@@ -718,7 +718,8 @@ typedef struct {
 
     mfxU16      LowDelayBRC;               /* tri-state option */
     mfxU16      EnableMBForceIntra;        /* tri-state option */
-    mfxU16      reserved[171];
+    mfxU16      AdaptiveMaxFrameSize;      /* tri-state option */
+    mfxU16      reserved[170];
 } mfxExtCodingOption3;
 
 /* IntraPredBlockSize/InterPredBlockSize */
