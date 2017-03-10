@@ -19,7 +19,7 @@
 
 #define MFX_ENABLE_H264_VIDEO_ENCODE
 #if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN)
-//     #define MFX_ENABLE_H265_VIDEO_ENCODE
+    #define MFX_ENABLE_H265_VIDEO_ENCODE
 #endif
 #define MFX_ENABLE_MVC_VIDEO_ENCODE
 //#define MFX_ENABLE_H264_VIDEO_PAK
@@ -130,7 +130,7 @@
     #define MFX_ENABLE_H265_VIDEO_DECODE
 #endif
 #if defined(AS_HEVCE_PLUGIN)
-//     #define MFX_ENABLE_H265_VIDEO_ENCODE
+     #define MFX_ENABLE_H265_VIDEO_ENCODE
     #if !defined(__APPLE__)
 //         #define MFX_ENABLE_CM
     #endif

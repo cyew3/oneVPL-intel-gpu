@@ -137,7 +137,9 @@ mfxU8 ConvertRateControlMFX2VAAPI(mfxU8 rateControl, bool bSWBRC)
         case MFX_RATECONTROL_LA_EXT: return VA_RC_CQP;
         case MFX_RATECONTROL_CBR:  return VA_RC_CBR | VA_RC_MB;
         case MFX_RATECONTROL_VBR:  return VA_RC_VBR | VA_RC_MB;
+#ifndef MFX_VAAPI_UPSTREAM
         case MFX_RATECONTROL_ICQ:  return VA_RC_ICQ | VA_RC_MB;
+#endif
         case MFX_RATECONTROL_VCM:  return VA_RC_VCM | VA_RC_MB;
         default: assert(!"Unsupported RateControl"); return 0;
     }
@@ -249,12 +251,16 @@ mfxStatus SetRateControl(
 #ifdef PARALLEL_BRC_support
         rate_param->rc_flags.bits.enable_parallel_brc =  (par.AsyncDepth > 1) && (par.mfx.GopRefDist > 1) && (par.mfx.GopRefDist <= 8) && par.isBPyramid();
 #else
+#ifndef MFX_VAAPI_UPSTREAM
         rate_param->rc_flags.bits.enable_parallel_brc = 0;
+#endif
 #endif
     }
 
+#ifndef MFX_VAAPI_UPSTREAM
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ)
         rate_param->ICQ_quality_factor = par.mfx.ICQQuality;
+#endif
 
     rate_param->initial_qp = par.m_pps.init_qp_minus26 + 26;
 
@@ -302,6 +308,7 @@ mfxStatus SetFrameRate(
     return MFX_ERR_NONE;
 }
 
+#ifdef PARALLEL_BRC_support
 mfxStatus SetBRCParallel(
     MfxVideoParam const & par,
     VADisplay    vaDisplay,
@@ -364,6 +371,7 @@ mfxStatus SetBRCParallel(
 
     return MFX_ERR_NONE;
 }
+#endif
 
 mfxStatus SetQualityLevelParams(
     MfxVideoParam const & par,
@@ -756,11 +764,13 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     VAConfigAttribType attr_types[] = {
         VAConfigAttribRTFormat,
         VAConfigAttribRateControl,
+#ifndef MFX_VAAPI_UPSTREAM
         VAConfigAttribEncQuantization,
         VAConfigAttribEncIntraRefresh,
         VAConfigAttribMaxPictureHeight,
         VAConfigAttribMaxPictureWidth,
         VAConfigAttribEncParallelRateControl,
+#endif
         VAConfigAttribEncMaxRefFrames,
         VAConfigAttribEncSliceStructure
     };
@@ -807,6 +817,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     }
     else
     {
+#ifndef MFX_VAAPI_UPSTREAM
         if ((attrs[ idx_map[VAConfigAttribMaxPictureWidth] ].value != VA_ATTRIB_NOT_SUPPORTED) &&
             (attrs[ idx_map[VAConfigAttribMaxPictureWidth] ].value != 0))
             m_caps.MaxPicWidth  = attrs[idx_map[VAConfigAttribMaxPictureWidth] ].value;
@@ -818,6 +829,10 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
             m_caps.MaxPicHeight = attrs[ idx_map[VAConfigAttribMaxPictureHeight] ].value;
         else
             m_caps.MaxPicHeight = 1088;
+#else
+            m_caps.MaxPicWidth  = 1920;
+            m_caps.MaxPicHeight = 1088;
+#endif
         
         //if (attrs[8].value != VA_ATTRIB_NOT_SUPPORTED)
         //    m_caps.SliceStructure = attrs[8].value ;
