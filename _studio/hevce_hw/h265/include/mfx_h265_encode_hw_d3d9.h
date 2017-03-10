@@ -19,31 +19,6 @@
 namespace MfxHwH265Encode
 {
 
-class AuxiliaryDevice : public ::AuxiliaryDevice
-{
-public:
-    using ::AuxiliaryDevice::Execute;
-
-    template <typename T, typename U>
-    HRESULT Execute(mfxU32 func, T& in, U& out)
-    {
-        return ::AuxiliaryDevice::Execute(func, &in, sizeof(in), &out, sizeof(out));
-    }
-
-    template <typename T>
-    HRESULT Execute(mfxU32 func, T& in, void*)
-    {
-        return ::AuxiliaryDevice::Execute(func, &in, sizeof(in), 0, 0);
-    }
-
-    template <typename U>
-    HRESULT Execute(mfxU32 func, void*, U& out)
-    {
-        return ::AuxiliaryDevice::Execute(func, 0, 0, &out, sizeof(out));
-    }
-};
-
-
 template<class DDI_SPS, class DDI_PPS, class DDI_SLICE>
 class D3D9Encoder : public DriverEncoder, DDIHeaderPacker, DDITracer
 {
@@ -125,6 +100,39 @@ private:
     std::vector<ENCODE_COMPBUFFERDESC>          m_cbd;
     FeedbackStorage                             m_feedbackUpdate;
     CachedFeedback                              m_feedbackCached;
+
+    template <class T> struct SizeOf { enum { value = sizeof(T) }; };
+    template<> struct SizeOf <void> { enum { value = 0 }; };
+
+    template <typename T, typename U>
+    HRESULT Execute(mfxU32 func, T* in, mfxU32 inSizeInBytes, U* out, mfxU32 outSizeInBytes)
+    {
+        HRESULT hr;
+        Trace(">>Function", func);
+        TraceArray(in, inSizeInBytes / Max<mfxU32>(SizeOf<T>::value, 1));
+        hr = m_auxDevice->Execute(func, in, inSizeInBytes, out, outSizeInBytes);
+        TraceArray(out, outSizeInBytes / Max<mfxU32>(SizeOf<U>::value, 1));
+        Trace("<<HRESULT", hr);
+        return hr;
+    }
+
+    template <typename T, typename U>
+    HRESULT Execute(mfxU32 func, T& in, U& out)
+    {
+        return Execute(func, &in, sizeof(in), &out, sizeof(out));
+    }
+    
+    template <typename T>
+    HRESULT Execute(mfxU32 func, T& in, void*)
+    {
+        return Execute(func, &in, sizeof(in), (void*)0, (mfxU32)0);
+    }
+    
+    template <typename U>
+    HRESULT Execute(mfxU32 func, void*, U& out)
+    {
+        return Execute(func, (void*)0, (mfxU32)0, &out, sizeof(out));
+    }
 };
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)

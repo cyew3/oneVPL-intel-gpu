@@ -603,7 +603,12 @@ void FillSpsBuffer(
 //        sps.AVBRConvergence = par.mfx.Convergence;
     }
 
+#if (HEVCE_DDI_VERSION >= 966)
+    sps.FrameRate.Numerator     = par.mfx.FrameInfo.FrameRateExtN;
+    sps.FrameRate.Denominator   = par.mfx.FrameInfo.FrameRateExtD;
+#else
     sps.FramesPer100Sec = (mfxU16)(mfxU64(100) * par.mfx.FrameInfo.FrameRateExtN / par.mfx.FrameInfo.FrameRateExtD);
+#endif
     sps.InitVBVBufferFullnessInBit = 8000 * par.InitialDelayInKB;
     sps.VBVBufferSizeInBit         = 8000 * par.BufferSizeInKB;
 

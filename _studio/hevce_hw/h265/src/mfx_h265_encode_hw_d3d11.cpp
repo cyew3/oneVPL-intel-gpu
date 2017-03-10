@@ -171,11 +171,12 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAuxilliaryDevice(
 
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "DecoderExtension");
-            hr = m_vcontext->DecoderExtension(m_vdecoder, &ext);
+            hr = DecoderExtension(ext);
         }
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
     }
 
+    Trace(m_guid, 0);
     Trace(m_caps, 0);
 
     sts = HardcodeCaps(m_caps, core, guid);
@@ -218,7 +219,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAccelerationService(M
             encryptParam.pPrivateInputData     = &encryptSet;
             encryptParam.PrivateInputDataSize  = sizeof(ENCODE_ENCRYPTION_SET);
 
-            hr = m_vcontext->DecoderExtension(m_vdecoder, &encryptParam);
+            hr = DecoderExtension(encryptParam);
             MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
         }
     }
@@ -228,14 +229,14 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAccelerationService(M
     ext.pPrivateOutputData = &m_capsQuery;
     ext.PrivateOutputDataSize = sizeof(m_capsQuery);
 
-    hr = m_vcontext->DecoderExtension(m_vdecoder, &ext);
+    hr = DecoderExtension(ext);
     MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
     ext.Function = ENCODE_ENC_CTRL_GET_ID;
     ext.pPrivateOutputData = &m_capsGet;
     ext.PrivateOutputDataSize = sizeof(m_capsGet);
 
-    hr = m_vcontext->DecoderExtension(m_vdecoder, &ext);
+    hr = DecoderExtension(ext);
     MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
     FillSpsBuffer(par, m_caps, m_sps);
@@ -347,7 +348,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryCompBufferInfo(D3DDDIF
         ext.PrivateOutputDataSize = sizeof(ENCODE_FORMAT_COUNT);
 
         
-        hr = m_vcontext->DecoderExtension(m_vdecoder, &ext);
+        hr = DecoderExtension(ext);
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
         m_compBufInfo.resize(cnt.CompressedBufferInfoCount);
@@ -364,7 +365,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryCompBufferInfo(D3DDDIF
         ext.pPrivateOutputData = &encodeFormats;
         ext.PrivateOutputDataSize = sizeof(ENCODE_FORMATS);
 
-        hr = m_vcontext->DecoderExtension(m_vdecoder, &ext);
+        hr = DecoderExtension(ext);
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
        
         MFX_CHECK(encodeFormats.CompressedBufferInfoSize > 0, MFX_ERR_DEVICE_FAILED);
@@ -653,7 +654,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, 
         ext.ppResourceList        = &resourceList[0];
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "DecoderExtension");
-            hr = m_vcontext->DecoderExtension(m_vdecoder, &ext);
+            hr = DecoderExtension(ext);
         }
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
         {
@@ -717,7 +718,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryStatus(Task & task)
 
                 {
                     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "ENCODE_QUERY_STATUS_ID");
-                    hr = m_vcontext->DecoderExtension(m_vdecoder, &ext);
+                    hr = DecoderExtension(ext);
                 }
             }
             catch (...)
@@ -787,6 +788,26 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryStatus(Task & task)
         assert(!"bad feedback status");
         return MFX_ERR_DEVICE_FAILED;
     }
+}
+
+template<class DDI_SPS, class DDI_PPS, class DDI_SLICE>
+HRESULT D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::DecoderExtension(D3D11_VIDEO_DECODER_EXTENSION const & ext)
+{
+    HRESULT hr;
+
+    Trace(">>Function", ext.Function);
+
+    if (!ext.pPrivateOutputData || ext.pPrivateInputData)
+        Trace(ext, 0); //input
+
+    hr = m_vcontext->DecoderExtension(m_vdecoder, &ext);
+
+    if (ext.pPrivateOutputData)
+        Trace(ext, 1); //output
+
+    Trace("<<HRESULT", hr);
+
+    return hr;
 }
 
 template<class DDI_SPS, class DDI_PPS, class DDI_SLICE>

@@ -6,6 +6,7 @@ builder/FindMFX.cmake
 builder/FindPackages.cmake
 builder/FindTrace.cmake
 builder/FindVTune.cmake
+_studio/hevce_hw/h265/include/hevce_ddi_947.h
 _studio/hevce_hw/h265/include/mfx_h265_encode_hw.h
 _studio/hevce_hw/h265/include/mfx_h265_encode_hw_brc.h
 _studio/hevce_hw/h265/include/mfx_h265_encode_hw_bs.h

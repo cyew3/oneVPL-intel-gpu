@@ -27,6 +27,7 @@ public:
 
     template<class T> void Trace(T const &, mfxU32) {};
     template<class T> void TraceArray(T const * b, mfxU32 n) { for (mfxU32 i = 0; i < n; i ++) Trace(b[i], i); };
+    inline void TraceArray(void const *, mfxU32) {};
 
     void Trace(ENCODE_COMPBUFFERDESC const & b, mfxU32 idx);
     void Trace(ENCODE_CAPS_HEVC const & b, mfxU32 idx);
@@ -37,11 +38,16 @@ public:
     void Trace(ENCODE_EXECUTE_PARAMS const & b, mfxU32 idx);
     void Trace(ENCODE_QUERY_STATUS_PARAMS const & b, mfxU32 idx);
 
+    void Trace(D3D11_VIDEO_DECODER_EXTENSION const & b, mfxU32 idx);
+
 #if (HEVCE_DDI_VERSION >= 960)
     void Trace(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_REXT const & b, mfxU32 idx);
     void Trace(ENCODE_SET_PICTURE_PARAMETERS_HEVC_REXT const & b, mfxU32 idx);
     void Trace(ENCODE_SET_SLICE_HEADER_HEVC_REXT const & b, mfxU32 idx);
 #endif // (HEVCE_DDI_VERSION >= 960)
+    inline void Trace(GUID const & guid, mfxU32) { TraceGUID(guid, m_log); };
+    void Trace(const char* name, mfxU32 value);
+    template<mfxU32 N> inline void Trace(const char name[N], mfxU32 value) { Trace((const char*) name, value);  }
 
     static void TraceGUID(GUID const & guid, FILE*);
 };

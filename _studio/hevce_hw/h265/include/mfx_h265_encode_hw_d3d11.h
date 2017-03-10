@@ -110,6 +110,8 @@ private:
     std::vector<mfxHDLPair>                     m_bsQueue;
     FeedbackStorage                             m_feedbackUpdate;
     CachedFeedback                              m_feedbackCached;
+
+    HRESULT DecoderExtension(D3D11_VIDEO_DECODER_EXTENSION const & ext);
 };
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)

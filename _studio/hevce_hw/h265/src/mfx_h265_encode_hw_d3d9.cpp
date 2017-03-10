@@ -57,6 +57,7 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAuxilliaryDevice(
     mfxU32      height)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9Encoder::CreateAuxilliaryDevice");
+    mfxStatus sts = MFX_ERR_NONE;
     m_core = core;
 
 #ifdef HEADER_PACKING_TEST
@@ -92,7 +93,6 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAuxilliaryDevice(
     m_caps.MaxNumOfTileColumnsMinus1= 3;
 #else
     IDirect3DDeviceManager9 *device = 0;
-    mfxStatus sts = MFX_ERR_NONE;
 
     sts = core->GetHandle(MFX_HANDLE_D3D9_DEVICE_MANAGER, (mfxHDL*)&device);
 
@@ -109,7 +109,7 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAuxilliaryDevice(
     sts = auxDevice->IsAccelerationServiceExist(guid);
     MFX_CHECK_STS(sts);
 
-    HRESULT hr = auxDevice->Execute(AUXDEV_QUERY_ACCEL_CAPS, guid, m_caps);
+    HRESULT hr = auxDevice->Execute(AUXDEV_QUERY_ACCEL_CAPS, &guid, sizeof(guid), &m_caps, sizeof(m_caps));
     MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
     
@@ -119,6 +119,7 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAuxilliaryDevice(
     m_auxDevice = auxDevice;
 #endif
     
+    Trace(m_guid, 0);
     Trace(m_caps, 0);
 
     sts = HardcodeCaps(m_caps, core, guid);
@@ -167,21 +168,21 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAccelerationService(Mf
     HRESULT hr;
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "AUXDEV_CREATE_ACCEL_SERVICE");
-        hr = m_auxDevice->Execute(AUXDEV_CREATE_ACCEL_SERVICE, m_guid, encodeCreateDevice);
+        hr = Execute(AUXDEV_CREATE_ACCEL_SERVICE, m_guid, encodeCreateDevice);
     }
     MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
     Zero(m_capsQuery);
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "ENCODE_ENC_CTRL_CAPS_ID");
-        hr = m_auxDevice->Execute(ENCODE_ENC_CTRL_CAPS_ID, (void *)0, m_capsQuery);
+        hr = Execute(ENCODE_ENC_CTRL_CAPS_ID, (void *)0, m_capsQuery);
     }
     MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
     Zero(m_capsGet);
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "ENCODE_ENC_CTRL_GET_ID");
-        hr = m_auxDevice->Execute(ENCODE_ENC_CTRL_GET_ID, (void *)0, m_capsGet);
+        hr = Execute(ENCODE_ENC_CTRL_GET_ID, (void *)0, m_capsGet);
     }
     MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 #else
@@ -233,7 +234,7 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryCompBufferInfo(D3DDDIFO
         encodeFormatCount.UncompressedFormatCount = 0;
 
         GUID guid = m_auxDevice->GetCurrentGuid();
-        HRESULT hr = m_auxDevice->Execute(ENCODE_FORMAT_COUNT_ID, guid, encodeFormatCount);
+        HRESULT hr = Execute(ENCODE_FORMAT_COUNT_ID, guid, encodeFormatCount);
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
         m_compBufInfo.resize(encodeFormatCount.CompressedBufferInfoCount);
@@ -245,7 +246,7 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryCompBufferInfo(D3DDDIFO
         encodeFormats.pCompressedBufferInfo = &m_compBufInfo[0];
         encodeFormats.pUncompressedFormats = &m_uncompBufInfo[0];
 
-        hr = m_auxDevice->Execute(ENCODE_FORMATS_ID, (void *)0, encodeFormats);
+        hr = Execute(ENCODE_FORMATS_ID, (void *)0, encodeFormats);
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
         MFX_CHECK(encodeFormats.CompressedBufferInfoSize > 0, MFX_ERR_DEVICE_FAILED);
         MFX_CHECK(encodeFormats.UncompressedFormatSize > 0, MFX_ERR_DEVICE_FAILED);
@@ -457,8 +458,6 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, m
         }
     }*/
 
-    Trace(executeParams, 0);
-
     try
     {
 #ifdef HEADER_PACKING_TEST
@@ -496,7 +495,7 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, m
 
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "ENCODE_ENC_PAK_ID");
-            hr = m_auxDevice->Execute(ENCODE_ENC_PAK_ID, executeParams, (void *)0);
+            hr = Execute(ENCODE_ENC_PAK_ID, executeParams, (void *)0);
         }
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
@@ -551,9 +550,9 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryStatus(Task & task)
 
             try
             {
-                hr = m_auxDevice->Execute(
+                hr = Execute(
                     ENCODE_QUERY_STATUS_ID,
-                    (void *)&feedbackDescr,
+                    &feedbackDescr,
                     sizeof(feedbackDescr),
                     &m_feedbackUpdate[0],
                     (mfxU32)m_feedbackUpdate.size() * m_feedbackUpdate.feedback_size());

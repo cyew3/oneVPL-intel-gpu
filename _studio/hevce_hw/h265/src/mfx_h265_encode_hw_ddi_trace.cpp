@@ -23,12 +23,19 @@ DDITracer::DDITracer(ENCODER_TYPE type)
     , m_type(type)
 {
     m_log = fopen("MSDK_HEVCE_HW_DDI_LOG.txt", "w");
+    Trace("HEVCE_DDI_VERSION", HEVCE_DDI_VERSION);
 }
 
 DDITracer::~DDITracer()
 {
     if (m_log)
         fclose(m_log);
+}
+
+void DDITracer::Trace(const char* name, mfxU32 value)
+{
+    fprintf(m_log, "%s = %d\n\n", name, value);
+    fflush(m_log);
 }
 
 #define TRACE(format, field) fprintf(m_log, FIELD_FORMAT " = " format "\n", #field, b.field); fflush(m_log);
@@ -61,6 +68,19 @@ void DDITracer::TraceGUID(GUID const & guid, FILE* f)
         , guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
     fflush(f);
 }
+
+
+#define FIELD_FORMAT "%-24s"
+DECL_START(D3D11_VIDEO_DECODER_EXTENSION)
+    TRACE("%d", Function);
+    TRACE("%d", PrivateInputDataSize);
+    TRACE_HEX_ROW(pPrivateInputData, b.PrivateInputDataSize);
+    TRACE("%d", PrivateOutputDataSize);
+    TRACE_HEX_ROW(pPrivateOutputData, b.PrivateOutputDataSize);
+    TRACE("%d", ResourceCount);
+DECL_END
+#undef FIELD_FORMAT
+
 
 #define FIELD_FORMAT "%-24s"
 DECL_START(ENCODE_COMPBUFFERDESC)
@@ -169,7 +189,12 @@ DECL_START(ENCODE_CAPS_HEVC)
 
     TRACE("%d", MaxNumOfROI               );
     TRACE("%d", ROIBRCPriorityLevelSupport);
-    TRACE("%d", ROIBlockSize              );
+
+#if (HEVCE_DDI_VERSION >= 966)
+    TRACE("%d", BlockSize);
+#else
+    TRACE("%d", ROIBlockSize);
+#endif
 
     TRACE("%d", SliceLevelReportSupport      );
     TRACE("%d", MaxNumOfTileColumnsMinus1    );
@@ -202,7 +227,12 @@ DECL_START(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC)
     TRACE("%d", TargetBitRate);
     TRACE("%d", MaxBitRate);
     TRACE("%d", MinBitRate);
+#if (HEVCE_DDI_VERSION >= 966)
+    TRACE("%d", FrameRate.Numerator);
+    TRACE("%d", FrameRate.Denominator);
+#else
     TRACE("%d", FramesPer100Sec);
+#endif
     TRACE("%d", InitVBVBufferFullnessInBit);
     TRACE("%d", VBVBufferSizeInBit);
 
@@ -217,7 +247,13 @@ DECL_START(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC)
     TRACE("%d", SourceBitDepth       );
     TRACE("%d", QpAdjustment         );
     TRACE("%d", ROIValueInDeltaQP    );
+
+#if (HEVCE_DDI_VERSION >= 966)
+    TRACE("%d", BlockQPforNonRectROI);
+#else
     TRACE("%d", BlockQPInDeltaQPIndex);
+#endif
+
     TRACE("%d", UserMaxFrameSize );
     //TRACE("%d", AVBRAccuracy     );
     //TRACE("%d", AVBRConvergence  );
@@ -418,7 +454,11 @@ DECL_START(ENCODE_SET_SLICE_HEADER_HEVC)
     TRACE("%d", beta_offset_div2);
     TRACE("%d", tc_offset_div2);
     TRACE("%d", luma_log2_weight_denom);
+#if (HEVCE_DDI_VERSION >= 966)
+    TRACE("%d", delta_chroma_log2_weight_denom);
+#else
     TRACE("%d", chroma_log2_weight_denom);
+#endif
 
     //CHAR    luma_offset[2][15];
     //CHAR    delta_luma_weight[2][15];
