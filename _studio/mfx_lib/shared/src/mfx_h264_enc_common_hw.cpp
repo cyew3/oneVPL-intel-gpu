@@ -3065,6 +3065,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         par.mfx.RateControlMethod != MFX_RATECONTROL_VBR &&
         par.mfx.RateControlMethod != MFX_RATECONTROL_QVBR &&
         par.mfx.RateControlMethod != MFX_RATECONTROL_LA_HRD &&
+        par.mfx.RateControlMethod != MFX_RATECONTROL_VCM &&
         par.calcParam.cqpHrdMode == 0)
     {
         changed = true;
@@ -4702,6 +4703,7 @@ void MfxHwH264Encode::InheritDefaultValues(
 
     if (parInit.mfx.RateControlMethod == MFX_RATECONTROL_VCM && parReset.mfx.RateControlMethod == MFX_RATECONTROL_VCM)
     {
+        InheritOption(parInit.mfx.InitialDelayInKB, parReset.mfx.InitialDelayInKB);
         InheritOption(parInit.mfx.TargetKbps,       parReset.mfx.TargetKbps);
         InheritOption(parInit.mfx.MaxKbps,          parReset.mfx.MaxKbps);
     }
