@@ -371,6 +371,7 @@ namespace MfxHwH264Encode
         ~VAAPIFEIPAKEncoder();
 
         virtual mfxStatus CreateAccelerationService(MfxVideoParam const & par);
+        virtual mfxStatus Reset(MfxVideoParam const & par);
         virtual mfxStatus Register(mfxFrameAllocResponse& response, D3DDDIFORMAT type);
         virtual mfxStatus Execute(mfxHDL surface, DdiTask const & task,
                 mfxU32 fieldId, PreAllocatedVector const & sei);

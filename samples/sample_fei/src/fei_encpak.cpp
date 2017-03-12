@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2016, Intel Corporation
+Copyright (c) 2005-2017, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -284,13 +284,8 @@ mfxStatus FEI_EncPakInterface::Reset(mfxU16 width, mfxU16 height, mfxU16 crop_w,
     }
     if (m_pmfxPAK)
     {
-        //sts = m_pmfxPAK->Reset(&m_videoParams_PAK);
-        //MSDK_CHECK_STATUS(sts, "FEI PAK: Reset failed");
-
-        sts = m_pmfxPAK->Close();
-        MSDK_CHECK_STATUS(sts, "FEI PAK: Close failed");
-        sts = m_pmfxPAK->Init(&m_videoParams_PAK);
-        MSDK_CHECK_STATUS(sts, "FEI PAK: Init failed");
+        sts = m_pmfxPAK->Reset(&m_videoParams_PAK);
+        MSDK_CHECK_STATUS(sts, "FEI PAK: Reset failed");
     }
     m_RefInfo.Clear();
     return sts;
