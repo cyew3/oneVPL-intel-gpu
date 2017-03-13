@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -20,6 +20,7 @@
 
 #include "libmfx_allocator_vaapi.h"
 #include "mfx_utils.h"
+#include "mfx_ext_buffers.h"
 
 #define VA_SAFE_CALL(__CALL)        \
 {                                   \
@@ -200,7 +201,6 @@ mfxDefaultAllocatorVAAPI::AllocFramesHW(
                 surfaceAttrib[attribCnt].flags = VA_SURFACE_ATTRIB_SETTABLE;
                 surfaceAttrib[attribCnt++].value.value.i = va_fourcc;
 
-#ifndef MFX_SURFACE_ENCODER_TARGET_DISABLE
                 /*
                  *  Enable this hint as required for creating RGB32 surface for MJPEG.
                  */
@@ -213,7 +213,7 @@ mfxDefaultAllocatorVAAPI::AllocFramesHW(
                     surfaceAttrib[attribCnt].value.type      = VAGenericValueTypeInteger;
                     surfaceAttrib[attribCnt++].value.value.i = VA_SURFACE_ATTRIB_USAGE_HINT_ENCODER;
                 }
-#endif
+
                 va_res = vaCreateSurfaces(pSelf->pVADisplay,
                                     format,
                                     request->Info.Width, request->Info.Height,

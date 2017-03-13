@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2006-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2006-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_JPEG_DDI_H
@@ -101,4 +101,4 @@ typedef struct tagJPEG_DECODE_QUERY_STATUS
     USHORT      reserved16bits;
 } JPEG_DECODE_QUERY_STATUS;
 
-#endif __UMC_JPEG_DDI_H
+#endif // __UMC_JPEG_DDI_H

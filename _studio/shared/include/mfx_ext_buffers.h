@@ -15,6 +15,12 @@
 #include "mfx_config.h"
 #include "vm_strings.h"
 
+#ifdef OPEN_SOURCE
+enum {
+    MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET = MFX_MEMTYPE_RESERVED2
+};
+#endif // OPEN_SOURCE
+
 #ifdef MFX_DEBUG_TOOLS
 // internal(undocumented) handles for VideoCORE::SetHandle
 #define MFX_HANDLE_TIMING_LOG       ((mfxHandleType)1001)

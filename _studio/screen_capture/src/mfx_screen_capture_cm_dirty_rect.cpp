@@ -141,7 +141,7 @@ mfxStatus CmDirtyRectFilter::Init(const mfxVideoParam* par, bool isSysMem, bool 
         result = CreateCmDevice(m_pCMDevice,version,(ID3D11Device*) m_mfxDeviceHdl);
     else
         return MFX_ERR_UNKNOWN;
-#else if defined(LINUX32) || defined (LINUX64)
+#elif defined(LINUX32) || defined (LINUX64)
     unsupported;
 #endif
 

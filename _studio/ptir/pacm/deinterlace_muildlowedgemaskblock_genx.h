@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef _BUILD_LOW_EDGE_MASK_BLOCK_GENX_H_
@@ -197,4 +197,4 @@ void _GENX_MAIN_ cmk_FilterMask_Main_Block(SurfaceIndex surfIn, SurfaceIndex sur
     cmk_FilterMask_Main_Block_Plane<BLOCK_WIDTH, BLOCK_HEIGHT, BotBase, GENX_SURFACE_Y_PLANE, 1, 0>(surfIn, surfBadMC, Height, Width);
 }
 
-#endif _BUILD_LOW_EDGE_MASK_BLOCK_GENX_H_
+#endif // _BUILD_LOW_EDGE_MASK_BLOCK_GENX_H_

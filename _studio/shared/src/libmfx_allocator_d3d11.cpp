@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2017 Intel Corporation. All Rights Reserved.
 //
 
 #if defined (MFX_VA)
@@ -182,13 +182,11 @@ mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocReq
     Desc.SampleDesc.Count = 1;
     Desc.Usage = D3D11_USAGE_DEFAULT;
 
-#ifndef MFX_SURFACE_ENCODER_TARGET_DISABLE
     if((request->Type&MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET) && (request->Type & MFX_MEMTYPE_INTERNAL_FRAME))
     {
         Desc.BindFlags = D3D11_BIND_VIDEO_ENCODER;
     }
     else
-#endif
         Desc.BindFlags = D3D11_BIND_DECODER;
 
 

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2012 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_VP8_DDI_H
@@ -130,4 +130,4 @@ The probabilities are adjusted when applicable.
 
 }; // namespace UMC
 
-#endif __UMC_VP8_DDI_H
+#endif // __UMC_VP8_DDI_H
