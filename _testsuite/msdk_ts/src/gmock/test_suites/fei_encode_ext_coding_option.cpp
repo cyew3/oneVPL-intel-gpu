@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2016 Intel Corporation.  All rights reserved.
+Copyright (C) 2016-2017 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -123,20 +123,69 @@ int TestSuite::RunTest(unsigned int id)
 
     m_pPar->AsyncDepth = 1; //limitation for FEI (from sample_fei)
 
+    mfxU32 numField = 1;
+    if ((m_par.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_TFF) ||
+        (m_par.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_BFF)) {
+        numField = 2;
+    }
+
     SetFrameAllocator(m_session, m_pVAHandle);
     m_pFrameAllocator = m_pVAHandle;
 
+    mfxExtBuffer* bufCodOpt[1];
+
     mfxExtCodingOption ext_coding_option;
-    //init mfxExtCodingOption
+
+    //assign mfxExtCodingOption(mfxVideoParam)
     memset(&ext_coding_option, 0, sizeof(mfxExtCodingOption));
     ext_coding_option.Header.BufferId = MFX_EXTBUFF_CODING_OPTION;
     ext_coding_option.Header.BufferSz = sizeof(mfxExtCodingOption);
     ext_coding_option.AUDelimiter = tc.set_par.aud_delimiter;
-    mfxExtBuffer* buf[1];
-    buf[0] = (mfxExtBuffer*)&ext_coding_option;
+
+    bufCodOpt[0] = (mfxExtBuffer*)&ext_coding_option;
+
     m_par.NumExtParam = 1;
-    m_par.ExtParam = buf;
-    mfxExtCodingOption &tt = m_par;
+    m_par.ExtParam = bufCodOpt;
+
+    mfxExtBuffer* bufFrCtrl[2];
+
+    mfxExtFeiEncFrameCtrl feiEncCtrl[2];
+
+    mfxU32 fieldId = 0;
+
+    //assign ExtFeiEncFrameCtrl(mfxEncodeCtrl/runtime)
+    for (fieldId = 0; fieldId < numField; fieldId++) {
+
+        memset(&feiEncCtrl[fieldId], 0, sizeof(mfxExtFeiEncFrameCtrl));
+
+        feiEncCtrl[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_CTRL;
+        feiEncCtrl[fieldId].Header.BufferSz = sizeof(mfxExtFeiEncFrameCtrl);
+        feiEncCtrl[fieldId].SearchPath = 2;
+        feiEncCtrl[fieldId].LenSP = 57;
+        feiEncCtrl[fieldId].SubMBPartMask = 0;
+        feiEncCtrl[fieldId].MultiPredL0 = 0;
+        feiEncCtrl[fieldId].MultiPredL1 = 0;
+        feiEncCtrl[fieldId].SubPelMode = 3;
+        feiEncCtrl[fieldId].InterSAD = 2;
+        feiEncCtrl[fieldId].IntraSAD = 2;
+        feiEncCtrl[fieldId].DistortionType = 0;
+        feiEncCtrl[fieldId].RepartitionCheckEnable = 0;
+        feiEncCtrl[fieldId].AdaptiveSearch = 0;
+        feiEncCtrl[fieldId].MVPredictor = 0;
+        feiEncCtrl[fieldId].NumMVPredictors[0] = 1;
+        feiEncCtrl[fieldId].PerMBQp = 0;
+        feiEncCtrl[fieldId].PerMBInput = 0;
+        feiEncCtrl[fieldId].MBSizeCtrl = 0;
+        feiEncCtrl[fieldId].RefHeight = 32;
+        feiEncCtrl[fieldId].RefWidth = 32;
+        feiEncCtrl[fieldId].SearchWindow = 5;
+
+        bufFrCtrl[fieldId] = (mfxExtBuffer*)&feiEncCtrl[fieldId];
+    }
+
+    m_ctrl.NumExtParam = numField;
+    m_ctrl.ExtParam = bufFrCtrl;
+
     /*******************Init() and Encode() test**********************/
     g_tsStatus.expect(tc.sts_init);
     Init(m_session, m_pPar);
