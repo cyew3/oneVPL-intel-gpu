@@ -209,6 +209,7 @@ void MFXStructureRef <mfxExtCodingOption3>::ConstructValues() const
     SERIALIZE_POD_ARRAY(NumRefActiveBL1, 8);
     SERIALIZE_INT(ConstrainedIntraPredFlag);
     SERIALIZE_INT(TransformSkip);
+    SERIALIZE_INT(AdaptiveMaxFrameSize);
     SERIALIZE_INT(TargetChromaFormatPlus1);
     SERIALIZE_INT(TargetBitDepthLuma);
     SERIALIZE_INT(TargetBitDepthChroma);

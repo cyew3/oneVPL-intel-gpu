@@ -380,6 +380,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_EXT_OPTION3(TargetBitDepthChroma,       OPT_UINT_32,   "Encoding target bit depth for chroma samples (by default same as source one)"),
         HANDLE_EXT_OPTION3(BRCPanicMode,               OPT_TRI_STATE, "BRC panic mode control"),
         HANDLE_EXT_OPTION3(LowDelayBRC,                OPT_TRI_STATE, ""),
+        HANDLE_EXT_OPTION3(AdaptiveMaxFrameSize,       OPT_TRI_STATE, ""),
 
         // mfxExtCodingOptionDDI
         HANDLE_DDI_OPTION(IntraPredCostType,       OPT_UINT_16,    "1=SAD, 2=SSD, 4=SATD_HADAMARD, 8=SATD_HARR"),
@@ -981,6 +982,44 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
 
             pExt->LowDelayBRC = (mfxU16)(on ? MFX_CODINGOPTION_ON : MFX_CODINGOPTION_OFF);
             m_ExtBuffers.get()->push_back(pExt);
+            argv++;
+        }
+        else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-AdaptiveMaxFrameSize"), VM_STRING("on/1/16, off/0/32")))
+        {
+            MFX_CHECK(1 + argv != argvEnd);
+
+            mfxU16 value = MFX_CODINGOPTION_UNKNOWN;
+            if (!vm_string_stricmp(argv[1], VM_STRING("on")) || !vm_string_stricmp(argv[1], VM_STRING("1")) || !vm_string_stricmp(argv[1], VM_STRING("16")))
+            {
+                value = MFX_CODINGOPTION_ON;
+            }
+            else if (!vm_string_stricmp(argv[1], VM_STRING("off")) || !vm_string_stricmp(argv[1], VM_STRING("0")) || !vm_string_stricmp(argv[1], VM_STRING("32")))
+            {
+                value = MFX_CODINGOPTION_OFF;
+            }
+            else
+            {
+                MFX_CHECK_SET_ERR(!VM_STRING("Wrong OPT_TRI_STATE"), PE_CHECK_PARAMS, MFX_ERR_UNKNOWN);
+            }
+
+            mfxExtCodingOption3 *pExt = NULL;
+            MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_CODING_OPTION3);
+
+            if (!ppExt)
+            {
+                pExt = new mfxExtCodingOption3();
+
+                pExt->Header.BufferId = MFX_EXTBUFF_CODING_OPTION3;
+                pExt->Header.BufferSz = sizeof(mfxExtCodingOption3);
+            }
+            else
+            {
+                pExt = reinterpret_cast<mfxExtCodingOption3 *>(ppExt->get());
+            }
+
+            pExt->AdaptiveMaxFrameSize = value;
+            m_ExtBuffers.get()->push_back(pExt);
+
             argv++;
         }
         else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-MaxSliceSize"), VM_STRING("")))
