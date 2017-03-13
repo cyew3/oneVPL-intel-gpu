@@ -167,13 +167,13 @@ mfxStatus CheckHeaders(
     MFX_CHECK_COND(
            par.m_sps.log2_min_luma_coding_block_size_minus3 == 0
         && par.m_sps.separate_colour_plane_flag == 0
-        && par.m_sps.sample_adaptive_offset_enabled_flag == 0
         && par.m_sps.pcm_enabled_flag == 0);
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN10)
     MFX_CHECK_COND(par.m_sps.amp_enabled_flag == 1);
 #else
     MFX_CHECK_COND(par.m_sps.amp_enabled_flag == 0);
+    MFX_CHECK_COND(par.m_sps.sample_adaptive_offset_enabled_flag == 0);
 #endif
 
 #if !defined(PRE_SI_TARGET_PLATFORM_GEN11)
@@ -327,12 +327,12 @@ ENCODE_PACKEDHEADER_DATA* DDIHeaderPacker::PackHeader(Task const & task, mfxU32 
     return &*m_cur;
 }
 
-ENCODE_PACKEDHEADER_DATA* DDIHeaderPacker::PackSliceHeader(Task const & task, mfxU32 id, mfxU32* qpd_offset)
+ENCODE_PACKEDHEADER_DATA* DDIHeaderPacker::PackSliceHeader(Task const & task, mfxU32 id, mfxU32* qpd_offset, mfxU32* sao_offset)
 {
     bool is1stNALU = (id == 0 && task.m_insertHeaders == 0);
     NewHeader();
 
-    m_packer.GetSSH(task, id, m_cur->pData, m_cur->DataLength, qpd_offset);
+    m_packer.GetSSH(task, id, m_cur->pData, m_cur->DataLength, qpd_offset, sao_offset);
     m_cur->BufferSize = m_cur->DataLength;
     m_cur->SkipEmulationByteCount = 3 + is1stNALU;
     m_cur->DataLength *= 8;

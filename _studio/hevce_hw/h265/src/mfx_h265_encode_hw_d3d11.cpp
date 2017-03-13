@@ -566,13 +566,16 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, 
             }
 
         }
-        else {
-            pPH = PackSliceHeader(task, i, &m_slice[i].SliceQpDeltaBitOffset); assert(pPH);
+        else
+#else
+        {
+            pPH = PackSliceHeader(task, i, &m_slice[i].SliceQpDeltaBitOffset
+#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
+                , &m_slice[i].SliceSAOFlagBitOffset
+#endif //defined(PRE_SI_TARGET_PLATFORM_GEN10)
+            ); assert(pPH);
             ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDSLICEDATA, *pPH, 1);
         }
-#else
-        pPH = PackSliceHeader(task, i, &m_slice[i].SliceQpDeltaBitOffset); assert(pPH);
-        ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDSLICEDATA, *pPH, 1);
 #endif
     }
 

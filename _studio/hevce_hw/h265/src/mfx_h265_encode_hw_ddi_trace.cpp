@@ -434,8 +434,10 @@ DECL_END
 DECL_START(ENCODE_SET_SLICE_HEADER_HEVC)
     TRACE("%d", slice_segment_address);
     TRACE("%d", NumLCUsInSlice);
+#pragma warning(disable:4477)
     TRACE_ARRAY_ROW("%d", RefPicList[0], 15);
     TRACE_ARRAY_ROW("%d", RefPicList[1], 15);
+#pragma warning(default:4477)
     TRACE("%d", num_ref_idx_l0_active_minus1);
     TRACE("%d", num_ref_idx_l1_active_minus1);
     TRACE("%d", bLastSliceOfPic                     );
@@ -469,6 +471,10 @@ DECL_START(ENCODE_SET_SLICE_HEADER_HEVC)
     TRACE("%d", slice_id);
     //TRACE("%d", MaxSlizeSizeInBytes);
     TRACE("%d", SliceQpDeltaBitOffset);
+
+#if (HEVCE_DDI_VERSION >= 966)
+    TRACE("%d", SliceSAOFlagBitOffset);
+#endif
 DECL_END
 #undef FIELD_FORMAT
 
@@ -487,7 +493,8 @@ DECL_START(ENCODE_EXECUTE_PARAMS)
     TRACE("%d", NumCompBuffers);
     TRACE("%p", pCompressedBuffers);
     TRACE("%p", pCipherCounter);
-    TRACE("%d", PavpEncryptionMode);
+    TRACE("%d", PavpEncryptionMode.eEncryptionType);
+    TRACE("%d", PavpEncryptionMode.eCounterMode);
 
     TraceArray(b.pCompressedBuffers, b.NumCompBuffers);
 DECL_END
@@ -496,7 +503,7 @@ DECL_END
 #define FIELD_FORMAT "%-28s"
 DECL_START(ENCODE_QUERY_STATUS_PARAMS)
     TRACE("%d", StatusReportFeedbackNumber);
-    TRACE("%d", CurrOriginalPic); 
+    TRACE("%d", CurrOriginalPic.bPicEntry); 
     TRACE("%d", field_pic_flag); 
     TRACE("%d", bStatus);
     TRACE("%d", Func);

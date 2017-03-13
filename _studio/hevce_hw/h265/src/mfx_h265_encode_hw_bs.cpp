@@ -2001,7 +2001,8 @@ void HeaderPacker::PackSSH(
     SPS   const &    sps,
     PPS   const &    pps,
     Slice const &    slice,
-    mfxU32*          qpd_offset)
+    mfxU32*          qpd_offset,
+    mfxU32*          sao_offset)
 {
     const mfxU8 B = 0, P = 1/*, I = 2*/;
     mfxU32 MaxCU = (1<<(sps.log2_min_luma_coding_block_size_minus3 + 3 + sps.log2_diff_max_min_luma_coding_block_size));
@@ -2089,6 +2090,9 @@ void HeaderPacker::PackSSH(
 
         if (sps.sample_adaptive_offset_enabled_flag)
         {
+            if (sao_offset)
+                *sao_offset = bs.GetOffset();
+
             bs.PutBit(slice.sao_luma_flag);
             bs.PutBit(slice.sao_chroma_flag);
         }
@@ -2753,7 +2757,7 @@ void HeaderPacker::GetSuffixSEI(Task const & task, mfxU8*& buf, mfxU32& sizeInBy
     }
 }
 
-void HeaderPacker::GetSSH(Task const & task, mfxU32 id, mfxU8*& buf, mfxU32& sizeInBytes, mfxU32* qpd_offset)
+void HeaderPacker::GetSSH(Task const & task, mfxU32 id, mfxU8*& buf, mfxU32& sizeInBytes, mfxU32* qpd_offset, mfxU32* sao_offset)
 {
     BitstreamWriter& rbsp = m_bs;
     bool LongStartCode = (id == 0 && task.m_insertHeaders == 0) || IsOn(m_par->m_ext.DDI.LongStartCodes);
@@ -2771,10 +2775,12 @@ void HeaderPacker::GetSSH(Task const & task, mfxU32 id, mfxU8*& buf, mfxU32& siz
 
     buf = m_bs.GetStart() + CeilDiv(rbsp.GetOffset(), 8);
 
-    PackSSH(rbsp, nalu, m_par->m_sps, m_par->m_pps, sh, qpd_offset);
+    PackSSH(rbsp, nalu, m_par->m_sps, m_par->m_pps, sh, qpd_offset, sao_offset);
 
     if (qpd_offset)
         *qpd_offset -= (mfxU32)(buf - m_bs.GetStart()) * 8;
+    if (sao_offset)
+        *sao_offset -= (mfxU32)(buf - m_bs.GetStart()) * 8;
 
     sizeInBytes = CeilDiv(rbsp.GetOffset(), 8) - (mfxU32)(buf - m_bs.GetStart());
 }

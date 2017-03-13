@@ -946,6 +946,9 @@ void InheritDefaultValues(
     InheritOption(extHEVCInit->GeneralConstraintFlags,  extHEVCReset->GeneralConstraintFlags);
     //InheritOption(extHEVCInit->PicHeightInLumaSamples,  extHEVCReset->PicHeightInLumaSamples);
     //InheritOption(extHEVCInit->PicWidthInLumaSamples,   extHEVCReset->PicWidthInLumaSamples);
+#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
+    InheritOption(extHEVCInit->SampleAdaptiveOffset, extHEVCReset->SampleAdaptiveOffset);
+#endif
 
     mfxExtHEVCTiles const * extHEVCTilInit  = &parInit.m_ext.HEVCTiles;
     mfxExtHEVCTiles *       extHEVCTilReset = &parReset.m_ext.HEVCTiles;
@@ -1031,6 +1034,63 @@ inline bool isInVideoMem(MfxVideoParam const & par)
     return (par.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY)
         || ((par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY) && (par.m_ext.Opaque.In.Type == MFX_IOPATTERN_IN_VIDEO_MEMORY));
 }
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
+
+inline bool isSAOSupported(MfxVideoParam const & par)
+{
+    /* On Gen10 VDEnc, this flag should be set to 0 when SliceSizeControl flag is on.
+    On Gen10/CNL both VDEnc and VME, this flag should be set to 0 for 10-bit encoding.
+    On CNL+, this flag should be set to 0 for max LCU size is 16x16 */
+    if (   par.m_platform.CodeName < MFX_PLATFORM_CANNONLAKE
+        || par.LCUSize == 16
+        || (   par.m_platform.CodeName == MFX_PLATFORM_CANNONLAKE
+            && (
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+                   (par.m_ext.CO3.TargetBitDepthLuma == 10)
+#else
+                   (   par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10
+                    || par.mfx.FrameInfo.BitDepthLuma == 10
+                    || par.mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
+#endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
+                || (IsOn(par.mfx.LowPower) && (par.m_ext.CO2.MaxSliceSize != 0)))))
+    {
+        return false;
+    }
+    return true;
+}
+
+namespace TUDefault
+{
+    inline mfxU16 TU(mfxU16 tu)
+    {
+        return tu ? Clip3<mfxU16>(1, 7, tu) : 4;
+    }
+
+    mfxU16 SAO(mfxU16 tu)
+    {
+        static const mfxU16 tumap[7] =
+        {
+            /*1*/   MFX_SAO_ENABLE_LUMA | MFX_SAO_ENABLE_CHROMA,
+            /*2*/   MFX_SAO_ENABLE_LUMA,
+            /*3*/   MFX_SAO_ENABLE_LUMA,
+            /*4*/   MFX_SAO_ENABLE_LUMA,
+            /*5*/   MFX_SAO_UNKNOWN,
+            /*6*/   MFX_SAO_UNKNOWN,
+            /*7*/   MFX_SAO_UNKNOWN //don't use by default but allow user to use per-frame
+        };
+
+        return tumap[TU(tu) - 1];
+    }
+
+    inline mfxU16 SAO(MfxVideoParam const & par)
+    {
+        return isSAOSupported(par) ? SAO(par.mfx.TargetUsage) : MFX_SAO_DISABLE;
+    }
+
+} //namespace TUDefault
+
+#endif //defined(PRE_SI_TARGET_PLATFORM_GEN10)
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
 
@@ -1990,7 +2050,27 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         changed += CheckRangeDflt(CO2.MaxQPB, 0, 0, 0);    
     }
 
-     sts = CheckProfile(par);
+#if defined (PRE_SI_TARGET_PLATFORM_GEN10)
+    if (isSAOSupported(par))
+    {
+        changed += CheckOption(par.m_ext.HEVCParam.SampleAdaptiveOffset
+            , (mfxU16)MFX_SAO_UNKNOWN
+            , (mfxU16)MFX_SAO_DISABLE
+            , (mfxU16)MFX_SAO_ENABLE_LUMA
+            , (mfxU16)MFX_SAO_ENABLE_CHROMA
+            , (mfxU16)(MFX_SAO_ENABLE_LUMA | MFX_SAO_ENABLE_CHROMA)
+        );
+    }
+    else
+    {
+        changed += CheckOption(par.m_ext.HEVCParam.SampleAdaptiveOffset
+            , (mfxU16)MFX_SAO_UNKNOWN
+            , (mfxU16)MFX_SAO_DISABLE
+        );
+    }
+#endif //defined (PRE_SI_TARGET_PLATFORM_GEN10)
+
+    sts = CheckProfile(par);
 
     if (sts >= MFX_ERR_NONE && par.mfx.CodecLevel > 0)  // QueryIOSurf, Init or Reset
     {
@@ -2393,7 +2473,10 @@ void SetDefaults(
 #if defined(PRE_SI_TARGET_PLATFORM_GEN10)
     if (!CO3.TransformSkip)
         CO3.TransformSkip = MFX_CODINGOPTION_OFF;
-#endif
+
+    if (!par.m_ext.HEVCParam.SampleAdaptiveOffset)
+        par.m_ext.HEVCParam.SampleAdaptiveOffset = TUDefault::SAO(par);
+#endif //defined(PRE_SI_TARGET_PLATFORM_GEN10)
 
     if (CO3.EnableMBQP == 0)
     {

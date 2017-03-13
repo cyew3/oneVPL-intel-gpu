@@ -1366,7 +1366,7 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
     m_sps.scaling_list_enabled_flag                = 0;
 #ifdef PRE_SI_TARGET_PLATFORM_GEN10
     m_sps.amp_enabled_flag                         = 1; // only 1
-    m_sps.sample_adaptive_offset_enabled_flag      = 0; // 0, 1 TODO: add API mapping when ready
+    m_sps.sample_adaptive_offset_enabled_flag      = !(m_ext.HEVCParam.SampleAdaptiveOffset & MFX_SAO_DISABLE);
 #else  //PRE_SI_TARGET_PLATFORM_GEN10
     m_sps.amp_enabled_flag                         = 0; // SKL
     m_sps.sample_adaptive_offset_enabled_flag      = 0; // SKL
@@ -2039,8 +2039,16 @@ mfxStatus MfxVideoParam::GetSliceHeader(Task const & task, Task const & prevTask
 
     if (m_sps.sample_adaptive_offset_enabled_flag)
     {
+#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
+        mfxExtHEVCParam* rtHEVCParam = ExtBuffer::Get(task.m_ctrl);
+        mfxU16 FrameSAO = rtHEVCParam ? rtHEVCParam->SampleAdaptiveOffset : m_ext.HEVCParam.SampleAdaptiveOffset;
+
+        s.sao_luma_flag   = !!(FrameSAO & MFX_SAO_ENABLE_LUMA);
+        s.sao_chroma_flag = !!(FrameSAO & MFX_SAO_ENABLE_CHROMA);
+#else
         s.sao_luma_flag   = 0;
         s.sao_chroma_flag = 0;
+#endif
     }
 
     if (isP || isB)

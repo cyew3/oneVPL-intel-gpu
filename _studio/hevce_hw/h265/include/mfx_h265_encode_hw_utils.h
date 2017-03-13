@@ -482,11 +482,15 @@ namespace ExtBuffer
         _NO_CHECK();
     }
 
-    inline void   CopySupportedParams(mfxExtHEVCParam& buf_dst, mfxExtHEVCParam& buf_src)
+    inline void CopySupportedParams(mfxExtHEVCParam& buf_dst, mfxExtHEVCParam& buf_src)
     {
         _CopyPar1(PicWidthInLumaSamples);
         _CopyPar1(PicHeightInLumaSamples);
+#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
+        _CopyPar1(SampleAdaptiveOffset);
+#endif //defined(PRE_SI_TARGET_PLATFORM_GEN10)
     }
+
     inline void  CopySupportedParams(mfxExtHEVCTiles& buf_dst, mfxExtHEVCTiles& buf_src)
     {
         _CopyPar1(NumTileRows);

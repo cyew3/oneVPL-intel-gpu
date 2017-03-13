@@ -821,6 +821,7 @@ void MFXStructureRef <mfxExtHEVCParam>::ConstructValues () const
 {
     SERIALIZE_INT(PicWidthInLumaSamples);
     SERIALIZE_INT(PicHeightInLumaSamples);
+    SERIALIZE_INT(SampleAdaptiveOffset);
 }
 
 void MFXStructureRef <mfxExtBuffer>:: ConstructValues () const {
