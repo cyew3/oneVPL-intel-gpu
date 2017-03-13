@@ -3699,7 +3699,7 @@ mfxStatus VideoDECODEMPEG2Internal_SW::DecodeFrameCheck(mfxBitstream *bs,
 
         isField = !m_implUmc->IsFramePictureStructure(m_task_num);
 
-        if (m_task_num > DPB && !isField)
+        if (m_task_num > (isField?2*DPB-1:DPB))
         {
             return MFX_ERR_UNDEFINED_BEHAVIOR;
         }
@@ -3707,6 +3707,7 @@ mfxStatus VideoDECODEMPEG2Internal_SW::DecodeFrameCheck(mfxBitstream *bs,
         if ((false == isField || (true == isField && !(dec_field_count & 1))))
         {
             curr_index = m_task_num;
+
             next_index = m_implUmc->GetNextDecodingIndex(curr_index);
             prev_index = m_implUmc->GetPrevDecodingIndex(curr_index);
 

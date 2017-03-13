@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -1108,6 +1108,7 @@ void VideoDECODEVP8_HW::DecodeInitDequantization(MFX_VP8_BoolDecoder &dec)
       free(m_frame_info.blContextUp); \
       \
     m_frame_info.blContextUp = (Ipp8u*)malloc(mbPerRow * mbPerCol * sizeof(vp8_MbInfo)); \
+    if (!m_frame_info.blContextUp) { return MFX_ERR_MEMORY_ALLOC; } \
   } \
   m_frame_info.mbPerCol = mbPerCol; \
   m_frame_info.mbPerRow = mbPerRow; \
@@ -1370,6 +1371,8 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
             }
         }
     }
+
+    MFX_CHECK_NULL_PTR1(m_frame_info.blContextUp);
 
     memset(m_frame_info.blContextUp, 0, m_frame_info.mbPerRow*9);
 

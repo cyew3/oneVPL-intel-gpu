@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2005-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2005-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include <ipps.h>
@@ -37,6 +37,7 @@ Splitter *CreateMPEG2SplitterNT(void) { return (new Demuxer()); }
 Demuxer::Demuxer()
 {
     m_pParser = NULL;
+    m_uiTotalSize = 0;
 }
 
 Demuxer::~Demuxer()

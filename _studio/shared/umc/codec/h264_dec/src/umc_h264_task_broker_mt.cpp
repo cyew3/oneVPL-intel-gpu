@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -1583,8 +1583,8 @@ bool TaskBrokerTwoThread::GetFrameDeblockingTaskThreaded(H264DecoderFrameInfo * 
 /****************************************************************************************************/
 
 LocalResources::LocalResources()
-    : next_mb_tables(0)
-
+    : m_pMBMap(0)
+    , next_mb_tables(0)
     , m_ppMBIntraTypes(0)
     , m_piMBIntraProp(0)
     , m_pMBInfo(0)

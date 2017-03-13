@@ -507,8 +507,9 @@ mfxStatus ConvertVideoParamFromSPSPPS_H264enc( mfxVideoInternalParam *parMFX, UM
             parMFX->mfx.FrameInfo.AspectRatioW = seq_parms->vui_parameters.sar_width;
             parMFX->mfx.FrameInfo.AspectRatioH = seq_parms->vui_parameters.sar_height;
         } else {
-            //if(seq_parms->vui_parameters.aspect_ratio_idc==0 || seq_parms->vui_parameters.aspect_ratio_idc>=sizeof(tab_AspectRatio)/sizeof(tab_AspectRatio[0]) )
-            //  return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+            // Limit valid range of the vui_parameters.aspect_ratio_idc to 1..16
+            if(seq_parms->vui_parameters.aspect_ratio_idc==0 || seq_parms->vui_parameters.aspect_ratio_idc>=sizeof(tab_AspectRatio)/sizeof(tab_AspectRatio[0]) )
+              return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
             parMFX->mfx.FrameInfo.AspectRatioW = tab_AspectRatio[seq_parms->vui_parameters.aspect_ratio_idc][0];
             parMFX->mfx.FrameInfo.AspectRatioH = tab_AspectRatio[seq_parms->vui_parameters.aspect_ratio_idc][1];
         }
@@ -1244,11 +1245,10 @@ mfxStatus LoadSPSPPS(const mfxVideoParam* in, H264SeqParamSet& seq_parms, H264Pi
                 if(seq_parms.vui_parameters.aspect_ratio_idc == 255) {
                     seq_parms.vui_parameters.sar_width = (Ipp16u)BS_17BITS(16); BS_SKIP(16);
                     seq_parms.vui_parameters.sar_height = (Ipp16u)BS_17BITS(16); BS_SKIP(16);
-                    //} else {
-                    //  if(seq_parms.vui_parameters.aspect_ratio_idc==0 || seq_parms.vui_parameters.aspect_ratio_idc>=sizeof(tab_AspectRatio)/sizeof(tab_AspectRatio[0]) )
-                    //    BS_FREE_RETURN(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM)
-                    //  out->mfx.FrameInfo.AspectRatioW = tab_AspectRatio[tmp][0];
-                    //  out->mfx.FrameInfo.AspectRatioH = tab_AspectRatio[tmp][1];
+                } else {
+                    // Limit valid range of the vui_parameters.aspect_ratio_idc to 1..16
+                    if(seq_parms.vui_parameters.aspect_ratio_idc==0 || seq_parms.vui_parameters.aspect_ratio_idc>=sizeof(tab_AspectRatio)/sizeof(tab_AspectRatio[0]) )
+                       BS_FREE_RETURN(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM)
                 }
             }
             seq_parms.vui_parameters.overscan_info_present_flag = (Ipp8u)BS_BIT; BS_SKIP(1);

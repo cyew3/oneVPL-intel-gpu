@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2005-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2005-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_mpeg2ts_parser.h"
@@ -17,6 +17,7 @@ using namespace UMC;
 
 Mpeg2TsParser::Mpeg2TsParser()
 {
+    m_bPatWasChanged = false;
 }
 
 Status Mpeg2TsParser::Init(StreamParserParams &init)

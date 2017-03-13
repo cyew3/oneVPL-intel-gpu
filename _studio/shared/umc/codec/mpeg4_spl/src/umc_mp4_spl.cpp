@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include <ipps.h>
@@ -30,9 +30,11 @@ MP4Splitter::MP4Splitter():
     IndexSplitter(),
     m_pInitMoofThread(NULL),
     m_nFragPosEnd(0),
+    m_pFirstSegmentDuration(NULL),
     m_pLastPTS(NULL),
     m_bFlagStopInitMoof(false)
 {
+    memset(&m_headerMPEG4, 0, sizeof(m_headerMPEG4));
 }
 
 MP4Splitter::~MP4Splitter()
