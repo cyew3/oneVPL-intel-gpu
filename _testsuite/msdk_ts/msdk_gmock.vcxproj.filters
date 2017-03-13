@@ -898,5 +898,8 @@
     <ClCompile Include="src\gmock\test_suites\avce_sliding_window.cpp">
       <Filter>Source Files\test_suites\avce</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vp9e_segmentation.cpp">
+      <Filter>Source Files\test_suites\vp9e</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
