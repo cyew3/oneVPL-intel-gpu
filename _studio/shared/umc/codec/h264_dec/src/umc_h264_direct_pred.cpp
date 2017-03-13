@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -77,6 +77,9 @@ void H264SegmentDecoder::DecodeDirectMotionVectorsTemporal(bool is_direct_mb)
             m_cur_mb.LocalMacroblockInfo->sbdir[sb]=D_DIR_DIRECT;
             m_cur_mb.GlobalMacroblockInfo->sbtype[sb]=SBTYPE_8x8;
         }
+
+        m_cur_mb.GlobalMacroblockInfo->mbtype = MBTYPE_INTER_8x8;
+        return;
     }
 
     FactorArrayValue *pDistScaleFactorMV;
