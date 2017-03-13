@@ -376,10 +376,7 @@ void MFX_SW_TaskSupplier::AddFakeReferenceFrame(H264Slice * pSlice)
     pFrame->SetisShortTermRef(true, 0);
     pFrame->SetisShortTermRef(true, 1);
 
-    pFrame->SetSkipped(true);
-    pFrame->SetFullFrame(true);
-    pFrame->SetFrameExistFlag(false);
-    pFrame->m_isDecoded = 1;
+    pFrame->SetFrameAsNonExist();
     pFrame->DecrementReference();
 
     DefaultFill(pFrame, 2, false);
@@ -425,13 +422,10 @@ H264DecoderFrame * MFX_SW_TaskSupplier::GetFreeFrame(const H264Slice *pSlice)
     AutomaticUMCMutex guard(m_mGuard);
     Ipp32u view_id = pSlice ? pSlice->GetSliceHeader()->nal_ext.mvc.view_id : 0;
     ViewItem &view = GetView(view_id);
-    H264DecoderFrame *pFrame = 0;
 
     H264DBPList *pDPB = view.GetDPBList(0);
 
-    // Traverse list for next disposable frame
-    //if (m_pDecodedFramesList->countAllFrames() >= m_dpbSize + m_DPBSizeEx)
-    pFrame = pDPB->GetDisposable();
+    H264DecoderFrame *pFrame = pDPB->GetDisposable();
 
     VM_ASSERT(!pFrame || pFrame->GetRefCounter() == 0);
 
@@ -453,7 +447,6 @@ H264DecoderFrame * MFX_SW_TaskSupplier::GetFreeFrame(const H264Slice *pSlice)
 
     DecReferencePictureMarking::Remove(pFrame);
     pFrame->Reset();
-    pFrame->SetFrameExistFlag(true);
     pFrame->IncrementReference();
 
     if (view.pCurFrame == pFrame)

@@ -165,9 +165,14 @@ public:
         return m_IsFrameExist;
     }
 
-    void SetFrameExistFlag(bool isFrameExist)
+    void SetFrameAsNonExist()
     {
-        m_IsFrameExist = isFrameExist;
+        m_IsFrameExist = true;
+        m_isFull = true;
+        m_isSkipped = true;
+        m_isDecoded = 1;
+        m_wasOutputted = 1;
+        m_wasDisplayed = 1;
     }
 
     // m_pParsedFrameData's allocated size is remembered so that a
@@ -208,12 +213,15 @@ public:
     void UpdateErrorWithRefFrameStatus();
 
     bool        wasDisplayed()    { return m_wasDisplayed != 0; }
-    void        setWasDisplayed() { m_wasDisplayed = 1; }
+    void        setWasDisplayed() {
+        m_wasDisplayed = 1; 
+        DecrementReference();
+    }
 
     bool        wasOutputted()    { return m_wasOutputted != 0; }
     void        setWasOutputted();
 
-    bool        isDisposable()    { return (!IsFullFrame() || (m_wasOutputted && m_wasDisplayed)) && !GetRefCounter(); }
+    bool        isDisposable()    { return !GetRefCounter(); }
 
     // A decoded frame can be "disposed" if it is not an active reference
     // and it is not locked by the calling application and it has been

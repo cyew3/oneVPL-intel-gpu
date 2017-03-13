@@ -847,9 +847,7 @@ Status DecReferencePictureMarking::UpdateRefPicMarking(ViewItem &view, H264Decod
                 Ipp32s LongTermFrameIdx;
                 Ipp32s picNum;
                 H264DecoderFrame * pRefFrame = 0;
-#if 1
                 Ipp32s field = 0;
-#endif
 
                 switch (pAdaptiveMarkingInfo->mmco[arpmmf_idx])
                 {
@@ -859,23 +857,15 @@ Status DecReferencePictureMarking::UpdateRefPicMarking(ViewItem &view, H264Decod
                     picNum = pFrame->PicNum(field_index) -
                         (pAdaptiveMarkingInfo->value[arpmmf_idx*2] + 1);
 
-#if 1
                     pRefFrame = view.GetDPBList(0)->findShortTermPic(picNum, &field);
                     AddItemAndRun(pFrame, pRefFrame, UNSET_REFERENCE | SHORT_TERM | (field ? BOTTOM_FIELD : TOP_FIELD));
-#else
-                    pRefFrame = view.pDPB->freeShortTermRef(picNum);
-#endif
                     break;
                 case 2:
                     // mark a long-term picture as unused for reference
                     // value is long_term_pic_num
                     picNum = pAdaptiveMarkingInfo->value[arpmmf_idx*2];
-#if 1
                     pRefFrame = view.GetDPBList(0)->findLongTermPic(picNum, &field);
                     AddItemAndRun(pFrame, pRefFrame, UNSET_REFERENCE | LONG_TERM | (field ? BOTTOM_FIELD : TOP_FIELD));
-#else
-                    pRefFrame = view.pDPB->freeLongTermRef(picNum);
-#endif
                     break;
                 case 3:
 
@@ -886,7 +876,6 @@ Status DecReferencePictureMarking::UpdateRefPicMarking(ViewItem &view, H264Decod
                         (pAdaptiveMarkingInfo->value[arpmmf_idx*2] + 1);
                     LongTermFrameIdx = pAdaptiveMarkingInfo->value[arpmmf_idx*2+1];
 
-#if 1
                     pRefFrame = view.GetDPBList(0)->findShortTermPic(picNum, &field);
                     if (!pRefFrame)
                         break;
@@ -902,12 +891,6 @@ Status DecReferencePictureMarking::UpdateRefPicMarking(ViewItem &view, H264Decod
 
                     pRefFrame->setLongTermFrameIdx(LongTermFrameIdx);
                     pRefFrame->UpdateLongTermPicNum(pRefFrame->m_PictureStructureForRef >= FRM_STRUCTURE ? 2 : pRefFrame->m_bottom_field_flag[field]);
-#else
-                    // First free any existing LT reference with the LT idx
-                    pRefFrame = view.pDPB->freeLongTermRefIdx(LongTermFrameIdx, pRefFrame);
-
-                    view.pDPB->changeSTtoLTRef(picNum, LongTermFrameIdx);
-#endif
                     break;
                 case 4:
                     // Specify max long term frame idx
@@ -915,18 +898,12 @@ Status DecReferencePictureMarking::UpdateRefPicMarking(ViewItem &view, H264Decod
                     // Set to "no long-term frame indices" (-1) when value == 0.
                     view.MaxLongTermFrameIdx[0] = pAdaptiveMarkingInfo->value[arpmmf_idx*2] - 1;
 
-#if 1
                     pRefFrame = view.GetDPBList(0)->findOldLongTermRef(view.MaxLongTermFrameIdx[0]);
                     while (pRefFrame)
                     {
                         AddItemAndRun(pFrame, pRefFrame, UNSET_REFERENCE | LONG_TERM | FULL_FRAME);
                         pRefFrame = view.GetDPBList(0)->findOldLongTermRef(view.MaxLongTermFrameIdx[0]);
                     }
-#else
-                    // Mark any long-term reference frames with a larger LT idx
-                    // as unused for reference.
-                    view.pDPB->freeOldLongTermRef(view.MaxLongTermFrameIdx);
-#endif
                     break;
                 case 5:
                     // Mark all as unused for reference
@@ -970,21 +947,11 @@ Status DecReferencePictureMarking::UpdateRefPicMarking(ViewItem &view, H264Decod
                     // Value is long_term_frame_idx
                     LongTermFrameIdx = pAdaptiveMarkingInfo->value[arpmmf_idx*2];
                     bCurrentisST = false;
-
-#if 1
                     pRefFrame = view.GetDPBList(0)->findLongTermRefIdx(LongTermFrameIdx);
                     if (pRefFrame != pFrame)
                         AddItemAndRun(pFrame, pRefFrame, UNSET_REFERENCE | LONG_TERM | FULL_FRAME);
 
                     AddItemAndRun(pFrame, pFrame, SET_REFERENCE | LONG_TERM | (field_index ? BOTTOM_FIELD : TOP_FIELD));
-
-#else
-                    // First free any existing LT reference with the LT idx
-                    pRefFrame = view.pDPB->freeLongTermRefIdx(LongTermFrameIdx, pFrame);
-
-                    // Mark current
-                    pFrame->SetisLongTermRef(true, field_index);
-#endif
                     pFrame->setLongTermFrameIdx(LongTermFrameIdx);
                     break;
                 case 0:
@@ -1034,11 +1001,7 @@ Status DecReferencePictureMarking::UpdateRefPicMarking(ViewItem &view, H264Decod
             SlideWindow(view, pSlice, field_index);
         }
 
-#if 1
         AddItemAndRun(pFrame, pFrame, SET_REFERENCE | SHORT_TERM | (field_index ? BOTTOM_FIELD : TOP_FIELD));
-#else
-        pFrame->SetisShortTermRef(true, field_index);
-#endif
     }
 
     return umcRes;
@@ -3062,18 +3025,8 @@ Status TaskSupplier::ProcessFrameNumGap(H264Slice *pSlice, Ipp32s field, Ipp32s 
         if (frame_num >= uMaxFrameNum)
             frame_num = 0;
 
-        // Set current as displayable and was outputted.
-        pFrame->SetFullFrame(true);
-        pFrame->SetSkipped(true);
-        pFrame->SetFrameExistFlag(false);
-        pFrame->m_isDecoded = 1;
+        pFrame->SetFrameAsNonExist();
         pFrame->DecrementReference();
-
-        if (dId != maxDId)
-        {
-            pFrame->setWasOutputted();
-            pFrame->setWasDisplayed();
-        }
     }   // while
 
     return UMC_OK;
@@ -3214,34 +3167,6 @@ H264DecoderFrame *TaskSupplier::GetAnyFrameToDisplay(bool force)
 
     return 0;
 }
-
-void TaskSupplier::SetFrameDisplayed(Ipp32s poc)
-{
-    ViewList::iterator iter = m_views.begin();
-    ViewList::iterator iter_end = m_views.end();
-    H264DecoderFrame *(toDisplay[2]) = {0, 0};
-    int idx = 0;
-
-    for (; iter != iter_end; iter++)
-    {
-        ViewItem &view = *iter;
-        H264DecoderFrame *pTmp = view.GetDPBList(0)->findOldestDisplayable(view.maxDecFrameBuffering);
-
-        if ((pTmp) &&
-            (pTmp->PicOrderCnt(0, 3) == poc))
-        {
-            if (2 > idx)
-            {
-                toDisplay[idx++] = pTmp;
-            }
-
-            pTmp->setWasOutputted();
-            pTmp->setWasDisplayed();
-        }
-    }
-
-
-} // void TaskSupplier::SetFrameDisplayed(Ipp32s poc)
 
 void TaskSupplier::SetMBMap(const H264Slice * , H264DecoderFrame *, LocalResources * )
 {
