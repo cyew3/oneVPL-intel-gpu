@@ -152,6 +152,7 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
 
         // validate input parameters
         sts = CheckParameters(toValidate, caps);
+        toValidate.SyncInternalParamToExternal();
 
         // copy validated parameters to [out]
         out->mfx = toValidate.mfx;
@@ -650,14 +651,17 @@ mfxStatus Plugin::ConfigTask(Task &task)
 {
     VP9FrameLevelParam frameParam = { };
     const VP9MfxVideoParam& curMfxPar = *task.m_pParam;
-    mfxStatus sts = SetFramesParams(curMfxPar, task, frameParam, m_pmfxCore);
+    mfxU16 forcedFrameType = task.m_ctrl.FrameType;
+    mfxU8 frameType = (mfxU8)((task.m_frameOrder % curMfxPar.mfx.GopPicSize) == 0 || (forcedFrameType & MFX_FRAMETYPE_I) ? KEY_FRAME : INTER_FRAME);
 
-    if (frameParam.frameType == KEY_FRAME)
+    if (frameType == KEY_FRAME)
     {
         m_frameOrderInGop = 0;
     }
 
     task.m_frameOrderInGop = m_frameOrderInGop;
+
+    mfxStatus sts = SetFramesParams(curMfxPar, task, frameType, frameParam, m_pmfxCore);
 
     task.m_pRecFrame = 0;
     task.m_pOutBs = 0;
@@ -669,6 +673,7 @@ mfxStatus Plugin::ConfigTask(Task &task)
         MFX_CHECK(task.m_pRawLocalFrame != 0, MFX_WRN_DEVICE_BUSY);
     }
     task.m_pRecFrame = m_reconFrames.GetFreeFrame();
+    task.m_pRecFrame->frameOrder = task.m_frameOrder;
     MFX_CHECK(task.m_pRecFrame != 0, MFX_WRN_DEVICE_BUSY);
 
     task.m_pOutBs = m_outBitstreams.GetFreeFrame();
@@ -918,6 +923,9 @@ inline void UpdatePictureHeader(mfxU32 frameLen, mfxU32 frameNum, mfxU8* pPictur
     memcpy_s(pPictureHeader, bufferSize, ivf_frame_header, sizeof (ivf_frame_header));
 };
 
+//#define SUPERFRAME_WA_MSDK
+
+
 mfxStatus Plugin::UpdateBitstream(
     Task & task)
 {
@@ -932,6 +940,16 @@ mfxStatus Plugin::UpdateBitstream(
     }
 
     mfxU32   bsSizeToCopy  = task.m_bsDataLength;
+
+#ifdef SUPERFRAME_WA_MSDK
+    // "SF" below stands for Superframe
+    const mfxU32 hiddenFrameSize = bsSizeToCopy - IVF_PIC_HEADER_SIZE_BYTES - (task.m_insertIVFSeqHeader ? IVF_SEQ_HEADER_SIZE_BYTES : 0);
+    const mfxU32 frameSizeLen = (CeilLog2(hiddenFrameSize) + 7) / 8;
+    const mfxU32 showFrameSize = 1;
+    const mfxU32 SFHeaderSize = 1;
+    const mfxU32 extraSizeForSF = showFrameSize + SFHeaderSize + 2 * frameSizeLen + SFHeaderSize;
+#endif
+
     mfxU32   bsSizeAvail   = task.m_pBitsteam->MaxLength - task.m_pBitsteam->DataOffset - task.m_pBitsteam->DataLength;
     mfxU8 *  bsData        = task.m_pBitsteam->Data + task.m_pBitsteam->DataOffset + task.m_pBitsteam->DataLength;
 
@@ -960,13 +978,62 @@ mfxStatus Plugin::UpdateBitstream(
     // mfxExtVP9CodingOption &opt = GetExtBufferRef(m_video);
     mfxExtCodingOptionDDI& opt = GetExtBufferRef(m_video);
 
+#ifdef SUPERFRAME_WA_MSDK
+    mfxU8* pEnd = bsData + bsSizeToCopy;
+    mfxU8* p = pEnd;
+
+    if (task.m_frameParam.showFrame == 0)
+    {
+        const mfxU8 frameMarker = 0x2 << 6;
+        const mfxU8 profile = 0x0 << 4;
+        const mfxU8 showExistingFrame = 0x1 << 3;
+        mfxU8 frameToShow = 0;
+        for (mfxU8 i = 0; i < DPB_SIZE; i++)
+        {
+            if (task.m_frameParam.refreshRefFrames[i] == 1)
+            {
+                frameToShow = i;
+                break;
+            }
+        }
+        const mfxU8 showFrame = frameMarker | profile | showExistingFrame | frameToShow;
+
+        const mfxU8 SFMarker = 0x06 << 5;
+        const mfxU8 bytesPerFrameSizeM1 = (static_cast<mfxU8>(frameSizeLen) - 1) << 3;
+        const mfxU8 framesInSuperFrameM1 = 1;
+        const mfxU8 superFrameHeader = SFMarker | bytesPerFrameSizeM1 | framesInSuperFrameM1;
+
+        *p = showFrame;
+        p++;
+
+        *p = superFrameHeader;
+        p++;
+
+        for (mfxU8 i = 0; i < frameSizeLen; i++)
+        {
+            *p = static_cast<mfxU8>(0xff & (hiddenFrameSize >> (8 * i)));
+            p++;
+        }
+
+        for (mfxU8 i = 0; i < frameSizeLen; i++)
+        {
+            *p = static_cast<mfxU8>(0xff & (showFrameSize >> (8 * i)));
+            p++;
+        }
+        *p = superFrameHeader;
+        p++;
+    }
+
+    task.m_pBitsteam->DataLength += static_cast<mfxU32>(p - pEnd);
+#endif
+
+    task.m_pBitsteam->DataLength += bsSizeToCopy;
+
     if (opt.WriteIVFHeaders != MFX_CODINGOPTION_OFF)
     {
         mfxU8 * pIVFPicHeader = task.m_insertIVFSeqHeader ? bsData + IVF_SEQ_HEADER_SIZE_BYTES : bsData;
-        UpdatePictureHeader(bsSizeToCopy - IVF_PIC_HEADER_SIZE_BYTES - (task.m_insertIVFSeqHeader ? IVF_SEQ_HEADER_SIZE_BYTES : 0), (mfxU32)task.m_frameOrder, pIVFPicHeader, bsSizeAvail - IVF_SEQ_HEADER_SIZE_BYTES);
+        UpdatePictureHeader(task.m_pBitsteam->DataLength - IVF_PIC_HEADER_SIZE_BYTES - (task.m_insertIVFSeqHeader ? IVF_SEQ_HEADER_SIZE_BYTES : 0), (mfxU32)task.m_frameOrder, pIVFPicHeader, bsSizeAvail - IVF_SEQ_HEADER_SIZE_BYTES);
     }
-
-    task.m_pBitsteam->DataLength += bsSizeToCopy;
 
     // Update bitstream fields
     task.m_pBitsteam->TimeStamp = task.m_timeStamp;

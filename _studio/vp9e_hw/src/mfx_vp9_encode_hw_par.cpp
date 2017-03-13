@@ -32,7 +32,8 @@ bool IsExtBufferSupportedInInit(mfxU32 id)
         || id == MFX_EXTBUFF_CODING_OPTION2
         || id == MFX_EXTBUFF_CODING_OPTION3
         || id == MFX_EXTBUFF_DDI // TODO: remove when IVFHeader will be added to API or disabled by default
-        || id == MFX_EXTBUFF_VP9_SEGMENTATION;
+        || id == MFX_EXTBUFF_VP9_SEGMENTATION
+        || id == MFX_EXTBUFF_VP9_TEMPORAL_LAYERS;
 }
 
 bool IsExtBufferSupportedInRuntime(mfxU32 id)
@@ -245,6 +246,24 @@ inline mfxStatus SetOrCopySupportedParams(mfxExtVP9Segmentation *pDst, mfxExtVP9
     return MFX_ERR_NONE;
 }
 
+inline mfxStatus SetOrCopySupportedParams(mfxExtVP9TemporalLayers *pDst, mfxExtVP9TemporalLayers const *pSrc = 0, bool zeroDst = true)
+{
+    MFX_CHECK_NULL_PTR1(pDst);
+
+    if (zeroDst)
+    {
+        ZeroExtBuffer(*pDst);
+    }
+
+    for (mfxU8 i = 0; i < MAX_NUM_TEMP_LAYERS_SUPPORTED; i++)
+    {
+        SET_OR_COPY_PAR_DONT_INHERIT(Layer[i].FrameRateScale);
+        SET_OR_COPY_PAR_DONT_INHERIT(Layer[i].TargetKbps);
+    }
+
+    return MFX_ERR_NONE;
+}
+
 mfxStatus SetSupportedParameters(mfxVideoParam & par)
 {
     par.AsyncDepth = 1;
@@ -278,6 +297,12 @@ mfxStatus SetSupportedParameters(mfxVideoParam & par)
     if (pOpt3 != 0)
     {
         SetOrCopySupportedParams(pOpt3);
+    }
+
+    mfxExtVP9TemporalLayers *pTL = GetExtBuffer(par);
+    if (pTL != 0)
+    {
+        SetOrCopySupportedParams(pTL);
     }
 
     return MFX_ERR_NONE;
@@ -373,6 +398,12 @@ void InheritDefaults(VP9MfxVideoParam& defaultsDst, VP9MfxVideoParam const & def
     {
         SetOrCopySupportedParams(pSegDst, pSegSrc);
     }
+
+    // inherit defaults from mfxExtVP9Segmentation
+    mfxExtVP9TemporalLayers* pTLDst = GetExtBuffer(defaultsDst);
+    mfxExtVP9TemporalLayers* pTLSrc = GetExtBuffer(defaultsSrc);
+    SetOrCopySupportedParams(pTLDst, pTLSrc, !defaultsDst.m_tempLayersBufPassed);
+
 }
 
 mfxStatus CleanOutUnsupportedParameters(VP9MfxVideoParam &par)
@@ -398,6 +429,14 @@ mfxStatus CleanOutUnsupportedParameters(VP9MfxVideoParam &par)
     mfxExtVP9Segmentation &segPar = GetExtBufferRef(par);
     SetOrCopySupportedParams(&segPar, &segTmp);
     if (memcmp(&segPar, &segTmp, sizeof(mfxExtVP9Segmentation)))
+    {
+        sts = MFX_ERR_UNSUPPORTED;
+    }
+
+    mfxExtVP9TemporalLayers &tlTmp = GetExtBufferRef(tmp);
+    mfxExtVP9TemporalLayers &tlPar = GetExtBufferRef(par);
+    SetOrCopySupportedParams(&tlPar, &tlTmp);
+    if (memcmp(&segPar, &segTmp, sizeof(mfxExtVP9TemporalLayers)))
     {
         sts = MFX_ERR_UNSUPPORTED;
     }
@@ -655,6 +694,18 @@ inline mfxStatus GetCheckStatus(Bool& changed, Bool& unsupported)
     return (changed == true) ? MFX_WRN_INCOMPATIBLE_VIDEO_PARAM : MFX_ERR_NONE;
 }
 
+inline void ConvertStatusToBools(Bool& changed, Bool& unsupported, mfxStatus sts)
+{
+    if (sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)
+    {
+        changed = true;
+    }
+    else if (sts == MFX_ERR_UNSUPPORTED)
+    {
+        unsupported = true;
+    }
+}
+
 mfxStatus CheckSegmentationParam(mfxExtVP9Segmentation& seg, mfxFrameInfo const & fi, ENCODE_CAPS_VP9 const & caps, mfxU16 QP)
 {
     Bool changed = false;
@@ -736,6 +787,114 @@ mfxStatus CheckSegmentationParam(mfxExtVP9Segmentation& seg, mfxFrameInfo const 
     }
 
     return GetCheckStatus(changed, unsupported);
+}
+
+mfxStatus CheckTemporalLayers(VP9MfxVideoParam& par, ENCODE_CAPS_VP9 const & caps)
+{
+    Bool changed = false;
+    Bool unsupported = false;
+
+    if (par.m_layerParam[0].Scale && par.m_layerParam[0].Scale != 1)
+    {
+        par.m_layerParam[0].Scale = 0;
+        unsupported = true;
+    }
+
+    mfxU8 i = 0;
+    mfxU16 prevScale = 0;
+    mfxU32 prevBitrate = 0;
+    par.m_numLayers = 0;
+    bool gapsInScales = false;
+
+    for (; i < MAX_NUM_TEMP_LAYERS_SUPPORTED; i++)
+    {
+        mfxU16& scale = par.m_layerParam[i].Scale;
+        mfxU32& bitrate = par.m_layerParam[i].targetKbps;
+
+        if (scale)
+        {
+            if (prevScale && (scale <= prevScale || scale % prevScale))
+            {
+                scale = 0;
+                unsupported = true;
+            }
+            else
+            {
+                prevScale = scale;
+            }
+        }
+        else
+        {
+            gapsInScales = true;
+        }
+
+        if (bitrate)
+        {
+            if (par.mfx.RateControlMethod &&
+                false == IsBitrateBasedBRC(par.mfx.RateControlMethod))
+            {
+                bitrate = 0;
+                changed = true;
+            }
+            else
+            {
+                if (caps.TemporalLayerRateCtrl == 0 || bitrate <= prevBitrate)
+                {
+                    bitrate = 0;
+                    unsupported = true;
+                }
+                else
+                {
+                    prevBitrate = bitrate;
+                }
+            }
+        }
+
+        if (scale && !gapsInScales)
+        {
+            par.m_numLayers++;
+        }
+    }
+
+    if (unsupported == true)
+    {
+        par.m_numLayers = 0;
+    }
+
+    if (par.m_numLayers)
+    {
+        mfxU16 temporalCycleLenght = par.m_layerParam[par.m_numLayers - 1].Scale;
+        if (par.mfx.GopPicSize && par.mfx.GopPicSize < temporalCycleLenght)
+        {
+            par.m_numLayers = 0;
+            i = 0;
+            changed = true;
+        }
+    }
+
+    for (; i < MAX_NUM_TEMP_LAYERS; i++)
+    {
+        if (par.m_layerParam[i].Scale != 0 ||
+            par.m_layerParam[i].targetKbps != 0)
+        {
+            Zero(par.m_layerParam[i]);
+            changed = true;
+        }
+    }
+
+    return GetCheckStatus(changed, unsupported);
+}
+
+inline mfxU16 MinRefsForTemporalLayers(mfxU16 numTL)
+{
+    if (numTL < 3)
+    {
+        return 1;
+    }
+    else
+    {
+        return numTL - 1;
+    }
 }
 
 mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
@@ -983,6 +1142,9 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         changed = true;
     }
 
+    mfxStatus tlSts = CheckTemporalLayers(par, caps);
+    ConvertStatusToBools(changed, unsupported, tlSts);
+
     mfxU16& brcMode = par.mfx.RateControlMethod;
 
     mfxExtCodingOption2& opt2 = GetExtBufferRef(par);
@@ -999,17 +1161,26 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
             par.mfx.BRCParamMultiplier = 0;
             unsupported = true;
         }
-        else if (brcMode == MFX_RATECONTROL_CBR
-                || brcMode == MFX_RATECONTROL_VBR)
+        else if (IsBitrateBasedBRC(brcMode))
         {
-            if ((brcMode == MFX_RATECONTROL_CBR  && par.m_maxKbps != par.m_targetKbps) ||
-                (brcMode == MFX_RATECONTROL_VBR  && par.m_maxKbps < par.m_targetKbps))
+            const mfxU32 bitrateForTopTempLayer = par.m_layerParam[par.m_numLayers - 1].targetKbps;
+            if (par.m_numLayers && bitrateForTopTempLayer &&
+                par.m_targetKbps && bitrateForTopTempLayer != par.m_targetKbps)
+            {
+                par.m_targetKbps = bitrateForTopTempLayer;
+                changed = true;
+            }
+
+            if ((brcMode == MFX_RATECONTROL_CBR  &&
+                par.m_maxKbps && par.m_maxKbps != par.m_targetKbps) ||
+                (brcMode == MFX_RATECONTROL_VBR  &&
+                    par.m_maxKbps && par.m_maxKbps < par.m_targetKbps))
             {
                 par.m_maxKbps = par.m_targetKbps;
                 changed = true;
             }
 
-            if (par.m_initialDelayInKb > par.m_bufferSizeInKb)
+            if (IsBufferBasedBRC(brcMode) && par.m_initialDelayInKb > par.m_bufferSizeInKb)
             {
                 par.m_initialDelayInKb = 0;
                 unsupported = true;
@@ -1040,6 +1211,12 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
                 par.mfx.QPB = 0;
                 changed = true;
             }
+
+            if (par.mfx.BRCParamMultiplier > 1)
+            {
+                par.mfx.BRCParamMultiplier = 1;
+                changed = true;
+            }
         }
         else if (brcMode == MFX_RATECONTROL_ICQ)
         {
@@ -1051,21 +1228,36 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         }
     }
 
-    // VP9 spec allows to store up to 8 reference frames.
-    // this VP9 implementation use maximum 3 of 8 so far.
-    // we don't need to allocate more if really only 3 are used.
-    if (par.mfx.NumRefFrame > DPB_SIZE_REAL)
-    {
-        par.mfx.NumRefFrame = DPB_SIZE_REAL;
-        changed = true;
-    }
 
-    if (par.mfx.TargetUsage)
+    if (par.m_numLayers == 0)
     {
-        if (par.mfx.TargetUsage != MFX_TARGETUSAGE_BEST_QUALITY &&
-            par.mfx.NumRefFrame > 2)
+        // VP9 spec allows to store up to 8 reference frames.
+        // this VP9 implementation use maximum 3 of 8 so far.
+        // we don't need to allocate more if really only 3 are used.
+        if (par.mfx.NumRefFrame > DPB_SIZE_REAL)
         {
-            par.mfx.NumRefFrame = 2;
+            par.mfx.NumRefFrame = DPB_SIZE_REAL;
+            changed = true;
+        }
+
+        // TargetUsage 4 and 7 don't support 3 reference frames
+        if (par.mfx.TargetUsage)
+        {
+            if (par.mfx.TargetUsage != MFX_TARGETUSAGE_BEST_QUALITY &&
+                par.mfx.NumRefFrame > 2)
+            {
+                par.mfx.NumRefFrame = 2;
+                changed = true;
+            }
+        }
+    }
+    else
+    {
+
+        if (par.mfx.NumRefFrame &&
+            par.mfx.NumRefFrame < MinRefsForTemporalLayers(par.m_numLayers))
+        {
+            par.mfx.NumRefFrame = MinRefsForTemporalLayers(par.m_numLayers);
             changed = true;
         }
     }
@@ -1139,14 +1331,7 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
     mfxExtVP9Segmentation& seg = GetExtBufferRef(par);
 
     mfxStatus segSts = CheckSegmentationParam(seg, par.mfx.FrameInfo, caps, 0);
-    if (segSts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)
-    {
-        changed = true;
-    }
-    else if (segSts == MFX_ERR_UNSUPPORTED)
-    {
-        unsupported = true;
-    }
+    ConvertStatusToBools(changed, unsupported, segSts);
 
     if (IsOn(opt2.MBBRC) && seg.NumSegments)
     {
@@ -1252,15 +1437,21 @@ mfxStatus SetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
     SetDefault(par.mfx.NumRefFrame, 1);
     SetDefault(par.mfx.BRCParamMultiplier, 1);
     SetDefault(par.mfx.RateControlMethod, MFX_RATECONTROL_CBR);
-    SetDefault(par.m_bufferSizeInKb, GetDefaultBufferSize(par));
     if (IsBufferBasedBRC(par.mfx.RateControlMethod))
     {
         SetDefault(par.m_initialDelayInKb, par.m_bufferSizeInKb / 2);
     }
     if (IsBitrateBasedBRC(par.mfx.RateControlMethod))
     {
+        if (par.m_numLayers)
+        {
+            const mfxU32 bitrateForTopTempLayer = par.m_layerParam[par.m_numLayers - 1].targetKbps;
+            SetDefault(par.m_targetKbps, bitrateForTopTempLayer);
+        }
         SetDefault(par.m_maxKbps, par.m_targetKbps);
     }
+
+    SetDefault(par.m_bufferSizeInKb, GetDefaultBufferSize(par));
 
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
     {
@@ -1317,7 +1508,17 @@ mfxStatus SetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
 
 mfxStatus CheckParametersAndSetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
 {
-    // check mandatory parameters
+    mfxStatus sts = MFX_ERR_NONE;
+
+    // check parameters defined by application
+    mfxStatus checkSts = MFX_ERR_NONE;
+    checkSts = CheckParameters(par, caps);
+    if (checkSts == MFX_ERR_UNSUPPORTED)
+    {
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+    }
+
+    // check presence of mandatory parameters
     // (1) resolution
     mfxFrameInfo const &fi = par.mfx.FrameInfo;
     if (fi.Width == 0 || fi.Height == 0)
@@ -1334,6 +1535,7 @@ mfxStatus CheckParametersAndSetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 c
     // (3) target bitrate
     if ((IsBitrateBasedBRC(par.mfx.RateControlMethod)
         || par.mfx.RateControlMethod == 0)
+        && par.m_numLayers == 0
         && par.m_targetKbps == 0)
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -1367,19 +1569,42 @@ mfxStatus CheckParametersAndSetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 c
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
-    mfxStatus sts = MFX_ERR_NONE;
-
-    // check parameters defined by application
-    mfxStatus checkSts = MFX_ERR_NONE;
-    checkSts = CheckParameters(par, caps);
-    if (checkSts == MFX_ERR_UNSUPPORTED)
+    // (7) At least one valid layer for temporal scalability
+    if (par.m_tempLayersBufPassed && par.m_numLayers == 0)
     {
-        return MFX_ERR_INVALID_VIDEO_PARAM;
+        mfxExtVP9TemporalLayers const & tl = GetExtBufferRef(par);
+        for (mfxU8 i = 0; i < MAX_NUM_TEMP_LAYERS_SUPPORTED; i++)
+        {
+            if (tl.Layer[i].FrameRateScale != 0)
+            {
+                return MFX_ERR_INVALID_VIDEO_PARAM;
+            }
+        }
     }
+
+    // (8) Bitrates for all temporal layers in case of bitrate-based BRC
+    if (par.m_numLayers &&
+        (IsBitrateBasedBRC(par.mfx.RateControlMethod) || par.mfx.RateControlMethod == 0))
+    {
+        for (mfxU8 i = 0; i < par.m_numLayers; i++)
+        {
+            if (par.m_layerParam[i].targetKbps == 0)
+            {
+                return MFX_ERR_INVALID_VIDEO_PARAM;
+            }
+        }
+    }
+
 
     // check non-mandatory parameters which require return of WARNING if not set
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP &&
         (par.mfx.QPI == 0 || par.mfx.QPP == 0))
+    {
+        checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+    }
+
+    if (IsBitrateBasedBRC(par.mfx.RateControlMethod) &&
+        par.m_numLayers && par.m_targetKbps == 0)
     {
         checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
     }

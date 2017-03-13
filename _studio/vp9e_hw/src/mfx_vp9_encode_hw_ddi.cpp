@@ -157,7 +157,7 @@ namespace MfxHwVP9Encode
 
         WriteBit(localBuf, 0);  // show_existing_frame
         WriteBit(localBuf, framePar.frameType);
-        WriteBit(localBuf, framePar.showFarme);
+        WriteBit(localBuf, framePar.showFrame);
         WriteBit(localBuf, framePar.errorResilentMode);
 
         if (framePar.frameType == KEY_FRAME) // Key frame
@@ -175,7 +175,7 @@ namespace MfxHwVP9Encode
         }
         else // Inter frame
         {
-            if (!framePar.showFarme)
+            if (!framePar.showFrame)
             {
                 WriteBit(localBuf, framePar.intraOnly);
             }

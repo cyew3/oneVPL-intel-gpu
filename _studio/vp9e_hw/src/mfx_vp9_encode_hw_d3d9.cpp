@@ -94,8 +94,23 @@ void FillSpsBuffer(
     if (IsBitrateBasedBRC(par.mfx.RateControlMethod))
     {
         mfxExtCodingOption2 opt2 = GetExtBufferRef(par);
-        sps.TargetBitRate[0] = par.m_targetKbps; // no support for temporal scalability. TODO: add support for temporal scalability
-        sps.MaxBitRate = par.m_maxKbps; // TODO: understand how to use MaxBitRate for temporal scalability
+        if (par.m_numLayers)
+        {
+            mfxExtVP9TemporalLayers const & tl = GetExtBufferRef(par);
+            for (mfxU16 i = 0; i < par.m_numLayers; i++)
+            {
+                assert(tl.Layer[i].FrameRateScale);
+                assert(tl.Layer[i].TargetKbps);
+                sps.TargetBitRate[i] = tl.Layer[i].TargetKbps;
+            }
+        }
+        else
+        {
+            sps.TargetBitRate[0] = par.m_targetKbps;
+        }
+
+        sps.MaxBitRate = par.m_maxKbps;
+
         if (IsOn(opt2.MBBRC))
         {
             sps.SeqFlags.fields.MBBRC = 1;
@@ -111,10 +126,40 @@ void FillSpsBuffer(
         sps.ICQQualityFactor = (mfxU8)par.mfx.ICQQuality; // it's guaranteed that ICQQuality is within range [0, 255]
     }
 
-    sps.FrameRate[0].Numerator   =  par.mfx.FrameInfo.FrameRateExtN; // no support for temporal scalability. TODO: add support for temporal scalability
-    sps.FrameRate[0].Denominator = par.mfx.FrameInfo.FrameRateExtD;  // no support for temporal scalability. TODO: add support for temporal scalability
+    mfxU32 nom = par.mfx.FrameInfo.FrameRateExtN;
+    mfxU32 denom = par.mfx.FrameInfo.FrameRateExtD;
 
-    sps.NumTemporalLayersMinus1 = 0;
+    if (par.m_numLayers)
+    {
+        mfxExtVP9TemporalLayers const & tl = GetExtBufferRef(par);
+        assert(tl.Layer[0].FrameRateScale == 1);
+        sps.FrameRate[par.m_numLayers - 1].Numerator = nom;
+        sps.FrameRate[par.m_numLayers - 1].Denominator = denom;
+
+        for (mfxU16 i = 1; i < par.m_numLayers; i++)
+        {
+            mfxU16 l2lRatio = tl.Layer[i].FrameRateScale / tl.Layer[i - 1].FrameRateScale;
+            assert(l2lRatio);
+            if (nom % l2lRatio == 0)
+            {
+                nom /= l2lRatio;
+            }
+            else
+            {
+                denom *= l2lRatio;
+            }
+
+            sps.FrameRate[par.m_numLayers - i - 1].Numerator = nom;
+            sps.FrameRate[par.m_numLayers - i - 1].Denominator = denom;
+        }
+    }
+    else
+    {
+        sps.FrameRate[0].Numerator = nom;
+        sps.FrameRate[0].Denominator = denom;
+    }
+
+    sps.NumTemporalLayersMinus1 = static_cast<mfxU8>(par.m_numLayers ? par.m_numLayers - 1 : 0);
 }
 
 mfxU32 MapSegIdBlockSizeToDDI(mfxU16 size)
@@ -217,10 +262,16 @@ void FillPpsBuffer(
     }
 
     pps.PicFlags.fields.frame_type           = framePar.frameType;
-    pps.PicFlags.fields.show_frame           = framePar.showFarme;
+    pps.PicFlags.fields.show_frame           = framePar.showFrame;
     pps.PicFlags.fields.error_resilient_mode = framePar.errorResilentMode;
     pps.PicFlags.fields.intra_only           = framePar.intraOnly;
     pps.PicFlags.fields.refresh_frame_context = framePar.refreshFrameContext;
+    pps.PicFlags.fields.frame_context_idx     = framePar.frameContextIdx;
+    pps.PicFlags.fields.allow_high_precision_mv = framePar.allowHighPrecisionMV;
+    if (pps.PicFlags.fields.show_frame == 0)
+    {
+        pps.PicFlags.fields.super_frame = 1;
+    }
     pps.PicFlags.fields.allow_high_precision_mv = framePar.allowHighPrecisionMV;
 
     pps.PicFlags.fields.segmentation_enabled = framePar.segmentation != NO_SEGMENTATION;
@@ -255,6 +306,8 @@ void FillPpsBuffer(
 
     pps.log2_tile_columns = framePar.log2TileCols;
     pps.log2_tile_rows    = framePar.log2TileRows;
+
+    pps.temporal_id = static_cast<mfxU8>(task.m_frameParam.temporalLayer);
 
     pps.StatusReportFeedbackNumber = task.m_taskIdForDriver;
 

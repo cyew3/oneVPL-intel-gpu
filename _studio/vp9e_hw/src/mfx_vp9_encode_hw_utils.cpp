@@ -9,6 +9,7 @@
 //
 
 #include "math.h"
+#include <map>
 #include "mfx_vp9_encode_hw_utils.h"
 
 #if defined (PRE_SI_TARGET_PLATFORM_GEN10)
@@ -58,10 +59,10 @@ void VP9MfxVideoParam::CalculateInternalParams()
     }
 
     m_targetKbps = m_maxKbps = m_bufferSizeInKb = m_initialDelayInKb = 0;
+    mfxU16 mult = MFX_MAX(mfx.BRCParamMultiplier, 1);
 
     if (IsBitrateBasedBRC(mfx.RateControlMethod))
     {
-        mfxU16 mult = MFX_MAX(mfx.BRCParamMultiplier, 1);
         m_targetKbps = mult * mfx.TargetKbps;
         m_maxKbps = mult * mfx.MaxKbps;
 
@@ -71,11 +72,22 @@ void VP9MfxVideoParam::CalculateInternalParams()
             m_initialDelayInKb = mult * mfx.InitialDelayInKB;
         }
     }
+
+    m_numLayers = 0;
+    for (mfxU16 i = 0; i < MAX_NUM_TEMP_LAYERS; i++)
+    {
+        if (m_extTempLayers.Layer[i].FrameRateScale)
+        {
+            m_numLayers++;
+        }
+        m_layerParam[i].Scale = m_extTempLayers.Layer[i].FrameRateScale;
+        m_layerParam[i].targetKbps = mult * m_extTempLayers.Layer[i].TargetKbps;
+    }
 }
 
 void VP9MfxVideoParam::SyncInternalParamToExternal()
 {
-    mfxU32 maxBrcVal32 = m_bufferSizeInKb; // buffer size is set by encoder for any BRC method
+    mfxU32 maxBrcVal32 = m_bufferSizeInKb;
 
     if (IsBitrateBasedBRC(mfx.RateControlMethod))
     {
@@ -85,11 +97,20 @@ void VP9MfxVideoParam::SyncInternalParamToExternal()
         {
             maxBrcVal32 = MFX_MAX(maxBrcVal32, m_initialDelayInKb);
         }
+
+        for (mfxU16 i = 0; i < MAX_NUM_TEMP_LAYERS; i++)
+        {
+            maxBrcVal32 = MFX_MAX(maxBrcVal32, m_layerParam[i].targetKbps);
+        }
     }
 
-    assert(maxBrcVal32);
+    mfxU16 mult = MFX_MAX(mfx.BRCParamMultiplier, 1);
 
-    mfxU16 mult = mfx.BRCParamMultiplier = mfxU16((maxBrcVal32 + 0x10000) / 0x10000);
+    if (maxBrcVal32)
+    {
+        mult = mfx.BRCParamMultiplier = static_cast<mfxU16>((maxBrcVal32 + 0x10000) / 0x10000);
+    }
+
     mfx.BufferSizeInKB = (mfxU16)CeilDiv(m_bufferSizeInKb, mult);
 
     if (IsBitrateBasedBRC(mfx.RateControlMethod))
@@ -101,6 +122,12 @@ void VP9MfxVideoParam::SyncInternalParamToExternal()
         {
             mfx.InitialDelayInKB = (mfxU16)CeilDiv(m_initialDelayInKb, mult);
         }
+    }
+
+    for (mfxU16 i = 0; i < MAX_NUM_TEMP_LAYERS; i++)
+    {
+        m_extTempLayers.Layer[i].FrameRateScale = m_layerParam[i].Scale;
+        m_extTempLayers.Layer[i].TargetKbps = static_cast<mfxU16>(CeilDiv(m_layerParam[i].targetKbps, mult));
     }
 }
 
@@ -118,6 +145,7 @@ void VP9MfxVideoParam::Construct(mfxVideoParam const & par)
     InitExtBufHeader(m_extOpt3);
     InitExtBufHeader(m_extOptDDI);
     InitExtBufHeader(m_extSeg);
+    InitExtBufHeader(m_extTempLayers);
 
     // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
     /*if (mfxExtVP9CodingOption * opts = GetExtBuffer(par))
@@ -142,6 +170,13 @@ void VP9MfxVideoParam::Construct(mfxVideoParam const & par)
         m_segBufPassed = true;
     }
 
+    m_tempLayersBufPassed = false;
+    if (mfxExtVP9TemporalLayers * opts = GetExtBuffer(par))
+    {
+        m_extTempLayers = *opts;
+        m_tempLayersBufPassed = true;
+    }
+
     // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
     // m_extParam[0] = &m_extOpt.Header;
     m_extParam[0] = &m_extOptDDI.Header;
@@ -149,6 +184,7 @@ void VP9MfxVideoParam::Construct(mfxVideoParam const & par)
     m_extParam[2] = &m_extOpt2.Header;
     m_extParam[3] = &m_extOpt3.Header;
     m_extParam[4] = &m_extSeg.Header;
+    m_extParam[5] = &m_extTempLayers.Header;
 
     ExtParam = m_extParam;
     NumExtParam = mfxU16(sizeof m_extParam / sizeof m_extParam[0]);
@@ -212,12 +248,12 @@ mfxStatus InitVp9SeqLevelParam(VP9MfxVideoParam const &video, VP9SeqLevelParam &
 
 mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
                           Task const & task,
+                          mfxU8 frameType,
                           VP9FrameLevelParam &frameParam,
                           mfxCoreInterface const * pCore)
 {
     Zero(frameParam);
-    mfxU16 forcedFrameType = task.m_ctrl.FrameType;
-    frameParam.frameType = (mfxU8)((task.m_frameOrder % par.mfx.GopPicSize) == 0 || (forcedFrameType & MFX_FRAMETYPE_I) ? KEY_FRAME : INTER_FRAME);
+    frameParam.frameType = frameType;
 
     // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
     //mfxExtCodingOptionVP9 const &opt = GetActualExtBufferRef(par, task.m_ctrl);
@@ -282,7 +318,7 @@ mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
         }
     }
 
-    frameParam.showFarme = 1;
+    frameParam.showFrame = 1;
     frameParam.intraOnly = 0;
 
     if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
@@ -292,21 +328,25 @@ mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
         frameParam.modeRefDeltaUpdate = 1;
     }
 
-    frameParam.resetFrameContext = 0;
+    mfxExtCodingOptionDDI const & extDdi = GetExtBufferRef(par);
+    if (extDdi.RefreshFrameContext)
+    {
+        frameParam.refreshFrameContext = IsOn(extDdi.RefreshFrameContext) ? 1 : 0;
+    }
+    else
+    {
+        // context switching isn't supported by driver now. So refresh_frame_context is disabled for temporal scalability
+        frameParam.refreshFrameContext = par.m_numLayers ? 0 : 1;
+    }
 #if defined (PRE_SI_TARGET_PLATFORM_GEN11)
     mfxPlatform platform;
     pCore->QueryPlatform(pCore->pthis, &platform);
     if (platform.CodeName == MFX_PLATFORM_ICELAKE)
     {
-        frameParam.refreshFrameContext = 0;  // ICL has a problems with HuC, so it's disabled by default. Need to disable refresh of CABAC contexts untill HuC is fixed.
-    }
-    else
-    {
-        frameParam.refreshFrameContext = 1;
+        frameParam.refreshFrameContext = 0; // refresh_frame_context is disabled by default because of ICL driver/HW limitation.
     }
 #else //PRE_SI_TARGET_PLATFORM_GEN11
     pCore;
-    frameParam.refreshFrameContext = 1;
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
 
     frameParam.allowHighPrecisionMV = 1;
@@ -316,6 +356,27 @@ mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
 
     frameParam.modeInfoRows = alignedWidth >> 3;
     frameParam.modeInfoCols = alignedHeight >> 3;
+
+    frameParam.temporalLayer = CalcTemporalLayerIndex(par, task.m_frameOrderInGop);
+    frameParam.nextTemporalLayer = CalcTemporalLayerIndex(par, task.m_frameOrderInGop + 1);
+
+    if (!IsOff(extDdi.SuperFrameForTS) && par.m_numLayers &&
+        frameParam.temporalLayer != frameParam.nextTemporalLayer)
+    {
+        frameParam.showFrame = 0;
+    }
+
+    if (IsOn(extDdi.ChangeFrameContextIdxForTS))
+    {
+        if (par.m_numLayers)
+        {
+            frameParam.frameContextIdx = static_cast<mfxU8>(frameParam.temporalLayer);
+        }
+        else
+        {
+            frameParam.frameContextIdx = static_cast<mfxU8>(task.m_frameOrder % 4);
+        }
+    }
 
     return MFX_ERR_NONE;
 }
@@ -330,42 +391,63 @@ mfxStatus DecideOnRefListAndDPBRefresh(VP9MfxVideoParam const & par, Task *pTask
 
     mfxU8 dpbSize = (mfxU8)dpb.size();
 
-    bool multiref = dpbSize > 1;
-    if (multiref == true)
+    if (par.m_numLayers < 2)
     {
-        frameParam.refList[REF_GOLD] = dpbSize - 1; // last DPB intry is always for LTR (= GOLD)
-        mfxU32 frameOrder = pTask->m_frameOrderInGop;
-        // for DPB size 2 LAST and ALT are both DBP[0]
-        // for DPB size 3 LAST and ALT alternate between DPB[0] and DPB[1]
-        if (dpbSize == 2)
+        // single layer
+        bool multiref = dpbSize > 1;
+        if (multiref == true)
         {
-            frameParam.refList[REF_LAST] = frameParam.refList[REF_ALT] = 0;
+            frameParam.refList[REF_GOLD] = dpbSize - 1; // last DPB intry is always for LTR (= GOLD)
+            mfxU32 frameOrder = pTask->m_frameOrderInGop;
+            // for DPB size 2 LAST and ALT are both DBP[0]
+            // for DPB size 3 LAST and ALT alternate between DPB[0] and DPB[1]
+            if (dpbSize == 2)
+            {
+                frameParam.refList[REF_LAST] = frameParam.refList[REF_ALT] = 0;
+            }
+            else
+            {
+                frameParam.refList[REF_LAST] = 1 - frameOrder % 2;
+                frameParam.refList[REF_ALT] = frameOrder % 2;
+            }
+
+            // DPB entry pointed by ALT is always refreshed with current frame
+            frameParam.refreshRefFrames[frameParam.refList[REF_ALT]] = 1;
+
+            mfxU32 frameRate = par.mfx.FrameInfo.FrameRateExtN / par.mfx.FrameInfo.FrameRateExtD;
+
+            if ((frameOrder % (frameRate / 2)) == 0 ||
+                (frameOrder % (frameRate / 2)) == frameRate / 4)
+            {
+                // behavior aligned with driver - 4 LTRs per second
+                frameParam.refreshRefFrames[frameParam.refList[REF_GOLD]] = 1;
+            }
         }
         else
         {
-            frameParam.refList[REF_LAST] = 1 - frameOrder % 2;
-            frameParam.refList[REF_ALT] = frameOrder % 2;
-        }
-
-        // DPB entry pointed by ALT is always refreshed with current frame
-        frameParam.refreshRefFrames[frameParam.refList[REF_ALT]] = 1;
-
-        mfxU32 frameRate = par.mfx.FrameInfo.FrameRateExtN / par.mfx.FrameInfo.FrameRateExtD;
-
-        if ((frameOrder % (frameRate / 2)) == 0 ||
-            (frameOrder % (frameRate / 2)) == frameRate / 4)
-        {
-            // behavior aligned with driver - 4 LTRs per second
-            frameParam.refreshRefFrames[frameParam.refList[REF_GOLD]] = 1;
+            // single ref:
+            // Last, Gold, Alt are pointing to DPB[0]
+            // current frame refreshes DPB[0]
+            frameParam.refList[REF_GOLD] = frameParam.refList[REF_ALT] = frameParam.refList[REF_LAST] = 0;
+            frameParam.refreshRefFrames[0] = 1;
         }
     }
     else
     {
-        // single ref:
-        // Last, Gold, Alt are pointing to DPB[0]
-        // current frame refreshes DPB[0]
-        frameParam.refList[REF_GOLD] = frameParam.refList[REF_ALT] = frameParam.refList[REF_LAST] = 0;
-        frameParam.refreshRefFrames[0] = 1;
+        // multiple temporal layers
+        std::map<mfxU32, mfxU32> FOs;
+        mfxU16 lastRefLayer = par.mfx.NumRefFrame >= par.m_numLayers ? par.m_numLayers - 1 : par.m_numLayers - 2;
+        for (mfxU32 i = 0; i <= frameParam.temporalLayer && i <= lastRefLayer; i++)
+        {
+            FOs.emplace(dpb[i]->frameOrder, i);
+        }
+
+        std::map<mfxU32, mfxU32>::reverse_iterator closest = FOs.rbegin();
+        for (mfxU8 ref = REF_LAST; ref < REF_TOTAL && closest != FOs.rend(); ref++, closest++)
+        {
+            frameParam.refList[ref] = static_cast<mfxU8>(closest->second);
+        }
+        frameParam.refreshRefFrames[frameParam.temporalLayer] = 1;
     }
 
     memset(&frameParam.refBiases[0], 0, REF_TOTAL);

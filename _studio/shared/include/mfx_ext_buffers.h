@@ -93,6 +93,9 @@ typedef struct {
     mfxU16 LCUSize;                 // 32 or 64 - overrides default value of Largest Coding Unit
 
     mfxU16 WriteIVFHeaders;         // tri-state
+    mfxU16 RefreshFrameContext;
+    mfxU16 ChangeFrameContextIdxForTS;
+    mfxU16 SuperFrameForTS;
 
 } mfxExtCodingOptionDDI;
 

@@ -63,6 +63,8 @@ namespace MfxHwVP9Encode
 #define MAX_ABS_Q_INDEX_DELTA 15
 
 #define MAX_TASK_ID 0xffff
+#define MAX_NUM_TEMP_LAYERS 8
+#define MAX_NUM_TEMP_LAYERS_SUPPORTED 4
 
 const mfxU16 segmentSkipMask = 0xf0;
 const mfxU16 segmentRefMask = 0x0f;
@@ -178,7 +180,7 @@ enum // identifies memory type at encoder input w/o any details
         mfxU16 modeInfoRows;
         mfxU8  allowHighPrecisionMV;
 
-        mfxU8  showFarme;
+        mfxU8  showFrame;
         mfxU8  intraOnly;
 
         mfxU8  lfLevel;
@@ -198,13 +200,16 @@ enum // identifies memory type at encoder input w/o any details
         mfxU8  frameContextIdx;
         mfxU8  log2TileCols;
         mfxU8  log2TileRows;
+
+        mfxU16  temporalLayer;
+        mfxU16  nextTemporalLayer;
     };
 
     struct sFrameEx
     {
         mfxFrameSurface1 *pSurface;
         mfxU32            idInPool;
-        mfxU8             QP;
+        mfxU32            frameOrder;
         mfxU8             refCount;
     };
 
@@ -245,6 +250,7 @@ enum // identifies memory type at encoder input w/o any details
     }
 
     inline mfxU32 CeilDiv(mfxU32 x, mfxU32 y) { return (x + y - 1) / y; }
+    inline mfxU32 CeilLog2(mfxU32 x) { mfxU32 l = 0; while (x > (1U << l)) l++; return l; }
 
     inline bool IsOn(mfxU16 opt)
     {
@@ -266,6 +272,7 @@ enum // identifies memory type at encoder input w/o any details
     BIND_EXTBUF_TYPE_TO_ID (mfxExtCodingOption3, MFX_EXTBUFF_CODING_OPTION3);
     BIND_EXTBUF_TYPE_TO_ID (mfxExtCodingOptionDDI, MFX_EXTBUFF_DDI);
     BIND_EXTBUF_TYPE_TO_ID (mfxExtVP9Segmentation, MFX_EXTBUFF_VP9_SEGMENTATION);
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtVP9TemporalLayers, MFX_EXTBUFF_VP9_TEMPORAL_LAYERS);
 #undef BIND_EXTBUF_TYPE_TO_ID
 
     template <class T> inline void InitExtBufHeader(T & extBuf)
@@ -491,9 +498,15 @@ template <typename T> mfxStatus RemoveExtBuffer(T & par, mfxU32 id)
         mfxU32             m_status;
     };
 
+    struct TempLayerParam
+    {
+        mfxU16 Scale;
+        mfxU32 targetKbps;
+    };
+
 // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
-// #define NUM_OF_SUPPORTED_EXT_BUFFERS 6 // mfxExtVP9CodingOption, mfxExtOpaqueSurfaceAlloc, mfxExtCodingOption2, mfxExtCodingOption3, mfxExtCodingOptionDDI, mfxExtVP9Segmentation
-#define NUM_OF_SUPPORTED_EXT_BUFFERS 5 // mfxExtOpaqueSurfaceAlloc, mfxExtCodingOption2, mfxExtCodingOption3, mfxExtCodingOptionDDI, mfxExtVP9Segmentation
+// #define NUM_OF_SUPPORTED_EXT_BUFFERS 7 // mfxExtVP9CodingOption, mfxExtOpaqueSurfaceAlloc, mfxExtCodingOption2, mfxExtCodingOption3, mfxExtCodingOptionDDI, mfxExtVP9Segmentation, mfxExtVP9TemporalLayers
+#define NUM_OF_SUPPORTED_EXT_BUFFERS 6 // mfxExtOpaqueSurfaceAlloc, mfxExtCodingOption2, mfxExtCodingOption3, mfxExtCodingOptionDDI, mfxExtVP9Segmentation, mfxExtVP9TemporalLayers
 
     class VP9MfxVideoParam : public mfxVideoParam
     {
@@ -511,7 +524,12 @@ template <typename T> mfxStatus RemoveExtBuffer(T & par, mfxU32 id)
         mfxU32 m_bufferSizeInKb;
         mfxU32 m_initialDelayInKb;
 
+        TempLayerParam m_layerParam[MAX_NUM_TEMP_LAYERS];
+
         bool m_segBufPassed;
+
+        bool m_tempLayersBufPassed;
+        mfxU16 m_numLayers;
 
         void CalculateInternalParams();
         void SyncInternalParamToExternal();
@@ -528,11 +546,13 @@ template <typename T> mfxStatus RemoveExtBuffer(T & par, mfxU32 id)
         mfxExtCodingOption3         m_extOpt3;
         mfxExtCodingOptionDDI       m_extOptDDI;
         mfxExtVP9Segmentation       m_extSeg;
+        mfxExtVP9TemporalLayers     m_extTempLayers;
     };
 
     class Task;
     mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
                               Task const & task,
+                              mfxU8 frameType,
                               VP9FrameLevelParam &frameParam,
                               mfxCoreInterface const * pCore);
 
@@ -681,6 +701,15 @@ template <typename T> mfxStatus RemoveExtBuffer(T & par, mfxU32 id)
         sts = FreeSurface(task.m_pSegmentMap, pCore);
         MFX_CHECK_STS(sts);
 
+        const VP9MfxVideoParam& curMfxPar = *task.m_pParam;
+        if (curMfxPar.m_numLayers && task.m_frameParam.temporalLayer == curMfxPar.m_numLayers - 1 &&
+            curMfxPar.m_numLayers > curMfxPar.mfx.NumRefFrame)
+        {
+            // if last temporal layer is non-reference, need to free reconstructed surface right away.
+            sts = FreeSurface(task.m_pRecFrame, pCore);
+            MFX_CHECK_STS(sts);
+        }
+
         task.m_pBitsteam = 0;
         Zero(task.m_frameParam);
         Zero(task.m_ctrl);
@@ -727,6 +756,22 @@ template <typename T> mfxStatus RemoveExtBuffer(T & par, mfxU32 id)
         {
             return false;
         }
+    }
+
+    inline mfxU16 CalcTemporalLayerIndex(VP9MfxVideoParam const & par, mfxU32 frameOrder)
+    {
+        mfxU16 i = 0;
+        mfxExtVP9TemporalLayers const & tl = GetExtBufferRef(par);
+
+        if (par.m_numLayers > 0)
+        {
+            mfxU32 maxScale = tl.Layer[par.m_numLayers - 1].FrameRateScale;
+            for (; i < par.m_numLayers; i++)
+                if (frameOrder % (maxScale / tl.Layer[i].FrameRateScale) == 0)
+                    break;
+        }
+
+        return i;
     }
 
     mfxStatus GetRealSurface(
