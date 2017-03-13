@@ -514,9 +514,34 @@ mfxStatus CEncodingPipeline::AllocFrames()
 
         ReconRequest.AllocId = m_BaseAllocID;
         MSDK_MEMCPY_VAR(ReconRequest.Info, &m_commonFrameInfo, sizeof(mfxFrameInfo));
-        ReconRequest.NumFrameMin       = m_appCfg.nReconSurf ? m_appCfg.nReconSurf : m_maxQueueLength;
-        ReconRequest.NumFrameSuggested = m_appCfg.nReconSurf ? m_appCfg.nReconSurf : m_maxQueueLength;
-        ReconRequest.Type = (EncRequest.Type & 0xfff0) | MFX_MEMTYPE_INTERNAL_FRAME;
+
+        if (m_appCfg.bENCPAK || m_appCfg.bOnlyPAK)
+        {
+            sts = m_pFEI_ENCPAK->QueryIOSurf(NULL, &ReconRequest);
+            MSDK_CHECK_STATUS(sts, "m_pFEI_ENCPAK->QueryIOSurf failed");
+            if (m_appCfg.nReconSurf != 0)
+            {
+                if (m_appCfg.nReconSurf > ReconRequest.NumFrameMin)
+                {
+                    ReconRequest.NumFrameMin = ReconRequest.NumFrameSuggested = m_appCfg.nReconSurf;
+                }
+                else
+                {
+                    msdk_printf(MSDK_STRING("\nWARNING: User input reconstruct surface num invalid!\n"));
+                }
+            }
+
+            if (m_appCfg.bENCPAK)
+            {
+                ReconRequest.Type |= MFX_MEMTYPE_FROM_ENC;
+            }
+        }
+        else
+        {// TODO: QueryIOSurf for OnlyENC
+            ReconRequest.NumFrameMin       = m_appCfg.nReconSurf ? m_appCfg.nReconSurf : m_maxQueueLength;
+            ReconRequest.NumFrameSuggested = m_appCfg.nReconSurf ? m_appCfg.nReconSurf : m_maxQueueLength;
+            ReconRequest.Type = (EncRequest.Type & 0xfff0) | MFX_MEMTYPE_INTERNAL_FRAME;
+        }
 
         sts = m_pMFXAllocator->Alloc(m_pMFXAllocator->pthis, &ReconRequest, &m_ReconResponse);
         MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->Alloc failed");

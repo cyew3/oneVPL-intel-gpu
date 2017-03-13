@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include <mfxvideo.h>
@@ -208,21 +208,30 @@ mfxStatus MFXVideoENC_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfxFra
         switch (par->mfx.CodecId)
         {
 
-#if defined (MFX_ENABLE_H264_VIDEO_ENC) && !defined (MFX_VA) || (defined (MFX_ENABLE_H264_VIDEO_ENC_HW) || defined(MFX_ENABLE_LA_H264_VIDEO_HW))&& defined (MFX_VA)
+#if defined (MFX_ENABLE_H264_VIDEO_ENC) && !defined (MFX_VA) || \
+    (defined (MFX_ENABLE_H264_VIDEO_ENC_HW) || defined(MFX_ENABLE_LA_H264_VIDEO_HW) || \
+     defined (MFX_ENABLE_H264_VIDEO_FEI_PREENC) || defined(MFX_ENABLE_H264_VIDEO_FEI_ENC)) && \
+     defined (MFX_VA)
         case MFX_CODEC_AVC:
 #ifdef MFX_VA
+
 #if defined (MFX_ENABLE_H264_VIDEO_ENC_HW)
             mfxRes = MFXHWVideoENCH264::QueryIOSurf(par, request);
 #endif
 #if defined(MFX_ENABLE_LA_H264_VIDEO_HW)
         if (bEnc_LA(par))
-            mfxRes = VideoENC_LA::QueryIOSurf(session->m_pCORE.get(),par, request);
+            mfxRes = VideoENC_LA::QueryIOSurf(session->m_pCORE.get(), par, request);
 #endif
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENC) && defined(MFX_ENABLE_H264_VIDEO_ENCODE_HW)
+        if (bEnc_ENC(par))
+            mfxRes = VideoENC_ENC::QueryIOSurf(session->m_pCORE.get(), par, request);
+#endif
+
 #else //MFX_VA
             mfxRes = MFXVideoEncH264::QueryIOSurf(par, request);
 #endif //MFX_VA
             break;
-#endif // MFX_ENABLE_H264_VIDEO_ENC || MFX_ENABLE_H264_VIDEO_ENC_H
+#endif // MFX_ENABLE_H264_VIDEO_ENC || MFX_ENABLE_H264_VIDEO_ENC_HW
 
 #if defined (MFX_VA) && defined (MFX_ENABLE_H265FEI_HW)
         case MFX_CODEC_HEVC:

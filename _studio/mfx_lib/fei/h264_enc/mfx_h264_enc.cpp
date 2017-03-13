@@ -285,7 +285,7 @@ mfxStatus VideoENC_ENC::Init(mfxVideoParam *par)
      * same reference /reconstruct list !
      * */
     request.Type              = MFX_MEMTYPE_FROM_ENC | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_INTERNAL_FRAME;
-    request.NumFrameMin       = m_video.mfx.GopRefDist * 2 + (m_video.AsyncDepth-1) + 1 + m_video.mfx.NumRefFrame + 1;
+    request.NumFrameMin       = m_video.AsyncDepth + m_video.mfx.NumRefFrame;
     request.NumFrameSuggested = request.NumFrameMin;
     request.AllocId           = par->AllocId;
 

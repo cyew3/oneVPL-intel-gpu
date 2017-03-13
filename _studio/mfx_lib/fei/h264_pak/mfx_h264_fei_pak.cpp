@@ -236,40 +236,43 @@ mfxStatus VideoPAK_PAK::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam 
     return MFX_ERR_NONE;
 }
 
-mfxStatus VideoPAK_PAK::QueryIOSurf(VideoCORE* , mfxVideoParam *par, mfxFrameAllocRequest *request)
+mfxStatus VideoPAK_PAK::QueryIOSurf(VideoCORE *core , mfxVideoParam *par, mfxFrameAllocRequest *request)
 {
-    MFX_CHECK_NULL_PTR2(par,request);
-#if 0
-    mfxExtLAControl *pControl = (mfxExtLAControl *) GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_LOOKAHEAD_CTRL);
-
-    MFX_CHECK(pControl,                 MFX_ERR_UNDEFINED_BEHAVIOR);
-    MFX_CHECK(pControl->LookAheadDepth, MFX_ERR_UNDEFINED_BEHAVIOR);
+    MFX_CHECK_NULL_PTR3(core, par, request);
 
     mfxU32 inPattern = par->IOPattern & MFX_IOPATTERN_IN_MASK;
     MFX_CHECK(
-        inPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
-        inPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY  ||
-        inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY,
+        inPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY,
         MFX_ERR_INVALID_VIDEO_PARAM);
 
-    if (inPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
-    {
-        request->Type =
-            MFX_MEMTYPE_EXTERNAL_FRAME |
-            MFX_MEMTYPE_FROM_ENCODE |
-            MFX_MEMTYPE_SYSTEM_MEMORY;
-    }
-    else // MFX_IOPATTERN_IN_VIDEO_MEMORY || MFX_IOPATTERN_IN_OPAQUE_MEMORY
-    {
-        request->Type = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET;
-        request->Type |= (inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-            ? MFX_MEMTYPE_OPAQUE_FRAME
-            : MFX_MEMTYPE_EXTERNAL_FRAME;
-    }
-    request->NumFrameMin         = GetRefDist(par) + GetAsyncDeph(par) + pControl->LookAheadDepth;
+    MFX_CHECK(
+        par->AsyncDepth == 0 ||
+        par->AsyncDepth == 1,
+        MFX_ERR_INVALID_VIDEO_PARAM);
+
+    ENCODE_CAPS hwCaps = {0};
+    mfxStatus sts = QueryHwCaps(core, hwCaps, par);
+    MFX_CHECK_STS(sts);
+
+    MfxVideoParam tmp(*par);
+    // call MfxHwH264Encode::CheckVideoParam to modify paramters(such like GopRefDist,
+    // NumRefFrame) if necessary, otherwise, need to copy checks from that function
+    mfxStatus checkStatus = MfxHwH264Encode::CheckVideoParam(tmp,
+                                                             hwCaps,
+                                                             core->IsExternalFrameAllocator(),
+                                                             core->GetHWType(),
+                                                             core->GetVAType());
+    MFX_CHECK(checkStatus >= MFX_ERR_NONE, checkStatus);
+
+    // more check if needed
+
+    request->Type                = MFX_MEMTYPE_FROM_PAK |
+                                   MFX_MEMTYPE_DXVA2_DECODER_TARGET |
+                                   MFX_MEMTYPE_INTERNAL_FRAME;
+    request->NumFrameMin         = tmp.AsyncDepth + tmp.mfx.NumRefFrame;
     request->NumFrameSuggested   = request->NumFrameMin;
-    request->Info                = par->mfx.FrameInfo;
-#endif
+    request->Info                = tmp.mfx.FrameInfo;
+
     return MFX_ERR_NONE;
 }
 
@@ -355,7 +358,7 @@ mfxStatus VideoPAK_PAK::Init(mfxVideoParam *par)
      * And only these surfaces should be passed to driver within Execute() call.
      * The size of recon pool is limited to 127 surfaces. */
     request.Type              = MFX_MEMTYPE_FROM_PAK | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_INTERNAL_FRAME;
-    request.NumFrameMin       = m_video.mfx.GopRefDist * 2 + (m_video.AsyncDepth-1) + 1 + m_video.mfx.NumRefFrame + 1;
+    request.NumFrameMin       = m_video.AsyncDepth + m_video.mfx.NumRefFrame;
     request.NumFrameSuggested = request.NumFrameMin;
     request.AllocId           = par->AllocId;
 
