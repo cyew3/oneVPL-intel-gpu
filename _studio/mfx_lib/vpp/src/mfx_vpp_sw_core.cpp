@@ -199,6 +199,9 @@ mfxStatus VideoVPPBase::Init(mfxVideoParam *par)
     /* SW doesn't support of protected processing */
     sts = CheckProtectedMode( par->Protected );
     MFX_CHECK_STS(sts);
+#else
+    if (par->Protected)
+        return MFX_ERR_INVALID_VIDEO_PARAM;
 #endif
 
     sts = CheckFrameInfo( &(par->vpp.In), VPP_IN );
@@ -683,12 +686,12 @@ mfxStatus VideoVPPBase::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam
             mfxSts = MFX_ERR_UNSUPPORTED;
         }
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         if(MFX_PLATFORM_HARDWARE == core->GetPlatformType() )
         {
             // hardware protected section
             out->Protected = in->Protected;
 
-#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
             if (IS_PROTECTION_ANY(out->Protected) || 0 == out->Protected)
             {
                 mfxSts = MFX_ERR_NONE;
@@ -698,8 +701,8 @@ mfxStatus VideoVPPBase::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam
                 out->Protected = 0;
                 mfxSts = MFX_ERR_UNSUPPORTED;
             }
-#endif
         }
+#endif
 
         /* [IOPattern] section
          * Reuse check function from QueryIOsurf
@@ -1210,6 +1213,9 @@ mfxStatus VideoVPPBase::Reset(mfxVideoParam *par)
     /* Protected Check */
     sts = CheckProtectedMode( par->Protected );
     MFX_CHECK_STS(sts);
+#else
+    if (par->Protected)
+        return MFX_ERR_INVALID_VIDEO_PARAM;
 #endif
 
     /* AsyncDepth */

@@ -616,8 +616,7 @@ namespace MPEG2EncoderHW
             out->Protected  = in->Protected;
             out->AsyncDepth = in->AsyncDepth;
 
-            mfxStatus sts = CheckHwCaps(core, out);
-            MFX_CHECK_STS(sts);
+            mfxStatus stsCaps = CheckHwCaps(core, out);
 
             MFX_CHECK_STS (CheckExtendedBuffers(in));
             MFX_CHECK_STS (CheckExtendedBuffers(out));
@@ -847,7 +846,7 @@ namespace MPEG2EncoderHW
 
             if (out->mfx.FrameInfo.FrameRateExtN !=0 && out->mfx.FrameInfo.FrameRateExtD != 0)
             {
-                sts = CheckFrameRateMPEG2(out->mfx.FrameInfo.FrameRateExtD, out->mfx.FrameInfo.FrameRateExtN);
+                mfxStatus sts = CheckFrameRateMPEG2(out->mfx.FrameInfo.FrameRateExtD, out->mfx.FrameInfo.FrameRateExtN);
                 if (sts != MFX_ERR_NONE)
                 {
                     bWarning = true;
@@ -879,7 +878,7 @@ namespace MPEG2EncoderHW
                 bWarning = true;
             }
 
-            sts = CheckAspectRatioMPEG2(
+            mfxStatus sts = CheckAspectRatioMPEG2(
                 out->mfx.FrameInfo.AspectRatioW,
                 out->mfx.FrameInfo.AspectRatioH,
                 out->mfx.FrameInfo.Width,
@@ -1000,6 +999,8 @@ namespace MPEG2EncoderHW
                     bUnsupported = true;
                 }
             }
+
+            MFX_CHECK_STS(stsCaps);
 
             if (bUnsupported)
             {
