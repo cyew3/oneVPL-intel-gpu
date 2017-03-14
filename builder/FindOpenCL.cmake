@@ -1,5 +1,5 @@
 ##******************************************************************************
-##  Copyright(C) 2014 Intel Corporation. All Rights Reserved.
+##  Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 ##
 ##  The source code, information  and  material ("Material") contained herein is
 ##  owned  by Intel Corporation or its suppliers or licensors, and title to such
@@ -25,8 +25,8 @@
 ##  Content: Intel(R) Media SDK Samples projects creation and build
 ##******************************************************************************
 
-find_path( OPENCL_INCLUDE opencl.h PATHS /usr/include/CL)
-find_library( OPENCL_LIBRARY libOpenCL.so PATHS /usr/lib )
+find_path( OPENCL_INCLUDE CL/opencl.h PATHS /usr/include /opt/intel/opencl/include)
+find_library( OPENCL_LIBRARY libOpenCL.so PATHS /usr/lib /opt/intel/opencl/)
 
 set( OCL_LIBS "" )
 
