@@ -341,9 +341,9 @@ namespace MfxHwVideoProcessing
 
     // Scene change detection
     typedef enum {
-        VPP_SCENE_NO_CHANGE  = 0,
-        VPP_MORE_SCENE_CHANGE_DETECTED = 2, // BOB display only first field to avoid out of frame order
-        VPP_SCENE_NEW        = 1            // BOB display current field to generate output
+        VPP_NO_SCENE_CHANGE  = 0,
+        VPP_SCENE_NEW        = 1,            // BOB display current field to generate output
+        VPP_MORE_SCENE_CHANGE_DETECTED = 2 // BOB display only first field to avoid out of frame order
     } vppScene;
 
     class mfxExecuteParams
@@ -419,7 +419,8 @@ namespace MfxHwVideoProcessing
                ,bEOS(false)
                ,mirroring(0)
                ,mirroringPosition(0)
-               ,scene(VPP_SCENE_NO_CHANGE)
+               ,scene(VPP_NO_SCENE_CHANGE)
+               ,bDeinterlace30i60p(false)
 #if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
                ,gpuHangTrigger(false)
 #endif
@@ -522,7 +523,7 @@ namespace MfxHwVideoProcessing
 
         bool        bEOS;
 
-        SignalInfo VideoSignalInfoIn;   // Common video signal info set on Init 
+        SignalInfo VideoSignalInfoIn;   // Common video signal info set on Init
         SignalInfo VideoSignalInfoOut;  // Video signal info for output
 
         std::vector<SignalInfo> VideoSignalInfo; // Video signal info for each frame in a single run
@@ -531,6 +532,7 @@ namespace MfxHwVideoProcessing
         int        mirroringPosition;
 
         vppScene    scene;     // Keep information about scene change
+        bool        bDeinterlace30i60p;
 
 #if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
         bool       gpuHangTrigger;

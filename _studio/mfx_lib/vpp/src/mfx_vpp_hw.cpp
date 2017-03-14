@@ -134,7 +134,7 @@ static void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )
     pMfxExecuteParams->rotation = 0;
     pMfxExecuteParams->scalingMode = MFX_SCALING_MODE_DEFAULT;
     pMfxExecuteParams->bEOS = false;
-    pMfxExecuteParams->scene = VPP_SCENE_NO_CHANGE;
+    pMfxExecuteParams->scene = VPP_NO_SCENE_CHANGE;
 } /*void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )*/
 
 
@@ -3090,7 +3090,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
             memset(&frameSurface, 0, sizeof(mfxFrameSurface1));
             frameSurface.Info = inFrame->Info;
 
-            if (m_executeParams.bFMDEnable)
+            if (m_executeParams.bDeinterlace30i60p)
             {
                 is30i60pConversion = 1;
             }
@@ -3200,7 +3200,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
         switch (m_scene_change)
         {
             case NO_SCENE_CHANGE:
-                m_executeParams.scene = VPP_SCENE_NO_CHANGE;
+                m_executeParams.scene = VPP_NO_SCENE_CHANGE;
                 break;
             case SCENE_CHANGE:
                 m_executeParams.scene = VPP_SCENE_NEW;
@@ -3838,6 +3838,7 @@ mfxStatus ConfigureExecuteParams(
                     config.m_surfCount[VPP_IN]  = IPP_MAX(2, config.m_surfCount[VPP_IN]);
                     config.m_surfCount[VPP_OUT] = IPP_MAX(2, config.m_surfCount[VPP_OUT]);
                     executeParams.bFMDEnable = true;
+                    executeParams.bDeinterlace30i60p = true;
                 }
                 else if(MFX_DEINTERLACING_BOB == executeParams.iDeinterlacingAlgorithm)
                 {
@@ -3846,7 +3847,7 @@ mfxStatus ConfigureExecuteParams(
                     config.m_surfCount[VPP_IN]  = IPP_MAX(1, config.m_surfCount[VPP_IN]);
                     config.m_surfCount[VPP_OUT] = IPP_MAX(2, config.m_surfCount[VPP_OUT]);
                     executeParams.bFMDEnable = false;
-                    executeParams.bFMDEnable = true;
+                    executeParams.bDeinterlace30i60p = true;
                 }
                 else if (MFX_DEINTERLACING_ADVANCED_NOREF == executeParams.iDeinterlacingAlgorithm)
                 {
@@ -3856,6 +3857,7 @@ mfxStatus ConfigureExecuteParams(
                     config.m_surfCount[VPP_IN]  = IPP_MAX(1, config.m_surfCount[VPP_IN]);
                     config.m_surfCount[VPP_OUT] = IPP_MAX(2, config.m_surfCount[VPP_OUT]);
                     executeParams.bFMDEnable = false;
+                    executeParams.bDeinterlace30i60p = true;
                 }
                 else
                 {

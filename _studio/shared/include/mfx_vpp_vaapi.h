@@ -129,7 +129,7 @@ namespace MfxHwVideoProcessing
         VABufferID m_deintFilterID;
         VABufferID m_procampFilterID;
         VABufferID m_frcFilterID;
-        mfxU32     m_refCountForADI;
+        mfxU32     m_deintFrameCount;
         BOOL       m_bFakeOutputEnabled;
         VASurfaceID m_refForFRC[5];
         mfxU32 m_frcCyclicCounter;
