@@ -207,6 +207,51 @@ int TestSuite::RunTest(unsigned int id)
     m_par.mfx.FrameInfo.PicStruct       = tc.PicStruct;
     CO2.BRefType                        = tc.BRefType;
 
+    mfxU32 numField = 1;
+    if ((m_par.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_TFF) ||
+        (m_par.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_BFF)) {
+            numField = 2;
+    }
+
+    mfxExtBuffer* bufFrCtrl[2];
+
+    mfxExtFeiEncFrameCtrl feiEncCtrl[2];
+
+    mfxU32 fieldId = 0;
+
+    //assign ExtFeiEncFrameCtrl(mfxEncodeCtrl/runtime)
+    for (fieldId = 0; fieldId < numField; fieldId++) {
+
+        memset(&feiEncCtrl[fieldId], 0, sizeof(mfxExtFeiEncFrameCtrl));
+
+        feiEncCtrl[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_CTRL;
+        feiEncCtrl[fieldId].Header.BufferSz = sizeof(mfxExtFeiEncFrameCtrl);
+        feiEncCtrl[fieldId].SearchPath = 2;
+        feiEncCtrl[fieldId].LenSP = 57;
+        feiEncCtrl[fieldId].SubMBPartMask = 0;
+        feiEncCtrl[fieldId].MultiPredL0 = 0;
+        feiEncCtrl[fieldId].MultiPredL1 = 0;
+        feiEncCtrl[fieldId].SubPelMode = 3;
+        feiEncCtrl[fieldId].InterSAD = 2;
+        feiEncCtrl[fieldId].IntraSAD = 2;
+        feiEncCtrl[fieldId].DistortionType = 0;
+        feiEncCtrl[fieldId].RepartitionCheckEnable = 0;
+        feiEncCtrl[fieldId].AdaptiveSearch = 0;
+        feiEncCtrl[fieldId].MVPredictor = 0;
+        feiEncCtrl[fieldId].NumMVPredictors[0] = 1;
+        feiEncCtrl[fieldId].PerMBQp = 0;
+        feiEncCtrl[fieldId].PerMBInput = 0;
+        feiEncCtrl[fieldId].MBSizeCtrl = 0;
+        feiEncCtrl[fieldId].RefHeight = 32;
+        feiEncCtrl[fieldId].RefWidth = 32;
+        feiEncCtrl[fieldId].SearchWindow = 5;
+
+        bufFrCtrl[fieldId] = (mfxExtBuffer*)&feiEncCtrl[fieldId];
+    }
+
+    m_ctrl.NumExtParam = numField;
+    m_ctrl.ExtParam = bufFrCtrl;
+
     numReorderFrames = m_par.mfx.GopRefDist > 1 ? 1 : 0;
     if (m_par.mfx.GopRefDist > 2 && tc.BRefType == MFX_B_REF_PYRAMID)
     {
