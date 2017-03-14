@@ -1847,7 +1847,12 @@ mfxStatus MfxHwH264Encode::CheckVideoParamFEI(
     mfxStatus checkSts = MFX_ERR_NONE;
 
     mfxExtFeiParam* feiParam = (mfxExtFeiParam*)MfxHwH264Encode::GetExtBuffer(par.ExtParam, par.NumExtParam, MFX_EXTBUFF_FEI_PARAM);
-    if ((!feiParam) || (!feiParam->Func)) return checkSts;
+
+    if (!feiParam->Func)
+    {
+        // It is not FEI, but regular encoder
+        return MFX_ERR_NONE;
+    }
 
     switch (feiParam->Func)
     {
@@ -6089,6 +6094,11 @@ mfxStatus MfxHwH264Encode::CheckFEIRunTimeExtBuffersContent(
 
         switch (ctrl->ExtParam[i]->BufferId)
         {
+        case MFX_EXTBUFF_MBQP:
+            // mfxExtMBQP is not allowed for FEI. FEI has it's own buffer: mfxExtFeiEncQP
+            return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+            break;
+
         case MFX_EXTBUFF_FEI_SLICE:
         {
             mfxExtFeiSliceHeader* pSliceHeader = reinterpret_cast<mfxExtFeiSliceHeader*>(ctrl->ExtParam[i]);

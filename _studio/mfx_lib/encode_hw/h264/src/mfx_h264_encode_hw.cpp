@@ -2799,28 +2799,17 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
             }
         }
 
-        if (m_isENCPAK)
+        if (IsOn(extOpt3.EnableMBQP))
         {
             const mfxExtMBQP *mbqp = GetExtBuffer(task->m_ctrl);
-            if (mbqp)
-            {
-                return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-            }
-        }
-        else
-        {
-            if (IsOn(extOpt3.EnableMBQP))
-            {
-                const mfxExtMBQP *mbqp = GetExtBuffer(task->m_ctrl);
-                mfxU32 wMB = (m_video.mfx.FrameInfo.CropW + 15) / 16;
-                mfxU32 hMB = (m_video.mfx.FrameInfo.CropH + 15) / 16;
-                task->m_isMBQP = mbqp && mbqp->QP && mbqp->NumQPAlloc >= wMB * hMB;
+            mfxU32 wMB = (m_video.mfx.FrameInfo.CropW + 15) / 16;
+            mfxU32 hMB = (m_video.mfx.FrameInfo.CropH + 15) / 16;
+            task->m_isMBQP = mbqp && mbqp->QP && mbqp->NumQPAlloc >= wMB * hMB;
 
-                if (m_useMBQPSurf && task->m_isMBQP)
-                {
-                    task->m_idxMBQP = FindFreeResourceIndex(m_mbqp);
-                    task->m_midMBQP = AcquireResource(m_mbqp, task->m_idxMBQP);
-                }
+            if (m_useMBQPSurf && task->m_isMBQP)
+            {
+                task->m_idxMBQP = FindFreeResourceIndex(m_mbqp);
+                task->m_midMBQP = AcquireResource(m_mbqp, task->m_idxMBQP);
             }
         }
 
