@@ -560,6 +560,9 @@ mfxStatus MfxH264FEIcommon::CheckInitExtBuffers(const MfxVideoParam & owned_vide
     const mfxExtFeiPPS* pDataPPS = GetExtBuffer(passed_video);
     if (pDataPPS)
     {
+        // Check correctness of provided PPS parameters
+        MFX_CHECK(pDataSPS->Log2MaxPicOrderCntLsb >= 4 && pDataSPS->Log2MaxPicOrderCntLsb < 16, MFX_ERR_INVALID_VIDEO_PARAM);
+
         // Update internal PPS if FEI PPS buffer attached
         mfxExtPpsHeader* extPps = GetExtBuffer(owned_video);
         MFX_CHECK(extPps, MFX_ERR_INVALID_VIDEO_PARAM);
