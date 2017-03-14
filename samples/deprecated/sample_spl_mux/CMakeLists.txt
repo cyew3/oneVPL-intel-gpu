@@ -1,4 +1,17 @@
-include( ${CMAKE_HOME_DIRECTORY}/../builder_s/FindFFmpeg.cmake )
+pkg_check_modules(PKG_LIBAVUTIL libavutil>=52.38.100)
+pkg_check_modules(PKG_LIBAVCODEC libavcodec>=55.18.102)
+pkg_check_modules(PKG_LIBAVFORMAT libavformat>=55.12.100)
+
+if(PKG_LIBAVUTIL_FOUND AND
+   PKG_LIBAVCODEC_FOUND AND
+   PKG_LIBAVFORMAT_FOUND)
+    set( FFMPEG_FOUND TRUE )
+    message( STATUS "FFmpeg headers and libraries were found." )
+endif( )
+
+if(NOT DEFINED FFMPEG_FOUND)
+  message( STATUS "FFmpeg headers and libraries were not found (optional)." )
+endif( )
 
 include_directories(
   ${CMAKE_SOURCE_DIR}/sample_common/include
