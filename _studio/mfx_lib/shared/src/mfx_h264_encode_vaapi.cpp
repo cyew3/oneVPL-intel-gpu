@@ -1358,18 +1358,15 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
 
     if (attrs[idx_map[VAConfigAttribEncROI]].value != VA_ATTRIB_NOT_SUPPORTED)
     {
+// Officially only APL supports ROI.
 #if defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT)
         VAConfigAttribValEncROIPrivate *VaEncROIValPtr = reinterpret_cast<VAConfigAttribValEncROIPrivate *>(&attrs[idx_map[VAConfigAttribEncROI]].value);
-#else
-        VAConfigAttribValEncROI *VaEncROIValPtr = reinterpret_cast<VAConfigAttribValEncROI *>(&attrs[idx_map[VAConfigAttribEncROI]].value);
-#endif  // defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT)
         assert(VaEncROIValPtr->bits.num_roi_regions < 32);
         m_caps.MaxNumOfROI = VaEncROIValPtr->bits.num_roi_regions;
         m_caps.ROIBRCPriorityLevelSupport = VaEncROIValPtr->bits.roi_rc_priority_support;
-#if defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT)
         m_caps.ROIBRCDeltaQPLevelSupport = VaEncROIValPtr->bits.roi_rc_qp_delta_support;
 #else
-        m_caps.ROIBRCDeltaQPLevelSupport = 0;
+        m_caps.MaxNumOfROI = 0;
 #endif  // defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT)
     }
     else
