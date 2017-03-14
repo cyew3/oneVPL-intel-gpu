@@ -656,6 +656,27 @@ enum {
     MFX_P_REF_PYRAMID = 2
 };
 
+/* QuantScaleType */
+enum {
+    MFX_MPEG2_QUANT_SCALE_TYPE_DEFAULT    = 0,
+    MFX_MPEG2_QUANT_SCALE_TYPE_LINEAR     = 1, /* q_scale_type = 0 */
+    MFX_MPEG2_QUANT_SCALE_TYPE_NONLINEAR  = 2  /* q_scale_type = 1 */
+};
+
+/* IntraVLCFormat */
+enum {
+    MFX_MPEG2_INTRA_VLC_FORMAT_DEFAULT    = 0,
+    MFX_MPEG2_INTRA_VLC_FORMAT_B14        = 1, /* use table B.14 */
+    MFX_MPEG2_INTRA_VLC_FORMAT_B15        = 2  /* use table B.15 */
+};
+
+/* ScanType */
+enum {
+    MFX_MPEG2_SCAN_TYPE_DEFAULT   = 0,
+    MFX_MPEG2_SCAN_TYPE_ZIGZAG    = 1, /* alternate_scan = 0 */
+    MFX_MPEG2_SCAN_TYPE_ALTERNATE = 2  /* alternate_scan = 1 */
+};
+
 typedef struct {
     mfxExtBuffer Header;
 
@@ -719,7 +740,12 @@ typedef struct {
     mfxU16      LowDelayBRC;               /* tri-state option */
     mfxU16      EnableMBForceIntra;        /* tri-state option */
     mfxU16      AdaptiveMaxFrameSize;      /* tri-state option */
-    mfxU16      reserved[170];
+
+    mfxU16      QuantScaleType;            /* For MPEG2 specifies mapping between quantiser_scale_code and quantiser_scale (see QuantScaleType enum) */
+    mfxU16      IntraVLCFormat;            /* For MPEG2 specifies which table shall be used for coding of DCT coefficients of intra macroblocks (see IntraVLCFormat enum) */
+    mfxU16      ScanType;                  /* For MPEG2 specifies transform coefficients scan pattern (see ScanType enum) */
+
+    mfxU16      reserved[167];
 } mfxExtCodingOption3;
 
 /* IntraPredBlockSize/InterPredBlockSize */

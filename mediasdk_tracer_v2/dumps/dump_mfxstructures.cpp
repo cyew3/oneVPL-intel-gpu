@@ -190,6 +190,9 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCodingOp
     DUMP_FIELD(TransformSkip);
     DUMP_FIELD(EnableMBForceIntra);
     DUMP_FIELD(AdaptiveMaxFrameSize);
+    DUMP_FIELD(QuantScaleType);
+    DUMP_FIELD(IntraVLCFormat);
+    DUMP_FIELD(ScanType);
     DUMP_FIELD_RESERVED(reserved);
     return str;
 }
