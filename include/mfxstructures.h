@@ -836,7 +836,8 @@ enum {
     MFX_EXTBUFF_MV_OVER_PIC_BOUNDARIES     = MFX_MAKEFOURCC('M','V','P','B'),
     MFX_EXTBUFF_VPP_COLORFILL              = MFX_MAKEFOURCC('V','C','L','F'),
     MFX_EXTBUFF_VPP_COLOR_CONVERSION       = MFX_MAKEFOURCC('V','C','S','C'),
-    MFX_EXTBUFF_VP9_SEGMENTATION           = MFX_MAKEFOURCC('9','S','E','G')
+    MFX_EXTBUFF_VP9_SEGMENTATION           = MFX_MAKEFOURCC('9','S','E','G'),
+    MFX_EXTBUFF_VP9_TEMPORAL_LAYERS        = MFX_MAKEFOURCC('9','T','M','L')
 };
 
 /* VPP Conf: Do not use certain algorithms  */
@@ -1798,6 +1799,18 @@ typedef struct {
     };
     mfxU16  reserved[52];
 } mfxExtVP9Segmentation;
+
+typedef struct {
+    mfxU16 FrameRateScale;  /* Layer[n].FrameRateScale = Layer[n - 1].FrameRateScale * (uint)m */
+    mfxU16 TargetKbps;      /* affected by BRCParamMultiplier, Layer[n].TargetKbps > Layer[n - 1].TargetKbps */
+    mfxU16 reserved[14];
+} mfxVP9TemporalLayer;
+
+typedef struct {
+    mfxExtBuffer        Header;
+    mfxVP9TemporalLayer Layer[8];
+    mfxU16              reserved[60];
+} mfxExtVP9TemporalLayers;
 
 #ifdef __cplusplus
 } // extern "C"

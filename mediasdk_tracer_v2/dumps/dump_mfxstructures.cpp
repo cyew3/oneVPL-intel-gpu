@@ -1282,3 +1282,24 @@ std::string DumpContext::dump(const std::string structName, const  mfxExtVP9Segm
 
     return str;
 }
+
+std::string DumpContext::dump(const std::string structName, const  mfxVP9TemporalLayer &_struct)
+{
+    std::string str;
+    DUMP_FIELD(FrameRateScale);
+    DUMP_FIELD(TargetKbps);
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const  mfxExtVP9TemporalLayers &_struct)
+{
+    std::string str;
+    str += dump(structName + ".Header", _struct.Header) + "\n";
+
+    for (mfxU16 i = 0; i < 8; i++)
+    {
+        str += dump(structName + ".Layer[" + ToString(i) + "]", _struct.Layer[i]) + "\n";
+    }
+
+    return str;
+}

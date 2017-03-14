@@ -875,3 +875,13 @@ STRUCT(mfxExtVP9Segmentation,
     FIELD_T(mfxU32            , NumSegmentIdAlloc)
     FIELD_T(mfxU8*            , SegmentId)
 )
+
+STRUCT(mfxVP9TemporalLayer,
+    FIELD_T(mfxU16, FrameRateScale)
+    FIELD_T(mfxU16, TargetKbps)
+)
+
+STRUCT(mfxExtVP9TemporalLayers,
+    FIELD_S(mfxExtBuffer        , Header)
+    FIELD_S(mfxVP9TemporalLayer , Layer)
+)

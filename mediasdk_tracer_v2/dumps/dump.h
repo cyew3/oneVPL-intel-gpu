@@ -412,6 +412,9 @@ public:
                         case MFX_EXTBUFF_VP9_SEGMENTATION:
                             str += dump(name, *((mfxExtVP9Segmentation*)_struct.ExtParam[i])) + "\n";
                             break;
+                        case MFX_EXTBUFF_VP9_TEMPORAL_LAYERS:
+                            str += dump(name, *((mfxExtVP9TemporalLayers*)_struct.ExtParam[i])) + "\n";
+                            break;
                         default:
                             str += dump(name, *(_struct.ExtParam[i])) + "\n";
                             break;
@@ -515,6 +518,8 @@ public:
     DEFINE_DUMP_FUNCTION(mfxExtDecVideoProcessing);
     DEFINE_DUMP_FUNCTION(mfxVP9SegmentParam);
     DEFINE_DUMP_FUNCTION(mfxExtVP9Segmentation);
+    DEFINE_DUMP_FUNCTION(mfxVP9TemporalLayer);
+    DEFINE_DUMP_FUNCTION(mfxExtVP9TemporalLayers);
 
 
     //mfxsession

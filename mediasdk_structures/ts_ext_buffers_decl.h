@@ -84,3 +84,4 @@ EXTBUF(mfxExtMoveRect               , MFX_EXTBUFF_MOVING_RECTANGLES         )
 
 EXTBUF(mfxExtVP9DecodedFrameInfo    , MFX_EXTBUFF_VP9_DECODED_FRAME_INFO    )
 EXTBUF(mfxExtVP9Segmentation        , MFX_EXTBUFF_VP9_SEGMENTATION          )
+EXTBUF(mfxExtVP9TemporalLayers      , MFX_EXTBUFF_VP9_TEMPORAL_LAYERS       )
