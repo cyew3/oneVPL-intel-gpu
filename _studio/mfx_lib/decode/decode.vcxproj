@@ -244,7 +244,12 @@
   <ItemGroup>
     <ClCompile Include="h264\src\mfx_h264_dec_decode.cpp" />
     <ClCompile Include="mjpeg\src\mfx_mjpeg_dec_decode.cpp" />
-    <ClCompile Include="mpeg2\src\mfx_mpeg2_decode.cpp" />
+    <ClCompile Include="mpeg2\src\mfx_mpeg2_decode.cpp">
+      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</TreatWarningAsError>
+      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug_THM|Win32'">false</TreatWarningAsError>
+      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</TreatWarningAsError>
+      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release_THM|Win32'">false</TreatWarningAsError>
+    </ClCompile>
     <ClCompile Include="vc1\src\mfx_vc1_decode.cpp" />
     <ClCompile Include="vp9\src\mfx_vp9_dec_decode.cpp" />
     <ClCompile Include="vp9\src\mfx_vp9_dec_decode_hw.cpp" />
