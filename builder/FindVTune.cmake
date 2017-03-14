@@ -25,56 +25,49 @@
 ##  Content: Intel(R) Media SDK Global Configuration of Targets Cmake module
 ##******************************************************************************
 
-if(__ITT)
+if(__ITT OR ENABLE_ITT)
   if( Linux )
+    if( CMAKE_VTUNE_HOME )
+      set( VTUNE_HOME ${CMAKE_VTUNE_HOME} )
+    elseif( DEFINED ENV{CMAKE_VTUNE_HOME} )
+      set( VTUNE_HOME $ENV{CMAKE_VTUNE_HOME} )
+    else()
+      set( VTUNE_HOME /opt/intel/vtune_amplifier_xe )
+    endif()
+
     if( __ARCH MATCHES intel64 )
       set( arch "64" )
     elseif()
       set( arch "32" )
     endif()
 
-    if(0)
-      # NOTE: that's a placeholder. Currently VTune installation can't be used directly.
-      find_path( VTUNE_INCLUDE ittnotify.h PATHS $ENV{MFX_VTUNE_PATH}/include )
-      find_library( VTUNE_LIBRARY libittnotify.a PATHS $ENV{MFX_VTUNE_PATH}/lib${arch}/ )
+    find_path( VTUNE_INCLUDE ittnotify.h PATHS ${VTUNE_HOME}/include )
+    find_library( VTUNE_LIBRARY libittnotify.a PATHS ${VTUNE_HOME}/lib${arch}/ )
 
-      if(NOT VTUNE_INCLUDE MATCHES NOTFOUND)
-        if(NOT VTUNE_LIBRARY MATCHES NOTFOUND)
-          set( VTUNE_FOUND TRUE )
-          include_directories( ${VTUNE_INCLUDE} )
+    if( NOT VTUNE_INCLUDE MATCHES NOTFOUND )
+      if( NOT VTUNE_LIBRARY MATCHES NOTFOUND )
+        set( VTUNE_FOUND TRUE )
+        message( STATUS "ITT was found here ${VTUNE_HOME}" )
 
-          get_filename_component( VTUNE_LIBRARY_PATH ${VTUNE_LIBRARY} PATH )
+        get_filename_component( VTUNE_LIBRARY_PATH ${VTUNE_LIBRARY} PATH )
 
-          link_directories( ${VTUNE_LIBRARY_PATH} )
+        include_directories( ${VTUNE_INCLUDE} )
+        link_directories( ${VTUNE_LIBRARY_PATH} )
 
-        endif()
+        append( "-DMFX_TRACE_ENABLE_ITT" CMAKE_C_FLAGS )
+        append( "-DMFX_TRACE_ENABLE_ITT" CMAKE_CXX_FLAGS )
+
+        set( ITT_CFLAGS "-I${VTUNE_INCLUDE} -DITT_SUPPORT" )
+        set( ITT_LIBRARY_DIRS "${VTUNE_LIBRARY_PATH}" )
+
+        set( ITT_LIBS "" )
+        list( APPEND ITT_LIBS
+          mfx_trace
+          ittnotify
+          dl
+        )
       endif()
-
-      if(NOT DEFINED VTUNE_FOUND)
-        message( FATAL_ERROR "ITT was not found! Set/check MFX_VTUNE_PATH environment variable!" )
-      else ()
-        message( STATUS "ITT was found here $ENV{MFX_VTUNE_PATH}" )
-      endif()
-    else()
-      set( VTUNE_FOUND TRUE )
-      message( STATUS "ITT was found here $ENV{MFX_HOME}/mdp_msdk-contrib/itt" )
-
-      include_directories($ENV{MFX_HOME}/mdp_msdk-contrib/itt/include)
-      link_directories( $ENV{MFX_HOME}/mdp_msdk-contrib/itt/lib${arch} )
     endif()
-
-    append("-DMFX_TRACE_ENABLE_ITT" CMAKE_C_FLAGS)
-    append("-DMFX_TRACE_ENABLE_ITT" CMAKE_CXX_FLAGS)
-
-    set( ITT_LIBS "" )
-    list( APPEND ITT_LIBS
-      mfx_trace
-      ittnotify
-      dl
-    )
-
-  elseif( Darwin )
-    message( STATUS "MFX tracing is unsupported on Darwin.")
   else()
     message( FATAL_ERROR "MFX tracing is supported only for linux!")
   endif()

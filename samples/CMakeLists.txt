@@ -25,7 +25,7 @@ include( ../builder_s/FindFunctions.cmake )
 include( ../builder/FindGlobals.cmake )
 include( ../builder_s/FindMFX.cmake )
 include( ../builder_s/FindPackages.cmake )
-include( ../builder_s/FindVTune.cmake )
+include( ../builder/FindVTune.cmake )
 
 set( NOT_CONFIGURED "" CACHE INTERNAL "" )
 set( SKIPPING "" CACHE INTERNAL "" )
