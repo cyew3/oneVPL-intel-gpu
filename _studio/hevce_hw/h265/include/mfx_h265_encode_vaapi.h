@@ -73,6 +73,8 @@ public:
         , VABID_PACKED_SkippedSlice_H
         , VABID_PACKED_SkippedSlice
         , VABID_PACKED_SkipBuffer
+
+        , VABID_ROI
     } IdType;
 
     VABuffersHandler()
@@ -243,6 +245,8 @@ mfxStatus SetSkipFrame(
         mfxU32 m_width;
         mfxU32 m_height;
         ENCODE_CAPS_HEVC m_caps;
+
+        std::vector<VAEncROI> m_arrayVAEncROI;
 
         static const mfxU32 MAX_CONFIG_BUFFERS_COUNT = 26 + 5;
 

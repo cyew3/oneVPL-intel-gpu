@@ -715,8 +715,13 @@ void FillSpsBuffer(
     if (par.m_ext.ROI.NumROI) {
         if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
             sps.ROIValueInDeltaQP = 1;
-        else
+        else {
             sps.ROIValueInDeltaQP = 0;  // 0 means Priorities (if supported in caps)
+#if MFX_VERSION > 1021
+            if(par.m_ext.ROI.ROIMode == MFX_ROI_MODE_QP_DELTA)
+                sps.ROIValueInDeltaQP = 1;
+#endif // MFX_VERSION > 1021
+        }
     }
 
     // if ENCODE_BLOCKQPDATA surface is provided

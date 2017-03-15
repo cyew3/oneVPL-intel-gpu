@@ -26,6 +26,88 @@
 namespace MfxHwH265Encode
 {
 
+static mfxStatus SetROI(
+                Task const & task,
+                std::vector<VAEncROI> & arrayVAEncROI,
+                VADisplay    vaDisplay,
+                VAContextID  vaContextEncode,
+                VABufferID & roiParam_id)
+{
+    VAStatus vaSts;
+    VAEncMiscParameterBuffer *misc_param;
+#if defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT)
+    VAEncMiscParameterBufferROIPrivate *roi_Param;
+    unsigned int roi_buffer_size = sizeof(VAEncMiscParameterBufferROIPrivate);
+#else
+    VAEncMiscParameterBufferROI *roi_Param;
+    unsigned int roi_buffer_size = sizeof(VAEncMiscParameterBufferROI);
+#endif  // defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT)
+
+    if (roiParam_id != VA_INVALID_ID)
+    {
+        vaDestroyBuffer(vaDisplay, roiParam_id);
+    }
+
+    vaSts = vaCreateBuffer(vaDisplay,
+            vaContextEncode,
+            VAEncMiscParameterBufferType,
+            sizeof(VAEncMiscParameterBuffer) + roi_buffer_size,
+            1,
+            NULL,
+            &roiParam_id);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    vaSts = vaMapBuffer(vaDisplay,
+            roiParam_id,
+            (void **)&misc_param);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+#if defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT)
+    misc_param->type = (VAEncMiscParameterType)VAEncMiscParameterTypeROIPrivate;
+    roi_Param = (VAEncMiscParameterBufferROIPrivate *)misc_param->data;
+#else
+    misc_param->type = (VAEncMiscParameterType)VAEncMiscParameterTypeROI;
+    roi_Param = (VAEncMiscParameterBufferROI *)misc_param->data;
+#endif  // defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT)
+
+    memset(roi_Param, 0, roi_buffer_size);
+
+    if (task.m_numRoi)
+    {
+        roi_Param->num_roi = task.m_numRoi;
+
+        if (arrayVAEncROI.size() < task.m_numRoi)
+        {
+            arrayVAEncROI.resize(task.m_numRoi);
+        }
+        roi_Param->roi = &arrayVAEncROI[0];
+        memset(roi_Param->roi, 0, task.m_numRoi*sizeof(VAEncROI));
+
+        for (mfxU32 i = 0; i < task.m_numRoi; i ++)
+        {
+            roi_Param->roi[i].roi_rectangle.x = task.m_roi[i].Left;
+            roi_Param->roi[i].roi_rectangle.y = task.m_roi[i].Top;
+            roi_Param->roi[i].roi_rectangle.width = task.m_roi[i].Right - task.m_roi[i].Left;
+            roi_Param->roi[i].roi_rectangle.height = task.m_roi[i].Bottom - task.m_roi[i].Top;
+            roi_Param->roi[i].roi_value = task.m_roi[i].Priority;
+        }
+        roi_Param->max_delta_qp = 51;
+        roi_Param->min_delta_qp = -51;
+
+#if defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT)
+        roi_Param->roi_flags.bits.roi_value_is_qp_delta = 0;
+#if MFX_VERSION > 1021
+        if (task.m_roiMode == MFX_ROI_MODE_QP_DELTA) {
+            roi_Param->roi_flags.bits.roi_value_is_qp_delta = 1;
+        }
+#endif // MFX_VERSION > 1021
+#endif // defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT)
+    }
+    vaUnmapBuffer(vaDisplay, roiParam_id);
+
+    return MFX_ERR_NONE;
+}
+
 void VABuffersHandler::_CheckPool(mfxU32 pool)
 {
     if (!m_poolMap.count(pool))
@@ -776,7 +858,8 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
         VAConfigAttribEncParallelRateControl,
 #endif
         VAConfigAttribEncMaxRefFrames,
-        VAConfigAttribEncSliceStructure
+        VAConfigAttribEncSliceStructure,
+        VAConfigAttribEncROI
     };
     std::vector<VAConfigAttrib> attrs;
 
@@ -860,6 +943,25 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
 
     //printf("LibVA legacy: MaxPicWidth %d (%d), MaxPicHeight %d (%d), SliceStructure %d (%d), NumRef %d  %d (%x)\n", m_caps.MaxPicWidth, attrs[5].value,  m_caps.MaxPicHeight,attrs[4].value, m_caps.SliceStructure, attrs[8].value, m_caps.MaxNum_Reference0, m_caps.MaxNum_Reference1, attrs[7].value);
     }    
+
+    if (attrs[ idx_map[VAConfigAttribEncROI] ].value != VA_ATTRIB_NOT_SUPPORTED) // VAConfigAttribEncROI
+    {
+#if defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT)
+        VAConfigAttribValEncROIPrivate *VaEncROIValPtr = reinterpret_cast<VAConfigAttribValEncROIPrivate *>(&attrs[ idx_map[VAConfigAttribEncROI] ].value);
+        assert(VaEncROIValPtr->bits.num_roi_regions < 32);
+        m_caps.MaxNumOfROI = VaEncROIValPtr->bits.num_roi_regions;
+        m_caps.ROIBRCPriorityLevelSupport = VaEncROIValPtr->bits.roi_rc_priority_support;
+        m_caps.ROIDeltaQPSupport = VaEncROIValPtr->bits.roi_rc_qp_delta_support;
+#else
+        m_caps.MaxNumOfROI = 0;
+#endif  // defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT)
+    }
+    else
+    {
+        m_caps.MaxNumOfROI = 0;
+    }
+
+
     return MFX_ERR_NONE;
 }
 
@@ -1515,6 +1617,14 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
         }
     }
    }
+
+    if (task.m_numRoi)
+    {
+        VABufferID &m_roiBufferId = VABufferNew(VABID_ROI, 0);
+        MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetROI(task, m_arrayVAEncROI, m_vaDisplay, m_vaContextEncode, m_roiBufferId),
+                              MFX_ERR_DEVICE_FAILED);
+    }
+
    mfxU32 storedSize = 0;
 
    if (skipMode.NeedDriverCall()){

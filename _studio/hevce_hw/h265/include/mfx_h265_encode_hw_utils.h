@@ -11,6 +11,8 @@
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
 
 #pragma once
+#include "mfx_h264_encode_struct_vaapi.h"
+#include "hevce_ddi_main.h"
 #include "mfx_h265_encode_hw_set.h"
 #include "mfx_ext_buffers.h"
 #include "mfx_common.h"
@@ -174,7 +176,7 @@ enum
     MAX_SLICES              = 200,
     DEFAULT_LTR_INTERVAL    = 16,
 
-    MAX_NUM_ROI             = 4
+    MAX_NUM_ROI             = 8
 };
 
 #if DEBUG_REC_FRAMES_INFO
@@ -369,6 +371,7 @@ typedef struct _Task : DpbFrame
 
     RoiData         m_roi[MAX_NUM_ROI];
     mfxU16          m_numRoi;
+    mfxU16          m_roiMode;
 
     mfxU16        m_SkipMode;
 
@@ -1005,7 +1008,9 @@ void ConfigureTask(
     Task &                task,
     Task const &          prevTask,
     MfxVideoParam const & video,
-    mfxU32 &baseLayerOrder);
+    mfxU32 &baseLayerOrder,
+    ENCODE_CAPS_HEVC const & caps);
+
 mfxI64 CalcDTSFromPTS(
     mfxFrameInfo const & info,
     mfxU16               dpbOutputDelay,
@@ -1072,7 +1077,8 @@ mfxStatus CodeAsSkipFrame(
 
 mfxStatus CheckAndFixRoi(
     MfxVideoParam const & par,
-    RoiData *roi);
+    RoiData *roi,
+    mfxU16 roiMode = 0);
 
 #if DEBUG_REC_FRAMES_INFO
     inline vm_file * OpenFile(vm_char const * name, vm_char const * mode)

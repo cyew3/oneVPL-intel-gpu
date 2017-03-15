@@ -291,14 +291,14 @@ namespace hevce_roi
         },
 
         // one correct region with incorrect qp in CBR
-        {/*29*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CORRECT_ROI, NONE, MFX_ROI_MODE_QP_DELTA, 1, 10, 10, 100, 100, HEVCE_ROI_MAXIMUM_ABS_QP_VALUE + 1,
+        {/*29*/ MFX_ERR_INVALID_VIDEO_PARAM, CORRECT_ROI, NONE, MFX_ROI_MODE_QP_DELTA, 1, 10, 10, 100, 100, HEVCE_ROI_MAXIMUM_ABS_QP_VALUE + 1,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
             }
         },
 
         // one correct region with incorrect negative qp in VBR
-        {/*30*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CORRECT_ROI, NONE, MFX_ROI_MODE_QP_DELTA, 1, 10, 10, 100, 100, (-1)*HEVCE_ROI_MAXIMUM_ABS_QP_VALUE - 1,
+        {/*30*/ MFX_ERR_INVALID_VIDEO_PARAM, CORRECT_ROI, NONE, MFX_ROI_MODE_QP_DELTA, 1, 10, 10, 100, 100, (-1)*HEVCE_ROI_MAXIMUM_ABS_QP_VALUE - 1,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
             }
@@ -326,14 +326,14 @@ namespace hevce_roi
         },
 
         // request Query for maximum supported regions in CBR
-        {/*34*/ MFX_ERR_NONE, CHECK_QUERY, MAX_SUPPORTED_REGIONS, MFX_ROI_MODE_QP_DELTA, MEDIASDK_API_MAXIMUM_SUPPORTED_REGIONS, 10, 10, 100, 100, 1,
+        {/*34*/ MFX_ERR_NONE, CHECK_QUERY, MAX_SUPPORTED_REGIONS, MFX_ROI_MODE_QP_DELTA, MAX_SUPPORTED_REGIONS + 5, 16, 16, 64, 64, 1,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
             }
         },
 
         // request Query for maximum supported regions in VBR
-        {/*35*/ MFX_ERR_NONE, CHECK_QUERY, MAX_SUPPORTED_REGIONS, MFX_ROI_MODE_QP_DELTA, MEDIASDK_API_MAXIMUM_SUPPORTED_REGIONS, 10, 10, 100, 100, 1,
+        {/*35*/ MFX_ERR_NONE, CHECK_QUERY, MAX_SUPPORTED_REGIONS, MFX_ROI_MODE_QP_DELTA, MAX_SUPPORTED_REGIONS + 5, 16, 16, 64, 64, 1,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
             }
@@ -445,7 +445,7 @@ namespace hevce_roi
 #if MFX_VERSION > 1021
         roi.ROIMode           = tc.roi_mode;
 #endif // MFX_VERSION > 1021
-        const mfxU32 multiplier = tc.type == WRONG_ROI_OUT_OF_IMAGE ? m_par.mfx.FrameInfo.Width : 1;
+        const mfxU32 multiplier = tc.type == WRONG_ROI_OUT_OF_IMAGE ? m_par.mfx.FrameInfo.Width : 16;
         const mfxU32 end_count = tc.roi_cnt > MEDIASDK_API_MAXIMUM_SUPPORTED_REGIONS ? MEDIASDK_API_MAXIMUM_SUPPORTED_REGIONS : tc.roi_cnt;
         for(mfxU32 i = 0; i < end_count; ++i)
         {

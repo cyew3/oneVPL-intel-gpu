@@ -810,7 +810,11 @@ bool CheckLCUSize(mfxU32 LCUSizeSupported, mfxU32& LCUSize)
     return false;
 }
 
-void CheckAndFixRect(MfxVideoParam const & par,
+#endif // PRE_SI_TARGET_PLATFORM_GEN10
+
+#ifdef MFX_ENABLE_HEVCE_ROI
+
+static void CheckAndFixRect(MfxVideoParam const & par,
                      RectData *rect,
                      mfxU32 &changed,
                      mfxU32 &invalid)
@@ -830,7 +834,7 @@ void CheckAndFixRect(MfxVideoParam const & par,
     invalid += (rect->Top > rect->Bottom);
 }
 
-mfxStatus CheckAndFixRoi(MfxVideoParam const & par, RoiData *roi)
+mfxStatus CheckAndFixRoi(MfxVideoParam const & par, RoiData *roi, mfxU16 roiMode)
 {
     mfxStatus checkSts = MFX_ERR_NONE;
     mfxU32 changed = 0, invalid = 0;
@@ -842,7 +846,16 @@ mfxStatus CheckAndFixRoi(MfxVideoParam const & par, RoiData *roi)
         invalid += CheckRange(roi->Priority, -51, 51);
     } else if (par.mfx.RateControlMethod)
     {
+#if MFX_VERSION > 1021
+        if(roiMode == MFX_ROI_MODE_QP_DELTA)
+            invalid += CheckRange(roi->Priority, -51, 51);
+        else if(roiMode == MFX_ROI_MODE_PRIORITY)
+            invalid += CheckRange(roi->Priority, -3, 3);
+        else
+            ++invalid;
+#else
         invalid += CheckRange(roi->Priority, -3, 3);
+#endif // MFX_VERSION > 1021
     }
 
     if (changed)
@@ -852,7 +865,8 @@ mfxStatus CheckAndFixRoi(MfxVideoParam const & par, RoiData *roi)
 
     return checkSts;
 }
-#endif // PRE_SI_TARGET_PLATFORM_GEN10
+
+#endif // MFX_ENABLE_HEVCE_ROI
 
 const mfxU16 AVBR_ACCURACY_MIN = 1;
 const mfxU16 AVBR_ACCURACY_MAX = 65535;
@@ -1243,9 +1257,9 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 
     mfxExtCodingOption2& CO2 = par.m_ext.CO2;
     mfxExtCodingOption3& CO3 = par.m_ext.CO3;
-#ifdef PRE_SI_TARGET_PLATFORM_GEN10
+#ifdef MFX_ENABLE_HEVCE_ROI
     mfxExtEncoderROI& ROI = par.m_ext.ROI;
-#endif //PRE_SI_TARGET_PLATFORM_GEN10
+#endif // MFX_ENABLE_HEVCE_ROI
 
     changed += CheckTriStateOption(par.mfx.LowPower);
 
@@ -1966,23 +1980,18 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     }
 #endif
 
-#ifdef PRE_SI_TARGET_PLATFORM_GEN10
+#ifdef MFX_ENABLE_HEVCE_ROI
     //ROI
     if (ROI.NumROI) {
 
+        mfxU16 maxNumOfRoi = caps.MaxNumOfROI <= MAX_NUM_ROI ? caps.MaxNumOfROI : MAX_NUM_ROI; 
+
         invalid += (caps.MaxNumOfROI == 0);
 
-        //{  // if block QP Data surface is not provided
-        //    if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
-        //        invalid += (caps.ROIDeltaQPSupport == 0);
-        //    else
-        //        invalid += (caps.ROIBRCPriorityLevelSupport == 0);
-        //}
-
         if (bInit)
-            invalid += CheckMax(ROI.NumROI, caps.MaxNumOfROI);
+            invalid += CheckMax(ROI.NumROI, maxNumOfRoi);
         else
-            changed += CheckMax(ROI.NumROI, caps.MaxNumOfROI);
+            changed += CheckMax(ROI.NumROI, maxNumOfRoi);
 
         if (par.m_platform.CodeName >= MFX_PLATFORM_CANNONLAKE)
             invalid += CheckMax(ROI.NumROI, 4);     /* Gen10-12 limitation */
@@ -1990,7 +1999,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         for (mfxU16 i = 0; i < ROI.NumROI; i++)
         {
             // check that rectangle dimensions don't conflict with each other and don't exceed frame size
-            sts = CheckAndFixRoi(par, (RoiData *)&(ROI.ROI[i]));
+            sts = CheckAndFixRoi(par, (RoiData *)&(ROI.ROI[i]), ROI.ROIMode);
             if (sts == MFX_ERR_INVALID_VIDEO_PARAM) {
                 invalid++;
             } else if (sts != MFX_ERR_NONE) {
@@ -1999,7 +2008,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
             }
         }
     }
-#endif // PRE_SI_TARGET_PLATFORM_GEN10
+#endif // MFX_ENABLE_HEVCE_ROI
 
     if (CO3.EnableMBQP !=0)
     {

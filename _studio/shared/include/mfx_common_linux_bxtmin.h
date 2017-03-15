@@ -72,6 +72,9 @@
 //#define MFX_ENABLE_LA_H264_VIDEO_HW
 #endif
 
+// H265 features
+#define MFX_ENABLE_HEVCE_ROI
+
 // H265 FEI plugin
 #if defined(AS_H265FEI_PLUGIN)
 //#define MFX_ENABLE_H265FEI_HW

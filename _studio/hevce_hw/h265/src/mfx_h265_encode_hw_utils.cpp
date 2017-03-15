@@ -3005,13 +3005,15 @@ void ConfigureTask(
     Task &                task,
     Task const &          prevTask,
     MfxVideoParam const & par,
-    mfxU32 &baseLayerOrder)
+    mfxU32 &baseLayerOrder,
+    ENCODE_CAPS_HEVC const & caps)
 {
     const bool isI    = !!(task.m_frameType & MFX_FRAMETYPE_I);
     const bool isP    = !!(task.m_frameType & MFX_FRAMETYPE_P);
     const bool isB    = !!(task.m_frameType & MFX_FRAMETYPE_B);
     const bool isIDR  = !!(task.m_frameType & MFX_FRAMETYPE_IDR);
     const mfxExtCodingOption3& CO3 = par.m_ext.CO3;
+    (void)(caps);
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     const mfxU8 maxQP = mfxU8(51 + 6 * (CO3.TargetBitDepthLuma - 8));
@@ -3041,7 +3043,7 @@ void ConfigureTask(
             task.m_SkipMode = 0;
         }
     }
-#ifdef PRE_SI_TARGET_PLATFORM_GEN10
+#ifdef MFX_ENABLE_HEVCE_ROI
     // process roi
     mfxExtEncoderROI const * pRoi = &par.m_ext.ROI;
     mfxExtEncoderROI* extRoiRuntime = ExtBuffer::Get(task.m_ctrl);
@@ -3054,20 +3056,53 @@ void ConfigureTask(
 
     if (pRoi && pRoi->NumROI)
     {
-        for (mfxU16 i = 0; i < pRoi->NumROI; i ++)
+        mfxU16 numRoi = pRoi->NumROI <= MAX_NUM_ROI ? pRoi->NumROI : MAX_NUM_ROI;
+
+        if (numRoi > caps.MaxNumOfROI) {
+            numRoi = caps.MaxNumOfROI;
+        }
+
+#if MFX_VERSION > 1021
+        task.m_roiMode = pRoi->ROIMode;
+
+        if (pRoi->ROIMode != MFX_ROI_MODE_QP_DELTA && pRoi->ROIMode != MFX_ROI_MODE_PRIORITY) {
+            numRoi = 0;
+        }
+
+// TODO: remove below macro conditional statement when ROI related caps will be correctly set up by the driver
+#if !defined(LINUX_TARGET_PLATFORM_BXTMIN) && !defined(LINUX_TARGET_PLATFORM_BXT)
+        if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
+            pRoi->ROIMode == MFX_ROI_MODE_QP_DELTA && caps.ROIDeltaQPSupport == 0) {
+            numRoi = 0;
+        }
+
+        if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
+            pRoi->ROIMode == MFX_ROI_MODE_PRIORITY && caps.ROIBRCPriorityLevelSupport == 0) {
+            numRoi = 0;
+        }
+#endif // !defined(LINUX_TARGET_PLATFORM_BXTMIN) && !defined(LINUX_TARGET_PLATFORM_BXT)
+
+#endif // MFX_VERSION > 1021
+
+        for (mfxU16 i = 0; i < numRoi; i ++)
         {
             memcpy_s(&task.m_roi[task.m_numRoi], sizeof(RoiData), &pRoi->ROI[i], sizeof(RoiData));
             if (extRoiRuntime)
             {
+#if MFX_VERSION > 1021
+                // check runtime ROI
+                mfxStatus sts = CheckAndFixRoi(par, (RoiData *)&(task.m_roi[task.m_numRoi]), extRoiRuntime->ROIMode);
+#else
                 // check runtime ROI
                 mfxStatus sts = CheckAndFixRoi(par, (RoiData *)&(task.m_roi[task.m_numRoi]));
+#endif // MFX_VERSION > 1021
                 if (sts != MFX_ERR_INVALID_VIDEO_PARAM)
                     task.m_numRoi ++;
             } else
                 task.m_numRoi ++;
         }
     }
-#endif // PRE_SI_TARGET_PLATFORM_GEN10
+#endif // MFX_ENABLE_HEVCE_ROI
 
     if (task.m_tid == 0 && IntRefType)
     {
