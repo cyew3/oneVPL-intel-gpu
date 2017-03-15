@@ -24,7 +24,7 @@ set( BUILDER_ROOT ${CMAKE_HOME_DIRECTORY}/../builder )
 include( ../builder_s/FindFunctions.cmake )
 include( ../builder/FindGlobals.cmake )
 include( ../builder/FindMFX.cmake )
-include( ../builder_s/FindPackages.cmake )
+include( ../builder/FindPackages.cmake )
 include( ../builder/FindVTune.cmake )
 
 set( NOT_CONFIGURED "" CACHE INTERNAL "" )
