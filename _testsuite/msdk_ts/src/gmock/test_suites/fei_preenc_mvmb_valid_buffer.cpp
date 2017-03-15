@@ -1,12 +1,30 @@
-/* /////////////////////////////////////////////////////////////////////////////
-//
-//                  INTEL CORPORATION PROPRIETARY INFORMATION
-//     This software is supplied under the terms of a license agreement or
-//     nondisclosure agreement with Intel Corporation and may not be copied
-//     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
-//
-*/
+/******************************************************************************* *\
+
+Copyright (C) 2016-2017 Intel Corporation.  All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+- Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+- Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+- Neither the name of Intel Corporation nor the names of its contributors
+may be used to endorse or promote products derived from this software
+without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY INTEL CORPORATION "AS IS" AND ANY EXPRESS OR
+IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL INTEL CORPORATION BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+*******************************************************************************/
 
 /******************************************************************************
     DisableMVOutput, DisableStatisticsOutput for PreENC.
@@ -278,7 +296,7 @@ int TestSuite::RunTest(unsigned int id)
     }
 
     /*** Starting preenc ***/
-    for (int i =0; i < FRAME_TO_ENCODE; i++) {
+    for (int i = 0; i < FRAME_TO_ENCODE; i++) {
         p_PreENCInput[i]->InSurface = &surfacesPool[i];
         p_PreENCInput[i]->InSurface->Data.Locked++;
         FEIPreEncCtrl[i].RefFrame[0] = (i == 0) ? NULL : p_PreENCInput[i - 1]->InSurface;
@@ -293,18 +311,20 @@ int TestSuite::RunTest(unsigned int id)
         /*** Check buffer valid ***/
         if(sts == MFX_ERR_NONE) {
             if(tc.mode & OUT_PREENC_MV) {
-                mfxU8* zero_mv_buffer = new mfxU8[sizeof(*(out_mvs[i].MB))*out_mvs[i].NumMBAlloc];
-                memset((mfxU8*)zero_mv_buffer, 0, sizeof(*(out_mvs[i].MB))*out_mvs[i].NumMBAlloc);
-                EXPECT_NE(0, memcmp((mfxU8*)zero_mv_buffer, (mfxU8*)out_mvs[i].MB, out_mvs[i].NumMBAlloc *sizeof(mfxExtFeiEncMV)))
-                    << "ERROR: mfxExtFeiEncMV output should not be zero";
-                delete zero_mv_buffer;
+                if(FEIPreEncCtrl[i].RefFrame[0] != NULL || FEIPreEncCtrl[i].RefFrame[1] != NULL) {
+                    mfxU8* zero_mv_buffer = new mfxU8[sizeof(*(out_mvs[i].MB))*out_mvs[i].NumMBAlloc];
+                    memset((mfxU8*)zero_mv_buffer, 0, sizeof(*(out_mvs[i].MB))*out_mvs[i].NumMBAlloc);
+                    EXPECT_NE(0, memcmp((mfxU8*)zero_mv_buffer, (mfxU8*)out_mvs[i].MB, out_mvs[i].NumMBAlloc *sizeof(mfxExtFeiEncMV)))
+                        << "ERROR: mfxExtFeiEncMV output should not be zero";
+                    delete[] zero_mv_buffer;
+                }
             }
             if(tc.mode & OUT_PREENC_MB_STAT) {
                 mfxU8* zero_mb_buffer = new mfxU8[sizeof(*(out_mbStat[i].MB))*out_mbStat[i].NumMBAlloc];
                 memset((mfxU8*)zero_mb_buffer, 0, sizeof(*(out_mbStat[i].MB))*out_mbStat[i].NumMBAlloc);
                 EXPECT_NE(0, memcmp((mfxU8*)zero_mb_buffer, (mfxU8*)out_mbStat[i].MB, out_mbStat[i].NumMBAlloc *sizeof(mfxExtFeiPreEncMBStat)))
                     << "ERROR: mfxExtFeiEncMBStat output should not be zero";
-                delete zero_mb_buffer;
+                delete[] zero_mb_buffer;
             }
         }
     }
@@ -314,17 +334,25 @@ int TestSuite::RunTest(unsigned int id)
 
     // Free memory allocated dynamically
     if (NULL != surfacesPool) {
-        delete surfacesPool;
+        delete[] surfacesPool;
         surfacesPool = NULL;
+    }
+    if (NULL != m_pFrameAllocator) {
+        delete m_pFrameAllocator;
+        m_pFrameAllocator = NULL;
+    }
+    if (NULL != p_vaapiAllocParams) {
+        delete p_vaapiAllocParams;
+        p_vaapiAllocParams = NULL;
     }
 
     for (int i = 0; i < FRAME_TO_ENCODE; i++) {
         if (NULL != out_mvs[i].MB) {
-            delete out_mvs[i].MB;
+            delete[] out_mvs[i].MB;
             out_mvs[i].MB = NULL;
         }
         if (NULL != out_mbStat[i].MB) {
-            delete out_mbStat[i].MB;
+            delete[] out_mbStat[i].MB;
             out_mbStat[i].MB = NULL;
         }
         if (NULL != p_PreENCInput[i]) {
