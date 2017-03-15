@@ -40,6 +40,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "vaapi_device.h"
 
+#define MSDK_ZERO_ARRAY(VAR, NUM) {memset(VAR, 0, sizeof(VAR[0])*NUM);}
 
 namespace fei_preenc_mvmb_valid_buffer
 {
@@ -161,9 +162,9 @@ int TestSuite::RunTest(unsigned int id)
 
     // Create VAAPI allocator
     MFXFrameAllocator *m_pFrameAllocator = new vaapiFrameAllocator;
-    MSDK_CHECK_POINTER(m_pFrameAllocator, MFX_ERR_MEMORY_ALLOC);
+
     vaapiAllocatorParams *p_vaapiAllocParams = new vaapiAllocatorParams;
-    MSDK_CHECK_POINTER(p_vaapiAllocParams, MFX_ERR_MEMORY_ALLOC);
+
     p_vaapiAllocParams->m_dpy = (VADisplay)hdl;
     mfxAllocatorParams* m_pmfxAllocatorParams = p_vaapiAllocParams;
     g_tsStatus.check(MFXVideoCORE_SetFrameAllocator(m_session, m_pFrameAllocator));
@@ -219,12 +220,19 @@ int TestSuite::RunTest(unsigned int id)
 
     // Attach mfxExtFeiPreEncMV and mfxExtFeiPreEncMBStat to m_pPreENCOutput.
     mfxENCInput* p_PreENCInput[FRAME_TO_ENCODE];
+    MSDK_ZERO_ARRAY(p_PreENCInput, FRAME_TO_ENCODE);
     mfxENCOutput* p_PreENCOutput[FRAME_TO_ENCODE];
+    MSDK_ZERO_ARRAY(p_PreENCOutput, FRAME_TO_ENCODE);
+
     std::vector<mfxExtBuffer*> in_buffs[FRAME_TO_ENCODE];
     std::vector<mfxExtBuffer*> out_buffs[FRAME_TO_ENCODE];
+
     mfxExtFeiPreEncCtrl FEIPreEncCtrl[FRAME_TO_ENCODE];
+    MSDK_ZERO_ARRAY(FEIPreEncCtrl, FRAME_TO_ENCODE);
     mfxExtFeiPreEncMV out_mvs[FRAME_TO_ENCODE];
+    MSDK_ZERO_ARRAY(out_mvs, FRAME_TO_ENCODE);
     mfxExtFeiPreEncMBStat out_mbStat[FRAME_TO_ENCODE];
+    MSDK_ZERO_ARRAY(out_mbStat, FRAME_TO_ENCODE);
 
     // Init in and out parameter for preenc call.
     for (int i =0; i < FRAME_TO_ENCODE; i++) {
