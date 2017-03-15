@@ -42,7 +42,7 @@ public:
     {
         TRACE_FUNC0(BS_parser::parse_next_unit);
         m_sts = this->parse_next_unit();
-        if((m_sts && m_sts != BS_ERR_MORE_DATA) || (m_sts && orDie))
+        if(m_sts && (m_sts != BS_ERR_MORE_DATA) && orDie)
         {
             g_tsLog << "FAILED in tsParser\n";
             g_tsStatus.check(MFX_ERR_UNKNOWN);
@@ -80,6 +80,7 @@ class tsParserHEVCAU : public BS_HEVC_parser
 {
 public:
     typedef BS_HEVC::AU UnitType;
+    UnitType dummy;
     BSErr m_sts;
 
     tsParserHEVCAU(mfxU32 mode = 0)
@@ -107,11 +108,13 @@ public:
 
         TRACE_FUNC0(BS_parser::parse_next_unit);
         m_sts = parse_next_au(pAU);
-        if(m_sts && ((m_sts != BS_ERR_MORE_DATA) || m_sts) && orDie)
+        if(m_sts && (m_sts != BS_ERR_MORE_DATA) && orDie)
         {
             g_tsLog << "ERROR: FAILED in tsParser: " << m_sts << "\n";
             g_tsStatus.check(MFX_ERR_UNKNOWN);
         }
+        if(pAU == NULL)
+            pAU = &dummy;
         return pAU;
     }
 
@@ -131,6 +134,7 @@ class tsParserH264AU : public BS_H264_parser
 {
 public:
     typedef BS_H264_au UnitType;
+    UnitType dummy;
     BSErr m_sts;
 
     tsParserH264AU(mfxU32 mode = 0)
@@ -158,11 +162,13 @@ public:
 
         TRACE_FUNC0(BS_parser::parse_next_unit);
         m_sts = parse_next_au(pAU);
-        if(m_sts && ((m_sts != BS_ERR_MORE_DATA) || m_sts) && orDie)
+        if(m_sts && (m_sts != BS_ERR_MORE_DATA) && orDie)
         {
             g_tsLog << "ERROR: FAILED in tsParser: " << m_sts << "\n";
             g_tsStatus.check(MFX_ERR_UNKNOWN);
         }
+        if(pAU == NULL)
+            pAU = &dummy;
         return pAU;
     }
 
@@ -265,7 +271,7 @@ public:
         {
             TRACE_FUNC0(BS_parser::parse_next_unit);
             m_sts = parse_next_unit();
-            if(m_sts && ((m_sts != BS_ERR_MORE_DATA) || m_sts) && orDie)
+            if(m_sts && orDie)
             {
                 if (m_sts == BS_ERR_MORE_DATA && (pAU->NumSlice || slices.size())) {
                     last_offset = 0;
