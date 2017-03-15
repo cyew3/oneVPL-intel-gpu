@@ -927,7 +927,7 @@ CEncodingPipeline::CEncodingPipeline()
     m_bExternalAlloc = false;
     m_pEncSurfaces = NULL;
     m_pVppSurfaces = NULL;
-    m_InputFourCC = NULL;
+    m_InputFourCC = 0;
 
     m_nMemBuffer = 0;
     m_nTimeout = 0;
