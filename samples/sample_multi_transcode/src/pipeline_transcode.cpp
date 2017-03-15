@@ -2161,8 +2161,10 @@ MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
     }
 
     //--- Settings HRD buffer size
-    m_mfxEncParams.mfx.BufferSizeInKB = pInParams->BufferSizeInKB ? pInParams->BufferSizeInKB
-        : (mfxU16)(m_mfxEncParams.mfx.TargetKbps*4L/8); // buffer for 4 seconds
+    if (pInParams->BufferSizeInKB)
+    {
+        m_mfxEncParams.mfx.BufferSizeInKB = pInParams->BufferSizeInKB;
+    }
 
     //--- Force setting fourcc type if required
     if (pInParams->EncoderFourCC)
