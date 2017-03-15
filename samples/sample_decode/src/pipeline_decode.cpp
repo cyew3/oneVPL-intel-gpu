@@ -792,8 +792,8 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
     if (!m_bVppIsUsed)
     {
 
-        if ( (m_mfxVideoParams.mfx.FrameInfo.CropW != pParams->Width) ||
-            (m_mfxVideoParams.mfx.FrameInfo.CropH != pParams->Height) )
+        if ( (m_mfxVideoParams.mfx.FrameInfo.CropW != pParams->Width && pParams->Width) ||
+            (m_mfxVideoParams.mfx.FrameInfo.CropH != pParams->Height && pParams->Height) )
         {
             /* By default VPP used for resize */
             m_bVppIsUsed = true;
