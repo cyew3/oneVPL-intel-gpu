@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2017 Intel Corporation. All Rights Reserved.
 //
 
 #if defined  (MFX_VA)
@@ -21,7 +21,6 @@
 #include "umc_va_video_processing.h"
 #include "libmfx_core_d3d11.h"
 #include "mfx_umc_alloc_wrapper.h"
-
 
 #define DXVA2_VC1PICTURE_PARAMS_EXT_BUFFER 21
 #define DXVA2_VC1BITPLANE_EXT_BUFFER       22
@@ -98,6 +97,14 @@ mfxStatus MFXD3D11Accelerator::GetSuitVideoDecoderConfig(const mfxVideoParam    
     {
         if ((m_Profile & (VA_ENTRY_POINT | VA_CODEC)) != (GuidProfile::GetGuidProfile(k)->profile  & (VA_ENTRY_POINT | VA_CODEC)))
             continue;
+
+#ifndef OPEN_SOURCE
+    {
+        if ((m_Profile & VA_PRIVATE_DDI_MODE) &&
+            !GuidProfile::GetGuidProfile(k)->IsIntelCustomGUID())
+            continue;
+    }
+#endif
 
         video_desc->Guid = GuidProfile::GetGuidProfile(k)->guid;
 

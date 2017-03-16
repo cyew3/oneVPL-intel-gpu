@@ -129,7 +129,6 @@ enum VideoAccelerationProfile
     VA_PROFILE_MVC_MV           = 0x05000,
     VA_PROFILE_MVC_STEREO       = 0x06000,
     VA_PROFILE_MVC_STEREO_PROG  = 0x07000,
-    VA_PROFILE_INTEL            = 0x08000,
     VA_PROFILE_WIDEVINE         = 0x09000,
     VA_PROFILE_422              = 0x0a000,
     VA_PROFILE_444              = 0x0b000,
@@ -143,6 +142,9 @@ enum VideoAccelerationProfile
     VA_LONG_SLICE_MODE          = 0x00100000,
     VA_SHORT_SLICE_MODE         = 0x00200000,
     VA_ANY_SLICE_MODE           = 0x00300000,
+#ifndef OPEN_SOURCE
+    VA_PRIVATE_DDI_MODE         = 0x01000000,
+#endif
 
     MPEG2_VLD       = VA_MPEG2 | VA_VLD,
     H264_VLD        = VA_H264 | VA_VLD,

@@ -106,6 +106,9 @@ struct GuidProfile
     static bool IsIntelCustomGUID(const GUID & guid);
     static bool IsMVCGUID(const GUID & guid);
     static bool isShortFormat(bool isHEVCGUID, Ipp32u configBitstreamRaw);
+
+    bool IsIntelCustomGUID() const
+    { return IsIntelCustomGUID(guid); }
 };
 
 enum eUMC_DirectX_Status
@@ -195,7 +198,6 @@ protected:
 template <typename T>
 bool CheckDXVAConfig(Ipp32s profile_flags, T *config, ProtectedVA * protectedVA)
 {
-    profile_flags &= ~VA_PROFILE_INTEL;
     Ipp32s const profile = 
         (profile_flags & (VA_ENTRY_POINT | VA_CODEC));
 

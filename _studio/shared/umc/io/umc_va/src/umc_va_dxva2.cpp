@@ -411,15 +411,15 @@ static const GuidProfile guidProfiles[] =
     { H264_VLD        | VA_PROFILE_WIDEVINE,                                    DXVA_Intel_Decode_Elementary_Stream_AVC },
 
     { H265_VLD,                                                                 DXVA_ModeHEVC_VLD_Main }, // MS
-    { H265_VLD        | VA_PROFILE_INTEL | VA_LONG_SLICE_MODE,                  DXVA_Intel_ModeHEVC_VLD_MainProfile },
+    { H265_VLD        | VA_LONG_SLICE_MODE,                                     DXVA_Intel_ModeHEVC_VLD_MainProfile },
     { H265_VLD        | VA_PROFILE_10,                                          DXVA_ModeHEVC_VLD_Main10  }, // MS
-    { H265_VLD        | VA_PROFILE_INTEL | VA_PROFILE_10 | VA_LONG_SLICE_MODE,  DXVA_Intel_ModeHEVC_VLD_Main10Profile },
+    { H265_VLD        | VA_PROFILE_10 | VA_LONG_SLICE_MODE,                     DXVA_Intel_ModeHEVC_VLD_Main10Profile },
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-    { H265_VLD_422    | VA_PROFILE_INTEL | VA_LONG_SLICE_MODE,                  DXVA_Intel_ModeHEVC_VLD_Main422_10Profile },
-    { H265_VLD_444    | VA_PROFILE_INTEL | VA_LONG_SLICE_MODE,                  DXVA_Intel_ModeHEVC_VLD_Main444_10Profile },
-    { H265_10_VLD_422 | VA_PROFILE_INTEL | VA_LONG_SLICE_MODE,                  DXVA_Intel_ModeHEVC_VLD_Main422_10Profile },
-    { H265_10_VLD_444 | VA_PROFILE_INTEL | VA_LONG_SLICE_MODE,                  DXVA_Intel_ModeHEVC_VLD_Main444_10Profile },
+    { H265_VLD_422    | VA_LONG_SLICE_MODE,                                     DXVA_Intel_ModeHEVC_VLD_Main422_10Profile },
+    { H265_VLD_444    | VA_LONG_SLICE_MODE,                                     DXVA_Intel_ModeHEVC_VLD_Main444_10Profile },
+    { H265_10_VLD_422 | VA_LONG_SLICE_MODE,                                     DXVA_Intel_ModeHEVC_VLD_Main422_10Profile },
+    { H265_10_VLD_444 | VA_LONG_SLICE_MODE,                                     DXVA_Intel_ModeHEVC_VLD_Main444_10Profile },
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
 
     { VA_H265 | VA_VLD | VA_PROFILE_WIDEVINE,                                   DXVA_Intel_Decode_Elementary_Stream_HEVC },
@@ -572,6 +572,13 @@ Status DXVA2Accelerator::FindConfiguration(VideoStreamInfo *pVideoInfo)
             if ((m_Profile & (VA_ENTRY_POINT | VA_CODEC))!= (GuidProfile::GetGuidProfile(k)->profile & (VA_ENTRY_POINT | VA_CODEC)))
                 continue;
 
+#ifndef OPEN_SOURCE
+    {
+        if ((m_Profile & VA_PRIVATE_DDI_MODE) &&
+            !GuidProfile::GetGuidProfile(k)->IsIntelCustomGUID())
+            continue;
+    }
+#endif
             m_guidDecoder = GuidProfile::GetGuidProfile(k)->guid;
             vm_trace_GUID(m_guidDecoder);
 

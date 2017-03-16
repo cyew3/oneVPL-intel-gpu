@@ -141,7 +141,7 @@ mfxU32 ChooseProfile(mfxVideoParam * param, eMFXHWType )
         mfxExtBuffer* extbuf =
              GetExtendedBuffer(param->ExtParam, param->NumExtParam, MFX_EXTBUFF_FORCE_PRIVATE_DDI);
          if (extbuf)
-            profile |= VA_PROFILE_INTEL;
+            profile |= VA_PRIVATE_DDI_MODE;
     }
 #endif
 

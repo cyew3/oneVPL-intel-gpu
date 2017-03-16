@@ -250,6 +250,15 @@ typedef struct {
     mfxU16      EnableCmBiref;      // 0-default 1-enables Interpolation and GpuBiref 
     mfxU16      reserved[36];       // 256 bytes total} mfxExtCodingOptionHEVC;
 } mfxExtCodingOptionHEVC;
+
+#ifdef MFX_EXTBUFF_FORCE_PRIVATE_DDI_ENABLE
+#define MFX_EXTBUFF_FORCE_PRIVATE_DDI MFX_MAKEFOURCC('F','P','R','V')
+
+typedef struct {
+    mfxExtBuffer Header;
+} mfxExtForcePrivateDDI;
+#endif // #ifdef MFX_EXTBUFF_FORCE_PRIVATE_DDI_ENABLE
+
 #endif // #ifndef OPEN_SOURCE
 
 #if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
@@ -259,13 +268,5 @@ typedef struct {
     mfxExtBuffer Header;
 } mfxExtIntGPUHang;
 #endif
-
-#ifdef MFX_EXTBUFF_FORCE_PRIVATE_DDI_ENABLE
-#define MFX_EXTBUFF_FORCE_PRIVATE_DDI MFX_MAKEFOURCC('F','P','R','V')
-
-typedef struct {
-    mfxExtBuffer Header;
-} mfxExtForcePrivateDDI;
-#endif // #ifdef MFX_EXTBUFF_FORCE_PRIVATE_DDI_ENABLE
 
 #endif // __MFX_EXT_BUFFERS_H__
