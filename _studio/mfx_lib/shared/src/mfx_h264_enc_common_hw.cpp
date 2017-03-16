@@ -1867,17 +1867,38 @@ mfxStatus MfxHwH264Encode::CheckVideoParamFEI(
     }
 
     mfxExtCodingOption3 * extCodingOpt3 = GetExtBuffer(par);
-
-    if (IsOn(extCodingOpt3->EnableMBQP))
-    {
-        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-    }
+    MFX_CHECK(!IsOn(extCodingOpt3->EnableMBQP), MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
     /* FEI works with CQP only */
-    if (MFX_RATECONTROL_CQP != par.mfx.RateControlMethod)
-    {
-        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-    }
+    MFX_CHECK(MFX_RATECONTROL_CQP == par.mfx.RateControlMethod, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+   // Possible options on Init stage:
+   //   one slice buffer      - propagate value to all slices
+   //   buffer for each slice - set value for each slice independently
+   mfxU32 fieldCount = par.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
+   for (mfxU32 i = 0; i < fieldCount; i++)
+   {
+       mfxExtFeiSliceHeader *pDataSliceHeader = GetExtBuffer(par, i);
+       if (pDataSliceHeader->Slice)
+       {
+           // If buffer attached, it should be properly filled
+           MFX_CHECK(pDataSliceHeader->NumSlice, MFX_ERR_INVALID_VIDEO_PARAM);
+
+           if (pDataSliceHeader->NumSlice != 1)
+           {
+               MFX_CHECK(GetMaxNumSlices(par) == pDataSliceHeader->NumSlice, MFX_ERR_INVALID_VIDEO_PARAM);
+           }
+
+           for (mfxU32 slice = 0; slice < pDataSliceHeader->NumSlice; ++slice)
+           {
+               MFX_CHECK(pDataSliceHeader->Slice[slice].DisableDeblockingFilterIdc <=  2, MFX_ERR_INVALID_VIDEO_PARAM);
+               MFX_CHECK(pDataSliceHeader->Slice[slice].SliceAlphaC0OffsetDiv2     <=  6, MFX_ERR_INVALID_VIDEO_PARAM);
+               MFX_CHECK(pDataSliceHeader->Slice[slice].SliceAlphaC0OffsetDiv2     >= -6, MFX_ERR_INVALID_VIDEO_PARAM);
+               MFX_CHECK(pDataSliceHeader->Slice[slice].SliceBetaOffsetDiv2        <=  6, MFX_ERR_INVALID_VIDEO_PARAM);
+               MFX_CHECK(pDataSliceHeader->Slice[slice].SliceBetaOffsetDiv2        >= -6, MFX_ERR_INVALID_VIDEO_PARAM);
+           }
+       }
+   }
 
     return checkSts;
 }
@@ -6145,6 +6166,17 @@ mfxStatus MfxHwH264Encode::CheckFEIRunTimeExtBuffersContent(
         {
             mfxExtFeiSliceHeader* pSliceHeader = reinterpret_cast<mfxExtFeiSliceHeader*>(ctrl->ExtParam[i]);
             MFX_CHECK_NULL_PTR1(pSliceHeader->Slice);
+            // Need to provide control for each slice in runtime if mfxExtFeiSliceHeader attached
+            MFX_CHECK(GetMaxNumSlices(video) >= pSliceHeader->NumSlice && pSliceHeader->NumSlice, MFX_ERR_INVALID_VIDEO_PARAM);
+
+            for (mfxU32 slice = 0; slice < pSliceHeader->NumSlice; ++slice)
+            {
+                MFX_CHECK(pSliceHeader->Slice[slice].DisableDeblockingFilterIdc <=  2, MFX_ERR_INVALID_VIDEO_PARAM);
+                MFX_CHECK(pSliceHeader->Slice[slice].SliceAlphaC0OffsetDiv2     <=  6, MFX_ERR_INVALID_VIDEO_PARAM);
+                MFX_CHECK(pSliceHeader->Slice[slice].SliceAlphaC0OffsetDiv2     >= -6, MFX_ERR_INVALID_VIDEO_PARAM);
+                MFX_CHECK(pSliceHeader->Slice[slice].SliceBetaOffsetDiv2        <=  6, MFX_ERR_INVALID_VIDEO_PARAM);
+                MFX_CHECK(pSliceHeader->Slice[slice].SliceBetaOffsetDiv2        >= -6, MFX_ERR_INVALID_VIDEO_PARAM);
+            }
         }
             break;
 

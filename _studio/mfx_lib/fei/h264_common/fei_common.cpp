@@ -429,18 +429,13 @@ void MfxH264FEIcommon::ConfigureTaskFEI(
 
         mfxExtFeiSliceHeader * extFeiSlice = GetExtBufferFEI(outParams, field);
 
-        for (size_t i = 0; i < GetMaxNumSlices(video); ++i)
+        for (size_t i = 0; i < extFeiSlice->NumSlice; ++i)
         {
-            /* default parameters */
-            mfxU8 disableDeblockingIdc   = 0;
-            mfxI8 sliceAlphaC0OffsetDiv2 = 0;
-            mfxI8 sliceBetaOffsetDiv2    = 0;
+            mfxU8 disableDeblockingIdc   = (mfxU8) extFeiSlice->Slice[i].DisableDeblockingFilterIdc;
+            mfxI8 sliceAlphaC0OffsetDiv2 = (mfxI8) extFeiSlice->Slice[i].SliceAlphaC0OffsetDiv2;
+            mfxI8 sliceBetaOffsetDiv2    = (mfxI8) extFeiSlice->Slice[i].SliceBetaOffsetDiv2;
 
-            disableDeblockingIdc   = (mfxU8) extFeiSlice->Slice[i].DisableDeblockingFilterIdc;
-            sliceAlphaC0OffsetDiv2 = (mfxI8) extFeiSlice->Slice[i].SliceAlphaC0OffsetDiv2;
-            sliceBetaOffsetDiv2    = (mfxI8) extFeiSlice->Slice[i].SliceBetaOffsetDiv2;
-
-            /* Now put values */
+            // Store per-slice values in task
             task.m_disableDeblockingIdc[fieldParity].push_back(disableDeblockingIdc);
             task.m_sliceAlphaC0OffsetDiv2[fieldParity].push_back(sliceAlphaC0OffsetDiv2);
             task.m_sliceBetaOffsetDiv2[fieldParity].push_back(sliceBetaOffsetDiv2);
@@ -549,26 +544,26 @@ mfxStatus MfxH264FEIcommon::CheckInitExtBuffers(const MfxVideoParam & owned_vide
     const mfxExtFeiSPS* pDataSPS = GetExtBuffer(passed_video);
     if (pDataSPS)
     {
+        // Check correctness of provided PPS parameters
+        MFX_CHECK(pDataSPS->Log2MaxPicOrderCntLsb >= 4 && pDataSPS->Log2MaxPicOrderCntLsb <= 16, MFX_ERR_INVALID_VIDEO_PARAM);
+
         // Update internal SPS if FEI SPS buffer attached
         mfxExtSpsHeader * extSps = GetExtBuffer(owned_video);
 
         extSps->seqParameterSetId           = pDataSPS->SPSId;
         extSps->picOrderCntType             = pDataSPS->PicOrderCntType;
-        extSps->log2MaxPicOrderCntLsbMinus4 = pDataSPS->Log2MaxPicOrderCntLsb - 4 ;
+        extSps->log2MaxPicOrderCntLsbMinus4 = pDataSPS->Log2MaxPicOrderCntLsb - 4;
     }
 
     const mfxExtFeiPPS* pDataPPS = GetExtBuffer(passed_video);
     if (pDataPPS)
     {
-        // Check correctness of provided PPS parameters
-        MFX_CHECK(pDataSPS->Log2MaxPicOrderCntLsb >= 4 && pDataSPS->Log2MaxPicOrderCntLsb < 16, MFX_ERR_INVALID_VIDEO_PARAM);
-
         // Update internal PPS if FEI PPS buffer attached
         mfxExtPpsHeader* extPps = GetExtBuffer(owned_video);
         MFX_CHECK(extPps, MFX_ERR_INVALID_VIDEO_PARAM);
 
-        extPps->seqParameterSetId = pDataPPS->SPSId;
-        extPps->picParameterSetId = pDataPPS->PPSId;
+        extPps->seqParameterSetId              = pDataPPS->SPSId;
+        extPps->picParameterSetId              = pDataPPS->PPSId;
 
         extPps->picInitQpMinus26               = pDataPPS->PicInitQP - 26;
         extPps->numRefIdxL0DefaultActiveMinus1 = (std::max)(pDataPPS->NumRefIdxL0Active, mfxU16(1)) - 1;;
@@ -579,14 +574,9 @@ mfxStatus MfxH264FEIcommon::CheckInitExtBuffers(const MfxVideoParam & owned_vide
         extPps->transform8x8ModeFlag           = pDataPPS->Transform8x8ModeFlag;
     }
 
+    // mfxExtFeiSliceHeader is useless at init stage for ENC and PAK (unlike the FEI ENCODE)
     const mfxExtFeiSliceHeader * pDataSliceHeader = GetExtBuffer(passed_video);
-    if (pDataSliceHeader)
-    {
-        for (mfxU32 i = 0; i < pDataSliceHeader->NumSlice; ++i)
-        {
-            MFX_CHECK(pDataSliceHeader->Slice[i].DisableDeblockingFilterIdc <= 2, MFX_ERR_INVALID_VIDEO_PARAM);
-        }
-    }
+    MFX_CHECK(pDataSliceHeader == NULL, MFX_ERR_INVALID_VIDEO_PARAM);
 
     return MFX_ERR_NONE;
 }
@@ -621,7 +611,11 @@ mfxStatus MfxH264FEIcommon::CheckRuntimeExtBuffers(T* input, U* output, const Mf
 
         for (mfxU32 i = 0; i < extFeiSliceInRintime->NumSlice; ++i)
         {
-            MFX_CHECK(extFeiSliceInRintime->Slice[i].DisableDeblockingFilterIdc <= 2, MFX_ERR_INVALID_VIDEO_PARAM);
+            MFX_CHECK(extFeiSliceInRintime->Slice[i].DisableDeblockingFilterIdc <=  2, MFX_ERR_INVALID_VIDEO_PARAM);
+            MFX_CHECK(extFeiSliceInRintime->Slice[i].SliceAlphaC0OffsetDiv2     <=  6, MFX_ERR_INVALID_VIDEO_PARAM);
+            MFX_CHECK(extFeiSliceInRintime->Slice[i].SliceAlphaC0OffsetDiv2     >= -6, MFX_ERR_INVALID_VIDEO_PARAM);
+            MFX_CHECK(extFeiSliceInRintime->Slice[i].SliceBetaOffsetDiv2        <=  6, MFX_ERR_INVALID_VIDEO_PARAM);
+            MFX_CHECK(extFeiSliceInRintime->Slice[i].SliceBetaOffsetDiv2        >= -6, MFX_ERR_INVALID_VIDEO_PARAM);
         }
 
         mfxExtFeiPPS* extFeiPPSinRuntime = GetExtBufferFEI(input, field);

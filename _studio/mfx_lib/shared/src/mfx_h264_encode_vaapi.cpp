@@ -867,7 +867,7 @@ void FillPWT(
 
         mfxExtCodingOptionDDI * extDdi      = GetExtBuffer(par);
         mfxExtCodingOption2   * extOpt2     = GetExtBuffer(par);
-        mfxExtFeiSliceHeader  * extFeiSlice = GetExtBuffer(par, fieldId);
+        mfxExtFeiSliceHeader  * extFeiSlice = GetExtBuffer(par, (MFX_PICSTRUCT_FIELD_BFF & task.GetPicStructForEncode()) ? (1 - fieldId) : fieldId);
         assert(extDdi      != 0);
         assert(extOpt2     != 0);
         assert(extFeiSlice != 0);
@@ -963,14 +963,15 @@ void UpdateSliceSizeLimited(
     MfxVideoParam const                        & par,
     std::vector<ExtVASurface> const & reconQueue)
 {
-    mfxU32 numPics  = task.GetPicStructForEncode() == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
+    mfxU32 numPics = task.GetPicStructForEncode() == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
     mfxU32 idx = 0, ref = 0;
 
-    mfxExtCodingOptionDDI * extDdi = GetExtBuffer(par);
-    mfxExtCodingOption2 * extOpt2 = GetExtBuffer(par);
-    mfxExtFeiSliceHeader * extFeiSlice = GetExtBuffer(par, fieldId);
-    assert(extDdi != 0);
-    assert(extOpt2 != 0);
+    mfxExtCodingOptionDDI * extDdi      = GetExtBuffer(par);
+    mfxExtCodingOption2   * extOpt2     = GetExtBuffer(par);
+    mfxExtFeiSliceHeader  * extFeiSlice = GetExtBuffer(par, (MFX_PICSTRUCT_FIELD_BFF & task.GetPicStructForEncode()) ? (1 - fieldId) : fieldId);
+    assert(extDdi      != 0);
+    assert(extOpt2     != 0);
+    assert(extFeiSlice != 0);
 
     mfxExtPredWeightTable const * pPWT = GetExtBuffer(task.m_ctrl, fieldId);
     if (!pPWT)
@@ -1055,7 +1056,7 @@ void UpdateSliceSizeLimited(
             FillPWT(hwCaps, pps, *pPWT, slice[i]);
     }
 
-} // void UpdateSlice(...)
+} // void UpdateSliceSizeLimited(...)
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -1994,15 +1995,12 @@ mfxStatus VAAPIEncoder::Execute(
         idxRecon *= 1 + task.m_fieldPicFlag;
 
         //find ext buffers
-        mfxExtFeiEncMBCtrl       * mbctrl    = GetExtBuffer(task.m_ctrl, feiFieldId);
-        mfxExtFeiEncMVPredictors * mvpred    = GetExtBuffer(task.m_ctrl, feiFieldId);
-        mfxExtFeiEncFrameCtrl    * frameCtrl = GetExtBuffer(task.m_ctrl, feiFieldId);
-        mfxExtFeiEncQP           * mbqp      = GetExtBuffer(task.m_ctrl, feiFieldId);
-        mfxExtFeiRepackCtrl      * rePakCtrl = GetExtBuffer(task.m_ctrl, feiFieldId);
-
-        /* mfxExtFeiSliceHeader buffer belongs to legacy encoder,
-         * so on  we have to use fieldId */
-        mfxExtFeiSliceHeader*  extFeiSlice = GetExtBuffer(task.m_ctrl, fieldId);
+        mfxExtFeiEncMBCtrl       * mbctrl      = GetExtBuffer(task.m_ctrl, feiFieldId);
+        mfxExtFeiEncMVPredictors * mvpred      = GetExtBuffer(task.m_ctrl, feiFieldId);
+        mfxExtFeiEncFrameCtrl    * frameCtrl   = GetExtBuffer(task.m_ctrl, feiFieldId);
+        mfxExtFeiEncQP           * mbqp        = GetExtBuffer(task.m_ctrl, feiFieldId);
+        mfxExtFeiRepackCtrl      * rePakCtrl   = GetExtBuffer(task.m_ctrl, feiFieldId);
+        mfxExtFeiSliceHeader     * extFeiSlice = GetExtBuffer(task.m_ctrl, feiFieldId);
 
         /* Output buffers passed via mfxBitstream structure*/
         mfxExtFeiEncMBStat * mbstat    = NULL;

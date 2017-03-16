@@ -1274,23 +1274,6 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         m_video.mfx.FrameInfo.Width / 16,
         m_video.mfx.FrameInfo.Height / 16 / (fieldCoding ? 2 : 1));
 
-    if (m_isENCPAK)
-    {
-
-        // In case of FEI ENCPAK only stream level control is supported
-        // for slice header parameters. The application must provide exactly the same
-        // number for slices to the number of slices specified during initialization
-        mfxU32 fieldCount = m_video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
-        for (mfxU32 i = 0; i < fieldCount; i++)
-        {
-            mfxExtFeiSliceHeader *pDataSliceHeader = GetExtBuffer(m_video, i);
-            if (pDataSliceHeader && pDataSliceHeader->Slice)
-            {
-                MFX_CHECK(GetMaxNumSlices(m_video) == pDataSliceHeader->NumSlice, MFX_ERR_INVALID_VIDEO_PARAM);
-            }
-        }
-    }
-
     m_videoInit = m_video;
 
     return checkStatus;

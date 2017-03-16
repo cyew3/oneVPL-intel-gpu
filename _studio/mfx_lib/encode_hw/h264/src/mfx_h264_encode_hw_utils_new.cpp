@@ -2180,38 +2180,34 @@ void MfxHwH264Encode::ConfigureTask(
     mfxU32 fieldMaxCount = video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
     for (mfxU32 field = 0; field < fieldMaxCount; field++)
     {
-        mfxExtFeiSliceHeader * extFeiSlice = GetExtBuffer(video, field);
-        /* To change de-blocking params in runtime we need to take params from runtime control */
-        mfxExtFeiSliceHeader * extFeiSliceInRintime = GetExtBuffer(task.m_ctrl, field);
-        /*And runtime params has priority before iInit() params */
-        if (NULL != extFeiSliceInRintime)
-            extFeiSlice = extFeiSliceInRintime;
+        mfxExtFeiSliceHeader * extFeiSlice = GetExtBuffer(task.m_ctrl, field);
 
-        for (size_t i = 0; i < GetMaxNumSlices(video); i++)
+        if (extFeiSlice == NULL)
         {
-            /* default parameters */
-            mfxU8 disableDeblockingIdc = 0;
-            mfxI8 sliceAlphaC0OffsetDiv2 = 0;
-            mfxI8 sliceBetaOffsetDiv2 = 0;
-            if (NULL != extFeiSlice)
-            {
-                if (NULL != extOpt2Cur)
-                    disableDeblockingIdc = (mfxU8) extOpt2Cur->DisableDeblockingIdc;
+            // take default buffer (from Init) if not provided in runtime
+            extFeiSlice = GetExtBuffer(video, field);
+        }
 
-                if (NULL != extFeiSlice->Slice)
-                {
-                    disableDeblockingIdc = (mfxU8) extFeiSlice->Slice[i].DisableDeblockingFilterIdc;
-                    if (disableDeblockingIdc > 2)
-                        disableDeblockingIdc = 0;
-                    sliceAlphaC0OffsetDiv2 = (mfxI8) extFeiSlice->Slice[i].SliceAlphaC0OffsetDiv2;
-                    sliceBetaOffsetDiv2 = (mfxI8) extFeiSlice->Slice[i].SliceBetaOffsetDiv2;
-                }
-            } // if (NULL != extFeiSlice)
-            /* Now put values */
+        // Fill deblocking parameters
+        mfxU8 disableDeblockingIdc   = (mfxU8)extOpt2Cur->DisableDeblockingIdc;
+        mfxI8 sliceAlphaC0OffsetDiv2 = 0;
+        mfxI8 sliceBetaOffsetDiv2    = 0;
+
+        for (mfxU32 i = 0; i < task.m_numSlice[task.m_fid[field]]; i++)
+        {
+            if (NULL != extFeiSlice->Slice && i < extFeiSlice->NumSlice)
+            {
+                // If only one buffer was passed on init, that value will be propagated for entire frame
+                disableDeblockingIdc   = (mfxU8)extFeiSlice->Slice[i].DisableDeblockingFilterIdc;
+                sliceAlphaC0OffsetDiv2 = (mfxI8)extFeiSlice->Slice[i].SliceAlphaC0OffsetDiv2;
+                sliceBetaOffsetDiv2    = (mfxI8)extFeiSlice->Slice[i].SliceBetaOffsetDiv2;
+            }
+
+            // Store per-slice values in task
             task.m_disableDeblockingIdc[task.m_fid[field]].push_back(disableDeblockingIdc);
             task.m_sliceAlphaC0OffsetDiv2[task.m_fid[field]].push_back(sliceAlphaC0OffsetDiv2);
             task.m_sliceBetaOffsetDiv2[task.m_fid[field]].push_back(sliceBetaOffsetDiv2);
-        } // for (size_t i = 0; i < GetMaxNumSlices(video); i++)
+        } // for (mfxU32 i = 0; i < task.m_numSlice[field]; i++)
     } // for (mfxU32 field = 0; field < fieldMaxCount; field++)
 }
 
