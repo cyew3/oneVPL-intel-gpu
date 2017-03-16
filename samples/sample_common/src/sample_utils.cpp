@@ -1977,7 +1977,7 @@ mfxStatus StrFormatToCodecFormatFourCC(msdk_char* strInput, mfxU32 &codecFormat)
         {
             codecFormat = MFX_CODEC_DUMP;
         }
-        else if ((0 == msdk_strcmp(strInput, MSDK_STRING("rgb4"))))
+        else if ((0 == msdk_strcmp(strInput, MSDK_STRING("rgb4_frame"))))
         {
             codecFormat = MFX_CODEC_RGB4;
         }

@@ -120,7 +120,8 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("Pipeline description (general options):\n"));
     msdk_printf(MSDK_STRING("  -i::h265|h264|mpeg2|vc1|mvc|jpeg|vp9 <file-name>\n"));
-    msdk_printf(MSDK_STRING("                Set input file and decoder type\n"));
+    msdk_printf(MSDK_STRING("                 Set input file and decoder type\n"));
+    msdk_printf(MSDK_STRING("  -i::rgb4_frame Set input rgb4 file for compositon. File should contain just one single frame (-vpp_comp_src_h and -vpp_comp_src_w should be specified as well).\n"));
     msdk_printf(MSDK_STRING("  -o::h265|h264|mpeg2|mvc|jpeg|raw <file-name>\n"));
     msdk_printf(MSDK_STRING("                Set output file and encoder type\n"));
     msdk_printf(MSDK_STRING("  -sw|-hw|-hw_d3d11\n"));
@@ -223,8 +224,8 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("  -vpp_comp_dst_y             Y position of this stream in composed stream (should be used in decoder session)\n"));
     msdk_printf(MSDK_STRING("  -vpp_comp_dst_h             Height of this stream in composed stream (should be used in decoder session)\n"));
     msdk_printf(MSDK_STRING("  -vpp_comp_dst_w             Width of this stream in composed stream (should be used in decoder session)\n"));
-    msdk_printf(MSDK_STRING("  -vpp_comp_src_h             Width of this stream in composed stream (should be used in decoder session)\n"));
-    msdk_printf(MSDK_STRING("  -vpp_comp_src_w             Width of this stream in composed stream (should be used in decoder session)\n"));
+    msdk_printf(MSDK_STRING("  -vpp_comp_src_h             Height of input static frame (should be used together with -i::rgb4_frame)\n"));
+    msdk_printf(MSDK_STRING("  -vpp_comp_src_w             Width of input static frame (should be used together with -i::rgb4_frame)\n"));
 #if _MSDK_API >= MSDK_API(1,22)
     msdk_printf(MSDK_STRING("  -dec_postproc               Resize after decoder using direct pipe (should be used in decoder session)\n"));
 #endif //_MSDK_API >= MSDK_API(1,22)
@@ -1586,7 +1587,7 @@ mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputPar
         ( !InputParams.nVppCompSrcH ||
          !InputParams.nVppCompSrcW ))
     {
-        PrintError(MSDK_STRING("VppCompSrcH and VppCompSrcW must be specified in case of -i::rgb4\n"));
+        PrintError(MSDK_STRING("VppCompSrcH and VppCompSrcW must be specified in case of -i::rgb4_frame\n"));
         return MFX_ERR_UNSUPPORTED;
     }
 
