@@ -281,8 +281,12 @@ void MfxHwH264Encode::FillVaringPartOfPpsBuffer(
 //  Intra refresh {
     {
         pps.bEnableRollingIntraRefresh = task.m_IRState.refrType;
+        pps.bDisableRollingIntraRefreshOverlap = 0; // default, overlapped Intra refresh is applied
         if (task.m_IRState.refrType == MFX_REFRESH_SLICE)
+        {
             pps.bEnableRollingIntraRefresh = MFX_REFRESH_HORIZONTAL;
+            pps.bDisableRollingIntraRefreshOverlap = 1; // intra refresh without overlap operation
+        }
         pps.IntraInsertionLocation = task.m_IRState.IntraLocation;
         pps.IntraInsertionSize = task.m_IRState.IntraSize;
         pps.QpDeltaForInsertedIntra = mfxU8(task.m_IRState.IntRefQPDelta);
