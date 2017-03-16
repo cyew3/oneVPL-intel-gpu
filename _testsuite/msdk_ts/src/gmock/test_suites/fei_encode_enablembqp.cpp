@@ -32,7 +32,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*
  * This test is for mfxExtCodingOption3: EnableMBQP and mfxExtMBQP when do FEI
- * ENCODE.
+ * ENCODE. FEI doesn't support mfxExtMBQP, so this is negative test.
  *
  */
 
@@ -65,6 +65,8 @@ public:
     }
     ~TestSuite()
     {
+        g_tsStatus.expect(MFX_ERR_NONE);
+
         delete m_reader;
 
         //to free buffers
@@ -267,7 +269,7 @@ int TestSuite::RunTest(unsigned int id)
             feiEncCtrl[fieldId].RepartitionCheckEnable = 0;
             feiEncCtrl[fieldId].AdaptiveSearch = 0;
             feiEncCtrl[fieldId].MVPredictor = 0;
-            feiEncCtrl[fieldId].NumMVPredictors[0] = 1;
+            feiEncCtrl[fieldId].NumMVPredictors[0] = 0;
             feiEncCtrl[fieldId].PerMBQp = 0;
             feiEncCtrl[fieldId].PerMBInput = 0;
             feiEncCtrl[fieldId].MBSizeCtrl = 0;
@@ -335,8 +337,12 @@ int TestSuite::RunTest(unsigned int id)
         }
 
         g_tsStatus.expect(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
-        SyncOperation();
 
+        // skip sync if encoding wasn't started
+        if (m_pSyncPoint && *m_pSyncPoint)
+        {
+            SyncOperation();
+        }
     }
 
     TS_END;
