@@ -1595,7 +1595,7 @@ IntraRefreshState MfxHwH264Encode::GetIntraRefreshState(
 
         state.firstFrameInCycle = extOpt3Init->IntRefCycleDist ? (((frameOrderInGopDispOrder - 1) % extOpt3Init->IntRefCycleDist == 0) && frameOrderInGopDispOrder) : (((frameOrderInGopDispOrder - 1) % extOpt3Init->NumSliceP == 0) && frameOrderInGopDispOrder);
 
-        state.IntraSize = ((USHORT)divider.GetNumMbInSlice() / (video.mfx.FrameInfo.Width >> 4)) - 1;
+        state.IntraSize = ((USHORT)divider.GetNumMbInSlice() / (video.mfx.FrameInfo.Width >> 4));
         state.IntraLocation = ((USHORT)divider.GetFirstMbInSlice() / (video.mfx.FrameInfo.Width >> 4));
         
         if ((state.IntraLocation == 0) && (!state.firstFrameInCycle))
