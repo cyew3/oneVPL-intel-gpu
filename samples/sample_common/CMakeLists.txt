@@ -4,5 +4,5 @@ include_directories (
 )
 
 set( defs "${WARNING_FLAGS}" )
-make_library( shortname universal static )
+make_library( shortname universal static "nasafestring" )
 set( defs "" )

@@ -11,6 +11,6 @@ list(APPEND sources.plus "${PLUGINS_COMMON_PATH}/mfx_plugin_module.cpp")
 list( APPEND LIBS sample_common)
 
 set(DEPENDENCIES libmfx dl)
-make_library(sample_rotate_plugin none shared)
+make_library(sample_rotate_plugin none shared "nosafestring")
 
 install( TARGETS ${target} LIBRARY DESTINATION ${MFX_SAMPLES_INSTALL_LIB_DIR} )

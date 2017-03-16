@@ -7,7 +7,7 @@ include_directories (
 list( APPEND LIBS_NOVARIANT sample_common )
 
 set(DEPENDENCIES libmfx dl pthread)
-make_executable( shortname none )
+make_executable( shortname none "nosafestring" )
 
 install( TARGETS ${target} RUNTIME DESTINATION ${MFX_SAMPLES_INSTALL_BIN_DIR} )
 

@@ -70,7 +70,9 @@ function( create_build )
   file( GLOB_RECURSE components "${CMAKE_SOURCE_DIR}/*/CMakeLists.txt" )
   foreach( component ${components} )
     get_filename_component( path ${component} PATH )
-    add_subdirectory( ${path} )
+    if(NOT path MATCHES ".*/deprecated/.*")
+      add_subdirectory( ${path} )
+    endif()
   endforeach()
 endfunction()
 
@@ -152,17 +154,32 @@ function( create_plugins_cfg directory )
 
 endfunction()
 
-#
 # Usage:
-#  make_library(shortname|<name> none|<variant> static|shared)
+#  make_library(shortname|<name> none|<variant> static|shared nosafestring|<true|false>)
 #    - shortname|<name>: use folder name as library name or <name> specified by user
 #    - <variant>|none: build library in specified variant (with drm or x11 or wayland support, etc),
 #      universal - special variant which enables compilation flags required for all backends, but
 #      moves dependency to runtime instead of linktime
 #    or without variant if none was specified
 #    - static|shared: build static or shared library
+#    - nosafestring|<true|false>: any value evaluated as True by CMake to disable link against SafeString
 #
 function( make_library name variant type )
+  set( nosafestring ${ARGV3} )
+  get_target( target ${ARGV0} ${ARGV1} )
+  if( ${ARGV0} MATCHES shortname )
+    get_folder( folder )
+  else ()
+    set( folder ${ARGV0} )
+  endif()
+
+  configure_dependencies(${target} "${DEPENDENCIES}" ${variant})
+  if(SKIPPING MATCHES ${target} OR NOT_CONFIGURED MATCHES ${target})
+    return()
+  else()
+    report_add_target(BUILDING ${target})
+  endif()
+
   if( NOT sources )
    get_source( include sources )
   endif()
@@ -171,15 +188,9 @@ function( make_library name variant type )
     list( APPEND sources ${sources.plus} )
   endif()
 
-  get_target( target ${ARGV0} ${ARGV1} )
-  if( ${ARGV0} MATCHES shortname )
-    get_folder( folder )
-  else ()
-    set( folder ${ARGV0} )
-  endif()
-
   if( ARGV2 MATCHES static )
     add_library( ${target} STATIC ${include} ${sources} )
+    append_property(${target} COMPILE_FLAGS "${SCOPE_CFLAGS}")
 
   elseif( ARGV2 MATCHES shared )
     add_library( ${target} SHARED ${include} ${sources} )
@@ -203,7 +214,9 @@ function( make_library name variant type )
       target_link_libraries( ${target} ${lib} )
     endforeach()
 
-    foreach( lib ${LIBS} )
+    append_property(${target} COMPILE_FLAGS "${CFLAGS} ${SCOPE_CFLAGS}")
+    append_property(${target} LINK_FLAGS "${LDFLAGS} ${SCOPE_LINKFLAGS}")
+    foreach(lib ${LIBS} ${SCOPE_LIBS})
       target_link_libraries( ${target} ${lib} )
     endforeach()
 
@@ -212,7 +225,9 @@ function( make_library name variant type )
 
   configure_build_variant( ${target} ${ARGV1} )
 
-  target_link_libraries( ${target} SafeString )
+  if( NOT nosafestring )
+    target_link_libraries( ${target} SafeString )
+  endif()
 
   if( defs )
     append_property( ${target} COMPILE_FLAGS ${defs} )
@@ -225,12 +240,30 @@ function( make_library name variant type )
     target_link_libraries( ${target} "-Xlinker --end-group" )
   endif()
 
-
   set( target ${target} PARENT_SCOPE )
 endfunction()
 
-# .....................................................
+# Usage:
+#  make_executable(name|<name> none|<variant> nosafestring|<true|false>)
+#    - name|<name>: use folder name as library name or <name> specified by user
+#    - <variant>|none: build library in specified variant (with drm or x11 or wayland support, etc),
+#      universal - special variant which enables compilation flags required for all backends, but
+#      moves dependency to runtime instead of linktime
+#    or without variant if none was specified
+#    - nosafestring|<true|false>: any value evaluated as True by CMake to disable link against SafeString
+#
 function( make_executable name variant )
+  set( nosafestring ${ARGV2} )
+  get_target( target ${ARGV0} ${ARGV1} )
+  get_folder( folder )
+
+  configure_dependencies(${target} "${DEPENDENCIES}" ${variant})
+  if(SKIPPING MATCHES ${target} OR NOT_CONFIGURED MATCHES ${target})
+    return()
+  else()
+    report_add_target(BUILDING ${target})
+  endif()
+
   if( NOT sources )
     get_source( include sources )
   endif()
@@ -238,9 +271,6 @@ function( make_executable name variant )
   if( sources.plus )
     list( APPEND sources ${sources.plus} )
   endif()
-
-  get_target( target ${ARGV0} ${ARGV1} )
-  get_folder( folder )
 
   project( ${target} )
 
@@ -275,9 +305,12 @@ function( make_executable name variant )
     target_link_libraries( ${target} optimized mfx )
   endif()
 
-  foreach( lib ${LIBS})
+  foreach( lib ${LIBS} ${SCOPE_LIBS} )
     target_link_libraries( ${target} ${lib} )
   endforeach()
+
+  append_property(${target} COMPILE_FLAGS "${CFLAGS} ${SCOPE_CFLAGS}")
+  append_property(${target} LINK_FLAGS "${LDFLAGS} ${SCOPE_LINKFLAGS}")
 
   configure_build_variant( ${target} ${ARGV1} )
 
@@ -285,7 +318,9 @@ function( make_executable name variant )
     target_link_libraries( ${target} ${lib} )
   endforeach()
 
-  target_link_libraries( ${target} SafeString )
+  if( NOT nosafestring )
+    target_link_libraries( ${target} SafeString )
+  endif()
 
   if( Linux )
     target_link_libraries( ${target} "-Xlinker --end-group" )

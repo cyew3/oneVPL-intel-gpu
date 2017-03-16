@@ -17,4 +17,4 @@ list( APPEND LIBS_VARIANT sample_common )
 list( APPEND LIBS_NOVARIANT vpp_plugin )
 
 set(DEPENDENCIES itt libmfx dl pthread)
-make_executable( shortname universal )
+make_executable( shortname universal "nosafestring" )

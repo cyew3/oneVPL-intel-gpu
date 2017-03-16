@@ -10,6 +10,6 @@ list(APPEND LIBS sample_common)
 
 set(DEPENDENCIES  libva libdrm wayland-client)
 
-make_library(mfx_wayland none shared)
+make_library(mfx_wayland none shared "nosafestring" )
 
 install( TARGETS ${target} LIBRARY DESTINATION ${MFX_SAMPLES_INSTALL_LIB_DIR} )
