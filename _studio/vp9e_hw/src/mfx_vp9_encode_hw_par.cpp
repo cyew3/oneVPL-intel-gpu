@@ -30,7 +30,8 @@ bool IsExtBufferSupportedInInit(mfxU32 id)
     //return id == MFX_EXTBUFF_VP9_CODING_OPTION
     return id == MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION
         || id == MFX_EXTBUFF_CODING_OPTION2
-        || id == MFX_EXTBUFF_CODING_OPTION3;
+        || id == MFX_EXTBUFF_CODING_OPTION3
+        || id == MFX_EXTBUFF_DDI; // TODO: remove when IVFHeader will be added to API or disabled by default
 }
 
 bool IsExtBufferSupportedInRuntime(mfxU32 id)
