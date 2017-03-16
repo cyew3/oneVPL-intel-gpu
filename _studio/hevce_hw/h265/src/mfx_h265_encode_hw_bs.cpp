@@ -2002,13 +2002,20 @@ void HeaderPacker::PackSSH(
     PPS   const &    pps,
     Slice const &    slice,
     mfxU32*          qpd_offset,
-    mfxU32*          sao_offset)
+    mfxU32*          sao_offset,
+    mfxU16*          ssh_start_len,
+    mfxU32*          ssh_offset)
 {
     const mfxU8 B = 0, P = 1/*, I = 2*/;
     mfxU32 MaxCU = (1<<(sps.log2_min_luma_coding_block_size_minus3 + 3 + sps.log2_diff_max_min_luma_coding_block_size));
     mfxU32 PicSizeInCtbsY = CeilDiv(sps.pic_width_in_luma_samples, MaxCU) * CeilDiv(sps.pic_height_in_luma_samples, MaxCU);
 
     PackNALU(bs, nalu);
+
+    mfxU32 ssh_start_off = bs.GetOffset();
+
+    if (ssh_offset)
+        *ssh_offset = (nalu.long_start_code) ? 6 : 5;
 
     bs.PutBit(slice.first_slice_segment_in_pic_flag);
 
@@ -2024,6 +2031,9 @@ void HeaderPacker::PackSSH(
 
         bs.PutBits(CeilLog2(PicSizeInCtbsY), slice.segment_address);
     }
+
+    if (ssh_start_len)
+        *ssh_start_len = (mfxU16)(bs.GetOffset() - ssh_start_off);
 
     if( !slice.dependent_slice_segment_flag )
     {
@@ -2218,6 +2228,7 @@ void HeaderPacker::PackSSH(
 
     assert(0 == pps.slice_segment_header_extension_present_flag);
 
+    // no trailing bits for dynamic slice size ????
     bs.PutTrailingBits();
 }
 
@@ -2757,7 +2768,7 @@ void HeaderPacker::GetSuffixSEI(Task const & task, mfxU8*& buf, mfxU32& sizeInBy
     }
 }
 
-void HeaderPacker::GetSSH(Task const & task, mfxU32 id, mfxU8*& buf, mfxU32& sizeInBytes, mfxU32* qpd_offset, mfxU32* sao_offset)
+void HeaderPacker::GetSSH(Task const & task, mfxU32 id, mfxU8*& buf, mfxU32& sizeInBytes, mfxU32* qpd_offset, mfxU32* sao_offset, mfxU16* ssh_start_len, mfxU32* ssh_offset)
 {
     BitstreamWriter& rbsp = m_bs;
     bool LongStartCode = (id == 0 && task.m_insertHeaders == 0) || IsOn(m_par->m_ext.DDI.LongStartCodes);
@@ -2775,12 +2786,15 @@ void HeaderPacker::GetSSH(Task const & task, mfxU32 id, mfxU8*& buf, mfxU32& siz
 
     buf = m_bs.GetStart() + CeilDiv(rbsp.GetOffset(), 8);
 
-    PackSSH(rbsp, nalu, m_par->m_sps, m_par->m_pps, sh, qpd_offset, sao_offset);
+    PackSSH(rbsp, nalu, m_par->m_sps, m_par->m_pps, sh, qpd_offset, sao_offset, ssh_start_len, ssh_offset);
 
+    mfxU32 SEIbits = (mfxU32)(buf - m_bs.GetStart()) * 8;
     if (qpd_offset)
-        *qpd_offset -= (mfxU32)(buf - m_bs.GetStart()) * 8;
+        *qpd_offset -= SEIbits;
     if (sao_offset)
-        *sao_offset -= (mfxU32)(buf - m_bs.GetStart()) * 8;
+        *sao_offset -= SEIbits;
+    if (ssh_start_len)
+        *ssh_start_len -= (mfxU16)SEIbits;
 
     sizeInBytes = CeilDiv(rbsp.GetOffset(), 8) - (mfxU32)(buf - m_bs.GetStart());
 }

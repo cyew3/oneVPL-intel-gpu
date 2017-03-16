@@ -444,13 +444,15 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, m
             pPH = PackSliceHeader(task, i, &m_slice[i].SliceQpDeltaBitOffset
 #if defined(PRE_SI_TARGET_PLATFORM_GEN10)
                 , &m_slice[i].SliceSAOFlagBitOffset
+                , &m_slice[i].BitLengthSliceHeaderStartingPortion
+                , &m_slice[i].SliceHeaderByteOffset
 #endif //defined(PRE_SI_TARGET_PLATFORM_GEN10)
             ); assert(pPH);
             ADD_CBD(D3DDDIFMT_INTELENCODE_PACKEDSLICEDATA, *pPH, 1);
         }
 #endif
     }
-    
+
     /*if (task.m_ctrl.NumPayload > 0)
     {
         pPH = PackHeader(task, SUFFIX_SEI_NUT); assert(pPH);

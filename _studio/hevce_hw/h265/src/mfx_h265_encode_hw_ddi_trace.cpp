@@ -474,6 +474,8 @@ DECL_START(ENCODE_SET_SLICE_HEADER_HEVC)
 
 #if (HEVCE_DDI_VERSION >= 966)
     TRACE("%d", SliceSAOFlagBitOffset);
+    TRACE("%d", BitLengthSliceHeaderStartingPortion);
+    TRACE("%d", SliceHeaderByteOffset);
 #endif
 DECL_END
 #undef FIELD_FORMAT
