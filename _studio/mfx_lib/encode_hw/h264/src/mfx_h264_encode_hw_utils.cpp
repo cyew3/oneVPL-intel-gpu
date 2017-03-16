@@ -3553,7 +3553,7 @@ mfxU8 VMEBrc::GetQp(const BRCFrameParams& par)
         ++start;
     }
 
-    //MFX_CHECK(start != m_laData.end(), 0);
+    MFX_CHECK(start != m_laData.end(), mfxU8(0));
     std::list<LaFrameData>::iterator it = start;
     mfxU32 numberOfFrames = 0;
     for(it = start;it != m_laData.end(); ++it)
