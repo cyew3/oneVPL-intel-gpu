@@ -453,6 +453,9 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Query(VideoCORE * core, mfxVideoParam *in, mfx
             out->mfx.Quality = in->mfx.Quality;
         }
 
+        out->mfx.FrameInfo.Height = in->mfx.FrameInfo.Height;
+        out->mfx.FrameInfo.Width = in->mfx.FrameInfo.Width;
+        out->mfx.Interleaved = in->mfx.Interleaved;
         out->mfx.RestartInterval = in->mfx.RestartInterval;
 
         switch (in->mfx.FrameInfo.PicStruct)
