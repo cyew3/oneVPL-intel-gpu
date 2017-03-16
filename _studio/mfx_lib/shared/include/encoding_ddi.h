@@ -179,7 +179,8 @@ typedef struct tagENCODE_QUERY_STATUS_PARAMS
               UINT NumSlicesNonCompliant    : 1;
               UINT LongTermReference        : 1;
               UINT FrameSkipped             : 1;
-              UINT                          : 27;
+              UINT SceneChangeDetected      : 1;
+              UINT                          : 26;
         };
         UINT QueryStatusFlags;
     };
@@ -204,8 +205,8 @@ typedef struct tagENCODE_QUERY_STATUS_PARAMS
 typedef struct tagENCODE_QUERY_STATUS_SLICE_PARAMS
 {
     ENCODE_QUERY_STATUS_PARAMS FrameLevelStatus;
-    UINT    SizeOfSliceSizesBuffer;
-    UINT    reserved[4];
+    UINT SizeOfSliceSizesBuffer;
+    UINT reserved[4];
     USHORT  *SliceSizes;
 } ENCODE_QUERY_STATUS_SLICE_PARAMS, *PENCODE_QUERY_STATUS_SLICE_PARAMS;
 

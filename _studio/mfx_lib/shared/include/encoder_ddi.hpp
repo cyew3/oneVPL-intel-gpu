@@ -59,6 +59,8 @@ typedef struct
 
 //from DDI 0.921 per MB QP
 #define D3DDDIFMT_INTELENCODE_MBQPDATA          (D3DDDIFORMAT)183
+//from DDI 0.947 per MB Control
+#define D3DDDIFMT_INTELENCODE_MBCONTROL         (D3DDDIFORMAT)184
 
 // Decode Extension Functions for DXVA11 Encode
 #define ENCODE_QUERY_ACCEL_CAPS_ID 0x110
@@ -86,6 +88,7 @@ enum D3D11_DDI_VIDEO_ENCODER_BUFFER_TYPE
     D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDSLICEDATA  = 17,
     D3D11_DDI_VIDEO_ENCODER_BUFFER_HUFFTBLDATA      = 22,
     D3D11_DDI_VIDEO_ENCODER_BUFFER_MBQPDATA         = 23,
+    D3D11_DDI_VIDEO_ENCODER_BUFFER_MBCONTROL        = 24, //  in ddi it is called D3D11_VIDEO_ENCODER_BUFFER_MBCONTROL
     D3D11_DDI_VIDEO_ENCODER_BUFFER_COEFFPROB        = 30,
     D3D11_DDI_VIDEO_ENCODER_BUFFER_DISTORTIONDATA   = 31
 };
@@ -548,14 +551,31 @@ typedef struct tagENCODE_CAPS
             UINT    DirtyRectSupport        : 1;
             UINT    MoveRectSupport         : 1;
             UINT    FrameSizeTolerance      : 1;
-            UINT    HWCounterAutoIncrement  : 1;
-            UINT                            : 20;
+            UINT    HWCounterAutoIncrement  : 2;
+            UINT                            : 19;
         };
         UINT      CodingLimits2;
     };
     UCHAR    MaxNum_WeightedPredL0;
     UCHAR    MaxNum_WeightedPredL1;
 } ENCODE_CAPS;
+
+// DDI v0.947
+// 3.12.12 MB Control Surface(D3DDDIFMT_INTELENCODE_MBCONTROL)
+// The application can provide this surface that contains desired coding properties
+// for each macroblock to be used for encoding.Currently, only forced intra is defined.
+typedef struct tagENCODE_MBCONTROL
+{
+    union
+    {
+        struct
+        {
+            UINT    bForceIntra : 1;
+            UINT    ReservedBits : 31;
+        } fields;
+        UINT    value;
+    } MBParams;
+} ENCODE_MBCONTROL;
 
 ////////////////////////////////////////////////////////////////////////////////
 // this structure is used to define the caps for JPEG.
@@ -908,7 +928,9 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_H264
             UINT    MBBRC                           : 4;
             UINT    Trellis                         : 4;
             UINT    bTemporalScalability            : 1;
-            UINT    Reserved1                       :11;
+            UINT    ROIValueInDeltaQP               : 1;
+            UINT    bAutoMaxPBFrameSizeForSceneChange : 1;
+            UINT    Reserved1                       :9;
         };
 
         UINT sFlags;
@@ -1050,7 +1072,8 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_H264
             UINT        bEnableRollingIntraRefresh               : 2;
             UINT        bSliceLevelReport                        : 1;
             UINT        bDisableSubpixel                         : 1;
-            UINT        bReserved                                : 19;
+            UINT        bDisableRollingIntraRefreshOverlap       : 1;
+            UINT        bReserved                                : 18;
 
         };
         BOOL    UserFlags;
@@ -1105,6 +1128,9 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_H264
 
     ENCODE_INPUT_TYPE InputType;
 
+    // Additiona bytes added in bit stream
+    UCHAR                               AdditionalZeroByte;
+    UCHAR                               AdditionalNALHeaderSize;
 } ENCODE_SET_PICTURE_PARAMETERS_H264;
 
 typedef struct tagENCODE_SET_PICTURE_PARAMETERS_MPEG2
@@ -1153,9 +1179,9 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_MPEG2
     UINT            f_code01                    : 4;
     UINT            f_code10                    : 4;
     UINT            f_code11                    : 4;
+    UINT            BRCPrecision                : 2;
 
-
-    UINT            Reserved1                   : 8;
+    UINT            Reserved1                   : 6;
 
     // ENC + PAK related parameters
     BOOL            bLastPicInStream;
@@ -1611,6 +1637,7 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_SVC
             UINT    bDisableSubMBPartition                  : 1;
             UINT    bEmulationByteInsertion                 : 1;
             UINT    bEnableRollingIntraRefresh              : 2;
+            UINT    bReserved                               : 21;
         };
         UINT    UserFlags;
     };
