@@ -1101,6 +1101,9 @@ bool MFX_JPEG_Utility::IsNeedPartialAcceleration(VideoCORE * core, mfxVideoParam
         if (par->mfx.FrameInfo.Width > 8192 || par->mfx.FrameInfo.Height > 8192)
             return true;
 
+        if (par->mfx.JPEGChromaFormat == MFX_CHROMAFORMAT_YUV411)
+            return true;
+
         if (par->mfx.JPEGChromaFormat == MFX_CHROMAFORMAT_YUV444)
             return true;
 
