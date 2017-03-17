@@ -2183,7 +2183,12 @@ mfxStatus VideoVPPHW::Close()
     // CM device
     if(m_pCmDevice) {
         m_pCmDevice->DestroyKernel(m_pCmKernel);
+        m_pCmKernel = NULL;
+
         m_pCmDevice->DestroyProgram(m_pCmProgram);
+        m_pCmProgram = NULL;
+
+        m_pCmQueue = NULL;
         //::DestroyCmDevice(device);
     }
 #endif
