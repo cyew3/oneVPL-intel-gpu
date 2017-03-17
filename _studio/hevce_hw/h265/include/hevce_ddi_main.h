@@ -295,7 +295,11 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_HEVC
     USHORT      NumMoveRects;
     MOVE_RECT   *pMoveRect;
 
+#if defined(OPEN_SOURCE)
+    UINT reserved;
+#else
     ENCODE_INPUT_TYPE   InputType;
+#endif //defined(OPEN_SOURCE)
 } ENCODE_SET_PICTURE_PARAMETERS_HEVC;
 
 typedef struct tagENCODE_SET_SLICE_HEADER_HEVC
