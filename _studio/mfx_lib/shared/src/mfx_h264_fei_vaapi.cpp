@@ -33,16 +33,6 @@ using namespace MfxHwH264Encode;
 //#include <va/vendor/va_intel_statistics.h>
 #include "mfx_h264_preenc.h"
 
-/*
-mfxU32 GetSurfaceIndexFromList(std::vector<ExtVASurface> &m_reconQueue, mfxU32 surface)
-{
-    for(mfxU32 i = 0; i < m_reconQueue.size(); i++)
-        if (m_reconQueue[i].surface == surface)
-            return i;
-
-    return VA_INVALID_SURFACE;
-} */
-
 VAAPIFEIPREENCEncoder::VAAPIFEIPREENCEncoder()
 : VAAPIEncoder()
 , m_codingFunction(0)

@@ -62,7 +62,7 @@ bool bEnc_PAK(mfxVideoParam *par)
 
     for (mfxU16 i = 0; i < par->NumExtParam; ++i)
     {
-        if (par->ExtParam[i] != 0 && par->ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PARAM){ // assuming aligned buffers
+        if (par->ExtParam[i] != 0 && par->ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PARAM){
             pControl = reinterpret_cast<mfxExtFeiParam *>(par->ExtParam[i]);
             break;
         }
@@ -74,11 +74,11 @@ bool bEnc_PAK(mfxVideoParam *par)
 
 static mfxStatus AsyncRoutine(void * state, void * param, mfxU32, mfxU32)
 {
+    MFX_CHECK_NULL_PTR1(state);
+
     VideoPAK_PAK & impl = *(VideoPAK_PAK *)state;
     return  impl.RunFramePAK(NULL, NULL);
 }
-
-
 
 mfxStatus VideoPAK_PAK::RunFramePAK(mfxPAKInput *in, mfxPAKOutput *out)
 {
@@ -117,8 +117,11 @@ mfxStatus VideoPAK_PAK::RunFramePAK(mfxPAKInput *in, mfxPAKOutput *out)
 
 static mfxStatus AsyncQuery(void * state, void * param, mfxU32 /*threadNumber*/, mfxU32 /*callNumber*/)
 {
+    MFX_CHECK_NULL_PTR2(state, param);
+
     VideoPAK_PAK & impl = *(VideoPAK_PAK *)state;
-    DdiTask& task = *(DdiTask *)param;
+    DdiTask      & task = *(DdiTask *)param;
+
     return impl.QueryStatus(task);
 }
 
@@ -230,6 +233,9 @@ VideoPAK_PAK::~VideoPAK_PAK()
 mfxStatus VideoPAK_PAK::Init(mfxVideoParam *par)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VideoPAK_PAK::Init");
+
+    MFX_CHECK_NULL_PTR1(par);
+
     mfxStatus sts = MfxEncPAK::CheckExtBufferId(*par);
     MFX_CHECK_STS(sts);
 
@@ -321,10 +327,9 @@ mfxStatus VideoPAK_PAK::Init(mfxVideoParam *par)
 
 mfxStatus VideoPAK_PAK::Reset(mfxVideoParam *par)
 {
-    mfxStatus sts = MFX_ERR_NONE;
     MFX_CHECK_NULL_PTR1(par);
 
-    sts = MfxEncPAK::CheckExtBufferId(*par);
+    mfxStatus sts = MfxEncPAK::CheckExtBufferId(*par);
     MFX_CHECK_STS(sts);
 
     MfxVideoParam newPar = *par;
@@ -567,6 +572,8 @@ static mfxStatus CopyRawSurfaceToVideoMemory(VideoCORE &    core,
                                         mfxMemId            dst_d3d,
                                         mfxHDL&             handle)
 {
+    MFX_CHECK_NULL_PTR1(src_sys);
+
     mfxExtOpaqueSurfaceAlloc const * extOpaq = GetExtBuffer(video);
     MFX_CHECK(extOpaq, MFX_ERR_NOT_FOUND);
 
@@ -620,19 +627,15 @@ mfxStatus VideoPAK_PAK::ProcessAndCheckNewParameters(
     bool & isIdrRequired,
     mfxVideoParam const * newParIn)
 {
-    mfxStatus sts = MFX_ERR_NONE;
-
-    mfxExtEncoderResetOption * extResetOpt = GetExtBuffer(newPar);
+    MFX_CHECK_NULL_PTR1(newParIn);
 
     InheritDefaultValues(m_video, newPar, newParIn);
 
     mfxStatus checkStatus = CheckVideoParam(newPar, m_caps, m_core->IsExternalFrameAllocator(), m_currentPlatform, m_currentVaType);
-    if (checkStatus == MFX_WRN_PARTIAL_ACCELERATION)
-        return MFX_ERR_INVALID_VIDEO_PARAM;
-    else if (checkStatus < MFX_ERR_NONE)
-        return checkStatus;
+    MFX_CHECK(checkStatus != MFX_WRN_PARTIAL_ACCELERATION, MFX_ERR_INVALID_VIDEO_PARAM);
+    MFX_CHECK(checkStatus >= MFX_ERR_NONE, checkStatus);
 
-    sts = CheckInitExtBuffers(m_video, newPar);
+    mfxStatus sts = CheckInitExtBuffers(m_video, newPar);
     MFX_CHECK_STS(sts);
 
     mfxExtSpsHeader const * extSpsNew = GetExtBuffer(newPar);
@@ -646,11 +649,10 @@ mfxStatus VideoPAK_PAK::ProcessAndCheckNewParameters(
     isIdrRequired = isSpsChanged
         || newPar.mfx.GopPicSize != m_video.mfx.GopPicSize;
 
-    if (isIdrRequired && IsOff(extResetOpt->StartNewSequence))
-        return MFX_ERR_INVALID_VIDEO_PARAM; // Reset can't change parameters w/o IDR. Report an error
+    mfxExtEncoderResetOption * extResetOpt = GetExtBuffer(newPar);
 
-    mfxExtCodingOption * extOptNew = GetExtBuffer(newPar);
-    mfxExtCodingOption * extOptOld = GetExtBuffer(m_video);
+    // Reset can't change parameters w/o IDR. Report an error
+    MFX_CHECK(!(isIdrRequired && IsOff(extResetOpt->StartNewSequence)), MFX_ERR_INVALID_VIDEO_PARAM);
 
     MFX_CHECK(
         IsAvcProfile(newPar.mfx.CodecProfile)                                   &&
@@ -664,6 +666,8 @@ mfxStatus VideoPAK_PAK::ProcessAndCheckNewParameters(
         m_video.mfx.FrameInfo.ChromaFormat == newPar.mfx.FrameInfo.ChromaFormat,
         MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
+    mfxExtCodingOption * extOptNew = GetExtBuffer(newPar);
+    mfxExtCodingOption * extOptOld = GetExtBuffer(m_video);
 
     MFX_CHECK(
         IsOn(extOptOld->FieldOutput) || extOptOld->FieldOutput == extOptNew->FieldOutput,

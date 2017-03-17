@@ -74,6 +74,8 @@ bool bEnc_ENC(mfxVideoParam *par)
 
 static mfxStatus AsyncRoutine(void * state, void * param, mfxU32, mfxU32)
 {
+    MFX_CHECK_NULL_PTR1(state);
+
     VideoENC_ENC & impl = *(VideoENC_ENC *)state;
     return  impl.RunFrameVmeENC(NULL, NULL);
 }
@@ -116,8 +118,11 @@ mfxStatus VideoENC_ENC::RunFrameVmeENC(mfxENCInput *in, mfxENCOutput *out)
 
 static mfxStatus AsyncQuery(void * state, void * param, mfxU32 /*threadNumber*/, mfxU32 /*callNumber*/)
 {
+    MFX_CHECK_NULL_PTR2(state, param);
+
     VideoENC_ENC & impl = *(VideoENC_ENC *)state;
-    DdiTask& task = *(DdiTask *)param;
+    DdiTask      & task = *(DdiTask *)param;
+
     return impl.QueryStatus(task);
 }
 
@@ -216,6 +221,9 @@ VideoENC_ENC::~VideoENC_ENC()
 mfxStatus VideoENC_ENC::Init(mfxVideoParam *par)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VideoENC_ENC::Init");
+
+    MFX_CHECK_NULL_PTR1(par);
+
     mfxStatus sts = MfxEncENC::CheckExtBufferId(*par);
     MFX_CHECK_STS(sts);
 
@@ -521,6 +529,8 @@ static mfxStatus CopyRawSurfaceToVideoMemory(VideoCORE &    core,
                                         mfxMemId            dst_d3d,
                                         mfxHDL&             handle)
 {
+    MFX_CHECK_NULL_PTR1(src_sys);
+
     mfxExtOpaqueSurfaceAlloc const * extOpaq = GetExtBuffer(video);
     MFX_CHECK(extOpaq, MFX_ERR_NOT_FOUND);
 

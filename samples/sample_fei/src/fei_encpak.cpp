@@ -391,7 +391,7 @@ mfxStatus FEI_EncPakInterface::FillParameters()
 {
     mfxStatus sts = MFX_ERR_NONE;
 
-    /* Share ENCODE video parameters with other interfaces */
+    /* Share ENCPAK video parameters with other interfaces */
     m_pAppConfig->PipelineCfg.pEncVideoParam = &m_videoParams_ENC;
     m_pAppConfig->PipelineCfg.pPakVideoParam = &m_videoParams_PAK;
 
