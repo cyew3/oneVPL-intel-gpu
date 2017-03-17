@@ -3289,6 +3289,13 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
         else
             sts = m_pmfxVPP->Init(&m_mfxVppParams);
         MSDK_CHECK_STATUS(sts, "m_pmfxVPP->Init failed");
+
+        if (MFX_WRN_PARTIAL_ACCELERATION == sts)
+        {
+            msdk_printf(MSDK_STRING("WARNING: partial acceleration\n"));
+            MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
+        }
+        MSDK_CHECK_STATUS(sts, "m_pmfxVPP->Init failed");
     }
     // LA initialization
     if (m_pmfxPreENC.get())
