@@ -63,6 +63,7 @@ const mfxU16 MaxFeiEncMVPNum = 4;
 #define MaxNumActiveRefBL0    4
 #define MaxNumActiveRefBL1    1
 #define MaxNumActiveRefBL1_i  2
+#define MaxNumActiveRefPAK    16 // PAK supports up to 16 L0 / L1 references
 
 enum
 {

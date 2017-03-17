@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2016, Intel Corporation
+Copyright (c) 2005-2017, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -56,9 +56,9 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-vbr] - use VBR rate control, it is supported only for progressive content for PAK only pipeline\n"));
     msdk_printf(MSDK_STRING("   [-TargetKbps value] - target bitrate for VBR rate control\n"));
 #endif
-    msdk_printf(MSDK_STRING("   [-num_active_P numRefs] - number of maximum allowed references for P frames (up to 4(default))\n"));
-    msdk_printf(MSDK_STRING("   [-num_active_BL0 numRefs] - number of maximum allowed backward references for B frames (up to 4(default))\n"));
-    msdk_printf(MSDK_STRING("   [-num_active_BL1 numRefs] - number of maximum allowed forward references for B frames (up to 2(default) for interlaced, 1(default) for progressive)\n"));
+    msdk_printf(MSDK_STRING("   [-num_active_P numRefs] - number of maximum allowed references for P frames (up to 4(default)); for PAK only limit is 16\n"));
+    msdk_printf(MSDK_STRING("   [-num_active_BL0 numRefs] - number of maximum allowed backward references for B frames (up to 4(default)); for PAK only limit is 16\n"));
+    msdk_printf(MSDK_STRING("   [-num_active_BL1 numRefs] - number of maximum allowed forward references for B frames (up to 2(default) for interlaced, 1(default) for progressive); for PAK only limit is 16\n"));
     msdk_printf(MSDK_STRING("   [-gop_opt closed|strict] - GOP optimization flags (can be used together)\n"));
     msdk_printf(MSDK_STRING("   [-trellis value] - bitfield: 0 = default, 1 = off, 2 = on for I frames, 4 = on for P frames, 8 = on for B frames (ENCODE only) (default is 0)\n"));
     msdk_printf(MSDK_STRING("   [-preenc ds_strength] - use extended FEI interface PREENC (RC is forced to constant QP)\n"));
@@ -822,34 +822,40 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
     }
 
     // Check references lists limits
+    mfxU16 num_ref_limit = pConfig->bOnlyPAK ? MaxNumActiveRefPAK : MaxNumActiveRefP;
+
     if (pConfig->NumRefActiveP == 0)
     {
-        pConfig->NumRefActiveP = MaxNumActiveRefP;
+        pConfig->NumRefActiveP = num_ref_limit;
     }
-    else if (pConfig->NumRefActiveP > MaxNumActiveRefP)
+    else if (pConfig->NumRefActiveP > num_ref_limit)
     {
-        pConfig->NumRefActiveP = MaxNumActiveRefP;
-        msdk_printf(MSDK_STRING("\nWARNING: Unsupported number of P frame references, adjusted to maximum (%d)\n"), MaxNumActiveRefP);
+        pConfig->NumRefActiveP = num_ref_limit;
+        msdk_printf(MSDK_STRING("\nWARNING: Unsupported number of P frame references, adjusted to maximum (%d)\n"), num_ref_limit);
     }
+
+    num_ref_limit = pConfig->bOnlyPAK ? MaxNumActiveRefPAK : MaxNumActiveRefBL0;
 
     if (pConfig->NumRefActiveBL0 == 0)
     {
-        pConfig->NumRefActiveBL0 = MaxNumActiveRefBL0;
+        pConfig->NumRefActiveBL0 = num_ref_limit;
     }
-    else if (pConfig->NumRefActiveBL0 > MaxNumActiveRefBL0)
+    else if (pConfig->NumRefActiveBL0 > num_ref_limit)
     {
-        pConfig->NumRefActiveBL0 = MaxNumActiveRefBL0;
-        msdk_printf(MSDK_STRING("\nWARNING: Unsupported number of B frame backward references, adjusted to maximum (%d)\n"), MaxNumActiveRefBL0);
+        pConfig->NumRefActiveBL0 = num_ref_limit;
+        msdk_printf(MSDK_STRING("\nWARNING: Unsupported number of B frame backward references, adjusted to maximum (%d)\n"), num_ref_limit);
     }
+
+    num_ref_limit = pConfig->bOnlyPAK ? MaxNumActiveRefPAK : ((pConfig->nPicStruct == MFX_PICSTRUCT_PROGRESSIVE) ? MaxNumActiveRefBL1 : MaxNumActiveRefBL1_i);
 
     if (pConfig->NumRefActiveBL1 == 0)
     {
-        pConfig->NumRefActiveBL1 = (pConfig->nPicStruct == MFX_PICSTRUCT_PROGRESSIVE) ? MaxNumActiveRefBL1 : MaxNumActiveRefBL1_i;
+        pConfig->NumRefActiveBL1 = num_ref_limit;
     }
-    else if (pConfig->NumRefActiveBL1 > ((pConfig->nPicStruct == MFX_PICSTRUCT_PROGRESSIVE) ? MaxNumActiveRefBL1 : MaxNumActiveRefBL1_i))
+    else if (pConfig->NumRefActiveBL1 > num_ref_limit)
     {
-        pConfig->NumRefActiveBL1 = (pConfig->nPicStruct == MFX_PICSTRUCT_PROGRESSIVE) ? MaxNumActiveRefBL1 : MaxNumActiveRefBL1_i;
-        msdk_printf(MSDK_STRING("\nWARNING: Unsupported number of B frame forward references, adjusted to maximum (%d (%d for interlaced))\n"), MaxNumActiveRefBL1, MaxNumActiveRefBL1_i);
+        pConfig->NumRefActiveBL1 = num_ref_limit;
+        msdk_printf(MSDK_STRING("\nWARNING: Unsupported number of B frame forward references, adjusted to maximum %d\n"), num_ref_limit);
     }
 
     if (pConfig->nPicStruct == MFX_PICSTRUCT_UNKNOWN
@@ -1217,13 +1223,6 @@ mfxStatus CheckDRCParams(AppConfig* pConfig)
     {
         return MFX_ERR_NONE;
     }
-
-    /*
-    if (pConfig->bENCPAK || pConfig->bOnlyENC || pConfig->bOnlyPAK || pConfig->bPREENC)
-    {
-        fprintf(stderr, "ERROR: Only ENCODE supports Dynamic Resolution Change\n");
-        return MFX_ERR_UNSUPPORTED;
-    } */
 
     for (mfxU32 i = 0; i < pConfig->DRCqueue.size(); ++i)
     {
