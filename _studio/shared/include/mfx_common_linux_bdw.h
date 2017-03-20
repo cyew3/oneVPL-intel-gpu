@@ -5,11 +5,14 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef _MFX_COMMON_LINUX_BDW_H_
 #define _MFX_COMMON_LINUX_BDW_H_
+
+
+#define PRE_SI_GEN 9 // SKL
 
 // h264
 #define MFX_ENABLE_H264_VIDEO_DECODE
@@ -96,7 +99,7 @@
 #endif
 
 #if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN) || defined(AS_VP8D_PLUGIN) || defined(AS_VP8E_PLUGIN) || defined(AS_VP9D_PLUGIN) || defined(AS_CAMERA_PLUGIN) || defined (MFX_RT)
-	#undef MFX_ENABLE_H265_VIDEO_DECODE
+    #undef MFX_ENABLE_H265_VIDEO_DECODE
     #undef MFX_ENABLE_H265_VIDEO_ENCODE
     #undef MFX_ENABLE_H264_VIDEO_DECODE
     #undef MFX_ENABLE_H264_VIDEO_ENCODE

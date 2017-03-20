@@ -101,47 +101,6 @@
     #endif // #if defined(LINUX32) || defined(LINUX64)
 #endif // MFX_VA
 
-#if defined (PRE_SI_GEN)
-    #define ENABLE_PRE_SI_FEATURES
-    #if PRE_SI_GEN == 9
-        #ifdef ENABLE_PRE_SI_FEATURES
-             #undef ENABLE_PRE_SI_FEATURES
-        #endif
-        #ifdef PRE_SI_TARGET_PLATFORM_GEN10
-             #undef PRE_SI_TARGET_PLATFORM_GEN10
-        #endif
-        #ifdef PRE_SI_TARGET_PLATFORM_GEN10
-             #undef PRE_SI_TARGET_PLATFORM_GEN10
-        #endif
-    #elif PRE_SI_GEN == 10
-        #define PRE_SI_TARGET_PLATFORM_GEN10
-    #elif PRE_SI_GEN == 11
-        #define PRE_SI_TARGET_PLATFORM_GEN11
-    #else
-        #pragma message("ERROR:\nWrong value of PRE_SI_GEN.\nValue should be 9, 10 or 11. \
-        \n9:\n\tENABLE_PRE_SI_FEATURES = off\n\tPRE_SI_TARGET_PLATFORM_GEN10 = off\n\tPRE_SI_TARGET_PLATFORM_GEN11 = off\n \
-        \n10:\n\tENABLE_PRE_SI_FEATURES = on\n\tPRE_SI_TARGET_PLATFORM_GEN10 = on\n \
-        \n11:\n\tENABLE_PRE_SI_FEATURES = on\n\tPRE_SI_TARGET_PLATFORM_GEN11 = on\n")
-        #error Wrong value of PRE_SI_GEN
-    #endif
-#else
-    #define ENABLE_PRE_SI_FEATURES
-
-    #if defined (ENABLE_PRE_SI_FEATURES)
-
-        #define PRE_SI_TARGET_PLATFORM_GEN11 // target generation is Gen11 (ICL, CNL-H, CNX-G)
-
-        #if defined (PRE_SI_TARGET_PLATFORM_GEN11)
-           #define PRE_SI_TARGET_PLATFORM_GEN10 // assume that all Gen10 features are supported on Gen11
-        #endif // PRE_SI_TARGET_PLATFORM_GEN11
-
-        //#define PRE_SI_TARGET_PLATFORM_GEN10 // target generation is Gen10 (CNL)
-
-    #endif // ENABLE_PRE_SI_FEATURES
-#endif
-
-
-
 #if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN)
     #if defined(HEVCE_EVALUATION)
         #define MFX_MAX_ENCODE_FRAMES 1000
@@ -316,7 +275,7 @@
         #include "mfx_common_linux_bxt.h"
     #elif defined(LINUX_TARGET_PLATFORM_BSW)
         #include "mfx_common_linux_bsw.h"
-    #elif defined(LINUX_TARGET_PLATFORM_BDW)
+    #elif defined(LINUX_TARGET_PLATFORM_BDW)  // PRE_SI_GEN == 9
         #include "mfx_common_linux_bdw.h"
     #elif defined(LINUX_TARGET_PLATFORM_TBD)
         #include "mfx_common_lnx_tbd.h"
@@ -324,6 +283,50 @@
         #error "Target platform should be specified!"
     #endif
 #endif // LINUX_TARGET_PLATFORM
+
+
+
+#if defined (PRE_SI_GEN)
+    #define ENABLE_PRE_SI_FEATURES
+    #if PRE_SI_GEN == 9
+        #ifdef ENABLE_PRE_SI_FEATURES
+             #undef ENABLE_PRE_SI_FEATURES
+        #endif
+        #ifdef PRE_SI_TARGET_PLATFORM_GEN10
+             #undef PRE_SI_TARGET_PLATFORM_GEN10
+        #endif
+        #ifdef PRE_SI_TARGET_PLATFORM_GEN10
+             #undef PRE_SI_TARGET_PLATFORM_GEN10
+        #endif
+    #elif PRE_SI_GEN == 10
+        #define PRE_SI_TARGET_PLATFORM_GEN10
+    #elif PRE_SI_GEN == 11
+        #define PRE_SI_TARGET_PLATFORM_GEN11
+    #else
+        #pragma message("ERROR:\nWrong value of PRE_SI_GEN.\nValue should be 9, 10 or 11. \
+        \n9:\n\tENABLE_PRE_SI_FEATURES = off\n\tPRE_SI_TARGET_PLATFORM_GEN10 = off\n\tPRE_SI_TARGET_PLATFORM_GEN11 = off\n \
+        \n10:\n\tENABLE_PRE_SI_FEATURES = on\n\tPRE_SI_TARGET_PLATFORM_GEN10 = on\n \
+        \n11:\n\tENABLE_PRE_SI_FEATURES = on\n\tPRE_SI_TARGET_PLATFORM_GEN11 = on\n")
+        #error Wrong value of PRE_SI_GEN
+    #endif
+#else
+
+    #define ENABLE_PRE_SI_FEATURES
+
+    #if defined (ENABLE_PRE_SI_FEATURES)
+
+        #define PRE_SI_TARGET_PLATFORM_GEN11 // target generation is Gen11 (ICL, CNL-H, CNX-G)
+
+        #if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+           #define PRE_SI_TARGET_PLATFORM_GEN10 // assume that all Gen10 features are supported on Gen11
+        #endif // PRE_SI_TARGET_PLATFORM_GEN11
+
+        //#define PRE_SI_TARGET_PLATFORM_GEN10 // target generation is Gen10 (CNL)
+
+    #endif // ENABLE_PRE_SI_FEATURES
+#endif
+
+
 
 
 #endif // _MFX_CONFIG_H_
