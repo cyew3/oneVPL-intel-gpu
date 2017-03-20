@@ -851,6 +851,15 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         unsupported = true;
     }
 
+    mfxExtOpaqueSurfaceAlloc& opaq = GetExtBufferRef(par);
+    if (par.IOPattern &&
+        par.IOPattern != MFX_IOPATTERN_IN_OPAQUE_MEMORY
+        && opaq.In.NumSurface)
+    {
+        opaq.In.NumSurface = 0;
+        changed = true;
+    }
+
     if (unsupported == true)
     {
         return MFX_ERR_UNSUPPORTED;
@@ -1098,6 +1107,9 @@ mfxStatus CheckEncodeFrameParam(
     MFX_CHECK_NULL_PTR1(bs);
     MFX_CHECK_NULL_PTR1(bs->Data);
 
+    mfxExtOpaqueSurfaceAlloc const & extOpaq = GetExtBufferRef(video);
+    bool isOpaq = video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && extOpaq.In.NumSurface > 0;
+
     // check that surface contains valid data
     if (surface != 0)
     {
@@ -1109,7 +1121,7 @@ mfxStatus CheckEncodeFrameParam(
             MFX_CHECK(surface->Data.U != 0, MFX_ERR_NULL_PTR);
             MFX_CHECK(surface->Data.V != 0, MFX_ERR_NULL_PTR);
         }
-        else
+        else if (isOpaq == false)
         {
             MFX_CHECK(surface->Data.MemId != 0, MFX_ERR_INVALID_VIDEO_PARAM);
         }
