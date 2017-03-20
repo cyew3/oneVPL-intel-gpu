@@ -1980,7 +1980,11 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
     VABufferID vaFeiFrameControlId = VA_INVALID_ID;
 
     // Extension buffers
+#if MFX_VERSION >= 1023
     mfxExtFeiSliceHeader  * pDataSliceHeader = GetExtBufferFEI(in, feiFieldId);
+#else
+    mfxExtFeiSliceHeader  * pDataSliceHeader = GetExtBufferFEI(out, feiFieldId);
+#endif // MFX_VERSION >= 1023
     mfxExtFeiEncMV        * mvout            = GetExtBufferFEI(in, feiFieldId);
     mfxExtFeiPakMBCtrl    * mbcodeout        = GetExtBufferFEI(in, feiFieldId);
 

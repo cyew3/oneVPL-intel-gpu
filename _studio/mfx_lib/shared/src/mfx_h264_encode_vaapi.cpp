@@ -2622,7 +2622,7 @@ mfxStatus VAAPIEncoder::Execute(
                     m_mbqp_buffer[mbRow * bufW + mbCol].qp_y = mbqp->QP[fieldOffset + mbRow * mbW + mbCol];
 
             MFX_DESTROY_VABUFFER(m_mbqpBufferId, m_vaDisplay);
-            // LibVA expect full buffer size w/o interlace ajustments
+            // LibVA expect full buffer size w/o interlace adjustments
             vaSts = vaCreateBuffer(m_vaDisplay,
                 m_vaContextEncode,
                 (VABufferType)VAEncQpBufferType,

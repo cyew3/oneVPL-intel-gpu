@@ -415,9 +415,11 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
 #if MFX_VERSION >= 1023
     // For now PAK doesn't have output extension buffers
     MFX_CHECK(!output->NumExtParam, MFX_ERR_UNDEFINED_BEHAVIOR);
-#endif // MFX_VERSION >= 1023
 
     mfxStatus sts = CheckRuntimeExtBuffers(input, output, m_video);
+#else
+    mfxStatus sts = CheckRuntimeExtBuffers(output, output, m_video);
+#endif // MFX_VERSION >= 1023
     MFX_CHECK_STS(sts);
 
     // For frame type detection
@@ -432,11 +434,11 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
         MFX_CHECK(mvout && mbcodeout, MFX_ERR_INVALID_VIDEO_PARAM);
 
         // Frame type detection
-        mfxExtFeiPPS* extFeiPPSinRuntime = GetExtBufferFEI(input, field);
-
 #if MFX_VERSION >= 1023
+        mfxExtFeiPPS* extFeiPPSinRuntime = GetExtBufferFEI(input, field);
         mfxU8 type = extFeiPPSinRuntime->FrameType;
 #else
+        mfxExtFeiPPS* extFeiPPSinRuntime = GetExtBufferFEI(output, field);
         mfxU8 type = extFeiPPSinRuntime->PictureType;
 #endif // MFX_VERSION >= 1023
 

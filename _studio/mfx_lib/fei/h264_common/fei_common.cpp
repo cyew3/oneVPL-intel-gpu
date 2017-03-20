@@ -582,7 +582,11 @@ mfxStatus MfxH264FEIcommon::CheckInitExtBuffers(const MfxVideoParam & owned_vide
 }
 
 template mfxStatus MfxH264FEIcommon::CheckRuntimeExtBuffers<>(mfxENCInput* input, mfxENCOutput* output, const MfxVideoParam & owned_video);
+#if MFX_VERSION >= 1023
 template mfxStatus MfxH264FEIcommon::CheckRuntimeExtBuffers<>(mfxPAKInput* input, mfxPAKOutput* output, const MfxVideoParam & owned_video);
+#else
+template mfxStatus MfxH264FEIcommon::CheckRuntimeExtBuffers<>(mfxPAKOutput* input, mfxPAKOutput* output, const MfxVideoParam & owned_video);
+#endif // MFX_VERSION >= 1023
 
 template <typename T, typename U>
 mfxStatus MfxH264FEIcommon::CheckRuntimeExtBuffers(T* input, U* output, const MfxVideoParam & owned_video)
