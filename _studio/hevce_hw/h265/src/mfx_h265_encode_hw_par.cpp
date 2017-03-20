@@ -1071,10 +1071,10 @@ namespace TUDefault
     {
         static const mfxU16 tumap[7] =
         {
-            /*1*/   MFX_SAO_ENABLE_LUMA | MFX_SAO_ENABLE_CHROMA,
-            /*2*/   MFX_SAO_ENABLE_LUMA,
-            /*3*/   MFX_SAO_ENABLE_LUMA,
-            /*4*/   MFX_SAO_ENABLE_LUMA,
+            /*1*/   MFX_SAO_UNKNOWN,
+            /*2*/   MFX_SAO_UNKNOWN,
+            /*3*/   MFX_SAO_UNKNOWN,
+            /*4*/   MFX_SAO_UNKNOWN,
             /*5*/   MFX_SAO_UNKNOWN,
             /*6*/   MFX_SAO_UNKNOWN,
             /*7*/   MFX_SAO_UNKNOWN //don't use by default but allow user to use per-frame
