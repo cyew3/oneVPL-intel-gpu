@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -160,6 +160,27 @@ void H265DecoderFrameInfo::RemoveSlice(Ipp32s num)
 
     m_SliceCount--;
     m_pSliceQueue[m_SliceCount] = pCurSlice;
+}
+
+void H265DecoderFrameInfo::CheckSlices()
+{
+    if (!GetSlice(0))
+        return;
+
+    const H265SliceHeader *firstSliceHeader = GetSlice(0)->GetSliceHeader();
+
+    for (Ipp32u sliceId = 1; sliceId < GetSliceCount(); sliceId++)
+    {
+        H265SliceHeader *sliceHeader = GetSlice(sliceId)->GetSliceHeader();
+
+        // HEVC 7.4.7.1 General slice segment header semantics
+        if (sliceHeader->slice_temporal_mvp_enabled_flag != firstSliceHeader->slice_temporal_mvp_enabled_flag)
+        {
+            RemoveSlice(sliceId);
+
+            sliceId--;
+        }
+    }
 }
 
 void H265DecoderFrameInfo::EliminateASO()
