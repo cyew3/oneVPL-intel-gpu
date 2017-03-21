@@ -79,6 +79,8 @@ MFXCamera_Plugin::MFXCamera_Plugin(bool CreateByDispatcher)
     Zero(m_3DLUTParams);
     Zero(m_CCMParams);
     Zero(m_WBparams);
+    Zero(m_TCCParams);
+    Zero(m_RGBToYUVParams);
     Zero(m_HPParams);
     Zero(m_DenoiseParams);
     Zero(m_LensParams);
