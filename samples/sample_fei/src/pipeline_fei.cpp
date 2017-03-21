@@ -1546,16 +1546,6 @@ mfxStatus CEncodingPipeline::Run()
         /* Reorder income frame */
         if (create_task)
         {
-            /* ENC and/or PAK */
-            if (m_appCfg.bENCPAK || m_appCfg.bOnlyENC || m_appCfg.bOnlyPAK)
-            {
-                /* FEI PAK requires separate pool for reconstruct surfaces */
-                m_taskInitializationParams.ReconSurf = m_ReconSurfaces.GetFreeSurface_FEI();
-                MSDK_CHECK_POINTER(m_taskInitializationParams.ReconSurf, MFX_ERR_MEMORY_ALLOC);
-
-                m_taskInitializationParams.ReconSurf->Data.FrameOrder = pSurf->Data.FrameOrder;
-            }
-
             /* PreENC on downsampled surface */
             if (m_appCfg.bPREENC && m_appCfg.preencDSstrength)
             {
@@ -1574,6 +1564,17 @@ mfxStatus CEncodingPipeline::Run()
 
             // No frame to process right now (bufferizing B-frames, need more input frames)
             if (!eTask) continue;
+
+            // Set reconstruct surface for ENC / PAK
+            if (m_appCfg.bENCPAK || m_appCfg.bOnlyENC || m_appCfg.bOnlyPAK)
+            {
+                /* FEI PAK requires separate pool for reconstruct surfaces */
+                mfxFrameSurface1 * recon_surf = m_ReconSurfaces.GetFreeSurface_FEI();
+                MSDK_CHECK_POINTER(recon_surf, MFX_ERR_MEMORY_ALLOC);
+
+                recon_surf->Data.FrameOrder = pSurf->Data.FrameOrder;
+                eTask->SetReconSurf(recon_surf);
+            }
         }
 
         if (m_appCfg.bPREENC)
@@ -1690,6 +1691,14 @@ mfxStatus CEncodingPipeline::ProcessBufferedFrames()
 
             if ((m_appCfg.bENCPAK) || (m_appCfg.bOnlyPAK) || (m_appCfg.bOnlyENC))
             {
+                // Set reconstruct surface for ENC / PAK
+
+                mfxFrameSurface1 * recon_surf = m_ReconSurfaces.GetFreeSurface_FEI();
+                MSDK_CHECK_POINTER(recon_surf, MFX_ERR_MEMORY_ALLOC);
+
+                recon_surf->Data.FrameOrder = eTask->m_frameOrder;
+                eTask->SetReconSurf(recon_surf);
+
                 sts = m_pFEI_ENCPAK->EncPakOneFrame(eTask);
                 MSDK_BREAK_ON_ERROR(sts);
             }
