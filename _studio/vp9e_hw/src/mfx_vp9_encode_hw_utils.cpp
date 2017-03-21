@@ -117,6 +117,7 @@ void VP9MfxVideoParam::Construct(mfxVideoParam const & par)
     InitExtBufHeader(m_extOpt2);
     InitExtBufHeader(m_extOpt3);
     InitExtBufHeader(m_extOptDDI);
+    InitExtBufHeader(m_extSeg);
 
     // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
     /*if (mfxExtVP9CodingOption * opts = GetExtBuffer(par))
@@ -134,12 +135,20 @@ void VP9MfxVideoParam::Construct(mfxVideoParam const & par)
     if (mfxExtCodingOptionDDI * opts = GetExtBuffer(par))
         m_extOptDDI = *opts;
 
+    m_segBufPassed = false;
+    if (mfxExtVP9Segmentation * opts = GetExtBuffer(par))
+    {
+        m_extSeg = *opts;
+        m_segBufPassed = true;
+    }
+
     // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
     // m_extParam[0] = &m_extOpt.Header;
     m_extParam[0] = &m_extOptDDI.Header;
     m_extParam[1] = &m_extOpaque.Header;
     m_extParam[2] = &m_extOpt2.Header;
     m_extParam[3] = &m_extOpt3.Header;
+    m_extParam[4] = &m_extSeg.Header;
 
     ExtParam = m_extParam;
     NumExtParam = mfxU16(sizeof m_extParam / sizeof m_extParam[0]);
@@ -211,9 +220,7 @@ mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
     frameParam.frameType = (mfxU8)((task.m_frameOrder % par.mfx.GopPicSize) == 0 || (forcedFrameType & MFX_FRAMETYPE_I) ? KEY_FRAME : INTER_FRAME);
 
     // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
-    /*mfxExtVP9CodingOption const &opt = GetExtBufferRef(par);
-    mfxExtVP9CodingOption const *pOptRuntime = GetExtBuffer(task.m_ctrl);
-    mfxExtVP9CodingOption const *pOpt = pOptRuntime ? pOptRuntime : &opt;*/
+    //mfxExtCodingOptionVP9 const &opt = GetActualExtBufferRef(par, task.m_ctrl);
 
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
     {
@@ -228,25 +235,51 @@ mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
     frameParam.height = frameParam.renderHeight = par.mfx.FrameInfo.Height;
 
     // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
-    /*frameParam.sharpness = (mfxU8)pOpt->SharpnessLevel;
+    /*frameParam.sharpness = (mfxU8)opt.SharpnessLevel;
 
     for (mfxU8 i = 0; i < 4; i ++)
     {
-        frameParam.lfRefDelta[i] = (mfxI8)pOpt->LoopFilterRefDelta[i];
+        frameParam.lfRefDelta[i] = (mfxI8)opt.LoopFilterRefDelta[i];
     }
 
-    frameParam.lfModeDelta[0] = (mfxI8)pOpt->LoopFilterModeDelta[0];
-    frameParam.lfModeDelta[1] = (mfxI8)pOpt->LoopFilterModeDelta[1];
+    frameParam.lfModeDelta[0] = (mfxI8)opt.LoopFilterModeDelta[0];
+    frameParam.lfModeDelta[1] = (mfxI8)opt.LoopFilterModeDelta[1];
+
+    frameParam.qIndexDeltaLumaDC   = (mfxI8)opt.QIndexDeltaLumaDC;
+    frameParam.qIndexDeltaChromaAC = (mfxI8)opt.QIndexDeltaChromaAC;
+    frameParam.qIndexDeltaChromaDC = (mfxI8)opt.QIndexDeltaChromaDC;
 
     frameParam.qIndexDeltaLumaDC   = (mfxI8)pOpt->QIndexDeltaLumaDC;
     frameParam.qIndexDeltaChromaAC = (mfxI8)pOpt->QIndexDeltaChromaAC;
     frameParam.qIndexDeltaChromaDC = (mfxI8)pOpt->QIndexDeltaChromaDC;*/
 
+    frameParam.errorResilentMode = 0;
+
     mfxExtCodingOption2 const & opt2 = GetExtBufferRef(par);
     if (IsOn(opt2.MBBRC))
     {
-        // MBBRC requires enabled segmentation to vary quantizer on per-segment basis
-        frameParam.allowSegmentation = 1;
+        frameParam.segmentation = BRC_SEGMENTATION;
+    }
+    else
+    {
+        mfxExtVP9Segmentation const & seg = GetActualExtBufferRef(par, task.m_ctrl);
+
+        if (seg.NumSegments && AllMandatorySegMapParams(seg))
+        {
+            frameParam.segmentation = APP_SEGMENTATION;
+            frameParam.segmentationUpdateMap = frameParam.frameType == KEY_FRAME ||
+                frameParam.errorResilentMode ||
+                false == CompareSegmentMaps(*task.m_pPrevSegment, seg);
+            frameParam.segmentationUpdateData = frameParam.frameType == KEY_FRAME ||
+                frameParam.errorResilentMode ||
+                false == CompareSegmentParams(*task.m_pPrevSegment, seg);
+            frameParam.segmentationTemporalUpdate = 0;
+            frameParam.segmentIdBlockSize = seg.SegmentIdBlockSize;
+        }
+        else
+        {
+            frameParam.segmentation = NO_SEGMENTATION;
+        }
     }
 
     frameParam.showFarme = 1;
@@ -259,7 +292,6 @@ mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
         frameParam.modeRefDeltaUpdate = 1;
     }
 
-    frameParam.errorResilentMode = 0;
     frameParam.resetFrameContext = 0;
 #if defined (PRE_SI_TARGET_PLATFORM_GEN11)
     mfxPlatform platform;
@@ -368,7 +400,8 @@ mfxStatus UpdateDpb(VP9FrameLevelParam &frameParam, sFrameEx *pRecFrame, std::ve
 //---------------------------------------------------------
 
 MfxFrameAllocResponse::MfxFrameAllocResponse()
-    : m_pCore(0)
+    : m_info()
+    , m_pCore(0)
     , m_numFrameActualReturnedByAllocFrames(0)
 {
     Zero(m_info);

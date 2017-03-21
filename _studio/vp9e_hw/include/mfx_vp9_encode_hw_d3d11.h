@@ -96,11 +96,13 @@ private:
 
     ENCODE_SET_SEQUENCE_PARAMETERS_VP9 m_sps;
     ENCODE_SET_PICTURE_PARAMETERS_VP9  m_pps;
+    ENCODE_SEGMENT_PARAMETERS          m_seg;
     std::vector<ENCODE_QUERY_STATUS_PARAMS>     m_feedbackUpdate;
     CachedFeedback                              m_feedbackCached;
 
     std::vector<mfxHDLPair>                     m_reconQueue;
     std::vector<mfxHDLPair>                     m_bsQueue;
+    std::vector<mfxHDLPair>                     m_segmapQueue;
 
     bool                                        m_infoQueried;
     std::vector<ENCODE_COMP_BUFFER_INFO>        m_compBufInfo;

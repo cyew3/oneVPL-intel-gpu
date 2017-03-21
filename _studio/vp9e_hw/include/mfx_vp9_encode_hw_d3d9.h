@@ -66,150 +66,14 @@ typedef enum tagENCODE_FRAMESIZE_TOLERANCE
     eFrameSizeTol_Extremely_Low = 2    // maps to "low delay"
 } ENCODE_FRAMESIZE_TOLERANCE;
 
-#ifdef DDI_VER_0960
-// DDI v0.960
-typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_VP9
+enum
 {
-    USHORT wMaxFrameWidth;
-    USHORT wMaxFrameHeight;
-    USHORT GopPicSize;
-    UCHAR  TargetUsage;
-    UCHAR  RateControlMethod;
-    UINT   TargetBitRate[8];    // One per temporal layer
-    UINT   MaxBitRate;
-    UINT   MinBitRate;
-    ULONG  InitVBVBufferFullnessInBit;
-    ULONG  VBVBufferSizeInBit;
-    ULONG  OptimalVBVBufferLevelInBit;
-    ULONG  UpperVBVBufferLevelThresholdInBit;
-    ULONG  LowerVBVBufferLevelThresholdInBit;
+    BLOCK_16x16 = 0,
+    BLOCK_32x32 = 1,
+    BLOCK_64x64 = 2,
+    BLOCK_8x8 = 4
+};
 
-    union
-    {
-        struct
-        {
-            UINT bResetBRC               : 1;
-            UINT bNoFrameHeaderInsertion : 1;
-            UINT bUseRawReconRef         : 1;
-            UINT MBBRC                   : 4;
-            UINT EnableDynamicScaling    : 1;
-            UINT SourceFormat            : 2;    //[0..3]
-            UINT SourceBitDepth          : 2;     //[0..3]
-            UINT EncodedFormat           : 2;     //[0..2]
-            UINT EncodedBitDepth         : 2;     //[0..2]
-            UINT DisplayFormatSwizzle    : 1;
-            UINT bReserved               : 15;
-        } fields;
-        UINT value;
-    } SeqFlags;
-
-    UINT      UserMaxFrameSize;
-    USHORT    reserved2;
-    USHORT    reserved3;
-    FRAMERATE FrameRate[8]; // One per temporal layer
-    UCHAR     NumTemporalLayersMinus1;
-    UCHAR     ICQQualityFactor;            // [0..255]
-
-    ENCODE_INPUT_COLORSPACE        InputColorSpace;
-    ENCODE_SCENARIO                ScenarioInfo;
-    ENCODE_CONTENT                ContentInfo;
-    ENCODE_FRAMESIZE_TOLERANCE         FrameSizeTolerance;
-
-} ENCODE_SET_SEQUENCE_PARAMETERS_VP9;
-
-typedef struct tagENCODE_SET_PICTURE_PARAMETERS_VP9
-{
-    USHORT SrcFrameHeightMinus1;       // [0..2^16-1]
-    USHORT SrcFrameWidthMinus1;        // [0..2^16-1]
-    USHORT DstFrameHeightMinus1;       // [0..2^16-1]
-    USHORT DstFrameWidthMinus1;        // [0..2^16-1]
-
-    UCHAR  CurrOriginalPic;            // [0..127]
-    UCHAR  CurrReconstructedPic;       // [0..11]
-    UCHAR  RefFrameList [8];           // [0..11, 0xFF]
-
-    union
-    {
-        struct
-        {
-            UINT frame_type                : 1;    // [0..1]
-            UINT show_frame               : 1;    // [0..1]
-            UINT error_resilient_mode          : 1;    // [0..1]
-            UINT intra_only                 : 1;    // [0..1]
-            UINT allow_high_precision_mv         : 1;     // [0..1]
-            UINT mcomp_filter_type             : 3;     // [0]
-            UINT frame_parallel_decoding_mode    : 1;     // [0..1]
-            UINT segmentation_enabled        : 1;      // [1]
-            UINT segmentation_temporal_update    : 1;      // [1]
-            UINT segmentation_update_map        : 1;      // [1]
-            UINT reset_frame_context            : 2;      // [0..3]
-            UINT refresh_frame_context        : 1;      // [0..1]
-            UINT frame_context_idx             : 2;      // [0..3]
-            UINT LosslessFlag                 : 1;      // [0..1]
-            UINT comp_prediction_mode        : 2;     // [0..2]
-            UINT SuperFrame                : 1;     // [0..1]
-            UINT SegIdBlockSize            : 2;    // [0..3]
-            UINT ReservedField                : 9;
-        }fields;
-        UINT value;
-    } PicFlags;
-
-    union
-    {
-        struct
-        {
-            UINT LastRefIdx                 : 3;    // [0..7]
-            UINT LastRefSignBias             : 1;     // [0..1]
-            UINT GoldenRefIdx                 : 3;     // [0..7]
-            UINT GoldenRefSignBias : 1;     // [0..1]
-            UINT AltRefIdx : 3;     // [0..7]
-            UINT AltRefSignBias : 1;     // [0..1]
-
-            UINT ref_frame_ctrl_l0 : 3;
-            UINT ref_frame_ctrl_l1 : 3;
-
-            UINT refresh_frame_flags : 8;
-            UINT ReservedField : 6;
-        }            fields;
-        UINT value;
-    } RefFlags;
-
-    UCHAR       LumaACQIndex;                // [1..255]
-    CHAR        LumaDCQIndexDelta;            // [-15..15]
-    CHAR        ChromaACQIndexDelta;            // [-15..15]
-    CHAR        ChromaDCQIndexDelta;            // [-15..15]
-
-    UCHAR        MinLumaACQIndex;                // [1..255]
-    UCHAR        MaxLumaACQIndex;                // [1..255]
-
-    UCHAR        filter_level;                    // [0..63]
-    UCHAR        sharpness_level;                // [0..7]
-
-    CHAR        LFRefDelta[4];                // [-63..63]
-    CHAR        LFModeDelta[2];                // [-63..63]
-
-    USHORT    BitOffsetForLFRefDelta;
-    USHORT    BitOffsetForLFModeDelta;
-    USHORT    BitOffsetForLFLevel;
-    USHORT    BitOffsetForQIndex;
-    USHORT    BitOffsetForFirstPartitionSize;
-    USHORT    BitOffsetForSegmentation;
-    USHORT    BitSizeForSegmentation;
-
-    UCHAR        log2_tile_rows;                // [0..2]
-    UCHAR        log2_tile_columns;                // [0..5]
-
-    UCHAR        temporal_id;
-
-    UINT        StatusReportFeedbackNumber;
-
-    // Skip Frames
-    UCHAR        SkipFrameFlag;                // [0..2]
-    UCHAR        NumSkipFrames;
-    UINT        SizeSkipFrames;
-
-} ENCODE_SET_PICTURE_PARAMETERS_VP9;
-#elif defined (DDI_FROM_MAINLINE_DRIVER)
 typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_VP9
 {
     USHORT wMaxFrameWidth;
@@ -291,7 +155,7 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_VP9
             UINT    comp_prediction_mode         : 2;
             UINT    super_frame                  : 1;
             UINT    seg_id_block_size            : 2;
-            UINT    display_format_swizzle       : 1;
+            UINT    segmentation_update_data     : 1;
 
             UINT    reserved                     : 8;
         } fields;
@@ -351,144 +215,29 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_VP9
     UCHAR           NumSkipFrames;
     UINT            SizeSkipFrames;
 } ENCODE_SET_PICTURE_PARAMETERS_VP9;
-#else
-// DDI v0.94
-typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_VP9
+
+typedef struct _DXVA_Intel_Seg_VP9
 {
-    USHORT        wMaxFrameWidth;
-    USHORT        wMaxFrameHeight;
-
-    USHORT      GopPicSize;
-
-    UCHAR       TargetUsage;
-    UCHAR       RateControlMethod;
-    UINT          TargetBitRate[8];    // One per temporal layer
-    UINT          MaxBitRate;
-    UINT        MinBitRate;
-    ULONG         InitVBVBufferFullnessInBit;
-    ULONG        VBVBufferSizeInBit;
-    ULONG       OptimalVBVBufferLevelInBit;
-    ULONG       UpperVBVBufferLevelThresholdInBit;
-    ULONG       LowerVBVBufferLevelThresholdInBit;
-
     union
     {
         struct
         {
-            DWORD        bResetBRC : 1;
-            DWORD       bNoFrameHeaderInsertion : 1;
-            DWORD       bUseRawReconRef : 1;
-            DWORD       MBBRC : 4;
-            DWORD       EnableDynamicScaling : 1;
-            DWORD       SourceFormat : 2;
-            DWORD       SourceBitDepth : 2;
-            DWORD       EncodedFormat : 2;
-            DWORD       EncodedBitDepth : 2;
-            DWORD       DisplayFormatSwizzle : 1;
-            DWORD       bReserved : 15;
-        }     fields;
+            UCHAR SegmentReferenceEnabled : 1; // [0..1]
+            UCHAR SegmentReference : 2;        // [0..3]
+            UCHAR SegmentSkipped : 1; // [0..1]
+            UCHAR ReservedField3 : 4;          // [0]
+        } fields;
+        UCHAR value;
+    } SegmentFlags;
 
-        UINT    value;
-    } SeqFlags;
+    CHAR  SegmentLFLevelDelta; // [-63..63]
+    SHORT SegmentQIndexDelta;  // [-255..255]
+} DXVA_Intel_Seg_VP9;
 
-    UINT    UserMaxFrameSize;
-    USHORT  reserved2;
-    USHORT  reserved3;
-    FRAMERATE   FrameRate[8];
-    UCHAR       NumTemporalLayersMinus1;
-} ENCODE_SET_SEQUENCE_PARAMETERS_VP9;
-
-typedef struct tagENCODE_SET_PICTURE_PARAMETERS_VP9
+typedef struct tagENCODE_MBSEGMENTMAP_PARAMETERS
 {
-    USHORT        SrcFrameHeightMinus1;        // [0..2^16-1]
-    USHORT        SrcFrameWidthMinus1;        // [0..2^16-1]
-    USHORT        DstFrameHeightMinus1;        // [0..2^16-1]
-    USHORT        DstFrameWidthMinus1;        // [0..2^16-1]
-
-    UCHAR            CurrOriginalPic;            // [0..127]
-    UCHAR            CurrReconstructedPic;        // [0..127]
-    UCHAR            RefFrameList[8];               // [0..127, 0xFF]
-
-    union
-    {
-        struct
-        {
-            UINT        frame_type : 1;    // [0..1]
-            UINT        show_frame : 1;    // [0..1]
-            UINT         error_resilient_mode : 1;    // [0..1]
-            UINT          intra_only : 1;    // [0..1]
-
-            UINT         allow_high_precision_mv : 1;     // [0..1]
-            UINT         mcomp_filter_type : 3;     // [0..7]
-            UINT         frame_parallel_decoding_mode : 1;     // [0..1]
-            UINT         segmentation_enabled : 1;      // [1]
-            UINT         segmentation_temporal_update : 1;      // [1]
-            UINT         segmentation_update_map : 1;      // [1]
-            UINT         reset_frame_context : 2;      // [0..3]
-            UINT         refresh_frame_context : 1;      // [0..1]
-            UINT         frame_context_idx : 2;      // [0..3]
-            UINT         LosslessFlag : 1;      // [0..1]
-            UINT         comp_prediction_mode : 2;     // [0..2]
-            UINT        super_frame : 1;    //[0..1]
-            UINT        SegIdBlockSize : 2;    //[0..3]
-            UINT        ReservedField : 9;
-        }            fields;
-        UINT        value;
-    } PicFlags;
-
-    union
-    {
-        struct
-        {
-            UINT        LastRefIdx : 3;    // [0..7]
-            UINT         LastRefSignBias : 1;     // [0..1]
-            UINT         GoldenRefIdx : 3;     // [0..7]
-            UINT         GoldenRefSignBias : 1;     // [0..1]
-            UINT         AltRefIdx : 3;     // [0..7]
-            UINT         AltRefSignBias : 1;     // [0..1]
-
-            UINT        ref_frame_ctrl_l0 : 3;
-            UINT        ref_frame_ctrl_l1 : 3;
-
-            UINT        refresh_frame_flags : 8;
-            UINT        reserved2 : 6;
-
-        }            fields;
-        UINT        value;
-    } RefFlags;
-
-    UCHAR        LumaACQIndex;                // [1..255]
-    CHAR        LumaDCQIndexDelta;            // [-15..15]
-    CHAR        ChromaACQIndexDelta;            // [-15..15]
-    CHAR        ChromaDCQIndexDelta;            // [-15..15]
-
-    UCHAR        filter_level;                    // [0..63]
-    UCHAR        sharpness_level;                // [0..7]
-
-    CHAR        LFRefDelta[4];                // [-63..63]
-    CHAR        LFModeDelta[2];                // [-63..63]
-
-    USHORT    BitOffsetForLFRefDelta;
-    USHORT    BitOffsetForLFModeDelta;
-    USHORT    BitOffsetForLFLevel;
-    USHORT    BitOffsetForQIndex;
-    USHORT    BitOffsetForFirstPartitionSize;
-    USHORT    BitOffsetForSegmentation;
-    USHORT  BitSizeForSegmentation;
-
-    UCHAR        log2_tile_rows;                // [0..2]
-    UCHAR        log2_tile_columns;                // [0..5]
-
-    UCHAR        temporal_id;
-
-    UINT        StatusReportFeedbackNumber;
-
-    // Skip Frames
-    UCHAR        SkipFrameFlag;                // [0..2]
-    UCHAR        NumSkipFrames;
-    UINT        SizeSkipFrames;
-} ENCODE_SET_PICTURE_PARAMETERS_VP9;
-#endif
+    DXVA_Intel_Seg_VP9 SegData[8];
+} ENCODE_SEGMENT_PARAMETERS;
 
 void FillSpsBuffer(
     VP9MfxVideoParam const & par,
@@ -501,6 +250,12 @@ void FillPpsBuffer(
     Task const & task,
     ENCODE_SET_PICTURE_PARAMETERS_VP9 & pps,
     BitOffsets const &offsets);
+
+mfxStatus FillSegmentMap(Task const & task,
+    mfxCoreInterface* m_pmfxCore);
+
+void FillSegmentParam(Task const & task,
+    ENCODE_SEGMENT_PARAMETERS & segPar);
 
 void HardcodeCaps(
     ENCODE_CAPS_VP9& caps,
@@ -592,6 +347,7 @@ private:
 
     ENCODE_SET_SEQUENCE_PARAMETERS_VP9 m_sps;
     ENCODE_SET_PICTURE_PARAMETERS_VP9  m_pps;
+    ENCODE_SEGMENT_PARAMETERS          m_seg;
     std::vector<ENCODE_QUERY_STATUS_PARAMS>     m_feedbackUpdate;
     CachedFeedback                              m_feedbackCached;
 

@@ -44,68 +44,28 @@ static const GUID DXVA2_Intel_LowpowerEncode_VP9_10bit_Profile3 =
 //#define DDI_VER_0960
 #define DDI_FROM_MAINLINE_DRIVER
 
-#ifdef DDI_VER_0960
-// DDI v0.960
 typedef struct tagENCODE_CAPS_VP9
 {
     union
     {
         struct
         {
-            UINT    CodingLimitSet          : 1;
-            UINT    Color420Only            : 1;
-            UINT    SegmentationSupport     : 1;
-            UINT    FrameLevelRateCtrl      : 1;
-            UINT    BRCReset                : 1;
-            UINT    MBBRCSupport            : 1;
-            UINT    TemporalLayerRateCtrl   : 3;
-            UINT    DynamicScaling          : 1;
-            UINT    TileSupport             : 1;
-            UINT    MaxLog2TileCols         : 3;
-            UINT    YUV422ReconSupport      : 1;
-            UINT    YUV444ReconSupport      : 1;
-            UINT    MaxEncodedBitDepth      : 2;
-            UINT    UserMaxFrameSizeSupport : 1;
-            UINT                            : 13;
-        };
-        UINT CodingLimits;
-    };
-
-    union
-    {
-        struct
-        {
-            BYTE    EncodeFunc              : 1;  // Enc+Pak
-            BYTE    HybridPakFunc           : 1;  // Hybrid Pak function
-            BYTE    EncFunc                 : 1;  // Enc only function
-            BYTE                            : 6;
-        };
-        BYTE CodingFunction;
-    };
-    UINT    MaxPicWidth;
-    UINT    MaxPicHeight;
-} ENCODE_CAPS_VP9;
-#elif defined (DDI_FROM_MAINLINE_DRIVER)
-typedef struct tagENCODE_CAPS_VP9
-{
-    union
-    {
-        struct
-        {
-            UINT    CodingLimitSet        : 1;
-            UINT    Color420Only          : 1;
-            UINT    SegmentationSupport   : 1;
-            UINT    FrameLevelRateCtrl    : 1;
-            UINT    BRCReset              : 1;
-            UINT    MBBRCSupport          : 1;
-            UINT    TemporalLayerRateCtrl : 3;
-            UINT    DynamicScaling        : 1;
-            UINT    TileSupport           : 1;
-            UINT    MaxLog2TileCols       : 1;
-            UINT    YUV422ReconSupport    : 1;
-            UINT    YUV444ReconSupport    : 1;
-            UINT    MaxEncodedBitDepth    : 2;
-        UINT                          :14;
+            UINT    CodingLimitSet            : 1;
+            UINT    Color420Only              : 1;
+            UINT    ForcedSegmentationSupport : 1;
+            UINT    FrameLevelRateCtrl        : 1;
+            UINT    BRCReset                  : 1;
+            UINT    AutoSegmentationSupport   : 1;
+            UINT    TemporalLayerRateCtrl     : 3;
+            UINT    DynamicScaling            : 1;
+            UINT    TileSupport               : 1;
+            UINT    MaxLog2TileCols           : 3;
+            UINT    YUV422ReconSupport        : 1;
+            UINT    YUV444ReconSupport        : 1;
+            UINT    MaxEncodedBitDepth        : 2;
+            UINT    UserMaxFrameSizeSupport   : 1;
+            UINT    SegmentFeatureSupport     : 4;
+            UINT                              : 9;
         };
 
         UINT        CodingLimits;
@@ -118,7 +78,7 @@ typedef struct tagENCODE_CAPS_VP9
             UCHAR   EncodeFunc            : 1; // CHV+
             UCHAR   HybridPakFunc         : 1; // HSW/BDW hybrid ENC & PAK
             UCHAR   EncFunc : 1; // BYT enc only mode
-        UCHAR: 6;
+        UCHAR: 5;
         };
 
         UCHAR       CodingFunction;
@@ -128,38 +88,6 @@ typedef struct tagENCODE_CAPS_VP9
     UINT            MaxPicHeight;
 
 } ENCODE_CAPS_VP9;
-#else
-// DDI v0.94
-typedef struct tagENCODE_CAPS_VP9
-{
-    union {
-        struct {
-            UINT    CodingLimitSet : 1;
-            UINT    Color420Only : 1;
-            UINT    SegmentationSupport : 1;
-            UINT    FrameLevelRateCtrl : 1;
-            UINT    BRCReset : 1;
-            UINT    MBBRCSupport : 1;
-            UINT    TemporalLayerRateCtrl : 8;
-            UINT    DynamicScaling : 1;
-        UINT: 17;
-        };
-        UINT            CodingLimits;
-    };
-    union {
-        struct {
-            BYTE     EncodeFunc : 1;  // Enc+Pak
-            BYTE     HybridPakFunc : 1;  // Hybrid Pak function
-            BYTE    EncFunc : 1;  // Enc only function
-        BYTE: 6;
-        };
-        BYTE CodingFunction;
-    };
-    UINT    MaxPicWidth;
-    UINT    MaxPicHeight;
-
-} ENCODE_CAPS_VP9;
-#endif
 
     class DriverEncoder;
 

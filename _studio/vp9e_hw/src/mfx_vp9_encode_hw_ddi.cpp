@@ -319,11 +319,14 @@ namespace MfxHwVP9Encode
         offsets.BitOffsetForSegmentation = (mfxU16)localBuf.bitOffset;
 
         //segmentation
-        WriteBit(localBuf, framePar.allowSegmentation);
-        if (framePar.allowSegmentation)
+        bool segmentation = framePar.segmentation != NO_SEGMENTATION;
+        WriteBit(localBuf, segmentation);
+        if (segmentation)
         {
-            WriteBit(localBuf, 0); // no segment map update for now
-            WriteBit(localBuf, 0); // no segment features update for now
+            // for both cases (APP_SEGMENTATION and BRC_SEGMENTATION) segmentation_params() will be completely re-written by HW accelerator
+            // so just writing dummy parameters here
+            WriteBit(localBuf, 0);
+            WriteBit(localBuf, 0);
         }
 
         offsets.BitSizeForSegmentation = (mfxU16)localBuf.bitOffset - offsets.BitOffsetForSegmentation;

@@ -32,12 +32,19 @@ mfxStatus SetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps);
 
 void InheritDefaults(VP9MfxVideoParam& defaultsDst, VP9MfxVideoParam const & defaultsSrc);
 
-mfxStatus CheckEncodeFrameParam(VP9MfxVideoParam const & video,
-                                mfxEncodeCtrl       * ctrl,
-                                mfxFrameSurface1    * surface,
-                                mfxBitstream        * bs);
+mfxStatus CheckSurface(VP9MfxVideoParam const & video,
+                       mfxFrameSurface1 const & surface);
+
+mfxStatus CheckAndFixCtrl(VP9MfxVideoParam const & video,
+                          mfxEncodeCtrl & ctrl,
+                          mfxFrameSurface1 const & surface,
+                          ENCODE_CAPS_VP9 const & caps);
+
+mfxStatus CheckBitstream(VP9MfxVideoParam const & video, mfxBitstream * bs);
 
 void SetDefailtsForProfileAndFrameInfo(VP9MfxVideoParam& par);
+
+bool CheckAndFixQIndexDelta(mfxI16& qIndexDelta, mfxU16 qIndex);
 } // MfxHwVP9Encode
 
 #endif // PRE_SI_TARGET_PLATFORM_GEN10

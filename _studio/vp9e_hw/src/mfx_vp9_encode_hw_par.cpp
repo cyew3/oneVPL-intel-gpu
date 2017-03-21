@@ -31,15 +31,15 @@ bool IsExtBufferSupportedInInit(mfxU32 id)
     return id == MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION
         || id == MFX_EXTBUFF_CODING_OPTION2
         || id == MFX_EXTBUFF_CODING_OPTION3
-        || id == MFX_EXTBUFF_DDI; // TODO: remove when IVFHeader will be added to API or disabled by default
+        || id == MFX_EXTBUFF_DDI // TODO: remove when IVFHeader will be added to API or disabled by default
+        || id == MFX_EXTBUFF_VP9_SEGMENTATION;
 }
 
 bool IsExtBufferSupportedInRuntime(mfxU32 id)
 {
-    id;
-    return false;
     // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
     // return id == MFX_EXTBUFF_VP9_CODING_OPTION;
+    return id == MFX_EXTBUFF_VP9_SEGMENTATION;
 }
 
 mfxStatus CheckExtBufferHeaders(mfxU16 numExtParam, mfxExtBuffer** extParam, bool isRuntime)
@@ -94,6 +94,25 @@ else\
 {\
     pDst->PAR = 1; \
 }
+
+#define SET_OR_COPY_PAR_DONT_INHERIT(PAR)\
+if (pSrc)\
+{\
+    if (zeroDst)\
+    {\
+        COPY_PAR_IF_ZERO(pDst, pSrc, PAR); \
+    }\
+}\
+else\
+{\
+    pDst->PAR = 1; \
+}
+
+#define COPY_PTR(PTR)\
+if (pSrc)\
+{\
+    COPY_PAR_IF_ZERO(pDst, pSrc, PTR); \
+}\
 
 inline mfxStatus SetOrCopySupportedParams(mfxInfoMFX *pDst, mfxInfoMFX const *pSrc = 0, bool zeroDst = true)
 {
@@ -196,6 +215,32 @@ inline mfxStatus SetOrCopySupportedParams(mfxExtCodingOption3 *pDst, mfxExtCodin
     SET_OR_COPY_PAR(TargetBitDepthLuma);
     SET_OR_COPY_PAR(TargetBitDepthChroma);
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
+
+    return MFX_ERR_NONE;
+}
+
+inline mfxStatus SetOrCopySupportedParams(mfxExtVP9Segmentation *pDst, mfxExtVP9Segmentation const *pSrc = 0, bool zeroDst = true)
+{
+    MFX_CHECK_NULL_PTR1(pDst);
+
+    if (zeroDst)
+    {
+        ZeroExtBuffer(*pDst);
+    }
+
+    SET_OR_COPY_PAR_DONT_INHERIT(NumSegments);
+    SET_OR_COPY_PAR(SegmentIdBlockSize);
+    SET_OR_COPY_PAR(NumSegmentIdAlloc);
+
+    for (mfxU8 i = 0; i < MAX_SEGMENTS; i++)
+    {
+        SET_OR_COPY_PAR_DONT_INHERIT(Segment[i].FeatureEnabled);
+        SET_OR_COPY_PAR_DONT_INHERIT(Segment[i].ReferenceFrame);
+        SET_OR_COPY_PAR_DONT_INHERIT(Segment[i].LoopFilterLevelDelta);
+        SET_OR_COPY_PAR_DONT_INHERIT(Segment[i].QIndexDelta);
+    }
+
+    COPY_PTR(SegmentId);
 
     return MFX_ERR_NONE;
 }
@@ -310,6 +355,24 @@ void InheritDefaults(VP9MfxVideoParam& defaultsDst, VP9MfxVideoParam const & def
     mfxExtCodingOption3* pOpt3Dst = GetExtBuffer(defaultsDst);
     mfxExtCodingOption3* pOpt3Src = GetExtBuffer(defaultsSrc);
     SetOrCopySupportedParams(pOpt3Dst, pOpt3Src, false);
+
+    // inherit defaults from mfxExtVP9Segmentation
+    mfxExtVP9Segmentation* pSegDst = GetExtBuffer(defaultsDst);
+    mfxExtVP9Segmentation* pSegSrc = GetExtBuffer(defaultsSrc);
+    if (defaultsDst.m_segBufPassed == true)
+    {
+        mfxU16 numSegmentsDst = pSegDst->NumSegments;
+        if (numSegmentsDst != 0)
+        {
+            // NumSegments set to 0 means disabling of segmentation
+            // so there is no need to inherit any segmentation paramaters
+            SetOrCopySupportedParams(pSegDst, pSegSrc, false);
+        }
+    }
+    else
+    {
+        SetOrCopySupportedParams(pSegDst, pSegSrc);
+    }
 }
 
 mfxStatus CleanOutUnsupportedParameters(VP9MfxVideoParam &par)
@@ -330,6 +393,14 @@ mfxStatus CleanOutUnsupportedParameters(VP9MfxVideoParam &par)
     {
         sts = MFX_ERR_UNSUPPORTED;
     }*/
+
+    mfxExtVP9Segmentation &segTmp = GetExtBufferRef(tmp);
+    mfxExtVP9Segmentation &segPar = GetExtBufferRef(par);
+    SetOrCopySupportedParams(&segPar, &segTmp);
+    if (memcmp(&segPar, &segTmp, sizeof(mfxExtVP9Segmentation)))
+    {
+        sts = MFX_ERR_UNSUPPORTED;
+    }
 
     return sts;
 }
@@ -460,10 +531,215 @@ mfxU16 MapTUToSupportedRange(mfxU16 tu)
     }
 }
 
+inline bool IsFeatureSupported(ENCODE_CAPS_VP9 const & caps, mfxU8 feature)
+{
+    return (caps.SegmentFeatureSupport & (1 << feature)) != 0;
+}
+
+inline void Disable(mfxU16& features, mfxU8 feature)
+{
+    features &= ~(1 << feature);
+}
+
+inline bool CheckFeature(mfxU16& features, mfxI16* featureValue, mfxU8 feature, ENCODE_CAPS_VP9 const & caps)
+{
+    bool status = true;
+    // check QIndex feature
+    if (IsFeatureEnabled(features, feature) && !IsFeatureSupported(caps, feature))
+    {
+        Disable(features, feature);
+        status = false;
+    }
+
+    if (featureValue && *featureValue && !IsFeatureEnabled(features, feature))
+    {
+        *featureValue = 0;
+        status = false;
+    }
+
+    return status;
+}
+
+bool CheckAndFixQIndexDelta(mfxI16& qIndexDelta, mfxU16 qIndex)
+{
+    mfxI16 minQIdxDelta = qIndex ? 1 - qIndex : 1 - MAX_Q_INDEX;
+    mfxI16 maxQIdxDelta = MAX_Q_INDEX - qIndex;
+
+    // if Q index is OK, but Q index value + delta is out of valid range - clamp Q index delta
+    return Clamp(qIndexDelta, minQIdxDelta, maxQIdxDelta);
+}
+
+mfxStatus CheckPerSegmentParams(mfxVP9SegmentParam& segPar, ENCODE_CAPS_VP9 const & caps, mfxU16 QP)
+{
+    Bool changed = false;
+    mfxU16& features = segPar.FeatureEnabled;
+
+    // check QIndex feature
+    if (false == CheckFeature(features, &segPar.QIndexDelta, FEAT_QIDX, caps))
+    {
+        changed = true;
+    }
+
+    // if delta Q index value is out of valid range - just ignore it
+    if (false == CheckRangeDflt(segPar.QIndexDelta, -MAX_Q_INDEX, MAX_Q_INDEX, 0))
+    {
+        changed = true;
+    }
+    else
+    {
+        // if delta Q index value is OK, but Q index value + delta is out of valid range - clamp Q index delta
+        if (false == CheckAndFixQIndexDelta(segPar.QIndexDelta, QP))
+        {
+            changed = true;
+        }
+    }
+
+
+    // check LF Level feature
+    if (false == CheckFeature(features, &segPar.LoopFilterLevelDelta, FEAT_LF_LVL, caps))
+    {
+        changed = true;
+    }
+
+    if (false == CheckRangeDflt(segPar.LoopFilterLevelDelta, -MAX_LF_LEVEL, MAX_LF_LEVEL, 0))
+    {
+        changed = true;
+    }
+
+    // check reference feature
+    if (false == CheckFeature(features, reinterpret_cast<mfxI16*>(&segPar.ReferenceFrame), FEAT_REF, caps))
+    {
+        changed = true;
+    }
+
+    if (segPar.ReferenceFrame &&
+        segPar.ReferenceFrame != MFX_VP9_REF_INTRA &&
+        segPar.ReferenceFrame != MFX_VP9_REF_LAST &&
+        segPar.ReferenceFrame != MFX_VP9_REF_GOLDEN &&
+        segPar.ReferenceFrame != MFX_VP9_REF_ALTREF)
+    {
+        segPar.ReferenceFrame = 0;
+        changed = true;
+    }
+
+    // check skip feature
+    if (false == CheckFeature(features, 0, FEAT_SKIP, caps))
+    {
+        changed = true;
+    }
+
+    return (changed == true) ?
+        MFX_WRN_INCOMPATIBLE_VIDEO_PARAM : MFX_ERR_NONE;
+}
+
+mfxStatus CheckSegmentationMap(mfxU8 const * segMap, mfxU32 numSegmentIdAlloc, mfxU16 numSegments)
+{
+    for (mfxU32 i = 0; i < numSegmentIdAlloc; i++)
+    {
+        if (segMap[i] >= numSegments)
+        {
+            return MFX_ERR_UNSUPPORTED;
+        }
+    }
+
+    return MFX_ERR_NONE;
+}
+
+inline mfxStatus GetCheckStatus(Bool& changed, Bool& unsupported)
+{
+    if (unsupported == true)
+    {
+        return MFX_ERR_UNSUPPORTED;
+    }
+
+    return (changed == true) ? MFX_WRN_INCOMPATIBLE_VIDEO_PARAM : MFX_ERR_NONE;
+}
+
+mfxStatus CheckSegmentationParam(mfxExtVP9Segmentation& seg, mfxFrameInfo const & fi, ENCODE_CAPS_VP9 const & caps, mfxU16 QP)
+{
+    Bool changed = false;
+    Bool unsupported = false;
+
+    if ((seg.NumSegments != 0 || true == AnyMandatorySegMapParam(seg)) && caps.ForcedSegmentationSupport == 0)
+    {
+        // driver/HW don't support segmentation
+        // set all segmentation parameters to 0
+        ZeroExtBuffer(seg);
+        unsupported = true;
+    }
+
+    if (seg.NumSegments > MAX_SEGMENTS)
+    {
+        // further parameter check hardly rely on NumSegments. Cannot fix value of NumSegments and then use modified value for checks. Need to drop and return MFX_ERR_UNSUPPORTED
+        seg.NumSegments = 0;
+        unsupported = true;
+    }
+
+    // for Gen10 driver supports only 16x16 granularity for segmentation map
+    // but every 32x32 block of seg map should contain equal segment ids because of HW limitation
+    // so segment map is accepted from application in terms of 32x32 or 64x64 blocks
+    if (seg.SegmentIdBlockSize && seg.SegmentIdBlockSize < MFX_VP9_SEGMENT_ID_BLOCK_SIZE_32x32)
+    {
+        seg.SegmentIdBlockSize = 0;
+        unsupported = true;
+    }
+
+    // check that NumSegmentIdAlloc is enough for given frame resolution and block size
+    mfxU16 blockSize = MapIdToBlockSize(seg.SegmentIdBlockSize);
+    if (seg.NumSegmentIdAlloc && blockSize && fi.Width && fi.Height)
+    {
+        mfxU16 widthInBlocks = (fi.Width + blockSize - 1) / blockSize;
+        mfxU16 heightInBlocks = (fi.Height + blockSize - 1) / blockSize;
+        mfxU16 sizeInBlocks = widthInBlocks * heightInBlocks;
+
+        if (seg.NumSegmentIdAlloc && seg.NumSegmentIdAlloc < sizeInBlocks)
+        {
+            seg.NumSegmentIdAlloc = 0;
+            seg.SegmentIdBlockSize = 0;
+            unsupported = true;
+        }
+    }
+
+    for (mfxU16 i = 0; i < seg.NumSegments; i++)
+    {
+        mfxStatus sts = CheckPerSegmentParams(seg.Segment[i], caps, QP);
+        if (sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)
+        {
+            changed = true;
+        }
+    }
+
+    // clean out per-segment parameters for segments with numbers exceeding seg.NumSegments
+    if (seg.NumSegments)
+    {
+        for (mfxU16 i = seg.NumSegments; i < MAX_SEGMENTS; i++)
+        {
+            if (seg.Segment[i].LoopFilterLevelDelta ||
+                seg.Segment[i].QIndexDelta ||
+                seg.Segment[i].ReferenceFrame)
+            {
+                Zero(seg.Segment[i]);
+                changed = true;
+            }
+        }
+    }
+
+    // check that segmentation map contains only valid segment ids
+    if (seg.NumSegments && seg.NumSegmentIdAlloc && seg.SegmentId)
+    {
+        mfxStatus sts = CheckSegmentationMap(seg.SegmentId, seg.NumSegmentIdAlloc, seg.NumSegments);
+        if (sts == MFX_ERR_UNSUPPORTED)
+        {
+            seg.SegmentId = 0;
+            unsupported = true;
+        }
+    }
+
+    return GetCheckStatus(changed, unsupported);
+}
+
 mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
 {
-    caps;
-
     Bool changed = false;
     Bool unsupported = false;
 
@@ -845,7 +1121,7 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         changed = true;
     }
 
-    if (IsOn(opt2.MBBRC) && caps.MBBRCSupport == 0)
+    if (IsOn(opt2.MBBRC) && caps.AutoSegmentationSupport == 0)
     {
         opt2.MBBRC = MFX_CODINGOPTION_OFF;
         unsupported = true;
@@ -860,12 +1136,26 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         changed = true;
     }
 
-    if (unsupported == true)
+    mfxExtVP9Segmentation& seg = GetExtBufferRef(par);
+
+    mfxStatus segSts = CheckSegmentationParam(seg, par.mfx.FrameInfo, caps, 0);
+    if (segSts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)
     {
-        return MFX_ERR_UNSUPPORTED;
+        changed = true;
+    }
+    else if (segSts == MFX_ERR_UNSUPPORTED)
+    {
+        unsupported = true;
     }
 
-    return (changed == true) ? MFX_WRN_INCOMPATIBLE_VIDEO_PARAM : MFX_ERR_NONE;
+    if (IsOn(opt2.MBBRC) && seg.NumSegments)
+    {
+        // explicit segmentation overwrites MBBRC
+        opt2.MBBRC = MFX_CODINGOPTION_OFF;
+        unsupported = true;
+    }
+
+    return GetCheckStatus(changed, unsupported);
 }
 
 template <typename T>
@@ -978,9 +1268,10 @@ mfxStatus SetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         SetDefault(par.mfx.QPP, par.mfx.QPI + 5);
     }
 
-    mfxExtCodingOption2 opt2 = GetExtBufferRef(par);
+    mfxExtCodingOption2& opt2 = GetExtBufferRef(par);
+    mfxExtVP9Segmentation& seg = GetExtBufferRef(par);
     if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
-        caps.MBBRCSupport)
+        caps.AutoSegmentationSupport && !AllMandatorySegMapParams(seg))
     {
         SetDefault(opt2.MBBRC, MFX_CODINGOPTION_ON);
     }
@@ -1069,6 +1360,13 @@ mfxStatus CheckParametersAndSetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 c
         }
     }
 
+    // (6) Mandatory segmentation parameters
+    mfxExtVP9Segmentation const & seg = GetExtBufferRef(par);
+    if (AnyMandatorySegMapParam(seg) && seg.NumSegments != 0 && !AllMandatorySegMapParams(seg))
+    {
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+    }
+
     mfxStatus sts = MFX_ERR_NONE;
 
     // check parameters defined by application
@@ -1097,54 +1395,125 @@ mfxStatus CheckParametersAndSetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 c
     return checkSts;
 }
 
-mfxStatus CheckEncodeFrameParam(
+mfxStatus CheckSurface(
     VP9MfxVideoParam const & video,
-    mfxEncodeCtrl       * ctrl,
-    mfxFrameSurface1    * surface,
+    mfxFrameSurface1 const & surface)
+{
+    mfxExtOpaqueSurfaceAlloc const & extOpaq = GetExtBufferRef(video);
+    bool isOpaq = video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && extOpaq.In.NumSurface > 0;
+
+    // check that surface contains valid data
+    MFX_CHECK(CheckFourcc(surface.Info.FourCC), MFX_ERR_INVALID_VIDEO_PARAM);
+
+    if (video.m_inMemType == INPUT_SYSTEM_MEMORY)
+    {
+        MFX_CHECK(surface.Data.Y != 0, MFX_ERR_NULL_PTR);
+        MFX_CHECK(surface.Data.U != 0, MFX_ERR_NULL_PTR);
+        MFX_CHECK(surface.Data.V != 0, MFX_ERR_NULL_PTR);
+    }
+    else if (isOpaq == false)
+    {
+        MFX_CHECK(surface.Data.MemId != 0, MFX_ERR_INVALID_VIDEO_PARAM);
+    }
+
+    MFX_CHECK(surface.Info.Width <= video.mfx.FrameInfo.Width, MFX_ERR_INVALID_VIDEO_PARAM);
+    MFX_CHECK(surface.Info.Height <= video.mfx.FrameInfo.Height, MFX_ERR_INVALID_VIDEO_PARAM);
+
+    mfxU32 pitch = (surface.Data.PitchHigh << 16) + surface.Data.PitchLow;
+    MFX_CHECK(pitch < 0x8000, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus CheckAndFixCtrl(
+    VP9MfxVideoParam const & video,
+    mfxEncodeCtrl & ctrl,
+    mfxFrameSurface1 const & surface,
+    ENCODE_CAPS_VP9 const & caps)
+{
+    video;
+
+    mfxStatus checkSts = MFX_ERR_NONE;
+
+    // check mfxEncodeCtrl for correct parameters
+    if (ctrl.QP > 255)
+    {
+        ctrl.QP = 255;
+        checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+    }
+
+    if (ctrl.FrameType > MFX_FRAMETYPE_P)
+    {
+        ctrl.FrameType = MFX_FRAMETYPE_P;
+        checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+    }
+
+    mfxExtVP9Segmentation* seg = GetExtBuffer(ctrl);
+    if (seg)
+    {
+        bool removeSegBuffer = false;
+        mfxExtCodingOption2 const & opt2 = GetExtBufferRef(video);
+        mfxStatus sts = MFX_ERR_NONE;
+        if (IsOn(opt2.MBBRC))
+        {
+            // segmentation ext buffer conflicts with MBBRC. It will be ignored.
+            removeSegBuffer = true;
+        }
+        else if (seg->NumSegments)
+        {
+            sts = CheckSegmentationParam(*seg, surface.Info, caps, ctrl.QP);
+            if (sts == MFX_ERR_UNSUPPORTED ||
+                true == AnyMandatorySegMapParam(*seg) && false == AllMandatorySegMapParams(*seg) ||
+                IsOn(opt2.MBBRC))
+            {
+                // provided segmentation parameters are invalid or lack mandatory information.
+                // Ext buffer will be ignored. Report to application about it with warning.
+                removeSegBuffer = true;
+            }
+            else
+            {
+                if (sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)
+                {
+                    checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+                }
+
+                mfxExtVP9Segmentation const & segInit = GetExtBufferRef(video);
+                CombineInitAndRuntimeSegmentBuffers(*seg, segInit);
+                if (false == AllMandatorySegMapParams(*seg))
+                {
+                    // neither runtime ext buffer not init don't contain valid segmentation map.
+                    // Ext buffer will be ignored. Report to application about it with warning.
+                    removeSegBuffer = true;
+                }
+            }
+        }
+
+        if (removeSegBuffer)
+        {
+            // remove ext buffer from mfxEncodeCtrl
+            // and report to application about it with warning.
+            checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+            sts = RemoveExtBuffer(ctrl, MFX_EXTBUFF_VP9_SEGMENTATION);
+            MFX_CHECK(sts >= MFX_ERR_NONE, checkSts);
+        }
+    }
+
+    return checkSts;
+}
+
+mfxStatus CheckBitstream(
+    VP9MfxVideoParam const & video,
     mfxBitstream        * bs)
 {
     mfxStatus checkSts = MFX_ERR_NONE;
     MFX_CHECK_NULL_PTR1(bs);
     MFX_CHECK_NULL_PTR1(bs->Data);
 
-    mfxExtOpaqueSurfaceAlloc const & extOpaq = GetExtBufferRef(video);
-    bool isOpaq = video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && extOpaq.In.NumSurface > 0;
-
-    // check that surface contains valid data
-    if (surface != 0)
-    {
-        MFX_CHECK(CheckFourcc(surface->Info.FourCC), MFX_ERR_INVALID_VIDEO_PARAM);
-
-        if (video.m_inMemType == INPUT_SYSTEM_MEMORY)
-        {
-            MFX_CHECK(surface->Data.Y != 0, MFX_ERR_NULL_PTR);
-            MFX_CHECK(surface->Data.U != 0, MFX_ERR_NULL_PTR);
-            MFX_CHECK(surface->Data.V != 0, MFX_ERR_NULL_PTR);
-        }
-        else if (isOpaq == false)
-        {
-            MFX_CHECK(surface->Data.MemId != 0, MFX_ERR_INVALID_VIDEO_PARAM);
-        }
-
-        MFX_CHECK(surface->Info.Width <= video.mfx.FrameInfo.Width, MFX_ERR_INVALID_VIDEO_PARAM);
-        MFX_CHECK(surface->Info.Height <= video.mfx.FrameInfo.Height, MFX_ERR_INVALID_VIDEO_PARAM);
-
-        mfxU32 pitch = (surface->Data.PitchHigh << 16) + surface->Data.PitchLow;
-        MFX_CHECK(pitch < 0x8000, MFX_ERR_UNDEFINED_BEHAVIOR);
-    }
-
     // check bitstream buffer for enough space
     MFX_CHECK(bs->MaxLength > 0, MFX_ERR_NOT_ENOUGH_BUFFER);
     MFX_CHECK(bs->DataOffset < bs->MaxLength, MFX_ERR_UNDEFINED_BEHAVIOR);
     MFX_CHECK(bs->MaxLength > bs->DataOffset + bs->DataLength, MFX_ERR_NOT_ENOUGH_BUFFER);
     MFX_CHECK(bs->DataOffset + bs->DataLength + video.m_bufferSizeInKb * 1000 <= bs->MaxLength, MFX_ERR_NOT_ENOUGH_BUFFER);
-
-    // check mfxEncodeCtrl for correct parameters
-    if (ctrl)
-    {
-        MFX_CHECK (ctrl->QP <= 255, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
-        MFX_CHECK (ctrl->FrameType <= MFX_FRAMETYPE_P, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
-    }
 
     return checkSts;
 }

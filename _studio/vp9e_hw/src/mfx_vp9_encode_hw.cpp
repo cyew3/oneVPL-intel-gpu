@@ -46,6 +46,10 @@ Plugin::Plugin(bool CreateByDispatcher)
     m_PluginParam.Type = MFX_PLUGINTYPE_VIDEO_ENCODE;
     m_PluginParam.CodecId = MFX_CODEC_VP9;
     m_PluginParam.PluginVersion = 1;
+
+    m_prevSegment.Header.BufferId = MFX_EXTBUFF_VP9_SEGMENTATION;
+    m_prevSegment.Header.BufferSz = sizeof(mfxExtVP9Segmentation);
+    ZeroExtBuffer(m_prevSegment);
 }
 
 mfxStatus Plugin::PluginInit(mfxCoreInterface * pCore)
@@ -363,8 +367,25 @@ MFX_CHECK_STS(sts);
     MFX_CHECK_STS(sts);
     sts = m_ddi->Register(m_outBitstreams.GetFrameAllocReponse(), D3DDDIFMT_INTELENCODE_BITSTREAMDATA);
     MFX_CHECK_STS(sts);
-
     m_maxBsSize = request.Info.Width * request.Info.Height;
+
+    // allocate and register surfaces for segmentation map
+    sts = m_ddi->QueryCompBufferInfo(D3DDDIFMT_INTELENCODE_MBSEGMENTMAP, request, m_video.mfx.FrameInfo.Width, m_video.mfx.FrameInfo.Height);
+    MFX_CHECK_STS(sts);
+    request.NumFrameMin = request.NumFrameSuggested = (mfxU16)CalcNumTasks(m_video);
+
+    sts = m_segmentMaps.Init(m_pmfxCore, &request);
+    MFX_CHECK_STS(sts);
+    sts = m_ddi->Register(m_segmentMaps.GetFrameAllocReponse(), D3DDDIFMT_INTELENCODE_MBSEGMENTMAP);
+    MFX_CHECK_STS(sts);
+
+    mfxU16 blockSize = MapIdToBlockSize(MFX_VP9_SEGMENT_ID_BLOCK_SIZE_32x32);
+    // allocate enough space for segmentation map for lowest supported segment block size and highest supported resolution
+    mfxU16 wInBlocks = (static_cast<mfxU16>(caps.MaxPicWidth) + blockSize - 1) / blockSize;
+    mfxU16 hInBlocks = (static_cast<mfxU16>(caps.MaxPicHeight) + blockSize - 1) / blockSize;
+    mfxU32 sizeInBlocks = wInBlocks * hInBlocks;
+    m_prevSegment.SegmentId = new mfxU8[sizeInBlocks];
+    memset(m_prevSegment.SegmentId, 0, sizeInBlocks);
 
     // prepare enough space for tasks
     m_free.resize(CalcNumTasks(m_video));
@@ -518,13 +539,8 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
         MFX_CHECK_STS(sts);
     }
 
-    mfxStatus checkSts = CheckEncodeFrameParam(
-        m_video,
-        ctrl,
-        surface,
-        bs);
-
-    MFX_CHECK(checkSts >= MFX_ERR_NONE, checkSts);
+    mfxStatus checkSts = CheckBitstream(m_video, bs);
+    MFX_CHECK_STS(checkSts);
 
     mfxStatus bufferingSts = MFX_ERR_NONE;
 
@@ -576,9 +592,20 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
             sts = LockSurface(newFrame.m_pRawFrame, m_pmfxCore);
             MFX_CHECK_STS(sts);
 
+            checkSts = CheckSurface(m_video, *surface);
+            MFX_CHECK_STS(checkSts);
+
             if (ctrl)
             {
-                newFrame.m_ctrl = *ctrl;
+                ENCODE_CAPS_VP9 caps = {};
+                sts = m_ddi->QueryEncodeCaps(caps);
+                if (sts != MFX_ERR_NONE)
+                    return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+                mfxEncodeCtrl tmpCtrl = *ctrl;
+                checkSts = CheckAndFixCtrl(m_video, tmpCtrl, *surface, caps);
+                MFX_CHECK(checkSts >= MFX_ERR_NONE, checkSts);
+                newFrame.m_ctrl = tmpCtrl;
             }
 
             newFrame.m_timeStamp = surface->Data.TimeStamp;
@@ -647,6 +674,12 @@ mfxStatus Plugin::ConfigTask(Task &task)
     task.m_pOutBs = m_outBitstreams.GetFreeFrame();
     MFX_CHECK(task.m_pOutBs != 0, MFX_WRN_DEVICE_BUSY);
 
+    if (frameParam.segmentation == APP_SEGMENTATION)
+    {
+        task.m_pSegmentMap = m_segmentMaps.GetFreeFrame();
+        MFX_CHECK(task.m_pSegmentMap != 0, MFX_WRN_DEVICE_BUSY);
+    }
+
     sts = DecideOnRefListAndDPBRefresh(curMfxPar, &task, m_dpb, frameParam);
 
     task.m_frameParam = frameParam;
@@ -685,6 +718,8 @@ mfxStatus Plugin::ConfigTask(Task &task)
     MFX_CHECK_STS(sts);
     sts = LockSurface(task.m_pOutBs, m_pmfxCore);
     MFX_CHECK_STS(sts);
+    sts = LockSurface(task.m_pSegmentMap, m_pmfxCore);
+    MFX_CHECK_STS(sts);
 
     UpdateDpb(frameParam, task.m_pRecFrame, m_dpb, m_pmfxCore);
 
@@ -709,6 +744,7 @@ mfxStatus Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
             VP9_LOG("\n (VP9_LOG) Frame %d Plugin::SubmitFrame +", newFrame.m_frameOrder);
             mfxStatus sts = MFX_ERR_NONE;
             const VP9MfxVideoParam& curMfxPar = *newFrame.m_pParam;
+            newFrame.m_pPrevSegment = &m_prevSegment;
 
             sts = ConfigTask(newFrame);
             MFX_CHECK_STS(sts);
@@ -737,6 +773,10 @@ mfxStatus Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
                 UMC::AutomaticUMCMutex guard(m_taskMutex);
                 m_submitted.splice(m_submitted.end(), m_accepted, m_accepted.begin());
             }
+
+            // save segmentation params which were applied to current frame
+            mfxExtVP9Segmentation const & seg = GetActualExtBufferRef(curMfxPar, newFrame.m_ctrl);
+            CopySegmentationBuffer(m_prevSegment, seg);
 
             m_frameOrderInGop++;
 
@@ -811,6 +851,8 @@ mfxStatus Plugin::Close()
     MFX_CHECK_STS(sts);
     sts = m_outBitstreams.Release();
     MFX_CHECK_STS(sts);
+    sts = m_segmentMaps.Release();
+    MFX_CHECK_STS(sts);
 
     mfxExtOpaqueSurfaceAlloc &opaq = GetExtBufferRef(m_video);
 
@@ -818,6 +860,12 @@ mfxStatus Plugin::Close()
     {
         sts = m_pmfxCore->UnmapOpaqueSurface(m_pmfxCore->pthis, opaq.In.NumSurface, opaq.In.Type, opaq.In.Surfaces);
         Zero(opaq);
+    }
+
+    if (m_prevSegment.SegmentId)
+    {
+        delete m_prevSegment.SegmentId;
+        m_prevSegment.SegmentId = 0;
     }
 
     m_initialized = false;

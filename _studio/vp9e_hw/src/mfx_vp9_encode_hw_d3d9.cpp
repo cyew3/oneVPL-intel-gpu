@@ -9,6 +9,7 @@
 //
 
 #include "mfx_vp9_encode_hw_d3d9.h"
+#include "mfx_vp9_encode_hw_par.h"
 
 #if defined (PRE_SI_TARGET_PLATFORM_GEN10)
 
@@ -88,6 +89,7 @@ void FillSpsBuffer(
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
 
     sps.SeqFlags.fields.bResetBRC = task.m_resetBrc;
+    sps.SeqFlags.fields.MBBRC = 2; // 2 is for MBBRC DISABLED
 
     if (IsBitrateBasedBRC(par.mfx.RateControlMethod))
     {
@@ -96,7 +98,6 @@ void FillSpsBuffer(
         sps.MaxBitRate = par.m_maxKbps; // TODO: understand how to use MaxBitRate for temporal scalability
         if (IsOn(opt2.MBBRC))
         {
-            assert(task.m_frameParam.allowSegmentation == 1);
             sps.SeqFlags.fields.MBBRC = 1;
         }
         if (IsBufferBasedBRC(par.mfx.RateControlMethod))
@@ -114,6 +115,39 @@ void FillSpsBuffer(
     sps.FrameRate[0].Denominator = par.mfx.FrameInfo.FrameRateExtD;  // no support for temporal scalability. TODO: add support for temporal scalability
 
     sps.NumTemporalLayersMinus1 = 0;
+}
+
+mfxU32 MapSegIdBlockSizeToDDI(mfxU16 size)
+{
+    switch (size)
+    {
+    case MFX_VP9_SEGMENT_ID_BLOCK_SIZE_8x8:
+        return BLOCK_8x8;
+    case MFX_VP9_SEGMENT_ID_BLOCK_SIZE_32x32:
+        return BLOCK_32x32;
+    case MFX_VP9_SEGMENT_ID_BLOCK_SIZE_64x64:
+        return BLOCK_64x64;
+    case MFX_VP9_SEGMENT_ID_BLOCK_SIZE_16x16:
+    default:
+        return BLOCK_16x16;
+    }
+}
+
+mfxU16 MapSegmentRefControlToDDI(mfxU16 refAndSkipCtrl)
+{
+    mfxU16 refControl = refAndSkipCtrl & segmentRefMask;
+    switch (refControl)
+    {
+    case MFX_VP9_REF_LAST:
+        return 1;
+    case MFX_VP9_REF_GOLDEN:
+        return 2;
+    case MFX_VP9_REF_ALTREF:
+        return 3;
+    case MFX_VP9_REF_INTRA:
+    default:
+        return 0;
+    }
 }
 
 void FillPpsBuffer(
@@ -189,7 +223,17 @@ void FillPpsBuffer(
     pps.PicFlags.fields.refresh_frame_context = framePar.refreshFrameContext;
     pps.PicFlags.fields.allow_high_precision_mv = framePar.allowHighPrecisionMV;
 
-    pps.PicFlags.fields.segmentation_enabled = framePar.allowSegmentation; // app level segmentation isn't supported for now. TODO: enable segmentation
+    pps.PicFlags.fields.segmentation_enabled = framePar.segmentation != NO_SEGMENTATION;
+
+    mfxExtCodingOption2 opt2 = GetExtBufferRef(par);
+    if (framePar.segmentation == APP_SEGMENTATION)
+    {
+        // segment map is provided by application
+        pps.PicFlags.fields.seg_id_block_size = BLOCK_16x16; // only 16x16 granularity for segmentation map is supported
+        pps.PicFlags.fields.segmentation_update_map = task.m_frameParam.segmentationUpdateMap;
+        pps.PicFlags.fields.segmentation_temporal_update = task.m_frameParam.segmentationTemporalUpdate;
+        pps.PicFlags.fields.segmentation_update_data = task.m_frameParam.segmentationUpdateData;
+    }
 
     pps.LumaACQIndex        = framePar.baseQIndex;
     pps.LumaDCQIndexDelta   = framePar.qIndexDeltaLumaDC;
@@ -221,6 +265,81 @@ void FillPpsBuffer(
     pps.BitOffsetForFirstPartitionSize = offsets.BitOffsetForFirstPartitionSize;
     pps.BitOffsetForSegmentation = offsets.BitOffsetForSegmentation;
     pps.BitSizeForSegmentation = offsets.BitSizeForSegmentation;
+}
+
+mfxStatus FillSegmentMap(Task const & task,
+                         mfxCoreInterface* m_pmfxCore)
+{
+    mfxFrameData segMap = {};
+
+    FrameLocker lock(m_pmfxCore, segMap, task.m_pSegmentMap->pSurface->Data.MemId);
+    if (segMap.Y == 0)
+    {
+        return MFX_ERR_LOCK_MEMORY;
+    }
+
+    mfxExtVP9Segmentation const & seg = GetActualExtBufferRef(*task.m_pParam, task.m_ctrl);
+
+    mfxFrameInfo const & dstFi = task.m_pSegmentMap->pSurface->Info;
+    mfxU32 dstW = dstFi.Width;
+    mfxU32 dstH = dstFi.Height;
+    mfxU32 dstPitch = segMap.Pitch;
+
+    mfxFrameInfo const & srcFi = task.m_pRawFrame->pSurface->Info;
+    mfxU16 srcBlockSize = MapIdToBlockSize(seg.SegmentIdBlockSize);
+    mfxU32 srcW = (srcFi.Width + srcBlockSize - 1) / srcBlockSize;
+    mfxU32 srcH = (srcFi.Height + srcBlockSize - 1) / srcBlockSize;
+    // driver seg map is always in 16x16 blocks because of HW limitation
+    const mfxU16 dstBlockSize = 16;
+    mfxU16 ratio = srcBlockSize / dstBlockSize;
+
+    if (seg.NumSegmentIdAlloc < srcW * srcH || seg.SegmentId == 0 ||
+        srcW != (dstW + ratio - 1) / ratio || srcH != (dstH + ratio - 1) / ratio)
+    {
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+
+    // for now application seg map is accepted in 32x32 and 64x64 blocks
+    // and driver seg map is always in 16x16 blocks
+    // need to map one to another
+    for (mfxU32 i = 0; i < dstH; i++)
+    {
+        for (mfxU32 j = 0; j < dstW; j++)
+        {
+            segMap.Y[i * dstPitch + j] = seg.SegmentId[(i / ratio) * srcW + j / ratio];
+        }
+    }
+
+    return MFX_ERR_NONE;
+}
+
+void FillSegmentParam(Task const & task,
+                      ENCODE_SEGMENT_PARAMETERS & segPar)
+{
+    Zero(segPar);
+
+    mfxExtVP9Segmentation const & seg = GetActualExtBufferRef(*task.m_pParam, task.m_ctrl);
+
+    for (mfxU16 i = 0; i < seg.NumSegments; i++)
+    {
+        mfxVP9SegmentParam const & param = seg.Segment[i];
+        mfxI16 qIndexDelta = param.QIndexDelta;
+        // clamp Q index delta if required (1-255)
+        CheckAndFixQIndexDelta(qIndexDelta, task.m_frameParam.baseQIndex);
+        segPar.SegData[i].SegmentQIndexDelta = qIndexDelta;
+        segPar.SegData[i].SegmentLFLevelDelta = static_cast<mfxI8>(param.LoopFilterLevelDelta);
+
+        if (IsFeatureEnabled(param.FeatureEnabled, FEAT_REF))
+        {
+            segPar.SegData[i].SegmentFlags.fields.SegmentReferenceEnabled = 1;
+            segPar.SegData[i].SegmentFlags.fields.SegmentReference = MapSegmentRefControlToDDI(param.ReferenceFrame);
+        }
+
+        if (IsFeatureEnabled(param.FeatureEnabled, FEAT_SKIP))
+        {
+            segPar.SegData[i].SegmentFlags.fields.SegmentSkipped = 1;
+        }
+    }
 }
 
 void CachedFeedback::Reset(mfxU32 cacheSize)
@@ -293,6 +412,7 @@ D3D9Encoder::D3D9Encoder()
     , m_caps()
     , m_sps()
     , m_pps()
+    , m_seg()
     , m_descForFrameHeader()
     , m_seqParam()
     , m_width(0)
@@ -323,9 +443,9 @@ void HardcodeCaps(ENCODE_CAPS_VP9& caps, mfxCoreInterface* pCore)
         Zero(caps);
 
         caps.CodingLimitSet = 1;
-        caps.SegmentationSupport = 1;
+        caps.ForcedSegmentationSupport = 1;
         caps.BRCReset = 1;
-        caps.MBBRCSupport = 1;
+        caps.AutoSegmentationSupport = 1;
         caps.TemporalLayerRateCtrl = 1;
         caps.DynamicScaling = 1;
 
@@ -358,6 +478,7 @@ void HardcodeCaps(ENCODE_CAPS_VP9& caps, mfxCoreInterface* pCore)
         caps.MaxEncodedBitDepth = 1;
     }
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
+
 }
 
 mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
@@ -587,6 +708,25 @@ mfxStatus D3D9Encoder::Execute(
     compBufferDesc[bufCnt].DataSize = mfxU32(sizeof(bitstream));
     compBufferDesc[bufCnt].pCompBuffer = &bitstream;
     bufCnt++;
+
+    mfxExtCodingOption2 opt2 = GetExtBufferRef(curMfxPar);
+    if (task.m_frameParam.segmentation == APP_SEGMENTATION)
+    {
+        mfxStatus sts = FillSegmentMap(task, m_pmfxCore);
+        MFX_CHECK_STS(sts);
+
+        mfxU32 segMap = task.m_pSegmentMap->idInPool;
+        compBufferDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)D3DDDIFMT_INTELENCODE_MBSEGMENTMAP;
+        compBufferDesc[bufCnt].DataSize = mfxU32(sizeof(segMap));
+        compBufferDesc[bufCnt].pCompBuffer = &segMap;
+        bufCnt++;
+
+        FillSegmentParam(task, m_seg);
+        compBufferDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)D3DDDIFMT_INTELENCODE_MBSEGMENTMAPPARMS;
+        compBufferDesc[bufCnt].DataSize = mfxU32(sizeof(m_seg));
+        compBufferDesc[bufCnt].pCompBuffer = &m_seg;
+        bufCnt++;
+    }
 
     m_descForFrameHeader = MakePackedByteBuffer(pBuf, bytesWritten);
 

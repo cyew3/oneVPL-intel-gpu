@@ -114,6 +114,7 @@ protected:
     InternalFrames  m_rawLocalFrames;
     InternalFrames  m_reconFrames;
     InternalFrames  m_outBitstreams;
+    InternalFrames  m_segmentMaps;
 
     std::vector<sFrameEx*> m_dpb;
 
@@ -138,6 +139,8 @@ protected:
     mfxU16 m_initHeight;
 
     mfxU32 m_frameOrderInGop;
+
+    mfxExtVP9Segmentation m_prevSegment;
 };
 
 } // MfxHwVP9Encode

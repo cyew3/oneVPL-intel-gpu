@@ -49,7 +49,8 @@ D3D11Encoder::D3D11Encoder()
     , m_caps()
     , m_sps()
     , m_pps()
-    , m_infoQueried(false)
+    , m_seg()
+    , m_infoQueried(false)    
     , m_descForFrameHeader()
     , m_seqParam()
     , m_width(0)
@@ -241,6 +242,8 @@ mfxU8 ConvertDX9TypeToDX11Type(mfxU8 type)
         return D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDSLICEDATA;
     case D3DDDIFMT_INTELENCODE_MBQPDATA:
         return D3D11_DDI_VIDEO_ENCODER_BUFFER_MBQPDATA;
+    case D3DDDIFMT_INTELENCODE_MBSEGMENTMAP:
+        return D3D11_DDI_VIDEO_ENCODER_BUFFER_MBSEGMENTMAP;
     default:
         break;
     }
@@ -321,6 +324,11 @@ mfxStatus D3D11Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequ
     request.Info.Width = m_compBufInfo[i].CreationWidth;
     request.Info.Height = m_compBufInfo[i].CreationHeight;
     request.Info.FourCC = ConvertDXGIFormatToMFXFourCC((DXGI_FORMAT)m_compBufInfo[i].CompressedFormats);
+    if (type == D3DDDIFMT_INTELENCODE_MBSEGMENTMAP)
+    {
+        // per DDI document buffer for segmentation map should be 2D
+        request.Info.FourCC = MFX_FOURCC_P8_TEXTURE;
+    }
 
     VP9_LOG("\n (VP9_LOG) D3D11Encoder::QueryCompBufferInfo -");
 
@@ -342,7 +350,9 @@ mfxStatus D3D11Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT t
     VP9_LOG("\n (VP9_LOG) D3D11Encoder::Register +");
 
     mfxFrameAllocator & fa = m_pmfxCore->FrameAllocator;
-    std::vector<mfxHDLPair> & queue = (type == D3DDDIFMT_INTELENCODE_BITSTREAMDATA) ? m_bsQueue : m_reconQueue;
+
+    std::vector<mfxHDLPair> & queue = (type == D3DDDIFMT_INTELENCODE_BITSTREAMDATA) ? m_bsQueue :
+        (type == D3DDDIFMT_INTELENCODE_MBSEGMENTMAP) ? m_segmapQueue : m_reconQueue;
 
     queue.resize(response.NumFrameActual);
 
@@ -384,8 +394,13 @@ mfxStatus D3D11Encoder::Execute(
     mfxU32       RES_ID_ORIGINAL  = 1;
     mfxU32       RES_ID_REFERENCE = 2;          // then goes all reference frames from dpb
     mfxU32       RES_ID_RECONSTRUCT = RES_ID_REFERENCE + task.m_pRecFrame->idInPool;
+    mfxU32       RES_ID_SEGMAP = RES_ID_REFERENCE + static_cast<mfxU32>(m_reconQueue.size());
 
     mfxU32 resourceCount = mfxU32(RES_ID_REFERENCE + m_reconQueue.size());
+    if (task.m_frameParam.segmentation == APP_SEGMENTATION)
+    {
+        resourceCount++;
+    }
     std::vector<ID3D11Resource*> resourceList;
     resourceList.resize(resourceCount);
 
@@ -395,6 +410,11 @@ mfxStatus D3D11Encoder::Execute(
     for (mfxU32 i = 0; i < m_reconQueue.size(); i++)
     {
         resourceList[RES_ID_REFERENCE + i] = static_cast<ID3D11Resource *>(m_reconQueue[i].first);
+    }
+
+    if (task.m_frameParam.segmentation == APP_SEGMENTATION)
+    {
+        resourceList[RES_ID_SEGMAP] = static_cast<ID3D11Resource *>(m_segmapQueue[task.m_pSegmentMap->idInPool].first);
     }
 
     // [1]. buffers in system memory (configuration buffers)
@@ -442,6 +462,23 @@ mfxStatus D3D11Encoder::Execute(
     compBufferDesc[bufCnt].DataSize = mfxU32(sizeof(RES_ID_BITSTREAM));
     compBufferDesc[bufCnt].pCompBuffer = &RES_ID_BITSTREAM;
     bufCnt++;
+
+    if (task.m_frameParam.segmentation == APP_SEGMENTATION)
+    {
+        mfxStatus sts = FillSegmentMap(task, m_pmfxCore);
+        MFX_CHECK_STS(sts);
+
+        compBufferDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)(D3D11_DDI_VIDEO_ENCODER_BUFFER_MBSEGMENTMAP);
+        compBufferDesc[bufCnt].DataSize = mfxU32(sizeof(RES_ID_SEGMAP));
+        compBufferDesc[bufCnt].pCompBuffer = &RES_ID_SEGMAP;
+        bufCnt++;
+
+        FillSegmentParam(task, m_seg);
+        compBufferDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)(D3D11_DDI_VIDEO_ENCODER_BUFFER_MBSEGMENTMAPPARMS);
+        compBufferDesc[bufCnt].DataSize = mfxU32(sizeof(m_seg));
+        compBufferDesc[bufCnt].pCompBuffer = &m_seg;
+        bufCnt++;
+    }
 
     m_descForFrameHeader = MakePackedByteBuffer(pBuf, bytesWritten);
 

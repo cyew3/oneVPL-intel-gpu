@@ -64,6 +64,9 @@ namespace MfxHwVP9Encode
 
 #define MAX_TASK_ID 0xffff
 
+const mfxU16 segmentSkipMask = 0xf0;
+const mfxU16 segmentRefMask = 0x0f;
+
 enum
 {
     MFX_MEMTYPE_D3D_INT = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_INTERNAL_FRAME,
@@ -146,6 +149,13 @@ enum // identifies memory type at encoder input w/o any details
         mfxU8  frameParallelDecoding;
     };
 
+    enum
+    {
+        NO_SEGMENTATION = 0,
+        APP_SEGMENTATION = 1,
+        BRC_SEGMENTATION = 2
+    };
+
     struct VP9FrameLevelParam
     {
         mfxU8  frameType;
@@ -178,7 +188,11 @@ enum // identifies memory type at encoder input w/o any details
         mfxU8  modeRefDeltaUpdate;
 
         mfxU8  sharpness;
-        mfxU8  allowSegmentation;
+        mfxU8  segmentation;
+        mfxU8  segmentationUpdateMap;
+        mfxU8  segmentationUpdateData;
+        mfxU8  segmentationTemporalUpdate;
+        mfxU16  segmentIdBlockSize;
         mfxU8  errorResilentMode;
         mfxU8  interpFilter;
         mfxU8  frameContextIdx;
@@ -251,6 +265,7 @@ enum // identifies memory type at encoder input w/o any details
     BIND_EXTBUF_TYPE_TO_ID (mfxExtCodingOption2, MFX_EXTBUFF_CODING_OPTION2);
     BIND_EXTBUF_TYPE_TO_ID (mfxExtCodingOption3, MFX_EXTBUFF_CODING_OPTION3);
     BIND_EXTBUF_TYPE_TO_ID (mfxExtCodingOptionDDI, MFX_EXTBUFF_DDI);
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtVP9Segmentation, MFX_EXTBUFF_VP9_SEGMENTATION);
 #undef BIND_EXTBUF_TYPE_TO_ID
 
     template <class T> inline void InitExtBufHeader(T & extBuf)
@@ -323,6 +338,80 @@ private:
 template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
 {
     return mfxExtBufferRefProxy(par.ExtParam, par.NumExtParam);
+}
+
+struct ActualExtBufferExtractor {
+public:
+    template <typename T> operator T&()
+    {
+        mfxExtBuffer * p = GetExtBuffer(
+            m_newParam,
+            m_newNum,
+            ExtBufTypeToId<typename GetPointedType<T*>::Type>::id);
+        if (p)
+        {
+            return *(reinterpret_cast<T*>(p));
+        }
+        else
+        {
+            p = GetExtBuffer(
+                m_basicParam,
+                m_basicNum,
+                ExtBufTypeToId<typename GetPointedType<T*>::Type>::id);
+            assert(p);
+            return *(reinterpret_cast<T*>(p));
+        }
+    }
+
+    template <typename T1, typename T2> friend ActualExtBufferExtractor GetActualExtBufferRef(const T1 & basicPar, const T2 & newPar);
+
+protected:
+    ActualExtBufferExtractor(mfxExtBuffer ** basicParam, mfxU32 basicNum,
+        mfxExtBuffer ** newParam, mfxU32 newNum)
+        : m_basicParam(basicParam)
+        , m_basicNum(basicNum)
+        , m_newParam(newParam)
+        , m_newNum(newNum)
+
+    {
+    }
+private:
+    mfxExtBuffer ** m_basicParam;
+    mfxU32          m_basicNum;
+    mfxExtBuffer ** m_newParam;
+    mfxU32          m_newNum;
+};
+
+template <typename T1, typename T2> ActualExtBufferExtractor GetActualExtBufferRef(T1 const & basicPar, T2 const & newPar)
+{
+    return ActualExtBufferExtractor(basicPar.ExtParam, basicPar.NumExtParam, newPar.ExtParam, newPar.NumExtParam);
+}
+
+// remove first entry of extended buffer
+template <typename T> mfxStatus RemoveExtBuffer(T & par, mfxU32 id)
+{
+    if (par.ExtParam == 0)
+    {
+        return MFX_ERR_NONE;
+    }
+
+    for (mfxU16 i = 0; i < par.NumExtParam; i++)
+    {
+        mfxExtBuffer* pBuf = par.ExtParam[i];
+        MFX_CHECK_NULL_PTR1(pBuf);
+        if (pBuf->BufferId == id)
+        {
+            for (mfxU16 j = i + 1; j < par.NumExtParam; j++)
+            {
+                par.ExtParam[j - 1] = par.ExtParam[j];
+                par.ExtParam[j] = 0;
+            }
+            par.NumExtParam--;
+            break;
+        }
+    }
+
+    return MFX_ERR_NONE;
 }
 
     class MfxFrameAllocResponse : public mfxFrameAllocResponse
@@ -403,8 +492,8 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
     };
 
 // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
-// #define NUM_OF_SUPPORTED_EXT_BUFFERS 5 // mfxExtVP9CodingOption, mfxExtOpaqueSurfaceAlloc, mfxExtCodingOption2, mfxExtCodingOption3, mfxExtCodingOptionDDI
-#define NUM_OF_SUPPORTED_EXT_BUFFERS 4 // mfxExtOpaqueSurfaceAlloc, mfxExtCodingOption2, mfxExtCodingOption3, mfxExtCodingOptionDDI
+// #define NUM_OF_SUPPORTED_EXT_BUFFERS 6 // mfxExtVP9CodingOption, mfxExtOpaqueSurfaceAlloc, mfxExtCodingOption2, mfxExtCodingOption3, mfxExtCodingOptionDDI, mfxExtVP9Segmentation
+#define NUM_OF_SUPPORTED_EXT_BUFFERS 5 // mfxExtOpaqueSurfaceAlloc, mfxExtCodingOption2, mfxExtCodingOption3, mfxExtCodingOptionDDI, mfxExtVP9Segmentation
 
     class VP9MfxVideoParam : public mfxVideoParam
     {
@@ -422,6 +511,8 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
         mfxU32 m_bufferSizeInKb;
         mfxU32 m_initialDelayInKb;
 
+        bool m_segBufPassed;
+
         void CalculateInternalParams();
         void SyncInternalParamToExternal();
 
@@ -436,6 +527,7 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
         mfxExtCodingOption2         m_extOpt2;
         mfxExtCodingOption3         m_extOpt3;
         mfxExtCodingOptionDDI       m_extOptDDI;
+        mfxExtVP9Segmentation       m_extSeg;
     };
 
     class Task;
@@ -535,6 +627,7 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
         sFrameEx*         m_pRecFrame;
         sFrameEx*         m_pRecRefFrames[3];
         sFrameEx*         m_pOutBs;
+        sFrameEx*         m_pSegmentMap;
         mfxU32            m_frameOrder;
         mfxU64            m_timeStamp;
         mfxU32            m_taskIdForDriver;
@@ -549,12 +642,15 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
         bool m_insertIVFSeqHeader;
         bool m_resetBrc;
 
+        mfxExtVP9Segmentation const * m_pPrevSegment;
+
         Task ():
               m_pRawFrame(NULL),
               m_pRawLocalFrame(NULL),
               m_pBitsteam(0),
               m_pRecFrame(NULL),
               m_pOutBs(NULL),
+              m_pSegmentMap(NULL),
               m_frameOrder(0),
               m_timeStamp(0),
               m_taskIdForDriver(0),
@@ -562,7 +658,8 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
               m_bsDataLength(0),
               m_pParam(NULL),
               m_insertIVFSeqHeader(false),
-            m_resetBrc(false)
+              m_resetBrc(false),
+              m_pPrevSegment(NULL)
           {
               Zero(m_pRecRefFrames);
               Zero(m_frameParam);
@@ -580,6 +677,8 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
         sts = FreeSurface(task.m_pRawLocalFrame, pCore);
         MFX_CHECK_STS(sts);
         sts = FreeSurface(task.m_pOutBs, pCore);
+        MFX_CHECK_STS(sts);
+        sts = FreeSurface(task.m_pSegmentMap, pCore);
         MFX_CHECK_STS(sts);
 
         task.m_pBitsteam = 0;
@@ -685,6 +784,130 @@ struct FindTaskByMfxVideoParam
     mfxVideoParam* m_pPar;
 };
 
+// full list of essential segmentation parametes is provided
+inline bool AllMandatorySegMapParams(mfxExtVP9Segmentation const & seg)
+{
+    return seg.SegmentIdBlockSize &&
+        seg.NumSegmentIdAlloc && seg.SegmentId;
+}
+
+// at least one essential segmentation parameter is provided
+inline bool AnyMandatorySegMapParam(mfxExtVP9Segmentation const & seg)
+{
+    return seg.SegmentIdBlockSize ||
+        seg.NumSegmentIdAlloc || seg.SegmentId;
+}
+
+inline mfxU16 MapIdToBlockSize(mfxU16 id)
+{
+    return id;
+}
+
+inline bool CompareSegmentMaps(mfxExtVP9Segmentation const & first, mfxExtVP9Segmentation const & second)
+{
+    bool equal = false;
+
+    if (first.SegmentId && second.SegmentId &&
+        first.SegmentIdBlockSize == second.SegmentIdBlockSize &&
+        first.NumSegmentIdAlloc && second.NumSegmentIdAlloc)
+    {
+        if (first.NumSegmentIdAlloc >= second.NumSegmentIdAlloc)
+        {
+            if (0 == memcmp(first.SegmentId, second.SegmentId, first.NumSegmentIdAlloc))
+            {
+                equal = true;
+            }
+        }
+        else
+        {
+            if (0 == memcmp(first.SegmentId, second.SegmentId, second.NumSegmentIdAlloc))
+            {
+                equal = true;
+            }
+        }
+    }
+
+    return equal;
+}
+
+inline bool CompareSegmentParams(mfxExtVP9Segmentation const & first, mfxExtVP9Segmentation const & second)
+{
+    bool equal = false;
+
+    if (first.NumSegments == second.NumSegments)
+    {
+        mfxU8 equalParams = 0;
+        for (mfxU8 i = 0; i < first.NumSegments; i++)
+        {
+            if (0 == memcmp(&first.Segment[i], &second.Segment[i], sizeof(mfxVP9SegmentParam)))
+            {
+                equalParams++;
+            }
+        }
+
+        if (equalParams == first.NumSegments)
+        {
+            equal = true;
+        }
+    }
+
+    return equal;
+}
+
+
+inline void CopySegmentationBuffer(mfxExtVP9Segmentation & dst, mfxExtVP9Segmentation const & src)
+{
+    mfxU8* tmp = dst.SegmentId;
+    ZeroExtBuffer(dst);
+    memcpy_s(&dst, sizeof(mfxExtVP9Segmentation), &src, sizeof(mfxExtVP9Segmentation));
+    dst.SegmentId = tmp;
+    if (dst.SegmentId && src.SegmentId && dst.NumSegmentIdAlloc)
+    {
+        memcpy_s(dst.SegmentId, dst.NumSegmentIdAlloc, src.SegmentId, dst.NumSegmentIdAlloc);
+    }
+}
+
+inline void CombineInitAndRuntimeSegmentBuffers(mfxExtVP9Segmentation & runtime, mfxExtVP9Segmentation const & init)
+{
+    if (runtime.SegmentId == 0 && init.SegmentId != 0)
+    {
+        runtime.SegmentId = init.SegmentId;
+        runtime.SegmentIdBlockSize = init.SegmentIdBlockSize;
+        runtime.NumSegmentIdAlloc = init.NumSegmentIdAlloc;
+    }
+}
+
+enum
+{
+    FEAT_QIDX = 0,
+    FEAT_LF_LVL = 1,
+    FEAT_REF = 2,
+    FEAT_SKIP = 3
+};
+
+inline bool IsFeatureEnabled(mfxU16 features, mfxU8 feature)
+{
+    return (features & (1 << feature)) != 0;
+}
+
 } // MfxHwVP9Encode
+
+template<class T, class I>
+inline bool Clamp(T & opt, I min, I max)
+{
+    if (opt < static_cast<T>(min))
+    {
+        opt = static_cast<T>(min);
+        return false;
+    }
+
+    if (opt > static_cast<T>(max))
+    {
+        opt = static_cast<T>(max);
+        return false;
+    }
+
+    return true;
+}
 
 #endif // PRE_SI_TARGET_PLATFORM_GEN10
