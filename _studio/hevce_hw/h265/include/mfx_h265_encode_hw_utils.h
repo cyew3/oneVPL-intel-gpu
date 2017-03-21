@@ -87,15 +87,6 @@ template<class T> inline T Align(T value, mfxU32 alignment)
     assert((alignment & (alignment - 1)) == 0); // should be 2^n
     return T((value + alignment - 1) & ~(alignment - 1));
 }
-template<class T> bool Trim(T& value, mfxU32 alignment)
-{
-    assert((alignment & (alignment - 1)) == 0); // should be 2^n
-    if (value & (alignment - 1)) {
-        value = T(value & ~(alignment - 1));
-        return true;
-    }
-    return false;
-}
 template<class T> bool IsAligned(T value, mfxU32 alignment)
 {
     assert((alignment & (alignment - 1)) == 0); // should be 2^n
@@ -369,9 +360,9 @@ typedef struct _Task : DpbFrame
     IntraRefreshState m_IRState;
     bool m_bSkipped;
 
-    RoiData         m_roi[MAX_NUM_ROI];
-    mfxU16          m_numRoi;
-    mfxU16          m_roiMode;
+    RoiData       m_roi[MAX_NUM_ROI];
+    mfxU16        m_roiMode;    // BRC only
+    mfxU16        m_numRoi;
 
     mfxU16        m_SkipMode;
 
@@ -1005,11 +996,11 @@ bool isLTR(
     mfxI32 poc);
 
 void ConfigureTask(
-    Task &                task,
-    Task const &          prevTask,
-    MfxVideoParam const & video,
-    mfxU32 &baseLayerOrder,
-    ENCODE_CAPS_HEVC const & caps);
+    Task &                   task,
+    Task const &             prevTask,
+    MfxVideoParam const &    video,
+    ENCODE_CAPS_HEVC const & caps,
+    mfxU32 &                 baseLayerOrder);
 
 mfxI64 CalcDTSFromPTS(
     mfxFrameInfo const & info,
@@ -1069,16 +1060,16 @@ bool IsFrameToSkip(
     bool bSWBRC);
 
 mfxStatus CodeAsSkipFrame(
-    MFXCoreInterface &            core,
-    MfxVideoParam const &  video,
-    Task&       task,
+    MFXCoreInterface & core,
+    MfxVideoParam const & video,
+    Task & task,
     MfxFrameAllocResponse & poolSkip,
     MfxFrameAllocResponse & poolRec);
 
 mfxStatus CheckAndFixRoi(
     MfxVideoParam const & par,
-    RoiData *roi,
-    mfxU16 roiMode = 0);
+    ENCODE_CAPS_HEVC const & caps,
+    mfxExtEncoderROI * ROI);
 
 #if DEBUG_REC_FRAMES_INFO
     inline vm_file * OpenFile(vm_char const * name, vm_char const * mode)

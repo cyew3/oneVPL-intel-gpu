@@ -135,6 +135,7 @@ mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, MFXCoreInterface* core, GUID guid
 #endif
     }
     caps.SliceStructure = 2;    // default 4 is not supported now
+    caps.ROIDeltaQPSupport = 1; // 0 is now on CNL !!!
 #else
     if (!caps.LCUSizeSupported)
         caps.LCUSizeSupported = 2;
@@ -711,11 +712,10 @@ void FillSpsBuffer(
     sps.pcm_sample_bit_depth_luma_minus1        = (mfxU8)par.m_sps.pcm_sample_bit_depth_luma_minus1;
     sps.pcm_sample_bit_depth_chroma_minus1      = (mfxU8)par.m_sps.pcm_sample_bit_depth_chroma_minus1;
 
-    // ROI
     if (par.m_ext.ROI.NumROI) {
-        if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+        if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP) {
             sps.ROIValueInDeltaQP = 1;
-        else {
+        } else {
             sps.ROIValueInDeltaQP = 0;  // 0 means Priorities (if supported in caps)
 #if MFX_VERSION > 1021
             if(par.m_ext.ROI.ROIMode == MFX_ROI_MODE_QP_DELTA)
@@ -724,13 +724,11 @@ void FillSpsBuffer(
         }
     }
 
-    // if ENCODE_BLOCKQPDATA surface is provided
-    //sps.BlockQPInDeltaQPIndex = 1;    // surface contains data for non-rect ROI
-    //sps.BlockQPInDeltaQPIndex = 0;    // surface contains data for block level absolute QP value
 }
 
 void FillPpsBuffer(
     MfxVideoParam const & par,
+    ENCODE_CAPS_HEVC const & caps,
     ENCODE_SET_PICTURE_PARAMETERS_HEVC & pps)
 {
     Zero(pps);
@@ -800,15 +798,13 @@ void FillPpsBuffer(
     pps.NumROI = (mfxU8)par.m_ext.ROI.NumROI;
     if (pps.NumROI)
     {
-        mfxU32 blkshift = par.m_sps.log2_min_luma_coding_block_size_minus3 + 3 +
-            par.m_sps.log2_diff_max_min_luma_coding_block_size;
-
+        mfxU32 blkSize = 1 << (caps.BlockSize + 3);
         for (mfxU16 i = 0; i < pps.NumROI; i ++)
-        {
-            pps.ROI[i].Roi.Left = (mfxU16)((par.m_ext.ROI.ROI[i].Left) >> blkshift);
-            pps.ROI[i].Roi.Top = (mfxU16)((par.m_ext.ROI.ROI[i].Top) >> blkshift);
-            pps.ROI[i].Roi.Right = (mfxU16)((par.m_ext.ROI.ROI[i].Right) >> blkshift);
-            pps.ROI[i].Roi.Bottom = (mfxU16)((par.m_ext.ROI.ROI[i].Bottom) >> blkshift);
+        {   // trimming should be done by driver
+            pps.ROI[i].Roi.Left = (mfxU16)CeilDiv((par.m_ext.ROI.ROI[i].Left), blkSize);
+            pps.ROI[i].Roi.Top = (mfxU16)CeilDiv((par.m_ext.ROI.ROI[i].Top), blkSize);
+            pps.ROI[i].Roi.Right = (mfxU16)CeilDiv((par.m_ext.ROI.ROI[i].Right), blkSize);
+            pps.ROI[i].Roi.Bottom = (mfxU16)CeilDiv((par.m_ext.ROI.ROI[i].Bottom), blkSize);
             pps.ROI[i].PriorityLevelOrDQp = (mfxU8)par.m_ext.ROI.ROI[i].Priority;
         }
         pps.MaxDeltaQp = 51;    // is used for BRC only
@@ -829,6 +825,7 @@ void FillPpsBuffer(
 
 void FillPpsBuffer(
     Task const & task,
+    ENCODE_CAPS_HEVC const & caps,
     ENCODE_SET_PICTURE_PARAMETERS_HEVC & pps)
 {
     pps.CurrOriginalPic.Index7Bits      = task.m_idxRec;
@@ -853,16 +850,16 @@ void FillPpsBuffer(
     pps.NumROI = (mfxU8)task.m_numRoi;
     if (pps.NumROI)
     {
-        mfxU32 blkshift = 5;    // should be taken from ROICaps.ROIBlockSize
-
-        for (mfxU16 i = 0; i < task.m_numRoi; i ++)
-        {
-            pps.ROI[i].Roi.Left = (mfxU16)((task.m_roi[i].Left) >> blkshift);
-            pps.ROI[i].Roi.Top = (mfxU16)((task.m_roi[i].Top) >> blkshift);
-            pps.ROI[i].Roi.Right = (mfxU16)((task.m_roi[i].Right) >> blkshift);
-            pps.ROI[i].Roi.Bottom = (mfxU16)((task.m_roi[i].Bottom) >> blkshift);
+        mfxU32 blkSize = 1 << (caps.BlockSize + 3);
+        for (mfxU16 i = 0; i < task.m_numRoi; i++)
+        {   // trimming should be done by driver
+            pps.ROI[i].Roi.Left = (mfxU16)CeilDiv((task.m_roi[i].Left), blkSize);
+            pps.ROI[i].Roi.Top = (mfxU16)CeilDiv((task.m_roi[i].Top), blkSize);
+            pps.ROI[i].Roi.Right = (mfxU16)CeilDiv((task.m_roi[i].Right), blkSize);
+            pps.ROI[i].Roi.Bottom = (mfxU16)CeilDiv((task.m_roi[i].Bottom), blkSize);
             pps.ROI[i].PriorityLevelOrDQp = (mfxU8)task.m_roi[i].Priority;
         }
+        
         pps.MaxDeltaQp = 51;    // is used for BRC only
         pps.MinDeltaQp = -51;
     }
@@ -957,10 +954,11 @@ void FillSpsBuffer(
 
 void FillPpsBuffer(
     MfxVideoParam const & par,
+    ENCODE_CAPS_HEVC const & caps,
     ENCODE_SET_PICTURE_PARAMETERS_HEVC_REXT & pps)
 {
     Zero(pps);
-    FillPpsBuffer(par, (ENCODE_SET_PICTURE_PARAMETERS_HEVC&)pps);
+    FillPpsBuffer(par, caps, (ENCODE_SET_PICTURE_PARAMETERS_HEVC&)pps);
 
     pps.log2_max_transform_skip_block_size_minus2   = par.m_pps.log2_max_transform_skip_block_size_minus2;
     pps.cross_component_prediction_enabled_flag     = par.m_pps.cross_component_prediction_enabled_flag;

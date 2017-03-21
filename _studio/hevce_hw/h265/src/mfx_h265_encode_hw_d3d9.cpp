@@ -190,7 +190,7 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAccelerationService(Mf
 #endif
 
     FillSpsBuffer(par, m_caps, m_sps);
-    FillPpsBuffer(par, m_pps);
+    FillPpsBuffer(par, m_caps, m_pps);
     FillSliceBuffer(par, m_sps, m_pps, m_slice);
 
     DDIHeaderPacker::Reset(par);
@@ -209,7 +209,7 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Reset(MfxVideoParam const & 
     Zero(m_slice);
 
     FillSpsBuffer(par, m_caps, m_sps);
-    FillPpsBuffer(par, m_pps);
+    FillPpsBuffer(par, m_caps, m_pps);
     FillSliceBuffer(par, m_sps, m_pps, m_slice);
 
     DDIHeaderPacker::Reset(par);
@@ -351,7 +351,7 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, m
     if (!m_sps.bResetBRC)
         m_sps.bResetBRC = task.m_resetBRC;
 
-    FillPpsBuffer(task, m_pps);
+    FillPpsBuffer(task, m_caps, m_pps);
     FillSliceBuffer(task, m_sps, m_pps, m_slice);
     m_pps.NumSlices = (USHORT)(m_slice.size());
 
@@ -588,7 +588,7 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryStatus(Task & task)
     switch (feedback->bStatus)
     {
     case ENCODE_OK:
-        Trace(*feedback, 0);
+//        Trace(*feedback, 0);
         task.m_bsDataLength = feedback->bitstreamSize;
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)

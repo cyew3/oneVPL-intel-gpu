@@ -188,6 +188,7 @@ DECL_START(ENCODE_CAPS_HEVC)
     TRACE("%d", TUSupport);
 
     TRACE("%d", MaxNumOfROI               );
+    TRACE("%d", ROIDeltaQPSupport         );
     TRACE("%d", ROIBRCPriorityLevelSupport);
 
 #if (HEVCE_DDI_VERSION >= 966)

@@ -1651,10 +1651,18 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
 #else
     m_pps.transform_skip_enabled_flag           = 0;
 #endif
-    m_pps.cu_qp_delta_enabled_flag              = ((mfx.RateControlMethod == MFX_RATECONTROL_CQP && !IsOn(m_ext.CO3.EnableMBQP)) || isSWBRC()) ? 0 : 1;
 
+    m_pps.cu_qp_delta_enabled_flag              = ((mfx.RateControlMethod == MFX_RATECONTROL_CQP && !IsOn(m_ext.CO3.EnableMBQP)) || isSWBRC()) ? 0 : 1;
     if (m_ext.CO2.MaxSliceSize)
         m_pps.cu_qp_delta_enabled_flag = 1;
+#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
+    if (m_ext.ROI.NumROI)
+        m_pps.cu_qp_delta_enabled_flag = 1;
+#endif
+#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
+    if (IsOn(mfx.LowPower))
+        m_pps.cu_qp_delta_enabled_flag = 1;
+#endif
 
 #ifndef MFX_CLOSED_PLATFORMS_DISABLE
     if ((m_platform.CodeName == MFX_PLATFORM_CANNONLAKE) ||
@@ -3002,11 +3010,11 @@ IntraRefreshState GetIntraRefreshState(
 }
 
 void ConfigureTask(
-    Task &                task,
-    Task const &          prevTask,
-    MfxVideoParam const & par,
-    mfxU32 &baseLayerOrder,
-    ENCODE_CAPS_HEVC const & caps)
+    Task &                   task,
+    Task const &             prevTask,
+    MfxVideoParam const &    par,
+    ENCODE_CAPS_HEVC const & caps,
+    mfxU32 &baseLayerOrder)
 {
     const bool isI    = !!(task.m_frameType & MFX_FRAMETYPE_I);
     const bool isP    = !!(task.m_frameType & MFX_FRAMETYPE_P);
@@ -3045,63 +3053,34 @@ void ConfigureTask(
     }
 #ifdef MFX_ENABLE_HEVCE_ROI
     // process roi
-    mfxExtEncoderROI const * pRoi = &par.m_ext.ROI;
-    mfxExtEncoderROI* extRoiRuntime = ExtBuffer::Get(task.m_ctrl);
-    if (extRoiRuntime)
+    mfxExtEncoderROI const * parRoi = &par.m_ext.ROI;
+    mfxExtEncoderROI * rtRoi = ExtBuffer::Get(task.m_ctrl);
+
+    if (rtRoi && rtRoi->NumROI)
     {
-        pRoi = extRoiRuntime;
+        mfxStatus sts = CheckAndFixRoi(par, caps, rtRoi);
+        if (sts == MFX_ERR_INVALID_VIDEO_PARAM)
+            parRoi = 0;
+        else
+            parRoi = (mfxExtEncoderROI const *)rtRoi;
+            
     }
 
     task.m_numRoi = 0;
-
-    if (pRoi && pRoi->NumROI)
+    if (parRoi && parRoi->NumROI)
     {
-        mfxU16 numRoi = pRoi->NumROI <= MAX_NUM_ROI ? pRoi->NumROI : MAX_NUM_ROI;
-
-        if (numRoi > caps.MaxNumOfROI) {
-            numRoi = caps.MaxNumOfROI;
-        }
-
-#if MFX_VERSION > 1021
-        task.m_roiMode = pRoi->ROIMode;
-
-        if (pRoi->ROIMode != MFX_ROI_MODE_QP_DELTA && pRoi->ROIMode != MFX_ROI_MODE_PRIORITY) {
-            numRoi = 0;
-        }
-
-// TODO: remove below macro conditional statement when ROI related caps will be correctly set up by the driver
-#if !defined(LINUX_TARGET_PLATFORM_BXTMIN) && !defined(LINUX_TARGET_PLATFORM_BXT)
-        if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
-            pRoi->ROIMode == MFX_ROI_MODE_QP_DELTA && caps.ROIDeltaQPSupport == 0) {
-            numRoi = 0;
-        }
-
-        if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
-            pRoi->ROIMode == MFX_ROI_MODE_PRIORITY && caps.ROIBRCPriorityLevelSupport == 0) {
-            numRoi = 0;
-        }
-#endif // !defined(LINUX_TARGET_PLATFORM_BXTMIN) && !defined(LINUX_TARGET_PLATFORM_BXT)
-
-#endif // MFX_VERSION > 1021
-
-        for (mfxU16 i = 0; i < numRoi; i ++)
+        for (mfxU16 i = 0; i < parRoi->NumROI; i ++)
         {
-            memcpy_s(&task.m_roi[task.m_numRoi], sizeof(RoiData), &pRoi->ROI[i], sizeof(RoiData));
-            if (extRoiRuntime)
-            {
-#if MFX_VERSION > 1021
-                // check runtime ROI
-                mfxStatus sts = CheckAndFixRoi(par, (RoiData *)&(task.m_roi[task.m_numRoi]), extRoiRuntime->ROIMode);
-#else
-                // check runtime ROI
-                mfxStatus sts = CheckAndFixRoi(par, (RoiData *)&(task.m_roi[task.m_numRoi]));
-#endif // MFX_VERSION > 1021
-                if (sts != MFX_ERR_INVALID_VIDEO_PARAM)
-                    task.m_numRoi ++;
-            } else
-                task.m_numRoi ++;
+            memcpy_s(&task.m_roi[i], sizeof(RoiData), &parRoi->ROI[i], sizeof(RoiData));
+            task.m_numRoi ++;
         }
+#if MFX_VERSION > 1021
+        if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+            task.m_roiMode = parRoi->ROIMode;
+#endif // MFX_VERSION > 1021
     }
+#else
+    caps;
 #endif // MFX_ENABLE_HEVCE_ROI
 
     if (task.m_tid == 0 && IntRefType)

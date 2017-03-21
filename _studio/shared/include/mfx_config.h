@@ -327,7 +327,9 @@
     #endif // ENABLE_PRE_SI_FEATURES
 #endif
 
-
+#if defined (PRE_SI_TARGET_PLATFORM_GEN10)
+    #define MFX_ENABLE_HEVCE_ROI
+#endif
 
 
 #endif // _MFX_CONFIG_H_

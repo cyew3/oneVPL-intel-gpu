@@ -240,7 +240,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAccelerationService(M
     MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
     FillSpsBuffer(par, m_caps, m_sps);
-    FillPpsBuffer(par, m_pps);
+    FillPpsBuffer(par, m_caps, m_pps);
     FillSliceBuffer(par, m_sps, m_pps, m_slice);
 
     DDIHeaderPacker::Reset(par);
@@ -261,7 +261,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Reset(MfxVideoParam const &
     Zero(m_slice);
 
     FillSpsBuffer(par, m_caps, m_sps);
-    FillPpsBuffer(par, m_pps);
+    FillPpsBuffer(par, m_caps, m_pps);
     FillSliceBuffer(par, m_sps, m_pps, m_slice);
 
     DDIHeaderPacker::Reset(par);
@@ -458,7 +458,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, 
     if (!m_sps.bResetBRC)
         m_sps.bResetBRC = task.m_resetBRC;
     
-    FillPpsBuffer(task, m_pps);
+    FillPpsBuffer(task, m_caps, m_pps);
     FillSliceBuffer(task, m_sps, m_pps, m_slice);
 
     mfxU32 RES_ID_BS  = 0;
