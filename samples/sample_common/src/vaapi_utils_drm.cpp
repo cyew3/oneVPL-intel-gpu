@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2015, Intel Corporation
+Copyright (c) 2005-2017, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -219,8 +219,21 @@ DRMLibVA::DRMLibVA(int type)
     delete [] adapterPaths;
 
     if (MFX_ERR_NONE != sts)
+    {
+        if (m_va_dpy)
+        {
+            m_libva.vaTerminate(m_va_dpy);
+            m_va_dpy=0;
+        }
+        if (m_fd >= 0)
+        {
+            close(m_fd);
+            m_fd=-1;
+        }
+
         throw std::invalid_argument("Loading of VA display was failed");
     }
+}
 
 DRMLibVA::~DRMLibVA(void)
 {

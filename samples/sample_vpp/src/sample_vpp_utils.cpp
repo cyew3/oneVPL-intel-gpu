@@ -1822,7 +1822,7 @@ mfxStatus GeneralWriter::Init(
             }
 #else
             {
-                msdk_strcopy(fname,strFileName);
+                msdk_strncopy_s(fname,strFileName, MSDK_MAX_FILENAME_LEN-1);
                 char* pFound = strrchr(fname,'.');
                 if(pFound)
                 {

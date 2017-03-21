@@ -283,7 +283,7 @@ namespace TranscodingSample
               : CTimeStatistics()
               , ofile(stdout)
             {
-                msdk_strcopy(bufDir, dir);
+                msdk_strncopy_s(bufDir, dir, MAX_PREF_LEN-1);
             }
 
             ~CIOStat()
@@ -298,7 +298,9 @@ namespace TranscodingSample
             inline void SetDirection(const msdk_char *dir)
             {
                 if (dir)
-                    msdk_strcopy(bufDir, dir);
+                {
+                    msdk_strncopy_s(bufDir, dir,MAX_PREF_LEN-1);
+                }
             }
 
             inline void PrintStatistics(mfxU32 numPipelineid, mfxF64 target_framerate = -1 /*default stands for infinite*/)

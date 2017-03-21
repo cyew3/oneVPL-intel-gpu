@@ -481,7 +481,7 @@ mfxStatus Launcher::ProcessResult()
         msdk_printf(MSDK_STRING("%s"),ss.str().c_str());
         if (pPerfFile)
         {
-            msdk_fprintf(pPerfFile, ss.str().c_str());
+            msdk_fprintf(pPerfFile, MSDK_STRING("%s"), ss.str().c_str());
         }
 
     }
@@ -493,7 +493,7 @@ mfxStatus Launcher::ProcessResult()
     msdk_printf(MSDK_STRING("%s"),ssTest.str().c_str());
     if (pPerfFile)
     {
-        msdk_fprintf(pPerfFile, ssTest.str().c_str());
+        msdk_fprintf(pPerfFile, MSDK_STRING("%s"), ssTest.str().c_str());
     }
     return FinalSts;
 } // mfxStatus Launcher::ProcessResult()
