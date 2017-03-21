@@ -2218,6 +2218,35 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
         configBuffers[buffersCount++] = m_packedPpsBufferId;
     }
 
+     //SEI
+    if (sei.Size() > 0)
+    {
+        packed_header_param_buffer.type                = VAEncPackedHeaderH264_SEI;
+        packed_header_param_buffer.has_emulation_bytes = 1;
+        packed_header_param_buffer.bit_length          = sei.Size() * 8;
+
+        MFX_DESTROY_VABUFFER(m_packedSeiHeaderBufferId, m_vaDisplay);
+        vaSts = vaCreateBuffer(m_vaDisplay,
+                                m_vaContextEncode,
+                                VAEncPackedHeaderParameterBufferType,
+                                sizeof(packed_header_param_buffer),
+                                1,
+                                &packed_header_param_buffer,
+                                &m_packedSeiHeaderBufferId);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+        MFX_DESTROY_VABUFFER(m_packedSeiBufferId,m_vaDisplay);
+        vaSts = vaCreateBuffer(m_vaDisplay,
+                                m_vaContextEncode,
+                                VAEncPackedHeaderDataBufferType,
+                                sei.Size(), 1, RemoveConst(sei.Buffer()),
+                                &m_packedSeiBufferId);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+        configBuffers[buffersCount++] = m_packedSeiHeaderBufferId;
+        configBuffers[buffersCount++] = m_packedSeiBufferId;
+    }
+
     // Fill SliceHeaders
     UpdateSlice(m_caps, task, fieldId, m_sps, m_pps, m_slice, m_videoParam, m_reconQueue);
 
@@ -2388,6 +2417,8 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
     MFX_DESTROY_VABUFFER(m_ppsBufferId,             m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_packedPpsHeaderBufferId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_packedPpsBufferId,       m_vaDisplay);
+    MFX_DESTROY_VABUFFER(m_packedSeiHeaderBufferId, m_vaDisplay);
+    MFX_DESTROY_VABUFFER(m_packedSeiBufferId,       m_vaDisplay);
 
     for( size_t i = 0; i < m_slice.size(); i++ )
     {

@@ -54,6 +54,67 @@ static mfxStatus CheckExtBufferId(mfxVideoParam const & par)
 
 } // namespace MfxEncPAK
 
+static const mfxU8 PAK_SUPPORTED_SEI[] = {
+        1, // 00 buffering_period
+        1, // 01 pic_timing
+        1, // 02 pan_scan_rect
+        1, // 03 filler_payload
+        1, // 04 user_data_registered_itu_t_t35
+        1, // 05 user_data_unregistered
+        1, // 06 recovery_point
+        1, // 07 dec_ref_pic_marking_repetition
+        0, // 08 spare_pic
+        1, // 09 scene_info
+        0, // 10 sub_seq_info
+        0, // 11 sub_seq_layer_characteristics
+        0, // 12 sub_seq_characteristics
+        1, // 13 full_frame_freeze
+        1, // 14 full_frame_freeze_release
+        1, // 15 full_frame_snapshot
+        1, // 16 progressive_refinement_segment_start
+        1, // 17 progressive_refinement_segment_end
+        0, // 18 motion_constrained_slice_group_set
+        1, // 19 film_grain_characteristics
+        1, // 20 deblocking_filter_display_preference
+        1, // 21 stereo_video_info
+        0, // 22 post_filter_hint
+        0, // 23 tone_mapping_info
+        0, // 24 scalability_info
+        0, // 25 sub_pic_scalable_layer
+        0, // 26 non_required_layer_rep
+        0, // 27 priority_layer_info
+        0, // 28 layers_not_present
+        0, // 29 layer_dependency_change
+        0, // 30 scalable_nesting
+        0, // 31 base_layer_temporal_hrd
+        0, // 32 quality_layer_integrity_check
+        0, // 33 redundant_pic_property
+        0, // 34 tl0_dep_rep_index
+        0, // 35 tl_switching_point
+        0, // 36 parallel_decoding_info
+        0, // 37 mvc_scalable_nesting
+        0, // 38 view_scalability_info
+        0, // 39 multiview_scene_info
+        0, // 40 multiview_acquisition_info
+        0, // 41 non_required_view_component
+        0, // 42 view_dependency_change
+        0, // 43 operation_points_not_present
+        0, // 44 base_view_temporal_hrd
+        1, // 45 frame_packing_arrangemen
+};
+
+#define PAK_SUPPORTED_MAX_PAYLOADS    (sizeof(PAK_SUPPORTED_SEI)/sizeof(PAK_SUPPORTED_SEI[0]))
+
+static const mfxU8 SEI_STARTCODE[5] = { 0, 0, 0, 1, 6 };
+
+#define SEI_STARTCODE_SIZE            (sizeof(SEI_STARTCODE))
+#define SEI_TRAILING_SIZE             1
+#define SEI_BUFFER_RESERVED_SIZE      (4 * 1024)
+#define SEI_MAX_SIZE                  (1 * 1024 * 1024)
+
+#define GET_SIZE_IN_BYTES(bits) (((bits) + 7) / 8)
+#define IS_BYTE_ALIGNED(bits) (((bits) & 0x07) == 0)
+
 bool bEnc_PAK(mfxVideoParam *par)
 {
     MFX_CHECK(par, false);
@@ -98,6 +159,9 @@ mfxStatus VideoPAK_PAK::RunFramePAK(mfxPAKInput *in, mfxPAKOutput *out)
 
     for (mfxU32 f = f_start; f <= fieldCount; ++f)
     {
+#if MFX_VERSION >= 1023
+        PrepareSeiMessageBuffer(m_video, task, task.m_fid[f]);
+#endif // MFX_VERSION >= 1023
         sts = m_ddi->Execute(task.m_handleRaw.first, task, task.m_fid[f], m_sei);
         MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
     }
@@ -402,6 +466,197 @@ mfxStatus VideoPAK_PAK::GetVideoParam(mfxVideoParam *par)
     return MFX_ERR_NONE;
 }
 
+mfxStatus VideoPAK_PAK::CheckPAKPayloads(const mfxPayload * const * payload,mfxU16 numPayload)
+{
+    mfxU32 SEISize = 0;
+
+    //check payloads are supported in the FEI lib
+    for (mfxU16 i = 0; i< numPayload; ++i)
+    {
+        //check only present payloads
+        if (payload[i] && payload[i]->NumBit > 0)
+        {
+            //check if byte-aligned
+            MFX_CHECK(
+                IS_BYTE_ALIGNED(payload[i]->NumBit),
+                MFX_ERR_UNDEFINED_BEHAVIOR);
+
+            //check Data pointer
+            MFX_CHECK(
+                payload[i]->Data,
+                MFX_ERR_UNDEFINED_BEHAVIOR);
+
+            //check buffer size
+            MFX_CHECK(
+                GET_SIZE_IN_BYTES(payload[i]->NumBit) <= payload[i]->BufSize,
+                MFX_ERR_UNDEFINED_BEHAVIOR);
+
+            //SEI messages type constraints
+            MFX_CHECK(
+                payload[i]->Type < PAK_SUPPORTED_MAX_PAYLOADS &&
+                PAK_SUPPORTED_SEI[payload[i]->Type] == 1,
+                MFX_ERR_UNDEFINED_BEHAVIOR);
+
+            SEISize += GET_SIZE_IN_BYTES(payload[i]->NumBit);
+        }
+    }
+
+    //Check payload buffer size
+    MFX_CHECK(SEISize <= SEI_MAX_SIZE, MFX_ERR_UNDEFINED_BEHAVIOR);
+    return MFX_ERR_NONE;
+}
+
+mfxU32 VideoPAK_PAK::GetPAKPayloadSize(
+    MfxVideoParam const & video,
+    const mfxPayload* const* payload,
+    mfxU16 numPayload)
+{
+    mfxExtCodingOption const *   extOpt = GetExtBuffer(video);
+    mfxU32 BufferSz = 0;
+
+    for (mfxU16 i = 0; i < numPayload; i++)
+    {
+        BufferSz += GET_SIZE_IN_BYTES(payload[i]->NumBit);
+    }
+
+    if (IsOn(extOpt->SingleSeiNalUnit))
+    {
+        BufferSz += (SEI_STARTCODE_SIZE + SEI_TRAILING_SIZE);
+    }
+    else
+    {
+        BufferSz += (SEI_STARTCODE_SIZE + SEI_TRAILING_SIZE) * numPayload;
+    }
+
+    return BufferSz;
+}
+
+#if MFX_VERSION >= 1023
+void VideoPAK_PAK::PrepareSeiMessageBuffer(
+    MfxVideoParam const & video,
+    DdiTask const & task,
+    mfxU32 fieldId)
+{
+    mfxPAKInput const *          input = reinterpret_cast<mfxPAKInput*>(task.m_userData[0]);
+    mfxExtCodingOption const *   extOpt = GetExtBuffer(video);
+
+    mfxU32 fieldPicFlag = (task.GetPicStructForEncode() != MFX_PICSTRUCT_PROGRESSIVE);
+    mfxU32 secondFieldPicFlag = (task.GetFirstField() != fieldId);
+
+    mfxU32 hasAtLeastOneSei =
+        input->Payload && (input->NumPayload > secondFieldPicFlag)
+        && (input->Payload[secondFieldPicFlag] != 0);
+    if (!hasAtLeastOneSei)
+    {
+        return;
+    }
+
+    mfxU32 BufferSz = GetPAKPayloadSize(video, input->Payload, input->NumPayload);
+    if (task.m_addRepackSize[fieldId] && hasAtLeastOneSei)
+    {
+        BufferSz += task.m_addRepackSize[fieldId];
+    }
+
+    //Reserve 4K Bytes for m_sei buffer to improve stability
+    BufferSz += SEI_BUFFER_RESERVED_SIZE;
+
+    if (m_sei.Capacity() < BufferSz)
+    {
+        m_sei.Alloc(BufferSz);
+    }
+
+    OutputBitstream writer(m_sei.Buffer(), m_sei.Capacity());
+
+    if (hasAtLeastOneSei && IsOn(extOpt->SingleSeiNalUnit))
+    {
+        writer.PutRawBytes(SEI_STARTCODE, SEI_STARTCODE + SEI_STARTCODE_SIZE);
+    }
+
+    //Add user-defined message
+    for (mfxU32 i = secondFieldPicFlag; i< input->NumPayload; i = i + 1 + fieldPicFlag)
+    {
+        if (input->Payload[i] != 0)
+        {
+            if (IsOff(extOpt->SingleSeiNalUnit))
+            {
+                writer.PutRawBytes(SEI_STARTCODE, SEI_STARTCODE + SEI_STARTCODE_SIZE);
+            }
+            mfxU32 uPayloadSize = GET_SIZE_IN_BYTES(input->Payload[i]->NumBit);
+            for (mfxU32 b = 0; b < uPayloadSize; b++)
+            {
+                writer.PutBits(input->Payload[i]->Data[b], 8);
+            }
+            if (IsOff(extOpt->SingleSeiNalUnit))
+            {
+                writer.PutTrailingBits();
+            }
+        }
+    }
+
+    if (hasAtLeastOneSei && IsOn(extOpt->SingleSeiNalUnit))
+    {
+        writer.PutTrailingBits();
+    }
+
+    //Add repack compensation to the end of last sei NALu
+    //It's padding done with trailing_zero_8bits. This padding could has greater size than real repack overhead.
+    if (task.m_addRepackSize[fieldId] && hasAtLeastOneSei)
+    {
+        writer.PutFillerBytes(0xff, task.m_addRepackSize[fieldId]);
+    }
+
+    m_sei.SetSize(GET_SIZE_IN_BYTES(writer.GetNumBits()));
+}
+#endif //MFX_VERSION >= 1023
+
+mfxU16 VideoPAK_PAK::GetBufferPeriodPayloadIdx(
+    const mfxPayload * const * payload,
+    mfxU16 numPayload,
+    mfxU32 start,
+    mfxU32 step)
+{
+    mfxU32 i = start;
+    for (; i < numPayload; i += step)
+    {
+        if (payload[i] && payload[i]->NumBit > 0 &&
+            payload[i]->Type == 0 /*Buffer Period SEI payload type*/)
+        {
+            break;
+        }
+    }
+
+    return i;
+}
+
+mfxStatus VideoPAK_PAK::ChangeBufferPeriodPayloadIndxIfNeed(
+    mfxPayload** payload,
+    mfxU16 numPayload)
+{
+    mfxU32 fieldMaxCount = m_video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
+    mfxStatus mfxSts = MFX_ERR_NONE;
+
+    for (mfxU32 i = 0; i < fieldMaxCount; i++)
+    {
+        mfxU32 start = i;
+        mfxU32 step  = fieldMaxCount;
+        mfxU16 index;
+
+        index = GetBufferPeriodPayloadIdx(payload, numPayload, start, step);
+        if (index != start && index < numPayload)
+        {
+            mfxPayload* tmp = payload[index];
+            for (mfxU32 j = index; j > start; j -= step)
+            {
+                MFX_CHECK_WITH_ASSERT((j-step) >= 0, MFX_ERR_INVALID_VIDEO_PARAM);
+                payload[j] = payload[j-step];
+            }
+            payload[start] = tmp;
+            mfxSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+        }
+    }
+    return mfxSts;
+}
+
 mfxStatus VideoPAK_PAK::RunFramePAKCheck(
                     mfxPAKInput  *input,
                     mfxPAKOutput *output,
@@ -426,6 +681,18 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
     mfxStatus sts = CheckRuntimeExtBuffers(output, output, m_video);
 #endif // MFX_VERSION >= 1023
     MFX_CHECK_STS(sts);
+
+#if MFX_VERSION >= 1023
+    //Check whether input payload is supported or not
+    MFX_CHECK(!CheckPAKPayloads(input->Payload, input->NumPayload), MFX_ERR_INVALID_VIDEO_PARAM);
+
+    //Refer to H.264 spec 7.4.1.2.3, when an SEI NAL unit
+    //containing a buffering period SEI message is present,
+    //the buffering period SEI message shall be the first SEI
+    //message payload of the first SEI NAL unit in the access unit
+    sts = ChangeBufferPeriodPayloadIndxIfNeed(input->Payload, input->NumPayload);
+    MFX_CHECK_STS(sts);
+#endif // MFX_VERSION >= 1023
 
     // For frame type detection
     PairU8 frame_type = PairU8(mfxU8(MFX_FRAMETYPE_UNKNOWN), mfxU8(MFX_FRAMETYPE_UNKNOWN));
@@ -563,7 +830,7 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
 
     numEntryPoints = 2;
 
-    return MFX_ERR_NONE;
+    return sts;
 }
 
 static mfxStatus CopyRawSurfaceToVideoMemory(VideoCORE &    core,

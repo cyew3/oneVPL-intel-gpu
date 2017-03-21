@@ -56,10 +56,30 @@ protected:
 
 private:
 
+    mfxStatus CheckPAKPayloads(const mfxPayload* const* payload, mfxU16 numPayload);
+
+#if MFX_VERSION >= 1023
+    void      PrepareSeiMessageBuffer(MfxHwH264Encode::MfxVideoParam const & video,
+                                   MfxHwH264Encode::DdiTask const & task,
+                                   mfxU32 fieldId);
+#endif // MFX_VERSION >= 1023
+
+    mfxU16    GetBufferPeriodPayloadIdx(const mfxPayload* const* payload,
+                                           mfxU16 numPayload,
+                                           mfxU32 start,
+                                           mfxU32 step);
+
+    mfxStatus ChangeBufferPeriodPayloadIndxIfNeed(mfxPayload** payload, mfxU16 numPayload);
+
+    mfxU32    GetPAKPayloadSize(MfxHwH264Encode::MfxVideoParam const & video,
+                                const mfxPayload* const* payload,
+                                mfxU16 numPayload);
+
+private:
+
     bool                                          m_bInit;
     VideoCORE*                                    m_core;
 
-    //std::list <mfxFrameSurface1*>                 m_SurfacesForOutput;
 
     std::auto_ptr<MfxHwH264Encode::DriverEncoder> m_ddi;
     std::vector<mfxU32>                           m_recFrameOrder; // !!! HACK !!!

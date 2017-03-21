@@ -1854,6 +1854,8 @@ mfxStatus MfxHwH264Encode::CheckVideoParamFEI(
         return MFX_ERR_NONE;
     }
 
+    bool isPAK = feiParam->Func == MFX_FEI_FUNCTION_PAK;
+
     switch (feiParam->Func)
     {
     case MFX_FEI_FUNCTION_PREENC:
@@ -1871,6 +1873,24 @@ mfxStatus MfxHwH264Encode::CheckVideoParamFEI(
 
     /* FEI works with CQP only */
     MFX_CHECK(MFX_RATECONTROL_CQP == par.mfx.RateControlMethod, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+    /*FEI PAK SEI option should be OFF*/
+    if (isPAK)
+    {
+        mfxExtCodingOption  * extCodingOpt  = GetExtBuffer(par);
+        if (!CheckTriStateOptionForOff(extCodingOpt->PicTimingSEI)     ||
+            !CheckTriStateOptionForOff(extCodingOpt->RecoveryPointSEI) ||
+            !CheckTriStateOptionForOff(extCodingOpt->RefPicMarkRep))
+        {
+            return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+        }
+        mfxExtCodingOption2 * extCodingOpt2 = GetExtBuffer(par);
+        if (extCodingOpt2->BufferingPeriodSEI == MFX_BPSEI_IFRAME)
+        {
+            extCodingOpt2->BufferingPeriodSEI = MFX_BPSEI_DEFAULT;
+            return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+        }
+    }
 
    // Possible options on Init stage:
    //   one slice buffer      - propagate value to all slices
@@ -5251,7 +5271,16 @@ void MfxHwH264Encode::SetDefaults(
         extOpt->EndOfStream = MFX_CODINGOPTION_OFF;
 
     if (extOpt->PicTimingSEI == MFX_CODINGOPTION_UNKNOWN)
-        extOpt->PicTimingSEI = MFX_CODINGOPTION_ON;
+    {
+        if(isPAK)
+        {
+            SetDefaultOff(extOpt->PicTimingSEI);
+        }
+        else
+        {
+            extOpt->PicTimingSEI = MFX_CODINGOPTION_ON;
+        }
+    }
 
     if (extOpt->ViewOutput == MFX_CODINGOPTION_UNKNOWN)
         extOpt->ViewOutput = MFX_CODINGOPTION_OFF;
@@ -5405,7 +5434,14 @@ void MfxHwH264Encode::SetDefaults(
         extOpt->RecoveryPointSEI == MFX_CODINGOPTION_ON &&
         extOpt2->IntRefType == 0)
     {
-        extOpt2->BufferingPeriodSEI = MFX_BPSEI_IFRAME;
+        if (isPAK)
+        {
+            extOpt2->BufferingPeriodSEI = MFX_BPSEI_DEFAULT;
+        }
+        else
+        {
+            extOpt2->BufferingPeriodSEI = MFX_BPSEI_IFRAME;
+        }
     }
 
     SetDefaultOff(extOpt2->DisableVUI);
