@@ -150,6 +150,8 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     }                                   \
 }
 
+#define STR_ARRAY_LEN(str) (sizeof(str)/sizeof(str[0]))
+
 mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pConfig)
 {
     const msdk_char* strArgument = MSDK_STRING("");
@@ -183,7 +185,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
             }
             i++;
 
-            if (msdk_strlen(strInput[i]) < sizeof(pConfig->strSrcFile)){
+            if (msdk_strlen(strInput[i]) < STR_ARRAY_LEN(pConfig->strSrcFile)){
                 msdk_opt_read(strInput[i], pConfig->strSrcFile);
             }
             else{
@@ -677,7 +679,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
                 break;
             case MSDK_CHAR('i'):
                 GET_OPTION_POINTER(strArgument);
-                if (msdk_strlen(strArgument) < sizeof(pConfig->strSrcFile)){
+                if (msdk_strlen(strArgument) < STR_ARRAY_LEN(pConfig->strSrcFile)){
                     msdk_strcopy(pConfig->strSrcFile, strArgument);
                 }else{
                     PrintHelp(strInput[0], MSDK_STRING("ERROR: Too long input filename (limit is 1023 characters)!"));
