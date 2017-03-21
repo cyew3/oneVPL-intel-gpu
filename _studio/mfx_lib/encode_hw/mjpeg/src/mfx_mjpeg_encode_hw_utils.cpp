@@ -26,8 +26,7 @@ using namespace MfxHwMJpegEncode;
 mfxStatus MfxHwMJpegEncode::QueryHwCaps(VideoCORE * core, JpegEncCaps & hwCaps)
 {
     //Should be replaced with once quering capabs as other encoders do
-
-    // FIXME: remove this when driver starts returning actual encode caps
+    // remove this when driver starts returning actual encode caps
     hwCaps.MaxPicWidth      = 4096;
     hwCaps.MaxPicHeight     = 4096;
 
@@ -53,8 +52,7 @@ bool MfxHwMJpegEncode::IsJpegParamExtBufferIdSupported(mfxU32 id)
     return
         id == MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION ||
         id == MFX_EXTBUFF_JPEG_QT ||
-        id == MFX_EXTBUFF_JPEG_HUFFMAN /*||
-        id == MFX_EXTBUFF_JPEG_PAYLOAD*/;
+        id == MFX_EXTBUFF_JPEG_HUFFMAN;
 }
 
 mfxStatus MfxHwMJpegEncode::CheckExtBufferId(mfxVideoParam const & par)

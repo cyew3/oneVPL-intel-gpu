@@ -174,14 +174,16 @@ enum
     MAX_SLICES              = 200,
     DEFAULT_LTR_INTERVAL    = 16,
 
-    MAX_NUM_ROI             = 4 // for Gen10 - Gen12
+    MAX_NUM_ROI             = 4
 };
 
+#if DEBUG_REC_FRAMES_INFO
 enum
 {
     MFX_FOURCC_Y410V = MFX_MAKEFOURCC('Y','4','1','V'),
     MFX_FOURCC_AYUVV = MFX_MAKEFOURCC('A','Y','V','V'),
 };
+#endif
 
 enum
 {

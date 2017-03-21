@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_vp8_dec_decode_common.h"
@@ -100,8 +100,8 @@ namespace VP8DecodeCommon
         width = ((p_bitstream[4] << 8) | p_bitstream[3]) & 0x3fff;
         height = ((p_bitstream[6] << 8) | p_bitstream[5]) & 0x3fff;
     
-        p_params->mfx.FrameInfo.AspectRatioW = 1; // pBitstream[4] >> 6;
-        p_params->mfx.FrameInfo.AspectRatioH = 1; // pBitstream[6] >> 6;
+        p_params->mfx.FrameInfo.AspectRatioW = 1;
+        p_params->mfx.FrameInfo.AspectRatioH = 1;
     
         p_params->mfx.FrameInfo.CropW = width;
         p_params->mfx.FrameInfo.CropH = height;
@@ -184,7 +184,7 @@ mfxStatus MFX_VP8_Utility::Query(VideoCORE *p_core, mfxVideoParam *p_in, mfxVide
         if (p_in->mfx.NumThread < 128)
             p_out->mfx.NumThread = p_in->mfx.NumThread;
 
-        if (p_in->AsyncDepth < MFX_MAX_ASYNC_DEPTH_VALUE) // Actually AsyncDepth > 5-7 is for debugging only.
+        if (p_in->AsyncDepth < MFX_MAX_ASYNC_DEPTH_VALUE)
             p_out->AsyncDepth = p_in->AsyncDepth;
 
         if ((p_in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) || (p_in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))

@@ -22,31 +22,6 @@
 
 namespace MFXVC1DecCommon
 {
-    typedef enum
-    {
-        IQT,
-        PredDec,
-        GetRecon,
-        RunILDBL,
-        Full
-    } VC1DecEntryPoints;
-
-    typedef enum
-    {
-        EndOfSequence              = 0x0A010000,
-        Slice                      = 0x0B010000,
-        Field                      = 0x0C010000,
-        FrameHeader                = 0x0D010000,
-        EntryPointHeader           = 0x0E010000,
-        SequenceHeader             = 0x0F010000,
-        SliceLevelUserData         = 0x1B010000,
-        FieldLevelUserData         = 0x1C010000,
-        FrameLevelUserData         = 0x1D010000,
-        EntryPointLevelUserData    = 0x1E010000,
-        SequenceLevelUserData      = 0x1F010000,
-
-    } VC1StartCodeSwapped;
-
     // need for dword alignment memory
     inline mfxU32    GetDWord_s(mfxU8* pData) { return ((*(pData+3))<<24) + ((*(pData+2))<<16) + ((*(pData+1))<<8) + *(pData);}
     

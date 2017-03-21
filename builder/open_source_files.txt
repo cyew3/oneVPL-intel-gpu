@@ -186,6 +186,7 @@ _studio/shared/include/mfxvideo++int.h
 _studio/shared/include/mfx_common.h
 _studio/shared/include/mfx_config.h
 _studio/shared/include/mfx_common_linux_bdw.h
+_studio/shared/include/mfx_common_linux_upstream.h
 _studio/shared/include/mfx_ext_buffers.h
 _studio/shared/include/mfx_timing.h
 _studio/shared/include/mfx_trace.h
@@ -418,11 +419,9 @@ _studio/mfx_lib/genx/h264_encode/src/genx_skl_histogram_isa.cpp
 _studio/mfx_lib/genx/h264_encode/src/genx_skl_simple_me_isa.cpp
 _studio/shared/umc/core/vm/include/vm_cond.h
 _studio/shared/umc/core/vm/src/vm_cond_linux32.c
-_studio/mfx_lib/decode/vp8/include/mfx_vp8_dec_decode.h
 _studio/mfx_lib/decode/vp8/include/mfx_vp8_dec_decode_common.h
 _studio/mfx_lib/decode/vp8/include/mfx_vp8_dec_decode_hw.h
 _studio/mfx_lib/decode/vp8/include/mfx_vp8_dec_decode_vp8_defs.h
-_studio/mfx_lib/decode/vp8/src/mfx_vp8_dec_decode.cpp
 _studio/mfx_lib/decode/vp8/src/mfx_vp8_dec_decode_common.cpp
 _studio/mfx_lib/decode/vp8/src/mfx_vp8_dec_decode_hw.cpp
 _studio/mfx_lib/decode/vp8/src/mfx_vp8_dec_decode_hw_vaapi.cpp

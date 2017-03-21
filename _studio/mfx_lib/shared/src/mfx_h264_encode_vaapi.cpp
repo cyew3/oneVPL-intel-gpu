@@ -1359,8 +1359,8 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
 
     if (attrs[idx_map[VAConfigAttribEncROI]].value != VA_ATTRIB_NOT_SUPPORTED)
     {
-// Officially only APL supports ROI.
 #if defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT)
+        // Officially only APL supports ROI.
         VAConfigAttribValEncROIPrivate *VaEncROIValPtr = reinterpret_cast<VAConfigAttribValEncROIPrivate *>(&attrs[idx_map[VAConfigAttribEncROI]].value);
         assert(VaEncROIValPtr->bits.num_roi_regions < 32);
         m_caps.MaxNumOfROI = VaEncROIValPtr->bits.num_roi_regions;

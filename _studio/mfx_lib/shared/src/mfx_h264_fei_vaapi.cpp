@@ -30,7 +30,6 @@
 using namespace MfxHwH264Encode;
 
 #if defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC)
-//#include <va/vendor/va_intel_statistics.h>
 #include "mfx_h264_preenc.h"
 
 VAAPIFEIPREENCEncoder::VAAPIFEIPREENCEncoder()
@@ -991,14 +990,13 @@ mfxStatus VAAPIFEIENCEncoder::Register(mfxFrameAllocResponse& response, D3DDDIFO
             pQueue->push_back(extSurf);
         }
     }
-    /*
+
 #if 0
     if (D3DDDIFMT_INTELENCODE_BITSTREAMDATA != type) {
         sts = CreateAccelerationService(m_videoParam);
         MFX_CHECK_STS(sts);
     }
 #endif
-    */
 
     return MFX_ERR_NONE;
 

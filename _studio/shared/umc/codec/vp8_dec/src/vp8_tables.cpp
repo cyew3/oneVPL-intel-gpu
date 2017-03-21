@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -542,7 +542,7 @@ const Ipp32u vp8_mbmode_2_blockmode_u32[VP8_NUM_MB_MODES_Y] =
   (VP8_B_VE_PRED << 24) | (VP8_B_VE_PRED << 16)  | (VP8_B_VE_PRED << 8) | VP8_B_VE_PRED,
   (VP8_B_HE_PRED << 24) | (VP8_B_HE_PRED << 16)  | (VP8_B_HE_PRED << 8) | VP8_B_HE_PRED,
   (VP8_B_TM_PRED << 24) | (VP8_B_TM_PRED << 16)  | (VP8_B_TM_PRED << 8) | VP8_B_TM_PRED,
-  (VP8_B_DC_PRED << 24) | (VP8_B_DC_PRED << 16)  | (VP8_B_DC_PRED << 8) | VP8_B_DC_PRED // not used - remove???
+  (VP8_B_DC_PRED << 24) | (VP8_B_DC_PRED << 16)  | (VP8_B_DC_PRED << 8) | VP8_B_DC_PRED
 };
 
 

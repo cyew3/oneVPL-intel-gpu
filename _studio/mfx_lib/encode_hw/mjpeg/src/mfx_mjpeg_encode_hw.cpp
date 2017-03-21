@@ -1025,9 +1025,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::TaskRoutineSubmitFrame(
     mfxStatus sts = enc.CheckDevice();
     MFX_CHECK_STS(sts);
 
-    // D3D11
     mfxHDLPair surfacePair = { };
-    // D3D9
     mfxHDL     surfaceHDL = 0;
 
     mfxHDL *pSurfaceHdl;
@@ -1049,7 +1047,6 @@ mfxStatus MFXVideoENCODEMJPEG_HW::TaskRoutineSubmitFrame(
         mfxFrameData dstSurf = { 0 };
         bool bExternalFrameLocked = false;
 
-        //no MDF implementation for linux yet
         if(enc.m_pCore->GetVAType() == MFX_HW_VAAPI )
         {
             enc.m_pCore->LockFrame(enc.m_raw.mids[task.m_idx], &dstSurf);

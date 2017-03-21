@@ -1368,10 +1368,10 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
     m_sps.amp_enabled_flag                         = 1; // only 1
     m_sps.sample_adaptive_offset_enabled_flag      = !(m_ext.HEVCParam.SampleAdaptiveOffset & MFX_SAO_DISABLE);
 #else  //PRE_SI_TARGET_PLATFORM_GEN10
-    m_sps.amp_enabled_flag                         = 0; // SKL
-    m_sps.sample_adaptive_offset_enabled_flag      = 0; // SKL
+    m_sps.amp_enabled_flag                         = 0;
+    m_sps.sample_adaptive_offset_enabled_flag      = 0;
 #endif  //PRE_SI_TARGET_PLATFORM_GEN10
-    m_sps.pcm_enabled_flag                         = 0; // SKL and CNL+
+    m_sps.pcm_enabled_flag                         = 0;
 
     assert(0 == m_sps.pcm_enabled_flag);
 

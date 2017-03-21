@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -417,8 +417,7 @@ mfxStatus VAAPIEncoder::QueryStatus(DdiTask & task)
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Enc vaSyncSurface");
             vaSts = vaSyncSurface(m_vaDisplay, waitSurface);
-            // following code is workaround:
-            // because of driver bug it could happen that decoding error will not be returned after decoder sync
+            // it could happen that decoding error will not be returned after decoder sync
             // and will be returned at subsequent encoder sync instead
             // just ignore VA_STATUS_ERROR_DECODING_ERROR in encoder
             if (vaSts == VA_STATUS_ERROR_DECODING_ERROR)
@@ -453,10 +452,6 @@ mfxStatus VAAPIEncoder::QueryStatus(DdiTask & task)
 
                     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
                 }
-//
-// TODO: Commented check is not correct for 422 and 444 (RGB) encodings, need rework
-//
-//                MFX_CHECK_WITH_ASSERT(codedBufferSegment->size < (m_width * m_height * 3 / 2), MFX_ERR_DEVICE_FAILED);
                 task.m_bsDataLength = codedBufferSegment->size;
 
                 {

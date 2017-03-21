@@ -643,8 +643,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
              * when scene change flag is set (pParams->scene > 0) ADI is
              * used otherwise.
              * ADI output is late by one field. Current and reference field
-             * are fed into de-interlacer. reference BSPEC for VEBOX
-             * https://gfxspecs.intel.com/Predator/Home/Index/13539
+             * are fed into de-interlacer.
              **/
 
             // ADI 30i->30p: To get first field of current frame , set deint.flags second output field.
@@ -2442,7 +2441,6 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
              * "white line"-like artifacts on transparent-opaque borders.
              * Setting nothing here triggers using a BLEND_SOURCE approach that is used on
              * Windows and looks to be free of such kind of artifacts */
-            /* Issue in described in HSD10045182 is over */
             blend_state[refIdx].flags |= VA_BLEND_PREMULTIPLIED_ALPHA;
         }
         if ((pParams->dstRects[refIdx-1].GlobalAlphaEnable != 0) ||

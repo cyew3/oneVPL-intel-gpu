@@ -2692,7 +2692,7 @@ mfxStatus VideoVPPHW::ProcessFieldCopy(mfxHDL in, mfxHDL out, mfxU32 fieldMask)
     MFX_CHECK_NULL_PTR1(in);
     MFX_CHECK_NULL_PTR1(out);
 
-    if (fieldMask > BFF2FIELD) //valid Sergey Osipov's kernel mask [0, 1, 2, 3, 4, 5, 6, 7]
+    if (fieldMask > BFF2FIELD) //valid kernel mask [0, 1, 2, 3, 4, 5, 6, 7]
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
@@ -3841,7 +3841,7 @@ mfxStatus ConfigureExecuteParams(
                     config.m_surfCount[VPP_IN]  = IPP_MAX(1, config.m_surfCount[VPP_IN]);
                     config.m_surfCount[VPP_OUT] = IPP_MAX(2, config.m_surfCount[VPP_OUT]);
                     executeParams.bFMDEnable = false;
-                    executeParams.bFMDEnable = true; // Snow try this !
+                    executeParams.bFMDEnable = true;
                 }
                 else if (MFX_DEINTERLACING_ADVANCED_NOREF == executeParams.iDeinterlacingAlgorithm)
                 {
@@ -4445,7 +4445,7 @@ mfxStatus ConfigureExecuteParams(
                 config.m_surfCount[VPP_IN]   = IPP_MAX(2, config.m_surfCount[VPP_IN]);
                 config.m_surfCount[VPP_OUT]  = IPP_MAX(1, config.m_surfCount[VPP_OUT]);
                 config.m_extConfig.mode = IS_REFERENCES;
-                // Sergey Osipov's kernel uses "0"  as a "valid" data, but HW_VPP doesn't.
+                // kernel uses "0"  as a "valid" data, but HW_VPP doesn't.
                 // To prevent an issue we increment here and decrement before kernel call.
                 executeParams.iFieldProcessingMode++;
 
@@ -4478,7 +4478,7 @@ mfxStatus ConfigureExecuteParams(
                 config.m_surfCount[VPP_IN]   = IPP_MAX(1, config.m_surfCount[VPP_IN]);
                 config.m_surfCount[VPP_OUT]  = IPP_MAX(2, config.m_surfCount[VPP_OUT]);
                 config.m_extConfig.mode = IS_REFERENCES;
-                // Sergey Osipov's kernel uses "0"  as a "valid" data, but HW_VPP doesn't.
+                // kernel uses "0"  as a "valid" data, but HW_VPP doesn't.
                 // To prevent an issue we increment here and decrement before kernel call.
                 executeParams.iFieldProcessingMode++;
 

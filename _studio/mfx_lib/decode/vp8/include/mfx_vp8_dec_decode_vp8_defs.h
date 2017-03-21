@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -23,27 +23,6 @@ using namespace UMC;
 
 namespace VP8Defs
 {
-
-#if (defined(__INTEL_COMPILER) || defined(_MSC_VER)) && !defined(_WIN32_WCE)
-#define __ALIGN16(type, name, size) \
-  __declspec (align(16)) type name[size]
-#else
-#if defined(LINUX32) || defined(LINUX64)
-#define __ALIGN16(type, name, size) \
-  type __attribute__((aligned(0x10))) name[size]
-#else
-#if defined(_WIN64) || defined(WIN64)
-#define __ALIGN16(type, name, size) \
-  Ipp8u _a16_##name[(size)*sizeof(type)+15]; type *name = (type*)(((Ipp64s)(_a16_##name) + 15) & ~15)
-#else
-#define __ALIGN16(type, name, size) \
-  Ipp8u _a16_##name[(size)*sizeof(type)+15]; type *name = (type*)(((Ipp32s)(_a16_##name) + 15) & ~15)
-#endif
-#endif
-#endif
-
-#define VP8_MAX_NUM_OF_TOKEN_PARTITIONS 8
-
 #define VP8_START_CODE_FOUND(ptr) ((ptr)[0] == 0x9d && (ptr)[1] == 0x01 && (ptr)[2] == 0x2a)
 
 #define vp8_CLIP(x, min, max) if ((x) < (min)) (x) = (min); else if ((x) > (max)) (x) = (max)
@@ -52,6 +31,7 @@ namespace VP8Defs
 
 #define vp8_CLIP255(x) ((x) > 255) ? 255 : ((x) < 0) ? 0 : (x)
 
+#define VP8_MAX_NUM_OF_TOKEN_PARTITIONS 8
 #define VP8_MIN_QP 0
 #define VP8_MAX_QP 127
 
@@ -214,21 +194,9 @@ enum {
 #define VP8_BILINEAR_INTERP 1
 #define VP8_CHROMA_FULL_PEL 2
 
-
-enum
-{
-  VP8_MV_TOP_BOTTOM = 0, /* two pieces {0...7} and {8...15} */
-  VP8_MV_LEFT_RIGHT,     /* {0,1,4,5,8,9,12,13} and {2,3,6,7,10,11,14,15} */
-  VP8_MV_QUARTERS,       /* {0,1,4,5}, {2,3,6,7}, {8,9,12,13}, {10,11,14,15} */
-  VP8_MV_16,             /* every subblock gets its own vector {0} ... {15} */
-  VP8_MV_NUM_PARTITIONS
-};
-
-
 typedef struct _vp8_FrameInfo
 {
-  //Ipp8u frameType;
-  UMC::FrameType frameType;// ???
+  UMC::FrameType frameType;
 
   Ipp8u showFrame;
 
@@ -255,26 +223,18 @@ typedef struct _vp8_FrameInfo
 
   Ipp8u numTokenPartitions;
 
-  Ipp32u mbPerCol;
-  Ipp32u mbPerRow;
-  Ipp32u mbStep;
-
   Ipp8u mbSkipEnabled;
   Ipp8u skipFalseProb;
   Ipp8u intraProb;
   Ipp8u goldProb;
   Ipp8u lastProb;
 
-  Ipp8u *blContextUp;
-  Ipp8u  blContextLeft[9];
-
   Ipp32s numPartitions;
   Ipp32s partitionSize[VP8_MAX_NUM_OF_TOKEN_PARTITIONS];
   Ipp8u *partitionStart[VP8_MAX_NUM_OF_TOKEN_PARTITIONS];
 
-  Ipp32s m_DPBSize; //???? to ask T.K. what is whis
+  Ipp32s m_DPBSize;
 
-  //Ipp8u version;
   Ipp8u color_space_type;
   Ipp8u clamping_type;
 
@@ -293,7 +253,6 @@ typedef struct _vp8_FrameInfo
   Ipp32u entropyDecOffset;
 
 } vp8_FrameInfo;
-
 
 typedef struct _vp8_QuantInfo
 {
@@ -324,6 +283,35 @@ typedef struct _vp8_QuantInfo
 
 } vp8_QuantInfo;
 
+#ifndef OPEN_SOURCE
+
+#if (defined(__INTEL_COMPILER) || defined(_MSC_VER)) && !defined(_WIN32_WCE)
+#define __ALIGN16(type, name, size) \
+  __declspec (align(16)) type name[size]
+#else
+#if defined(LINUX32) || defined(LINUX64)
+#define __ALIGN16(type, name, size) \
+  type __attribute__((aligned(0x10))) name[size]
+#else
+#if defined(_WIN64) || defined(WIN64)
+#define __ALIGN16(type, name, size) \
+  Ipp8u _a16_##name[(size)*sizeof(type)+15]; type *name = (type*)(((Ipp64s)(_a16_##name) + 15) & ~15)
+#else
+#define __ALIGN16(type, name, size) \
+  Ipp8u _a16_##name[(size)*sizeof(type)+15]; type *name = (type*)(((Ipp32s)(_a16_##name) + 15) & ~15)
+#endif
+#endif
+#endif
+
+enum
+{
+    VP8_MV_TOP_BOTTOM = 0, /* two pieces {0...7} and {8...15} */
+    VP8_MV_LEFT_RIGHT,     /* {0,1,4,5,8,9,12,13} and {2,3,6,7,10,11,14,15} */
+    VP8_MV_QUARTERS,       /* {0,1,4,5}, {2,3,6,7}, {8,9,12,13}, {10,11,14,15} */
+    VP8_MV_16,             /* every subblock gets its own vector {0} ... {15} */
+    VP8_MV_NUM_PARTITIONS
+};
+
 #pragma warning (disable: 4201)
 union vp8_MotionVector
 {
@@ -333,17 +321,6 @@ union vp8_MotionVector
   };
   Ipp32s s32;
 };
-
-
-/*
-typedef struct _vp8_BlockInfo
-{
-  Ipp8u            mode;
-  vp8_MotionVector mv;
-
-} vp8_BlockInfo;
-*/
-
 
 typedef struct _vp8_LoopFilterInfo
 {
@@ -375,9 +352,8 @@ typedef struct _vp8_MbInfo
   Ipp8u refFrame;    
 
   vp8_LoopFilterInfo lfInfo;
-//  vp8_BlockInfo blockInfo[16];
 } vp8_MbInfo;
-
+#endif // #ifndef OPEN_SOURCE
 
 typedef struct _vp8_RefreshInfo
 {
@@ -436,7 +412,6 @@ typedef struct _vp8_FrameData
   Ipp32s border_size;
 
 } vp8_FrameData;
-
 
 } // namespace UMC
 

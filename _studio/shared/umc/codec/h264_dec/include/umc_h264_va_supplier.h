@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -81,7 +81,6 @@ private:
 
 // this template class added to apply big surface pool workaround depends on platform
 // because platform check can't be added inside VATaskSupplier
-// for WidevineTaskSupplier the also can be applied
 template <class BaseClass>
 class VATaskSupplierBigSurfacePool :
     public BaseClass

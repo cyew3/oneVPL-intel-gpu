@@ -4344,7 +4344,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     }
 #endif
 
-    // for PV3, only explicit WP P is supported. Remove this check when WP B is also supported.
+    // Remove this check when WP B is also supported.
     if (isENCPAK
         && (extOpt3->WeightedBiPred == MFX_WEIGHTED_PRED_EXPLICIT ||
             extOpt3->WeightedBiPred == MFX_WEIGHTED_PRED_IMPLICIT))

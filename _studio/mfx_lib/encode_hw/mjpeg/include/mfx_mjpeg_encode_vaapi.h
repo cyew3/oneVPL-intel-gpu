@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFX_MJPEG_ENCODE_VAAPI_H__
@@ -109,9 +109,6 @@ namespace MfxHwMJpegEncode
         std::vector<ExtVASurface> m_feedbackCache;
         std::vector<ExtVASurface> m_bsQueue;
 
-        //std::vector<VABufferID>  m_qmBufferIds;
-        //std::vector<VABufferID>  m_htBufferIds;
-        //std::vector<VABufferID>  m_scanBufferIds;
         VABufferID  m_qmBufferId;
         VABufferID  m_htBufferId;
         VABufferID  m_scanBufferId;

@@ -128,7 +128,6 @@ mfxStatus VideoDECODEVP8_HW::Init(mfxVideoParam *p_video_param)
         return MFX_ERR_UNSUPPORTED;
     }
 
-    // how "D3D" cound be related to VA API code !? (crappy naming!)
     m_p_frame_allocator.reset(new mfx_UMC_FrameAllocator_D3D());
 
     if (MFX_VP8_Utility::CheckVideoParam(p_video_param, type) == false)
@@ -336,12 +335,6 @@ mfxStatus VideoDECODEVP8_HW::Close()
     m_frameOrder = (mfxU16)0;
     m_p_video_accelerator = 0;
     memset(&m_stat, 0, sizeof(m_stat));
-
-    if(m_frame_info.blContextUp)
-    {
-      free(m_frame_info.blContextUp);
-      m_frame_info.blContextUp = 0;
-    }
 
     if (m_bs.Data)
     {
@@ -865,7 +858,7 @@ void VideoDECODEVP8_HW::UpdateSegmentation(MFX_VP8_BoolDecoder &dec)
 
     if (m_frame_info.updateSegmentData)
     {
-        m_frame_info.segmentAbsMode = (Ipp8u)dec.decode();//VP8_DECODE_BOOL_PROB128(pBooldec, m_frame_info.segmentAbsMode);
+        m_frame_info.segmentAbsMode = (Ipp8u)dec.decode();
         UMC_SET_ZERO(m_frame_info.segmentFeatureData);
 
         for (i = 0; i < VP8Defs::VP8_NUM_OF_MB_FEATURES; i++)
@@ -1095,24 +1088,6 @@ void VideoDECODEVP8_HW::DecodeInitDequantization(MFX_VP8_BoolDecoder &dec)
     #endif
 
   }
-} // VP8VideoDecoderSoftware::DecodeInitDequantization()
-
-#define CHECK_N_REALLOC_BUFFERS \
-{ \
-  Ipp32u mbPerCol, mbPerRow; \
-  mbPerCol = m_frame_info.frameHeight >> 4; \
-  mbPerRow = m_frame_info.frameWidth  >> 4; \
-  if (m_frame_info.mbPerRow <  mbPerRow) \
-  { \
-    if (m_frame_info.blContextUp) \
-      free(m_frame_info.blContextUp); \
-      \
-    m_frame_info.blContextUp = (Ipp8u*)malloc(mbPerRow * mbPerCol * sizeof(vp8_MbInfo)); \
-    if (!m_frame_info.blContextUp) { return MFX_ERR_MEMORY_ALLOC; } \
-  } \
-  m_frame_info.mbPerCol = mbPerCol; \
-  m_frame_info.mbPerRow = mbPerRow; \
-  m_frame_info.mbStep   = mbPerRow; \
 }
 
 mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
@@ -1157,8 +1132,6 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
             break;
     }
 
-    //Ipp32u pTemp = (data_in[2] << 16) | (data_in[1] << 8) | data_in[0];
-    //Ipp32u realSize = (pTemp >> 5) & 0x7FFFF;
     mfxU32 first_partition_size = (data_in[0] >> 5) |           // 19 bit
                                   (data_in[1] << 3) |
                                   (data_in[2] << 11);
@@ -1201,8 +1174,6 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
             m_frame_info.frameWidth  = (Ipp16s)width;
             m_frame_info.frameHeight = (Ipp16s)height;
         }
-
-        CHECK_N_REALLOC_BUFFERS;
 
         data_in += 7;
 
@@ -1291,7 +1262,7 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
     partitions = 1 << bits;
     m_frame_info.numTokenPartitions = 1 << bits;
 
-    m_frame_info.numPartitions = m_frame_info.numTokenPartitions;// + 1; // ??? do we need 1st partition here?
+    m_frame_info.numPartitions = m_frame_info.numTokenPartitions;
     partitions =  m_frame_info.numPartitions;
     mfxU8 *pTokenPartition = data_in + first_partition_size;
 
@@ -1372,10 +1343,6 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
         }
     }
 
-    MFX_CHECK_NULL_PTR1(m_frame_info.blContextUp);
-
-    memset(m_frame_info.blContextUp, 0, m_frame_info.mbPerRow*9);
-
     m_frame_info.mbSkipEnabled = (Ipp8u)m_boolDecoder[VP8_FIRST_PARTITION].decode();
     m_frame_info.skipFalseProb = 0;
 
@@ -1430,12 +1397,6 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
             while (++p < pstop);
         }
         while (++i < 2);
-    }
-    else
-    {
-        //m_frame_info.intraProb = 0;
-        //m_frame_info.lastProb = 0;
-        //m_frame_info.goldProb = 0;
     }
 
     m_frame_info.entropyDecSize = m_boolDecoder[VP8_FIRST_PARTITION].pos() * 8 - 16 - m_boolDecoder[VP8_FIRST_PARTITION].bitcount();

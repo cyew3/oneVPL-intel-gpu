@@ -87,6 +87,7 @@ typedef struct tagENCODE_CAPS_HEVC
     UCHAR    MaxNum_WeightedPredL1;
 } ENCODE_CAPS_HEVC;
 
+#if !defined(OPEN_SOURCE)
 typedef struct tagFRAMERATE
 {
     UINT    Numerator;
@@ -417,3 +418,5 @@ typedef struct tagENCODE_SET_CUDATA_HEVC
     UINT    CUDataOffset;
     BYTE*   pBuffer;
 } ENCODE_SET_CUDATA_HEVC;
+
+#endif // #if !defined(OPEN_SOURCE)

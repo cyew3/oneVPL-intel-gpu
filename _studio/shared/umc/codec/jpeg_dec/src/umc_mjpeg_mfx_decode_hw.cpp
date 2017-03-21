@@ -141,7 +141,6 @@ mfxStatus MJPEGVideoDecoderMFX_HW::CheckStatusReportNumber(Ipp32u statusReportFe
     iteratorReady = find(m_cachedReadyTaskIndex.begin(), m_cachedReadyTaskIndex.end(), statusReportFeedbackNumber);
     iteratorSubmitted = find(m_submittedTaskIndex.begin(), m_submittedTaskIndex.end(), statusReportFeedbackNumber);
     if (m_cachedReadyTaskIndex.end() == iteratorReady){
-        //in Case TDR occur status won't be updated, otherwise driver will change status to correct.
         for (mfxU32 i = 0; i < numStructures; i += 1){
             queryStatus[i].bStatus = 3;
         }
@@ -162,7 +161,6 @@ mfxStatus MJPEGVideoDecoderMFX_HW::CheckStatusReportNumber(Ipp32u statusReportFe
         }
 
 #endif
-        // houston, we have a problem :)
         if(sts != UMC_OK)
         {
             return MFX_ERR_DEVICE_FAILED;
@@ -291,7 +289,7 @@ Status MJPEGVideoDecoderMFX_HW::_DecodeField(MediaDataEx* in)
 } // MJPEGVideoDecoderMFX_HW::_DecodeField(MediaDataEx* in)
 
 Status MJPEGVideoDecoderMFX_HW::DefaultInitializationHuffmantables()
-{    // VD [23.08.2010] - use default huffman tables if not presented in stream
+{
     JERRCODE jerr;
     if(m_decBase->m_dctbl[0].IsEmpty())
     {
@@ -925,7 +923,7 @@ Status MJPEGVideoDecoderMFX_HW::PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PAR
         if ( !sliceParams )
             return MFX_ERR_DEVICE_FAILED;
         sliceParams->slice_data_size           = obtainedScanParams->DataLength;
-        sliceParams->slice_data_offset         = 0;//obtainedScanParams->DataOffset;
+        sliceParams->slice_data_offset         = 0;
         sliceParams->slice_data_flag           = VA_SLICE_DATA_FLAG_ALL;
         sliceParams->num_components            = obtainedScanParams->NumComponents;
         sliceParams->restart_interval          = obtainedScanParams->RestartInterval;
