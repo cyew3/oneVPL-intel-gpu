@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2016, Intel Corporation
+Copyright (c) 2005-2017, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -188,16 +188,22 @@ public:
         //...........................reflist management........................................
         task->prevTask = last_encoded_task;
 
+        // Update frame order of last I and IDR
         task->m_frameOrderIdr = (ExtractFrameType(*task) & MFX_FRAMETYPE_IDR) ? task->m_frameOrder : (task->prevTask ? task->prevTask->m_frameOrderIdr : 0);
         task->m_frameOrderI   = (ExtractFrameType(*task) & MFX_FRAMETYPE_I)   ? task->m_frameOrder : (task->prevTask ? task->prevTask->m_frameOrderI   : 0);
+
+        // Wrap the FrameNum
         mfxU8  frameNumIncrement = (task->prevTask && (ExtractFrameType(*(task->prevTask)) & MFX_FRAMETYPE_REF || task->prevTask->m_nalRefIdc[0])) ? 1 : 0;
         task->m_frameNumWrap = task->m_frameNum = (task->prevTask && !(ExtractFrameType(*task) & MFX_FRAMETYPE_IDR)) ?
             mfxU16((task->prevTask->m_frameNum + frameNumIncrement) % (1 << log2frameNumMax)) : 0;
 
+        // Increase IDR counter if previous frame was IDR
         task->m_frameIdrCounter = task->prevTask ? ((ExtractFrameType(*task->prevTask) & MFX_FRAMETYPE_IDR) && task->prevTask->m_frameOrder ? task->prevTask->m_frameIdrCounter + 1 : task->prevTask->m_frameIdrCounter) : 0;
 
+        // Calculate PicNum
         task->m_picNum[1] = task->m_picNum[0] = task->m_frameNum * (task->m_fieldPicFlag + 1) + task->m_fieldPicFlag;
 
+        // Fill DPB and RefLists
         task->m_dpb[task->m_fid[0]] = task->prevTask ? task->prevTask->m_dpbPostEncoding : ArrayDpbFrame();
         UpdateDpbFrames(*task, task->m_fid[0], 1 << log2frameNumMax);
         InitRefPicList(*task, task->m_fid[0]);
@@ -214,6 +220,9 @@ public:
             if (task->m_reference[task->m_fid[1]])
                 task->m_dpbPostEncoding.Back().m_refPicFlag[task->m_fid[1]] = 1;
         }
+
+        // Adjust RefLists
+        AdjustReflists(task);
 
         task_in_process = task;
         ShowDpbInfo(task, task->m_frameOrder);
@@ -295,6 +304,37 @@ public:
                 ++count;
 
         return count;
+    }
+
+    /* By standard L0/L1 lists contains of identical set of references.
+       This function removes excessive entries from RefLists */
+    void AdjustReflists(iTask* task)
+    {
+        if (!task) return;
+
+        mfxU32 fid, n_l0, n_l1, numOfFields = task->m_fieldPicFlag ? 2 : 1;
+
+        for (mfxU32 fieldId = 0; fieldId < numOfFields; fieldId++)
+        {
+            fid = task->m_fid[fieldId];
+
+            /* in some cases l0 and l1 lists are equal, if so same ref lists for l0 and l1 should be used*/
+            n_l0 = task->GetNBackward(fieldId);
+            n_l1 = task->GetNForward(fieldId);
+
+            if (!n_l0 && task->m_list0[fid].Size() && !(task->m_type[fid] & MFX_FRAMETYPE_I))
+            {
+                n_l0 = task->m_list0[fid].Size();
+            }
+
+            if (!n_l1 && task->m_list1[fid].Size() && (task->m_type[fid] & MFX_FRAMETYPE_B))
+            {
+                n_l1 = task->m_list1[fid].Size();
+            }
+
+            task->m_list0[fid].Resize(n_l0);
+            task->m_list1[fid].Resize(n_l1);
+        }
     }
 
     /* These functions prints out state of DPB and reference lists for given frame.
