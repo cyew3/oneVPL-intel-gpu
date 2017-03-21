@@ -193,6 +193,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCodingOp
     DUMP_FIELD(QuantScaleType);
     DUMP_FIELD(IntraVLCFormat);
     DUMP_FIELD(ScanType);
+    DUMP_FIELD(RepartitionCheckEnable);
     DUMP_FIELD_RESERVED(reserved);
     return str;
 }

@@ -703,6 +703,7 @@ STRUCT(mfxExtCodingOption3,
     FIELD_T(mfxU16      , QuantScaleType                )
     FIELD_T(mfxU16      , IntraVLCFormat                )
     FIELD_T(mfxU16      , ScanType                      )
+    FIELD_T(mfxU16      , RepartitionCheckEnable        ) /* tri-state option */
 )
 
 STRUCT(mfxExtLAControl,
