@@ -1568,11 +1568,10 @@ mfxStatus CEncodingPipeline::Run()
             // Set reconstruct surface for ENC / PAK
             if (m_appCfg.bENCPAK || m_appCfg.bOnlyENC || m_appCfg.bOnlyPAK)
             {
-                /* FEI PAK requires separate pool for reconstruct surfaces */
+                /* FEI ENC and (or) PAK requires separate pool for reconstruct surfaces */
                 mfxFrameSurface1 * recon_surf = m_ReconSurfaces.GetFreeSurface_FEI();
                 MSDK_CHECK_POINTER(recon_surf, MFX_ERR_MEMORY_ALLOC);
 
-                recon_surf->Data.FrameOrder = pSurf->Data.FrameOrder;
                 eTask->SetReconSurf(recon_surf);
             }
         }
@@ -1692,11 +1691,9 @@ mfxStatus CEncodingPipeline::ProcessBufferedFrames()
             if ((m_appCfg.bENCPAK) || (m_appCfg.bOnlyPAK) || (m_appCfg.bOnlyENC))
             {
                 // Set reconstruct surface for ENC / PAK
-
                 mfxFrameSurface1 * recon_surf = m_ReconSurfaces.GetFreeSurface_FEI();
                 MSDK_CHECK_POINTER(recon_surf, MFX_ERR_MEMORY_ALLOC);
 
-                recon_surf->Data.FrameOrder = eTask->m_frameOrder;
                 eTask->SetReconSurf(recon_surf);
 
                 sts = m_pFEI_ENCPAK->EncPakOneFrame(eTask);

@@ -689,10 +689,15 @@ struct iTask
         return *this;
     }
 
+    /* Sets recon_surf as reconstruct surface for ENC / PAK*/
     void SetReconSurf(mfxFrameSurface1 * recon_surf)
     {
         if (recon_surf)
         {
+            // Set appropriate frame order
+            recon_surf->Data.FrameOrder = m_frameOrder;
+
+            // Lock for each interface (symmetric unlock performed in destructor)
             ENC_out.OutSurface = recon_surf;
             ENC_out.OutSurface->Data.Locked++;
 
