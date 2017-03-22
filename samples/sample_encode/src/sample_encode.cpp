@@ -546,7 +546,9 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->UseRegionEncode = true;
         }
+#ifdef MOD_ENC
         MOD_ENC_PARSE_INPUT
+#endif
 #if defined (ENABLE_V4L2_SUPPORT)
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-d")))
         {
@@ -990,8 +992,9 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
 
 CEncodingPipeline* CreatePipeline(const sInputParams& params)
 {
+#ifdef MOD_ENC
     MOD_ENC_CREATE_PIPELINE;
-
+#endif
     if(params.UseRegionEncode)
     {
         return new CRegionEncodingPipeline;

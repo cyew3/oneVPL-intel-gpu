@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2016, Intel Corporation
+Copyright (c) 2005-2017, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -65,7 +65,9 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("   <codecid>=h265|vp8                - in-box Media SDK plugins (may require separate downloading and installation)\n"));
     msdk_printf(MSDK_STRING("   If codecid is jpeg, -q option is mandatory.)\n"));
     msdk_printf(MSDK_STRING("Options: \n"));
+#ifdef MOD_ENC
     MOD_ENC_PRINT_HELP;
+#endif
     msdk_printf(MSDK_STRING("   [-nv12] - input is in NV12 color format, if not specified YUV420 is expected\n"));
     msdk_printf(MSDK_STRING("   [-tff|bff] - input stream is interlaced, top|bottom fielf first, if not specified progressive is expected\n"));
     msdk_printf(MSDK_STRING("   [-bref] - arrange B frames in B pyramid reference structure\n"));
@@ -401,7 +403,9 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
 #endif
             pParams->pluginParams.type = MFX_PLUGINLOAD_TYPE_FILE;
         }
+#ifdef MOD_ENC
         MOD_ENC_PARSE_INPUT
+#endif
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-yuy2")))
         {
             pParams->MondelloFormat = YUY2;
@@ -831,8 +835,9 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
 
 CEncodingPipeline* CreatePipeline(const sInputParams& params)
 {
+#ifdef MOD_ENC
     MOD_ENC_CREATE_PIPELINE;
-
+#endif
     if(params.nRotationAngle)
     {
         return new CUserPipeline;
