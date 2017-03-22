@@ -1857,8 +1857,10 @@ void H265Encoder::OnLookaheadCompletion()
     }
 
     if (m_videoParam.AnalyzeCmplx) {
-        for (FrameIter it = m_inputQueue.begin(); it != itEnd; it++) {
-            AverageComplexity(*it, m_videoParam);
+        for (FrameIter it = m_inputQueue.begin(); it != m_inputQueue.end() && it != itEnd; it++) {
+            FrameIter nt = it;
+            if(nt != m_inputQueue.end()) nt++;
+            AverageComplexity((it != m_inputQueue.end())?*it:NULL, m_videoParam, (nt != m_inputQueue.end())?*nt:NULL);
         }
     }
 
@@ -1989,7 +1991,7 @@ void Lookahead::ResetState()
     m_lastAcceptedFrame[0] = m_lastAcceptedFrame[1] = NULL;
 }
 
-void H265Enc::AverageComplexity(Frame *in, H265VideoParam& videoParam)
+void H265Enc::AverageComplexity(Frame *in, H265VideoParam& videoParam, Frame *next)
 {
     if (in == NULL)
         return;
@@ -2069,6 +2071,18 @@ void H265Enc::AverageComplexity(Frame *in, H265VideoParam& videoParam)
             in->m_stats[1]->m_avgInterSatd /= scaleFactor;
         }
     }
+
+    stat->m_bestSatdHist[stat->m_bestSatdHist.size()-1] = stat->m_avgBestSatd;
+    stat->m_intraSatdHist[stat->m_intraSatdHist.size()-1] = stat->m_avgIntraSatd;
+    if(next) {
+        for (Ipp32s k = 0;  k < (Ipp32s) stat->m_bestSatdHist.size()-1; k++) {
+            next->m_stats[useLowres ? 1 : 0]->m_bestSatdHist[k] = stat->m_bestSatdHist[k+1];
+        }
+        for (Ipp32s k = 0;  k < (Ipp32s) stat->m_intraSatdHist.size()-1; k++) {
+            next->m_stats[useLowres ? 1 : 0]->m_intraSatdHist[k] = stat->m_intraSatdHist[k+1];
+        }
+    }
+
 }
 
 

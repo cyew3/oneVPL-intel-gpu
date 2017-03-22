@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -112,6 +112,7 @@ using namespace H265Enc::MfxEnumShortAliases;
     tab_##mode##_ConstQpOffset[x],\
     tab_##mode##_SplitThresholdMultiplier[x],\
     tab_##mode##_EnableCmBiref[x],\
+    tab_##mode##_RepackForMaxFrameSize[x],\
     }
 
     // Extended bit depth
@@ -324,6 +325,7 @@ using namespace H265Enc::MfxEnumShortAliases;
 
     TU_OPT_SW  (ConstQpOffset,                  0,   0,   0,   0,   0,   0,   0);
     TU_OPT_GACC(ConstQpOffset,                  0,   0,   0,   0,   0,   0,   0);
+    TU_OPT_ALL (RepackForMaxFrameSize,          ON,  ON,  ON,  ON,  ON,  ON,  ON);
 
 namespace H265Enc {
 

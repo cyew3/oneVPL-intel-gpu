@@ -353,6 +353,7 @@ void MFXStructureRef <mfxExtCodingOptionHEVC>::ConstructValues() const
     SERIALIZE_INT(ConstQpOffset);
     SERIALIZE_INT(SplitThresholdMultiplier);
     SERIALIZE_INT(EnableCmBiref);
+    SERIALIZE_INT(RepackForMaxFrameSize);
 }
 
 void MFXStructureRef <mfxExtHEVCTiles>::ConstructValues() const

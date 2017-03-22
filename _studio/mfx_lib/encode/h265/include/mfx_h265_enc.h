@@ -120,6 +120,7 @@ namespace H265Enc {
         Ipp16u SkipMotionPartition;  // 0-default, 1-never, 2-Adaptive
         Ipp16u SkipCandRD;       // on: Do Full RD /off : do Fast decision 
         Ipp16u AdaptiveRefs;     // on: Adaptive Search for best ref
+
         Ipp16u NumRefFrameB;     // 0,1-default, 2+ Use Given
         Ipp16u NumRefLayers;
         Ipp8u  refLayerLimit[4];
@@ -203,6 +204,9 @@ namespace H265Enc {
         Ipp32u  hrdBitrate;
         Ipp32u  cpbSize;
         Ipp32u  initDelay;
+        Ipp32u  MaxFrameSizeInBits;
+        Ipp16u  RepackForMaxFrameSize;
+
         Ipp16u  AspectRatioW;
         Ipp16u  AspectRatioH;
         Ipp16u  Profile;

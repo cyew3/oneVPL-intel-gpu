@@ -43,6 +43,9 @@
 #include "mfxla.h"
 #include "mfx_ext_buffers.h"
 
+#define AMT_MAX_FRAME_SIZE
+//#define AMT_MAX_FRAME_SIZE_DEBUG
+
 #if defined(MFX_VA)
 #define AMT_NEW_ICRA
 #endif

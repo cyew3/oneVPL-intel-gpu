@@ -125,6 +125,8 @@ namespace H265Enc {
         Ipp32f m_avgIntraSatd;
         Ipp32f m_avgInterSatd;
         Ipp32f m_intraRatio;
+        std::vector<Ipp32f> m_intraSatdHist;
+        std::vector<Ipp32f> m_bestSatdHist;
 
         // SceneCut info
         Ipp32s m_sceneChange;
@@ -416,6 +418,9 @@ namespace H265Enc {
         SceneStats* m_sceneStats;
 
         // BRC info
+        Ipp64f m_fzCmplx;
+        Ipp64f m_fzCmplxK;
+        Ipp64f m_fzRateE;
         Ipp64f m_avCmplx;
         Ipp64f m_CmplxQstep;
         Ipp32s m_qpBase;

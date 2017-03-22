@@ -307,6 +307,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_HEVC_OPTION(ConstQpOffset,            OPT_UINT_16,    "allows setting negative QPs for 10bit: finalQP[IPB] = mfx.QP[IPB] - ConstQpOffset"),
         HANDLE_HEVC_OPTION(SplitThresholdMultiplier, OPT_UINT_16,    "0-10-default: multipler = SplitThresholdMultiplier / 10.0"),
         HANDLE_HEVC_OPTION(EnableCmBiref,            OPT_UINT_16,    "default is ON for TU1-5 and OFF for TU6-7"),
+        HANDLE_HEVC_OPTION(RepackForMaxFrameSize,    OPT_TRI_STATE,  "Repack for Max Frame Size violations (default is ON)"),
 
         HANDLE_HEVC_TILES(NumTileColumns,            OPT_UINT_16,    "number of tile columns (1 - default)"),
         HANDLE_HEVC_TILES(NumTileRows,               OPT_UINT_16,    "number of tile rows (1 - default)"),

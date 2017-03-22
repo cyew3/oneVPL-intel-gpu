@@ -248,7 +248,8 @@ typedef struct {
     mfxU16      ConstQpOffset;      // allows setting negative QPs for 10bit: finalQP[IPB] = mfx.QP[IPB] - ConstQpOffset
     mfxU16      SplitThresholdMultiplier; //0-10-default: multipler = SplitThresholdMultiplier / 10.0
     mfxU16      EnableCmBiref;      // 0-default 1-enables Interpolation and GpuBiref 
-    mfxU16      reserved[36];       // 256 bytes total} mfxExtCodingOptionHEVC;
+    mfxU16      RepackForMaxFrameSize;
+    mfxU16      reserved[34];       // 256 bytes total} mfxExtCodingOptionHEVC;
 } mfxExtCodingOptionHEVC;
 
 #ifdef MFX_EXTBUFF_FORCE_PRIVATE_DDI_ENABLE

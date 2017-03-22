@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2017 Intel Corporation. All Rights Reserved.
 //
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
@@ -40,7 +40,8 @@ enum eMfxBRCStatus
     MFX_BRC_BIG_FRAME               = 0x2,
     MFX_BRC_ERR_SMALL_FRAME         = 0x4,
     MFX_BRC_SMALL_FRAME             = 0x8,
-    MFX_BRC_NOT_ENOUGH_BUFFER       = 0x10
+    MFX_BRC_NOT_ENOUGH_BUFFER       = 0x10,
+    MFX_BRC_ERR_MAX_FRAME           = 0x20
 };
 
 enum eMfxBRCRecode
@@ -373,6 +374,11 @@ public:
     void SetMiniGopData(Frame *frames[], Ipp32s numFrames);
     void UpdateMiniGopData(Frame *frame,  Ipp8s qp);
 
+    void InitMinQForMaxFrameSize(H265VideoParam *video);
+    void ResetMinQForMaxFrameSize(H265VideoParam *video, Frame *f);
+    Ipp64f GetMinQForMaxFrameSize(H265VideoParam *video, Frame *f, Ipp32s layer, Frame *maxpoc, Ipp32s myPos);
+    void UpdateMinQForMaxFrameSize(H265VideoParam *video, Frame *f, Ipp32s bits, Ipp32s layer, mfxBRCStatus Sts);
+
     mfxStatus SetQP(Ipp32s qp, Ipp16u frameType);
 
     mfxStatus GetInitialCPBRemovalDelay(Ipp32u *initial_cpb_removal_delay, Ipp32s recode = 0);
@@ -412,6 +418,7 @@ protected:
     Ipp32s mPrevBitsLayer[8];
     Ipp64f mPrevQstepLayer[8];
     Ipp32s mPrevQpLayer[8];
+    Ipp32s mPrevQpLayerSet[8];
 
     Ipp64f mPrevCmplxIP;
     Ipp32s mPrevBitsIP;
@@ -433,6 +440,19 @@ protected:
     Ipp64f mQstepScale0;
     Ipp32s mLoanLength;
     Ipp32s mLoanBitsPerFrame;
+
+    // MinQ for Max Frame Size
+    Ipp32s mfs;
+#ifdef AMT_MAX_FRAME_SIZE
+    Ipp64f mMinQstepCmplxK[5];              // Layers
+    Ipp64f mMinQstepRateEP;                 // Var based on GopRefDist
+    Ipp64f mMinQstepICmplxEP;               // Var based on GopRefDist
+    Ipp64f mMinQstepPCmplxEP;               // Var based on GopRefDist
+    Ipp32s mMinQstepCmplxKInitEncOrder;     // Avoid mixing scenes
+    Ipp32s mMinQstepCmplxKUpdt[5];          // Layers
+    Ipp64f mMinQstepCmplxKUpdtC[5];         // Layers
+    Ipp64f mMinQstepCmplxKUpdtErr[5];       // Layers
+#endif
 
     //Ipp32s mLoanLengthP;
     //Ipp32s mLoanBitsPerFrameP;

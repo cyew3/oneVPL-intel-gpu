@@ -107,6 +107,8 @@ namespace H265Enc {
         // for BRC
         m_intraSatd.resize(numBlk);
         m_interSatd.resize(numBlk);
+        m_intraSatdHist.resize(33, -1);
+        m_bestSatdHist.resize(33, -1);
 
         // for content analysis (paq/calq)
         m_interSad.resize(numBlk);
@@ -162,6 +164,9 @@ namespace H265Enc {
         Ipp32s len = 0;
         m_intraSatd.resize(numBlk);
         m_interSatd.resize(numBlk);
+        m_intraSatdHist.resize(0);
+        m_bestSatdHist.resize(0);
+
         m_interSad.resize(numBlk);
         m_interSad_pdist_past.resize(numBlk);
         m_interSad_pdist_future.resize(numBlk);
@@ -636,6 +641,7 @@ namespace H265Enc {
         m_forceTryIntra = 0;
         m_sliceQpY    = 0;
 
+        m_fzCmplx      = 0.0;
         m_avCmplx      = 0.0;
         m_CmplxQstep   = 0.0;
         m_qpBase       = 0;

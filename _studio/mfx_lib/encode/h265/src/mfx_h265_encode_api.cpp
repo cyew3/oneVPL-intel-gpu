@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2015-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2015-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -496,6 +496,11 @@ namespace {
             ext->RepackProb = 1;
             ext->NumRefLayers = 1;
             ext->ConstQpOffset = 1;
+#ifdef AMT_MAX_FRAME_SIZE
+            ext->RepackForMaxFrameSize = 1;
+#else
+            ext->RepackForMaxFrameSize = 0;
+#endif
         }
 
         if (mfxExtCodingOption *ext = GetExtBuffer(*out)) {
@@ -532,7 +537,11 @@ namespace {
             ext->IntRefType = 0;
             ext->IntRefCycleSize = 0;
             ext->IntRefQPDelta = 0;
+#ifdef AMT_MAX_FRAME_SIZE
+            ext->MaxFrameSize = 1;
+#else
             ext->MaxFrameSize = 0;
+#endif
             ext->MaxSliceSize = 0;
             ext->BitrateLimit = 0;
             ext->MBBRC = 1;
@@ -809,6 +818,8 @@ namespace {
             wrnIncompatible = !CheckSet(optHevc->IntraAngModesP, CodecLimits::SUP_INTRA_ANG_MODE);
             wrnIncompatible = !CheckSet(optHevc->IntraAngModesBRef, CodecLimits::SUP_INTRA_ANG_MODE);
             wrnIncompatible = !CheckSet(optHevc->IntraAngModesBnonRef, CodecLimits::SUP_INTRA_ANG_MODE);
+
+            wrnIncompatible = !CheckTriState(optHevc->RepackForMaxFrameSize);
         }
 
         if (opt) {
@@ -993,6 +1004,7 @@ namespace {
         Ipp32u maxKbps          = MAX(1, mfx.BRCParamMultiplier) * mfx.MaxKbps;
         Ipp32u bufferSizeInKB   = MAX(1, mfx.BRCParamMultiplier) * mfx.BufferSizeInKB;
         Ipp32u initialDelayInKB = MAX(1, mfx.BRCParamMultiplier) * mfx.InitialDelayInKB;
+        
         const Ipp16u profile = mfx.CodecProfile ? mfx.CodecProfile : Ipp16u(fi.FourCC ? GetProfile(fi.FourCC) : 0);
 
         // check targetKbps <= raw data rate
@@ -1000,7 +1012,7 @@ namespace {
             Ipp32u rawDataKbps = (Ipp32u)MIN(MAX_UINT, (Ipp64u)picWidth * picHeight * GetBpp(fi.FourCC) * fi.FrameRateExtN / fi.FrameRateExtD / 1000);
             wrnIncompatible = !CheckMaxSat(targetKbps, rawDataKbps);
         }
-
+        
         if (mfx.RateControlMethod == VBR && targetKbps && maxKbps) // maxKbps >= targetKbps
             wrnIncompatible = !CheckMinSat(maxKbps, targetKbps);
 
@@ -1025,6 +1037,16 @@ namespace {
             if (initialDelayInKB) // initialDelayInKB >= 1 average compressed frames
                 wrnIncompatible = !CheckMinSat(initialDelayInKB, avgFrameInKB);
         }
+        if (opt2 && opt2->MaxFrameSize && (mfx.RateControlMethod == VBR || mfx.RateControlMethod == AVBR) && fi.FrameRateExtN && fi.FrameRateExtD && fi.FourCC != P010 && fi.FourCC != P210 && fi.PicStruct == PROGR) {
+            Ipp32u MaxFrameSize = opt2->MaxFrameSize;
+            const Ipp32u avgFrameInBytes = (Ipp32u)MIN(MAX_UINT/2, (Ipp64f)targetKbps * 1000 * fi.FrameRateExtD / fi.FrameRateExtN / 8) + 1;
+            wrnIncompatible = !CheckMinSat(MaxFrameSize, avgFrameInBytes);
+            opt2->MaxFrameSize = MaxFrameSize;
+        } else if (opt2 && opt2->MaxFrameSize) {
+            opt2->MaxFrameSize = 0, wrnIncompatible = true;
+        }
+
+
 
         if (IsCbrOrVbr(mfx.RateControlMethod) && profile && bufferSizeInKB) // bufferSizeInKB <= MaxCPB[High6.2]
             wrnIncompatible = !CheckMaxSat(bufferSizeInKB, GetMaxCpbForLevel(profile, H62) / 8000);
@@ -1495,6 +1517,8 @@ namespace {
             optHevc.DeblockBorders = defaultOptHevc.DeblockBorders;
         if (optHevc.SAOChroma == 0)
             optHevc.SAOChroma = defaultOptHevc.SAOChroma;
+        if (optHevc.RepackForMaxFrameSize == 0)
+            optHevc.RepackForMaxFrameSize = defaultOptHevc.RepackForMaxFrameSize;
     }
 
     mfxStatus CheckIoPattern(MFXCoreInterface1 &core, const mfxVideoParam &param)

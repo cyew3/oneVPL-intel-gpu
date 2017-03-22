@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2015 - 2016 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2015 - 2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "gtest/gtest.h"
@@ -198,6 +198,7 @@ void ApiTestCommon::InitParamSetValid(ParamSet &paramset) {
     paramset.extCodingOptionHevc.ConstQpOffset = 1;
     paramset.extCodingOptionHevc.SplitThresholdMultiplier = 10;
     paramset.extCodingOptionHevc.EnableCmBiref = 32;
+    paramset.extCodingOptionHevc.RepackForMaxFrameSize = MFX_CODINGOPTION_ON;
     paramset.extCodingOption.AUDelimiter = MFX_CODINGOPTION_ON;
     paramset.extCodingOption2.DisableVUI = MFX_CODINGOPTION_ON;
     paramset.extCodingOption2.AdaptiveI = MFX_CODINGOPTION_ON;
@@ -497,6 +498,7 @@ template <> void ApiTestCommon::ExpectEqual<mfxExtCodingOptionHEVC>(const mfxExt
     EXPECT(ConstQpOffset);
     EXPECT(SplitThresholdMultiplier);
     EXPECT(EnableCmBiref);
+    EXPECT(RepackForMaxFrameSize);
     EXPECT_EQ(0, MemCompare(expected, actual)); // double check by full memcmp
 }
 template <> void ApiTestCommon::ExpectEqual<mfxExtHEVCParam>(const mfxExtHEVCParam &expected, const mfxExtHEVCParam &actual) {

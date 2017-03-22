@@ -138,6 +138,7 @@ int FS_Init(FSP *fsp, int w_orig, int h_orig, int mode, int use_nv12, unsigned s
 void FS_Free(FSP *fsp)
 {
     FS *fs = *fsp;
+    if(!fs) return;
     // Buffer Ptrs
     DeinitFrameBuffPtr(&fs->fbp, &fs->sd_struct.dim);
     // FaceDet

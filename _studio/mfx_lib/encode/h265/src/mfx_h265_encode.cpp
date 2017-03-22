@@ -596,7 +596,15 @@ static void TaskLogDump()
                 intParam.initDelay = MIN(0xffffE380, (Ipp64u)mfx.InitialDelayInKB * mfx.BRCParamMultiplier * 8000);
                 intParam.hrdBitrate = intParam.cbrFlag ? intParam.targetBitrate : MIN(0xfffffed8, (Ipp64u)mfx.MaxKbps * mfx.BRCParamMultiplier * 1000);
             }
+            if(opt2.MaxFrameSize && (mfx.RateControlMethod == VBR ||  mfx.RateControlMethod == AVBR)) {
+                intParam.MaxFrameSizeInBits = opt2.MaxFrameSize * 8;  // bits
+#ifdef AMT_MAX_FRAME_SIZE
+                intParam.FullresMetrics = 1;
+#endif
+            }
         }
+
+        intParam.RepackForMaxFrameSize = (optHevc.RepackForMaxFrameSize == ON);
 
         intParam.writeBufPeriod = intParam.hrdPresentFlag;
         intParam.writePicTiming = intParam.hrdPresentFlag || intParam.picStruct != PROGR;
@@ -888,6 +896,10 @@ H265Encoder::H265Encoder(MFXCoreInterface1 &core)
 
     m_pauseFeiThread = 0;
     m_stopFeiThread = 0;
+
+#ifdef AMT_HROI_PSY_AQ
+    m_faceSkinDet = NULL;
+#endif
     
 #if TASK_LOG_ENABLE
     taskLog = NULL;
@@ -1767,8 +1779,10 @@ Frame *H265Encoder::AcceptFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl *ctrl, 
         // tmp fix for short sequences
         if (m_la.get()) {
             if (m_videoParam.AnalyzeCmplx)
-                for (std::list<Frame *>::iterator i = m_inputQueue.begin(); i != m_inputQueue.end(); ++i)
-                    AverageComplexity(*i, m_videoParam);
+                for (std::list<Frame *>::iterator i = m_inputQueue.begin(); i != m_inputQueue.end(); ++i) {
+                    std::list<Frame *>::iterator n = i;
+                    AverageComplexity(*i, m_videoParam, (++n != m_inputQueue.end())?(*n):NULL);
+                }
 #if 0
             if (m_videoParam.DeltaQpMode & (AMT_DQP_PAQ | AMT_DQP_CAL)) {
                 while (m_la.get()->BuildQpMap_AndTriggerState(NULL));
