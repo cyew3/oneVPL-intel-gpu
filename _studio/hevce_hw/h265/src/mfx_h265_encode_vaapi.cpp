@@ -301,7 +301,11 @@ mfxStatus SetFrameRate(
     misc_param->type = VAEncMiscParameterTypeFrameRate;
     frameRate_param = (VAEncMiscParameterFrameRate *)misc_param->data;
 
+#ifndef MFX_VAAPI_UPSTREAM
     frameRate_param->framerate = (unsigned int)(100.0 * (mfxF64)par.mfx.FrameInfo.FrameRateExtN / (mfxF64)par.mfx.FrameInfo.FrameRateExtD);
+#else
+    frameRate_param->framerate = (par.mfx.FrameInfo.FrameRateExtD << 16 ) | par.mfx.FrameInfo.FrameRateExtN;
+#endif
 
     vaUnmapBuffer(vaDisplay, frameRateBuf_id);
 
