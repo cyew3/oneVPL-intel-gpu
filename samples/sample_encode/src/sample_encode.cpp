@@ -36,8 +36,8 @@ or https://software.intel.com/en-us/media-client-solutions-support.
     } \
 }
 
-// Extensions for internal use, normally these macros are blank
 #ifdef MOD_ENC
+// Extensions for internal use, normally these macros are blank
 #include "extension_macros.h"
 #else
 #define MOD_ENC_CREATE_PIPELINE
@@ -66,7 +66,9 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("   <codecid>=h265                - in-box Media SDK plugins (may require separate downloading and installation)\n"));
     msdk_printf(MSDK_STRING("   If codecid is jpeg, -q option is mandatory.)\n"));
     msdk_printf(MSDK_STRING("Options: \n"));
+#ifdef MOD_ENC
     MOD_ENC_PRINT_HELP;
+#endif
     msdk_printf(MSDK_STRING("   [-nv12|yuy2|p010|rgb4] - input color format (by default YUV420 is expected). YUY2 is for JPEG encode only.\n"));
     msdk_printf(MSDK_STRING("   [-ec::p010] - force usage of P010 surfaces for encoder (conversion will be made if necessary). Use for 10 bit HEVC encoding\n"));
     msdk_printf(MSDK_STRING("   [-tff|bff] - input stream is interlaced, top|bottom fielf first, if not specified progressive is expected\n"));
