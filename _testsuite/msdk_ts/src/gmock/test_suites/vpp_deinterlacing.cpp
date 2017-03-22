@@ -108,8 +108,6 @@ int TestSuite::RunTest(unsigned int id)
 
     SETPARS(&m_par, MFX_PAR);
 
-    if ((MFX_FOURCC_Y210 == m_par.vpp.In.FourCC || MFX_FOURCC_Y210 == m_par.vpp.Out.FourCC) && g_tsHWtype < MFX_HW_CNL)
-        sts = MFX_ERR_INVALID_VIDEO_PARAM; // y210 deinterlacing works since CNL
 
     mfxExtVPPDeinterlacing* extVPPDi = (mfxExtVPPDeinterlacing*)m_par.GetExtBuffer(MFX_EXTBUFF_VPP_DEINTERLACING);
     if (MFX_DEINTERLACING_ADVANCED_SCD == extVPPDi->Mode)
@@ -120,6 +118,9 @@ int TestSuite::RunTest(unsigned int id)
         if (MFX_OS_FAMILY_LINUX == g_tsOSFamily && MFX_HW_APL == g_tsHWtype)
             sts = MFX_ERR_UNSUPPORTED; // only Linux for BDW & SKL supports SCD mode for now
     }
+
+    if ((MFX_FOURCC_Y210 == m_par.vpp.In.FourCC || MFX_FOURCC_Y210 == m_par.vpp.Out.FourCC) && g_tsHWtype < MFX_HW_CNL)
+        sts = MFX_ERR_INVALID_VIDEO_PARAM; // y210 deinterlacing works since CNL
 
     SetHandle();
 
