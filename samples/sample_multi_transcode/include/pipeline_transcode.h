@@ -283,7 +283,7 @@ namespace TranscodingSample
               : CTimeStatistics()
               , ofile(stdout)
             {
-                msdk_strncopy_s(bufDir, dir, MAX_PREF_LEN-1);
+                msdk_strncopy_s(bufDir, MAX_PREF_LEN, dir, MAX_PREF_LEN - 1);
             }
 
             ~CIOStat()
@@ -299,7 +299,7 @@ namespace TranscodingSample
             {
                 if (dir)
                 {
-                    msdk_strncopy_s(bufDir, dir,MAX_PREF_LEN-1);
+                    msdk_strncopy_s(bufDir, MAX_PREF_LEN, dir, MAX_PREF_LEN - 1);
                 }
             }
 
