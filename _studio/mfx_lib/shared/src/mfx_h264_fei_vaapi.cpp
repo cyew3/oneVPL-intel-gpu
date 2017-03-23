@@ -357,7 +357,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
     mfxENCInput*  in  = reinterpret_cast<mfxENCInput* >(task.m_userData[0]);
     mfxENCOutput* out = reinterpret_cast<mfxENCOutput*>(task.m_userData[1]);
 
-    mfxU32 feiFieldId = (task.GetPicStructForEncode() & MFX_PICSTRUCT_FIELD_BFF) ? (1 - fieldId) : fieldId;
+    mfxU32 feiFieldId = task.m_fid[fieldId];
 
     //find output buffers
     mfxExtFeiPreEncMV           * mvsOut    = GetExtBufferFEI(out, feiFieldId);
@@ -664,7 +664,7 @@ mfxStatus VAAPIFEIPREENCEncoder::QueryStatus(
     VABufferID statMVid     = VA_INVALID_ID;
     VABufferID statOUTid    = VA_INVALID_ID;
 
-    mfxU32 indxSurf, feiFieldId = (task.GetPicStructForEncode() & MFX_PICSTRUCT_FIELD_BFF) ? (1 - fieldId) : fieldId;
+    mfxU32 indxSurf, feiFieldId = task.m_fid[fieldId];
 
     UMC::AutomaticUMCMutex guard(m_guard);
 
@@ -1016,7 +1016,7 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
 
     VASurfaceID *inputSurface = (VASurfaceID*) surface;
 
-    mfxU32 feiFieldId = (MFX_PICSTRUCT_FIELD_BFF & task.GetPicStructForEncode()) ? (1 - fieldId) : fieldId;
+    mfxU32 feiFieldId = task.m_fid[fieldId];
 
     // Offset to choose correct buffers
     mfxU32 idxRecon = task.m_idxRecon * (1 + task.m_fieldPicFlag);
@@ -1556,7 +1556,7 @@ mfxStatus VAAPIFEIENCEncoder::QueryStatus(
     VABufferID vaFeiMVOutId     = VA_INVALID_ID;
     mfxU32 indxSurf;
 
-    mfxU32 feiFieldId = (MFX_PICSTRUCT_FIELD_BFF & task.GetPicStructForEncode()) ? (1 - fieldId) : fieldId;
+    mfxU32 feiFieldId = task.m_fid[fieldId];
 
     UMC::AutomaticUMCMutex guard(m_guard);
 
@@ -1943,7 +1943,7 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
     VAStatus  vaSts  = VA_STATUS_SUCCESS;
     mfxStatus mfxSts = MFX_ERR_NONE;
 
-    mfxU32 feiFieldId = (MFX_PICSTRUCT_FIELD_BFF & task.GetPicStructForEncode()) ? (1 - fieldId) : fieldId;
+    mfxU32 feiFieldId = task.m_fid[fieldId];
 
     std::vector<VABufferID> configBuffers(MAX_CONFIG_BUFFERS_COUNT + m_slice.size() * 2);
     std::fill(configBuffers.begin(), configBuffers.end(), VA_INVALID_ID);
@@ -2446,7 +2446,7 @@ mfxStatus VAAPIFEIPAKEncoder::QueryStatus(
     // (1) mapping feedbackNumber -> surface & bs
     VASurfaceID waitSurface     = VA_INVALID_SURFACE;
 
-    mfxU32 indxSurf, feiFieldId = (MFX_PICSTRUCT_FIELD_BFF & task.GetPicStructForEncode()) ? (1 - fieldId) : fieldId;
+    mfxU32 indxSurf, feiFieldId = task.m_fid[fieldId];
 
     UMC::AutomaticUMCMutex guard(m_guard);
 

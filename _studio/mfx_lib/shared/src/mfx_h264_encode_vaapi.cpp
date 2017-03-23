@@ -907,12 +907,12 @@ void FillPWT(
 
         mfxExtCodingOptionDDI * extDdi      = GetExtBuffer(par);
         mfxExtCodingOption2   * extOpt2     = GetExtBuffer(par);
-        mfxExtFeiSliceHeader  * extFeiSlice = GetExtBuffer(par, (MFX_PICSTRUCT_FIELD_BFF & task.GetPicStructForEncode()) ? (1 - fieldId) : fieldId);
+        mfxExtFeiSliceHeader  * extFeiSlice = GetExtBuffer(par, task.m_fid[fieldId]);
         assert(extDdi      != 0);
         assert(extOpt2     != 0);
         assert(extFeiSlice != 0);
 
-        mfxExtPredWeightTable const * pPWT = GetExtBuffer(task.m_ctrl, fieldId);
+        mfxExtPredWeightTable const * pPWT = GetExtBuffer(task.m_ctrl, task.m_fid[fieldId]);
         if (!pPWT)
             pPWT = &task.m_pwt[fieldId];
 
@@ -1008,12 +1008,12 @@ void UpdateSliceSizeLimited(
 
     mfxExtCodingOptionDDI * extDdi      = GetExtBuffer(par);
     mfxExtCodingOption2   * extOpt2     = GetExtBuffer(par);
-    mfxExtFeiSliceHeader  * extFeiSlice = GetExtBuffer(par, (MFX_PICSTRUCT_FIELD_BFF & task.GetPicStructForEncode()) ? (1 - fieldId) : fieldId);
+    mfxExtFeiSliceHeader  * extFeiSlice = GetExtBuffer(par, task.m_fid[fieldId]);
     assert(extDdi      != 0);
     assert(extOpt2     != 0);
     assert(extFeiSlice != 0);
 
-    mfxExtPredWeightTable const * pPWT = GetExtBuffer(task.m_ctrl, fieldId);
+    mfxExtPredWeightTable const * pPWT = GetExtBuffer(task.m_ctrl, task.m_fid[fieldId]);
     if (!pPWT)
         pPWT = &task.m_pwt[fieldId];
 
@@ -2032,7 +2032,7 @@ mfxStatus VAAPIEncoder::Execute(
     VABufferID vaFeiMBQPId         = VA_INVALID_ID;
 
     // Parity to order conversion (FEI ext buffers attached by field order, but MSDK operates in terms of fields parity)
-    mfxU32 feiFieldId = (MFX_PICSTRUCT_FIELD_BFF & task.GetPicStructForEncode()) ? (1 - fieldId) : fieldId;
+    mfxU32 feiFieldId = task.m_fid[fieldId];
 
     if (m_isENCPAK)
     {
@@ -3070,7 +3070,8 @@ mfxStatus VAAPIEncoder::QueryStatus(
 
     if (m_isENCPAK)
     {
-        sts = VAAPIEncoder::QueryStatusFEI(task, fieldId, currentFeedback);
+        // Use parity to order conversion here (FEI ext buffers attached by field order, but MSDK operates in terms of fields parity)
+        sts = VAAPIEncoder::QueryStatusFEI(task, task.m_fid[fieldId], currentFeedback);
         MFX_CHECK_STS(sts);
     }
 
@@ -3089,12 +3090,6 @@ mfxStatus VAAPIEncoder::QueryStatusFEI(
     VABufferID vaFeiMBStatId    = curFeedback.mbstat;
     VABufferID vaFeiMBCODEOutId = curFeedback.mbcode;
     VABufferID vaFeiMVOutId     = curFeedback.mv;
-
-    // Parity to order conversion (FEI ext buffers attached by field order, but MSDK operates in terms of fields parity)
-    if (MFX_PICSTRUCT_FIELD_BFF & task.GetPicStructForEncode())
-    {
-        feiFieldId = 1 - feiFieldId;
-    }
 
     //find ext buffers
     mfxExtFeiEncMBStat * mbstat    = NULL;

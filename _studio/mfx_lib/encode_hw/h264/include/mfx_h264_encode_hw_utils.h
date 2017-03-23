@@ -1123,6 +1123,11 @@ namespace MfxHwH264Encode
         DdiTask const * m_bwdRef;
 
         mfxU8   m_fieldPicFlag;
+        // m_fid is a remapper of field parity to field order and vise versa.
+        // i.e. parity = m_fid[fieldId] and fieldId = m_fid[parity] (fieldId == m_fid[m_fid[fieldId]]).
+        // It is useful to switch between these two representation, because DdiTask stores all information
+        // according to parity, but all of the per-field extension buffers are attached according to field order
+        // (the only exception is mfxExtAVCRefLists).
         mfxU8   m_fid[2];               // progressive fid=[0,0]; tff fid=[0,1]; bff fid=[1,0]
         mfxU8   m_fieldCounter;
         mfxU64  m_timeStamp;

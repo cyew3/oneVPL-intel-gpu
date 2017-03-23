@@ -8814,16 +8814,18 @@ void WritePredWeightTable(
     mfxU32              fieldId,
     mfxU32              chromaArrayType)
 {
-    const mfxExtPredWeightTable* pPWT = GetExtBuffer(task.m_ctrl, fieldId);
+    // Transform field parity to field number before buffer request (PWT attached according to field order, not parity)
+    const mfxExtPredWeightTable* pPWT = GetExtBuffer(task.m_ctrl, task.m_fid[fieldId]);
+
+    if (!pPWT)
+        pPWT = &task.m_pwt[fieldId];
+
     mfxU32 nRef[2] = {
         IPP_MAX(1, task.m_list0[fieldId].Size()),
         IPP_MAX(1, task.m_list1[fieldId].Size())
     };
     mfxU32 maxWeights[2] = { hwCaps.MaxNum_WeightedPredL0, hwCaps.MaxNum_WeightedPredL1 };
     bool present;
-
-    if (!pPWT)
-        pPWT = &task.m_pwt[fieldId];
 
     obs.PutUe(pPWT->LumaLog2WeightDenom);
 

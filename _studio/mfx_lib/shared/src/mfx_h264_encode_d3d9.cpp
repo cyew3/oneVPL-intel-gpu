@@ -483,11 +483,13 @@ void MfxHwH264Encode::FillVaringPartOfSliceBuffer(
     ENCODE_SET_PICTURE_PARAMETERS_H264 const &  pps,
     std::vector<ENCODE_SET_SLICE_HEADER_H264> & slice)
 {
-    mfxU32 numPics = task.GetPicStructForEncode() == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
+    // Transform field parity to field number before buffer request (PWT attached according to field order, not parity)
+    mfxExtPredWeightTable const * pPWT = GetExtBuffer(task.m_ctrl, task.m_fid[fieldId]);
 
-    mfxExtPredWeightTable const * pPWT = GetExtBuffer(task.m_ctrl, fieldId);
     if (!pPWT)
         pPWT = &task.m_pwt[fieldId];
+
+    mfxU32 numPics = task.GetPicStructForEncode() == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
 
     SliceDivider divider = MakeSliceDivider(
         (hwCaps.SliceLevelRateCtrl)?4:hwCaps.SliceStructure,//temporal WA for KBL multislice as it reports 3 instead of 4
@@ -549,7 +551,9 @@ mfxStatus MfxHwH264Encode::FillVaringPartOfSliceBufferSizeLimited(
     ENCODE_SET_PICTURE_PARAMETERS_H264 const &  pps,
     std::vector<ENCODE_SET_SLICE_HEADER_H264> & slice)
 {
-    mfxExtPredWeightTable const * pPWT = GetExtBuffer(task.m_ctrl, fieldId);
+    // Transform field parity to field number before buffer request (PWT attached according to field order, not parity)
+    mfxExtPredWeightTable const * pPWT = GetExtBuffer(task.m_ctrl, task.m_fid[fieldId]);
+
     if (!pPWT)
         pPWT = &task.m_pwt[fieldId];
 
