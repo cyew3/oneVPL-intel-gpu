@@ -232,9 +232,9 @@ namespace hevcd_get_payload
     }
 
     char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_YUY2>)
-    { return "TODO"; }
+    { return "conformance/hevc/sei_payload/Kimono1_704x576_24_422_8_sei.265"; }
     char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_AYUV>)
-    { return "TODO"; }
+    { return "conformance/hevc/sei_payload/Kimono1_704x576_24_444_8_sei.265"; }
 
     /* 10 bit */
     char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_P010>)
@@ -261,8 +261,8 @@ namespace hevcd_get_payload
     };
 
     TS_REG_TEST_SUITE(hevcd_get_payload,     TestSuiteEx<MFX_FOURCC_NV12>::RunTest, 3);
-    //TS_REG_TEST_SUITE(hevcd_422_get_payload, TestSuiteEx<MFX_FOURCC_YUY2>::RunTest, 1);
-    //TS_REG_TEST_SUITE(hevcd_444_get_payload, TestSuiteEx<MFX_FOURCC_AYUV>::RunTest, 1);
+    TS_REG_TEST_SUITE(hevcd_422_get_payload, TestSuiteEx<MFX_FOURCC_YUY2>::RunTest, 1);
+    TS_REG_TEST_SUITE(hevcd_444_get_payload, TestSuiteEx<MFX_FOURCC_AYUV>::RunTest, 1);
 
     TS_REG_TEST_SUITE(hevc10d_get_payload,     TestSuiteEx<MFX_FOURCC_P010>::RunTest, 1);
     TS_REG_TEST_SUITE(hevc10d_422_get_payload, TestSuiteEx<MFX_FOURCC_Y210>::RunTest, 1);
