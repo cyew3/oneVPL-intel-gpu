@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -179,8 +179,9 @@ int TestSuite::RunTest(unsigned int id)
             {
                 expected = MFX_WRN_PARTIAL_ACCELERATION;
             }
-
-
+#if defined (LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN)
+            expected = MFX_WRN_PARTIAL_ACCELERATION;
+#endif
         }
 
         m_pPar->mfx.FrameInfo.Width = 320;
@@ -236,6 +237,9 @@ int TestSuite::RunTest(unsigned int id)
             }
             if(m_par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
             {
+#if defined (LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN)
+                g_tsStatus.expect(MFX_WRN_PARTIAL_ACCELERATION);
+#endif
                 QueryIOSurf();
                 AllocOpaque(m_request, m_par);
             }
