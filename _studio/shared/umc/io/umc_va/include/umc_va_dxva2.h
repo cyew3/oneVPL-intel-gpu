@@ -49,20 +49,20 @@ DEFINE_GUID(DXVA_Intel_Decode_Elementary_Stream_HEVC, 0x7cfaffb, 0x5a2e, 0x4b99,
 
 /* Intel VP9 VLD GUIDs (VP9 decoding DDI version 0.88) */
 // {76988A52-DF13-419A-8E64-FFCF4A336CF5}
-DEFINE_GUID(DXVA_Intel_ModeVP9_Profile0_VLD, 
+DEFINE_GUID(DXVA_Intel_ModeVP9_Profile0_VLD,
 0x76988a52, 0xdf13, 0x419a, 0x8e, 0x64, 0xff, 0xcf, 0x4a, 0x33, 0x6c, 0xf5);
 
 // {80A3A7BD-89D8-4497-A2B8-2126AF7E6EB8}
-DEFINE_GUID(DXVA_Intel_ModeVP9_Profile2_10bit_VLD, 
+DEFINE_GUID(DXVA_Intel_ModeVP9_Profile2_10bit_VLD,
 0x80a3a7bd, 0x89d8, 0x4497, 0xa2, 0xb8, 0x21, 0x26, 0xaf, 0x7e, 0x6e, 0xb8);
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
 // {68A21C7B-D58F-4e74-9993-E4B8172B19A0}
-DEFINE_GUID(DXVA_Intel_ModeVP9_Profile1_YUV444_VLD, 
+DEFINE_GUID(DXVA_Intel_ModeVP9_Profile1_YUV444_VLD,
 0x68a21c7b, 0xd58f, 0x4e74, 0x99, 0x93, 0xe4, 0xb8, 0x17, 0x2b, 0x19, 0xa0);
 
 // {1D5C4D76-B55A-4430-904C-3383A7AE3B16}
-DEFINE_GUID(DXVA_Intel_ModeVP9_Profile3_YUV444_10bit_VLD, 
+DEFINE_GUID(DXVA_Intel_ModeVP9_Profile3_YUV444_10bit_VLD,
 0x1d5c4d76, 0xb55a, 0x4430, 0x90, 0x4c, 0x33, 0x83, 0xa7, 0xae, 0x3b, 0x16);
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
 
@@ -87,13 +87,27 @@ DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_Main10Profile, 0x75fc75f7, 0xc589, 0x4a07, 0
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
 // {E484DCB8-CAC9-4859-99F5-5C0D45069089}
-DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_Main422_10Profile, 
-0xe484dcb8, 0xcac9, 0x4859, 0x99, 0xf5, 0x5c, 0xd, 0x45, 0x6, 0x90, 0x89);
+DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_Main422_10Profile,
+    0xe484dcb8, 0xcac9, 0x4859, 0x99, 0xf5, 0x5c, 0xd, 0x45, 0x6, 0x90, 0x89);
 
 // {6A6A81BA-912A-485D-B57F-CCD2D37B8D94}
-DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_Main444_10Profile, 
-0x6a6a81ba, 0x912a, 0x485d, 0xb5, 0x7f, 0xcc, 0xd2, 0xd3, 0x7b, 0x8d, 0x94);
+DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_Main444_10Profile,
+    0x6a6a81ba, 0x912a, 0x485d, 0xb5, 0x7f, 0xcc, 0xd2, 0xd3, 0x7b, 0x8d, 0x94);
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+// {8FF8A3AA-C456-4132-B6EF-69D9DD72571D}
+DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_Main12Profile,
+    0x8ff8a3aa, 0xc456, 0x4132, 0xb6, 0xef, 0x69, 0xd9, 0xdd, 0x72, 0x57, 0x1d);
+
+// {C23DD857-874B-423C-B6E0-82CEAA9B118A}
+DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_Main422_12Profile,
+    0xc23dd857, 0x874b, 0x423c, 0xb6, 0xe0, 0x82, 0xce, 0xaa, 0x9b, 0x11, 0x8a);
+
+// {5B08E35D-0C66-4C51-A6F1-89D00CB2C197}
+DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_Main444_12Profile,
+    0x5b08e35d, 0xc66, 0x4c51, 0xa6, 0xf1, 0x89, 0xd0, 0xc, 0xb2, 0xc1, 0x97);
+#endif //PRE_SI_TARGET_PLATFORM_GEN12
 
 struct GuidProfile
 {
