@@ -497,6 +497,12 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         m_EncExtParams.push_back((mfxExtBuffer*)&m_ExtHEVCParam);
     }
 
+    if (pInParams->TransferMatrix)
+    {
+        m_VideoSignalInfo.MatrixCoefficients = pInParams->TransferMatrix;
+        m_EncExtParams.push_back((mfxExtBuffer*)&m_VideoSignalInfo);
+    }
+
     if (!m_EncExtParams.empty())
     {
         m_mfxEncParams.ExtParam = &m_EncExtParams[0]; // vector is stored linearly in memory
@@ -963,6 +969,10 @@ CEncodingPipeline::CEncodingPipeline()
     MSDK_ZERO_MEMORY(m_ExtHEVCParam);
     m_ExtHEVCParam.Header.BufferId = MFX_EXTBUFF_HEVC_PARAM;
     m_ExtHEVCParam.Header.BufferSz = sizeof(m_ExtHEVCParam);
+
+    MSDK_ZERO_MEMORY(m_VideoSignalInfo);
+    m_VideoSignalInfo.Header.BufferId = MFX_EXTBUFF_VIDEO_SIGNAL_INFO;
+    m_VideoSignalInfo.Header.BufferSz = sizeof(m_VideoSignalInfo);
 
 #ifdef ENABLE_FF
     MSDK_ZERO_MEMORY(m_ExtBRC);

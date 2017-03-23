@@ -118,6 +118,8 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("   [-BufferSizeInKB ]       - represents the maximum possible size of any compressed frames\n"));
     msdk_printf(MSDK_STRING("   [-MaxKbps ]              - for variable bitrate control, specifies the maximum bitrate at which \
                             the encoded data enters the Video Buffering Verifier buffer\n"));
+    msdk_printf(MSDK_STRING("   [-signal:tm ]            - represents transfer matrix coefficients for mfxExtVideoSignalInfo. 0 - unknown, 1 - BT709, 2 - BT601\n"));
+
     msdk_printf(MSDK_STRING("   [-timeout]               - encoding in cycle not less than specific time in seconds\n"));
     msdk_printf(MSDK_STRING("   [-membuf]                - size of memory buffer in frames\n"));
     msdk_printf(MSDK_STRING("   [-uncut]                 - do not cut output file in looped mode (in case of -timeout option)\n"));
@@ -432,6 +434,16 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nTimeout))
             {
                 PrintHelp(strInput[0], MSDK_STRING("Timeout is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-signal:tm")))
+        {
+            VAL_CHECK(i + 1 >= nArgNum, i, strInput[i]);
+
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->TransferMatrix))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Transfer matrix param is invalid"));
                 return MFX_ERR_UNSUPPORTED;
             }
         }
@@ -844,6 +856,14 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     if (!pParams->nQuality && (MFX_CODEC_JPEG == pParams->CodecId))
     {
         PrintHelp(strInput[0], MSDK_STRING("-q must be specified for JPEG encoder"));
+        return MFX_ERR_UNSUPPORTED;
+    }
+
+    if (MFX_TRANSFERMATRIX_UNKNOWN != pParams->TransferMatrix &&
+        MFX_TRANSFERMATRIX_BT601 != pParams->TransferMatrix &&
+        MFX_TRANSFERMATRIX_BT709 != pParams->TransferMatrix)
+    {
+        PrintHelp(strInput[0], MSDK_STRING("Invalid transfer matrix type"));
         return MFX_ERR_UNSUPPORTED;
     }
 

@@ -89,7 +89,6 @@ struct sInputParams
     mfxU16 nQuality; // quality parameter for JPEG encoder
 
     mfxU32 numViews; // number of views for Multi-View Codec
-
     mfxU16 nDstWidth; // destination picture width, specified if resizing required
     mfxU16 nDstHeight; // destination picture height, specified if resizing required
 
@@ -118,6 +117,8 @@ struct sInputParams
 
     mfxU16 nGPB;
     mfxU16 nExtBRC;
+
+    mfxU16 TransferMatrix;
 
     bool enableQSVFF;
 
@@ -262,6 +263,9 @@ protected:
     // HEVC
     mfxExtHEVCParam m_ExtHEVCParam;
     mfxExtCodingOption3 m_CodingOption3;
+
+    // Set up video signal information
+    mfxExtVideoSignalInfo m_VideoSignalInfo;
 
 #ifdef ENABLE_FF
     mfxExtBRC           m_ExtBRC;
