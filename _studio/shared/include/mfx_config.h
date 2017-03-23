@@ -284,8 +284,6 @@
     #endif
 #endif // LINUX_TARGET_PLATFORM
 
-
-
 #if defined (PRE_SI_GEN)
     #define ENABLE_PRE_SI_FEATURES
     #if PRE_SI_GEN == 9
@@ -303,20 +301,29 @@
     #elif PRE_SI_GEN == 11
         #define PRE_SI_TARGET_PLATFORM_GEN11
         #define PRE_SI_TARGET_PLATFORM_GEN10 // assume that all Gen10 features are supported on Gen11
+    #elif PRE_SI_GEN == 12
+        #define PRE_SI_TARGET_PLATFORM_GEN12
+        #define PRE_SI_TARGET_PLATFORM_GEN11
+        #define PRE_SI_TARGET_PLATFORM_GEN10 // assume that all Gen10\Ge11 features are supported on Gen12
     #else
-        #pragma message("ERROR:\nWrong value of PRE_SI_GEN.\nValue should be 9, 10 or 11. \
-        \n9:\n\tENABLE_PRE_SI_FEATURES = off\n\tPRE_SI_TARGET_PLATFORM_GEN10 = off\n\tPRE_SI_TARGET_PLATFORM_GEN11 = off\n \
+        #pragma message("ERROR:\nWrong value of PRE_SI_GEN.\nValue should be 9, 10, 11 or 12. \
+        \n9:\n\tENABLE_PRE_SI_FEATURES = off\n\tPRE_SI_TARGET_PLATFORM_GEN10 = off\n\tPRE_SI_TARGET_PLATFORM_GEN11 = off\n\tPRE_SI_TARGET_PLATFORM_GEN12 = off\n \
         \n10:\n\tENABLE_PRE_SI_FEATURES = on\n\tPRE_SI_TARGET_PLATFORM_GEN10 = on\n \
-        \n11:\n\tENABLE_PRE_SI_FEATURES = on\n\tPRE_SI_TARGET_PLATFORM_GEN11 = on\n")
+        \n11:\n\tENABLE_PRE_SI_FEATURES = on\n\tPRE_SI_TARGET_PLATFORM_GEN11 = on\n \
+        \n12:\n\tENABLE_PRE_SI_FEATURES = on\n\tPRE_SI_TARGET_PLATFORM_GEN12 = on\n")
         #error Wrong value of PRE_SI_GEN
     #endif
 #else
-
     #define ENABLE_PRE_SI_FEATURES
 
     #if defined (ENABLE_PRE_SI_FEATURES)
 
-        #define PRE_SI_TARGET_PLATFORM_GEN11 // target generation is Gen11 (ICL, CNL-H, CNX-G)
+        #define PRE_SI_TARGET_PLATFORM_GEN12 // target generation is Gen12 (TGL)
+        //#define PRE_SI_TARGET_PLATFORM_GEN11 // target generation is Gen11 (ICL, CNL-H, CNX-G)
+
+        #if defined (PRE_SI_TARGET_PLATFORM_GEN12)
+            #define PRE_SI_TARGET_PLATFORM_GEN11 // assume that all Gen11 features are supported on Gen12
+        #endif // PRE_SI_TARGET_PLATFORM_GEN12
 
         #if defined (PRE_SI_TARGET_PLATFORM_GEN11)
            #define PRE_SI_TARGET_PLATFORM_GEN10 // assume that all Gen10 features are supported on Gen11
