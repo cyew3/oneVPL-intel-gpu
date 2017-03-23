@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -243,15 +243,11 @@ static IppStatus mp2_HuffmanTableInitAlloc(Ipp32s *tbl, Ipp32s bits_table0, mp2_
 }
 
 MPEG2VideoDecoderSW::MPEG2VideoDecoderSW()
+    : vlcMBAdressing(),
+    vlcMBType(),
+    vlcMBPattern(),
+    vlcMotionVector()
 {
-    vlcMBAdressing.table0 = vlcMBAdressing.table1 = NULL;
-
-    vlcMBType[0].table0 = vlcMBType[0].table1 = NULL;
-    vlcMBType[1].table0 = vlcMBType[1].table1 = NULL;
-    vlcMBType[2].table0 = vlcMBType[2].table1 = NULL;
-
-    vlcMBPattern.table0 = vlcMBPattern.table1 = NULL;
-    vlcMotionVector.table0 = vlcMotionVector.table1 = NULL;
 }
 
 MPEG2VideoDecoderSW::~MPEG2VideoDecoderSW()
