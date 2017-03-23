@@ -285,7 +285,10 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*24*/ MFX_ERR_NONE,  "10bit/GENERAL_8b_444_RExt_Sony_1.bit",},
     {/*25*/ MFX_ERR_NONE,  "10bit/GENERAL_10b_444_RExt_Sony_1.bit",},
     {/*26*/ MFX_ERR_NONE,  "StressBitstreamEncode/rext444_10b/Stress_HEVC_Rext444_10bHT62_432x240_30fps_302_inter_stress_2.2.hevc",},
-    //{/*27*/ MFX_ERR_NONE,  "StressBitstreamEncode/rext444_10b/Stress_HEVC_Rext444_12bHT62_432x240_30fps_302_inter_stress_2.2.hevc",}, //444 12 bit handling not implemented yet
+    {/*27*/ MFX_ERR_NONE,  "12bit/400format/GENERAL_12b_400_RExt_Sony_1.bit",},
+    {/*28*/ MFX_ERR_NONE,  "12bit/420format/GENERAL_12b_420_RExt_Sony_1.bit",},
+    {/*29*/ MFX_ERR_NONE,  "12bit/422format/GENERAL_12b_422_RExt_Sony_1.bit",},
+    {/*30*/ MFX_ERR_NONE,  "12bit/444format/GENERAL_12b_444_RExt_Sony_1.bit",},
 };
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
 
@@ -405,7 +408,7 @@ int TestSuite::RunTest(unsigned int id)
         EXPECT_EQ(sps.bit_depth_luma_minus8 + 8, m_par.mfx.FrameInfo.BitDepthLuma);
         EXPECT_EQ(sps.bit_depth_chroma_minus8 + 8, m_par.mfx.FrameInfo.BitDepthChroma);
 
-        if (m_par.mfx.FrameInfo.ChromaFormat == 1)
+        if (m_par.mfx.FrameInfo.ChromaFormat == 0 || m_par.mfx.FrameInfo.ChromaFormat == 1)
         {
             if (m_par.mfx.FrameInfo.BitDepthLuma == 8)
             {
@@ -414,6 +417,13 @@ int TestSuite::RunTest(unsigned int id)
             else if (m_par.mfx.FrameInfo.BitDepthLuma == 10)
             {
                 EXPECT_EQ(MFX_FOURCC_P010, m_par.mfx.FrameInfo.FourCC);
+            }
+            else if (g_tsHWtype >= MFX_HW_TGL)//Gen12
+            {
+                if (m_par.mfx.FrameInfo.BitDepthLuma == 12)
+                {
+                    EXPECT_EQ(MFX_FOURCC_P016, m_par.mfx.FrameInfo.FourCC);
+                }
             }
             else
             {
@@ -432,6 +442,13 @@ int TestSuite::RunTest(unsigned int id)
                 else if (m_par.mfx.FrameInfo.BitDepthLuma == 10)
                 {
                     EXPECT_EQ(MFX_FOURCC_Y210, m_par.mfx.FrameInfo.FourCC);
+                }
+                else if (g_tsHWtype >= MFX_HW_TGL)//Gen12
+                {
+                    if (m_par.mfx.FrameInfo.BitDepthLuma == 12)
+                    {
+                        EXPECT_EQ(MFX_FOURCC_Y216, m_par.mfx.FrameInfo.FourCC);
+                    }
                 }
                 else
                 {
@@ -463,6 +480,13 @@ int TestSuite::RunTest(unsigned int id)
                 else if (m_par.mfx.FrameInfo.BitDepthLuma == 10)
                 {
                     EXPECT_EQ(MFX_FOURCC_Y410, m_par.mfx.FrameInfo.FourCC);
+                }
+                else if (g_tsHWtype >= MFX_HW_TGL)//Gen12
+                {
+                    if (m_par.mfx.FrameInfo.BitDepthLuma == 12)
+                    {
+                        EXPECT_EQ(MFX_FOURCC_Y416, m_par.mfx.FrameInfo.FourCC);
+                    }
                 }
                 else
                 {
