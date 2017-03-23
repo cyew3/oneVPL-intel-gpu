@@ -37,6 +37,8 @@ enum HWType
     MFX_HW_CNL       = 0xc00000,
 
     MFX_HW_ICL       = 0xd00000,
+
+    MFX_HW_TGL       = 0xe00000,
 };
 
 enum OSFamily
