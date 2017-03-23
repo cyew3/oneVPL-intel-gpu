@@ -3,7 +3,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2015-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2015-2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -246,6 +246,7 @@ int TestSuite::RunTest(unsigned int id)
     Reset();
     AllocBitstream((m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height) * 1024 * 1024 * nf);
     EncodeFrames(nf);
+    DrainEncodedBitstream();
     Ipp32u crc = bs_crc.GetCRC();
 
 // reset
@@ -260,6 +261,7 @@ int TestSuite::RunTest(unsigned int id)
     AllocSurfaces();
     AllocBitstream((m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height) * 1024 * 1024 * nf);
     EncodeFrames(nf);
+    DrainEncodedBitstream();
     Ipp32u cmp_crc = bs_cmp_crc.GetCRC();
     g_tsLog << "crc = " << crc << "\n";
     g_tsLog << "cmp_crc = " << cmp_crc << "\n";

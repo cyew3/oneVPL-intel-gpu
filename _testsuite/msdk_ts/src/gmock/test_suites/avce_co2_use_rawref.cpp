@@ -25,11 +25,11 @@ public:
         m_filler = this;
 
         mfxFrameInfo fi = {0};
-        fi.Width = 720;
-        fi.Height = 576;
+        fi.Width = 352;
+        fi.Height = 288;
         fi.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
         fi.FourCC = MFX_FOURCC_NV12;
-        m_reader = new tsRawReader(g_tsStreamPool.Get("YUV/iceage_720x576_491.yuv"), fi);
+        m_reader = new tsRawReader(g_tsStreamPool.Get("forBehaviorTest/foreman_cif.nv12"), fi);
         g_tsStreamPool.Reg();
     }
     ~TestSuite() { delete m_reader; }
@@ -40,7 +40,6 @@ public:
     {
         mfxStatus sts = m_reader->ProcessSurface(s);
 
-        if (!(mode & NO_INIT))
         {
             mfxExtCodingOption2& co2 = ctrl[nframe];
                 co2.UseRawRef = mode & RAND ?
@@ -134,10 +133,6 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1}}},
     {/*08*/ MFX_ERR_NONE, NO_INIT, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 2},
-        {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
-        {MFXPAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 200},
-        {MFXPAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 600},
-        {MFXPAR, &tsStruct::mfxVideoParam.mfx.MaxKbps, 600},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 4}}},
 
     {/*09*/ MFX_ERR_NONE, INIT, {
@@ -155,12 +150,11 @@ int TestSuite::RunTest(unsigned int id)
 
     tsBitstreamCRC32 bs_crc;
     m_bs_processor = &bs_crc;
-
     MFXInit();
 
     // set up parameters for case
-    m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 720;
-    m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 576;
+    m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 352;
+    m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 288;
     SETPARS(m_pPar, MFXPAR);
     if (m_par.mfx.LowPower == MFX_CODINGOPTION_ON)
         SETPARS(m_pPar, MFXPAR_LOWPOWER);
@@ -202,19 +196,23 @@ int TestSuite::RunTest(unsigned int id)
 
             if (tc.mode & NO_INIT)
             {
+                DrainEncodedBitstream();
                 Close();
                 Ipp32u crc = bs_crc.GetCRC();
+ 
                 memset(&m_bitstream, 0, sizeof(mfxBitstream));
                 m_pPar = &pars;
                 m_pPar->NumExtParam = 0;
                 m_pPar->ExtParam = 0;
+                m_pCtrl->NumExtParam = 0;
+                m_pCtrl->ExtParam = 0;
 
                 mfxFrameInfo fi = { 0 };
-                fi.Width = 720;
-                fi.Height = 576;
+                fi.Width = 352;
+                fi.Height = 288;
                 fi.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
                 fi.FourCC = MFX_FOURCC_NV12;
-                tsRawReader reader(g_tsStreamPool.Get("YUV/iceage_720x576_491.yuv"), fi);
+                tsRawReader reader(g_tsStreamPool.Get("forBehaviorTest/foreman_cif.nv12"), fi);
                 m_filler = &reader;
 
                 tsBitstreamCRC32 bs_cmp_crc;
@@ -223,7 +221,7 @@ int TestSuite::RunTest(unsigned int id)
                 Init(m_session, m_pPar);
 
                 EncodeFrames(nf);
-
+                DrainEncodedBitstream();
                 Ipp32u cmp_crc = bs_cmp_crc.GetCRC();
                 if (crc != cmp_crc)
                 {
