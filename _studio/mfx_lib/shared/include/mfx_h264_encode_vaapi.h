@@ -254,6 +254,12 @@ namespace MfxHwH264Encode
         std::vector<VABufferID> m_vaFeiMVOutId;
         std::vector<VABufferID> m_vaFeiMCODEOutId;
 
+        // The following 3 members are used in pair with 3 above,
+        // to indicate the size of allocated buf.
+        std::vector<mfxU32> m_vaFeiMBStatBufSize;
+        std::vector<mfxU32> m_vaFeiMVOutBufSize;
+        std::vector<mfxU32> m_vaFeiMCODEOutBufSize;
+
         std::vector<ExtVASurface> m_feedbackCache;
         std::vector<ExtVASurface> m_bsQueue;
         std::vector<ExtVASurface> m_reconQueue;
