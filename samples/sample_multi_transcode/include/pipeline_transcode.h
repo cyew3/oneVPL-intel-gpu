@@ -88,6 +88,12 @@ namespace TranscodingSample
         VppCompOnlyEncode  // means that pipeline makes vpp composition + encode and get data from shared buffer
     };
 
+    enum VppCompDumpMode
+    {
+        NULL_RENDER_VPP_COMP = 1,
+        DUMP_FILE_VPP_COMP = 2
+    };
+
     enum EFieldCopyMode
     {
         FC_NONE=0,
@@ -122,6 +128,7 @@ namespace TranscodingSample
 
         msdk_char  strSrcFile[MSDK_MAX_FILENAME_LEN]; // source bitstream file
         msdk_char  strDstFile[MSDK_MAX_FILENAME_LEN]; // destination bitstream file
+        msdk_char  strDumpVppCompFile[MSDK_MAX_FILENAME_LEN]; // VPP composition output dump file
 
         // specific encode parameters
         mfxU16 nTargetUsage;
@@ -521,6 +528,7 @@ namespace TranscodingSample
         mfxStatus AllocateSufficientBuffer(mfxBitstream* pBS);
         mfxStatus PutBS();
 
+        mfxStatus DumpSurface2File(mfxFrameSurface1* pSurface);
         mfxStatus Surface2BS(ExtendedSurface* pSurf,mfxBitstream* pBS, mfxU32 fourCC);
         mfxStatus NV12toBS(mfxFrameSurface1* pSurface,mfxBitstream* pBS);
         mfxStatus RGB4toBS(mfxFrameSurface1* pSurface,mfxBitstream* pBS);
@@ -558,6 +566,9 @@ namespace TranscodingSample
         void*                           m_hdl; // Diret3D device manager
 
         mfxU32                          m_numEncoders;
+
+        CSmplYUVWriter                  m_dumpVppCompFileWriter;
+        mfxU32                          m_vppCompDumpRenderMode;
 
 #if defined(_WIN32) || defined(_WIN64)
         CDecodeD3DRender*               m_hwdev4Rendering;

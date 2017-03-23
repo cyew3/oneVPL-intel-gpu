@@ -109,7 +109,8 @@ CTranscodingPipeline::CTranscodingPipeline():
     m_nReqFrameTime(0),
     m_nOutputFramesNum(0),
     shouldUseGreedyFormula(false),
-    isHEVCSW(false)
+    isHEVCSW(false),
+    m_vppCompDumpRenderMode(0)
 {
     MSDK_ZERO_MEMORY(m_mfxDecParams);
     MSDK_ZERO_MEMORY(m_mfxVppParams);
@@ -1193,12 +1194,23 @@ mfxStatus CTranscodingPipeline::Encode()
                 sts = m_pmfxSession->SyncOperation(VppExtSurface.Syncp, MSDK_WAIT_INTERVAL);
                 MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
+                /* in case if enabled dumping into file for after VPP composition */
+                if (DUMP_FILE_VPP_COMP == m_vppCompDumpRenderMode)
+                {
+                    sts = DumpSurface2File(VppExtSurface.pSurface);
+                    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+                }
+                /* Rendering may be explicitly disabled for performance measurements */
+                if (NULL_RENDER_VPP_COMP != m_vppCompDumpRenderMode)
+                {
+
 #if defined(_WIN32) || defined(_WIN64)
                 sts = m_hwdev4Rendering->RenderFrame(VppExtSurface.pSurface, m_pMFXAllocator);
 #else
                 sts = m_hwdev4Rendering->RenderFrame(VppExtSurface.pSurface, NULL);
 #endif
                 MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+                } // if (NULL_RENDER_VPP_COMP != m_vppCompDumpRenderMode)
             }
         }
 
@@ -1693,6 +1705,22 @@ mfxStatus CTranscodingPipeline::PutBS()
 
     return sts;
 } //mfxStatus CTranscodingPipeline::PutBS()
+
+mfxStatus CTranscodingPipeline::DumpSurface2File(mfxFrameSurface1* pSurf)
+{
+    mfxStatus       sts = MFX_ERR_NONE;
+    sts = m_pMFXAllocator->Lock(m_pMFXAllocator->pthis,pSurf->Data.MemId,&pSurf->Data);
+    MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->Lock failed");
+
+    sts =  m_dumpVppCompFileWriter.WriteNextFrame(pSurf);
+    MSDK_CHECK_STATUS(sts, "m_dumpVppCompFileWriter.WriteNextFrame failed");
+
+    sts = m_pMFXAllocator->Unlock(m_pMFXAllocator->pthis,pSurf->Data.MemId,&pSurf->Data);
+    MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->Unlock failed");
+
+    return sts;
+} // mfxStatus CTranscodingPipeline::DumpSurface2File(ExtendedSurface* pSurf)
+
 
 mfxStatus CTranscodingPipeline::Surface2BS(ExtendedSurface* pSurf,mfxBitstream* pBS, mfxU32 fourCC)
 {
@@ -3243,6 +3271,21 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     {
         sts = EncodePreInit(pParams);
         MSDK_CHECK_STATUS(sts, "EncodePreInit failed");
+    }
+
+    if ((pParams->eMode == Source) &&
+        ((m_nVPPCompEnable == VppCompOnly) ||
+          (m_nVPPCompEnable == VppCompOnlyEncode) ||
+          (m_nVPPCompEnable == VppComp))  )
+    {
+        if ((0 == msdk_strncmp(MSDK_STRING("null_render"), pParams->strDumpVppCompFile, msdk_strlen(MSDK_STRING("null_render")))))
+            m_vppCompDumpRenderMode = NULL_RENDER_VPP_COMP; // null_render case
+        else if (0 != msdk_strlen(pParams->strDumpVppCompFile))
+        {
+            sts = m_dumpVppCompFileWriter.Init(pParams->strDumpVppCompFile, 0);
+            MSDK_CHECK_STATUS(sts, "VPP COMP DUMP File Init failed");
+            m_vppCompDumpRenderMode = DUMP_FILE_VPP_COMP;
+        }
     }
 
     // Frames allocation for all component

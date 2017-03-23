@@ -228,6 +228,8 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("  -vpp_comp_src_h             Width of this stream in composed stream (should be used in decoder session)\n"));
     msdk_printf(MSDK_STRING("  -vpp_comp_src_w             Width of this stream in composed stream (should be used in decoder session)\n"));
     msdk_printf(MSDK_STRING("  -vpp_comp_tile_id           Tile_id for current channel of composition (should be used in decoder session)\n"));
+    msdk_printf(MSDK_STRING("  -vpp_comp_dump <file-name>  Dump of VPP Composition's output into file. Valid if with -vpp_comp* options\n"));
+    msdk_printf(MSDK_STRING("  -vpp_comp_dump null_render  Disabling rendering after VPP Composition. This is for performance measurements\n"));
 #if _MSDK_API >= MSDK_API(1,22)
     msdk_printf(MSDK_STRING("  -dec_postproc               Resize after decoder using direct pipe (should be used in decoder session)\n"));
 #endif //_MSDK_API >= MSDK_API(1,22)
@@ -1169,6 +1171,13 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
             {
                 msdk_printf(MSDK_STRING("WARNING: internal allocators were disabled because of composition+rendering requirement \n\n"));
             }
+        }
+        else if (0 == msdk_strncmp(MSDK_STRING("-vpp_comp_dump"), argv[i], msdk_strlen(MSDK_STRING("-vpp_comp_dump"))))
+        {
+            VAL_CHECK(i+1 == argc, i, argv[i]);
+            i++;
+            SIZE_CHECK((msdk_strlen(argv[i])+1) > MSDK_ARRAY_LEN(InputParams.strDumpVppCompFile));
+            msdk_opt_read(argv[i], InputParams.strDumpVppCompFile);
         }
 #if defined(LIBVA_X11_SUPPORT)
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-rx11")))
