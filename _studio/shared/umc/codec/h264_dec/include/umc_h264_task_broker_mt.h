@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -29,9 +29,9 @@ public:
     H264Task(Ipp32s iThreadNumber)
         : m_iThreadNumber(iThreadNumber)
     {
-        m_pSlice = 0;
-
-        m_pBuffer = 0;
+        m_pSlice = NULL;
+        m_pSlicesInfo = NULL;
+        m_pBuffer = NULL;
         m_WrittenSize = 0;
 
         m_iFirstMB = -1;
