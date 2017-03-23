@@ -440,6 +440,8 @@ Status MPEG2VideoDecoderSW::DecodeSlice(VideoContext  *video, int task_num)
 void MPEG2VideoDecoderSW::SetOutputPointers(MediaData *output, int task_num)
 {
     VideoData *out_data = DynamicCast<VideoData, MediaData>(output);
+    if (out_data == 0)
+        return;
     Ipp32s curr_index = frame_buffer.curr_index[task_num];
     Ipp32s pitch_l, pitch_c;
 
