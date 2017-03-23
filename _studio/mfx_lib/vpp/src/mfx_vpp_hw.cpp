@@ -1332,10 +1332,16 @@ void TaskManager::UpdatePTS_Mode30i60p(
     mfxU32 taskIndex,
     mfxStatus *intSts)
 {
+    if (input == NULL)
+    {
+        output->Data.TimeStamp = (mfxU64)MFX_TIME_STAMP_INVALID;
+        output->Data.FrameOrder = (mfxU32)MFX_FRAMEORDER_UNKNOWN;
+        *intSts = MFX_ERR_MORE_SURFACE;
+    }
+
     if ( (FRC_STANDARD & m_extMode) || (FRC_DISABLED == m_extMode) )
     {
-        if ((0 != taskIndex % 2) ||
-           (NULL == input)) /* Second condition is prevent from incorrect usage */
+        if (0 != taskIndex % 2)
         {
             output->Data.TimeStamp = (mfxU64) MFX_TIME_STAMP_INVALID;
             output->Data.FrameOrder = (mfxU32) MFX_FRAMEORDER_UNKNOWN;
