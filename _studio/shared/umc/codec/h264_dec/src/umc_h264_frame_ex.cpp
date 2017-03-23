@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -23,6 +23,7 @@ namespace UMC
 //////////////////////////////////////////////////////////////////////////////
 H264DecoderFrameEx::H264DecoderFrameEx(MemoryAllocator *pMemoryAllocator, H264_Heap_Objects * pObjHeap)
     : H264DecoderFrame(pMemoryAllocator, pObjHeap)
+    , m_mbinfo()
 {
     m_pParsedFrameDataNew = 0;
     m_paddedParsedFrameDataSize.width = 0;
