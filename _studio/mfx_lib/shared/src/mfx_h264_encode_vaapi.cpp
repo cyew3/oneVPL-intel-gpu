@@ -2070,7 +2070,7 @@ mfxStatus VAAPIEncoder::Execute(
                     //limitation from driver, num elements should be 1
                     1,
                     mvpred->MB,
-                    &vaFeiMVPredId );
+                    &vaFeiMVPredId);
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
             configBuffers[buffersCount++] = vaFeiMVPredId;
         }
@@ -2253,9 +2253,7 @@ mfxStatus VAAPIEncoder::Execute(
             if (NULL != rePakCtrl)
             {
                 vaFeiFrameControl->max_frame_size = rePakCtrl->MaxFrameSize;
-                // Maximum value of NumPasses is 4
-                // This is driver's limitation
-                vaFeiFrameControl->num_passes = (std::min)(rePakCtrl->NumPasses, mfxU32(4));
+                vaFeiFrameControl->num_passes     = rePakCtrl->NumPasses;
 
                 for (mfxU32 ii = 0; ii < vaFeiFrameControl->num_passes; ++ii)
                     qp_delta_list[ii] = rePakCtrl->DeltaQP[ii];

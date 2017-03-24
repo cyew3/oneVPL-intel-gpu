@@ -92,23 +92,24 @@ mfxStatus VAAPIFEIPREENCEncoder::CreateAccelerationService(MfxVideoParam const &
 
 mfxStatus VAAPIFEIPREENCEncoder::CreatePREENCAccelerationService(MfxVideoParam const & par)
 {
-    MFX_CHECK(m_vaDisplay, MFX_ERR_DEVICE_FAILED);
-    VAStatus vaSts;
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "FEI::PreENC::CreatePREENCAccelerationService");
 
-    mfxI32 entrypointsIndx = 0;
+    MFX_CHECK(m_vaDisplay, MFX_ERR_DEVICE_FAILED);
+
     mfxI32 numEntrypoints = vaMaxNumEntrypoints(m_vaDisplay);
     MFX_CHECK(numEntrypoints, MFX_ERR_DEVICE_FAILED);
 
     std::vector<VAEntrypoint> pEntrypoints(numEntrypoints);
 
     // Find entry point for PreENC
-    vaSts = vaQueryConfigEntrypoints(
+    VAStatus vaSts = vaQueryConfigEntrypoints(
             m_vaDisplay,
             VAProfileNone, //specific for statistic
             Begin(pEntrypoints),
             &numEntrypoints);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
+    mfxI32 entrypointsIndx = 0;
     for (entrypointsIndx = 0; entrypointsIndx < numEntrypoints; entrypointsIndx++) {
         if (VAEntrypointStatisticsIntel == pEntrypoints[entrypointsIndx]) {
             break;
@@ -120,6 +121,7 @@ mfxStatus VAAPIFEIPREENCEncoder::CreatePREENCAccelerationService(MfxVideoParam c
     VAConfigAttrib attrib[2];
     //attrib[0].type = VAConfigAttribRTFormat;
     attrib[0].type = (VAConfigAttribType)VAConfigAttribStatisticsIntel;
+
     vaSts = vaGetConfigAttributes(m_vaDisplay,
             VAProfileNone,
             (VAEntrypoint)VAEntrypointStatisticsIntel,
@@ -288,16 +290,12 @@ mfxStatus VAAPIFEIPREENCEncoder::CreatePREENCAccelerationService(MfxVideoParam c
 
 mfxStatus VAAPIFEIPREENCEncoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT type)
 {
-    std::vector<ExtVASurface> * pQueue;
-    mfxStatus sts;
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "FEI::PreENC::Register");
 
-    if (D3DDDIFMT_INTELENCODE_BITSTREAMDATA == type)
-    {
-        pQueue = &m_bsQueue;
-    } else
-    {
-        pQueue = &m_reconQueue;
-    }
+    std::vector<ExtVASurface> * pQueue = (D3DDDIFMT_INTELENCODE_BITSTREAMDATA == type) ? &m_bsQueue : &m_reconQueue;
+    MFX_CHECK(pQueue, MFX_ERR_NULL_PTR);
+
+    mfxStatus sts;
 
     {
         // we should register allocated HW bitstreams and recon surfaces
@@ -341,19 +339,12 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
 
     mfxU16 buffersCount = 0;
 
-    //Add preENC buffers
-    //preENC control
-    VABufferID mvPredid = VA_INVALID_ID;
-    VABufferID qpid     = VA_INVALID_ID;
+    // IDs for input buffers
+    VABufferID mvPredid = VA_INVALID_ID, qpid = VA_INVALID_ID;
 
-    /* This is additional check in Execute,"Sync()" portion.
-     * First done is RunFrameVmeENCCheck() function
-     * */
-    mfxU16 picStructTask = task.GetPicStructForEncode();
-    mfxU16 picStructInit = m_videoParam.mfx.FrameInfo.PicStruct;
-    MFX_CHECK(picStructInit == MFX_PICSTRUCT_UNKNOWN || picStructInit == picStructTask, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+    // IDs for output buffers
+    VABufferID statParamsId = VA_INVALID_ID;
 
-    /* Condition != NULL checked on VideoENC_PREENC::RunFrameVmeENCCheck */
     mfxENCInput*  in  = reinterpret_cast<mfxENCInput* >(task.m_userData[0]);
     mfxENCOutput* out = reinterpret_cast<mfxENCOutput*>(task.m_userData[1]);
 
@@ -368,20 +359,17 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
     mfxExtFeiEncQP              * feiQP     = GetExtBufferFEI(in,  feiFieldId);
     mfxExtFeiPreEncMVPredictors * feiMVPred = GetExtBufferFEI(in,  feiFieldId);
 
-    //should be adjusted
 
     VAStatsStatisticsParameter16x16Intel statParams;
     memset(&statParams, 0, sizeof (VAStatsStatisticsParameter16x16Intel));
-    VABufferID statParamsId = VA_INVALID_ID;
 
-    statParams.adaptive_search = feiCtrl->AdaptiveSearch;
+    statParams.adaptive_search           = feiCtrl->AdaptiveSearch;
     statParams.disable_statistics_output = /*(mbstatOut == NULL) ||*/ feiCtrl->DisableStatisticsOutput;
     /* There is a limitation from driver for now:
      * MSDK need to provide stat buffers for I- frame.
      * MSDK always attach statistic buffer for PreEnc right now
      * (But does not copy buffer to user if it is not required)
      * */
-    //statParams.disable_statistics_output = 0;
     statParams.disable_mv_output         = (mvsOut == NULL) || feiCtrl->DisableMVOutput;
     statParams.mb_qp                     = (feiQP == NULL) && feiCtrl->MBQp;
     statParams.mv_predictor_ctrl         = (feiMVPred != NULL) ? feiCtrl->MVPredictor : 0;
@@ -391,7 +379,6 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
     statParams.intra_sad                 = feiCtrl->IntraSAD;
     statParams.len_sp                    = feiCtrl->LenSP;
     statParams.search_path               = feiCtrl->SearchPath;
-    //statParams.outputs = &outBuffers[0]; //bufIDs for outputs
     statParams.sub_pel_mode              = feiCtrl->SubPelMode;
     statParams.sub_mb_part_mask          = feiCtrl->SubMBPartMask;
     statParams.ref_height                = feiCtrl->RefHeight;
@@ -445,18 +432,19 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
      * This is can be used in future, maybe
      *  */
 
-    //currently only video mem is used, all input surfaces should be in video mem
+    //currently only video memory is used, all input surfaces should be in video memory
     statParams.num_past_references = 0;
     statParams.past_references     = NULL;
 
     if (feiCtrl->RefFrame[0])
     {
         statParams.num_past_references = 1;
+
         mfxHDL handle;
-        VAPictureFEI* l0surfs = &past_ref;
         mfxSts = m_core->GetExternalFrameHDL(feiCtrl->RefFrame[0]->Data.MemId, &handle);
         MFX_CHECK_STS(mfxSts);
 
+        VAPictureFEI* l0surfs = &past_ref;
         l0surfs->picture_id = *(VASurfaceID*)handle;
 
         switch (feiCtrl->RefPictureType[0])
@@ -485,11 +473,12 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
     if (feiCtrl->RefFrame[1])
     {
         statParams.num_future_references = 1;
+
         mfxHDL handle;
-        VAPictureFEI* l1surfs = &future_ref;
         mfxSts = m_core->GetExternalFrameHDL(feiCtrl->RefFrame[1]->Data.MemId, &handle);
         MFX_CHECK_STS(mfxSts);
 
+        VAPictureFEI* l1surfs = &future_ref;
         l1surfs->picture_id = *(VASurfaceID*)handle;
 
         switch (feiCtrl->RefPictureType[1])
@@ -547,7 +536,6 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
         }
     } // if (!statParams.disable_statistics_output)
 
-    //mdprintf(stderr,"\n");
     statParams.input.picture_id = *inputSurface;
     /*
      * feiCtrl->PictureType - value from user in runtime
@@ -573,7 +561,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
     if (!IsOff(feiCtrl->DownsampleInput) && (0 == feiFieldId))
         statParams.input.flags |= VA_PICTURE_FEI_CONTENT_UPDATED;
 
-    /* Link output va buffers */
+    /* Link output VA buffers */
     statParams.outputs = &outBuffers[0]; //bufIDs for outputs
 
     //MFX_DESTROY_VABUFFER(statParamsId, m_vaDisplay);
@@ -651,7 +639,8 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
 
 mfxStatus VAAPIFEIPREENCEncoder::QueryStatus(
         DdiTask & task,
-        mfxU32 fieldId) {
+        mfxU32 fieldId)
+{
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "FEI::PreENC::QueryStatus");
     VAStatus vaSts;
     mfxStatus sts = MFX_ERR_NONE;
@@ -959,18 +948,12 @@ mfxStatus VAAPIFEIENCEncoder::CreateENCAccelerationService(MfxVideoParam const &
 
 mfxStatus VAAPIFEIENCEncoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT type)
 {
-    std::vector<ExtVASurface> * pQueue;
-    mfxStatus sts;
-
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "FEI::ENC::Register");
-    if (D3DDDIFMT_INTELENCODE_BITSTREAMDATA == type)
-    {
-        pQueue = &m_bsQueue;
-    }
-    else
-    {
-        pQueue = &m_reconQueue;
-    }
+
+    std::vector<ExtVASurface> * pQueue = (D3DDDIFMT_INTELENCODE_BITSTREAMDATA == type) ? &m_bsQueue : &m_reconQueue;
+    MFX_CHECK(pQueue, MFX_ERR_NULL_PTR);
+
+    mfxStatus sts;
 
     {
         // we should register allocated HW bitstreams and recon surfaces
@@ -1026,15 +1009,11 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
 
     mfxU16 buffersCount = 0;
 
-    /* hrd parameter */
-    /* it was done on the init stage */
-    //SetHRD(par, m_vaDisplay, m_vaContextEncode, m_hrdBufferId);
+    /* HRD parameter */
     mdprintf(stderr, "m_hrdBufferId=%d\n", m_hrdBufferId);
     configBuffers[buffersCount++] = m_hrdBufferId;
 
     /* frame rate parameter */
-    /* it was done on the init stage */
-    //SetFrameRate(par, m_vaDisplay, m_vaContextEncode, m_frameRateId);
     mdprintf(stderr, "m_frameRateId=%d\n", m_frameRateId);
     configBuffers[buffersCount++] = m_frameRateId;
 
@@ -1366,8 +1345,7 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
 
     for (size_t i = 0; i < m_slice.size(); ++i)
     {
-        // Small correction: legacy use 5,6,7 type values, but for FEI 0,1,2
-        m_slice[i].slice_type %= 5;
+        // Note: legacy use 5,6,7 type values, but for FEI 0,1,2
 
         m_slice[i].macroblock_address            = pDataSliceHeader->Slice[i].MBAddress;
         m_slice[i].num_macroblocks               = pDataSliceHeader->Slice[i].NumMBs;
@@ -1893,18 +1871,12 @@ mfxStatus VAAPIFEIPAKEncoder::CreatePAKAccelerationService(MfxVideoParam const &
 
 mfxStatus VAAPIFEIPAKEncoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT type)
 {
-    std::vector<ExtVASurface> * pQueue;
-    mfxStatus sts;
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "FEI::PAK::Register");
 
-    if (D3DDDIFMT_INTELENCODE_BITSTREAMDATA == type)
-    {
-        pQueue = &m_bsQueue;
-    }
-    else
-    {
-        pQueue = &m_reconQueue;
-    }
+    std::vector<ExtVASurface> * pQueue = (D3DDDIFMT_INTELENCODE_BITSTREAMDATA == type) ? &m_bsQueue : &m_reconQueue;
+    MFX_CHECK(pQueue, MFX_ERR_NULL_PTR);
+
+    mfxStatus sts;
 
     {
         // we should register allocated HW bitstreams and recon surfaces
@@ -1951,14 +1923,10 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
     mfxU16 buffersCount = 0;
 
     /* HRD parameter */
-    /* it was done on the init stage */
-    //SetHRD(par, m_vaDisplay, m_vaContextEncode, m_hrdBufferId);
     mdprintf(stderr, "m_hrdBufferId=%d\n", m_hrdBufferId);
     configBuffers[buffersCount++] = m_hrdBufferId;
 
     /* frame rate parameter */
-    /* it was done on the init stage */
-    //SetFrameRate(par, m_vaDisplay, m_vaContextEncode, m_frameRateId);
     mdprintf(stderr, "m_frameRateId=%d\n", m_frameRateId);
     configBuffers[buffersCount++] = m_frameRateId;
 
@@ -1989,9 +1957,9 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
     {
         ENCODE_PACKEDHEADER_DATA const & packedAud = m_headerPacker.PackAud(task, fieldId);
 
-        packed_header_param_buffer.type = VAEncPackedHeaderRawData;
+        packed_header_param_buffer.type                = VAEncPackedHeaderRawData;
         packed_header_param_buffer.has_emulation_bytes = !packedAud.SkipEmulationByteCount;
-        packed_header_param_buffer.bit_length = packedAud.DataLength * 8;
+        packed_header_param_buffer.bit_length          = packedAud.DataLength * 8;
 
         MFX_DESTROY_VABUFFER(m_packedAudHeaderBufferId, m_vaDisplay);
         vaSts = vaCreateBuffer(m_vaDisplay,
@@ -2084,10 +2052,9 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
                                 m_vaContextEncode,
                                 (VABufferType)VAEncFEIModeBufferTypeIntel,
                                 sizeof (VAEncFEIModeBufferH264Intel)*mbcodeout->NumMBAlloc,
-                                //limitation from driver, num elements should be 1
-                                1,
-                        mbcodeout->MB,
-                        &m_vaFeiMCODEOutId[0]);
+                                1, //limitation from driver, num elements should be 1
+                                mbcodeout->MB,
+                                &m_vaFeiMCODEOutId[0]);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
         mdprintf(stderr, "MCODE Out bufId[%d]=%d\n", 0, m_vaFeiMCODEOutId[0]);
         }
@@ -2099,7 +2066,7 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
                                 m_vaContextEncode,
                                 VAEncMiscParameterBufferType,
                                 sizeof(VAEncMiscParameterBuffer) + sizeof (VAEncMiscParameterFEIFrameControlH264Intel),
-                                1,
+                                1, //limitation from driver, num elements should be 1
                                 NULL,
                                 &vaFeiFrameControlId);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
@@ -2252,8 +2219,7 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
 
     for (size_t i = 0; i < m_slice.size(); ++i)
     {
-        /* Small correction: legacy use 5,6,7 type values, but for FEI 0,1,2 */
-        m_slice[i].slice_type %= 5;
+        // Note: legacy use 5,6,7 type values, but for FEI 0,1,2
 
         m_slice[i].macroblock_address            = pDataSliceHeader->Slice[i].MBAddress;
         m_slice[i].num_macroblocks               = pDataSliceHeader->Slice[i].NumMBs;
@@ -2456,7 +2422,7 @@ mfxStatus VAAPIFEIPAKEncoder::QueryStatus(
 
         if (currentFeedback.number == task.m_statusReportNumber[feiFieldId])
         {
-            waitSurface      = currentFeedback.surface;
+            waitSurface = currentFeedback.surface;
             break;
         }
     }
