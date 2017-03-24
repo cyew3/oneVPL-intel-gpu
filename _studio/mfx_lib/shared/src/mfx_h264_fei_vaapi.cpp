@@ -1018,8 +1018,8 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
 
     mfxU32 feiFieldId = task.m_fid[fieldId];
 
-    // Offset to choose correct buffers
-    mfxU32 idxRecon = task.m_idxRecon * (1 + task.m_fieldPicFlag);
+    // Offset to choose correct buffers (use value from Init for correct repositioning during mixed-picstructs encoding)
+    mfxU32 idxRecon = task.m_idxRecon * (1 + (m_videoParam.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE));
 
     std::vector<VABufferID> configBuffers(MAX_CONFIG_BUFFERS_COUNT + m_slice.size() * 2);
     std::fill(configBuffers.begin(), configBuffers.end(), VA_INVALID_ID);
