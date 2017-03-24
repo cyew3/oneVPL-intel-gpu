@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_vp8_encode_utils_hybrid_hw.h"
@@ -494,7 +494,11 @@ mfxStatus SetFrameRate(
     misc_param->type = VAEncMiscParameterTypeFrameRate;
     frameRate_param = (VAEncMiscParameterFrameRate *)misc_param->data;
 
+#ifndef MFX_VAAPI_UPSTREAM
     frameRate_param->framerate = (unsigned int)(100.0 * (mfxF64)par.mfx.FrameInfo.FrameRateExtN / (mfxF64)par.mfx.FrameInfo.FrameRateExtD);
+#else
+    frameRate_param->framerate = (par.mfx.FrameInfo.FrameRateExtD << 16 ) | par.mfx.FrameInfo.FrameRateExtN;
+#endif
 
     vaUnmapBuffer(m_vaDisplay, frameRateBufId);
 
