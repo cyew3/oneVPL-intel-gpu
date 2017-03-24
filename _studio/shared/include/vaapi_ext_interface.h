@@ -595,7 +595,10 @@ typedef struct _VAEncFEIMBControlH264Intel {
     /** \brief when set, correposndent MB is coded as skip */
     unsigned int force_to_skip       : 1;
     unsigned int force_to_nonskip    : 1;
-    unsigned int reserved0           : 29;
+    unsigned int EnableDirectBiasAdjustment : 1;
+    unsigned int EnableMotionBiasAdjustment : 1;
+    unsigned int ExtMVCostScalingFactor     : 3;
+    unsigned int reserved0           : 24;
 
     unsigned int reserved1;
 

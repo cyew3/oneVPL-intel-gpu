@@ -1444,6 +1444,7 @@ bool MfxHwH264Encode::IsRunTimeExtBufferIdSupported(MfxVideoParam const & video,
         || id == MFX_EXTBUFF_ENCODED_FRAME_INFO
         || id == MFX_EXTBUFF_PICTURE_TIMING_SEI
         || id == MFX_EXTBUFF_CODING_OPTION2
+        || id == MFX_EXTBUFF_CODING_OPTION3
         || id == MFX_EXTBUFF_ENCODER_ROI
         || id == MFX_EXTBUFF_MBQP
         || id == MFX_EXTBUFF_MB_DISABLE_SKIP_MAP
@@ -2952,7 +2953,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     if (!CheckTriStateOption(extOpt3->DirectBiasAdjustment))        changed = true;
     if (!CheckTriStateOption(extOpt3->GlobalMotionBiasAdjustment))  changed = true;
 
-    if (    vaType != MFX_HW_VAAPI
+    if ((isENCPAK || vaType != MFX_HW_VAAPI)
         && (IsOn(extOpt3->DirectBiasAdjustment) || IsOn(extOpt3->GlobalMotionBiasAdjustment)))
     {
         changed = true;
@@ -5456,6 +5457,8 @@ void MfxHwH264Encode::SetDefaults(
     SetDefaultOff(extOpt3->LowDelayHrd);
     SetDefaultOn(extOpt3->BitstreamRestriction);
     SetDefaultOff(extOpt->RecoveryPointSEI);
+    SetDefaultOff(extOpt3->DirectBiasAdjustment);
+    SetDefaultOff(extOpt3->GlobalMotionBiasAdjustment);
 #ifndef OPEN_SOURCE
     SetDefaultOff(extOpt3->LowDelayBRC);
 #endif
@@ -6237,6 +6240,15 @@ mfxStatus MfxHwH264Encode::CheckFEIRunTimeExtBuffersContent(
 
         switch (ctrl->ExtParam[i]->BufferId)
         {
+        case MFX_EXTBUFF_CODING_OPTION3:
+        {
+            mfxExtCodingOption3* extOpt3 = reinterpret_cast<mfxExtCodingOption3*>(ctrl->ExtParam[i]);
+            //per-frame bias adjustment is not supported for FEI.
+            if (IsOn(extOpt3->DirectBiasAdjustment) || IsOn(extOpt3->GlobalMotionBiasAdjustment))
+                return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+        }
+            break;
+
         case MFX_EXTBUFF_MBQP:
             // mfxExtMBQP is not allowed for FEI. FEI has it's own buffer: mfxExtFeiEncQP
             return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
