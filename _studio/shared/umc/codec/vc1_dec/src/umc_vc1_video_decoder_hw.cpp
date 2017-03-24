@@ -225,6 +225,8 @@ bool VC1VideoDecoderHW::InitAlloc(VC1Context* pContext, Ipp32u )
     if (m_stCodes_VA == NULL)
     {
         m_stCodes_VA = (MediaDataEx::_MediaDataEx *)malloc(START_CODE_NUMBER * 2 * sizeof(Ipp32s) + sizeof(MediaDataEx::_MediaDataEx));
+        if (m_stCodes_VA == NULL)
+            return false;
         memset(m_stCodes_VA, 0, (START_CODE_NUMBER * 2 * sizeof(Ipp32s) + sizeof(MediaDataEx::_MediaDataEx)));
         m_stCodes_VA->count = 0;
         m_stCodes_VA->index = 0;
