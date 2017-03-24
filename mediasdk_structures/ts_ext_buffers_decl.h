@@ -36,6 +36,8 @@ EXTBUF(mfxExtLAControl              , MFX_EXTBUFF_LOOKAHEAD_CTRL            )
 EXTBUF(mfxExtVPPFieldProcessing     , MFX_EXTBUFF_VPP_FIELD_PROCESSING      )
 // FEI
 EXTBUF(mfxExtFeiParam               , MFX_EXTBUFF_FEI_PARAM                 )
+EXTBUF(mfxExtFeiSPS                 , MFX_EXTBUFF_FEI_SPS                   )
+EXTBUF(mfxExtFeiPPS                 , MFX_EXTBUFF_FEI_PPS                   )
 EXTBUF(mfxExtFeiEncFrameCtrl        , MFX_EXTBUFF_FEI_ENC_CTRL              )
 EXTBUF(mfxExtFeiEncMVPredictors     , MFX_EXTBUFF_FEI_ENC_MV_PRED           )
 EXTBUF(mfxExtFeiEncMBCtrl           , MFX_EXTBUFF_FEI_ENC_MB                )

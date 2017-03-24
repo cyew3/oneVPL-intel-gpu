@@ -30,3 +30,7 @@ typedef union { mfxU32 n; char c[4]; } mfx4CC;
 typedef mfxExtAVCRefLists::mfxRefPic mfxExtAVCRefLists_mfxRefPic;
 typedef mfxExtFeiEncMV::mfxExtFeiEncMVMB mfxExtFeiEncMV_MB;
 typedef mfxExtFeiEncMBCtrl::mfxExtFeiEncMBCtrlMB mfxExtFeiEncMBCtrl_MB;
+
+#if MFX_VERSION >= 1023
+typedef mfxExtFeiPPS::mfxExtFeiPpsDPB mfxExtFeiPPS_mfxExtFeiPpsDPB;
+#endif // MFX_VERSION >= 1023

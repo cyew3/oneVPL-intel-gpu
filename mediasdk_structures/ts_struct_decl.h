@@ -504,6 +504,53 @@ STRUCT(mfxExtFeiParam,
     FIELD_T(mfxU16, SingleFieldProcessing)
 )
 
+STRUCT(mfxExtFeiSPS,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU16, SPSId)
+    FIELD_T(mfxU16, PicOrderCntType)
+    FIELD_T(mfxU16, Log2MaxPicOrderCntLsb)
+)
+
+#if MFX_VERSION >= 1023
+STRUCT(mfxExtFeiPPS_mfxExtFeiPpsDPB,
+    FIELD_T(mfxU16, Index)
+    FIELD_T(mfxU16, PicType)
+    FIELD_T(mfxI32, FrameNumWrap)
+    FIELD_T(mfxU16, LongTermFrameIdx)
+)
+
+STRUCT(mfxExtFeiPPS,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU16, SPSId)
+    FIELD_T(mfxU16, PPSId)
+    FIELD_T(mfxU16, PictureType)
+    FIELD_T(mfxU16, FrameType)
+    FIELD_T(mfxU16, PicInitQP)
+    FIELD_T(mfxU16, NumRefIdxL0Active)
+    FIELD_T(mfxU16, NumRefIdxL1Active)
+    FIELD_T(mfxI16, ChromaQPIndexOffset)
+    FIELD_T(mfxI16, SecondChromaQPIndexOffset)
+    FIELD_T(mfxU16, Transform8x8ModeFlag)
+    FIELD_S(mfxExtFeiPPS_mfxExtFeiPpsDPB, DpbBefore)
+    FIELD_S(mfxExtFeiPPS_mfxExtFeiPpsDPB, DpbAfter)
+)
+
+#else
+STRUCT(mfxExtFeiPPS,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU16, SPSId)
+    FIELD_T(mfxU16, PPSId)
+    FIELD_T(mfxU16, PictureType)
+    FIELD_T(mfxU16, PicInitQP)
+    FIELD_T(mfxU16, NumRefIdxL0Active)
+    FIELD_T(mfxU16, NumRefIdxL1Active)
+    FIELD_T(mfxU16, ReferenceFrames)
+    FIELD_T(mfxI16, ChromaQPIndexOffset)
+    FIELD_T(mfxI16, SecondChromaQPIndexOffset)
+    FIELD_T(mfxU16, Transform8x8ModeFlag)
+)
+#endif //MFX_VERSION >= 1023
+
 STRUCT(mfxExtFeiEncFrameCtrl,
     FIELD_S(mfxExtBuffer, Header)
     FIELD_T(mfxU16,       SearchPath)
