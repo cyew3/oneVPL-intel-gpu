@@ -302,6 +302,7 @@
         #define PRE_SI_TARGET_PLATFORM_GEN10
     #elif PRE_SI_GEN == 11
         #define PRE_SI_TARGET_PLATFORM_GEN11
+        #define PRE_SI_TARGET_PLATFORM_GEN10 // assume that all Gen10 features are supported on Gen11
     #else
         #pragma message("ERROR:\nWrong value of PRE_SI_GEN.\nValue should be 9, 10 or 11. \
         \n9:\n\tENABLE_PRE_SI_FEATURES = off\n\tPRE_SI_TARGET_PLATFORM_GEN10 = off\n\tPRE_SI_TARGET_PLATFORM_GEN11 = off\n \
