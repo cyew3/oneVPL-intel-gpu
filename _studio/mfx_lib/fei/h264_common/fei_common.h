@@ -82,6 +82,9 @@ namespace MfxH264FEIcommon
     template <typename T, typename U>
     mfxStatus CheckRuntimeExtBuffers(T* input, U* output, const MfxHwH264Encode::MfxVideoParam & owned_video);
 
+    bool IsRunTimeInputExtBufferIdSupported(const MfxHwH264Encode::MfxVideoParam & owned_video, mfxU32 id);
+    bool IsRunTimeOutputExtBufferIdSupported(const MfxHwH264Encode::MfxVideoParam & owned_video, mfxU32 id);
+
 #if MFX_VERSION >= 1023
     template <typename T, typename U>
     mfxStatus CheckDPBpairCorrectness(T* input, U* output, mfxExtFeiPPS* extFeiPPSinRuntime, const MfxHwH264Encode::MfxVideoParam & owned_video);

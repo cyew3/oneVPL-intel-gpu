@@ -311,14 +311,8 @@ mfxStatus VideoPAK_PAK::Init(mfxVideoParam *par)
 
     MfxVideoParam tmp(*par);
 
-    sts = ReadSpsPpsHeaders(tmp);
-    MFX_CHECK_STS(sts);
-
     sts = CheckWidthAndHeight(tmp);
     MFX_CHECK_STS(sts);
-
-    sts = CopySpsPpsToVideoParam(tmp);
-    MFX_CHECK(sts >= MFX_ERR_NONE, sts);
 
     m_ddi.reset(new VAAPIFEIPAKEncoder);
 
@@ -336,14 +330,9 @@ mfxStatus VideoPAK_PAK::Init(mfxVideoParam *par)
     m_currentPlatform = m_core->GetHWType();
     m_currentVaType   = m_core->GetVAType();
 
-    mfxStatus spsppsSts = CopySpsPpsToVideoParam(m_video);
-
     mfxStatus checkStatus = CheckVideoParam(m_video, m_caps, m_core->IsExternalFrameAllocator(), m_currentPlatform, m_currentVaType);
     MFX_CHECK(checkStatus != MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION);
     MFX_CHECK(checkStatus >= MFX_ERR_NONE, checkStatus);
-
-    if (checkStatus == MFX_ERR_NONE)
-        checkStatus = spsppsSts;
 
     const mfxExtFeiParam* params = GetExtBuffer(m_video);
 
@@ -361,6 +350,7 @@ mfxStatus VideoPAK_PAK::Init(mfxVideoParam *par)
     request.NumFrameMin       = m_video.AsyncDepth + m_video.mfx.NumRefFrame;
     request.NumFrameSuggested = request.NumFrameMin;
     request.AllocId           = par->AllocId;
+    MFX_CHECK(request.NumFrameMin <= 127, MFX_ERR_UNSUPPORTED);
 
     //sts = m_core->AllocFrames(&request, &m_rec);
     sts = m_rec.Alloc(m_core, request, false, true);

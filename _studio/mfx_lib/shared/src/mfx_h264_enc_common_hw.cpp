@@ -1874,9 +1874,13 @@ mfxStatus MfxHwH264Encode::CheckVideoParamFEI(
     /* FEI works with CQP only */
     MFX_CHECK(MFX_RATECONTROL_CQP == par.mfx.RateControlMethod, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
-    /*FEI PAK SEI option should be OFF*/
     if (isPAK)
     {
+        MFX_CHECK(par.mfx.EncodedOrder ==                             1, MFX_ERR_INVALID_VIDEO_PARAM);
+        MFX_CHECK(par.AsyncDepth       ==                             1, MFX_ERR_INVALID_VIDEO_PARAM);
+        MFX_CHECK(par.IOPattern        == MFX_IOPATTERN_IN_VIDEO_MEMORY, MFX_ERR_INVALID_VIDEO_PARAM);
+
+        /*FEI PAK SEI option should be OFF*/
         mfxExtCodingOption  * extCodingOpt  = GetExtBuffer(par);
         if (!CheckTriStateOptionForOff(extCodingOpt->PicTimingSEI)     ||
             !CheckTriStateOptionForOff(extCodingOpt->RecoveryPointSEI) ||

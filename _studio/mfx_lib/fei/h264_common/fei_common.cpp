@@ -13,6 +13,10 @@
 #if defined(MFX_VA) && defined(MFX_ENABLE_H264_VIDEO_ENCODE_HW) && (defined(MFX_ENABLE_H264_VIDEO_FEI_ENC) || defined(MFX_ENABLE_H264_VIDEO_FEI_PAK))
 #include "fei_common.h"
 
+#define I_SLICE(SliceType) ((SliceType) == 2 || (SliceType) == 7)
+#define P_SLICE(SliceType) ((SliceType) == 0 || (SliceType) == 5)
+#define B_SLICE(SliceType) ((SliceType) == 1 || (SliceType) == 6)
+
 using namespace MfxHwH264Encode;
 
 #if MFX_VERSION >= 1023
@@ -545,7 +549,10 @@ mfxStatus MfxH264FEIcommon::CheckInitExtBuffers(const MfxVideoParam & owned_vide
     if (pDataSPS)
     {
         // Check correctness of provided PPS parameters
-        MFX_CHECK(pDataSPS->Log2MaxPicOrderCntLsb >= 4 && pDataSPS->Log2MaxPicOrderCntLsb <= 16, MFX_ERR_INVALID_VIDEO_PARAM);
+        MFX_CHECK(pDataSPS->SPSId                 <=  31, MFX_ERR_INVALID_VIDEO_PARAM);
+        MFX_CHECK(pDataSPS->Log2MaxPicOrderCntLsb <=  16, MFX_ERR_INVALID_VIDEO_PARAM);
+        MFX_CHECK(pDataSPS->Log2MaxPicOrderCntLsb >=   4, MFX_ERR_INVALID_VIDEO_PARAM);
+        MFX_CHECK(pDataSPS->PicOrderCntType       <=   2, MFX_ERR_INVALID_VIDEO_PARAM);
 
         // Update internal SPS if FEI SPS buffer attached
         mfxExtSpsHeader * extSps = GetExtBuffer(owned_video);
@@ -558,6 +565,16 @@ mfxStatus MfxH264FEIcommon::CheckInitExtBuffers(const MfxVideoParam & owned_vide
     const mfxExtFeiPPS* pDataPPS = GetExtBuffer(passed_video);
     if (pDataPPS)
     {
+        MFX_CHECK(pDataPPS->SPSId                     <=  31, MFX_ERR_INVALID_VIDEO_PARAM);
+        MFX_CHECK(pDataPPS->PPSId                     <= 255, MFX_ERR_INVALID_VIDEO_PARAM);
+        MFX_CHECK(pDataPPS->NumRefIdxL0Active         <=  32, MFX_ERR_INVALID_VIDEO_PARAM);
+        MFX_CHECK(pDataPPS->NumRefIdxL1Active         <=  32, MFX_ERR_INVALID_VIDEO_PARAM);
+        MFX_CHECK(pDataPPS->ChromaQPIndexOffset       <=  12, MFX_ERR_INVALID_VIDEO_PARAM);
+        MFX_CHECK(pDataPPS->ChromaQPIndexOffset       >= -12, MFX_ERR_INVALID_VIDEO_PARAM);
+        MFX_CHECK(pDataPPS->SecondChromaQPIndexOffset <=  12, MFX_ERR_INVALID_VIDEO_PARAM);
+        MFX_CHECK(pDataPPS->SecondChromaQPIndexOffset >= -12, MFX_ERR_INVALID_VIDEO_PARAM);
+        MFX_CHECK(pDataPPS->Transform8x8ModeFlag      <=   1, MFX_ERR_INVALID_VIDEO_PARAM);
+
         // Update internal PPS if FEI PPS buffer attached
         mfxExtPpsHeader* extPps = GetExtBuffer(owned_video);
         MFX_CHECK(extPps, MFX_ERR_INVALID_VIDEO_PARAM);
@@ -581,6 +598,38 @@ mfxStatus MfxH264FEIcommon::CheckInitExtBuffers(const MfxVideoParam & owned_vide
     return MFX_ERR_NONE;
 }
 
+
+bool MfxH264FEIcommon::IsRunTimeInputExtBufferIdSupported(MfxVideoParam const & owned_video, mfxU32 id)
+{
+    mfxExtFeiParam const * feiParam = GetExtBuffer(owned_video);
+    switch(feiParam->Func)
+    {
+        case MFX_FEI_FUNCTION_PAK:
+            return (  id == MFX_EXTBUFF_FEI_PPS
+                   || id == MFX_EXTBUFF_FEI_SLICE
+                   || id == MFX_EXTBUFF_FEI_PAK_CTRL
+                   || id == MFX_EXTBUFF_FEI_ENC_MV
+                   );
+        case MFX_FEI_FUNCTION_ENC:
+            return (  id == MFX_EXTBUFF_FEI_PPS
+                   || id == MFX_EXTBUFF_FEI_SLICE
+                   || id == MFX_EXTBUFF_FEI_ENC_CTRL
+                   || id == MFX_EXTBUFF_FEI_ENC_MV_PRED
+                   || id == MFX_EXTBUFF_FEI_ENC_MB
+                   );
+        default:
+            return true;
+    }
+}
+
+bool MfxH264FEIcommon::IsRunTimeOutputExtBufferIdSupported(MfxVideoParam const & owned_video, mfxU32 id)
+{
+    return (  id == MFX_EXTBUFF_FEI_ENC_MV
+           || id == MFX_EXTBUFF_FEI_ENC_MB_STAT
+           || id == MFX_EXTBUFF_FEI_PAK_CTRL
+           );
+}
+
 template mfxStatus MfxH264FEIcommon::CheckRuntimeExtBuffers<>(mfxENCInput* input, mfxENCOutput* output, const MfxVideoParam & owned_video);
 #if MFX_VERSION >= 1023
 template mfxStatus MfxH264FEIcommon::CheckRuntimeExtBuffers<>(mfxPAKInput* input, mfxPAKOutput* output, const MfxVideoParam & owned_video);
@@ -591,6 +640,22 @@ template mfxStatus MfxH264FEIcommon::CheckRuntimeExtBuffers<>(mfxPAKOutput* inpu
 template <typename T, typename U>
 mfxStatus MfxH264FEIcommon::CheckRuntimeExtBuffers(T* input, U* output, const MfxVideoParam & owned_video)
 {
+
+    MFX_CHECK_NULL_PTR1(input);
+    MFX_CHECK_NULL_PTR1(output);
+
+    for (mfxU32 i = 0; i < input->NumExtParam; ++i)
+    {
+        MFX_CHECK_NULL_PTR1(input->ExtParam[i]);
+        MFX_CHECK(MfxH264FEIcommon::IsRunTimeInputExtBufferIdSupported(owned_video, input->ExtParam[i]->BufferId), MFX_ERR_INVALID_VIDEO_PARAM);
+    }
+
+    for (mfxU32 i = 0; i < output->NumExtParam; ++i)
+    {
+        MFX_CHECK_NULL_PTR1(output->ExtParam[i]);
+        MFX_CHECK(MfxH264FEIcommon::IsRunTimeOutputExtBufferIdSupported(owned_video, output->ExtParam[i]->BufferId), MFX_ERR_INVALID_VIDEO_PARAM);
+    }
+
     // SPS at runtime is not allowed
     mfxExtFeiSPS* extFeiSPSinRuntime = GetExtBufferFEI(input, 0);
     MFX_CHECK(!extFeiSPSinRuntime, MFX_ERR_UNDEFINED_BEHAVIOR);
@@ -615,11 +680,18 @@ mfxStatus MfxH264FEIcommon::CheckRuntimeExtBuffers(T* input, U* output, const Mf
 
         for (mfxU32 i = 0; i < extFeiSliceInRintime->NumSlice; ++i)
         {
-            MFX_CHECK(extFeiSliceInRintime->Slice[i].DisableDeblockingFilterIdc <=  2, MFX_ERR_INVALID_VIDEO_PARAM);
-            MFX_CHECK(extFeiSliceInRintime->Slice[i].SliceAlphaC0OffsetDiv2     <=  6, MFX_ERR_INVALID_VIDEO_PARAM);
-            MFX_CHECK(extFeiSliceInRintime->Slice[i].SliceAlphaC0OffsetDiv2     >= -6, MFX_ERR_INVALID_VIDEO_PARAM);
-            MFX_CHECK(extFeiSliceInRintime->Slice[i].SliceBetaOffsetDiv2        <=  6, MFX_ERR_INVALID_VIDEO_PARAM);
-            MFX_CHECK(extFeiSliceInRintime->Slice[i].SliceBetaOffsetDiv2        >= -6, MFX_ERR_INVALID_VIDEO_PARAM);
+            MFX_CHECK(  I_SLICE(extFeiSliceInRintime->Slice[i].SliceType)
+                     || P_SLICE(extFeiSliceInRintime->Slice[i].SliceType)
+                     || B_SLICE(extFeiSliceInRintime->Slice[i].SliceType), MFX_ERR_INVALID_VIDEO_PARAM);
+
+            MFX_CHECK(extFeiSliceInRintime->Slice[i].PPSId                      <= 255, MFX_ERR_INVALID_VIDEO_PARAM);
+            MFX_CHECK(extFeiSliceInRintime->Slice[i].CabacInitIdc               <=   2, MFX_ERR_INVALID_VIDEO_PARAM);
+
+            MFX_CHECK(extFeiSliceInRintime->Slice[i].DisableDeblockingFilterIdc <=   2, MFX_ERR_INVALID_VIDEO_PARAM);
+            MFX_CHECK(extFeiSliceInRintime->Slice[i].SliceAlphaC0OffsetDiv2     <=   6, MFX_ERR_INVALID_VIDEO_PARAM);
+            MFX_CHECK(extFeiSliceInRintime->Slice[i].SliceAlphaC0OffsetDiv2     >=  -6, MFX_ERR_INVALID_VIDEO_PARAM);
+            MFX_CHECK(extFeiSliceInRintime->Slice[i].SliceBetaOffsetDiv2        <=   6, MFX_ERR_INVALID_VIDEO_PARAM);
+            MFX_CHECK(extFeiSliceInRintime->Slice[i].SliceBetaOffsetDiv2        >=  -6, MFX_ERR_INVALID_VIDEO_PARAM);
         }
 
         mfxExtFeiPPS* extFeiPPSinRuntime = GetExtBufferFEI(input, field);
