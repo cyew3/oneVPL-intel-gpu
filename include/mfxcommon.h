@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-Copyright (C) 2013-2016 Intel Corporation.  All rights reserved.
+Copyright (C) 2013-2017 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -165,11 +165,12 @@ enum {
     MFX_PLATFORM_BROADWELL      = 5,
     MFX_PLATFORM_CHERRYTRAIL    = 6,
     MFX_PLATFORM_SKYLAKE        = 7,
-    MFX_PLATFORM_BROXTON        = 8, // Deprecated platform name, to be replaced by MFX_PLATFORM_APOLLOLAKE
     MFX_PLATFORM_APOLLOLAKE     = 8,
     MFX_PLATFORM_KABYLAKE       = 9,
-    MFX_PLATFORM_CANNONLAKE     = 10,
-    MFX_PLATFORM_ICELAKE        = 11,
+    MFX_PLATFORM_GEMINILAKE     = 10,
+    MFX_PLATFORM_CANNONLAKE     = 20,
+    MFX_PLATFORM_ICELAKE        = 30,
+    MFX_PLATFORM_TIGERLAKE      = 40,
 };
 
 typedef struct {
