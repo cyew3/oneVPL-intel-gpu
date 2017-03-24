@@ -53,7 +53,9 @@ public:
         , VABID_FrameRate
         , VABID_QualityLevel
         , VABID_MaxFrameSize
+#if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
         , VABID_TriggerCodecHang
+#endif
         , VABID_QpBuffer
 
         , VABID_PACKED_AUD_H

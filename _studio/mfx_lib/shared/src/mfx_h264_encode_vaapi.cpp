@@ -1937,7 +1937,6 @@ mfxStatus VAAPIEncoder::Execute(
     mfxU16      buffersCount = 0;
     mfxU32      packedDataSize = 0;
     VAStatus    vaSts;
-    unsigned int trigger_hang = 1;
     mfxU8 skipFlag  = task.SkipFlag();
     mfxU16 skipMode = m_skipMode;
     mfxExtCodingOption2     const * ctrlOpt2      = GetExtBuffer(task.m_ctrl);
@@ -2721,6 +2720,7 @@ mfxStatus VAAPIEncoder::Execute(
 #if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
     if ((mfxExtIntGPUHang*)GetExtBuffer(task.m_ctrl))
     {
+        unsigned int trigger_hang = 1;
         MFX_DESTROY_VABUFFER(m_triggerGpuHangBufferId, m_vaDisplay);
         vaSts = vaCreateBuffer(m_vaDisplay,
                                m_vaContextEncode,

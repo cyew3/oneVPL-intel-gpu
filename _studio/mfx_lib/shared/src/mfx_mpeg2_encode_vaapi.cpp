@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -1204,7 +1204,6 @@ mfxStatus VAAPIEncoder::Execute(ExecuteBuffers* pExecuteBuffers, mfxU32 funcId, 
     std::vector<VABufferID> configBuffers(NumCompBuffer, VA_INVALID_ID);
     
     mfxU16 buffersCount = 0;
-    unsigned int trigger_hang = 1;
 
     if (pExecuteBuffers->m_bAddSPS)
     {    
@@ -1334,6 +1333,7 @@ mfxStatus VAAPIEncoder::Execute(ExecuteBuffers* pExecuteBuffers, mfxU32 funcId, 
 #if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
     if (pExecuteBuffers->m_bTriggerGpuHang)
     {
+        unsigned int trigger_hang = 1;
         MFX_DESTROY_VABUFFER(m_triggerGpuHangBufferId, m_vaDisplay);
         vaSts = vaCreateBuffer(m_vaDisplay,
                                m_vaContextEncode,
