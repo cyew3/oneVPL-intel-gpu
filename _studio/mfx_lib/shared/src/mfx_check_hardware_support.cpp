@@ -81,6 +81,9 @@ enum PRODUCT_FAMILY
     IGFX_CNX_G,
     IGFX_ICELAKE,
     IGFX_ICELAKE_LP,
+    IGFX_RESERVED_1,
+    IGFX_RESERVED_2,
+    IGFX_TIGERLAKE,
 
     IGFX_SOFIA_LTE1 = 1001,
     IGFX_SOFIA_LTE2 = 1002,
@@ -126,10 +129,15 @@ eMFXHWType GetHardwareType(const mfxU32 adapterNum, mfxU32 platformFromDriver)
         return MFX_HW_ICL;
     case IGFX_ICELAKE_LP:
         return MFX_HW_ICL_LP;
-#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+    case IGFX_TIGERLAKE:
+        return MFX_HW_TGL;
+#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
     default:
-      return MFX_HW_ICL;  // temporarily for pre-si
-#endif  //PRE_SI_TARGET_PLATFORM_GEN11
+      return MFX_HW_TGL;  // temporarily for Gen12 pre-si
+#elif defined (PRE_SI_TARGET_PLATFORM_GEN11)
+    default:
+      return MFX_HW_ICL;  // temporarily for Gen11 pre-si
+#endif
     }
 
 

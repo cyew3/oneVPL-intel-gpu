@@ -73,7 +73,8 @@ mfxStatus D3D11VideoCORE::InternalInit()
 #ifndef MFX_CLOSED_PLATFORMS_DISABLE
     if ((m_HWType == MFX_HW_CNL) ||
         (m_HWType == MFX_HW_ICL) ||
-        (m_HWType == MFX_HW_ICL_LP))
+        (m_HWType == MFX_HW_ICL_LP) ||
+        (m_HWType == MFX_HW_TGL))
         m_bCmCopyAllowed = false;   // !!! temporarily for pre-si
 #endif
 
