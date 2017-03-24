@@ -106,7 +106,7 @@ enum {
     MFX_FOURCC_RGB4         = MFX_MAKEFOURCC('R','G','B','4'),   /* ARGB in that order, A channel is 8 MSBs */
     MFX_FOURCC_P8           = 41,                                /*  D3DFMT_P8   */
     MFX_FOURCC_P8_TEXTURE   = MFX_MAKEFOURCC('P','8','M','B'),
-    MFX_FOURCC_P010         = MFX_MAKEFOURCC('P','0','1','0'), 
+    MFX_FOURCC_P010         = MFX_MAKEFOURCC('P','0','1','0'),
     MFX_FOURCC_P210         = MFX_MAKEFOURCC('P','2','1','0'),
     MFX_FOURCC_BGR4         = MFX_MAKEFOURCC('B','G','R','4'),   /* ABGR in that order, A channel is 8 MSBs */
     MFX_FOURCC_A2RGB10      = MFX_MAKEFOURCC('R','G','1','0'),   /* ARGB in that order, A channel is two MSBs */
@@ -1181,7 +1181,7 @@ enum {
 };
 
 typedef struct {
-    mfxExtBuffer    Header; 
+    mfxExtBuffer    Header;
 
     mfxU32          FrameOrder;
     mfxU16          PicStruct;
@@ -1193,30 +1193,31 @@ typedef struct {
     mfxU16          reserved[2];
 
     struct {
-            mfxU32      FrameOrder;
-            mfxU16      PicStruct;
-            mfxU16      LongTermIdx;
-            mfxU16      reserved[4];
+        mfxU32      FrameOrder;
+        mfxU16      PicStruct;
+        mfxU16      LongTermIdx;
+        mfxU16      reserved[4];
     } UsedRefListL0[32], UsedRefListL1[32];
 } mfxExtAVCEncodedFrameInfo;
 
 typedef struct mfxVPPCompInputStream {
-        mfxU32  DstX;
-        mfxU32  DstY;
-        mfxU32  DstW;
-        mfxU32  DstH;
+    mfxU32  DstX;
+    mfxU32  DstY;
+    mfxU32  DstW;
+    mfxU32  DstH;
 
-        mfxU16  LumaKeyEnable;
-        mfxU16  LumaKeyMin;
-        mfxU16  LumaKeyMax;
+    mfxU16  LumaKeyEnable;
+    mfxU16  LumaKeyMin;
+    mfxU16  LumaKeyMax;
 
-        mfxU16  GlobalAlphaEnable;
-        mfxU16  GlobalAlpha;
+    mfxU16  GlobalAlphaEnable;
+    mfxU16  GlobalAlpha;
+    mfxU16  PixelAlphaEnable;
 
-        mfxU16 PixelAlphaEnable;
+    mfxU16  TileId;
 
-        mfxU16  reserved2[18];
-} mfxVPPCompInputStream;     
+    mfxU16  reserved2[17];
+} mfxVPPCompInputStream;
 
 typedef struct {
     mfxExtBuffer    Header;
@@ -1234,11 +1235,11 @@ typedef struct {
         mfxU16   V;
         mfxU16   B;
     };
+    mfxU16       NumTiles;
+    mfxU16       reserved1[23];
 
-    mfxU16      reserved1[24];
-
-    mfxU16      NumInputStream;
-    mfxVPPCompInputStream *InputStream;     
+    mfxU16       NumInputStream;
+    mfxVPPCompInputStream *InputStream;
 } mfxExtVPPComposite;
 
 /* TransferMatrix */

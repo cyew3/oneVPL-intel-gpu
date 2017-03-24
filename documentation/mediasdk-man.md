@@ -3786,21 +3786,22 @@ This structure is available since SDK API 1.6.
 
 ```C
 typedef struct mfxVPPCompInputStream {
-        mfxU32  DstX;
-        mfxU32  DstY;
-        mfxU32  DstW;
-        mfxU32  DstH;
+    mfxU32  DstX;
+    mfxU32  DstY;
+    mfxU32  DstW;
+    mfxU32  DstH;
 
-        mfxU16  LumaKeyEnable;
-        mfxU16  LumaKeyMin;
-        mfxU16  LumaKeyMax;
+    mfxU16  LumaKeyEnable;
+    mfxU16  LumaKeyMin;
+    mfxU16  LumaKeyMax;
 
-        mfxU16  GlobalAlphaEnable;
-        mfxU16  GlobalAlpha;
+    mfxU16  GlobalAlphaEnable;
+    mfxU16  GlobalAlpha;
+    mfxU16  PixelAlphaEnable;
 
-        mfxU16  PixelAlphaEnable;
+    mfxU16  TileId;
 
-        mfxU16  reserved2[18];
+    mfxU16  reserved2[17];
 } mfxVPPCompInputStream;
 
 typedef struct {
@@ -3820,9 +3821,10 @@ typedef struct {
         mfxU16   B;
     };
 
-    mfxU16      reserved1[24];
+    mfxU16       NumTiles;
+    mfxU16       reserved1[23];
 
-    mfxU16      NumInputStream;
+    mfxU16       NumInputStream;
     mfxVPPCompInputStream *InputStream;
 } mfxExtVPPComposite;
 ```
@@ -3863,13 +3865,20 @@ There are three different blending use cases:
 
 It is not allowed to mix different blending use cases in the same function call.
 
+In special case where destination region of the output surface defined by output crops is fully covered with destination sub-regions of the surfaces, the fast compositing mode can be enabled. The main use case for this mode is a video-wall scenario with fixed destination surface partition into sub-regions of potentialy different size.
+
+In order to trigger this mode, application must cluster input surfaces into tiles, defining at least one tile by setting the `NumTiles` field to be greater then 0 and assigning surfaces to the corresponding tiles setting `TileId` field to the value within [0..`NumTiles`) range per input surface. Tiles should also satisfy following additional constraints:
+- each tile should not have more than 8 surfaces assigned to it;
+- tile bounding boxes, as defined by the enclosing rectangles of a union of a surfaces assigned to this tile, should not intersect;
+
 **Members**
 
 | | |
 --- | ---
 `Header.BufferId` | Must be [MFX_EXTBUFF_VPP_COMPOSITE](#ExtendedBufferID)
-`Y, U, V`, `R, G, B` | background color, may be changed dynamically through Reset. No default value. YUV black is (0;128;128) or (16;128;128) depending on the sample range. The SDK uses YUV or RGB triple depending on output color format.
-`NumInputStream` | Number of input surfaces to compose one output. May be changed dynamically at runtime through Reset. Number of surfaces can be decreased or increased, but should not exceed number specified during initialization. Query mode 2 should be used to find maximum supported number.
+`Y, U, V`, `R, G, B` | background color, may be changed dynamically through [Reset](#MFXVideoVPP_Reset). No default value. YUV black is (0;128;128) or (16;128;128) depending on the sample range. The SDK uses YUV or RGB triple depending on output color format.
+`NumTiles` | Number of input surface clusters grouped together to enable fast compositing. May be changed dynamically at runtime through [Reset](#MFXVideoVPP_Reset).
+`NumInputStream` | Number of input surfaces to compose one output. May be changed dynamically at runtime through [Reset](#MFXVideoVPP_Reset). Number of surfaces can be decreased or increased, but should not exceed number specified during initialization. Query mode 2 should be used to find maximum supported number.
 `InputStream` | This array of mfxVPPCompInputStream structures describes composition of input video streams. It should consist of exactly `NumInputStream` elements.
   `DstX,   DstY,   DstW,   DstH` | Location of input stream in output surface.
   `LumaKeyEnable` | None zero value enables luma keying for the input stream. Luma keying is used to mark some of the areas of the frame with specified luma values as transparent. It may be used for closed captioning, for example.
@@ -3877,6 +3886,7 @@ It is not allowed to mix different blending use cases in the same function call.
   `GlobalAlphaEnable` | None zero value enables global alpha blending for this input stream.
   `GlobalAlpha` | Alpha value for this stream in [0..255] range. 0 – transparent, 255 – opaque.
   `PixelAlphaEnable` | None zero value enables per pixel alpha blending for this input stream. The stream should have RGB color format.
+  `TileId` | Specify the tile this video stream assigned to. Should be in range [0..`NumTiles`). Valid only if `NumTiles` > 0.
 
 **Change History**
 
@@ -3884,6 +3894,8 @@ This structure is available since SDK API 1.8.
 
 The SDK API 1.9 adds `LumaKeyEnable, LumaKeyMin, LumaKeyMax, GlobalAlphaEnable, GlobalAlpha` and
 `PixelAlphaEnable` fields.
+
+The SDK API 1.24 adds 'TileId' and 'NumTiles' fields.
 
 ## mfxExtVPPVideoSignalInfo
 

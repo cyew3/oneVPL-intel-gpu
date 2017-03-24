@@ -77,7 +77,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCodingOp
     str += structName + ".MESearchType=" + ToString(_struct.MESearchType) + "\n";
     str += structName + ".MVSearchWindow.x=" + ToString(_struct.MVSearchWindow.x) + "\n";
     str += structName + ".MVSearchWindow.y=" + ToString(_struct.MVSearchWindow.y) + "\n";
-    
+
     str += structName + ".EndOfSequence=" + ToString(_struct.EndOfSequence) + "\n";
     str += structName + ".FramePicture=" + ToString(_struct.FramePicture) + "\n";
 
@@ -976,6 +976,7 @@ std::string DumpContext::dump(const std::string structName, const mfxVPPCompInpu
     str += structName + ".GlobalAlphaEnable=" + ToString(VPPCompInputStream.GlobalAlphaEnable) + "\n";
     str += structName + ".GlobalAlphae=" + ToString(VPPCompInputStream.GlobalAlpha) + "\n";
     str += structName + ".PixelAlphaEnable=" + ToString(VPPCompInputStream.PixelAlphaEnable) + "\n";
+    str += structName + ".TileId=" + ToString(VPPCompInputStream.TileId) + "\n";
     str += structName + ".reserved2[]=" + DUMP_RESERVED_ARRAY(VPPCompInputStream.reserved2) + "\n";
     return str;
 }
@@ -990,6 +991,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtVPPCompo
     str += structName + ".G=" + ToString(ExtVPPComposite.G) + "\n";
     str += structName + ".V=" + ToString(ExtVPPComposite.V) + "\n";
     str += structName + ".B=" + ToString(ExtVPPComposite.B) + "\n";
+    str += structName + ".NumTiles=" + ToString(ExtVPPComposite.NumTiles) + "\n";
     str += structName + ".reserved1[]=" + DUMP_RESERVED_ARRAY(ExtVPPComposite.reserved1) + "\n";
     str += structName + ".NumInputStream=" + ToString(ExtVPPComposite.NumInputStream) + "\n";
     str += structName + ".InputStream=" + ToHexFormatString(ExtVPPComposite.InputStream) + "\n";

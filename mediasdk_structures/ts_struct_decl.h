@@ -441,6 +441,7 @@ STRUCT(mfxVPPCompInputStream,
     FIELD_T(mfxU16, GlobalAlphaEnable)
     FIELD_T(mfxU16, GlobalAlpha      )
     FIELD_T(mfxU16, PixelAlphaEnable )
+    FIELD_T(mfxU16, TileId )
 )
 
 STRUCT(mfxExtVPPComposite,
@@ -451,6 +452,7 @@ STRUCT(mfxExtVPPComposite,
     FIELD_T(mfxU16, R)
     FIELD_T(mfxU16, G)
     FIELD_T(mfxU16, B)
+    FIELD_T(mfxU16, NumTiles)
     FIELD_T(mfxU16, NumInputStream)
     FIELD_T(mfxVPPCompInputStream*, InputStream)
 )
