@@ -271,6 +271,9 @@ bool MFXTaskSupplier::ProcessNonPairedField(H264DecoderFrame * pFrame)
         pFrame->m_bottom_field_flag[1] = !pFrame->m_bottom_field_flag[0];
 
         H264Slice * pSlice = pFrame->GetAU(0)->GetSlice(0);
+        VM_ASSERT(pSlice);
+        if (!pSlice)
+            return false;
         pFrame->setPicNum(pSlice->GetSliceHeader()->frame_num*2 + 1, 1);
 
         Ipp32s isBottom = pSlice->IsBottomField() ? 0 : 1;
