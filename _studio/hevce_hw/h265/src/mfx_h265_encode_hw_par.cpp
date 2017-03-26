@@ -401,7 +401,7 @@ mfxU16 AddTileSlices(
     else
     {
         s = true;
-        f = nSlice / f;
+        f = (nSlice % f == 0) ? nSlice / f : nSlice / (f - 1);
     }
 
     mfxU32 i = nSlicePrev;
@@ -417,7 +417,6 @@ mfxU16 AddTileSlices(
     {
         par.m_slice[i - 1].NumLCU = par.m_slice[nSlicePrev].SegmentAddress + nLCU - par.m_slice[i - 1].SegmentAddress ;
     }
-
     return (mfxU16)nSlice;
 }
 
