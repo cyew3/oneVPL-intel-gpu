@@ -257,10 +257,20 @@ public:
                     EXPECT_EQ(pps->weighted_pred_flag, weighted_pred_flag) << "--ERROR: wrong weighted_pred_flag in PPS.\n";
 
                     if (weighted_pred_flag && slice->slice_type % 5 == SLICE_P) {
-                        if((int)slice->bottom_field_flag == 0)
+
+                        // buffers are attached by order, i.e. first field buffer goes first
+                        switch (m_par.mfx.FrameInfo.PicStruct)
+                        {
+                        case MFX_PICSTRUCT_FIELD_TFF:
+                            fieldId = slice->bottom_field_flag;
+                            break;
+                        case MFX_PICSTRUCT_FIELD_BFF:
+                            fieldId = !slice->bottom_field_flag;
+                            break;
+                        default:
                             fieldId = 0;
-                        else
-                            fieldId = 1 - fieldId;
+                            break;
+                        }
 
                         if(m_hasPWT) {
                             //g_tsLog <<"check: the external PWT\n";
