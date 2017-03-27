@@ -6037,11 +6037,12 @@ mfxStatus MfxHwH264Encode::CheckPayloads(
 
 mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
     MfxVideoParam const & video,
-    mfxEncodeCtrl *       ctrl,
-    mfxFrameSurface1 *    surface,
-    ENCODE_CAPS const &   caps)
+    mfxEncodeCtrl       * ctrl,
+    mfxFrameSurface1    * surface,
+    mfxBitstream        * bs,
+    ENCODE_CAPS   const & caps)
 {
-    MFX_CHECK_NULL_PTR2(ctrl, surface);
+    MFX_CHECK_NULL_PTR3(ctrl, surface, bs);
     mfxStatus checkSts = MFX_ERR_NONE;
 
     for (mfxU32 i = 0; i < ctrl->NumExtParam; i++)
@@ -6097,16 +6098,47 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
         }
     }
 
+    mfxU16 PicStruct = (video.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_UNKNOWN) ? video.mfx.FrameInfo.PicStruct : surface->Info.PicStruct;
+    mfxU16 NumFields = (PicStruct & MFX_PICSTRUCT_PROGRESSIVE) ? 1 : 2;
     // FEI frame control buffer is mandatory for encoding
     mfxExtFeiParam const * feiParam = GetExtBuffer(video);
 
     if (feiParam->Func == MFX_FEI_FUNCTION_ENCODE)
     {
-        mfxExtBuffer * frameCtrl = MfxHwH264Encode::GetExtBuffer(ctrl->ExtParam, ctrl->NumExtParam, MFX_EXTBUFF_FEI_ENC_CTRL);
-        MFX_CHECK(frameCtrl, MFX_ERR_UNDEFINED_BEHAVIOR);
+        for ( mfxU16 fieldId = 0; fieldId < NumFields; fieldId++)
+        {
+            // FEI frame control buffer is mandatory for encoding, and check it first
+            mfxExtFeiEncFrameCtrl* feiEncCtrl =
+                reinterpret_cast<mfxExtFeiEncFrameCtrl*>(MfxHwH264Encode::GetExtBuffer(ctrl->ExtParam, ctrl->NumExtParam, MFX_EXTBUFF_FEI_ENC_CTRL, fieldId));
+            MFX_CHECK(feiEncCtrl, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+            if (feiEncCtrl->MVPredictor)
+            {
+                // MV predictor is never used for I frame
+                MFX_CHECK(!(ctrl->FrameType & (!fieldId ? MFX_FRAMETYPE_I : MFX_FRAMETYPE_xI)), MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+                //mfxExtFeiEncMVPredictors should be attached when MVPredictor is enabled
+                mfxExtBuffer* feiEncMVPredictors = MfxHwH264Encode::GetExtBuffer(ctrl->ExtParam, ctrl->NumExtParam, MFX_EXTBUFF_FEI_ENC_MV_PRED, fieldId);
+                MFX_CHECK(feiEncMVPredictors, MFX_ERR_UNDEFINED_BEHAVIOR);
+            }
+
+            if (feiEncCtrl->PerMBInput)
+            {
+                //mfxExtFeiEncMBCtrl should be attached when PerMBInput is enabled
+                mfxExtBuffer* feiEncMBCtrl = MfxHwH264Encode::GetExtBuffer(ctrl->ExtParam, ctrl->NumExtParam, MFX_EXTBUFF_FEI_ENC_MB, fieldId);
+                MFX_CHECK(feiEncMBCtrl, MFX_ERR_UNDEFINED_BEHAVIOR);
+            }
+
+            if (feiEncCtrl->PerMBQp)
+            {
+                //mfxExtFeiEncQP should be attached when PerMBQp is enabled
+                mfxExtBuffer* feiEncQp = MfxHwH264Encode::GetExtBuffer(ctrl->ExtParam, ctrl->NumExtParam, MFX_EXTBUFF_FEI_ENC_QP, fieldId);
+                MFX_CHECK(feiEncQp, MFX_ERR_UNDEFINED_BEHAVIOR);
+            }
+        }
     }
 
-    checkSts = CheckFEIRunTimeExtBuffersContent(video, ctrl);
+    checkSts = CheckFEIRunTimeExtBuffersContent(video, ctrl, surface, bs);
     MFX_CHECK(checkSts >= MFX_ERR_NONE, checkSts);
 
     mfxExtAVCRefListCtrl const * extRefListCtrl = GetExtBuffer(*ctrl);
@@ -6251,9 +6283,11 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
 
 mfxStatus MfxHwH264Encode::CheckFEIRunTimeExtBuffersContent(
     MfxVideoParam const & video,
-    mfxEncodeCtrl *       ctrl)
+    mfxEncodeCtrl       * ctrl,
+    mfxFrameSurface1    * surface,
+    mfxBitstream        * bs)
 {
-    MFX_CHECK_NULL_PTR1(ctrl);
+    MFX_CHECK_NULL_PTR3(ctrl, surface, bs);
     mfxStatus checkSts = MFX_ERR_NONE;
 
 #if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
@@ -6262,6 +6296,11 @@ mfxStatus MfxHwH264Encode::CheckFEIRunTimeExtBuffersContent(
 
     if (!isFeiENCPAK) return MFX_ERR_NONE;
 
+    mfxU32 FrameSizeInMB = surface->Info.Width * surface->Info.Height / 256;
+    mfxU16 PicStruct = (video.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_UNKNOWN) ? video.mfx.FrameInfo.PicStruct : surface->Info.PicStruct;
+    mfxU32 NumMB = (PicStruct & MFX_PICSTRUCT_PROGRESSIVE) ? FrameSizeInMB : FrameSizeInMB / 2;
+
+    // check input extbuffer
     for (mfxU32 i = 0; i < ctrl->NumExtParam; ++i)
     {
         MFX_CHECK_NULL_PTR1(ctrl->ExtParam[i]);
@@ -6313,10 +6352,12 @@ mfxStatus MfxHwH264Encode::CheckFEIRunTimeExtBuffersContent(
                 // For Main and Baseline profiles 8x8 transform is prohibited
                 return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
             }
+            if (feiEncCtrl->MVPredictor)
+            {
+                MFX_CHECK(feiEncCtrl->NumMVPredictors[0] <= 4, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+                MFX_CHECK(feiEncCtrl->NumMVPredictors[1] <= 4, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+            }
         }
-            break;
-
-        case MFX_EXTBUFF_FEI_ENC_MV_PRED:
             break;
 
         case MFX_EXTBUFF_FEI_REPACK_CTRL:
@@ -6326,15 +6367,33 @@ mfxStatus MfxHwH264Encode::CheckFEIRunTimeExtBuffersContent(
         }
             break;
 
+        case MFX_EXTBUFF_FEI_ENC_MV_PRED:
+        {
+            mfxExtFeiEncMVPredictors* feiEncMVPredictors = reinterpret_cast<mfxExtFeiEncMVPredictors*>(ctrl->ExtParam[i]);
+            MFX_CHECK(feiEncMVPredictors->NumMBAlloc == NumMB, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+            MFX_CHECK(feiEncMVPredictors->MB         != NULL,  MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+        }
+            break;
+
         case MFX_EXTBUFF_FEI_ENC_MB:
+        {
+            mfxExtFeiEncMBCtrl* feiEncMBCtrl = reinterpret_cast<mfxExtFeiEncMBCtrl*>(ctrl->ExtParam[i]);
+            MFX_CHECK(feiEncMBCtrl->NumMBAlloc == NumMB, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+            MFX_CHECK(feiEncMBCtrl->MB         != NULL,  MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+        }
             break;
+
         case MFX_EXTBUFF_FEI_ENC_QP:
-            break;
-        case MFX_EXTBUFF_FEI_ENC_MB_STAT:
-            break;
-        case MFX_EXTBUFF_FEI_ENC_MV:
-            break;
-        case MFX_EXTBUFF_FEI_PAK_CTRL:
+        {
+            mfxExtFeiEncQP* feiEncQP = reinterpret_cast<mfxExtFeiEncQP*>(ctrl->ExtParam[i]);
+#if MFX_VERSION >= 1023
+            MFX_CHECK(feiEncQP->NumMBAlloc == NumMB, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+            MFX_CHECK(feiEncQP->MB         != NULL,  MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+#else
+            MFX_CHECK(feiEncQP->NumQPAlloc == NumMB, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+            MFX_CHECK(feiEncQP->QP         != NULL,  MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+#endif
+        }
             break;
 
         case MFX_EXTBUFF_PRED_WEIGHT_TABLE:
@@ -6398,10 +6457,57 @@ mfxStatus MfxHwH264Encode::CheckFEIRunTimeExtBuffersContent(
             }
         }
             break;
+
+        default:
+            //unsupported input extbuffer is attached.
+            return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+
+            break;
         }
     }
+
+    // check output extbuffer
+    for (mfxU32 i = 0; i < bs->NumExtParam; ++i)
+    {
+        MFX_CHECK_NULL_PTR1(bs->ExtParam[i]);
+
+        switch (bs->ExtParam[i]->BufferId)
+        {
+            case MFX_EXTBUFF_FEI_ENC_MB_STAT:
+            {
+                mfxExtFeiEncMBStat* feiEncMBStat = reinterpret_cast<mfxExtFeiEncMBStat*>(bs->ExtParam[i]);
+                MFX_CHECK(feiEncMBStat->NumMBAlloc == NumMB, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+                MFX_CHECK(feiEncMBStat->MB         != NULL,  MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+            }
+            break;
+
+            case MFX_EXTBUFF_FEI_ENC_MV:
+            {
+                mfxExtFeiEncMV* feiEncMV = reinterpret_cast<mfxExtFeiEncMV*>(bs->ExtParam[i]);
+                MFX_CHECK(feiEncMV->NumMBAlloc == NumMB, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+                MFX_CHECK(feiEncMV->MB         != NULL,  MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+            }
+            break;
+
+            case MFX_EXTBUFF_FEI_PAK_CTRL:
+            {
+                mfxExtFeiPakMBCtrl* feiPakMBCtrl = reinterpret_cast<mfxExtFeiPakMBCtrl*>(bs->ExtParam[i]);
+                MFX_CHECK(feiPakMBCtrl->NumMBAlloc == NumMB, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+                MFX_CHECK(feiPakMBCtrl->MB         != NULL,  MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+            }
+            break;
+
+            default:
+                //unsupported output extbuffer is attached.
+                return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+
+                break;
+        }
+    }
+
 #else
     (void)video;
+    (void)bs;
 #endif
 
     return checkSts;

@@ -840,11 +840,14 @@ namespace MfxHwH264Encode
         MfxVideoParam const & video,
         mfxEncodeCtrl *       ctrl,
         mfxFrameSurface1 *    surface,
+        mfxBitstream *        bs,
         ENCODE_CAPS const &   caps);
 
     mfxStatus CheckFEIRunTimeExtBuffersContent(
         MfxVideoParam const & video,
-        mfxEncodeCtrl *       ctrl);
+        mfxEncodeCtrl *       ctrl,
+        mfxFrameSurface1 *    surface,
+        mfxBitstream *        bs);
 
     mfxStatus CheckRunTimePicStruct(
         mfxU16 runtPicStruct,
