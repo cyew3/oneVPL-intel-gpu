@@ -61,6 +61,11 @@ public:
 
     virtual mfxStatus RunFrameVmeENC(mfxENCInput *in, mfxENCOutput *out);
 
+protected:
+    mfxStatus ProcessAndCheckNewParameters(MfxHwH264Encode::MfxVideoParam & newPar,
+                                           bool & isIdrRequired,
+                                           mfxVideoParam const * newParIn = 0);
+
 private:
 
     bool                                          m_bInit;
@@ -73,6 +78,7 @@ private:
     ENCODE_CAPS                                   m_caps;
 
     MfxHwH264Encode::MfxVideoParam                m_video;
+    MfxHwH264Encode::MfxVideoParam                m_videoInit; // m_video may change by Reset, m_videoInit doesn't change
     MfxHwH264Encode::PreAllocatedVector           m_sei;
 
     MfxHwH264Encode::MfxFrameAllocResponse        m_rec;

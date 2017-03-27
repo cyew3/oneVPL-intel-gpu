@@ -274,13 +274,8 @@ mfxStatus FEI_EncPakInterface::Reset(mfxU16 width, mfxU16 height, mfxU16 crop_w,
     mfxStatus sts = MFX_ERR_NOT_INITIALIZED;
     if (m_pmfxENC)
     {
-        //sts = m_pmfxENC->Reset(&m_videoParams_ENC);
-        //MSDK_CHECK_STATUS(sts, "FEI ENC: Reset failed");
-
-        sts = m_pmfxENC->Close();
-        MSDK_CHECK_STATUS(sts, "FEI ENC: Close failed");
-        sts = m_pmfxENC->Init(&m_videoParams_ENC);
-        MSDK_CHECK_STATUS(sts, "FEI ENC: Init failed");
+        sts = m_pmfxENC->Reset(&m_videoParams_ENC);
+        MSDK_CHECK_STATUS(sts, "FEI ENC: Reset failed");
     }
     if (m_pmfxPAK)
     {

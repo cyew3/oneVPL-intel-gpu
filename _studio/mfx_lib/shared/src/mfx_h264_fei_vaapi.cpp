@@ -827,6 +827,24 @@ mfxStatus VAAPIFEIENCEncoder::Destroy()
 
 } // VAAPIFEIENCEncoder::Destroy()
 
+mfxStatus VAAPIFEIENCEncoder::Reset(MfxVideoParam const & par)
+{
+    m_videoParam = par;
+
+    FillSps(par, m_sps);
+
+    MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetHRD(par, m_vaDisplay, m_vaContextEncode, m_hrdBufferId), MFX_ERR_DEVICE_FAILED);
+    MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetFrameRate(par, m_vaDisplay, m_vaContextEncode, m_frameRateId), MFX_ERR_DEVICE_FAILED);
+
+    FillConstPartOfPps(par, m_pps);
+
+    if (m_caps.HeaderInsertion == 0)
+        m_headerPacker.Init(par, m_caps);
+
+    return MFX_ERR_NONE;
+
+}
+
 
 mfxStatus VAAPIFEIENCEncoder::CreateAccelerationService(MfxVideoParam const & par)
 {

@@ -202,6 +202,8 @@ VideoENC_ENC::VideoENC_ENC(VideoCORE *core,  mfxStatus * sts)
     : m_bInit(false)
     , m_core(core)
     , m_caps()
+    , m_video()
+    , m_videoInit()
     , m_prevTask()
     , m_inputFrameType()
     , m_currentPlatform(MFX_HW_UNKNOWN)
@@ -313,14 +315,52 @@ mfxStatus VideoENC_ENC::Init(mfxVideoParam *par)
     m_free.resize(m_video.AsyncDepth);
     m_incoming.clear();
 
+    m_videoInit = m_video;
+
     m_bInit = true;
     return checkStatus;
 }
 
 mfxStatus VideoENC_ENC::Reset(mfxVideoParam *par)
 {
-    Close();
-    return Init(par);
+    mfxStatus sts = MFX_ERR_NONE;
+    MFX_CHECK_NULL_PTR1(par);
+
+    sts = MfxEncENC::CheckExtBufferId(*par);
+    MFX_CHECK_STS(sts);
+
+    MfxVideoParam newPar = *par;
+
+    bool isIdrRequired = false;
+    mfxStatus checkStatus = ProcessAndCheckNewParameters(newPar, isIdrRequired, par);
+    if (checkStatus < MFX_ERR_NONE)
+        return checkStatus;
+
+    m_ddi->Reset(newPar);
+
+    mfxExtEncoderResetOption const * extResetOpt = GetExtBuffer(newPar);
+
+    // perform reset of encoder and start new sequence with IDR in following cases:
+    // 1) change of encoding parameters require insertion of IDR
+    // 2) application explicitly asked about starting new sequence
+    if (isIdrRequired || IsOn(extResetOpt->StartNewSequence))
+    {
+        UMC::AutomaticUMCMutex guard(m_listMutex);
+        m_free.splice(m_free.end(), m_incoming);
+
+        for (DdiTaskIter i = m_free.begin(); i != m_free.end(); ++i)
+        {
+            if (i->m_yuv)
+                m_core->DecreaseReference(&i->m_yuv->Data);
+            *i = DdiTask();
+        }
+
+        m_rec.Unlock();
+    }
+
+    m_video = newPar;
+
+    return checkStatus;
 }
 
 mfxStatus VideoENC_ENC::GetVideoParam(mfxVideoParam *par)
@@ -357,6 +397,61 @@ mfxStatus VideoENC_ENC::GetVideoParam(mfxVideoParam *par)
 
     return MFX_ERR_NONE;
 }
+
+mfxStatus VideoENC_ENC::ProcessAndCheckNewParameters(
+    MfxVideoParam & newPar,
+    bool & isIdrRequired,
+    mfxVideoParam const * newParIn)
+{
+    MFX_CHECK_NULL_PTR1(newParIn);
+
+    InheritDefaultValues(m_video, newPar, newParIn);
+
+    mfxStatus checkStatus = CheckVideoParam(newPar, m_caps, m_core->IsExternalFrameAllocator(), m_currentPlatform, m_currentVaType);
+    MFX_CHECK(checkStatus != MFX_WRN_PARTIAL_ACCELERATION, MFX_ERR_INVALID_VIDEO_PARAM);
+    MFX_CHECK(checkStatus >= MFX_ERR_NONE, checkStatus);
+
+    mfxStatus sts = CheckInitExtBuffers(m_video, *newParIn);
+    MFX_CHECK_STS(sts);
+
+    mfxExtSpsHeader const * extSpsNew = GetExtBuffer(newPar);
+    mfxExtSpsHeader const * extSpsOld = GetExtBuffer(m_video);
+
+    // check if IDR required after change of encoding parameters
+    bool isSpsChanged = extSpsNew->vuiParametersPresentFlag == 0 ?
+        memcmp(extSpsNew, extSpsOld, sizeof(mfxExtSpsHeader) - sizeof(VuiParameters)) != 0 :
+    !Equal(*extSpsNew, *extSpsOld);
+
+    isIdrRequired = isSpsChanged
+        || newPar.mfx.GopPicSize != m_video.mfx.GopPicSize;
+
+    mfxExtEncoderResetOption * extResetOpt = GetExtBuffer(newPar);
+
+    // Reset can't change parameters w/o IDR. Report an error
+    MFX_CHECK(!(isIdrRequired && IsOff(extResetOpt->StartNewSequence)), MFX_ERR_INVALID_VIDEO_PARAM);
+
+    MFX_CHECK(
+        IsAvcProfile(newPar.mfx.CodecProfile)                                   &&
+        m_video.AsyncDepth                 == newPar.AsyncDepth                 &&
+        m_videoInit.mfx.GopRefDist         >= newPar.mfx.GopRefDist             &&
+        m_videoInit.mfx.NumSlice           >= newPar.mfx.NumSlice               &&
+        m_videoInit.mfx.NumRefFrame        >= newPar.mfx.NumRefFrame            &&
+        m_video.mfx.RateControlMethod      == newPar.mfx.RateControlMethod      &&
+        m_videoInit.mfx.FrameInfo.Width    >= newPar.mfx.FrameInfo.Width        &&
+        m_videoInit.mfx.FrameInfo.Height   >= newPar.mfx.FrameInfo.Height       &&
+        m_video.mfx.FrameInfo.ChromaFormat == newPar.mfx.FrameInfo.ChromaFormat,
+        MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+    mfxExtCodingOption * extOptNew = GetExtBuffer(newPar);
+    mfxExtCodingOption * extOptOld = GetExtBuffer(m_video);
+
+    MFX_CHECK(
+        IsOn(extOptOld->FieldOutput) || extOptOld->FieldOutput == extOptNew->FieldOutput,
+        MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+    return checkStatus;
+}
+
 
 mfxStatus VideoENC_ENC::RunFrameVmeENCCheck(
                     mfxENCInput  *input,
