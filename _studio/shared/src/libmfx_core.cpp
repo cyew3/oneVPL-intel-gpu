@@ -366,6 +366,16 @@ mfxStatus CommonCORE::FreeFrames(mfxFrameAllocResponse *response, bool ExtendedS
                         }
                         return InternalFreeFrames(response);
                     }
+                    else
+                    {
+                        // clean up resources allocated in IsOpaqSurfacesAlreadyMapped
+                        MemIDMap::iterator it = m_RespMidQ.find(response->mids);
+                        if (m_RespMidQ.end() != it)
+                        {
+                            delete[] it->first;
+                            m_RespMidQ.erase(it);
+                        }
+                    }
                     return sts;
                 }
             }
