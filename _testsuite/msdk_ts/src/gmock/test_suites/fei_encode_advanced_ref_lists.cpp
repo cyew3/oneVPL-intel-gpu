@@ -27,19 +27,75 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
 #include "ts_encoder.h"
+#include "ts_decoder.h"
 #include "ts_parser.h"
 #include "ts_struct.h"
 #include "ts_fei_warning.h"
 
-// This test verified the ref list reordering in slice header; there is no check for quality.
+// This test verified the ref list reordering in slice header;
+// There is also quality check (PSNR) to verify if there is artifacts in the encoded stream.
+
 // Swith "DEBUG" on to have encoded stream stored in file, we may manually verify if there is
 // quality issue in encoded stream.
 //#define DEBUG
+
 
 namespace fei_encode_advanced_ref_lists
 {
 
 typedef std::vector<mfxExtBuffer*> InBuf;
+
+// This threshold is the number I tried out. If there is
+// suggested data to use, please update it.
+const mfxF64 PSNR_THRESHOLD = 36.0;
+
+class Verifier : public tsSurfaceProcessor
+{
+public:
+    tsRawReader* m_reader;
+    mfxFrameSurface1 m_ref;
+    mfxU32 m_frames;
+
+    Verifier(mfxFrameSurface1& ref, mfxU16 nFrames, const char* sn)
+        : tsSurfaceProcessor()
+        , m_reader(0)
+    {
+        m_reader = new tsRawReader(sn, ref.Info, nFrames);
+        m_max = nFrames;
+        m_ref = ref;
+        m_frames = 0;
+    }
+
+    ~Verifier()
+    {
+        if (m_reader)
+        {
+            delete m_reader;
+            m_reader = NULL;
+        }
+    }
+
+    mfxStatus ProcessSurface(mfxFrameSurface1& s)
+    {
+        m_reader->ProcessSurface(m_ref);
+
+        tsFrame ref_frame(m_ref);
+        tsFrame s_frame(s);
+        mfxF64 psnr_y = PSNR(ref_frame, s_frame, 0);
+        mfxF64 psnr_u = PSNR(ref_frame, s_frame, 1);
+        mfxF64 psnr_v = PSNR(ref_frame, s_frame, 2);
+        if ((psnr_y < PSNR_THRESHOLD) ||
+            (psnr_u < PSNR_THRESHOLD) ||
+            (psnr_v < PSNR_THRESHOLD))
+        {
+            g_tsLog << "ERROR: Low PSNR on frame " << m_frames << "\n";
+            return MFX_ERR_ABORTED;
+        }
+        m_frames++;
+        return MFX_ERR_NONE;
+    }
+};
+
 class TestSuite : tsVideoEncoder
 {
 public:
@@ -157,7 +213,7 @@ private:
     tsRawReader* m_reader;
 
 public:
-    SFiller(const TestSuite::tc_struct & tc, mfxEncodeCtrl& ctrl, mfxVideoParam& par)
+    SFiller(const TestSuite::tc_struct & tc, mfxEncodeCtrl& ctrl, mfxVideoParam& par, const char *sn)
         : m_c(0)
         , m_i(0)
         , m_buf_idx(0)
@@ -166,15 +222,7 @@ public:
         , m_tc(tc)
         , m_reader(0)
     {
-#ifdef DEBUG
-        m_par.mfx.FrameInfo.Width     = 352;
-        m_par.mfx.FrameInfo.Height    = 288;
-        m_par.mfx.FrameInfo.CropW     = 352;
-        m_par.mfx.FrameInfo.CropH     = 288;
-
-        m_reader = new tsRawReader(g_tsStreamPool.Get("forBehaviorTest/foreman_cif.nv12"), m_par.mfx.FrameInfo, 30);
-        g_tsStreamPool.Reg();
-#endif
+        m_reader = new tsRawReader(sn, m_par.mfx.FrameInfo, tc.nFrames);
 
         // set default value for mfxExtAVCRefLists, mfxExtFeiEncFrameCtrl
         mfxExtAVCRefLists     rlb = {{MFX_EXTBUFF_AVC_REFLISTS, sizeof(mfxExtAVCRefLists)}, };
@@ -239,13 +287,11 @@ public:
 
     ~SFiller()
     {
-#ifdef DEBUG
         if (m_reader)
         {
             delete m_reader;
             m_reader = NULL;
         }
-#endif
     };
 
     mfxStatus ProcessSurface(mfxFrameSurface1& s);
@@ -346,9 +392,7 @@ public:
 
     m_c ++;
 
-#ifdef DEBUG
     m_reader->ProcessSurface(s);
-#endif
     return MFX_ERR_NONE;
 }
 
@@ -365,6 +409,10 @@ private:
     tsBitstreamWriter m_writer;
 #endif
 public:
+    mfxU8  *m_buf;
+    mfxU32 m_len;    //data length in m_buf
+    mfxU32 m_buf_sz; //buf size
+
     BitstreamChecker(const TestSuite::tc_struct & tc, mfxVideoParam& par)
         : tsParserH264AU()
         , m_i(0)
@@ -376,6 +424,9 @@ public:
 #endif
     {
         set_trace_level(BS_H264_TRACE_LEVEL_REF_LIST);
+
+        m_buf_sz = m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height * 4 * tc.nFrames;
+        m_buf = new mfxU8[m_buf_sz];
 
         for (auto& ctrl : tc.mfx)
         {
@@ -406,6 +457,15 @@ public:
         }
     }
 
+    ~BitstreamChecker()
+    {
+        if(m_buf)
+        {
+            delete [] m_buf;
+            m_buf = NULL;
+        }
+    }
+
     mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames);
 
     mfxU32 GetPOC(mfxExtAVCRefLists::mfxRefPic rp, mfxU32 IdrCnt)
@@ -427,6 +487,8 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
 {
     mfxU32 checked = 0;
     SetBuffer(bs);
+    memcpy(&m_buf[m_len], bs.Data + bs.DataOffset, bs.DataLength - bs.DataOffset);
+    m_len += bs.DataLength - bs.DataOffset;
 
     nFrames *= 1 + !(bs.PicStruct & MFX_PICSTRUCT_PROGRESSIVE);
 #ifdef DEBUG
@@ -711,6 +773,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {17,  {NRAL0(4), RPL0(0, 6, BF), RPL0(1, 6, TF), RPL0(2, 3, BF), RPL0(3, 3, TF), NRAL1(2), RPL1(0, 9, TF), RPL1(1, 9, BF)}},
         },
         {
+            { 3, TFF},
             { 4, BFF},
             { 5, BFF},
             { 6, TFF},
@@ -763,8 +826,6 @@ int TestSuite::RunTest(unsigned int id)
 
     const tc_struct& tc = test_case[id];
 
-    mfxU32 num_mb = mfxU32(m_par.mfx.FrameInfo.Width / 16) * mfxU32(m_par.mfx.FrameInfo.Height / 16);
-
     m_par.AsyncDepth   = 1;
     m_par.mfx.NumSlice = 1;
     m_pPar->IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
@@ -775,12 +836,41 @@ int TestSuite::RunTest(unsigned int id)
 
     ((mfxExtCodingOption2&)m_par).BRefType = tc.BRef;
 
-    SFiller sf(tc, *m_pCtrl, *m_pPar);
+    const char* sn = g_tsStreamPool.Get("forBehaviorTest/foreman_cif.nv12");
+    g_tsStreamPool.Reg();
+
+    m_par.mfx.FrameInfo.Width     = 352;
+    m_par.mfx.FrameInfo.Height    = 288;
+    m_par.mfx.FrameInfo.CropW     = 352;
+    m_par.mfx.FrameInfo.CropH     = 288;
+
+    SFiller sf(tc, *m_pCtrl, *m_pPar, sn);
     BitstreamChecker c(tc, *m_pPar);
     m_filler = &sf;
     m_bs_processor = &c;
 
     EncodeFrames(tc.nFrames);
+
+    // to check the quality of encoded stream
+    tsVideoDecoder dec(MFX_CODEC_AVC);
+
+    mfxBitstream bs;
+    bs.Data = c.m_buf;
+    bs.DataLength = c.m_len;
+    bs.MaxLength = c.m_buf_sz;
+    tsBitstreamReader reader(bs, c.m_buf_sz);
+    dec.m_bs_processor = &reader;
+
+    // Borrow one surface from encoder which is already done execution.
+    // This surface will be used in verifier only.
+    mfxFrameSurface1 *ref = GetSurface();
+    Verifier v(*ref, tc.nFrames, sn);
+    dec.m_surf_processor = &v;
+
+    dec.Init();
+    dec.AllocSurfaces();
+    dec.DecodeFrames(tc.nFrames);
+    dec.Close();
 
     TS_END;
     return 0;
