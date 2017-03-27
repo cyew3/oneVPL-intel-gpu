@@ -895,7 +895,7 @@ mfxStatus VideoPAK_PAK::ProcessAndCheckNewParameters(
     MFX_CHECK(checkStatus != MFX_WRN_PARTIAL_ACCELERATION, MFX_ERR_INVALID_VIDEO_PARAM);
     MFX_CHECK(checkStatus >= MFX_ERR_NONE, checkStatus);
 
-    mfxStatus sts = CheckInitExtBuffers(m_video, newPar);
+    mfxStatus sts = CheckInitExtBuffers(m_video, *newParIn);
     MFX_CHECK_STS(sts);
 
     mfxExtSpsHeader const * extSpsNew = GetExtBuffer(newPar);

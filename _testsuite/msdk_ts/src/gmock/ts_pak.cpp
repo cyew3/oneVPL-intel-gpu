@@ -200,3 +200,20 @@ mfxStatus tsVideoPAK::Reset(mfxSession session, mfxVideoParam *par)
     return g_tsStatus.get();
 }
 
+mfxStatus tsVideoPAK::GetVideoParam()
+{
+    if(m_default && !m_initialized)
+    {
+        Init();TS_CHECK_MFX;
+    }
+    return GetVideoParam(m_session, m_pPar);
+}
+
+mfxStatus tsVideoPAK::GetVideoParam(mfxSession session, mfxVideoParam *par)
+{
+    TRACE_FUNC2(MFXVideoPAK_GetVideoParam, session, par);
+    g_tsStatus.check( MFXVideoPAK_GetVideoParam(session, par) );
+    TS_TRACE(par);
+
+    return g_tsStatus.get();
+}
