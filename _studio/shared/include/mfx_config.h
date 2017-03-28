@@ -269,13 +269,13 @@
     #if defined(LINUX_TARGET_PLATFORM_UPSTREAM)
         // mfx_common_linux_upstream.h was derived from mfx_common_linux_bdw.h
         #include "mfx_common_linux_upstream.h"
-    #elif defined(LINUX_TARGET_PLATFORM_BXTMIN)
+    #elif defined(LINUX_TARGET_PLATFORM_BXTMIN) // PRE_SI_GEN == 9
         #include "mfx_common_linux_bxtmin.h"
-    #elif defined(LINUX_TARGET_PLATFORM_BXT)
+    #elif defined(LINUX_TARGET_PLATFORM_BXT) // PRE_SI_GEN == 9
         #include "mfx_common_linux_bxt.h"
     #elif defined(LINUX_TARGET_PLATFORM_BSW)
         #include "mfx_common_linux_bsw.h"
-    #elif defined(LINUX_TARGET_PLATFORM_BDW)  // PRE_SI_GEN == 9
+    #elif defined(LINUX_TARGET_PLATFORM_BDW) // PRE_SI_GEN == 9
         #include "mfx_common_linux_bdw.h"
     #elif defined(LINUX_TARGET_PLATFORM_TBD)
         #include "mfx_common_lnx_tbd.h"
