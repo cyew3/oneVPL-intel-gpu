@@ -154,6 +154,9 @@ typedef enum _GPU_PLATFORM{
     PLATFORM_INTEL_SKL         = 7,   //SKL
     PLATFORM_INTEL_APL         = 8,   //Apollolake
     PLATFORM_INTEL_CNL         = 9,   //CNL
+    PLATFORM_INTEL_ICL         = 10,  //Icelake
+    PLATFORM_INTEL_KBL         = 11,  //Kabylake
+    PLATFORM_INTEL_GLV         = 12,  //Glenview
 } GPU_PLATFORM;
 
 #endif

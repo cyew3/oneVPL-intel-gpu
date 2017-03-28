@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -445,7 +445,6 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
     case PLATFORM_INTEL_SNB:
 #endif
     case PLATFORM_INTEL_HSW:
-    //case MFX_HW_HSW_ULT:
         programGradient         = ReadProgram(device, genx_hevce_analyze_gradient_32x32_best_hsw, sizeof(genx_hevce_analyze_gradient_32x32_best_hsw));
         programPrepareSrc       = ReadProgram(device, genx_hevce_prepare_src_hsw, sizeof(genx_hevce_prepare_src_hsw));
         programHmeMe32          = ReadProgram(device, genx_hevce_hme_and_me_p32_4mv_hsw, sizeof(genx_hevce_hme_and_me_p32_4mv_hsw));
@@ -462,7 +461,6 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
         break;
     case PLATFORM_INTEL_BDW:
     case PLATFORM_INTEL_CHV:
-    //case MFX_HW_CHT:
         programGradient         = ReadProgram(device, genx_hevce_analyze_gradient_32x32_best_bdw, sizeof(genx_hevce_analyze_gradient_32x32_best_bdw));
         programPrepareSrc       = ReadProgram(device, genx_hevce_prepare_src_bdw, sizeof(genx_hevce_prepare_src_bdw));
         programHmeMe32          = ReadProgram(device, genx_hevce_hme_and_me_p32_4mv_bdw, sizeof(genx_hevce_hme_and_me_p32_4mv_bdw));
@@ -478,6 +476,7 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
         programSao              = ReadProgram(device, genx_hevce_sao_bdw, sizeof(genx_hevce_sao_bdw));
         break;
     case PLATFORM_INTEL_SKL:
+    case PLATFORM_INTEL_KBL:
         programGradient         = ReadProgram(device, genx_hevce_analyze_gradient_32x32_best_skl, sizeof(genx_hevce_analyze_gradient_32x32_best_skl));
         programPrepareSrc       = ReadProgram(device, genx_hevce_prepare_src_skl, sizeof(genx_hevce_prepare_src_skl));
         programHmeMe32          = ReadProgram(device, genx_hevce_hme_and_me_p32_4mv_skl, sizeof(genx_hevce_hme_and_me_p32_4mv_skl));
@@ -493,6 +492,7 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
         programSao              = ReadProgram(device, genx_hevce_sao_skl, sizeof(genx_hevce_sao_skl));
         break;
     default:
+        assert(!"unsupported GPU_PLATFORM");
         return MFX_ERR_UNSUPPORTED;
     }
 
