@@ -180,13 +180,18 @@ mfxStatus TestSuite::ProcessBitstream(mfxBitstream &bs, mfxU32 nFrames)
                     if((m_per_frame_sei.find(frm_count) != m_per_frame_sei.end())) {
                         //For field pictures, odd payloads are associated with the first field and even payloads are associated with the second field.
                         mfxU32 num_sei = 0;
+                        std::vector<mfxU8> matched_index;
                         for (auto p : found_pl) {
                             //compare with the preset sei message of the frm_count frame
                             std::vector<mfxPayload*>::iterator i_exp_p =  m_per_frame_sei[frm_count].begin();
                             if(frm_field > 1) {
                                 i_exp_p += fieldId;
                             }
-                            for (i_exp_p; i_exp_p < m_per_frame_sei[frm_count].end(); i_exp_p += frm_field) {
+                            mfxU8 ind = 0;
+                            for (i_exp_p; i_exp_p < m_per_frame_sei[frm_count].end(); i_exp_p += frm_field, ind++) {
+                                //in case of the current element has been matched in previous comparison
+                                if(find(matched_index.begin(), matched_index.end(), ind) != matched_index.end())
+                                    continue;
                                 //  recalc real size, because exp_p->BufSize = SEI size + header_size(type + size)
                                 mfxU16 size = (*i_exp_p)->BufSize;
                                 std::vector<mfxU8> data;
@@ -195,11 +200,15 @@ mfxStatus TestSuite::ProcessBitstream(mfxBitstream &bs, mfxU32 nFrames)
 
                                 // whether the payload match one of it in the messages group
                                 if (p.BufSize == size && p.Type == (*i_exp_p)->Type) {
+                                    matched_index.push_back(ind);
                                     num_sei++;
+                                    break;
                                 }
                             }
                             g_tsLog << "The SEI in the " << frm_count << " frame: "  << "Type " << p.Type << " Size " << p.BufSize << "\n";
                         }
+                        //clear the previous founded sei msg, prepare for the follow up statistic no matter SingleSeiNalUnit off or on.
+                        found_pl.clear();
                         //only with the correct type and buffer size of each payload in the bitstream, the number of messages could be correct.
                         EXPECT_EQ((frm_field > 1) ? m_per_frame_sei[frm_count].size()/2 : m_per_frame_sei[frm_count].size(), num_sei)
                                 << "ERROR: incorrect number of SEI messages, some lost. \n";
@@ -208,7 +217,6 @@ mfxStatus TestSuite::ProcessBitstream(mfxBitstream &bs, mfxU32 nFrames)
                 }
 
                 if(nalu->nal_unit_type == 0x06) { //SEI
-                    found_pl.clear();
                     for (Bs16u sei_ind = 0; sei_ind < nalu->SEI->numMessages; ++sei_ind) {
                         payload p = {};
                         p.BufSize = nalu->SEI->message[sei_ind].payloadSize;
@@ -229,7 +237,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {{0, 1, {5}}}},
 
     {/*02*/ MFX_ERR_NONE, 1,
-            {{0, 2, {5, 5}}}}, //with 2 extra SEI inserted, the parser return the BS_ERR_WRONG_UNITS_ORDER
+            {{0, 2, {5, 5}}}},
 
     {/*03*/ MFX_ERR_NONE, 2,
             {{0, 1, {5}},{3, 2, {5, 5}}}},
@@ -241,7 +249,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {{0, 1, {5}},{3, 1, {5}},{7, 3, {5, 5, 5}}}},
 
     {/*06*/ MFX_ERR_NONE, 2,
-            {{0, 1, {5}},{4, 2, {5, 5}}}, //the parser can't parse 2 type of 5 SEI inserted in IDR(5th frame in this case)
+            {{0, 1, {5}},{4, 2, {5, 5}}},
             {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 4},
             {EXT_COD, &tsStruct::mfxExtCodingOption.SingleSeiNalUnit, MFX_CODINGOPTION_ON}}},
 
