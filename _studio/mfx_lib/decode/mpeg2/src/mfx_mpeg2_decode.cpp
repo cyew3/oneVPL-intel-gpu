@@ -3581,12 +3581,23 @@ mfxStatus VideoDECODEMPEG2Internal_SW::DecodeFrameCheck(mfxBitstream *bs,
 {
     int disp_index = -1;
 
+    bool isField = false;
+    isField = !m_implUmc->IsFramePictureStructure(m_task_num);
+
+    if (!isField && (dec_field_count & 1))
+    {
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+    if (m_task_num >= DPB * ((dec_field_count & 1) + 1))
+    {
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+
     m_in[m_task_num].SetBufferPointer(m_frame[m_frame_curr].Data + m_frame[m_frame_curr].DataOffset, m_frame[m_frame_curr].DataLength);
     m_in[m_task_num].SetDataSize(m_frame[m_frame_curr].DataLength);
     m_in[m_task_num].SetTime(m_time[m_frame_curr]);
 
     UMC::Status res = UMC::UMC_OK;
-    bool isField = false;
     bool isSkipped = false;
 
     if (8 < m_frame[m_frame_curr].DataLength)
@@ -3697,14 +3708,7 @@ mfxStatus VideoDECODEMPEG2Internal_SW::DecodeFrameCheck(mfxBitstream *bs,
 
         mfxStatus sts = UpdateCurrVideoParams(surface_work, m_task_num);
 
-        isField = !m_implUmc->IsFramePictureStructure(m_task_num);
-
-        if (m_task_num > (isField?2*DPB-1:DPB))
-        {
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
-        }
-
-        if ((false == isField || (true == isField && !(dec_field_count & 1))))
+        if (!(dec_field_count & 1))
         {
             curr_index = m_task_num;
 
