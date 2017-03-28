@@ -51,8 +51,9 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiPreEn
     std::string str;
 
     str += dump(structName + ".Header", _struct.Header) + "\n";
-    DUMP_FIELD_RESERVED(reserved);
+    DUMP_FIELD_RESERVED(reserved1);
     DUMP_FIELD(NumMBAlloc);
+    DUMP_FIELD_RESERVED(reserved2);
     if (_struct.MB)
     {
         str += structName + ".MB[]={\n";
@@ -74,8 +75,9 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiPreEn
     std::string str;
 
     str += dump(structName + ".Header", _struct.Header) + "\n";
-    DUMP_FIELD_RESERVED(reserved);
+    DUMP_FIELD_RESERVED(reserved1);
     DUMP_FIELD(NumMBAlloc);
+    DUMP_FIELD_RESERVED(reserved2);
     if (_struct.MB)
     {
         str += structName + ".MB[]={\n";
@@ -101,8 +103,9 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiPreEn
     std::string str;
 
     str += dump(structName + ".Header", _struct.Header) + "\n";
-    DUMP_FIELD_RESERVED(reserved0);
+    DUMP_FIELD_RESERVED(reserved1);
     DUMP_FIELD(NumMBAlloc);
+    DUMP_FIELD_RESERVED(reserved2);
     if (_struct.MB)
     {
         for (unsigned int i = 0; i < _struct.NumMBAlloc; i++)
@@ -171,8 +174,9 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiEncMV
     std::string str;
 
     str += dump(structName + ".Header", _struct.Header) + "\n";
-    DUMP_FIELD_RESERVED(reserved);
+    DUMP_FIELD_RESERVED(reserved1);
     DUMP_FIELD(NumMBAlloc);
+    DUMP_FIELD_RESERVED(reserved2);
     if (_struct.MB)
     {
         str +=  structName + ".MB[]={\n";
@@ -216,10 +220,11 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiEncQP
     std::string str;
 
     str += dump(structName + ".Header", _struct.Header) + "\n";
-    DUMP_FIELD_RESERVED(reserved);
-    DUMP_FIELD(NumQPAlloc); /* size of allocated memory in number of QPs value*/
+    DUMP_FIELD_RESERVED(reserved1);
+    DUMP_FIELD(NumMBAlloc); /* size of allocated memory in number of QPs value*/
+    DUMP_FIELD_RESERVED(reserved2);
 
-    str += structName + ".QP[]=" + dump_reserved_array(_struct.QP, _struct.NumQPAlloc) + "\n";
+    str += structName + ".QP[]=" + dump_reserved_array(_struct.MB, _struct.NumMBAlloc) + "\n";
     return str;
 }
 
@@ -229,8 +234,9 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiEncMB
     std::string str;
 
     str += dump(structName + ".Header", _struct.Header) + "\n";
-    DUMP_FIELD_RESERVED(reserved);
+    DUMP_FIELD_RESERVED(reserved1);
     DUMP_FIELD(NumMBAlloc);
+    DUMP_FIELD_RESERVED(reserved2);
     if (_struct.MB)
     {
         str += structName + ".MB[]={\n";
@@ -270,8 +276,9 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiEncMV
     std::string str;
 
     str += dump(structName + ".Header", _struct.Header) + "\n";
-    DUMP_FIELD_RESERVED(reserved);
+    DUMP_FIELD_RESERVED(reserved1);
     DUMP_FIELD(NumMBAlloc);
+    DUMP_FIELD_RESERVED(reserved2);
     if (_struct.MB)
     {
         str += structName + ".MB[]={\n";
@@ -297,8 +304,9 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiEncMB
     std::string str;
 
     str += dump(structName + ".Header", _struct.Header) + "\n";
-    DUMP_FIELD_RESERVED(reserved);
+    DUMP_FIELD_RESERVED(reserved1);
     DUMP_FIELD(NumMBAlloc);
+    DUMP_FIELD_RESERVED(reserved2);
     if (_struct.MB)
     {
         str += structName + ".MB[]={\n";
@@ -404,8 +412,9 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiPakMB
     std::string str;
 
     str += dump(structName + ".Header", _struct.Header) + "\n";
-    DUMP_FIELD_RESERVED(reserved);
+    DUMP_FIELD_RESERVED(reserved1);
     DUMP_FIELD(NumMBAlloc);
+    DUMP_FIELD_RESERVED(reserved2);
     if (_struct.MB)
     {
         str += structName + ".MB[]={\n";
@@ -425,6 +434,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiRepac
     str += dump(structName + ".Header", _struct.Header) + "\n";
     DUMP_FIELD(MaxFrameSize);
     DUMP_FIELD(NumPasses);
+    DUMP_FIELD_RESERVED(reserved);
     DUMP_FIELD_RESERVED(DeltaQP);
 
     return str;
@@ -516,10 +526,11 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiDecSt
     std::string str;
 
     str += dump(structName + ".Header", _struct.Header) + "\n";
-    DUMP_FIELD_RESERVED(reserved);
+    DUMP_FIELD_RESERVED(reserved1);
+    DUMP_FIELD(NumMBAlloc);
     DUMP_FIELD(RemapRefIdx);
     DUMP_FIELD(PicStruct);
-    DUMP_FIELD(NumMBAlloc);
+    DUMP_FIELD_RESERVED(reserved2);
     if (_struct.MB)
     {
         str += structName + ".MB[]={\n";
@@ -549,6 +560,8 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiParam
 std::string DumpContext::dump(const std::string structName, const mfxPAKInput &_struct)
 {
     std::string str;
+
+    DUMP_FIELD_RESERVED(reserved);
 
     if (_struct.InSurface)
     {
@@ -605,8 +618,6 @@ std::string DumpContext::dump(const std::string structName, const mfxPAKInput &_
         }
     }
 
-    DUMP_FIELD_RESERVED(reserved);
-
     return str;
 }
 
@@ -614,6 +625,8 @@ std::string DumpContext::dump(const std::string structName, const mfxPAKInput &_
 std::string DumpContext::dump(const std::string structName, const mfxPAKOutput &_struct)
 {
     std::string str;
+
+    DUMP_FIELD_RESERVED(reserved);
 
     if (_struct.Bs)
     {
@@ -647,6 +660,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiSPS &
     DUMP_FIELD(SPSId);
     DUMP_FIELD(PicOrderCntType);
     DUMP_FIELD(Log2MaxPicOrderCntLsb);
+    DUMP_FIELD_RESERVED(reserved);
 
     return str;
 }
@@ -667,6 +681,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiPPS &
     DUMP_FIELD(ChromaQPIndexOffset);
     DUMP_FIELD(SecondChromaQPIndexOffset);
     DUMP_FIELD(Transform8x8ModeFlag);
+    DUMP_FIELD_RESERVED(reserved);
 
     str += structName + ".DpbBefore[]={\n";
     for (unsigned int i = 0; i < GET_ARRAY_SIZE(_struct.DpbBefore); i++)
@@ -677,6 +692,9 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiPPS &
         str += "        .PicType"          + ToString(_struct.DpbBefore[i].PicType)          + "\n";
         str += "        .FrameNumWrap"     + ToString(_struct.DpbBefore[i].FrameNumWrap)     + "\n";
         str += "        .LongTermFrameIdx" + ToString(_struct.DpbBefore[i].LongTermFrameIdx) + "\n";
+        str += "        .reserved[0]" + ToString(_struct.DpbBefore[i].reserved[0]) + "\n";
+        str += "        .reserved[1]" + ToString(_struct.DpbBefore[i].reserved[1]) + "\n";
+        str += "        .reserved[2]" + ToString(_struct.DpbBefore[i].reserved[2]) + "\n";
         str += "    }\n";
     }
     str += "}\n";
@@ -705,6 +723,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiSlice
     str += dump(structName + ".Header", _struct.Header) + "\n";
 
     DUMP_FIELD(NumSlice);
+    DUMP_FIELD_RESERVED(reserved);
 
     if (_struct.Slice)
     {
@@ -729,23 +748,28 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiSlice
     DUMP_FIELD(PPSId);
     DUMP_FIELD(IdrPicId);
     DUMP_FIELD(CabacInitIdc);
+    DUMP_FIELD(NumRefIdxL0Active);
+    DUMP_FIELD(NumRefIdxL1Active);
     DUMP_FIELD(SliceQPDelta);
     DUMP_FIELD(DisableDeblockingFilterIdc);
     DUMP_FIELD(SliceAlphaC0OffsetDiv2);
     DUMP_FIELD(SliceBetaOffsetDiv2);
-    DUMP_FIELD(NumRefIdxL0Active);
-    DUMP_FIELD(NumRefIdxL1Active);
+    DUMP_FIELD_RESERVED(reserved);
 
     for (unsigned int i = 0; i < GET_ARRAY_SIZE(_struct.RefL0); i++)
     {
         str += structName + ".RefL0[" + ToString(i) + "].PictureType=" + ToString(_struct.RefL0[i].PictureType) + "\n";
         str += structName + ".RefL0[" + ToString(i) + "].Index=" + ToString(_struct.RefL0[i].Index) + "\n";
+        str += structName + ".RefL0[" + ToString(i) + "].reserved[0]=" + ToString(_struct.RefL0[i].reserved[0]) + "\n";
+        str += structName + ".RefL0[" + ToString(i) + "].reserved[1]=" + ToString(_struct.RefL0[i].reserved[1]) + "\n";
     }
 
     for (unsigned int i = 0; i < GET_ARRAY_SIZE(_struct.RefL1); i++)
     {
         str += structName + ".RefL1[" + ToString(i) + "].PictureType=" + ToString(_struct.RefL1[i].PictureType) + "\n";
         str += structName + ".RefL1[" + ToString(i) + "].Index=" + ToString(_struct.RefL1[i].Index) + "\n";
+        str += structName + ".RefL1[" + ToString(i) + "].reserved[0]=" + ToString(_struct.RefL1[i].reserved[0]) + "\n";
+        str += structName + ".RefL1[" + ToString(i) + "].reserved[1]=" + ToString(_struct.RefL1[i].reserved[1]) + "\n";
     }
 
     return str;

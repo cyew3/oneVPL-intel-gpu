@@ -70,8 +70,9 @@ typedef struct {
 
 typedef struct {
     mfxExtBuffer    Header;
-    mfxU32  reserved[13];
+    mfxU32  reserved1[3];
     mfxU32  NumMBAlloc; /* size of allocated memory in number of macroblocks */
+    mfxU16  reserved2[20];
 
     struct  mfxExtFeiPreEncMVPredictorsMB {
         mfxI16Pair MV[2]; /* 0 for L0 and 1 for L1 */
@@ -80,18 +81,20 @@ typedef struct {
 
 typedef struct {
     mfxExtBuffer    Header;
-    mfxU32  reserved[13];
-    mfxU32  NumQPAlloc; /* size of allocated memory in number of QPs value */
+    mfxU32  reserved1[3];
+    mfxU32  NumMBAlloc;
+    mfxU16  reserved2[20];
 
-    mfxU8    *QP;
+    mfxU8    *MB;
 } mfxExtFeiEncQP;
 
-/* 1 PreENC output */
+/* PreENC output */
 /* Layout is exactly the same as mfxExtFeiEncMVs, this buffer may be removed in future */
 typedef struct {
     mfxExtBuffer    Header;
-    mfxU32  reserved[13];
+    mfxU32  reserved1[3];
     mfxU32  NumMBAlloc;
+    mfxU16  reserved2[20];
 
     struct  mfxExtFeiPreEncMVMB {
         mfxI16Pair MV[16][2];
@@ -100,11 +103,12 @@ typedef struct {
 
 typedef struct {
     mfxExtBuffer    Header;
-    mfxU32 reserved0[13];
+    mfxU32  reserved1[3];
     mfxU32  NumMBAlloc;
+    mfxU16  reserved2[20];
 
     struct  mfxExtFeiPreEncMBStatMB {
-        struct  {
+        struct  mfxExtFeiPreEncMBStatMBInter {
             mfxU16  BestDistortion;
             mfxU16  Mode ;
         } Inter[2]; /*0 -L0, 1 - L1*/
@@ -155,11 +159,12 @@ typedef struct {
 
 typedef struct {
     mfxExtBuffer    Header;
-    mfxU32  reserved[13];
-    mfxU32  NumMBAlloc; /* size of allocated memory in number of macroblocks */
+    mfxU32  reserved1[3];
+    mfxU32  NumMBAlloc;
+    mfxU16  reserved2[20];
 
     struct  mfxExtFeiEncMVPredictorsMB {
-        struct {
+        struct mfxExtFeiEncMVPredictorsMBRefIdx{
             mfxU8   RefL0: 4;
             mfxU8   RefL1: 4;
         } RefIdx[4]; /* index is predictor number */
@@ -170,8 +175,9 @@ typedef struct {
 
 typedef struct {
     mfxExtBuffer    Header;
-    mfxU32  reserved[13];
+    mfxU32  reserved1[3];
     mfxU32  NumMBAlloc;
+    mfxU16  reserved2[20];
 
     struct  mfxExtFeiEncMBCtrlMB {
         mfxU32    ForceToIntra     : 1;
@@ -209,8 +215,9 @@ For example, MV for right top 4x4 sub block is stored in 5-th element of the arr
 */
 typedef struct {
     mfxExtBuffer    Header;
-    mfxU32  reserved[13];
+    mfxU32  reserved1[3];
     mfxU32  NumMBAlloc;
+    mfxU16  reserved2[20];
 
     struct  mfxExtFeiEncMVMB {
         mfxI16Pair MV[16][2]; /* first index is block (4x4 pixels) number, second is 0 for L0 and 1 for L1 */
@@ -219,8 +226,9 @@ typedef struct {
 
 typedef struct {
     mfxExtBuffer    Header;
-    mfxU32  reserved[13];
+    mfxU32  reserved1[3];
     mfxU32  NumMBAlloc;
+    mfxU16  reserved2[20];
 
     struct mfxExtFeiEncMBStatMB {
         mfxU16  InterDistortion[16];
@@ -309,8 +317,9 @@ typedef struct {
 
 typedef struct {
     mfxExtBuffer    Header;
-    mfxU32  reserved[13];
+    mfxU32  reserved1[3];
     mfxU32  NumMBAlloc;
+    mfxU16  reserved2[20];
 
     mfxFeiPakMBCtrl *MB;
 } mfxExtFeiPakMBCtrl;
@@ -319,6 +328,7 @@ typedef struct {
     mfxExtBuffer    Header;
     mfxU32      MaxFrameSize; /* in bytes */
     mfxU32      NumPasses;    /* up to 8 */
+    mfxU16      reserved[8];
     mfxU8       DeltaQP[8];   /* list of delta QPs, only positive values */
 } mfxExtFeiRepackCtrl;
 
@@ -393,10 +403,11 @@ typedef struct {
 
 typedef struct {
     mfxExtBuffer    Header;
-    mfxU16  reserved[24];
+    mfxU32  reserved1[3];
+    mfxU32  NumMBAlloc;
     mfxU16  RemapRefIdx; /* tri-state option, default is OFF */
     mfxU16  PicStruct;
-    mfxU32  NumMBAlloc;
+    mfxU16  reserved2[18];
 
     mfxFeiDecStreamOutMBCtrl *MB;
 } mfxExtFeiDecStreamOut;
@@ -409,6 +420,7 @@ typedef struct {
 
     mfxU16    PicOrderCntType;
     mfxU16    Log2MaxPicOrderCntLsb;
+    mfxU16    reserved[121];
 } mfxExtFeiSPS;
 
 typedef struct {
@@ -425,12 +437,14 @@ typedef struct {
     mfxI16    ChromaQPIndexOffset;
     mfxI16    SecondChromaQPIndexOffset;
     mfxU16    Transform8x8ModeFlag;
+    mfxU16    reserved[114];
 
     struct mfxExtFeiPpsDPB {
         mfxU16    Index;    /* index in mfxPAKInput::L0Surface array */
         mfxU16    PicType;
         mfxI32    FrameNumWrap;
         mfxU16    LongTermFrameIdx;
+        mfxU16    reserved[3];
     } DpbBefore[16], DpbAfter[16];
 } mfxExtFeiPPS;
 
@@ -438,6 +452,7 @@ typedef struct {
     mfxExtBuffer    Header;
 
     mfxU16    NumSlice; /* actual number of slices in the picture */
+    mfxU16    reserved[11];
 
     struct mfxSlice{
         mfxU16    MBAddress;
@@ -455,10 +470,12 @@ typedef struct {
         mfxU16    DisableDeblockingFilterIdc;
         mfxI16    SliceAlphaC0OffsetDiv2;
         mfxI16    SliceBetaOffsetDiv2;
+        mfxU16    reserved[20];
 
-        struct {
+        struct mfxSliceRef{
             mfxU16   PictureType;
             mfxU16   Index;
+            mfxU16   reserved[2];
         } RefL0[32], RefL1[32]; /* index in mfxPAKInput::L0Surface array */
 
     } *Slice;

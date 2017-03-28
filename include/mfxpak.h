@@ -38,6 +38,8 @@ extern "C"
 #endif /* __cplusplus */
 
 typedef struct {
+    mfxU16 reserved[32];
+
     mfxFrameSurface1 *InSurface;
 
     mfxU16  NumFrameL0;
@@ -50,11 +52,11 @@ typedef struct {
 
     mfxU16 NumPayload;
     mfxPayload      **Payload;
-
-    mfxU32 reserved[32];
 } mfxPAKInput;
 
 typedef struct {
+    mfxU16  reserved[32];
+
     mfxBitstream     *Bs;
 
     mfxFrameSurface1 *OutSurface;
