@@ -238,11 +238,11 @@ namespace hevcd_get_payload
 
     /* 10 bit */
     char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_P010>)
-    { return "conformance/hevc/StressBitstreamEncode/main10/Syntax_HEVC_Main10HT62_432x240_30fps_203_inter_sei_1.7.2.hevc"; }
+    { return "conformance/hevc/sei_payload/Kimono1_704x576_24_10_sei.265"; }
     char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_Y210>)
-    { return "conformance/hevc/StressBitstreamEncode/rext422_10b/Syntax_HEVC_Rext422-10b-HT62_432x240_30fps_203_inter_sei_2.0.0.hevc"; }
+    { return "conformance/hevc/sei_payload/Kimono1_704x576_24_422_10_sei.265"; }
     char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_Y410>)
-    { return "conformance/hevc/StressBitstreamEncode/rext444_10b/Syntax_HEVC_Rext444_10bHT62_432x240_30fps_203_inter_sei_2.2.hevc"; }
+    { return "conformance/hevc/sei_payload/Kimono1_704x576_24_444_10_sei.265"; }
 
     template <unsigned fourcc>
     struct TestSuiteEx
