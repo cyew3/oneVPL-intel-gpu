@@ -1499,7 +1499,16 @@ DdiTaskIter MfxHwH264Encode::ReorderFrame(
     bool                  flush)
 {
     DdiTaskIter top = ReorderFrame(dpb, begin, end);
-
+    DdiTaskIter prev = top;
+    if(prev != end && prev != begin){            //special case for custom IDR frame
+        --prev;                                  //we just change previous B-frame to P-frame
+        if(top->m_ctrl.FrameType & MFX_FRAMETYPE_IDR && prev->GetFrameType() & MFX_FRAMETYPE_B && !gopStrict)
+        {
+          prev->m_type[0] = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
+          prev->m_type[1] = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
+          top = prev;
+        }
+    }
     if (flush && top == end && begin != end)
     {
         if (gopStrict)
@@ -1542,7 +1551,6 @@ PairU8 MfxHwH264Encode::GetFrameType(
 
     if (frameOrder % gopPicSize % gopRefDist == 0)
         return ExtendFrameType(MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF);
-
     if ((gopOptFlag & MFX_GOP_STRICT) == 0)
         if (((frameOrder + 1) % gopPicSize == 0 && (gopOptFlag & MFX_GOP_CLOSED)) ||
             (frameOrder + 1) % idrPicDist == 0)
