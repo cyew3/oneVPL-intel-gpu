@@ -166,7 +166,7 @@ protected:
     bool m_IsUseExternalFrames;
     bool m_sfcVideoPostProcessing;
 
-    mfxFrameSurface1 m_surface;  // for copying
+    mfxFrameInfo m_surface_info;  // for copying
 
     UMC::VideoDataInfo m_info;
 

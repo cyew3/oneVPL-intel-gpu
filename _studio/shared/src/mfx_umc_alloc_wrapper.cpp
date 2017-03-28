@@ -218,10 +218,7 @@ UMC::Status mfx_UMC_FrameAllocator::InitMfx(UMC::FrameAllocatorParams *,
 
     UMC::Status umcSts = m_info.Init(params->mfx.FrameInfo.Width, params->mfx.FrameInfo.Height, color_format, bit_depth);
 
-    m_surface.Info.Width = params->mfx.FrameInfo.Width;
-    m_surface.Info.Height = params->mfx.FrameInfo.Height;
-    m_surface.Info.BitDepthLuma = params->mfx.FrameInfo.BitDepthLuma;
-    m_surface.Info.BitDepthChroma = params->mfx.FrameInfo.BitDepthChroma;
+    m_surface_info = params->mfx.FrameInfo;
 
     if (umcSts != UMC::UMC_OK)
         return umcSts;
@@ -602,10 +599,10 @@ mfxStatus mfx_UMC_FrameAllocator::SetCurrentMFXSurface(mfxFrameSurface1 *surf, b
 
     // check input surface
 
-    if ((surf->Info.BitDepthLuma ? surf->Info.BitDepthLuma : 8) != (m_surface.Info.BitDepthLuma ? m_surface.Info.BitDepthLuma : 8))
+    if ((surf->Info.BitDepthLuma ? surf->Info.BitDepthLuma : 8) != (m_surface_info.BitDepthLuma ? m_surface_info.BitDepthLuma : 8))
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
-    if ((surf->Info.BitDepthChroma ? surf->Info.BitDepthChroma : 8) != (m_surface.Info.BitDepthChroma ? m_surface.Info.BitDepthChroma : 8))
+    if ((surf->Info.BitDepthChroma ? surf->Info.BitDepthChroma : 8) != (m_surface_info.BitDepthChroma ? m_surface_info.BitDepthChroma : 8))
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
     if (surf->Info.FourCC == MFX_FOURCC_P010 || surf->Info.FourCC == MFX_FOURCC_P210)
@@ -900,6 +897,7 @@ mfxFrameSurface1 * mfx_UMC_FrameAllocator::GetSurface(UMC::FrameMemID index, mfx
 mfxStatus mfx_UMC_FrameAllocator::PrepareToOutput(mfxFrameSurface1 *surface_work, UMC::FrameMemID index, const mfxVideoParam *, bool isOpaq)
 {
     UMC::AutomaticUMCMutex guard(m_guard);
+
     mfxStatus sts;
     mfxU16 dstMemType = isOpaq?(MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET):(MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET);
     
@@ -909,60 +907,69 @@ mfxStatus mfx_UMC_FrameAllocator::PrepareToOutput(mfxFrameSurface1 *surface_work
     if (m_IsUseExternalFrames)
         return MFX_ERR_NONE;
 
-    m_surface.Info.Width = (mfxU16)frame->GetInfo()->GetWidth();
-    m_surface.Info.Height = (mfxU16)frame->GetInfo()->GetHeight();
+    mfxFrameSurface1 surface;
+
+    memset(&surface, 0, sizeof(mfxFrameSurface1));
+
+    surface.Info = m_surface_info;
+    surface.Info.Width  = (mfxU16)frame->GetInfo()->GetWidth();
+    surface.Info.Height = (mfxU16)frame->GetInfo()->GetHeight();
 
     switch (frame->GetInfo()->GetColorFormat())
     {
     case UMC::NV12:
-        m_surface.Data.Y = frame->GetPlaneMemoryInfo(0)->m_planePtr;
-        m_surface.Data.UV = frame->GetPlaneMemoryInfo(1)->m_planePtr;
-        m_surface.Data.PitchHigh = (mfxU16)(frame->GetPlaneMemoryInfo(0)->m_pitch / (1 << 16));
-        m_surface.Data.PitchLow  = (mfxU16)(frame->GetPlaneMemoryInfo(0)->m_pitch % (1 << 16));
+        surface.Data.Y = frame->GetPlaneMemoryInfo(0)->m_planePtr;
+        surface.Data.UV = frame->GetPlaneMemoryInfo(1)->m_planePtr;
+        surface.Data.PitchHigh = (mfxU16)(frame->GetPlaneMemoryInfo(0)->m_pitch / (1 << 16));
+        surface.Data.PitchLow  = (mfxU16)(frame->GetPlaneMemoryInfo(0)->m_pitch % (1 << 16));
         break;
 
     case UMC::YUV420:
-        m_surface.Data.Y = frame->GetPlaneMemoryInfo(0)->m_planePtr;
-        m_surface.Data.U = frame->GetPlaneMemoryInfo(1)->m_planePtr;
-        m_surface.Data.V = frame->GetPlaneMemoryInfo(2)->m_planePtr;
-        m_surface.Data.PitchHigh = (mfxU16)(frame->GetPlaneMemoryInfo(0)->m_pitch / (1 << 16));
-        m_surface.Data.PitchLow  = (mfxU16)(frame->GetPlaneMemoryInfo(0)->m_pitch % (1 << 16));
+        surface.Data.Y = frame->GetPlaneMemoryInfo(0)->m_planePtr;
+        surface.Data.U = frame->GetPlaneMemoryInfo(1)->m_planePtr;
+        surface.Data.V = frame->GetPlaneMemoryInfo(2)->m_planePtr;
+        surface.Data.PitchHigh = (mfxU16)(frame->GetPlaneMemoryInfo(0)->m_pitch / (1 << 16));
+        surface.Data.PitchLow  = (mfxU16)(frame->GetPlaneMemoryInfo(0)->m_pitch % (1 << 16));
         break;
 
     case UMC::IMC3:
-        m_surface.Data.Y = frame->GetPlaneMemoryInfo(0)->m_planePtr;
-        m_surface.Data.U = frame->GetPlaneMemoryInfo(1)->m_planePtr;
-        m_surface.Data.V = frame->GetPlaneMemoryInfo(2)->m_planePtr;
-        m_surface.Data.PitchHigh = (mfxU16)(frame->GetPlaneMemoryInfo(0)->m_pitch / (1 << 16));
-        m_surface.Data.PitchLow  = (mfxU16)(frame->GetPlaneMemoryInfo(0)->m_pitch % (1 << 16));
+        surface.Data.Y = frame->GetPlaneMemoryInfo(0)->m_planePtr;
+        surface.Data.U = frame->GetPlaneMemoryInfo(1)->m_planePtr;
+        surface.Data.V = frame->GetPlaneMemoryInfo(2)->m_planePtr;
+        surface.Data.PitchHigh = (mfxU16)(frame->GetPlaneMemoryInfo(0)->m_pitch / (1 << 16));
+        surface.Data.PitchLow  = (mfxU16)(frame->GetPlaneMemoryInfo(0)->m_pitch % (1 << 16));
         break;
 
     case UMC::RGB32:
-        m_surface.Data.B = frame->GetPlaneMemoryInfo(0)->m_planePtr;
-        m_surface.Data.G = m_surface.Data.B + 1;
-        m_surface.Data.R = m_surface.Data.B + 2;
-        m_surface.Data.A = m_surface.Data.B + 3;
-        m_surface.Data.PitchHigh = (mfxU16)(frame->GetPlaneMemoryInfo(0)->m_pitch / (1 << 16));
-        m_surface.Data.PitchLow  = (mfxU16)(frame->GetPlaneMemoryInfo(0)->m_pitch % (1 << 16));
+        surface.Data.B = frame->GetPlaneMemoryInfo(0)->m_planePtr;
+        surface.Data.G = surface.Data.B + 1;
+        surface.Data.R = surface.Data.B + 2;
+        surface.Data.A = surface.Data.B + 3;
+        surface.Data.PitchHigh = (mfxU16)(frame->GetPlaneMemoryInfo(0)->m_pitch / (1 << 16));
+        surface.Data.PitchLow  = (mfxU16)(frame->GetPlaneMemoryInfo(0)->m_pitch % (1 << 16));
         break;
 
     case UMC::YUY2:
-        m_surface.Data.Y = frame->GetPlaneMemoryInfo(0)->m_planePtr;
-        m_surface.Data.U = m_surface.Data.Y + 1;
-        m_surface.Data.V = m_surface.Data.Y + 3;
-        m_surface.Data.PitchHigh = (mfxU16)(frame->GetPlaneMemoryInfo(0)->m_pitch / (1 << 16));
-        m_surface.Data.PitchLow  = (mfxU16)(frame->GetPlaneMemoryInfo(0)->m_pitch % (1 << 16));
+        surface.Data.Y = frame->GetPlaneMemoryInfo(0)->m_planePtr;
+        surface.Data.U = surface.Data.Y + 1;
+        surface.Data.V = surface.Data.Y + 3;
+        surface.Data.PitchHigh = (mfxU16)(frame->GetPlaneMemoryInfo(0)->m_pitch / (1 << 16));
+        surface.Data.PitchLow  = (mfxU16)(frame->GetPlaneMemoryInfo(0)->m_pitch % (1 << 16));
         break;
 
     default:
         return MFX_ERR_UNSUPPORTED;
     }
-    m_surface.Info.FourCC = surface_work->Info.FourCC;
-    m_surface.Info.Shift = m_IsUseExternalFrames ? m_extSurfaces[index].FrameSurface->Info.Shift : m_frameData[index].first.Info.Shift;
+    surface.Info.FourCC = surface_work->Info.FourCC;
+    surface.Info.Shift = m_IsUseExternalFrames ? m_extSurfaces[index].FrameSurface->Info.Shift : m_frameData[index].first.Info.Shift;
+
+    //Performance issue. We need to unlock mutex to let decoding thread run async.
+    guard.Unlock();
     sts = m_pCore->DoFastCopyWrapper(surface_work,
                                      dstMemType,
-                                     &m_surface,
+                                     &surface,
                                      MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY);
+    guard.Lock();
 
     MFX_CHECK_STS(sts);
 
@@ -1282,18 +1289,22 @@ mfxStatus   mfx_UMC_FrameAllocator_D3D::PrepareToOutput(mfxFrameSurface1 *surfac
         if (!m_sfcVideoPostProcessing)
         {
             UMC::VideoDataInfo VInfo;
+            mfxFrameSurface1 surface;
 
             mfxMemId idx = m_frameData[index].first.Data.MemId;
-            memset(&m_surface.Data,0,sizeof(mfxFrameData));
-            m_surface.Info = m_frameData[index].first.Info;
-            m_surface.Data.Y = 0;
-            m_surface.Data.MemId = idx;
+            memset(&surface.Data,0,sizeof(mfxFrameData));
+            surface.Info = m_frameData[index].first.Info;
+            surface.Data.Y = 0;
+            surface.Data.MemId = idx;
+            //Performance issue. We need to unlock mutex to let decoding thread run async.
+            guard.Unlock();
             sts = m_pCore->DoFastCopyWrapper(surface_work,
                                              MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY,
-                                             &m_surface,
+                                             &surface,
 
                                              MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET
                                              );
+            guard.Lock();
             MFX_CHECK_STS(sts);
         }
 
@@ -1418,10 +1429,7 @@ UMC::Status mfx_UMC_FrameAllocator_D3D_Converter::InitMfx(UMC::FrameAllocatorPar
 
     UMC::Status umcSts = m_info.Init(params->mfx.FrameInfo.Width, params->mfx.FrameInfo.Height, color_format, 8);
 
-    m_surface.Info.Width = params->mfx.FrameInfo.Width;
-    m_surface.Info.Height = params->mfx.FrameInfo.Height;
-    m_surface.Info.BitDepthLuma = params->mfx.FrameInfo.BitDepthLuma;
-    m_surface.Info.BitDepthChroma = params->mfx.FrameInfo.BitDepthChroma;
+    m_surface_info = params->mfx.FrameInfo;
 
     if (umcSts != UMC::UMC_OK)
         return umcSts;
@@ -1577,8 +1585,11 @@ mfxStatus mfx_UMC_FrameAllocator_D3D_Converter::CheckPreparingToOutput(mfxFrameS
     {
         UMC::FrameMemID index = in->GetFrameMID();
 
-        mfxFrameSurface1 pSrc = m_frameData[index].first;
-        sts = (*pCc)->EndHwJpegProcessing(&pSrc, surface_work);
+        mfxFrameSurface1 src = m_frameData[index].first;
+        //Performance issue. We need to unlock mutex to let decoding thread run async.
+        guard.Unlock();
+        sts = (*pCc)->EndHwJpegProcessing(&src, surface_work);
+        guard.Lock();
         if (sts < MFX_ERR_NONE)
             return sts;
 
@@ -1593,12 +1604,15 @@ mfxStatus mfx_UMC_FrameAllocator_D3D_Converter::CheckPreparingToOutput(mfxFrameS
         UMC::FrameMemID indexTop = in[0].GetFrameMID();
         UMC::FrameMemID indexBottom = in[1].GetFrameMID();
 
-        mfxFrameSurface1 pSrcTop, pSrcBottom;
+        mfxFrameSurface1 srcTop, srcBottom;
 
-        pSrcTop = m_frameData[indexTop].first;
-        pSrcBottom = m_frameData[indexBottom].first;
+        srcTop = m_frameData[indexTop].first;
+        srcBottom = m_frameData[indexBottom].first;
 
-        sts = (*pCc)->EndHwJpegProcessing(&pSrcTop, &pSrcBottom, surface_work);
+        //Performance issue. We need to unlock mutex to let decoding thread run async.
+        guard.Unlock();
+        sts = (*pCc)->EndHwJpegProcessing(&srcTop, &srcBottom, surface_work);
+        guard.Lock();
         if (sts < MFX_ERR_NONE)
             return sts;
 
