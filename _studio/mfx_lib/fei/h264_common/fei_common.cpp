@@ -641,8 +641,7 @@ template <typename T, typename U>
 mfxStatus MfxH264FEIcommon::CheckRuntimeExtBuffers(T* input, U* output, const MfxVideoParam & owned_video)
 {
 
-    MFX_CHECK_NULL_PTR1(input);
-    MFX_CHECK_NULL_PTR1(output);
+    MFX_CHECK_NULL_PTR2(input, output);
 
     for (mfxU32 i = 0; i < input->NumExtParam; ++i)
     {
@@ -725,8 +724,6 @@ mfxStatus MfxH264FEIcommon::CheckRuntimeExtBuffers(T* input, U* output, const Mf
         mfxExtFeiPPS *extFeiPPS_f = GetExtBufferFEI(input, 0),
                      *extFeiPPS_s = GetExtBufferFEI(input, 1);
 
-        mfxI32 res = memcmp(extFeiPPS_f->DpbAfter, extFeiPPS_s->DpbBefore, sizeof(extFeiPPS_f->DpbAfter));
-        MFX_CHECK_WITH_ASSERT(!res, MFX_ERR_UNDEFINED_BEHAVIOR);
     }
 #endif
 

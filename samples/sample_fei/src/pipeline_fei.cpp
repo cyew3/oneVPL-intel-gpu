@@ -1080,9 +1080,15 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
 
                     qps[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_QP;
                     qps[fieldId].Header.BufferSz = sizeof(mfxExtFeiEncQP);
+#if MFX_VERSION >= 1023
+                    qps[fieldId].NumMBAlloc = numMB;
+                    qps[fieldId].MB = new mfxU8[qps[fieldId].NumMBAlloc];
+                    MSDK_ZERO_ARRAY(qps[fieldId].MB, qps[fieldId].NumMBAlloc);
+#else
                     qps[fieldId].NumQPAlloc = numMB;
                     qps[fieldId].QP = new mfxU8[qps[fieldId].NumQPAlloc];
                     MSDK_ZERO_ARRAY(qps[fieldId].QP, qps[fieldId].NumQPAlloc);
+#endif
                 }
 
                 if (!preENCCtr[fieldId].DisableMVOutput)
@@ -1344,9 +1350,15 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
 
                     feiEncMbQp[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_QP;
                     feiEncMbQp[fieldId].Header.BufferSz = sizeof(mfxExtFeiEncQP);
+#if MFX_VERSION >= 1023
+                    feiEncMbQp[fieldId].NumMBAlloc = numMB;
+                    feiEncMbQp[fieldId].MB = new mfxU8[feiEncMbQp[fieldId].NumMBAlloc];
+                    MSDK_ZERO_ARRAY(feiEncMbQp[fieldId].MB, feiEncMbQp[fieldId].NumMBAlloc);
+#else
                     feiEncMbQp[fieldId].NumQPAlloc = numMB;
                     feiEncMbQp[fieldId].QP = new mfxU8[feiEncMbQp[fieldId].NumQPAlloc];
                     MSDK_ZERO_ARRAY(feiEncMbQp[fieldId].QP, feiEncMbQp[fieldId].NumQPAlloc);
+#endif
                 }
 
                 if (Weights)

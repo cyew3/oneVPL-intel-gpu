@@ -93,7 +93,7 @@ public:
                     {
                         mfxExtFeiEncQP* feiEncMbQp = (mfxExtFeiEncQP*)(*it_buf);
                         for (int fieldId = 0; fieldId < numFields; fieldId++) {
-                            delete[] feiEncMbQp[fieldId].QP;
+                            delete[] feiEncMbQp[fieldId].MB;
                         }
                         delete[] feiEncMbQp;
                         feiEncMbQp = NULL;

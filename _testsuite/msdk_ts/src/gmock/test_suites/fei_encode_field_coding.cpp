@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2016 Intel Corporation.  All rights reserved.
+Copyright (C) 2016-2017 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -190,7 +190,7 @@ public:
                         {
                             mfxExtFeiEncQP* feiEncMbQp = (mfxExtFeiEncQP*)((*it)->ExtParam[i]);
                             for (int fieldId = 0; fieldId < numFields; fieldId++) {
-                                delete[] feiEncMbQp[fieldId].QP;
+                                delete[] feiEncMbQp[fieldId].MB;
                             }
                             delete[] feiEncMbQp;
                             feiEncMbQp = NULL;
@@ -285,13 +285,13 @@ public:
                 }
                 feiEncMbQp[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_QP;
                 feiEncMbQp[fieldId].Header.BufferSz = sizeof (mfxExtFeiEncQP);
-                feiEncMbQp[fieldId].NumQPAlloc = numMB;
-                feiEncMbQp[fieldId].QP = new mfxU8[numMB];
+                feiEncMbQp[fieldId].NumMBAlloc = numMB;
+                feiEncMbQp[fieldId].MB = new mfxU8[numMB];
 
                 //generate random qp value and assign
                 m_qp[m_fo * 2 + fieldId] = 1 + rand() % 50;
-                memset(feiEncMbQp[fieldId].QP, m_qp[m_fo * 2 + fieldId],
-                       feiEncMbQp[fieldId].NumQPAlloc * sizeof(feiEncMbQp[fieldId].QP[0]));
+                memset(feiEncMbQp[fieldId].MB, m_qp[m_fo * 2 + fieldId],
+                       feiEncMbQp[fieldId].NumMBAlloc * sizeof(feiEncMbQp[fieldId].MB[0]));
 
                 numExtBuf++;
             }

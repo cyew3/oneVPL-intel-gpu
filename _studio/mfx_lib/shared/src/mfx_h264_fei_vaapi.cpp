@@ -204,8 +204,8 @@ mfxStatus VAAPIFEIPREENCEncoder::CreatePREENCAccelerationService(MfxVideoParam c
                                 m_vaContextEncode,
                                 (VABufferType)VAStatsStatisticsBufferTypeIntel,
                                 sizeof(VAStatsStatistics16x16Intel) * currNumMbs_first_buff,
-                                1,
-                                NULL,
+                                1, //limitation from driver, num elements should be 1
+                                NULL, //should be mapped later
                                 &m_statOutId[0]);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
@@ -215,8 +215,8 @@ mfxStatus VAAPIFEIPREENCEncoder::CreatePREENCAccelerationService(MfxVideoParam c
                                 m_vaContextEncode,
                                 (VABufferType)VAStatsStatisticsBotFieldBufferTypeIntel,
                                 sizeof (VAStatsStatistics16x16Intel) * currNumMbs/2,
-                                1,
-                                NULL,
+                                1, //limitation from driver, num elements should be 1
+                                NULL, //should be mapped later
                                 &m_statOutId[1]);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
@@ -228,7 +228,7 @@ mfxStatus VAAPIFEIPREENCEncoder::CreatePREENCAccelerationService(MfxVideoParam c
                                 (VABufferType)VAStatsMotionVectorBufferTypeIntel,
                                 //sizeof (VAMotionVectorIntel)*mvsOut->NumMBAlloc * 16, //16 MV per MB
                                 sizeof(VAMotionVectorIntel) * currNumMbs_first_buff * 16,
-                                1,
+                                1, //limitation from driver, num elements should be 1
                                 NULL, //should be mapped later
                                 &m_statMVId[0]);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
@@ -238,7 +238,7 @@ mfxStatus VAAPIFEIPREENCEncoder::CreatePREENCAccelerationService(MfxVideoParam c
                                 (VABufferType)VAStatsMotionVectorBufferTypeIntel,
                                 //sizeof (VAMotionVectorIntel)*mvsOut->NumMBAlloc * 16, //16 MV per MB
                                 sizeof(VAMotionVectorIntel) * currNumMbs/2 * 16,
-                                1,
+                                1, //limitation from driver, num elements should be 1
                                 NULL, //should be mapped later
                                 &m_statMVId[1]);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
@@ -255,7 +255,7 @@ mfxStatus VAAPIFEIPREENCEncoder::CreatePREENCAccelerationService(MfxVideoParam c
                                 m_vaContextEncode,
                                 (VABufferType)VAStatsStatisticsBufferTypeIntel,
                                 sizeof (VAStatsStatistics16x16Intel) * currNumMbs,
-                                1,
+                                1, //limitation from driver, num elements should be 1
                                 NULL, //should be mapped later
                                 &m_statOutId[0]);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
@@ -397,7 +397,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
                                 m_vaContextEncode,
                                 (VABufferType)VAStatsMVPredictorBufferTypeIntel,
                                 sizeof (VAMotionVectorIntel) *feiMVPred->NumMBAlloc,
-                                1,
+                                1, //limitation from driver, num elements should be 1
                                 feiMVPred->MB,
                                 &mvPredid);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
@@ -408,13 +408,31 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
         mdprintf(stderr, "MVPred bufId=%d\n", mvPredid);
     }
 
+#if MFX_VERSION >= 1023
+    if ((statParams.mb_qp) && (feiQP != NULL) && (feiQP->MB != NULL))
+    {
+        vaSts = vaCreateBuffer(m_vaDisplay,
+                                m_vaContextEncode,
+                                (VABufferType)VAEncQpBufferType,
+                                sizeof(VAEncQpBufferH264)*feiQP->NumMBAlloc,
+                                1, //limitation from driver, num elements should be 1
+                                feiQP->MB,
+                                &qpid);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+        statParams.qp                 = qpid;
+        configBuffers[buffersCount++] = qpid;
+
+        mdprintf(stderr, "Qp bufId=%d\n", qpid);
+    }
+#else
     if ((statParams.mb_qp) && (feiQP != NULL) && (feiQP->QP != NULL))
     {
         vaSts = vaCreateBuffer(m_vaDisplay,
                                 m_vaContextEncode,
                                 (VABufferType)VAEncQpBufferType,
                                 sizeof (VAEncQpBufferH264)*feiQP->NumQPAlloc,
-                                1,
+                                1, //limitation from driver, num elements should be 1
                                 feiQP->QP,
                                 &qpid);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
@@ -424,13 +442,9 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
 
         mdprintf(stderr, "Qp bufId=%d\n", qpid);
     }
+#endif
 
     /* PreEnc support only 1 forward and 1 backward reference */
-    /*
-     * (AL): I have decided to save previous implementation of passing reference
-     * via mfxENCInput structure ...
-     * This is can be used in future, maybe
-     *  */
 
     //currently only video memory is used, all input surfaces should be in video memory
     statParams.num_past_references = 0;
@@ -1096,8 +1110,8 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
         vaSts = vaCreateBuffer(m_vaDisplay,
                                 m_vaContextEncode,
                                 (VABufferType) VAEncFEIMVPredictorBufferTypeIntel,
-                                sizeof(VAEncMVPredictorH264Intel)*mvpred->NumMBAlloc,  //limitation from driver, num elements should be 1
-                                1,
+                                sizeof(VAEncMVPredictorH264Intel)*mvpred->NumMBAlloc,
+                                1, //limitation from driver, num elements should be 1
                                 mvpred->MB,
                                 &vaFeiMVPredId);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
@@ -1111,8 +1125,8 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
         vaSts = vaCreateBuffer(m_vaDisplay,
                                 m_vaContextEncode,
                                 (VABufferType)VAEncFEIMBControlBufferTypeIntel,
-                                sizeof (VAEncFEIMBControlH264Intel)*mbctrl->NumMBAlloc,  //limitation from driver, num elements should be 1
-                                1,
+                                sizeof (VAEncFEIMBControlH264Intel)*mbctrl->NumMBAlloc,
+                                1,//limitation from driver, num elements should be 1
                                 mbctrl->MB,
                                 &vaFeiMBControlId);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
@@ -1123,13 +1137,23 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
     if (frameCtrl != NULL && frameCtrl->PerMBQp && mbqp != NULL)
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaCreateBuffer (MBqp)");
+#if MFX_VERSION >= 1023
         vaSts = vaCreateBuffer(m_vaDisplay,
                                 m_vaContextEncode,
                                 (VABufferType)VAEncQpBufferType,
-                                sizeof (VAEncQpBufferH264)*mbqp->NumQPAlloc, //limitation from driver, num elements should be 1
-                                1,
+                                sizeof(VAEncQpBufferH264)*mbqp->NumMBAlloc,
+                                1, //limitation from driver, num elements should be 1
+                                mbqp->MB,
+                                &vaFeiMBQPId);
+#else
+        vaSts = vaCreateBuffer(m_vaDisplay,
+                                m_vaContextEncode,
+                                (VABufferType)VAEncQpBufferType,
+                                sizeof (VAEncQpBufferH264)*mbqp->NumQPAlloc,
+                                1, //limitation from driver, num elements should be 1
                                 mbqp->QP,
                                 &vaFeiMBQPId);
+#endif
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
         configBuffers[buffersCount++] = vaFeiMBQPId;
         mdprintf(stderr, "vaFeiMBQPId=%d\n", vaFeiMBQPId);
@@ -1143,8 +1167,7 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
                                 m_vaContextEncode,
                                 (VABufferType)VAEncFEIDistortionBufferTypeIntel,
                                 sizeof (VAEncFEIDistortionBufferH264Intel)*mbstat->NumMBAlloc,
-                                //limitation from driver, num elements should be 1
-                                1,
+                                1, //limitation from driver, num elements should be 1
                                 NULL, //should be mapped later
                                 &m_vaFeiMBStatId[feiFieldId]);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
@@ -1159,15 +1182,14 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
                                 m_vaContextEncode,
                                 (VABufferType)VAEncFEIMVBufferTypeIntel,
                                 sizeof (VAMotionVectorIntel)*16*mvout->NumMBAlloc,
-                                //limitation from driver, num elements should be 1
-                                1,
+                                1, //limitation from driver, num elements should be 1
                                 NULL, //should be mapped later
                                 &m_vaFeiMVOutId[idxRecon+feiFieldId]);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
         mdprintf(stderr, "MV Out bufId[%d]=%d\n", idxRecon+feiFieldId, m_vaFeiMVOutId[idxRecon+feiFieldId]);
     }
 
-    //output buffer for MBCODE (Pak object cmds)
+    //output buffer for MBCODE (PAK object cmds)
     if ((NULL != mbcodeout) && (VA_INVALID_ID == m_vaFeiMCODEOutId[idxRecon+feiFieldId]))
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaCreateBuffer (MBcode)");
@@ -1175,8 +1197,7 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
                                 m_vaContextEncode,
                                 (VABufferType)VAEncFEIModeBufferTypeIntel,
                                 sizeof (VAEncFEIModeBufferH264Intel)*mbcodeout->NumMBAlloc,
-                                //limitation from driver, num elements should be 1
-                                1,
+                                1, //limitation from driver, num elements should be 1
                                 NULL, //should be mapped later
                                 &m_vaFeiMCODEOutId[idxRecon+feiFieldId]);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);

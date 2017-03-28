@@ -148,12 +148,12 @@
 //mfxfei.h
 #if defined (__MFXFEI_H__)
     #if defined(_WIN64) || defined(LINUX64)
-        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtFeiPreEncCtrl        ,128 )
+        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtFeiPreEncCtrl        ,128)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtFeiPreEncMVPredictors,72 )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtFeiEncQP             ,72 )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtFeiPreEncMV          ,72 )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtFeiPreEncMBStat      ,72 )
-        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtFeiEncFrameCtrl      ,128 )
+        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtFeiEncFrameCtrl      ,128)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtFeiEncMVPredictors   ,72 )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtFeiEncMBCtrl         ,72 )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtFeiEncMV             ,72 )
@@ -163,18 +163,19 @@
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxFeiFunction             ,4  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtFeiParam             ,128)
 #if (MFX_VERSION >= 1023)
-        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxPAKInput                ,200)
+        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxPAKInput                ,136)
+        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxPAKOutput               ,96)
 #else
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxPAKInput                ,184)
-#endif
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxPAKOutput               ,32)
+#endif
     #elif defined(_WIN32) || defined(LINUX32)
-        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtFeiPreEncCtrl        ,120 )
+        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtFeiPreEncCtrl        ,120)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtFeiPreEncMVPredictors,68 )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtFeiEncQP             ,68 )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtFeiPreEncMV          ,68 )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtFeiPreEncMBStat      ,68 )
-        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtFeiEncFrameCtrl      ,128 )
+        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtFeiEncFrameCtrl      ,128)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtFeiEncMVPredictors   ,68 )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtFeiEncMBCtrl         ,68 )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtFeiEncMV             ,68 )
@@ -184,11 +185,12 @@
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxFeiFunction             ,4  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtFeiParam             ,128)
 #if (MFX_VERSION >= 1023)
-        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxPAKInput                ,164)
+        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxPAKInput                ,100)
+        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxPAKOutput               ,80 )
 #else
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxPAKInput                ,156)
-#endif
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxPAKOutput               ,16 )
+#endif
     #endif
 #endif //defined (__MFXFEI_H__)
 

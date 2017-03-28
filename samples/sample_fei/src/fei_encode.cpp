@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2016, Intel Corporation
+Copyright (c) 2005-2017, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -504,7 +504,11 @@ mfxStatus FEI_EncodeInterface::InitFrameParams(mfxFrameSurface1* encodeSurface, 
                 if (m_pAppConfig->PipelineCfg.mixedPicstructs && (encodeSurface->Info.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) && !!mbQPID)
                     continue;
                 mfxExtFeiEncQP* pMbQP = reinterpret_cast<mfxExtFeiEncQP*>(*it);
+#if MFX_VERSION >= 1023
+                SAFE_FREAD(pMbQP->MB, sizeof(pMbQP->MB[0])*pMbQP->NumMBAlloc, 1, m_pMbQP_in, MFX_ERR_MORE_DATA);
+#else
                 SAFE_FREAD(pMbQP->QP, sizeof(pMbQP->QP[0])*pMbQP->NumQPAlloc, 1, m_pMbQP_in, MFX_ERR_MORE_DATA);
+#endif
                 mbQPID++;
             }
             break;

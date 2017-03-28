@@ -393,13 +393,6 @@ public:
 };
 
 #if MFX_VERSION >= 1023
-/* Structure RefInfo represents state of DPB and reference lists of the task being processed */
-
-struct RefListEntry
-{
-    mfxU16   PictureType;
-    mfxU16   Index;
-};
 
 struct RefInfo
 {
@@ -409,7 +402,7 @@ struct RefInfo
     // so we don't need two structures to hold the state of DPB_after
     std::vector<mfxExtFeiPPS::mfxExtFeiPpsDPB> DPB_before, DPB_after;
 
-    std::vector<RefListEntry> L0[2], L1[2];
+    std::vector<mfxExtFeiSliceHeader::mfxSlice::mfxSliceRef> L0[2], L1[2];
 
     void Clear()
     {
@@ -421,7 +414,7 @@ struct RefInfo
         L1[0].clear(); L1[1].clear();
     }
 
-    mfxStatus FillRefList(iTask* eTask, iTaskPool* inputTasks, ArrayU8x33* task_list, std::vector<RefListEntry> * struct_list)
+    mfxStatus FillRefList(iTask* eTask, iTaskPool* inputTasks, ArrayU8x33* task_list, std::vector<mfxExtFeiSliceHeader::mfxSlice::mfxSliceRef> * struct_list)
     {
         iTask* ref_task = NULL;
         mfxFrameSurface1* ref_surface = NULL;
@@ -448,7 +441,7 @@ struct RefInfo
                     rslt = std::find(reference_frames.begin(), reference_frames.end(), ref_surface);
                     MSDK_CHECK_ERROR(rslt, reference_frames.end(), MFX_ERR_UNSUPPORTED); // surface from reflist not in DPB (should never happen)
 
-                    RefListEntry newEntry = { cur_PicType, static_cast<mfxU16>(std::distance(reference_frames.begin(), rslt)) };
+                    mfxExtFeiSliceHeader::mfxSlice::mfxSliceRef newEntry = { cur_PicType, static_cast<mfxU16>(std::distance(reference_frames.begin(), rslt)) };
                     struct_list[fieldId].push_back(newEntry);
                 }
             }

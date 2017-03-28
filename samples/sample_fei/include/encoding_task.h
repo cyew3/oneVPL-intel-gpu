@@ -73,7 +73,11 @@ struct setElem
                 case MFX_EXTBUFF_FEI_ENC_QP:
                 {
                     mfxExtFeiEncQP* pMbQP = reinterpret_cast<mfxExtFeiEncQP*>(buffers[i]);
+#if MFX_VERSION >= 1023
+                    pMbQP->NumMBAlloc = new_numMB;
+#else
                     pMbQP->NumQPAlloc = new_numMB;
+#endif
                 }
                 break;
 
@@ -181,7 +185,11 @@ struct setElem
                 {
                     mfxExtFeiEncQP* qps = reinterpret_cast<mfxExtFeiEncQP*>(buffers[i]);
                     for (mfxU32 fieldId = 0; fieldId < num_of_fields; fieldId++){
+#if MFX_VERSION >= 1023
+                        MSDK_SAFE_DELETE_ARRAY(qps[fieldId].MB);
+#else
                         MSDK_SAFE_DELETE_ARRAY(qps[fieldId].QP);
+#endif
                     }
                     MSDK_SAFE_DELETE_ARRAY(qps);
                     i += num_of_fields;

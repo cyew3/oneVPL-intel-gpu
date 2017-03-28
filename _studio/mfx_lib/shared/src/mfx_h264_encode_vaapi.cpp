@@ -2080,8 +2080,7 @@ mfxStatus VAAPIEncoder::Execute(
                     m_vaContextEncode,
                     (VABufferType) VAEncFEIMVPredictorBufferTypeIntel,
                     sizeof(VAEncMVPredictorH264Intel)*mvpred->NumMBAlloc,
-                    //limitation from driver, num elements should be 1
-                    1,
+                    1, //limitation from driver, num elements should be 1
                     mvpred->MB,
                     &vaFeiMVPredId);
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
@@ -2095,8 +2094,7 @@ mfxStatus VAAPIEncoder::Execute(
                     m_vaContextEncode,
                     (VABufferType)VAEncFEIMBControlBufferTypeIntel,
                     sizeof (VAEncFEIMBControlH264Intel)*mbctrl->NumMBAlloc,
-                    //limitation from driver, num elements should be 1
-                    1,
+                    1, //limitation from driver, num elements should be 1
                     mbctrl->MB,
                     &vaFeiMBControlId);
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
@@ -2106,14 +2104,23 @@ mfxStatus VAAPIEncoder::Execute(
         if (frameCtrl->PerMBQp && mbqp != NULL)
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaCreateBuffer (MBqp)");
+#if MFX_VERSION >= 1023
+            vaSts = vaCreateBuffer(m_vaDisplay,
+                    m_vaContextEncode,
+                    (VABufferType)VAEncQpBufferType,
+                sizeof(VAEncQpBufferH264)*mbqp->NumMBAlloc,
+                1, //limitation from driver, num elements should be 1
+                mbqp->MB,
+                &vaFeiMBQPId);
+#else
             vaSts = vaCreateBuffer(m_vaDisplay,
                     m_vaContextEncode,
                     (VABufferType)VAEncQpBufferType,
                     sizeof (VAEncQpBufferH264)*mbqp->NumQPAlloc,
-                    //limitation from driver, num elements should be 1
-                    1,
+                    1, //limitation from driver, num elements should be 1
                     mbqp->QP,
                     &vaFeiMBQPId);
+#endif
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
             configBuffers[buffersCount++] = vaFeiMBQPId;
         }
@@ -2145,8 +2152,7 @@ mfxStatus VAAPIEncoder::Execute(
                             m_vaContextEncode,
                             (VABufferType)VAEncFEIDistortionBufferTypeIntel,
                             vaFeiMBStatBufSize,
-                            //limitation from driver, num elements should be 1
-                            1,
+                        1, //limitation from driver, num elements should be 1
                             NULL, //should be mapped later
                             &m_vaFeiMBStatId[idxRecon + feiFieldId]);
                 }
@@ -2182,8 +2188,7 @@ mfxStatus VAAPIEncoder::Execute(
                             m_vaContextEncode,
                             (VABufferType)VAEncFEIMVBufferTypeIntel,
                             vaFeiMVOutBufSize,
-                            //limitation from driver, num elements should be 1
-                            1,
+                        1, //limitation from driver, num elements should be 1
                             NULL, //should be mapped later
                             &m_vaFeiMVOutId[idxRecon + feiFieldId]);
                 }
@@ -2206,8 +2211,7 @@ mfxStatus VAAPIEncoder::Execute(
                             m_vaContextEncode,
                             (VABufferType)VAEncFEIModeBufferTypeIntel,
                             vaFeiMCODEOutBufSize,
-                            //limitation from driver, num elements should be 1
-                            1,
+                        1, //limitation from driver, num elements should be 1
                             NULL, //should be mapped later
                             &m_vaFeiMCODEOutId[idxRecon + feiFieldId]);
                 }
@@ -2688,7 +2692,7 @@ mfxStatus VAAPIEncoder::Execute(
         mfxU32 bufH = ((mbH + 7) & ~7);
         mfxU32 fieldOffset = (mfxU32)fieldId * (mbH * mbW) * (mfxU32)!!task.m_fieldPicFlag;
 
-        if (   mbqp && mbqp->QP && mbqp->NumQPAlloc >= mbW * m_sps.picture_height_in_mbs
+        if (mbqp && mbqp->QP && mbqp->NumQPAlloc >= mbW * m_sps.picture_height_in_mbs
             && m_mbqp_buffer.size() >= (bufW * bufH))
         {
 

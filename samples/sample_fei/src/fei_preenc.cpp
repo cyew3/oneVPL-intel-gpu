@@ -715,7 +715,11 @@ mfxStatus FEI_PreencInterface::InitFrameParams(iTask* eTask, iTask* refTask[2][2
             if (m_pMbQP_in)
             {
                 mfxExtFeiEncQP* pMbQP = reinterpret_cast<mfxExtFeiEncQP*>(eTask->PREENC_in.ExtParam[i]);
+#if MFX_VERSION >= 1023
+                SAFE_FREAD(pMbQP->MB, sizeof(pMbQP->MB[0])*pMbQP->NumMBAlloc, 1, m_pMbQP_in, MFX_ERR_MORE_DATA);
+#else
                 SAFE_FREAD(pMbQP->QP, sizeof(pMbQP->QP[0])*pMbQP->NumQPAlloc, 1, m_pMbQP_in, MFX_ERR_MORE_DATA);
+#endif
             }
             break;
         }
