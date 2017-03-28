@@ -124,7 +124,7 @@ const DecodeSuite::tc_struct DecodeSuite::test_case[] =
         {INIT|MFXVPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, {208}}}
     },
     {/*10*/ MFX_ERR_NONE, {BITSTREAM, &tsStruct::mfxBitstream.DataFlag, {MFX_BITSTREAM_COMPLETE_FRAME}}},
-    {/*11*/ MFX_ERR_LOCK_MEMORY,
+    {/*11*/ MFX_ERR_UNDEFINED_BEHAVIOR,
         {
             {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
             {INIT|ALLOCATOR, 0, {frame_allocator::ALLOC_MAX, frame_allocator::LARGE_PITCH_LOCK}},
@@ -139,7 +139,7 @@ const DecodeSuite::tc_struct DecodeSuite::test_case[] =
     },
     {/*13*/ MFX_ERR_UNDEFINED_BEHAVIOR, {BITSTREAM, &tsStruct::mfxBitstream.DataOffset, {100001}}},
     {/*14*/ MFX_ERR_MORE_SURFACE, {SURF_WORK, &tsStruct::mfxFrameSurface1.Data.Locked, {1}}},
-    {/*15*/ MFX_ERR_LOCK_MEMORY,
+    {/*15*/ MFX_ERR_UNDEFINED_BEHAVIOR,
         {
             {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
             {INIT|ALLOCATOR, 0, {frame_allocator::ALLOC_MAX, frame_allocator::ZERO_LUMA_LOCK}},
@@ -197,8 +197,6 @@ int DecodeSuite::run(unsigned int id, const char* sname)
     else
     {
         m_par.IOPattern = MFX_IOPATTERN_OUT_VIDEO_MEMORY;
-        if (expected == MFX_ERR_LOCK_MEMORY)
-            expected = MFX_ERR_UNDEFINED_BEHAVIOR;
     }
 
     apply_par(tc, INIT);
