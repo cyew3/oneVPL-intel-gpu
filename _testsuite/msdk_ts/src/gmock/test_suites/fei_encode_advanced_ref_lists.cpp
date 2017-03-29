@@ -419,6 +419,7 @@ public:
         , m_par(par)
         , m_tc(tc)
         , m_IdrCnt(0)
+        , m_len(0)
 #ifdef DEBUG
         , m_writer("/tmp/debug.264")
 #endif
@@ -855,6 +856,7 @@ int TestSuite::RunTest(unsigned int id)
     tsVideoDecoder dec(MFX_CODEC_AVC);
 
     mfxBitstream bs;
+    memset(&bs, 0, sizeof(bs));
     bs.Data = c.m_buf;
     bs.DataLength = c.m_len;
     bs.MaxLength = c.m_buf_sz;
