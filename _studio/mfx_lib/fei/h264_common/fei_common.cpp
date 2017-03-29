@@ -616,6 +616,7 @@ bool MfxH264FEIcommon::IsRunTimeInputExtBufferIdSupported(MfxVideoParam const & 
                    || id == MFX_EXTBUFF_FEI_ENC_CTRL
                    || id == MFX_EXTBUFF_FEI_ENC_MV_PRED
                    || id == MFX_EXTBUFF_FEI_ENC_MB
+                   || id == MFX_EXTBUFF_FEI_ENC_QP
                    );
         default:
             return true;
