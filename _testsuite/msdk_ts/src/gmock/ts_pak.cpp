@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -38,11 +38,16 @@ tsVideoPAK::tsVideoPAK(mfxFeiFunction func, mfxU32 CodecId, bool useDefaults)
         m_par.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
         m_par.mfx.QPI = m_par.mfx.QPP = m_par.mfx.QPB = 26;
         m_par.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
+        m_par.mfx.EncodedOrder = 1;
+        m_par.AsyncDepth = 1;
     }
 
     mfxExtFeiParam& extbuffer = m_par;
     extbuffer.Func = func;
     m_par.mfx.CodecId = CodecId;
+
+    mfxExtFeiSPS& extsps = m_par;
+    extsps.Log2MaxPicOrderCntLsb = 4;
 
     m_loaded = true;
 }
