@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2017 Intel Corporation. All Rights Reserved.
 
 File Name: hevce_init.cpp
 
@@ -612,11 +612,6 @@ namespace hevce_init
                 m_par.mfx.FrameInfo.Width = ((m_par.mfx.FrameInfo.Width + 32 - 1) & ~(32 - 1));
                 m_par.mfx.FrameInfo.Height = ((m_par.mfx.FrameInfo.Height + 32 - 1) & ~(32 - 1));
             }
-            if ((tc.type == CHROMA_FORMAT) && (tc.sub_type == INVALID) && (g_tsImpl & MFX_IMPL_VIA_D3D11))
-            {
-                sts = MFX_ERR_DEVICE_FAILED;
-            }
-
 
         } else {
             //for non hevce hw plugin, return ERR_NONE as no parameters set in mfxExtHEVCParam
