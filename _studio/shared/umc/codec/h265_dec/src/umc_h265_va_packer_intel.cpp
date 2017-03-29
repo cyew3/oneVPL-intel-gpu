@@ -108,7 +108,15 @@ namespace UMC_HEVC_DECODER
         UMCVACompBuffer *compBuf;
         DXVA_Intel_PicParams_HEVC *pPicParam = (DXVA_Intel_PicParams_HEVC*)m_va->GetCompBuffer(DXVA_PICTURE_DECODE_BUFFER, &compBuf);
         Ipp32s const size =
-            pSeqParamSet->getPTL()->GetGeneralPTL()->profile_idc != H265_PROFILE_FREXT ? sizeof(DXVA_Intel_PicParams_HEVC) : sizeof(DXVA_Intel_PicParams_HEVC_Rext);
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+            !(m_va->m_Profile & VA_PROFILE_REXT) ? sizeof(DXVA_Intel_PicParams_HEVC) : sizeof(DXVA_Intel_PicParams_HEVC_Rext);
+#else
+            sizeof(DXVA_Intel_PicParams_HEVC);
+#endif
+
+        if (compBuf->GetBufferSize() < size)
+            throw h265_exception(UMC_ERR_FAILED);
+
         compBuf->SetDataSize(size);
         memset(pPicParam, 0, size);
 
@@ -307,33 +315,35 @@ namespace UMC_HEVC_DECODER
 
         pPicParam->StatusReportFeedbackNumber = m_statusReportFeedbackCounter;
 
-        if (pSeqParamSet->getPTL()->GetGeneralPTL()->profile_idc != H265_PROFILE_FREXT)
-            return;
-
-        DXVA_Intel_PicParams_HEVC_Rext* pExtPicParam = (DXVA_Intel_PicParams_HEVC_Rext*)pPicParam;
-        pExtPicParam->PicRangeExtensionFlags.fields.transform_skip_rotation_enabled_flag = pSeqParamSet->transform_skip_rotation_enabled_flag;
-        pExtPicParam->PicRangeExtensionFlags.fields.transform_skip_context_enabled_flag = pSeqParamSet->transform_skip_context_enabled_flag;
-        pExtPicParam->PicRangeExtensionFlags.fields.implicit_rdpcm_enabled_flag = pSeqParamSet->implicit_residual_dpcm_enabled_flag;
-        pExtPicParam->PicRangeExtensionFlags.fields.explicit_rdpcm_enabled_flag = pSeqParamSet->explicit_residual_dpcm_enabled_flag;
-        pExtPicParam->PicRangeExtensionFlags.fields.extended_precision_processing_flag = pSeqParamSet->extended_precision_processing_flag;
-        pExtPicParam->PicRangeExtensionFlags.fields.intra_smoothing_disabled_flag = pSeqParamSet->intra_smoothing_disabled_flag;
-        pExtPicParam->PicRangeExtensionFlags.fields.high_precision_offsets_enabled_flag = pSeqParamSet->high_precision_offsets_enabled_flag;
-        pExtPicParam->PicRangeExtensionFlags.fields.persistent_rice_adaptation_enabled_flag = pSeqParamSet->fast_rice_adaptation_enabled_flag;
-        pExtPicParam->PicRangeExtensionFlags.fields.cabac_bypass_alignment_enabled_flag = pSeqParamSet->cabac_bypass_alignment_enabled_flag;
-        pExtPicParam->PicRangeExtensionFlags.fields.cross_component_prediction_enabled_flag = pPicParamSet->cross_component_prediction_enabled_flag;
-        pExtPicParam->PicRangeExtensionFlags.fields.chroma_qp_offset_list_enabled_flag      = pPicParamSet->chroma_qp_offset_list_enabled_flag;
-
-        pExtPicParam->diff_cu_chroma_qp_offset_depth            = (UCHAR)pPicParamSet->diff_cu_chroma_qp_offset_depth;
-        pExtPicParam->chroma_qp_offset_list_len_minus1          = pPicParamSet->chroma_qp_offset_list_enabled_flag ?(UCHAR)pPicParamSet->chroma_qp_offset_list_len - 1 : 0;
-        pExtPicParam->log2_sao_offset_scale_luma                = (UCHAR)pPicParamSet->log2_sao_offset_scale_luma;
-        pExtPicParam->log2_sao_offset_scale_chroma              = (UCHAR)pPicParamSet->log2_sao_offset_scale_chroma;
-        pExtPicParam->log2_max_transform_skip_block_size_minus2 = pPicParamSet->pps_range_extensions_flag && pPicParamSet->transform_skip_enabled_flag ? (UCHAR)pPicParamSet->log2_max_transform_skip_block_size - 2 : 0;
-
-        for (Ipp32u i = 0; i < pPicParamSet->chroma_qp_offset_list_len; i++)
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+        if (m_va->m_Profile & VA_PROFILE_REXT)
         {
-            pExtPicParam->cb_qp_offset_list[i] = (CHAR)pPicParamSet->cb_qp_offset_list[i + 1];
-            pExtPicParam->cr_qp_offset_list[i] = (CHAR)pPicParamSet->cr_qp_offset_list[i + 1];
+            DXVA_Intel_PicParams_HEVC_Rext* pExtPicParam = (DXVA_Intel_PicParams_HEVC_Rext*)pPicParam;
+            pExtPicParam->PicRangeExtensionFlags.fields.transform_skip_rotation_enabled_flag = pSeqParamSet->transform_skip_rotation_enabled_flag;
+            pExtPicParam->PicRangeExtensionFlags.fields.transform_skip_context_enabled_flag = pSeqParamSet->transform_skip_context_enabled_flag;
+            pExtPicParam->PicRangeExtensionFlags.fields.implicit_rdpcm_enabled_flag = pSeqParamSet->implicit_residual_dpcm_enabled_flag;
+            pExtPicParam->PicRangeExtensionFlags.fields.explicit_rdpcm_enabled_flag = pSeqParamSet->explicit_residual_dpcm_enabled_flag;
+            pExtPicParam->PicRangeExtensionFlags.fields.extended_precision_processing_flag = pSeqParamSet->extended_precision_processing_flag;
+            pExtPicParam->PicRangeExtensionFlags.fields.intra_smoothing_disabled_flag = pSeqParamSet->intra_smoothing_disabled_flag;
+            pExtPicParam->PicRangeExtensionFlags.fields.high_precision_offsets_enabled_flag = pSeqParamSet->high_precision_offsets_enabled_flag;
+            pExtPicParam->PicRangeExtensionFlags.fields.persistent_rice_adaptation_enabled_flag = pSeqParamSet->fast_rice_adaptation_enabled_flag;
+            pExtPicParam->PicRangeExtensionFlags.fields.cabac_bypass_alignment_enabled_flag = pSeqParamSet->cabac_bypass_alignment_enabled_flag;
+            pExtPicParam->PicRangeExtensionFlags.fields.cross_component_prediction_enabled_flag = pPicParamSet->cross_component_prediction_enabled_flag;
+            pExtPicParam->PicRangeExtensionFlags.fields.chroma_qp_offset_list_enabled_flag      = pPicParamSet->chroma_qp_offset_list_enabled_flag;
+
+            pExtPicParam->diff_cu_chroma_qp_offset_depth            = (UCHAR)pPicParamSet->diff_cu_chroma_qp_offset_depth;
+            pExtPicParam->chroma_qp_offset_list_len_minus1          = pPicParamSet->chroma_qp_offset_list_enabled_flag ?(UCHAR)pPicParamSet->chroma_qp_offset_list_len - 1 : 0;
+            pExtPicParam->log2_sao_offset_scale_luma                = (UCHAR)pPicParamSet->log2_sao_offset_scale_luma;
+            pExtPicParam->log2_sao_offset_scale_chroma              = (UCHAR)pPicParamSet->log2_sao_offset_scale_chroma;
+            pExtPicParam->log2_max_transform_skip_block_size_minus2 = pPicParamSet->pps_range_extensions_flag && pPicParamSet->transform_skip_enabled_flag ? (UCHAR)pPicParamSet->log2_max_transform_skip_block_size - 2 : 0;
+
+            for (Ipp32u i = 0; i < pPicParamSet->chroma_qp_offset_list_len; i++)
+            {
+                pExtPicParam->cb_qp_offset_list[i] = (CHAR)pPicParamSet->cb_qp_offset_list[i + 1];
+                pExtPicParam->cr_qp_offset_list[i] = (CHAR)pPicParamSet->cr_qp_offset_list[i + 1];
+            }
         }
+#endif
     }
 
     template <typename T>
@@ -531,7 +541,14 @@ namespace UMC_HEVC_DECODER
 
             const H265SeqParamSet *pSeqParamSet = pSlice->GetSeqParam();
 
-            if (pSeqParamSet->getPTL()->GetGeneralPTL()->profile_idc != H265_PROFILE_FREXT)
+#if !defined(PRE_SI_TARGET_PLATFORM_GEN11)
+            {
+                DXVA_Intel_Slice_HEVC_Long* header = 0;
+                GetSliceVABuffers(m_va, &header, sizeof(DXVA_Intel_Slice_HEVC_Long), &pSliceData, rawDataSize + prefix_size, isLastSlice ? 128 : 0);
+                PackSliceHeader(pSlice, pp, prefix_size, header);
+            }
+#else
+            if (!(m_va->m_Profile & VA_PROFILE_REXT))
             {
                 DXVA_Intel_Slice_HEVC_Long* header = 0;
                 GetSliceVABuffers(m_va, &header, sizeof(DXVA_Intel_Slice_HEVC_Long), &pSliceData, rawDataSize + prefix_size, isLastSlice ? 128 : 0);
@@ -543,6 +560,7 @@ namespace UMC_HEVC_DECODER
                 GetSliceVABuffers(m_va, &header, sizeof(DXVA_Intel_Slice_HEVC_Rext_Long), &pSliceData, rawDataSize + prefix_size, isLastSlice ? 128 : 0);
                 PackSliceHeader(pSlice, pp, prefix_size, header);
             }
+#endif
         }
 
         // copy slice data to slice data buffer

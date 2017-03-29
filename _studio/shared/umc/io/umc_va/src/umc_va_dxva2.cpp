@@ -416,6 +416,8 @@ static const GuidProfile guidProfiles[] =
     { H265_VLD        | VA_PROFILE_10 | VA_LONG_SLICE_MODE,                     DXVA_Intel_ModeHEVC_VLD_Main10Profile },
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    { H265_VLD        | VA_PROFILE_REXT | VA_LONG_SLICE_MODE,                   DXVA_Intel_ModeHEVC_VLD_Main422_10Profile },
+    { H265_10_VLD     | VA_PROFILE_REXT | VA_LONG_SLICE_MODE,                   DXVA_Intel_ModeHEVC_VLD_Main422_10Profile },
     { H265_VLD_422    | VA_LONG_SLICE_MODE,                                     DXVA_Intel_ModeHEVC_VLD_Main422_10Profile },
     { H265_VLD_444    | VA_LONG_SLICE_MODE,                                     DXVA_Intel_ModeHEVC_VLD_Main444_10Profile },
     { H265_10_VLD_422 | VA_LONG_SLICE_MODE,                                     DXVA_Intel_ModeHEVC_VLD_Main422_10Profile },

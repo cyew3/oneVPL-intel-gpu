@@ -260,6 +260,8 @@ bool CheckDXVAConfig(Ipp32s profile_flags, T *config, ProtectedVA * protectedVA)
     case H265_VLD:
     case H265_10_VLD:
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    case H265_VLD    | VA_PROFILE_REXT:
+    case H265_10_VLD | VA_PROFILE_REXT:
     case H265_VLD_422:
     case H265_VLD_444:
     case H265_10_VLD_422:
