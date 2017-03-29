@@ -593,7 +593,8 @@ mfxStatus MfxH264FEIcommon::CheckInitExtBuffers(const MfxVideoParam & owned_vide
 
     // mfxExtFeiSliceHeader is useless at init stage for ENC and PAK (unlike the FEI ENCODE)
     const mfxExtFeiSliceHeader * pDataSliceHeader = GetExtBuffer(passed_video);
-    MFX_CHECK(pDataSliceHeader == NULL, MFX_ERR_INVALID_VIDEO_PARAM);
+    //        Init                     || Reset
+    MFX_CHECK(pDataSliceHeader == NULL || (pDataSliceHeader && pDataSliceHeader->Slice == NULL), MFX_ERR_INVALID_VIDEO_PARAM);
 
     return MFX_ERR_NONE;
 }
