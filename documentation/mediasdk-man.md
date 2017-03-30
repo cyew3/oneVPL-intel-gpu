@@ -3265,8 +3265,9 @@ typedef struct {
 
     mfxU16      BRCPanicMode;              /* tri-state option */
     mfxU16      LowDelayBRC;               /* tri-state option */
+    mfxU16      EnableMBForceIntra;        /* tri-state option */
 
-    mfxU16      reserved[172];
+    mfxU16      reserved[171];
 } mfxExtCodingOption3;
 ```
 
@@ -3285,12 +3286,12 @@ The application can attach this extended buffer to the [mfxVideoParam](#mfxVideo
 `WinBRCMaxAvgKbps` | When rate control method is [MFX_RATECONTROL_LA](#RateControlMethod) or [MFX_RATECONTROL_LA_HRD](#RateControlMethod)  this parameter specifies the maximum bitrate averaged over a sliding window specified by `WinBRCSize.`
 `WinBRCSize` | When rate control method is [MFX_RATECONTROL_LA](#RateControlMethod) or [MFX_RATECONTROL_LA_HRD](#RateControlMethod) this parameter specifies sliding window size in frames. Set this parameter to zero to disable sliding window.
 `QVBRQuality` | When rate control method is [MFX_RATECONTROL_QVBR](#RateControlMethod) this parameter specifies quality factor.It is a value in the 1…51 range, where 1 corresponds to the best quality.
-`EnableMBQP` | Turn ON this flag to enable per-macroblock QP control, rate control method must be [MFX_RATECONTROL_CQP](#RateControlMethod). See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option. This parameter is valid only during initialization.
+`EnableMBQP` | Turn ON this option to enable per-macroblock QP control, rate control method must be [MFX_RATECONTROL_CQP](#RateControlMethod). See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option. This parameter is valid only during initialization.
 `IntRefCycleDist` | Distance between the beginnings of the intra-refresh cycles in frames. Zero means no distance between cycles.
-`DirectBiasAdjustment` | Turn ON this flag to enable the ENC mode decision algorithm to bias to fewer B Direct/Skip types. Applies only to B frames, all other frames will ignore this setting. See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option.
+`DirectBiasAdjustment` | Turn ON this option to enable the ENC mode decision algorithm to bias to fewer B Direct/Skip types. Applies only to B frames, all other frames will ignore this setting. See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option.
 `GlobalMotionBiasAdjustment` | Enables global motion bias. See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option.
 `MVCostScalingFactor` | MV cost scaling ratio. It is used when `GlobalMotionBiasAdjustment` is ON.<br><br>Values are:<br>0: set MV cost to be 0<br>1: scale MV cost to be 1/2 of the default value<br>2: scale MV cost to be 1/4 of the default value<br>3: scale MV cost to be 1/8 of the default value
-`MBDisableSkipMap` | Turn ON this flag to enable usage of [mfxExtMBDisableSkipMap](#mfxExtMBDisableSkipMap). See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option. This parameter is valid only during initialization.
+`MBDisableSkipMap` | Turn ON this option to enable usage of [mfxExtMBDisableSkipMap](#mfxExtMBDisableSkipMap). See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option. This parameter is valid only during initialization.
 `WeightedPred`, `WeightedBiPred` | Weighted prediction mode. See the [WeightedPred](#WeightedPred) enumerator for values of these options.
 `AspectRatioInfoPresent` | Instructs encoder whether aspect ratio info should present in VUI parameters. See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option.
 `OverscanInfoPresent` | Instructs encoder whether overscan info should present in VUI parameters. See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option.
@@ -3311,6 +3312,7 @@ The application can attach this extended buffer to the [mfxVideoParam](#mfxVideo
 `NumRefActiveP`, `NumRefActiveBL0`, `NumRefActiveBL1` | Max number of active references for P and B frames in reference picture lists 0 and 1 correspondingly. Array index is pyramid layer.
 `BRCPanicMode` | Controls panic mode in AVC and MPEG2 encoders.
 `LowDelayBRC`  | When rate control method is `MFX_RATECONTROL_VBR`, `MFX_RATECONTROL_QVBR` or `MFX_RATECONTROL_VCM` this parameter specifies frame size tolerance. Set this parameter to `MFX_CODINGOPTION_ON` to allow strictly obey average frame size set by `MaxKbps`, e.g. cases when `MaxFrameSize == (MaxKbps*1000)/(8* FrameRateExtN/FrameRateExtD)`.<br>Also `MaxFrameSizeI` and `MaxFrameSizeP` can be set separately.
+'EnableMBForceIntra'   | Turn ON this option to enable usage of [mfxExtMBForceIntra](#mfxExtMBForceIntra). See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option. This parameter is valid only during initialization.
 
 
 **Change History**
@@ -3333,7 +3335,7 @@ EnableQPOffset, QPOffset, NumRefActiveP, NumRefActiveBL0, NumRefActiveBL1` field
 
 The SDK API 1.21 adds `BRCPanicMode` field.
 
-The SDK API 1.23 adds `LowDelayBRC` field.
+The SDK API 1.23 adds `LowDelayBRC`, `EnableMBForceIntra` fields.
 
 ## <a id='mfxExtCodingOptionSPSPPS'>mfxExtCodingOptionSPSPPS</a>
 
@@ -5287,6 +5289,38 @@ The **mfxExtMBQP** structure specifies per-macroblock QP for current frame if [m
 
 This structure is available since SDK API 1.13.
 
+## <a id='mfxExtMBForceIntra'>mfxExtMBForceIntra</a>
+
+**Definition**
+
+```C
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU32 reserved[11];
+    mfxU32 MapSize;
+    union {
+        mfxU8  *Map;
+        mfxU64  reserved2;
+    };
+} mfxExtMBForceIntra;
+```
+
+**Description**
+
+The **mfxExtMBForceIntra** structure specifies macroblock map for current frame which forces specified macroblocks to be encoded as Intra if [mfxExtCodingOption3](#mfxExtCodingOption3)`::EnableMBForceIntra` was turned ON during encoder initialization. The application can attach this extended buffer to the [mfxEncodeCtrl](#mfxEncodeCtrl) during runtime.
+
+**Members**
+
+| | |
+--- | ---
+`Header.BufferId` | Must be [MFX_EXTBUFF_MB_FORCE_INTRA](#ExtendedBufferID).
+`MapSize` | Macroblock map size.
+`Map` | Pointer to a list of force intra macroblock flags in raster scan order. Each flag is one byte in map. Set flag to 1 to force corresponding macroblock to be encoded as intra. In case of interlaced encoding, the first half of map affects top field and the second – bottom field.
+
+**Change History**
+
+This structure is available since SDK API 1.23.
 
 ## <a id='mfxExtChromaLocInfo'>mfxExtChromaLocInfo</a>
 
@@ -6257,6 +6291,7 @@ The `ExtendedBufferID` enumerator itemizes and defines identifiers (`BufferId`) 
 `MFX_EXTBUFF_VPP_SCENE_CHANGE` | Deprecated.
 `MFX_EXTBUFF_VPP_FIELD_PROCESSING` | The extended buffer defines control parameters for the **VPP** field-processing algorithm. See the [mfxExtVPPFieldProcessing](#mfxExtVPPFieldProcessing) structure for details. The application can attach this buffer to the [mfxVideoParam](#mfxVideoParam) structure for video processing initialization or to the [mfxFrameData](#mfxFrameData) structure during runtime.
 `MFX_EXTBUFF_MBQP` | This extended buffer defines per-macroblock QP. See the [mfxExtMBQP](#mfxExtMBQP) structure for details. The application can attach this buffer to the [mfxEncodeCtrl](#mfxEncodeCtrl) structure for per-frame encoding configuration.
+`MFX_EXTBUFF_MB_FORCE_INTRA` | This extended buffer defines per-macroblock force intra flag. See the [mfxExtMBForceIntra](#mfxExtMBForceIntra) structure for details. The application can attach this buffer to the [mfxEncodeCtrl](#mfxEncodeCtrl) structure for per-frame encoding configuration.
 `MFX_EXTBUFF_CHROMA_LOC_INFO` | This extended buffer defines chroma samples location information. See the [mfxExtChromaLocInfo](#mfxExtChromaLocInfo) structure for details. The application can attach this buffer to the [mfxVideoParam](#mfxVideoParam) structure for encoding initialization.
 `MFX_EXTBUFF_HEVC_PARAM` | See the [mfxExtHEVCParam](#mfxExtHEVCParam) structure for details.
 `MFX_EXTBUFF_HEVC_TILES` | This extended buffer defines additional encoding controls for HEVC tiles. See the [mfxExtHEVCTiles](#mfxExtHEVCTiles) structure for details. The application can attach this buffer to the [mfxVideoParam](#mfxVideoParam) structure for encoding initialization.
@@ -6307,6 +6342,8 @@ SDK API 1.19 adds `MFX_EXTBUFF_ENCODED_SLICES_INFO, MFX_EXTBUFF_MV_OVER_PIC_BOUN
 MFX_EXTBUFF_VPP_SCALING, MFX_EXTBUFF_VPP_MIRRORING, MFX_EXTBUFF_VPP_COLORFILL.`
 
 SDK API 1.22 adds `MFX_EXTBUFF_DEC_VIDEO_PROCESSING`
+
+SDK API 1.23 adds `MFX_EXTBUFF_MB_FORCE_INTRA`
 
 See additional change history in the structure definitions.
 
