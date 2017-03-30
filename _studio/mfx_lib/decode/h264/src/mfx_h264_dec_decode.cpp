@@ -1217,6 +1217,7 @@ mfxStatus VideoDECODEH264::RunThread(void * params, mfxU32 threadNumber)
         if (isDecoded)
         {
             info->surface_work = 0;
+            pFrame->m_UID = -1;
         }
     }
 

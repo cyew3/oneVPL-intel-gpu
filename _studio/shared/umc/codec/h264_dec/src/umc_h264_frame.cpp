@@ -176,7 +176,7 @@ void H264DecoderFrame::Reset()
     m_dFrameTime = -1;
     m_isOriginalPTS = false;
 
-    m_IsFrameExist = true;
+    m_IsFrameExist = false;
     m_iNumberOfSlices = 0;
 
     m_UserData.Reset();
@@ -245,6 +245,7 @@ void H264DecoderFrame::OnDecodingCompleted()
 
     m_isDecoded = 1;
     FreeResources();
+    DecrementReference();
 }
 
 void H264DecoderFrame::SetisShortTermRef(bool isRef, Ipp32s WhichField)
@@ -272,6 +273,11 @@ void H264DecoderFrame::SetisShortTermRef(bool isRef, Ipp32s WhichField)
 
         if (wasRef && !isShortTermRef() && !isLongTermRef())
         {
+            if (!IsFrameExist())
+            {
+                setWasOutputted();
+                setWasDisplayed();
+            }
             DecrementReference();
         }
     }
@@ -302,6 +308,12 @@ void H264DecoderFrame::SetisLongTermRef(bool isRef, Ipp32s WhichField)
 
         if (wasRef && !isShortTermRef() && !isLongTermRef())
         {
+            if (!IsFrameExist())
+            {
+                setWasOutputted();
+                setWasDisplayed();
+            }
+
             DecrementReference();
         }
     }
