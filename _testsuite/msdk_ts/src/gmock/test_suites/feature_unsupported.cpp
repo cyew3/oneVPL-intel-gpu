@@ -83,6 +83,7 @@ private:
         NONE     = MFX_ERR_NONE,
         E_UNSPRT = MFX_ERR_UNSUPPORTED,
         E_INVLID = MFX_ERR_INVALID_VIDEO_PARAM,
+        E_INCOMP = MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
         W_PARACL = MFX_WRN_PARTIAL_ACCELERATION,
         W_INCOMP = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM
     } shortSts;
@@ -122,17 +123,20 @@ static const tsStruct::Field* mfxFourCC   (&tsStruct::mfxVideoParam.mfx.FrameInf
 static const tsStruct::Field* inFourCC    (&tsStruct::mfxVideoParam.vpp.In.FourCC);
 static const tsStruct::Field* outFourCC   (&tsStruct::mfxVideoParam.vpp.Out.FourCC);
 static const tsStruct::Field* ChromaFormat(&tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat);
+static const tsStruct::Field* InitialDelayInKB(&tsStruct::mfxVideoParam.mfx.InitialDelayInKB);
+static const tsStruct::Field* TargetKbps(&tsStruct::mfxVideoParam.mfx.TargetKbps);
+static const tsStruct::Field* MaxKbps(&tsStruct::mfxVideoParam.mfx.MaxKbps);
 
 const TestSuite::tc_struct TestSuite::test_case[] =
 {//  id   component     codec          Query()   Init()    Parameters to set                            Additional parameters to set
     //MPEG2 rate controls
     {/**/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {RateCtrlMthd, MFX_RATECONTROL_LA       , true}, set_brc_params },
     {/**/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {RateCtrlMthd, MFX_RATECONTROL_LA_HRD   , true}, set_brc_params },
-    {/**/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {RateCtrlMthd, MFX_RATECONTROL_AVBR     , true}, set_brc_params },
-    {/**/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {RateCtrlMthd, MFX_RATECONTROL_RESERVED1, true}, set_brc_params },
-    {/**/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {RateCtrlMthd, MFX_RATECONTROL_RESERVED2, true}, set_brc_params },
-    {/**/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {RateCtrlMthd, MFX_RATECONTROL_RESERVED3, true}, set_brc_params },
-    {/**/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {RateCtrlMthd, MFX_RATECONTROL_RESERVED4, true}, set_brc_params },
+    {/**/ ENCODE, MFX_CODEC_MPEG2, W_INCOMP, W_INCOMP, {{RateCtrlMthd, MFX_RATECONTROL_RESERVED1, true},
+                                                        { InitialDelayInKB, 150, false },
+                                                        { TargetKbps, 600, false },
+                                                        { MaxKbps, 900, false }},
+                                                        set_brc_params },
     {/**/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {RateCtrlMthd, MFX_RATECONTROL_ICQ      , true}, set_brc_params },
     {/**/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {RateCtrlMthd, MFX_RATECONTROL_VCM      , true}, set_brc_params },
     {/**/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {RateCtrlMthd, MFX_RATECONTROL_LA_ICQ   , true}, set_brc_params },
@@ -172,8 +176,8 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/**/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID, {&tsStruct::mfxExtDirtyRect.NumRect, 1} },
     {/**/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID, {&tsStruct::mfxExtMoveRect.NumRect,  1} },
 
-    {/**/ ENCODE, MFX_CODEC_AVC,     E_UNSPRT, E_INVLID, {&tsStruct::mfxExtEncoderCapability.MBPerSec, 1},},
-    {/**/ ENCODE, MFX_CODEC_AVC,     E_UNSPRT, E_INVLID, {&tsStruct::mfxExtEncoderCapability.InputMemoryTiling, 1},},
+    {/**/ ENCODE, MFX_CODEC_AVC,     NONE, NONE, {&tsStruct::mfxExtEncoderCapability.MBPerSec, 1},},
+    {/**/ ENCODE, MFX_CODEC_AVC,     NONE, NONE, {&tsStruct::mfxExtEncoderCapability.InputMemoryTiling, 1},},
     {/**/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID, {&tsStruct::mfxExtEncoderCapability.MBPerSec, 1},},
     {/**/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID, {&tsStruct::mfxExtEncoderCapability.InputMemoryTiling, 1},},
 };
@@ -287,11 +291,18 @@ int TestSuite::RunTestQueryInitComponent(const tc_struct& tc)
     }
     const tsExtBufType<mfxVideoParam> tmpPar = queryParIn;
     queryParOut = tmpPar;
-
     component.MFXInit();
 
+
     //Query(session, in, out) test:
-    g_tsStatus.expect(tc.query_sts);
+    if ((MFX_CODEC_AVC == tc.codec) && (component.m_impl != MFX_IMPL_VIA_D3D11) && (queryParIn.GetExtBuffer(MFX_EXTBUFF_ENCODER_CAPABILITY)))
+    {
+        g_tsStatus.expect(MFX_ERR_UNSUPPORTED);//MBPerSec, InputMemoryTiling supported only by D3D11
+    }
+    else
+    {
+        g_tsStatus.expect(tc.query_sts);
+    }
     component.Query(component.m_session, &queryParIn, &queryParOut);
     EXPECT_EQ(tmpPar, queryParIn) << "ERROR: Component should not change input structure in Query()!\n";
 
@@ -302,7 +313,14 @@ int TestSuite::RunTestQueryInitComponent(const tc_struct& tc)
     queryParIn = tmpPar;
 
     //Query(session, in, in) test:
-    g_tsStatus.expect(tc.query_sts);
+    if ((MFX_CODEC_AVC == tc.codec) && (component.m_impl != MFX_IMPL_VIA_D3D11) && (queryParIn.GetExtBuffer(MFX_EXTBUFF_ENCODER_CAPABILITY)))
+    {
+        g_tsStatus.expect(MFX_ERR_UNSUPPORTED);//MBPerSec, InputMemoryTiling supported only by D3D11
+    }
+    else
+    {
+        g_tsStatus.expect(tc.query_sts);
+    }
     component.Query(component.m_session, &queryParIn, &queryParIn);
 
     //Check that bad parameters were zero-ed or corrected
@@ -319,6 +337,8 @@ int TestSuite::RunTestQueryInitComponent(const tc_struct& tc)
     if( tc.init_sts >= MFX_ERR_NONE )
     {
         g_tsStatus.expect( MFX_ERR_NONE );
+        if (queryParOut.GetExtBuffer(MFX_EXTBUFF_ENCODER_CAPABILITY))//GetVideoParam() unsupport MFX_EXTBUFF_ENCODER_CAPABILITY
+            queryParOut.RemoveExtBuffer(MFX_EXTBUFF_ENCODER_CAPABILITY);
         component.GetVideoParam(component.m_session, &queryParOut);
 
         //Check that bad parameters were zero-ed or corrected by component through GetVideoParam
@@ -336,7 +356,6 @@ int TestSuite::RunTest(unsigned int id)
 {
     TS_START;
     const tc_struct& tc = test_case[id];
-
     if(0 == tc.component)
     {
         EXPECT_NE((mfxU32)0, tc.component) << "ERROR: test is not implemented\n";
