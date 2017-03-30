@@ -135,13 +135,18 @@ mfxU32 ChooseProfile(mfxVideoParam * param, eMFXHWType )
         }
 #endif
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
         {
             mfxU32 const profile_idc = ExtractProfile(param->mfx.CodecProfile);
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+            if (profile_idc == MFX_PROFILE_HEVC_SCC)
+                profile |= VA_PROFILE_SCC;
+#endif //PRE_SI_TARGET_PLATFORM_GEN12
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
             if (profile_idc == MFX_PROFILE_HEVC_REXT)
                 profile |= VA_PROFILE_REXT;
-        }
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
+        }
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         if (IS_PROTECTION_WIDEVINE(param->Protected))

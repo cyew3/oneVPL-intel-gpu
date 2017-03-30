@@ -425,10 +425,15 @@ static const GuidProfile guidProfiles[] =
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-    { H265_12_VLD_420 | VA_LONG_SLICE_MODE,                                     DXVA_Intel_ModeHEVC_VLD_Main12Profile },
-    { H265_12_VLD_422 | VA_LONG_SLICE_MODE,                                     DXVA_Intel_ModeHEVC_VLD_Main422_12Profile },
-    { H265_12_VLD_444 | VA_LONG_SLICE_MODE,                                     DXVA_Intel_ModeHEVC_VLD_Main444_12Profile },
-#endif
+    { H265_12_VLD_420     | VA_LONG_SLICE_MODE,                                 DXVA_Intel_ModeHEVC_VLD_Main12Profile },
+    { H265_12_VLD_422     | VA_LONG_SLICE_MODE,                                 DXVA_Intel_ModeHEVC_VLD_Main422_12Profile },
+    { H265_12_VLD_444     | VA_LONG_SLICE_MODE,                                 DXVA_Intel_ModeHEVC_VLD_Main444_12Profile },
+
+    { H265_VLD_SCC        | VA_LONG_SLICE_MODE,                                 DXVA_Intel_ModeHEVC_VLD_SCC_Main_Profile },
+    { H265_10_VLD_SCC     | VA_LONG_SLICE_MODE,                                 DXVA_Intel_ModeHEVC_VLD_SCC_Main_10Profile },
+    { H265_VLD_444_SCC    | VA_LONG_SLICE_MODE,                                 DXVA_Intel_ModeHEVC_VLD_SCC_Main444_Profile },
+    { H265_10_VLD_444_SCC | VA_LONG_SLICE_MODE,                                 DXVA_Intel_ModeHEVC_VLD_SCC_Main444_10Profile },
+#endif //PRE_SI_TARGET_PLATFORM_GEN12
 
     { VA_H265 | VA_VLD | VA_PROFILE_WIDEVINE,                                   DXVA_Intel_Decode_Elementary_Stream_HEVC },
 
@@ -489,6 +494,10 @@ bool GuidProfile::IsIntelCustomGUID(const GUID & guid)
         || guid == DXVA_Intel_ModeHEVC_VLD_Main12Profile
         || guid == DXVA_Intel_ModeHEVC_VLD_Main422_12Profile
         || guid == DXVA_Intel_ModeHEVC_VLD_Main444_12Profile
+        || guid == DXVA_Intel_ModeHEVC_VLD_SCC_Main_Profile
+        || guid == DXVA_Intel_ModeHEVC_VLD_SCC_Main_10Profile
+        || guid == DXVA_Intel_ModeHEVC_VLD_SCC_Main444_Profile
+        || guid == DXVA_Intel_ModeHEVC_VLD_SCC_Main444_10Profile
 #endif //PRE_SI_TARGET_PLATFORM_GEN12
         ;
 }

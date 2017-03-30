@@ -107,6 +107,22 @@ DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_Main422_12Profile,
 // {5B08E35D-0C66-4C51-A6F1-89D00CB2C197}
 DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_Main444_12Profile,
     0x5b08e35d, 0xc66, 0x4c51, 0xa6, 0xf1, 0x89, 0xd0, 0xc, 0xb2, 0xc1, 0x97);
+
+// {0E4BC693-5D2C-4936-B125-AEFE32B16D8A}
+DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_SCC_Main_Profile,
+    0xe4bc693, 0x5d2c, 0x4936, 0xb1, 0x25, 0xae, 0xfe, 0x32, 0xb1, 0x6d, 0x8a);
+
+// {2F08B5B1-DBC2-4d48-883A-4E7B8174CFF6}
+DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_SCC_Main_10Profile,
+    0x2f08b5b1, 0xdbc2, 0x4d48, 0x88, 0x3a, 0x4e, 0x7b, 0x81, 0x74, 0xcf, 0xf6);
+
+// {5467807A-295D-445d-BD2E-CBA8C2457C3D}
+DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_SCC_Main444_Profile,
+    0x5467807a, 0x295d, 0x445d, 0xbd, 0x2e, 0xcb, 0xa8, 0xc2, 0x45, 0x7c, 0x3d);
+
+// {AE0D4E15-2360-40a8-BF82-028E6A0DD827}
+DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_SCC_Main444_10Profile,
+    0xae0d4e15, 0x2360, 0x40a8, 0xbf, 0x82, 0x2, 0x8e, 0x6a, 0xd, 0xd8, 0x27);
 #endif //PRE_SI_TARGET_PLATFORM_GEN12
 
 struct GuidProfile
@@ -286,6 +302,12 @@ bool CheckDXVAConfig(Ipp32s profile_flags, T *config, ProtectedVA * protectedVA)
     case H265_12_VLD_422:
     case H265_12_VLD_444:
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+    case H265_VLD_SCC:
+    case H265_10_VLD_SCC:
+    case H265_VLD_444_SCC:
+    case H265_10_VLD_444_SCC:
+#endif //PRE_SI_TARGET_PLATFORM_GEN12
         if (profile_flags & VA_LONG_SLICE_MODE)
             res = (2 == config->ConfigBitstreamRaw || 3 == config->ConfigBitstreamRaw);
         else if (profile_flags & VA_SHORT_SLICE_MODE)
