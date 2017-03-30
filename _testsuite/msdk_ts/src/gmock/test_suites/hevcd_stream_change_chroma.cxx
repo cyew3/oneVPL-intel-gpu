@@ -9,10 +9,10 @@ struct chroma_change_tag;
 template <>
 TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_NV12, chroma_change_tag>::test_cases[][TestSuite::max_num_ctrl] =
 {
-    {/* 0*/ {"hevc/420format_8bit/Kimono1_704x576_24_420_8.265"}, {"hevc/422format/Kimono1_704x576_24_422_8.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
-    {/* 1*/ {"hevc/420format_8bit/Kimono1_704x576_24_420_8.265", 5}, {"hevc/422format/Kimono1_704x576_24_422_8.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
-    {/* 2*/ {"hevc/420format_8bit/Kimono1_704x576_24_420_8.265"}, {"hevc/444format_8bit/Kimono1_704x576_24_444_8.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
-    {/* 3*/ {"hevc/420format_8bit/Kimono1_704x576_24_420_8.265", 5}, {"hevc/444format_8bit/Kimono1_704x576_24_444_8.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
+    {/* 0*/ {"hevc/420format/Kimono1_704x576_24_420_8.265"}, {"hevc/422format/Kimono1_704x576_24_422_8.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
+    {/* 1*/ {"hevc/420format/Kimono1_704x576_24_420_8.265", 5}, {"hevc/422format/Kimono1_704x576_24_422_8.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
+    {/* 2*/ {"hevc/420format/Kimono1_704x576_24_420_8.265"}, {"hevc/444format/Kimono1_704x576_24_444_8.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
+    {/* 3*/ {"hevc/420format/Kimono1_704x576_24_420_8.265", 5}, {"hevc/444format/Kimono1_704x576_24_444_8.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
 };
 template <>
 unsigned int const TestSuiteExt<MFX_FOURCC_NV12, chroma_change_tag>::n_cases = sizeof(TestSuiteExt<MFX_FOURCC_NV12, chroma_change_tag>::test_cases) / sizeof(TestSuite::tc_struct[max_num_ctrl]);
@@ -21,10 +21,10 @@ unsigned int const TestSuiteExt<MFX_FOURCC_NV12, chroma_change_tag>::n_cases = s
 template <>
 TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_YUY2, chroma_change_tag>::test_cases[][TestSuite::max_num_ctrl] =
 {
-    {/* 0*/ {"hevc/422format_8bit/Kimono1_704x576_24_422_8.265"}, {"hevc/420format_8bit/Kimono1_704x576_24_420_8.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
-    {/* 1*/ {"hevc/422format_8bit/Kimono1_704x576_24_422_8.265", 5}, {"hevc/420format_8bit/Kimono1_704x576_24_420_8.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
-    {/* 2*/ {"hevc/422format_8bit/Kimono1_704x576_24_422_8.265"}, {"hevc/444format_8bit/Kimono1_704x576_24_444_8.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
-    {/* 3*/ {"hevc/422format_8bit/Kimono1_704x576_24_422_8.265", 5}, {"hevc/444format_8bit/Kimono1_704x576_24_444_8.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
+    {/* 0*/ {"hevc/422format/Kimono1_704x576_24_422_8.265"}, {"hevc/420format/Kimono1_704x576_24_420_8.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
+    {/* 1*/ {"hevc/422format/Kimono1_704x576_24_422_8.265", 5}, {"hevc/420format/Kimono1_704x576_24_420_8.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
+    {/* 2*/ {"hevc/422format/Kimono1_704x576_24_422_8.265"}, {"hevc/444format/Kimono1_704x576_24_444_8.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
+    {/* 3*/ {"hevc/422format/Kimono1_704x576_24_422_8.265", 5}, {"hevc/444format/Kimono1_704x576_24_444_8.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
 };
 template <>
 unsigned int const TestSuiteExt<MFX_FOURCC_YUY2, chroma_change_tag>::n_cases = sizeof(TestSuiteExt<MFX_FOURCC_YUY2, chroma_change_tag>::test_cases) / sizeof(TestSuite::tc_struct[max_num_ctrl]);
@@ -33,10 +33,10 @@ unsigned int const TestSuiteExt<MFX_FOURCC_YUY2, chroma_change_tag>::n_cases = s
 template <>
 TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_AYUV, chroma_change_tag>::test_cases[][TestSuite::max_num_ctrl] =
 {
-    {/* 0*/ {"hevc/444format_8bit/Kimono1_704x576_24_444_8.265"}, {"hevc/420format_8bit/Kimono1_704x576_24_420_8.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
-    {/* 1*/ {"hevc/444format_8bit/Kimono1_704x576_24_444_8.265", 5}, {"hevc/420format_8bit/Kimono1_704x576_24_420_8.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
-    {/* 2*/ {"hevc/444format_8bit/Kimono1_704x576_24_444_8.265"}, {"hevc/422format_8bit/Kimono1_704x576_24_422_8.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
-    {/* 3*/ {"hevc/444format_8bit/Kimono1_704x576_24_444_8.265", 5}, {"hevc/422format_8bit/Kimono1_704x576_24_422_8.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
+    {/* 0*/ {"hevc/444format/Kimono1_704x576_24_444_8.265"}, {"hevc/420format/Kimono1_704x576_24_420_8.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
+    {/* 1*/ {"hevc/444format/Kimono1_704x576_24_444_8.265", 5}, {"hevc/420format/Kimono1_704x576_24_420_8.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
+    {/* 2*/ {"hevc/444format/Kimono1_704x576_24_444_8.265"}, {"hevc/422format/Kimono1_704x576_24_422_8.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
+    {/* 3*/ {"hevc/444format/Kimono1_704x576_24_444_8.265", 5}, {"hevc/422format/Kimono1_704x576_24_422_8.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
 };
 template <>
 unsigned int const TestSuiteExt<MFX_FOURCC_AYUV, chroma_change_tag>::n_cases = sizeof(TestSuiteExt<MFX_FOURCC_AYUV, chroma_change_tag>::test_cases) / sizeof(TestSuite::tc_struct[max_num_ctrl]);

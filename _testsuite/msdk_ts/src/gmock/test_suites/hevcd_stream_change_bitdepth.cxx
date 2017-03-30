@@ -9,8 +9,8 @@ struct bitdepth_change_tag;
 template <>
 TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_NV12, bitdepth_change_tag>::test_cases[][TestSuite::max_num_ctrl] =
 {
-    {/* 0*/ {"hevc/420format_8bit/Kimono1_704x576_24_420_8.265"}, {"hevc/420format_10bit/Kimono1_704x576_24_420_10.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
-    {/* 1*/ {"hevc/420format_8bit/Kimono1_704x576_24_420_8.265", 5}, {"hevc/420format_10bit/Kimono1_704x576_24_420_10.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
+    {/* 0*/ {"hevc/420format/Kimono1_704x576_24_420_8.265"}, {"hevc/420format_10bit/Kimono1_704x576_24_420_10.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
+    {/* 1*/ {"hevc/420format/Kimono1_704x576_24_420_8.265", 5}, {"hevc/420format_10bit/Kimono1_704x576_24_420_10.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
 };
 template <>
 unsigned int const TestSuiteExt<MFX_FOURCC_NV12, bitdepth_change_tag>::n_cases = sizeof(TestSuiteExt<MFX_FOURCC_NV12, bitdepth_change_tag>::test_cases) / sizeof(TestSuite::tc_struct[max_num_ctrl]);
@@ -39,8 +39,8 @@ unsigned int const TestSuiteExt<MFX_FOURCC_AYUV, bitdepth_change_tag>::n_cases =
 template <>
 TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_P010, bitdepth_change_tag>::test_cases[][TestSuite::max_num_ctrl] =
 {
-    {/* 0*/ {"hevc/420format_10bit/Kimono1_704x576_24_420_10.265"}, {"hevc/420format_8bit/Kimono1_704x576_24_420_8.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
-    {/* 1*/ {"hevc/420format_10bit/Kimono1_704x576_24_420_10.265", 5}, {"hevc/420format_8bit/Kimono1_704x576_24_420_8.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
+    {/* 0*/ {"hevc/420format_10bit/Kimono1_704x576_24_420_10.265"}, {"hevc/420format/Kimono1_704x576_24_420_8.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
+    {/* 1*/ {"hevc/420format_10bit/Kimono1_704x576_24_420_10.265", 5}, {"hevc/420format/Kimono1_704x576_24_420_8.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
 };
 template <>
 unsigned int const TestSuiteExt<MFX_FOURCC_P010, bitdepth_change_tag>::n_cases = sizeof(TestSuiteExt<MFX_FOURCC_P010, bitdepth_change_tag>::test_cases) / sizeof(TestSuite::tc_struct[max_num_ctrl]);
