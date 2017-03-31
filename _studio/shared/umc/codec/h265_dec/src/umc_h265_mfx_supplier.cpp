@@ -448,23 +448,23 @@ eMFXPlatform MFX_Utility::GetPlatform_H265(VideoCORE * core, mfxVideoParam * par
 #if defined (MFX_VA)
     if (platform != MFX_PLATFORM_SOFTWARE)
     {
+        int profile = par->mfx.CodecProfile;
+        if (profile == MFX_PROFILE_UNKNOWN ||
+            profile == MFX_PROFILE_HEVC_MAINSP)
+            //MFX_PROFILE_HEVC_MAINSP conforms either MAIN or MAIN10 profile
+            //(restricted to bit_depth_luma_minus8/bit_depth_chroma_minus8 equal to 0 only),
+            //select appropriate GUID basing on FOURCC
+            //see A.3.4: "When general_profile_compatibility_flag[ 3 ] is equal to 1,
+            //            general_profile_compatibility_flag[ 1 ] and
+            //            general_profile_compatibility_flag[ 2 ] should also be equal to 1"
+            profile = MatchProfile(par->mfx.FrameInfo.FourCC);
+
 #if defined (MFX_VA_WIN)
         GUID guids[2] = {};
         if (IS_PROTECTION_WIDEVINE(par->Protected))
             guids[0] = DXVA_Intel_Decode_Elementary_Stream_HEVC;
         else
         {
-            int profile = par->mfx.CodecProfile;
-            if (profile == MFX_PROFILE_UNKNOWN ||
-                profile == MFX_PROFILE_HEVC_MAINSP)
-                //MFX_PROFILE_HEVC_MAINSP conforms either MAIN or MAIN10 profile
-                //(restricted to bit_depth_luma_minus8/bit_depth_chroma_minus8 equal to 0 only),
-                //select appropriate GUID basing on FOURCC
-                //see A.3.4: "When general_profile_compatibility_flag[ 3 ] is equal to 1,
-                //            general_profile_compatibility_flag[ 1 ] and
-                //            general_profile_compatibility_flag[ 2 ] should also be equal to 1"
-                profile = MatchProfile(par->mfx.FrameInfo.FourCC);
-
             switch (profile)
             {
                 case MFX_PROFILE_HEVC_MAIN:
@@ -496,6 +496,16 @@ eMFXPlatform MFX_Utility::GetPlatform_H265(VideoCORE * core, mfxVideoParam * par
 #else
         if (core->IsGuidSupported(DXVA_ModeHEVC_VLD_Main, par) != MFX_ERR_NONE)
             return MFX_PLATFORM_SOFTWARE;
+
+        switch (profile)
+        {
+            case MFX_PROFILE_HEVC_MAIN:
+            case MFX_PROFILE_HEVC_MAIN10:
+                break;
+
+            default:
+                return MFX_PLATFORM_SOFTWARE;
+        }
 #endif
     }
 #endif
