@@ -83,7 +83,8 @@ mfxStatus CSmplYUVReader::Init(std::list<msdk_string> inputs, mfxU32 ColorFormat
         MFX_FOURCC_YUY2 != ColorFormat &&
         MFX_FOURCC_RGB4 != ColorFormat &&
         MFX_FOURCC_BGR4 != ColorFormat &&
-        MFX_FOURCC_P010 != ColorFormat )
+        MFX_FOURCC_P010 != ColorFormat && 
+        MFX_FOURCC_P210 != ColorFormat)
     {
         return MFX_ERR_UNSUPPORTED;
     }
@@ -167,7 +168,7 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
         h = pInfo.Height;
     }
 
-    mfxU32 nBytesPerPixel = (pInfo.FourCC == MFX_FOURCC_P010) ? 2 : 1;
+    mfxU32 nBytesPerPixel = (pInfo.FourCC == MFX_FOURCC_P010 || pInfo.FourCC == MFX_FOURCC_P210) ? 2 : 1;
 
     if (MFX_FOURCC_YUY2 == pInfo.FourCC || MFX_FOURCC_RGB4 == pInfo.FourCC || MFX_FOURCC_BGR4 == pInfo.FourCC)
     {
@@ -209,7 +210,7 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
             return MFX_ERR_UNSUPPORTED;
         }
     }
-    else if (MFX_FOURCC_NV12 == pInfo.FourCC || MFX_FOURCC_YV12 == pInfo.FourCC || MFX_FOURCC_P010 == pInfo.FourCC)
+    else if (MFX_FOURCC_NV12 == pInfo.FourCC || MFX_FOURCC_YV12 == pInfo.FourCC || MFX_FOURCC_P010 == pInfo.FourCC || MFX_FOURCC_P210 == pInfo.FourCC)
     {
         pitch = pData.Pitch;
         ptr = pData.Y + pInfo.CropX + pInfo.CropY * pData.Pitch;
@@ -225,7 +226,7 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
             }
 
             // Shifting data if required
-            if(MFX_FOURCC_P010 == pInfo.FourCC && shouldShiftP010High)
+            if((MFX_FOURCC_P010 == pInfo.FourCC || MFX_FOURCC_P210 == pInfo.FourCC) && shouldShiftP010High)
             {
                 mfxU16* shortPtr = (mfxU16*)(ptr + i * pitch);
                 for(int idx = 0; idx < w; idx++)
@@ -316,7 +317,11 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
             break;
         case MFX_FOURCC_NV12:
         case MFX_FOURCC_P010:
-            h /= 2;
+        case MFX_FOURCC_P210:
+            if (MFX_FOURCC_P210 != pInfo.FourCC)
+            {
+                h /= 2;
+            }
             ptr  = pData.UV + pInfo.CropX + (pInfo.CropY / 2) * pitch;
             for(i = 0; i < h; i++)
             {
@@ -328,7 +333,7 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
                 }
 
                 // Shifting data if required
-                if(MFX_FOURCC_P010 == pInfo.FourCC && shouldShiftP010High)
+                if((MFX_FOURCC_P010 == pInfo.FourCC || MFX_FOURCC_P210 == pInfo.FourCC) && shouldShiftP010High)
                 {
                     mfxU16* shortPtr = (mfxU16*)(ptr + i * pitch);
                     for(int idx = 0; idx < w; idx++)
@@ -792,6 +797,7 @@ mfxStatus CSmplYUVWriter::WriteNextFrame(mfxFrameSurface1 *pSurface)
         }
         break;
         case MFX_FOURCC_P010:
+        case MFX_FOURCC_P210:
             for (i = 0; i < pInfo.CropH; i++)
             {
                 mfxU16* shortPtr = (mfxU16*) (pData.Y + (pInfo.CropY * pData.Pitch + pInfo.CropX) + i * pData.Pitch);
@@ -809,6 +815,7 @@ mfxStatus CSmplYUVWriter::WriteNextFrame(mfxFrameSurface1 *pSurface)
                     (mfxU32)pInfo.CropW*2, MFX_ERR_UNDEFINED_BEHAVIOR);
             }
         break;
+
         case MFX_FOURCC_RGB4:
         case 100: //DXGI_FORMAT_AYUV
         case MFX_FOURCC_A2RGB10:
@@ -874,8 +881,10 @@ mfxStatus CSmplYUVWriter::WriteNextFrame(mfxFrameSurface1 *pSurface)
             break;
         }
         case MFX_FOURCC_P010:
+        case MFX_FOURCC_P210:
         {
-            for (i = 0; i < (mfxU32)pInfo.CropH/2; i++)
+            mfxU32 height = pInfo.FourCC == MFX_FOURCC_P010 ? (mfxU32)pInfo.CropH / 2 : (mfxU32)pInfo.CropH;
+            for (i = 0; i < height; i++)
             {
                 mfxU16* shortPtr = (mfxU16*) (pData.UV + (pInfo.CropY * pData.Pitch / 2 + pInfo.CropX) + i * pData.Pitch);
                 // Shifting data if required
