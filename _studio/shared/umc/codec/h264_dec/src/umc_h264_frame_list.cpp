@@ -156,35 +156,7 @@ H264DBPList::H264DBPList()
 {
 }
 
-H264DecoderFrame * H264DBPList::GetOldestDisposable(void)
-{
-    H264DecoderFrame *pOldest = NULL;
-    Ipp32s  SmallestPicOrderCnt = 0x7fffffff;    // very large positive
-    Ipp32u  LargestRefPicListResetCount = 0;
-
-    for (H264DecoderFrame * pTmp = m_pHead; pTmp; pTmp = pTmp->future())
-    {
-        if (pTmp->isDisposable())
-        {
-            if (pTmp->RefPicListResetCount(0) > LargestRefPicListResetCount)
-            {
-                pOldest = pTmp;
-                SmallestPicOrderCnt = pTmp->PicOrderCnt(0,3);
-                LargestRefPicListResetCount = pTmp->RefPicListResetCount(0);
-            }
-            else if ((pTmp->PicOrderCnt(0,3) < SmallestPicOrderCnt) &&
-                     (pTmp->RefPicListResetCount(0) == LargestRefPicListResetCount))
-            {
-                pOldest = pTmp;
-                SmallestPicOrderCnt = pTmp->PicOrderCnt(0,3);
-            }
-        }
-    }
-
-    return pOldest;
-} // H264DecoderFrame *H264DBPList::GetDisposable(void)
-
-H264DecoderFrame * H264DBPList::GetLastDisposable(void)
+H264DecoderFrame * H264DBPList::GetDisposable(void)
 {
     H264DecoderFrame *pOldest = NULL;
 
@@ -196,31 +168,6 @@ H264DecoderFrame * H264DBPList::GetLastDisposable(void)
         }
     }
     return pOldest;
-} // H264DecoderFrame *H264DBPList::GetDisposable(void)
-
-void H264DBPList::MoveToTail(H264DecoderFrame * pFrame)
-{
-    if (m_pHead == m_pTail || pFrame == m_pTail)
-    {
-        return;
-    }
-
-    // move to tail
-    if (pFrame == m_pHead)
-    {
-        m_pHead = pFrame->m_pFutureFrame;
-        m_pHead->m_pPreviousFrame = 0;
-    }
-    else
-    {
-        pFrame->m_pPreviousFrame->m_pFutureFrame = pFrame->m_pFutureFrame;
-        pFrame->m_pFutureFrame->m_pPreviousFrame = pFrame->m_pPreviousFrame;
-    }
-
-    m_pTail->m_pFutureFrame = pFrame;
-    pFrame->m_pPreviousFrame = m_pTail;
-    m_pTail = pFrame;
-    pFrame->m_pFutureFrame = 0;
 }
 
 bool H264DBPList::IsDisposableExist()
@@ -250,20 +197,6 @@ bool H264DBPList::IsAlmostDisposableExist()
 
     return count < m_dpbSize;
 }
-
-H264DecoderFrame * H264DBPList::GetDisposable(void)
-{
-    for (H264DecoderFrame * pTmp = m_pHead; pTmp; pTmp = pTmp->future())
-    {
-        if (pTmp->isDisposable())
-        {
-            return pTmp;
-        }
-    }
-
-    // We never found one
-    return NULL;
-} // H264DecoderFrame *H264DBPList::GetDisposable(void)
 
 H264DecoderFrame * H264DBPList::findDisplayableByDPBDelay(void)
 {
@@ -299,8 +232,6 @@ H264DecoderFrame * H264DBPList::findDisplayableByDPBDelay(void)
                     pOldest = pCurr;
             }
 
-            //if (count == dbpSize + 1)
-              //  break;
             count++;
         }
 
@@ -350,8 +281,6 @@ H264DecoderFrame * H264DBPList::findOldestDisplayable(Ipp32s /*dbpSize*/ )
                     pOldest = pCurr;
             }
 
-            //if (count == dbpSize + 1)
-              //  break;
             count++;
         }
 
@@ -413,35 +342,6 @@ void H264DBPList::countActiveRefs(Ipp32u &NumShortTerm, Ipp32u &NumLongTerm)
 
 }    // countActiveRefs
 
-///////////////////////////////////////////////////////////////////////////////
-// removeAllRef
-// Marks all frames as not used as reference frames.
-///////////////////////////////////////////////////////////////////////////////
-void H264DBPList::removeAllRef()
-{
-    H264DecoderFrame *pCurr = m_pHead;
-
-    while (pCurr)
-    {
-        if (pCurr->isShortTermRef() || pCurr->isLongTermRef())
-        {
-            pCurr->SetisLongTermRef(false, 0);
-            pCurr->SetisLongTermRef(false, 1);
-            pCurr->SetisShortTermRef(false, 0);
-            pCurr->SetisShortTermRef(false, 1);
-
-            if (!pCurr->IsFrameExist())
-            {
-                pCurr->setWasOutputted();
-                pCurr->setWasDisplayed();
-            }
-        }
-
-        pCurr = pCurr->future();
-    }
-
-}    // removeAllRef
-
 void H264DBPList::IncreaseRefPicListResetCount(H264DecoderFrame *ExcludeFrame)
 {
     H264DecoderFrame *pCurr = m_pHead;
@@ -496,143 +396,6 @@ H264DecoderFrame * H264DBPList::findOldestLongTermRef()
     return pOldest;
 }    // findOldestLongTermRef
 
-///////////////////////////////////////////////////////////////////////////////
-// freeShortTermRef
-// Mark the short-term reference frame with specified picNum as not used
-///////////////////////////////////////////////////////////////////////////////
-H264DecoderFrame * H264DBPList::freeShortTermRef(Ipp32s  picNum)
-{
-    H264DecoderFrame *pCurr = m_pHead;
-    bool found = false;
-    while (pCurr)
-    {
-        if (pCurr->m_PictureStructureForRef >= FRM_STRUCTURE)
-        {
-            if (pCurr->isShortTermRef() && (pCurr->PicNum(0) == picNum))
-            {
-                pCurr->SetisShortTermRef(false, 0);
-                return pCurr;
-            }
-        }
-        else
-        {
-            if (pCurr->isShortTermRef(0) && (pCurr->PicNum(0) == picNum))
-            {
-                pCurr->SetisShortTermRef(false, 0);
-                found = true;
-            }
-
-            if (pCurr->isShortTermRef(1) && (pCurr->PicNum(1) == picNum))
-            {
-                pCurr->SetisShortTermRef(false, 1);
-                found = true;
-            }
-
-            if (found)
-                return pCurr;
-        }
-
-        pCurr = pCurr->future();
-    }
-
-    //VM_ASSERT(false);
-    return 0;
-}    // freeShortTermRef
-
-///////////////////////////////////////////////////////////////////////////////
-// freeLongTermRef
-// Mark the long-term reference frame with specified LongTermPicNum as not used
-///////////////////////////////////////////////////////////////////////////////
-H264DecoderFrame * H264DBPList::freeLongTermRef(Ipp32s  LongTermPicNum)
-{
-    H264DecoderFrame *pCurr = m_pHead;
-    bool found = false;
-
-    while (pCurr)
-    {
-        if (pCurr->m_PictureStructureForRef>=FRM_STRUCTURE)
-        {
-            if (pCurr->isLongTermRef() && (pCurr->LongTermPicNum(0) == LongTermPicNum))
-            {
-                pCurr->SetisLongTermRef(false, 0);
-                return pCurr;
-            }
-        }
-        else
-        {
-            if (pCurr->isLongTermRef(0) && (pCurr->LongTermPicNum(0) == LongTermPicNum))
-            {
-                pCurr->SetisLongTermRef(false, 0);
-                found = true;
-            }
-
-            if (pCurr->isLongTermRef(1) && (pCurr->LongTermPicNum(1) == LongTermPicNum))
-            {
-                pCurr->SetisLongTermRef(false, 1);
-                found = true;
-            }
-
-            if (found)
-                return pCurr;
-        }
-
-        pCurr = pCurr->future();
-    }
-
-
-    //VM_ASSERT(false);    // No match found, should not happen.
-    return 0;
-}    // freeLongTermRef
-
-///////////////////////////////////////////////////////////////////////////////
-// freeLongTermRef
-// Mark the long-term reference frame with specified LongTermFrameIdx
-// as not used
-///////////////////////////////////////////////////////////////////////////////
-H264DecoderFrame * H264DBPList::freeLongTermRefIdx(Ipp32s  LongTermFrameIdx, H264DecoderFrame * pCurrentFrame)
-{
-    H264DecoderFrame *pCurr = m_pHead;
-
-    while (pCurr)
-    {
-        if (pCurr->m_PictureStructureForRef >= FRM_STRUCTURE)
-        {
-            if (pCurr->isLongTermRef() && (pCurr->LongTermFrameIdx() == LongTermFrameIdx ))
-            {
-                if (pCurrentFrame == pCurr)
-                    return 0;
-                pCurr->SetisLongTermRef(false, 0);
-                return pCurr;
-            }
-        }
-        else
-        {
-            if (pCurr->isLongTermRef(0) && (pCurr->LongTermFrameIdx() == LongTermFrameIdx ))
-            {
-                if (pCurrentFrame == pCurr)
-                    return 0;
-                pCurr->SetisLongTermRef(false, 0);
-                pCurr->SetisLongTermRef(false, 1);
-                return pCurr;
-            }
-
-            if (pCurr->isLongTermRef(1) && (pCurr->LongTermFrameIdx() == LongTermFrameIdx ))
-            {
-                if (pCurrentFrame == pCurr)
-                    return 0;
-                pCurr->SetisLongTermRef(false, 0);
-                pCurr->SetisLongTermRef(false, 1);
-                return pCurr;
-            }
-        }
-
-        pCurr = pCurr->future();
-    }
-
-    //VM_ASSERT(false);
-    return 0;
-}    // freeLongTermRefIdx
-
 H264DecoderFrame * H264DBPList::findLongTermRefIdx(Ipp32s LongTermFrameIdx)
 {
     H264DecoderFrame *pCurr = m_pHead;
@@ -666,39 +429,6 @@ H264DecoderFrame * H264DBPList::findLongTermRefIdx(Ipp32s LongTermFrameIdx)
     return 0;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// freeOldLongTermRef
-// Mark any long-term reference frame with LongTermFrameIdx greater
-// than MaxLongTermFrameIdx as not used. When MaxLongTermFrameIdx is -1, this
-// indicates no long-term frame indices and all long-term reference
-// frames should be freed.
-///////////////////////////////////////////////////////////////////////////////
-H264DecoderFrame * H264DBPList::freeOldLongTermRef(Ipp32s  MaxLongTermFrameIdx)
-{
-    H264DecoderFrame *pCurr = m_pHead;
-
-    while (pCurr)
-    {
-        if (pCurr->isLongTermRef(0) && (pCurr->LongTermFrameIdx() > MaxLongTermFrameIdx))
-        {
-            pCurr->SetisLongTermRef(false, 0);
-            pCurr->SetisLongTermRef(false, 1);
-
-            if (!pCurr->IsFrameExist())
-            {
-                pCurr->setWasOutputted();
-                pCurr->setWasDisplayed();
-            }
-        }
-
-        pCurr = pCurr->future();
-    }
-
-    return 0;
-    // OK to not find any to free
-
-}    // freeOldLongTermRef
-
 H264DecoderFrame * H264DBPList::findOldLongTermRef(Ipp32s MaxLongTermFrameIdx)
 {
     H264DecoderFrame *pCurr = m_pHead;
@@ -717,54 +447,6 @@ H264DecoderFrame * H264DBPList::findOldLongTermRef(Ipp32s MaxLongTermFrameIdx)
     // OK to not find any to free
 
 }
-
-///////////////////////////////////////////////////////////////////////////////
-// changeSTtoLTRef
-//    Mark the short-term reference frame with specified PicNum as long-term
-//  with specified long term idx.
-///////////////////////////////////////////////////////////////////////////////
-void H264DBPList::changeSTtoLTRef(Ipp32s  picNum, Ipp32s  longTermFrameIdx)
-{
-    H264DecoderFrame *pCurr = m_pHead;
-    while (pCurr)
-    {
-        if (pCurr->m_PictureStructureForRef >= FRM_STRUCTURE)
-        {
-            if (pCurr->isShortTermRef() && (pCurr->PicNum(0) == picNum))
-            {
-                pCurr->SetisShortTermRef(false, 0);
-                pCurr->setLongTermFrameIdx(longTermFrameIdx);
-                pCurr->SetisLongTermRef(true, 0);
-                pCurr->UpdateLongTermPicNum(2);
-                return;
-            }
-        }
-        else
-        {
-            if (pCurr->isShortTermRef(0) && (pCurr->PicNum(0) == picNum))
-            {
-                pCurr->SetisShortTermRef(false, 0);
-                pCurr->setLongTermFrameIdx(longTermFrameIdx);
-                pCurr->SetisLongTermRef(true, 0);
-                pCurr->UpdateLongTermPicNum(pCurr->m_bottom_field_flag[0]);
-                return;
-            }
-
-            if (pCurr->isShortTermRef(1) && (pCurr->PicNum(1) == picNum))
-            {
-                pCurr->SetisShortTermRef(false, 1);
-                pCurr->setLongTermFrameIdx(longTermFrameIdx);
-                pCurr->SetisLongTermRef(true, 1);
-                pCurr->UpdateLongTermPicNum(pCurr->m_bottom_field_flag[1]);
-                return;
-            }
-        }
-        pCurr = pCurr->future();
-    }
-
-    //VM_ASSERT(false);    // No match found, should not happen.
-    return;
-}    // changeSTtoLTRef
 
 H264DecoderFrame *H264DBPList::findShortTermPic(Ipp32s  picNum, Ipp32s * field)
 {

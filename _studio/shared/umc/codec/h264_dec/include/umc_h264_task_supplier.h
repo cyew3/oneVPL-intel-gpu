@@ -606,7 +606,6 @@ protected:
     Status CompleteDecodedFrames(H264DecoderFrame ** decoded);
 
     H264DecoderFrame *GetAnyFrameToDisplay(bool force);
-    void SetFrameDisplayed(Ipp32s poc);
 
     void PreventDPBFullness();
 

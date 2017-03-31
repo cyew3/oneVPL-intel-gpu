@@ -74,46 +74,23 @@ public:
 
     H264DBPList();
 
-    H264DecoderFrame * GetOldestDisposable();
-
-    H264DecoderFrame * GetLastDisposable();
-
     bool IsDisposableExist();
 
     bool IsAlmostDisposableExist();
 
-    H264DecoderFrame *GetDisposable(void);
+    H264DecoderFrame *GetDisposable();
     // Search through the list for the disposable frame to decode into
     // Move disposable frame to tail
-
-    void removeAllRef();
-    // Mark all frames as not used as reference frames.
 
     void IncreaseRefPicListResetCount(H264DecoderFrame *excludeFrame);
     // Mark all frames as not used as reference frames.
 
-    H264DecoderFrame *  freeShortTermRef(Ipp32s picNum);
-    // Mark the short-term reference frame with specified picNum
-    // as not used
-
-    H264DecoderFrame *  freeLongTermRef(Ipp32s longTermPicNum);
-    // Mark the long-term reference frame with specified LongTermPicNum
-    // as not used
-
-    H264DecoderFrame *  freeLongTermRefIdx(Ipp32s longTermFrameIdx, H264DecoderFrame *pCurrentFrame);
-    // Mark the long-term reference frame with specified LongTermFrameIdx
-    // as not used
 
     H264DecoderFrame * findLongTermRefIdx(Ipp32s LongTermFrameIdx);
 
     H264DecoderFrame * findOldLongTermRef(Ipp32s MaxLongTermFrameIdx);
-    H264DecoderFrame *  freeOldLongTermRef(Ipp32s maxLongTermFrameIdx);
     // Mark any long-term reference frame with LongTermFrameIdx greater
     // than MaxLongTermFrameIdx as not used.
-
-    void changeSTtoLTRef(Ipp32s picNum, Ipp32s longTermFrameIdx);
-    // Mark the short-term reference frame with
-    // specified picNum as long-term with specified long term idx.
 
     H264DecoderFrame * findOldestShortTermRef();
 
@@ -137,8 +114,6 @@ public:
 
     Ipp32u countNumDisplayable();
     // Return number of displayable frames.
-
-    void MoveToTail(H264DecoderFrame * pFrame);
 
     H264DecoderFrame * FindClosest(H264DecoderFrame * pFrame);
 

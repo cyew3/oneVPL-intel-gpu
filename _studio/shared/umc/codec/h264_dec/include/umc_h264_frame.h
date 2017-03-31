@@ -165,9 +165,14 @@ public:
         return m_IsFrameExist;
     }
 
-    void SetFrameExistFlag(bool isFrameExist)
+    void SetFrameAsNonExist()
     {
-        m_IsFrameExist = isFrameExist;
+        m_IsFrameExist = false;
+        m_isFull = true;
+        m_isSkipped = true;
+        m_isDecoded = 1;
+        m_wasOutputted = 1;
+        m_wasDisplayed = 1;
     }
 
     // m_pParsedFrameData's allocated size is remembered so that a

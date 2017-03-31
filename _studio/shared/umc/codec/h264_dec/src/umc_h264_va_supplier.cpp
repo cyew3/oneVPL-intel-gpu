@@ -139,9 +139,8 @@ H264DecoderFrame *VATaskSupplier::GetFreeFrame(const H264Slice * pSlice)
 
     H264DecoderFrame *pFrame = 0;
 
-    // Traverse list for next disposable frame
     if (view.GetDPBList(0)->countAllFrames() >= view.maxDecFrameBuffering + m_DPBSizeEx)
-        pFrame = view.GetDPBList(0)->GetLastDisposable();
+        pFrame = view.GetDPBList(0)->GetDisposable();
 
     VM_ASSERT(!pFrame || pFrame->GetRefCounter() == 0);
 
@@ -170,7 +169,6 @@ H264DecoderFrame *VATaskSupplier::GetFreeFrame(const H264Slice * pSlice)
 
     DecReferencePictureMarking::Remove(pFrame);
     pFrame->Reset();
-    pFrame->SetFrameExistFlag(true);
     pFrame->IncrementReference();
 
     m_UIDFrameCounter++;
