@@ -225,7 +225,7 @@ int TestSuite::RunTest(unsigned int id)
     if ((tc.mode & (ENC|INIT)) == ENC) // no sps on init for enc
         ExcludeExtBufferPtr(encpak.enc.initbuf, &spsE->Header);
     if ((tc.mode & (PAK|INIT)) == PAK) // no sps on init for pak
-        ExcludeExtBufferPtr(encpak.enc.initbuf, &spsP->Header);
+        ExcludeExtBufferPtr(encpak.pak.initbuf, &spsP->Header);
 
     g_tsStatus.disable(); // it is checked many times inside, resetting expected to err_none
 
@@ -275,7 +275,6 @@ int TestSuite::RunTest(unsigned int id)
             if (sts != MFX_ERR_NONE)
                 break;
         }
-        count++;
 
     }
 
