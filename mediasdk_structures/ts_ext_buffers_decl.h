@@ -64,6 +64,7 @@ EXTBUF(mfxExtCamPipeControl         , MFX_EXTBUF_CAM_PIPECONTROL             )
 EXTBUF(mfxExtAVCRefLists            , MFX_EXTBUFF_AVC_REFLISTS               )
 EXTBUF(mfxExtCodingOption3          , MFX_EXTBUFF_CODING_OPTION3             )
 EXTBUF(mfxExtMBQP                   , MFX_EXTBUFF_MBQP                       )
+EXTBUF(mfxExtMBForceIntra           , MFX_EXTBUFF_MB_FORCE_INTRA             )
 
 EXTBUF(mfxExtChromaLocInfo          , MFX_EXTBUFF_CHROMA_LOC_INFO            )
 EXTBUF(mfxExtDecodedFrameInfo       , MFX_EXTBUFF_DECODED_FRAME_INFO         )

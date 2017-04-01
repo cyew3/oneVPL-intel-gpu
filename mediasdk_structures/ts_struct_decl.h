@@ -935,3 +935,9 @@ STRUCT(mfxExtVP9TemporalLayers,
     FIELD_S(mfxExtBuffer        , Header)
     FIELD_S(mfxVP9TemporalLayer , Layer)
 )
+
+STRUCT(mfxExtMBForceIntra,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU32, MapSize)
+    FIELD_T(mfxU8*, Map)
+)
