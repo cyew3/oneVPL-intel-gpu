@@ -1239,7 +1239,6 @@ mfxStatus MFXVideoDECODEVC1::ReturnLastFrame(mfxFrameSurface1 *surface_work, mfx
         mfxStatus MFXSts = GetOutputSurface(surface_disp, surface_work, memID);
         MFX_CHECK_STS(MFXSts);
 
-
         m_pVC1VideoDecoder->SetCorrupted(NULL, Corrupted);
         (*surface_disp)->Data.Corrupted = Corrupted;
 
@@ -1248,29 +1247,27 @@ mfxStatus MFXVideoDECODEVC1::ReturnLastFrame(mfxFrameSurface1 *surface_work, mfx
     else 
     {
         *surface_disp = 0;
-        if (-1 == m_qMemID.back())
-        {
-            return MFX_ERR_MORE_DATA;
-        }
-        else if (-2 == m_qMemID.back())
-            return MFX_ERR_MORE_DATA;
-        else if (0 == m_qMemID.back())
-        {
-            //only one frame in stream
-            mfxU16 Corrupted;
-            memID = m_qMemID.back();
-            m_qSyncMemID.pop_back();
-            mfxStatus MFXSts = GetOutputSurface(surface_disp, surface_work, memID);
-            MFX_CHECK_STS(MFXSts);
+        memID = m_qMemID.back();
 
+        switch (memID) {
+        case -1:
+        case -2:
+            return MFX_ERR_MORE_DATA;
+        default:
+            // only one frame in stream | reset + decodeframeasync + drain with zero bitstream
+            // memID may be arbitrary in case of external allocator
+            mfxU16 Corrupted;
+            mfxStatus MFXSts;
+
+            m_qSyncMemID.pop_back();
+            MFXSts = GetOutputSurface(surface_disp, surface_work, memID);
+            MFX_CHECK_STS(MFXSts);
 
             m_pVC1VideoDecoder->SetCorrupted(NULL, Corrupted);
             (*surface_disp)->Data.Corrupted = Corrupted;
 
             return MFX_ERR_NONE;
         }
-        else
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
 
 }
