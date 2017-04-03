@@ -294,29 +294,28 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
         mfxRes = MFX_WRN_PARTIAL_ACCELERATION;
     }
 
-    if (MFXTrace_GetOutputMode() & (MFX_TRACE_OUTPUT_ETW | MFX_TRACE_OUTPUT_TEXTLOG))
+#ifndef OPEN_SOURCE
+    if (mfxRes == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM || mfxRes == MFX_ERR_INCOMPATIBLE_VIDEO_PARAM)
     {
-        if (mfxRes == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM || mfxRes == MFX_ERR_INCOMPATIBLE_VIDEO_PARAM)
+        try
         {
-            try
+            mfx_reflect::AccessibleTypesCollection g_Reflection = GetReflection();
+            if (g_Reflection.m_bIsInitialized)
             {
-                static mfx_reflect::AccessibleTypesCollection g_Reflection; //TODO: store in Core
-                if (0 == g_Reflection.m_KnownTypes.size())
-                {
-                    g_Reflection.DeclareMsdkStructs();
-                }
-                CompareStructsAndPrintResult(g_Reflection.Access(in), g_Reflection.Access(out));
-            }
-            catch (const std::exception& e)
-            {
-                MFX_LTRACE_MSG(MFX_TRACE_LEVEL_INTERNAL, e.what());
-            }
-            catch (...) 
-            { 
-                MFX_LTRACE_MSG(MFX_TRACE_LEVEL_INTERNAL, "Unknown exception was caught while comparing In and Out VideoParams.");
-            }
+                std::string result = mfx_reflect::CompareStructsToString(g_Reflection.Access(in), g_Reflection.Access(out));
+                MFX_LTRACE_MSG(MFX_TRACE_LEVEL_INTERNAL, result.c_str())
+            }  
+        }
+        catch (const std::exception& e)
+        {
+            MFX_LTRACE_MSG(MFX_TRACE_LEVEL_INTERNAL, e.what());
+        }
+        catch (...) 
+        { 
+            MFX_LTRACE_MSG(MFX_TRACE_LEVEL_INTERNAL, "Unknown exception was caught while comparing In and Out VideoParams.");
         }
     }
+#endif
 
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, out);
     MFX_LTRACE_I(MFX_TRACE_LEVEL_API, mfxRes);

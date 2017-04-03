@@ -16,7 +16,6 @@
 #include <vector>
 #include <map>
 #include <stdexcept>
-#include "mfxstructures.h"
 #include "mfx_config.h"
 
 #if defined(MFX_HAS_CPP11)
@@ -49,7 +48,6 @@ namespace mfx_reflect
         }
     }
 #endif
-
 
     class ReflectedField;
     class ReflectedType;
@@ -90,53 +88,6 @@ namespace mfx_reflect
         friend class ReflectedType;
     };
 
-    template<class T>
-    struct mfx_ext_buffer_id {
-        enum { id = 0 }; //TODO remove this
-    };
-    template<>struct mfx_ext_buffer_id<mfxExtCodingOption> {
-        enum { id = MFX_EXTBUFF_CODING_OPTION };
-    };
-    template<>struct mfx_ext_buffer_id<mfxExtCodingOption2> {
-        enum { id = MFX_EXTBUFF_CODING_OPTION2 };
-    };
-    template<>struct mfx_ext_buffer_id<mfxExtCodingOption3> {
-        enum { id = MFX_EXTBUFF_CODING_OPTION3 };
-    };
-    template<>struct mfx_ext_buffer_id<mfxExtAvcTemporalLayers> {
-        enum { id = MFX_EXTBUFF_AVC_TEMPORAL_LAYERS };
-    };
-    template<>struct mfx_ext_buffer_id<mfxExtAVCRefListCtrl> {
-        enum { id = MFX_EXTBUFF_AVC_REFLIST_CTRL };
-    };
-    template<>struct mfx_ext_buffer_id<mfxExtVideoSignalInfo> {
-        enum { id = MFX_EXTBUFF_VIDEO_SIGNAL_INFO };
-    };
-    template<>struct mfx_ext_buffer_id<mfxExtEncoderCapability> {
-        enum { id = MFX_EXTBUFF_ENCODER_CAPABILITY };
-    };
-    template<>struct mfx_ext_buffer_id<mfxExtAVCEncodedFrameInfo> {
-        enum { id = MFX_EXTBUFF_ENCODED_FRAME_INFO };
-    };
-    //template<>struct mfx_ext_buffer_id<mfxExtPAVPOption> {
-    //    enum { id = MFX_EXTBUFF_PAVP_OPTION };
-    //};
-    //template<>struct mfx_ext_buffer_id<mfxExtAVCEncoderWiDiUsage> {
-    //    enum { id = MFX_EXTBUFF_ENCODER_WIDI_USAGE };
-    //};
-    template<>struct mfx_ext_buffer_id<mfxExtEncoderROI> {
-        enum { id = MFX_EXTBUFF_ENCODER_ROI };
-    };
-    template<>struct mfx_ext_buffer_id<mfxExtDirtyRect> {
-        enum { id = MFX_EXTBUFF_DIRTY_RECTANGLES };
-    };
-    template<>struct mfx_ext_buffer_id<mfxExtEncoderResetOption> {
-        enum { id = MFX_EXTBUFF_ENCODER_RESET_OPTION };
-    };
-    //template<>struct mfx_ext_buffer_id<mfxExtCodingOptionDDI> {
-    //    enum { id = MFX_EXTBUFF_DDI };
-    //};
-
     class ReflectedType
     {
     public:
@@ -145,26 +96,16 @@ namespace mfx_reflect
         size_t          Size;
         ReflectedTypesCollection *m_pCollection;
         bool m_bIsPointer;
-        mfxU32 ExtBufferId;
+        unsigned int ExtBufferId;
 
-        ReflectedType(ReflectedTypesCollection *pCollection, TypeIndex typeIndex, const ::std::string typeName, size_t size, bool isPointer, mfxU32 extBufferId);
+        ReflectedType(ReflectedTypesCollection *pCollection, TypeIndex typeIndex, const ::std::string typeName, size_t size, bool isPointer, unsigned int extBufferId);
 
         void AddField(ReflectedField::P pField)
         {
             m_Fields.push_back(pField);
         }
 
-        ReflectedField::P AddField(TypeIndex typeIndex, ::std::string typeName, size_t typeSize, bool isPointer, size_t offset, const ::std::string fieldName, size_t count, mfxU32 extBufferId);
-
-        template <class T>
-        ReflectedField::P AddField(const std::string typeName, size_t offset, const std::string fieldName, size_t count)
-        {
-            mfxU32 extBufId = 0;
-            extBufId = mfx_ext_buffer_id<T>::id;
-            bool isPointer = false;
-            isPointer = mfx_cpp11::is_pointer<T>();
-            return AddField(TypeIndex(typeid(T)), typeName, sizeof(T), isPointer, offset, fieldName, count, extBufId);
-        }
+        ReflectedField::P AddField(TypeIndex typeIndex, ::std::string typeName, size_t typeSize, bool isPointer, size_t offset, const ::std::string fieldName, size_t count, unsigned int extBufferId);
 
         ReflectedField::FieldsCollectionCI FindField(const ::std::string fieldName) const;
 
@@ -189,21 +130,11 @@ namespace mfx_reflect
         ReflectedType::P FindExistingByTypeInfoName(const char* name);
 
         ReflectedType::P FindExistingType(TypeIndex typeIndex);
-        ReflectedType::P FindExtBufferTypeById(mfxU32 ExtBufferId);
+        ReflectedType::P FindExtBufferTypeById(unsigned int ExtBufferId);
 
-        ReflectedType::P DeclareType(TypeIndex typeIndex, const ::std::string typeName, size_t typeSize, bool isPointer, mfxU32 extBufferId);
+        ReflectedType::P DeclareType(TypeIndex typeIndex, const ::std::string typeName, size_t typeSize, bool isPointer, unsigned int extBufferId);
 
-        template <class T>
-        ReflectedType::P DeclareType(const std::string typeName)
-        {
-            mfxU32 extBufId = 0;
-            extBufId = mfx_ext_buffer_id<T>::id;
-            bool isPointer = false;
-            isPointer = mfx_cpp11::is_pointer<T>();
-            return DeclareType(TypeIndex(typeid(T)), typeName, sizeof(T), isPointer, extBufId);
-        }
-
-        ReflectedType::P FindOrDeclareType(TypeIndex typeIndex, const ::std::string typeName, size_t typeSize, bool isPointer, mfxU32 extBufferId);
+        ReflectedType::P FindOrDeclareType(TypeIndex typeIndex, const ::std::string typeName, size_t typeSize, bool isPointer, unsigned int extBufferId);
 
         void DeclareMsdkStructs();
     };
@@ -296,6 +227,10 @@ namespace mfx_reflect
     class AccessibleTypesCollection : public ReflectedTypesCollection
     {
     public:
+        AccessibleTypesCollection() 
+            : m_bIsInitialized(false)
+        {}
+        bool m_bIsInitialized;
         template <class T>
         AccessorType Access(T *p)
         {
@@ -324,16 +259,14 @@ namespace mfx_reflect
     class TypeComparisonResult : public ::std::list < FieldComparisonResult >
     {
     public:
-        list<mfxU32> extBufferIdList;
+        list<unsigned int> extBufferIdList;
     };
 
     typedef mfx_cpp11::shared_ptr<AccessorType> AccessorTypeP;
 
     TypeComparisonResultP CompareTwoStructs(AccessorType data1, AccessorType data2);
-    TypeComparisonResultP CompareExtBufferLists(mfxExtBuffer** pExtParam1, mfxU16 numExtParam1, mfxExtBuffer** pExtParam2, mfxU16 numExtParam2, ReflectedTypesCollection* collection);
-    AccessorTypeP GetAccessorOfExtBufferOriginalType(mfxExtBuffer& pExtInnerParam, ReflectedTypesCollection& collection);
 
-    void CompareStructsAndPrintResult(AccessorType data1, AccessorType data2);
+    std::string CompareStructsToString(AccessorType data1, AccessorType data2);
     void PrintStuctsComparisonResult(::std::stringstream& comparisonResult, ::std::string prefix, TypeComparisonResultP result);
 
     template <class T> bool PrintFieldIfTypeMatches(::std::ostream& stream, AccessorField field);

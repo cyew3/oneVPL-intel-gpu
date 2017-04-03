@@ -6,6 +6,8 @@ mfx_include_dirs( )
     ${CMAKE_CURRENT_SOURCE_DIR}/include 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include
     ${CMAKE_CURRENT_SOURCE_DIR}/../umc/core/vm/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../../../mdp_msdk-api/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../../../mdp_msdk-api/mediasdk_structures
   )
   
   file( GLOB_RECURSE srcs "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp" )

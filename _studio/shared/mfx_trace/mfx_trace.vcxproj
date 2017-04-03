@@ -87,34 +87,42 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\mfx_lib\Intel.Mfx.StaticLib.props" />
+    <Import Project="mfx_reflection.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_THM|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\mfx_lib\Intel.Mfx.StaticLib.props" />
+    <Import Project="mfx_reflection.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\mfx_lib\Intel.Mfx.StaticLib.props" />
+    <Import Project="mfx_reflection.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_THM|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\mfx_lib\Intel.Mfx.StaticLib.props" />
+    <Import Project="mfx_reflection.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\mfx_lib\Intel.Mfx.StaticLib.props" />
+    <Import Project="mfx_reflection.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_THM|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\mfx_lib\Intel.Mfx.StaticLib.props" />
+    <Import Project="mfx_reflection.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\mfx_lib\Intel.Mfx.StaticLib.props" />
+    <Import Project="mfx_reflection.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_THM|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\mfx_lib\Intel.Mfx.StaticLib.props" />
+    <Import Project="mfx_reflection.props" />
   </ImportGroup>
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
@@ -241,6 +249,7 @@
     </Bscmake>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\mfx_reflect.cpp" />
     <ClCompile Include="src\mfx_trace.cpp" />
     <ClCompile Include="src\mfx_trace_etw.cpp" />
     <ClCompile Include="src\mfx_trace_itt.cpp" />
@@ -252,6 +261,8 @@
     <ClCompile Include="src\mfx_trace_utils_windows.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\include\mfx_cpp11_replacement.h" />
+    <ClInclude Include="..\include\mfx_reflect.h" />
     <ClInclude Include="include\mfx_evntprov.h" />
     <ClInclude Include="..\include\mfx_trace.h" />
     <ClInclude Include="include\mfx_trace_etw.h" />

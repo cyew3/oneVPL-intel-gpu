@@ -55,7 +55,6 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/shared/src )
     ${prefix}/mfx_h264_enc_common.cpp
     ${prefix}/mfx_mpeg2_dec_common.cpp
     ${prefix}/mfx_vc1_dec_common.cpp
-    ${prefix}/mfx_reflect.cpp
     #=================
   )
 endforeach()
@@ -199,7 +198,6 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR} )
     ${prefix}/shared/src/mfx_session.cpp
     ${prefix}/shared/src/mfx_user_plugin.cpp
     ${prefix}/shared/src/mfx_check_hardware_support.cpp
-    ${prefix}/shared/src/mfx_reflect.cpp
     ${prefix}/scheduler/src/mfx_scheduler_core.cpp
     ${prefix}/scheduler/src/mfx_scheduler_core_ischeduler.cpp
     ${prefix}/scheduler/src/mfx_scheduler_core_iunknown.cpp

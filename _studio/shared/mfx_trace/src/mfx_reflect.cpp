@@ -14,8 +14,13 @@
 #include <iomanip>
 #include <sstream>
 #include <algorithm>
+#include <cstddef>
 
-#include "mfx_common.h"
+#include "mfxstructures.h"
+#include "mfxvp8.h"
+#include "mfxvp9.h"
+#include "mfxplugin.h"
+#include "mfxmvc.h"
 #include "mfxcamera.h"
 #include "mfxfei.h"
 #include "mfxfeih265.h"
@@ -34,6 +39,53 @@ namespace mfx_reflect
 #else
 #define MAKE_SHARED(T, ARGS) mfx_cpp11::shared_ptr<T>(new T ARGS)
 #endif
+
+    template<class T>
+    struct mfx_ext_buffer_id {
+        enum { id = 0 }; //TODO remove this
+    };
+    template<>struct mfx_ext_buffer_id<mfxExtCodingOption> {
+        enum { id = MFX_EXTBUFF_CODING_OPTION };
+    };
+    template<>struct mfx_ext_buffer_id<mfxExtCodingOption2> {
+        enum { id = MFX_EXTBUFF_CODING_OPTION2 };
+    };
+    template<>struct mfx_ext_buffer_id<mfxExtCodingOption3> {
+        enum { id = MFX_EXTBUFF_CODING_OPTION3 };
+    };
+    template<>struct mfx_ext_buffer_id<mfxExtAvcTemporalLayers> {
+        enum { id = MFX_EXTBUFF_AVC_TEMPORAL_LAYERS };
+    };
+    template<>struct mfx_ext_buffer_id<mfxExtAVCRefListCtrl> {
+        enum { id = MFX_EXTBUFF_AVC_REFLIST_CTRL };
+    };
+    template<>struct mfx_ext_buffer_id<mfxExtVideoSignalInfo> {
+        enum { id = MFX_EXTBUFF_VIDEO_SIGNAL_INFO };
+    };
+    template<>struct mfx_ext_buffer_id<mfxExtEncoderCapability> {
+        enum { id = MFX_EXTBUFF_ENCODER_CAPABILITY };
+    };
+    template<>struct mfx_ext_buffer_id<mfxExtAVCEncodedFrameInfo> {
+        enum { id = MFX_EXTBUFF_ENCODED_FRAME_INFO };
+    };
+    //template<>struct mfx_ext_buffer_id<mfxExtPAVPOption> {
+    //    enum { id = MFX_EXTBUFF_PAVP_OPTION };
+    //};
+    //template<>struct mfx_ext_buffer_id<mfxExtAVCEncoderWiDiUsage> {
+    //    enum { id = MFX_EXTBUFF_ENCODER_WIDI_USAGE };
+    //};
+    template<>struct mfx_ext_buffer_id<mfxExtEncoderROI> {
+        enum { id = MFX_EXTBUFF_ENCODER_ROI };
+    };
+    template<>struct mfx_ext_buffer_id<mfxExtDirtyRect> {
+        enum { id = MFX_EXTBUFF_DIRTY_RECTANGLES };
+    };
+    template<>struct mfx_ext_buffer_id<mfxExtEncoderResetOption> {
+        enum { id = MFX_EXTBUFF_ENCODER_RESET_OPTION };
+    };
+    //template<>struct mfx_ext_buffer_id<mfxExtCodingOptionDDI> {
+    //    enum { id = MFX_EXTBUFF_DDI };
+    //};
 
     void AccessorField::SetFieldAddress()
     {
@@ -116,9 +168,9 @@ namespace mfx_reflect
                         fieldTypeName = &(*findIterator);
                     }
                 }
-                if (NULL == fieldTypeName) 
-                { 
-                    throw ::std::invalid_argument(::std::string("Unexpected behavior - fieldTypeName is NULL")); 
+                if (NULL == fieldTypeName)
+                {
+                    throw ::std::invalid_argument(::std::string("Unexpected behavior - fieldTypeName is NULL"));
                 }
                 pField = ReflectedField::P(new ReflectedField(m_pCollection, pType, *fieldTypeName, offset, fieldName, count)); //std::make_shared cannot access protected constructor
                 m_Fields.push_back(pField);
@@ -281,6 +333,9 @@ namespace mfx_reflect
         return stream;
     }
 
+    TypeComparisonResultP CompareExtBufferLists(mfxExtBuffer** pExtParam1, mfxU16 numExtParam1, mfxExtBuffer** pExtParam2, mfxU16 numExtParam2, ReflectedTypesCollection* collection);
+    AccessorTypeP GetAccessorOfExtBufferOriginalType(mfxExtBuffer& pExtInnerParam, ReflectedTypesCollection& collection);
+
     TypeComparisonResultP CompareTwoStructs(AccessorType data1, AccessorType data2) //always return not null result
     {
         TypeComparisonResultP result = MAKE_SHARED(TypeComparisonResult,());
@@ -417,7 +472,7 @@ namespace mfx_reflect
     }
 
 
-    void CompareStructsAndPrintResult(AccessorType data1, AccessorType data2)
+    std::string CompareStructsToString(AccessorType data1, AccessorType data2)
     {
         ::std::stringstream comparisonResult;
         if (data1.m_P == data2.m_P)
@@ -430,19 +485,40 @@ namespace mfx_reflect
             TypeComparisonResultP result = CompareTwoStructs(data1, data2);
             PrintStuctsComparisonResult(comparisonResult, "", result);
         }
-        MFX_LTRACE_MSG(MFX_TRACE_LEVEL_INTERNAL /*resolve what level should be*/, comparisonResult.str().c_str())
+        return comparisonResult.str();
+    }
+
+    template <class T>
+    ReflectedField::P AddFieldT(ReflectedType &type, const std::string typeName, size_t offset, const std::string fieldName, size_t count)
+    {
+        unsigned int extBufId = 0;
+        extBufId = mfx_ext_buffer_id<T>::id;
+        bool isPointer = false;
+        isPointer = mfx_cpp11::is_pointer<T>();
+        return type.AddField(TypeIndex(typeid(T)), typeName, sizeof(T), isPointer, offset, fieldName, count, extBufId);
+    }
+
+    template <class T>
+    ReflectedType::P DeclareTypeT(ReflectedTypesCollection& collection, const std::string typeName)
+    {
+        unsigned int extBufId = 0;
+        extBufId = mfx_ext_buffer_id<T>::id;
+        bool isPointer = false;
+        isPointer = mfx_cpp11::is_pointer<T>();
+        return collection.DeclareType(TypeIndex(typeid(T)), typeName, sizeof(T), isPointer, extBufId);
     }
 
     void ReflectedTypesCollection::DeclareMsdkStructs()
     {
-#define STRUCT(TYPE, FIELDS) {                          \
-    typedef TYPE BaseType;                              \
-    ReflectedType::P pType = DeclareType<TYPE>(#TYPE);  \
-    FIELDS                                              \
+#define STRUCT(TYPE, FIELDS) {                                  \
+    typedef TYPE BaseType;                                      \
+    ReflectedType::P pType = DeclareTypeT<TYPE>(*this, #TYPE);  \
+    FIELDS                                                      \
     }
 
 #define FIELD_T(FIELD_TYPE, FIELD_NAME)                 \
-    (void)pType->AddField<FIELD_TYPE>(                  \
+    (void)AddFieldT<FIELD_TYPE>(                        \
+        *pType,                                         \
         #FIELD_TYPE,                                    \
         offsetof(BaseType, FIELD_NAME),                 \
         #FIELD_NAME,                                    \

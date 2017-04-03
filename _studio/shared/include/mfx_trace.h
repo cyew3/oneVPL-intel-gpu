@@ -11,6 +11,10 @@
 #ifndef __MFX_TRACE_H__
 #define __MFX_TRACE_H__
 
+#ifndef OPEN_SOURCE
+#include "mfx_reflect.h"
+#endif
+
 #ifndef MFX_TRACE_DISABLE
 // Uncomment one or several lines below to enable tracing
 #if (defined(_WIN32) || defined(_WIN64)) && !defined (MFX_TRACE_ENABLE_ITT)
@@ -63,6 +67,10 @@
 
 typedef unsigned int mfxTraceU32;
 typedef __UINT64 mfxTraceU64;
+
+#ifndef OPEN_SOURCE
+mfx_reflect::AccessibleTypesCollection GetReflection();
+#endif
 
 /*------------------------------------------------------------------------------*/
 // C section
@@ -287,8 +295,6 @@ mfxTraceU32 MFXTrace_EndTask(mfxTraceStaticHandle *static_handle,
 #define MFX_TRACE_CLOSE_RES(res)
 #define MFX_LTRACE(_trace_all_params)
 #endif
-
-mfxTraceU32 MFXTrace_GetOutputMode();
 
 /*------------------------------------------------------------------------------*/
 // standard formats

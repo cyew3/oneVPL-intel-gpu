@@ -248,21 +248,18 @@
     <ClCompile Include="src\mfx_enc_common.cpp" />
     <ClCompile Include="src\mfx_h264_enc_common.cpp" />
     <ClCompile Include="src\mfx_mpeg2_dec_common.cpp" />
-    <ClCompile Include="src\mfx_reflect.cpp" />
     <ClCompile Include="src\mfx_vc1_dec_common.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\mfx_brc_common.h" />
     <ClInclude Include="include\mfx_common_decode_int.h" />
     <ClInclude Include="include\mfx_common_int.h" />
-    <ClInclude Include="include\mfx_cpp11_replacement.h" />
     <ClInclude Include="include\mfx_critical_error_handler.h" />
     <ClInclude Include="include\mfx_enc_common.h" />
     <ClInclude Include="include\mfx_h264_enc_common.h" />
     <ClInclude Include="include\mfx_interface.h" />
     <ClInclude Include="include\mfx_mpeg2_dec_common.h" />
     <ClInclude Include="include\mfx_mpeg2_enc_common.h" />
-    <ClInclude Include="include\mfx_reflect.h" />
     <ClInclude Include="include\mfx_vc1_dec_common.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

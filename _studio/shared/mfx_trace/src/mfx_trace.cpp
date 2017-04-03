@@ -10,12 +10,16 @@
 
 #include "mfx_trace.h"
 
-static mfxTraceU32      g_OutputMode = MFX_TRACE_OUTPUT_TRASH;
+#ifndef OPEN_SOURCE
+static mfx_reflect::AccessibleTypesCollection g_Reflection;
+#endif
 
-mfxTraceU32 MFXTrace_GetOutputMode()
+#ifndef OPEN_SOURCE
+mfx_reflect::AccessibleTypesCollection GetReflection()
 {
-    return g_OutputMode;
+    return g_Reflection;
 }
+#endif
 
 #ifdef MFX_TRACE_ENABLE
 
@@ -34,6 +38,9 @@ extern "C"
 #include <stdlib.h>
 #include <string.h>
 #include "vm_interlocked.h"
+#ifndef OPEN_SOURCE
+#include "mfx_reflect.h"
+#endif
 
 /*------------------------------------------------------------------------------*/
 
@@ -82,6 +89,7 @@ struct mfxTraceAlgorithm
 
 /*------------------------------------------------------------------------------*/
 
+static mfxTraceU32      g_OutputMode = MFX_TRACE_OUTPUT_TRASH;
 static mfxTraceU32      g_Level      = MFX_TRACE_LEVEL_DEFAULT;
 static volatile Ipp32u  g_refCounter = 0;
 
@@ -330,6 +338,14 @@ mfxTraceU32 MFXTrace_Init()
     {
         return sts;
     }
+
+#ifndef OPEN_SOURCE
+    if (g_OutputMode & (MFX_TRACE_OUTPUT_ETW | MFX_TRACE_OUTPUT_TEXTLOG))
+    {
+        g_Reflection.DeclareMsdkStructs();
+        g_Reflection.m_bIsInitialized = true;
+    }
+#endif
 
     sts = MFXTrace_GetRegistryParams();
     if (!sts)
