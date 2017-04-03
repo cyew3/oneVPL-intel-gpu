@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2016 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2017 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -173,6 +173,7 @@ static IdTable tbl_fourcc[] = {
     TABLE_ENTRY(MFX_FOURCC_P8),
     TABLE_ENTRY(MFX_FOURCC_P8_TEXTURE),
     TABLE_ENTRY(MFX_FOURCC_P010),
+    TABLE_ENTRY(MFX_FOURCC_P016),
     TABLE_ENTRY(MFX_FOURCC_P210),
     TABLE_ENTRY(MFX_FOURCC_BGR4),
     TABLE_ENTRY(MFX_FOURCC_A2RGB10),
@@ -181,7 +182,11 @@ static IdTable tbl_fourcc[] = {
     TABLE_ENTRY(MFX_FOURCC_ABGR16),
     TABLE_ENTRY(MFX_FOURCC_AYUV),
     TABLE_ENTRY(MFX_FOURCC_AYUV_RGB4),
-    TABLE_ENTRY(MFX_FOURCC_UYVY)
+    TABLE_ENTRY(MFX_FOURCC_UYVY),
+    TABLE_ENTRY(MFX_FOURCC_Y210),
+    TABLE_ENTRY(MFX_FOURCC_Y216),
+    TABLE_ENTRY(MFX_FOURCC_Y410),
+    TABLE_ENTRY(MFX_FOURCC_Y416)
 };
 
 static IdTable tbl_sts[] = {

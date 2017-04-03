@@ -6151,7 +6151,7 @@ The `CodecProfile` enumerator itemizes codec profiles for all codecs.
 `MFX_PROFILE_AVC_CONSTRAINT_SET0`,<br>`MFX_PROFILE_AVC_CONSTRAINT_SET1`,<br>`MFX_PROFILE_AVC_CONSTRAINT_SET2`,<br>`MFX_PROFILE_AVC_CONSTRAINT_SET3`,<br>`MFX_PROFILE_AVC_CONSTRAINT_SET4`,<br>`MFX_PROFILE_AVC_CONSTRAINT_SET5` | Combined with H.264 profile these flags impose additional constrains. See H.264 specification for the list of constrains.
 `MFX_PROFILE_MPEG2_SIMPLE`,<br>`MFX_PROFILE_MPEG2_MAIN`,<br>`MFX_PROFILE_MPEG2_HIGH` | MPEG-2 profiles
 `MFX_PROFILE_VC1_SIMPLE`,<br>`MFX_PROFILE_VC1_MAIN`,<br>`MFX_PROFILE_VC1_ADVANCED`,<br> | VC-1 profiles
-`MFX_PROFILE_HEVC_MAIN`,<br>`MFX_PROFILE_HEVC_MAIN10`,<br>`MFX_PROFILE_HEVC_MAINSP`,<br>`MFX_PROFILE_HEVC_REXT`,<br> | HEVC profiles
+`MFX_PROFILE_HEVC_MAIN`,<br>`MFX_PROFILE_HEVC_MAIN10`,<br>`MFX_PROFILE_HEVC_MAINSP`,<br>`MFX_PROFILE_HEVC_REXT`,<br>`MFX_PROFILE_HEVC_SCC`,<br> | HEVC profiles
 `MFX_PROFILE_VP9_0`,<br>`MFX_PROFILE_VP9_1`,<br>`MFX_PROFILE_VP9_2`,<br>`MFX_PROFILE_VP9_3` | VP9 profiles
 
 **Change History**
@@ -6168,6 +6168,8 @@ SDK API 1.8 added HEVC profile definitions.
 SDK API 1.16 adds `MFX_PROFILE_HEVC_REXT.`
 
 SDK API 1.19 added VP9 profile definitions.
+
+SDK API **TBD** adds `MFX_PROFILE_HEVC_SCC.`
 
 ## <a id='CodingOptionValue'>CodingOptionValue</a>
 
@@ -6208,6 +6210,7 @@ The `ColorFourCC` enumerator itemizes color formats.
 `MFX_FOURCC_P8` | Internal SDK color format. The application should use one of the functions below to create such surface, depending on Direct3D version.<br><br>Direct3D9<br><br>IDirectXVideoDecoderService::CreateSurface()<br><br>Direct3D11<br><br>ID3D11Device::CreateBuffer()
 `MFX_FOURCC_P8_TEXTURE` | Internal SDK color format. The application should use one of the functions below to create such surface, depending on Direct3D version.<br><br>Direct3D9<br><br>IDirectXVideoDecoderService::CreateSurface()<br><br>Direct3D11<br><br>ID3D11Device::CreateTexture2D()
 `MFX_FOURCC_P010` | P010 color format. This is 10 bit per sample format with similar to NV12 layout.<br><br>This format should be mapped to DXGI_FORMAT_P010.
+`MFX_FOURCC_P016` | P016 color format. This is 16 bit per sample format with similar to NV12 layout.<br><br>This format should be mapped to DXGI_FORMAT_P016.
 `MFX_FOURCC_P210` | 10 bit per sample 4:2:2 color format with similar to NV12 layout
 `MFX_FOURCC_BGR4` | ABGR color format. It is similar to MFX_FOURCC_RGB4 but with interchanged R and B channels. ‘A’ is 8 MSBs, then 8 bits for ‘B’ channel, then ‘G’ and ‘R’ channels.
 `MFX_FOURCC_A2RGB10` | 10 bits ARGB color format packed in 32 bits. ‘A’ channel is two MSBs, then ‘R’, then ‘G’ and then ‘B’ channels.<br><br>This format should be mapped to DXGI_FORMAT_R10G10B10A2_UNORM or D3DFMT_A2R10G10B10.
@@ -6217,7 +6220,10 @@ The `ColorFourCC` enumerator itemizes color formats.
 `MFX_FOURCC_AYUV` | YUV 4:4:4, AYUV color format.<br><br>This format should be mapped to DXGI_FORMAT_AYUV.
 `MFX_FOURCC_AYUV_RGB4` | RGB4 stored in AYUV surface.<br><br>This format should be mapped to DXGI_FORMAT_AYUV.
 `MFX_FOURCC_UYVY` | UYVY color planes. Same as YUY2 except the byte order is reversed.
-
+`MFX_FOURCC_Y210` | 10 bit per sample 4:2:2 packed color format with similar to YUY2 layout.<br><br>This format should be mapped to DXGI_FORMAT_Y210.
+`MFX_FOURCC_Y216` | 16 bit per sample 4:2:2 packed color format with similar to YUY2 layout.<br><br>This format should be mapped to DXGI_FORMAT_Y216.
+`MFX_FOURCC_Y410` | 10 bit per sample 4:4:4 packed color format<br><br>This format should be mapped to DXGI_FORMAT_Y410.
+`MFX_FOURCC_Y416` | 16 bit per sample 4:4:4 packed color format<br><br>This format should be mapped to DXGI_FORMAT_Y416.
 **Change History**
 
 This enumerator is available since SDK API 1.0.
@@ -6233,6 +6239,9 @@ The SDK API 1.11 adds `MFX_FOURCC_NV16` and `MFX_FOURCC_P210`.
 
 The SDK API 1.17 adds `MFX_FOURCC_ABGR16`, `MFX_FOURCC_AYUV`, `MFX_FOURCC_AYUV_RGB4`, and
 `MFX_FOURCC_UYVY`.
+
+The SDK API **TBD** adds `MFX_FOURCC_P016`, `MFX_FOURCC_Y210`, `MFX_FOURCC_Y216`, `MFX_FOURCC_Y410`, and
+`MFX_FOURCC_Y416`.
 
 ## <a id='Corruption'>Corruption</a>
 

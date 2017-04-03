@@ -107,6 +107,7 @@ enum {
     MFX_FOURCC_P8           = 41,                                /*  D3DFMT_P8   */
     MFX_FOURCC_P8_TEXTURE   = MFX_MAKEFOURCC('P','8','M','B'),
     MFX_FOURCC_P010         = MFX_MAKEFOURCC('P','0','1','0'),
+    MFX_FOURCC_P016         = MFX_MAKEFOURCC('P','0','1','6'),
     MFX_FOURCC_P210         = MFX_MAKEFOURCC('P','2','1','0'),
     MFX_FOURCC_BGR4         = MFX_MAKEFOURCC('B','G','R','4'),   /* ABGR in that order, A channel is 8 MSBs */
     MFX_FOURCC_A2RGB10      = MFX_MAKEFOURCC('R','G','1','0'),   /* ARGB in that order, A channel is two MSBs */
@@ -118,7 +119,8 @@ enum {
     MFX_FOURCC_UYVY         = MFX_MAKEFOURCC('U','Y','V','Y'),
     MFX_FOURCC_Y210         = MFX_MAKEFOURCC('Y','2','1','0'),
     MFX_FOURCC_Y216         = MFX_MAKEFOURCC('Y','2','1','6'),
-    MFX_FOURCC_Y410         = MFX_MAKEFOURCC('Y','4','1','0')
+    MFX_FOURCC_Y410         = MFX_MAKEFOURCC('Y','4','1','0'),
+    MFX_FOURCC_Y416         = MFX_MAKEFOURCC('Y','4','1','6')
 };
 
 /* PicStruct */
@@ -444,6 +446,7 @@ enum {
     MFX_PROFILE_HEVC_MAIN10           =2,
     MFX_PROFILE_HEVC_MAINSP           =3,
     MFX_PROFILE_HEVC_REXT             =4,
+    MFX_PROFILE_HEVC_SCC              =9,
 
     MFX_LEVEL_HEVC_1   = 10,
     MFX_LEVEL_HEVC_2   = 20,
