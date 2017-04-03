@@ -416,6 +416,7 @@
     <ClCompile Include="src\gmock\test_suites\vpp_hw_wrn_filter_skipped.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_multi_view.cpp" />
+    <ClCompile Include="src\gmock\test_suites\vpp_pts_suite.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_query.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_queryiosurf.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_query_extbuf.cpp" />
