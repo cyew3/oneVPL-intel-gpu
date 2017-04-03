@@ -258,7 +258,6 @@ void MfxHwH264Encode::FillVaringPartOfPpsBuffer(
     std::vector<ENCODE_RECT> &           dirtyRects,
     std::vector<MOVE_RECT> &             movingRects)
 {
-    mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(task.m_ctrl);
 
     pps.NumSlice                                = mfxU8(task.m_numSlice[fieldId]);
     pps.CurrOriginalPic.Index7Bits              = mfxU8(task.m_idxRecon);
@@ -293,8 +292,7 @@ void MfxHwH264Encode::FillVaringPartOfPpsBuffer(
     }
 //  Intra refresh }
 
-    if (extOpt2)
-        pps.bUseRawPicForRef = IsOn(extOpt2->UseRawRef);
+    pps.bUseRawPicForRef = task.m_isUseRawRef;
 
     pps.InputType = eType_DRM_NONE;
 

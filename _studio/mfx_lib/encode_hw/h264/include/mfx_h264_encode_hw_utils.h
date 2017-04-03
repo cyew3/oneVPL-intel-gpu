@@ -955,6 +955,7 @@ namespace MfxHwH264Encode
             , m_idxMBQP(NO_INDEX)
             , m_midMBQP(MID_INVALID)
             , m_isMBQP(false)
+            , m_isUseRawRef(false)
 
             , m_isMBControl(false)
             , m_midMBControl(MID_INVALID)
@@ -1150,6 +1151,7 @@ namespace MfxHwH264Encode
         mfxU32   m_idxMBQP;
         mfxMemId m_midMBQP;
         bool     m_isMBQP;
+        bool     m_isUseRawRef;
 
         bool     m_isMBControl;
         mfxMemId m_midMBControl;

@@ -1903,6 +1903,9 @@ void MfxHwH264Encode::ConfigureTask(
     task.m_encOrderIdr   = prevIdrFrameFlag ? prevTask.m_encOrder : prevTask.m_encOrderIdr;
     task.m_encOrderI     = prevIFrameFlag ? prevTask.m_encOrder : prevTask.m_encOrderI;
 
+    task.m_isUseRawRef = IsOn(extOpt2.UseRawRef);
+    if (task.m_isUseRawRef && extOpt2Runtime)
+      task.m_isUseRawRef = !IsOff(extOpt2Runtime->UseRawRef);
 
     task.m_frameNum = mfxU16((prevTask.m_frameNum + frameNumIncrement) % FRAME_NUM_MAX);
     if (idrPicFlag)
