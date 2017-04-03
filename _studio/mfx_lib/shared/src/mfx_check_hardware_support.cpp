@@ -118,6 +118,8 @@ eMFXHWType GetHardwareType(const mfxU32 adapterNum, mfxU32 platformFromDriver)
         return MFX_HW_KBL;
     case IGFX_APOLLOLAKE:
         return MFX_HW_APL;
+    case IGFX_GEMINILAKE:
+        return MFX_HW_GLK;
     case IGFX_CANNONLAKE:
         return MFX_HW_CNL;
     case IGFX_ICELAKE:

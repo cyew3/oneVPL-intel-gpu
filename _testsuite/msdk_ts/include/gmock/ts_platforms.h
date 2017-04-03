@@ -33,6 +33,7 @@ enum HWType
     MFX_HW_APL       = 0xa00000,
 
     MFX_HW_KBL       = 0xb00000,
+    MFX_HW_GLK       = MFX_HW_KBL + 1,
 
     MFX_HW_CNL       = 0xc00000,
 
