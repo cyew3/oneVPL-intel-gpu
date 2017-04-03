@@ -87,6 +87,20 @@ template<class T> inline T Align(T value, mfxU32 alignment)
     assert((alignment & (alignment - 1)) == 0); // should be 2^n
     return T((value + alignment - 1) & ~(alignment - 1));
 }
+template<class T> bool AlignDown(T& value, mfxU32 alignment)
+{
+    assert((alignment & (alignment - 1)) == 0); // should be 2^n
+    if (!(value & (alignment - 1))) return false;
+    value = value & ~(alignment - 1);
+    return true;
+}
+template<class T> bool AlignUp(T& value, mfxU32 alignment)
+{
+    assert((alignment & (alignment - 1)) == 0); // should be 2^n
+    if (!(value & (alignment - 1))) return false;
+    value = (value + alignment - 1) & ~(alignment - 1);
+    return true;
+}
 template<class T> bool IsAligned(T value, mfxU32 alignment)
 {
     assert((alignment & (alignment - 1)) == 0); // should be 2^n

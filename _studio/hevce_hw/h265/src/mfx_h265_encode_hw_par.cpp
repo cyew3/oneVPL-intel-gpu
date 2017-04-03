@@ -835,19 +835,25 @@ mfxStatus CheckAndFixRoi(MfxVideoParam const & par, ENCODE_CAPS_HEVC const & cap
     }
 #endif  // LINUX_TARGET_PLATFORM_BXTMIN
 
-    changed += CheckMax(ROI->NumROI, caps.MaxNumOfROI);
+    mfxU16 maxNumOfRoi = caps.MaxNumOfROI <= MAX_NUM_ROI ? caps.MaxNumOfROI : MAX_NUM_ROI;
+
+    changed += CheckMax(ROI->NumROI, maxNumOfRoi);
 
     for (mfxU16 i = 0; i < ROI->NumROI; i++)
     {
         // check that rectangle dimensions don't conflict with each other and don't exceed frame size
         RoiData *roi = (RoiData *)&(ROI->ROI[i]);
 
-        //changed += CheckRange(roi->Left, mfxU32(0), mfxU32(par.mfx.FrameInfo.Width));
-        //changed += CheckRange(roi->Right, mfxU32(0), mfxU32(par.mfx.FrameInfo.Width));
-        //changed += CheckRange(roi->Top, mfxU32(0), mfxU32(par.mfx.FrameInfo.Height));
-        //changed += CheckRange(roi->Bottom, mfxU32(0), mfxU32(par.mfx.FrameInfo.Height));
+        changed += CheckRange(roi->Left, mfxU32(0), mfxU32(par.mfx.FrameInfo.Width));
+        changed += CheckRange(roi->Right, mfxU32(0), mfxU32(par.mfx.FrameInfo.Width));
+        changed += CheckRange(roi->Top, mfxU32(0), mfxU32(par.mfx.FrameInfo.Height));
+        changed += CheckRange(roi->Bottom, mfxU32(0), mfxU32(par.mfx.FrameInfo.Height));
 
-        // Driver trims ROI itself
+        // align to LCU size
+        changed += AlignDown(roi->Left, par.LCUSize);
+        changed += AlignDown(roi->Top, par.LCUSize);
+        changed += AlignUp(roi->Right, par.LCUSize);
+        changed += AlignUp(roi->Bottom, par.LCUSize);
 
         invalid += (roi->Left > roi->Right);
         invalid += (roi->Top > roi->Bottom);
@@ -1994,11 +2000,10 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 #ifdef MFX_ENABLE_HEVCE_ROI
     if (ROI->NumROI) {   // !!! if ENCODE_BLOCKQPDATA is provided NumROI is assumed to be 0
         sts = CheckAndFixRoi(par, caps, ROI);
-        if (sts == MFX_ERR_INVALID_VIDEO_PARAM) {
-            invalid++;
+        if (sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM) {
+            changed++;
         } else if (sts != MFX_ERR_NONE) {
-            if (bInit) invalid++;
-            else changed++;
+            invalid++;
         }
     }
 #endif // MFX_ENABLE_HEVCE_ROI
