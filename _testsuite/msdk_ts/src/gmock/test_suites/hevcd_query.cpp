@@ -28,6 +28,7 @@ protected:
             mfxU32 type;
             const tsStruct::Field* field;
             mfxU32 par[max_num_ctrl_par];
+            HWType platform; //on which platform this field have to be checked
         } ctrl[max_num_ctrl];
     };
 
@@ -151,15 +152,20 @@ int TestSuite::RunTest(tc_struct const& tc)
     for(mfxU32 i = 0; i < max_num_ctrl; i ++)
     {
         auto c = tc.ctrl[i];
-        if(c.type == (MFX_IN|INVALID) && c.field)
+        if (g_tsHWtype < c.platform)
+            continue;
+
+        if (c.type == (MFX_IN|INVALID) && c.field)
         {
             tsStruct::check_eq(m_pParOut, *c.field, 0);
         }
-        if(c.type == (MFX_IN|VALID) && c.field)
+
+        if (c.type == (MFX_IN|VALID) && c.field)
         {
             tsStruct::check_eq(m_pParOut, *c.field, tsStruct::get(m_pPar, *c.field));
         }
-        if(c.type == (MFX_IN|WRN) && c.field)
+
+        if (c.type == (MFX_IN|WRN) && c.field)
         {
             tsStruct::check_ne(m_pParOut, *c.field, tsStruct::get(m_pPar, *c.field));
         }
@@ -252,12 +258,12 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_NV12>::test_cases[] =
 
     /* spec. cases: actual status depends on platform */
     {/*31*/ MFX_ERR_UNSUPPORTED,
-        { { MFX_IN | VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat,{ MFX_CHROMAFORMAT_YUV422 } },
+        { { MFX_IN | VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat,{ MFX_CHROMAFORMAT_YUV422 }, MFX_HW_ICL },
           { MFX_IN | INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC,{ MFX_FOURCC_NV12 } } }
     },
 
     {/*32*/ MFX_ERR_UNSUPPORTED,
-        { { MFX_IN | VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat,{ MFX_CHROMAFORMAT_YUV444 } },
+        { { MFX_IN | VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat,{ MFX_CHROMAFORMAT_YUV444, MFX_HW_ICL } },
           { MFX_IN | INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC,{ MFX_FOURCC_NV12 } } }
     },
 
