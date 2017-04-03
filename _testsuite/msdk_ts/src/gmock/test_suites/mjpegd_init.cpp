@@ -173,14 +173,14 @@ int TestSuite::RunTest(unsigned int id)
         {
             MFXInit();
         }
-        if(g_tsImpl == MFX_IMPL_HARDWARE)
-        {
-            if ((g_tsHWtype < MFX_HW_HSW) && (tc.sts == MFX_ERR_NONE))
-            {
+        if(g_tsImpl == MFX_IMPL_HARDWARE) {
+            if((g_tsHWtype < MFX_HW_HSW) && (tc.sts == MFX_ERR_NONE)) {
                 expected = MFX_WRN_PARTIAL_ACCELERATION;
             }
 #if defined (LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN)
-            expected = MFX_WRN_PARTIAL_ACCELERATION;
+            if(expected == MFX_ERR_NONE) {
+                expected = MFX_WRN_PARTIAL_ACCELERATION;
+            }
 #endif
         }
 
@@ -238,7 +238,9 @@ int TestSuite::RunTest(unsigned int id)
             if(m_par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
             {
 #if defined (LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN)
-                g_tsStatus.expect(MFX_WRN_PARTIAL_ACCELERATION);
+                if(expected == MFX_ERR_NONE) {
+                    g_tsStatus.expect(MFX_WRN_PARTIAL_ACCELERATION);
+                }
 #endif
                 QueryIOSurf();
                 AllocOpaque(m_request, m_par);
