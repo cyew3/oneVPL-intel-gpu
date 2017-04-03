@@ -29,19 +29,24 @@ namespace mfx_reflect
 {
 
 #if defined(MFX_HAS_CPP11)
-
     typedef ::std::type_index TypeIndex;
-    template <class T>
-    using mfx_shared_ptr = ::std::shared_ptr<T>;
+    namespace mfx_cpp11
+    {
+        template <class T>
+        using shared_ptr = ::std::shared_ptr<T>;
+    }
 #else
-    typedef mfx_type_index TypeIndex;
+    typedef mfx_cpp11::type_index TypeIndex;
 #endif
 
 #if defined(MFX_HAS_CPP11)
-    template <class T>
-    inline bool mfx_is_pointer()
+    namespace mfx_cpp11
     {
-        return ::std::is_pointer<T>::value;
+        template <class T>
+        inline bool is_pointer()
+        {
+            return ::std::is_pointer<T>::value;
+        }
     }
 #endif
 
@@ -53,12 +58,12 @@ namespace mfx_reflect
     class ReflectedField
     {
     public:
-        typedef mfx_shared_ptr<ReflectedField> P;
+        typedef mfx_cpp11::shared_ptr<ReflectedField> P;
         typedef ::std::vector<ReflectedField::P> FieldsCollection;
         typedef FieldsCollection::const_iterator FieldsCollectionCI;
 
 
-        mfx_shared_ptr<ReflectedType>  FieldType;
+        mfx_cpp11::shared_ptr<ReflectedType>  FieldType;
         const ::std::string &             FieldTypeName; //single C++ type may have several typedef aliases. This is original name that was used for this field declaration.
         size_t                          Offset;
         const ::std::string               FieldName;
@@ -72,7 +77,7 @@ namespace mfx_reflect
 
 
     protected:
-        ReflectedField(ReflectedTypesCollection *pCollection, mfx_shared_ptr<ReflectedType> fieldType, const ::std::string &fieldTypeName, size_t offset, const ::std::string fieldName, size_t count)
+        ReflectedField(ReflectedTypesCollection *pCollection, mfx_cpp11::shared_ptr<ReflectedType> fieldType, const ::std::string &fieldTypeName, size_t offset, const ::std::string fieldName, size_t count)
             : FieldType(fieldType)
             , FieldTypeName(fieldTypeName)
             , Offset(offset)
@@ -157,14 +162,14 @@ namespace mfx_reflect
             mfxU32 extBufId = 0;
             extBufId = mfx_ext_buffer_id<T>::id;
             bool isPointer = false;
-            isPointer = mfx_is_pointer<T>();
+            isPointer = mfx_cpp11::is_pointer<T>();
             return AddField(TypeIndex(typeid(T)), typeName, sizeof(T), isPointer, offset, fieldName, count, extBufId);
         }
 
         ReflectedField::FieldsCollectionCI FindField(const ::std::string fieldName) const;
 
         ReflectedField::FieldsCollection m_Fields;
-        typedef mfx_shared_ptr<ReflectedType> P;
+        typedef mfx_cpp11::shared_ptr<ReflectedType> P;
         typedef ::std::list< ::std::string> StringList;
 
     };
@@ -194,7 +199,7 @@ namespace mfx_reflect
             mfxU32 extBufId = 0;
             extBufId = mfx_ext_buffer_id<T>::id;
             bool isPointer = false;
-            isPointer = mfx_is_pointer<T>();
+            isPointer = mfx_cpp11::is_pointer<T>();
             return DeclareType(TypeIndex(typeid(T)), typeName, sizeof(T), isPointer, extBufId);
         }
 
@@ -218,7 +223,7 @@ namespace mfx_reflect
                 m_pReflection = NULL;
             }
         }
-        typedef mfx_shared_ptr<T> P;
+        typedef mfx_cpp11::shared_ptr<T> P;
 
         template <class ORIGINAL_TYPE>
         const ORIGINAL_TYPE& Get() const
@@ -307,7 +312,7 @@ namespace mfx_reflect
     };
 
     class TypeComparisonResult;
-    typedef mfx_shared_ptr<TypeComparisonResult> TypeComparisonResultP;
+    typedef mfx_cpp11::shared_ptr<TypeComparisonResult> TypeComparisonResultP;
 
     struct FieldComparisonResult
     {
@@ -322,7 +327,7 @@ namespace mfx_reflect
         list<mfxU32> extBufferIdList;
     };
 
-    typedef mfx_shared_ptr<AccessorType> AccessorTypeP;
+    typedef mfx_cpp11::shared_ptr<AccessorType> AccessorTypeP;
 
     TypeComparisonResultP CompareTwoStructs(AccessorType data1, AccessorType data2);
     TypeComparisonResultP CompareExtBufferLists(mfxExtBuffer** pExtParam1, mfxU16 numExtParam1, mfxExtBuffer** pExtParam2, mfxU16 numExtParam2, ReflectedTypesCollection* collection);

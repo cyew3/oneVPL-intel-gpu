@@ -32,7 +32,7 @@ namespace mfx_reflect
 #if defined(MFX_HAS_CPP11)
 #define MAKE_SHARED(T, ARGS) ::std::make_shared<T> ARGS
 #else
-#define MAKE_SHARED(T, ARGS) mfx_shared_ptr<T>(new T ARGS)
+#define MAKE_SHARED(T, ARGS) mfx_cpp11::shared_ptr<T>(new T ARGS)
 #endif
 
     void AccessorField::SetFieldAddress()
