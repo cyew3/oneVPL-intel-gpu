@@ -1272,15 +1272,18 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     changed += CheckTriStateOption(par.mfx.LowPower);
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN10)
-    if (par.m_ext.DDI.LCUSize)  // LCUSize from input params
-        par.LCUSize = par.m_ext.DDI.LCUSize;
+    if (par.m_platform.CodeName >= MFX_PLATFORM_CANNONLAKE)
+    {
+        if (par.m_ext.DDI.LCUSize)  // LCUSize from input params
+            par.LCUSize = par.m_ext.DDI.LCUSize;
 
-    if (!CheckLCUSize(caps.LCUSizeSupported, par.LCUSize))
-        invalid++;
-#else //PRE_SI_TARGET_PLATFORM_GEN10
+        if (!CheckLCUSize(caps.LCUSizeSupported, par.LCUSize))
+            invalid++;
+    }
+    else
+#endif //PRE_SI_TARGET_PLATFORM_GEN10
     if (!par.LCUSize)
         par.LCUSize = GetDefaultLCUSize(par, caps);
-#endif
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
 
@@ -1382,7 +1385,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         maxQP += 6 * (CO3.TargetBitDepthLuma - 8);
 
         if (IsOn(par.mfx.LowPower) || par.m_platform.CodeName < MFX_PLATFORM_ICELAKE)
-            minQP = 6 * (CO3.TargetBitDepthLuma - 8);
+            minQP += 6 * (CO3.TargetBitDepthLuma - 8);
     }
 
     switch (maxChroma)
@@ -1476,7 +1479,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
             BitDepthLuma = (par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10 || par.mfx.FrameInfo.FourCC == MFX_FOURCC_P010) ? 10 : 8;
 
         maxQP += 6 * (BitDepthLuma - 8);
-        minQP = 6 * (BitDepthLuma - 8);
+        minQP += 6 * (BitDepthLuma - 8);
     }
 #endif
 
@@ -2141,7 +2144,7 @@ void SetDefaults(
         maxQP += 6 * (CO3.TargetBitDepthLuma - 8);
 
         if (IsOn(par.mfx.LowPower) || par.m_platform.CodeName < MFX_PLATFORM_ICELAKE)
-            minQP = 6 * (CO3.TargetBitDepthLuma - 8);
+            minQP += 6 * (CO3.TargetBitDepthLuma - 8);
     }
 
     if (!par.mfx.CodecProfile)
@@ -2234,7 +2237,7 @@ void SetDefaults(
             || par.m_platform.CodeName == MFX_PLATFORM_KABYLAKE
 #endif
             )
-            minQP = 6 * (par.mfx.FrameInfo.BitDepthLuma - 8);
+            minQP += 6 * (par.mfx.FrameInfo.BitDepthLuma - 8);
     }
 #endif
 

@@ -134,8 +134,13 @@ mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, MFXCoreInterface* core, GUID guid
             caps.LCUSizeSupported |= 0b10;   // add support of 32x32 lcu for ENC+PAK
 #endif
     }
-    caps.SliceStructure = 2;    // default 4 is not supported now
-    caps.ROIDeltaQPSupport = 1; // 0 is now on CNL !!!
+
+    if (pltfm.CodeName >= MFX_PLATFORM_CANNONLAKE)
+    {
+        caps.SliceStructure = 2;    // default 4 is not supported now
+        caps.ROIDeltaQPSupport = 1; // 0 is now on CNL !!!
+    }
+
 #else
     if (!caps.LCUSizeSupported)
         caps.LCUSizeSupported = 2;
@@ -171,11 +176,16 @@ mfxStatus CheckHeaders(
         && par.m_sps.pcm_enabled_flag == 0);
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN10)
-    MFX_CHECK_COND(par.m_sps.amp_enabled_flag == 1);
-#else
-    MFX_CHECK_COND(par.m_sps.amp_enabled_flag == 0);
-    MFX_CHECK_COND(par.m_sps.sample_adaptive_offset_enabled_flag == 0);
+    if (par.m_platform.CodeName >= MFX_PLATFORM_CANNONLAKE)
+    {
+        MFX_CHECK_COND(par.m_sps.amp_enabled_flag == 1);
+    }
+    else
 #endif
+    {
+        MFX_CHECK_COND(par.m_sps.amp_enabled_flag == 0);
+        MFX_CHECK_COND(par.m_sps.sample_adaptive_offset_enabled_flag == 0);
+    }
 
 #if !defined(PRE_SI_TARGET_PLATFORM_GEN11)
     MFX_CHECK_COND(par.m_pps.tiles_enabled_flag == 0);

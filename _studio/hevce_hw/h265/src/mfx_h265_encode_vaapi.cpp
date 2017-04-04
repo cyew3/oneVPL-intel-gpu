@@ -834,6 +834,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     mfxU32 width,
     mfxU32 height)
 {
+    MFX_CHECK_WITH_ASSERT(core != 0, MFX_ERR_NULL_PTR);
     m_core = core;
 
     mfxStatus sts = core->GetHandle(MFX_HANDLE_VA_DISPLAY, (mfxHDL*)&m_vaDisplay);
@@ -873,6 +874,29 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
                           VAEntrypointEncSlice,
                           Begin(attrs), attrs.size());
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+#if MFX_VERSION >= 1022
+    {
+        mfxPlatform p = {};
+
+        sts = m_core->QueryPlatform(&p);
+        MFX_CHECK_STS(sts);
+
+        if (p.CodeName >= MFX_PLATFORM_SKYLAKE)
+        {
+            m_caps.Color420Only = 1;
+            m_caps.BitDepth8Only = 1;
+            m_caps.MaxEncodedBitDepth = 0;
+            m_caps.YUV422ReconSupport = 0;
+            m_caps.YUV444ReconSupport = 0;
+        }
+        if (p.CodeName >= MFX_PLATFORM_KABYLAKE)
+        {
+            m_caps.BitDepth8Only      = 0;
+            m_caps.MaxEncodedBitDepth = 1;
+        }
+    }
+#endif //MFX_VERSION >= 1022
 
     m_caps.VCMBitRateControl =
         attrs[ idx_map[VAConfigAttribRateControl] ].value & VA_RC_VCM ? 1 : 0; //Video conference mode

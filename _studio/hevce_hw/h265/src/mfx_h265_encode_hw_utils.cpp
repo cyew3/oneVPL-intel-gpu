@@ -1365,13 +1365,18 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
     m_sps.max_transform_hierarchy_depth_intra      = 2;
     m_sps.scaling_list_enabled_flag                = 0;
 #ifdef PRE_SI_TARGET_PLATFORM_GEN10
-    m_sps.amp_enabled_flag                         = 1; // only 1
-    m_sps.sample_adaptive_offset_enabled_flag      = !(m_ext.HEVCParam.SampleAdaptiveOffset & MFX_SAO_DISABLE);
-#else  //PRE_SI_TARGET_PLATFORM_GEN10
-    m_sps.amp_enabled_flag                         = 0;
-    m_sps.sample_adaptive_offset_enabled_flag      = 0;
+    if (m_platform.CodeName >= MFX_PLATFORM_CANNONLAKE)
+    {
+        m_sps.amp_enabled_flag = 1; // only 1
+        m_sps.sample_adaptive_offset_enabled_flag = !(m_ext.HEVCParam.SampleAdaptiveOffset & MFX_SAO_DISABLE);
+    }
+    else
 #endif  //PRE_SI_TARGET_PLATFORM_GEN10
-    m_sps.pcm_enabled_flag                         = 0;
+    { // SKL/KBL
+        m_sps.amp_enabled_flag = 0; 
+        m_sps.sample_adaptive_offset_enabled_flag = 0;
+    }
+    m_sps.pcm_enabled_flag = 0;
 
     assert(0 == m_sps.pcm_enabled_flag);
 
@@ -1646,13 +1651,16 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
     m_pps.num_ref_idx_l1_default_active_minus1  = 0;
     m_pps.init_qp_minus26                       = 0;
     m_pps.constrained_intra_pred_flag           = 0;
-#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
-    m_pps.transform_skip_enabled_flag           = IsOn(m_ext.CO3.TransformSkip);
-#else
-    m_pps.transform_skip_enabled_flag           = 0;
-#endif
 
-    m_pps.cu_qp_delta_enabled_flag              = ((mfx.RateControlMethod == MFX_RATECONTROL_CQP && !IsOn(m_ext.CO3.EnableMBQP)) || isSWBRC()) ? 0 : 1;
+#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
+    if (m_platform.CodeName >= MFX_PLATFORM_CANNONLAKE)
+        m_pps.transform_skip_enabled_flag = IsOn(m_ext.CO3.TransformSkip);
+    else
+#endif
+        m_pps.transform_skip_enabled_flag = 0;
+
+    m_pps.cu_qp_delta_enabled_flag = ((mfx.RateControlMethod == MFX_RATECONTROL_CQP && !IsOn(m_ext.CO3.EnableMBQP)) || isSWBRC()) ? 0 : 1;
+
     if (m_ext.CO2.MaxSliceSize)
         m_pps.cu_qp_delta_enabled_flag = 1;
 #if defined(PRE_SI_TARGET_PLATFORM_GEN10)
@@ -1686,7 +1694,7 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
     }
     if (mfx.RateControlMethod == MFX_RATECONTROL_CQP)
     {
-        m_pps.init_qp_minus26 = (mfx.GopRefDist == 1 ? mfx.QPP : mfx.QPB) - 26;
+        m_pps.init_qp_minus26 = (mfx.GopPicSize == 1 ? mfx.QPI : (mfx.GopRefDist == 1 ? mfx.QPP : mfx.QPB)) - 26;
         m_pps.init_qp_minus26 -= 6 * m_sps.bit_depth_luma_minus8;
         // m_pps.cb_qp_offset = -1;
         // m_pps.cr_qp_offset = -1;
