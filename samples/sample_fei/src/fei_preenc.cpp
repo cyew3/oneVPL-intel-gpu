@@ -1104,6 +1104,8 @@ mfxStatus FEI_PreencInterface::RepackPredictorsPerf(iTask* eTask)
         j = 0;
         for (std::list<PreEncOutput>::iterator it = eTask->preenc_output.begin(); j < nOfPredPairs; ++it, ++j)
         {
+            if (it == eTask->preenc_output.end()) { return MFX_ERR_UNDEFINED_BEHAVIOR; }
+
             mvs_v.push_back(reinterpret_cast<mfxExtFeiPreEncMV*>((*it).output_bufs->PB_bufs.out.getBufById(MFX_EXTBUFF_FEI_PREENC_MV, fieldId)));
             refIdx_v.push_back((*it).refIdx[fieldId]);
         }
