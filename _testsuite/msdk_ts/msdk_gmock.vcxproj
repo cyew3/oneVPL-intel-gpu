@@ -214,6 +214,7 @@
     <ClInclude Include="include\test_sample_allocator.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\gmock\test_suites\avce_adaptivemaxframesize.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_lowdelay_brc.cpp" />
     <ClCompile Include="src\gmock\test_suites\avcd_bs_dataflag.cpp" />
     <ClCompile Include="src\gmock\test_suites\avcd_close.cpp" />

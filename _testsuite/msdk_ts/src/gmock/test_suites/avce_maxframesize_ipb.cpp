@@ -27,7 +27,6 @@ namespace avce_maxframesize_ipb
         enum TYPE
         {
             INIT = 0,
-            QUERY,
             ENCODE
         };
 
@@ -38,11 +37,9 @@ namespace avce_maxframesize_ipb
             mfxU32 maxFrameSize;
             mfxU32 maxIFrameSize;
             mfxU32 maxPBFrameSize;
-            mfxU16 AdaptiveMaxFrameSize;
             mfxU32 out_maxFrameSize;
             mfxU32 out_maxIFrameSize;
             mfxU32 out_maxPBFrameSize;
-            mfxU16 out_AdaptiveMaxFrameSize;
         };
 
         static const tc_struct test_case[];
@@ -51,28 +48,12 @@ namespace avce_maxframesize_ipb
 
     const TestSuite::tc_struct TestSuite::test_case[] =
     {
-        {/*0*/ MFX_ERR_NONE, INIT, 0, 0, 0, 0, 0, 0, 0, MFX_CODINGOPTION_OFF },
-        {/*1*/ MFX_ERR_NONE, INIT, 1, 0, 0, 0, 1, 0, 0, MFX_CODINGOPTION_OFF },
-        {/*2*/ MFX_ERR_NONE, INIT, 0, 1, 0, 0, 0, 1, 0, MFX_CODINGOPTION_OFF },
-        {/*3*/ MFX_ERR_INVALID_VIDEO_PARAM, INIT, 0, 0, 1, 0, 0, 0, 1, MFX_CODINGOPTION_OFF },
-        {/*4*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, 1, 2, 3, 0 , 2, 2, 3, MFX_CODINGOPTION_OFF },
-        {/*5*/ MFX_ERR_NONE, ENCODE, 0, 0, 0, 0 , 0, 0, 0, MFX_CODINGOPTION_OFF },
-        //AdaptiveMaxFrameSize tests
-#if MFX_VERSION >= 1023
-        {/*6*/ MFX_ERR_NONE, QUERY, 0, 1, 2, MFX_CODINGOPTION_OFF , 0, 1, 2, MFX_CODINGOPTION_OFF }, // off ok
-        {/*7*/ MFX_ERR_NONE, INIT, 0, 1, 2, MFX_CODINGOPTION_UNKNOWN , 0, 1, 2, MFX_CODINGOPTION_OFF }, // by default OFF
-        {/*8*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, 0, 1, 2, 0x1 , 0, 1, 2, 0 }, // ivalid tri state
-        {/*9*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, 0, 1, 2, 0x1 , 0, 1, 2, MFX_CODINGOPTION_OFF }, // // ivalid tri state - but Init set it to OFF
-    #if defined(_WIN32) || defined(_WIN64)
-        {/*10*/ MFX_ERR_NONE, QUERY, 0, 1, 2, MFX_CODINGOPTION_ON , 0, 1, 2, MFX_CODINGOPTION_ON }, // can be enabled
-        {/*11*/ MFX_ERR_NONE, INIT, 0, 1, 2, MFX_CODINGOPTION_ON , 0, 1, 2, MFX_CODINGOPTION_ON }, // can be enabled
-        {/*12*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, 0, 1, 0, MFX_CODINGOPTION_ON , 0, 1, 0, 0 }, // maxPFrameSize must be non zero
-        {/*13*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, 0, 1, 0, MFX_CODINGOPTION_ON , 0, 1, 0, MFX_CODINGOPTION_OFF }, // maxPFrameSize must be non zero and but Init set it to OFF
-    #else // LINUX, IOTG , OPEN SOURCE
-        {/*10*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, 0, 1, 2, MFX_CODINGOPTION_ON , 0, 1, 2, 0 }, // can NOT be enabled
-        {/*11*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, 0, 1, 2, MFX_CODINGOPTION_ON , 0, 1, 2, MFX_CODINGOPTION_OFF }, // can NOT  be enabled
-    #endif
-#endif
+        {/*0*/ MFX_ERR_NONE, INIT, 0, 0, 0, 0, 0, 0 },
+        {/*1*/ MFX_ERR_NONE, INIT, 1, 0, 0, 1, 0, 0 },
+        {/*2*/ MFX_ERR_NONE, INIT, 0, 1, 0, 0, 1, 0 },
+        {/*3*/ MFX_ERR_INVALID_VIDEO_PARAM, INIT, 0, 0, 1, 0, 0, 1 },
+        {/*4*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, 1, 2, 3 , 2, 2, 3 },
+        {/*5*/ MFX_ERR_NONE, ENCODE, 0, 0, 0 , 0, 0, 0 },
     };
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
 
@@ -102,20 +83,11 @@ namespace avce_maxframesize_ipb
         {
             ((mfxExtCodingOption3*)extOpt3)->MaxFrameSizeI = tc.maxIFrameSize;
             ((mfxExtCodingOption3*)extOpt3)->MaxFrameSizeP = tc.maxPBFrameSize;
-#if MFX_VERSION >= 1023
-            ((mfxExtCodingOption3*)extOpt3)->AdaptiveMaxFrameSize = tc.AdaptiveMaxFrameSize;
-#endif
         }
 
         g_tsStatus.expect(tc.sts);
 
-        if (tc.type == QUERY)
-        {
-            out_par = m_par;
-            m_pParOut = &out_par;
-            Query();
-        }
-        else if (tc.type == INIT)
+        if (tc.type == INIT)
         {
             Init();
         }
@@ -129,11 +101,7 @@ namespace avce_maxframesize_ipb
             g_tsStatus.expect(MFX_ERR_NONE);
             out_par.AddExtBuffer(MFX_EXTBUFF_CODING_OPTION2, sizeof(mfxExtCodingOption2));
             out_par.AddExtBuffer(MFX_EXTBUFF_CODING_OPTION3, sizeof(mfxExtCodingOption3));
-
-            if (tc.type != QUERY)
-            {
-                GetVideoParam(m_session, &out_par);
-            }
+            GetVideoParam(m_session, &out_par);
 
             //check expOpt2, extOpt3
             extOpt2 = out_par.GetExtBuffer(MFX_EXTBUFF_CODING_OPTION2);
@@ -151,10 +119,6 @@ namespace avce_maxframesize_ipb
                 if (tc.out_maxFrameSize != 0)
                     EXPECT_EQ(tc.out_maxPBFrameSize, ((mfxExtCodingOption3*)extOpt3)->MaxFrameSizeP)
                         << "ERROR: Expect MaxPBFrameSize = " << tc.out_maxPBFrameSize << ", but real MaxPBFarmeSize = " << ((mfxExtCodingOption3*)extOpt3)->MaxFrameSizeP << "!\n";
-#if MFX_VERSION >= 1023
-                EXPECT_EQ(tc.out_AdaptiveMaxFrameSize, ((mfxExtCodingOption3*)extOpt3)->AdaptiveMaxFrameSize)
-                    << "ERROR: Expect AdaptiveMaxFrameSize = " << tc.out_AdaptiveMaxFrameSize << ", but real AdaptiveMaxFrameSize = " << ((mfxExtCodingOption3*)extOpt3)->AdaptiveMaxFrameSize << "!\n";
-#endif
             }
         }
 

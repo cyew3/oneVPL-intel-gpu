@@ -4388,7 +4388,9 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 
 #if MFX_VERSION >= 1023
     #if defined(MFX_VA_WIN)
-    if (hwCaps.UserMaxFrameSizeSupport == 1 && extOpt3->MaxFrameSizeP == 0 && IsOn(extOpt3->AdaptiveMaxFrameSize))
+    if (hwCaps.UserMaxFrameSizeSupport == 1 &&
+        ( extOpt3->MaxFrameSizeP == 0 || IsOn(par.mfx.LowPower) ) &&
+        IsOn(extOpt3->AdaptiveMaxFrameSize))
     {
         extOpt3->AdaptiveMaxFrameSize = 0;
         changed = true;
