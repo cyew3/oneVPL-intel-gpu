@@ -28,14 +28,14 @@ Copyright(c) 2016-2017 Intel Corporation. All Rights Reserved.
 namespace fei_encode_sei_payload
 {
 
-class TestSuite : tsVideoEncoder, tsSurfaceProcessor, tsBitstreamProcessor, tsParserH264AU
+class TestSuite : tsVideoEncoder, tsSurfaceProcessor, tsBitstreamProcessor, tsParserAVC2
 {
 public:
     static const unsigned int n_cases;
 
     TestSuite()
         : tsVideoEncoder(MFX_FEI_FUNCTION_ENCODE, MFX_CODEC_AVC, true)
-        , tsParserH264AU(BS_H264_INIT_MODE_DEFAULT)
+        , tsParserAVC2(BS_AVC2::INIT_MODE_DEFAULT)
         , m_nframes(10)
         , m_frm_in(0)
         , m_frm_out(0)
@@ -149,21 +149,18 @@ mfxStatus TestSuite::ProcessBitstream(mfxBitstream &bs, mfxU32 nFrames)
         };
 
         std::vector<payload> found_pl;
-        BS_H264_au au;
         Bs32u frm_count = 0;
         Bs32s last_poc_even = 0;
         Bs32s gop_count = -1;
         Bs16u gop_size = m_par.mfx.GopPicSize ? m_par.mfx.GopPicSize : 0xffff;
         while(1) {
-            au = ParseOrDie();
+            UnitType& au = ParseOrDie();
             if(m_sts == BS_ERR_MORE_DATA) { //end of bs buffer
                 return MFX_ERR_NONE;
             }
             for (Bs32u au_ind = 0; au_ind < au.NumUnits; au_ind++) {
-                auto nalu = &au.NALU[au_ind];
-
-                if((nalu->nal_unit_type == 0x01 || nalu->nal_unit_type == 0x05)) {
-                    slice_header& s = *nalu->slice_hdr;
+                if((au.nalu[au_ind]->nal_unit_type == 0x01 || au.nalu[au_ind]->nal_unit_type == 0x05)) {
+                    BS_AVC2::Slice& s = *au.nalu[au_ind]->slice;
                     if(m_field == MFX_PICSTRUCT_FIELD_BFF) {
                         fieldId = s.bottom_field_flag ? 0 : 1;
                     }
@@ -171,10 +168,10 @@ mfxStatus TestSuite::ProcessBitstream(mfxBitstream &bs, mfxU32 nFrames)
                         fieldId = s.bottom_field_flag ? 1 : 0;
                     }
 
-                    if(s.PicOrderCnt == 0)
+                    if(s.POC == 0)
                         ++gop_count;
-                    if(last_poc_even != (s.PicOrderCnt / 2)) {
-                        last_poc_even = (s.PicOrderCnt / 2);
+                    if(last_poc_even != (s.POC / 2)) {
+                        last_poc_even = (s.POC / 2);
                         frm_count = last_poc_even + gop_count * gop_size;
                     }
                     if((m_per_frame_sei.find(frm_count) != m_per_frame_sei.end())) {
@@ -216,12 +213,14 @@ mfxStatus TestSuite::ProcessBitstream(mfxBitstream &bs, mfxU32 nFrames)
 
                 }
 
-                if(nalu->nal_unit_type == 0x06) { //SEI
-                    for (Bs16u sei_ind = 0; sei_ind < nalu->SEI->numMessages; ++sei_ind) {
+                if(au.nalu[au_ind]->nal_unit_type == 0x06) { //SEI
+                    while(au.nalu[au_ind]->sei) {
                         payload p = {};
-                        p.BufSize = nalu->SEI->message[sei_ind].payloadSize;
-                        p.Type = nalu->SEI->message[sei_ind].payloadType;
+                        p.BufSize = au.nalu[au_ind]->sei->payloadSize;
+                        p.Type = au.nalu[au_ind]->sei->payloadType;
                         found_pl.push_back(p);
+
+                        au.nalu[au_ind]->sei = au.nalu[au_ind]->sei->next;
                     }
                 }
             }
