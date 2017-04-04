@@ -134,7 +134,7 @@ mfxStatus PrepareParamBuf(mfxExtFeiParam* & fpar, const mfxVideoParam& vpar, mfx
     fpar->Header.BufferId = MFX_EXTBUFF_FEI_PARAM;
     fpar->Header.BufferSz = sizeof(mfxExtFeiParam);
     fpar->Func = func;
-    fpar->SingleFieldProcessing = (vpar.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) ? MFX_CODINGOPTION_OFF : MFX_CODINGOPTION_ON;
+    fpar->SingleFieldProcessing = /*(*/(vpar.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) /* || !m_bSingleField)*/ ? MFX_CODINGOPTION_OFF : MFX_CODINGOPTION_ON;
 
     return MFX_ERR_NONE;
 }
@@ -330,6 +330,7 @@ tsVideoENCPAK::tsVideoENCPAK(mfxFeiFunction funcEnc, mfxFeiFunction funcPak, mfx
     : m_default(useDefaults)
     , m_initialized(false)
     , m_loaded(false)
+    , m_bSingleField(true)
     , enc(funcEnc)
     , pak(funcPak)
     , m_enc_pool()
@@ -747,7 +748,7 @@ mfxStatus tsVideoENCPAK::PrepareFrameBuffers (bool secondField)
             }
         }
 
-        m_PAKInput->InSurface = m_ENCInput->InSurface = m_enc_pool.GetSurface(); TS_CHECK_MFX;
+        m_PAKInput->InSurface   = m_ENCInput->InSurface   = m_enc_pool.GetSurface(); TS_CHECK_MFX;
         m_ENCOutput->OutSurface = m_PAKOutput->OutSurface = m_rec_pool.GetSurface(); TS_CHECK_MFX;
         if (m_filler)
             m_PAKInput->InSurface = m_ENCInput->InSurface = m_filler->ProcessSurface(m_PAKInput->InSurface, m_pFrameAllocator);
@@ -762,7 +763,7 @@ mfxStatus tsVideoENCPAK::PrepareFrameBuffers (bool secondField)
     for (mfxU32 i = 0; i < m_rec_pool.PoolSize(); i++)
         recSet[i] = m_rec_pool.GetSurface(i);
 
-    m_PAKInput->L0Surface = m_ENCInput->L0Surface = recSet.data();
+    m_PAKInput->L0Surface  = m_ENCInput->L0Surface  = recSet.data();
     m_PAKInput->NumFrameL0 = m_ENCInput->NumFrameL0 = recSet.size();
 
 
@@ -773,7 +774,8 @@ mfxStatus tsVideoENCPAK::PrepareFrameBuffers (bool secondField)
     pak.outbuf.clear();
 
     mfxU32 nfields = (enc.m_pPar->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE) ? 2 : 1;
-    for (mfxU32 field = 0; field < nfields; field++) {
+    for (mfxU32 field = (m_bSingleField && secondField) ? 1 : 0; field < ((!m_bSingleField || secondField) ? nfields : 1); field++)
+    {
         PrepareSliceBuf(enc.fslice, enc.m_par);
         PrepareCtrlBuf(enc.fctrl, enc.m_par);
         PreparePPSBuf(enc.fpps, enc.m_par);
@@ -797,11 +799,20 @@ mfxStatus tsVideoENCPAK::PrepareFrameBuffers (bool secondField)
     mfxU16 frtype = 0, slicetype = 0;
     mfxI32 order = m_ENCInput->InSurface->Data.FrameOrder;
     mfxI32 goporder = order % enc.m_pPar->mfx.GopPicSize;
-    if (goporder == 0 && !secondField) {
-        frtype = MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF;
-        slicetype = 2; //FEI_SLICETYPE_I;
-        if (enc.m_pPar->mfx.IdrInterval <= 1 || order / enc.m_pPar->mfx.GopPicSize % enc.m_pPar->mfx.IdrInterval == 0)
-            frtype |= MFX_FRAMETYPE_IDR;
+    if (goporder == 0)
+    {
+        if (!secondField)
+        {
+            frtype = MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF;
+            slicetype = 2; //FEI_SLICETYPE_I;
+            if (enc.m_pPar->mfx.IdrInterval <= 1 || order / enc.m_pPar->mfx.GopPicSize % enc.m_pPar->mfx.IdrInterval == 0)
+                frtype |= MFX_FRAMETYPE_IDR;
+        }
+        else
+        {
+            frtype = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
+            slicetype = 0; //FEI_SLICETYPE_P;
+        }
     }
     else if (goporder % enc.m_pPar->mfx.GopRefDist == 0) {
         frtype = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
@@ -813,12 +824,12 @@ mfxStatus tsVideoENCPAK::PrepareFrameBuffers (bool secondField)
 
     mfxFrameInfo &info = m_ENCInput->InSurface->Info;
     mfxU16 pictype = info.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? MFX_PICTYPE_FRAME :
-            ((info.PicStruct == MFX_PICSTRUCT_FIELD_TFF && !secondField) ? MFX_PICTYPE_TOPFIELD : MFX_PICTYPE_BOTTOMFIELD);
+        ((info.PicStruct == MFX_PICSTRUCT_FIELD_TFF) ?
+        (!secondField ? MFX_PICTYPE_TOPFIELD : MFX_PICTYPE_BOTTOMFIELD) :
+        ( secondField ? MFX_PICTYPE_TOPFIELD : MFX_PICTYPE_BOTTOMFIELD));
 
-    enc.fpps[curField].FrameType = frtype; // TODO for 2nd field
-    enc.fpps[curField].PictureType = pictype;
-    pak.fpps[curField].FrameType = frtype;
-    pak.fpps[curField].PictureType = pictype;
+    pak.fpps[curField].FrameType   = enc.fpps[curField].FrameType   = frtype;
+    pak.fpps[curField].PictureType = enc.fpps[curField].PictureType = pictype;
 
     for (mfxI32 s=0; s<enc.fslice[curField].NumSlice; s++) {
         enc.fslice[curField].Slice[s].SliceType = slicetype;
@@ -975,7 +986,7 @@ mfxStatus tsVideoENCPAK::EncodeFrame(bool secondField)
         return sts;
 
     // update DPB - simplest way for a while
-    mfxU16 type = ((mfxExtFeiPPS *)GetExtFeiBuffer(m_PAKInput->ExtParam, m_PAKInput->NumExtParam, MFX_EXTBUFF_FEI_PPS, secondField))->FrameType;
+    mfxU16 type = ((mfxExtFeiPPS *)GetExtFeiBuffer(m_PAKInput->ExtParam, m_PAKInput->NumExtParam, MFX_EXTBUFF_FEI_PPS, m_bSingleField ? 0 : secondField))->FrameType;
     if (type & MFX_FRAMETYPE_REF) {
         if (type & MFX_FRAMETYPE_IDR)
             refs.clear();

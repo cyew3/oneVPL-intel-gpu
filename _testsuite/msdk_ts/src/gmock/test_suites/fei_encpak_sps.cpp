@@ -248,16 +248,19 @@ int TestSuite::RunTest(unsigned int id)
         for (mfxU32 field = 0; field < num_fields && sts == MFX_ERR_NONE; field++) {
             encpak.PrepareFrameBuffers(field);
 
+            // In single-field mode only one set is used
+            mfxU32 idxToPickBuffers = encpak.m_bSingleField ? 0 : field;
+
             // to modify pps etc
-            mfxExtFeiPPS * fppsE = (mfxExtFeiPPS *)GetExtFeiBuffer(encpak.enc.inbuf, MFX_EXTBUFF_FEI_PPS, field);
+            mfxExtFeiPPS * fppsE = (mfxExtFeiPPS *)GetExtFeiBuffer(encpak.enc.inbuf, MFX_EXTBUFF_FEI_PPS, idxToPickBuffers);
             fppsE->SPSId = tc.par.SPSId;
-            mfxExtFeiSliceHeader * fsliceE = (mfxExtFeiSliceHeader *)GetExtFeiBuffer(encpak.enc.inbuf, MFX_EXTBUFF_FEI_SLICE, field);
+            mfxExtFeiSliceHeader * fsliceE = (mfxExtFeiSliceHeader *)GetExtFeiBuffer(encpak.enc.inbuf, MFX_EXTBUFF_FEI_SLICE, idxToPickBuffers);
             for (mfxI32 s=0; s<fsliceE->NumSlice; s++) {
                 fsliceE->Slice[s].PPSId = fppsE->PPSId;
             }
 
-            mfxExtFeiPPS * fppsP = (mfxExtFeiPPS *)GetExtFeiBuffer(encpak.pak.inbuf, MFX_EXTBUFF_FEI_PPS, field);
-            mfxExtFeiSliceHeader * fsliceP = (mfxExtFeiSliceHeader *)GetExtFeiBuffer(encpak.pak.inbuf, MFX_EXTBUFF_FEI_SLICE, field);
+            mfxExtFeiPPS * fppsP = (mfxExtFeiPPS *)GetExtFeiBuffer(encpak.pak.inbuf, MFX_EXTBUFF_FEI_PPS, idxToPickBuffers);
+            mfxExtFeiSliceHeader * fsliceP = (mfxExtFeiSliceHeader *)GetExtFeiBuffer(encpak.pak.inbuf, MFX_EXTBUFF_FEI_SLICE, idxToPickBuffers);
             fppsP->SPSId = tc.par.SPSId;
             for (mfxI32 s=0; s<fsliceP->NumSlice; s++) {
                 fsliceP->Slice[s].PPSId = fppsP->PPSId;

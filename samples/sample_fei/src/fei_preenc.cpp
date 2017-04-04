@@ -302,7 +302,7 @@ mfxStatus FEI_PreencInterface::FillDSVideoParams()
     m_VppDoNotUse->AlgList[3] = MFX_EXTBUFF_VPP_PROCAMP;        // turn off processing amplified (on by default)
     m_DSExtParams.push_back(reinterpret_cast<mfxExtBuffer *>(m_VppDoNotUse));
 
-    m_DSParams.ExtParam    = &m_DSExtParams[0]; // vector is stored linearly in memory
+    m_DSParams.ExtParam    = m_DSExtParams.data();
     m_DSParams.NumExtParam = (mfxU16)m_DSExtParams.size();
 
     return sts;
@@ -608,25 +608,24 @@ mfxStatus FEI_PreencInterface::InitFrameParams(iTask* eTask, iTask* refTask[2][2
         eTask->PREENC_in.NumFrameL0 = !!refSurf0[fieldId];
         eTask->PREENC_in.NumFrameL1 = !!refSurf1[fieldId];
 
-        //in data
-        eTask->PREENC_in.NumExtParam = is_I_frame ? eTask->preenc_bufs->I_bufs.in.NumExtParam() : eTask->preenc_bufs->PB_bufs.in.NumExtParam();
-        eTask->PREENC_in.ExtParam    = is_I_frame ? eTask->preenc_bufs->I_bufs.in.ExtParam()    : eTask->preenc_bufs->PB_bufs.in.ExtParam();
-        //out data
-        eTask->PREENC_out.NumExtParam = is_I_frame ? eTask->preenc_bufs->I_bufs.out.NumExtParam() : eTask->preenc_bufs->PB_bufs.out.NumExtParam();
-        eTask->PREENC_out.ExtParam    = is_I_frame ? eTask->preenc_bufs->I_bufs.out.ExtParam()    : eTask->preenc_bufs->PB_bufs.out.ExtParam();
+        // Initialize controller for Extension buffers
+        mfxStatus sts = eTask->ExtBuffersController.InitializeController(eTask->preenc_bufs, bufSetController::PREENC, is_I_frame, !eTask->m_fieldPicFlag);
+        MSDK_CHECK_STATUS(sts, "eTask->ExtBuffersController.InitializeController failed");
     }
 
+    // Update extension buffers
     mfxU32 preENCCtrId = 0, pMvPredId = 0;
     mfxU8 type = MFX_FRAMETYPE_UNKNOWN;
     bool ref0_isFrame = !eTask->m_fieldPicFlag, ref1_isFrame = !eTask->m_fieldPicFlag;
 
-    for (int i = 0; i < eTask->PREENC_in.NumExtParam; i++)
+    for (std::vector<mfxExtBuffer*>::iterator it = eTask->preenc_bufs->PB_bufs.in.buffers.begin();
+        it != eTask->preenc_bufs->PB_bufs.in.buffers.end(); ++it)
     {
-        switch (eTask->PREENC_in.ExtParam[i]->BufferId)
+        switch ((*it)->BufferId)
         {
         case MFX_EXTBUFF_FEI_PREENC_CTRL:
         {
-            mfxExtFeiPreEncCtrl* preENCCtr = reinterpret_cast<mfxExtFeiPreEncCtrl*>(eTask->PREENC_in.ExtParam[i]);
+            mfxExtFeiPreEncCtrl* preENCCtr = reinterpret_cast<mfxExtFeiPreEncCtrl*>(*it);
 
             /* Get type of current field */
             type = ExtractFrameType(*eTask, preENCCtrId);
@@ -701,7 +700,7 @@ mfxStatus FEI_PreencInterface::InitFrameParams(iTask* eTask, iTask* refTask[2][2
                 /* Skip MV predictor data for I-fields/frames */
                 if (!(ExtractFrameType(*eTask, pMvPredId) & MFX_FRAMETYPE_I))
                 {
-                    mfxExtFeiPreEncMVPredictors* pMvPredBuf = reinterpret_cast<mfxExtFeiPreEncMVPredictors*>(eTask->PREENC_in.ExtParam[i]);
+                    mfxExtFeiPreEncMVPredictors* pMvPredBuf = reinterpret_cast<mfxExtFeiPreEncMVPredictors*>(*it);
                     SAFE_FREAD(pMvPredBuf->MB, sizeof(pMvPredBuf->MB[0])*pMvPredBuf->NumMBAlloc, 1, m_pMvPred_in, MFX_ERR_MORE_DATA);
                 }
                 else{
@@ -714,7 +713,7 @@ mfxStatus FEI_PreencInterface::InitFrameParams(iTask* eTask, iTask* refTask[2][2
         case MFX_EXTBUFF_FEI_ENC_QP:
             if (m_pMbQP_in)
             {
-                mfxExtFeiEncQP* pMbQP = reinterpret_cast<mfxExtFeiEncQP*>(eTask->PREENC_in.ExtParam[i]);
+                mfxExtFeiEncQP* pMbQP = reinterpret_cast<mfxExtFeiEncQP*>(*it);
 #if MFX_VERSION >= 1023
                 SAFE_FREAD(pMbQP->MB, sizeof(pMbQP->MB[0])*pMbQP->NumMBAlloc, 1, m_pMbQP_in, MFX_ERR_MORE_DATA);
 #else
@@ -808,6 +807,24 @@ mfxStatus FEI_PreencInterface::ProcessMultiPreenc(iTask* eTask)
         {
             for (int i = 0; i < 1 + m_bSingleFieldMode; ++i)
             {
+                // Attach extension buffers for current field
+                // (in double-field mode both calls will return equal sets, holding buffers for both fields)
+
+                std::vector<mfxExtBuffer *> * in_buffers = eTask->ExtBuffersController.GetBuffers(bufSetController::PREENC, i, true);
+                MSDK_CHECK_POINTER(in_buffers, MFX_ERR_NULL_PTR);
+
+                std::vector<mfxExtBuffer *> * out_buffers = eTask->ExtBuffersController.GetBuffers(bufSetController::PREENC, i, false);
+                MSDK_CHECK_POINTER(out_buffers, MFX_ERR_NULL_PTR);
+
+                // Input buffers
+                eTask->PREENC_in.NumExtParam  = mfxU16(in_buffers->size());
+                eTask->PREENC_in.ExtParam     = in_buffers->data();
+
+                // Output buffers
+                eTask->PREENC_out.NumExtParam = mfxU16(out_buffers->size());
+                eTask->PREENC_out.ExtParam    = out_buffers->data();
+
+                // Actual PreENC goes below
                 sts = m_pmfxPREENC->ProcessFrameAsync(&eTask->PREENC_in, &eTask->PREENC_out, &m_SyncPoint);
                 if (sts == MFX_ERR_GPU_HANG)
                 {

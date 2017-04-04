@@ -57,6 +57,7 @@ tsVideoEncoder::tsVideoEncoder(mfxU32 CodecId, bool useDefaults)
     , m_bs_processor(0)
     , m_frames_buffered(0)
     , m_uid(0)
+    , m_single_field_processing(false)
     , m_field_processed(0)
 {
     m_par.mfx.CodecId = CodecId;
@@ -120,6 +121,7 @@ tsVideoEncoder::tsVideoEncoder(mfxFeiFunction func, mfxU32 CodecId, bool useDefa
     , m_bs_processor(0)
     , m_frames_buffered(0)
     , m_uid(0)
+    , m_single_field_processing(false)
     , m_field_processed(0)
 {
     m_par.mfx.CodecId = CodecId;
@@ -157,7 +159,7 @@ tsVideoEncoder::~tsVideoEncoder()
     }
 }
     
-mfxStatus tsVideoEncoder::Init() 
+mfxStatus tsVideoEncoder::Init()
 {
     if(m_default)
     {
@@ -169,7 +171,7 @@ mfxStatus tsVideoEncoder::Init()
         {
             Load();
         }
-        if(     !m_pFrameAllocator 
+        if(     !m_pFrameAllocator
             && (   (m_request.Type & (MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET|MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET))
                 || (m_par.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY)))
         {
@@ -189,6 +191,12 @@ mfxStatus tsVideoEncoder::Init()
             AllocOpaque(m_request, m_par);
         }
     }
+
+    // Set single field processing flag
+    mfxExtFeiParam* fei_ext = (mfxExtFeiParam*)m_par.GetExtBuffer(MFX_EXTBUFF_FEI_PARAM);
+    if (fei_ext)
+        m_single_field_processing = (fei_ext->SingleFieldProcessing == MFX_CODINGOPTION_ON);
+
     return Init(m_session, m_pPar);
 }
 
@@ -364,14 +372,22 @@ mfxStatus tsVideoEncoder::EncodeFrameAsync()
         if (m_field_processed == 0) {
             //if SingleFieldProcessing is enabled, then don't get new surface if the second field to be processed.
             //if SingleFieldProcessing is not enabled, m_field_processed == 0 always.
-            m_pSurf = GetSurface();TS_CHECK_MFX;
-            if(m_filler)
-            {
-                m_pSurf = m_filler->ProcessSurface(m_pSurf, m_pFrameAllocator);
-            }
+            m_pSurf = GetSurface(); TS_CHECK_MFX;
+        }
+
+        if(m_filler)
+        {
+            m_pSurf = m_filler->ProcessSurface(m_pSurf, m_pFrameAllocator);
         }
     }
     mfxStatus mfxRes = EncodeFrameAsync(m_session, m_pSurf ? m_pCtrl : 0, m_pSurf, m_pBitstream, m_pSyncPoint);
+
+    if (m_single_field_processing)
+    {
+        //m_field_processed would be use as indicator in ProcessBitstream(),
+        //so increase it in advance here.
+        m_field_processed = 1 - m_field_processed;
+    }
 
     return mfxRes;
 }
@@ -490,16 +506,17 @@ mfxStatus tsVideoEncoder::EncodeFrames(mfxU32 n, bool check)
     mfxU32 async = TS_MAX(1, m_par.AsyncDepth);
     mfxSyncPoint sp;
 
-    bool bSingleFldProc = false;
     mfxExtFeiParam* fei_ext= (mfxExtFeiParam*)m_par.GetExtBuffer(MFX_EXTBUFF_FEI_PARAM);
     if (fei_ext)
-        bSingleFldProc = (fei_ext->SingleFieldProcessing == MFX_CODINGOPTION_ON);
+        m_single_field_processing = (fei_ext->SingleFieldProcessing == MFX_CODINGOPTION_ON);
 
     async = TS_MIN(n, async - 1);
 
     while(encoded < n)
     {
-        if(MFX_ERR_MORE_DATA == EncodeFrameAsync())
+        mfxStatus sts = EncodeFrameAsync();
+
+        if (sts == MFX_ERR_MORE_DATA)
         {
             if(!m_pSurf)
             {
@@ -509,29 +526,23 @@ mfxStatus tsVideoEncoder::EncodeFrames(mfxU32 n, bool check)
                     SyncOperation(sp);
                 }
                 break;
-            } 
+            }
+
             continue;
         }
 
-        g_tsStatus.check();TS_CHECK_MFX;
+        g_tsStatus.check(); TS_CHECK_MFX;
         sp = m_syncpoint;
 
-        //For FEI, AsyncDepth = 1, so everytime one frame is submitted for encoded, it will
+        //For FEI, AsyncDepth = 1, so every time one frame is submitted for encoded, it will
         //be synced immediately afterwards.
         if(++submitted >= async)
         {
-            if(bSingleFldProc)
-            {
-                //m_field_processed would be use as indicator in ProcessBitstream(),
-                //so increase it in advance here.
-                m_field_processed = (m_field_processed + 1) % 2;
-            }
             SyncOperation();TS_CHECK_MFX;
 
             //If SingleFieldProcessing is enabled, and the first field is processed, continue
-            if(bSingleFldProc)
+            if (m_single_field_processing)
             {
-                //m_field_processed = (m_field_processed + 1) % 2;
                 if (m_field_processed)
                 {
                     //for the second field, no new surface submitted.

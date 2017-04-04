@@ -551,6 +551,8 @@ bool bEnc_PREENC(mfxVideoParam *par)
 
 static mfxStatus AsyncRoutine(void * state, void * param, mfxU32, mfxU32)
 {
+    MFX_CHECK_NULL_PTR1(state);
+
     VideoENC_PREENC & impl = *(VideoENC_PREENC *)state;
     return  impl.RunFrameVmeENC(NULL, NULL);
 }
@@ -573,26 +575,31 @@ mfxStatus VideoENC_PREENC::RunFrameVmeENC(mfxENCInput *in, mfxENCOutput *out)
     sts = CopyRawSurfaceToVideoMemory(*m_core, m_video, task);
     MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
 
-    if (MFX_CODINGOPTION_ON == m_singleFieldProcessingMode)
+    if (m_bSingleFieldMode)
     {
+        // Set a field to process
         f_start = fieldCount = m_firstFieldDone;
     }
 
     for (f = f_start; f <= fieldCount; f++)
     {
-        //mprintf(stderr,"handle=0x%x mid=0x%x\n", task.m_handleRaw, task.m_midRaw );
         sts = m_ddi->Execute(task.m_handleRaw.first, task, task.m_fid[f], m_sei);
         MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
     }
 
-    if (MFX_CODINGOPTION_ON == m_singleFieldProcessingMode)
+    // After encoding of field - switch m_firstFieldDone flag between 0 and 1
+    if (m_bSingleFieldMode)
+    {
         m_firstFieldDone = 1 - m_firstFieldDone;
+    }
 
     return sts;
 }
 
 static mfxStatus AsyncQuery(void * state, void * param, mfxU32 /*threadNumber*/, mfxU32 /*callNumber*/)
 {
+    MFX_CHECK_NULL_PTR2(state, param);
+
     VideoENC_PREENC & impl = *(VideoENC_PREENC *)state;
     DdiTask& task = *(DdiTask *)param;
     return impl.QueryStatus(task);
@@ -605,8 +612,9 @@ mfxStatus VideoENC_PREENC::QueryStatus(DdiTask& task)
     mfxU32 f = 0, f_start = 0;
     mfxU32 fieldCount = task.m_fieldPicFlag;
 
-    if (MFX_CODINGOPTION_ON == m_singleFieldProcessingMode)
+    if (m_bSingleFieldMode)
     {
+        // This flag was flipped at the end of RunFramePAK, so flip it back to check status of correct field
         f_start = fieldCount = 1 - m_firstFieldDone;
     }
 
@@ -621,7 +629,6 @@ mfxStatus VideoENC_PREENC::QueryStatus(DdiTask& task)
 
     UMC::AutomaticUMCMutex guard(m_listMutex);
     //move that task to free tasks from m_incoming
-    //m_incoming
     std::list<DdiTask>::iterator it = std::find(m_incoming.begin(), m_incoming.end(), task);
     MFX_CHECK(it != m_incoming.end(), MFX_ERR_NOT_FOUND);
 
@@ -738,7 +745,7 @@ VideoENC_PREENC::VideoENC_PREENC(VideoCORE *core,  mfxStatus * sts)
     , m_inputFrameType()
     , m_currentPlatform(MFX_HW_UNKNOWN)
     , m_currentVaType(MFX_HW_NO)
-    , m_singleFieldProcessingMode(0)
+    , m_bSingleFieldMode(false)
     , m_firstFieldDone(0)
 {
     *sts = MFX_ERR_NONE;
@@ -752,6 +759,8 @@ VideoENC_PREENC::~VideoENC_PREENC()
 
 mfxStatus VideoENC_PREENC::Init(mfxVideoParam *par)
 {
+    MFX_CHECK_NULL_PTR1(par);
+
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VideoENC_PREENC::Init");
     mfxStatus sts = MfxEncPREENC::CheckExtBufferId(*par);
     MFX_CHECK_STS(sts);
@@ -789,8 +798,7 @@ mfxStatus VideoENC_PREENC::Init(mfxVideoParam *par)
     }
 
     mfxExtFeiParam * feiParam = GetExtBuffer(m_video);
-    if (IsOn(feiParam->SingleFieldProcessing))
-        m_singleFieldProcessingMode = MFX_CODINGOPTION_ON;
+    m_bSingleFieldMode = IsOn(feiParam->SingleFieldProcessing);
 
     m_currentPlatform = m_core->GetHWType();
     m_currentVaType   = m_core->GetVAType();
@@ -861,77 +869,50 @@ mfxStatus VideoENC_PREENC::RunFrameVmeENCCheck(
 
     MFX_CHECK_NULL_PTR2(input, output);
 
-    //set frame type
-    mfxU8 mtype_first_field = 0, mtype_second_field = 0;
-
-    mfxExtFeiPreEncCtrl* feiCtrl = GetExtBufferFEI(input, 0);
-    MFX_CHECK_NULL_PTR1(feiCtrl); // this is fatal error
+    // For frame type detection
+    PairU8 frame_type = PairU8(mfxU8(MFX_FRAMETYPE_UNKNOWN), mfxU8(MFX_FRAMETYPE_UNKNOWN));
 
     /* This value have to be initialized here
      * as we use MfxHwH264Encode::GetPicStruct
      * (Legacy encoder do initialization  by itself)
      * */
     mfxExtCodingOption * extOpt = GetExtBuffer(m_video);
-    extOpt->FieldOutput = 32;
-    PairU16 picStruct   = GetPicStruct(m_video, input->InSurface->Info.PicStruct);
+    extOpt->FieldOutput = MFX_CODINGOPTION_OFF;
 
-    if      (!feiCtrl->RefFrame[0] && !feiCtrl->RefFrame[1]) mtype_first_field = MFX_FRAMETYPE_I;
-    else if ( feiCtrl->RefFrame[0] && !feiCtrl->RefFrame[1]) mtype_first_field = MFX_FRAMETYPE_P;
-    else                                                     mtype_first_field = MFX_FRAMETYPE_B;
+    PairU16 picStruct = GetPicStruct(m_video, input->InSurface->Info.PicStruct);
 
-    MFX_CHECK((feiCtrl->PictureType == MFX_PICTYPE_TOPFIELD    && picStruct[ENC] == MFX_PICSTRUCT_FIELD_TFF) ||
-              (feiCtrl->PictureType == MFX_PICTYPE_BOTTOMFIELD && picStruct[ENC] == MFX_PICSTRUCT_FIELD_BFF) ||
-              (feiCtrl->PictureType == MFX_PICTYPE_FRAME       && picStruct[ENC] == MFX_PICSTRUCT_PROGRESSIVE),
-              MFX_ERR_INVALID_VIDEO_PARAM);
+    mfxU32 fieldCount = (picStruct[ENC] & MFX_PICSTRUCT_PROGRESSIVE) ? 1 : 2;
 
-    if (feiCtrl->RefFrame[0])
+    for (mfxU32 field = 0; field < fieldCount; ++field)
     {
-        MFX_CHECK(feiCtrl->RefPictureType[0] == MFX_PICTYPE_TOPFIELD    ||
-                  feiCtrl->RefPictureType[0] == MFX_PICTYPE_BOTTOMFIELD ||
-                  feiCtrl->RefPictureType[0] == MFX_PICTYPE_FRAME, MFX_ERR_INVALID_VIDEO_PARAM);
-    }
-
-    if (feiCtrl->RefFrame[1])
-    {
-        MFX_CHECK(feiCtrl->RefPictureType[1] == MFX_PICTYPE_TOPFIELD    ||
-                  feiCtrl->RefPictureType[1] == MFX_PICTYPE_BOTTOMFIELD ||
-                  feiCtrl->RefPictureType[1] == MFX_PICTYPE_FRAME, MFX_ERR_INVALID_VIDEO_PARAM);
-    }
-
-    if (MFX_PICSTRUCT_PROGRESSIVE != picStruct[ENC])
-    {
-        /* same for second field */
-        feiCtrl = GetExtBufferFEI(input, 1);
+        mfxExtFeiPreEncCtrl* feiCtrl = GetExtBufferFEI(input, field);
         MFX_CHECK_NULL_PTR1(feiCtrl); // this is fatal error
 
-        if      (!feiCtrl->RefFrame[0] && !feiCtrl->RefFrame[1]) mtype_second_field = MFX_FRAMETYPE_I;
-        else if ( feiCtrl->RefFrame[0] && !feiCtrl->RefFrame[1]) mtype_second_field = MFX_FRAMETYPE_P;
-        else                                                     mtype_second_field = MFX_FRAMETYPE_B;
+        if      (!feiCtrl->RefFrame[0] && !feiCtrl->RefFrame[1]) frame_type[field] = MFX_FRAMETYPE_I;
+        else if ( feiCtrl->RefFrame[0] && !feiCtrl->RefFrame[1]) frame_type[field] = MFX_FRAMETYPE_P;
+        else                                                     frame_type[field] = MFX_FRAMETYPE_B;
 
-        MFX_CHECK((feiCtrl->PictureType == MFX_PICTYPE_TOPFIELD    && picStruct[ENC] == MFX_PICSTRUCT_FIELD_BFF) ||
-                  (feiCtrl->PictureType == MFX_PICTYPE_BOTTOMFIELD && picStruct[ENC] == MFX_PICSTRUCT_FIELD_TFF),
+        MFX_CHECK((feiCtrl->PictureType == MFX_PICTYPE_TOPFIELD    && picStruct[ENC] == (!field ? MFX_PICSTRUCT_FIELD_TFF : MFX_PICSTRUCT_FIELD_BFF)) ||
+                  (feiCtrl->PictureType == MFX_PICTYPE_BOTTOMFIELD && picStruct[ENC] == (!field ? MFX_PICSTRUCT_FIELD_BFF : MFX_PICSTRUCT_FIELD_TFF)) ||
+                  (feiCtrl->PictureType == MFX_PICTYPE_FRAME       && picStruct[ENC] == MFX_PICSTRUCT_PROGRESSIVE),
                   MFX_ERR_INVALID_VIDEO_PARAM);
 
-        if (feiCtrl->RefFrame[0])
+        for (mfxU32 ref = 0; ref < 2; ++ref)
         {
-            MFX_CHECK(feiCtrl->RefPictureType[0] == MFX_PICTYPE_TOPFIELD    ||
-                      feiCtrl->RefPictureType[0] == MFX_PICTYPE_BOTTOMFIELD ||
-                      feiCtrl->RefPictureType[0] == MFX_PICTYPE_FRAME, MFX_ERR_INVALID_VIDEO_PARAM);
-        }
-
-        if (feiCtrl->RefFrame[1])
-        {
-            MFX_CHECK(feiCtrl->RefPictureType[1] == MFX_PICTYPE_TOPFIELD    ||
-                      feiCtrl->RefPictureType[1] == MFX_PICTYPE_BOTTOMFIELD ||
-                      feiCtrl->RefPictureType[1] == MFX_PICTYPE_FRAME, MFX_ERR_INVALID_VIDEO_PARAM);
+            if (feiCtrl->RefFrame[ref])
+            {
+                MFX_CHECK(feiCtrl->RefPictureType[ref] == MFX_PICTYPE_TOPFIELD    ||
+                          feiCtrl->RefPictureType[ref] == MFX_PICTYPE_BOTTOMFIELD ||
+                          feiCtrl->RefPictureType[ref] == MFX_PICTYPE_FRAME, MFX_ERR_INVALID_VIDEO_PARAM);
+            }
         }
     }
 
     UMC::AutomaticUMCMutex guard(m_listMutex);
 
-    m_free.front().m_yuv = input->InSurface;
+    m_free.front().m_yuv          = input->InSurface;
     //m_free.front().m_ctrl = 0;
-    m_free.front().m_type = Pair<mfxU8>(mtype_first_field, mtype_second_field);
+    m_free.front().m_type         = frame_type;
     m_free.front().m_picStruct    = picStruct;
     m_free.front().m_fieldPicFlag = m_free.front().m_picStruct[ENC] != MFX_PICSTRUCT_PROGRESSIVE;
     m_free.front().m_fid[0]       = m_free.front().m_picStruct[ENC] == MFX_PICSTRUCT_FIELD_BFF;

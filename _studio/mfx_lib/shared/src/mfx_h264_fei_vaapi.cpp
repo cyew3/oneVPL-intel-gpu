@@ -1057,20 +1057,22 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
     VABufferID vaFeiMBControlId    = VA_INVALID_ID;
     VABufferID vaFeiMBQPId         = VA_INVALID_ID;
 
-    //find ext buffers
-    /* In buffers */
-    mfxExtFeiSliceHeader     * pDataSliceHeader = GetExtBufferFEI(in,feiFieldId);
-    mfxExtFeiEncMBCtrl       * mbctrl           = GetExtBufferFEI(in,feiFieldId);
-    mfxExtFeiEncMVPredictors * mvpred           = GetExtBufferFEI(in,feiFieldId);
-    mfxExtFeiEncFrameCtrl    * frameCtrl        = GetExtBufferFEI(in,feiFieldId);
-    mfxExtFeiEncQP           * mbqp             = GetExtBufferFEI(in,feiFieldId);
-    /* Out Buffers*/
-    mfxExtFeiEncMBStat       * mbstat           = GetExtBufferFEI(out,feiFieldId);
-    mfxExtFeiEncMV           * mvout            = GetExtBufferFEI(out,feiFieldId);
-    mfxExtFeiPakMBCtrl       * mbcodeout        = GetExtBufferFEI(out,feiFieldId);
+    // In case of single-field processing, only one buffer is attached
+    mfxU32 idxToPickBuffer = task.m_singleFieldMode ? 0 : feiFieldId;
+
+    // Input ext buffers
+    mfxExtFeiSliceHeader     * pDataSliceHeader = GetExtBufferFEI(in, idxToPickBuffer);
+    mfxExtFeiEncMBCtrl       * mbctrl           = GetExtBufferFEI(in, idxToPickBuffer);
+    mfxExtFeiEncMVPredictors * mvpred           = GetExtBufferFEI(in, idxToPickBuffer);
+    mfxExtFeiEncFrameCtrl    * frameCtrl        = GetExtBufferFEI(in, idxToPickBuffer);
+    mfxExtFeiEncQP           * mbqp             = GetExtBufferFEI(in, idxToPickBuffer);
+    // Output ext buffers
+    mfxExtFeiEncMBStat       * mbstat           = GetExtBufferFEI(out, idxToPickBuffer);
+    mfxExtFeiEncMV           * mvout            = GetExtBufferFEI(out, idxToPickBuffer);
+    mfxExtFeiPakMBCtrl       * mbcodeout        = GetExtBufferFEI(out, idxToPickBuffer);
 
     // Update internal MSDK PPS
-    mfxExtFeiPPS             * pDataPPS         = GetExtBufferFEI(in,feiFieldId);
+    mfxExtFeiPPS             * pDataPPS         = GetExtBufferFEI(in, idxToPickBuffer);
     mfxExtPpsHeader          * extPps           = GetExtBuffer(m_videoParam);
 
     extPps->seqParameterSetId              = pDataPPS->SPSId;
@@ -1638,10 +1640,13 @@ mfxStatus VAAPIFEIENCEncoder::QueryStatus(
         default: //for now driver does not return correct status
         case VASurfaceReady:
         {
+            // In case of single-field processing, only one buffer is attached
+            mfxU32 idxToPickBuffer = task.m_singleFieldMode ? 0 : feiFieldId;
+
             mfxENCOutput*       out       = reinterpret_cast<mfxENCOutput*>(task.m_userData[1]);
-            mfxExtFeiEncMBStat* mbstat    = GetExtBufferFEI(out,feiFieldId);
-            mfxExtFeiEncMV*     mvout     = GetExtBufferFEI(out,feiFieldId);
-            mfxExtFeiPakMBCtrl* mbcodeout = GetExtBufferFEI(out,feiFieldId);
+            mfxExtFeiEncMBStat* mbstat    = GetExtBufferFEI(out, idxToPickBuffer);
+            mfxExtFeiEncMV*     mvout     = GetExtBufferFEI(out, idxToPickBuffer);
+            mfxExtFeiPakMBCtrl* mbcodeout = GetExtBufferFEI(out, idxToPickBuffer);
 
             /* NO Bitstream in ENC */
             task.m_bsDataLength[feiFieldId] = 0;
@@ -1791,7 +1796,7 @@ mfxStatus VAAPIFEIPAKEncoder::Reset(MfxVideoParam const & par)
 
     FillSps(par, m_sps);
 
-    MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetHRD(par, m_vaDisplay, m_vaContextEncode, m_hrdBufferId), MFX_ERR_DEVICE_FAILED);
+    MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetHRD(par, m_vaDisplay, m_vaContextEncode, m_hrdBufferId),       MFX_ERR_DEVICE_FAILED);
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetFrameRate(par, m_vaDisplay, m_vaContextEncode, m_frameRateId), MFX_ERR_DEVICE_FAILED);
 
     FillConstPartOfPps(par, m_pps);
@@ -1998,18 +2003,21 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
 
     VABufferID vaFeiFrameControlId = VA_INVALID_ID;
 
+    // In case of single-field processing, only one buffer is attached
+    mfxU32 idxToPickBuffer = task.m_singleFieldMode ? 0 : feiFieldId;
+
     // Extension buffers
 #if MFX_VERSION >= 1023
-    mfxExtFeiSliceHeader  * pDataSliceHeader = GetExtBufferFEI(in, feiFieldId);
+    mfxExtFeiSliceHeader  * pDataSliceHeader = GetExtBufferFEI(in, idxToPickBuffer);
 #else
-    mfxExtFeiSliceHeader  * pDataSliceHeader = GetExtBufferFEI(out, feiFieldId);
+    mfxExtFeiSliceHeader  * pDataSliceHeader = GetExtBufferFEI(out, idxToPickBuffer);
 #endif // MFX_VERSION >= 1023
-    mfxExtFeiEncMV        * mvout            = GetExtBufferFEI(in, feiFieldId);
-    mfxExtFeiPakMBCtrl    * mbcodeout        = GetExtBufferFEI(in, feiFieldId);
+    mfxExtFeiEncMV        * mvout            = GetExtBufferFEI(in, idxToPickBuffer);
+    mfxExtFeiPakMBCtrl    * mbcodeout        = GetExtBufferFEI(in, idxToPickBuffer);
 
     // Update internal PPS from FEI PPS buffer
-    mfxExtFeiPPS    * pDataPPS = GetExtBufferFEI(in,feiFieldId);
-    mfxExtPpsHeader * extPps   = GetExtBuffer(m_videoParam);
+    mfxExtFeiPPS          * pDataPPS         = GetExtBufferFEI(in, idxToPickBuffer);
+    mfxExtPpsHeader       * extPps           = GetExtBuffer(m_videoParam);
 
     extPps->seqParameterSetId              = pDataPPS->SPSId;
     extPps->picParameterSetId              = pDataPPS->PPSId;
@@ -2113,10 +2121,9 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
                                 m_vaContextEncode,
                                 (VABufferType)VAEncFEIMVBufferTypeIntel,
                                 sizeof (VAMotionVectorIntel)*16*mvout->NumMBAlloc,
-                                //limitation from driver, num elements should be 1
-                                1,
-                        mvout->MB,
-                        &m_vaFeiMVOutId[0]);
+                                1, //limitation from driver, num elements should be 1
+                                mvout->MB,
+                                &m_vaFeiMVOutId[0]);
 
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
         mdprintf(stderr, "MV Out bufId[%d]=%d\n", 0, m_vaFeiMVOutId[0]);

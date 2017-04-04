@@ -34,6 +34,7 @@ public:
     tsBitstreamProcessor*       m_bs_processor;
     mfxU32                      m_frames_buffered;
     mfxPluginUID*               m_uid;
+    bool                        m_single_field_processing;
     mfxU16                      m_field_processed;
 
     tsVideoEncoder(mfxU32 CodecId = 0, bool useDefaults = true);

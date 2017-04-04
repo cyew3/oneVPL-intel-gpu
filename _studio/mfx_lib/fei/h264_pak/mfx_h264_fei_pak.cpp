@@ -152,8 +152,9 @@ mfxStatus VideoPAK_PAK::RunFramePAK(mfxPAKInput *in, mfxPAKOutput *out)
 
     mfxU32 f_start = 0, fieldCount = task.m_fieldPicFlag;
 
-    if (MFX_CODINGOPTION_ON == m_singleFieldProcessingMode)
+    if (m_bSingleFieldMode)
     {
+        // Set a field to process
         fieldCount = f_start = m_firstFieldDone; // 0 or 1
     }
 
@@ -166,11 +167,13 @@ mfxStatus VideoPAK_PAK::RunFramePAK(mfxPAKInput *in, mfxPAKOutput *out)
         MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
     }
 
-    if (MFX_CODINGOPTION_ON == m_singleFieldProcessingMode)
+    // After encoding of field - switch m_firstFieldDone flag between 0 and 1
+    if (m_bSingleFieldMode)
     {
         m_firstFieldDone = 1 - m_firstFieldDone;
     }
 
+    // In case of second field being encoded store this task as previous one for next frame
     if (0 == m_firstFieldDone)
     {
         m_prevTask = task;
@@ -196,8 +199,9 @@ mfxStatus VideoPAK_PAK::QueryStatus(DdiTask& task)
 
     mfxU32 f_start = 0, fieldCount = task.m_fieldPicFlag;
 
-    if (MFX_CODINGOPTION_ON == m_singleFieldProcessingMode)
+    if (m_bSingleFieldMode)
     {
+        // This flag was flipped at the end of RunFramePAK, so flip it back to check status of correct field
         f_start = fieldCount = 1 - m_firstFieldDone;
     }
 
@@ -286,7 +290,7 @@ VideoPAK_PAK::VideoPAK_PAK(VideoCORE *core,  mfxStatus * sts)
     , m_inputFrameType(0)
     , m_currentPlatform(MFX_HW_UNKNOWN)
     , m_currentVaType(MFX_HW_NO)
-    , m_singleFieldProcessingMode(0)
+    , m_bSingleFieldMode(false)
     , m_firstFieldDone(0)
 {
     *sts = MFX_ERR_NONE;
@@ -336,8 +340,7 @@ mfxStatus VideoPAK_PAK::Init(mfxVideoParam *par)
 
     const mfxExtFeiParam* params = GetExtBuffer(m_video);
 
-    if (MFX_CODINGOPTION_ON == params->SingleFieldProcessing)
-        m_singleFieldProcessingMode = MFX_CODINGOPTION_ON;
+    m_bSingleFieldMode = IsOn(params->SingleFieldProcessing);
 
     //raw surfaces should be created before accel service
     mfxFrameAllocRequest request = { };
@@ -352,10 +355,9 @@ mfxStatus VideoPAK_PAK::Init(mfxVideoParam *par)
     request.AllocId           = par->AllocId;
     MFX_CHECK(request.NumFrameMin <= 127, MFX_ERR_UNSUPPORTED);
 
-    //sts = m_core->AllocFrames(&request, &m_rec);
     sts = m_rec.Alloc(m_core, request, false, true);
-    //sts = m_raw.Alloc(m_core, request);
     MFX_CHECK_STS(sts);
+
     sts = m_ddi->Register(m_rec, D3DDDIFMT_NV12);
     MFX_CHECK_STS(sts);
 
@@ -393,8 +395,7 @@ mfxStatus VideoPAK_PAK::Reset(mfxVideoParam *par)
 
     bool isIdrRequired = false;
     mfxStatus checkStatus = ProcessAndCheckNewParameters(newPar, isIdrRequired, par);
-    if (checkStatus < MFX_ERR_NONE)
-        return checkStatus;
+    MFX_CHECK(checkStatus >= MFX_ERR_NONE, checkStatus);
 
     m_ddi->Reset(newPar);
 
@@ -665,6 +666,30 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
     MFX_CHECK_NULL_PTR2(input, output);
     MFX_CHECK_NULL_PTR2(input->InSurface, output->OutSurface);
 
+    UMC::AutomaticUMCMutex guard(m_listMutex);
+
+    m_free.front().m_yuv         = input->InSurface;
+    //m_free.front().m_ctrl      = 0;
+
+    m_free.front().m_extFrameTag = input->InSurface->Data.FrameOrder;
+    m_free.front().m_frameOrder  = input->InSurface->Data.FrameOrder;
+    m_free.front().m_timeStamp   = input->InSurface->Data.TimeStamp;
+    m_free.front().m_userData.resize(2);
+    m_free.front().m_userData[0] = input;
+    m_free.front().m_userData[1] = output;
+
+    MFX_CHECK_NULL_PTR1(output->Bs);
+    m_free.front().m_bs = output->Bs;
+
+    m_incoming.splice(m_incoming.end(), m_free, m_free.begin());
+    DdiTask& task = m_incoming.front();
+
+    task.m_singleFieldMode = m_bSingleFieldMode;
+    task.m_picStruct       = GetPicStruct(m_video, task);
+    task.m_fieldPicFlag    = task.m_picStruct[ENC] != MFX_PICSTRUCT_PROGRESSIVE;
+    task.m_fid[0]          = task.m_picStruct[ENC] == MFX_PICSTRUCT_FIELD_BFF;
+    task.m_fid[1]          = task.m_fieldPicFlag - task.m_fid[0];
+
     //To record returned status that may contain warning status
     mfxStatus mfxSts = MFX_ERR_NONE;
 
@@ -672,9 +697,9 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
     // For now PAK doesn't have output extension buffers
     MFX_CHECK(!output->NumExtParam, MFX_ERR_UNDEFINED_BEHAVIOR);
 
-    mfxStatus sts = CheckRuntimeExtBuffers(input, output, m_video);
+    mfxStatus sts = CheckRuntimeExtBuffers(input, output, m_video, task);
 #else
-    mfxStatus sts = CheckRuntimeExtBuffers(output, output, m_video);
+    mfxStatus sts = CheckRuntimeExtBuffers(output, output, m_video, task);
 #endif // MFX_VERSION >= 1023
     MFX_CHECK_STS(sts);
 
@@ -693,20 +718,30 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
     // For frame type detection
     PairU8 frame_type = PairU8(mfxU8(MFX_FRAMETYPE_UNKNOWN), mfxU8(MFX_FRAMETYPE_UNKNOWN));
 
-    mfxU32 fieldMaxCount = m_video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
-    for (mfxU32 field = 0; field < fieldMaxCount; ++field)
+    mfxU32 f_start = 0, fieldCount = m_video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? 0 : 1;
+
+    if (m_bSingleFieldMode)
     {
-        // Additionally check ENC specific requirements for extension buffers
-        mfxExtFeiEncMV     * mvout     = GetExtBufferFEI(input, field);
-        mfxExtFeiPakMBCtrl * mbcodeout = GetExtBufferFEI(input, field);
+        // Set a field to process
+        fieldCount = f_start = m_firstFieldDone = FirstFieldProcessingDone(input, task); // 0 or 1
+    }
+
+    for (mfxU32 field = f_start; field <= fieldCount; ++field)
+    {
+        // In case of single-field processing, only one buffer is attached
+        mfxU32 idxToPickBuffer = m_bSingleFieldMode ? 0 : field;
+
+        // Additionally check PAK specific requirements for extension buffers
+        mfxExtFeiEncMV     * mvout     = GetExtBufferFEI(input, idxToPickBuffer);
+        mfxExtFeiPakMBCtrl * mbcodeout = GetExtBufferFEI(input, idxToPickBuffer);
         MFX_CHECK(mvout && mbcodeout, MFX_ERR_INVALID_VIDEO_PARAM);
 
         // Frame type detection
 #if MFX_VERSION >= 1023
-        mfxExtFeiPPS* extFeiPPSinRuntime = GetExtBufferFEI(input, field);
+        mfxExtFeiPPS* extFeiPPSinRuntime = GetExtBufferFEI(input, idxToPickBuffer);
         mfxU8 type = extFeiPPSinRuntime->FrameType;
 #else
-        mfxExtFeiPPS* extFeiPPSinRuntime = GetExtBufferFEI(output, field);
+        mfxExtFeiPPS* extFeiPPSinRuntime = GetExtBufferFEI(output, idxToPickBuffer);
         mfxU8 type = extFeiPPSinRuntime->PictureType;
 #endif // MFX_VERSION >= 1023
 
@@ -726,32 +761,15 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
         }
 
         frame_type[field] = type;
+
+        // Having both valid frame types simplifies calculations in ConfigureTask
+        if (m_bSingleFieldMode || fieldCount < 1)
+        {
+            frame_type[!field] = m_bSingleFieldMode && field != 0 ? task.m_type[!field] : (frame_type[field] & ~MFX_FRAMETYPE_IDR);
+        }
     }
-    if (!frame_type[1]){ frame_type[1] = frame_type[0] & ~MFX_FRAMETYPE_IDR; }
 
-    UMC::AutomaticUMCMutex guard(m_listMutex);
-
-    m_free.front().m_yuv         = input->InSurface;
-    //m_free.front().m_ctrl      = 0;
-    m_free.front().m_type        = frame_type;
-
-    m_free.front().m_extFrameTag = input->InSurface->Data.FrameOrder;
-    m_free.front().m_frameOrder  = input->InSurface->Data.FrameOrder;
-    m_free.front().m_timeStamp   = input->InSurface->Data.TimeStamp;
-    m_free.front().m_userData.resize(2);
-    m_free.front().m_userData[0] = input;
-    m_free.front().m_userData[1] = output;
-
-    MFX_CHECK_NULL_PTR1(output->Bs);
-    m_free.front().m_bs = output->Bs;
-
-    m_incoming.splice(m_incoming.end(), m_free, m_free.begin());
-    DdiTask& task = m_incoming.front();
-
-    task.m_picStruct    = GetPicStruct(m_video, task);
-    task.m_fieldPicFlag = task.m_picStruct[ENC] != MFX_PICSTRUCT_PROGRESSIVE;
-    task.m_fid[0]       = task.m_picStruct[ENC] == MFX_PICSTRUCT_FIELD_BFF;
-    task.m_fid[1]       = task.m_fieldPicFlag - task.m_fid[0];
+    task.m_type = frame_type;
 
     if (task.m_picStruct[ENC] == MFX_PICSTRUCT_FIELD_BFF)
     {
@@ -762,7 +780,6 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
     m_core->IncreaseReference(&output->OutSurface->Data);
 
     // Configure current task
-    //if (m_firstFieldDone == 0)
     {
         sts = GetNativeHandleToRawSurface(*m_core, m_video, task, task.m_handleRaw);
         MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));

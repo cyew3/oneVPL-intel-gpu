@@ -79,7 +79,7 @@ private:
     mfxU32                                        m_inputFrameType;
     eMFXHWType                                    m_currentPlatform;
     eMFXVAType                                    m_currentVaType;
-    mfxU32                                        m_singleFieldProcessingMode;
+    bool                                          m_bSingleFieldMode;
     mfxU32                                        m_firstFieldDone;
 };
 

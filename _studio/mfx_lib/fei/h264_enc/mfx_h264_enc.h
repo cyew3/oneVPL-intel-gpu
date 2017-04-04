@@ -16,19 +16,6 @@
 #include "fei_common.h"
 #include "mfx_enc_ext.h"
 
-/*
-namespace MfxEncENC
-{
-
-}; // namespace
-
-class mfxFeiEncEncodeInternalParams : public mfxEncodeInternalParams
-{
-public:
-     mfxENCInput  *in;
-     mfxENCOutput *out;
-};*/
-
 bool bEnc_ENC(mfxVideoParam *par);
 
 class VideoENC_ENC :  public VideoENC_Ext
@@ -90,7 +77,7 @@ private:
     mfxU32                                        m_inputFrameType;
     eMFXHWType                                    m_currentPlatform;
     eMFXVAType                                    m_currentVaType;
-    mfxU32                                        m_singleFieldProcessingMode;
+    bool                                          m_bSingleFieldMode;
     mfxU32                                        m_firstFieldDone;
 
 #if MFX_VERSION < 1023

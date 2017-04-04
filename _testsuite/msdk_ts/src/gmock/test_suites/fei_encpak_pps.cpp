@@ -116,18 +116,23 @@ const TestSuite::tc_struct TestSuite::test_case[] =
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct) * 3;
 mfxStatus LoadTC(std::vector<mfxExtBuffer*>& encbuf, std::vector<mfxExtBuffer*>& pakbuf, const TestSuite::tc_struct& tc, mfxU32 field)
 {
-    mfxExtFeiPPS* ppsE = (mfxExtFeiPPS*)GetExtFeiBuffer(encbuf, MFX_EXTBUFF_FEI_PPS, field);
-    mfxExtFeiPPS* ppsP = (mfxExtFeiPPS*)GetExtFeiBuffer(pakbuf, MFX_EXTBUFF_FEI_PPS, field);
+    // In single-field mode only one set is used
+    mfxU32 idxToPickBuffers = 0;// encpak.m_bSingleField ? 0 : field;
+
+    mfxExtFeiPPS* ppsE = (mfxExtFeiPPS*)GetExtFeiBuffer(encbuf, MFX_EXTBUFF_FEI_PPS, idxToPickBuffers);
+    mfxExtFeiPPS* ppsP = (mfxExtFeiPPS*)GetExtFeiBuffer(pakbuf, MFX_EXTBUFF_FEI_PPS, idxToPickBuffers);
+
     if (!ppsE || !ppsP)
-    	return MFX_ERR_NOT_FOUND;
+        return MFX_ERR_NOT_FOUND;
+
     ppsE->SPSId = ppsP->SPSId = tc.par.SPSId;
     ppsE->PPSId = ppsP->PPSId = tc.par.PPSId;
     ppsE->PicInitQP = ppsP->PicInitQP = tc.par.PicInitQP;
     ppsE->NumRefIdxL0Active = ppsP->NumRefIdxL0Active = std::min(tc.par.NumRefIdxL0Active, ppsP->NumRefIdxL0Active);
     ppsE->NumRefIdxL1Active = ppsP->NumRefIdxL1Active = std::min(tc.par.NumRefIdxL1Active, ppsP->NumRefIdxL1Active);
-    ppsE->ChromaQPIndexOffset = ppsP->ChromaQPIndexOffset = tc.par.ChromaQPIndexOffset;
+    ppsE->ChromaQPIndexOffset       = ppsP->ChromaQPIndexOffset       = tc.par.ChromaQPIndexOffset;
     ppsE->SecondChromaQPIndexOffset = ppsP->SecondChromaQPIndexOffset = tc.par.SecondChromaQPIndexOffset;
-    ppsE->Transform8x8ModeFlag = ppsP->Transform8x8ModeFlag = tc.par.Transform8x8ModeFlag;
+    ppsE->Transform8x8ModeFlag      = ppsP->Transform8x8ModeFlag      = tc.par.Transform8x8ModeFlag;
 
     return MFX_ERR_NONE;
 }
@@ -194,7 +199,7 @@ public:
                     //VERIFY_FIELD(au.NALU[i].PPS->, m_tc.par.FrameType, "FrameType")
                     VERIFY_FIELD(au.NALU[i].PPS->pic_init_qp_minus26+26, m_tc.par.PicInitQP, "PicInitQP")
                     VERIFY_FIELD(au.NALU[i].PPS->num_ref_idx_l0_default_active_minus1+1,
-                    		(std::max)(mfxU16(1), m_tc.par.NumRefIdxL0Active), "NumRefIdxL0Active")
+                            (std::max)(mfxU16(1), m_tc.par.NumRefIdxL0Active), "NumRefIdxL0Active")
                     VERIFY_FIELD(au.NALU[i].PPS->num_ref_idx_l1_default_active_minus1+1, (std::max)(mfxU16(1), m_tc.par.NumRefIdxL1Active), "NumRefIdxL1Active")
                     VERIFY_FIELD(au.NALU[i].PPS->chroma_qp_index_offset, m_tc.par.ChromaQPIndexOffset, "ChromaQPIndexOffset")
                     VERIFY_FIELD(au.NALU[i].PPS->second_chroma_qp_index_offset, m_tc.par.SecondChromaQPIndexOffset, "SecondChromaQPIndexOffset")
@@ -270,7 +275,7 @@ int TestSuite::RunTest(unsigned int id)
     mfxExtFeiPPS* ppsE = (mfxExtFeiPPS*)GetExtFeiBuffer(encpak.enc.initbuf, MFX_EXTBUFF_FEI_PPS);
     mfxExtFeiPPS* ppsP = (mfxExtFeiPPS*)GetExtFeiBuffer(encpak.pak.initbuf, MFX_EXTBUFF_FEI_PPS);
     ppsE->PictureType = ppsP->PictureType = tc.par.PictureType;
-    ppsE->FrameType = ppsP->FrameType = tc.par.FrameType;
+    ppsE->FrameType   = ppsP->FrameType   = tc.par.FrameType;
 
     if ((tc.mode & (ENC|INIT)) == ENC) // no pps on init for enc
         ExcludeExtBufferPtr(encpak.enc.initbuf, &ppsE->Header);
@@ -302,17 +307,21 @@ int TestSuite::RunTest(unsigned int id)
             if (num_fields == 2) {
                 LoadTC(encpak.enc.inbuf, encpak.pak.inbuf, tc, 1 ^ field);
             }
+
+            // In single-field mode only one set is used
+            mfxU32 idxToPickBuffers = encpak.m_bSingleField ? 0 : field;
+
             // to modify pps etc
-            mfxExtFeiPPS * fppsE = (mfxExtFeiPPS *)GetExtFeiBuffer(encpak.enc.inbuf, MFX_EXTBUFF_FEI_PPS, field);
-            mfxExtFeiSliceHeader * fsliceE = (mfxExtFeiSliceHeader *)GetExtFeiBuffer(encpak.enc.inbuf, MFX_EXTBUFF_FEI_SLICE, field);
+            mfxExtFeiPPS         * fppsE   = (mfxExtFeiPPS *)        GetExtFeiBuffer(encpak.enc.inbuf, MFX_EXTBUFF_FEI_PPS,   idxToPickBuffers);
+            mfxExtFeiSliceHeader * fsliceE = (mfxExtFeiSliceHeader *)GetExtFeiBuffer(encpak.enc.inbuf, MFX_EXTBUFF_FEI_SLICE, idxToPickBuffers);
             for (mfxI32 s=0; s<fsliceE->NumSlice; s++) {
                 fsliceE->Slice[s].PPSId = fppsE->PPSId;
                 fsliceE->Slice[s].NumRefIdxL0Active = fppsE->NumRefIdxL0Active;
                 fsliceE->Slice[s].NumRefIdxL1Active = fppsE->NumRefIdxL1Active;
             }
 
-            mfxExtFeiPPS * fppsP = (mfxExtFeiPPS *)GetExtFeiBuffer(encpak.pak.inbuf, MFX_EXTBUFF_FEI_PPS, field);
-            mfxExtFeiSliceHeader * fsliceP = (mfxExtFeiSliceHeader *)GetExtFeiBuffer(encpak.pak.inbuf, MFX_EXTBUFF_FEI_SLICE, field);
+            mfxExtFeiPPS         * fppsP   = (mfxExtFeiPPS *)        GetExtFeiBuffer(encpak.pak.inbuf, MFX_EXTBUFF_FEI_PPS, idxToPickBuffers);
+            mfxExtFeiSliceHeader * fsliceP = (mfxExtFeiSliceHeader *)GetExtFeiBuffer(encpak.pak.inbuf, MFX_EXTBUFF_FEI_SLICE, idxToPickBuffers);
             for (mfxI32 s=0; s<fsliceP->NumSlice; s++) {
                 fsliceP->Slice[s].PPSId = fppsP->PPSId;
                 fsliceP->Slice[s].NumRefIdxL0Active = fppsP->NumRefIdxL0Active;
@@ -320,24 +329,24 @@ int TestSuite::RunTest(unsigned int id)
             }
 
             // mods to check possibility
-            fppsP->PicInitQP = fppsE->PicInitQP = (tc.par.PicInitQP - 2 + 2*count + field) % 52;
-            fppsP->ChromaQPIndexOffset = fppsE->ChromaQPIndexOffset = (tc.par.ChromaQPIndexOffset - 3 + 2*count + field) % 13;
+            fppsP->PicInitQP                 = fppsE->PicInitQP                 = (tc.par.PicInitQP                 - 2 + 2*count + field) % 52;
+            fppsP->ChromaQPIndexOffset       = fppsE->ChromaQPIndexOffset       = (tc.par.ChromaQPIndexOffset       - 3 + 2*count + field) % 13;
             fppsP->SecondChromaQPIndexOffset = fppsE->SecondChromaQPIndexOffset = (tc.par.SecondChromaQPIndexOffset - 2 + 2*count + field) % 13;
-            fppsP->Transform8x8ModeFlag = fppsE->Transform8x8ModeFlag = (tc.par.Transform8x8ModeFlag + 2*count + field)*3/4 & 1;
+            fppsP->Transform8x8ModeFlag      = fppsE->Transform8x8ModeFlag      = (tc.par.Transform8x8ModeFlag          + 2*count + field)*3/4 & 1;
 
 
             // values in input tc are not always valid and can be changed in PrepareFrameBuffers()
 
-            pd.m_tc.par.SPSId                = fppsE->SPSId;
-            pd.m_tc.par.PPSId                = fppsE->PPSId;
-            pd.m_tc.par.PictureType          = fppsE->PictureType;
-            pd.m_tc.par.FrameType            = fppsE->FrameType;
-            pd.m_tc.par.PicInitQP            = fppsE->PicInitQP;
-            pd.m_tc.par.NumRefIdxL0Active    = fppsE->NumRefIdxL0Active;
-            pd.m_tc.par.NumRefIdxL1Active    = fppsE->NumRefIdxL1Active;
-            pd.m_tc.par.ChromaQPIndexOffset  = fppsE->ChromaQPIndexOffset;
+            pd.m_tc.par.SPSId                     = fppsE->SPSId;
+            pd.m_tc.par.PPSId                     = fppsE->PPSId;
+            pd.m_tc.par.PictureType               = fppsE->PictureType;
+            pd.m_tc.par.FrameType                 = fppsE->FrameType;
+            pd.m_tc.par.PicInitQP                 = fppsE->PicInitQP;
+            pd.m_tc.par.NumRefIdxL0Active         = fppsE->NumRefIdxL0Active;
+            pd.m_tc.par.NumRefIdxL1Active         = fppsE->NumRefIdxL1Active;
+            pd.m_tc.par.ChromaQPIndexOffset       = fppsE->ChromaQPIndexOffset;
             pd.m_tc.par.SecondChromaQPIndexOffset = fppsE->SecondChromaQPIndexOffset;
-            pd.m_tc.par.Transform8x8ModeFlag = fppsE->Transform8x8ModeFlag;
+            pd.m_tc.par.Transform8x8ModeFlag      = fppsE->Transform8x8ModeFlag;
 
 
             // remove both fields'?

@@ -945,6 +945,7 @@ namespace MfxHwH264Encode
             , m_fwdRef(0)
             , m_bwdRef(0)
             , m_fieldPicFlag(0)
+            , m_singleFieldMode(false)
             , m_fieldCounter(0)
             , m_timeStamp(0)
             , m_minQP(0)
@@ -1126,7 +1127,9 @@ namespace MfxHwH264Encode
         DdiTask const * m_fwdRef;
         DdiTask const * m_bwdRef;
 
-        mfxU8   m_fieldPicFlag;
+        mfxU8   m_fieldPicFlag;    // true for frames with interlaced content
+        bool    m_singleFieldMode; // true for FEI single-field processing mode
+
         // m_fid is a remapper of field parity to field order and vise versa.
         // i.e. parity = m_fid[fieldId] and fieldId = m_fid[parity] (fieldId == m_fid[m_fid[fieldId]]).
         // It is useful to switch between these two representation, because DdiTask stores all information

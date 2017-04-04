@@ -55,6 +55,8 @@ public:
     bool                        m_default;
     bool                        m_initialized;
     bool                        m_loaded;
+    bool                        m_bSingleField;
+
     struct feiCfg {
         //tsExtBufType<mfxVideoParam> m_par;
         mfxVideoParam               m_par;

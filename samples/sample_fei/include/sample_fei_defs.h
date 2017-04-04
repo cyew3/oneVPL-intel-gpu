@@ -34,6 +34,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include <cstring>
 #include <list>
 #include <vector>
+#include <map>
 #include <ctime>
 #include "math.h"
 

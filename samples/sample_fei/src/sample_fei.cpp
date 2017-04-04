@@ -1043,6 +1043,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
         msdk_printf(MSDK_STRING("           could be non-bitexact with last frame in FEI ENCODE with Display Order!\n"));
     }
 
+    if (pConfig->bPREENC || pConfig->bENCPAK || pConfig->bOnlyENC || pConfig->bOnlyPAK)
+    {
+        pConfig->EncodedOrder = true;
+    }
+
     if (pConfig->bPerfMode && (pConfig->mvinFile || pConfig->mvoutFile || pConfig->mbctrinFile || pConfig->mbstatoutFile || pConfig->mbcodeoutFile || pConfig->mbQpFile || pConfig->repackctrlFile || pConfig->decodestreamoutFile || pConfig->weightsFile))
     {
         msdk_printf(MSDK_STRING("\nWARNING: All file operations would be ignored in performance mode!\n"));
@@ -1150,9 +1155,8 @@ int main(int argc, char *argv[])
 
     msdk_printf(MSDK_STRING("Processing started\n"));
 
-    msdk_tick startTime;
     msdk_tick frequency = msdk_time_get_frequency();
-    startTime = msdk_time_get_tick();
+    msdk_tick startTime = msdk_time_get_tick();
 
     for (;;)
     {

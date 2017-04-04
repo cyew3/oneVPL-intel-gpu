@@ -6041,6 +6041,9 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
     MFX_CHECK_NULL_PTR3(ctrl, surface, bs);
     mfxStatus checkStsWrn = MFX_ERR_NONE, sts = MFX_ERR_NONE;
 
+    mfxExtFeiParam const * feiParam = GetExtBuffer(video);
+    bool single_field_mode = IsOn(feiParam->SingleFieldProcessing);
+
     for (mfxU32 i = 0; i < ctrl->NumExtParam; i++)
     {
         MFX_CHECK_NULL_PTR1(ctrl->ExtParam[i]);
@@ -6058,10 +6061,12 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
                             i,
                             ctrl->ExtParam[i]->BufferId);
 
-        bool buffer_pair_allowed  = IsRunTimeExtBufferPairAllowed(video, ctrl->ExtParam[i]->BufferId);
+        // In single-field mode only one buffer is required for one field encoding
+        bool buffer_pair_allowed = !single_field_mode ? IsRunTimeExtBufferPairAllowed(video, ctrl->ExtParam[i]->BufferId) : false;
 
         // if initialized PicStruct is UNKNOWN, to check runtime PicStruct
-        bool buffer_pair_required = IsRunTimeExtBufferPairRequired(video, ctrl->ExtParam[i]->BufferId);
+        bool buffer_pair_required = !single_field_mode ? IsRunTimeExtBufferPairRequired(video, ctrl->ExtParam[i]->BufferId) : false;
+
         if (buffer_pair_required)
         {
             switch (video.mfx.FrameInfo.PicStruct)
@@ -6096,39 +6101,44 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
 
     mfxU16 PicStruct = (video.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_UNKNOWN) ? video.mfx.FrameInfo.PicStruct : surface->Info.PicStruct;
     mfxU16 NumFields = (PicStruct & MFX_PICSTRUCT_PROGRESSIVE) ? 1 : 2;
-    // FEI frame control buffer is mandatory for encoding
-    mfxExtFeiParam const * feiParam = GetExtBuffer(video);
 
     if (feiParam->Func == MFX_FEI_FUNCTION_ENCODE)
     {
-        for ( mfxU16 fieldId = 0; fieldId < NumFields; fieldId++)
+        for (mfxU16 fieldId = 0; fieldId < NumFields; fieldId++)
         {
-            // FEI frame control buffer is mandatory for encoding, and check it first
+            // In case of single-field processing, only one buffer is attached
+            mfxU32 idxToPickBuffer = single_field_mode ? 0 : fieldId;
+
+            // FEI frame control buffer is mandatory for encoding
             mfxExtFeiEncFrameCtrl* feiEncCtrl =
-                reinterpret_cast<mfxExtFeiEncFrameCtrl*>(MfxHwH264Encode::GetExtBuffer(ctrl->ExtParam, ctrl->NumExtParam, MFX_EXTBUFF_FEI_ENC_CTRL, fieldId));
+                reinterpret_cast<mfxExtFeiEncFrameCtrl*>(MfxHwH264Encode::GetExtBuffer(ctrl->ExtParam, ctrl->NumExtParam, MFX_EXTBUFF_FEI_ENC_CTRL, idxToPickBuffer));
             MFX_CHECK(feiEncCtrl, MFX_ERR_UNDEFINED_BEHAVIOR);
 
             if (feiEncCtrl->MVPredictor)
             {
-                // MV predictor is never used for I frame
-                MFX_CHECK(!(ctrl->FrameType & (!fieldId ? MFX_FRAMETYPE_I : MFX_FRAMETYPE_xI)), MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+                // TODO: check it in single-field
+                if (IsOff(feiParam->SingleFieldProcessing))
+                {
+                    // MV predictor is never used for I frame
+                    MFX_CHECK(!(ctrl->FrameType & (!fieldId ? MFX_FRAMETYPE_I : MFX_FRAMETYPE_xI)), MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+                }
 
                 //mfxExtFeiEncMVPredictors should be attached when MVPredictor is enabled
-                mfxExtBuffer* feiEncMVPredictors = MfxHwH264Encode::GetExtBuffer(ctrl->ExtParam, ctrl->NumExtParam, MFX_EXTBUFF_FEI_ENC_MV_PRED, fieldId);
+                mfxExtBuffer* feiEncMVPredictors = MfxHwH264Encode::GetExtBuffer(ctrl->ExtParam, ctrl->NumExtParam, MFX_EXTBUFF_FEI_ENC_MV_PRED, idxToPickBuffer);
                 MFX_CHECK(feiEncMVPredictors, MFX_ERR_UNDEFINED_BEHAVIOR);
             }
 
             if (feiEncCtrl->PerMBInput)
             {
                 //mfxExtFeiEncMBCtrl should be attached when PerMBInput is enabled
-                mfxExtBuffer* feiEncMBCtrl = MfxHwH264Encode::GetExtBuffer(ctrl->ExtParam, ctrl->NumExtParam, MFX_EXTBUFF_FEI_ENC_MB, fieldId);
+                mfxExtBuffer* feiEncMBCtrl = MfxHwH264Encode::GetExtBuffer(ctrl->ExtParam, ctrl->NumExtParam, MFX_EXTBUFF_FEI_ENC_MB, idxToPickBuffer);
                 MFX_CHECK(feiEncMBCtrl, MFX_ERR_UNDEFINED_BEHAVIOR);
             }
 
             if (feiEncCtrl->PerMBQp)
             {
                 //mfxExtFeiEncQP should be attached when PerMBQp is enabled
-                mfxExtBuffer* feiEncQp = MfxHwH264Encode::GetExtBuffer(ctrl->ExtParam, ctrl->NumExtParam, MFX_EXTBUFF_FEI_ENC_QP, fieldId);
+                mfxExtBuffer* feiEncQp = MfxHwH264Encode::GetExtBuffer(ctrl->ExtParam, ctrl->NumExtParam, MFX_EXTBUFF_FEI_ENC_QP, idxToPickBuffer);
                 MFX_CHECK(feiEncQp, MFX_ERR_UNDEFINED_BEHAVIOR);
             }
         }
@@ -6456,9 +6466,7 @@ mfxStatus MfxHwH264Encode::CheckFEIRunTimeExtBuffersContent(
             break;
 
         default:
-            //unsupported input extbuffer is attached.
-            return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-
+            // All input buffers ids are already checked at CheckRunTimeExtBuffers
             break;
         }
     }

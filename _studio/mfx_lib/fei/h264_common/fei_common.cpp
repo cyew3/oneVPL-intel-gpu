@@ -76,7 +76,17 @@ void MfxH264FEIcommon::ConfigureTaskFEI(
 #endif // MFX_VERSION >= 1023
 
 {
-    bool FrameRepacking = prevTask.m_encOrder != 0xffffffff && task.m_frameOrder == prevTask.m_frameOrder;
+    bool FrameOrSecondFieldRepacking;
+
+    if (prevTask.m_encOrder == 0xffffffff && task.m_frameOrder == 0)
+    {
+        // First frame
+        FrameOrSecondFieldRepacking = !task.m_disableDeblockingIdc[0].empty() && !task.m_disableDeblockingIdc[1].empty();
+    }
+    else
+    {
+        FrameOrSecondFieldRepacking = task.m_frameOrder == prevTask.m_frameOrder;
+    }
 
     mfxExtCodingOption  const & extOpt  = GetExtBufferRef(video);
     mfxExtCodingOption2 const & extOpt2 = GetExtBufferRef(video);
@@ -88,7 +98,7 @@ void MfxH264FEIcommon::ConfigureTaskFEI(
     mfxU8 intraPicFlag = !!(task.GetFrameType() & MFX_FRAMETYPE_I);
     mfxU8 refPicFlag   = !!(task.GetFrameType() & MFX_FRAMETYPE_REF);
 
-    if (!FrameRepacking)
+    if (!FrameOrSecondFieldRepacking)
     {
         mfxU8 prevIdrFrameFlag = !!(prevTask.GetFrameType() & MFX_FRAMETYPE_IDR);
         mfxU8 prevIFrameFlag   = !!(prevTask.GetFrameType() & MFX_FRAMETYPE_I);
@@ -117,7 +127,8 @@ void MfxH264FEIcommon::ConfigureTaskFEI(
         task.m_encOrderIdr   = prevTask.m_encOrderIdr;
         task.m_encOrderI     = prevTask.m_encOrderI;
 
-        task.m_picNum[1] = task.m_picNum[0] = task.m_frameNum = prevTask.m_frameNum;
+        task.m_picNum   = prevTask.m_picNum;
+        task.m_frameNum = prevTask.m_frameNum;
 
         task.m_idrPicId = prevTask.m_idrPicId;
     }
@@ -153,13 +164,26 @@ void MfxH264FEIcommon::ConfigureTaskFEI(
     mfxU16 field_type_mask[2] = { MFX_PICTYPE_FRAME | MFX_PICTYPE_TOPFIELD, MFX_PICTYPE_FRAME | MFX_PICTYPE_BOTTOMFIELD },
         last_frame_ref = 0;
 
-    mfxU32 fieldMaxCount = 1 + task.m_fieldPicFlag;
-    for (mfxU32 field = 0; field < fieldMaxCount; ++field)
+    mfxU32 f_start = 0, fieldCount = task.m_fieldPicFlag;
+
+    if (task.m_singleFieldMode)
     {
-        mfxU32 fieldParity = (video.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_BFF)? (1 - field) : field;
+        fieldCount = f_start = FirstFieldProcessingDone(inParams, task); // 0 or 1
+    }
+
+    for (mfxU32 field = f_start; field <= fieldCount; ++field)
+    {
+        // In case of single-field processing, only one buffer is attached
+        mfxU32 idxToPickBuffer = task.m_singleFieldMode ? 0 : field;
+        mfxU32 fieldParity     = task.m_fid[field];
 
         // Fill Deblocking parameters
-        mfxExtFeiSliceHeader * extFeiSlice = GetExtBufferFEI(inParams, field);
+        mfxExtFeiSliceHeader * extFeiSlice = GetExtBufferFEI(inParams, idxToPickBuffer);
+
+        // Fill Deblocking parameters
+        task.m_disableDeblockingIdc[fieldParity].clear();
+        task.m_sliceAlphaC0OffsetDiv2[fieldParity].clear();
+        task.m_sliceBetaOffsetDiv2[fieldParity].clear();
 
         for (size_t i = 0; i < extFeiSlice->NumSlice; ++i)
         {
@@ -169,7 +193,7 @@ void MfxH264FEIcommon::ConfigureTaskFEI(
         }
 
         // Fill DPB
-        mfxExtFeiPPS * pDataPPS = GetExtBufferFEI(inParams, field);
+        mfxExtFeiPPS * pDataPPS = GetExtBufferFEI(inParams, idxToPickBuffer);
 
         std::vector<mfxFrameSurface1*> dpb_frames;
         dpb_frames.reserve(16);
@@ -266,7 +290,7 @@ void MfxH264FEIcommon::ConfigureTaskFEI(
         task.m_refPicList0Mod[fieldParity] = CreateRefListMod(task.m_dpb[fieldParity], initList0, task.m_list0[fieldParity], task.m_viewIdx, task.m_picNum[fieldParity], true);
         task.m_refPicList1Mod[fieldParity] = CreateRefListMod(task.m_dpb[fieldParity], initList1, task.m_list1[fieldParity], task.m_viewIdx, task.m_picNum[fieldParity], true);
 
-    } // for (mfxU32 field = 0; field < fieldMaxCount; ++field)
+    } // for (mfxU32 field = 0; field <= fieldCount; ++field)
 
     // Update Ref flag
     if (task.m_dpb[sfid].Size())
@@ -314,14 +338,14 @@ void MfxH264FEIcommon::ConfigureTaskFEI(
     }
 
     // Section below configures MMCO
-    for (mfxU32 field = 0; field < fieldMaxCount; ++field)
+    for (mfxU32 field = 0; field <= fieldCount; ++field)
     {
         mfxU32 fieldParity = (video.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_BFF) ? (1 - field) : field;
 
         task.m_decRefPicMrk[fieldParity].Clear();
 
         ArrayDpbFrame & DPB_before = task.m_dpb[fieldParity],
-            DPB_after = (field + 1 == fieldMaxCount) ? task.m_dpbPostEncoding : task.m_dpb[!fieldParity];
+            DPB_after = (field == task.m_fieldPicFlag) ? task.m_dpbPostEncoding : task.m_dpb[!fieldParity];
 
         // Current frame is reference and DPB has no free slots. Find frame to remove with sliding window
         DpbFrame * toRemoveDefault = NULL;
@@ -421,32 +445,48 @@ void MfxH264FEIcommon::ConfigureTaskFEI(
                 }
             }
         }
-    } // for (mfxU32 field = 0; field < fieldMaxCount; ++field)
+    } // for (mfxU32 field = 0; field <= fieldCount; ++field)
 #else
     frameOrder_frameNum[task.m_frameOrder] = task.m_frameNum;
 
-    // Fill Deblocking parameters
-    mfxU32 fieldMaxCount = (video.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) ? 1 : 2;
-    for (mfxU32 field = 0; field < fieldMaxCount; ++field)
+    mfxU32 f_start = 0, fieldCount = task.m_fieldPicFlag;
+
+    if (task.m_singleFieldMode)
     {
+        // Set a field to process
+        fieldCount = f_start = FirstFieldProcessingDone(inParams, task); // 0 or 1
+    }
+
+    if (!task.m_singleFieldMode || !f_start)
+    {
+        for (mfxU32 field = 0; field < 2; ++field)
+        {
+            task.m_disableDeblockingIdc[field].clear();
+            task.m_sliceAlphaC0OffsetDiv2[field].clear();
+            task.m_sliceBetaOffsetDiv2[field].clear();
+        }
+    }
+
+    for (mfxU32 field = f_start; field <= fieldCount; ++field)
+    {
+        // In case of single-field processing, only one buffer is attached
+        mfxU32 idxToPickBuffer = task.m_singleFieldMode ? 0 : field;
+
         mfxU32 fieldParity = (video.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_BFF)? (1 - field) : field;
 
-        mfxExtFeiSliceHeader * extFeiSlice = GetExtBufferFEI(outParams, field);
+        mfxExtFeiSliceHeader * extFeiSlice = GetExtBufferFEI(outParams, idxToPickBuffer);
 
+        // Fill Deblocking parameters
         for (size_t i = 0; i < extFeiSlice->NumSlice; ++i)
         {
-            mfxU8 disableDeblockingIdc   = (mfxU8) extFeiSlice->Slice[i].DisableDeblockingFilterIdc;
-            mfxI8 sliceAlphaC0OffsetDiv2 = (mfxI8) extFeiSlice->Slice[i].SliceAlphaC0OffsetDiv2;
-            mfxI8 sliceBetaOffsetDiv2    = (mfxI8) extFeiSlice->Slice[i].SliceBetaOffsetDiv2;
-
             // Store per-slice values in task
-            task.m_disableDeblockingIdc[fieldParity].push_back(disableDeblockingIdc);
-            task.m_sliceAlphaC0OffsetDiv2[fieldParity].push_back(sliceAlphaC0OffsetDiv2);
-            task.m_sliceBetaOffsetDiv2[fieldParity].push_back(sliceBetaOffsetDiv2);
-        } // for (size_t i = 0; i < GetMaxNumSlices(video); i++)
+            task.m_disableDeblockingIdc[fieldParity].push_back(extFeiSlice->Slice[i].DisableDeblockingFilterIdc);
+            task.m_sliceAlphaC0OffsetDiv2[fieldParity].push_back(extFeiSlice->Slice[i].SliceAlphaC0OffsetDiv2);
+            task.m_sliceBetaOffsetDiv2[fieldParity].push_back(extFeiSlice->Slice[i].SliceBetaOffsetDiv2);
+        } // for (size_t i = 0; i < GetMaxNumSlices(video); ++i)
 
         // Fill DPB
-        mfxExtFeiPPS * pDataPPS = GetExtBufferFEI(outParams, field);
+        mfxExtFeiPPS * pDataPPS = GetExtBufferFEI(outParams, idxToPickBuffer);
 
         std::vector<mfxFrameSurface1*> dpb_frames;
 
@@ -530,9 +570,47 @@ void MfxH264FEIcommon::ConfigureTaskFEI(
         task.m_refPicList0Mod[fieldParity] = MfxHwH264Encode::CreateRefListMod(task.m_dpb[fieldParity], initList0, task.m_list0[fieldParity], task.m_viewIdx, task.m_picNum[fieldParity], true);
         task.m_refPicList1Mod[fieldParity] = MfxHwH264Encode::CreateRefListMod(task.m_dpb[fieldParity], initList1, task.m_list1[fieldParity], task.m_viewIdx, task.m_picNum[fieldParity], true);
 
-    } // for (mfxU32 field = 0; field < fieldMaxCount; ++field)
+    } // for (mfxU32 field = 0; field <= fieldCount; ++field)
 #endif // MFX_VERSION >= 1023
 } // void MfxH264FEIcommon::ConfigureTaskFEI
+
+
+template bool MfxH264FEIcommon::FirstFieldProcessingDone<>(mfxENCInput* inParams, const DdiTask & task);
+template bool MfxH264FEIcommon::FirstFieldProcessingDone<>(mfxPAKInput* inParams, const DdiTask & task);
+
+template <typename T>
+bool MfxH264FEIcommon::FirstFieldProcessingDone(T* inParams, const DdiTask & task)
+{
+#if MFX_VERSION >= 1023
+    mfxExtFeiPPS * pDataPPS = GetExtBufferFEI(inParams, 0);
+
+    if (!pDataPPS)
+    {
+        // In this case absence of PPS will be discovered at parameters check stage
+        return 0;
+    }
+
+    switch (pDataPPS->PictureType)
+    {
+    case MFX_PICTYPE_TOPFIELD:
+        return task.m_fid[1] == 0; // i.e. Bottom Field was already coded and current picstruct is BFF
+        break;
+
+    case MFX_PICTYPE_BOTTOMFIELD:
+        return task.m_fid[1] == 1; // i.e. Top Field was already coded and current picstruct is TFF
+        break;
+
+    case MFX_PICTYPE_FRAME:
+    default:
+        return 0;
+        break;
+    }
+#else
+    // If some values in deblocking parameters present only for one field, current field to process is the second field,
+    // other ways - the first field
+    return task.m_disableDeblockingIdc[0].empty() != task.m_disableDeblockingIdc[1].empty();
+#endif
+} // bool MfxH264FEIcommon::FirstFieldProcessingDone(T* inParams, DdiTask & task)
 
 mfxStatus MfxH264FEIcommon::CheckInitExtBuffers(const MfxVideoParam & owned_video, const mfxVideoParam & passed_video)
 {
@@ -594,8 +672,7 @@ mfxStatus MfxH264FEIcommon::CheckInitExtBuffers(const MfxVideoParam & owned_vide
 
     // mfxExtFeiSliceHeader is useless at init stage for ENC and PAK (unlike the FEI ENCODE)
     const mfxExtFeiSliceHeader * pDataSliceHeader = GetExtBuffer(passed_video);
-    //        Init                     || Reset
-    MFX_CHECK(pDataSliceHeader == NULL || (pDataSliceHeader && pDataSliceHeader->Slice == NULL), MFX_ERR_INVALID_VIDEO_PARAM);
+    MFX_CHECK(pDataSliceHeader == NULL, MFX_ERR_INVALID_VIDEO_PARAM);
 
     return MFX_ERR_NONE;
 }
@@ -633,15 +710,15 @@ bool MfxH264FEIcommon::IsRunTimeOutputExtBufferIdSupported(MfxVideoParam const &
            );
 }
 
-template mfxStatus MfxH264FEIcommon::CheckRuntimeExtBuffers<>(mfxENCInput* input, mfxENCOutput* output, const MfxVideoParam & owned_video);
+template mfxStatus MfxH264FEIcommon::CheckRuntimeExtBuffers<>(mfxENCInput* input, mfxENCOutput* output, const MfxVideoParam & owned_video, const DdiTask & task);
 #if MFX_VERSION >= 1023
-template mfxStatus MfxH264FEIcommon::CheckRuntimeExtBuffers<>(mfxPAKInput* input, mfxPAKOutput* output, const MfxVideoParam & owned_video);
+template mfxStatus MfxH264FEIcommon::CheckRuntimeExtBuffers<>(mfxPAKInput* input, mfxPAKOutput* output, const MfxVideoParam & owned_video, const DdiTask & task);
 #else
-template mfxStatus MfxH264FEIcommon::CheckRuntimeExtBuffers<>(mfxPAKOutput* input, mfxPAKOutput* output, const MfxVideoParam & owned_video);
+template mfxStatus MfxH264FEIcommon::CheckRuntimeExtBuffers<>(mfxPAKOutput* input, mfxPAKOutput* output, const MfxVideoParam & owned_video, const DdiTask & task);
 #endif // MFX_VERSION >= 1023
 
 template <typename T, typename U>
-mfxStatus MfxH264FEIcommon::CheckRuntimeExtBuffers(T* input, U* output, const MfxVideoParam & owned_video)
+mfxStatus MfxH264FEIcommon::CheckRuntimeExtBuffers(T* input, U* output, const MfxVideoParam & owned_video, const DdiTask & task)
 {
 
     MFX_CHECK_NULL_PTR2(input, output);
@@ -662,18 +739,55 @@ mfxStatus MfxH264FEIcommon::CheckRuntimeExtBuffers(T* input, U* output, const Mf
     mfxExtFeiSPS* extFeiSPSinRuntime = GetExtBufferFEI(input, 0);
     MFX_CHECK(!extFeiSPSinRuntime, MFX_ERR_UNDEFINED_BEHAVIOR);
 
+
+    // Check field-based runtime buffers
+    const mfxExtFeiParam* params = GetExtBuffer(owned_video);
+
+    bool bSingleFieldMode = IsOn(params->SingleFieldProcessing);
+
     bool is_progressive = !!(owned_video.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE);
-    mfxU32 fieldMaxCount = is_progressive ? 1 : 2;
-    for (mfxU32 field = 0; field < fieldMaxCount; field++)
+    mfxU32 f_start = 0, fieldCount = is_progressive ? 0 : 1;
+
+    if (bSingleFieldMode)
     {
-        mfxExtFeiPPS* extFeiPPSinRuntime = GetExtBufferFEI(input, field);
+        // Set a field to process
+        mfxExtFeiPPS * pDataPPS = GetExtBufferFEI(input, 0);
+        MFX_CHECK(pDataPPS, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+        mfxU16 firstFieldDone = 0;
+
+        switch (pDataPPS->PictureType)
+        {
+        case MFX_PICTYPE_TOPFIELD:
+            firstFieldDone = !!(owned_video.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_BFF); // i.e. Bottom Field was already coded and current picstruct is BFF
+            break;
+
+        case MFX_PICTYPE_BOTTOMFIELD:
+            firstFieldDone = !!(owned_video.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_TFF); // i.e. Top Field was already coded and current picstruct is TFF
+            break;
+
+        case MFX_PICTYPE_FRAME:
+        default:
+            firstFieldDone = 0;
+            break;
+        }
+
+        fieldCount = f_start = FirstFieldProcessingDone(input, task); // 0 or 1
+    }
+
+    for (mfxU32 field = f_start; field <= fieldCount; ++field)
+    {
+        // In case of single-field processing, only one buffer is attached
+        mfxU32 idxToPickBuffer = bSingleFieldMode ? 0 : field;
+
+        mfxExtFeiPPS* extFeiPPSinRuntime = GetExtBufferFEI(input, idxToPickBuffer);
         MFX_CHECK(extFeiPPSinRuntime, MFX_ERR_UNDEFINED_BEHAVIOR);
 
         // Check PPS parameters and copy
         {
             mfxExtPpsHeader* extPps = GetExtBuffer(owned_video);
 
-            // For now it is dissallowed to change SPS Id and PPS Id parameters
+            // For now it is disallowed to change SPS Id and PPS Id parameters
             MFX_CHECK(extPps->seqParameterSetId == extFeiPPSinRuntime->SPSId, MFX_ERR_UNDEFINED_BEHAVIOR);
             MFX_CHECK(extPps->picParameterSetId == extFeiPPSinRuntime->PPSId, MFX_ERR_UNDEFINED_BEHAVIOR);
 
@@ -688,7 +802,7 @@ mfxStatus MfxH264FEIcommon::CheckRuntimeExtBuffers(T* input, U* output, const Mf
         }
 
         // SliceHeader is required to pass reference lists
-        mfxExtFeiSliceHeader * extFeiSliceInRintime = GetExtBufferFEI(input, field);
+        mfxExtFeiSliceHeader * extFeiSliceInRintime = GetExtBufferFEI(input, idxToPickBuffer);
         MFX_CHECK(extFeiSliceInRintime,                                           MFX_ERR_UNDEFINED_BEHAVIOR);
         MFX_CHECK(extFeiSliceInRintime->Slice,                                    MFX_ERR_UNDEFINED_BEHAVIOR);
         MFX_CHECK(extFeiSliceInRintime->NumSlice,                                 MFX_ERR_UNDEFINED_BEHAVIOR);
@@ -729,17 +843,6 @@ mfxStatus MfxH264FEIcommon::CheckRuntimeExtBuffers(T* input, U* output, const Mf
         MFX_CHECK_STS(sts);
 #endif // MFX_VERSION >= 1023
     }
-
-#if MFX_VERSION >= 1023
-    // Check that DPB_after of first field is equal to DPB_before of second
-    if (fieldMaxCount == 2)
-    {
-        mfxExtFeiPPS *extFeiPPS_f = GetExtBufferFEI(input, 0),
-                     *extFeiPPS_s = GetExtBufferFEI(input, 1);
-
-    }
-#endif
-
     return MFX_ERR_NONE;
 }
 

@@ -64,6 +64,9 @@ namespace MfxH264FEIcommon
         std::map<mfxU32, mfxU32> &      frameOrder_frameNum);
 #endif //MFX_VERSION >= 1023
 
+    template <typename T>
+    bool FirstFieldProcessingDone(T* inParams, const MfxHwH264Encode::DdiTask & task);
+
     static void TEMPORAL_HACK_WITH_DPB(
         MfxHwH264Encode::ArrayDpbFrame & dpb,
         mfxMemId                 const * mids,
@@ -80,7 +83,7 @@ namespace MfxH264FEIcommon
     mfxStatus CheckInitExtBuffers(const MfxHwH264Encode::MfxVideoParam & owned_video, const mfxVideoParam & passed_video);
 
     template <typename T, typename U>
-    mfxStatus CheckRuntimeExtBuffers(T* input, U* output, const MfxHwH264Encode::MfxVideoParam & owned_video);
+    mfxStatus CheckRuntimeExtBuffers(T* input, U* output, const MfxHwH264Encode::MfxVideoParam & owned_video, const MfxHwH264Encode::DdiTask & task);
 
     bool IsRunTimeInputExtBufferIdSupported(const MfxHwH264Encode::MfxVideoParam & owned_video, mfxU32 id);
     bool IsRunTimeOutputExtBufferIdSupported(const MfxHwH264Encode::MfxVideoParam & owned_video, mfxU32 id);

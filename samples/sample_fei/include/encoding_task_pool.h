@@ -34,6 +34,8 @@ public:
     std::list<iTask*> task_pool;
     iTask* last_encoded_task;
     iTask* task_in_process;
+    bool   reorder_frames;
+    mfxU16 NInputLockers;
     mfxU16 GopRefDist;
     mfxU16 GopOptFlag;
     mfxU16 NumRefFrame;
@@ -43,6 +45,8 @@ public:
     explicit iTaskPool(mfxU16 GopRefDist = 1, mfxU16 GopOptFlag = 0, mfxU16 NumRefFrame = 0, mfxU16 limit = 1, mfxU16 log2frameNumMax = 8)
         : last_encoded_task(NULL)
         , task_in_process(NULL)
+        , reorder_frames(true)
+        , NInputLockers(0)
         , GopRefDist(GopRefDist)
         , GopOptFlag(GopOptFlag)
         , NumRefFrame(NumRefFrame)
@@ -53,8 +57,10 @@ public:
     ~iTaskPool() { Clear(); }
 
     /* Update those fields that could be adjusted by MSDK internal checks */
-    void Init(mfxU16 RefDist, mfxU16 OptFlag, mfxU16 NumRef, mfxU16 limit, mfxU16 lg2frameNumMax)
+    void Init(bool EncodedOrder, mfxU16 n_input_lockers, mfxU16 RefDist, mfxU16 OptFlag, mfxU16 NumRef, mfxU16 limit, mfxU16 lg2frameNumMax)
     {
+        reorder_frames  = EncodedOrder;
+        NInputLockers   = n_input_lockers;
         GopRefDist      = RefDist;
         GopOptFlag      = OptFlag;
         NumRefFrame     = NumRef;
@@ -83,16 +89,19 @@ public:
     /* Finish processing of current task and erase the oldest task in pool if refresh_limit is achieved */
     void UpdatePool()
     {
-        if (!task_in_process) return;
+        if (reorder_frames)
+        {
+            if (!task_in_process) return;
 
-        task_in_process->encoded = true;
+            task_in_process->encoded = true;
 
-        if (!last_encoded_task)
-            last_encoded_task = new iTask(iTaskParams());
+            if (!last_encoded_task)
+                last_encoded_task = new iTask(iTaskParams());
 
-        *last_encoded_task = *task_in_process;
+            *last_encoded_task = *task_in_process;
 
-        task_in_process = NULL;
+            task_in_process = NULL;
+        }
 
         if (task_pool.size() >= refresh_limit)
         {
@@ -103,8 +112,24 @@ public:
     /* Find and erase the oldest processed task in pool that is not in DPB of last_encoded_task */
     void RemoveProcessedTask()
     {
-        if (last_encoded_task)
+        if (!reorder_frames)
         {
+            for (std::list<iTask*>::iterator it = task_pool.begin(); it != task_pool.end(); ++it)
+            {
+                // If Encode in Display-Order mode, we can free the task when encoder releases input surface
+                (*it)->encoded = (*it)->ENC_in.InSurface && (*it)->ENC_in.InSurface->Data.Locked == NInputLockers;
+
+                if ((*it)->encoded)
+                {
+                    MSDK_SAFE_DELETE(*it);
+                    task_pool.erase(it);
+                    return;
+                }
+            }
+        }
+        else if (last_encoded_task)
+        {
+            // For all other cases, where manual reordering used
             ArrayDpbFrame & dpb = last_encoded_task->m_dpbPostEncoding;
             std::list<mfxU32> FramesInDPB;
 
@@ -181,6 +206,12 @@ public:
        If task is found this function also fills DPB of this task */
     iTask* GetTaskToEncode(bool buffered_frames_processing)
     {
+        if (!reorder_frames)
+        {
+            return !task_pool.empty() ? task_pool.back() : NULL;
+        }
+
+        // Reorder frame
         iTask* task = GetReorderedTask(buffered_frames_processing);
 
         if (!task) return NULL;

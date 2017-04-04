@@ -941,14 +941,17 @@ void FillPWT(
         mfxU32 numSlice = slice.size();
         mfxU32 idx = 0, ref = 0;
 
+        // In case of single-field processing, only one buffer is attached
+        mfxU32 idxToPickBuffer = task.m_singleFieldMode ? 0 : task.m_fid[fieldId];
+
         mfxExtCodingOptionDDI * extDdi      = GetExtBuffer(par);
         mfxExtCodingOption2   * extOpt2     = GetExtBuffer(par);
-        mfxExtFeiSliceHeader  * extFeiSlice = GetExtBuffer(par, task.m_fid[fieldId]);
+        mfxExtFeiSliceHeader  * extFeiSlice = GetExtBuffer(par, idxToPickBuffer);
         assert(extDdi      != 0);
         assert(extOpt2     != 0);
         assert(extFeiSlice != 0);
 
-        mfxExtPredWeightTable const * pPWT = GetExtBuffer(task.m_ctrl, task.m_fid[fieldId]);
+        mfxExtPredWeightTable const * pPWT = GetExtBuffer(task.m_ctrl, idxToPickBuffer);
         if (!pPWT)
             pPWT = &task.m_pwt[fieldId];
 
@@ -2090,13 +2093,16 @@ mfxStatus VAAPIEncoder::Execute(
         if (MFX_PICSTRUCT_PROGRESSIVE != m_videoParam.mfx.FrameInfo.PicStruct)
             idxRecon *= 2;
 
+        // In case of single-field processing, only one buffer is attached
+        mfxU32 idxToPickBuffer = task.m_singleFieldMode ? 0 : feiFieldId;
+
         //find ext buffers
-        mfxExtFeiEncMBCtrl       * mbctrl      = GetExtBuffer(task.m_ctrl, feiFieldId);
-        mfxExtFeiEncMVPredictors * mvpred      = GetExtBuffer(task.m_ctrl, feiFieldId);
-        mfxExtFeiEncFrameCtrl    * frameCtrl   = GetExtBuffer(task.m_ctrl, feiFieldId);
-        mfxExtFeiEncQP           * mbqp        = GetExtBuffer(task.m_ctrl, feiFieldId);
-        mfxExtFeiRepackCtrl      * rePakCtrl   = GetExtBuffer(task.m_ctrl, feiFieldId);
-        mfxExtFeiSliceHeader     * extFeiSlice = GetExtBuffer(task.m_ctrl, feiFieldId);
+        mfxExtFeiEncMBCtrl       * mbctrl      = GetExtBuffer(task.m_ctrl, idxToPickBuffer);
+        mfxExtFeiEncMVPredictors * mvpred      = GetExtBuffer(task.m_ctrl, idxToPickBuffer);
+        mfxExtFeiEncFrameCtrl    * frameCtrl   = GetExtBuffer(task.m_ctrl, idxToPickBuffer);
+        mfxExtFeiEncQP           * mbqp        = GetExtBuffer(task.m_ctrl, idxToPickBuffer);
+        mfxExtFeiRepackCtrl      * rePakCtrl   = GetExtBuffer(task.m_ctrl, idxToPickBuffer);
+        mfxExtFeiSliceHeader     * extFeiSlice = GetExtBuffer(task.m_ctrl, idxToPickBuffer);
 
         /* Output buffers passed via mfxBitstream structure*/
         mfxExtFeiEncMBStat * mbstat    = NULL;
@@ -2105,9 +2111,9 @@ mfxStatus VAAPIEncoder::Execute(
 
         if (NULL != task.m_bs)
         {
-            mbstat    = GetExtBufferFEI(task.m_bs, feiFieldId);
-            mvout     = GetExtBufferFEI(task.m_bs, feiFieldId);
-            mbcodeout = GetExtBufferFEI(task.m_bs, feiFieldId);
+            mbstat    = GetExtBufferFEI(task.m_bs, idxToPickBuffer);
+            mvout     = GetExtBufferFEI(task.m_bs, idxToPickBuffer);
+            mbcodeout = GetExtBufferFEI(task.m_bs, idxToPickBuffer);
         }
 
         if (frameCtrl->MVPredictor && mvpred != NULL)
@@ -2145,10 +2151,10 @@ mfxStatus VAAPIEncoder::Execute(
             vaSts = vaCreateBuffer(m_vaDisplay,
                     m_vaContextEncode,
                     (VABufferType)VAEncQpBufferType,
-                sizeof(VAEncQpBufferH264)*mbqp->NumMBAlloc,
-                1, //limitation from driver, num elements should be 1
-                mbqp->MB,
-                &vaFeiMBQPId);
+                    sizeof(VAEncQpBufferH264)*mbqp->NumMBAlloc,
+                    1, //limitation from driver, num elements should be 1
+                    mbqp->MB,
+                    &vaFeiMBQPId);
 #else
             vaSts = vaCreateBuffer(m_vaDisplay,
                     m_vaContextEncode,
@@ -2189,7 +2195,7 @@ mfxStatus VAAPIEncoder::Execute(
                             m_vaContextEncode,
                             (VABufferType)VAEncFEIDistortionBufferTypeIntel,
                             vaFeiMBStatBufSize,
-                        1, //limitation from driver, num elements should be 1
+                            1, //limitation from driver, num elements should be 1
                             NULL, //should be mapped later
                             &m_vaFeiMBStatId[idxRecon + feiFieldId]);
                 }
@@ -2225,7 +2231,7 @@ mfxStatus VAAPIEncoder::Execute(
                             m_vaContextEncode,
                             (VABufferType)VAEncFEIMVBufferTypeIntel,
                             vaFeiMVOutBufSize,
-                        1, //limitation from driver, num elements should be 1
+                            1, //limitation from driver, num elements should be 1
                             NULL, //should be mapped later
                             &m_vaFeiMVOutId[idxRecon + feiFieldId]);
                 }
@@ -2234,7 +2240,7 @@ mfxStatus VAAPIEncoder::Execute(
                 m_vaFeiMVOutBufSize[idxRecon + feiFieldId] = vaFeiMVOutBufSize;
             }
 
-            //output buffer for MBCODE (Pak object cmds)
+            //output buffer for MBCODE (PAK object cmds)
             mfxU32 vaFeiMCODEOutBufSize = sizeof(VAEncFEIModeBufferH264Intel) * numMbCodeToAlloc;
             if (VA_INVALID_ID == m_vaFeiMCODEOutId[idxRecon + feiFieldId] ||
                 vaFeiMCODEOutBufSize > m_vaFeiMCODEOutBufSize[idxRecon + feiFieldId])
@@ -2248,7 +2254,7 @@ mfxStatus VAAPIEncoder::Execute(
                             m_vaContextEncode,
                             (VABufferType)VAEncFEIModeBufferTypeIntel,
                             vaFeiMCODEOutBufSize,
-                        1, //limitation from driver, num elements should be 1
+                            1, //limitation from driver, num elements should be 1
                             NULL, //should be mapped later
                             &m_vaFeiMCODEOutId[idxRecon + feiFieldId]);
                 }
@@ -3021,7 +3027,7 @@ mfxStatus VAAPIEncoder::QueryStatus(
 
     // find used bitstream
     VABufferID codedBuffer;
-    if( waitIdxBs < m_bsQueue.size())
+    if(waitIdxBs < m_bsQueue.size())
     {
         codedBuffer = m_bsQueue[waitIdxBs].surface;
     }
@@ -3070,7 +3076,7 @@ mfxStatus VAAPIEncoder::QueryStatus(
         return MFX_ERR_DEVICE_FAILED;
     }
 
-#   endif // #if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
+#endif // #if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
 
 #endif // #if defined(SYNCHRONIZATION_BY_VA_MAP_BUFFER)
 
@@ -3164,11 +3170,14 @@ mfxStatus VAAPIEncoder::QueryStatusFEI(
     mfxExtFeiEncMV     * mvout     = NULL;
     mfxExtFeiPakMBCtrl * mbcodeout = NULL;
 
+    // In case of single-field processing, only one buffer is attached
+    mfxU32 idxToPickBuffer = task.m_singleFieldMode ? 0 : feiFieldId;
+
     if (NULL != task.m_bs)
     {
-        mbstat    = GetExtBufferFEI(task.m_bs, feiFieldId);
-        mvout     = GetExtBufferFEI(task.m_bs, feiFieldId);
-        mbcodeout = GetExtBufferFEI(task.m_bs, feiFieldId);
+        mbstat    = GetExtBufferFEI(task.m_bs, idxToPickBuffer);
+        mvout     = GetExtBufferFEI(task.m_bs, idxToPickBuffer);
+        mbcodeout = GetExtBufferFEI(task.m_bs, idxToPickBuffer);
     }
 
     if (mbstat != NULL && vaFeiMBStatId != VA_INVALID_ID)

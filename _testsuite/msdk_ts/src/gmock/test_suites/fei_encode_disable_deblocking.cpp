@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2016 Intel Corporation.  All rights reserved.
+Copyright (C) 2016-2017 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -207,8 +207,8 @@ public:
             fei_encode_ctrl[field].RepartitionCheckEnable = 0;
             fei_encode_ctrl[field].AdaptiveSearch         = 0;
             fei_encode_ctrl[field].MVPredictor            = 0;
-            fei_encode_ctrl[field].NumMVPredictors[0]        = 0;
-            fei_encode_ctrl[field].PerMBQp                = 26;
+            fei_encode_ctrl[field].NumMVPredictors[0]     = 0;
+            fei_encode_ctrl[field].PerMBQp                = 0;
             fei_encode_ctrl[field].PerMBInput             = 0;
             fei_encode_ctrl[field].MBSizeCtrl             = 0;
             fei_encode_ctrl[field].ColocatedMbDistortion  = 0;
@@ -399,27 +399,27 @@ int TestSuite::RunTest(unsigned int id)
                 fei_encode_ctrl[field].Header.BufferId = MFX_EXTBUFF_FEI_ENC_CTRL;
                 fei_encode_ctrl[field].Header.BufferSz = sizeof(mfxExtFeiEncFrameCtrl);
 
-                fei_encode_ctrl[field].SearchPath = 2;
-                fei_encode_ctrl[field].LenSP = 57;
-                fei_encode_ctrl[field].SubMBPartMask = 0;
-                fei_encode_ctrl[field].MultiPredL0 = 0;
-                fei_encode_ctrl[field].MultiPredL1 = 0;
-                fei_encode_ctrl[field].SubPelMode = 0x03;
-                fei_encode_ctrl[field].InterSAD = 0;
-                fei_encode_ctrl[field].IntraSAD = 0;
-                fei_encode_ctrl[field].IntraPartMask = 0;
-                fei_encode_ctrl[field].DistortionType = 0;
+                fei_encode_ctrl[field].SearchPath             = 2;
+                fei_encode_ctrl[field].LenSP                  = 57;
+                fei_encode_ctrl[field].SubMBPartMask          = 0;
+                fei_encode_ctrl[field].MultiPredL0            = 0;
+                fei_encode_ctrl[field].MultiPredL1            = 0;
+                fei_encode_ctrl[field].SubPelMode             = 0x03;
+                fei_encode_ctrl[field].InterSAD               = 0;
+                fei_encode_ctrl[field].IntraSAD               = 0;
+                fei_encode_ctrl[field].IntraPartMask          = 0;
+                fei_encode_ctrl[field].DistortionType         = 0;
                 fei_encode_ctrl[field].RepartitionCheckEnable = 0;
-                fei_encode_ctrl[field].AdaptiveSearch = 0;
-                fei_encode_ctrl[field].MVPredictor = 0;
-                fei_encode_ctrl[field].NumMVPredictors[0] = 0;
-                fei_encode_ctrl[field].PerMBQp = 26;
-                fei_encode_ctrl[field].PerMBInput = 0;
-                fei_encode_ctrl[field].MBSizeCtrl = 0;
-                fei_encode_ctrl[field].ColocatedMbDistortion = 0;
-                fei_encode_ctrl[field].RefHeight = 32;
-                fei_encode_ctrl[field].RefWidth = 32;
-                fei_encode_ctrl[field].SearchWindow = 5;
+                fei_encode_ctrl[field].AdaptiveSearch         = 0;
+                fei_encode_ctrl[field].MVPredictor            = 0;
+                fei_encode_ctrl[field].NumMVPredictors[0]     = 0;
+                fei_encode_ctrl[field].PerMBQp                = 0;
+                fei_encode_ctrl[field].PerMBInput             = 0;
+                fei_encode_ctrl[field].MBSizeCtrl             = 0;
+                fei_encode_ctrl[field].ColocatedMbDistortion  = 0;
+                fei_encode_ctrl[field].RefHeight              = 32;
+                fei_encode_ctrl[field].RefWidth               = 32;
+                fei_encode_ctrl[field].SearchWindow           = 5;
             }
         }
         for (mfxU32 f = 0; f < num_fields; f++)

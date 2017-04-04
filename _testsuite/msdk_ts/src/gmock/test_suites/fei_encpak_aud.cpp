@@ -176,9 +176,9 @@ int TestSuite::RunTest(unsigned int id)
     encpak.enc.m_pPar->AsyncDepth = 1;
     encpak.enc.m_pPar->IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
 
-    encpak.pak.m_par.mfx = encpak.enc.m_par.mfx;
+    encpak.pak.m_par.mfx        = encpak.enc.m_par.mfx;
     encpak.pak.m_par.AsyncDepth = encpak.enc.m_par.AsyncDepth;
-    encpak.pak.m_par.IOPattern = encpak.enc.m_par.IOPattern;
+    encpak.pak.m_par.IOPattern  = encpak.enc.m_par.IOPattern;
 
     mfxU16 num_fields = encpak.enc.m_par.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
 
@@ -189,12 +189,12 @@ int TestSuite::RunTest(unsigned int id)
 
     encpak.PrepareInitBuffers();
 
-    mfxExtCodingOption* extOpt = new mfxExtCodingOption;
-    memset(extOpt, 0, sizeof(mfxExtCodingOption));
-    extOpt->Header.BufferId = MFX_EXTBUFF_CODING_OPTION;
-    extOpt->Header.BufferSz = sizeof(mfxExtCodingOption);
-    extOpt->AUDelimiter = tc.set_par.aud_delimiter;
-    encpak.pak.initbuf.push_back(&extOpt->Header);
+    mfxExtCodingOption extOpt;
+    memset(&extOpt, 0, sizeof(mfxExtCodingOption));
+    extOpt.Header.BufferId = MFX_EXTBUFF_CODING_OPTION;
+    extOpt.Header.BufferSz = sizeof(mfxExtCodingOption);
+    extOpt.AUDelimiter = tc.set_par.aud_delimiter;
+    encpak.pak.initbuf.push_back(&extOpt.Header);
 
     g_tsStatus.disable(); // it is checked many times inside, resetting expected to err_none
 
@@ -228,12 +228,6 @@ int TestSuite::RunTest(unsigned int id)
 
     g_tsStatus.enable();
     g_tsStatus.check(sts);
-
-    if (extOpt)
-    {
-        delete extOpt;
-        extOpt = NULL;
-    }
 
     TS_END;
     return 0;

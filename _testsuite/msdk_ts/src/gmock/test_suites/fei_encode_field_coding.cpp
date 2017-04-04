@@ -170,7 +170,7 @@ public:
         delete m_reader;
 
         //to free buffers
-        const int numFields = 2;
+        const int numFields = m_single_field_processing ? 1 : 2;
         for (std::vector<InBuf*>::iterator it = m_InBufs.begin(); it != m_InBufs.end(); ++it)
         {
             if ((*it)->ExtParam)
@@ -226,22 +226,28 @@ public:
 
     mfxStatus ProcessSurface(mfxFrameSurface1& s)
     {
-        mfxStatus sts = m_reader->ProcessSurface(s);
+        mfxStatus sts = MFX_ERR_NONE;
+
+        if (m_field_processed == 0)
+        {
+            // Processing of first field
+            sts = m_reader->ProcessSurface(s);
+        }
 
         InBuf *in_buffs = new InBuf;
         memset(in_buffs, 0, sizeof(InBuf));
         unsigned int numExtBuf = 0;
 
-        //calculat numMB
+        //calculate numMB
         mfxU32 widthMB  = ((m_par.mfx.FrameInfo.Width  + 15) & ~15);
         mfxU32 heightMB = ((m_par.mfx.FrameInfo.Height + 15) & ~15);
         mfxU32 numMB = widthMB / 16 * (((heightMB / 16) + 1) / 2);
         //no progressive cases in this test
-        mfxU32 numField = 2;
+        mfxU32 numField = m_single_field_processing ? 1 : 2;
 
-        mfxExtFeiEncFrameCtrl *feiEncCtrl = NULL;
-        mfxExtFeiEncQP *feiEncMbQp = NULL;
-        mfxExtFeiEncMBCtrl *feiEncMbCtl = NULL;
+        mfxExtFeiEncFrameCtrl * feiEncCtrl  = NULL;
+        mfxExtFeiEncQP        * feiEncMbQp  = NULL;
+        mfxExtFeiEncMBCtrl    * feiEncMbCtl = NULL;
         mfxU32 fieldId = 0;
         //assign ExtFeiEncFrameCtrl
         for (fieldId = 0; fieldId < numField; fieldId++) {
@@ -263,7 +269,7 @@ public:
             feiEncCtrl[fieldId].RepartitionCheckEnable = 0;
             feiEncCtrl[fieldId].AdaptiveSearch = 0;
             feiEncCtrl[fieldId].MVPredictor = 0;
-            feiEncCtrl[fieldId].NumMVPredictors[0] = 1;
+            feiEncCtrl[fieldId].NumMVPredictors[0] = 0;
             feiEncCtrl[fieldId].PerMBQp = 0; //non-zero value
             feiEncCtrl[fieldId].PerMBInput = 0;
             feiEncCtrl[fieldId].MBSizeCtrl = 0;
@@ -289,8 +295,11 @@ public:
                 feiEncMbQp[fieldId].MB = new mfxU8[numMB];
 
                 //generate random qp value and assign
-                m_qp[m_fo * 2 + fieldId] = 1 + rand() % 50;
-                memset(feiEncMbQp[fieldId].MB, m_qp[m_fo * 2 + fieldId],
+                // In case of double-field processing m_field_processed == 0,
+                // in case of single-field processing fieldId == 0
+                mfxU32 index = m_fo * 2 + fieldId + m_field_processed;
+                m_qp[index] = 1 + rand() % 50;
+                memset(feiEncMbQp[fieldId].MB, m_qp[index],
                        feiEncMbQp[fieldId].NumMBAlloc * sizeof(feiEncMbQp[fieldId].MB[0]));
 
                 numExtBuf++;
@@ -312,7 +321,9 @@ public:
                 memset(feiEncMbCtl[fieldId].MB, 0, numMB * sizeof(mfxExtFeiEncMBCtrl::mfxExtFeiEncMBCtrlMB));
 
                 //generate random value for mbctrl
-                unsigned int index = m_fo * 2 + fieldId;
+                // In case of double-field processing m_field_processed == 0,
+                // in case of single-field processing fieldId == 0
+                mfxU32 index = m_fo * 2 + fieldId + m_field_processed;
                 //According to Sergey, only one of the three parameters can be set at one time.
                 m_ctl[index] = (mfxU8)(rand() % 3);//possible values: 0, 1, 2;
                 for (mfxU32 i = 0; i < numMB; i++) {
@@ -353,13 +364,22 @@ public:
         }
 
         //assign the ext buffers to m_pCtrl
-        m_pCtrl->ExtParam = in_buffs->ExtParam;
+        m_pCtrl->ExtParam    = in_buffs->ExtParam;
         m_pCtrl->NumExtParam = in_buffs->NumExtParam;
 
         //save in_buffs into m_InBufs
         m_InBufs.push_back(in_buffs);
 
-        s.Data.TimeStamp = s.Data.FrameOrder = m_fo++;
+        if (m_field_processed == 0)
+        {
+            s.Data.TimeStamp = s.Data.FrameOrder = m_fo;
+        }
+
+        if (!m_single_field_processing || m_field_processed == 1)
+        {
+            ++m_fo;
+        }
+
         return sts;
     }
 
@@ -385,7 +405,7 @@ public:
                 mfxU32 i = 0;
                 bool bff = (bool)(m_par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_BFF);
                 //to calculate index to m_qp
-                mfxU32 index = 2 * bs.TimeStamp + (mfxU32)(bff ^ au.IsBottomField());
+                mfxU32 index = 2 * bs.TimeStamp + (mfxU32(bff) + mfxU32(au.IsBottomField())) % 2;
                 mfxU8 expected_qp = m_qp[index];
 
                 g_tsLog << "Frame #"<< bs.TimeStamp <<" QPs:\n";
@@ -539,20 +559,20 @@ const TestSuite::tc_struct TestSuite::test_case[] =
                                      {MFX_PAR, &mfx_GopRefDist, 1}}},
     {/*03*/ MFX_ERR_NONE, CMP_MBQP, {{MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF},
                                      {MFX_PAR, &mfx_GopPicSize, 30},
-                                     {MFX_PAR, &mfx_GopRefDist, 3}}},
+                                     {MFX_PAR, &mfx_GopRefDist, 1}}},
     {/*04*/ MFX_ERR_NONE, CMP_MBQP, {{MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF},
                                      {MFX_PAR, &mfx_GopPicSize, 30},
-                                     {MFX_PAR, &mfx_GopRefDist, 3}}},
+                                     {MFX_PAR, &mfx_GopRefDist, 1}}},
     {/*05*/ MFX_ERR_NONE, CMP_MBCTL, {{MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF},
                                       {MFX_PAR, &mfx_GopRefDist, 1}}},
     {/*06*/ MFX_ERR_NONE, CMP_MBCTL, {{MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF},
                                       {MFX_PAR, &mfx_GopRefDist, 1}}},
     {/*07*/ MFX_ERR_NONE, CMP_MBCTL, {{MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF},
                                       {MFX_PAR, &mfx_GopPicSize, 30},
-                                      {MFX_PAR, &mfx_GopRefDist, 3}}},
+                                      {MFX_PAR, &mfx_GopRefDist, 1}}},
     {/*08*/ MFX_ERR_NONE, CMP_MBCTL, {{MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF},
                                       {MFX_PAR, &mfx_GopPicSize, 30},
-                                      {MFX_PAR, &mfx_GopRefDist, 3}}},
+                                      {MFX_PAR, &mfx_GopRefDist, 1}}},
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);

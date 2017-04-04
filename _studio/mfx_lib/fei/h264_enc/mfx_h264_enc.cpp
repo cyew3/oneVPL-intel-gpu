@@ -92,8 +92,9 @@ mfxStatus VideoENC_ENC::RunFrameVmeENC(mfxENCInput *in, mfxENCOutput *out)
 
     mfxU32 f_start = 0, fieldCount = task.m_fieldPicFlag;
 
-    if (MFX_CODINGOPTION_ON == m_singleFieldProcessingMode)
+    if (m_bSingleFieldMode)
     {
+        // Set a field to process
         fieldCount = f_start = m_firstFieldDone; // 0 or 1
     }
 
@@ -103,11 +104,13 @@ mfxStatus VideoENC_ENC::RunFrameVmeENC(mfxENCInput *in, mfxENCOutput *out)
         MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
     }
 
-    if (MFX_CODINGOPTION_ON == m_singleFieldProcessingMode)
+    // After encoding of field - switch m_firstFieldDone flag between 0 and 1
+    if (m_bSingleFieldMode)
     {
         m_firstFieldDone = 1 - m_firstFieldDone;
     }
 
+    // In case of second field being encoded store this task as previous one for next frame
     if (0 == m_firstFieldDone)
     {
         m_prevTask = task;
@@ -134,8 +137,9 @@ mfxStatus VideoENC_ENC::QueryStatus(DdiTask& task)
 
     mfxU32 f_start = 0, fieldCount = task.m_fieldPicFlag;
 
-    if (MFX_CODINGOPTION_ON == m_singleFieldProcessingMode)
+    if (m_bSingleFieldMode)
     {
+        // This flag was flipped at the end of RunFramePAK, so flip it back to check status of correct field
         f_start = fieldCount = 1 - m_firstFieldDone;
     }
 
@@ -154,7 +158,6 @@ mfxStatus VideoENC_ENC::QueryStatus(DdiTask& task)
 
     UMC::AutomaticUMCMutex guard(m_listMutex);
     //move that task to free tasks from m_incoming
-    //m_incoming
     std::list<DdiTask>::iterator it = std::find(m_incoming.begin(), m_incoming.end(), task);
     MFX_CHECK(it != m_incoming.end(), MFX_ERR_NOT_FOUND);
 
@@ -208,7 +211,7 @@ VideoENC_ENC::VideoENC_ENC(VideoCORE *core,  mfxStatus * sts)
     , m_inputFrameType()
     , m_currentPlatform(MFX_HW_UNKNOWN)
     , m_currentVaType(MFX_HW_NO)
-    , m_singleFieldProcessingMode(0)
+    , m_bSingleFieldMode(false)
     , m_firstFieldDone(0)
 {
     *sts = MFX_ERR_NONE;
@@ -259,8 +262,7 @@ mfxStatus VideoENC_ENC::Init(mfxVideoParam *par)
 
     const mfxExtFeiParam* params = GetExtBuffer(m_video);
 
-    if (MFX_CODINGOPTION_ON == params->SingleFieldProcessing)
-        m_singleFieldProcessingMode = MFX_CODINGOPTION_ON;
+    m_bSingleFieldMode = IsOn(params->SingleFieldProcessing);
 
     //raw surfaces should be created before accel service
     mfxFrameAllocRequest request = { };
@@ -280,7 +282,6 @@ mfxStatus VideoENC_ENC::Init(mfxVideoParam *par)
     request.NumFrameSuggested = request.NumFrameMin;
     request.AllocId           = par->AllocId;
 
-    //sts = m_core->AllocFrames(&request, &m_rec);
     sts = m_rec.Alloc(m_core, request, false, true);
     MFX_CHECK_STS(sts);
 
@@ -456,24 +457,57 @@ mfxStatus VideoENC_ENC::RunFrameVmeENCCheck(
     MFX_CHECK_NULL_PTR2(input, output);
     MFX_CHECK_NULL_PTR2(input->InSurface, output->OutSurface);
 
-    mfxStatus sts = CheckRuntimeExtBuffers(input, output, m_video);
+    // Configure new task
+
+    UMC::AutomaticUMCMutex guard(m_listMutex);
+
+    m_free.front().m_yuv         = input->InSurface;
+    //m_free.front().m_ctrl      = 0;
+
+    m_free.front().m_extFrameTag = input->InSurface->Data.FrameOrder;
+    m_free.front().m_frameOrder  = input->InSurface->Data.FrameOrder;
+    m_free.front().m_timeStamp   = input->InSurface->Data.TimeStamp;
+    m_free.front().m_userData.resize(2);
+    m_free.front().m_userData[0] = input;
+    m_free.front().m_userData[1] = output;
+
+    m_incoming.splice(m_incoming.end(), m_free, m_free.begin());
+    DdiTask& task = m_incoming.front();
+
+    task.m_singleFieldMode = m_bSingleFieldMode;
+    task.m_picStruct       = GetPicStruct(m_video, task);
+    task.m_fieldPicFlag    = task.m_picStruct[ENC] != MFX_PICSTRUCT_PROGRESSIVE;
+    task.m_fid[0]          = task.m_picStruct[ENC] == MFX_PICSTRUCT_FIELD_BFF;
+    task.m_fid[1]          = task.m_fieldPicFlag - task.m_fid[0];
+
+    mfxStatus sts = CheckRuntimeExtBuffers(input, output, m_video, task);
     MFX_CHECK_STS(sts);
 
     // For frame type detection
     PairU8 frame_type = PairU8(mfxU8(MFX_FRAMETYPE_UNKNOWN), mfxU8(MFX_FRAMETYPE_UNKNOWN));
 
-    mfxU32 fieldMaxCount = (m_video.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) ? 1 : 2;
-    for (mfxU32 field = 0; field < fieldMaxCount; ++field)
+    mfxU32 f_start = 0, fieldCount = m_video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? 0 : 1;
+
+    if (m_bSingleFieldMode)
     {
+        // Set a field to process
+        fieldCount = f_start = m_firstFieldDone = FirstFieldProcessingDone(input, task); // 0 or 1
+    }
+
+    for (mfxU32 field = f_start; field <= fieldCount; ++field)
+    {
+        // In case of single-field processing, only one buffer is attached
+        mfxU32 idxToPickBuffer = m_bSingleFieldMode ? 0 : field;
+
         // Additionally check ENC specific requirements for extension buffers
-        mfxExtFeiEncMV     * mvout     = GetExtBufferFEI(output, field);
-        mfxExtFeiPakMBCtrl * mbcodeout = GetExtBufferFEI(output, field);
+        mfxExtFeiEncMV     * mvout     = GetExtBufferFEI(output, idxToPickBuffer);
+        mfxExtFeiPakMBCtrl * mbcodeout = GetExtBufferFEI(output, idxToPickBuffer);
 
         // Driver need both buffer to generate bitstream. If they both are not provided, driver will create them on his side
         MFX_CHECK(!!mvout == !!mbcodeout, MFX_ERR_INVALID_VIDEO_PARAM);
 
         // Check FrameCtrl settings
-        mfxExtFeiEncFrameCtrl * frameCtrl = GetExtBufferFEI(input, field);
+        mfxExtFeiEncFrameCtrl * frameCtrl = GetExtBufferFEI(input, idxToPickBuffer);
         MFX_CHECK(frameCtrl,                    MFX_ERR_UNDEFINED_BEHAVIOR);
         MFX_CHECK(frameCtrl->SearchWindow != 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
@@ -486,7 +520,7 @@ mfxStatus VideoENC_ENC::RunFrameVmeENCCheck(
         }
 
         // Frame type detection
-        mfxExtFeiPPS* extFeiPPSinRuntime = GetExtBufferFEI(input, field);
+        mfxExtFeiPPS* extFeiPPSinRuntime = GetExtBufferFEI(input, idxToPickBuffer);
 
 #if MFX_VERSION >= 1023
         mfxU8 type = extFeiPPSinRuntime->FrameType;
@@ -510,29 +544,15 @@ mfxStatus VideoENC_ENC::RunFrameVmeENCCheck(
         }
 
         frame_type[field] = type;
+
+        // Having both valid frame types simplifies calculations in ConfigureTask
+        if (m_bSingleFieldMode || fieldCount < 1)
+        {
+            frame_type[!field] = m_bSingleFieldMode && field != 0 ? task.m_type[!field] : (frame_type[field] & ~MFX_FRAMETYPE_IDR);
+        }
     }
-    if (!frame_type[1]){ frame_type[1] = frame_type[0] & ~MFX_FRAMETYPE_IDR; }
 
-    UMC::AutomaticUMCMutex guard(m_listMutex);
-
-    m_free.front().m_yuv         = input->InSurface;
-    //m_free.front().m_ctrl      = 0;
-    m_free.front().m_type        = frame_type;
-
-    m_free.front().m_extFrameTag = input->InSurface->Data.FrameOrder;
-    m_free.front().m_frameOrder  = input->InSurface->Data.FrameOrder;
-    m_free.front().m_timeStamp   = input->InSurface->Data.TimeStamp;
-    m_free.front().m_userData.resize(2);
-    m_free.front().m_userData[0] = input;
-    m_free.front().m_userData[1] = output;
-
-    m_incoming.splice(m_incoming.end(), m_free, m_free.begin());
-    DdiTask& task = m_incoming.front();
-
-    task.m_picStruct    = GetPicStruct(m_video, task);
-    task.m_fieldPicFlag = task.m_picStruct[ENC] != MFX_PICSTRUCT_PROGRESSIVE;
-    task.m_fid[0]       = task.m_picStruct[ENC] == MFX_PICSTRUCT_FIELD_BFF;
-    task.m_fid[1]       = task.m_fieldPicFlag - task.m_fid[0];
+    task.m_type = frame_type;
 
     if (task.m_picStruct[ENC] == MFX_PICSTRUCT_FIELD_BFF)
     {
@@ -543,7 +563,6 @@ mfxStatus VideoENC_ENC::RunFrameVmeENCCheck(
     m_core->IncreaseReference(&output->OutSurface->Data);
 
     // Configure current task
-    //if (m_firstFieldDone == 0)
     {
         sts = GetNativeHandleToRawSurface(*m_core, m_video, task, task.m_handleRaw);
         MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));

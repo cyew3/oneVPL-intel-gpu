@@ -23,38 +23,6 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "encoding_task.h"
 #include "predictors_repacking.h"
 
-struct SyncList
-{
-    std::list<std::pair<bufSet*, mfxFrameSurface1*> > sync_list;
-
-    ~SyncList(){ Clear(); }
-
-    void Add(const std::pair<bufSet*, mfxFrameSurface1*> & instance) { sync_list.push_back(instance); }
-
-    void Clear()
-    {
-        for (std::list<std::pair<bufSet*, mfxFrameSurface1*> >::iterator it = sync_list.begin(); it != sync_list.end(); ++it)
-        {
-            if ((*it).first){ (*it).first->vacant = true; }
-        }
-    }
-
-    void Update()
-    {
-        for (std::list<std::pair<bufSet*, mfxFrameSurface1*> >::iterator it = sync_list.begin(); it != sync_list.end();)
-        {
-            if (!(*it).second || (*it).second->Data.Locked == 0)
-            {
-                if ((*it).first){ (*it).first->vacant = true; }
-                it = sync_list.erase(it);
-            }
-            else{
-                ++it;
-            }
-        }
-    }
-};
-
 class FEI_EncodeInterface
 {
 private:
@@ -87,7 +55,6 @@ public:
     FILE* m_pMBcode_out;
 
     std::vector<mfxExtBuffer*> m_InitExtParams;
-    SyncList sync_list;
 
     /* Temporary memory to speed up computations */
     std::vector<mfxI16> m_tmpForMedian;
@@ -149,10 +116,10 @@ public:
                     bool   & bSigleFieldProcessing);
 
     mfxStatus FillParameters();
-    mfxStatus InitFrameParams(mfxFrameSurface1* encodeSurface, PairU8 frameType, iTask* eTask);
+    mfxStatus InitFrameParams(iTask* eTask);
     mfxStatus AllocateSufficientBuffer();
-    mfxStatus EncodeOneFrame(iTask* eTask, mfxFrameSurface1* pSurf, PairU8 runtime_frameType);
-    mfxStatus FlushOutput();
+    mfxStatus EncodeOneFrame(iTask* eTask);
+    mfxStatus FlushOutput(iTask* eTask);
     mfxStatus ResetState();
 };
 #endif // __SAMPLE_FEI_ENCODE_INTERFACE_H__
