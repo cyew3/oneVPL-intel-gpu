@@ -221,21 +221,37 @@ public:
     // methods to be called by application
     virtual mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in, mfxFrameAllocRequest *out);
     static HWtoSYSCopier* CreateGenericPlugin(mfxSession session) {
+        mfxPlugin plg1;
+        mfxStatus sts = MFXVideoUSER_GetPlugin(session, MFX_PLUGINTYPE_VIDEO_GENERAL, &plg1);
+        if (sts == MFX_ERR_NONE)
+        {
+            return (HWtoSYSCopier *)plg1.pthis; // do not need to recreate plugin. For multi renders!
+        }
+
         HWtoSYSCopier *copier = new HWtoSYSCopier(session);
         mfxPlugin plg = make_mfx_plugin_adapter((MFXGenericPlugin*)copier);
-        mfxStatus sts = MFXVideoUSER_Register(session, MFX_PLUGINTYPE_VIDEO_GENERAL, &plg);
+        sts = MFXVideoUSER_Register(session, MFX_PLUGINTYPE_VIDEO_GENERAL, &plg);
         if (MFX_ERR_NONE != sts)
             return 0;
 
+        sts = MFXVideoUSER_GetPlugin(session, MFX_PLUGINTYPE_VIDEO_GENERAL, &plg);
         return copier;
     }
 
-    static void UnloadGenericPlugin(HWtoSYSCopier *copier)
+    static void UnloadGenericPlugin(HWtoSYSCopier *copier, mfxSession session)
     {
         if (!copier)
             return;
+
+        mfxPlugin plg1;
+        mfxStatus sts = MFXVideoUSER_GetPlugin(session, MFX_PLUGINTYPE_VIDEO_GENERAL, &plg1);
+        if (sts != MFX_ERR_NONE)
+        {
+            return ; //  deleted it yet
+        }
+
         mfxPlugin plg = make_mfx_plugin_adapter((MFXGenericPlugin*)copier);
-        MFXVideoUSER_Unregister(copier->GetSession(), MFX_PLUGINTYPE_VIDEO_GENERAL);
+        MFXVideoUSER_Unregister(session, MFX_PLUGINTYPE_VIDEO_GENERAL);
         delete copier;
     }
 
@@ -458,7 +474,7 @@ MFXFileWriteRender::~MFXFileWriteRender()
     }
 #endif
 
-    HWtoSYSCopier::UnloadGenericPlugin(m_copier);
+    HWtoSYSCopier::UnloadGenericPlugin(m_copier, m_pSessionWrapper->GetMFXSession());
 }
 
 MFXFileWriteRender * MFXFileWriteRender::Clone()

@@ -3893,7 +3893,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
     else if ( 0!= (nPattern1 = m_OptProc.Check(argv[0], VM_STRING("--output|-OutputFile|-o( |:multi)"), VM_STRING("output file. If Multiple flag specified new file will be created for each view"), OPT_FILENAME)) ||
               0!= (nPattern  = m_OptProc.Check(argv[0], VM_STRING("-o:(bmp|")VM_STRING(MFX_FOURCC_PATTERN())VM_STRING(")"), VM_STRING("output file in NV12 ,YV12, RGB32 color format. Default is YV12"), OPT_FILENAME)))
     {
-        m_inParams.bMultiFiles = nPattern1 == 3;///-o:multiple is 3rd case
+        m_inParams.bMultiFiles = nPattern1 == 4;///-o:multiple is 4rd case
 
         if (MFX_ERR_NONE != GetMFXFrameInfoFromFOURCCPatternIdx(nPattern - 1, m_inParams.outFrameInfo))
         {
