@@ -1861,7 +1861,8 @@ mfxStatus MfxHwH264Encode::CheckVideoParamFEI(
         return MFX_ERR_NONE;
     }
 
-    bool isPAK = feiParam->Func == MFX_FEI_FUNCTION_PAK;
+    bool isPAK      = feiParam->Func == MFX_FEI_FUNCTION_PAK;
+    bool isENCorPAK = feiParam->Func == MFX_FEI_FUNCTION_ENC || isPAK;
 
     switch (feiParam->Func)
     {
@@ -1881,14 +1882,14 @@ mfxStatus MfxHwH264Encode::CheckVideoParamFEI(
     /* FEI works with CQP only */
     MFX_CHECK(MFX_RATECONTROL_CQP == par.mfx.RateControlMethod, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
-    if (isPAK)
+    if (isENCorPAK)
     {
         MFX_CHECK(par.mfx.EncodedOrder ==                             1, MFX_ERR_INVALID_VIDEO_PARAM);
         MFX_CHECK(par.AsyncDepth       ==                             1, MFX_ERR_INVALID_VIDEO_PARAM);
         MFX_CHECK(par.IOPattern        == MFX_IOPATTERN_IN_VIDEO_MEMORY, MFX_ERR_INVALID_VIDEO_PARAM);
 
         /*FEI PAK SEI option should be OFF*/
-        mfxExtCodingOption  * extCodingOpt  = GetExtBuffer(par);
+        mfxExtCodingOption * extCodingOpt = GetExtBuffer(par);
         if (!CheckTriStateOptionForOff(extCodingOpt->PicTimingSEI)     ||
             !CheckTriStateOptionForOff(extCodingOpt->RecoveryPointSEI) ||
             !CheckTriStateOptionForOff(extCodingOpt->RefPicMarkRep))
