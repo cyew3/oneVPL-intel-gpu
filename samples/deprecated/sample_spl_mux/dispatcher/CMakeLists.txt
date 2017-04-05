@@ -1,10 +1,10 @@
 include_directories (
-  ${CMAKE_SOURCE_DIR}/deprecated/sample_spl_mux/dispatcher/include
-  ${CMAKE_SOURCE_DIR}/deprecated/sample_spl_mux/api
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../api
 )
 
 list(APPEND sources
-  ${CMAKE_SOURCE_DIR}/deprecated/sample_spl_mux/dispatcher/src/spl_mux_dispatcher.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/spl_mux_dispatcher.c
 )
 
 set(defs "${WARNING_FLAGS}")

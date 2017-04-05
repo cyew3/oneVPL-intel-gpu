@@ -14,16 +14,16 @@ if(NOT DEFINED FFMPEG_FOUND)
 endif( )
 
 include_directories(
-  ${CMAKE_SOURCE_DIR}/sample_common/include
-  ${CMAKE_SOURCE_DIR}/deprecated/sample_spl_mux/api
-  ${CMAKE_SOURCE_DIR}/deprecated/sample_spl_mux/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../sample_common/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/api
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 list(APPEND sources
-  ${CMAKE_SOURCE_DIR}/deprecated/sample_spl_mux/src/adts_muxer.c
-  ${CMAKE_SOURCE_DIR}/deprecated/sample_spl_mux/src/ffmpeg_mux_impl.c
-  ${CMAKE_SOURCE_DIR}/deprecated/sample_spl_mux/src/ffmpeg_reader_writer.c
-  ${CMAKE_SOURCE_DIR}/deprecated/sample_spl_mux/src/ffmpeg_splitter_impl.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/adts_muxer.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/ffmpeg_mux_impl.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/ffmpeg_reader_writer.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/ffmpeg_splitter_impl.c
 )
 
 set(DEPENDENCIES libavutil libavcodec libavformat dl)
