@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_vpp.h"
 #include "ts_struct.h"
 #include "mfxstructures.h"
@@ -78,9 +88,15 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*11*/ MFX_ERR_NONE, 1,
             {MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO}
     },
+#if defined (WIN32) || (WIN64)
     {/*12*/ MFX_ERR_NONE, 1,
             { MFX_EXTBUFF_VPP_COLOR_CONVERSION }
     },
+#else
+    {/*12*/ MFX_WRN_FILTER_SKIPPED, 1,
+            { MFX_EXTBUFF_VPP_COLOR_CONVERSION }
+    },
+#endif
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
