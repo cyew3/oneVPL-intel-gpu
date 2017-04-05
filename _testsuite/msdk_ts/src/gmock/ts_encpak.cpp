@@ -104,7 +104,7 @@ mfxStatus PreparePPSBuf(mfxExtFeiPPS* & fpps, const mfxVideoParam& vpar)
     fpps->PictureType = MFX_PICTYPE_FRAME;
 
     fpps->PicInitQP = 26;
-    fpps->NumRefIdxL0Active = 1;
+    fpps->NumRefIdxL0Active = 0;
     fpps->NumRefIdxL1Active = 0;
     for(int i=0; i<16; i++) {
         fpps->DpbBefore[i].Index = 0xffff;
@@ -815,6 +815,12 @@ mfxStatus tsVideoENCPAK::PrepareFrameBuffers (bool secondField)
                 pak.fslice[curField].Slice[s].RefL0[r].PictureType = RefList[list][RefList[list].size()-1 - r].type;
             }
         }
+        enc.fslice[curField].Slice[s].PPSId             = enc.fpps[curField].PPSId;
+        enc.fslice[curField].Slice[s].NumRefIdxL0Active = enc.fpps[curField].NumRefIdxL0Active = RefList[0].size();
+        enc.fslice[curField].Slice[s].NumRefIdxL1Active = enc.fpps[curField].NumRefIdxL1Active = RefList[1].size();
+        pak.fslice[curField].Slice[s].PPSId             = pak.fpps[curField].PPSId;
+        pak.fslice[curField].Slice[s].NumRefIdxL0Active = pak.fpps[curField].NumRefIdxL0Active = RefList[0].size();
+        pak.fslice[curField].Slice[s].NumRefIdxL1Active = pak.fpps[curField].NumRefIdxL1Active = RefList[1].size();
     }
 
     PrepareDpbBuffers(secondField);
