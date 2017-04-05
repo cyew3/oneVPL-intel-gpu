@@ -83,11 +83,11 @@ const TestSuite::tc_struct TestSuite::test_case[] =
  /*03*/ {MFX_ERR_UNDEFINED_BEHAVIOR, NORMAL, {1, 0, 4}},
  /*04*/ {MFX_ERR_INVALID_VIDEO_PARAM, NORMAL, {0, 0, 1}}, // 0 0 1 fails
  /*05*/ {MFX_ERR_NONE, NEVER | ENC, {0, 0, 4}},
- /*06*/ {MFX_ERR_UNDEFINED_BEHAVIOR, FRAME | ENC, {0, 0, 4}},
- /*07*/ {MFX_ERR_UNDEFINED_BEHAVIOR, ALWAYS | ENC, {0, 0, 4}},
+ /*06*/ {MFX_ERR_INVALID_VIDEO_PARAM, FRAME | ENC, {0, 0, 4}},
+ /*07*/ {MFX_ERR_INVALID_VIDEO_PARAM, ALWAYS | ENC, {0, 0, 4}},
  /*08*/ {MFX_ERR_NONE, NEVER | PAK, {0, 0, 4}},
- /*09*/ {MFX_ERR_UNDEFINED_BEHAVIOR, FRAME | PAK, {0, 0, 4}},
- /*10*/ {MFX_ERR_UNDEFINED_BEHAVIOR, ALWAYS | PAK, {0, 0, 4}},
+ /*09*/ {MFX_ERR_INVALID_VIDEO_PARAM, FRAME | PAK, {0, 0, 4}},
+ /*10*/ {MFX_ERR_INVALID_VIDEO_PARAM, ALWAYS | PAK, {0, 0, 4}},
 };
 
 // use 3 times - progressive, tff, bff
@@ -199,6 +199,7 @@ int TestSuite::RunTest(unsigned int id)
     encpak.enc.m_pPar->mfx.GopRefDist  = 1; // to exclude
     encpak.enc.m_pPar->mfx.NumRefFrame = 2; // frame reordering
     encpak.enc.m_pPar->mfx.TargetUsage = 4;
+    encpak.enc.m_pPar->mfx.EncodedOrder = 1;
     encpak.enc.m_pPar->AsyncDepth = 1;
     encpak.enc.m_pPar->IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
 
