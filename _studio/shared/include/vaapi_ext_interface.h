@@ -140,6 +140,11 @@ typedef struct _VAEncMiscParameterPrivate
             unsigned int UltraHMEDisable                    : 1;
             //disable panic mode
             unsigned int PanicModeDisable                   : 1;
+            // Force RepartitionCheck
+            //      0: DEFAULT - follow driver default settings.
+            //      1: FORCE_ENABLE - enable this feature totally for all cases.
+            //      2: FORCE_DISABLE - disable this feature totally for all cases.
+            unsigned int ForceRepartitionCheck              : 2;
         };
         unsigned int encControls;
     };

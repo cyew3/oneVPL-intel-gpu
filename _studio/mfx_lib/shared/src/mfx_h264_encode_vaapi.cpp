@@ -423,6 +423,23 @@ mfxStatus SetPrivateParams(
             private_param->HMEMVCostScalingFactor = extOpt3->MVCostScalingFactor;
 
         private_param->PanicModeDisable = IsOff(extOpt3->BRCPanicMode);
+
+#ifdef MFX_ENABLE_H264_REPARTITION_CHECK
+        switch (extOpt3->RepartitionCheckEnable)
+        {
+        case MFX_CODINGOPTION_ON:
+            private_param->ForceRepartitionCheck = 1;
+            break;
+        case MFX_CODINGOPTION_OFF:
+            private_param->ForceRepartitionCheck = 2;
+            break;
+        case MFX_CODINGOPTION_UNKNOWN:
+        case MFX_CODINGOPTION_ADAPTIVE:
+        default:
+            private_param->ForceRepartitionCheck = 0;
+        }
+#endif // MFX_ENABLE_H264_REPARTITION_CHECK
+
     }
 
     if (extOptFEI)

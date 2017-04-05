@@ -44,6 +44,8 @@
 #define MFX_UNDOCUMENTED_CO_DDI
 //#define MFX_EXTBUFF_FORCE_PRIVATE_DDI_ENABLE
 
+#undef MFX_ENABLE_H264_REPARTITION_CHECK
+
 //#define MFX_ENABLE_SVC_VIDEO_DECODE
 #define MFX_ENABLE_VPP_SVC
 #endif // #ifndef OPEN_SOURCE
@@ -300,8 +302,8 @@
         #ifdef PRE_SI_TARGET_PLATFORM_GEN10
              #undef PRE_SI_TARGET_PLATFORM_GEN10
         #endif
-        #ifdef PRE_SI_TARGET_PLATFORM_GEN10
-             #undef PRE_SI_TARGET_PLATFORM_GEN10
+        #ifdef PRE_SI_TARGET_PLATFORM_GEN11
+             #undef PRE_SI_TARGET_PLATFORM_GEN11
         #endif
     #elif PRE_SI_GEN == 10
         #define PRE_SI_TARGET_PLATFORM_GEN10
