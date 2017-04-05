@@ -315,7 +315,6 @@ public:
                 unsigned int index = m_fo * 2 + fieldId;
                 //According to Sergey, only one of the three parameters can be set at one time.
                 m_ctl[index] = (mfxU8)(rand() % 3);//possible values: 0, 1, 2;
-                printf("m_ctl[%d] = %d\n", index, m_ctl[index]);
                 for (mfxU32 i = 0; i < numMB; i++) {
                     switch (m_ctl[index]) {
                     case SET_FORCE_INTRA:
@@ -418,6 +417,8 @@ public:
                 macro_block *mb = NULL;
                 mfxU32 nCountIntra = 0;
                 mfxU32 nCountSkip = 0;
+                // num mbs of (non-skip && CBP == zero).
+                mfxU32 nZeroCBP = 0;
                 bool b_IField = false;
                 mfxU32 index = 2 * bs.TimeStamp + (mfxU32)(bff ^ au.IsBottomField());
                 mfxU8 ex_ctl = m_ctl[index];
@@ -426,13 +427,19 @@ public:
                     case 0: //p slice
                         while ((mb = au.NextMB())) {
                             if (mb->mb_type > 4) nCountIntra++;
-                            if (mb->mb_skip_flag) nCountSkip++;
+                            if (mb->mb_skip_flag)
+                                nCountSkip++;
+                            else if (mb->coded_block_pattern == 0)
+                                nZeroCBP++;
                         }
                         break;
                     case 1: //b slice
                         while ((mb = au.NextMB())) {
                             if (mb->mb_type > 22) nCountIntra++;
-                            if (mb->mb_skip_flag) nCountSkip++;
+                            if (mb->mb_skip_flag)
+                                nCountSkip++;
+                            else if (mb->coded_block_pattern == 0)
+                                nZeroCBP++;
                         }
                         break;
                     case 2: //i slice
@@ -450,7 +457,8 @@ public:
                         EXPECT_EQ(nCountIntra, numMB);
                         break;
                     case SET_FORCE_SKIP:
-                        EXPECT_EQ(nCountSkip, numMB);
+                        // if ForceToSkip is set to '1', the MB is encoded as skip MB or CBP is set to zero.
+                        EXPECT_EQ(nCountSkip + nZeroCBP, numMB);
                         break;
                     case SET_FORCE_NONSKIP:
                         EXPECT_EQ(nCountSkip, (mfxU32)0);
