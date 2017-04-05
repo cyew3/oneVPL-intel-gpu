@@ -124,6 +124,7 @@ namespace MfxHwVideoProcessing
         mfxU16 IOPattern; //sys/video/opaque memory
         mfxU16 ChromaFormat;
         mfxU32 FourCC;
+        mfxU32 TileId;
     };
 
 #ifndef MFX_CAMERA_FEATURE_DISABLE
@@ -384,7 +385,9 @@ namespace MfxHwVideoProcessing
                ,frcModeOrig(0)
                ,bComposite(false)
                ,dstRects(0)
+               ,bBackgroundRequired(true)
                ,iBackgroundColor(0)
+               ,iTilesNum4Comp(0)
                ,statusReportID(0)
                ,bFieldWeaving(false)
                ,iFieldProcessingMode(0)
@@ -481,7 +484,9 @@ namespace MfxHwVideoProcessing
 
         bool           bComposite;
         std::vector<DstRect> dstRects;
+        bool           bBackgroundRequired;
         mfxU64         iBackgroundColor;
+        mfxU32         iTilesNum4Comp;
 
         mfxU32         statusReportID;
 

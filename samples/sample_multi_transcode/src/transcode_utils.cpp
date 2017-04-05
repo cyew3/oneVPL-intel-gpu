@@ -220,12 +220,14 @@ void TranscodingSample::PrintHelp()
 #endif
     msdk_printf(MSDK_STRING("  -vpp_comp <sourcesNum>      Enables composition from several decoding sessions. Result is written to the file\n"));
     msdk_printf(MSDK_STRING("  -vpp_comp_only <sourcesNum> Enables composition from several decoding sessions. Result is shown on screen\n"));
+    msdk_printf(MSDK_STRING("  -vpp_comp_num_tiles <Num>   Quantity of tiles for composition. if equal to 0 tiles processing ignored\n"));
     msdk_printf(MSDK_STRING("  -vpp_comp_dst_x             X position of this stream in composed stream (should be used in decoder session)\n"));
     msdk_printf(MSDK_STRING("  -vpp_comp_dst_y             Y position of this stream in composed stream (should be used in decoder session)\n"));
     msdk_printf(MSDK_STRING("  -vpp_comp_dst_h             Height of this stream in composed stream (should be used in decoder session)\n"));
     msdk_printf(MSDK_STRING("  -vpp_comp_dst_w             Width of this stream in composed stream (should be used in decoder session)\n"));
-    msdk_printf(MSDK_STRING("  -vpp_comp_src_h             Height of input static frame (should be used together with -i::rgb4_frame)\n"));
-    msdk_printf(MSDK_STRING("  -vpp_comp_src_w             Width of input static frame (should be used together with -i::rgb4_frame)\n"));
+    msdk_printf(MSDK_STRING("  -vpp_comp_src_h             Width of this stream in composed stream (should be used in decoder session)\n"));
+    msdk_printf(MSDK_STRING("  -vpp_comp_src_w             Width of this stream in composed stream (should be used in decoder session)\n"));
+    msdk_printf(MSDK_STRING("  -vpp_comp_tile_id           Tile_id for current channel of composition (should be used in decoder session)\n"));
 #if _MSDK_API >= MSDK_API(1,22)
     msdk_printf(MSDK_STRING("  -dec_postproc               Resize after decoder using direct pipe (should be used in decoder session)\n"));
 #endif //_MSDK_API >= MSDK_API(1,22)
@@ -1280,6 +1282,28 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
             }
             if (InputParams.eModeExt != VppComp)
                 InputParams.eModeExt = VppComp;
+        }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-vpp_comp_num_tiles")))
+        {
+            VAL_CHECK(i + 1 == argc, i, argv[i]);
+            i++;
+            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.numTiles4Comp))
+            {
+                PrintError(MSDK_STRING("-vpp_comp_num_tiles %s is invalid"), argv[i]);
+                return MFX_ERR_UNSUPPORTED;
+            }
+            if (InputParams.eModeExt != VppCompOnly)
+                InputParams.eModeExt = VppCompOnly;
+        }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-vpp_comp_tile_id")))
+        {
+            VAL_CHECK(i + 1 == argc, i, argv[i]);
+            i++;
+            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.nVppCompTileId))
+            {
+                PrintError(MSDK_STRING("-vpp_comp_tile_id %s is invalid"), argv[i]);
+                return MFX_ERR_UNSUPPORTED;
+            }
         }
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-vpp_comp_render")))
         {

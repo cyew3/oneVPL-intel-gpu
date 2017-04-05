@@ -1537,6 +1537,9 @@ mfxStatus VideoVPPHW::GetVideoParams(mfxVideoParam *par) const
             MFX_CHECK_NULL_PTR1(bufComp);
             MFX_CHECK_NULL_PTR1(bufComp->InputStream);
             bufComp->NumInputStream = static_cast<mfxU16>(m_executeParams.dstRects.size());
+#if MFX_VERSION > 1023
+            bufComp->NumTiles = static_cast<mfxU16>(m_executeParams.iTilesNum4Comp);
+#endif
             for (size_t k = 0; k < m_executeParams.dstRects.size(); k++)
             {
                 MFX_CHECK_NULL_PTR1(bufComp->InputStream);
@@ -1544,6 +1547,9 @@ mfxStatus VideoVPPHW::GetVideoParams(mfxVideoParam *par) const
                 bufComp->InputStream[k].DstY = m_executeParams.dstRects[k].DstY;
                 bufComp->InputStream[k].DstW = m_executeParams.dstRects[k].DstW;
                 bufComp->InputStream[k].DstH = m_executeParams.dstRects[k].DstH;
+#if MFX_VERSION > 1023
+                bufComp->InputStream[k].TileId = (mfxU16)m_executeParams.dstRects[k].TileId;
+#endif
                 bufComp->InputStream[k].GlobalAlpha       = m_executeParams.dstRects[k].GlobalAlpha;
                 bufComp->InputStream[k].GlobalAlphaEnable = m_executeParams.dstRects[k].GlobalAlphaEnable;
                 bufComp->InputStream[k].LumaKeyEnable = m_executeParams.dstRects[k].LumaKeyEnable;
@@ -3674,6 +3680,90 @@ mfxI32 GetDeinterlaceMode( const mfxVideoParam& videoParam, const mfxVppCaps& ca
     return deinterlacingMode;
 }
 
+/* functions to detect: does required to set background in composition or not */
+template <class T> inline T max_local1(const T &x, const T &y) {return (((x) > (y)) ? (x) : (y)); }
+template <class T> inline T min_local1(const T &x, const T &y) {return (((x) < (y)) ? (x) : (y)); }
+template <class T> inline T mid(const T &x, const T &y, const T &z) {return (min_local1(max_local1((x), (y)), (z))); }
+
+template <class T> class cRect {
+public:
+    T m_x1, m_y1;
+    T m_x2, m_y2;
+    int     m_frag_lvl;
+    int     m_surf_idx;
+    int     reserved[2];
+public:
+    cRect(): m_x1(0), m_y1(0), m_x2(0), m_y2(0), m_frag_lvl(1), m_surf_idx(-1) {};
+    cRect(T x1, T y1, T x2, T y2, int fragl, int s_id): m_x1(x1), m_y1(y1), m_x2(x2), m_y2(y2), m_frag_lvl(fragl), m_surf_idx(s_id) {};
+
+    inline bool overlap(cRect &B) const {
+        return !((m_x2 <= B.m_x1) || (m_x1 >= B.m_x2) || (m_y2 <= B.m_y1) || (m_y1 >= B.m_y2) );
+    };
+    inline T area(void) const { return (m_x2-m_x1) * (m_y2-m_y1); };
+};
+
+template <class T> void fragment(const cRect<T> a, const cRect<T> &b, std::vector< cRect<T> > &stack) {
+    T   xa = mid(a.m_x1, b.m_x1, a.m_x2);
+    T   xb = mid(a.m_x1, b.m_x2, a.m_x2);
+    T   ya = mid(a.m_y1, b.m_y1, a.m_y2);
+    T   yb = mid(a.m_y1, b.m_y2, a.m_y2);
+    int nidx = a.m_frag_lvl + 1;
+    int s_id = a.m_surf_idx;
+
+    if(a.m_x2 != xb)
+        stack.push_back(cRect<T>(xb, ya, a.m_x2, yb, nidx, s_id));
+
+    if(a.m_x1 != xa)
+        stack.push_back(cRect<T>(a.m_x1, ya, xa, yb, nidx, s_id));
+
+    if(a.m_y2 != yb)
+        stack.push_back(cRect<T>(a.m_x1, yb, a.m_x2, a.m_y2, nidx, s_id));
+
+    if(a.m_y1 != ya)
+        stack.push_back(cRect<T>(a.m_x1, a.m_y1, a.m_x2, ya, nidx, s_id));
+}
+
+template <class T> void add_unique_fragments(const cRect<T> &r, std::vector< cRect<T> > &fragments)
+{
+    std::vector< cRect<T> > stack;
+    int frag_cnt = (int)fragments.size();
+
+    stack.reserve(128);
+    stack.push_back(r);
+
+    while(!stack.empty()) {
+        cRect<T> &cr = stack.back();
+        const cRect<T> &cf = fragments[cr.m_frag_lvl];
+
+        if(cr.m_frag_lvl == frag_cnt) {
+            stack.pop_back();
+            fragments.push_back(cr);
+        } else if(cf.overlap(cr)) {
+            stack.pop_back();
+            fragment(cr, cf, stack);
+        } else {
+            cr.m_frag_lvl++;
+        }
+    }
+}
+
+template <class T> T get_total_area(std::vector< cRect<T> > &rects) {
+    std::vector< cRect<T> > fragments;
+    size_t                     i;
+
+    fragments.reserve(4*rects.size());
+    fragments.push_back(rects[0]);
+
+    for (i = 1; i < rects.size(); i++)
+        add_unique_fragments(rects[i], fragments);
+
+    T area = 0;
+    for (i = 0; i < fragments.size(); i++)
+        area += fragments[i].area();
+
+    return area;
+}
+
 //---------------------------------------------------------
 // Do internal configuration
 //---------------------------------------------------------
@@ -4262,6 +4352,10 @@ mfxStatus ConfigureExecuteParams(
                             executeParams.dstRects.clear();
                             executeParams.dstRects.resize(StreamCount);
                         }
+#if MFX_VERSION > 1023
+                        executeParams.iTilesNum4Comp = extComp->NumTiles;
+#endif
+
                         for (mfxU32 cnt = 0; cnt < StreamCount; ++cnt)
                         {
                             DstRect rec = {0};
@@ -4269,6 +4363,9 @@ mfxStatus ConfigureExecuteParams(
                             rec.DstY = extComp->InputStream[cnt].DstY;
                             rec.DstW = extComp->InputStream[cnt].DstW;
                             rec.DstH = extComp->InputStream[cnt].DstH;
+#if MFX_VERSION > 1023
+                            rec.TileId = extComp->InputStream[cnt].TileId;
+#endif
                             if ((videoParam.vpp.Out.Width < (rec.DstX + rec.DstW)) || (videoParam.vpp.Out.Height < (rec.DstY + rec.DstH)))
                                 return MFX_ERR_INVALID_VIDEO_PARAM; // sub-stream is out of range
                             if (extComp->InputStream[cnt].GlobalAlphaEnable != 0)
@@ -4334,6 +4431,32 @@ mfxStatus ConfigureExecuteParams(
                 config.m_extConfig.customRateData.outputIndexCountPerCycle  = 1;
 
                 executeParams.bComposite = true;
+
+                /**/
+                mfxU32 tCropW = videoParam.vpp.Out.CropW;
+                mfxU32 tCropH = videoParam.vpp.Out.CropH;
+                mfxU32 refCount = config.m_extConfig.customRateData.fwdRefCount;
+                executeParams.bBackgroundRequired = true; /* by default background required */
+                {
+                    cRect<mfxU32> t_rect;
+                    std::vector< cRect<mfxU32> > rects;
+                    rects.reserve(refCount);
+
+                    for(mfxU32 i = 0; i < refCount+1; i++)
+                    {
+                            mfxI32 x1 = mid((mfxU32)0, executeParams.dstRects[i].DstX, tCropW);
+                            mfxI32 y1 = mid((mfxU32)0, executeParams.dstRects[i].DstY, tCropH);
+                            mfxI32 x2 = mid((mfxU32)0, executeParams.dstRects[i].DstX + executeParams.dstRects[i].DstW, tCropW);
+                            mfxI32 y2 = mid((mfxU32)0, executeParams.dstRects[i].DstY + executeParams.dstRects[i].DstH, tCropW);
+
+                            t_rect = cRect<mfxU32>(x1, y1, x2, y2, 0, i);
+                            if (t_rect.area() > 0)
+                                    rects.push_back(t_rect);
+                    }
+
+                    if(get_total_area(rects) == tCropW*tCropH)
+                        executeParams.bBackgroundRequired = false;
+                }
 
                 break;
             }

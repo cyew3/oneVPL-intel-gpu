@@ -62,7 +62,7 @@ namespace MfxHwVideoProcessing
 
         virtual mfxStatus Execute_Composition(mfxExecuteParams *pParams);
 
-        virtual mfxStatus Execute_Composition_VideoWall(mfxExecuteParams *pParams);
+        virtual mfxStatus Execute_Composition_TiledVideoWall(mfxExecuteParams *pParams);
 
         virtual mfxStatus Execute_FakeOutput(mfxExecuteParams *pParams);
 
@@ -83,30 +83,15 @@ namespace MfxHwVideoProcessing
             {};
         } compStreamElem;
 
-        /* Small structure to keep video wall settings. */
-        struct _videoWallPars
-        {
-            /* Width of the single stream in video wall.
-             * All streams must have the same width */
-            mfxU16 elemWidth;
-            /* Height of the single stream in video wall.
-             * All streams must have the same width */
-            mfxU16 elemHeight;
-            /* Number of the streams on X-axis */
-            mfxU16 numX;
-            /* Number of the streams on Y-axis */
-            mfxU16 numY;
-
-            /* Number of tiles needed. Each tile takes 8 streams at maximum
-             * That's current driver limitation */
-            mfxU16 tiles;
-            std::map<mfxU16, compStreamElem> layout;
-        } m_videoWallParams;
+        typedef struct vppTileVW{
+            mfxU32 numChannels;
+            VARectangle targerRect;
+            mfxU8 channelIds[8];
+        } m_tiledVideoWallParams;
 
         BOOL    isVideoWall(mfxExecuteParams *pParams);
 
         BOOL m_bRunning;
-        BOOL m_bVideoWallMode;
 
         VideoCORE* m_core;
 

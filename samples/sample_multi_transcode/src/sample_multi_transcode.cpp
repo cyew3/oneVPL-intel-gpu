@@ -220,10 +220,11 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
     {
         /* Save params for VPP composition */
         sVppCompDstRect tempDstRect;
-        tempDstRect.DstX = m_InputParamsArray[jj].nVppCompDstX;
-        tempDstRect.DstY = m_InputParamsArray[jj].nVppCompDstY;
-        tempDstRect.DstW = m_InputParamsArray[jj].nVppCompDstW;
-        tempDstRect.DstH = m_InputParamsArray[jj].nVppCompDstH;
+        tempDstRect.DstX   = m_InputParamsArray[jj].nVppCompDstX;
+        tempDstRect.DstY   = m_InputParamsArray[jj].nVppCompDstY;
+        tempDstRect.DstW   = m_InputParamsArray[jj].nVppCompDstW;
+        tempDstRect.DstH   = m_InputParamsArray[jj].nVppCompDstH;
+        tempDstRect.TileId = m_InputParamsArray[jj].nVppCompTileId;
         m_VppDstRects.push_back(tempDstRect);
     }
 

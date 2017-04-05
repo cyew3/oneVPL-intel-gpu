@@ -2507,6 +2507,10 @@ mfxStatus CTranscodingPipeline::AddLaStreams(mfxU16 width, mfxU16 height)
             break;
         }
 
+#if _MSDK_API > MSDK_API(1,23)
+        m_VppCompParams.NumTiles = pInParams->numTiles4Comp;
+#endif
+
         MSDK_CHECK_POINTER(pInParams->pVppCompDstRects,MFX_ERR_NULL_PTR);
         for (mfxU32 i = 0; i < pInParams->numSurf4Comp; i++)
         {
@@ -2514,6 +2518,9 @@ mfxStatus CTranscodingPipeline::AddLaStreams(mfxU16 width, mfxU16 height)
             m_VppCompParams.InputStream[i].DstY = pInParams->pVppCompDstRects[i].DstY;
             m_VppCompParams.InputStream[i].DstW = pInParams->pVppCompDstRects[i].DstW;
             m_VppCompParams.InputStream[i].DstH = pInParams->pVppCompDstRects[i].DstH;
+#if _MSDK_API > MSDK_API(1,23)
+            m_VppCompParams.InputStream[i].TileId = pInParams->pVppCompDstRects[i].TileId;
+#endif
             m_VppCompParams.InputStream[i].GlobalAlpha = 0;
             m_VppCompParams.InputStream[i].GlobalAlphaEnable = 0;
             m_VppCompParams.InputStream[i].PixelAlphaEnable = 0;
