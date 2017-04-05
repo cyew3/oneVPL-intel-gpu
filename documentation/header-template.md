@@ -1,7 +1,7 @@
 ![](./pic/intel_logo.png)
 <br><br><br>
 #**Title**
-API Version 1.23
+API Version 1.24
 
 <div style="page-break-before:always" />
 
