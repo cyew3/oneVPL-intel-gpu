@@ -101,6 +101,8 @@ private:
     FeedbackStorage                             m_feedbackUpdate;
     CachedFeedback                              m_feedbackCached;
 
+    std::vector<ENCODE_RECT> m_dirtyRects;
+
     template <class T> struct SizeOf { enum { value = sizeof(T) }; };
     template<> struct SizeOf <void> { enum { value = 0 }; };
 

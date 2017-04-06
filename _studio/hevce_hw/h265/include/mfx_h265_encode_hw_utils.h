@@ -181,7 +181,8 @@ enum
     MAX_SLICES              = 200,
     DEFAULT_LTR_INTERVAL    = 16,
 
-    MAX_NUM_ROI             = 8
+    MAX_NUM_ROI             = 8,
+    MAX_NUM_DIRTY_RECT      = 64
 };
 
 #if DEBUG_REC_FRAMES_INFO
@@ -378,6 +379,11 @@ typedef struct _Task : DpbFrame
     mfxU16        m_roiMode;    // BRC only
     mfxU16        m_numRoi;
 
+#ifdef MFX_ENABLE_HEVCE_DIRTY_RECT
+    RectData      m_dirtyRect[MAX_NUM_DIRTY_RECT];
+    mfxU16        m_numDirtyRect;
+#endif  // MFX_ENABLE_HEVCE_DIRTY_RECT
+
     mfxU16        m_SkipMode;
 
 }Task;
@@ -442,7 +448,8 @@ namespace ExtBuffer
 #endif
          MFX_EXTBUFF_ENCODED_SLICES_INFO,
          MFX_EXTBUFF_MBQP,
-         MFX_EXTBUFF_ENCODER_ROI
+         MFX_EXTBUFF_ENCODER_ROI,
+         MFX_EXTBUFF_DIRTY_RECTANGLES
     };
 
     template<class T> struct ExtBufferMap {};
@@ -479,6 +486,7 @@ namespace ExtBuffer
 #endif
         EXTBUF(mfxExtEncodedSlicesInfo,     MFX_EXTBUFF_ENCODED_SLICES_INFO);
         EXTBUF(mfxExtEncoderROI,            MFX_EXTBUFF_ENCODER_ROI);
+        EXTBUF(mfxExtDirtyRect,             MFX_EXTBUFF_DIRTY_RECTANGLES);
 #if !defined(MFX_EXT_BRC_DISABLE)
         EXTBUF(mfxExtBRC,                   MFX_EXTBUFF_BRC);
 #endif
@@ -787,6 +795,9 @@ public:
         mfxU32 NumLCU;
     };
     std::vector<SliceInfo> m_slice;
+#ifdef MFX_ENABLE_HEVCE_DIRTY_RECT
+    ENCODE_RECT m_dirtyRects[MAX_NUM_DIRTY_RECT];
+#endif
 
     struct
     {
@@ -810,6 +821,7 @@ public:
 #endif
         mfxExtEncodedSlicesInfo     SliceInfo;
         mfxExtEncoderROI            ROI;
+        mfxExtDirtyRect             DirtyRect;
         mfxExtBuffer *              m_extParam[SIZE_OF_ARRAY(ExtBuffer::allowed_buffers)];
     } m_ext;
 
@@ -1084,6 +1096,10 @@ mfxStatus CheckAndFixRoi(
     MfxVideoParam const & par,
     ENCODE_CAPS_HEVC const & caps,
     mfxExtEncoderROI * ROI);
+
+mfxStatus CheckAndFixDirtyRect(
+    ENCODE_CAPS_HEVC const & caps,
+    mfxExtDirtyRect * DirtyRect);
 
 #if DEBUG_REC_FRAMES_INFO
     inline vm_file * OpenFile(vm_char const * name, vm_char const * mode)

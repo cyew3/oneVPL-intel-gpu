@@ -111,6 +111,8 @@ private:
     FeedbackStorage                             m_feedbackUpdate;
     CachedFeedback                              m_feedbackCached;
 
+    std::vector<ENCODE_RECT>                    m_dirtyRects;
+
     HRESULT DecoderExtension(D3D11_VIDEO_DECODER_EXTENSION const & ext);
 };
 

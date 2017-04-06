@@ -882,6 +882,41 @@ mfxStatus CheckAndFixRoi(MfxVideoParam const & par, ENCODE_CAPS_HEVC const & cap
 
 #endif // MFX_ENABLE_HEVCE_ROI
 
+#ifdef MFX_ENABLE_HEVCE_DIRTY_RECT
+mfxStatus CheckAndFixDirtyRect(ENCODE_CAPS_HEVC const & caps, mfxExtDirtyRect *DirtyRect)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+    mfxU32 changed = 0, invalid = 0;
+
+    invalid += (caps.DirtyRectSupport == 0);
+
+#if (HEVCE_DDI_VERSION >= 967)
+    changed += CheckMax(DirtyRect->NumRect, caps.MaxNumOfDirtyRect);
+#else
+    changed += CheckMax(DirtyRect->NumRect, MAX_NUM_DIRTY_RECT);
+#endif  // (HEVCE_DDI_VERSION >= 967)
+
+    for (mfxU16 i = 0; i < DirtyRect->NumRect; i++)
+    {
+        // check that rectangle dimensions don't conflict with each other and don't exceed frame size
+        RectData *rect = (RectData *)&(DirtyRect->Rect[i]);
+
+        invalid += (rect->Left > rect->Right);
+        invalid += (rect->Top > rect->Bottom);
+
+        // Driver trims rects itself
+    }
+
+    if (changed)
+        sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+    if (invalid)
+        sts = MFX_ERR_INVALID_VIDEO_PARAM;
+
+    return sts;
+}
+
+#endif // MFX_ENABLE_HEVCE_DIRTY_RECT
+
 const mfxU16 AVBR_ACCURACY_MIN = 1;
 const mfxU16 AVBR_ACCURACY_MAX = 65535;
 
@@ -1274,6 +1309,9 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 #ifdef MFX_ENABLE_HEVCE_ROI
     mfxExtEncoderROI* ROI = &par.m_ext.ROI;
 #endif // MFX_ENABLE_HEVCE_ROI
+#ifdef MFX_ENABLE_HEVCE_DIRTY_RECT
+    mfxExtDirtyRect* DirtyRect = &par.m_ext.DirtyRect;
+#endif // MFX_ENABLE_HEVCE_DIRTY_RECT
 
     changed += CheckTriStateOption(par.mfx.LowPower);
 
@@ -2007,6 +2045,19 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         }
     }
 #endif // MFX_ENABLE_HEVCE_ROI
+
+#ifdef MFX_ENABLE_HEVCE_DIRTY_RECT
+    if (DirtyRect->NumRect) {
+        sts = CheckAndFixDirtyRect(caps, DirtyRect);
+        if (sts == MFX_ERR_INVALID_VIDEO_PARAM) {
+            invalid++;
+        }
+        else if (sts != MFX_ERR_NONE) {
+            if (bInit) invalid++;
+            else changed++;
+        }
+    }
+#endif // MFX_ENABLE_HEVCE_DIRTY_RECT
 
     if (CO3.EnableMBQP !=0)
     {

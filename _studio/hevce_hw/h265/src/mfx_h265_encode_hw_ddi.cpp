@@ -811,10 +811,10 @@ void FillPpsBuffer(
         mfxU32 blkSize = 1 << (caps.BlockSize + 3);
         for (mfxU16 i = 0; i < pps.NumROI; i ++)
         {   // trimming should be done by driver
-            pps.ROI[i].Roi.Left = (mfxU16)CeilDiv((par.m_ext.ROI.ROI[i].Left), blkSize);
-            pps.ROI[i].Roi.Top = (mfxU16)CeilDiv((par.m_ext.ROI.ROI[i].Top), blkSize);
-            pps.ROI[i].Roi.Right = (mfxU16)CeilDiv((par.m_ext.ROI.ROI[i].Right), blkSize);
-            pps.ROI[i].Roi.Bottom = (mfxU16)CeilDiv((par.m_ext.ROI.ROI[i].Bottom), blkSize);
+            pps.ROI[i].Roi.Left = (mfxU16)(par.m_ext.ROI.ROI[i].Left / blkSize);
+            pps.ROI[i].Roi.Top = (mfxU16)(par.m_ext.ROI.ROI[i].Top / blkSize);
+            pps.ROI[i].Roi.Right = (mfxU16)(par.m_ext.ROI.ROI[i].Right / blkSize);
+            pps.ROI[i].Roi.Bottom = (mfxU16)(par.m_ext.ROI.ROI[i].Bottom / blkSize);
             pps.ROI[i].PriorityLevelOrDQp = (mfxU8)par.m_ext.ROI.ROI[i].Priority;
         }
         pps.MaxDeltaQp = 51;    // is used for BRC only
@@ -836,7 +836,8 @@ void FillPpsBuffer(
 void FillPpsBuffer(
     Task const & task,
     ENCODE_CAPS_HEVC const & caps,
-    ENCODE_SET_PICTURE_PARAMETERS_HEVC & pps)
+    ENCODE_SET_PICTURE_PARAMETERS_HEVC & pps,
+    std::vector<ENCODE_RECT> & dirtyRects)
 {
     pps.CurrOriginalPic.Index7Bits      = task.m_idxRec;
     pps.CurrOriginalPic.AssociatedFlag  = !!(task.m_frameType & MFX_FRAMETYPE_REF);
@@ -858,15 +859,13 @@ void FillPpsBuffer(
 
     // ROI
     pps.NumROI = (mfxU8)task.m_numRoi;
-    if (pps.NumROI)
-    {
+    if (pps.NumROI) {
         mfxU32 blkSize = 1 << (caps.BlockSize + 3);
-        for (mfxU16 i = 0; i < task.m_numRoi; i++)
-        {   // trimming should be done by driver
-            pps.ROI[i].Roi.Left = (mfxU16)CeilDiv((task.m_roi[i].Left), blkSize);
-            pps.ROI[i].Roi.Top = (mfxU16)CeilDiv((task.m_roi[i].Top), blkSize);
-            pps.ROI[i].Roi.Right = (mfxU16)CeilDiv((task.m_roi[i].Right), blkSize);
-            pps.ROI[i].Roi.Bottom = (mfxU16)CeilDiv((task.m_roi[i].Bottom), blkSize);
+        for (mfxU16 i = 0; i < task.m_numRoi; i++) {
+            pps.ROI[i].Roi.Left = (mfxU16)(task.m_roi[i].Left / blkSize);
+            pps.ROI[i].Roi.Top = (mfxU16)(task.m_roi[i].Top / blkSize);
+            pps.ROI[i].Roi.Right = (mfxU16)(task.m_roi[i].Right / blkSize);
+            pps.ROI[i].Roi.Bottom = (mfxU16)(task.m_roi[i].Bottom / blkSize);
             pps.ROI[i].PriorityLevelOrDQp = (mfxU8)task.m_roi[i].Priority;
         }
         
@@ -880,6 +879,28 @@ void FillPpsBuffer(
     // pps.NumDeltaQpForNonRectROI    // total number of different delta QPs for non-rect ROI ( + the same for rect ROI should not exceed MaxNumDeltaQP in caps
     // pps.NonRectROIDeltaQpList[0..pps.NumDeltaQpForNonRectROI-1] // delta QPs for non-rect ROI
 #endif
+
+#ifdef MFX_ENABLE_HEVCE_DIRTY_RECT
+    // DirtyRect
+    pps.NumDirtyRects = task.m_numDirtyRect;
+    if (task.m_numDirtyRect) {
+        dirtyRects.resize(task.m_numDirtyRect);
+        mfxU32 blkSize = 1 << (caps.BlockSize + 3);
+        for (mfxU16 i = 0; i < task.m_numDirtyRect; i++) {
+            dirtyRects[i].Left = (mfxU16)(task.m_dirtyRect[i].Left / blkSize);
+            dirtyRects[i].Top = (mfxU16)(task.m_dirtyRect[i].Top / blkSize);
+            dirtyRects[i].Right = (mfxU16)(task.m_dirtyRect[i].Right / blkSize);
+            dirtyRects[i].Bottom = (mfxU16)(task.m_dirtyRect[i].Bottom / blkSize);
+        }
+        pps.pDirtyRect = &(dirtyRects[0]);
+    } else {
+        pps.pDirtyRect = 0;
+    }
+#else
+    dirtyRects;
+    pps.NumDirtyRects = 0;
+    pps.pDirtyRect = 0;
+#endif  // MFX_ENABLE_HEVCE_DIRTY_RECT
 
     pps.CodingType      = task.m_codingType;
     pps.CurrPicOrderCnt = task.m_poc;

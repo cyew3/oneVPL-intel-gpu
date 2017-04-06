@@ -676,7 +676,7 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
 #endif
     ExtBuffer::Construct(par, m_ext.SliceInfo, m_ext.m_extParam, base.NumExtParam);
     ExtBuffer::Construct(par, m_ext.ROI, m_ext.m_extParam, base.NumExtParam);
-
+    ExtBuffer::Construct(par, m_ext.DirtyRect, m_ext.m_extParam, base.NumExtParam);
 }
 
 mfxStatus MfxVideoParam::FillPar(mfxVideoParam& par, bool query)
@@ -710,6 +710,9 @@ mfxStatus MfxVideoParam::GetExtBuffers(mfxVideoParam& par, bool query)
     ExtBuffer::Set(par, m_ext.VSI);
 #if !defined(MFX_EXT_BRC_DISABLE)
     ExtBuffer::Set(par, m_ext.extBRC);
+#endif
+#ifdef MFX_ENABLE_HEVCE_DIRTY_RECT
+    ExtBuffer::Set(par, m_ext.DirtyRect);
 #endif
 
     mfxExtCodingOptionSPSPPS * pSPSPPS = ExtBuffer::Get(par);
@@ -3091,6 +3094,29 @@ void ConfigureTask(
 #else
     caps;
 #endif // MFX_ENABLE_HEVCE_ROI
+
+#ifdef MFX_ENABLE_HEVCE_DIRTY_RECT
+    // DirtyRect
+    mfxExtDirtyRect const * parDirtyRect = &par.m_ext.DirtyRect;
+    mfxExtDirtyRect * rtDirtyRect = ExtBuffer::Get(task.m_ctrl);
+
+    if (rtDirtyRect && rtDirtyRect->NumRect)
+    {
+        mfxStatus sts = CheckAndFixDirtyRect(caps, rtDirtyRect);
+        if (sts == MFX_ERR_INVALID_VIDEO_PARAM)
+            parDirtyRect = 0;
+        else
+            parDirtyRect = (mfxExtDirtyRect const *)rtDirtyRect;
+    }
+
+    task.m_numDirtyRect = 0;
+    if (parDirtyRect && parDirtyRect->NumRect) {
+        for (mfxU16 i = 0; i < parDirtyRect->NumRect; i++) {
+            memcpy_s(&task.m_dirtyRect[i], sizeof(RectData), &parDirtyRect->Rect[i], sizeof(RectData));
+            task.m_numDirtyRect++;
+        }
+    }
+#endif
 
     if (task.m_tid == 0 && IntRefType)
     {

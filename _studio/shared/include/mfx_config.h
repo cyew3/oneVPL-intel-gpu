@@ -345,6 +345,7 @@
 
 #if defined (PRE_SI_TARGET_PLATFORM_GEN10)
     #define MFX_ENABLE_HEVCE_ROI
+    #define MFX_ENABLE_HEVCE_DIRTY_RECT
 #endif
 
 
