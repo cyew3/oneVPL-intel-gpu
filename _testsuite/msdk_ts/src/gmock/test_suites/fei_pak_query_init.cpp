@@ -349,10 +349,10 @@ namespace fei_pak_query_init
         {/*53*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, 0,
             {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 0}
         },
-        {/*54*/ MFX_ERR_UNSUPPORTED, MFX_WRN_PARTIAL_ACCELERATION, 0,
+        {/*54*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, 0,
             {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 4128}
         },
-        {/*55*/ MFX_ERR_UNSUPPORTED, MFX_WRN_PARTIAL_ACCELERATION, 0,
+        {/*55*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, 0,
             {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 4128}
         },
         {/*56*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, 0,

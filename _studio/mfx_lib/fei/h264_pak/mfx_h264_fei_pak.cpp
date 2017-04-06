@@ -331,7 +331,7 @@ mfxStatus VideoPAK_PAK::Init(mfxVideoParam *par)
     m_currentVaType   = m_core->GetVAType();
 
     mfxStatus checkStatus = CheckVideoParam(m_video, m_caps, m_core->IsExternalFrameAllocator(), m_currentPlatform, m_currentVaType);
-    MFX_CHECK(checkStatus != MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION);
+    MFX_CHECK(checkStatus != MFX_WRN_PARTIAL_ACCELERATION, MFX_ERR_INVALID_VIDEO_PARAM);
     MFX_CHECK(checkStatus >= MFX_ERR_NONE, checkStatus);
 
     const mfxExtFeiParam* params = GetExtBuffer(m_video);
