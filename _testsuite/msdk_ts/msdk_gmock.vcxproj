@@ -250,6 +250,7 @@
     <ClCompile Include="src\gmock\test_suites\avce_max_bins_pcm.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_max_frame_size.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_max_slice_size.cpp" />
+    <ClCompile Include="src\gmock\test_suites\avce_mbcontrol.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_mbext_brc.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_mbqp.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_mb_disable_skip_map.cpp" />

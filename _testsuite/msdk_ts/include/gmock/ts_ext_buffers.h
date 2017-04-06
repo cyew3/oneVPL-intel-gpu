@@ -104,7 +104,7 @@ public:
         return 0;
     }
 
-    void AddExtBuffer(mfxU32 id, mfxU32 size)
+    void AddExtBuffer(mfxU32 id, mfxU32 size, mfxU32 nbBytesExtraSize = 0)
     {
         if(!size)
         {
@@ -114,7 +114,7 @@ public:
             EBIterator it = std::find_if(m_buf.begin(), m_buf.end(), tsCmpExtBufById(id));
             if(it == m_buf.end())
             {
-                m_buf.push_back( (mfxExtBuffer*)new mfxU8[size] );
+                m_buf.push_back( (mfxExtBuffer*)new mfxU8[size+ nbBytesExtraSize] );
                 mfxExtBuffer& eb = *m_buf.back();
 
                 memset(&eb, 0, size);
@@ -126,6 +126,11 @@ public:
         RefreshBuffers();
     }
 
+    template <typename T> void AddExtBuffer(mfxU32 nbBytesExtraSize)
+    {
+        return AddExtBuffer(tsExtBufTypeToId<T>::id, sizeof(T), nbBytesExtraSize);
+    }
+
     void RemoveExtBuffer(mfxU32 id)
     {
         EBIterator it = std::find_if(m_buf.begin(), m_buf.end(), tsCmpExtBufById(id));
@@ -135,6 +140,11 @@ public:
             m_buf.erase(it);
             RefreshBuffers();
         }
+    }
+
+    template <typename T> void RemoveExtBuffer()
+    {
+        return RemoveExtBuffer(tsExtBufTypeToId<T>::id);
     }
 
     template <typename T> operator T&()

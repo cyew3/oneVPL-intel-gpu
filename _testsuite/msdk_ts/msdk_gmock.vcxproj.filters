@@ -886,7 +886,9 @@
     <ClCompile Include="src\gmock\test_suites\avce_weight_prediction.cpp">
       <Filter>Source Files\test_suites\avce</Filter>
     </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\vpp_query.cpp">
+    <ClCompile Include="src\gmock\test_suites\avce_mbcontrol.cpp">
+      <Filter>Source Files\test_suites\avce</Filter>
+    </ClCompile>    <ClCompile Include="src\gmock\test_suites\vpp_query.cpp">
       <Filter>Source Files\test_suites\vpp</Filter>
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\vpp_query_extbuf.cpp">

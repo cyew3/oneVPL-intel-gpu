@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2010-2016 Intel Corporation.  All rights reserved.
+Copyright (C) 2010-2017 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -171,6 +171,7 @@ static CodeStringTable StringsOfExtendedBuffer[] = {
     DEFINE_CODE(MFX_EXTBUFF_CODING_OPTION3           ),
     DEFINE_CODE(MFX_EXTBUFF_CHROMA_LOC_INFO          ),
     DEFINE_CODE(MFX_EXTBUFF_MBQP                     ),
+    DEFINE_CODE(MFX_EXTBUFF_MB_FORCE_INTRA           ),
     DEFINE_CODE(MFX_EXTBUFF_HEVC_TILES               ),
     DEFINE_CODE(MFX_EXTBUFF_MB_DISABLE_SKIP_MAP      ),
     DEFINE_CODE(MFX_EXTBUFF_DPB                      ),
