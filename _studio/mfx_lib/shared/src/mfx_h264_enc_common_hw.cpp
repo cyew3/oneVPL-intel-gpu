@@ -4995,7 +4995,8 @@ void MfxHwH264Encode::SetDefaults(
                     (feiParam->Func == MFX_FEI_FUNCTION_ENC)    ||
                     (feiParam->Func == MFX_FEI_FUNCTION_PAK);
 
-    bool isPAK = feiParam->Func == MFX_FEI_FUNCTION_PAK;
+    bool isPAK      = feiParam->Func == MFX_FEI_FUNCTION_PAK;
+    bool isENCorPAK = feiParam->Func == MFX_FEI_FUNCTION_ENC || isPAK;
 
     if (extOpt2->UseRawRef)
         extDdi->RefRaw = extOpt2->UseRawRef;
@@ -5306,16 +5307,13 @@ void MfxHwH264Encode::SetDefaults(
     if (extOpt->EndOfStream == MFX_CODINGOPTION_UNKNOWN)
         extOpt->EndOfStream = MFX_CODINGOPTION_OFF;
 
-    if (extOpt->PicTimingSEI == MFX_CODINGOPTION_UNKNOWN)
+    if (isENCorPAK)
     {
-        if(isPAK)
-        {
-            SetDefaultOff(extOpt->PicTimingSEI);
-        }
-        else
-        {
-            extOpt->PicTimingSEI = MFX_CODINGOPTION_ON;
-        }
+        SetDefaultOff(extOpt->PicTimingSEI);
+    }
+    else
+    {
+        SetDefaultOn(extOpt->PicTimingSEI);
     }
 
     if (extOpt->ViewOutput == MFX_CODINGOPTION_UNKNOWN)
@@ -5466,18 +5464,12 @@ void MfxHwH264Encode::SetDefaults(
     if (par.mfx.CodecLevel == MFX_LEVEL_UNKNOWN)
         par.mfx.CodecLevel = MFX_LEVEL_AVC_1;
 
-    if (extOpt2->BufferingPeriodSEI == MFX_BPSEI_DEFAULT &&
-        extOpt->RecoveryPointSEI == MFX_CODINGOPTION_ON &&
-        extOpt2->IntRefType == 0)
+    if (extOpt2->BufferingPeriodSEI == MFX_BPSEI_DEFAULT
+        && IsOn(extOpt->RecoveryPointSEI)
+        && extOpt2->IntRefType == 0
+        && !isENCorPAK)
     {
-        if (isPAK)
-        {
-            extOpt2->BufferingPeriodSEI = MFX_BPSEI_DEFAULT;
-        }
-        else
-        {
-            extOpt2->BufferingPeriodSEI = MFX_BPSEI_IFRAME;
-        }
+        extOpt2->BufferingPeriodSEI = MFX_BPSEI_IFRAME;
     }
 
     SetDefaultOff(extOpt2->DisableVUI);

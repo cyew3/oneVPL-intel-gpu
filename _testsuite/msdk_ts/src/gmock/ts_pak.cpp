@@ -37,9 +37,9 @@ tsVideoPAK::tsVideoPAK(mfxFeiFunction func, mfxU32 CodecId, bool useDefaults)
         m_par.mfx.FrameInfo.FrameRateExtD = 1;
         m_par.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
         m_par.mfx.QPI = m_par.mfx.QPP = m_par.mfx.QPB = 26;
-        m_par.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
+        m_par.IOPattern        = MFX_IOPATTERN_IN_VIDEO_MEMORY;
         m_par.mfx.EncodedOrder = 1;
-        m_par.AsyncDepth = 1;
+        m_par.AsyncDepth       = 1;
     }
 
     mfxExtFeiParam& extbuffer = m_par;
