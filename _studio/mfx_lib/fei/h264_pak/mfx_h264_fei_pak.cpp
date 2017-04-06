@@ -665,6 +665,9 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
     MFX_CHECK_NULL_PTR2(input, output);
     MFX_CHECK_NULL_PTR2(input->InSurface, output->OutSurface);
 
+    //To record returned status that may contain warning status
+    mfxStatus mfxSts = MFX_ERR_NONE;
+
 #if MFX_VERSION >= 1023
     // For now PAK doesn't have output extension buffers
     MFX_CHECK(!output->NumExtParam, MFX_ERR_UNDEFINED_BEHAVIOR);
@@ -683,8 +686,8 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
     //containing a buffering period SEI message is present,
     //the buffering period SEI message shall be the first SEI
     //message payload of the first SEI NAL unit in the access unit
-    sts = ChangeBufferPeriodPayloadIndxIfNeed(input->Payload, input->NumPayload);
-    MFX_CHECK_STS(sts);
+    mfxSts = ChangeBufferPeriodPayloadIndxIfNeed(input->Payload, input->NumPayload);
+    MFX_CHECK(mfxSts >= MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM);
 #endif // MFX_VERSION >= 1023
 
     // For frame type detection
@@ -823,7 +826,7 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
 
     numEntryPoints = 2;
 
-    return sts;
+    return mfxSts;
 }
 
 static mfxStatus CopyRawSurfaceToVideoMemory(VideoCORE &    core,
