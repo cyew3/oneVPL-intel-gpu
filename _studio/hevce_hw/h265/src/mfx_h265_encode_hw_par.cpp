@@ -401,7 +401,7 @@ mfxU16 AddTileSlices(
     else
     {
         s = true;
-        f = (nSlice % f == 0) ? nSlice / f : nSlice / (f - 1);
+        f = (nSlice % f == 0) ? nSlice / f : nSlice / f + 1;
     }
 
     mfxU32 i = nSlicePrev;
