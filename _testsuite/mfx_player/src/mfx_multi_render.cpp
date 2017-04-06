@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2010-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2010-2017 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -20,10 +20,10 @@ MFXMultiRender::MFXMultiRender (IMFXVideoRender * pSingleRender)
 
 MFXMultiRender :: ~MFXMultiRender ()
 {
-    //input render will be deleted as part of view array 
+    //input render will be deleted as part of view array
     if (!m_Renders.empty())
         m_pTarget.release();
-    
+
     for_each(m_Renders.begin(), m_Renders.end(), deleter<MFXViewRender<_TView>*>());
 }
 
@@ -32,7 +32,7 @@ mfxStatus MFXMultiRender::RenderFrame( mfxFrameSurface1 *surface
 {
     //cleaning up all existed renderers
     if (NULL == surface)
-    {   
+    {
         _CollectionType  :: iterator it;
 
         for (it = m_Renders.begin(); it != m_Renders.end(); it++)
@@ -50,12 +50,7 @@ mfxStatus MFXMultiRender::RenderFrame( mfxFrameSurface1 *surface
 
     mfxStatus sts = MFX_ERR_NONE;
 
-    _CollectionType::iterator it = m_Renders.begin();
-    // need implement valid clone for EncodeWrapper with use share_pointers
-        /*std::find_if( m_Renders.begin()
-                    , m_Renders.end()
-                    , bind1st(MFXViewRenderCompare<_TView>(), surface->Info.FrameId.ViewId));*/
-
+    _CollectionType::iterator it = std::find_if( m_Renders.begin(), m_Renders.end(), bind1st(MFXViewRenderCompare<_TView>(), surface->Info.FrameId.ViewId));
 
     if (it == m_Renders.end())
     {
