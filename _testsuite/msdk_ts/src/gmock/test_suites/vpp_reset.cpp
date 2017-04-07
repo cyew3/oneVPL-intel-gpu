@@ -57,6 +57,7 @@ private:
             mfxU32 v;
         } set_par[MAX_NPARS];
         do_not_use dnu_struct;
+        HWType platform;
     };
 
     static const tc_struct test_case[];
@@ -111,7 +112,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {RESET, &tsStruct::mfxExtVPPDetail.DetailFactor,    40},
             {RESET, &tsStruct::mfxExtVPPProcAmp.Brightness,     30},
             {RESET, &tsStruct::mfxExtVPPDeinterlacing.Mode,     MFX_DEINTERLACING_BOB},
-        }
+        },
     },
     {/*04*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
         {
@@ -273,19 +274,21 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {
             {RESET, &tsStruct::mfxVideoParam.vpp.In.FourCC,     MFX_FOURCC_AYUV},
         },
-        {}
+        {},
     },
-    {/*25*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+    {/*25*/ MFX_ERR_INVALID_VIDEO_PARAM,
         {
             {RESET, &tsStruct::mfxVideoParam.vpp.Out.FourCC,    MFX_FOURCC_Y210},
         },
-        {}
+        {},
+        MFX_HW_ICL
     },
-    {/*26*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+    {/*26*/ MFX_ERR_INVALID_VIDEO_PARAM,
         {
             {RESET, &tsStruct::mfxVideoParam.vpp.Out.FourCC,    MFX_FOURCC_Y410},
         },
-        {}
+        {},
+        MFX_HW_ICL
     },
 #if !defined(_WIN32)
     {/*27*/ MFX_ERR_NONE,
@@ -365,10 +368,15 @@ int TestSuite::RunTest(unsigned int id)
     SETPARS(&par_reset, RESET);
     SetParamsDoNotUse(*&par_reset, tc.dnu_struct);
 
-    g_tsStatus.expect(tc.sts);
+    //adjust expected status for
+    mfxStatus expected = tc.sts;
+    if (tc.platform != MFX_HW_UNKNOWN && g_tsHWtype >= tc.platform)
+        expected = MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+
+    g_tsStatus.expect(expected);
     Reset(m_session, &par_reset);
 
-    if (MFX_ERR_NONE == tc.sts) // GetVideoParam checks are valid only in case of succesfull reset
+    if (MFX_ERR_NONE == expected) // GetVideoParam checks are valid only in case of succesfull reset
     {
         EXPECT_EQ(m_par, par_init) << "ERROR: Init parameters and parameters from GetVideoParams are not equal\n";
 
