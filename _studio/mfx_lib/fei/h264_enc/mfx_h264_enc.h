@@ -71,8 +71,6 @@ private:
     bool                                          m_bInit;
     VideoCORE*                                    m_core;
 
-    //std::list <mfxFrameSurface1*>             m_SurfacesForOutput;
-
     std::auto_ptr<MfxHwH264Encode::DriverEncoder> m_ddi;
     std::vector<mfxU32>                           m_recFrameOrder; // !!! HACK !!!
     ENCODE_CAPS                                   m_caps;
@@ -82,7 +80,6 @@ private:
     MfxHwH264Encode::PreAllocatedVector           m_sei;
 
     MfxHwH264Encode::MfxFrameAllocResponse        m_rec;
-    //MfxHwH264Encode::MfxFrameAllocResponse    m_opaqHren;
 
     std::list<MfxHwH264Encode::DdiTask>           m_free;
     std::list<MfxHwH264Encode::DdiTask>           m_incoming;
@@ -97,7 +94,7 @@ private:
     mfxU32                                        m_firstFieldDone;
 
 #if MFX_VERSION < 1023
-    std::map<mfxU32, mfxU32>                  m_frameOrder_frameNum;
+    std::map<mfxU32, mfxU32>                      m_frameOrder_frameNum;
 #endif // MSDK_API < 1023
 };
 

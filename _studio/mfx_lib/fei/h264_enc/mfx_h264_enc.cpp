@@ -234,14 +234,8 @@ mfxStatus VideoENC_ENC::Init(mfxVideoParam *par)
 
     MfxVideoParam tmp(*par);
 
-    sts = ReadSpsPpsHeaders(tmp);
-    MFX_CHECK_STS(sts);
-
     sts = CheckWidthAndHeight(tmp);
     MFX_CHECK_STS(sts);
-
-    sts = CopySpsPpsToVideoParam(tmp);
-    MFX_CHECK(sts >= MFX_ERR_NONE, sts);
 
     m_ddi.reset(new VAAPIFEIENCEncoder);
 
@@ -259,14 +253,9 @@ mfxStatus VideoENC_ENC::Init(mfxVideoParam *par)
     m_currentPlatform = m_core->GetHWType();
     m_currentVaType   = m_core->GetVAType();
 
-    mfxStatus spsppsSts = CopySpsPpsToVideoParam(m_video);
-
     mfxStatus checkStatus = CheckVideoParam(m_video, m_caps, m_core->IsExternalFrameAllocator(), m_currentPlatform, m_currentVaType);
-    MFX_CHECK(checkStatus != MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION);
+    MFX_CHECK(checkStatus != MFX_WRN_PARTIAL_ACCELERATION, MFX_ERR_INVALID_VIDEO_PARAM);
     MFX_CHECK(checkStatus >= MFX_ERR_NONE, checkStatus);
-
-    if (checkStatus == MFX_ERR_NONE)
-        checkStatus = spsppsSts;
 
     const mfxExtFeiParam* params = GetExtBuffer(m_video);
 

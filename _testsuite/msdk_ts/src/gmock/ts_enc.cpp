@@ -91,6 +91,9 @@ tsVideoENC::tsVideoENC(mfxFeiFunction func, mfxU32 CodecId, bool useDefaults)
     extbuffer.Func = func;
     m_par.mfx.CodecId = CodecId;
 
+    mfxExtFeiSPS& extsps = m_par;
+    extsps.Log2MaxPicOrderCntLsb = 4;
+
     m_loaded = true;
 }
 
