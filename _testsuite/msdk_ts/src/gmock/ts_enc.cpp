@@ -75,14 +75,16 @@ tsVideoENC::tsVideoENC(mfxFeiFunction func, mfxU32 CodecId, bool useDefaults)
     {
         m_par.mfx.FrameInfo.Width  = m_par.mfx.FrameInfo.CropW = 720;
         m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 576;
-        m_par.mfx.FrameInfo.FourCC       = MFX_FOURCC_NV12;
-        m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-        m_par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+        m_par.mfx.FrameInfo.FourCC        = MFX_FOURCC_NV12;
+        m_par.mfx.FrameInfo.ChromaFormat  = MFX_CHROMAFORMAT_YUV420;
+        m_par.mfx.FrameInfo.PicStruct     = MFX_PICSTRUCT_PROGRESSIVE;
         m_par.mfx.FrameInfo.FrameRateExtN = 30;
         m_par.mfx.FrameInfo.FrameRateExtD = 1;
         m_par.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
         m_par.mfx.QPI = m_par.mfx.QPP = m_par.mfx.QPB = 26;
-        m_par.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
+        m_par.IOPattern        = MFX_IOPATTERN_IN_VIDEO_MEMORY;
+        m_par.mfx.EncodedOrder = 1;
+        m_par.AsyncDepth       = 1;
     }
 
     mfxExtFeiParam& extbuffer = m_par;
