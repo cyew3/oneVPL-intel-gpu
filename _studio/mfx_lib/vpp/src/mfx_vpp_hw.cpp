@@ -2015,6 +2015,20 @@ mfxStatus VideoVPPHW::Reset(mfxVideoParam *par)
     if ( fabs(inFrameRateCur / outFrameRateCur - inFrameRate / outFrameRate) > std::numeric_limits<mfxF64>::epsilon() )
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM; // Frame Rate ratio check
 
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+    eMFXPlatform platform = m_pCore->GetPlatformType();
+    if (platform == MFX_PLATFORM_HARDWARE)
+    {
+        eMFXHWType type = m_pCore->GetHWType();
+        if (type < MFX_HW_ICL &&
+           (par->vpp.In.FourCC   == MFX_FOURCC_Y210 ||
+            par->vpp.In.FourCC   == MFX_FOURCC_Y410 ||
+            par->vpp.Out.FourCC  == MFX_FOURCC_Y210 ||
+            par->vpp.Out.FourCC  == MFX_FOURCC_Y410))
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+    }
+#endif
+
     if (m_params.vpp.In.FourCC  != par->vpp.In.FourCC ||
         m_params.vpp.Out.FourCC != par->vpp.Out.FourCC)
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
