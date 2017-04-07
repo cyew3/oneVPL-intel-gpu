@@ -25,25 +25,25 @@
 ##  Content: Intel(R) Media SDK Samples projects creation and build
 ##******************************************************************************
 
+set( MSDK_STUDIO_ROOT ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio )
+set( MSDK_LIB_ROOT    ${MSDK_STUDIO_ROOT}/mfx_lib                  )
+set( MSDK_UMC_ROOT    ${MSDK_STUDIO_ROOT}/shared/umc               )
+
 function( mfx_include_dirs )
   include_directories (
-    ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/shared/include
-    ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/shared/umc/core/vm/include
-    ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/shared/umc/core/vm_plus/include
-    ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/shared/umc/core/umc/include
-    ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/shared/umc/io/umc_io/include
-    ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/shared/umc/io/umc_va/include
-    ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/shared/umc/io/media_buffers/include
-    ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/mfx_lib/shared/include
-    ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/mfx_lib/optimization/h265/include
-    ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/mfx_lib/optimization/h264/include
-    ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/mfx_lib/shared/include
-    ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/mfx_lib/fei/include
-    ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/mfx_lib/fei/h264_la
+    ${MSDK_STUDIO_ROOT}/shared/include
+    ${MSDK_UMC_ROOT}/core/vm/include
+    ${MSDK_UMC_ROOT}/core/vm_plus/include
+    ${MSDK_UMC_ROOT}/core/umc/include
+    ${MSDK_UMC_ROOT}/io/umc_io/include
+    ${MSDK_UMC_ROOT}/io/umc_va/include
+    ${MSDK_UMC_ROOT}/io/media_buffers/include
+    ${MSDK_LIB_ROOT}/shared/include
+    ${MSDK_LIB_ROOT}/optimization/h265/include
+    ${MSDK_LIB_ROOT}/optimization/h264/include
+    ${MSDK_LIB_ROOT}/shared/include
+    ${MSDK_LIB_ROOT}/fei/include
+    ${MSDK_LIB_ROOT}/fei/h264_la
     ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/SafeStringStaticLibrary/include
   )
-
-  set ( MSDK_STUDIO_ROOT ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio PARENT_SCOPE )
-  set ( MSDK_LIB_ROOT    ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/mfx_lib PARENT_SCOPE )
-  set ( MSDK_UMC_ROOT    ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/shared/umc PARENT_SCOPE )
 endfunction()
