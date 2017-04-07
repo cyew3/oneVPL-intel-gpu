@@ -25,9 +25,12 @@
 ##  Content: Intel(R) Media SDK Samples projects creation and build
 ##******************************************************************************
 
-set( MSDK_STUDIO_ROOT ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio )
-set( MSDK_LIB_ROOT    ${MSDK_STUDIO_ROOT}/mfx_lib                  )
-set( MSDK_UMC_ROOT    ${MSDK_STUDIO_ROOT}/shared/umc               )
+set( MSDK_STUDIO_ROOT  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio    )
+set( MSDK_TSUITE_ROOT  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_testsuite )
+set( MSDK_LIB_ROOT     ${MSDK_STUDIO_ROOT}/mfx_lib                     )
+set( MSDK_UMC_ROOT     ${MSDK_STUDIO_ROOT}/shared/umc                  )
+set( MSDK_SAMPLES_ROOT ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/samples    )
+set( MSDK_BUILDER_ROOT ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/builder    )
 
 function( mfx_include_dirs )
   include_directories (
