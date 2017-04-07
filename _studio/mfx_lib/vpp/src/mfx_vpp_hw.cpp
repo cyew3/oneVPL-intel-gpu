@@ -4431,13 +4431,17 @@ mfxStatus ConfigureExecuteParams(
                 config.m_extConfig.customRateData.outputIndexCountPerCycle  = 1;
 
                 executeParams.bComposite = true;
-
-                /**/
-                mfxU32 tCropW = videoParam.vpp.Out.CropW;
-                mfxU32 tCropH = videoParam.vpp.Out.CropH;
-                mfxU32 refCount = config.m_extConfig.customRateData.fwdRefCount;
                 executeParams.bBackgroundRequired = true; /* by default background required */
+
+                /* Let's check: Does background required or not?
+                 * If tiling enabled VPP composition will skip background setting
+                 * bBackgroundRequired flag ignored on ddi level if tiling enabled
+                 * */
+                if (0 == executeParams.iTilesNum4Comp)
                 {
+                    mfxU32 tCropW = videoParam.vpp.Out.CropW;
+                    mfxU32 tCropH = videoParam.vpp.Out.CropH;
+                    mfxU32 refCount = config.m_extConfig.customRateData.fwdRefCount;
                     cRect<mfxU32> t_rect;
                     std::vector< cRect<mfxU32> > rects;
                     rects.reserve(refCount);
@@ -4456,7 +4460,7 @@ mfxStatus ConfigureExecuteParams(
 
                     if(get_total_area(rects) == tCropW*tCropH)
                         executeParams.bBackgroundRequired = false;
-                }
+                } // if (executeParams.iTilesNum4Comp > 0)
 
                 break;
             }

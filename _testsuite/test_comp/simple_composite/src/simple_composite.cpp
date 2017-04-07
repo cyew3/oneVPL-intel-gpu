@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2005-2016 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2005-2017 Intel Corporation. All Rights Reserved.
 //
 
 #define ENABLE_OUTPUT    // Disabling this flag removes all YUV file writing
@@ -274,6 +274,8 @@ struct ProgramArguments
     mfxU32 frames_to_process;
     mfxU32 maxWidth;
     mfxU32 maxHeight;
+    // Num tiles
+    mfxU32 iNumTiles;
 
     // Restart related
     bool   need_reset;
@@ -360,6 +362,8 @@ ProgramArguments ParseInputString(const vector<string> &args)
         pa.dW = 0;
     if (!ParseValue(args, "-dH", pa.dH))
         pa.dH = 0;
+    if (!ParseValue(args, "-numTiles", pa.iNumTiles))
+        pa.iNumTiles = 0;
     if (ParseValue(args, "-reset_par", pa.reset_par))
     {
         pa.need_reset = true;
@@ -393,6 +397,7 @@ void PrintHelp(ostream &out)
     out << "-reset_start index if the start frame for reset" << endl;
     out << "-d3d11 flag enables MFX_IMPL_VIA_D3D11 implementation"<< endl;
     out << "-sw flag enables MFX_IMPL_SOFTWARE implementation"<< endl;
+    out << "-numTiles <numTiles> quantity of tiles (means enabling tiles)"<< endl;
 }
 
 // trim from start
@@ -472,6 +477,9 @@ public:
             m_Color.U = 0;
             m_Color.V = 0;
         }
+#if MFX_VERSION > 1023
+        m_VPPComp.NumTiles = pa->iNumTiles;
+#endif
 
         memset(m_RealWidths,  0, sizeof(m_RealWidths));
         memset(m_RealHeights, 0, sizeof(m_RealHeights));
@@ -740,6 +748,7 @@ protected:
         m_VPPComp.Y = m_Color.Y;
         m_VPPComp.U = m_Color.U;
         m_VPPComp.V = m_Color.V;
+
         for (int i = 0; i < m_nStreams; ++i)
         {
             m_VPPComp.InputStream[i].DstX = atoi(m_Params[i]["dstx"].c_str());
@@ -752,6 +761,9 @@ protected:
             m_VPPComp.InputStream[i].LumaKeyEnable       = (mfxU16)atoi(m_Params[i]["LumaKeyEnable"].c_str()) ;
             m_VPPComp.InputStream[i].LumaKeyMin          = (mfxU16)atoi(m_Params[i]["LumaKeyMin"].c_str()) ;
             m_VPPComp.InputStream[i].LumaKeyMax          = (mfxU16)atoi(m_Params[i]["LumaKeyMax"].c_str()) ;
+#if MFX_VERSION > 1023
+            m_VPPComp.InputStream[i].TileId         = (mfxU16)atoi(m_Params[i]["TileId"].c_str()) ;
+#endif
             cout << "Set " << i << "->" << m_VPPComp.InputStream[i].DstX << ":" << m_VPPComp.InputStream[i].DstY << ":" << m_VPPComp.InputStream[i].DstW  << ":" << m_VPPComp.InputStream[i].DstH << ":" << endl;
             cout << " Alpha Blending Params:" << endl;
             cout << "  GlobalAlphaEnable="    << m_VPPComp.InputStream[i].GlobalAlphaEnable << endl;
@@ -760,6 +772,9 @@ protected:
             cout << "  LumaKeyEnable="        << m_VPPComp.InputStream[i].LumaKeyEnable << endl;
             cout << "  LumaKeyMin="           << m_VPPComp.InputStream[i].LumaKeyMin << endl;
             cout << "  LumaKeyMax="           << m_VPPComp.InputStream[i].LumaKeyMax << endl;
+#if MFX_VERSION > 1023
+            cout << "  TileId="           << m_VPPComp.InputStream[i].TileId << endl;
+#endif
         }
         return MFX_ERR_NONE;
     }
