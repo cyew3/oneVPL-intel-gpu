@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_DATA_READER_H__
@@ -146,14 +146,6 @@ inline
 Status DataReader::GetData(void *data, Ipp32u *nsize)
 {
     size_t data_sz = (size_t)(*nsize);
-
-    /*if (((size_t)(m_pEODPointer - m_pDataPointer)) >= data_sz)
-    {
-        MFX_INTERNAL_CPY(data, m_pDataPointer, data_sz);
-        m_pDataPointer += data_sz;
-        return UMC_OK;
-    }*/
-
     Status umcRes = UMC_OK;
 
     do {

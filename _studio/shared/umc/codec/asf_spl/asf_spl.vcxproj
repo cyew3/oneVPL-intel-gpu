@@ -205,6 +205,7 @@
     <ClCompile>
       <AdditionalIncludeDirectories>include;$(MfxIppIncludeDir);$(MfxIppIncludeDir);include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\io\media_buffers\include;..\..\..\..\..\..\mdp_msdk-api\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
     <Lib />
   </ItemDefinitionGroup>

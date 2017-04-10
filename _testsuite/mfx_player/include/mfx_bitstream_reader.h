@@ -5,7 +5,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -14,7 +14,7 @@
 
 #include "mfx_ibitstream_reader.h"
 #include "umc_corruption_reader.h"
-#include "umc_file_reader.h"
+#include "umc_fio_reader.h"
 
 #define MFX_TIME_STAMP_INVALID   (mfxU64)-1;
 class BitstreamReader
@@ -49,7 +49,7 @@ public:
     virtual mfxStatus Init(const vm_char *strFileName)
     {
         mfxStatus sts;
-        UMC::FileReader *pFileReader = new  UMC::FileReader();
+        UMC::FIOReader *pFileReader = new  UMC::FIOReader();
 
         UMC::CorruptionReaderParams  *pCorruptionParams = new UMC::CorruptionReaderParams();
         UMC::FileReaderParams        *pFileReaderParams = new UMC::FileReaderParams();

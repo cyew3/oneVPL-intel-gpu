@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2017 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -21,7 +21,7 @@ File Name: .h
 #include "umc_avi_splitter.h"
 #include "umc_threaded_demuxer.h"
 #include "umc_ivf_splitter.h"
-#include "umc_file_reader.h"
+#include "umc_fio_reader.h"
 #include "umc_corruption_reader.h"
 #include "mfx_frame_constructor.h"
 #include "mfxjpeg.h"
@@ -508,7 +508,7 @@ mfxStatus UMCSplWrapper::SelectDataReader(const vm_char * strFileName)
     //creating generic reader
     {
         FileReaderParams   *pFileReaderParams;
-        MFX_CHECK_WITH_ERR((pReader.reset(new FileReader()), NULL != pReader.get()), MFX_ERR_MEMORY_ALLOC);
+        MFX_CHECK_WITH_ERR((pReader.reset(new FIOReader()), NULL != pReader.get()), MFX_ERR_MEMORY_ALLOC);
         MFX_CHECK_WITH_ERR((pParams.reset(pFileReaderParams = new FileReaderParams()), NULL != pParams.get()), MFX_ERR_MEMORY_ALLOC);
 
         pFileReaderParams->m_portion_size = 0;

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2017 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -27,50 +27,6 @@ BitrateLimitedReader :: BitrateLimitedReader( mfxU32 nBytesSec
     , m_firstDataWrittenTick()
 {
 }
-
-//mfxStatus BitrateLimitedReader :: ReadNextFrame(mfxBitstream2 &bs)
-//{
-//    //TODO: remove memory leak
-//    //reading into internal buffer
-//    if (!bs.isNull && bs.MaxLength > m_inputBs.MaxLength)
-//    {
-//        m_bsData.resize(bs.MaxLength);
-//        m_inputBs.MaxLength = bs.MaxLength;
-//        m_inputBs.Data = &m_bsData.front();
-//    }
-//
-//    //copy all available data
-//    mfxU32 nBytesCopied = m_nMinChunkSize ? m_nMinChunkSize : m_inputBs.DataLength;
-//    mfxStatus sts = BSUtil::MoveNBytesTail(bs.isNull ? NULL : &bs, &m_inputBs, nBytesCopied);
-//
-//    if (sts == MFX_ERR_MORE_DATA || 0 == nBytesCopied)
-//    {
-//        //need to update internal buffer
-//        sts = PullData();
-//
-//        //TODO: comment this and fix crash
-//        nBytesCopied = m_nMinChunkSize ? m_nMinChunkSize : m_inputBs.DataLength;
-//
-//        //and copy data again
-//        if (sts != MFX_ERR_NONE)
-//        {
-//            return sts;
-//        }
-//        sts = BSUtil::MoveNBytesTail(&bs, &m_inputBs, nBytesCopied);
-//    }
-//    
-//    if (MFX_ERR_NONE != sts)
-//    {
-//        return sts;
-//    }
-//
-//    m_nBytesWritten += nBytesCopied;
-//
-//    ControlBitrate();
-//    bs.FrameType = m_inputBs.FrameType;
-//    
-//    return MFX_ERR_NONE;
-//}
 
 mfxStatus BitrateLimitedReader :: ReadNextFrame(mfxBitstream2 &bs)
 {

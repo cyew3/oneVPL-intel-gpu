@@ -1767,14 +1767,15 @@ mfxStatus MFXDecPipeline::CreateSplitter()
     }
 
 #ifndef LUCAS_DLL
-    //getfilesize
     Ipp64u file_size = 0;
     // don't request filesize if it's a directory wildcard
     if (!vm_string_strchr(m_inParams.strSrcFile, '*') && MFX_CONTAINER_CRMF != m_inParams.m_container &&  MFX_FOURCC_R16 != m_inParams.FrameInfo.FourCC)
-        MFX_CHECK_WITH_ERR( 0 != vm_file_getinfo(m_inParams.strSrcFile, &file_size, NULL), MFX_ERR_UNKNOWN);
+    {
+        if (vm_file_getinfo(m_inParams.strSrcFile, &file_size, NULL) != 0)
+            m_inParams.nLimitInputBs = file_size;
+    }
     PrintInfo(VM_STRING("FileName"), VM_STRING("%s"), m_inParams.strSrcFile);
     PrintInfo(VM_STRING("FileSize"), VM_STRING("%.2f M"), (double)file_size / (1024. * 1024.));
-    m_inParams.nLimitInputBs = file_size;
 #endif
 
     if (m_inParams.bYuvReaderMode)

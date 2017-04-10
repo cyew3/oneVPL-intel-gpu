@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2003-2016 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 */
 #ifndef __UMC_CORRUPTOION_READER_H__
@@ -15,7 +15,7 @@
 
 #if defined (UMC_ENABLE_FILE_CORRUPT_DATA_READER)
 
-#include "umc_file_reader.h"
+#include "umc_data_reader.h"
 
 namespace UMC
 {
