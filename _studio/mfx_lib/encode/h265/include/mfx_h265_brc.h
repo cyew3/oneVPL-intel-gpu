@@ -352,6 +352,13 @@ public:
         mRCMode = 0;
         Zero(mHRD);
         Zero(mParams);
+        mfs = 0;
+#ifdef AMT_MAX_FRAME_SIZE
+        mMinQstepCmplxKInitEncOrder = 0;
+        mMinQstepRateEP = 0;
+        mMinQstepICmplxEP = 0;
+        mMinQstepPCmplxEP = 0;
+#endif
     }
     virtual ~H265BRC()
     {
