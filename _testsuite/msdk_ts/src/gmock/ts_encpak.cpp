@@ -359,17 +359,21 @@ tsVideoENCPAK::tsVideoENCPAK(mfxFeiFunction funcEnc, mfxFeiFunction funcPak, mfx
     {
         enc.m_par.mfx.FrameInfo.Width  = enc.m_par.mfx.FrameInfo.CropW = 720;
         enc.m_par.mfx.FrameInfo.Height = enc.m_par.mfx.FrameInfo.CropH = 576;
-        enc.m_par.mfx.FrameInfo.FourCC       = MFX_FOURCC_NV12;
-        enc.m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-        enc.m_par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+        enc.m_par.mfx.FrameInfo.FourCC        = MFX_FOURCC_NV12;
+        enc.m_par.mfx.FrameInfo.ChromaFormat  = MFX_CHROMAFORMAT_YUV420;
+        enc.m_par.mfx.FrameInfo.PicStruct     = MFX_PICSTRUCT_PROGRESSIVE;
         enc.m_par.mfx.FrameInfo.FrameRateExtN = 30;
         enc.m_par.mfx.FrameInfo.FrameRateExtD = 1;
         enc.m_par.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
         enc.m_par.mfx.QPI = enc.m_par.mfx.QPP = enc.m_par.mfx.QPB = 26;
-        enc.m_par.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
+        enc.m_par.IOPattern        = MFX_IOPATTERN_IN_VIDEO_MEMORY;
+        enc.m_par.mfx.EncodedOrder = 1;
+        enc.m_par.AsyncDepth       = 1;
 
         pak.m_par.mfx = enc.m_par.mfx;
         pak.m_par.IOPattern = enc.m_par.IOPattern;
+        pak.m_par.mfx.EncodedOrder = 1;
+        pak.m_par.AsyncDepth       = 1;
     }
 
     pak.m_par.mfx.CodecId = enc.m_par.mfx.CodecId = CodecId;
