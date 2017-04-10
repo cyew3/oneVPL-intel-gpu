@@ -326,7 +326,8 @@ mfxStatus D3D9VideoCORE::InternalInit()
     if ((m_HWType == MFX_HW_CNL) ||
         (m_HWType == MFX_HW_ICL) ||
         (m_HWType == MFX_HW_ICL_LP) ||
-        (m_HWType == MFX_HW_TGL))
+        (m_HWType == MFX_HW_TGL_LP) ||
+        (m_HWType == MFX_HW_TGL_HP))
         m_bCmCopyAllowed = false;   // !!! temporarily for pre-si
 
     return MFX_ERR_NONE;

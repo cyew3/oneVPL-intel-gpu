@@ -51,8 +51,7 @@ enum
 
 enum PRODUCT_FAMILY
 {
-    IGFX_UNKNOWN       = 0,
-
+    IGFX_UNKNOWN = 0,
     IGFX_GRANTSDALE_G,
     IGFX_ALVISO_G,
     IGFX_LAKEPORT_G,
@@ -72,6 +71,7 @@ enum PRODUCT_FAMILY
     IGFX_CHERRYVIEW,
     IGFX_SKYLAKE,
     IGFX_KABYLAKE,
+    IGFX_COFFEELAKE,
     IGFX_WILLOWVIEW,
     IGFX_APOLLOLAKE,
     IGFX_GEMINILAKE,
@@ -81,9 +81,9 @@ enum PRODUCT_FAMILY
     IGFX_CNX_G,
     IGFX_ICELAKE,
     IGFX_ICELAKE_LP,
-    IGFX_RESERVED_1,
-    IGFX_RESERVED_2,
-    IGFX_TIGERLAKE,
+    IGFX_LAKEFIELD,
+    IGFX_TIGERLAKE_LP,
+    IGFX_TIGERLAKE_HP,
 
     IGFX_SOFIA_LTE1 = 1001,
     IGFX_SOFIA_LTE2 = 1002,
@@ -119,6 +119,8 @@ eMFXHWType GetHardwareType(const mfxU32 adapterNum, mfxU32 platformFromDriver)
         return MFX_HW_IVB; // sandybridge
     case IGFX_KABYLAKE:
         return MFX_HW_KBL;
+    case IGFX_COFFEELAKE:
+        return MFX_HW_CFL;
     case IGFX_APOLLOLAKE:
         return MFX_HW_APL;
     case IGFX_GEMINILAKE:
@@ -129,15 +131,16 @@ eMFXHWType GetHardwareType(const mfxU32 adapterNum, mfxU32 platformFromDriver)
         return MFX_HW_ICL;
     case IGFX_ICELAKE_LP:
         return MFX_HW_ICL_LP;
-    case IGFX_TIGERLAKE:
-        return MFX_HW_TGL;
-#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
+    case IGFX_CNX_G:
+        return MFX_HW_CNX_G;
+    case IGFX_LAKEFIELD:
+        return MFX_HW_LKF;
+    case IGFX_TIGERLAKE_LP:
+        return MFX_HW_TGL_LP;
+    case IGFX_TIGERLAKE_HP:
+        return MFX_HW_TGL_HP;
     default:
-      return MFX_HW_TGL;  // temporarily for Gen12 pre-si
-#elif defined (PRE_SI_TARGET_PLATFORM_GEN11)
-    default:
-      return MFX_HW_ICL;  // temporarily for Gen11 pre-si
-#endif
+        break;
     }
 
 
