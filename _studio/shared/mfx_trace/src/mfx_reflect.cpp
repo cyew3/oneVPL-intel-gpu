@@ -172,7 +172,8 @@ namespace mfx_reflect
                 {
                     throw ::std::invalid_argument(::std::string("Unexpected behavior - fieldTypeName is NULL"));
                 }
-                pField = ReflectedField::P(new ReflectedField(m_pCollection, pType, *fieldTypeName, offset, fieldName, count)); //std::make_shared cannot access protected constructor
+                mfx_cpp11::shared_ptr<ReflectedType> aggregatingType = mfx_cpp11::shared_ptr<ReflectedType>(this);
+                pField = ReflectedField::P(new ReflectedField(m_pCollection, aggregatingType, pType, *fieldTypeName, offset, fieldName, count)); //std::make_shared cannot access protected constructor
                 m_Fields.push_back(pField);
             }
         }
@@ -445,15 +446,20 @@ namespace mfx_reflect
         for (::std::list<FieldComparisonResult>::iterator i = result->begin(); i != result->end(); ++i)
         {
             TypeComparisonResultP subtypeResult = i->subtypeComparisonResultP;
+            mfx_cpp11::shared_ptr<ReflectedType> aggregatingType = i->accessorField1.m_pReflection->AggregatingType;
+            ::std::list< ::std::string >::const_iterator it = aggregatingType->TypeNames.begin();
+            ::std::string strTypeName = ((it != aggregatingType->TypeNames.end()) ? *(it) : "unknown_type");
+
             if (NULL != subtypeResult)
             {
                 ::std::string strFieldName = i->accessorField1.m_pReflection->FieldName;
-                ::std::string newprefix = prefix.empty() ? (strFieldName) : (prefix + "." + strFieldName);
+                ::std::string newprefix = prefix.empty() ? (strTypeName + "." + strFieldName) : (prefix + "." + strFieldName);
                 PrintStuctsComparisonResult(comparisonResult, newprefix, subtypeResult);
             }
             else
             {
                 if (!prefix.empty()) { comparisonResult << prefix << "."; }
+                else if (!strTypeName.empty()) { comparisonResult << strTypeName << "."; }
                 comparisonResult << i->accessorField1 << " -> ";
                 PrintFieldValue(comparisonResult, i->accessorField2);
                 comparisonResult << ::std::endl;
