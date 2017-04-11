@@ -4,8 +4,8 @@ mfx_include_dirs( )
 #
 include_directories (
 #  /usr/include/c++/4.6/bits
-  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/samples/sample_common/include/vm
-  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/samples/sample_common/include
+  ${MSDK_SAMPLES_ROOT}/sample_common/include/vm
+  ${MSDK_SAMPLES_ROOT}/sample_common/include
   ${CMAKE_HOME_DIRECTORY}/mdp_msdk-val-tools/bs_parser/include
   ${CMAKE_HOME_DIRECTORY}/mdp_msdk-api/mediasdk_structures
 # ${CMAKE_HOME_DIRECTORY}/igfx_s3dcontrol/include
@@ -16,7 +16,7 @@ include_directories (
 # ${CMAKE_HOME_DIRECTORY}/include #included by CMake
   ${CMAKE_CURRENT_SOURCE_DIR}/include/gmock
   ${CMAKE_CURRENT_SOURCE_DIR}/include
-  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_testsuite/mfx_serializer/include
+  ${MSDK_TSUITE_ROOT}/mfx_serializer/include
 )
 
 list(APPEND sources
@@ -75,7 +75,7 @@ include_directories (
   ${CMAKE_HOME_DIRECTORY}/mdp_msdk-val-tools/bs_parser/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../shared/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../../_studio/shared/umc/codec/demuxer/include
-  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/samples/sample_common/include
+  ${MSDK_SAMPLES_ROOT}/sample_common/include
 )
 
 list(APPEND sources

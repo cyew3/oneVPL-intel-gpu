@@ -2,13 +2,13 @@ mfx_include_dirs( )
 
 include_directories (
   ${CMAKE_HOME_DIRECTORY}/mdp_msdk-api/opensource/mfx_dispatch/include
-  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/shared/umc/codec/spl_common/include
-  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/shared/umc/codec/avi_spl/include
-  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/shared/umc/codec/demuxer/include
-  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/shared/umc/test_suite/spy_test_component/include
+  ${MSDK_UMC_ROOT}/codec/spl_common/include
+  ${MSDK_UMC_ROOT}/codec/avi_spl/include
+  ${MSDK_UMC_ROOT}/codec/demuxer/include
+  ${MSDK_UMC_ROOT}/test_suite/spy_test_component/include
   ${CMAKE_CURRENT_SOURCE_DIR}/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../shared/include
-  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/samples/deprecated/sample_spl_mux/api
+  ${MSDK_SAMPLES_ROOT}/deprecated/sample_spl_mux/api
 )
 
 # =============================================================================

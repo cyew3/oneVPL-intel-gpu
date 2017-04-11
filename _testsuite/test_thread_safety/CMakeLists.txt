@@ -5,7 +5,7 @@ include_directories (
   ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_player/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_transcoder/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../shared/include
-  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/samples/sample_common/include
+  ${MSDK_SAMPLES_ROOT}/sample_common/include
 )
 
 set( LIBS "" )

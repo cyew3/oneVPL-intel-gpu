@@ -4,13 +4,13 @@ mfx_include_dirs( )
 
 # Includes
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
-include_directories( ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/mfx_lib/scheduler/include )
+include_directories( ${MSDK_STUDIO_ROOT}/mfx_lib/scheduler/include )
 # gtest/gmock
 include_directories( ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/gmock/gtest/include )
 include_directories( ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/gmock/include )
 
 # scheduler sources
-file( GLOB_RECURSE srcs "${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/mfx_lib/scheduler/src/*.cpp" )
+file( GLOB_RECURSE srcs "${MSDK_STUDIO_ROOT}/mfx_lib/scheduler/src/*.cpp" )
 list( APPEND sources ${srcs})
 
 # Tests sources

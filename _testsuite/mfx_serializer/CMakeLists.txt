@@ -1,13 +1,13 @@
 include_directories (
   ${CMAKE_HOME_DIRECTORY}/mdp_msdk-api/include
   ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/yaml-cpp/include
-  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_testsuite/mfx_serializer/include
-  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/shared/include
+  ${MSDK_TSUITE_ROOT}/mfx_serializer/include
+  ${MSDK_STUDIO_ROOT}/shared/include
 )
 
 list(APPEND sources
-  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_testsuite/mfx_serializer/src/mfx_serial_utils.cpp
-  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_testsuite/mfx_serializer/src/mfx_serializer.cpp
+  ${MSDK_TSUITE_ROOT}/mfx_serializer/src/mfx_serial_utils.cpp
+  ${MSDK_TSUITE_ROOT}/mfx_serializer/src/mfx_serializer.cpp
   ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/yaml-cpp/src/aliasmanager.cpp
   ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/yaml-cpp/src/binary.cpp
   ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/yaml-cpp/src/contrib/graphbuilder.cpp

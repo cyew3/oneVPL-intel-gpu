@@ -4,7 +4,7 @@ include_directories (
   ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_player/include
   ${CMAKE_CURRENT_SOURCE_DIR}/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../shared/include
-  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/samples/deprecated/sample_spl_mux/api
+  ${MSDK_SAMPLES_ROOT}/deprecated/sample_spl_mux/api
 #  ${CMAKE_HOME_DIRECTORY}/samples/sample_common/include
 )
 
