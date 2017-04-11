@@ -819,12 +819,13 @@ mfxStatus tsVideoENCPAK::PrepareFrameBuffers (bool secondField)
                 pak.fslice[curField].Slice[s].RefL0[r].PictureType = RefList[list][RefList[list].size()-1 - r].type;
             }
         }
+        // TODO: Return NumRefIdxActive back after relaxing of restrictions on encpak buffers parameters
         enc.fslice[curField].Slice[s].PPSId             = enc.fpps[curField].PPSId;
-        enc.fslice[curField].Slice[s].NumRefIdxL0Active = enc.fpps[curField].NumRefIdxL0Active = RefList[0].size();
-        enc.fslice[curField].Slice[s].NumRefIdxL1Active = enc.fpps[curField].NumRefIdxL1Active = RefList[1].size();
+        enc.fslice[curField].Slice[s].NumRefIdxL0Active = RefList[0].size();
+        enc.fslice[curField].Slice[s].NumRefIdxL1Active = RefList[1].size();
         pak.fslice[curField].Slice[s].PPSId             = pak.fpps[curField].PPSId;
-        pak.fslice[curField].Slice[s].NumRefIdxL0Active = pak.fpps[curField].NumRefIdxL0Active = RefList[0].size();
-        pak.fslice[curField].Slice[s].NumRefIdxL1Active = pak.fpps[curField].NumRefIdxL1Active = RefList[1].size();
+        pak.fslice[curField].Slice[s].NumRefIdxL0Active = RefList[0].size();
+        pak.fslice[curField].Slice[s].NumRefIdxL1Active = RefList[1].size();
     }
 
     PrepareDpbBuffers(secondField);
