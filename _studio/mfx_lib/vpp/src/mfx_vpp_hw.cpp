@@ -3608,7 +3608,7 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
         sts = GetWorstSts(sts, MFX_WRN_PARTIAL_ACCELERATION);
 
     /* 6. */
-    if (MFX_FOURCC_YV12 == par->vpp.In.FourCC && MFX_HW_BDW < core->GetHWType() && (par->vpp.In.Width > 6144 || par->vpp.In.Height > 6144))
+    if (MFX_FOURCC_YV12 == par->vpp.In.FourCC && MFX_HW_BDW < core->GetHWType())
         sts = GetWorstSts(sts, MFX_WRN_PARTIAL_ACCELERATION);
 
     /* 7. BitDepthLuma and BitDepthChroma should be configured for p010 format */
