@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2002-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2002-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -1256,6 +1256,41 @@ public:
 }
 
 #define PUT_START_CODE(scode) PUT_START_CODE_TH(0,scode)
+
+namespace mpeg2_helpers {
+    template<class T> inline void checkBufferSize(T &bBuf)
+    {
+#ifdef SAFE_MODE
+        if (((Ipp8u*)bBuf.current_pointer - (Ipp8u*)bBuf.start_pointer) > bBuf.bytelen - 8)
+        {
+            throw MPEG2_Exceptions(UMC::UMC_ERR_NOT_ENOUGH_BUFFER);
+        }
+#else
+        (void)bBuf; // unreferenced arg
+#endif
+    }
+
+    // analog of PUT_START_CODE macro
+    template<class T> inline void putStartCode(T &bitBuffer, unsigned long scode) {
+        Ipp32u code1, code2;
+        Ipp32s off = bitBuffer.bit_offset &~7;
+        code1 = bitBuffer.current_pointer[0];
+        code2 = 0;
+        if (off > 0) code1 |= (scode) >> (32 - off);
+        if (off < 32) code2 = (scode) << off;
+        bitBuffer.current_pointer[0] = BSWAP(code1);
+        bitBuffer.current_pointer++;
+        bitBuffer.current_pointer[0] = code2;
+        bitBuffer.bit_offset = off;
+    }
+
+    template<class T,class V> inline void putBits(T &bitBuffer, V value, Ipp32s nbits) {
+        checkBufferSize(bitBuffer);
+        ippiPutBits(bitBuffer.current_pointer,
+            bitBuffer.bit_offset,
+            value, nbits);
+    }
+}
 
 #define PUT_MB_TYPE(PictureType, MOTION_TYPE) {         \
   Ipp32s mb_type = MOTION_TYPE;                         \

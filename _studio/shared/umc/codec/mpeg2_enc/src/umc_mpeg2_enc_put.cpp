@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2002-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2002-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -435,38 +435,39 @@ const IppiPoint MPEG2VideoEncoderBase::MV_ZERO = {0, 0};
 
 Ipp32u MPEG2VideoEncoderBase::PutSequenceHeader2Mem(Ipp32u * buf, Ipp32u len)
 {
-    struct { bitBuffer bBuf; } threadSpecific[1] = { { 32, static_cast<mfxI32>(len), (Ipp8u *)buf, buf} };
-
+    using namespace mpeg2_helpers;
+    bitBuffer bBuf = { 32, static_cast<mfxI32>(len), (Ipp8u *)buf, buf };
     Ipp32s i=0;
 
-    PUT_START_CODE(SEQ_START_CODE);                // sequence_header_code
-    PUT_BITS((encodeInfo.info.clip_info.width & 0xfff), 12);  // horizontal_size_value
-    PUT_BITS((encodeInfo.info.clip_info.height & 0xfff), 12); // vertical_size_value
-    PUT_BITS(aspectRatio_code, 4);      // aspect_ratio_information
-    PUT_BITS(frame_rate_code, 4);                  // frame_rate_code
-    PUT_BITS(((Ipp32s)ceil(encodeInfo.info.bitrate / 400.0) & 0x3ffff), 18); // bit_rate_value
-    PUT_BITS(1, 1);                                // marker_bit
-    PUT_BITS((encodeInfo.VBV_BufferSize & 0x3ff), 10); // vbv_buffer_size_value
-    PUT_BITS(0, 1);                                // constrained_parameters_flag
+    putStartCode(bBuf,SEQ_START_CODE);                // sequence_header_code
+    putBits(bBuf, (encodeInfo.info.clip_info.width & 0xfff), 12); // horizontal_size_value
+    putBits(bBuf, (encodeInfo.info.clip_info.height & 0xfff), 12); // vertical_size_value
+    putBits(bBuf, aspectRatio_code, 4);      // aspect_ratio_information
+    putBits(bBuf, frame_rate_code, 4);                  // frame_rate_code
+    putBits(bBuf, ((Ipp32s)ceil(encodeInfo.info.bitrate / 400.0) & 0x3ffff), 18); // bit_rate_value
+    putBits(bBuf, 1, 1);                                // marker_bit
+    putBits(bBuf, (encodeInfo.VBV_BufferSize & 0x3ff), 10); // vbv_buffer_size_value
+    putBits(bBuf, 0, 1);                                // constrained_parameters_flag
 
-    PUT_BITS(encodeInfo.CustomIntraQMatrix, 1);    // load_intra_quantizer_matrix
+    putBits(bBuf, encodeInfo.CustomIntraQMatrix, 1);    // load_intra_quantizer_matrix
     if( encodeInfo.CustomIntraQMatrix )
         for(i=0; i < 64; i++) // matrices are always downloaded in zig-zag order
-            PUT_BITS(IntraQMatrix[ZigZagScan[i]], 8);  // intra_quantizer_matrix
+            putBits(bBuf, IntraQMatrix[ZigZagScan[i]], 8);  // intra_quantizer_matrix
 
-    PUT_BITS(encodeInfo.CustomNonIntraQMatrix, 1); // load_non_intra_quantizer_matrix
+    putBits(bBuf, encodeInfo.CustomNonIntraQMatrix, 1); // load_non_intra_quantizer_matrix
     if( encodeInfo.CustomNonIntraQMatrix )
         for(i=0; i < 64; i++)
-            PUT_BITS(NonIntraQMatrix[ZigZagScan[i]], 8); // non_intra_quantizer_matrix
+            putBits(bBuf, NonIntraQMatrix[ZigZagScan[i]], 8); // non_intra_quantizer_matrix
 
-    FLUSH_BITSTREAM(threadSpecific->bBuf.current_pointer, threadSpecific->bBuf.bit_offset);
+    FLUSH_BITSTREAM(bBuf.current_pointer, bBuf.bit_offset);
 
-    return Ipp32u((Ipp8u *)threadSpecific->bBuf.current_pointer - (Ipp8u *)threadSpecific->bBuf.start_pointer) + (32 - threadSpecific->bBuf.bit_offset + 7) / 8;
+    return Ipp32u((Ipp8u *)bBuf.current_pointer - (Ipp8u *)bBuf.start_pointer) + (32 - bBuf.bit_offset + 7) / 8;
 }
 
 Ipp32u MPEG2VideoEncoderBase::PutSequenceExt2Mem(Ipp32u * buf, Ipp32u len)
 {
-    struct { bitBuffer bBuf; } threadSpecific[1] = { { 32, static_cast<mfxI32>(len), (Ipp8u *)buf, buf} };
+    using namespace mpeg2_helpers;
+    bitBuffer bBuf = { 32, static_cast<mfxI32>(len), (Ipp8u *)buf, buf };
 
     Ipp32s chroma_format_code;
     Ipp32s prog_seq = (encodeInfo.info.interlace_type == PROGRESSIVE) ? 1 : 0;
@@ -477,48 +478,49 @@ Ipp32u MPEG2VideoEncoderBase::PutSequenceExt2Mem(Ipp32u * buf, Ipp32u len)
         case YUV444: chroma_format_code = 3; break;
         default:     chroma_format_code = 1;
     }
-    PUT_START_CODE(EXT_START_CODE);               // extension_start_code
-    PUT_BITS(SEQ_ID, 4);                          // extension_start_code_identifier
-    PUT_BITS(( encodeInfo.profile << 4 ) | encodeInfo.level, 8);    // profile_and_level_indication
-    PUT_BITS(prog_seq, 1);                        // progressive sequence
-    PUT_BITS(chroma_format_code, 2);              // chroma_format
-    PUT_BITS(encodeInfo.info.clip_info.width >> 12, 2);      // horizontal_size_extension
-    PUT_BITS(encodeInfo.info.clip_info.height >> 12, 2);     // vertical_size_extension
-    PUT_BITS(((Ipp32s)ceil(encodeInfo.info.bitrate / 400.0)) >> 18, 12);    // bit_rate_extension
-    PUT_BITS(1, 1);                               // marker_bit
-    PUT_BITS(encodeInfo.VBV_BufferSize >> 10, 8); // vbv_buffer_size_extension
-    PUT_BITS(0, 1);                               // low_delay  (not implemented)
-    PUT_BITS(frame_rate_extension_n, 2);
-    PUT_BITS(frame_rate_extension_d, 5);
+    putStartCode(bBuf, EXT_START_CODE);               // extension_start_code
+    putBits(bBuf, SEQ_ID, 4);                          // extension_start_code_identifier
+    putBits(bBuf, ( encodeInfo.profile << 4 ) | encodeInfo.level, 8);    // profile_and_level_indication
+    putBits(bBuf, prog_seq, 1);                        // progressive sequence
+    putBits(bBuf, chroma_format_code, 2);              // chroma_format
+    putBits(bBuf, encodeInfo.info.clip_info.width >> 12, 2);      // horizontal_size_extension
+    putBits(bBuf, encodeInfo.info.clip_info.height >> 12, 2);     // vertical_size_extension
+    putBits(bBuf, ((Ipp32s)ceil(encodeInfo.info.bitrate / 400.0)) >> 18, 12);    // bit_rate_extension
+    putBits(bBuf, 1, 1);                               // marker_bit
+    putBits(bBuf, encodeInfo.VBV_BufferSize >> 10, 8); // vbv_buffer_size_extension
+    putBits(bBuf, 0, 1);                               // low_delay  (not implemented)
+    putBits(bBuf, frame_rate_extension_n, 2);
+    putBits(bBuf, frame_rate_extension_d, 5);
 
-    FLUSH_BITSTREAM(threadSpecific->bBuf.current_pointer, threadSpecific->bBuf.bit_offset);
+    FLUSH_BITSTREAM(bBuf.current_pointer, bBuf.bit_offset);
 
-    return Ipp32u((Ipp8u *)threadSpecific->bBuf.current_pointer - (Ipp8u *)threadSpecific->bBuf.start_pointer) + (32 - threadSpecific->bBuf.bit_offset + 7) / 8;
+    return Ipp32u((Ipp8u *)bBuf.current_pointer - (Ipp8u *)bBuf.start_pointer) + (32 - bBuf.bit_offset + 7) / 8;
 }
 
 Ipp32u MPEG2VideoEncoderBase::PutSequenceDisplayExt2Mem(Ipp32u * buf, Ipp32u len)
 {
-    struct { bitBuffer bBuf; } threadSpecific[1] = { { 32, static_cast<mfxI32>(len), (Ipp8u *)buf, buf} };
+    using namespace mpeg2_helpers;
+    bitBuffer bBuf = { 32, static_cast<mfxI32>(len), (Ipp8u *)buf, buf };
 
-    PUT_START_CODE(EXT_START_CODE); // extension_start_code
-    PUT_BITS(DISP_ID, 4);           // extension_start_code_identifier
-    PUT_BITS(encodeInfo.video_format, 3);
-    PUT_BITS(encodeInfo.color_description, 1);
+    putStartCode(bBuf, EXT_START_CODE); // extension_start_code
+    putBits(bBuf, DISP_ID, 4);           // extension_start_code_identifier
+    putBits(bBuf, encodeInfo.video_format, 3);
+    putBits(bBuf, encodeInfo.color_description, 1);
 
     if (encodeInfo.color_description)
     {
-        PUT_BITS(encodeInfo.color_primaries, 8);
-        PUT_BITS(encodeInfo.transfer_characteristics, 8);
-        PUT_BITS(encodeInfo.matrix_coefficients, 8);
+        putBits(bBuf, encodeInfo.color_primaries, 8);
+        putBits(bBuf, encodeInfo.transfer_characteristics, 8);
+        putBits(bBuf, encodeInfo.matrix_coefficients, 8);
     }
 
-    PUT_BITS(encodeInfo.info.clip_info.width, 14);  // display_horizontal_size
-    PUT_BITS(1, 1);                                 // marker_bit
-    PUT_BITS(encodeInfo.info.clip_info.height, 14); // display_vertical_size
+    putBits(bBuf, encodeInfo.info.clip_info.width, 14);  // display_horizontal_size
+    putBits(bBuf, 1, 1);                                 // marker_bit
+    putBits(bBuf, encodeInfo.info.clip_info.height, 14); // display_vertical_size
 
-    FLUSH_BITSTREAM(threadSpecific->bBuf.current_pointer, threadSpecific->bBuf.bit_offset);
+    FLUSH_BITSTREAM(bBuf.current_pointer, bBuf.bit_offset);
 
-    return Ipp32u((Ipp8u *)threadSpecific->bBuf.current_pointer - (Ipp8u *)threadSpecific->bBuf.start_pointer) + (32 - threadSpecific->bBuf.bit_offset + 7) / 8;
+    return Ipp32u((Ipp8u *)bBuf.current_pointer - (Ipp8u *)bBuf.start_pointer) + (32 - bBuf.bit_offset + 7) / 8;
 }
 
 // generate sequence header (6.2.2.1, 6.3.3)
