@@ -117,13 +117,14 @@ void mfx_UMC_FrameAllocator::FrameInformation::Reset()
 }
 
 mfx_UMC_FrameAllocator::mfx_UMC_FrameAllocator()
-    : m_curIndex(-1),
-      m_IsUseExternalFrames(true),
-      m_sfcVideoPostProcessing(false),
-      m_pCore(0),
-      m_externalFramesResponse(0),
-      m_isSWDecode(false),
-      m_IOPattern(0)
+    : m_curIndex(-1)
+    , m_IsUseExternalFrames(true)
+    , m_sfcVideoPostProcessing(false)
+    , m_surface_info()
+    , m_pCore(0)
+    , m_externalFramesResponse(0)
+    , m_isSWDecode(false)
+    , m_IOPattern(0)
 {
 }
 
