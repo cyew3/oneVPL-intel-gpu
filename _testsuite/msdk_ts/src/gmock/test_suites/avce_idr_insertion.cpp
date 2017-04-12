@@ -42,6 +42,7 @@ public:
     {
         mfxStatus sts;
         mfxU32 mode;
+        mfxU16 BRefType;
         struct f_pair
         {
             mfxU32 ext_type;
@@ -113,10 +114,15 @@ public:
 
 const TestSuite::tc_struct TestSuite::test_case[] =
 {
-    {/*00*/ MFX_ERR_NONE, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist,  4}},
-    {/*01*/ MFX_ERR_NONE, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist,  7}},
-    {/*02*/ MFX_ERR_NONE, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 10}},
-    {/*03*/ MFX_ERR_NONE, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 0}}
+    {/*00*/ MFX_ERR_NONE, 0, 2, {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist,  4}},
+    {/*01*/ MFX_ERR_NONE, 0, 2, {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist,  7}},
+    {/*02*/ MFX_ERR_NONE, 0, 2, {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 10}},
+    {/*03*/ MFX_ERR_NONE, 0, 2, {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 0}},
+    {/*04*/ MFX_ERR_NONE, 0, 1, {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 0}},
+    {/*05*/ MFX_ERR_NONE, 0, 1, {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 4}},
+    {/*06*/ MFX_ERR_NONE, 0, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 0}},
+    {/*07*/ MFX_ERR_NONE, 0, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 4}},
+    {/*08*/ MFX_ERR_NONE, 0, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 7}}
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -135,7 +141,7 @@ int TestSuite::RunTest(unsigned int id)
     SETPARS(m_pPar, MFXPAR);
     m_par.AsyncDepth = 1;
     mfxExtCodingOption2& cod2 = m_par;
-    cod2.BRefType = 2;
+    cod2.BRefType = tc.BRefType;
 
     m_par.mfx.FrameInfo.Width = 352;
     m_par.mfx.FrameInfo.Height = 288;
@@ -150,7 +156,7 @@ int TestSuite::RunTest(unsigned int id)
 
     mfxU32 nframes = 60;
     EncodeFrames(nframes, true);
-
+    EXPECT_EQ(true, pred_frame_type != -1) << "error last frame type: " << pred_frame_type << " \n";
     TS_END;
     return 0;
 }
