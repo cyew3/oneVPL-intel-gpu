@@ -201,7 +201,6 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
 int test(unsigned int id)
 {
     TS_START;
-    g_tsLog << "TEST INFO: this test performs real verification on SW only\n";
     tsVideoEncoder enc(MFX_CODEC_AVC);
     SFiller sf;
     BitstreamChecker c;
@@ -247,7 +246,7 @@ int test(unsigned int id)
     co.PicTimingSEI         = 16;
     co.VuiNalHrdParameters  = 16;
 
-    enc.EncodeFrames(300);
+    enc.EncodeFrames(g_tsConfig.sim ? 10 : 300);
 
     TS_END;
     return 0;

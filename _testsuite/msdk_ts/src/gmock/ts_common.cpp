@@ -10,6 +10,10 @@ Copyright(c) 2016-2017 Intel Corporation. All Rights Reserved.
 
 #include "ts_common.h"
 
+#if defined(_WIN32) || defined(_WIN64)
+    #include "..\opensource\mfx_dispatch\include\mfx_dxva2_device.h"
+#endif
+
 tsTrace      g_tsLog(std::cout.rdbuf());
 tsStatus     g_tsStatus;
 mfxIMPL      g_tsImpl     = MFX_IMPL_AUTO;
@@ -21,7 +25,7 @@ mfxVersion   g_tsVersion  = {MFX_VERSION_MINOR, MFX_VERSION_MAJOR};
 mfxU32       g_tsTrace    = 1;
 tsPlugin     g_tsPlugin;
 tsStreamPool g_tsStreamPool;
-tsConfig     g_tsConfig = {0};
+tsConfig     g_tsConfig = {0, false, ""};
 
 bool operator == (const mfxFrameInfo& v1, const mfxFrameInfo& v2)
 {
@@ -236,6 +240,8 @@ void MFXVideoTest::SetUp()
     std::string lowpower = ENV("TS_LOWPOWER", "");
     std::string cfg_file = ENV("TS_CONFIG_FILE", "");
 
+    g_tsConfig.sim = (ENV("TS_SIM", "0") == "1");
+
     g_tsConfig.lowpower = MFX_CODINGOPTION_UNKNOWN;
     if      (lowpower ==  "ON") { g_tsConfig.lowpower =  MFX_CODINGOPTION_ON; }
     else if (lowpower == "OFF") { g_tsConfig.lowpower = MFX_CODINGOPTION_OFF; }
@@ -312,6 +318,54 @@ void MFXVideoTest::SetUp()
     sscanf(trace.c_str(), "%d", &g_tsTrace);
 
     g_tsPlugin.Init(plugins, platform);
+
+#if defined(_WIN32) || defined(_WIN64)
+    for (mfxU32 adapter = 0; adapter < 4 && !g_tsConfig.sim; adapter++)
+    {
+        MFX::DXVA2Device device;
+
+        if (g_tsImpl & MFX_IMPL_VIA_D3D11)
+        {
+            if (!device.InitDXGI1(adapter))
+                break;
+        }
+        else if (!device.InitD3D9(adapter))
+            break;
+
+
+        if (device.GetVendorID() != 0x8086)
+            continue;
+
+        auto id = device.GetDeviceID();
+
+        switch (id)
+        {
+        //CNL Simulation:
+        case 0xA00: //iCNLGT0
+        case 0xA01: //iCNLGT1
+        case 0xA02: //iCNLGT2
+        //ICL Simulation:
+        case 0xFF02: //iICL11HP
+        case 0xFF05: //iICL11LP
+        case 0xFF15: //iICLCNXG
+        //GLV Simulation
+        case 0xFF10: //iGLVSIM
+        //TGL Simulation
+        case 0xFF20: //iTGLSIM
+        //LKF Simulation
+        case 0x8A40: //iLKFSIM
+            g_tsConfig.sim = true;
+            g_tsLog << "SIMULATION DETECTED\n";
+        default:
+            break;
+        }
+
+        id = ((id << 8) | (id >> 8));
+        g_tsLog << "DeviceID = 0x" << hexstr(&id, 2) << " at adapter #" << adapter << "\n";
+
+        break;
+    }
+#endif
 }
 #pragma warning(default:4996)
 
