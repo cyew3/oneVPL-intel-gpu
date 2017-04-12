@@ -2002,38 +2002,32 @@ void HeaderPacker::PackSSH(
     PPS   const &    pps,
     Slice const &    slice,
     mfxU32*          qpd_offset,
-    mfxU32*          sao_offset,
-    mfxU16*          ssh_start_len,
-    mfxU32*          ssh_offset)
+    bool             dyn_slice_size,
+    mfxU32*          sao_offset)
 {
     const mfxU8 B = 0, P = 1/*, I = 2*/;
-    mfxU32 MaxCU = (1<<(sps.log2_min_luma_coding_block_size_minus3 + 3 + sps.log2_diff_max_min_luma_coding_block_size));
-    mfxU32 PicSizeInCtbsY = CeilDiv(sps.pic_width_in_luma_samples, MaxCU) * CeilDiv(sps.pic_height_in_luma_samples, MaxCU);
 
     PackNALU(bs, nalu);
 
-    mfxU32 ssh_start_off = bs.GetOffset();
+    if (!dyn_slice_size) {
+        mfxU32 MaxCU = (1<<(sps.log2_min_luma_coding_block_size_minus3 + 3 + sps.log2_diff_max_min_luma_coding_block_size));
+        mfxU32 PicSizeInCtbsY = CeilDiv(sps.pic_width_in_luma_samples, MaxCU) * CeilDiv(sps.pic_height_in_luma_samples, MaxCU);
 
-    if (ssh_offset)
-        *ssh_offset = (nalu.long_start_code) ? 6 : 5;
+        bs.PutBit(slice.first_slice_segment_in_pic_flag);
 
-    bs.PutBit(slice.first_slice_segment_in_pic_flag);
+        if (nalu.nal_unit_type >=  BLA_W_LP  && nalu.nal_unit_type <=  RSV_IRAP_VCL23)
+            bs.PutBit(slice.no_output_of_prior_pics_flag);
 
-    if (nalu.nal_unit_type >=  BLA_W_LP  && nalu.nal_unit_type <=  RSV_IRAP_VCL23)
-        bs.PutBit(slice.no_output_of_prior_pics_flag);
+        bs.PutUE(slice.pic_parameter_set_id);
 
-    bs.PutUE(slice.pic_parameter_set_id);
+        if (!slice.first_slice_segment_in_pic_flag)
+        {
+            if (pps.dependent_slice_segments_enabled_flag)
+                bs.PutBit(slice.dependent_slice_segment_flag);
 
-    if (!slice.first_slice_segment_in_pic_flag)
-    {
-        if (pps.dependent_slice_segments_enabled_flag)
-            bs.PutBit(slice.dependent_slice_segment_flag);
-
-        bs.PutBits(CeilLog2(PicSizeInCtbsY), slice.segment_address);
+            bs.PutBits(CeilLog2(PicSizeInCtbsY), slice.segment_address);
+        }
     }
-
-    if (ssh_start_len)
-        *ssh_start_len = (mfxU16)(bs.GetOffset() - ssh_start_off);
 
     if( !slice.dependent_slice_segment_flag )
     {
@@ -2228,8 +2222,8 @@ void HeaderPacker::PackSSH(
 
     assert(0 == pps.slice_segment_header_extension_present_flag);
 
-    // no trailing bits for dynamic slice size ????
-    bs.PutTrailingBits();
+    if (!dyn_slice_size)   // no trailing bits for dynamic slice size
+        bs.PutTrailingBits();
 }
 
 void HeaderPacker::PackSTRPS(BitstreamWriter& bs, const STRPS* sets, mfxU32 num, mfxU32 idx)
@@ -2768,7 +2762,7 @@ void HeaderPacker::GetSuffixSEI(Task const & task, mfxU8*& buf, mfxU32& sizeInBy
     }
 }
 
-void HeaderPacker::GetSSH(Task const & task, mfxU32 id, mfxU8*& buf, mfxU32& sizeInBytes, mfxU32* qpd_offset, mfxU32* sao_offset, mfxU16* ssh_start_len, mfxU32* ssh_offset)
+void HeaderPacker::GetSSH(Task const & task, mfxU32 id, mfxU8*& buf, mfxU32& sizeInBits, mfxU32* qpd_offset, bool dyn_slice_size, mfxU32* sao_offset, mfxU16* ssh_start_len, mfxU32* ssh_offset)
 {
     BitstreamWriter& rbsp = m_bs;
     bool LongStartCode = (id == 0 && task.m_insertHeaders == 0) || IsOn(m_par->m_ext.DDI.LongStartCodes);
@@ -2786,17 +2780,19 @@ void HeaderPacker::GetSSH(Task const & task, mfxU32 id, mfxU8*& buf, mfxU32& siz
 
     buf = m_bs.GetStart() + CeilDiv(rbsp.GetOffset(), 8);
 
-    PackSSH(rbsp, nalu, m_par->m_sps, m_par->m_pps, sh, qpd_offset, sao_offset, ssh_start_len, ssh_offset);
+    PackSSH(rbsp, nalu, m_par->m_sps, m_par->m_pps, sh, qpd_offset, dyn_slice_size, sao_offset);
+    if (dyn_slice_size) {
+        *ssh_start_len = (nalu.long_start_code) ? 48 : 40;
+        *ssh_offset = 0;
+    }
 
     mfxU32 SEIbits = (mfxU32)(buf - m_bs.GetStart()) * 8;
     if (qpd_offset)
         *qpd_offset -= SEIbits;
     if (sao_offset)
         *sao_offset -= SEIbits;
-    if (ssh_start_len)
-        *ssh_start_len -= (mfxU16)SEIbits;
 
-    sizeInBytes = CeilDiv(rbsp.GetOffset(), 8) - (mfxU32)(buf - m_bs.GetStart());
+    sizeInBits = rbsp.GetOffset() - (mfxU32)(buf - m_bs.GetStart()) * 8;
 }
 
 void HeaderPacker::codingTree(mfxU32 xCtu, mfxU32 yCtu, mfxU32 log2CtuSize, BitstreamWriter& bs, const Slice& slice, mfxU32 x0, mfxU32 y0, mfxU8* tabl)

@@ -302,7 +302,7 @@ mfxStatus D3D9VideoCORE::InternalInit()
     if (sts == MFX_ERR_NONE)
         platformFromDriver = config.ConfigBitstreamRaw;
 
-#if 0
+#if 1
     // added temporarily to monitor driver DDI version if needed
     sts = GetIntelDataPrivateReport(DXVA2_Intel_Encode_HEVC_Main, config);
     int DriverDDIMain = config.ConfigSpatialResid8;

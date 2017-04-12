@@ -570,6 +570,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, 
 #else
         {
             pPH = PackSliceHeader(task, i, &m_slice[i].SliceQpDeltaBitOffset
+                ,!!(m_pps.MaxSliceSizeInBytes)
 #if defined(PRE_SI_TARGET_PLATFORM_GEN10)
                 , &m_slice[i].SliceSAOFlagBitOffset
                 , &m_slice[i].BitLengthSliceHeaderStartingPortion

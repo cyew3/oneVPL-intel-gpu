@@ -336,15 +336,14 @@ ENCODE_PACKEDHEADER_DATA* DDIHeaderPacker::PackHeader(Task const & task, mfxU32 
     return &*m_cur;
 }
 
-ENCODE_PACKEDHEADER_DATA* DDIHeaderPacker::PackSliceHeader(Task const & task, mfxU32 id, mfxU32* qpd_offset, mfxU32* sao_offset, mfxU16* ssh_start_len, mfxU32* ssh_offset)
+ENCODE_PACKEDHEADER_DATA* DDIHeaderPacker::PackSliceHeader(Task const & task, mfxU32 id, mfxU32* qpd_offset, bool dyn_slice_size, mfxU32* sao_offset, mfxU16* ssh_start_len, mfxU32* ssh_offset)
 {
     bool is1stNALU = (id == 0 && task.m_insertHeaders == 0);
     NewHeader();
 
-    m_packer.GetSSH(task, id, m_cur->pData, m_cur->DataLength, qpd_offset, sao_offset, ssh_start_len, ssh_offset);
-    m_cur->BufferSize = m_cur->DataLength;
+    m_packer.GetSSH(task, id, m_cur->pData, m_cur->DataLength, qpd_offset, dyn_slice_size, sao_offset, ssh_start_len, ssh_offset);
+    m_cur->BufferSize = CeilDiv(m_cur->DataLength, 8);
     m_cur->SkipEmulationByteCount = 3 + is1stNALU;
-    m_cur->DataLength *= 8;
 
     return &*m_cur;
 }
