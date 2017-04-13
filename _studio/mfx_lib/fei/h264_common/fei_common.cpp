@@ -567,6 +567,7 @@ mfxStatus MfxH264FEIcommon::CheckInitExtBuffers(const MfxVideoParam & owned_vide
     {
         MFX_CHECK(pDataPPS->SPSId                     <=  31, MFX_ERR_INVALID_VIDEO_PARAM);
         MFX_CHECK(pDataPPS->PPSId                     <= 255, MFX_ERR_INVALID_VIDEO_PARAM);
+        MFX_CHECK(pDataPPS->PicInitQP                 <=  51, MFX_ERR_INVALID_VIDEO_PARAM);
         MFX_CHECK(pDataPPS->NumRefIdxL0Active         <=  32, MFX_ERR_INVALID_VIDEO_PARAM);
         MFX_CHECK(pDataPPS->NumRefIdxL1Active         <=  32, MFX_ERR_INVALID_VIDEO_PARAM);
         MFX_CHECK(pDataPPS->ChromaQPIndexOffset       <=  12, MFX_ERR_INVALID_VIDEO_PARAM);
@@ -583,8 +584,8 @@ mfxStatus MfxH264FEIcommon::CheckInitExtBuffers(const MfxVideoParam & owned_vide
         extPps->picParameterSetId              = pDataPPS->PPSId;
 
         extPps->picInitQpMinus26               = pDataPPS->PicInitQP - 26;
-        extPps->numRefIdxL0DefaultActiveMinus1 = (std::max)(pDataPPS->NumRefIdxL0Active, mfxU16(1)) - 1;;
-        extPps->numRefIdxL1DefaultActiveMinus1 = (std::max)(pDataPPS->NumRefIdxL1Active, mfxU16(1)) - 1;;
+        extPps->numRefIdxL0DefaultActiveMinus1 = (std::max)(pDataPPS->NumRefIdxL0Active, mfxU16(1)) - 1;
+        extPps->numRefIdxL1DefaultActiveMinus1 = (std::max)(pDataPPS->NumRefIdxL1Active, mfxU16(1)) - 1;
 
         extPps->chromaQpIndexOffset            = pDataPPS->ChromaQPIndexOffset;
         extPps->secondChromaQpIndexOffset      = pDataPPS->SecondChromaQPIndexOffset;
@@ -661,9 +662,27 @@ mfxStatus MfxH264FEIcommon::CheckRuntimeExtBuffers(T* input, U* output, const Mf
     mfxExtFeiSPS* extFeiSPSinRuntime = GetExtBufferFEI(input, 0);
     MFX_CHECK(!extFeiSPSinRuntime, MFX_ERR_UNDEFINED_BEHAVIOR);
 
-    mfxU32 fieldMaxCount = (owned_video.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) ? 1 : 2;
+    bool is_progressive = !!(owned_video.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE);
+    mfxU32 fieldMaxCount = is_progressive ? 1 : 2;
     for (mfxU32 field = 0; field < fieldMaxCount; field++)
     {
+        mfxExtFeiPPS* extFeiPPSinRuntime = GetExtBufferFEI(input, field);
+        MFX_CHECK(extFeiPPSinRuntime, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+        // Check that parameters from previous init kept unchanged
+        {
+            mfxExtPpsHeader* extPps = GetExtBuffer(owned_video);
+
+            MFX_CHECK(extPps->seqParameterSetId              == extFeiPPSinRuntime->SPSId,                                        MFX_ERR_UNDEFINED_BEHAVIOR);
+            MFX_CHECK(extPps->picParameterSetId              == extFeiPPSinRuntime->PPSId,                                        MFX_ERR_UNDEFINED_BEHAVIOR);
+            MFX_CHECK(extPps->picInitQpMinus26               == extFeiPPSinRuntime->PicInitQP - 26,                               MFX_ERR_UNDEFINED_BEHAVIOR);
+            MFX_CHECK(extPps->numRefIdxL0DefaultActiveMinus1 == (std::max)(extFeiPPSinRuntime->NumRefIdxL0Active, mfxU16(1)) - 1, MFX_ERR_UNDEFINED_BEHAVIOR);
+            MFX_CHECK(extPps->numRefIdxL1DefaultActiveMinus1 == (std::max)(extFeiPPSinRuntime->NumRefIdxL1Active, mfxU16(1)) - 1, MFX_ERR_UNDEFINED_BEHAVIOR);
+            MFX_CHECK(extPps->chromaQpIndexOffset            == extFeiPPSinRuntime->ChromaQPIndexOffset,                          MFX_ERR_UNDEFINED_BEHAVIOR);
+            MFX_CHECK(extPps->secondChromaQpIndexOffset      == extFeiPPSinRuntime->SecondChromaQPIndexOffset,                    MFX_ERR_UNDEFINED_BEHAVIOR);
+            MFX_CHECK(extPps->transform8x8ModeFlag           == extFeiPPSinRuntime->Transform8x8ModeFlag,                         MFX_ERR_UNDEFINED_BEHAVIOR);
+        }
+        
         // SliceHeader is required to pass reference lists
         mfxExtFeiSliceHeader * extFeiSliceInRintime = GetExtBufferFEI(input, field);
         MFX_CHECK(extFeiSliceInRintime,                                           MFX_ERR_UNDEFINED_BEHAVIOR);
@@ -687,29 +706,17 @@ mfxStatus MfxH264FEIcommon::CheckRuntimeExtBuffers(T* input, U* output, const Mf
 
             MFX_CHECK(extFeiSliceInRintime->Slice[i].PPSId                      <= 255, MFX_ERR_INVALID_VIDEO_PARAM);
             MFX_CHECK(extFeiSliceInRintime->Slice[i].CabacInitIdc               <=   2, MFX_ERR_INVALID_VIDEO_PARAM);
-
+            MFX_CHECK(extFeiSliceInRintime->Slice[i].NumRefIdxL0Active          <=  is_progressive ? 15 : 31, 
+                                                                                        MFX_ERR_INVALID_VIDEO_PARAM);
+            MFX_CHECK(extFeiSliceInRintime->Slice[i].NumRefIdxL1Active          <=  is_progressive ? 15 : 31, 
+                                                                                        MFX_ERR_INVALID_VIDEO_PARAM);
+            MFX_CHECK(extFeiSliceInRintime->Slice[i].SliceQPDelta + extFeiPPSinRuntime->PicInitQP              
+                                                                                <=  51, MFX_ERR_INVALID_VIDEO_PARAM);
             MFX_CHECK(extFeiSliceInRintime->Slice[i].DisableDeblockingFilterIdc <=   2, MFX_ERR_INVALID_VIDEO_PARAM);
             MFX_CHECK(extFeiSliceInRintime->Slice[i].SliceAlphaC0OffsetDiv2     <=   6, MFX_ERR_INVALID_VIDEO_PARAM);
             MFX_CHECK(extFeiSliceInRintime->Slice[i].SliceAlphaC0OffsetDiv2     >=  -6, MFX_ERR_INVALID_VIDEO_PARAM);
             MFX_CHECK(extFeiSliceInRintime->Slice[i].SliceBetaOffsetDiv2        <=   6, MFX_ERR_INVALID_VIDEO_PARAM);
             MFX_CHECK(extFeiSliceInRintime->Slice[i].SliceBetaOffsetDiv2        >=  -6, MFX_ERR_INVALID_VIDEO_PARAM);
-        }
-
-        mfxExtFeiPPS* extFeiPPSinRuntime = GetExtBufferFEI(input, field);
-        MFX_CHECK(extFeiPPSinRuntime, MFX_ERR_UNDEFINED_BEHAVIOR);
-
-        // Check that parameters from previous init kept unchanged
-        {
-            mfxExtPpsHeader* extPps = GetExtBuffer(owned_video);
-
-            MFX_CHECK(extPps->seqParameterSetId              == extFeiPPSinRuntime->SPSId,                                        MFX_ERR_UNDEFINED_BEHAVIOR);
-            MFX_CHECK(extPps->picParameterSetId              == extFeiPPSinRuntime->PPSId,                                        MFX_ERR_UNDEFINED_BEHAVIOR);
-            MFX_CHECK(extPps->picInitQpMinus26               == extFeiPPSinRuntime->PicInitQP - 26,                               MFX_ERR_UNDEFINED_BEHAVIOR);
-            MFX_CHECK(extPps->numRefIdxL0DefaultActiveMinus1 == (std::max)(extFeiPPSinRuntime->NumRefIdxL0Active, mfxU16(1)) - 1, MFX_ERR_UNDEFINED_BEHAVIOR);
-            MFX_CHECK(extPps->numRefIdxL1DefaultActiveMinus1 == (std::max)(extFeiPPSinRuntime->NumRefIdxL1Active, mfxU16(1)) - 1, MFX_ERR_UNDEFINED_BEHAVIOR);
-            MFX_CHECK(extPps->chromaQpIndexOffset            == extFeiPPSinRuntime->ChromaQPIndexOffset,                          MFX_ERR_UNDEFINED_BEHAVIOR);
-            MFX_CHECK(extPps->secondChromaQpIndexOffset      == extFeiPPSinRuntime->SecondChromaQPIndexOffset,                    MFX_ERR_UNDEFINED_BEHAVIOR);
-            MFX_CHECK(extPps->transform8x8ModeFlag           == extFeiPPSinRuntime->Transform8x8ModeFlag,                         MFX_ERR_UNDEFINED_BEHAVIOR);
         }
 
 #if MFX_VERSION >= 1023
