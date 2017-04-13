@@ -819,7 +819,7 @@ mfxStatus ResMngr::FillTaskForMode30i60p(
                 pTask->input = m_surfQueue[CURRENT_INPUT];
             }
         }
-        
+
         pTask->input.timeStamp     = CURRENT_TIME_STAMP + actualNumber * FRAME_INTERVAL;
         pTask->input.endTimeStamp  = CURRENT_TIME_STAMP + (actualNumber + 1) * FRAME_INTERVAL;
         if(m_surf[VPP_IN].size() > 0) // input in system memory
@@ -2746,7 +2746,7 @@ mfxStatus VideoVPPHW::MergeRuntimeParams(const DdiTask *pTask, MfxHwVideoProcess
     MFX_CHECK_NULL_PTR1(pTask);
     MFX_CHECK_NULL_PTR1(execParams);
     mfxU32 numSamples;
-    std::vector<ExtSurface> inputSurfs;
+    std::vector<mfxFrameSurface1*> inputSurfs;
     size_t i, indx;
 
     numSamples = pTask->bkwdRefCount + 1 + pTask->fwdRefCount;
@@ -2757,25 +2757,36 @@ mfxStatus VideoVPPHW::MergeRuntimeParams(const DdiTask *pTask, MfxHwVideoProcess
     for(i = 0; i < pTask->bkwdRefCount; i++)
     {
         indx = i;
-        inputSurfs[indx] = pTask->m_refList[i];
+        inputSurfs[indx] = pTask->m_refList[i].pSurf;
     }
 
     // cur Frame
     indx = pTask->bkwdRefCount;
-    inputSurfs[indx] = pTask->input;
+    inputSurfs[indx] = pTask->input.pSurf;
 
     // fwd Frames
     for( i = 0; i < pTask->fwdRefCount; i++ )
     {
         indx = pTask->bkwdRefCount + 1 + i;
-        inputSurfs[indx] = pTask->m_refList[pTask->bkwdRefCount + i];
+        inputSurfs[indx] = pTask->m_refList[pTask->bkwdRefCount + i].pSurf;
+    }
+
+    if(m_IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY)
+    {
+        for (i = 0; i < numSamples; ++i)
+        {
+            inputSurfs[i] = m_pCore->GetOpaqSurface(inputSurfs[i]->Data.MemId);
+            MFX_CHECK(inputSurfs[i], MFX_ERR_NULL_PTR);
+        }
     }
 
     mfxExtVPPVideoSignalInfo *vsi;
     for (i = 0; i < numSamples; i++)
     {
         // Update Video Signal info params for output
-        vsi = reinterpret_cast<mfxExtVPPVideoSignalInfo *>( GetExtendedBuffer(inputSurfs[i].pSurf->Data.ExtParam, inputSurfs[i].pSurf->Data.NumExtParam, MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO));
+        vsi = reinterpret_cast<mfxExtVPPVideoSignalInfo *>(GetExtendedBuffer(inputSurfs[i]->Data.ExtParam,
+                                                                             inputSurfs[i]->Data.NumExtParam,
+                                                                             MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO));
         if (vsi)
         {
             /* Check params */
@@ -2804,7 +2815,7 @@ mfxStatus VideoVPPHW::MergeRuntimeParams(const DdiTask *pTask, MfxHwVideoProcess
     execParams->gpuHangTrigger = false;
     for (i = 0; i < numSamples; i++)
     {
-        if (GetExtendedBuffer(inputSurfs[i].pSurf->Data.ExtParam, inputSurfs[i].pSurf->Data.NumExtParam, MFX_EXTBUFF_GPU_HANG))
+        if (GetExtendedBuffer(inputSurfs[i]->Data.ExtParam, inputSurfs[i]->Data.NumExtParam, MFX_EXTBUFF_GPU_HANG))
         {
             execParams->gpuHangTrigger = true;
             break;
@@ -2812,9 +2823,12 @@ mfxStatus VideoVPPHW::MergeRuntimeParams(const DdiTask *pTask, MfxHwVideoProcess
     }
 #endif
 
-    ExtSurface outputSurf = pTask->output;
+    mfxFrameSurface1 * outputSurf = m_IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY ? m_pCore->GetOpaqSurface(pTask->output.pSurf->Data.MemId): pTask->output.pSurf;
+    MFX_CHECK(outputSurf, MFX_ERR_NULL_PTR);
     // Update Video Signal info params for output
-    vsi = reinterpret_cast<mfxExtVPPVideoSignalInfo *>( GetExtendedBuffer(outputSurf.pSurf->Data.ExtParam, outputSurf.pSurf->Data.NumExtParam, MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO));
+    vsi = reinterpret_cast<mfxExtVPPVideoSignalInfo *>(GetExtendedBuffer(outputSurf->Data.ExtParam,
+                                                                         outputSurf->Data.NumExtParam,
+                                                                         MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO));
     if (vsi)
     {
             /* Check params */
@@ -2898,7 +2912,11 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
     mfxU32 imfxFPMode = 0xffffffff;
     if (m_executeParams.iFieldProcessingMode != 0)
     {
-        mfxFrameSurface1 * pInputSurface = surfQueue[0].pSurf;
+        mfxFrameSurface1 * pInputSurface = m_IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY ?
+                                            m_pCore->GetOpaqSurface(surfQueue[0].pSurf->Data.MemId):
+                                            surfQueue[0].pSurf;
+        MFX_CHECK(pInputSurface, MFX_ERR_NULL_PTR);
+
         /* Mean filter was configured as DOUSE, but no ExtBuf in VPP Init()
          * And ... no any parameters in runtime. This is an error! */
         if (((m_executeParams.iFieldProcessingMode -1) == FROM_RUNTIME_EXTBUFF_FIELD_PROC) && (pInputSurface->Data.NumExtParam == 0))

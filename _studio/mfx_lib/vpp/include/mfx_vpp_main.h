@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
 //
 
 /* ****************************************************************************** */
@@ -71,14 +71,14 @@ public:
     }
 
     virtual mfxStatus VppFrameCheck(
-        mfxFrameSurface1 *in, 
-        mfxFrameSurface1 *out, 
+        mfxFrameSurface1 *in,
+        mfxFrameSurface1 *out,
         mfxExtVppAuxData *aux,
         MFX_ENTRY_POINT pEntryPoint[],
         mfxU32 &numEntryPoints);
 
     virtual mfxStatus VppFrameCheck(
-        mfxFrameSurface1 *, 
+        mfxFrameSurface1 *,
         mfxFrameSurface1 *)
     {
         return MFX_ERR_UNSUPPORTED;
@@ -88,8 +88,8 @@ public:
 
     // multi threading of SW_VPP functions
     mfxStatus RunVPPTask(
-        mfxFrameSurface1 *in, 
-        mfxFrameSurface1 *out, 
+        mfxFrameSurface1 *in,
+        mfxFrameSurface1 *out,
         FilterVPP::InternalParam *pParam );
 
     mfxStatus ResetTaskCounters();
@@ -107,10 +107,6 @@ private:
             {
                 nativeSurface->Data.FrameOrder = surface->Data.FrameOrder;
                 nativeSurface->Data.TimeStamp = surface->Data.TimeStamp;
-                //nativeSurface->Data.Corrupted = surface->Data.Corrupted;
-                //nativeSurface->Data.DataFlag = surface->Data.DataFlag;
-                nativeSurface->Data.NumExtParam = surface->Data.NumExtParam;
-                nativeSurface->Data.ExtParam = surface->Data.ExtParam;
                 nativeSurface->Info = surface->Info;
             }
 
