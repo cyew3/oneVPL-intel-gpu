@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2017 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -137,7 +137,7 @@ class BSUtil
 public: 
     //copy as much data as it can, but no more than nBytes
     //and move offset in source buffer, returns number of copied bytes 
-    static mfxU32 MoveNBytes(mfxU8 *pTo, mfxBitstream *pFrom, mfxU32 nBytes);
+    static inline mfxU32 MoveNBytes(mfxU8 *pTo, mfxBitstream *pFrom, mfxU32 nBytes);
 
     //copy as much data as it can, but no more than nBytes, and donot move present bytes inside destination buffer
     //and move offset in source buffer, nBytes contains number of copied bytes 
@@ -167,11 +167,40 @@ public:
 
 private:
     //no pointers or size checks, just copy and offsets adjustments
-    static void MoveNBytesUnsafe(mfxBitstream *pTo, mfxBitstream *pFrom, mfxU32 nBytes);
+    static inline void MoveNBytesUnsafe(mfxBitstream *pTo, mfxBitstream *pFrom, mfxU32 nBytes);
     
     //no pointers or size checks, just copy and offsets adjustments
-    static void MoveNBytesUnsafe(mfxU8 *pTo, mfxBitstream *pFrom, mfxU32 nBytes);
+    static inline void MoveNBytesUnsafe(mfxU8 *pTo, mfxBitstream *pFrom, mfxU32 nBytes);
 };
+
+inline void BSUtil::MoveNBytesUnsafe(mfxU8 *pTo, mfxBitstream *pFrom, mfxU32 nCopied)
+{
+    //copy to the end of bs
+    memcpy(pTo, pFrom->Data + pFrom->DataOffset, nCopied);
+
+    //moving offsets
+    pFrom->DataLength -= nCopied;
+    pFrom->DataOffset += nCopied;
+}
+
+inline void BSUtil::MoveNBytesUnsafe(mfxBitstream *pTo, mfxBitstream *pFrom, mfxU32 nCopied)
+{
+    MoveNBytesUnsafe(pTo->Data + pTo->DataOffset + pTo->DataLength, pFrom, nCopied);
+
+    //moving dest offset
+    pTo->DataLength += nCopied;
+}
+
+inline mfxU32 BSUtil::MoveNBytes(mfxU8 *pTo, mfxBitstream *pFrom, mfxU32 nBytes)
+{
+    if (NULL == pTo || NULL == pFrom || NULL == pFrom->Data)
+        return 0;
+
+    nBytes = (std::min)(pFrom->DataLength, nBytes);
+    MoveNBytesUnsafe(pTo, pFrom, nBytes);
+
+    return nBytes;
+}
 
 tstring cvt_s2t(const std::string & lhs);
 

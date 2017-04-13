@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2017 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -1313,35 +1313,6 @@ mfxStatus CheckStatusMultiSkip(mfxStatus status_to_check, ... )
             return MFX_ERR_NONE;
     }
     return status_to_check;
-}
-
-void BSUtil::MoveNBytesUnsafe(mfxU8 *pTo, mfxBitstream *pFrom, mfxU32 nCopied)
-{
-    //copy to the end of bs
-    memcpy(pTo, pFrom->Data + pFrom->DataOffset, nCopied);
-
-    //moving offsets
-    pFrom->DataLength -= nCopied;
-    pFrom->DataOffset += nCopied;
-}
-
-void BSUtil::MoveNBytesUnsafe(mfxBitstream *pTo, mfxBitstream *pFrom, mfxU32 nCopied)
-{
-    MoveNBytesUnsafe(pTo->Data + pTo->DataOffset + pTo->DataLength, pFrom, nCopied);
-
-    //moving dest offset
-    pTo->DataLength   += nCopied;
-}
-
-mfxU32 BSUtil::MoveNBytes(mfxU8 *pTo, mfxBitstream *pFrom, mfxU32 nBytes)
-{
-    if (NULL == pTo || NULL == pFrom || NULL == pFrom->Data)
-        return 0;
-
-    nBytes = (std::min)(pFrom->DataLength, nBytes);
-    MoveNBytesUnsafe(pTo, pFrom, nBytes);
-
-    return nBytes;
 }
 
 mfxStatus BSUtil::MoveNBytesTail(mfxBitstream *pTo, mfxBitstream *pFrom, mfxU32 &nBytes)

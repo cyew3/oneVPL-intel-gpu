@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2017 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -95,16 +95,28 @@ mfxStatus MFXYUVDecoder::DecodeFrame(mfxBitstream * bs, mfxFrameSurface1 *surfac
 {
     MFX_CHECK_POINTER(surface);
 
-    //will move bs data to internal
-    MFX_CHECK_STS_SKIP(ConstructFrame(bs, &m_internalBS), MFX_ERR_MORE_DATA);
+    if (!bs)
+        return MFX_ERR_MORE_DATA;
+
+    mfxBitstream * internalBs = &m_internalBS;
 
     //yuv decoder work with complete frames only
-    if (m_internalBS.DataLength < GetMinPlaneSize(m_vParam.mfx.FrameInfo))
+    if (internalBs->DataLength || bs->DataLength < GetMinPlaneSize(m_vParam.mfx.FrameInfo))
     {
-        return MFX_ERR_MORE_DATA;
+        //will move bs data to internal
+        MFX_CHECK_STS_SKIP(ConstructFrame(bs, internalBs), MFX_ERR_MORE_DATA);
+
+        //yuv decoder work with complete frames only
+        if (internalBs->DataLength < GetMinPlaneSize(m_vParam.mfx.FrameInfo))
+        {
+            return MFX_ERR_MORE_DATA;
+        }
+    }
+    else
+    {
+        internalBs = bs;
     }
 
-    mfxBitstream bsTmp = m_internalBS;
     mfxStatus    sts   = MFX_ERR_NONE;
 
     MFXFrameAllocatorRW* pAlloc = NULL;
@@ -122,17 +134,14 @@ mfxStatus MFXYUVDecoder::DecodeFrame(mfxBitstream * bs, mfxFrameSurface1 *surfac
     surface->Info.Width       = m_vParam.mfx.FrameInfo.Width;
     surface->Info.Height      = m_vParam.mfx.FrameInfo.Height;
 
-    //MFX_CHECK_STS_SKIP(sts = DecodeFrameInternal(&m_internalBS, surface), PIPELINE_ERROR_FILE_READ);
-    //
-    //free(surface->Data.MemId);
+    mfxBitstream bsTmp = *internalBs;
 
     MFX_CHECK_POINTER(m_pConverter.get());
-    MFX_CHECK_STS_SKIP(sts = m_pConverter->Transform(&m_internalBS, surface), MFX_ERR_MORE_DATA);
-    //free(surface->Data.MemId);
+    MFX_CHECK_STS_SKIP(sts = m_pConverter->Transform(internalBs, surface), MFX_ERR_MORE_DATA);
     
     if (MFX_ERR_MORE_DATA == sts )
     {
-        m_internalBS = bsTmp;
+        *internalBs = bsTmp;
     }else
     {
         //frameorders start from 0
