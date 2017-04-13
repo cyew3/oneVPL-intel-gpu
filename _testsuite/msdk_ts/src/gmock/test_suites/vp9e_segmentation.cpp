@@ -14,7 +14,7 @@ Copyright(c) 2017 Intel Corporation. All Rights Reserved.
 #include "ts_parser.h"
 #include "ts_struct.h"
 
-namespace vp9e_msegmentation
+namespace vp9e_segmentation
 {
 #define VP9E_MAX_SUPPORTED_SEGMENTS (8)
 #define VP9E_MAX_POSITIVE_Q_INDEX_DELTA (255)
@@ -23,6 +23,7 @@ namespace vp9e_msegmentation
 #define VP9E_MAX_NEGATIVE_LF_DELTA (-63)
 #define VP9E_MAGIC_NUM_WRONG_SIZE (11)
 #define VP9E_PSNR_THRESHOLD (20.0)
+#define VP9E_DEFAULT_ENCODING_SEQUENCE_COUNT (3)
 
     enum
     {
@@ -44,6 +45,13 @@ namespace vp9e_msegmentation
         CHECK_SEGM_ON_FRAME = 0x1 << 8,
         CHECK_INVALID_SEG_INDEX_IN_MAP = 0x1 << 9,
         CHECK_PSNR = 0x1 << 10,
+        CHECK_SEGM_OUT_OF_RANGE_PARAMS = 0x1 << 11,
+        CHECK_SEGM_DISABLE_FOR_FRAME = 0x1 << 12,
+        CHECK_RESET_NO_SEGM_EXT_BUFFER = 0x1 << 13,
+        CHECK_SECOND_ENCODING_STREAM_IS_BIGGER = 0x1 << 14,
+        CHECK_STRESS_TEST = 0x1 << 15,
+        CHECK_STRESS_SCENARIO_1 = 0x1 << 16,
+        CHECK_STRESS_SCENARIO_2 = 0x1 << 17,
     };
 
     struct tc_struct
@@ -58,32 +66,112 @@ namespace vp9e_msegmentation
         } set_par[MAX_NPARS];
     };
 
+    enum
+    {
+        SEGMENTATION_DISABLED = 0,
+        SEGMENTATION_WITHOUT_UPDATES = 0x1,
+        SEGMENTATION_MAP_UPDATE = 0x1 << 1,
+        SEGMENTATION_DATA_UPDATE = 0x1 << 2,
+    };
+    enum
+    {
+        CHANGE_TYPE_NONE = 0,
+        CHANGE_TYPE_INIT = 0x1,
+        CHANGE_TYPE_RESET = 0x1 << 1,
+        CHANGE_TYPE_RUNTIME_PARAMS = 0x1 << 2,
+    };
+
+
+#define VP9_SET_RESET_PARAMS(p, type, step)                                                                                  \
+for(mfxU32 i = 0; i < MAX_NPARS; i++)                                                                                        \
+{                                                                                                                            \
+    if(m_StressTestScenario[step].reset_params[i].f && m_StressTestScenario[step].reset_params[i].ext_type == type)          \
+    {                                                                                                                        \
+        SetParam(p, m_StressTestScenario[step].reset_params[i].f->name, m_StressTestScenario[step].reset_params[i].f->offset,\
+                          m_StressTestScenario[step].reset_params[i].f->size, m_StressTestScenario[step].reset_params[i].v); \
+    }                                                                                                                        \
+}
+
+    typedef std::map</*frame_num*/mfxU32, /*params*/mfxExtVP9Segmentation> runtime_segmentation_params;
+
+    struct test_iteration
+    {
+        mfxU32 encoding_count;
+
+        struct reset_params_str
+        {
+            mfxU32 ext_type;
+            const tsStruct::Field* f;
+            mfxU32 v;
+        } reset_params[MAX_NPARS];
+
+        mfxU32 segmentation_type_expected;
+
+        runtime_segmentation_params runtime_params;
+
+        test_iteration()
+            : encoding_count(VP9E_DEFAULT_ENCODING_SEQUENCE_COUNT)
+            , segmentation_type_expected(SEGMENTATION_DISABLED)
+        {}
+    };
+
+    struct FrameStatStruct : public mfxExtVP9Segmentation
+    {
+        mfxU32 type;
+        mfxU32 encoded_size;
+        double psnr;
+        mfxU32 change_type;
+        mfxExtVP9Segmentation segm_params;
+        FrameStatStruct()
+            : type(SEGMENTATION_DISABLED)
+            , encoded_size(0)
+            , psnr(0.0)
+            , change_type(CHANGE_TYPE_NONE)
+        {
+            memset(&segm_params, 0, sizeof(mfxExtVP9Segmentation));
+        }
+    };
+
     class TestSuite : tsVideoEncoder, BS_VP9_parser
     {
     public:
         static const unsigned int n_cases;
-        mfxExtVP9Segmentation *segment_ext_params;
+        mfxExtVP9Segmentation *m_InitedSegmentExtParams;
         mfxU32 m_SourceWidth;
         mfxU32 m_SourceHeight;
         std::map<mfxU32, mfxU8 *> m_source_frames_y;
         std::mutex  m_frames_storage_mtx;
+        std::map<mfxU32, FrameStatStruct> m_EncodedFramesStat;
+        std::vector<test_iteration> m_StressTestScenario;
 
         TestSuite()
             : tsVideoEncoder(MFX_CODEC_VP9)
-            , segment_ext_params(nullptr)
+            , m_InitedSegmentExtParams(nullptr)
             , m_SourceWidth(0)
             , m_SourceHeight(0)
-            , m_FrameForSegmentationCtrl(0)
+            , m_SourceFrameCount(0)
         {}
-        ~TestSuite() {}
+        ~TestSuite()
+        {
+            // let's print frames info in the very end
+            PrintFramesInfo();
+
+            if (m_InitedSegmentExtParams && m_InitedSegmentExtParams->SegmentId)
+            {
+                delete[]m_InitedSegmentExtParams->SegmentId;
+            }
+        }
         int RunTest(unsigned int id);
+
+        mfxVideoParam const & GetEncodingParams() { return m_par; }
 
     private:
         void EncodingCycle(const tc_struct& tc, const mfxU32& frames_count);
-        mfxStatus EncodeFrames(mfxU32 n, mfxU32 flags = 0);
+        void PrintFramesInfo();
+        mfxStatus EncodeFrames(mfxU32 n, mfxU32 flags = 0, const runtime_segmentation_params *runtime_params = nullptr);
         mfxStatus AllocateAndSetMap(mfxExtVP9Segmentation &segment_ext_params, mfxU32 is_check_no_buffer = 0);
         static const tc_struct test_case[];
-        mfxI16 m_FrameForSegmentationCtrl;
+        mfxU32 m_SourceFrameCount;
     };
 
     const tc_struct TestSuite::test_case[] =
@@ -115,17 +203,17 @@ namespace vp9e_msegmentation
             }
         },
 
-        // all routines: correct segmentation params with 2 segments and params for both segments
+        // all routines: correct segmentation params with 2 segments and QIndexDelta for both segments
         {/*03*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.SegmentIdBlockSize, MFX_VP9_SEGMENT_ID_BLOCK_SIZE_32x32 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.Segment[0].QIndexDelta, 5 },
-                { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.Segment[1].QIndexDelta, 7 },
+                { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.Segment[1].QIndexDelta, (mfxU32)(-10) },
             }
         },
 
-        // all routines: correct segmentation params with 2 segments and params for the first segment
+        // all routines: correct segmentation params with 2 segments and QIndexDelta for the first segment only
         {/*04*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
@@ -134,7 +222,7 @@ namespace vp9e_msegmentation
             }
         },
 
-        // all routines: correct segmentation params with 2 segments and params for the second segment
+        // all routines: correct segmentation params with 2 segments and QIndexDelta for the second segment only
         {/*05*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 50 },
@@ -145,7 +233,7 @@ namespace vp9e_msegmentation
             }
         },
 
-        // all routines: correct LoopFilterLevelDelta
+        // all routines: correct segmentation params with 2 segments and LoopFilterLevelDelta for the second segment only
         {/*06*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
@@ -154,8 +242,9 @@ namespace vp9e_msegmentation
             }
         },
 
-        // all routines: correct ReferenceFrame
-        {/*07*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE,
+        // all routines: check ReferenceFrame feature for the segment
+        // currently the feature is not supported by the driver - so check warning-status
+        {/*07*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.SegmentIdBlockSize, MFX_VP9_SEGMENT_ID_BLOCK_SIZE_32x32 },
@@ -163,8 +252,9 @@ namespace vp9e_msegmentation
             }
         },
 
-        // all routines: correct Skip
-        {/*08*/ MFX_ERR_INVALID_VIDEO_PARAM, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE,
+        // all routines: check Skip feature for the segment
+        // currently the feature is not supported by the driver - so check warning-status
+        {/*08*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.SegmentIdBlockSize, MFX_VP9_SEGMENT_ID_BLOCK_SIZE_32x32 },
@@ -172,7 +262,7 @@ namespace vp9e_msegmentation
             }
         },
 
-        // all routines: correct segmentation params (8 segments)
+        // all routines: correct segmentation params with values for 8 segments
         {/*09*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 8 },
@@ -180,12 +270,12 @@ namespace vp9e_msegmentation
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.Segment[0].QIndexDelta, 1 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.Segment[1].QIndexDelta, 5 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.Segment[2].QIndexDelta, (mfxU32)(-5) },
-                { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.Segment[3].QIndexDelta, 10 },
-                { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.Segment[3].QIndexDelta, 10 },
-                { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.Segment[5].QIndexDelta, (mfxU32)(-10) },
-                { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.Segment[5].QIndexDelta, 10 },
+                { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.Segment[3].LoopFilterLevelDelta, 10 },
+                { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.Segment[4].QIndexDelta, 10 },
+                { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.Segment[5].LoopFilterLevelDelta, (mfxU32)(-10) },
+                { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.Segment[6].QIndexDelta, 10 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.Segment[7].QIndexDelta, (mfxU32)(-10) },
-                { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.Segment[7].QIndexDelta, 10 },
+                { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.Segment[7].LoopFilterLevelDelta, 10 },
             }
         },
 
@@ -198,7 +288,7 @@ namespace vp9e_msegmentation
             }
         },
 
-        // all routines: 8x8 block - error
+        // all routines: 8x8 block - error (not supported now)
         {/*11*/ MFX_ERR_INVALID_VIDEO_PARAM, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments,2 },
@@ -207,7 +297,7 @@ namespace vp9e_msegmentation
             }
         },
 
-        // all routines: 16x16 block - error
+        // all routines: 16x16 block - error (not supported now)
         {/*12*/ MFX_ERR_INVALID_VIDEO_PARAM, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
@@ -216,8 +306,8 @@ namespace vp9e_msegmentation
             }
         },
 
-        // query: map-buffer is null with correct NumSegmentIdAlloc - error
-        {/*13*/ MFX_ERR_INVALID_VIDEO_PARAM, CHECK_QUERY | CHECK_NO_BUFFER,
+        // query: map-buffer is null, but other params are correct - OK-status on Query (Query doesn't check null-params)
+        {/*13*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_NO_BUFFER,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.SegmentIdBlockSize, MFX_VP9_SEGMENT_ID_BLOCK_SIZE_32x32 },
@@ -225,7 +315,7 @@ namespace vp9e_msegmentation
             }
         },
 
-        // init + get_v_param: map-buffer is null with correct NumSegmentIdAlloc - error
+        // init + get_v_param: map-buffer is null, but other params are correct - error (Init checks all params)
         {/*14*/ MFX_ERR_INVALID_VIDEO_PARAM, CHECK_GET_V_PARAM | CHECK_NO_BUFFER,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
@@ -234,7 +324,7 @@ namespace vp9e_msegmentation
             }
         },
 
-        // query: map-buffer and NumSegmentIdAlloc has small size - error
+        // query: map-buffer and NumSegmentIdAlloc have small sizes - error
         {/*15*/ MFX_ERR_INVALID_VIDEO_PARAM, CHECK_QUERY,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
@@ -244,7 +334,7 @@ namespace vp9e_msegmentation
             }
         },
 
-        // init + get_v_param: map-buffer and NumSegmentIdAlloc has small size - error
+        // init + get_v_param: map-buffer and NumSegmentIdAlloc have small sizes - error
         {/*16*/ MFX_ERR_INVALID_VIDEO_PARAM, CHECK_GET_V_PARAM | CHECK_NO_BUFFER,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
@@ -254,7 +344,7 @@ namespace vp9e_msegmentation
             }
         },
 
-        // all routines: too big num segments - should be corrected
+        // all routines: too big NumSegments - error
         {/*17*/ MFX_ERR_INVALID_VIDEO_PARAM, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, VP9E_MAX_SUPPORTED_SEGMENTS + 1 },
@@ -262,7 +352,7 @@ namespace vp9e_msegmentation
             }
         },
 
-        // all routines: invalid seg index (VP9E_MAX_SUPPORTED_SEGMENTS) in the map - error
+        // all routines: invalid seg. index in the map (value more than VP9E_MAX_SUPPORTED_SEGMENTS) - error
         {/*18*/ MFX_ERR_INVALID_VIDEO_PARAM, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_INVALID_SEG_INDEX_IN_MAP,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
@@ -270,8 +360,8 @@ namespace vp9e_msegmentation
             }
         },
 
-        // query: mandatory parameter SegmentIdBlockSize is not set - error
-        {/*19*/ MFX_ERR_INVALID_VIDEO_PARAM, CHECK_QUERY,
+        // query: correct 'NumSegments' passes checks
+        {/*19*/ MFX_ERR_NONE, CHECK_QUERY,
             { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 1 },
         },
 
@@ -280,7 +370,7 @@ namespace vp9e_msegmentation
             { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 1 },
         },
 
-        // all routines: MBBRC with segmentation - MBBRC should be switched off
+        // all routines: MBBRC with segmentation - warning and MBBRC should be switched off by Init
         {/*21*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_QUERY | CHECK_GET_V_PARAM | CHECK_GET_V_PARAM,
             {
                 { CDO2_PAR, &tsStruct::mfxExtCodingOption2.MBBRC, MFX_CODINGOPTION_ON },
@@ -290,7 +380,7 @@ namespace vp9e_msegmentation
             }
         },
 
-        // query: q_index and loop_filter delta-s out of range - should be corrected
+        // query: q_index and loop_filter delta-s are out of range - warning status + values should be corrected
         {/*22*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_QUERY,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
@@ -302,7 +392,7 @@ namespace vp9e_msegmentation
             }
         },
 
-        // init + get_v_param: q_index and loop_filter delta-s out of range - should be corrected
+        // init + get_v_param: q_index and loop_filter delta-s out of range - warning status + values should be corrected
         {/*23*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_GET_V_PARAM,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
@@ -314,10 +404,10 @@ namespace vp9e_msegmentation
             }
         },
 
-        // CASES BELOW DO FULL DECODING AND CHECKING OF PSNR
+        // CASES BELOW DO STREAM DECODING AND CALCULATION OF PSNR
 
-        // all routines: base QP + segm.QP_delta gives too big positive QP - driver should solve it
-        {/*24*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE | CHECK_PSNR,
+        // all routines: base-QP + QIndexDelta give out-of-range positive value combined - expected QIndexDelta correction
+        {/*24*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE | CHECK_PSNR,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 200 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPP, 200 },
@@ -327,8 +417,8 @@ namespace vp9e_msegmentation
             }
         },
 
-        // all routines: base QP + segm.QP_delta gives too big negative QP - driver should solve it
-        {/*25*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE | CHECK_PSNR,
+        // all routines: base-QP + QIndexDelta give out-of-range negative value combined - expected QIndexDelta correction
+        {/*25*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE | CHECK_PSNR,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 50 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPP, 50 },
@@ -338,18 +428,18 @@ namespace vp9e_msegmentation
             }
         },
 
-        // all routines: BRC=CBR with normal bitrate and normal QP_delta on segmentation
+        // all routines: BRC=CBR with correct bitrate and correct QIndexDelta on segmentation
         {/*26*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE | CHECK_PSNR,
-        {
-            { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
-            { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.SegmentIdBlockSize, MFX_VP9_SEGMENT_ID_BLOCK_SIZE_32x32 },
-            { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.Segment[1].QIndexDelta, 5 },
-            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
-            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 500 },
-            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.MaxKbps, 500 },
-            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 0 },
-            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.BufferSizeInKB, 0 },
-        }
+            {
+                { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
+                { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.SegmentIdBlockSize, MFX_VP9_SEGMENT_ID_BLOCK_SIZE_32x32 },
+                { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.Segment[1].QIndexDelta, 5 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 500 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.MaxKbps, 500 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 0 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.BufferSizeInKB, 0 },
+            }
         },
 
         // all routines: BRC=CBR with high bitrate and big negative QP_delta on segmentation
@@ -380,18 +470,16 @@ namespace vp9e_msegmentation
             }
         },
 
-        // CASES BELOW INCLUDE 2 ENCODING PARTS - IT IS EXPECTED THE SECOND PART TO ENCODE IN BETTER QUALITY (=> BIGGER SIZE)
-
-        // check frame-by-frame segmentation (no global segmentatiuon)
-        {/*29*/ MFX_ERR_NONE, CHECK_ENCODE | CHECK_SEGM_ON_FRAME,
+        // check runtime segmentation set with disabled global segmentation
+        {/*29*/ MFX_ERR_NONE, CHECK_ENCODE | CHECK_SEGM_ON_FRAME | CHECK_PSNR,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 200 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPP, 200 },
             }
         },
 
-            // check frame-by-frame segmentation with global segmentation
-        {/*30*/ MFX_ERR_NONE, CHECK_ENCODE | CHECK_SEGM_ON_FRAME,
+        // check runtime segmentation set with enabled global segmentation
+        {/*30*/ MFX_ERR_NONE, CHECK_ENCODE | CHECK_SEGM_ON_FRAME | CHECK_PSNR,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 100 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPP, 100 },
@@ -401,38 +489,78 @@ namespace vp9e_msegmentation
             }
         },
 
-        // check Reset with segmentation after reset
-        {/*31*/ MFX_ERR_NONE, CHECK_RESET_WITH_SEG_AFTER_ONLY,
+        // check runtime segmentation with out-of-range params (global segmentation disabled)
+        //  expected MFX_WRN_INCOMPATIBLE_VIDEO_PARAM on EncodeFrameAsync()
+        {/*31*/ MFX_ERR_NONE, CHECK_ENCODE | CHECK_SEGM_ON_FRAME | CHECK_SEGM_OUT_OF_RANGE_PARAMS | CHECK_PSNR,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 200 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPP, 200 },
+            }
+        },
+
+        // check disabling segmentation in runtime for one frame
+        {/*32*/ MFX_ERR_NONE, CHECK_ENCODE | CHECK_SEGM_ON_FRAME | CHECK_SEGM_DISABLE_FOR_FRAME | CHECK_PSNR,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 100 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPP, 100 },
+                { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
+                { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.SegmentIdBlockSize, MFX_VP9_SEGMENT_ID_BLOCK_SIZE_32x32 },
+                { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.Segment[1].LoopFilterLevelDelta, 50 },
+            }
+        },
+
+        // check changing segmentation params on Reset
+        {/*33*/ MFX_ERR_NONE, CHECK_RESET | CHECK_RESET_NO_SEGM_EXT_BUFFER | CHECK_PSNR,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 150 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPP, 150 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.SegmentIdBlockSize, MFX_VP9_SEGMENT_ID_BLOCK_SIZE_32x32 },
-                { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.Segment[1].QIndexDelta, (mfxU32)(-50) },
+                { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.Segment[1].QIndexDelta, 20 },
             }
         },
 
-        // check Reset with segmentation only before reset
-        {/*32*/ MFX_ERR_NONE, CHECK_RESET_WITH_SEG_BEFORE_ONLY,
+        // CASES BELOW INCLUDE 2 ENCODING PARTS - IT IS EXPECTED THE SECOND PART TO ENCODE IN BETTER QUALITY (=> BIGGER SIZE)
+
+        // check Reset with segmentation enabling after reset only
+        {/*34*/ MFX_ERR_NONE, CHECK_RESET_WITH_SEG_AFTER_ONLY | CHECK_SECOND_ENCODING_STREAM_IS_BIGGER,
             {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 50 },
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPP, 50 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.SegmentIdBlockSize, MFX_VP9_SEGMENT_ID_BLOCK_SIZE_32x32 },
-                { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.Segment[1].QIndexDelta, 20 },
+                { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.Segment[1].QIndexDelta, (mfxU32)(-150) },
+            }
+        },
+
+        // check Reset with segmentation enabled before reset only
+        {/*35*/ MFX_ERR_NONE, CHECK_RESET_WITH_SEG_BEFORE_ONLY | CHECK_SECOND_ENCODING_STREAM_IS_BIGGER,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 10 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPP, 10 },
+                { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
+                { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.SegmentIdBlockSize, MFX_VP9_SEGMENT_ID_BLOCK_SIZE_32x32 },
+                { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.Segment[1].QIndexDelta, 240 },
             }
         },
 
         // check Reset with changing segmentation's params on reset
-        {/*33*/ MFX_ERR_NONE, CHECK_RESET,
+        {/*36*/ MFX_ERR_NONE, CHECK_RESET | CHECK_SECOND_ENCODING_STREAM_IS_BIGGER,
             {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 150 },
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPP, 150 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 128 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPP, 128 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.SegmentIdBlockSize, MFX_VP9_SEGMENT_ID_BLOCK_SIZE_32x32 },
-                { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.Segment[1].QIndexDelta, 20 },
+                { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.Segment[1].QIndexDelta, 100 },
             }
         },
+
+        // CASES BELOW DO SEGMENTATION STRESS-TESTING
+
+        // Stress-test: Scenario #1 (see the script below in RunTest)
+        {/*37*/ MFX_ERR_NONE, CHECK_STRESS_TEST | CHECK_STRESS_SCENARIO_1 | CHECK_PSNR, {} },
+
+        // Stress-test: Scenario #2 (see the script below in RunTest)
+        {/*38*/ MFX_ERR_NONE, CHECK_STRESS_TEST | CHECK_STRESS_SCENARIO_2 | CHECK_PSNR, {} },
+
     };
 
     const unsigned int TestSuite::n_cases = sizeof(test_case) / sizeof(tc_struct);
@@ -519,6 +647,7 @@ namespace vp9e_msegmentation
         const int encoded_size = bs.DataLength;
         static FILE *fp_vp9 = fopen("vp9e_encoded_segmentation.vp9", "wb");
         fwrite(bs.Data, encoded_size, 1, fp_vp9);
+        fflush(fp_vp9);
         */
 
         while (checked++ < nFrames)
@@ -527,17 +656,24 @@ namespace vp9e_msegmentation
 
             if (m_TestPtr)
             {
-                mfxExtVP9Segmentation *segment_params = m_TestPtr->segment_ext_params;
-                if (segment_params)
+                m_TestPtr->m_EncodedFramesStat[m_DecodedFramesCount].encoded_size = bs.DataLength;
+                if (m_TestPtr->m_EncodedFramesStat[m_DecodedFramesCount].type > 0)
                 {
-                    if (segment_params->NumSegments > 0 && !hdr.uh.segm.enabled)
+                    if (!hdr.uh.segm.enabled)
                     {
-                        ADD_FAILURE() << "ERROR: mfxExtVP9Segmentation.NumSegments=" << segment_params->NumSegments << " but uncompr_hdr.segm.enabled=" << hdr.uh.segm.enabled;
+                        ADD_FAILURE() << "ERROR: encoded_frame[" << m_DecodedFramesCount << "] expected to have segmentation, but uncompr_hdr.segm.enabled=false";
                         throw tsFAIL;
                     }
-
-                    if (hdr.uh.segm.enabled)
+                    if (m_TestPtr->m_EncodedFramesStat[m_DecodedFramesCount].type & SEGMENTATION_DATA_UPDATE)
                     {
+                        if (hdr.uh.segm.update_data == 0)
+                        {
+                            ADD_FAILURE() << "ERROR: encoded_frame[" << m_DecodedFramesCount
+                                << "] expected to have segmentation data update, but uncompr_hdr.segm.update_data=false"; throw tsFAIL;
+                        }
+
+                        mfxExtVP9Segmentation *segment_params = &m_TestPtr->m_EncodedFramesStat[m_DecodedFramesCount].segm_params;
+
                         for (mfxU16 i = 0; i < segment_params->NumSegments; ++i)
                         {
                             if (segment_params->Segment[i].QIndexDelta)
@@ -547,7 +683,34 @@ namespace vp9e_msegmentation
                                     ADD_FAILURE() << "ERROR: mfxExtVP9Segmentation.Segment[" << i << "].QIndexDelta=" << segment_params->Segment[i].QIndexDelta
                                         << " but uncompr_hdr.segm.feature[" << i << "][0].enabled=" << hdr.uh.segm.feature[i][0].enabled; throw tsFAIL;
                                 }
-                                if (hdr.uh.segm.feature[i][0].data * sign_value(hdr.uh.segm.feature[i][0].sign) != segment_params->Segment[i].QIndexDelta)
+
+                                if ((segment_params->Segment[i].QIndexDelta > VP9E_MAX_POSITIVE_Q_INDEX_DELTA
+                                    || segment_params->Segment[i].QIndexDelta < VP9E_MAX_NEGATIVE_Q_INDEX_DELTA)
+                                    && hdr.uh.segm.feature[i][0].data != 0)
+                                {
+                                    ADD_FAILURE() << "ERROR: mfxExtVP9Segmentation.Segment[" << i << "].QIndexDelta=" << segment_params->Segment[i].QIndexDelta
+                                        << " (out of range) but uncompr_hdr.segm.feature[" << i << "][0].data=" << hdr.uh.segm.feature[i][0].data << " ..sign="
+                                        << hdr.uh.segm.feature[i][0].sign; throw tsFAIL;
+                                }
+                                else if (m_TestPtr->GetEncodingParams().mfx.RateControlMethod == MFX_RATECONTROL_CQP && segment_params->Segment[i].QIndexDelta + hdr.uh.quant.base_qindex > 255)
+                                {
+                                    if (hdr.uh.segm.feature[i][0].data*sign_value(hdr.uh.segm.feature[i][0].sign) + hdr.uh.quant.base_qindex != 255)
+                                    {
+                                        ADD_FAILURE() << "ERROR: Cutting QIndexDelta wrong:  mfxExtVP9Segmentation.Segment[" << i << "].QIndexDelta=" << segment_params->Segment[i].QIndexDelta
+                                            << " base_qindex" << i << "][0].data=" << hdr.uh.quant.base_qindex << " uncompr_hdr.segm.feature[" << i << "][0].data="
+                                            << hdr.uh.segm.feature[i][0].data << " ..sign=" << hdr.uh.segm.feature[i][0].sign; throw tsFAIL;
+                                    }
+                                }
+                                else if (m_TestPtr->GetEncodingParams().mfx.RateControlMethod == MFX_RATECONTROL_CQP && segment_params->Segment[i].QIndexDelta + hdr.uh.quant.base_qindex < 1)
+                                {
+                                    if (hdr.uh.segm.feature[i][0].data*sign_value(hdr.uh.segm.feature[i][0].sign) + hdr.uh.quant.base_qindex != 1)
+                                    {
+                                        ADD_FAILURE() << "ERROR: Cutting QIndexDelta wrong:  mfxExtVP9Segmentation.Segment[" << i << "].QIndexDelta=" << segment_params->Segment[i].QIndexDelta
+                                            << " base_qindex" << i << "][0].data=" << hdr.uh.quant.base_qindex << " uncompr_hdr.segm.feature[" << i << "][0].data="
+                                            << hdr.uh.segm.feature[i][0].data << " ..sign=" << hdr.uh.segm.feature[i][0].sign; throw tsFAIL;
+                                    }
+                                }
+                                else if (hdr.uh.segm.feature[i][0].data * sign_value(hdr.uh.segm.feature[i][0].sign) != segment_params->Segment[i].QIndexDelta)
                                 {
                                     ADD_FAILURE() << "ERROR: mfxExtVP9Segmentation.Segment[" << i << "].QIndexDelta=" << segment_params->Segment[i].QIndexDelta
                                         << " but uncompr_hdr.segm.feature[" << i << "][0].data=" << hdr.uh.segm.feature[i][0].data << " ..sign="
@@ -562,7 +725,16 @@ namespace vp9e_msegmentation
                                     ADD_FAILURE() << "ERROR: mfxExtVP9Segmentation.Segment[" << i << "].LoopFilterLevelDelta=" << segment_params->Segment[i].LoopFilterLevelDelta
                                         << " but uncompr_hdr.segm.feature[" << i << "][1].enabled=" << hdr.uh.segm.feature[i][1].enabled; throw tsFAIL;
                                 }
-                                if (hdr.uh.segm.feature[i][1].data * sign_value(hdr.uh.segm.feature[i][1].sign) != segment_params->Segment[i].LoopFilterLevelDelta)
+
+                                if ((segment_params->Segment[i].LoopFilterLevelDelta > VP9E_MAX_POSITIVE_LF_DELTA
+                                    || segment_params->Segment[i].LoopFilterLevelDelta < VP9E_MAX_NEGATIVE_LF_DELTA)
+                                    && hdr.uh.segm.feature[i][0].data != 0)
+                                {
+                                    ADD_FAILURE() << "ERROR: mfxExtVP9Segmentation.Segment[" << i << "].LoopFilterLevelDelta=" << segment_params->Segment[i].LoopFilterLevelDelta
+                                        << " (out of range) but uncompr_hdr.segm.feature[" << i << "][0].data=" << hdr.uh.segm.feature[i][0].data << " ..sign="
+                                        << hdr.uh.segm.feature[i][0].sign; throw tsFAIL;
+                                }
+                                else if (hdr.uh.segm.feature[i][1].data * sign_value(hdr.uh.segm.feature[i][1].sign) != segment_params->Segment[i].LoopFilterLevelDelta)
                                 {
                                     ADD_FAILURE() << "ERROR: mfxExtVP9Segmentation.Segment[" << i << "].LoopFilterLevelDelta=" << segment_params->Segment[i].LoopFilterLevelDelta
                                         << " but uncompr_hdr.segm.feature[" << i << "][1].data=" << hdr.uh.segm.feature[i][1].data << " ..sign="
@@ -572,28 +744,49 @@ namespace vp9e_msegmentation
 
                             if (segment_params->Segment[i].FeatureEnabled & MFX_VP9_SEGMENT_FEATURE_SKIP)
                             {
-                                if (hdr.uh.segm.feature[i][3].enabled != true)
+                                if (hdr.uh.segm.feature[i][3].enabled == true)
                                 {
                                     ADD_FAILURE() << "ERROR: mfxExtVP9Segmentation.Segment[" << i << "].ReferenceAndSkipCtrl=MFX_VP9_RASCTRL_SKIP"
-                                        << " but uncompr_hdr.segm.feature[" << i << "][3].enabled=" << hdr.uh.segm.feature[i][3].enabled; throw tsFAIL;
+                                        << " but uncompr_hdr.segm.feature[" << i << "][3].enabled=" << hdr.uh.segm.feature[i][3].enabled << "(should be desibled)"; throw tsFAIL;
                                 }
                             }
 
                             if (segment_params->Segment[i].FeatureEnabled & MFX_VP9_SEGMENT_FEATURE_REFERENCE)
                             {
-                                if (hdr.uh.segm.feature[i][2].enabled != true)
+                                if (hdr.uh.segm.feature[i][2].enabled == true)
                                 {
                                     ADD_FAILURE() << "ERROR: mfxExtVP9Segmentation.Segment[" << i << "].ReferenceAndSkipCtrl=" << segment_params->Segment[i].ReferenceFrame
-                                        << " but uncompr_hdr.segm.feature[" << i << "][2].enabled=" << hdr.uh.segm.feature[i][3].enabled; throw tsFAIL;
-                                }
-                                if (hdr.uh.segm.feature[i][2].data * sign_value(hdr.uh.segm.feature[i][2].sign) != segment_params->Segment[i].ReferenceFrame)
-                                {
-                                    ADD_FAILURE() << "ERROR: mfxExtVP9Segmentation.Segment[" << i << "].ReferenceAndSkipCtrl=" << segment_params->Segment[i].ReferenceFrame
-                                        << " but uncompr_hdr.segm.feature[" << i << "][2].data=" << hdr.uh.segm.feature[i][2].data << " ..sign="
-                                        << hdr.uh.segm.feature[i][2].sign; throw tsFAIL;
+                                        << " but uncompr_hdr.segm.feature[" << i << "][2].enabled=" << hdr.uh.segm.feature[i][3].enabled << "(should be desibled)"; throw tsFAIL;
                                 }
                             }
                         }
+                    }
+
+                    if (m_TestPtr->m_EncodedFramesStat[m_DecodedFramesCount].type & SEGMENTATION_MAP_UPDATE)
+                    {
+                        if (hdr.uh.segm.update_map == 0)
+                        {
+                            ADD_FAILURE() << "ERROR: encoded_frame[" << m_DecodedFramesCount
+                                << "] expected to have segmentation map update, but uncompr_hdr.segm.update_map=false"; throw tsFAIL;
+                        }
+                    }
+
+                    if (m_TestPtr->m_EncodedFramesStat[m_DecodedFramesCount].type & SEGMENTATION_WITHOUT_UPDATES)
+                    {
+                        if (hdr.uh.segm.update_map != 0 || hdr.uh.segm.update_data != 0)
+                        {
+                            ADD_FAILURE() << "ERROR: encoded_frame[" << m_DecodedFramesCount
+                                << "] expected do not have segmentation updates, but uncompr_hdr.segm.update_map=" << (hdr.uh.segm.update_map ? 1 : 0)
+                                << ", uncompr_hdr.segm.update_data=" << (hdr.uh.segm.update_data ? 1 : 0); throw tsFAIL;
+                        }
+                    }
+                }
+                else
+                {
+                    if (hdr.uh.segm.enabled != 0)
+                    {
+                        ADD_FAILURE() << "ERROR: encoded_frame[" << m_DecodedFramesCount
+                            << "] expected do not have enabled segmentation, but uncompr_hdr.segm.enabled=true"; throw tsFAIL;
                     }
                 }
             }
@@ -618,6 +811,8 @@ namespace vp9e_msegmentation
 
                         m_TestPtr->m_frames_storage_mtx.lock();
                         mfxF64 psnr = PSNR_Y_8bit(m_TestPtr->m_source_frames_y[m_DecodedFramesCount], ptr_decoded, m_TestPtr->m_SourceWidth*m_TestPtr->m_SourceHeight);
+
+                        m_TestPtr->m_EncodedFramesStat[m_DecodedFramesCount].psnr = psnr;
 
                         // source frame is not needed anymore
                         delete[]m_TestPtr->m_source_frames_y[m_DecodedFramesCount];
@@ -665,26 +860,26 @@ namespace vp9e_msegmentation
         }
         for (mfxU16 i = 0; i < input.NumSegments; ++i)
         {
-            if (input.Segment[i].QIndexDelta > VP9E_MAX_POSITIVE_Q_INDEX_DELTA && input.Segment[i].QIndexDelta != 0)
+            if (input.Segment[i].QIndexDelta > VP9E_MAX_POSITIVE_Q_INDEX_DELTA && output.Segment[i].QIndexDelta != 0)
             {
                 ADD_FAILURE() << "ERROR: " << caller_method_name << ": QIndexDelta_in=" << input.Segment[i].QIndexDelta << " QIndexDelta_out=" << output.Segment[i].QIndexDelta
                     << " QIndexDelta_expected=" << 0;
                 return false;
             }
-            if (input.Segment[i].QIndexDelta < VP9E_MAX_NEGATIVE_Q_INDEX_DELTA && input.Segment[i].QIndexDelta != 0)
+            if (input.Segment[i].QIndexDelta < VP9E_MAX_NEGATIVE_Q_INDEX_DELTA && output.Segment[i].QIndexDelta != 0)
             {
                 ADD_FAILURE() << "ERROR: " << caller_method_name << ": QIndexDelta_in=" << input.Segment[i].QIndexDelta << " QIndexDelta_out=" << output.Segment[i].QIndexDelta
                     << " QIndexDelta_expected=" << 0;
                 return false;
             }
 
-            if (input.Segment[i].LoopFilterLevelDelta > VP9E_MAX_POSITIVE_LF_DELTA && input.Segment[i].LoopFilterLevelDelta != 0)
+            if (input.Segment[i].LoopFilterLevelDelta > VP9E_MAX_POSITIVE_LF_DELTA && output.Segment[i].LoopFilterLevelDelta != 0)
             {
                 ADD_FAILURE() << "ERROR: " << caller_method_name << ": LoopFilterLevelDelta_in=" << input.Segment[i].LoopFilterLevelDelta << " LoopFilterLevelDelta_out="
                     << output.Segment[i].LoopFilterLevelDelta << " LoopFilterLevelDelta_expected=" << 0;
                 return false;
             }
-            if (input.Segment[i].LoopFilterLevelDelta < VP9E_MAX_NEGATIVE_LF_DELTA && input.Segment[i].LoopFilterLevelDelta != 0)
+            if (input.Segment[i].LoopFilterLevelDelta < VP9E_MAX_NEGATIVE_LF_DELTA && output.Segment[i].LoopFilterLevelDelta != 0)
             {
                 ADD_FAILURE() << "ERROR: " << caller_method_name << ": LoopFilterLevelDelta_in=" << input.Segment[i].LoopFilterLevelDelta << " LoopFilterLevelDelta_out="
                     << output.Segment[i].LoopFilterLevelDelta << " LoopFilterLevelDelta_expected=" << 0;
@@ -695,28 +890,118 @@ namespace vp9e_msegmentation
         return true;
     }
 
-    mfxStatus TestSuite::EncodeFrames(mfxU32 n, mfxU32 flags)
+    // Routine just set FetaureEnable flag for non-null values
+    mfxStatus SetFeatureEnable(mfxExtVP9Segmentation &segment_ext_params)
+    {
+        for (mfxU32 i = 0; i < VP9E_MAX_SUPPORTED_SEGMENTS; ++i)
+        {
+            if (segment_ext_params.Segment[i].QIndexDelta)
+                segment_ext_params.Segment[i].FeatureEnabled = MFX_VP9_SEGMENT_FEATURE_QINDEX;
+            if (segment_ext_params.Segment[i].LoopFilterLevelDelta)
+                segment_ext_params.Segment[i].FeatureEnabled |= MFX_VP9_SEGMENT_FEATURE_LOOP_FILTER;
+            if (segment_ext_params.Segment[i].ReferenceFrame)
+                segment_ext_params.Segment[i].FeatureEnabled |= MFX_VP9_SEGMENT_FEATURE_REFERENCE;
+        }
+
+        return MFX_ERR_NONE;
+    }
+
+    mfxStatus TestSuite::EncodeFrames(mfxU32 n, mfxU32 flags, const runtime_segmentation_params *runtime_params)
     {
         mfxU32 encoded = 0;
         mfxU32 submitted = 0;
-        mfxU32 source_frame_count = 0;
         mfxU32 async = TS_MAX(1, m_par.AsyncDepth);
         mfxSyncPoint sp = nullptr;
+        mfxU32 cycle_count = 0;
 
         async = TS_MIN(n, async - 1);
 
         while (encoded < n)
         {
-            if ( m_FrameForSegmentationCtrl )
+            mfxU32 is_frame_with_out_of_range_params = false;
+
+            //clear extBuffer in the beginning
+            m_ctrl.RemoveExtBuffer(MFX_EXTBUFF_VP9_SEGMENTATION);
+
+            if (runtime_params && runtime_params->find(cycle_count) != runtime_params->end())
             {
                 m_ctrl.AddExtBuffer(MFX_EXTBUFF_VP9_SEGMENTATION, sizeof(mfxExtVP9Segmentation));
                 mfxExtVP9Segmentation *segment_ext_params_ctrl = reinterpret_cast <mfxExtVP9Segmentation*>(m_ctrl.GetExtBuffer(MFX_EXTBUFF_VP9_SEGMENTATION));
                 EXPECT_EQ(!!segment_ext_params_ctrl, true);
-                segment_ext_params_ctrl->NumSegments = 2;
-                segment_ext_params_ctrl->SegmentIdBlockSize = MFX_VP9_SEGMENT_ID_BLOCK_SIZE_32x32;
-                AllocateAndSetMap(*segment_ext_params_ctrl);
-                segment_ext_params_ctrl->Segment[1].QIndexDelta = -50;
+
+                memcpy((char *)segment_ext_params_ctrl + sizeof(mfxExtBuffer), (char *)(&runtime_params->at(cycle_count)) + sizeof(mfxExtBuffer), sizeof(mfxExtVP9Segmentation) - sizeof(mfxExtBuffer));
+
+                m_EncodedFramesStat[m_SourceFrameCount].type = SEGMENTATION_MAP_UPDATE | SEGMENTATION_DATA_UPDATE;
+                m_EncodedFramesStat[m_SourceFrameCount].segm_params = *segment_ext_params_ctrl;
+                m_EncodedFramesStat[m_SourceFrameCount].change_type = CHANGE_TYPE_RUNTIME_PARAMS;
             }
+            else if ( flags & CHECK_SEGM_ON_FRAME && m_SourceFrameCount == 1)
+            {
+                g_tsStatus.expect(MFX_ERR_NONE);
+
+                m_ctrl.AddExtBuffer(MFX_EXTBUFF_VP9_SEGMENTATION, sizeof(mfxExtVP9Segmentation));
+                mfxExtVP9Segmentation *segment_ext_params_ctrl = reinterpret_cast <mfxExtVP9Segmentation*>(m_ctrl.GetExtBuffer(MFX_EXTBUFF_VP9_SEGMENTATION));
+                EXPECT_EQ(!!segment_ext_params_ctrl, true);
+
+                if (flags & CHECK_SEGM_DISABLE_FOR_FRAME)
+                {
+                    segment_ext_params_ctrl->NumSegments = 0;
+
+                    m_EncodedFramesStat[m_SourceFrameCount].type = SEGMENTATION_DISABLED;
+                    m_EncodedFramesStat[m_SourceFrameCount].change_type = CHANGE_TYPE_RUNTIME_PARAMS;
+                }
+                else
+                {
+                    segment_ext_params_ctrl->NumSegments = 3;
+                    segment_ext_params_ctrl->SegmentIdBlockSize = MFX_VP9_SEGMENT_ID_BLOCK_SIZE_32x32;
+                    AllocateAndSetMap(*segment_ext_params_ctrl);
+
+                    if (flags & CHECK_SEGM_OUT_OF_RANGE_PARAMS)
+                    {
+                        segment_ext_params_ctrl->Segment[0].QIndexDelta = VP9E_MAX_POSITIVE_Q_INDEX_DELTA * 2;
+                        segment_ext_params_ctrl->Segment[1].LoopFilterLevelDelta = VP9E_MAX_NEGATIVE_LF_DELTA * 2;
+
+                        is_frame_with_out_of_range_params = true;
+                    }
+                    else
+                    {
+                        segment_ext_params_ctrl->Segment[1].QIndexDelta = -50;
+                    }
+
+                    m_EncodedFramesStat[m_SourceFrameCount].type = SEGMENTATION_MAP_UPDATE | SEGMENTATION_DATA_UPDATE;
+                    m_EncodedFramesStat[m_SourceFrameCount].segm_params = *segment_ext_params_ctrl;
+                    m_EncodedFramesStat[m_SourceFrameCount].change_type = CHANGE_TYPE_RUNTIME_PARAMS;
+                }
+
+                SetFeatureEnable(*segment_ext_params_ctrl);
+            }
+            else
+            {
+                if (m_EncodedFramesStat.find(m_SourceFrameCount) == m_EncodedFramesStat.end())
+                {
+                    if (m_InitedSegmentExtParams == nullptr)
+                    {
+                        m_EncodedFramesStat[m_SourceFrameCount].type = SEGMENTATION_DISABLED;
+                    }
+                    else
+                    {
+                        m_EncodedFramesStat[m_SourceFrameCount].type = SEGMENTATION_WITHOUT_UPDATES;
+                        if (m_SourceFrameCount > 0)
+                        {
+                            if (m_EncodedFramesStat[m_SourceFrameCount - 1].change_type == CHANGE_TYPE_RUNTIME_PARAMS)
+                            {
+                                m_EncodedFramesStat[m_SourceFrameCount].type = SEGMENTATION_MAP_UPDATE | SEGMENTATION_DATA_UPDATE;
+                            }
+                        }
+                        if (m_EncodedFramesStat[m_SourceFrameCount].change_type > CHANGE_TYPE_INIT)
+                        {
+                            m_EncodedFramesStat[m_SourceFrameCount].type = SEGMENTATION_MAP_UPDATE | SEGMENTATION_DATA_UPDATE;
+                        }
+                    }
+                }
+            }
+
+            cycle_count++;
 
             mfxStatus encode_status = EncodeFrameAsync();
 
@@ -726,11 +1011,11 @@ namespace vp9e_msegmentation
                 memcpy(ptr + i*m_SourceWidth, m_pSurf->Data.Y + i*m_pSurf->Data.Pitch, m_SourceWidth);
             }
             m_frames_storage_mtx.lock();
-            m_source_frames_y[source_frame_count] = ptr;
+            m_source_frames_y[m_SourceFrameCount] = ptr;
             m_frames_storage_mtx.unlock();
 
             submitted++;
-            source_frame_count++;
+            m_SourceFrameCount++;
 
             if (MFX_ERR_MORE_DATA == encode_status)
             {
@@ -744,6 +1029,24 @@ namespace vp9e_msegmentation
                     break;
                 }
                 continue;
+            }
+            else if (is_frame_with_out_of_range_params && flags & CHECK_SEGM_OUT_OF_RANGE_PARAMS)
+            {
+                g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
+                // for out-of-range segmentation params a warning expected at this point
+                if (encode_status != MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)
+                {
+                    ADD_FAILURE() << "ERROR: For out-of-range segmentation params MFX_WRN_INCOMPATIBLE_VIDEO_PARAM expected on EncodeFrameAsync(), but returned  "
+                        << encode_status; throw tsFAIL;
+                }
+                else
+                {
+                    // correcting values for the future check of the encoded frame
+                    m_EncodedFramesStat[m_SourceFrameCount-1].segm_params.Segment[0].QIndexDelta = 0;
+                    m_EncodedFramesStat[m_SourceFrameCount-1].segm_params.Segment[1].LoopFilterLevelDelta = 0;
+
+                    encode_status = MFX_ERR_NONE;
+                }
             }
 
             g_tsStatus.check(); TS_CHECK_MFX;
@@ -765,22 +1068,6 @@ namespace vp9e_msegmentation
             return MFX_ERR_UNKNOWN;
 
         return g_tsStatus.get();
-    }
-
-    // Routine just set FetaureEnable flag for non-null values
-    mfxStatus SetFeatureEnable(mfxExtVP9Segmentation &segment_ext_params)
-    {
-        for (mfxU32 i = 0; i < VP9E_MAX_SUPPORTED_SEGMENTS; ++i)
-        {
-            if (segment_ext_params.Segment[i].QIndexDelta)
-                segment_ext_params.Segment[i].FeatureEnabled = MFX_VP9_SEGMENT_FEATURE_QINDEX;
-            if (segment_ext_params.Segment[i].LoopFilterLevelDelta)
-                segment_ext_params.Segment[i].FeatureEnabled |= MFX_VP9_SEGMENT_FEATURE_LOOP_FILTER;
-            if (segment_ext_params.Segment[i].ReferenceFrame)
-                segment_ext_params.Segment[i].FeatureEnabled |= MFX_VP9_SEGMENT_FEATURE_REFERENCE;
-        }
-
-        return MFX_ERR_NONE;
     }
 
     mfxStatus TestSuite::AllocateAndSetMap(mfxExtVP9Segmentation &segment_ext_params, mfxU32 is_check_no_buffer)
@@ -846,6 +1133,52 @@ namespace vp9e_msegmentation
         return MFX_ERR_NONE;
     }
 
+    void TestSuite::PrintFramesInfo()
+    {
+        g_tsLog << "\n INFO: FRAMES STATISTICS (encoded " << m_EncodedFramesStat.size() << " frames)\n";
+        for (auto const &iter : m_EncodedFramesStat)
+        {
+            std::string segm_status_text = "SEGM_DISABLED";
+            if (iter.second.type == 1)
+            {
+                segm_status_text = "SEGM_NO_UPDATE";
+            }
+            else if (iter.second.type & SEGMENTATION_MAP_UPDATE && iter.second.type & SEGMENTATION_DATA_UPDATE)
+            {
+                segm_status_text = "SEGM_MAP_DATA_UPDATE";
+            }
+            else if (iter.second.type & SEGMENTATION_MAP_UPDATE)
+            {
+                segm_status_text = "SEGM_MAP_UPDATE";
+            }
+            else if (iter.second.type & SEGMENTATION_DATA_UPDATE)
+            {
+                segm_status_text = "SEGM_DATA_UPDATE";
+            }
+
+            std::string change_type_status = "NO_CHANGE";
+            if (iter.second.change_type == CHANGE_TYPE_INIT)
+            {
+                change_type_status = "CHANGE_BY_INIT";
+            }
+            else if (iter.second.change_type == CHANGE_TYPE_RESET)
+            {
+                change_type_status = "CHANGE_BY_RESET";
+            }
+            else if (iter.second.change_type == CHANGE_TYPE_RUNTIME_PARAMS)
+            {
+                change_type_status = "CHANGE_BY_RUNTIME_PARAMS";
+            }
+
+            g_tsLog << "encoded_frame[" << iter.first << "|" << change_type_status << "].segmentation_status=" << segm_status_text << ", size=" << iter.second.encoded_size << ", psnr=" << iter.second.psnr << "\n";
+            if (iter.second.change_type > CHANGE_TYPE_NONE)
+            {
+                g_tsLog << "             num_segments=" << iter.second.segm_params.NumSegments << " block_size=" << iter.second.segm_params.SegmentIdBlockSize
+                    << " map_ptr=" << iter.second.segm_params.SegmentId << "\n";
+            }
+        }
+    }
+
     int TestSuite::RunTest(unsigned int id)
     {
         TS_START;
@@ -855,9 +1188,9 @@ namespace vp9e_msegmentation
         const char* stream = g_tsStreamPool.Get("YUV/salesman_176x144_449.yuv");
 
         g_tsStreamPool.Reg();
-        tsRawReader *reader;
+        tsRawReader *reader = nullptr;
 
-        const mfxU32 default_frames_number = 3;
+        mfxU32 m_EncodingSequenceCount = VP9E_DEFAULT_ENCODING_SEQUENCE_COUNT;
 
         MFXInit();
         Load();
@@ -876,16 +1209,23 @@ namespace vp9e_msegmentation
             SETPARS(m_par, MFX_PAR);
             SETPARS(m_par, CDO2_PAR);
         }
-
-        segment_ext_params = reinterpret_cast <mfxExtVP9Segmentation*>(m_par.GetExtBuffer(MFX_EXTBUFF_VP9_SEGMENTATION));
-        if (segment_ext_params)
+        else
         {
-            SetFeatureEnable(*segment_ext_params);
-            AllocateAndSetMap(*segment_ext_params, tc.type & CHECK_NO_BUFFER ? 1 : 0);
+            m_par.mfx.QPI = m_par.mfx.QPP = 200;
+        }
+
+        m_InitedSegmentExtParams = reinterpret_cast <mfxExtVP9Segmentation*>(m_par.GetExtBuffer(MFX_EXTBUFF_VP9_SEGMENTATION));
+        if (m_InitedSegmentExtParams)
+        {
+            SetFeatureEnable(*m_InitedSegmentExtParams);
+            AllocateAndSetMap(*m_InitedSegmentExtParams, tc.type & CHECK_NO_BUFFER ? 1 : 0);
             if (tc.type & CHECK_INVALID_SEG_INDEX_IN_MAP)
             {
-                segment_ext_params->SegmentId[segment_ext_params->NumSegmentIdAlloc / 2] = VP9E_MAX_SUPPORTED_SEGMENTS;
+                m_InitedSegmentExtParams->SegmentId[m_InitedSegmentExtParams->NumSegmentIdAlloc / 2] = VP9E_MAX_SUPPORTED_SEGMENTS;
             }
+
+            m_EncodedFramesStat[0].type = SEGMENTATION_MAP_UPDATE | SEGMENTATION_DATA_UPDATE;
+            m_EncodedFramesStat[0].segm_params = *m_InitedSegmentExtParams;
         }
 
         InitAndSetAllocator();
@@ -901,6 +1241,68 @@ namespace vp9e_msegmentation
         }  else {
             g_tsLog << "WARNING: loading encoder from plugin failed!\n";
             return 0;
+        }
+
+        if (tc.type & CHECK_STRESS_SCENARIO_1)
+        {
+            test_iteration cycle1;
+            cycle1.encoding_count = 5;
+            cycle1.reset_params[0] = { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 1 };
+            cycle1.reset_params[1] = { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.SegmentIdBlockSize, MFX_VP9_SEGMENT_ID_BLOCK_SIZE_32x32 };
+            cycle1.reset_params[2] = { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.Segment[0].QIndexDelta, 100 };
+            cycle1.segmentation_type_expected = SEGMENTATION_MAP_UPDATE | SEGMENTATION_DATA_UPDATE;
+
+            mfxExtVP9Segmentation cycle1_runtime_params;
+            memset(&cycle1_runtime_params, 0, sizeof(mfxExtVP9Segmentation));
+            cycle1_runtime_params.NumSegments = 8;
+            cycle1_runtime_params.SegmentIdBlockSize = MFX_VP9_SEGMENT_ID_BLOCK_SIZE_32x32;
+            AllocateAndSetMap(cycle1_runtime_params);
+            cycle1_runtime_params.Segment[0].QIndexDelta = 10;
+            cycle1_runtime_params.Segment[2].QIndexDelta = 15;
+            SetFeatureEnable(cycle1_runtime_params);
+            cycle1.runtime_params[3] = cycle1_runtime_params;
+
+            m_StressTestScenario.push_back(cycle1);
+
+            test_iteration cycle2;
+            cycle2.encoding_count = 5;
+            cycle2.reset_params[1] = { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.SegmentIdBlockSize, MFX_VP9_SEGMENT_ID_BLOCK_SIZE_64x64 };
+            cycle2.segmentation_type_expected = SEGMENTATION_MAP_UPDATE;
+            m_StressTestScenario.push_back(cycle2);
+
+            test_iteration cycle3;
+            cycle3.encoding_count = 5;
+            cycle3.reset_params[0] = { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 3 };
+            cycle3.segmentation_type_expected = SEGMENTATION_DATA_UPDATE;
+            m_StressTestScenario.push_back(cycle3);
+        }
+        else if (tc.type & CHECK_STRESS_SCENARIO_2)
+        {
+            test_iteration cycle1;
+            cycle1.encoding_count = 6;
+            cycle1.segmentation_type_expected = SEGMENTATION_DISABLED;
+
+            mfxExtVP9Segmentation cycle1_runtime_params;
+            memset(&cycle1_runtime_params, 0, sizeof(mfxExtVP9Segmentation));
+            cycle1_runtime_params.NumSegments = 1;
+            cycle1_runtime_params.SegmentIdBlockSize = MFX_VP9_SEGMENT_ID_BLOCK_SIZE_32x32;
+            AllocateAndSetMap(cycle1_runtime_params);
+            cycle1_runtime_params.Segment[0].QIndexDelta = 10;
+            SetFeatureEnable(cycle1_runtime_params);
+            cycle1.runtime_params[1] = cycle1_runtime_params;
+
+            mfxExtVP9Segmentation cycle1_runtime_params_1;
+            memset(&cycle1_runtime_params_1, 0, sizeof(mfxExtVP9Segmentation));
+            cycle1_runtime_params_1.NumSegments = 2;
+            cycle1_runtime_params_1.SegmentIdBlockSize = MFX_VP9_SEGMENT_ID_BLOCK_SIZE_32x32;
+            AllocateAndSetMap(cycle1_runtime_params_1);
+            cycle1_runtime_params.Segment[0].QIndexDelta = 22;
+            SetFeatureEnable(cycle1_runtime_params_1);
+            cycle1.runtime_params[2] = cycle1_runtime_params_1;
+
+            cycle1.runtime_params[4] = cycle1_runtime_params_1;
+
+            m_StressTestScenario.push_back(cycle1);
         }
 
         // QUERY SECTION
@@ -919,15 +1321,19 @@ namespace vp9e_msegmentation
             g_tsStatus.expect(query_expect_status);
             tsExtBufType<mfxVideoParam> par_query_out = m_par;
 
-            TRACE_FUNC3(MFXVideoENCODE_Query, m_session, m_pPar, &par_query_out);
+            TS_TRACE(m_session);
+            TS_TRACE(m_pPar);
+            g_tsLog << "NOW CALLING QUERY()...\n MFXVideoENCODE_Query(m_session, m_pPar, &par_query_out) \n";
             mfxStatus query_result_status = MFXVideoENCODE_Query(m_session, m_pPar, &par_query_out);
+            g_tsLog << "QUERY() FINISHED WITH STATUS " << query_result_status << "\n";
+            TS_TRACE(&par_query_out);
             mfxExtVP9Segmentation *segment_ext_params_query = reinterpret_cast <mfxExtVP9Segmentation*>(par_query_out.GetExtBuffer(MFX_EXTBUFF_VP9_SEGMENTATION));
-            if (segment_ext_params != nullptr && segment_ext_params_query == nullptr)
+            if (m_InitedSegmentExtParams != nullptr && segment_ext_params_query == nullptr)
             {
                 ADD_FAILURE() << "ERROR: Query() does not have mfxExtVP9Segmentation in the output while input has one";
             }
 
-            if (segment_ext_params && !SegmentationParamsChecker("Query", *segment_ext_params, *segment_ext_params_query))
+            if (m_InitedSegmentExtParams && !SegmentationParamsChecker("Query", *m_InitedSegmentExtParams, *segment_ext_params_query))
             {
                 ADD_FAILURE() << "ERROR: Query() parameters check failed!";
             }
@@ -947,7 +1353,7 @@ namespace vp9e_msegmentation
 
         // INIT SECTION
         if (tc.type & CHECK_INIT || tc.type & CHECK_GET_V_PARAM || tc.type & CHECK_ENCODE || tc.type & CHECK_RESET
-            || tc.type & CHECK_RESET_WITH_SEG_BEFORE_ONLY || tc.type & CHECK_RESET_WITH_SEG_AFTER_ONLY)
+            || tc.type & CHECK_RESET_WITH_SEG_BEFORE_ONLY || tc.type & CHECK_RESET_WITH_SEG_AFTER_ONLY || tc.type & CHECK_STRESS_TEST)
         {
             g_tsStatus.expect(tc.sts);
             TRACE_FUNC2(MFXVideoENCODE_Init, m_session, m_pPar);
@@ -958,6 +1364,12 @@ namespace vp9e_msegmentation
             }
             g_tsLog << "Init() returned with status " << init_result_status << ", expected status " << tc.sts << "\n";
             g_tsStatus.check(init_result_status);
+            m_EncodedFramesStat[m_SourceFrameCount].change_type = CHANGE_TYPE_INIT;
+            if (m_InitedSegmentExtParams)
+            {
+                m_EncodedFramesStat[m_SourceFrameCount].segm_params = *m_InitedSegmentExtParams;
+                m_EncodedFramesStat[m_SourceFrameCount].type = SEGMENTATION_MAP_UPDATE | SEGMENTATION_DATA_UPDATE;
+            }
         }
 
         // GET_VIDEO_PARAM SECTION
@@ -965,16 +1377,16 @@ namespace vp9e_msegmentation
         {
             g_tsStatus.expect(MFX_ERR_NONE);
 
-            tsExtBufType<mfxVideoParam> out_par = m_par;
-            mfxStatus getvparam_result_status = GetVideoParam(m_session, &out_par);
+            tsExtBufType<mfxVideoParam> getvpar_out_par = m_par;
+            mfxStatus getvparam_result_status = GetVideoParam(m_session, &getvpar_out_par);
 
-            mfxExtVP9Segmentation *segment_ext_params_getvparam = reinterpret_cast <mfxExtVP9Segmentation*>(out_par.GetExtBuffer(MFX_EXTBUFF_VP9_SEGMENTATION));
-            if (segment_ext_params != nullptr && segment_ext_params_getvparam == nullptr)
+            mfxExtVP9Segmentation *segment_ext_params_getvparam = reinterpret_cast <mfxExtVP9Segmentation*>(getvpar_out_par.GetExtBuffer(MFX_EXTBUFF_VP9_SEGMENTATION));
+            if (m_InitedSegmentExtParams != nullptr && segment_ext_params_getvparam == nullptr)
             {
                 ADD_FAILURE() << "ERROR: GetVideoParam() does not have mfxExtVP9Segmentation in the output while input has one";
             }
 
-            if (segment_ext_params && !SegmentationParamsChecker("GetVideoParam", *segment_ext_params, *segment_ext_params_getvparam))
+            if (m_InitedSegmentExtParams && !SegmentationParamsChecker("GetVideoParam", *m_InitedSegmentExtParams, *segment_ext_params_getvparam))
             {
                 ADD_FAILURE() << "ERROR: GetVideoParam() check parameters failed!";
             }
@@ -986,16 +1398,20 @@ namespace vp9e_msegmentation
 
         mfxU32 frames_size = 0;
 
-        // ENCODE SECTION
-        if ((tc.type & CHECK_ENCODE || tc.type & CHECK_RESET || tc.type & CHECK_RESET_WITH_SEG_BEFORE_ONLY || tc.type & CHECK_RESET_WITH_SEG_AFTER_ONLY) && m_initialized)
+        // FIRST ENCODE SECTION
+        if ((tc.type & CHECK_ENCODE || tc.type & CHECK_RESET || tc.type & CHECK_RESET_WITH_SEG_BEFORE_ONLY
+            || tc.type & CHECK_RESET_WITH_SEG_AFTER_ONLY || tc.type & CHECK_STRESS_TEST) && m_initialized)
         {
             //set reader
-            reader = new tsRawReader(stream, m_pPar->mfx.FrameInfo);
-            m_filler = reader;
+            if (reader == nullptr)
+            {
+                reader = new tsRawReader(stream, m_pPar->mfx.FrameInfo);
+                m_filler = reader;
+            }
 
             if (tc.sts >= MFX_ERR_NONE)
             {
-                TestSuite::EncodeFrames(default_frames_number);
+                TestSuite::EncodeFrames(m_EncodingSequenceCount, tc.type);
 
                 g_tsStatus.check(DrainEncodedBitstream());
                 TS_CHECK_MFX;
@@ -1003,60 +1419,107 @@ namespace vp9e_msegmentation
             }
         }
 
-        // RESET SECTION
-        if ((tc.type & CHECK_RESET || tc.type & CHECK_RESET_WITH_SEG_BEFORE_ONLY || tc.type & CHECK_RESET_WITH_SEG_AFTER_ONLY) && m_initialized)
+        const mfxU32 launch_steps = (mfxU32)(m_StressTestScenario.size() > 0 ? m_StressTestScenario.size() : 1);
+        const mfxU32 setup_steps = m_StressTestScenario.size() > 0 ? 1 : 0;
+        for (mfxU32 st = 0; st < launch_steps; ++st)
         {
-            if (tc.type == CHECK_RESET_WITH_SEG_AFTER_ONLY)
+
+            // RESET SECTION
+            if ((tc.type & CHECK_RESET || tc.type & CHECK_RESET_WITH_SEG_BEFORE_ONLY
+                || tc.type & CHECK_RESET_WITH_SEG_AFTER_ONLY || tc.type & CHECK_STRESS_TEST) && m_initialized)
             {
-                SETPARS(m_par, MFX_PAR);
-                segment_ext_params = reinterpret_cast <mfxExtVP9Segmentation*>(m_par.GetExtBuffer(MFX_EXTBUFF_VP9_SEGMENTATION));
-                if (segment_ext_params)
+                tsExtBufType<mfxVideoParam> tmp_par;
+                if (tc.type & CHECK_RESET_WITH_SEG_AFTER_ONLY)
                 {
-                    SetFeatureEnable(*segment_ext_params);
-                    AllocateAndSetMap(*segment_ext_params, tc.type & CHECK_NO_BUFFER ? 1 : 0);
+                    SETPARS(m_par, MFX_PAR);
+                    m_InitedSegmentExtParams = reinterpret_cast <mfxExtVP9Segmentation*>(m_par.GetExtBuffer(MFX_EXTBUFF_VP9_SEGMENTATION));
+                    if (m_InitedSegmentExtParams)
+                    {
+                        SetFeatureEnable(*m_InitedSegmentExtParams);
+                        AllocateAndSetMap(*m_InitedSegmentExtParams, tc.type & CHECK_NO_BUFFER ? 1 : 0);
+
+                        m_EncodedFramesStat[m_SourceFrameCount].type = SEGMENTATION_MAP_UPDATE | SEGMENTATION_DATA_UPDATE;
+                        m_EncodedFramesStat[m_SourceFrameCount].segm_params = *m_InitedSegmentExtParams;
+                        m_EncodedFramesStat[m_SourceFrameCount].change_type = CHANGE_TYPE_RESET;
+                    }
                 }
-            }
-            else if (tc.type == CHECK_RESET_WITH_SEG_BEFORE_ONLY)
-            {
-                if (segment_ext_params)
+                else if (tc.type & CHECK_RESET_WITH_SEG_BEFORE_ONLY)
                 {
-                    // switching off the segmentation
-                    segment_ext_params->NumSegments = 0;
+                    if (m_InitedSegmentExtParams)
+                    {
+                        // switching off the segmentation
+                        m_InitedSegmentExtParams->NumSegments = 0;
+
+                        for (mfxU32 i = 0; i < VP9E_DEFAULT_ENCODING_SEQUENCE_COUNT; ++i)
+                        {
+                            m_EncodedFramesStat[m_SourceFrameCount + i].type = SEGMENTATION_DISABLED;
+                        }
+                    }
                 }
+                else if (tc.type & CHECK_RESET_NO_SEGM_EXT_BUFFER)
+                {
+                    tmp_par = m_par;
+                    tmp_par.RemoveExtBuffer(MFX_EXTBUFF_VP9_SEGMENTATION);
+                    m_pPar = &tmp_par;
+                }
+                else if (tc.type & CHECK_STRESS_TEST)
+                {
+                    VP9_SET_RESET_PARAMS(m_par, MFX_PAR, st);
+
+                    m_InitedSegmentExtParams = reinterpret_cast <mfxExtVP9Segmentation*>(m_par.GetExtBuffer(MFX_EXTBUFF_VP9_SEGMENTATION));
+                    if (m_InitedSegmentExtParams)
+                    {
+                        SetFeatureEnable(*m_InitedSegmentExtParams);
+                        AllocateAndSetMap(*m_InitedSegmentExtParams, tc.type & CHECK_NO_BUFFER ? 1 : 0);
+
+                        m_EncodedFramesStat[m_SourceFrameCount].type = m_StressTestScenario[st].segmentation_type_expected;
+                        m_EncodedFramesStat[m_SourceFrameCount].segm_params = *m_InitedSegmentExtParams;
+                        m_EncodedFramesStat[m_SourceFrameCount].change_type = CHANGE_TYPE_RESET;
+                    }
+                }
+                else
+                {
+                    // switch Q_Index from positive delta to negative delta
+                    EXPECT_EQ(!!m_InitedSegmentExtParams, true);
+                    m_InitedSegmentExtParams->Segment[1].QIndexDelta = -100;
+
+                    m_EncodedFramesStat[m_SourceFrameCount].type = SEGMENTATION_DATA_UPDATE;
+                    m_EncodedFramesStat[m_SourceFrameCount].change_type = CHANGE_TYPE_RESET;
+                }
+
+                g_tsStatus.expect(tc.sts);
+                mfxStatus reset_status = Reset(m_session, m_pPar);
+                g_tsLog << "Reset() returned with status " << reset_status << ", expected status" << tc.sts << MFX_ERR_NONE << "\n";
             }
-            else
+
+            // SECOND ENCODE SECTION
+            if ((tc.type & CHECK_RESET || tc.type & CHECK_RESET_WITH_SEG_BEFORE_ONLY
+                || tc.type & CHECK_RESET_WITH_SEG_AFTER_ONLY || tc.type & CHECK_STRESS_TEST) && m_initialized)
             {
-                // switch Q_Index from positive delta to negative delta
-                EXPECT_EQ(!!segment_ext_params, true);
-                segment_ext_params->Segment[1].QIndexDelta = -20;
-            }
+                if (setup_steps)
+                {
+                    m_EncodingSequenceCount = m_StressTestScenario[st].encoding_count;
+                }
+                else
+                {
+                    reader->ResetFile();
+                    bs_checker.m_AllFramesSize = 0;
+                }
+                const runtime_segmentation_params *params_ptr = tc.type & CHECK_STRESS_TEST ? &m_StressTestScenario[st].runtime_params : nullptr;
 
-            g_tsStatus.expect(tc.sts);
-            mfxStatus reset_status = Reset(m_session, m_pPar);
-            g_tsLog << "Reset() returned with status " << reset_status << ", expected statu" << tc.sts << MFX_ERR_NONE << "\n";
-        }
+                TestSuite::EncodeFrames(m_EncodingSequenceCount, tc.type, params_ptr);
+                g_tsStatus.check(DrainEncodedBitstream());
 
-        // SECOND ENCODE SECTION
-        if ((tc.type & CHECK_RESET || tc.type & CHECK_RESET_WITH_SEG_BEFORE_ONLY || tc.type & CHECK_RESET_WITH_SEG_AFTER_ONLY || tc.type & CHECK_SEGM_ON_FRAME) && m_initialized)
-        {
-            reader->ResetFile();
-            bs_checker.m_AllFramesSize = 0;
-
-            if (tc.type & CHECK_SEGM_ON_FRAME)
-            {
-                m_FrameForSegmentationCtrl = 1;
-            }
-
-            TestSuite::EncodeFrames(default_frames_number);
-            g_tsStatus.check(DrainEncodedBitstream());
-
-            mfxU32 frames_size_after_reset = bs_checker.m_AllFramesSize;
-
-            g_tsLog << "Stream size of the first part = " << frames_size << " bytes, the second part = " << frames_size_after_reset << " bytes\n";
-            if (frames_size_after_reset < frames_size*1.5)
-            {
-                ADD_FAILURE() << "ERROR: Stream size of the second encoding part expected to be significantly bigger due to better quality, but it is not";
-                return MFX_ERR_INVALID_VIDEO_PARAM;
+                if (tc.type & CHECK_SECOND_ENCODING_STREAM_IS_BIGGER)
+                {
+                    mfxU32 frames_size_after_reset = bs_checker.m_AllFramesSize;
+                    g_tsLog << "Stream size of the first part = " << frames_size << " bytes, the second part = " << frames_size_after_reset << " bytes\n";
+                    if (frames_size_after_reset < frames_size*1.5)
+                    {
+                        ADD_FAILURE() << "ERROR: Stream size of the second encoding part expected to be significantly bigger due to better quality, but it is not";
+                        return MFX_ERR_INVALID_VIDEO_PARAM;
+                    }
+                }
             }
         }
 
@@ -1064,11 +1527,6 @@ namespace vp9e_msegmentation
         {
             g_tsStatus.expect(MFX_ERR_NONE);
             Close();
-        }
-
-        if (segment_ext_params && segment_ext_params->SegmentId)
-        {
-            delete[]segment_ext_params->SegmentId;
         }
 
         TS_END;
