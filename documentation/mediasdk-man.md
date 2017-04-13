@@ -3871,7 +3871,7 @@ It is not allowed to mix different blending use cases in the same function call.
 
 In special case where destination region of the output surface defined by output crops is fully covered with destination sub-regions of the surfaces, the fast compositing mode can be enabled. The main use case for this mode is a video-wall scenario with fixed destination surface partition into sub-regions of potentialy different size.
 
-In order to trigger this mode, application must cluster input surfaces into tiles, defining at least one tile by setting the `NumTiles` field to be greater then 0 and assigning surfaces to the corresponding tiles setting `TileId` field to the value within [0..`NumTiles`) range per input surface. Tiles should also satisfy following additional constraints:
+In order to trigger this mode, application must cluster input surfaces into tiles, defining at least one tile by setting the `NumTiles` field to be greater then 0 and assigning surfaces to the corresponding tiles setting `TileId` field to the value within \[0..`NumTiles`) range per input surface. Tiles should also satisfy following additional constraints:
 - each tile should not have more than 8 surfaces assigned to it;
 - tile bounding boxes, as defined by the enclosing rectangles of a union of a surfaces assigned to this tile, should not intersect;
 
@@ -3890,7 +3890,7 @@ In order to trigger this mode, application must cluster input surfaces into tile
   `GlobalAlphaEnable` | None zero value enables global alpha blending for this input stream.
   `GlobalAlpha` | Alpha value for this stream in [0..255] range. 0 – transparent, 255 – opaque.
   `PixelAlphaEnable` | None zero value enables per pixel alpha blending for this input stream. The stream should have RGB color format.
-  `TileId` | Specify the tile this video stream assigned to. Should be in range [0..`NumTiles`). Valid only if `NumTiles` > 0.
+  `TileId` | Specify the tile this video stream assigned to. Should be in range \[0..`NumTiles`). Valid only if `NumTiles` > 0.
 
 **Change History**
 
@@ -6039,6 +6039,49 @@ mfxExtDecVideoProcessing.Out.CropH  = 288;
 
 This structure is available since SDK API 1.22.
 
+## <a id='mfxExtVP9Param'>mfxExtVP9Param</a>
+
+**Definition**
+
+```C
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU16  FrameWidth;
+    mfxU16  FrameHeight;
+
+    mfxU16  WriteIVFHeaders;        /* tri-state option */
+
+    mfxI16  LoopFilterRefDelta[4];
+    mfxI16  LoopFilterModeDelta[2];
+
+    mfxI16  QIndexDeltaLumaDC;
+    mfxI16  QIndexDeltaChromaAC;
+    mfxI16  QIndexDeltaChromaDC;
+    mfxU16  reserved[112];
+} mfxExtVP9Param;
+```
+
+**Description**
+
+Attached to the [mfxVideoParam](#mfxVideoParam) structure extends it with VP9-specific parameters. Used by both decoder and encoder.
+
+**Members**
+
+| | |
+--- | ---
+`Header.BufferId`       | Must be [MFX_EXTBUFF_VP9_PARAM](#ExtendedBufferID).
+`FrameWidth`            | Width of the coded frame in pixels.
+`FrameHeight`           | Height of the coded frame in pixels.
+`WriteIVFHeaders`       | Turn this option ON to make encoder insert IVF container headers to output stream. NumFrame field of IVF sequence header will be zero, it’s responsibility of application to update it with correct value.<br>See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option.
+`LoopFilterRefDelta[4]` | Contains the adjustment needed for the filter level based on the chosen reference frame, see [VP9ReferenceFrame](#VP9ReferenceFrame) enum for array idx.
+`LoopFilterModeDelta[2]`| Contains the adjustment needed for the filter level based on the chosen mode.
+`QIndexDeltaLumaDC`,<br>`QIndexDeltaChromaAC`,<br>`QIndexDeltaChromaDC` | Specifies an offset for a particular quantization parameter.
+
+**Change History**
+
+This structure is available since SDK API **TBD**.
+
 
 # Enumerator Reference
 
@@ -6322,39 +6365,36 @@ The `ExtendedBufferID` enumerator itemizes and defines identifiers (`BufferId`) 
 `MFX_EXTBUFF_VPP_MIRRORING` | See the [mfxExtVPPMirroring](#mfxExtVPPMirroring) structure for details.
 `MFX_EXTBUFF_VPP_COLORFILL` | See the [mfxExtVPPColorFill](#mfxExtVPPColorFill) structure for details.
 `MFX_EXTBUFF_DEC_VIDEO_PROCESSING` | See the [mfxExtDecVideoProcessing](#mfxExtDecVideoProcessing) structure for details.
+`MFX_EXTBUFF_VP9_PARAM` | Extends [mfxVideoParam](#mfxVideoParam) structure with VP9-specific parameters. See the [mfxExtVP9Param](#mfxExtVP9Param) structure for details.
 
 **Change History**
 
 This enumerator is available since SDK API 1.0.
 
-SDK API 1.6 adds `MFX_EXTBUFF_VPP_IMAGE_STABILIZATION, MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION,
-MFX_EXTBUFF_CODING_OPTION2` and deprecates `MFX_EXTBUFF_VPP_SCENE_CHANGE.`
+SDK API 1.6 adds `MFX_EXTBUFF_VPP_IMAGE_STABILIZATION`, `MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION`, `MFX_EXTBUFF_CODING_OPTION2` and deprecates `MFX_EXTBUFF_VPP_SCENE_CHANGE`.
 
-SDK API 1.7 adds `MFX_EXTBUFF_ENCODED_FRAME_INFO, MFX_EXTBUFF_ENCODER_CAPABILITY,
-MFX_EXTBUFF_ENCODER_RESET_OPTION.`
+SDK API 1.7 adds `MFX_EXTBUFF_ENCODED_FRAME_INFO`, `MFX_EXTBUFF_ENCODER_CAPABILITY`, `MFX_EXTBUFF_ENCODER_RESET_OPTION`.
 
-SDK API 1.11 adds `MFX_EXTBUFF_CODING_OPTION3` and `MFX_EXTBUFF_VPP_FIELD_PROCESSING.`
+SDK API 1.11 adds `MFX_EXTBUFF_CODING_OPTION3` and `MFX_EXTBUFF_VPP_FIELD_PROCESSING`.
 
-SDK API 1.13 adds `MFX_EXTBUFF_MBQP, MFX_EXTBUFF_HEVC_TILES, MFX_EXTBUFF_MB_DISABLE_SKIP_MAP` and
-`MFX_EXTBUFF_CHROMA_LOC_INFO.`
+SDK API 1.13 adds `MFX_EXTBUFF_MBQP`, `MFX_EXTBUFF_HEVC_TILES`, `MFX_EXTBUFF_MB_DISABLE_SKIP_MAP` and `MFX_EXTBUFF_CHROMA_LOC_INFO`.
 
-SDK API 1.14 adds `MFX_EXTBUFF_HEVC_PARAM, MFX_EXTBUFF_HEVC_TILES, MFX_EXTBUFF_MB_DISABLE_SKIP_MAP,
-MFX_EXTBUFF_DECODED_FRAME_INFO` and `MFX_EXTBUFF_TIME_CODE.`
+SDK API 1.14 adds `MFX_EXTBUFF_HEVC_PARAM`, `MFX_EXTBUFF_HEVC_TILES`, `MFX_EXTBUFF_MB_DISABLE_SKIP_MAP`, `MFX_EXTBUFF_DECODED_FRAME_INFO` and `MFX_EXTBUFF_TIME_CODE`.
 
-SDK API 1.15 adds `MFX_HEVC_REGION_SLICE` and `MFX_EXTBUFF_THREADS_PARAM.`
+SDK API 1.15 adds `MFX_HEVC_REGION_SLICE` and `MFX_EXTBUFF_THREADS_PARAM`.
 
-SDK API 1.16 adds `MFX_EXTBUFF_PRED_WEIGHT_TABLE, MFX_EXTBUFF_DIRTY_RECTANGLES` and
-`MFX_EXTBUFF_MOVING_RECTANGLES.`
+SDK API 1.16 adds `MFX_EXTBUFF_PRED_WEIGHT_TABLE`, `MFX_EXTBUFF_DIRTY_RECTANGLES` and
+`MFX_EXTBUFF_MOVING_RECTANGLES`.
 
-SDK API 1.17 adds `MFX_EXTBUFF_CODING_OPTION_VPS` and `MFX_EXTBUFF_VPP_ROTATION` and deprecates
-`MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION`.
+SDK API 1.17 adds `MFX_EXTBUFF_CODING_OPTION_VPS` and `MFX_EXTBUFF_VPP_ROTATION` and deprecates `MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION`.
 
-SDK API 1.19 adds `MFX_EXTBUFF_ENCODED_SLICES_INFO, MFX_EXTBUFF_MV_OVER_PIC_BOUNDARIES,
-MFX_EXTBUFF_VPP_SCALING, MFX_EXTBUFF_VPP_MIRRORING, MFX_EXTBUFF_VPP_COLORFILL.`
+SDK API 1.19 adds `MFX_EXTBUFF_ENCODED_SLICES_INFO`, `MFX_EXTBUFF_MV_OVER_PIC_BOUNDARIES`, `MFX_EXTBUFF_VPP_SCALING`,  `MFX_EXTBUFF_VPP_MIRRORING`, `MFX_EXTBUFF_VPP_COLORFILL`.
 
-SDK API 1.22 adds `MFX_EXTBUFF_DEC_VIDEO_PROCESSING`
+SDK API 1.22 adds `MFX_EXTBUFF_DEC_VIDEO_PROCESSING`.
 
-SDK API 1.23 adds `MFX_EXTBUFF_MB_FORCE_INTRA`
+SDK API 1.23 adds `MFX_EXTBUFF_MB_FORCE_INTRA`.
+
+SDK API **TBD** adds `MFX_EXTBUFF_VP9_PARAM`.
 
 See additional change history in the structure definitions.
 
@@ -7194,6 +7234,26 @@ The `PayloadCtrlFlags` enumerator itemizes additional payload properties.
 **Change History**
 
 This enumerator is available since SDK API 1.19.
+
+
+## <a id='VP9ReferenceFrame'>VP9ReferenceFrame</a>
+
+**Description**
+
+The `VP9ReferenceFrame` enumerator itemizes reference frame type.
+
+**Name/Description**
+
+| | |
+--- | ---
+`MFX_VP9_REF_INTRA`  | Intra
+`MFX_VP9_REF_LAST`   | Last
+`MFX_VP9_REF_GOLDEN` | Golden
+`MFX_VP9_REF_ALTREF` | Alternative reference
+
+**Change History**
+
+This enumerator is available since SDK API **TBD**.
 
 # Appendices
 

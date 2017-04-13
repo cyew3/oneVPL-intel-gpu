@@ -936,6 +936,18 @@ STRUCT(mfxExtVP9TemporalLayers,
     FIELD_S(mfxVP9TemporalLayer , Layer)
 )
 
+STRUCT(mfxExtVP9Param,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU16      , FrameWidth)
+    FIELD_T(mfxU16      , FrameHeight)
+    FIELD_T(mfxU16      , WriteIVFHeaders)
+    FIELD_T(mfxI16      , LoopFilterRefDelta)
+    FIELD_T(mfxI16      , LoopFilterModeDelta)
+    FIELD_T(mfxI16      , QIndexDeltaLumaDC)
+    FIELD_T(mfxI16      , QIndexDeltaChromaAC)
+    FIELD_T(mfxI16      , QIndexDeltaChromaDC)
+)
+
 STRUCT(mfxExtMBForceIntra,
     FIELD_S(mfxExtBuffer, Header)
     FIELD_T(mfxU32, MapSize)

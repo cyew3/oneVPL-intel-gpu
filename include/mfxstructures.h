@@ -842,7 +842,8 @@ enum {
     MFX_EXTBUFF_VPP_COLORFILL              = MFX_MAKEFOURCC('V','C','L','F'),
     MFX_EXTBUFF_VPP_COLOR_CONVERSION       = MFX_MAKEFOURCC('V','C','S','C'),
     MFX_EXTBUFF_VP9_SEGMENTATION           = MFX_MAKEFOURCC('9','S','E','G'),
-    MFX_EXTBUFF_VP9_TEMPORAL_LAYERS        = MFX_MAKEFOURCC('9','T','M','L')
+    MFX_EXTBUFF_VP9_TEMPORAL_LAYERS        = MFX_MAKEFOURCC('9','T','M','L'),
+    MFX_EXTBUFF_VP9_PARAM                  = MFX_MAKEFOURCC('9','P','A','R')
 };
 
 /* VPP Conf: Do not use certain algorithms  */
@@ -1817,6 +1818,23 @@ typedef struct {
     mfxVP9TemporalLayer Layer[8];
     mfxU16              reserved[60];
 } mfxExtVP9TemporalLayers;
+
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU16  FrameWidth;
+    mfxU16  FrameHeight;
+
+    mfxU16  WriteIVFHeaders;        /* tri-state option */
+
+    mfxI16  LoopFilterRefDelta[4];
+    mfxI16  LoopFilterModeDelta[2];
+
+    mfxI16  QIndexDeltaLumaDC;
+    mfxI16  QIndexDeltaChromaAC;
+    mfxI16  QIndexDeltaChromaDC;
+    mfxU16  reserved[112];
+} mfxExtVP9Param;
 
 #ifdef __cplusplus
 } // extern "C"

@@ -1306,3 +1306,20 @@ std::string DumpContext::dump(const std::string structName, const  mfxExtVP9Temp
 
     return str;
 }
+
+std::string DumpContext::dump(const std::string structName, const  mfxExtVP9Param &_struct)
+{
+    std::string str;
+    str += dump(structName + ".Header", _struct.Header) + "\n";
+
+    DUMP_FIELD(FrameWidth);
+    DUMP_FIELD(FrameHeight);
+    DUMP_FIELD(WriteIVFHeaders);
+    str += structName + ".LoopFilterRefDelta[4]=" + DUMP_RESERVED_ARRAY(_struct.LoopFilterRefDelta) + "\n";
+    str += structName + ".LoopFilterModeDelta[2]=" + DUMP_RESERVED_ARRAY(_struct.LoopFilterModeDelta) + "\n";
+    DUMP_FIELD(QIndexDeltaLumaDC);
+    DUMP_FIELD(QIndexDeltaChromaAC);
+    DUMP_FIELD(QIndexDeltaChromaDC);
+
+    return str;
+}
