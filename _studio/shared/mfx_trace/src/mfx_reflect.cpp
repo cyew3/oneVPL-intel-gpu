@@ -462,9 +462,10 @@ namespace mfx_reflect
         if (!result->extBufferIdList.empty())
         {
             comparisonResult << "Id of unparsed ExtBuffer types: " << ::std::endl;
-            for (size_t i = 0; i < result->extBufferIdList.size(); i++)
+            while (!result->extBufferIdList.empty())
             {
-                comparisonResult << "0x" << ::std::hex << ::std::setfill('0') << result->extBufferIdList.front();
+                unsigned char* FourCC = reinterpret_cast<unsigned char*>(&result->extBufferIdList.front());
+                comparisonResult << "0x" << ::std::hex << ::std::setfill('0') << result->extBufferIdList.front() << " \"" << FourCC[0] << FourCC[1] << FourCC[2] << FourCC[3] << "\"";
                 result->extBufferIdList.pop_front();
                 if (!result->extBufferIdList.empty()) { comparisonResult << ", "; }
             }
