@@ -22,7 +22,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "sample_defs.h"
 
 #ifndef MSDK_MAJOR
-#define MSDK_MAJOR 1
+#define MSDK_MAJOR 8
 #endif
 
 #ifndef MSDK_MINOR
@@ -30,7 +30,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #endif
 
 #ifndef MSDK_RELEASE
-#define MSDK_RELEASE 0
+#define MSDK_RELEASE 23
 #endif
 
 #ifndef MSDK_BUILD
