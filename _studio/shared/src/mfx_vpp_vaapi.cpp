@@ -1905,8 +1905,14 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition_TiledVideoWall(mfxExecutePar
             (pParams->dstRects[i].PixelAlphaEnable == 0) )
         {
             blend_state[i].flags |= VA_BLEND_LUMA_KEY;
+#if defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT)
+            blend_state[i].min_luma = ((float)pParams->dstRects[i].LumaKeyMin/255);
+            blend_state[i].max_luma = ((float)pParams->dstRects[i].LumaKeyMax/255);
+#else
             blend_state[i].min_luma = pParams->dstRects[i].LumaKeyMin;
             blend_state[i].max_luma = pParams->dstRects[i].LumaKeyMax;
+#endif
+
         }
         if ((pParams->dstRects[i].LumaKeyEnable    == 0 ) &&
             (pParams->dstRects[i].PixelAlphaEnable != 0 ) )
@@ -2447,8 +2453,13 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
             (pParams->dstRects[refIdx-1].PixelAlphaEnable == 0) )
         {
             blend_state[refIdx].flags |= VA_BLEND_LUMA_KEY;
-            blend_state[refIdx].min_luma = pParams->dstRects[refIdx-1].LumaKeyMin;
-            blend_state[refIdx].max_luma = pParams->dstRects[refIdx-1].LumaKeyMax;
+#if defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT)
+            blend_state[refIdx].min_luma = ((float)pParams->dstRects[refIdx-1].LumaKeyMin/255);
+            blend_state[refIdx].max_luma = ((float)pParams->dstRects[refIdx-1].LumaKeyMax/255);
+#else
+            blend_state[refIdx].min_luma = pParams->dstRects[refIdx - 1].LumaKeyMin;
+            blend_state[refIdx].max_luma = pParams->dstRects[refIdx - 1].LumaKeyMax;
+#endif
         }
         if ((pParams->dstRects[refIdx-1].LumaKeyEnable == 0 ) &&
             (pParams->dstRects[refIdx-1].PixelAlphaEnable != 0 ) )
