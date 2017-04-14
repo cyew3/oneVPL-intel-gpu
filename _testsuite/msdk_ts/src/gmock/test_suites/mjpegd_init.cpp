@@ -238,9 +238,7 @@ int TestSuite::RunTest(unsigned int id)
             if(m_par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
             {
 #if defined (LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN)
-                if(expected == MFX_ERR_NONE) {
-                    g_tsStatus.expect(MFX_WRN_PARTIAL_ACCELERATION);
-                }
+                g_tsStatus.expect(MFX_WRN_PARTIAL_ACCELERATION);
 #endif
                 QueryIOSurf();
                 AllocOpaque(m_request, m_par);
@@ -285,12 +283,13 @@ int TestSuite::RunTest(unsigned int id)
 
 
     g_tsStatus.expect(MFX_ERR_NONE);
+#if defined (LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN)
+    g_tsStatus.expect(MFX_WRN_PARTIAL_ACCELERATION);
+#endif
     for (mfxU32 i = 1; i < tc.num_call; i++)
          Init(m_session, m_pPar);
     g_tsStatus.expect(expected);
     Init(m_session, m_pPar);
-
-
 
     TS_END;
     return 0;
@@ -299,3 +298,4 @@ int TestSuite::RunTest(unsigned int id)
 TS_REG_TEST_SUITE_CLASS(mjpegd_init);
 
 }
+
