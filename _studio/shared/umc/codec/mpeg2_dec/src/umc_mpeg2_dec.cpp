@@ -651,7 +651,7 @@ MPEG2VideoDecoderBase::~MPEG2VideoDecoderBase()
 
 Status MPEG2VideoDecoderBase::Reset()
 {
-    int i;
+    sequenceHeader.is_decoded = false;
     sequenceHeader.first_i_occure  = 0;
     sequenceHeader.first_p_occure  = 0;
     sequenceHeader.broken_link = 0;
@@ -679,7 +679,7 @@ Status MPEG2VideoDecoderBase::Reset()
     m_isFrameRateFromInit = false;
     m_isAspectRatioFromInit = false;
 
-    for(i = 0; i < 2*DPB_SIZE; i++)
+    for (int i = 0; i < 2*DPB_SIZE; i++)
     {
         PictureHeader[i].intra_vlc_format    = 0;
         PictureHeader[i].curr_intra_dc_multi = intra_dc_multi[0];

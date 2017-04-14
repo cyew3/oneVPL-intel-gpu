@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFX_MPEG2_DECODE_H__
@@ -197,6 +197,7 @@ protected:
     } m_fcState;
 
     bool m_found_SH;
+    bool m_found_IFrame;
     bool m_first_SH;
     bool m_new_bs;
 
@@ -335,7 +336,7 @@ class VideoDECODEMPEG2 : public VideoDECODE
 
 public:
     std::auto_ptr<VideoDECODEMPEG2InternalBase> internalImpl;
-    
+
     static mfxStatus Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out);
     static mfxStatus QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request);
     static mfxStatus DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVideoParam *par);
@@ -366,7 +367,7 @@ public:
                                mfxFrameSurface1 *surface_work,
                                mfxFrameSurface1 **surface_out,
                                MFX_ENTRY_POINT *pEntryPoint);
-  
+
     mfxStatus CheckFrameData(const mfxFrameSurface1 *pSurface);
 
     virtual mfxStatus GetUserData(mfxU8 *ud, mfxU32 *sz, mfxU64 *ts,mfxU16 bufsize);
