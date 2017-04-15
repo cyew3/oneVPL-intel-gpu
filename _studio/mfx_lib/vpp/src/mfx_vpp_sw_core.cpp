@@ -261,10 +261,10 @@ mfxStatus VideoVPPBase::Init(mfxVideoParam *par)
     }
 
     sts = InternalInit(par);
-    if (MFX_WRN_FILTER_SKIPPED == sts)
+    if (MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == sts || MFX_WRN_FILTER_SKIPPED == sts)
     {
-        sts_wrn = MFX_WRN_FILTER_SKIPPED;
-        sts     = MFX_ERR_NONE;
+        sts_wrn = sts;
+        sts = MFX_ERR_NONE;
     }
     MFX_CHECK_STS( sts );
    
