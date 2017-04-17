@@ -431,6 +431,37 @@ mfxStatus ResMngr::Close(void)
     Clear(m_surf[VPP_IN]);
     Clear(m_surf[VPP_OUT]);
 
+    m_bOutputReady = false;
+    m_bRefFrameEnable = false;
+    m_inputIndex  = 0;
+    m_outputIndex = 0;
+    m_bkwdRefCount = 0;
+    m_fwdRefCount = 0;
+
+    m_EOS = false;
+    m_actualNumber = 0;
+    m_indxOutTimeStamp = 0;
+    m_fieldWeaving = false;
+
+    m_inputFramesOrFieldPerCycle = 0;
+    m_inputIndexCount   = 0;
+    m_outputIndexCountPerCycle  = 0;
+
+    m_fwdRefCountRequired  = 0;
+    m_bkwdRefCountRequired = 0;
+/*
+    m_core = NULL;
+    if (NULL != m_pSubResource)
+    {
+        m_pSubResource->refCount = 0;
+        m_pSubResource->surfaceListForRelease.clear();
+        m_pSubResource = NULL;
+    }
+    */
+    m_subTaskQueue.clear();
+
+    m_surfQueue.clear();
+
     return MFX_ERR_NONE;
 
 } // mfxStatus ResMngr::Close(void)
@@ -1057,8 +1088,7 @@ mfxStatus TaskManager::Close(void)
      * So, it should be unlocked if Reset() happends */
     for (mfxU32 i = 0; i < m_tasks.size(); i++)
     {
-        if ((m_tasks[i].bkwdRefCount > 0) &&
-            (NULL != m_tasks[i].input.pSurf) &&
+        if ((NULL != m_tasks[i].input.pSurf) &&
             (0 != m_tasks[i].input.pSurf->Data.Locked))
         {
             mfxStatus sts = m_core->DecreaseReference( &(m_tasks[i].input.pSurf->Data) );
@@ -3231,12 +3261,6 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
 
             } // end (is30i60pConversion == 0 || m_frame_num % 2 == 1)
 
-            // Use BOB for last frame in 30i->60p mode to avoid display previous reference frame.
-            if ((is30i60pConversion == 1) && (pTask->bEOS))
-            {
-                m_scene_change = VPP_SCENE_NEW;
-            }
-
         }
 
         // set up m_executeParams.scene for vaapi interface;
@@ -3256,12 +3280,6 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
         } //end switch
     }  // if (MFX_DEINTERLACING_ADVANCED_SCD == m_executeParams.iDeinterlacingAlgorithm)
 
-    // TRY - Snow
-    // Use BOB for last frame in 30i->60p mode to avoid display previous reference frame.
-            if (pTask->bEOS)
-            {
-                m_executeParams.scene = VPP_SCENE_NEW;
-            }
 
     // increment ADI frame number
     m_frame_num++;

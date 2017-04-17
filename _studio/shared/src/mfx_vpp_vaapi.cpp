@@ -496,7 +496,6 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
     mfxU8* pPrimarySurfaceBuffer;
     VAImage imageRefSurface;
     mfxU8* pRefSurfaceBuffer;
-    bool   bForceADI = false;
     bool bIsFirstField = true;
     bool bUseReference = false;
 
@@ -566,39 +565,10 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         return MFX_ERR_DEVICE_FAILED;
 #endif // #if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
 
-    /* Now msdk needs intermediate surface for ADI with ref 30i->30p mode*/
-    if ((m_primarySurface4Composition == NULL) && (pParams->iDeinterlacingAlgorithm !=0) )
-    {
-        mfxDrvSurface* pRefSurf = &(pParams->pRefSurfaces[0]);
-        mfxFrameInfo *inInfo = &(pRefSurf->frameInfo);
-
-        m_primarySurface4Composition = (VASurfaceID*)calloc(1,sizeof(VASurfaceID));
-        /* required to check, is memory allocated o not  */
-        if (m_primarySurface4Composition == NULL)
-            return MFX_ERR_MEMORY_ALLOC;
-
-        attrib.type = VASurfaceAttribPixelFormat;
-        attrib.value.type = VAGenericValueTypeInteger;
-
-        unsigned int rt_format;
-
-        // default format is NV12
-        if (inInfo->FourCC == MFX_FOURCC_RGB4)
-        {
-            attrib.value.value.i = VA_FOURCC_ARGB;
-            rt_format = VA_RT_FORMAT_RGB32;
-        }
-        else
-        {
-            attrib.value.value.i = VA_FOURCC_NV12;
-	    rt_format = VA_RT_FORMAT_YUV420;
-        }
-        attrib.flags = VA_SURFACE_ATTRIB_SETTABLE;
-
-        vaSts = vaCreateSurfaces(m_vaDisplay, rt_format, inInfo->Width, inInfo->Height,
-                m_primarySurface4Composition, 1, &attrib, 1);
-        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-    }
+    // This works for ADI 30i->30p for now
+    // Better way may involve enabling bEOS for 30i->30p mode
+    if ((1 == pParams->refCount) && (pParams->bDeinterlace30i60p == false))
+        m_deintFrameCount = 0;
 
     if (VA_INVALID_ID == m_deintFilterID)
     {
@@ -614,12 +584,6 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             }
             else
             {
-                if (pParams->bEOS && MFX_DEINTERLACING_ADVANCED == pParams->iDeinterlacingAlgorithm)
-                {
-                    // for the last frame
-                    // otherwise it's not processed properly
-                    bForceADI = true;
-                }
                 deint.algorithm = VAProcDeinterlacingMotionAdaptive;
             }
 
@@ -656,7 +620,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
              * BOB, ADI_no_ref do not use reference frame and are used on first frame:
              *   m_deintFrameCount==0, if TFF, TOP=first field of current, BOTTOM=seconf field of current.
              */
-            if((pParams->bDeinterlace30i60p == true) || bForceADI)
+            if (pParams->bDeinterlace30i60p == true)
             {
                 // Deinterlace with reference can be used after first frame is processed
                 if(pParams->refCount > 1 && m_deintFrameCount)
@@ -948,8 +912,9 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
     {
         mfxDrvSurface* pRefSurf;
         pRefSurf = &(pParams->pRefSurfaces[refIdx]);
+        memset(&m_pipelineParam[refIdx], 0, sizeof(m_pipelineParam[refIdx]));
 
-        if (pParams->bFieldWeaving || bForceADI || ( (pParams->refCount > 1) && (0 != pParams->iDeinterlacingAlgorithm )))
+        if (pParams->bFieldWeaving || ( (pParams->refCount > 1) && (0 != pParams->iDeinterlacingAlgorithm )))
         {
             m_pipelineParam[refIdx].num_backward_references = 1;
             mfxDrvSurface* pRefSurf_1 = NULL;
@@ -1208,6 +1173,12 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
 
         // increase deinterlacer frame count after frame has been processed
         m_deintFrameCount ++;
+
+        // for ADI 30i->60p, EOS is received on second field after vpp_reset
+        // reset m_deintFrameCount to zero after processing second field
+        if((pParams->bEOS) && (pParams->bDeinterlace30i60p == true))
+            m_deintFrameCount = 0;
+
 
     }
 
@@ -1498,6 +1469,7 @@ mfxStatus VAAPIVideoProcessing::Execute_FakeOutput(mfxExecuteParams *pParams)
     {
         mfxDrvSurface* pRefSurf;
         pRefSurf = &(pParams->pRefSurfaces[refIdx]);
+        memset(&m_pipelineParam[refIdx], 0, sizeof(m_pipelineParam[refIdx]));
 
         if (pParams->refCount > 1)
         {
@@ -2166,6 +2138,7 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
     for( refIdx = 0; refIdx < SampleCount; refIdx++ )
     {
         mfxDrvSurface* pRefSurf = &(pParams->targetSurface);
+        memset(&m_pipelineParam[refIdx], 0, sizeof(m_pipelineParam[refIdx]));
 
         //VASurfaceID* srf_1 = (VASurfaceID*)(pRefSurf->hdl.first);
         //m_pipelineParam[refIdx].surface = *srf_1;
