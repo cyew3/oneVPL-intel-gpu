@@ -1328,8 +1328,9 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
     }
     m_pps.coded_buf = m_codedBufferId;
 
-    if ( (MFX_PROFILE_AVC_BASELINE & m_videoParam.mfx.CodecProfile) == MFX_PROFILE_AVC_BASELINE ||
-         (MFX_PROFILE_AVC_MAIN    == m_videoParam.mfx.CodecProfile) || (frameCtrl->IntraPartMask & 0x2) )
+    if ( (m_videoParam.mfx.CodecProfile & 0xff) == MFX_PROFILE_AVC_BASELINE ||
+         (m_videoParam.mfx.CodecProfile & 0xff) == MFX_PROFILE_AVC_MAIN     ||
+         (frameCtrl->IntraPartMask & 0x2))
     {
         m_pps.pic_fields.bits.transform_8x8_mode_flag = 0;
     }

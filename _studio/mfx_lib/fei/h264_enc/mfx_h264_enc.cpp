@@ -478,7 +478,7 @@ mfxStatus VideoENC_ENC::RunFrameVmeENCCheck(
         MFX_CHECK(frameCtrl->SearchWindow != 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
         mfxExtCodingOption const * extOpt = GetExtBuffer(m_video);
-        if (((m_video.mfx.CodecProfile & MFX_PROFILE_AVC_BASELINE) == MFX_PROFILE_AVC_BASELINE || m_video.mfx.CodecProfile == MFX_PROFILE_AVC_MAIN
+        if (((m_video.mfx.CodecProfile & 0xff) == MFX_PROFILE_AVC_BASELINE || (m_video.mfx.CodecProfile & 0xff) == MFX_PROFILE_AVC_MAIN
             || extOpt->IntraPredBlockSize == MFX_BLOCKSIZE_MIN_16X16) && !(frameCtrl->IntraPartMask & 0x02))
         {
             // For Main and Baseline profiles 8x8 transform is prohibited

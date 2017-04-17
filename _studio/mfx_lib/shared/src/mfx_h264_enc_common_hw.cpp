@@ -6346,8 +6346,8 @@ mfxStatus MfxHwH264Encode::CheckFEIRunTimeExtBuffersContent(
             MFX_CHECK(feiEncCtrl->SearchWindow != 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
             mfxExtCodingOption const* extOpt = GetExtBuffer(video);
-            if ( ( extOpt->IntraPredBlockSize == MFX_BLOCKSIZE_MIN_16X16 || (video.mfx.CodecProfile & MFX_PROFILE_AVC_BASELINE) == MFX_PROFILE_AVC_BASELINE
-                || video.mfx.CodecProfile == MFX_PROFILE_AVC_MAIN ) && !(feiEncCtrl->IntraPartMask & 0x02))
+            if ( ( extOpt->IntraPredBlockSize == MFX_BLOCKSIZE_MIN_16X16 || (video.mfx.CodecProfile & 0xff) == MFX_PROFILE_AVC_BASELINE
+                || (video.mfx.CodecProfile & 0xff) == MFX_PROFILE_AVC_MAIN ) && !(feiEncCtrl->IntraPartMask & 0x02))
             {
                 // For Main and Baseline profiles 8x8 transform is prohibited
                 return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
