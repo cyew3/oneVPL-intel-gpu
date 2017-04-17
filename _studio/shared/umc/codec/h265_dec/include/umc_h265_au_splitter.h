@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -53,7 +53,7 @@ protected:
 
 protected:
 
-    std::auto_ptr<NALUnitSplitter_H265> m_pNALSplitter;
+    std::unique_ptr<NALUnitSplitter_H265> m_pNALSplitter;
 };
 
 } // namespace UMC_HEVC_DECODER

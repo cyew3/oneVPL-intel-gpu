@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include <memory>
@@ -89,11 +89,11 @@ public:
     bool Close();
 
 private:
-    std::auto_ptr<OutlineReader> m_pReader1;
-    std::auto_ptr<OutlineReader> m_pReader2;
+    std::unique_ptr<OutlineReader> m_pReader1;
+    std::unique_ptr<OutlineReader> m_pReader2;
 
-    std::auto_ptr<VideoOutlineWriter> m_pWriter;
-    std::auto_ptr<CheckerBase> m_checker;
+    std::unique_ptr<VideoOutlineWriter> m_pWriter;
+    std::unique_ptr<CheckerBase> m_checker;
 
     bool CompareSequence(Ipp32s seq_id);
 

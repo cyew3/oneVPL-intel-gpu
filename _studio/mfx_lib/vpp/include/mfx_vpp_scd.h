@@ -444,16 +444,16 @@ private:
     mfxHDL        m_mfxDeviceHdl;
     CmDevice     *m_pCmDevice;
 
-    std::auto_ptr<mdfut::CmDeviceEx> device;
-    std::auto_ptr<mdfut::CmQueueEx>  queue;
+    std::unique_ptr<mdfut::CmDeviceEx> device;
+    std::unique_ptr<mdfut::CmQueueEx>  queue;
 
-    std::auto_ptr<mdfut::CmKernelEx> kernel_p; // progressive frame
-    std::auto_ptr<mdfut::CmKernelEx> kernel_t; // interlaced, top field
-    std::auto_ptr<mdfut::CmKernelEx> kernel_b; // interlaced, bottom field
-    std::auto_ptr<mdfut::CmThreadSpaceEx> threadSpace;
+    std::unique_ptr<mdfut::CmKernelEx> kernel_p; // progressive frame
+    std::unique_ptr<mdfut::CmKernelEx> kernel_t; // interlaced, top field
+    std::unique_ptr<mdfut::CmKernelEx> kernel_b; // interlaced, bottom field
+    std::unique_ptr<mdfut::CmThreadSpaceEx> threadSpace;
 
     std::map<void *, CmSurface2D *> m_tableCmRelations;
-    std::auto_ptr<mdfut::CmBufferUPEx> surfaceOut;
+    std::unique_ptr<mdfut::CmBufferUPEx> surfaceOut;
 
     static const int subWidth = 112;
     static const int subHeight = 64;

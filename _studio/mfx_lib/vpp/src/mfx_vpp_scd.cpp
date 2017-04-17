@@ -1695,9 +1695,9 @@ BOOL SceneChangeDetector::CompareStats(mfxU8 current, mfxU8 reference, BOOL isIn
         exit(-666);
     }
     mfxU8 comparison = 0;
-    comparison += abs(support->logic[current]->Rs - support->logic[reference]->Rs) < 0.075;
-    comparison += abs(support->logic[current]->Cs - support->logic[reference]->Cs) < 0.075;
-    comparison += abs(support->logic[current]->SC - support->logic[reference]->SC) < 0.075;
+    comparison += ::abs(support->logic[current]->Rs - support->logic[reference]->Rs) < 0.075;
+    comparison += ::abs(support->logic[current]->Cs - support->logic[reference]->Cs) < 0.075;
+    comparison += ::abs(support->logic[current]->SC - support->logic[reference]->SC) < 0.075;
     comparison += (!isInterlaced && support->logic[current]->TSCindex == 0) || isInterlaced;
     if(comparison == 4)
         return Same;
@@ -11672,51 +11672,51 @@ mfxStatus SceneChangeDetector::SubSampleImage(mfxU32 srcWidth, mfxU32 srcHeight,
     eMFXHWType  platform = m_pCore->GetHWType();;
 
     if(platform == MFX_HW_HSW || platform == MFX_HW_HSW_ULT)
-        device = std::auto_ptr<mdfut::CmDeviceEx>(new mdfut::CmDeviceEx(asc_genx_hsw, sizeof(asc_genx_hsw), m_pCmDevice, m_mfxDeviceType, m_mfxDeviceHdl));
+        device = std::unique_ptr<mdfut::CmDeviceEx>(new mdfut::CmDeviceEx(asc_genx_hsw, sizeof(asc_genx_hsw), m_pCmDevice, m_mfxDeviceType, m_mfxDeviceHdl));
     else if (platform == MFX_HW_SCL)
-        device = std::auto_ptr<mdfut::CmDeviceEx>(new mdfut::CmDeviceEx(asc_genx_skl, sizeof(asc_genx_skl), m_pCmDevice, m_mfxDeviceType, m_mfxDeviceHdl));
+        device = std::unique_ptr<mdfut::CmDeviceEx>(new mdfut::CmDeviceEx(asc_genx_skl, sizeof(asc_genx_skl), m_pCmDevice, m_mfxDeviceType, m_mfxDeviceHdl));
     else
-        device = std::auto_ptr<mdfut::CmDeviceEx>(new mdfut::CmDeviceEx(asc_genx_bdw, sizeof(asc_genx_bdw), m_pCmDevice, m_mfxDeviceType, m_mfxDeviceHdl));
+        device = std::unique_ptr<mdfut::CmDeviceEx>(new mdfut::CmDeviceEx(asc_genx_bdw, sizeof(asc_genx_bdw), m_pCmDevice, m_mfxDeviceType, m_mfxDeviceHdl));
 
-    queue  = std::auto_ptr<mdfut::CmQueueEx>(new mdfut::CmQueueEx(DeviceEx()));
+    queue  = std::unique_ptr<mdfut::CmQueueEx>(new mdfut::CmQueueEx(DeviceEx()));
 
     // select the fastest kernels for the given input surface size
     if (gpustep_w == 6 && gpustep_h == 7) {
-        kernel_p = std::auto_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_480p)));
-        kernel_t = std::auto_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_480t)));
-        kernel_b = std::auto_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_480b)));
+        kernel_p = std::unique_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_480p)));
+        kernel_t = std::unique_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_480t)));
+        kernel_b = std::unique_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_480b)));
     }
     else if (gpustep_w == 11 && gpustep_h == 11) {
-        kernel_p = std::auto_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_720p)));
-        kernel_t = std::auto_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_720t)));
-        kernel_b = std::auto_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_720b)));
+        kernel_p = std::unique_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_720p)));
+        kernel_t = std::unique_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_720t)));
+        kernel_b = std::unique_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_720b)));
     }
     else if (gpustep_w == 17 && gpustep_h == 16) {
-        kernel_p = std::auto_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_1080p)));
-        kernel_t = std::auto_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_1080t)));
-        kernel_b = std::auto_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_1080b)));
+        kernel_p = std::unique_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_1080p)));
+        kernel_t = std::unique_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_1080t)));
+        kernel_b = std::unique_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_1080b)));
     }
     else if (gpustep_w == 34 && gpustep_h == 33) {
-        kernel_p = std::auto_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_2160p)));
-        kernel_t = std::auto_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_2160t)));
-        kernel_b = std::auto_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_2160b)));
+        kernel_p = std::unique_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_2160p)));
+        kernel_t = std::unique_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_2160t)));
+        kernel_b = std::unique_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_2160b)));
     }
     else if (gpustep_w <= 32) {
-        kernel_p = std::auto_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_var_p)));
-        kernel_t = std::auto_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_var_t)));
-        kernel_b = std::auto_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_var_b)));
+        kernel_p = std::unique_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_var_p)));
+        kernel_t = std::unique_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_var_t)));
+        kernel_b = std::unique_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_var_b)));
     }
     else
     {
         return MFX_ERR_UNSUPPORTED;
     }
 
-    surfaceOut = std::auto_ptr<mdfut::CmBufferUPEx>(new mdfut::CmBufferUPEx(DeviceEx(), pData, subWidth * subHeight));
+    surfaceOut = std::unique_ptr<mdfut::CmBufferUPEx>(new mdfut::CmBufferUPEx(DeviceEx(), pData, subWidth * subHeight));
 
     assert((subWidth % OUT_BLOCK) == 0);
     UINT threadsWidth = subWidth / OUT_BLOCK;
     UINT threadsHeight = subHeight;
-    threadSpace = std::auto_ptr<mdfut::CmThreadSpaceEx>(new mdfut::CmThreadSpaceEx(DeviceEx(), threadsWidth, threadsHeight));
+    threadSpace = std::unique_ptr<mdfut::CmThreadSpaceEx>(new mdfut::CmThreadSpaceEx(DeviceEx(), threadsWidth, threadsHeight));
 
     return MFX_ERR_NONE;
 }

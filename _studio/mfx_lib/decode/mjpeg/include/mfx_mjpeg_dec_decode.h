@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -46,7 +46,7 @@ namespace UMC
 class VideoDECODEMJPEGBase
 {
 public:
-    std::auto_ptr<mfx_UMC_FrameAllocator>    m_FrameAllocator;
+    std::unique_ptr<mfx_UMC_FrameAllocator>    m_FrameAllocator;
 
     UMC::VideoDecoderParams umcVideoParams;
 
@@ -119,7 +119,7 @@ protected:
     // True if we need special VPP color conversion after decoding
     bool   m_needVpp;
     // Decoder's array
-    std::auto_ptr<UMC::MJPEGVideoDecoderMFX_HW> m_pMJPEGVideoDecoder;
+    std::unique_ptr<UMC::MJPEGVideoDecoderMFX_HW> m_pMJPEGVideoDecoder;
 
     // Number of pictures collected
     mfxU32 m_numPic;
@@ -202,7 +202,7 @@ protected:
     mfxFrameSurface1 * GetOriginalSurface(mfxFrameSurface1 *surface);
 
     // Frames collecting unit
-    std::auto_ptr<UMC::JpegFrameConstructor> m_frameConstructor;
+    std::unique_ptr<UMC::JpegFrameConstructor> m_frameConstructor;
 
 
     mfxVideoParamWrapper m_vFirstPar;
@@ -217,7 +217,7 @@ protected:
 
     mfxU32  m_frameOrder;
 
-    std::auto_ptr<VideoDECODEMJPEGBase> decoder;
+    std::unique_ptr<VideoDECODEMJPEGBase> decoder;
 
     mfxFrameAllocResponse m_response;
     mfxFrameAllocResponse m_response_alien;

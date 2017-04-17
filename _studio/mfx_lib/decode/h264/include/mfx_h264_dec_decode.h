@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include <mfxcommon.h>
@@ -99,10 +99,10 @@ protected:
 
     mfxFrameSurface1 * GetOriginalSurface(mfxFrameSurface1 *surface);
 
-    std::auto_ptr<UMC::MFXTaskSupplier>  m_pH264VideoDecoder;
+    std::unique_ptr<UMC::MFXTaskSupplier>  m_pH264VideoDecoder;
     mfx_UMC_MemAllocator            m_MemoryAllocator;
 
-    std::auto_ptr<mfx_UMC_FrameAllocator>    m_FrameAllocator;
+    std::unique_ptr<mfx_UMC_FrameAllocator>    m_FrameAllocator;
 
     mfxVideoParamWrapper m_vInitPar;
     mfxVideoParamWrapper m_vFirstPar;

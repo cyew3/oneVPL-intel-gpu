@@ -194,7 +194,7 @@ mfxStatus MFXHWVideoENCODEH264::Init(mfxVideoParam * par)
             par->mfx.CodecProfile = MFX_PROFILE_AVC_SCALABLE_BASELINE;
 #endif
 
-    std::auto_ptr<VideoENCODE> impl(
+    std::unique_ptr<VideoENCODE> impl(
 #ifdef MFX_ENABLE_MVC_VIDEO_ENCODE_HW
         IsMvcProfile(par->mfx.CodecProfile)
 
@@ -211,7 +211,7 @@ mfxStatus MFXHWVideoENCODEH264::Init(mfxVideoParam * par)
         sts >= MFX_ERR_NONE &&
         sts != MFX_WRN_PARTIAL_ACCELERATION, sts);
 
-    m_impl = impl;
+    m_impl = std::move(impl);
     return sts;
 }
 

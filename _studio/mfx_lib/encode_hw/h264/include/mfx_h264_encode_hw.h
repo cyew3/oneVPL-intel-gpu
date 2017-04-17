@@ -123,7 +123,7 @@ public:
 
 protected:
     VideoCORE*                 m_core;
-    std::auto_ptr<VideoENCODE> m_impl;
+    std::unique_ptr<VideoENCODE> m_impl;
 };
 
 

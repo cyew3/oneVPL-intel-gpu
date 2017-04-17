@@ -1226,7 +1226,7 @@ mfxStatus MfxHwH264Encode::QueryHwCaps(VideoCORE* core, ENCODE_CAPS & hwCaps, mf
         if (pEncodeCaps->GetHWCaps<ENCODE_CAPS>(guid, &hwCaps) == MFX_ERR_NONE)
             return MFX_ERR_NONE;
     }
-    std::auto_ptr<DriverEncoder> ddi;
+    std::unique_ptr<DriverEncoder> ddi;
 
     ddi.reset(CreatePlatformH264Encoder(core));
     if (ddi.get() == 0)
@@ -1265,7 +1265,7 @@ mfxStatus MfxHwH264Encode::QueryMbProcRate(VideoCORE* core, mfxVideoParam const 
             return MFX_ERR_NONE;
     }
 
-    std::auto_ptr<DriverEncoder> ddi;
+    std::unique_ptr<DriverEncoder> ddi;
 
     ddi.reset(CreatePlatformH264Encoder(core));
     if (ddi.get() == 0)
@@ -1291,7 +1291,7 @@ mfxStatus MfxHwH264Encode::QueryMbProcRate(VideoCORE* core, mfxVideoParam const 
 mfxStatus MfxHwH264Encode::QueryInputTilingSupport(VideoCORE* core, mfxVideoParam const & par, mfxU32 &inputTiling, GUID guid, mfxU32 width,  mfxU32 height)
 {
 
-    std::auto_ptr<DriverEncoder> ddi;
+    std::unique_ptr<DriverEncoder> ddi;
 
     ddi.reset(CreatePlatformH264Encoder(core));
     if (ddi.get() == 0)
@@ -1308,7 +1308,7 @@ mfxStatus MfxHwH264Encode::QueryInputTilingSupport(VideoCORE* core, mfxVideoPara
 
 mfxStatus MfxHwH264Encode::QueryGuid(VideoCORE* core, GUID guid)
 {
-    std::auto_ptr<DriverEncoder> ddi;
+    std::unique_ptr<DriverEncoder> ddi;
 
     ddi.reset(CreatePlatformH264Encoder(core));
     if (ddi.get() == 0)

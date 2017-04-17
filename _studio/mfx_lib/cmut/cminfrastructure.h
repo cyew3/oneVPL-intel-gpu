@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -93,8 +93,9 @@ protected:
 #endif
 };
 
+
 template<typename ty>
-struct pointer_traits
+struct data_view_traits
 {
   enum { dim = 0 };
   typedef ty tail_pointee_type;
@@ -102,24 +103,24 @@ struct pointer_traits
 
 template<typename ty, int n>
 #ifdef __GNUC__
-struct pointer_traits<ty [n]>
+struct data_view_traits<ty [n]>
 #else
-struct ::pointer_traits<ty [n]>
+struct ::data_view_traits<std::array<ty, n>>
 #endif
 {
-  enum { dim = pointer_traits<ty>::dim + 1 };
-  typedef typename pointer_traits<ty>::tail_pointee_type tail_pointee_type;
+  enum { dim = data_view_traits<ty>::dim + 1 };
+  typedef typename data_view_traits<ty>::tail_pointee_type tail_pointee_type;
 };
 
 template<typename ty>
 #ifdef __GNUC__
-struct pointer_traits<ty *>
+struct data_view_traits<ty *>
 #else
-struct ::pointer_traits<ty *>
+struct ::data_view_traits<ty *>
 #endif
 {
-  enum { dim = pointer_traits<ty>::dim + 1 };
-  typedef typename pointer_traits<ty>::tail_pointee_type tail_pointee_type;
+  enum { dim = data_view_traits<ty>::dim + 1 };
+  typedef typename data_view_traits<ty>::tail_pointee_type tail_pointee_type;
 };
 
 template<bool b>
@@ -201,7 +202,7 @@ public:
   {
     this->pDatas = new ty[size];
 
-    typedef typename ::pointer_traits<ty2>::tail_pointee_type tail_pointee_type;
+    typedef typename ::data_view_traits<ty2>::tail_pointee_type tail_pointee_type;
     for (unsigned int i = 0; i < size; i++) {
       this->pDatas[i] = (ty)((tail_pointee_type *)pData)[i];
     }

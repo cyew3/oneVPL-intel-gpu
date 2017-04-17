@@ -32,7 +32,6 @@
 #pragma warning(disable: 4100)
 #pragma warning(disable: 4201)
 
-#include "cmrt_cross_platform.h"
 
 #include "umc_mutex.h"
 
@@ -40,6 +39,8 @@
 #include <set>
 #include <map>
 #include <vector>
+
+#include "cmrt_cross_platform.h"
 
 typedef mfxI32 cmStatus;
 

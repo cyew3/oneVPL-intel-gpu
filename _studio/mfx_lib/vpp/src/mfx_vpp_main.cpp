@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "math.h"
@@ -41,7 +41,7 @@ static bool IsSvcMode(mfxVideoParam * par)
         GetFilterParam(par, MFX_EXTBUFF_SVC_SEQ_DESC, &pHint);
         if( pHint ) return true;
     }
-    
+
     return false;
 
 } // bool IsSvcMode(mfxVideoParam * par)
@@ -92,7 +92,7 @@ mfxStatus VideoVPPMain::Init(mfxVideoParam *par)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
 
-    std::auto_ptr<VideoVPP> impl(
+    std::unique_ptr<VideoVPP> impl(
 #ifdef MFX_ENABLE_VPP_SVC
         IsSvcMode(par)
             ? (VideoVPP*) new ImplementationSvc(m_core) :
@@ -174,7 +174,7 @@ mfxStatus VideoVPPMain::Init(mfxVideoParam *par)
         }
     }
     
-    m_impl = impl;
+    m_impl = std::move(impl);
 
     return (MFX_ERR_NONE == mfxSts) ? internalSts : mfxSts;
 

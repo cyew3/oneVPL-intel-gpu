@@ -1452,7 +1452,7 @@ namespace MfxHwH264Encode
             return m_impl->SetFrameVMEData(pLAOutput,width,height);
         }
     private:
-        std::auto_ptr<BrcIface> m_impl;
+        std::unique_ptr<BrcIface> m_impl;
     };
 
     class UmcBrc : public BrcIface
@@ -2242,7 +2242,7 @@ namespace MfxHwH264Encode
 #endif
         mfxU32      m_maxBsSize;
 
-        std::auto_ptr<DriverEncoder>    m_ddi;
+        std::unique_ptr<DriverEncoder>    m_ddi;
 
         std::vector<mfxU32>     m_recFrameOrder;
 
@@ -2289,7 +2289,7 @@ namespace MfxHwH264Encode
 
         // bitrate reset for SNB
 
-        std::auto_ptr<CmContext>    m_cmCtx;
+        std::unique_ptr<CmContext>    m_cmCtx;
         std::vector<VmeData>        m_vmeDataStorage;
         std::vector<VmeData *>      m_tmpVmeData;
 
@@ -2441,7 +2441,7 @@ namespace MfxHwH264Encode
         MfxVideoParam m_videoInit;  // m_video may change by Reset, m_videoInit doesn't change
 
         Hrd                          m_hrd;
-        std::auto_ptr<DriverEncoder> m_ddi;
+        std::unique_ptr<DriverEncoder> m_ddi;
         TaskManager                  m_tasks;
 #ifndef MFX_PROTECTED_FEATURE_DISABLE
         AesCounter                   m_aesCounter;
@@ -2831,7 +2831,7 @@ namespace MfxHwH264Encode
 
         std::vector<Hrd>            m_hrd;
 // MVC BD {
-        std::auto_ptr<DriverEncoder> m_ddi[2];
+        std::unique_ptr<DriverEncoder> m_ddi[2];
         mfxU8                        m_numEncs;
         MfxFrameAllocResponse       m_raw[2];
         MfxFrameAllocResponse       m_bitstream[2];
@@ -3309,7 +3309,7 @@ namespace MfxHwH264Encode
         MfxVideoParam                       m_video;
         MfxVideoParam                       m_videoInit;    // m_video may change by Reset, m_videoInit doesn't change
         Hrd                                 m_hrd;
-        std::auto_ptr<DriverEncoder>        m_ddi;
+        std::unique_ptr<DriverEncoder>        m_ddi;
         GUID                                m_guid;
         TaskManagerSvc                      m_manager;
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)

@@ -118,7 +118,7 @@ struct Context
     Ipp32u save_tlIf;
     Ipp32u save_tpIf;
 
-    std::auto_ptr<ReconstructorBase>  m_reconstructor;
+    std::unique_ptr<ReconstructorBase>  m_reconstructor;
 };
 
 // Slice decoder CTB local state
@@ -360,14 +360,14 @@ public:
     Ipp32u m_MaxDepth; //max number of depth
     H265DecYUVBufferPadded* m_ppcYUVResi; //array of residual buffer
 
-    std::auto_ptr<H265Prediction> m_Prediction;
+    std::unique_ptr<H265Prediction> m_Prediction;
 
     H265TrQuant* m_TrQuant;
     Ipp32u m_BakAbsPartIdxChroma;
     Ipp32u m_bakAbsPartIdxQp;
 
     DecodingContext * m_context;
-    std::auto_ptr<DecodingContext> m_context_single_thread;
+    std::unique_ptr<DecodingContext> m_context_single_thread;
 
     // Fill up basic CU information in local decoder context
     void UpdateNeighborBuffers(Ipp32u AbsPartIdx, Ipp32u Depth, bool isSkipped);

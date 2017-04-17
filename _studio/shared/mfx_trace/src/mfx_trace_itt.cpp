@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_trace.h"
@@ -13,7 +13,12 @@
 #ifdef MFX_TRACE_ENABLE_ITT
 extern "C"
 {
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wattributes"
 #include <ittnotify.h>
+#pragma GCC diagnostic pop
+
 #include <stdio.h>
 #include "mfx_trace_utils.h"
 #include "mfx_trace_textlog.h"

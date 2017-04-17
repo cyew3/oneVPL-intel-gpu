@@ -17,8 +17,8 @@
 
 #include "mfx_enc_ext.h"
 #include "mfxla.h"
-#include "cmrt_cross_platform.h"
 #include "mfx_h264_encode_hw_utils.h"
+#include "cmrt_cross_platform.h"
 
 #include <memory>
 #include <list>

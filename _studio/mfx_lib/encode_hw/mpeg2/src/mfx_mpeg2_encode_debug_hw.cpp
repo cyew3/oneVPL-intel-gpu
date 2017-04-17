@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2002-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2002-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_mpeg2_encode_hw.h"
@@ -550,7 +550,7 @@ void MPEG2EncodeDebug_HW::Init(MFXVideoENCODEMPEG2_HW *pEncode_hw)
     strcpy(debug_logs_folder,MP2_DBG_DEBUG_LOG_FOLDER);
   }
 
-  system("rd /S /Q "MP2_DBG_DEBUG_LOG_FOLDER"");
+  system("rd /S /Q " MP2_DBG_DEBUG_LOG_FOLDER "");
   _mkdir(debug_logs_folder);
 
 //allocating memory
