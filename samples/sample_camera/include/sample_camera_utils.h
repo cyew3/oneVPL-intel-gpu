@@ -151,7 +151,6 @@ typedef struct _ownFrameInfo
   mfxU32  CropY;
   mfxU32  CropW;
   mfxU32  CropH;
-
   mfxU32 FourCC;
   mfxF64 dFrameRate;
 
@@ -328,7 +327,7 @@ struct sInputParams
 
     std::vector<sResetParams> resetParams;
     mfxU32 resetInterval;
-
+    bool bPerf_opt;
     bool bDoPadding;
 
     bool b3DLUT;
@@ -388,8 +387,8 @@ struct sInputParams
         MSDK_ZERO_MEMORY(strSrcFile);
         MSDK_ZERO_MEMORY(strDstFile);
         MSDK_ZERO_MEMORY(strPluginPath);
-
-        bDoPadding=false;
+        bPerf_opt = false;
+        bDoPadding = false;
 
         CameraPluginVersion = 1;
         inputType     = MFX_CAM_BAYER_RGGB;
@@ -506,6 +505,35 @@ protected:
     bool        m_bSingleFileMode;
     mfxU32      m_Width;
     mfxU32      m_Height;
+};
+
+
+class CBufferedVideoReader : public CVideoReader
+{
+public:
+    CBufferedVideoReader() : m_fSrc(0), m_Height(0), m_Width(0), m_FileNum(0), nCurrentFrame(0) {
+        MSDK_ZERO_MEMORY(m_FileNameBase);
+    };
+    virtual ~CBufferedVideoReader();
+    void Close();
+    mfxStatus  Init(sInputParams *pParams);
+    mfxStatus  LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInfo, mfxU32 type);
+    void  SetStartFileNumber(mfxI32 fileNum)
+    {
+        m_FileNum = fileNum;
+    }
+
+protected:
+    FILE*       m_fSrc;
+    msdk_char   m_FileNameBase[MSDK_MAX_FILENAME_LEN];
+    mfxU32      m_FileNum;
+    bool        m_DoPadding;
+    mfxU32      m_Width;
+    mfxU32      m_Height;
+    mfxU32      nFramesToProceed;
+    mfxU32      nCurrentFrame;
+
+    std::vector<mfxU16*> buffer;
 };
 
 class CBmpWriter

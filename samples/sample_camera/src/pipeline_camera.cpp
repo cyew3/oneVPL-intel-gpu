@@ -833,7 +833,9 @@ mfxStatus CCameraPipeline::Init(sInputParams *pParams)
 
     mfxStatus sts = MFX_ERR_NONE;
 
-    if ( isBayerFormat(pParams->inputType) )
+    if (pParams->bPerf_opt)
+        m_pFileReader = new CBufferedVideoReader();
+    else if ( isBayerFormat(pParams->inputType) )
         m_pFileReader = new CRawVideoReader();
     else
         m_pFileReader = new CARGB16VideoReader();

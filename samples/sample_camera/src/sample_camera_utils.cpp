@@ -315,6 +315,99 @@ mfxStatus CARGB16VideoReader::LoadNextFrameSequential(mfxFrameData* pData, mfxFr
     return MFX_ERR_NONE;
 }
 
+mfxStatus CBufferedVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInfo, mfxU32 bayerType)
+{
+    pData->Y16 = buffer[nCurrentFrame];
+    pData->FrameOrder = nCurrentFrame;
+    nCurrentFrame++;
+    return MFX_ERR_NONE;
+}
+
+mfxStatus CBufferedVideoReader::Init(sInputParams *pParams) {
+    //Valid only for Bayer sequence input
+    msdk_strcopy(m_FileNameBase, pParams->strSrcFile);
+    m_FileNum = 0;
+    nFramesToProceed = pParams->nFramesToProceed;
+    m_DoPadding = pParams->bDoPadding;
+    printf("Buffering ");
+    while (m_FileNum < pParams->nFramesToProceed) {
+        int filenameIndx = m_FileNum;
+        msdk_char fname[MSDK_MAX_FILENAME_LEN];
+        const msdk_char *pExt;
+        switch (pParams->inputType) {
+        case MFX_CAM_BAYER_GRBG:
+            pExt = MSDK_STRING("gr16");
+            break;
+        case MFX_CAM_BAYER_GBRG:
+            pExt = MSDK_STRING("gb16");
+            break;
+        case MFX_CAM_BAYER_BGGR:
+            pExt = MSDK_STRING("bg16");
+            break;
+        case MFX_CAM_BAYER_RGGB:
+        default:
+            pExt = MSDK_STRING("rg16");
+            break;
+        }
+
+#if defined(_WIN32) || defined(_WIN64)
+        msdk_sprintf(fname, MSDK_MAX_FILENAME_LEN, MSDK_STRING("%s%08d.%s"), m_FileNameBase, filenameIndx, pExt);
+#else
+        msdk_sprintf(fname, MSDK_STRING("%s%08d.%s"), m_FileNameBase, filenameIndx, pExt);
+#endif
+        MSDK_FOPEN(m_fSrc, fname, MSDK_STRING("rb"));
+
+        MSDK_CHECK_POINTER(m_fSrc, MFX_ERR_MORE_DATA);
+
+        mfxI32 w, h, i, pitch;
+        mfxI32 nBytesRead;
+
+        w = m_Width = pParams->frameInfo->nWidth;
+        h = m_Height = pParams->frameInfo->nHeight;
+
+        //buffer for FOURCC_R16 is w*h*2
+        mfxU16* data = new mfxU16[w * h * 2];
+        mfxU16 *ptr = data;
+
+        pitch = w;
+
+        if (!m_DoPadding)
+        {
+            for (i = 0; i < h; i++)
+            {
+                nBytesRead = (mfxI32)fread(ptr + i * pitch, sizeof(mfxU16), w, m_fSrc);
+
+                IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
+            }
+        }
+        buffer.push_back(data);
+        printf(".");
+        m_FileNum++;
+
+        fclose(m_fSrc);
+    }
+    printf("\n");
+    return MFX_ERR_NONE;
+}
+
+CBufferedVideoReader::~CBufferedVideoReader() {
+    Close();
+}
+
+void CBufferedVideoReader::Close() {
+    if (m_fSrc != 0)
+    {
+        fclose(m_fSrc);
+        m_fSrc = 0;
+    }
+    while (buffer.size() > 0) {
+        if (buffer[0]) {
+            delete buffer[0];
+            buffer.erase(buffer.begin());
+        }
+    }
+}
+
 CRawVideoReader::CRawVideoReader()
 {
     m_fSrc = 0;

@@ -56,6 +56,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-n numFrames] / [-numFramesToProcess numFrames]    - number of frames to process\n"));
     msdk_printf(MSDK_STRING("   [-alpha alpha]                                      - write value to alpha channel of output surface \n"));
     msdk_printf(MSDK_STRING("   [-pd] / [-padding]                                  - do input surface padding \n"));
+    msdk_printf(MSDK_STRING("   [-perf_opt]                                         - buffered reading of input (support: Bayer sequence \n"));
     msdk_printf(MSDK_STRING("   [-resetInterval resetInterval]                      - reset interval in frames, default 7 \n"));
     msdk_printf(MSDK_STRING("   [-reset -i ... -o ... -f ... -w ... -h ... -bbl ... -bwb ... -ccm ...]     -  params to be used after next reset.\n"));
     msdk_printf(MSDK_STRING("       Only params listed above are supported, if a param is not set here, the originally set value is used. \n"));
@@ -143,6 +144,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 return MFX_ERR_UNSUPPORTED;
             }
             i++;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-perf_opt")))
+        {
+            pParams->bPerf_opt = true;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-imem")))
         {
@@ -772,7 +777,6 @@ int main(int argc, char *argv[])
     double time = ((double)timeEnd.QuadPart - (double)timeBegin.QuadPart)/ (double)m_Freq.QuadPart;
 
     int frames = Pipeline.GetNumberProcessedFrames();
-
     _tprintf(_T("Total frames %d \n"), frames);
     _tprintf(_T("Total time   %.2lf sec\n"), time);
     _tprintf(_T("Total FPS    %.2lf fps\n"), frames/time);
