@@ -64,8 +64,6 @@ namespace MfxHwVideoProcessing
 
         virtual mfxStatus Execute_Composition_TiledVideoWall(mfxExecuteParams *pParams);
 
-        virtual mfxStatus Execute_FakeOutput(mfxExecuteParams *pParams);
-
     private:
 
 
