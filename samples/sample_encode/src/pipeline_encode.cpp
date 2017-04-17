@@ -1198,10 +1198,10 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     MSDK_CHECK_POINTER(m_pmfxENC, MFX_ERR_MEMORY_ALLOC);
 
     // create preprocessor if resizing was requested from command line
-    // or if different FourCC is set in InitMfxVppParams
+    // or if different FourCC is set
     if (pParams->nWidth  != pParams->nDstWidth ||
         pParams->nHeight != pParams->nDstHeight ||
-        m_mfxVppParams.vpp.In.FourCC != m_mfxVppParams.vpp.Out.FourCC)
+        pParams->FileInputFourCC != pParams->EncodeFourCC)
     {
         m_pmfxVPP = new MFXVideoVPP(m_mfxSession);
         MSDK_CHECK_POINTER(m_pmfxVPP, MFX_ERR_MEMORY_ALLOC);
