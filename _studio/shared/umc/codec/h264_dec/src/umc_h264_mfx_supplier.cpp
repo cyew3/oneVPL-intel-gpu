@@ -562,10 +562,10 @@ eMFXPlatform MFX_Utility::GetPlatform(VideoCORE * core, mfxVideoParam * par)
     case MFX_HW_BDW:
     case MFX_HW_SCL:
     case MFX_HW_CHT:
-#ifndef MFX_CLOSED_PLATFORMS_DISABLE
     case MFX_HW_KBL:
-    case MFX_HW_CNL:
     case MFX_HW_APL:
+#ifndef MFX_CLOSED_PLATFORMS_DISABLE
+    case MFX_HW_CNL:
 #endif
         name = sDXVA2_ModeH264_VLD_NoFGT;
 #ifndef OPEN_SOURCE

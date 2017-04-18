@@ -400,9 +400,11 @@ _studio/shared/umc/io/umc_va/CMakeLists.txt
 _studio/shared/umc/io/umc_va/include/umc_va.h
 _studio/shared/umc/io/umc_va/include/umc_va_fei.h
 _studio/shared/umc/io/umc_va/include/umc_va_linux.h
+_studio/shared/umc/io/umc_va/include/umc_va_video_processing.h
 _studio/shared/umc/io/umc_va/src/umc_va.cpp
 _studio/shared/umc/io/umc_va/src/umc_va_fei.cpp
 _studio/shared/umc/io/umc_va/src/umc_va_linux.cpp
+_studio/shared/umc/io/umc_va/src/umc_va_video_processing.cpp
 _studio/mfx_lib/cmrt_cross_platform/include/cmrt_cross_platform.h
 _studio/mfx_lib/cmrt_cross_platform/src/cmrt_cross_platform.cpp
 _studio/mfx_lib/genx/field_copy/include/genx_fcopy_cmcode_isa.h

@@ -2288,11 +2288,7 @@ void SetDefaults(
         rawBits = rawBits / 8 * par.mfx.FrameInfo.BitDepthLuma;
         maxQP += 6 * (par.mfx.FrameInfo.BitDepthLuma - 8);
 
-        if (IsOn(par.mfx.LowPower)
-#ifndef MFX_CLOSED_PLATFORMS_DISABLE
-            || par.m_platform.CodeName == MFX_PLATFORM_KABYLAKE
-#endif
-            )
+        if (IsOn(par.mfx.LowPower) || par.m_platform.CodeName == MFX_PLATFORM_KABYLAKE)
             minQP += 6 * (par.mfx.FrameInfo.BitDepthLuma - 8);
     }
 #endif

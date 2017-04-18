@@ -1039,9 +1039,7 @@ namespace MfxHwH264Encode
 
     mfxU8 ConvertMfxFrameType2SliceType(mfxU8 type);
 
-#ifndef OPEN_SOURCE
     ENCODE_FRAME_SIZE_TOLERANCE ConvertLowDelayBRCMfx2Ddi(mfxU16 type);
-#endif
 
     template<class T> inline T AlignValue(T value, mfxU32 alignment)
     {

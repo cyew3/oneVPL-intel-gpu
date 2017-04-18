@@ -2214,9 +2214,9 @@ mfxStatus CmCopyWrapper::InitializeSwapKernels(eMFXHWType hwtype)
             }
 #endif
         case MFX_HW_SCL:
-#ifndef MFX_CLOSED_PLATFORMS_DISABLE
         case MFX_HW_APL:
         case MFX_HW_KBL:
+#ifndef MFX_CLOSED_PLATFORMS_DISABLE
         case MFX_HW_GLK:
 #endif
             {

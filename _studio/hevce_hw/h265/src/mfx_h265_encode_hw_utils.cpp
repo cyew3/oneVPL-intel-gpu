@@ -3176,10 +3176,7 @@ void ConfigureTask(
 
         task.m_qpY -= 6 * par.m_sps.bit_depth_luma_minus8;
 
-        if (task.m_qpY < 0 && (
-#ifndef MFX_CLOSED_PLATFORMS_DISABLE
-            par.m_platform.CodeName == MFX_PLATFORM_KABYLAKE || 
-#endif
+        if (task.m_qpY < 0 && (par.m_platform.CodeName == MFX_PLATFORM_KABYLAKE || 
             IsOn(par.mfx.LowPower)))
             task.m_qpY = 0;
     }

@@ -52,10 +52,11 @@ enum eMFXHWType
 
     MFX_HW_SCL       = 0x900000,
 
-#ifndef MFX_CLOSED_PLATFORMS_DISABLE
     MFX_HW_APL       = 0x1000000,
 
     MFX_HW_KBL       = 0x1100000,
+
+#ifndef MFX_CLOSED_PLATFORMS_DISABLE
     MFX_HW_GLK       = MFX_HW_KBL + 1,
     MFX_HW_CFL       = MFX_HW_KBL + 2,
 

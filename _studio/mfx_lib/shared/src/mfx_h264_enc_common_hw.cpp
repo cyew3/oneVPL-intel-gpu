@@ -2504,7 +2504,6 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         }
     }
 
-#ifndef OPEN_SOURCE
     if (extOpt3->LowDelayBRC == MFX_CODINGOPTION_ON) {
         if (par.mfx.RateControlMethod != MFX_RATECONTROL_VBR && par.mfx.RateControlMethod != MFX_RATECONTROL_QVBR &&
             par.mfx.RateControlMethod != MFX_RATECONTROL_VCM) {
@@ -2527,7 +2526,6 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
             }
         }
     }
-#endif
 
     if (par.mfx.NumSlice         != 0 &&
         par.mfx.FrameInfo.Width  != 0 &&
@@ -5482,9 +5480,7 @@ void MfxHwH264Encode::SetDefaults(
     SetDefaultOff(extOpt->RecoveryPointSEI);
     SetDefaultOff(extOpt3->DirectBiasAdjustment);
     SetDefaultOff(extOpt3->GlobalMotionBiasAdjustment);
-#ifndef OPEN_SOURCE
     SetDefaultOff(extOpt3->LowDelayBRC);
-#endif
 
     CheckVideoParamQueryLike(par, hwCaps, platform, vaType);
 
@@ -6696,7 +6692,6 @@ mfxU8 MfxHwH264Encode::ConvertFrameTypeMfx2Ddi(mfxU32 type)
     }
 }
 
-#ifndef OPEN_SOURCE
 ENCODE_FRAME_SIZE_TOLERANCE MfxHwH264Encode::ConvertLowDelayBRCMfx2Ddi(mfxU16 type)
 {
     switch (type) {
@@ -6706,7 +6701,6 @@ ENCODE_FRAME_SIZE_TOLERANCE MfxHwH264Encode::ConvertLowDelayBRCMfx2Ddi(mfxU16 ty
             return eFrameSizeTolerance_Normal;
     }
 }
-#endif
 
 mfxU8 MfxHwH264Encode::ConvertMfxFrameType2SliceType(mfxU8 type)
 {

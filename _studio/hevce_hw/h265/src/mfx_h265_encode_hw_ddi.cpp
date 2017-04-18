@@ -92,7 +92,7 @@ DriverEncoder* CreatePlatformH265Encoder(MFXCoreInterface* core, ENCODER_TYPE ty
     return 0;
 }
 
-#ifndef OPEN_SOURCE
+#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
 bool IsEncPak(GUID guid)
 {
     // search among ENC+PAK guids GuidTable[0]
@@ -129,10 +129,8 @@ mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, MFXCoreInterface* core, GUID guid
             caps.LCUSizeSupported = 0b10;   // 32x32 lcu is only supported
     }
     else {
-#ifndef OPEN_SOURCE
         if (IsEncPak(guid))
             caps.LCUSizeSupported |= 0b10;   // add support of 32x32 lcu for ENC+PAK
-#endif
     }
 
     if (pltfm.CodeName >= MFX_PLATFORM_CANNONLAKE)

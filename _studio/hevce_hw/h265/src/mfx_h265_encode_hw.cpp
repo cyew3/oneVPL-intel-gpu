@@ -186,10 +186,8 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
 
     m_vpar = *par;
 
-#ifndef MFX_CLOSED_PLATFORMS_DISABLE
     sts = m_core.QueryPlatform(&m_vpar.m_platform);
     MFX_CHECK_STS(sts);
-#endif
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     if (   m_vpar.m_ext.CO3.TargetChromaFormatPlus1 != (MFX_CHROMAFORMAT_YUV420 + 1)
@@ -515,9 +513,8 @@ mfxStatus Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request,
     default: return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
-#ifndef MFX_CLOSED_PLATFORMS_DISABLE
     m_core.QueryPlatform(&tmp.m_platform);
-#endif
+
     sts = QueryHwCaps(&m_core, GetGUID(tmp), caps);
     MFX_CHECK_STS(sts);
 
@@ -592,10 +589,8 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
             return MFX_ERR_UNSUPPORTED;
         }
 
-#ifndef MFX_CLOSED_PLATFORMS_DISABLE
         sts = m_core.QueryPlatform(&tmp.m_platform);
         MFX_CHECK_STS(sts);
-#endif
 
         MFX_CHECK(in->mfx.CodecId == MFX_CODEC_HEVC, MFX_ERR_UNSUPPORTED);
 

@@ -1055,8 +1055,6 @@ bool MFX_JPEG_Utility::IsNeedPartialAcceleration(VideoCORE * core, mfxVideoParam
     if (par->mfx.InterleavedDec == MFX_SCANTYPE_NONINTERLEAVED)
         return true;
 
-#ifndef MFX_CLOSED_PLATFORMS_DISABLE
-    // BXT SW fallback definition
     if (core->GetHWType() == MFX_HW_APL)
     {
         if (par->mfx.FrameInfo.Width > 4096 || par->mfx.FrameInfo.Height > 4096)
@@ -1095,7 +1093,7 @@ bool MFX_JPEG_Utility::IsNeedPartialAcceleration(VideoCORE * core, mfxVideoParam
             }
         }
     }
-#endif // MFX_CLOSED_PLATFORMS_DISABLE
+
     if (core->GetHWType() == MFX_HW_BDW || core->GetHWType() == MFX_HW_SCL)
     {
         if (par->mfx.FrameInfo.Width > 8192 || par->mfx.FrameInfo.Height > 8192)
@@ -1824,7 +1822,7 @@ void VideoDECODEMJPEGBase_HW::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxIn
 {
     if (info->JPEGColorFormat == MFX_JPEG_COLORFORMAT_UNKNOWN || info->JPEGColorFormat == MFX_JPEG_COLORFORMAT_YCbCr)
     {
-        #if defined (MFX_VA_LINUX) && !defined(MFX_CLOSED_PLATFORMS_DISABLE)
+        #if defined (MFX_VA_LINUX)
             if (hwType == MFX_HW_APL) return;
         #endif
         switch(info->JPEGChromaFormat)

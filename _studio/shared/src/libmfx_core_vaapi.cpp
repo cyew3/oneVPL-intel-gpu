@@ -203,7 +203,6 @@ typedef struct {
     { 0x193B, MFX_HW_SCL }, // Halo
     { 0x193D, MFX_HW_SCL }, // WKS
 
-#ifndef MFX_CLOSED_PLATFORMS_DISABLE
     /* APL */
     { 0x0A84, MFX_HW_APL},
     { 0x0A85, MFX_HW_APL},
@@ -213,6 +212,7 @@ typedef struct {
     { 0x5A84, MFX_HW_APL},
     { 0x5A85, MFX_HW_APL},
 
+#ifndef MFX_CLOSED_PLATFORMS_DISABLE
     /* CNL */
     /* SImulation */
     { 0x0A00, MFX_HW_CNL},
