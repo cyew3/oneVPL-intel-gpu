@@ -294,10 +294,13 @@ void vm_sys_info_get_vga_card(vm_char *vga_card)
                                                  NULL);
             }
 
+#if (_WIN32_WINNT >= 0x600) && (defined(UNICODE) || defined(_UNICODE))
             if (pLib)
             {
                 FreeLibrary(pLib);
             }
+
+#endif // (_WIN32_WINNT >= 0x600) && (defined(UNICODE) || defined(_UNICODE))
 
             break;
         }
