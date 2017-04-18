@@ -414,9 +414,11 @@ mfxStatus CTranscodingPipeline::EncodePreInit(sInputParams *pParams)
                 }
                 else
                 {
+                    bool isDefaultPlugin = false;
                     if (AreGuidsEqual(pParams->encoderPluginParams.pluginGuid, MSDK_PLUGINGUID_NULL))
                     {
                         pParams->encoderPluginParams.pluginGuid = msdkGetPluginUID(pParams->libType, MSDK_VENCODE, pParams->EncodeId);
+                        isDefaultPlugin = true;
                     }
                     if (!AreGuidsEqual(pParams->encoderPluginParams.pluginGuid, MSDK_PLUGINGUID_NULL))
                     {
@@ -425,7 +427,9 @@ mfxStatus CTranscodingPipeline::EncodePreInit(sInputParams *pParams)
                     }
                     if(sts==MFX_ERR_UNSUPPORTED)
                     {
-                        msdk_printf(MSDK_STRING("Default plugin cannot be loaded (possibly you have to define plugin explicitly)\n"));
+                        msdk_printf(isDefaultPlugin ?
+                            MSDK_STRING("Default plugin cannot be loaded (possibly you have to define plugin explicitly)\n")
+                            : MSDK_STRING("Explicitly specified plugin cannot be loaded.\n"));
                     }
                 }
                 MSDK_CHECK_STATUS(sts, "LoadPlugin failed");

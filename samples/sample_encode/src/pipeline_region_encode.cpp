@@ -390,10 +390,12 @@ mfxStatus CRegionEncodingPipeline::Init(sInputParams *pParams)
         }
         else
         {
+            bool isDefaultPlugin = false;
             if (AreGuidsEqual(pParams->pluginParams.pluginGuid, MSDK_PLUGINGUID_NULL))
             {
                 mfxIMPL impl = pParams->bUseHWLib ? MFX_IMPL_HARDWARE : MFX_IMPL_SOFTWARE;
                 pParams->pluginParams.pluginGuid = msdkGetPluginUID(impl, MSDK_VENCODE, pParams->CodecId);
+                isDefaultPlugin = true;
             }
             if (!AreGuidsEqual(pParams->pluginParams.pluginGuid, MSDK_PLUGINGUID_NULL))
             {
@@ -402,7 +404,9 @@ mfxStatus CRegionEncodingPipeline::Init(sInputParams *pParams)
             }
             if(sts==MFX_ERR_UNSUPPORTED)
             {
-                msdk_printf(MSDK_STRING("Default plugin cannot be loaded (possibly you have to define plugin explicitly)\n"));
+                msdk_printf(isDefaultPlugin ?
+                    MSDK_STRING("Default plugin cannot be loaded (possibly you have to define plugin explicitly)\n")
+                    : MSDK_STRING("Explicitly specified plugin cannot be loaded.\n"));
             }
         }
         MSDK_CHECK_STATUS(sts, "m_resources.CreatePlugins failed");
