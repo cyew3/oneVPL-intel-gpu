@@ -103,7 +103,7 @@ namespace vp9e_temporal_scalability
             }
         },
 
-        // query: incorrect 'FrameRateScale' for the 1st layer (should be bigger than for 0-layer)
+        // query: incorrect 'FrameRateScale' for the 1st layer is wrong
         {/*01*/ MFX_ERR_INVALID_VIDEO_PARAM, CHECK_QUERY,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].FrameRateScale, 1 },
@@ -113,9 +113,10 @@ namespace vp9e_temporal_scalability
             }
         },
 
-        // query: incorrect bitrate for the 1st layer (less than for 0-layer)
+        // query: incorrect bitrate for the 1st layer is wrong
         {/*02*/ MFX_ERR_INVALID_VIDEO_PARAM, CHECK_QUERY,
             {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].FrameRateScale, 1 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].FrameRateScale, 2 },
@@ -124,37 +125,39 @@ namespace vp9e_temporal_scalability
         },
 
         // query: too many layers - error
-        {/*03*/ MFX_ERR_INVALID_VIDEO_PARAM, CHECK_QUERY,
+        {/*03*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_QUERY,
             {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].FrameRateScale, 1 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE / 6},
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].FrameRateScale, 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].TargetKbps, VP9E_DEFAULT_BITRATE / 5 },
-                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[2].FrameRateScale, 3 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[2].FrameRateScale, 4 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[2].TargetKbps, VP9E_DEFAULT_BITRATE / 4},
-                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[3].FrameRateScale, 4 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[3].FrameRateScale, 8 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[3].TargetKbps, VP9E_DEFAULT_BITRATE / 3 },
-                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[4].FrameRateScale, 5 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[4].FrameRateScale, 16 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[4].TargetKbps, VP9E_DEFAULT_BITRATE / 2 },
-                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[5].FrameRateScale, 6 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[5].FrameRateScale, 32 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[5].TargetKbps, VP9E_DEFAULT_BITRATE },
             }
         },
 
         // init: too many layers - error
-        {/*04*/ MFX_ERR_INVALID_VIDEO_PARAM, CHECK_INIT,
+        {/*04*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_INIT,
             {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].FrameRateScale, 1 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE / 6 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].FrameRateScale, 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].TargetKbps, VP9E_DEFAULT_BITRATE / 5 },
-                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[2].FrameRateScale, 3 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[2].FrameRateScale, 4 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[2].TargetKbps, VP9E_DEFAULT_BITRATE / 4 },
-                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[3].FrameRateScale, 4 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[3].FrameRateScale, 8 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[3].TargetKbps, VP9E_DEFAULT_BITRATE / 3 },
-                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[4].FrameRateScale, 5 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[4].FrameRateScale, 16 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[4].TargetKbps, VP9E_DEFAULT_BITRATE / 2 },
-                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[5].FrameRateScale, 6 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[5].FrameRateScale, 32 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[5].TargetKbps, VP9E_DEFAULT_BITRATE },
             }
         },
@@ -162,71 +165,97 @@ namespace vp9e_temporal_scalability
         // init + get_v_param + encode: correct params with 2 temporal layers (only mandatory params are set)
         {/*05*/ MFX_ERR_NONE, CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE,
             {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].FrameRateScale, 1 },
-                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE / 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].FrameRateScale, 2 },
-                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].TargetKbps, (mfxU16)(VP9E_DEFAULT_BITRATE*1.5) },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].TargetKbps, VP9E_DEFAULT_BITRATE },
             }
         },
 
-        // init + get_v_param + encode: correct params with 2 temporal layers (some optional params are set)
-        {/*06*/ MFX_ERR_NONE, CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE,
+        // init + get_v_param + encode: correct params with 2 temporal layers, but TargetKbps is not set - warning
+        {/*06*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].FrameRateScale, 1 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE / 2 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].FrameRateScale, 2 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].TargetKbps, VP9E_DEFAULT_BITRATE },
+            }
+        },
+
+        // init + get_v_param + encode: correct params with 2 temporal layers (+ non-mandatory MaxKbps)
+        {/*07*/ MFX_ERR_NONE, CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 3 },
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 1 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.MaxKbps,    VP9E_DEFAULT_BITRATE },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].FrameRateScale, 1 },
-                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE/2 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE / 2 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].FrameRateScale, 2 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].TargetKbps, VP9E_DEFAULT_BITRATE },
+            }
+        },
+
+        // init + get_v_param + encode: TargetKbps is less than MaxLayerLevel->TargetKbps
+        {/*08*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE / 2 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].FrameRateScale, 1 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE / 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].FrameRateScale, 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].TargetKbps, VP9E_DEFAULT_BITRATE },
             }
         },
 
         // all routines: TargetKbps for 0-layer is not set - Error
-        {/*07*/ MFX_ERR_INVALID_VIDEO_PARAM, CHECK_INIT | CHECK_GET_V_PARAM,
+        {/*09*/ MFX_ERR_INVALID_VIDEO_PARAM, CHECK_INIT | CHECK_GET_V_PARAM,
             {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].FrameRateScale, 1 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, 0 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].FrameRateScale, 2 },
-                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].TargetKbps, (mfxU16)(VP9E_DEFAULT_BITRATE*1.5) },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].TargetKbps, VP9E_DEFAULT_BITRATE },
             }
         },
 
         // all routines: FrameRateScale for 0-layer is not set - Error
-        {/*08*/ MFX_ERR_INVALID_VIDEO_PARAM, CHECK_INIT | CHECK_GET_V_PARAM,
+        {/*10*/ MFX_ERR_INVALID_VIDEO_PARAM, CHECK_INIT | CHECK_GET_V_PARAM,
             {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].FrameRateScale, 0 },
-                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE / 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].FrameRateScale, 2 },
-                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].TargetKbps, (mfxU16)(VP9E_DEFAULT_BITRATE*1.5) },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].TargetKbps, VP9E_DEFAULT_BITRATE },
             }
         },
 
         // all routines: TargetKbps for 1st layer is less than for the 0st layer - Error
-        {/*09*/ MFX_ERR_INVALID_VIDEO_PARAM, CHECK_INIT | CHECK_GET_V_PARAM,
+        {/*11*/ MFX_ERR_INVALID_VIDEO_PARAM, CHECK_INIT | CHECK_GET_V_PARAM,
             {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].FrameRateScale, 1 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].FrameRateScale, 2 },
-                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].TargetKbps, (mfxU16)(VP9E_DEFAULT_BITRATE*0.9) },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].TargetKbps, VP9E_DEFAULT_BITRATE / 2 },
             }
         },
 
         // all routines: FrameRateScale for 2nd layer is wrong - Error
-        {/*10*/ MFX_ERR_INVALID_VIDEO_PARAM, CHECK_INIT | CHECK_GET_V_PARAM,
+        {/*12*/ MFX_ERR_INVALID_VIDEO_PARAM, CHECK_INIT | CHECK_GET_V_PARAM,
             {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].FrameRateScale, 1 },
-                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE / 4 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].FrameRateScale, 2 },
-                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].TargetKbps, (mfxU16)(VP9E_DEFAULT_BITRATE*1.5) },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].TargetKbps, VP9E_DEFAULT_BITRATE / 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[2].FrameRateScale, 1 },
-                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[2].TargetKbps, (mfxU16)(VP9E_DEFAULT_BITRATE*2) },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[2].TargetKbps, VP9E_DEFAULT_BITRATE },
             }
         },
 
         // all routines: corner cases for the layers' values - should work
-        {/*11*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE,
+        {/*13*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE,
             {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 0xffff },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].FrameRateScale, 1 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].FrameRateScale, 0xffff },
@@ -235,31 +264,33 @@ namespace vp9e_temporal_scalability
         },
 
         // all routines: CQP-mode - should work
-        {/*12*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE,
+        {/*14*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 50 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPP, 50 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].FrameRateScale, 1 },
-                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, 0 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].FrameRateScale, 4 },
-                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].TargetKbps, (mfxU16)(VP9E_DEFAULT_BITRATE*1.5) },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].TargetKbps, 0 },
             }
         },
 
         // all routines: correct VBR-mode - should work
-        {/*13*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE,
+        {/*15*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.MaxKbps, VP9E_DEFAULT_BITRATE*2 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.MaxKbps, VP9E_DEFAULT_BITRATE * 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].FrameRateScale, 1 },
-                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE / 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].FrameRateScale, 4 },
-                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].TargetKbps, (mfxU16)(VP9E_DEFAULT_BITRATE*1.5) },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].TargetKbps, VP9E_DEFAULT_BITRATE },
             }
         },
 
-        // all routines: VBR-mode with incorrect MaxKbps - error
-        {/*14*/ MFX_ERR_INVALID_VIDEO_PARAM, CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE,
+        // all routines: VBR-mode with incorrect MaxKbps - maxKbps should be corrected
+        {/*16*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 0 },
@@ -267,15 +298,16 @@ namespace vp9e_temporal_scalability
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.MaxKbps, VP9E_DEFAULT_BITRATE / 2},
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].FrameRateScale, 1 },
-                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE / 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].FrameRateScale, 4 },
-                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].TargetKbps, (mfxU16)(VP9E_DEFAULT_BITRATE*1.5) },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].TargetKbps, VP9E_DEFAULT_BITRATE },
             }
         },
 
-        // correct params: too small bitrates
-        {/*15*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_ENCODE | CHECK_ZERO_LAYER | CHECK_PSNR,
+        // correct params: too small bitrates (global TargetKbps should be corrected)
+        {/*17*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_QUERY | CHECK_ENCODE | CHECK_ZERO_LAYER | CHECK_PSNR,
             {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 1 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].FrameRateScale, 1 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE / 10 },
@@ -285,8 +317,9 @@ namespace vp9e_temporal_scalability
         },
 
         // correct params: too big bitrates
-        {/*16*/ MFX_ERR_NONE, CHECK_ENCODE | CHECK_ZERO_LAYER | CHECK_PSNR,
+        {/*18*/ MFX_ERR_NONE, CHECK_ENCODE | CHECK_ZERO_LAYER | CHECK_PSNR,
             {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 0xffff },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 1 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].FrameRateScale, 1 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, (0xffff) / 2 },
@@ -296,8 +329,9 @@ namespace vp9e_temporal_scalability
         },
 
         // correct params: layers' bitrates should be updated with multiplier
-        {/*17*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_GET_V_PARAM | CHECK_ENCODE | CHECK_ZERO_LAYER | CHECK_PSNR,
+        {/*19*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_GET_V_PARAM | CHECK_ENCODE | CHECK_ZERO_LAYER | CHECK_PSNR,
             {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.BRCParamMultiplier, 4 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].FrameRateScale, 1 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE / 2 },
@@ -307,8 +341,9 @@ namespace vp9e_temporal_scalability
         },
 
         // correct params: decode zero layer from a stream of 2 layers (TU=1)
-        {/*18*/ MFX_ERR_NONE, CHECK_ENCODE | CHECK_ZERO_LAYER | CHECK_PSNR,
+        {/*20*/ MFX_ERR_NONE, CHECK_ENCODE | CHECK_ZERO_LAYER | CHECK_PSNR,
             {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 1 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].FrameRateScale, 1 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE / 2 },
@@ -318,8 +353,9 @@ namespace vp9e_temporal_scalability
         },
 
         // correct params: decode zero layer from a stream of 2 layers (TU=4)
-        {/*19*/ MFX_ERR_NONE, CHECK_ENCODE | CHECK_ZERO_LAYER | CHECK_PSNR,
+        {/*21*/ MFX_ERR_NONE, CHECK_ENCODE | CHECK_ZERO_LAYER | CHECK_PSNR,
             {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 4 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].FrameRateScale, 1 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE / 2 },
@@ -329,8 +365,9 @@ namespace vp9e_temporal_scalability
         },
 
         // correct params: decode zero layer from a stream of 2 layers (TU=7)
-        {/*20*/ MFX_ERR_NONE, CHECK_ENCODE | CHECK_ZERO_LAYER | CHECK_PSNR,
+        {/*22*/ MFX_ERR_NONE, CHECK_ENCODE | CHECK_ZERO_LAYER | CHECK_PSNR,
             {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 7 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].FrameRateScale, 1 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE / 2 },
@@ -340,8 +377,9 @@ namespace vp9e_temporal_scalability
         },
 
         // correct params: decode zero layer from a stream of 2 layers (NumRefFrame=1)
-        {/*21*/ MFX_ERR_NONE, CHECK_ENCODE | CHECK_ZERO_LAYER | CHECK_PSNR,
+        {/*23*/ MFX_ERR_NONE, CHECK_ENCODE | CHECK_ZERO_LAYER | CHECK_PSNR,
             {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 1 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].FrameRateScale, 1 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE / 2 },
@@ -351,8 +389,9 @@ namespace vp9e_temporal_scalability
         },
 
         // correct params: decode zero layer from a stream of 2 layers (NumRefFrame=2)
-        {/*22*/ MFX_ERR_NONE, CHECK_ENCODE | CHECK_ZERO_LAYER | CHECK_PSNR,
+        {/*24*/ MFX_ERR_NONE, CHECK_ENCODE | CHECK_ZERO_LAYER | CHECK_PSNR,
             {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].FrameRateScale, 1 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE / 2 },
@@ -362,8 +401,9 @@ namespace vp9e_temporal_scalability
         },
 
         // correct params: decode zero layer from a stream of 2 layers (NumRefFrame=3)
-        {/*23*/ MFX_ERR_NONE, CHECK_ENCODE | CHECK_ZERO_LAYER | CHECK_PSNR,
+        {/*25*/ MFX_ERR_NONE, CHECK_ENCODE | CHECK_ZERO_LAYER | CHECK_PSNR,
             {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 3 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].FrameRateScale, 1 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE / 2 },
@@ -373,17 +413,18 @@ namespace vp9e_temporal_scalability
         },
 
         // correct params, but 'NumRefFrame' is not set (should use default value)
-        {/*24*/ MFX_ERR_NONE, CHECK_ENCODE | CHECK_ZERO_LAYER | CHECK_PSNR,
+        {/*26*/ MFX_ERR_NONE, CHECK_ENCODE | CHECK_ZERO_LAYER | CHECK_PSNR,
             {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].FrameRateScale, 1 },
-                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE/2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].FrameRateScale, 2 },
-                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].TargetKbps, (mfxU16)(VP9E_DEFAULT_BITRATE*1.5) },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].TargetKbps, VP9E_DEFAULT_BITRATE },
             }
         },
 
         // correct params, CQP-mode
-        {/*25*/ MFX_ERR_NONE, CHECK_ENCODE | CHECK_ZERO_LAYER | CHECK_PSNR,
+        {/*27*/ MFX_ERR_NONE, CHECK_ENCODE | CHECK_ZERO_LAYER | CHECK_PSNR,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 100 },
@@ -396,29 +437,56 @@ namespace vp9e_temporal_scalability
         },
 
         // correct params: check decoding of 1st layer from a stream of 3 layers
-        {/*26*/ MFX_ERR_NONE, CHECK_ENCODE | CHECK_FIRST_LAYER | CHECK_PSNR,
+        {/*28*/ MFX_ERR_NONE, CHECK_ENCODE | CHECK_FIRST_LAYER | CHECK_PSNR,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].FrameRateScale, 1 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE / 4 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].FrameRateScale, 2 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].TargetKbps, VP9E_DEFAULT_BITRATE / 2 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[2].FrameRateScale, 4 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[2].TargetKbps, VP9E_DEFAULT_BITRATE },
+            }
+        },
+
+        // query: 2nd layer has wrong FrameRateScale
+        {/*29*/ MFX_ERR_INVALID_VIDEO_PARAM, CHECK_QUERY,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].FrameRateScale, 1 },
-                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE / 4 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].FrameRateScale, 2 },
-                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].TargetKbps, (mfxU16)(VP9E_DEFAULT_BITRATE*1.5) },
-                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[2].FrameRateScale, 4 },
-                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[2].TargetKbps, (mfxU16)(VP9E_DEFAULT_BITRATE*2) },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].TargetKbps, VP9E_DEFAULT_BITRATE / 2 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[2].FrameRateScale, 3 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[2].TargetKbps, VP9E_DEFAULT_BITRATE },
+            }
+        },
+
+        // init: 2nd layer has wrong FrameRateScale
+        {/*30*/ MFX_ERR_INVALID_VIDEO_PARAM, CHECK_INIT,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].FrameRateScale, 1 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE / 4 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].FrameRateScale, 2 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].TargetKbps, VP9E_DEFAULT_BITRATE / 2 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[2].FrameRateScale, 3 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[2].TargetKbps, VP9E_DEFAULT_BITRATE },
             }
         },
 
         // correct params: big RateScale
-        {/*27*/ MFX_ERR_NONE, CHECK_ENCODE | CHECK_ZERO_LAYER | CHECK_PSNR,
+        {/*31*/ MFX_ERR_NONE, CHECK_ENCODE | CHECK_ZERO_LAYER | CHECK_PSNR,
             {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].FrameRateScale, 1 },
-                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE / 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].FrameRateScale, 5 },
-                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].TargetKbps, (mfxU16)(VP9E_DEFAULT_BITRATE*1.5) },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].TargetKbps, VP9E_DEFAULT_BITRATE },
             }
         },
 
         // Temporal Scalability is set on frame level - unsupported, check error status after EncodeFrameAsync()
-        {/*28*/ MFX_ERR_NONE, CHECK_ENCODE | CHECK_TEMP_SCAL_ON_FRAME,
+        {/*32*/ MFX_ERR_NONE, CHECK_ENCODE | CHECK_TEMP_SCAL_ON_FRAME,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
             }
@@ -427,8 +495,9 @@ namespace vp9e_temporal_scalability
         // Cases below include 2 parts of encoding - it is expected the second part to have better quality (= bigger size of the encoded stream)
 
         // bitrate is being increased on reset
-        {/*29*/ MFX_ERR_NONE, CHECK_RESET | CHECK_ZERO_LAYER | CHECK_PSNR,
+        {/*33*/ MFX_ERR_NONE, CHECK_RESET | CHECK_ZERO_LAYER | CHECK_PSNR,
             {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].FrameRateScale, 1 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE / 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].FrameRateScale, 2 },
@@ -437,9 +506,9 @@ namespace vp9e_temporal_scalability
         },
 
         // Temporal Scalability is being switched off on reset
-        {/*30*/ MFX_ERR_NONE, CHECK_RESET | CHECK_SWITCH_OFF_TEMP_SCAL | CHECK_ZERO_LAYER | CHECK_PSNR,
+        {/*34*/ MFX_ERR_NONE, CHECK_RESET | CHECK_SWITCH_OFF_TEMP_SCAL | CHECK_ZERO_LAYER | CHECK_PSNR,
             {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE * 10 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].FrameRateScale, 1 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE / 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].FrameRateScale, 2 },
@@ -448,7 +517,7 @@ namespace vp9e_temporal_scalability
         },
 
         // Temporal Scalability is being activated on reset
-        {/*31*/ MFX_ERR_NONE, CHECK_RESET | CHECK_SWITCH_ON_TEMP_SCAL | CHECK_ZERO_LAYER | CHECK_PSNR,
+        {/*35*/ MFX_ERR_NONE, CHECK_RESET | CHECK_SWITCH_ON_TEMP_SCAL | CHECK_ZERO_LAYER | CHECK_PSNR,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE / 5 },
             }
@@ -590,7 +659,14 @@ namespace vp9e_temporal_scalability
 
                     if (superframe_marker == 0xc0)
                     {
-                        ADD_FAILURE() << "ERROR: superframe index marker is found at a frame in the middle of the layer sequence"; throw tsFAIL;
+                        if (temporal_layers == nullptr)
+                        {
+                            ADD_FAILURE() << "ERROR: superframe index marker is found at a frame with disabled temporal scalability"; throw tsFAIL;
+                        }
+                        else
+                        {
+                            ADD_FAILURE() << "ERROR: superframe index marker is found at a frame in the middle of the layer sequence"; throw tsFAIL;
+                        }
                     }
                 }
             }
@@ -640,10 +716,12 @@ namespace vp9e_temporal_scalability
             {
                 if (m_TestPtr->m_LayerToCheck != -1 && m_TestPtr->m_LayerNestingLevel[m_ChunkCount] > m_TestPtr->m_LayerToCheck)
                 {
-                    g_tsLog << "INFO: Frame " << m_ChunkCount << " is not sending to the decoder cause layer " << m_TestPtr->m_LayerToCheck << " is being checked\n";
+                    g_tsLog << "INFO: Frame " << m_ChunkCount << " is not sending to the decoder cause layer " << (mfxI32)m_TestPtr->m_LayerToCheck << " is being checked\n";
                 }
                 else
                 {
+                    g_tsLog << "INFO: Decoding frame " << m_ChunkCount << ", checked layer is " << (mfxI32)m_TestPtr->m_LayerToCheck << "\n";
+
                     const mfxU32 headers_shift = 12/*header*/ + (m_DecodedFramesCount == 0 ? 32/*ivf_header*/ : 0);
                     m_pBitstream->Data = bs.Data + headers_shift;
                     m_pBitstream->DataOffset = 0;
@@ -683,12 +761,16 @@ namespace vp9e_temporal_scalability
 
                         if (psnr < VP9E_PSNR_THRESHOLD)
                         {
-                            ADD_FAILURE() << "ERROR: Y-PSNR of the decoded frame is too low: " << psnr << ", threshold is " << VP9E_PSNR_THRESHOLD; throw tsFAIL;
+                            ADD_FAILURE() << "ERROR: Y-PSNR of the decoded_frame[" << m_ChunkCount << "] is too low: " << psnr << ", threshold is " << VP9E_PSNR_THRESHOLD; throw tsFAIL;
                         }
                         else
                         {
-                            g_tsLog << "INFO: Y-PSNR for the decoded frame is " << psnr << "\n";
+                            g_tsLog << "INFO: Y-PSNR for the decoded_frame[" << m_ChunkCount << "] is " << psnr << "\n";
                         }
+                    }
+                    else
+                    {
+                        ADD_FAILURE() << "ERROR: DecodeFrameAsync() failed with status " << decode_status; throw tsFAIL;
                     }
 
                     m_DecodedFramesCount++;
@@ -832,32 +914,71 @@ namespace vp9e_temporal_scalability
         temporal_layers_ext_params = reinterpret_cast <mfxExtVP9TemporalLayers*>(m_par.GetExtBuffer(MFX_EXTBUFF_VP9_TEMPORAL_LAYERS));
         if (temporal_layers_ext_params)
         {
-            // let's match each encoded frame with the layer it is nested
-            mfxU32 counter = 0;
-            while (true)
+            // let's match each encoded frame with the layer it is neste
+
+            if (temporal_layers_ext_params->Layer[0].FrameRateScale != 1)
             {
-                m_LayerNestingLevel[counter++] = 0;
-                if (counter >= VP9E_MAX_FRAMES_IN_TEST_SEQUENCE)
+                // do not make calculations for wrong params
+                return MFX_ERR_NONE;
+            }
+
+            mfxU16 section_length = 0;
+            mfxU16 layers_count = 0;
+            for (mfxU16 i = 0; i < VP9E_MAX_TEMPORAL_LAYERS; i++)
+            {
+                if (temporal_layers_ext_params->Layer[i].FrameRateScale != 0)
+                {
+                    section_length = temporal_layers_ext_params->Layer[i].FrameRateScale;
+                    layers_count++;
+
+                    if (i > 1 && temporal_layers_ext_params->Layer[i].FrameRateScale < temporal_layers_ext_params->Layer[i - 1].FrameRateScale * 2)
+                    {
+                        // do not make calculations for wrong params
+                        return MFX_ERR_NONE;
+                    }
+                }
+                else
                 {
                     break;
                 }
-                for (mfxU32 i = 1; i < VP9E_MAX_TEMPORAL_LAYERS; i++)
+            }
+            mfxU16 *section_template = new mfxU16[section_length];
+
+            for (mfxU32 i = 0; i < section_length; i++)
+            {
+                section_template[i] = layers_count;
+            }
+
+            for (mfxU32 i = layers_count - 1; i > 1; i--)
+            {
+                mfxU16 ratio = temporal_layers_ext_params->Layer[i].FrameRateScale / temporal_layers_ext_params->Layer[i-1].FrameRateScale;
+                mfxU16 ratio_counter = ratio;
+                for (mfxU32 j = 0; j < section_length; j++)
                 {
-                    if (temporal_layers_ext_params->Layer[i].FrameRateScale)
+                    if (section_template[j] == i + 1)
                     {
-                        for (mfxU16 m = 0; m < temporal_layers_ext_params->Layer[i].FrameRateScale - temporal_layers_ext_params->Layer[i - 1].FrameRateScale; m++)
+                        if (ratio_counter == ratio)
                         {
-                            m_LayerNestingLevel[counter++] = i;
-                            if (counter >= VP9E_MAX_FRAMES_IN_TEST_SEQUENCE)
-                            {
-                                break;
-                            }
+                            section_template[j] = i;
+                        }
+                        ratio_counter--;
+                        if (ratio_counter == 0)
+                        {
+                            ratio_counter = ratio;
                         }
                     }
                 }
-                if (counter >= VP9E_MAX_FRAMES_IN_TEST_SEQUENCE)
+            }
+
+            section_template[0] = 1;
+
+            mfxU32 counter = 0;
+            for (mfxU32 i = 0; i < VP9E_MAX_FRAMES_IN_TEST_SEQUENCE; i++)
+            {
+                m_LayerNestingLevel[i] = section_template[counter++] - 1;
+                if (counter == section_length)
                 {
-                    break;
+                    counter = 0;
                 }
             }
 
@@ -939,10 +1060,11 @@ namespace vp9e_temporal_scalability
             g_tsStatus.expect(query_expect_status);
             tsExtBufType<mfxVideoParam> par_query_out = m_par;
 
-            TRACE_FUNC3(MFXVideoENCODE_Query, m_session, m_pPar, &par_query_out);
+            TS_TRACE(m_pPar);
             mfxStatus query_result_status = MFXVideoENCODE_Query(m_session, m_pPar, &par_query_out);
+            TS_TRACE(&par_query_out);
 
-            if (!TemporalLayersParamsChecker("Query", m_par, par_query_out))
+            if (tc.sts == MFX_ERR_NONE && !TemporalLayersParamsChecker("Query", m_par, par_query_out))
             {
                 ADD_FAILURE() << "ERROR: Query() parameters check failed!"; throw tsFAIL;
             }
@@ -1009,15 +1131,20 @@ namespace vp9e_temporal_scalability
             temporal_layers_ext_params = reinterpret_cast <mfxExtVP9TemporalLayers*>(m_par.GetExtBuffer(MFX_EXTBUFF_VP9_TEMPORAL_LAYERS));
             if (tc.type & CHECK_SWITCH_OFF_TEMP_SCAL)
             {
+                m_par.mfx.TargetKbps = m_par.mfx.MaxKbps = VP9E_DEFAULT_BITRATE * 10;
+
                 EXPECT_EQ(!!temporal_layers_ext_params, true);
                 temporal_layers_ext_params->Layer[0].FrameRateScale = 0;
                 temporal_layers_ext_params->Layer[1].FrameRateScale = 0;
                 temporal_layers_ext_params->Layer[2].FrameRateScale = 0;
                 temporal_layers_ext_params->Layer[3].FrameRateScale = 0;
+
+                // this is to disable super-frame headers check
+                temporal_layers_ext_params = nullptr;
             }
             else if (tc.type & CHECK_SWITCH_ON_TEMP_SCAL)
             {
-                m_par.mfx.TargetKbps = 0;
+                m_par.mfx.TargetKbps = m_par.mfx.MaxKbps = VP9E_DEFAULT_BITRATE * 5;
 
                 m_par.AddExtBuffer(MFX_EXTBUFF_VP9_TEMPORAL_LAYERS, sizeof(mfxExtVP9TemporalLayers));
                 mfxExtVP9TemporalLayers *temporal_layers_ext_params_ctrl = reinterpret_cast <mfxExtVP9TemporalLayers*>(m_par.GetExtBuffer(MFX_EXTBUFF_VP9_TEMPORAL_LAYERS));
@@ -1034,6 +1161,7 @@ namespace vp9e_temporal_scalability
                 EXPECT_EQ(!!temporal_layers_ext_params, true);
                 temporal_layers_ext_params->Layer[0].TargetKbps *= 10;
                 temporal_layers_ext_params->Layer[1].TargetKbps *= 10;
+                m_par.mfx.TargetKbps = m_par.mfx.MaxKbps = temporal_layers_ext_params->Layer[1].TargetKbps;
             }
 
 
