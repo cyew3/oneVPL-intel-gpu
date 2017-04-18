@@ -163,3 +163,15 @@ list(APPEND sources.plus
 set( defs "-DMFX_DISPATCHER_LOG -DDXVA2DEVICE_LOG ${WARNING_FLAGS}" )
 make_static_library( dispatch_trace )
 
+get_mfx_version(MFX_VERSION_MAJOR MFX_VERSION_MINOR)
+set( PKG_CONFIG_FNAME "${CMAKE_LIB_DIR}/${CMAKE_BUILD_TYPE}/${PROJECT_NAME}.pc")
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/pkg-config.pc.cmake" ${PKG_CONFIG_FNAME} @ONLY)
+
+if(__ARCH MATCHES intel64)
+  install( TARGETS mfx ARCHIVE DESTINATION lib/lin_x64 )
+  install( FILES ${PKG_CONFIG_FNAME} DESTINATION lib/lin_x64/pkgconfig )
+else( )
+  install( TARGETS mfx ARCHIVE DESTINATION lib/lin_x86 )
+  install( FILES ${PKG_CONFIG_FNAME} DESTINATION lib/lin_x86/pkgconfig )
+endif( )
+install( DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../../include/ DESTINATION include FILES_MATCHING PATTERN *.h )
