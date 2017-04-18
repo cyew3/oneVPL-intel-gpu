@@ -26,7 +26,6 @@
 
 namespace mfx_reflect
 {
-
 #if defined(MFX_HAS_CPP11)
     typedef ::std::type_index TypeIndex;
     namespace mfx_cpp11
@@ -56,12 +55,12 @@ namespace mfx_reflect
     class ReflectedField
     {
     public:
-        typedef mfx_cpp11::shared_ptr<ReflectedField> P;
-        typedef ::std::vector<ReflectedField::P> FieldsCollection;
+        typedef mfx_cpp11::shared_ptr<ReflectedField> SP;
+        typedef ::std::vector<ReflectedField::SP> FieldsCollection;
         typedef FieldsCollection::const_iterator FieldsCollectionCI;
 
 
-        mfx_cpp11::shared_ptr<ReflectedType>  FieldType;
+        ReflectedType*  FieldType;
         ReflectedType*  AggregatingType;
         const ::std::string &             FieldTypeName; //single C++ type may have several typedef aliases. This is original name that was used for this field declaration.
         size_t                          Offset;
@@ -75,7 +74,7 @@ namespace mfx_reflect
         }
 
     protected:
-        ReflectedField(ReflectedTypesCollection *pCollection, ReflectedType* aggregatingType, mfx_cpp11::shared_ptr<ReflectedType> fieldType, const ::std::string &fieldTypeName, size_t offset, const ::std::string fieldName, size_t count)
+        ReflectedField(ReflectedTypesCollection *pCollection, ReflectedType* aggregatingType, ReflectedType* fieldType, const ::std::string& fieldTypeName, size_t offset, const ::std::string& fieldName, size_t count)
             : FieldType(fieldType)
             , AggregatingType(aggregatingType)
             , FieldTypeName(fieldTypeName)
@@ -99,19 +98,14 @@ namespace mfx_reflect
         bool m_bIsPointer;
         unsigned int ExtBufferId;
 
-        ReflectedType(ReflectedTypesCollection *pCollection, TypeIndex typeIndex, const ::std::string typeName, size_t size, bool isPointer, unsigned int extBufferId);
+        ReflectedType(ReflectedTypesCollection *pCollection, TypeIndex typeIndex, const ::std::string& typeName, size_t size, bool isPointer, unsigned int extBufferId);
 
-        void AddField(ReflectedField::P pField)
-        {
-            m_Fields.push_back(pField);
-        }
+        ReflectedField::SP AddField(TypeIndex typeIndex, const ::std::string &typeName, size_t typeSize, bool isPointer, size_t offset, const ::std::string &fieldName, size_t count, unsigned int extBufferId);
 
-        ReflectedField::P AddField(TypeIndex typeIndex, ::std::string typeName, size_t typeSize, bool isPointer, size_t offset, const ::std::string fieldName, size_t count, unsigned int extBufferId);
-
-        ReflectedField::FieldsCollectionCI FindField(const ::std::string fieldName) const;
+        ReflectedField::FieldsCollectionCI FindField(const ::std::string& fieldName) const;
 
         ReflectedField::FieldsCollection m_Fields;
-        typedef mfx_cpp11::shared_ptr<ReflectedType> P;
+        typedef mfx_cpp11::shared_ptr<ReflectedType> SP;
         typedef ::std::list< ::std::string> StringList;
 
     };
@@ -119,23 +113,23 @@ namespace mfx_reflect
     class ReflectedTypesCollection
     {
     public:
-        typedef ::std::map<TypeIndex, ReflectedType::P> Container;
+        typedef ::std::map<TypeIndex, ReflectedType::SP> Container;
 
         Container m_KnownTypes;
 
-        template <class T> ReflectedType::P FindExistingType()
+        template <class T> ReflectedType::SP FindExistingType()
         {
             return FindExistingType(TypeIndex(typeid(T)));
         }
 
-        ReflectedType::P FindExistingByTypeInfoName(const char* name);
+        ReflectedType::SP FindExistingByTypeInfoName(const char* name);
 
-        ReflectedType::P FindExistingType(TypeIndex typeIndex);
-        ReflectedType::P FindExtBufferTypeById(unsigned int ExtBufferId);
+        ReflectedType::SP FindExistingType(TypeIndex typeIndex);
+        ReflectedType::SP FindExtBufferTypeById(unsigned int ExtBufferId);
 
-        ReflectedType::P DeclareType(TypeIndex typeIndex, const ::std::string typeName, size_t typeSize, bool isPointer, unsigned int extBufferId);
+        ReflectedType::SP DeclareType(TypeIndex typeIndex, const ::std::string& typeName, size_t typeSize, bool isPointer, unsigned int extBufferId);
 
-        ReflectedType::P FindOrDeclareType(TypeIndex typeIndex, const ::std::string typeName, size_t typeSize, bool isPointer, unsigned int extBufferId);
+        ReflectedType::SP FindOrDeclareType(TypeIndex typeIndex, const ::std::string& typeName, size_t typeSize, bool isPointer, unsigned int extBufferId);
 
         void DeclareMsdkStructs();
     };
@@ -200,7 +194,7 @@ namespace mfx_reflect
 
         AccessorField& operator++();
 
-        bool Compare(const AccessorField& field) const
+        bool Equal(const AccessorField& field) const
         {
             if (field.m_pReflection != m_pReflection)
             {
@@ -221,21 +215,21 @@ namespace mfx_reflect
         AccessorType(void *p, const ReflectedType &reflection) : AccessorBase(p, reflection) {}
 
         AccessorField AccessField(ReflectedField::FieldsCollectionCI iter) const;
-        AccessorField AccessField(const ::std::string fieldName) const;
+        AccessorField AccessField(const ::std::string& fieldName) const;
         AccessorField AccessFirstField() const;
     };
 
     class AccessibleTypesCollection : public ReflectedTypesCollection
     {
     public:
-        AccessibleTypesCollection() 
+        AccessibleTypesCollection()
             : m_bIsInitialized(false)
         {}
         bool m_bIsInitialized;
         template <class T>
         AccessorType Access(T *p)
         {
-            ReflectedType::P pType = FindExistingType(TypeIndex(typeid(T)));
+            ReflectedType::SP pType = FindExistingType(TypeIndex(typeid(T)));
             if (pType == NULL)
             {
                 throw std::invalid_argument(std::string("Unknown type"));
@@ -268,10 +262,10 @@ namespace mfx_reflect
     TypeComparisonResultP CompareTwoStructs(AccessorType data1, AccessorType data2);
 
     std::string CompareStructsToString(AccessorType data1, AccessorType data2);
-    void PrintStuctsComparisonResult(::std::stringstream& comparisonResult, ::std::string prefix, TypeComparisonResultP result);
+    void PrintStuctsComparisonResult(::std::ostream& comparisonResult, ::std::string prefix, TypeComparisonResultP result);
 
     template <class T> bool PrintFieldIfTypeMatches(::std::ostream& stream, AccessorField field);
-    void PrintFieldValue(::std::stringstream &stream, AccessorField field);
+    void PrintFieldValue(::std::ostream &stream, AccessorField field);
     ::std::ostream& operator<< (::std::ostream& stream, AccessorField field);
     ::std::ostream& operator<< (::std::ostream& stream, AccessorType data);
 }

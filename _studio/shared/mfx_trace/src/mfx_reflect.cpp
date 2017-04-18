@@ -33,7 +33,6 @@
 
 namespace mfx_reflect
 {
-
 #if defined(MFX_HAS_CPP11)
 #define MAKE_SHARED(T, ARGS) ::std::make_shared<T> ARGS
 #else
@@ -125,7 +124,7 @@ namespace mfx_reflect
         }
     }
 
-    AccessorField AccessorType::AccessField(const ::std::string fieldName) const
+    AccessorField AccessorType::AccessField(const ::std::string& fieldName) const
     {
         ReflectedField::FieldsCollectionCI iter = m_pReflection->FindField(fieldName);
         return AccessField(iter);
@@ -137,7 +136,7 @@ namespace mfx_reflect
     }
 
 
-    ReflectedType::ReflectedType(ReflectedTypesCollection *pCollection, TypeIndex typeIndex, const ::std::string typeName, size_t size, bool isPointer, mfxU32 extBufferId)
+    ReflectedType::ReflectedType(ReflectedTypesCollection *pCollection, TypeIndex typeIndex, const ::std::string& typeName, size_t size, bool isPointer, mfxU32 extBufferId)
         : m_TypeIndex(typeIndex)
         , TypeNames(1, typeName)
         , Size(size)
@@ -151,36 +150,36 @@ namespace mfx_reflect
         }
     }
 
-    ReflectedField::P ReflectedType::AddField(TypeIndex typeIndex, const ::std::string typeName, size_t typeSize, bool isPointer, size_t offset, const ::std::string fieldName, size_t count, mfxU32 extBufferId)
+    ReflectedField::SP ReflectedType::AddField(TypeIndex typeIndex, const ::std::string &typeName, size_t typeSize, bool isPointer, size_t offset, const ::std::string &fieldName, size_t count, mfxU32 extBufferId)
     {
-        ReflectedField::P pField;
-        if (NULL != m_pCollection)
+        ReflectedField::SP pField;
+        if (typeName.empty())
         {
-            ReflectedType::P pType = m_pCollection->FindOrDeclareType(typeIndex, typeName, typeSize, isPointer, extBufferId);
+            throw ::std::invalid_argument(::std::string("Unexpected behavior - typeName is empty"));
+        }
+        if (NULL == m_pCollection)
+        {
+            return pField;
+        }
+        else
+        {
+            ReflectedType* pType = m_pCollection->FindOrDeclareType(typeIndex, typeName, typeSize, isPointer, extBufferId).get();
             if (pType != NULL)
             {
-                ::std::string *fieldTypeName = NULL;
-                if (!typeName.empty())
-                {
-                    StringList::iterator findIterator = ::std::find<StringList::iterator, ::std::string>(pType->TypeNames.begin(), pType->TypeNames.end(), typeName);
-                    if (pType->TypeNames.end() != findIterator)
-                    {
-                        fieldTypeName = &(*findIterator);
-                    }
-                }
-                if (NULL == fieldTypeName)
+                StringList::iterator findIterator = ::std::find(pType->TypeNames.begin(), pType->TypeNames.end(), typeName);
+                if (pType->TypeNames.end() == findIterator)
                 {
                     throw ::std::invalid_argument(::std::string("Unexpected behavior - fieldTypeName is NULL"));
                 }
-                ReflectedType* aggregatingType = this;
-                pField = ReflectedField::P(new ReflectedField(m_pCollection, aggregatingType, pType, *fieldTypeName, offset, fieldName, count)); //std::make_shared cannot access protected constructor
-                m_Fields.push_back(pField);
+                m_Fields.push_back(ReflectedField::SP(new ReflectedField(m_pCollection, this, pType, *findIterator, offset, fieldName, count))); //std::make_shared cannot access protected constructor
+                pField = m_Fields.back();
             }
+            return pField;
         }
-        return pField;
+
     }
 
-    ReflectedField::FieldsCollectionCI ReflectedType::FindField(const ::std::string fieldName) const
+    ReflectedField::FieldsCollectionCI ReflectedType::FindField(const ::std::string& fieldName) const
     {
         ReflectedField::FieldsCollectionCI iter = m_Fields.begin();
         for (; iter != m_Fields.end(); ++iter)
@@ -193,61 +192,58 @@ namespace mfx_reflect
         return iter;
     }
 
-    ReflectedType::P ReflectedTypesCollection::FindExistingByTypeInfoName(const char* name) //currenly we are not using this
+    ReflectedType::SP ReflectedTypesCollection::FindExistingByTypeInfoName(const char* name) //currenly we are not using this
     {
-        ReflectedType::P pType;
         for (Container::iterator iter = m_KnownTypes.begin(); iter != m_KnownTypes.end(); ++iter)
         {
             if (0 == strcmp(iter->first.name(), name))
             {
-                pType = iter->second;
-                break;
+                return iter->second;
             }
         }
-        return pType;
+        ReflectedType::SP pEmptyType;
+        return pEmptyType;
     }
 
-    ReflectedType::P ReflectedTypesCollection::FindExistingType(TypeIndex typeIndex)
+    ReflectedType::SP ReflectedTypesCollection::FindExistingType(TypeIndex typeIndex)
     {
-        ReflectedType::P pType;
         Container::const_iterator it = m_KnownTypes.find(typeIndex);
         if (m_KnownTypes.end() != it)
         {
-            pType = it->second;
+            return it->second;
         }
-
-        return pType;
+        ReflectedType::SP pEmptyType;
+        return pEmptyType;
     }
 
-    ReflectedType::P ReflectedTypesCollection::FindExtBufferTypeById(mfxU32 ExtBufferId) //optimize with map (index -> type)
+    ReflectedType::SP ReflectedTypesCollection::FindExtBufferTypeById(mfxU32 ExtBufferId) //optimize with map (index -> type)
     {
-        ReflectedType::P pExtBufferType;
         for (Container::iterator iter = m_KnownTypes.begin(); iter != m_KnownTypes.end(); ++iter)
         {
-            ReflectedType::P pTempType = iter->second;
-            if (ExtBufferId == pTempType->ExtBufferId)
+            if (ExtBufferId == iter->second->ExtBufferId)
             {
-                pExtBufferType = pTempType;
-                break;
+                return iter->second;
             }
         }
-        return pExtBufferType;
+        ReflectedType::SP pEmptyExtBufferType;
+        return pEmptyExtBufferType;
     }
 
-    ReflectedType::P ReflectedTypesCollection::DeclareType(TypeIndex typeIndex, const ::std::string typeName, size_t typeSize, bool isPointer, mfxU32 extBufferId)
+    ReflectedType::SP ReflectedTypesCollection::DeclareType(TypeIndex typeIndex, const ::std::string& typeName, size_t typeSize, bool isPointer, mfxU32 extBufferId)
     {
-        ReflectedType::P pType;
         if (m_KnownTypes.end() == m_KnownTypes.find(typeIndex))
         {
+            ReflectedType::SP pType;
             pType = MAKE_SHARED(ReflectedType,(this, typeIndex, typeName, typeSize, isPointer, extBufferId));
             m_KnownTypes.insert(::std::make_pair(pType->m_TypeIndex, pType));
+            return pType;
         }
-        return pType;
+        throw std::invalid_argument(std::string("Unexpected behavior - type is already declared"));
     }
 
-    ReflectedType::P ReflectedTypesCollection::FindOrDeclareType(TypeIndex typeIndex, const ::std::string typeName, size_t typeSize, bool isPointer, mfxU32 extBufferId)
+    ReflectedType::SP ReflectedTypesCollection::FindOrDeclareType(TypeIndex typeIndex, const ::std::string& typeName, size_t typeSize, bool isPointer, mfxU32 extBufferId)
     {
-        ReflectedType::P pType = FindExistingType(typeIndex);
+        ReflectedType::SP pType = FindExistingType(typeIndex);
         if (pType == NULL)
         {
             pType = DeclareType(typeIndex, typeName, typeSize, isPointer, extBufferId);
@@ -260,7 +256,7 @@ namespace mfx_reflect
             }
             else if (!typeName.empty())
             {
-                ReflectedType::StringList::iterator findIterator = ::std::find<ReflectedType::StringList::iterator, ::std::string>(pType->TypeNames.begin(), pType->TypeNames.end(), typeName);
+                ReflectedType::StringList::iterator findIterator = ::std::find(pType->TypeNames.begin(), pType->TypeNames.end(), typeName);
                 if (pType->TypeNames.end() == findIterator)
                 {
                     pType->TypeNames.push_back(typeName);
@@ -273,8 +269,7 @@ namespace mfx_reflect
     template <class T> bool PrintFieldIfTypeMatches(::std::ostream& stream, AccessorField field)
     {
         bool bResult = false;
-        ReflectedType::P pType = field.m_pReflection->m_pCollection->FindExistingType<T>();
-        if (field.m_pReflection->FieldType->m_TypeIndex == pType->m_TypeIndex)
+        if (field.m_pReflection->FieldType->m_TypeIndex == field.m_pReflection->m_pCollection->FindExistingType<T>()->m_TypeIndex)
         {
             stream << field.Get<T>();
             bResult = true;
@@ -282,7 +277,7 @@ namespace mfx_reflect
         return bResult;
     }
 
-    void PrintFieldValue(::std::stringstream &stream, AccessorField field)
+    void PrintFieldValue(::std::ostream &stream, AccessorField field)
     {
         if (field.m_pReflection->FieldType->m_bIsPointer)
         {
@@ -310,10 +305,9 @@ namespace mfx_reflect
 
     ::std::ostream& operator<< (::std::ostream& stream, AccessorField field)
     {
-        ::std::stringstream ss;
+        ::std::ostringstream ss;
         ss << field.m_pReflection->FieldName << " = ";
         PrintFieldValue(ss, field);
-
         stream << ss.str();
         return stream;
     }
@@ -347,7 +341,7 @@ namespace mfx_reflect
         for (AccessorField field1 = data1.AccessFirstField(); field1.IsValid(); ++field1) //TODO: compare arrays
         {
             AccessorField field2 = data2.AccessField(field1.m_Iterator);
-            ReflectedType::P p_mfxExtBufferType = field1.m_pReflection->m_pCollection->FindExistingType<mfxExtBuffer**>();
+            ReflectedType::SP p_mfxExtBufferType = field1.m_pReflection->m_pCollection->FindExistingType<mfxExtBuffer**>();
             if (field1.m_pReflection->FieldType->m_TypeIndex == p_mfxExtBufferType->m_TypeIndex)
             {
                 mfxExtBuffer** pExtParam1 = field1.Get<mfxExtBuffer**>();
@@ -385,7 +379,7 @@ namespace mfx_reflect
                 }
                 subtypeResult = CompareTwoStructs(subtype1, subtype2);
             }
-            if (!field1.Compare(field2))
+            if (!field1.Equal(field2))
             {
                 FieldComparisonResult fields = { field1 , field2, subtypeResult };
                 result->push_back(fields);
@@ -398,7 +392,7 @@ namespace mfx_reflect
     {
         AccessorTypeP pExtBuffer;
         mfxU32 id = pExtBufferParam.BufferId;
-        ReflectedType::P pTypeExtBuffer = collection.FindExtBufferTypeById(id); //find in KnownTypes this BufferId
+        ReflectedType::SP pTypeExtBuffer = collection.FindExtBufferTypeById(id); //find in KnownTypes this BufferId
         if (pTypeExtBuffer != NULL)
         {
             pExtBuffer = MAKE_SHARED(AccessorType,(&pExtBufferParam, *pTypeExtBuffer));
@@ -441,7 +435,7 @@ namespace mfx_reflect
     }
 
 
-    void PrintStuctsComparisonResult(::std::stringstream& comparisonResult, ::std::string prefix, TypeComparisonResultP result)
+    void PrintStuctsComparisonResult(::std::ostream& comparisonResult, ::std::string prefix, TypeComparisonResultP result)
     {
         for (::std::list<FieldComparisonResult>::iterator i = result->begin(); i != result->end(); ++i)
         {
@@ -477,10 +471,9 @@ namespace mfx_reflect
         }
     }
 
-
     std::string CompareStructsToString(AccessorType data1, AccessorType data2)
     {
-        ::std::stringstream comparisonResult;
+        ::std::ostringstream comparisonResult;
         if (data1.m_P == data2.m_P)
         {
             comparisonResult << "Comparing of VideoParams is unsupported: In and Out pointers are the same.";
@@ -495,7 +488,7 @@ namespace mfx_reflect
     }
 
     template <class T>
-    ReflectedField::P AddFieldT(ReflectedType &type, const std::string typeName, size_t offset, const std::string fieldName, size_t count)
+    ReflectedField::SP AddFieldT(ReflectedType &type, const std::string typeName, size_t offset, const std::string fieldName, size_t count)
     {
         unsigned int extBufId = 0;
         extBufId = mfx_ext_buffer_id<T>::id;
@@ -505,7 +498,7 @@ namespace mfx_reflect
     }
 
     template <class T>
-    ReflectedType::P DeclareTypeT(ReflectedTypesCollection& collection, const std::string typeName)
+    ReflectedType::SP DeclareTypeT(ReflectedTypesCollection& collection, const std::string typeName)
     {
         unsigned int extBufId = 0;
         extBufId = mfx_ext_buffer_id<T>::id;
@@ -518,7 +511,7 @@ namespace mfx_reflect
     {
 #define STRUCT(TYPE, FIELDS) {                                  \
     typedef TYPE BaseType;                                      \
-    ReflectedType::P pType = DeclareTypeT<TYPE>(*this, #TYPE);  \
+    ReflectedType::SP pType = DeclareTypeT<TYPE>(*this, #TYPE);  \
     FIELDS                                                      \
     }
 
