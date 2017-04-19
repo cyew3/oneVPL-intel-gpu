@@ -36,11 +36,18 @@ bool IsExtBufferSupportedInInit(mfxU32 id)
         || id == MFX_EXTBUFF_VP9_TEMPORAL_LAYERS;
 }
 
+bool IsExtBufferIgnoredInRuntime(mfxU32 id)
+{
+    // we may just ignore MFX_EXTBUFF_VPP_AUXDATA as it provides auxiliary information
+    return id == MFX_EXTBUFF_VPP_AUXDATA;
+}
+
 bool IsExtBufferSupportedInRuntime(mfxU32 id)
 {
     // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
     // return id == MFX_EXTBUFF_VP9_CODING_OPTION;
-    return id == MFX_EXTBUFF_VP9_SEGMENTATION;
+    return id == MFX_EXTBUFF_VP9_SEGMENTATION
+        || IsExtBufferIgnoredInRuntime(id);
 }
 
 mfxStatus CheckExtBufferHeaders(mfxU16 numExtParam, mfxExtBuffer** extParam, bool isRuntime)
