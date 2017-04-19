@@ -201,7 +201,9 @@ mfxStatus tsSurfacePool::UnlockSurface(mfxFrameSurface1& s)
 mfxFrameSurface1* tsSurfacePool::GetSurface()
 {
     std::vector<mfxFrameSurface1>::iterator it = m_pool.begin();
-    mfxU32 timeout = 100;
+    // set timer to 30 sec for simulation (simics/MediaSolo)
+    // and to 100 ms for real HW
+    mfxU32 timeout = g_tsConfig.sim ? 30000 : 100;
     mfxU32 step = 5;
 
     while (timeout)
