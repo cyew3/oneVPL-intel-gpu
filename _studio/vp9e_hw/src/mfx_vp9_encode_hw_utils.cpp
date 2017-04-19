@@ -414,6 +414,14 @@ mfxStatus DecideOnRefListAndDPBRefresh(VP9MfxVideoParam const & par, Task *pTask
             // DPB entry pointed by ALT is always refreshed with current frame
             frameParam.refreshRefFrames[frameParam.refList[REF_ALT]] = 1;
 
+            if (dpb[frameParam.refList[REF_LAST]] == dpb[frameParam.refList[REF_GOLD]] &&
+                dpb[frameParam.refList[REF_LAST]] != dpb[frameParam.refList[REF_ALT]])
+            {
+                // if LAST and GOLD point to same reference slot, other than is pointed by ALT
+                // need to swap ALT and GOLD since arhitecture doesn't support use of LAST and ALT w/o GOLD
+                std::swap(frameParam.refList[REF_GOLD], frameParam.refList[REF_ALT]);
+            }
+
             mfxU32 frameRate = par.mfx.FrameInfo.FrameRateExtN / par.mfx.FrameInfo.FrameRateExtD;
 
             if ((frameOrder % (frameRate / 2)) == 0 ||
