@@ -17,7 +17,7 @@
 
 #ifndef MFX_VAAPI_UPSTREAM
     #define MFX_ENABLE_VPP_COMPOSITION
-    #define MFX_ENABLE_VPP_FRC
+    //#define MFX_ENABLE_VPP_FRC
     #define MFX_ENABLE_VPP_ROTATION
     #define MFX_ENABLE_VPP_VIDEO_SIGNAL
 #endif
