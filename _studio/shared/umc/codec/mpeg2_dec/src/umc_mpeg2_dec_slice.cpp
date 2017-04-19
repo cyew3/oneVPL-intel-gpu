@@ -243,10 +243,11 @@ static IppStatus mp2_HuffmanTableInitAlloc(Ipp32s *tbl, Ipp32s bits_table0, mp2_
 }
 
 MPEG2VideoDecoderSW::MPEG2VideoDecoderSW()
-    : vlcMBAdressing(),
-    vlcMBType(),
-    vlcMBPattern(),
-    vlcMotionVector()
+    : m_Spec()
+    , vlcMBAdressing()
+    , vlcMBType()
+    , vlcMBPattern()
+    , vlcMotionVector()
 {
 }
 
