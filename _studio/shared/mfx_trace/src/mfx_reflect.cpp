@@ -172,7 +172,7 @@ namespace mfx_reflect
                 {
                     throw ::std::invalid_argument(::std::string("Unexpected behavior - fieldTypeName is NULL"));
                 }
-                mfx_cpp11::shared_ptr<ReflectedType> aggregatingType = mfx_cpp11::shared_ptr<ReflectedType>(this);
+                ReflectedType* aggregatingType = this;
                 pField = ReflectedField::P(new ReflectedField(m_pCollection, aggregatingType, pType, *fieldTypeName, offset, fieldName, count)); //std::make_shared cannot access protected constructor
                 m_Fields.push_back(pField);
             }
@@ -446,7 +446,7 @@ namespace mfx_reflect
         for (::std::list<FieldComparisonResult>::iterator i = result->begin(); i != result->end(); ++i)
         {
             TypeComparisonResultP subtypeResult = i->subtypeComparisonResultP;
-            mfx_cpp11::shared_ptr<ReflectedType> aggregatingType = i->accessorField1.m_pReflection->AggregatingType;
+            ReflectedType* aggregatingType = i->accessorField1.m_pReflection->AggregatingType;
             ::std::list< ::std::string >::const_iterator it = aggregatingType->TypeNames.begin();
             ::std::string strTypeName = ((it != aggregatingType->TypeNames.end()) ? *(it) : "unknown_type");
 

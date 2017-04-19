@@ -62,7 +62,7 @@ namespace mfx_reflect
 
 
         mfx_cpp11::shared_ptr<ReflectedType>  FieldType;
-        mfx_cpp11::shared_ptr<ReflectedType>  AggregatingType;
+        ReflectedType*  AggregatingType;
         const ::std::string &             FieldTypeName; //single C++ type may have several typedef aliases. This is original name that was used for this field declaration.
         size_t                          Offset;
         const ::std::string               FieldName;
@@ -74,9 +74,8 @@ namespace mfx_reflect
             return ((unsigned char*)pBase) + Offset;
         }
 
-
     protected:
-        ReflectedField(ReflectedTypesCollection *pCollection, mfx_cpp11::shared_ptr<ReflectedType> aggregatingType, mfx_cpp11::shared_ptr<ReflectedType> fieldType, const ::std::string &fieldTypeName, size_t offset, const ::std::string fieldName, size_t count)
+        ReflectedField(ReflectedTypesCollection *pCollection, ReflectedType* aggregatingType, mfx_cpp11::shared_ptr<ReflectedType> fieldType, const ::std::string &fieldTypeName, size_t offset, const ::std::string fieldName, size_t count)
             : FieldType(fieldType)
             , AggregatingType(aggregatingType)
             , FieldTypeName(fieldTypeName)
