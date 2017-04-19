@@ -54,6 +54,7 @@ namespace vp9e_brc
             MFX_PAR,
             MFX_BS,
             MULTIPLIER_CHECK,
+            CHECK_BITRATE_DYNAMIC_CHANGE,
             NONE
         };
 
@@ -63,98 +64,90 @@ namespace vp9e_brc
     const TestSuite::tc_struct TestSuite::test_case[] =
     {
         {/*00*/ MFX_ERR_NONE, NONE, NONE},
+
         {/*01*/ MFX_ERR_NONE, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.MaxKbps, VP9E_DEFAULT_BITRATE },
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 0 },
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.BufferSizeInKB, 0 },
             }
         },
+
         {/*02 bitrate unspecified for CBR*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 0 },
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.MaxKbps, VP9E_DEFAULT_BITRATE },
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 0 },
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.BufferSizeInKB, 0 },
             }
         },
-        {/*03 max-bitrate unspecified for CBR*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE,
+
+        {/*03 MaxKbps is less than TargetKbps CBR*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.MaxKbps, 0 },
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 0 },
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.BufferSizeInKB, 0 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.MaxKbps, VP9E_DEFAULT_BITRATE / 2 },
             }
         },
+
         {/*04 too small 'InitialDelayInKB'*/ MFX_ERR_NONE, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.MaxKbps, VP9E_DEFAULT_BITRATE },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 10 },
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.BufferSizeInKB, 0 },
             }
         },
+
         {/*05 too small 'BufferSizeInKB'*/ MFX_ERR_NONE, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.MaxKbps, VP9E_DEFAULT_BITRATE },
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 0 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.BufferSizeInKB, 10 },
             }
         },
+
         {/*06 'BufferSizeInKB' smaller than 'InitialDelayInKB'*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.MaxKbps, VP9E_DEFAULT_BITRATE },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 20 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.BufferSizeInKB, 10 },
             }
         },
+
         {/*07 check Multiplier for normal values*/ MFX_ERR_NONE, MULTIPLIER_CHECK,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.MaxKbps, VP9E_DEFAULT_BITRATE },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 1000 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.BufferSizeInKB, 1000 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.BRCParamMultiplier, 2 },
             }
         },
+
         {/*08 check Multiplier for out-of-range values*/ MFX_ERR_NONE, MULTIPLIER_CHECK,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 30000 },
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.MaxKbps, 30000 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 1000 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.BufferSizeInKB, 1000 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.BRCParamMultiplier, 4 },
             }
         },
+
         {/*09*/ MFX_ERR_NONE, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.MaxKbps, VP9E_DEFAULT_BITRATE * 2 },
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 0 },
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.BufferSizeInKB, 0 },
             }
         },
+
         {/*10 'MaxKbps' is smaller than 'TargetKbps'*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.MaxKbps, VP9E_DEFAULT_BITRATE / 2 },
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 0 },
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.BufferSizeInKB, 0 },
             }
         },
+
         {/*11*/ MFX_ERR_NONE, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
@@ -162,6 +155,7 @@ namespace vp9e_brc
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPP, 150 },
             }
         },
+
         {/*12*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
@@ -169,6 +163,7 @@ namespace vp9e_brc
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPP, 0 },
             }
         },
+
         {/*13 QP out of range*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
@@ -195,18 +190,31 @@ namespace vp9e_brc
         {/*27 unspecified both brc-type and kbps)*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, 0 },
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 0 },
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.BufferSizeInKB, 0 },
             }
         },
+
         {/*28 unspecified brc type, but correct kbps => map to CBR)*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, 0 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 0 },
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.BufferSizeInKB, 0 },
             }
         },
+
+        {/*29*/ MFX_ERR_NONE, CHECK_BITRATE_DYNAMIC_CHANGE,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
+            }
+        },
+
+        {/*30*/ MFX_ERR_NONE, CHECK_BITRATE_DYNAMIC_CHANGE,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.MaxKbps, VP9E_DEFAULT_BITRATE * 2 },
+            }
+        },
+
 /*
 // This case is working on the first post-Si CNL-hardware, but there are issues on CNL-Simics (switched off until post-Si validations)
         {too small bitrate MFX_ERR_NONE, NONE,
@@ -288,6 +296,7 @@ ICQ-based brc is not supported by the driver now, cases are left for the future 
 
         m_par.mfx.FrameInfo.Width  = m_par.mfx.FrameInfo.CropW = getStreamDesc(fourcc_id).w;
         m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = getStreamDesc(fourcc_id).h;
+        m_par.mfx.InitialDelayInKB = m_par.mfx.BufferSizeInKB = 0;
 
         SETPARS(m_pPar, MFX_PAR);
 
@@ -400,6 +409,54 @@ ICQ-based brc is not supported by the driver now, cases are left for the future 
             g_tsStatus.expect(MFX_ERR_NONE);
         } else {
             g_tsStatus.expect(MFX_ERR_NOT_INITIALIZED);
+        }
+
+        if (tc.type == CHECK_BITRATE_DYNAMIC_CHANGE)
+        {
+            DrainEncodedBitstream();
+
+            for (mfxU16 i = 2; i <= 3; i++)
+            {
+                // now increasing bitrate and encode one more frame
+                m_par.mfx.TargetKbps = m_par.mfx.TargetKbps * i;
+                m_par.mfx.MaxKbps = m_par.mfx.MaxKbps ? (m_par.mfx.MaxKbps * i) : 0;
+
+                mfxStatus reset_status = Reset();
+                if (reset_status == MFX_ERR_NONE)
+                {
+                    mfxVideoParam new_par = {};
+                    GetVideoParam(m_session, &new_par); TS_CHECK_MFX
+
+                    if (new_par.mfx.TargetKbps != m_par.mfx.TargetKbps)
+                    {
+                        ADD_FAILURE() << "ERROR: TargetKbps before Reset() is " << m_par.mfx.TargetKbps << " but GetVideoParam() after Reset() has " << new_par.mfx.TargetKbps;
+                        throw tsFAIL;
+                    }
+
+                    if (m_par.mfx.MaxKbps && new_par.mfx.MaxKbps != m_par.mfx.MaxKbps)
+                    {
+                        ADD_FAILURE() << "ERROR: MaxKbpsKbps before Reset() is " << m_par.mfx.MaxKbps << " but GetVideoParam() after Reset() has " << new_par.mfx.MaxKbps;
+                        throw tsFAIL;
+                    }
+
+                    mfxStatus second_encode_status = EncodeFrames(1);
+                    if (second_encode_status == MFX_ERR_NONE)
+                    {
+                        DrainEncodedBitstream();
+                    }
+                    else
+                    {
+                        ADD_FAILURE() << "ERROR: EncodeFrameAsync() after changing bitrate returned " << reset_status;
+                        throw tsFAIL;
+                    }
+                }
+                else
+                {
+                    ADD_FAILURE() << "ERROR: Reset() with chaning bitrate returned " << reset_status;
+                    throw tsFAIL;
+                }
+            }
+
         }
 
         Close();
