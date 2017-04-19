@@ -3626,12 +3626,13 @@ mfxStatus VideoDECODEMPEG2Internal_SW::DecodeFrameCheck(mfxBitstream *bs,
     {
         res = m_implUmc->GetPictureHeader(&m_in[m_task_num], m_task_num, m_prev_task_num);
 
-        if (UMC::UMC_ERR_INVALID_STREAM == res)
+        //if stream was corrupted try skip frame
+        /*if (UMC::UMC_ERR_INVALID_STREAM == res)
         {
             //return MFX_ERR_UNKNOWN;
             //m_implUmc.SetCorruptionFlag(m_task_num);
             res = 0;
-        }
+        }*/
 
         if (UMC::UMC_OK != res)
         {
