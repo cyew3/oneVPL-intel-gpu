@@ -179,7 +179,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     pParams->bUseHWLib = true;
     pParams->isV4L2InputEnabled = false;
     pParams->nNumFrames = 0;
-    pParams->FileInputFourCC = MFX_FOURCC_YV12;
+    pParams->FileInputFourCC = MFX_FOURCC_I420;
     pParams->EncodeFourCC = MFX_FOURCC_NV12;
 #if defined (ENABLE_V4L2_SUPPORT)
     pParams->MipiPort = -1;

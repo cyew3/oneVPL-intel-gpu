@@ -553,7 +553,11 @@ mfxStatus CEncodingPipeline::InitMfxVppParams(sInputParams *pInParams)
 
     // fill output frame info
     MSDK_MEMCPY_VAR(m_mfxVppParams.vpp.Out,&m_mfxVppParams.vpp.In, sizeof(mfxFrameInfo));
-    m_mfxVppParams.vpp.In.FourCC    = m_InputFourCC;
+
+    // File reader automatically converts MFX_FOURCC_I420 to NV12
+    m_mfxVppParams.vpp.In.FourCC    = m_InputFourCC == MFX_FOURCC_I420 ?
+        MFX_FOURCC_NV12 : m_InputFourCC;
+
     m_mfxVppParams.vpp.Out.FourCC    = pInParams->EncodeFourCC;
     m_mfxVppParams.vpp.In.ChromaFormat =  FourCCToChroma(m_mfxVppParams.vpp.In.FourCC);
     m_mfxVppParams.vpp.Out.ChromaFormat = FourCCToChroma(m_mfxVppParams.vpp.Out.FourCC);
@@ -1094,7 +1098,7 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     m_MVCflags = pParams->MVC_flags;
 
     // FileReader can convert yv12->nv12 without vpp
-    m_InputFourCC = (pParams->FileInputFourCC == MFX_FOURCC_YV12) ? MFX_FOURCC_NV12 : pParams->FileInputFourCC;
+    m_InputFourCC = (pParams->FileInputFourCC == MFX_FOURCC_I420) ? MFX_FOURCC_NV12 : pParams->FileInputFourCC;
 
     m_nTimeout = pParams->nTimeout;
 

@@ -80,10 +80,11 @@ mfxStatus CSmplYUVReader::Init(std::list<msdk_string> inputs, mfxU32 ColorFormat
 
     if( MFX_FOURCC_NV12 != ColorFormat &&
         MFX_FOURCC_YV12 != ColorFormat &&
+        MFX_FOURCC_I420 != ColorFormat &&
         MFX_FOURCC_YUY2 != ColorFormat &&
         MFX_FOURCC_RGB4 != ColorFormat &&
         MFX_FOURCC_BGR4 != ColorFormat &&
-        MFX_FOURCC_P010 != ColorFormat && 
+        MFX_FOURCC_P010 != ColorFormat &&
         MFX_FOURCC_P210 != ColorFormat)
     {
         return MFX_ERR_UNSUPPORTED;
@@ -239,7 +240,7 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
         // read chroma planes
         switch (m_ColorFormat) // color format of data in the input file
         {
-        case MFX_FOURCC_YV12: // YUV420 is implied
+        case MFX_FOURCC_I420:
             switch (pInfo.FourCC)
             {
             case MFX_FOURCC_NV12:
@@ -315,6 +316,7 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
                 return MFX_ERR_UNSUPPORTED;
             }
             break;
+        case MFX_FOURCC_YV12:
         case MFX_FOURCC_NV12:
         case MFX_FOURCC_P010:
         case MFX_FOURCC_P210:
@@ -1436,6 +1438,8 @@ const msdk_char* ColorFormatToStr(mfxU32 format)
     case MFX_FOURCC_NV12:
         return MSDK_STRING("NV12");
     case MFX_FOURCC_YV12:
+        return MSDK_STRING("YV12");
+    case MFX_FOURCC_I420:
         return MSDK_STRING("YUV420");
     case MFX_FOURCC_RGB4:
         return MSDK_STRING("RGB4");
