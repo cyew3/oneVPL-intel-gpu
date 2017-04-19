@@ -1069,6 +1069,22 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
     mfxExtFeiEncMV           * mvout            = GetExtBufferFEI(out,feiFieldId);
     mfxExtFeiPakMBCtrl       * mbcodeout        = GetExtBufferFEI(out,feiFieldId);
 
+    // Update internal MSDK PPS
+    mfxExtFeiPPS             * pDataPPS         = GetExtBufferFEI(in,feiFieldId);
+    mfxExtPpsHeader          * extPps           = GetExtBuffer(m_videoParam);
+
+    extPps->seqParameterSetId              = pDataPPS->SPSId;
+    extPps->picParameterSetId              = pDataPPS->PPSId;
+
+    extPps->picInitQpMinus26               = pDataPPS->PicInitQP - 26;
+    extPps->numRefIdxL0DefaultActiveMinus1 = (std::max)(pDataPPS->NumRefIdxL0Active, mfxU16(1)) - 1;
+    extPps->numRefIdxL1DefaultActiveMinus1 = (std::max)(pDataPPS->NumRefIdxL1Active, mfxU16(1)) - 1;
+
+    extPps->chromaQpIndexOffset            = pDataPPS->ChromaQPIndexOffset;
+    extPps->secondChromaQpIndexOffset      = pDataPPS->SecondChromaQPIndexOffset;
+    extPps->transform8x8ModeFlag           = pDataPPS->Transform8x8ModeFlag;
+
+
     // Pack headers if required
     if (task.m_insertSps[fieldId] || task.m_insertPps[fieldId])
     {
@@ -1289,6 +1305,13 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
     // Fill PPS
     UpdatePPS(task, fieldId, m_pps, m_reconQueue);
 
+    // Update from FEI PPS
+    m_pps.pic_init_qp                             = extPps->picInitQpMinus26 + 26;
+    m_pps.num_ref_idx_l0_active_minus1            = extPps->numRefIdxL0DefaultActiveMinus1;
+    m_pps.num_ref_idx_l1_active_minus1            = extPps->numRefIdxL1DefaultActiveMinus1;
+    m_pps.chroma_qp_index_offset                  = extPps->chromaQpIndexOffset;
+    m_pps.second_chroma_qp_index_offset           = extPps->secondChromaQpIndexOffset;
+    m_pps.pic_fields.bits.transform_8x8_mode_flag = extPps->transform8x8ModeFlag;
 
     /* ENC & PAK surfaces management notes:
      * (1): ENC does not generate real reconstruct surface, but driver use surface ID to store
@@ -1984,6 +2007,21 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
     mfxExtFeiEncMV        * mvout            = GetExtBufferFEI(in, feiFieldId);
     mfxExtFeiPakMBCtrl    * mbcodeout        = GetExtBufferFEI(in, feiFieldId);
 
+    // Update internal PPS from FEI PPS buffer
+    mfxExtFeiPPS    * pDataPPS = GetExtBufferFEI(in,feiFieldId);
+    mfxExtPpsHeader * extPps   = GetExtBuffer(m_videoParam);
+
+    extPps->seqParameterSetId              = pDataPPS->SPSId;
+    extPps->picParameterSetId              = pDataPPS->PPSId;
+
+    extPps->picInitQpMinus26               = pDataPPS->PicInitQP - 26;
+    extPps->numRefIdxL0DefaultActiveMinus1 = (std::max)(pDataPPS->NumRefIdxL0Active, mfxU16(1)) - 1;
+    extPps->numRefIdxL1DefaultActiveMinus1 = (std::max)(pDataPPS->NumRefIdxL1Active, mfxU16(1)) - 1;
+
+    extPps->chromaQpIndexOffset            = pDataPPS->ChromaQPIndexOffset;
+    extPps->secondChromaQpIndexOffset      = pDataPPS->SecondChromaQPIndexOffset;
+    extPps->transform8x8ModeFlag           = pDataPPS->Transform8x8ModeFlag;
+
     // Pack headers if required
     if (task.m_insertSps[fieldId] || task.m_insertPps[fieldId])
     {
@@ -2138,6 +2176,14 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
 
     // Fill PPS
     UpdatePPS(task, fieldId, m_pps, m_reconQueue);
+
+    // Update from FEI PPS
+    m_pps.pic_init_qp                             = extPps->picInitQpMinus26 + 26;
+    m_pps.num_ref_idx_l0_active_minus1            = extPps->numRefIdxL0DefaultActiveMinus1;
+    m_pps.num_ref_idx_l1_active_minus1            = extPps->numRefIdxL1DefaultActiveMinus1;
+    m_pps.chroma_qp_index_offset                  = extPps->chromaQpIndexOffset;
+    m_pps.second_chroma_qp_index_offset           = extPps->secondChromaQpIndexOffset;
+    m_pps.pic_fields.bits.transform_8x8_mode_flag = extPps->transform8x8ModeFlag;
 
     /* ENC & PAK surfaces management notes:
     * (1): ENC does not generate real reconstruct surface, but driver use surface ID to store

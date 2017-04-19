@@ -669,20 +669,24 @@ mfxStatus MfxH264FEIcommon::CheckRuntimeExtBuffers(T* input, U* output, const Mf
         mfxExtFeiPPS* extFeiPPSinRuntime = GetExtBufferFEI(input, field);
         MFX_CHECK(extFeiPPSinRuntime, MFX_ERR_UNDEFINED_BEHAVIOR);
 
-        // Check that parameters from previous init kept unchanged
+        // Check PPS parameters and copy
         {
             mfxExtPpsHeader* extPps = GetExtBuffer(owned_video);
 
-            MFX_CHECK(extPps->seqParameterSetId              == extFeiPPSinRuntime->SPSId,                                        MFX_ERR_UNDEFINED_BEHAVIOR);
-            MFX_CHECK(extPps->picParameterSetId              == extFeiPPSinRuntime->PPSId,                                        MFX_ERR_UNDEFINED_BEHAVIOR);
-            MFX_CHECK(extPps->picInitQpMinus26               == extFeiPPSinRuntime->PicInitQP - 26,                               MFX_ERR_UNDEFINED_BEHAVIOR);
-            MFX_CHECK(extPps->numRefIdxL0DefaultActiveMinus1 == (std::max)(extFeiPPSinRuntime->NumRefIdxL0Active, mfxU16(1)) - 1, MFX_ERR_UNDEFINED_BEHAVIOR);
-            MFX_CHECK(extPps->numRefIdxL1DefaultActiveMinus1 == (std::max)(extFeiPPSinRuntime->NumRefIdxL1Active, mfxU16(1)) - 1, MFX_ERR_UNDEFINED_BEHAVIOR);
-            MFX_CHECK(extPps->chromaQpIndexOffset            == extFeiPPSinRuntime->ChromaQPIndexOffset,                          MFX_ERR_UNDEFINED_BEHAVIOR);
-            MFX_CHECK(extPps->secondChromaQpIndexOffset      == extFeiPPSinRuntime->SecondChromaQPIndexOffset,                    MFX_ERR_UNDEFINED_BEHAVIOR);
-            MFX_CHECK(extPps->transform8x8ModeFlag           == extFeiPPSinRuntime->Transform8x8ModeFlag,                         MFX_ERR_UNDEFINED_BEHAVIOR);
+            // For now it is dissallowed to change SPS Id and PPS Id parameters
+            MFX_CHECK(extPps->seqParameterSetId == extFeiPPSinRuntime->SPSId, MFX_ERR_UNDEFINED_BEHAVIOR);
+            MFX_CHECK(extPps->picParameterSetId == extFeiPPSinRuntime->PPSId, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+            MFX_CHECK(extFeiPPSinRuntime->PicInitQP                 <=  51, MFX_ERR_INVALID_VIDEO_PARAM);
+            MFX_CHECK(extFeiPPSinRuntime->NumRefIdxL0Active         <=  32, MFX_ERR_INVALID_VIDEO_PARAM);
+            MFX_CHECK(extFeiPPSinRuntime->NumRefIdxL1Active         <=  32, MFX_ERR_INVALID_VIDEO_PARAM);
+            MFX_CHECK(extFeiPPSinRuntime->ChromaQPIndexOffset       <=  12, MFX_ERR_INVALID_VIDEO_PARAM);
+            MFX_CHECK(extFeiPPSinRuntime->ChromaQPIndexOffset       >= -12, MFX_ERR_INVALID_VIDEO_PARAM);
+            MFX_CHECK(extFeiPPSinRuntime->SecondChromaQPIndexOffset <=  12, MFX_ERR_INVALID_VIDEO_PARAM);
+            MFX_CHECK(extFeiPPSinRuntime->SecondChromaQPIndexOffset >= -12, MFX_ERR_INVALID_VIDEO_PARAM);
+            MFX_CHECK(extFeiPPSinRuntime->Transform8x8ModeFlag      <=   1, MFX_ERR_INVALID_VIDEO_PARAM);
         }
-        
+
         // SliceHeader is required to pass reference lists
         mfxExtFeiSliceHeader * extFeiSliceInRintime = GetExtBufferFEI(input, field);
         MFX_CHECK(extFeiSliceInRintime,                                           MFX_ERR_UNDEFINED_BEHAVIOR);
@@ -706,11 +710,11 @@ mfxStatus MfxH264FEIcommon::CheckRuntimeExtBuffers(T* input, U* output, const Mf
 
             MFX_CHECK(extFeiSliceInRintime->Slice[i].PPSId                      <= 255, MFX_ERR_INVALID_VIDEO_PARAM);
             MFX_CHECK(extFeiSliceInRintime->Slice[i].CabacInitIdc               <=   2, MFX_ERR_INVALID_VIDEO_PARAM);
-            MFX_CHECK(extFeiSliceInRintime->Slice[i].NumRefIdxL0Active          <=  is_progressive ? 15 : 31, 
+            MFX_CHECK(extFeiSliceInRintime->Slice[i].NumRefIdxL0Active          <=  is_progressive ? 15 : 31,
                                                                                         MFX_ERR_INVALID_VIDEO_PARAM);
-            MFX_CHECK(extFeiSliceInRintime->Slice[i].NumRefIdxL1Active          <=  is_progressive ? 15 : 31, 
+            MFX_CHECK(extFeiSliceInRintime->Slice[i].NumRefIdxL1Active          <=  is_progressive ? 15 : 31,
                                                                                         MFX_ERR_INVALID_VIDEO_PARAM);
-            MFX_CHECK(extFeiSliceInRintime->Slice[i].SliceQPDelta + extFeiPPSinRuntime->PicInitQP              
+            MFX_CHECK(extFeiSliceInRintime->Slice[i].SliceQPDelta + extFeiPPSinRuntime->PicInitQP
                                                                                 <=  51, MFX_ERR_INVALID_VIDEO_PARAM);
             MFX_CHECK(extFeiSliceInRintime->Slice[i].DisableDeblockingFilterIdc <=   2, MFX_ERR_INVALID_VIDEO_PARAM);
             MFX_CHECK(extFeiSliceInRintime->Slice[i].SliceAlphaC0OffsetDiv2     <=   6, MFX_ERR_INVALID_VIDEO_PARAM);
