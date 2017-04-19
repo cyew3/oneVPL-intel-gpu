@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -198,7 +198,7 @@ int DecodeSuite::run(unsigned int id, const char* sname)
     {
         m_par.IOPattern = MFX_IOPATTERN_OUT_VIDEO_MEMORY;
         if (expected == MFX_ERR_LOCK_MEMORY)
-            expected = MFX_ERR_ABORTED;
+            expected = MFX_ERR_UNDEFINED_BEHAVIOR;
     }
 
     apply_par(tc, INIT);
