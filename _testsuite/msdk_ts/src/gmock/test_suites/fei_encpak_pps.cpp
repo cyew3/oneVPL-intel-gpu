@@ -89,22 +89,27 @@ private:
 const TestSuite::tc_struct TestSuite::test_case[] =
 {
  /*00*/ {MFX_ERR_NONE, NORMAL, {0, 0, MFX_FRAMETYPE_I, MFX_PICTYPE_FRAME, 26, 0,0, 0,0, 1}},
- /*01*/ {MFX_ERR_NONE, NORMAL, {0, 0, MFX_FRAMETYPE_I, MFX_PICTYPE_FRAME, 26, 0,0, 0,0, 0}}, // should be unsupported
- /*02*/ {MFX_ERR_NONE, NORMAL, {0, 0, MFX_FRAMETYPE_I, MFX_PICTYPE_FRAME, 26, 1,0, 0,0, 1}},
-// /*00*/ {MFX_ERR_NONE, NORMAL, {0, 0, MFX_FRAMETYPE_I, MFX_PICTYPE_FRAME, 26, 0,1, 0,0, 1}}, // craches
-// /*00*/ {MFX_ERR_INVALID_VIDEO_PARAM, NORMAL, {0, 0, MFX_FRAMETYPE_I, MFX_PICTYPE_FRAME, 26, 33,0, 0,0, 1}}, // crashes
-// /*00*/ {MFX_ERR_INVALID_VIDEO_PARAM, NORMAL, {0, 0, MFX_FRAMETYPE_I, MFX_PICTYPE_FRAME, 26, 2,33, 0,0, 1}},
+ /*01*/ {MFX_ERR_NONE, NORMAL, {0, 0, MFX_FRAMETYPE_I, MFX_PICTYPE_FRAME, 26, 0,0, 0,0, 0}},
+ /*02*/ {MFX_ERR_NONE, NORMAL, {0, 0, MFX_FRAMETYPE_I, MFX_PICTYPE_FRAME, 26, 2,0, 0,0, 1}}, // numRef are ignored
+ /*03*/ {MFX_ERR_NONE, NORMAL, {0, 0, MFX_FRAMETYPE_I, MFX_PICTYPE_FRAME, 26, 0,2, 0,0, 1}}, // numRef are ignored
+ /*04*/ {MFX_ERR_NONE, NORMAL, {0, 0, MFX_FRAMETYPE_I, MFX_PICTYPE_FRAME, 26, 0,0, 0,3, 1}},
+ /*05*/ {MFX_ERR_NONE, NORMAL, {0, 0, MFX_FRAMETYPE_I, MFX_PICTYPE_FRAME, 26, 0,0, 3,0, 1}},
+ /*06*/ {MFX_ERR_NONE, NORMAL, {0, 0, MFX_FRAMETYPE_I, MFX_PICTYPE_FRAME, 20, 0,0, 0,0, 1}},
+ /*07*/ {MFX_ERR_NONE, NORMAL, {0, 0, MFX_FRAMETYPE_I, MFX_PICTYPE_FRAME,  0, 0,0, 0,0, 1}},
 
- // /*01*/ {MFX_ERR_NONE, NORMAL, {0, 1, 4}},
-// /*02*/ {MFX_ERR_NONE, NORMAL, {0, 0, 5}},
-// /*03*/ {MFX_ERR_UNDEFINED_BEHAVIOR, NORMAL, {1, 0, 4}},
-// /*04*/ {MFX_ERR_INVALID_VIDEO_PARAM, NORMAL, {0, 0, 1}}, // 0 0 1 fails
-// /*05*/ {MFX_ERR_NONE, NEVER | ENC, {0, 0, 4}},
-// /*06*/ {MFX_ERR_UNDEFINED_BEHAVIOR, FRAME | ENC, {0, 0, 4}},
-// /*07*/ {MFX_ERR_UNDEFINED_BEHAVIOR, ALWAYS | ENC, {0, 0, 4}},
-// /*08*/ {MFX_ERR_NONE, NEVER | PAK, {0, 0, 4}},
-// /*09*/ {MFX_ERR_UNDEFINED_BEHAVIOR, FRAME | PAK, {0, 0, 4}},
-// /*10*/ {MFX_ERR_UNDEFINED_BEHAVIOR, ALWAYS | PAK, {0, 0, 4}},
+ /*08*/ {MFX_ERR_INVALID_VIDEO_PARAM, NORMAL, {0, 0, MFX_FRAMETYPE_I, MFX_PICTYPE_FRAME, 77, 0,0, 0,0, 1}},
+// /*00*/ {MFX_ERR_NONE, NORMAL, {1, 0, MFX_FRAMETYPE_I, MFX_PICTYPE_FRAME, 26, 0,0, 0,0, 1}}, // hangs on bs parser !!!
+ /*09*/ {MFX_ERR_NONE, NORMAL, {0, 1, MFX_FRAMETYPE_I, MFX_PICTYPE_FRAME, 26, 0,0, 0,0, 1}}, // 3 below are ignored
+ /*10*/ {MFX_ERR_NONE, NORMAL, {0, 0, MFX_FRAMETYPE_P, MFX_PICTYPE_FRAME, 26, 0,0, 0,0, 1}},
+ /*11*/ {MFX_ERR_NONE, NORMAL, {0, 0, MFX_FRAMETYPE_I, MFX_PICTYPE_TOPFIELD, 26, 0,0, 0,0, 1}},
+
+ /*12*/ {MFX_ERR_UNDEFINED_BEHAVIOR, NEVER | ENC, {0, 0, MFX_FRAMETYPE_I, MFX_PICTYPE_FRAME, 26, 0,0, 0,0, 1}},
+ /*13*/ {MFX_ERR_UNDEFINED_BEHAVIOR, INIT  | ENC, {0, 0, MFX_FRAMETYPE_I, MFX_PICTYPE_FRAME, 26, 0,0, 0,0, 1}},
+ /*14*/ {MFX_ERR_NONE, FRAME | ENC, {0, 0, MFX_FRAMETYPE_I, MFX_PICTYPE_FRAME, 26, 0,0, 0,0, 1}},
+ /*15*/ {MFX_ERR_UNDEFINED_BEHAVIOR, NEVER | PAK, {0, 0, MFX_FRAMETYPE_I, MFX_PICTYPE_FRAME, 26, 0,0, 0,0, 1}},
+ /*16*/ {MFX_ERR_UNDEFINED_BEHAVIOR, INIT  | PAK, {0, 0, MFX_FRAMETYPE_I, MFX_PICTYPE_FRAME, 26, 0,0, 0,0, 1}},
+ /*17*/ {MFX_ERR_NONE, FRAME | PAK, {0, 0, MFX_FRAMETYPE_I, MFX_PICTYPE_FRAME, 26, 0,0, 0,0, 1}},
+
 };
 
 // use 3 times - progressive, tff, bff
@@ -314,9 +319,26 @@ int TestSuite::RunTest(unsigned int id)
                 fsliceP->Slice[s].NumRefIdxL1Active = fppsP->NumRefIdxL1Active;
             }
 
+            // mods to check possibility
+            fppsP->PicInitQP = fppsE->PicInitQP = (tc.par.PicInitQP - 2 + 2*count + field) % 52;
+            fppsP->ChromaQPIndexOffset = fppsE->ChromaQPIndexOffset = (tc.par.ChromaQPIndexOffset - 3 + 2*count + field) % 13;
+            fppsP->SecondChromaQPIndexOffset = fppsE->SecondChromaQPIndexOffset = (tc.par.SecondChromaQPIndexOffset - 2 + 2*count + field) % 13;
+            fppsP->Transform8x8ModeFlag = fppsE->Transform8x8ModeFlag = (tc.par.Transform8x8ModeFlag + 2*count + field)*3/4 & 1;
+
+
             // values in input tc are not always valid and can be changed in PrepareFrameBuffers()
-            pd.m_tc.par.NumRefIdxL0Active = fppsE->NumRefIdxL0Active;
-            pd.m_tc.par.NumRefIdxL1Active = fppsE->NumRefIdxL1Active;
+
+            pd.m_tc.par.SPSId                = fppsE->SPSId;
+            pd.m_tc.par.PPSId                = fppsE->PPSId;
+            pd.m_tc.par.PictureType          = fppsE->PictureType;
+            pd.m_tc.par.FrameType            = fppsE->FrameType;
+            pd.m_tc.par.PicInitQP            = fppsE->PicInitQP;
+            pd.m_tc.par.NumRefIdxL0Active    = fppsE->NumRefIdxL0Active;
+            pd.m_tc.par.NumRefIdxL1Active    = fppsE->NumRefIdxL1Active;
+            pd.m_tc.par.ChromaQPIndexOffset  = fppsE->ChromaQPIndexOffset;
+            pd.m_tc.par.SecondChromaQPIndexOffset = fppsE->SecondChromaQPIndexOffset;
+            pd.m_tc.par.Transform8x8ModeFlag = fppsE->Transform8x8ModeFlag;
+
 
             // remove both fields'?
             if ((tc.mode & (ENC|FRAME)) == ENC) // no pps on frame for enc
@@ -326,7 +348,7 @@ int TestSuite::RunTest(unsigned int id)
 
             sts = encpak.EncodeFrame(field);
 
-            g_tsStatus.expect(tc.sts); // if init fails check if it is expected
+            g_tsStatus.expect(tc.sts); // if fails check if it is expected
             if (sts != MFX_ERR_NONE)
                 break;
         }
@@ -336,7 +358,7 @@ int TestSuite::RunTest(unsigned int id)
     g_tsLog << count << " FRAMES Encoded\n";
 
     g_tsStatus.enable();
-    int ret = g_tsStatus.check(sts);
+    int ret = g_tsStatus.check(/*sts*/);
 
     TS_END;
     return 0;

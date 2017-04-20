@@ -819,7 +819,7 @@ mfxStatus tsVideoENCPAK::PrepareFrameBuffers (bool secondField)
                 pak.fslice[curField].Slice[s].RefL0[r].PictureType = RefList[list][RefList[list].size()-1 - r].type;
             }
         }
-        // TODO: Return NumRefIdxActive back after relaxing of restrictions on encpak buffers parameters
+        // TODO: Return *.fpps[curField].NumRefIdxL?Active back after relaxing of restrictions on encpak buffers parameters
         enc.fslice[curField].Slice[s].PPSId             = enc.fpps[curField].PPSId;
         enc.fslice[curField].Slice[s].NumRefIdxL0Active = RefList[0].size();
         enc.fslice[curField].Slice[s].NumRefIdxL1Active = RefList[1].size();
@@ -932,7 +932,7 @@ mfxStatus tsVideoENCPAK::SyncOperation(mfxSyncPoint syncp, tsBitstreamProcessor*
         TS_CHECK_MFX;
     }
 
-    return g_tsStatus.m_status = res;
+    return /*g_tsStatus.m_status = */ res;
 }
 
 mfxStatus tsVideoENCPAK::SyncOperation(mfxSession session,  mfxSyncPoint syncp, mfxU32 wait)
