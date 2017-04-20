@@ -15,6 +15,8 @@
 #include "memory"
 
 #include <limits.h> // for INT_MIN, INT_MAX on Linux
+#include <functional>
+#include <algorithm>
 
 #include "umc_h265_task_supplier.h"
 #include "umc_h265_frame_list.h"
@@ -450,16 +452,17 @@ SEI_Storer_H265::SEI_Message* SEI_Storer_H265::AddMessage(UMC::MediaDataEx *nalU
     }
 
     size_t freeSlot = 0;
-    for (Ipp32u i = 0; i < m_payloads.size(); i++)
+    //move empty (not used) payloads to the end of sequence
+    std::vector<SEI_Message>::iterator
+        end = std::remove_if(m_payloads.begin(), m_payloads.end(), std::mem_fun_ref(&SEI_Message::empty));
+    if (end != m_payloads.end())
     {
-        if (!m_payloads[i].isUsed)
-        {
-            freeSlot = i;
-            break;
-        }
+        //since the state of elements after new logical end is unspecified
+        //we have to clear (mark as not used) them
+        std::for_each(end, m_payloads.end(), std::mem_fun_ref(&SEI_Message::clear));
+        freeSlot = std::distance(m_payloads.begin(), end);
     }
-
-    if (m_payloads[freeSlot].isUsed)
+    else
     {
         if (m_payloads.size() >= MAX_ELEMENTS)
             return 0;

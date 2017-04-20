@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -117,15 +117,22 @@ public:
         Ipp32s      isUsed;
 
         SEI_Message()
-            : frame(0)
-            , size(0)
-            , offset(0)
-            , data(0)
-            , nal_type(NAL_UT_INVALID)
-            , timestamp(0)
-            , type(SEI_RESERVED)
-            , isUsed(0)
         {
+            clear();
+        }
+
+        bool empty() const
+        { return !isUsed; }
+
+        void clear()
+        {
+            frame = NULL;
+            data =  NULL;
+            size = offset = 0;
+            nal_type = NAL_UT_INVALID;
+            timestamp = 0;
+            type = SEI_RESERVED;
+            isUsed = 0;
         }
     };
 

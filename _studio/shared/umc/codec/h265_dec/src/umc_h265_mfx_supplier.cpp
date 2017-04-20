@@ -365,7 +365,12 @@ UMC::Status MFXTaskSupplier_H265::DecodeSEI(UMC::MediaDataEx *nalUnit)
 
                 nalUnit->MoveDataPointer((Ipp32s)nal_u_size);
 
-                m_sei_messages->AddMessage(&nalUnit1, m_SEIPayLoads.payLoadType);
+                SEI_Storer_H265::SEI_Message* msg =
+                    m_sei_messages->AddMessage(&nalUnit1, m_SEIPayLoads.payLoadType);
+                //frame is bound to SEI prefix payloads w/ the first slice
+                //here we bind SEI suffix payloads
+                if (msg && msg->nal_type == NAL_UT_SEI_SUFFIX)
+                    msg->frame = GetView()->pCurFrame;
             }
 
         } while (bitStream.More_RBSP_Data());
