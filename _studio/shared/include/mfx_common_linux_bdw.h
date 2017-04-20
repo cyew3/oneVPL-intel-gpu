@@ -92,6 +92,7 @@
     #undef MFX_ENABLE_MVC_VIDEO_ENCODE // HW limitation
 #endif // #if defined (MFX_VA)
 
+#define SYNCHRONIZATION_BY_VA_MAP_BUFFER
 #define SYNCHRONIZATION_BY_VA_SYNC_SURFACE
 
 #if defined(AS_H264LA_PLUGIN)
