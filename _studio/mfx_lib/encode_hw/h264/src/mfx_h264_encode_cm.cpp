@@ -829,6 +829,9 @@ void CmContext::Setup(
     case MFX_HW_SCL:
     case MFX_HW_APL:
     case MFX_HW_KBL:
+#ifndef MFX_CLOSED_PLATFORMS_DISABLE
+    case MFX_HW_GLK:
+#endif
         m_program = ReadProgram(m_device, genx_skl_simple_me, SizeOf(genx_skl_simple_me));
         m_programHist = ReadProgram(m_device, genx_skl_histogram, SizeOf(genx_skl_histogram));
         break;
