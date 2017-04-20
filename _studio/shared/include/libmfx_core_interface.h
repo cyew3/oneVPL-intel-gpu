@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __LIBMFX_CORE_INTERFACE_H__
@@ -13,7 +13,6 @@
 
 #include "mfx_common.h"
 #include <mfxvideo++int.h>
-
 
 // {1F5BB140-6BB4-416e-81FF-4A8C030FBDC6}
 static const 
@@ -77,7 +76,10 @@ static const
 MFX_GUID MFXICMEnabledCore_GUID =
 { 0x2aafdae8, 0xf7ba, 0x46ed, { 0xb2, 0x77, 0xb8, 0x7e, 0x94, 0xf2, 0xd3, 0x84 } };
 
-
+// {E4E4823F-90D2-4945-823E-00B5F3F3184C}
+static const 
+MFX_GUID MFXMFEDDIENCODER_GUID = 
+{ 0xe4e4823f, 0x90d2, 0x4945, { 0x82, 0x3e, 0x0, 0xb5, 0xf3, 0xf3, 0x18, 0x4c } };
 
 // Try to obtain required interface
 // Declare a template to query an interface
@@ -170,7 +172,11 @@ class ComPtrCore
 public: 
     static const MFX_GUID getGuid()
     {
+#if defined(MFX_VA_WIN)
         return MFXID3D11DECODER_GUID;
+#else
+        return MFXMFEDDIENCODER_GUID;
+#endif
     }
     ComPtrCore():m_pComPtr(NULL)
     {

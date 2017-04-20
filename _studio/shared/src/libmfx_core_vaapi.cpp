@@ -1162,7 +1162,7 @@ VAAPIVideoCORE::DoFastCopyExtended(
 
             {
                 MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "memcpy_sys2vid");
-                
+
                 mfxStatus sts = mfxDefaultAllocatorVAAPI::SetFrameData(va_image, pDst->Info.FourCC, (mfxU8*)pBits, &pDst->Data);
                 MFX_CHECK_STS(sts);
 
@@ -1271,6 +1271,18 @@ void* VAAPIVideoCORE::QueryCoreInterface(const MFX_GUID &guid)
     {
         return (void*) &m_encode_caps;
     }
+#ifdef MFX_ENABLE_MFE
+    else if (MFXMFEDDIENCODER_GUID == guid)
+    {
+        if (!m_mfe.get())
+        {
+            m_mfe = (MFEVAAPIEncoder*)m_session->m_pOperatorCore->QueryGUID<ComPtrCore<MFEVAAPIEncoder> >(&VideoCORE::QueryCoreInterface, guid);
+            if (m_mfe.get())
+                m_mfe.get()->AddRef();
+        }
+        return (void*)&m_mfe;
+    }
+#endif
     else if (MFXICORECM_GUID == guid)
     {
         CmDevice* pCmDevice = NULL;

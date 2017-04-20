@@ -26,6 +26,10 @@
 #include "va/va.h"
 #include "vaapi_ext_interface.h"
 
+#if defined (MFX_ENABLE_MFE)
+#include "mfx_mfe_adapter.h"
+#endif
+
 #if defined (MFX_ENABLE_VPP) && !defined(MFX_RT)
 #include "mfx_vpp_interface.h"
 #endif
@@ -43,7 +47,7 @@ namespace UMC
 
 
 class VAAPIVideoCORE : public CommonCORE
-{    
+{
 public:
     friend class FactoryCORE;
     class VAAPIAdapter : public VAAPIInterface
@@ -52,9 +56,10 @@ public:
         VAAPIAdapter(VAAPIVideoCORE *pVAAPICore):m_pVAAPICore(pVAAPICore)
         {
         };
-    protected:
+
+ protected:
         VAAPIVideoCORE *m_pVAAPICore;
-    
+
     };
 
     class CMEnabledCoreAdapter : public CMEnabledCoreInterface
@@ -77,7 +82,7 @@ public:
     virtual mfxStatus     SetHandle(mfxHandleType type, mfxHDL handle);
 
     virtual mfxStatus     AllocFrames(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response, bool isNeedCopy = true);
-    virtual void          GetVA(mfxHDL* phdl, mfxU16 type) 
+    virtual void          GetVA(mfxHDL* phdl, mfxU16 type)
     {
         (type & MFX_MEMTYPE_FROM_DECODE)?(*phdl = m_pVA.get()):(*phdl = 0);
     };
@@ -141,7 +146,6 @@ protected:
     bool                                 m_bCmCopy;
     bool                                 m_bCmCopyAllowed;
     s_ptr<CmCopyWrapper, true>           m_pCmCopy;
-
 #if defined (MFX_ENABLE_VPP) && !defined(MFX_RT)
     VPPHWResMng                          m_vpp_hw_resmng;
 #endif
@@ -150,6 +154,9 @@ private:
 
     s_ptr<VAAPIAdapter, true>            m_pAdapter;
     s_ptr<CMEnabledCoreAdapter, true>    m_pCmAdapter;
+#ifdef MFX_ENABLE_MFE
+    ComPtrCore<MFEVAAPIEncoder> m_mfe;
+#endif
 };
 
 class PointerProxy

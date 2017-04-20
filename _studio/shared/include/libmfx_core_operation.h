@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __LIBMFX_CORE_OPERATOR_H__
@@ -20,7 +20,7 @@ class VideoCORE;
 class OperatorCORE
 {
 public:
-    OperatorCORE(VideoCORE* pCore) 
+    OperatorCORE(VideoCORE* pCore)
         : m_refCounter(1)
         , m_CoreCounter(0)
     {
@@ -71,7 +71,7 @@ public:
         }
         return false;
     }
-    
+
     // functor to run fuction from child cores
     bool CheckOpaqRequest(mfxFrameAllocRequest *request, mfxFrameSurface1 **pOpaqueSurface, mfxU32 NumOpaqueSurface)
     {
@@ -123,7 +123,22 @@ public:
         }
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
+    // functor to get fuction from child cores
+    template <typename obj, typename func, typename arg>
+    void* QueryGUID(func functor, arg par)
+    {
+        UMC::AutomaticUMCMutex guard(m_guard);
+        std::vector<VideoCORE*>::iterator it = m_Cores.begin();
 
+        for (;it != m_Cores.end();it++)
+        {
+            obj* object = (obj*)((*it)->*functor)(par);
+            // if it is correct Core we can return
+            if (object->get())
+                return (void*)(object->get());
+        }
+        return NULL;
+    }
     // functor to run fuction from child cores
     template <typename func, typename arg>
     mfxFrameSurface1* GetSurface(func functor, arg par)
