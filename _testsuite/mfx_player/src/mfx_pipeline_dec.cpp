@@ -129,7 +129,6 @@ MFXDecPipeline::MFXDecPipeline(IMFXPipelineFactory *pFactory)
     , m_pSpl()
     , m_pVPP()
     , m_pRender()
-    , m_inBSFrame()
     //, m_components[eDEC](VM_STRING("Decoder"))
     //, m_components[eVPP](VM_STRING("VPP"))
     //, m_components[eREN](VM_STRING("Encoder"))
@@ -702,9 +701,6 @@ mfxStatus MFXDecPipeline::ReleasePipeline()
         m_components[eREN].m_pSession->Close();
     }
 
-    MFX_DELETE_ARRAY(m_inBSFrame.Data);
-    //MFX_ZERO_MEM(m_inBSFrame);
-    mfxBitstream2_ZERO_MEM(m_inBSFrame);
     m_bitstreamBuf.Close();
 
     m_fLastTime  =  0;
@@ -829,17 +825,12 @@ mfxStatus MFXDecPipeline::InitInputBs(bool &bExtended)
 {
     mfxU64 bs_size = m_components[eDEC].m_params.mfx.FrameInfo.Width  *
         m_components[eDEC].m_params.mfx.FrameInfo.Height * 4;
-    if (0 == bs_size)
-    {
-        //taking params from cmdline
-        bs_size = m_inParams.FrameInfo.Width * m_inParams.FrameInfo.Height * 4;
-    }
 
-    if (0 == bs_size)
-    {
-        //if we still dont know a resolution lets start from 320x240
+    if (!bs_size) //taking params from cmdline
+        bs_size = m_inParams.FrameInfo.Width * m_inParams.FrameInfo.Height * 4;
+
+    if (!bs_size) //if we still dont know a resolution lets start from 320x240
         bs_size = 320 * 240 * 3;
-    }
 
     //limit bitstream size with file_size, in some critical resolutions, it is only possible way to not run out of memory
     if (m_inParams.nLimitInputBs)
@@ -848,18 +839,17 @@ mfxStatus MFXDecPipeline::InitInputBs(bool &bExtended)
     }
 
     bExtended = false;
-    if (bs_size > m_inBSFrame.MaxLength)
+    if (bs_size > m_bitstreamBuf.MaxLength)
     {
         bExtended = true;
     }
 
     //extending bitstream if necessary
-    MFX_CHECK_STS(MFXBistreamBuffer::ExtendBs((mfxU32)bs_size, &m_inBSFrame));
     MFX_CHECK_STS(m_bitstreamBuf.Init( m_inParams.nDecBufSize
-        , m_inBSFrame.MaxLength));
+        , bs_size));
 
     PrintInfo( VM_STRING("Input bitstream buffer"), VM_STRING("%d")
-        , 0 != m_inParams.nDecBufSize ? m_inParams.nDecBufSize : m_inBSFrame.MaxLength);
+        , 0 != m_inParams.nDecBufSize ? m_inParams.nDecBufSize : m_bitstreamBuf.MaxLength);
 
     //complete frame is failed if decbufsize used
     if (m_inParams.nDecBufSize !=0 )
@@ -1464,18 +1454,18 @@ mfxStatus MFXDecPipeline::DecodeHeader()
     {
         //buffer may contain data
 
-        MFX_CHECK_STS_SKIP(sts = m_pYUVSource->DecodeHeader(&m_inBSFrame, &m_components[eDEC].m_params)
+        MFX_CHECK_STS_SKIP(sts = m_pYUVSource->DecodeHeader(&m_bitstreamBuf, &m_components[eDEC].m_params)
             , MFX_ERR_MORE_DATA);
 
         if (MFX_ERR_MORE_DATA == sts)
         {
-            if (m_inBSFrame.MaxLength == m_inBSFrame.DataLength)
+            if (m_bitstreamBuf.MaxLength == m_bitstreamBuf.DataLength)
             {
-                mfxU32 new_length = m_inBSFrame.MaxLength + m_inBSFrame.MaxLength / 2; //grow by 50%
-                MFX_CHECK_STS(MFXBistreamBuffer::ExtendBs(new_length, &m_inBSFrame));
+                mfxU32 new_length = m_bitstreamBuf.MaxLength + m_bitstreamBuf.MaxLength / 2; //grow by 50%
+                MFX_CHECK_STS(MFXBistreamBuffer::ExtendBs(new_length, &m_bitstreamBuf));
             }
         }
-        else if ((MFX_ERR_NONE <= sts) || (m_inBSFrame.DataFlag & MFX_BITSTREAM_EOS))
+        else if ((MFX_ERR_NONE <= sts) || (m_bitstreamBuf.DataFlag & MFX_BITSTREAM_EOS))
         {
             //TODO: create dedicated decoder class
             //in case of SVC codec profile specified we will continue decode header to get info
@@ -1519,7 +1509,7 @@ mfxStatus MFXDecPipeline::DecodeHeader()
             break;
         }
 
-        MFX_CHECK_STS(m_pSpl->ReadNextFrame(m_inBSFrame));
+        MFX_CHECK_STS(m_pSpl->ReadNextFrame(m_bitstreamBuf));
     }
 
     //handling of default values
@@ -1574,7 +1564,7 @@ mfxStatus MFXDecPipeline::DecodeHeader()
     if (bExtended && m_inParams.bCompleteFrame)
     {
         //unknown if fine, since if means either eof or not enough buffer
-        MFX_CHECK_STS_SKIP(m_pSpl->ReadNextFrame(m_inBSFrame), MFX_ERR_UNKNOWN);
+        MFX_CHECK_STS_SKIP(m_pSpl->ReadNextFrame(m_bitstreamBuf), MFX_ERR_UNKNOWN);
     }
 
     //width and height could be changed during stream parsing
@@ -2958,34 +2948,30 @@ mfxStatus MFXDecPipeline::Play()
     m_KernelTime = 1000 * usage.ru_stime.tv_sec + (Ipp32u)((Ipp64f)usage.ru_stime.tv_usec / (Ipp64f)1000);
 #endif
 
-    mfxU32 nminSize;
-    bool   bHasFirstFrame = 0 != m_inBSFrame.DataLength;
-    m_bitstreamBuf.GetMinBuffSize(nminSize);
-
     while (!bEOS && sts != PIPELINE_ERR_STOPPED)
     {
         // Read next frame
         if (m_pSpl)
         {
             MPA_TRACE("ReadNextFrame");
-            if ((bHasFirstFrame || MFX_ERR_NONE != (sts = m_pSpl->ReadNextFrame(m_inBSFrame))) && m_inBSFrame.DataLength <= 4)
+            if (m_bitstreamBuf.DataLength <= 4 && (MFX_ERR_NONE != (sts = m_pSpl->ReadNextFrame(m_bitstreamBuf))))
             {
                 //checking for all commands executed
                 if (m_commands.empty())
                 {
-                    m_bitstreamBuf.PutBuffer(NULL, true);//say buffer that EOS reached in upstream
+                    m_bitstreamBuf.PutBuffer(true);//say buffer that EOS reached in upstream
                     bEOS = true;
                 }
                 else
                 {
-                    m_inBSFrame.isNull = true;
+                    m_bitstreamBuf.isNull = true;
                     for(;sts != PIPELINE_ERR_STOPPED ;)
                     {
-                        sts = RunDecode(m_inBSFrame);
+                        sts = RunDecode(m_bitstreamBuf);
                         if (MFX_ERR_NONE != sts)
                             break;
                     }
-                    m_inBSFrame.isNull = false;
+                    m_bitstreamBuf.isNull = false;
                     //TODO: redesign this to fix last frame missed if command gets executed due to stream finished processing
                     (*m_commands.begin())->MarkAsReady();
                     //also notify command about eos, some encdless commands should react on that
@@ -3000,12 +2986,9 @@ mfxStatus MFXDecPipeline::Play()
             }
         }
 
-        //not first frame
-        bHasFirstFrame = false;
         sts = MFX_ERR_NONE;
 
-        MFX_CHECK_STS(m_bitstreamBuf.PutBuffer(&m_inBSFrame));
-        MFX_CHECK_STS(m_bitstreamBuf.SetMinBuffSize(nminSize));
+        MFX_CHECK_STS(m_bitstreamBuf.PutBuffer());
 
         while (MFX_ERR_NONE == sts)
         {
@@ -3030,17 +3013,10 @@ mfxStatus MFXDecPipeline::Play()
             {
                 exit_sts = sts;
                 bEOS     = true;
+
                 //flushing data back to inBSFrame
-                m_bitstreamBuf.PutBuffer(NULL, true);
-                MFX_CHECK_STS(m_bitstreamBuf.SetMinBuffSize(1));
-                MFX_CHECK_STS_SKIP(sts = m_bitstreamBuf.LockOutput(&inputBs) , MFX_ERR_MORE_DATA);
-                if (MFX_ERR_MORE_DATA == sts)//still don't have enough data in buffer
-                {
-                    break;
-                }
-                MFX_CHECK_STS(MFXBistreamBuffer::MoveBsExtended(&m_inBSFrame, &inputBs));
-                MFX_CHECK_STS(m_bitstreamBuf.UnLockOutput(&inputBs));
-                MFX_CHECK_STS(m_bitstreamBuf.SetMinBuffSize(nminSize));
+                sts = m_bitstreamBuf.UndoInputBS();
+                MFX_CHECK_STS_SKIP(sts, MFX_ERR_MORE_DATA); //MFX_ERR_MORE_DATA - still don't have enough data in buffer
                 break;
             }
 
@@ -3070,25 +3046,18 @@ mfxStatus MFXDecPipeline::Play()
                     }
                 }
             }
-
-            if(nInputSize != inputBs.DataLength)
-            {
-                //state when decoder do not accept any data ended, continue with predefined buffer size
-                MFX_CHECK_STS(m_bitstreamBuf.SetMinBuffSize(nminSize));
-            }
         } // while constructing frames and decoding
-
     }
 
     // to get the last(buffered) decoded frame
-    m_inBSFrame.isNull = true;
+    m_bitstreamBuf.isNull = true;
     for(;sts != PIPELINE_ERR_STOPPED ;)
     {
-        sts = RunDecode(m_inBSFrame);
+        sts = RunDecode(m_bitstreamBuf);
         if (MFX_ERR_NONE != sts)
             break;
     }
-    m_inBSFrame.isNull = false;
+    m_bitstreamBuf.isNull = false;
 
 
     MFX_CHECK_STS_SKIP(sts, MFX_ERR_MORE_DATA, PIPELINE_ERR_STOPPED);
@@ -5488,10 +5457,6 @@ mfxStatus MFXDecPipeline::GetVppParams(ComponentParams *& pParams)
 
 mfxStatus MFXDecPipeline::ResetAfterSeek()
 {
-    ////splitter output
-    m_inBSFrame.DataLength = 0;
-
-    //buffered splitter output prior decoding
     m_bitstreamBuf.Reset();
 
     ////remove queued sync points

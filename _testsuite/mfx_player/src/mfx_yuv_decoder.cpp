@@ -260,6 +260,10 @@ mfxStatus MFXYUVDecoder::ConstructFrame(mfxBitstream *in, mfxBitstream *out)
 
     int bytes2copy = (std::min)(in->DataLength, out->MaxLength - out->DataLength);
 
+    mfxU32 planeSize = GetMinPlaneSize(m_vParam.mfx.FrameInfo);
+    if (out->DataLength + bytes2copy > planeSize) // it is better to copy no more yuv size
+        bytes2copy = planeSize - out->DataLength;
+
     memmove(out->Data, out->Data + out->DataOffset, out->DataLength);
     out->DataOffset = 0;
 

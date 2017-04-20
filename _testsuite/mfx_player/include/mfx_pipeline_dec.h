@@ -410,8 +410,6 @@ protected:
     IMFXVideoVPP           * m_pVPP;         // vpp
     IMFXVideoRender        * m_pRender;      // render
 
-    mfxBitstream2            m_inBSFrame;    // data from splitter
-
     //d3d9 memory
     mfx_shared_ptr<IHWDevice> m_pHWDevice;
 #if defined(D3D_SURFACES_SUPPORT) || MFX_D3D11_SUPPORT==1

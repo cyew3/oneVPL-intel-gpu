@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2009-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2009-2017 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -18,11 +18,11 @@ File Name: .h
 using namespace UMC;
 
 MFXBistreamBuffer::MFXBistreamBuffer()
-    : m_bDonotUseLinear()
+    : mfxBitstream2()
+    , m_bDonotUseLinear()
     , m_bStartedBuffering()
     , m_bEnable()
     , m_bEos()
-    , m_inputBS()
 {
 }
 
@@ -34,7 +34,8 @@ MFXBistreamBuffer::~MFXBistreamBuffer()
 mfxStatus MFXBistreamBuffer::Init( mfxU32 nBufferSizeMin
                                  , mfxU32 nBufferSizeMax)
 {
-    Close();
+    m_bEos = false;
+    //Close();
     MFX_CHECK_WITH_ERR(nBufferSizeMin > 4 || nBufferSizeMin == 0, MFX_ERR_UNKNOWN);
     if (nBufferSizeMax <= nBufferSizeMin)
     {
@@ -45,6 +46,8 @@ mfxStatus MFXBistreamBuffer::Init( mfxU32 nBufferSizeMin
     m_bDonotUseLinear = nBufferSizeMin == 0;
     m_nBufferSizeMin  = IPP_MAX(nBufferSizeMin, 1);//0 size doesn't make sense
     m_nBufferSizeMax  = nBufferSizeMax;
+
+    ExtendBs((mfxU32)nBufferSizeMax, this);
 
     if (!m_bDonotUseLinear)
     {
@@ -77,11 +80,9 @@ mfxStatus MFXBistreamBuffer::GetMinBuffSize(mfxU32 &nBufferSizeMin)
 
 mfxStatus MFXBistreamBuffer::Reset()
 {
-    if (m_bDonotUseLinear)
-    {
-        m_inputBS.DataLength = 0;
-    }
-    else
+    this->DataLength = 0;
+
+    if (!m_bDonotUseLinear)
     {
         m_UMCBuffer.UnLockInputBuffer(NULL, UMC_ERR_END_OF_STREAM);
         mfxBitstream2 bs;
@@ -101,11 +102,8 @@ mfxStatus MFXBistreamBuffer::Close()
     m_UMCBuffer.Close();
     m_bEos = false;
     
-    if (m_bDonotUseLinear)
-    {
-        MFX_DELETE_ARRAY(m_inputBS.Data);
-        mfxBitstream2_ZERO_MEM(m_inputBS);
-    }
+    MFX_DELETE_ARRAY(this->Data);
+    mfxBitstream2_ZERO_MEM(*(mfxBitstream2*)this);
     
     return MFX_ERR_NONE;
 }
@@ -226,7 +224,7 @@ mfxStatus MFXBistreamBuffer::CopyBsExtended(mfxBitstream2 *dest, mfxBitstream2 *
     return MFX_ERR_NONE;
 }
 
-mfxStatus MFXBistreamBuffer::PutBuffer(mfxBitstream2 * pBs, bool bEos)
+mfxStatus MFXBistreamBuffer::PutBuffer(bool bEos)
 {
     if (!m_bEos)
         m_bEos = bEos;
@@ -251,17 +249,16 @@ mfxStatus MFXBistreamBuffer::PutBuffer(mfxBitstream2 * pBs, bool bEos)
 #endif
     if (m_bDonotUseLinear)
     {
-        return MoveBsExtended(&m_inputBS, pBs);
-    }
-
-    if (NULL == pBs)
-    {
-        if (bEos)
-        {
-            m_UMCBuffer.UnLockInputBuffer(NULL, UMC_ERR_END_OF_STREAM);
-        }
         return MFX_ERR_NONE;
     }
+
+    if (bEos)
+    {
+        m_UMCBuffer.UnLockInputBuffer(NULL, UMC_ERR_END_OF_STREAM);
+        return MFX_ERR_NONE;
+    }
+
+    mfxBitstream2 * pBs = this;
 
     if (pBs->DataLength == 0)
     {
@@ -283,7 +280,6 @@ mfxStatus MFXBistreamBuffer::PutBuffer(mfxBitstream2 * pBs, bool bEos)
 
     mData.SetDataSize(pBs->DataLength);
     pBs->DataLength = 0;
-    m_inputBS = *pBs;
 
     m_UMCBuffer.UnLockInputBuffer(&mData);
 
@@ -296,9 +292,9 @@ mfxStatus MFXBistreamBuffer::LockOutput(mfxBitstream2 * pBs)
 
     if (m_bDonotUseLinear)
     {
-        *pBs = m_inputBS;
+        *pBs = *this;
 
-        return 0 == m_inputBS.DataLength ? MFX_ERR_MORE_DATA : MFX_ERR_NONE;
+        return 0 == this->DataLength ? MFX_ERR_MORE_DATA : MFX_ERR_NONE;
     }
 
     MediaData mData;
@@ -315,7 +311,7 @@ mfxStatus MFXBistreamBuffer::LockOutput(mfxBitstream2 * pBs)
         }
     }
 
-   *pBs = m_inputBS;
+   *pBs = *this;
     pBs->Data = (mfxU8*)mData.GetDataPointer();
         //data length is limited only if buffer inited with non zero size
     pBs->DataLength = (mfxU32)IPP_MIN( mData.GetDataSize()
@@ -332,10 +328,8 @@ mfxStatus MFXBistreamBuffer::UnLockOutput(mfxBitstream2 * pBs)
 
     if (m_bDonotUseLinear)
     {
-        //checks how many bytes are copied
-        //memmove(m_inputBS.Data, m_inputBS.Data + pBs->DataOffset, pBs->DataLength);
-        m_inputBS.DataLength = pBs->DataLength;
-        m_inputBS.DataOffset = pBs->DataOffset;
+        this->DataLength = pBs->DataLength;
+        this->DataOffset = pBs->DataOffset;
         return MFX_ERR_NONE;
     }
 
@@ -348,3 +342,29 @@ mfxStatus MFXBistreamBuffer::UnLockOutput(mfxBitstream2 * pBs)
     return MFX_ERR_NONE;
 }
 
+mfxStatus MFXBistreamBuffer::UndoInputBS()
+{
+    if (m_bDonotUseLinear)
+        return MFX_ERR_NONE;
+
+    mfxStatus sts;
+    mfxBitstream2 inputBs;
+
+    mfxU32 nminSize;
+    GetMinBuffSize(nminSize);
+
+    PutBuffer(true);
+    MFX_CHECK_STS(SetMinBuffSize(1));
+    MFX_CHECK_STS_SKIP(sts = LockOutput(&inputBs), MFX_ERR_MORE_DATA);
+    if (MFX_ERR_MORE_DATA == sts)//still don't have enough data in buffer
+    {
+        SetMinBuffSize(nminSize);
+        return MFX_ERR_MORE_DATA;
+    }
+
+    MFX_CHECK_STS(MFXBistreamBuffer::MoveBsExtended(this, &inputBs));
+    MFX_CHECK_STS(UnLockOutput(&inputBs));
+    MFX_CHECK_STS(SetMinBuffSize(nminSize));
+
+    return MFX_ERR_NONE;
+}

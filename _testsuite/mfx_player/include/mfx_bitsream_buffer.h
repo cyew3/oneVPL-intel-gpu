@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2009-2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2009-2017 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -17,7 +17,7 @@ File Name: .h
 #include "mfx_bitstream2.h"
 
 //lightweight analog to sample buffer
-class MFXBistreamBuffer
+class MFXBistreamBuffer : public mfxBitstream2
 {
 public:
     MFXBistreamBuffer();
@@ -32,9 +32,11 @@ public:
 
     virtual mfxStatus Reset();//reset will empties buffer without fully closing it
     virtual mfxStatus Close();
-    virtual mfxStatus PutBuffer(mfxBitstream2 * pBs, bool bEos = false);
+    virtual mfxStatus PutBuffer(bool bEos = false);
     virtual mfxStatus LockOutput(mfxBitstream2 * pBs);
     virtual mfxStatus UnLockOutput(mfxBitstream2 * pBs);
+
+    mfxStatus UndoInputBS();
 
 public:
     //copies one bitstream to another extends destination if necessary
@@ -44,7 +46,6 @@ public:
     //Just extend Buffer to new size keeping data
     static mfxStatus ExtendBs(mfxU32 nNewLen, mfxBitstream *src);
     
-
 protected:
 
     bool          m_bDonotUseLinear;
