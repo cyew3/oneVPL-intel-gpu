@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -42,7 +42,7 @@ public:
 
     virtual mfxTaskThreadingPolicy GetThreadingPolicy()
     {
-        return MFX_TASK_THREADING_DEDICATED;
+        return MFX_TASK_THREADING_INTRA;
     }
 
     virtual mfxStatus Reset(mfxVideoParam *par)
