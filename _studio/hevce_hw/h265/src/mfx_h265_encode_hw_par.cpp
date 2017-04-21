@@ -1133,13 +1133,13 @@ namespace TUDefault
     {
         static const mfxU16 tumap[7] =
         {
-            /*1*/   MFX_SAO_UNKNOWN,
-            /*2*/   MFX_SAO_UNKNOWN,
-            /*3*/   MFX_SAO_UNKNOWN,
-            /*4*/   MFX_SAO_UNKNOWN,
-            /*5*/   MFX_SAO_UNKNOWN,
-            /*6*/   MFX_SAO_UNKNOWN,
-            /*7*/   MFX_SAO_UNKNOWN //don't use by default but allow user to use per-frame
+            /*1*/   MFX_SAO_DISABLE,
+            /*2*/   MFX_SAO_DISABLE,
+            /*3*/   MFX_SAO_DISABLE,
+            /*4*/   MFX_SAO_DISABLE,
+            /*5*/   MFX_SAO_DISABLE,
+            /*6*/   MFX_SAO_DISABLE,
+            /*7*/   MFX_SAO_DISABLE //don't use by default but allow user to use per-frame
         };
 
         return tumap[TU(tu) - 1];
