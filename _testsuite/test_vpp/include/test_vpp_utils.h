@@ -315,8 +315,7 @@ public :
     mfxStatus  Init(
         const vm_char *strFileName, 
         PTSMaker *pPTSMaker, 
-        bool outYV12  = false,
-        bool need_crc = false);
+        sInputParams &params);
 
     mfxStatus  PutNextFrame(
         sMemoryAllocator* pAllocator, 
@@ -330,6 +329,8 @@ private:
         mfxFrameData* pData, 
         mfxFrameInfo* pInfo);
     
+    void WriteLine(mfxU8 *data, mfxU32 length);
+
     mfxStatus  CRC32(
         mfxU8 *data, 
         mfxU32 length);
@@ -340,7 +341,9 @@ private:
     std::auto_ptr<mfxU8>                   m_outSurfYV12;
     Ipp32u                                 m_crc32c;
     bool                                   m_need_crc;
-
+    
+    std::vector<mfxU8>                     m_temporalLine;
+    bool                                   m_d3d_output;
 };
 
 
@@ -356,9 +359,8 @@ public :
     mfxStatus  Init(
         const vm_char *strFileName, 
         PTSMaker *pPTSMaker,
-        sSVCLayerDescr*  pDesc = NULL,
-        bool outYV12 = false,
-        bool need_crc = false);
+        sInputParams   &params,
+        sSVCLayerDescr*  pDesc = NULL);
 
     mfxU32     GetCRC(mfxFrameSurface1* pSurface);
 

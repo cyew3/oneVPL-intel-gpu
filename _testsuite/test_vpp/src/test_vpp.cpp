@@ -450,9 +450,8 @@ int main(int argc, vm_char *argv[])
         sts = Resources.pDstFileWriters[i].Init(
             istream, 
             ptsMaker.get(),
-            (VPP_FILTER_DISABLED != Params.svcParam[0].mode) ? Params.svcParam[0].descr : NULL,
-            Params.isOutYV12,
-            Params.need_crc);
+            Params,
+            (VPP_FILTER_DISABLED != Params.svcParam[0].mode) ? Params.svcParam[0].descr : NULL);
         CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { vm_string_printf(VM_STRING("Failed to init YUV writer\n")); WipeResources(&Resources); WipeParams(&Params);});
     }
 

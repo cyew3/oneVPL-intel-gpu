@@ -23,6 +23,8 @@
 
 #include "d3d11_allocator.h"
 
+#include "fast_copy.h"
+
 #define MFX_CHECK_STS(sts) {if (MFX_ERR_NONE != sts) return sts;}
 
 /* ******************************************************************* */
@@ -1065,9 +1067,6 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
             nBytesRead = (mfxU32)vm_file_fread(ptr + i * pitch, 1, w, m_fSrc);
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
         }
-
-        int i = 0;
-        i;
     }
     else if(pInfo->FourCC == MFX_FOURCC_YUV411)
     {
@@ -1479,7 +1478,7 @@ CRawVideoWriter::CRawVideoWriter()
     return;
 }
 
-mfxStatus CRawVideoWriter::Init(const vm_char *strFileName, PTSMaker *pPTSMaker, bool outYV12, bool need_crc )
+mfxStatus CRawVideoWriter::Init(const vm_char *strFileName, PTSMaker *pPTSMaker, sInputParams &params)
 {
     Close();
 
@@ -1493,8 +1492,14 @@ mfxStatus CRawVideoWriter::Init(const vm_char *strFileName, PTSMaker *pPTSMaker,
 
     m_fDst = vm_file_fopen(strFileName, VM_STRING("wb"));
     CHECK_POINTER(m_fDst, MFX_ERR_ABORTED);
-    m_outYV12  = outYV12;
-    m_need_crc = need_crc;
+    m_outYV12  = params.isOutYV12;
+    m_need_crc = params.need_crc;
+    m_d3d_output = (params.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) ? true : false;
+
+#if defined(_WIN32) || defined(_WIN64)
+    if (!m_need_crc)
+        m_d3d_output = false; // windows write file doesn't need optimization
+#endif
 
     return MFX_ERR_NONE;
 }
@@ -1539,48 +1544,76 @@ mfxStatus CRawVideoWriter::PutNextFrame(
                                         mfxFrameSurface1* pSurface)
 {
     mfxStatus sts;
-    if (m_fDst)
+    
+    try
     {
-        if (pSurface->Data.MemId) 
+        if (m_fDst)
         {
-            // get YUV pointers
-            sts = pAllocator->pMfxAllocator->Lock(pAllocator->pMfxAllocator->pthis, pSurface->Data.MemId, &(pSurface->Data));
-            CHECK_NOT_EQUAL(sts, MFX_ERR_NONE, MFX_ERR_ABORTED);
+            if (pSurface->Data.MemId)
+            {
+                // get YUV pointers
+                sts = pAllocator->pMfxAllocator->Lock(pAllocator->pMfxAllocator->pthis, pSurface->Data.MemId, &(pSurface->Data));
+                CHECK_NOT_EQUAL(sts, MFX_ERR_NONE, MFX_ERR_ABORTED);
 
-            sts = WriteFrame( &(pSurface->Data), pInfo);
-            CHECK_NOT_EQUAL(sts, MFX_ERR_NONE, MFX_ERR_ABORTED);
+                sts = WriteFrame(&(pSurface->Data), pInfo);
+                CHECK_NOT_EQUAL(sts, MFX_ERR_NONE, MFX_ERR_ABORTED);
 
-            sts = pAllocator->pMfxAllocator->Unlock(pAllocator->pMfxAllocator->pthis, pSurface->Data.MemId, &(pSurface->Data));
-            CHECK_NOT_EQUAL(sts, MFX_ERR_NONE, MFX_ERR_ABORTED);
+                sts = pAllocator->pMfxAllocator->Unlock(pAllocator->pMfxAllocator->pthis, pSurface->Data.MemId, &(pSurface->Data));
+                CHECK_NOT_EQUAL(sts, MFX_ERR_NONE, MFX_ERR_ABORTED);
+            }
+            else
+            {
+                sts = WriteFrame(&(pSurface->Data), pInfo);
+                CHECK_NOT_EQUAL(sts, MFX_ERR_NONE, MFX_ERR_ABORTED);
+            }
         }
-        else 
+        else // performance mode
         {
-            sts = WriteFrame( &(pSurface->Data), pInfo);
-            CHECK_NOT_EQUAL(sts, MFX_ERR_NONE, MFX_ERR_ABORTED);
+            if (pSurface->Data.MemId)
+            {
+                sts = pAllocator->pMfxAllocator->Lock(pAllocator->pMfxAllocator->pthis, pSurface->Data.MemId, &(pSurface->Data));
+                CHECK_NOT_EQUAL(sts, MFX_ERR_NONE, MFX_ERR_ABORTED);
+                sts = pAllocator->pMfxAllocator->Unlock(pAllocator->pMfxAllocator->pthis, pSurface->Data.MemId, &(pSurface->Data));
+                CHECK_NOT_EQUAL(sts, MFX_ERR_NONE, MFX_ERR_ABORTED);
+            }
         }
+        if (m_pPTSMaker)
+            return m_pPTSMaker->CheckPTS(pSurface) ? MFX_ERR_NONE : MFX_ERR_ABORTED;
+
     }
-    else // performance mode
+    catch (...)
     {
-        if (pSurface->Data.MemId) 
-        {
-            sts = pAllocator->pMfxAllocator->Lock(pAllocator->pMfxAllocator->pthis, pSurface->Data.MemId, &(pSurface->Data));
-            CHECK_NOT_EQUAL(sts, MFX_ERR_NONE, MFX_ERR_ABORTED);
-            sts = pAllocator->pMfxAllocator->Unlock(pAllocator->pMfxAllocator->pthis, pSurface->Data.MemId, &(pSurface->Data));
-            CHECK_NOT_EQUAL(sts, MFX_ERR_NONE, MFX_ERR_ABORTED);
-        }
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
-    if (m_pPTSMaker)
-        return m_pPTSMaker->CheckPTS(pSurface)?MFX_ERR_NONE:MFX_ERR_ABORTED;
 
     return MFX_ERR_NONE;
 }
+
+void CRawVideoWriter::WriteLine(mfxU8 *data, mfxU32 length)
+{
+    if (m_d3d_output && length)
+    {
+        if (m_temporalLine.size() < length)
+        {
+            m_temporalLine.resize(length);
+        }
+
+        copyVideoToSys(data, m_temporalLine.data(), length);
+        data = m_temporalLine.data();
+    }
+
+    if (length != (mfxU32)vm_file_fwrite(data, length, 1, m_fDst))
+        throw MFX_ERR_UNDEFINED_BEHAVIOR;
+ 
+    if (m_need_crc)
+        CRC32(data, length);
+}
+
 mfxStatus CRawVideoWriter::WriteFrame(
                                       mfxFrameData* pData, 
                                       mfxFrameInfo* pInfo)
 {
-    mfxI32 nBytesRead   = 0;
-
-    mfxI32 i, h, w, pitch;
+    mfxU32 i, h, w, pitch;
     mfxU8* ptr;
 
     CHECK_POINTER(pData, MFX_ERR_NOT_INITIALIZED);
@@ -1643,8 +1676,7 @@ mfxStatus CRawVideoWriter::WriteFrame(
 
         for (i = 0; i < h; i++)
         {
-            CHECK_NOT_EQUAL(vm_file_fwrite(ptr+ i * pitch, 1, w, m_fDst), w, MFX_ERR_UNDEFINED_BEHAVIOR);
-            if ( m_need_crc ) CRC32(ptr + i * pitch, w);
+            WriteLine(ptr + i * pitch, w);
         }
 
         w     >>= 1;
@@ -1654,16 +1686,13 @@ mfxStatus CRawVideoWriter::WriteFrame(
         ptr  = outData.V + (pInfo->CropX >> 1) + (pInfo->CropY >> 1) * pitch;
         for(i = 0; i < h; i++) 
         {
-            CHECK_NOT_EQUAL( vm_file_fwrite(ptr+ i * pitch, 1, w, m_fDst), w, MFX_ERR_UNDEFINED_BEHAVIOR);
-            if ( m_need_crc ) CRC32(ptr + i * pitch, w);
+            WriteLine(ptr + i * pitch, w);
         }
 
         ptr  = outData.U + (pInfo->CropX >> 1) + (pInfo->CropY >> 1) * pitch;
         for(i = 0; i < h; i++) 
         {
-            nBytesRead = (mfxU32)vm_file_fwrite(ptr + i * pitch, 1, w, m_fDst);
-            CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
-            if ( m_need_crc ) CRC32(ptr + i * pitch, w);
+            WriteLine(ptr + i * pitch, w);
         }
     } 
     else if(pInfo->FourCC == MFX_FOURCC_YUV400)
@@ -1672,8 +1701,7 @@ mfxStatus CRawVideoWriter::WriteFrame(
 
         for (i = 0; i < h; i++)
         {
-            CHECK_NOT_EQUAL( vm_file_fwrite(ptr+ i * pitch, 1, w, m_fDst), w, MFX_ERR_UNDEFINED_BEHAVIOR);
-            if ( m_need_crc ) CRC32(ptr + i * pitch, w);
+            WriteLine(ptr + i * pitch, w);
         }
 
         w     >>= 1;
@@ -1683,16 +1711,13 @@ mfxStatus CRawVideoWriter::WriteFrame(
         ptr  = pData->V + (pInfo->CropX >> 1) + (pInfo->CropY >> 1) * pitch;
         for(i = 0; i < h; i++) 
         {
-            CHECK_NOT_EQUAL( vm_file_fwrite(ptr+ i * pitch, 1, w, m_fDst), w, MFX_ERR_UNDEFINED_BEHAVIOR);
-            if ( m_need_crc ) CRC32(ptr + i * pitch, w);
+            WriteLine(ptr + i * pitch, w);
         }
 
         ptr  = pData->U + (pInfo->CropX >> 1) + (pInfo->CropY >> 1) * pitch;
         for(i = 0; i < h; i++) 
         {
-            nBytesRead = (mfxU32)vm_file_fwrite(ptr + i * pitch, 1, w, m_fDst);
-            CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
-            if ( m_need_crc ) CRC32(ptr + i * pitch, w);
+            WriteLine(ptr + i * pitch, w);
         }
     } 
     else if(pInfo->FourCC == MFX_FOURCC_YUV411)
@@ -1701,8 +1726,7 @@ mfxStatus CRawVideoWriter::WriteFrame(
 
         for (i = 0; i < h; i++)
         {
-            CHECK_NOT_EQUAL( vm_file_fwrite(ptr+ i * pitch, 1, w, m_fDst), w, MFX_ERR_UNDEFINED_BEHAVIOR);
-            if ( m_need_crc ) CRC32(ptr + i * pitch, w);
+            WriteLine(ptr + i * pitch, w);
         }
 
         w     /= 4;
@@ -1711,16 +1735,13 @@ mfxStatus CRawVideoWriter::WriteFrame(
         ptr  = pData->V + (pInfo->CropX >> 1) + (pInfo->CropY >> 1) * pitch;
         for(i = 0; i < h; i++) 
         {
-            CHECK_NOT_EQUAL( vm_file_fwrite(ptr+ i * pitch, 1, w, m_fDst), w, MFX_ERR_UNDEFINED_BEHAVIOR);
-            if ( m_need_crc ) CRC32(ptr + i * pitch, w);
+            WriteLine(ptr + i * pitch, w);
         }
 
         ptr  = pData->U + (pInfo->CropX >> 1) + (pInfo->CropY >> 1) * pitch;
         for(i = 0; i < h; i++) 
         {
-            nBytesRead = (mfxU32)vm_file_fwrite(ptr + i * pitch, 1, w, m_fDst);
-            CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
-            if ( m_need_crc ) CRC32(ptr + i * pitch, w);
+            WriteLine(ptr + i * pitch, w);
         }
     } 
     else if(pInfo->FourCC == MFX_FOURCC_YUV422H)
@@ -1729,8 +1750,7 @@ mfxStatus CRawVideoWriter::WriteFrame(
 
         for (i = 0; i < h; i++)
         {
-            CHECK_NOT_EQUAL( vm_file_fwrite(ptr+ i * pitch, 1, w, m_fDst), w, MFX_ERR_UNDEFINED_BEHAVIOR);
-            if ( m_need_crc ) CRC32(ptr + i * pitch, w);
+            WriteLine(ptr + i * pitch, w);
         }
 
         w     >>= 1;
@@ -1739,16 +1759,13 @@ mfxStatus CRawVideoWriter::WriteFrame(
         ptr  = pData->V + (pInfo->CropX >> 1) + (pInfo->CropY >> 1) * pitch;
         for(i = 0; i < h; i++) 
         {
-            CHECK_NOT_EQUAL( vm_file_fwrite(ptr+ i * pitch, 1, w, m_fDst), w, MFX_ERR_UNDEFINED_BEHAVIOR);
-            if ( m_need_crc ) CRC32(ptr + i * pitch, w);
+            WriteLine(ptr + i * pitch, w);
         }
 
         ptr  = pData->U + (pInfo->CropX >> 1) + (pInfo->CropY >> 1) * pitch;
         for(i = 0; i < h; i++) 
         {
-            nBytesRead = (mfxU32)vm_file_fwrite(ptr + i * pitch, 1, w, m_fDst);
-            CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
-            if ( m_need_crc ) CRC32(ptr + i * pitch, w);
+            WriteLine(ptr + i * pitch, w);
         }
     } 
     else if(pInfo->FourCC == MFX_FOURCC_YUV422V)
@@ -1757,8 +1774,7 @@ mfxStatus CRawVideoWriter::WriteFrame(
 
         for (i = 0; i < h; i++)
         {
-            CHECK_NOT_EQUAL( vm_file_fwrite(ptr+ i * pitch, 1, w, m_fDst), w, MFX_ERR_UNDEFINED_BEHAVIOR);
-            if ( m_need_crc ) CRC32(ptr + i * pitch, w);
+            WriteLine(ptr + i * pitch, w);
         }
 
         h     >>= 1;
@@ -1766,16 +1782,13 @@ mfxStatus CRawVideoWriter::WriteFrame(
         ptr  = pData->V + (pInfo->CropX >> 1) + (pInfo->CropY >> 1) * pitch;
         for(i = 0; i < h; i++) 
         {
-            CHECK_NOT_EQUAL( vm_file_fwrite(ptr+ i * pitch, 1, w, m_fDst), w, MFX_ERR_UNDEFINED_BEHAVIOR);
-            if ( m_need_crc ) CRC32(ptr + i * pitch, w);
+            WriteLine(ptr + i * pitch, w);
         }
 
         ptr  = pData->U + (pInfo->CropX >> 1) + (pInfo->CropY >> 1) * pitch;
         for(i = 0; i < h; i++) 
         {
-            nBytesRead = (mfxU32)vm_file_fwrite(ptr + i * pitch, 1, w, m_fDst);
-            CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
-            if ( m_need_crc ) CRC32(ptr + i * pitch, w);
+            WriteLine(ptr + i * pitch, w);
         }
     } 
     else if(pInfo->FourCC == MFX_FOURCC_YUV444)
@@ -1784,23 +1797,19 @@ mfxStatus CRawVideoWriter::WriteFrame(
 
         for (i = 0; i < h; i++)
         {
-            CHECK_NOT_EQUAL( vm_file_fwrite(ptr+ i * pitch, 1, w, m_fDst), w, MFX_ERR_UNDEFINED_BEHAVIOR);
-            if ( m_need_crc ) CRC32(ptr + i * pitch, w);
+            WriteLine(ptr + i * pitch, w);
         }
 
         ptr  = pData->V + (pInfo->CropX >> 1) + (pInfo->CropY >> 1) * pitch;
         for(i = 0; i < h; i++) 
         {
-            CHECK_NOT_EQUAL( vm_file_fwrite(ptr+ i * pitch, 1, w, m_fDst), w, MFX_ERR_UNDEFINED_BEHAVIOR);
-            if ( m_need_crc ) CRC32(ptr + i * pitch, w);
+            WriteLine(ptr + i * pitch, w);
         }
 
         ptr  = pData->U + (pInfo->CropX >> 1) + (pInfo->CropY >> 1) * pitch;
         for(i = 0; i < h; i++) 
         {
-            nBytesRead = (mfxU32)vm_file_fwrite(ptr + i * pitch, 1, w, m_fDst);
-            CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
-            if ( m_need_crc ) CRC32(ptr + i * pitch, w);
+            WriteLine(ptr + i * pitch, w);
         }
     } 
     else if( pInfo->FourCC == MFX_FOURCC_NV12 )
@@ -1809,8 +1818,7 @@ mfxStatus CRawVideoWriter::WriteFrame(
 
         for (i = 0; i < h; i++)
         {
-            CHECK_NOT_EQUAL( vm_file_fwrite(ptr+ i * pitch, 1, w, m_fDst), w, MFX_ERR_UNDEFINED_BEHAVIOR);
-            if ( m_need_crc ) CRC32(ptr + i * pitch, w);
+            WriteLine(ptr + i * pitch, w);
         }
 
         // write UV data
@@ -1819,8 +1827,7 @@ mfxStatus CRawVideoWriter::WriteFrame(
 
         for(i = 0; i < h; i++) 
         {
-            CHECK_NOT_EQUAL( vm_file_fwrite(ptr+ i * pitch, 1, w, m_fDst), w, MFX_ERR_UNDEFINED_BEHAVIOR);
-            if ( m_need_crc ) CRC32(ptr + i * pitch, w);
+            WriteLine(ptr + i * pitch, w);
         }
     }
     else if( pInfo->FourCC == MFX_FOURCC_NV16 )
@@ -1829,8 +1836,7 @@ mfxStatus CRawVideoWriter::WriteFrame(
 
         for (i = 0; i < h; i++)
         {
-            CHECK_NOT_EQUAL( vm_file_fwrite(ptr+ i * pitch, 1, w, m_fDst), w, MFX_ERR_UNDEFINED_BEHAVIOR);
-            if ( m_need_crc ) CRC32(ptr + i * pitch, w);
+            WriteLine(ptr + i * pitch, w);
         }
 
         // write UV data
@@ -1838,8 +1844,7 @@ mfxStatus CRawVideoWriter::WriteFrame(
 
         for(i = 0; i < h; i++)
         {
-            CHECK_NOT_EQUAL( vm_file_fwrite(ptr+ i * pitch, 1, w, m_fDst), w, MFX_ERR_UNDEFINED_BEHAVIOR);
-            if ( m_need_crc ) CRC32(ptr + i * pitch, w);
+            WriteLine(ptr + i * pitch, w);
         }
     }
     else if( pInfo->FourCC == MFX_FOURCC_P010 )
@@ -1848,8 +1853,7 @@ mfxStatus CRawVideoWriter::WriteFrame(
 
         for (i = 0; i < h; i++)
         {
-            CHECK_NOT_EQUAL( vm_file_fwrite(ptr+ i * pitch, 1, w * 2, m_fDst), w * 2, MFX_ERR_UNDEFINED_BEHAVIOR);
-            if ( m_need_crc ) CRC32(ptr + i * pitch, w * 2);
+            WriteLine(ptr + i * pitch, w * 2);
         }
 
         // write UV data
@@ -1858,8 +1862,7 @@ mfxStatus CRawVideoWriter::WriteFrame(
 
         for(i = 0; i < h; i++) 
         {
-            CHECK_NOT_EQUAL( vm_file_fwrite(ptr+ i * pitch, 1, w*2, m_fDst), w*2, MFX_ERR_UNDEFINED_BEHAVIOR);
-            if ( m_need_crc ) CRC32(ptr + i * pitch, w * 2);
+            WriteLine(ptr + i * pitch, w * 2);
         }
     }
     else if( pInfo->FourCC == MFX_FOURCC_P210 )
@@ -1868,8 +1871,7 @@ mfxStatus CRawVideoWriter::WriteFrame(
 
         for (i = 0; i < h; i++)
         {
-            CHECK_NOT_EQUAL( vm_file_fwrite(ptr+ i * pitch, 1, w * 2, m_fDst), w * 2, MFX_ERR_UNDEFINED_BEHAVIOR);
-            if ( m_need_crc ) CRC32(ptr + i * pitch, w * 2);
+            WriteLine(ptr + i * pitch, w * 2);
         }
 
         // write UV data
@@ -1877,8 +1879,7 @@ mfxStatus CRawVideoWriter::WriteFrame(
 
         for(i = 0; i < h; i++) 
         {
-            CHECK_NOT_EQUAL( vm_file_fwrite(ptr+ i * pitch, 1, w*2, m_fDst), w*2, MFX_ERR_UNDEFINED_BEHAVIOR);
-            if ( m_need_crc ) CRC32(ptr + i * pitch, w * 2);
+            WriteLine(ptr + i * pitch, w * 2);
         }
     }
     else if( pInfo->FourCC == MFX_FOURCC_YUY2 )
@@ -1887,8 +1888,7 @@ mfxStatus CRawVideoWriter::WriteFrame(
 
         for(i = 0; i < h; i++) 
         {
-            CHECK_NOT_EQUAL( vm_file_fwrite(ptr+ i * pitch, 1, 2*w, m_fDst), 2*w, MFX_ERR_UNDEFINED_BEHAVIOR);
-            if ( m_need_crc ) CRC32(ptr + i * pitch, 2*w);
+            WriteLine(ptr + i * pitch, 2*w);
         }
     }
     else if ( pInfo->FourCC == MFX_FOURCC_IMC3 )
@@ -1897,8 +1897,7 @@ mfxStatus CRawVideoWriter::WriteFrame(
 
         for (i = 0; i < h; i++)
         {
-            CHECK_NOT_EQUAL( vm_file_fwrite(ptr+ i * pitch, 1, w, m_fDst), w, MFX_ERR_UNDEFINED_BEHAVIOR);
-            if ( m_need_crc ) CRC32(ptr + i * pitch, w);
+            WriteLine(ptr + i * pitch, w);
         }
 
         w     >>= 1;
@@ -1907,16 +1906,13 @@ mfxStatus CRawVideoWriter::WriteFrame(
         ptr  = pData->V + (pInfo->CropX >> 1) + (pInfo->CropY >> 1) * pitch;
         for(i = 0; i < h; i++)
         {
-            CHECK_NOT_EQUAL( vm_file_fwrite(ptr+ i * pitch, 1, w, m_fDst), w, MFX_ERR_UNDEFINED_BEHAVIOR);
-            if ( m_need_crc ) CRC32(ptr + i * pitch, w);
+            WriteLine(ptr + i * pitch, w);
         }
 
         ptr  = pData->U + (pInfo->CropX >> 1) + (pInfo->CropY >> 1) * pitch;
         for(i = 0; i < h; i++)
         {
-            nBytesRead = (mfxU32)vm_file_fwrite(ptr + i * pitch, 1, w, m_fDst);
-            CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
-            if ( m_need_crc ) CRC32(ptr + i * pitch, w);
+            WriteLine(ptr + i * pitch, w);
         }
     }
     else if (pInfo->FourCC == MFX_FOURCC_RGB4 || pInfo->FourCC == MFX_FOURCC_A2RGB10)
@@ -1932,8 +1928,7 @@ mfxStatus CRawVideoWriter::WriteFrame(
 
         for(i = 0; i < h; i++)
         {
-            CHECK_NOT_EQUAL( vm_file_fwrite(ptr + i * pitch, 1, 4*w, m_fDst), 4*w, MFX_ERR_UNDEFINED_BEHAVIOR);
-            if ( m_need_crc ) CRC32(ptr + i * pitch, 4*w);
+            WriteLine(ptr + i * pitch, 4*w);
         }
     }
     else if (pInfo->FourCC == MFX_FOURCC_AYUV)
@@ -1943,8 +1938,7 @@ mfxStatus CRawVideoWriter::WriteFrame(
 
         for(i = 0; i < h; i++)
         {
-            CHECK_NOT_EQUAL( vm_file_fwrite(ptr + i * pitch, 1, 4*w, m_fDst), 4*w, MFX_ERR_UNDEFINED_BEHAVIOR);
-            if ( m_need_crc ) CRC32(ptr + i * pitch, 4*w);
+            WriteLine(ptr + i * pitch, 4*w);
         }
     }
     else if( pInfo->FourCC == MFX_FOURCC_Y210)
@@ -1953,8 +1947,7 @@ mfxStatus CRawVideoWriter::WriteFrame(
 
         for(i = 0; i < h; i++) 
         {
-            CHECK_NOT_EQUAL( vm_file_fwrite(ptr+ i * pitch, 1, 4*w, m_fDst), 4*w, MFX_ERR_UNDEFINED_BEHAVIOR);
-            if ( m_need_crc ) CRC32(ptr + i * pitch, 4*w);
+            WriteLine(ptr + i * pitch, 4*w);
         }
     }
     else if (pInfo->FourCC == MFX_FOURCC_Y410)
@@ -1963,8 +1956,7 @@ mfxStatus CRawVideoWriter::WriteFrame(
 
         for(i = 0; i < h; i++)
         {
-            CHECK_NOT_EQUAL( vm_file_fwrite(ptr + i * pitch, 1, 4*w, m_fDst), 4*w, MFX_ERR_UNDEFINED_BEHAVIOR);
-            if ( m_need_crc ) CRC32(ptr + i * pitch, 4*w);
+            WriteLine(ptr + i * pitch, 4*w);
         }
     }
     else
@@ -2000,11 +1992,10 @@ void GeneralWriter::Close()
 mfxStatus GeneralWriter::Init(
     const vm_char *strFileName, 
     PTSMaker *pPTSMaker,
-    sSVCLayerDescr*  pDesc,
-    bool outYV12,
-    bool need_crc)
+    sInputParams   &params,
+    sSVCLayerDescr*  pDesc)
 {
-    mfxStatus sts = MFX_ERR_UNKNOWN;;
+    mfxStatus sts = MFX_ERR_UNKNOWN;
 
     mfxU32 didCount = (pDesc) ? 8 : 1;
     m_svcMode = (pDesc) ? true : false;
@@ -2037,8 +2028,7 @@ mfxStatus GeneralWriter::Init(
             sts = m_ofile[did]->Init(
                 (1 == didCount) ? strFileName : out_buf,
                 pPTSMaker,
-                outYV12,
-                need_crc);
+                params);
 
             if(sts != MFX_ERR_NONE) break;
         }
