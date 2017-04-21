@@ -1338,8 +1338,7 @@ void TaskManager::UpdatePTS_Mode30i60p(
         output->Data.FrameOrder = (mfxU32)MFX_FRAMEORDER_UNKNOWN;
         *intSts = MFX_ERR_MORE_SURFACE;
     }
-
-    if ( (FRC_STANDARD & m_extMode) || (FRC_DISABLED == m_extMode) )
+    else if ( (FRC_STANDARD & m_extMode) || (FRC_DISABLED == m_extMode) )
     {
         if (0 != taskIndex % 2)
         {
