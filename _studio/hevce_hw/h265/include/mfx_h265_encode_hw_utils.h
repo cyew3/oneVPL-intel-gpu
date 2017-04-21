@@ -23,7 +23,7 @@
 #include "mfxwidi.h"
 #include "mfxbrc.h"
 
-#define MFX_EXTBUFF_CU_QP_ENABLE 0
+#define MFX_EXTBUFF_CU_QP_ENABLE 1
 #define DEBUG_REC_FRAMES_INFO 0   // dependency from fwrite(). Custom writing to file shouldn't be present in MSDK releases w/o documentation and testing
 #ifdef DEBUG_REC_FRAMES_INFO
 #include "vm_file.h"

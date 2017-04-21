@@ -234,6 +234,11 @@ mfxStatus SetSkipFrame(
         std::vector<ExtVASurface> m_bsQueue;
         std::vector<ExtVASurface> m_reconQueue;
 
+
+        mfxU32 m_width;
+        mfxU32 m_height;
+        ENCODE_CAPS_HEVC m_caps;
+
 #if MFX_EXTBUFF_CU_QP_ENABLE
         std::vector<mfxI8>                m_cuqp_buffer;
         mfxU32                            m_cuqp_width;
@@ -241,11 +246,6 @@ mfxStatus SetSkipFrame(
         mfxU32                            m_cuqp_pitch;
         mfxU32                            m_cuqp_h_aligned;
 #endif
-
-        mfxU32 m_width;
-        mfxU32 m_height;
-        ENCODE_CAPS_HEVC m_caps;
-
         std::vector<VAEncROI> m_arrayVAEncROI;
 
         static const mfxU32 MAX_CONFIG_BUFFERS_COUNT = 26 + 5;
