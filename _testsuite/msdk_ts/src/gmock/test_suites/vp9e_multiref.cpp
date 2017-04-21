@@ -80,9 +80,26 @@ namespace vp9e_multiref
         {/*00*/ MFX_ERR_NONE, INIT_ONLY_CHECK, 0, 0, 0,
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 0 },
         },
-        // Check big NumRefFrame value
+
+        // Check big NumRefFrame value (TU is default => "4")
         {/*01*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT_ONLY_CHECK, 0, 0, 0,
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, VP9E_MULTIREF_MAX_NUMREFFRAME + 1 },
+        },
+
+        // Check big NumRefFrame value for TU=1
+        {/*02*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT_ONLY_CHECK, 0, 0, 0,
+        {
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, VP9E_MULTIREF_MAX_NUMREFFRAME + 1 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 1 },
+        }
+        },
+
+        // Check big NumRefFrame value for TU=7 (it only supports 2)
+        {/*03*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT_ONLY_CHECK, 0, 0, 0,
+        {
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, VP9E_MULTIREF_MAX_NUMREFFRAME },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 7 },
+        }
         },
 
         // Below are cases that check ability of the encoder to utilize DPB-buffer.
@@ -92,7 +109,7 @@ namespace vp9e_multiref
         // == EXPECTED ERROR CODE == TEST TYPE == STREAM LEN == REPEAT PATTERN == EXPECTED QNT OF INTER-ONLY FRAMES ==
 
         // CQP-mode
-        {/*02*/ MFX_ERR_NONE, NONE, 20, 2, 0,
+        {/*04*/ MFX_ERR_NONE, NONE, 20, 2, 0,
         {
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 10 },
@@ -102,7 +119,7 @@ namespace vp9e_multiref
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 1 },
         }
         },
-        {/*03*/ MFX_ERR_NONE, NONE, 20, 2, 8,
+        {/*05*/ MFX_ERR_NONE, NONE, 20, 2, 8,
         {
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 10 },
@@ -112,7 +129,7 @@ namespace vp9e_multiref
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 2 },
         }
         },
-        {/*04*/ MFX_ERR_NONE, NONE, 20, 2, 16,
+        {/*06*/ MFX_ERR_NONE, NONE, 20, 2, 16,
         {
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 10 },
@@ -122,7 +139,7 @@ namespace vp9e_multiref
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 3 },
         }
         },
-        {/*05*/ MFX_ERR_NONE, NONE, 20, 2, 0,
+        {/*07*/ MFX_ERR_NONE, NONE, 20, 2, 0,
         {
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 10 },
@@ -132,7 +149,7 @@ namespace vp9e_multiref
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 1 },
         }
         },
-        {/*06*/ MFX_ERR_NONE, NONE, 20, 2, 8,
+        {/*08*/ MFX_ERR_NONE, NONE, 20, 2, 8,
         {
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 10 },
@@ -142,7 +159,7 @@ namespace vp9e_multiref
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 2 },
         }
         },
-        {/*07*/ MFX_ERR_NONE, NONE, 20, 2, 8,
+        {/*09*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, 20, 2, 8,
         {
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 10 },
@@ -152,7 +169,7 @@ namespace vp9e_multiref
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 3 },
         }
         },
-        {/*08*/ MFX_ERR_NONE, NONE, 20, 2, 0,
+        {/*10*/ MFX_ERR_NONE, NONE, 20, 2, 0,
         {
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 10 },
@@ -162,7 +179,7 @@ namespace vp9e_multiref
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 1 },
         }
         },
-        {/*09*/ MFX_ERR_NONE, NONE, 20, 2, 8,
+        {/*11*/ MFX_ERR_NONE, NONE, 20, 2, 8,
         {
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 10 },
@@ -172,7 +189,7 @@ namespace vp9e_multiref
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 2 },
         }
         },
-        {/*10*/ MFX_ERR_NONE, NONE, 20, 2, 8,
+        {/*12*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, 20, 2, 8,
         {
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 10 },
@@ -184,7 +201,7 @@ namespace vp9e_multiref
         },
 
         // CBR-mode
-        {/*11*/ MFX_ERR_NONE, NONE, 20, 2, 0,
+        {/*13*/ MFX_ERR_NONE, NONE, 20, 2, 0,
         {
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 10 },
@@ -195,7 +212,7 @@ namespace vp9e_multiref
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 1 },
         }
         },
-        {/*12*/ MFX_ERR_NONE, NONE, 20, 2, 8,
+        {/*14*/ MFX_ERR_NONE, NONE, 20, 2, 8,
         {
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 10 },
@@ -206,7 +223,7 @@ namespace vp9e_multiref
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 2 },
         }
         },
-        {/*13*/ MFX_ERR_NONE, NONE, 20, 2, 16,
+        {/*15*/ MFX_ERR_NONE, NONE, 20, 2, 16,
         {
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 10 },
@@ -217,7 +234,7 @@ namespace vp9e_multiref
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 3 },
         }
         },
-        {/*14*/ MFX_ERR_NONE, NONE, 20, 2, 0,
+        {/*16*/ MFX_ERR_NONE, NONE, 20, 2, 0,
         {
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 10 },
@@ -228,7 +245,7 @@ namespace vp9e_multiref
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 1 },
         }
         },
-        {/*15*/ MFX_ERR_NONE, NONE, 20, 2, 8,
+        {/*17*/ MFX_ERR_NONE, NONE, 20, 2, 8,
         {
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 10 },
@@ -239,7 +256,7 @@ namespace vp9e_multiref
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 2 },
         }
         },
-        {/*16*/ MFX_ERR_NONE, NONE, 20, 2, 8,
+        {/*18*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, 20, 2, 8,
         {
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 10 },
@@ -250,7 +267,7 @@ namespace vp9e_multiref
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 3 },
         }
         },
-        {/*17*/ MFX_ERR_NONE, NONE, 20, 2, 0,
+        {/*19*/ MFX_ERR_NONE, NONE, 20, 2, 0,
         {
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 10 },
@@ -261,7 +278,7 @@ namespace vp9e_multiref
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 1 },
         }
         },
-        {/*18*/ MFX_ERR_NONE, NONE, 20, 2, 8,
+        {/*20*/ MFX_ERR_NONE, NONE, 20, 2, 8,
         {
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 10 },
@@ -272,7 +289,7 @@ namespace vp9e_multiref
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 2 },
         }
         },
-        {/*19*/ MFX_ERR_NONE, NONE, 20, 2, 8,
+        {/*21*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, 20, 2, 8,
         {
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 10 },
@@ -497,10 +514,17 @@ namespace vp9e_multiref
         mfxVideoParam new_par = {};
         GetVideoParam(m_session, &new_par);
 
-        if (m_pPar->mfx.NumRefFrame > VP9E_MULTIREF_MAX_NUMREFFRAME)
+        mfxU16 tu_actual = (m_par.mfx.TargetUsage == 0 ? 4 : m_par.mfx.TargetUsage);
+        mfxU16 NumRefFrame_maximum_expected = (tu_actual > 2 ? 2 : 3);
+        if (tu_actual > 2 && m_pPar->mfx.NumRefFrame > 2)
         {
-            EXPECT_EQ(new_par.mfx.NumRefFrame, VP9E_MULTIREF_MAX_NUMREFFRAME) << "ERROR: NumRefFrame for "
-                << m_pPar->mfx.NumRefFrame << " is inited to " << new_par.mfx.NumRefFrame << ", expected " << VP9E_MULTIREF_MAX_NUMREFFRAME;
+            EXPECT_EQ(new_par.mfx.NumRefFrame, NumRefFrame_maximum_expected) << "ERROR: NumRefFrame for "
+                << m_pPar->mfx.NumRefFrame << " is inited to " << new_par.mfx.NumRefFrame << ", expected " << NumRefFrame_maximum_expected;
+        }
+        else if (m_pPar->mfx.NumRefFrame > VP9E_MULTIREF_MAX_NUMREFFRAME)
+        {
+            EXPECT_EQ(new_par.mfx.NumRefFrame, NumRefFrame_maximum_expected) << "ERROR: NumRefFrame for "
+                << m_pPar->mfx.NumRefFrame << " is inited to " << new_par.mfx.NumRefFrame << ", expected " << NumRefFrame_maximum_expected;
         }
         else if (m_pPar->mfx.NumRefFrame == 0)
         {
