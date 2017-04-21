@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2010-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2010-2013 Intel Corporation. All Rights Reserved.
 
 File Name: mfxstructures.h
 
@@ -235,80 +235,6 @@ namespace Formater
         tstring head() const {
             return tstring();
         } 
-    };
-
-    class VP9TemporalLayersFormater
-    {
-        void _unused()
-        {
-            mfxExtVP9TemporalLayers layers;
-            layers;
-            STATIC_ASSERT(sizeof(layers.Layer[0]) == sizeof(VP9TemporalLayerElement), c1);
-        }
-    public:
-        struct VP9TemporalLayerElement {
-            mfxU16 FrameRateScale;
-            mfxU16 TargetKbps;
-            mfxU16 reserved[14];
-        };
-
-        template<class T>
-        tstring operator () (const T & element) const
-        {
-            const VP9TemporalLayerElement *tlElement = reinterpret_cast<const VP9TemporalLayerElement*>(&element);
-
-            tstringstream stream;
-            stream << VM_STRING("{") << tlElement->FrameRateScale << VM_STRING(",")
-                << tlElement->TargetKbps << VM_STRING("}");
-            return stream.str();
-        }
-        tstring head() const {
-            return tstring();
-        }
-    };
-
-    class TemporalLayersFormater
-    {
-        //to make 1:1 relation to mfx_structures
-        void _unused()
-        {
-            mfxExtTemporalLayers layers;
-            layers;
-            STATIC_ASSERT(sizeof(layers.Layer[0]) == sizeof(TemporalLayerElement), c1);
-        }
-    public:
-        struct TemporalLayerElement {
-            mfxU16   Scale;
-            mfxU16   QPI;
-            mfxU16   QPP;
-            mfxU16   QPB;
-            mfxU32   TargetKbps;
-            mfxU32   MaxKbps;
-            mfxU32   BufferSizeInKB;
-            mfxU32   InitialDelayInKB;
-            mfxU16   reserved1[20];
-        };
-
-        template<class T>
-        tstring operator () (const T & element) const
-        {
-            const TemporalLayerElement *tlElement = reinterpret_cast<const TemporalLayerElement*>(&element);
-
-            tstringstream stream;
-            stream << VM_STRING("{") << tlElement->Scale << VM_STRING(",")
-                << tlElement->QPI << VM_STRING(",")
-                << tlElement->QPP << VM_STRING(",")
-                << tlElement->QPB << VM_STRING(",")
-                << tlElement->TargetKbps << VM_STRING(",")
-                << tlElement->MaxKbps << VM_STRING(",")
-                << tlElement->BufferSizeInKB << VM_STRING(",")
-                << tlElement->InitialDelayInKB << VM_STRING(",")
-                << VM_STRING("}");
-            return stream.str();
-        }
-        tstring head() const {
-            return tstring();
-        }
     };
 }
 

@@ -261,9 +261,7 @@ void MFXStructureRef <mfxExtCodingOptionDDI>::ConstructValues () const
 
     SERIALIZE_INT(LCUSize);
     SERIALIZE_INT(WriteIVFHeaders);
-    SERIALIZE_INT(RefreshFrameContext);
-    SERIALIZE_INT(ChangeFrameContextIdxForTS);
-    SERIALIZE_INT(SuperFrameForTS);
+
 }
 
 void MFXStructureRef <mfxExtCodingOptionHEVC>::ConstructValues() const
@@ -753,68 +751,6 @@ void MFXStructureRef <mfxExtAvcTemporalLayers>::ConstructValues () const
     SerializeArrayOfPODs(VM_STRING("Layer"), (AvcTemporalLayersFormater::AvcTemporalLayerElement*)m_pStruct->Layer, MFX_ARRAY_SIZE(m_pStruct->Layer), AvcTemporalLayersFormater());
 }
 
-bool MFXStructureRef <mfxExtVP9TemporalLayers>::DeSerialize(const tstring & refStr, int *nPosition)
-{
-    tstringstream input_strm;
-    input_strm.str(refStr + VM_STRING(' '));
-
-    //clearing attached structure firstly
-    MFXExtBufferPtr<mfxExtVP9TemporalLayers> initHeader(m_pStruct);
-    initHeader.release();
-
-    for (mfxU32 i = 0; i < MFX_ARRAY_SIZE(m_pStruct->Layer); i++)
-    {
-        DESERIALIZE_INT(Layer[i].FrameRateScale);
-        if (m_pStruct->Layer[i].FrameRateScale)
-        {
-            DESERIALIZE_INT(Layer[i].TargetKbps);
-        }
-    }
-
-    if (NULL != nPosition)
-    {
-        *nPosition = (int)input_strm.tellg();
-    }
-
-    return true;
-}
-
-void MFXStructureRef <mfxExtVP9TemporalLayers>::ConstructValues() const
-{
-    SerializeArrayOfPODs(VM_STRING("Layer"), (VP9TemporalLayersFormater::VP9TemporalLayerElement*)m_pStruct->Layer, MFX_ARRAY_SIZE(m_pStruct->Layer), VP9TemporalLayersFormater());
-}
-
-bool MFXStructureRef <mfxExtTemporalLayers>::DeSerialize(const tstring & refStr, int *nPosition)
-{
-    tstringstream input_strm;
-    input_strm.str(refStr + VM_STRING(' '));
-
-    //clearing attached structure firstly
-    MFXExtBufferPtr<mfxExtTemporalLayers> initHeader(m_pStruct);
-    initHeader.release();
-
-    for (mfxU32 i = 0; i < MFX_ARRAY_SIZE(m_pStruct->Layer); i++)
-    {
-        DESERIALIZE_INT(Layer[i].Scale);
-        if (m_pStruct->Layer[i].Scale)
-        {
-            DESERIALIZE_INT(Layer[i].TargetKbps);
-        }
-    }
-
-    if (NULL != nPosition)
-    {
-        *nPosition = (int)input_strm.tellg();
-    }
-
-    return true;
-}
-
-void MFXStructureRef <mfxExtTemporalLayers>::ConstructValues() const
-{
-    SerializeArrayOfPODs(VM_STRING("Layer"), (TemporalLayersFormater::TemporalLayerElement*)m_pStruct->Layer, MFX_ARRAY_SIZE(m_pStruct->Layer), TemporalLayersFormater());
-}
-
 
 bool MFXStructureRef <IppiRect>::DeSerialize(const tstring & refStr, int *nPosition)
 {
@@ -964,15 +900,7 @@ void MFXStructureRef <mfxExtBuffer>:: ConstructValues () const {
         case MFX_EXTBUFF_ENCODED_FRAME_INFO :{
             SerializeStruct(VM_STRING("ENC_FRAME_INFO."), *(mfxExtAVCEncodedFrameInfo*)m_pStruct);
             break;
-        }
-        case MFX_EXTBUFF_TEMPORAL_LAYERS: {
-            SerializeStruct(VM_STRING("TL."), *(mfxExtTemporalLayers*)m_pStruct);
-            break;
-        }
-        case MFX_EXTBUFF_VP9_TEMPORAL_LAYERS: {
-            SerializeStruct(VM_STRING("VP9TL."), *(mfxExtVP9TemporalLayers*)m_pStruct);
-            break;
-        }
+                                             }
         default :
             //unsupported buffer
         break;

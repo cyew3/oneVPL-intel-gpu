@@ -822,34 +822,6 @@ protected:
 };
 
 template<>
-class MFXStructureRef <mfxExtVP9TemporalLayers>
-    : public MFXStructureBase<mfxExtVP9TemporalLayers>
-{
-public:
-    MFXStructureRef(mfxExtVP9TemporalLayers & refStruct, int flags = 0)
-        : MFXStructureBase<mfxExtVP9TemporalLayers>(refStruct, flags)
-    {
-    }
-    virtual bool DeSerialize(const tstring & refStr, int *nPosition);
-protected:
-    virtual void ConstructValues() const;
-};
-
-template<>
-class MFXStructureRef <mfxExtTemporalLayers>
-    : public MFXStructureBase<mfxExtTemporalLayers>
-{
-public:
-    MFXStructureRef(mfxExtTemporalLayers & refStruct, int flags = 0)
-        : MFXStructureBase<mfxExtTemporalLayers>(refStruct, flags)
-    {
-    }
-    virtual bool DeSerialize(const tstring & refStr, int *nPosition);
-protected:
-    virtual void ConstructValues() const;
-};
-
-template<>
 class MFXStructureRef <IppiRect>
     : public MFXStructureBase<IppiRect>
 {
