@@ -267,7 +267,7 @@ mfxStatus VideoVPPBase::Init(mfxVideoParam *par)
         sts = MFX_ERR_NONE;
     }
     MFX_CHECK_STS( sts );
-   
+
     /* save init params to prevent core crash */
     m_errPrtctState.In  = par->vpp.In;
     m_errPrtctState.Out = par->vpp.Out;
@@ -612,7 +612,7 @@ mfxStatus VideoVPPBase::QueryCaps(VideoCORE * core, MfxHwVideoProcessing::mfxVpp
 
     if (MFX_PLATFORM_HARDWARE == core->GetPlatformType())
         return MFX_WRN_PARTIAL_ACCELERATION;
-    
+
     return MFX_ERR_NONE;
 #else
     return MFX_ERR_UNSUPPORTED;
@@ -962,6 +962,30 @@ mfxStatus VideoVPPBase::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam
                     else if( MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION == in->ExtParam[i]->BufferId )
                     {
                         // No specific checks for Opaque ext buffer at the moment.
+                    }
+                    else if (MFX_EXTBUFF_MVC_SEQ_DESC == in->ExtParam[i]->BufferId)
+                    {
+                        mfxExtMVCSeqDesc* pHintMVC = NULL;
+                        mfxExtBuffer* pHint = NULL;
+                        GetFilterParam(in, MFX_EXTBUFF_MVC_SEQ_DESC, &pHint);
+                        if (pHint)
+                        {
+                            pHintMVC = (mfxExtMVCSeqDesc*)pHint;
+                            if (pHintMVC->NumView == 0)
+                            {
+                                mfxSts = MFX_ERR_UNDEFINED_BEHAVIOR;
+                                continue;
+                            }
+                            for (mfxU32 viewIndx = 0; viewIndx < pHintMVC->NumView; viewIndx++)
+                            {
+                                if (pHintMVC->View[viewIndx].ViewId >= 1024)
+                                {
+                                    pHintMVC->View[viewIndx].ViewId = 0;
+                                    mfxSts = MFX_ERR_UNDEFINED_BEHAVIOR;
+                                    continue;
+                                }
+                            }
+                        }
                     }
                     else
                     {

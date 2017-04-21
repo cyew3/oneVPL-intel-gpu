@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "math.h"
@@ -25,7 +25,7 @@ using namespace MfxVideoProcessing;
 mfxStatus ImplementationMvc::QueryIOSurf(VideoCORE* core, mfxVideoParam *par, mfxFrameAllocRequest *request)
 {
     mfxStatus sts = VideoVPPBase::QueryIOSurf(core, par, request);
-        
+
     // in case of multiview we should correct result
     if( MFX_ERR_NONE == sts || MFX_WRN_PARTIAL_ACCELERATION == sts )
     {
@@ -90,6 +90,7 @@ mfxStatus ImplementationMvc::Init(mfxVideoParam *par)
         m_bMultiViewMode = true;
     }
 
+    if( viewCount == 0 ) return MFX_ERR_INVALID_VIDEO_PARAM;
 
     // [2] initialization
     mfxStatus mfxSts = MFX_ERR_NONE;
