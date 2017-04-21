@@ -584,7 +584,7 @@
       <Project>{430e22ba-bdf6-497c-bfc5-ec6907f90018}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\mdp_msdk-samples\samples\deprecated\sample_spl_mux\dispatcher\sample_spl_mux_dispatcher_v15.vcxproj">
+    <ProjectReference Include="..\..\samples\deprecated\sample_spl_mux\dispatcher\sample_spl_mux_dispatcher_v15.vcxproj">
       <Project>{bf10bfcb-5080-4e85-93b7-13299dd6c5c2}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\_studio\shared\mfx_trace\mfx_trace.vcxproj">

@@ -103,7 +103,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>include;..\..\..\mdp_msdk-api\include;..\..\..\mdp_msdk-samples\samples\sample_common\include;..\shared\include;..\..\_studio\shared\umc\core\vm\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;..\..\..\mdp_msdk-api\include;..\..\samples\sample_common\include;..\shared\include;..\..\_studio\shared\umc\core\vm\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -127,7 +127,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>include;..\..\..\mdp_msdk-api\include;..\..\..\mdp_msdk-samples\samples\sample_common\include;..\shared\include;..\..\_studio\shared\umc\core\vm\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;..\..\..\mdp_msdk-api\include;..\..\samples\sample_common\include;..\shared\include;..\..\_studio\shared\umc\core\vm\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -147,7 +147,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>include;..\..\..\mdp_msdk-api\include;..\..\..\mdp_msdk-samples\samples\sample_common\include;..\shared\include;..\..\_studio\shared\umc\core\vm\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;..\..\..\mdp_msdk-api\include;..\..\samples\sample_common\include;..\shared\include;..\..\_studio\shared\umc\core\vm\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -172,7 +172,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>include;..\..\..\mdp_msdk-api\include;..\..\..\mdp_msdk-samples\samples\sample_common\include;..\shared\include;..\..\_studio\shared\umc\core\vm\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;..\..\..\mdp_msdk-api\include;..\..\samples\sample_common\include;..\shared\include;..\..\_studio\shared\umc\core\vm\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -219,7 +219,7 @@
       <Project>{9e7b3527-11aa-46ba-a82f-c58761f9b56f}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\mdp_msdk-samples\samples\sample_common\sample_common_vs2015.vcxproj">
+    <ProjectReference Include="..\..\samples\sample_common\sample_common.vcxproj">
       <Project>{db71b91d-16d8-4339-9621-d81798e46e8f}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\_studio\shared\umc\core\vm\vm.vcxproj">

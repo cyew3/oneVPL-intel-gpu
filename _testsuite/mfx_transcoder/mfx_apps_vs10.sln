@@ -59,17 +59,17 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_pipeline_mock", "..\mfx
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lucas_launch", "..\mfx_player\scripts\tools\lucas_launch\lucas_launch.vcxproj", "{01B0C3A6-547C-4DBF-841C-017AD84A1222}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_spl_mux", "..\..\..\mdp_msdk-samples\samples\deprecated\sample_spl_mux\sample_spl_mux.vcxproj", "{44D60213-8682-48F3-ADD2-4885479FD9DB}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_spl_mux", "..\..\samples\deprecated\sample_spl_mux\sample_spl_mux.vcxproj", "{44D60213-8682-48F3-ADD2-4885479FD9DB}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_spl_mux_dispatcher", "..\..\..\mdp_msdk-samples\samples\deprecated\sample_spl_mux\dispatcher\sample_spl_mux_dispatcher.vcxproj", "{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_spl_mux_dispatcher", "..\..\samples\deprecated\sample_spl_mux\dispatcher\sample_spl_mux_dispatcher.vcxproj", "{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "plugins", "plugins", "{ADA1EB99-5503-44AB-B611-92F28006FA0B}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vp8_decoder_plugin", "..\..\..\mdp_msdk-samples\samples\sample_plugins\vp8_decode_plugin\vp8_decoder_plugin.vcxproj", "{1119372D-BA13-4730-AFF6-1994B26EFF6C}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vp8_decoder_plugin", "..\..\samples\sample_plugins\vp8_decode_plugin\vp8_decoder_plugin.vcxproj", "{1119372D-BA13-4730-AFF6-1994B26EFF6C}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_common", "..\..\..\mdp_msdk-samples\samples\sample_common\sample_common.vcxproj", "{DB71B91D-16D8-4339-9621-D81798E46E8F}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_common", "..\..\samples\sample_common\sample_common.vcxproj", "{DB71B91D-16D8-4339-9621-D81798E46E8F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mock_encoder_plugin", "..\..\..\mdp_msdk-samples\samples\sample_plugins\mock_encoder_plugin\mock_encoder_plugin.vcxproj", "{CEC17285-C2D9-4007-A423-F3DA8520260A}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mock_encoder_plugin", "..\..\samples\sample_plugins\mock_encoder_plugin\mock_encoder_plugin.vcxproj", "{CEC17285-C2D9-4007-A423-F3DA8520260A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "unittest", "unittest", "{E1FFA6C7-F00B-4326-88EB-C3EE02C6BE65}"
 EndProject

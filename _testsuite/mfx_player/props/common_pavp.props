@@ -24,7 +24,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>winmm.lib; psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\..\pavp\_build\$(PlatformName)\$(ConfigurationName)\lib;..\..\..\mdp_msdk-samples\samples\_build\$(PlatformName)\$(ConfigurationName)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\..\pavp\_build\$(PlatformName)\$(ConfigurationName)\lib;..\..\samples\_build\$(PlatformName)\$(ConfigurationName)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
 </Project>
