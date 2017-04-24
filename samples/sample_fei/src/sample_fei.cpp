@@ -821,7 +821,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
     // if nv12 option wasn't specified we expect input YUV file in YUV420 color format
     if (!pConfig->ColorFormat)
     {
-        pConfig->ColorFormat = MFX_FOURCC_YV12;
+        pConfig->ColorFormat = MFX_FOURCC_I420;
     }
 
     // Check references lists limits

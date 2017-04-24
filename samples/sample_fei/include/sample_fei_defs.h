@@ -276,7 +276,7 @@ struct AppConfig
     AppConfig()
         : DecodeId(0)            // Default (invalid) value
         , CodecId(MFX_CODEC_AVC) // Only AVC is supported
-        , ColorFormat(MFX_FOURCC_YV12)
+        , ColorFormat(MFX_FOURCC_I420)
         , nPicStruct(MFX_PICSTRUCT_PROGRESSIVE)
         , nWidth(0)
         , nHeight(0)
