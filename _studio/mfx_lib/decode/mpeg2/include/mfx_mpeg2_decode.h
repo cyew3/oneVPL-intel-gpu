@@ -197,7 +197,7 @@ protected:
     } m_fcState;
 
     bool m_found_SH;
-    bool m_found_IFrame;
+    bool m_found_RA_Frame;
     bool m_first_SH;
     bool m_new_bs;
 

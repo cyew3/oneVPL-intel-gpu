@@ -1544,7 +1544,7 @@ VideoDECODEMPEG2InternalBase::VideoDECODEMPEG2InternalBase()
     m_isSWBuf = false;
     m_isSWDecoder = true;
     m_found_SH = false;
-    m_found_IFrame = false;
+    m_found_RA_Frame = false;
     m_first_SH = true;
 
     for(int i = 0; i < DPB; i++)
@@ -1607,7 +1607,7 @@ mfxStatus VideoDECODEMPEG2InternalBase::Reset(mfxVideoParam *par)
     last_good_timestamp = 0.0;
 
     m_found_SH = false;
-    m_found_IFrame = false;
+    m_found_RA_Frame = false;
     m_first_SH = true;
     m_new_bs   = true;
 
@@ -2485,14 +2485,15 @@ mfxStatus VideoDECODEMPEG2InternalBase::ConstructFrameImpl(mfxBitstream *in, mfx
                 curr += 4;
             }
 
-            if (ePIC == curr[3] && !m_found_IFrame)
+            if (ePIC == curr[3] && !m_found_RA_Frame)
             {
                 if (tail < curr + 6)
                     return MFX_ERR_MORE_DATA;
 
                 mfxI32 pic_type = (curr[5] >> 3) & 0x7;
-                if (pic_type == I_PICTURE)
-                    m_found_IFrame = true;
+                if (pic_type == I_PICTURE ||
+                    pic_type == P_PICTURE)
+                    m_found_RA_Frame = true;
                 else
                 {
                     skipped = true;
