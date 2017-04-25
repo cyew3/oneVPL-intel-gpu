@@ -6,6 +6,7 @@
 *.opensdf
 *.user
 _build
+*.VC.*
 # CMake intermidiate files
 __cmake
 .project

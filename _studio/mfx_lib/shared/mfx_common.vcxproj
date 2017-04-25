@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\..\..\builder\MSDK.Common.props" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug_THM|Win32">
       <Configuration>Debug_THM</Configuration>
@@ -146,7 +147,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_THM|Win32'" />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\..\..\mdp_msdk-api\mediasdk_structures;..\..\..\..\mdp_msdk-api\include;..\shared\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\vc1_dec\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\codec\vc1_spl\include;..\..\shared\umc\codec\mpeg2_dec\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\io\media_buffers\include;$(MfxIppIncludeDir);..\..\shared\umc\codec\brc\include;..\..\shared\umc\io\umc_va\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..\mdp_msdk-api\mediasdk_structures;..\..\..\..\mdp_msdk-api\include;..\shared\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_dec\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_common\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_spl\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\mpeg2_dec\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\h264_enc\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;$(MSDK_STUDIO_ROOT)\shared\umc\io\media_buffers\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\codec\brc\include;$(MSDK_STUDIO_ROOT)\shared\umc\io\umc_va\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Lib />
@@ -156,7 +157,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_THM|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\..\..\mdp_msdk-api\mediasdk_structures;..\..\..\..\mdp_msdk-api\include;..\shared\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\vc1_dec\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\codec\vc1_spl\include;..\..\shared\umc\codec\mpeg2_dec\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\io\media_buffers\include;$(MfxIppIncludeDir);..\..\shared\umc\codec\brc\include;..\..\shared\umc\io\umc_va\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..\mdp_msdk-api\mediasdk_structures;..\..\..\..\mdp_msdk-api\include;..\shared\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_dec\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_common\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_spl\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\mpeg2_dec\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\h264_enc\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;$(MSDK_STUDIO_ROOT)\shared\umc\io\media_buffers\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\codec\brc\include;$(MSDK_STUDIO_ROOT)\shared\umc\io\umc_va\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Lib />
@@ -169,7 +170,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\..\..\mdp_msdk-api\mediasdk_structures;..\..\..\..\mdp_msdk-api\include;..\shared\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\vc1_dec\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\codec\vc1_spl\include;..\..\shared\umc\codec\mpeg2_dec\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\brc\include;..\..\shared\umc\io\media_buffers\include;$(MfxIppIncludeDir);..\..\shared\umc\io\umc_va\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..\mdp_msdk-api\mediasdk_structures;..\..\..\..\mdp_msdk-api\include;..\shared\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_dec\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_common\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_spl\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\mpeg2_dec\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\h264_enc\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\brc\include;$(MSDK_STUDIO_ROOT)\shared\umc\io\media_buffers\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\io\umc_va\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Lib />
@@ -182,7 +183,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\..\..\mdp_msdk-api\mediasdk_structures;..\..\..\..\mdp_msdk-api\include;..\shared\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\vc1_dec\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\codec\vc1_spl\include;..\..\shared\umc\codec\mpeg2_dec\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\brc\include;..\..\shared\umc\io\media_buffers\include;$(MfxIppIncludeDir);..\..\shared\umc\io\umc_va\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..\mdp_msdk-api\mediasdk_structures;..\..\..\..\mdp_msdk-api\include;..\shared\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_dec\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_common\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_spl\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\mpeg2_dec\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\h264_enc\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\brc\include;$(MSDK_STUDIO_ROOT)\shared\umc\io\media_buffers\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\io\umc_va\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Lib />
@@ -192,7 +193,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\..\..\mdp_msdk-api\mediasdk_structures;..\..\..\..\mdp_msdk-api\include;..\shared\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\vc1_dec\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\codec\vc1_spl\include;..\..\shared\umc\codec\mpeg2_dec\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\io\media_buffers\include;$(MfxIppIncludeDir);..\..\shared\umc\codec\brc\include;..\..\shared\umc\io\umc_va\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..\mdp_msdk-api\mediasdk_structures;..\..\..\..\mdp_msdk-api\include;..\shared\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_dec\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_common\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_spl\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\mpeg2_dec\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\h264_enc\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;$(MSDK_STUDIO_ROOT)\shared\umc\io\media_buffers\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\codec\brc\include;$(MSDK_STUDIO_ROOT)\shared\umc\io\umc_va\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
     </ClCompile>
@@ -203,7 +204,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_THM|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\..\..\mdp_msdk-api\mediasdk_structures;..\..\..\..\mdp_msdk-api\include;..\shared\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\vc1_dec\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\codec\vc1_spl\include;..\..\shared\umc\codec\mpeg2_dec\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\io\media_buffers\include;$(MfxIppIncludeDir);..\..\shared\umc\codec\brc\include;..\..\shared\umc\io\umc_va\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..\mdp_msdk-api\mediasdk_structures;..\..\..\..\mdp_msdk-api\include;..\shared\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_dec\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_common\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_spl\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\mpeg2_dec\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\h264_enc\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;$(MSDK_STUDIO_ROOT)\shared\umc\io\media_buffers\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\codec\brc\include;$(MSDK_STUDIO_ROOT)\shared\umc\io\umc_va\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
     </ClCompile>
@@ -217,7 +218,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\..\..\mdp_msdk-api\mediasdk_structures;..\..\..\..\mdp_msdk-api\include;..\shared\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\vc1_dec\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\codec\vc1_spl\include;..\..\shared\umc\codec\mpeg2_dec\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\brc\include;..\..\shared\umc\io\media_buffers\include;$(MfxIppIncludeDir);..\..\shared\umc\io\umc_va\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..\mdp_msdk-api\mediasdk_structures;..\..\..\..\mdp_msdk-api\include;..\shared\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_dec\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_common\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_spl\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\mpeg2_dec\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\h264_enc\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\brc\include;$(MSDK_STUDIO_ROOT)\shared\umc\io\media_buffers\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\io\umc_va\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
     </ClCompile>
@@ -231,7 +232,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\..\..\mdp_msdk-api\include;..\shared\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\vc1_dec\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\codec\vc1_spl\include;..\..\shared\umc\codec\mpeg2_dec\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\brc\include;..\..\shared\umc\io\media_buffers\include;$(MfxIppIncludeDir);..\..\shared\umc\io\umc_va\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..\mdp_msdk-api\include;..\shared\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_dec\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_common\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_spl\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\mpeg2_dec\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\h264_enc\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\brc\include;$(MSDK_STUDIO_ROOT)\shared\umc\io\media_buffers\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\io\umc_va\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
     </ClCompile>
