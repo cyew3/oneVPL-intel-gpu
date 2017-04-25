@@ -1230,8 +1230,8 @@ void H264DBPList::DebugPrint()
         Trace(VM_STRING("FrameNum - %d \n"), pTmp->m_FrameNum);
         Trace(VM_STRING("PicNum - (%d, %d) \n"), pTmp->m_PicNum[0], pTmp->m_PicNum[1]);
         Trace(VM_STRING("LongPicNum - (%d, %d) \n"), pTmp->m_LongTermPicNum[0], pTmp->m_LongTermPicNum[1]);
-        Trace(VM_STRING("Disp - %d , wasOutput - %d wasDisplayed - %d\n"), pTmp->isDisplayable(), pTmp->wasOutputted(), pTmp->wasDisplayed());
-        Trace(VM_STRING("frame ID - %d, this - %d, decoded - %d, %d \n"), pTmp->GetFrameData()->GetFrameMID(), pTmp, pTmp->m_Flags.isDecoded, pTmp->m_Flags.isDecodingCompleted);
+        Trace(VM_STRING("Disp - %d , wasOutput - %d wasDisplayed - %d\n"), pTmp->IsDecoded(), pTmp->wasOutputted(), pTmp->wasDisplayed());
+        Trace(VM_STRING("frame ID - %d, this - %d, decoded - %d, %d \n"), pTmp->GetFrameData()->GetFrameMID(), pTmp, pTmp->m_isDecoded, pTmp->m_isDecodingCompleted);
     }
 
     Trace(VM_STRING("-==========================================\n"));

@@ -342,7 +342,7 @@ H264Slice * VATaskSupplier::DecodeSliceHeader(MediaDataEx *nalUnit)
     if (!slice)
         return 0;
 
-    if (nalUnit->GetFlags() & MediaData::FLAG_VIDEO_DATA_NOT_FULL_FRAME)
+    //if (nalUnit->GetFlags() & MediaData::FLAG_VIDEO_DATA_NOT_FULL_FRAME)
     {
         slice->m_pSource.Allocate(nalUnit->GetDataSize() + DEFAULT_NU_TAIL_SIZE);
         MFX_INTERNAL_CPY(slice->m_pSource.GetPointer(), nalUnit->GetDataPointer(), (Ipp32u)nalUnit->GetDataSize());
@@ -350,10 +350,10 @@ H264Slice * VATaskSupplier::DecodeSliceHeader(MediaDataEx *nalUnit)
         slice->m_pSource.SetDataSize(nalUnit->GetDataSize());
         slice->m_pSource.SetTime(nalUnit->GetTime());
     }
-    else
+    /*else
     {
         slice->m_pSource.SetData(nalUnit);
-    }
+    }*/
 
     Ipp32u* pbs;
     Ipp32u bitOffset;
