@@ -737,10 +737,23 @@ mfxStatus tsVideoENCPAK::PrepareFrameBuffers (bool secondField)
             AllocBitstream();TS_CHECK_MFX;
         }
 
+        // before request from reconstruct pool, update locked flags according to current refs
+        mfxFrameSurface1* surf;
+        for (int i=0; (surf = m_rec_pool.GetSurface(i)) != 0; i++ ) {
+            if (std::find(refs.begin(), refs.end(), surf) == refs.end()) {
+                surf->Data.Locked = 0;
+            } else {
+                surf->Data.Locked = 1;
+            }
+        }
+
         m_PAKInput->InSurface = m_ENCInput->InSurface = m_enc_pool.GetSurface(); TS_CHECK_MFX;
         m_ENCOutput->OutSurface = m_PAKOutput->OutSurface = m_rec_pool.GetSurface(); TS_CHECK_MFX;
         if (m_filler)
             m_PAKInput->InSurface = m_ENCInput->InSurface = m_filler->ProcessSurface(m_PAKInput->InSurface, m_pFrameAllocator);
+
+        // to compute dpb_after, FrameOrder is used to emulate FrameNumWrap
+        m_PAKOutput->OutSurface->Data.FrameOrder = m_PAKInput->InSurface->Data.FrameOrder;
 
         m_PAKOutput->Bs = m_pBitstream; // once for both fields?
     }
@@ -810,15 +823,17 @@ mfxStatus tsVideoENCPAK::PrepareFrameBuffers (bool secondField)
     for (mfxI32 s=0; s<enc.fslice[curField].NumSlice; s++) {
         enc.fslice[curField].Slice[s].SliceType = slicetype;
         pak.fslice[curField].Slice[s].SliceType = slicetype;
-        for (mfxU32 list=0; list<2; list++) {
-            for (mfxU32 r=0; r<RefList[list].size(); r++) {
-                // TODO find picture type for refs
-                enc.fslice[curField].Slice[s].RefL0[r].Index       = RefList[list][RefList[list].size()-1 - r].dpb_idx; // simplest case, latest first
-                enc.fslice[curField].Slice[s].RefL0[r].PictureType = RefList[list][RefList[list].size()-1 - r].type;
-                pak.fslice[curField].Slice[s].RefL0[r].Index       = RefList[list][RefList[list].size()-1 - r].dpb_idx;
-                pak.fslice[curField].Slice[s].RefL0[r].PictureType = RefList[list][RefList[list].size()-1 - r].type;
-            }
+
+        // simplest case, latest first
+        for (mfxU32 r=0; r<RefList[0].size(); r++) {
+            pak.fslice[curField].Slice[s].RefL0[r].Index       = enc.fslice[curField].Slice[s].RefL0[r].Index       = RefList[0][RefList[0].size()-1 - r].dpb_idx;
+            pak.fslice[curField].Slice[s].RefL0[r].PictureType = enc.fslice[curField].Slice[s].RefL0[r].PictureType = RefList[0][RefList[0].size()-1 - r].type;
         }
+        for (mfxU32 r=0; r<RefList[1].size(); r++) {
+            pak.fslice[curField].Slice[s].RefL1[r].Index       = enc.fslice[curField].Slice[s].RefL1[r].Index       = RefList[1][RefList[1].size()-1 - r].dpb_idx;
+            pak.fslice[curField].Slice[s].RefL1[r].PictureType = enc.fslice[curField].Slice[s].RefL1[r].PictureType = RefList[1][RefList[1].size()-1 - r].type;
+        }
+
         // TODO: Return *.fpps[curField].NumRefIdxL?Active back after relaxing of restrictions on encpak buffers parameters
         enc.fslice[curField].Slice[s].PPSId             = enc.fpps[curField].PPSId;
         enc.fslice[curField].Slice[s].NumRefIdxL0Active = RefList[0].size();
