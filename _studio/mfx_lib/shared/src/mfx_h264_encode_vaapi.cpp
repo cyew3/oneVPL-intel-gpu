@@ -464,7 +464,26 @@ mfxStatus SetPrivateParams(
 
             if (private_param->globalMotionBiasAdjustmentEnable && extOpt3rt->MVCostScalingFactor < 4)
                 private_param->HMEMVCostScalingFactor = extOpt3rt->MVCostScalingFactor;
-        }
+
+#ifdef MFX_ENABLE_H264_REPARTITION_CHECK
+            switch (extOpt3rt->RepartitionCheckEnable)
+            {
+            case MFX_CODINGOPTION_ON:
+                private_param->ForceRepartitionCheck = 1;
+                break;
+            case MFX_CODINGOPTION_OFF:
+                private_param->ForceRepartitionCheck = 2;
+                break;
+            case MFX_CODINGOPTION_UNKNOWN:
+                // lets stick with option specified on init if not specified per-frame
+                break;
+            case MFX_CODINGOPTION_ADAPTIVE:
+            default:
+                private_param->ForceRepartitionCheck = 0;
+            }
+#endif // MFX_ENABLE_H264_REPARTITION_CHECK
+
+        } // if (extOpt3rt)
 
 #ifndef MFX_PRIVATE_AVC_ENCODE_CTRL_DISABLE
         mfxExtAVCEncodeCtrl const * extPCQC    = GetExtBuffer(*pCtrl);
@@ -1969,6 +1988,7 @@ mfxStatus VAAPIEncoder::Execute(
     mfxU8 skipFlag  = task.SkipFlag();
     mfxU16 skipMode = m_skipMode;
     mfxExtCodingOption2     const * ctrlOpt2      = GetExtBuffer(task.m_ctrl);
+    mfxExtCodingOption3     const * ctrlOpt3      = GetExtBuffer(task.m_ctrl);
     mfxExtMBDisableSkipMap  const * ctrlNoSkipMap = GetExtBuffer(task.m_ctrl);
     mfxExtCodingOption      const*  extOpt        = GetExtBuffer(m_videoParam);
     mfxU8 qp_delta_list[] = {0,0,0,0, 0,0,0,0};
@@ -2783,7 +2803,7 @@ mfxStatus VAAPIEncoder::Execute(
     }
 #endif
 
-    if (ctrlOpt2)
+    if (ctrlOpt2 || ctrlOpt3)
     {
         if (IsSupported__VAEncMiscParameterPrivate()) {
             MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetPrivateParams(m_videoParam, m_vaDisplay,
