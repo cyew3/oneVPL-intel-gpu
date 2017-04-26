@@ -34,7 +34,7 @@
 namespace mfx_reflect
 {
 #if defined(MFX_HAS_CPP11)
-#define MAKE_SHARED(T, ARGS) ::std::make_shared<T> ARGS
+#define MAKE_SHARED(T, ARGS) std::make_shared<T> ARGS
 #else
 #define MAKE_SHARED(T, ARGS) mfx_cpp11::shared_ptr<T>(new T ARGS)
 #endif
@@ -120,11 +120,11 @@ namespace mfx_reflect
         }
         else
         {
-            throw ::std::invalid_argument(::std::string("No such field"));
+            throw std::invalid_argument(std::string("No such field"));
         }
     }
 
-    AccessorField AccessorType::AccessField(const ::std::string& fieldName) const
+    AccessorField AccessorType::AccessField(const std::string& fieldName) const
     {
         ReflectedField::FieldsCollectionCI iter = m_pReflection->FindField(fieldName);
         return AccessField(iter);
@@ -135,8 +135,7 @@ namespace mfx_reflect
         return AccessField(m_pReflection->m_Fields.begin());
     }
 
-
-    ReflectedType::ReflectedType(ReflectedTypesCollection *pCollection, TypeIndex typeIndex, const ::std::string& typeName, size_t size, bool isPointer, mfxU32 extBufferId)
+    ReflectedType::ReflectedType(ReflectedTypesCollection *pCollection, TypeIndex typeIndex, const std::string& typeName, size_t size, bool isPointer, mfxU32 extBufferId)
         : m_TypeIndex(typeIndex)
         , TypeNames(1, typeName)
         , Size(size)
@@ -150,12 +149,12 @@ namespace mfx_reflect
         }
     }
 
-    ReflectedField::SP ReflectedType::AddField(TypeIndex typeIndex, const ::std::string &typeName, size_t typeSize, bool isPointer, size_t offset, const ::std::string &fieldName, size_t count, mfxU32 extBufferId)
+    ReflectedField::SP ReflectedType::AddField(TypeIndex typeIndex, const std::string &typeName, size_t typeSize, bool isPointer, size_t offset, const std::string &fieldName, size_t count, mfxU32 extBufferId)
     {
         ReflectedField::SP pField;
         if (typeName.empty())
         {
-            throw ::std::invalid_argument(::std::string("Unexpected behavior - typeName is empty"));
+            throw std::invalid_argument(std::string("Unexpected behavior - typeName is empty"));
         }
         if (NULL == m_pCollection)
         {
@@ -166,10 +165,10 @@ namespace mfx_reflect
             ReflectedType* pType = m_pCollection->FindOrDeclareType(typeIndex, typeName, typeSize, isPointer, extBufferId).get();
             if (pType != NULL)
             {
-                StringList::iterator findIterator = ::std::find(pType->TypeNames.begin(), pType->TypeNames.end(), typeName);
+                StringList::iterator findIterator = std::find(pType->TypeNames.begin(), pType->TypeNames.end(), typeName);
                 if (pType->TypeNames.end() == findIterator)
                 {
-                    throw ::std::invalid_argument(::std::string("Unexpected behavior - fieldTypeName is NULL"));
+                    throw std::invalid_argument(std::string("Unexpected behavior - fieldTypeName is NULL"));
                 }
                 m_Fields.push_back(ReflectedField::SP(new ReflectedField(m_pCollection, this, pType, *findIterator, offset, fieldName, count))); //std::make_shared cannot access protected constructor
                 pField = m_Fields.back();
@@ -179,7 +178,7 @@ namespace mfx_reflect
 
     }
 
-    ReflectedField::FieldsCollectionCI ReflectedType::FindField(const ::std::string& fieldName) const
+    ReflectedField::FieldsCollectionCI ReflectedType::FindField(const std::string& fieldName) const
     {
         ReflectedField::FieldsCollectionCI iter = m_Fields.begin();
         for (; iter != m_Fields.end(); ++iter)
@@ -229,19 +228,19 @@ namespace mfx_reflect
         return pEmptyExtBufferType;
     }
 
-    ReflectedType::SP ReflectedTypesCollection::DeclareType(TypeIndex typeIndex, const ::std::string& typeName, size_t typeSize, bool isPointer, mfxU32 extBufferId)
+    ReflectedType::SP ReflectedTypesCollection::DeclareType(TypeIndex typeIndex, const std::string& typeName, size_t typeSize, bool isPointer, mfxU32 extBufferId)
     {
         if (m_KnownTypes.end() == m_KnownTypes.find(typeIndex))
         {
             ReflectedType::SP pType;
             pType = MAKE_SHARED(ReflectedType,(this, typeIndex, typeName, typeSize, isPointer, extBufferId));
-            m_KnownTypes.insert(::std::make_pair(pType->m_TypeIndex, pType));
+            m_KnownTypes.insert(std::make_pair(pType->m_TypeIndex, pType));
             return pType;
         }
         throw std::invalid_argument(std::string("Unexpected behavior - type is already declared"));
     }
 
-    ReflectedType::SP ReflectedTypesCollection::FindOrDeclareType(TypeIndex typeIndex, const ::std::string& typeName, size_t typeSize, bool isPointer, mfxU32 extBufferId)
+    ReflectedType::SP ReflectedTypesCollection::FindOrDeclareType(TypeIndex typeIndex, const std::string& typeName, size_t typeSize, bool isPointer, mfxU32 extBufferId)
     {
         ReflectedType::SP pType = FindExistingType(typeIndex);
         if (pType == NULL)
@@ -256,7 +255,7 @@ namespace mfx_reflect
             }
             else if (!typeName.empty())
             {
-                ReflectedType::StringList::iterator findIterator = ::std::find(pType->TypeNames.begin(), pType->TypeNames.end(), typeName);
+                ReflectedType::StringList::iterator findIterator = std::find(pType->TypeNames.begin(), pType->TypeNames.end(), typeName);
                 if (pType->TypeNames.end() == findIterator)
                 {
                     pType->TypeNames.push_back(typeName);
@@ -266,7 +265,7 @@ namespace mfx_reflect
         return pType;
     }
 
-    template <class T> bool PrintFieldIfTypeMatches(::std::ostream& stream, AccessorField field)
+    template <class T> bool PrintFieldIfTypeMatches(std::ostream& stream, AccessorField field)
     {
         bool bResult = false;
         if (field.m_pReflection->FieldType->m_TypeIndex == field.m_pReflection->m_pCollection->FindExistingType<T>()->m_TypeIndex)
@@ -277,7 +276,7 @@ namespace mfx_reflect
         return bResult;
     }
 
-    void PrintFieldValue(::std::ostream &stream, AccessorField field)
+    void PrintFieldValue(std::ostream &stream, AccessorField field)
     {
         if (field.m_pReflection->FieldType->m_bIsPointer)
         {
@@ -303,16 +302,16 @@ namespace mfx_reflect
         }
     }
 
-    ::std::ostream& operator<< (::std::ostream& stream, AccessorField field)
+    std::ostream& operator<< (std::ostream& stream, AccessorField field)
     {
-        ::std::ostringstream ss;
+        std::ostringstream ss;
         ss << field.m_pReflection->FieldName << " = ";
         PrintFieldValue(ss, field);
         stream << ss.str();
         return stream;
     }
 
-    ::std::ostream& operator<< (::std::ostream& stream, AccessorType data)
+    std::ostream& operator<< (std::ostream& stream, AccessorType data)
     {
         stream << data.m_pReflection->m_TypeIndex.name() << " = {";
         size_t nFields = data.m_pReflection->m_Fields.size();
@@ -320,7 +319,7 @@ namespace mfx_reflect
         {
             if (nFields > 1)
             {
-                stream << ::std::endl;
+                stream << std::endl;
             }
             stream << "\t" << field;
         }
@@ -336,7 +335,7 @@ namespace mfx_reflect
         TypeComparisonResultP result = MAKE_SHARED(TypeComparisonResult,());
         if (data1.m_pReflection != data2.m_pReflection)
         {
-            throw ::std::invalid_argument(::std::string("Types mismatch"));
+            throw std::invalid_argument(std::string("Types mismatch"));
         }
         for (AccessorField field1 = data1.AccessFirstField(); field1.IsValid(); ++field1) //TODO: compare arrays
         {
@@ -363,7 +362,7 @@ namespace mfx_reflect
                 }
                 else
                 {
-                    throw ::std::invalid_argument(::std::string("Unexpected behavior - ExtBuffer comparison result is NULL"));
+                    throw std::invalid_argument(std::string("Unexpected behavior - ExtBuffer comparison result is NULL"));
                 }
             }
             AccessorType subtype1 = field1.AccessSubtype();
@@ -375,7 +374,7 @@ namespace mfx_reflect
                 AccessorType subtype2 = field2.AccessSubtype();
                 if (subtype1.m_pReflection != subtype2.m_pReflection)
                 {
-                    throw ::std::invalid_argument(::std::string("Subtypes mismatch - should never happen for same types"));
+                    throw std::invalid_argument(std::string("Subtypes mismatch - should never happen for same types"));
                 }
                 subtypeResult = CompareTwoStructs(subtype1, subtype2);
             }
@@ -421,7 +420,7 @@ namespace mfx_reflect
                         }
                         else
                         {
-                            throw ::std::invalid_argument(::std::string("Unexpected behavior - comparison result is NULL"));
+                            throw std::invalid_argument(std::string("Unexpected behavior - comparison result is NULL"));
                         }
                     }
                     else
@@ -434,20 +433,19 @@ namespace mfx_reflect
         return result;
     }
 
-
-    void PrintStuctsComparisonResult(::std::ostream& comparisonResult, ::std::string prefix, TypeComparisonResultP result)
+    void PrintStuctsComparisonResult(std::ostream& comparisonResult, std::string prefix, TypeComparisonResultP result)
     {
-        for (::std::list<FieldComparisonResult>::iterator i = result->begin(); i != result->end(); ++i)
+        for (std::list<FieldComparisonResult>::iterator i = result->begin(); i != result->end(); ++i)
         {
             TypeComparisonResultP subtypeResult = i->subtypeComparisonResultP;
             ReflectedType* aggregatingType = i->accessorField1.m_pReflection->AggregatingType;
-            ::std::list< ::std::string >::const_iterator it = aggregatingType->TypeNames.begin();
-            ::std::string strTypeName = ((it != aggregatingType->TypeNames.end()) ? *(it) : "unknown_type");
+            std::list< std::string >::const_iterator it = aggregatingType->TypeNames.begin();
+            std::string strTypeName = ((it != aggregatingType->TypeNames.end()) ? *(it) : "unknown_type");
 
             if (NULL != subtypeResult)
             {
-                ::std::string strFieldName = i->accessorField1.m_pReflection->FieldName;
-                ::std::string newprefix = prefix.empty() ? (strTypeName + "." + strFieldName) : (prefix + "." + strFieldName);
+                std::string strFieldName = i->accessorField1.m_pReflection->FieldName;
+                std::string newprefix = prefix.empty() ? (strTypeName + "." + strFieldName) : (prefix + "." + strFieldName);
                 PrintStuctsComparisonResult(comparisonResult, newprefix, subtypeResult);
             }
             else
@@ -456,16 +454,16 @@ namespace mfx_reflect
                 else if (!strTypeName.empty()) { comparisonResult << strTypeName << "."; }
                 comparisonResult << i->accessorField1 << " -> ";
                 PrintFieldValue(comparisonResult, i->accessorField2);
-                comparisonResult << ::std::endl;
+                comparisonResult << std::endl;
             }
         }
         if (!result->extBufferIdList.empty())
         {
-            comparisonResult << "Id of unparsed ExtBuffer types: " << ::std::endl;
+            comparisonResult << "Id of unparsed ExtBuffer types: " << std::endl;
             while (!result->extBufferIdList.empty())
             {
                 unsigned char* FourCC = reinterpret_cast<unsigned char*>(&result->extBufferIdList.front());
-                comparisonResult << "0x" << ::std::hex << ::std::setfill('0') << result->extBufferIdList.front() << " \"" << FourCC[0] << FourCC[1] << FourCC[2] << FourCC[3] << "\"";
+                comparisonResult << "0x" << std::hex << std::setfill('0') << result->extBufferIdList.front() << " \"" << FourCC[0] << FourCC[1] << FourCC[2] << FourCC[3] << "\"";
                 result->extBufferIdList.pop_front();
                 if (!result->extBufferIdList.empty()) { comparisonResult << ", "; }
             }
@@ -474,14 +472,14 @@ namespace mfx_reflect
 
     std::string CompareStructsToString(AccessorType data1, AccessorType data2)
     {
-        ::std::ostringstream comparisonResult;
+        std::ostringstream comparisonResult;
         if (data1.m_P == data2.m_P)
         {
             comparisonResult << "Comparing of VideoParams is unsupported: In and Out pointers are the same.";
         }
         else
         {
-            comparisonResult << "Incompatible VideoParams were updated:" << ::std::endl;
+            comparisonResult << "Incompatible VideoParams were updated:" << std::endl;
             TypeComparisonResultP result = CompareTwoStructs(data1, data2);
             PrintStuctsComparisonResult(comparisonResult, "", result);
         }
