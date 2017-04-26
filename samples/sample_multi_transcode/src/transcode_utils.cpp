@@ -227,7 +227,9 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("  -vpp_comp_dst_w             Width of this stream in composed stream (should be used in decoder session)\n"));
     msdk_printf(MSDK_STRING("  -vpp_comp_src_h             Width of this stream in composed stream (should be used in decoder session)\n"));
     msdk_printf(MSDK_STRING("  -vpp_comp_src_w             Width of this stream in composed stream (should be used in decoder session)\n"));
+#if _MSDK_API > MSDK_API(1,23)
     msdk_printf(MSDK_STRING("  -vpp_comp_tile_id           Tile_id for current channel of composition (should be used in decoder session)\n"));
+#endif
     msdk_printf(MSDK_STRING("  -vpp_comp_dump <file-name>  Dump of VPP Composition's output into file. Valid if with -vpp_comp* options\n"));
     msdk_printf(MSDK_STRING("  -vpp_comp_dump null_render  Disabling rendering after VPP Composition. This is for performance measurements\n"));
 #if _MSDK_API >= MSDK_API(1,22)
@@ -678,7 +680,7 @@ bool CmdProcessor::ParseROIFile(const msdk_char *roi_file_name, std::vector<mfxE
             frame_roi.ROIMode = MFX_ROI_MODE_QP_DELTA;
 
             int roi_num = std::atoi(items[item_ind].c_str());
-            if (roi_num < 0 || roi_num > sizeof(frame_roi.ROI) / sizeof(frame_roi.ROI[0]))
+            if (roi_num < 0 || roi_num > (int)(sizeof(frame_roi.ROI) / sizeof(frame_roi.ROI[0])))
             {
                 m_ROIData.clear();
                 return false;
@@ -1308,6 +1310,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
             if (InputParams.eModeExt != VppCompOnly)
                 InputParams.eModeExt = VppCompOnly;
         }
+#if _MSDK_API > MSDK_API(1,23)
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-vpp_comp_tile_id")))
         {
             VAL_CHECK(i + 1 == argc, i, argv[i]);
@@ -1318,6 +1321,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
                 return MFX_ERR_UNSUPPORTED;
             }
         }
+#endif
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-vpp_comp_render")))
         {
             if (InputParams.eModeExt != VppComp)

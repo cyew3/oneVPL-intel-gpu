@@ -30,7 +30,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #endif
 
 #ifndef MSDK_RELEASE
-#define MSDK_RELEASE 23
+#define MSDK_RELEASE 24
 #endif
 
 #ifndef MSDK_BUILD
