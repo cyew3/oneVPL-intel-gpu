@@ -125,7 +125,7 @@ public:
             ippiSet_8u_C1R(0, (Ipp8u*)data.Y + info.CropH * pitch, pitch, roi);
 
             roi.height >>= 1;
-            ippiSet_8u_C1R(0, (Ipp8u*)data.UV + info.CropH * pitch, pitch, roi);
+            ippiSet_8u_C1R(0, (Ipp8u*)data.UV + (info.CropH / 2) * pitch, pitch, roi);
         }
     }
 };
@@ -292,14 +292,14 @@ public:
         mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
         mfxU8  *ptr = data.Y + info.CropX + (info.CropY >> 1) * pitch;
 
-        FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, info.CropW, roi, COPY_SYS_TO_SYS);
+        FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
         bs->DataOffset += roi.width * roi.height;
         bs->DataLength -= roi.width * roi.height;
 
         ptr = data.UV + info.CropX + (info.CropY >> 1) * pitch;
 
         roi.height >>= 1;
-        FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, info.CropW, roi, COPY_SYS_TO_SYS);
+        FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
         bs->DataOffset += roi.width * roi.height;
         bs->DataLength -= roi.width * roi.height;
         return MFX_ERR_NONE;

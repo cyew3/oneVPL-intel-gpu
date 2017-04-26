@@ -2954,35 +2954,39 @@ mfxStatus MFXDecPipeline::Play()
         if (m_pSpl)
         {
             MPA_TRACE("ReadNextFrame");
-            if (m_bitstreamBuf.DataLength <= 4 && (MFX_ERR_NONE != (sts = m_pSpl->ReadNextFrame(m_bitstreamBuf))))
+            if (sts == MFX_ERR_MORE_DATA || m_bitstreamBuf.DataLength <= 4)
             {
-                //checking for all commands executed
-                if (m_commands.empty())
+                if (MFX_ERR_NONE != (sts = m_pSpl->ReadNextFrame(m_bitstreamBuf)))
                 {
-                    m_bitstreamBuf.PutBuffer(true);//say buffer that EOS reached in upstream
-                    bEOS = true;
+                    //checking for all commands executed
+                    if (m_commands.empty())
+                    {
+                        m_bitstreamBuf.PutBuffer(true);//say buffer that EOS reached in upstream
+                        bEOS = true;
+                    }
+                    else
+                    {
+                        m_bitstreamBuf.isNull = true;
+                        for (; sts != PIPELINE_ERR_STOPPED;)
+                        {
+                            sts = RunDecode(m_bitstreamBuf);
+                            if (MFX_ERR_NONE != sts)
+                                break;
+                        }
+                        m_bitstreamBuf.isNull = false;
+                        //TODO: redesign this to fix last frame missed if command gets executed due to stream finished processing
+                        (*m_commands.begin())->MarkAsReady();
+                        //also notify command about eos, some encdless commands should react on that
+                        (*m_commands.begin())->NotifyEOS();
+                        MFX_CHECK_STS(ProcessTrickCommands());
+                        continue;
+                    }
                 }
                 else
                 {
-                    m_bitstreamBuf.isNull = true;
-                    for(;sts != PIPELINE_ERR_STOPPED ;)
-                    {
-                        sts = RunDecode(m_bitstreamBuf);
-                        if (MFX_ERR_NONE != sts)
-                            break;
-                    }
-                    m_bitstreamBuf.isNull = false;
-                    //TODO: redesign this to fix last frame missed if command gets executed due to stream finished processing
-                    (*m_commands.begin())->MarkAsReady();
-                    //also notify command about eos, some encdless commands should react on that
-                    (*m_commands.begin())->NotifyEOS();
-                    MFX_CHECK_STS(ProcessTrickCommands());
-                    continue;
+                    if (!m_inParams.bVerbose)
+                        PipelineTraceSplFrame();
                 }
-            }else
-            {
-                if (!m_inParams.bVerbose)
-                    PipelineTraceSplFrame();
             }
         }
 
