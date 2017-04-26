@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -53,7 +53,7 @@ tsVideoDecoder::tsVideoDecoder(mfxU32 CodecId, bool useDefaults, mfxU32 plugin_i
         if(m_default && (plugin_id == MFX_MAKEFOURCC('C','A','P','T')))
         {
             m_pBitstream = 0;
-            if(g_tsImpl == MFX_IMPL_HARDWARE)
+            if(g_tsImpl & MFX_IMPL_HARDWARE)
             {
                 if(g_tsHWtype < MFX_HW_HSW)
                     m_sw_fallback = true;
@@ -175,6 +175,7 @@ mfxStatus tsVideoDecoder::Query()
 mfxStatus tsVideoDecoder::Query(mfxSession session, mfxVideoParam *in, mfxVideoParam *out)
 {
     TRACE_FUNC3(MFXVideoDECODE_Query, session, in, out);
+    IS_FALLBACK_EXPECTED(m_sw_fallback, g_tsStatus);
     g_tsStatus.check( MFXVideoDECODE_Query(session, in, out) );
     TS_TRACE(out);
 
