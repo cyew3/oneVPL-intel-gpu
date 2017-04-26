@@ -523,6 +523,15 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     return MFX_ERR_NONE;
 }
 
+mfxU32 CEncodingPipeline::FileFourCC2EncFourCC(mfxU32 fcc)
+{
+    // File reader automatically converts I420 and YV12 to NV12
+    if (fcc == MFX_FOURCC_I420 || fcc == MFX_FOURCC_YV12)
+        return MFX_FOURCC_NV12;
+    else
+        return fcc;
+}
+
 mfxStatus CEncodingPipeline::InitMfxVppParams(sInputParams *pInParams)
 {
     MSDK_CHECK_POINTER(pInParams,  MFX_ERR_NULL_PTR);
@@ -554,9 +563,7 @@ mfxStatus CEncodingPipeline::InitMfxVppParams(sInputParams *pInParams)
     // fill output frame info
     MSDK_MEMCPY_VAR(m_mfxVppParams.vpp.Out,&m_mfxVppParams.vpp.In, sizeof(mfxFrameInfo));
 
-    // File reader automatically converts MFX_FOURCC_I420 to NV12
-    m_mfxVppParams.vpp.In.FourCC    = m_InputFourCC == MFX_FOURCC_I420 ?
-        MFX_FOURCC_NV12 : m_InputFourCC;
+    m_mfxVppParams.vpp.In.FourCC    = FileFourCC2EncFourCC(m_InputFourCC);
 
     m_mfxVppParams.vpp.Out.FourCC    = pInParams->EncodeFourCC;
     m_mfxVppParams.vpp.In.ChromaFormat =  FourCCToChroma(m_mfxVppParams.vpp.In.FourCC);
@@ -1205,7 +1212,7 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     // or if different FourCC is set
     if (pParams->nWidth  != pParams->nDstWidth ||
         pParams->nHeight != pParams->nDstHeight ||
-        pParams->FileInputFourCC != pParams->EncodeFourCC)
+        FileFourCC2EncFourCC(pParams->FileInputFourCC) != pParams->EncodeFourCC)
     {
         m_pmfxVPP = new MFXVideoVPP(m_mfxSession);
         MSDK_CHECK_POINTER(m_pmfxVPP, MFX_ERR_MEMORY_ALLOC);

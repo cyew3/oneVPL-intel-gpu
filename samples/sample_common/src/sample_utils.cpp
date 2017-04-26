@@ -241,12 +241,13 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
         switch (m_ColorFormat) // color format of data in the input file
         {
         case MFX_FOURCC_I420:
+        case MFX_FOURCC_YV12:
             switch (pInfo.FourCC)
             {
             case MFX_FOURCC_NV12:
 
                 mfxU8 buf[2048]; // maximum supported chroma width for nv12
-                mfxU32 j;
+                mfxU32 j, dstOffset[2];
                 w /= 2;
                 h /= 2;
                 ptr = pData.UV + pInfo.CropX + (pInfo.CropY / 2) * pitch;
@@ -254,7 +255,16 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
                 {
                     return MFX_ERR_UNSUPPORTED;
                 }
-                // load U
+
+                if (m_ColorFormat == MFX_FOURCC_I420) {
+                    dstOffset[0] = 0;
+                    dstOffset[1] = 1;
+                } else {
+                    dstOffset[0] = 1;
+                    dstOffset[1] = 0;
+                }
+
+                // load first chroma plane: U (input == I420) or V (input == YV12)
                 for (i = 0; i < h; i++)
                 {
                     nBytesRead = (mfxU32)fread(buf, 1, w, m_files[vid]);
@@ -264,10 +274,11 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
                     }
                     for (j = 0; j < w; j++)
                     {
-                        ptr[i * pitch + j * 2] = buf[j];
+                        ptr[i * pitch + j * 2 + dstOffset[0]] = buf[j];
                     }
                 }
-                // load V
+
+                // load second chroma plane: V (input == I420) or U (input == YV12)
                 for (i = 0; i < h; i++)
                 {
 
@@ -279,7 +290,7 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
                     }
                     for (j = 0; j < w; j++)
                     {
-                        ptr[i * pitch + j * 2 + 1] = buf[j];
+                        ptr[i * pitch + j * 2 + dstOffset[1]] = buf[j];
                     }
                 }
 
@@ -289,8 +300,13 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
                 h /= 2;
                 pitch /= 2;
 
-                ptr  = pData.U + (pInfo.CropX / 2) + (pInfo.CropY / 2) * pitch;
-                ptr2 = pData.V + (pInfo.CropX / 2) + (pInfo.CropY / 2) * pitch;
+                if (m_ColorFormat == MFX_FOURCC_I420) {
+                    ptr  = pData.U + (pInfo.CropX / 2) + (pInfo.CropY / 2) * pitch;
+                    ptr2 = pData.V + (pInfo.CropX / 2) + (pInfo.CropY / 2) * pitch;
+                } else {
+                    ptr  = pData.V + (pInfo.CropX / 2) + (pInfo.CropY / 2) * pitch;
+                    ptr2 = pData.U + (pInfo.CropX / 2) + (pInfo.CropY / 2) * pitch;
+                }
 
                 for(i = 0; i < h; i++)
                 {
@@ -316,7 +332,6 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
                 return MFX_ERR_UNSUPPORTED;
             }
             break;
-        case MFX_FOURCC_YV12:
         case MFX_FOURCC_NV12:
         case MFX_FOURCC_P010:
         case MFX_FOURCC_P210:

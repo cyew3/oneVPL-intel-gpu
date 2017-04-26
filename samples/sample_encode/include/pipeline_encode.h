@@ -320,6 +320,8 @@ protected:
     virtual mfxStatus GetFreeTask(sTask **ppTask);
     virtual MFXVideoSession& GetFirstSession(){return m_mfxSession;}
     virtual MFXVideoENCODE* GetFirstEncoder(){return m_pmfxENC;}
+
+    virtual mfxU32 FileFourCC2EncFourCC(mfxU32 fcc);
 };
 
 #endif // __PIPELINE_ENCODE_H__
