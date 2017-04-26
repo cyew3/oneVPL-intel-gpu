@@ -224,6 +224,7 @@ mfxStatus VAAPIEncoder::QueryEncodeCaps(JpegEncCaps & caps)
     }
     else
     {
+#ifndef MFX_VAAPI_UPSTREAM
         // Configuration
         VAConfigAttrib attrib;
 
@@ -240,6 +241,10 @@ mfxStatus VAAPIEncoder::QueryEncodeCaps(JpegEncCaps & caps)
                               VAEntrypointEncPicture,
                               &attrib, 1);
         caps.MaxPicHeight     = attrib.value;
+#else
+        caps.MaxPicWidth  = 4096;
+        caps.MaxPicHeight = 4096;
+#endif
     }
 
     return MFX_ERR_NONE;
