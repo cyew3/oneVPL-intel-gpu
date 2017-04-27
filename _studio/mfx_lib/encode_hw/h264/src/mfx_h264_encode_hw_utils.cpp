@@ -101,15 +101,12 @@ namespace MfxHwH264Encode
             }
             else // MFX_IOPATTERN_IN_VIDEO_MEMORY || MFX_IOPATTERN_IN_OPAQUE_MEMORY
             {
-                mfxExtCodingOptionDDI * extDdi = GetExtBuffer(par);
-                numFrameMin = IsOn(extDdi->RefRaw)
-                    ? par.mfx.GopRefDist + par.mfx.NumRefFrame
-                    : par.mfx.GopRefDist;
-
                 numFrameMin = (mfxU16)AsyncRoutineEmulator(par).GetTotalGreediness() + par.AsyncDepth - 1;
 
-                if (extOpt2 && IsOn(extOpt2->UseRawRef))
-                    numFrameMin += par.mfx.NumRefFrame;
+                mfxExtCodingOptionDDI * extDdi = GetExtBuffer(par);
+                numFrameMin += IsOn(extDdi->RefRaw)
+                    ? par.mfx.NumRefFrame
+                    : 0;
 
                 // strange thing but for backward compatibility:
                 //   msdk needs to tell how many surfaces application will need for reordering
