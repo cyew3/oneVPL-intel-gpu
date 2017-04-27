@@ -49,7 +49,16 @@ public:
 
     mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
     {
-        const mfxExtCodingOption *pExtCodingOpt = (mfxExtCodingOption*)*(m_par.ExtParam);
+        mfxExtCodingOption *pExtCodingOpt = NULL;
+
+        for (int i = 0; i < m_par.NumExtParam; ++i)
+        {
+            if (m_par.ExtParam[i]->BufferId == MFX_EXTBUFF_CODING_OPTION)
+            {
+                pExtCodingOpt = reinterpret_cast<mfxExtCodingOption*>(m_par.ExtParam[i]);
+                break;
+            }
+        }
 
         if (m_par.mfx.FrameInfo.PicStruct & (MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_BFF))
         {
@@ -132,20 +141,8 @@ int TestSuite::RunTest(unsigned int id)
     SetFrameAllocator(m_session, m_pVAHandle);
     m_pFrameAllocator = m_pVAHandle;
 
-    mfxExtBuffer* bufCodOpt[1];
-
-    mfxExtCodingOption ext_coding_option;
-
-    //assign mfxExtCodingOption(mfxVideoParam)
-    memset(&ext_coding_option, 0, sizeof(mfxExtCodingOption));
-    ext_coding_option.Header.BufferId = MFX_EXTBUFF_CODING_OPTION;
-    ext_coding_option.Header.BufferSz = sizeof(mfxExtCodingOption);
-    ext_coding_option.AUDelimiter = tc.set_par.aud_delimiter;
-
-    bufCodOpt[0] = (mfxExtBuffer*)&ext_coding_option;
-
-    m_par.NumExtParam = 1;
-    m_par.ExtParam = bufCodOpt;
+    mfxExtCodingOption& extbuffer_CO = m_par;
+    extbuffer_CO.AUDelimiter = tc.set_par.aud_delimiter;
 
     mfxExtBuffer* bufFrCtrl[2];
 

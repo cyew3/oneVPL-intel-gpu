@@ -1450,6 +1450,8 @@ bool MfxHwH264Encode::IsRunTimeExtBufferIdSupported(MfxVideoParam const & video,
         || id == MFX_EXTBUFF_CODING_OPTION3
         || id == MFX_EXTBUFF_ENCODER_ROI
         || id == MFX_EXTBUFF_MBQP
+        || id == MFX_EXTBUFF_MOVING_RECTANGLES
+        || id == MFX_EXTBUFF_DIRTY_RECTANGLES
 #if MFX_VERSION >= 1023
         || id == MFX_EXTBUFF_MB_FORCE_INTRA
 #endif
