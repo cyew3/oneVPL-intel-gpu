@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\..\..\..\builder\MSDK.Common.props" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -99,7 +100,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\shared\include;..\..\..\shared\include;..\..\..\shared\umc\core\vm\include;..\..\..\shared\umc\core\vm_plus\include;..\..\..\..\..\mdp_msdk-api\include;..\..\..\shared\umc\core\umc\include;..\dispatcher\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\shared\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\..\..\..\mdp_msdk-api\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;..\dispatcher\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;VM_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -128,7 +129,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\shared\include;..\..\..\shared\include;..\..\..\shared\umc\core\vm\include;..\..\..\shared\umc\core\vm_plus\include;..\..\..\..\..\mdp_msdk-api\include;..\..\..\shared\umc\core\umc\include;..\dispatcher\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\shared\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\..\..\..\mdp_msdk-api\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;..\dispatcher\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -153,7 +154,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <AdditionalOptions>$(CPPFLAGS) %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\shared\include;..\..\..\shared\include;..\..\..\shared\umc\core\vm\include;..\..\..\shared\umc\core\vm_plus\include;..\..\..\..\..\mdp_msdk-api\include;..\..\..\shared\umc\core\umc\include;..\dispatcher\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\shared\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\..\..\..\mdp_msdk-api\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;..\dispatcher\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -181,7 +182,7 @@
     </Midl>
     <ClCompile>
       <AdditionalOptions>$(CPPFLAGS) %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\shared\include;..\..\..\shared\include;..\..\..\shared\umc\core\vm\include;..\..\..\shared\umc\core\vm_plus\include;..\..\..\..\..\mdp_msdk-api\include;..\..\..\shared\umc\core\umc\include;..\dispatcher\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\shared\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\..\..\..\mdp_msdk-api\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;..\dispatcher\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader />

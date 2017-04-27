@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\..\..\builder\MSDK.Common.props" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug_THM|Win32">
       <Configuration>Debug_THM</Configuration>
@@ -180,7 +181,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>include;..\shared\include;..\..\..\..\mdp_msdk-api\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\core\ipp\ia32\include;..\..\shared\umc\core\ipp\include;$(MfxIppIncludeDir);..\..\shared\umc\codec\scene_analyzer\include;..\..\shared\umc\io\umc_va\include;..\..\shared\umc\codec\color_space_converter\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;..\shared\include;..\..\..\..\mdp_msdk-api\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\ia32\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\codec\scene_analyzer\include;$(MSDK_STUDIO_ROOT)\shared\umc\io\umc_va\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Lib />
@@ -190,7 +191,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_THM|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>include;..\shared\include;..\..\..\..\mdp_msdk-api\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\core\ipp\ia32\include;..\..\shared\umc\core\ipp\include;$(MfxIppIncludeDir);..\..\shared\umc\codec\scene_analyzer\include;..\..\shared\umc\io\umc_va\include;..\..\shared\umc\codec\color_space_converter\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;..\shared\include;..\..\..\..\mdp_msdk-api\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\ia32\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\codec\scene_analyzer\include;$(MSDK_STUDIO_ROOT)\shared\umc\io\umc_va\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Lib />
@@ -203,7 +204,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>include;..\shared\include;..\..\..\..\mdp_msdk-api\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\core\ipp\ia32\include;..\..\shared\umc\core\ipp\include;$(MfxIppIncludeDir);..\..\shared\umc\codec\scene_analyzer\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;..\shared\include;..\..\..\..\mdp_msdk-api\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\ia32\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\codec\scene_analyzer\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Lib />
@@ -216,7 +217,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>include;..\shared\include;..\..\..\..\mdp_msdk-api\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\core\ipp\ia32\include;..\..\shared\umc\core\ipp\include;$(MfxIppIncludeDir);..\..\shared\umc\codec\scene_analyzer\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;..\shared\include;..\..\..\..\mdp_msdk-api\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\ia32\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\codec\scene_analyzer\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Lib />
@@ -226,7 +227,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>include;..\shared\include;..\..\..\..\mdp_msdk-api\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\core\ipp\ia32\include;..\..\shared\umc\core\ipp\include;$(MfxIppIncludeDir);..\..\shared\umc\codec\scene_analyzer\include;..\..\shared\umc\io\umc_va\include;..\..\shared\umc\codec\color_space_converter\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;..\shared\include;..\..\..\..\mdp_msdk-api\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\ia32\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\codec\scene_analyzer\include;$(MSDK_STUDIO_ROOT)\shared\umc\io\umc_va\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
     </ClCompile>
@@ -237,7 +238,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_THM|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>include;..\shared\include;..\..\..\..\mdp_msdk-api\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\core\ipp\ia32\include;..\..\shared\umc\core\ipp\include;$(MfxIppIncludeDir);..\..\shared\umc\codec\scene_analyzer\include;..\..\shared\umc\io\umc_va\include;..\..\shared\umc\codec\color_space_converter\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;..\shared\include;..\..\..\..\mdp_msdk-api\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\ia32\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\codec\scene_analyzer\include;$(MSDK_STUDIO_ROOT)\shared\umc\io\umc_va\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>
       </SDLCheck>
@@ -249,7 +250,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>include;..\shared\include;..\..\..\..\mdp_msdk-api\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\core\ipp\ia32\include;..\..\shared\umc\core\ipp\include;$(MfxIppIncludeDir);..\..\shared\umc\codec\scene_analyzer\include;..\..\shared\umc\io\umc_va\include;..\..\shared\umc\codec\color_space_converter\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;..\shared\include;..\..\..\..\mdp_msdk-api\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\ia32\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\codec\scene_analyzer\include;$(MSDK_STUDIO_ROOT)\shared\umc\io\umc_va\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Lib />
@@ -262,7 +263,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>include;..\shared\include;..\..\..\..\mdp_msdk-api\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\core\ipp\ia32\include;..\..\shared\umc\core\ipp\include;$(MfxIppIncludeDir);..\..\shared\umc\codec\scene_analyzer\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;..\shared\include;..\..\..\..\mdp_msdk-api\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\ia32\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\codec\scene_analyzer\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>
       </AdditionalOptions>
@@ -278,7 +279,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>include;..\shared\include;..\..\..\..\mdp_msdk-api\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\core\ipp\ia32\include;..\..\shared\umc\core\ipp\include;$(MfxIppIncludeDir);..\..\shared\umc\codec\scene_analyzer\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;..\shared\include;..\..\..\..\mdp_msdk-api\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\ia32\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\codec\scene_analyzer\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>
       </AdditionalOptions>
@@ -295,7 +296,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>include;..\shared\include;..\..\..\..\mdp_msdk-api\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\core\ipp\ia32\include;..\..\shared\umc\core\ipp\include;$(MfxIppIncludeDir);..\..\shared\umc\codec\scene_analyzer\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;..\shared\include;..\..\..\..\mdp_msdk-api\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\ia32\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\codec\scene_analyzer\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>-wd170  /QxCORE-AVX2</AdditionalOptions>
     </ClCompile>
