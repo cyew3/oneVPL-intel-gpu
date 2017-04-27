@@ -795,6 +795,27 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
 
             argv++;
         }
+        else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-RepartitionCheckEnable"), VM_STRING("")))
+        {
+            MFX_CHECK(1 + argv != argvEnd);
+            mfxU16 value = MFX_CODINGOPTION_UNKNOWN;
+            MFX_PARSE_STR_ON_OFF(value, argv[1]);
+            mfxExtCodingOption3 *pExt = NULL;
+            MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_CODING_OPTION3);
+            if (!ppExt)
+            {
+                pExt = new mfxExtCodingOption3();
+                pExt->Header.BufferId = MFX_EXTBUFF_CODING_OPTION3;
+                pExt->Header.BufferSz = sizeof(mfxExtCodingOption3);
+            }
+            else
+            {
+                pExt = reinterpret_cast<mfxExtCodingOption3 *>(ppExt->get());
+            }
+            pExt->RepartitionCheckEnable = value;
+            m_ExtBuffers.get()->push_back(pExt);
+            argv++;
+        }
         else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-VuiVclHrdParameters"), VM_STRING("")))
         {
             mfxU32 on;
@@ -991,19 +1012,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             MFX_CHECK(1 + argv != argvEnd);
 
             mfxU16 value = MFX_CODINGOPTION_UNKNOWN;
-            if (!vm_string_stricmp(argv[1], VM_STRING("on")) || !vm_string_stricmp(argv[1], VM_STRING("1")) || !vm_string_stricmp(argv[1], VM_STRING("16")))
-            {
-                value = MFX_CODINGOPTION_ON;
-            }
-            else if (!vm_string_stricmp(argv[1], VM_STRING("off")) || !vm_string_stricmp(argv[1], VM_STRING("0")) || !vm_string_stricmp(argv[1], VM_STRING("32")))
-            {
-                value = MFX_CODINGOPTION_OFF;
-            }
-            else
-            {
-                MFX_CHECK_SET_ERR(!VM_STRING("Wrong OPT_TRI_STATE"), PE_CHECK_PARAMS, MFX_ERR_UNKNOWN);
-            }
-
+            MFX_PARSE_STR_ON_OFF(value, argv[1]);
             mfxExtCodingOption3 *pExt = NULL;
             MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_CODING_OPTION3);
 

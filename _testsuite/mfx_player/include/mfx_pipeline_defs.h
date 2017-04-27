@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2017 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -493,6 +493,22 @@ template <class T> bool IsZero(T & Struct) {
 {\
     vm_char *stopCharacter;\
     MFX_CHECK((mfx_silent_assign(int_value, vm_string_strtol(string_value, &stopCharacter, 10)), stopCharacter != string_value));\
+}
+
+#define MFX_PARSE_STR_ON_OFF(int_value, string_value)\
+{\
+    if (!vm_string_stricmp(argv[1], VM_STRING("on")) || !vm_string_stricmp(argv[1], VM_STRING("1")) || !vm_string_stricmp(argv[1], VM_STRING("16")))\
+    {\
+        int_value = MFX_CODINGOPTION_ON;\
+    }\
+    else if (!vm_string_stricmp(argv[1], VM_STRING("off")) || !vm_string_stricmp(argv[1], VM_STRING("0")) || !vm_string_stricmp(argv[1], VM_STRING("32")))\
+    {\
+        int_value = MFX_CODINGOPTION_OFF;\
+    }\
+    else\
+    {\
+        MFX_CHECK_SET_ERR(!VM_STRING("Wrong OPT_TRI_STATE"), PE_CHECK_PARAMS, MFX_ERR_UNKNOWN);\
+    }\
 }
 
 //clear error status in pipeline
