@@ -2980,7 +2980,7 @@ mfxStatus CTranscodingPipeline::CalculateNumberOfReqFrames(mfxFrameAllocRequest 
 
         MSDK_ZERO_MEMORY(PreEncRequest);
         sts = m_pmfxPreENC.get()->QueryIOSurf(&m_mfxPreEncParams, &PreEncRequest);
-        MSDK_CHECK_STATUS(sts, "m_pmfxPreENC.get failed");
+        MSDK_CHECK_STATUS(sts, "m_pmfxPreENC.get()->QueryIOSurf failed");
 
         if (!CheckAsyncDepth(PreEncRequest, m_mfxPreEncParams.AsyncDepth))
             return MFX_ERR_MEMORY_ALLOC;
@@ -2993,7 +2993,7 @@ mfxStatus CTranscodingPipeline::CalculateNumberOfReqFrames(mfxFrameAllocRequest 
         MSDK_ZERO_MEMORY(EncRequest);
 
         sts = m_pmfxENC.get()->QueryIOSurf(&m_mfxEncParams, &EncRequest);
-        MSDK_CHECK_STATUS(sts, "m_pmfxENC.get failed");
+        MSDK_CHECK_STATUS(sts, "m_pmfxENC.get()->QueryIOSurf failed");
 
         if (!CheckAsyncDepth(EncRequest, m_mfxEncParams.AsyncDepth))
             return MFX_ERR_MEMORY_ALLOC;
@@ -3842,21 +3842,30 @@ mfxStatus SafetySurfaceBuffer::WaitForSurfaceInsertion(mfxU32 msec)
 
 void SafetySurfaceBuffer::AddSurface(ExtendedSurface Surf)
 {
-    AutomaticMutex  guard(m_mutex);
+    bool isBufferingAllowed = false;
 
-    if(m_IsBufferingAllowed)
     {
-        SurfaceDescriptor sDescriptor;
-        // Locked is used to signal when we can free surface
-        sDescriptor.Locked     = 1;
-        sDescriptor.ExtSurface = Surf;
+        AutomaticMutex  guard(m_mutex);
 
-        if (Surf.pSurface)
+        isBufferingAllowed = m_IsBufferingAllowed;
+        if (isBufferingAllowed)
         {
-            IncreaseReference(&Surf.pSurface->Data);
-        }
+            SurfaceDescriptor sDescriptor;
+            // Locked is used to signal when we can free surface
+            sDescriptor.Locked = 1;
+            sDescriptor.ExtSurface = Surf;
 
-        m_SList.push_back(sDescriptor);
+            if (Surf.pSurface)
+            {
+                IncreaseReference(&Surf.pSurface->Data);
+            }
+
+            m_SList.push_back(sDescriptor);
+        }
+    }
+
+    if (isBufferingAllowed)
+    {
         pInsEvent->Signal();
     }
 
@@ -3884,7 +3893,7 @@ mfxStatus SafetySurfaceBuffer::GetSurface(ExtendedSurface &Surf)
 
 mfxStatus SafetySurfaceBuffer::ReleaseSurface(mfxFrameSurface1* pSurf)
 {
-    AutomaticMutex guard(m_mutex);
+    m_mutex.Lock();
     std::list<SurfaceDescriptor>::iterator it;
     for (it = m_SList.begin(); it != m_SList.end(); it++)
     {
@@ -3896,11 +3905,19 @@ mfxStatus SafetySurfaceBuffer::ReleaseSurface(mfxFrameSurface1* pSurf)
             if (0 == it->Locked)
             {
                 m_SList.erase(it);
+                m_mutex.Unlock();
+
+                // event operation should be out of synced context
                 pRelEvent->Signal();
+            }
+            else
+            {
+                m_mutex.Unlock();
             }
             return MFX_ERR_NONE;
         }
     }
+    m_mutex.Unlock();
     return MFX_ERR_UNKNOWN;
 
 } // mfxStatus SafetySurfaceBuffer::ReleaseSurface(mfxFrameSurface1* pSurf)
