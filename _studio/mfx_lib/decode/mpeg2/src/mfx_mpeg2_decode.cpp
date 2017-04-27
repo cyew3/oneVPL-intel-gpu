@@ -3609,13 +3609,6 @@ mfxStatus VideoDECODEMPEG2Internal_SW::DecodeFrameCheck(mfxBitstream *bs,
 {
     int disp_index = -1;
 
-    bool isField = false;
-    isField = !m_implUmc->IsFramePictureStructure(m_task_num);
-
-    if (!isField && (dec_field_count & 1))
-    {
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
-    }
     if (m_task_num >= DPB * ((dec_field_count & 1) + 1))
     {
         return MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -3735,6 +3728,14 @@ mfxStatus VideoDECODEMPEG2Internal_SW::DecodeFrameCheck(mfxBitstream *bs,
         res = m_implUmc->GetInfo(&m_vdPar);
 
         mfxStatus sts = UpdateCurrVideoParams(surface_work, m_task_num);
+
+        bool isField = false;
+        isField = !m_implUmc->IsFramePictureStructure(m_task_num);
+
+        if (!isField && (dec_field_count & 1))
+        {
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+        }
 
         if (!(dec_field_count & 1))
         {
