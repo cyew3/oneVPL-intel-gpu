@@ -537,7 +537,61 @@ bool MFX_CDECL MFX_Utility::IsBugSurfacePoolApplicable(eMFXHWType hwtype, mfxVid
 }
 
 inline
-mfxU32 CalculateFourcc(int codecProfile, mfxFrameInfo const* frameInfo)
+bool CheckChromaFormat(mfxU16 profile, mfxU16 format)
+{
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    VM_ASSERT(!(profile > MFX_PROFILE_HEVC_REXT));
+#else
+    VM_ASSERT(!(profile > MFX_PROFILE_HEVC_MAINSP));
+#endif
+
+    static const mfxU16 minmax[][2] =
+    {
+        { MFX_CHROMAFORMAT_YUV400, MFX_CHROMAFORMAT_YUV444 }, //MFX_PROFILE_UNKNOWN
+        { MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV420 }, //MFX_PROFILE_HEVC_MAIN
+        { MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV420 }, //MFX_PROFILE_HEVC_MAIN10
+        { MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV420 }, //MFX_PROFILE_HEVC_MAINSP
+#ifndef MFX_VA
+        { MFX_CHROMAFORMAT_YUV400, MFX_CHROMAFORMAT_YUV422 }, //MFX_PROFILE_HEVC_REXT
+#elif defined(PRE_SI_TARGET_PLATFORM_GEN11)
+        { MFX_CHROMAFORMAT_YUV400, MFX_CHROMAFORMAT_YUV444 }, //MFX_PROFILE_HEVC_REXT
+#endif
+    };
+
+    return
+        !(format < minmax[profile][0]) &&
+        !(format > minmax[profile][1])
+        ;
+}
+
+inline
+bool CheckBitDepth(mfxU16 profile, mfxU16 bit_depth)
+{
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    VM_ASSERT(!(profile > MFX_PROFILE_HEVC_REXT));
+#else
+    VM_ASSERT(!(profile > MFX_PROFILE_HEVC_MAINSP));
+#endif
+
+    static const mfxU16 minmax[][2] =
+    {
+        { 8, 12 }, //MFX_PROFILE_UNKNOWN
+        { 8,  8 }, //MFX_PROFILE_HEVC_MAIN
+        { 8, 10 }, //MFX_PROFILE_HEVC_MAIN10
+        { 8,  8 }, //MFX_PROFILE_HEVC_MAINSP
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+        { 8, 10 }, //MFX_PROFILE_HEVC_REXT (10b max for Gen11)
+#endif
+    };
+
+    return
+        !(bit_depth < minmax[profile][0]) &&
+        !(bit_depth > minmax[profile][1])
+        ;
+}
+
+inline
+mfxU32 CalculateFourcc(mfxU16 codecProfile, mfxFrameInfo const* frameInfo)
 {
     //map profile + chroma fmt + bit depth => fcc
     //Main   - [4:2:0], [8] bit
@@ -547,17 +601,10 @@ mfxU32 CalculateFourcc(int codecProfile, mfxFrameInfo const* frameInfo)
     if (codecProfile > MFX_PROFILE_HEVC_REXT)
         return 0;
 
-#ifndef MFX_VA
-    if (frameInfo->ChromaFormat > MFX_CHROMAFORMAT_YUV422)
-#elif defined(PRE_SI_TARGET_PLATFORM_GEN11)
-    if (frameInfo->ChromaFormat > MFX_CHROMAFORMAT_YUV444)
-#else
-    if (frameInfo->ChromaFormat > MFX_CHROMAFORMAT_YUV420)
-#endif
+    if (!CheckChromaFormat(codecProfile, frameInfo->ChromaFormat))
         return 0;
 
-    if (frameInfo->BitDepthLuma < 8 ||
-        frameInfo->BitDepthLuma > 10)
+    if (!CheckBitDepth(codecProfile, frameInfo->BitDepthLuma))
         return 0;
 
     //map chroma fmt & bit depth onto fourcc (NOTE: we currently don't support bit depth above 10 bit)
@@ -1172,14 +1219,7 @@ mfxStatus MFX_CDECL MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, 
         }
 
         if (in->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV400 ||
-            in->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV420
-#ifndef MFX_VA
-            || in->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422
-#elif defined(PRE_SI_TARGET_PLATFORM_GEN11)
-            || in->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422
-            || in->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV444
-#endif
-            )
+            CheckChromaFormat(in->mfx.CodecProfile, in->mfx.FrameInfo.ChromaFormat))
             out->mfx.FrameInfo.ChromaFormat = in->mfx.FrameInfo.ChromaFormat;
         else
             sts = MFX_ERR_UNSUPPORTED;
@@ -1240,15 +1280,14 @@ mfxStatus MFX_CDECL MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, 
         }
 
         out->mfx.FrameInfo.BitDepthLuma = in->mfx.FrameInfo.BitDepthLuma;
-
-        if (in->mfx.FrameInfo.BitDepthLuma && (in->mfx.FrameInfo.BitDepthLuma < 8 || in->mfx.FrameInfo.BitDepthLuma > 16))
+        if (in->mfx.FrameInfo.BitDepthLuma && !CheckBitDepth(in->mfx.CodecProfile, in->mfx.FrameInfo.BitDepthLuma))
         {
             out->mfx.FrameInfo.BitDepthLuma = 0;
             sts = MFX_ERR_UNSUPPORTED;
         }
 
         out->mfx.FrameInfo.BitDepthChroma = in->mfx.FrameInfo.BitDepthChroma;
-        if (in->mfx.FrameInfo.BitDepthChroma && (in->mfx.FrameInfo.BitDepthChroma < 8 || in->mfx.FrameInfo.BitDepthChroma > 16))
+        if (in->mfx.FrameInfo.BitDepthChroma && !CheckBitDepth(in->mfx.CodecProfile, in->mfx.FrameInfo.BitDepthChroma))
         {
             out->mfx.FrameInfo.BitDepthChroma = 0;
             sts = MFX_ERR_UNSUPPORTED;
