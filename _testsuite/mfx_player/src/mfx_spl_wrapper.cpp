@@ -22,6 +22,7 @@ File Name: .h
 #include "umc_threaded_demuxer.h"
 #include "umc_ivf_splitter.h"
 #include "umc_fio_reader.h"
+#include "umc_file_reader.h"
 #include "umc_corruption_reader.h"
 #include "mfx_frame_constructor.h"
 #include "mfxjpeg.h"
@@ -508,7 +509,7 @@ mfxStatus UMCSplWrapper::SelectDataReader(const vm_char * strFileName)
     //creating generic reader
     {
         FileReaderParams   *pFileReaderParams;
-        MFX_CHECK_WITH_ERR((pReader.reset(new FIOReader()), NULL != pReader.get()), MFX_ERR_MEMORY_ALLOC);
+        MFX_CHECK_WITH_ERR((pReader.reset(new FileReader()), NULL != pReader.get()), MFX_ERR_MEMORY_ALLOC);
         MFX_CHECK_WITH_ERR((pParams.reset(pFileReaderParams = new FileReaderParams()), NULL != pParams.get()), MFX_ERR_MEMORY_ALLOC);
 
         pFileReaderParams->m_portion_size = 0;
