@@ -362,7 +362,7 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_AYUV>::test_cases[] =
     {/*25*/ MFX_ERR_NONE,
         { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.CodecProfile, {MFX_PROFILE_HEVC_REXT} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV444} },
-          { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_YUY2} } }
+          { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_AYUV} } }
     },
 
     {/*26*/ MFX_ERR_NONE,
@@ -635,7 +635,7 @@ struct TestSuiteChoice
 
 TS_REG_TEST_SUITE(hevcd_query,    (TestSuiteSpec<MFX_FOURCC_NV12, 30>::RunTest), TestSuiteExt<MFX_FOURCC_NV12>::n_cases);
 TS_REG_TEST_SUITE(hevcd_422_query, TestSuiteExt<MFX_FOURCC_YUY2>::RunTest, TestSuiteExt<MFX_FOURCC_YUY2>::n_cases);
-//TS_REG_TEST_SUITE(hevcd_444_query, TestSuiteExt<MFX_FOURCC_AYUV>::RunTest, TestSuiteExt<MFX_FOURCC_AYUV>::n_cases);
+TS_REG_TEST_SUITE(hevcd_444_query, TestSuiteExt<MFX_FOURCC_AYUV>::RunTest, TestSuiteExt<MFX_FOURCC_AYUV>::n_cases);
 
 TS_REG_TEST_SUITE(hevc10d_query,    (TestSuiteSpec<MFX_FOURCC_P010, 29>::RunTest), TestSuiteExt<MFX_FOURCC_P010>::n_cases);
 TS_REG_TEST_SUITE(hevc10d_422_query, (TestSuiteChoice<MFX_FOURCC_P210, MFX_FOURCC_Y210>::RunTest), (TestSuiteChoice<MFX_FOURCC_P210, MFX_FOURCC_Y210>::Count()));
