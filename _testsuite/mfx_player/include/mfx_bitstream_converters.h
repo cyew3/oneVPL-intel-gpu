@@ -290,13 +290,13 @@ public:
 
         IppiSize roi = { info.CropW*2, info.CropH };
         mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
-        mfxU8  *ptr = data.Y + info.CropX + (info.CropY >> 1) * pitch;
+        mfxU8  *ptr = data.Y + (info.CropX * 2) + info.CropY * pitch;
 
         FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
         bs->DataOffset += roi.width * roi.height;
         bs->DataLength -= roi.width * roi.height;
 
-        ptr = data.UV + info.CropX + (info.CropY >> 1) * pitch;
+        ptr = data.UV + (info.CropX * 2) + (info.CropY >> 1) * pitch;
 
         roi.height >>= 1;
         FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
@@ -318,58 +318,32 @@ public:
         mfxFrameData &data = surface->Data;
         mfxFrameInfo &info = surface->Info;
 
+        if (bs->DataLength < GetMinPlaneSize(info))
+        {
+            return MFX_ERR_MORE_DATA;
+        }
+
 #if defined(LINUX32) || defined (LINUX64)  
         // on Windows surfaces comes zero-initialized, on Linux have to clear non-aligned stream boundaries
         memset(data.Y, 0, info.Width * info.Height * 2);
         memset(data.UV, 0, info.Width * info.Height );
 #endif
 
-        mfxU32 planeSize;
-        mfxU32 w, h, pitch;
-        mfxU8  *ptr;
+        IppiSize roi = { info.CropW * 2, info.CropH };
+        mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
+        mfxU8  *ptr = data.Y + (info.CropX * 2) + info.CropY * pitch;
 
-        w = info.CropW * 2;
-        h = info.CropH;
-        pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
+        FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
+        bs->DataOffset += roi.width * roi.height;
+        bs->DataLength -= roi.width * roi.height;
 
-        // load Y
-        ptr = data.Y + info.CropX + (info.CropY >> 1) * pitch;
-        if (pitch == w)
-        {
-            //we can read whole plane directly to surface
-            planeSize  = w * h;
-            MFX_CHECK_WITH_ERR(planeSize == BSUtil::MoveNBytes(ptr, bs, planeSize), MFX_ERR_MORE_DATA);
-        }
-        else
-        {
-            for (mfxU32 i = 0; i < h; i++) 
-            {
-                MFX_CHECK_WITH_ERR(w == BSUtil::MoveNBytes(ptr + i * pitch, bs, w), MFX_ERR_MORE_DATA);
-            }
-        }
+        ptr = data.UV + (info.CropX * 2) + info.CropY * pitch;
 
-        // load UV
-        h = info.CropH;
-        ptr = data.UV + info.CropX + (info.CropY >> 1) * pitch;
-        if (pitch == w)
-        {
-            //we can read whole plane directly to surface
-            planeSize  = w * h;
-            MFX_CHECK_WITH_ERR(planeSize == BSUtil::MoveNBytes(ptr, bs, planeSize), MFX_ERR_MORE_DATA);
-        }
-        else
-        {
-            for (mfxU32 i = 0; i < h; i++) 
-            {
-                MFX_CHECK_WITH_ERR(w == BSUtil::MoveNBytes(ptr + i * pitch, bs, w ), MFX_ERR_MORE_DATA);
-            }
-        }
-
+        FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
+        bs->DataOffset += roi.width * roi.height;
+        bs->DataLength -= roi.width * roi.height;
         return MFX_ERR_NONE;
     }
-
-protected:
-    
 };
 
 template <>
