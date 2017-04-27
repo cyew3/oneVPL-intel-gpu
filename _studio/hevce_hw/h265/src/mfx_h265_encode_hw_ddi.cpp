@@ -135,7 +135,6 @@ mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, MFXCoreInterface* core, GUID guid
 
     if (pltfm.CodeName >= MFX_PLATFORM_CANNONLAKE)
     {
-        caps.SliceStructure = 2;    // default 4 is not supported now
         caps.ROIDeltaQPSupport = 1; // 0 is now on CNL !!!
     }
 

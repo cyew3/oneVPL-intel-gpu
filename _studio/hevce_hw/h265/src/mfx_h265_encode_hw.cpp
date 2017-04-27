@@ -616,8 +616,8 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
             sts = LoadSPSPPS(tmp, pSPSPPS);
             MFX_CHECK_STS(sts);
 
-             sts = CheckHeaders(tmp, caps);
-             MFX_CHECK_STS(sts);
+            sts = CheckHeaders(tmp, caps);
+            MFX_CHECK_STS(sts);
         }
 
         mfxExtEncodedSlicesInfo* pSliceInfo = ExtBuffer::Get(*in);

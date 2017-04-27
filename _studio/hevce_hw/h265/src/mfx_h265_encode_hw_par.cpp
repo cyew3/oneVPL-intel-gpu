@@ -457,6 +457,12 @@ mfxU16 MakeSlices(MfxVideoParam& par, mfxU32 SliceStructure)
     {
         nSlice = Max(nSlice, nTile);
     }
+
+    if (par.m_platform.CodeName >= MFX_PLATFORM_ICELAKE) {
+        if (nTile == 1)
+            SliceStructure = 2;
+    }
+
 #endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
 
     par.m_slice.resize(0);
