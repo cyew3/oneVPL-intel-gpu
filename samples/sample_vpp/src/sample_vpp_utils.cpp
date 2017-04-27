@@ -1856,6 +1856,7 @@ mfxStatus GeneralWriter::Init(
 #else
             {
                 msdk_strncopy_s(fname, MSDK_MAX_FILENAME_LEN, strFileName, MSDK_MAX_FILENAME_LEN - 1);
+                fname[MSDK_MAX_FILENAME_LEN - 1] = 0;
                 char* pFound = strrchr(fname,'.');
                 if(pFound)
                 {

@@ -297,6 +297,7 @@ namespace TranscodingSample
               , ofile(stdout)
             {
                 msdk_strncopy_s(bufDir, MAX_PREF_LEN, dir, MAX_PREF_LEN - 1);
+                bufDir[MAX_PREF_LEN - 1] = 0;
             }
 
             ~CIOStat()
@@ -313,6 +314,7 @@ namespace TranscodingSample
                 if (dir)
                 {
                     msdk_strncopy_s(bufDir, MAX_PREF_LEN, dir, MAX_PREF_LEN - 1);
+                    bufDir[MAX_PREF_LEN - 1] = 0;
                 }
             }
 

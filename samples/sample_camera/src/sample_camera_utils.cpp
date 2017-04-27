@@ -317,6 +317,8 @@ mfxStatus CARGB16VideoReader::LoadNextFrameSequential(mfxFrameData* pData, mfxFr
 
 mfxStatus CBufferedVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInfo, mfxU32 bayerType)
 {
+    bayerType; pInfo;
+
     pData->Y16 = buffer[nCurrentFrame];
     pData->FrameOrder = nCurrentFrame;
     nCurrentFrame++;

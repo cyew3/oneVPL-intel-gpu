@@ -33,8 +33,9 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include "plugin_loader.h"
 
-// let's use std::max instead
+// let's use std::max and std::min instead
 #undef max
+#undef min
 
 using namespace TranscodingSample;
 
@@ -1353,7 +1354,7 @@ void CTranscodingPipeline::FillMBQPBuffer(mfxExtMBQP &qpMap, mfxU16 pictStruct)
 {
     if (pictStruct == MFX_PICSTRUCT_PROGRESSIVE)
     {
-        mfxI8 fQP = (m_nSubmittedFramesNum % m_GOPSize) ? m_QPforP : m_QPforI;
+        mfxI8 fQP = (mfxI8)((m_nSubmittedFramesNum % m_GOPSize) ? m_QPforP : m_QPforI);
         std::memset(qpMap.QP, fQP, qpMap.NumQPAlloc);
 
         if (m_ROIData.size() > m_nSubmittedFramesNum)
@@ -1367,9 +1368,13 @@ void CTranscodingPipeline::FillMBQPBuffer(mfxExtMBQP &qpMap, mfxU16 pictStruct)
                         b = (roi.ROI[i].Bottom + 15) >> 4;
                 mfxI8   qp_delta = (mfxI8)roi.ROI[i].DeltaQP;
 
-                for (mfxU8 k=t; k<b; k++)
-                    for (mfxU8 j=l; j<r; j++)
-                        qpMap.QP[k*m_QPmapWidth +j] = fQP + qp_delta;
+                for (mfxU32 k = t; k < b; k++)
+                {
+                    for (mfxU32 j = l; j < r; j++)
+                    {
+                        qpMap.QP[k*m_QPmapWidth + j] = fQP + qp_delta;
+                    }
+                }
             }
         }
     }
@@ -1395,9 +1400,9 @@ void CTranscodingPipeline::FillMBQPBuffer(mfxExtMBQP &qpMap, mfxU16 pictStruct)
                             r = (roi.ROI[i].Right + 15) >> 4,
                             b = (roi.ROI[i].Bottom + 31) >> 5;
                     mfxI8   qp_delta = (mfxI8)roi.ROI[i].DeltaQP;
-                    mfxU8   roi_qp = std::min(std::max(mfxI8(fQP[fld]) + qp_delta, 0), 51);
-                    for (mfxU8 k=t; k<b; k++)
-                        for (mfxU8 j=l; j<r; j++)
+                    mfxU8   roi_qp = (mfxU8)std::min(std::max(mfxI8(fQP[fld]) + qp_delta, 0), 51);
+                    for (mfxU32 k=t; k<b; k++)
+                        for (mfxU32 j=l; j<r; j++)
                             qpMap.QP[fOff[fld] + k*m_QPmapWidth +j] = roi_qp;
                 }
             }
@@ -1405,7 +1410,7 @@ void CTranscodingPipeline::FillMBQPBuffer(mfxExtMBQP &qpMap, mfxU16 pictStruct)
     }
     else
     {
-        mfxI8 fQP = (m_nSubmittedFramesNum % m_GOPSize) ? m_QPforP : m_QPforI;
+        mfxI8 fQP = (mfxI8)((m_nSubmittedFramesNum % m_GOPSize) ? m_QPforP : m_QPforI);
         std::memset(qpMap.QP, fQP, qpMap.NumQPAlloc);
     }
 }
@@ -1420,8 +1425,6 @@ void CTranscodingPipeline::SetEncCtrlRT(ExtendedSurface& extSurface, mfxEncodeCt
         extSurface.pEncCtrl = &extSurface.pAuxCtrl->encCtrl;
 
 #if _MSDK_API >= MSDK_API(1,22)
-    mfxU32  NumExtParam = 0;
-
     if (extSurface.pSurface)
     {
         int i, idx = -1;
@@ -3445,7 +3448,7 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
         {
             mfxVideoParam enc_par;
             MSDK_ZERO_MEMORY(enc_par);
-            mfxStatus sts = m_pmfxENC->GetVideoParam(&enc_par);
+            sts = m_pmfxENC->GetVideoParam(&enc_par);
             MSDK_CHECK_STATUS(sts, "m_pmfxENC->GetVideoParam failed");
 
             if(enc_par.mfx.GopRefDist != 1)
@@ -3467,7 +3470,7 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
             }
         }
 
-        mfxU32 NumExtBufs = m_pEncPool->size();
+        mfxU32 NumExtBufs = (mfxU32)m_pEncPool->size();
 
         m_extBuffPtrStorage.reserve(NumExtBufs*MAX_EXTBUF_CNT);
 
@@ -3477,7 +3480,7 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
 
             m_bufExtMBQP.reserve(NumExtBufs);
             m_qpMapStorage.reserve(NumExtBufs*NumQPAlloc);
-            for (int i=0; i<NumExtBufs; i++)
+            for (mfxU32 i=0; i<NumExtBufs; i++)
             {
                 m_bufExtMBQP[i].Header.BufferId = MFX_EXTBUFF_MBQP;
                 m_bufExtMBQP[i].Header.BufferSz = sizeof(mfxExtMBQP);

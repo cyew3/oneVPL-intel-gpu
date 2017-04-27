@@ -1203,6 +1203,7 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
                 msdk_strncopy_s(pParams->strSrcFile, MSDK_MAX_FILENAME_LEN, strInput[i], MSDK_MAX_FILENAME_LEN - 1);
+                pParams->strSrcFile[MSDK_MAX_FILENAME_LEN - 1] = 0;
             }
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-o")))
             {
@@ -1217,6 +1218,7 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
                 msdk_strncopy_s(pParams->strPerfFile, MSDK_MAX_FILENAME_LEN, strInput[i], MSDK_MAX_FILENAME_LEN - 1);
+                pParams->strPerfFile[MSDK_MAX_FILENAME_LEN - 1] = 0;
             }
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-scc")))
             {
@@ -1370,6 +1372,7 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
                 msdk_strncopy_s(pParams->strPlgGuid, MSDK_MAX_FILENAME_LEN, strInput[i],MSDK_MAX_FILENAME_LEN-1);
+                pParams->strPlgGuid[MSDK_MAX_FILENAME_LEN - 1] = 0;
                 pParams->need_plugin = true;
             }
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-plugin_guid")))
@@ -1377,6 +1380,7 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
                 msdk_strncopy_s(pParams->strPlgGuid, MSDK_MAX_FILENAME_LEN, strInput[i],MSDK_MAX_FILENAME_LEN-1);
+                pParams->strPlgGuid[MSDK_MAX_FILENAME_LEN - 1] = 0; 
                 pParams->need_plugin = true;
             }
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-extapi")) )
