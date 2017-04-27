@@ -883,6 +883,9 @@ mfxStatus VideoENC_PREENC::RunFrameVmeENCCheck(
 
     mfxU32 fieldCount = (picStruct[ENC] & MFX_PICSTRUCT_PROGRESSIVE) ? 1 : 2;
 
+    mfxU32 SizeInMB = input->InSurface->Info.Width * input->InSurface->Info.Height / 256;
+    mfxU32 NumMB = (MFX_PICSTRUCT_PROGRESSIVE & picStruct[ENC]) ? SizeInMB : SizeInMB / 2;
+
     for (mfxU32 field = 0; field < fieldCount; ++field)
     {
         mfxExtFeiPreEncCtrl* feiCtrl = GetExtBufferFEI(input, field);
@@ -905,6 +908,20 @@ mfxStatus VideoENC_PREENC::RunFrameVmeENCCheck(
                           feiCtrl->RefPictureType[ref] == MFX_PICTYPE_BOTTOMFIELD ||
                           feiCtrl->RefPictureType[ref] == MFX_PICTYPE_FRAME, MFX_ERR_INVALID_VIDEO_PARAM);
             }
+        }
+
+        if (!feiCtrl->DisableMVOutput)
+        {
+            mfxExtFeiPreEncMV* feiPreEncMV = GetExtBufferFEI(output, field);
+            MFX_CHECK(feiPreEncMV,                      MFX_ERR_UNDEFINED_BEHAVIOR);
+            MFX_CHECK(feiPreEncMV->NumMBAlloc == NumMB, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+        }
+
+        if (!feiCtrl->DisableStatisticsOutput)
+        {
+            mfxExtFeiPreEncMBStat* feiPreEncMBStat = GetExtBufferFEI(output, field);
+            MFX_CHECK(feiPreEncMBStat,                      MFX_ERR_UNDEFINED_BEHAVIOR);
+            MFX_CHECK(feiPreEncMBStat->NumMBAlloc == NumMB, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
         }
     }
 

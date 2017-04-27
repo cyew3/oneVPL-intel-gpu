@@ -313,11 +313,12 @@ int TestSuite::RunTest(unsigned int id)
         p_PreENCInput[i]->NumFrameL1 = 0;
         sts = ProcessFrameAsync(m_session, p_PreENCInput[i], p_PreENCOutput[i], m_pSyncPoint);
         g_tsStatus.expect(tc.sts);
-        sts = SyncOperation();
-        g_tsStatus.expect(tc.sts);
 
         /*** Check buffer valid ***/
-        if(sts == MFX_ERR_NONE) {
+        if(sts == MFX_ERR_NONE)
+        {
+            sts = SyncOperation();
+
             if(tc.mode & OUT_PREENC_MV) {
                 if(FEIPreEncCtrl[i].RefFrame[0] != NULL || FEIPreEncCtrl[i].RefFrame[1] != NULL) {
                     mfxU8* zero_mv_buffer = new mfxU8[sizeof(*(out_mvs[i].MB))*out_mvs[i].NumMBAlloc];
@@ -338,6 +339,7 @@ int TestSuite::RunTest(unsigned int id)
     }
 
     /*** Finish ***/
+    g_tsStatus.expect(MFX_ERR_NONE);
     Close();
 
     // Free memory allocated dynamically
