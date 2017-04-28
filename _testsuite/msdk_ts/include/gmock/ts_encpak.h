@@ -117,7 +117,7 @@ public:
     mfxStatus GetVideoParam();
     //mfxStatus GetVideoParam(mfxSession session, mfxVideoParam *par);
 
-    mfxStatus ProcessFrameAsync();
+    virtual mfxStatus ProcessFrameAsync();
     mfxStatus ProcessFrameAsync(mfxSession session, mfxENCInput *in, mfxENCOutput *out, mfxSyncPoint *syncp);
     mfxStatus ProcessFrameAsync(mfxSession session, mfxPAKInput *in, mfxPAKOutput *out, mfxSyncPoint *syncp);
 
