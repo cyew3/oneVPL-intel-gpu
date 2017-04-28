@@ -1747,7 +1747,7 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
                   assert(header.has_emulation_bytes);
                   MFX_CHECK_WITH_ASSERT(mfxU32(bsDataStart + m_width*m_height - bsDataEnd) > length, MFX_ERR_NOT_ENOUGH_BUFFER);
                   mfxU8* bsEnd = bsDataStart + m_width*m_height;
-                  bsDataEnd += AddEmulationPreventionAndCopy((mfxU8*)pData, length, bsDataEnd, bsEnd, 1);
+                  bsDataEnd += AddEmulationPreventionAndCopy((mfxU8*)pData, length, bsDataEnd, bsEnd, !header.has_emulation_bytes);
               }
               vaSts = vaUnmapBuffer(m_vaDisplay, buf_id[i]);
               MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);

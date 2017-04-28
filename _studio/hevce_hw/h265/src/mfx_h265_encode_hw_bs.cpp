@@ -300,19 +300,18 @@ mfxU32 AddEmulationPreventionAndCopy(
     bool                             bEmulationByteInsertion)
 {
     mfxU8 * sbegin = data;
-    mfxU32  len = bEmulationByteInsertion ? 4 : length;
+    mfxU32  len = length;
     assert(mfxU32(bsEnd - bsDataStart) > length);
 
-    if (len)
+    if (!bEmulationByteInsertion)
     {
         memcpy(bsDataStart, sbegin, len);
-        bsDataStart += len;
-        sbegin += len;
+        return len;
     }
 
     mfxU32 size = mfxU32(bsEnd - bsDataStart);
     HeaderPacker::PackRBSP(bsDataStart, sbegin, size, length);
-    len += size;
+    len = size;
     return len;
 }
 
