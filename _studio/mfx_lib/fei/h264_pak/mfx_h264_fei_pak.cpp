@@ -730,6 +730,7 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
     {
         // In case of single-field processing, only one buffer is attached
         mfxU32 idxToPickBuffer = m_bSingleFieldMode ? 0 : field;
+        mfxU32 fieldParity     = task.m_fid[field];
 
         // Additionally check PAK specific requirements for extension buffers
         mfxExtFeiEncMV     * mvout     = GetExtBufferFEI(input, idxToPickBuffer);
@@ -760,21 +761,16 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
             break;
         }
 
-        frame_type[field] = type;
+        frame_type[fieldParity] = type;
 
         // Having both valid frame types simplifies calculations in ConfigureTask
         if (m_bSingleFieldMode || fieldCount < 1)
         {
-            frame_type[!field] = m_bSingleFieldMode && field != 0 ? task.m_type[!field] : (frame_type[field] & ~MFX_FRAMETYPE_IDR);
+            frame_type[!fieldParity] = m_bSingleFieldMode && field != 0 ? task.m_type[!fieldParity] : (frame_type[fieldParity] & ~MFX_FRAMETYPE_IDR);
         }
     }
 
     task.m_type = frame_type;
-
-    if (task.m_picStruct[ENC] == MFX_PICSTRUCT_FIELD_BFF)
-    {
-        std::swap(task.m_type.top, task.m_type.bot);
-    }
 
     m_core->IncreaseReference(&input->InSurface->Data);
     m_core->IncreaseReference(&output->OutSurface->Data);
