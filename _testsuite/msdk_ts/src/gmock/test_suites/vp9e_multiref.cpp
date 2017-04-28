@@ -438,19 +438,48 @@ namespace vp9e_multiref
     //  by checking their sizes.
     mfxU32 CalculateInterOnlyFramesQnt(std::vector<mfxU32> sizes_vector)
     {
+        mfxU32 result = 0;
+
+        if (sizes_vector.size() < 2)
+        {
+            return result;
+        }
+
         std::sort(sizes_vector.begin(), sizes_vector.end());
 
-        const mfxU32 threshold = 5;
+        mfxU32 max_element = sizes_vector[sizes_vector.size() - 1];
 
-        for (mfxU32 i = 0; i < sizes_vector.size() - 1; i++)
+        // Iterative approach to find small elements in the array from very obvious case to less obvious
+        for (mfxU32 threshold = 10; threshold >= 2; threshold--)
         {
-            if ((sizes_vector[i + 1] - sizes_vector[i]) > sizes_vector[i] * threshold)
+            mfxI32 small_elements_count = -1;
+
+            // On 1st phase we calculate small elements in the array (in compare with the biggest one)
+            for (mfxU32 i = 0; i < sizes_vector.size(); i++)
             {
-                return (i + 1);
+                if (sizes_vector[i] < (max_element / (3*threshold)))
+                {
+                    small_elements_count++;
+                }
+            }
+
+            // On 2nd phase we check that there is a significant difference between small elements
+            //  and the rest elements
+            if (small_elements_count >= 0)
+            {
+                if (sizes_vector[small_elements_count] < sizes_vector[small_elements_count + 1] / threshold)
+                {
+                    result = small_elements_count + 1;
+                }
+            }
+
+            if (result > 0)
+            {
+                break;
             }
         }
 
-        return 0;
+        return result;
     }
 
     int TestSuite::RunTest(unsigned int id)
