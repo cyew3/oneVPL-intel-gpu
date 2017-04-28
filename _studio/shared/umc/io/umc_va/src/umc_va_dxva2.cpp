@@ -121,8 +121,8 @@ Status DXVA2Accelerator::BeginFrame(Ipp32s index)
     for (Ipp32u i = 0; i < 200; i++)
     {
         hr = m_pDXVAVideoDecoder->BeginFrame(surface, NULL);
-        
-        if (E_PENDING != hr) 
+
+        if (E_PENDING != hr)
             break;
 
         // sleep some time
@@ -143,7 +143,7 @@ Status DXVA2Accelerator::EndFrame(void * handle)
 {
     for (Ipp32u j = 0; j < m_bufferOrder.size(); ++j)
     {
-        ReleaseBuffer(m_bufferOrder[j]); 
+        ReleaseBuffer(m_bufferOrder[j]);
     }
 
     m_bufferOrder.clear();
@@ -307,7 +307,7 @@ Status DXVA2Accelerator::Execute()
         {
             MFX_LTRACE_I(MFX_TRACE_LEVEL_EXTCALL, hr);
         }
-        
+
         //if (hr == E_FRAME_LOCKED)
         //{
         //    EndFrame();
@@ -350,7 +350,7 @@ Status DXVA2Accelerator::ExecuteStatusReportBuffer(void * buffer, Ipp32s size)
     DXVA2_DecodeExecuteParams executeParams;
     DXVA2_DecodeExtensionData extensionData;
     HRESULT hr;
-    
+
     memset(&executeParams, 0, sizeof(DXVA2_DecodeExecuteParams));
     memset(&extensionData, 0, sizeof(DXVA2_DecodeExtensionData));
 
@@ -424,6 +424,12 @@ static const GuidProfile guidProfiles[] =
     { H265_10_VLD_444 | VA_LONG_SLICE_MODE,                                     DXVA_Intel_ModeHEVC_VLD_Main444_10Profile },
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
 
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+    { H265_12_VLD_420 | VA_LONG_SLICE_MODE,                                     DXVA_Intel_ModeHEVC_VLD_Main12Profile },
+    { H265_12_VLD_422 | VA_LONG_SLICE_MODE,                                     DXVA_Intel_ModeHEVC_VLD_Main422_12Profile },
+    { H265_12_VLD_444 | VA_LONG_SLICE_MODE,                                     DXVA_Intel_ModeHEVC_VLD_Main444_12Profile },
+#endif
+
     { VA_H265 | VA_VLD | VA_PROFILE_WIDEVINE,                                   DXVA_Intel_Decode_Elementary_Stream_HEVC },
 
 };
@@ -469,14 +475,21 @@ bool GuidProfile::isShortFormat(bool isHEVCGUID, Ipp32u configBitstreamRaw)
 bool GuidProfile::IsIntelCustomGUID(const GUID & guid)
 {
     return
-        guid == sDXVA2_Intel_ModeVC1_D_Super || 
-        guid == sDXVA_Intel_ModeH264_VLD_MVC || 
+        guid == sDXVA2_Intel_ModeVC1_D_Super ||
+        guid == sDXVA_Intel_ModeH264_VLD_MVC ||
         guid == DXVA_Intel_ModeHEVC_VLD_MainProfile       || guid == DXVA_Intel_ModeHEVC_VLD_Main10Profile ||
         guid == DXVA_Intel_ModeVP9_Profile0_VLD           || guid == DXVA_Intel_ModeVP9_Profile2_10bit_VLD
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-        || guid == DXVA_Intel_ModeHEVC_VLD_Main422_10Profile || guid == DXVA_Intel_ModeHEVC_VLD_Main444_10Profile
-        || guid == DXVA_Intel_ModeVP9_Profile1_YUV444_VLD    || guid == DXVA_Intel_ModeVP9_Profile3_YUV444_10bit_VLD
+        || guid == DXVA_Intel_ModeHEVC_VLD_Main422_10Profile
+        || guid == DXVA_Intel_ModeHEVC_VLD_Main444_10Profile
+        || guid == DXVA_Intel_ModeVP9_Profile1_YUV444_VLD
+        || guid == DXVA_Intel_ModeVP9_Profile3_YUV444_10bit_VLD
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+        || guid == DXVA_Intel_ModeHEVC_VLD_Main12Profile
+        || guid == DXVA_Intel_ModeHEVC_VLD_Main422_12Profile
+        || guid == DXVA_Intel_ModeHEVC_VLD_Main444_12Profile
+#endif //PRE_SI_TARGET_PLATFORM_GEN12
         ;
 }
 

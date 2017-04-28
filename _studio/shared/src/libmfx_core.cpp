@@ -1328,7 +1328,9 @@ mfxStatus CommonCORE::DoSWFastCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSr
 #ifndef OPEN_SOURCE
 #if defined (PRE_SI_TARGET_PLATFORM_GEN11)
     case MFX_FOURCC_Y210:
+#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
     case MFX_FOURCC_Y216:
+#endif
 
         MFX_CHECK_NULL_PTR1(pSrc->Data.Y);
 
@@ -1351,6 +1353,15 @@ mfxStatus CommonCORE::DoSWFastCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSr
         }
         break;
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
+
+#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
+    case MFX_FOURCC_Y416:
+        roi.width *= 8;
+
+        sts = pFastCopy->Copy(pDst->Data.A, dstPitch, pSrc->Data.A, srcPitch, roi, copyFlag);
+        MFX_CHECK_STS(sts);
+        break;
+#endif //PRE_SI_TARGET_PLATFORM_GEN12
 #endif
 
     case MFX_FOURCC_RGB3:

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "libmfx_allocator.h"
@@ -172,6 +172,9 @@ mfxStatus mfxDefaultAllocator::AllocFrames(mfxHDL pthis, mfxFrameAllocRequest *r
         nbytes=Pitch*Height2 + (Pitch>>1)*(Height2>>1) + (Pitch>>1)*(Height2>>1);
         break;
     case MFX_FOURCC_P010:
+#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
+    case MFX_FOURCC_P016:
+#endif
         Pitch=ALIGN32(request->Info.Width*2);
         nbytes=Pitch*Height2 + (Pitch>>1)*(Height2>>1) + (Pitch>>1)*(Height2>>1);
         break;
@@ -224,7 +227,9 @@ mfxStatus mfxDefaultAllocator::AllocFrames(mfxHDL pthis, mfxFrameAllocRequest *r
 
 #if defined (PRE_SI_TARGET_PLATFORM_GEN11)
     case MFX_FOURCC_Y210:
+#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
     case MFX_FOURCC_Y216:
+#endif
         Pitch=ALIGN32(request->Info.Width*2);
         nbytes=Pitch*Height2 + (Pitch>>1)*(Height2) + (Pitch>>1)*(Height2);
         break;
@@ -233,6 +238,13 @@ mfxStatus mfxDefaultAllocator::AllocFrames(mfxHDL pthis, mfxFrameAllocRequest *r
         nbytes=Pitch*Height2;
         break;
 #endif // PRE_SI_TARGET_PLATFORM_GEN11
+
+#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
+    case MFX_FOURCC_Y416:
+        Pitch=ALIGN32(request->Info.Width*8);
+        nbytes=Pitch*Height2;
+        break;
+#endif
 
     default:
         return MFX_ERR_UNSUPPORTED;

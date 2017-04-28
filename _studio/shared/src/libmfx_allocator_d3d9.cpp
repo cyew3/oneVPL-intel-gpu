@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -33,8 +33,13 @@
 #if defined (PRE_SI_TARGET_PLATFORM_GEN11)
 #define D3DFMT_Y410     (D3DFORMAT)MFX_FOURCC_Y410
 #define D3DFMT_Y210     (D3DFORMAT)MFX_FOURCC_Y210
-#define D3DFMT_Y216     (D3DFORMAT)MFX_FOURCC_Y216
 #endif //#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+
+#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
+#define D3DFMT_P016     (D3DFORMAT)MFX_FOURCC_P016
+#define D3DFMT_Y216     (D3DFORMAT)MFX_FOURCC_Y216
+#define D3DFMT_Y416     (D3DFORMAT)MFX_FOURCC_Y416
+#endif //#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
 
 template<class T> inline
 T align_value(size_t nValue, size_t lAlignValue = DEFAULT_ALIGN_VALUE)
@@ -70,9 +75,13 @@ mfxStatus mfxDefaultAllocatorD3D9::AllocFramesHW(mfxHDL pthis, mfxFrameAllocRequ
     case MFX_FOURCC_AYUV:
 #if defined (PRE_SI_TARGET_PLATFORM_GEN11)
     case MFX_FOURCC_Y210:
-    case MFX_FOURCC_Y216:
     case MFX_FOURCC_Y410:
 #endif //#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
+    case MFX_FOURCC_P016:
+    case MFX_FOURCC_Y216:
+    case MFX_FOURCC_Y416:
+#endif //#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
         break;
 
     default:
@@ -176,6 +185,9 @@ mfxStatus mfxDefaultAllocatorD3D9::SetFrameData(const D3DSURFACE_DESC &desc, con
     switch ((DWORD)desc.Format)
     {
     case D3DFMT_P010:
+#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
+    case D3DFMT_P016:
+#endif
         ptr->PitchHigh = (mfxU16)(LockedRect.Pitch / (1 << 16));
         ptr->PitchLow  = (mfxU16)(LockedRect.Pitch % (1 << 16));
         ptr->Y = (mfxU8 *)LockedRect.pBits;
@@ -285,7 +297,9 @@ mfxStatus mfxDefaultAllocatorD3D9::SetFrameData(const D3DSURFACE_DESC &desc, con
         break;
 #if defined (PRE_SI_TARGET_PLATFORM_GEN11)
     case D3DFMT_Y210:
+#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
     case D3DFMT_Y216:
+#endif
         ptr->PitchHigh = (mfxU16)(LockedRect.Pitch / (1 << 16));
         ptr->PitchLow = (mfxU16)(LockedRect.Pitch % (1 << 16));
         ptr->Y16 = (mfxU16*)LockedRect.pBits;
@@ -301,6 +315,18 @@ mfxStatus mfxDefaultAllocatorD3D9::SetFrameData(const D3DSURFACE_DESC &desc, con
         ptr->A = 0;
         break;
 #endif //#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+
+#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
+    case D3DFMT_Y416:
+        ptr->PitchHigh = (mfxU16)(LockedRect.Pitch / (1 << 16));
+        ptr->PitchLow = (mfxU16)(LockedRect.Pitch % (1 << 16));
+        ptr->A   = (mfxU8 *)LockedRect.pBits;
+        ptr->V16 = ((mfxU16*)ptr->A) + 1;
+        ptr->Y16 = ptr->V16 + 1;
+        ptr->U16 = ptr->Y16 + 1;
+        break;
+#endif //#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
+
     default:
         return MFX_ERR_LOCK_MEMORY;
     }
