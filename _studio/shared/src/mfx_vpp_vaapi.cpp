@@ -491,15 +491,16 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VAAPIVideoProcessing::Execute");
 
-    VASurfaceAttrib attrib;
-    VAImage imagePrimarySurface;
-    mfxU8* pPrimarySurfaceBuffer;
-    VAImage imageRefSurface;
-    mfxU8* pRefSurfaceBuffer;
     bool bIsFirstField = true;
     bool bUseReference = false;
-
     VAStatus vaSts = VA_STATUS_SUCCESS;
+
+    // NOTE the following variables should be visible till vaRenderPicture/vaEndPicture,
+    // not till vaCreateBuffer as the data they hold are passed to the driver via a pointer
+    // to the memory and driver simply copies the pointer till further dereference in the
+    // functions noted above. Thus, safer to simply make sure these variable are visible
+    // thru the whole scope of the function.
+    VARectangle input_region, output_region;
 
     MFX_CHECK_NULL_PTR1( pParams );
     MFX_CHECK_NULL_PTR1( pParams->targetSurface.hdl.first );
@@ -897,290 +898,276 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
     /* pParams->refCount is total number of processing surfaces:
      * in case of composition this is primary + sub streams*/
 
-    mfxU32 SampleCount = 1;
-    mfxU32 refIdx = 0;
-
     m_pipelineParam.resize(pParams->refCount);
     m_pipelineParamID.resize(pParams->refCount, VA_INVALID_ID);
 
-    std::vector<VARectangle> input_region;
-    input_region.resize(pParams->refCount);
-    std::vector<VARectangle> output_region;
-    output_region.resize(pParams->refCount);
+    mfxDrvSurface* pRefSurf = &(pParams->pRefSurfaces[0]);
+    memset(&m_pipelineParam[0], 0, sizeof(m_pipelineParam[0]));
 
-    for( refIdx = 0; refIdx < SampleCount; refIdx++ )
+    if (pParams->bFieldWeaving || ( (pParams->refCount > 1) && (0 != pParams->iDeinterlacingAlgorithm )))
     {
-        mfxDrvSurface* pRefSurf;
-        pRefSurf = &(pParams->pRefSurfaces[refIdx]);
-        memset(&m_pipelineParam[refIdx], 0, sizeof(m_pipelineParam[refIdx]));
+        m_pipelineParam[0].num_backward_references = 1;
+        mfxDrvSurface* pRefSurf_1 = NULL;
+        /* in pRefSurfaces
+            * first is backward references
+            * then current src surface
+            * and only after this is forward references
+            * */
+        pRefSurf_1 = &(pParams->pRefSurfaces[0]); // point to previous frame
+        VASurfaceID *ref_srf = (VASurfaceID *)(pRefSurf_1->hdl.first);
+        m_pipelineParam[0].backward_references = ref_srf;
+    }
+    /* FRC Interpolated case */
+    if (0 != pParams->bFRCEnable)
+    {
+        if (30 == pParams->customRateData.customRate.FrameRateExtD)
+            m_pipelineParam[0].num_forward_references = 2;
+        else if (24 == pParams->customRateData.customRate.FrameRateExtD)
+            m_pipelineParam[0].num_forward_references = 3;
 
-        if (pParams->bFieldWeaving || ( (pParams->refCount > 1) && (0 != pParams->iDeinterlacingAlgorithm )))
+        if (2 == pParams->refCount) /* may be End of Stream case */
         {
-            m_pipelineParam[refIdx].num_backward_references = 1;
-            mfxDrvSurface* pRefSurf_1 = NULL;
-            /* in pRefSurfaces
-             * first is backward references
-             * then current src surface
-             * and only after this is forward references
-             * */
-            pRefSurf_1 = &(pParams->pRefSurfaces[0]); // point to previous frame
-            VASurfaceID *ref_srf = (VASurfaceID *)(pRefSurf_1->hdl.first);
-            m_pipelineParam[refIdx].backward_references = ref_srf;
+            mfxDrvSurface* pRefSurf_frc1;
+            pRefSurf_frc1 = &(pParams->pRefSurfaces[1]);
+            m_refForFRC[0] = *(VASurfaceID*)(pRefSurf_frc1->hdl.first);
+            m_refForFRC[2] = m_refForFRC[1] = m_refForFRC[0];
         }
-        /* FRC Interpolated case */
-        if (0 != pParams->bFRCEnable)
+        if (3 == pParams->refCount)
         {
-            if (30 == pParams->customRateData.customRate.FrameRateExtD)
-                m_pipelineParam[refIdx].num_forward_references = 2;
-            else if (24 == pParams->customRateData.customRate.FrameRateExtD)
-                m_pipelineParam[refIdx].num_forward_references = 3;
-
-            if (2 == pParams->refCount) /* may be End of Stream case */
-            {
-                mfxDrvSurface* pRefSurf_frc1;
-                pRefSurf_frc1 = &(pParams->pRefSurfaces[1]);
-                m_refForFRC[0] = *(VASurfaceID*)(pRefSurf_frc1->hdl.first);
-                m_refForFRC[2] = m_refForFRC[1] = m_refForFRC[0];
-            }
-            if (3 == pParams->refCount)
-            {
-                mfxDrvSurface* pRefSurf_frc1;
-                pRefSurf_frc1 = &(pParams->pRefSurfaces[1]);
-                m_refForFRC[0] = *(VASurfaceID*)(pRefSurf_frc1->hdl.first);
-                mfxDrvSurface* pRefSurf_frc2;
-                pRefSurf_frc2 = &(pParams->pRefSurfaces[2]);
-                m_refForFRC[1] = *(VASurfaceID*) (pRefSurf_frc2->hdl.first);
-            }
-            if (4 == pParams->refCount)
-            {
-                mfxDrvSurface* pRefSurf_frc1;
-                pRefSurf_frc1 = &(pParams->pRefSurfaces[1]);
-                m_refForFRC[0] = *(VASurfaceID*)(pRefSurf_frc1->hdl.first);
-                mfxDrvSurface* pRefSurf_frc2;
-                pRefSurf_frc2 = &(pParams->pRefSurfaces[2]);
-                m_refForFRC[1] = *(VASurfaceID*) (pRefSurf_frc2->hdl.first);
-                mfxDrvSurface* pRefSurf_frc3;
-                pRefSurf_frc3 = &(pParams->pRefSurfaces[3]);
-                m_refForFRC[2] = *(VASurfaceID*) (pRefSurf_frc3->hdl.first);
-            }
-            /* to pass ref list to pipeline */
-            m_pipelineParam[refIdx].forward_references = m_refForFRC;
-        } /*if (0 != pParams->bFRCEnable)*/
-
-        /* SRC surface */
-        mfxDrvSurface* pSrcInputSurf = &pRefSurf[pParams->bkwdRefCount];
-        /* in 30i->60p mode, when scene change occurs, BOB is used and needs current input frame.
-         * Current frame = ADI reference for odd output frames
-         * Current frame = ADI input for even output frames
-        **/
-        if(pParams->bDeinterlace30i60p && (VPP_SCENE_NEW == pParams->scene))
-        {
-            if(m_deintFrameCount % 2)
-                pSrcInputSurf = &(pParams->pRefSurfaces[0]); // point to reference frame
+            mfxDrvSurface* pRefSurf_frc1;
+            pRefSurf_frc1 = &(pParams->pRefSurfaces[1]);
+            m_refForFRC[0] = *(VASurfaceID*)(pRefSurf_frc1->hdl.first);
+            mfxDrvSurface* pRefSurf_frc2;
+            pRefSurf_frc2 = &(pParams->pRefSurfaces[2]);
+            m_refForFRC[1] = *(VASurfaceID*) (pRefSurf_frc2->hdl.first);
         }
-        VASurfaceID* srf = (VASurfaceID*)(pSrcInputSurf->hdl.first);
-        m_pipelineParam[refIdx].surface = *srf;
+        if (4 == pParams->refCount)
+        {
+            mfxDrvSurface* pRefSurf_frc1;
+            pRefSurf_frc1 = &(pParams->pRefSurfaces[1]);
+            m_refForFRC[0] = *(VASurfaceID*)(pRefSurf_frc1->hdl.first);
+            mfxDrvSurface* pRefSurf_frc2;
+            pRefSurf_frc2 = &(pParams->pRefSurfaces[2]);
+            m_refForFRC[1] = *(VASurfaceID*) (pRefSurf_frc2->hdl.first);
+            mfxDrvSurface* pRefSurf_frc3;
+            pRefSurf_frc3 = &(pParams->pRefSurfaces[3]);
+            m_refForFRC[2] = *(VASurfaceID*) (pRefSurf_frc3->hdl.first);
+        }
+        /* to pass ref list to pipeline */
+        m_pipelineParam[0].forward_references = m_refForFRC;
+    } /*if (0 != pParams->bFRCEnable)*/
+
+    /* SRC surface */
+    mfxDrvSurface* pSrcInputSurf = &pRefSurf[pParams->bkwdRefCount];
+    /* in 30i->60p mode, when scene change occurs, BOB is used and needs current input frame.
+        * Current frame = ADI reference for odd output frames
+        * Current frame = ADI input for even output frames
+    **/
+    if(pParams->bDeinterlace30i60p && (VPP_SCENE_NEW == pParams->scene))
+    {
+        if(m_deintFrameCount % 2)
+            pSrcInputSurf = &(pParams->pRefSurfaces[0]); // point to reference frame
+    }
+    VASurfaceID* srf = (VASurfaceID*)(pSrcInputSurf->hdl.first);
+    m_pipelineParam[0].surface = *srf;
 
 #ifdef MFX_ENABLE_VPP_ROTATION
-        switch (pParams->rotation)
+    switch (pParams->rotation)
+    {
+    case MFX_ANGLE_90:
+        if ( m_pipelineCaps.rotation_flags & (1 << VA_ROTATION_90))
         {
-        case MFX_ANGLE_90:
-            if ( m_pipelineCaps.rotation_flags & (1 << VA_ROTATION_90))
-            {
-                m_pipelineParam[refIdx].rotation_state = VA_ROTATION_90;
-            }
-            break;
-        case MFX_ANGLE_180:
-            if ( m_pipelineCaps.rotation_flags & (1 << VA_ROTATION_180))
-            {
-                m_pipelineParam[refIdx].rotation_state = VA_ROTATION_180;
-            }
-            break;
-        case MFX_ANGLE_270:
-            if ( m_pipelineCaps.rotation_flags & (1 << VA_ROTATION_270))
-            {
-                m_pipelineParam[refIdx].rotation_state = VA_ROTATION_270;
-            }
-            break;
+            m_pipelineParam[0].rotation_state = VA_ROTATION_90;
         }
+        break;
+    case MFX_ANGLE_180:
+        if ( m_pipelineCaps.rotation_flags & (1 << VA_ROTATION_180))
+        {
+            m_pipelineParam[0].rotation_state = VA_ROTATION_180;
+        }
+        break;
+    case MFX_ANGLE_270:
+        if ( m_pipelineCaps.rotation_flags & (1 << VA_ROTATION_270))
+        {
+            m_pipelineParam[0].rotation_state = VA_ROTATION_270;
+        }
+        break;
+    }
 #endif
 
-        // source cropping
-        mfxFrameInfo *inInfo = &(pRefSurf->frameInfo);
-        input_region[refIdx].y   = inInfo->CropY;
-        input_region[refIdx].x   = inInfo->CropX;
-        input_region[refIdx].height = inInfo->CropH;
-        input_region[refIdx].width  = inInfo->CropW;
-        m_pipelineParam[refIdx].surface_region = &input_region[refIdx];
+    // source cropping
+    mfxFrameInfo *inInfo = &(pRefSurf->frameInfo);
+    input_region.y   = inInfo->CropY;
+    input_region.x   = inInfo->CropX;
+    input_region.height = inInfo->CropH;
+    input_region.width  = inInfo->CropW;
+    m_pipelineParam[0].surface_region = &input_region;
 
-        // destination cropping
-        mfxFrameInfo *outInfo = &(pParams->targetSurface.frameInfo);
-        output_region[refIdx].y  = outInfo->CropY;
-        output_region[refIdx].x   = outInfo->CropX;
-        output_region[refIdx].height= outInfo->CropH;
-        output_region[refIdx].width  = outInfo->CropW;
-        m_pipelineParam[refIdx].output_region = &output_region[refIdx];
+    // destination cropping
+    mfxFrameInfo *outInfo = &(pParams->targetSurface.frameInfo);
+    output_region.y  = outInfo->CropY;
+    output_region.x   = outInfo->CropX;
+    output_region.height= outInfo->CropH;
+    output_region.width  = outInfo->CropW;
+    m_pipelineParam[0].output_region = &output_region;
 
-        m_pipelineParam[refIdx].output_background_color = 0xff000000; // black for ARGB
+    m_pipelineParam[0].output_background_color = 0xff000000; // black for ARGB
 
 #ifdef MFX_ENABLE_VPP_VIDEO_SIGNAL
-    #define ENABLE_VPP_VIDEO_SIGNAL(X) X
+#define ENABLE_VPP_VIDEO_SIGNAL(X) X
 #else
-    #define ENABLE_VPP_VIDEO_SIGNAL(X)
+#define ENABLE_VPP_VIDEO_SIGNAL(X)
 #endif
 
 
-        mfxU32  refFourcc = pRefSurf->frameInfo.FourCC;
-        switch (refFourcc)
-        {
-        case MFX_FOURCC_RGB4:
-            m_pipelineParam[refIdx].surface_color_standard = VAProcColorStandardNone;
-            ENABLE_VPP_VIDEO_SIGNAL(m_pipelineParam[refIdx].input_surface_flag     = VA_SOURCE_RANGE_FULL);
-            break;
-        case MFX_FOURCC_NV12:
-        default:
-            m_pipelineParam[refIdx].surface_color_standard = VAProcColorStandardBT601;
-            ENABLE_VPP_VIDEO_SIGNAL(m_pipelineParam[refIdx].input_surface_flag     = VA_SOURCE_RANGE_REDUCED);
-            break;
-        }
+    mfxU32  refFourcc = pRefSurf->frameInfo.FourCC;
+    switch (refFourcc)
+    {
+    case MFX_FOURCC_RGB4:
+        m_pipelineParam[0].surface_color_standard = VAProcColorStandardNone;
+        ENABLE_VPP_VIDEO_SIGNAL(m_pipelineParam[0].input_surface_flag     = VA_SOURCE_RANGE_FULL);
+        break;
+    case MFX_FOURCC_NV12:
+    default:
+        m_pipelineParam[0].surface_color_standard = VAProcColorStandardBT601;
+        ENABLE_VPP_VIDEO_SIGNAL(m_pipelineParam[0].input_surface_flag     = VA_SOURCE_RANGE_REDUCED);
+        break;
+    }
 
-        mfxU32  targetFourcc = pParams->targetSurface.frameInfo.FourCC;
-        switch (targetFourcc)
-        {
-        case MFX_FOURCC_RGB4:
-            m_pipelineParam[refIdx].output_color_standard = VAProcColorStandardNone;
-            ENABLE_VPP_VIDEO_SIGNAL(m_pipelineParam[refIdx].output_surface_flag   = VA_SOURCE_RANGE_FULL);
-            break;
-        case MFX_FOURCC_NV12:
-        default:
-            m_pipelineParam[refIdx].output_color_standard = VAProcColorStandardBT601;
-            ENABLE_VPP_VIDEO_SIGNAL(m_pipelineParam[refIdx].output_surface_flag   = VA_SOURCE_RANGE_REDUCED);
-            break;
-        }
+    mfxU32  targetFourcc = pParams->targetSurface.frameInfo.FourCC;
+    switch (targetFourcc)
+    {
+    case MFX_FOURCC_RGB4:
+        m_pipelineParam[0].output_color_standard = VAProcColorStandardNone;
+        ENABLE_VPP_VIDEO_SIGNAL(m_pipelineParam[0].output_surface_flag   = VA_SOURCE_RANGE_FULL);
+        break;
+    case MFX_FOURCC_NV12:
+    default:
+        m_pipelineParam[0].output_color_standard = VAProcColorStandardBT601;
+        ENABLE_VPP_VIDEO_SIGNAL(m_pipelineParam[0].output_surface_flag   = VA_SOURCE_RANGE_REDUCED);
+        break;
+    }
 
-        /* It needs interlaced flag passed only for 
-         * deinterlacing and scaling. All other filters must 
-         * use progressive even for interlaced content.
-         */
-        bool forceProgressive = true;
-        if (pParams->iDeinterlacingAlgorithm ||
-            inInfo->CropH != outInfo->CropH    ||
-            inInfo->CropW != outInfo->CropW)
-        {
-            forceProgressive = false;
-        }
+    /* It needs interlaced flag passed only for 
+        * deinterlacing and scaling. All other filters must 
+        * use progressive even for interlaced content.
+        */
+    bool forceProgressive = true;
+    if (pParams->iDeinterlacingAlgorithm ||
+        inInfo->CropH != outInfo->CropH    ||
+        inInfo->CropW != outInfo->CropW)
+    {
+        forceProgressive = false;
+    }
 
+    switch (pRefSurf->frameInfo.PicStruct)
+    {
+        case MFX_PICSTRUCT_PROGRESSIVE:
+            m_pipelineParam[0].filter_flags = VA_FRAME_PICTURE;
+            break;
+        case MFX_PICSTRUCT_FIELD_TFF:
+            m_pipelineParam[0].filter_flags = forceProgressive ? VA_FRAME_PICTURE : VA_TOP_FIELD;
+            break;
+        case MFX_PICSTRUCT_FIELD_BFF:
+            m_pipelineParam[0].filter_flags = forceProgressive ? VA_FRAME_PICTURE : VA_BOTTOM_FIELD;
+            break;
+    }
+
+    if (pParams->bFieldWeaving)
+    {
+        // Field weaving needs flags that are different from usual pipeline
         switch (pRefSurf->frameInfo.PicStruct)
         {
-            case MFX_PICSTRUCT_PROGRESSIVE:
-                m_pipelineParam[refIdx].filter_flags = VA_FRAME_PICTURE;
-                break;
             case MFX_PICSTRUCT_FIELD_TFF:
-                m_pipelineParam[refIdx].filter_flags = forceProgressive ? VA_FRAME_PICTURE : VA_TOP_FIELD;
+                m_pipelineParam[0].filter_flags = VA_TOP_FIELD_WEAVE;
                 break;
             case MFX_PICSTRUCT_FIELD_BFF:
-                m_pipelineParam[refIdx].filter_flags = forceProgressive ? VA_FRAME_PICTURE : VA_BOTTOM_FIELD;
+                m_pipelineParam[0].filter_flags = VA_BOTTOM_FIELD_WEAVE;
                 break;
         }
-
-        if (pParams->bFieldWeaving)
-        {
-            // Field weaving needs flags that are different from usual pipeline
-            switch (pRefSurf->frameInfo.PicStruct)
-            {
-                case MFX_PICSTRUCT_FIELD_TFF:
-                    m_pipelineParam[refIdx].filter_flags = VA_TOP_FIELD_WEAVE;
-                    break;
-                case MFX_PICSTRUCT_FIELD_BFF:
-                    m_pipelineParam[refIdx].filter_flags = VA_BOTTOM_FIELD_WEAVE;
-                    break;
-            }
-        }
-
-        m_pipelineParam[refIdx].filters      = m_filterBufs;
-        m_pipelineParam[refIdx].num_filters  = m_numFilterBufs;
-
-        int index = GetCurFrameSignalIdx(pParams);
-        if ((index >= 0) && pParams->VideoSignalInfo[index].enabled)
-        {
-#ifdef MFX_ENABLE_VPP_VIDEO_SIGNAL
-            if(pParams->VideoSignalInfo[index].TransferMatrix != MFX_TRANSFERMATRIX_UNKNOWN)
-            {
-                m_pipelineParam[refIdx].surface_color_standard = (MFX_TRANSFERMATRIX_BT709 == pParams->VideoSignalInfo[index].TransferMatrix ? VAProcColorStandardBT709 : VAProcColorStandardBT601);
-            }
-
-            if(pParams->VideoSignalInfo[index].NominalRange != MFX_NOMINALRANGE_UNKNOWN)
-            {
-                m_pipelineParam[refIdx].input_surface_flag = (MFX_NOMINALRANGE_0_255 == pParams->VideoSignalInfo[index].NominalRange) ? VA_SOURCE_RANGE_FULL : VA_SOURCE_RANGE_REDUCED;
-            }
-        }
-
-        if (pParams->VideoSignalInfoOut.enabled)
-        {
-            if(pParams->VideoSignalInfoOut.TransferMatrix != MFX_TRANSFERMATRIX_UNKNOWN)
-            {
-                m_pipelineParam[refIdx].output_color_standard = (MFX_TRANSFERMATRIX_BT709 == pParams->VideoSignalInfoOut.TransferMatrix ? VAProcColorStandardBT709 : VAProcColorStandardBT601);
-            }
-
-            if(pParams->VideoSignalInfoOut.NominalRange != MFX_NOMINALRANGE_UNKNOWN)
-            {
-                m_pipelineParam[refIdx].output_surface_flag = (MFX_NOMINALRANGE_0_255 == pParams->VideoSignalInfoOut.NominalRange) ? VA_SOURCE_RANGE_FULL : VA_SOURCE_RANGE_REDUCED;
-            }
-#else
-            return MFX_ERR_UNSUPPORTED;
-#endif // #ifdef MFX_ENABLE_VPP_VIDEO_SIGNAL
-        }
-
-        /* Scaling params */
-        switch (pParams->scalingMode)
-        {
-        case MFX_SCALING_MODE_LOWPOWER:
-            /* VA_FILTER_SCALING_DEFAULT means the following:
-             *  First priority is SFC. If SFC can't work, revert to AVS
-             *  If scaling ratio between 1/8...8 -> SFC
-             *  If scaling ratio between 1/16...1/8 or larger than 8 -> AVS
-             *  If scaling ratio is less than 1/16 -> bilinear
-             */
-            m_pipelineParam[refIdx].filter_flags |= VA_FILTER_SCALING_DEFAULT;
-            break;
-        case MFX_SCALING_MODE_QUALITY:
-            /*  VA_FILTER_SCALING_HQ means the following:
-             *  If scaling ratio is less than 1/16 -> bilinear
-             *  For all other cases, AVS is used.
-             */
-            m_pipelineParam[refIdx].filter_flags |= VA_FILTER_SCALING_HQ;
-            break;
-        case MFX_SCALING_MODE_DEFAULT:
-        default:
-#if defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT)
-            /* Use SFC by default on BXT platforms due to power consumption considerations */
-            m_pipelineParam[refIdx].filter_flags |= VA_FILTER_SCALING_DEFAULT;
-#else
-            /* Force AVS by default for all platforms except BXT */
-            m_pipelineParam[refIdx].filter_flags |= VA_FILTER_SCALING_HQ;
-#endif
-            break;
-        }
-
-        vaSts = vaCreateBuffer(m_vaDisplay,
-                            m_vaContextVPP,
-                            VAProcPipelineParameterBufferType,
-                            sizeof(VAProcPipelineParameterBuffer),
-                            1,
-                            &m_pipelineParam[refIdx],
-                            &m_pipelineParamID[refIdx]);
-        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-
-        // increase deinterlacer frame count after frame has been processed
-        m_deintFrameCount ++;
-
-        // for ADI 30i->60p, EOS is received on second field after vpp_reset
-        // reset m_deintFrameCount to zero after processing second field
-        if((pParams->bEOS) && (pParams->bDeinterlace30i60p == true))
-            m_deintFrameCount = 0;
-
-
     }
+
+    m_pipelineParam[0].filters      = m_filterBufs;
+    m_pipelineParam[0].num_filters  = m_numFilterBufs;
+
+    int index = GetCurFrameSignalIdx(pParams);
+    if ((index >= 0) && pParams->VideoSignalInfo[index].enabled)
+    {
+#ifdef MFX_ENABLE_VPP_VIDEO_SIGNAL
+        if(pParams->VideoSignalInfo[index].TransferMatrix != MFX_TRANSFERMATRIX_UNKNOWN)
+        {
+            m_pipelineParam[0].surface_color_standard = (MFX_TRANSFERMATRIX_BT709 == pParams->VideoSignalInfo[index].TransferMatrix ? VAProcColorStandardBT709 : VAProcColorStandardBT601);
+        }
+
+        if(pParams->VideoSignalInfo[index].NominalRange != MFX_NOMINALRANGE_UNKNOWN)
+        {
+            m_pipelineParam[0].input_surface_flag = (MFX_NOMINALRANGE_0_255 == pParams->VideoSignalInfo[index].NominalRange) ? VA_SOURCE_RANGE_FULL : VA_SOURCE_RANGE_REDUCED;
+        }
+    }
+
+    if (pParams->VideoSignalInfoOut.enabled)
+    {
+        if(pParams->VideoSignalInfoOut.TransferMatrix != MFX_TRANSFERMATRIX_UNKNOWN)
+        {
+            m_pipelineParam[0].output_color_standard = (MFX_TRANSFERMATRIX_BT709 == pParams->VideoSignalInfoOut.TransferMatrix ? VAProcColorStandardBT709 : VAProcColorStandardBT601);
+        }
+
+        if(pParams->VideoSignalInfoOut.NominalRange != MFX_NOMINALRANGE_UNKNOWN)
+        {
+            m_pipelineParam[0].output_surface_flag = (MFX_NOMINALRANGE_0_255 == pParams->VideoSignalInfoOut.NominalRange) ? VA_SOURCE_RANGE_FULL : VA_SOURCE_RANGE_REDUCED;
+        }
+#else
+        return MFX_ERR_UNSUPPORTED;
+#endif // #ifdef MFX_ENABLE_VPP_VIDEO_SIGNAL
+    }
+
+    /* Scaling params */
+    switch (pParams->scalingMode)
+    {
+    case MFX_SCALING_MODE_LOWPOWER:
+        /* VA_FILTER_SCALING_DEFAULT means the following:
+            *  First priority is SFC. If SFC can't work, revert to AVS
+            *  If scaling ratio between 1/8...8 -> SFC
+            *  If scaling ratio between 1/16...1/8 or larger than 8 -> AVS
+            *  If scaling ratio is less than 1/16 -> bilinear
+            */
+        m_pipelineParam[0].filter_flags |= VA_FILTER_SCALING_DEFAULT;
+        break;
+    case MFX_SCALING_MODE_QUALITY:
+        /*  VA_FILTER_SCALING_HQ means the following:
+            *  If scaling ratio is less than 1/16 -> bilinear
+            *  For all other cases, AVS is used.
+            */
+        m_pipelineParam[0].filter_flags |= VA_FILTER_SCALING_HQ;
+        break;
+    case MFX_SCALING_MODE_DEFAULT:
+    default:
+#if defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT)
+        /* Use SFC by default on BXT platforms due to power consumption considerations */
+        m_pipelineParam[0].filter_flags |= VA_FILTER_SCALING_DEFAULT;
+#else
+        /* Force AVS by default for all platforms except BXT */
+        m_pipelineParam[0].filter_flags |= VA_FILTER_SCALING_HQ;
+#endif
+        break;
+    }
+
+    vaSts = vaCreateBuffer(m_vaDisplay,
+                        m_vaContextVPP,
+                        VAProcPipelineParameterBufferType,
+                        sizeof(VAProcPipelineParameterBuffer),
+                        1,
+                        &m_pipelineParam[0],
+                        &m_pipelineParamID[0]);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    // increase deinterlacer frame count after frame has been processed
+    m_deintFrameCount ++;
+
+    // for ADI 30i->60p, EOS is received on second field after vpp_reset
+    // reset m_deintFrameCount to zero after processing second field
+    if((pParams->bEOS) && (pParams->bDeinterlace30i60p == true))
+        m_deintFrameCount = 0;
 
 #if defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT)
 // It looks like only BXT supports this at the moment
@@ -1199,8 +1186,8 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
     VABufferID  outputParamBuf = VA_INVALID_ID;
 
     outputParam.surface = *outputSurface;
-    outputParam.surface_region = &(output_region.front());
-    outputParam.output_region  = &(output_region.front());
+    outputParam.surface_region = &output_region;
+    outputParam.output_region  = &output_region;
 
     vaSts = vaCreateBuffer(m_vaDisplay,
                            m_vaContextVPP,
@@ -1231,7 +1218,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
 #endif
 
 #if defined(VPP_NO_COLORFILL)
-    if(0 == output_region.front().x && 0 == output_region.front().y) // Do not disable colorfill if letterboxing is used
+    if(0 == output_region.x && 0 == output_region.y) // Do not disable colorfill if letterboxing is used
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaRenderPicture");
         vaSts = vaRenderPicture(m_vaDisplay, m_vaContextVPP, &outputParamBuf, 1);
@@ -1241,11 +1228,8 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
 
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaRenderPicture");
-        for( refIdx = 0; refIdx < SampleCount; refIdx++ )
-        {
-            vaSts = vaRenderPicture(m_vaDisplay, m_vaContextVPP, &m_pipelineParamID[refIdx], 1);
-            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-        }
+        vaSts = vaRenderPicture(m_vaDisplay, m_vaContextVPP, &m_pipelineParamID[0], 1);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
 
     {
@@ -1255,7 +1239,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
     }
     MFX_LTRACE_2(MFX_TRACE_LEVEL_HOTSPOTS, "A|VPP|FILTER|PACKET_END|", "%d|%d", m_vaContextVPP, 0);
 
-    for( refIdx = 0; refIdx < m_pipelineParamID.size(); refIdx++ )
+    for( mfxU32 refIdx = 0; refIdx < m_pipelineParamID.size(); refIdx++ )
     {
         if ( m_pipelineParamID[refIdx] != VA_INVALID_ID)
         {
