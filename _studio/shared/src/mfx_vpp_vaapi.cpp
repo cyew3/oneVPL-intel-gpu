@@ -1100,8 +1100,8 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         m_pipelineParam[refIdx].filters      = m_filterBufs;
         m_pipelineParam[refIdx].num_filters  = m_numFilterBufs;
 
-        size_t index = refIdx < pParams->VideoSignalInfo.size() ? refIdx : (pParams->VideoSignalInfo.size() - 1);
-        if(pParams->VideoSignalInfo[index].enabled)
+        int index = GetCurFrameSignalIdx(pParams);
+        if ((index >= 0) && pParams->VideoSignalInfo[index].enabled)
         {
 #ifdef MFX_ENABLE_VPP_VIDEO_SIGNAL
             if(pParams->VideoSignalInfo[index].TransferMatrix != MFX_TRANSFERMATRIX_UNKNOWN)

@@ -66,6 +66,20 @@ namespace MfxHwVideoProcessing
 
     private:
 
+        // VideoSignalInfo contains infor for backward reference, current and forward reference
+        // frames. Indices in the info array are:
+        //    { <indices for bwd refs>, <current>, <indices for fwd refs> }
+        // For example, in case of ADI we will have: 1 bwd ref, 1 current, 0 fwd ref; indices will be:
+        //    VideoSignalInfo[0] - for bwd ref
+        //    VideoSignalInfo[1] - for cur reference
+        inline int GetCurFrameSignalIdx(mfxExecuteParams* pParams)
+        {
+            if (!pParams) return -1;
+            if ((size_t)pParams->bkwdRefCount < pParams->VideoSignalInfo.size()) {
+                return pParams->bkwdRefCount;
+            }
+            return -1;
+        }
 
         typedef struct _compositionStreamElement
         {
