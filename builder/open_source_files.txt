@@ -291,6 +291,7 @@ _studio/shared/umc/codec/h265_dec/include/umc_h265_task_supplier.h
 _studio/shared/umc/codec/h265_dec/include/umc_h265_va_packer.h
 _studio/shared/umc/codec/h265_dec/include/umc_h265_va_supplier.h
 _studio/shared/umc/codec/h265_dec/include/umc_h265_yuv.h
+_studio/shared/umc/codec/h265_dec/include/umc_h265_mfx_utils.h
 _studio/shared/umc/codec/h265_dec/src/umc_h265_au_splitter.cpp
 _studio/shared/umc/codec/h265_dec/src/umc_h265_bitstream_headers.cpp
 _studio/shared/umc/codec/h265_dec/src/umc_h265_debug.cpp
@@ -310,6 +311,7 @@ _studio/shared/umc/codec/h265_dec/src/umc_h265_task_supplier.cpp
 _studio/shared/umc/codec/h265_dec/src/umc_h265_va_packer.cpp
 _studio/shared/umc/codec/h265_dec/src/umc_h265_va_supplier.cpp
 _studio/shared/umc/codec/h265_dec/src/umc_h265_yuv.cpp
+_studio/shared/umc/codec/h265_dec/src/umc_h265_mfx_utils.cpp
 _studio/shared/umc/codec/mpeg2_dec/CMakeLists.txt
 _studio/shared/umc/codec/mpeg2_dec/include/umc_mpeg2_dec.h
 _studio/shared/umc/codec/mpeg2_dec/include/umc_mpeg2_dec_base.h

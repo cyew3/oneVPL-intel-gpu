@@ -16,6 +16,7 @@
 #include "mfx_common_decode_int.h"
 
 #include "umc_h265_mfx_supplier.h"
+#include "umc_h265_mfx_utils.h"
 #include "umc_h265_frame_list.h"
 
 #include "vm_sys_info.h"
@@ -650,7 +651,7 @@ mfxStatus VideoDECODEH265::DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVi
     else if (umcRes != UMC::UMC_OK)
         return ConvertUMCStatusToMfx(umcRes);
 
-    umcRes = MFX_Utility::FillVideoParam(&decoder, par, false);
+    umcRes = decoder.FillVideoParam(par, false);
     if (umcRes != UMC::UMC_OK)
         return ConvertUMCStatusToMfx(umcRes);
 
@@ -1205,7 +1206,7 @@ void VideoDECODEH265::FillVideoParam(mfxVideoParamWrapper *par, bool full)
     if (!m_pH265VideoDecoder.get())
         return;
 
-    MFX_Utility::FillVideoParam(m_pH265VideoDecoder.get(), par, full);
+    m_pH265VideoDecoder->FillVideoParam(par, full);
 
     if (MFX_Utility::GetPlatform_H265(m_core, par) != MFX_PLATFORM_SOFTWARE)
     {

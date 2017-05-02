@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -94,6 +94,9 @@ public:
     // Set initial video params from application
     void SetVideoParams(mfxVideoParam * par);
 
+    // Initialize mfxVideoParam structure based on decoded bitstream header values
+    UMC::Status FillVideoParam(mfxVideoParam *par, bool full);
+
 protected:
 
     // Decode SEI nal unit
@@ -116,34 +119,6 @@ private:
         return *this;
 
     } // MFXTaskSupplier_H265 & operator = (MFXTaskSupplier_H265 &)
-};
-
-// MFX utility API functions
-class MFX_Utility
-{
-public:
-
-    // Initialize mfxVideoParam structure based on decoded bitstream header values
-    static UMC::Status MFX_CDECL FillVideoParam(const H265SeqParamSet * seq, mfxVideoParam *par, bool full);
-
-    // Returns implementation platform
-    static eMFXPlatform MFX_CDECL GetPlatform_H265(VideoCORE * core, mfxVideoParam * par);
-    // Initialize mfxVideoParam structure based on decoded bitstream header values
-    static UMC::Status MFX_CDECL FillVideoParam(TaskSupplier_H265 * supplier, ::mfxVideoParam *par, bool full);
-    // Find bitstream header NAL units, parse them and fill application parameters structure
-    static UMC::Status MFX_CDECL DecodeHeader(TaskSupplier_H265 * supplier, UMC::VideoDecoderParams* params, mfxBitstream *bs, mfxVideoParam *out);
-
-    // MediaSDK DECODE_Query API function
-    static mfxStatus MFX_CDECL Query_H265(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out, eMFXHWType type);
-    // Validate input parameters
-    static bool MFX_CDECL CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType type);
-
-    static bool MFX_CDECL IsBugSurfacePoolApplicable(eMFXHWType hwtype, mfxVideoParam * par);
-private:
-
-    // Check HW capabilities
-    static bool IsNeedPartialAcceleration_H265(mfxVideoParam * par, eMFXHWType type);
-
 };
 
 } // namespace UMC_HEVC_DECODER
