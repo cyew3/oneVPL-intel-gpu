@@ -24,13 +24,13 @@ using namespace MfxHwH264Encode;
 template void MfxH264FEIcommon::ConfigureTaskFEI<>(
     DdiTask             & task,
     DdiTask       const & prevTask,
-    MfxVideoParam const & video,
+    MfxVideoParam       & video,
     mfxENCInput * inParams);
 
 template void MfxH264FEIcommon::ConfigureTaskFEI<>(
     DdiTask             & task,
     DdiTask       const & prevTask,
-    MfxVideoParam const & video,
+    MfxVideoParam       & video,
     mfxPAKInput * inParams);
 
 #else
@@ -38,7 +38,7 @@ template void MfxH264FEIcommon::ConfigureTaskFEI<>(
 template void MfxH264FEIcommon::ConfigureTaskFEI<>(
     DdiTask             & task,
     DdiTask       const & prevTask,
-    MfxVideoParam const & video,
+    MfxVideoParam       & video,
     mfxENCInput * inParams,
     mfxENCInput * outParams,
     std::map<mfxU32, mfxU32> &      frameOrder_frameNum);
@@ -46,7 +46,7 @@ template void MfxH264FEIcommon::ConfigureTaskFEI<>(
 template void MfxH264FEIcommon::ConfigureTaskFEI<>(
     DdiTask             & task,
     DdiTask       const & prevTask,
-    MfxVideoParam const & video,
+    MfxVideoParam       & video,
     mfxPAKInput * inParams,
     mfxPAKOutput* outParams,
     std::map<mfxU32, mfxU32> &      frameOrder_frameNum);
@@ -59,7 +59,7 @@ template <typename T>
 void MfxH264FEIcommon::ConfigureTaskFEI(
     DdiTask             & task,
     DdiTask       const & prevTask,
-    MfxVideoParam const & video,
+    MfxVideoParam       & video,
     T                   * inParams)
 
 #else
@@ -68,7 +68,7 @@ template <typename T, typename U>
 void MfxH264FEIcommon::ConfigureTaskFEI(
     DdiTask             & task,
     DdiTask       const & prevTask,
-    MfxVideoParam const & video,
+    MfxVideoParam       & video,
     T                   * inParams,
     U                   * outParams,
     std::map<mfxU32, mfxU32> &      frameOrder_frameNum)
@@ -91,6 +91,7 @@ void MfxH264FEIcommon::ConfigureTaskFEI(
     mfxExtCodingOption  const & extOpt  = GetExtBufferRef(video);
     mfxExtCodingOption2 const & extOpt2 = GetExtBufferRef(video);
     mfxExtSpsHeader     const & extSps  = GetExtBufferRef(video);
+    mfxExtPpsHeader           * extPps  = GetExtBuffer(video);
 
     mfxU32 const FRAME_NUM_MAX = 1 << (extSps.log2MaxFrameNumMinus4 + 4);
 
@@ -194,6 +195,30 @@ void MfxH264FEIcommon::ConfigureTaskFEI(
 
         // Fill DPB
         mfxExtFeiPPS * pDataPPS = GetExtBufferFEI(inParams, idxToPickBuffer);
+
+        // Force PPS insertion if manual PPS with new parameters provided
+        if (   extPps->seqParameterSetId              != pDataPPS->SPSId
+            || extPps->picParameterSetId              != pDataPPS->PPSId
+            || extPps->picInitQpMinus26               != pDataPPS->PicInitQP - 26
+            || extPps->numRefIdxL0DefaultActiveMinus1 != (std::max)(pDataPPS->NumRefIdxL0Active, mfxU16(1)) - 1
+            || extPps->numRefIdxL1DefaultActiveMinus1 != (std::max)(pDataPPS->NumRefIdxL1Active, mfxU16(1)) - 1
+            || extPps->chromaQpIndexOffset            != pDataPPS->ChromaQPIndexOffset
+            || extPps->secondChromaQpIndexOffset      != pDataPPS->SecondChromaQPIndexOffset
+            || extPps->transform8x8ModeFlag           != pDataPPS->Transform8x8ModeFlag)
+        {
+            task.m_insertPps[fieldParity] = true;
+
+            extPps->seqParameterSetId              = pDataPPS->SPSId;
+            extPps->picParameterSetId              = pDataPPS->PPSId;
+
+            extPps->picInitQpMinus26               = pDataPPS->PicInitQP - 26;
+            extPps->numRefIdxL0DefaultActiveMinus1 = (std::max)(pDataPPS->NumRefIdxL0Active, mfxU16(1)) - 1;
+            extPps->numRefIdxL1DefaultActiveMinus1 = (std::max)(pDataPPS->NumRefIdxL1Active, mfxU16(1)) - 1;
+
+            extPps->chromaQpIndexOffset            = pDataPPS->ChromaQPIndexOffset;
+            extPps->secondChromaQpIndexOffset      = pDataPPS->SecondChromaQPIndexOffset;
+            extPps->transform8x8ModeFlag           = pDataPPS->Transform8x8ModeFlag;
+        }
 
         std::vector<mfxFrameSurface1*> dpb_frames;
         dpb_frames.reserve(16);

@@ -1075,17 +1075,20 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
     mfxExtFeiPPS             * pDataPPS         = GetExtBufferFEI(in, idxToPickBuffer);
     mfxExtPpsHeader          * extPps           = GetExtBuffer(m_videoParam);
 
-    extPps->seqParameterSetId              = pDataPPS->SPSId;
-    extPps->picParameterSetId              = pDataPPS->PPSId;
+    // Force PPS insertion if manual PPS with new parameters provided
+    if (task.m_insertPps[fieldId])
+    {
+        extPps->seqParameterSetId              = pDataPPS->SPSId;
+        extPps->picParameterSetId              = pDataPPS->PPSId;
 
-    extPps->picInitQpMinus26               = pDataPPS->PicInitQP - 26;
-    extPps->numRefIdxL0DefaultActiveMinus1 = (std::max)(pDataPPS->NumRefIdxL0Active, mfxU16(1)) - 1;
-    extPps->numRefIdxL1DefaultActiveMinus1 = (std::max)(pDataPPS->NumRefIdxL1Active, mfxU16(1)) - 1;
+        extPps->picInitQpMinus26               = pDataPPS->PicInitQP - 26;
+        extPps->numRefIdxL0DefaultActiveMinus1 = (std::max)(pDataPPS->NumRefIdxL0Active, mfxU16(1)) - 1;
+        extPps->numRefIdxL1DefaultActiveMinus1 = (std::max)(pDataPPS->NumRefIdxL1Active, mfxU16(1)) - 1;
 
-    extPps->chromaQpIndexOffset            = pDataPPS->ChromaQPIndexOffset;
-    extPps->secondChromaQpIndexOffset      = pDataPPS->SecondChromaQPIndexOffset;
-    extPps->transform8x8ModeFlag           = pDataPPS->Transform8x8ModeFlag;
-
+        extPps->chromaQpIndexOffset            = pDataPPS->ChromaQPIndexOffset;
+        extPps->secondChromaQpIndexOffset      = pDataPPS->SecondChromaQPIndexOffset;
+        extPps->transform8x8ModeFlag           = pDataPPS->Transform8x8ModeFlag;
+    }
 
     // Pack headers if required
     if (task.m_insertSps[fieldId] || task.m_insertPps[fieldId])
@@ -2019,16 +2022,20 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
     mfxExtFeiPPS          * pDataPPS         = GetExtBufferFEI(in, idxToPickBuffer);
     mfxExtPpsHeader       * extPps           = GetExtBuffer(m_videoParam);
 
-    extPps->seqParameterSetId              = pDataPPS->SPSId;
-    extPps->picParameterSetId              = pDataPPS->PPSId;
+    // Force PPS insertion if manual PPS with new parameters provided
+    if (task.m_insertPps[fieldId])
+    {
+        extPps->seqParameterSetId              = pDataPPS->SPSId;
+        extPps->picParameterSetId              = pDataPPS->PPSId;
 
-    extPps->picInitQpMinus26               = pDataPPS->PicInitQP - 26;
-    extPps->numRefIdxL0DefaultActiveMinus1 = (std::max)(pDataPPS->NumRefIdxL0Active, mfxU16(1)) - 1;
-    extPps->numRefIdxL1DefaultActiveMinus1 = (std::max)(pDataPPS->NumRefIdxL1Active, mfxU16(1)) - 1;
+        extPps->picInitQpMinus26               = pDataPPS->PicInitQP - 26;
+        extPps->numRefIdxL0DefaultActiveMinus1 = (std::max)(pDataPPS->NumRefIdxL0Active, mfxU16(1)) - 1;
+        extPps->numRefIdxL1DefaultActiveMinus1 = (std::max)(pDataPPS->NumRefIdxL1Active, mfxU16(1)) - 1;
 
-    extPps->chromaQpIndexOffset            = pDataPPS->ChromaQPIndexOffset;
-    extPps->secondChromaQpIndexOffset      = pDataPPS->SecondChromaQPIndexOffset;
-    extPps->transform8x8ModeFlag           = pDataPPS->Transform8x8ModeFlag;
+        extPps->chromaQpIndexOffset            = pDataPPS->ChromaQPIndexOffset;
+        extPps->secondChromaQpIndexOffset      = pDataPPS->SecondChromaQPIndexOffset;
+        extPps->transform8x8ModeFlag           = pDataPPS->Transform8x8ModeFlag;
+    }
 
     // Pack headers if required
     if (task.m_insertSps[fieldId] || task.m_insertPps[fieldId])

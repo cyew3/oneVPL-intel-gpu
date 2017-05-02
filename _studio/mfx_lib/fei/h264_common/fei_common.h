@@ -51,14 +51,14 @@ namespace MfxH264FEIcommon
     void ConfigureTaskFEI(
         MfxHwH264Encode::DdiTask             & task,
         MfxHwH264Encode::DdiTask       const & prevTask,
-        MfxHwH264Encode::MfxVideoParam const & video,
+        MfxHwH264Encode::MfxVideoParam       & video,
         T * inParams);
 #else
     template <typename T, typename U>
     void ConfigureTaskFEI(
         MfxHwH264Encode::DdiTask             & task,
         MfxHwH264Encode::DdiTask       const & prevTask,
-        MfxHwH264Encode::MfxVideoParam const & video,
+        MfxHwH264Encode::MfxVideoParam       & video,
         T * inParams,
         U * outParams,
         std::map<mfxU32, mfxU32> &      frameOrder_frameNum);
