@@ -1443,14 +1443,19 @@ void CTranscodingPipeline::SetEncCtrlRT(ExtendedSurface& extSurface, mfxEncodeCt
 
         // Initialize *pCtrl optionally copying content of the pExtSurface.pAuxCtrl.encCtrl
         if (extSurface.pEncCtrl)
+        {
             *pCtrl = *extSurface.pEncCtrl;
+        }
 
         // Replace the buffers pointer to pre-allocated storage
         pCtrl->ExtParam = &m_extBuffPtrStorage[idx*MAX_EXTBUF_CNT];
 
-        // Copy all extended buffer pointers from pExtSurface.pAuxCtrl.encCtrl
-        for (i=0; i<pCtrl->NumExtParam; i++)
-            pCtrl->ExtParam[i] = extSurface.pAuxCtrl->encCtrl.ExtParam[i];
+        if (extSurface.pEncCtrl)
+        {
+            // Copy all extended buffer pointers from pExtSurface.pAuxCtrl.encCtrl
+            for (i = 0; i < pCtrl->NumExtParam; i++)
+                pCtrl->ExtParam[i] = extSurface.pEncCtrl->ExtParam[i];
+        }
 
         // Attach additional buffer with either MBQP or ROI information
         if (m_bUseQPMap)
