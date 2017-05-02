@@ -1836,6 +1836,7 @@ mfxStatus GeneralWriter::Init(
             }
 
             msdk_char out_buf[MSDK_MAX_FILENAME_LEN*4+20];
+            msdk_char fname[MSDK_MAX_FILENAME_LEN];
 
 #if defined(_WIN32) || defined(_WIN64)
             {
@@ -1854,8 +1855,6 @@ mfxStatus GeneralWriter::Init(
             }
 #else
             {
-                msdk_char fname[MSDK_MAX_FILENAME_LEN];
-
                 msdk_strncopy_s(fname, MSDK_MAX_FILENAME_LEN, strFileName, MSDK_MAX_FILENAME_LEN - 1);
                 fname[MSDK_MAX_FILENAME_LEN - 1] = 0;
                 char* pFound = strrchr(fname,'.');
