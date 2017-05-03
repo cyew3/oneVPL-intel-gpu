@@ -355,13 +355,7 @@ void MFX_SW_TaskSupplier::AddFakeReferenceFrame(H264Slice * pSlice)
     if (!pFrame)
         return;
 
-    Status umcRes = InitFreeFrame(pFrame, pSlice);
-    if (umcRes != UMC_OK)
-    {
-        return;
-    }
-
-    umcRes = AllocateFrameData(pFrame, pFrame->lumaSize(), pFrame->m_bpp, pFrame->GetColorFormat());
+    Status umcRes = AllocateFrameData(pFrame);
     if (umcRes != UMC_OK)
     {
         return;
@@ -452,25 +446,27 @@ H264DecoderFrame * MFX_SW_TaskSupplier::GetFreeFrame(const H264Slice *pSlice)
 
     DecReferencePictureMarking::Remove(pFrame);
     pFrame->Reset();
-    pFrame->IncrementReference();
 
     if (view.pCurFrame == pFrame)
         view.pCurFrame = 0;
 
-    m_UIDFrameCounter++;
-    pFrame->m_UID = m_UIDFrameCounter;
+    InitFreeFrame(pFrame, pSlice);
 
     return pFrame;
 }
 
 
-Status MFX_SW_TaskSupplier::AllocateFrameData(H264DecoderFrame * pFrame, IppiSize dimensions, Ipp32s bit_depth, ColorFormat color_format)
+Status MFX_SW_TaskSupplier::AllocateFrameData(H264DecoderFrame * pFrame)
 {
+    IppiSize dimensions = pFrame->lumaSize();
     VideoDataInfo info;
-    info.Init(dimensions.width, dimensions.height, color_format, bit_depth);
+    info.Init(dimensions.width, dimensions.height, pFrame->GetColorFormat(), pFrame->m_bpp);
 
     FrameMemID frmMID;
     Status sts = m_pFrameAllocator->Alloc(&frmMID, &info, 0);
+
+    if (sts == UMC_ERR_ALLOC)
+        return UMC_ERR_ALLOC;
 
     if (sts != UMC_OK)
     {
@@ -483,6 +479,10 @@ Status MFX_SW_TaskSupplier::AllocateFrameData(H264DecoderFrame * pFrame, IppiSiz
         throw h264_exception(UMC_ERR_LOCK);
 
     pFrame->allocate(frmData, &info);
+
+    pFrame->IncrementReference();
+    m_UIDFrameCounter++;
+    pFrame->m_UID = m_UIDFrameCounter;
     pFrame->m_index = frmMID;
 
     Status umcRes = ((H264DecoderFrameEx *)pFrame)->allocateParsedFrameData();

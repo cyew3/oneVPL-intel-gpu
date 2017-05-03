@@ -1362,12 +1362,6 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
 
         for (;;)
         {
-            if (m_FrameAllocator->FindFreeSurface() == -1)
-            {
-                umcRes = UMC::UMC_ERR_NOT_ENOUGH_BUFFER;
-            }
-            else
-            {
 #if (defined(MFX_VA_WIN) || defined (MFX_VA_LINUX)) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
                 if (IS_PROTECTION_WIDEVINE(m_vPar.Protected))
                 {
@@ -1388,26 +1382,35 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
                 else
 #endif
                     umcRes = m_pH264VideoDecoder->AddSource(bs ? &src : 0);
-            }
 
             umcAddSourceRes = umcFrameRes = umcRes;
+
+            src.Save(bs);
+
+            if (umcRes == UMC_ERR_ALLOC)
+            {
+                sts = MFX_ERR_MORE_SURFACE;
+                break;
+            }
 
             if (umcRes == UMC::UMC_NTF_NEW_RESOLUTION || umcRes == UMC::UMC_WRN_REPOSITION_INPROGRESS || umcRes == UMC::UMC_ERR_UNSUPPORTED)
             {
                 FillVideoParam(&m_vPar, true);
-            }
+                if (umcRes == UMC::UMC_WRN_REPOSITION_INPROGRESS)
+                {
+                    if (!m_isFirstRun)
+                    {
+                        sts = MFX_WRN_VIDEO_PARAM_CHANGED;
+                    }
+                    else
+                    {
+                        umcAddSourceRes = umcFrameRes = umcRes = UMC::UMC_OK;
+                        m_isFirstRun = false;
+                    }
+                }
 
-            if (umcRes == UMC::UMC_WRN_REPOSITION_INPROGRESS)
-            {
-                if (!m_isFirstRun)
-                {
-                    sts = MFX_WRN_VIDEO_PARAM_CHANGED;
-                }
-                else
-                {
-                    umcAddSourceRes = umcFrameRes = umcRes = UMC::UMC_OK;
-                    m_isFirstRun = false;
-                }
+                if (umcRes == UMC::UMC_NTF_NEW_RESOLUTION)
+                    return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
             }
 
             if (umcRes == UMC::UMC_ERR_INVALID_STREAM)
@@ -1417,17 +1420,6 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
                 if (IS_PROTECTION_WIDEVINE(m_vPar.Protected))
                     sts = MFX_ERR_UNDEFINED_BEHAVIOR;
 #endif
-            }
-
-            if (umcRes == UMC::UMC_NTF_NEW_RESOLUTION)
-            {
-                sts = MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-            }
-
-            if (umcRes == UMC::UMC_OK && m_FrameAllocator->FindFreeSurface() == -1)
-            {
-                sts = MFX_ERR_MORE_SURFACE;
-                umcFrameRes = UMC::UMC_ERR_NOT_ENOUGH_BUFFER;
             }
 
             if (umcRes == UMC::UMC_ERR_NOT_ENOUGH_BUFFER || umcRes == UMC::UMC_WRN_INFO_NOT_READY)
@@ -1444,26 +1436,11 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
                 sts = MFX_ERR_MORE_DATA;
             }
 
-#if defined(MFX_VA_WIN) || defined (MFX_VA_LINUX)
-            if (umcRes == UMC::UMC_ERR_DEVICE_FAILED)
+            if (umcRes == UMC::UMC_ERR_DEVICE_FAILED || umcRes == UMC::UMC_ERR_GPU_HANG)
             {
-                sts = MFX_ERR_DEVICE_FAILED;
-            }
-
-            if (umcRes == UMC::UMC_ERR_GPU_HANG)
-            {
-                sts = MFX_ERR_GPU_HANG;
-            }
-#endif
-            src.Save(bs);
-
-            if (sts == MFX_ERR_INCOMPATIBLE_VIDEO_PARAM)
-                return sts;
-
-            //return these errors immediatelly unless we have [input == 0]
-            if (sts == MFX_ERR_DEVICE_FAILED || sts == MFX_ERR_GPU_HANG)
-            {
-               if (!bs)
+                //return these errors immediatelly unless we have [input == 0]
+                sts = (umcRes == UMC::UMC_ERR_DEVICE_FAILED) ? MFX_ERR_DEVICE_FAILED : MFX_ERR_GPU_HANG;
+                if (!bs)
                     force = true;
                 else
                     return sts;
@@ -1486,10 +1463,9 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
                 return MFX_ERR_NONE;
             }
 
-            *surface_out = 0;
-
             if (umcFrameRes != UMC::UMC_OK)
                 break;
+
         } // for (;;)
     }
     catch(const UMC::h264_exception & ex)

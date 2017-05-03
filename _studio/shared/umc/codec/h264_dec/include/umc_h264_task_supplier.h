@@ -576,8 +576,7 @@ protected:
     void AddSliceToFrame(H264DecoderFrame *pFrame, H264Slice *pSlice);
 
     // Initialize just allocated frame with slice parameters
-    virtual
-    Status InitFreeFrame(H264DecoderFrame *pFrame, const H264Slice *pSlice);
+    virtual void InitFreeFrame(H264DecoderFrame *pFrame, const H264Slice *pSlice);
     // Initialize frame's counter and corresponding parameters
     virtual
     void InitFrameCounter(H264DecoderFrame *pFrame, const H264Slice *pSlice);
@@ -593,7 +592,7 @@ protected:
 
     virtual Status AddOneFrame(MediaData * pSource);
 
-    virtual Status AllocateFrameData(H264DecoderFrame * pFrame, IppiSize dimensions, Ipp32s bit_depth, ColorFormat color_format) = 0;
+    virtual Status AllocateFrameData(H264DecoderFrame * pFrame) = 0;
 
     virtual Status DecodeHeaders(MediaDataEx *nalUnit);
     virtual Status DecodeSEI(MediaDataEx *nalUnit);
@@ -609,7 +608,7 @@ protected:
 
     void PreventDPBFullness();
 
-    H264DecoderFrame *AllocateNewFrame(const H264Slice *pSlice);
+    Status AllocateNewFrame(const H264Slice *pSlice, H264DecoderFrame **frame);
 
     Status InitializeLayers(AccessUnit *accessUnit, H264DecoderFrame * pFrame, Ipp32s field);
     void ApplyPayloadsToFrame(H264DecoderFrame * frame, H264Slice *slice, SeiPayloadArray * payloads);

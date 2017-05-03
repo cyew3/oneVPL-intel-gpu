@@ -52,7 +52,7 @@ protected:
 
     Status AddSource(MediaData*);
 
-    virtual Status AllocateFrameData(H264DecoderFrame * pFrame, IppiSize dimensions, Ipp32s bit_depth, ColorFormat chroma_format_idc);
+    virtual Status AllocateFrameData(H264DecoderFrame * pFrame);
 
     virtual void InitFrameCounter(H264DecoderFrame * pFrame, const H264Slice *pSlice);
 
@@ -93,9 +93,9 @@ public:
 
 protected:
 
-    virtual Status AllocateFrameData(H264DecoderFrame * pFrame, IppiSize dimensions, Ipp32s bit_depth, ColorFormat chroma_format_idc)
+    virtual Status AllocateFrameData(H264DecoderFrame * pFrame)
     {
-        Status ret = BaseClass::AllocateFrameData(pFrame, dimensions, bit_depth, chroma_format_idc);
+        Status ret = BaseClass::AllocateFrameData(pFrame);
         if (ret == UMC_OK)
         {
             pFrame->m_index = BaseClass::GetFreeFrameIndex();

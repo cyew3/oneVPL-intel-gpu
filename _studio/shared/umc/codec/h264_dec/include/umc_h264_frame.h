@@ -124,7 +124,6 @@ class H264DecoderFrame
     Ipp8u  m_isDecodingStarted;
     Ipp8u  m_isDecodingCompleted;
     Ipp8u  m_isSkipped;
-    Ipp8u  m_isActive;
 
     Ipp8u  m_wasDisplayed;
     Ipp8u  m_wasOutputted;

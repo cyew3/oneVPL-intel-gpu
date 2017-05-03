@@ -91,7 +91,6 @@ H264DecoderFrame::H264DecoderFrame(MemoryAllocator *pMemoryAllocator, H264_Heap_
     m_isDecodingStarted = 0;
     m_isDecodingCompleted = 0;
     m_isSkipped = 0;
-    m_isActive = 0;
     m_wasOutputted = 0;
     m_wasDisplayed = 0;
     prepared[0] = false;
@@ -166,7 +165,7 @@ void H264DecoderFrame::Reset()
     m_isDecodingStarted = 0;
     m_isDecodingCompleted = 0;
     m_isSkipped = 0;
-    m_isActive = 0;
+    m_auIndex = -1;
     m_wasOutputted = 0;
     m_wasDisplayed = 0;
     m_dpb_output_delay = INVALID_DPB_OUTPUT_DELAY;

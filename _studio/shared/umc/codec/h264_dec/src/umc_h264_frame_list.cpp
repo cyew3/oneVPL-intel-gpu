@@ -531,7 +531,7 @@ H264DecoderFrame *H264DBPList::findInterViewRef(Ipp32s auIndex, Ipp32u bottomFie
     H264DecoderFrame *pCurr = m_pHead;
     while (pCurr)
     {
-        if (pCurr->m_auIndex == auIndex && pCurr->m_isActive)
+        if (pCurr->m_auIndex == auIndex)
         {
             Ipp32u fieldIdx = pCurr->GetNumberByParity(bottomFieldFlag);
             return pCurr->isInterViewRef(fieldIdx) ? pCurr : 0;

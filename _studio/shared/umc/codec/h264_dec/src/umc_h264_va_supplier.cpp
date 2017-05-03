@@ -169,11 +169,7 @@ H264DecoderFrame *VATaskSupplier::GetFreeFrame(const H264Slice * pSlice)
 
     DecReferencePictureMarking::Remove(pFrame);
     pFrame->Reset();
-    pFrame->IncrementReference();
-
-    m_UIDFrameCounter++;
-    pFrame->m_UID = m_UIDFrameCounter;
-
+    InitFreeFrame(pFrame, pSlice);
     return pFrame;
 }
 
@@ -288,13 +284,17 @@ Status VATaskSupplier::AddSource(MediaData * pSource)
     return UMC_WRN_INFO_NOT_READY;
 }
 
-Status VATaskSupplier::AllocateFrameData(H264DecoderFrame * pFrame, IppiSize dimensions, Ipp32s bit_depth, ColorFormat color_format)
+Status VATaskSupplier::AllocateFrameData(H264DecoderFrame * pFrame)
 {
+    IppiSize dimensions = pFrame->lumaSize();
     VideoDataInfo info;
-    info.Init(dimensions.width, dimensions.height, color_format, bit_depth);
+    info.Init(dimensions.width, dimensions.height, pFrame->GetColorFormat(), pFrame->m_bpp);
 
     FrameMemID frmMID;
     Status sts = m_pFrameAllocator->Alloc(&frmMID, &info, 0);
+
+    if (sts == UMC_ERR_ALLOC)
+        return UMC_ERR_ALLOC;
 
     if (sts != UMC_OK)
         throw h264_exception(UMC_ERR_ALLOC);
@@ -325,6 +325,9 @@ Status VATaskSupplier::AllocateFrameData(H264DecoderFrame * pFrame, IppiSize dim
 
     pFrame->allocate(&frmData, &info);
 
+    pFrame->IncrementReference();
+    m_UIDFrameCounter++;
+    pFrame->m_UID = m_UIDFrameCounter;
     pFrame->m_index = frmMID;
 
     return UMC_OK;

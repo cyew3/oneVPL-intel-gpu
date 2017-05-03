@@ -264,204 +264,6 @@ Status DecReferencePictureMarking::CheckSEIRepetition(ViewItem &view, H264SEIPay
         return UMC_ERR_FAILED;
     }
 
-#if 0
-    Ipp32s field_index = payload->SEI_messages.dec_ref_pic_marking_repetition.original_bottom_field_flag;
-    bool bCurrentisST = true;
-
-    DPBCommandsList commandsList;
-
-    if (payload->SEI_messages.dec_ref_pic_marking_repetition.original_idr_flag)
-    {
-        // mark all reference pictures as unused
-        for (H264DecoderFrame *pCurr = view.pDPB->head(); pCurr; pCurr = pCurr->future())
-        {
-            if (pCurr->isShortTermRef() || pCurr->isLongTermRef())
-            {
-                AddItem(commandsList, pFrame, pCurr, UNSET_REFERENCE | FULL_FRAME | SHORT_TERM);
-                AddItem(commandsList, pFrame, pCurr, UNSET_REFERENCE | FULL_FRAME | LONG_TERM);
-            }
-        }
-
-        if (payload->SEI_messages.dec_ref_pic_marking_repetition.long_term_reference_flag)
-        {
-            AddItem(commandsList, pFrame, pFrame, SET_REFERENCE | LONG_TERM | (field_index ? BOTTOM_FIELD : TOP_FIELD));
-        }
-        else
-        {
-            AddItem(commandsList, pFrame, pFrame, SET_REFERENCE | SHORT_TERM | (field_index ? BOTTOM_FIELD : TOP_FIELD));
-        }
-
-        bCurrentisST = false;
-    }
-    else
-    {
-        AdaptiveMarkingInfo* pAdaptiveMarkingInfo = &payload->SEI_messages.dec_ref_pic_marking_repetition.adaptiveMarkingInfo;
-        // adaptive ref pic marking
-        if (pAdaptiveMarkingInfo && pAdaptiveMarkingInfo->num_entries > 0)
-        {
-            for (Ipp32u arpmmf_idx = 0; arpmmf_idx<pAdaptiveMarkingInfo->num_entries; arpmmf_idx++)
-            {
-                H264DecoderFrame * pRefFrame = 0;
-                Ipp32s field = 0;
-                Ipp32s picNum;
-                Ipp32s LongTermFrameIdx;
-
-                switch (pAdaptiveMarkingInfo->mmco[arpmmf_idx])
-                {
-                case 1:
-                    // mark a short-term picture as unused for reference
-                    // Value is difference_of_pic_nums_minus1
-                    picNum = pFrame->PicNum(field_index) -
-                        (pAdaptiveMarkingInfo->value[arpmmf_idx*2] + 1);
-
-                    pRefFrame = view.pDPB->findShortTermPic(picNum, &field);
-                    AddItem(commandsList, pFrame, pRefFrame, UNSET_REFERENCE | SHORT_TERM | (field ? BOTTOM_FIELD : TOP_FIELD));
-                    break;
-                case 2:
-                    // mark a long-term picture as unused for reference
-                    // value is long_term_pic_num
-                    picNum = pAdaptiveMarkingInfo->value[arpmmf_idx*2];
-                    pRefFrame = view.pDPB->findLongTermPic(picNum, &field);
-                    AddItem(commandsList, pFrame, pRefFrame, UNSET_REFERENCE | LONG_TERM | (field ? BOTTOM_FIELD : TOP_FIELD));
-                    break;
-                case 3:
-                    // Assign a long-term frame idx to a short-term picture
-                    // Value is difference_of_pic_nums_minus1 followed by
-                    // long_term_frame_idx. Only this case uses 2 value entries.
-                    picNum = pFrame->PicNum(field_index) -
-                        (pAdaptiveMarkingInfo->value[arpmmf_idx*2] + 1);
-                    LongTermFrameIdx = pAdaptiveMarkingInfo->value[arpmmf_idx*2+1];
-
-                    pRefFrame = view.pDPB->findShortTermPic(picNum, &field);
-                    if (!pRefFrame)
-                        break;
-
-                    {
-                        H264DecoderFrame * longTerm = view.pDPB->findLongTermRefIdx(LongTermFrameIdx);
-                        if (longTerm != pRefFrame)
-                            AddItemAndRun(pFrame, longTerm, UNSET_REFERENCE | LONG_TERM | FULL_FRAME);
-                    }
-
-                    AddItem(commandsList, pFrame, pRefFrame, SET_REFERENCE | LONG_TERM | (field ? BOTTOM_FIELD : TOP_FIELD));
-                    AddItem(commandsList, pFrame, pRefFrame, UNSET_REFERENCE | SHORT_TERM | (field ? BOTTOM_FIELD : TOP_FIELD));
-                    break;
-                case 4:
-                    // Specify max long term frame idx
-                    // Value is max_long_term_frame_idx_plus1
-                    // Set to "no long-term frame indices" (-1) when value == 0.
-                    view.MaxLongTermFrameIdx = pAdaptiveMarkingInfo->value[arpmmf_idx*2] - 1;
-
-                    pRefFrame = view.pDPB->findOldLongTermRef(view.MaxLongTermFrameIdx);
-                    while (pRefFrame)
-                    {
-                        AddItem(commandsList, pFrame, pRefFrame, UNSET_REFERENCE | LONG_TERM | FULL_FRAME);
-                        pRefFrame = view.pDPB->findOldLongTermRef(view.MaxLongTermFrameIdx);
-                    }
-                    break;
-                case 5:
-                    // Mark all as unused for reference
-                    // no value
-                    for (H264DecoderFrame *pCurr = view.pDPB->head(); pCurr; pCurr = pCurr->future())
-                    {
-                        if (pCurr->isShortTermRef() || pCurr->isLongTermRef())
-                        {
-                            AddItemAndRun(pFrame, pCurr, UNSET_REFERENCE | FULL_FRAME | SHORT_TERM);
-                            AddItemAndRun(pFrame, pCurr, UNSET_REFERENCE | FULL_FRAME | LONG_TERM);
-                        }
-                    }
-
-                    view.pDPB->IncreaseRefPicListResetCount(pFrame);
-                    view.MaxLongTermFrameIdx = -1;        // no long term frame indices
-                    // set "previous" picture order count vars for future
-
-                    if (pFrame->m_PictureStructureForDec < FRM_STRUCTURE)
-                    {
-                        pFrame->setPicOrderCnt(0, field_index);
-                        pFrame->setPicNum(0, field_index);
-                    }
-                    else
-                    {
-                        Ipp32s poc = pFrame->PicOrderCnt(0, 3);
-                        pFrame->setPicOrderCnt(pFrame->PicOrderCnt(0, 1) - poc, 0);
-                        pFrame->setPicOrderCnt(pFrame->PicOrderCnt(1, 1) - poc, 1);
-                        pFrame->setPicNum(0, 0);
-                        pFrame->setPicNum(0, 1);
-                    }
-
-                    view.pPOCDec->Reset(0);
-                    // set frame_num to zero for this picture, for correct
-                    // FrameNumWrap
-                    pFrame->setFrameNum(0);
-                    break;
-                case 6:
-                    // Assign long term frame idx to current picture
-                    // Value is long_term_frame_idx
-                    LongTermFrameIdx = pAdaptiveMarkingInfo->value[arpmmf_idx*2];
-                    bCurrentisST = false;
-
-                    pRefFrame = view.pDPB->findLongTermRefIdx(LongTermFrameIdx);
-                    if (pRefFrame != pFrame)
-                        AddItem(commandsList, pFrame, pRefFrame, UNSET_REFERENCE | LONG_TERM | FULL_FRAME);
-
-                    AddItem(commandsList, pFrame, pFrame, SET_REFERENCE | LONG_TERM | (field_index ? BOTTOM_FIELD : TOP_FIELD));
-
-                    pFrame->setLongTermFrameIdx(LongTermFrameIdx);
-                    break;
-                case 0:
-                default:
-                    // invalid mmco command in bitstream
-                    VM_ASSERT(0);
-                    umcRes = UMC_ERR_INVALID_STREAM;
-                    break;
-                }    // switch
-            }    // for arpmmf_idx
-        }
-    }    // not IDR picture
-
-    if (bCurrentisST)
-    { // set current as
-        if (payload->SEI_messages.dec_ref_pic_marking_repetition.original_field_pic_flag && field_index)
-        {
-        }
-        else
-        {
-            SlideWindow(view, 0, field_index);
-        }
-
-        AddItemAndRun(pFrame, pFrame, SET_REFERENCE | SHORT_TERM | (field_index ? BOTTOM_FIELD : TOP_FIELD));
-    }
-
-        struct TempSt
-        {
-            bool shortRef[2];
-            bool longRef[2];
-        };
-
-        std::vector<TempSt> tempArr;
-        for (H264DecoderFrame *pCurr = view.pDPB->head(); pCurr; pCurr = pCurr->future())
-        {
-            TempSt temp;
-            temp.shortRef[0] = pCurr->m_isShortTermRef[0];
-            temp.shortRef[1] = pCurr->m_isShortTermRef[1];
-            temp.longRef[0] = pCurr->m_isLongTermRef[0];
-            temp.longRef[1] = pCurr->m_isLongTermRef[1];
-            tempArr.push_back(temp);
-        }
-
-        //CheckSEIRepetition(view, pFrame);
-
-        Ipp32s i = 0;
-        for (H264DecoderFrame *pCurr = view.pDPB->head(); pCurr; pCurr = pCurr->future(), ++i)
-        {
-            TempSt &temp = tempArr[i];
-            if (temp.shortRef[0] != pCurr->m_isShortTermRef[0] ||
-            temp.shortRef[1] != pCurr->m_isShortTermRef[1] ||
-            temp.longRef[0] != pCurr->m_isLongTermRef[0] ||
-            temp.longRef[1] != pCurr->m_isLongTermRef[1] )
-            __asm int 3;
-        }
-#endif
-
     return umcRes;
 }
 
@@ -2958,12 +2760,9 @@ Status TaskSupplier::ProcessFrameNumGap(H264Slice *pSlice, Ipp32s field, Ipp32s 
                 return UMC_ERR_NOT_ENOUGH_BUFFER;
             }
 
-            Status res = InitFreeFrame(pFrame, pSlice);
-
-            if (res != UMC_OK)
-            {
-                return UMC_ERR_NOT_ENOUGH_BUFFER;
-            }
+            pFrame->IncrementReference();
+            m_UIDFrameCounter++;
+            pFrame->m_UID = m_UIDFrameCounter;
         }
 
         frameNumGap--;
@@ -3429,7 +3228,7 @@ Status TaskSupplier::AddOneFrame(MediaData * pSource)
     if (m_pLastSlice)
     {
         Status sts = AddSlice(m_pLastSlice, !pSource);
-        if (sts == UMC_ERR_NOT_ENOUGH_BUFFER)
+        if (sts == UMC_ERR_NOT_ENOUGH_BUFFER || sts == UMC_ERR_ALLOC)
         {
             return sts;
         }
@@ -3485,7 +3284,7 @@ Status TaskSupplier::AddOneFrame(MediaData * pSource)
                 if (pSlice)
                 {
                     umsRes = AddSlice(pSlice, !pSource);
-                    if (umsRes == UMC_ERR_NOT_ENOUGH_BUFFER || umsRes == UMC_OK)
+                    if (umsRes == UMC_ERR_NOT_ENOUGH_BUFFER || umsRes == UMC_OK || umsRes == UMC_ERR_ALLOC)
                     {
                         return umsRes;
                     }
@@ -3822,7 +3621,10 @@ Status TaskSupplier::AddSlice(H264Slice * pSlice, bool force)
                 if (setOfSlices->m_frame)
                     continue;
 
-                setOfSlices->m_frame = AllocateNewFrame(slice);
+                Status sts = AllocateNewFrame(slice, &setOfSlices->m_frame);
+                if (sts != UMC_OK)
+                    return sts;
+
                 if (!setOfSlices->m_frame)
                     return UMC_ERR_NOT_ENOUGH_BUFFER;
 
@@ -4054,9 +3856,8 @@ Status TaskSupplier::CompleteFrame(H264DecoderFrame * pFrame, Ipp32s field)
     return UMC_OK;
 }
 
-Status TaskSupplier::InitFreeFrame(H264DecoderFrame * pFrame, const H264Slice *pSlice)
+void TaskSupplier::InitFreeFrame(H264DecoderFrame * pFrame, const H264Slice *pSlice)
 {
-    Status umcRes = UMC_OK;
     const H264SeqParamSet *pSeqParam = pSlice->GetSeqParam();
 
     pFrame->m_FrameType = SliceTypeToFrameType(pSlice->GetSliceHeader()->slice_type);
@@ -4124,8 +3925,6 @@ Status TaskSupplier::InitFreeFrame(H264DecoderFrame * pFrame, const H264Slice *p
     info.Init(dimensions.width, dimensions.height, cf, bit_depth);
 
     pFrame->Init(&info);
-
-    return umcRes;
 }
 
 void TaskSupplier::InitFrameCounter(H264DecoderFrame * pFrame, const H264Slice *pSlice)
@@ -4352,9 +4151,14 @@ void TaskSupplier::ApplyPayloadsToFrame(H264DecoderFrame * frame, H264Slice *sli
     }
 }
 
-H264DecoderFrame * TaskSupplier::AllocateNewFrame(const H264Slice *slice)
+Status TaskSupplier::AllocateNewFrame(const H264Slice *slice, H264DecoderFrame **frame)
 {
-    H264DecoderFrame *pFrame = 0;
+    if (!frame || !slice)
+    {
+        return UMC_ERR_NULL_PTR;
+    }
+
+    *frame = 0;
 
     m_currentView = slice->GetSliceHeader()->nal_ext.mvc.view_id;
     ViewItem &view = GetView(m_currentView);
@@ -4364,46 +4168,29 @@ H264DecoderFrame * TaskSupplier::AllocateNewFrame(const H264Slice *slice)
         H264Slice * pFirstFrameSlice = view.pCurFrame->GetAU(0)->GetSlice(0);
         if (pFirstFrameSlice && IsFieldOfOneFrame(view.pCurFrame, pFirstFrameSlice, slice))
         {
-            pFrame = view.pCurFrame;
-            InitFrameCounter(pFrame, slice);
-        }
-        else
-        {
-            //ProcessNonPairedField(view.pCurFrame);
-            //OnFullFrame(view.pCurFrame);
+            *frame = view.pCurFrame;
+            InitFrameCounter(*frame, slice);
         }
 
         view.pCurFrame = 0;
     }
 
-    if (pFrame)
-        return pFrame;
+    if (*frame)
+        return UMC_OK;
 
-    if (!slice)
+    H264DecoderFrame *pFrame = GetFreeFrame(slice);
+    if (!pFrame)
     {
-        return NULL;
+        return UMC_ERR_NOT_ENOUGH_BUFFER;
     }
 
-    pFrame = GetFreeFrame(slice);
-
-    if (NULL == pFrame)
-    {
-        return NULL;
-    }
-
-    pFrame->m_isActive = 1;
-
-    Status umcRes = InitFreeFrame(pFrame, slice);
+    Status umcRes = AllocateFrameData(pFrame);
     if (umcRes != UMC_OK)
     {
-        return 0;
+        return umcRes;
     }
 
-    umcRes = AllocateFrameData(pFrame, pFrame->lumaSize(), pFrame->m_bpp, pFrame->GetColorFormat());
-    if (umcRes != UMC_OK)
-    {
-        return 0;
-    }
+    *frame = pFrame;
 
     if (slice->IsField())
     {
@@ -4412,7 +4199,7 @@ H264DecoderFrame * TaskSupplier::AllocateNewFrame(const H264Slice *slice)
 
     InitFrameCounter(pFrame, slice);
 
-    return pFrame;
+    return UMC_OK;
 } // H264DecoderFrame * TaskSupplier::AddFrame(H264Slice *pSlice)
 
 } // namespace UMC
