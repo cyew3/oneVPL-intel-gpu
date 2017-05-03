@@ -43,7 +43,7 @@ if(NOT GTEST_INCLUDE MATCHES NOTFOUND)
 endif()
 
 if(NOT DEFINED GTEST_FOUND)
-  message( WARNING "Google tests libraries and headers were not found! Build GTest and install to /usr/local." )
+  message( STATUS "Google tests libraries and headers were not found! Build GTest and install to /usr/local." )
 else ()
   message( STATUS "Google tests libraries were found in ${GTEST_LIB_DIR}" )
   message( STATUS "Google tests headers were found in ${GTEST_INCLUDE}" )
