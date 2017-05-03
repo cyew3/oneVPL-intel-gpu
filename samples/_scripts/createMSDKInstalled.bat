@@ -50,9 +50,9 @@ mkdir %TargetDir%\lib
 mkdir %TargetDir%\lib\win32
 mkdir %TargetDir%\lib\x64
 
-copy /Y %BuildDir%\win_Win32\lib\libmfx_vs2015.lib %TargetDir%\lib\win32\libmfx.lib
-copy /Y %BuildDir%\win_Win32\lib\libmfx_vs2015_d.lib %TargetDir%\lib\win32\libmfx_d.lib
-copy /Y %BuildDir%\win_x64\lib\libmfx_vs2015.lib %TargetDir%\lib\x64\libmfx.lib
-copy /Y %BuildDir%\win_x64\lib\libmfx_vs2015_d.lib %TargetDir%\lib\x64\libmfx_d.lib
+copy /Y %BuildDir%\win_Win32\lib\libmfx_vs2015.lib %TargetDir%\lib\win32\*.*
+copy /Y %BuildDir%\win_Win32\lib\libmfx_vs2015_d.lib %TargetDir%\lib\win32\*.*
+copy /Y %BuildDir%\win_x64\lib\libmfx_vs2015.lib %TargetDir%\lib\x64\*.*
+copy /Y %BuildDir%\win_x64\lib\libmfx_vs2015_d.lib %TargetDir%\lib\x64\*.*
 
 setx INTELMEDIASDKROOT %TargetDir%
