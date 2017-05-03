@@ -1433,7 +1433,7 @@ void CTranscodingPipeline::SetEncCtrlRT(ExtendedSurface& extSurface, mfxEncodeCt
         int i, idx = -1;
 
         // Find surface index in the pool, to use it for synchronization of extended buffer structures
-        for (i = 0; i<m_pEncPool->size(); i++)
+        for (i = 0; i<(int)m_pEncPool->size(); i++)
         {
             if ((*m_pEncPool)[i]==extSurface.pSurface)
             {
