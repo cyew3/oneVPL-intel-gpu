@@ -2177,6 +2177,12 @@ MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
     {
         m_CodingOption3.WinBRCMaxAvgKbps = pInParams->WinBRCMaxAvgKbps;
         m_CodingOption3.WinBRCSize = pInParams->WinBRCSize;
+#if _MSDK_API >= MSDK_API(1,22)
+    if (pInParams->RepartitionCheckMode)
+    {
+        m_CodingOption3.RepartitionCheckEnable = pInParams->RepartitionCheckMode;
+    }
+#endif
         m_EncExtParams.push_back((mfxExtBuffer *)&m_CodingOption3);
     }
 

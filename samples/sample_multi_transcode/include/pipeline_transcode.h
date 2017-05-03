@@ -167,6 +167,7 @@ namespace TranscodingSample
         mfxU16 GopRefDist;
         mfxU16 NumRefFrame;
         mfxU16 nBRefType;
+        mfxU16 RepartitionCheckMode;
 
         mfxU16 CodecLevel;
         mfxU16 CodecProfile;

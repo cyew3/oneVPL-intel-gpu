@@ -187,6 +187,7 @@ void TranscodingSample::PrintHelp()
                             the encoded data enters the Video Buffering Verifier buffer\n"));
 
     msdk_printf(MSDK_STRING("  -gpucopy::<on,off> Enable or disable GPU copy mode\n"));
+    msdk_printf(MSDK_STRING("  -repartitioncheck::<on,off> Enable or disable RepartitionCheckEnable mode\n"));
     msdk_printf(MSDK_STRING("  -cqp          Constant quantization parameter (CQP BRC) bitrate control method\n"));
     msdk_printf(MSDK_STRING("                              (by default constant bitrate control method is used), should be used along with -qpi, -qpp, -qpb.\n"));
     msdk_printf(MSDK_STRING("  -qpi          Constant quantizer for I frames (if bitrace control method is CQP). In range [1,51]. 0 by default, i.e.no limitations on QP.\n"));
@@ -1436,6 +1437,14 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-gpucopy::off")))
         {
             InputParams.nGpuCopyMode = MFX_GPUCOPY_OFF;
+        }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-repartitioncheck::on")))
+        {
+            InputParams.RepartitionCheckMode = MFX_CODINGOPTION_ON;
+        }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-repartitioncheck::off")))
+        {
+            InputParams.RepartitionCheckMode = MFX_CODINGOPTION_OFF;
         }
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-cqp")))
         {
