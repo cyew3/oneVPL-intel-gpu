@@ -81,5 +81,5 @@ gen_plugins_cfg("HEVC_Encoder_HW" ${HEVC_Encoder_HW_GUID} "mfx_hevce_hw64" "02" 
 
 set( defs " -DAS_HEVCE_PLUGIN ${defs} ${WARNING_FLAGS}" )
 make_library( mfx_hevce_hw64 hw shared )
-install( TARGETS mfx_hevce_hw64 LIBRARY DESTINATION ${MFX_PLUGINS_DIR} )
+msdk_install( mfx_hevce_hw64 ${MFX_PLUGINS_DIR} )
 set( defs "" )

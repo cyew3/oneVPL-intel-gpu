@@ -69,7 +69,7 @@ if(__ITT OR ENABLE_ITT)
       endif()
     endif()
   else()
-    message( FATAL_ERROR "MFX tracing is supported only for linux!")
+    message( STATUS "MFX tracing is supported only for linux!" )
   endif()
 
 endif()

@@ -36,19 +36,12 @@ set( CMAKE_SKIP_BUILD_RPATH TRUE )
 collect_oses()
 collect_arch()
 
-if( Windows )
-  message( FATAL_ERROR "Windows is not currently supported!" )
-
-else()
-
+if( Linux OR Darwin )
   # If user did not override CMAKE_INSTALL_PREFIX, then set the default prefix
   # to /opt/intel/mediasdk instead of cmake's default
   if( CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT )
     set( CMAKE_INSTALL_PREFIX /opt/intel/mediasdk CACHE PATH "Install Path Prefix" FORCE )
   endif()
-  message( STATUS "CMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}" )
-
-  set( MFX_PLUGINS_DIR ${CMAKE_INSTALL_PREFIX}/plugins )
 
   add_definitions(-DUNIX)
 
@@ -127,16 +120,27 @@ else()
 
   if(__ARCH MATCHES ia32)
     link_directories(/usr/lib)
-    set(MFX_MODULES_DIR ${CMAKE_INSTALL_PREFIX}/lib)
-    set( MFX_SAMPLES_INSTALL_BIN_DIR ${CMAKE_INSTALL_PREFIX}/samples )
-    set( MFX_SAMPLES_INSTALL_LIB_DIR ${CMAKE_INSTALL_PREFIX}/samples )
-  else ()
+  else()
     link_directories(/usr/lib64)
-    set(MFX_MODULES_DIR ${CMAKE_INSTALL_PREFIX}/lib64)
-    set( MFX_SAMPLES_INSTALL_BIN_DIR ${CMAKE_INSTALL_PREFIX}/samples )
-    set( MFX_SAMPLES_INSTALL_LIB_DIR ${CMAKE_INSTALL_PREFIX}/samples )
+  endif()
+elseif( Windows )
+  if( CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT )
+    set( CMAKE_INSTALL_PREFIX "C:/Program Files/mediasdk/" CACHE PATH "Install Path Prefix" FORCE )
   endif()
 endif( )
+
+if(__ARCH MATCHES ia32)
+  set( MFX_MODULES_DIR ${CMAKE_INSTALL_PREFIX}/lib )
+  set( MFX_SAMPLES_INSTALL_BIN_DIR ${CMAKE_INSTALL_PREFIX}/samples )
+  set( MFX_SAMPLES_INSTALL_LIB_DIR ${CMAKE_INSTALL_PREFIX}/samples )
+else()
+  set( MFX_MODULES_DIR ${CMAKE_INSTALL_PREFIX}/lib64 )
+  set( MFX_SAMPLES_INSTALL_BIN_DIR ${CMAKE_INSTALL_PREFIX}/samples )
+  set( MFX_SAMPLES_INSTALL_LIB_DIR ${CMAKE_INSTALL_PREFIX}/samples )
+endif()
+
+message( STATUS "CMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}" )
+set( MFX_PLUGINS_DIR ${CMAKE_INSTALL_PREFIX}/plugins )
 
 # Some font definitions: colors, bold text, etc.
 if(NOT Windows)

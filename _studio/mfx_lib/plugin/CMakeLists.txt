@@ -28,7 +28,7 @@ include_directories( ${MSDK_LIB_ROOT}/fs_det/include )
 list( APPEND umc_dirs
   common
   brc scene_analyzer
-  mpeg2_dec h264_dec h264_enc 
+  mpeg2_dec h264_dec h264_enc
   vc1_common vc1_dec vc1_spl
   mpeg2_enc jpeg_enc color_space_converter
 
@@ -263,7 +263,11 @@ foreach( variant ${hevcd_variants} )
   endif()
   make_library( ${eval_plugin_name} ${variant} shared)
 
-  install( TARGETS ${plugin_name} ${eval_plugin_name} LIBRARY DESTINATION ${MFX_PLUGINS_DIR} )
+  if( Windows )
+    install( TARGETS ${plugin_name} ${eval_plugin_name} RUNTIME DESTINATION ${MFX_PLUGINS_DIR} )
+  else()
+    install( TARGETS ${plugin_name} ${eval_plugin_name} LIBRARY DESTINATION ${MFX_PLUGINS_DIR} )
+  endif()
 
 endforeach()
 
@@ -375,7 +379,11 @@ foreach( variant ${hevce_variants} )
   endif()
   make_library( ${eval_plugin_name} ${variant} shared)
 
-  install( TARGETS ${plugin_name} ${eval_plugin_name} LIBRARY DESTINATION ${MFX_PLUGINS_DIR} )
+  if( Windows )
+    install( TARGETS ${plugin_name} ${eval_plugin_name} RUNTIME DESTINATION ${MFX_PLUGINS_DIR} )
+  else()
+    install( TARGETS ${plugin_name} ${eval_plugin_name} LIBRARY DESTINATION ${MFX_PLUGINS_DIR} )
+  endif()
 
 endforeach()
 set( defs "" )
@@ -517,7 +525,7 @@ foreach( variant hw )
   gen_plugins_cfg("H264la_Encoder" ${H264LA_ENCODER_GUID} ${plugin_name} "04" "AVC")
   make_library( ${plugin_name} ${variant} shared)
 
-  install( TARGETS ${plugin_name} LIBRARY DESTINATION ${MFX_PLUGINS_DIR} )
+  msdk_install( ${plugin_name} ${MFX_PLUGINS_DIR} )
 
 endforeach()
 
@@ -615,7 +623,7 @@ if( ENABLE_HEVC_FEI )
     gen_plugins_cfg("H265FEI_Encoder" ${H265FEI_ENCODER_GUID} ${plugin_name} "04" "HEVC")
     make_library( ${plugin_name} ${variant} shared)
 
-    install( TARGETS ${plugin_name} LIBRARY DESTINATION ${MFX_PLUGINS_DIR} )
+    msdk_install( ${plugin_name} ${MFX_PLUGINS_DIR} )
 
   endforeach()
 endif()
@@ -752,7 +760,7 @@ foreach( variant
   set( defs "${defs} ${WARNING_FLAGS}" )
   make_library( ${plugin_name} ${variant} shared)
 
-  install( TARGETS ${plugin_name} LIBRARY DESTINATION ${MFX_PLUGINS_DIR} )
+  msdk_install( ${plugin_name} ${MFX_PLUGINS_DIR} )
 
 endforeach()
 
@@ -887,6 +895,6 @@ foreach( variant
   set( defs "${defs} ${WARNING_FLAGS}" )
   make_library( ${plugin_name} ${variant} shared)
 
-  install( TARGETS ${plugin_name} LIBRARY DESTINATION ${MFX_PLUGINS_DIR} )
+  msdk_install( ${plugin_name} ${MFX_PLUGINS_DIR} )
 
 endforeach()

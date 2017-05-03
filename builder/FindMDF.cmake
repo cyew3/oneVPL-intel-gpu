@@ -25,7 +25,6 @@
 ##  Content: Intel(R) Media SDK Samples projects creation and build
 ##******************************************************************************
 
-if (Linux)
 
 if (__ARCH MATCHES ia32)
   set( mdf_arch x86)
@@ -37,8 +36,12 @@ endif()
 
 set( mdf_root $ENV{MFX_MDF_PATH} )
 if( NOT EXISTS ${mdf_root} )
+  if( Windows )
+    message( FATAL_ERROR "MDF was not found (required)! Set/check MFX_MDF_PATH environment variable!")
+  else()
     message( STATUS "!!! There is no MFX_MDF_PATH, looking into $ENV{MEDIASDK_ROOT}/tools/linuxem64t/mdf" )
     set( mdf_root $ENV{MEDIASDK_ROOT}/tools/linuxem64t/mdf )
+  endif()
 endif()
 
 find_path( CMRT_INCLUDE cm_rt.h PATHS ${mdf_root}/runtime/include )
@@ -56,9 +59,5 @@ if(NOT DEFINED MDF_FOUND)
   message( FATAL_ERROR "Intel(R) MDF was not found (required)! Set/check MFX_MDF_PATH environment variable!" )
 else ()
   message( STATUS "Intel(R) MDF was found in ${mdf_root}" )
-endif()
-
-else()
-  message( STATUS "Intel(R) MDF search skipped" )
 endif()
 
