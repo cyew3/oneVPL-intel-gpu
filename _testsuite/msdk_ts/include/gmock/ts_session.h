@@ -4,14 +4,14 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 */
 #pragma once
 
 #include "ts_alloc.h"
 
-class tsSession 
+class tsSession
 {
 public:
     bool                m_initialized;
@@ -30,10 +30,10 @@ public:
 
     tsSession(mfxIMPL impl = g_tsImpl, mfxVersion version = g_tsVersion);
     ~tsSession();
-    
+
     mfxStatus MFXInit();
     mfxStatus MFXInit(mfxIMPL impl, mfxVersion *ver, mfxSession *session);
-    
+
     mfxStatus MFXClose();
     mfxStatus MFXClose(mfxSession session);
 
@@ -54,6 +54,9 @@ public:
     mfxStatus MFXInitEx();
     mfxStatus MFXInitEx(mfxInitParam par, mfxSession* session);
     mfxStatus MFXDoWork(mfxSession session);
+
+    mfxStatus MFXJoinSession(mfxSession session);
+    mfxStatus MFXDisjoinSession();
 };
 
 #define IS_FALLBACK_EXPECTED(b_fallback, status)          \

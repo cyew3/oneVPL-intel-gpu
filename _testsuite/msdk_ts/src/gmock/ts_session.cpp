@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -167,5 +167,19 @@ mfxStatus tsSession::MFXDoWork(mfxSession session)
 {
     TRACE_FUNC1(MFXDoWork, session);
     g_tsStatus.check( ::MFXDoWork(session) );
+    return g_tsStatus.get();
+}
+
+mfxStatus tsSession::MFXJoinSession(mfxSession session)
+{
+    TRACE_FUNC2(MFXJoinSession, m_session, session);
+    g_tsStatus.check( ::MFXJoinSession(m_session, session) );
+    return g_tsStatus.get();
+}
+
+mfxStatus tsSession::MFXDisjoinSession()
+{
+    TRACE_FUNC1(MFXJoinSession, m_session);
+    g_tsStatus.check( ::MFXDisjoinSession(m_session) );
     return g_tsStatus.get();
 }

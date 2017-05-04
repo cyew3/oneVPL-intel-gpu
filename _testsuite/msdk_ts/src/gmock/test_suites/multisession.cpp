@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
 
 File Name: multisession.cpp
 \* ****************************************************************************** */
@@ -26,7 +26,7 @@ Algorithm:
 - Call GetHandle for 2d session(MFX_ERR_NONE expected)
 - Initialize encoder with main session (enc_0)
 - Initialize encoder with 2d session (enc_1) (MFX_ERR_INVALID_VIDEO_PARAM expected)
-- Set frame allocator of 2d session 
+- Set frame allocator of 2d session
 - Initialize encoder with 2d session (enc_1) (MFX_ERR_NONE expected)
 - Compare allocators surfaces
 - Close encoders and sessions
@@ -43,7 +43,7 @@ namespace multisession
     {
         MFX_PAR = 1,
     };
-    
+
     //! \brief Enum with possible test case modes
     enum
     {
@@ -128,7 +128,7 @@ namespace multisession
         s->m_pVAHandle->get_hdl(hdl_type, hdl);
         SetHandle(s->m_session, hdl_type, hdl);
         return s->m_pVAHandle;
-#else 
+#else
         s->m_pFrameAllocator = &al;
         s->m_pFrameAllocator->get_hdl(hdl_type, hdl);
         SetHandle(s->m_session, hdl_type, hdl);
@@ -172,8 +172,7 @@ namespace multisession
 
         if (tc.mode == JOIN){
             init(&t_ses_1);
-            TRACE_FUNC2(MFXJoinSession, m_session, t_ses_1.m_session);
-            MFXJoinSession(m_session, t_ses_1.m_session);
+            MFXJoinSession(t_ses_1.m_session);
         } else if(tc.mode == CLONE) {
             TRACE_FUNC2(MFXCloneSession,m_session, t_ses_1.m_pSession);
             MFXCloneSession(m_session, t_ses_1.m_pSession);
@@ -227,6 +226,3 @@ namespace multisession
     //! \brief Regs test suite into test system
     TS_REG_TEST_SUITE_CLASS(multisession);
 }
-
-
-
