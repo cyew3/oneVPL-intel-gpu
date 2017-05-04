@@ -497,7 +497,7 @@ void MfxH264FEIcommon::ConfigureTaskFEI(
             task.m_disableDeblockingIdc[fieldParity].push_back(extFeiSlice->Slice[i].DisableDeblockingFilterIdc);
             task.m_sliceAlphaC0OffsetDiv2[fieldParity].push_back(extFeiSlice->Slice[i].SliceAlphaC0OffsetDiv2);
             task.m_sliceBetaOffsetDiv2[fieldParity].push_back(extFeiSlice->Slice[i].SliceBetaOffsetDiv2);
-        } // for (size_t i = 0; i < GetMaxNumSlices(video); ++i)
+        } // for (size_t i = 0; i < extFeiSlice->NumSlice; ++i)
 
         // Fill DPB
         mfxExtFeiPPS * pDataPPS = GetExtBufferFEI(outParams, idxToPickBuffer);

@@ -659,6 +659,7 @@ mfxStatus FEI_EncodeInterface::EncodeOneFrame(iTask* eTask)
 
             // Encoding goes below
             sts = m_pmfxENCODE->EncodeFrameAsync(&m_encodeControl, encodeSurface, &m_mfxBS, &m_SyncPoint);
+            MSDK_BREAK_ON_ERROR(sts); // Remove to allow warnings here
 
             if (MFX_ERR_NONE < sts && !m_SyncPoint) // repeat the call if warning and no output
             {
@@ -671,10 +672,6 @@ mfxStatus FEI_EncodeInterface::EncodeOneFrame(iTask* eTask)
             {
                 // ignore warnings if output is available
                 sts = m_pmfxSession->SyncOperation(m_SyncPoint, MSDK_WAIT_INTERVAL);
-                if (sts == MFX_ERR_GPU_HANG)
-                {
-                    return MFX_ERR_GPU_HANG;
-                }
                 MSDK_CHECK_STATUS(sts, "FEI ENCODE: SyncOperation failed");
                 break;
             }
@@ -688,24 +685,21 @@ mfxStatus FEI_EncodeInterface::EncodeOneFrame(iTask* eTask)
                 if (m_SyncPoint)
                 {
                     sts = m_pmfxSession->SyncOperation(m_SyncPoint, MSDK_WAIT_INTERVAL);
-                    if (sts == MFX_ERR_GPU_HANG)
-                    {
-                        return MFX_ERR_GPU_HANG;
-                    }
                     MSDK_CHECK_STATUS(sts, "FEI ENCODE: SyncOperation failed");
                 }
                 break;
             }
         } // for(;;)
+
+        MSDK_BREAK_ON_ERROR(sts);
+
     } // for (int i = 0; i < 1 + m_bSingleFieldMode; ++i)
 
-    if (sts == MFX_ERR_MORE_DATA)
+    if (sts == MFX_ERR_MORE_DATA && encodeSurface)
     {
-        if (encodeSurface)
-        {
-            sts = MFX_ERR_NONE; // MFX_ERR_MORE_DATA is correct status to finish encoding of buffered frames.
-        }                       // Otherwise, ignore it
-        return sts;
+        // MFX_ERR_MORE_DATA is correct status to finish encoding of buffered frames (for which encodeSurface == NULL).
+        // Otherwise, ignore it
+        return MFX_ERR_NONE;
     }
 
     MSDK_CHECK_STATUS(sts, "FEI ENCODE: EncodeFrameAsync failed");

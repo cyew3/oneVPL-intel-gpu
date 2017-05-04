@@ -1033,113 +1033,139 @@ mfxStatus FEI_EncPakInterface::EncPakOneFrame(iTask* eTask)
     mfxStatus sts = InitFrameParams(eTask);
     MSDK_CHECK_STATUS(sts, "FEI ENCPAK: InitFrameParams failed");
 
-    for (;;)
+    for (int i = 0; i < 1 + m_bSingleFieldMode; ++i)
     {
         mdprintf(stderr, "frame: %d  t:%d %d : submit ", eTask->m_frameOrder, eTask->m_type[eTask->m_fid[0]], eTask->m_type[eTask->m_fid[1]]);
 
-        for (int i = 0; i < 1 + m_bSingleFieldMode; ++i)
+        if (m_pmfxENC)
         {
-            if (m_pmfxENC)
+            // Attach extension buffers for current field
+            // (in double-field mode both calls will return equal sets, holding buffers for both fields)
+
+            std::vector<mfxExtBuffer *> * in_buffers = eTask->ExtBuffersController.GetBuffers(bufSetController::ENC, i, true);
+            MSDK_CHECK_POINTER(in_buffers, MFX_ERR_NULL_PTR);
+
+            std::vector<mfxExtBuffer *> * out_buffers = eTask->ExtBuffersController.GetBuffers(bufSetController::ENC, i, false);
+            MSDK_CHECK_POINTER(out_buffers, MFX_ERR_NULL_PTR);
+
+            // Input buffers
+            eTask->ENC_in.NumExtParam = mfxU16(in_buffers->size());
+            eTask->ENC_in.ExtParam    = in_buffers->data();
+
+            // Output buffers
+            eTask->ENC_out.NumExtParam = mfxU16(out_buffers->size());
+            eTask->ENC_out.ExtParam    = out_buffers->data();
+
+            // Encoding goes below
+            for (;;)
             {
-                // Attach extension buffers for current field
-                // (in double-field mode both calls will return equal sets, holding buffers for both fields)
-
-                std::vector<mfxExtBuffer *> * in_buffers = eTask->ExtBuffersController.GetBuffers(bufSetController::ENC, i, true);
-                MSDK_CHECK_POINTER(in_buffers, MFX_ERR_NULL_PTR);
-
-                std::vector<mfxExtBuffer *> * out_buffers = eTask->ExtBuffersController.GetBuffers(bufSetController::ENC, i, false);
-                MSDK_CHECK_POINTER(out_buffers, MFX_ERR_NULL_PTR);
-
-                // Input buffers
-                eTask->ENC_in.NumExtParam  = mfxU16(in_buffers->size());
-                eTask->ENC_in.ExtParam     = in_buffers->data();
-
-                // Output buffers
-                eTask->ENC_out.NumExtParam = mfxU16(out_buffers->size());
-                eTask->ENC_out.ExtParam    = out_buffers->data();
-
-                // Encoding goes below
                 sts = m_pmfxENC->ProcessFrameAsync(&eTask->ENC_in, &eTask->ENC_out, &m_SyncPoint);
-                if (sts == MFX_ERR_GPU_HANG)
+                MSDK_BREAK_ON_ERROR(sts); // Remove to allow warnings here
+
+                if (MFX_ERR_NONE < sts && !m_SyncPoint)
                 {
-                    return MFX_ERR_GPU_HANG;
-                }
-                MSDK_BREAK_ON_ERROR(sts);
+                    // Repeat the call if warning and no output
 
-                sts = m_pmfxSession->SyncOperation(m_SyncPoint, MSDK_WAIT_INTERVAL);
-                if (sts == MFX_ERR_GPU_HANG)
+                    if (MFX_WRN_DEVICE_BUSY == sts){
+                        WaitForDeviceToBecomeFree(*m_pmfxSession, m_SyncPoint, sts);
+                    }
+                }
+                else if (MFX_ERR_NONE < sts && m_SyncPoint)
                 {
-                    return MFX_ERR_GPU_HANG;
+                    // Ignore warnings if output is available
+                    sts = m_pmfxSession->SyncOperation(m_SyncPoint, MSDK_WAIT_INTERVAL);
+                    mdprintf(stderr, "ENC synced : %d\n", sts);
+
+                    break;
                 }
-                MSDK_BREAK_ON_ERROR(sts);
-                mdprintf(stderr, "synced : %d\n", sts);
-            }
+                else
+                {
+                    // Break if error
+                    MSDK_BREAK_ON_ERROR(sts);
 
-            // Prepare PAK-object from streamout buffer if requested
-            if (i == 0 && m_pAppConfig->bDECODESTREAMOUT && m_pAppConfig->bOnlyPAK)
-            {
-                sts = PakOneStreamoutFrame(eTask, m_pAppConfig->QP, m_inputTasks);
-                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-            }
+                    if (m_SyncPoint)
+                    {
+                        sts = m_pmfxSession->SyncOperation(m_SyncPoint, MSDK_WAIT_INTERVAL);
+                        mdprintf(stderr, "ENC synced : %d\n", sts);
+                    }
 
-            if (m_pmfxPAK)
-            {
-                // Attach extension buffers for current field
-                std::vector<mfxExtBuffer *> * in_buffers = eTask->ExtBuffersController.GetBuffers(bufSetController::PAK, i, true);
-                MSDK_CHECK_POINTER(in_buffers, MFX_ERR_NULL_PTR);
+                    break;
+                }
+            } // for(;;)
+        } // if (m_pmfxENC)
+        MSDK_BREAK_ON_ERROR(sts);
+
+        // Prepare PAK-object from streamout buffer if requested
+        if (i == 0 && m_pAppConfig->bDECODESTREAMOUT && m_pAppConfig->bOnlyPAK)
+        {
+            sts = PakOneStreamoutFrame(eTask, m_pAppConfig->QP, m_inputTasks);
+            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        }
+
+        if (m_pmfxPAK)
+        {
+            // Attach extension buffers for current field
+            std::vector<mfxExtBuffer *> * in_buffers = eTask->ExtBuffersController.GetBuffers(bufSetController::PAK, i, true);
+            MSDK_CHECK_POINTER(in_buffers, MFX_ERR_NULL_PTR);
 
 #if MFX_VERSION < 1023
-                std::vector<mfxExtBuffer *> * out_buffers = eTask->ExtBuffersController.GetBuffers(bufSetController::PAK, i, false);
-                MSDK_CHECK_POINTER(out_buffers, MFX_ERR_NULL_PTR);
+            std::vector<mfxExtBuffer *> * out_buffers = eTask->ExtBuffersController.GetBuffers(bufSetController::PAK, i, false);
+            MSDK_CHECK_POINTER(out_buffers, MFX_ERR_NULL_PTR);
 #endif // MFX_VERSION < 1023
 
-                eTask->PAK_in.NumExtParam  = mfxU16(in_buffers->size());
-                eTask->PAK_in.ExtParam     = !in_buffers->empty() ? in_buffers->data() : NULL;
+            eTask->PAK_in.NumExtParam = mfxU16(in_buffers->size());
+            eTask->PAK_in.ExtParam    = !in_buffers->empty() ? in_buffers->data() : NULL;
 
 #if MFX_VERSION < 1023
-                eTask->PAK_out.NumExtParam = mfxU16(out_buffers->size());
-                eTask->PAK_out.ExtParam    = !out_buffers->empty() ? out_buffers->data() : NULL;;
+            eTask->PAK_out.NumExtParam = mfxU16(out_buffers->size());
+            eTask->PAK_out.ExtParam    = !out_buffers->empty() ? out_buffers->data() : NULL;;
 #endif // MFX_VERSION < 1023
 
-                // Frame packing goes below
+            // Frame packing goes below
+            for (;;)
+            {
                 sts = m_pmfxPAK->ProcessFrameAsync(&eTask->PAK_in, &eTask->PAK_out, &m_SyncPoint);
-                if (sts == MFX_ERR_GPU_HANG)
-                {
-                    return MFX_ERR_GPU_HANG;
-                }
-                MSDK_BREAK_ON_ERROR(sts);
+                MSDK_BREAK_ON_ERROR(sts); // Remove to allow warnings here
 
-                sts = m_pmfxSession->SyncOperation(m_SyncPoint, MSDK_WAIT_INTERVAL);
-                if (sts == MFX_ERR_GPU_HANG)
+                if (MFX_ERR_NONE < sts && !m_SyncPoint)
                 {
-                    return MFX_ERR_GPU_HANG;
-                }
-                MSDK_BREAK_ON_ERROR(sts);
-                mdprintf(stderr, "synced : %d\n", sts);
-            }
-        }
+                    // Repeat the call if warning and no output
 
-        if (MFX_ERR_NONE < sts && !m_SyncPoint) // repeat the call if warning and no output
-        {
-            if (MFX_WRN_DEVICE_BUSY == sts){
-                WaitForDeviceToBecomeFree(*m_pmfxSession, m_SyncPoint, sts);
-            }
-        }
-        else if (MFX_ERR_NONE < sts && m_SyncPoint)
-        {
-            sts = MFX_ERR_NONE; // ignore warnings if output is available
-            break;
-        }
-        else if (MFX_ERR_NOT_ENOUGH_BUFFER == sts)
-        {
-            sts = AllocateSufficientBuffer();
-            MSDK_CHECK_STATUS(sts, "AllocateSufficientBuffer failed");
-        }
-        else
-        {
-            break;
-        }
-    }
+                    if (MFX_WRN_DEVICE_BUSY == sts){
+                        WaitForDeviceToBecomeFree(*m_pmfxSession, m_SyncPoint, sts);
+                    }
+                }
+                else if (MFX_ERR_NONE < sts && m_SyncPoint)
+                {
+                    // Ignore warnings if output is available
+                    sts = m_pmfxSession->SyncOperation(m_SyncPoint, MSDK_WAIT_INTERVAL);
+                    mdprintf(stderr, "PAK synced : %d\n", sts);
+
+                    break;
+                }
+                else if (MFX_ERR_NOT_ENOUGH_BUFFER == sts)
+                {
+                    sts = AllocateSufficientBuffer();
+                    MSDK_CHECK_STATUS(sts, "AllocateSufficientBuffer failed");
+                }
+                else
+                {
+                    // Break if error
+                    MSDK_BREAK_ON_ERROR(sts);
+
+                    if (m_SyncPoint)
+                    {
+                        sts = m_pmfxSession->SyncOperation(m_SyncPoint, MSDK_WAIT_INTERVAL);
+                        mdprintf(stderr, "PAK synced : %d\n", sts);
+                    }
+
+                    break;
+                }
+            } // for(;;)
+            MSDK_BREAK_ON_ERROR(sts);
+        } // if (m_pmfxPAK)
+
+    } // for (int i = 0; i < 1 + m_bSingleFieldMode; ++i)
     MSDK_CHECK_STATUS(sts, "FEI ENCPAK failed to encode frame");
 
     if (m_pmfxPAK)
