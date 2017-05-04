@@ -1844,6 +1844,8 @@ int MEforGen75::SetupSearchPath( )
 int MEforGen75::OneSearchUnit(U8   qx, U8   qy, short isb)
 /*****************************************************************************************************/
 {
+    if (isb >= 2) return ERR_UNKNOWN;
+
     int        realx,realy,i,j,k,k0=0,k1=0,k2=0,k3=0,e[42] = {},fbits,SUw,r,rb2,rb4;
     SUw = ((Vsta.SadType&INTER_CHROMA_MODE) ? 1 : 2);
     int        x = (qx<<SUw);
