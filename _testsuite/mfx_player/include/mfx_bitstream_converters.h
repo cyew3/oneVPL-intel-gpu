@@ -382,12 +382,12 @@ public:
         roi.width >>= 1;
 
         pitch >>= 1;
-        ptr = data.U + (info.CropX >> 1) + (info.CropY >> 1) * pitch;
+        ptr = data.V + (info.CropX >> 1) + (info.CropY >> 1) * pitch;
         FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
         bs->DataOffset += roi.width * roi.height;
         bs->DataLength -= roi.width * roi.height;
 
-        ptr = data.V + (info.CropX >> 1) + (info.CropY >> 1) * pitch;
+        ptr = data.U + (info.CropX >> 1) + (info.CropY >> 1) * pitch;
         FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
         bs->DataOffset += roi.width * roi.height;
         bs->DataLength -= roi.width * roi.height;
