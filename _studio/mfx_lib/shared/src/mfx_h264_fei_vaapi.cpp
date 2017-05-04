@@ -2131,13 +2131,12 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
                                 1, //limitation from driver, num elements should be 1
                                 mvout->MB,
                                 &m_vaFeiMVOutId[0]);
-
-            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
         mdprintf(stderr, "MV Out bufId[%d]=%d\n", 0, m_vaFeiMVOutId[0]);
-        }
+    }
 
     // Create buffer for PAKobj input
-        {
+    {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MBcode");
 
         vaSts = vaCreateBuffer(m_vaDisplay,
@@ -2149,9 +2148,9 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
                                 &m_vaFeiMCODEOutId[0]);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
         mdprintf(stderr, "MCODE Out bufId[%d]=%d\n", 0, m_vaFeiMCODEOutId[0]);
-        }
+    }
 
-        {
+    {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "FrameCtrl");
         VAEncMiscParameterBuffer *miscParam;
         vaSts = vaCreateBuffer(m_vaDisplay,

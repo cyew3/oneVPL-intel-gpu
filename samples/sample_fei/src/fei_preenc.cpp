@@ -602,6 +602,8 @@ mfxStatus FEI_PreencInterface::InitFrameParams(iTask* eTask, iTask* refTask[2][2
     {
         bool is_I_frame = ExtractFrameType(*eTask, fieldId) & MFX_FRAMETYPE_I;
 
+        // Input surfaces are used here even if reconstructed surfaces available.
+        // In this case downsampled surfaces for references are picked from PreENC's cache
         refSurf0[fieldId] = refTask[fieldId][0] ? refTask[fieldId][0]->PREENC_in.InSurface : NULL;
         refSurf1[fieldId] = refTask[fieldId][1] ? refTask[fieldId][1]->PREENC_in.InSurface : NULL;
 
