@@ -173,8 +173,8 @@ namespace fei_multi_pak
     const TestSuite::tc_struct TestSuite::test_case[] =
     {
         /*00*/ {MFX_ERR_NONE, MFX_PICSTRUCT_PROGRESSIVE, 2},
-        ///*01*/ {MFX_ERR_NONE, MFX_PICSTRUCT_FIELD_TFF, 2},
-        ///*02*/ {MFX_ERR_NONE, MFX_PICSTRUCT_FIELD_BFF, 2}
+        /*01*/ {MFX_ERR_NONE, MFX_PICSTRUCT_FIELD_TFF, 2},
+        /*02*/ {MFX_ERR_NONE, MFX_PICSTRUCT_FIELD_BFF, 2}
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
