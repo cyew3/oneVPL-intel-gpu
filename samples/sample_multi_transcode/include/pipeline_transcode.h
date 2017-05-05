@@ -73,7 +73,6 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #endif
 
 #define MAX_PREF_LEN    256
-#define MAX_EXTBUF_CNT  10
 
 namespace TranscodingSample
 {
@@ -204,7 +203,6 @@ namespace TranscodingSample
         std::vector<mfxExtEncoderROI> m_ROIData;
 
         bool bDecoderPostProcessing;
-        bool bROIasQPMAP;
 #endif //_MSDK_API >= MSDK_API(1,22)
 
         bool bOpenCL;
@@ -265,8 +263,7 @@ namespace TranscodingSample
     struct ExtendedSurface
     {
         mfxFrameSurface1 *pSurface;
-        PreEncAuxBuffer  *pAuxCtrl;
-        mfxEncodeCtrl    *pEncCtrl;
+        PreEncAuxBuffer  *pCtrl;
         mfxSyncPoint      Syncp;
     };
 
@@ -482,6 +479,10 @@ namespace TranscodingSample
         virtual mfxStatus EncodeOneFrame(ExtendedSurface *pExtSurface, mfxBitstream *pBS);
         virtual mfxStatus PreEncOneFrame(ExtendedSurface *pInSurface, ExtendedSurface *pOutSurface);
 
+#if _MSDK_API >= MSDK_API(1,22)
+        mfxStatus AddExtRoiBufferToCtrl(mfxEncodeCtrl **ppCtrl);
+#endif // _MSDK_API >= MSDK_API(1,22)
+
         virtual mfxStatus DecodePreInit(sInputParams *pParams);
         virtual mfxStatus VPPPreInit(sInputParams *pParams);
         virtual mfxStatus EncodePreInit(sInputParams *pParams);
@@ -510,7 +511,7 @@ namespace TranscodingSample
         mfxFrameSurface1* GetFreeSurface(bool isDec, mfxU64 timeout);
         mfxU32 GetFreeSurfacesCount(bool isDec);
         PreEncAuxBuffer*  GetFreePreEncAuxBuffer();
-        void SetEncCtrlRT(ExtendedSurface& extSurface, mfxEncodeCtrl *pCtrl, bool bInsertIDR);
+        void SetSurfaceAuxIDR(ExtendedSurface& extSurface, PreEncAuxBuffer* encAuxCtrl, bool bInsertIDR);
 
         // parameters configuration functions
         mfxStatus InitDecMfxParams(sInputParams *pInParams);
@@ -689,23 +690,10 @@ namespace TranscodingSample
         bool shouldUseGreedyFormula;
 
 #if _MSDK_API >= MSDK_API(1,22)
-        // ROI data
+        // roi data
         std::vector<mfxExtEncoderROI> m_ROIData;
-        mfxU32         m_nSubmittedFramesNum;
-
-        // ROI with MBQP map data
-        bool              m_bUseQPMap;
-        std::vector<mfxExtMBQP> m_bufExtMBQP;
-        std::vector<mfxExtBuffer*> m_extBuffPtrStorage;
-        std::vector<mfxU8> m_qpMapStorage;
-        mfxU32            m_QPmapWidth;
-        mfxU32            m_QPmapHeight;
-        mfxU32            m_GOPSize;
-        mfxU32            m_QPforI;
-        mfxU32            m_QPforP;
-        SurfPointersArray *m_pEncPool;
-
-        void FillMBQPBuffer(mfxExtMBQP &qpMap, mfxU16 pictStruct);
+        mfxEncodeCtrl auxCtrl;
+        mfxExtBuffer *ext_params1[1];
 #endif //_MSDK_API >= MSDK_API(1,22)
     private:
         DISALLOW_COPY_AND_ASSIGN(CTranscodingPipeline);
@@ -731,6 +719,8 @@ namespace TranscodingSample
         // Status of the finished session
         mfxStatus transcodingSts;
     };
+
+
 }
 
 #endif
