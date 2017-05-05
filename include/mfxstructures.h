@@ -1539,7 +1539,8 @@ typedef struct {
     mfxU16          PicHeightInLumaSamples;
     mfxU64          GeneralConstraintFlags;
     mfxU16          SampleAdaptiveOffset;   /* see enum SampleAdaptiveOffset, valid during Init and Runtime */
-    mfxU16          reserved[117];
+    mfxU16          LCUSize;
+    mfxU16          reserved[116];
 } mfxExtHEVCParam;
 #pragma pack(pop)
 

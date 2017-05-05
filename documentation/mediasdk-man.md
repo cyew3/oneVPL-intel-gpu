@@ -371,7 +371,7 @@ Besides validation of syntax elements and theirs constrains, decoder also uses v
 Example 2 shows the pseudo code of the encoding procedure. The following describes a few key points:
 
 - The application uses the [MFXVideoENCODE_QueryIOSurf](#MFXVideoENCODE_QueryIOSurf) function to obtain the number of working frame surfaces required for reordering input frames.
-- The application calls the [MFXVideoENCODE_EncodedFrameAsync](#MFXVideoENCODE_EncodeFrameAsync) function for the encoding operation. The input frame must be in an unlocked frame surface from the frame surface pool. If the encoding output is not available, the function returns the status code [MFX_ERR_MORE_DATA](#mfxStatus) to request additional input frames.
+- The application calls the [MFXVideoENCODE_EncodeFrameAsync](#MFXVideoENCODE_EncodeFrameAsync) function for the encoding operation. The input frame must be in an unlocked frame surface from the frame surface pool. If the encoding output is not available, the function returns the status code [MFX_ERR_MORE_DATA](#mfxStatus) to request additional input frames.
 - Upon successful encoding, the [MFXVideoENCODE_EncodeFrameAsync](#MFXVideoENCODE_EncodeFrameAsync) function returns [MFX_ERR_NONE](#mfxStatus). However, the encoded bitstream is not yet available because the [MFXVideoENCODE_EncodeFrameAsync](#MFXVideoENCODE_EncodeFrameAsync) function is asynchronous. The application must use the
   [MFXVideoCORE_SyncOperation](#MFXVideoCORE_SyncOperation) function to synchronize the encoding operation before retrieving the encoded bitstream.
 - At the end of the stream, the application continuously calls the [MFXVideoENCODE_EncodeFrameAsync](#MFXVideoENCODE_EncodeFrameAsync) function with NULL surface pointer to drain any remaining bitstreams cached within the SDK encoder, until the function returns [MFX_ERR_MORE_DATA](#mfxStatus).
@@ -5667,7 +5667,9 @@ typedef struct {
     mfxU16          PicWidthInLumaSamples;
     mfxU16          PicHeightInLumaSamples;
     mfxU64          GeneralConstraintFlags;
-    mfxU16          reserved[118];
+    mfxU16          SampleAdaptiveOffset;
+    mfxU16          LCUSize;
+    mfxU16          reserved[116];
 } mfxExtHEVCParam;
 ```
 
@@ -5679,16 +5681,20 @@ Attached to the [mfxVideoParam](#mfxVideoParam) structure extends it with HEVC-s
 
 | | |
 --- | ---
-`Header.BufferId` | Must be [MFX_EXTBUFF_HEVC_PARAM](#ExtendedBufferID).
-`PicWidthInLumaSamples` | Specifies the width of each coded picture in units of luma samples.
+`Header.BufferId`        | Must be [MFX_EXTBUFF_HEVC_PARAM](#ExtendedBufferID).
+`PicWidthInLumaSamples`  | Specifies the width of each coded picture in units of luma samples.
 `PicHeightInLumaSamples` | Specifies the height of each coded picture in units of luma samples.
 `GeneralConstraintFlags` | Additional flags to specify exact profile/constraints. See the [GeneralConstraintFlags](#GeneralConstraintFlags) enumerator for values of this field.
+`SampleAdaptiveOffset`   | Controls SampleAdaptiveOffset encoding feature. See enum [SampleAdaptiveOffset](#SampleAdaptiveOffset) for supported values (bit-ORed). Valid during encoder [Init](#MFXVideoENCODE_Init) and [Runtime](#MFXVideoENCODE_EncodeFrameAsync).
+`LCUSize`                | Specifies largest coding unit size (max luma coding block). Valid during encoder [Init](#MFXVideoENCODE_Init).
 
 **Change History**
 
 This structure is available since SDK API 1.14.
 
 The SDK API 1.16 adds `GeneralConstraintFlags` field.
+
+The SDK API **TBD** adds `SampleAdaptiveOffset` and `LCUSize` fields.
 
 ## <a id='mfxExtPredWeightTable'>mfxExtPredWeightTable</a>
 
@@ -7380,6 +7386,25 @@ The `InsertHDRPayload` enumerator itemizes HDR payloads insertion rules.
 --- | ---
 `MFX_PAYLOAD_OFF` | Don't insert payload
 `MFX_PAYLOAD_IDR` | Insert payload on IDR frames
+
+**Change History**
+
+This enumerator is available since SDK API **TBD**.
+
+## <a id='SampleAdaptiveOffset'>SampleAdaptiveOffset</a>
+
+**Description**
+
+The `SampleAdaptiveOffset` enumerator uses bit-ORed values to itemize correspoding HEVC encoding feature.
+
+**Name/Description**
+
+| | |
+--- | ---
+`MFX_SAO_UNKNOWN`       | Use default value for platform/TargetUsage.
+`MFX_SAO_DISABLE`       | Disable SAO. If set during [Init](#MFXVideoENCODE_Init) leads to SPS `sample_adaptive_offset_enabled_flag = 0`.  If set during [Runtime](#MFXVideoENCODE_EncodeFrameAsync), leads to to `slice_sao_luma_flag = 0` and `slice_sao_chroma_flag = 0` for current frame.
+`MFX_SAO_ENABLE_LUMA`   | Enable SAO for luma (`slice_sao_luma_flag = 1`).
+`MFX_SAO_ENABLE_CHROMA` | Enable SAO for chroma (`slice_sao_chroma_flag = 1`).
 
 **Change History**
 

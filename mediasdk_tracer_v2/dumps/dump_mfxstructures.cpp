@@ -1058,14 +1058,18 @@ std::string DumpContext::dump(const std::string structName, const mfxExtHEVCTile
     return str;
 }
 
-std::string DumpContext::dump(const std::string structName, const mfxExtHEVCParam &ExtHEVCParam)
+std::string DumpContext::dump(const std::string structName, const mfxExtHEVCParam &_struct)
 {
     std::string str;
-    str += dump(structName + ".Header", ExtHEVCParam.Header) + "\n";
-    str += structName + ".PicWidthInLumaSamples=" + ToString(ExtHEVCParam.PicWidthInLumaSamples) + "\n";
-    str += structName + ".PicHeightInLumaSamples=" + ToString(ExtHEVCParam.PicHeightInLumaSamples) + "\n";
-    str += structName + ".GeneralConstraintFlags=" + ToString(ExtHEVCParam.GeneralConstraintFlags) + "\n";
-    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtHEVCParam.reserved) + "\n";
+    str += dump(structName + ".Header", _struct.Header) + "\n";
+
+    DUMP_FIELD(PicWidthInLumaSamples);
+    DUMP_FIELD(PicHeightInLumaSamples);
+    DUMP_FIELD(GeneralConstraintFlags);
+    DUMP_FIELD(SampleAdaptiveOffset);
+    DUMP_FIELD(LCUSize);
+
+    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(_struct.reserved) + "\n";
     return str;
 }
 

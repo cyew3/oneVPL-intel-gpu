@@ -895,6 +895,8 @@ STRUCT(mfxExtHEVCParam,
     FIELD_T(mfxU16       , PicWidthInLumaSamples )
     FIELD_T(mfxU16       , PicHeightInLumaSamples)
     FIELD_T(mfxU64       , GeneralConstraintFlags)
+    FIELD_T(mfxU16       , SampleAdaptiveOffset)
+    FIELD_T(mfxU16       , LCUSize)
 )
 
 STRUCT(mfxExtHEVCRegion,
