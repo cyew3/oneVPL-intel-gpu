@@ -315,7 +315,7 @@ void MfxH264FEIcommon::ConfigureTaskFEI(
         task.m_refPicList0Mod[fieldParity] = CreateRefListMod(task.m_dpb[fieldParity], initList0, task.m_list0[fieldParity], task.m_viewIdx, task.m_picNum[fieldParity], true);
         task.m_refPicList1Mod[fieldParity] = CreateRefListMod(task.m_dpb[fieldParity], initList1, task.m_list1[fieldParity], task.m_viewIdx, task.m_picNum[fieldParity], true);
 
-    } // for (mfxU32 field = 0; field <= fieldCount; ++field)
+    } // for (mfxU32 field = f_start; field <= fieldCount; ++field)
 
     // Update Ref flag
     if (task.m_dpb[sfid].Size())
@@ -324,7 +324,7 @@ void MfxH264FEIcommon::ConfigureTaskFEI(
     mfxFrameSurface1* pMfxFrame;
     mfxI32 poc_base;
     mfxU16 indexFromPPSHeader;
-    mfxExtFeiPPS * pDataPPS = GetExtBufferFEI(inParams, 0);
+    mfxExtFeiPPS * pDataPPS = GetExtBufferFEI(inParams, task.m_fieldPicFlag && !task.m_singleFieldMode);
     mfxU32 fieldParity = !!(video.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_BFF);
 
     task.m_dpbPostEncoding.Resize(0);
@@ -363,14 +363,14 @@ void MfxH264FEIcommon::ConfigureTaskFEI(
     }
 
     // Section below configures MMCO
-    for (mfxU32 field = 0; field <= fieldCount; ++field)
+    for (mfxU32 field = f_start; field <= fieldCount; ++field)
     {
         mfxU32 fieldParity = (video.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_BFF) ? (1 - field) : field;
 
         task.m_decRefPicMrk[fieldParity].Clear();
 
         ArrayDpbFrame & DPB_before = task.m_dpb[fieldParity],
-            DPB_after = (field == task.m_fieldPicFlag) ? task.m_dpbPostEncoding : task.m_dpb[!fieldParity];
+            DPB_after = ((field == task.m_fieldPicFlag) || task.m_singleFieldMode) ? task.m_dpbPostEncoding : task.m_dpb[!fieldParity];
 
         // Current frame is reference and DPB has no free slots. Find frame to remove with sliding window
         DpbFrame * toRemoveDefault = NULL;
@@ -470,7 +470,7 @@ void MfxH264FEIcommon::ConfigureTaskFEI(
                 }
             }
         }
-    } // for (mfxU32 field = 0; field <= fieldCount; ++field)
+    } // for (mfxU32 field = f_start; field <= fieldCount; ++field)
 #else
     frameOrder_frameNum[task.m_frameOrder] = task.m_frameNum;
 
@@ -595,7 +595,7 @@ void MfxH264FEIcommon::ConfigureTaskFEI(
         task.m_refPicList0Mod[fieldParity] = MfxHwH264Encode::CreateRefListMod(task.m_dpb[fieldParity], initList0, task.m_list0[fieldParity], task.m_viewIdx, task.m_picNum[fieldParity], true);
         task.m_refPicList1Mod[fieldParity] = MfxHwH264Encode::CreateRefListMod(task.m_dpb[fieldParity], initList1, task.m_list1[fieldParity], task.m_viewIdx, task.m_picNum[fieldParity], true);
 
-    } // for (mfxU32 field = 0; field <= fieldCount; ++field)
+    } // for (mfxU32 field = f_start; field <= fieldCount; ++field)
 #endif // MFX_VERSION >= 1023
 } // void MfxH264FEIcommon::ConfigureTaskFEI
 
