@@ -2179,6 +2179,11 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
         vaFeiFrameControl->mv_data      = m_vaFeiMVOutId[0];
         vaFeiFrameControl->mb_code_data = m_vaFeiMCODEOutId[0];
 
+        vaFeiFrameControl->mb_ctrl      = VA_INVALID_ID;
+        vaFeiFrameControl->distortion   = VA_INVALID_ID;
+        vaFeiFrameControl->qp           = VA_INVALID_ID;
+        vaFeiFrameControl->mv_predictor = VA_INVALID_ID;
+
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
             vaUnmapBuffer(m_vaDisplay, vaFeiFrameControlId);  //check for deletions
