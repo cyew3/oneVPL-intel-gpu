@@ -1712,6 +1712,7 @@ mfxStatus CEncodingPipeline::ProcessBufferedFrames()
         while (numUnencoded != 0)
         {
             eTask = m_inputTasks.GetTaskToEncode(true);
+            MSDK_CHECK_POINTER(eTask, MFX_ERR_NULL_PTR);
 
             if (m_appCfg.bPREENC)
             {
