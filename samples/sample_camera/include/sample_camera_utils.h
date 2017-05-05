@@ -511,9 +511,11 @@ protected:
 class CBufferedVideoReader : public CVideoReader
 {
 public:
-    CBufferedVideoReader() : m_fSrc(0), m_Height(0), m_Width(0), m_FileNum(0), nCurrentFrame(0) {
+    CBufferedVideoReader() : m_fSrc(0), m_Height(0), m_Width(0), m_FileNum(0), nCurrentFrame(0), nFramesToProceed(0), m_DoPadding(false)
+    {
         MSDK_ZERO_MEMORY(m_FileNameBase);
     };
+
     virtual ~CBufferedVideoReader();
     void Close();
     mfxStatus  Init(sInputParams *pParams);

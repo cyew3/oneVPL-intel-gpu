@@ -685,10 +685,12 @@ template<size_t S>
     {
         value[0]=0;
     #if defined(_WIN32) || defined(_WIN64)
-        return (0 == _tcscpy_s(value, string))? MFX_ERR_NONE: MFX_ERR_UNKNOWN;
+        value[S - 1] = 0;
+        return (0 == _tcsncpy_s(value, string,S-1))? MFX_ERR_NONE: MFX_ERR_UNKNOWN;
     #else
         if (strlen(string) < S) {
             strncpy(value, string, S-1);
+            value[S - 1] = 0;
             return MFX_ERR_NONE;
         }
         return MFX_ERR_UNKNOWN;
