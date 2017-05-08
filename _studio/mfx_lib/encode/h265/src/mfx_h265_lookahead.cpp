@@ -1261,7 +1261,6 @@ Ipp32s GetSpatioTemporalComplexity_own(Ipp32s sad, Ipp32f scpp)
 #define MAXPDIST 5
 #define REFMOD_MAX      15
 
-
 static void AddCandidate(H265MV *pMV, int *uMVnum, H265MV *MVCandidate) 
 {
     int i;
@@ -1331,6 +1330,21 @@ void H265Enc::DetermineQpMap_IFrame(FrameIter curr, FrameIter end, H265VideoPara
     Ipp32s widthIn8x8 = videoParam.Width>>3;
     Ipp32s heightInCtbs = (Ipp32s)videoParam.PicHeightInCtbs;
     Ipp32s widthInCtbs = (Ipp32s)videoParam.PicWidthInCtbs;
+
+    bool futr_key = false;
+    Ipp32s REF_DIST = 8;
+
+    FrameIter it1 = ++FrameIter(curr);
+    Frame* futr_frame = inFrame;
+    for (FrameIter it = it1; it != end; it++) {
+        if(*it) {
+            futr_frame = *it;
+            if (futr_frame && futr_frame->m_picCodeType == MFX_FRAMETYPE_I) {
+                futr_key = true;
+            }
+        }
+    }
+    REF_DIST = IPP_MIN(8, (inFrame->m_frameOrder - futr_frame->m_frameOrder));
 
     for (Ipp32s row=0; row<heightInCtbs; row++) {
         for (Ipp32s col=0; col<widthInCtbs; col++) {
@@ -1410,21 +1424,26 @@ void H265Enc::DetermineQpMap_IFrame(FrameIter curr, FrameIter end, H265VideoPara
                             // Visual Quality (Flat area first, because coloc count doesn't work in flat areas)
                             coloc = 1;
                             qp_mask = -1*coloc;
-                        } else if(coloc>=8 && pdsad_futr<tsc_RTML) {
-                            // Stable Motion, Propagation & Motion reuse (long term stable hypothesis, 8+=>inf)
-                            qp_mask = -1*IPP_MIN(futr_qp, (Ipp32s)(((Ipp32f)coloc/8.f)*futr_qp));
-                        } else if(coloc>=8 && pdsad_futr<tsc_RTMG) {
-                            // Stable Motion, Propagation possible & Motion reuse 
-                            qp_mask = -1*IPP_MIN(futr_qp, (Ipp32s)(((Ipp32f)coloc/8.f)*4.f));
-                        } else if(coloc>1 && pdsad_futr<tsc_RTMG) {
-                            // Stable Motion & Motion reuse 
-                            qp_mask = -1*IPP_MIN(4, (Ipp32s)(((Ipp32f)coloc/8.f)*4.f));
-                        } else if(scVal>=6 && pdsad_futr>tsc_RTS) {
-                            // Reduce disproportional cost on high texture and bad motion
-                            qp_mask = 1;
                         } else {
-                            // Default
-                            qp_mask = 0;
+                            if(futr_key) {
+                                coloc = IPP_MIN(REF_DIST/2, coloc);
+                            }
+                            if(coloc>=8 && pdsad_futr<tsc_RTML) {
+                                // Stable Motion, Propagation & Motion reuse (long term stable hypothesis, 8+=>inf)
+                                qp_mask = -1*IPP_MIN(futr_qp, (Ipp32s)(((Ipp32f)coloc/8.f)*futr_qp));
+                            } else if(coloc>=8 && pdsad_futr<tsc_RTMG) {
+                                // Stable Motion, Propagation possible & Motion reuse 
+                                qp_mask = -1*IPP_MIN(futr_qp, (Ipp32s)(((Ipp32f)coloc/8.f)*4.f));
+                            } else if(coloc>1 && pdsad_futr<tsc_RTMG) {
+                                // Stable Motion & Motion reuse 
+                                qp_mask = -1*IPP_MIN(4, (Ipp32s)(((Ipp32f)coloc/8.f)*4.f));
+                            } else if(scVal>=6 && pdsad_futr>tsc_RTS) {
+                                // Reduce disproportional cost on high texture and bad motion
+                                qp_mask = 1;
+                            } else {
+                                // Default
+                                qp_mask = 0;
+                            }
                         }
                     }
                 }
@@ -1449,6 +1468,14 @@ void H265Enc::DetermineQpMap_PFrame(FrameIter begin, FrameIter curr, FrameIter e
     Ipp32s widthInCtbs = (Ipp32s)videoParam.PicWidthInCtbs;
 
     bool futr_key = false;
+    FrameIter it1 = ++FrameIter(curr);
+    for (FrameIter it = it1; it != end; it++) {
+        if (*it && (*it)->m_picCodeType == MFX_FRAMETYPE_I) {
+            futr_key = true;
+            break;
+        }
+    }
+
     for (Ipp32s row=0; row<heightInCtbs; row++) {
         for (Ipp32s col=0; col<widthInCtbs; col++) {
             Ipp32s pelX = col * videoParam.MaxCUSize;
@@ -1548,27 +1575,32 @@ void H265Enc::DetermineQpMap_PFrame(FrameIter begin, FrameIter curr, FrameIter e
                             // Avoid quantization noise recoding
                             //inFrame->qp_mask[off] = IPP_MIN(0, past_frame->qp_mask[off]+1);
                             qp_mask = 0; // Propagate
-                        } else if(coloc>=8 && coloc==coloc_futr && pdsad_futr<tsc_RTML && !futr_key) {
-                            // Stable Motion & Motion reuse 
-                            qp_mask = -1*IPP_MIN((int)futr_qp, (int)(((Ipp32f)coloc/8.0)*futr_qp));
-                        } else if(coloc>=8 && coloc==coloc_futr && pdsad_futr<tsc_RTMG && !futr_key) {
-                            // Stable Motion & Motion reuse 
-                            qp_mask = -1*IPP_MIN((int)futr_qp, (int)(((Ipp32f)coloc/8.0)*4.0));
-                        } else if(coloc>1 && coloc==coloc_futr && pdsad_futr<tsc_RTMG && !futr_key) {
-                            // Stable Motion & Motion Reuse
-                            qp_mask = -1*IPP_MIN(4, (int)(((Ipp32f)coloc/8.0)*4.0));
-                            // Possibly propagation
-                        } else if(coloc>1 && coloc==coloc_past && pdsad_past<tsc_RTMG) {
-                            // Stable Motion & Motion Reuse
-                            qp_mask = -1*IPP_MIN(4, (int)(((Ipp32f)coloc/8.0)*4.0));
-                            // Past Boost probably no propagation since coloc_futr is less than coloc_past
-                        }  else if(scVal>=6 && pdsad_past>tsc_RTS && coloc==0) {
-                            // reduce disproportional cost on high texture and bad motion
-                            // use pdsad_past since its coded a in order p frame
-                            qp_mask = 1;
                         } else {
-                            // Default
-                            qp_mask = 0;
+                            if(futr_key) {
+                                coloc = IPP_MIN(REF_DIST/2, coloc);
+                            }
+                            if(coloc>=8 && coloc==coloc_futr && pdsad_futr<tsc_RTML) {
+                                // Stable Motion & Motion reuse 
+                                qp_mask = -1*IPP_MIN((int)futr_qp, (int)(((Ipp32f)coloc/8.0)*futr_qp));
+                            } else if(coloc>=8 && coloc==coloc_futr && pdsad_futr<tsc_RTMG) {
+                                // Stable Motion & Motion reuse 
+                                qp_mask = -1*IPP_MIN((int)futr_qp, (int)(((Ipp32f)coloc/8.0)*4.0));
+                            } else if(coloc>1 && coloc==coloc_futr && pdsad_futr<tsc_RTMG) {
+                                // Stable Motion & Motion Reuse
+                                qp_mask = -1*IPP_MIN(4, (int)(((Ipp32f)coloc/8.0)*4.0));
+                                // Possibly propagation
+                            } else if(coloc>1 && coloc==coloc_past && pdsad_past<tsc_RTMG) {
+                                // Stable Motion & Motion Reuse
+                                qp_mask = -1*IPP_MIN(4, (int)(((Ipp32f)coloc/8.0)*4.0));
+                                // Past Boost probably no propagation since coloc_futr is less than coloc_past
+                            }  else if(scVal>=6 && pdsad_past>tsc_RTS && coloc==0) {
+                                // reduce disproportional cost on high texture and bad motion
+                                // use pdsad_past since its coded a in order p frame
+                                qp_mask = 1;
+                            } else {
+                                // Default
+                                qp_mask = 0;
+                            }
                         }
                     }
                 }
