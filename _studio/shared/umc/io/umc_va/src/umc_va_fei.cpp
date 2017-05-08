@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2006-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2006-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include <umc_va_base.h>
@@ -190,6 +190,7 @@ namespace UMC
 
     void VAStreamOutBuffer::RemapReferences(void* data, Ipp32s size)
     {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VAStreamOutBuffer::RemapReferences");
         //InterMB.RefIdx explained:
         //Bit 7: Must Be One (1 - indicate it is in Frame store ID format, 0 - indicate it is in Reference Index format)
         //Bit 6:5: reserved MBZ

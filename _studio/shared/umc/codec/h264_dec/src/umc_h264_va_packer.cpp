@@ -32,6 +32,8 @@
 
 #include "mfxfei.h"
 
+#include "mfx_trace.h"
+
 namespace UMC
 {
 
@@ -2485,6 +2487,7 @@ void PackerVA::PackAU(const H264DecoderFrame *pFrame, Ipp32s isTop)
 
 Status PackerVA::QueryStreamOut(H264DecoderFrame* pFrame)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "PackerVA::QueryStreamOut");
     if (!m_enableStreamOut)
         return UMC_OK;
 
@@ -2531,7 +2534,10 @@ Status PackerVA::QueryStreamOut(H264DecoderFrame* pFrame)
     VM_ASSERT(src);
 
     Ipp32s const offset1 =  size * top;
-    memcpy_s(dst + offset1, size, src, size);
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "memcpy");
+        memcpy_s(dst + offset1, size, src, size);
+    }
 
     fei_va->ReleaseBuffer(buffer);
 
