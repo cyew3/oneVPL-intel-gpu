@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include <mfx_scheduler_core_task.h>
@@ -21,7 +21,9 @@ MFX_SCHEDULER_TASK::MFX_SCHEDULER_TASK(mfxU32 taskID, mfxSchedulerCore *pSchedul
     m_pSchedulerCore(pSchedulerCore)
 {
     vm_cond_set_invalid(&done);
-
+    if (VM_OK != vm_cond_init(&done)) {
+        throw std::bad_alloc();
+    }
     // reset task parameters
     memset(&param, 0, sizeof(param));
 }

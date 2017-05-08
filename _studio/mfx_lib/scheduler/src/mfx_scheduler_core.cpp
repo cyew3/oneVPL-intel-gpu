@@ -448,13 +448,6 @@ mfxStatus mfxSchedulerCore::AllocateEmptyTask(void)
         try
         {
             m_pFreeTasks = new MFX_SCHEDULER_TASK(m_taskCounter++, this);
-            if (VM_OK != vm_cond_init(&m_pFreeTasks->done))
-            {
-                m_taskCounter--;
-                delete m_pFreeTasks;
-                m_pFreeTasks = NULL;
-                throw (int) 0;
-            }
         }
         catch(...)
         {
