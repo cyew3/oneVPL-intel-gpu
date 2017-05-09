@@ -36,6 +36,8 @@
     <ClCompile Include="..\..\shared\src\libmfx_core_hw.cpp" />
     <ClCompile Include="..\..\shared\src\mfx_dxva2_device.cpp" />
     <ClCompile Include="..\genx\copy_kernels\src\genx_skl_copy_isa.cpp" />
+    <ClCompile Include="..\genx\copy_kernels\src\genx_cnl_copy_isa.cpp" />
+    <ClCompile Include="..\genx\copy_kernels\src\genx_icl_copy_isa.cpp" />
     <ClCompile Include="..\scheduler\src\mfx_scheduler_core.cpp" />
     <ClCompile Include="..\scheduler\src\mfx_scheduler_core_ischeduler.cpp" />
     <ClCompile Include="..\scheduler\src\mfx_scheduler_core_iunknown.cpp" />
@@ -57,6 +59,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\genx\copy_kernels\include\skl_copy_kernel_genx_isa.h" />
+    <ClInclude Include="..\genx\copy_kernels\include\cnl_copy_kernel_genx_isa.h" />
+    <ClInclude Include="..\genx\copy_kernels\include\icl_copy_kernel_genx_isa.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{348EB879-A3FF-44A1-8D14-E5957A4D5E18}</ProjectGuid>

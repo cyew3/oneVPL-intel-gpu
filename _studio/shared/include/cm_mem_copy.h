@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __CM_MEM_COPY_H__
@@ -16,6 +16,12 @@
 #include "ippi.h"
 #if defined(WIN64) || defined(WIN32)
 #include "skl_copy_kernel_genx_isa.h"
+#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
+#include "cnl_copy_kernel_genx_isa.h"
+#endif  // PRE_SI_TARGET_PLATFORM_GEN10
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#include "icl_copy_kernel_genx_isa.h"
+#endif  // PRE_SI_TARGET_PLATFORM_GEN11
 #if !(defined(AS_VPP_PLUGIN) || defined(UNIFIED_PLUGIN) || defined(AS_H265FEI_PLUGIN) || defined(AS_H264LA_PLUGIN))
 #include "cht_copy_kernel_genx_isa.h"
 #endif

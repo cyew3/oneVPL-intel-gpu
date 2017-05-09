@@ -120,15 +120,26 @@
 SET ICLDIR=%25INSTALLDIR%25\compiler
 SET PATH=%25ICLDIR%25\bin%3b%25ICLDIR%25\lib%3b%25PATH%25
 SET INCLUDE=%25ICLDIR%25\include%3b%25ICLDIR%25\include\cm%3b%25INCLUDE%25
-icl /c /Qxcm /Qxcm_release /Qxcm_jit_target=gen9 .\src\skl_copy_kernel_genx.cpp /mCM_print_asm_count
 icl /c /Qxcm /Qxcm_release /Qxcm_jit_target=gen8 .\src\cht_copy_kernel_genx.cpp /mCM_print_asm_count
+icl /c /Qxcm /Qxcm_release /Qxcm_jit_target=gen9 .\src\skl_copy_kernel_genx.cpp /mCM_print_asm_count
+copy  .\src\skl_copy_kernel_genx.cpp  .\src\cnl_copy_kernel_genx.cpp
+copy  .\src\skl_copy_kernel_genx.cpp  .\src\icl_copy_kernel_genx.cpp
+icl /c /Qxcm /Qxcm_release /Qxcm_jit_target=gen10 .\src\cnl_copy_kernel_genx.cpp /mCM_print_asm_count
+icl /c /Qxcm /Qxcm_release /Qxcm_jit_target=gen11 .\src\icl_copy_kernel_genx.cpp /mCM_print_asm_count
 cl .\src\embed_isa.c
-embed_isa skl_copy_kernel_genx.isa
-move skl_copy_kernel_genx.cpp .\src\genx_skl_copy_isa.cpp
-move skl_copy_kernel_genx.h .\include\skl_copy_kernel_genx_isa.h
 embed_isa cht_copy_kernel_genx.isa
+embed_isa skl_copy_kernel_genx.isa
+embed_isa cnl_copy_kernel_genx.isa
+embed_isa icl_copy_kernel_genx.isa
 move cht_copy_kernel_genx.cpp .\src\genx_cht_copy_isa.cpp
 move cht_copy_kernel_genx.h .\include\cht_copy_kernel_genx_isa.h
+move skl_copy_kernel_genx.cpp .\src\genx_skl_copy_isa.cpp
+move skl_copy_kernel_genx.h .\include\skl_copy_kernel_genx_isa.h
+move cnl_copy_kernel_genx.cpp .\src\genx_cnl_copy_isa.cpp
+move cnl_copy_kernel_genx.h .\include\cnl_copy_kernel_genx_isa.h
+move icl_copy_kernel_genx.cpp .\src\genx_icl_copy_isa.cpp
+move icl_copy_kernel_genx.h .\include\icl_copy_kernel_genx_isa.h
+
 </Command>
     </PreBuildEvent>
     <CustomBuildStep>

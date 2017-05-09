@@ -811,6 +811,8 @@
     <ClCompile Include="..\decode\vp9\src\mfx_vp9_dec_decode.cpp" />
     <ClCompile Include="..\decode\vp9\src\mfx_vp9_dec_decode_hw.cpp" />
     <ClCompile Include="..\decode\vp9\src\mfx_vp9_dec_decode_utils.cpp" />
+    <ClCompile Include="..\genx\copy_kernels\src\genx_cnl_copy_isa.cpp" />
+    <ClCompile Include="..\genx\copy_kernels\src\genx_icl_copy_isa.cpp" />
     <ClCompile Include="..\genx\copy_kernels\src\genx_skl_copy_isa.cpp" />
     <ClCompile Include="..\shared\src\libmfxsw.cpp" />
     <ClCompile Include="..\shared\src\libmfxsw_async.cpp" />
@@ -899,6 +901,8 @@
     <ClInclude Include="..\decode\vp9\include\mfx_vp9_dec_decode.h" />
     <ClInclude Include="..\decode\vp9\include\mfx_vp9_dec_decode_hw.h" />
     <ClInclude Include="..\decode\vp9\include\mfx_vp9_dec_decode_utils.h" />
+    <ClInclude Include="..\genx\copy_kernels\include\cnl_copy_kernel_genx_isa.h" />
+    <ClInclude Include="..\genx\copy_kernels\include\icl_copy_kernel_genx_isa.h" />
     <ClInclude Include="..\genx\copy_kernels\include\skl_copy_kernel_genx_isa.h" />
     <ClInclude Include="..\scheduler\include\mfx_dependency_item.h" />
     <ClInclude Include="..\shared\include\mfx_check_hardware_support.h" />
