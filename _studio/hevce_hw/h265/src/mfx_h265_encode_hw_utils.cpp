@@ -2061,7 +2061,7 @@ mfxStatus MfxVideoParam::GetSliceHeader(Task const & task, Task const & prevTask
     {
 #if defined(PRE_SI_TARGET_PLATFORM_GEN10)
         mfxExtHEVCParam* rtHEVCParam = ExtBuffer::Get(task.m_ctrl);
-        mfxU16 FrameSAO = rtHEVCParam ? rtHEVCParam->SampleAdaptiveOffset : m_ext.HEVCParam.SampleAdaptiveOffset;
+        mfxU16 FrameSAO = (rtHEVCParam && rtHEVCParam->SampleAdaptiveOffset) ? rtHEVCParam->SampleAdaptiveOffset : m_ext.HEVCParam.SampleAdaptiveOffset;
 
         s.sao_luma_flag   = !!(FrameSAO & MFX_SAO_ENABLE_LUMA);
         s.sao_chroma_flag = !!(FrameSAO & MFX_SAO_ENABLE_CHROMA);

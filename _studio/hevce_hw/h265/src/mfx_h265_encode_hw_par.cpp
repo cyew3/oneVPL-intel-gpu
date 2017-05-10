@@ -1111,6 +1111,9 @@ inline bool isSAOSupported(MfxVideoParam const & par)
     On Gen10/CNL both VDEnc and VME, this flag should be set to 0 for 10-bit encoding.
     On CNL+, this flag should be set to 0 for max LCU size is 16x16 */
     if (   par.m_platform.CodeName < MFX_PLATFORM_CANNONLAKE
+        || par.mfx.TargetUsage == MFX_TARGETUSAGE_BEST_SPEED
+        || par.m_ext.CO3.WeightedPred == MFX_WEIGHTED_PRED_EXPLICIT
+        || par.m_ext.CO3.WeightedBiPred == MFX_WEIGHTED_PRED_EXPLICIT
         || par.LCUSize == 16
         || (   par.m_platform.CodeName == MFX_PLATFORM_CANNONLAKE
             && (
@@ -1139,13 +1142,13 @@ namespace TUDefault
     {
         static const mfxU16 tumap[7] =
         {
-            /*1*/   MFX_SAO_DISABLE,
-            /*2*/   MFX_SAO_DISABLE,
-            /*3*/   MFX_SAO_DISABLE,
-            /*4*/   MFX_SAO_DISABLE,
-            /*5*/   MFX_SAO_DISABLE,
+            /*1*/   MFX_SAO_ENABLE_LUMA | MFX_SAO_ENABLE_CHROMA,
+            /*2*/   MFX_SAO_ENABLE_LUMA | MFX_SAO_ENABLE_CHROMA,
+            /*3*/   MFX_SAO_UNKNOWN,
+            /*4*/   MFX_SAO_UNKNOWN,
+            /*5*/   MFX_SAO_UNKNOWN,
             /*6*/   MFX_SAO_DISABLE,
-            /*7*/   MFX_SAO_DISABLE //don't use by default but allow user to use per-frame
+            /*7*/   MFX_SAO_DISABLE
         };
 
         return tumap[TU(tu) - 1];
