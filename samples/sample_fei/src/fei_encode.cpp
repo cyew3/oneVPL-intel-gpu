@@ -726,20 +726,34 @@ mfxStatus FEI_EncodeInterface::EncodeOneFrame(iTask* eTask)
 
 mfxStatus FEI_EncodeInterface::FlushOutput(iTask* eTask)
 {
-    // In case of draining frames from encoder in display-order mode
-    if (!eTask) return MFX_ERR_NONE;
+    mfxExtBuffer** output_buffers   = NULL;
+    mfxU32         n_output_buffers = 0;
 
-    mfxU32 mvBufCounter = 0; // eTask->bufs
-
-    for (std::vector<mfxExtBuffer*>::iterator it = eTask->bufs->PB_bufs.out.buffers.begin();
-        it != eTask->bufs->PB_bufs.out.buffers.end(); ++it)
+    if (eTask)
     {
-        switch ((*it)->BufferId)
+        MSDK_CHECK_POINTER(eTask->bufs, MFX_ERR_NULL_PTR);
+        output_buffers   = eTask->bufs->PB_bufs.out.buffers.data();
+        n_output_buffers = eTask->bufs->PB_bufs.out.buffers.size();
+    }
+    else
+    {
+        // In case of draining frames from encoder in display-order mode
+        output_buffers   = m_mfxBS.ExtParam;
+        n_output_buffers = m_mfxBS.NumExtParam;
+    }
+
+    mfxU32 mvBufCounter = 0;
+
+    for (mfxU32 i = 0; i < n_output_buffers; ++i)
+    {
+        MSDK_CHECK_POINTER(output_buffers[i], MFX_ERR_NULL_PTR);
+
+        switch (output_buffers[i]->BufferId)
         {
         case MFX_EXTBUFF_FEI_ENC_MV:
             if (m_pMV_out)
             {
-                mfxExtFeiEncMV* mvBuf = reinterpret_cast<mfxExtFeiEncMV*>(*it);
+                mfxExtFeiEncMV* mvBuf = reinterpret_cast<mfxExtFeiEncMV*>(output_buffers[i]);
                 if (!(extractType(m_mfxBS.FrameType, mvBufCounter) & MFX_FRAMETYPE_I)){
                     SAFE_FWRITE(mvBuf->MB, sizeof(mvBuf->MB[0])*mvBuf->NumMBAlloc, 1, m_pMV_out, MFX_ERR_MORE_DATA);
                 }
@@ -756,7 +770,7 @@ mfxStatus FEI_EncodeInterface::FlushOutput(iTask* eTask)
         case MFX_EXTBUFF_FEI_ENC_MB_STAT:
             if (m_pMBstat_out)
             {
-                mfxExtFeiEncMBStat* mbstatBuf = reinterpret_cast<mfxExtFeiEncMBStat*>(*it);
+                mfxExtFeiEncMBStat* mbstatBuf = reinterpret_cast<mfxExtFeiEncMBStat*>(output_buffers[i]);
                 SAFE_FWRITE(mbstatBuf->MB, sizeof(mbstatBuf->MB[0])*mbstatBuf->NumMBAlloc, 1, m_pMBstat_out, MFX_ERR_MORE_DATA);
             }
             break;
@@ -764,12 +778,12 @@ mfxStatus FEI_EncodeInterface::FlushOutput(iTask* eTask)
         case MFX_EXTBUFF_FEI_PAK_CTRL:
             if (m_pMBcode_out)
             {
-                mfxExtFeiPakMBCtrl* mbcodeBuf = reinterpret_cast<mfxExtFeiPakMBCtrl*>(*it);
+                mfxExtFeiPakMBCtrl* mbcodeBuf = reinterpret_cast<mfxExtFeiPakMBCtrl*>(output_buffers[i]);
                 SAFE_FWRITE(mbcodeBuf->MB, sizeof(mbcodeBuf->MB[0])*mbcodeBuf->NumMBAlloc, 1, m_pMBcode_out, MFX_ERR_MORE_DATA);
             }
             break;
-        } // switch ((*it)->BufferId)
-    } // for(iterator it = PB_bufs.out.buffers.begin(); it != PB_bufs.out.buffers.end(); ++it)
+        } // switch (output_buffers[i]->BufferId)
+    } // for (mfxU32 i = 0; i < n_output_buffers; ++i)
 
     return MFX_ERR_NONE;
 }
