@@ -986,7 +986,8 @@ mfxStatus tsVideoENCPAK::EncodeFrame(bool secondField)
         return sts;
 
     // update DPB - simplest way for a while
-    mfxU16 type = ((mfxExtFeiPPS *)GetExtFeiBuffer(m_PAKInput->ExtParam, m_PAKInput->NumExtParam, MFX_EXTBUFF_FEI_PPS, m_bSingleField ? 0 : secondField))->FrameType;
+    const mfxExtFeiPPS* pps = (mfxExtFeiPPS *)GetExtFeiBuffer(m_PAKInput->ExtParam, m_PAKInput->NumExtParam, MFX_EXTBUFF_FEI_PPS, m_bSingleField ? 0 : secondField);
+    mfxU16 type = pps->FrameType;
     if (type & MFX_FRAMETYPE_REF) {
         if (type & MFX_FRAMETYPE_IDR)
             refs.clear();
@@ -1012,6 +1013,15 @@ mfxStatus tsVideoENCPAK::EncodeFrame(bool secondField)
             continue; // must be impossible
         } else {
             mfxU16 idx = static_cast<mfxU16>(std::distance(recSet.begin(), rslt));
+            // remove if missed in DpbAfter
+            bool found = false;
+            for (int i=0; i<16 && pps->DpbAfter[i].Index != 0xffff && !(found = (pps->DpbAfter[i].Index == idx)); i++);
+            if (!found) {
+            	refs.erase(refs.begin()+r);
+            	r--; // to resume after erased
+            	continue;
+            }
+
 //            dpb_idx.push_back(idx);
             // insert to reflists, TODO fix details
             bool isL1 = surf->Data.FrameOrder > input->Data.FrameOrder;
