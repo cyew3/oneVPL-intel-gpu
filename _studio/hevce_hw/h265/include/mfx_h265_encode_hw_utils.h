@@ -1062,8 +1062,7 @@ mfxStatus CopyRawSurfaceToVideoMemory(
 IntraRefreshState GetIntraRefreshState(
     MfxVideoParam const & video,
     mfxU32                frameOrderInGopDispOrder,
-    mfxEncodeCtrl const * ctrl,
-    mfxU16                intraStripeWidthInMBs);
+    mfxEncodeCtrl const * ctrl);
 
 mfxU8 GetNumReorderFrames(
     mfxU32 BFrameRate,

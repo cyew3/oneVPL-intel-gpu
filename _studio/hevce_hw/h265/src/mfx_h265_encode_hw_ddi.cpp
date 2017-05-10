@@ -127,8 +127,7 @@ mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, MFXCoreInterface* core, GUID guid
     if (pltfm.CodeName < MFX_PLATFORM_CANNONLAKE) {
         if (!caps.LCUSizeSupported)     // not set until CNL now
             caps.LCUSizeSupported = 0b10;   // 32x32 lcu is only supported
-    }
-    else {
+    } else {
         if (IsEncPak(guid))
             caps.LCUSizeSupported |= 0b10;   // add support of 32x32 lcu for ENC+PAK
     }
@@ -136,6 +135,7 @@ mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, MFXCoreInterface* core, GUID guid
     if (pltfm.CodeName >= MFX_PLATFORM_CANNONLAKE)
     {
         caps.ROIDeltaQPSupport = 1; // 0 is now on CNL !!!
+        caps.IntraRefreshBlockUnitSize = 1; // 16x16
     }
 
 #else
@@ -911,8 +911,8 @@ void FillPpsBuffer(
 
     if (pps.bEnableRollingIntraRefresh)
     {
-        pps.IntraInsertionLocation = task.m_IRState.IntraLocation;
-        pps.IntraInsertionSize = task.m_IRState.IntraSize;
+        pps.IntraInsertionLocation = task.m_IRState.IntraLocation << (3 - caps.IntraRefreshBlockUnitSize);
+        pps.IntraInsertionSize = task.m_IRState.IntraSize << (3 - caps.IntraRefreshBlockUnitSize);
         pps.QpDeltaForInsertedIntra = mfxU8(task.m_IRState.IntRefQPDelta);
     }
     pps.StatusReportFeedbackNumber = task.m_statusReportNumber;

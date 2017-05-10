@@ -2975,8 +2975,7 @@ mfxU8 GetSHNUT(Task const & task)
 IntraRefreshState GetIntraRefreshState(
     MfxVideoParam const & video,
     mfxU32                frameOrderInGopDispOrder,
-    mfxEncodeCtrl const * ctrl,
-    mfxU16                intraStripeWidthInMBs)
+    mfxEncodeCtrl const * ctrl)
 {
     IntraRefreshState state={};
     const mfxExtCodingOption2*   extOpt2Init = &(video.m_ext.CO2);
@@ -2991,14 +2990,16 @@ IntraRefreshState GetIntraRefreshState(
 
     mfxI32 frameOrderMinusOffset = frameOrderInGopDispOrder - offsetFromStartOfGop;
     if (frameOrderMinusOffset < 0)
-        return state; // too early to start regresh
+        return state; // too early to start refresh
 
     mfxU32 frameOrderInRefreshPeriod = frameOrderMinusOffset % refreshPeriod;
     if (frameOrderInRefreshPeriod >= extOpt2Init->IntRefCycleSize)
         return state; // for current refresh period refresh cycle is already passed
 
+    mfxU32 refreshDimension = extOpt2Init->IntRefType == HORIZ_REFRESH ? CeilDiv(video.m_ext.HEVCParam.PicHeightInLumaSamples, video.LCUSize) : CeilDiv(video.m_ext.HEVCParam.PicWidthInLumaSamples, video.LCUSize);
+    mfxU16 intraStripeWidthInMBs = (mfxU16)((refreshDimension + video.m_ext.CO2.IntRefCycleSize - 1) / video.m_ext.CO2.IntRefCycleSize);
+
     // check if Intra refresh required for current frame
-    mfxU32 refreshDimension = extOpt2Init->IntRefType == HORIZ_REFRESH ? video.mfx.FrameInfo.Height >> CeilLog2(video.LCUSize) : video.mfx.FrameInfo.Width >> CeilLog2(video.LCUSize);
     mfxU32 numFramesWithoutRefresh = extOpt2Init->IntRefCycleSize - (refreshDimension + intraStripeWidthInMBs - 1) / intraStripeWidthInMBs;
     mfxU32 idxInRefreshCycle = frameOrderInRefreshPeriod;
     state.firstFrameInCycle = (idxInRefreshCycle == 0);
@@ -3123,14 +3124,10 @@ void ConfigureTask(
        if (isI)
             baseLayerOrder = 0;
 
-        mfxU32 refreshDimension = IntRefType == HORIZ_REFRESH ? CeilDiv(par.m_ext.HEVCParam.PicHeightInLumaSamples, par.LCUSize) : CeilDiv(par.m_ext.HEVCParam.PicWidthInLumaSamples, par.LCUSize);
-        mfxU16 intraStripeWidthInMBs = (mfxU16)((refreshDimension + par.m_ext.CO2.IntRefCycleSize - 1) / par.m_ext.CO2.IntRefCycleSize);
-
         task.m_IRState = GetIntraRefreshState(
             par,
             baseLayerOrder ++,
-            &(task.m_ctrl),
-            intraStripeWidthInMBs);
+            &(task.m_ctrl));
     }
 
      mfxU32 needRecoveryPointSei = (par.m_ext.CO.RecoveryPointSEI == MFX_CODINGOPTION_ON &&
@@ -3164,7 +3161,7 @@ void ConfigureTask(
             task.m_qpY = (mfxI8)par.mfx.QPP;
             if (par.isLowDelay())
                 task.m_qpY = (mfxI8)Clip3<mfxI32>(1, maxQP, par.m_ext.CO3.QPOffset[PLayer(task.m_poc - prevTask.m_lastIPoc, par)] + task.m_qpY);
-         }
+        }
         else
         {
             assert(task.m_frameType & MFX_FRAMETYPE_I);
@@ -3182,6 +3179,7 @@ void ConfigureTask(
     }
     else if (par.mfx.RateControlMethod != MFX_RATECONTROL_LA_EXT)
         task.m_qpY = 0;
+
     if (IsOn(CO3.GPB) && isP)
     {
         // encode P as GPB
