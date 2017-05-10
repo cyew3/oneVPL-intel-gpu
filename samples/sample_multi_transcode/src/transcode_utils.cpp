@@ -623,7 +623,7 @@ bool CmdProcessor::is_not_allowed_char(char a) {
 bool CmdProcessor::ParseROIFile(const msdk_char *roi_file_name, std::vector<mfxExtEncoderROI>& m_ROIData)
 {
     FILE *roi_file = NULL;
-    MSDK_FOPEN(roi_file, roi_file_name, MSDK_STRING("r"));
+    MSDK_FOPEN(roi_file, roi_file_name, MSDK_STRING("rb"));
 
     m_ROIData.clear();
 
