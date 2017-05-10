@@ -590,6 +590,7 @@ int TestSuite::RunTest(unsigned int id)
     SETPARS(m_pPar, MFX_PAR);
     m_pPar->AsyncDepth = 1; //limitation for FEI (from sample_fei)
     m_pPar->mfx.RateControlMethod = MFX_RATECONTROL_CQP; //For now FEI work with CQP only
+    m_pPar->mfx.EncodedOrder      = 1; // Single-field + DisplayOrder is not supported
 
     //enable single field coding
     mfxExtFeiParam& extFeiPar = m_par;

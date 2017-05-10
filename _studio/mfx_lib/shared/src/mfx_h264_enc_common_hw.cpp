@@ -4413,6 +4413,12 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         changed = true;
     }
 
+    if (isENCPAK && IsOn(feiParam->SingleFieldProcessing) && !par.mfx.EncodedOrder)
+    {
+        feiParam->SingleFieldProcessing = MFX_CODINGOPTION_OFF;
+        unsupported = true;
+    }
+
 #if defined (MFX_VA_LINUX)
     // disable WP for legacy encoder on linux
     if ((!isENCPAK)
