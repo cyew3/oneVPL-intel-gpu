@@ -555,7 +555,6 @@ mfxStatus CSmplBitstreamReader::ReadNextFrame(mfxBitstream *pBS)
         return MFX_ERR_NOT_INITIALIZED;
 
     MSDK_CHECK_POINTER(pBS, MFX_ERR_NULL_PTR);
-    MSDK_CHECK_ERROR(m_bInited, false, MFX_ERR_NOT_INITIALIZED);
 
     mfxU32 nBytesRead = 0;
 

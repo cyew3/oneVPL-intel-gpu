@@ -209,9 +209,9 @@ mfxStatus CDecodeD3DRender::RenderFrame(mfxFrameSurface1 *pSurface, mfxFrameAllo
         {
             pDestBuf[i] = (pBuf[i]<<6)&0xFFC0FFC0FFC0FFC0;
         }
-        pAllocator->Unlock(pAllocator->pthis,shiftedSurface.Data.MemId,&shiftedSurface.Data);
+        sts = pAllocator->Unlock(pAllocator->pthis,shiftedSurface.Data.MemId,&shiftedSurface.Data);
         MSDK_CHECK_STATUS(sts, "pAllocator->Unlock of shiftedSurface failed");
-        pAllocator->Unlock(pAllocator->pthis,pSurface->Data.MemId,&pSurface->Data);
+        sts = pAllocator->Unlock(pAllocator->pthis,pSurface->Data.MemId,&pSurface->Data);
         MSDK_CHECK_STATUS(sts, "pAllocator->Unlock of pSurface failed");
 
         sts = m_hwdev->RenderFrame(&shiftedSurface, pmfxAlloc);

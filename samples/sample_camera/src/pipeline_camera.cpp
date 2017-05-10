@@ -1257,6 +1257,10 @@ void CCameraPipeline::Close()
        m_d3dRender.Close();
 #endif
 
+    MSDK_SAFE_FREE(m_3dlut_17);
+    MSDK_SAFE_FREE(m_3dlut_33);
+    MSDK_SAFE_FREE(m_3dlut_65);
+
     // allocator if used as external for MediaSDK must be deleted after decoder
     DeleteAllocator();
 

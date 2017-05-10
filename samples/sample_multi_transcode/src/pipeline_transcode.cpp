@@ -3680,16 +3680,10 @@ SafetySurfaceBuffer::SafetySurfaceBuffer(SafetySurfaceBuffer *pNext)
 {
     mfxStatus sts=MFX_ERR_NONE;
     pRelEvent = new MSDKEvent(sts,false,false);
-    if(sts !=MFX_ERR_NONE)
-    {
-        msdk_printf(MSDK_STRING("Cannot create event (for release) for surfaces buffer\n"));
-    }
+    MSDK_CHECK_POINTER_NO_RET(pRelEvent);
 
     pInsEvent = new MSDKEvent(sts,false,false);
-    if(sts !=MFX_ERR_NONE)
-    {
-        msdk_printf(MSDK_STRING("Cannot create event (for insertion) for surfaces buffer\n"));
-    }
+    MSDK_CHECK_POINTER_NO_RET(pInsEvent);
 
 } // SafetySurfaceBuffer::SafetySurfaceBuffer
 

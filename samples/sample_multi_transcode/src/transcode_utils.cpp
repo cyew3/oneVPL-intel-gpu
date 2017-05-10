@@ -379,11 +379,6 @@ mfxStatus CmdProcessor::ParseCmdLine(int argc, msdk_char *argv[])
     {
         if (0 == msdk_strcmp(argv[0], MSDK_STRING("-par")))
         {
-            if (parFile)
-            {
-                msdk_printf(MSDK_STRING("error: too many parfiles\n"));
-                return MFX_ERR_UNSUPPORTED;
-            }
             --argc;
             ++argv;
             if (!argv[0]) {

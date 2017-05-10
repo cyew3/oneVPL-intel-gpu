@@ -110,7 +110,7 @@ namespace TranscodingSample
         mfxU32 DstY;
         mfxU32 DstW;
         mfxU32 DstH;
-        mfxU32 TileId;
+        mfxU16 TileId;
     };
 
     struct __sInputParams
@@ -155,7 +155,7 @@ namespace TranscodingSample
         mfxU32 FrameNumberPreference; // how many surfaces user wants
         mfxU32 MaxFrameNumber; // maximum frames for transcoding
         mfxU32 numSurf4Comp;
-        mfxU32 numTiles4Comp;
+        mfxU16 numTiles4Comp;
 
         mfxU16 nSlices; // number of slices for encoder initialization
         mfxU16 nMaxSliceSize; //maximum size of slice
