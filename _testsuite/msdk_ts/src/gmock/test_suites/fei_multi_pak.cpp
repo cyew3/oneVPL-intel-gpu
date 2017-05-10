@@ -26,6 +26,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 *******************************************************************************/
 #include <vector>
+#include "random"
 #include "ts_encpak.h"
 #include "ts_struct.h"
 #include "ts_parser.h"
@@ -35,14 +36,114 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace fei_multi_pak
 {
 
-    class MultiPAK : public tsVideoENCPAK
+    enum
+    {
+        QP_INVALID = 255,
+        QP_BY_FRM_TYPE = 254,
+        QP_DO_NOT_CHECK = 253
+    };
+
+    class AUWrap : public H264AUWrapper
+    {
+    private:
+        mfxU8 m_prevqp;
+    public:
+
+        AUWrap(BS_H264_au& au)
+            : H264AUWrapper(au)
+            , m_prevqp(QP_INVALID)
+        {};
+
+        ~AUWrap()
+        {};
+
+        mfxU8 NextQP()
+        {
+            if (!NextMB())
+                return QP_INVALID;
+
+            //assume bit-depth=8
+            if (m_mb == m_sh->mb)
+                m_prevqp = 26 + m_sh->pps_active->pic_init_qp_minus26 + m_sh->slice_qp_delta;
+
+            m_prevqp = (m_prevqp + m_mb->mb_qp_delta + 52) % 52;
+
+            if (m_sh->slice_type % 5 == 2)  // Intra
+            {
+                // 7-11
+                if ((m_mb->mb_type == 0 && m_mb->coded_block_pattern == 0) || m_mb->mb_type == 25)
+                    return QP_DO_NOT_CHECK;
+            }
+            else
+            {
+                if (m_mb->mb_skip_flag)
+                    return QP_DO_NOT_CHECK;
+
+                if (m_sh->slice_type % 5 == 0)  // P
+                {
+                    // 7-13 + 7-11
+                    if ((m_mb->mb_type <= 5 && m_mb->coded_block_pattern == 0) || m_mb->mb_type == 30)
+                        return QP_DO_NOT_CHECK;
+                }
+                else
+                {   // 7-14 + 7-11
+                    if ((m_mb->mb_type <= 23 && m_mb->coded_block_pattern == 0) || m_mb->mb_type == 48)
+                        return QP_DO_NOT_CHECK;
+                }
+            }
+
+            return m_prevqp;
+        };
+    };
+
+    class MultiPAK : public tsVideoENCPAK, public tsParserH264AU
     {
     public:
         //variables
         int m_numPAK;
+        bool m_changeMBQP;
+        std::mt19937 m_gen;
         //functions
-        MultiPAK(mfxFeiFunction funcEnc, mfxFeiFunction funcPak, mfxU32 CodecId = 0, bool useDefaults = true) : tsVideoENCPAK(funcEnc, funcPak, CodecId, useDefaults) { m_numPAK = 1; };
+        MultiPAK(mfxFeiFunction funcEnc, mfxFeiFunction funcPak, mfxU32 CodecId = 0, bool useDefaults = true)
+            : tsVideoENCPAK(funcEnc, funcPak, CodecId, useDefaults)
+            , tsParserH264AU(BS_H264_INIT_MODE_CABAC | BS_H264_INIT_MODE_CAVLC)
+            , m_numPAK(1)
+            , m_changeMBQP(false)
+        {};
+
         mfxStatus ProcessFrameAsync();
+    private:
+        //functions
+        void ChangeMBQP(mfxExtFeiPakMBCtrl* mb, int seed);
+        void CheckingMBQP(mfxExtFeiPakMBCtrl* mb);
+    };
+
+    void MultiPAK::ChangeMBQP(mfxExtFeiPakMBCtrl* mb, int seed)
+    {
+        m_gen.seed(seed + 1); //seed = 0 leads to error
+        std::uniform_int_distribution<int> distr(0, 51);
+
+        mfxI32 nummb = mb->NumMBAlloc;
+        for (mfxI32 idxMB = 0; idxMB < nummb; idxMB++)
+            mb->MB[idxMB].QpPrimeY = distr(m_gen);
+    };
+
+    void MultiPAK::CheckingMBQP(mfxExtFeiPakMBCtrl* mb)
+    {
+        if (m_pBitstream ? m_pBitstream->Data : m_bitstream.Data)
+            set_buffer((m_pBitstream ? *m_pBitstream : m_bitstream).Data + (m_pBitstream ? *m_pBitstream : m_bitstream).DataOffset, (m_pBitstream ? *m_pBitstream : m_bitstream).DataLength + 1);
+
+        UnitType& hdr = ParseOrDie();
+        AUWrap au(hdr);
+        mfxI32 nummb = mb->NumMBAlloc;
+        for (mfxI32 idxMB = 0; idxMB < nummb; idxMB++) {
+            mfxU8 qp = au.NextQP();
+            if (mb->MB[idxMB].QpPrimeY != qp && qp != QP_DO_NOT_CHECK)
+            {
+                g_tsLog << "ERROR: both mbqp should be the same\n";
+                g_tsStatus.check(MFX_ERR_ABORTED);
+            }
+        }
     };
 
     mfxStatus MultiPAK::ProcessFrameAsync()
@@ -60,7 +161,26 @@ namespace fei_multi_pak
         if (mfxRes != MFX_ERR_NONE)
             return mfxRes;
 
+        //End of the ENC
+
+        mfxExtFeiPakMBCtrl* mb = (mfxExtFeiPakMBCtrl*)GetExtFeiBuffer(pak.inbuf, MFX_EXTBUFF_FEI_PAK_CTRL, 0);
+
+        //Save reference pak object
+        mfxExtFeiPakMBCtrl mbRef;
+        memset(&mbRef, 0, sizeof(mfxExtFeiPakMBCtrl));
+        mbRef.MB = new mfxFeiPakMBCtrl[mb->NumMBAlloc];
+        mbRef.NumMBAlloc = mb->NumMBAlloc;
+        memcpy(mbRef.MB, mb->MB, sizeof(mfxFeiPakMBCtrl) * mb->NumMBAlloc);
+
         for (int countPAK = 0; countPAK < m_numPAK; countPAK++) {
+
+            //Changing for MBQP
+            if (m_changeMBQP) {
+                if (countPAK != (m_numPAK - 1))
+                    ChangeMBQP(mb, countPAK);
+                else
+                    memcpy(mb->MB, mbRef.MB, sizeof(mfxFeiPakMBCtrl) * mbRef.NumMBAlloc);
+            }
 
             m_PAKInput->ExtParam = pak.inbuf.data();
             m_PAKInput->NumExtParam = (mfxU16)pak.inbuf.size();
@@ -69,11 +189,21 @@ namespace fei_multi_pak
 
             mfxRes = tsVideoENCPAK::ProcessFrameAsync(m_session, m_PAKInput, m_PAKOutput, m_pSyncPoint);
             if (mfxRes != MFX_ERR_NONE)
+            {
+                SAFE_DELETE_ARRAY(mbRef.MB);
                 return mfxRes;
+            }
 
             mfxRes = tsVideoENCPAK::SyncOperation(m_session, *m_pSyncPoint, MFX_INFINITE);
             if (mfxRes != MFX_ERR_NONE)
+            {
+                SAFE_DELETE_ARRAY(mbRef.MB);
                 return mfxRes;
+            }
+
+            //Checking for MBQP
+            if (m_changeMBQP && (countPAK != (m_numPAK - 1)))
+                CheckingMBQP(mb);
 
             if (countPAK == (m_numPAK - 1)) {
                 if (m_default && m_bs_processor && g_tsStatus.get() == MFX_ERR_NONE)
@@ -86,6 +216,7 @@ namespace fei_multi_pak
             m_pBitstream ? m_pBitstream->DataLength = 0 : m_bitstream.DataLength = 0;
         }
 
+        SAFE_DELETE_ARRAY(mbRef.MB);
         return MFX_ERR_NONE;
     };
 
@@ -98,7 +229,8 @@ namespace fei_multi_pak
         static const unsigned int n_cases;
 
         //functions
-        TestSuite() : //tsBitstreamWriter("bs.out")
+        TestSuite()
+            : //tsBitstreamWriter("bs.out")
             encpak(MFX_FEI_FUNCTION_ENC, MFX_FEI_FUNCTION_PAK, MFX_CODEC_AVC, true)
             , multipak(MFX_FEI_FUNCTION_ENC, MFX_FEI_FUNCTION_PAK, MFX_CODEC_AVC, true)
         {
@@ -135,6 +267,7 @@ namespace fei_multi_pak
             mfxStatus sts;
             mfxU16 picStruct;
             int numPAK;
+            bool changeMBQP;
         };
 
     private:
@@ -172,9 +305,12 @@ namespace fei_multi_pak
 
     const TestSuite::tc_struct TestSuite::test_case[] =
     {
-        /*00*/ {MFX_ERR_NONE, MFX_PICSTRUCT_PROGRESSIVE, 2},
-        /*01*/ {MFX_ERR_NONE, MFX_PICSTRUCT_FIELD_TFF, 2},
-        /*02*/ {MFX_ERR_NONE, MFX_PICSTRUCT_FIELD_BFF, 2}
+        /*00*/ {MFX_ERR_NONE, MFX_PICSTRUCT_PROGRESSIVE, 3, false},
+        /*01*/ {MFX_ERR_NONE, MFX_PICSTRUCT_FIELD_TFF,   3, false},
+        /*02*/ {MFX_ERR_NONE, MFX_PICSTRUCT_FIELD_BFF,   3, false},
+        /*03*/ {MFX_ERR_NONE, MFX_PICSTRUCT_PROGRESSIVE, 3, true},
+        /*04*/ {MFX_ERR_NONE, MFX_PICSTRUCT_FIELD_TFF,   3, true},
+        /*05*/ {MFX_ERR_NONE, MFX_PICSTRUCT_FIELD_BFF,   3, true}
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
@@ -207,8 +343,9 @@ namespace fei_multi_pak
         std::vector <Ipp32u> refCRCVect;
         std::vector <Ipp32u> testCRCVect;
 
-        //Set number of PAK
+        //Set parameters for modification of the PAK
         multipak.m_numPAK = tc.numPAK;
+        multipak.m_changeMBQP = tc.changeMBQP;
 
         mfxU16 num_fields = encpak.enc.m_par.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
 

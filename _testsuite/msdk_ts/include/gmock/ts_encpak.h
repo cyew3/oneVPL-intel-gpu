@@ -141,13 +141,13 @@ private:
     mfxPAKInput                 PAKInput;
     mfxPAKOutput                PAKOutput;
 
-    mfxExtFeiPakMBCtrl          mb[2]; // [1st, 2nd fields]
-    mfxExtFeiEncMV              mv[2]; // [1st, 2nd fields]
-
     std::vector<mfxFrameSurface1*> refs; // dpb, updated after frame, filled at tail
     std::vector<mfxFrameSurface1*> recSet; // hw allocated recon surface pool, in->LOsufaces
 public:
 //    std::vector<mfxU16> dpb_idx; // copy src for pps->ReferenceFrames, maps dpb to recon pool above
+
+    mfxExtFeiPakMBCtrl          m_mb[2]; // [1st, 2nd fields]
+    mfxExtFeiEncMV              m_mv[2]; // [1st, 2nd fields]
 
     std::vector<RefListElem> RefList[2]; // [L0,L1], filled at tail
 

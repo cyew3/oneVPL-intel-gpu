@@ -246,8 +246,8 @@ mfxStatus tsVideoENCPAK::Close()
     SAFE_DELETE_ARRAY(m_bitstream.Data);
     mfxU32 nfields = (enc.m_pPar->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE) ? 2 : 1;
     for (mfxU32 field = 0; field < nfields; field++) {
-        SAFE_DELETE_ARRAY(mb[field].MB);
-        SAFE_DELETE_ARRAY(mv[field].MB);
+        SAFE_DELETE_ARRAY(m_mb[field].MB);
+        SAFE_DELETE_ARRAY(m_mv[field].MB);
     }
 
     SAFE_DELETE_ARRAY(enc.fctrl);
@@ -353,8 +353,8 @@ tsVideoENCPAK::tsVideoENCPAK(mfxFeiFunction funcEnc, mfxFeiFunction funcPak, mfx
     memset(&ENCOutput, 0, sizeof(ENCOutput));
     memset(&PAKInput, 0, sizeof(PAKInput));
     memset(&PAKOutput, 0, sizeof(PAKOutput));
-    memset(&mb, 0, sizeof(mb));
-    memset(&mv, 0, sizeof(mv));
+    memset(&m_mb, 0, sizeof(m_mb));
+    memset(&m_mv, 0, sizeof(m_mv));
 
     if(m_default)
     {
@@ -436,8 +436,8 @@ mfxStatus tsVideoENCPAK::Init()
     if (sts >= MFX_ERR_NONE) {
         mfxU32 nfields = (enc.m_pPar->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE) ? 2 : 1;
         for (mfxU32 field = 0; field < nfields; field++) {
-            PreparePakMBCtrlBuf(mb[field], *enc.m_pPar);
-            PrepareEncMVBuf(mv[field], *enc.m_pPar);
+            PreparePakMBCtrlBuf(m_mb[field], *enc.m_pPar);
+            PrepareEncMVBuf(m_mv[field], *enc.m_pPar);
         }
 
         m_initialized = true;
@@ -786,13 +786,13 @@ mfxStatus tsVideoENCPAK::PrepareFrameBuffers (bool secondField)
         enc.inbuf.push_back(&enc.fpps[field].Header);
         enc.inbuf.push_back(&enc.fslice[field].Header);
         enc.inbuf.push_back(&enc.fctrl[field].Header);
-        enc.outbuf.push_back(&mb[field].Header);
-        enc.outbuf.push_back(&mv[field].Header);
+        enc.outbuf.push_back(&m_mb[field].Header);
+        enc.outbuf.push_back(&m_mv[field].Header);
 
         pak.inbuf.push_back(&pak.fpps[field].Header);
         pak.inbuf.push_back(&pak.fslice[field].Header);
-        pak.inbuf.push_back(&mb[field].Header);
-        pak.inbuf.push_back(&mv[field].Header);
+        pak.inbuf.push_back(&m_mb[field].Header);
+        pak.inbuf.push_back(&m_mv[field].Header);
     }
 
 
