@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2017 Intel Corporation. All Rights Reserved.
 
 File Name: hevce_encode_frame_async.cpp
 
@@ -88,27 +88,24 @@ namespace hevce_encode_frame_async
         },
         {/*09*/ MFX_ERR_NONE, NONE },
         {/*10*/ MFX_ERR_NONE, NONE,
-            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 4 }
+        {
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, 1 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, 51 }
+        }
         },
         {/*11*/ MFX_ERR_NONE, NONE,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, 1 },
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, 51 }
-            }
-        },
-        {/*12*/ MFX_ERR_NONE, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 60000 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1001 }
             }
         },
-        {/*13*/ MFX_ERR_NONE, NONE,
+        {/*12*/ MFX_ERR_NONE, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.AspectRatioW, 16 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.AspectRatioH, 9 }
             }
         },
-        {/*14*/ MFX_ERR_NONE, CROP_XY,
+        {/*13*/ MFX_ERR_NONE, CROP_XY,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 720 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 480 - 1 },
@@ -116,8 +113,18 @@ namespace hevce_encode_frame_async
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropY, 1 },
             }
         },
-
-
+        // NumMb % NumSlice > NumSlice / 2
+        {/*14*/ MFX_ERR_NONE, NONE,
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 44 }
+        },
+        // NumMb % (NumMb % NumSlice) == 0
+        {/*15*/ MFX_ERR_NONE, NONE,
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 33 }
+        },
+        // NumMb % (NumMb % NumSlice) != 0
+        {/*16*/ MFX_ERR_NONE, NONE,
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 7 }
+        },
 
     };
 
