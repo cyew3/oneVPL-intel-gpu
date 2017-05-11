@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include <stdio.h>
@@ -207,6 +207,22 @@ PackVA::SaveVLDParameters(
     Ipp32s)
 {
   if(va_mode == VA_NO) return UMC_OK;
+
+  Ipp32s numSlices = (Ipp32s)(pSliceInfo - pSliceInfoBuffer);
+  for (int i = 1; i < numSlices; i++)
+  {
+      DXVA_SliceInfo  & slice = pSliceInfoBuffer[i];
+      DXVA_SliceInfo  & prevSlice = pSliceInfoBuffer[i-1];
+      if (slice.wVerticalPosition == prevSlice.wVerticalPosition && slice.wHorizontalPosition == prevSlice.wHorizontalPosition)
+      {
+          // remove slice duplication
+          memmove_s(&pSliceInfoBuffer[i - 1], (pSliceInfo - &pSliceInfoBuffer[i]) * sizeof(DXVA_SliceInfo),
+              &pSliceInfoBuffer[i], (pSliceInfo - &pSliceInfoBuffer[i])*sizeof(DXVA_SliceInfo));
+          numSlices--;
+          pSliceInfo--;
+          i--;
+      }
+  }
 
   if(va_mode == VA_VLD_W)
   {
@@ -570,6 +586,22 @@ PackVA::SaveVLDParameters(
     if(va_mode == VA_NO)
     {
         return UMC_OK;
+    }
+
+    Ipp32s numSlices = (Ipp32s)(pSliceInfo - pSliceInfoBuffer);
+    for (int i = 1; i < numSlices; i++)
+    {
+        VASliceParameterBufferMPEG2 & slice = pSliceInfoBuffer[i];
+        VASliceParameterBufferMPEG2 & prevSlice = pSliceInfoBuffer[i - 1];
+        if (slice.slice_vertical_position == prevSlice.slice_vertical_position && slice.slice_horizontal_position == prevSlice.slice_horizontal_position)
+        {
+            // remove slice duplication
+            memmove_s(&pSliceInfoBuffer[i - 1], (pSliceInfo - &pSliceInfoBuffer[i]) * sizeof(VASliceParameterBufferMPEG2), 
+                &pSliceInfoBuffer[i], (pSliceInfo - &pSliceInfoBuffer[i]) * sizeof(VASliceParameterBufferMPEG2));
+            numSlices--;
+            pSliceInfo--;
+            i--;
+        }
     }
 
     if(va_mode == VA_VLD_L)
