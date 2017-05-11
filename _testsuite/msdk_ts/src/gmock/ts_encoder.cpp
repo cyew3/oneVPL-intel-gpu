@@ -39,6 +39,30 @@ void SkipDecision(mfxVideoParam& par)
     }
 }
 
+void SetFrameTypeIfRequired(mfxEncodeCtrl * pCtrl, mfxVideoParam * pPar, mfxFrameSurface1 * pSurf)
+{
+    if (!pPar || !pPar->mfx.EncodedOrder || !pCtrl || !pSurf)
+    {
+        // Skip if frame draining in display order
+        return;
+    }
+
+    mfxU32 order = pSurf->Data.FrameOrder;
+    mfxU32 goporder = order % pPar->mfx.GopPicSize;
+    if (goporder == 0)
+    {
+        pCtrl->FrameType = MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_xP | MFX_FRAMETYPE_xREF;
+        if (pPar->mfx.IdrInterval <= 1 || order / pPar->mfx.GopPicSize % pPar->mfx.IdrInterval == 0)
+            pCtrl->FrameType |= MFX_FRAMETYPE_IDR;
+    }
+    else if (goporder % pPar->mfx.GopRefDist == 0) {
+        pCtrl->FrameType = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_xP | MFX_FRAMETYPE_xREF;
+    }
+    else {
+        pCtrl->FrameType = MFX_FRAMETYPE_B | MFX_FRAMETYPE_xB;
+    }
+}
+
 tsVideoEncoder::tsVideoEncoder(mfxU32 CodecId, bool useDefaults)
     : m_default(useDefaults)
     , m_initialized(false)
@@ -59,6 +83,7 @@ tsVideoEncoder::tsVideoEncoder(mfxU32 CodecId, bool useDefaults)
     , m_uid(0)
     , m_single_field_processing(false)
     , m_field_processed(0)
+    , m_bUseDefaultFrameType(false)
 {
     m_par.mfx.CodecId = CodecId;
     if (g_tsConfig.lowpower != MFX_CODINGOPTION_UNKNOWN)
@@ -123,6 +148,7 @@ tsVideoEncoder::tsVideoEncoder(mfxFeiFunction func, mfxU32 CodecId, bool useDefa
     , m_uid(0)
     , m_single_field_processing(false)
     , m_field_processed(0)
+    , m_bUseDefaultFrameType(false)
 {
     m_par.mfx.CodecId = CodecId;
     if (g_tsConfig.lowpower != MFX_CODINGOPTION_UNKNOWN)
@@ -380,7 +406,14 @@ mfxStatus tsVideoEncoder::EncodeFrameAsync()
             m_pSurf = m_filler->ProcessSurface(m_pSurf, m_pFrameAllocator);
         }
     }
-    mfxStatus mfxRes = EncodeFrameAsync(m_session, m_pSurf ? m_pCtrl : 0, m_pSurf, m_pBitstream, m_pSyncPoint);
+
+    mfxEncodeCtrl * cur_ctrl = m_pSurf ? m_pCtrl : NULL;
+    if (m_bUseDefaultFrameType)
+    {
+        SetFrameTypeIfRequired(cur_ctrl, m_pPar, m_pSurf);
+    }
+
+    mfxStatus mfxRes = EncodeFrameAsync(m_session, cur_ctrl, m_pSurf, m_pBitstream, m_pSyncPoint);
 
     if (m_single_field_processing)
     {
@@ -431,7 +464,7 @@ mfxStatus tsVideoEncoder::EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ct
     TS_TRACE(syncp);
 
     m_frames_buffered += (mfxRes >= 0);
-        
+
     return g_tsStatus.m_status = mfxRes;
 }
 

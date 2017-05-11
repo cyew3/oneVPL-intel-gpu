@@ -36,11 +36,12 @@ public:
     mfxPluginUID*               m_uid;
     bool                        m_single_field_processing;
     mfxU16                      m_field_processed;
+    bool                        m_bUseDefaultFrameType;
 
     tsVideoEncoder(mfxU32 CodecId = 0, bool useDefaults = true);
     tsVideoEncoder(mfxFeiFunction func, mfxU32 CodecId = 0, bool useDefaults = true);
     ~tsVideoEncoder();
-    
+
     mfxStatus Init();
     mfxStatus Init(mfxSession session, mfxVideoParam *par);
 
@@ -52,7 +53,7 @@ public:
 
     mfxStatus QueryIOSurf();
     mfxStatus QueryIOSurf(mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest *request);
-    
+
     mfxStatus Reset();
     mfxStatus Reset(mfxSession session, mfxVideoParam *par);
 
@@ -65,7 +66,7 @@ public:
     mfxStatus AllocBitstream(mfxU32 size = 0);
     mfxStatus AllocSurfaces();
 
-    
+
     mfxStatus SyncOperation();
     mfxStatus SyncOperation(mfxSyncPoint syncp);
     mfxStatus SyncOperation(mfxSession session, mfxSyncPoint syncp, mfxU32 wait);

@@ -373,7 +373,8 @@ public:
 
     const char* getFrameType(mfxU8 type)
     {
-        switch (type & MFX_FRAMETYPE_IPB) {
+        switch (type & (MFX_FRAMETYPE_IPB | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF))
+        {
         case MFX_FRAMETYPE_I:
             if (type & MFX_FRAMETYPE_IDR) {
                 return "IDR";

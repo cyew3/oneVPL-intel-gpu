@@ -591,6 +591,8 @@ int TestSuite::RunTest(unsigned int id)
     m_pPar->AsyncDepth = 1; //limitation for FEI (from sample_fei)
     m_pPar->mfx.RateControlMethod = MFX_RATECONTROL_CQP; //For now FEI work with CQP only
     m_pPar->mfx.EncodedOrder      = 1; // Single-field + DisplayOrder is not supported
+    m_pPar->mfx.GopPicSize = (std::max)(mfxU16(1), m_pPar->mfx.GopPicSize);
+    m_bUseDefaultFrameType = true;
 
     //enable single field coding
     mfxExtFeiParam& extFeiPar = m_par;
