@@ -240,7 +240,7 @@ mfxStatus VideoPAK_PAK::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam 
     return MFX_ERR_NONE;
 }
 
-mfxStatus VideoPAK_PAK::QueryIOSurf(VideoCORE *core , mfxVideoParam *par, mfxFrameAllocRequest *request)
+mfxStatus VideoPAK_PAK::QueryIOSurf(VideoCORE *core , mfxVideoParam *par, mfxFrameAllocRequest request[2])
 {
     MFX_CHECK_NULL_PTR3(core, par, request);
 
@@ -270,12 +270,19 @@ mfxStatus VideoPAK_PAK::QueryIOSurf(VideoCORE *core , mfxVideoParam *par, mfxFra
 
     // more check if needed
 
-    request->Type                = MFX_MEMTYPE_FROM_PAK |
-                                   MFX_MEMTYPE_DXVA2_DECODER_TARGET |
-                                   MFX_MEMTYPE_INTERNAL_FRAME;
-    request->NumFrameMin         = tmp.AsyncDepth + tmp.mfx.NumRefFrame;
-    request->NumFrameSuggested   = request->NumFrameMin;
-    request->Info                = tmp.mfx.FrameInfo;
+    request[0].Type                = MFX_MEMTYPE_FROM_PAK |
+                                     MFX_MEMTYPE_DXVA2_DECODER_TARGET |
+                                     MFX_MEMTYPE_EXTERNAL_FRAME;
+    request[0].NumFrameMin         = tmp.mfx.GopRefDist + (tmp.AsyncDepth-1);
+    request[0].NumFrameSuggested   = request[0].NumFrameMin;
+    request[0].Info                = tmp.mfx.FrameInfo;
+
+    request[1].Type                = MFX_MEMTYPE_FROM_PAK |
+                                     MFX_MEMTYPE_DXVA2_DECODER_TARGET |
+                                     MFX_MEMTYPE_INTERNAL_FRAME;
+    request[1].NumFrameMin         = tmp.AsyncDepth + tmp.mfx.NumRefFrame;
+    request[1].NumFrameSuggested   = request[1].NumFrameMin;
+    request[1].Info                = tmp.mfx.FrameInfo;
 
     return MFX_ERR_NONE;
 }

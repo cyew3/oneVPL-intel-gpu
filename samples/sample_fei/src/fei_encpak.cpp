@@ -286,19 +286,24 @@ mfxStatus FEI_EncPakInterface::Reset(mfxU16 width, mfxU16 height, mfxU16 crop_w,
     return sts;
 }
 
-mfxStatus FEI_EncPakInterface::QueryIOSurf(mfxFrameAllocRequest* enc_request, mfxFrameAllocRequest* pak_request)
+mfxStatus FEI_EncPakInterface::QueryIOSurf(mfxFrameAllocRequest* request)
 {
+    MSDK_CHECK_POINTER(request, MFX_ERR_NULL_PTR);
+
     mfxStatus sts = MFX_ERR_NOT_INITIALIZED;
-    if (m_pmfxENC && enc_request)
-    {
-        sts = m_pmfxENC->QueryIOSurf(&m_videoParams_ENC, enc_request);
-        MSDK_CHECK_STATUS(sts, "FEI ENC: Reset failed");
-    }
     if (m_pmfxPAK)
     {
-        sts = m_pmfxPAK->QueryIOSurf(&m_videoParams_PAK, pak_request);
-        MSDK_CHECK_STATUS(sts, "FEI PAK: Reset failed");
+        sts = m_pmfxPAK->QueryIOSurf(&m_videoParams_PAK, request);
+        MSDK_CHECK_STATUS(sts, "FEI PAK: QueryIOSurf failed");
     }
+    else
+    {
+        MFXVideoPAK      tmpPAK(*m_pmfxSession);
+
+        sts = tmpPAK.QueryIOSurf(&m_videoParams_PAK, request);
+        MSDK_CHECK_STATUS(sts, "FEI ENC (via PAK): QueryIOSurf failed");
+    }
+
     return sts;
 }
 
@@ -520,7 +525,9 @@ mfxStatus FEI_EncPakInterface::FillParameters()
         m_videoParams_ENC.NumExtParam = (mfxU16)m_InitExtParams_ENC.size();
     }
 
-    if (m_pmfxPAK)
+    // for ENCOnly case, here's workaround that also fill the parameters for m_videoParams_PAK
+    // in case to support ENC QueryIOSurf
+    if (m_pmfxPAK || m_pmfxENC)
     {
         MSDK_MEMCPY_VAR(m_videoParams_PAK, &m_videoParams_ENC, sizeof(mfxVideoParam));
 

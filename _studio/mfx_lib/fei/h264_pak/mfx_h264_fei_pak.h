@@ -38,7 +38,7 @@ public:
 
     static mfxStatus Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out);
 
-    static mfxStatus QueryIOSurf(VideoCORE*, mfxVideoParam *par, mfxFrameAllocRequest *request);
+    static mfxStatus QueryIOSurf(VideoCORE*, mfxVideoParam *par, mfxFrameAllocRequest request[2]);
 
     virtual mfxStatus GetVideoParam(mfxVideoParam *par);
 

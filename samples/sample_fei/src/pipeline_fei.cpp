@@ -375,19 +375,31 @@ mfxStatus CEncodingPipeline::AllocFrames()
         MSDK_CHECK_STATUS(sts, "m_pmfxENCODE->QueryIOSurf failed");
     }
 
-    m_maxQueueLength = m_refDist * 2 + m_nAsyncDepth;
-    /* temporary solution for a while for PREENC + ENC cases
-    * (It required to calculate accurate formula for all usage cases)
-    * this is not optimal from memory usage consumption */
-    m_maxQueueLength += m_appCfg.numRef + 1;
+    mfxFrameAllocRequest PakRequest[2];
+    if (m_pFEI_ENCPAK)
+    {
+        MSDK_ZERO_MEMORY(PakRequest[0]); // ENCPAK input request
+        MSDK_ZERO_MEMORY(PakRequest[1]); // ENCPAK reconstruct request
+
+        sts = m_pFEI_ENCPAK->QueryIOSurf(PakRequest);
+        MSDK_CHECK_STATUS(sts, "m_pFEI_ENCPAK->QueryIOSurf failed");
+    }
+
+    m_maxQueueLength = m_refDist * 2 + m_nAsyncDepth + m_appCfg.numRef + 1;
 
     // The number of surfaces shared by vpp output and encode input.
     // When surfaces are shared 1 surface at first component output contains output frame that goes to next component input
     if (m_appCfg.nInputSurf == 0)
     {
         nEncSurfNum = EncRequest.NumFrameSuggested + (m_nAsyncDepth - 1) + 2;
-        if ((m_appCfg.bPREENC) || (m_appCfg.bENCPAK) || (m_appCfg.bENCODE) ||
-            (m_appCfg.bOnlyENC) || (m_appCfg.bOnlyPAK))
+        if ((m_appCfg.bENCPAK) || (m_appCfg.bOnlyPAK) || (m_appCfg.bOnlyENC))
+        {
+            // Some additional surfaces required, because eTask holds frames till the destructor.
+            // More optimal approaches are possible
+            nEncSurfNum  = PakRequest[0].NumFrameSuggested + m_appCfg.numRef + m_refDist + 1;
+            nEncSurfNum += m_pVPP ? m_refDist + 1 : 0;
+        }
+        else if ((m_appCfg.bPREENC) || (m_appCfg.bENCODE))
         {
             nEncSurfNum  = m_maxQueueLength;
             nEncSurfNum += m_pVPP ? m_refDist + 1 : 0;
@@ -509,41 +521,27 @@ mfxStatus CEncodingPipeline::AllocFrames()
      * */
     if (m_pFEI_ENCPAK)
     {
-        mfxFrameAllocRequest ReconRequest;
-        MSDK_ZERO_MEMORY(ReconRequest);
+        PakRequest[1].AllocId = m_BaseAllocID;
+        MSDK_MEMCPY_VAR(PakRequest[1].Info, &m_commonFrameInfo, sizeof(mfxFrameInfo));
 
-        ReconRequest.AllocId = m_BaseAllocID;
-        MSDK_MEMCPY_VAR(ReconRequest.Info, &m_commonFrameInfo, sizeof(mfxFrameInfo));
-
-        if (m_appCfg.bENCPAK || m_appCfg.bOnlyPAK)
+        if (m_appCfg.nReconSurf != 0)
         {
-            sts = m_pFEI_ENCPAK->QueryIOSurf(NULL, &ReconRequest);
-            MSDK_CHECK_STATUS(sts, "m_pFEI_ENCPAK->QueryIOSurf failed");
-            if (m_appCfg.nReconSurf != 0)
+            if (m_appCfg.nReconSurf > PakRequest[1].NumFrameMin)
             {
-                if (m_appCfg.nReconSurf > ReconRequest.NumFrameMin)
-                {
-                    ReconRequest.NumFrameMin = ReconRequest.NumFrameSuggested = m_appCfg.nReconSurf;
-                }
-                else
-                {
-                    msdk_printf(MSDK_STRING("\nWARNING: User input reconstruct surface num invalid!\n"));
-                }
+                PakRequest[1].NumFrameMin = PakRequest[1].NumFrameSuggested = m_appCfg.nReconSurf;
             }
-
-            if (m_appCfg.bENCPAK)
+            else
             {
-                ReconRequest.Type |= MFX_MEMTYPE_FROM_ENC;
+                msdk_printf(MSDK_STRING("\nWARNING: User input reconstruct surface num invalid!\n"));
             }
         }
-        else
-        {// TODO: QueryIOSurf for OnlyENC
-            ReconRequest.NumFrameMin       = m_appCfg.nReconSurf ? m_appCfg.nReconSurf : m_maxQueueLength;
-            ReconRequest.NumFrameSuggested = m_appCfg.nReconSurf ? m_appCfg.nReconSurf : m_maxQueueLength;
-            ReconRequest.Type = (EncRequest.Type & 0xfff0) | MFX_MEMTYPE_INTERNAL_FRAME;
+
+        if (m_appCfg.bENCPAK || m_appCfg.bOnlyENC)
+        {
+            PakRequest[1].Type |= MFX_MEMTYPE_FROM_ENC;
         }
 
-        sts = m_pMFXAllocator->Alloc(m_pMFXAllocator->pthis, &ReconRequest, &m_ReconResponse);
+        sts = m_pMFXAllocator->Alloc(m_pMFXAllocator->pthis, &PakRequest[1], &m_ReconResponse);
         MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->Alloc failed");
 
         m_ReconSurfaces.PoolSize = m_ReconResponse.NumFrameActual;
