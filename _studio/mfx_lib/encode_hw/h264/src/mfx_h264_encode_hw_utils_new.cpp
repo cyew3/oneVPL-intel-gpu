@@ -2190,7 +2190,7 @@ void MfxHwH264Encode::ConfigureTask(
     {
         mfxExtFeiSliceHeader * extFeiSlice = GetExtBuffer(task.m_ctrl, field);
 
-        if (extFeiSlice == NULL)
+        if (NULL == extFeiSlice)
         {
             // take default buffer (from Init) if not provided in runtime
             extFeiSlice = GetExtBuffer(video, field);
@@ -2203,7 +2203,7 @@ void MfxHwH264Encode::ConfigureTask(
 
         for (mfxU32 i = 0; i < task.m_numSlice[task.m_fid[field]]; i++)
         {
-            if (NULL != extFeiSlice->Slice && i < extFeiSlice->NumSlice)
+            if (extFeiSlice && NULL != extFeiSlice->Slice && i < extFeiSlice->NumSlice)
             {
                 // If only one buffer was passed on init, that value will be propagated for entire frame
                 disableDeblockingIdc   = (mfxU8)extFeiSlice->Slice[i].DisableDeblockingFilterIdc;
