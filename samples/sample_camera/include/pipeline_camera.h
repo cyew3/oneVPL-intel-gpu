@@ -100,8 +100,10 @@ protected:
     mfxExtCamHotPixelRemoval      m_HP;
     mfxExtCamGammaCorrection      m_GammaCorrection;
     mfxExtCamFwdGamma             m_3DLUT_GammaCorrection;
+#if _MSDK_API >= MSDK_API(1, 23)
     mfxExtCamTotalColorControl    m_TotalColorControl;
     mfxExtCamCscYuvRgb             m_RGBToYUV;
+#endif
     mfxExtCamBlackLevelCorrection m_BlackLevelCorrection;
     mfxExtCamWhiteBalance         m_WhiteBalance;
     mfxExtCamColorCorrection3x3   m_CCM;
@@ -168,8 +170,10 @@ protected:
     virtual mfxStatus AllocAndInitCamWhiteBalance(sInputParams *pParams);
     virtual mfxStatus AllocAndInitCamCCM(sInputParams *pParams);
     virtual mfxStatus AllocAndInitCamLens(sInputParams *pParams);
+#if _MSDK_API >= MSDK_API(1, 23)
     virtual mfxStatus AllocAndInitCamTotalColorControl(sInputParams *pParams);
     virtual mfxStatus AllocAndInitCamRGBtoYUV(sInputParams *pParams);
+#endif
     virtual mfxStatus AllocAndInitCamBlackLevelCorrection(sInputParams *pParams);
     virtual mfxStatus AllocAndInitCamHotPixelRemoval(sInputParams *pParams);
     virtual void FreeCamGammaCorrection();
