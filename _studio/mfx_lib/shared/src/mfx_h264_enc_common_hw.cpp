@@ -6047,7 +6047,7 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
     ENCODE_CAPS   const & caps)
 {
     MFX_CHECK_NULL_PTR3(ctrl, surface, bs);
-    mfxStatus checkStsWrn = MFX_ERR_NONE, sts = MFX_ERR_NONE;
+    mfxStatus checkSts = MFX_ERR_NONE;
 
     mfxExtFeiParam const * feiParam = GetExtBuffer(video);
     bool single_field_mode = IsOn(feiParam->SingleFieldProcessing);
@@ -6057,7 +6057,7 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
         MFX_CHECK_NULL_PTR1(ctrl->ExtParam[i]);
 
         if (!IsRunTimeExtBufferIdSupported(video, ctrl->ExtParam[i]->BufferId))
-            checkStsWrn = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM; // don't return error in runtime, just ignore unsupported ext buffer and return warning
+            checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM; // don't return error in runtime, just ignore unsupported ext buffer and return warning
 
         bool buffer_pair = MfxHwH264Encode::GetExtBuffer(
                             ctrl->ExtParam + i + 1,
@@ -6098,7 +6098,7 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
         if (buffer_pair && !buffer_pair_allowed)
         {
             // Ignore second buffer and return warning
-            checkStsWrn = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+            checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
         }
         else if (!buffer_pair && buffer_pair_required)
         {
@@ -6152,24 +6152,22 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
         }
     }
 
-    sts = CheckFEIRunTimeExtBuffersContent(video, ctrl, surface, bs);
-    MFX_CHECK(sts >= MFX_ERR_NONE, sts);
-    if (sts != MFX_ERR_NONE)
-        checkStsWrn = sts;
+    checkSts = CheckFEIRunTimeExtBuffersContent(video, ctrl, surface, bs);
+    MFX_CHECK(checkSts >= MFX_ERR_NONE, checkSts);
 
     mfxExtAVCRefListCtrl const * extRefListCtrl = GetExtBuffer(*ctrl);
     if (extRefListCtrl && video.calcParam.numTemporalLayer > 0 && video.calcParam.tempScalabilityMode == 0)
-        checkStsWrn = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+        checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
 
 #ifndef MFX_PROTECTED_FEATURE_DISABLE
     mfxExtSpecialEncodingModes const * extSpecModes = GetExtBuffer(video);
     if (extRefListCtrl && extSpecModes->refDummyFramesForWiDi)
-        checkStsWrn = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM; // no DPB and ref list manipulations allowed for WA WiDi mode
+        checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM; // no DPB and ref list manipulations allowed for WA WiDi mode
 #endif
 
     mfxExtAVCRefLists const * extRefLists = GetExtBuffer(*ctrl);
     if (extRefLists && video.calcParam.numTemporalLayer > 0 && video.calcParam.tempScalabilityMode == 0)
-        checkStsWrn = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+        checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
 
     // check timestamp from mfxExtPictureTimingSEI
     mfxExtPictureTimingSEI const * extPt   = GetExtBuffer(*ctrl);
@@ -6193,7 +6191,9 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
                 extPt->TimeStamp[i].SecondsFlag        == 0xffff ||
                 extPt->TimeStamp[i].MinutesFlag        == 0xffff ||
                 extPt->TimeStamp[i].HoursFlag          == 0xffff)
-                checkStsWrn = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+            {
+                checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+            }
         }
     }
 
@@ -6207,27 +6207,27 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
         {
             if (extRoi->NumROI > MaxNumOfROI)
             {
-                checkStsWrn = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+                checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
                 actualNumRoi = MaxNumOfROI;
             }
 #if MFX_VERSION > 1021
             if (extRoi->ROIMode != MFX_ROI_MODE_QP_DELTA && extRoi->ROIMode != MFX_ROI_MODE_PRIORITY)
             {
-                checkStsWrn = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+                checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
                 actualNumRoi = 0;
             }
 
             if (video.mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
                 extRoi->ROIMode == MFX_ROI_MODE_QP_DELTA && caps.ROIBRCDeltaQPLevelSupport == 0)
             {
-                checkStsWrn = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+                checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
                 actualNumRoi = 0;
             }
 
             if (video.mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
                 extRoi->ROIMode == MFX_ROI_MODE_PRIORITY && caps.ROIBRCPriorityLevelSupport == 0)
             {
-                checkStsWrn = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+                checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
                 actualNumRoi = 0;
             }
 #endif // MFX_VERSION > 1021
@@ -6238,18 +6238,18 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
             // check that ROI is aligned to MB
             if ((extRoi->ROI[i].Left & 0x0f) || (extRoi->ROI[i].Right & 0x0f) ||
                 (extRoi->ROI[i].Top & 0x0f) || (extRoi->ROI[i].Bottom & 0x0f))
-                checkStsWrn = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+                checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
 
             // check that ROI dimensions don't conflict with each other and don't exceed frame size
             if(extRoi->ROI[i].Left > mfxU32(video.mfx.FrameInfo.Width -16) ||
                extRoi->ROI[i].Right < mfxU32(extRoi->ROI[i].Left + 16) ||
                extRoi->ROI[i].Right >  video.mfx.FrameInfo.Width)
-               checkStsWrn = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+               checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
 
             if(extRoi->ROI[i].Top > mfxU32(video.mfx.FrameInfo.Height -16) ||
                extRoi->ROI[i].Bottom < mfxU32(extRoi->ROI[i].Top + 16) ||
                extRoi->ROI[i].Bottom >  video.mfx.FrameInfo.Height)
-               checkStsWrn = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+               checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
         }
     }
 
@@ -6261,15 +6261,16 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
 
         if (actualNumRect == 0)
         {
-            checkStsWrn = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+            checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
         }
 
         for (mfxU16 i = 0; i < actualNumRect; i++)
         {
-            sts = CheckAndFixRectQueryLike(video, (mfxRectDesc*)(&(extDirtyRect->Rect[i])));
-            MFX_CHECK(sts >= MFX_ERR_NONE, MFX_ERR_UNSUPPORTED);
-            if (sts != MFX_ERR_NONE)
-                checkStsWrn = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+            mfxStatus sts = CheckAndFixRectQueryLike(video, (mfxRectDesc*)(&(extDirtyRect->Rect[i])));
+            if (sts < MFX_ERR_NONE)
+                checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+            else
+                return MFX_ERR_UNSUPPORTED;
         }
     }
 
@@ -6281,19 +6282,20 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
 
         if (actualNumRect == 0)
         {
-            checkStsWrn = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+            checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
         }
 
         for (mfxU16 i = 0; i < actualNumRect; i++)
         {
-            sts = CheckAndFixMovingRectQueryLike(video, (mfxMovingRectDesc*)(&(extMoveRect->Rect[i])));
-            MFX_CHECK(sts >= MFX_ERR_NONE, MFX_ERR_UNSUPPORTED);
-            if (sts != MFX_ERR_NONE)
-                checkStsWrn = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+            mfxStatus sts = CheckAndFixMovingRectQueryLike(video, (mfxMovingRectDesc*)(&(extMoveRect->Rect[i])));
+            if (sts < MFX_ERR_NONE)
+                checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+            else
+                return MFX_ERR_UNSUPPORTED;
         }
     }
 
-    return checkStsWrn;
+    return checkSts;
 }
 
 mfxStatus MfxHwH264Encode::CheckFEIRunTimeExtBuffersContent(
