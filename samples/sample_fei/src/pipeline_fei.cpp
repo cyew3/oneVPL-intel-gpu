@@ -385,7 +385,7 @@ mfxStatus CEncodingPipeline::AllocFrames()
         MSDK_CHECK_STATUS(sts, "m_pFEI_ENCPAK->QueryIOSurf failed");
     }
 
-    m_maxQueueLength = m_refDist * 2 + m_nAsyncDepth + m_appCfg.numRef + 1;
+    m_maxQueueLength = m_refDist * 2 + m_nAsyncDepth + m_numRefFrame + 1;
 
     // The number of surfaces shared by vpp output and encode input.
     // When surfaces are shared 1 surface at first component output contains output frame that goes to next component input
@@ -396,7 +396,7 @@ mfxStatus CEncodingPipeline::AllocFrames()
         {
             // Some additional surfaces required, because eTask holds frames till the destructor.
             // More optimal approaches are possible
-            nEncSurfNum  = PakRequest[0].NumFrameSuggested + m_appCfg.numRef + m_refDist + 1;
+            nEncSurfNum  = PakRequest[0].NumFrameSuggested + m_numRefFrame + m_refDist + 1;
             nEncSurfNum += m_pVPP ? m_refDist + 1 : 0;
         }
         else if ((m_appCfg.bPREENC) || (m_appCfg.bENCODE))
@@ -1014,7 +1014,7 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
         mfxExtFeiPreEncMBStat*       mbdata     = NULL;
 
         int num_buffers = m_maxQueueLength + (m_appCfg.bDECODE ? m_decodePoolSize : 0) + (m_pVPP ? 2 : 0) + 4;
-        num_buffers = (std::max)(num_buffers, m_maxQueueLength*m_appCfg.numRef);
+        num_buffers = (std::max)(num_buffers, m_maxQueueLength*m_numRefFrame);
 
         for (int k = 0; k < num_buffers; k++)
         {
