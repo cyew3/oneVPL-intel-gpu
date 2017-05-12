@@ -673,8 +673,8 @@ mfxStatus Plugin::ConfigTask(Task &task)
         MFX_CHECK(task.m_pRawLocalFrame != 0, MFX_WRN_DEVICE_BUSY);
     }
     task.m_pRecFrame = m_reconFrames.GetFreeFrame();
-    task.m_pRecFrame->frameOrder = task.m_frameOrder;
     MFX_CHECK(task.m_pRecFrame != 0, MFX_WRN_DEVICE_BUSY);
+    task.m_pRecFrame->frameOrder = task.m_frameOrder;
 
     task.m_pOutBs = m_outBitstreams.GetFreeFrame();
     MFX_CHECK(task.m_pOutBs != 0, MFX_WRN_DEVICE_BUSY);

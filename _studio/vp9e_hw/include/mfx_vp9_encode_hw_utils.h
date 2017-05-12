@@ -347,6 +347,8 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
     return mfxExtBufferRefProxy(par.ExtParam, par.NumExtParam);
 }
 
+class VP9MfxVideoParam;
+
 struct ActualExtBufferExtractor {
 public:
     template <typename T> operator T&()
@@ -370,7 +372,7 @@ public:
         }
     }
 
-    template <typename T1, typename T2> friend ActualExtBufferExtractor GetActualExtBufferRef(const T1 & basicPar, const T2 & newPar);
+    template <typename T> friend ActualExtBufferExtractor GetActualExtBufferRef(const VP9MfxVideoParam & basicPar, const T & newPar);
 
 protected:
     ActualExtBufferExtractor(mfxExtBuffer ** basicParam, mfxU32 basicNum,
@@ -389,7 +391,7 @@ private:
     mfxU32          m_newNum;
 };
 
-template <typename T1, typename T2> ActualExtBufferExtractor GetActualExtBufferRef(T1 const & basicPar, T2 const & newPar)
+template <typename T> ActualExtBufferExtractor GetActualExtBufferRef(VP9MfxVideoParam const & basicPar, T const & newPar)
 {
     return ActualExtBufferExtractor(basicPar.ExtParam, basicPar.NumExtParam, newPar.ExtParam, newPar.NumExtParam);
 }

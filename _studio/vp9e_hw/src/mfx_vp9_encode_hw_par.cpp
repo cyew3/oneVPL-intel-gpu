@@ -1170,12 +1170,15 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         }
         else if (IsBitrateBasedBRC(brcMode))
         {
-            const mfxU32 bitrateForTopTempLayer = par.m_layerParam[par.m_numLayers - 1].targetKbps;
-            if (par.m_numLayers && bitrateForTopTempLayer &&
-                par.m_targetKbps && bitrateForTopTempLayer != par.m_targetKbps)
+            if (par.m_numLayers)
             {
-                par.m_targetKbps = bitrateForTopTempLayer;
-                changed = true;
+                const mfxU32 bitrateForTopTempLayer = par.m_layerParam[par.m_numLayers - 1].targetKbps;
+                if (bitrateForTopTempLayer && par.m_targetKbps &&
+                    bitrateForTopTempLayer != par.m_targetKbps)
+                {
+                    par.m_targetKbps = bitrateForTopTempLayer;
+                    changed = true;
+                }
             }
 
             if ((brcMode == MFX_RATECONTROL_CBR  &&
