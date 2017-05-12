@@ -40,7 +40,6 @@ const mfxU32 DEFAULT_CPB_IN_SECONDS = 2000;          //  BufferSizeInBits = DEFA
 const mfxU32 MAX_BITRATE_RATIO = mfxU32(1.5 * 1000); //  MaxBps = MAX_BITRATE_RATIO * TargetKbps;
 
 const mfxU32 MIN_LOOKAHEAD_DEPTH = 10;
-const mfxU32 MAX_LOOKAHEAD_DEPTH = 100;
 
 namespace
 {
@@ -2347,12 +2346,6 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         {
             changed = true;
             extOpt2->LookAheadDepth = MIN_LOOKAHEAD_DEPTH;
-        }
-
-        if (extOpt2->LookAheadDepth > MAX_LOOKAHEAD_DEPTH)
-        {
-            changed = true;
-            extOpt2->LookAheadDepth = MAX_LOOKAHEAD_DEPTH;
         }
 
         if (!bRateControlLA(par.mfx.RateControlMethod))
