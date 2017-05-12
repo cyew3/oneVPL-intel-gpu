@@ -949,11 +949,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         return MFX_ERR_UNSUPPORTED;
     }
 
-    if (pParams->nLADepth && (pParams->nLADepth < 10 || pParams->nLADepth > 100))
+    if (pParams->nLADepth && (pParams->nLADepth < 10))
     {
         if ((pParams->nLADepth != 1) || (!pParams->nMaxSliceSize))
         {
-            PrintHelp(strInput[0], MSDK_STRING("Unsupported value of -lad parameter, must be in range [10, 100] or 1 in case of -mss option!"));
+            PrintHelp(strInput[0], MSDK_STRING("Unsupported value of -lad parameter, must be >= 10, or 1 in case of -mss option!"));
             return MFX_ERR_UNSUPPORTED;
         }
     }

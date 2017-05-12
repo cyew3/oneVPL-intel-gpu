@@ -1691,11 +1691,11 @@ mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputPar
         return MFX_ERR_UNSUPPORTED;
     }
 
-    if (InputParams.nLADepth && (InputParams.nLADepth < 10 || InputParams.nLADepth > 100))
+    if (InputParams.nLADepth && (InputParams.nLADepth < 10))
     {
         if ((InputParams.nLADepth != 1) || (!InputParams.nMaxSliceSize))
         {
-            PrintError(MSDK_STRING("Unsupported value of -lad parameter, must be in range [10, 100] or 1 in case of -mss option!"));
+            PrintError(MSDK_STRING("Unsupported value of -lad parameter, must be >= 10, or 1 in case of -mss option!"));
             return MFX_ERR_UNSUPPORTED;
         }
     }
