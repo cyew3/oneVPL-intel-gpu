@@ -372,8 +372,13 @@ mfxStatus CommonCORE::FreeFrames(mfxFrameAllocResponse *response, bool ExtendedS
                         MemIDMap::iterator it = m_RespMidQ.find(response->mids);
                         if (m_RespMidQ.end() != it)
                         {
-                            delete[] it->first;
-                            m_RespMidQ.erase(it);
+                            // Means that FreeFrames call is done from a component
+                            // which operated with already mapped surfaces.
+                            if (response->mids != ref_it->first->mids)
+                            {
+                                delete[] response->mids;
+                                m_RespMidQ.erase(it);
+                            }
                         }
                     }
                     return sts;
