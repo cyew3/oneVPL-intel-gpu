@@ -499,6 +499,7 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
 
     if (pInParams->TransferMatrix)
     {
+        m_VideoSignalInfo.ColourDescriptionPresent = 1;
         m_VideoSignalInfo.MatrixCoefficients = pInParams->TransferMatrix;
         m_EncExtParams.push_back((mfxExtBuffer*)&m_VideoSignalInfo);
     }
