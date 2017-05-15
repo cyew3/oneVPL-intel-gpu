@@ -849,10 +849,27 @@ mfxStatus MfxH264FEIcommon::CheckRuntimeExtBuffers(T* input, U* output, const Mf
 
             MFX_CHECK(extFeiSliceInRintime->Slice[i].PPSId                      <= 255, MFX_ERR_INVALID_VIDEO_PARAM);
             MFX_CHECK(extFeiSliceInRintime->Slice[i].CabacInitIdc               <=   2, MFX_ERR_INVALID_VIDEO_PARAM);
-            MFX_CHECK(extFeiSliceInRintime->Slice[i].NumRefIdxL0Active          <=  is_progressive ? 15 : 31,
+
+            if (!I_SLICE(extFeiSliceInRintime->Slice[i].SliceType))
+            {
+                MFX_CHECK(extFeiSliceInRintime->Slice[i].NumRefIdxL0Active      <= is_progressive ? 16 : 32,
                                                                                         MFX_ERR_INVALID_VIDEO_PARAM);
-            MFX_CHECK(extFeiSliceInRintime->Slice[i].NumRefIdxL1Active          <=  is_progressive ? 15 : 31,
+                MFX_CHECK(extFeiSliceInRintime->Slice[i].NumRefIdxL0Active,             MFX_ERR_INVALID_VIDEO_PARAM);
+
+                MFX_CHECK(CheckSliceHeaderReferenceList(extFeiSliceInRintime->Slice[i].RefL0,
+                                     extFeiSliceInRintime->Slice[i].NumRefIdxL0Active), MFX_ERR_INVALID_VIDEO_PARAM);
+            }
+
+            if (B_SLICE(extFeiSliceInRintime->Slice[i].SliceType))
+            {
+                MFX_CHECK(extFeiSliceInRintime->Slice[i].NumRefIdxL1Active      <= is_progressive ? 16 : 32,
                                                                                         MFX_ERR_INVALID_VIDEO_PARAM);
+                MFX_CHECK(extFeiSliceInRintime->Slice[i].NumRefIdxL1Active,             MFX_ERR_INVALID_VIDEO_PARAM);
+
+                MFX_CHECK(CheckSliceHeaderReferenceList(extFeiSliceInRintime->Slice[i].RefL1,
+                                     extFeiSliceInRintime->Slice[i].NumRefIdxL1Active), MFX_ERR_INVALID_VIDEO_PARAM);
+            }
+
             MFX_CHECK(extFeiSliceInRintime->Slice[i].SliceQPDelta + extFeiPPSinRuntime->PicInitQP
                                                                                 <=  51, MFX_ERR_INVALID_VIDEO_PARAM);
             MFX_CHECK(extFeiSliceInRintime->Slice[i].DisableDeblockingFilterIdc <=   2, MFX_ERR_INVALID_VIDEO_PARAM);
@@ -869,6 +886,30 @@ mfxStatus MfxH264FEIcommon::CheckRuntimeExtBuffers(T* input, U* output, const Mf
 #endif // MFX_VERSION >= 1023
     }
     return MFX_ERR_NONE;
+}
+
+bool MfxH264FEIcommon::CheckSliceHeaderReferenceList(mfxExtFeiSliceHeader::mfxSlice::mfxSliceRef * ref, mfxU16 num_idx_active)
+{
+    for (mfxU16 i = 0; i < num_idx_active; ++i)
+    {
+        if (ref[i].Index == 0xffff)
+        {
+            return false;
+        }
+
+        switch (ref[i].PictureType)
+        {
+            case MFX_PICTYPE_FRAME:
+            case MFX_PICTYPE_TOPFIELD:
+            case MFX_PICTYPE_BOTTOMFIELD:
+                break;
+            default:
+                return false;
+                break;
+        }
+    }
+
+    return true;
 }
 
 #if MFX_VERSION >= 1023
