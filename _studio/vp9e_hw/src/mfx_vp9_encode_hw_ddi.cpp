@@ -292,18 +292,9 @@ namespace MfxHwVP9Encode
                 {
                     // always write deltas explicitly to allow BRC modify them
                     const mfxI8 delta = framePar.lfModeDelta[i];
-                    if (framePar.frameType == KEY_FRAME && i == 1)
-                    {
-                        // it's WA for problem with incorrect packing of compressed header if LF delts for Inter mode is set for Intra frame.
-                        // by some reason driver is packing corrupted compressed header in this case.
-                        WriteBit(localBuf, 0);
-                    }
-                    else
-                    {
-                        WriteBit(localBuf, 1);
-                        WriteLiteral(localBuf, abs(delta) & 0x3F, 6);
-                        WriteBit(localBuf, delta < 0);
-                    }
+                    WriteBit(localBuf, 1);
+                    WriteLiteral(localBuf, abs(delta) & 0x3F, 6);
+                    WriteBit(localBuf, delta < 0);
                 }
             }
         }
