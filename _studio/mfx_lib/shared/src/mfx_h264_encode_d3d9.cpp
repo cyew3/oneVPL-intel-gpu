@@ -138,6 +138,27 @@ void MfxHwH264Encode::FillSpsBuffer(
     }
 }
 
+void MfxHwH264Encode::FillVaringPartOfSpsBuffer(
+    ENCODE_SET_SEQUENCE_PARAMETERS_H264 & sps,
+    DdiTask const &                       task,
+    mfxU32                                fieldId)
+{
+    (void)fieldId;
+    sps.ROIValueInDeltaQP = 0;
+
+    if (task.m_numRoi)
+    {
+        // use m_roiMode from task
+        sps.ROIValueInDeltaQP = (task.m_roiMode == MFX_ROI_MODE_QP_DELTA) ? 1 : 0;
+
+        // ROIValueInDeltaQP must be set to 1 for CQP.
+        if (sps.RateControlMethod == MFX_RATECONTROL_CQP) //  DDI level definition matches with MSDK enum
+        {
+            sps.ROIValueInDeltaQP = 1;
+        }
+        // rest of ROI params are part of PPS
+    }
+}
 
 void MfxHwH264Encode::FillVuiBuffer(
     MfxVideoParam const &      par,
@@ -324,12 +345,16 @@ void MfxHwH264Encode::FillVaringPartOfPpsBuffer(
         {
             pps.ROI[i].Roi.Left = (mfxU16)((task.m_roi[i].Left)>>4);
             pps.ROI[i].Roi.Top = (mfxU16)((task.m_roi[i].Top)>>4);
-            pps.ROI[i].Roi.Right = (mfxU16)((task.m_roi[i].Right)>>4);
-            pps.ROI[i].Roi.Bottom = (mfxU16)((task.m_roi[i].Bottom)>>4);
+            // Driver expects rect with 'close' top bottom edge i.e. included
+            // MSDK uses open edge rect i.e. top bottom edge excluded
+            // '-1' below converts open -> close notation
+            pps.ROI[i].Roi.Right = (mfxU16)((task.m_roi[i].Right)>>4)-1;
+            pps.ROI[i].Roi.Bottom = (mfxU16)((task.m_roi[i].Bottom)>>4)-1;
             pps.ROI[i].PriorityLevelOrDQp = (mfxU8)task.m_roi[i].ROIValue;
         }
         pps.MaxDeltaQp = 51;
         pps.MinDeltaQp = -51;
+        // task.m_roiMode used in SPS
     }
 
     // dirty rectangles
@@ -1484,6 +1509,8 @@ mfxStatus D3D9Encoder::Execute(
 
     {
         size_t slice_size_old = m_slice.size();
+        FillVaringPartOfSpsBuffer(m_sps, task, fieldId);
+
         FillVaringPartOfPpsBuffer(task, fieldId, m_pps, m_dirtyRects, m_movingRects);
 
         if (task.m_SliceInfo.size())

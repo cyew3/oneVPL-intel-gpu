@@ -88,6 +88,11 @@ namespace MfxHwH264Encode
         MfxVideoParam const &                 par,
         ENCODE_SET_SEQUENCE_PARAMETERS_H264 & sps);
 
+    void FillVaringPartOfSpsBuffer(
+        ENCODE_SET_SEQUENCE_PARAMETERS_H264 & sps,
+        DdiTask const & task,
+        mfxU32 fieldId);
+
     void FillVuiBuffer(
         MfxVideoParam const &      par,
         ENCODE_SET_VUI_PARAMETER & vui);
