@@ -538,8 +538,8 @@ typedef struct tagENCODE_CAPS
         struct {
             UCHAR MaxNumOfROI                : 5; // [0..16]
             UCHAR                            : 1;
-            UCHAR ROIBRCPriorityLevelSupport : 1;
             UCHAR ROIBRCDeltaQPLevelSupport  : 1;
+            UCHAR ROIBRCPriorityLevelSupport : 1;
         };
         UCHAR ROICaps;
     };
