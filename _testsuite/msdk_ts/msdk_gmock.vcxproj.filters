@@ -888,7 +888,8 @@
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\avce_mbcontrol.cpp">
       <Filter>Source Files\test_suites\avce</Filter>
-    </ClCompile>    <ClCompile Include="src\gmock\test_suites\vpp_query.cpp">
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vpp_query.cpp">
       <Filter>Source Files\test_suites\vpp</Filter>
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\vpp_query_extbuf.cpp">
@@ -911,6 +912,9 @@
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\vp9e_temporal_scalability.cpp">
       <Filter>Source Files\test_suites\vp9e</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\hevce_sao.cpp">
+      <Filter>Source Files\test_suites\hevce</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

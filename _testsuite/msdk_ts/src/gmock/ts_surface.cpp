@@ -20,7 +20,10 @@ tsFrame::tsFrame(mfxFrameSurface1 s)
     case MFX_FOURCC_NV12: m_pFrame = new tsFrameNV12(s.Data); break;
     case MFX_FOURCC_YV12: m_pFrame = new tsFrameYV12(s.Data); break;
     case MFX_FOURCC_YUY2: m_pFrame = new tsFrameYUY2(s.Data); break;
+    case MFX_FOURCC_AYUV: m_pFrame = new tsFrameAYUV(s.Data); break;
     case MFX_FOURCC_P010: m_pFrame = new tsFrameP010(s.Data); break;
+    case MFX_FOURCC_Y210: m_pFrame = new tsFrameY210(s.Data); break;
+    case MFX_FOURCC_Y410: m_pFrame = new tsFrameY410(s.Data); break;
     case MFX_FOURCC_BGR4: std::swap(s.Data.B, s.Data.R);
     case MFX_FOURCC_RGB4: m_pFrame = new tsFrameRGB4(s.Data); break;
     case MFX_FOURCC_R16:  m_pFrame = new tsFrameR16(s.Data); break;
@@ -219,6 +222,7 @@ tsRawReader::tsRawReader(const char* fname, mfxFrameInfo fi, mfxU32 n_frames)
     , m_surf()
     , m_fsz(0)
     , m_buf(0)
+    , m_disable_shift_hack(false)
 {
     Init(fi);
 }
@@ -229,6 +233,7 @@ tsRawReader::tsRawReader(mfxBitstream bs, mfxFrameInfo fi, mfxU32 n_frames)
     , m_surf()
     , m_fsz(0)
     , m_buf(0)
+    , m_disable_shift_hack(false)
 {
     Init(fi);
 }
@@ -260,7 +265,8 @@ void tsRawReader::Init(mfxFrameInfo fi)
     if(MFX_FOURCC_R16 == m_surf.Info.FourCC)
         m_fsz = m_fsz * 2;
 
-    if(MFX_FOURCC_P010 == m_surf.Info.FourCC)
+    if (   MFX_FOURCC_P010 == m_surf.Info.FourCC
+        || MFX_FOURCC_Y210 == m_surf.Info.FourCC)
     {
         fsz = fsz * 2;
         m_fsz = m_fsz * 2;
@@ -283,14 +289,35 @@ void tsRawReader::Init(mfxFrameInfo fi)
         break;
     case MFX_FOURCC_YUY2:
         m_data.Y     = m_buf;
-        m_data.U     = m_data.Y + 1;
-        m_data.V     = m_data.U + 3;
+        m_data.U     = m_buf + 1;
+        m_data.V     = m_buf + 3;
         pitch        = fi.Width * 2;
+        break;
+    case MFX_FOURCC_AYUV:
+        m_data.V = m_buf;
+        m_data.U = m_buf + 1;
+        m_data.Y = m_buf + 2;
+        m_data.A = m_buf + 3;
+        pitch = fi.Width * 4;
         break;
     case MFX_FOURCC_P010:
         m_data.Y16     = (mfxU16*) m_buf;
         m_data.U16    = (mfxU16*) (m_data.Y + fsz);
         pitch        = fi.Width * 2;
+        break;
+    case MFX_FOURCC_Y210:
+        m_data.Y16 = (mfxU16*)m_buf;
+        m_data.U16 = m_data.Y16 + 1;
+        m_data.V16 = m_data.Y16 + 3;
+        pitch = fi.Width * 4;
+        break;
+    case MFX_FOURCC_Y410:
+        m_data.Y410 = (mfxY410*)m_buf;
+        pitch = fi.Width * 4;
+        break;
+    case MFX_FOURCC_A2RGB10:
+        m_data.A2RGB10 = (mfxA2RGB10*)m_buf;
+        pitch = fi.Width * 4;
         break;
     case MFX_FOURCC_RGB4:
         m_data.R     = m_buf;
@@ -329,7 +356,9 @@ mfxStatus tsRawReader::ProcessSurface(mfxFrameSurface1& s)
 {
     m_eos = (m_fsz != Read(m_buf, m_fsz));
 
-    if(m_surf.Info.Shift > 0)
+    /*WTF? Should be done inside "dst = src;" based on both src.shift and dst.shift if needed at all, not here.
+      Wrong place, wrong condidtion. Keeping for bkwd compatibility, have to use m_disable_shift_hack for straight P010.*/
+    if(m_surf.Info.Shift > 0 && !m_disable_shift_hack)
     {
         if(m_surf.Info.FourCC == MFX_FOURCC_P010)
         {

@@ -229,6 +229,7 @@ mfxStatus tsVideoEncoder::Init()
 mfxStatus tsVideoEncoder::Init(mfxSession session, mfxVideoParam *par)
 {
     mfxVideoParam orig_par;
+
     if (par) memcpy(&orig_par, m_pPar, sizeof(mfxVideoParam));
 
     TRACE_FUNC2(MFXVideoENCODE_Init, session, par);
@@ -372,6 +373,9 @@ mfxStatus tsVideoEncoder::GetVideoParam(mfxSession session, mfxVideoParam *par)
 
 mfxStatus tsVideoEncoder::EncodeFrameAsync()
 {
+    mfxEncodeCtrl* prevCtrl;
+    bool restoreCtrl = false;
+
     if(m_default)
     {
         if(!PoolSize())
@@ -405,6 +409,13 @@ mfxStatus tsVideoEncoder::EncodeFrameAsync()
         {
             m_pSurf = m_filler->ProcessSurface(m_pSurf, m_pFrameAllocator);
         }
+
+        if (m_ctrl_next.Get())
+        {
+            prevCtrl = m_pCtrl;
+            restoreCtrl = true;
+            m_pCtrl = m_ctrl_next.Get();
+        }
     }
 
     mfxEncodeCtrl * cur_ctrl = m_pSurf ? m_pCtrl : NULL;
@@ -420,6 +431,34 @@ mfxStatus tsVideoEncoder::EncodeFrameAsync()
         //m_field_processed would be use as indicator in ProcessBitstream(),
         //so increase it in advance here.
         m_field_processed = 1 - m_field_processed;
+    }
+
+    if (m_default)
+    {
+        if (restoreCtrl)
+            m_pCtrl = prevCtrl;
+
+        if (m_ctrl_next.Get())
+        {
+            if (   mfxRes == MFX_ERR_MORE_DATA
+                || mfxRes == MFX_ERR_NONE)
+            {
+                m_ctrl_next.m_fo = m_pSurf ? m_pSurf->Data.FrameOrder : 0;
+                m_ctrl_reorder_buffer.push_back(m_ctrl_next);
+                m_ctrl_next.Reset();
+            }
+
+            if (mfxRes == MFX_ERR_NONE)
+            {
+                for (auto& p : m_ctrl_reorder_buffer)
+                {
+                    p.m_sp = *m_pSyncPoint;
+                    p.m_lockCnt = m_request.NumFrameMin;
+                }
+
+                m_ctrl_list.splice(m_ctrl_list.end(), m_ctrl_reorder_buffer);
+            }
+        }
     }
 
     return mfxRes;
@@ -529,7 +568,23 @@ mfxStatus tsVideoEncoder::SyncOperation(mfxSyncPoint syncp)
 mfxStatus tsVideoEncoder::SyncOperation(mfxSession session,  mfxSyncPoint syncp, mfxU32 wait)
 {
     m_frames_buffered = 0;
-    return tsSession::SyncOperation(session, syncp, wait);
+    tsSession::SyncOperation(session, syncp, wait);
+
+    if (!g_tsStatus.get())
+    {
+        for (auto& p : m_ctrl_list)
+        {
+            if (p.m_sp == syncp)
+                p.m_unlock = true;
+
+            if (p.m_unlock && p.m_lockCnt)
+                p.m_lockCnt--;
+        }
+
+        m_ctrl_list.remove_if([](tsSharedCtrl& p) { return (p.m_unlock && !p.m_lockCnt); });
+    }
+
+    return g_tsStatus.get();
 }
 
 mfxStatus tsVideoEncoder::EncodeFrames(mfxU32 n, bool check)

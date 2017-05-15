@@ -75,6 +75,9 @@ typedef tsParser<BS_MPEG2_parser> tsParserMPEG2;
 typedef tsParser<BS_HEVC_parser> tsParserHEVC;
 typedef tsParser<BS_H264_parser> tsParserH264NALU;
 typedef tsParser<BS_AVC2_parser> tsParserAVC2;
+typedef tsParser<BS_HEVC2_parser> tsParserHEVC2;
+
+inline bool IsHEVCSlice(Bs32u nut) { return (nut <= 21) && ((nut < 10) || (nut > 15)); }
 
 class tsParserHEVCAU : public BS_HEVC_parser
 {

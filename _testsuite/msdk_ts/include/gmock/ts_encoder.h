@@ -12,6 +12,37 @@
 #include "ts_session.h"
 #include "ts_ext_buffers.h"
 #include "ts_surface.h"
+#include <memory>
+
+class tsSharedCtrl
+{
+public:
+    typedef tsExtBufType<mfxEncodeCtrl> Type;
+    std::shared_ptr<Type> m_ptr;
+    mfxU32 m_lockCnt;
+    mfxU32 m_fo;
+    mfxSyncPoint m_sp;
+    bool m_unlock;
+
+    tsSharedCtrl() { Reset(); }
+
+    void Reset()
+    {
+        m_lockCnt = 0;
+        m_sp = 0;
+        m_ptr.reset();
+        m_unlock = false;
+    }
+
+    Type* New()
+    {
+        m_ptr.reset(new Type);
+        return m_ptr.get();
+    }
+
+    inline Type* Get() { return m_ptr.get(); }
+};
+
 
 class tsVideoEncoder : virtual public tsSession, virtual public tsSurfacePool
 {
@@ -37,6 +68,9 @@ public:
     bool                        m_single_field_processing;
     mfxU16                      m_field_processed;
     bool                        m_bUseDefaultFrameType;
+    std::list<tsSharedCtrl>     m_ctrl_list;
+    std::list<tsSharedCtrl>     m_ctrl_reorder_buffer;
+    tsSharedCtrl                m_ctrl_next;
 
     tsVideoEncoder(mfxU32 CodecId = 0, bool useDefaults = true);
     tsVideoEncoder(mfxFeiFunction func, mfxU32 CodecId = 0, bool useDefaults = true);

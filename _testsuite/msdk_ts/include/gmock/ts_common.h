@@ -191,3 +191,6 @@ void SetParam(tsExtBufType<T> *base, const std::string name, const mfxU32 offset
 }
 template <typename T>
 void SetParam(tsExtBufType<T>& base, const std::string name, const mfxU32 offset, const mfxU32 size, mfxU64 value);
+
+//Interrupt test-case execution and return FAILED immediately if at least one check failed (EXPECT_EQ etc.)
+inline void BreakOnFailure() { if (testing::Test::HasFailure()) throw tsFAIL; }
