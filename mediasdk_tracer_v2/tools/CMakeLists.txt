@@ -63,7 +63,7 @@ set_target_properties( mfx-tracer PROPERTIES LINK_FLAGS
 
 target_link_libraries( mfx-tracer dl rt )
 
-install( TARGETS mfx-tracer LIBRARY DESTINATION tools/tracer )
+msdk_install( mfx-tracer tools/tracer )
 install( FILES ../README DESTINATION tools/tracer )
 
 set(defs "")
