@@ -407,6 +407,8 @@ mfxStatus FEI_EncodeInterface::FillParameters()
 
 mfxStatus FEI_EncodeInterface::InitFrameParams(iTask* eTask)
 {
+    MSDK_CHECK_POINTER(eTask, MFX_ERR_NULL_PTR);
+
     mfxStatus sts = MFX_ERR_NONE;
 
     mfxFrameSurface1* encodeSurface = eTask->ENC_in.InSurface;
@@ -532,19 +534,12 @@ mfxStatus FEI_EncodeInterface::InitFrameParams(iTask* eTask)
             but MSDK lib will adjust them to zero if application doesn't
             */
             feiEncCtrl->NumMVPredictors[0] = feiEncCtrl->NumMVPredictors[1] = 0;
+
             if (feiEncCtrl->MVPredictor)
             {
-                if (eTask)
-                {
-                    // feiEncCtrlId tracks id in term of field parity, GetNumMVP accepts fieldId
-                    feiEncCtrl->NumMVPredictors[0] = GetNumL0MVPs(*eTask, feiEncCtrlId != ffid);
-                    feiEncCtrl->NumMVPredictors[1] = GetNumL1MVPs(*eTask, feiEncCtrlId != ffid);
-                }
-                else // in case of Encode in display order, default configuration is used
-                {
-                    feiEncCtrl->NumMVPredictors[0] = (eTask->m_type[feiEncCtrlId] & MFX_FRAMETYPE_B) ? m_pAppConfig->PipelineCfg.NumMVPredictorsBL0 : m_pAppConfig->PipelineCfg.NumMVPredictorsP;
-                    feiEncCtrl->NumMVPredictors[1] = (eTask->m_type[feiEncCtrlId] & MFX_FRAMETYPE_B) ? m_pAppConfig->PipelineCfg.NumMVPredictorsBL1 : 0;
-                }
+                // feiEncCtrlId tracks id in term of field parity, GetNumMVP accepts fieldId
+                feiEncCtrl->NumMVPredictors[0] = GetNumL0MVPs(*eTask, feiEncCtrlId != ffid);
+                feiEncCtrl->NumMVPredictors[1] = GetNumL1MVPs(*eTask, feiEncCtrlId != ffid);
             }
 
             fieldId++;
