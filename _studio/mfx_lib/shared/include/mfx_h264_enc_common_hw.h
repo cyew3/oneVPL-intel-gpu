@@ -788,6 +788,10 @@ namespace MfxHwH264Encode
         MfxVideoParam const & par,
         mfxRectDesc *         rect);
 
+    mfxStatus CheckAndFixOpenRectQueryLike(
+        MfxVideoParam const & par,
+        mfxRectDesc *         rect);
+
     mfxStatus CheckAndFixRoiQueryLike(
         MfxVideoParam const & par,
         mfxRoiDesc *          roi,

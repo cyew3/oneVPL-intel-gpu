@@ -178,6 +178,17 @@ namespace
         return true;
     }
 
+    bool CheckMbAlignmentAndUp(mfxU32 & opt)
+    {
+        if (opt & 0x0f)
+        {
+            opt = (opt & 0xfffffff0) + 0x10;
+            return false;
+        }
+
+        return true;
+    }
+
     bool IsValidCodingLevel(mfxU16 level)
     {
         return
@@ -1997,18 +2008,71 @@ mfxStatus MfxHwH264Encode::CheckAndFixRectQueryLike(
     return checkSts;
 }
 
+/*
+The function does following
+align down Left Top corner to Mb  i.e. 15->0
+align up Right and Bottom corner to Mb  i.e. 15->16
+
+checks that aligned rect is 'open '  i.e. Left < Right and Top < Bottom
+check that Right and Bottom fits in Frame
+i.e. Right(aligned up) <= par.mfx.FrameInfo.Width( must be aligned)
+
+returns:
+MFX_WRN_INCOMPATIBLE_VIDEO_PARAM - if any has been aligned
+MFX_ERR_UNSUPPORTED - if Left < Right and Top < Bottom
+MFX_ERR_UNSUPPORTED - if Right or Bottom
+*/
+mfxStatus MfxHwH264Encode::CheckAndFixOpenRectQueryLike(
+    MfxVideoParam const & par,
+    mfxRectDesc *         rect)
+{
+    mfxStatus checkSts = MFX_ERR_NONE;
+
+    // check that rectangle is aligned to MB, correct it if not
+    if (!CheckMbAlignment(rect->Left))   checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+    if (!CheckMbAlignmentAndUp(rect->Right))  checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+    if (!CheckMbAlignment(rect->Top))    checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+    if (!CheckMbAlignmentAndUp(rect->Bottom)) checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+
+    // check that rectangle dimensions don't conflict with each other and don't exceed frame size
+    if (par.mfx.FrameInfo.Width)
+    {
+        if (!CheckRangeDflt(rect->Left, mfxU32(0), mfxU32(par.mfx.FrameInfo.Width - 16), mfxU32(0))) checkSts = MFX_ERR_UNSUPPORTED;
+        if (!CheckRangeDflt(rect->Right, mfxU32(rect->Left + 16), mfxU32(par.mfx.FrameInfo.Width), mfxU32(0))) checkSts = MFX_ERR_UNSUPPORTED;
+    }
+
+    if (rect->Right && rect->Right < rect->Left )
+    {
+        checkSts = MFX_ERR_UNSUPPORTED;
+        rect->Right = 0;
+    }
+
+    if (par.mfx.FrameInfo.Height)
+    {
+        if (!CheckRangeDflt(rect->Top, mfxU32(0), mfxU32(par.mfx.FrameInfo.Height - 16), mfxU32(0))) checkSts = MFX_ERR_UNSUPPORTED;
+        if (!CheckRangeDflt(rect->Bottom, mfxU32(rect->Top + 16), mfxU32(par.mfx.FrameInfo.Height), mfxU32(0))) checkSts = MFX_ERR_UNSUPPORTED;
+    }
+
+    if (rect->Bottom && rect->Bottom <= rect->Top )
+    {
+        checkSts = MFX_ERR_UNSUPPORTED;
+        rect->Bottom = 0;
+    }
+
+    return checkSts;
+}
+
 mfxStatus MfxHwH264Encode::CheckAndFixRoiQueryLike(
     MfxVideoParam const & par,
     mfxRoiDesc *          roi,
     mfxU16                roiMode)
 {
-    mfxStatus checkSts = CheckAndFixRectQueryLike(par, (mfxRectDesc*)roi);
+    mfxStatus checkSts = CheckAndFixOpenRectQueryLike(par, (mfxRectDesc*)roi);
 
+    // check QP
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
     {
-        if (!CheckRangeDflt(roi->ROIValue, -par.mfx.QPI, 51 - par.mfx.QPI, 0) ||
-            !CheckRangeDflt(roi->ROIValue, -par.mfx.QPP, 51 - par.mfx.QPP, 0) ||
-            !CheckRangeDflt(roi->ROIValue, -par.mfx.QPB, 51 - par.mfx.QPB, 0))
+        if (!CheckRangeDflt(roi->ROIValue, -51, 51, 0))
             checkSts = MFX_ERR_UNSUPPORTED;
     } else if (par.mfx.RateControlMethod)
     {
@@ -6224,6 +6288,10 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
     mfxExtEncoderROI const * extRoi = GetExtBuffer(*ctrl);
 
     if (extRoi) {
+        // check below should have the same logic as in MfxHwH264Encode::ConfigureTask
+        // the difference that ConfigureTask doesn't copy bad arg to DdiTask
+        // CheckRunTimeExtBuffers just reports MFX_WRN_INCOMPATIBLE_VIDEO_PARAM for the same args
+
         mfxU16 const MaxNumOfROI = caps.MaxNumOfROI;
         mfxU16 actualNumRoi = extRoi->NumROI;
         if (extRoi->NumROI)
@@ -6258,21 +6326,18 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
 
         for (mfxU16 i = 0; i < actualNumRoi; i++)
         {
-            // check that ROI is aligned to MB
-            if ((extRoi->ROI[i].Left & 0x0f) || (extRoi->ROI[i].Right & 0x0f) ||
-                (extRoi->ROI[i].Top & 0x0f) || (extRoi->ROI[i].Bottom & 0x0f))
-                checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-
-            // check that ROI dimensions don't conflict with each other and don't exceed frame size
-            if(extRoi->ROI[i].Left > mfxU32(video.mfx.FrameInfo.Width -16) ||
-               extRoi->ROI[i].Right < mfxU32(extRoi->ROI[i].Left + 16) ||
-               extRoi->ROI[i].Right >  video.mfx.FrameInfo.Width)
-               checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-
-            if(extRoi->ROI[i].Top > mfxU32(video.mfx.FrameInfo.Height -16) ||
-               extRoi->ROI[i].Bottom < mfxU32(extRoi->ROI[i].Top + 16) ||
-               extRoi->ROI[i].Bottom >  video.mfx.FrameInfo.Height)
-               checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+                mfxRoiDesc task_roi = {};
+                memcpy_s(&task_roi, sizeof(mfxRoiDesc), &extRoi->ROI[i], sizeof(mfxRoiDesc));
+                // check runtime ROI
+#if MFX_VERSION > 1021
+                mfxStatus sts = CheckAndFixRoiQueryLike(video, &task_roi, extRoi->ROIMode);
+#else
+                mfxStatus sts = CheckAndFixRoiQueryLike(video, &task_roi, 0);
+#endif // MFX_VERSION > 1021
+                if (sts != MFX_ERR_NONE)
+                {
+                    checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+                }
         }
     }
 

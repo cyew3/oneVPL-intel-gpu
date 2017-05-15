@@ -13,6 +13,10 @@ Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
 namespace 
 {
 
+#if defined(LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN) || defined (WIN32)
+  #define PLATFOM_SUPPORT_ROI_DELTA_QP
+#endif
+
 typedef struct 
 {
     mfxSession      session;
@@ -97,7 +101,7 @@ void ROI_1(tsVideoEncoder& enc, mfxVideoParam* , mfxU32 p0, mfxU32 p1, mfxU32 p2
     mfxExtEncoderROI& roi = enc.m_par;
     roi.NumROI            = p0;
 #if MFX_VERSION > 1022
-#if defined(LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN)
+#ifdef PLATFOM_SUPPORT_ROI_DELTA_QP
     roi.ROIMode           = MFX_ROI_MODE_QP_DELTA;
 #endif  // defined(LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN)
 #endif // #if  MFX_VERSION > 1022
@@ -108,7 +112,7 @@ void ROI_1(tsVideoEncoder& enc, mfxVideoParam* , mfxU32 p0, mfxU32 p1, mfxU32 p2
         roi.ROI[i].Top        = 0+i*k;
         roi.ROI[i].Right      = k+i*k;
         roi.ROI[i].Bottom     = k+i*k;
-#if defined(LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN)
+#ifdef PLATFOM_SUPPORT_ROI_DELTA_QP
 #if MFX_VERSION > 1022
         roi.ROI[i].DeltaQP    = p1;
 #else
@@ -123,7 +127,7 @@ void ROI_ctrl(tsVideoEncoder& enc, mfxVideoParam* , mfxU32 p0, mfxU32 p1, mfxU32
 {
     mfxExtEncoderROI& roi = enc.m_ctrl;
     roi.NumROI            = p0;
-#if defined(LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN)
+#ifdef PLATFOM_SUPPORT_ROI_DELTA_QP
 #if MFX_VERSION > 1022
     roi.ROIMode           = MFX_ROI_MODE_QP_DELTA;
 #endif // MFX_VERSION > 1022
@@ -135,7 +139,7 @@ void ROI_ctrl(tsVideoEncoder& enc, mfxVideoParam* , mfxU32 p0, mfxU32 p1, mfxU32
         roi.ROI[i].Top        = 0+i*k;
         roi.ROI[i].Right      = k+i*k;
         roi.ROI[i].Bottom     = k+i*k;
-#if defined(LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN)
+#ifdef PLATFOM_SUPPORT_ROI_DELTA_QP
 #if MFX_VERSION > 1022
         roi.ROI[i].DeltaQP    = p1;
 #else
@@ -166,7 +170,7 @@ typedef struct
 #define MFX_OFFSET(field)        (offsetof(mfxVideoParam, mfx) + offsetof(mfxInfoMFX, field))
 #define EXT_BUF_PAR(eb) tsExtBufTypeToId<eb>::id, sizeof(eb)
 
-#if defined(_WIN32) || defined(_WIN64)
+#if (defined(_WIN32) || defined(_WIN64)) && !defined( PLATFOM_SUPPORT_ROI_DELTA_QP)
 tc_struct test_case[] = 
 {
     //Query function
@@ -240,12 +244,12 @@ tc_struct test_case[] =
 //    {/*61*/ EncodeFrameAsync|WithROIInit|WOBuf,   MFX_ERR_NONE, AVBR,  4, 5000,    5,  ROI_1, 3,   2, 0 },
     {/*62*/ EncodeFrameAsync|WithROIInit|WOBuf,   MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 3, -25, 0 },
 };
-#elif defined(LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN)
+#elif defined( PLATFOM_SUPPORT_ROI_DELTA_QP)
 tc_struct test_case[] =
 {
     //Query function
-    {/*00*/ Query|Inplace, MFX_ERR_UNSUPPORTED,  CQP, 24,   24,   24,  ROI_1, 2, -25, 0 },
-    {/*01*/ Query|InOut,   MFX_ERR_UNSUPPORTED,  CQP, 24,   24,   24,  ROI_1, 2, -25, 0 },
+    {/*00*/ Query|Inplace, MFX_ERR_UNSUPPORTED,  CQP, 24,   24,   24,  ROI_1, 2, -52, 0 },
+    {/*01*/ Query|InOut,   MFX_ERR_UNSUPPORTED,  CQP, 24,   24,   24,  ROI_1, 2, -52, 0 },
     {/*02*/ Query|DifIO,   MFX_ERR_UNSUPPORTED,  CQP, 24,   24,   24,  ROI_1, 2, -25, 0 },
     {/*03*/ Query|NullIn,  MFX_ERR_NONE,         CQP, 24,   24,   24,  ROI_1, 2, -25, 0 },
     {/*04*/ Query|NullIn,  MFX_ERR_NONE,         CQP, 24,   24,   24,  ROI_1, 2, -25, 15 },
@@ -263,11 +267,11 @@ tc_struct test_case[] =
     {/*16*/ Query|NullIn,  MFX_ERR_NONE,  CBR,  0, 5000,    0,  ROI_1, 2,   2, 0 },
     {/*17*/ Query|NullIn,  MFX_ERR_NONE,  VBR,  0, 5000, 6000,  ROI_1, 2,   2, 0 },
     {/*18*/ Query|NullIn,  MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 2, -25, 0 },
-    {/*19*/ Query|Inplace, MFX_ERR_UNSUPPORTED,  CBR,  0, 5000,    0,  ROI_1, 2,   2, 15 },
+    {/*19*/ Query|Inplace, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,  CBR,  0, 5000,    0,  ROI_1, 2,   2, 15 },
     {/*20*/ Query|NullIn,  MFX_ERR_NONE,         CQP, 24,   24,   24,  ROI_1, 2, -25, 15 },
-    {/*21*/ Query|Max,  MFX_ERR_NONE,  CBR,  0, 5000,    0,  ROI_1, 0, 2, 0 },
-    {/*22*/ Query|Max,  MFX_ERR_NONE,  VBR,  0, 5000, 6000,  ROI_1, 0, 3, 0 },
-    {/*23*/ Query|Max,  MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 0, -22, 0 },
+    {/*21*/ Query|Max,  MFX_ERR_UNSUPPORTED,  CBR,  0, 5000,    0,  ROI_1, 0, 2, 0 },
+    {/*22*/ Query|Max,  MFX_ERR_UNSUPPORTED,  VBR,  0, 5000, 6000,  ROI_1, 0, 3, 0 },
+    {/*23*/ Query|Max,  MFX_ERR_UNSUPPORTED,  CQP, 24,   24,   24,  ROI_1, 0, -22, 0 },
 
     //QueryIOSurf - Just check that won't fail
     {/*24*/ QueryIOSurf,   MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 1, -22, 0 },
@@ -276,20 +280,20 @@ tc_struct test_case[] =
 
     //Init function
     {/*27*/ Init,          MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 2, -22, 0 },
-    {/*28*/ Init,          MFX_ERR_INVALID_VIDEO_PARAM,  CQP, 24,   24,   24,  ROI_1, 4, -25, 0 },
-    {/*29*/ Init,          MFX_ERR_INVALID_VIDEO_PARAM,  CQP, 24,   24,   24,  ROI_1, 2, -25, 15 },
+    {/*28*/ Init,          MFX_ERR_INVALID_VIDEO_PARAM,  CQP, 24,   24,   24,  ROI_1, 4, -52, 0 },
+    {/*29*/ Init,          MFX_ERR_INVALID_VIDEO_PARAM,  CQP, 24,   24,   24,  ROI_1, 2, -10, 241 },  // rect out of Frame
     {/*30*/ Init,          MFX_ERR_NONE,  CBR,  0, 5000,    0,  ROI_1, 1,   3, 0 },
     {/*31*/ Init,          MFX_ERR_NONE,  VBR,  0, 5000, 6000,  ROI_1, 1,   3, 0 },
     {/*32*/ Init,          MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 2, -22, 0 },
     {/*33*/ Init,          MFX_ERR_NONE,  CBR,  0, 5000,    0,  ROI_1, 3,   2, 0 },
     {/*34*/ Init,          MFX_ERR_NONE,  VBR,  0, 5000, 6000,  ROI_1, 3,   2, 0 },
     {/*35*/ Init,          MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 4, -22, 0 },
-    {/*36*/ Init,          MFX_ERR_INVALID_VIDEO_PARAM,  CBR,  0, 5000,    0,  ROI_1, 2,   2, 15 },
-    {/*37*/ Init,          MFX_ERR_INVALID_VIDEO_PARAM,  CQP, 24,   24,   24,  ROI_1, 2, -25, 15 },
+    {/*36*/ Init,          MFX_ERR_INVALID_VIDEO_PARAM,  CBR,  0, 5000,    0,  ROI_1, 2,   52, 15 },// need debug it
+    {/*37*/ Init,          MFX_ERR_INVALID_VIDEO_PARAM,  CQP, 24,   24,   24,  ROI_1, 2, -25, 241 },
 
     //Reset function
     {/*38*/ Reset|WithROIInit, MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 3, -22, 0 },
-    {/*39*/ Reset|WoROIInit,   MFX_ERR_INVALID_VIDEO_PARAM,  CQP, 24,   24,   24,  ROI_1, 3, -25, 0 },
+    {/*39*/ Reset|WoROIInit,   MFX_ERR_INVALID_VIDEO_PARAM,  CQP, 24,   24,   24,  ROI_1, 3, -52, 0 },
     {/*40*/ Reset|WithROIInit, MFX_ERR_NONE,  CBR,  0, 5000,    0,  ROI_1, 1,   3, 0 },
     {/*41*/ Reset|WithROIInit, MFX_ERR_NONE,  VBR,  0, 5000, 6000,  ROI_1, 1,   3, 0 },
     {/*42*/ Reset|WithROIInit, MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 3, -22, 0 },
@@ -299,21 +303,22 @@ tc_struct test_case[] =
 
     //EncodeFrameAsync function
     {/*46*/ EncodeFrameAsync|WithROIInit, MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 3, -22, 0 },
-    {/*47*/ EncodeFrameAsync|WoROIInit,   MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,  CQP, 24,   24,   24,  ROI_1, 3, -25, 0 },
+    {/*47*/ EncodeFrameAsync | WoROIInit,   MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 3, -25, 0 }, // EncodeFrameAsync Does NOT check 1 < QP+delta < 51
     {/*48*/ EncodeFrameAsync|WoROIInit,   MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,  CQP, 24,   24,   24,  ROI_1, 3, -25, 15 },
     {/*49*/ EncodeFrameAsync|WithROIInit|WOBuf,   MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 3, -22, 0 },
     {/*50*/ EncodeFrameAsync|WithROIInit, MFX_ERR_NONE,  CBR,  0, 5000,    0,  ROI_1, 1,   3, 0 },
     {/*51*/ EncodeFrameAsync|WithROIInit, MFX_ERR_NONE,  VBR,  0, 5000, 6000,  ROI_1, 1,   3, 0 },
-    {/*53*/ EncodeFrameAsync|WithROIInit, MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 3, -22, 0 },
-    {/*54*/ EncodeFrameAsync|WoROIInit,   MFX_ERR_NONE,  CBR,  0, 5000,    0,  ROI_1, 2,   2, 0 },
-    {/*55*/ EncodeFrameAsync|WoROIInit,   MFX_ERR_NONE,  VBR,  0, 5000, 6000,  ROI_1, 2,   2, 0 },
-    {/*57*/ EncodeFrameAsync|WoROIInit,   MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 3, -25, 0 },
-    {/*58*/ EncodeFrameAsync|WoROIInit,   MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,  CBR,  0, 5000,    0,  ROI_1, 2,   2, 15 },
-    {/*59*/ EncodeFrameAsync|WoROIInit,   MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,  VBR,  0, 5000, 6000,  ROI_1, 2,   2, 15 },
-    {/*61*/ EncodeFrameAsync|WoROIInit,   MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,  CQP, 24,   24,   24,  ROI_1, 3, -25, 15 },
-    {/*62*/ EncodeFrameAsync|WithROIInit|WOBuf,   MFX_ERR_NONE,  CBR,  0, 5000,    0,  ROI_1, 2,   2, 0 },
-    {/*63*/ EncodeFrameAsync|WithROIInit|WOBuf,   MFX_ERR_NONE,  VBR,  0, 5000, 6000,  ROI_1, 2,   2, 0 },
-    {/*65*/ EncodeFrameAsync|WithROIInit|WOBuf,   MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 3, -25, 0 },
+    {/*52*/ EncodeFrameAsync|WithROIInit, MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 3, -22, 0 },
+    {/*53*/ EncodeFrameAsync|WoROIInit,   MFX_ERR_NONE,  CBR,  0, 5000,    0,  ROI_1, 2,   2, 0 },
+    {/*54*/ EncodeFrameAsync|WoROIInit,   MFX_ERR_NONE,  VBR,  0, 5000, 6000,  ROI_1, 2,   2, 0 },
+    {/*55*/ EncodeFrameAsync|WoROIInit,   MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 3, -25, 0 },
+    {/*56*/ EncodeFrameAsync|WoROIInit,   MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,  CBR,  0, 5000,    0,  ROI_1, 2,   2, 15 },
+    {/*57*/ EncodeFrameAsync|WoROIInit,   MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,  VBR,  0, 5000, 6000,  ROI_1, 2,   2, 15 },
+    {/*58*/ EncodeFrameAsync|WoROIInit,   MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,  CQP, 24,   24,   24,  ROI_1, 3, -25, 15 },
+    {/*59*/ EncodeFrameAsync|WithROIInit|WOBuf,   MFX_ERR_NONE,  CBR,  0, 5000,    0,  ROI_1, 2,   2, 0 },
+    {/*60*/ EncodeFrameAsync|WithROIInit|WOBuf,   MFX_ERR_NONE,  VBR,  0, 5000, 6000,  ROI_1, 2,   2, 0 },
+    {/*61*/ EncodeFrameAsync|WithROIInit|WOBuf,   MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 3, -25, 0 },
+
 };
 #else
 tc_struct test_case[] = 
