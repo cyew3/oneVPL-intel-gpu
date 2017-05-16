@@ -500,12 +500,13 @@ mfxStatus MFXVideoENCODEMJPEG_HW::QueryIOSurf(VideoCORE * core, mfxVideoParam *p
     if (sts == MFX_WRN_PARTIAL_ACCELERATION)
         return MFX_WRN_PARTIAL_ACCELERATION;
 
-    mfxU32 inPattern = par->IOPattern;
-    MFX_CHECK(
-        inPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
-        inPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY ||
-        inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY,
-        MFX_ERR_INVALID_VIDEO_PARAM);
+    // check for valid IOPattern
+    mfxU16 inPattern = par->IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_IN_OPAQUE_MEMORY);
+    if ((par->IOPattern == 0) ||
+        ((inPattern != MFX_IOPATTERN_IN_VIDEO_MEMORY) && (inPattern != MFX_IOPATTERN_IN_SYSTEM_MEMORY) && (inPattern != MFX_IOPATTERN_IN_OPAQUE_MEMORY)))
+    {
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+    }
 
     request->Info              = par->mfx.FrameInfo;
 
@@ -797,6 +798,21 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Reset(mfxVideoParam *par)
 
     par = &checked; // from now work with fixed copy of input!
 
+    // check for valid IOPattern
+    mfxU16 IOPatternIn = par->IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_IN_OPAQUE_MEMORY);
+    if (!par->IOPattern ||
+        ((IOPatternIn != MFX_IOPATTERN_IN_VIDEO_MEMORY) && (IOPatternIn != MFX_IOPATTERN_IN_SYSTEM_MEMORY) && (IOPatternIn != MFX_IOPATTERN_IN_OPAQUE_MEMORY)))
+    {
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+    }
+
+    if (!m_pCore->IsExternalFrameAllocator() && (par->IOPattern & (MFX_IOPATTERN_OUT_VIDEO_MEMORY | MFX_IOPATTERN_IN_VIDEO_MEMORY)))
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+
+    // checks for opaque memory
+    if (!(m_vFirstParam.IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY) && (par->IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY))
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+
     if(par->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_UNKNOWN &&
        par->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE &&
        par->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_FIELD_TFF &&
@@ -847,6 +863,9 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Close(void)
 
 mfxStatus MFXVideoENCODEMJPEG_HW::GetVideoParam(mfxVideoParam *par)
 {
+    if (!m_bInitialized)
+        return MFX_ERR_NOT_INITIALIZED;
+
     MFX_CHECK_NULL_PTR1(par);
 
     par->mfx = m_vParam.mfx;
@@ -865,7 +884,15 @@ mfxStatus MFXVideoENCODEMJPEG_HW::GetFrameParam(mfxFrameParam *par)
 
 mfxStatus MFXVideoENCODEMJPEG_HW::GetEncodeStat(mfxEncodeStat *stat)
 {
-    stat;
+    if (!m_bInitialized)
+        return MFX_ERR_NOT_INITIALIZED;
+
+    MFX_CHECK_NULL_PTR1(stat)
+    memset(stat, 0, sizeof(mfxEncodeStat));
+    /*stat->NumCachedFrame = 0;
+    stat->NumBit = m_totalBits;
+    stat->NumFrame = m_encodedFrames;*/
+
     return MFX_ERR_UNSUPPORTED;
 }
 
@@ -887,6 +914,24 @@ mfxStatus MFXVideoENCODEMJPEG_HW::EncodeFrameCheck(
     JpegEncCaps              hwCaps = {0};
 
     mfxFrameSurface1 *surface = GetOriginalSurface(inSurface);
+    // input surface is opaque surface
+    if (surface != inSurface)
+    {
+        if (surface == 0)
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+        surface->Info = inSurface->Info;
+        surface->Data.Corrupted = inSurface->Data.Corrupted;
+        surface->Data.DataFlag = inSurface->Data.DataFlag;
+        surface->Data.TimeStamp = inSurface->Data.TimeStamp;
+        surface->Data.FrameOrder = inSurface->Data.FrameOrder;
+    }
+
+    if (inSurface && !surface)
+    {
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+
     mfxStatus checkSts = CheckEncodeFrameParam(
         surface,
         bs,
