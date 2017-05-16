@@ -142,6 +142,59 @@ mfxU16 MaxTask(MfxVideoParam const & par)
     return par.AsyncDepth + par.mfx.GopRefDist - 1 + ((par.AsyncDepth > 1)? 1: 0);
 }
 
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+bool GetRecInfo(const MfxVideoParam& par, mfxFrameInfo& rec)
+{
+    const mfxExtCodingOption3& CO3 = par.m_ext.CO3;
+
+    rec = par.mfx.FrameInfo;
+
+    if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV444) && CO3.TargetBitDepthLuma == 10)
+    {
+        rec.FourCC = MFX_FOURCC_Y410;
+        rec.Width /= 2;
+        rec.Height *= 3;
+    }
+    else if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV444) && CO3.TargetBitDepthLuma == 8)
+    {
+        rec.FourCC = MFX_FOURCC_AYUV;
+        rec.Width /= 4;
+        rec.Height *= 3;
+    }
+    else if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV422) && CO3.TargetBitDepthLuma == 10)
+    {
+        rec.FourCC = MFX_FOURCC_Y210;
+        rec.Width /= 2;
+        rec.Height *= 2;
+    }
+    else if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV422) && CO3.TargetBitDepthLuma == 8)
+    {
+        rec.FourCC = MFX_FOURCC_YUY2;
+        rec.Width /= 2;
+        rec.Height *= 2;
+    }
+    else if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV420) && CO3.TargetBitDepthLuma == 10)
+    {
+        rec.FourCC = MFX_FOURCC_P010;
+    }
+    else if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV420) && CO3.TargetBitDepthLuma == 8)
+    {
+        rec.FourCC = MFX_FOURCC_NV12;
+    }
+    else
+    {
+        assert(!"undefined target format");
+        return false;
+    }
+
+    rec.ChromaFormat   = CO3.TargetChromaFormatPlus1 - 1;
+    rec.BitDepthLuma   = CO3.TargetBitDepthLuma;
+    rec.BitDepthChroma = CO3.TargetBitDepthChroma;
+
+    return true;
+}
+#endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
+
 mfxStatus LoadSPSPPS(MfxVideoParam& par, mfxExtCodingOptionSPSPPS* pSPSPPS)
 {
     mfxStatus sts = MFX_ERR_NONE;
@@ -337,42 +390,7 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
     request.NumFrameMin = MaxRec(m_vpar);
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-    {
-        const mfxExtCodingOption3& CO3 = m_vpar.m_ext.CO3;
-
-        if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV444) && CO3.TargetBitDepthLuma == 10) {
-            request.Info.FourCC = MFX_FOURCC_Y410;
-            request.Info.Width /= 2;
-            request.Info.Height *= 3;
-        }
-        else if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV444) && CO3.TargetBitDepthLuma == 8) {
-            request.Info.FourCC = MFX_FOURCC_AYUV;
-            request.Info.Width /= 4;
-            request.Info.Height *= 3;
-        }
-        else if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV422) && CO3.TargetBitDepthLuma == 10) {
-            request.Info.FourCC =  MFX_FOURCC_Y210;
-            request.Info.Width /= 2;
-            request.Info.Height *= 2;
-        }
-        else if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV422) && CO3.TargetBitDepthLuma == 8) {
-            request.Info.FourCC =  MFX_FOURCC_YUY2;
-            request.Info.Width /= 2;
-            request.Info.Height *= 2;
-        }
-        else if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV420) && CO3.TargetBitDepthLuma == 10)
-            request.Info.FourCC =  MFX_FOURCC_P010;
-        else if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV420) && CO3.TargetBitDepthLuma == 8)
-            request.Info.FourCC =  MFX_FOURCC_NV12;
-        else
-        {
-            assert(!"undefined target format");
-        }
-
-        request.Info.ChromaFormat = CO3.TargetChromaFormatPlus1 - 1;
-        request.Info.BitDepthLuma = CO3.TargetBitDepthLuma;
-        request.Info.BitDepthChroma = CO3.TargetBitDepthChroma;
-    }
+    MFX_CHECK(GetRecInfo(m_vpar, request.Info), MFX_ERR_UNDEFINED_BEHAVIOR);
 #else
     if(request.Info.FourCC == MFX_FOURCC_RGB4)
     {
@@ -760,7 +778,24 @@ mfxStatus  Plugin::Reset(mfxVideoParam *par)
     sts = CheckHeaders(parNew, m_caps);
     MFX_CHECK_STS(sts);
 
+#if defined PRE_SI_TARGET_PLATFORM_GEN11
+    {
+        mfxFrameInfo recNew = {};
+        MFX_CHECK(GetRecInfo(m_vpar, recNew), MFX_ERR_UNDEFINED_BEHAVIOR);
 
+        MFX_CHECK(parNew.mfx.CodecId                == MFX_CODEC_HEVC                   , MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+        MFX_CHECK(m_vpar.AsyncDepth                 == parNew.AsyncDepth                , MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+        MFX_CHECK(m_vpar.mfx.GopRefDist             >= parNew.mfx.GopRefDist            , MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+        MFX_CHECK(m_vpar.mfx.NumRefFrame            >= parNew.mfx.NumRefFrame           , MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+        MFX_CHECK(m_vpar.mfx.RateControlMethod      == parNew.mfx.RateControlMethod     , MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+        MFX_CHECK(m_vpar.mfx.FrameInfo.ChromaFormat == parNew.mfx.FrameInfo.ChromaFormat, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+        MFX_CHECK(m_vpar.IOPattern                  == parNew.IOPattern                 , MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+        MFX_CHECK(m_rec.m_info.Width  >= recNew.Width , MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+        MFX_CHECK(m_rec.m_info.Height >= recNew.Height, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+        MFX_CHECK(m_rec.m_info.FourCC == recNew.FourCC, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+    }
+#else
     MFX_CHECK(
            parNew.mfx.CodecId                == MFX_CODEC_HEVC
         && m_vpar.AsyncDepth                 == parNew.AsyncDepth
@@ -773,6 +808,7 @@ mfxStatus  Plugin::Reset(mfxVideoParam *par)
         && m_vpar.mfx.FrameInfo.ChromaFormat == parNew.mfx.FrameInfo.ChromaFormat
         && m_vpar.IOPattern                  == parNew.IOPattern
         ,  MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+#endif //defined PRE_SI_TARGET_PLATFORM_GEN11
 
     if (m_vpar.mfx.RateControlMethod == MFX_RATECONTROL_CBR ||
         m_vpar.mfx.RateControlMethod == MFX_RATECONTROL_VBR || 

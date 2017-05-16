@@ -508,6 +508,9 @@ namespace ExtBuffer
     {
         _CopyPar1(PicWidthInLumaSamples);
         _CopyPar1(PicHeightInLumaSamples);
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+        _CopyPar1(GeneralConstraintFlags);
+#endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
 #if defined(PRE_SI_TARGET_PLATFORM_GEN10)
         _CopyPar1(SampleAdaptiveOffset);
 #endif //defined(PRE_SI_TARGET_PLATFORM_GEN10)
