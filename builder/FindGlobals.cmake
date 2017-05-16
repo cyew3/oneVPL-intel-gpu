@@ -1,5 +1,5 @@
 ##******************************************************************************
-##  Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+##  Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 ##
 ##  The source code, information  and  material ("Material") contained herein is
 ##  owned  by Intel Corporation or its suppliers or licensors, and title to such
@@ -83,6 +83,7 @@ if( Linux OR Darwin )
 
     add_definitions( -DMFX_FILE_VERSION=\"${ver}${cur_date}\")
     add_definitions( -DMFX_PRODUCT_VERSION=\"${version}\" )
+    add_definitions( -DMSDK_BUILD=\"$ENV{BUILD_NUMBER}\")
   endif()
 
   set(no_warnings "-Wno-deprecated-declarations -Wno-unknown-pragmas -Wno-unused")
