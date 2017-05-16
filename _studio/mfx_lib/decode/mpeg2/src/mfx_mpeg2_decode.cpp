@@ -2077,7 +2077,6 @@ mfxStatus VideoDECODEMPEG2InternalBase::UpdateOutputSurfaceParamsFromWorkSurface
     outputSurface->Info.CropY = internalSurface->Info.CropY;
     outputSurface->Info.AspectRatioH = internalSurface->Info.AspectRatioH;
     outputSurface->Info.AspectRatioW = internalSurface->Info.AspectRatioW;
-
     return MFX_ERR_NONE;
 }
 
@@ -3181,6 +3180,7 @@ mfxStatus VideoDECODEMPEG2Internal_HW::DecodeFrameCheck(mfxBitstream *bs,
                 m_task_param[m_task_num].task_num = m_task_num;
                 m_task_param[m_task_num].m_isSoftwareBuffer = m_isSWBuf;
 
+
                 pEntryPoint->pParam = (void *)(&(m_task_param[m_task_num]));
 
                 m_prev_task_num = m_task_num;
@@ -3292,9 +3292,9 @@ mfxStatus VideoDECODEMPEG2Internal_HW::CompleteTasks(void *pParam)
     return MFX_TASK_DONE;
 }
 
-mfxStatus VideoDECODEMPEG2Internal_HW::GetStatusReportByIndex(mfxFrameSurface1 *displaySurface, mfxU32 currIdx)
+mfxStatus VideoDECODEMPEG2Internal_HW::GetStatusReportByIndex(Ipp32s current_index, mfxU32 currIdx)
 {
-    displaySurface; currIdx;
+    current_index; currIdx;
 
 #ifdef MFX_VA_WIN
 
@@ -3368,7 +3368,7 @@ mfxStatus VideoDECODEMPEG2Internal_HW::GetStatusReportByIndex(mfxFrameSurface1 *
             break;
 
         case STATUS_REPORT_SIGNIFICANT_PROBLEM:
-            displaySurface->Data.Corrupted = 1;
+            m_implUmc->SetCorruptionFlag(current_index);
             break;
 
         case STATUS_REPORT_SEVERE_PROBLEM:
@@ -3384,10 +3384,10 @@ mfxStatus VideoDECODEMPEG2Internal_HW::GetStatusReportByIndex(mfxFrameSurface1 *
     return MFX_ERR_NONE;
 }
 
-mfxStatus VideoDECODEMPEG2Internal_HW::GetStatusReport(mfxFrameSurface1 *displaySurface, UMC::FrameMemID surface_id)
+mfxStatus VideoDECODEMPEG2Internal_HW::GetStatusReport(Ipp32s current_index, UMC::FrameMemID surface_id)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VideoDECODEMPEG2Internal_HW::GetStatusReport");
-    displaySurface;surface_id;
+    current_index; surface_id;
 #ifdef MFX_VA_WIN
     UMC::Status sts = UMC::UMC_OK;
 
@@ -3448,12 +3448,12 @@ mfxStatus VideoDECODEMPEG2Internal_HW::GetStatusReport(mfxFrameSurface1 *display
 
         case STATUS_REPORT_MINOR_PROBLEM:
         case STATUS_REPORT_SIGNIFICANT_PROBLEM:
-            displaySurface->Data.Corrupted = 1;
+            m_implUmc->SetCorruptionFlag(current_index);
             break;
 
         case STATUS_REPORT_SEVERE_PROBLEM:
         case STATUS_REPORT_SEVERE_PROBLEM_OTHER:
-            displaySurface->Data.Corrupted = 2;
+            m_implUmc->SetCorruptionFlag(current_index);
             return MFX_ERR_DEVICE_FAILED;
 
         default:
@@ -3495,11 +3495,64 @@ mfxStatus VideoDECODEMPEG2Internal_HW::GetStatusReport(mfxFrameSurface1 *display
 
 #endif // #if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
 
-    displaySurface->Data.Corrupted = surfCorruption;
+    if (surfCorruption)
+    {
+        m_implUmc->SetCorruptionFlag(current_index);
+    }
 
 #endif // UMC_VA_LINUX
 
     return MFX_ERR_NONE;
+}
+
+void VideoDECODEMPEG2Internal_HW::TranslateCorruptionFlag(Ipp32s disp_index, mfxFrameSurface1 * surface)
+{
+    if (!surface)
+    {
+        return;
+    }
+
+    mfxU32 frameType = m_implUmc->GetFrameType(disp_index);
+    Ipp32s fwd_index = m_implUmc->GetPrevDecodingIndex(disp_index);
+    Ipp32s bwd_index = m_implUmc->GetNextDecodingIndex(disp_index);
+
+    surface->Data.Corrupted = 0;
+
+    if (m_implUmc->GetCorruptionFlag(disp_index))
+    {
+        surface->Data.Corrupted = MFX_CORRUPTION_MAJOR;
+    }
+
+    switch (frameType)
+    {
+    case I_PICTURE:
+        break;
+
+    case P_PICTURE:
+
+        if (fwd_index >= 0 && m_implUmc->GetCorruptionFlag(fwd_index))
+        {
+            m_implUmc->SetCorruptionFlag(disp_index);
+            surface->Data.Corrupted |= MFX_CORRUPTION_REFERENCE_FRAME;
+        }
+
+        break;
+
+    case B_PICTURE:
+
+        if ((fwd_index >= 0 && m_implUmc->GetCorruptionFlag(fwd_index))
+         || (bwd_index >= 0 && m_implUmc->GetCorruptionFlag(bwd_index)))
+        {
+            m_implUmc->SetCorruptionFlag(disp_index);
+            surface->Data.Corrupted |= MFX_CORRUPTION_REFERENCE_FRAME;
+        }
+
+        break;
+
+    default:
+        break;
+    }
+
 }
 
 mfxStatus VideoDECODEMPEG2Internal_HW::PerformStatusCheck(void *pParam)
@@ -3508,11 +3561,14 @@ mfxStatus VideoDECODEMPEG2Internal_HW::PerformStatusCheck(void *pParam)
     MFX_CHECK_NULL_PTR1(pParam);
     MParam *parameters = (MParam *)pParam;
     Ipp32s disp_index = parameters->display_index;
-    Ipp32s current_index    = parameters->curr_index;
+    Ipp32s current_index = parameters->curr_index;
 
     if (disp_index < 0)
     {
-        GetStatusReport(parameters->surface_work, parameters->mid[current_index]);
+        GetStatusReport(current_index, parameters->mid[current_index]);
+
+        TranslateCorruptionFlag(disp_index, parameters->surface_work);
+
         return MFX_ERR_NONE;
     }
 
@@ -3520,7 +3576,7 @@ mfxStatus VideoDECODEMPEG2Internal_HW::PerformStatusCheck(void *pParam)
     if (!IsStatusReportEnable(m_pCore))
         return MFX_ERR_NONE;
 
-    mfxStatus sts = GetStatusReport(parameters->surface_out, parameters->mid[disp_index]);
+    mfxStatus sts = GetStatusReport(disp_index, parameters->mid[disp_index]);
 
     if (MFX_ERR_NONE != sts)
     {
@@ -3529,32 +3585,31 @@ mfxStatus VideoDECODEMPEG2Internal_HW::PerformStatusCheck(void *pParam)
         return sts;
     }
 
-    mfxU16 isCorrupted = parameters->surface_out->Data.Corrupted;
     mfxU32 frameType = m_implUmc->GetFrameType(disp_index);
-    Ipp32s previous_index = m_implUmc->GetPrevDecodingIndex(disp_index);
-
-    if (isCorrupted && I_PICTURE == frameType)
-        m_implUmc->SetCorruptionFlag(disp_index);
+    // Ipp32s fwd_index = m_implUmc->GetPrevDecodingIndex(disp_index);
+    Ipp32s bwd_index = m_implUmc->GetNextDecodingIndex(disp_index);
 
     switch (frameType)
     {
         case I_PICTURE:
-
-            if (isCorrupted)
+        case P_PICTURE:
+            break;
+        case B_PICTURE:
+            // backward reference
+            if (bwd_index >= 0)
             {
-                parameters->surface_out->Data.Corrupted = MFX_CORRUPTION_MAJOR;
+                // should be similar to forward reference, but this function called in display order
+                // following call is workaround for incorrect time of this function call (previous to next_index)
+
+                GetStatusReport(bwd_index, parameters->mid[bwd_index]);
             }
 
             break;
-
-        default: // P_PICTURE
-
-            if (true == m_implUmc->GetCorruptionFlag(previous_index))
-            {
-                m_implUmc->SetCorruptionFlag(disp_index);
-                parameters->surface_out->Data.Corrupted = MFX_CORRUPTION_REFERENCE_FRAME;
-            }
+        default:
+            return MFX_ERR_UNKNOWN;
     }
+
+    TranslateCorruptionFlag(disp_index, parameters->surface_out);
 
     return MFX_ERR_NONE;
 }
@@ -4044,6 +4099,7 @@ mfxStatus VideoDECODEMPEG2Internal_SW::CompleteTasks(void *pParam)
         GetCurrentThreadId(), pParam, parameters->task_num, parameters->m_curr_thread_idx, parameters->m_thread_completed)
 
     Ipp32s disp_index = parameters->display_index;
+
 
     if (0 <= disp_index)
     {
