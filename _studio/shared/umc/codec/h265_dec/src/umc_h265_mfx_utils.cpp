@@ -16,7 +16,7 @@
 #include "umc_h265_task_supplier.h"
 #include "umc_h265_nal_spl.h"
 
-#include "mfx_common_int.h"
+#include "mfx_common_decode_int.h"
 #include "mfxpcp.h"
 
 #if defined (MFX_VA)
@@ -456,6 +456,9 @@ UMC::Status FillVideoParam(const H265SeqParamSet * seq, mfxVideoParam *par, bool
 
     par->mfx.CodecProfile = (mfxU16)seq->m_pcPTL.GetGeneralPTL()->profile_idc;
     par->mfx.CodecLevel = (mfxU16)seq->m_pcPTL.GetGeneralPTL()->level_idc;
+    par->mfx.CodecLevel |=
+        seq->m_pcPTL.GetGeneralPTL()->tier_flag ? MFX_TIER_HEVC_HIGH : MFX_TIER_HEVC_MAIN;
+
     par->mfx.MaxDecFrameBuffering = (mfxU16)seq->sps_max_dec_pic_buffering[0];
 
     // CodecProfile can't be UNKNOWN here (it comes from SPS), that's asserted at CalculateFourcc
@@ -763,7 +766,10 @@ mfxStatus Query_H265(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out, eMF
         if (out->mfx.CodecProfile != MFX_PROFILE_UNKNOWN)
             profile = out->mfx.CodecProfile;
 
-        switch (in->mfx.CodecLevel)
+        mfxU32 const level =
+            ExtractProfile(in->mfx.CodecLevel);
+
+        switch (level)
         {
         case MFX_LEVEL_UNKNOWN:
         case MFX_LEVEL_HEVC_1:
