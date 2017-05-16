@@ -1602,7 +1602,7 @@ void CRawVideoWriter::WriteLine(mfxU8 *data, mfxU32 length)
         data = m_temporalLine.data();
     }
 
-    if (length != (mfxU32)vm_file_fwrite(data, length, 1, m_fDst))
+    if (length != (mfxU32)vm_file_fwrite(data, 1, length, m_fDst))
         throw MFX_ERR_UNDEFINED_BEHAVIOR;
  
     if (m_need_crc)
