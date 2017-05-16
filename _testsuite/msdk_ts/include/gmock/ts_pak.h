@@ -22,7 +22,7 @@ public:
     bool                        m_loaded;
     tsExtBufType<mfxVideoParam> m_par;
     tsExtBufType<mfxBitstream>  m_bitstream;
-    mfxFrameAllocRequest        m_request;
+    mfxFrameAllocRequest        m_request[2];
     mfxVideoParam*              m_pPar;
     mfxVideoParam*              m_pParOut;
     mfxBitstream*               m_pBitstream;

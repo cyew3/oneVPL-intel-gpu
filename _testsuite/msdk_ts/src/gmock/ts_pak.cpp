@@ -20,12 +20,14 @@ tsVideoPAK::tsVideoPAK(mfxFeiFunction func, mfxU32 CodecId, bool useDefaults)
     , m_pPar(&m_par)
     , m_pParOut(&m_par)
     , m_pBitstream(&m_bitstream)
-    , m_pRequest(&m_request)
+    , m_pRequest(m_request)
     , m_pSyncPoint(&m_syncpoint)
     , m_filler(0)
     , m_frames_buffered(0)
     , m_uid(0)
 {
+    memset(m_request, 0, sizeof(m_request));
+
     if(m_default)
     {
         m_par.mfx.FrameInfo.Width  = m_par.mfx.FrameInfo.CropW = 720;
@@ -73,7 +75,8 @@ mfxStatus tsVideoPAK::Init()
             Load();
         }
         if(     !m_pFrameAllocator
-            && (   (m_request.Type & (MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET|MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET))
+            && (   (m_request[0].Type & (MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET|MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET))
+                || (m_request[1].Type & (MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET|MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET))
                 || (m_par.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY)))
         {
             if(!GetAllocator())
@@ -82,11 +85,6 @@ mfxStatus tsVideoPAK::Init()
             }
             m_pFrameAllocator = GetAllocator();
             SetFrameAllocator();TS_CHECK_MFX;
-        }
-        if(m_par.IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-        {
-            QueryIOSurf();
-            AllocOpaque(m_request, m_par);
         }
     }
     return Init(m_session, m_pPar);
@@ -178,11 +176,20 @@ mfxStatus tsVideoPAK::QueryIOSurf(mfxSession session, mfxVideoParam *par, mfxFra
 
 mfxStatus tsVideoPAK::AllocSurfaces()
 {
-    if(m_default && !m_request.NumFrameMin)
+    mfxStatus sts = MFX_ERR_NONE;
+
+    if(m_default && (!m_request[0].NumFrameMin || !m_request[1].NumFrameMin))
     {
         QueryIOSurf();TS_CHECK_MFX;
     }
-    return tsSurfacePool::AllocSurfaces(m_request);
+
+    sts = tsSurfacePool::AllocSurfaces(m_request[0]);
+    if (sts)
+    {
+        return sts;
+    }
+
+    return tsSurfacePool::AllocSurfaces(m_request[1]);
 }
 
 mfxStatus tsVideoPAK::Reset()

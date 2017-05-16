@@ -111,7 +111,7 @@ namespace fei_pak_memory_init
         }
         else
         {
-            m_request = pak_request;
+            m_request[0] = pak_request;
         }
 
         //Create extended buffer to Init FEI
