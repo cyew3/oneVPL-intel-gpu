@@ -1543,11 +1543,12 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             argv ++;
             MFX_PARSE_INT(m_extVP8CodingOptions->Version, argv[0]);
         }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-roi"), VM_STRING(""), OPT_SPECIAL, VM_STRING("")))
+        else if (m_OptProc.Check(argv[0], VM_STRING("-roi"), VM_STRING("Set provided values to mfxExtEncoderROI structure, implies MFX_ROI_MODE_PRIORITY  "), OPT_SPECIAL, VM_STRING("NumRect [Left Top Right Bottom Priority]{0..NumRect}")))
         {
             MFX_CHECK(1 + argv < argvEnd);
             argv ++;
             MFX_PARSE_INT(m_extEncoderRoi->NumROI, argv[0]);
+            m_extEncoderRoi->ROIMode = MFX_ROI_MODE_PRIORITY;
             MFX_CHECK(m_extEncoderRoi->NumROI * 5 + argv < argvEnd);
             argv ++;
             for (mfxU8 i = 0; i < m_extEncoderRoi->NumROI; i ++)
@@ -1561,6 +1562,26 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             }
             argv--;
         }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-roi_dqp"), VM_STRING("the same as -roi  but implies MFX_ROI_MODE_QP_DELTA"), OPT_SPECIAL, VM_STRING("NumRect [Left Top Right Bottom Priority]{0..NumRect}")))
+        {
+            MFX_CHECK(1 + argv < argvEnd);
+            argv++;
+            MFX_PARSE_INT(m_extEncoderRoi->NumROI, argv[0]);
+            m_extEncoderRoi->ROIMode = MFX_ROI_MODE_QP_DELTA;
+            MFX_CHECK(m_extEncoderRoi->NumROI * 5 + argv < argvEnd);
+            argv++;
+            for (mfxU8 i = 0; i < m_extEncoderRoi->NumROI; i++)
+            {
+                MFX_PARSE_INT(m_extEncoderRoi->ROI[i].Left, argv[0]);
+                MFX_PARSE_INT(m_extEncoderRoi->ROI[i].Top, argv[1]);
+                MFX_PARSE_INT(m_extEncoderRoi->ROI[i].Right, argv[2]);
+                MFX_PARSE_INT(m_extEncoderRoi->ROI[i].Bottom, argv[3]);
+                MFX_PARSE_INT(m_extEncoderRoi->ROI[i].Priority, argv[4]);
+                argv += 5;
+            }
+            argv--;
+        }
+
         else if (m_OptProc.Check(argv[0], VM_STRING("-dirty_rect"), VM_STRING(""), OPT_SPECIAL, VM_STRING("")))
         {
             MFX_CHECK(1 + argv < argvEnd);
