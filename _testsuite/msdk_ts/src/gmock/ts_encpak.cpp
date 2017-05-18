@@ -1017,9 +1017,9 @@ mfxStatus tsVideoENCPAK::EncodeFrame(bool secondField)
             bool found = false;
             for (int i=0; i<16 && pps->DpbAfter[i].Index != 0xffff && !(found = (pps->DpbAfter[i].Index == idx)); i++);
             if (!found) {
-            	refs.erase(refs.begin()+r);
-            	r--; // to resume after erased
-            	continue;
+                refs.erase(refs.begin()+r);
+                r--; // to resume after erased
+                continue;
             }
 
 //            dpb_idx.push_back(idx);

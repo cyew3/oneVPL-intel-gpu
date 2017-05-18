@@ -316,16 +316,12 @@ int TestSuite::RunTest(unsigned int id)
             mfxExtFeiSliceHeader * fsliceE = (mfxExtFeiSliceHeader *)GetExtFeiBuffer(encpak.enc.inbuf, MFX_EXTBUFF_FEI_SLICE, idxToPickBuffers);
             for (mfxI32 s=0; s<fsliceE->NumSlice; s++) {
                 fsliceE->Slice[s].PPSId = fppsE->PPSId;
-                fsliceE->Slice[s].NumRefIdxL0Active = fppsE->NumRefIdxL0Active;
-                fsliceE->Slice[s].NumRefIdxL1Active = fppsE->NumRefIdxL1Active;
             }
 
             mfxExtFeiPPS         * fppsP   = (mfxExtFeiPPS *)        GetExtFeiBuffer(encpak.pak.inbuf, MFX_EXTBUFF_FEI_PPS, idxToPickBuffers);
             mfxExtFeiSliceHeader * fsliceP = (mfxExtFeiSliceHeader *)GetExtFeiBuffer(encpak.pak.inbuf, MFX_EXTBUFF_FEI_SLICE, idxToPickBuffers);
             for (mfxI32 s=0; s<fsliceP->NumSlice; s++) {
                 fsliceP->Slice[s].PPSId = fppsP->PPSId;
-                fsliceP->Slice[s].NumRefIdxL0Active = fppsP->NumRefIdxL0Active;
-                fsliceP->Slice[s].NumRefIdxL1Active = fppsP->NumRefIdxL1Active;
             }
 
             // mods to check possibility

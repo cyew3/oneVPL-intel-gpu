@@ -892,7 +892,7 @@ bool MfxH264FEIcommon::CheckSliceHeaderReferenceList(mfxExtFeiSliceHeader::mfxSl
 {
     for (mfxU16 i = 0; i < num_idx_active; ++i)
     {
-        if (ref[i].Index == 0xffff)
+        if (ref[i].Index >= 17)
         {
             return false;
         }
