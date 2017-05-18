@@ -1965,7 +1965,7 @@ mfxStatus MFXVideoENCODEMVC::InitMVCView(mfxVideoParam *par_in, mfxExtCodingOpti
     st = ConvertVideoParam_H264enc(par, &videoParams); // converts all with preference rules
     MFX_CHECK_STS(st);
 
-    if (m_isOpaque && opaqAllocReq->In.NumSurface < (videoParams.B_frame_rate + 1) * (m_numviews + 1))
+    if (m_isOpaque && opaqAllocReq && opaqAllocReq->In.NumSurface < (videoParams.B_frame_rate + 1) * (m_numviews + 1))
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
     view->m_useAuxInput = false;
