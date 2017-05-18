@@ -21,7 +21,7 @@ Description:
         3) joined session is executed correctly if there were changes in another session
 */
 
-#define TEST_NAME opaque_custom_pipeline
+#define TEST_NAME opaque_dynamic_pipeline
 const mfxU32 NSTEPS = 5;
 const mfxU32 NFRAMES = 5;
 
