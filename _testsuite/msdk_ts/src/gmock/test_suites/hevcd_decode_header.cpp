@@ -278,17 +278,18 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*17*/ MFX_ERR_NONE,  "itu/HRD_A_Fujitsu_3.bin", {REPACK_AR, 0, {255, 16, 9}}},
     {/*18*/ MFX_ERR_NONE,  "itu/HRD_A_Fujitsu_3.bin", {{REPACK_VSI, 0, {4,1,1,3,3,3}}, {ATTACH_EXT_BUF, 0, {1, EXT_BUF(mfxExtVideoSignalInfo)}}}},
     {/*19*/ MFX_ERR_NONE,  "itu/HRD_A_Fujitsu_3.bin", {REPACK_FS, 0, {1}}},
-    {/*20*/ MFX_ERR_NONE,  "422format/inter_422_8.bin",},
-    {/*21*/ MFX_ERR_NONE,  "10bit/DBLK_A_MAIN10_VIXS_3.bit",},
-    {/*22*/ MFX_ERR_NONE,  "10bit/GENERAL_10b_422_RExt_Sony_1.bit",},
+    {/*20*/ MFX_ERR_NONE,  "itu/FILLER_A_Sony_1.bit",},
+    {/*21*/ MFX_ERR_NONE,  "422format/inter_422_8.bin",},
+    {/*22*/ MFX_ERR_NONE,  "10bit/DBLK_A_MAIN10_VIXS_3.bit",},
     {/*23*/ MFX_ERR_NONE,  "10bit/GENERAL_10b_422_RExt_Sony_1.bit",},
-    {/*24*/ MFX_ERR_NONE,  "10bit/GENERAL_8b_444_RExt_Sony_1.bit",},
-    {/*25*/ MFX_ERR_NONE,  "10bit/GENERAL_10b_444_RExt_Sony_1.bit",},
-    {/*26*/ MFX_ERR_NONE,  "StressBitstreamEncode/rext444_10b/Stress_HEVC_Rext444_10bHT62_432x240_30fps_302_inter_stress_2.2.hevc",},
-    {/*27*/ MFX_ERR_NONE,  "12bit/400format/GENERAL_12b_400_RExt_Sony_1.bit",},
-    {/*28*/ MFX_ERR_NONE,  "12bit/420format/GENERAL_12b_420_RExt_Sony_1.bit",},
-    {/*29*/ MFX_ERR_NONE,  "12bit/422format/GENERAL_12b_422_RExt_Sony_1.bit",},
-    {/*30*/ MFX_ERR_NONE,  "12bit/444format/GENERAL_12b_444_RExt_Sony_1.bit",},
+    {/*24*/ MFX_ERR_NONE,  "10bit/GENERAL_10b_422_RExt_Sony_1.bit",},
+    {/*25*/ MFX_ERR_NONE,  "10bit/GENERAL_8b_444_RExt_Sony_1.bit",},
+    {/*26*/ MFX_ERR_NONE,  "10bit/GENERAL_10b_444_RExt_Sony_1.bit",},
+    {/*27*/ MFX_ERR_NONE,  "StressBitstreamEncode/rext444_10b/Stress_HEVC_Rext444_10bHT62_432x240_30fps_302_inter_stress_2.2.hevc",},
+    {/*28*/ MFX_ERR_NONE,  "12bit/400format/GENERAL_12b_400_RExt_Sony_1.bit",},
+    {/*29*/ MFX_ERR_NONE,  "12bit/420format/GENERAL_12b_420_RExt_Sony_1.bit",},
+    {/*30*/ MFX_ERR_NONE,  "12bit/422format/GENERAL_12b_422_RExt_Sony_1.bit",},
+    {/*31*/ MFX_ERR_NONE,  "12bit/444format/GENERAL_12b_444_RExt_Sony_1.bit",},
 };
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
 
@@ -384,7 +385,8 @@ int TestSuite::RunTest(unsigned int id)
         expected_height = ( ( expected_height / 16 ) + ( (expected_height % 16) != 0 ) )* 16;
 
         EXPECT_EQ((mfxU16)sps.ptl.general.profile_idc,  m_par.mfx.CodecProfile);
-        EXPECT_EQ((mfxU16)sps.ptl.general.level_idc/3,  m_par.mfx.CodecLevel);
+        EXPECT_EQ((mfxU16)sps.ptl.general.level_idc/3,  m_par.mfx.CodecLevel & 0xFF);
+        EXPECT_EQ(sps.ptl.general.tier_flag, (m_par.mfx.CodecLevel >> 8) & 0x1);
         EXPECT_EQ(expectedFrameRate, FrameRate);
         EXPECT_EQ(expected_width, m_par.mfx.FrameInfo.Width);
         EXPECT_EQ(expected_height, m_par.mfx.FrameInfo.Height);
