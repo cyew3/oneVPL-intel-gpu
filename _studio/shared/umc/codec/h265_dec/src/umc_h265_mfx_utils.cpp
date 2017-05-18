@@ -23,6 +23,14 @@
 #include "umc_va_dxva2.h"
 #endif
 
+#if defined (MFX_VA_WIN)
+#include "libmfx_core_hw.h"
+#endif
+
+#include <functional>
+#include <algorithm>
+#include <iterator>
+
 namespace UMC_HEVC_DECODER { namespace MFX_Utility
 {
 
@@ -71,6 +79,75 @@ mfxU16 MatchProfile(mfxU32 fourcc)
     return MFX_PROFILE_UNKNOWN;
 }
 
+#if defined (MFX_VA_WIN)
+struct checker
+{
+    mfxU32 profile;
+    VideoCORE* core;
+    mfxVideoParam* param;
+
+    checker(mfxU32 p, VideoCORE* core, mfxVideoParam* param)
+        : profile(p)
+        , core(core)
+        , param(param)
+    {}
+    bool operator()(GuidProfile const& candidate) const
+    {
+        return
+            (static_cast<mfxU32>(candidate.profile) & (UMC::VA_CODEC | UMC::VA_ENTRY_POINT)) == profile &&
+            core->IsGuidSupported(candidate.guid, param) == MFX_ERR_NONE;
+    }
+};
+#endif
+
+#if defined (MFX_VA)
+inline
+bool CheckGUID(VideoCORE * core, eMFXHWType type, mfxVideoParam const* param)
+{
+    mfxVideoParam vp = *param;
+    mfxU16 profile = vp.mfx.CodecProfile && 0xFF;
+    if (profile == MFX_PROFILE_UNKNOWN)
+    {
+        profile = MatchProfile(vp.mfx.FrameInfo.FourCC);
+        vp.mfx.CodecProfile |= profile; //preserve tier
+    }
+
+#if defined (MFX_VA_WIN)
+    if (IS_PROTECTION_WIDEVINE(vp.Protected))
+        return core->IsGuidSupported(DXVA_Intel_Decode_Elementary_Stream_HEVC, &vp) == MFX_ERR_NONE;
+
+    mfxU32 const va_profile =
+        ChooseProfile(&vp, type) & (UMC::VA_CODEC | UMC::VA_ENTRY_POINT);
+
+    GuidProfile const
+        *f = GuidProfile::GetGuidProfiles(),
+        *l = f + GuidProfile::GetGuidProfileSize();
+    GuidProfile const* p =
+        std::find_if(f, l,
+            checker(va_profile, core, &vp)
+        );
+
+    return p != l;
+#elif defined (MFX_VA_LINUX)
+    if (!core->IsGuidSupported(DXVA_ModeHEVC_VLD_Main, &vp) != MFX_ERR_NONE)
+        return false;
+
+    //Linux doesn't check GUID, just [mfxVideoParam]
+    switch (profile)
+    {
+        case MFX_PROFILE_HEVC_MAIN:
+        case MFX_PROFILE_HEVC_MAINSP:
+#if defined(ANDROID)
+        case MFX_PROFILE_HEVC_MAIN10:
+#endif
+            return true;
+    }
+
+    return false;
+#endif
+}
+#endif
+
 // Returns implementation platform
 eMFXPlatform GetPlatform_H265(VideoCORE * core, mfxVideoParam * par)
 {
@@ -94,74 +171,10 @@ eMFXPlatform GetPlatform_H265(VideoCORE * core, mfxVideoParam * par)
     }
 
 #if defined (MFX_VA)
-    if (platform != MFX_PLATFORM_SOFTWARE)
-    {
-        int profile = par->mfx.CodecProfile;
-        if (profile == MFX_PROFILE_UNKNOWN ||
-            profile == MFX_PROFILE_HEVC_MAINSP)
-            //MFX_PROFILE_HEVC_MAINSP conforms either MAIN or MAIN10 profile
-            //(restricted to bit_depth_luma_minus8/bit_depth_chroma_minus8 equal to 0 only),
-            //select appropriate GUID basing on FOURCC
-            //see A.3.4: "When general_profile_compatibility_flag[ 3 ] is equal to 1,
-            //            general_profile_compatibility_flag[ 1 ] and
-            //            general_profile_compatibility_flag[ 2 ] should also be equal to 1"
-            profile = MatchProfile(par->mfx.FrameInfo.FourCC);
-
-#if defined (MFX_VA_WIN)
-        GUID guids[5] = {};
-        if (IS_PROTECTION_WIDEVINE(par->Protected))
-            guids[0] = DXVA_Intel_Decode_Elementary_Stream_HEVC;
-        else
-        {
-            switch (profile)
-            {
-                case MFX_PROFILE_HEVC_MAIN:
-                    guids[0] = DXVA_ModeHEVC_VLD_Main;
-                    guids[1] = DXVA_Intel_ModeHEVC_VLD_MainProfile;
-                    break;
-
-                case MFX_PROFILE_HEVC_MAIN10:
-                    guids[0] = DXVA_ModeHEVC_VLD_Main10;
-                    guids[1] = DXVA_Intel_ModeHEVC_VLD_Main10Profile;
-                    break;
-
-#ifdef PRE_SI_TARGET_PLATFORM_GEN11
-                case MFX_PROFILE_HEVC_REXT:
-                    guids[0] = DXVA_Intel_ModeHEVC_VLD_Main422_10Profile;
-                    guids[1] = DXVA_Intel_ModeHEVC_VLD_Main444_10Profile;
-#ifdef PRE_SI_TARGET_PLATFORM_GEN12
-                    guids[2] = DXVA_Intel_ModeHEVC_VLD_Main12Profile;
-                    guids[3] = DXVA_Intel_ModeHEVC_VLD_Main422_12Profile;
-                    guids[4] = DXVA_Intel_ModeHEVC_VLD_Main444_12Profile;
+    if (platform != MFX_PLATFORM_SOFTWARE && !CheckGUID(core, typeHW, par))
+        platform = MFX_PLATFORM_SOFTWARE;
 #endif
-                    break;
-#endif
-            }
-        }
 
-        size_t i = 0;
-        for (; i < sizeof(guids) / sizeof(guids[0]); ++i)
-            if (guids[i] != GUID_NULL && core->IsGuidSupported(guids[i], par) == MFX_ERR_NONE)
-                break;
-
-        if (i == sizeof(guids) / sizeof(guids[0]))
-            return MFX_PLATFORM_SOFTWARE;
-#else
-        if (core->IsGuidSupported(DXVA_ModeHEVC_VLD_Main, par) != MFX_ERR_NONE)
-            return MFX_PLATFORM_SOFTWARE;
-
-        switch (profile)
-        {
-            case MFX_PROFILE_HEVC_MAIN:
-            case MFX_PROFILE_HEVC_MAIN10:
-                break;
-
-            default:
-                return MFX_PLATFORM_SOFTWARE;
-        }
-#endif
-    }
-#endif
     return platform;
 #endif
 }
