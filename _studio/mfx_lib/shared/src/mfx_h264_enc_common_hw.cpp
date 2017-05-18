@@ -1913,7 +1913,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamFEI(
    for (mfxU32 i = 0; i < fieldCount; i++)
    {
        mfxExtFeiSliceHeader *pDataSliceHeader = GetExtBuffer(par, i);
-       if (pDataSliceHeader->Slice)
+       if (pDataSliceHeader && pDataSliceHeader->Slice)
        {
            // If buffer attached, it should be properly filled
            MFX_CHECK(pDataSliceHeader->NumSlice, MFX_ERR_INVALID_VIDEO_PARAM);
