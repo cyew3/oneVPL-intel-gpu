@@ -925,6 +925,8 @@ void FillPpsBuffer(
     else
         pps.InputType = eType_DRM_NONE;
 #endif
+
+    pps.nal_unit_type = task.m_shNUT;
 }
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
