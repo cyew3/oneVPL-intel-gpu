@@ -1727,9 +1727,9 @@ mfxStatus  VideoVPPHW::Init(
     {
         m_asyncDepth = MFX_AUTO_ASYNC_DEPTH_VALUE;
     }
-    else if( par->AsyncDepth > MFX_AUTO_ASYNC_DEPTH_VALUE )
+    else if( par->AsyncDepth > MFX_MAX_ASYNC_DEPTH_VALUE )
     {
-        m_asyncDepth = MFX_AUTO_ASYNC_DEPTH_VALUE;
+        m_asyncDepth = MFX_MAX_ASYNC_DEPTH_VALUE;
     }
     else
     {
