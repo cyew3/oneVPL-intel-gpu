@@ -111,7 +111,9 @@ namespace fei_pak_memory_init
         }
         else
         {
-            m_request[0] = pak_request;
+            m_request[0] = m_request[1] = pak_request;
+            m_request[1].Type &= 0xfff0;
+            m_request[1].Type |= MFX_MEMTYPE_INTERNAL_FRAME;
         }
 
         //Create extended buffer to Init FEI
