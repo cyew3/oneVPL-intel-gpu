@@ -718,20 +718,36 @@ mfxStatus ResMngr::ReleaseSubResource(bool bAll)
     // (2) if common Close()
     std::vector<ReleaseResource*> taskToRemove;
     mfxU32 i;
-    for(i = 0; i < m_subTaskQueue.size(); i++)
+    for (i = 0; i < m_subTaskQueue.size(); i++)
     {
-        if(bAll || (0 == m_subTaskQueue[i]->refCount) )
-        {
-            for(mfxU32 resIndx = 0; resIndx <  m_subTaskQueue[i]->surfaceListForRelease.size(); resIndx++ )
-            {
-                mfxStatus sts = m_core->DecreaseReference( &(m_subTaskQueue[i]->surfaceListForRelease[resIndx].pSurf->Data) );
-                MFX_CHECK_STS(sts);
 
-                mfxU32 freeIdx = m_subTaskQueue[i]->surfaceListForRelease[resIndx].resIdx;
-                if(NO_INDEX != freeIdx && m_surf[VPP_IN].size() > 0)
+        if (bAll || (0 == m_subTaskQueue[i]->refCount) )
+        {
+            for (mfxU32 resIndx = 0; resIndx <  m_subTaskQueue[i]->surfaceListForRelease.size(); resIndx++ )
+            {
+                ExtSurface & extSrf = m_subTaskQueue[i]->surfaceListForRelease[resIndx];
+                mfxU32 freeIdx = extSrf.resIdx;
+                if (NO_INDEX != freeIdx && m_surf[VPP_IN].size() > 0)
                 {
                     m_surf[VPP_IN][freeIdx].SetFree(true);
                 }
+
+                if (bAll)
+                {
+                    // surfaceListForRelease has copies from m_surfQueue.
+                    // Remove such elements from m_surfQueue.
+                    std::vector<ExtSurface>::iterator it = m_surfQueue.begin();
+                    while (it != m_surfQueue.end())
+                    {
+                        if (it->pSurf == extSrf.pSurf)
+                            it = m_surfQueue.erase(it);
+                        else
+                            it++;
+                    }
+                }
+
+                mfxStatus sts = m_core->DecreaseReference( &(extSrf.pSurf->Data) );
+                MFX_CHECK_STS(sts);
             }
             taskToRemove.push_back( m_subTaskQueue[i] );
         }
@@ -739,15 +755,26 @@ mfxStatus ResMngr::ReleaseSubResource(bool bAll)
 
     size_t removeCount = taskToRemove.size();
     std::vector<ReleaseResource*>::iterator it;
-    for(i = 0; i < removeCount; i++)
+    for (i = 0; i < removeCount; i++)
     {
         it = std::find(m_subTaskQueue.begin(), m_subTaskQueue.end(), taskToRemove[i] );
-        if( it != m_subTaskQueue.end())
+        if ( it != m_subTaskQueue.end())
         {
             m_subTaskQueue.erase(it);
         }
 
         delete taskToRemove[i];
+    }
+
+    if (bAll)
+    {
+        // DecreaseReference on remaining elements from m_surfQueue
+        while (m_surfQueue.size())
+        {
+            mfxFrameSurface1 * surf = m_surfQueue.begin()->pSurf;
+            m_surfQueue.erase(m_surfQueue.begin());
+            m_core->DecreaseReference( &(surf->Data));
+        }
     }
 
     return MFX_ERR_NONE;
@@ -1083,18 +1110,6 @@ mfxStatus TaskManager::Close(void)
 {
     m_actualNumber = m_taskIndex = 0;
 
-    /* In case of ADI needa to clear task properly:
-     * ADI locked input frame as reference for next one frame
-     * So, it should be unlocked if Reset() happends */
-    for (mfxU32 i = 0; i < m_tasks.size(); i++)
-    {
-        if ((NULL != m_tasks[i].input.pSurf) &&
-            (0 != m_tasks[i].input.pSurf->Data.Locked))
-        {
-            mfxStatus sts = m_core->DecreaseReference( &(m_tasks[i].input.pSurf->Data) );
-            MFX_CHECK_STS(sts);
-        }
-    }
     Clear(m_tasks);
 
     m_core     = NULL;
