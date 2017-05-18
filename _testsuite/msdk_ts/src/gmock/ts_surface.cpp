@@ -21,7 +21,12 @@ tsFrame::tsFrame(mfxFrameSurface1 s)
     case MFX_FOURCC_YV12: m_pFrame = new tsFrameYV12(s.Data); break;
     case MFX_FOURCC_YUY2: m_pFrame = new tsFrameYUY2(s.Data); break;
     case MFX_FOURCC_AYUV: m_pFrame = new tsFrameAYUV(s.Data); break;
-    case MFX_FOURCC_P010: m_pFrame = new tsFrameP010(s.Data); break;
+    case MFX_FOURCC_P010:
+        if (s.Info.Shift == 0)
+            m_pFrame = new tsFrameP010s0(s.Data);
+        else
+            m_pFrame = new tsFrameP010(s.Data);
+        break;
     case MFX_FOURCC_Y210: m_pFrame = new tsFrameY210(s.Data); break;
     case MFX_FOURCC_Y410: m_pFrame = new tsFrameY410(s.Data); break;
     case MFX_FOURCC_BGR4: std::swap(s.Data.B, s.Data.R);
@@ -103,6 +108,42 @@ tsFrame& tsFrame::operator=(tsFrame& src)
                 {
                     U16(w + m_info.CropX, h + m_info.CropY) = src.U16(w + src.m_info.CropX, h + src.m_info.CropY);
                     V16(w + m_info.CropX, h + m_info.CropY) = src.V16(w + src.m_info.CropX, h + src.m_info.CropY);
+                }
+            }
+        }
+    }
+    else if (isYUV16() && src.isYUV())
+    {
+        mfxU16 shY = TS_MAX(8, m_info.BitDepthLuma) - 8;
+        mfxU16 shC = !m_info.BitDepthChroma ? shY : TS_MAX(8, m_info.BitDepthChroma) - 8;
+
+        for (mfxU32 h = 0; h < maxh; h++)
+        {
+            for (mfxU32 w = 0; w < maxw; w++)
+            {
+                Y16(w + m_info.CropX, h + m_info.CropY) = mfxU16((mfxU8)src.Y(w + src.m_info.CropX, h + src.m_info.CropY)) << shY;
+                if (n == 3)
+                {
+                    U16(w + m_info.CropX, h + m_info.CropY) = mfxU16((mfxU8)src.U(w + src.m_info.CropX, h + src.m_info.CropY)) << shC;
+                    V16(w + m_info.CropX, h + m_info.CropY) = mfxU16((mfxU8)src.V(w + src.m_info.CropX, h + src.m_info.CropY)) << shC;
+                }
+            }
+        }
+    }
+    else if (isYUV() && src.isYUV16())
+    {
+        mfxU16 shY = TS_MAX(8, src.m_info.BitDepthLuma) - 8;
+        mfxU16 shC = !src.m_info.BitDepthChroma ? shY : TS_MAX(8, src.m_info.BitDepthChroma) - 8;
+
+        for (mfxU32 h = 0; h < maxh; h++)
+        {
+            for (mfxU32 w = 0; w < maxw; w++)
+            {
+                Y(w + m_info.CropX, h + m_info.CropY) = mfxU8((mfxU16)src.Y16(w + src.m_info.CropX, h + src.m_info.CropY) >> shY);
+                if (n == 3)
+                {
+                    U(w + m_info.CropX, h + m_info.CropY) = mfxU8((mfxU16)src.U16(w + src.m_info.CropX, h + src.m_info.CropY) >> shC);
+                    V(w + m_info.CropX, h + m_info.CropY) = mfxU8((mfxU16)src.V16(w + src.m_info.CropX, h + src.m_info.CropY) >> shC);
                 }
             }
         }
@@ -192,6 +233,21 @@ mfxStatus tsNoiseFiller::ProcessSurface(mfxFrameSurface1& s)
                 d.Y(w,h) = rand() % (1 << 8);
                 d.U(w,h) = rand() % (1 << 8);
                 d.V(w,h) = rand() % (1 << 8);
+            }
+        }
+    }
+    else if (d.isYUV16())
+    {
+        mfxU16 rangeY = (1 << TS_MAX(8, s.Info.BitDepthLuma));
+        mfxU16 rangeC = !s.Info.BitDepthChroma ? rangeY : (1 << TS_MAX(8, s.Info.BitDepthChroma));
+
+        for (mfxU32 h = 0; h < s.Info.Height; h++)
+        {
+            for (mfxU32 w = 0; w < s.Info.Width; w++)
+            {
+                d.Y16(w, h) = rand() % rangeY;
+                d.U16(w, h) = rand() % rangeC;
+                d.V16(w, h) = rand() % rangeC;
             }
         }
     }
@@ -434,6 +490,67 @@ mfxStatus tsSurfaceWriter::ProcessSurface(mfxFrameSurface1& s)
         for(mfxU32 i = s.Info.CropY; i < s.Info.CropH; i++) 
         {
             if (fwrite(ptr + i * pitch, 1, count, m_file) != count)
+                return MFX_ERR_UNKNOWN;
+        }
+    }
+    else if (s.Info.FourCC == MFX_FOURCC_YUY2)
+    {
+        mfxU16 cropX = ((s.Info.CropX >> 1) << 2);
+        count *= 2;
+
+        for (mfxU16 i = s.Info.CropY; i < (s.Info.CropH + s.Info.CropY); i++)
+        {
+            if (fwrite(s.Data.Y + pitch * i + cropX, 1, count, m_file) != count)
+                return MFX_ERR_UNKNOWN;
+        }
+    }
+    else if (s.Info.FourCC == MFX_FOURCC_AYUV)
+    {
+        mfxU16 cropX = s.Info.CropX * 4;
+        count *= 4;
+
+        for (mfxU16 i = s.Info.CropY; i < (s.Info.CropH + s.Info.CropY); i++)
+        {
+            if (fwrite(s.Data.V + pitch * i + cropX, 1, count, m_file) != count)
+                return MFX_ERR_UNKNOWN;
+        }
+    }
+    else if (s.Info.FourCC == MFX_FOURCC_P010)
+    {
+        mfxU16 cropX = s.Info.CropX * 2;
+
+        for (mfxU16 i = s.Info.CropY; i < (s.Info.CropH + s.Info.CropY); i++)
+        {
+            if (fwrite(s.Data.Y + pitch * i + cropX, 2, count, m_file) != count)
+                return MFX_ERR_UNKNOWN;
+        }
+
+        for (mfxU16 i = (s.Info.CropY / 2); i < ((s.Info.CropH + s.Info.CropY) / 2); i++)
+        {
+            if (fwrite(s.Data.UV + pitch * i + cropX, 2, count, m_file) != count)
+                return MFX_ERR_UNKNOWN;
+        }
+    }
+    else if (s.Info.FourCC == MFX_FOURCC_Y210)
+    {
+        mfxU16 cropX = ((s.Info.CropX >> 1) << 2);
+        count *= 2;
+        pitch /= 2; //bytes to words
+
+        for (mfxU16 i = s.Info.CropY; i < (s.Info.CropH + s.Info.CropY); i++)
+        {
+            if (fwrite(s.Data.Y16 + pitch * i + cropX, 2, count, m_file) != count)
+                return MFX_ERR_UNKNOWN;
+        }
+    }
+    else if (s.Info.FourCC == MFX_FOURCC_Y410)
+    {
+        mfxU16 cropX = s.Info.CropX;
+        pitch /= 4; //bytes to dwords
+
+        for (mfxU16 i = s.Info.CropY; i < (s.Info.CropH + s.Info.CropY); i++)
+        {
+            if (fwrite(s.Data.Y410 + pitch * i + cropX, 4, count, m_file) != count)
                 return MFX_ERR_UNKNOWN;
         }
     }

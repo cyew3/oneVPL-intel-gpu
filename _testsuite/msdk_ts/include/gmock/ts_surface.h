@@ -186,9 +186,30 @@ public:
     virtual ~tsFrameP010() { }
 
     inline bool isYUV16() {return true;};
-    inline tsSample<mfxU16> Y16(mfxU32 w, mfxU32 h) { return tsSample<mfxU16>(new tsSampleImpl<mfxU16, mfxU16>(&m_y[h * (m_pitch/2) + w])); }
-    inline tsSample<mfxU16> U16(mfxU32 w, mfxU32 h) { return tsSample<mfxU16>(new tsSampleImpl<mfxU16, mfxU16>(&m_uv[(h/2) * (m_pitch/2) + (w%2==0?w:(w-1))])); }
-    inline tsSample<mfxU16> V16(mfxU32 w, mfxU32 h) { return tsSample<mfxU16>(new tsSampleImpl<mfxU16, mfxU16>(&m_uv[(h/2) * (m_pitch/2) + (w%2==0?w:(w-1)) + 1])); }
+    inline tsSample<mfxU16> Y16(mfxU32 w, mfxU32 h) { return tsSample<mfxU16>(new tsSampleImpl<mfxU16, mfxU16>(&m_y[h * (m_pitch/2) + w], 0xffc0, 6)); }
+    inline tsSample<mfxU16> U16(mfxU32 w, mfxU32 h) { return tsSample<mfxU16>(new tsSampleImpl<mfxU16, mfxU16>(&m_uv[(h/2) * (m_pitch/2) + (w%2==0?w:(w-1))], 0xffc0, 6)); }
+    inline tsSample<mfxU16> V16(mfxU32 w, mfxU32 h) { return tsSample<mfxU16>(new tsSampleImpl<mfxU16, mfxU16>(&m_uv[(h/2) * (m_pitch/2) + (w%2==0?w:(w-1)) + 1], 0xffc0, 6)); }
+};
+
+class tsFrameP010s0 : public tsFrameAbstract
+{
+private:
+    mfxU32 m_pitch;
+    mfxU16* m_y;
+    mfxU16* m_uv;
+public:
+    tsFrameP010s0(mfxFrameData d)
+        : m_pitch(mfxU32(d.PitchHigh << 16) + d.PitchLow)
+        , m_y(d.Y16)
+        , m_uv(d.U16)
+    {}
+
+    virtual ~tsFrameP010s0() { }
+
+    inline bool isYUV16() { return true; };
+    inline tsSample<mfxU16> Y16(mfxU32 w, mfxU32 h) { return tsSample<mfxU16>(new tsSampleImpl<mfxU16, mfxU16>(&m_y[h * (m_pitch / 2) + w])); }
+    inline tsSample<mfxU16> U16(mfxU32 w, mfxU32 h) { return tsSample<mfxU16>(new tsSampleImpl<mfxU16, mfxU16>(&m_uv[(h / 2) * (m_pitch / 2) + (w % 2 == 0 ? w : (w - 1))])); }
+    inline tsSample<mfxU16> V16(mfxU32 w, mfxU32 h) { return tsSample<mfxU16>(new tsSampleImpl<mfxU16, mfxU16>(&m_uv[(h / 2) * (m_pitch / 2) + (w % 2 == 0 ? w : (w - 1)) + 1])); }
 };
 
 class tsFrameY210 : public tsFrameAbstract
@@ -209,9 +230,9 @@ public:
     virtual ~tsFrameY210() { }
 
     inline bool isYUV16() { return true; };
-    inline tsSample<mfxU16> Y16(mfxU32 w, mfxU32 h) { return tsSample<mfxU16>(new tsSampleImpl<mfxU16, mfxU16>(&m_y[h * m_pitch + w * 2])); }
-    inline tsSample<mfxU16> U16(mfxU32 w, mfxU32 h) { return tsSample<mfxU16>(new tsSampleImpl<mfxU16, mfxU16>(&m_u[h * m_pitch + (w / 2) * 4])); }
-    inline tsSample<mfxU16> V16(mfxU32 w, mfxU32 h) { return tsSample<mfxU16>(new tsSampleImpl<mfxU16, mfxU16>(&m_v[h * m_pitch + (w / 2) * 4])); }
+    inline tsSample<mfxU16> Y16(mfxU32 w, mfxU32 h) { return tsSample<mfxU16>(new tsSampleImpl<mfxU16, mfxU16>(&m_y[h * m_pitch + w * 2], 0xffc0, 6)); }
+    inline tsSample<mfxU16> U16(mfxU32 w, mfxU32 h) { return tsSample<mfxU16>(new tsSampleImpl<mfxU16, mfxU16>(&m_u[h * m_pitch + (w / 2) * 4], 0xffc0, 6)); }
+    inline tsSample<mfxU16> V16(mfxU32 w, mfxU32 h) { return tsSample<mfxU16>(new tsSampleImpl<mfxU16, mfxU16>(&m_v[h * m_pitch + (w / 2) * 4], 0xffc0, 6)); }
 };
 
 class tsFrameY410 : public tsFrameAbstract
