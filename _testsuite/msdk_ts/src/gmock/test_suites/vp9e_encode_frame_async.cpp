@@ -41,11 +41,13 @@ namespace vp9e_encode_frame_async
         int RunTest_Subtype(const unsigned int id);
 
         int RunTest(const tc_struct& tc, unsigned int fourcc_id);
-        static const tc_struct test_case_nv12[]; //8b 420
+        static const tc_struct test_case_nv12[]; //8b  420
         static const tc_struct test_case_p010[]; //10b 420
+        static const tc_struct test_case_ayuv[]; //8b  444
 
         static const unsigned int n_cases_nv12;
         static const unsigned int n_cases_p010;
+        static const unsigned int n_cases_ayuv;
 
     private:
         enum
@@ -160,6 +162,14 @@ namespace vp9e_encode_frame_async
     };
     const unsigned int TestSuite::n_cases_p010 = sizeof(TestSuite::test_case_p010)/sizeof(TestSuite::tc_struct) + n_cases;
 
+    const TestSuite::tc_struct TestSuite::test_case_ayuv[] =
+    {
+        {/*18*/ MFX_ERR_NULL_PTR, NONE,
+        { MFX_SURF, &tsStruct::mfxFrameSurface1.Data.Y, 0 }
+        },
+    };
+    const unsigned int TestSuite::n_cases_ayuv = sizeof(TestSuite::test_case_ayuv) / sizeof(TestSuite::tc_struct) + n_cases;
+
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
 
     struct streamDesc
@@ -172,6 +182,7 @@ namespace vp9e_encode_frame_async
     const streamDesc streams[] = {
         {720, 480, "YUV/calendar_720x480_600_nv12.yuv"},
         {1280, 720, "YUV10bit/Suzie_ProRes_1280x720_50f.p010.yuv"},
+        {352, 288, "YUV8bit444/Kimono1_352x288_24_ayuv.yuv"}
     };
 
     const streamDesc& getStreamDesc(const mfxU32& id)
@@ -180,6 +191,7 @@ namespace vp9e_encode_frame_async
         {
         case MFX_FOURCC_NV12: return streams[0];
         case MFX_FOURCC_P010: return streams[1];
+        case MFX_FOURCC_AYUV: return streams[2];
         default: assert(0); return streams[0];
         }
     }
@@ -190,6 +202,7 @@ namespace vp9e_encode_frame_async
         {
         case MFX_FOURCC_NV12: return TestSuite::test_case_nv12;
         case MFX_FOURCC_P010: return TestSuite::test_case_p010;
+        case MFX_FOURCC_AYUV: return TestSuite::test_case_ayuv;
         default: assert(0); return 0;
         }
     }
@@ -233,6 +246,12 @@ namespace vp9e_encode_frame_async
             m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
             m_par.mfx.FrameInfo.Shift = 1;
         }
+        else if (fourcc_id == MFX_FOURCC_AYUV)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_AYUV;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
+        }
         else
         {
             g_tsLog << "WARNING: invalid fourcc_id parameter: " << fourcc_id << "\n";
@@ -244,7 +263,7 @@ namespace vp9e_encode_frame_async
         if (0 == memcmp(m_uid->Data, MFX_PLUGINID_VP9E_HW.Data, sizeof(MFX_PLUGINID_VP9E_HW.Data)))
         {
             if ((fourcc_id == MFX_FOURCC_NV12 && g_tsHWtype < MFX_HW_CNL)
-                || (fourcc_id == MFX_FOURCC_P010 && g_tsHWtype < MFX_HW_ICL)) // MFX_PLUGIN_VP9E_HW unsupported on platform less CNL
+                || ((fourcc_id == MFX_FOURCC_P010 || fourcc_id == MFX_FOURCC_AYUV) && g_tsHWtype < MFX_HW_ICL)) // MFX_PLUGIN_VP9E_HW unsupported on platform less CNL
             {
                 g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
                 g_tsLog << "WARNING: Unsupported HW Platform!\n";
@@ -338,7 +357,7 @@ namespace vp9e_encode_frame_async
                         ADD_FAILURE() << "ERROR: unc-header profile mismatch, expected 0, detected " << hdr->uh.profile;
                         throw tsFAIL;
                     }
-                } 
+                }
                 else if(fourcc_id == MFX_FOURCC_P010)
                 {
                     if(hdr->uh.profile != 2)
@@ -390,4 +409,5 @@ namespace vp9e_encode_frame_async
 
     TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9e_encode_frame_async,              RunTest_Subtype<MFX_FOURCC_NV12>, n_cases_nv12);
     TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9e_10b_420_p010_encode_frame_async, RunTest_Subtype<MFX_FOURCC_P010>, n_cases_p010);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9e_8b_444_ayuv_encode_frame_async,  RunTest_Subtype<MFX_FOURCC_AYUV>, n_cases_ayuv);
 };
