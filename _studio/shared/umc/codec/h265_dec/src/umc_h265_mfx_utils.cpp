@@ -278,7 +278,9 @@ mfxU32 CalculateFourcc(mfxU16 codecProfile, mfxFrameInfo const* frameInfo)
     if (!CheckChromaFormat(codecProfile, frameInfo->ChromaFormat))
         return 0;
 
-    if (!CheckBitDepth(codecProfile, frameInfo->BitDepthLuma))
+    mfxU16 bit_depth =
+       IPP_MAX(frameInfo->BitDepthLuma, frameInfo->BitDepthChroma);
+    if (!CheckBitDepth(codecProfile, bit_depth))
         return 0;
 
     //map chroma fmt & bit depth onto fourcc (NOTE: we currently don't support bit depth above 10 bit)
@@ -324,9 +326,6 @@ mfxU32 CalculateFourcc(mfxU16 codecProfile, mfxFrameInfo const* frameInfo)
         "Unsupported chroma format, should be validated before"
     );
 #endif
-
-    mfxU16 bit_depth =
-       IPP_MAX(frameInfo->BitDepthLuma, frameInfo->BitDepthChroma);
 
     //align luma depth up to 2 (8-10-12 ...)
     bit_depth = (bit_depth + 2 - 1) & ~(2 - 1);
