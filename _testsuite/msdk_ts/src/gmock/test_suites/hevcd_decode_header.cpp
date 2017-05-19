@@ -420,9 +420,9 @@ int TestSuite::RunTest(unsigned int id)
             {
                 EXPECT_EQ(MFX_FOURCC_P010, m_par.mfx.FrameInfo.FourCC);
             }
-            else if (g_tsHWtype >= MFX_HW_TGL)//Gen12
+            else if (m_par.mfx.FrameInfo.BitDepthLuma == 12)
             {
-                if (m_par.mfx.FrameInfo.BitDepthLuma == 12)
+                if (g_tsHWtype >= MFX_HW_TGL) //Gen12
                 {
                     EXPECT_EQ(MFX_FOURCC_P016, m_par.mfx.FrameInfo.FourCC);
                 }
@@ -445,9 +445,9 @@ int TestSuite::RunTest(unsigned int id)
                 {
                     EXPECT_EQ(MFX_FOURCC_Y210, m_par.mfx.FrameInfo.FourCC);
                 }
-                else if (g_tsHWtype >= MFX_HW_TGL)//Gen12
+                else if (m_par.mfx.FrameInfo.BitDepthLuma == 12)
                 {
-                    if (m_par.mfx.FrameInfo.BitDepthLuma == 12)
+                    if (g_tsHWtype >= MFX_HW_TGL)//Gen12
                     {
                         EXPECT_EQ(MFX_FOURCC_Y216, m_par.mfx.FrameInfo.FourCC);
                     }
@@ -471,9 +471,9 @@ int TestSuite::RunTest(unsigned int id)
                 {
                     EXPECT_EQ(MFX_FOURCC_Y410, m_par.mfx.FrameInfo.FourCC);
                 }
-                else if (g_tsHWtype >= MFX_HW_TGL)//Gen12
+                else if (m_par.mfx.FrameInfo.BitDepthLuma == 12)//Gen12
                 {
-                    if (m_par.mfx.FrameInfo.BitDepthLuma == 12)
+                    if (g_tsHWtype >= MFX_HW_TGL)
                     {
                         EXPECT_EQ(MFX_FOURCC_Y416, m_par.mfx.FrameInfo.FourCC);
                     }
