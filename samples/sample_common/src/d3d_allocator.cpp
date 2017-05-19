@@ -64,6 +64,8 @@ D3DFORMAT ConvertMfxFourccToD3dFormat(mfxU32 fourcc)
         return D3DFMT_P8;
     case MFX_FOURCC_P010:
         return D3DFMT_P010;
+    case MFX_FOURCC_AYUV:
+        return D3DFMT_AYUV;
     case MFX_FOURCC_P210:
         return D3DFMT_P210;
 #ifdef ENABLE_PS
