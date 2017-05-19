@@ -97,11 +97,11 @@ public:
 
 protected:
 
-    virtual Status DecodeSEI(MediaDataEx *nalUnit);
+    virtual Status DecodeSEI(NalUnit *nalUnit);
 
     virtual void AddFakeReferenceFrame(H264Slice * pSlice);
 
-    virtual Status DecodeHeaders(MediaDataEx *nalUnit);
+    virtual Status DecodeHeaders(NalUnit *nalUnit);
 
     mfxStatus RunThread(mfxU32 threadNumber);
 

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -112,7 +112,7 @@ public:
         return iCodeNext;
     }
 
-    virtual Ipp32s GetNALUnit(MediaData * pSource, MediaData * pDst)
+    virtual Ipp32s GetNALUnit(MediaData * pSource, NalUnit * pDst)
     {
         if (!pSource)
             return EndOfStream(pDst);
@@ -128,7 +128,7 @@ public:
         return iCode;
     }
 
-    Ipp32s GetNALUnitInternal(MediaData * pSource, MediaData * pDst)
+    Ipp32s GetNALUnitInternal(MediaData * pSource, NalUnit * pDst)
     {
         if (m_code == -1)
             m_prev.clear();
@@ -163,6 +163,7 @@ public:
             m_prev.insert(m_prev.end(), (Ipp8u *)pSource->GetDataPointer(), source);
             pSource->MoveDataPointer((Ipp32s)(source - (Ipp8u *)pSource->GetDataPointer()));
 
+            pDst->m_use_external_memory = false;
             pDst->SetFlags(MediaData::FLAG_VIDEO_DATA_NOT_FULL_FRAME);
             pDst->SetBufferPointer(&(m_prev[0]), m_prev.size());
             pDst->SetDataSize(m_prev.size());
@@ -235,7 +236,7 @@ public:
         return code;
     }
 
-    Ipp32s EndOfStream(MediaData * pDst)
+    Ipp32s EndOfStream(NalUnit * pDst)
     {
         if (m_code == -1)
         {
@@ -248,6 +249,7 @@ public:
             pDst->SetBufferPointer(&(m_prev[0]), m_prev.size());
             pDst->SetDataSize(m_prev.size());
             pDst->SetTime(m_pts);
+            pDst->m_use_external_memory = false;
             Ipp32s code = m_code;
             m_code = -1;
             m_pts = -1;
@@ -355,28 +357,17 @@ public:
     virtual void SwapMemory(H264MemoryPiece * pMemDst, H264MemoryPiece * pMemSrc, Ipp8u defaultValue)
     {
         size_t dstSize = pMemSrc->GetDataSize();
-        /*if (IsVLCCode(pMediaDataEx->values[0]))
-        {
-            size_t small_size = IPP_MIN(1024, pMemSrc->GetDataSize());
-            swapper->SwapMemory(pMemDst->GetPointer(),
-                        dstSize,
-                        (Ipp8u*)pMemSrc->GetPointer(),
-                        small_size);
-        }
-        else*/
-        {
-            SwapMemory(pMemDst->GetPointer(),
-                        dstSize,
-                        pMemSrc->GetPointer(),
-                        pMemSrc->GetDataSize());
+        SwapMemory(pMemDst->GetPointer(),
+                    dstSize,
+                    pMemSrc->GetPointer(),
+                    pMemSrc->GetDataSize());
 
-            size_t tail_size = pMemDst->GetSize() - dstSize;
-            memset(pMemDst->GetPointer() + dstSize, defaultValue, tail_size);
+        size_t tail_size = pMemDst->GetSize() - dstSize;
+        memset(pMemDst->GetPointer() + dstSize, defaultValue, tail_size);
 
-            VM_ASSERT(pMemDst->GetSize() >= dstSize);
-            pMemDst->SetDataSize(dstSize);
-            pMemDst->SetTime(pMemSrc->GetTime());
-        }
+        VM_ASSERT(pMemDst->GetSize() >= dstSize);
+        pMemDst->SetDataSize(dstSize);
+        pMemDst->SetTime(pMemSrc->GetTime());
     }
 
     virtual void CopyBitStream(Ipp8u *pDestination, Ipp8u *pSource, size_t &nSrcSize)
@@ -386,12 +377,9 @@ public:
 };
 
 NALUnitSplitter::NALUnitSplitter()
-    : m_pSupplier(0)
-    , m_bWaitForIDR(true)
-    , m_pSwapper(0)
+    : m_pSwapper(0)
     , m_pStartCodeIter(0)
 {
-    m_MediaData.SetExData(&m_MediaDataEx);
 }
 
 NALUnitSplitter::~NALUnitSplitter()
@@ -403,15 +391,12 @@ void NALUnitSplitter::Init()
 {
     Release();
 
-    m_bWaitForIDR = true;
-
     m_pSwapper = new Swapper();
     m_pStartCodeIter = new StartCodeIterator();
 }
 
 void NALUnitSplitter::Reset()
 {
-    m_bWaitForIDR = true;
     if (m_pStartCodeIter)
     {
         m_pStartCodeIter->Reset();
@@ -436,25 +421,18 @@ Ipp32s NALUnitSplitter::MoveToStartCode(MediaData * pSource)
     return m_pStartCodeIter->MoveToStartCode(pSource); // find first start code
 }
 
-MediaDataEx * NALUnitSplitter::GetNalUnits(MediaData * pSource)
+NalUnit * NALUnitSplitter::GetNalUnits(MediaData * pSource)
 {
-    MediaDataEx * out = &m_MediaData;
-    MediaDataEx::_MediaDataEx* pMediaDataEx = &m_MediaDataEx;
+    m_nalUnit.m_use_external_memory = true;
 
-    Ipp32s iCode = m_pStartCodeIter->GetNALUnit(pSource, out);
+    Ipp32s iCode = m_pStartCodeIter->GetNALUnit(pSource, &m_nalUnit);
 
     if (iCode == -1)
     {
-        pMediaDataEx->count = 0;
         return 0;
     }
 
-    pMediaDataEx->values[0] = iCode;
-
-    pMediaDataEx->offsets[0] = 0;
-    pMediaDataEx->offsets[1] = (Ipp32s)out->GetDataSize();
-    pMediaDataEx->count = 1;
-    pMediaDataEx->index = 0;
+    m_nalUnit.m_nal_unit_type = iCode;
 
     /*static int k = 0;
     if (k)
@@ -464,7 +442,7 @@ MediaDataEx * NALUnitSplitter::GetNalUnits(MediaData * pSource)
         fwrite(out->GetDataPointer(), out->GetDataSize(), 1, fl);
     }*/
 
-    return out;
+    return &m_nalUnit;
 }
 
 /* temporal class definition */

@@ -302,7 +302,7 @@ void MFXTaskSupplier::SetVideoParams(mfxVideoParam * par)
     m_firstVideoParams = *par;
 }
 
-Status MFXTaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
+Status MFXTaskSupplier::DecodeHeaders(NalUnit *nalUnit)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MFXTaskSupplier::DecodeHeaders");
     Status sts = TaskSupplier::DecodeHeaders(nalUnit);
@@ -341,7 +341,7 @@ Status MFXTaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
 
     {
         // save sps/pps
-        Ipp32u nal_unit_type = nalUnit->GetExData()->values[0];
+        Ipp32u nal_unit_type = nalUnit->GetNalUnitType();
         switch(nal_unit_type)
         {
             case NAL_UT_SPS:
@@ -364,8 +364,7 @@ Status MFXTaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
         }
     }
 
-    MediaDataEx::_MediaDataEx* pMediaDataEx = nalUnit->GetExData();
-    if ((NAL_Unit_Type)pMediaDataEx->values[0] == NAL_UT_SPS && m_firstVideoParams.mfx.FrameInfo.Width)
+    if (nalUnit->GetNalUnitType() == NAL_UT_SPS && m_firstVideoParams.mfx.FrameInfo.Width)
     {
         currSPS = m_Headers.m_SeqParams.GetCurrentHeader();
 
@@ -385,7 +384,7 @@ Status MFXTaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
     return UMC_OK;
 }
 
-Status MFXTaskSupplier::DecodeSEI(MediaDataEx *nalUnit)
+Status MFXTaskSupplier::DecodeSEI(NalUnit *nalUnit)
 {
     H264HeadersBitstream bitStream;
 
@@ -825,7 +824,7 @@ UMC::Status PosibleMVC::ProcessNalUnit(UMC::MediaData * data)
 
         bool needProcess = false;
 
-        UMC::MediaDataEx *nalUnit = m_supplier->GetNalUnit(data);
+        UMC::NalUnit *nalUnit = m_supplier->GetNalUnit(data);
 
         switch ((UMC::NAL_Unit_Type)startCode)
         {

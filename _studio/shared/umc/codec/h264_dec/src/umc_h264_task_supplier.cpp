@@ -2344,7 +2344,7 @@ Status TaskSupplier::GetInfo(VideoDecoderParams *lpInfo)
     return UMC_OK;
 }
 
-Status TaskSupplier::DecodeSEI(MediaDataEx *nalUnit)
+Status TaskSupplier::DecodeSEI(NalUnit *nalUnit)
 {
     H264HeadersBitstream bitStream;
 
@@ -2394,7 +2394,7 @@ Status TaskSupplier::DecodeSEI(MediaDataEx *nalUnit)
 }
 
 #if 1
-Status TaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
+Status TaskSupplier::DecodeHeaders(NalUnit *nalUnit)
 {
     ViewItem *view = GetViewCount() ? &GetViewByNumber(BASE_VIEW) : 0;
     Status umcRes = UMC_OK;
@@ -3163,13 +3163,11 @@ Status TaskSupplier::AddSource(MediaData * pSource)
     return umcRes;
 }
 
-Status TaskSupplier::ProcessNalUnit(MediaDataEx *nalUnit)
+Status TaskSupplier::ProcessNalUnit(NalUnit *nalUnit)
 {
     Status umcRes = UMC_OK;
 
-    MediaDataEx::_MediaDataEx* pMediaDataEx = nalUnit->GetExData();
-
-    switch ((NAL_Unit_Type)pMediaDataEx->values[pMediaDataEx->index])
+    switch (nalUnit->GetNalUnitType())
     {
     case NAL_UT_IDR_SLICE:
     case NAL_UT_SLICE:
@@ -3239,7 +3237,7 @@ Status TaskSupplier::AddOneFrame(MediaData * pSource)
 
     do
     {
-        MediaDataEx *nalUnit = m_pNALSplitter->GetNalUnits(pSource);
+        NalUnit *nalUnit = m_pNALSplitter->GetNalUnits(pSource);
 
         if (!nalUnit && pSource)
         {
@@ -3262,84 +3260,78 @@ Status TaskSupplier::AddOneFrame(MediaData * pSource)
             return UMC_ERR_NOT_ENOUGH_DATA;
         }
 
-        MediaDataEx::_MediaDataEx* pMediaDataEx = nalUnit->GetExData();
-
-        for (Ipp32s i = 0; i < (Ipp32s)pMediaDataEx->count; i++, pMediaDataEx->index ++)
+        if ((NAL_UT_IDR_SLICE != nalUnit->GetNalUnitType()) &&
+            (NAL_UT_SLICE != nalUnit->GetNalUnitType()))
         {
-            if ((NAL_UT_IDR_SLICE != (NAL_Unit_Type)pMediaDataEx->values[i]) &&
-                (NAL_UT_SLICE != (NAL_Unit_Type)pMediaDataEx->values[i]))
+            // Reset last prefix NAL unit
+            m_Headers.m_nalExtension.extension_present = 0;
+        }
+
+        switch ((NAL_Unit_Type)nalUnit->GetNalUnitType())
+        {
+        case NAL_UT_IDR_SLICE:
+        case NAL_UT_SLICE:
+        case NAL_UT_AUXILIARY:
+        case NAL_UT_CODED_SLICE_EXTENSION:
             {
-                // Reset last prefix NAL unit
-                m_Headers.m_nalExtension.extension_present = 0;
-            }
-
-            switch ((NAL_Unit_Type)pMediaDataEx->values[i])
+            H264Slice * pSlice = DecodeSliceHeader(nalUnit);
+            if (pSlice)
             {
-            case NAL_UT_IDR_SLICE:
-            case NAL_UT_SLICE:
-            case NAL_UT_AUXILIARY:
-            case NAL_UT_CODED_SLICE_EXTENSION:
+                umsRes = AddSlice(pSlice, !pSource);
+                if (umsRes == UMC_ERR_NOT_ENOUGH_BUFFER || umsRes == UMC_OK || umsRes == UMC_ERR_ALLOC)
                 {
-                H264Slice * pSlice = DecodeSliceHeader(nalUnit);
-                if (pSlice)
-                {
-                    umsRes = AddSlice(pSlice, !pSource);
-                    if (umsRes == UMC_ERR_NOT_ENOUGH_BUFFER || umsRes == UMC_OK || umsRes == UMC_ERR_ALLOC)
-                    {
-                        return umsRes;
-                    }
-                }
-                }
-                break;
 
-            case NAL_UT_SPS:
-            case NAL_UT_PPS:
-            case NAL_UT_SPS_EX:
-            case NAL_UT_SUBSET_SPS:
-            case NAL_UT_PREFIX:
-                umsRes = DecodeHeaders(nalUnit);
-                if (umsRes != UMC_OK)
-                {
-                    if (umsRes == UMC_NTF_NEW_RESOLUTION)
-                    {
-                        Ipp32s nalIndex = pMediaDataEx->index;
-                        Ipp32s size = pMediaDataEx->offsets[nalIndex + 1] - pMediaDataEx->offsets[nalIndex];
-
-                        pSource->MoveDataPointer(- size - 3);
-                    }
                     return umsRes;
                 }
+            }
+            }
+            break;
 
-                if (pMediaDataEx->values[i] == NAL_UT_SPS || pMediaDataEx->values[i] == NAL_UT_PPS)
+        case NAL_UT_SPS:
+        case NAL_UT_PPS:
+        case NAL_UT_SPS_EX:
+        case NAL_UT_SUBSET_SPS:
+        case NAL_UT_PREFIX:
+            umsRes = DecodeHeaders(nalUnit);
+            if (umsRes != UMC_OK)
+            {
+                if (umsRes == UMC_NTF_NEW_RESOLUTION)
                 {
-                    m_accessUnit.CompleteLastLayer();
+                    Ipp32s size = (Ipp32s)nalUnit->GetDataSize();
+                    pSource->MoveDataPointer(- size - 3);
                 }
-                break;
+                return umsRes;
+            }
 
-            case NAL_UT_SEI:
+            if (nalUnit->GetNalUnitType() == NAL_UT_SPS || nalUnit->GetNalUnitType() == NAL_UT_PPS)
+            {
                 m_accessUnit.CompleteLastLayer();
-                DecodeSEI(nalUnit);
-                break;
-            case NAL_UT_AUD:  //ignore it
+            }
+            break;
+
+        case NAL_UT_SEI:
+            m_accessUnit.CompleteLastLayer();
+            DecodeSEI(nalUnit);
+            break;
+        case NAL_UT_AUD:  //ignore it
+            m_accessUnit.CompleteLastLayer();
+            break;
+
+        case NAL_UT_END_OF_STREAM:
+        case NAL_UT_END_OF_SEQ:
+            {
                 m_accessUnit.CompleteLastLayer();
-                break;
+                m_WaitForIDR = true;
+            }
+            break;
 
-            case NAL_UT_END_OF_STREAM:
-            case NAL_UT_END_OF_SEQ:
-                {
-                    m_accessUnit.CompleteLastLayer();
-                    m_WaitForIDR = true;
-                }
-                break;
-
-            case NAL_UT_DPA: //ignore it
-            case NAL_UT_DPB:
-            case NAL_UT_DPC:
-            case NAL_UT_FD:
-            default:
-                break;
-            };
-        }
+        case NAL_UT_DPA: //ignore it
+        case NAL_UT_DPB:
+        case NAL_UT_DPC:
+        case NAL_UT_FD:
+        default:
+            break;
+        };
 
     } while ((pSource) && (MINIMAL_DATA_SIZE < pSource->GetDataSize()));
 
@@ -3392,7 +3384,7 @@ H264Slice * TaskSupplier::CreateSlice()
     return m_ObjHeap.AllocateObject<H264Slice>();
 }
 
-H264Slice * TaskSupplier::DecodeSliceHeader(MediaDataEx *nalUnit)
+H264Slice * TaskSupplier::DecodeSliceHeader(NalUnit *nalUnit)
 {
     if ((0 > m_Headers.m_SeqParams.GetCurrentID()) ||
         (0 > m_Headers.m_PicParams.GetCurrentID()))

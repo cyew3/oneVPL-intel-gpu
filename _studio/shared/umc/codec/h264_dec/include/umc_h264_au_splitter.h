@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -26,6 +26,7 @@
 namespace UMC
 {
 class NALUnitSplitter;
+class NalUnit;
 
 /****************************************************************************************************/
 // SeiPayloadArray class routine
@@ -153,7 +154,7 @@ public:
 
     void Reset();
 
-    MediaDataEx * GetNalUnit(MediaData * src);
+    NalUnit * GetNalUnit(MediaData * src);
 
     NALUnitSplitter * GetNalUnitSplitter();
 

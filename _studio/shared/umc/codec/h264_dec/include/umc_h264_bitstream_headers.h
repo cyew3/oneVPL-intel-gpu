@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -126,6 +126,7 @@ public:
     void GetOrg(Ipp32u **pbs, Ipp32u *size);
     void GetState(Ipp32u **pbs, Ipp32u *bitOffset);
     void SetState(Ipp32u *pbs, Ipp32u bitOffset);
+    inline Ipp32u GetBitOffset() const;
 
     // Set current decoding position
     void SetDecodedBytes(size_t);
@@ -377,6 +378,11 @@ inline size_t H264BaseBitstream::BitsDecoded()
 inline size_t H264BaseBitstream::BytesLeft()
 {
     return((Ipp32s)m_maxBsSize - (Ipp32s) BytesDecoded());
+}
+
+inline Ipp32u H264BaseBitstream::GetBitOffset() const
+{
+    return m_bitOffset;
 }
 
 inline void H264BaseBitstream::AlignPointerRight()

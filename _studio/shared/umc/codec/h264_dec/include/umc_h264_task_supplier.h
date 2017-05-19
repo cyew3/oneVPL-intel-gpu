@@ -507,7 +507,7 @@ public:
     virtual Status AddSource(DecryptParametersWrapper* pDecryptParams) {pDecryptParams; return MFX_ERR_UNSUPPORTED;}
 #endif
 
-    Status ProcessNalUnit(MediaDataEx *nalUnit);
+    Status ProcessNalUnit(NalUnit *nalUnit);
 
     void SetMemoryAllocator(MemoryAllocator *pMemoryAllocator)
     {
@@ -557,7 +557,7 @@ public:
         return m_Headers.m_SeqParams.GetCurrentHeader();
     }
 
-    virtual H264Slice * DecodeSliceHeader(MediaDataEx *nalUnit);
+    virtual H264Slice * DecodeSliceHeader(NalUnit *nalUnit);
     virtual H264Slice * CreateSlice();
 
     H264_Heap_Objects * GetObjHeap()
@@ -594,8 +594,8 @@ protected:
 
     virtual Status AllocateFrameData(H264DecoderFrame * pFrame) = 0;
 
-    virtual Status DecodeHeaders(MediaDataEx *nalUnit);
-    virtual Status DecodeSEI(MediaDataEx *nalUnit);
+    virtual Status DecodeHeaders(NalUnit *nalUnit);
+    virtual Status DecodeSEI(NalUnit *nalUnit);
 
     Status ProcessFrameNumGap(H264Slice *slice, Ipp32s field, Ipp32s did, Ipp32s maxDid);
 

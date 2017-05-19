@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -55,6 +55,17 @@ public:
         m_pDataPointer = (Ipp8u*)out->GetDataPointer();
         m_nDataSize = out->GetDataSize();
         m_pts = out->GetTime();
+    }
+
+    void MoveToInternalBuffer()
+    {
+        if (m_pSourceBuffer)
+            return;
+
+        m_nSourceSize = m_nDataSize + DEFAULT_NU_TAIL_SIZE;
+        m_pSourceBuffer = h264_new_array_throw<Ipp8u>((Ipp32s)m_nSourceSize);
+        MFX_INTERNAL_CPY(m_pSourceBuffer, m_pDataPointer, m_nDataSize);
+        m_pDataPointer = m_pSourceBuffer;
     }
 
     // Allocate memory piece

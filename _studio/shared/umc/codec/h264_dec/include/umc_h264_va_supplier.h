@@ -23,6 +23,21 @@ namespace UMC
 
 class MFXVideoDECODEH264;
 
+class LazyCopier
+{
+public:
+    void Reset();
+
+    void Add(H264Slice * slice);
+    void Remove(H264DecoderFrameInfo * info);
+    void Remove(H264Slice * slice);
+    void CopyAll();
+
+private:
+    typedef std::list<H264Slice *> SlicesList;
+    SlicesList m_slices;
+};
+
 /****************************************************************************************************/
 // TaskSupplier
 /****************************************************************************************************/
@@ -40,17 +55,18 @@ public:
 
     virtual Status Init(VideoDecoderParams *pInit);
 
+    virtual void Close();
     virtual void Reset();
 
     void SetBufferedFramesNumber(Ipp32u buffered);
 
-    virtual Status DecodeHeaders(MediaDataEx *nalUnit);
+    virtual Status DecodeHeaders(NalUnit *nalUnit);
+
+    virtual Status AddSource(MediaData * pSource);
 
 protected:
 
     virtual void CreateTaskBroker();
-
-    Status AddSource(MediaData*);
 
     virtual Status AllocateFrameData(H264DecoderFrame * pFrame);
 
@@ -62,7 +78,7 @@ protected:
 
     virtual H264DecoderFrame * GetFreeFrame(const H264Slice *pSlice = NULL);
 
-    virtual H264Slice * DecodeSliceHeader(MediaDataEx *nalUnit);
+    virtual H264Slice * DecodeSliceHeader(NalUnit *nalUnit);
 
     virtual H264DecoderFrame *GetFrameToDisplayInternal(bool force);
 
@@ -71,6 +87,7 @@ protected:
     virtual Ipp32s GetFreeFrameIndex();
 
     Ipp32u m_bufferedFrameNumber;
+    LazyCopier m_lazyCopier;
 
 private:
     VATaskSupplier & operator = (VATaskSupplier &)

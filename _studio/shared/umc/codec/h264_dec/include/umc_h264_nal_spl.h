@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -51,7 +51,31 @@ bool IsVLCCode(Ipp32s iCode)
 }
 
 class MediaData;
-class TaskSupplier;
+class NALUnitSplitter;
+
+class NalUnit : public MediaData
+{
+public:
+    NalUnit()
+        : MediaData()
+        , m_nal_unit_type(NAL_UT_UNSPECIFIED)
+        , m_use_external_memory(false)
+    {
+    }
+
+    NAL_Unit_Type GetNalUnitType() const
+    {
+        return (NAL_Unit_Type)m_nal_unit_type;
+    }
+
+    bool IsUsedExternalMem() const
+    {
+        return m_use_external_memory;
+    }
+
+    int m_nal_unit_type;
+    bool m_use_external_memory;
+};
 
 class SwapperBase
 {
@@ -103,7 +127,7 @@ public:
 
     virtual Ipp32s CheckNalUnitType(MediaData * pSource) = 0;
     virtual Ipp32s MoveToStartCode(MediaData * pSource) = 0;
-    virtual Ipp32s GetNALUnit(MediaData * pSource, MediaData * pDst) = 0;
+    virtual Ipp32s GetNALUnit(MediaData * pSource, NalUnit * pDst) = 0;
 
     virtual void Reset() = 0;
 
@@ -130,7 +154,7 @@ public:
 
     virtual Ipp32s CheckNalUnitType(MediaData * pSource);
     virtual Ipp32s MoveToStartCode(MediaData * pSource);
-    virtual MediaDataEx * GetNalUnits(MediaData * in);
+    virtual NalUnit * GetNalUnits(MediaData * in);
 
     virtual void Reset();
 
@@ -149,13 +173,10 @@ public:
 
 protected:
 
-    TaskSupplier *  m_pSupplier;
-    bool m_bWaitForIDR;
     SwapperBase *   m_pSwapper;
     StartCodeIteratorBase * m_pStartCodeIter;
 
-    MediaDataEx m_MediaData;
-    MediaDataEx::_MediaDataEx m_MediaDataEx;
+    NalUnit     m_nalUnit;
 };
 
 } // namespace UMC

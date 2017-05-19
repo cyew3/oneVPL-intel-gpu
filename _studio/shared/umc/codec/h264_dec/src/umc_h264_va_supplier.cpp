@@ -27,11 +27,61 @@
 #include "mfx_umc_alloc_wrapper.h"
 #include "mfx_common_int.h"
 #include "mfx_ext_buffers.h"
+#include "umc_h264_notify.h"
 
 #include "mfxfei.h"
 
 namespace UMC
 {
+
+void LazyCopier::Reset()
+{
+    m_slices.clear();
+}
+
+void LazyCopier::Add(H264Slice * slice)
+{
+    if (!slice)
+        return;
+
+    m_slices.push_back(slice);
+}
+
+void LazyCopier::Remove(H264Slice * slice)
+{
+    m_slices.remove(slice);
+}
+
+void LazyCopier::Remove(H264DecoderFrameInfo * info)
+{
+    if (!info)
+        return;
+
+    Ipp32u count = info->GetSliceCount();
+    for (Ipp32u i = 0; i < count; i++)
+    {
+        H264Slice * slice = info->GetSlice(i);
+        Remove(slice);
+    }
+}
+
+void LazyCopier::CopyAll()
+{
+    SlicesList::iterator iter = m_slices.begin();
+    SlicesList::iterator iter_end = m_slices.end();
+    for (; iter != iter_end; ++iter)
+    {
+        H264Slice * slice = *iter;
+        slice->m_pSource.MoveToInternalBuffer();
+
+        // update bs ptr !!!
+        H264HeadersBitstream *pBitstream = slice->GetBitStream();
+        Ipp32s offset = pBitstream->GetBitOffset();
+        pBitstream->Reset(slice->m_pSource.GetPointer(), offset, (Ipp32u)slice->m_pSource.GetDataSize());
+    }
+
+    m_slices.clear();
+}
 
 VATaskSupplier::VATaskSupplier()
     : m_bufferedFrameNumber(0)
@@ -62,6 +112,7 @@ Status VATaskSupplier::Init(VideoDecoderParams *pInit)
 
     m_sei_messages = new SEI_Storer();
     m_sei_messages->Init();
+    m_lazyCopier.Reset();
 
     return UMC_OK;
 }
@@ -96,29 +147,37 @@ H264DecoderFrame * VATaskSupplier::GetFrameToDisplayInternal(bool force)
     return frame;
 }
 
+void VATaskSupplier::Close()
+{
+    m_lazyCopier.Reset();
+    MFXTaskSupplier::Close();
+}
+
 void VATaskSupplier::Reset()
 {
+    m_lazyCopier.Reset();
+
     if (m_pTaskBroker)
         m_pTaskBroker->Reset();
 
     MFXTaskSupplier::Reset();
-
     DXVASupport<VATaskSupplier>::Reset();
 }
 
 void VATaskSupplier::AfterErrorRestore()
 {
+    m_lazyCopier.Reset();
     MFXTaskSupplier::AfterErrorRestore();
 }
 
-Status VATaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
+Status VATaskSupplier::DecodeHeaders(NalUnit *nalUnit)
 {
     Status sts = MFXTaskSupplier::DecodeHeaders(nalUnit);
 
     if (sts != UMC_OK && sts != UMC_WRN_REPOSITION_INPROGRESS)
         return sts;
 
-    Ipp32u nal_unit_type = nalUnit->GetExData()->values[0];
+    Ipp32u nal_unit_type = nalUnit->GetNalUnitType();
     if (nal_unit_type == NAL_UT_SPS && m_firstVideoParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE &&
         isMVCProfile(m_firstVideoParams.mfx.CodecProfile) && m_va)
     {
@@ -233,6 +292,7 @@ Status VATaskSupplier::CompleteFrame(H264DecoderFrame * pFrame, Ipp32s field)
     DecodePicture(pFrame, field);
     DBPUpdate(pFrame, field);
 
+    m_lazyCopier.Remove(slicesInfo);
     slicesInfo->SetStatus(H264DecoderFrameInfo::STATUS_FILLED);
 
     return UMC_OK;
@@ -249,6 +309,8 @@ Status VATaskSupplier::AddSource(MediaData * pSource)
 
     if (!pSource)
         return MFXTaskSupplier::AddSource(pSource);
+
+    notifier0<LazyCopier> memory_leak_preventing_slice(&m_lazyCopier, &LazyCopier::CopyAll);
 
     Ipp32u const flags = pSource->GetFlags();
     if (flags & MediaData::FLAG_VIDEO_DATA_NOT_FULL_FRAME)
@@ -333,7 +395,7 @@ Status VATaskSupplier::AllocateFrameData(H264DecoderFrame * pFrame)
     return UMC_OK;
 }
 
-H264Slice * VATaskSupplier::DecodeSliceHeader(MediaDataEx *nalUnit)
+H264Slice * VATaskSupplier::DecodeSliceHeader(NalUnit *nalUnit)
 {
     size_t dataSize = nalUnit->GetDataSize();
     nalUnit->SetDataSize(IPP_MIN(1024, dataSize));
@@ -345,7 +407,12 @@ H264Slice * VATaskSupplier::DecodeSliceHeader(MediaDataEx *nalUnit)
     if (!slice)
         return 0;
 
-    //if (nalUnit->GetFlags() & MediaData::FLAG_VIDEO_DATA_NOT_FULL_FRAME)
+    if (nalUnit->IsUsedExternalMem())
+    {
+        slice->m_pSource.SetData(nalUnit);
+        m_lazyCopier.Add(slice);
+    }
+    else
     {
         slice->m_pSource.Allocate(nalUnit->GetDataSize() + DEFAULT_NU_TAIL_SIZE);
         MFX_INTERNAL_CPY(slice->m_pSource.GetPointer(), nalUnit->GetDataPointer(), (Ipp32u)nalUnit->GetDataSize());
@@ -353,10 +420,6 @@ H264Slice * VATaskSupplier::DecodeSliceHeader(MediaDataEx *nalUnit)
         slice->m_pSource.SetDataSize(nalUnit->GetDataSize());
         slice->m_pSource.SetTime(nalUnit->GetTime());
     }
-    /*else
-    {
-        slice->m_pSource.SetData(nalUnit);
-    }*/
 
     Ipp32u* pbs;
     Ipp32u bitOffset;
