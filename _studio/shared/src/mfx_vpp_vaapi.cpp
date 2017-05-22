@@ -443,8 +443,14 @@ mfxStatus VAAPIVideoProcessing::QueryCapabilities(mfxVppCaps& caps)
     }
 #endif
 
+    /* NB! The code below should to be replaced with querying caps from driver*/
+#if defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT)
     caps.uMaxWidth  = 8192;
     caps.uMaxHeight = 8192;
+#else
+    caps.uMaxWidth  = 4096;
+    caps.uMaxHeight = 4096;
+#endif
 
 #if defined (MFX_ENABLE_MJPEG_WEAVE_DI_VPP)
     caps.uFieldWeavingControl = 1;
@@ -1048,8 +1054,8 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         break;
     }
 
-    /* It needs interlaced flag passed only for 
-        * deinterlacing and scaling. All other filters must 
+    /* It needs interlaced flag passed only for
+        * deinterlacing and scaling. All other filters must
         * use progressive even for interlaced content.
         */
     bool forceProgressive = true;
