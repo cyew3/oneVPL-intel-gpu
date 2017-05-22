@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -362,7 +362,7 @@ int TestSuite::RunTest(unsigned int id, const char* sname)
         mfxU16 expectedPicStruct = sps.vui.field_seq_flag ? MFX_PICSTRUCT_FIELD_SINGLE : MFX_PICSTRUCT_PROGRESSIVE;
 
         EXPECT_EQ((mfxU16)sps.ptl.general.profile_idc,  m_par.mfx.CodecProfile);
-        EXPECT_EQ((mfxU16)sps.ptl.general.level_idc/3,  m_par.mfx.CodecLevel);
+        EXPECT_EQ((mfxU16)sps.ptl.general.level_idc/3,  m_par.mfx.CodecLevel & 0xFF);
         EXPECT_EQ(expectedFrameRate, FrameRate);
 
         mfxU16 const expected_width =
