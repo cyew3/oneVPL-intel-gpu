@@ -95,6 +95,7 @@ protected:
     //lync support
     MFXExtBufferPtr<mfxExtCodingOptionSPSPPS> m_extCodingOptionsSPSPPS;
     MFXExtBufferPtr<mfxExtAvcTemporalLayers> m_extAvcTemporalLayers;
+    MFXExtBufferPtr<mfxExtVP9TemporalLayers> m_extVP9TemporalLayers;
 
     MFXExtBufferPtr<mfxExtSVCSeqDesc> m_svcSeq;
     StructureBuilder<mfxExtSVCSeqDesc> m_svcSeqDeserial;
@@ -107,6 +108,8 @@ protected:
     MFXExtBufferPtr<mfxExtEncoderCapability> m_extEncoderCapability;
 
     MFXExtBufferPtr<mfxExtEncoderResetOption> m_extEncoderReset;
+
+    MFXExtBufferPtr<mfxExtTemporalLayers> m_extTemporalLayers;
 
     //MFXExtmfxExtBuffer                   m_ExtParamsBuffer[MAX_EXT_BUFFERS];
     mfxVideoParam                   m_EncParams;

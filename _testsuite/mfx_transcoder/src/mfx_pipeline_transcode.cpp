@@ -128,6 +128,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
     , m_extMoveRect(new mfxExtMoveRect())
     , m_extCodingOptionsSPSPPS(new mfxExtCodingOptionSPSPPS())
     , m_extAvcTemporalLayers(new mfxExtAvcTemporalLayers())
+    , m_extVP9TemporalLayers(new mfxExtVP9TemporalLayers())
     , m_svcSeq(new mfxExtSVCSeqDesc())
     , m_svcSeqDeserial(VM_STRING(""), *m_svcSeq.get(), m_filesForDependency)
     , m_svcRateCtrl(new mfxExtSVCRateControl())
@@ -135,6 +136,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
     , m_QuantMatrix(VM_STRING(""),*m_extCodingOptionsQuantMatrix.get())
     , m_extEncoderCapability(new mfxExtEncoderCapability())
     , m_extEncoderReset(new mfxExtEncoderResetOption())
+    , m_extTemporalLayers(new mfxExtTemporalLayers())
     , m_EncParams()
     , m_ExtBuffers(new MFXExtBufferVector())
     , m_bCreateDecode()
@@ -422,6 +424,9 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_DDI_OPTION(CabacInitIdcPlus1,       OPT_UINT_16,    "0-to use default value (depends on Target Usaeg), 1-cabacinitidc=0, 2-cabacinitidc=1,  etc"),
         HANDLE_DDI_OPTION(LCUSize,                 OPT_UINT_16,    "32 or 64 - overrides default value of Largest Coding Unit"),
         HANDLE_DDI_OPTION(WriteIVFHeaders,         OPT_TRI_STATE,    ""),
+        HANDLE_DDI_OPTION(RefreshFrameContext,     OPT_TRI_STATE, ""),
+        HANDLE_DDI_OPTION(ChangeFrameContextIdxForTS, OPT_TRI_STATE, ""),
+        HANDLE_DDI_OPTION(SuperFrameForTS,         OPT_TRI_STATE, ""),
 
         //mfxExtEncoderCapability
         HANDLE_CAP_OPTION(MBPerSec,                OPT_BOOL,       "Query Encoder for Max MB Per Second"),
@@ -1429,6 +1434,54 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
                 m_ExtBuffers.get()->push_back(pExt);
             }
         }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-vp9temporallayers"), VM_STRING("add mfxExtVP9TemporalLayers buffer to mfxVideoParam"), OPT_SPECIAL, VM_STRING("")))
+        {
+            if (!m_bResetParamsStart) {
+                MFX_CHECK(DeSerialize(*m_extVP9TemporalLayers.get(), ++argv, argvEnd));
+                continue;
+            }
+            mfxExtVP9TemporalLayers *pExt = NULL;
+
+            MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_VP9_TEMPORAL_LAYERS);
+            if (!ppExt)
+            {
+                pExt = &mfx_init_ext_buffer(*new mfxExtVP9TemporalLayers());
+            }
+            else
+            {
+                pExt = reinterpret_cast<mfxExtVP9TemporalLayers *>(ppExt->get());
+            }
+
+            MFX_CHECK(DeSerialize(*pExt, ++argv, argvEnd));
+
+            if (!ppExt) {
+                m_ExtBuffers.get()->push_back(pExt);
+            }
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-temporallayers"), VM_STRING("add mfxExtTemporalLayers buffer to mfxVideoParam"), OPT_SPECIAL, VM_STRING("")))
+        {
+            if (!m_bResetParamsStart) {
+                MFX_CHECK(DeSerialize(*m_extTemporalLayers.get(), ++argv, argvEnd));
+                continue;
+            }
+            mfxExtTemporalLayers *pExt = NULL;
+
+            MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_TEMPORAL_LAYERS);
+            if (!ppExt)
+            {
+                pExt = &mfx_init_ext_buffer(*new mfxExtTemporalLayers());
+            }
+            else
+            {
+                pExt = reinterpret_cast<mfxExtTemporalLayers *>(ppExt->get());
+            }
+
+            MFX_CHECK(DeSerialize(*pExt, ++argv, argvEnd));
+
+            if (!ppExt) {
+                m_ExtBuffers.get()->push_back(pExt);
+            }
+        }
         else if (m_OptProc.Check(argv[0], VM_STRING("-LoopFilterLevel"), VM_STRING(""), OPT_SPECIAL, VM_STRING("")))
         {
             MFX_CHECK(4 + argv < argvEnd);
@@ -2040,6 +2093,9 @@ mfxStatus MFXTranscodingPipeline::CheckParams()
     if (!m_extAvcTemporalLayers.IsZero())
         m_components[eREN].m_extParams.push_back(m_extAvcTemporalLayers);
 
+    if (!m_extVP9TemporalLayers.IsZero())
+        m_components[eREN].m_extParams.push_back(m_extVP9TemporalLayers);
+
     if (!m_svcSeq.IsZero())
         m_components[eREN].m_extParams.push_back(m_svcSeq);
 
@@ -2054,6 +2110,9 @@ mfxStatus MFXTranscodingPipeline::CheckParams()
 
     if (!m_extEncoderReset.IsZero())
         m_components[eREN].m_extParams.push_back(m_extEncoderReset);
+
+    if (!m_extTemporalLayers.IsZero())
+        m_components[eREN].m_extParams.push_back(m_extTemporalLayers);
 
     switch (pMFXParams->mfx.CodecId)
     {
