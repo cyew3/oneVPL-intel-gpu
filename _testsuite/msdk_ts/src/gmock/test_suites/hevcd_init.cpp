@@ -118,9 +118,6 @@ int TestSuite::RunTest(tc_struct const& tc)
             Load();
         }
 
-        // set default param
-        m_pPar->mfx.FrameInfo.ChromaFormat = 0;
-
         for (mfxU32 i = 0; i < n_par; i++)
         {
             if (tc.set_par[i].f)
