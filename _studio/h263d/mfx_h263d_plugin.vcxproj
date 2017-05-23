@@ -408,7 +408,7 @@
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ModuleDefinitionFile>
       </ModuleDefinitionFile>
-      <AdditionalDependencies>OneCoreUAP.lib;ippcoremt.lib;ippccmt.lib;ippimt.lib;ippvcmt.lib;ippcvmt.lib;ippjmt.lib;ippsmt.lib;dxva2.lib;version.lib;D3D11.lib;DXGI.lib;uuid.lib</AdditionalDependencies>
+      <AdditionalDependencies>onecore.lib;ippcoremt.lib;ippccmt.lib;ippimt.lib;ippvcmt.lib;ippcvmt.lib;ippjmt.lib;ippsmt.lib;dxva2.lib;version.lib;D3D11.lib;DXGI.lib;uuid.lib</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>psapi.lib;winmm.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
     <PreBuildEvent>
