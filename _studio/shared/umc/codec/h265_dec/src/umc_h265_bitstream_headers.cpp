@@ -1451,14 +1451,19 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
             Ipp8u num_ref_idx_active_override_flag = Get1Bit();
             if (num_ref_idx_active_override_flag)
             {
-                sliceHdr->m_numRefIdx[REF_PIC_LIST_0] = GetVLCElementU() + 1;
+                Ipp32u const num_ref_idx_l0_default_active_minus1 = GetVLCElementU();
+                if (num_ref_idx_l0_default_active_minus1 > 14)
+                    throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
+                sliceHdr->m_numRefIdx[REF_PIC_LIST_0] = num_ref_idx_l0_default_active_minus1 + 1;
                 if (sliceHdr->slice_type == B_SLICE)
                 {
-                    sliceHdr->m_numRefIdx[REF_PIC_LIST_1] = GetVLCElementU() + 1;
-                }
+                    Ipp32u const num_ref_idx_l1_default_active_minus1 = GetVLCElementU();
+                    if (num_ref_idx_l1_default_active_minus1 > 14)
+                        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
-                if (sliceHdr->m_numRefIdx[REF_PIC_LIST_0] > 15 || sliceHdr->m_numRefIdx[REF_PIC_LIST_1] > 15)
-                    throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+                    sliceHdr->m_numRefIdx[REF_PIC_LIST_1] = num_ref_idx_l1_default_active_minus1 + 1;
+                }
             }
             else
             {
