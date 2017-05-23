@@ -2173,18 +2173,26 @@ MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
         m_EncExtParams.push_back((mfxExtBuffer *)&m_CodingOption2);
     }
 
+    bool addCodingOpt3 = false;
+
     if (pInParams->WinBRCMaxAvgKbps || pInParams->WinBRCSize)
     {
         m_CodingOption3.WinBRCMaxAvgKbps = pInParams->WinBRCMaxAvgKbps;
         m_CodingOption3.WinBRCSize = pInParams->WinBRCSize;
+        addCodingOpt3 = true;
+    }
+
 #if _MSDK_API >= MSDK_API(1,23)
     if (pInParams->RepartitionCheckMode)
     {
         m_CodingOption3.RepartitionCheckEnable = pInParams->RepartitionCheckMode;
+        addCodingOpt3 = true;
     }
 #endif
+
+    if (addCodingOpt3)
         m_EncExtParams.push_back((mfxExtBuffer *)&m_CodingOption3);
-    }
+
 
     if (m_bUseOpaqueMemory)
         m_EncExtParams.push_back((mfxExtBuffer *)&m_EncOpaqueAlloc);
