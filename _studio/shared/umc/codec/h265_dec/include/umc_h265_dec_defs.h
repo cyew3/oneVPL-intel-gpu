@@ -684,12 +684,12 @@ struct ReferencePictureSet
 {
     Ipp8u inter_ref_pic_set_prediction_flag;
 
-    Ipp32s num_negative_pics;
-    Ipp32s num_positive_pics;
+    Ipp32u num_negative_pics;
+    Ipp32u num_positive_pics;
 
-    Ipp32s num_pics;
+    Ipp32u num_pics;
 
-    Ipp32s num_lt_pics;
+    Ipp32u num_lt_pics;
 
     Ipp32u num_long_term_pics;
     Ipp32u num_long_term_sps;
@@ -711,7 +711,7 @@ struct ReferencePictureSet
     Ipp32u getNumberOfNegativePictures() const    { return num_negative_pics; }
     Ipp32u getNumberOfPositivePictures() const    { return num_positive_pics; }
     Ipp32u getNumberOfLongtermPictures() const    { return num_lt_pics; }
-    void setNumberOfLongtermPictures(Ipp32s val)  { num_lt_pics = val; }
+    void setNumberOfLongtermPictures(Ipp32u val)  { num_lt_pics = val; }
     int getDeltaPOC(int index) const        { return m_DeltaPOC[index]; }
     void setDeltaPOC(int index, int val)    { m_DeltaPOC[index] = val; }
     Ipp8u getUsed(int index) const           { return used_by_curr_pic_flag[index]; }

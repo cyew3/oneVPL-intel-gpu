@@ -1855,7 +1855,7 @@ void H265HeadersBitstream::parseShortTermRefPicSet(const H265SeqParamSet* sps, R
             throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
         ReferencePictureSet*   rpsRef = const_cast<H265SeqParamSet *>(sps)->getRPSList()->getReferencePictureSet(rIdx);
-        int k = 0, k0 = 0, k1 = 0;
+        Ipp32u k = 0, k0 = 0, k1 = 0;
         Ipp32u delta_rps_sign = Get1Bit();
         Ipp32u abs_delta_rps_minus1 = GetVLCElementU();
 

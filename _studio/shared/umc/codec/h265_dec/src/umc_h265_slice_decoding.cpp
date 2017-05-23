@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -615,7 +615,7 @@ ReferencePictureSet::ReferencePictureSet()
 // Negative values are stored with biggest absolute value first. See HEVC spec 8.3.2.
 void ReferencePictureSet::sortDeltaPOC()
 {
-    for (Ipp32s j = 1; j < num_pics; j++)
+    for (Ipp32u j = 1; j < num_pics; j++)
     {
         Ipp32s deltaPOC = m_DeltaPOC[j];
         Ipp8u Used = used_by_curr_pic_flag[j];

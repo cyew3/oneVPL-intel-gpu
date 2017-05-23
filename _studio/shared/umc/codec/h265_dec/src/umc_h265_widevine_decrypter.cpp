@@ -1077,7 +1077,7 @@ void DecryptParametersWrapper::decodeSlice(H265WidevineSlice *pSlice, const H265
             if (sps->long_term_ref_pics_present_flag)
             {
                 ReferencePictureSet* rps = pSlice->getRPS();
-                int offset = rps->getNumberOfNegativePictures()+rps->getNumberOfPositivePictures();
+                Ipp32u offset = rps->getNumberOfNegativePictures()+rps->getNumberOfPositivePictures();
         //        if (sps->num_long_term_ref_pics_sps > 0)
         //        {
         //            rps->num_long_term_sps = GetVLCElementU();
@@ -1092,7 +1092,7 @@ void DecryptParametersWrapper::decodeSlice(H265WidevineSlice *pSlice, const H265
         //        if (offset + rps->num_long_term_sps + rps->num_long_term_pics > sps->sps_max_dec_pic_buffering[sps->sps_max_sub_layers - 1])
         //            throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
-                for(Ipp32s j = offset, k = 0; k < rps->num_lt_pics; j++, k++)
+                for(Ipp32u j = offset, k = 0; k < rps->num_lt_pics; j++, k++)
                 {
         //            int pocLsbLt;
         //            if (k < rps->num_long_term_sps)
@@ -1528,7 +1528,7 @@ void DecryptParametersWrapper::parseShortTermRefPicSet(const H265SeqParamSet* sp
         if (rps->num_negative_pics >= MAX_NUM_REF_PICS || rps->num_positive_pics >= MAX_NUM_REF_PICS || (rps->num_positive_pics + rps->num_negative_pics) >= MAX_NUM_REF_PICS)
             throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
-        for(Ipp32s j = 0 ;j <= rps->num_pics; j++)
+        for(Ipp32u j = 0 ;j <= rps->num_pics; j++)
         {
             rps->m_DeltaPOC[j] = SeqParams.sps_short_term_ref_pic_set[idx].rps_delta_poc[j];
             rps->used_by_curr_pic_flag[j] = SeqParams.sps_short_term_ref_pic_set[idx].rps_is_used[j];
