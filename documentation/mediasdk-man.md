@@ -336,6 +336,35 @@ The [MFXVideoDECODE_DecodeFrameAsync](#MFXVideoDECODE_DecodeFrameAsync) function
 - Retrieve any remaining frames by calling [MFXVideoDECODE_DecodeFrameAsync](#MFXVideoDECODE_DecodeFrameAsync) with a NULL input bitstream pointer until the function returns [MFX_ERR_MORE_DATA](#mfxStatus). This step is not necessary if the application plans to discard any remaining frames.
 - De-initialize the decoder by calling the [MFXVideoDECODE_Close](#MFXVideoDECODE_Close) function, and restart the decoding procedure from the new bitstream position.
 
+### Broken Streams Handling
+
+Robustness and capability to handle broken input stream is important part of the decoder.
+
+First of all, start code prefix (ITU-T H.264 3.148 and ITU-T H.265 3.142) is used to separate NAL units. Then all syntax elements in bitstream are parsed and verified. If any of elements violate the specification then input bitstream is considered as invalid and decoder tries to re-sync (find next start code). The further decoder’s behavior is depend on which syntax element is broken:
+
+- SPS header – return [MFX_ERR_INCOMPATIBLE_VIDEO_PARAM](#mfxStatus) (HEVC decoder only, AVC decoder uses last valid)
+- PPS header – re-sync, use last valid PPS for decoding
+- Slice header – skip this slice, re-sync
+- Slice data - [Corruption](#Corruption) flags are set on output surface
+
+**Note:**
+Some requirements are relaxed because there are a lot of streams which violate the letter of standard but can be decoded without errors.
+
+- Many streams have IDR frames with `frame_num != 0` while specification says that “If the current picture is an IDR picture, `frame_num` shall be equal to 0.” (ITU-T H.265 7.4.3)
+- VUI is also validated, but errors doesn’t invalidate the whole SPS, decoder either doesn’t use corrupted VUI (AVC) or resets incorrect values to default (HEVC).
+
+The corruption at reference frame is spread over all inter-coded pictures which use this reference for prediction. To cope with this problem you either have to periodically insert I-frames (intra-coded) or use ‘intra refresh’ technique. The latter allows to recover corruptions within a pre-defined time interval. The main point of ‘intra refresh’ is to insert cyclic intra-coded pattern (usually row) of macroblocks into the inter-coded pictures, restricting motion vectors accordingly. Intra-refresh is often used in combination with Recovery point SEI, where `recovery_frame_cnt` is derived from intra-refresh interval.
+Recovery point SEI message is well described at ITU-T H.264 D.2.7 and ITU-T H.265 D.2.8. This message can be used by the decoder to understand from which picture all subsequent (in display order) pictures contain no errors, if we start decoding from AU associated with this SEI message.  In opposite to IDR, recovery point message doesn’t mark reference pictures as "unused for reference".
+
+Besides validation of syntax elements and theirs constrains, decoder also uses various hints to handle broken streams.
+
+- If there are no valid slices for current frame – the whole frame is skipped.
+- The slices which violate slice segment header semantics (ITU-T H.265 7.4.7.1) are skipped. Only `slice_temporal_mvp_enabled_flag` is checked for now.
+- Since LTR (Long Term Reference) stays at DPB until it will be explicitly cleared by IDR or MMCO, the incorrect LTR could cause long standing visual artifacts. AVC decoder uses the following approaches to care about this:
+    - When we have DPB overflow in case incorrect MMCO command which marks reference picture as LT, we rollback this operation
+    - An IDR frame with `frame_num != 0` can’t be LTR
+- If decoder detects frame gapping, it inserts ‘fake’ (marked as non-existing) frames, updates FrameNumWrap (ITU-T H.264 8.2.4.1) for reference frames and applies Sliding Window (ITU-T H.264 8.2.5.3) marking process. ‘Fake’ frames are marked as reference, but since they are marked as non-existing they are not really used for inter-prediction.
+
 ## Encoding Procedures
 
 Example 2 shows the pseudo code of the encoding procedure. The following describes a few key points:
@@ -6298,18 +6327,20 @@ The `Corruption` enumerator itemizes the decoding corruption types. It is a bit-
 
 | | |
 --- | ---
-`MFX_CORRUPTION_MINOR` | Minor corruption in decoding certain macro-blocks
-`MFX_CORRUPTION_MAJOR` | Major corruption in decoding the frame
-`MFX_CORRUPTION_REFERENCE_FRAME` | Decoding used a corrupted reference frame.
-`MFX_CORRUPTION_REFERENCE_LIST` | The reference list information of this frame does not match what is specified in the Reference Picture Marking Repetition SEI message.
+`MFX_CORRUPTION_MINOR` | Minor corruption in decoding certain macro-blocks.
+`MFX_CORRUPTION_MAJOR` | Major corruption in decoding the frame - incomplete data, for example.
+`MFX_CORRUPTION_REFERENCE_FRAME` | Decoding used a corrupted reference frame. A corrupted reference frame was used for decoding this frame. For example, if the frame uses refers to frame was decoded with minor/major corruption flag – this frame is also marked with reference corruption flag.
+`MFX_CORRUPTION_REFERENCE_LIST` | The reference list information of this frame does not match what is specified in the Reference Picture Marking Repetition SEI message. (ITU-T H.264 D.1.8  dec_ref_pic_marking_repetition)
 `MFX_CORRUPTION_ABSENT_TOP_FIELD` | Top field of frame is absent in bitstream. Only bottom field has been decoded.
 `MFX_CORRUPTION_ABSENT_BOTTOM_FIELD` | Bottom field of frame is absent in bitstream. Only top filed has been decoded.
+
+Flag `MFX_CORRUPTION_ABSENT_TOP_FIELD`/`MFX_CORRUPTION_ABSENT_BOTTOM_FIELD` is set by the AVC decoder when it detects that one of fields is not present in bitstream. Which field is absent depends on value of `bottom_field_flag` (ITU-T H.264 7.4.3).
 
 **Change History**
 
 This enumerator is available since SDK API 1.3.
 
-The SDK API 1.6 added MFX_CORRUPTION_ABSENT_TOP_FIELD and MFX_CORRUPTION_ABSENT_BOTTOM_FIELD definitions.
+The SDK API 1.6 added `MFX_CORRUPTION_ABSENT_TOP_FIELD` and `MFX_CORRUPTION_ABSENT_BOTTOM_FIELD` definitions.
 
 ## <a id='ExtendedBufferID'>ExtendedBufferID</a>
 
