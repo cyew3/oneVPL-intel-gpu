@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
 
 File Name: avce_qp_report.cpp
 \* ****************************************************************************** */
@@ -29,7 +29,7 @@ Algorithm:
 #include "ts_parser.h"
 #include <fstream>
 
-#define DUMP_BS(bs);  std::fstream fout("out.bin", std::fstream::binary);fout.write((char*)bs.Data, bs.DataLength); fout.close();
+#define DUMP_BS(bs);  std::fstream fout("out.bin", std::fstream::binary | std::fstream::out);fout.write((char*)bs.Data, bs.DataLength); fout.close();
 /*! \brief Main test name space */
 namespace avce_qp_report
 {
@@ -86,7 +86,7 @@ namespace avce_qp_report
         void check_bs_cbr_vbr(int n);
         //! \brief check_bs if ratecontrol = MFX_RATECONTROL_CBR or FX_RATECONTROL_VBR but MMBRC is on
         //! \param n - number of frames to check
-        void check_bs_cbr_vbr_mmbrc(int n);
+        void check_bs_cbr_vbr_mbbrc(int n);
         //! \brief Compares reported and encoded QP values with special message (in case of compare fail)
         //! \param expected - Encoded QP value
         //! \param reported - Reported QP value
@@ -98,6 +98,8 @@ namespace avce_qp_report
         void check_qp(Bs32s expected, Bs32s reported);
         //! \brief vector with reported QP values
         std::vector <mfxU32> reported_qp;
+        //! \brief vector with reported frame types
+        std::vector <mfxU32> reported_ft;
         //! \brief Set of test cases
         static const tc_struct test_case[];
     };
@@ -122,7 +124,12 @@ namespace avce_qp_report
     void TestSuite::check_qp_msg(Bs32s expected, Bs32s reported, const char* msg)
     {
 #if defined (WIN32)||(WIN64)
+        if ((m_impl & MFX_IMPL_HARDWARE) && (m_impl & MFX_IMPL_VIA_D3D11)) {
             EXPECT_EQ(expected, reported) << msg;
+        }
+        else {
+            EXPECT_EQ(0, reported) << "ERROR: QP report feature is unsupported, reported QP must be 0";
+        }
 #else
             EXPECT_EQ(0, reported) << "ERROR: QP report feature is unsupported, reported QP must be 0";
 #endif
@@ -138,33 +145,80 @@ namespace avce_qp_report
     {
 
         AllocSurfaces();
-        AllocBitstream();
+        AllocBitstream(m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height * 3 * n);
         m_pSurf = 0;
 
         int c = 0;
 
-        for(int i = 0, c = 0; i<n; c++) {
-            m_pSurf = GetSurface();
-            tsRawReader reader(g_tsStreamPool.Get("YUV/matrix_1920x1088_500.yuv"), m_par.mfx.FrameInfo, m_par.mfx.FrameInfo.FrameRateExtN);
-            g_tsStreamPool.Reg();
-            m_filler = &reader;
+        const char *filename = NULL;
 
+        switch (m_par.mfx.FrameInfo.Width) {
+        case 320:
+                filename = "YUV/To_The_Limit_320x240_300.yuv";
+            break; //case w:320
+        case 640:
+                filename = "YUV/To_The_Limit_640x480_300.yuv";
+            break; //case w:640
+        case 720:
+            switch (m_par.mfx.FrameInfo.Height) {
+            case 240:
+                filename = "YUV/iceage_720x240_491.yuv";
+                break; //case h:240
+            default:
+                filename = "YUV/iceage_720x480_491.yuv";
+                break; //case h:480
+            }
+            break; //case w:720
+        case 1920:
+        case 2048:
+                filename = "YUV/matrix_1920x1088_500.yuv";
+            break; //case w:1920,2048
+        case 3840:
+                filename = "YUV/horsecab_3840x2160_30fps_1s_YUV.yuv";
+            break; //case w:3840
+        }
+
+        /*
+            n multiply 2 because counter increments for two for every ProcessSurface step
+            inside the method EncodeFrameAsync
+        */
+        tsRawReader reader(g_tsStreamPool.Get(filename), m_par.mfx.FrameInfo, n*2);
+        g_tsStreamPool.Reg();
+        m_filler = &reader;
+
+        int e, s;
+        for(e = 0, s = 0; e<=s; ) {
             mfxStatus sts = EncodeFrameAsync();
 
-            if(sts == MFX_ERR_NONE) {
+            if (m_pSurf)
+                s++;
+            if (m_pSurf && sts == MFX_ERR_MORE_DATA) {
+                if (reader.m_eos) break;
+                continue;
+            }
+
+            if (sts == MFX_ERR_NONE ) {
                 SyncOperation();
-                mfxExtAVCEncodedFrameInfo* efi = (mfxExtAVCEncodedFrameInfo*)m_bitstream.GetExtBuffer(MFX_EXTBUFF_ENCODED_FRAME_INFO);
+                mfxExtAVCEncodedFrameInfo* efi = m_bitstream; /* GetExtBuffer */
                 TestSuite::reported_qp.push_back(efi->QP);
-                i++;
-            } else if(sts == MFX_ERR_MORE_DATA) {
-                if(reader.m_eos)
-                    break;
+                TestSuite::reported_ft.push_back(m_bitstream.FrameType & (MFX_FRAMETYPE_I | MFX_FRAMETYPE_P | MFX_FRAMETYPE_B));
+                e++;
             } else {
                 break;
             }
         }
+
+        if (e < n) {
+            g_tsLog << "\n\nERROR: Encoded frames count (" << e << ") < requested frame count (" << n << ")\n\n\n";
+            throw tsFAIL;
+        }
     }
 
+    /// Counting QP for CQP in the bitstream
+    /*! Algorithm is:
+    QP is counting for the slice (multi-slice does not supported).
+    After that QP is comparing to the QPI,QPP,QPB.
+    */
     void TestSuite::check_bs_cqp(int n_fr)
     {
         tsParserH264AU parser(m_bitstream);
@@ -190,31 +244,41 @@ namespace avce_qp_report
                     qp = slice_qp_delta + pic_init_qp_minus26 + 26;
                 }
             }
-            std::cout << "Frame: " << i << "\nReported QP = " << TestSuite::reported_qp[i] << " Encoded QP = " << qp << "\n";
+            g_tsLog << "Frame: " << i << "\nReported QP = " << TestSuite::reported_qp[i] << " Encoded QP = " << qp << "\n";
             if(frame_found) {
                 check_qp(qp, TestSuite::reported_qp[i]);
             }
 
-            if(0x1 == m_bitstream.FrameType) {        //MFX_FRAMETYPE_I
+            if(MFX_FRAMETYPE_I == TestSuite::reported_ft[i]) {
                 check_qp_msg(m_par.mfx.QPI, TestSuite::reported_qp[i], "ERROR: Reported QP != provided to encoder QPI");
-            } else if(0x2 == m_bitstream.FrameType) { //MFX_FRAMETYPE_P
+            } else if(MFX_FRAMETYPE_P == TestSuite::reported_ft[i]) {
                 check_qp_msg(m_par.mfx.QPP, TestSuite::reported_qp[i], "ERROR: Reported QP != provided to encoder QPP");
-            } else if(0x4 == m_bitstream.FrameType) { //MFX_FRAMETYPE_B
+            } else if(MFX_FRAMETYPE_B == TestSuite::reported_ft[i]) {
                 check_qp_msg(m_par.mfx.QPB, TestSuite::reported_qp[i], "ERROR: Reported QP != provided to encoder QPB");
             }
         }
 
     }
 
+    /// Checking QP for non-MBBRC execution
+    /*! Algorithm is (on 23 May 2017):
+    1. Search for first QP change in the slice
+    2. qp1 = Get sum of QP before change (count is n_mb)
+    3. qp2 = Get sum of QP after change (count is slice->NumMB minus n_mb)
+    4. Get average QP for slice ((qp1*n_mb)+(qp2*(slice->NumMB-n_mb))/slice->NumMB
+    */
     void TestSuite::check_bs_cbr_vbr(int n_fr)
     {
         tsParserAVC2 parser(m_bitstream, BS_AVC2::INIT_MODE_PARSE_SD);
         mfxU8 frame_found = 0;
-        mfxU32 qp = 0;
+        mfxU32 qp1 = 0, qp2 = 0;
+        mfxU32 average_qp = 0;
+
         for(int f = 0; f < n_fr; f++) {
             BS_AVC2::AU* hdr = parser.Parse();
             Bs32u n = hdr->NumUnits;
             BS_AVC2::NALU** nalu = hdr->nalu;
+
             for(mfxU32 i = 0; i < n; i++) {
                 mfxU8 type = nalu[i][0].nal_unit_type;
                 if((type == 5) || (type == 1)) {
@@ -223,15 +287,15 @@ namespace avce_qp_report
                     BS_AVC2::Slice* slice = nalu[i][0].slice;
                     BS_AVC2::MB* mb = slice->mb;
                     mfxU32 n_mb = 0;
+                    mfxI32 mb_qp_delta = 0;
 
-                    while((mb->mb_skip_flag == 1 || mb->coded_block_pattern==0) && n_mb < slice->NumMB) {
+                    while((mb->mb_skip_flag == 1 || mb->mb_qp_delta == mb_qp_delta) && n_mb < slice->NumMB) {
                         if(mb->next) {
                             mb = mb->next;
                         }
                         n_mb++;
                     }
 
-                    mfxU32 mb_qp_delta = 0;
                     if(mb && mb->mb_qp_delta) {
                         mb_qp_delta = mb->mb_qp_delta;
                     }
@@ -243,29 +307,37 @@ namespace avce_qp_report
 
                     Bs32s sqp = pic_init_qp_minus26 + 26 + slice_qp_delta;
 
-                    qp = ((sqp + mb_qp_delta + 52 + 2 * QpBdOffsetY) % (52 + QpBdOffsetY)) - QpBdOffsetY;
+                    qp1 = ((sqp +      0      + 52 + 2 * QpBdOffsetY) % (52 + QpBdOffsetY)) - QpBdOffsetY;
+                    qp2 = ((sqp + mb_qp_delta + 52 + 2 * QpBdOffsetY) % (52 + QpBdOffsetY)) - QpBdOffsetY;
 
-                }
+                    average_qp = (mfxU32)( (qp1*n_mb + qp2*(slice->NumMB-n_mb))/slice->NumMB );
+               }
             }
-            std::cout << "Frame: " << f << "\nReported QP = " << reported_qp[f] << ", Encoded QP = " << qp << "\n";
+
+            g_tsLog << "Frame: " << f << "\nReported QP = " << reported_qp[f] << ", Encoded QP = " << average_qp << "\n";
             if(frame_found) {
-                check_qp(qp, reported_qp[f]);
+                check_qp(average_qp, reported_qp[f]);
             }
 
         }
     }
 
-    void TestSuite::check_bs_cbr_vbr_mmbrc(int n_fr)
+    /// Checking QP for MBBRC execution
+    /*! Algorithm is (on 23 May 2017):
+    Get average QP for all MB in the slice
+    */
+    void TestSuite::check_bs_cbr_vbr_mbbrc(int n_fr)
     {
         tsParserAVC2 parser(m_bitstream, BS_AVC2::INIT_MODE_PARSE_SD);
         mfxU8 frame_found = 0;
         mfxU32 qp = 0;
-        mfxU32 average_qp = 0;
 
         for(int f = 0; f < n_fr; f++) {
             BS_AVC2::AU* hdr = parser.Parse();
             Bs32u n = hdr->NumUnits;
             BS_AVC2::NALU** nalu = hdr->nalu;
+            mfxU32 average_qp = 0;
+
             for(mfxU32 i = 0; i < n; i++) {
                 mfxU8 type = nalu[i][0].nal_unit_type;
                 if((type == 5) || (type == 1)) {
@@ -278,7 +350,6 @@ namespace avce_qp_report
 
                     Bs32u QpBdOffsetY = 6 * nalu[i][0].sps->bit_depth_luma_minus8;
                     Bs8s slice_qp_delta = int(slice->slice_qp_delta);
-
 
                     Bs32s pic_init_qp_minus26 = nalu[i][0].pps->pic_init_qp_minus26;
                     Bs32s sqp = pic_init_qp_minus26 + 26 + slice_qp_delta;
@@ -296,7 +367,7 @@ namespace avce_qp_report
             }
 
             if(frame_found) {
-                std::cout << "Frame: " << f << "\nReported QP = " << reported_qp[f] << ", Encoded QP = " << average_qp << "\n";
+                g_tsLog << "Frame: " << f << "\nReported QP = " << reported_qp[f] << ", Encoded QP = " << average_qp << "\n";
 #if defined (WIN32) || (WIN64)
                 if(average_qp + 1 < reported_qp[f] || average_qp - 1 > reported_qp[f]) {
                     g_tsLog << "ERROR: Reported QP much bigger/much smaller than average Encoded QP";
@@ -313,7 +384,7 @@ namespace avce_qp_report
         mfxU16 MBBRC = 0;
 
         if(m_par.NumExtParam) {
-            mfxExtCodingOption2* co2 = (mfxExtCodingOption2*)m_par.GetExtBuffer(MFX_EXTBUFF_CODING_OPTION2);
+            mfxExtCodingOption2* co2 = m_par; /* GetExtBuffer */
             MBBRC = co2->MBBRC;
             if(MBBRC == MFX_CODINGOPTION_OFF)
                 MBBRC = 0;
@@ -324,7 +395,7 @@ namespace avce_qp_report
         } else if(((m_par.mfx.RateControlMethod == MFX_RATECONTROL_CBR || m_par.mfx.RateControlMethod == MFX_RATECONTROL_VBR) && !MBBRC)) {
             check_bs_cbr_vbr(f);
         } else if(((m_par.mfx.RateControlMethod == MFX_RATECONTROL_CBR || m_par.mfx.RateControlMethod == MFX_RATECONTROL_VBR) && MBBRC)) {
-            check_bs_cbr_vbr_mmbrc(f);
+            check_bs_cbr_vbr_mbbrc(f);
         }
     }
 
@@ -567,10 +638,19 @@ namespace avce_qp_report
         SETPARS(&m_par, CDO2_PAR);
         m_par.mfx.FrameInfo.CropW = m_par.mfx.FrameInfo.Width;
         m_par.mfx.FrameInfo.CropH = m_par.mfx.FrameInfo.Height;
+        mfxExtCodingOption2 *codingOption2 = reinterpret_cast<mfxExtCodingOption2*>(m_par.GetExtBuffer(MFX_EXTBUFF_CODING_OPTION2));
+
+        if (!(m_impl & MFX_IMPL_SOFTWARE) && (!(m_impl & MFX_IMPL_HARDWARE) || !(m_impl & MFX_IMPL_VIA_D3D11)) ) {
+            g_tsLog << "\n\nWARNING: QP reporting is only supported by hw and d3d11 mode\n\n\n";
+            throw tsSKIP;
+        }
+        if ((codingOption2->MBBRC==MFX_CODINGOPTION_ON) && (m_impl & MFX_IMPL_SOFTWARE)) {
+            g_tsLog << "\n\nWARNING: Software library does not support MBBRC\n\n\n";
+            throw tsSKIP;
+        }
 
         Query();
         Init();
-
         encode(tc.n_frames);
         //DUMP_BS(m_bitstream);
         check_bs(tc.n_frames);
@@ -580,6 +660,3 @@ namespace avce_qp_report
     //! \brief Regs test suite into test system
     TS_REG_TEST_SUITE_CLASS(avce_qp_report);
 }
-
-
-
