@@ -311,7 +311,7 @@
     <ClCompile>
       <EnablePREfast>false</EnablePREfast>
       <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions);WIN_TRESHOLD_MOBILE</PreprocessorDefinitions>
       <ControlFlowGuard>Guard</ControlFlowGuard>
     </ClCompile>
@@ -340,7 +340,7 @@
     </Lib>
     <ClCompile>
       <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions);WIN_TRESHOLD_MOBILE</PreprocessorDefinitions>
       <ControlFlowGuard>Guard</ControlFlowGuard>
     </ClCompile>
@@ -360,7 +360,7 @@
     </Lib>
     <ClCompile>
       <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PreprocessorDefinitions>_ATL_NO_WIN_SUPPORT;_DEBUG;%(PreprocessorDefinitions);WIN_TRESHOLD_MOBILE</PreprocessorDefinitions>
       <ControlFlowGuard>Guard</ControlFlowGuard>
     </ClCompile>

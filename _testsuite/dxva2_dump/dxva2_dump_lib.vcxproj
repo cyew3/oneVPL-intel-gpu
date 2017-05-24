@@ -225,7 +225,7 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <AdditionalIncludeDirectories>include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;..\..\include;..\..\_studio\shared\include;..\..\_studio\mfx_lib\shared\include;..\shared\include;$(MEDIASDK_ROOT)\tools\win32\detours;..\..\_studio\shared\umc\io\umc_va\include;..\..\_studio\shared\umc\core\vm\include;..\..\_studio\shared\umc\core\umc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;MFX_VA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -267,7 +267,7 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <AdditionalIncludeDirectories>include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;..\..\include;..\..\_studio\mfx_lib\shared\include;..\shared\include;$(MEDIASDK_ROOT)\tools\win32\detours;..\..\_studio\shared\include;..\..\_studio\shared\umc\io\umc_va\include;..\..\_studio\shared\umc\core\umc\include;..\..\_studio\shared\umc\core\vm\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;MFX_VA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -303,7 +303,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;MFX_VA;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>

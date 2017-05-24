@@ -189,7 +189,7 @@
       <AdditionalIncludeDirectories>include;..\..\..\mdp_msdk-api\include;..\..\_studio\shared\include;..\..\_studio\mfx_lib\shared\include;..\..\_studio\shared\umc\core\umc\include;..\..\_studio\shared\umc\core\vm\include;..\..\_studio\shared\umc\core\vm_plus\include;..\..\_studio\shared\umc\codec\h264_dec\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_ATL_NO_WIN_SUPPORT;WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
@@ -253,7 +253,7 @@
       <AdditionalIncludeDirectories>include;..\..\..\mdp_msdk-api\include;..\..\_studio\shared\include;..\..\_studio\mfx_lib\shared\include;..\..\_studio\shared\umc\core\umc\include;..\..\_studio\shared\umc\core\vm\include;..\..\_studio\shared\umc\core\vm_plus\include;..\..\_studio\shared\umc\codec\h264_dec\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
@@ -287,7 +287,7 @@
       <AdditionalIncludeDirectories>include;..\..\..\mdp_msdk-api\include;..\..\_studio\shared\include;..\..\_studio\mfx_lib\shared\include;..\..\_studio\shared\umc\core\umc\include;..\..\_studio\shared\umc\core\vm\include;..\..\_studio\shared\umc\core\vm_plus\include;..\..\_studio\shared\umc\codec\h264_dec\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
