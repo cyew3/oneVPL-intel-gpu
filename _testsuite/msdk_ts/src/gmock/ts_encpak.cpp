@@ -32,6 +32,26 @@ mfxExtBuffer* GetExtFeiBuffer(std::vector<mfxExtBuffer*>& buff, mfxU32 BufferId,
     return 0;
 }
 
+void CopyPpsDPB  (const mfxExtFeiPPS::mfxExtFeiPpsDPB *src, mfxExtFeiPPS::mfxExtFeiPpsDPB *dst)
+{
+    for (mfxU32 d=0; d < PpsDPBSize; d++)
+        dst[d] = src[d];
+}
+
+// returns mismatched idx or PpsDPBSize if all match
+mfxU32 ComparePpsDPB  (const mfxExtFeiPPS::mfxExtFeiPpsDPB *src, const mfxExtFeiPPS::mfxExtFeiPpsDPB *dst)
+{
+    mfxU32 d;
+    for (d = 0; d < PpsDPBSize && src[d].Index != 0xffff; d++)
+        if (dst[d].Index != src[d].Index ||
+            dst[d].LongTermFrameIdx != src[d].LongTermFrameIdx ||
+            (src[d].LongTermFrameIdx == 0xffff && dst[d].FrameNumWrap != src[d].FrameNumWrap) ||
+            dst[d].PicType != src[d].PicType)
+            return d;
+    if (d < PpsDPBSize && dst[d].Index != 0xffff)
+        return d;
+    return PpsDPBSize;
+}
 
 mfxStatus PrepareCtrlBuf(mfxExtFeiEncFrameCtrl* & fei_encode_ctrl, const mfxVideoParam& vpar)
 {
@@ -111,8 +131,8 @@ mfxStatus PreparePPSBuf(mfxExtFeiPPS* & fpps, const mfxVideoParam& vpar)
         fpps->DpbBefore[i].PicType = 0;
         fpps->DpbBefore[i].FrameNumWrap = 0;
         fpps->DpbBefore[i].LongTermFrameIdx = 0;
-        fpps->DpbAfter[i] = fpps->DpbBefore[i];
     }
+    CopyPpsDPB(fpps->DpbBefore, fpps->DpbAfter);
 
     //fpps->ChromaQPIndexOffset;
     //fpps->SecondChromaQPIndexOffset;
@@ -144,7 +164,6 @@ mfxStatus PrepareSliceBuf(mfxExtFeiSliceHeader* & fslice, const mfxVideoParam& v
 {
     mfxU32 nfields = (vpar.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE) ? 2 : 1;
     if (!fslice)
-        //fslice = new mfxExtFeiSliceHeader;
         fslice = (mfxExtFeiSliceHeader*) new mfxU8 [sizeof(mfxExtFeiSliceHeader) * nfields];
     else
         SAFE_DELETE_ARRAY (fslice->Slice)
@@ -269,61 +288,8 @@ mfxStatus tsVideoENCPAK::Close()
     }
 
     m_initialized = false;
-    m_frames_buffered = 0;
 
     return Close(m_session);
-}
-
-mfxStatus ReleaseExtBufs (std::vector<mfxExtBuffer*>& in_buffs, mfxU32 num_fields)
-{
-    for (std::vector<mfxExtBuffer*>::iterator it = in_buffs.begin(); it != in_buffs.end(); it++) {
-        if (!*it)
-            continue;
-        switch ((*it)->BufferId) {
-            case MFX_EXTBUFF_FEI_ENC_CTRL:
-                SAFE_DELETE_ARRAY(*it);
-                for (mfxU32 i = 1; i < num_fields; i++) {
-                    ++it;
-                    *it = NULL;
-                }
-                break;
-
-            case MFX_EXTBUFF_FEI_SPS:
-                SAFE_DELETE_ARRAY(*it);
-                break;
-
-            case MFX_EXTBUFF_FEI_PPS:
-                SAFE_DELETE_ARRAY(*it);
-                break;
-
-            case MFX_EXTBUFF_FEI_PARAM:
-                SAFE_DELETE_ARRAY(*it);
-                break;
-
-            case MFX_EXTBUFF_FEI_SLICE:
-            {
-                mfxExtFeiSliceHeader* fslice = (mfxExtFeiSliceHeader*)(*it);
-                SAFE_DELETE_ARRAY(fslice->Slice);
-                SAFE_DELETE_ARRAY(*it);
-                break;
-            }
-            case MFX_EXTBUFF_FEI_ENC_MV:
-            {
-                mfxExtFeiEncMV* mv = (mfxExtFeiEncMV*)(*it);
-                SAFE_DELETE_ARRAY(mv->MB);
-                break;
-            }
-            case MFX_EXTBUFF_FEI_PAK_CTRL:
-            {
-                mfxExtFeiPakMBCtrl* mb = (mfxExtFeiPakMBCtrl*)(*it);
-                SAFE_DELETE_ARRAY(mb->MB);
-                break;
-            }
-            default:
-                break;
-        }
-    }
-    return MFX_ERR_NONE;
 }
 
 tsVideoENCPAK::tsVideoENCPAK(mfxFeiFunction funcEnc, mfxFeiFunction funcPak, mfxU32 CodecId, bool useDefaults)
@@ -340,7 +306,6 @@ tsVideoENCPAK::tsVideoENCPAK(mfxFeiFunction funcEnc, mfxFeiFunction funcPak, mfx
     , m_bitstream()
     , m_pBitstream(&m_bitstream)
     , m_bs_processor(0)
-    , m_frames_buffered(0)
     , m_pSyncPoint(&m_syncpoint)
     , m_filler(0)
     , m_uid(0)
@@ -355,6 +320,7 @@ tsVideoENCPAK::tsVideoENCPAK(mfxFeiFunction funcEnc, mfxFeiFunction funcPak, mfx
     memset(&PAKOutput, 0, sizeof(PAKOutput));
     memset(&m_mb, 0, sizeof(m_mb));
     memset(&m_mv, 0, sizeof(m_mv));
+    for (int i=0; i<PpsDPBSize; i++) nextDpb[i].Index = 0xffff;
 
     if(m_default)
     {
@@ -418,11 +384,6 @@ mfxStatus tsVideoENCPAK::Init()
             m_enc_pool.SetAllocator(m_pFrameAllocator, true);
             m_rec_pool.SetAllocator(m_pFrameAllocator, true);
         }
-//        if (enc.m_par.IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY) // do we need the same for pak?
-//        {
-//            QueryIOSurf();
-//            m_enc_pool.AllocOpaque(m_enc_request, enc.osa);
-//        }
     }
 
     AllocSurfaces();
@@ -539,7 +500,7 @@ mfxStatus tsVideoENCPAK::QueryIOSurf()
             Load();
         }
     }
-    //return QueryIOSurf(m_session, enc.m_pPar, m_pRequest);
+
     m_enc_request.AllocId           = m_BaseAllocID;
     m_enc_request.Info              = enc.m_pPar->mfx.FrameInfo;
     m_enc_request.NumFrameMin       = enc.m_pPar->mfx.GopRefDist + enc.m_pPar->AsyncDepth; // what if !progressive?
@@ -561,14 +522,11 @@ mfxStatus tsVideoENCPAK::QueryIOSurf()
 
 mfxStatus tsVideoENCPAK::Reset()
 {
-    //return Reset(m_session, m_pPar);
     TRACE_FUNC2(MFXVideoENC_Reset, m_session, enc.m_pPar);
     g_tsStatus.check( MFXVideoENC_Reset(m_session, enc.m_pPar) );
 
     TRACE_FUNC2(MFXVideoPAK_Reset, m_session, pak.m_pPar);
     g_tsStatus.check( MFXVideoPAK_Reset(m_session, pak.m_pPar) );
-
-    //m_frames_buffered = 0;
 
     return g_tsStatus.get();
 }
@@ -593,12 +551,6 @@ mfxStatus tsVideoENCPAK::AllocBitstream(mfxU32 size)
 
     g_tsLog << "ALLOC BITSTREAM OF SIZE " << size << "\n";
 
-//    mfxMemId mid = 0;
-//    TRACE_FUNC4((*m_buffer_allocator.Alloc), &m_buffer_allocator, size, (MFX_MEMTYPE_SYSTEM_MEMORY|MFX_MEMTYPE_FROM_ENCODE), &mid);
-//    g_tsStatus.check((*m_buffer_allocator.Alloc)(&m_buffer_allocator, size, (MFX_MEMTYPE_SYSTEM_MEMORY|MFX_MEMTYPE_FROM_ENCODE), &mid));
-//    TRACE_FUNC3((*m_buffer_allocator.Lock), &m_buffer_allocator, mid, &m_bitstream.Data);
-//    g_tsStatus.check((*m_buffer_allocator.Lock)(&m_buffer_allocator, mid, &m_bitstream.Data));
-
     m_bitstream.Data = new mfxU8[size];
     m_bitstream.MaxLength = size;
 
@@ -611,7 +563,6 @@ mfxStatus tsVideoENCPAK::GetVideoParam()
     {
         Init();TS_CHECK_MFX;
     }
-    //return GetVideoParam(m_session, m_pPar);
     TRACE_FUNC2(MFXVideoENC_GetVideoParam, m_session, enc.m_pPar);
     g_tsStatus.check( MFXVideoENC_GetVideoParam(m_session, enc.m_pPar) );
     TS_TRACE(enc.m_pPar);
@@ -647,60 +598,72 @@ mfxStatus tsVideoENCPAK::PrepareInitBuffers()
     return MFX_ERR_NONE;
 }
 
+mfxStatus tsVideoENCPAK::CreatePpsDPB  (const std::vector<mfxFrameSurface1*>& _refs, mfxExtFeiPPS::mfxExtFeiPpsDPB *pd)
+{
+    for (mfxU32 r=0, d=0; d < PpsDPBSize; r++, d++) {
+        if (r >= _refs.size()) {
+            pd[d].Index = 0xffff;
+            continue;
+        }
+        mfxFrameSurface1* surf = _refs[r];
+        std::vector<mfxFrameSurface1*>::iterator rslt;
+        rslt = std::find(recSet.begin(), recSet.end(), surf);
+
+        if (rslt == _refs.end()) {
+            continue; // must be impossible
+        } else {
+            mfxU16 idx = static_cast<mfxU16>(std::distance(recSet.begin(), rslt));
+            mfxU16 refType = surf->Info.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? MFX_PICTYPE_FRAME : (MFX_PICTYPE_TOPFIELD | MFX_PICTYPE_BOTTOMFIELD);
+            pd[d].Index = idx;
+            pd[d].PicType = refType;
+            pd[d].FrameNumWrap = surf->Data.FrameOrder; // simplified
+            pd[d].LongTermFrameIdx = 0xffff; // unused
+
+            // change to field if interlace and current is its 2nd field
+            if (refType != MFX_PICTYPE_FRAME && surf->Data.FrameOrder == m_PAKInput->InSurface->Data.FrameOrder) {
+                pd[d].PicType = surf->Info.PicStruct == MFX_PICSTRUCT_FIELD_TFF ? MFX_PICTYPE_TOPFIELD : MFX_PICTYPE_BOTTOMFIELD;
+            }
+        }
+    }
+
+    return MFX_ERR_NONE;
+}
+
+// update DPB - simplest way for a while
+mfxStatus tsVideoENCPAK::UpdateDPB (std::vector<mfxFrameSurface1*>& dpb, bool secondField)
+{
+    const mfxU32 curField = secondField; // to avoid confusing
+    mfxU16 type = enc.fpps[curField].FrameType;
+    if (type & MFX_FRAMETYPE_REF) {
+        if (type & MFX_FRAMETYPE_IDR)
+            dpb.clear();
+        else if (dpb.size() == enc.m_pPar->mfx.NumRefFrame)
+            dpb.erase(dpb.begin());
+        if (dpb.end() == std::find(dpb.begin(), dpb.end(), m_PAKOutput->OutSurface))
+            dpb.push_back(m_PAKOutput->OutSurface);
+    }
+
+    return MFX_ERR_NONE;
+}
+
 mfxStatus tsVideoENCPAK::PrepareDpbBuffers (bool secondField)
 {
     const mfxU32 curField = secondField; // to avoid confusing
-    std::vector<mfxFrameSurface1*> _refs = refs; // make local copy
 
-    mfxExtFeiPPS::mfxExtFeiPpsDPB *pd = enc.fpps[curField].DpbBefore;
+    CreatePpsDPB(refs, enc.fpps[curField].DpbBefore);
 
-    for (int pass = 0; pass<2; pass++) { // before and after
+    // test error if differ
+    if (ComparePpsDPB(enc.fpps[curField].DpbBefore, nextDpb) < PpsDPBSize )
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
 
-        for (mfxU32 r=0, d=0; d < 16; r++, d++) {
-            if (r >= _refs.size()) {
-                pd[d].Index = 0xffff;
-                continue;
-            }
-            mfxFrameSurface1* surf = _refs[r];
-            std::vector<mfxFrameSurface1*>::iterator rslt;
-            rslt = std::find(recSet.begin(), recSet.end(), surf);
+    std::vector<mfxFrameSurface1*> _refs = refs; // make local copy to see the future
+    UpdateDPB(_refs, secondField);
 
-            if (rslt == _refs.end()) {
-                continue; // must be impossible
-            } else {
-                mfxU16 idx = static_cast<mfxU16>(std::distance(recSet.begin(), rslt));
-                mfxU16 refType = surf->Info.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? MFX_PICTYPE_FRAME : (MFX_PICTYPE_TOPFIELD | MFX_PICTYPE_BOTTOMFIELD);
-                pd[d].Index = idx;
-                pd[d].PicType = refType;
-                pd[d].FrameNumWrap = surf->Data.FrameOrder; // simplified
-                pd[d].LongTermFrameIdx = 0xffff; // unused
+    CreatePpsDPB(_refs, enc.fpps[curField].DpbAfter);
+    CopyPpsDPB(enc.fpps[curField].DpbAfter, nextDpb); // will check if test modified DpbAfter
 
-                // change to field if interlace and current is its 2nd field
-                if (refType != MFX_PICTYPE_FRAME && surf->Data.FrameOrder == m_PAKInput->InSurface->Data.FrameOrder) {
-                    pd[d].PicType = surf->Info.PicStruct == MFX_PICSTRUCT_FIELD_TFF ? MFX_PICTYPE_TOPFIELD : MFX_PICTYPE_BOTTOMFIELD;
-                }
-            }
-        }
-
-        if (pass == 1) break;
-
-        // update DPB - simplest way for a while
-        mfxU16 type = enc.fpps[curField].FrameType;
-        if (type & MFX_FRAMETYPE_REF) {
-            if (type & MFX_FRAMETYPE_IDR)
-                _refs.clear();
-            else if (_refs.size() == enc.m_pPar->mfx.NumRefFrame)
-                _refs.erase(_refs.begin());
-            if (_refs.end() == std::find(_refs.begin(), _refs.end(), m_PAKOutput->OutSurface))
-                _refs.push_back(m_PAKOutput->OutSurface);
-        }
-        pd = enc.fpps[curField].DpbAfter;
-    }
-
-    for (mfxU32 d=0; d < 16; d++) {
-        pak.fpps[curField].DpbBefore[d] = enc.fpps[curField].DpbBefore[d];
-        pak.fpps[curField].DpbAfter[d] = enc.fpps[curField].DpbAfter[d];
-    }
+    CopyPpsDPB(enc.fpps[curField].DpbBefore, pak.fpps[curField].DpbBefore);
+    CopyPpsDPB(enc.fpps[curField].DpbAfter, pak.fpps[curField].DpbAfter);
 
     return MFX_ERR_NONE;
 }
@@ -762,6 +725,9 @@ mfxStatus tsVideoENCPAK::PrepareFrameBuffers (bool secondField)
     recSet.resize(m_rec_pool.PoolSize());
     for (mfxU32 i = 0; i < m_rec_pool.PoolSize(); i++)
         recSet[i] = m_rec_pool.GetSurface(i);
+    LTidxSet.resize(m_rec_pool.PoolSize());
+    for (mfxU32 i = 0; i < m_rec_pool.PoolSize(); i++)
+        LTidxSet[i] = 0xffff;
 
     m_PAKInput->L0Surface  = m_ENCInput->L0Surface  = recSet.data();
     m_PAKInput->NumFrameL0 = m_ENCInput->NumFrameL0 = recSet.size();
@@ -834,8 +800,103 @@ mfxStatus tsVideoENCPAK::PrepareFrameBuffers (bool secondField)
     for (mfxI32 s=0; s<enc.fslice[curField].NumSlice; s++) {
         enc.fslice[curField].Slice[s].SliceType = slicetype;
         pak.fslice[curField].Slice[s].SliceType = slicetype;
+    }
 
-        // simplest case, latest first
+    mfxStatus sts = PrepareDpbBuffers(secondField);
+    if (sts != MFX_ERR_NONE)
+        return sts;
+    FillRefLists(secondField);
+    FillSliceRefs(secondField);
+
+    // HACK to pass checking in lib: after 1st == before 2nd, 2nd frameType
+    if (enc.m_pPar->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE) {
+        if (!secondField) {
+            CopyPpsDPB(enc.fpps[0].DpbBefore, enc.fpps[1].DpbBefore);
+            CopyPpsDPB(pak.fpps[0].DpbBefore, pak.fpps[1].DpbBefore);
+
+            enc.fpps[1].FrameType = enc.fpps[0].FrameType;
+            if (enc.fpps[1].FrameType & MFX_FRAMETYPE_I)
+                enc.fpps[1].FrameType = (enc.fpps[1].FrameType &~ (MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR)) | MFX_FRAMETYPE_P;
+            pak.fpps[1].FrameType = enc.fpps[1].FrameType;
+        } else {
+            CopyPpsDPB(enc.fpps[1].DpbBefore, enc.fpps[0].DpbBefore);
+            CopyPpsDPB(pak.fpps[1].DpbBefore, pak.fpps[0].DpbBefore);
+
+            enc.fpps[0].FrameType = enc.fpps[1].FrameType; // don't care, just to pass check
+            pak.fpps[0].FrameType = enc.fpps[0].FrameType;
+        }
+    }
+
+    return MFX_ERR_NONE;
+}
+
+void InsertRefListSorted (std::vector<RefListElem> RefList[2], RefListElem rle) // ref-current for ST
+{
+    // Note: acc to spec BWD follows FWD for L0 and vice versa for L1 and then LT. Don't care here.
+    if (rle.LongTermFrameIdx == 0xffff) { // ST
+        mfxI32 isL1 = rle.diffFrameOrder > 0; // ignore case when 2nd field is B-ref for first
+        mfxI16 diffFrameOrder = std::abs(rle.diffFrameOrder);
+        std::vector<RefListElem>::iterator it = RefList[isL1].begin();
+        for ( ; it != RefList[isL1].end(); it++) {
+            if ((*it).LongTermFrameIdx == 0xffff && std::abs((*it).diffFrameOrder) < diffFrameOrder )
+                break;
+        }
+        RefList[isL1].insert(it, rle); // insert before smaller ST
+    } else { // LT
+        for (int isL1 = 0; isL1 <= 1; isL1 ++) {
+            std::vector<RefListElem>::iterator it = RefList[isL1].begin();
+            for ( ; it != RefList[isL1].end(); it++) {
+                if ((*it).LongTermFrameIdx == 0xffff || (*it).LongTermFrameIdx < rle.LongTermFrameIdx )
+                    break;
+            }
+            RefList[isL1].insert(it, rle); // insert before first ST or smaller LT
+        }
+    }
+
+}
+
+// map dpb to reconstruct pool, fill reflists from refs (dpb)
+mfxStatus tsVideoENCPAK::FillRefLists(bool secondField)
+{
+    mfxFrameSurface1* input = m_PAKInput->InSurface;
+    std::vector<RefListElem> LT;
+    RefList[0].clear();
+    RefList[1].clear();
+
+    for (mfxU32 r=0; r<refs.size(); r++) {
+        mfxFrameSurface1* surf = refs[r];
+        std::vector<mfxFrameSurface1*>::iterator rslt;
+        rslt = std::find(recSet.begin(), recSet.end(), surf);
+
+        if (rslt == recSet.end()) {
+            continue; // must be impossible
+        } else {
+            mfxU16 idx = static_cast<mfxU16>(std::distance(recSet.begin(), rslt));
+
+            // insert to reflists
+            mfxI16 diffFrameOrder = mfxI16 (surf->Data.FrameOrder - input->Data.FrameOrder);
+            mfxU16 refType = surf->Info.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? MFX_PICTYPE_FRAME :
+                    (surf->Info.PicStruct == MFX_PICSTRUCT_FIELD_TFF ? MFX_PICTYPE_TOPFIELD : MFX_PICTYPE_BOTTOMFIELD);
+            mfxU16 longTermFrameIdx = LTidxSet[idx];
+            RefListElem rle = {idx, refType, longTermFrameIdx, diffFrameOrder};
+            InsertRefListSorted(RefList, rle); // insert frame or first field
+            // insert 2nd field for interlace if it is encoded
+            if (secondField && surf->Data.FrameOrder != input->Data.FrameOrder) {
+                rle.type ^= MFX_PICTYPE_TOPFIELD ^ MFX_PICTYPE_BOTTOMFIELD; // change to opposite
+                InsertRefListSorted( RefList, rle);
+            }
+        }
+    }
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus tsVideoENCPAK::FillSliceRefs(bool secondField)
+{
+    const mfxU32 curField = secondField; // to avoid confusing
+
+    for (mfxI32 s=0; s<enc.fslice[curField].NumSlice; s++) {
+        // latest first
         for (mfxU32 r=0; r<RefList[0].size(); r++) {
             pak.fslice[curField].Slice[s].RefL0[r].Index       = enc.fslice[curField].Slice[s].RefL0[r].Index       = RefList[0][RefList[0].size()-1 - r].dpb_idx;
             pak.fslice[curField].Slice[s].RefL0[r].PictureType = enc.fslice[curField].Slice[s].RefL0[r].PictureType = RefList[0][RefList[0].size()-1 - r].type;
@@ -853,30 +914,6 @@ mfxStatus tsVideoENCPAK::PrepareFrameBuffers (bool secondField)
         pak.fslice[curField].Slice[s].NumRefIdxL0Active = RefList[0].size();
         pak.fslice[curField].Slice[s].NumRefIdxL1Active = RefList[1].size();
     }
-
-    PrepareDpbBuffers(secondField);
-
-    // HACK to pass checking in lib: after 1st == before 2nd, 2nd frameType
-    if (enc.m_pPar->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE) {
-        if (!secondField) {
-            for (mfxU32 d=0; d < 16; d++) {
-                enc.fpps[1].DpbBefore[d] = enc.fpps[0].DpbAfter[d];
-                pak.fpps[1].DpbBefore[d] = pak.fpps[0].DpbAfter[d];
-            }
-            enc.fpps[1].FrameType = enc.fpps[0].FrameType;
-            if (enc.fpps[1].FrameType & MFX_FRAMETYPE_I)
-                enc.fpps[1].FrameType = (enc.fpps[1].FrameType &~ (MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR)) | MFX_FRAMETYPE_P;
-            pak.fpps[1].FrameType = enc.fpps[1].FrameType;
-        } else {
-            for (mfxU32 d=0; d < 16; d++) {
-                enc.fpps[0].DpbAfter[d] = enc.fpps[1].DpbBefore[d];
-                pak.fpps[0].DpbAfter[d] = pak.fpps[1].DpbBefore[d];
-            }
-            enc.fpps[0].FrameType = enc.fpps[1].FrameType; // don't care, just to pass check
-            pak.fpps[0].FrameType = enc.fpps[0].FrameType;
-        }
-    }
-
     return MFX_ERR_NONE;
 }
 
@@ -921,8 +958,6 @@ mfxStatus tsVideoENCPAK::ProcessFrameAsync(mfxSession session, mfxENCInput *in, 
     TS_TRACE(out);
     TS_TRACE(syncp);
 
-    m_frames_buffered += (mfxRes >= 0);
-
     return g_tsStatus.m_status = mfxRes;
 }
 
@@ -935,8 +970,6 @@ mfxStatus tsVideoENCPAK::ProcessFrameAsync(mfxSession session, mfxPAKInput *in, 
     TS_TRACE(out);
     TS_TRACE(syncp);
 
-    //m_frames_buffered += (mfxRes >= 0);
-
     return g_tsStatus.m_status = mfxRes;
 }
 
@@ -948,22 +981,21 @@ mfxStatus tsVideoENCPAK::SyncOperation()
 
 mfxStatus tsVideoENCPAK::SyncOperation(mfxSyncPoint syncp, tsBitstreamProcessor* bs_processor)
 {
-    mfxU32 nFrames = 1; // instead of m_frames_buffered;
+    mfxU32 nFrames = 1;
     mfxStatus res = SyncOperation(m_session, syncp, MFX_INFINITE);
 
     // for PAK only
     if (m_default && bs_processor && g_tsStatus.get() == MFX_ERR_NONE)
     {
-        g_tsStatus.check(bs_processor->ProcessBitstream(m_pBitstream ? *m_pBitstream : m_bitstream, nFrames));
+        g_tsStatus.check(res = bs_processor->ProcessBitstream(m_pBitstream ? *m_pBitstream : m_bitstream, nFrames));
         TS_CHECK_MFX;
     }
 
-    return /*g_tsStatus.m_status = */ res;
+    return res;
 }
 
 mfxStatus tsVideoENCPAK::SyncOperation(mfxSession session,  mfxSyncPoint syncp, mfxU32 wait)
 {
-    m_frames_buffered = 0;
     return tsSession::SyncOperation(session, syncp, wait);
 }
 
@@ -981,61 +1013,50 @@ mfxStatus tsVideoENCPAK::AllocSurfaces()
 
 mfxStatus tsVideoENCPAK::EncodeFrame(bool secondField)
 {
+    const mfxExtFeiPPS* pps = &enc.fpps[secondField];
+
+    if (ComparePpsDPB(pps->DpbAfter, nextDpb) < PpsDPBSize) {
+        // used mmco - modify internal refs
+        for (int a = 0; a < PpsDPBSize && pps->DpbAfter[a].Index != 0xffff; a++) {
+            if (pps->DpbAfter[a].Index >= LTidxSet.size())
+                return MFX_ERR_ABORTED; // or what?
+            LTidxSet[pps->DpbAfter[a].Index] = pps->DpbAfter[a].LongTermFrameIdx; // TODO what if current to be LT after encode?
+            int match = -1;
+            for (int n = 0; n < PpsDPBSize && nextDpb[n].Index != 0xffff; n++)
+                if (pps->DpbAfter[a].Index == nextDpb[n].Index) {
+                    match = n;
+                    break;
+                }
+            if (match >= 0) {
+                // check LT doesn't change to ST
+                if (nextDpb[match].LongTermFrameIdx != 0xffff && pps->DpbAfter[a].LongTermFrameIdx == 0xffff)
+                    return MFX_ERR_ABORTED; // or what?
+            } else {
+                // frame gone, remove it from our dpb
+                mfxFrameSurface1* surf = recSet[pps->DpbAfter[a].Index];
+                std::vector<mfxFrameSurface1*>::iterator rslt;
+                rslt = std::find(refs.begin(), refs.end(), surf);
+                if (rslt == recSet.end()) {
+                    return MFX_ERR_ABORTED; // or what?
+                } else {
+                    //if (surf != input) // always
+                    refs.erase(rslt);
+                }
+            }
+        }
+
+        // Now rebuild reflists for (and) slice headers
+        FillRefLists(secondField);
+        FillSliceRefs(secondField);
+    }
+
     mfxStatus sts = ProcessFrameAsync();
     if (sts != MFX_ERR_NONE)
         return sts;
 
-    // update DPB - simplest way for a while
-    const mfxExtFeiPPS* pps = (mfxExtFeiPPS *)GetExtFeiBuffer(m_PAKInput->ExtParam, m_PAKInput->NumExtParam, MFX_EXTBUFF_FEI_PPS, m_bSingleField ? 0 : secondField);
-    mfxU16 type = pps->FrameType;
-    if (type & MFX_FRAMETYPE_REF) {
-        if (type & MFX_FRAMETYPE_IDR)
-            refs.clear();
-        else if (refs.size() == enc.m_pPar->mfx.NumRefFrame)
-            refs.erase(refs.begin());
-        if (refs.end() == std::find(refs.begin(), refs.end(), m_PAKOutput->OutSurface))
-            refs.push_back(m_PAKOutput->OutSurface);
-    }
+    UpdateDPB(refs, secondField);
 
-    mfxFrameSurface1* input = m_PAKInput->InSurface;
-
-    // map dpb to reconstruct pool, fill reflists
-//    dpb_idx.clear();
-    RefList[0].clear();
-    RefList[1].clear();
-
-    for (mfxU32 r=0; r<refs.size(); r++) {
-        mfxFrameSurface1* surf = refs[r];
-        std::vector<mfxFrameSurface1*>::iterator rslt;
-        rslt = std::find(recSet.begin(), recSet.end(), surf);
-
-        if (rslt == recSet.end()) {
-            continue; // must be impossible
-        } else {
-            mfxU16 idx = static_cast<mfxU16>(std::distance(recSet.begin(), rslt));
-            // remove if missed in DpbAfter
-            bool found = false;
-            for (int i=0; i<16 && pps->DpbAfter[i].Index != 0xffff && !(found = (pps->DpbAfter[i].Index == idx)); i++);
-            if (!found) {
-                refs.erase(refs.begin()+r);
-                r--; // to resume after erased
-                continue;
-            }
-
-//            dpb_idx.push_back(idx);
-            // insert to reflists, TODO fix details
-            bool isL1 = surf->Data.FrameOrder > input->Data.FrameOrder;
-            mfxU16 refType = surf->Info.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? MFX_PICTYPE_FRAME :
-                    (surf->Info.PicStruct == MFX_PICSTRUCT_FIELD_TFF ? MFX_PICTYPE_TOPFIELD : MFX_PICTYPE_BOTTOMFIELD);
-            RefListElem rle = {idx, refType};
-            RefList[isL1].push_back(rle); // insert frame or first field
-            // insert 2nd field if interlace and current is not its 2nd field
-            if (refType != MFX_PICTYPE_FRAME && surf->Data.FrameOrder != input->Data.FrameOrder) {
-                rle.type ^= MFX_PICTYPE_TOPFIELD ^ MFX_PICTYPE_BOTTOMFIELD; // change to opposite
-                RefList[isL1].insert(RefList[isL1].end()-1, rle); // before last - finally same parity will be first
-            }
-        }
-    }
+    CreatePpsDPB(refs, nextDpb); // to check before next frame
 
     return sts;
 }

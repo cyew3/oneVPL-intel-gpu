@@ -116,11 +116,9 @@ const TestSuite::tc_struct TestSuite::test_case[] =
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct) * 3;
 mfxStatus LoadTC(std::vector<mfxExtBuffer*>& encbuf, std::vector<mfxExtBuffer*>& pakbuf, const TestSuite::tc_struct& tc, mfxU32 field)
 {
-    // In single-field mode only one set is used
-    mfxU32 idxToPickBuffers = 0;// encpak.m_bSingleField ? 0 : field;
-
-    mfxExtFeiPPS* ppsE = (mfxExtFeiPPS*)GetExtFeiBuffer(encbuf, MFX_EXTBUFF_FEI_PPS, idxToPickBuffers);
-    mfxExtFeiPPS* ppsP = (mfxExtFeiPPS*)GetExtFeiBuffer(pakbuf, MFX_EXTBUFF_FEI_PPS, idxToPickBuffers);
+    // field is set index but not true field - only 0 for single_field mode
+    mfxExtFeiPPS* ppsE = (mfxExtFeiPPS*)GetExtFeiBuffer(encbuf, MFX_EXTBUFF_FEI_PPS, field);
+    mfxExtFeiPPS* ppsP = (mfxExtFeiPPS*)GetExtFeiBuffer(pakbuf, MFX_EXTBUFF_FEI_PPS, field);
 
     if (!ppsE || !ppsP)
         return MFX_ERR_NOT_FOUND;
@@ -262,6 +260,7 @@ int TestSuite::RunTest(unsigned int id)
     encpak.pak.m_par.IOPattern = encpak.enc.m_par.IOPattern;
 
     mfxU16 num_fields = encpak.enc.m_par.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
+    bool bTwoBuffers = (encpak.enc.m_par.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE) && !encpak.m_bSingleField;
 
     ProcessSetPPS pd(encpak.enc.m_par, tc, "bs.out");
 
@@ -300,16 +299,17 @@ int TestSuite::RunTest(unsigned int id)
 
     for ( count = 0; count < n_frames && sts == MFX_ERR_NONE; count++) {
         for (mfxU32 field = 0; field < num_fields && sts == MFX_ERR_NONE; field++) {
-            encpak.PrepareFrameBuffers(field);
-            LoadTC(encpak.enc.inbuf, encpak.pak.inbuf, tc, field);
-
-            // tmp: to align fields
-            if (num_fields == 2) {
-                LoadTC(encpak.enc.inbuf, encpak.pak.inbuf, tc, 1 ^ field);
-            }
-
             // In single-field mode only one set is used
             mfxU32 idxToPickBuffers = encpak.m_bSingleField ? 0 : field;
+
+            encpak.PrepareFrameBuffers(field);
+            if (sts != MFX_ERR_NONE)
+                break;
+
+            LoadTC(encpak.enc.inbuf, encpak.pak.inbuf, tc, idxToPickBuffers);
+            if (bTwoBuffers) {
+                LoadTC(encpak.enc.inbuf, encpak.pak.inbuf, tc, 1 ^ idxToPickBuffers);
+            }
 
             // to modify pps etc
             mfxExtFeiPPS         * fppsE   = (mfxExtFeiPPS *)        GetExtFeiBuffer(encpak.enc.inbuf, MFX_EXTBUFF_FEI_PPS,   idxToPickBuffers);
@@ -354,8 +354,6 @@ int TestSuite::RunTest(unsigned int id)
             sts = encpak.EncodeFrame(field);
 
             g_tsStatus.expect(tc.sts); // if fails check if it is expected
-            if (sts != MFX_ERR_NONE)
-                break;
         }
 
     }

@@ -18,10 +18,12 @@ mfxStatus PrepareCtrlBuf(mfxExtFeiEncFrameCtrl* & fei_encode_ctrl, const mfxVide
 mfxStatus PrepareSPSBuf(mfxExtFeiSPS* & fsps, const mfxVideoParam& vpar);
 mfxStatus PreparePPSBuf(mfxExtFeiPPS* & fpps, const mfxVideoParam& vpar);
 mfxStatus PrepareSliceBuf(mfxExtFeiSliceHeader* & fslice, const mfxVideoParam& vpar);
-mfxStatus ReleaseExtBufs (std::vector<mfxExtBuffer*>& in_buffs, mfxU32 num_fields);
 
 mfxStatus PreparePakMBCtrlBuf(mfxExtFeiPakMBCtrl & mb, const mfxVideoParam& vpar);
 mfxStatus PrepareEncMVBuf(mfxExtFeiEncMV & mv, const mfxVideoParam& vpar);
+
+#define   PpsDPBSize 16
+void      CopyPpsDPB(const mfxExtFeiPPS::mfxExtFeiPpsDPB *src, mfxExtFeiPPS::mfxExtFeiPpsDPB *dst);
 
 // there should be common function like this instead of one in mfx_h264_enc_common_hw.h
 mfxExtBuffer* GetExtFeiBuffer(mfxExtBuffer** ebuffers, mfxU32 nbuffers, mfxU32 BufferId, mfxU32 field = 0);
@@ -47,6 +49,8 @@ enum
 typedef struct {
     mfxU16 dpb_idx; // pos in pps->ReferenceFrames[0];
     mfxU16 type;    // MFX_PICTYPE_FRAME, _TOPFIELD, _BOTTOMFIELD
+    mfxU16 LongTermFrameIdx; // Like PpsDPB
+    mfxI16 diffFrameOrder;   // this ref minus current frame
 } RefListElem;
 
 class tsVideoENCPAK : public tsSession//, public tsSurfacePool
@@ -80,8 +84,6 @@ public:
     tsExtBufType<mfxBitstream>  m_bitstream;
     mfxBitstream*               m_pBitstream;
     tsBitstreamProcessor*       m_bs_processor;
-
-    mfxU32                      m_frames_buffered; // fuzzy, unused so far
 
     mfxSyncPoint*               m_pSyncPoint;
     tsSurfaceProcessor*         m_filler;
@@ -130,7 +132,11 @@ public:
     mfxStatus PrepareInitBuffers();
     mfxStatus PrepareFrameBuffers(bool secondField);
 
+    mfxStatus CreatePpsDPB(const std::vector<mfxFrameSurface1*>& _refs, mfxExtFeiPPS::mfxExtFeiPpsDPB *pd);
+    mfxStatus UpdateDPB   (std::vector<mfxFrameSurface1*>& dpb, bool secondField);
     mfxStatus PrepareDpbBuffers(bool secondField); // fills dpb from current state
+    mfxStatus FillRefLists(bool secondField);
+    mfxStatus FillSliceRefs(bool secondField);
 
     mfxStatus EncodeFrame(bool secondField);
 
@@ -141,11 +147,12 @@ private:
     mfxPAKInput                 PAKInput;
     mfxPAKOutput                PAKOutput;
 
+    mfxExtFeiPPS::mfxExtFeiPpsDPB nextDpb[PpsDPBSize]; // before frame - expectation, after frame - compare to next Before
+
     std::vector<mfxFrameSurface1*> refs; // dpb, updated after frame, filled at tail
     std::vector<mfxFrameSurface1*> recSet; // hw allocated recon surface pool, in->LOsufaces
+    std::vector<mfxU16> LTidxSet; // LT frame idx, co-located with recSet
 public:
-//    std::vector<mfxU16> dpb_idx; // copy src for pps->ReferenceFrames, maps dpb to recon pool above
-
     mfxExtFeiPakMBCtrl          m_mb[2]; // [1st, 2nd fields]
     mfxExtFeiEncMV              m_mv[2]; // [1st, 2nd fields]
 

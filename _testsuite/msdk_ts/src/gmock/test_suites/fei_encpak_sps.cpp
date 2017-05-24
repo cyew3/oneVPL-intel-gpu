@@ -147,6 +147,8 @@ public:
                     if (au.NALU[i].nal_unit_type != SPS_NUT)
                         continue; // todo: missed sps succeeds now
 
+                    if ((m_tc.mode & ALWAYS) == NEVER) // never provided - don't compare
+                        continue;
                     VERIFY_FIELD(au.NALU[i].SPS->seq_parameter_set_id, m_tc.par.SPSId, "SPSid")
                     VERIFY_FIELD(au.NALU[i].SPS->pic_order_cnt_type, m_tc.par.PicOrderCntType, "PicOrderCntType")
                     VERIFY_FIELD(au.NALU[i].SPS->log2_max_pic_order_cnt_lsb_minus4+4, m_tc.par.Log2MaxPicOrderCntLsb, "Log2MaxPicOrderCntLsb")
@@ -276,8 +278,6 @@ int TestSuite::RunTest(unsigned int id)
             sts = encpak.EncodeFrame(field);
 
             g_tsStatus.expect(tc.sts); // if init fails check if it is expected
-            if (sts != MFX_ERR_NONE)
-                break;
         }
 
     }
@@ -285,7 +285,7 @@ int TestSuite::RunTest(unsigned int id)
     g_tsLog << count << " FRAMES Encoded\n";
 
     g_tsStatus.enable();
-    int ret = g_tsStatus.check(sts);
+    int ret = g_tsStatus.check(/*sts*/);
 
     TS_END;
     return 0;
