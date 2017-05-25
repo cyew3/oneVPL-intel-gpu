@@ -595,13 +595,19 @@ mfxStatus VideoENC_ENC::RunFrameVmeENCCheck(
         ConfigureTaskFEI(task, m_prevTask, m_video, input);
 #else
         ConfigureTaskFEI(task, m_prevTask, m_video, input, input, m_frameOrder_frameNum);
-#endif // MSDK_API >= 1023
+#endif // MFX_VERSION >= 1023
 
-        //!!! HACK !!!
+        // Change DPB
         m_recFrameOrder[task.m_idxRecon] = task.m_frameOrder;
-        TEMPORAL_HACK_WITH_DPB(task.m_dpb[0],          m_rec.mids, m_recFrameOrder);
-        TEMPORAL_HACK_WITH_DPB(task.m_dpb[1],          m_rec.mids, m_recFrameOrder);
-        TEMPORAL_HACK_WITH_DPB(task.m_dpbPostEncoding, m_rec.mids, m_recFrameOrder);
+
+        sts = Change_DPB(task.m_dpb[0],          m_rec.mids, m_recFrameOrder);
+        MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
+
+        sts = Change_DPB(task.m_dpb[1],          m_rec.mids, m_recFrameOrder);
+        MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
+
+        sts = Change_DPB(task.m_dpbPostEncoding, m_rec.mids, m_recFrameOrder);
+        MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
     }
 
     pEntryPoints[0].pState               = this;
