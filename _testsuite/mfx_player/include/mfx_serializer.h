@@ -905,7 +905,44 @@ protected:
     virtual void ConstructValues () const;
 };
 
+template<>
+class MFXStructureRef <mfxExtAVCRefLists::mfxRefPic>
+    : public MFXStructureBase<mfxExtAVCRefLists::mfxRefPic>
+{
+public:
+    MFXStructureRef(mfxExtAVCRefLists::mfxRefPic & refStruct, int flags = 0)
+        : MFXStructureBase<mfxExtAVCRefLists::mfxRefPic>(refStruct, flags)
+    {
+    }
+protected:
+    virtual void ConstructValues() const;
+};
 
+template<>
+class MFXStructureRef <mfxExtAVCRefLists>
+    : public MFXStructureBase<mfxExtAVCRefLists>
+{
+public:
+    MFXStructureRef(mfxExtAVCRefLists & refStruct, int flags = 0)
+        : MFXStructureBase<mfxExtAVCRefLists>(refStruct, flags)
+    {
+    }
+protected:
+    virtual void ConstructValues() const;
+};
+
+template<>
+class MFXStructureRef <mfxExtPredWeightTable>
+    : public MFXStructureBase<mfxExtPredWeightTable>
+{
+public:
+    MFXStructureRef(mfxExtPredWeightTable & refStruct, int flags = 0)
+        : MFXStructureBase<mfxExtPredWeightTable>(refStruct, flags)
+    {
+    }
+protected:
+    virtual void ConstructValues() const;
+};
 
 template <class T> 
 MFXStructureRef<T> make_structure_ref( T & structure) {

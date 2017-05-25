@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2017 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -335,27 +335,30 @@ addExtBufferCommand::addExtBufferCommand(IPipelineControl *pHolder)
 {
 }
 
-mfxStatus    addExtBufferCommand::Execute()
+mfxStatus addExtBufferCommand::Execute()
 {
-    if (NULL == m_pBuf) {
-        PipelineTrace((VM_STRING("ERROR: [addExtBufferCommand]:Execute buffer is NULL\n")));
-        return MFX_ERR_NULL_PTR;
-    }
     IVideoEncode *pEnc;
     ICurrentFrameControl *pCtrl;
     MFX_CHECK_STS(m_pControl->GetEncoder(&pEnc));
     MFX_CHECK_POINTER(pCtrl = pEnc->GetInterface<ICurrentFrameControl>());
-    pCtrl->AddExtBuffer((mfxExtBuffer&)*m_pBuf);
-    PipelineTrace((VM_STRING("ExtBufferAdded: \n%s\n"), Serialize(*m_pBuf).c_str()));
+
+    for (size_t i = 0; i < m_buf.size(); i++)
+    {
+        if (!m_buf[i])
+        {
+            PipelineTrace((VM_STRING("ERROR: [addExtBufferCommand]:Execute buffer is NULL\n")));
+            return MFX_ERR_NULL_PTR;
+        }
+        pCtrl->AddExtBuffer(*m_buf[i]);
+        PipelineTrace((VM_STRING("ExtBufferAdded: \n%s\n"), Serialize(*m_buf[i]).c_str()));
+    }
 
     return MFX_ERR_NONE;
 }
 
 void addExtBufferCommand::RegisterExtBuffer( const mfxExtBuffer & refBuf )
 {
-    m_bufData.resize(refBuf.BufferSz);
-    m_pBuf = (mfxExtBuffer*)&m_bufData.front();
-    memcpy(m_pBuf, &refBuf, m_bufData.size());
+    m_buf.push_back(refBuf);
 }
 
 mfxStatus removeExtBufferCommand::Execute()

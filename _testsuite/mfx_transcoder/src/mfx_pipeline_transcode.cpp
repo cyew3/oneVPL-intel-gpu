@@ -21,6 +21,7 @@ Copyright(c) 2008-2017 Intel Corporation. All Rights Reserved.
 #include "mfx_latency_decoder.h"
 #include "mfx_perfcounter_time.h"
 #include "mfx_ref_list_control_encode.h"
+#include "mfx_per_frame_ext_buf_encode.h"
 #include "mfx_serializer.h"
 #include "mfx_file_generic.h"
 #include "mfx_adapters.h"
@@ -1407,6 +1408,65 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             //pipeline will create a encode wrapper according to this flag
             m_inParams.bCreateRefListControl = true;
         }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-PWTPar"), VM_STRING("par-file for per-frame PredWeightTable + RefLists. Par format - int values; at new frame: <FrameOrder>,<log2WDy>,<log2WDc>,<L0Size>,<L1Size>\\n; then for each reference(L0Size + L1Size lines): <FrameOrder>,<PicStruct>,<WeightY>,<OffsetY>,<WeightCb>,<OffsetCb>,<WeightCr>,<OffsetCr>\\n. No comments/empty lines allowed."), OPT_FILENAME))
+        {
+            MFX_CHECK(++argv != argvEnd);
+            vm_file* par_file = vm_file_fopen(argv[0], VM_STRING("r"));
+            MFX_CHECK(par_file != 0);
+
+            for(;;)
+            {
+                const mfxU16 Y = 0, Cb = 1, Cr = 2, W = 0, O = 1;
+                mfxExtAVCRefLists rpl = { {MFX_EXTBUFF_AVC_REFLISTS, sizeof(mfxExtAVCRefLists)}, };
+                mfxExtPredWeightTable pwt = { { MFX_EXTBUFF_PRED_WEIGHT_TABLE, sizeof(mfxExtPredWeightTable) }, };
+                mfxExtBuffer* ppExtBuf[] = {&rpl.Header, &pwt.Header};
+                mfxU32 frameOrder;
+                mfxI16 wY, wC;
+                vm_char sbuf[256], *pStr;
+
+                pStr = vm_file_fgets(sbuf, sizeof(sbuf), par_file);
+                if (!pStr)
+                    break;
+
+                MFX_CHECK(5 == vm_string_sscanf(pStr, VM_STRING("%i,%hi,%hi,%hi,%hi")
+                    , &frameOrder
+                    , &pwt.LumaLog2WeightDenom
+                    , &pwt.ChromaLog2WeightDenom
+                    , &rpl.NumRefIdxL0Active
+                    , &rpl.NumRefIdxL1Active));
+
+                wY = (1 << pwt.LumaLog2WeightDenom);
+                wC = (1 << pwt.ChromaLog2WeightDenom);
+
+                for (mfxU32 l = 0, n = rpl.NumRefIdxL0Active; l < 2; l++, n = rpl.NumRefIdxL1Active)
+                {
+                    for (mfxU32 i = 0; i < n; i++)
+                    {
+                        mfxExtAVCRefLists::mfxRefPic& ref = l ? rpl.RefPicList1[i] : rpl.RefPicList0[i];
+
+                        MFX_CHECK(pStr = vm_file_fgets(sbuf, sizeof(sbuf), par_file));
+                        MFX_CHECK(8 == vm_string_sscanf(pStr, VM_STRING("%i,%hi,%hi,%hi,%hi,%hi,%hi,%hi")
+                            , &ref.FrameOrder
+                            , &ref.PicStruct
+                            , &pwt.Weights[l][i][Y][W]
+                            , &pwt.Weights[l][i][Y][O]
+                            , &pwt.Weights[l][i][Cb][W]
+                            , &pwt.Weights[l][i][Cb][O]
+                            , &pwt.Weights[l][i][Cr][W]
+                            , &pwt.Weights[l][i][Cr][O]));
+                        pwt.LumaWeightFlag[l][i] = pwt.Weights[l][i][Y][O] || pwt.Weights[l][i][Y][W] != wY;
+                        pwt.ChromaWeightFlag[l][i] = pwt.Weights[l][i][Cb][O] || pwt.Weights[l][i][Cb][W] != wC
+                                                  || pwt.Weights[l][i][Cr][O] || pwt.Weights[l][i][Cr][W] != wC;
+                    }
+                }
+
+                m_pFactories.push_back(new constnumFactory(1
+                    , new FrameBasedCommandActivator(new addExtBufferCommand(this), this)
+                    , new baseCmdsInitializer(frameOrder, 0., 0., 0, m_pRandom, 0, 0, (mfxExtBuffer*)ppExtBuf, 0, MFX_ARRAY_SIZE(ppExtBuf))));
+            }
+
+            m_inParams.bCreatePerFrameExtBuf = true;
+        }
         else HANDLE_BOOL_OPTION(m_bCreateDecode, VM_STRING("-enc:dec"), VM_STRING("decoding of encoded frames "));
         else HANDLE_INT_OPTION(m_extCodingOptionsSPSPPS->SPSId, VM_STRING("-spsid"), VM_STRING("set SPSId in mfxExcodingOptionSPSPPS structure"))
         else HANDLE_INT_OPTION(m_extCodingOptionsSPSPPS->PPSId, VM_STRING("-ppsid"), VM_STRING("set PPSId in mfxExcodingOptionSPSPPS structure"))
@@ -2576,8 +2636,14 @@ std::auto_ptr<IVideoEncode> MFXTranscodingPipeline::CreateEncoder()
         pEncoder.reset(new FieldOutputEncoder(pEncoder));
     }
 
-    if (!m_extEncoderCapability.IsZero()) {
+    if (!m_extEncoderCapability.IsZero())
+    {
         pEncoder.reset(new QueryMode4Encode(pEncoder));
+    }
+
+    if (m_inParams.bCreatePerFrameExtBuf)
+    {
+        pEncoder.reset(new PerFrameExtBufEncode(pEncoder));
     }
 
     //TODO: always attaching MVC handler, is it possible not to do this

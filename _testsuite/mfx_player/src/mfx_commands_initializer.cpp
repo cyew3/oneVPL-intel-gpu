@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2017 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -63,7 +63,8 @@ baseCmdsInitializer::baseCmdsInitializer( mfxU32 nActivatedFrame
                                         , mfxVideoParam * pResetEncParam
                                         , mfxVideoParam * pMaskedEncParam
                                         , mfxExtBuffer  * bufToAttach
-                                        , mfxU32 nBufToRemove)
+                                        , mfxU32 nBufToRemove
+                                        , mfxU16 nExtBuf)
     : m_fWarminUpTime(fWarminUpTime)
     , m_fSeekToTime(fSeekToTime)
     , m_nMaxSkipLevel(nMaxSkipLevel)
@@ -83,10 +84,33 @@ baseCmdsInitializer::baseCmdsInitializer( mfxU32 nActivatedFrame
     {
         memcpy(&m_maskedParams, pMaskedEncParam, sizeof(*pMaskedEncParam));
     }
-    if (NULL != bufToAttach) {
-        m_bufferToAttachData.resize(bufToAttach->BufferSz);
-        m_pBufferToAttach = (mfxExtBuffer*)&m_bufferToAttachData.front();
-        memcpy(m_pBufferToAttach, bufToAttach, bufToAttach->BufferSz);
+
+    if (NULL != bufToAttach)
+    {
+        if (nExtBuf > 0)
+        {
+            mfxExtBuffer** ppExtBuf = (mfxExtBuffer**)bufToAttach;
+            size_t sz = 0;
+
+            for (mfxU32 i = 0; i < nExtBuf; i++)
+                sz += ppExtBuf[i]->BufferSz;
+
+            m_bufferToAttachData.resize(sz);
+            m_pBufferToAttach = (mfxExtBuffer*)&m_bufferToAttachData.front();
+            sz = 0;
+
+            for (mfxU32 i = 0; i < nExtBuf; i++)
+            {
+                memcpy(&m_bufferToAttachData[sz], ppExtBuf[i], ppExtBuf[i]->BufferSz);
+                sz += ppExtBuf[i]->BufferSz;
+            }
+        }
+        else
+        {
+            m_bufferToAttachData.resize(bufToAttach->BufferSz);
+            m_pBufferToAttach = (mfxExtBuffer*)&m_bufferToAttachData.front();
+            memcpy(m_pBufferToAttach, bufToAttach, bufToAttach->BufferSz);
+        }
     }
 }
 
@@ -127,7 +151,15 @@ bool baseCmdsInitializer::Init(resetEncCommand* pCmd)
 
 bool baseCmdsInitializer::Init(addExtBufferCommand * pCmd)
 {
-    pCmd->RegisterExtBuffer((mfxExtBuffer&)*m_pBufferToAttach);
+    size_t sz = 0;
+
+    while (sz < m_bufferToAttachData.size())
+    {
+        mfxExtBuffer* pExtBuf = (mfxExtBuffer*)&m_bufferToAttachData[sz];
+        pCmd->RegisterExtBuffer(*pExtBuf);
+        sz += pExtBuf->BufferSz;
+    }
+
     return true;
 }
 

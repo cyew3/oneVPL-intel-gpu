@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2017 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -27,6 +27,7 @@ File Name: .h
 
 
 #include "mfx_icommand.h"
+#include "mfx_extended_buffer.h"
 
 //hold pipeline control only
 class commandBase : public ICommand
@@ -128,8 +129,7 @@ public:
     virtual void         RegisterExtBuffer(const mfxExtBuffer & refBuf );
 
 protected:
-    std::vector<char> m_bufData;
-    mfxExtBuffer *m_pBuf;
+    MFXExtBufferVector m_buf;
 };
 
 class removeExtBufferCommand : public commandBase

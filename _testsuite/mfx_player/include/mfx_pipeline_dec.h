@@ -98,6 +98,7 @@ struct sCommandlineParams
   bool           bMultiFiles;//used in multiview render to allow create output in different files
   bool           bCreateRefListControl;
   bool           bCreateEncFrameInfo;
+  bool           bCreatePerFrameExtBuf;
   bool           bCalcCRC;//create crc calculation wrapper over filewriter
   bool           bNullFileWriter;
   bool           bDisableIpFieldPair;//disables p field generation

@@ -890,6 +890,110 @@ void MFXStructureRef <mfxExtHEVCParam>::ConstructValues () const
     SERIALIZE_INT(SampleAdaptiveOffset);
 }
 
+void MFXStructureRef<mfxExtAVCRefLists::mfxRefPic>::ConstructValues() const
+{
+    SERIALIZE_INT(FrameOrder);
+    SERIALIZE_INT(PicStruct);
+}
+
+void MFXStructureRef<mfxExtAVCRefLists>::ConstructValues() const
+{
+    SERIALIZE_INT(NumRefIdxL0Active);
+    SERIALIZE_INT(NumRefIdxL1Active);
+
+    if (m_pStruct->NumRefIdxL0Active)
+        SERIALIZE_STRUCTS_ARRAY(RefPicList0, m_pStruct->NumRefIdxL0Active);
+    if (m_pStruct->NumRefIdxL1Active)
+        SERIALIZE_STRUCTS_ARRAY(RefPicList1, m_pStruct->NumRefIdxL1Active);
+}
+
+void MFXStructureRef<mfxExtPredWeightTable>::ConstructValues() const
+{
+    SERIALIZE_INT(LumaLog2WeightDenom);
+    SERIALIZE_INT(ChromaLog2WeightDenom);
+    SERIALIZE_POD_ARRAY(LumaWeightFlag[0], 32);
+    SERIALIZE_POD_ARRAY(LumaWeightFlag[1], 32);
+    SERIALIZE_POD_ARRAY(ChromaWeightFlag[0], 32);
+    SERIALIZE_POD_ARRAY(ChromaWeightFlag[1], 32);
+
+#define SERIALIZE_PWT_WEIGHT(list, idx)                 \
+    if (m_pStruct->LumaWeightFlag[list][idx])           \
+        SERIALIZE_POD_ARRAY(Weights[list][idx][0], 2);  \
+    if (m_pStruct->ChromaWeightFlag[list][idx])         \
+    {                                                   \
+        SERIALIZE_POD_ARRAY(Weights[list][idx][1], 2);  \
+        SERIALIZE_POD_ARRAY(Weights[list][idx][2], 2);  \
+    }
+
+    SERIALIZE_PWT_WEIGHT(0,  0);
+    SERIALIZE_PWT_WEIGHT(0,  1);
+    SERIALIZE_PWT_WEIGHT(0,  2);
+    SERIALIZE_PWT_WEIGHT(0,  3);
+    SERIALIZE_PWT_WEIGHT(0,  4);
+    SERIALIZE_PWT_WEIGHT(0,  5);
+    SERIALIZE_PWT_WEIGHT(0,  6);
+    SERIALIZE_PWT_WEIGHT(0,  7);
+    SERIALIZE_PWT_WEIGHT(0,  8);
+    SERIALIZE_PWT_WEIGHT(0, 19);
+    SERIALIZE_PWT_WEIGHT(0, 10);
+    SERIALIZE_PWT_WEIGHT(0, 11);
+    SERIALIZE_PWT_WEIGHT(0, 12);
+    SERIALIZE_PWT_WEIGHT(0, 13);
+    SERIALIZE_PWT_WEIGHT(0, 14);
+    SERIALIZE_PWT_WEIGHT(0, 15);
+    SERIALIZE_PWT_WEIGHT(0, 16);
+    SERIALIZE_PWT_WEIGHT(0, 17);
+    SERIALIZE_PWT_WEIGHT(0, 18);
+    SERIALIZE_PWT_WEIGHT(0, 19);
+    SERIALIZE_PWT_WEIGHT(0, 20);
+    SERIALIZE_PWT_WEIGHT(0, 21);
+    SERIALIZE_PWT_WEIGHT(0, 22);
+    SERIALIZE_PWT_WEIGHT(0, 23);
+    SERIALIZE_PWT_WEIGHT(0, 24);
+    SERIALIZE_PWT_WEIGHT(0, 25);
+    SERIALIZE_PWT_WEIGHT(0, 26);
+    SERIALIZE_PWT_WEIGHT(0, 27);
+    SERIALIZE_PWT_WEIGHT(0, 28);
+    SERIALIZE_PWT_WEIGHT(0, 29);
+    SERIALIZE_PWT_WEIGHT(0, 30);
+    SERIALIZE_PWT_WEIGHT(0, 31);
+
+    SERIALIZE_PWT_WEIGHT(1,  0);
+    SERIALIZE_PWT_WEIGHT(1,  1);
+    SERIALIZE_PWT_WEIGHT(1,  2);
+    SERIALIZE_PWT_WEIGHT(1,  3);
+    SERIALIZE_PWT_WEIGHT(1,  4);
+    SERIALIZE_PWT_WEIGHT(1,  5);
+    SERIALIZE_PWT_WEIGHT(1,  6);
+    SERIALIZE_PWT_WEIGHT(1,  7);
+    SERIALIZE_PWT_WEIGHT(1,  8);
+    SERIALIZE_PWT_WEIGHT(1, 19);
+    SERIALIZE_PWT_WEIGHT(1, 10);
+    SERIALIZE_PWT_WEIGHT(1, 11);
+    SERIALIZE_PWT_WEIGHT(1, 12);
+    SERIALIZE_PWT_WEIGHT(1, 13);
+    SERIALIZE_PWT_WEIGHT(1, 14);
+    SERIALIZE_PWT_WEIGHT(1, 15);
+    SERIALIZE_PWT_WEIGHT(1, 16);
+    SERIALIZE_PWT_WEIGHT(1, 17);
+    SERIALIZE_PWT_WEIGHT(1, 18);
+    SERIALIZE_PWT_WEIGHT(1, 19);
+    SERIALIZE_PWT_WEIGHT(1, 20);
+    SERIALIZE_PWT_WEIGHT(1, 21);
+    SERIALIZE_PWT_WEIGHT(1, 22);
+    SERIALIZE_PWT_WEIGHT(1, 23);
+    SERIALIZE_PWT_WEIGHT(1, 24);
+    SERIALIZE_PWT_WEIGHT(1, 25);
+    SERIALIZE_PWT_WEIGHT(1, 26);
+    SERIALIZE_PWT_WEIGHT(1, 27);
+    SERIALIZE_PWT_WEIGHT(1, 28);
+    SERIALIZE_PWT_WEIGHT(1, 29);
+    SERIALIZE_PWT_WEIGHT(1, 30);
+    SERIALIZE_PWT_WEIGHT(1, 31);
+
+#undef SERIALIZE_PWT_WEIGHT
+}
+
 void MFXStructureRef <mfxExtBuffer>:: ConstructValues () const {
     switch (m_pStruct->BufferId)
     {
@@ -971,6 +1075,14 @@ void MFXStructureRef <mfxExtBuffer>:: ConstructValues () const {
         }
         case MFX_EXTBUFF_VP9_TEMPORAL_LAYERS: {
             SerializeStruct(VM_STRING("VP9TL."), *(mfxExtVP9TemporalLayers*)m_pStruct);
+            break;
+        }
+        case MFX_EXTBUFF_AVC_REFLISTS: {
+            SerializeStruct(VM_STRING("AVCRPL."), *(mfxExtAVCRefLists*)m_pStruct);
+            break;
+        }
+        case MFX_EXTBUFF_PRED_WEIGHT_TABLE: {
+            SerializeStruct(VM_STRING("PWT."), *(mfxExtPredWeightTable*)m_pStruct);
             break;
         }
         default :
