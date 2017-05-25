@@ -414,7 +414,7 @@ void MfxH264FEIcommon::ConfigureTaskFEI(
                 }
 
                 // Remove one field from pair if required
-                if (instance->m_refPicFlag[ffid] != instance_after->m_refPicFlag[ffid] || instance->m_refPicFlag[sfid] != instance_after->m_refPicFlag[sfid])
+                if ((instance->m_refPicFlag[ffid] && !instance_after->m_refPicFlag[ffid]) || (instance->m_refPicFlag[sfid] && !instance_after->m_refPicFlag[sfid]))
                 {
                     mfxU32 fid = instance->m_refPicFlag[ffid] != instance_after->m_refPicFlag[ffid] ? ffid : sfid;
 
@@ -970,8 +970,13 @@ mfxStatus MfxH264FEIcommon::CheckDPBpairCorrectness(T * input, U* output, mfxExt
             MFX_CHECK_WITH_ASSERT(dpb_frame_before->FrameNumWrap     == dpb_frame_after->FrameNumWrap,                                                     MFX_ERR_UNDEFINED_BEHAVIOR);
             // LongTermFrameIdx shouldn't change
             MFX_CHECK_WITH_ASSERT(dpb_frame_before->LongTermFrameIdx == dpb_frame_after->LongTermFrameIdx || dpb_frame_before->LongTermFrameIdx == 0xffff, MFX_ERR_UNDEFINED_BEHAVIOR);
-            // Allowed transformation of PicType is following: unchanged or one field became unused. The rest are forbidden.
-            MFX_CHECK_WITH_ASSERT((dpb_frame_before->PicType & dpb_frame_after->PicType) && (dpb_frame_before->PicType >= dpb_frame_after->PicType),       MFX_ERR_UNDEFINED_BEHAVIOR);
+
+            // Allowed transformation of PicType is following: unchanged, one field became unused or current frame's second field added. The rest are forbidden.
+            if (input->L0Surface[dpb_frame_before->Index] != output->OutSurface)
+            {
+                // Not current frame
+                MFX_CHECK_WITH_ASSERT((dpb_frame_before->PicType & dpb_frame_after->PicType) && (dpb_frame_before->PicType >= dpb_frame_after->PicType),   MFX_ERR_UNDEFINED_BEHAVIOR)
+            }
         }
     }
     MFX_CHECK_WITH_ASSERT(newFrames.size() <= 1, MFX_ERR_UNDEFINED_BEHAVIOR);
@@ -997,6 +1002,13 @@ mfxStatus MfxH264FEIcommon::CheckOneDPBCorrectness(mfxExtFeiPPS::mfxExtFeiPpsDPB
     {
         if (DPB[i].Index == 0xffff)
             break;
+
+        // Check passed PicType
+        MFX_CHECK_WITH_ASSERT(DPB[i].PicType == MFX_PICTYPE_FRAME       ||
+                              DPB[i].PicType == MFX_PICTYPE_TOPFIELD    ||
+                              DPB[i].PicType == MFX_PICTYPE_BOTTOMFIELD ||
+                              DPB[i].PicType == (MFX_PICTYPE_TOPFIELD | MFX_PICTYPE_BOTTOMFIELD),
+                              MFX_ERR_UNDEFINED_BEHAVIOR);
 
         dpb_setting.push_back(DPB[i].Index);
     }
