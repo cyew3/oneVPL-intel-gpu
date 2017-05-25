@@ -491,6 +491,9 @@ namespace ExtBuffer
         EXTBUF(mfxExtBRC,                   MFX_EXTBUFF_BRC);
 #endif
         EXTBUF(mfxExtMBQP,                  MFX_EXTBUFF_MBQP);
+#if defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
+        EXTBUF(mfxExtPredWeightTable,       MFX_EXTBUFF_PRED_WEIGHT_TABLE);
+#endif //defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
 
     #undef EXTBUF
 
@@ -576,6 +579,13 @@ namespace ExtBuffer
 #endif
         _CopyPar1(WinBRCMaxAvgKbps);
         _CopyPar1(WinBRCSize);
+#if defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
+        _CopyPar1(WeightedPred);
+        _CopyPar1(WeightedBiPred);
+#if defined(MFX_ENABLE_HEVCE_FADE_DETECTION)
+        _CopyPar1(FadeDetection);
+#endif //defined(MFX_ENABLE_HEVCE_FADE_DETECTION)
+#endif //defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
     }
 
     inline void  CopySupportedParams(mfxExtCodingOptionDDI& buf_dst, mfxExtCodingOptionDDI& buf_src)
@@ -856,7 +866,7 @@ public:
 
     mfxStatus FillPar(mfxVideoParam& par, bool query = false);
 
-    mfxStatus GetSliceHeader(Task const & task, Task const & prevTask, Slice & s) const;
+    mfxStatus GetSliceHeader(Task const & task, Task const & prevTask, ENCODE_CAPS_HEVC const & caps, Slice & s) const;
 
     mfxStatus GetExtBuffers(mfxVideoParam& par, bool query = false);
     bool CheckExtBufferParam();

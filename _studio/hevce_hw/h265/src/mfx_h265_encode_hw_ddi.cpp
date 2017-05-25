@@ -138,6 +138,23 @@ mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, MFXCoreInterface* core, GUID guid
         caps.IntraRefreshBlockUnitSize = 1; // 16x16
     }
 
+#if defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
+    if (pltfm.CodeName >= MFX_PLATFORM_ICELAKE)
+    {
+        if (caps.NoWeightedPred)
+            caps.NoWeightedPred = 0;
+
+        caps.LumaWeightedPred = 1;
+        caps.ChromaWeightedPred = 1;
+
+        if (!caps.MaxNum_WeightedPredL0)
+            caps.MaxNum_WeightedPredL0 = 3;
+        if (!caps.MaxNum_WeightedPredL1)
+            caps.MaxNum_WeightedPredL1 = 3;
+
+        //caps.SliceLevelWeightedPred;
+    }
+#endif //defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
 #else
     if (!caps.LCUSizeSupported)
         caps.LCUSizeSupported = 2;
@@ -335,12 +352,21 @@ ENCODE_PACKEDHEADER_DATA* DDIHeaderPacker::PackHeader(Task const & task, mfxU32 
     return &*m_cur;
 }
 
-ENCODE_PACKEDHEADER_DATA* DDIHeaderPacker::PackSliceHeader(Task const & task, mfxU32 id, mfxU32* qpd_offset, bool dyn_slice_size, mfxU32* sao_offset, mfxU16* ssh_start_len, mfxU32* ssh_offset)
+ENCODE_PACKEDHEADER_DATA* DDIHeaderPacker::PackSliceHeader(
+    Task const & task,
+    mfxU32 id,
+    mfxU32* qpd_offset,
+    bool dyn_slice_size,
+    mfxU32* sao_offset,
+    mfxU16* ssh_start_len,
+    mfxU32* ssh_offset,
+    mfxU32* pwt_offset,
+    mfxU32* pwt_length)
 {
     bool is1stNALU = (id == 0 && task.m_insertHeaders == 0);
     NewHeader();
 
-    m_packer.GetSSH(task, id, m_cur->pData, m_cur->DataLength, qpd_offset, dyn_slice_size, sao_offset, ssh_start_len, ssh_offset);
+    m_packer.GetSSH(task, id, m_cur->pData, m_cur->DataLength, qpd_offset, dyn_slice_size, sao_offset, ssh_start_len, ssh_offset, pwt_offset, pwt_length);
     m_cur->BufferSize = CeilDiv(m_cur->DataLength, 8);
     m_cur->SkipEmulationByteCount = 3 + is1stNALU;
 
@@ -513,6 +539,7 @@ void FillSliceBuffer(
 
 void FillSliceBuffer(
     Task const & task,
+    ENCODE_SET_PICTURE_PARAMETERS_HEVC const & pps,
     bool bLast,
     ENCODE_SET_SLICE_HEADER_HEVC & cs)
 {
@@ -542,15 +569,33 @@ void FillSliceBuffer(
     cs.beta_offset_div2     = task.m_sh.beta_offset_div2;
     cs.tc_offset_div2       = task.m_sh.tc_offset_div2;
 
-    //if (pps.weighted_pred_flag || pps.weighted_bipred_flag)
-    //{
-    //    cs.luma_log2_weight_denom;
-    //    cs.chroma_log2_weight_denom;
-    //    cs.luma_offset[2][15];
-    //    cs.delta_luma_weight[2][15];
-    //    cs.chroma_offset[2][15][2];
-    //    cs.delta_chroma_weight[2][15][2];
-    //}
+#if defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
+    if (cs.slice_type != 2 && (pps.weighted_pred_flag || pps.weighted_bipred_flag))
+    {
+        const mfxU16 Y = 0, Cb = 1, Cr = 2, W = 0, O = 1;
+
+        cs.luma_log2_weight_denom           = (UCHAR)task.m_sh.luma_log2_weight_denom;
+        cs.delta_chroma_log2_weight_denom   = (CHAR)(task.m_sh.chroma_log2_weight_denom - cs.luma_log2_weight_denom);
+
+        mfxI16 wY = (1 << cs.luma_log2_weight_denom);
+        mfxI16 wC = (1 << task.m_sh.chroma_log2_weight_denom);
+
+        for (mfxU16 l = 0; l < 2; l++)
+        {
+            for (mfxU16 i = 0; i < 15; i++)
+            {
+                cs.luma_offset[l][i]            = (CHAR)(task.m_sh.pwt[l][i][Y][O]);
+                cs.delta_luma_weight[l][i]      = (CHAR)(task.m_sh.pwt[l][i][Y][W] - wY);
+                cs.chroma_offset[l][i][0]       = (CHAR)(task.m_sh.pwt[l][i][Cb][O]);
+                cs.chroma_offset[l][i][1]       = (CHAR)(task.m_sh.pwt[l][i][Cr][O]);
+                cs.delta_chroma_weight[l][i][0] = (CHAR)(task.m_sh.pwt[l][i][Cb][W] - wC);
+                cs.delta_chroma_weight[l][i][1] = (CHAR)(task.m_sh.pwt[l][i][Cr][W] - wC);
+            }
+        }
+    }
+#else
+    pps;
+#endif //defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
 
     cs.MaxNumMergeCand = 5 - task.m_sh.five_minus_max_num_merge_cand;
 }
@@ -558,12 +603,12 @@ void FillSliceBuffer(
 void FillSliceBuffer(
     Task const & task,
     ENCODE_SET_SEQUENCE_PARAMETERS_HEVC const & /*sps*/,
-    ENCODE_SET_PICTURE_PARAMETERS_HEVC const & /*pps*/,
+    ENCODE_SET_PICTURE_PARAMETERS_HEVC const & pps,
     std::vector<ENCODE_SET_SLICE_HEADER_HEVC> & slice)
 {
     for (mfxU16 i = 0; i < slice.size(); i ++)
     {
-        FillSliceBuffer(task, (i == slice.size() - 1), slice[i]);
+        FillSliceBuffer(task, pps, (i == slice.size() - 1), slice[i]);
     }
 }
 
@@ -762,7 +807,12 @@ void FillPpsBuffer(
     pps.cu_qp_delta_enabled_flag         = par.m_pps.cu_qp_delta_enabled_flag;
     pps.weighted_pred_flag               = par.m_pps.weighted_pred_flag;
     pps.weighted_bipred_flag             = par.m_pps.weighted_pred_flag;
+
+#if defined(MFX_ENABLE_HEVCE_FADE_DETECTION)
+    pps.bEnableGPUWeightedPrediction     = IsOn(par.m_ext.CO3.FadeDetection) && (pps.weighted_pred_flag || pps.weighted_bipred_flag);
+#else
     pps.bEnableGPUWeightedPrediction     = 0;
+#endif //defined(MFX_ENABLE_HEVCE_FADE_DETECTION)
 
     pps.loop_filter_across_slices_flag        = par.m_pps.loop_filter_across_slices_enabled_flag;
     pps.loop_filter_across_tiles_flag         = par.m_pps.loop_filter_across_tiles_enabled_flag;
@@ -962,17 +1012,29 @@ void FillSliceBuffer(
 void FillSliceBuffer(
     Task const & task,
     ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_REXT const & /*sps*/,
-    ENCODE_SET_PICTURE_PARAMETERS_HEVC_REXT const & /*pps*/,
+    ENCODE_SET_PICTURE_PARAMETERS_HEVC_REXT const & pps,
     std::vector<ENCODE_SET_SLICE_HEADER_HEVC_REXT> & slice)
 {
     for (mfxU16 i = 0; i < slice.size(); i++)
     {
-        FillSliceBuffer(task, (i == slice.size() - 1), slice[i]);
-        //TBD
-        //slice[i].luma_offset_l0;
-        //slice[i].ChromaOffsetL0;
-        //slice[i].luma_offset_l1;
-        //slice[i].ChromaOffsetL1;
+        ENCODE_SET_SLICE_HEADER_HEVC_REXT & cs = slice[i];
+
+        FillSliceBuffer(task, pps, (i == slice.size() - 1), slice[i]);
+
+        if (cs.slice_type != 2 && (pps.weighted_pred_flag || pps.weighted_bipred_flag))
+        {
+            const mfxU16 Y = 0, Cb = 1, Cr = 2, W = 0, O = 1;
+
+            for (mfxU16 r = 0; r < 15; r++)
+            {
+                cs.luma_offset_l0[r]    = (SHORT)task.m_sh.pwt[0][r][Y][O];
+                cs.ChromaOffsetL0[r][0] = (SHORT)task.m_sh.pwt[0][r][Cb][O];
+                cs.ChromaOffsetL0[r][1] = (SHORT)task.m_sh.pwt[0][r][Cr][O];
+                cs.luma_offset_l1[r]    = (SHORT)task.m_sh.pwt[1][r][Y][O];
+                cs.ChromaOffsetL1[r][0] = (SHORT)task.m_sh.pwt[1][r][Cb][O];
+                cs.ChromaOffsetL1[r][1] = (SHORT)task.m_sh.pwt[1][r][Cr][O];
+            }
+        }
     }
 }
 

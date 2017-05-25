@@ -1705,8 +1705,14 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
     }
 
     m_pps.slice_chroma_qp_offsets_present_flag  = 0;
+#if defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
+    m_pps.weighted_pred_flag = (m_ext.CO3.WeightedPred == MFX_WEIGHTED_PRED_EXPLICIT);
+    m_pps.weighted_bipred_flag = 
+        (m_ext.CO3.WeightedBiPred == MFX_WEIGHTED_PRED_EXPLICIT) || (IsOn(m_ext.CO3.GPB) && m_pps.weighted_pred_flag);
+#else
     m_pps.weighted_pred_flag                    = 0;
     m_pps.weighted_bipred_flag                  = 0;
+#endif //defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
     m_pps.transquant_bypass_enabled_flag        = 0;
     m_pps.tiles_enabled_flag                    = 0;
     m_pps.entropy_coding_sync_enabled_flag      = 0;
@@ -1870,7 +1876,7 @@ bool isForcedDeltaPocMsbPresent(
     return false;
 }
 
-mfxStatus MfxVideoParam::GetSliceHeader(Task const & task, Task const & prevTask, Slice & s) const
+mfxStatus MfxVideoParam::GetSliceHeader(Task const & task, Task const & prevTask, ENCODE_CAPS_HEVC const & caps, Slice & s) const
 {
     bool  isP   = !!(task.m_frameType & MFX_FRAMETYPE_P);
     bool  isB   = !!(task.m_frameType & MFX_FRAMETYPE_B);
@@ -2091,8 +2097,74 @@ mfxStatus MfxVideoParam::GetSliceHeader(Task const & task, Task const & prevTask
         if (s.temporal_mvp_enabled_flag)
             s.collocated_from_l0_flag = 1;
 
+#if defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
+        if (   (m_pps.weighted_pred_flag && isP)
+            || (m_pps.weighted_bipred_flag && isB))
+        {
+            const mfxU16 Y = 0, Cb = 1, Cr = 2, W = 0, O = 1;
+            mfxExtPredWeightTable* pwt = ExtBuffer::Get(task.m_ctrl);
+
+            if (pwt)
+            {
+                s.luma_log2_weight_denom = pwt->LumaLog2WeightDenom;
+                s.chroma_log2_weight_denom = pwt->ChromaLog2WeightDenom;
+            }
+            else
+            {
+                s.luma_log2_weight_denom = 6;
+                s.chroma_log2_weight_denom = s.luma_log2_weight_denom;
+            }
+
+            for (mfxU16 l = 0; l < 2; l++)
+            {
+                for (mfxU16 i = 0; i < 16; i++)
+                {
+                    s.pwt[l][i][Y][W] = (1 << s.luma_log2_weight_denom);
+                    s.pwt[l][i][Y][O] = 0;
+                    s.pwt[l][i][Cb][W] = (1 << s.chroma_log2_weight_denom);
+                    s.pwt[l][i][Cb][O] = 0;
+                    s.pwt[l][i][Cr][W] = (1 << s.chroma_log2_weight_denom);
+                    s.pwt[l][i][Cr][O] = 0;
+                }
+            }
+
+            if (pwt)
+            {
+                mfxU16 sz[2] =
+                {
+                    Min<mfxU16>(s.num_ref_idx_l0_active_minus1 + 1, caps.MaxNum_WeightedPredL0),
+                    Min<mfxU16>(s.num_ref_idx_l1_active_minus1 + 1, caps.MaxNum_WeightedPredL1)
+                };
+
+                for (mfxU16 l = 0; l < 2; l++)
+                {
+                    for (mfxU16 i = 0; i < sz[l]; i++)
+                    {
+                        if (pwt->LumaWeightFlag[l][i] && caps.LumaWeightedPred)
+                        {
+                            s.pwt[l][i][Y][W] = pwt->Weights[l][i][Y][W];
+                            s.pwt[l][i][Y][O] = pwt->Weights[l][i][Y][O];
+                        }
+
+                        if (pwt->ChromaWeightFlag[l][i] && caps.ChromaWeightedPred)
+                        {
+                            s.pwt[l][i][Cb][W] = pwt->Weights[l][i][Cb][W];
+                            s.pwt[l][i][Cb][O] = pwt->Weights[l][i][Cb][O];
+                            s.pwt[l][i][Cr][W] = pwt->Weights[l][i][Cr][W];
+                            s.pwt[l][i][Cr][O] = pwt->Weights[l][i][Cr][O];
+                        }
+                    }
+
+                    if (task.m_ldb && Equal(task.m_refPicList[0], task.m_refPicList[1]))
+                        Copy(s.pwt[1], s.pwt[0]);
+                }
+            }
+        }
+#else
+        caps;
         assert(0 == m_pps.weighted_pred_flag);
         assert(0 == m_pps.weighted_bipred_flag);
+#endif //defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
 
         s.five_minus_max_num_merge_cand = 0;
     }
@@ -2889,6 +2961,8 @@ void ConstructRPL(
 
     if (!isB)
     {
+        l1 = 0; //ignore l1 != l0 in pExtLists for LDB (unsupported by HW)
+
         for (mfxU16 i = 0; i < Min<mfxU16>(l0, NumRefLX[1]); i ++)
             RPL[1][l1++] = RPL[0][i];
         //for (mfxI16 i = l0 - 1; i >= 0 && l1 < NumRefLX[1]; i --)
@@ -3255,7 +3329,7 @@ void ConfigureTask(
 
     task.m_shNUT = GetSHNUT(task);
 
-    par.GetSliceHeader(task, prevTask, task.m_sh);
+    par.GetSliceHeader(task, prevTask, caps, task.m_sh);
     task.m_statusReportNumber = prevTask.m_statusReportNumber + 1;
     task.m_statusReportNumber = (task.m_statusReportNumber == 0) ? 1 : task.m_statusReportNumber;
 

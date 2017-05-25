@@ -168,7 +168,17 @@ public:
     inline void GetPPS(mfxU8*& buf, mfxU32& len){buf = m_bs_pps; len = m_sz_pps;}
     void GetPrefixSEI(Task const & task, mfxU8*& buf, mfxU32& len);
     void GetSuffixSEI(Task const & task, mfxU8*& buf, mfxU32& len);
-    void GetSSH(Task const & task, mfxU32 id, mfxU8*& buf, mfxU32& len, mfxU32* qpd_offset, bool dyn_slice_size = false, mfxU32* sao_offset = 0, mfxU16* ssh_start_len = 0, mfxU32* ssh_offset = 0);
+    void GetSSH(Task const & task,
+        mfxU32 id,
+        mfxU8*& buf,
+        mfxU32& len,
+        mfxU32* qpd_offset,
+        bool dyn_slice_size = false,
+        mfxU32* sao_offset = 0,
+        mfxU16* ssh_start_len = 0,
+        mfxU32* ssh_offset = 0,
+        mfxU32* pwt_offset = 0,
+        mfxU32* pwt_length = 0);
     void GetSkipSlice(Task const & task, mfxU32 id, mfxU8*& buf, mfxU32& len, mfxU32* qpd_offset = 0);
     void codingTree(mfxU32 xCtu, mfxU32 yCtu, mfxU32 log2CtuSize, BitstreamWriter& bs, const Slice& slice, mfxU32 x0, mfxU32 y0, mfxU8* tabl);
     static void PackNALU (BitstreamWriter& bs, NALU  const &  nalu);
@@ -183,7 +193,9 @@ public:
                           Slice const &     slice,
                           mfxU32* qpd_offset,
                           bool    dyn_slice_size = false,
-                          mfxU32* sao_offset = 0);
+                          mfxU32* sao_offset = 0,
+                          mfxU32* pwt_offset = 0,
+                          mfxU32* pwt_length = 0);
     static void PackVUI  (BitstreamWriter& bs, VUI        const & vui, mfxU16 max_sub_layers_minus1);
     static void PackHRD  (BitstreamWriter& bs, HRDInfo    const & hrd, bool commonInfPresentFlag, mfxU16 maxNumSubLayersMinus1);
     static void PackPTL  (BitstreamWriter& bs, LayersInfo const & ptl, mfxU16 max_sub_layers_minus1);

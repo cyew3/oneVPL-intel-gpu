@@ -549,7 +549,9 @@ struct Slice
     mfxU8  ref_pic_list_modification_flag_lx[2];
     mfxU8  list_entry_lx[2][16];
 
-    //PredWeightTable *pwt;
+    mfxU16 luma_log2_weight_denom   : 3;
+    mfxU16 chroma_log2_weight_denom : 3;
+    mfxI16 pwt[2][16][3][2]; //[list][list entry][Y, Cb, Cr][weight, offset]
 
     //mfxU32 entry_point_offset_minus1[MAX_NUM_ENTRY_POINT_OFFSETS];
 };

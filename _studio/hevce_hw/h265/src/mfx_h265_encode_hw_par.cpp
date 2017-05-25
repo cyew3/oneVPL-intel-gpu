@@ -2136,6 +2136,31 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     }
 #endif //defined (PRE_SI_TARGET_PLATFORM_GEN10)
 
+#if defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
+    changed += CheckOption(CO3.WeightedPred
+        , (mfxU16)MFX_WEIGHTED_PRED_UNKNOWN
+        , (mfxU16)MFX_WEIGHTED_PRED_DEFAULT
+        , caps.NoWeightedPred ? 0 : MFX_WEIGHTED_PRED_EXPLICIT);
+
+    changed += CheckOption(CO3.WeightedBiPred
+        , (mfxU16)MFX_WEIGHTED_PRED_UNKNOWN
+        , (mfxU16)MFX_WEIGHTED_PRED_DEFAULT
+        , caps.NoWeightedPred ? 0 : MFX_WEIGHTED_PRED_EXPLICIT);
+
+#if defined(MFX_ENABLE_HEVCE_FADE_DETECTION)
+    if (caps.NoWeightedPred || par.m_platform.CodeName < MFX_PLATFORM_ICELAKE)
+    {
+        changed += CheckOption(CO3.FadeDetection
+            , (mfxU16)MFX_CODINGOPTION_UNKNOWN
+            , (mfxU16)MFX_CODINGOPTION_OFF);
+    }
+    else
+    {
+        changed += CheckTriStateOption(CO3.FadeDetection);
+    }
+#endif //defined(MFX_ENABLE_HEVCE_FADE_DETECTION)
+#endif //defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
+
     sts = CheckProfile(par);
 
     if (sts >= MFX_ERR_NONE && par.mfx.CodecLevel > 0)  // QueryIOSurf, Init or Reset
@@ -2570,12 +2595,41 @@ void SetDefaults(
             constr |= MFX_HEVC_CONSTR_REXT_MAX_12BIT;
         if (CO3.TargetBitDepthLuma <= 10)
             constr |= MFX_HEVC_CONSTR_REXT_MAX_10BIT;
-        if (CO3.TargetBitDepthLuma <= 8)
+        if (   CO3.TargetBitDepthLuma <= 8
+            //there is no Main 4:2:2 in current standard spec.(2016/12), only Main 4:2:2 10
+            && (CO3.TargetChromaFormatPlus1 - 1 != MFX_CHROMAFORMAT_YUV422))
             constr |= MFX_HEVC_CONSTR_REXT_MAX_8BIT;
 
         constr |= MFX_HEVC_CONSTR_REXT_LOWER_BIT_RATE;
     }
 #endif
+
+#if defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
+
+#if defined(MFX_ENABLE_HEVCE_FADE_DETECTION)
+    if (!CO3.FadeDetection)
+        CO3.FadeDetection = MFX_CODINGOPTION_OFF;
+#endif //defined(MFX_ENABLE_HEVCE_FADE_DETECTION)
+
+    if (!CO3.WeightedPred)
+    {
+        CO3.WeightedPred =
+#if defined(MFX_ENABLE_HEVCE_FADE_DETECTION)
+            IsOn(CO3.FadeDetection) ? (mfxU16)MFX_WEIGHTED_PRED_EXPLICIT :
+#endif //defined(MFX_ENABLE_HEVCE_FADE_DETECTION)
+                (mfxU16)MFX_WEIGHTED_PRED_DEFAULT;
+    }
+
+    if (!CO3.WeightedBiPred)
+    {
+        CO3.WeightedBiPred =
+#if defined(MFX_ENABLE_HEVCE_FADE_DETECTION)
+            IsOn(CO3.FadeDetection) ? (mfxU16)MFX_WEIGHTED_PRED_EXPLICIT :
+#endif //defined(MFX_ENABLE_HEVCE_FADE_DETECTION)
+                (mfxU16)MFX_WEIGHTED_PRED_DEFAULT;
+    }
+#endif //defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
+
 }
 
 } //namespace MfxHwH265Encode

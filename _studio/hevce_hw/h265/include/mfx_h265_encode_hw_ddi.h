@@ -200,7 +200,15 @@ public:
     void Reset(MfxVideoParam const & par);
 
     ENCODE_PACKEDHEADER_DATA* PackHeader(Task const & task, mfxU32 nut);
-    ENCODE_PACKEDHEADER_DATA* PackSliceHeader(Task const & task, mfxU32 id, mfxU32* qpd_offset, bool dyn_slice_size = false, mfxU32* sao_offset = 0, mfxU16* ssh_start_len = 0, mfxU32* ssh_offset = 0);
+    ENCODE_PACKEDHEADER_DATA* PackSliceHeader(Task const & task,
+        mfxU32 id,
+        mfxU32* qpd_offset,
+        bool dyn_slice_size = false,
+        mfxU32* sao_offset = 0,
+        mfxU16* ssh_start_len = 0,
+        mfxU32* ssh_offset = 0,
+        mfxU32* pwt_offset = 0,
+        mfxU32* pwt_length = 0);
     ENCODE_PACKEDHEADER_DATA* PackSkippedSlice(Task const & task, mfxU32 id, mfxU32* qpd_offset);
 
     inline mfxU32 MaxPackedHeaders() { return (mfxU32)m_buf.size(); }

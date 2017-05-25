@@ -2002,7 +2002,9 @@ void HeaderPacker::PackSSH(
     Slice const &    slice,
     mfxU32*          qpd_offset,
     bool             dyn_slice_size,
-    mfxU32*          sao_offset)
+    mfxU32*          sao_offset,
+    mfxU32*          pwt_offset,
+    mfxU32*          pwt_length)
 {
     const mfxU8 B = 0, P = 1/*, I = 2*/;
 
@@ -2163,8 +2165,88 @@ void HeaderPacker::PackSSH(
                     bs.PutUE(slice.collocated_ref_idx);
             }
 
+#if defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
+            if (pwt_offset)
+                *pwt_offset = bs.GetOffset();
+
+            if (   (pps.weighted_pred_flag && slice.type == P)
+                || (pps.weighted_bipred_flag && slice.type == B))
+            {
+                const mfxU16 Y = 0, Cb = 1, Cr = 2, W = 0, O = 1;
+                mfxI16
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+                      WpOffsetHalfRangeC = (1 << (sps.high_precision_offsets_enabled_flag ? (sps.bit_depth_chroma_minus8 + 8 - 1) : 7))
+#else
+                      WpOffsetHalfRangeC = (1 << 7)
+#endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
+                    , wY = (1 << slice.luma_log2_weight_denom)
+                    , wC = (1 << slice.chroma_log2_weight_denom)
+                    , l2WDc = slice.chroma_log2_weight_denom;
+
+                bs.PutUE(slice.luma_log2_weight_denom);
+
+                if (sps.chroma_format_idc != 0)
+                    bs.PutSE(mfxI32(slice.chroma_log2_weight_denom) - slice.luma_log2_weight_denom);
+
+                for (mfxU32 l = 0; l < mfxU32(1 + (slice.type == B)); l++)
+                {
+                    mfxU32 sz = l ? slice.num_ref_idx_l1_active_minus1 + 1 : slice.num_ref_idx_l0_active_minus1 + 1;
+
+                    mfxU16 lumaw = 0;
+                    mfxU16 chromaw = 0;
+
+                    for (mfxU32 i = 0; i < sz; i++)
+                    {
+                        lumaw   <<= 1;
+                        lumaw   |= !(slice.pwt[l][i][Y][O] == 0 && slice.pwt[l][i][Y][W] == wY);
+                        chromaw <<= 1;
+                        chromaw |= !(slice.pwt[l][i][Cb][O] == 0 && slice.pwt[l][i][Cb][W] == wC);
+                        chromaw |= !(slice.pwt[l][i][Cr][O] == 0 && slice.pwt[l][i][Cr][W] == wC);
+                    }
+
+                    bs.PutBits(sz, lumaw);
+
+                    if (sps.chroma_format_idc != 0)
+                        bs.PutBits(sz, chromaw);
+                    else
+                        chromaw = 0;
+
+                    for (mfxU32 i = 0; i < sz; i++)
+                    {
+                        if (lumaw & (1 << (sz - i - 1)))
+                        {
+                            bs.PutSE(slice.pwt[l][i][Y][W] - wY);
+                            bs.PutSE(slice.pwt[l][i][Y][O]);
+                        }
+
+                        if (chromaw & (1 << (sz - i - 1)))
+                        {
+                            bs.PutSE(slice.pwt[l][i][Cb][W] - wC);
+                            bs.PutSE(
+                                Clip3(
+                                    -4 * WpOffsetHalfRangeC,
+                                    4 * WpOffsetHalfRangeC - 1,
+                                    ((WpOffsetHalfRangeC * slice.pwt[l][i][Cb][W]) >> l2WDc) + slice.pwt[l][i][Cb][O] - WpOffsetHalfRangeC));
+
+                            bs.PutSE(slice.pwt[l][i][Cr][W] - wC);
+                            bs.PutSE(
+                                Clip3(
+                                    -4 * WpOffsetHalfRangeC,
+                                    4 * WpOffsetHalfRangeC - 1,
+                                    ((WpOffsetHalfRangeC * slice.pwt[l][i][Cr][W]) >> l2WDc) + slice.pwt[l][i][Cr][O] - WpOffsetHalfRangeC));
+                        }
+                    }
+                }
+            }
+
+            if (pwt_length && pwt_offset)
+                *pwt_length = bs.GetOffset() - *pwt_offset;
+#else
+            pwt_offset;
+            pwt_length;
             assert(0 == pps.weighted_pred_flag);
             assert(0 == pps.weighted_bipred_flag);
+#endif //defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
 
 
             bs.PutUE(slice.five_minus_max_num_merge_cand);
@@ -2761,7 +2843,18 @@ void HeaderPacker::GetSuffixSEI(Task const & task, mfxU8*& buf, mfxU32& sizeInBy
     }
 }
 
-void HeaderPacker::GetSSH(Task const & task, mfxU32 id, mfxU8*& buf, mfxU32& sizeInBits, mfxU32* qpd_offset, bool dyn_slice_size, mfxU32* sao_offset, mfxU16* ssh_start_len, mfxU32* ssh_offset)
+void HeaderPacker::GetSSH(
+    Task const & task,
+    mfxU32 id,
+    mfxU8*& buf,
+    mfxU32& sizeInBits,
+    mfxU32* qpd_offset,
+    bool dyn_slice_size,
+    mfxU32* sao_offset,
+    mfxU16* ssh_start_len,
+    mfxU32* ssh_offset,
+    mfxU32* pwt_offset,
+    mfxU32* pwt_length)
 {
     BitstreamWriter& rbsp = m_bs;
     bool LongStartCode = (id == 0 && task.m_insertHeaders == 0) || IsOn(m_par->m_ext.DDI.LongStartCodes);
@@ -2779,7 +2872,7 @@ void HeaderPacker::GetSSH(Task const & task, mfxU32 id, mfxU8*& buf, mfxU32& siz
 
     buf = m_bs.GetStart() + CeilDiv(rbsp.GetOffset(), 8);
 
-    PackSSH(rbsp, nalu, m_par->m_sps, m_par->m_pps, sh, qpd_offset, dyn_slice_size, sao_offset);
+    PackSSH(rbsp, nalu, m_par->m_sps, m_par->m_pps, sh, qpd_offset, dyn_slice_size, sao_offset, pwt_offset, pwt_length);
     if (dyn_slice_size) {
         *ssh_start_len = (nalu.long_start_code) ? 48 : 40;
         *ssh_offset = 0;
@@ -2790,6 +2883,8 @@ void HeaderPacker::GetSSH(Task const & task, mfxU32 id, mfxU8*& buf, mfxU32& siz
         *qpd_offset -= SEIbits;
     if (sao_offset)
         *sao_offset -= SEIbits;
+    if (pwt_offset)
+        *pwt_offset -= SEIbits;
 
     sizeInBits = rbsp.GetOffset() - (mfxU32)(buf - m_bs.GetStart()) * 8;
 }

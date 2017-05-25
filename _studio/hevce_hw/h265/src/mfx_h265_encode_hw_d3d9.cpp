@@ -86,11 +86,17 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAuxilliaryDevice(
     m_caps.MaxPicWidth              = 8192;
     m_caps.MaxPicHeight             = 4096;
     m_caps.MaxNum_Reference0        = 3;
-    m_caps.MaxNum_Reference1        = 1;
+    m_caps.MaxNum_Reference1        = 3;
     m_caps.MBBRCSupport             = 1;
     m_caps.TUSupport                = 73;
     m_caps.TileSupport              = 1;
     m_caps.MaxNumOfTileColumnsMinus1= 3;
+
+    m_caps.NoWeightedPred = 0;
+    m_caps.LumaWeightedPred = 1;
+    m_caps.ChromaWeightedPred = 1;
+    m_caps.MaxNum_WeightedPredL0 = 3;
+    m_caps.MaxNum_WeightedPredL1 = 3;
 #else
     IDirect3DDeviceManager9 *device = 0;
 
@@ -439,7 +445,7 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, m
 
         }
         else
-#else
+#endif //defined(MFX_SKIP_FRAME_SUPPORT)
         {
             pPH = PackSliceHeader(task, i, &m_slice[i].SliceQpDeltaBitOffset
                 ,!!(m_pps.MaxSliceSizeInBytes)
@@ -447,12 +453,13 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, m
                 , &m_slice[i].SliceSAOFlagBitOffset
                 , &m_slice[i].BitLengthSliceHeaderStartingPortion
                 , &m_slice[i].SliceHeaderByteOffset
+                , &m_slice[i].PredWeightTableBitOffset
+                , &m_slice[i].PredWeightTableBitLength
 #endif //defined(PRE_SI_TARGET_PLATFORM_GEN10)
             );
             assert(pPH);
             ADD_CBD(D3DDDIFMT_INTELENCODE_PACKEDSLICEDATA, *pPH, 1);
         }
-#endif
     }
 
     /*if (task.m_ctrl.NumPayload > 0)

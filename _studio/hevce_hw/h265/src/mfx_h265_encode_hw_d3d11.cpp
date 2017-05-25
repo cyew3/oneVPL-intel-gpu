@@ -567,7 +567,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, 
 
         }
         else
-#else
+#endif //defined(MFX_SKIP_FRAME_SUPPORT)
         {
             pPH = PackSliceHeader(task, i, &m_slice[i].SliceQpDeltaBitOffset
                 ,!!(m_pps.MaxSliceSizeInBytes)
@@ -575,11 +575,12 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, 
                 , &m_slice[i].SliceSAOFlagBitOffset
                 , &m_slice[i].BitLengthSliceHeaderStartingPortion
                 , &m_slice[i].SliceHeaderByteOffset
+                , &m_slice[i].PredWeightTableBitOffset
+                , &m_slice[i].PredWeightTableBitLength
 #endif //defined(PRE_SI_TARGET_PLATFORM_GEN10)
             ); assert(pPH);
             ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDSLICEDATA, *pPH, 1);
         }
-#endif
     }
 
     /*if (task.m_ctrl.NumPayload > 0)

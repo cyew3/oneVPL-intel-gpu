@@ -463,10 +463,70 @@ DECL_START(ENCODE_SET_SLICE_HEADER_HEVC)
     TRACE("%d", chroma_log2_weight_denom);
 #endif
 
-    //CHAR    luma_offset[2][15];
-    //CHAR    delta_luma_weight[2][15];
-    //CHAR    chroma_offset[2][15][2];
-    //CHAR    delta_chroma_weight[2][15][2];
+    TRACE_ARRAY_ROW("%d", luma_offset[0], 15);
+    TRACE_ARRAY_ROW("%d", luma_offset[1], 15);
+    TRACE_ARRAY_ROW("%d", delta_luma_weight[0], 15);
+    TRACE_ARRAY_ROW("%d", delta_luma_weight[1], 15);
+    TRACE_ARRAY_ROW("%d", chroma_offset[0][0], 2);
+    TRACE_ARRAY_ROW("%d", chroma_offset[0][1], 2);
+    TRACE_ARRAY_ROW("%d", chroma_offset[0][2], 2);
+    TRACE_ARRAY_ROW("%d", chroma_offset[0][3], 2);
+    TRACE_ARRAY_ROW("%d", chroma_offset[0][4], 2);
+    TRACE_ARRAY_ROW("%d", chroma_offset[0][5], 2);
+    TRACE_ARRAY_ROW("%d", chroma_offset[0][6], 2);
+    TRACE_ARRAY_ROW("%d", chroma_offset[0][7], 2);
+    TRACE_ARRAY_ROW("%d", chroma_offset[0][8], 2);
+    TRACE_ARRAY_ROW("%d", chroma_offset[0][9], 2);
+    TRACE_ARRAY_ROW("%d", chroma_offset[0][10], 2);
+    TRACE_ARRAY_ROW("%d", chroma_offset[0][11], 2);
+    TRACE_ARRAY_ROW("%d", chroma_offset[0][12], 2);
+    TRACE_ARRAY_ROW("%d", chroma_offset[0][13], 2);
+    TRACE_ARRAY_ROW("%d", chroma_offset[0][14], 2);
+    TRACE_ARRAY_ROW("%d", chroma_offset[1][0], 2);
+    TRACE_ARRAY_ROW("%d", chroma_offset[1][1], 2);
+    TRACE_ARRAY_ROW("%d", chroma_offset[1][2], 2);
+    TRACE_ARRAY_ROW("%d", chroma_offset[1][3], 2);
+    TRACE_ARRAY_ROW("%d", chroma_offset[1][4], 2);
+    TRACE_ARRAY_ROW("%d", chroma_offset[1][5], 2);
+    TRACE_ARRAY_ROW("%d", chroma_offset[1][6], 2);
+    TRACE_ARRAY_ROW("%d", chroma_offset[1][7], 2);
+    TRACE_ARRAY_ROW("%d", chroma_offset[1][8], 2);
+    TRACE_ARRAY_ROW("%d", chroma_offset[1][9], 2);
+    TRACE_ARRAY_ROW("%d", chroma_offset[1][10], 2);
+    TRACE_ARRAY_ROW("%d", chroma_offset[1][11], 2);
+    TRACE_ARRAY_ROW("%d", chroma_offset[1][12], 2);
+    TRACE_ARRAY_ROW("%d", chroma_offset[1][13], 2);
+    TRACE_ARRAY_ROW("%d", chroma_offset[1][14], 2);
+    TRACE_ARRAY_ROW("%d", delta_chroma_weight[0][0], 2);
+    TRACE_ARRAY_ROW("%d", delta_chroma_weight[0][1], 2);
+    TRACE_ARRAY_ROW("%d", delta_chroma_weight[0][2], 2);
+    TRACE_ARRAY_ROW("%d", delta_chroma_weight[0][3], 2);
+    TRACE_ARRAY_ROW("%d", delta_chroma_weight[0][4], 2);
+    TRACE_ARRAY_ROW("%d", delta_chroma_weight[0][5], 2);
+    TRACE_ARRAY_ROW("%d", delta_chroma_weight[0][6], 2);
+    TRACE_ARRAY_ROW("%d", delta_chroma_weight[0][7], 2);
+    TRACE_ARRAY_ROW("%d", delta_chroma_weight[0][8], 2);
+    TRACE_ARRAY_ROW("%d", delta_chroma_weight[0][9], 2);
+    TRACE_ARRAY_ROW("%d", delta_chroma_weight[0][10], 2);
+    TRACE_ARRAY_ROW("%d", delta_chroma_weight[0][11], 2);
+    TRACE_ARRAY_ROW("%d", delta_chroma_weight[0][12], 2);
+    TRACE_ARRAY_ROW("%d", delta_chroma_weight[0][13], 2);
+    TRACE_ARRAY_ROW("%d", delta_chroma_weight[0][14], 2);
+    TRACE_ARRAY_ROW("%d", delta_chroma_weight[1][0], 2);
+    TRACE_ARRAY_ROW("%d", delta_chroma_weight[1][1], 2);
+    TRACE_ARRAY_ROW("%d", delta_chroma_weight[1][2], 2);
+    TRACE_ARRAY_ROW("%d", delta_chroma_weight[1][3], 2);
+    TRACE_ARRAY_ROW("%d", delta_chroma_weight[1][4], 2);
+    TRACE_ARRAY_ROW("%d", delta_chroma_weight[1][5], 2);
+    TRACE_ARRAY_ROW("%d", delta_chroma_weight[1][6], 2);
+    TRACE_ARRAY_ROW("%d", delta_chroma_weight[1][7], 2);
+    TRACE_ARRAY_ROW("%d", delta_chroma_weight[1][8], 2);
+    TRACE_ARRAY_ROW("%d", delta_chroma_weight[1][9], 2);
+    TRACE_ARRAY_ROW("%d", delta_chroma_weight[1][10], 2);
+    TRACE_ARRAY_ROW("%d", delta_chroma_weight[1][11], 2);
+    TRACE_ARRAY_ROW("%d", delta_chroma_weight[1][12], 2);
+    TRACE_ARRAY_ROW("%d", delta_chroma_weight[1][13], 2);
+    TRACE_ARRAY_ROW("%d", delta_chroma_weight[1][14], 2);
 
     TRACE("%d", MaxNumMergeCand);
     TRACE("%d", slice_id);
@@ -477,6 +537,8 @@ DECL_START(ENCODE_SET_SLICE_HEADER_HEVC)
     TRACE("%d", SliceSAOFlagBitOffset);
     TRACE("%d", BitLengthSliceHeaderStartingPortion);
     TRACE("%d", SliceHeaderByteOffset);
+    TRACE("%d", PredWeightTableBitOffset);
+    TRACE("%d", PredWeightTableBitLength);
 #endif
 DECL_END
 #undef FIELD_FORMAT
@@ -564,9 +626,37 @@ DECL_END
 DECL_START(ENCODE_SET_SLICE_HEADER_HEVC_REXT)
     Trace((ENCODE_SET_SLICE_HEADER_HEVC const &)b, idx);
     TRACE_ARRAY_ROW("%d", luma_offset_l0, 15);
-    //SHORT   ChromaOffsetL0[15][2];
+    TRACE_ARRAY_ROW("%d", ChromaOffsetL0[0], 2);
+    TRACE_ARRAY_ROW("%d", ChromaOffsetL0[1], 2);
+    TRACE_ARRAY_ROW("%d", ChromaOffsetL0[2], 2);
+    TRACE_ARRAY_ROW("%d", ChromaOffsetL0[3], 2);
+    TRACE_ARRAY_ROW("%d", ChromaOffsetL0[4], 2);
+    TRACE_ARRAY_ROW("%d", ChromaOffsetL0[5], 2);
+    TRACE_ARRAY_ROW("%d", ChromaOffsetL0[6], 2);
+    TRACE_ARRAY_ROW("%d", ChromaOffsetL0[7], 2);
+    TRACE_ARRAY_ROW("%d", ChromaOffsetL0[8], 2);
+    TRACE_ARRAY_ROW("%d", ChromaOffsetL0[9], 2);
+    TRACE_ARRAY_ROW("%d", ChromaOffsetL0[0], 2);
+    TRACE_ARRAY_ROW("%d", ChromaOffsetL0[11], 2);
+    TRACE_ARRAY_ROW("%d", ChromaOffsetL0[12], 2);
+    TRACE_ARRAY_ROW("%d", ChromaOffsetL0[13], 2);
+    TRACE_ARRAY_ROW("%d", ChromaOffsetL0[14], 2);
     TRACE_ARRAY_ROW("%d", luma_offset_l1, 15);
-    //SHORT   ChromaOffsetL1[15][2];
+    TRACE_ARRAY_ROW("%d", ChromaOffsetL1[0], 2);
+    TRACE_ARRAY_ROW("%d", ChromaOffsetL1[1], 2);
+    TRACE_ARRAY_ROW("%d", ChromaOffsetL1[2], 2);
+    TRACE_ARRAY_ROW("%d", ChromaOffsetL1[3], 2);
+    TRACE_ARRAY_ROW("%d", ChromaOffsetL1[4], 2);
+    TRACE_ARRAY_ROW("%d", ChromaOffsetL1[5], 2);
+    TRACE_ARRAY_ROW("%d", ChromaOffsetL1[6], 2);
+    TRACE_ARRAY_ROW("%d", ChromaOffsetL1[7], 2);
+    TRACE_ARRAY_ROW("%d", ChromaOffsetL1[8], 2);
+    TRACE_ARRAY_ROW("%d", ChromaOffsetL1[9], 2);
+    TRACE_ARRAY_ROW("%d", ChromaOffsetL1[0], 2);
+    TRACE_ARRAY_ROW("%d", ChromaOffsetL1[11], 2);
+    TRACE_ARRAY_ROW("%d", ChromaOffsetL1[12], 2);
+    TRACE_ARRAY_ROW("%d", ChromaOffsetL1[13], 2);
+    TRACE_ARRAY_ROW("%d", ChromaOffsetL1[14], 2);
 DECL_END
 #undef FIELD_FORMAT
 
