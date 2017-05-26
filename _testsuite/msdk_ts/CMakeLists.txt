@@ -20,6 +20,26 @@ include_directories (
 )
 
 list(APPEND sources
+   ${MSDK_SAMPLES_ROOT}/sample_common/src/avc_bitstream.cpp
+   ${MSDK_SAMPLES_ROOT}/sample_common/src/avc_nal_spl.cpp
+   ${MSDK_SAMPLES_ROOT}/sample_common/src/avc_spl.cpp
+   ${MSDK_SAMPLES_ROOT}/sample_common/src/base_allocator.cpp
+   ${MSDK_SAMPLES_ROOT}/sample_common/src/vaapi_device.cpp
+   ${MSDK_SAMPLES_ROOT}/sample_common/src/vaapi_allocator.cpp
+   ${MSDK_SAMPLES_ROOT}/sample_common/src/vaapi_utils.cpp
+   ${MSDK_SAMPLES_ROOT}/sample_common/src/vaapi_utils_drm.cpp
+   ${MSDK_SAMPLES_ROOT}/sample_common/src/vaapi_utils_x11.cpp
+   ${MSDK_SAMPLES_ROOT}/sample_common/src/vaapi_utils_android.cpp
+   ${MSDK_SAMPLES_ROOT}/sample_common/src/sample_utils.cpp
+   ${MSDK_SAMPLES_ROOT}/sample_common/src/sysmem_allocator.cpp
+   ${MSDK_SAMPLES_ROOT}/sample_common/src/vm/atomic.cpp
+   ${MSDK_SAMPLES_ROOT}/sample_common/src/vm/shared_object.cpp
+   ${MSDK_SAMPLES_ROOT}/sample_common/src/vm/thread.cpp
+   ${MSDK_SAMPLES_ROOT}/sample_common/src/vm/time_linux.cpp
+   ${MSDK_SAMPLES_ROOT}/sample_common/src/vm/atomic_linux.cpp
+   ${MSDK_SAMPLES_ROOT}/sample_common/src/vm/shared_object_linux.cpp
+   ${MSDK_SAMPLES_ROOT}/sample_common/src/vm/thread_linux.cpp
+   ${MSDK_SAMPLES_ROOT}/sample_common/src/vm/time.cpp
    ${CMAKE_CURRENT_SOURCE_DIR}/src/test_sample_allocator.cpp
    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_alloc.cpp
    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_bitstream.cpp
@@ -44,6 +64,7 @@ file( GLOB_RECURSE srcs "${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/*.cpp
 list( APPEND sources ${srcs})
 
 add_definitions( -D_VARIADIC_MAX=10 )
+add_definitions( -DENABLE_PS=1 )
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 
 set( LIBS "" )
@@ -55,7 +76,6 @@ list( APPEND LIBS
   dl
 #      ippvc_l ippcc_l ippi_l ipps_l ippcore_l
   ippi_l ippdc_l ipps_l ippcore_l
-  sample_common
   pthread
   mfx_serializer
 )

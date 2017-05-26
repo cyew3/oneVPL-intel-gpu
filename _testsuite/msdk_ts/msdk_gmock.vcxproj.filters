@@ -63,6 +63,12 @@
     <Filter Include="Source Files\test_suites\vc1d">
       <UniqueIdentifier>{e6baecb0-9772-4180-a21a-608b54edcd47}</UniqueIdentifier>
     </Filter>
+    <Filter Include="sample_common">
+      <UniqueIdentifier>{fae26a54-d400-457a-9ab0-7cc8ea1c3168}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sample_common\vm">
+      <UniqueIdentifier>{003c70d9-687d-4ac7-8c3d-8039a5fc544f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\test_sample_allocator.h">
@@ -918,6 +924,51 @@
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\hevce_transformskip.cpp">
       <Filter>Source Files\test_suites\hevce</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\samples\sample_common\src\d3d_allocator.cpp">
+      <Filter>sample_common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\samples\sample_common\src\d3d11_allocator.cpp">
+      <Filter>sample_common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\samples\sample_common\src\base_allocator.cpp">
+      <Filter>sample_common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\samples\sample_common\src\d3d_device.cpp">
+      <Filter>sample_common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\samples\sample_common\src\d3d11_device.cpp">
+      <Filter>sample_common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\samples\sample_common\src\sample_utils.cpp">
+      <Filter>sample_common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\samples\sample_common\src\sysmem_allocator.cpp">
+      <Filter>sample_common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\samples\sample_common\src\vm\atomic.cpp">
+      <Filter>sample_common\vm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\samples\sample_common\src\vm\shared_object.cpp">
+      <Filter>sample_common\vm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\samples\sample_common\src\vm\thread.cpp">
+      <Filter>sample_common\vm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\samples\sample_common\src\vm\thread_windows.cpp">
+      <Filter>sample_common\vm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\samples\sample_common\src\vm\time.cpp">
+      <Filter>sample_common\vm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\samples\sample_common\src\avc_bitstream.cpp">
+      <Filter>sample_common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\samples\sample_common\src\avc_nal_spl.cpp">
+      <Filter>sample_common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\samples\sample_common\src\avc_spl.cpp">
+      <Filter>sample_common</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

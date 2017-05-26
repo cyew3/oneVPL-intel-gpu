@@ -112,7 +112,8 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_VARIADIC_MAX=10;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_VARIADIC_MAX=10;WIN32;_DEBUG;_CONSOLE;ENABLE_PS
+;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../../../mdp_msdk-api/mediasdk_structures;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;../../samples/sample_common/include/vm;../../samples/sample_common/include;../../../mdp_msdk-contrib/igfx_s3dcontrol/include;../../../mdp_msdk-val-tools/bs_parser/include;../../../mdp_msdk-contrib/gmock/gtest/include;../../../mdp_msdk-contrib/gmock/include;../../../mdp_msdk-api/include;./include/gmock;./include;../mfx_serializer/include;../../../mdp_msdk-contrib/yaml-cpp/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <DebugInformationFormat>OldStyle</DebugInformationFormat>
@@ -130,7 +131,8 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_VARIADIC_MAX=10;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_VARIADIC_MAX=10;WIN32;_DEBUG;_CONSOLE;ENABLE_PS
+;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../../../mdp_msdk-api/mediasdk_structures;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;../../samples/sample_common/include/vm;../../samples/sample_common/include;../../../mdp_msdk-contrib/igfx_s3dcontrol/include;../../../mdp_msdk-val-tools/bs_parser/include;../../../mdp_msdk-contrib/gmock/gtest/include;../../../mdp_msdk-contrib/gmock/include;../../../mdp_msdk-api/include;./include/gmock;./include;../mfx_serializer/include;../../../mdp_msdk-contrib/yaml-cpp/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <DebugInformationFormat>OldStyle</DebugInformationFormat>
@@ -150,7 +152,8 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>_VARIADIC_MAX=10;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_VARIADIC_MAX=10;WIN32;NDEBUG;_CONSOLE;ENABLE_PS
+;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../../../mdp_msdk-api/mediasdk_structures;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;../../samples/sample_common/include/vm;../../samples/sample_common/include;../../../mdp_msdk-contrib/igfx_s3dcontrol/include;../../../mdp_msdk-val-tools/bs_parser/include;../../../mdp_msdk-contrib/gmock/gtest/include;../../../mdp_msdk-contrib/gmock/include;../../../mdp_msdk-api/include;./include/gmock;./include;../mfx_serializer/include;../../../mdp_msdk-contrib/yaml-cpp/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <ControlFlowGuard>Guard</ControlFlowGuard>
@@ -172,7 +175,8 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>_VARIADIC_MAX=10;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_VARIADIC_MAX=10;WIN32;NDEBUG;_CONSOLE;ENABLE_PS
+;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;../../samples/sample_common/include/vm;../../samples/sample_common/include;../../../mdp_msdk-contrib/igfx_s3dcontrol/include;../../../mdp_msdk-val-tools/bs_parser/include;../../../mdp_msdk-contrib/gmock/gtest/include;../../../mdp_msdk-contrib/gmock/include;../../../mdp_msdk-api/mediasdk_structures;../../../mdp_msdk-api/include;./include/gmock;./include;../mfx_serializer/include;../../../mdp_msdk-contrib/yaml-cpp/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <ControlFlowGuard>Guard</ControlFlowGuard>
@@ -214,6 +218,21 @@
     <ClInclude Include="include\test_sample_allocator.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\samples\sample_common\src\avc_bitstream.cpp" />
+    <ClCompile Include="..\..\samples\sample_common\src\avc_nal_spl.cpp" />
+    <ClCompile Include="..\..\samples\sample_common\src\avc_spl.cpp" />
+    <ClCompile Include="..\..\samples\sample_common\src\base_allocator.cpp" />
+    <ClCompile Include="..\..\samples\sample_common\src\d3d11_allocator.cpp" />
+    <ClCompile Include="..\..\samples\sample_common\src\d3d11_device.cpp" />
+    <ClCompile Include="..\..\samples\sample_common\src\d3d_allocator.cpp" />
+    <ClCompile Include="..\..\samples\sample_common\src\d3d_device.cpp" />
+    <ClCompile Include="..\..\samples\sample_common\src\sample_utils.cpp" />
+    <ClCompile Include="..\..\samples\sample_common\src\sysmem_allocator.cpp" />
+    <ClCompile Include="..\..\samples\sample_common\src\vm\atomic.cpp" />
+    <ClCompile Include="..\..\samples\sample_common\src\vm\shared_object.cpp" />
+    <ClCompile Include="..\..\samples\sample_common\src\vm\thread.cpp" />
+    <ClCompile Include="..\..\samples\sample_common\src\vm\thread_windows.cpp" />
+    <ClCompile Include="..\..\samples\sample_common\src\vm\time.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_adaptivemaxframesize.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_lowdelay_brc.cpp" />
     <ClCompile Include="src\gmock\test_suites\avcd_bs_dataflag.cpp" />
@@ -475,9 +494,6 @@
     </ProjectReference>
     <ProjectReference Include="..\..\..\mdp_msdk-val-tools\bs_parser\bs_parser.vcxproj">
       <Project>{d08d664e-7245-40f7-9b55-3440ef95f2f7}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\samples\sample_common\sample_common.vcxproj">
-      <Project>{db71b91d-16d8-4339-9621-d81798e46e8f}</Project>
     </ProjectReference>
     <ProjectReference Include="..\mfx_serializer\mfx_serializer.vcxproj">
       <Project>{e2a5abae-f0a8-485c-ba1d-4f3d6567073a}</Project>
