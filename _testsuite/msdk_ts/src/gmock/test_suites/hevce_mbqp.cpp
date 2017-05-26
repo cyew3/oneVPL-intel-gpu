@@ -120,6 +120,7 @@ private:
     {
         m_noiser.ProcessSurface(s);
         m_mbqp.clear();
+        /* Granularity of MBQP buffer 16x16 blocks */
         int BlockSize = 16;
         mfxU32 w = (m_par.mfx.FrameInfo.Width  + BlockSize - 1)/BlockSize;
         mfxU32 h = (m_par.mfx.FrameInfo.Height + BlockSize - 1)/BlockSize;
@@ -127,7 +128,7 @@ private:
         mfxU32 numMB = w*h;
         for (size_t i = 0; i <  m_mbqp.size(); ++i)
         {
-            m_mbqp[i] = (i % 51) + 1;
+            m_mbqp[i] = 1 + rand() % 50;
         }
         Ctrl& ctrl = m_ctrl[m_fo];
         ctrl.buf.resize(numMB);
@@ -223,15 +224,17 @@ void SetQP(std::vector< std::vector<Bs16u> >& QP, BS_HEVC::CQT const & cqt, Bs32
               {
                   SetQP(QP, cu->cqt, Log2MaxTrafoSize, Log2MinTrafoSize);
               }
-              m_cuqp_width  = (sps.pic_width_in_luma_samples   + 31) / 32*2; //32x16 only: driver limitation
-              m_cuqp_height = (sps.pic_height_in_luma_samples  + 31) / 32;
 
               mfxU32 k_lcu_w = 32 / (1 << Log2MinTrafoSize);
               m_cu = 0;
               mfxU32 m_cu_old = 0;
+
+              mfxU32 BlockSize = 16;
+              mfxU32 pitch_MBQP = (m_par.mfx.FrameInfo.Width  + BlockSize - 1)/BlockSize;
               for (Bs32u y = 0; y < (Height >> Log2MinTrafoSize); y++)
               {
-                 m_cu =  ((y % k_lcu_w == 0) && (y != 0)) ? (m_cu_old + 2*m_cuqp_width) : m_cu_old;
+                 //16x32 only: driver limitation
+                 m_cu =  ((y % k_lcu_w == 0) && (y != 0)) ? (m_cu_old + 2*pitch_MBQP) : m_cu_old;
                  if((y % k_lcu_w == 0) && (y != 0))
                      m_cu_old = m_cu;
                  for (Bs32u x = 0; x < (Width >> Log2MinTrafoSize); x ++){
@@ -259,8 +262,35 @@ void SetQP(std::vector< std::vector<Bs16u> >& QP, BS_HEVC::CQT const & cqt, Bs32
 const TestSuite::tc_struct TestSuite::test_case[] =
 {
     #if defined(LINUX32) || defined(LINUX64)
-    /*00*/{MFX_ERR_NONE, 0, {EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableMBQP, MFX_CODINGOPTION_ON}},
-    /*01*/{MFX_ERR_NONE, 0, {{EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableMBQP, MFX_CODINGOPTION_ON},{MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 2}}},
+    /*00 - W&H Align 32 */
+    {MFX_ERR_NONE, 0, {{EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableMBQP, MFX_CODINGOPTION_ON},
+                       {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 736},
+                       {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 480},
+                       {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 736},
+                       {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 480}}
+    },
+    /*01 - W&H Align 32, NumSlice = 2 */
+    {MFX_ERR_NONE, 0, {{EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableMBQP, MFX_CODINGOPTION_ON},
+                       {MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 2},
+                       {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 736},
+                       {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 480},
+                       {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 736},
+                       {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 480}}
+    },
+    /*02 - Cropping values unaligned on 16 */
+    {MFX_ERR_NONE, 0, {{EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableMBQP, MFX_CODINGOPTION_ON},
+                       {MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 2},
+                       {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 720-8},
+                       {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 480-8}}
+    },
+    /*03*/
+    {MFX_ERR_NONE, 0, {{EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableMBQP, MFX_CODINGOPTION_ON},
+                       {MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 2},
+                       {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 352},
+                       {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 288},
+                       {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 352-16},
+                       {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 288}}
+   },
     #else
     /*00*/{MFX_ERR_UNSUPPORTED, 0, {EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableMBQP, MFX_CODINGOPTION_ON}},
     #endif
@@ -284,11 +314,6 @@ int TestSuite::RunTest(unsigned int id)
     m_framesToEncode = 1;
     m_mbqp_on = true;
 
-    m_par.mfx.FrameInfo.CropW = ((m_par.mfx.FrameInfo.CropW + 32 - 1) & ~(32 - 1));
-    m_par.mfx.FrameInfo.CropH = ((m_par.mfx.FrameInfo.CropH + 32 - 1) & ~(32 - 1));
-
-    m_par.mfx.FrameInfo.Width = ((m_par.mfx.FrameInfo.Width + 32 - 1) & ~(32 - 1));
-    m_par.mfx.FrameInfo.Height = ((m_par.mfx.FrameInfo.Height + 32 - 1) & ~(32 - 1));
     m_par.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
     m_par.mfx.GopRefDist = 2;
     Init();
