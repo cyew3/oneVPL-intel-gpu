@@ -598,7 +598,7 @@ mfxStatus tsVideoENCPAK::PrepareInitBuffers()
     return MFX_ERR_NONE;
 }
 
-mfxStatus tsVideoENCPAK::CreatePpsDPB  (const std::vector<mfxFrameSurface1*>& _refs, mfxExtFeiPPS::mfxExtFeiPpsDPB *pd)
+mfxStatus tsVideoENCPAK::CreatePpsDPB  (const std::vector<mfxFrameSurface1*>& _refs, mfxExtFeiPPS::mfxExtFeiPpsDPB *pd, bool after2nd)
 {
     for (mfxU32 r=0, d=0; d < PpsDPBSize; r++, d++) {
         if (r >= _refs.size()) {
@@ -620,7 +620,7 @@ mfxStatus tsVideoENCPAK::CreatePpsDPB  (const std::vector<mfxFrameSurface1*>& _r
             pd[d].LongTermFrameIdx = 0xffff; // unused
 
             // change to field if interlace and current is its 2nd field
-            if (refType != MFX_PICTYPE_FRAME && surf->Data.FrameOrder == m_PAKInput->InSurface->Data.FrameOrder) {
+            if (refType != MFX_PICTYPE_FRAME && surf->Data.FrameOrder == m_PAKInput->InSurface->Data.FrameOrder && !after2nd) {
                 pd[d].PicType = surf->Info.PicStruct == MFX_PICSTRUCT_FIELD_TFF ? MFX_PICTYPE_TOPFIELD : MFX_PICTYPE_BOTTOMFIELD;
             }
         }
@@ -637,10 +637,11 @@ mfxStatus tsVideoENCPAK::UpdateDPB (std::vector<mfxFrameSurface1*>& dpb, bool se
     if (type & MFX_FRAMETYPE_REF) {
         if (type & MFX_FRAMETYPE_IDR)
             dpb.clear();
-        else if (dpb.size() == enc.m_pPar->mfx.NumRefFrame)
-            dpb.erase(dpb.begin());
-        if (dpb.end() == std::find(dpb.begin(), dpb.end(), m_PAKOutput->OutSurface))
+        if (dpb.end() == std::find(dpb.begin(), dpb.end(), m_PAKOutput->OutSurface)) { // not yet in dpb
+            if (dpb.size() == enc.m_pPar->mfx.NumRefFrame)
+                dpb.erase(dpb.begin());
             dpb.push_back(m_PAKOutput->OutSurface);
+        }
     }
 
     return MFX_ERR_NONE;
@@ -650,7 +651,7 @@ mfxStatus tsVideoENCPAK::PrepareDpbBuffers (bool secondField)
 {
     const mfxU32 curField = secondField; // to avoid confusing
 
-    CreatePpsDPB(refs, enc.fpps[curField].DpbBefore);
+    CreatePpsDPB(refs, enc.fpps[curField].DpbBefore, false && secondField); // && for hint
 
     // test error if differ
     if (ComparePpsDPB(enc.fpps[curField].DpbBefore, nextDpb) < PpsDPBSize )
@@ -659,7 +660,7 @@ mfxStatus tsVideoENCPAK::PrepareDpbBuffers (bool secondField)
     std::vector<mfxFrameSurface1*> _refs = refs; // make local copy to see the future
     UpdateDPB(_refs, secondField);
 
-    CreatePpsDPB(_refs, enc.fpps[curField].DpbAfter);
+    CreatePpsDPB(_refs, enc.fpps[curField].DpbAfter, true && secondField); // && for hint
     CopyPpsDPB(enc.fpps[curField].DpbAfter, nextDpb); // will check if test modified DpbAfter
 
     CopyPpsDPB(enc.fpps[curField].DpbBefore, pak.fpps[curField].DpbBefore);
@@ -1056,7 +1057,7 @@ mfxStatus tsVideoENCPAK::EncodeFrame(bool secondField)
 
     UpdateDPB(refs, secondField);
 
-    CreatePpsDPB(refs, nextDpb); // to check before next frame
+    CreatePpsDPB(refs, nextDpb, true && secondField); // to check before next frame // && for hint
 
     return sts;
 }

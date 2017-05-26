@@ -439,17 +439,6 @@ void MfxH264FEIcommon::ConfigureTaskFEI(
                     // Mark current frame as LT
                     marking.PushBack(MMCO_CURR_TO_LT, instance_after->m_longTermIdxPlus1 - 1);
                 }
-
-                // Remove one field from pair if required
-                if (!instance_after->m_refPicFlag[ffid] || !instance_after->m_refPicFlag[sfid])
-                {
-                    mfxU32 fid = !instance_after->m_refPicFlag[ffid] ? ffid : sfid;
-
-                    if (instance_after->m_longterm)
-                        marking.PushBack(MMCO_LT_TO_UNUSED, instance_after->m_longTermPicNum[fid]);
-                    else
-                        marking.PushBack(MMCO_ST_TO_UNUSED, task.m_picNum[fieldParity] - instance_after->m_picNum[fid] - 1);
-                }
             }
         }
 

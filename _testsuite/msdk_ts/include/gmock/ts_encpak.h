@@ -132,7 +132,7 @@ public:
     mfxStatus PrepareInitBuffers();
     mfxStatus PrepareFrameBuffers(bool secondField);
 
-    mfxStatus CreatePpsDPB(const std::vector<mfxFrameSurface1*>& _refs, mfxExtFeiPPS::mfxExtFeiPpsDPB *pd);
+    mfxStatus CreatePpsDPB(const std::vector<mfxFrameSurface1*>& _refs, mfxExtFeiPPS::mfxExtFeiPpsDPB *pd, bool after2nd);
     mfxStatus UpdateDPB   (std::vector<mfxFrameSurface1*>& dpb, bool secondField);
     mfxStatus PrepareDpbBuffers(bool secondField); // fills dpb from current state
     mfxStatus FillRefLists(bool secondField);

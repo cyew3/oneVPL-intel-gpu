@@ -85,12 +85,13 @@ private:
 
 const TestSuite::tc_struct TestSuite::test_case[] =
 {
- /*00*/ {MFX_ERR_NONE, 0+0, 1, {{3, MMCO_1, 2, 0}, {6, MMCO_0, 0, 0}, {0}} }, // rm ST - ok
- /*01*/ {MFX_ERR_NONE, 0+0, 1, {{3, MMCO_3, 2, 1}, {6, MMCO_2, 0, 1}, {0}} }, // rm LT - no
- /*02*/ {MFX_ERR_NONE, 0+0, 1, {{3, MMCO_3, 2, 0}, {0}} }, // ST->LT - ok
- /*03*/ {MFX_ERR_NONE, 0+0, 1, {{2, MMCO_3, 1, 2}, {3, MMCO_3, 3, 1}, {4, MMCO_3, 1, 0}, {4, MMCO_1, 2, 0}, {5, MMCO_4, 0, 0}, {0}} }, // cut LT - no
- /*04*/ {MFX_ERR_NONE, 0+0, 1, {{0, MMCO_6, 0, 1}, {0}} }, // curr to LT - no
-// /*05*/ {MFX_ERR_NONE, 0+0, 1, {{0, MMCO_6, 0, 2}, {3, MMCO_6, 0, 4}, {3, MMCO_2, 2, 0}, {4, MMCO_3, 0, 1}, {0}} }, // mix - no
+ /*00*/ {MFX_ERR_NONE, 0+0, 1, {{0}} }, // empty
+ /*01*/ {MFX_ERR_NONE, 0+0, 1, {{3, MMCO_1, 2, 0}, {6, MMCO_0, 0, 0}, {0}} }, // rm ST - ok
+ /*02*/ {MFX_ERR_NONE, 0+0, 1, {{3, MMCO_3, 2, 1}, {6, MMCO_2, 0, 1}, {0}} }, // rm LT - no
+ /*03*/ {MFX_ERR_NONE, 0+0, 1, {{3, MMCO_3, 2, 0}, {0}} }, // ST->LT - ok
+ /*04*/ {MFX_ERR_NONE, 0+0, 1, {{2, MMCO_3, 1, 2}, {3, MMCO_3, 3, 1}, {4, MMCO_3, 1, 0}, {4, MMCO_1, 2, 0}, {5, MMCO_4, 0, 0}, {0}} }, // cut LT - no
+ /*05*/ {MFX_ERR_NONE, 0+0, 1, {{0, MMCO_6, 0, 1}, {0}} }, // curr to LT - no
+// /*06*/ {MFX_ERR_NONE, 0+0, 1, {{0, MMCO_6, 0, 2}, {3, MMCO_6, 0, 4}, {3, MMCO_2, 2, 0}, {4, MMCO_3, 0, 1}, {0}} }, // mix - no
 };
 
 // use 3 times - progressive, tff, bff
@@ -243,14 +244,14 @@ class ProcessSetMMCO : public tsSurfaceProcessor, public tsBitstreamWriter, publ
 {
     mfxU32 m_nFields;
     mfxU32 m_nSurf;
-    mfxU32 m_nFrame;
+    mfxU32 m_nPic;
     mfxVideoParam& m_par;
 
 public:
     TestSuite::tc_struct m_tc; // some fields differs with original tc (numRef*)
 
     ProcessSetMMCO(mfxVideoParam& par, const TestSuite::tc_struct& tc, const char* fname)
-        : tsBitstreamWriter(fname), tsParserH264AU(), m_nSurf(0), m_nFrame(0), m_par(par), m_tc(tc)
+        : tsBitstreamWriter(fname), tsParserH264AU(), m_nSurf(0), m_nPic(0), m_par(par), m_tc(tc)
     {
         m_nFields = m_par.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
         set_trace_level(BS_H264_TRACE_LEVEL_REF_LIST);
@@ -273,6 +274,7 @@ public:
         using namespace BS_AVC2; // for NALU type
         set_buffer(bs.Data + bs.DataOffset, bs.DataLength+1);
 
+        mfxU32 nFrame = (m_nFields == 2) ? m_nPic >> 1 : m_nPic;
         mfxU16 err = 0;
 
         while (nFrames--) {
@@ -284,7 +286,7 @@ public:
                         continue; // todo: check if missed pps succeeds
                     dec_ref_pic_marking_params* marking = au.NALU[i].slice_hdr->dec_ref_pic_marking;
                     int numExpected = 0, numFound = 0;
-                    for (int d = 0; d<MAX_MMCO_IN_CASE; numExpected += (m_tc.mmco_set[d].mmco != 0 && m_tc.mmco_set[d].frameNum == m_nFrame), d++);
+                    for (int d = 0; d<MAX_MMCO_IN_CASE; numExpected += (m_tc.mmco_set[d].mmco != 0 && m_tc.mmco_set[d].frameNum == nFrame), d++);
 
                     while (marking) {
                         numFound += (marking->memory_management_control_operation != 0);
@@ -298,7 +300,7 @@ public:
                             {
                                 mfxI32 target = marking->difference_of_pic_nums_minus1+1;
                                 for (int d = 0; d<MAX_MMCO_IN_CASE && !matched; d++) {
-                                    if (m_tc.mmco_set[d].frameNum != m_nFrame ||
+                                    if (m_tc.mmco_set[d].frameNum != nFrame ||
                                             m_tc.mmco_set[d].mmco != marking->memory_management_control_operation ||
                                             m_tc.mmco_set[d].idxST != target)
                                         continue;
@@ -310,7 +312,7 @@ public:
                             {
                                 mfxU32 target = marking->long_term_pic_num;
                                 for (int d = 0; d<MAX_MMCO_IN_CASE && !matched; d++) {
-                                    if (m_tc.mmco_set[d].frameNum != m_nFrame ||
+                                    if (m_tc.mmco_set[d].frameNum != nFrame ||
                                             m_tc.mmco_set[d].mmco != marking->memory_management_control_operation ||
                                             m_tc.mmco_set[d].idxLT != target)
                                         continue;
@@ -322,7 +324,7 @@ public:
                             {
                                 mfxI32 target = marking->difference_of_pic_nums_minus1+1;
                                 for (int d = 0; d<MAX_MMCO_IN_CASE && !matched; d++) {
-                                    if (m_tc.mmco_set[d].frameNum != m_nFrame ||
+                                    if (m_tc.mmco_set[d].frameNum != nFrame ||
                                             m_tc.mmco_set[d].mmco != marking->memory_management_control_operation ||
                                             m_tc.mmco_set[d].idxST != target)
                                         continue;
@@ -335,7 +337,7 @@ public:
                             {
                                 mfxI32 target = marking->max_long_term_frame_idx_plus1 - 1;
                                 for (int d = 0; d<MAX_MMCO_IN_CASE && !matched; d++) {
-                                    if (m_tc.mmco_set[d].frameNum != m_nFrame ||
+                                    if (m_tc.mmco_set[d].frameNum != nFrame ||
                                             m_tc.mmco_set[d].mmco != marking->memory_management_control_operation)
                                         continue;
                                     matched = (m_tc.mmco_set[d].idxLT == target);
@@ -346,7 +348,7 @@ public:
                         case MMCO_5:
                             {
                                 for (int d = 0; d<MAX_MMCO_IN_CASE; d++) {
-                                    if (m_tc.mmco_set[d].frameNum != m_nFrame)
+                                    if (m_tc.mmco_set[d].frameNum != nFrame)
                                         continue;
                                     matched = (m_tc.mmco_set[d].mmco == MMCO_5);
                                     break;
@@ -357,7 +359,7 @@ public:
                             {
                                 mfxU32 target = marking->long_term_frame_idx;
                                 for (int d = 0; d<MAX_MMCO_IN_CASE && !matched; d++) {
-                                    if (m_tc.mmco_set[d].frameNum != m_nFrame ||
+                                    if (m_tc.mmco_set[d].frameNum != nFrame ||
                                             m_tc.mmco_set[d].mmco != marking->memory_management_control_operation)
                                         continue;
                                     matched = (m_tc.mmco_set[d].idxLT == target);
@@ -372,13 +374,14 @@ public:
                         err += !matched;
                         marking = marking->next;
                     }
-                    VERIFY_FIELD(numFound, numExpected, "Number of nz mmco in " << m_nFrame << " frame ")
+                    VERIFY_FIELD(numFound, numExpected, "Number of nz mmco in " << nFrame << " frame (" << m_nPic << ")")
                     err += (numFound != numExpected);
                     g_tsLog << "\n";
                 }
             }
-            m_nFrame++;
         }
+
+        m_nPic++;
 
         bs.DataOffset = 0;
         bs.DataLength = 0;
@@ -469,8 +472,11 @@ int TestSuite::RunTest(unsigned int id)
             mfxU32 idxToPickBuffers = encpak.m_bSingleField ? 0 : field;
 
             sts = encpak.PrepareFrameBuffers(field);
-            if (sts != MFX_ERR_NONE)
+            if (sts != MFX_ERR_NONE) {
+                g_tsStatus.expect(tc.sts); // if fails check if it is expected
+                g_tsStatus.check(sts);
                 break;
+            }
 
             LoadTC(encpak.enc.inbuf, encpak.pak.inbuf, tc, count, idxToPickBuffers);
 
