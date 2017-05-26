@@ -673,6 +673,13 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
     MFX_CHECK_NULL_PTR2(input, output);
     MFX_CHECK_NULL_PTR2(input->InSurface, output->OutSurface);
 
+    // Frame order -1 is forbidden
+    MFX_CHECK(input->InSurface->Data.FrameOrder != 0xffffffff, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+    output->OutSurface->Data.FrameOrder = input->InSurface->Data.FrameOrder;
+
+    // Configure new task
+
     UMC::AutomaticUMCMutex guard(m_listMutex);
 
     m_free.front().m_yuv         = input->InSurface;

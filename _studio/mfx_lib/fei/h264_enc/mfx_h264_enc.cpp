@@ -454,8 +454,14 @@ mfxStatus VideoENC_ENC::RunFrameVmeENCCheck(
     // Check that all appropriate parameters passed
 
     MFX_CHECK(m_bInit, MFX_ERR_UNDEFINED_BEHAVIOR);
+
     MFX_CHECK_NULL_PTR2(input, output);
     MFX_CHECK_NULL_PTR2(input->InSurface, output->OutSurface);
+
+    // Frame order -1 is forbidden
+    MFX_CHECK(input->InSurface->Data.FrameOrder != 0xffffffff, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+    output->OutSurface->Data.FrameOrder = input->InSurface->Data.FrameOrder;
 
     // Configure new task
 
