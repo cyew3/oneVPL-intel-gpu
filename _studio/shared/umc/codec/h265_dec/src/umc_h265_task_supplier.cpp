@@ -1156,6 +1156,24 @@ UMC::Status TaskSupplier_H265::xDecodePPS(H265HeadersBitstream * bs)
     if (pps.log2_sao_offset_scale_chroma  > sps->bit_depth_chroma - 10)
         throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
+    //palette sanity checks
+    if (pps.pps_num_palette_predictor_initializer)
+    {
+        unsigned const PaletteMaxPredSize
+            = sps->palette_max_size + sps->delta_palette_max_predictor_size;
+        if (pps.pps_num_palette_predictor_initializer > PaletteMaxPredSize)
+            throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
+        if (pps.monochrome_palette_flag != (sps->chroma_format_idc == 0))
+            throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
+        if (pps.luma_bit_depth_entry != sps->bit_depth_luma)
+            throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
+        if (!pps.monochrome_palette_flag && pps.chroma_bit_depth_entry != sps->bit_depth_chroma)
+            throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+    }
+
     Ipp32u WidthInLCU = sps->WidthInCU;
     Ipp32u HeightInLCU = sps->HeightInCU;
 

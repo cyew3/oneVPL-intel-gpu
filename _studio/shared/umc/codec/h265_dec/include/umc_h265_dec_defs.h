@@ -43,10 +43,11 @@ namespace UMC_HEVC_DECODER
 
 enum
 {
-    H265_PROFILE_MAIN = 1,
+    H265_PROFILE_MAIN   = 1,
     H265_PROFILE_MAIN10 = 2,
     H265_PROFILE_MAINSP = 3,
-    H265_PROFILE_FREXT = 4,
+    H265_PROFILE_FREXT  = 4,
+    H265_PROFILE_SCC    = 9,
 };
 
 // HEVC level identifiers
@@ -495,6 +496,7 @@ struct H265PTL
     Ipp8u       intra_constraint_flag;
     Ipp8u       one_picture_only_constraint_flag;
     Ipp8u       lower_bit_rate_constraint_flag;
+    Ipp8u       max_14bit_constraint_flag;
 
     H265PTL()   { memset(this, 0, sizeof(*this)); }
 };
@@ -867,7 +869,9 @@ struct H265SeqParamSetBase
 
     // sps extension
     Ipp8u sps_range_extension_flag;
+    Ipp8u sps_scc_extension_flag;
 
+    //range extention
     Ipp8u transform_skip_rotation_enabled_flag;
     Ipp8u transform_skip_context_enabled_flag;
     Ipp8u implicit_residual_dpcm_enabled_flag;
@@ -877,6 +881,16 @@ struct H265SeqParamSetBase
     Ipp8u high_precision_offsets_enabled_flag;
     Ipp8u fast_rice_adaptation_enabled_flag;
     Ipp8u cabac_bypass_alignment_enabled_flag;
+
+    //scc extention
+    Ipp8u sps_curr_pic_ref_enabled_flag;
+    Ipp8u palette_mode_enabled_flag;
+    Ipp32u palette_max_size;
+    Ipp32u delta_palette_max_predictor_size;
+    Ipp8u sps_palette_predictor_initializer_present_flag;
+    Ipp32u sps_num_palette_predictor_initializer;
+    Ipp32u motion_vector_resolution_control_idc;
+    Ipp8u intra_boundary_filtering_disabled_flag;
 
     ///////////////////////////////////////////////////////
     // calculated params
@@ -915,7 +929,8 @@ struct H265SeqParamSetBase
 // Sequence parameter set structure, corresponding to the HEVC bitstream definition.
 struct H265SeqParamSet : public HeapObject, public H265SeqParamSetBase
 {
-    H265ScalingList m_scalingList;
+    H265ScalingList     m_scalingList;
+    std::vector<Ipp32u> m_paletteInitializers;
 
     H265SeqParamSet()
         : HeapObject()
@@ -925,8 +940,7 @@ struct H265SeqParamSet : public HeapObject, public H265SeqParamSetBase
     }
 
     ~H265SeqParamSet()
-    {
-    }
+    {}
 
     Ipp32s GetID() const
     {
@@ -938,6 +952,7 @@ struct H265SeqParamSet : public HeapObject, public H265SeqParamSetBase
         H265SeqParamSetBase::Reset();
 
         m_RPSList.m_NumberOfReferencePictureSets = 0;
+        m_paletteInitializers.clear();
 
         sps_video_parameter_set_id = MAX_NUM_VPS_PARAM_SETS_H265;
         sps_seq_parameter_set_id = MAX_NUM_SEQ_PARAM_SETS_H265;
@@ -1056,8 +1071,11 @@ struct H265PicParamSetBase
     Ipp32u  log2_parallel_merge_level;
     Ipp8u   slice_segment_header_extension_present_flag;
 
-    // pps range extension
+    // pps extension
     Ipp8u  pps_range_extensions_flag;
+    Ipp8u  pps_scc_extension_flag;
+
+    // pps range extension
     Ipp32u log2_max_transform_skip_block_size;
 
     Ipp8u cross_component_prediction_enabled_flag;
@@ -1069,6 +1087,20 @@ struct H265PicParamSetBase
 
     Ipp32u log2_sao_offset_scale_luma;
     Ipp32u log2_sao_offset_scale_chroma;
+
+    // scc extension
+    Ipp8u pps_curr_pic_ref_enabled_flag;
+    Ipp8u residual_adaptive_colour_transform_enabled_flag;
+    Ipp8u pps_slice_act_qp_offsets_present_flag;
+    Ipp32s pps_act_y_qp_offset;
+    Ipp32s pps_act_cb_qp_offset;
+    Ipp32s pps_act_cr_qp_offset;
+
+    Ipp8u pps_palette_predictor_initializer_present_flag;
+    Ipp32u pps_num_palette_predictor_initializer;
+    Ipp8u monochrome_palette_flag;
+    Ipp32u luma_bit_depth_entry;
+    Ipp32u chroma_bit_depth_entry;
 
     ///////////////////////////////////////////////////////
     // calculated params
@@ -1091,8 +1123,9 @@ struct H265PicParamSetBase
 // Picture parameter set structure, corresponding to the H.264 bitstream definition.
 struct H265PicParamSet : public HeapObject, public H265PicParamSetBase
 {
-    H265ScalingList m_scalingList;
+    H265ScalingList       m_scalingList;
     std::vector<TileInfo> tilesInfo;
+    std::vector<Ipp32u>   m_paletteInitializers;
 
     H265PicParamSet()
         : H265PicParamSetBase()
@@ -1111,6 +1144,7 @@ struct H265PicParamSet : public HeapObject, public H265PicParamSetBase
         H265PicParamSetBase::Reset();
 
         tilesInfo.clear();
+        m_paletteInitializers.clear();
         m_scalingList.destroy();
 
         pps_pic_parameter_set_id = MAX_NUM_PIC_PARAM_SETS_H265;
@@ -1186,10 +1220,15 @@ struct H265SliceHeader
     wpScalingParam  pred_weight_table[2][MAX_NUM_REF_PICS][3]; // [REF_PIC_LIST_0 or REF_PIC_LIST_1][refIdx][0:Y, 1:U, 2:V]
 
     Ipp32s      max_num_merge_cand;
+    Ipp8u       use_integer_mv_flag;
 
     Ipp32s      slice_qp_delta;                       // to calculate default slice QP
     Ipp32s      slice_cb_qp_offset;
     Ipp32s      slice_cr_qp_offset;
+
+    Ipp32s      slice_act_y_qp_offset;
+    Ipp32s      slice_act_cb_qp_offset;
+    Ipp32s      slice_act_cr_qp_offset;
 
     Ipp8u       cu_chroma_qp_offset_enabled_flag;
 

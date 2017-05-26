@@ -222,7 +222,16 @@ inline
 bool CheckChromaFormat(mfxU16 profile, mfxU16 format)
 {
     VM_ASSERT(profile != MFX_PROFILE_UNKNOWN);
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+    VM_ASSERT(
+        !(profile >  MFX_PROFILE_HEVC_REXT) ||
+          profile == MFX_PROFILE_HEVC_SCC
+    );
+#elif defined(PRE_SI_TARGET_PLATFORM_GEN11)
     VM_ASSERT(!(profile > MFX_PROFILE_HEVC_REXT));
+#else
+    VM_ASSERT(!(profile > MFX_PROFILE_HEVC_MAINSP));
+#endif
 
     if (format > MFX_CHROMAFORMAT_YUV444)
         return false;
@@ -243,6 +252,13 @@ bool CheckChromaFormat(mfxU16 profile, mfxU16 format)
     };
 
     return
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+        profile == MFX_PROFILE_HEVC_SCC ?
+            (format == MFX_CHROMAFORMAT_YUV400 ||
+             format == MFX_CHROMAFORMAT_YUV420 ||
+             format == MFX_CHROMAFORMAT_YUV444)
+        :
+#endif
         !(format < minmax[profile][0]) &&
         !(format > minmax[profile][1])
         ;
@@ -252,28 +268,45 @@ inline
 bool CheckBitDepth(mfxU16 profile, mfxU16 bit_depth)
 {
     VM_ASSERT(profile != MFX_PROFILE_UNKNOWN);
-    VM_ASSERT(!(profile > MFX_PROFILE_HEVC_REXT));
-
-    static const mfxU16 minmax[][2] =
-    {
-        { 0,  0 }, //MFX_PROFILE_UNKNOWN is not allowed, just placeholder here
-        { 8,  8 }, //MFX_PROFILE_HEVC_MAIN
-        { 8, 10 }, //MFX_PROFILE_HEVC_MAIN10
-        { 8,  8 }, //MFX_PROFILE_HEVC_MAINSP
-#if !defined(MFX_VA)
-        { 8, 10 }, //MFX_PROFILE_HEVC_REXT (10b max for SW)
-#elif defined(PRE_SI_TARGET_PLATFORM_GEN12)
-        { 8, 12 }, //MFX_PROFILE_HEVC_REXT (12b max for Gen12)
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+    VM_ASSERT(
+        !(profile >  MFX_PROFILE_HEVC_REXT) ||
+          profile == MFX_PROFILE_HEVC_SCC
+    );
 #elif defined(PRE_SI_TARGET_PLATFORM_GEN11)
-        { 8, 10 }, //MFX_PROFILE_HEVC_REXT (12b max for Gen11)
+    VM_ASSERT(!(profile > MFX_PROFILE_HEVC_REXT));
 #else
-        { 0,  0 }  //MFX_PROFILE_HEVC_REXT - unsupported
+    VM_ASSERT(!(profile > MFX_PROFILE_HEVC_MAINSP));
+#endif
+
+    struct minmax_t
+    {
+        mfxU16 profile;
+        mfxU8  lo, hi;
+    } static const minmax[] =
+    {
+        { MFX_PROFILE_HEVC_MAIN,   8,  8 },
+        { MFX_PROFILE_HEVC_MAIN10, 8, 10 },
+        { MFX_PROFILE_HEVC_MAINSP, 8,  8 },
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+        { MFX_PROFILE_HEVC_REXT,   8, 12 }, //(12b max for Gen12)
+        { MFX_PROFILE_HEVC_SCC,    8, 10 }, //(10b max for Gen12)
+#elif defined(PRE_SI_TARGET_PLATFORM_GEN11) || !defined(MFX_VA)
+        { MFX_PROFILE_HEVC_REXT,   8, 10 }, //(10b max for Gen11 & SW mode)
 #endif
     };
 
+    minmax_t const
+        *f = minmax,
+        *l = f + sizeof(minmax) / sizeof(minmax[0]);
+    for (; f != l; ++f)
+        if (f->profile == profile)
+            break;
+
     return
-        !(bit_depth < minmax[profile][0]) &&
-        !(bit_depth > minmax[profile][1])
+        f != l &&
+        !(bit_depth < f->lo) &&
+        !(bit_depth > f->hi)
         ;
 }
 
@@ -285,7 +318,8 @@ mfxU32 CalculateFourcc(mfxU16 codecProfile, mfxFrameInfo const* frameInfo)
     //Main10 - [4:2:0], [8, 10] bit
     //Extent - [4:2:0, 4:2:2, 4:4:4], [8, 10, 12, 16]
 
-    if (codecProfile > MFX_PROFILE_HEVC_REXT)
+    if (codecProfile > MFX_PROFILE_HEVC_REXT &&
+        codecProfile != H265_PROFILE_SCC)
         return 0;
 
     if (!CheckChromaFormat(codecProfile, frameInfo->ChromaFormat))
