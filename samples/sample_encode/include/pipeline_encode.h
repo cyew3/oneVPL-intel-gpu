@@ -141,6 +141,8 @@ struct sInputParams
     mfxU16 GopOptFlag;
     mfxU32 nMaxFrameSize;
 
+    mfxU16 LowDelayBRC;
+
     bool bUncut;
     bool shouldUseShiftedP010Enc;
     bool shouldUseShiftedP010VPP;
