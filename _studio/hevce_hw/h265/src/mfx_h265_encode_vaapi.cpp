@@ -739,7 +739,7 @@ VAAPIEncoder::VAAPIEncoder()
 , m_height(0)
 , m_caps()
 #if MFX_EXTBUFF_CU_QP_ENABLE
-, m_cuqp_width(0) 
+, m_cuqp_width(0)
 , m_cuqp_height(0)
 , m_cuqp_pitch(0)
 , m_cuqp_h_aligned(0)
@@ -766,7 +766,7 @@ void VAAPIEncoder::FillSps(
     sps.intra_idr_period     = par.mfx.GopPicSize*par.mfx.IdrInterval;
     sps.ip_period            = mfxU8(par.mfx.GopRefDist);
     if (   par.mfx.RateControlMethod != MFX_RATECONTROL_CQP
-          && par.mfx.RateControlMethod != MFX_RATECONTROL_ICQ 
+          && par.mfx.RateControlMethod != MFX_RATECONTROL_ICQ
           && par.mfx.RateControlMethod != MFX_RATECONTROL_LA_EXT)
     {
         sps.bits_per_second   = par.TargetKbps * 1000;
@@ -944,7 +944,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
             m_caps.MaxPicWidth  = 1920;
             m_caps.MaxPicHeight = 1088;
 #endif
-        
+
         //if (attrs[8].value != VA_ATTRIB_NOT_SUPPORTED)
         //    m_caps.SliceStructure = attrs[8].value ;
         //else
@@ -966,7 +966,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
         m_caps.LCUSizeSupported = 2;
 
     //printf("LibVA legacy: MaxPicWidth %d (%d), MaxPicHeight %d (%d), SliceStructure %d (%d), NumRef %d  %d (%x)\n", m_caps.MaxPicWidth, attrs[5].value,  m_caps.MaxPicHeight,attrs[4].value, m_caps.SliceStructure, attrs[8].value, m_caps.MaxNum_Reference0, m_caps.MaxNum_Reference1, attrs[7].value);
-    }    
+    }
 
     if (attrs[ idx_map[VAConfigAttribEncROI] ].value != VA_ATTRIB_NOT_SUPPORTED) // VAConfigAttribEncROI
     {
@@ -1117,7 +1117,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
    if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP && IsOn(par.m_ext.CO3.EnableMBQP))
    {
         m_cuqp_width  = (par.m_ext.HEVCParam.PicWidthInLumaSamples   + par.LCUSize  - 1) / par.LCUSize*2; //32x16 only: driver limitation
-        m_cuqp_height = (par.m_ext.HEVCParam.PicHeightInLumaSamples  + par.LCUSize  - 1) / par.LCUSize; 
+        m_cuqp_height = (par.m_ext.HEVCParam.PicHeightInLumaSamples  + par.LCUSize  - 1) / par.LCUSize;
         m_cuqp_pitch  =    (((((((par.m_ext.HEVCParam.PicWidthInLumaSamples/4 + 15)/16)*4*16) + 31)/32)*2 + 63)/64)*64;
         m_cuqp_h_aligned = (((((((par.m_ext.HEVCParam.PicHeightInLumaSamples/4 + 15)/16)*4*16) + 31)/32) + 3)/4)*4;
         m_cuqp_buffer.resize(m_cuqp_pitch * m_cuqp_h_aligned);
@@ -1235,7 +1235,7 @@ bool operator!=(const ENCODE_ENC_CTRL_CAPS& l, const ENCODE_ENC_CTRL_CAPS& r)
 #if MFX_EXTBUFF_CU_QP_ENABLE
 mfxStatus FillCUQPDataVA(Task const & task, MfxVideoParam &par, std::vector<mfxI8>  &m_cuqp_buffer, mfxU32  Width, mfxU32  Height, mfxU32 Pitch)
 {
-    
+
    if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP || !IsOn(par.m_ext.CO3.EnableMBQP) )
         return MFX_ERR_NONE;
 
@@ -1250,7 +1250,7 @@ mfxStatus FillCUQPDataVA(Task const & task, MfxVideoParam &par, std::vector<mfxI
     mfxU32 k_dr_w  = 1;
     mfxU32 k_dr_h  = 1;
     mfxU32 k_input = 1;
-    
+
     if (driverQPsize > minQPSize)
     {
         k_dr_w = Width/minWidthQPData;
@@ -1266,13 +1266,13 @@ mfxStatus FillCUQPDataVA(Task const & task, MfxVideoParam &par, std::vector<mfxI
     mfxExtMBQP *mbqp = ExtBuffer::Get(task.m_ctrl);
     if (mbqp)
     {
-        mfxU16 blockSize= mbqp->BlockSize ? mbqp->BlockSize : 16; 
+        mfxU16 blockSize= mbqp->BlockSize ? mbqp->BlockSize : 16;
         k_input = par.LCUSize/blockSize;
         MFX_CHECK(par.LCUSize == blockSize*k_input, MFX_ERR_UNDEFINED_BEHAVIOR);
         MFX_CHECK (mbqp->NumQPAlloc >= minQPSize*k_input*k_input, MFX_ERR_UNDEFINED_BEHAVIOR);
         MFX_CHECK(k_input == 1 ||k_input == 2 || k_input == 4 || k_input == 8 , MFX_ERR_UNDEFINED_BEHAVIOR);
     }
-    
+
     {
 
         if (mbqp)
@@ -1282,7 +1282,7 @@ mfxStatus FillCUQPDataVA(Task const & task, MfxVideoParam &par, std::vector<mfxI
         else
             for (mfxU32 i = 0; i < Height; i++)
                 for (mfxU32 j = 0; j < Width; j++)
-                    m_cuqp_buffer[i * Pitch +j] = (mfxU8)task.m_qpY;         
+                    m_cuqp_buffer[i * Pitch +j] = (mfxU8)task.m_qpY;
 
     }
     return MFX_ERR_NONE;
@@ -1527,7 +1527,7 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
             ENCODE_PACKEDHEADER_DATA * packedPps = PackHeader(task, PPS_NUT);
 
             packed_header_param_buffer.type = VAEncPackedHeaderHEVC_PPS;
-            packed_header_param_buffer.has_emulation_bytes = 1; //!packedPps->SkipEmulationByteCount; 
+            packed_header_param_buffer.has_emulation_bytes = 1; //!packedPps->SkipEmulationByteCount;
             packed_header_param_buffer.bit_length = packedPps->DataLength*8;
 
             vaSts = vaCreateBuffer(m_vaDisplay,
@@ -1718,7 +1718,7 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
       codedBufferSegment->next = 0;
       codedBufferSegment->reserved = 0;
       codedBufferSegment->status = 0;
-      
+
       MFX_CHECK_WITH_ASSERT(codedBufferSegment->buf, MFX_ERR_DEVICE_FAILED);
 
       mfxU8 *  bsDataStart = (mfxU8 *)codedBufferSegment->buf;
@@ -1900,6 +1900,8 @@ mfxStatus VAAPIEncoder::QueryStatus(Task & task)
 
 mfxStatus VAAPIEncoder::Destroy()
 {
+    VABuffersDestroy();
+
     if (m_vaContextEncode != VA_INVALID_ID)
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaDestroyContext");
@@ -1912,8 +1914,6 @@ mfxStatus VAAPIEncoder::Destroy()
         vaDestroyConfig(m_vaDisplay, m_vaConfig);
         m_vaConfig = VA_INVALID_ID;
     }
-
-    VABuffersDestroy();
     return MFX_ERR_NONE;
 } // mfxStatus VAAPIEncoder::Destroy()
 

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFX_MPEG2_ENCODE_VAAPI__H
@@ -55,7 +55,7 @@ namespace MfxHwMpeg2Encode
         mfxStatus CreateContext(ExecuteBuffers* pExecuteBuffers, mfxU32 numRefFrames, mfxU32 funcId);
 
         virtual
-        mfxStatus Execute(ExecuteBuffers* pExecuteBuffers, mfxU8* pUserData = 0, mfxU32 userDataLen = 0);                
+        mfxStatus Execute(ExecuteBuffers* pExecuteBuffers, mfxU8* pUserData = 0, mfxU32 userDataLen = 0);
 
         virtual
         mfxStatus Close();
@@ -99,10 +99,10 @@ namespace MfxHwMpeg2Encode
         mfxStatus FillMBQPBuffer(ExecuteBuffers* pExecuteBuffers, mfxU8* mbqp, mfxU32 numMB);
         mfxStatus FillSkipFrameBuffer(mfxU8 skipFlag);
 
-        mfxStatus Execute(ExecuteBuffers* pExecuteBuffers, mfxU32 func, mfxU8* pUserData, mfxU32 userDataLen);        
+        mfxStatus Execute(ExecuteBuffers* pExecuteBuffers, mfxU32 func, mfxU8* pUserData, mfxU32 userDataLen);
         mfxStatus Register (const mfxFrameAllocResponse* pResponse, D3DDDIFORMAT type);
         mfxI32    GetRecFrameIndex (mfxMemId memID);
-        mfxI32    GetRawFrameIndex (mfxMemId memIDe, bool bAddFrames);    
+        mfxI32    GetRawFrameIndex (mfxMemId memIDe, bool bAddFrames);
 
 
         VideoCORE*                          m_core;
@@ -126,7 +126,7 @@ namespace MfxHwMpeg2Encode
         VAEncMiscParameterBuffer           *m_pMiscParamsPrivate;
         VAEncMiscParameterBuffer           *m_pMiscParamsSeqInfo;
         VAEncMiscParameterBuffer           *m_pMiscParamsSkipFrame;
-        
+
 
         VABufferID                          m_miscParamFpsId;
         VABufferID                          m_miscParamPrivateId;
@@ -145,10 +145,8 @@ namespace MfxHwMpeg2Encode
         mfxU16                              m_initFrameWidth;
         mfxU16                              m_initFrameHeight;
 
-        std::vector<ENCODE_COMP_BUFFER_INFO> m_compBufInfo;
-        std::vector<D3DDDIFORMAT> m_uncompBufInfo;
         ENCODE_MBDATA_LAYOUT m_layout;
-        
+
         mfxFeedback                         m_feedback;
         std::vector<ExtVASurface>           m_bsQueue;
         std::vector<ExtVASurface>           m_reconQueue;
@@ -164,7 +162,7 @@ namespace MfxHwMpeg2Encode
 #ifdef MPEG2_ENC_HW_PERF
         vm_time lock_MB_data_time[3];
         vm_time copy_MB_data_time[3];
-#endif 
+#endif
     }; // class VAAPIEncoder
 
 

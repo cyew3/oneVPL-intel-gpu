@@ -3259,18 +3259,6 @@ mfxStatus VAAPIEncoder::QueryStatusFEI(
 mfxStatus VAAPIEncoder::Destroy()
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VAAPIEncoder::Destroy");
-    if (m_vaContextEncode != VA_INVALID_ID)
-    {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaDestroyContext");
-        vaDestroyContext(m_vaDisplay, m_vaContextEncode);
-        m_vaContextEncode = VA_INVALID_ID;
-    }
-
-    if (m_vaConfig != VA_INVALID_ID)
-    {
-        vaDestroyConfig(m_vaDisplay, m_vaConfig);
-        m_vaConfig = VA_INVALID_ID;
-    }
 
     MFX_DESTROY_VABUFFER(m_spsBufferId,               m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_hrdBufferId,               m_vaDisplay);
@@ -3326,6 +3314,18 @@ mfxStatus VAAPIEncoder::Destroy()
         MFX_DESTROY_VABUFFER(m_vaFeiMCODEOutId[i], m_vaDisplay);
     }
 
+    if (m_vaContextEncode != VA_INVALID_ID)
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaDestroyContext");
+        vaDestroyContext(m_vaDisplay, m_vaContextEncode);
+        m_vaContextEncode = VA_INVALID_ID;
+    }
+
+    if (m_vaConfig != VA_INVALID_ID)
+    {
+        vaDestroyConfig(m_vaDisplay, m_vaConfig);
+        m_vaConfig = VA_INVALID_ID;
+    }
 
     return MFX_ERR_NONE;
 } // mfxStatus VAAPIEncoder::Destroy()

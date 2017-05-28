@@ -1029,6 +1029,17 @@ mfxStatus VAAPIEncoder::QueryStatus(
 
 mfxStatus VAAPIEncoder::Destroy()
 {
+    MFX_DESTROY_VABUFFER(m_spsBufferId, m_vaDisplay);
+    MFX_DESTROY_VABUFFER(m_ppsBufferId, m_vaDisplay);
+    MFX_DESTROY_VABUFFER(m_coeffBufBufferId, m_vaDisplay);
+    MFX_DESTROY_VABUFFER(m_segParBufferId, m_vaDisplay);
+    MFX_DESTROY_VABUFFER(m_frmUpdateBufferId, m_vaDisplay);
+    MFX_DESTROY_VABUFFER(m_frameRateBufferId, m_vaDisplay);
+    MFX_DESTROY_VABUFFER(m_rateCtrlBufferId, m_vaDisplay);
+    MFX_DESTROY_VABUFFER(m_hrdBufferId, m_vaDisplay);
+    MFX_DESTROY_VABUFFER(m_probUpdateBufferId, m_vaDisplay);
+    MFX_DESTROY_VABUFFER(m_qualityLevelBufferId, m_vaDisplay);
+
     if( m_vaContextEncode )
     {
         vaDestroyContext( m_vaDisplay, m_vaContextEncode );
@@ -1040,17 +1051,6 @@ mfxStatus VAAPIEncoder::Destroy()
         vaDestroyConfig( m_vaDisplay, m_vaConfig );
         m_vaConfig = 0;
     }
-
-    MFX_DESTROY_VABUFFER(m_spsBufferId, m_vaDisplay);
-    MFX_DESTROY_VABUFFER(m_ppsBufferId, m_vaDisplay);
-    MFX_DESTROY_VABUFFER(m_coeffBufBufferId, m_vaDisplay);
-    MFX_DESTROY_VABUFFER(m_segParBufferId, m_vaDisplay);
-    MFX_DESTROY_VABUFFER(m_frmUpdateBufferId, m_vaDisplay);
-    MFX_DESTROY_VABUFFER(m_frameRateBufferId, m_vaDisplay);
-    MFX_DESTROY_VABUFFER(m_rateCtrlBufferId, m_vaDisplay);
-    MFX_DESTROY_VABUFFER(m_hrdBufferId, m_vaDisplay);
-    MFX_DESTROY_VABUFFER(m_probUpdateBufferId, m_vaDisplay);
-    MFX_DESTROY_VABUFFER(m_qualityLevelBufferId, m_vaDisplay);
 
     return MFX_ERR_NONE;
 

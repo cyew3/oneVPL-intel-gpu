@@ -524,6 +524,11 @@ mfxStatus VAAPIEncoder::DestroyBuffers() {
 mfxStatus VAAPIEncoder::Destroy()
 {
     mfxStatus sts = MFX_ERR_NONE;
+
+    m_bsQueue.clear();
+    m_feedbackCache.clear();
+    DestroyBuffers();
+
     if( m_vaContextEncode )
     {
         vaDestroyContext( m_vaDisplay, m_vaContextEncode );
@@ -535,9 +540,6 @@ mfxStatus VAAPIEncoder::Destroy()
         vaDestroyConfig( m_vaDisplay, m_vaConfig );
         m_vaConfig = 0;
     }
-    m_bsQueue.clear();
-    m_feedbackCache.clear();
-    DestroyBuffers();
     return sts;
 }
 

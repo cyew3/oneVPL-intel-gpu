@@ -13,7 +13,7 @@
 #include "assert.h"
 
 namespace MFX_VP8ENC
-{    
+{
     mfxStatus QueryHwCaps(mfxCoreInterface * pCore, ENCODE_CAPS_VP8 & caps)
     {
         std::auto_ptr<DriverEncoder> ddi;
@@ -23,7 +23,7 @@ namespace MFX_VP8ENC
 
         mfxStatus sts = ddi.get()->CreateAuxilliaryDevice(pCore, DXVA2_Intel_Encode_VP8, 640, 480);
         MFX_CHECK_STS(sts);
-            
+
         sts = ddi.get()->QueryEncodeCaps(caps);
         MFX_CHECK_STS(sts);
 
@@ -40,7 +40,7 @@ namespace MFX_VP8ENC
         if (pExtVP8Opt->EnableMultipleSegments && !caps.SegmentationAllowed)
         {
             pExtVP8Opt->EnableMultipleSegments = 0;
-            sts =  MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;       
+            sts =  MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
         }
         return sts;
     }
@@ -61,19 +61,19 @@ namespace MFX_VP8ENC
         Zero(sps);
 
         sps.frame_width  = par.mfx.FrameInfo.Width;
-        sps.frame_height = par.mfx.FrameInfo.Height; 
+        sps.frame_height = par.mfx.FrameInfo.Height;
         sps.frame_width_scale = 0;
         sps.frame_height_scale = 0;
 
         /*OG: are those parameters used for full ENCODE Mode only ??? */
 
-        sps.error_resilient = 0; 
-        sps.kf_auto = 0; 
+        sps.error_resilient = 0;
+        sps.kf_auto = 0;
         sps.kf_min_dist = 1;
         sps.kf_max_dist = par.mfx.GopRefDist;
-        sps.bits_per_second = par.mfx.TargetKbps*1000;    //     
+        sps.bits_per_second = par.mfx.TargetKbps*1000;    //
         sps.intra_period  = par.mfx.GopPicSize;
-    } 
+    }
 
     mfxStatus FillPpsBuffer(
         TaskHybridDDI const & task,
@@ -140,12 +140,12 @@ namespace MFX_VP8ENC
             if (pps.pic_flags.bits.refresh_alternate_frame == 0)
                 pps.pic_flags.bits.copy_buffer_to_alternate = task.m_sFrameParams.copyToAltRef;
             pps.pic_flags.bits.refresh_last = task.m_sFrameParams.bLastRef ? 1 : 0;
-        }  
+        }
 
         pps.pic_flags.bits.sign_bias_golden         = 0;
         pps.pic_flags.bits.sign_bias_alternate      = 0;
         pps.pic_flags.bits.mb_no_coeff_skip         = 1;
-  
+
         pps.sharpness_level          = task.m_sFrameParams.Sharpness;
 
         for (int i = 0; i < 4; i ++)
@@ -265,10 +265,10 @@ namespace MFX_VP8ENC
                     memset(&(bufPtr[segMapPitch * row]), pExtRoi->NumROI, frameWidthInMBs);
 
                 memset(&(bufPtr[segMapPitch * row + frameWidthInMBs]), 0, segMapAlign);
-            }            
+            }
         }
 
-#if 0        
+#if 0
         printf("\n\n");
         for (mfxU32 row = 0; row < frameHeightInMBs; row ++)
         {
@@ -283,7 +283,7 @@ namespace MFX_VP8ENC
 #endif
         return MFX_ERR_NONE;
     }
-    
+
     mfxStatus FillFrameUpdateBuffer(TaskHybridDDI const & task, VAEncMiscParameterVP8HybridFrameUpdate & frmUpdate)
     {
         frmUpdate.prev_frame_size = (UINT)task.m_prevFrameSize;
@@ -313,7 +313,7 @@ namespace MFX_VP8ENC
 
         return MFX_ERR_NONE;
     }
-    
+
 mfxU8 ConvertRateControlMFX2VAAPI(mfxU8 rateControl)
 {
     switch (rateControl)
@@ -630,7 +630,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     m_caps.MaxPicHeight = 1080;
     m_caps.HybridPakFunc = 1;
     m_caps.SegmentationAllowed = 1;
-    
+
     return MFX_ERR_NONE;
 
 } // mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(VideoCORE* core, GUID guid, mfxU32 width, mfxU32 height)
@@ -666,8 +666,8 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(mfxVideoParam const & par)
     bool bEncodeEnable = false;
     for( entrypointsIndx = 0; entrypointsIndx < numEntrypoints; entrypointsIndx++ )
     {
-        // [SE] VAEntrypointHybridEncSlice is entry point for Hybrid VP8 encoder        
-        if( VAEntrypointHybridEncSlice == pEntrypoints[entrypointsIndx] )        
+        // [SE] VAEntrypointHybridEncSlice is entry point for Hybrid VP8 encoder
+        if( VAEntrypointHybridEncSlice == pEntrypoints[entrypointsIndx] )
         {
             bEncodeEnable = true;
             break;
@@ -727,7 +727,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(mfxVideoParam const & par)
 
     Zero(m_sps);
     Zero(m_pps);
- 
+
     //------------------------------------------------------------------
 
     FillSpsBuffer(par, m_sps);
@@ -826,9 +826,9 @@ mfxStatus VAAPIEncoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequ
         return MFX_ERR_UNSUPPORTED;
     }
 
-    // context_id required for allocation video memory (tmp solution) 
+    // context_id required for allocation video memory (tmp solution)
     request.AllocId = m_vaContextEncode;
-    
+
     return MFX_ERR_NONE;
 
 } // mfxStatus VAAPIEncoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequest& request, mfxU32 frameWidth, mfxU32 frameHeight)
@@ -917,7 +917,7 @@ mfxStatus VAAPIEncoder::Execute(
     VASurfaceID *inputSurface = (VASurfaceID*)surface;
     VASurfaceID reconSurface;
     VABufferID codedBuffer;
-    mfxU32 i;    
+    mfxU32 i;
 
     std::vector<VABufferID> configBuffers;
     configBuffers.resize(MAX_CONFIG_BUFFERS_COUNT);
@@ -929,11 +929,11 @@ mfxStatus VAAPIEncoder::Execute(
     FillSegMap(task, m_video, m_pmfxCore, m_segMapPar);
     FillFrameUpdateBuffer(task, m_frmUpdate);
 
-//===============================================================================================    
+//===============================================================================================
 
     //------------------------------------------------------------------
-    // find bitstream    
-    mfxU32 idxInPool = task.m_pRecFrame->idInPool;    
+    // find bitstream
+    mfxU32 idxInPool = task.m_pRecFrame->idInPool;
     if( idxInPool < m_mbDataQueue.size() )
     {
         codedBuffer = m_mbDataQueue[idxInPool].surface;
@@ -1167,6 +1167,16 @@ mfxStatus VAAPIEncoder::QueryStatus(
 
 mfxStatus VAAPIEncoder::Destroy()
 {
+    MFX_DESTROY_VABUFFER(m_spsBufferId, m_vaDisplay);
+    MFX_DESTROY_VABUFFER(m_ppsBufferId, m_vaDisplay);
+    MFX_DESTROY_VABUFFER(m_qMatrixBufferId, m_vaDisplay);
+    MFX_DESTROY_VABUFFER(m_segMapParBufferId, m_vaDisplay);
+    MFX_DESTROY_VABUFFER(m_frmUpdateBufferId, m_vaDisplay);
+    MFX_DESTROY_VABUFFER(m_frameRateBufferId, m_vaDisplay);
+    MFX_DESTROY_VABUFFER(m_rateCtrlBufferId, m_vaDisplay);
+    MFX_DESTROY_VABUFFER(m_hrdBufferId, m_vaDisplay);
+    MFX_DESTROY_VABUFFER(m_qualityLevelBufferId, m_vaDisplay);
+
     if( m_vaContextEncode )
     {
         vaDestroyContext( m_vaDisplay, m_vaContextEncode );
@@ -1179,20 +1189,10 @@ mfxStatus VAAPIEncoder::Destroy()
         m_vaConfig = 0;
     }
 
-    MFX_DESTROY_VABUFFER(m_spsBufferId, m_vaDisplay);    
-    MFX_DESTROY_VABUFFER(m_ppsBufferId, m_vaDisplay);
-    MFX_DESTROY_VABUFFER(m_qMatrixBufferId, m_vaDisplay);
-    MFX_DESTROY_VABUFFER(m_segMapParBufferId, m_vaDisplay);
-    MFX_DESTROY_VABUFFER(m_frmUpdateBufferId, m_vaDisplay);
-    MFX_DESTROY_VABUFFER(m_frameRateBufferId, m_vaDisplay);
-    MFX_DESTROY_VABUFFER(m_rateCtrlBufferId, m_vaDisplay);
-    MFX_DESTROY_VABUFFER(m_hrdBufferId, m_vaDisplay);
-    MFX_DESTROY_VABUFFER(m_qualityLevelBufferId, m_vaDisplay);
-
     return MFX_ERR_NONE;
 
 } // mfxStatus VAAPIEncoder::Destroy()
 #endif
 }
 
-#endif 
+#endif

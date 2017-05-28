@@ -175,18 +175,6 @@ mfxStatus VAAPIVideoProcessing::Close(void)
         free(m_primarySurface4Composition);
         m_primarySurface4Composition = NULL;
     }
-    if( m_vaContextVPP )
-    {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaDestroyContext");
-        vaDestroyContext( m_vaDisplay, m_vaContextVPP );
-        m_vaContextVPP = 0;
-    }
-
-    if( m_vaConfig )
-    {
-        vaDestroyConfig( m_vaDisplay, m_vaConfig );
-        m_vaConfig = 0;
-    }
 
     if( VA_INVALID_ID != m_denoiseFilterID )
     {
@@ -211,6 +199,19 @@ mfxStatus VAAPIVideoProcessing::Close(void)
     if( VA_INVALID_ID != m_frcFilterID )
     {
         vaDestroyBuffer(m_vaDisplay, m_frcFilterID);
+    }
+
+    if( m_vaContextVPP )
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaDestroyContext");
+        vaDestroyContext( m_vaDisplay, m_vaContextVPP );
+        m_vaContextVPP = 0;
+    }
+
+    if( m_vaConfig )
+    {
+        vaDestroyConfig( m_vaDisplay, m_vaConfig );
+        m_vaConfig = 0;
     }
 
     for(int i = 0; i < VAProcFilterCount; i++)
