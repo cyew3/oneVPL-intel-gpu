@@ -290,6 +290,10 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*29*/ MFX_ERR_NONE,  "12bit/420format/GENERAL_12b_420_RExt_Sony_1.bit",},
     {/*30*/ MFX_ERR_NONE,  "12bit/422format/GENERAL_12b_422_RExt_Sony_1.bit",},
     {/*31*/ MFX_ERR_NONE,  "12bit/444format/GENERAL_12b_444_RExt_Sony_1.bit",},
+    {/*32*/ MFX_ERR_NONE,  "scc/scc-main/020_main_palette_all_lf.hevc",},
+    {/*33*/ MFX_ERR_NONE,  "scc/scc-main10/020_main10_palette_all_lf.hevc",},
+    {/*34*/ MFX_ERR_NONE,  "scc/scc-main444/020_main444_palette_all_lf.hevc",},
+    {/*35*/ MFX_ERR_NONE,  "scc/scc-main444_10/020_main444_10_palette_all_lf.hevc",},
 };
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
 
