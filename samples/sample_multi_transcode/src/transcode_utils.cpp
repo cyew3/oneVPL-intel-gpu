@@ -215,6 +215,8 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("  -w            Destination picture width, invokes VPP resize\n"));
     msdk_printf(MSDK_STRING("  -h            Destination picture height, invokes VPP resize\n"));
     msdk_printf(MSDK_STRING("  -field_processing t2t|t2b|b2t|b2b|fr2fr - Field Copy feature\n"));
+    msdk_printf(MSDK_STRING("  -WeightedPred 0/1/2/3\n"));
+    msdk_printf(MSDK_STRING("  -WeightedBiPred 0/1/2/3 - 0 - unknown, 1 - default, 2 - explicit, 3 - implicit\n"));
 
 #ifdef ENABLE_FF
     msdk_printf(MSDK_STRING("  -extbrc::<on,off>           Enables external BRC for HEVC encoder"));
@@ -1027,6 +1029,26 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
             if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.nTargetUsage))
             {
                 PrintError(MSDK_STRING(" \"%s\" target usage is invalid"), argv[i]);
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-WeightedPred")))
+        {
+            VAL_CHECK(i + 1 == argc, i, argv[i]);
+            i++;
+            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.WeightedPred))
+            {
+                PrintError(MSDK_STRING(" \"%s\" WeightedPred is invalid"), argv[i]);
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-WeightedBiPred")))
+        {
+            VAL_CHECK(i + 1 == argc, i, argv[i]);
+            i++;
+            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.WeightedBiPred))
+            {
+                PrintError(MSDK_STRING(" \"%s\" WeightedBiPred is invalid"), argv[i]);
                 return MFX_ERR_UNSUPPORTED;
             }
         }

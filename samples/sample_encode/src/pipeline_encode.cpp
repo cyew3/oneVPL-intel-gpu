@@ -479,10 +479,18 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     }
 #endif
 
-    // configure GBP for HEVC
-    if ((pInParams->CodecId == MFX_CODEC_HEVC) && pInParams->nGPB)
+    // set up mfxCodingOption3
+    if (pInParams->nGPB ||
+        pInParams->WeightedPred || pInParams->WeightedBiPred)
     {
-        m_CodingOption3.GPB = pInParams->nGPB;
+        if (pInParams->CodecId == MFX_CODEC_HEVC)
+        {
+            m_CodingOption3.GPB = pInParams->nGPB;
+        }
+
+        m_CodingOption3.WeightedPred = pInParams->WeightedPred;
+        m_CodingOption3.WeightedBiPred = pInParams->WeightedBiPred;
+
         m_EncExtParams.push_back((mfxExtBuffer *)&m_CodingOption3);
     }
 

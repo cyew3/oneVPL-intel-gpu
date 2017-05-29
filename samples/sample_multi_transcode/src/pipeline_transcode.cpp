@@ -2281,6 +2281,13 @@ MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
     }
 #endif
 
+    if (pInParams->WeightedPred || pInParams->WeightedBiPred)
+    {
+        m_CodingOption3.WeightedPred = pInParams->WeightedPred;
+        m_CodingOption3.WeightedBiPred = pInParams->WeightedBiPred;
+        addCodingOpt3 = true;
+    }
+
 #if _MSDK_API >= MSDK_API(1,23)
     if (pInParams->RepartitionCheckMode)
     {

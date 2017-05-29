@@ -176,6 +176,9 @@ namespace TranscodingSample
         mfxU16 InitialDelayInKB;
         mfxU16 GopOptFlag;
 
+        mfxU16 WeightedPred;
+        mfxU16 WeightedBiPred;
+
         // MVC Specific Options
         bool   bIsMVC; // true if Multi-View-Codec is in use
         mfxU32 numViews; // number of views for Multi-View-Codec
