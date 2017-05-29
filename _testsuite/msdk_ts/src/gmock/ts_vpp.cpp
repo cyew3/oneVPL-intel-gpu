@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -78,7 +78,7 @@ tsVideoVPP::tsVideoVPP(bool useDefaults, mfxU32 plugin_id)
     }
 }
 
-tsVideoVPP::~tsVideoVPP() 
+tsVideoVPP::~tsVideoVPP()
 {
     if(m_initialized)
     {
@@ -87,7 +87,7 @@ tsVideoVPP::~tsVideoVPP()
 }
 
 
-mfxStatus tsVideoVPP::Init() 
+mfxStatus tsVideoVPP::Init()
 {
     bool set_allocator = false;
 
@@ -170,9 +170,29 @@ mfxStatus tsVideoVPP::Init(mfxSession session, mfxVideoParam *par)
     return g_tsStatus.get();
 }
 
-mfxStatus tsVideoVPP::Close()
+mfxStatus tsVideoVPP::Close(bool check)
 {
-    return Close(m_session);
+    mfxStatus sts = Close(m_session);
+
+    if (!check)
+        return sts;
+
+    // check locked counters is disabled by default
+    mfxStatus locked_sts = m_pSurfPoolIn->CheckLockedCounter();
+    if (locked_sts != MFX_ERR_NONE)
+    {
+        g_tsLog << "ERROR: there is Locked IN surface after Close()\n";
+        g_tsStatus.check(MFX_ERR_ABORTED); TS_CHECK_MFX;
+    }
+
+    locked_sts = m_pSurfPoolOut->CheckLockedCounter();
+    if (locked_sts != MFX_ERR_NONE)
+    {
+        g_tsLog << "ERROR: there is Locked OUT surface after Close()\n";
+        g_tsStatus.check(MFX_ERR_ABORTED); TS_CHECK_MFX;
+    }
+
+    return sts;
 }
 
 mfxStatus tsVideoVPP::Close(mfxSession session)
@@ -246,13 +266,13 @@ mfxStatus tsVideoVPP::Reset(mfxSession session, mfxVideoParam *par)
     return g_tsStatus.get();
 }
 
-mfxStatus tsVideoVPP::GetVideoParam() 
+mfxStatus tsVideoVPP::GetVideoParam()
 {
     if(m_default && !m_initialized)
     {
         Init();
     }
-    return GetVideoParam(m_session, m_pPar); 
+    return GetVideoParam(m_session, m_pPar);
 }
 
 mfxStatus tsVideoVPP::GetVideoParam(mfxSession session, mfxVideoParam *par)
@@ -264,13 +284,13 @@ mfxStatus tsVideoVPP::GetVideoParam(mfxSession session, mfxVideoParam *par)
     return g_tsStatus.get();
 }
 
-mfxStatus tsVideoVPP::GetVPPStat() 
+mfxStatus tsVideoVPP::GetVPPStat()
 {
     if(m_default && !m_initialized)
     {
         GetVPPStat();
     }
-    return GetVPPStat(m_session, m_pStat); 
+    return GetVPPStat(m_session, m_pStat);
 }
 
 mfxStatus tsVideoVPP::GetVPPStat(mfxSession session, mfxVPPStat *stat)
@@ -342,10 +362,10 @@ mfxStatus tsVideoVPP::RunFrameVPPAsync()
 }
 
 mfxStatus tsVideoVPP::RunFrameVPPAsync(
-    mfxSession  session, 
-    mfxFrameSurface1 *in, 
-    mfxFrameSurface1 *out, 
-    mfxExtVppAuxData *aux, 
+    mfxSession  session,
+    mfxFrameSurface1 *in,
+    mfxFrameSurface1 *out,
+    mfxExtVppAuxData *aux,
     mfxSyncPoint *syncp)
 {
     TRACE_FUNC5(MFXVideoVPP_RunFrameVPPAsync, session, in, out, aux, syncp);
@@ -353,7 +373,7 @@ mfxStatus tsVideoVPP::RunFrameVPPAsync(
     TS_TRACE(mfxRes);
     TS_TRACE(out);
     TS_TRACE(syncp);
-    
+
     return g_tsStatus.m_status = mfxRes;
 }
 
@@ -415,7 +435,7 @@ mfxStatus tsVideoVPP::ProcessFrames(mfxU32 n)
                     while(m_surf_out.size()) SyncOperation();
                 }
                 break;
-            } 
+            }
             continue;
         }
 
@@ -436,7 +456,7 @@ mfxStatus tsVideoVPP::ProcessFrames(mfxU32 n)
     }
 
     g_tsLog << processed << " FRAMES PROCESSED\n";
-    
+
     return g_tsStatus.get();
 }
 
@@ -543,7 +563,7 @@ mfxStatus tsVideoVPP::ProcessFramesEx(mfxU32 n)
     return g_tsStatus.get();
 }
 
-mfxStatus tsVideoVPP::Load() 
+mfxStatus tsVideoVPP::Load()
 {
     if(m_default && !m_session)
     {
@@ -552,7 +572,7 @@ mfxStatus tsVideoVPP::Load()
 
     m_loaded = (0 == tsSession::Load(m_session, m_uid, 1));
 
-    return g_tsStatus.get(); 
+    return g_tsStatus.get();
 }
 
 mfxStatus tsVideoVPP::SetHandle()

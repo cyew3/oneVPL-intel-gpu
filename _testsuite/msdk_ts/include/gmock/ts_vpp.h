@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -48,7 +48,7 @@ public:
     mfxStatus Init();
     mfxStatus Init(mfxSession session, mfxVideoParam *par);
 
-    mfxStatus Close();
+    mfxStatus Close(bool check=false);
     mfxStatus Close(mfxSession session);
 
     mfxStatus Query();
@@ -56,10 +56,10 @@ public:
 
     mfxStatus QueryIOSurf();
     mfxStatus QueryIOSurf(mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest *request);
-    
+
     mfxStatus Reset();
     mfxStatus Reset(mfxSession session, mfxVideoParam *par);
-    
+
     mfxStatus GetVideoParam();
     mfxStatus GetVideoParam(mfxSession session, mfxVideoParam *par);
 
@@ -77,11 +77,11 @@ public:
 
     mfxStatus RunFrameVPPAsyncEx();
     virtual mfxStatus RunFrameVPPAsyncEx(mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, mfxSyncPoint *syncp);
-    
+
     mfxStatus SyncOperation();
     virtual mfxStatus SyncOperation(mfxSyncPoint syncp);
     mfxStatus SyncOperation(mfxSession session, mfxSyncPoint syncp, mfxU32 wait);
-    
+
     mfxStatus ProcessFrames(mfxU32 n);
     mfxStatus ProcessFramesEx(mfxU32 n);
 

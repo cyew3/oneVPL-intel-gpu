@@ -95,7 +95,7 @@ void tsSurfacePool::AllocOpaque(mfxFrameAllocRequest request, mfxExtOpaqueSurfac
         osa.In.NumSurface = request.NumFrameSuggested;
         osa.In.Surfaces   = m_opaque_pool.data();
     }
-    else 
+    else
     {
         osa.Out.Type       = request.Type;
         osa.Out.NumSurface = request.NumFrameSuggested;
@@ -259,5 +259,19 @@ mfxStatus tsSurfacePool::UpdateSurfaceResolutionInfo(const mfxU16 &new_width, co
         it++;
     }
 
+    return MFX_ERR_NONE;
+}
+
+mfxStatus tsSurfacePool::CheckLockedCounter()
+{
+    std::vector<mfxFrameSurface1>::iterator it = m_pool.begin();
+
+    while (it != m_pool.end())
+    {
+        if (it->Data.Locked)
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+        it++;
+    }
     return MFX_ERR_NONE;
 }

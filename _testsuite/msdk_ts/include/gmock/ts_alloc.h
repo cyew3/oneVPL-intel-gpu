@@ -14,7 +14,7 @@
 
 class tsBufferAllocator : public buffer_allocator
 {
-public: 
+public:
     tsBufferAllocator();
     ~tsBufferAllocator();
 };
@@ -52,4 +52,5 @@ public:
     mfxFrameSurface1* GetSurface(mfxU32 ind);
 
     mfxStatus UpdateSurfaceResolutionInfo(const mfxU16 &new_width, const mfxU16 &new_height);
+    mfxStatus CheckLockedCounter();
 };

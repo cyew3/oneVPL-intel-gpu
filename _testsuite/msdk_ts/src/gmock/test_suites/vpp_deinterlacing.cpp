@@ -27,6 +27,12 @@ public:
     int RunTest(unsigned int id);
     static const unsigned int n_cases;
 
+    enum
+    {
+        INIT,
+        RESET,
+    };
+
 private:
 
     enum
@@ -90,6 +96,9 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.TelecineLocation, 1}}
     },
 
+    // customer case: reset after processing 1 frame
+    {/*17*/ MFX_ERR_NONE, RESET, {{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode,  MFX_DEINTERLACING_ADVANCED}}},
+
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -126,6 +135,21 @@ int TestSuite::RunTest(unsigned int id)
 
     g_tsStatus.expect(sts);
     Init(m_session, m_pPar);
+
+    if (RESET == tc.mode)
+    {
+        ProcessFrames(1);
+        Reset();
+        // library should free input surfaces used as reference
+        mfxStatus locked_sts = m_pSurfPoolIn->CheckLockedCounter();
+        if (locked_sts != MFX_ERR_NONE)
+        {
+            g_tsLog << "ERROR: there is Locked IN surface after Reset()\n";
+            g_tsStatus.check(MFX_ERR_ABORTED);
+        }
+    }
+
+    Close(true); // Close and check surface pools locked cnt
 
     TS_END;
     return 0;
