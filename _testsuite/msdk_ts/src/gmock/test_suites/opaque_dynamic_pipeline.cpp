@@ -19,11 +19,50 @@ Description:
         1) reset one of the component with the same parameters
         2) change surface pool
         3) joined session is executed correctly if there were changes in another session
+
+    cases with single session:
+    #00 - Close VPP and Init VPP with the same parameters, surface pools shouldn't change,
+          check there are no unexpected errors during transcoding
+
+    #01 - Close Decoder and Init Decoder with the same parameters, surface pool shouldn't change,
+          check there are no unexpected errors during transcoding
+
+    #02 - Close Encoder and Init Encoder with the same parameters, surface pool shouldn't change,
+          check there are no unexpected errors during transcoding
+
+    #03 - Close VPP and Init VPP with the same parameters, surface pools shouldn't change,
+          check there are no unexpected errors during transcoding, repeat it 10 times
+
+    #04 - Realloc surface pool for new VPP out and Encoder parameters, Init Encoder with new parameters,
+          Init VPP with new output parameters, check there are no unexpected errors during transcoding
+
+    #05 - Realloc surface pool for new input stream and VPP in parameters, Init Decodeer with new parameters,
+          Init VPP with new input parameters, check there are no unexpected errors during transcoding,
+          repeat 10 times
+
+    cases with 2 joined session:
+    #06 - Close VPP and Init VPP with the same parameters in one of sessions interchangeably ,
+          surface pools shouldn't change, check there are no unexpected errors during transcoding
+          for both sessions, repeat 5 times per session
+
+    #07 - Realloc surface pool for new VPP out and Encoder parameters in one of sessions interchangeably,
+          Init Encoder with new parameters, Init VPP with new output parameters,
+          check there are no unexpected errors during transcoding for both sessions,
+          repeat 5 times per session
+
+    #08 - Close all pipeline's components, Realloc surface pools for new parameters in one of sessions
+          interchangeably, check there are no unexpected errors during transcoding for both sessions,
+          repeat 5 times
+
+    #09 - Close/Init with the same parameters for one session, check transcoding pipeline for both sessions
+          Realloc surface pool for new VPP out and Encoder parameters for another session,
+          check transcoding pipeline for both sessions, repeat 5 times
+
 */
 
 #define TEST_NAME opaque_dynamic_pipeline
 const mfxU32 NSTEPS = 5;
-const mfxU32 NFRAMES = 5;
+const mfxU32 NFRAMES = 7;
 
 namespace TEST_NAME
 {
@@ -85,6 +124,7 @@ public:
     mfxU32 SyncTasks();
     mfxFrameSurface1* GetVPPOutSurface();
     mfxFrameSurface1* GetDecodeSurface();
+    mfxStatus ResetInputStream();
 };
 
 TestSession::TestSession(tsExtBufType<mfxVideoParam> dec_par, tsExtBufType<mfxVideoParam> enc_par,
@@ -192,6 +232,8 @@ void TestSession::ReallocPool(mfxU32 type, tsExtBufType<mfxVideoParam>& upd_par)
 
         m_enc.m_par = upd_par;
         m_vpp.m_par.vpp.Out = upd_par.mfx.FrameInfo;
+        m_enc.m_par.mfx.CodecLevel = 0;
+
 
         m_vpp.QueryIOSurf();
         m_enc.QueryIOSurf();
@@ -219,6 +261,12 @@ void TestSession::ReallocPool(mfxU32 type, tsExtBufType<mfxVideoParam>& upd_par)
         m_spool_out.FreeSurfaces();
 
         CloseComponents();
+
+        m_vpp.m_par = upd_par;
+        m_vpp.m_par.vpp.In = m_dec.m_par.mfx.FrameInfo;
+        m_enc.m_par.mfx.FrameInfo = m_vpp.m_par.vpp.Out;
+        m_enc.m_par.mfx.CodecLevel = 0;
+
         AllocSurfaces();
 
         CloseInitDecode();
@@ -268,17 +316,15 @@ void TestSession::CloseComponents()
 
 void TestSession::DecodeHeader()
 {
-    const char* stream = g_tsStreamPool.Get(getStream(m_dec.m_par.mfx.CodecId));
     if (m_dec.m_bs_processor)
         delete m_dec.m_bs_processor;
+
+    const char* stream = g_tsStreamPool.Get(getStream(m_dec.m_par.mfx.CodecId));
     // bit stream buffer for decoder
-    m_dec.m_bs_processor = new tsBitstreamReader(stream, 1024*1024);
-    if (!m_dec.m_bitstream.DataLength)
-    {
-        m_dec.m_bitstream.DataLength = m_dec.m_bitstream.MaxLength;
-        m_dec.m_bitstream.DataOffset = 0;
-    }
+    mfxU32 buf_size = 1920 * 1088 * 500;
+    m_dec.m_bs_processor = new tsBitstreamReader(stream, buf_size);
     m_dec.m_pBitstream = m_dec.m_bs_processor->ProcessBitstream(m_dec.m_bitstream);
+
     m_dec.DecodeHeader(m_session, m_dec.m_pBitstream, m_dec.m_pPar);
 }
 
@@ -325,6 +371,21 @@ void TestSession::CloseInitDecode()
 
     m_dec.Init(m_session, m_dec.m_pPar);
     m_dec.GetVideoParam();
+}
+
+mfxStatus TestSession::ResetInputStream()
+{
+    tsBitstreamReader* reader = dynamic_cast<tsBitstreamReader*>(m_dec.m_bs_processor);
+    if (reader)
+    {
+        reader->SeekToStart();
+        reader->m_eos = false;
+        m_dec.m_pBitstream = m_dec.m_bs_processor->ProcessBitstream(m_dec.m_bitstream);
+        if (m_dec.m_pBitstream)
+            return MFX_ERR_NONE;
+    }
+
+    return MFX_ERR_UNKNOWN;
 }
 
 TestSession::Task* TestSession::GetFreeTask()
@@ -473,7 +534,16 @@ void TestSession::ProcessFrames(mfxU32 n)
                                      &currTask->syncp);
 
         if (MFX_ERR_MORE_DATA == sts && eos)
+        {
+            // move pointer to the start of stream,
+            // if test don't finish processing of required number of frames
+            if (submitted < n && ResetInputStream() == MFX_ERR_NONE)
+            {
+                eos = false;
+                continue;
+            }
             break;
+        }
         if (MFX_ERR_MORE_DATA == sts) // encoder need more input, request more surfaces
             continue;
         if (MFX_ERR_NONE < sts && currTask->syncp)
@@ -486,7 +556,11 @@ void TestSession::ProcessFrames(mfxU32 n)
     sync += SyncTasks(); // sync remaining tasks
 
     g_tsLog << sync << " processed frames\n";
-    EXPECT_EQ(sync, n);
+    if (sync != n)
+    {
+        EXPECT_EQ(sync, n) << "ERROR: processed frames != expected";
+        throw tsFAIL;
+    }
 }
 
 struct f_pair
@@ -610,7 +684,7 @@ const struct TestCase
             {VPP, &tsStruct::mfxVideoParam.AsyncDepth, 4}},
 
             {{VPP, REALLOC, {{VPP, &tsStruct::mfxVideoParam.vpp.Out.Width, 1920},
-                             {VPP, &tsStruct::mfxVideoParam.vpp.Out.Height, 1080}
+                             {VPP, &tsStruct::mfxVideoParam.vpp.Out.Height, 1088}
                             }},
             },
           5
