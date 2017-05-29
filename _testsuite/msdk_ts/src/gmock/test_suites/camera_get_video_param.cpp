@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -119,7 +119,7 @@ private:
                     std::cout << "  Set field " << c.field->name << " to " << c.par[0] << "\n";
                 }
                 else
-                    *((mfxU32*)base) = c.par[0];
+                    *base = reinterpret_cast<void*>(static_cast<ptrdiff_t>(c.par[0]));
             }
         }
     }
