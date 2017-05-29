@@ -781,7 +781,7 @@ mfxStatus  Plugin::Reset(mfxVideoParam *par)
 #if defined PRE_SI_TARGET_PLATFORM_GEN11
     {
         mfxFrameInfo recNew = {};
-        MFX_CHECK(GetRecInfo(m_vpar, recNew), MFX_ERR_UNDEFINED_BEHAVIOR);
+        MFX_CHECK(GetRecInfo(parNew, recNew), MFX_ERR_UNDEFINED_BEHAVIOR);
 
         MFX_CHECK(parNew.mfx.CodecId                == MFX_CODEC_HEVC                   , MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
         MFX_CHECK(m_vpar.AsyncDepth                 == parNew.AsyncDepth                , MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
