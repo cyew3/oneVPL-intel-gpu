@@ -194,7 +194,7 @@ int TestSuite::RunTest(tc_struct const& tc)
     return 0;
 }
 
-template <unsigned fourcc>
+template <unsigned fourcc, unsigned profile>
 struct TestSuiteExt
     : public TestSuite
 {
@@ -207,7 +207,7 @@ struct TestSuiteExt
 
 /* 8b 420 */
 template <>
-TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_NV12>::test_cases[] =
+TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_MAIN>::test_cases[] =
 {
     {/*24*/ MFX_ERR_NONE,
         { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV420} },
@@ -296,11 +296,11 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_NV12>::test_cases[] =
     },
 };
 template <>
-unsigned int const TestSuiteExt<MFX_FOURCC_NV12>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_NV12>::test_cases) / sizeof(TestSuite::tc_struct);
+unsigned int const TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_MAIN>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_MAIN>::test_cases) / sizeof(TestSuite::tc_struct);
 
 /* 8b 422 */
 template <>
-TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_YUY2>::test_cases[] =
+TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_YUY2, MFX_PROFILE_HEVC_REXT>::test_cases[] =
 {
     {/*24*/ MFX_ERR_NONE,
         { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV422} },
@@ -360,11 +360,11 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_YUY2>::test_cases[] =
     },
 };
 template <>
-unsigned int const TestSuiteExt<MFX_FOURCC_YUY2>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_YUY2>::test_cases) / sizeof(TestSuite::tc_struct);
+unsigned int const TestSuiteExt<MFX_FOURCC_YUY2, MFX_PROFILE_HEVC_REXT>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_YUY2, MFX_PROFILE_HEVC_REXT>::test_cases) / sizeof(TestSuite::tc_struct);
 
 /* 8b 444 */
 template <>
-TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_AYUV>::test_cases[] =
+TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_AYUV, MFX_PROFILE_HEVC_REXT>::test_cases[] =
 {
     {/*24*/ MFX_ERR_NONE,
         { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV444} },
@@ -418,11 +418,11 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_AYUV>::test_cases[] =
     },
 };
 template <>
-unsigned int const TestSuiteExt<MFX_FOURCC_AYUV>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_AYUV>::test_cases) / sizeof(TestSuite::tc_struct);
+unsigned int const TestSuiteExt<MFX_FOURCC_AYUV, MFX_PROFILE_HEVC_REXT>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_AYUV, MFX_PROFILE_HEVC_REXT>::test_cases) / sizeof(TestSuite::tc_struct);
 
 /* 10b 420 */
 template <>
-TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_P010>::test_cases[] =
+TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_HEVC_MAIN10>::test_cases[] =
 {
     {/*24*/ MFX_ERR_NONE,
         { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV420} },
@@ -508,11 +508,11 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_P010>::test_cases[] =
     }
 };
 template <>
-unsigned int const TestSuiteExt<MFX_FOURCC_P010>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_P010>::test_cases) / sizeof(TestSuite::tc_struct);
+unsigned int const TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_HEVC_MAIN10>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_HEVC_MAIN10>::test_cases) / sizeof(TestSuite::tc_struct);
 
 /* 10b 422 HW */
 template <>
-TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_Y210>::test_cases[] =
+TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_Y210, MFX_PROFILE_HEVC_REXT>::test_cases[] =
 {
     {/*24*/ MFX_ERR_NONE,
         { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV422} },
@@ -595,11 +595,11 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_Y210>::test_cases[] =
     },
 };
 template <>
-unsigned int const TestSuiteExt<MFX_FOURCC_Y210>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_Y210>::test_cases) / sizeof(TestSuite::tc_struct);
+unsigned int const TestSuiteExt<MFX_FOURCC_Y210, MFX_PROFILE_HEVC_REXT>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_Y210, MFX_PROFILE_HEVC_REXT>::test_cases) / sizeof(TestSuite::tc_struct);
 
 /* 10b 422 SW */
 template <>
-TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_P210>::test_cases[] =
+TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_P210, MFX_PROFILE_HEVC_REXT>::test_cases[] =
 {
     {/*24*/ MFX_ERR_NONE,
         { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV422} },
@@ -629,11 +629,11 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_P210>::test_cases[] =
     },
 };
 template <>
-unsigned int const TestSuiteExt<MFX_FOURCC_P210>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_P210>::test_cases) / sizeof(TestSuite::tc_struct);
+unsigned int const TestSuiteExt<MFX_FOURCC_P210, MFX_PROFILE_HEVC_REXT>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_P210, MFX_PROFILE_HEVC_REXT>::test_cases) / sizeof(TestSuite::tc_struct);
 
 /* 10b 444 */
 template <>
-TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_Y410>::test_cases[] =
+TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_Y410, MFX_PROFILE_HEVC_REXT>::test_cases[] =
 {
     {/*24*/ MFX_ERR_NONE,
         { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV444} },
@@ -695,11 +695,11 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_Y410>::test_cases[] =
     },
 };
 template <>
-unsigned int const TestSuiteExt<MFX_FOURCC_Y410>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_Y410>::test_cases) / sizeof(TestSuite::tc_struct);
+unsigned int const TestSuiteExt<MFX_FOURCC_Y410, MFX_PROFILE_HEVC_REXT>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_Y410, MFX_PROFILE_HEVC_REXT>::test_cases) / sizeof(TestSuite::tc_struct);
 
 /* 12b 420 */
 template <>
-TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_P016>::test_cases[] =
+TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_P016, MFX_PROFILE_HEVC_REXT>::test_cases[] =
 {
     {/*24*/ MFX_ERR_NONE,
         { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV420} },
@@ -768,11 +768,11 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_P016>::test_cases[] =
     },
 };
 template <>
-unsigned int const TestSuiteExt<MFX_FOURCC_P016>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_P016>::test_cases) / sizeof(TestSuite::tc_struct);
+unsigned int const TestSuiteExt<MFX_FOURCC_P016, MFX_PROFILE_HEVC_REXT>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_P016, MFX_PROFILE_HEVC_REXT>::test_cases) / sizeof(TestSuite::tc_struct);
 
 /* 12b 422 */
 template <>
-TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_Y216>::test_cases[] =
+TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_Y216, MFX_PROFILE_HEVC_REXT>::test_cases[] =
 {
     {/*24*/ MFX_ERR_NONE,
         { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV422} },
@@ -826,11 +826,11 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_Y216>::test_cases[] =
     },
 };
 template <>
-unsigned int const TestSuiteExt<MFX_FOURCC_Y216>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_Y216>::test_cases) / sizeof(TestSuite::tc_struct);
+unsigned int const TestSuiteExt<MFX_FOURCC_Y216, MFX_PROFILE_HEVC_REXT>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_Y216, MFX_PROFILE_HEVC_REXT>::test_cases) / sizeof(TestSuite::tc_struct);
 
 /* 12b 444 */
 template <>
-TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_Y416>::test_cases[] =
+TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_Y416, MFX_PROFILE_HEVC_REXT>::test_cases[] =
 {
     {/*24*/ MFX_ERR_NONE,
         { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV444} },
@@ -892,10 +892,78 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_Y416>::test_cases[] =
     },
 };
 template <>
-unsigned int const TestSuiteExt<MFX_FOURCC_Y416>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_Y416>::test_cases) / sizeof(TestSuite::tc_struct);
+unsigned int const TestSuiteExt<MFX_FOURCC_Y416, MFX_PROFILE_HEVC_REXT>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_Y416, MFX_PROFILE_HEVC_REXT>::test_cases) / sizeof(TestSuite::tc_struct);
 
-template <unsigned fourcc>
-int TestSuiteExt<fourcc>::RunTest(unsigned int id)
+/* 8b 420 SCC */
+template <>
+TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_SCC>::test_cases[] =
+{
+    {/*24*/ MFX_ERR_NONE,
+    { { MFX_IN | VALID, &tsStruct::mfxVideoParam.mfx.CodecProfile,{ MFX_PROFILE_HEVC_SCC } },
+    { MFX_IN | VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat,{ MFX_CHROMAFORMAT_YUV420 } },
+    { MFX_IN | VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC,{ MFX_FOURCC_NV12 } } }
+    },
+
+    {/*25*/ MFX_ERR_NONE,
+    { { MFX_IN | VALID, &tsStruct::mfxVideoParam.mfx.CodecProfile,{ MFX_PROFILE_HEVC_SCC } },
+    { MFX_IN | VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat,{ MFX_CHROMAFORMAT_YUV420 } },
+    { MFX_IN | VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma,{ 8 } },
+    { MFX_IN | VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma,{ 8 } },
+    { MFX_IN | VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC,{ MFX_FOURCC_NV12 } } }
+    },
+
+    {/*26*/ MFX_ERR_UNSUPPORTED,
+    { { MFX_IN | VALID, &tsStruct::mfxVideoParam.mfx.CodecProfile,{ MFX_PROFILE_HEVC_SCC } },
+    { MFX_IN | INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat,{ MFX_CHROMAFORMAT_YUV400 } },
+    { MFX_IN | INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC,{ MFX_FOURCC_NV12 } } }
+    },
+
+    {/*27*/ MFX_ERR_UNSUPPORTED,
+    { { MFX_IN | VALID, &tsStruct::mfxVideoParam.mfx.CodecProfile,{ MFX_PROFILE_HEVC_SCC } },
+    { MFX_IN | VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat,{ MFX_CHROMAFORMAT_YUV420 } },
+    { MFX_IN | INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC,{ MFX_FOURCC_NV12 } },
+    { MFX_IN | VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma,{ 10 } } }
+    },
+
+    {/*28*/ MFX_ERR_UNSUPPORTED,
+    { { MFX_IN | VALID, &tsStruct::mfxVideoParam.mfx.CodecProfile,{ MFX_PROFILE_HEVC_SCC } },
+    { MFX_IN | VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat,{ MFX_CHROMAFORMAT_YUV422 } },
+    { MFX_IN | INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC,{ MFX_FOURCC_NV12 } } }
+    },
+
+    {/*29*/ MFX_ERR_UNSUPPORTED,
+    { { MFX_IN | VALID, &tsStruct::mfxVideoParam.mfx.CodecProfile,{ MFX_PROFILE_HEVC_SCC } },
+    { MFX_IN | VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat,{ MFX_CHROMAFORMAT_YUV444 } },
+    { MFX_IN | INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC,{ MFX_FOURCC_NV12 } } }
+    },
+
+    {/*30*/ MFX_ERR_NONE,
+    { { MFX_IN | VALID, &tsStruct::mfxVideoParam.mfx.CodecProfile,{ MFX_PROFILE_HEVC_SCC } },
+    { MFX_IN | VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat,{ MFX_CHROMAFORMAT_YUV420 } },
+    { MFX_IN | VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC,{ MFX_FOURCC_NV12 } } }
+    },
+
+    {/*31*/ MFX_ERR_NONE,
+    { { MFX_IN | VALID, &tsStruct::mfxVideoParam.mfx.CodecProfile,{ MFX_PROFILE_HEVC_SCC } },
+    { MFX_IN | VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat,{ MFX_CHROMAFORMAT_YUV420 } },
+    { MFX_IN | VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma,{ 8 } },
+    { MFX_IN | VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma,{ 8 } },
+    { MFX_IN | VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC,{ MFX_FOURCC_NV12 } } }
+    },
+
+    {/*32*/ MFX_ERR_UNSUPPORTED,
+    { { MFX_IN | VALID, &tsStruct::mfxVideoParam.mfx.CodecProfile,{ MFX_PROFILE_HEVC_SCC } },
+    { MFX_IN | VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat,{ MFX_CHROMAFORMAT_YUV420 } },
+    { MFX_IN | VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma,{ 10 } },
+    { MFX_IN | VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma,{ 10 } },
+    { MFX_IN | INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC,{ MFX_FOURCC_NV12 } } }
+    },
+};
+template <>
+unsigned int const TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_SCC>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_SCC>::test_cases) / sizeof(TestSuite::tc_struct);
+
+template <unsigned fourcc, unsigned profile>
+int TestSuiteExt<fourcc, profile>::RunTest(unsigned int id)
 {
     auto tc =
         id >= TestSuite::n_cases ?
@@ -905,16 +973,16 @@ int TestSuiteExt<fourcc>::RunTest(unsigned int id)
     return suite.RunTest(tc);
 }
 
-template <unsigned fourcc, unsigned tag>
+template <unsigned fourcc, unsigned profile, unsigned tag>
 struct TestSuiteSpec
-    : public TestSuiteExt<fourcc>
+    : public TestSuiteExt<fourcc, profile>
 {
     static
     int RunTest(unsigned int id)
     {
         auto tc =
             id >= TestSuite::n_cases ?
-            TestSuiteExt<fourcc>::test_cases[id - TestSuite::n_cases] : TestSuite::test_case[id];
+            TestSuiteExt<fourcc, profile>::test_cases[id - TestSuite::n_cases] : TestSuite::test_case[id];
 
         /* resolve ambiguity: nv12 runs on all platform, but some cases valid on ICL+ only*/
         if (id > tag &&
@@ -927,36 +995,37 @@ struct TestSuiteSpec
 };
 
 //Use [fourcc1] for SW impl and [fourcc2] for HW
-template <unsigned fourcc1, unsigned fourcc2>
+template <unsigned fourcc1, unsigned fourcc2, unsigned profile>
 struct TestSuiteChoice
 {
     static
     int RunTest(unsigned int id)
     {
         return g_tsImpl == MFX_IMPL_SOFTWARE ?
-            TestSuiteExt<fourcc1>::RunTest(id) :
-            TestSuiteExt<fourcc2>::RunTest(id);
+            TestSuiteExt<fourcc1, profile>::RunTest(id) :
+            TestSuiteExt<fourcc2, profile>::RunTest(id);
     }
 
     static
     int Count()
     {
         return g_tsImpl == MFX_IMPL_SOFTWARE ?
-            TestSuiteExt<fourcc1>::n_cases :
-            TestSuiteExt<fourcc2>::n_cases;
+            TestSuiteExt<fourcc1, profile>::n_cases :
+            TestSuiteExt<fourcc2, profile>::n_cases;
     }
 };
 
-TS_REG_TEST_SUITE(hevcd_query,    (TestSuiteSpec<MFX_FOURCC_NV12, 31>::RunTest), TestSuiteExt<MFX_FOURCC_NV12>::n_cases);
-TS_REG_TEST_SUITE(hevcd_422_query, TestSuiteExt<MFX_FOURCC_YUY2>::RunTest, TestSuiteExt<MFX_FOURCC_YUY2>::n_cases);
-TS_REG_TEST_SUITE(hevcd_444_query, TestSuiteExt<MFX_FOURCC_AYUV>::RunTest, TestSuiteExt<MFX_FOURCC_AYUV>::n_cases);
+TS_REG_TEST_SUITE(hevcd_query,       (TestSuiteSpec<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_MAIN, 31>::RunTest), (TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_MAIN>::n_cases));
+TS_REG_TEST_SUITE(hevcd_422_query,   (TestSuiteExt<MFX_FOURCC_YUY2, MFX_PROFILE_HEVC_REXT>::RunTest),      (TestSuiteExt<MFX_FOURCC_YUY2, MFX_PROFILE_HEVC_REXT>::n_cases));
+TS_REG_TEST_SUITE(hevcd_444_query,   (TestSuiteExt<MFX_FOURCC_AYUV, MFX_PROFILE_HEVC_REXT>::RunTest),      (TestSuiteExt<MFX_FOURCC_AYUV, MFX_PROFILE_HEVC_REXT>::n_cases));
 
-TS_REG_TEST_SUITE(hevc10d_query,    (TestSuiteSpec<MFX_FOURCC_P010, 33>::RunTest), TestSuiteExt<MFX_FOURCC_P010>::n_cases);
-TS_REG_TEST_SUITE(hevc10d_422_query, (TestSuiteChoice<MFX_FOURCC_P210, MFX_FOURCC_Y210>::RunTest), (TestSuiteChoice<MFX_FOURCC_P210, MFX_FOURCC_Y210>::Count()));
-TS_REG_TEST_SUITE(hevc10d_444_query, TestSuiteExt<MFX_FOURCC_Y410>::RunTest, TestSuiteExt<MFX_FOURCC_Y410>::n_cases);
+TS_REG_TEST_SUITE(hevc10d_query,     (TestSuiteSpec<MFX_FOURCC_P010, MFX_PROFILE_HEVC_MAIN10, 33>::RunTest),              (TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_HEVC_MAIN10>::n_cases));
+TS_REG_TEST_SUITE(hevc10d_422_query, (TestSuiteChoice<MFX_FOURCC_P210, MFX_FOURCC_Y210, MFX_PROFILE_HEVC_REXT>::RunTest), (TestSuiteChoice<MFX_FOURCC_P210, MFX_FOURCC_Y210, MFX_PROFILE_HEVC_REXT>::Count()));
+TS_REG_TEST_SUITE(hevc10d_444_query, (TestSuiteExt<MFX_FOURCC_Y410, MFX_PROFILE_HEVC_REXT>::RunTest),                     (TestSuiteExt<MFX_FOURCC_Y410, MFX_PROFILE_HEVC_REXT>::n_cases));
 
-TS_REG_TEST_SUITE(hevc12d_420_query, TestSuiteExt<MFX_FOURCC_P016>::RunTest, TestSuiteExt<MFX_FOURCC_P016>::n_cases);
-TS_REG_TEST_SUITE(hevc12d_422_query, TestSuiteExt<MFX_FOURCC_Y216>::RunTest, TestSuiteExt<MFX_FOURCC_Y216>::n_cases);
-TS_REG_TEST_SUITE(hevc12d_444_query, TestSuiteExt<MFX_FOURCC_Y416>::RunTest, TestSuiteExt<MFX_FOURCC_Y416>::n_cases);
+TS_REG_TEST_SUITE(hevc12d_420_query, (TestSuiteExt<MFX_FOURCC_P016, MFX_PROFILE_HEVC_REXT>::RunTest), (TestSuiteExt<MFX_FOURCC_P016, MFX_PROFILE_HEVC_REXT>::n_cases));
+TS_REG_TEST_SUITE(hevc12d_422_query, (TestSuiteExt<MFX_FOURCC_Y216, MFX_PROFILE_HEVC_REXT>::RunTest), (TestSuiteExt<MFX_FOURCC_Y216, MFX_PROFILE_HEVC_REXT>::n_cases));
+TS_REG_TEST_SUITE(hevc12d_444_query, (TestSuiteExt<MFX_FOURCC_Y416, MFX_PROFILE_HEVC_REXT>::RunTest), (TestSuiteExt<MFX_FOURCC_Y416, MFX_PROFILE_HEVC_REXT>::n_cases));
 
+TS_REG_TEST_SUITE(hevcd_420_nv12_scc_query, (TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_SCC>::RunTest), (TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_SCC>::n_cases));
 }
