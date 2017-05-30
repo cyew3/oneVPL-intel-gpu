@@ -2746,10 +2746,11 @@ mfxStatus VideoDECODEMPEG2Internal_HW::RestoreDecoder(Ipp32s frame_buffer_num, U
     m_frame[frame_buffer_num].DataOffset = 0;
     m_frame_in_use[frame_buffer_num] = false;
 
-    if (mem_id_to_unlock >= 0 && mem_id_to_unlock < DPB)
+    if (mem_id_to_unlock >= 0)
         m_FrameAllocator->DecreaseReference(mem_id_to_unlock);
 
-    if (task_num_to_unlock >= 0 && task_num_to_unlock < 2*DPB) {
+    if (task_num_to_unlock >= 0 && task_num_to_unlock < 2*DPB) 
+    {
         UMC::AutomaticUMCMutex guard(m_guard);
         m_implUmc->UnLockTask(task_num_to_unlock);
     }
@@ -2799,6 +2800,8 @@ mfxStatus VideoDECODEMPEG2Internal_HW::DecodeFrameCheck(mfxBitstream *bs,
         {
             int decrease_dec_field_count = dec_field_count % 2 == 0 ? 0 : 1;
             Ipp32s previous_field = m_task_num - DPB;
+            if (previous_field > DPB)
+                return MFX_ERR_UNKNOWN;
             MFX_CHECK_STS(RestoreDecoder(m_frame_curr, mid[previous_field], previous_field, NO_END_FRAME, REMOVE_LAST_2_FRAMES, decrease_dec_field_count))
             return MFX_ERR_MORE_DATA;
         }
