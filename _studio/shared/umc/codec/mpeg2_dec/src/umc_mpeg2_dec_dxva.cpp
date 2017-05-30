@@ -176,12 +176,12 @@ PackVA::SetBufferSize(
             CompBuf = NULL;
             m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &CompBuf);
             //CompBuf->SetDataSize((Ipp32s) (pSliceInfo[-1].dwSliceDataLocation +
-                
+
             if (NULL == CompBuf)
             {
                     return UMC_ERR_FAILED;
             }
-                
+
             CompBuf->SetDataSize((bs_size > bs_size_getting) ? bs_size_getting : bs_size);
             CompBuf->FirstMb = 0;
             CompBuf->NumOfMB = numMB;
@@ -349,7 +349,7 @@ PackVA::SaveVLDParameters(
         pQmatrixData->bNewQmatrix[from] = QmatrixData.bNewQmatrix[from];
         if(QmatrixData.bNewQmatrix[from])
         {
-          MFX_INTERNAL_CPY((Ipp8u*)pQmatrixData->Qmatrix[to], (Ipp8u*)QmatrixData.Qmatrix[from], 
+          MFX_INTERNAL_CPY((Ipp8u*)pQmatrixData->Qmatrix[to], (Ipp8u*)QmatrixData.Qmatrix[from],
             sizeof(pQmatrixData->Qmatrix[0]));
           to++;
         }
@@ -382,7 +382,7 @@ PackVA::SaveVLDParameters(
     }
     else if(pict_type == MPEG2_B_PICTURE)
     {
-        Ipp32s idx = frame_buffer->frame_p_c_n[frame_buffer->curr_index[task_num]].prev_index; 
+        Ipp32s idx = frame_buffer->frame_p_c_n[frame_buffer->curr_index[task_num]].prev_index;
 
         if (idx < 0)
         {
@@ -479,7 +479,7 @@ Status PackVA::GetStatusReport(DXVA_Status_VC1 *pStatusReport)
     while (!pStatusReport->StatusReportFeedbackNumber && UMC_OK == sts && iterNum != 0)
     {
         iterNum -= 1;
-        
+
         sts = m_va->ExecuteStatusReportBuffer((void*)pStatusReport, sizeof(DXVA_Status_VC1) * 32);
 
         if (pStatusReport->StatusReportFeedbackNumber)
@@ -513,7 +513,7 @@ Status PackVA::InitBuffers(int size_bs, int size_sl)
         if (NULL == (vpPictureParam = (VAPictureParameterBufferMPEG2*)m_va->GetCompBuffer(VAPictureParameterBufferType, &CompBuf, sizeof (VAPictureParameterBufferMPEG2))))
             return UMC_ERR_ALLOC;
 
-        if (va_mode == VA_VLD_L)
+        if (va_mode == VA_VLD_L && size_bs && size_sl)
         {
             if (NULL == (pQmatrixData = (VAIQMatrixBufferMPEG2*)m_va->GetCompBuffer(VAIQMatrixBufferType, &CompBuf, sizeof (VAIQMatrixBufferMPEG2))))
                 return UMC_ERR_ALLOC;
@@ -596,7 +596,7 @@ PackVA::SaveVLDParameters(
         if (slice.slice_vertical_position == prevSlice.slice_vertical_position && slice.slice_horizontal_position == prevSlice.slice_horizontal_position)
         {
             // remove slice duplication
-            memmove_s(&pSliceInfoBuffer[i - 1], (pSliceInfo - &pSliceInfoBuffer[i]) * sizeof(VASliceParameterBufferMPEG2), 
+            memmove_s(&pSliceInfoBuffer[i - 1], (pSliceInfo - &pSliceInfoBuffer[i]) * sizeof(VASliceParameterBufferMPEG2),
                 &pSliceInfoBuffer[i], (pSliceInfo - &pSliceInfoBuffer[i]) * sizeof(VASliceParameterBufferMPEG2));
             numSlices--;
             pSliceInfo--;
@@ -622,13 +622,13 @@ PackVA::SaveVLDParameters(
         pQmatrixData->load_chroma_intra_quantiser_matrix = QmatrixData.load_chroma_intra_quantiser_matrix;
         pQmatrixData->load_chroma_non_intra_quantiser_matrix = QmatrixData.load_chroma_non_intra_quantiser_matrix;
 
-        MFX_INTERNAL_CPY((Ipp8u*)pQmatrixData->intra_quantiser_matrix, (Ipp8u*)QmatrixData.intra_quantiser_matrix, 
+        MFX_INTERNAL_CPY((Ipp8u*)pQmatrixData->intra_quantiser_matrix, (Ipp8u*)QmatrixData.intra_quantiser_matrix,
             sizeof(pQmatrixData->intra_quantiser_matrix));
-        MFX_INTERNAL_CPY((Ipp8u*)pQmatrixData->non_intra_quantiser_matrix, (Ipp8u*)QmatrixData.non_intra_quantiser_matrix, 
+        MFX_INTERNAL_CPY((Ipp8u*)pQmatrixData->non_intra_quantiser_matrix, (Ipp8u*)QmatrixData.non_intra_quantiser_matrix,
             sizeof(pQmatrixData->non_intra_quantiser_matrix));
-        MFX_INTERNAL_CPY((Ipp8u*)pQmatrixData->chroma_intra_quantiser_matrix, (Ipp8u*)QmatrixData.chroma_intra_quantiser_matrix, 
+        MFX_INTERNAL_CPY((Ipp8u*)pQmatrixData->chroma_intra_quantiser_matrix, (Ipp8u*)QmatrixData.chroma_intra_quantiser_matrix,
             sizeof(pQmatrixData->chroma_intra_quantiser_matrix));
-        MFX_INTERNAL_CPY((Ipp8u*)pQmatrixData->chroma_non_intra_quantiser_matrix, (Ipp8u*)QmatrixData.chroma_non_intra_quantiser_matrix, 
+        MFX_INTERNAL_CPY((Ipp8u*)pQmatrixData->chroma_non_intra_quantiser_matrix, (Ipp8u*)QmatrixData.chroma_non_intra_quantiser_matrix,
             sizeof(pQmatrixData->chroma_non_intra_quantiser_matrix));
 
         NumOfItem = (int)(pSliceInfo - pSliceInfoBuffer);
@@ -638,7 +638,7 @@ PackVA::SaveVLDParameters(
             &CompBuf,
             (Ipp32s) (sizeof (VASliceParameterBufferMPEG2))*NumOfItem);
 
-        MFX_INTERNAL_CPY((Ipp8u*)l_pSliceInfoBuffer, (Ipp8u*)pSliceInfoBuffer, 
+        MFX_INTERNAL_CPY((Ipp8u*)l_pSliceInfoBuffer, (Ipp8u*)pSliceInfoBuffer,
             sizeof(VASliceParameterBufferMPEG2) * NumOfItem);
 
         m_va->GetCompBuffer(VASliceParameterBufferType,&CompBuf);

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -125,7 +125,7 @@ Ipp32u DistToNextSlice(mfxEncryptedData *encryptedData, PAVP_COUNTER_TYPE counte
     }
 }
 //slice size with alignment
-Ipp32u SliceSize(mfxEncryptedData *first, PAVP_COUNTER_TYPE counterMode, 
+Ipp32u SliceSize(mfxEncryptedData *first, PAVP_COUNTER_TYPE counterMode,
                  Ipp32u &overlap)
 {
     mfxEncryptedData *temp = first;
@@ -618,65 +618,75 @@ mm:                 Ipp32s numMB = (PictureHeader[task_num].picture_structure ==
 
 #if defined UMC_VA_DXVA
     if(pack_w.va_mode == VA_VLD_W) {
-      if (GET_REMAINED_BYTES(video->bs) <= 0) 
-      {
-          isCorrupted = true;
-          return UMC_ERR_INVALID_STREAM;
-      }
-      pack_w.pSliceInfo->wMBbitOffset = (WORD)(GET_BIT_OFFSET(video->bs) - bit_pos);
-      pack_w.pSliceInfo->wVerticalPosition = (WORD)(video->slice_vertical_position - 1);
+        if (GET_REMAINED_BYTES(video->bs) <= 0)
+        {
+            isCorrupted = true;
+            return UMC_ERR_INVALID_STREAM;
+        }
+        pack_w.pSliceInfo->wMBbitOffset = (WORD)(GET_BIT_OFFSET(video->bs) - bit_pos);
+        pack_w.pSliceInfo->wVerticalPosition = (WORD)(video->slice_vertical_position - 1);
 
-      pack_w.pSliceInfo->dwSliceDataLocation = (DWORD)(GET_START_PTR(Video[task_num][0]->bs)+bit_pos/8-pack_w.pSliceStart);
+        pack_w.pSliceInfo->dwSliceDataLocation = (DWORD)(GET_START_PTR(Video[task_num][0]->bs)+bit_pos/8-pack_w.pSliceStart);
 
-      pack_w.pSliceInfo->bStartCodeBitOffset = 0;
-      pack_w.pSliceInfo->wQuantizerScaleCode = (WORD)video->cur_q_scale;
-      pack_w.pSliceInfo->wBadSliceChopping = 0;
-      pack_w.pSliceInfo->wHorizontalPosition = 0;
-      pack_w.pSliceInfo->dwSliceBitsInBuffer = bytes_remain*8;
-      // assume slices are ordered
-      pack_w.pSliceInfo->wNumberMBsInSlice = (WORD)sequenceHeader.mb_width[task_num];
+        pack_w.pSliceInfo->bStartCodeBitOffset = 0;
+        pack_w.pSliceInfo->wQuantizerScaleCode = (WORD)video->cur_q_scale;
+        pack_w.pSliceInfo->wBadSliceChopping = 0;
+        pack_w.pSliceInfo->wHorizontalPosition = 0;
+        pack_w.pSliceInfo->dwSliceBitsInBuffer = bytes_remain*8;
+        // assume slices are ordered
+        pack_w.pSliceInfo->wNumberMBsInSlice = (WORD)sequenceHeader.mb_width[task_num];
 
-      pack_w.pSliceInfo->bReservedBits = 0;
-      pack_w.pSliceInfo->wBadSliceChopping = 0;
+        pack_w.pSliceInfo->bReservedBits = 0;
+        pack_w.pSliceInfo->wBadSliceChopping = 0;
     }
 #elif defined UMC_VA_LINUX
 
-    if(pack_l.va_mode == VA_VLD_L) {
-    
-      if (GET_REMAINED_BYTES(video->bs) <= 0) {
-        return UMC_ERR_INVALID_STREAM;
-      }
-      pack_l.pSliceInfo->macroblock_offset = GET_BIT_OFFSET(video->bs) - bit_pos;
-      pack_l.pSliceInfo->slice_data_offset = GET_START_PTR(Video[task_num][0]->bs)+bit_pos/8-pack_l.pSliceStart;
-      pack_l.pSliceInfo->quantiser_scale_code = video->cur_q_scale;
-      pack_l.pSliceInfo->slice_data_size = bytes_remain;
-      pack_l.pSliceInfo->intra_slice_flag = PictureHeader[task_num].picture_coding_type == MPEG2_I_PICTURE;
+    if(pack_l.va_mode == VA_VLD_L)
+    {
+        if (GET_REMAINED_BYTES(video->bs) <= 0)
+        {
+            return UMC_ERR_INVALID_STREAM;
+        }
 
-      if (video->stream_type != MPEG1_VIDEO)
-      {
-           const int field_pic = PictureHeader[task_num].picture_structure != FRAME_PICTURE;
-           pack_l.pSliceInfo->slice_vertical_position = (start_code - 0x00000101) << field_pic; //SLICE_MIN_START_CODE 0x00000101
-           if(BOTTOM_FIELD == PictureHeader[task_num].picture_structure)
-               ++pack_l.pSliceInfo->slice_vertical_position;
+        Ipp32u slice_idx = pack_w.pSliceInfo - pack_w.pSliceInfoBuffer;
+        Ipp32u num_allocated_slices = pack_w.slice_size_getting/sizeof(VASliceParameterBufferMPEG2);
 
-           Ipp32u macroblock_address_increment=1;
+        if (slice_idx < num_allocated_slices)
+        {
+            pack_l.pSliceInfo->macroblock_offset = GET_BIT_OFFSET(video->bs) - bit_pos;
+            pack_l.pSliceInfo->slice_data_offset = GET_START_PTR(Video[task_num][0]->bs)+bit_pos/8-pack_l.pSliceStart;
+            pack_l.pSliceInfo->quantiser_scale_code = video->cur_q_scale;
+            pack_l.pSliceInfo->slice_data_size = bytes_remain;
+            pack_l.pSliceInfo->intra_slice_flag = PictureHeader[task_num].picture_coding_type == MPEG2_I_PICTURE;
+
+            if (video->stream_type != MPEG1_VIDEO)
+            {
+                const int field_pic = PictureHeader[task_num].picture_structure != FRAME_PICTURE;
+                pack_l.pSliceInfo->slice_vertical_position = (start_code - 0x00000101) << field_pic; //SLICE_MIN_START_CODE 0x00000101
+                if(BOTTOM_FIELD == PictureHeader[task_num].picture_structure)
+                    ++pack_l.pSliceInfo->slice_vertical_position;
+
+                Ipp32u macroblock_address_increment=1;
 
 
-           if (IS_NEXTBIT1(video->bs)) 
-           {
-               SKIP_BITS(video->bs, 1)
-           } 
-           else 
-           {
-               macroblock_address_increment = DecoderMBInc(video);
-           }
-           macroblock_address_increment--;
-           pack_w.pSliceInfo->slice_horizontal_position = macroblock_address_increment;
-      }
-      else
-          pack_l.pSliceInfo->slice_vertical_position = video->slice_vertical_position-1;
+                if (IS_NEXTBIT1(video->bs))
+                {
+                    SKIP_BITS(video->bs, 1)
+                }
+                else
+                {
+                    macroblock_address_increment = DecoderMBInc(video);
+                }
+                macroblock_address_increment--;
+                pack_w.pSliceInfo->slice_horizontal_position = macroblock_address_increment;
+            }
+            else
+                pack_l.pSliceInfo->slice_vertical_position = video->slice_vertical_position-1;
 
-      pack_l.pSliceInfo->slice_data_flag = VA_SLICE_DATA_FLAG_ALL;
+            pack_l.pSliceInfo->slice_data_flag = VA_SLICE_DATA_FLAG_ALL;
+        }
+        else
+            return UMC_ERR_FAILED;
     }
 #endif
 
@@ -706,21 +716,21 @@ Status MPEG2VideoDecoderHW::DecodeSlice(VideoContext  *video, int task_num)
     Ipp32s macroblock_address_increment = 1;
 
     Ipp32s remained = GET_REMAINED_BYTES(video->bs);
-        
-    if (remained == 0) 
+
+    if (remained == 0)
     {
         return UMC_OK;
-    } 
-    else if (remained < 0) 
+    }
+    else if (remained < 0)
     {
         return UMC_ERR_INVALID_STREAM;
     }
 
-    if (IS_NEXTBIT1(video->bs)) 
+    if (IS_NEXTBIT1(video->bs))
     {
         SKIP_BITS(video->bs, 1)
-    } 
-    else 
+    }
+    else
     {
         macroblock_address_increment = DecoderMBInc(video);
     }
@@ -777,7 +787,7 @@ Status MPEG2VideoDecoderHW::PostProcessFrame(int display_index, int task_num)
           {
              // printf("save data at the end of frame\n");
 #   if defined(UMC_VA_DXVA)   // part 1
-             
+
              pack_w.bs_size = pack_w.pSliceInfo[-1].dwSliceDataLocation + pack_w.pSliceInfo[-1].dwSliceBitsInBuffer/8;
 
 #ifndef MFX_PROTECTED_FEATURE_DISABLE
@@ -1178,7 +1188,7 @@ Status MPEG2VideoDecoderHW::ProcessRestFrame(int task_num)
     Video[task_num][0]->color_format = m_ClipInfo.color_format;
     Video[task_num][0]->clip_info_width = m_ClipInfo.clip_info.width;
     Video[task_num][0]->clip_info_height = m_ClipInfo.clip_info.height;
-    
+
     return MPEG2VideoDecoderBase::ProcessRestFrame(task_num);
 }
 
