@@ -256,7 +256,7 @@
       <PreprocessorDefinitions>WIN_TRESHOLD_MOBILE;WIN32;_DEBUG;_CONSOLE;MFX_DISPATCHER_LOG;DXVA2DEVICE_LOG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
@@ -318,7 +318,7 @@
       <AdditionalIncludeDirectories>include;../../include;$(INTELMEDIASDK_WINSDK_PATH)/include;$(INTELMEDIASDK_WINSDK_PATH)/include/shared;$(INTELMEDIASDK_WINSDK_PATH)/include/um;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN_TRESHOLD_MOBILE;WIN32;NDEBUG;_CONSOLE;MFX_DISPATCHER_LOG;DXVA2DEVICE_LOG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -356,7 +356,7 @@
       <AdditionalIncludeDirectories>include;../../include;$(INTELMEDIASDK_WINSDK_PATH)/include;$(INTELMEDIASDK_WINSDK_PATH)/include/shared;$(INTELMEDIASDK_WINSDK_PATH)/include/um;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN_TRESHOLD_MOBILE;WIN64;NDEBUG;_CONSOLE;MFX_DISPATCHER_LOG;DXVA2DEVICE_LOG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
