@@ -1963,7 +1963,8 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
 
     // Update entry points
     size_t offsets = removed_offsets.size();
-    if (pSlice->GetPicParam()->tiles_enabled_flag && pSlice->getTileLocationCount() > 0 && offsets > 0)
+    if ((pSlice->GetPicParam()->tiles_enabled_flag || pSlice->GetPicParam()->entropy_coding_sync_enabled_flag) &&
+        pSlice->getTileLocationCount() > 0 && offsets > 0)
     {
         Ipp32u removed_bytes = 0;
         std::vector<Ipp32u>::iterator it = removed_offsets.begin();

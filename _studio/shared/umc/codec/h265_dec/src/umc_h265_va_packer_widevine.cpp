@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -170,7 +170,6 @@ namespace UMC_HEVC_DECODER
             }
         }
 
-        m_refFrameListCacheSize = count;
         for(int n=count;n < sizeof(pPicParam->RefFrameList)/sizeof(pPicParam->RefFrameList[0]);n++)
         {
             pPicParam->RefFrameList[n].bPicEntry = (UCHAR)0xff;

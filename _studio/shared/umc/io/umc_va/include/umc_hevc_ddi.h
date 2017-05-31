@@ -202,8 +202,37 @@ typedef struct _DXVA_Intel_PicParams_HEVC_Rext
     CHAR    cr_qp_offset_list[6];             // [-12..12]
 } DXVA_Intel_PicParams_HEVC_Rext, *LPDXVA_Intel_PicParams_HEVC_Rext;
 
-/****************************************************************************/
+typedef struct _DXVA_Intel_PicParams_HEVC_SCC
+{
+    DXVA_Intel_PicParams_HEVC_Rext PicParamsRext;
 
+    union
+    {
+        struct
+        {
+            UINT32  pps_curr_pic_ref_enabled_flag                   : 1;
+            UINT32  palette_mode_enabled_flag                       : 1;
+            UINT32  motion_vector_resolution_control_idc            : 2; //[0..2]
+            UINT32  intra_boundary_filtering_disabled_flag          : 1;
+            UINT32  residual_adaptive_colour_transform_enabled_flag : 1;
+            UINT32  pps_slice_act_qp_offsets_present_flag           : 1;
+            UINT32  ReservedBits6                                   : 25;
+        } fields;
+
+        UINT        dwScreenContentCodingPropertyFlags;
+    } PicSCCExtensionFlags;
+
+    UCHAR           palette_max_size;                 // [0..64]
+    UCHAR           delta_palette_max_predictor_size; // [0..128]
+    UCHAR           PredictorPaletteSize;             // [0..127]
+    USHORT          PredictorPaletteEntries[3][128];
+    CHAR            pps_act_y_qp_offset_plus5;        // [-7..17]
+    CHAR            pps_act_cb_qp_offset_plus5;       // [-7..17]
+    CHAR            pps_act_cr_qp_offset_plus3;       // [-9..15]
+
+} DXVA_Intel_PicParams_HEVC_SCC, *LPDXVA_Intel_PicParams_HEVC_SCC;
+
+/****************************************************************************/
 
 typedef struct _DXVA_Intel_Slice_HEVC_Long
 {
@@ -319,9 +348,6 @@ typedef struct _DXVA_Intel_Slice_HEVC_Rext_Long
     SHORT   ChromaOffsetL1[15][2];
     UCHAR   five_minus_max_num_merge_cand;
 
-    //USHORT  num_entry_point_offsets;               // [0..540]
-    //USHORT  EntryOffsetToSubsetArray;              // [0..540]
-
     union
     {
         UINT    value;
@@ -334,13 +360,81 @@ typedef struct _DXVA_Intel_Slice_HEVC_Rext_Long
 
 } DXVA_Intel_Slice_HEVC_Rext_Long, *LPDXVA_Intel_Slice_HEVC_Rext_Long;
 
+typedef struct _DXVA_Intel_Slice_HEVC_Rext_Long_Gen12
+{
+    UINT    BSNALunitDataLocation;
+    UINT    SliceBytesInBuffer;
+    USHORT  wBadSliceChopping;
+    USHORT  ReservedBits;
+    UINT    ByteOffsetToSliceData;
+    UINT    slice_segment_address;
+
+    DXVA_Intel_PicEntry_HEVC    RefPicList[2][15];
+
+    union
+    {
+        UINT    value;
+
+        struct
+        {
+            UINT    LastSliceOfPic : 1;
+            UINT    dependent_slice_segment_flag : 1;
+            UINT    slice_type : 2;
+            UINT    color_plane_id : 2;
+            UINT    slice_sao_luma_flag : 1;
+            UINT    slice_sao_chroma_flag : 1;
+            UINT    mvd_l1_zero_flag : 1;
+            UINT    cabac_init_flag : 1;
+            UINT    slice_temporal_mvp_enabled_flag : 1;
+            UINT    slice_deblocking_filter_disabled_flag : 1;
+            UINT    collocated_from_l0_flag : 1;
+            UINT    slice_loop_filter_across_slices_enabled_flag : 1;
+            UINT    reserved : 18;
+        }
+        fields;
+    } LongSliceFlags;
+
+    UCHAR   collocated_ref_idx;
+    UCHAR   num_ref_idx_l0_active_minus1;
+    UCHAR   num_ref_idx_l1_active_minus1;
+    CHAR    slice_qp_delta;
+    CHAR    slice_cb_qp_offset;
+    CHAR    slice_cr_qp_offset;
+    CHAR    slice_beta_offset_div2;                // [-6..6]
+    CHAR    slice_tc_offset_div2;                  // [-6..6]
+    UCHAR   luma_log2_weight_denom;
+    UCHAR   delta_chroma_log2_weight_denom;
+    CHAR    delta_luma_weight_l0[15];
+    SHORT   luma_offset_l0[15];
+    CHAR    delta_chroma_weight_l0[15][2];
+    SHORT   ChromaOffsetL0[15][2];
+    CHAR    delta_luma_weight_l1[15];
+    SHORT   luma_offset_l1[15];
+    CHAR    delta_chroma_weight_l1[15][2];
+    SHORT   ChromaOffsetL1[15][2];
+    UCHAR   five_minus_max_num_merge_cand;
+
+    USHORT  num_entry_point_offsets;               // [0..540]
+    USHORT  EntryOffsetToSubsetArray;              // [0..540]
+
+    union
+    {
+        UINT    value;
+        struct
+        {
+            UINT    cu_chroma_qp_offset_enabled_flag : 1;
+            UINT    reserved : 31;
+        } fields;
+    } SliceRextFlags;
+
+} DXVA_Intel_Slice_HEVC_Rext_Long_Gen12, *LPDXVA_Intel_Slice_HEVC_Rext_Long_Gen12;
+
 typedef struct _DXVA_Intel_Slice_HEVC_Short
 {
     UINT    BSNALunitDataLocation;
     UINT    SliceBytesInBuffer;
     USHORT  wBadSliceChopping;
 } DXVA_Intel_Slice_HEVC_Short, *LPDXVA_Intel_Slice_HEVC_Short;
-
 
 typedef struct _DXVA_Intel_Qmatrix_HEVC
 {
@@ -351,6 +445,18 @@ typedef struct _DXVA_Intel_Qmatrix_HEVC
     UCHAR   ucScalingListDCCoefSizeID2[6];
     UCHAR   ucScalingListDCCoefSizeID3[2];
 } DXVA_Intel_Qmatrix_HEVC, *LPDXVA_Intel_Qmatrix_HEVC;
+
+typedef struct _SUBSET_HEVC
+{
+    UINT    entry_point_offset_minus1[540];
+} SUBSET_HEVC;
+
+#define D3DDDIFMT_INTEL_HEVC_SUBSET 161
+
+typedef enum D3D11_INTEL_VIDEO_DECODER_BUFFER_HEVC_TYPE
+{
+    D3D11_INTEL_VIDEO_DECODER_BUFFER_HEVC_SUBSET = 11
+} D3D11_INTEL_VIDEO_DECODER_BUFFER_HEVC_TYPE;
 
 #pragma pack()
 

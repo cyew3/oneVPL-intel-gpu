@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2016 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -93,7 +93,7 @@ public:
     H265DecoderFrame *findShortRefPic(Ipp32s picPOC);
 
     // Searches DPB for a long term reference frame with specified POC
-    H265DecoderFrame *findLongTermRefPic(const H265DecoderFrame *excludeFrame, Ipp32s picPOC, Ipp32u bitsForPOC, bool isUseMask);
+    H265DecoderFrame *findLongTermRefPic(const H265DecoderFrame *excludeFrame, Ipp32s picPOC, Ipp32u bitsForPOC, bool isUseMask) const;
 
     // Returns the number of frames in DPB
     Ipp32u countAllFrames();

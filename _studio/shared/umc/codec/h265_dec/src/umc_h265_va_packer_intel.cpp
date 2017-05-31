@@ -39,10 +39,31 @@ namespace UMC_HEVC_DECODER
         void PackQmatrix(const H265Slice *pSlice);
         void PackPicParams(const H265DecoderFrame *pCurrentFrame, H265DecoderFrameInfo * pSliceInfo, TaskSupplier_H265 *supplier);
         bool PackSliceParams(H265Slice *pSlice, Ipp32u &, bool isLastSlice);
+        void PackSubsets(const H265DecoderFrame *pCurrentFrame);
     };
 
     Packer * CreatePackerIntel(UMC::VideoAccelerator* va)
     { return new PackerDXVA2intel(va); }
+
+    template <typename T>
+    void GetPicParamsBuffer(UMC::VideoAccelerator* va, T** ppPicParams, Ipp32s size)
+    {
+        VM_ASSERT(va);
+        VM_ASSERT(ppPicParams);
+
+        UMCVACompBuffer *compBuf;
+        *ppPicParams = 
+            reinterpret_cast<T*>(va->GetCompBuffer(DXVA_PICTURE_DECODE_BUFFER, &compBuf));
+
+        if (!*ppPicParams)
+            throw h265_exception(UMC_ERR_FAILED);
+
+        if (compBuf->GetBufferSize() < size)
+            throw h265_exception(UMC_ERR_FAILED);
+
+        compBuf->SetDataSize(size);
+        memset(*ppPicParams, 0, size);
+    }
 
     template <typename T>
     void GetSliceVABuffers(UMC::VideoAccelerator* va, T** ppSliceHeader, Ipp32s headerSize, void **ppSliceData, Ipp32s dataSize, Ipp32s dataAlignment)
@@ -96,32 +117,27 @@ namespace UMC_HEVC_DECODER
         }
     }
 
-    void PackerDXVA2intel::PackPicParams(const H265DecoderFrame *pCurrentFrame, H265DecoderFrameInfo * pSliceInfo, TaskSupplier_H265 *supplier)
+    template <typename T>
+    inline
+    void PackPicHeaderCommon(H265DecoderFrame const* pCurrentFrame, H265DecoderFrameInfo const* pSliceInfo, H265DBPList const* dpb, T* pPicParam)
     {
+        VM_ASSERT(pCurrentFrame);
+        VM_ASSERT(pSliceInfo);
+        VM_ASSERT(dpb);
+        VM_ASSERT(pPicParam);
+
         H265Slice *pSlice = pSliceInfo->GetSlice(0);
         if (!pSlice)
             return;
-        H265SliceHeader * sliceHeader = pSlice->GetSliceHeader();
+
         const H265SeqParamSet *pSeqParamSet = pSlice->GetSeqParam();
+        VM_ASSERT(pSeqParamSet);
         const H265PicParamSet *pPicParamSet = pSlice->GetPicParam();
+        VM_ASSERT(pPicParamSet);
 
-        UMCVACompBuffer *compBuf;
-        DXVA_Intel_PicParams_HEVC *pPicParam = (DXVA_Intel_PicParams_HEVC*)m_va->GetCompBuffer(DXVA_PICTURE_DECODE_BUFFER, &compBuf);
-        Ipp32s const size =
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-            !(m_va->m_Profile & VA_PROFILE_REXT) ? sizeof(DXVA_Intel_PicParams_HEVC) : sizeof(DXVA_Intel_PicParams_HEVC_Rext);
-#else
-            sizeof(DXVA_Intel_PicParams_HEVC);
-#endif
+        H265SliceHeader const* sliceHeader = pSlice->GetSliceHeader();
+        VM_ASSERT(sliceHeader);
 
-        if (compBuf->GetBufferSize() < size)
-            throw h265_exception(UMC_ERR_FAILED);
-
-        compBuf->SetDataSize(size);
-        memset(pPicParam, 0, size);
-
-        //
-        //
         pPicParam->PicWidthInMinCbsY = (USHORT)LengthInMinCb(pSeqParamSet->pic_width_in_luma_samples, pSeqParamSet->log2_min_luma_coding_block_size);
         pPicParam->PicHeightInMinCbsY = (USHORT)LengthInMinCb(pSeqParamSet->pic_height_in_luma_samples, pSeqParamSet->log2_min_luma_coding_block_size);
 
@@ -137,16 +153,16 @@ namespace UMC_HEVC_DECODER
 
         //
         //
-        pPicParam->CurrPic.Index7bits = pCurrentFrame->m_index;    // ?
+        pPicParam->CurrPic.Index7bits = pCurrentFrame->m_index;
         pPicParam->CurrPicOrderCntVal = sliceHeader->slice_pic_order_cnt_lsb;
 
         int count = 0;
         int cntRefPicSetStCurrBefore = 0,
             cntRefPicSetStCurrAfter = 0,
             cntRefPicSetLtCurr = 0;
-        H265DBPList *dpb = supplier->GetDPBList();
         ReferencePictureSet *rps = pSlice->getRPS();
-        for (H265DecoderFrame* frame = dpb->head(); frame && count < sizeof(pPicParam->RefFrameList) / sizeof(pPicParam->RefFrameList[0]); frame = frame->future())
+        VM_ASSERT(rps);
+        for (H265DecoderFrame const* frame = dpb->head(); frame && count < sizeof(pPicParam->RefFrameList) / sizeof(pPicParam->RefFrameList[0]); frame = frame->future())
         {
             if (frame != pCurrentFrame)
             {
@@ -176,7 +192,7 @@ namespace UMC_HEVC_DECODER
         for (; index < rps->getNumberOfNegativePictures() + rps->getNumberOfPositivePictures() + rps->getNumberOfLongtermPictures(); index++)
         {
             Ipp32s poc = rps->getPOC(index);
-            H265DecoderFrame *pFrm = supplier->GetDPBList()->findLongTermRefPic(pCurrentFrame, poc, pSeqParamSet->log2_max_pic_order_cnt_lsb, !rps->getCheckLTMSBPresent(index));
+            H265DecoderFrame *pFrm = dpb->findLongTermRefPic(pCurrentFrame, poc, pSeqParamSet->log2_max_pic_order_cnt_lsb, !rps->getCheckLTMSBPresent(index));
 
             if (pFrm)
             {
@@ -207,7 +223,6 @@ namespace UMC_HEVC_DECODER
             }
         }
 
-        m_refFrameListCacheSize = count;
         for (int n = count; n < sizeof(pPicParam->RefFrameList) / sizeof(pPicParam->RefFrameList[0]); n++)
         {
             pPicParam->RefFrameList[n].bPicEntry = (UCHAR)0xff;
@@ -241,6 +256,21 @@ namespace UMC_HEVC_DECODER
 
         pPicParam->wNumBitsForShortTermRPSInSlice = (USHORT)sliceHeader->wNumBitsForShortTermRPSInSlice;
         pPicParam->ucNumDeltaPocsOfRefRpsIdx = (UCHAR)pPicParam->wNumBitsForShortTermRPSInSlice;
+
+        Ipp32u num_offsets = 0;
+        for (Ipp32u i = 0; i < pSliceInfo->GetSliceCount(); ++i)
+        {
+            H265Slice const* slice = pSliceInfo->GetSlice(i);
+            if (!slice)
+                throw h265_exception(UMC_ERR_FAILED);
+
+            H265SliceHeader const* sh = pSlice->GetSliceHeader();
+            VM_ASSERT(sh);
+
+            num_offsets += sh->num_entry_point_offsets;
+        }
+
+        pPicParam->TotalNumEntryPointOffsets = (USHORT)num_offsets;
 
         // dwCodingParamToolFlags
         //
@@ -312,36 +342,141 @@ namespace UMC_HEVC_DECODER
         //
         pPicParam->RefFieldPicFlag = 0;
         pPicParam->RefBottomFieldFlag = 0;
+    }
 
-        pPicParam->StatusReportFeedbackNumber = m_statusReportFeedbackCounter;
+    inline
+    void PackPicHeader(H265DecoderFrame const* pCurrentFrame, H265DecoderFrameInfo const* pSliceInfo, H265DBPList const* dpb, DXVA_Intel_PicParams_HEVC* pPicParam)
+    { PackPicHeaderCommon(pCurrentFrame, pSliceInfo, dpb, pPicParam); }
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    inline
+    void PackPicHeader(H265DecoderFrame const* pCurrentFrame, H265DecoderFrameInfo const* pSliceInfo, H265DBPList const* dpb, DXVA_Intel_PicParams_HEVC_Rext* pPicParam)
+    {
+        PackPicHeaderCommon(pCurrentFrame, pSliceInfo, dpb, &pPicParam->PicParamsMain);
+
+        const H265Slice *pSlice = pSliceInfo->GetSlice(0);
+        VM_ASSERT(pSlice);
+
+        const H265SeqParamSet *pSeqParamSet = pSlice->GetSeqParam();
+        VM_ASSERT(pSeqParamSet);
+        const H265PicParamSet *pPicParamSet = pSlice->GetPicParam();
+        VM_ASSERT(pPicParamSet);
+
+        pPicParam->PicRangeExtensionFlags.fields.transform_skip_rotation_enabled_flag = pSeqParamSet->transform_skip_rotation_enabled_flag;
+        pPicParam->PicRangeExtensionFlags.fields.transform_skip_context_enabled_flag = pSeqParamSet->transform_skip_context_enabled_flag;
+        pPicParam->PicRangeExtensionFlags.fields.implicit_rdpcm_enabled_flag = pSeqParamSet->implicit_residual_dpcm_enabled_flag;
+        pPicParam->PicRangeExtensionFlags.fields.explicit_rdpcm_enabled_flag = pSeqParamSet->explicit_residual_dpcm_enabled_flag;
+        pPicParam->PicRangeExtensionFlags.fields.extended_precision_processing_flag = pSeqParamSet->extended_precision_processing_flag;
+        pPicParam->PicRangeExtensionFlags.fields.intra_smoothing_disabled_flag = pSeqParamSet->intra_smoothing_disabled_flag;
+        pPicParam->PicRangeExtensionFlags.fields.high_precision_offsets_enabled_flag = pSeqParamSet->high_precision_offsets_enabled_flag;
+        pPicParam->PicRangeExtensionFlags.fields.persistent_rice_adaptation_enabled_flag = pSeqParamSet->fast_rice_adaptation_enabled_flag;
+        pPicParam->PicRangeExtensionFlags.fields.cabac_bypass_alignment_enabled_flag = pSeqParamSet->cabac_bypass_alignment_enabled_flag;
+        pPicParam->PicRangeExtensionFlags.fields.cross_component_prediction_enabled_flag = pPicParamSet->cross_component_prediction_enabled_flag;
+        pPicParam->PicRangeExtensionFlags.fields.chroma_qp_offset_list_enabled_flag = pPicParamSet->chroma_qp_offset_list_enabled_flag;
+
+        pPicParam->diff_cu_chroma_qp_offset_depth = (UCHAR)pPicParamSet->diff_cu_chroma_qp_offset_depth;
+        pPicParam->chroma_qp_offset_list_len_minus1 = pPicParamSet->chroma_qp_offset_list_enabled_flag ? (UCHAR)pPicParamSet->chroma_qp_offset_list_len - 1 : 0;
+        pPicParam->log2_sao_offset_scale_luma = (UCHAR)pPicParamSet->log2_sao_offset_scale_luma;
+        pPicParam->log2_sao_offset_scale_chroma = (UCHAR)pPicParamSet->log2_sao_offset_scale_chroma;
+        pPicParam->log2_max_transform_skip_block_size_minus2 = pPicParamSet->pps_range_extensions_flag && pPicParamSet->transform_skip_enabled_flag ? (UCHAR)pPicParamSet->log2_max_transform_skip_block_size - 2 : 0;
+
+        for (Ipp32u i = 0; i < pPicParamSet->chroma_qp_offset_list_len; i++)
+        {
+            pPicParam->cb_qp_offset_list[i] = (CHAR)pPicParamSet->cb_qp_offset_list[i + 1];
+            pPicParam->cr_qp_offset_list[i] = (CHAR)pPicParamSet->cr_qp_offset_list[i + 1];
+        }
+    }
+
+    inline
+    void FillPaletteEntries(DXVA_Intel_PicParams_HEVC_SCC* pPicParam, Ipp8u numComps, Ipp32u const* entries, Ipp32u count)
+    {
+        VM_ASSERT(!(count > 128));
+
+        pPicParam->PredictorPaletteSize = static_cast<UCHAR>(count);
+        for (Ipp8u i = 0; i < numComps; ++i, entries += count)
+            std::copy(entries, entries + count, pPicParam->PredictorPaletteEntries[i]);
+    }
+
+    inline
+    void PackPicHeader(H265DecoderFrame const* pCurrentFrame, H265DecoderFrameInfo const* pSliceInfo, H265DBPList const* dpb, DXVA_Intel_PicParams_HEVC_SCC* pPicParam)
+    {
+        PackPicHeader(pCurrentFrame, pSliceInfo, dpb, &pPicParam->PicParamsRext);
+
+        const H265Slice *pSlice = pSliceInfo->GetSlice(0);
+        VM_ASSERT(pSlice);
+
+        const H265SeqParamSet *pSeqParamSet = pSlice->GetSeqParam();
+        VM_ASSERT(pSeqParamSet);
+        const H265PicParamSet *pPicParamSet = pSlice->GetPicParam();
+        VM_ASSERT(pPicParamSet);
+
+        pPicParam->PicSCCExtensionFlags.fields.pps_curr_pic_ref_enabled_flag = pPicParamSet->pps_curr_pic_ref_enabled_flag;
+        pPicParam->PicSCCExtensionFlags.fields.palette_mode_enabled_flag = pSeqParamSet->palette_mode_enabled_flag;
+        pPicParam->PicSCCExtensionFlags.fields.motion_vector_resolution_control_idc = pSeqParamSet->motion_vector_resolution_control_idc;
+        pPicParam->PicSCCExtensionFlags.fields.intra_boundary_filtering_disabled_flag = pSeqParamSet->intra_boundary_filtering_disabled_flag;
+        pPicParam->PicSCCExtensionFlags.fields.residual_adaptive_colour_transform_enabled_flag = pPicParamSet->residual_adaptive_colour_transform_enabled_flag;
+        pPicParam->PicSCCExtensionFlags.fields.pps_slice_act_qp_offsets_present_flag = pPicParamSet->pps_slice_act_qp_offsets_present_flag;
+
+        pPicParam->pps_act_y_qp_offset_plus5  = static_cast<CHAR>(pPicParamSet->pps_act_y_qp_offset  + 5);
+        pPicParam->pps_act_cb_qp_offset_plus5 = static_cast<CHAR>(pPicParamSet->pps_act_cb_qp_offset + 5);
+        pPicParam->pps_act_cr_qp_offset_plus3 = static_cast<CHAR>(pPicParamSet->pps_act_cr_qp_offset + 3);
+
+        pPicParam->palette_max_size = static_cast<UCHAR>(pSeqParamSet->palette_max_size);
+        pPicParam->delta_palette_max_predictor_size = static_cast<UCHAR>(pSeqParamSet->delta_palette_max_predictor_size);
+
+        Ipp8u const numComps = pSeqParamSet->chroma_format_idc ? 3 : 1;
+        if (pPicParamSet->pps_palette_predictor_initializer_present_flag)
+        {
+            VM_ASSERT(!pPicParamSet->m_paletteInitializers.empty());
+            VM_ASSERT(pPicParamSet->pps_num_palette_predictor_initializer == pPicParamSet->m_paletteInitializers.size());
+
+            FillPaletteEntries(pPicParam, numComps, &pPicParamSet->m_paletteInitializers[0], pPicParamSet->pps_num_palette_predictor_initializer);
+        }
+        else if (pSeqParamSet->sps_palette_predictor_initializer_present_flag)
+        {
+            VM_ASSERT(!pSeqParamSet->m_paletteInitializers.empty());
+            VM_ASSERT(pSeqParamSet->sps_num_palette_predictor_initializer == pSeqParamSet->m_paletteInitializers.size());
+
+            FillPaletteEntries(pPicParam, numComps, &pSeqParamSet->m_paletteInitializers[0], pSeqParamSet->sps_num_palette_predictor_initializer);
+        }
+    }
+
+    void PackerDXVA2intel::PackPicParams(const H265DecoderFrame *pCurrentFrame, H265DecoderFrameInfo * pSliceInfo, TaskSupplier_H265 *supplier)
+    {
+        H265DBPList const* dpb = supplier->GetDPBList();
+        if (!dpb)
+            throw h265_exception(UMC_ERR_FAILED);
+
+#if !defined(PRE_SI_TARGET_PLATFORM_GEN11)
+        {
+            DXVA_Intel_PicParams_HEVC* pp = 0;
+            GetPicParamsBuffer(m_va, &pp, sizeof(DXVA_Intel_PicParams_HEVC));
+            PackPicHeader(pCurrentFrame, pSliceInfo, dpb, pp);
+            pp->StatusReportFeedbackNumber = m_statusReportFeedbackCounter;
+        }
+#else
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+        if (m_va->m_Profile & VA_PROFILE_SCC)
+        {
+            DXVA_Intel_PicParams_HEVC_SCC* pp = 0;
+            GetPicParamsBuffer(m_va, &pp, sizeof(DXVA_Intel_PicParams_HEVC_SCC));
+            PackPicHeader(pCurrentFrame, pSliceInfo, dpb, pp);
+            pp->PicParamsRext.PicParamsMain.StatusReportFeedbackNumber = m_statusReportFeedbackCounter;
+        }
+        else
+#endif
         if (m_va->m_Profile & VA_PROFILE_REXT)
         {
-            DXVA_Intel_PicParams_HEVC_Rext* pExtPicParam = (DXVA_Intel_PicParams_HEVC_Rext*)pPicParam;
-            pExtPicParam->PicRangeExtensionFlags.fields.transform_skip_rotation_enabled_flag = pSeqParamSet->transform_skip_rotation_enabled_flag;
-            pExtPicParam->PicRangeExtensionFlags.fields.transform_skip_context_enabled_flag = pSeqParamSet->transform_skip_context_enabled_flag;
-            pExtPicParam->PicRangeExtensionFlags.fields.implicit_rdpcm_enabled_flag = pSeqParamSet->implicit_residual_dpcm_enabled_flag;
-            pExtPicParam->PicRangeExtensionFlags.fields.explicit_rdpcm_enabled_flag = pSeqParamSet->explicit_residual_dpcm_enabled_flag;
-            pExtPicParam->PicRangeExtensionFlags.fields.extended_precision_processing_flag = pSeqParamSet->extended_precision_processing_flag;
-            pExtPicParam->PicRangeExtensionFlags.fields.intra_smoothing_disabled_flag = pSeqParamSet->intra_smoothing_disabled_flag;
-            pExtPicParam->PicRangeExtensionFlags.fields.high_precision_offsets_enabled_flag = pSeqParamSet->high_precision_offsets_enabled_flag;
-            pExtPicParam->PicRangeExtensionFlags.fields.persistent_rice_adaptation_enabled_flag = pSeqParamSet->fast_rice_adaptation_enabled_flag;
-            pExtPicParam->PicRangeExtensionFlags.fields.cabac_bypass_alignment_enabled_flag = pSeqParamSet->cabac_bypass_alignment_enabled_flag;
-            pExtPicParam->PicRangeExtensionFlags.fields.cross_component_prediction_enabled_flag = pPicParamSet->cross_component_prediction_enabled_flag;
-            pExtPicParam->PicRangeExtensionFlags.fields.chroma_qp_offset_list_enabled_flag      = pPicParamSet->chroma_qp_offset_list_enabled_flag;
-
-            pExtPicParam->diff_cu_chroma_qp_offset_depth            = (UCHAR)pPicParamSet->diff_cu_chroma_qp_offset_depth;
-            pExtPicParam->chroma_qp_offset_list_len_minus1          = pPicParamSet->chroma_qp_offset_list_enabled_flag ?(UCHAR)pPicParamSet->chroma_qp_offset_list_len - 1 : 0;
-            pExtPicParam->log2_sao_offset_scale_luma                = (UCHAR)pPicParamSet->log2_sao_offset_scale_luma;
-            pExtPicParam->log2_sao_offset_scale_chroma              = (UCHAR)pPicParamSet->log2_sao_offset_scale_chroma;
-            pExtPicParam->log2_max_transform_skip_block_size_minus2 = pPicParamSet->pps_range_extensions_flag && pPicParamSet->transform_skip_enabled_flag ? (UCHAR)pPicParamSet->log2_max_transform_skip_block_size - 2 : 0;
-
-            for (Ipp32u i = 0; i < pPicParamSet->chroma_qp_offset_list_len; i++)
-            {
-                pExtPicParam->cb_qp_offset_list[i] = (CHAR)pPicParamSet->cb_qp_offset_list[i + 1];
-                pExtPicParam->cr_qp_offset_list[i] = (CHAR)pPicParamSet->cr_qp_offset_list[i + 1];
-            }
+            DXVA_Intel_PicParams_HEVC_Rext* pp = 0;
+            GetPicParamsBuffer(m_va, &pp, sizeof(DXVA_Intel_PicParams_HEVC_Rext));
+            PackPicHeader(pCurrentFrame, pSliceInfo, dpb, pp);
+            pp->PicParamsMain.StatusReportFeedbackNumber = m_statusReportFeedbackCounter;
+        }
+        else
+        {
+            DXVA_Intel_PicParams_HEVC* pp = 0;
+            GetPicParamsBuffer(m_va, &pp, sizeof(DXVA_Intel_PicParams_HEVC));
+            PackPicHeader(pCurrentFrame, pSliceInfo, dpb, pp);
+            pp->StatusReportFeedbackNumber = m_statusReportFeedbackCounter;
         }
 #endif
     }
@@ -431,11 +566,10 @@ namespace UMC_HEVC_DECODER
         header->five_minus_max_num_merge_cand = (UCHAR)(5 - ssh->max_num_merge_cand);
     }
 
+    template <typename OffsetType, typename T>
     inline
-    void PackSliceHeader(H265Slice const* pSlice, DXVA_Intel_PicParams_HEVC const* pp, size_t prefix_size, DXVA_Intel_Slice_HEVC_Long* header)
+    void PackPredWeight(H265Slice const* pSlice, T* header)
     {
-        PackSliceHeaderCommon(pSlice, pp, prefix_size, header);
-
         H265SliceHeader const* ssh = pSlice->GetSliceHeader();
         VM_ASSERT(ssh);
 
@@ -448,24 +582,24 @@ namespace UMC_HEVC_DECODER
 
                 if (eRefPicList == REF_PIC_LIST_0)
                 {
-                    header->luma_offset_l0[iRefIdx] = (CHAR)wp[0].offset;
+                    header->luma_offset_l0[iRefIdx] = (OffsetType)wp[0].offset;
                     header->delta_luma_weight_l0[iRefIdx] = (CHAR)wp[0].delta_weight;
 
                     for (int chroma = 0; chroma < 2; chroma++)
                     {
                         header->delta_chroma_weight_l0[iRefIdx][chroma] = (CHAR)wp[1 + chroma].delta_weight;
-                        header->ChromaOffsetL0[iRefIdx][chroma] = (CHAR)wp[1 + chroma].offset;
+                        header->ChromaOffsetL0[iRefIdx][chroma] = (OffsetType)wp[1 + chroma].offset;
                     }
                 }
                 else
                 {
-                    header->luma_offset_l1[iRefIdx] = (CHAR)wp[0].offset;
+                    header->luma_offset_l1[iRefIdx] = (OffsetType)wp[0].offset;
                     header->delta_luma_weight_l1[iRefIdx] = (CHAR)wp[0].delta_weight;
 
                     for (int chroma = 0; chroma < 2; chroma++)
                     {
                         header->delta_chroma_weight_l1[iRefIdx][chroma] = (CHAR)wp[1 + chroma].delta_weight;
-                        header->ChromaOffsetL1[iRefIdx][chroma] = (CHAR)wp[1 + chroma].offset;
+                        header->ChromaOffsetL1[iRefIdx][chroma] = (OffsetType)wp[1 + chroma].offset;
                     }
                 }
             }
@@ -473,46 +607,59 @@ namespace UMC_HEVC_DECODER
     }
 
     inline
+    void PackSliceHeader(H265Slice const* pSlice, DXVA_Intel_PicParams_HEVC const* pp, size_t prefix_size, DXVA_Intel_Slice_HEVC_Long* header)
+    {
+        PackSliceHeaderCommon(pSlice, pp, prefix_size, header);
+        PackPredWeight<CHAR>(pSlice, header);
+    }
+
+    inline
     void PackSliceHeader(H265Slice const* pSlice, DXVA_Intel_PicParams_HEVC const* pp, size_t prefix_size, DXVA_Intel_Slice_HEVC_Rext_Long* header)
     {
         PackSliceHeaderCommon(pSlice, pp, prefix_size, header);
+        PackPredWeight<SHORT>(pSlice, header);
 
-        H265SliceHeader const* ssh = pSlice->GetSliceHeader();
-        VM_ASSERT(ssh);
+        H265SliceHeader const* sh = pSlice->GetSliceHeader();
+        VM_ASSERT(sh);
 
-        for (int l = 0; l < 2; l++)
+        header->SliceRextFlags.fields.cu_chroma_qp_offset_enabled_flag = sh->cu_chroma_qp_offset_enabled_flag;
+    }
+
+    inline
+    void PackSliceHeader(H265Slice const* pSlice, DXVA_Intel_PicParams_HEVC const* pp, size_t prefix_size, DXVA_Intel_Slice_HEVC_Rext_Long_Gen12* header)
+    {
+        PackSliceHeaderCommon(pSlice, pp, prefix_size, header);
+        PackPredWeight<SHORT>(pSlice, header);
+
+        H265SliceHeader const* sh = pSlice->GetSliceHeader();
+        VM_ASSERT(sh);
+
+        //Rext spec.
+        header->SliceRextFlags.fields.cu_chroma_qp_offset_enabled_flag = sh->cu_chroma_qp_offset_enabled_flag;
+
+        //WPP/tiles
+        header->num_entry_point_offsets = static_cast<USHORT>(sh->num_entry_point_offsets);
+        if (sh->num_entry_point_offsets)
         {
-            EnumRefPicList eRefPicList = (l == 1 ? REF_PIC_LIST_1 : REF_PIC_LIST_0);
-            for (int iRefIdx = 0; iRefIdx < pSlice->getNumRefIdx(eRefPicList); iRefIdx++)
+            H265DecoderFrame* frame = pSlice->GetCurrentFrame();
+            if (!frame)
+                throw h265_exception(UMC_ERR_FAILED);
+
+            H265DecoderFrameInfo* fi = frame->GetAU();
+            if (!fi)
+                throw h265_exception(UMC_ERR_FAILED);
+
+            Ipp32u offset = 0;
+            H265Slice const* slice = fi->GetSlice(0);
+            while (slice != pSlice) //assume slices are sorted
             {
-                wpScalingParam const* wp = ssh->pred_weight_table[eRefPicList][iRefIdx];
-
-                if (eRefPicList == REF_PIC_LIST_0)
-                {
-                    header->luma_offset_l0[iRefIdx] = (SHORT)wp[0].offset;
-                    header->delta_luma_weight_l0[iRefIdx] = (CHAR)wp[0].delta_weight;
-
-                    for (int chroma = 0; chroma < 2; chroma++)
-                    {
-                        header->delta_chroma_weight_l0[iRefIdx][chroma] = (CHAR)wp[1 + chroma].delta_weight;
-                        header->ChromaOffsetL0[iRefIdx][chroma] = (SHORT)wp[1 + chroma].offset;
-                    }
-                }
-                else
-                {
-                    header->luma_offset_l1[iRefIdx] = (SHORT)wp[0].offset;
-                    header->delta_luma_weight_l1[iRefIdx] = (CHAR)wp[0].delta_weight;
-
-                    for (int chroma = 0; chroma < 2; chroma++)
-                    {
-                        header->delta_chroma_weight_l1[iRefIdx][chroma] = (CHAR)wp[1 + chroma].delta_weight;
-                        header->ChromaOffsetL1[iRefIdx][chroma] = (SHORT)wp[1 + chroma].offset;
-                    }
-                }
+                H265SliceHeader const* h = slice->GetSliceHeader();
+                VM_ASSERT(h);
+                offset += h->num_entry_point_offsets;
             }
-        }
 
-        header->SliceRextFlags.fields.cu_chroma_qp_offset_enabled_flag = ssh->cu_chroma_qp_offset_enabled_flag;
+            header->EntryOffsetToSubsetArray = static_cast<USHORT>(offset);
+        }
     }
 
     bool PackerDXVA2intel::PackSliceParams(H265Slice *pSlice, Ipp32u &, bool isLastSlice)
@@ -539,8 +686,6 @@ namespace UMC_HEVC_DECODER
             UMCVACompBuffer *compBuf;
             DXVA_Intel_PicParams_HEVC const* pp = (DXVA_Intel_PicParams_HEVC*)m_va->GetCompBuffer(DXVA_PICTURE_DECODE_BUFFER, &compBuf);
 
-            const H265SeqParamSet *pSeqParamSet = pSlice->GetSeqParam();
-
 #if !defined(PRE_SI_TARGET_PLATFORM_GEN11)
             {
                 DXVA_Intel_Slice_HEVC_Long* header = 0;
@@ -556,9 +701,20 @@ namespace UMC_HEVC_DECODER
             }
             else
             {
-                DXVA_Intel_Slice_HEVC_Rext_Long* header = 0;
-                GetSliceVABuffers(m_va, &header, sizeof(DXVA_Intel_Slice_HEVC_Rext_Long), &pSliceData, rawDataSize + prefix_size, isLastSlice ? 128 : 0);
-                PackSliceHeader(pSlice, pp, prefix_size, header);
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+                if (m_va->m_HWPlatform >= MFX_HW_TGL_LP)
+                {
+                    DXVA_Intel_Slice_HEVC_Rext_Long_Gen12* header = 0;
+                    GetSliceVABuffers(m_va, &header, sizeof(DXVA_Intel_Slice_HEVC_Rext_Long_Gen12), &pSliceData, rawDataSize + prefix_size, isLastSlice ? 128 : 0);
+                    PackSliceHeader(pSlice, pp, prefix_size, header);
+                }
+                else
+#endif
+                {
+                    DXVA_Intel_Slice_HEVC_Rext_Long* header = 0;
+                    GetSliceVABuffers(m_va, &header, sizeof(DXVA_Intel_Slice_HEVC_Rext_Long), &pSliceData, rawDataSize + prefix_size, isLastSlice ? 128 : 0);
+                    PackSliceHeader(pSlice, pp, prefix_size, header);
+                }
             }
 #endif
         }
@@ -579,6 +735,37 @@ namespace UMC_HEVC_DECODER
         memset(pQmatrix, 0, sizeof(DXVA_Intel_Qmatrix_HEVC));
 
         PackerDXVA2::PackQmatrix(pSlice, pQmatrix);
+    }
+
+    void PackerDXVA2intel::PackSubsets(H265DecoderFrame const* frame)
+    {
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+        if (m_va->m_HWPlatform < MFX_HW_TGL_LP)
+            return;
+
+        UMCVACompBuffer* compBuf;
+        SUBSET_HEVC* subset = 
+            reinterpret_cast<SUBSET_HEVC*>(m_va->GetCompBuffer(D3DDDIFMT_INTEL_HEVC_SUBSET, &compBuf));
+        if (!subset)
+            throw h265_exception(UMC_ERR_FAILED);
+
+        compBuf->SetDataSize(sizeof(SUBSET_HEVC));
+        memset(subset, 0, compBuf->GetDataSize());
+
+        H265DecoderFrameInfo* fi = frame->GetAU();
+        if (!fi)
+            throw h265_exception(UMC_ERR_FAILED);
+
+        Ipp32u const count = fi->GetSliceCount();
+        for (Ipp32u i = 0; i < count; ++i)
+        {
+            H265Slice const* slice = fi->GetSlice(i);
+            if (!slice)
+                throw h265_exception(UMC_ERR_FAILED);
+
+            subset->entry_point_offset_minus1[i] = slice->m_tileByteLocation[i];
+        }
+#endif
     }
 }
 
