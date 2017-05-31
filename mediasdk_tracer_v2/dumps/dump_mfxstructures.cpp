@@ -647,26 +647,16 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCamLensG
 {
     std::string str;
     str += dump(structName + ".Header", CamLensGeomDistCorrection.Header) + "\n";
-    if (CamLensGeomDistCorrection.a)
-    {
-        for (int i = 0; i < 3; i++)
-            str += structName + ".a[" + ToString(i) + "]=" + ToString(CamLensGeomDistCorrection.a[i]) + "\n";
-    }
-    if (CamLensGeomDistCorrection.b)
-    {
-        for (int i = 0; i < 3; i++)
-            str += structName + ".b[" + ToString(i) + "]=" + ToString(CamLensGeomDistCorrection.b[i]) + "\n";
-    }
-    if (CamLensGeomDistCorrection.c)
-    {
-        for (int i = 0; i < 3; i++)
-            str += structName + ".c[" + ToString(i) + "]=" + ToString(CamLensGeomDistCorrection.c[i]) + "\n";
-    }
-    if (CamLensGeomDistCorrection.d)
-    {
-        for (int i = 0; i < 3; i++)
-            str += structName + ".d[" + ToString(i) + "]=" + ToString(CamLensGeomDistCorrection.d[i]) + "\n";
-    }
+
+    for (int i = 0; i < 3; i++)
+        str += structName + ".a[" + ToString(i) + "]=" + ToString(CamLensGeomDistCorrection.a[i]) + "\n";
+    for (int i = 0; i < 3; i++)
+        str += structName + ".b[" + ToString(i) + "]=" + ToString(CamLensGeomDistCorrection.b[i]) + "\n";
+    for (int i = 0; i < 3; i++)
+        str += structName + ".c[" + ToString(i) + "]=" + ToString(CamLensGeomDistCorrection.c[i]) + "\n";
+    for (int i = 0; i < 3; i++)
+        str += structName + ".d[" + ToString(i) + "]=" + ToString(CamLensGeomDistCorrection.d[i]) + "\n";
+
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(CamLensGeomDistCorrection.reserved) + "\n";
     return str;
 }
@@ -762,12 +752,9 @@ std::string DumpContext::dump(const std::string structName, const mfxExtJPEGQuan
     str += dump(structName + ".Header", ExtJPEGQuantTables.Header) + "\n";
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtJPEGQuantTables.reserved) + "\n";
     str += structName + ".NumTable=" + ToString(ExtJPEGQuantTables.NumTable) + "\n";
-    if (ExtJPEGQuantTables.Qm)
+    for (int i = 0; i < 4; i++)
     {
-        for (int i = 0; i < 4; i++)
-        {
-            str += structName + ".Qm[" + ToString(i) + "][]=" + DUMP_RESERVED_ARRAY(ExtJPEGQuantTables.Qm[i]) + "\n";
-        }
+        str += structName + ".Qm[" + ToString(i) + "][]=" + DUMP_RESERVED_ARRAY(ExtJPEGQuantTables.Qm[i]) + "\n";
     }
     return str;
 }
@@ -779,35 +766,15 @@ std::string DumpContext::dump(const std::string structName, const mfxExtJPEGHuff
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtJPEGHuffmanTables.reserved) + "\n";
     str += structName + ".NumDCTable=" + ToString(ExtJPEGHuffmanTables.NumDCTable) + "\n";
     str += structName + ".NumACTable=" + ToString(ExtJPEGHuffmanTables.NumACTable) + "\n";
-    if (ExtJPEGHuffmanTables.DCTables)
+    for (int i = 0; i < 4; i++)
     {
-        for (int i = 0; i < 4; i++)
-        {
-            if (ExtJPEGHuffmanTables.DCTables[i].Bits)
-                str += structName + ".DCTables[" + ToString(i) + "].Bits[]=" + DUMP_RESERVED_ARRAY(ExtJPEGHuffmanTables.DCTables[i].Bits) + "\n";
-            else
-                str += structName + ".DCTables[" + ToString(i) + "].Bits[]=" + "NULL" + "\n";
-
-            if (ExtJPEGHuffmanTables.DCTables[i].Values)
-                str += structName + ".DCTables[" + ToString(i) + "].Values[]=" + DUMP_RESERVED_ARRAY(ExtJPEGHuffmanTables.DCTables[i].Values) + "\n";
-            else
-                str += structName + ".DCTables[" + ToString(i) + "].Values[]=" + "NULL" + "\n";
-        }
+        str += structName + ".DCTables[" + ToString(i) + "].Bits[]=" + DUMP_RESERVED_ARRAY(ExtJPEGHuffmanTables.DCTables[i].Bits) + "\n";
+        str += structName + ".DCTables[" + ToString(i) + "].Values[]=" + DUMP_RESERVED_ARRAY(ExtJPEGHuffmanTables.DCTables[i].Values) + "\n";
     }
-    if (ExtJPEGHuffmanTables.ACTables)
+    for (int i = 0; i < 4; i++)
     {
-        for (int i = 0; i < 4; i++)
-        {
-            if (ExtJPEGHuffmanTables.ACTables[i].Bits)
-                str += structName + ".ACTables[" + ToString(i) + "].Bits[]=" + DUMP_RESERVED_ARRAY(ExtJPEGHuffmanTables.ACTables[i].Bits) + "\n";
-            else
-                str += structName + ".ACTables[" + ToString(i) + "].Bits[]=" + "NULL" + "\n";
-
-            if (ExtJPEGHuffmanTables.ACTables[i].Values)
-                str += structName + ".ACTables[" + ToString(i) + "].Values[]=" + DUMP_RESERVED_ARRAY(ExtJPEGHuffmanTables.ACTables[i].Values) + "\n";
-            else
-                str += structName + ".ACTables[" + ToString(i) + "].Values[]=" + "NULL" + "\n";
-        }
+        str += structName + ".ACTables[" + ToString(i) + "].Bits[]=" + DUMP_RESERVED_ARRAY(ExtJPEGHuffmanTables.ACTables[i].Bits) + "\n";
+        str += structName + ".ACTables[" + ToString(i) + "].Values[]=" + DUMP_RESERVED_ARRAY(ExtJPEGHuffmanTables.ACTables[i].Values) + "\n";
     }
     return str;
 }
@@ -1119,17 +1086,14 @@ std::string DumpContext::dump(const std::string structName, const mfxExtPredWeig
     str += dump(structName + ".Header", ExtPredWeightTable.Header) + "\n";
     str += structName + ".LumaLog2WeightDenom=" + ToString(ExtPredWeightTable.LumaLog2WeightDenom) + "\n";
     str += structName + ".ChromaLog2WeightDenom=" + ToString(ExtPredWeightTable.ChromaLog2WeightDenom) + "\n";
-    if (ExtPredWeightTable.LumaWeightFlag)
-        for (int i = 0; i < 2; i++)
-            str += structName + ".LumaWeightFlag[" + ToString(i) + "][]=" + DUMP_RESERVED_ARRAY(ExtPredWeightTable.LumaWeightFlag[i]) + "\n";
-    if (ExtPredWeightTable.ChromaWeightFlag)
-        for (int i = 0; i < 2; i++)
-            str += structName + ".ChromaWeightFlag[" + ToString(i) + "][]=" + DUMP_RESERVED_ARRAY(ExtPredWeightTable.ChromaWeightFlag[i]) + "\n";
-    if (ExtPredWeightTable.Weights)
-        for (int i = 0; i < 2; i++)
-            for (int j = 0; j < 32; j++)
-                for (int k = 0; k < 3; k++)
-                    str += structName + ".ChromaWeightFlag[" + ToString(i) + "][" + ToString(j) + "][" + ToString(k) + "][]=" + DUMP_RESERVED_ARRAY(ExtPredWeightTable.Weights[i][j][k]) + "\n";
+    for (int i = 0; i < 2; i++)
+        str += structName + ".LumaWeightFlag[" + ToString(i) + "][]=" + DUMP_RESERVED_ARRAY(ExtPredWeightTable.LumaWeightFlag[i]) + "\n";
+    for (int i = 0; i < 2; i++)
+        str += structName + ".ChromaWeightFlag[" + ToString(i) + "][]=" + DUMP_RESERVED_ARRAY(ExtPredWeightTable.ChromaWeightFlag[i]) + "\n";
+    for (int i = 0; i < 2; i++)
+        for (int j = 0; j < 32; j++)
+            for (int k = 0; k < 3; k++)
+                str += structName + ".ChromaWeightFlag[" + ToString(i) + "][" + ToString(j) + "][" + ToString(k) + "][]=" + DUMP_RESERVED_ARRAY(ExtPredWeightTable.Weights[i][j][k]) + "\n";
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtPredWeightTable.reserved) + "\n";
     return str;
 }

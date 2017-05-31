@@ -68,19 +68,24 @@ bool _IsBadReadPtr(void *ptr, size_t size);
 #define DUMP_FIELD_RESERVED(_field) \
     str += structName + "." #_field "[]=" + DUMP_RESERVED_ARRAY(_struct._field) + "\n";
 
-#define ToString( x )  dynamic_cast< std::ostringstream & >( \
-    ( std::ostringstream() << std::dec << x ) ).str()
+#if defined(ANDROID)
+    #define ToString( x )  (std::ostringstream() << std::dec << x).str()
+    #define TimeToString( x ) (std::ostringstream() << std::left << std::setw(4) << std::dec << x <<" msec").str()
+    #define ToHexFormatString( x ) (std::ostringstream() << std::hex << pVoidToHexString((void*)x)).str()
+#else
+    #define ToString( x )  dynamic_cast< std::ostringstream & >( \
+        ( std::ostringstream() << std::dec << x ) ).str()
 
-#define TimeToString( x ) dynamic_cast< std::ostringstream & >( \
-        ( std::ostringstream() << std::left << std::setw(4) << std::dec << x <<" msec") ).str()
+    #define TimeToString( x ) dynamic_cast< std::ostringstream & >( \
+            ( std::ostringstream() << std::left << std::setw(4) << std::dec << x <<" msec") ).str()
 
-/*
-#define ToHexFormatString( x ) dynamic_cast< std::ostringstream & >( \
-        ( std::ostringstream() << std::hex << x ) ).str()
-*/
+    /*
+    #define ToHexFormatString( x ) dynamic_cast< std::ostringstream & >( \
+            ( std::ostringstream() << std::hex << x ) ).str()
+    */
 
-#define ToHexFormatString( x ) (dynamic_cast< std::ostringstream & >( ( std::ostringstream() << std::hex << pVoidToHexString((void*)x) ) ).str() )
-
+    #define ToHexFormatString( x ) (dynamic_cast< std::ostringstream & >( ( std::ostringstream() << std::hex << pVoidToHexString((void*)x) ) ).str() )
+#endif
 
 /*
 #define DEFINE_GET_TYPE(type) \

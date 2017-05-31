@@ -81,7 +81,11 @@ mfxStatus MFXInit(mfxIMPL impl, mfxVersion *ver, mfxSession *session)
             return MFX_ERR_MEMORY_ALLOC;
         }
         if (g_mfxlib) {
+#ifdef ANDROID
+            loader->dlhandle = dlopen(g_mfxlib, RTLD_NOW|RTLD_LOCAL);
+#else
             loader->dlhandle = dlopen(g_mfxlib, RTLD_NOW|RTLD_LOCAL|RTLD_DEEPBIND);
+#endif
         }
         if (!loader->dlhandle){
             Log::WriteLog(context.dump("ver", ver));
@@ -188,7 +192,11 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
             return MFX_ERR_MEMORY_ALLOC;
         }
         if (g_mfxlib) {
+#ifdef ANDROID
+            loader->dlhandle = dlopen(g_mfxlib, RTLD_NOW|RTLD_LOCAL);
+#else
             loader->dlhandle = dlopen(g_mfxlib, RTLD_NOW|RTLD_LOCAL|RTLD_DEEPBIND);
+#endif
         }
         if (!loader->dlhandle){
             Log::WriteLog(context.dump("par", par));

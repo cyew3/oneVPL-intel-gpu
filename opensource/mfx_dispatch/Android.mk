@@ -1,11 +1,11 @@
 LOCAL_PATH:= $(call my-dir)
 
-include $(MFX_HOME)/android/mfx_env.mk
+include $(MFX_HOME)/mdp_msdk-lib/android/mfx_env.mk
 
 # =============================================================================
 
 include $(CLEAR_VARS)
-include $(MFX_HOME)/android/mfx_defs.mk
+include $(MFX_HOME)/mdp_msdk-lib/android/mfx_defs.mk
 
 LOCAL_SRC_FILES := $(addprefix src/, \
     main.cpp \
@@ -30,8 +30,12 @@ LOCAL_CFLAGS := \
     $(MFX_CFLAGS_INTERNAL) \
     $(MFX_CFLAGS) \
     $(MFX_CFLAGS_STL)
-LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_32)
-LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_64)
+LOCAL_CFLAGS_32 := \
+    $(MFX_CFLAGS_INTERNAL_32) \
+    -DMFX_MODULES_DIR=\"/system/lib\"
+LOCAL_CFLAGS_64 := \
+    $(MFX_CFLAGS_INTERNAL_64) \
+    -DMFX_MODULES_DIR=\"/system/lib64\"
 
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libmfx
@@ -41,7 +45,7 @@ include $(BUILD_STATIC_LIBRARY)
 # =============================================================================
 
 include $(CLEAR_VARS)
-include $(MFX_HOME)/android/mfx_defs.mk
+include $(MFX_HOME)/mdp_msdk-lib/android/mfx_defs.mk
 
 LOCAL_SRC_FILES := $(addprefix src/, \
     main.cpp \
@@ -68,8 +72,12 @@ LOCAL_CFLAGS := \
     $(MFX_CFLAGS) \
     $(MFX_CFLAGS_STL) \
     -DMFX_DISPATCHER -DMFX_DISPATCHER_LOG -DDXVA2DEVICE_LOG
-LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_32)
-LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_64)
+LOCAL_CFLAGS_32 := \
+    $(MFX_CFLAGS_INTERNAL_32) \
+    -DMFX_MODULES_DIR=\"/system/lib\"
+LOCAL_CFLAGS_64 := \
+    $(MFX_CFLAGS_INTERNAL_64) \
+    -DMFX_MODULES_DIR=\"/system/lib64\"
 
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libdispatch_trace
