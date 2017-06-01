@@ -158,8 +158,13 @@ CTranscodingPipeline::CTranscodingPipeline():
 #endif
 
 #if _MSDK_API >= MSDK_API(1,22)
-    MSDK_ZERO_MEMORY(auxCtrl);
-    ext_params1[0] = NULL;
+    m_bUseQPMap = 0;
+    m_QPmapWidth = 0;
+    m_QPmapHeight = 0;
+    m_GOPSize = 0;
+    m_QPforI = 0;
+    m_QPforP = 0;
+    m_nSubmittedFramesNum = 0;
 #endif //_MSDK_API >= MSDK_API(1,22)
 
     m_EncOpaqueAlloc.Header.BufferId = m_VppOpaqueAlloc.Header.BufferId =
@@ -667,69 +672,14 @@ mfxStatus CTranscodingPipeline::VPPOneFrame(ExtendedSurface *pSurfaceIn, Extende
 
 } // mfxStatus CTranscodingPipeline::DecodeOneFrame(ExtendedSurface *pExtSurface)
 
-#if _MSDK_API >= MSDK_API(1,22)
-mfxStatus CTranscodingPipeline::AddExtRoiBufferToCtrl(mfxEncodeCtrl **ppCtrl)
-{
-    if (!ppCtrl) return MFX_ERR_NULL_PTR;
-    mfxEncodeCtrl *pCtrl = *ppCtrl;
-
-    mfxU32 frame_num = m_nProcessedFramesNum;
-
-    if (m_ROIData.size() > frame_num) {
-        mfxU16 roi_buf_ind = 0;
-        if(pCtrl) {
-            bool is_reallocate = true;
-            for (mfxU16 i = 0; i < pCtrl->NumExtParam; ++i) {
-                if (pCtrl->ExtParam[i]->BufferId == MFX_EXTBUFF_ENCODER_ROI) {
-                    is_reallocate = false;
-                    roi_buf_ind = i;
-                    break;
-                }
-            }
-            if(is_reallocate) {
-                mfxExtBuffer **ext_params;
-                // reallocate (mfxExtBuffer*) array to add roi buffer
-                ext_params = new mfxExtBuffer* [pCtrl->NumExtParam + 1];
-                for(unsigned int i = 0; i < pCtrl->NumExtParam; i++) {
-                    ext_params[i] = pCtrl->ExtParam[i];
-                }
-                roi_buf_ind = pCtrl->NumExtParam;
-                delete pCtrl->ExtParam;
-                pCtrl->ExtParam = ext_params;
-                pCtrl->NumExtParam++;
-            }
-        } else {
-           // prepare auxiliary ctrl with the single ext buffer to store roi data
-           std::memset(&auxCtrl, 0, sizeof(auxCtrl));
-           auxCtrl.ExtParam = ext_params1;
-           auxCtrl.NumExtParam = 1;
-
-           *ppCtrl = &auxCtrl;
-           pCtrl = &auxCtrl;
-           roi_buf_ind = 0;
-        }
-        pCtrl->ExtParam[roi_buf_ind] = (mfxExtBuffer *)&m_ROIData[frame_num];
-    }
-
-    return MFX_ERR_NONE;
-}
-#endif //_MSDK_API >= MSDK_API(1,22)
-
 mfxStatus CTranscodingPipeline::EncodeOneFrame(ExtendedSurface *pExtSurface, mfxBitstream *pBS)
 {
     mfxStatus sts = MFX_ERR_NONE;
-    mfxEncodeCtrl *pCtrl = (pExtSurface->pCtrl) ? &pExtSurface->pCtrl->encCtrl : NULL;
-
-#if _MSDK_API >= MSDK_API(1,22)
-    // add ext roi buffer to ctrl
-    sts = AddExtRoiBufferToCtrl(&pCtrl);
-    if (sts != MFX_ERR_NONE) return sts;
-#endif //_MSDK_API >= MSDK_API(1,22)
 
     for (;;)
     {
         // at this point surface for encoder contains either a frame from file or a frame processed by vpp
-        sts = m_pmfxENC->EncodeFrameAsync(pCtrl, pExtSurface->pSurface, pBS, &pExtSurface->Syncp);
+        sts = m_pmfxENC->EncodeFrameAsync(pExtSurface->pEncCtrl, pExtSurface->pSurface, pBS, &pExtSurface->Syncp);
 
         if (MFX_ERR_NONE < sts && !pExtSurface->Syncp) // repeat the call if warning and no output
         {
@@ -787,7 +737,7 @@ mfxStatus CTranscodingPipeline::PreEncOneFrame(ExtendedSurface *pInSurface, Exte
         else if (MFX_ERR_NONE <= sts && pOutSurface->Syncp)
         {
             LockPreEncAuxBuffer(pAux);
-            pOutSurface->pCtrl = pAux;
+            pOutSurface->pAuxCtrl = pAux;
             MSDK_CHECK_POINTER(pAux->encOutput.ExtParam, MFX_ERR_NULL_PTR);
             MSDK_CHECK_NOT_EQUAL(pAux->encOutput.NumExtParam, 1, MFX_ERR_UNSUPPORTED);
             pOutSurface->pSurface =  ((mfxExtLAFrameStatistics *) pAux->encOutput.ExtParam[0])->OutSurface;
@@ -1084,10 +1034,7 @@ mfxStatus CTranscodingPipeline::Encode()
     bool bInsertIDR = false;
     int nFramesAlreadyPut = 0;
     SafetySurfaceBuffer   *curBuffer = m_pBuffer;
-
-    PreEncAuxBuffer encAuxCtrl;
-    MSDK_ZERO_MEMORY(encAuxCtrl);
-    encAuxCtrl.encCtrl.FrameType = MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF;
+    mfxEncodeCtrl   eCtrl;
 
     bool shouldReadNextFrame=true;
     while (MFX_ERR_NONE == sts ||  MFX_ERR_MORE_DATA == sts)
@@ -1142,12 +1089,12 @@ mfxStatus CTranscodingPipeline::Encode()
         if (m_pmfxVPP.get())
         {
             sts = VPPOneFrame(&DecExtSurface, &VppExtSurface);
-            VppExtSurface.pCtrl = DecExtSurface.pCtrl;
+            VppExtSurface.pAuxCtrl = DecExtSurface.pAuxCtrl;
         }
         else // no VPP - just copy pointers
         {
             VppExtSurface.pSurface = DecExtSurface.pSurface;
-            VppExtSurface.pCtrl = DecExtSurface.pCtrl;
+            VppExtSurface.pAuxCtrl = DecExtSurface.pAuxCtrl;
             VppExtSurface.Syncp = DecExtSurface.Syncp;
         }
 
@@ -1236,7 +1183,7 @@ mfxStatus CTranscodingPipeline::Encode()
             m_pBSProcessor->ResetOutput();
         }
 
-        SetSurfaceAuxIDR(VppExtSurface, &encAuxCtrl, bInsertIDR);
+        SetEncCtrlRT(VppExtSurface, &eCtrl, bInsertIDR);
         bInsertIDR = false;
 
         if ((m_nVPPCompEnable != VppCompOnly) || (m_nVPPCompEnable == VppCompOnlyEncode))
@@ -1288,7 +1235,7 @@ mfxStatus CTranscodingPipeline::Encode()
         }
 
         m_BSPool.back()->Syncp = VppExtSurface.Syncp;
-        m_BSPool.back()->pCtrl =  VppExtSurface.pCtrl;
+        m_BSPool.back()->pCtrl =  VppExtSurface.pAuxCtrl;
 
         /* Actually rendering... if enabled
          * SYNC have not done by driver !!! */
@@ -1403,24 +1350,160 @@ mfxStatus CTranscodingPipeline::Encode()
 
 } // mfxStatus CTranscodingPipeline::Encode()
 
-void CTranscodingPipeline::SetSurfaceAuxIDR(ExtendedSurface& extSurface, PreEncAuxBuffer* encAuxCtrl, bool bInsertIDR)
+#if _MSDK_API >= MSDK_API(1,22)
+// Fill MBQP buffer with ROI data
+void CTranscodingPipeline::FillMBQPBuffer(mfxExtMBQP &qpMap, mfxU16 pictStruct)
 {
-    if (bInsertIDR)
+    if (pictStruct == MFX_PICSTRUCT_PROGRESSIVE)
     {
-        if (extSurface.pCtrl)
-            extSurface.pCtrl->encCtrl.FrameType = MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF;
-        else
-            extSurface.pCtrl = encAuxCtrl;
+        mfxI8 fQP = (m_nSubmittedFramesNum % m_GOPSize) ? m_QPforP : m_QPforI;
+        std::memset(qpMap.QP, fQP, qpMap.NumQPAlloc);
+
+//        printf("QP expectation: %d, map PTR %lld\n",fQP,(long long int)qpMap.QP);
+
+        if (m_ROIData.size() > m_nSubmittedFramesNum)
+        {
+            mfxExtEncoderROI &roi = m_ROIData[m_nSubmittedFramesNum];
+            for (mfxI32 i=roi.NumROI-1; i>=0; i--)
+            {
+                mfxU32  l = (roi.ROI[i].Left) >> 4,
+                        t = (roi.ROI[i].Top) >> 4,
+                        r = (roi.ROI[i].Right + 15) >> 4,
+                        b = (roi.ROI[i].Bottom + 15) >> 4;
+
+                //Additional 32x32 block alignment for HEVC
+                if(m_mfxEncParams.mfx.CodecId == MFX_CODEC_HEVC)
+                {
+                    l = ((roi.ROI[i].Left) >> 5) << 1;
+                    t = ((roi.ROI[i].Top) >> 5) << 1;
+                    r = ((roi.ROI[i].Right + 31) >> 5) << 1;
+                    b = ((roi.ROI[i].Bottom + 31) >> 5) << 1;
+                }
+
+                if(l > m_QPmapWidth) l = m_QPmapWidth;
+                if(r > m_QPmapWidth) r = m_QPmapWidth;
+                if(t > m_QPmapHeight) t = m_QPmapHeight;
+                if(b > m_QPmapHeight) b = m_QPmapHeight;
+
+                mfxI8   qp_value = std::min(std::max(fQP + (mfxI8)roi.ROI[i].DeltaQP, 0), 51);
+
+                for (mfxU8 k=t; k<b; k++)
+                    std::memset(qpMap.QP + k*m_QPmapWidth + l, qp_value, r-l);
+            }
+        }
+    }
+    else if (pictStruct == MFX_PICSTRUCT_FIELD_TFF || pictStruct == MFX_PICSTRUCT_FIELD_BFF)
+    {
+        mfxU32  fQP[2] = {(m_nSubmittedFramesNum % m_GOPSize) ? m_QPforP : m_QPforI,
+                          (m_GOPSize > 1) ? m_QPforP : m_QPforI};
+        mfxU32 fIdx[2] = {2*m_nSubmittedFramesNum, 2*m_nSubmittedFramesNum+1};
+        mfxU32 fOff[2] = {0, 0};
+
+        fOff[(pictStruct == MFX_PICSTRUCT_FIELD_BFF) ? 0 : 1] = qpMap.NumQPAlloc/2;
+
+        for (int fld=0; fld<=1; fld++)
+        {
+            std::memset(qpMap.QP + fOff[fld], fQP[fld], qpMap.NumQPAlloc/2);
+            if (m_ROIData.size() > fIdx[fld])
+            {
+                mfxExtEncoderROI &roi = m_ROIData[fIdx[fld]];
+                for (mfxI32 i=roi.NumROI-1; i>=0; i--)
+                {
+                    mfxU32  l = (roi.ROI[i].Left) >> 4,
+                            t = (roi.ROI[i].Top) >> 5,
+                            r = (roi.ROI[i].Right + 15) >> 4,
+                            b = (roi.ROI[i].Bottom + 31) >> 5;
+                    mfxI8   qp_delta = (mfxI8)roi.ROI[i].DeltaQP;
+                    mfxU8   roi_qp = std::min(std::max(mfxI8(fQP[fld]) + qp_delta, 0), 51);
+
+                    if(l > m_QPmapWidth) l = m_QPmapWidth;
+                    if(r > m_QPmapWidth) r = m_QPmapWidth;
+                    if(t > m_QPmapHeight/2) t = m_QPmapHeight/2;
+                    if(b > m_QPmapHeight/2) b = m_QPmapHeight/2;
+
+                    for (mfxU8 k=t; k<b; k++)
+                        std::memset(qpMap.QP + fOff[fld] + k*m_QPmapWidth + l, roi_qp, r-l);
+                }
+            }
+        }
     }
     else
     {
-        if (extSurface.pCtrl)
+        mfxI8 fQP = (m_nSubmittedFramesNum % m_GOPSize) ? m_QPforP : m_QPforI;
+        std::memset(qpMap.QP, fQP, qpMap.NumQPAlloc);
+    }
+}
+#endif //_MSDK_API >= MSDK_API(1,22)
+
+void CTranscodingPipeline::SetEncCtrlRT(ExtendedSurface& extSurface, mfxEncodeCtrl *pCtrl, bool bInsertIDR)
+{
+    MSDK_ZERO_MEMORY(*pCtrl);
+
+    extSurface.pEncCtrl = NULL;
+    if (extSurface.pAuxCtrl)
+        extSurface.pEncCtrl = &extSurface.pAuxCtrl->encCtrl;
+
+#if _MSDK_API >= MSDK_API(1,22)
+    mfxU32  NumExtParam = 0;
+
+    if (extSurface.pSurface)
+    {
+        void* keyId = (void*) extSurface.pSurface;
+
+        // Use encoded surface pointer to find placeholders for run-time structures in maps
+        if(m_bufExtMBQP.find(keyId) == m_bufExtMBQP.end())
         {
-            if (extSurface.pCtrl != encAuxCtrl)
-                extSurface.pCtrl->encCtrl.FrameType = 0;
-            else
-                extSurface.pCtrl = NULL;
+            m_extBuffPtrStorage[keyId] = std::vector<mfxExtBuffer*> ();
+
+            m_qpMapStorage[keyId] = std::vector<mfxU8> ();
+            m_qpMapStorage[keyId].resize(m_QPmapWidth*m_QPmapHeight);
+
+            m_bufExtMBQP[keyId] = mfxExtMBQP ();
+            m_bufExtMBQP[keyId].Header.BufferId = MFX_EXTBUFF_MBQP;
+            m_bufExtMBQP[keyId].Header.BufferSz = sizeof(mfxExtMBQP);
+            m_bufExtMBQP[keyId].NumQPAlloc = m_QPmapWidth*m_QPmapHeight;
+            m_bufExtMBQP[keyId].QP = &(m_qpMapStorage[keyId][0]);
         }
+
+        // Initialize *pCtrl optionally copying content of the pExtSurface.pAuxCtrl.encCtrl
+        if (extSurface.pEncCtrl)
+            *pCtrl = *extSurface.pEncCtrl;
+
+        // Copy all extended buffer pointers from pExtSurface.pAuxCtrl.encCtrl
+        m_extBuffPtrStorage[keyId].clear();
+        for (unsigned int i=0; i<pCtrl->NumExtParam; i++)
+            m_extBuffPtrStorage[keyId].push_back(extSurface.pAuxCtrl->encCtrl.ExtParam[i]);
+
+        // Attach additional buffer with either MBQP or ROI information
+        if (m_bUseQPMap)
+        {
+            FillMBQPBuffer(m_bufExtMBQP[keyId], extSurface.pSurface->Info.PicStruct);
+            m_extBuffPtrStorage[keyId].push_back((mfxExtBuffer *)&m_bufExtMBQP[keyId]);
+        }
+        else
+        {
+            if (m_ROIData.size() > m_nSubmittedFramesNum)
+                m_extBuffPtrStorage[keyId].push_back((mfxExtBuffer *)&m_ROIData[m_nSubmittedFramesNum]);
+        }
+
+        // Replace the buffers pointer to pre-allocated storage
+        pCtrl->NumExtParam = m_extBuffPtrStorage[keyId].size();
+        pCtrl->ExtParam = &(m_extBuffPtrStorage[keyId][0]);
+
+        extSurface.pEncCtrl = pCtrl;
+        m_nSubmittedFramesNum++;
+    }
+#endif //_MSDK_API >= MSDK_API(1,22)
+
+    if (bInsertIDR)
+    {
+        if(extSurface.pEncCtrl == NULL) extSurface.pEncCtrl = pCtrl;
+        extSurface.pEncCtrl->FrameType = MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF;
+    }
+    else
+    {
+        if(extSurface.pEncCtrl)
+            extSurface.pEncCtrl->FrameType = 0;
     }
 }
 
@@ -1435,10 +1518,7 @@ mfxStatus CTranscodingPipeline::Transcode()
     bool bLastCycle = false;
     bool bInsertIDR = false;
     bool shouldReadNextFrame=true;
-    PreEncAuxBuffer encAuxCtrl;
-
-    MSDK_ZERO_MEMORY(encAuxCtrl);
-    encAuxCtrl.encCtrl.FrameType = MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF;
+    mfxEncodeCtrl   eCtrl;
 
     time_t start = time(0);
     while (MFX_ERR_NONE == sts )
@@ -1536,7 +1616,7 @@ mfxStatus CTranscodingPipeline::Transcode()
                         else
                         {
                             VppExtSurface.pSurface = DecExtSurface.pSurface;
-                            VppExtSurface.pCtrl = DecExtSurface.pCtrl;
+                            VppExtSurface.pAuxCtrl = DecExtSurface.pAuxCtrl;
                             VppExtSurface.Syncp = DecExtSurface.Syncp;
                         }
                     }
@@ -1555,7 +1635,7 @@ mfxStatus CTranscodingPipeline::Transcode()
         else // no VPP - just copy pointers
         {
             VppExtSurface.pSurface = DecExtSurface.pSurface;
-            VppExtSurface.pCtrl = DecExtSurface.pCtrl;
+            VppExtSurface.pAuxCtrl = DecExtSurface.pAuxCtrl;
             VppExtSurface.Syncp = DecExtSurface.Syncp;
         }
 
@@ -1592,7 +1672,7 @@ mfxStatus CTranscodingPipeline::Transcode()
         m_BSPool.push_back(pBS);
 
         // encode frame only if it wasn't encoded enough
-        SetSurfaceAuxIDR(VppExtSurface, &encAuxCtrl, bInsertIDR);
+        SetEncCtrlRT(VppExtSurface, &eCtrl, bInsertIDR);
         bInsertIDR = false;
 
         if(bNeedDecodedFrames)
@@ -2181,6 +2261,26 @@ MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
         m_CodingOption3.WinBRCSize = pInParams->WinBRCSize;
         addCodingOpt3 = true;
     }
+#if _MSDK_API >= MSDK_API(1,22)
+    if (pInParams->bROIasQPMAP)
+    {
+        switch(m_mfxEncParams.mfx.CodecId)
+        {
+        case MFX_CODEC_AVC:
+        case MFX_CODEC_HEVC:
+            // For AVC codec QP map should define QP value for every 16x16 sub-block of a frame
+            m_QPmapWidth = (m_mfxEncParams.mfx.FrameInfo.Width + 15) >> 4;
+            m_QPmapHeight = (m_mfxEncParams.mfx.FrameInfo.Height + 15) >> 4;
+            m_CodingOption3.EnableMBQP = MFX_CODINGOPTION_ON;
+            addCodingOpt3 = true;
+            break;
+        default:
+            m_QPmapWidth = 0;
+            m_QPmapHeight = 0;
+            break;
+        }
+    }
+#endif
 
 #if _MSDK_API >= MSDK_API(1,23)
     if (pInParams->RepartitionCheckMode)
@@ -2192,7 +2292,6 @@ MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
 
     if (addCodingOpt3)
         m_EncExtParams.push_back((mfxExtBuffer *)&m_CodingOption3);
-
 
     if (m_bUseOpaqueMemory)
         m_EncExtParams.push_back((mfxExtBuffer *)&m_EncOpaqueAlloc);
@@ -2842,6 +2941,7 @@ mfxStatus CTranscodingPipeline::AllocFrames()
             }
         }
     }
+
     return MFX_ERR_NONE;
 }
 
@@ -3380,10 +3480,37 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     {
         sts = m_pmfxENC->Init(&m_mfxEncParams);
         MSDK_CHECK_STATUS(sts, "m_pmfxENC->Init failed");
+
+#if _MSDK_API >= MSDK_API(1,22)
+        if(pParams->bROIasQPMAP)
+        {
+            mfxVideoParam enc_par;
+            MSDK_ZERO_MEMORY(enc_par);
+            mfxStatus sts = m_pmfxENC->GetVideoParam(&enc_par);
+            MSDK_CHECK_STATUS(sts, "m_pmfxENC->GetVideoParam failed");
+
+            if(enc_par.mfx.GopRefDist != 1)
+            {
+                printf("INFO: Sample implementation of ROI through MBQP map require B-frames to be disabled.\n");
+                m_bUseQPMap = false;
+            }
+            else if(enc_par.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+            {
+                printf("INFO: MBQP map require ConstQP mode to operate.\n");
+                m_bUseQPMap = false;
+            }
+            else
+            {
+                m_GOPSize = (enc_par.mfx.GopPicSize) ? enc_par.mfx.GopPicSize : 1;
+                m_QPforI  = enc_par.mfx.QPI;
+                m_QPforP  = enc_par.mfx.QPP;
+                m_bUseQPMap = true;
+            }
+        }
+#endif //_MSDK_API >= MSDK_API(1,22)
     }
     m_bIsInit = true;
     return sts;
-
 } //mfxStatus CTranscodingPipeline::Init(sInputParams *pParams)
 
 
@@ -3761,9 +3888,7 @@ mfxStatus SafetySurfaceBuffer::GetSurface(ExtendedSurface &Surf)
     // no ready surfaces
     if (0 == m_SList.size())
     {
-        Surf.pSurface=NULL;
-        Surf.pCtrl=NULL;
-        Surf.Syncp=0;
+        MSDK_ZERO_MEMORY(Surf)
         return MFX_ERR_MORE_SURFACE;
     }
 
