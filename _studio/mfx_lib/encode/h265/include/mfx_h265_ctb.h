@@ -354,6 +354,7 @@ public:
         bool    done;
     } m_ief;
 #endif
+
     Ipp32s  m_mvdMax;
     Ipp32s  m_mvdCost;
     bool    m_bIntraCandInBuf;
@@ -906,7 +907,6 @@ public:
     bool IsBadPred(Ipp32f SCpp, Ipp32f SADpp, Ipp32f mvdAvg) const;
     // Support
     void CmMvPred(mfxI16Pair *mv, Ipp32s p, Ipp32s x, Ipp32s y,  Ipp32s best_list, Ipp32s best_ref, Ipp32s puSize, Frame *colPic, mfxI16Pair &mvd_best) const;
-    void BestCmBlockDist(Ipp32s x, Ipp32s bX, Ipp32s y, Ipp32s bY, Ipp32s puSize, Ipp32s& dist_best, Ipp32s& best_list, Ipp32s& best_ref) const;
     // Main
     void InitIEFs();
     bool HasIEF() const;
@@ -915,7 +915,9 @@ public:
     bool IsDisableSkipIEF() const;
     void CalcIEFs(Ipp32s absPartIdx, Ipp32s depth, Ipp32s partAddr, Ipp32s partDepth, Ipp8s qp, Ipp8u& splitMode);
 #endif
-    
+    void BestCmBlockDist(Ipp32s x, Ipp32s bX, Ipp32s y, Ipp32s bY, Ipp32s puSize, Ipp32s& dist_best, Ipp32s& best_list, Ipp32s& best_ref) const;
+    void CalcMAD();
+
     Ipp8u EncInterLumaTuGetBaseCBF(Ipp32u absPartIdx, Ipp32s offset, Ipp32s width, Ipp8s qp);
     void EncInterChromaTuGetBaseCBF(Ipp32u absPartIdx, Ipp32s offset, Ipp32s width, Ipp8u *nz, Ipp8s qp);
     bool TuMaxSplitInterHasNonZeroCoeff(Ipp32u absPartIdx, Ipp8u trIdxMax);

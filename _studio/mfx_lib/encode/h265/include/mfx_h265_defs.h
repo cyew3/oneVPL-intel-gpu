@@ -42,6 +42,7 @@
 #include "mfxdefs.h"
 #include "mfxla.h"
 #include "mfx_ext_buffers.h"
+#include "mfxbrc.h"
 
 #define AMT_MAX_FRAME_SIZE
 //#define AMT_MAX_FRAME_SIZE_DEBUG
@@ -744,6 +745,7 @@ namespace MfxEnumShortAliases {
     template<> struct Type2Id<mfxExtCodingOptionVPS>    { enum { id = MFX_EXTBUFF_CODING_OPTION_VPS }; };
     template<> struct Type2Id<mfxExtLAFrameStatistics>  { enum { id = MFX_EXTBUFF_LOOKAHEAD_STAT}; };
     template<> struct Type2Id<mfxExtEncoderROI>         { enum { id = MFX_EXTBUFF_ENCODER_ROI}; };
+    template<> struct Type2Id<mfxExtBRC>                { enum { id = MFX_EXTBUFF_BRC }; };
 
     template <class T> struct RemoveConst          { typedef T type; };
     template <class T> struct RemoveConst<const T> { typedef T type; };

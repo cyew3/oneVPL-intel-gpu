@@ -106,9 +106,10 @@ namespace H265Enc {
         Ipp8u  CmBirefineFlag;  // GPU birefinement
         Ipp8u  CmInterpFlag;    // GPU hpel interpolation for every recon
 
-        Ipp16u DeltaQpMode;      // 0 - disable, 0x1 = CAQ, 0x2 = CAL, 0x4 = PAQ
+        Ipp16u DeltaQpMode;      // 0 - disable, 0x1 = CAQ, 0x2 = CAL, 0x4 = PAQ, 0x8 = PSY, 0x10 = HROI
         CostType LambdaCorrection;
         Ipp32s RateControlDepth; // rate control depth: how many analyzed future frames are required for BRC
+        Ipp8u  EnableMAD;
         Ipp8u  SceneCut;         // Enable Scene Change Detection and insert IDR frame
         Ipp16u AnalyzeCmplx;     // analyze frame complexity (for BRC)
         Ipp16u LowresFactor;     // > 0 means lookahead algorithms is applied on downscaled frames

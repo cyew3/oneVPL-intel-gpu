@@ -105,8 +105,8 @@ namespace H265Enc {
         Ipp32s numBlk = PicWidthInBlk * PicHeightInBlk;
 
         // for BRC
-        m_intraSatd.resize(numBlk);
-        m_interSatd.resize(numBlk);
+        m_intraSatd.resize(numBlk, 0);
+        m_interSatd.resize(numBlk, 0);
         m_intraSatdHist.resize(33, -1);
         m_bestSatdHist.resize(33, -1);
 
@@ -334,7 +334,7 @@ namespace H265Enc {
         m_bdLumaFlag = par->bitDepthLuma > 8;
         m_bdChromaFlag = par->bitDepthChroma > 8;
         m_chromaFormatIdc = par->chromaFormatIdc;
-
+        m_mad.resize(numCtbs, 0);
         m_slices.resize(par->NumSlices);
 
         Ipp32s numCtbs_parts = numCtbs << par->Log2NumPartInCU;
@@ -651,6 +651,7 @@ namespace H265Enc {
         m_predBits     = 0;
         m_cmplx        = 0.0;
         m_refQp        = -1;
+
 
         if (m_stats[0]) {
             m_stats[0]->ResetAvgMetrics();

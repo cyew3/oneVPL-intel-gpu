@@ -1339,7 +1339,7 @@ void H265Enc::DetermineQpMap_IFrame(FrameIter curr, FrameIter end, H265VideoPara
     for (FrameIter it = it1; it != end; it++) {
         if(*it) {
             futr_frame = *it;
-            if (futr_frame && futr_frame->m_picCodeType == MFX_FRAMETYPE_I) {
+            if (futr_frame->m_picCodeType == MFX_FRAMETYPE_I) {
                 futr_key = true;
             }
         }
@@ -2875,16 +2875,16 @@ mfxStatus Lookahead::Execute(ThreadingTask& task)
                     if (it != end) {
                         Frame* prev = (*it);
                         FrameData* frame = useLowres ? curr->m_lowres : curr->m_origin;
-                        Statistics* stat = curr->m_stats[ useLowres ? 1 : 0 ];
+                        Statistics* stat = curr->m_stats[useLowres ? 1 : 0];
                         FrameData* framePrev = useLowres ? prev->m_lowres : prev->m_origin;
 
                         Ipp32s rowsInRegion = useLowres ? m_lowresRowsInRegion : m_originRowsInRegion;
                         Ipp32s numActiveRows = GetNumActiveRows(region_row, rowsInRegion, frame->height);
 
-                        for (Ipp32s i=0; i<numActiveRows; i++) {
-                            DoInterAnalysis_OneRow(frame, NULL, framePrev, &stat->m_interSad[0], &stat->m_interSatd[0], 
+                        for (Ipp32s i = 0; i < numActiveRows; i++) {
+                            DoInterAnalysis_OneRow(frame, NULL, framePrev, &stat->m_interSad[0], &stat->m_interSatd[0],
                                 &stat->m_mv[0], 0, 0, m_videoParam.LowresFactor, curr->m_bitDepthLuma, region_row * rowsInRegion + i,
-                                m_videoParam.FullresMetrics ? curr->m_origin : NULL, 
+                                m_videoParam.FullresMetrics ? curr->m_origin : NULL,
                                 m_videoParam.FullresMetrics ? prev->m_origin : NULL);
                         }
 
@@ -2924,8 +2924,14 @@ mfxStatus Lookahead::Execute(ThreadingTask& task)
                 for (Ipp32s fieldNum = 0; fieldNum < fieldCount; fieldNum++) {
                     Frame* curr = in[fieldNum];
                     Statistics* stat = curr->m_stats[ useLowres ? 1 : 0 ];
-                    std::fill(stat->m_interSad.begin(), stat->m_interSad.end(), IPP_MAX_32S);
-                    std::fill(stat->m_interSatd.begin(), stat->m_interSatd.end(), IPP_MAX_32S);
+                    FrameData* frame = useLowres ? curr->m_lowres : curr->m_origin;
+                    Ipp32s rowsInRegion = useLowres ? m_lowresRowsInRegion : m_originRowsInRegion;
+                    Ipp32s numActiveRows = GetNumActiveRows(region_row, rowsInRegion, frame->height);
+                    Ipp32s picWidthInBlks = (frame->width + SIZE_BLK_LA - 1) / SIZE_BLK_LA;
+                    Ipp32s fPos = (region_row * rowsInRegion) * picWidthInBlks; // [fPos, lPos)
+                    Ipp32s lPos = fPos + numActiveRows*picWidthInBlks;
+                    std::fill(stat->m_interSad.begin()+fPos, stat->m_interSad.begin()+lPos, IPP_MAX_32S);
+                    std::fill(stat->m_interSatd.begin()+fPos, stat->m_interSatd.begin()+lPos, IPP_MAX_32S);
                 }
             }
 

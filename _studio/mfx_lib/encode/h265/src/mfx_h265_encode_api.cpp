@@ -545,7 +545,7 @@ namespace {
             ext->MaxSliceSize = 0;
             ext->BitrateLimit = 0;
             ext->MBBRC = 1;
-            ext->ExtBRC = 0;
+            ext->ExtBRC = 1;
             ext->LookAheadDepth = 0;
             ext->Trellis = 0;
             ext->RepeatPPS = 0;
@@ -565,7 +565,7 @@ namespace {
             ext->DisableDeblockingIdc = 0;
             ext->DisableVUI = 1;
             ext->BufferingPeriodSEI = 0;
-            ext->EnableMAD = 0;
+            ext->EnableMAD = 1;
             ext->UseRawRef = 0;
         }
 
@@ -830,6 +830,8 @@ namespace {
             wrnIncompatible = !CheckTriState(opt2->AdaptiveI);
             wrnIncompatible = !CheckTriState(opt2->DisableVUI);
             wrnIncompatible = !CheckTriState(opt2->MBBRC);
+            wrnIncompatible = !CheckTriState(opt2->ExtBRC);
+            wrnIncompatible = !CheckTriState(opt2->EnableMAD);
         }
 
         if (opt3) {
@@ -1046,8 +1048,6 @@ namespace {
             opt2->MaxFrameSize = 0, wrnIncompatible = true;
         }
 
-
-
         if (IsCbrOrVbr(mfx.RateControlMethod) && profile && bufferSizeInKB) // bufferSizeInKB <= MaxCPB[High6.2]
             wrnIncompatible = !CheckMaxSat(bufferSizeInKB, GetMaxCpbForLevel(profile, H62) / 8000);
 
@@ -1105,6 +1105,9 @@ namespace {
 
         if (optHevc && optHevc->EnableCm == ON && optHevc->FramesInParallel > 8) // no more than 8 parallel frames in gacc
             optHevc->FramesInParallel = 8, wrnIncompatible = true;
+        
+        if (opt2 && optHevc && optHevc->EnableCm == OFF && opt2->EnableMAD == ON) // EnableMAD only for gacc
+            opt2->EnableMAD = OFF, wrnIncompatible = true;
 
         if (mfx.NumSlice && region && region->RegionEncoding == MFX_HEVC_REGION_ENCODING_ON && region->RegionType == MFX_HEVC_REGION_SLICE && region->RegionId >= mfx.NumSlice) // RegionId < NumSlice
             region->RegionId = 0, errInvalidParam = true;
@@ -1886,6 +1889,7 @@ ExtBuffers::ExtBuffers()
     extParamAll[count++] = &extSpsPps.Header;
     extParamAll[count++] = &extVps.Header;
     extParamAll[count++] = &extRoi.Header;
+    extParamAll[count++] = &extBRC.Header;
     assert(NUM_EXT_PARAM == count);
 }
 
@@ -1905,6 +1909,7 @@ void ExtBuffers::CleanUp()
     InitExtBuffer(extSpsPps);
     InitExtBuffer(extVps);
     InitExtBuffer(extRoi);
+    InitExtBuffer(extBRC);
 }
 
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE

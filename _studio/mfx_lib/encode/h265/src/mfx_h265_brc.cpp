@@ -3151,15 +3151,168 @@ mfxI32 VMEBrc::GetQP(H265VideoParam &video, Frame *pFrame, mfxI32 *chromaQP )
 
     return mfxU8(m_curQp);
 }
-BrcIface * CreateBrc(mfxVideoParam const * video)
 
+const size_t PreAnalysisExtBuffers::NUM_EXT_PARAM = sizeof(PreAnalysisExtBuffers().extParamAll) / sizeof(PreAnalysisExtBuffers().extParamAll[0]);
+
+PreAnalysisExtBuffers::PreAnalysisExtBuffers()
 {
+    Zero(extParamAll);
+    CleanUp();
+    size_t count = 0;
+    extParamAll[count++] = &extLAStats.Header;
+    assert(NUM_EXT_PARAM == count);
+}
+
+void PreAnalysisExtBuffers::CleanUp()
+{
+    mfxExtBuffer header = { Type2Id<mfxExtLAFrameStatistics>::id, sizeof(extLAStats) };
+    memset(&extLAStats, 0, sizeof(mfxExtLAFrameStatistics));
+    extLAStats.Header = header;
+
+}
+
+// Initialize with specified parameter(s)
+mfxStatus WrapExtBRC::Init(const mfxVideoParam *init, H265VideoParam &video, Ipp32s enableRecode) {
+    mfxExtBRC *extBRC = GetExtBuffer(*init);
+    if (extBRC && extBRC->pthis) {
+        mfxVideoParam video = *init;
+        m_pBRC = extBRC;
+        mIsInit = 1;
+        return m_pBRC->Init(m_pBRC->pthis, &video);
+    }
+    return MFX_ERR_NOT_INITIALIZED;
+}
+
+mfxStatus WrapExtBRC::Close() {
+    if (m_pBRC) {
+        mIsInit = 0;
+        return m_pBRC->Close(m_pBRC->pthis);
+    }
+    return MFX_ERR_NOT_INITIALIZED;
+}
+
+mfxStatus WrapExtBRC::Reset(mfxVideoParam *init, H265VideoParam &video, Ipp32s enableRecode) {
+    if (m_pBRC) {
+        return m_pBRC->Reset(m_pBRC->pthis, init);
+    }
+    return MFX_ERR_NOT_INITIALIZED;
+}
+
+mfxBRCStatus WrapExtBRC::PostPackFrame(H265VideoParam *video, Ipp8s sliceQpY, Frame *pFrame, Ipp32s bitsEncodedFrame, Ipp32s overheadBits, Ipp32s recode) {
+    if (m_pBRC) {
+        mfxBRCFrameParam frame_par = {};
+        mfxBRCFrameCtrl  frame_ctrl = {};
+        mfxBRCFrameStatus frame_sts = {};
+
+        frame_ctrl.QpY = sliceQpY;
+        frame_par.CodedFrameSize = bitsEncodedFrame >> 3;  // Size of frame in bytes after encoding
+        frame_par.EncodedOrder = pFrame->m_encOrder;
+        frame_par.FrameType = pFrame->m_picCodeType;
+        frame_par.PyramidLayer = pFrame->m_pyramidLayer;
+        frame_par.NumRecode = recode;
+        frame_par.DisplayOrder = pFrame->m_poc;
+
+        if (video->AnalyzeCmplx) {
+            m_ppExtBuffers.extLAStats.NumAlloc = 1;
+            m_ppExtBuffers.extLAStats.FrameStat = &ppframe;
+            m_ppExtBuffers.extLAStats.NumStream = 1;
+            m_ppExtBuffers.extLAStats.NumFrame = 1;
+            mfxLAFrameInfo* pFrameData = &m_ppExtBuffers.extLAStats.FrameStat[0];
+            pFrameData->Width = video->LowresFactor ? pFrame->m_lowres->width : pFrame->m_origin->width;
+            pFrameData->Height = video->LowresFactor ? pFrame->m_lowres->height : pFrame->m_origin->height;
+            pFrameData->FrameType = pFrame->m_picCodeType;
+            pFrameData->FrameDisplayOrder = pFrame->m_poc;
+            pFrameData->FrameEncodeOrder = pFrame->m_encOrder;
+            pFrameData->Layer = pFrame->m_pyramidLayer;
+            pFrameData->IntraCost = pFrame->m_stats[video->LowresFactor ? 1 : 0]->m_avgIntraSatd * (pFrameData->Width*pFrameData->Height);
+            pFrameData->InterCost = pFrame->m_stats[video->LowresFactor ? 1 : 0]->m_avgInterSatd * (pFrameData->Width*pFrameData->Height);
+            //pFrameData->BestCost = pFrame->m_stats[video->LowresFactor ? 1 : 0]->m_avgBestSatd * (pFrameData->Width*pFrameData->Height);
+            frame_par.NumExtParam = 1;
+            frame_par.ExtParam = m_ppExtBuffers.extParamAll;
+        }
+
+        mfxStatus sts = m_pBRC->Update(m_pBRC->pthis, &frame_par, &frame_ctrl, &frame_sts);
+        MFX_CHECK(sts == MFX_ERR_NONE, (mfxU32)H265Enc::MFX_BRC_ERROR); // BRC_ERROR
+        
+        m_minSize = frame_sts.MinFrameSize;
+
+        switch (frame_sts.BRCStatus)
+        {
+        case ::MFX_BRC_OK:
+            return  H265Enc::MFX_BRC_OK;
+        case ::MFX_BRC_BIG_FRAME:
+            return H265Enc::MFX_BRC_BIG_FRAME;
+        case ::MFX_BRC_SMALL_FRAME:
+            return H265Enc::MFX_BRC_SMALL_FRAME;
+        case ::MFX_BRC_PANIC_BIG_FRAME:
+            return H265Enc::MFX_BRC_ERR_BIG_FRAME;
+        case ::MFX_BRC_PANIC_SMALL_FRAME:
+            return H265Enc::MFX_BRC_ERR_SMALL_FRAME;
+        }
+        return H265Enc::MFX_BRC_OK;
+    }
+    return H265Enc::MFX_BRC_ERROR;
+}
+
+Ipp32s WrapExtBRC::GetQP(H265VideoParam *video, Frame *pFrames[], Ipp32s numFrames) {
+    if (m_pBRC) {
+        mfxBRCFrameParam frame_par = { 0 };
+        mfxBRCFrameCtrl  frame_ctrl = { 0 };
+
+        if (pFrames && numFrames > 0) {
+            frame_par.EncodedOrder = pFrames[0]->m_encOrder;
+            frame_par.DisplayOrder = pFrames[0]->m_poc;
+            frame_par.FrameType = pFrames[0]->m_picCodeType;
+            frame_par.PyramidLayer = pFrames[0]->m_pyramidLayer;
+
+            if (video->AnalyzeCmplx) {
+                m_paExtBuffers.extLAStats.NumAlloc = MAX_LAFRAME_ALLOC;
+                m_paExtBuffers.extLAStats.FrameStat = laframes;
+                m_paExtBuffers.extLAStats.NumStream = 1;
+                mfxU32 lookahead = IPP_MIN(numFrames, m_paExtBuffers.extLAStats.NumAlloc);
+                // summary LA data and copy into output structure
+                m_paExtBuffers.extLAStats.NumFrame = lookahead;
+                m_paExtBuffers.extLAStats.NumStream = 1;
+                mfxLAFrameInfo* pFrameData = &m_paExtBuffers.extLAStats.FrameStat[0];
+                for (mfxU32 i = 0; i < lookahead; i++)
+                {
+                    pFrameData[i].Width = video->LowresFactor ? pFrames[i]->m_lowres->width : pFrames[i]->m_origin->width;
+                    pFrameData[i].Height = video->LowresFactor ? pFrames[i]->m_lowres->height : pFrames[i]->m_origin->height;
+                    pFrameData[i].FrameType = pFrames[i]->m_picCodeType;
+                    pFrameData[i].FrameDisplayOrder = pFrames[i]->m_poc;
+                    pFrameData[i].FrameEncodeOrder = pFrames[i]->m_encOrder;
+                    pFrameData[i].Layer = pFrames[i]->m_pyramidLayer;
+                    pFrameData[i].IntraCost = pFrames[i]->m_stats[video->LowresFactor ? 1 : 0]->m_avgIntraSatd * (pFrameData[i].Width*pFrameData[i].Height);
+                    pFrameData[i].InterCost = pFrames[i]->m_stats[video->LowresFactor ? 1 : 0]->m_avgInterSatd * (pFrameData[i].Width*pFrameData[i].Height);
+                    //pFrameData[i].BestCost = pFrames[i]->m_stats[video->LowresFactor ? 1 : 0]->m_avgBestSatd * (pFrameData[i].Width*pFrameData[i].Height);
+                }
+                frame_par.NumExtParam = 1;
+                frame_par.ExtParam = m_paExtBuffers.extParamAll;
+            }
+        }
+        m_pBRC->GetFrameCtrl(m_pBRC->pthis, &frame_par, &frame_ctrl);
+        return (mfxU8)frame_ctrl.QpY;
+    }
+    else {
+        return -1;
+    }
+}
+
+void WrapExtBRC::GetMinMaxFrameSize(Ipp32s *minFrameSizeInBits, Ipp32s *maxFrameSizeInBits) {
+    *minFrameSizeInBits = m_minSize;
+    *maxFrameSizeInBits = 0;
+}
+
+BrcIface * CreateBrc(mfxVideoParam const * video)
+{
+    mfxExtCodingOption2 *ext = GetExtBuffer(*video);
+    mfxExtBRC *extBRC = GetExtBuffer(*video);
     if (video->mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT)
         return new VMEBrc;
+    else if (ext && extBRC && ext->ExtBRC == MFX_CODINGOPTION_ON && extBRC->pthis)
+        return new WrapExtBRC();
     else
         return new H265BRC;
-
-
 }
 } // namespace
 

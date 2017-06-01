@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2015-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2015-2017 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -21,6 +21,7 @@
 #include "mfxvideo++int.h"
 #include "mfxplugin++.h"
 #include "mfx_ext_buffers.h"
+#include "mfxbrc.h"
 
 namespace H265Enc {
     class H265Encoder;
@@ -42,7 +43,8 @@ namespace H265Enc {
         mfxExtCodingOptionSPSPPS extSpsPps;
         mfxExtCodingOptionVPS    extVps;
         mfxExtEncoderROI         extRoi;  
-        mfxExtBuffer            *extParamAll[12];
+        mfxExtBRC                extBRC;
+        mfxExtBuffer            *extParamAll[13];
 
         static const size_t NUM_EXT_PARAM;
     };

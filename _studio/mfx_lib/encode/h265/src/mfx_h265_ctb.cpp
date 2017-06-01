@@ -1198,6 +1198,8 @@ void H265CU<PixType>::InitCu(
 #ifdef AMT_NEW_ICRA
         InitIEFs();
 #endif
+        if (m_par->EnableMAD)
+            CalcMAD();
     }
 }
 
@@ -2038,6 +2040,98 @@ Ipp32s H265CU<PixType>::GetSpatialComplexity(Ipp32s absPartIdx, Ipp32s depth, Ip
     }
     return scVal;
 }
+
+
+template <typename PixType>
+inline void H265CU<PixType>::BestCmBlockDist(Ipp32s x, Ipp32s bX, Ipp32s y, Ipp32s bY, Ipp32s puSize, Ipp32s& dist_best, Ipp32s& best_list, Ipp32s& best_ref) const
+{
+    Ipp32s uniqRefIdx = m_currFrame->m_mapListRefUnique[0][0];
+    Ipp32s pitchData = m_currFrame->m_feiInterData[uniqRefIdx][puSize]->m_pitch;
+    Ipp32s cmMvP = pitchData / sizeof(mfxI16Pair);
+    Ipp32s offset = 0;
+    if (puSize == 3 || puSize == 2) {
+        offset = (y + bY) * cmMvP + 16 * (x + bX);
+    }
+    else {
+        offset = (y + bY) * cmMvP + 2 * (x + bX);
+    }
+    Ipp32s numLists = (m_cslice->slice_type == B_SLICE) + 1;
+
+    for (Ipp32s list = 0; list < numLists; list++) {
+        Ipp32s numRefIdx = m_cslice->num_ref_idx[list];
+        for (Ipp8s refIdx = 0; refIdx < numRefIdx; refIdx++) {
+            if (list == 1) {
+                Ipp32s idx0 = m_currFrame->m_mapRefIdxL1ToL0[refIdx];
+                if (idx0 >= 0 && dist_best != INT_MAX) continue;
+            }
+            Ipp32s uqRefIdx = m_currFrame->m_mapListRefUnique[list][refIdx];
+            Ipp32u *cmDist = ((Ipp32u *)m_currFrame->m_feiInterData[uqRefIdx][puSize]->m_sysmem) + offset + 1;
+            Ipp32s Dist = (int)*cmDist;
+            if (puSize == 3) {
+                for (Ipp16s sadIdx = 0, dy = -2; dy <= 2; dy += 2) {
+                    for (Ipp16s dx = -2; dx <= 2; dx += 2, sadIdx++) {
+                        Ipp32s cost = cmDist[sadIdx];
+                        if (Dist > cost) {
+                            Dist = cost;
+                        }
+                    }
+                }
+            }
+            else if (puSize == 2) {
+                for (Ipp16s sadIdx = 0, dy = -1; dy <= 1; dy++) {
+                    for (Ipp16s dx = -1; dx <= 1; dx++, sadIdx++) {
+                        Ipp32s cost = (int)cmDist[sadIdx];
+                        if (Dist > cost) {
+                            Dist = cost;
+                        }
+                    }
+                }
+            }
+            if (Dist < dist_best) {
+                dist_best = Dist;
+                best_list = list;
+                best_ref = refIdx;
+            }
+        }
+    }
+}
+
+template <typename PixType>
+void H265CU<PixType>::CalcMAD()
+{
+    if (m_cslice->slice_type == I_SLICE)                              return;
+
+    Ipp32u width = (Ipp8u)(m_par->MaxCUSize);
+    Ipp32u height = (Ipp8u)(m_par->MaxCUSize);
+
+    if (m_ctbPelX + width > m_par->Width)
+        width = m_par->Width - m_ctbPelX;
+    if (m_ctbPelY + height > m_par->Height)
+        height = m_par->Height - m_ctbPelY;
+
+    Ipp32s puSize = 1;
+    Ipp32s puW = 16;
+    Ipp32s puH = 16;
+
+    Ipp32s x = m_ctbPelX / puW;
+    Ipp32s y = m_ctbPelY / puH;
+
+    Ipp32s uniqRefIdx = m_currFrame->m_mapListRefUnique[0][0];
+    Ipp32s pitchData = m_currFrame->m_feiInterData[uniqRefIdx][puSize]->m_pitch;
+    Ipp32f mad = 0;
+
+    for (Ipp32s bY = 0; bY < (int)height / puH; bY++) {
+        for (Ipp32s bX = 0; bX < (int)width / puW; bX++) {
+            Ipp32s dist_best = INT_MAX, best_list = 0, best_ref = 0;
+            BestCmBlockDist(x, bX, y, bY, puSize, dist_best, best_list, best_ref);
+            mad += ((Ipp32f)dist_best / 4.0f);
+        }
+    }
+
+    m_currFrame->m_mad[m_ctbAddr] = (Ipp32u)mad;
+}
+
+
 #ifdef AMT_NEW_ICRA
 
 static inline Ipp32s IsZeroResd(Ipp32f SCpp, Ipp32f SADpp, Ipp8s qp)
@@ -2444,57 +2538,6 @@ inline void H265CU<PixType>::CmMvPred(mfxI16Pair *mv, Ipp32s p, Ipp32s x, Ipp32s
     }
 }
 
-template <typename PixType>
-inline void H265CU<PixType>::BestCmBlockDist(Ipp32s x, Ipp32s bX, Ipp32s y, Ipp32s bY, Ipp32s puSize, Ipp32s& dist_best, Ipp32s& best_list, Ipp32s& best_ref) const
-{
-    Ipp32s uniqRefIdx = m_currFrame->m_mapListRefUnique[0][0];
-    Ipp32s pitchData = m_currFrame->m_feiInterData[uniqRefIdx][puSize]->m_pitch;
-    Ipp32s cmMvP = pitchData/sizeof(mfxI16Pair);
-    Ipp32s offset = 0;
-    if(puSize == 3 || puSize == 2) {
-        offset = (y+bY) * cmMvP + 16 * (x+bX);
-    } else {
-        offset = (y+bY) * cmMvP + 2 * (x+bX);
-    }
-    Ipp32s numLists = (m_cslice->slice_type == B_SLICE) + 1;
-
-    for (Ipp32s list = 0; list < numLists; list++) {
-        Ipp32s numRefIdx = m_cslice->num_ref_idx[list];
-        for (Ipp8s refIdx = 0; refIdx < numRefIdx; refIdx++) {
-            if (list == 1) { 
-                Ipp32s idx0 = m_currFrame->m_mapRefIdxL1ToL0[refIdx];
-                if(idx0>=0 && dist_best!=INT_MAX) continue;
-            }
-            Ipp32s uqRefIdx = m_currFrame->m_mapListRefUnique[list][refIdx];
-            Ipp32u *cmDist = ((Ipp32u *)m_currFrame->m_feiInterData[uqRefIdx][puSize]->m_sysmem) + offset +1;
-            Ipp32s Dist = (int) *cmDist;
-            if(puSize == 3) {
-                for (Ipp16s sadIdx = 0, dy = -2; dy <= 2; dy += 2) {
-                    for (Ipp16s dx = -2; dx <= 2; dx += 2, sadIdx++) {
-                        Ipp32s cost = cmDist[sadIdx];
-                        if (Dist > cost) {
-                            Dist = cost;
-                        }
-                    }
-                }
-            } else if(puSize == 2) {
-                for (Ipp16s sadIdx = 0, dy = -1; dy <= 1; dy++) {
-                    for (Ipp16s dx = -1; dx <= 1; dx++, sadIdx++) {
-                        Ipp32s cost = (int) cmDist[sadIdx];
-                        if (Dist > cost) {
-                            Dist = cost;
-                        }
-                    }
-                }
-            }
-            if(Dist < dist_best) {
-                dist_best = Dist;
-                best_list = list;
-                best_ref = refIdx;
-            }
-        }
-    }
-}
 
 static inline void SetSplitHist(Ipp32s *psplitHist, Ipp32s depth, Ipp8u splitMode) 
 {
@@ -2537,6 +2580,8 @@ inline bool H265CU<PixType>::IsDisableSkipIEF() const
     if (m_ief.done && !m_ief.superPred) return true;
     return false;
 }
+
+
 
 // Intelligent encoder functions to predict mode and split based on ICRA features
 template <typename PixType>
@@ -2780,6 +2825,7 @@ inline void H265CU<PixType>::CalcIEFs(Ipp32s absPartIdx, Ipp32s depth, Ipp32s pa
         m_ief.done = true;
     }
 }
+
 #endif
 
 template <typename PixType>
@@ -10078,7 +10124,6 @@ void H265CU<PixType>::EncAndRecLumaTu(Ipp32s absPartIdx, Ipp32s offset, Ipp32s w
 
         Ipp8s qp = dataTu->qp + 6 * (m_par->bitDepthLuma - 8);
         cbf = QuantFwdTu(m_residualsY+offset, m_coeffWorkY+offset, absPartIdx, qp, width, 1, isIntra);
-
         if (cbf) {
             QuantInvTu(m_coeffWorkY+offset, m_residualsY+offset, qp, width, 1);
             if (is_pred_transposed)
@@ -10198,14 +10243,14 @@ void H265CU<PixType>::EncAndRecChromaTu(Ipp32s absPartIdx, Ipp32s idx422, Ipp32s
         cbf[0] = QuantFwdTu(m_residualsU+offset, m_coeffWorkU+offset, absPartIdx, qp, width, 0, isIntra);
         if (cbf[0]) {
             QuantInvTu(m_coeffWorkU+offset, m_residualsU+offset, qp, width, 0);
-            TransformInv(NULL, 0, m_residualsU+offset, width, m_residualsU+offset, width, 0, 0, m_par->bitDepthChroma); 
+            TransformInv(NULL, 0, m_residualsU+offset, width, m_residualsU+offset, width, 0, 0, m_par->bitDepthChroma);
         }
 
         TransformFwd(residV, pitchResidV, m_residualsV+offset, width, m_par->bitDepthChroma, 0);
         cbf[1] = QuantFwdTu(m_residualsV+offset, m_coeffWorkV+offset, absPartIdx, qp, width, 0, isIntra);
         if (cbf[1]) {
             QuantInvTu(m_coeffWorkV+offset, m_residualsV+offset, qp, width, 0);
-            TransformInv(NULL, 0, m_residualsV+offset, width, m_residualsV+offset, width, 0, 0, m_par->bitDepthChroma); 
+            TransformInv(NULL, 0, m_residualsV+offset, width, m_residualsV+offset, width, 0, 0, m_par->bitDepthChroma);
         }
     }
 

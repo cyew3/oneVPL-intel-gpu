@@ -169,6 +169,7 @@ void ApiTestCommon::InitParamSetValid(ParamSet &paramset) {
     paramset.extCodingOptionHevc.NumBiRefineIter = 10;
     paramset.extCodingOptionHevc.CUSplitThreshold = 256;
     paramset.extCodingOptionHevc.DeltaQpMode = 1;
+    paramset.extCodingOptionHevc.Log2MinCuQpDeltaSize = 6;
     paramset.extCodingOptionHevc.Enable10bit = MFX_CODINGOPTION_OFF;
     paramset.extCodingOptionHevc.IntraAngModesP = 1;
     paramset.extCodingOptionHevc.IntraAngModesBRef = 1;
@@ -444,6 +445,7 @@ template <> void ApiTestCommon::ExpectEqual<mfxExtCodingOptionHEVC>(const mfxExt
     EXPECT(IntraNumCand2_5);
     EXPECT(IntraNumCand2_6);
     EXPECT(WPP);
+    EXPECT(Log2MinCuQpDeltaSize);
     EXPECT(PartModes);
     EXPECT(CmIntraThreshold);
     EXPECT(TUSplitIntra);
@@ -458,6 +460,12 @@ template <> void ApiTestCommon::ExpectEqual<mfxExtCodingOptionHEVC>(const mfxExt
     EXPECT(RDOQuantChroma);
     EXPECT(RDOQuantCGZ);
     EXPECT(SaoOpt);
+    EXPECT(SaoSubOpt);
+    EXPECT(IntraNumCand0_2);
+    EXPECT(IntraNumCand0_3);
+    EXPECT(IntraNumCand0_4);
+    EXPECT(IntraNumCand0_5);
+    EXPECT(IntraNumCand0_6);
     EXPECT(CostChroma);
     EXPECT(PatternIntPel);
     EXPECT(FastSkip);
@@ -488,6 +496,9 @@ template <> void ApiTestCommon::ExpectEqual<mfxExtCodingOptionHEVC>(const mfxExt
     EXPECT(FastCoeffCost);
     EXPECT(NumRefFrameB);
     EXPECT(IntraMinDepthSC);
+    EXPECT(InterMinDepthSTC);
+    EXPECT(MotionPartitionDepth);
+    EXPECT(reserved1);
     EXPECT(AnalyzeCmplx);
     EXPECT(RateControlDepth);
     EXPECT(LowresFactor);

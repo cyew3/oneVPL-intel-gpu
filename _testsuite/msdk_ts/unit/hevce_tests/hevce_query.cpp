@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2015 - 2016 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2015 - 2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "gtest/gtest.h"
@@ -289,7 +289,7 @@ TEST_F(QueryTest, Mode1_Main) {
     EXPECT_EQ(1, output.extCodingOptionHevc.ConstQpOffset);
     // check if the rest of ExtCodingOptionHevc is zeroed
     EXPECT_EQ(true, IsZero(output.extCodingOptionHevc.reserved));
-    EXPECT_EQ(36 * sizeof(mfxU16), sizeof(output.extCodingOptionHevc.reserved)); // if fails here then new fields were added, need to add tests for these fields
+    EXPECT_EQ(34 * sizeof(mfxU16), sizeof(output.extCodingOptionHevc.reserved)); // if fails here then new fields were added, need to add tests for these fields
 
     // check if ExtHevcTiles fields are set correctly
     EXPECT_EQ(1, output.extHevcTiles.NumTileRows);
@@ -337,11 +337,11 @@ TEST_F(QueryTest, Mode1_Main) {
     EXPECT_EQ(0, output.extCodingOption2.IntRefType);
     EXPECT_EQ(0, output.extCodingOption2.IntRefCycleSize);
     EXPECT_EQ(0, output.extCodingOption2.IntRefQPDelta);
-    EXPECT_EQ(0, output.extCodingOption2.MaxFrameSize);
+    EXPECT_EQ(1, output.extCodingOption2.MaxFrameSize);
     EXPECT_EQ(0, output.extCodingOption2.MaxSliceSize);
     EXPECT_EQ(0, output.extCodingOption2.BitrateLimit);
     EXPECT_EQ(1, output.extCodingOption2.MBBRC);
-    EXPECT_EQ(0, output.extCodingOption2.ExtBRC);
+    EXPECT_EQ(1, output.extCodingOption2.ExtBRC);
     EXPECT_EQ(0, output.extCodingOption2.LookAheadDepth);
     EXPECT_EQ(0, output.extCodingOption2.Trellis);
     EXPECT_EQ(0, output.extCodingOption2.RepeatPPS);
@@ -361,7 +361,7 @@ TEST_F(QueryTest, Mode1_Main) {
     EXPECT_EQ(0, output.extCodingOption2.DisableDeblockingIdc);
     EXPECT_EQ(1, output.extCodingOption2.DisableVUI);
     EXPECT_EQ(0, output.extCodingOption2.BufferingPeriodSEI);
-    EXPECT_EQ(0, output.extCodingOption2.EnableMAD);
+    EXPECT_EQ(1, output.extCodingOption2.EnableMAD);
     EXPECT_EQ(0, output.extCodingOption2.UseRawRef);
 
     // check if ExtCodingOption3 fields are set correctly
@@ -875,9 +875,9 @@ TEST_F(QueryTest, Mode2_Single) {
         TestOneFieldErr(input.extCodingOptionHevc.PatternSubPel, output.extCodingOptionHevc.PatternSubPel, 0, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, unsupported);
     }
     { SCOPED_TRACE("Test DeltaQpMode");
-        const Ipp16u supported[] = {1, 2, 3, 4, 5, 6, 7, 8};
+        const Ipp16u supported[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32};
         TestOneFieldOk(input.extCodingOptionHevc.DeltaQpMode, output.extCodingOptionHevc.DeltaQpMode, supported);
-        const Ipp16u unsupported[] = {9, 10, 0xff, 0xffff};
+        const Ipp16u unsupported[] = {33, 34, 0xff, 0xffff};
         TestOneFieldErr(input.extCodingOptionHevc.DeltaQpMode, output.extCodingOptionHevc.DeltaQpMode, 0, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, unsupported);
     }
     { SCOPED_TRACE("Test SplitThresholdTabIndex");

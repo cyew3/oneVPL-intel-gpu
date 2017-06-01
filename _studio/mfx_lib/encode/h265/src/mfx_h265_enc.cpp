@@ -2469,7 +2469,7 @@ mfxStatus H265FrameEncoder::PerformThreadingTask(ThreadingTaskSpecifier action, 
 
             m_bsf[bsf_id].CtxSave(m_bs[bs_id].m_base.context_array_enc);
         } else {
-            cu_ithread->EncodeCU(&m_bs[bs_id], 0, 0, 0);
+            cu_ithread->EncodeCU(&m_bs[bs_id], 0, 0, RD_CU_ALL);
 
             if (m_topEnc.m_pps.entropy_coding_sync_enabled_flag && ctb_col == 1)
                 m_bs[bs_id].CtxSaveWPP(m_context_array_wpp + NUM_CABAC_CONTEXT * ctb_row);

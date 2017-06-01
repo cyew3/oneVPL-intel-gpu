@@ -479,6 +479,7 @@ static void TaskLogDump()
         intParam.enableCmPostProc = intParam.enableCmFlag && (intParam.bitDepthLuma == 8) && (intParam.chromaFormatIdc == MFX_CHROMAFORMAT_YUV420);
         intParam.CmBirefineFlag = (optHevc.EnableCmBiref == ON) && ((intParam.Width * intParam.Height) <= (4096 * 4096));  //GPU is out of memory for 8K !!!
         intParam.CmInterpFlag = intParam.CmBirefineFlag;
+        intParam.EnableMAD = (intParam.enableCmFlag && opt2.EnableMAD == ON);
 
         intParam.m_framesInParallel = optHevc.FramesInParallel;
         // intParam.m_lagBehindRefRows = 3;
@@ -2278,7 +2279,14 @@ mfxStatus H265Encoder::SyncOnFrameCompletion(H265EncodeTaskInputParams *inputPar
             }
         }
     }
-
+    if (m_videoParam.EnableMAD && mfxBs->NumExtParam) {
+        mfxExtAVCEncodedFrameInfo * encFrameInfo = (mfxExtAVCEncodedFrameInfo*)GetExtBuffer(mfxBs->ExtParam, mfxBs->NumExtParam, MFX_EXTBUFF_ENCODED_FRAME_INFO);
+        if (encFrameInfo) {
+            encFrameInfo->MAD = std::accumulate(frame->m_mad.begin(),frame->m_mad.end(), 0);
+            encFrameInfo->FrameOrder = frame->m_encOrder;
+            encFrameInfo->QP = frame->m_sliceQpY;
+        }
+    }
     // bs update on completion stage
     vm_mutex_lock(&m_critSect);
     // THREADING_PAUSE -> THREADING_WORKING

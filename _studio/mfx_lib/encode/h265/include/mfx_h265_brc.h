@@ -20,6 +20,7 @@
 #include "umc_mutex.h"
 #include "mfxla.h"
 #include <vector>
+#include "mfxbrc.h"
 
 namespace H265Enc {
 
@@ -498,6 +499,54 @@ protected:
 
     Ipp32s mMinQp;
     Ipp32s mMaxQp;
+};
+
+struct PreAnalysisExtBuffers {
+    PreAnalysisExtBuffers();
+    void CleanUp();
+    mfxExtLAFrameStatistics extLAStats;
+    mfxExtBuffer            *extParamAll[1];
+    static const size_t NUM_EXT_PARAM;
+};
+
+#define MAX_LAFRAME_ALLOC 128
+class WrapExtBRC : public BrcIface
+{
+
+public:
+    WrapExtBRC() {
+        m_minSize = 0;
+        mIsInit = 0;
+        m_pBRC = 0;
+    }
+    virtual ~WrapExtBRC() {
+        Close();
+    }
+    // Initialize with specified parameter(s)
+    mfxStatus Init(const mfxVideoParam *init, H265VideoParam &video, Ipp32s enableRecode = 1);
+    mfxStatus Close();
+    mfxStatus Reset(mfxVideoParam *init, H265VideoParam &video, Ipp32s enableRecode = 1);
+    mfxBRCStatus PostPackFrame(H265VideoParam *video, Ipp8s sliceQpY, Frame *pFrame, Ipp32s bitsEncodedFrame, Ipp32s overheadBits, Ipp32s recode = 0);
+    Ipp32s GetQP(H265VideoParam *video, Frame *pFrames[], Ipp32s numFrames);
+    mfxStatus SetQP(Ipp32s qp, Ipp16u frameType) {
+        return MFX_ERR_UNSUPPORTED;
+    }
+    void GetMinMaxFrameSize(Ipp32s *minFrameSizeInBits, Ipp32s *maxFrameSizeInBits);
+    void PreEnc(mfxU32 /* frameType */, std::vector<VmeData *> const & /* vmeData */, mfxU32 /* encOrder */) {}
+    virtual mfxStatus SetFrameVMEData(const mfxExtLAFrameStatistics*, mfxU32, mfxU32) {
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+    bool IsVMEBRC() { return false; }
+
+protected:
+    bool   mIsInit;
+    PreAnalysisExtBuffers m_paExtBuffers;
+    PreAnalysisExtBuffers m_ppExtBuffers;
+    mfxLAFrameInfo ppframe;
+    mfxLAFrameInfo laframes[MAX_LAFRAME_ALLOC];
+private:
+    mfxExtBRC * m_pBRC;
+    mfxU32      m_minSize;  // In Bytes
 };
 
 } // namespace
