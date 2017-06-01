@@ -1636,12 +1636,12 @@ bool CommonCORE::CheckOpaqueRequest(mfxFrameAllocRequest *request,
     return true;
 
 }
+
 bool CommonCORE::IsOpaqSurfacesAlreadyMapped(mfxFrameSurface1 **pOpaqueSurface,
                                              mfxU32 NumOpaqueSurface,
                                              mfxFrameAllocResponse *response,
                                              bool ExtendedSearch)
 {
-    if (m_OpqTbl.size())
     {
         UMC::AutomaticUMCMutex guard(m_guard);
 
@@ -1686,15 +1686,10 @@ bool CommonCORE::IsOpaqSurfacesAlreadyMapped(mfxFrameSurface1 **pOpaqueSurface,
                 }
             }
             return false; // unexpected behavior
-
-        }
-        else if (ExtendedSearch)
-        {
-            bool sts = m_session->m_pOperatorCore->IsOpaqSurfacesAlreadyMapped(pOpaqueSurface, NumOpaqueSurface, response);
-            return sts;
         }
     }
-    else if (ExtendedSearch) // try to find in another cores
+
+    if (ExtendedSearch)
     {
         bool sts = m_session->m_pOperatorCore->IsOpaqSurfacesAlreadyMapped(pOpaqueSurface, NumOpaqueSurface, response);
         return sts;
