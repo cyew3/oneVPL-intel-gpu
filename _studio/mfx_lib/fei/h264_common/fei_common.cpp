@@ -343,8 +343,8 @@ void MfxH264FEIcommon::ConfigureTaskFEI(
         //frame.m_frameNumWrap = (frame.m_frameNum > task.m_frameNum) ? frame.m_frameNum - FRAME_NUM_MAX : frame.m_frameNum;
         frame.m_frameNumWrap = pDataPPS->DpbAfter[dpb_idx].FrameNumWrap;
 
-        //frame.m_picNum[0] = task.m_fieldPicFlag ? 2 * frame.m_frameNumWrap + ( !fieldParity) : frame.m_frameNumWrap; // in original here field = ffid / sfid
-        //frame.m_picNum[1] = task.m_fieldPicFlag ? 2 * frame.m_frameNumWrap + (!!fieldParity) : frame.m_frameNumWrap;
+        frame.m_picNum[0] = task.m_fieldPicFlag ? 2 * frame.m_frameNumWrap + ( !fieldParity) : frame.m_frameNumWrap; // in original here field = ffid / sfid
+        frame.m_picNum[1] = task.m_fieldPicFlag ? 2 * frame.m_frameNumWrap + (!!fieldParity) : frame.m_frameNumWrap;
 
         frame.m_refPicFlag[ffid] = !!(pDataPPS->DpbAfter[dpb_idx].PicType & field_type_mask[ fieldParity]);
         frame.m_refPicFlag[sfid] = !!(pDataPPS->DpbAfter[dpb_idx].PicType & field_type_mask[!fieldParity]);
@@ -355,8 +355,8 @@ void MfxH264FEIcommon::ConfigureTaskFEI(
         {
             frame.m_longTermIdxPlus1 = pDataPPS->DpbAfter[dpb_idx].LongTermFrameIdx + 1;
 
-            //frame.m_longTermPicNum[0] = task.m_fieldPicFlag ? 2 * (frame.m_longTermIdxPlus1 - 1) + ( !fieldParity) : frame.m_longTermIdxPlus1 - 1;
-            //frame.m_longTermPicNum[1] = task.m_fieldPicFlag ? 2 * (frame.m_longTermIdxPlus1 - 1) + (!!fieldParity) : frame.m_longTermIdxPlus1 - 1;
+            frame.m_longTermPicNum[0] = task.m_fieldPicFlag ? 2 * (frame.m_longTermIdxPlus1 - 1) + ( !fieldParity) : frame.m_longTermIdxPlus1 - 1;
+            frame.m_longTermPicNum[1] = task.m_fieldPicFlag ? 2 * (frame.m_longTermIdxPlus1 - 1) + (!!fieldParity) : frame.m_longTermIdxPlus1 - 1;
         }
 
         task.m_dpbPostEncoding.PushBack(frame);
@@ -370,7 +370,7 @@ void MfxH264FEIcommon::ConfigureTaskFEI(
         task.m_decRefPicMrk[fieldParity].Clear();
 
         ArrayDpbFrame & DPB_before = task.m_dpb[fieldParity],
-            DPB_after = ((field == task.m_fieldPicFlag) || task.m_singleFieldMode) ? task.m_dpbPostEncoding : task.m_dpb[!fieldParity];
+            & DPB_after = ((field == task.m_fieldPicFlag) || task.m_singleFieldMode) ? task.m_dpbPostEncoding : task.m_dpb[!fieldParity];
 
         // Current frame is reference and DPB has no free slots. Find frame to remove with sliding window
         DpbFrame * toRemoveDefault = NULL;

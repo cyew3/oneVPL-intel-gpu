@@ -61,7 +61,7 @@ public:
 
     struct mmco_par
     {
-        mfxU16    frameNum;
+        mfxU16    frameNum; // count in pictures (2 per frame for field mode)
         mfxU16    mmco;
         mfxI16    idxST; // diff with current (without minus1)
         mfxU16    idxLT;
@@ -69,7 +69,7 @@ public:
     struct tc_struct
     {
         mfxStatus sts;
-        mfxU16 mode;
+        mfxU16 mode; // MFX_PICSTRUCT_PROGRESSIVE, ...
         mfxU16 gopRefDist;
         struct mmco_par mmco_set[MAX_MMCO_IN_CASE];
     };
@@ -85,22 +85,37 @@ private:
 
 const TestSuite::tc_struct TestSuite::test_case[] =
 {
- /*00*/ {MFX_ERR_NONE, 0+0, 1, {{0}} }, // empty
- /*01*/ {MFX_ERR_NONE, 0+0, 1, {{3, MMCO_1, 2, 0}, {6, MMCO_0, 0, 0}, {0}} }, // rm ST - ok
- /*02*/ {MFX_ERR_NONE, 0+0, 1, {{3, MMCO_3, 2, 1}, {6, MMCO_2, 0, 1}, {0}} }, // rm LT - no
- /*03*/ {MFX_ERR_NONE, 0+0, 1, {{3, MMCO_3, 2, 0}, {0}} }, // ST->LT - ok
- /*04*/ {MFX_ERR_NONE, 0+0, 1, {{2, MMCO_3, 1, 2}, {3, MMCO_3, 3, 1}, {4, MMCO_3, 1, 0}, {4, MMCO_1, 2, 0}, {5, MMCO_4, 0, 0}, {0}} }, // cut LT - no
- /*05*/ {MFX_ERR_NONE, 0+0, 1, {{0, MMCO_6, 0, 1}, {0}} }, // curr to LT - no
-// /*06*/ {MFX_ERR_NONE, 0+0, 1, {{0, MMCO_6, 0, 2}, {3, MMCO_6, 0, 4}, {3, MMCO_2, 2, 0}, {4, MMCO_3, 0, 1}, {0}} }, // mix - no
+ /*00*/ {MFX_ERR_NONE, MFX_PICSTRUCT_PROGRESSIVE, 1, {{0}} }, // empty
+ /*01*/ {MFX_ERR_NONE, MFX_PICSTRUCT_PROGRESSIVE, 1, {{3, MMCO_1, 2, 0}, {6, MMCO_0, 0, 0}, {0}} }, // rm ST - ok
+ /*02*/ {MFX_ERR_NONE, MFX_PICSTRUCT_PROGRESSIVE, 1, {{3, MMCO_3, 2, 1}, {6, MMCO_2, 0, 1}, {0}} }, // rm LT - no
+ /*03*/ {MFX_ERR_NONE, MFX_PICSTRUCT_PROGRESSIVE, 1, {{3, MMCO_3, 2, 0}, {0}} }, // ST->LT - ok
+ /*04*/ {MFX_ERR_NONE, MFX_PICSTRUCT_PROGRESSIVE, 1, {{2, MMCO_3, 1, 2}, {3, MMCO_3, 3, 1}, {4, MMCO_3, 1, 0}, {4, MMCO_1, 2, 0}, {5, MMCO_4, 0, 0}, {0}} }, // cut LT - no
+ /*05*/ {MFX_ERR_NONE, MFX_PICSTRUCT_PROGRESSIVE, 1, {{0, MMCO_6, 0, 1}, {0}} }, // curr to LT - no
+
+ /*06*/ {MFX_ERR_NONE, MFX_PICSTRUCT_FIELD_TFF, 1, {{0}} }, // empty
+ /*07*/ {MFX_ERR_NONE, MFX_PICSTRUCT_FIELD_TFF, 1, {{6, MMCO_1, 4, 0}, {6, MMCO_1, 5, 0}, {0}} }, // rm ST - ok
+ /*08*/ {MFX_ERR_NONE, MFX_PICSTRUCT_FIELD_TFF, 1, {{6, MMCO_1, 4, 0}, {0}} }, // 1 - of 4 cases: remove only one field
+ /*09*/ {MFX_ERR_NONE, MFX_PICSTRUCT_FIELD_TFF, 1, {{6, MMCO_1, 5, 0}, {0}} }, // 2
+ /*10*/ {MFX_ERR_NONE, MFX_PICSTRUCT_FIELD_TFF, 1, {{7, MMCO_1, 4, 0}, {0}} }, // 3
+ /*11*/ {MFX_ERR_NONE, MFX_PICSTRUCT_FIELD_TFF, 1, {{7, MMCO_1, 5, 0}, {0}} }, // 4
+ /*12*/ {MFX_ERR_NONE, MFX_PICSTRUCT_FIELD_TFF, 1, {{2, MMCO_1, 3, 0}, {4, MMCO_1, 4, 0}, {4, MMCO_1, 2, 0}, {5, MMCO_1, 2, 0}, {0}} }, // mix of mmco_1, rms 2 1st frames
+// /**/ {MFX_ERR_NONE, MFX_PICSTRUCT_PROGRESSIVE, 1, {{0, MMCO_6, 0, 2}, {3, MMCO_6, 0, 4}, {3, MMCO_2, 2, 0}, {4, MMCO_3, 0, 1}, {0}} }, // mix - no
 };
 
-// use 3 times - progressive, tff, bff
-const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct) * 1; //3;
-mfxStatus LoadTC(std::vector<mfxExtBuffer*>& encbuf, std::vector<mfxExtBuffer*>& pakbuf, const TestSuite::tc_struct& tc, mfxU32 frame, mfxU32 field)
+const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
+mfxStatus LoadTC(std::vector<mfxExtBuffer*>& encbuf, std::vector<mfxExtBuffer*>& pakbuf, const TestSuite::tc_struct& tc, mfxU32 frame, mfxU32 field, mfxU32 idxToPickBuffers)
 {
+    mfxU32 fieldMode = (tc.mode != MFX_PICSTRUCT_PROGRESSIVE);
+    mfxU32 picture = fieldMode ? frame * 2 + field : frame;
+
+    mfxU32 picType = !fieldMode ? MFX_PICTYPE_FRAME :
+            ((tc.mode == MFX_PICSTRUCT_FIELD_TFF) == (field == 0)) ? MFX_PICTYPE_TOPFIELD : MFX_PICTYPE_BOTTOMFIELD;
+
+    mfxU16 processed[PpsDPBSize] = {0}; // for fields were affected (MFX_PICTYPE_*)
+
     // field is set index but not true field - only 0 for single_field mode
-    mfxExtFeiPPS* ppsE = (mfxExtFeiPPS*)GetExtFeiBuffer(encbuf, MFX_EXTBUFF_FEI_PPS, field);
-    mfxExtFeiPPS* ppsP = (mfxExtFeiPPS*)GetExtFeiBuffer(pakbuf, MFX_EXTBUFF_FEI_PPS, field);
+    mfxExtFeiPPS* ppsE = (mfxExtFeiPPS*)GetExtFeiBuffer(encbuf, MFX_EXTBUFF_FEI_PPS, idxToPickBuffers);
+    mfxExtFeiPPS* ppsP = (mfxExtFeiPPS*)GetExtFeiBuffer(pakbuf, MFX_EXTBUFF_FEI_PPS, idxToPickBuffers);
     if (!ppsE || !ppsP)
         return MFX_ERR_NOT_FOUND;
 
@@ -108,11 +123,11 @@ mfxStatus LoadTC(std::vector<mfxExtBuffer*>& encbuf, std::vector<mfxExtBuffer*>&
     bool havemmco = false;
 
     for (int op = 0; tc.mmco_set[op].mmco != 0; op++) {
-        if (tc.mmco_set[op].frameNum != frame)
+        if (tc.mmco_set[op].frameNum != picture)
             continue;
         const mfxExtFeiPPS::mfxExtFeiPpsDPB *current = 0; // current frame in newDpb
 
-        // for first mmco occurence
+        // for first mmco occurrence
         if (!havemmco && tc.mmco_set[op].mmco != MMCO_0) {
             havemmco = true;
             CopyPpsDPB(ppsE->DpbBefore, newDpb); // will rebuild without sliding window
@@ -140,15 +155,23 @@ mfxStatus LoadTC(std::vector<mfxExtBuffer*>& encbuf, std::vector<mfxExtBuffer*>&
         switch (tc.mmco_set[op].mmco) {
         case MMCO_1:
             {
-                mfxI32 target = frame - tc.mmco_set[op].idxST;
+                mfxI32 target = (picture | fieldMode) - tc.mmco_set[op].idxST; // "CurrPicNum is set equal to 2 * frame_num + 1"
                 bool err = true;
                 for (int d = 0; d < PpsDPBSize && newDpb[d].Index != 0xffff; d++) {
-                    if (newDpb[d].LongTermFrameIdx == 0xffff && newDpb[d].FrameNumWrap == target) {
+                    if (newDpb[d].LongTermFrameIdx == 0xffff && newDpb[d].FrameNumWrap == (target >> fieldMode)) {
+                        mfxU32 refType = !fieldMode ? MFX_PICTYPE_FRAME :
+                                ((target & 1) ? picType : (picType ^ (MFX_PICTYPE_TOPFIELD | MFX_PICTYPE_BOTTOMFIELD))); // same parity for bigger picnum
+                        if (processed[d] & refType) // same picture again
+                            return MFX_ERR_ABORTED; // or what?
+                        err = false;
+                        processed[d] |= refType;
+                        newDpb[d].PicType &= ~refType;
+                        if (newDpb[d].PicType) // one field left - keep it
+                            break;
                         // remove with shift left
                         for ( ; d+1 < PpsDPBSize && newDpb[d+1].Index != 0xffff; d++)
                             newDpb[d] = newDpb[d+1];
                         newDpb[d].Index = 0xffff;
-                        err = false;
                         break;
                     }
                 }
@@ -162,6 +185,10 @@ mfxStatus LoadTC(std::vector<mfxExtBuffer*>& encbuf, std::vector<mfxExtBuffer*>&
                 bool err = true;
                 for (int d = 0; d < PpsDPBSize && newDpb[d].Index != 0xffff; d++) {
                     if (newDpb[d].LongTermFrameIdx == target) {
+                        mfxU32 refType = 0xff; // any. TODO check if it can work by fields
+                        if (processed[d] & refType) // same picture again
+                            return MFX_ERR_ABORTED; // or what?
+                        processed[d] |= refType;
                         // remove with shift left
                         for ( ; d+1 < PpsDPBSize && newDpb[d+1].Index != 0xffff; d++)
                             newDpb[d] = newDpb[d+1];
@@ -177,10 +204,15 @@ mfxStatus LoadTC(std::vector<mfxExtBuffer*>& encbuf, std::vector<mfxExtBuffer*>&
         case MMCO_6: // assumes tc.mmco_set[op].idxST is 0
         case MMCO_3:
             {
-                mfxI32 target = frame - tc.mmco_set[op].idxST;
+                mfxI32 target = (picture | fieldMode) - tc.mmco_set[op].idxST;
                 bool err = true;
                 for (int d = 0; d < PpsDPBSize && newDpb[d].Index != 0xffff; d++) {
-                    if (newDpb[d].LongTermFrameIdx == 0xffff && newDpb[d].FrameNumWrap == target) {
+                    if (newDpb[d].LongTermFrameIdx == 0xffff && newDpb[d].FrameNumWrap == (target >> fieldMode)) {
+                        mfxU32 refType = !fieldMode ? MFX_PICTYPE_FRAME :
+                                ((target & 1) ? picType : (picType ^ (MFX_PICTYPE_TOPFIELD | MFX_PICTYPE_BOTTOMFIELD))); // same parity for bigger picnum
+                        if (processed[d] & refType) // same picture again
+                            return MFX_ERR_ABORTED; // or what?
+                        processed[d] |= refType;
                         // change ST to LT
                         newDpb[d].LongTermFrameIdx = tc.mmco_set[op].idxLT;
                         err = false;
@@ -197,6 +229,10 @@ mfxStatus LoadTC(std::vector<mfxExtBuffer*>& encbuf, std::vector<mfxExtBuffer*>&
                 bool err = true;
                 for (int d = 0; d < PpsDPBSize && newDpb[d].Index != 0xffff; d++) {
                     if (newDpb[d].LongTermFrameIdx != 0xffff && newDpb[d].LongTermFrameIdx > target) {
+                        mfxU32 refType = 0xff; // any. TODO check if it can work by fields
+                        if (processed[d] & refType) // same picture again
+                            return MFX_ERR_ABORTED; // or what?
+                        processed[d] |= refType;
                         // remove with shift left
                         for ( ; d+1 < PpsDPBSize && newDpb[d+1].Index != 0xffff; d++)
                             newDpb[d] = newDpb[d+1];
@@ -209,7 +245,7 @@ mfxStatus LoadTC(std::vector<mfxExtBuffer*>& encbuf, std::vector<mfxExtBuffer*>&
                     return MFX_ERR_ABORTED; // or what?
             }
             break;
-        case MMCO_5: // msdk removes one by one
+        case MMCO_5: // now msdk removes one by one, never go here
             if (current) // put current first, if exists
                 newDpb[0] = *current;
             else
@@ -286,7 +322,7 @@ public:
                         continue; // todo: check if missed pps succeeds
                     dec_ref_pic_marking_params* marking = au.NALU[i].slice_hdr->dec_ref_pic_marking;
                     int numExpected = 0, numFound = 0;
-                    for (int d = 0; d<MAX_MMCO_IN_CASE; numExpected += (m_tc.mmco_set[d].mmco != 0 && m_tc.mmco_set[d].frameNum == nFrame), d++);
+                    for (int d = 0; d<MAX_MMCO_IN_CASE; numExpected += (m_tc.mmco_set[d].mmco != 0 && m_tc.mmco_set[d].frameNum == m_nPic), d++);
 
                     while (marking) {
                         numFound += (marking->memory_management_control_operation != 0);
@@ -300,7 +336,7 @@ public:
                             {
                                 mfxI32 target = marking->difference_of_pic_nums_minus1+1;
                                 for (int d = 0; d<MAX_MMCO_IN_CASE && !matched; d++) {
-                                    if (m_tc.mmco_set[d].frameNum != nFrame ||
+                                    if (m_tc.mmco_set[d].frameNum != m_nPic ||
                                             m_tc.mmco_set[d].mmco != marking->memory_management_control_operation ||
                                             m_tc.mmco_set[d].idxST != target)
                                         continue;
@@ -312,7 +348,7 @@ public:
                             {
                                 mfxU32 target = marking->long_term_pic_num;
                                 for (int d = 0; d<MAX_MMCO_IN_CASE && !matched; d++) {
-                                    if (m_tc.mmco_set[d].frameNum != nFrame ||
+                                    if (m_tc.mmco_set[d].frameNum != m_nPic ||
                                             m_tc.mmco_set[d].mmco != marking->memory_management_control_operation ||
                                             m_tc.mmco_set[d].idxLT != target)
                                         continue;
@@ -324,7 +360,7 @@ public:
                             {
                                 mfxI32 target = marking->difference_of_pic_nums_minus1+1;
                                 for (int d = 0; d<MAX_MMCO_IN_CASE && !matched; d++) {
-                                    if (m_tc.mmco_set[d].frameNum != nFrame ||
+                                    if (m_tc.mmco_set[d].frameNum != m_nPic ||
                                             m_tc.mmco_set[d].mmco != marking->memory_management_control_operation ||
                                             m_tc.mmco_set[d].idxST != target)
                                         continue;
@@ -337,7 +373,7 @@ public:
                             {
                                 mfxI32 target = marking->max_long_term_frame_idx_plus1 - 1;
                                 for (int d = 0; d<MAX_MMCO_IN_CASE && !matched; d++) {
-                                    if (m_tc.mmco_set[d].frameNum != nFrame ||
+                                    if (m_tc.mmco_set[d].frameNum != m_nPic ||
                                             m_tc.mmco_set[d].mmco != marking->memory_management_control_operation)
                                         continue;
                                     matched = (m_tc.mmco_set[d].idxLT == target);
@@ -348,7 +384,7 @@ public:
                         case MMCO_5:
                             {
                                 for (int d = 0; d<MAX_MMCO_IN_CASE; d++) {
-                                    if (m_tc.mmco_set[d].frameNum != nFrame)
+                                    if (m_tc.mmco_set[d].frameNum != m_nPic)
                                         continue;
                                     matched = (m_tc.mmco_set[d].mmco == MMCO_5);
                                     break;
@@ -359,7 +395,7 @@ public:
                             {
                                 mfxU32 target = marking->long_term_frame_idx;
                                 for (int d = 0; d<MAX_MMCO_IN_CASE && !matched; d++) {
-                                    if (m_tc.mmco_set[d].frameNum != nFrame ||
+                                    if (m_tc.mmco_set[d].frameNum != m_nPic ||
                                             m_tc.mmco_set[d].mmco != marking->memory_management_control_operation)
                                         continue;
                                     matched = (m_tc.mmco_set[d].idxLT == target);
@@ -399,26 +435,12 @@ int TestSuite::RunTest(unsigned int id)
 
     CHECK_FEI_SUPPORT();
 
-    const int table_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
-    const tc_struct& tc = test_case[id % table_cases];
-    srand(id);
+    const tc_struct& tc = test_case[id];
+    //srand(id);
 
     const mfxU16 n_frames = 10;
-    mfxU16 picStruct;
+    mfxU16 picStruct = tc.mode;
     mfxStatus sts;
-
-    switch(id / table_cases) {
-    case 0:
-    default:
-        picStruct = MFX_PICSTRUCT_PROGRESSIVE;
-        break;
-    case 1:
-        picStruct = MFX_PICSTRUCT_FIELD_TFF;
-        break;
-    case 2:
-        picStruct = MFX_PICSTRUCT_FIELD_BFF;
-        break;
-    }
 
     encpak.enc.m_par.mfx.FrameInfo.PicStruct = picStruct;
     encpak.enc.m_pPar->mfx.GopPicSize = 30;
@@ -442,13 +464,10 @@ int TestSuite::RunTest(unsigned int id)
     encpak.m_bs_processor = &pd;
 
     encpak.PrepareInitBuffers();
-    //LoadTC(encpak.enc.initbuf, encpak.pak.initbuf, tc, 0);
 
-//// mods for Init to be here
-    mfxExtFeiPPS* ppsE = (mfxExtFeiPPS*)GetExtFeiBuffer(encpak.enc.initbuf, MFX_EXTBUFF_FEI_PPS);
-    mfxExtFeiPPS* ppsP = (mfxExtFeiPPS*)GetExtFeiBuffer(encpak.pak.initbuf, MFX_EXTBUFF_FEI_PPS);
-//    ppsE->PictureType = ppsP->PictureType = tc.par.PictureType;
-//    ppsE->FrameType = ppsP->FrameType = tc.par.FrameType;
+////// mods for Init to be here
+//    mfxExtFeiPPS* ppsE = (mfxExtFeiPPS*)GetExtFeiBuffer(encpak.enc.initbuf, MFX_EXTBUFF_FEI_PPS);
+//    mfxExtFeiPPS* ppsP = (mfxExtFeiPPS*)GetExtFeiBuffer(encpak.pak.initbuf, MFX_EXTBUFF_FEI_PPS);
 
     g_tsStatus.disable(); // it is checked many times inside, resetting expected to err_none
 
@@ -478,10 +497,15 @@ int TestSuite::RunTest(unsigned int id)
                 break;
             }
 
-            LoadTC(encpak.enc.inbuf, encpak.pak.inbuf, tc, count, idxToPickBuffers);
+            sts = LoadTC(encpak.enc.inbuf, encpak.pak.inbuf, tc, count, field, idxToPickBuffers);
+            if (sts != MFX_ERR_NONE) {
+                g_tsStatus.expect(tc.sts); // if fails check if it is expected
+                g_tsStatus.check(sts);
+                break;
+            }
 
             if (bTwoBuffers) {
-                LoadTC(encpak.enc.inbuf, encpak.pak.inbuf, tc, count, 1 ^ idxToPickBuffers);
+                LoadTC(encpak.enc.inbuf, encpak.pak.inbuf, tc, count, field, 1 ^ idxToPickBuffers);
             }
             // to modify pps etc
             mfxExtFeiPPS * fppsE = (mfxExtFeiPPS *)GetExtFeiBuffer(encpak.enc.inbuf, MFX_EXTBUFF_FEI_PPS, idxToPickBuffers);
