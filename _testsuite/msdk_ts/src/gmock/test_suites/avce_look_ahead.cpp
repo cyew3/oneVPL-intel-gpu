@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
 
 File Name: avce_look_ahead.cpp
 \* ****************************************************************************** */
@@ -106,105 +106,90 @@ namespace avce_look_ahead{
     {
         {/*00*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
                 {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA},
-                 {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, 101},
-                 {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDS, MFX_LOOKAHEAD_DS_OFF}}},
-
-        {/*01*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
-                {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, 9},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDS, MFX_LOOKAHEAD_DS_OFF}}},
 
-        {/*02*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
+        {/*01*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
                 {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, 10},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDS, MFX_LOOKAHEAD_DS_OFF}}},
 
-        {/*03*/ MFX_ERR_NONE, MFX_ERR_NONE,
+        {/*02*/ MFX_ERR_NONE, MFX_ERR_NONE,
                 {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, 100},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDS, MFX_LOOKAHEAD_DS_OFF}}},
 
-        {/*04*/ MFX_ERR_NONE, MFX_ERR_NONE,
+        {/*03*/ MFX_ERR_NONE, MFX_ERR_NONE,
                 {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, 10},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDS, MFX_LOOKAHEAD_DS_OFF}}},
 
-        {/*05*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
+        {/*04*/ MFX_ERR_NONE, MFX_ERR_NONE,
                 {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, 101},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDS, MFX_LOOKAHEAD_DS_UNKNOWN}}},
 
-        {/*06*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
+        {/*05*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
                 {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, 9},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDS, MFX_LOOKAHEAD_DS_UNKNOWN}}},
 
-        {/*07*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
+        {/*06*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
                 {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
+                 {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, 10},
+                 {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDS, MFX_LOOKAHEAD_DS_UNKNOWN}}},
+
+        {/*07*/ MFX_ERR_NONE, MFX_ERR_NONE,
+                {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, 10},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDS, MFX_LOOKAHEAD_DS_UNKNOWN}}},
 
         {/*08*/ MFX_ERR_NONE, MFX_ERR_NONE,
                 {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA},
-                 {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, 100},
-                 {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDS, MFX_LOOKAHEAD_DS_UNKNOWN}}},
-
-        {/*09*/ MFX_ERR_NONE, MFX_ERR_NONE,
-                {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA},
-                 {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, 10},
-                 {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDS, MFX_LOOKAHEAD_DS_UNKNOWN}}},
-
-        {/*10*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
-                {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA},
-                 {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, 101},
+                 {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, 141},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDS, MFX_LOOKAHEAD_DS_2x}}},
 
-        {/*11*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
+        {/*09*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
                 {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, 9},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDS, MFX_LOOKAHEAD_DS_2x}}},
 
-        {/*12*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
+        {/*10*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
                 {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, 10},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDS, MFX_LOOKAHEAD_DS_2x}}},
 
-        {/*13*/ MFX_ERR_NONE, MFX_ERR_NONE,
-                {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA},
-                 {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, 100},
-                 {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDS, MFX_LOOKAHEAD_DS_2x}}},
-
-        {/*14*/ MFX_ERR_NONE, MFX_ERR_NONE,
+        {/*11*/ MFX_ERR_NONE, MFX_ERR_NONE,
                 {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, 10},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDS, MFX_LOOKAHEAD_DS_2x}}},
+
+        {/*12*/ MFX_ERR_NONE, MFX_ERR_NONE,
+                {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA},
+                 {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, 201},
+                 {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDS, 4}}},
+
+        {/*13*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
+                {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA},
+                 {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, 9},
+                 {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDS, MFX_LOOKAHEAD_DS_4x}}},
+
+        {/*14*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
+                {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
+                 {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, 10},
+                 {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDS, MFX_LOOKAHEAD_DS_4x}}},
 
         {/*15*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
                 {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA},
-                 {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, 101},
-                 {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDS, 4}}},
-
-        {/*16*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
-                {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA},
-                 {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, 9},
-                 {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDS, MFX_LOOKAHEAD_DS_4x}}},
-
-        {/*17*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
-                {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
-                 {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, 10},
-                 {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDS, MFX_LOOKAHEAD_DS_4x}}},
-
-        {/*18*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
-                {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, 100},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDS, MFX_LOOKAHEAD_DS_4x}}},
 
-        {/*19*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
+        {/*16*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
                 {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, 10},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDS, MFX_LOOKAHEAD_DS_4x}}},
 
-        {/*20*/ MFX_ERR_NONE, MFX_ERR_NONE,
+        {/*17*/ MFX_ERR_NONE, MFX_ERR_NONE,
                 {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, 10},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDS, 4}}}
