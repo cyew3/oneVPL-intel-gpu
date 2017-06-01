@@ -1635,6 +1635,12 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition_TiledVideoWall(mfxExecutePar
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
         outputparam.surface = *outputSurface;
+        // The targerRect.width and targerRect.height here actually storing the x2 and y2
+        // value. Deduct x and y respectively to get the exact targerRect.width and
+        // targerRect.height
+        tilingParams[currTile].targerRect.width -= tilingParams[currTile].targerRect.x;
+        tilingParams[currTile].targerRect.height -= tilingParams[currTile].targerRect.y;
+
         outputparam.output_region  = &tilingParams[currTile].targerRect;
         outputparam.surface_region = &tilingParams[currTile].targerRect;
 
