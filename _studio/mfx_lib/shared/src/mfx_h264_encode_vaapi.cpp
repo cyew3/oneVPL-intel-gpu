@@ -169,7 +169,8 @@ mfxStatus SetRateControl(
 {
     VAStatus vaSts;
     VAEncMiscParameterBuffer *misc_param;
-    VAEncMiscParameterRateControl *rate_param;
+    VAEncMiscParameterRateControlPrivate *rate_param;
+    mfxExtCodingOption3 const * extOpt3  = GetExtBuffer(par);
 
     if ( rateParamBuf_id != VA_INVALID_ID)
     {
@@ -179,7 +180,7 @@ mfxStatus SetRateControl(
     vaSts = vaCreateBuffer(vaDisplay,
                    vaContextEncode,
                    VAEncMiscParameterBufferType,
-                   sizeof(VAEncMiscParameterBuffer) + sizeof(VAEncMiscParameterRateControl),
+                   sizeof(VAEncMiscParameterBuffer) + sizeof(VAEncMiscParameterRateControlPrivate),
                    1,
                    NULL,
                    &rateParamBuf_id);
@@ -191,7 +192,7 @@ mfxStatus SetRateControl(
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
     misc_param->type = VAEncMiscParameterTypeRateControl;
-    rate_param = (VAEncMiscParameterRateControl *)misc_param->data;
+    rate_param = (VAEncMiscParameterRateControlPrivate *)misc_param->data;
 
     rate_param->bits_per_second = GetMaxBitrateValue(par.calcParam.maxKbps) << (6 + SCALE_FROM_DRIVER);
     rate_param->window_size     = par.mfx.Convergence * 100;
@@ -203,6 +204,14 @@ mfxStatus SetRateControl(
 
     if(par.calcParam.maxKbps)
         rate_param->target_percentage = (unsigned int)(100.0 * (mfxF64)par.calcParam.targetKbps / (mfxF64)par.calcParam.maxKbps);
+
+#if defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT)
+    // Activate frame tolerance sliding window mode
+    if (extOpt3->WinBRCSize) {
+        rate_param->rc_flags.bits.frame_tolerance_mode = 1;
+    }
+#endif  // defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT)
+
 /*
  * MBBRC control
  * Control VA_RC_MB 0: default, 1: enable, 2: disable, other: reserved

@@ -31,6 +31,68 @@
 #define VA_CODED_BUF_STATUS_BAD_BITSTREAM 0x8000
 #define VA_CODED_BUF_STATUS_HW_TEAR_DOWN 0x4000
 
+/** \brief Rate control parameters */
+typedef struct _VAEncMiscParameterRateControlPrivate
+{
+    /* this is the maximum bit-rate to be constrained by the rate control implementation */
+    unsigned int bits_per_second;
+    /* this is the bit-rate the rate control is targeting, as a percentage of the maximum
+     * bit-rate for example if target_percentage is 95 then the rate control will target
+     * a bit-rate that is 95% of the maximum bit-rate
+     */
+    unsigned int target_percentage;
+    /* windows size in milliseconds. For example if this is set to 500,
+     * then the rate control will guarantee the target bit-rate over a 500 ms window
+     */
+    unsigned int window_size;
+    /* initial_qp: initial QP for the first I frames
+     * min_qp/max_qp: minimal and maximum QP frames
+     * If set them to 0, encoder chooses the best QP according to rate control
+     */
+    unsigned int initial_qp;
+    unsigned int min_qp;
+    unsigned int max_qp;
+    unsigned int basic_unit_size;
+    union
+    {
+        struct
+        {
+            unsigned int reset : 1;
+            unsigned int disable_frame_skip : 1; /* Disable frame skip in rate control mode */
+            unsigned int disable_bit_stuffing : 1; /* Disable bit stuffing in rate control mode */
+            unsigned int mb_rate_control : 4; /* Control VA_RC_MB 0: default, 1: enable, 2: disable, other: reserved*/
+            /*
+             * The temporal layer that the rate control parameters are specified for.
+             */
+            unsigned int temporal_id : 8;
+            unsigned int cfs_I_frames : 1; /* I frame also follows CFS */
+            unsigned int enable_parallel_brc    : 1;
+            unsigned int enable_dynamic_scaling : 1;
+            /** \brief Frame Tolerance Mode
+             *  Indicates the tolerance the application has to variations in the frame size. 
+             *  For example, remote display scenarios may require very steady bit rate to
+             *  reduce buffering time. It affects the rate control algorithm used,
+             *  but may or may not have an effect based on the combination of other BRC
+             *  parameters.  Only valid when the driver reports support for
+             *  #VAConfigAttribFrameSizeToleranceSupport.
+             *
+             *  equals 0    -- normal mode;
+             *  equals 1    -- maps to sliding window;
+             *  equals 2    -- maps to low delay mode;
+             *  other       -- invalid.
+             */
+            unsigned int frame_tolerance_mode   : 2;
+            /** \brief Enable fine-tuned qp adjustment at CQP mode.
+             *  With BRC modes, this flag should be set to 0.
+             */
+            unsigned int qp_adjustment          : 1;
+            unsigned int reserved               : 11;
+        } bits;
+        unsigned int value;
+    } rc_flags;
+    unsigned int ICQ_quality_factor; /* Initial ICQ quality factor: 1-51. */
+} VAEncMiscParameterRateControlPrivate;
+
 /** \brief Attribute value for VAConfigAttribEncROI */
 typedef union _VAConfigAttribValEncROIPrivate {
     struct {

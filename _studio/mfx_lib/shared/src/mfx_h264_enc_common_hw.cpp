@@ -4211,8 +4211,16 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 
      if (extOpt3->WinBRCMaxAvgKbps || extOpt3->WinBRCSize)
      {
-         if ((par.mfx.RateControlMethod != MFX_RATECONTROL_LA  && par.mfx.RateControlMethod != MFX_RATECONTROL_LA_HRD && par.mfx.RateControlMethod != MFX_RATECONTROL_LA_EXT
-             && par.mfx.RateControlMethod != MFX_RATECONTROL_VBR && par.mfx.RateControlMethod != MFX_RATECONTROL_QVBR))
+         if ((par.mfx.RateControlMethod != MFX_RATECONTROL_LA  &&
+             par.mfx.RateControlMethod != MFX_RATECONTROL_LA_HRD &&
+             par.mfx.RateControlMethod != MFX_RATECONTROL_LA_EXT &&
+             par.mfx.RateControlMethod != MFX_RATECONTROL_VBR &&
+             par.mfx.RateControlMethod != MFX_RATECONTROL_QVBR
+#if defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT)
+             // Sliding window is not supported by SW BRC in CBR
+             && !(par.mfx.RateControlMethod == MFX_RATECONTROL_CBR && !IsOn(extOpt2->ExtBRC))
+#endif  // defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT)
+             ))
          {
              extOpt3->WinBRCMaxAvgKbps = 0;
              extOpt3->WinBRCSize = 0;
@@ -4223,7 +4231,12 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
          {
              warning = true;
          }
-         else if (par.mfx.RateControlMethod == MFX_RATECONTROL_VBR || par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR)
+         else if ((par.mfx.RateControlMethod == MFX_RATECONTROL_VBR ||
+             par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR
+#if defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT)
+             || par.mfx.RateControlMethod == MFX_RATECONTROL_CBR
+#endif  // defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT)
+             ) && !IsOn(extOpt2->ExtBRC))
          {
              if (par.mfx.FrameInfo.FrameRateExtN != 0 && par.mfx.FrameInfo.FrameRateExtD != 0)
              {
@@ -4249,6 +4262,16 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
              }
              else if (par.calcParam.WinBRCMaxAvgKbps)
              {
+#if defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT)
+                 if (par.calcParam.targetKbps &&
+                     par.mfx.RateControlMethod == MFX_RATECONTROL_CBR &&
+                     par.calcParam.WinBRCMaxAvgKbps != par.calcParam.targetKbps)
+                 {
+                     par.calcParam.WinBRCMaxAvgKbps = par.calcParam.targetKbps;
+                     changed = true;
+                 }
+#endif  // defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT)
+
                  if (par.calcParam.targetKbps && par.calcParam.WinBRCMaxAvgKbps < par.calcParam.targetKbps)
                  {
                      extOpt3->WinBRCMaxAvgKbps = 0;
