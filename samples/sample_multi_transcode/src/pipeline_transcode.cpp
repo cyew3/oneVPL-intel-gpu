@@ -1356,7 +1356,7 @@ void CTranscodingPipeline::FillMBQPBuffer(mfxExtMBQP &qpMap, mfxU16 pictStruct)
 {
     if (pictStruct == MFX_PICSTRUCT_PROGRESSIVE)
     {
-        mfxI8 fQP = (m_nSubmittedFramesNum % m_GOPSize) ? m_QPforP : m_QPforI;
+        mfxI8 fQP = (m_nSubmittedFramesNum % m_GOPSize) ? (mfxI8)m_QPforP : (mfxI8)m_QPforI;
         std::memset(qpMap.QP, fQP, qpMap.NumQPAlloc);
 
 //        printf("QP expectation: %d, map PTR %lld\n",fQP,(long long int)qpMap.QP);
@@ -1385,9 +1385,9 @@ void CTranscodingPipeline::FillMBQPBuffer(mfxExtMBQP &qpMap, mfxU16 pictStruct)
                 if(t > m_QPmapHeight) t = m_QPmapHeight;
                 if(b > m_QPmapHeight) b = m_QPmapHeight;
 
-                mfxI8   qp_value = std::min(std::max(fQP + (mfxI8)roi.ROI[i].DeltaQP, 0), 51);
+                mfxI8   qp_value = (mfxI8)std::min(std::max(fQP + (mfxI8)roi.ROI[i].DeltaQP, 0), 51);
 
-                for (mfxU8 k=t; k<b; k++)
+                for (mfxU32 k=t; k<b; k++)
                     std::memset(qpMap.QP + k*m_QPmapWidth + l, qp_value, r-l);
             }
         }
@@ -1414,14 +1414,14 @@ void CTranscodingPipeline::FillMBQPBuffer(mfxExtMBQP &qpMap, mfxU16 pictStruct)
                             r = (roi.ROI[i].Right + 15) >> 4,
                             b = (roi.ROI[i].Bottom + 31) >> 5;
                     mfxI8   qp_delta = (mfxI8)roi.ROI[i].DeltaQP;
-                    mfxU8   roi_qp = std::min(std::max(mfxI8(fQP[fld]) + qp_delta, 0), 51);
+                    mfxU8   roi_qp = (mfxU8)std::min(std::max(mfxI8(fQP[fld]) + qp_delta, 0), 51);
 
                     if(l > m_QPmapWidth) l = m_QPmapWidth;
                     if(r > m_QPmapWidth) r = m_QPmapWidth;
                     if(t > m_QPmapHeight/2) t = m_QPmapHeight/2;
                     if(b > m_QPmapHeight/2) b = m_QPmapHeight/2;
 
-                    for (mfxU8 k=t; k<b; k++)
+                    for (mfxU32 k=t; k<b; k++)
                         std::memset(qpMap.QP + fOff[fld] + k*m_QPmapWidth + l, roi_qp, r-l);
                 }
             }
@@ -1429,7 +1429,7 @@ void CTranscodingPipeline::FillMBQPBuffer(mfxExtMBQP &qpMap, mfxU16 pictStruct)
     }
     else
     {
-        mfxI8 fQP = (m_nSubmittedFramesNum % m_GOPSize) ? m_QPforP : m_QPforI;
+        mfxI8 fQP = (m_nSubmittedFramesNum % m_GOPSize) ? (mfxI8)m_QPforP : (mfxI8)m_QPforI;
         std::memset(qpMap.QP, fQP, qpMap.NumQPAlloc);
     }
 }
@@ -1444,7 +1444,6 @@ void CTranscodingPipeline::SetEncCtrlRT(ExtendedSurface& extSurface, mfxEncodeCt
         extSurface.pEncCtrl = &extSurface.pAuxCtrl->encCtrl;
 
 #if _MSDK_API >= MSDK_API(1,22)
-    mfxU32  NumExtParam = 0;
 
     if (extSurface.pSurface)
     {
@@ -1487,7 +1486,7 @@ void CTranscodingPipeline::SetEncCtrlRT(ExtendedSurface& extSurface, mfxEncodeCt
         }
 
         // Replace the buffers pointer to pre-allocated storage
-        pCtrl->NumExtParam = m_extBuffPtrStorage[keyId].size();
+        pCtrl->NumExtParam = (mfxU16)m_extBuffPtrStorage[keyId].size();
         pCtrl->ExtParam = &(m_extBuffPtrStorage[keyId][0]);
 
         extSurface.pEncCtrl = pCtrl;
@@ -3486,8 +3485,8 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
         {
             mfxVideoParam enc_par;
             MSDK_ZERO_MEMORY(enc_par);
-            mfxStatus sts = m_pmfxENC->GetVideoParam(&enc_par);
-            MSDK_CHECK_STATUS(sts, "m_pmfxENC->GetVideoParam failed");
+            mfxStatus sts1 = m_pmfxENC->GetVideoParam(&enc_par);
+            MSDK_CHECK_STATUS(sts1, "m_pmfxENC->GetVideoParam failed");
 
             if(enc_par.mfx.GopRefDist != 1)
             {
