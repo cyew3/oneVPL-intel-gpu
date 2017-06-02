@@ -126,7 +126,6 @@ public:
     void GetOrg(Ipp32u **pbs, Ipp32u *size);
     void GetState(Ipp32u **pbs, Ipp32u *bitOffset);
     void SetState(Ipp32u *pbs, Ipp32u bitOffset);
-    inline Ipp32u GetBitOffset() const;
 
     // Set current decoding position
     void SetDecodedBytes(size_t);
@@ -378,11 +377,6 @@ inline size_t H264BaseBitstream::BitsDecoded()
 inline size_t H264BaseBitstream::BytesLeft()
 {
     return((Ipp32s)m_maxBsSize - (Ipp32s) BytesDecoded());
-}
-
-inline Ipp32u H264BaseBitstream::GetBitOffset() const
-{
-    return m_bitOffset;
 }
 
 inline void H264BaseBitstream::AlignPointerRight()

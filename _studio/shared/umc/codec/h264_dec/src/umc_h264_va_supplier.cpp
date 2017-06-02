@@ -76,8 +76,15 @@ void LazyCopier::CopyAll()
 
         // update bs ptr !!!
         H264HeadersBitstream *pBitstream = slice->GetBitStream();
-        Ipp32s offset = pBitstream->GetBitOffset();
-        pBitstream->Reset(slice->m_pSource.GetPointer(), offset, (Ipp32u)slice->m_pSource.GetDataSize());
+
+        Ipp32u *pbsBase, *pbs;
+        Ipp32u size, bitOffset;
+
+        pBitstream->GetOrg(&pbsBase, &size);
+        pBitstream->GetState(&pbs, &bitOffset);
+
+        pBitstream->Reset(slice->m_pSource.GetPointer(), bitOffset, (Ipp32u)slice->m_pSource.GetDataSize());
+        pBitstream->SetState((Ipp32u*)slice->m_pSource.GetPointer() + (pbs - pbsBase), bitOffset);
     }
 
     m_slices.clear();
