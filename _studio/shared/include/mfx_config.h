@@ -90,9 +90,7 @@
         #undef  UMC_VA_DXVA
         #define UMC_VA_DXVA
 
-        #if !defined( WIN_TRESHOLD_MOBILE )
-            #define MFX_D3D9_ENABLED
-        #endif
+        #define MFX_D3D9_ENABLED
 
     #elif defined(__APPLE__)
         #undef  MFX_VA_OSX

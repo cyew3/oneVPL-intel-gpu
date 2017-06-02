@@ -403,13 +403,12 @@
       <PreprocessorDefinitions>WIN64;_DEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;MFX_VA;MFX_VA_WIN;MFX_D3D11_ENABLED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <WarningLevel>Level4</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>dxva2.lib;version.lib;D3D11.lib;DXGI.lib;ippcoremt.lib;ipps_s_y8.lib;ippvc_s_y8.lib;ippi_s_y8.lib;ippcc_s_y8.lib;ippcv_s_y8.lib;ippj_s_y8.lib;ippmsdk_s_y8.lib</AdditionalDependencies>
+      <AdditionalDependencies>dxva2.lib;version.lib;D3D11.lib;DXGI.lib;ippcoremt.lib;ipps_s_y8.lib;ippvc_s_y8.lib;ippi_s_y8.lib;ippcc_s_y8.lib;ippcv_s_y8.lib;ippj_s_y8.lib;ippmsdk_s_y8.lib;onecore.lib;uuid.lib;d3d9.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(MEDIASDK_ROOT)\CMRT\compiler\lib\x64;$(MEDIASDK_ROOT)\CMRT\runtime\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>setupapi.lib;PowrProf.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ModuleDefinitionFile>libmfx.def</ModuleDefinitionFile>
@@ -419,6 +418,7 @@
       <ImportLibrary>$(OutDir)..\lib\$(TargetName).lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
       <ShowProgress>LinkVerbose</ShowProgress>
+      <DelayLoadDLLs>%(DelayLoadDLLs)</DelayLoadDLLs>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'">
@@ -484,7 +484,7 @@
       <SDLCheck>true</SDLCheck>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>dxva2.lib;version.lib;D3D11.lib;DXGI.lib;ippcoremt.lib;ipps_s_p8.lib;ippvc_s_p8.lib;ippi_s_p8.lib;ippcc_s_p8.lib;ippcv_s_p8.lib;ippj_s_p8.lib;ippmsdk_s_p8.lib;uuid.lib</AdditionalDependencies>
+      <AdditionalDependencies>dxva2.lib;version.lib;D3D11.lib;DXGI.lib;ippcoremt.lib;ipps_s_p8.lib;ippvc_s_p8.lib;ippi_s_p8.lib;ippcc_s_p8.lib;ippcv_s_p8.lib;ippj_s_p8.lib;ippmsdk_s_p8.lib;uuid.lib;d3d9.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(MEDIASDK_ROOT)\CMRT\compiler\lib\x86;$(MEDIASDK_ROOT)\CMRT\runtime\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>setupapi.lib;PowrProf.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;odbc32.lib;odbccp32.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ModuleDefinitionFile>libmfx.def</ModuleDefinitionFile>
@@ -561,7 +561,7 @@
       <SDLCheck>true</SDLCheck>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>dxva2.lib;version.lib;D3D11.lib;DXGI.lib;ippcoremt.lib;ipps_s_y8.lib;ippvc_s_y8.lib;ippi_s_y8.lib;ippcc_s_y8.lib;ippcv_s_y8.lib;ippj_s_y8.lib;ippmsdk_s_y8.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>dxva2.lib;version.lib;D3D11.lib;DXGI.lib;ippcoremt.lib;ipps_s_y8.lib;ippvc_s_y8.lib;ippi_s_y8.lib;ippcc_s_y8.lib;ippcv_s_y8.lib;ippj_s_y8.lib;ippmsdk_s_y8.lib;d3d9.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(MEDIASDK_ROOT)\CMRT\compiler\lib\x64;$(MEDIASDK_ROOT)\CMRT\runtime\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>setupapi.lib;PowrProf.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ModuleDefinitionFile>libmfx.def</ModuleDefinitionFile>

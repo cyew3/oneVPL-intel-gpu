@@ -313,6 +313,7 @@ copy $(MEDIASDK_ROOT)\CMRT\compiler\lib\x86\libcm.dll ..\..\..\..\build\win_$(Pl
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <Optimization>Disabled</Optimization>
     </ClCompile>
     <Lib />
     <Bscmake>

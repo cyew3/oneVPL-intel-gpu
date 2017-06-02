@@ -20,8 +20,9 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Release_THM' or '$(Configuration)'=='Debug_THM'">
     <Link>
-      <AdditionalDependencies>onecore.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>onecore.lib;d3d9.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;odbc32.lib;odbccp32.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <DelayLoadDLLs>D3D9.dll</DelayLoadDLLs>
     </Link>
   </ItemDefinitionGroup>
   <PropertyGroup>
