@@ -96,8 +96,8 @@ VAAPIVideoProcessing::VAAPIVideoProcessing():
   m_bRunning(false)
 , m_core(NULL)
 , m_vaDisplay(0)
-, m_vaConfig(0)
-, m_vaContextVPP(0)
+, m_vaConfig(VA_INVALID_ID)
+, m_vaContextVPP(VA_INVALID_ID)
 , m_denoiseFilterID(VA_INVALID_ID)
 , m_detailFilterID(VA_INVALID_ID)
 , m_deintFilterID(VA_INVALID_ID)
@@ -201,17 +201,17 @@ mfxStatus VAAPIVideoProcessing::Close(void)
         vaDestroyBuffer(m_vaDisplay, m_frcFilterID);
     }
 
-    if( m_vaContextVPP )
+    if (m_vaContextVPP != VA_INVALID_ID)
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaDestroyContext");
         vaDestroyContext( m_vaDisplay, m_vaContextVPP );
-        m_vaContextVPP = 0;
+        m_vaContextVPP = VA_INVALID_ID;
     }
 
-    if( m_vaConfig )
+    if (m_vaConfig != VA_INVALID_ID)
     {
         vaDestroyConfig( m_vaDisplay, m_vaConfig );
-        m_vaConfig = 0;
+        m_vaConfig = VA_INVALID_ID;
     }
 
     for(int i = 0; i < VAProcFilterCount; i++)
