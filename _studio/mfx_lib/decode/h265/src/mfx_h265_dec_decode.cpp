@@ -1115,7 +1115,7 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
 
             if (umcRes == UMC::UMC_ERR_NOT_ENOUGH_DATA || umcRes == UMC::UMC_ERR_SYNC)
             {
-                if ((!bs) || (bs->DataFlag == MFX_BITSTREAM_EOS))
+                if (!bs || bs->DataFlag == MFX_BITSTREAM_EOS)
                     force = true;
                 sts = MFX_ERR_MORE_DATA;
             }
@@ -1144,7 +1144,7 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
             //return these errors immediatelly unless we have [input == 0]
             if (sts == MFX_ERR_DEVICE_FAILED || sts == MFX_ERR_GPU_HANG)
             {
-                if (!bs)
+                if (!bs || bs->DataFlag == MFX_BITSTREAM_EOS)
                     force = true;
                 else
                     return sts;
