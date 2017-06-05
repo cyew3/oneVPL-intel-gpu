@@ -749,10 +749,10 @@ STRUCT(mfxExtCodingOption3,
     FIELD_T(mfxU16      , LowDelayBRC                   )
     FIELD_T(mfxU16      , EnableMBForceIntra            )
     FIELD_T(mfxU16      , AdaptiveMaxFrameSize          )
+    FIELD_T(mfxU16      , RepartitionCheckEnable        ) /* tri-state option */
     FIELD_T(mfxU16      , QuantScaleType                )
     FIELD_T(mfxU16      , IntraVLCFormat                )
     FIELD_T(mfxU16      , ScanType                      )
-    FIELD_T(mfxU16      , RepartitionCheckEnable        ) /* tri-state option */
 )
 
 STRUCT(mfxExtLAControl,

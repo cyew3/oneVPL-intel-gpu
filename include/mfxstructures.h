@@ -744,11 +744,11 @@ typedef struct {
     mfxU16      EnableMBForceIntra;        /* tri-state option */
     mfxU16      AdaptiveMaxFrameSize;      /* tri-state option */
 
+    mfxU16      RepartitionCheckEnable;    /* tri-state option */
+
     mfxU16      QuantScaleType;            /* For MPEG2 specifies mapping between quantiser_scale_code and quantiser_scale (see QuantScaleType enum) */
     mfxU16      IntraVLCFormat;            /* For MPEG2 specifies which table shall be used for coding of DCT coefficients of intra macroblocks (see IntraVLCFormat enum) */
     mfxU16      ScanType;                  /* For MPEG2 specifies transform coefficients scan pattern (see ScanType enum) */
-
-    mfxU16      RepartitionCheckEnable;    /* tri-state option */
 
     mfxU16      reserved[166];
 } mfxExtCodingOption3;
