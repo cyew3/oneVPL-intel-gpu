@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2016 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2017 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -110,7 +110,7 @@ void DXDevice::LoadDLLModule(const wchar_t *pModuleName)
     UnloadDLLModule();
 
     // set the silent error mode
-#if (_WIN32_WINNT >= 0x0600) && !(__GNUC__) && !defined(WIN_TRESHOLD_MOBILE)
+#if (_WIN32_WINNT >= 0x0600) && !(__GNUC__)
     SetThreadErrorMode(SEM_FAILCRITICALERRORS, &prevErrorMode); 
 #else
     prevErrorMode = SetErrorMode(SEM_FAILCRITICALERRORS);
@@ -119,7 +119,7 @@ void DXDevice::LoadDLLModule(const wchar_t *pModuleName)
     m_hModule = LoadLibraryExW(pModuleName, NULL, 0);
 
     // set the previous error mode
-#if (_WIN32_WINNT >= 0x0600) && !(__GNUC__) && !defined(WIN_TRESHOLD_MOBILE)
+#if (_WIN32_WINNT >= 0x0600) && !(__GNUC__)
     SetThreadErrorMode(prevErrorMode, NULL);
 #else
     SetErrorMode(prevErrorMode);
