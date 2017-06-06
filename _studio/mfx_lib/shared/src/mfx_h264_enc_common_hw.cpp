@@ -1962,6 +1962,9 @@ mfxStatus MfxHwH264Encode::CheckAndFixRectQueryLike(
 {
     mfxStatus checkSts = MFX_ERR_NONE;
 
+    if (rect->Left == 0 && rect->Right == 0 && rect->Top == 0 && rect->Bottom == 0)
+        return checkSts;
+
     // check that rectangle is aligned to MB, correct it if not
     if (!CheckMbAlignment(rect->Left))   checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
     if (!CheckMbAlignment(rect->Right))  checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
@@ -6284,9 +6287,9 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
         {
             mfxStatus sts = CheckAndFixRectQueryLike(video, (mfxRectDesc*)(&(extDirtyRect->Rect[i])));
             if (sts < MFX_ERR_NONE)
+                return  MFX_ERR_UNSUPPORTED;
+            else if (sts != MFX_ERR_NONE)
                 checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-            else
-                return MFX_ERR_UNSUPPORTED;
         }
     }
 
