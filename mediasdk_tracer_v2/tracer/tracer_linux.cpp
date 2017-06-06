@@ -1,6 +1,6 @@
 /*********************************************************************************
 
-Copyright (C) 2012-2016 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2017 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -43,7 +43,14 @@ void __attribute__ ((constructor)) dll_init(void)
 #ifdef ANDROID // temporary hardcode for Android
         g_mfxlib = "/system/lib/libmfxhw32.so";
 #else
-        g_mfxlib = Config::GetParam("core", "lib").c_str();
+        static std::string mfxlib = Config::GetParam("core", "lib");
+        if (mfxlib.empty()) {
+            Log::WriteLog("mfx_tracer: No path to real MediaSDK library is specified in the config file");
+            return;
+        }
+        else {
+            g_mfxlib = mfxlib.c_str();
+        }
 #endif
         Log::WriteLog("mfx_tracer: lib=" + string(g_mfxlib));
         Log::WriteLog("mfx_tracer: dll_init() - \n\n");
@@ -73,7 +80,9 @@ mfxStatus MFXInit(mfxIMPL impl, mfxVersion *ver, mfxSession *session)
             Log::WriteLog(context.dump_mfxStatus("status", MFX_ERR_MEMORY_ALLOC));
             return MFX_ERR_MEMORY_ALLOC;
         }
-        loader->dlhandle = dlopen(g_mfxlib, RTLD_NOW|RTLD_LOCAL|RTLD_DEEPBIND);
+        if (g_mfxlib) {
+            loader->dlhandle = dlopen(g_mfxlib, RTLD_NOW|RTLD_LOCAL|RTLD_DEEPBIND);
+        }
         if (!loader->dlhandle){
             Log::WriteLog(context.dump("ver", ver));
             Log::WriteLog(context.dump("session", *session));
@@ -178,7 +187,9 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
             Log::WriteLog(context.dump_mfxStatus("status", MFX_ERR_MEMORY_ALLOC));
             return MFX_ERR_MEMORY_ALLOC;
         }
-        loader->dlhandle = dlopen(g_mfxlib, RTLD_NOW|RTLD_LOCAL|RTLD_DEEPBIND);
+        if (g_mfxlib) {
+            loader->dlhandle = dlopen(g_mfxlib, RTLD_NOW|RTLD_LOCAL|RTLD_DEEPBIND);
+        }
         if (!loader->dlhandle){
             Log::WriteLog(context.dump("par", par));
             Log::WriteLog(context.dump("session", *session));
