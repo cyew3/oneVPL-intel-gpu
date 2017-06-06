@@ -158,8 +158,8 @@ Ipp32u vm_sys_info_get_cpu_num(void)
 
 Ipp32u vm_sys_info_get_numa_nodes_num(void)
 {
-#if !defined(_WIN32_WCE) && !defined(WIN_TRESHOLD_MOBILE)
-	ULONG HighestNodeNumber;
+#if !defined(_WIN32_WCE)
+    ULONG HighestNodeNumber;
 
     BOOL ret = GetNumaHighestNodeNumber(&HighestNodeNumber);
 
@@ -167,7 +167,7 @@ Ipp32u vm_sys_info_get_numa_nodes_num(void)
 
     return HighestNodeNumber + 1;
 #else
-	return 1;
+    return 1;
 #endif
 } /* Ipp32u vm_sys_info_get_numa_nodes_num(void) */
 
@@ -178,8 +178,8 @@ Ipp64u vm_sys_info_get_cpu_mask_of_numa_node(Ipp32u node)
     GetNumaNodeProcessorMask((UCHAR)node, &mask);
     return (Ipp64u)mask;
 #else
-	node;
-	return 1;
+    node;
+    return 1;
 #endif
 }
 
