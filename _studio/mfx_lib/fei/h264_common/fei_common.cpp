@@ -326,6 +326,7 @@ void MfxH264FEIcommon::ConfigureTaskFEI(
     mfxU16 indexFromPPSHeader;
     mfxExtFeiPPS * pDataPPS = GetExtBufferFEI(inParams, task.m_fieldPicFlag && !task.m_singleFieldMode);
     mfxU32 fieldParity = !!(video.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_BFF);
+    mfxU32 fieldParityAfterLastField = fieldCount ^ fieldParity; // Flip the parity for interlaced
 
     task.m_dpbPostEncoding.Resize(0);
     for (mfxU32 dpb_idx = 0; dpb_idx < 16; ++dpb_idx)
@@ -343,8 +344,8 @@ void MfxH264FEIcommon::ConfigureTaskFEI(
         //frame.m_frameNumWrap = (frame.m_frameNum > task.m_frameNum) ? frame.m_frameNum - FRAME_NUM_MAX : frame.m_frameNum;
         frame.m_frameNumWrap = pDataPPS->DpbAfter[dpb_idx].FrameNumWrap;
 
-        frame.m_picNum[0] = task.m_fieldPicFlag ? 2 * frame.m_frameNumWrap + ( !fieldParity) : frame.m_frameNumWrap; // in original here field = ffid / sfid
-        frame.m_picNum[1] = task.m_fieldPicFlag ? 2 * frame.m_frameNumWrap + (!!fieldParity) : frame.m_frameNumWrap;
+        frame.m_picNum[0] = task.m_fieldPicFlag ? 2 * frame.m_frameNumWrap + ( !fieldParityAfterLastField) : frame.m_frameNumWrap; // in original here field = ffid / sfid
+        frame.m_picNum[1] = task.m_fieldPicFlag ? 2 * frame.m_frameNumWrap + (!!fieldParityAfterLastField) : frame.m_frameNumWrap;
 
         frame.m_refPicFlag[ffid] = !!(pDataPPS->DpbAfter[dpb_idx].PicType & field_type_mask[ fieldParity]);
         frame.m_refPicFlag[sfid] = !!(pDataPPS->DpbAfter[dpb_idx].PicType & field_type_mask[!fieldParity]);
@@ -355,8 +356,8 @@ void MfxH264FEIcommon::ConfigureTaskFEI(
         {
             frame.m_longTermIdxPlus1 = pDataPPS->DpbAfter[dpb_idx].LongTermFrameIdx + 1;
 
-            frame.m_longTermPicNum[0] = task.m_fieldPicFlag ? 2 * (frame.m_longTermIdxPlus1 - 1) + ( !fieldParity) : frame.m_longTermIdxPlus1 - 1;
-            frame.m_longTermPicNum[1] = task.m_fieldPicFlag ? 2 * (frame.m_longTermIdxPlus1 - 1) + (!!fieldParity) : frame.m_longTermIdxPlus1 - 1;
+            frame.m_longTermPicNum[0] = task.m_fieldPicFlag ? 2 * (frame.m_longTermIdxPlus1 - 1) + ( !fieldParityAfterLastField) : frame.m_longTermIdxPlus1 - 1;
+            frame.m_longTermPicNum[1] = task.m_fieldPicFlag ? 2 * (frame.m_longTermIdxPlus1 - 1) + (!!fieldParityAfterLastField) : frame.m_longTermIdxPlus1 - 1;
         }
 
         task.m_dpbPostEncoding.PushBack(frame);

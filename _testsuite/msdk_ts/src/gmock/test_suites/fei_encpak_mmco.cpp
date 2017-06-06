@@ -99,6 +99,15 @@ const TestSuite::tc_struct TestSuite::test_case[] =
  /*10*/ {MFX_ERR_NONE, MFX_PICSTRUCT_FIELD_TFF, 1, {{7, MMCO_1, 4, 0}, {0}} }, // 3
  /*11*/ {MFX_ERR_NONE, MFX_PICSTRUCT_FIELD_TFF, 1, {{7, MMCO_1, 5, 0}, {0}} }, // 4
  /*12*/ {MFX_ERR_NONE, MFX_PICSTRUCT_FIELD_TFF, 1, {{2, MMCO_1, 3, 0}, {4, MMCO_1, 4, 0}, {4, MMCO_1, 2, 0}, {5, MMCO_1, 2, 0}, {0}} }, // mix of mmco_1, rms 2 1st frames
+
+ /*13*/ {MFX_ERR_NONE, MFX_PICSTRUCT_FIELD_BFF, 1, {{0}} }, // empty
+ /*14*/ {MFX_ERR_NONE, MFX_PICSTRUCT_FIELD_BFF, 1, {{6, MMCO_1, 4, 0}, {6, MMCO_1, 5, 0}, {0}} }, // rm ST - ok
+ /*15*/ {MFX_ERR_NONE, MFX_PICSTRUCT_FIELD_BFF, 1, {{6, MMCO_1, 4, 0}, {0}} }, // 1 - of 4 cases: remove only one field
+ /*16*/ {MFX_ERR_NONE, MFX_PICSTRUCT_FIELD_BFF, 1, {{6, MMCO_1, 5, 0}, {0}} }, // 2
+ /*17*/ {MFX_ERR_NONE, MFX_PICSTRUCT_FIELD_BFF, 1, {{7, MMCO_1, 4, 0}, {0}} }, // 3
+ /*18*/ {MFX_ERR_NONE, MFX_PICSTRUCT_FIELD_BFF, 1, {{7, MMCO_1, 5, 0}, {0}} }, // 4
+ /*19*/ {MFX_ERR_NONE, MFX_PICSTRUCT_FIELD_BFF, 1, {{2, MMCO_1, 3, 0}, {4, MMCO_1, 4, 0}, {4, MMCO_1, 2, 0}, {5, MMCO_1, 2, 0}, {0}} }, // mix of mmco_1, rms 2 1st frames
+
 // /**/ {MFX_ERR_NONE, MFX_PICSTRUCT_PROGRESSIVE, 1, {{0, MMCO_6, 0, 2}, {3, MMCO_6, 0, 4}, {3, MMCO_2, 2, 0}, {4, MMCO_3, 0, 1}, {0}} }, // mix - no
 };
 
@@ -139,12 +148,8 @@ mfxStatus LoadTC(std::vector<mfxExtBuffer*>& encbuf, std::vector<mfxExtBuffer*>&
 
             if (origin)
             for (int d = 0; d < PpsDPBSize; d++) {// while not same nor empty
-                if (newDpb[d].Index == 0xffff) { // not there
+                if (newDpb[d].Index == 0xffff || newDpb[d].FrameNumWrap == (mfxI32)frame) {
                     newDpb[d] = *origin;
-                    current = &newDpb[d];
-                    break;
-                }
-                if (newDpb[d].FrameNumWrap == (mfxI32)frame) {
                     current = &newDpb[d];
                     break;
                 }
