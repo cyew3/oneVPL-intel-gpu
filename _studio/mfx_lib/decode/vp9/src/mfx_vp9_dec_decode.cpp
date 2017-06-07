@@ -170,7 +170,7 @@ mfxStatus VideoDECODEVP9::Init(mfxVideoParam *params)
     if (MFX_ERR_NONE > CheckVideoParamDecoders(params, m_core->IsExternalFrameAllocator(), type))
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
-    if (!MFX_VP9_Utility::CheckVideoParam(params, type))
+    if (!MFX_VP9_Utility::CheckVideoParam(params, m_platform))
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
     m_vInitPar = *params;
@@ -343,7 +343,7 @@ mfxStatus VideoDECODEVP9::Reset(mfxVideoParam *params)
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
-    if (false == MFX_VP9_Utility::CheckVideoParam(params, type))
+    if (false == MFX_VP9_Utility::CheckVideoParam(params, m_platform))
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
@@ -557,7 +557,7 @@ mfxStatus VideoDECODEVP9::QueryIOSurf(VideoCORE *core, mfxVideoParam *p_params, 
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
-    eMFXPlatform platform = MFX_VP9_Utility::GetPlatform(core, p_params);
+    eMFXPlatform platform = core->GetPlatformType();
 
     eMFXHWType type = MFX_HW_UNKNOWN;
     if (platform == MFX_PLATFORM_HARDWARE)
