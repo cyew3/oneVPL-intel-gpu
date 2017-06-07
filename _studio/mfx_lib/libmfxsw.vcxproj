@@ -570,7 +570,7 @@
       </SDLCheck>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>minicore.lib;ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>onecore.lib;ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(MfxIppLibraryDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ModuleDefinitionFile>libmfx.def</ModuleDefinitionFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
