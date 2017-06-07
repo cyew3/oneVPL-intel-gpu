@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -787,7 +787,7 @@ namespace MFX_HEVC_PP
     }
 #endif
 
-    void h265_PredictIntra_Planar_ChromaNV12_8u_px(Ipp8u* PredPel, Ipp8u* pDst, Ipp32s dstStride, Ipp32s blkSize)
+    void MAKE_NAME(h265_PredictIntra_Planar_ChromaNV12_8u)(Ipp8u* PredPel, Ipp8u* pDst, Ipp32s dstStride, Ipp32s blkSize)
     {
         Ipp32s bottomLeft, topRight;
         Ipp32s bottomLeft1, topRight1;
@@ -840,6 +840,43 @@ namespace MFX_HEVC_PP
             }
         }
     }
+
+// to compile 32 bit binaries on Android platforms using Clang
+#if defined(ANDROID) && !defined(__x86_64__)
+
+    void h265_PredictIntra_DC_ChromaNV12_8u(Ipp8u* PredPel, Ipp8u* pDst, Ipp32s dstStride, Ipp32s blkSize)
+    {
+        Ipp32s k;
+        Ipp32s l;
+
+        Ipp32s dc1, dc2;
+        Ipp32s Sum1 = 0, Sum2 = 0;
+
+        for (Ipp32s Ind = 2; Ind < blkSize * 2 + 2; Ind += 2)
+        {
+            Sum1 += PredPel[Ind];
+            Sum2 += PredPel[Ind+1];
+        }
+        for (Ipp32s Ind = blkSize * 4 + 2; Ind < blkSize * 6 + 2; Ind += 2)
+        {
+            Sum1 += PredPel[Ind];
+            Sum2 += PredPel[Ind+1];
+        }
+
+        dc1 = (Ipp32s)((Sum1 + blkSize) / (blkSize << 1));
+        dc2 = (Ipp32s)((Sum2 + blkSize) / (blkSize << 1));
+
+        for (k = 0; k < blkSize; k++)
+        {
+            for (l = 0; l < blkSize * 2; l += 2)
+            {
+                pDst[k * dstStride + l] = (Ipp8u)dc1;
+                pDst[k * dstStride + l + 1] = (Ipp8u)dc2;
+            }
+        }
+    }
+
+#else
 
     namespace PredictIntra_DC_ChromaNV12_8u_Details {
         inline void Sum128(__m128i sum128, Ipp32s &sumU, Ipp32s &sumV) {
@@ -911,6 +948,8 @@ namespace MFX_HEVC_PP
             break;
         }
     }
+
+#endif
 
     void h265_PredictIntra_Hor_ChromaNV12_8u(Ipp8u* PredPel, Ipp8u* pDst, Ipp32s dstStride, Ipp32s blkSize)
     {
