@@ -1,33 +1,35 @@
 LOCAL_PATH:= $(call my-dir)
 
-include $(MFX_HOME)/android/mfx_env.mk
+include $(MFX_HOME)/mdp_msdk-lib/android/mfx_env.mk
 
 # =============================================================================
 
 MFX_PIPELINE_CFLAGS += \
     $(MFX_CFLAGS_INTERNAL) \
-    $(MFX_CFLAGS_LIBVA)
+    $(MFX_CFLAGS_LIBVA) \
+    -Wno-date-time
+
 MFX_PIPELINE_INCLUDES += \
     $(MFX_C_INCLUDES_INTERNAL) \
     $(MFX_C_INCLUDES_LIBVA) \
-    $(MFX_HOME)/opensource/mfx_dispatch/include \
-    $(MFX_HOME)/_studio/shared/umc/codec/spl_common/include \
-    $(MFX_HOME)/_studio/shared/umc/codec/avi_spl/include \
-    $(MFX_HOME)/_studio/shared/umc/codec/demuxer/include \
-    $(MFX_HOME)/_studio/shared/umc/test_suite/spy_test_component/include \
-    $(MFX_HOME)/_testsuite/shared/include \
-    $(MFX_HOME)/samples/sample_spl_mux/api
+    $(MFX_HOME)/mdp_msdk-api/opensource/mfx_dispatch/include \
+    $(MFX_HOME)/mdp_msdk-lib/_studio/shared/umc/codec/spl_common/include \
+    $(MFX_HOME)/mdp_msdk-lib/_studio/shared/umc/codec/avi_spl/include \
+    $(MFX_HOME)/mdp_msdk-lib/_studio/shared/umc/codec/demuxer/include \
+    $(MFX_HOME)/mdp_msdk-lib/_studio/shared/umc/test_suite/spy_test_component/include \
+    $(MFX_HOME)/mdp_msdk-lib/_testsuite/shared/include \
+    $(MFX_HOME)/mdp_msdk-lib/samples/deprecated/sample_spl_mux/api
 
 MFX_PLAYER_INCLUDES += \
     $(MFX_C_INCLUDES_INTERNAL) \
     $(MFX_C_INCLUDES_LIBVA) \
-    $(MFX_HOME)/_testsuite/shared/include \
-    $(MFX_HOME)/samples/sample_spl_mux/api
+    $(MFX_HOME)/mdp_msdk-lib/_testsuite/shared/include \
+    $(MFX_HOME)/mdp_msdk-lib/samples/deprecated/sample_spl_mux/api
 
 # =============================================================================
 
 include $(CLEAR_VARS)
-include $(MFX_HOME)/android/mfx_defs.mk
+include $(MFX_HOME)/mdp_msdk-lib/android/mfx_defs.mk
 
 LOCAL_SRC_FILES := $(filter-out src/mfx_player.cpp, \
     $(addprefix src/, $(notdir $(wildcard $(LOCAL_PATH)/src/*.cpp))))
@@ -48,7 +50,7 @@ include $(BUILD_STATIC_LIBRARY)
 # =============================================================================
 
 include $(CLEAR_VARS)
-include $(MFX_HOME)/android/mfx_defs.mk
+include $(MFX_HOME)/mdp_msdk-lib/android/mfx_defs.mk
 
 LOCAL_SRC_FILES := $(filter-out src/mfx_player.cpp, \
     $(addprefix src/, $(notdir $(wildcard $(LOCAL_PATH)/src/*.cpp))))
@@ -71,7 +73,7 @@ include $(BUILD_STATIC_LIBRARY)
 # =============================================================================
 
 include $(CLEAR_VARS)
-include $(MFX_HOME)/android/mfx_defs.mk
+include $(MFX_HOME)/mdp_msdk-lib/android/mfx_defs.mk
 
 LOCAL_SRC_FILES := $(addprefix src/, \
     mfx_player.cpp)
@@ -84,11 +86,7 @@ LOCAL_CFLAGS := $(MFX_PIPELINE_CFLAGS)
 LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_32)
 LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_64)
 
-LOCAL_LDFLAGS := \
-    $(MFX_LDFLAGS_INTERNAL) \
-    -lippvc_l -lippcc_l -lippcp_l -lippdc_l -lippi_l -lipps_l -lippcore_l
-LOCAL_LDFLAGS_32 := $(MFX_LDFLAGS_INTERNAL_32)
-LOCAL_LDFLAGS_64 := $(MFX_LDFLAGS_INTERNAL_64)
+LOCAL_LDFLAGS := $(MFX_LDFLAGS)
 
 LOCAL_STATIC_LIBRARIES += \
     libmfx \
@@ -99,8 +97,18 @@ LOCAL_STATIC_LIBRARIES += \
     libumc_codecs_merged \
     libumc_io_merged_sw \
     libumc_core_merged \
-    libsafec
+    libmfx_trace_hw \
+    libsafec \
+    libippvc_l \
+    libippcc_l \
+    libippcp_l \
+    libippdc_l \
+    libippi_l \
+    libipps_l \
+    libippcore_l
+
 LOCAL_SHARED_LIBRARIES := libdl libva libva-android
+
 ifeq ($(MFX_NDK),true)
    LOCAL_SHARED_LIBRARIES += libstlport-mfx libgabi++-mfx
 endif
@@ -116,7 +124,7 @@ include $(BUILD_EXECUTABLE)
 # =============================================================================
 
 include $(CLEAR_VARS)
-include $(MFX_HOME)/android/mfx_defs.mk
+include $(MFX_HOME)/mdp_msdk-lib/android/mfx_defs.mk
 
 LOCAL_SRC_FILES := $(addprefix src/, \
     mfx_player.cpp)
@@ -131,11 +139,7 @@ LOCAL_CFLAGS := \
 LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_32)
 LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_64)
 
-LOCAL_LDFLAGS := \
-    $(MFX_LDFLAGS_INTERNAL) \
-    -lippvc_l -lippcc_l -lippcp_l -lippdc_l -lippi_l -lipps_l -lippcore_l
-LOCAL_LDFLAGS_32 := $(MFX_LDFLAGS_INTERNAL_32)
-LOCAL_LDFLAGS_64 := $(MFX_LDFLAGS_INTERNAL_64)
+LOCAL_LDFLAGS := $(MFX_LDFLAGS)
 
 LOCAL_STATIC_LIBRARIES += \
     libmfx \
@@ -146,8 +150,18 @@ LOCAL_STATIC_LIBRARIES += \
     libumc_codecs_merged \
     libumc_io_merged_sw \
     libumc_core_merged \
-    libsafec
+    libmfx_trace_hw \
+    libsafec \
+    libippvc_l \
+    libippcc_l \
+    libippcp_l \
+    libippdc_l \
+    libippi_l \
+    libipps_l \
+    libippcore_l
+
 LOCAL_SHARED_LIBRARIES := libdl libva libva-android
+
 ifeq ($(MFX_NDK),true)
    LOCAL_SHARED_LIBRARIES += libstlport-mfx libgabi++-mfx
 endif

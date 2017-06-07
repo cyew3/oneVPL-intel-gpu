@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2013-2015 Intel Corporation. All Rights Reserved.
+Copyright(c) 2013-2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -12,6 +12,7 @@ Copyright(c) 2013-2015 Intel Corporation. All Rights Reserved.
 #ifdef ANDROID
 
 #include "vaapi_utils_android.h"
+#include <new>
 
 CLibVA* CreateLibVA(int)
 {

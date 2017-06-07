@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2017 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -52,7 +52,7 @@ public:
                           , bool)
     { return MFX_ERR_NONE; }
 
-    virtual mfxStatus Reset(WindowHandle /*hDeviceWindow*/, bool /*bWindowed*/) { return MFX_ERR_NONE; }
+    virtual mfxStatus Reset(WindowHandle /*hDeviceWindow*/, RECT /*drawRect*/, bool /*bWindowed*/) { return MFX_ERR_NONE; }
     virtual mfxStatus GetHandle(mfxHandleType type, mfxHDL *pHdl)
     {
         if ((MFX_HANDLE_VA_DISPLAY == type) && (NULL != pHdl))
@@ -69,7 +69,7 @@ private:
     AndroidLibVA *m_pAndroidLibVA;
 };
 
-IHWDevice* CreateVAAPIDevice(void);
+IHWDevice* CreateVAAPIDevice(int type);
 
 #endif // #ifdef LIBVA_ANDROID_SUPPORT
 #endif // #if defined(ANDROID)

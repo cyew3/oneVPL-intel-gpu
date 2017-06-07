@@ -5,7 +5,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2008-2016 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2008-2017 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -195,7 +195,7 @@ mfxStatus CYUVReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInfo)
 
 mfxStatus CYUVReader::LoadBlock(mfxU8* pSubPicInFrame, mfxU32 wSubPic, mfxU32 hSubPic, mfxU32 FramePitch)
 {
-    CHECK_ERROR(pSubPicInFrame, false, ERROR_NOTINIT);
+    CHECK_ERROR(pSubPicInFrame, NULL, ERROR_NOTINIT);
     mfxU32 nBytesRead   = 0;
     mfxU32 i = 0;
     for (i = 0 ; i < hSubPic; i++)
