@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2017 Intel Corporation. All Rights Reserved.
 //
 
 #if !defined(_WIN32) && !defined(_WIN64)
@@ -16,6 +16,10 @@
 
 #ifdef MFX_TRACE_ENABLE
 #include "vm_sys_info.h"
+
+#if defined(ANDROID)
+#include "snprintf_s.h"
+#endif
 
 extern "C"
 {
@@ -29,7 +33,13 @@ FILE* mfx_trace_open_conf_file(const char* name)
     FILE* file = NULL;
     char file_name[MAX_PATH] = {0};
 
-    if (getenv("HOME"))
+#if defined(ANDROID)
+    const char* home = "/data/data/com.intel.vtune/mediasdk";
+#else
+    const char* home = getenv("HOME");
+#endif
+
+    if (home)
     {
         snprintf_s_ss(file_name, MAX_PATH-1, "%s/.%s", getenv("HOME"), name);
         file = fopen(file_name, "r");

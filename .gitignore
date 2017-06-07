@@ -14,3 +14,5 @@ __cmake
 *.ipch
 /samples/include
 content
+# Android sub-projects
+/samples/sample_openmax_plugins

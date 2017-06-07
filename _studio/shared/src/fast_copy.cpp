@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "fast_copy.h"
@@ -51,7 +51,7 @@ public:
 
     // copy memory by streaming
     mfxStatus Copy(mfxU8 *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, IppiSize roi, int flag);
-#ifndef LINUX64
+#if defined(_WIN32) || defined(_WIN64)
     // copy memory by streaming with shifting
     mfxStatus CopyAndShift(mfxU16 *pDst, mfxU32 dstPitch, mfxU16 *pSrc, mfxU32 srcPitch, IppiSize roi, Ipp8u lshift, Ipp8u rshift, int flag);
 #endif
@@ -206,7 +206,7 @@ mfxStatus FastCopyMultithreading::Copy(mfxU8 *pDst, mfxU32 dstPitch, mfxU8 *pSrc
     return MFX_ERR_NONE;
 
 } // mfxStatus FastCopy::Copy(mfxU8 *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, IppiSize roi)
-#ifndef LINUX64
+#if defined(_WIN32) || defined(_WIN64)
 mfxStatus FastCopyMultithreading::CopyAndShift(mfxU16 *pDst, mfxU32 dstPitch, mfxU16 *pSrc, mfxU32 srcPitch, IppiSize roi, Ipp8u lshift, Ipp8u rshift, int flag)
 {
     return FastCopy::CopyAndShift(pDst, dstPitch, pSrc, srcPitch, roi, lshift, rshift, flag);

@@ -1,6 +1,6 @@
 LOCAL_PATH:= $(call my-dir)
 
-include $(MFX_HOME)/android/mfx_env.mk
+include $(MFX_HOME)/mdp_msdk-lib/android/mfx_env.mk
 
 # Setting subdirectories to march thru
 MFX_LOCAL_DIRS_IMPL = \
@@ -28,9 +28,10 @@ MFX_LOCAL_C_INCLUDES_HW = \
 
 ifeq ($(MFX_IMPL_HW), true)
   include $(CLEAR_VARS)
-  include $(MFX_HOME)/android/mfx_defs.mk
+  include $(MFX_HOME)/mdp_msdk-lib/android/mfx_defs.mk
 
   LOCAL_SRC_FILES := $(MFX_LOCAL_SRC_FILES_HW)
+
   LOCAL_C_INCLUDES := \
     $(MFX_LOCAL_C_INCLUDES_HW) \
     $(MFX_C_INCLUDES_INTERNAL_HW)
@@ -53,9 +54,10 @@ endif # ifeq ($(MFX_IMPL_HW), true)
 # calling of this lib. So, we should not cover this by MFX_IMPL_SW==true protection.
 
 include $(CLEAR_VARS)
-include $(MFX_HOME)/android/mfx_defs.mk
+include $(MFX_HOME)/mdp_msdk-lib/android/mfx_defs.mk
 
 LOCAL_SRC_FILES := $(MFX_LOCAL_SRC_FILES_IMPL)
+
 LOCAL_C_INCLUDES := \
   $(MFX_LOCAL_C_INCLUDES) \
   $(MFX_C_INCLUDES_INTERNAL)

@@ -1245,7 +1245,7 @@ mfxStatus CommonCORE::DoSWFastCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSr
     switch (pDst->Info.FourCC)
     {
     case MFX_FOURCC_P010:
-#ifndef LINUX64
+#if defined(_WIN32) || defined(_WIN64)
         if(pDst->Info.Shift != pSrc->Info.Shift)
         {
             roi.width <<= 1;

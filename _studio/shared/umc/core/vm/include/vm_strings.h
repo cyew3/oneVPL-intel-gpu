@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __VM_STRINGS_H__
@@ -37,6 +37,10 @@ extern "C"
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
+
+#else // ANDROID
+
+# include "safe_str_lib.h"
 
 #endif // !defined(ANDROID)
 
@@ -81,16 +85,17 @@ typedef char vm_char;
 #else // ANDROID
 
 #define vm_string_strcat    strcat
-#define vm_string_strcat_s  (dest, size, src)  (strncat((dest), (src), (size)),0)
+#define vm_string_strcat_s(dest, size, src)  (strncat((dest), (src), (size)),0)
 #define vm_string_strncat   strncat
 #define vm_string_strcpy    strcpy
-#define vm_string_strcpy_s  (dest, size, src)  (strncpy((dest), (src), (size)),0)
+#define vm_string_strcpy_s(dest, size, src)  (strncpy((dest), (src), (size)),0)
 #define vm_string_strncpy   strncpy
-#define vm_string_strncpy_s (dst, dst_size, src, n) (strncpy(dst,src,n))
+#define vm_string_strncpy_s(dst, dst_size, src, n) (strncpy(dst,src,n))
 #define vm_string_strcspn   strcspn
 #define vm_string_strspn    strspn
 
 #define vm_string_strlen    strlen
+#define vm_string_strnlen_s strnlen_s
 #define vm_string_strcmp    strcmp
 #define vm_string_strncmp   strncmp
 #define vm_string_stricmp   strcasecmp
@@ -218,30 +223,8 @@ Ipp32s vm_string_findnext(vm_findptr handle, vm_finddata_t* fileinfo);
 #define __VM_STRING(str) VM_STRING(str)
 
 #if !defined(_WIN32) && !defined(_WIN64)
+
 typedef int error_t;
-
-#if defined(ANDROID)
-
-static inline
-error_t memcpy_s(void* pDst, size_t nDstSize, const void* pSrc, size_t nCount)
-{
-    if (pDst && pSrc && (nDstSize >= nCount))
-    {
-        ippsCopy_8u((Ipp8u*)pSrc, (Ipp8u*)pDst, nCount);
-        return 0;
-    }
-    if (!pDst) return EINVAL;
-    if (!pSrc)
-    {
-        ippsZero_8u((Ipp8u*)pDst, nDstSize);
-        return EINVAL;
-    }
-    // only remainnig option: nDstSize < nCount
-    ippsZero_8u((Ipp8u*)pDst, nDstSize);
-    return ERANGE;
-}
-
-#endif //  defined(ANDROID)
 
 #endif 
 

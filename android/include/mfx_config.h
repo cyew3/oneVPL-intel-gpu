@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2017 Intel Corporation. All Rights Reserved.
 
 *********************************************************************************/
 
@@ -22,12 +22,15 @@ Copyright(c) 2011-2016 Intel Corporation. All Rights Reserved.
 #define MFX_LD           0x04
 #define MFX_MM           0x08
 #define MFX_N            0x10
+#define MFX_O            0x20
 
 #define MFX_OTC_JB  MFX_OTC + MFX_JB
 #define MFX_MCG_JB  MFX_MCG + MFX_JB
 
 #define MFX_OTC_KK  MFX_OTC + MFX_KK
 #define MFX_MCG_KK  MFX_MCG + MFX_KK
+
 #define MFX_OTC_LD  MFX_OTC + MFX_LD
 #define MFX_MCG_LD  MFX_MCG + MFX_LD
+
 #endif // #ifndef __MFX_CONFIG_H__
