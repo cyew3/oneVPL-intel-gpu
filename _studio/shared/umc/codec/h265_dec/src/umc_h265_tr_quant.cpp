@@ -5,11 +5,12 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
 #ifdef UMC_ENABLE_H265_VIDEO_DECODER
+#ifndef MFX_VA
 
 #include "umc_h265_tr_quant.h"
 #include "umc_h265_segment_decoder.h"
@@ -46,6 +47,7 @@ void InverseTransform(CoeffsPtr coeff, DstCoeffsType* dst, size_t dstPitch, Ipp3
     if (inplace)
         inplace = bitDepth > 8 ? 2 : 1;
 
+#if !defined(ANDROID)
     if (bit_depth > 10)
     {
         if (Size == 4)
@@ -73,6 +75,7 @@ void InverseTransform(CoeffsPtr coeff, DstCoeffsType* dst, size_t dstPitch, Ipp3
         }
     }
     else
+#endif
     {
         if (Size == 4)
         {
@@ -395,4 +398,5 @@ void H265TrQuant::InvTransformSkip(CoeffsPtr pCoeff, DstCoeffsType* pResidual, s
 
 } // end namespace UMC_HEVC_DECODER
 
+#endif // #ifndef MFX_VA
 #endif // UMC_ENABLE_H265_VIDEO_DECODER

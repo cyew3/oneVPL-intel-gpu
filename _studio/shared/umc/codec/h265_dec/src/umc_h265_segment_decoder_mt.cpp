@@ -5,11 +5,12 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
 #ifdef UMC_ENABLE_H265_VIDEO_DECODER
+#ifndef MFX_VA
 
 #include "umc_h265_segment_decoder_mt.h"
 
@@ -1083,11 +1084,13 @@ void ReconstructorT<bitDepth, H265PlaneType>::FilterPredictPels(DecodingContext*
 
         if (CUSize >= blkSize && (bilinearLeft && bilinearAbove))
         {
+#if !defined(ANDROID)
             if (sd->m_sps->bit_depth_luma > 10)
             {
                 MFX_HEVC_PP::h265_FilterPredictPels_Bilinear_16s_px((Ipp16s *)PredPel, width, topLeft, bottomLeft, topRight);
             }
             else
+#endif
             {
                 h265_FilterPredictPels_Bilinear(PredPel, width, topLeft, bottomLeft, topRight);
             }
@@ -1168,6 +1171,7 @@ void ReconstructorT<bitDepth, H265PlaneType>::PredictIntra(Ipp32s predMode, Plan
         Ipp16u* pels = (Ipp16u*)PredPel;
         Ipp16u* rec = (Ipp16u*)pRec;
 
+#if !defined(ANDROID)
         if (bit_depth > 10)
         {
             switch(predMode)
@@ -1189,6 +1193,7 @@ void ReconstructorT<bitDepth, H265PlaneType>::PredictIntra(Ipp32s predMode, Plan
             }
         }
         else
+#endif
         {
             switch(predMode)
             {
@@ -1402,4 +1407,5 @@ void H265SegmentDecoderMultiThreaded::CreateReconstructor()
 }
 
 } // namespace UMC_HEVC_DECODER
+#endif // #ifndef MFX_VA
 #endif // UMC_ENABLE_H265_VIDEO_DECODER

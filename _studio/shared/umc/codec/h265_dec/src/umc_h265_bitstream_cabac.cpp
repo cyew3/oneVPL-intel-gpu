@@ -5,11 +5,12 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
 #ifdef UMC_ENABLE_H265_VIDEO_DECODER
+#ifndef MFX_VA
 
 #include "umc_h265_bitstream.h"
 #include "umc_h265_bitstream_inlines.h"
@@ -247,4 +248,6 @@ t_DecodeSingleBin_CABAC s_pDecodeSingleBin_CABAC_dispatched =
 #endif // defined( __INTEL_COMPILER ) && (defined( __x86_64__ ) || defined ( _WIN64 ))
 
 } // namespace UMC_HEVC_DECODER
+
+#endif // #ifndef MFX_VA
 #endif // UMC_ENABLE_H265_VIDEO_DECODER

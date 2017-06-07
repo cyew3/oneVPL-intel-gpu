@@ -5,11 +5,12 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
 #ifdef UMC_ENABLE_H265_VIDEO_DECODER
+#ifndef MFX_VA
 
 #include "umc_h265_dec_defs.h"
 #include "umc_h265_yuv.h"
@@ -877,7 +878,7 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoLine(SAOLCUParam* sa
         if (!pTmpCu->m_Frame)
             continue;
 
-        bool isNeedSAOLuma = pTmpCu->m_SliceHeader->slice_sao_luma_flag && saoLCUParam[addr].m_typeIdx >= 0;
+        bool isNeedSAOLuma = pTmpCu->m_SliceHeader->slice_sao_luma_flag && saoLCUParam[addr].m_typeIdx[0] >= 0;
         bool isNeedSAOChroma = pTmpCu->m_SliceHeader->slice_sao_chroma_flag && saoLCUParam[addr].m_typeIdx[1] >= 0;
 
         // Save samples that may require to skip filtering
@@ -1312,4 +1313,5 @@ void H265SampleAdaptiveOffset::SAOProcess(H265DecoderFrame* pFrame, Ipp32s start
 
 } // end namespace UMC_HEVC_DECODER
 
+#endif // #ifndef MFX_VA
 #endif // UMC_ENABLE_H265_VIDEO_DECODER
