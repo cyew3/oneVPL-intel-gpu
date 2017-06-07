@@ -4,7 +4,7 @@
  * This software is supplied under the terms of a license agreement or nondisclosure
  * agreement with Intel Corporation and may not be copied or disclosed except in
  * accordance with the terms of that agreement
- * Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
+ * Copyright(c) 2008-2017 Intel Corporation. All Rights Reserved.
  *
  * \* ****************************************************************************** */
 
@@ -19,7 +19,12 @@
 #include <string.h>
 #include <fcntl.h>
 #include "sample_defs.h"
+
+#ifdef ANDROID
+#include "api/ICamera.h"
+#else
 #include "libcamhal/api/ICamera.h"
+#endif
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 #define ERRSTR strerror(errno)

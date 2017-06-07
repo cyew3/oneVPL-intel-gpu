@@ -2513,7 +2513,7 @@ mfxStatus CTranscodingPipeline::InitPreEncMfxParams(sInputParams *pInParams)
 
 mfxStatus CTranscodingPipeline::AddLaStreams(mfxU16 width, mfxU16 height)
 {
-    if (m_pmfxPreENC.get() > 0)
+    if (m_pmfxPreENC.get() != NULL)
     {
         mfxU32 num = m_ExtLAControl.NumOutStream;
         m_numEncoders ++;

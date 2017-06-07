@@ -1,9 +1,9 @@
 LOCAL_PATH:= $(call my-dir)
 
-include $(MFX_HOME)/android/mfx_env.mk
+include $(MFX_HOME)/mdp_msdk-lib/android/mfx_env.mk
 
 include $(CLEAR_VARS)
-include $(MFX_HOME)/android/mfx_defs.mk
+include $(MFX_HOME)/mdp_msdk-lib/android/mfx_defs.mk
 
 LOCAL_SRC_FILES := $(addprefix src/, $(notdir $(wildcard $(LOCAL_PATH)/src/*.cpp))) \
                    $(addprefix src/vm/, $(notdir $(wildcard $(LOCAL_PATH)/src/vm/*.cpp)))

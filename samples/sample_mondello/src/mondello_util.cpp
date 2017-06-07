@@ -4,7 +4,7 @@
  * This software is supplied under the terms of a license agreement or nondisclosure
  * agreement with Intel Corporation and may not be copied or disclosed except in
  * accordance with the terms of that agreement
- * Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
+ * Copyright(c) 2008-2017 Intel Corporation. All Rights Reserved.
  *
  * \* ****************************************************************************** */
 
@@ -15,8 +15,14 @@
 #include <signal.h>
 #include <time.h>
 #include "mondello_util.h"
+
+#ifdef ANDROID
+#include "api/Parameters.h"
+#else
 #include "libcamhal/api/ICamera.h"
 #include "libcamhal/api/Parameters.h"
+#endif
+
 using namespace icamera;
 
 // Global Declaration
@@ -173,7 +179,11 @@ void MondelloDevice::MondelloInit()
         BYE_ON(ret < 0, "failed to set parameters: %s\n", ERRSTR);
     }
 
+#ifdef ANDROID
+    ret = camera_device_config_streams(m_device_id, &m_StreamList, &m_streams[0]);
+#else
     ret = camera_device_config_streams(m_device_id, &m_StreamList, m_streams[0].format);
+#endif
     BYE_ON(ret < 0, "failed to add stream: %s\n", ERRSTR);
     m_stream_id = m_streams[0].id;
 }
