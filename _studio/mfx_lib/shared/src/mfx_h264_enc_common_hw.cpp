@@ -6171,8 +6171,12 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
         }
     }
 
-    checkSts = CheckFEIRunTimeExtBuffersContent(video, ctrl, surface, bs);
-    MFX_CHECK(checkSts >= MFX_ERR_NONE, checkSts);
+    {
+        mfxStatus sts = CheckFEIRunTimeExtBuffersContent(video, ctrl, surface, bs);
+        MFX_CHECK(sts >= MFX_ERR_NONE, sts);
+        if (sts != MFX_ERR_NONE)
+            checkSts = sts;
+    }
 
     mfxExtAVCRefListCtrl const * extRefListCtrl = GetExtBuffer(*ctrl);
     if (extRefListCtrl && video.calcParam.numTemporalLayer > 0 && video.calcParam.tempScalabilityMode == 0)
