@@ -6355,9 +6355,7 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
         for (mfxU16 i = 0; i < actualNumRect; i++)
         {
             mfxStatus sts = CheckAndFixRectQueryLike(video, (mfxRectDesc*)(&(extDirtyRect->Rect[i])));
-            if (sts < MFX_ERR_NONE)
-                return  MFX_ERR_UNSUPPORTED;
-            else if (sts != MFX_ERR_NONE)
+            if (sts != MFX_ERR_NONE)
                 checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
         }
     }
@@ -6376,10 +6374,8 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
         for (mfxU16 i = 0; i < actualNumRect; i++)
         {
             mfxStatus sts = CheckAndFixMovingRectQueryLike(video, (mfxMovingRectDesc*)(&(extMoveRect->Rect[i])));
-            if (sts < MFX_ERR_NONE)
+            if (sts != MFX_ERR_NONE)
                 checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-            else
-                return MFX_ERR_UNSUPPORTED;
         }
     }
 
