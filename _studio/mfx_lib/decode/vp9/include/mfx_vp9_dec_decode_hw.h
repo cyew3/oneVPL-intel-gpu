@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef _MFX_VP9_DECODE_HW_H_
@@ -107,6 +107,7 @@ private:
         UMC::FrameMemID currFrameId;
         UMC::FrameMemID copyFromFrame;
         mfxU32     index;
+        mfxU32 showFrame;
     };
 
     UMC::VideoAccelerator * m_va;

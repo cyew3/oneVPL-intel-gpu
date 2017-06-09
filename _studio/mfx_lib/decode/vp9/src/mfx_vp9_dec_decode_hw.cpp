@@ -630,13 +630,10 @@ mfxStatus MFX_CDECL VP9DECODERoutine(void *p_state, void * /* pp_param */, mfxU3
         decoder.m_FrameAllocator->SetSfcPostProcessingFlag(true);
         sts = decoder.m_FrameAllocator->PrepareToOutput(data.surface_work, data.copyFromFrame, 0, false);
         MFX_CHECK_STS(sts);
-        decoder.m_FrameAllocator->SetSfcPostProcessingFlag(false);
-
         if (data.currFrameId != -1)
            decoder.m_FrameAllocator->DecreaseReference(data.currFrameId);
-
         decoder.m_FrameAllocator->DecreaseReference(data.copyFromFrame);
-
+        decoder.m_FrameAllocator->SetSfcPostProcessingFlag(false);
         return MFX_ERR_NONE;
     }
 
@@ -707,8 +704,10 @@ mfxStatus MFX_CDECL VP9DECODERoutine(void *p_state, void * /* pp_param */, mfxU3
 
     if (decoder.m_vInitPar.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
     {
-        mfxStatus sts = decoder.m_FrameAllocator->PrepareToOutput(data.surface_work, data.currFrameId, 0, false);
-        MFX_CHECK_STS(sts);
+        if (data.showFrame) {
+            mfxStatus sts = decoder.m_FrameAllocator->PrepareToOutput(data.surface_work, data.currFrameId, 0, false);
+            MFX_CHECK_STS(sts);
+        } else decoder.m_core->DecreaseReference(&data.surface_work->Data);
     }
 
     UMC::AutomaticUMCMutex guard(decoder.m_mGuard);
@@ -866,6 +865,7 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
     routineData->copyFromFrame = repeateFrame;
     routineData->surface_work = surface_work;
     routineData->index        = m_index;
+    routineData->showFrame = m_frameInfo.showFrame;
 
     p_entry_point->pState = routineData;
     p_entry_point->requiredNumThreads = 1;
