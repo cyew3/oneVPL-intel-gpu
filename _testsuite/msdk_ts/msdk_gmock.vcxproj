@@ -413,6 +413,7 @@
     <ClCompile Include="src\gmock\test_suites\vp9e_brc.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp9e_close.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp9e_cqp.cpp" />
+    <ClCompile Include="src\gmock\test_suites\vp9e_dynamic_scaling.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp9e_encode_frame_async.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp9e_get_video_param.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp9e_goppattern.cpp" />

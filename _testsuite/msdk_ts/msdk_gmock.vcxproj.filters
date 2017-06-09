@@ -928,6 +928,9 @@
     <ClCompile Include="src\gmock\test_suites\hevce_transformskip.cpp">
       <Filter>Source Files\test_suites\hevce</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vp9e_dynamic_scaling.cpp">
+      <Filter>Source Files\test_suites\vp9e</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\samples\sample_common\src\d3d_allocator.cpp">
       <Filter>sample_common</Filter>
     </ClCompile>
