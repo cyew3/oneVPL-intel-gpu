@@ -46,35 +46,54 @@ namespace fei_multi_pak
         //variables
         unsigned int m_numPAK;
         bool m_changeMBQP;
+        bool m_changeMBMV;
         std::mt19937 m_gen;
+        std::vector <Ipp32u> m_refCRCVect;
         //functions
         MultiPAK(mfxFeiFunction funcEnc, mfxFeiFunction funcPak, mfxU32 CodecId = 0, bool useDefaults = true)
             : tsVideoENCPAK(funcEnc, funcPak, CodecId, useDefaults)
             , tsParserAVC2(INIT_MODE_PARSE_SD)
             , m_numPAK(1)
             , m_changeMBQP(false)
+            , m_changeMBMV(false)
         {};
 
         mfxStatus ProcessFrameAsync();
     private:
         //functions
-        void ChangeMBQP(mfxExtFeiPakMBCtrl* pakObject, unsigned int seed);
-        void CheckingMBQP(mfxExtFeiPakMBCtrl* pakObject);
-        mfxU8 GetQP(MB* mb);
+        void ChangeMBQP(mfxExtFeiPakMBCtrl & pakObject, unsigned int seed);
+        void ChangeMBMV(mfxExtFeiEncMV & mv);
+        void CheckingMBQP(mfxExtFeiPakMBCtrl & pakObject);
+        void CheckingMBMV();
+        mfxU8 GetQP(MB & mb);
 
     };
 
-    void MultiPAK::ChangeMBQP(mfxExtFeiPakMBCtrl* pakObject, unsigned int seed)
+    void MultiPAK::ChangeMBQP(mfxExtFeiPakMBCtrl & pakObject, unsigned int seed)
     {
         m_gen.seed(seed > 0 ? seed : 1); //seed = 0 leads to error
         std::uniform_int_distribution<int> distr(0, 51);
 
-        mfxI32 nummb = pakObject->NumMBAlloc;
-        for (mfxI32 idxMB = 0; idxMB < nummb; idxMB++)
-            pakObject->MB[idxMB].QpPrimeY = distr(m_gen);
+        mfxU32 nummb = pakObject.NumMBAlloc;
+        for (mfxU32 idxMB = 0; idxMB < nummb; idxMB++)
+            pakObject.MB[idxMB].QpPrimeY = distr(m_gen);
     };
 
-    void MultiPAK::CheckingMBQP(mfxExtFeiPakMBCtrl* pakObject)
+    void MultiPAK::ChangeMBMV(mfxExtFeiEncMV & mv)
+    {
+        mfxU32 nummb = mv.NumMBAlloc;
+        for (mfxU32 idxMB = 0; idxMB < nummb; idxMB++) {
+            for (mfxU8 idxList = 0; idxList < 2; idxList++) {
+                for (mfxU8 idxMV = 0; idxMV < 16; idxMV++) {
+                    auto & p = mv.MB[idxMB].MV[idxMV][idxList];
+                    p.x = (mfxI16)(p.x * 0.9);
+                    p.y = (mfxI16)(p.y * 0.9);
+                }
+            }
+        }
+    };
+
+    void MultiPAK::CheckingMBQP(mfxExtFeiPakMBCtrl & pakObject)
     {
         SetBuffer0(m_bitstream);
 
@@ -90,11 +109,11 @@ namespace fei_multi_pak
 
             auto mb = nalu.slice->mb;
 
-            mfxI32 nummb = pakObject->NumMBAlloc;
+            mfxI32 nummb = pakObject.NumMBAlloc;
             for (mfxI32 idxMB = 0; idxMB < nummb; idxMB++) {
-                mfxU8 qp = GetQP((MB*)mb);
+                mfxU8 qp = GetQP(*mb);
                 if (qp != QP_DO_NOT_CHECK) {
-                    if (pakObject->MB[idxMB].QpPrimeY != qp)
+                    if (pakObject.MB[idxMB].QpPrimeY != qp)
                     {
                         g_tsLog << "ERROR: QP after repacking is not equal to requested one\n";
                         g_tsStatus.check(MFX_ERR_ABORTED);
@@ -105,10 +124,30 @@ namespace fei_multi_pak
         }
     };
 
-    mfxU8 MultiPAK::GetQP(MB* mb)
+    void MultiPAK::CheckingMBMV()
     {
-        if ((mb->MbType >= I_16x16_0_1_0 && mb->MbType <= I_16x16_3_2_1) || mb->coded_block_pattern != 0)
-            return mb->QPy;
+        Ipp32u crc = 0;
+        IppStatus sts = ippsCRC32_8u(m_bitstream.Data, m_bitstream.DataLength, &crc);
+        if (sts != ippStsNoErr)
+        {
+            g_tsLog << "ERROR: cannot calculate CRC32 IppStatus=" << sts << "\n";
+            g_tsStatus.check(MFX_ERR_ABORTED);
+        }
+
+        for (size_t idxCRC = 1; idxCRC < m_refCRCVect.size(); idxCRC++) {//w/o I frame/field
+            if (crc == m_refCRCVect.at(idxCRC))
+            {
+                g_tsLog << "ERROR: MVs in the repacking don't change bit-stream\n";
+                g_tsStatus.check(MFX_ERR_ABORTED);
+            }
+        }
+
+    };
+
+    mfxU8 MultiPAK::GetQP(MB & mb)
+    {
+        if ((mb.MbType >= I_16x16_0_0_1 && mb.MbType <= I_16x16_3_2_1) || (mb.coded_block_pattern % 16 != 0))
+            return mb.QPy;
 
         return QP_DO_NOT_CHECK;
     };
@@ -130,23 +169,34 @@ namespace fei_multi_pak
 
         //End of the ENC
 
-        mfxExtFeiPakMBCtrl* mb = (mfxExtFeiPakMBCtrl*)GetExtFeiBuffer(pak.inbuf, MFX_EXTBUFF_FEI_PAK_CTRL, 0);
+        mfxExtFeiPakMBCtrl & mb = *(mfxExtFeiPakMBCtrl*)GetExtFeiBuffer(pak.inbuf, MFX_EXTBUFF_FEI_PAK_CTRL, 0);
 
         //Save reference pak object
         mfxExtFeiPakMBCtrl mbRef;
         memset(&mbRef, 0, sizeof(mfxExtFeiPakMBCtrl));
-        mbRef.MB = new mfxFeiPakMBCtrl[mb->NumMBAlloc];
-        mbRef.NumMBAlloc = mb->NumMBAlloc;
-        memcpy(mbRef.MB, mb->MB, sizeof(mfxFeiPakMBCtrl) * mb->NumMBAlloc);
+        mbRef.MB = new mfxFeiPakMBCtrl[mb.NumMBAlloc];
+        mbRef.NumMBAlloc = mb.NumMBAlloc;
+        memcpy(mbRef.MB, mb.MB, sizeof(mfxFeiPakMBCtrl) * mb.NumMBAlloc);
+
+        mfxExtFeiEncMV & mv = *(mfxExtFeiEncMV*)GetExtFeiBuffer(pak.inbuf, MFX_EXTBUFF_FEI_ENC_MV, 0);
+
+        //Save reference mv
+        mfxExtFeiEncMV mvRef;
+        memset(&mvRef, 0, sizeof(mfxExtFeiEncMV));
+        mvRef.MB = new mfxExtFeiEncMV::mfxExtFeiEncMVMB[mv.NumMBAlloc];
+        mvRef.NumMBAlloc = mv.NumMBAlloc;
+        memcpy(mvRef.MB, mv.MB, sizeof(mfxExtFeiEncMV::mfxExtFeiEncMVMB) * mv.NumMBAlloc);
 
         for (unsigned int countPAK = 0; countPAK < m_numPAK; countPAK++) {
 
-            //Changing for MBQP
-            if (m_changeMBQP) {
+            //Changing for parameters
+            if (m_changeMBQP | m_changeMBMV) {
                 if (countPAK != (m_numPAK - 1))
-                    ChangeMBQP(mb, countPAK);
+                    m_changeMBQP ? ChangeMBQP(mb, countPAK) : ChangeMBMV(mv);
                 else
-                    memcpy(mb->MB, mbRef.MB, sizeof(mfxFeiPakMBCtrl) * mbRef.NumMBAlloc);
+                    m_changeMBQP ?
+                    memcpy(mb.MB, mbRef.MB, sizeof(mfxFeiPakMBCtrl) * mbRef.NumMBAlloc)
+                    : memcpy(mv.MB, mvRef.MB, sizeof(mfxExtFeiEncMV::mfxExtFeiEncMVMB) * mvRef.NumMBAlloc);
             }
 
             m_PAKInput->ExtParam = pak.inbuf.data();
@@ -158,6 +208,7 @@ namespace fei_multi_pak
             if (mfxRes != MFX_ERR_NONE)
             {
                 SAFE_DELETE_ARRAY(mbRef.MB);
+                SAFE_DELETE_ARRAY(mvRef.MB);
                 return mfxRes;
             }
 
@@ -165,12 +216,14 @@ namespace fei_multi_pak
             if (mfxRes != MFX_ERR_NONE)
             {
                 SAFE_DELETE_ARRAY(mbRef.MB);
+                SAFE_DELETE_ARRAY(mvRef.MB);
                 return mfxRes;
             }
 
-            //Checking for MBQP
-            if (m_changeMBQP && (countPAK != (m_numPAK - 1)))
-                CheckingMBQP(mb);
+            //Checking for MB parameters
+            if (m_changeMBQP | m_changeMBMV)
+                if (countPAK != (m_numPAK - 1))
+                    m_changeMBQP ? CheckingMBQP(mb) : CheckingMBMV();
 
             if (countPAK == (m_numPAK - 1)) {
                 if (m_default && m_bs_processor && g_tsStatus.get() == MFX_ERR_NONE)
@@ -184,6 +237,7 @@ namespace fei_multi_pak
         }
 
         SAFE_DELETE_ARRAY(mbRef.MB);
+        SAFE_DELETE_ARRAY(mvRef.MB);
         return MFX_ERR_NONE;
     };
 
@@ -235,6 +289,7 @@ namespace fei_multi_pak
             mfxU16 picStruct;
             int numPAK;
             bool changeMBQP;
+            bool changeMBMV;
         };
 
     private:
@@ -272,12 +327,18 @@ namespace fei_multi_pak
 
     const TestSuite::tc_struct TestSuite::test_case[] =
     {
-        /*00*/ {MFX_ERR_NONE, MFX_PICSTRUCT_PROGRESSIVE, 3, false},
-        /*01*/ {MFX_ERR_NONE, MFX_PICSTRUCT_FIELD_TFF,   3, false},
-        /*02*/ {MFX_ERR_NONE, MFX_PICSTRUCT_FIELD_BFF,   3, false},
-        /*03*/ {MFX_ERR_NONE, MFX_PICSTRUCT_PROGRESSIVE, 3, true},
-        /*04*/ {MFX_ERR_NONE, MFX_PICSTRUCT_FIELD_TFF,   3, true},
-        /*05*/ {MFX_ERR_NONE, MFX_PICSTRUCT_FIELD_BFF,   3, true}
+        //w/o modification
+        /*00*/ {MFX_ERR_NONE, MFX_PICSTRUCT_PROGRESSIVE, 3, false, false},
+        /*01*/ {MFX_ERR_NONE, MFX_PICSTRUCT_FIELD_TFF,   3, false, false},
+        /*02*/ {MFX_ERR_NONE, MFX_PICSTRUCT_FIELD_BFF,   3, false, false},
+        //MB QP
+        /*03*/ {MFX_ERR_NONE, MFX_PICSTRUCT_PROGRESSIVE, 3, true, false},
+        /*04*/ {MFX_ERR_NONE, MFX_PICSTRUCT_FIELD_TFF,   3, true, false},
+        /*05*/ {MFX_ERR_NONE, MFX_PICSTRUCT_FIELD_BFF,   3, true, false},
+        //MB MV
+        /*06*/{ MFX_ERR_NONE, MFX_PICSTRUCT_PROGRESSIVE, 3, false, true},
+        /*07*/{ MFX_ERR_NONE, MFX_PICSTRUCT_FIELD_TFF,   3, false, true},
+        /*08*/{ MFX_ERR_NONE, MFX_PICSTRUCT_FIELD_BFF,   3, false, true}
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
@@ -313,6 +374,7 @@ namespace fei_multi_pak
         //Set parameters for modification of the PAK
         multipak.m_numPAK = tc.numPAK;
         multipak.m_changeMBQP = tc.changeMBQP;
+        multipak.m_changeMBMV = tc.changeMBMV;
 
         mfxU16 num_fields = encpak.enc.m_par.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
 
@@ -354,6 +416,7 @@ namespace fei_multi_pak
                     break;
 
                 refCRCVect.push_back(bs_crc.GetCRC());
+                multipak.m_refCRCVect.push_back(bs_crc.GetCRC());
             }
 
         }
