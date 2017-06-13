@@ -166,8 +166,9 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("                May be 1 in the case when -mss option is specified \n"));
     msdk_printf(MSDK_STRING("  -la_ext       Use external LA plugin (compatible with h264 & hevc encoders)\n"));
     msdk_printf(MSDK_STRING("  -vbr          Variable bitrate control\n"));
-    msdk_printf(MSDK_STRING("  -hrd <KB>     Maximum possible size of any compressed frames \n"));
-    msdk_printf(MSDK_STRING("  -wb <KBps>    Maximum bitrate for sliding window \n"));
+    msdk_printf(MSDK_STRING("  -hrd <KBytes> Maximum possible size of any compressed frames \n"));
+    msdk_printf(MSDK_STRING("  -wb <Kbits per second>\n"));
+    msdk_printf(MSDK_STRING("                Maximum bitrate for sliding window\n"));
     msdk_printf(MSDK_STRING("  -ws           Sliding window size in frames\n"));
     msdk_printf(MSDK_STRING("  -gop_size     Size of GOP structure in frames \n"));
     msdk_printf(MSDK_STRING("  -dist         Distance between I- or P- key frames \n"));
