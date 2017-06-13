@@ -1887,9 +1887,6 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
 
     if (pps->tiles_enabled_flag || pps->entropy_coding_sync_enabled_flag)
     {
-        Ipp32u *entryPointOffset  = 0;
-        int offsetLenMinus1 = 0;
-
         sliceHdr->num_entry_point_offsets = GetVLCElementU();
 
         Ipp32u PicHeightInCtbsY = sps->HeightInCU;
@@ -1903,6 +1900,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
         if (pps->tiles_enabled_flag && pps->entropy_coding_sync_enabled_flag && sliceHdr->num_entry_point_offsets > pps->num_tile_columns*PicHeightInCtbsY)
             throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
+        Ipp32u offsetLenMinus1 = 0;
         if (sliceHdr->num_entry_point_offsets > 0)
         {
             offsetLenMinus1 = GetVLCElementU();
@@ -1910,7 +1908,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
                 throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
         }
 
-        entryPointOffset = new Ipp32u[sliceHdr->num_entry_point_offsets];
+        Ipp32u* entryPointOffset = new Ipp32u[sliceHdr->num_entry_point_offsets];
         for (Ipp32u idx = 0; idx < sliceHdr->num_entry_point_offsets; idx++)
         {
             entryPointOffset[idx] = GetBits(offsetLenMinus1 + 1) + 1;
