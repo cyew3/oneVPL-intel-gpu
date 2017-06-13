@@ -87,11 +87,11 @@ const TestSuite::tc_struct TestSuite::test_case[] =
 {
  /*00*/ {MFX_ERR_NONE, MFX_PICSTRUCT_PROGRESSIVE, 1, {{0}} }, // empty
  /*01*/ {MFX_ERR_NONE, MFX_PICSTRUCT_PROGRESSIVE, 1, {{3, MMCO_1, 2, 0}, {6, MMCO_0, 0, 0}, {0}} }, // rm ST - ok
- /*02*/ {MFX_ERR_NONE, MFX_PICSTRUCT_PROGRESSIVE, 1, {{3, MMCO_3, 2, 1}, {6, MMCO_2, 0, 1}, {0}} }, // rm LT - no
+ /*02*/ {MFX_ERR_NONE, MFX_PICSTRUCT_PROGRESSIVE, 1, {{3, MMCO_3, 2, 1}, {6, MMCO_2, 0, 1}, {0}} }, // rm LT - ok
  /*03*/ {MFX_ERR_NONE, MFX_PICSTRUCT_PROGRESSIVE, 1, {{3, MMCO_3, 2, 0}, {0}} }, // ST->LT - ok
- /*04*/ {MFX_ERR_NONE, MFX_PICSTRUCT_PROGRESSIVE, 1, {{2, MMCO_3, 1, 2}, {3, MMCO_3, 3, 1}, {4, MMCO_3, 1, 0}, {4, MMCO_1, 2, 0}, {5, MMCO_4, 0, 0}, {0}} }, // cut LT - no
- /*05*/ {MFX_ERR_NONE, MFX_PICSTRUCT_PROGRESSIVE, 1, {{0, MMCO_6, 0, 1}, {0}} }, // curr to LT - no
-
+ /*04*/ {MFX_ERR_NONE, MFX_PICSTRUCT_PROGRESSIVE, 1, {{2, MMCO_3, 1, 2}, {3, MMCO_3, 3, 1}, {4, MMCO_3, 1, 0}, {4, MMCO_1, 2, 0}, {5, MMCO_4, 0, 0}, {0}} }, // cut LT - no - (lib uses mmco2 instead)
+ /*05*/ {MFX_ERR_NONE, MFX_PICSTRUCT_PROGRESSIVE, 1, {{1, MMCO_6, 0, 1}, {0}} }, // curr to LT - ok
+//fields only for ST (mmco1)
  /*06*/ {MFX_ERR_NONE, MFX_PICSTRUCT_FIELD_TFF, 1, {{0}} }, // empty
  /*07*/ {MFX_ERR_NONE, MFX_PICSTRUCT_FIELD_TFF, 1, {{6, MMCO_1, 4, 0}, {6, MMCO_1, 5, 0}, {0}} }, // rm ST - ok
  /*08*/ {MFX_ERR_NONE, MFX_PICSTRUCT_FIELD_TFF, 1, {{6, MMCO_1, 4, 0}, {0}} }, // 1 - of 4 cases: remove only one field
@@ -164,7 +164,7 @@ mfxStatus LoadTC(std::vector<mfxExtBuffer*>& encbuf, std::vector<mfxExtBuffer*>&
                 bool err = true;
                 for (int d = 0; d < PpsDPBSize && newDpb[d].Index != 0xffff; d++) {
                     if (newDpb[d].LongTermFrameIdx == 0xffff && newDpb[d].FrameNumWrap == (target >> fieldMode)) {
-                        mfxU32 refType = !fieldMode ? MFX_PICTYPE_FRAME :
+                        mfxU32 refType = !fieldMode ? (MFX_PICTYPE_FRAME | MFX_PICTYPE_TOPFIELD | MFX_PICTYPE_BOTTOMFIELD) :
                                 ((target & 1) ? picType : (picType ^ (MFX_PICTYPE_TOPFIELD | MFX_PICTYPE_BOTTOMFIELD))); // same parity for bigger picnum
                         if (processed[d] & refType) // same picture again
                             return MFX_ERR_ABORTED; // or what?
@@ -174,8 +174,10 @@ mfxStatus LoadTC(std::vector<mfxExtBuffer*>& encbuf, std::vector<mfxExtBuffer*>&
                         if (newDpb[d].PicType) // one field left - keep it
                             break;
                         // remove with shift left
-                        for ( ; d+1 < PpsDPBSize && newDpb[d+1].Index != 0xffff; d++)
+                        for ( ; d+1 < PpsDPBSize && newDpb[d+1].Index != 0xffff; d++) {
                             newDpb[d] = newDpb[d+1];
+                            processed[d] = processed[d+1];
+                        }
                         newDpb[d].Index = 0xffff;
                         break;
                     }
@@ -195,8 +197,10 @@ mfxStatus LoadTC(std::vector<mfxExtBuffer*>& encbuf, std::vector<mfxExtBuffer*>&
                             return MFX_ERR_ABORTED; // or what?
                         processed[d] |= refType;
                         // remove with shift left
-                        for ( ; d+1 < PpsDPBSize && newDpb[d+1].Index != 0xffff; d++)
+                        for ( ; d+1 < PpsDPBSize && newDpb[d+1].Index != 0xffff; d++) {
                             newDpb[d] = newDpb[d+1];
+                            processed[d] = processed[d+1];
+                        }
                         newDpb[d].Index = 0xffff;
                         err = false;
                         break;
@@ -213,7 +217,7 @@ mfxStatus LoadTC(std::vector<mfxExtBuffer*>& encbuf, std::vector<mfxExtBuffer*>&
                 bool err = true;
                 for (int d = 0; d < PpsDPBSize && newDpb[d].Index != 0xffff; d++) {
                     if (newDpb[d].LongTermFrameIdx == 0xffff && newDpb[d].FrameNumWrap == (target >> fieldMode)) {
-                        mfxU32 refType = !fieldMode ? MFX_PICTYPE_FRAME :
+                        mfxU32 refType = !fieldMode ? (MFX_PICTYPE_FRAME | MFX_PICTYPE_TOPFIELD | MFX_PICTYPE_BOTTOMFIELD) :
                                 ((target & 1) ? picType : (picType ^ (MFX_PICTYPE_TOPFIELD | MFX_PICTYPE_BOTTOMFIELD))); // same parity for bigger picnum
                         if (processed[d] & refType) // same picture again
                             return MFX_ERR_ABORTED; // or what?
@@ -228,7 +232,7 @@ mfxStatus LoadTC(std::vector<mfxExtBuffer*>& encbuf, std::vector<mfxExtBuffer*>&
                     return MFX_ERR_ABORTED; // or what?
             }
             break;
-        case MMCO_4:
+        case MMCO_4: // now msdk removes one by one, never go here
             {
                 mfxI32 target = tc.mmco_set[op].idxLT; // max allowed value
                 bool err = true;
@@ -239,11 +243,12 @@ mfxStatus LoadTC(std::vector<mfxExtBuffer*>& encbuf, std::vector<mfxExtBuffer*>&
                             return MFX_ERR_ABORTED; // or what?
                         processed[d] |= refType;
                         // remove with shift left
-                        for ( ; d+1 < PpsDPBSize && newDpb[d+1].Index != 0xffff; d++)
+                        for ( ; d+1 < PpsDPBSize && newDpb[d+1].Index != 0xffff; d++) {
                             newDpb[d] = newDpb[d+1];
+                            processed[d] = processed[d+1];
+                        }
                         newDpb[d].Index = 0xffff;
                         err = false; // at least one is required for testing
-                        break;
                     }
                 }
                 if (err)
@@ -374,7 +379,7 @@ public:
                                 }
                             }
                             break;
-                        case MMCO_4:
+                        case MMCO_4: // now msdk removes one by one, never go here
                             {
                                 mfxI32 target = marking->max_long_term_frame_idx_plus1 - 1;
                                 for (int d = 0; d<MAX_MMCO_IN_CASE && !matched; d++) {
@@ -386,7 +391,7 @@ public:
                                 }
                             }
                             break;
-                        case MMCO_5:
+                        case MMCO_5: // now msdk removes one by one, never go here
                             {
                                 for (int d = 0; d<MAX_MMCO_IN_CASE; d++) {
                                     if (m_tc.mmco_set[d].frameNum != m_nPic)

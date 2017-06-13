@@ -1004,10 +1004,10 @@ namespace
     bool MfxHwH264Encode::OrderByFrameNumWrap(DpbFrame const & lhs, DpbFrame const & rhs)
     {
         if (!lhs.m_longterm && !rhs.m_longterm)
-            if (lhs.m_frameNumWrap < rhs.m_frameNumWrap)
-                return lhs.m_refBase > rhs.m_refBase;
+            if (lhs.m_refBase == rhs.m_refBase)
+                return lhs.m_frameNumWrap < rhs.m_frameNumWrap;
             else
-                return false;
+                return lhs.m_refBase > rhs.m_refBase;
         else if (!lhs.m_longterm && rhs.m_longterm)
             return true;
         else if (lhs.m_longterm && !rhs.m_longterm)

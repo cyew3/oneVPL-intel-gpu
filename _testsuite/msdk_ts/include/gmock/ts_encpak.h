@@ -76,6 +76,12 @@ public:
         feiCfg(mfxFeiFunction func) : m_par(), m_pPar(&m_par), m_pParOut(&m_par), initbuf(3), inbuf(6), outbuf(3), fslice(0), fpps(0), fctrl(0), fsps(0), fpar(0), Func(func) {};
     } enc, pak;
 
+    struct refInfo {
+        mfxFrameSurface1* frame;
+        mfxU16 LTidx;   // LT frame idx,
+        bool  avail[2]; // [top, bottom] unused if both are false
+    };
+
     tsSurfacePool               m_enc_pool;
     tsSurfacePool               m_rec_pool;
     mfxFrameAllocRequest        m_enc_request;
@@ -132,8 +138,8 @@ public:
     mfxStatus PrepareInitBuffers();
     mfxStatus PrepareFrameBuffers(bool secondField);
 
-    mfxStatus CreatePpsDPB(const std::vector<mfxFrameSurface1*>& _refs, mfxExtFeiPPS::mfxExtFeiPpsDPB *pd, bool after2nd);
-    mfxStatus UpdateDPB   (std::vector<mfxFrameSurface1*>& dpb, bool secondField);
+    mfxStatus CreatePpsDPB(const std::vector<refInfo>& dpb, mfxExtFeiPPS::mfxExtFeiPpsDPB *pd, bool after2nd);
+    mfxStatus UpdateDPB   (std::vector<refInfo>& dpb, bool secondField);
     mfxStatus PrepareDpbBuffers(bool secondField); // fills dpb from current state
     mfxStatus FillRefLists(bool secondField);
     mfxStatus FillSliceRefs(bool secondField);
@@ -149,9 +155,10 @@ private:
 
     mfxExtFeiPPS::mfxExtFeiPpsDPB nextDpb[PpsDPBSize]; // before frame - expectation, after frame - compare to next Before
 
-    std::vector<mfxFrameSurface1*> refs; // dpb, updated after frame, filled at tail
+    //std::vector<mfxFrameSurface1*> refs; // dpb, updated after frame, filled at tail
     std::vector<mfxFrameSurface1*> recSet; // hw allocated recon surface pool, in->LOsufaces
-    std::vector<mfxU16> LTidxSet; // LT frame idx, co-located with recSet
+    //std::vector<mfxU16> LTidxSet; // LT frame idx, co-located with recSet
+    std::vector<refInfo> refInfoSet; // co-located with recSet
 public:
     mfxExtFeiPakMBCtrl          m_mb[2]; // [1st, 2nd fields]
     mfxExtFeiEncMV              m_mv[2]; // [1st, 2nd fields]
