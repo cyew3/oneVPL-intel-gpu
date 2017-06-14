@@ -1639,10 +1639,11 @@ mfxStatus CDecodingPipeline::SyncOutputSurface(mfxU32 wait)
             m_output_count = m_synced_count;
             ReturnSurfaceToBuffers(m_pCurrentOutputSurface);
         } else if (m_eWorkMode == MODE_FILE_DUMP) {
-            m_output_count = m_synced_count;
             sts = DeliverOutput(&(m_pCurrentOutputSurface->surface->frame));
             if (MFX_ERR_NONE != sts) {
                 sts = MFX_ERR_UNKNOWN;
+            } else {
+                m_output_count = m_synced_count;
             }
             ReturnSurfaceToBuffers(m_pCurrentOutputSurface);
         } else if (m_eWorkMode == MODE_RENDERING) {
@@ -1917,6 +1918,15 @@ mfxStatus CDecodingPipeline::RunDecoding()
             }
         }
     } //while processing
+
+    if (m_nFrames == m_output_count)
+    {
+        if (!sts)
+            msdk_printf(MSDK_STRING("[WARNING] Decoder returned error %s that could be compensated during next iterations of decoding process.\
+                                    But requested amount of frames is already successfully decoded, so whole process is finished successfully."),
+                        StatusToString(sts).c_str());
+        sts = MFX_ERR_NONE;
+    }
 
     PrintPerFrameStat(true);
 
