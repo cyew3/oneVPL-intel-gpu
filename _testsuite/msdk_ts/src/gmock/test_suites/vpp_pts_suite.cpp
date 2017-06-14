@@ -265,7 +265,7 @@ namespace vpp_pts_suite
         mfxHandleType hdl_type;
         m_pFrameAllocator = &al;
 
-        if(al_type == frame_allocator::AllocatorType::HARDWARE) {
+        if(al_type == frame_allocator::AllocatorType::HARDWARE || al_type == frame_allocator::AllocatorType::HARDWARE_DX11) {
             al.get_hdl(hdl_type, hdl);
             SetHandle(m_session, hdl_type, hdl);
         }
@@ -323,7 +323,6 @@ namespace vpp_pts_suite
                 }
             }
 
-
             switch(sts) {
                 case MFX_ERR_MORE_SURFACE:
                     pts = m_pSurfOut->Data.TimeStamp;
@@ -359,7 +358,6 @@ namespace vpp_pts_suite
                     throw tsFAIL;
                     break;
             }
-
 
         }
         TS_END;
