@@ -7474,7 +7474,13 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
 #endif
     CONSTRUCT_EXT_BUFFER(mfxExtVideoSignalInfo,      m_extVideoSignal);
     CONSTRUCT_EXT_BUFFER(mfxExtOpaqueSurfaceAlloc,   m_extOpaque);
-    CONSTRUCT_EXT_BUFFER(mfxExtMVCSeqDesc,           m_extMvcSeqDescr);
+
+    // perform deep copy of the mfxExtMVCSeqDesc buffer
+    InitExtBufHeader(m_extMvcSeqDescr);
+    if (mfxExtMVCSeqDesc * buffer = GetExtBuffer(par))
+        ConstructMvcSeqDesc(*buffer);
+    m_extParam[NumExtParam++] = &m_extMvcSeqDescr.Header;
+
     CONSTRUCT_EXT_BUFFER(mfxExtPictureTimingSEI,     m_extPicTiming);
     CONSTRUCT_EXT_BUFFER(mfxExtAvcTemporalLayers,    m_extTempLayers);
 #ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
@@ -7530,15 +7536,15 @@ void MfxVideoParam::ConstructMvcSeqDesc(
     m_extMvcSeqDescr.NumRefsTotal   = desc.NumRefsTotal;
 
     if (desc.View)
-    {
-        m_storageView.resize(desc.NumView);
+    {// potentially NumView and NumViewAlloc may differ, so reallocate for NumViewAlloc views
+        m_storageView.resize(desc.NumViewAlloc);
         std::copy(desc.View,   desc.View   + desc.NumView,   m_storageView.begin());
         m_extMvcSeqDescr.View           = &m_storageView[0];
 
         if (desc.ViewId && desc.OP)
         {
-            m_storageOp.resize(desc.NumOP);
-            m_storageViewId.resize(desc.NumViewId);
+            m_storageOp.resize(desc.NumOPAlloc);
+            m_storageViewId.resize(desc.NumViewIdAlloc);
 
             std::copy(desc.OP,     desc.OP     + desc.NumOP,     m_storageOp.begin());
             std::copy(desc.ViewId, desc.ViewId + desc.NumViewId, m_storageViewId.begin());
