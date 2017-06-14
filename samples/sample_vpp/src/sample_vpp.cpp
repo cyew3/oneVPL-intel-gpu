@@ -109,6 +109,8 @@ static
     pParams->rotate.clear(); pParams->rotate.push_back(0);
     pParams->bScaling     = false;
     pParams->scalingMode  = MFX_SCALING_MODE_DEFAULT;
+    pParams->bChromaSiting = false;
+    pParams->uChromaSiting = 0;
     pParams->numFrames    = 0;
 
     // Optional video processing features

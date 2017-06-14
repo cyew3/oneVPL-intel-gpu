@@ -166,6 +166,9 @@ struct sInputParams
     bool     bScaling;
     mfxU16   scalingMode;
 
+    bool     bChromaSiting;
+    mfxU16   uChromaSiting;
+
     bool     bInitEx;
     mfxU16   GPUCopyValue;
 
@@ -435,6 +438,9 @@ struct sAppResources
     mfxExtVPPDenoise    denoiseConfig;
     mfxExtVPPRotation   rotationConfig;
     mfxExtVPPScaling    scalingConfig;
+#ifdef ENABLE_FF
+    mfxExtColorConversion    chromaSitingConfig;
+#endif
     mfxExtVPPFrameRateConversion    frcConfig;
     mfxExtVPPDeinterlacing deinterlaceConfig;
     mfxExtVPPVideoSignalInfo  videoSignalInfoConfig;
