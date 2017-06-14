@@ -61,8 +61,288 @@ inline mfxU32 NumComponents(mfxFrameInfo fi)
     return 3;
 }
 
+bool tsFrameNV12::Copy(tsFrameAbstract const & srcAbstract, mfxFrameInfo const & srcInfo, mfxFrameInfo const & dstInfo)
+{
+    if (srcInfo.FourCC == MFX_FOURCC_NV12)
+    {
+        auto& src = (const tsFrameNV12 &)srcAbstract;
+        mfxU32 maxw = TS_MIN(dstInfo.Width,  srcInfo.Width);
+        mfxU32 maxh = TS_MIN(dstInfo.Height, srcInfo.Height);
+
+        if (   dstInfo.CropW
+            && dstInfo.CropH
+            && srcInfo.CropW
+            && srcInfo.CropH)
+        {
+            maxw = TS_MIN(dstInfo.CropW, srcInfo.CropW);
+            maxh = TS_MIN(dstInfo.CropH, srcInfo.CropH);
+        }
+
+        mfxU8* pDst = m_y + (m_pitch * dstInfo.CropY) + dstInfo.CropX;
+        mfxU8* pSrc = src.m_y + (src.m_pitch * srcInfo.CropY) + srcInfo.CropX;
+
+        for (mfxU32 h = 0; h < maxh; h++)
+        {
+            if (!memcpy(pDst, pSrc, maxw))
+                return false;
+            pDst += m_pitch;
+            pSrc += src.m_pitch;
+        }
+
+        if (dstInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV420 && srcInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV420)
+        {
+            pDst = m_uv + (m_pitch * dstInfo.CropY / 2) + dstInfo.CropX;
+            pSrc = src.m_uv + (src.m_pitch * srcInfo.CropY / 2) + srcInfo.CropX;
+            maxh /= 2;
+
+            for (mfxU32 h = 0; h < maxh; h++)
+            {
+                if (!memcpy(pDst, pSrc, maxw))
+                    return false;
+                pDst += m_pitch;
+                pSrc += src.m_pitch;
+            }
+        }
+
+        return true;
+    }
+
+    if (srcInfo.FourCC == MFX_FOURCC_YV12)
+    {
+        auto& src = (const tsFrameYV12 &)srcAbstract;
+        mfxI32 maxw = TS_MIN(dstInfo.Width, srcInfo.Width);
+        mfxI32 maxh = TS_MIN(dstInfo.Height, srcInfo.Height);
+
+        if (   dstInfo.CropW
+            && dstInfo.CropH
+            && srcInfo.CropW
+            && srcInfo.CropH)
+        {
+            maxw = TS_MIN(dstInfo.CropW, srcInfo.CropW);
+            maxh = TS_MIN(dstInfo.CropH, srcInfo.CropH);
+        }
+
+        const Ipp8u* pSrc[3] = {
+            src.m_y + (src.m_pitch * srcInfo.CropY) + srcInfo.CropX,
+            src.m_u + (src.m_pitch / 2 * srcInfo.CropY / 2) + srcInfo.CropX / 2,
+            src.m_v + (src.m_pitch / 2 * srcInfo.CropY / 2) + srcInfo.CropX / 2
+        };
+        mfxI32 srcPitch[3] = {(mfxI32)src.m_pitch, (mfxI32)src.m_pitch / 2, (mfxI32)src.m_pitch / 2 };
+        mfxU8* pDstY = m_y + (m_pitch * dstInfo.CropY) + dstInfo.CropX;
+        mfxU8* pDstUV = m_uv + (m_pitch * dstInfo.CropY / 2) + dstInfo.CropX;
+        IppiSize roi = { maxw, maxh };
+
+        if (ippiYCbCr420_8u_P3P2R(pSrc, srcPitch, pDstY, m_pitch, pDstUV, m_pitch, roi))
+            return false;
+
+        return true;
+    }
+
+    return false;
+}
+
+bool tsFrameYUY2::Copy(tsFrameAbstract const & srcAbstract, mfxFrameInfo const & srcInfo, mfxFrameInfo const & dstInfo)
+{
+    if (srcInfo.FourCC == MFX_FOURCC_YUY2)
+    {
+        auto& src = (const tsFrameYUY2 &)srcAbstract;
+        mfxU32 maxw = TS_MIN(dstInfo.Width, srcInfo.Width);
+        mfxU32 maxh = TS_MIN(dstInfo.Height, srcInfo.Height);
+
+        if (   dstInfo.CropW
+            && dstInfo.CropH
+            && srcInfo.CropW
+            && srcInfo.CropH)
+        {
+            maxw = TS_MIN(dstInfo.CropW, srcInfo.CropW);
+            maxh = TS_MIN(dstInfo.CropH, srcInfo.CropH);
+        }
+
+        mfxU8* pDst = m_y + (m_pitch * dstInfo.CropY) + dstInfo.CropX * 2;
+        mfxU8* pSrc = src.m_y + (src.m_pitch * srcInfo.CropY) + srcInfo.CropX * 2;
+        maxw *= 2;
+
+        for (mfxU32 h = 0; h < maxh; h++)
+        {
+            if (!memcpy(pDst, pSrc, maxw))
+                return false;
+            pDst += m_pitch;
+            pSrc += src.m_pitch;
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
+bool tsFrameAYUV::Copy(tsFrameAbstract const & srcAbstract, mfxFrameInfo const & srcInfo, mfxFrameInfo const & dstInfo)
+{
+    if (srcInfo.FourCC == MFX_FOURCC_AYUV)
+    {
+        auto& src = (const tsFrameAYUV &)srcAbstract;
+        mfxU32 maxw = TS_MIN(dstInfo.Width, srcInfo.Width);
+        mfxU32 maxh = TS_MIN(dstInfo.Height, srcInfo.Height);
+
+        if (   dstInfo.CropW
+            && dstInfo.CropH
+            && srcInfo.CropW
+            && srcInfo.CropH)
+        {
+            maxw = TS_MIN(dstInfo.CropW, srcInfo.CropW);
+            maxh = TS_MIN(dstInfo.CropH, srcInfo.CropH);
+        }
+
+        mfxU8* pDst = m_v + (m_pitch * dstInfo.CropY) + dstInfo.CropX * 4;
+        mfxU8* pSrc = src.m_v + (src.m_pitch * srcInfo.CropY) + srcInfo.CropX * 4;
+        maxw *= 4;
+
+        for (mfxU32 h = 0; h < maxh; h++)
+        {
+            if (!memcpy(pDst, pSrc, maxw))
+                return false;
+            pDst += m_pitch;
+            pSrc += src.m_pitch;
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
+bool tsFrameP010::Copy(tsFrameAbstract const & srcAbstract, mfxFrameInfo const & srcInfo, mfxFrameInfo const & dstInfo)
+{
+    if (   srcInfo.FourCC == MFX_FOURCC_P010
+        && srcInfo.BitDepthLuma == dstInfo.BitDepthLuma
+        && srcInfo.BitDepthChroma == dstInfo.BitDepthChroma
+        && srcInfo.Shift == dstInfo.Shift)
+    {
+        auto& src = (const tsFrameP010 &)srcAbstract;
+        mfxU32 maxw = TS_MIN(dstInfo.Width, srcInfo.Width);
+        mfxU32 maxh = TS_MIN(dstInfo.Height, srcInfo.Height);
+
+        if (dstInfo.CropW
+            && dstInfo.CropH
+            && srcInfo.CropW
+            && srcInfo.CropH)
+        {
+            maxw = TS_MIN(dstInfo.CropW, srcInfo.CropW);
+            maxh = TS_MIN(dstInfo.CropH, srcInfo.CropH);
+        }
+
+        mfxU8* pDst = (mfxU8*)m_y + (m_pitch * dstInfo.CropY) + dstInfo.CropX * 2;
+        mfxU8* pSrc = (mfxU8*)src.m_y + (src.m_pitch * srcInfo.CropY) + srcInfo.CropX * 2;
+        maxw *= 2;
+
+        for (mfxU32 h = 0; h < maxh; h++)
+        {
+            if (!memcpy(pDst, pSrc, maxw))
+                return false;
+            pDst += m_pitch;
+            pSrc += src.m_pitch;
+        }
+
+        pDst = (mfxU8*)m_uv + (m_pitch * dstInfo.CropY / 2) + dstInfo.CropX * 2;
+        pSrc = (mfxU8*)src.m_uv + (src.m_pitch * srcInfo.CropY / 2) + srcInfo.CropX * 2;
+        maxh /= 2;
+
+        for (mfxU32 h = 0; h < maxh; h++)
+        {
+            if (!memcpy(pDst, pSrc, maxw))
+                return false;
+            pDst += m_pitch;
+            pSrc += src.m_pitch;
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
+bool tsFrameY210::Copy(tsFrameAbstract const & srcAbstract, mfxFrameInfo const & srcInfo, mfxFrameInfo const & dstInfo)
+{
+    if (   srcInfo.FourCC == MFX_FOURCC_Y210
+        && srcInfo.BitDepthLuma == dstInfo.BitDepthLuma
+        && srcInfo.BitDepthChroma == dstInfo.BitDepthChroma
+        && srcInfo.Shift == dstInfo.Shift)
+    {
+        auto& src = (const tsFrameY210 &)srcAbstract;
+        mfxU32 maxw = TS_MIN(dstInfo.Width, srcInfo.Width);
+        mfxU32 maxh = TS_MIN(dstInfo.Height, srcInfo.Height);
+
+        if (dstInfo.CropW
+            && dstInfo.CropH
+            && srcInfo.CropW
+            && srcInfo.CropH)
+        {
+            maxw = TS_MIN(dstInfo.CropW, srcInfo.CropW);
+            maxh = TS_MIN(dstInfo.CropH, srcInfo.CropH);
+        }
+
+        mfxU16* pDst = m_y + (m_pitch * dstInfo.CropY) + dstInfo.CropX * 2;
+        mfxU16* pSrc = src.m_y + (src.m_pitch * srcInfo.CropY) + srcInfo.CropX * 2;
+        maxw *= 4;
+
+        for (mfxU32 h = 0; h < maxh; h++)
+        {
+            if (!memcpy(pDst, pSrc, maxw))
+                return false;
+            pDst += m_pitch;
+            pSrc += src.m_pitch;
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
+bool tsFrameY410::Copy(tsFrameAbstract const & srcAbstract, mfxFrameInfo const & srcInfo, mfxFrameInfo const & dstInfo)
+{
+    if (   srcInfo.FourCC == MFX_FOURCC_Y410
+        && srcInfo.BitDepthLuma == dstInfo.BitDepthLuma
+        && srcInfo.BitDepthChroma == dstInfo.BitDepthChroma)
+    {
+        auto& src = (const tsFrameY410 &)srcAbstract;
+        mfxU32 maxw = TS_MIN(dstInfo.Width, srcInfo.Width);
+        mfxU32 maxh = TS_MIN(dstInfo.Height, srcInfo.Height);
+
+        if (dstInfo.CropW
+            && dstInfo.CropH
+            && srcInfo.CropW
+            && srcInfo.CropH)
+        {
+            maxw = TS_MIN(dstInfo.CropW, srcInfo.CropW);
+            maxh = TS_MIN(dstInfo.CropH, srcInfo.CropH);
+        }
+
+        auto* pDst = m_y + (m_pitch * dstInfo.CropY) + dstInfo.CropX;
+        auto* pSrc = src.m_y + (src.m_pitch * srcInfo.CropY) + srcInfo.CropX;
+        maxw *= sizeof(*pDst);
+
+        for (mfxU32 h = 0; h < maxh; h++)
+        {
+            if (!memcpy(pDst, pSrc, maxw))
+                return false;
+            pDst += m_pitch;
+            pSrc += src.m_pitch;
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
 tsFrame& tsFrame::operator=(tsFrame& src)
 {
+    if (m_pFrame->Copy(*src.m_pFrame, src.m_info, m_info))
+    {
+        return *this;
+    }
+
     mfxU32 n = TS_MIN(NumComponents(m_info), NumComponents(src.m_info));
     mfxU32 maxw = TS_MIN(m_info.Width, src.m_info.Width);
     mfxU32 maxh = TS_MIN(m_info.Height, src.m_info.Height);
@@ -443,11 +723,11 @@ mfxStatus tsRawReader::ResetFile()
     return SeekToStart();
 }
 
-tsSurfaceWriter::tsSurfaceWriter(const char* fname)
+tsSurfaceWriter::tsSurfaceWriter(const char* fname, bool append)
     : m_file(0)
 {
 #pragma warning(disable:4996)
-    m_file = fopen(fname, "wb");  
+    m_file = fopen(fname, append ? "ab" : "wb");
 #pragma warning(default:4996)
 }
 
@@ -564,13 +844,34 @@ mfxStatus tsSurfaceWriter::ProcessSurface(mfxFrameSurface1& s)
 
 mfxF64 PSNR(tsFrame& ref, tsFrame& src, mfxU32 id)
 {
-    mfxF64 max  = (1 << 8) - 1;
     mfxF64 size = ref.m_info.CropW * ref.m_info.CropH;
     mfxI32 diff = 0;
     mfxU64 dist = 0;
     mfxU32 chroma_step = 1;
     mfxU32 maxw = TS_MIN(ref.m_info.CropW, src.m_info.CropW);
     mfxU32 maxh = TS_MIN(ref.m_info.CropH, src.m_info.CropH);
+    mfxU16 bd0 = id ? TS_MAX(8, ref.m_info.BitDepthChroma) : TS_MAX(8, ref.m_info.BitDepthLuma);
+    mfxU16 bd1 = id ? TS_MAX(8, src.m_info.BitDepthChroma) : TS_MAX(8, src.m_info.BitDepthLuma);
+    mfxF64 max  = (1 << bd0) - 1;
+
+    if (bd0 != bd1)
+        g_tsStatus.check(MFX_ERR_UNSUPPORTED);
+
+    if (0 != id)
+    {
+        if(    ref.m_info.ChromaFormat == MFX_CHROMAFORMAT_YUV400
+            || src.m_info.ChromaFormat == MFX_CHROMAFORMAT_YUV400)
+        {
+            g_tsStatus.check(MFX_ERR_UNSUPPORTED);
+            return 0;
+        }
+        if(    ref.m_info.ChromaFormat == MFX_CHROMAFORMAT_YUV420
+            && src.m_info.ChromaFormat == MFX_CHROMAFORMAT_YUV420)
+        {
+            chroma_step = 2;
+            size /= 4;
+        }
+    }
 
 #define GET_DIST(COMPONENT, STEP)                                              \
     for(mfxU32 y = 0; y < maxh; y += STEP)                                     \
@@ -582,25 +883,8 @@ mfxF64 PSNR(tsFrame& ref, tsFrame& src, mfxU32 id)
             dist += (diff * diff);                                             \
         }                                                                      \
     }
-
-    if(ref.isYUV() && src.isYUV())
+    if (ref.isYUV() && src.isYUV())
     {
-        if( 0 != id )
-        {
-            if(    ref.m_info.ChromaFormat == MFX_CHROMAFORMAT_YUV400
-                || src.m_info.ChromaFormat == MFX_CHROMAFORMAT_YUV400)
-            {
-                g_tsStatus.check(MFX_ERR_UNSUPPORTED);
-                return 0;
-            }
-            if(    ref.m_info.ChromaFormat == MFX_CHROMAFORMAT_YUV420
-                && src.m_info.ChromaFormat == MFX_CHROMAFORMAT_YUV420)
-            {
-                chroma_step = 2;
-                size /= 4;
-            }
-        }
-
         switch(id)
         {
         case 0:  GET_DIST(Y, 1); break;
@@ -608,8 +892,19 @@ mfxF64 PSNR(tsFrame& ref, tsFrame& src, mfxU32 id)
         case 2:  GET_DIST(V, chroma_step); break;
         default: g_tsStatus.check(MFX_ERR_UNSUPPORTED); break;
         }
-
-    } else g_tsStatus.check(MFX_ERR_UNSUPPORTED);
+    }
+    else if (ref.isYUV16() && src.isYUV16())
+    {
+        switch (id)
+        {
+        case 0:  GET_DIST(Y16, 1); break;
+        case 1:  GET_DIST(U16, chroma_step); break;
+        case 2:  GET_DIST(V16, chroma_step); break;
+        default: g_tsStatus.check(MFX_ERR_UNSUPPORTED); break;
+        }
+    }
+    else
+        g_tsStatus.check(MFX_ERR_UNSUPPORTED);
 
     if (0 == dist)
         return 1000.;

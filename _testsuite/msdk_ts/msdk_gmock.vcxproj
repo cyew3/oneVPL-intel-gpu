@@ -121,7 +121,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>dxva2.lib;d3d9.lib;d3d11.lib;dxgi.lib;ippcoremt.lib;ippdcmt.lib;ippimt.lib</AdditionalDependencies>
+      <AdditionalDependencies>dxva2.lib;d3d9.lib;d3d11.lib;dxgi.lib;ippcoremt.lib;ippdcmt.lib;ippimt.lib;ippccmt.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -140,7 +140,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>dxva2.lib;d3d9.lib;d3d11.lib;dxgi.lib;ippcoremt.lib;ippdcmt.lib;ippimt.lib</AdditionalDependencies>
+      <AdditionalDependencies>dxva2.lib;d3d9.lib;d3d11.lib;dxgi.lib;ippcoremt.lib;ippdcmt.lib;ippimt.lib;ippccmt.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -163,7 +163,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>dxva2.lib;d3d9.lib;d3d11.lib;dxgi.lib;ippcoremt.lib;ippdcmt.lib;ippimt.lib</AdditionalDependencies>
+      <AdditionalDependencies>dxva2.lib;d3d9.lib;d3d11.lib;dxgi.lib;ippcoremt.lib;ippdcmt.lib;ippimt.lib;ippccmt.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -186,7 +186,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>dxva2.lib;d3d9.lib;d3d11.lib;dxgi.lib;ippcoremt.lib;ippdcmt.lib;ippimt.lib</AdditionalDependencies>
+      <AdditionalDependencies>dxva2.lib;d3d9.lib;d3d11.lib;dxgi.lib;ippcoremt.lib;ippdcmt.lib;ippimt.lib;ippccmt.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
