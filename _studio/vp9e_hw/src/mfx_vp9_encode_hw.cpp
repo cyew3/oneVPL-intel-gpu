@@ -37,6 +37,7 @@ Plugin::Plugin(bool CreateByDispatcher)
     , m_initWidth(0)
     , m_initHeight(0)
     , m_frameOrderInGop(0)
+    , m_frameOrderInRefStructure(0)
 {
     m_PluginParam.ThreadPolicy = MFX_THREADPOLICY_SERIAL;
     m_PluginParam.MaxThreadNum = 1;
@@ -388,6 +389,8 @@ MFX_CHECK_STS(sts);
     m_prevSegment.SegmentId = new mfxU8[sizeInBlocks];
     memset(m_prevSegment.SegmentId, 0, sizeInBlocks);
 
+    Zero(m_prevFrameParam);
+
     // prepare enough space for tasks
     m_free.resize(CalcNumTasks(m_video));
     m_numBufferedFrames = 0;
@@ -403,6 +406,7 @@ MFX_CHECK_STS(sts);
     m_frameArrivalOrder = 0;
     m_taskIdForDriver = 0;
     m_frameOrderInGop = 0;
+    m_frameOrderInRefStructure = 0;
 
     m_videoForParamChange.push_back(m_video);
 
@@ -461,10 +465,20 @@ mfxStatus Plugin::Reset(mfxVideoParam *par)
     m_video = parAfterReset;
     m_resetBrc = isBrcResetRequired(parBeforeReset, parAfterReset);
 
-    if (IsResetOfPipelineRequired(parBeforeReset, parAfterReset))
+    if (m_frameArrivalOrder)
+    {
+        m_bStartIVFSequence = false;
+    }
+
+    const mfxExtEncoderResetOption * pExtReset = (mfxExtEncoderResetOption*)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_ENCODER_RESET_OPTION);
+    if (parBeforeReset.mfx.GopPicSize != parAfterReset.mfx.GopPicSize ||
+        pExtReset && IsOn(pExtReset->StartNewSequence))
     {
         m_frameArrivalOrder = 0;
         m_frameOrderInGop = 0;
+        m_frameOrderInRefStructure = 0;
+        Zero(m_prevFrameParam);
+        //m_bStartIVFSequence = true;
         // below commented code is to completely reset encoding pipeline
         /*
         // release all the reconstructed frames
@@ -487,8 +501,28 @@ mfxStatus Plugin::Reset(mfxVideoParam *par)
         m_taskIdForDriver = 0;
         */
     }
+    else
+    {
+        // check that changes in encoding parameters don't violate VP9 specification
+        const mfxExtVP9Param& extParBefore = GetExtBufferRef(parBeforeReset);
+        const mfxExtVP9Param& extParAfter = GetExtBufferRef(parAfterReset);
+        MFX_CHECK(m_frameArrivalOrder == 0 ||
+            extParAfter.FrameWidth <= MAX_UPSCALE_RATIO * extParBefore.FrameWidth &&
+            extParAfter.FrameHeight <= MAX_UPSCALE_RATIO * extParBefore.FrameHeight &&
+            static_cast<mfxF64>(extParAfter.FrameWidth) >=
+            static_cast<mfxF64>(extParBefore.FrameWidth) / MAX_DOWNSCALE_RATIO &&
+            static_cast<mfxF64>(extParAfter.FrameHeight) >=
+            static_cast<mfxF64>(extParBefore.FrameHeight) / MAX_DOWNSCALE_RATIO,
+            MFX_ERR_INVALID_VIDEO_PARAM);
 
-    m_bStartIVFSequence = false;
+        // so far dynamic scaling isn't supported together with temporal scalability
+        if ((extParAfter.FrameWidth != extParBefore.FrameWidth ||
+            extParAfter.FrameHeight != extParBefore.FrameHeight) &&
+            parAfterReset.m_numLayers > 1)
+        {
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+        }
+    }
 
     sts = m_ddi->Reset(m_video);
     MFX_CHECK_STS(sts);
@@ -593,7 +627,7 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
             sts = LockSurface(newFrame.m_pRawFrame, m_pmfxCore);
             MFX_CHECK_STS(sts);
 
-            checkSts = CheckSurface(m_video, *surface);
+            checkSts = CheckSurface(m_video, *surface, m_initWidth, m_initHeight);
             MFX_CHECK_STS(checkSts);
 
             if (ctrl)
@@ -604,7 +638,7 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
                     return MFX_ERR_UNDEFINED_BEHAVIOR;
 
                 mfxEncodeCtrl tmpCtrl = *ctrl;
-                checkSts = CheckAndFixCtrl(m_video, tmpCtrl, *surface, caps);
+                checkSts = CheckAndFixCtrl(m_video, tmpCtrl, caps);
                 MFX_CHECK(checkSts >= MFX_ERR_NONE, checkSts);
                 newFrame.m_ctrl = tmpCtrl;
             }
@@ -654,12 +688,35 @@ mfxStatus Plugin::ConfigTask(Task &task)
     mfxU16 forcedFrameType = task.m_ctrl.FrameType;
     mfxU8 frameType = (mfxU8)((task.m_frameOrder % curMfxPar.mfx.GopPicSize) == 0 || (forcedFrameType & MFX_FRAMETYPE_I) ? KEY_FRAME : INTER_FRAME);
 
+    task.m_insertIVFSeqHeader = false;
     if (frameType == KEY_FRAME)
     {
+        // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
+        //mfxExtVP9CodingOption& opt = GetExtBufferRef(curMfxPar);
+        mfxExtCodingOptionDDI& opt = GetExtBufferRef(curMfxPar);
+        if (opt.WriteIVFHeaders != MFX_CODINGOPTION_OFF &&
+            m_frameOrderInGop == 0 && m_bStartIVFSequence == true)
+        {
+            task.m_insertIVFSeqHeader = true;
+        }
+
         m_frameOrderInGop = 0;
     }
 
     task.m_frameOrderInGop = m_frameOrderInGop;
+
+    mfxExtVP9Param const &extPar = GetActualExtBufferRef(curMfxPar, task.m_ctrl);
+
+    mfxU32 prevFrameOrderInRefStructure = m_frameOrderInRefStructure;
+
+    if (m_frameOrderInGop == 0 ||
+        (m_prevFrameParam.width != extPar.FrameWidth ||
+        m_prevFrameParam.height != extPar.FrameHeight))
+    {
+        m_frameOrderInRefStructure = 0;
+    }
+
+    task.m_frameOrderInRefStructure = m_frameOrderInRefStructure;
 
     mfxStatus sts = SetFramesParams(curMfxPar, task, frameType, frameParam, m_pmfxCore);
 
@@ -685,23 +742,11 @@ mfxStatus Plugin::ConfigTask(Task &task)
         MFX_CHECK(task.m_pSegmentMap != 0, MFX_WRN_DEVICE_BUSY);
     }
 
-    sts = DecideOnRefListAndDPBRefresh(curMfxPar, &task, m_dpb, frameParam);
+    sts = DecideOnRefListAndDPBRefresh(curMfxPar, &task, m_dpb, frameParam, prevFrameOrderInRefStructure);
 
     task.m_frameParam = frameParam;
 
     task.m_pRecFrame->pSurface->Data.FrameOrder = task.m_frameOrder;
-
-    // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
-    //mfxExtVP9CodingOption& opt = GetExtBufferRef(curMfxPar);
-    mfxExtCodingOptionDDI& opt = GetExtBufferRef(curMfxPar);
-    if (opt.WriteIVFHeaders != MFX_CODINGOPTION_OFF)
-    {
-        task.m_insertIVFSeqHeader = (task.m_frameOrder == 0 && m_bStartIVFSequence);
-    }
-    else
-    {
-        task.m_insertIVFSeqHeader = false;
-    }
 
     if (task.m_frameParam.frameType == KEY_FRAME)
     {
@@ -727,6 +772,8 @@ mfxStatus Plugin::ConfigTask(Task &task)
     MFX_CHECK_STS(sts);
 
     UpdateDpb(frameParam, task.m_pRecFrame, m_dpb, m_pmfxCore);
+
+    m_prevFrameParam = task.m_frameParam;
 
     return sts;
 }
@@ -784,6 +831,7 @@ mfxStatus Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
             CopySegmentationBuffer(m_prevSegment, seg);
 
             m_frameOrderInGop++;
+            m_frameOrderInRefStructure++;
 
             VP9_LOG("\n (VP9_LOG) Frame %d Plugin::SubmitFrame -", newFrame.m_frameOrder);
         }

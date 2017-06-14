@@ -26,14 +26,14 @@ namespace MfxHwVP9Encode
 
 bool IsExtBufferSupportedInInit(mfxU32 id)
 {
-    // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
-    //return id == MFX_EXTBUFF_VP9_CODING_OPTION
-    return id == MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION
+    return id == MFX_EXTBUFF_VP9_PARAM
+        || id == MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION
         || id == MFX_EXTBUFF_CODING_OPTION2
         || id == MFX_EXTBUFF_CODING_OPTION3
         || id == MFX_EXTBUFF_DDI // TODO: remove when IVFHeader will be added to API or disabled by default
         || id == MFX_EXTBUFF_VP9_SEGMENTATION
-        || id == MFX_EXTBUFF_VP9_TEMPORAL_LAYERS;
+        || id == MFX_EXTBUFF_VP9_TEMPORAL_LAYERS
+        || id == MFX_EXTBUFF_ENCODER_RESET_OPTION;
 }
 
 bool IsExtBufferIgnoredInRuntime(mfxU32 id)
@@ -44,9 +44,8 @@ bool IsExtBufferIgnoredInRuntime(mfxU32 id)
 
 bool IsExtBufferSupportedInRuntime(mfxU32 id)
 {
-    // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
-    // return id == MFX_EXTBUFF_VP9_CODING_OPTION;
-    return id == MFX_EXTBUFF_VP9_SEGMENTATION
+    return id == MFX_EXTBUFF_VP9_PARAM
+        || id == MFX_EXTBUFF_VP9_SEGMENTATION
         || IsExtBufferIgnoredInRuntime(id);
 }
 
@@ -166,8 +165,7 @@ inline mfxStatus SetOrCopySupportedParams(mfxInfoMFX *pDst, mfxInfoMFX const *pS
     return MFX_ERR_NONE;
 }
 
-// TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
-/*inline mfxStatus SetOrCopySupportedParams(mfxExtVP9CodingOption *pDst, mfxExtVP9CodingOption const *pSrc = 0, bool zeroDst = true)
+inline mfxStatus SetOrCopySupportedParams(mfxExtVP9Param *pDst, mfxExtVP9Param const *pSrc = 0, bool zeroDst = true)
 {
     MFX_CHECK_NULL_PTR1(pDst);
 
@@ -176,11 +174,11 @@ inline mfxStatus SetOrCopySupportedParams(mfxInfoMFX *pDst, mfxInfoMFX const *pS
         ZeroExtBuffer(*pDst);
     }
 
-    SET_OR_COPY_PAR(SharpnessLevel);
+    SET_OR_COPY_PAR_DONT_INHERIT(FrameWidth);
+    SET_OR_COPY_PAR_DONT_INHERIT(FrameHeight);
+
+    /*
     SET_OR_COPY_PAR(WriteIVFHeaders);
-    SET_OR_COPY_PAR(QIndexDeltaLumaDC);
-    SET_OR_COPY_PAR(QIndexDeltaChromaAC);
-    SET_OR_COPY_PAR(QIndexDeltaChromaDC);
 
     for (mfxU8 i = 0; i < MAX_REF_LF_DELTAS; i++)
     {
@@ -191,8 +189,13 @@ inline mfxStatus SetOrCopySupportedParams(mfxInfoMFX *pDst, mfxInfoMFX const *pS
         SET_OR_COPY_PAR(LoopFilterModeDelta[i]);
     }
 
+    SET_OR_COPY_PAR(QIndexDeltaLumaDC);
+    SET_OR_COPY_PAR(QIndexDeltaChromaAC);
+    SET_OR_COPY_PAR(QIndexDeltaChromaDC);
+    */
+
     return MFX_ERR_NONE;
-}*/
+}
 
 inline mfxStatus SetOrCopySupportedParams(mfxExtCodingOption2 *pDst, mfxExtCodingOption2 const *pSrc = 0, bool zeroDst = true)
 {
@@ -287,12 +290,11 @@ mfxStatus SetSupportedParameters(mfxVideoParam & par)
     mfxStatus sts = CheckExtBufferHeaders(par.NumExtParam, par.ExtParam);
     MFX_CHECK_STS(sts);
 
-    // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
-    /*mfxExtVP9CodingOption *pOpt = GetExtBuffer(par);
-    if (pOpt != 0)
+    mfxExtVP9Param *pPar = GetExtBuffer(par);
+    if (pPar != 0)
     {
-        SetOrCopySupportedParams(pOpt);
-    }*/
+        SetOrCopySupportedParams(pPar);
+    }
 
     mfxExtCodingOption2 *pOpt2 = GetExtBuffer(par);
     if (pOpt2 != 0)
@@ -372,11 +374,10 @@ void InheritDefaults(VP9MfxVideoParam& defaultsDst, VP9MfxVideoParam const & def
     // inherit default from mfxInfoMfx
     SetOrCopySupportedParams(&defaultsDst.mfx, &defaultsSrc.mfx, false);
 
-    // inherit defaults from mfxExtVP9CodingOption
-    // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
-    /*mfxExtVP9CodingOption* pOptDst = GetExtBuffer(defaultsDst);
-    mfxExtVP9CodingOption* pOptSrc = GetExtBuffer(defaultsSrc);
-    SetOrCopySupportedParams(pOptDst, pOptSrc, false);*/
+    // inherit defaults from mfxExtVP9Param
+    mfxExtVP9Param* pParDst = GetExtBuffer(defaultsDst);
+    mfxExtVP9Param* pParSrc = GetExtBuffer(defaultsSrc);
+    SetOrCopySupportedParams(pParDst, pParSrc, false);
 
     // inherit defaults from mfxExtCodingOption2
     mfxExtCodingOption2* pOpt2Dst = GetExtBuffer(defaultsDst);
@@ -423,14 +424,13 @@ mfxStatus CleanOutUnsupportedParameters(VP9MfxVideoParam &par)
         sts = MFX_ERR_UNSUPPORTED;
     }
 
-    // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
-    /*mfxExtVP9CodingOption &optTmp = GetExtBufferRef(tmp);
-    mfxExtVP9CodingOption &optPar = GetExtBufferRef(par);
-    SetOrCopySupportedParams(&optPar, &optTmp);
-    if (memcmp(&optPar, &optTmp, sizeof(mfxExtCodingOptionVP9)))
+    mfxExtVP9Param &parTmp = GetExtBufferRef(tmp);
+    mfxExtVP9Param &parPar = GetExtBufferRef(par);
+    SetOrCopySupportedParams(&parPar, &parTmp);
+    if (memcmp(&parPar, &parTmp, sizeof(mfxExtVP9Param)))
     {
         sts = MFX_ERR_UNSUPPORTED;
-    }*/
+    }
 
     mfxExtVP9Segmentation &segTmp = GetExtBufferRef(tmp);
     mfxExtVP9Segmentation &segPar = GetExtBufferRef(par);
@@ -713,7 +713,7 @@ inline void ConvertStatusToBools(Bool& changed, Bool& unsupported, mfxStatus sts
     }
 }
 
-mfxStatus CheckSegmentationParam(mfxExtVP9Segmentation& seg, mfxFrameInfo const & fi, ENCODE_CAPS_VP9 const & caps, mfxU16 QP)
+mfxStatus CheckSegmentationParam(mfxExtVP9Segmentation& seg, mfxU32 frameWidth, mfxU32 frameHeight, ENCODE_CAPS_VP9 const & caps, mfxU16 QP)
 {
     Bool changed = false;
     Bool unsupported = false;
@@ -744,11 +744,11 @@ mfxStatus CheckSegmentationParam(mfxExtVP9Segmentation& seg, mfxFrameInfo const 
 
     // check that NumSegmentIdAlloc is enough for given frame resolution and block size
     mfxU16 blockSize = MapIdToBlockSize(seg.SegmentIdBlockSize);
-    if (seg.NumSegmentIdAlloc && blockSize && fi.Width && fi.Height)
+    if (seg.NumSegmentIdAlloc && blockSize && frameWidth && frameHeight)
     {
-        mfxU16 widthInBlocks = (fi.Width + blockSize - 1) / blockSize;
-        mfxU16 heightInBlocks = (fi.Height + blockSize - 1) / blockSize;
-        mfxU16 sizeInBlocks = widthInBlocks * heightInBlocks;
+        mfxU32 widthInBlocks = (frameWidth + blockSize - 1) / blockSize;
+        mfxU32 heightInBlocks = (frameHeight + blockSize - 1) / blockSize;
+        mfxU32 sizeInBlocks = widthInBlocks * heightInBlocks;
 
         if (seg.NumSegmentIdAlloc && seg.NumSegmentIdAlloc < sizeInBlocks)
         {
@@ -1190,7 +1190,8 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
                 changed = true;
             }
 
-            if (IsBufferBasedBRC(brcMode) && par.m_initialDelayInKb > par.m_bufferSizeInKb)
+            if (IsBufferBasedBRC(brcMode) && par.m_bufferSizeInKb &&
+                par.m_initialDelayInKb > par.m_bufferSizeInKb)
             {
                 par.m_initialDelayInKb = 0;
                 unsupported = true;
@@ -1272,13 +1273,52 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         }
     }
 
-    // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
-    // mfxExtVP9CodingOption &opt = GetExtBufferRef(par);
+
     mfxExtCodingOptionDDI &opt = GetExtBufferRef(par);
     if (false == CheckTriStateOption(opt.WriteIVFHeaders))
     {
         changed = true;
     }
+
+     mfxExtVP9Param &extPar = GetExtBufferRef(par);
+
+     if (extPar.FrameWidth % 2)
+     {
+         extPar.FrameWidth = 0;
+         unsupported = true;
+     }
+
+     if (extPar.FrameHeight % 2)
+     {
+         extPar.FrameHeight = 0;
+         unsupported = true;
+     }
+
+     if (extPar.FrameWidth && fi.Width &&
+         extPar.FrameWidth > fi.Width)
+     {
+         extPar.FrameWidth = 0;
+         unsupported = true;
+     }
+
+     if (extPar.FrameHeight && fi.Height &&
+         extPar.FrameHeight > fi.Height)
+     {
+         extPar.FrameHeight = 0;
+         unsupported = true;
+     }
+
+     /*if (extPar.FrameWidth &&
+         (fi.CropX + fi.CropW > extPar.FrameWidth) ||
+         extPar.FrameHeight &&
+         (fi.CropY + fi.CropH > extPar.FrameHeight))
+     {
+         fi.CropX = 0;
+         fi.CropW = 0;
+         fi.CropY = 0;
+         fi.CropH = 0;
+         unsupported = true;
+     }*/
 
     // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
     /*if (false == CheckTriStateOption(opt.EnableMultipleSegments))
@@ -1340,7 +1380,7 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
 
     mfxExtVP9Segmentation& seg = GetExtBufferRef(par);
 
-    mfxStatus segSts = CheckSegmentationParam(seg, par.mfx.FrameInfo, caps, 0);
+    mfxStatus segSts = CheckSegmentationParam(seg, extPar.FrameWidth, extPar.FrameHeight, caps, 0);
     ConvertStatusToBools(changed, unsupported, segSts);
 
     if (IsOn(opt2.MBBRC) && seg.NumSegments)
@@ -1391,14 +1431,13 @@ inline mfxU32 GetDefaultBufferSize(VP9MfxVideoParam const &par)
     }
     else
     {
-        mfxFrameInfo const &fi = par.mfx.FrameInfo;
-
+        const mfxExtVP9Param& extPar = GetExtBufferRef(par);
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
         if (par.mfx.FrameInfo.FourCC == MFX_FOURCC_P010 || par.mfx.FrameInfo.FourCC == MFX_FOURCC_Y410) {
-            return (fi.Width * fi.Height * 3) / 1000; // size of two uncompressed 420 8bit frames in KB
+            return (extPar.FrameWidth * extPar.FrameHeight * 3) / 1000; // size of two uncompressed 420 8bit frames in KB
         }
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
-        return (fi.Width * fi.Height * 3) / 2 / 1000;  // size of uncompressed 420 8bit frame in KB
+        return (extPar.FrameWidth * extPar.FrameHeight * 3) / 2 / 1000;  // size of uncompressed 420 8bit frame in KB
     }
 }
 
@@ -1461,6 +1500,13 @@ mfxStatus SetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         SetDefault(par.m_maxKbps, par.m_targetKbps);
     }
 
+    // mfxInfomfx.FrameInfo
+    mfxFrameInfo &fi = par.mfx.FrameInfo;
+
+    mfxExtVP9Param& extPar = GetExtBufferRef(par);
+    SetDefault(extPar.FrameWidth, fi.Width);
+    SetDefault(extPar.FrameHeight, fi.Height);
+
     SetDefault(par.m_bufferSizeInKb, GetDefaultBufferSize(par));
 
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
@@ -1480,9 +1526,6 @@ mfxStatus SetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
     {
         SetDefault(opt2.MBBRC, MFX_CODINGOPTION_OFF);
     }
-
-    // mfxInfomfx.FrameInfo
-    mfxFrameInfo &fi = par.mfx.FrameInfo;
 
     if (false == SetTwoDefaults(fi.FrameRateExtN, fi.FrameRateExtD, 30, 1))
     {
@@ -1632,7 +1675,9 @@ mfxStatus CheckParametersAndSetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 c
 
 mfxStatus CheckSurface(
     VP9MfxVideoParam const & video,
-    mfxFrameSurface1 const & surface)
+    mfxFrameSurface1 const & surface,
+    mfxU32 initWidth,
+    mfxU32 initHeight)
 {
     mfxExtOpaqueSurfaceAlloc const & extOpaq = GetExtBufferRef(video);
     bool isOpaq = video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && extOpaq.In.NumSurface > 0;
@@ -1651,8 +1696,11 @@ mfxStatus CheckSurface(
         MFX_CHECK(surface.Data.MemId != 0, MFX_ERR_INVALID_VIDEO_PARAM);
     }
 
-    MFX_CHECK(surface.Info.Width <= video.mfx.FrameInfo.Width, MFX_ERR_INVALID_VIDEO_PARAM);
-    MFX_CHECK(surface.Info.Height <= video.mfx.FrameInfo.Height, MFX_ERR_INVALID_VIDEO_PARAM);
+    const mfxExtVP9Param& extPar = GetExtBufferRef(video);
+    MFX_CHECK(surface.Info.Width >= extPar.FrameWidth, MFX_ERR_INVALID_VIDEO_PARAM);
+    MFX_CHECK(surface.Info.Height >= extPar.FrameHeight, MFX_ERR_INVALID_VIDEO_PARAM);
+    MFX_CHECK(surface.Info.Width <= initWidth, MFX_ERR_INVALID_VIDEO_PARAM);
+    MFX_CHECK(surface.Info.Height <= initHeight, MFX_ERR_INVALID_VIDEO_PARAM);
 
     mfxU32 pitch = (surface.Data.PitchHigh << 16) + surface.Data.PitchLow;
     MFX_CHECK(pitch < 0x8000, MFX_ERR_UNDEFINED_BEHAVIOR);
@@ -1663,7 +1711,6 @@ mfxStatus CheckSurface(
 mfxStatus CheckAndFixCtrl(
     VP9MfxVideoParam const & video,
     mfxEncodeCtrl & ctrl,
-    mfxFrameSurface1 const & surface,
     ENCODE_CAPS_VP9 const & caps)
 {
     video;
@@ -1683,6 +1730,21 @@ mfxStatus CheckAndFixCtrl(
         checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
     }
 
+    const mfxExtVP9Param* pExtParRuntime = GetExtBuffer(ctrl);
+    const mfxExtVP9Param& extParInit = GetExtBufferRef(video);
+
+    if (pExtParRuntime)
+    {
+        if (pExtParRuntime->FrameWidth != extParInit.FrameWidth ||
+            pExtParRuntime->FrameHeight != extParInit.FrameHeight)
+        {
+            // runtime values of FrameWidth/FrameHeight should be same as static values
+            // we cannot just remove whole mfxExtVP9Param since it has other parameters
+            // so just return error to app to notify
+            checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+        }
+    }
+
     mfxExtVP9Segmentation* seg = GetExtBuffer(ctrl);
     if (seg)
     {
@@ -1696,7 +1758,8 @@ mfxStatus CheckAndFixCtrl(
         }
         else if (seg->NumSegments)
         {
-            sts = CheckSegmentationParam(*seg, surface.Info, caps, ctrl.QP);
+            const mfxExtVP9Param& extPar = GetExtBufferRef(video);
+            sts = CheckSegmentationParam(*seg, extPar.FrameWidth, extPar.FrameHeight, caps, ctrl.QP);
             if (sts == MFX_ERR_UNSUPPORTED ||
                 true == AnyMandatorySegMapParam(*seg) && false == AllMandatorySegMapParams(*seg) ||
                 IsOn(opt2.MBBRC))

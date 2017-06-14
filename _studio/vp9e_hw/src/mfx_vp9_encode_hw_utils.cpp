@@ -138,8 +138,7 @@ void VP9MfxVideoParam::Construct(mfxVideoParam const & par)
 
     Zero(m_extParam);
 
-    // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
-    // InitExtBufHeader(m_extOpt);
+    InitExtBufHeader(m_extPar);
     InitExtBufHeader(m_extOpaque);
     InitExtBufHeader(m_extOpt2);
     InitExtBufHeader(m_extOpt3);
@@ -147,9 +146,8 @@ void VP9MfxVideoParam::Construct(mfxVideoParam const & par)
     InitExtBufHeader(m_extSeg);
     InitExtBufHeader(m_extTempLayers);
 
-    // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
-    /*if (mfxExtVP9CodingOption * opts = GetExtBuffer(par))
-        m_extOpt = *opts;*/
+    if (mfxExtVP9Param * opts = GetExtBuffer(par))
+        m_extPar = *opts;
 
     if (mfxExtOpaqueSurfaceAlloc * opts = GetExtBuffer(par))
         m_extOpaque = *opts;
@@ -177,14 +175,13 @@ void VP9MfxVideoParam::Construct(mfxVideoParam const & par)
         m_tempLayersBufPassed = true;
     }
 
-    // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
-    // m_extParam[0] = &m_extOpt.Header;
-    m_extParam[0] = &m_extOptDDI.Header;
+    m_extParam[0] = &m_extPar.Header;
     m_extParam[1] = &m_extOpaque.Header;
     m_extParam[2] = &m_extOpt2.Header;
     m_extParam[3] = &m_extOpt3.Header;
     m_extParam[4] = &m_extSeg.Header;
     m_extParam[5] = &m_extTempLayers.Header;
+    m_extParam[6] = &m_extOptDDI.Header;
 
     ExtParam = m_extParam;
     NumExtParam = mfxU16(sizeof m_extParam / sizeof m_extParam[0]);
@@ -255,8 +252,7 @@ mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
     Zero(frameParam);
     frameParam.frameType = frameType;
 
-    // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
-    //mfxExtCodingOptionVP9 const &opt = GetActualExtBufferRef(par, task.m_ctrl);
+    mfxExtVP9Param const &extPar = GetActualExtBufferRef(par, task.m_ctrl);
 
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
     {
@@ -267,8 +263,8 @@ mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
 
     frameParam.lfLevel   = (mfxU8)ModifyLoopFilterLevelQPBased(frameParam.baseQIndex, 0); // always 0 is passes since at the moment there is no LF level in MSDK API
 
-    frameParam.width  = frameParam.renderWidth = par.mfx.FrameInfo.Width;
-    frameParam.height = frameParam.renderHeight = par.mfx.FrameInfo.Height;
+    frameParam.width  = frameParam.renderWidth = extPar.FrameWidth;
+    frameParam.height = frameParam.renderHeight = extPar.FrameHeight;
 
     // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
     /*frameParam.sharpness = (mfxU8)opt.SharpnessLevel;
@@ -351,8 +347,8 @@ mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
 
     frameParam.allowHighPrecisionMV = 1;
 
-    mfxU16 alignedWidth = ALIGN_POWER_OF_TWO(par.mfx.FrameInfo.Width, 3); // align to Mode Info block size (8 pixels)
-    mfxU16 alignedHeight = ALIGN_POWER_OF_TWO(par.mfx.FrameInfo.Height, 3); // align to Mode Info block size (8 pixels)
+    mfxU16 alignedWidth = ALIGN_POWER_OF_TWO(frameParam.width, 3); // align to Mode Info block size (8 pixels)
+    mfxU16 alignedHeight = ALIGN_POWER_OF_TWO(frameParam.height, 3); // align to Mode Info block size (8 pixels)
 
     frameParam.modeInfoRows = alignedWidth >> 3;
     frameParam.modeInfoCols = alignedHeight >> 3;
@@ -381,7 +377,45 @@ mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
     return MFX_ERR_NONE;
 }
 
-mfxStatus DecideOnRefListAndDPBRefresh(VP9MfxVideoParam const & par, Task *pTask, std::vector<sFrameEx*>& dpb, VP9FrameLevelParam &frameParam)
+#define DPB_SLOT_FOR_GOLD_REF dpbSize - 1
+
+// construct default ref list. This list can be modified later for special cases
+mfxStatus GetDefaultRefList(mfxU32 frameOrder, mfxU8 (&refList)[3], std::vector<sFrameEx*> const & dpb)
+{
+    mfxU8 dpbSize = (mfxU8)dpb.size();
+
+    bool multiref = dpbSize > 1;
+    if (multiref == true)
+    {
+        refList[REF_GOLD] = DPB_SLOT_FOR_GOLD_REF; // last DPB intry is always for LTR (= GOLD)
+                                                   // for DPB size 2 LAST and ALT are both DBP[0]
+                                                   // for DPB size 3 LAST and ALT alternate between DPB[0] and DPB[1]
+        if (dpbSize == 2)
+        {
+            refList[REF_LAST] = refList[REF_ALT] = 0;
+        }
+        else
+        {
+            refList[REF_LAST] = 1 - frameOrder % 2;
+            refList[REF_ALT] = frameOrder % 2;
+        }
+    }
+    else
+    {
+        // single ref:
+        // Last, Gold, Alt are pointing to DPB[0]
+        refList[REF_GOLD] = refList[REF_ALT] = refList[REF_LAST] = 0;
+    }
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus DecideOnRefListAndDPBRefresh(
+    VP9MfxVideoParam const & par,
+    Task *pTask,
+    std::vector<sFrameEx*>& dpb,
+    VP9FrameLevelParam &frameParam,
+    mfxU32 prevFrameOrderInRefStructure)
 {
     if (frameParam.frameType == KEY_FRAME)
     {
@@ -394,50 +428,51 @@ mfxStatus DecideOnRefListAndDPBRefresh(VP9MfxVideoParam const & par, Task *pTask
     if (par.m_numLayers < 2)
     {
         // single layer
+        mfxU32 frameOrder = pTask->m_frameOrderInRefStructure;
+
+        GetDefaultRefList(
+            frameOrder ? frameOrder : prevFrameOrderInRefStructure,
+            frameParam.refList,
+            dpb);
+
+        // by default encoder always updates DPB slot pointed by "default" ALT
+        mfxU8 dpbSlotToRefresh = frameParam.refList[REF_ALT];
+
         bool multiref = dpbSize > 1;
-        if (multiref == true)
+        if (multiref)
         {
-            frameParam.refList[REF_GOLD] = dpbSize - 1; // last DPB intry is always for LTR (= GOLD)
-            mfxU32 frameOrder = pTask->m_frameOrderInGop;
-            // for DPB size 2 LAST and ALT are both DBP[0]
-            // for DPB size 3 LAST and ALT alternate between DPB[0] and DPB[1]
-            if (dpbSize == 2)
+            // modify ref list to workaround architecture limitations
+            if (frameOrder == 0)
             {
-                frameParam.refList[REF_LAST] = frameParam.refList[REF_ALT] = 0;
+                // special case - ref structure was reset w/o key-frame - use single ref for current frame
+                frameParam.refList[REF_GOLD] = frameParam.refList[REF_ALT] = frameParam.refList[REF_LAST];
             }
-            else
-            {
-                frameParam.refList[REF_LAST] = 1 - frameOrder % 2;
-                frameParam.refList[REF_ALT] = frameOrder % 2;
-            }
-
-            // DPB entry pointed by ALT is always refreshed with current frame
-            frameParam.refreshRefFrames[frameParam.refList[REF_ALT]] = 1;
-
-            if (dpb[frameParam.refList[REF_LAST]] == dpb[frameParam.refList[REF_GOLD]] &&
+            else if (dpb[frameParam.refList[REF_LAST]] == dpb[frameParam.refList[REF_GOLD]] &&
                 dpb[frameParam.refList[REF_LAST]] != dpb[frameParam.refList[REF_ALT]])
             {
                 // if LAST and GOLD point to same reference slot, other than is pointed by ALT
                 // need to swap ALT and GOLD since arhitecture doesn't support use of LAST and ALT w/o GOLD
                 std::swap(frameParam.refList[REF_GOLD], frameParam.refList[REF_ALT]);
             }
+        }
 
-            mfxU32 frameRate = par.mfx.FrameInfo.FrameRateExtN / par.mfx.FrameInfo.FrameRateExtD;
-
-            if ((frameOrder % (frameRate / 2)) == 0 ||
-                (frameOrder % (frameRate / 2)) == frameRate / 4)
-            {
-                // behavior aligned with driver - 4 LTRs per second
-                frameParam.refreshRefFrames[frameParam.refList[REF_GOLD]] = 1;
-            }
+        if (frameOrder == 0)
+        {
+            // refresh whole DPB with current frame
+            memset(frameParam.refreshRefFrames, 1, DPB_SIZE);
         }
         else
         {
-            // single ref:
-            // Last, Gold, Alt are pointing to DPB[0]
-            // current frame refreshes DPB[0]
-            frameParam.refList[REF_GOLD] = frameParam.refList[REF_ALT] = frameParam.refList[REF_LAST] = 0;
-            frameParam.refreshRefFrames[0] = 1;
+            // refresh chosen DPB slot with current frame
+            frameParam.refreshRefFrames[dpbSlotToRefresh] = 1;
+            // in addition change LTR (=GOLD) ref frame 4 times per second
+            mfxU32 frameRate = par.mfx.FrameInfo.FrameRateExtN / par.mfx.FrameInfo.FrameRateExtD;
+            if (frameRate >= 4 &&
+                ((frameOrder % (frameRate / 2)) == 0 ||
+                (frameOrder % (frameRate / 2)) == frameRate / 4))
+            {
+                frameParam.refreshRefFrames[DPB_SLOT_FOR_GOLD_REF] = 1;
+            }
         }
     }
     else

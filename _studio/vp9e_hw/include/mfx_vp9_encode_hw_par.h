@@ -33,11 +33,12 @@ mfxStatus SetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps);
 void InheritDefaults(VP9MfxVideoParam& defaultsDst, VP9MfxVideoParam const & defaultsSrc);
 
 mfxStatus CheckSurface(VP9MfxVideoParam const & video,
-                       mfxFrameSurface1 const & surface);
+                       mfxFrameSurface1 const & surface,
+                       mfxU32 initWidth,
+                       mfxU32 initHeight);
 
 mfxStatus CheckAndFixCtrl(VP9MfxVideoParam const & video,
                           mfxEncodeCtrl & ctrl,
-                          mfxFrameSurface1 const & surface,
                           ENCODE_CAPS_VP9 const & caps);
 
 mfxStatus CheckBitstream(VP9MfxVideoParam const & video, mfxBitstream * bs);

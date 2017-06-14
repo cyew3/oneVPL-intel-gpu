@@ -71,12 +71,14 @@ void FillSpsBuffer(
     VP9MfxVideoParam const & par,
     ENCODE_CAPS_VP9 const & /*caps*/,
     ENCODE_SET_SEQUENCE_PARAMETERS_VP9 & sps,
-    Task const & task)
+    Task const & task,
+    mfxU16 maxWidth,
+    mfxU16 maxHeight)
 {
     Zero(sps);
 
-    sps.wMaxFrameWidth    = par.mfx.FrameInfo.Width;
-    sps.wMaxFrameHeight   = par. mfx.FrameInfo.Height;
+    sps.wMaxFrameWidth    = maxWidth;
+    sps.wMaxFrameHeight   = maxHeight;
     sps.GopPicSize        = par.mfx.GopPicSize;
     sps.TargetUsage       = (UCHAR)par.mfx.TargetUsage;
     sps.RateControlMethod = MapRateControlMethodToDDI(par.mfx.RateControlMethod);
@@ -90,6 +92,8 @@ void FillSpsBuffer(
 
     sps.SeqFlags.fields.bResetBRC = task.m_resetBrc;
     sps.SeqFlags.fields.MBBRC = 2; // 2 is for MBBRC DISABLED
+
+    sps.SeqFlags.fields.EnableDynamicScaling = 1;
 
     if (IsBitrateBasedBRC(par.mfx.RateControlMethod))
     {
@@ -209,10 +213,10 @@ void FillPpsBuffer(
     //pps.MaxLumaACQIndex = 127;
 
     // per-frame part of pps structure
-    pps.SrcFrameWidthMinus1 =  par.mfx.FrameInfo.Width - 1; // it's workaround Actual value shuld be talen from task to support dynamic scaling. TODO: fix for dynamic scaling.
-    pps.SrcFrameHeightMinus1 = par.mfx.FrameInfo.Height - 1; // it's workaround Actual value shuld be talen from task to support dynamic scaling.
-    pps.DstFrameWidthMinus1 =  par.mfx.FrameInfo.Width - 1; // it's workaround Actual value shuld be talen from task to support dynamic scaling. TODO: fix for dynamic scaling.
-    pps.DstFrameHeightMinus1 = par.mfx.FrameInfo.Height - 1; // it's workaround Actual value shuld be talen from task to support dynamic scaling.
+    pps.SrcFrameWidthMinus1 = static_cast<mfxU16>(task.m_frameParam.width) - 1;
+    pps.SrcFrameHeightMinus1 = static_cast<mfxU16>(task.m_frameParam.height) - 1;
+    pps.DstFrameWidthMinus1 = pps.SrcFrameWidthMinus1;
+    pps.DstFrameHeightMinus1 = pps.SrcFrameHeightMinus1;
 
     // for VP9 encoder driver uses CurrOriginalPic to get input frame from raw surfaces chain. It's incorrect behavior. Workaround on MSDK level is to set CurrOriginalPic = 0.
     // this WA works for synchronous encoding only. For async encoding fix in driver is required.
@@ -734,7 +738,7 @@ mfxStatus D3D9Encoder::Execute(
 
     const VP9MfxVideoParam& curMfxPar = *task.m_pParam;
 
-    FillSpsBuffer(curMfxPar, m_caps, m_sps, task);
+    FillSpsBuffer(curMfxPar, m_caps, m_sps, task, static_cast<mfxU16>(m_width), static_cast<mfxU16>(m_height));
 
     compBufferDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)D3DDDIFMT_INTELENCODE_SPSDATA;
     compBufferDesc[bufCnt].DataSize = mfxU32(sizeof(m_sps));

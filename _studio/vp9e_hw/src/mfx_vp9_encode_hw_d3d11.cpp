@@ -429,7 +429,7 @@ mfxStatus D3D11Encoder::Execute(
 
     const VP9MfxVideoParam& curMfxPar = *task.m_pParam;
 
-    FillSpsBuffer(curMfxPar, m_caps, m_sps, task);
+    FillSpsBuffer(curMfxPar, m_caps, m_sps, task, static_cast<mfxU16>(m_width), static_cast<mfxU16>(m_height));
 
     compBufferDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)(D3D11_DDI_VIDEO_ENCODER_BUFFER_SPSDATA);
     compBufferDesc[bufCnt].DataSize = mfxU32(sizeof(m_sps));

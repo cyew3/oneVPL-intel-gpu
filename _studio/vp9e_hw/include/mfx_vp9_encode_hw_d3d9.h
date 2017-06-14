@@ -243,7 +243,9 @@ void FillSpsBuffer(
     VP9MfxVideoParam const & par,
     ENCODE_CAPS_VP9 const & /*caps*/,
     ENCODE_SET_SEQUENCE_PARAMETERS_VP9 & sps,
-    Task const & task);
+    Task const & task,
+    mfxU16 maxWidth,
+    mfxU16 maxHeight);
 
 void FillPpsBuffer(
     VP9MfxVideoParam const & par,

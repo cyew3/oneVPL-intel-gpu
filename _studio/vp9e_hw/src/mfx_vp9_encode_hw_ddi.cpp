@@ -221,12 +221,19 @@ namespace MfxHwVP9Encode
                 }
 
                 // frame size with refs
-                mfxU8 found = 0;
+                mfxU8 found = 1;
+                if (task.m_frameOrderInRefStructure == 0)
+                {
+                    // reference structure is reset which means resolution change
+                    // don't inherit resolution of reference frames
+                    found = 0;
+                }
 
                 for (mfxI8 refFrame = LAST_FRAME; refFrame <= ALTREF_FRAME; refFrame ++)
                 {
                     // TODO: implement correct logic for [found] flag
                     WriteBit(localBuf, found);
+                    if (found) break;
                 }
 
                 if (!found)
@@ -387,8 +394,8 @@ namespace MfxHwVP9Encode
         {
             if (task.m_insertIVFSeqHeader)
             {
-                AddSeqHeader(par.mfx.FrameInfo.Width,
-                    par.mfx.FrameInfo.Height,
+                AddSeqHeader(task.m_frameParam.width,
+                    task.m_frameParam.height,
                     par.mfx.FrameInfo.FrameRateExtN,
                     par.mfx.FrameInfo.FrameRateExtD,
                     0,

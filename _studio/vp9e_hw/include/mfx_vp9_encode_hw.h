@@ -139,8 +139,10 @@ protected:
     mfxU16 m_initHeight;
 
     mfxU32 m_frameOrderInGop;
+    mfxU32 m_frameOrderInRefStructure; // reset of ref structure happens at key-frames and after dynamic scaling
 
     mfxExtVP9Segmentation m_prevSegment;
+    VP9FrameLevelParam m_prevFrameParam;
 };
 
 } // MfxHwVP9Encode

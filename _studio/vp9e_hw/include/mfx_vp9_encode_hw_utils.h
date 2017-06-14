@@ -66,6 +66,9 @@ namespace MfxHwVP9Encode
 #define MAX_NUM_TEMP_LAYERS 8
 #define MAX_NUM_TEMP_LAYERS_SUPPORTED 4
 
+#define MAX_UPSCALE_RATIO 16
+#define MAX_DOWNSCALE_RATIO 2
+
 const mfxU16 segmentSkipMask = 0xf0;
 const mfxU16 segmentRefMask = 0x0f;
 
@@ -265,8 +268,7 @@ enum // identifies memory type at encoder input w/o any details
     template<class T> struct ExtBufTypeToId {};
 
 #define BIND_EXTBUF_TYPE_TO_ID(TYPE, ID) template<> struct ExtBufTypeToId<TYPE> { enum { id = ID }; }
-    // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
-    // BIND_EXTBUF_TYPE_TO_ID (mfxExtVP9CodingOption,  MFX_EXTBUFF_VP9_CODING_OPTION);
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtVP9Param,  MFX_EXTBUFF_VP9_PARAM);
     BIND_EXTBUF_TYPE_TO_ID (mfxExtOpaqueSurfaceAlloc,MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
     BIND_EXTBUF_TYPE_TO_ID (mfxExtCodingOption2, MFX_EXTBUFF_CODING_OPTION2);
     BIND_EXTBUF_TYPE_TO_ID (mfxExtCodingOption3, MFX_EXTBUFF_CODING_OPTION3);
@@ -506,9 +508,7 @@ template <typename T> mfxStatus RemoveExtBuffer(T & par, mfxU32 id)
         mfxU32 targetKbps;
     };
 
-// TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
-// #define NUM_OF_SUPPORTED_EXT_BUFFERS 7 // mfxExtVP9CodingOption, mfxExtOpaqueSurfaceAlloc, mfxExtCodingOption2, mfxExtCodingOption3, mfxExtCodingOptionDDI, mfxExtVP9Segmentation, mfxExtVP9TemporalLayers
-#define NUM_OF_SUPPORTED_EXT_BUFFERS 6 // mfxExtOpaqueSurfaceAlloc, mfxExtCodingOption2, mfxExtCodingOption3, mfxExtCodingOptionDDI, mfxExtVP9Segmentation, mfxExtVP9TemporalLayers
+#define NUM_OF_SUPPORTED_EXT_BUFFERS 7 // mfxExtVP9Param, mfxExtOpaqueSurfaceAlloc, mfxExtCodingOption2, mfxExtCodingOption3, mfxExtCodingOptionDDI, mfxExtVP9Segmentation, mfxExtVP9TemporalLayers
 
     class VP9MfxVideoParam : public mfxVideoParam
     {
@@ -541,8 +541,7 @@ template <typename T> mfxStatus RemoveExtBuffer(T & par, mfxU32 id)
 
     private:
         mfxExtBuffer *              m_extParam[NUM_OF_SUPPORTED_EXT_BUFFERS];
-        // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
-        // mfxExtVP9CodingOption    m_extOpt;
+        mfxExtVP9Param              m_extPar;
         mfxExtOpaqueSurfaceAlloc    m_extOpaque;
         mfxExtCodingOption2         m_extOpt2;
         mfxExtCodingOption3         m_extOpt3;
@@ -563,7 +562,8 @@ template <typename T> mfxStatus RemoveExtBuffer(T & par, mfxU32 id)
     mfxStatus DecideOnRefListAndDPBRefresh(VP9MfxVideoParam const & par,
                                            Task *pTask,
                                            std::vector<sFrameEx*>& dpb,
-                                           VP9FrameLevelParam &frameParam);
+                                           VP9FrameLevelParam &frameParam,
+                                           mfxU32 prevFrameOrderInRefStructure);
 
     mfxStatus UpdateDpb(VP9FrameLevelParam &frameParam,
                         sFrameEx *pRecFrame,
@@ -632,11 +632,6 @@ template <typename T> mfxStatus RemoveExtBuffer(T & par, mfxU32 id)
         return video.AsyncDepth;
     }
 
-    inline mfxU32 CalcNumMB(mfxVideoParam const & video)
-    {
-        return (video.mfx.FrameInfo.Width>>4)*(video.mfx.FrameInfo.Height>>4);
-    }
-
     class Task
     {
     public:
@@ -654,6 +649,7 @@ template <typename T> mfxStatus RemoveExtBuffer(T & par, mfxU32 id)
         mfxU64            m_timeStamp;
         mfxU32            m_taskIdForDriver;
         mfxU32            m_frameOrderInGop;
+        mfxU32            m_frameOrderInRefStructure;
 
         mfxEncodeCtrl     m_ctrl;
 
@@ -677,6 +673,7 @@ template <typename T> mfxStatus RemoveExtBuffer(T & par, mfxU32 id)
               m_timeStamp(0),
               m_taskIdForDriver(0),
               m_frameOrderInGop(0),
+              m_frameOrderInRefStructure(0),
               m_bsDataLength(0),
               m_pParam(NULL),
               m_insertIVFSeqHeader(false),
@@ -730,15 +727,10 @@ template <typename T> mfxStatus RemoveExtBuffer(T & par, mfxU32 id)
         return IsBufferBasedBRC(brcMethod);
     }
 
-    inline bool IsResetOfPipelineRequired(const mfxVideoParam& oldPar, const mfxVideoParam& newPar)
-    {
-        return oldPar.mfx.GopPicSize != newPar.mfx.GopPicSize;
-    }
-
     inline bool isBrcResetRequired(VP9MfxVideoParam const & parBefore, VP9MfxVideoParam const & parAfter)
     {
         mfxU16 brc = parAfter.mfx.RateControlMethod;
-        if (brc == MFX_RATECONTROL_CQP)
+        if (false == IsBitrateBasedBRC(brc))
         {
             return false;
         }
@@ -746,11 +738,16 @@ template <typename T> mfxStatus RemoveExtBuffer(T & par, mfxU32 id)
         double frameRateBefore = (double)parBefore.mfx.FrameInfo.FrameRateExtN / (double)parBefore.mfx.FrameInfo.FrameRateExtD;
         double frameRateAfter = (double)parAfter.mfx.FrameInfo.FrameRateExtN / (double)parAfter.mfx.FrameInfo.FrameRateExtD;
 
+        mfxExtVP9Param const & extParBefore = GetExtBufferRef(parBefore);
+        mfxExtVP9Param const & extParAfter = GetExtBufferRef(parAfter);
+
         if (parBefore.m_targetKbps != parAfter.m_targetKbps
             || (brc == MFX_RATECONTROL_VBR) && (parBefore.m_maxKbps != parAfter.m_maxKbps)
             || frameRateBefore != frameRateAfter
             || IsBufferBasedBRC(brc) && (parBefore.m_bufferSizeInKb != parAfter.m_bufferSizeInKb)
-            || (brc == MFX_RATECONTROL_ICQ) && (parBefore.mfx.ICQQuality != parAfter.mfx.ICQQuality))
+            || (brc == MFX_RATECONTROL_ICQ) && (parBefore.mfx.ICQQuality != parAfter.mfx.ICQQuality)
+            || extParBefore.FrameWidth != extParAfter.FrameWidth
+            || extParBefore.FrameHeight != extParAfter.FrameHeight)
         {
             return true;
         }
