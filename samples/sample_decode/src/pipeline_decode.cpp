@@ -1568,7 +1568,7 @@ mfxStatus CDecodingPipeline::DeliverLoop(void)
         ReturnSurfaceToBuffers(pCurrentDeliveredSurface);
 
         pCurrentDeliveredSurface = NULL;
-        ++m_output_count;
+        msdk_atomic_inc32(&m_output_count);
         m_pDeliveredEvent->Signal();
     }
     return res;
