@@ -1835,6 +1835,7 @@ mfxStatus MFXDecPipeline::CreateRender()
         m_components[eREN].m_params.mfx.FrameInfo.BitDepthLuma   = m_components[eDEC].m_params.mfx.FrameInfo.BitDepthLuma;
         m_components[eREN].m_params.mfx.FrameInfo.BitDepthChroma = m_components[eDEC].m_params.mfx.FrameInfo.BitDepthChroma;
         m_components[eREN].m_params.mfx.FrameInfo.Shift          = m_components[eDEC].m_params.mfx.FrameInfo.Shift;
+        m_components[eREN].m_params.mfx.FrameInfo.ChromaFormat   = m_components[eDEC].m_params.mfx.FrameInfo.ChromaFormat;
     }
 
     //shouldn't recreate existed render in case of light reset
@@ -1848,6 +1849,7 @@ mfxStatus MFXDecPipeline::CreateRender()
         m_inParams.outFrameInfo.FourCC = (m_components[eDEC].m_params.mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422) ? static_cast<int>(MFX_FOURCC_YV16) : MFX_FOURCC_YV12;
         m_inParams.outFrameInfo.BitDepthLuma = m_components[eDEC].m_params.mfx.FrameInfo.BitDepthLuma;
         m_inParams.outFrameInfo.BitDepthChroma = m_components[eDEC].m_params.mfx.FrameInfo.BitDepthChroma;
+        m_inParams.outFrameInfo.ChromaFormat = m_components[eDEC].m_params.mfx.FrameInfo.ChromaFormat;
 
         if (m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_AYUV)
             m_inParams.outFrameInfo.FourCC = MFX_FOURCC_AYUV;
@@ -1869,8 +1871,6 @@ mfxStatus MFXDecPipeline::CreateRender()
                     m_inParams.outFrameInfo.FourCC = MFX_FOURCC_YUV420_16;
                     break;
             }
-            m_inParams.outFrameInfo.BitDepthLuma = m_components[eDEC].m_params.mfx.FrameInfo.BitDepthLuma;
-            m_inParams.outFrameInfo.BitDepthChroma = m_components[eDEC].m_params.mfx.FrameInfo.BitDepthChroma;
         }
     }
     //crc calculation only possible in filewriter render
