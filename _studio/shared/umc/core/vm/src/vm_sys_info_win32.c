@@ -173,14 +173,10 @@ Ipp32u vm_sys_info_get_numa_nodes_num(void)
 
 Ipp64u vm_sys_info_get_cpu_mask_of_numa_node(Ipp32u node)
 {
-#if !defined(_WIN32_WCE) && !defined(WIN_TRESHOLD_MOBILE)
-    ULONGLONG mask = 0;
-    GetNumaNodeProcessorMask((UCHAR)node, &mask);
-    return (Ipp64u)mask;
-#else
-    node;
-    return 1;
-#endif
+    GROUP_AFFINITY group_affinity;
+    memset(&group_affinity, 0, sizeof(GROUP_AFFINITY));
+    GetNumaNodeProcessorMaskEx((UCHAR)node, &group_affinity);
+    return (Ipp64u)group_affinity.Mask;
 }
 
 Ipp32u vm_sys_info_get_mem_size(void)
