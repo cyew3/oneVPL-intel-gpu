@@ -402,11 +402,9 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
                                 &mvPredid);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-        statParams.mv_predictor       = mvPredid;
-        configBuffers[buffersCount++] = mvPredid;
-
         mdprintf(stderr, "MVPred bufId=%d\n", mvPredid);
     }
+    statParams.mv_predictor = mvPredid;
 
 #if MFX_VERSION >= 1023
     if ((statParams.mb_qp) && (feiQP != NULL) && (feiQP->MB != NULL))
@@ -420,11 +418,9 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
                                 &qpid);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-        statParams.qp                 = qpid;
-        configBuffers[buffersCount++] = qpid;
-
         mdprintf(stderr, "Qp bufId=%d\n", qpid);
     }
+    statParams.qp = qpid;
 #else
     if ((statParams.mb_qp) && (feiQP != NULL) && (feiQP->QP != NULL))
     {
@@ -437,11 +433,9 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
                                 &qpid);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-        statParams.qp                 = qpid;
-        configBuffers[buffersCount++] = qpid;
-
         mdprintf(stderr, "Qp bufId=%d\n", qpid);
     }
+    statParams.qp = qpid;
 #endif
 
     /* PreEnc support only 1 forward and 1 backward reference */
@@ -449,6 +443,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
     //currently only video memory is used, all input surfaces should be in video memory
     statParams.num_past_references = 0;
     statParams.past_references     = NULL;
+    statParams.past_ref_stat_buf   = NULL;
 
     if (feiCtrl->RefFrame[0])
     {
@@ -478,11 +473,12 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
             l0surfs->flags |= VA_PICTURE_FEI_CONTENT_UPDATED;
 
         statParams.past_references   = l0surfs;
-        statParams.past_ref_stat_buf = NULL; // IsOn(feiCtrl->DownsampleReference[0]) ? &m_statOutId[surfPastIndexInList] : NULL;
+        // statParams.past_ref_stat_buf = IsOn(feiCtrl->DownsampleReference[0]) ? &m_statOutId[surfPastIndexInList] : NULL;
     }
 
     statParams.num_future_references = 0;
     statParams.future_references     = NULL;
+    statParams.future_ref_stat_buf   = NULL;
 
     if (feiCtrl->RefFrame[1])
     {
@@ -512,7 +508,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
             l1surfs->flags |= VA_PICTURE_FEI_CONTENT_UPDATED;
 
         statParams.future_references   = l1surfs;
-        statParams.future_ref_stat_buf = NULL; // IsOn(feiCtrl->DownsampleReference[1]) ? &m_statOutId[surfFutureIndexInList] : NULL;
+        // statParams.future_ref_stat_buf = IsOn(feiCtrl->DownsampleReference[1]) ? &m_statOutId[surfFutureIndexInList] : NULL;
     }
 
     if ((0 == statParams.num_past_references) && (0 == statParams.num_future_references))
@@ -522,8 +518,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
 
     if (!statParams.disable_mv_output)
     {
-        outBuffers[numOutBufs++]      = m_statMVId[feiFieldId];
-        configBuffers[buffersCount++] = m_statMVId[feiFieldId];
+        outBuffers[numOutBufs++] = m_statMVId[feiFieldId];
 
         mdprintf(stderr, "MV bufId=%d\n", m_statMVId[feiFieldId]);
     }
@@ -1154,7 +1149,6 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
                                 mvpred->MB,
                                 &vaFeiMVPredId);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-        configBuffers[buffersCount++] = vaFeiMVPredId;
         mdprintf(stderr, "vaFeiMVPredId=%d\n", vaFeiMVPredId);
     }
 
@@ -1169,7 +1163,6 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
                                 mbctrl->MB,
                                 &vaFeiMBControlId);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-        configBuffers[buffersCount++] = vaFeiMBControlId;
         mdprintf(stderr, "vaFeiMBControlId=%d\n", vaFeiMBControlId);
     }
 

@@ -2136,7 +2136,6 @@ mfxStatus VAAPIEncoder::Execute(
                     mvpred->MB,
                     &vaFeiMVPredId);
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-            configBuffers[buffersCount++] = vaFeiMVPredId;
         }
 
         if (frameCtrl->PerMBInput && mbctrl != NULL)
@@ -2150,7 +2149,6 @@ mfxStatus VAAPIEncoder::Execute(
                     mbctrl->MB,
                     &vaFeiMBControlId);
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-            configBuffers[buffersCount++] = vaFeiMBControlId;
         }
 
         if (frameCtrl->PerMBQp && mbqp != NULL)
@@ -2174,7 +2172,6 @@ mfxStatus VAAPIEncoder::Execute(
                     &vaFeiMBQPId);
 #endif
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-            configBuffers[buffersCount++] = vaFeiMBQPId;
         }
 
         // Override deblocking parameters from init with runtime parameters, if provided
