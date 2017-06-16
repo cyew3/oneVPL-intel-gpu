@@ -132,7 +132,7 @@ namespace TEST_NAME
         { MFXVPAR, &tsStruct::mfxVideoParam.mfx.TargetKbps,{ 6000 } }
         }
         },
-        {/*8*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
+        {/*08*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
         { { QUERY | BUFPAR_3, &tsStruct::mfxExtCodingOption3.WinBRCSize,{ 30 } },
         { BUFPAR_3, &tsStruct::mfxExtCodingOption3.WinBRCMaxAvgKbps,{ } },
         { MFXVPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod,{ MFX_RATECONTROL_VBR } },
@@ -142,7 +142,8 @@ namespace TEST_NAME
         { MFXVPAR, &tsStruct::mfxVideoParam.mfx.TargetKbps,{ 2000 } }
         }
         },
-        {/*9*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
+#if !defined(LINUX_TARGET_PLATFORM_BXT) && !defined (LINUX_TARGET_PLATFORM_BXTMIN)
+        {/*09*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
         { { QUERY | INIT | RESET | BUFPAR_3, &tsStruct::mfxExtCodingOption3.WinBRCSize,{ 15 } },
         { BUFPAR_3, &tsStruct::mfxExtCodingOption3.WinBRCMaxAvgKbps,{ 5000 } },
         { MFXVPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod,{ MFX_RATECONTROL_QVBR } },
@@ -231,7 +232,70 @@ namespace TEST_NAME
         { MFXVPAR, &tsStruct::mfxVideoParam.mfx.MaxKbps,{ 5000 } },
         { MFXVPAR, &tsStruct::mfxVideoParam.mfx.TargetKbps,{ 2000 } }
         }
+        },
+#endif  // !defined(LINUX_TARGET_PLATFORM_BXT) && !defined (LINUX_TARGET_PLATFORM_BXTMIN)
+#if defined(LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN)
+        {/*18*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
+        { { QUERY | INIT | RESET | BUFPAR_3, &tsStruct::mfxExtCodingOption3.WinBRCSize,{ 15 } },
+        { BUFPAR_3, &tsStruct::mfxExtCodingOption3.WinBRCMaxAvgKbps,{ 2000 } },
+        { MFXVPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod,{ MFX_RATECONTROL_CBR } },
+        { MFXVPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN,{ 30 } },
+        { MFXVPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD,{ 1 } },
+        { MFXVPAR, &tsStruct::mfxVideoParam.mfx.MaxKbps,{ 2000 } },
+        { MFXVPAR, &tsStruct::mfxVideoParam.mfx.TargetKbps,{ 2000 } }
         }
+        },
+        {/*19*/ MFX_ERR_NONE,
+        { { QUERY | INIT | RESET | BUFPAR_3, &tsStruct::mfxExtCodingOption3.WinBRCSize,{ 30 } },
+        { BUFPAR_3, &tsStruct::mfxExtCodingOption3.WinBRCMaxAvgKbps,{ 2000 } },
+        { MFXVPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod,{ MFX_RATECONTROL_CBR } },
+        { MFXVPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN,{ 30 } },
+        { MFXVPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD,{ 1 } },
+        { MFXVPAR, &tsStruct::mfxVideoParam.mfx.MaxKbps,{ 2000 } },
+        { MFXVPAR, &tsStruct::mfxVideoParam.mfx.TargetKbps,{ 2000 } }
+        }
+        },
+        {/*20*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
+        { { QUERY | INIT | RESET | BUFPAR_3, &tsStruct::mfxExtCodingOption3.WinBRCSize,{ 30 } },
+        { BUFPAR_3, &tsStruct::mfxExtCodingOption3.WinBRCMaxAvgKbps,{ 2000 } },
+        { MFXVPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod,{ MFX_RATECONTROL_CBR } },
+        { MFXVPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN,{ } },
+        { MFXVPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD,{ } },
+        { MFXVPAR, &tsStruct::mfxVideoParam.mfx.MaxKbps,{ 2000 } },
+        { MFXVPAR, &tsStruct::mfxVideoParam.mfx.TargetKbps,{ 2000 } }
+        }
+        },
+        {/*21*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
+        { { QUERY | BUFPAR_3, &tsStruct::mfxExtCodingOption3.WinBRCSize,{ 30 } },
+        { BUFPAR_3, &tsStruct::mfxExtCodingOption3.WinBRCMaxAvgKbps,{ 2500 } },
+        { MFXVPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod,{ MFX_RATECONTROL_CBR } },
+        { MFXVPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN,{ 30 } },
+        { MFXVPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD,{ 1 } },
+        { MFXVPAR, &tsStruct::mfxVideoParam.mfx.MaxKbps,{ 2000 } },
+        { MFXVPAR, &tsStruct::mfxVideoParam.mfx.TargetKbps,{ 2000 } }
+        }
+        },
+        {/*22*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
+        { { QUERY | BUFPAR_3, &tsStruct::mfxExtCodingOption3.WinBRCSize,{ 30 } },
+        { BUFPAR_3, &tsStruct::mfxExtCodingOption3.WinBRCMaxAvgKbps,{ 2000 } },
+        { MFXVPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod,{ MFX_RATECONTROL_CBR } },
+        { MFXVPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN,{ 30 } },
+        { MFXVPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD,{ 1 } },
+        { MFXVPAR, &tsStruct::mfxVideoParam.mfx.MaxKbps,{ } },
+        { MFXVPAR, &tsStruct::mfxVideoParam.mfx.TargetKbps,{ 2000 } }
+        }
+        },
+        {/*23*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
+        { { QUERY | BUFPAR_3, &tsStruct::mfxExtCodingOption3.WinBRCSize,{ 30 } },
+        { BUFPAR_3, &tsStruct::mfxExtCodingOption3.WinBRCMaxAvgKbps,{ } },
+        { MFXVPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod,{ MFX_RATECONTROL_CBR } },
+        { MFXVPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN,{ 30 } },
+        { MFXVPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD,{ 1 } },
+        { MFXVPAR, &tsStruct::mfxVideoParam.mfx.MaxKbps,{ 2000 } },
+        { MFXVPAR, &tsStruct::mfxVideoParam.mfx.TargetKbps,{ 2000 } }
+        }
+        },
+#endif  // defined(LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN)
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
