@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2010-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2010-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include <mfx_scheduler_core.h>
@@ -208,8 +208,8 @@ mfxStatus mfxSchedulerCore::Initialize2(const MFX_SCHEDULER_PARAM2 *pParam)
                 // prepare context
                 m_pThreadCtx[i].threadNum = i;
                 m_pThreadCtx[i].pSchedulerCore = this;
-                umcRes = m_pThreadCtx[i].taskAdded.Init(0, 0);
-                if (UMC::UMC_OK != umcRes) {
+                vm_status vmRes = vm_cond_init(&m_pThreadCtx[i].taskAdded);
+                if (VM_OK != vmRes) {
                     return MFX_ERR_UNKNOWN;
                 }
                 // spawn a thread

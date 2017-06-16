@@ -138,6 +138,7 @@ void mfxSchedulerCore::ThreadProc(MFX_SCHEDULER_THREAD_CONTEXT *pContext)
         }
         else
         {
+            UMC::AutomaticMutex guard(m_guard);
             mfxU64 start, stop;
 
 #if defined(MFX_SCHEDULER_LOG)
