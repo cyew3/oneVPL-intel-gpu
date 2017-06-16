@@ -129,7 +129,7 @@ bool CheckGUID(VideoCORE * core, eMFXHWType type, mfxVideoParam const* param)
 
     return p != l;
 #elif defined (MFX_VA_LINUX)
-    if (!core->IsGuidSupported(DXVA_ModeHEVC_VLD_Main, &vp) != MFX_ERR_NONE)
+    if (core->IsGuidSupported(DXVA_ModeHEVC_VLD_Main, &vp) != MFX_ERR_NONE)
         return false;
 
     //Linux doesn't check GUID, just [mfxVideoParam]
