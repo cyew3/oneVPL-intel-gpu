@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 /*
@@ -1812,7 +1812,7 @@ static void t_InterpLuma_s16_d16_V_AVX2(const short* pSrc, unsigned int srcPitch
             // store 16 16-bit values
             t0 = _mm256_packs_epi32(t0, u0);
             t0 = _mm256_permute4x64_epi64(t0, _MM_SHUFFLE(3,1,2,0));
-            _mm256_store_si256((__m256i*)pD, t0);
+            _mm256_storeu_si256((__m256i*)pD, t0);
 
             // shift rows
             y0 = y1;

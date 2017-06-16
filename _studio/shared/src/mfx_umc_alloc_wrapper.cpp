@@ -104,17 +104,122 @@ UMC::Status mfx_UMC_MemAllocator::DeallocateMem(UMC::MemID )
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // mfx_UMC_FrameAllocator implementation
 ////////////////////////////////////////////////////////////////////////////////////////////////
-mfx_UMC_FrameAllocator::FrameInformation::FrameInformation()
-    : m_locks(0)
-    , m_referenceCounter(0)
+mfx_UMC_FrameAllocator::InternalFrameData::FrameRefInfo::FrameRefInfo()
+    : m_referenceCounter(0)
 {
 }
 
-void mfx_UMC_FrameAllocator::FrameInformation::Reset()
+void mfx_UMC_FrameAllocator::InternalFrameData::FrameRefInfo::Reset()
 {
-    m_locks = 0;
     m_referenceCounter = 0;
 }
+
+bool mfx_UMC_FrameAllocator::InternalFrameData::IsValidMID(mfxU32 index) const
+{
+    if (index >= m_frameData.size())
+        return false;
+
+    return true;
+}
+
+mfxFrameSurface1 & mfx_UMC_FrameAllocator::InternalFrameData::GetSurface(mfxU32 index)
+{
+    if (!IsValidMID(index))
+        throw std::exception();
+
+    return m_frameData[index].first;
+}
+
+UMC::FrameData   & mfx_UMC_FrameAllocator::InternalFrameData::GetFrameData(mfxU32 index)
+{
+    if (!IsValidMID(index))
+        throw std::exception();
+
+    return m_frameData[index].second;
+}
+
+void mfx_UMC_FrameAllocator::InternalFrameData::Close()
+{
+    m_frameData.clear();
+    m_frameDataRefs.clear();
+}
+
+void mfx_UMC_FrameAllocator::InternalFrameData::ResetFrameData(mfxU32 index)
+{
+    if (!IsValidMID(index))
+        throw std::exception();
+
+    m_frameDataRefs[index].Reset();
+    m_frameData[index].second.Reset();
+}
+
+void mfx_UMC_FrameAllocator::InternalFrameData::Resize(mfxU32 size)
+{
+    m_frameData.resize(size);
+    m_frameDataRefs.resize(size);
+}
+
+mfxU32 mfx_UMC_FrameAllocator::InternalFrameData::IncreaseRef(mfxU32 index)
+{
+    if (!IsValidMID(index))
+        throw std::exception();
+
+    FrameRefInfo * frameRef = &m_frameDataRefs[index];
+    frameRef->m_referenceCounter++;
+    return frameRef->m_referenceCounter;
+}
+
+mfxU32 mfx_UMC_FrameAllocator::InternalFrameData::DecreaseRef(mfxU32 index)
+{
+    if (!IsValidMID(index))
+        throw std::exception();
+
+    FrameRefInfo * frameRef = &m_frameDataRefs[index];
+    frameRef->m_referenceCounter--;
+    return frameRef->m_referenceCounter;
+}
+
+void mfx_UMC_FrameAllocator::InternalFrameData::Reset()
+{
+    // unlock internal sufraces
+    for (mfxU32 i = 0; i < m_frameData.size(); i++)
+    {
+        m_frameData[i].first.Data.Locked = 0;  // if app ext allocator then should decrease Locked counter same times as locked by medisSDK
+        m_frameData[i].second.Reset();
+    }
+
+    for (mfxU32 i = 0; i < m_frameDataRefs.size(); i++)
+    {
+        m_frameDataRefs[i].Reset();
+    }
+}
+
+mfxU32 mfx_UMC_FrameAllocator::InternalFrameData::GetSize() const
+{
+    return (mfxU32)m_frameData.size();
+}
+
+void mfx_UMC_FrameAllocator::InternalFrameData::AddNewFrame(mfx_UMC_FrameAllocator * alloc, mfxFrameSurface1 *surface, UMC::VideoDataInfo * info)
+{
+    FrameRefInfo refInfo;
+    m_frameDataRefs.push_back(refInfo);
+
+    FrameInfo  frameInfo;
+    m_frameData.push_back(frameInfo);
+
+    mfxU32 index = (mfxU32)(m_frameData.size() - 1);;
+
+    memset(&(m_frameData[index].first), 0, sizeof(m_frameData[index].first));
+    m_frameData[index].first.Data.MemId = surface->Data.MemId;
+    m_frameData[index].first.Info = surface->Info;
+
+    // fill UMC frameData
+    UMC::FrameData* frameData = &GetFrameData(index);
+
+    // set correct width & height to planes
+    frameData->Init(info, (UMC::FrameMemID)index, alloc);
+}
+
 
 mfx_UMC_FrameAllocator::mfx_UMC_FrameAllocator()
     : m_curIndex(-1)
@@ -226,29 +331,25 @@ UMC::Status mfx_UMC_FrameAllocator::InitMfx(UMC::FrameAllocatorParams *,
 
     if (!m_IsUseExternalFrames || !m_isSWDecode)
     {
-        m_frameData.resize(response->NumFrameActual);
+        m_frameDataInternal.Resize(response->NumFrameActual);
         m_extSurfaces.resize(response->NumFrameActual);
 
         for (mfxU32 i = 0; i < response->NumFrameActual; i++)
         {
-            m_frameData[i].first.Data.MemId = response->mids[i];
-            m_frameData[i].first.Data.MemType = request->Type;
-            memcpy_s(&m_frameData[i].first.Info, sizeof(mfxFrameInfo), &request->Info, sizeof(mfxFrameInfo));
+            mfxFrameSurface1 & surface = m_frameDataInternal.GetSurface(i);
+            surface.Data.MemId = response->mids[i];
+            surface.Data.MemType = request->Type;
+            memcpy_s(&surface.Info, sizeof(mfxFrameInfo), &request->Info, sizeof(mfxFrameInfo));
 
             // fill UMC frameData
-            FrameInformation * frameMID = &m_frameData[i].second;
-            frameMID->Reset();
-            UMC::FrameData* frameData = &frameMID->m_frame;
+            UMC::FrameData& frameData = m_frameDataInternal.GetFrameData(i);
 
             // set correct width & height to planes
-            frameData->Init(&m_info, (UMC::FrameMemID)i, this);
+            frameData.Init(&m_info, (UMC::FrameMemID)i, this);
         }
     }
     else
     {
-        // make sure AddSurface() call would not result in UMC::FrameData reallocation
-        // as it will result in UB in IncreaseReference&DecreaseReference as m_frameData would be in unspecified state
-        m_frameData.reserve(response->NumFrameActual);
         m_extSurfaces.reserve(response->NumFrameActual);
     }
 
@@ -263,7 +364,7 @@ UMC::Status mfx_UMC_FrameAllocator::Close()
     UMC::AutomaticUMCMutex guard(m_guard);
 
     Reset();
-    m_frameData.clear();
+    m_frameDataInternal.Close();
     m_extSurfaces.clear();
     return UMC::UMC_OK;
 }
@@ -285,12 +386,7 @@ UMC::Status mfx_UMC_FrameAllocator::Reset()
     m_curIndex = -1;
     mfxStatus sts = MFX_ERR_NONE;
 
-    // unlock internal sufraces
-    for (mfxU32 i = 0; i < m_frameData.size(); i++)
-    {
-        m_frameData[i].first.Data.Locked = 0;  // if app ext allocator then should decrease Locked counter same times as locked by medisSDK
-        m_frameData[i].second.Reset();
-    }
+    m_frameDataInternal.Reset();
 
     // free external sufraces
     for (mfxU32 i = 0; i < m_extSurfaces.size(); i++)
@@ -339,7 +435,9 @@ UMC::Status mfx_UMC_FrameAllocator::Alloc(UMC::FrameMemID *pNewMemID, const UMC:
 
     *pNewMemID = (UMC::FrameMemID)index;
 
-    IppiSize allocated = {m_frameData[index].first.Info.Width, m_frameData[index].first.Info.Height};
+    mfxFrameInfo &surfInfo = m_frameDataInternal.GetSurface(index).Info;
+
+    IppiSize allocated = { surfInfo.Width, surfInfo.Height};
     IppiSize passed = {static_cast<int>(info->GetWidth()), static_cast<int>(info->GetHeight())};
     UMC::ColorFormat colorFormat = m_info.GetColorFormat();
 
@@ -378,7 +476,7 @@ UMC::Status mfx_UMC_FrameAllocator::Alloc(UMC::FrameMemID *pNewMemID, const UMC:
         return UMC::UMC_ERR_UNSUPPORTED;
     }
 
-    sts = m_pCore->IncreasePureReference(m_frameData[index].first.Data.Locked);
+    sts = m_pCore->IncreasePureReference(m_frameDataInternal.GetSurface(index).Data.Locked);
     if (sts < MFX_ERR_NONE)
         return UMC::UMC_ERR_FAILED;
 
@@ -394,7 +492,7 @@ UMC::Status mfx_UMC_FrameAllocator::Alloc(UMC::FrameMemID *pNewMemID, const UMC:
         }
     }
 
-    m_frameData[index].second.Reset();
+    m_frameDataInternal.ResetFrameData(index);
     m_curIndex = -1;
 
     return UMC::UMC_OK;
@@ -405,20 +503,21 @@ const UMC::FrameData* mfx_UMC_FrameAllocator::Lock(UMC::FrameMemID mid)
     UMC::AutomaticUMCMutex guard(m_guard);
 
     mfxU32 index = (mfxU32)mid;
-    if (index >= m_frameData.size())
+    if (!m_frameDataInternal.IsValidMID(index))
         return 0;
 
     mfxFrameData *data = 0;
 
     mfxFrameSurface1 check_surface;
-    check_surface.Info.FourCC = m_frameData[index].first.Info.FourCC;
+    mfxFrameSurface1 &internal_surface = m_frameDataInternal.GetSurface(index);
+    check_surface.Info.FourCC = internal_surface.Info.FourCC;
 
     if (m_IsUseExternalFrames)
     {
-        if (m_frameData[index].first.Data.MemId != 0)
+        if (internal_surface.Data.MemId != 0)
         {
-            data = &m_frameData[index].first.Data;
-            mfxStatus sts = m_pCore->LockExternalFrame(m_frameData[index].first.Data.MemId, data);
+            data = &internal_surface.Data;
+            mfxStatus sts = m_pCore->LockExternalFrame(internal_surface.Data.MemId, data);
 
             if (sts < MFX_ERR_NONE || !data)
                 return 0;
@@ -436,10 +535,10 @@ const UMC::FrameData* mfx_UMC_FrameAllocator::Lock(UMC::FrameMemID mid)
     }
     else
     {
-        if (m_frameData[index].first.Data.MemId != 0)
+        if (internal_surface.Data.MemId != 0)
         {
-            data = &m_frameData[index].first.Data;
-            mfxStatus sts = m_pCore->LockFrame(m_frameData[index].first.Data.MemId, data);
+            data = &internal_surface.Data;
+            mfxStatus sts = m_pCore->LockFrame(internal_surface.Data.MemId, data);
 
             if (sts < MFX_ERR_NONE || !data)
                 return 0;
@@ -454,8 +553,7 @@ const UMC::FrameData* mfx_UMC_FrameAllocator::Lock(UMC::FrameMemID mid)
             return 0;
     }
 
-    FrameInformation * frameMID = &m_frameData[index].second;
-    UMC::FrameData* frameData = &frameMID->m_frame;
+    UMC::FrameData* frameData = &m_frameDataInternal.GetFrameData(index);
     mfxU32 pitch = data->PitchLow + ((mfxU32)data->PitchHigh << 16);
 
     switch (frameData->GetInfo()->GetColorFormat())
@@ -487,7 +585,7 @@ const UMC::FrameData* mfx_UMC_FrameAllocator::Lock(UMC::FrameMemID mid)
         }
         break;
     default:
-        if (m_frameData[index].first.Data.MemId)
+        if (internal_surface.Data.MemId)
         {
             if (m_IsUseExternalFrames)
             {
@@ -495,7 +593,7 @@ const UMC::FrameData* mfx_UMC_FrameAllocator::Lock(UMC::FrameMemID mid)
             }
             else
             {
-                m_pCore->UnlockFrame(m_frameData[index].first.Data.MemId);
+                m_pCore->UnlockFrame(internal_surface.Data.MemId);
             }
         }
         return 0;
@@ -510,16 +608,17 @@ UMC::Status mfx_UMC_FrameAllocator::Unlock(UMC::FrameMemID mid)
     UMC::AutomaticUMCMutex guard(m_guard);
 
     mfxU32 index = (mfxU32)mid;
-    if (index >= m_frameData.size())
+    if (!m_frameDataInternal.IsValidMID(index))
         return UMC::UMC_ERR_FAILED;
 
-    if (m_frameData[index].first.Data.MemId)
+    mfxFrameSurface1 &internal_surface = m_frameDataInternal.GetSurface(index);
+    if (internal_surface.Data.MemId)
     {
         mfxStatus sts;
         if (m_IsUseExternalFrames)
             sts = m_pCore->UnlockExternalFrame(m_extSurfaces[index].FrameSurface->Data.MemId);
         else
-            sts = m_pCore->UnlockFrame(m_frameData[index].first.Data.MemId);
+            sts = m_pCore->UnlockFrame(internal_surface.Data.MemId);
 
         if (sts < MFX_ERR_NONE)
             return UMC::UMC_ERR_FAILED;
@@ -533,11 +632,10 @@ UMC::Status mfx_UMC_FrameAllocator::IncreaseReference(UMC::FrameMemID mid)
     UMC::AutomaticUMCMutex guard(m_guard);
 
     mfxU32 index = (mfxU32)mid;
-    if (index >= m_frameData.size())
+    if (!m_frameDataInternal.IsValidMID(index))
         return UMC::UMC_ERR_FAILED;
 
-    FrameInformation * frameMID = &m_frameData[index].second;
-    frameMID->m_referenceCounter++;
+    m_frameDataInternal.IncreaseRef(index);
 
     return UMC::UMC_OK;
 }
@@ -547,20 +645,12 @@ UMC::Status mfx_UMC_FrameAllocator::DecreaseReference(UMC::FrameMemID mid)
     UMC::AutomaticUMCMutex guard(m_guard);
 
     mfxU32 index = (mfxU32)mid;
-    if (index >= m_frameData.size())
+    if (!m_frameDataInternal.IsValidMID(index))
         return UMC::UMC_ERR_FAILED;
 
-    FrameInformation * frameMID = &m_frameData[index].second;
-
-    frameMID->m_referenceCounter--;
-    if (!frameMID->m_referenceCounter)
+    mfxU32 refCounter = m_frameDataInternal.DecreaseRef(index);
+    if (!refCounter)
     {
-        if (frameMID->m_locks)
-        {
-            frameMID->m_referenceCounter++;
-            return UMC::UMC_ERR_FAILED;
-        }
-
         return Free(mid);
     }
 
@@ -573,10 +663,10 @@ UMC::Status mfx_UMC_FrameAllocator::Free(UMC::FrameMemID mid)
 
     mfxStatus sts = MFX_ERR_NONE;
     mfxU32 index = (mfxU32)mid;
-    if (index >= m_frameData.size())
+    if (!m_frameDataInternal.IsValidMID(index))
         return UMC::UMC_ERR_FAILED;
 
-    sts = m_pCore->DecreasePureReference(m_frameData[index].first.Data.Locked);
+    sts = m_pCore->DecreasePureReference(m_frameDataInternal.GetSurface(index).Data.Locked);
     if (sts < MFX_ERR_NONE)
         return UMC::UMC_ERR_FAILED;
 
@@ -669,7 +759,7 @@ mfxStatus mfx_UMC_FrameAllocator::SetCurrentMFXSurface(mfxFrameSurface1 *surf, b
             if ( (NULL != m_extSurfaces[i].FrameSurface) &&
                   (0 == m_extSurfaces[i].FrameSurface->Data.Locked) &&
                   (m_extSurfaces[i].FrameSurface->Data.MemId == surf->Data.MemId) &&
-                  (0 == m_frameData[i].first.Data.Locked) )
+                  (0 == m_frameDataInternal.GetSurface(i).Data.Locked) )
             {
                 /* surfaces filled already */
                 m_curIndex = i;
@@ -684,14 +774,15 @@ mfxStatus mfx_UMC_FrameAllocator::SetCurrentMFXSurface(mfxFrameSurface1 *surf, b
 
         if (m_curIndex != -1)
         {
+            mfxFrameSurface1 &internalSurf = m_frameDataInternal.GetSurface(m_curIndex);
             m_extSurfaces[m_curIndex].FrameSurface = surf;
-            if (m_frameData[m_curIndex].first.Data.Locked) // surface was locked yet
+            if (internalSurf.Data.Locked) // surface was locked yet
             {
                 m_curIndex = -1;
             }
 
             // update info
-            m_frameData[m_curIndex].first.Info = surf->Info;
+            internalSurf.Info = surf->Info;
         }
         else
         {
@@ -718,7 +809,7 @@ mfxI32 mfx_UMC_FrameAllocator::AddSurface(mfxFrameSurface1 *surface)
         mfxU32 i;
         for (i = 0; i < m_extSurfaces.size(); i++)
         {
-            if (surface->Data.MemId == m_pCore->MapIdx(m_frameData[i].first.Data.MemId))
+            if (surface->Data.MemId == m_pCore->MapIdx(m_frameDataInternal.GetSurface(i).Data.MemId))
             {
                 m_extSurfaces[i].FrameSurface = surface;
                 index = i;
@@ -757,21 +848,7 @@ mfxI32 mfx_UMC_FrameAllocator::AddSurface(mfxFrameSurface1 *surface)
 
     if (m_IsUseExternalFrames && m_isSWDecode)
     {
-        FrameInfo  frameInfo;
-        m_frameData.push_back(frameInfo); // potentially risky line, as UMC::FrameData deep copy ask this allocator to 
-                                          // to increase/decrease frame references
-
-        memset(&(m_frameData[index].first), 0, sizeof(m_frameData[index].first));
-        m_frameData[index].first.Data.MemId = surface->Data.MemId;
-        m_frameData[index].first.Info = surface->Info;
-
-        // fill UMC frameData
-        FrameInformation * frameMID = &m_frameData[index].second;
-        frameMID->Reset();
-        UMC::FrameData* frameData = &frameMID->m_frame;
-
-        // set correct width & height to planes
-        frameData->Init(&m_info, (UMC::FrameMemID)index, this);
+        m_frameDataInternal.AddNewFrame(this, surface, &m_info);
     }
 
     return index;
@@ -788,10 +865,11 @@ mfxI32 mfx_UMC_FrameAllocator::FindSurface(mfxFrameSurface1 *surf, bool isOpaq)
 
     if (data->MemId && m_IsUseExternalFrames)
     {
-        mfxMemId    sMemId;
-        for (mfxU32 i = 0; i < m_frameData.size(); i++)
+        mfxMemId sMemId;
+        for (mfxU32 i = 0; i < m_frameDataInternal.GetSize(); i++)
         {
-            sMemId = isOpaq == true ? m_frameData[i].first.Data.MemId : m_pCore->MapIdx(m_frameData[i].first.Data.MemId);
+            mfxMemId memId = m_frameDataInternal.GetSurface(i).Data.MemId;
+            sMemId = isOpaq == true ? memId : m_pCore->MapIdx(memId);
             if (sMemId == data->MemId)
             {
                 return i;
@@ -822,9 +900,9 @@ mfxI32 mfx_UMC_FrameAllocator::FindFreeSurface()
     if (m_curIndex != -1)
         return m_curIndex;
 
-    for (mfxU32 i = 0; i < m_frameData.size(); i++)
+    for (mfxU32 i = 0; i < m_frameDataInternal.GetSize(); i++)
     {
-        if (!m_frameData[i].first.Data.Locked)
+        if (!m_frameDataInternal.GetSurface(i).Data.Locked)
         {
             return i;
         }
@@ -844,9 +922,9 @@ mfxFrameSurface1 * mfx_UMC_FrameAllocator::GetInternalSurface(UMC::FrameMemID in
 
     if (index >= 0)
     {
-        if ((Ipp32u)index >= m_frameData.size())
+        if (!m_frameDataInternal.IsValidMID((mfxU32)index))
             return 0;
-        return &m_frameData[index].first;
+        return &m_frameDataInternal.GetSurface(index);
     }
 
     return 0;
@@ -859,10 +937,10 @@ mfxFrameSurface1 * mfx_UMC_FrameAllocator::GetSurfaceByIndex(UMC::FrameMemID ind
     if (index < 0)
         return 0;
 
-    if ((Ipp32u)index >= m_frameData.size())
+    if (!m_frameDataInternal.IsValidMID((mfxU32)index))
         return 0;
 
-    return m_IsUseExternalFrames ? m_extSurfaces[index].FrameSurface : &m_frameData[index].first;
+    return m_IsUseExternalFrames ? m_extSurfaces[index].FrameSurface : &m_frameDataInternal.GetSurface(index);
 }
 
 void mfx_UMC_FrameAllocator::SetSfcPostProcessingFlag(bool flagToSet)
@@ -879,7 +957,7 @@ mfxFrameSurface1 * mfx_UMC_FrameAllocator::GetSurface(UMC::FrameMemID index, mfx
 
     if ((m_IsUseExternalFrames) || (m_sfcVideoPostProcessing))
     {
-        if ((Ipp32u)index >= m_frameData.size())
+        if ((Ipp32u)index >= m_extSurfaces.size())
             return 0;
         return m_extSurfaces[index].FrameSurface;
     }
@@ -902,8 +980,7 @@ mfxStatus mfx_UMC_FrameAllocator::PrepareToOutput(mfxFrameSurface1 *surface_work
     mfxStatus sts;
     mfxU16 dstMemType = isOpaq?(MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET):(MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET);
     
-
-    UMC::FrameData* frame = &m_frameData[index].second.m_frame;
+    UMC::FrameData* frame = &m_frameDataInternal.GetFrameData(index);
 
     if (m_IsUseExternalFrames)
         return MFX_ERR_NONE;
@@ -962,7 +1039,7 @@ mfxStatus mfx_UMC_FrameAllocator::PrepareToOutput(mfxFrameSurface1 *surface_work
         return MFX_ERR_UNSUPPORTED;
     }
     surface.Info.FourCC = surface_work->Info.FourCC;
-    surface.Info.Shift = m_IsUseExternalFrames ? m_extSurfaces[index].FrameSurface->Info.Shift : m_frameData[index].first.Info.Shift;
+    surface.Info.Shift = m_IsUseExternalFrames ? m_extSurfaces[index].FrameSurface->Info.Shift : m_frameDataInternal.GetSurface(index).Info.Shift;
 
     //Performance issue. We need to unlock mutex to let decoding thread run async.
     guard.Unlock();
@@ -1060,7 +1137,7 @@ const UMC::FrameData* mfx_UMC_FrameAllocator_NV12::Lock(UMC::FrameMemID mid)
         return 0;
 
     mfxU32 index = (mfxU32)mid;
-    if (index >= m_frameData.size())
+    if (!m_frameDataInternal.IsValidMID(index))
         return 0;
 
     const UMC::FrameData* frame = &m_yv12Frames[index];
@@ -1231,7 +1308,7 @@ mfxFrameSurface1 * mfx_UMC_FrameAllocator_NV12::GetSurface(UMC::FrameMemID index
 {
     UMC::AutomaticUMCMutex guard(m_guard);
 
-    if (index >= (Ipp32s)m_frameData.size())
+    if (!m_frameDataInternal.IsValidMID((mfxU32)index))
         return 0;
 
     return mfx_UMC_FrameAllocator::GetSurface(index, surface, videoPar);
@@ -1242,15 +1319,15 @@ mfxStatus mfx_UMC_FrameAllocator_NV12::PrepareToOutput(mfxFrameSurface1 *surf_wo
     isOpaq;
     UMC::AutomaticUMCMutex guard(m_guard);
 
-    if (index < 0 || index >= (Ipp32s)m_frameData.size())
+    if (!m_frameDataInternal.IsValidMID((mfxU32)index))
         return MFX_ERR_NOT_FOUND;
 
     const UMC::FrameData* frame = &m_yv12Frames[index];
 
     mfxStatus sts;
-    if (m_frameData[index].first.Data.MemId)
+    if (m_frameDataInternal.GetSurface(index).Data.MemId)
     {
-        sts = ConvertToNV12(frame, &m_frameData[index].first.Data, videoPar);
+        sts = ConvertToNV12(frame, &m_frameDataInternal.GetSurface(index).Data, videoPar);
     }
     else
     {
@@ -1277,7 +1354,8 @@ mfxStatus   mfx_UMC_FrameAllocator_D3D::PrepareToOutput(mfxFrameSurface1 *surfac
     UMC::AutomaticUMCMutex guard(m_guard);
 
     mfxStatus sts = MFX_ERR_NONE;
-    mfxMemId memId = isOpaq?(m_frameData[index].first.Data.MemId):(m_pCore->MapIdx(m_frameData[index].first.Data.MemId));
+    mfxMemId memInternal = m_frameDataInternal.GetSurface(index).Data.MemId;
+    mfxMemId memId = isOpaq?(memInternal):(m_pCore->MapIdx(memInternal));
 
     if ((surface_work->Data.MemId)&&
         (surface_work->Data.MemId == memId))
@@ -1292,9 +1370,10 @@ mfxStatus   mfx_UMC_FrameAllocator_D3D::PrepareToOutput(mfxFrameSurface1 *surfac
             UMC::VideoDataInfo VInfo;
             mfxFrameSurface1 surface;
 
-            mfxMemId idx = m_frameData[index].first.Data.MemId;
+            mfxFrameSurface1 & internalSurf = m_frameDataInternal.GetSurface(index);
+            mfxMemId idx = internalSurf.Data.MemId;
             memset(&surface.Data,0,sizeof(mfxFrameData));
-            surface.Info = m_frameData[index].first.Info;
+            surface.Info = internalSurf.Info;
             surface.Data.Y = 0;
             surface.Data.MemId = idx;
             //Performance issue. We need to unlock mutex to let decoding thread run async.
@@ -1438,22 +1517,21 @@ UMC::Status mfx_UMC_FrameAllocator_D3D_Converter::InitMfx(UMC::FrameAllocatorPar
     if (!m_IsUseExternalFrames ||
         !m_isSWDecode)
     {
-        m_frameData.resize(response->NumFrameActual);
+        m_frameDataInternal.Resize(response->NumFrameActual);
         m_extSurfaces.resize(response->NumFrameActual);
 
         for (mfxU32 i = 0; i < response->NumFrameActual; i++)
         {
-            m_frameData[i].first.Data.MemId = response->mids[i];
+            mfxFrameSurface1 & surface = m_frameDataInternal.GetSurface(i);
+            surface.Data.MemId = response->mids[i];
 
-            MFX_INTERNAL_CPY(&m_frameData[i].first.Info, &request->Info, sizeof(mfxFrameInfo));
+            MFX_INTERNAL_CPY(&surface.Info, &request->Info, sizeof(mfxFrameInfo));
 
             // fill UMC frameData
-            FrameInformation * frameMID = &m_frameData[i].second;
-            frameMID->Reset();
-            UMC::FrameData* frameData = &frameMID->m_frame;
+            UMC::FrameData& frameData = m_frameDataInternal.GetFrameData(i);
 
             // set correct width & height to planes
-            frameData->Init(&m_info, (UMC::FrameMemID)i, this);
+            frameData.Init(&m_info, (UMC::FrameMemID)i, this);
         }
     }
 
@@ -1477,8 +1555,8 @@ mfxStatus mfx_UMC_FrameAllocator_D3D_Converter::StartPreparingToOutput(mfxFrameS
     if(par->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE)
     {
         UMC::FrameMemID index = in->GetFrameMID();
-
-        mfxMemId memId = isOpaq?(m_frameData[index].first.Data.MemId):(m_pCore->MapIdx(m_frameData[index].first.Data.MemId));
+        mfxMemId memInter = m_frameDataInternal.GetSurface(index).Data.MemId;
+        mfxMemId memId = isOpaq?(memInter):(m_pCore->MapIdx(memInter));
 
         mfxHDLPair pPair;
         if(isOpaq)
@@ -1496,7 +1574,7 @@ mfxStatus mfx_UMC_FrameAllocator_D3D_Converter::StartPreparingToOutput(mfxFrameS
         {
             mfxFrameSurface1 pSrc;
 
-            pSrc = m_frameData[index].first;
+            pSrc = m_frameDataInternal.GetSurface(index);
             if(par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
             {
                 isD3DToSys = true;
@@ -1523,7 +1601,8 @@ mfxStatus mfx_UMC_FrameAllocator_D3D_Converter::StartPreparingToOutput(mfxFrameS
         UMC::FrameMemID indexBottom = in[1].GetFrameMID();
 
         // Opaque for interlaced content currently is unsupported
-        mfxMemId memId = isOpaq?(m_frameData[indexTop].first.Data.MemId):(m_pCore->MapIdx(m_frameData[indexTop].first.Data.MemId));
+        mfxMemId memInter = m_frameDataInternal.GetSurface(indexTop).Data.MemId;
+        mfxMemId memId = isOpaq?(memInter):(m_pCore->MapIdx(memInter));
 
         mfxHDLPair pPair;
         if(isOpaq)
@@ -1541,8 +1620,8 @@ mfxStatus mfx_UMC_FrameAllocator_D3D_Converter::StartPreparingToOutput(mfxFrameS
         {
             mfxFrameSurface1 pSrcTop, pSrcBottom;
 
-            pSrcTop = m_frameData[indexTop].first;
-            pSrcBottom = m_frameData[indexBottom].first;
+            pSrcTop = m_frameDataInternal.GetSurface(indexTop);
+            pSrcBottom = m_frameDataInternal.GetSurface(indexBottom);
 
             if(par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
             {
@@ -1586,7 +1665,7 @@ mfxStatus mfx_UMC_FrameAllocator_D3D_Converter::CheckPreparingToOutput(mfxFrameS
     {
         UMC::FrameMemID index = in->GetFrameMID();
 
-        mfxFrameSurface1 src = m_frameData[index].first;
+        mfxFrameSurface1 src = m_frameDataInternal.GetSurface(index);
         //Performance issue. We need to unlock mutex to let decoding thread run async.
         guard.Unlock();
         sts = (*pCc)->EndHwJpegProcessing(&src, surface_work);
@@ -1607,8 +1686,8 @@ mfxStatus mfx_UMC_FrameAllocator_D3D_Converter::CheckPreparingToOutput(mfxFrameS
 
         mfxFrameSurface1 srcTop, srcBottom;
 
-        srcTop = m_frameData[indexTop].first;
-        srcBottom = m_frameData[indexBottom].first;
+        srcTop = m_frameDataInternal.GetSurface(indexTop);
+        srcBottom = m_frameDataInternal.GetSurface(indexBottom);
 
         //Performance issue. We need to unlock mutex to let decoding thread run async.
         guard.Unlock();

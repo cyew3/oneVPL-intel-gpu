@@ -120,9 +120,7 @@ public:
 
     mfxMemId ConvertMemId(UMC::FrameMemID index)
     {
-        if (index < 0 || (size_t)index >= m_frameData.size())
-            return NULL;
-        return m_frameData[index].first.Data.MemId;
+        return m_frameDataInternal.GetSurface(index).Data.MemId;
     };
 
 protected:
@@ -144,20 +142,44 @@ protected:
 
     virtual mfxI32 AddSurface(mfxFrameSurface1 *surface);
 
-    class FrameInformation
+    class InternalFrameData
     {
+        class FrameRefInfo
+        {
+        public:
+            FrameRefInfo();
+            void Reset();
+
+            mfxU32 m_referenceCounter;
+        };
+
+        typedef std::pair<mfxFrameSurface1, UMC::FrameData> FrameInfo;
+
     public:
-        FrameInformation();
+
+        mfxFrameSurface1 & GetSurface(mfxU32 index);
+        UMC::FrameData   & GetFrameData(mfxU32 index);
+        void ResetFrameData(mfxU32 index);
+        mfxU32 IncreaseRef(mfxU32 index);
+        mfxU32 DecreaseRef(mfxU32 index);
+
+        bool IsValidMID(mfxU32 index) const;
+
+        void AddNewFrame(mfx_UMC_FrameAllocator * alloc, mfxFrameSurface1 *surface, UMC::VideoDataInfo * info);
+
+        mfxU32 GetSize() const;
+
+        void Close();
         void Reset();
 
-        mfxU32 m_locks;
-        mfxU32 m_referenceCounter;
-        UMC::FrameData  m_frame;
+        void Resize(mfxU32 size);
+
+    private:
+        std::vector<FrameInfo>  m_frameData;
+        std::vector<FrameRefInfo>  m_frameDataRefs;
     };
 
-    typedef std::pair<mfxFrameSurface1, FrameInformation> FrameInfo;
-
-    std::vector<FrameInfo>  m_frameData;
+    InternalFrameData m_frameDataInternal;
 
     std::vector<surf_descr> m_extSurfaces;
 
