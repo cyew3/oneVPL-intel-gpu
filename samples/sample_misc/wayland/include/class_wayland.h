@@ -135,11 +135,11 @@ class Wayland {
         struct ShmPool *m_shm_pool;
         int m_display_fd;
         int m_fd;
-        struct pollfd m_poll;
         drm_intel_bufmgr *m_bufmgr;
         char *m_device_name;
         int m_x, m_y;
         bool m_perf_mode;
+        struct pollfd m_poll;
 };
 
 extern "C" Wayland* WaylandCreate();

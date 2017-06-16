@@ -50,22 +50,23 @@ Wayland::Wayland()
     , m_shell(NULL)
     , m_drm(NULL)
     , m_shm(NULL)
-    , m_pool(NULL)
     , m_surface(NULL)
     , m_shell_surface(NULL)
     , m_callback(NULL)
-    , m_shm_pool(NULL)
     , m_event_queue(NULL)
-    , m_fd(-1)
+    , m_pending_frame(0)
+    , m_shm_pool(NULL)
     , m_display_fd(-1)
+    , m_fd(-1)
     , m_bufmgr(NULL)
     , m_device_name(NULL)
-    , m_pending_frame(0)
     , m_x(0), m_y(0)
     , m_perf_mode(false)
 {
     std::memset(&m_poll, 0, sizeof(m_poll));
 }
+
+
 
 bool Wayland::InitDisplay()
 {
