@@ -40,7 +40,6 @@ namespace fei_multi_pak
 {
     class MultiPAK
         : public tsVideoENCPAK
-        , public tsParserAVC2
     {
     public:
         //variables
@@ -52,21 +51,47 @@ namespace fei_multi_pak
         //functions
         MultiPAK(mfxFeiFunction funcEnc, mfxFeiFunction funcPak, mfxU32 CodecId = 0, bool useDefaults = true)
             : tsVideoENCPAK(funcEnc, funcPak, CodecId, useDefaults)
-            , tsParserAVC2(INIT_MODE_PARSE_SD)
             , m_numPAK(1)
             , m_changeMBQP(false)
             , m_changeMBMV(false)
         {};
 
         mfxStatus ProcessFrameAsync();
+        mfxStatus ResetParser(bool freeOnly = true);
     private:
+        //variables
+        std::vector<tsParserAVC2 *> m_parserArray;
         //functions
         void ChangeMBQP(mfxExtFeiPakMBCtrl & pakObject, unsigned int seed);
         void ChangeMBMV(mfxExtFeiEncMV & mv);
-        void CheckingMBQP(mfxExtFeiPakMBCtrl & pakObject);
+        void CheckingMBQP(mfxExtFeiPakMBCtrl & pakObject, unsigned int countPAK);
         void CheckingMBMV();
         mfxU8 GetQP(MB & mb);
 
+    };
+
+    mfxStatus MultiPAK::ResetParser(bool freeOnly)
+    {
+        std::vector<tsParserAVC2 *>::iterator curr, next=m_parserArray.begin();
+
+        if (m_numPAK < 1)
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+
+        while (next != m_parserArray.end())
+        {
+            curr = next++;
+            delete *curr;
+            m_parserArray.erase(curr);
+        }
+
+        if (freeOnly)
+            return MFX_ERR_NONE;
+
+        m_parserArray.resize(m_numPAK-1);
+        for (unsigned int i=0; i<(m_numPAK-1); ++i)
+             m_parserArray[i] = new tsParserAVC2(INIT_MODE_PARSE_SD);
+
+        return MFX_ERR_NONE;
     };
 
     void MultiPAK::ChangeMBQP(mfxExtFeiPakMBCtrl & pakObject, unsigned int seed)
@@ -93,11 +118,12 @@ namespace fei_multi_pak
         }
     };
 
-    void MultiPAK::CheckingMBQP(mfxExtFeiPakMBCtrl & pakObject)
+    void MultiPAK::CheckingMBQP(mfxExtFeiPakMBCtrl & pakObject, unsigned int countPAK)
     {
-        SetBuffer0(m_bitstream);
+        tsParserAVC2 *parser = m_parserArray[countPAK];
+        parser->SetBuffer0(m_bitstream);
 
-        UnitType& hdr = ParseOrDie();
+        AU& hdr = parser->ParseOrDie();
 
         for (Bs32u iNALU = 0; iNALU < hdr.NumUnits; iNALU++)
         {
@@ -223,7 +249,7 @@ namespace fei_multi_pak
             //Checking for MB parameters
             if (m_changeMBQP | m_changeMBMV)
                 if (countPAK != (m_numPAK - 1))
-                    m_changeMBQP ? CheckingMBQP(mb) : CheckingMBMV();
+                    m_changeMBQP ? CheckingMBQP(mb, countPAK) : CheckingMBMV();
 
             if (countPAK == (m_numPAK - 1)) {
                 if (m_default && m_bs_processor && g_tsStatus.get() == MFX_ERR_NONE)
@@ -376,6 +402,9 @@ namespace fei_multi_pak
         multipak.m_changeMBQP = tc.changeMBQP;
         multipak.m_changeMBMV = tc.changeMBMV;
 
+        if (multipak.m_changeMBQP)
+            multipak.ResetParser(false);
+
         mfxU16 num_fields = encpak.enc.m_par.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
 
         encpak.PrepareInitBuffers();
@@ -448,6 +477,8 @@ namespace fei_multi_pak
 
         }
 
+        if (multipak.m_changeMBQP)
+            multipak.ResetParser(true);
         multipak.Close();
         delete m_reader;
         m_reader = NULL;
