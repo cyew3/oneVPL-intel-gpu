@@ -39,10 +39,10 @@ cd $INSTALLDIR/tools/tracer
 ln -s libmfx-tracer.so libmfxhw64.so
 
 3. Generate config file for the tracer:
-$INSTALLDIR/bin/mfx-tracer-config --default
-$INSTALLDIR/bin/mfx-tracer-config core.type file
-$INSTALLDIR/bin/mfx-tracer-config core.log ~/mfxtracer.log
-$INSTALLDIR/bin/mfx-tracer-config core.lib /opt/intel/mediasdk/lib64/libmfxhw64-p-REAL.so.1.23
+$INSTALLDIR/tools/tracer/mfx-tracer-config --default
+$INSTALLDIR/tools/tracer/mfx-tracer-config core.type file
+$INSTALLDIR/tools/tracer/mfx-tracer-config core.log ~/mfxtracer.log
+$INSTALLDIR/tools/tracer/mfx-tracer-config core.lib /opt/intel/mediasdk/lib64/libmfxhw64-p-REAL.so.1.23
 
 Following this procedure you will generate a configuration file called '~/.mfxtracer' and set the tracer to dump
 logs to '~/mfxtracer_<PID>.log' files. You may adjust your configuration with 'mfx-tracer-config' tool.
