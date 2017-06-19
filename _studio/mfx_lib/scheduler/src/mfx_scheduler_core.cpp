@@ -168,31 +168,12 @@ void mfxSchedulerCore::Close(void)
 
         for (type = MFX_TYPE_HARDWARE; type <= MFX_TYPE_SOFTWARE; type += 1)
         {
-            MFX_SCHEDULER_TASK *pTask;
-
-            try
-            {
-                // get the tasks list
-                pTask = m_pTasks[priority][type];
-                // and run through it
-                while (pTask)
-                {
-                    MFX_ENTRY_POINT &entryPoint = pTask->param.task.entryPoint;
-
-                    if ((MFX_TASK_WORKING == pTask->curStatus) &&
-                        (entryPoint.pCompleteProc))
-                    {
-                        entryPoint.pCompleteProc(entryPoint.pState,
-                                                 entryPoint.pParam,
-                                                 MFX_ERR_ABORTED);
-                    }
-
-                    // advance the task pointer
-                    pTask = pTask->pNext;
+            MFX_SCHEDULER_TASK *pTask = m_pTasks[priority][type];
+            while (pTask) {
+                if (MFX_TASK_WORKING == pTask->curStatus) {
+                    pTask->CompleteTask(MFX_ERR_ABORTED);
                 }
-            }
-            catch(...)
-            {
+                pTask = pTask->pNext;
             }
         }
     }

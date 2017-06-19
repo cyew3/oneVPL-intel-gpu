@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2010-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2010-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include <mfx_scheduler_core.h>
@@ -528,27 +528,14 @@ void mfxSchedulerCore::MarkTaskCompleted(const MFX_CALL_INFO *pCallInfo,
 
                     // temporarily leave the protected code section
                     guard.Unlock();
-                    // be aware of external call
-                    try
-                    {
-                        // release the component's resources
-                        mfxRes = entryPoint.pCompleteProc(entryPoint.pState,
-                                                          entryPoint.pParam,
-                                                          pTask->curStatus);
-                        // update status
-                        if ((isFailed(mfxRes)) &&
-                            (MFX_ERR_NONE == pTask->curStatus))
-                        {
-                            pTask->curStatus = mfxRes;
-                        }
+
+                    mfxRes = pTask->CompleteTask(pTask->curStatus);
+                    if ((isFailed(mfxRes)) &&
+                        (MFX_ERR_NONE == pTask->curStatus)) {
+
+                        pTask->curStatus = mfxRes;
                     }
-                    catch(...)
-                    {
-                        if (MFX_ERR_NONE == pTask->curStatus)
-                        {
-                            pTask->curStatus = MFX_ERR_UNKNOWN;
-                        }
-                    }
+
                     // enter the protected code section
                     guard.Lock();
                 }

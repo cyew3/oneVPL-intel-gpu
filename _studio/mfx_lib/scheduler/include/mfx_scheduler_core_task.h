@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2017 Intel Corporation. All Rights Reserved.
 //
 
 #if !defined (__MFX_SCHEDULER_CORE_TASK_H)
@@ -59,6 +59,10 @@ struct MFX_SCHEDULER_TASK : public mfxDependencyItem<MFX_TASK_NUM_DEPENDENCIES>
     // Update the dependent object with the status of the parent object
     virtual
     void OnDependencyResolved(mfxStatus result);
+
+    // wraps an optional call to pCompleteProc
+    mfxStatus CompleteTask(mfxStatus res);
+
     // Release all allocated resources and decrement reference counters
     void ReleaseResources(void);
 
@@ -89,50 +93,50 @@ struct MFX_SCHEDULER_TASK : public mfxDependencyItem<MFX_TASK_NUM_DEPENDENCIES>
     struct
     {
 
-    // task describing parameters
+        // task describing parameters
 
-    // Task's parameters
-    MFX_TASK task;
-    // Pointer to the thread occupancy table's entity
-    MFX_THREAD_ASSIGNMENT *pThreadAssignment;
-    // Current occupancy of the task (number of threads entered inside)
-    mfxU32 occupancy;
-    // Occupied threads bit mask
-    mfxU64 threadMask;
-    // Number of call of the task
-    mfxU32 numberOfCalls;
+        // Task's parameters
+        MFX_TASK task;
+        // Pointer to the thread occupancy table's entity
+        MFX_THREAD_ASSIGNMENT *pThreadAssignment;
+        // Current occupancy of the task (number of threads entered inside)
+        mfxU32 occupancy;
+        // Occupied threads bit mask
+        mfxU64 threadMask;
+        // Number of call of the task
+        mfxU32 numberOfCalls;
 
-    // task timing parameters
-    bool bWaiting;                                              // (bool) task needs some waiting
-    struct
-    {
-    // Time in msec of the last 'entering' to the task
-    mfxU64 timeLastEnter;
-    // Time stamp of the last call issued
-    mfxU64 timeLastCallIssued;
-    // Time stamp of the last processed call result
-    mfxU64 timeLastCallProcessed;
-    // Integral time spend for the task
-    mfxU64 timeSpent;
-    // Time spend for false thread entering
-    mfxU64 timeOverhead;
-    // HW counter value of the last 'entering' to the task
-    mfxU64 hwCounterLastEnter;
-    } timing;
+        // task timing parameters
+        bool bWaiting;                                              // (bool) task needs some waiting
+        struct
+        {
+            // Time in msec of the last 'entering' to the task
+            mfxU64 timeLastEnter;
+            // Time stamp of the last call issued
+            mfxU64 timeLastCallIssued;
+            // Time stamp of the last processed call result
+            mfxU64 timeLastCallProcessed;
+            // Integral time spend for the task
+            mfxU64 timeSpent;
+            // Time spend for false thread entering
+            mfxU64 timeOverhead;
+            // HW counter value of the last 'entering' to the task
+            mfxU64 hwCounterLastEnter;
+        } timing;
 
-    // source file info
-    struct
-    {
-    const char *pFileName;                                      // (const char *) source file name, where task was spawn
-    int lineNumber;                                             // (int) source source file line number, where task was spawn
-    } sourceInfo;
+        // source file info
+        struct
+        {
+            const char *pFileName;                                      // (const char *) source file name, where task was spawn
+            int lineNumber;                                             // (int) source source file line number, where task was spawn
+        } sourceInfo;
 
-    // dependencies members
-    struct
-    {
-    // Indicies in the dependency table of the generated outputs
-    mfxU32 dstIdx[MFX_TASK_NUM_DEPENDENCIES];
-    } dependencies;
+        // dependencies members
+        struct
+        {
+            // Indicies in the dependency table of the generated outputs
+            mfxU32 dstIdx[MFX_TASK_NUM_DEPENDENCIES];
+        } dependencies;
 
     } param;
 

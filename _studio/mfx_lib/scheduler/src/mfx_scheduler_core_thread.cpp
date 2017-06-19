@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include <mfx_scheduler_core.h>
@@ -124,52 +124,12 @@ void mfxSchedulerCore::ThreadProc(MFX_SCHEDULER_THREAD_CONTEXT *pContext)
         mfxRes = GetTask(call, previousTaskHandle, threadNum);
         if (MFX_ERR_NONE == mfxRes)
         {
-            mfxU64 start, stop;
-
             // perform asynchronous operation
-            try
-            {
-                const char *pRoutineName = call.pTask->entryPoint.pRoutineName;
-                if (!pRoutineName) pRoutineName = "MFX Async Task";
-                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, pRoutineName);
-                MFX_LTRACE_1(MFX_TRACE_LEVEL_SCHED, "^Child^of", "%d", call.pTask->nParentId);
+            call_pRoutine(call);
 
-                // mark beginning of working period
-                start = GetHighPerformanceCounter();
-
-                // NOTE: it is legacy task call,
-                // it should be eliminated soon
-                if (call.pTask->bObsoleteTask)
-                {
-                    call.res = call.pTask->entryPoint.pRoutine(call.pTask->entryPoint.pState,
-                                                               (void *) &call.pTask->obsolete_params,
-                                                               call.threadNum,
-                                                               call.callNum);
-                }
-                // the only legal task calling process.
-                // Should survive only this one :-).
-                else
-                {
-                    call.res = call.pTask->entryPoint.pRoutine(call.pTask->entryPoint.pState,
-                                                               call.pTask->entryPoint.pParam,
-                                                               call.threadNum,
-                                                               call.callNum);
-                }
-
-                // mark end of working period
-                stop = GetHighPerformanceCounter();
-
-                // update thread statistic
-                call.timeSpend = (stop - start);
-                pContext->workTime += call.timeSpend;
-                // save the previous task's handle
-                previousTaskHandle = call.taskHandle;
-                MFX_LTRACE_1(MFX_TRACE_LEVEL_SCHED, "mfxRes = ", "%d", call.res);
-            }
-            catch(...)
-            {
-                call.res = MFX_ERR_UNKNOWN;
-            }
+            pContext->workTime += call.timeSpend;
+            // save the previous task's handle
+            previousTaskHandle = call.taskHandle;
 
             // mark the task completed,
             // set the sync point into the high state if any.
