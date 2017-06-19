@@ -33,6 +33,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ts_fei_warning.h"
 
 #define QP_DO_NOT_CHECK 255
+const mfxF64 PSNR_THRESHOLD = 30.0;
 
 using namespace BS_AVC2;
 
@@ -54,25 +55,35 @@ namespace fei_multi_pak
             , m_numPAK(1)
             , m_changeMBQP(false)
             , m_changeMBMV(false)
-        {};
+        {
+            memset(&m_refTmp, 0, sizeof(mfxFrameSurface1));
+            memset(&m_srcTmp, 0, sizeof(mfxFrameSurface1));
+        };
 
         mfxStatus ProcessFrameAsync();
         mfxStatus ResetParser(bool freeOnly = true);
+        void AllocTmpSurf(const mfxFrameInfo& fi);
     private:
         //variables
         std::vector<tsParserAVC2 *> m_parserArray;
+        mfxFrameSurface1 m_refTmp;
+        mfxFrameSurface1 m_srcTmp;
+        std::unique_ptr <mfxU8[]>m_pRefTmp;
+        std::unique_ptr <mfxU8[]>m_pSrcTmp;
         //functions
         void ChangeMBQP(mfxExtFeiPakMBCtrl & pakObject, unsigned int seed);
         void ChangeMBMV(mfxExtFeiEncMV & mv);
         void CheckingMBQP(mfxExtFeiPakMBCtrl & pakObject, unsigned int countPAK);
         void CheckingMBMV();
+        void ChekingPSNR(mfxFrameSurface1& ref, mfxFrameSurface1& src, mfxU16 pictype);
         mfxU8 GetQP(MB & mb);
-
+        mfxU32 ClipQP(mfxU32 x);
+        void FieldCopy(const mfxFrameSurface1& s, mfxFrameSurface1& sTemp, mfxU16 pictype);
     };
 
     mfxStatus MultiPAK::ResetParser(bool freeOnly)
     {
-        std::vector<tsParserAVC2 *>::iterator curr, next=m_parserArray.begin();
+        std::vector<tsParserAVC2 *>::iterator curr, next = m_parserArray.begin();
 
         if (m_numPAK < 1)
             return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -87,9 +98,9 @@ namespace fei_multi_pak
         if (freeOnly)
             return MFX_ERR_NONE;
 
-        m_parserArray.resize(m_numPAK-1);
-        for (unsigned int i=0; i<(m_numPAK-1); ++i)
-             m_parserArray[i] = new tsParserAVC2(INIT_MODE_PARSE_SD);
+        m_parserArray.resize(m_numPAK - 1);
+        for (unsigned int i = 0; i < (m_numPAK - 1); ++i)
+            m_parserArray[i] = new tsParserAVC2(INIT_MODE_PARSE_SD);
 
         return MFX_ERR_NONE;
     };
@@ -97,11 +108,14 @@ namespace fei_multi_pak
     void MultiPAK::ChangeMBQP(mfxExtFeiPakMBCtrl & pakObject, unsigned int seed)
     {
         m_gen.seed(seed > 0 ? seed : 1); //seed = 0 leads to error
-        std::uniform_int_distribution<int> distr(0, 51);
+
+        int deltaQP = 10;
+
+        std::uniform_int_distribution<int> distr(-deltaQP, deltaQP);
 
         mfxU32 nummb = pakObject.NumMBAlloc;
         for (mfxU32 idxMB = 0; idxMB < nummb; idxMB++)
-            pakObject.MB[idxMB].QpPrimeY = distr(m_gen);
+            pakObject.MB[idxMB].QpPrimeY = ClipQP(pakObject.MB[idxMB].QpPrimeY + distr(m_gen));
     };
 
     void MultiPAK::ChangeMBMV(mfxExtFeiEncMV & mv)
@@ -170,12 +184,142 @@ namespace fei_multi_pak
 
     };
 
+    void MultiPAK::ChekingPSNR(mfxFrameSurface1& ref, mfxFrameSurface1& src, mfxU16 pictype)
+    {
+        bool useAllocatorRef = m_pFrameAllocator && !ref.Data.Y;
+        bool useAllocatorSrc = m_pFrameAllocator && !src.Data.Y;
+
+        mfxFrameSurface1* pRef = NULL;
+        mfxFrameSurface1* pSrc = NULL;
+
+        if (useAllocatorRef)
+        {
+            TRACE_FUNC3(mfxFrameAllocator::Lock, m_pFrameAllocator->pthis, ref.Data.MemId, &(ref.Data));
+            g_tsStatus.check(m_pFrameAllocator->Lock(m_pFrameAllocator->pthis, ref.Data.MemId, &(ref.Data)));
+        }
+
+        if (useAllocatorSrc)
+        {
+            TRACE_FUNC3(mfxFrameAllocator::Lock, m_pFrameAllocator->pthis, src.Data.MemId, &(src.Data));
+            g_tsStatus.check(m_pFrameAllocator->Lock(m_pFrameAllocator->pthis, src.Data.MemId, &(src.Data)));
+        }
+
+        if (pictype == MFX_PICTYPE_FRAME) {
+            pRef = &ref;
+            pSrc = &src;
+        }
+        else {
+            FieldCopy(ref, m_refTmp, pictype);
+            FieldCopy(src, m_srcTmp, pictype);
+            pRef = &m_refTmp;
+            pSrc = &m_srcTmp;
+        }
+
+        tsFrame ref_frame(*pRef);
+        tsFrame s_frame(*pSrc);
+
+        mfxF64 psnr_y = PSNR(ref_frame, s_frame, 0);
+        mfxF64 psnr_u = PSNR(ref_frame, s_frame, 1);
+        mfxF64 psnr_v = PSNR(ref_frame, s_frame, 2);
+        mfxF64 psnr_overall = (4 * psnr_y + psnr_u + psnr_v) / 6;
+
+        if (psnr_overall < PSNR_THRESHOLD)
+        {
+            g_tsLog << "ERROR: Low PSNR\n";
+            g_tsStatus.check(MFX_ERR_ABORTED);
+        }
+
+        if (useAllocatorRef)
+        {
+            TRACE_FUNC3(mfxFrameAllocator::Unlock, m_pFrameAllocator->pthis, ref.Data.MemId, &(ref.Data));
+            g_tsStatus.check(m_pFrameAllocator->Unlock(m_pFrameAllocator->pthis, ref.Data.MemId, &(ref.Data)));
+        }
+
+        if (useAllocatorSrc)
+        {
+            TRACE_FUNC3(mfxFrameAllocator::Unlock, m_pFrameAllocator->pthis, src.Data.MemId, &(src.Data));
+            g_tsStatus.check(m_pFrameAllocator->Unlock(m_pFrameAllocator->pthis, src.Data.MemId, &(src.Data)));
+        }
+    };
+
     mfxU8 MultiPAK::GetQP(MB & mb)
     {
         if ((mb.MbType >= I_16x16_0_0_1 && mb.MbType <= I_16x16_3_2_1) || (mb.coded_block_pattern % 16 != 0))
             return mb.QPy;
 
         return QP_DO_NOT_CHECK;
+    };
+
+    mfxU32 MultiPAK::ClipQP(mfxU32 x) {
+        if (x < 0)
+            return 0;
+        else if (x > 51)
+            return 51;
+        else
+            return x;
+    };
+
+    void MultiPAK::FieldCopy(const mfxFrameSurface1& s, mfxFrameSurface1& sTemp, mfxU16 pictype)
+    {
+        mfxU32 pitch = mfxU32(s.Data.PitchHigh << 16) + s.Data.PitchLow;
+        mfxU32 pitchTmp = mfxU32(sTemp.Data.PitchHigh << 16) + sTemp.Data.PitchLow;
+
+        int inOff = 0;
+        int outOff = 0;
+        int outStep = 0;
+        int inStep = 0;
+
+        int inR = 0, outR = 0;
+        mfxU8 *pInR, *pOutR;
+        mfxU8 *pInY = (mfxU8 *)s.Data.Y;
+        mfxU8 *pOutY = (mfxU8 *)sTemp.Data.Y;
+        mfxU8 *pInUV = (mfxU8 *)s.Data.Y + pitch * s.Info.Height;
+        mfxU8 *pOutUV = (mfxU8 *)sTemp.Data.Y + pitchTmp * sTemp.Info.Height;
+
+        if (pictype == MFX_PICTYPE_TOPFIELD) {
+            inOff = 0; inStep = 2; outOff = 0; outStep = 1;
+        }
+        else {
+            inOff = 1; inStep = 2; outOff = 0; outStep = 1;
+        }
+
+        for (inR = inOff, outR = outOff; outR < sTemp.Info.Height; inR += inStep, outR += outStep) {
+            pInR = pInY + inR * pitch;
+            pOutR = pOutY + outR * pitchTmp;
+            memcpy(pOutR, pInR, pitchTmp);
+        }
+
+        for (inR = inOff, outR = outOff; outR < sTemp.Info.Height / 2; inR += inStep, outR += outStep) {
+            pInR = pInUV + inR * pitch;
+            pOutR = pOutUV + outR * pitchTmp;
+            memcpy(pOutR, pInR, pitchTmp);
+        }
+    };
+
+    void MultiPAK::AllocTmpSurf(const mfxFrameInfo& fi)
+    {
+        if (fi.PicStruct == MFX_PICSTRUCT_PROGRESSIVE)
+            return;
+
+        mfxU16 height = fi.Height / 2;//We work with interlaced content
+        mfxU16 width = fi.Width;
+        //Prepare frame information
+        m_refTmp.Info.FourCC = m_srcTmp.Info.FourCC = MFX_FOURCC_NV12;
+        m_refTmp.Info.ChromaFormat = m_srcTmp.Info.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+        m_refTmp.Data.PitchHigh = m_srcTmp.Data.PitchHigh = 0;
+        m_refTmp.Data.PitchLow = m_srcTmp.Data.PitchLow = width;
+        m_refTmp.Info.CropW = m_srcTmp.Info.CropW = width;
+        m_refTmp.Info.Height = m_srcTmp.Info.Height = height;
+        m_refTmp.Info.CropH = m_srcTmp.Info.CropH = height;
+        //
+        
+        m_refTmp.Data.Y = new mfxU8[(width * height * 3) / 2];
+        m_pRefTmp.reset(m_refTmp.Data.Y);
+        m_refTmp.Data.UV = m_refTmp.Data.Y + width * height;
+
+        m_srcTmp.Data.Y = new mfxU8[(width * height * 3) / 2];
+        m_pSrcTmp.reset(m_srcTmp.Data.Y);
+        m_srcTmp.Data.UV = m_srcTmp.Data.Y + width * height;
     };
 
     mfxStatus MultiPAK::ProcessFrameAsync()
@@ -195,7 +339,11 @@ namespace fei_multi_pak
 
         //End of the ENC
 
-        mfxExtFeiPakMBCtrl & mb = *(mfxExtFeiPakMBCtrl*)GetExtFeiBuffer(pak.inbuf, MFX_EXTBUFF_FEI_PAK_CTRL, 0);
+        //Picture type
+        mfxU16 pictype = ((mfxExtFeiPPS*)GetExtFeiBuffer(pak.inbuf, MFX_EXTBUFF_FEI_PPS, 0))->PictureType;
+        //
+
+        mfxExtFeiPakMBCtrl & mb = *(mfxExtFeiPakMBCtrl*)GetExtFeiBuffer(pak.inbuf, MFX_EXTBUFF_FEI_PAK_CTRL, 0);//Single-field mode
 
         //Save reference pak object
         mfxExtFeiPakMBCtrl mbRef;
@@ -204,7 +352,7 @@ namespace fei_multi_pak
         mbRef.NumMBAlloc = mb.NumMBAlloc;
         memcpy(mbRef.MB, mb.MB, sizeof(mfxFeiPakMBCtrl) * mb.NumMBAlloc);
 
-        mfxExtFeiEncMV & mv = *(mfxExtFeiEncMV*)GetExtFeiBuffer(pak.inbuf, MFX_EXTBUFF_FEI_ENC_MV, 0);
+        mfxExtFeiEncMV & mv = *(mfxExtFeiEncMV*)GetExtFeiBuffer(pak.inbuf, MFX_EXTBUFF_FEI_ENC_MV, 0);//Single-field mode
 
         //Save reference mv
         mfxExtFeiEncMV mvRef;
@@ -215,16 +363,21 @@ namespace fei_multi_pak
 
         for (unsigned int countPAK = 0; countPAK < m_numPAK; countPAK++) {
 
-            //Changing for parameters
-            if (m_changeMBQP | m_changeMBMV) {
-                if (countPAK != (m_numPAK - 1))
-                    m_changeMBQP ? ChangeMBQP(mb, countPAK) : ChangeMBMV(mv);
-                else
-                    m_changeMBQP ?
-                    memcpy(mb.MB, mbRef.MB, sizeof(mfxFeiPakMBCtrl) * mbRef.NumMBAlloc)
-                    : memcpy(mv.MB, mvRef.MB, sizeof(mfxExtFeiEncMV::mfxExtFeiEncMVMB) * mvRef.NumMBAlloc);
-            }
+            bool isLastPAK = (countPAK == (m_numPAK - 1));
 
+            //Changing for parameters
+            if (!isLastPAK) {
+                if (m_changeMBQP)
+                    ChangeMBQP(mb, countPAK);
+                else if (m_changeMBMV)
+                    ChangeMBMV(mv);
+            }
+            else {
+                if (m_changeMBQP)
+                    memcpy(mb.MB, mbRef.MB, sizeof(mfxFeiPakMBCtrl) * mbRef.NumMBAlloc);
+                else if (m_changeMBMV)
+                    memcpy(mv.MB, mvRef.MB, sizeof(mfxExtFeiEncMV::mfxExtFeiEncMVMB) * mvRef.NumMBAlloc);
+            }
             m_PAKInput->ExtParam = pak.inbuf.data();
             m_PAKInput->NumExtParam = (mfxU16)pak.inbuf.size();
             m_PAKOutput->ExtParam = pak.outbuf.data();
@@ -246,12 +399,17 @@ namespace fei_multi_pak
                 return mfxRes;
             }
 
-            //Checking for MB parameters
-            if (m_changeMBQP | m_changeMBMV)
-                if (countPAK != (m_numPAK - 1))
-                    m_changeMBQP ? CheckingMBQP(mb, countPAK) : CheckingMBMV();
+            //PSNR cheking
+            ChekingPSNR(*m_PAKInput->InSurface, *m_PAKOutput->OutSurface, pictype);
 
-            if (countPAK == (m_numPAK - 1)) {
+            //Checking for MB parameters
+            if (!isLastPAK) {
+                if (m_changeMBQP)
+                    CheckingMBQP(mb, countPAK);
+                else if (m_changeMBMV)
+                    CheckingMBMV();
+            }
+            else {
                 if (m_default && m_bs_processor && g_tsStatus.get() == MFX_ERR_NONE)
                 {
                     g_tsStatus.check(m_bs_processor->ProcessBitstream(m_bitstream, 1));
@@ -401,7 +559,6 @@ namespace fei_multi_pak
         multipak.m_numPAK = tc.numPAK;
         multipak.m_changeMBQP = tc.changeMBQP;
         multipak.m_changeMBMV = tc.changeMBMV;
-
         if (multipak.m_changeMBQP)
             multipak.ResetParser(false);
 
@@ -459,6 +616,9 @@ namespace fei_multi_pak
         //test
         m_reader = new tsRawReader(g_tsStreamPool.Get("YUV/matrix_1920x1088_250.yuv"), m_rawReaderFrameInfo);
         g_tsStreamPool.Reg();
+
+        //Allocate internal surf
+        multipak.AllocTmpSurf(m_rawReaderFrameInfo);
 
         tsBitstreamCRC32 bs_crc_cmp;
         multipak.m_bs_processor = &bs_crc_cmp;
