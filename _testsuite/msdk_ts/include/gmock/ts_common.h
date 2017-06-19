@@ -162,7 +162,7 @@ extern tsConfig     g_tsConfig;
 
 #define TS_HW_ALLOCATOR_TYPE (!!((g_tsImpl) & 0xF00) ? frame_allocator::HARDWARE_DX11 : frame_allocator::HARDWARE)
 
-#define MAX_NPARS 15
+#define MAX_NPARS 20
 
 #define SETPARS(p, type)                                                                                        \
 for(mfxU32 i = 0; i < MAX_NPARS; i++)                                                                           \

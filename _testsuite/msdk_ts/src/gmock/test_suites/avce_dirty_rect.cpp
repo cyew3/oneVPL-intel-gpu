@@ -17,23 +17,52 @@ File Name: avce_dirty_rect.cpp
 /*! \brief Main test name space */
 namespace avce_dirty_rect {
 
+#define RECT_PARS(type, i, numrect,left,top,right,bottom)                    \
+            {type, &tsStruct::mfxExtDirtyRect.NumRect,           numrect},   \
+            {type, &tsStruct::mfxExtDirtyRect.Rect[i].Left,      left},      \
+            {type, &tsStruct::mfxExtDirtyRect.Rect[i].Top,       top},       \
+            {type, &tsStruct::mfxExtDirtyRect.Rect[i].Right,     right},     \
+            {type, &tsStruct::mfxExtDirtyRect.Rect[i].Bottom,    bottom}
+
+
+#define CHECK_PARS(expected, actual) {                                                                    \
+    EXPECT_EQ(expected.Left, actual.Left)                                                                 \
+        << "ERROR: Expect rect = " << expected.Left << ", but real rect = " << actual.Left << "!\n";      \
+    EXPECT_EQ(expected.Top, actual.Top)                                                                   \
+        << "ERROR: Expect rect = " << expected.Top << ", but real rect = " << actual.Top << "!\n";        \
+    EXPECT_EQ(expected.Right, actual.Right)                                                               \
+        << "ERROR: Expect rect = " << expected.Right << ", but real rect = " << actual.Right << "!\n";    \
+    EXPECT_EQ(expected.Bottom, actual.Bottom)                                                             \
+        << "ERROR: Expect rect = " << expected.Bottom << ", but real rect = " << actual.Bottom << "!\n";  \
+}
+
     enum {
         MFX_PAR = 1,
+        DIRTYRECT,
+        DIRTYRECT_EXPECTED_QUERY
+    };
+
+    enum TYPE {
+        QUERY = 0x1,
+        INIT = 0x2,
+        ENCODE = 0x4
     };
 
     /*!\brief Structure of test suite parameters
     */
 
-    static const mfxU32 num_rectangles = 1;
-    struct tc_struct
-    {
-        mfxStatus sts;
+    struct tc_struct {
+        struct status {
+            mfxStatus query;
+            mfxStatus init;
+            mfxStatus encode;
+        } sts;
+        mfxU32 type;
         struct tctrl {
-            mfxU32 par[4];
-        } ctrl[num_rectangles];
-
-
-
+            mfxU32 ext_type;
+            const  tsStruct::Field* f;
+            mfxU32 v;
+        } set_par[MAX_NPARS];
     };
 
     //!\brief Main test class
@@ -73,11 +102,80 @@ namespace avce_dirty_rect {
 
     const tc_struct TestSuite::test_case[] =
     {
-        {/*00*/ MFX_ERR_NONE,{ 0, 0, 0, 0 } },
-        {/*01*/ MFX_ERR_UNSUPPORTED,{ 0, 1, 0, 0 } },
-        {/*02*/ MFX_ERR_UNSUPPORTED,{ 0, 0, 1, 0 } },
-        {/*03*/ MFX_ERR_UNSUPPORTED,{ 0, 0, 0, 1 } }
+        {/*00*/{ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE },
+            QUERY | INIT,{
+            RECT_PARS(DIRTYRECT,                0, 1,   0, 0, 0, 0),
+            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, 0, 0, 0)
+        } },
 
+        {/*01*/{ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
+            QUERY | INIT | ENCODE,{
+            RECT_PARS(DIRTYRECT,                0, 1,   16, 16, 48, 48),
+            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   16, 16, 48, 48)
+        } },
+
+        {/*02*/{ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE },
+            QUERY | INIT,{
+            RECT_PARS(DIRTYRECT,                0, 1,   0, 0, 0, 16), // Right == Left
+            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, 0, 0, 16)
+        } },
+
+        {/*03*/{ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE },
+            QUERY | INIT,{
+            RECT_PARS(DIRTYRECT,                0, 1,   1920, 0, 0, 16), // Left == Width
+            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,      0, 0, 0, 16)
+        } },
+
+        {/*04*/{ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE },
+            QUERY | INIT,{
+            RECT_PARS(DIRTYRECT,                0, 1,   0, 0, 1950, 16), // Right > Width, out of bounds
+            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, 0,    0, 16)
+        } },
+
+        {/*05*/{ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE },
+            QUERY | INIT,{
+            RECT_PARS(DIRTYRECT,                0, 1,   0, 0, 16, 0), // Top == Bottom
+            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, 0, 16, 0)
+        } },
+
+        {/*06*/{ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE },
+            QUERY | INIT,{
+            RECT_PARS(DIRTYRECT,                0, 1,   0, 1088, 16, 0), // Top == Height
+            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0,    0, 16, 0)
+        } },
+
+        {/*07*/{ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE },
+            QUERY | INIT,{
+            RECT_PARS(DIRTYRECT,                0, 1,   0, 0, 16, 1105), // Bottom > Height, out of bounds
+            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, 0, 16,    0)
+        } },
+
+        {/*08*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE },
+            QUERY | INIT | ENCODE,{
+            RECT_PARS(DIRTYRECT,                0, 1,   1, 1, 33, 33),
+            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, 0, 32, 32)
+        } },
+
+        {/*09*/{ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
+            QUERY | INIT | ENCODE,{
+            RECT_PARS(DIRTYRECT,                0, 2,   0, 0, 16, 16), //Rect[0]
+            RECT_PARS(DIRTYRECT,                1, 2,   0, 0, 32, 32), //Rect[1]
+
+            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 2,   0, 0, 16, 16),
+            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 1, 2,   0, 0, 32, 32),
+        } },
+
+        {/*10*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE },
+            QUERY | INIT,{
+            { DIRTYRECT, &tsStruct::mfxExtDirtyRect.NumRect, 300 }, // MAX NumRect is 256
+            { DIRTYRECT_EXPECTED_QUERY, &tsStruct::mfxExtDirtyRect.NumRect, 256 }
+        } },
+
+        {/*11*/{ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
+            ENCODE,{
+            RECT_PARS(DIRTYRECT,                0, 1,   0, 0, 32, 32),
+            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, 0, 32, 32)
+        } },
     };
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::test_case[0]);
 
@@ -88,48 +186,115 @@ namespace avce_dirty_rect {
         if (g_tsOSFamily != MFX_OS_FAMILY_WINDOWS) {
             g_tsLog << "[ SKIPPED ] This test is only for windows platform\n";
             return 0;
-        }  
+        }
 
-        if (g_tsImpl == MFX_IMPL_HARDWARE)
-        {
-            if (g_tsHWtype < MFX_HW_SKL)
-            {
+        if (g_tsImpl == MFX_IMPL_HARDWARE) {
+            if (g_tsHWtype < MFX_HW_SKL) {
                 g_tsLog << "SKIPPED for this platform\n";
                 return 0;
             }
         }
 
+        mfxStatus sts = MFX_ERR_NONE;
+        mfxExtBuffer* extDirtyRect;
+        tsExtBufType<mfxVideoParam> out_par;
+        mfxExtDirtyRect extDirtyRect_expectation;
+
         MFXInit();
-
+        m_session = tsSession::m_session;
         initParams();
-        Query();
-        Init();
 
-        std::vector<mfxExtBuffer*> in_buffs;
-        mfxExtDirtyRect db;
-        memset(&db, 0, sizeof(db));
-        db.Header.BufferId = MFX_EXTBUFF_DIRTY_RECTANGLES;
-        db.Header.BufferSz = sizeof(db);
+        m_par.AddExtBuffer(MFX_EXTBUFF_DIRTY_RECTANGLES, sizeof(mfxExtDirtyRect));
+        extDirtyRect = m_par.GetExtBuffer(MFX_EXTBUFF_DIRTY_RECTANGLES);
 
-        db.NumRect = num_rectangles;
+        out_par = m_par;
+        m_pParOut = &out_par;
 
-        for (mfxU32 i = 0; i < num_rectangles; i++)
-        {
-            db.Rect[i].Top = tc.ctrl[i].par[0];
-            db.Rect[i].Bottom = tc.ctrl[i].par[1];
-            db.Rect[i].Right = tc.ctrl[i].par[2];
-            db.Rect[i].Left = tc.ctrl[i].par[3];
+        if (tc.type & QUERY) {
+            SETPARS(extDirtyRect, DIRTYRECT);
+            int num_rect = ((mfxExtDirtyRect*)extDirtyRect)->NumRect;
+            if (num_rect == 300)
+                for (int i = 0; i < 256; i++) {
+                    ((mfxExtDirtyRect*)extDirtyRect)->Rect[i] = { 0, 0, 16, 16 };
+                }
+
+            g_tsStatus.expect(tc.sts.query);
+            SETPARS(&extDirtyRect_expectation, DIRTYRECT_EXPECTED_QUERY);
+            Query();
+
+            extDirtyRect = out_par.GetExtBuffer(MFX_EXTBUFF_DIRTY_RECTANGLES);
+
+            if (num_rect <= 256)
+                for (int i = 0; i < num_rect; i++) {
+                    CHECK_PARS(extDirtyRect_expectation.Rect[i], ((mfxExtDirtyRect*)extDirtyRect)->Rect[i]);
+                }
+            else
+                EXPECT_EQ(extDirtyRect_expectation.NumRect, ((mfxExtDirtyRect*)extDirtyRect)->NumRect)
+                << "ERROR: Expect num_rect = " << extDirtyRect_expectation.NumRect << ", but real num_rect = " << ((mfxExtDirtyRect*)extDirtyRect)->NumRect << "!\n";
         }
-        in_buffs.push_back((mfxExtBuffer*)&db);
-        m_pCtrl->NumExtParam = 1;
-        m_pCtrl->ExtParam = &in_buffs[0];
 
+        if (tc.type & INIT) {
+            SETPARS(extDirtyRect, DIRTYRECT);
+            int num_rect = ((mfxExtDirtyRect*)extDirtyRect)->NumRect;
+            if (num_rect == 300)
+                for (int i = 0; i < 256; i++) {
+                    ((mfxExtDirtyRect*)extDirtyRect)->Rect[i] = { 0, 0, 16, 16 };
+                }
 
-        mfxStatus sts = EncodeFrameAsync();
-        if (sts == MFX_ERR_MORE_DATA)
-            sts = MFX_ERR_NONE;
-        g_tsStatus.expect(tc.sts);
-        g_tsStatus.check(sts);
+            g_tsStatus.expect(tc.sts.init);
+            SETPARS(&extDirtyRect_expectation, DIRTYRECT);
+            sts = Init();
+
+            if (num_rect <= 256)
+                for (int i = 0; i < num_rect; i++) {
+                    CHECK_PARS(extDirtyRect_expectation.Rect[i], ((mfxExtDirtyRect*)extDirtyRect)->Rect[i]);
+                }
+            else
+                EXPECT_EQ(extDirtyRect_expectation.NumRect, ((mfxExtDirtyRect*)extDirtyRect)->NumRect)
+                << "ERROR: Expect num_rect = " << extDirtyRect_expectation.NumRect << ", but real num_rect = " << ((mfxExtDirtyRect*)extDirtyRect)->NumRect << "!\n";
+
+            if (sts != MFX_ERR_INVALID_VIDEO_PARAM) {
+                SETPARS(&extDirtyRect_expectation, DIRTYRECT_EXPECTED_QUERY);
+                GetVideoParam(m_session, &out_par);
+                extDirtyRect = out_par.GetExtBuffer(MFX_EXTBUFF_DIRTY_RECTANGLES);
+
+                if (num_rect <= 256)
+                    for (int i = 0; i < num_rect; i++) {
+                        CHECK_PARS(extDirtyRect_expectation.Rect[i], ((mfxExtDirtyRect*)extDirtyRect)->Rect[i]);
+                    }
+                else
+                    EXPECT_EQ(extDirtyRect_expectation.NumRect, ((mfxExtDirtyRect*)extDirtyRect)->NumRect)
+                    << "ERROR: Expect num_rect = " << extDirtyRect_expectation.NumRect << ", but real num_rect = " << ((mfxExtDirtyRect*)extDirtyRect)->NumRect << "!\n";
+            }
+        }
+
+        if (tc.type & ENCODE) {
+            m_ctrl.AddExtBuffer(MFX_EXTBUFF_DIRTY_RECTANGLES, sizeof(mfxExtDirtyRect));
+            extDirtyRect = m_ctrl.GetExtBuffer(MFX_EXTBUFF_DIRTY_RECTANGLES);
+
+            SETPARS(extDirtyRect, DIRTYRECT);
+            int num_rect = ((mfxExtDirtyRect*)extDirtyRect)->NumRect;
+
+            sts = EncodeFrameAsync();
+
+            if (sts == MFX_ERR_MORE_DATA)
+                sts = MFX_ERR_NONE;
+            g_tsStatus.expect(tc.sts.encode);
+            g_tsStatus.check(sts);
+
+            SETPARS(&extDirtyRect_expectation, DIRTYRECT_EXPECTED_QUERY);
+            if (num_rect <= 256)
+                for (int i = 0; i < num_rect; i++) {
+                    CHECK_PARS(extDirtyRect_expectation.Rect[i], ((mfxExtDirtyRect*)extDirtyRect)->Rect[i]);
+                }
+            else
+                EXPECT_EQ(extDirtyRect_expectation.NumRect, ((mfxExtDirtyRect*)extDirtyRect)->NumRect)
+                << "ERROR: Expect num_rect = " << extDirtyRect_expectation.NumRect << ", but real num_rect = " << ((mfxExtDirtyRect*)extDirtyRect)->NumRect << "!\n";
+        }
+
+        if (m_initialized) {
+            Close();
+        }
 
         TS_END;
         return 0;
