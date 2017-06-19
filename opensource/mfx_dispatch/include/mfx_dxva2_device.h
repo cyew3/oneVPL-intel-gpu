@@ -34,9 +34,7 @@ File Name: mfx_dxva2_device.h
 #if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
 
-#if !defined( WIN_TRESHOLD_MOBILE )
 #define MFX_D3D9_ENABLED
-#endif // !defined( WIN_TRESHOLD_MOBILE )
 
 #endif // #if defined(_WIN32) || defined(_WIN64)
 
