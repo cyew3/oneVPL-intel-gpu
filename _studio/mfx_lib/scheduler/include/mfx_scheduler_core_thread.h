@@ -21,7 +21,8 @@ class mfxSchedulerCore;
 struct MFX_SCHEDULER_THREAD_CONTEXT
 {
     MFX_SCHEDULER_THREAD_CONTEXT()
-      : pSchedulerCore(NULL)
+      : state(State::Waiting)
+      , pSchedulerCore(NULL)
       , threadNum(0)
       , threadHandle()
       , workTime(0)
@@ -31,6 +32,12 @@ struct MFX_SCHEDULER_THREAD_CONTEXT
         vm_cond_set_invalid(&taskAdded);
     }
 
+    enum State {
+        Waiting, // thread is waiting for incoming tasks
+        Running  // thread is executing a task
+    };
+
+    State state;                      // thread state, waiting or running
     mfxSchedulerCore *pSchedulerCore; // pointer to the owning core
     mfxU32 threadNum;                 // thread number assigned by the core
     vm_thread threadHandle;           // thread handle

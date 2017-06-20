@@ -120,12 +120,17 @@ void mfxSchedulerCore::ThreadProc(MFX_SCHEDULER_THREAD_CONTEXT *pContext)
     // main working cycle for threads
     while (false == m_bQuit)
     {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "thread_proc");
+
         MFX_CALL_INFO call = {};
         mfxStatus mfxRes;
+
+        pContext->state = MFX_SCHEDULER_THREAD_CONTEXT::Waiting;
 
         mfxRes = GetTask(call, previousTaskHandle, threadNum);
         if (MFX_ERR_NONE == mfxRes)
         {
+            pContext->state = MFX_SCHEDULER_THREAD_CONTEXT::Running;
             vm_mutex_unlock(&m_guard);
             {
                 // perform asynchronous operation
@@ -202,7 +207,7 @@ void mfxSchedulerCore::WakeupThreadProc()
 
             //MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "HW Event");
             IncrementHWEventCounter();
-            WakeUpThreads((mfxU32) MFX_INVALID_THREAD_ID, MFX_SCHEDULER_HW_BUFFER_COMPLETED);
+            WakeUpThreads(1,1);
         }
     }
 }

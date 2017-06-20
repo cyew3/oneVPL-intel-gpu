@@ -72,6 +72,11 @@ void MFX_SCHEDULER_TASK::OnDependencyResolved(mfxStatus result)
         ReleaseResources();
 
         CompleteTask(MFX_ERR_ABORTED);
+    } else {
+        // Notify the scheduler that task got resolved dependencies.
+        // Scheduler will reevaluate whether it needs to wake up threads to
+        // handle this task.
+        m_pSchedulerCore->OnDependencyResolved(this);
     }
 
     // call the parent's method

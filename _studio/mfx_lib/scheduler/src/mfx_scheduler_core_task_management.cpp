@@ -265,6 +265,43 @@ mfxU32 GetFreeThreadNumber(MFX_THREAD_ASSIGNMENT &occupancyInfo,
 
 } // namespace
 
+bool mfxSchedulerCore::IsReadyToRun(MFX_SCHEDULER_TASK *pTask)
+{
+    // task is not ready to run (ro should not be run)
+    // if task is already done
+    if (MFX_TASK_NEED_CONTINUE != pTask->curStatus) {
+        return false;
+    }
+    // or dependencies are not resolved
+    if (false == pTask->IsDependenciesResolved()) {
+        return false;
+    }
+    // or there is no proper thread number
+    if (MFX_INVALID_THREAD_NUMBER == GetFreeThreadNumber(*(pTask->param.pThreadAssignment), pTask)) {
+        return false;
+    }
+    // or task is still waiting
+    if (pTask->param.bWaiting) {
+        // prevent entering more than 1 thread in 'waiting' task,
+        // let the thread inspect other tasks.
+        if (pTask->param.occupancy) {
+            return false;
+        } else {
+            // check the 'waiting' time period
+            // calculate the period elapsed since the last 'need-waiting' call
+            mfxU64 time = GetHighPerformanceCounter() - pTask->param.timing.timeLastEnter;
+            if (m_timeWaitPeriod > time) {
+                const mfxU64 hwCounter = GetHWEventCounter();
+
+                if (hwCounter == pTask->param.timing.hwCounterLastEnter) {
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
+}
+
 mfxStatus mfxSchedulerCore::WrapUpTask(MFX_CALL_INFO &callInfo,
                                        MFX_SCHEDULER_TASK *pTask,
                                        const mfxU32 threadNum)
@@ -276,64 +313,22 @@ mfxStatus mfxSchedulerCore::WrapUpTask(MFX_CALL_INFO &callInfo,
     // Just do what need to do.
     //
 
-    //
-    // check basic conditions
-    //
-
-        // if task is done
-    if ((MFX_TASK_NEED_CONTINUE != pTask->curStatus) ||
-        // or dependencies are not resolved
-        (false == pTask->IsDependenciesResolved()))
-    {
-        return MFX_ERR_NOT_FOUND;
-    }
-        // or non-zero thread tries to get a dedicated (hardware) task
-    if ((MFX_TASK_DEDICATED & occupancyInfo.threadingPolicy) &&
-        (threadNum))
-    {
-        return MFX_ERR_NOT_FOUND;
-    }
-    callInfo.threadNum = GetFreeThreadNumber(occupancyInfo, pTask);
-        // or there is no proper thread number
-    if (MFX_INVALID_THREAD_NUMBER == callInfo.threadNum)
-    {
+    if (!IsReadyToRun(pTask)) {
         return MFX_ERR_NOT_FOUND;
     }
 
-    callInfo.callNum = pTask->param.numberOfCalls;
-
-    // is the task waiting for something ?
-    if (pTask->param.bWaiting)
-    {
-        // prevent entering more than 1 thread in 'waiting' task,
-        // let the thread inspect other tasks.
-        if (pTask->param.occupancy)
-        {
-            return MFX_ERR_NOT_FOUND;
-        }
-        // check the 'waiting' time period
-        else
-        {
-            mfxU64 time;
-
-            // calculate the period elapsed since the last 'need-waiting' call
-            time = m_currentTimeStamp - pTask->param.timing.timeLastEnter;
-            if (m_timeWaitPeriod > time)
-            {
-                const mfxU64 hwCounter = GetHWEventCounter();
-
-                if (hwCounter == pTask->param.timing.hwCounterLastEnter)
-                {
-                    return MFX_ERR_NOT_FOUND;
-                }
-            }
-        }
+    // non-zero thread tries to get a dedicated (hardware) task...
+    if (threadNum && (MFX_TASK_DEDICATED & occupancyInfo.threadingPolicy)) {
+        return MFX_ERR_NOT_FOUND;
     }
 
     //
     // everything is OK.
     // Update the task and return the parameters
     //
+
+    callInfo.threadNum = GetFreeThreadNumber(occupancyInfo, pTask);
+    callInfo.callNum = pTask->param.numberOfCalls;
 
     // update the scheduler
     m_numAssignedTasks[pTask->param.task.priority] += 1;
@@ -412,11 +407,23 @@ void mfxSchedulerCore::ResetWaitingTasks(const void *pOwner)
 
 } // void mfxSchedulerCore::ResetWaitingTasks(const void *pOwner)
 
+void mfxSchedulerCore::OnDependencyResolved(MFX_SCHEDULER_TASK *pTask)
+{
+    if (IsReadyToRun(pTask)) {
+        if (MFX_TASK_DEDICATED & pTask->param.task.threadingPolicy) {
+            m_DedicatedThreadsToWakeUp += pTask->param.task.entryPoint.requiredNumThreads;
+        } else {
+            m_RegularThreadsToWakeUp += pTask->param.task.entryPoint.requiredNumThreads;
+        }
+    }
+}
+
 void mfxSchedulerCore::MarkTaskCompleted(const MFX_CALL_INFO *pCallInfo,
                                          const mfxU32 threadNum)
 {
-    bool wakeUpThreads = false;
-    mfxU32 requiredNumThreads;
+    (void)pCallInfo;
+    (void)threadNum;
+
     bool taskReleased = false;
     mfxU32 nTraceTaskId = 0;
 
@@ -456,12 +463,13 @@ void mfxSchedulerCore::MarkTaskCompleted(const MFX_CALL_INFO *pCallInfo,
     }
     occupancyInfo.taskOccupancy -= (0 == pTask->param.occupancy) ? (1) : (0);
 
-    // update the number of available tasks
-    if ((MFX_TASK_NEED_CONTINUE == pTask->curStatus) &&
-        ((isFailed(pCallInfo->res) || MFX_TASK_DONE == pCallInfo->res)))
-    {
-        (MFX_TASK_DEDICATED & pTask->param.task.threadingPolicy) ? (m_numHwTasks -= 1) : (m_numSwTasks -= 1);
-    }
+    // Below we will notify dependent tasks that this task is done and
+    // scheduler will get notifications from dependent tasks that their
+    // dependencies are resolved. Upon these notifications scheduler will
+    // calculate how many threads we need to wakeup to handle dependent
+    // tasks.
+    m_DedicatedThreadsToWakeUp = 0;
+    m_RegularThreadsToWakeUp = 0;
 
     // try to not overwrite the newest status from other thread
     if (pTask->param.timing.timeLastCallProcessed < pCallInfo->timeStamp)
@@ -477,7 +485,6 @@ void mfxSchedulerCore::MarkTaskCompleted(const MFX_CALL_INFO *pCallInfo,
     else if ((MFX_TASK_DONE == pCallInfo->res) &&
                 (MFX_TASK_NEED_CONTINUE == pTask->curStatus))
     {
-        wakeUpThreads = true;
         pTask->curStatus = pCallInfo->res;
 
         // reset all waiting tasks with the given working object
@@ -495,8 +502,6 @@ void mfxSchedulerCore::MarkTaskCompleted(const MFX_CALL_INFO *pCallInfo,
     }
     else
     {
-        wakeUpThreads = true;
-
         // reset all waiting tasks with the given working object
         ResetWaitingTasks(pCallInfo->pTask->pOwner);
     }
@@ -593,8 +598,6 @@ void mfxSchedulerCore::MarkTaskCompleted(const MFX_CALL_INFO *pCallInfo,
             // release all allocated resources
             pTask->ReleaseResources();
 
-            // task is done. Wake up all threads.
-            wakeUpThreads = true;
             // task object becomes free
             taskReleased = true;
         }
@@ -632,12 +635,9 @@ void mfxSchedulerCore::MarkTaskCompleted(const MFX_CALL_INFO *pCallInfo,
     }
 #endif // defined(MFX_SCHEDULER_LOG)
 
-    requiredNumThreads = GetNumResolvedSwTasks();
-
     // wake up additional threads for this task and tasks dependent
-    if (wakeUpThreads)
-    {
-        WakeUpNumThreads(requiredNumThreads, threadNum);
+    if (m_DedicatedThreadsToWakeUp || m_RegularThreadsToWakeUp) {
+        WakeUpThreads(m_DedicatedThreadsToWakeUp, m_RegularThreadsToWakeUp);
     }
 
     // wake up external threads waiting for a free task object
@@ -652,8 +652,9 @@ void mfxSchedulerCore::MarkTaskCompleted(const MFX_CALL_INFO *pCallInfo,
         MFX_LTRACE_1(MFX_TRACE_LEVEL_SCHED, "^Completed^", "%d", nTraceTaskId);
     }
 
-} // void mfxSchedulerCore::MarkTaskCompleted(mfxTaskHandle handle,
-                // update dependencies produced from the dependency table
+}
+
+// update dependencies produced from the dependency table
 void mfxSchedulerCore::ResolveDependencyTable(MFX_SCHEDULER_TASK *pTask)
 {
     mfxU32 i;
@@ -666,31 +667,4 @@ void mfxSchedulerCore::ResolveDependencyTable(MFX_SCHEDULER_TASK *pTask)
             m_pDependencyTable[idx].mfxRes = pTask->curStatus;
         }
     }
-}
-
-mfxU32 mfxSchedulerCore::GetNumResolvedSwTasks(void) const
-{
-    mfxU32 numResolvedTasks = 0;
-
-    mfxU32 priority;
-    for (priority = 0; priority < MFX_PRIORITY_NUMBER; priority += 1)
-    {
-        MFX_SCHEDULER_TASK *pTask = m_pTasks[priority][MFX_TYPE_SOFTWARE];
-
-        // run over the tasks with particular priority
-        while (pTask)
-        {
-            // if a task has not been done yet
-            if ((MFX_TASK_NEED_CONTINUE == pTask->curStatus) &&
-            // and dependencies are resolved
-                (true == pTask->IsDependenciesResolved()))
-            {
-                numResolvedTasks++;
-            }
-
-            pTask = pTask->pNext;
-        }
-    }
-
-    return numResolvedTasks;
 }
