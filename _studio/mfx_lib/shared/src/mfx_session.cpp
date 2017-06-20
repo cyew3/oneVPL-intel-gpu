@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -997,7 +997,38 @@ mfxStatus _mfxSession_1_10::InitEx(mfxInitParam& par)
 #endif
         }
         else
+        {
+            const wchar_t* d3d9dllname = L"d3d9.dll";
+            DWORD prevErrorMode = 0;
+            // set the silent error mode
+            #if (_WIN32_WINNT >= 0x0600) && !(__GNUC__)
+            SetThreadErrorMode(SEM_FAILCRITICALERRORS, &prevErrorMode);
+            #else
+            prevErrorMode = SetErrorMode(SEM_FAILCRITICALERRORS);
+            #endif
+
+            // this is safety check for universal build for d3d9 aviability.
+            HMODULE hD3D9Lib = LoadLibraryExW(d3d9dllname, NULL, 0);
+
+            // set the previous error mode
+            #if (_WIN32_WINNT >= 0x0600) && !(__GNUC__)
+            SetThreadErrorMode(prevErrorMode, NULL);
+            #else
+            SetErrorMode(prevErrorMode);
+            #endif
+
+            if (hD3D9Lib == nullptr)
+            {
+                return MFX_ERR_UNSUPPORTED;
+            }
+            else
+            {
+                (void)FreeLibrary(hD3D9Lib);
+                hD3D9Lib = nullptr;
+            }
+
             m_pCORE.reset(FactoryCORE::CreateCORE(MFX_HW_D3D9, m_adapterNum, maxNumThreads, this));
+        }
 
     }
 #elif defined(MFX_VA_LINUX)
