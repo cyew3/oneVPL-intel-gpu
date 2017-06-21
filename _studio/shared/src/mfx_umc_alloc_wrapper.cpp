@@ -458,6 +458,7 @@ UMC::Status mfx_UMC_FrameAllocator::Alloc(UMC::FrameMemID *pNewMemID, const UMC:
     case UMC::Y210:
     case UMC::Y216:
     case UMC::Y410:
+    case UMC::P016:
     case UMC::Y416:
         break;
     default:

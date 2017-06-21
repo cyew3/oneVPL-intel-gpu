@@ -65,11 +65,18 @@ mfxStatus CheckFrameInfoCommon(mfxFrameInfo  *info, mfxU32 /* codecId */)
     case MFX_FOURCC_NV16:
     case MFX_FOURCC_P210:
     case MFX_FOURCC_AYUV:
+
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     case MFX_FOURCC_Y210:
-    case MFX_FOURCC_Y216:
     case MFX_FOURCC_Y410:
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+    case MFX_FOURCC_P016:
+    case MFX_FOURCC_Y216:
+    case MFX_FOURCC_Y416:
+#endif //PRE_SI_TARGET_PLATFORM_GEN12
+
 #if defined(_WIN32) || defined(_WIN64)
     case DXGI_FORMAT_AYUV:
 #endif
@@ -84,12 +91,20 @@ mfxStatus CheckFrameInfoCommon(mfxFrameInfo  *info, mfxU32 /* codecId */)
         {
         case MFX_FOURCC_P010:
         case MFX_FOURCC_P210:
+
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
         case MFX_FOURCC_Y210:
-        case MFX_FOURCC_Y216:
         case MFX_FOURCC_Y410:
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+        case MFX_FOURCC_P016:
+        case MFX_FOURCC_Y216:
+        case MFX_FOURCC_Y416:
+#endif //PRE_SI_TARGET_PLATFORM_GEN12
+
             break;
+
         default:
             return MFX_ERR_INVALID_VIDEO_PARAM;
         }
