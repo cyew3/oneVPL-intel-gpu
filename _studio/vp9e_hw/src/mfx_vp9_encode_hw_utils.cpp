@@ -344,14 +344,6 @@ mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
         // context switching isn't supported by driver now. So refresh_frame_context is disabled for temporal scalability
         frameParam.refreshFrameContext = par.m_numLayers ? 0 : 1;
     }
-#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
-    if (platform.CodeName == MFX_PLATFORM_ICELAKE)
-    {
-        frameParam.refreshFrameContext = 0; // refresh_frame_context is disabled by default because of ICL driver/HW limitation.
-    }
-#else //PRE_SI_TARGET_PLATFORM_GEN11
-    platform;
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
 
     frameParam.allowHighPrecisionMV = 1;
 
