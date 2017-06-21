@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
 
 File Name: vpp_query.cpp
 \* ****************************************************************************** */
@@ -184,13 +184,19 @@ namespace vpp_query
             { MFX_PAR, &tsStruct::mfxVideoParam.Protected, 0 }
         }
         },
-
+#if defined WIN32 || WIN64
         {/*13*/ STANDART, MFX_ERR_NONE,
         {
             { MFX_PAR, &tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_PAVP }
         }
         },
-
+#else
+        {/*13*/ STANDART, MFX_ERR_UNSUPPORTED,
+        {
+            { MFX_PAR, &tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_PAVP }
+        }
+        },
+#endif
         {/*14*/ IN_PARAM_ZERO, MFX_ERR_NONE},
 
         {/*15*/ STANDART, MFX_ERR_UNSUPPORTED,
@@ -293,7 +299,6 @@ namespace vpp_query
         MFXInit();
         auto& tc = test_case[id];
         mfxSession work_ses = m_session;
-        mfxVideoParam par_out = {0};
 
         SETPARS(&m_par, MFX_PAR);
         if(tc.mode == MODE::SESSION_NULL) {
@@ -309,7 +314,7 @@ namespace vpp_query
         }
 
         g_tsStatus.expect(tc.expected_sts);
-        Query(work_ses, m_pPar, &par_out);
+        Query(work_ses, m_pPar, m_pParOut);
         TS_END;
         return 0;
     }
