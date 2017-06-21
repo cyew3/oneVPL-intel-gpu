@@ -91,7 +91,7 @@ typedef struct tagENCODE_CAPS_VP9
 
     class DriverEncoder;
 
-    mfxStatus QueryHwCaps(mfxCoreInterface * pCore, ENCODE_CAPS_VP9 & caps, GUID guid);
+    mfxStatus QueryCapsAndPlatform(mfxCoreInterface * pCore, ENCODE_CAPS_VP9 & caps, mfxPlatform & platform, GUID guid);
 
     DriverEncoder* CreatePlatformVp9Encoder(mfxCoreInterface * pCore);
 
@@ -135,6 +135,10 @@ typedef struct tagENCODE_CAPS_VP9
         virtual
         mfxStatus QueryEncodeCaps(
             ENCODE_CAPS_VP9 & caps) = 0;
+
+        virtual
+        mfxStatus QueryPlatform(
+            mfxPlatform& platform) = 0;
 
         virtual
         mfxStatus QueryStatus(

@@ -26,9 +26,15 @@ mfxStatus SetSupportedParameters(mfxVideoParam & par);
 
 mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps);
 
-mfxStatus CheckParametersAndSetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps);
+mfxStatus CheckParametersAndSetDefaults(
+    VP9MfxVideoParam &par,
+    ENCODE_CAPS_VP9 const &caps,
+    mfxPlatform const & platform);
 
-mfxStatus SetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps);
+mfxStatus SetDefaults(
+    VP9MfxVideoParam &par,
+    ENCODE_CAPS_VP9 const &caps,
+    mfxPlatform const & platform);
 
 void InheritDefaults(VP9MfxVideoParam& defaultsDst, VP9MfxVideoParam const & defaultsSrc);
 

@@ -70,6 +70,10 @@ public:
         ENCODE_CAPS_VP9& caps);
 
     virtual
+    mfxStatus QueryPlatform(
+        mfxPlatform& platform);
+
+    virtual
     mfxStatus QueryStatus(
         Task & task);
 
@@ -93,6 +97,7 @@ private:
 
     mfxCoreInterface*  m_pmfxCore;
     ENCODE_CAPS_VP9    m_caps;
+    mfxPlatform        m_platform;
 
     ENCODE_SET_SEQUENCE_PARAMETERS_VP9 m_sps;
     ENCODE_SET_PICTURE_PARAMETERS_VP9  m_pps;

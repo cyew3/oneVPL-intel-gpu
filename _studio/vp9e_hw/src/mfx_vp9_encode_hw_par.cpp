@@ -1475,7 +1475,10 @@ void SetDefailtsForProfileAndFrameInfo(VP9MfxVideoParam& par)
 #define DEFAULT_GOP_SIZE 0xffff
 #define DEFAULT_FRAME_RATE 30
 
-mfxStatus SetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
+mfxStatus SetDefaults(
+    VP9MfxVideoParam &par,
+    ENCODE_CAPS_VP9 const &caps,
+    mfxPlatform const & platform)
 {
     SetDefault(par.AsyncDepth, GetDefaultAsyncDepth(par));
 
@@ -1520,7 +1523,20 @@ mfxStatus SetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
     if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
         caps.AutoSegmentationSupport && !AllMandatorySegMapParams(seg))
     {
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+        if (platform.CodeName == MFX_PLATFORM_ICELAKE)
+        {
+            // workaround for issues with auto segmentation for ICL platform
+            SetDefault(opt2.MBBRC, MFX_CODINGOPTION_OFF);
+        }
+        else
+        {
+            SetDefault(opt2.MBBRC, MFX_CODINGOPTION_ON);
+        }
+#else //PRE_SI_TARGET_PLATFORM_GEN11
         SetDefault(opt2.MBBRC, MFX_CODINGOPTION_ON);
+        platform;
+#endif //PRE_SI_TARGET_PLATFORM_GEN11
     }
     else
     {
@@ -1559,7 +1575,10 @@ mfxStatus SetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
     return MFX_ERR_NONE;
 }
 
-mfxStatus CheckParametersAndSetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
+mfxStatus CheckParametersAndSetDefaults(
+    VP9MfxVideoParam &par,
+    ENCODE_CAPS_VP9 const &caps,
+    mfxPlatform const & platform)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
@@ -1663,7 +1682,7 @@ mfxStatus CheckParametersAndSetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 c
     }
 
     // set defaults for parameters not defined by application
-    sts = SetDefaults(par, caps);
+    sts = SetDefaults(par, caps, platform);
     MFX_CHECK(sts >= 0, sts);
 
     // during parameters validation we worked with internal parameter versions

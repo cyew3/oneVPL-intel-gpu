@@ -555,7 +555,7 @@ template <typename T> mfxStatus RemoveExtBuffer(T & par, mfxU32 id)
                               Task const & task,
                               mfxU8 frameType,
                               VP9FrameLevelParam &frameParam,
-                              mfxCoreInterface const * pCore);
+                              mfxPlatform const & platform);
 
     mfxStatus InitVp9SeqLevelParam(VP9MfxVideoParam const &video, VP9SeqLevelParam &param);
 

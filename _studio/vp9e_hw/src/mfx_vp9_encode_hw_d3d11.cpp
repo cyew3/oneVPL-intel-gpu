@@ -47,6 +47,7 @@ D3D11Encoder::D3D11Encoder()
     : m_guid()
     , m_pmfxCore(NULL)
     , m_caps()
+    , m_platform()
     , m_sps()
     , m_pps()
     , m_seg()
@@ -173,6 +174,11 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
         //MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
         HardcodeCaps(m_caps, pCore);
     }
+
+    // [5] Query HW platform
+    Zero(m_platform);
+    sts = pCore->QueryPlatform(pCore->pthis, &m_platform);
+    MFX_CHECK_STS(sts);
 
     VP9_LOG("\n (VP9_LOG) D3D11Encoder::CreateAuxilliaryDevice -");
     return MFX_ERR_NONE;
@@ -344,6 +350,13 @@ mfxStatus D3D11Encoder::QueryEncodeCaps(ENCODE_CAPS_VP9& caps)
     return MFX_ERR_NONE;
 
 } // mfxStatus D3D11Encoder::QueryEncodeCaps(ENCODE_CAPS& caps)
+
+mfxStatus D3D11Encoder::QueryPlatform(mfxPlatform& platform)
+{
+    platform = m_platform;
+
+    return MFX_ERR_NONE;
+} // mfxStatus D3D11Encoder::QueryPlatform(mfxPlatform& platform)
 
 mfxStatus D3D11Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT type)
 {

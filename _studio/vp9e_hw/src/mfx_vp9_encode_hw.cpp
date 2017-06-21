@@ -147,9 +147,9 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
         VP9MfxVideoParam toValidate = *in;
 
         // get HW caps from driver
-        ENCODE_CAPS_VP9 caps;
-        Zero(caps);
-        MFX_CHECK(MFX_ERR_NONE == QueryHwCaps(m_pmfxCore, caps, GetGuid(toValidate)), MFX_ERR_UNSUPPORTED);
+        ENCODE_CAPS_VP9 caps = {};
+        mfxPlatform platform = {};
+        MFX_CHECK(MFX_ERR_NONE == QueryCapsAndPlatform(m_pmfxCore, caps, platform, GetGuid(toValidate)), MFX_ERR_UNSUPPORTED);
 
         // validate input parameters
         sts = CheckParameters(toValidate, caps);
@@ -206,13 +206,13 @@ mfxStatus Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in, mfxF
     VP9MfxVideoParam toValidate = *par;
 
     // get HW caps from driver
-    ENCODE_CAPS_VP9 caps;
-    Zero(caps);
-    MFX_CHECK(MFX_ERR_NONE == QueryHwCaps(m_pmfxCore, caps, GetGuid(toValidate)), MFX_ERR_UNSUPPORTED);
+    ENCODE_CAPS_VP9 caps = {};
+    mfxPlatform platform = {};
+    MFX_CHECK(MFX_ERR_NONE == QueryCapsAndPlatform(m_pmfxCore, caps, platform, GetGuid(toValidate)), MFX_ERR_UNSUPPORTED);
 
     // get validated and properly initialized set of parameters
     CheckParameters(toValidate, caps);
-    SetDefaults(toValidate, caps);
+    SetDefaults(toValidate, caps, platform);
 
     // fill mfxFrameAllocRequest
     switch (par->IOPattern)
@@ -304,12 +304,12 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
     MFX_CHECK(sts == MFX_ERR_NONE, MFX_ERR_UNSUPPORTED);
 
     ENCODE_CAPS_VP9 caps = {};
-    sts = m_ddi->QueryEncodeCaps(caps);
-    if (sts != MFX_ERR_NONE)
-        return MFX_ERR_UNSUPPORTED;
+    m_ddi->QueryEncodeCaps(caps);
+    mfxPlatform platform = {};
+    m_ddi->QueryPlatform(platform);
 
     // get validated and properly initialized set of parameters for encoding
-    checkSts = CheckParametersAndSetDefaults(m_video, caps);
+    checkSts = CheckParametersAndSetDefaults(m_video, caps, platform);
     MFX_CHECK(checkSts >= 0, checkSts);
 
     // save WxH from Init to check resolution change in Reset
@@ -435,17 +435,15 @@ mfxStatus Plugin::Reset(mfxVideoParam *par)
     VP9MfxVideoParam parAfterReset = *par;
 
     ENCODE_CAPS_VP9 caps = {};
-    sts = m_ddi->QueryEncodeCaps(caps);
-    if (sts != MFX_ERR_NONE)
-    {
-        return MFX_ERR_UNSUPPORTED;
-    }
+    m_ddi->QueryEncodeCaps(caps);
+    mfxPlatform platform = {};
+    m_ddi->QueryPlatform(platform);
 
     InheritDefaults(parAfterReset, parBeforeReset);
     parAfterReset.CalculateInternalParams();
 
     // get validated and properly initialized set of parameters for encoding
-    checkSts = CheckParametersAndSetDefaults(parAfterReset, caps);
+    checkSts = CheckParametersAndSetDefaults(parAfterReset, caps, platform);
     MFX_CHECK(checkSts >= 0, checkSts);
 
     // check that no re-allocation is required
@@ -718,7 +716,9 @@ mfxStatus Plugin::ConfigTask(Task &task)
 
     task.m_frameOrderInRefStructure = m_frameOrderInRefStructure;
 
-    mfxStatus sts = SetFramesParams(curMfxPar, task, frameType, frameParam, m_pmfxCore);
+    mfxPlatform platform = {};
+    m_ddi->QueryPlatform(platform);
+    mfxStatus sts = SetFramesParams(curMfxPar, task, frameType, frameParam, platform);
 
     task.m_pRecFrame = 0;
     task.m_pOutBs = 0;

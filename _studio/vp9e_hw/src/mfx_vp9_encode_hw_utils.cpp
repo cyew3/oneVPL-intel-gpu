@@ -247,7 +247,7 @@ mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
                           Task const & task,
                           mfxU8 frameType,
                           VP9FrameLevelParam &frameParam,
-                          mfxCoreInterface const * pCore)
+                          mfxPlatform const & platform)
 {
     Zero(frameParam);
     frameParam.frameType = frameType;
@@ -322,6 +322,16 @@ mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
         // in BRC mode driver may update LF level and mode/ref LF deltas
         frameParam.modeRefDeltaEnabled = 1;
         frameParam.modeRefDeltaUpdate = 1;
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+        if (platform.CodeName == MFX_PLATFORM_ICELAKE && par.mfx.CodecProfile > MFX_PROFILE_VP9_0)
+        {
+            // REXT is being encoded. Need to disable mode and ref LF deltas to workaround driver issue.
+            frameParam.modeRefDeltaEnabled = 0;
+            frameParam.modeRefDeltaUpdate = 0;
+        }
+#else //PRE_SI_TARGET_PLATFORM_GEN11
+        platform;
+#endif //PRE_SI_TARGET_PLATFORM_GEN11
     }
 
     mfxExtCodingOptionDDI const & extDdi = GetExtBufferRef(par);
@@ -335,14 +345,12 @@ mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
         frameParam.refreshFrameContext = par.m_numLayers ? 0 : 1;
     }
 #if defined (PRE_SI_TARGET_PLATFORM_GEN11)
-    mfxPlatform platform;
-    pCore->QueryPlatform(pCore->pthis, &platform);
     if (platform.CodeName == MFX_PLATFORM_ICELAKE)
     {
         frameParam.refreshFrameContext = 0; // refresh_frame_context is disabled by default because of ICL driver/HW limitation.
     }
 #else //PRE_SI_TARGET_PLATFORM_GEN11
-    pCore;
+    platform;
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
 
     frameParam.allowHighPrecisionMV = 1;

@@ -467,6 +467,7 @@ D3D9Encoder::D3D9Encoder()
     : m_guid()
     , m_pmfxCore(NULL)
     , m_caps()
+    , m_platform()
     , m_sps()
     , m_pps()
     , m_seg()
@@ -584,6 +585,10 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
 
     m_auxDevice = auxDevice;
 
+    Zero(m_platform);
+    sts = pCore->QueryPlatform(pCore->pthis, &m_platform);
+    MFX_CHECK_STS(sts);
+
     VP9_LOG("\n (VP9_LOG) D3D9Encoder::CreateAuxilliaryDevice -");
     return MFX_ERR_NONE;
 } // mfxStatus D3D9Encoder::CreateAuxilliaryDevice(VideoCORE* core, GUID guid, mfxU32 width, mfxU32 height)
@@ -682,6 +687,13 @@ mfxStatus D3D9Encoder::QueryEncodeCaps(ENCODE_CAPS_VP9& caps)
     return MFX_ERR_NONE;
 
 } // mfxStatus D3D9Encoder::QueryEncodeCaps(ENCODE_CAPS& caps)
+
+mfxStatus D3D9Encoder::QueryPlatform(mfxPlatform& platform)
+{
+    platform = m_platform;
+
+    return MFX_ERR_NONE;
+} // mfxStatus D3D9Encoder::QueryPlatform(mfxPlatform& platform)
 
 mfxStatus D3D9Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT type)
 {
