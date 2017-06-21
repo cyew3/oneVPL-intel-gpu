@@ -1573,6 +1573,9 @@ mfxStatus MFXCamera_Plugin::VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFram
     m_core->IncreaseReference(&surface_out->Data);
     if(m_mfxVideoParam.IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY)
     {
+        if (surface_in->Info.FourCC != MFX_FOURCC_R16 && surface_in->Info.FourCC != MFX_FOURCC_ARGB16 && surface_in->Info.FourCC != MFX_FOURCC_ABGR16)
+            return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+
         if(MFX_FOURCC_R16 == surface_in->Info.FourCC)
         {
             if(!surface_in->Data.Y16)
@@ -1622,8 +1625,6 @@ mfxStatus MFXCamera_Plugin::VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFram
     if (surface_in->Info.CropH + surface_in->Info.CropY > surface_in->Info.Height)
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
     if (surface_out->Info.CropH + surface_out->Info.CropY > surface_out->Info.Height)
-        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-    if(surface_in->Info.FourCC != MFX_FOURCC_R16 && surface_in->Info.FourCC != MFX_FOURCC_ARGB16 && surface_in->Info.FourCC != MFX_FOURCC_ABGR16)
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
     if(surface_out->Info.FourCC != MFX_FOURCC_RGB4 &&
        surface_out->Info.FourCC != MFX_FOURCC_ARGB16 &&
