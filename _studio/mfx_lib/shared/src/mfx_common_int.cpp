@@ -112,7 +112,15 @@ mfxStatus CheckFrameInfoCommon(mfxFrameInfo  *info, mfxU32 /* codecId */)
 
     if (info->Shift)
     {
-        if (info->FourCC != MFX_FOURCC_P010 && info->FourCC != MFX_FOURCC_P210)
+        if (   info->FourCC != MFX_FOURCC_P010 && info->FourCC != MFX_FOURCC_P210
+#ifdef PRE_SI_TARGET_PLATFORM_GEN11
+            && info->FourCC != MFX_FOURCC_Y210
+#endif
+#ifdef PRE_SI_TARGET_PLATFORM_GEN12
+            && info->FourCC != MFX_FOURCC_P016 && info->FourCC != MFX_FOURCC_Y216
+            && info->FourCC != MFX_FOURCC_Y416
+#endif
+            )
             return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
@@ -324,7 +332,7 @@ mfxStatus CheckVideoParamCommon(mfxVideoParam *in, eMFXHWType type)
             return MFX_ERR_INVALID_VIDEO_PARAM;
 #else
         return MFX_ERR_INVALID_VIDEO_PARAM;
-#endif        
+#endif
     }
 
     switch (in->mfx.CodecId)
@@ -567,11 +575,29 @@ mfxStatus CheckFrameData(const mfxFrameSurface1 *surface)
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
             break;
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+        case MFX_FOURCC_Y210:
+            if (!surface->Data.Y16 || !surface->Data.U16 || !surface->Data.V16)
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+            break;
         case MFX_FOURCC_Y410:
-            if (!surface->Data.Y || !surface->Data.Y410)
+            if (!surface->Data.Y410)
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
             break;
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+        case MFX_FOURCC_P016:
+            if (!surface->Data.Y || !surface->Data.U || !surface->Data.V)
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+            break;
+        case MFX_FOURCC_Y216:
+            if (!surface->Data.Y16 || !surface->Data.U16 || !surface->Data.V16)
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+            break;
+        case MFX_FOURCC_Y416:
+            if (!surface->Data.A || !surface->Data.V16 || !surface->Data.Y16 || !surface->Data.U16)
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+            break;
+#endif //PRE_SI_TARGET_PLATFORM_GEN12
         case MFX_FOURCC_P8:
             if (!surface->Data.Y)
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
