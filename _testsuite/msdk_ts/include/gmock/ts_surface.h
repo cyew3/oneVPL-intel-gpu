@@ -460,6 +460,16 @@ public:
     }
 };
 
+class tsSurfaceCRC32 : public tsSurfaceProcessor
+{
+    Ipp32u m_crc;
+public:
+    tsSurfaceCRC32() : m_crc(0) {}
+    ~tsSurfaceCRC32() {};
+    inline Ipp32u GetCRC() { return m_crc; }
+    mfxStatus ProcessSurface(mfxFrameSurface1& s);
+};
+
 mfxF64 PSNR(tsFrame& ref, tsFrame& src, mfxU32 id);
 mfxF64 SSIM(tsFrame& ref, tsFrame& src, mfxU32 id);
 

@@ -347,9 +347,9 @@ tsFrame& tsFrame::operator=(tsFrame& src)
     mfxU32 maxw = TS_MIN(m_info.Width, src.m_info.Width);
     mfxU32 maxh = TS_MIN(m_info.Height, src.m_info.Height);
 
-    if(    m_info.CropW 
+    if(    m_info.CropW
         && m_info.CropH
-        && src.m_info.CropW 
+        && src.m_info.CropW
         && src.m_info.CropH)
     {
         maxw = TS_MIN(m_info.CropW, src.m_info.CropW);
@@ -449,7 +449,7 @@ tsFrame& tsFrame::operator=(tsFrame& src)
     return *this;
 }
 
-tsSurfaceProcessor::tsSurfaceProcessor(mfxU32 n_frames) 
+tsSurfaceProcessor::tsSurfaceProcessor(mfxU32 n_frames)
     : m_max(n_frames)
     , m_cur(0)
     , m_eos(false)
@@ -491,7 +491,7 @@ mfxFrameSurface1* tsSurfaceProcessor::ProcessSurface(mfxFrameSurface1* ps, mfxFr
     return ps;
 }
 
-tsNoiseFiller::tsNoiseFiller(mfxU32 n_frames) 
+tsNoiseFiller::tsNoiseFiller(mfxU32 n_frames)
     : tsSurfaceProcessor(n_frames)
 {
 }
@@ -591,10 +591,10 @@ void tsRawReader::Init(mfxFrameInfo fi)
     {
     case MFX_CHROMAFORMAT_YUV400 : m_fsz = fsz; break;
     case MFX_CHROMAFORMAT_YUV420 : m_fsz = fsz * 3 / 2; break;
-    case MFX_CHROMAFORMAT_YUV422 : 
+    case MFX_CHROMAFORMAT_YUV422 :
     case MFX_CHROMAFORMAT_YUV422V: m_fsz = fsz * 2; break;
     case MFX_CHROMAFORMAT_YUV444 : m_fsz = fsz * 4; break;
-    case MFX_CHROMAFORMAT_YUV411 : 
+    case MFX_CHROMAFORMAT_YUV411 :
     default: g_tsStatus.check(MFX_ERR_UNSUPPORTED);
     }
 
@@ -767,7 +767,7 @@ mfxStatus tsSurfaceWriter::ProcessSurface(mfxFrameSurface1& s)
         ptr = TS_MIN( TS_MIN(s.Data.R, s.Data.G), s.Data.B );
         ptr = ptr + s.Info.CropX + s.Info.CropY * pitch;
 
-        for(mfxU32 i = s.Info.CropY; i < s.Info.CropH; i++) 
+        for(mfxU32 i = s.Info.CropY; i < s.Info.CropH; i++)
         {
             if (fwrite(ptr + i * pitch, 1, count, m_file) != count)
                 return MFX_ERR_UNKNOWN;
@@ -837,6 +837,69 @@ mfxStatus tsSurfaceWriter::ProcessSurface(mfxFrameSurface1& s)
     else
     {
         return MFX_ERR_UNSUPPORTED;
+    }
+
+    return MFX_ERR_NONE;
+}
+
+
+mfxStatus tsSurfaceCRC32::ProcessSurface(mfxFrameSurface1& s)
+{
+    mfxU32 pitch = (s.Data.PitchHigh << 16) + s.Data.PitchLow;
+    size_t count = s.Info.CropW;
+
+    switch (s.Info.FourCC) {
+        case MFX_FOURCC_NV12:
+        {
+            for(mfxU16 i = s.Info.CropY; i < (s.Info.CropH + s.Info.CropY); i ++)
+            {
+                IppStatus sts = ippsCRC32_8u(s.Data.Y + pitch * i + s.Info.CropX, count, &m_crc);
+                if (sts != ippStsNoErr)
+                {
+                    g_tsLog << "ERROR: cannot calculate CRC32 IppStatus=" << sts << "\n";
+                    return MFX_ERR_ABORTED;
+                }
+            }
+            for(mfxU16 i = (s.Info.CropY / 2); i < ((s.Info.CropH + s.Info.CropY) / 2); i ++)
+            {
+                IppStatus sts = ippsCRC32_8u(s.Data.UV + pitch * i + s.Info.CropX, count, &m_crc);
+                if (sts != ippStsNoErr)
+                {
+                    g_tsLog << "ERROR: cannot calculate CRC32 IppStatus=" << sts << "\n";
+                    return MFX_ERR_ABORTED;
+                }
+            }
+            break;
+        }
+        case MFX_FOURCC_RGB4:
+        {
+            count *= 4;
+            mfxU8* ptr = 0;
+            ptr = TS_MIN( TS_MIN(s.Data.R, s.Data.G), s.Data.B );
+            ptr = ptr + s.Info.CropX + s.Info.CropY * pitch;
+
+            for(mfxU32 i = s.Info.CropY; i < s.Info.CropH; i++)
+            {
+                IppStatus sts = ippsCRC32_8u(ptr + i * pitch, count, &m_crc);
+                if (sts != ippStsNoErr)
+                {
+                    g_tsLog << "ERROR: cannot calculate CRC32 IppStatus=" << sts << "\n";
+                    return MFX_ERR_ABORTED;
+                }
+            }
+            break;
+        }
+        case MFX_FOURCC_YUY2:
+        case MFX_FOURCC_AYUV:
+        case MFX_FOURCC_P010:
+        case MFX_FOURCC_Y210:
+        case MFX_FOURCC_Y410:
+        {
+            g_tsLog << "ERROR: CRC calculation is not impelemented\n";
+            return MFX_ERR_ABORTED;
+        }
+        default:
+            return MFX_ERR_UNSUPPORTED;
     }
 
     return MFX_ERR_NONE;
@@ -966,7 +1029,7 @@ mfxF64 SSIM(tsFrame& ref, tsFrame& src, mfxU32 id)
             win_cnt++;                                                                        \
         }                                                                                     \
     }
-    
+
     if(ref.isYUV() && src.isYUV())
     {
         if( 0 != id )
