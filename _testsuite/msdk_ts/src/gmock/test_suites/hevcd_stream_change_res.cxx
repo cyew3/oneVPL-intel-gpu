@@ -82,7 +82,7 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_Y210, res_change_tag>::test_c
     {/* 1*/ {"hevc/422format_10bit/GENERAL_10b_422_RExt_Sony_1.bit"}, {"hevc/422format_10bit/Kimono1_704x576_24_422_10.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
     {/* 2*/ {"hevc/422format_10bit/Kimono1_704x576_24_422_10.265", 5}, {"hevc/422format_10bit/GENERAL_10b_422_RExt_Sony_1.bit", 5}},
     {/* 3*/ {"hevc/422format_10bit/Kimono1_704x576_24_422_10.265", 5}, {"hevc/422format_10bit/GENERAL_10b_422_RExt_Sony_1.bit", 5}, {"hevc/TSCTX_10bit_RExt_SHARP_1_converted_to_422_10.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
-    {/* 4*/ {"hevc/TSCTX_10bit_RExt_SHARP_1_converted_to_422_10.265", 5}, {"hevc/422format_10bit/Kimono1_704x576_24_422_10.265", 5}, {"hevc/422format_10bit/GENERAL_10b_422_RExt_Sony_1.bit", 5}},
+    {/* 4*/ {"hevc/422format_10bit/TSCTX_10bit_RExt_SHARP_1_converted_to_422_10.265", 5}, {"hevc/422format_10bit/Kimono1_704x576_24_422_10.265", 5}, {"hevc/422format_10bit/GENERAL_10b_422_RExt_Sony_1.bit", 5}},
     
 };
 template <>
@@ -95,8 +95,8 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_Y410, res_change_tag>::test_c
     {/* 0*/ {"hevc/444format_10bit/Kimono1_704x576_24_444_10.265"}, {"hevc/444format_10bit/GENERAL_10b_444_RExt_Sony_1.bit"}},
     {/* 1*/ {"hevc/444format_10bit/GENERAL_10b_444_RExt_Sony_1.bit"}, {"hevc/444format_10bit/Kimono1_704x576_24_444_10.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
     {/* 2*/ {"hevc/444format_10bit/Kimono1_704x576_24_444_10.265", 5}, {"hevc/444format_10bit/GENERAL_10b_444_RExt_Sony_1.bit", 5}},
-    {/* 3*/ {"hevc/444format_10bit/Kimono1_704x576_24_444_10.265", 5}, {"hevc/444format_10bit/GENERAL_10b_444_RExt_Sony_1.bit", 5}, {"hevc/TSCTX_10bit_RExt_SHARP_1.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
-    {/* 4*/ {"hevc/444format_10bit/TSCTX_10bit_RExt_SHARP_1.265", 5}, {"hevc/444format_10bit/Kimono1_704x576_24_444_10.265", 5}, {"hevc/444format_10bit/GENERAL_10b_444_RExt_Sony_1.bit", 5}},
+    {/* 3*/ {"hevc/444format_10bit/Kimono1_704x576_24_444_10.265", 5}, {"hevc/444format_10bit/GENERAL_10b_444_RExt_Sony_1.bit", 5}, {"hevc/444format_10bit/TSCTX_10bit_RExt_SHARP_1.bin", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
+    {/* 4*/ {"hevc/444format_10bit/TSCTX_10bit_RExt_SHARP_1.bin", 5}, {"hevc/444format_10bit/Kimono1_704x576_24_444_10.265", 5}, {"hevc/444format_10bit/GENERAL_10b_444_RExt_Sony_1.bit", 5}},
 };
 template <>
 unsigned int const TestSuiteExt<MFX_FOURCC_Y410, res_change_tag>::n_cases = sizeof(TestSuiteExt<MFX_FOURCC_Y410, res_change_tag>::test_cases) / sizeof(TestSuite::tc_struct[max_num_ctrl]);
