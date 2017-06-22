@@ -963,6 +963,7 @@ mfxStatus VideoVPPBase::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam
                     {
                         // No specific checks for Opaque ext buffer at the moment.
                     }
+#if defined(_WIN32) || defined(_WIN64)
                     else if (MFX_EXTBUFF_MVC_SEQ_DESC == in->ExtParam[i]->BufferId)
                     {
                         mfxExtMVCSeqDesc* pHintMVC = NULL;
@@ -971,7 +972,7 @@ mfxStatus VideoVPPBase::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam
                         if (pHint)
                         {
                             pHintMVC = (mfxExtMVCSeqDesc*)pHint;
-                            if (pHintMVC->NumView == 0)
+                            if ((pHintMVC->NumView == 0) || !pHintMVC->View)
                             {
                                 mfxSts = MFX_ERR_UNDEFINED_BEHAVIOR;
                                 continue;
@@ -987,6 +988,7 @@ mfxStatus VideoVPPBase::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam
                             }
                         }
                     }
+#endif
                     else
                     {
                         out->ExtParam[i]->BufferId = 0;
