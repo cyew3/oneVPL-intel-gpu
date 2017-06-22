@@ -407,7 +407,7 @@ void InheritDefaults(VP9MfxVideoParam& defaultsDst, VP9MfxVideoParam const & def
         SetOrCopySupportedParams(pSegDst, pSegSrc);
     }
 
-    // inherit defaults from mfxExtVP9Segmentation
+    // inherit defaults from mfxExtVP9TemporalLayers
     mfxExtVP9TemporalLayers* pTLDst = GetExtBuffer(defaultsDst);
     mfxExtVP9TemporalLayers* pTLSrc = GetExtBuffer(defaultsSrc);
     SetOrCopySupportedParams(pTLDst, pTLSrc, !defaultsDst.m_tempLayersBufPassed);
@@ -443,7 +443,7 @@ mfxStatus CleanOutUnsupportedParameters(VP9MfxVideoParam &par)
     mfxExtVP9TemporalLayers &tlTmp = GetExtBufferRef(tmp);
     mfxExtVP9TemporalLayers &tlPar = GetExtBufferRef(par);
     SetOrCopySupportedParams(&tlPar, &tlTmp);
-    if (memcmp(&segPar, &segTmp, sizeof(mfxExtVP9TemporalLayers)))
+    if (memcmp(&tlPar, &tlTmp, sizeof(mfxExtVP9TemporalLayers)))
     {
         sts = MFX_ERR_UNSUPPORTED;
     }
