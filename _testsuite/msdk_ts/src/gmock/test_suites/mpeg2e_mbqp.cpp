@@ -1,3 +1,10 @@
+/* ****************************************************************************** *\
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2015-2017 Intel Corporation. All Rights Reserved.
+\* ****************************************************************************** */
 #include "ts_encoder.h"
 #include "ts_parser.h"
 #include "ts_struct.h"
@@ -367,7 +374,19 @@ int TestSuite::RunTest(unsigned int id)
     }
 
 #if defined(_WIN32)
-    Init(); 
+    if (!(tc.mode & RESET_ON))
+    {
+        Init();
+    }
+    else
+    {
+        g_tsStatus.expect(MFX_ERR_NONE);
+        Init();
+        g_tsStatus.expect(tc.sts);
+        mfxExtCodingOption3& co3 = m_par;
+        co3.EnableMBQP = MFX_CODINGOPTION_ON;
+        Reset();
+    }
     return 0;
 #else
     if (tc.mode & INIT)
