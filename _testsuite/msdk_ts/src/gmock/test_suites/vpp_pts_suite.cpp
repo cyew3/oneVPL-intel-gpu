@@ -246,11 +246,11 @@ namespace vpp_pts_suite
         m_use_memid = tc.memid;
 
         frame_allocator::AllocatorType al_type = frame_allocator::AllocatorType::SOFTWARE;
-        if(g_tsImpl == MFX_IMPL_HARDWARE) {
+        if(g_tsImpl & MFX_IMPL_HARDWARE) {
             al_type = frame_allocator::AllocatorType::HARDWARE;
             m_par.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY;
         }
-        if(g_tsImpl == MFX_IMPL_VIA_D3D11) {
+        if(g_tsImpl & MFX_IMPL_VIA_D3D11) {
             al_type = frame_allocator::AllocatorType::HARDWARE_DX11;
         }
 

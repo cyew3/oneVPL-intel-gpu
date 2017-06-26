@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
 
 File Name: vc1_sethandle_16.cpp
 \* ****************************************************************************** */
@@ -132,7 +132,7 @@ namespace vc1_sethandle_16
         mfxHDL hdl;
         mfxHandleType hdl_type = mfxHandleType::MFX_HANDLE_D3D9_DEVICE_MANAGER;
         frame_allocator::AllocatorType type = frame_allocator::AllocatorType::HARDWARE;
-        if(g_tsImpl == MFX_IMPL_VIA_D3D11) {
+        if(g_tsImpl & MFX_IMPL_VIA_D3D11) {
             type = frame_allocator::AllocatorType::HARDWARE_DX11;
             hdl_type = mfxHandleType::MFX_HANDLE_D3D11_DEVICE;
         }

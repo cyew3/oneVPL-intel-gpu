@@ -142,7 +142,7 @@ namespace multisession
         auto& tc = test_case[id];
         frame_allocator::AllocatorType al_type;
         if(g_tsImpl != MFX_IMPL_SOFTWARE) {
-            if(g_tsImpl == MFX_IMPL_VIA_D3D11){
+            if(g_tsImpl & MFX_IMPL_VIA_D3D11){
                 al_type = frame_allocator::AllocatorType::HARDWARE_DX11;
             } else {
                 al_type = frame_allocator::AllocatorType::HARDWARE;
