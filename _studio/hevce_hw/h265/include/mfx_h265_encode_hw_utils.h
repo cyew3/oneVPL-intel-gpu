@@ -216,14 +216,15 @@ enum
 
 enum
 {
-    INSERT_AUD      = 0x01,
-    INSERT_VPS      = 0x02,
-    INSERT_SPS      = 0x04,
-    INSERT_PPS      = 0x08,
-    INSERT_BPSEI    = 0x10,
-    INSERT_PTSEI    = 0x20,
-
-    INSERT_SEI = (INSERT_BPSEI | INSERT_PTSEI)
+    INSERT_AUD = 0x01,
+    INSERT_VPS = 0x02,
+    INSERT_SPS = 0x04,
+    INSERT_PPS = 0x08,
+    INSERT_BPSEI = 0x10,
+    INSERT_PTSEI = 0x20,
+    INSERT_DCVSEI = 0x40,
+    INSERT_LLISEI = 0x80,
+    INSERT_SEI = (INSERT_BPSEI | INSERT_PTSEI | INSERT_DCVSEI | INSERT_LLISEI)
 };
 
 inline bool IsOn(mfxU32 opt)
@@ -449,7 +450,11 @@ namespace ExtBuffer
          MFX_EXTBUFF_ENCODED_SLICES_INFO,
          MFX_EXTBUFF_MBQP,
          MFX_EXTBUFF_ENCODER_ROI,
-         MFX_EXTBUFF_DIRTY_RECTANGLES
+         MFX_EXTBUFF_DIRTY_RECTANGLES,
+#ifdef MFX_ENABLE_HEVCE_HDR_SEI
+         MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME,
+         MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO
+#endif
     };
 
     template<class T> struct ExtBufferMap {};
@@ -494,7 +499,10 @@ namespace ExtBuffer
 #if defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
         EXTBUF(mfxExtPredWeightTable,       MFX_EXTBUFF_PRED_WEIGHT_TABLE);
 #endif //defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
-
+#ifdef MFX_ENABLE_HEVCE_HDR_SEI
+        EXTBUF(mfxExtMasteringDisplayColourVolume, MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME);
+        EXTBUF(mfxExtContentLightLevelInfo, MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO);
+#endif
     #undef EXTBUF
 
     #define _CopyPar(dst, src, PAR) dst.PAR = src.PAR;
@@ -598,6 +606,7 @@ namespace ExtBuffer
     {
         _CopyPar1(MBPerSec);
     }
+
     #undef _CopyPar
     #undef _CopyPar1
     #undef _CopyStruct1
@@ -835,6 +844,10 @@ public:
         mfxExtEncodedSlicesInfo     SliceInfo;
         mfxExtEncoderROI            ROI;
         mfxExtDirtyRect             DirtyRect;
+#ifdef MFX_ENABLE_HEVCE_HDR_SEI
+        mfxExtMasteringDisplayColourVolume   DisplayColour;
+        mfxExtContentLightLevelInfo LightLevel;
+#endif
         mfxExtBuffer *              m_extParam[SIZE_OF_ARRAY(ExtBuffer::allowed_buffers)];
     } m_ext;
 

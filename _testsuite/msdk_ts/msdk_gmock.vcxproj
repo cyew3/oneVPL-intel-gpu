@@ -234,6 +234,7 @@
     <ClCompile Include="..\..\samples\sample_common\src\vm\thread_windows.cpp" />
     <ClCompile Include="..\..\samples\sample_common\src\vm\time.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_dirty_rect.cpp" />
+    <ClCompile Include="src\gmock\test_suites\hevce_sei_hdr.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_adaptivemaxframesize.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_lowdelay_brc.cpp" />
     <ClCompile Include="src\gmock\test_suites\avcd_bs_dataflag.cpp" />

@@ -82,6 +82,9 @@
 #undef MFX_ENABLE_AVCE_DIRTY_RECTANGLE
 #undef MFX_ENABLE_AVCE_MOVE_RECTANGLE
 
+//H265 feature
+#undef MFX_ENABLE_HEVCE_HDR_SEI
+
 // user plugin for decoder, encoder, and vpp
 #define MFX_ENABLE_USER_DECODE
 #define MFX_ENABLE_USER_ENCODE

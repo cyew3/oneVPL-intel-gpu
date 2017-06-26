@@ -919,6 +919,9 @@
     <ClCompile Include="src\gmock\test_suites\vp9e_temporal_scalability.cpp">
       <Filter>Source Files\test_suites\vp9e</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\hevce_sei_hdr.cpp">
+      <Filter>Source Files\test_suites\hevce</Filter>
+    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\hevce_sao.cpp">
       <Filter>Source Files\test_suites\hevce</Filter>
     </ClCompile>

@@ -204,7 +204,10 @@ public:
 
     static void PackSEIPayload(BitstreamWriter& bs, VUI const & vui, BufferingPeriodSEI const & bp);
     static void PackSEIPayload(BitstreamWriter& bs, VUI const & vui, PicTimingSEI const & pt);
-
+#ifdef MFX_ENABLE_HEVCE_HDR_SEI
+    static void PackSEIPayload(BitstreamWriter& bs, mfxExtMasteringDisplayColourVolume const & DisplayColour);
+    static void PackSEIPayload(BitstreamWriter& bs, mfxExtContentLightLevelInfo const & LightLevel);
+#endif
     static mfxStatus PackRBSP(mfxU8* dst, mfxU8* src, mfxU32& dst_size, mfxU32 src_size);
 
 

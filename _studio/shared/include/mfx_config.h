@@ -50,6 +50,7 @@
 
 //#define MFX_ENABLE_SVC_VIDEO_DECODE
 #define MFX_ENABLE_VPP_SVC
+#define MFX_ENABLE_HEVCE_HDR_SEI
 #endif // #ifndef OPEN_SOURCE
 
 #ifdef UMC_VA_LINUX

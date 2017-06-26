@@ -677,6 +677,10 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     ExtBuffer::Construct(par, m_ext.SliceInfo, m_ext.m_extParam, base.NumExtParam);
     ExtBuffer::Construct(par, m_ext.ROI, m_ext.m_extParam, base.NumExtParam);
     ExtBuffer::Construct(par, m_ext.DirtyRect, m_ext.m_extParam, base.NumExtParam);
+#ifdef MFX_ENABLE_HEVCE_HDR_SEI
+    ExtBuffer::Construct(par, m_ext.DisplayColour, m_ext.m_extParam, base.NumExtParam);
+    ExtBuffer::Construct(par, m_ext.LightLevel, m_ext.m_extParam, base.NumExtParam);
+#endif
 }
 
 mfxStatus MfxVideoParam::FillPar(mfxVideoParam& par, bool query)
@@ -715,7 +719,10 @@ mfxStatus MfxVideoParam::GetExtBuffers(mfxVideoParam& par, bool query)
 #ifdef MFX_ENABLE_HEVCE_DIRTY_RECT
     ExtBuffer::Set(par, m_ext.DirtyRect);
 #endif
-
+#ifdef MFX_ENABLE_HEVCE_HDR_SEI
+    ExtBuffer::Set(par, m_ext.DisplayColour);
+    ExtBuffer::Set(par, m_ext.LightLevel);
+#endif
     mfxExtCodingOptionSPSPPS * pSPSPPS = ExtBuffer::Get(par);
     if (pSPSPPS && !query)
     {
@@ -784,7 +791,10 @@ bool MfxVideoParam::CheckExtBufferParam()
 #if !defined(MFX_EXT_BRC_DISABLE)
     bUnsupported += ExtBuffer::CheckBufferParams(m_ext.extBRC, true);
 #endif
-
+#ifdef MFX_ENABLE_HEVCE_HDR_SEI
+    bUnsupported += ExtBuffer::CheckBufferParams(m_ext.DisplayColour, true);
+    bUnsupported += ExtBuffer::CheckBufferParams(m_ext.LightLevel, true);
+#endif
     return !!bUnsupported;
 }
 
@@ -3170,7 +3180,27 @@ void ConfigureTask(
 #else
     caps;
 #endif // MFX_ENABLE_HEVCE_ROI
+#ifdef MFX_ENABLE_HEVCE_HDR_SEI
+    mfxExtMasteringDisplayColourVolume* rtDisplayColour = ExtBuffer::Get(task.m_ctrl);
+    mfxExtMasteringDisplayColourVolume const * parDisplayColour = &par.m_ext.DisplayColour;
+    if (rtDisplayColour) {
+        task.m_insertHeaders |= INSERT_DCVSEI;
+    }
+    else if (parDisplayColour) {
+        if (parDisplayColour->InsertPayloadToggle == MFX_PAYLOAD_IDR && isIDR)
+            task.m_insertHeaders |= INSERT_DCVSEI;
+    }
 
+    mfxExtContentLightLevelInfo* rtLightLevel = ExtBuffer::Get(task.m_ctrl);
+    mfxExtContentLightLevelInfo const * parLightLevel = &par.m_ext.LightLevel;
+    if (rtLightLevel) {
+        task.m_insertHeaders |= INSERT_LLISEI;
+    }
+    else if (parLightLevel) {
+        if (parLightLevel->InsertPayloadToggle == MFX_PAYLOAD_IDR && isIDR)
+            task.m_insertHeaders |= INSERT_LLISEI;
+    }
+#endif
 #ifdef MFX_ENABLE_HEVCE_DIRTY_RECT
     // DirtyRect
     mfxExtDirtyRect const * parDirtyRect = &par.m_ext.DirtyRect;
