@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2013-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2013-2017 Intel Corporation. All Rights Reserved.
 
 *********************************************************************************/
 
@@ -64,9 +64,6 @@ Copyright(c) 2013-2016 Intel Corporation. All Rights Reserved.
   #define MFX_ENABLE_H265_VIDEO_DECODE
   #define MFX_TARGET_OPTIMIZATION_ATOM
   #define MFX_MAKENAME_ATOM
-
-  #define MFX_ENABLE_VP8_VIDEO_DECODE
-  #define MFX_ENABLE_VP9_VIDEO_DECODE
 #endif // MFX_VA
 #else
 

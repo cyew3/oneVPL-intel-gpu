@@ -4,7 +4,7 @@ include $(MFX_HOME)/mdp_msdk-lib/android/mfx_env.mk
 
 # =============================================================================
 
-MFX_LOCAL_DECODERS = h265 h264 mpeg2 vc1 mjpeg vp8 vp9
+MFX_LOCAL_DECODERS = h265 h264 mpeg2 vc1 mjpeg
 MFX_LOCAL_ENCODERS = h265 h264 mpeg2 vc1 mjpeg mvc svc vp8
 
 # Setting subdirectories to march thru
