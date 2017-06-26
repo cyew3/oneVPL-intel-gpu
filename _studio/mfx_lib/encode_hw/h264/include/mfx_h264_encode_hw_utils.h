@@ -1788,7 +1788,7 @@ namespace MfxHwH264Encode
 
             frame_par = *((mfxBRCFrameParam*)&par);
             m_pBRC->GetFrameCtrl(m_pBRC->pthis,&frame_par, &frame_ctrl);
-            return (mfxU8)frame_ctrl.QpY;    
+            return (mfxU8)CLIPVAL(1, 51, frame_ctrl.QpY);
         }
         mfxU8 GetQpForRecode(const BRCFrameParams& par, mfxU8 /*curQP */)
         {
