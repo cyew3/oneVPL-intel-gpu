@@ -119,7 +119,7 @@ mfxU32 GetMaxDpbSize(mfxU32 PicSizeInSamplesY, mfxU32 MaxLumaPs, mfxU32 maxDpbPi
     return maxDpbPicBuf;
 }
 
-mfxStatus CheckProfile(mfxVideoParam& par)
+mfxStatus CheckProfile(mfxVideoParam& par, mfxU16 platform)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
@@ -142,6 +142,9 @@ mfxStatus CheckProfile(mfxVideoParam& par)
         break;
 
     case MFX_PROFILE_HEVC_REXT:
+        if (platform < MFX_PLATFORM_ICELAKE)
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+
         if (pHevcPar)
         {
             mfxU64 REXTConstr = pHevcPar->GeneralConstraintFlags;
@@ -176,6 +179,8 @@ mfxStatus CheckProfile(mfxVideoParam& par)
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 #else
+    platform;
+
     switch (par.mfx.CodecProfile)
     {
     case 0:
@@ -2161,7 +2166,12 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 #endif //defined(MFX_ENABLE_HEVCE_FADE_DETECTION)
 #endif //defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
 
-    sts = CheckProfile(par);
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    if (par.m_platform.CodeName < MFX_PLATFORM_ICELAKE)
+        changed += CheckOption(par.m_ext.HEVCParam.GeneralConstraintFlags, 0);
+#endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
+
+    sts = CheckProfile(par, par.m_platform.CodeName);
 
     if (sts >= MFX_ERR_NONE && par.mfx.CodecLevel > 0)  // QueryIOSurf, Init or Reset
     {
