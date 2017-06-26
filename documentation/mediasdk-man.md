@@ -7242,6 +7242,7 @@ The `PlatformCodeName` enumerator itemizes Intel® processor microarchitecture c
 `MFX_PLATFORM_GEMINILAKE`   | Gemini Lake
 `MFX_PLATFORM_CANNONLAKE`   | Cannon Lake
 `MFX_PLATFORM_ICELAKE`      | Ice Lake
+`MFX_PLATFORM_LAKEFIELD`    | Lakefield
 `MFX_PLATFORM_TIGERLAKE`    | Tiger Lake
 
 **Change History**
@@ -7249,7 +7250,7 @@ The `PlatformCodeName` enumerator itemizes Intel® processor microarchitecture c
 This enumerator is available since SDK API 1.19.
 SDK API 1.22 adds `MFX_PLATFORM_APOLLOLAKE`, and `MFX_PLATFORM_KABYLAKE`.
 
-SDK API **TBD** adds `MFX_PLATFORM_GEMINILAKE`, `MFX_PLATFORM_CANNONLAKE`, `MFX_PLATFORM_ICELAKE` and  `MFX_PLATFORM_TIGERLAKE`.
+SDK API **TBD** adds `MFX_PLATFORM_GEMINILAKE`, `MFX_PLATFORM_CANNONLAKE`, `MFX_PLATFORM_ICELAKE`, `MFX_PLATFORM_LAKEFIELD` and `MFX_PLATFORM_TIGERLAKE`.
 
 ## <a id='PayloadCtrlFlags'>PayloadCtrlFlags</a>
 
