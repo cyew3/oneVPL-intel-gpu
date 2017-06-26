@@ -683,6 +683,7 @@ mfxStatus MfxVideoParam::FillPar(mfxVideoParam& par, bool query)
 {
         SyncCalculableToVideoParam();
 
+        par.AllocId    = AllocId;
         par.mfx        = mfx;
         par.AsyncDepth = AsyncDepth;
         par.IOPattern  = IOPattern;
