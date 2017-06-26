@@ -41,6 +41,9 @@
 
 #define MFX_H264ENC_HW_TASK_TIMEOUT 2000
 
+#define MFX_ARRAY_SIZE(ARR) (sizeof(ARR)/sizeof(ARR[0]))
+const int MFX_MAX_DIRTY_RECT_COUNT = MFX_ARRAY_SIZE(mfxExtDirtyRect::Rect);
+
 #if USE_AGOP
 #define MAX_B_FRAMES 10
 #define MAX_GOP_SEQUENCE 255
@@ -798,9 +801,9 @@ namespace MfxHwH264Encode
     typedef FixedArray<PairU32, 16>    ArrayPairU32x16;
     typedef FixedArray<RefListMod, 32> ArrayRefListMod;
 
-    typedef FixedArray<mfxRoiDesc, 256>        ArrayRoi;
-    typedef FixedArray<mfxRectDesc, 256>       ArrayRect;
-    typedef FixedArray<mfxMovingRectDesc, 256> ArrayMovingRect;
+    typedef FixedArray<mfxRoiDesc, 256>                       ArrayRoi;
+    typedef FixedArray<mfxRectDesc, MFX_MAX_DIRTY_RECT_COUNT> ArrayRect;
+    typedef FixedArray<mfxMovingRectDesc, 256>                ArrayMovingRect;
 
     struct ArrayDpbFrame : public FixedArray<DpbFrame, 16>
     {

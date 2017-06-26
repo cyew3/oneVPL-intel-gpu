@@ -4185,6 +4185,12 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
             changed = true;
     }
 
+    if (extDirtyRect->NumRect > MFX_MAX_DIRTY_RECT_COUNT)
+    {
+        changed = true;
+        extDirtyRect->NumRect = MFX_MAX_DIRTY_RECT_COUNT;
+    }
+
     if (extDirtyRect->NumRect && hwCaps.DirtyRectSupport == 0)
     {
         unsupported = true;
@@ -6349,6 +6355,12 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
 
         if (actualNumRect == 0)
         {
+            checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+        }
+
+        if (actualNumRect > MFX_MAX_DIRTY_RECT_COUNT)
+        {
+            actualNumRect = MFX_MAX_DIRTY_RECT_COUNT;
             checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
         }
 
