@@ -43,9 +43,10 @@ boldface, such as [mfxStatus](#mfxStatus).
 **VUI** | Video Usability Information
 **YUY2** | A color format for raw video frames
 **YV12** | A color format for raw video frames
-**GPB** | Generalized P/B picture. B-picture, containing only forward references in both L0 and L1.
+**GPB** | Generalized P/B picture. B-picture, containing only forward references in both L0 and L1
+**HDR** | High Dynamic Range
 
-<div style="page-break-before:always" /> 
+<div style="page-break-before:always" />
 
 # Architecture
 
@@ -116,8 +117,8 @@ Table 1 shows the SDK video processing features. The application can configure s
 
 ###### Table 1: Video Processing Features
 
- **Video Processing Features** | **Configuration** 
- --- | --- 
+ **Video Processing Features** | **Configuration**
+ --- | ---
 Convert color format from input to output  (See Table 2 for supported conversions)                | I/O parameters
 De-interlace to produce progressive frames at the output  (See Table 3 for supported conversions) | I/O parameters
 Crop and resize the input frames to meet the output resolution and region of display              | I/O parameters
@@ -134,28 +135,28 @@ Perform detection of picture structure                                          
 
 ###### Table 2: Color Conversion Support in VPP*
 
-  **Output Color**><br>**Input Color**˅| **NV12** | **RGB32** | **P010** | **P210** | **NV16** | **A2RGB10** 
- --- | --- | --- | --- | --- | --- | --- 
-RGB4 (RGB32) | X<br>limited | X<br>Limited |  |  |  | 
-NV12 | X | X | X |   | X | 
-YV12 | X | X |   |   |   | 
-UYVY | X |   |   |   |   | 
-YUY2 | X | X |   |   |   | 
+  **Output Color**><br>**Input Color**˅| **NV12** | **RGB32** | **P010** | **P210** | **NV16** | **A2RGB10**
+ --- | --- | --- | --- | --- | --- | ---
+RGB4 (RGB32) | X<br>limited | X<br>Limited |  |  |  |
+NV12 | X | X | X |   | X |
+YV12 | X | X |   |   |   |
+UYVY | X |   |   |   |   |
+YUY2 | X | X |   |   |   |
 P010 | X |   | X | X |   | X
 P210 | X |   | X | X | X | X
-NV16 | X |   |   | X | X | 
+NV16 | X |   |   | X | X |
 X indicates a supported function<br>*Conversions absent in this table are unsupported
 
 The SDK video processing pipeline supports limited functionality for RGB4 input. Only filters that are required to convert input format to output one are included in pipeline. All optional filters are skipped. See description of [MFX_WRN_FILTER_SKIPPED](#MFX_WRN_FILTER_SKIPPED) warning for more details on how to retrieve list of active filters.
 
 ###### Table 3: Deinterlacing/Inverse Telecine Support in VPP
 
-**Input Field Rate (fps) Interlaced** | **Output Frame Rate (fps) Progressive** | **Output Frame Rate (fps) Progressive** | **Output Frame Rate (fps) Progressive** | **Output Frame Rate (fps) Progressive** | **Output Frame Rate (fps) Progressive** | **Output Frame Rate (fps) Progressive** | **Output Frame Rate (fps) Progressive** 
- ---- | ---------------- | --- | ----- | --- | --- | ----- | --- 
+**Input Field Rate (fps) Interlaced** | **Output Frame Rate (fps) Progressive** | **Output Frame Rate (fps) Progressive** | **Output Frame Rate (fps) Progressive** | **Output Frame Rate (fps) Progressive** | **Output Frame Rate (fps) Progressive** | **Output Frame Rate (fps) Progressive** | **Output Frame Rate (fps) Progressive**
+ ---- | ---------------- | --- | ----- | --- | --- | ----- | ---
  -    | 23.976           | 25  | 29.97 | 30  | 50  | 59.94 | 60
-29.97 | Inverse Telecine |     | X     |     |     |       | 
-50    |                  | X   |       |     | X   |       | 
-59.94 |                  |     | X     |     |     | X     | 
+29.97 | Inverse Telecine |     | X     |     |     |       |
+50    |                  | X   |       |     | X   |       |
+59.94 |                  |     | X     |     |     | X     |
 60    |                  |     |       | X   |     |       | X
 X indicates a supported function.
 
@@ -169,19 +170,19 @@ There is one special mode of deinterlacing available in combination with frame r
 
 ###### Table 4: Color formats supported by VPP filters
 
- **Color**><br>**Filter**˅ | **RGB4 (RGB32)** | **NV12** | **YV12** | **YUY2** | **P010** | **P210** | **NV16** 
- ------------------------- | ---------------- | -------- | -------- | -------- | -------- | -------- | ------- 
-Denoise                    |                  | X        |          |          |          |          | 
-Deinterlace                |                  | X        |          |          |          |          | 
-Image stabilization        |                  | X        |          |          |          |          | 
-Frame rate conversion      |                  | X        |          |          |          |          | 
+ **Color**><br>**Filter**˅ | **RGB4 (RGB32)** | **NV12** | **YV12** | **YUY2** | **P010** | **P210** | **NV16**
+ ------------------------- | ---------------- | -------- | -------- | -------- | -------- | -------- | -------
+Denoise                    |                  | X        |          |          |          |          |
+Deinterlace                |                  | X        |          |          |          |          |
+Image stabilization        |                  | X        |          |          |          |          |
+Frame rate conversion      |                  | X        |          |          |          |          |
 Resize                     |                  | X        |          |          | X        | X        | X
-Detail                     |                  | X        |          |          |          |          | 
+Detail                     |                  | X        |          |          |          |          |
 Color conversion (see table 2 for details) | X | X | X | X | X | X | X
-Composition                | X                | X        |          |          |          |          | 
-Field copy                 |                  | X        |          |          |          |          | 
-Fields weaving             |                  | X        |          |          |          |          | 
-Fields splitting           |                  | X        |          |          |          |          | 
+Composition                | X                | X        |          |          |          |          |
+Field copy                 |                  | X        |          |          |          |          |
+Fields weaving             |                  | X        |          |          |          |          |
+Fields splitting           |                  | X        |          |          |          |          |
 X indicates a supported function
 
 The SDK video processing pipeline supports limited HW acceleration for P010 format - zeroed [mfxFrameInfo](#mfxFrameInfo)`::Shift` leads to partial acceleration.
@@ -531,8 +532,8 @@ Specifying a region of interest guides the resizing function to achieve special 
 
 ###### Table 5: Examples of VPP Operations on Region of Interest
 
- **Operation** | **VPP Input** | **VPP Input** | **VPP Output** | **VPP Output** 
- --- | --- | --- | --- | --- 
+ **Operation** | **VPP Input** | **VPP Input** | **VPP Output** | **VPP Output**
+ --- | --- | --- | --- | ---
  <br> | **Width/Height** | **CropX, CropY, CropW, CropH** | **Width/Height** | **CropX, CropY, CropW, CropH**
 Cropping                                           | 720x480   | 16,16,688,448 | 720x480   | 16,16,688,448
 Resizing                                           | 720x480   | 0,0,720,480   | 1440x960  | 0,0,1440,960
@@ -665,8 +666,8 @@ supports RGB32 output.
 |**VPP**         | Decoder/Processor Render Target | Listed in [ColorFourCC](#ColorFourCC) | Decoder Render Target | NV12
 |                |                        |                        | Processor Render Target| RGB32
 |**ENCODE**      | Decoder Render Target  | NV12                   | Not Applicable        | Not Applicable
-|                | Decoder Render Target  | RGB32, YUY2, YV12<br>JPEG only |  | 
- 
+|                | Decoder Render Target  | RGB32, YUY2, YV12<br>JPEG only |  |
+
 **Note:** `“Decoder Render Target” corresponds to DXVA2_ VideoDecoderRenderTarget type, “Processor Render Target” to DXVA2_ VideoProcessorRenderTarget.`
 
 ###### Table 7: Supported SDK Surface Types and Color Formats for Direct3D11
@@ -679,8 +680,8 @@ supports RGB32 output.
 |**VPP**         | Decoder/Processor Render Target  | Listed in [ColorFourCC](#ColorFourCC) | Processor Render Target | NV12
 |                |                        |                        | Processor Render Target | RGB32
 |**ENCODE**      | Decoder/Processor Render Target  | NV12         | Not Applicable          | Not Applicable
-|                | Decoder/Processor Render Target  | RGB32, YUY2<br>JPEG only |  | 
- 
+|                | Decoder/Processor Render Target  | RGB32, YUY2<br>JPEG only |  |
+
 **Note:** `“Decoder Render Target” corresponds to D3D11_BIND_DECODER flag, “Processor Render Target” to D3D11_BIND_RENDER_TARGET.`
 
 ### Working with VA API Applications
@@ -734,8 +735,8 @@ Table 8: Supported SDK Surface Types and Color Formats for VA API shows supporte
 |**DECODE**      | Not Applicable         | NV12
 |               |                        | RGB32, YUY2<br>JPEG only
 |**VPP**         | Listed in [ColorFourCC](#ColorFourCC) | NV12, RGB32
-|**ENCODE**      | NV12                   | Not Applicable 
-|               | RGB32, YUY2, YV12<br>JPEG only | 
+|**ENCODE**      | NV12                   | Not Applicable
+|               | RGB32, YUY2, YV12<br>JPEG only |
 
 ## <a id='Memory_Allocation'>Memory Allocation and External Allocators</a>
 
@@ -761,9 +762,9 @@ typedef struct {
 } mid_struct;
 
 mfxStatus fa_alloc(mfxHDL pthis, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response) {
-    if (!(request->type&MFX_MEMTYPE_SYSTEM_MEMORY)) 
+    if (!(request->type&MFX_MEMTYPE_SYSTEM_MEMORY))
         return MFX_ERR_UNSUPPORTED;
-    if (request->Info->FourCC!=MFX_FOURCC_NV12) 
+    if (request->Info->FourCC!=MFX_FOURCC_NV12)
         return MFX_ERR_UNSUPPORTED;
     response->NumFrameActual=request->NumFrameMin;
     for (int i=0;i<request->NumFrameMin;i++) {
@@ -902,8 +903,8 @@ In each function description, only commonly used status codes are documented. Th
 
 Global functions initialize and de-initialize the SDK library and perform query functions on a global scale within an application.
 
- **Member Functions** | Description 
- -------------------- | ----------- 
+ **Member Functions** | Description
+ -------------------- | -----------
 [MFXInit](#MFXInit)                    | Initializes an SDK session
 [MFXQueryIMPL](#MFXQueryIMPL)          | Queries the implementation type
 [MFXQueryVersion](#MFXQueryVersion)     | Queries the implementation version
@@ -1922,7 +1923,7 @@ This function is available since SDK API 1.19.
 **Syntax**
 
 ```C
-mfxStatus MFXVideoENC_ProcessFrameAsync(mfxSession session, mfxENCInput *in, 
+mfxStatus MFXVideoENC_ProcessFrameAsync(mfxSession session, mfxENCInput *in,
                                         mfxENCOutput *out, mfxSyncPoint *syncp);
 ```
 
@@ -4180,6 +4181,74 @@ This structure is available since SDK API 1.8.
 The SDK API 1.22 adds `ROIMode` and `DeltaQP` fields.
 The SDK API **TBD** adds clarification that ROI rectangle Right, Bottom  are considered exclusive and aligment rules changed.
 
+## <a id='mfxExtMasteringDisplayColourVolume'>mfxExtMasteringDisplayColourVolume</a>
+
+**Definition**
+
+```C
+typedef struct {
+    mfxExtBuffer    Header;
+    mfxU16      reserved[13];
+
+    mfxU16 InsertPayloadToggle;
+    mfxU16 DisplayPrimariesX[3];
+    mfxU16 DisplayPrimariesY[3];
+    mfxU16 WhitePointX;
+    mfxU16 WhitePointY;
+    mfxU32 MaxDisplayMasteringLuminance;
+    mfxU32 MinDisplayMasteringLuminance;
+} mfxExtMasteringDisplayColourVolume;
+```
+
+**Description**
+
+The `mfxExtMasteringDisplayColourVolume` structure configures the HDR SEI message. If application attaches this structure to the [mfxEncodeCtrl](#mfxEncodeCtrl) structure at [runtime](#MFXVideoENCODE_EncodeFrameAsync), the encoder inserts the HDR SEI message for current frame and ignores `InsertPayloadToggle`. If application attaches this structure to the [mfxVideoParam](#mfxVideoParam) structure during [initialization](#MFXVideoENCODE_Init) or [reset](#MFXVideoENCODE_Reset), the encoder inserts HDR SEI message based on `InsertPayloadToggle`. Fields semantic defined in ITU-T* H.265 Annex D.
+
+**Members**
+
+| | |
+--- | ---
+`Header.BufferId` | Must be [MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME](#ExtendedBufferID)
+`InsertPayloadToggle` | [InsertHDRPayload](#InsertHDRPayload).
+`DisplayPrimariesX[3], DisplayPrimariesY[3], WhitePointX, WhitePointY` | Color primaries for a video source in increments of 0.00002. Consist of RGB x,y coordinates and define how to convert colors from RGB color space to CIE XYZ color space. These fields belong to the [0..50000] range.
+`MaxDisplayMasteringLuminance, MinDisplayMasteringLuminance` | Specify maximum and minimum luminance of the display on which the content was authored in units of 0.00001 candelas per square meter. These fields belong to the [1..65535] range.
+
+**Change History**
+
+This structure is available since SDK API **TBD**.
+
+## <a id='mfxExtContentLightLevelInfo'>mfxExtContentLightLevelInfo</a>
+
+**Definition**
+
+```C
+typedef struct {
+    mfxExtBuffer    Header;
+    mfxU16      reserved[3];
+
+    mfxU16 InsertPayloadToggle;
+    mfxU16 MaxContentLightLevel;
+    mfxU16 MaxPicAverageLightLevel;
+} mfxExtContentLightLevelInfo;
+```
+
+**Description**
+
+The `mfxExtContentLightLevelInfo` structure configures the HDR SEI message. If application attaches this structure to the [mfxEncodeCtrl](#mfxEncodeCtrl) structure at [runtime](#MFXVideoENCODE_EncodeFrameAsync), the encoder inserts the HDR SEI message for current frame and ignores `InsertPayloadToggle`. If application attaches this structure to the [mfxVideoParam](#mfxVideoParam) structure during [initialization](#MFXVideoENCODE_Init) or [reset](#MFXVideoENCODE_Reset), the encoder inserts HDR SEI message based on `InsertPayloadToggle`. Fields semantic defined in ITU-T* H.265 Annex D.
+
+**Members**
+
+| | |
+--- | ---
+`Header.BufferId` | Must be [MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO](#ExtendedBufferID)
+`InsertPayloadToggle` | [InsertHDRPayload](#InsertHDRPayload).
+`MaxContentLightLevel` | Maximum luminance level of the content. The field belongs to the [1..65535] range.
+`MaxPicAverageLightLevel` | Maximum average per-frame luminance level of the content. The field belongs to the [1..65535] range.
+
+**Change History**
+
+This structure is available since SDK API **TBD**.
+
 ## <a id='mfxExtVPPDeinterlacing'>mfxExtVPPDeinterlacing</a>
 
 **Definition**
@@ -6036,7 +6105,7 @@ mfxExtDecVideoProcessing.In.CropX   = 0;
 mfxExtDecVideoProcessing.In.CropY   = 0;
 mfxExtDecVideoProcessing.In.CropW   = 1920;
 mfxExtDecVideoProcessing.In.CropH   = 1088;
-mfxExtDecVideoProcessing.Out.Width  = 352; 
+mfxExtDecVideoProcessing.Out.Width  = 352;
 mfxExtDecVideoProcessing.Out.Heigth = 288
 mfxExtDecVideoProcessing.Out.CropX  = 0;
 mfxExtDecVideoProcessing.Out.CropY  = 0;
@@ -6057,7 +6126,7 @@ mfxExtDecVideoProcessing.In.CropX   = 0;
 mfxExtDecVideoProcessing.In.CropY   = 0;
 mfxExtDecVideoProcessing.In.CropW   = 1280;
 mfxExtDecVideoProcessing.In.CropH   = 720;
-mfxExtDecVideoProcessing.Out.Width  = 720; 
+mfxExtDecVideoProcessing.Out.Width  = 720;
 mfxExtDecVideoProcessing.Out.Heigth = 480;
 mfxExtDecVideoProcessing.Out.CropX  = 0;
 mfxExtDecVideoProcessing.Out.CropY  = 0;
@@ -6398,6 +6467,8 @@ The `ExtendedBufferID` enumerator itemizes and defines identifiers (`BufferId`) 
 `MFX_EXTBUFF_VPP_COLORFILL` | See the [mfxExtVPPColorFill](#mfxExtVPPColorFill) structure for details.
 `MFX_EXTBUFF_DEC_VIDEO_PROCESSING` | See the [mfxExtDecVideoProcessing](#mfxExtDecVideoProcessing) structure for details.
 `MFX_EXTBUFF_VP9_PARAM` | Extends [mfxVideoParam](#mfxVideoParam) structure with VP9-specific parameters. See the [mfxExtVP9Param](#mfxExtVP9Param) structure for details.
+`MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME` | This extended buffer configures HDR SEI message. See the [mfxExtMasteringDisplayColourVolume](#mfxExtMasteringDisplayColourVolume) structure for details.
+`MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO` | This extended buffer configures HDR SEI message. See the [mfxExtContentLightLevelInfo](#mfxExtContentLightLevelInfo) structure for details.
 
 **Change History**
 
@@ -6426,7 +6497,7 @@ SDK API 1.22 adds `MFX_EXTBUFF_DEC_VIDEO_PROCESSING`.
 
 SDK API 1.23 adds `MFX_EXTBUFF_MB_FORCE_INTRA`.
 
-SDK API **TBD** adds `MFX_EXTBUFF_VP9_PARAM`.
+SDK API **TBD** adds `MFX_EXTBUFF_VP9_PARAM`, `MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO`, `MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME`.
 
 See additional change history in the structure definitions.
 
@@ -7144,7 +7215,7 @@ The `ScenarioInfo` enumerator itemizes scenarios for the encoding session.
 
 | | |
 --- | ---
-`MFX_SCENARIO_UNKNOWN`,<br>`MFX_SCENARIO_DISPLAY_REMOTING`,<br>`MFX_SCENARIO_VIDEO_CONFERENCE`,<br>`MFX_SCENARIO_ARCHIVE`,<br>`MFX_SCENARIO_LIVE_STREAMING`,<br>`MFX_SCENARIO_CAMERA_CAPTURE` | 
+`MFX_SCENARIO_UNKNOWN`,<br>`MFX_SCENARIO_DISPLAY_REMOTING`,<br>`MFX_SCENARIO_VIDEO_CONFERENCE`,<br>`MFX_SCENARIO_ARCHIVE`,<br>`MFX_SCENARIO_LIVE_STREAMING`,<br>`MFX_SCENARIO_CAMERA_CAPTURE` |
 
 **Change History**
 
@@ -7160,7 +7231,7 @@ The `ContentInfo` enumerator itemizes content types for the encoding session.
 
 | | |
 --- | ---
-`MFX_CONTENT_UNKNOWN`, `MFX_CONTENT_FULL_SCREEN_VIDEO`, `MFX_CONTENT_NON_VIDEO_SCREEN` | 
+`MFX_CONTENT_UNKNOWN`, `MFX_CONTENT_FULL_SCREEN_VIDEO`, `MFX_CONTENT_NON_VIDEO_SCREEN` |
 
 **Change History**
 
@@ -7288,6 +7359,23 @@ The `VP9ReferenceFrame` enumerator itemizes reference frame type.
 
 This enumerator is available since SDK API **TBD**.
 
+## <a id='InsertHDRPayload'>InsertHDRPayload</a>
+
+**Description**
+
+The `InsertHDRPayload` enumerator itemizes HDR payloads insertion rules.
+
+**Name/Description**
+
+| | |
+--- | ---
+`MFX_PAYLOAD_OFF` | Don't insert payload
+`MFX_PAYLOAD_IDR` | Insert payload on IDR frames
+
+**Change History**
+
+This enumerator is available since SDK API **TBD**.
+
 # Appendices
 
 ## Appendix A: Configuration Parameter Constraints
@@ -7339,12 +7427,12 @@ The following table summarizes how to specify the configuration parameters durin
 
 |  | **ENCODE**<br>Init | **ENCODE**<br>Encoding | **DECODE**<br>Init | **DECODE**<br>Decoding | **VPP**<br>Init | **VPP**<br>Processing |
 | --- | --- | --- | --- | --- | --- | --- |
-| [mfxVideoParam](#mfxVideoParam) | | | | | | 
+| [mfxVideoParam](#mfxVideoParam) | | | | | |
  | `Protected` | R | - | R | - | R | -
  | `IOPattern` | M | - | M | - | M | -
  | `ExtParam` | O | - | O | - | O | -
  | `NumExtParam` | O | - | O | - | O | -
-[mfxInfoMFX](#mfxInfoMFX) |  |  |  |  |  |  | 
+[mfxInfoMFX](#mfxInfoMFX) |  |  |  |  |  |  |
  | `CodecId` | M | - | M | - | - | -
  | `CodecProfile` | O | - | O | - | - | -
  | `CodecLevel` | O | - | O | - | - | -
@@ -7362,7 +7450,7 @@ The following table summarizes how to specify the configuration parameters durin
  | `NumSlice` | O | - | - | - | - | -
  | `NumRefFrame` | O | - | - | - | - | -
  | `EncodedOrder` | M | - | - | - | - | -
-[mfxFrameInfo](#mfxFrameInfo) |  |  |  |  |  |  | 
+[mfxFrameInfo](#mfxFrameInfo) |  |  |  |  |  |  |
  | `FourCC` | M | M | M | M | M | M
  | `Width` | M | M | M | M | M | M
  | `Height` | M | M | M | M | M | M
@@ -7689,9 +7777,9 @@ Example 21 shows how to enable CQP HRD mode. Application should set `RateControl
 
     /* configure mfxVideoParam */
     mfxVideoParam param;
-    
+
     ...
-    
+
     param.mfx.RateControlMethod         = MFX_RATECONTROL_CQP;
     param.mfx.FrameInfo.FrameRateExtN   = <valid_non_zero_value>;
     param.mfx.FrameInfo.FrameRateExtD   = <valid_non_zero_value>;

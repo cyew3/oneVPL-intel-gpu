@@ -423,6 +423,12 @@ public:
                         case MFX_EXTBUFF_VP9_PARAM:
                             str += dump(name, *((mfxExtVP9Param*)_struct.ExtParam[i])) + "\n";
                             break;
+                        case MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME:
+                            str += dump(name, *((mfxExtMasteringDisplayColourVolume*)_struct.ExtParam[i])) + "\n";
+                            break;
+                        case MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO:
+                            str += dump(name, *((mfxExtContentLightLevelInfo*)_struct.ExtParam[i])) + "\n";
+                            break;
                         default:
                             str += dump(name, *(_struct.ExtParam[i])) + "\n";
                             break;
@@ -529,7 +535,8 @@ public:
     DEFINE_DUMP_FUNCTION(mfxVP9TemporalLayer);
     DEFINE_DUMP_FUNCTION(mfxExtVP9TemporalLayers);
     DEFINE_DUMP_FUNCTION(mfxExtVP9Param);
-
+    DEFINE_DUMP_FUNCTION(mfxExtMasteringDisplayColourVolume);
+    DEFINE_DUMP_FUNCTION(mfxExtContentLightLevelInfo);
 
     //mfxsession
     DEFINE_DUMP_FUNCTION(mfxSession);

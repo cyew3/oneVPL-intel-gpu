@@ -1287,3 +1287,31 @@ std::string DumpContext::dump(const std::string structName, const  mfxExtVP9Para
 
     return str;
 }
+
+std::string DumpContext::dump(const std::string structName, const  mfxExtMasteringDisplayColourVolume &_struct) {
+    std::string str;
+    str += dump(structName + ".Header", _struct.Header) + "\n";
+    str += structName + ".InsertPayloadToggle=" + ToString(_struct.InsertPayloadToggle) + "\n";
+    for (int i = 0; i < 3; i++) {
+        str += structName + ".DisplayPrimariesX[" + ToString(i) + "]=" + ToString(_struct.DisplayPrimariesX[i]) + "\n";
+        str += structName + ".DisplayPrimariesY[" + ToString(i) + "]=" + ToString(_struct.DisplayPrimariesY[i]) + "\n";
+    }
+    str += structName + ".WhitePointX=" + ToString(_struct.WhitePointX) + "\n";
+    str += structName + ".WhitePointY=" + ToString(_struct.WhitePointY) + "\n";
+    str += structName + ".MaxDisplayMasteringLuminance=" + ToString(_struct.MaxDisplayMasteringLuminance) + "\n";
+    str += structName + ".MinDisplayMasteringLuminance=" + ToString(_struct.MinDisplayMasteringLuminance) + "\n";
+
+    DUMP_FIELD_RESERVED(reserved);
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const  mfxExtContentLightLevelInfo &_struct) {
+    std::string str;
+    str += dump(structName + ".Header", _struct.Header) + "\n";
+    str += structName + ".InsertPayloadToggle=" + ToString(_struct.InsertPayloadToggle) + "\n";
+    str += structName + ".MaxContentLightLevel=" + ToString(_struct.MaxContentLightLevel) + "\n";
+    str += structName + ".MaxPicAverageLightLevel=" + ToString(_struct.MaxPicAverageLightLevel) + "\n";
+
+    DUMP_FIELD_RESERVED(reserved);
+    return str;
+}

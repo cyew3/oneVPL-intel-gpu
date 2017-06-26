@@ -953,3 +953,21 @@ STRUCT(mfxExtMBForceIntra,
     FIELD_T(mfxU32, MapSize)
     FIELD_T(mfxU8*, Map)
 )
+
+STRUCT(mfxExtMasteringDisplayColourVolume,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU16      , InsertPayloadToggle)
+    FIELD_T(mfxU16     , DisplayPrimariesX)
+    FIELD_T(mfxU16     , DisplayPrimariesY)
+    FIELD_T(mfxU16      , WhitePointX)
+    FIELD_T(mfxU16      , WhitePointY)
+    FIELD_T(mfxU32      , MaxDisplayMasteringLuminance)
+    FIELD_T(mfxU32      , MinDisplayMasteringLuminance)
+)
+
+STRUCT(mfxExtContentLightLevelInfo,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU16      , InsertPayloadToggle)
+    FIELD_T(mfxU16      , MaxContentLightLevel)
+    FIELD_T(mfxU16      , MaxPicAverageLightLevel)
+)

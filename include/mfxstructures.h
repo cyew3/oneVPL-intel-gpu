@@ -781,69 +781,70 @@ enum {
     MFX_BITSTREAM_COMPLETE_FRAME    = 0x0001,        /* the bitstream contains a complete frame or field pair of data */
     MFX_BITSTREAM_EOS               = 0x0002
 };
-
 /* Extended Buffer Ids */
 enum {
-    MFX_EXTBUFF_CODING_OPTION              = MFX_MAKEFOURCC('C','D','O','P'),
-    MFX_EXTBUFF_CODING_OPTION_SPSPPS       = MFX_MAKEFOURCC('C','O','S','P'),
-    MFX_EXTBUFF_VPP_DONOTUSE               = MFX_MAKEFOURCC('N','U','S','E'),
-    MFX_EXTBUFF_VPP_AUXDATA                = MFX_MAKEFOURCC('A','U','X','D'),
-    MFX_EXTBUFF_VPP_DENOISE                = MFX_MAKEFOURCC('D','N','I','S'),
-    MFX_EXTBUFF_VPP_SCENE_ANALYSIS         = MFX_MAKEFOURCC('S','C','L','Y'),
-    MFX_EXTBUFF_VPP_SCENE_CHANGE           = MFX_EXTBUFF_VPP_SCENE_ANALYSIS,
-    MFX_EXTBUFF_VPP_PROCAMP                = MFX_MAKEFOURCC('P','A','M','P'),
-    MFX_EXTBUFF_VPP_DETAIL                 = MFX_MAKEFOURCC('D','E','T',' '),
-    MFX_EXTBUFF_VIDEO_SIGNAL_INFO          = MFX_MAKEFOURCC('V','S','I','N'),
-    MFX_EXTBUFF_VPP_DOUSE                  = MFX_MAKEFOURCC('D','U','S','E'),
-    MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION  = MFX_MAKEFOURCC('O','P','Q','S'),
-    MFX_EXTBUFF_AVC_REFLIST_CTRL           = MFX_MAKEFOURCC('R','L','S','T'),
-    MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION  = MFX_MAKEFOURCC('F','R','C',' '),
-    MFX_EXTBUFF_PICTURE_TIMING_SEI         = MFX_MAKEFOURCC('P','T','S','E'),
-    MFX_EXTBUFF_AVC_TEMPORAL_LAYERS        = MFX_MAKEFOURCC('A','T','M','L'),
-    MFX_EXTBUFF_CODING_OPTION2             = MFX_MAKEFOURCC('C','D','O','2'),
-    MFX_EXTBUFF_VPP_IMAGE_STABILIZATION    = MFX_MAKEFOURCC('I','S','T','B'),
-    MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION    = MFX_MAKEFOURCC('I','D','E','T'),
-    MFX_EXTBUFF_ENCODER_CAPABILITY         = MFX_MAKEFOURCC('E','N','C','P'),
-    MFX_EXTBUFF_ENCODER_RESET_OPTION       = MFX_MAKEFOURCC('E','N','R','O'),
-    MFX_EXTBUFF_ENCODED_FRAME_INFO         = MFX_MAKEFOURCC('E','N','F','I'),
-    MFX_EXTBUFF_VPP_COMPOSITE              = MFX_MAKEFOURCC('V','C','M','P'),
-    MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO      = MFX_MAKEFOURCC('V','V','S','I'),
-    MFX_EXTBUFF_ENCODER_ROI                = MFX_MAKEFOURCC('E','R','O','I'),
-    MFX_EXTBUFF_VPP_DEINTERLACING          = MFX_MAKEFOURCC('V','P','D','I'),
-    MFX_EXTBUFF_AVC_REFLISTS               = MFX_MAKEFOURCC('R','L','T','S'),
-    MFX_EXTBUFF_DEC_VIDEO_PROCESSING       = MFX_MAKEFOURCC('D','E','C','V'),
-    MFX_EXTBUFF_VPP_FIELD_PROCESSING       = MFX_MAKEFOURCC('F','P','R','O'),
-    MFX_EXTBUFF_CODING_OPTION3             = MFX_MAKEFOURCC('C','D','O','3'),
-    MFX_EXTBUFF_CHROMA_LOC_INFO            = MFX_MAKEFOURCC('C','L','I','N'),
-    MFX_EXTBUFF_MBQP                       = MFX_MAKEFOURCC('M','B','Q','P'),
-    MFX_EXTBUFF_MB_FORCE_INTRA             = MFX_MAKEFOURCC('M','B','F','I'),
-    MFX_EXTBUFF_HEVC_TILES                 = MFX_MAKEFOURCC('2','6','5','T'),
-    MFX_EXTBUFF_MB_DISABLE_SKIP_MAP        = MFX_MAKEFOURCC('M','D','S','M'),
-    MFX_EXTBUFF_DPB                        = MFX_MAKEFOURCC('E','D','P','B'),
-    MFX_EXTBUFF_HEVC_PARAM                 = MFX_MAKEFOURCC('2','6','5','P'),
-    MFX_EXTBUFF_DECODED_FRAME_INFO         = MFX_MAKEFOURCC('D','E','F','I'),
-    MFX_EXTBUFF_TIME_CODE                  = MFX_MAKEFOURCC('T','M','C','D'),
-    MFX_EXTBUFF_HEVC_REGION                = MFX_MAKEFOURCC('2','6','5','R'),
-    MFX_EXTBUFF_PRED_WEIGHT_TABLE          = MFX_MAKEFOURCC('E','P','W','T'),
-    MFX_EXTBUFF_TEMPORAL_LAYERS            = MFX_MAKEFOURCC('T','M','P','L'),
-    MFX_EXTBUFF_DIRTY_RECTANGLES           = MFX_MAKEFOURCC('D','R','O','I'),
-    MFX_EXTBUFF_MOVING_RECTANGLES          = MFX_MAKEFOURCC('M','R','O','I'),
-    MFX_EXTBUFF_AVC_SCALING_MATRIX         = MFX_MAKEFOURCC('A','V','S','M'),
-    MFX_EXTBUFF_MPEG2_QUANT_MATRIX         = MFX_MAKEFOURCC('M','2','Q','M'),
-    MFX_EXTBUFF_CODING_OPTION_VPS          = MFX_MAKEFOURCC('C','O','V','P'),
-    MFX_EXTBUFF_VPP_ROTATION               = MFX_MAKEFOURCC('R','O','T',' '),
-    MFX_EXTBUFF_ENCODED_SLICES_INFO        = MFX_MAKEFOURCC('E','N','S','I'),
-    MFX_EXTBUFF_VPP_SCALING                = MFX_MAKEFOURCC('V','S','C','L'),
-    MFX_EXTBUFF_HEVC_REFLIST_CTRL          = MFX_EXTBUFF_AVC_REFLIST_CTRL,
-    MFX_EXTBUFF_HEVC_REFLISTS              = MFX_EXTBUFF_AVC_REFLISTS,
-    MFX_EXTBUFF_HEVC_TEMPORAL_LAYERS       = MFX_EXTBUFF_AVC_TEMPORAL_LAYERS,
-    MFX_EXTBUFF_VPP_MIRRORING              = MFX_MAKEFOURCC('M','I','R','R'),
-    MFX_EXTBUFF_MV_OVER_PIC_BOUNDARIES     = MFX_MAKEFOURCC('M','V','P','B'),
-    MFX_EXTBUFF_VPP_COLORFILL              = MFX_MAKEFOURCC('V','C','L','F'),
-    MFX_EXTBUFF_VPP_COLOR_CONVERSION       = MFX_MAKEFOURCC('V','C','S','C'),
-    MFX_EXTBUFF_VP9_SEGMENTATION           = MFX_MAKEFOURCC('9','S','E','G'),
-    MFX_EXTBUFF_VP9_TEMPORAL_LAYERS        = MFX_MAKEFOURCC('9','T','M','L'),
-    MFX_EXTBUFF_VP9_PARAM                  = MFX_MAKEFOURCC('9','P','A','R')
+    MFX_EXTBUFF_CODING_OPTION                   = MFX_MAKEFOURCC('C','D','O','P'),
+    MFX_EXTBUFF_CODING_OPTION_SPSPPS            = MFX_MAKEFOURCC('C','O','S','P'),
+    MFX_EXTBUFF_VPP_DONOTUSE                    = MFX_MAKEFOURCC('N','U','S','E'),
+    MFX_EXTBUFF_VPP_AUXDATA                     = MFX_MAKEFOURCC('A','U','X','D'),
+    MFX_EXTBUFF_VPP_DENOISE                     = MFX_MAKEFOURCC('D','N','I','S'),
+    MFX_EXTBUFF_VPP_SCENE_ANALYSIS              = MFX_MAKEFOURCC('S','C','L','Y'),
+    MFX_EXTBUFF_VPP_SCENE_CHANGE                = MFX_EXTBUFF_VPP_SCENE_ANALYSIS,
+    MFX_EXTBUFF_VPP_PROCAMP                     = MFX_MAKEFOURCC('P','A','M','P'),
+    MFX_EXTBUFF_VPP_DETAIL                      = MFX_MAKEFOURCC('D','E','T',' '),
+    MFX_EXTBUFF_VIDEO_SIGNAL_INFO               = MFX_MAKEFOURCC('V','S','I','N'),
+    MFX_EXTBUFF_VPP_DOUSE                       = MFX_MAKEFOURCC('D','U','S','E'),
+    MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION       = MFX_MAKEFOURCC('O','P','Q','S'),
+    MFX_EXTBUFF_AVC_REFLIST_CTRL                = MFX_MAKEFOURCC('R','L','S','T'),
+    MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION       = MFX_MAKEFOURCC('F','R','C',' '),
+    MFX_EXTBUFF_PICTURE_TIMING_SEI              = MFX_MAKEFOURCC('P','T','S','E'),
+    MFX_EXTBUFF_AVC_TEMPORAL_LAYERS             = MFX_MAKEFOURCC('A','T','M','L'),
+    MFX_EXTBUFF_CODING_OPTION2                  = MFX_MAKEFOURCC('C','D','O','2'),
+    MFX_EXTBUFF_VPP_IMAGE_STABILIZATION         = MFX_MAKEFOURCC('I','S','T','B'),
+    MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION         = MFX_MAKEFOURCC('I','D','E','T'),
+    MFX_EXTBUFF_ENCODER_CAPABILITY              = MFX_MAKEFOURCC('E','N','C','P'),
+    MFX_EXTBUFF_ENCODER_RESET_OPTION            = MFX_MAKEFOURCC('E','N','R','O'),
+    MFX_EXTBUFF_ENCODED_FRAME_INFO              = MFX_MAKEFOURCC('E','N','F','I'),
+    MFX_EXTBUFF_VPP_COMPOSITE                   = MFX_MAKEFOURCC('V','C','M','P'),
+    MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO           = MFX_MAKEFOURCC('V','V','S','I'),
+    MFX_EXTBUFF_ENCODER_ROI                     = MFX_MAKEFOURCC('E','R','O','I'),
+    MFX_EXTBUFF_VPP_DEINTERLACING               = MFX_MAKEFOURCC('V','P','D','I'),
+    MFX_EXTBUFF_AVC_REFLISTS                    = MFX_MAKEFOURCC('R','L','T','S'),
+    MFX_EXTBUFF_DEC_VIDEO_PROCESSING            = MFX_MAKEFOURCC('D','E','C','V'),
+    MFX_EXTBUFF_VPP_FIELD_PROCESSING            = MFX_MAKEFOURCC('F','P','R','O'),
+    MFX_EXTBUFF_CODING_OPTION3                  = MFX_MAKEFOURCC('C','D','O','3'),
+    MFX_EXTBUFF_CHROMA_LOC_INFO                 = MFX_MAKEFOURCC('C','L','I','N'),
+    MFX_EXTBUFF_MBQP                            = MFX_MAKEFOURCC('M','B','Q','P'),
+    MFX_EXTBUFF_MB_FORCE_INTRA                  = MFX_MAKEFOURCC('M','B','F','I'),
+    MFX_EXTBUFF_HEVC_TILES                      = MFX_MAKEFOURCC('2','6','5','T'),
+    MFX_EXTBUFF_MB_DISABLE_SKIP_MAP             = MFX_MAKEFOURCC('M','D','S','M'),
+    MFX_EXTBUFF_DPB                             = MFX_MAKEFOURCC('E','D','P','B'),
+    MFX_EXTBUFF_HEVC_PARAM                      = MFX_MAKEFOURCC('2','6','5','P'),
+    MFX_EXTBUFF_DECODED_FRAME_INFO              = MFX_MAKEFOURCC('D','E','F','I'),
+    MFX_EXTBUFF_TIME_CODE                       = MFX_MAKEFOURCC('T','M','C','D'),
+    MFX_EXTBUFF_HEVC_REGION                     = MFX_MAKEFOURCC('2','6','5','R'),
+    MFX_EXTBUFF_PRED_WEIGHT_TABLE               = MFX_MAKEFOURCC('E','P','W','T'),
+    MFX_EXTBUFF_TEMPORAL_LAYERS                 = MFX_MAKEFOURCC('T','M','P','L'),
+    MFX_EXTBUFF_DIRTY_RECTANGLES                = MFX_MAKEFOURCC('D','R','O','I'),
+    MFX_EXTBUFF_MOVING_RECTANGLES               = MFX_MAKEFOURCC('M','R','O','I'),
+    MFX_EXTBUFF_AVC_SCALING_MATRIX              = MFX_MAKEFOURCC('A','V','S','M'),
+    MFX_EXTBUFF_MPEG2_QUANT_MATRIX              = MFX_MAKEFOURCC('M','2','Q','M'),
+    MFX_EXTBUFF_CODING_OPTION_VPS               = MFX_MAKEFOURCC('C','O','V','P'),
+    MFX_EXTBUFF_VPP_ROTATION                    = MFX_MAKEFOURCC('R','O','T',' '),
+    MFX_EXTBUFF_ENCODED_SLICES_INFO             = MFX_MAKEFOURCC('E','N','S','I'),
+    MFX_EXTBUFF_VPP_SCALING                     = MFX_MAKEFOURCC('V','S','C','L'),
+    MFX_EXTBUFF_HEVC_REFLIST_CTRL               = MFX_EXTBUFF_AVC_REFLIST_CTRL,
+    MFX_EXTBUFF_HEVC_REFLISTS                   = MFX_EXTBUFF_AVC_REFLISTS,
+    MFX_EXTBUFF_HEVC_TEMPORAL_LAYERS            = MFX_EXTBUFF_AVC_TEMPORAL_LAYERS,
+    MFX_EXTBUFF_VPP_MIRRORING                   = MFX_MAKEFOURCC('M','I','R','R'),
+    MFX_EXTBUFF_MV_OVER_PIC_BOUNDARIES          = MFX_MAKEFOURCC('M','V','P','B'),
+    MFX_EXTBUFF_VPP_COLORFILL                   = MFX_MAKEFOURCC('V','C','L','F'),
+    MFX_EXTBUFF_VPP_COLOR_CONVERSION            = MFX_MAKEFOURCC('V','C','S','C'),
+    MFX_EXTBUFF_VP9_SEGMENTATION                = MFX_MAKEFOURCC('9','S','E','G'),
+    MFX_EXTBUFF_VP9_TEMPORAL_LAYERS             = MFX_MAKEFOURCC('9','T','M','L'),
+    MFX_EXTBUFF_VP9_PARAM                       = MFX_MAKEFOURCC('9','P','A','R'),
+    MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO        = MFX_MAKEFOURCC('L','L','I','S'),
+    MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME = MFX_MAKEFOURCC('D','C','V','S')
 };
 
 /* VPP Conf: Do not use certain algorithms  */
@@ -1122,6 +1123,35 @@ typedef struct {
     mfxU16  Mode;
     mfxU16  reserved[11];
 } mfxExtVPPImageStab;
+
+enum {
+    MFX_PAYLOAD_OFF = 0,
+    MFX_PAYLOAD_IDR = 1
+};
+
+typedef struct {
+    mfxExtBuffer    Header;
+    mfxU16      reserved[15];
+
+    mfxU16 InsertPayloadToggle;
+    mfxU16 DisplayPrimariesX[3];
+    mfxU16 DisplayPrimariesY[3];
+    mfxU16 WhitePointX;
+    mfxU16 WhitePointY;
+    mfxU32 MaxDisplayMasteringLuminance;
+    mfxU32 MinDisplayMasteringLuminance;
+} mfxExtMasteringDisplayColourVolume;
+
+
+typedef struct {
+    mfxExtBuffer    Header;
+    mfxU16      reserved[9];
+
+    mfxU16 InsertPayloadToggle;
+    mfxU16 MaxContentLightLevel;
+    mfxU16 MaxPicAverageLightLevel;
+} mfxExtContentLightLevelInfo;
+
 
 typedef struct {
   mfxExtBuffer    Header;
@@ -1841,4 +1871,3 @@ typedef struct {
 #endif
 
 #endif
-
