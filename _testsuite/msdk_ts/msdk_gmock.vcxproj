@@ -233,6 +233,7 @@
     <ClCompile Include="..\..\samples\sample_common\src\vm\thread.cpp" />
     <ClCompile Include="..\..\samples\sample_common\src\vm\thread_windows.cpp" />
     <ClCompile Include="..\..\samples\sample_common\src\vm\time.cpp" />
+    <ClCompile Include="src\gmock\test_suites\avce_encoder_roi.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_dirty_rect.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_sps_frame_crop_offset.cpp" />
     <ClCompile Include="src\gmock\test_suites\encoders_extbrc.cpp" />

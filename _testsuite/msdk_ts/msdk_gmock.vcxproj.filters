@@ -928,6 +928,9 @@
     <ClCompile Include="src\gmock\test_suites\avce_dirty_rect.cpp">
       <Filter>Source Files\test_suites\avce</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avce_encoder_roi.cpp">
+      <Filter>Source Files\test_suites\avce</Filter>
+    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\hevce_transformskip.cpp">
       <Filter>Source Files\test_suites\hevce</Filter>
     </ClCompile>
