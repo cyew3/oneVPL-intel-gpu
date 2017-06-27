@@ -5,7 +5,6 @@ VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "msdk_gmock", "msdk_gmock.vcxproj", "{5192F0D4-4593-4AFE-813C-1E985F5C9A96}"
 	ProjectSection(ProjectDependencies) = postProject
-		{DB71B91D-16D8-4339-9621-D81798E46E8F} = {DB71B91D-16D8-4339-9621-D81798E46E8F}
 		{E2A5ABAE-F0A8-485C-BA1D-4F3D6567073A} = {E2A5ABAE-F0A8-485C-BA1D-4F3D6567073A}
 	EndProjectSection
 EndProject
@@ -18,8 +17,6 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_dispatch_trace", "..\..\..\mdp_msdk-api\opensource\mfx_dispatch\mfx_dispatch_trace_lib.vcxproj", "{430E22BA-BDF6-497C-BFC5-EC6907F90018}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_serializer", "..\mfx_serializer\mfx_serializer.vcxproj", "{E2A5ABAE-F0A8-485C-BA1D-4F3D6567073A}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_common", "..\..\samples\sample_common\sample_common.vcxproj", "{DB71B91D-16D8-4339-9621-D81798E46E8F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -103,18 +100,6 @@ Global
 		{E2A5ABAE-F0A8-485C-BA1D-4F3D6567073A}.Release|Win32.Build.0 = Release|Win32
 		{E2A5ABAE-F0A8-485C-BA1D-4F3D6567073A}.Release|x64.ActiveCfg = Release|x64
 		{E2A5ABAE-F0A8-485C-BA1D-4F3D6567073A}.Release|x64.Build.0 = Release|x64
-		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Debug_WithDebugAPI|Win32.ActiveCfg = Debug_WithDebugAPI|Win32
-		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Debug_WithDebugAPI|Win32.Build.0 = Debug_WithDebugAPI|Win32
-		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Debug_WithDebugAPI|x64.ActiveCfg = Debug_WithDebugAPI|x64
-		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Debug_WithDebugAPI|x64.Build.0 = Debug_WithDebugAPI|x64
-		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Debug|Win32.ActiveCfg = Debug|Win32
-		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Debug|Win32.Build.0 = Debug|Win32
-		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Debug|x64.ActiveCfg = Debug_WithDebugAPI|x64
-		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Debug|x64.Build.0 = Debug_WithDebugAPI|x64
-		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Release|Win32.ActiveCfg = Release|Win32
-		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Release|Win32.Build.0 = Release|Win32
-		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Release|x64.ActiveCfg = Release|x64
-		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
