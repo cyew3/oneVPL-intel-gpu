@@ -84,8 +84,7 @@ Copyright(c) 2008-2017 Intel Corporation. All Rights Reserved.
 #define HANDLE_HEVC_TILES(member, OPT_TYPE, description)      HANDLE_OPTION_FOR_EXT_BUFFER(m_extHEVCTiles, member, OPT_TYPE, description)
 #define HANDLE_HEVC_PARAM(member, OPT_TYPE, description)      HANDLE_OPTION_FOR_EXT_BUFFER(m_extHEVCParam, member, OPT_TYPE, description)
 #define HANDLE_VP8_OPTION(member, OPT_TYPE, description) HANDLE_OPTION_FOR_EXT_BUFFER(m_extVP8CodingOptions, member, OPT_TYPE, description)
-// TODO: uncomment when buffer will be added to API
-// #define HANDLE_VP9_OPTION(member, OPT_TYPE, description) HANDLE_OPTION_FOR_EXT_BUFFER(m_extVP9CodingOptions, member, OPT_TYPE, description)
+#define HANDLE_VP9_PARAM(member, OPT_TYPE, description) HANDLE_OPTION_FOR_EXT_BUFFER(m_extVP9Param, member, OPT_TYPE, description)
 #define HANDLE_ENCRESET_OPTION(member, OPT_TYPE, description) HANDLE_OPTION_FOR_EXT_BUFFER(m_extEncoderReset, member, OPT_TYPE, description)
 
 
@@ -122,8 +121,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
     , m_extHEVCTiles(new mfxExtHEVCTiles())
     , m_extHEVCParam(new mfxExtHEVCParam())
     , m_extVP8CodingOptions(new mfxExtVP8CodingOption())
-    // TODO: uncomment when buffer will be added to API
-    //, m_extVP9CodingOptions(new mfxExtVP9CodingOption())
+    , m_extVP9Param(new mfxExtVP9Param())
     , m_extEncoderRoi(new mfxExtEncoderROI())
     , m_extDirtyRect(new mfxExtDirtyRect())
     , m_extMoveRect(new mfxExtMoveRect())
@@ -318,6 +316,14 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_HEVC_PARAM(PicWidthInLumaSamples,     OPT_UINT_16,    "HEVC encoded picture width (SPS.pic_width_in_luma_samples)"),
         HANDLE_HEVC_PARAM(PicHeightInLumaSamples,    OPT_UINT_16,    "HEVC encoded picture height (SPS.pic_height_in_luma_samples)"),
         HANDLE_HEVC_PARAM(SampleAdaptiveOffset,      OPT_UINT_16,    "HEVC SAO public API: 0=unknown, 1=disabled, 2=luma, 4=chroma, 6=luma&chroma"),
+
+        // mfxExtVP9Param
+        HANDLE_VP9_PARAM(FrameWidth,          OPT_UINT_32, "0-maxU32"),
+        HANDLE_VP9_PARAM(FrameHeight,         OPT_UINT_32, "0-maxU32"),
+        HANDLE_VP9_PARAM(WriteIVFHeaders,     OPT_TRI_STATE, ""),
+        HANDLE_VP9_PARAM(QIndexDeltaLumaDC,   OPT_INT_16, ""),
+        HANDLE_VP9_PARAM(QIndexDeltaChromaAC, OPT_INT_16, ""),
+        HANDLE_VP9_PARAM(QIndexDeltaChromaDC, OPT_INT_16, ""),
 
         HANDLE_VP8_OPTION(EnableMultipleSegments,OPT_UINT_16,   "0-maxU32"),
         HANDLE_VP8_OPTION(LoopFilterType,        OPT_UINT_16,   "0-maxU16"),
@@ -1308,6 +1314,62 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
 
             argv++;
         }
+        else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-FrameWidth"), VM_STRING("")))
+        {
+            mfxU32 val;
+            MFX_CHECK(1 + argv != argvEnd);
+            MFX_PARSE_INT(val, argv[1]);
+
+            mfxExtVP9Param *pExt = NULL;
+
+            {
+                MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_VP9_PARAM);
+                if (!ppExt)
+                {
+                    pExt = new mfxExtVP9Param();
+
+                    pExt->Header.BufferId = MFX_EXTBUFF_VP9_PARAM;
+                    pExt->Header.BufferSz = sizeof(mfxExtVP9Param);
+                }
+                else
+                {
+                    pExt = reinterpret_cast<mfxExtVP9Param *>(ppExt->get());
+                }
+            }
+
+            pExt->FrameWidth = val;
+            m_ExtBuffers.get()->push_back(pExt);
+
+            argv++;
+        }
+        else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-FrameHeight"), VM_STRING("")))
+        {
+            mfxU32 val;
+            MFX_CHECK(1 + argv != argvEnd);
+            MFX_PARSE_INT(val, argv[1]);
+
+            mfxExtVP9Param *pExt = NULL;
+
+            {
+                MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_VP9_PARAM);
+                if (!ppExt)
+                {
+                    pExt = new mfxExtVP9Param();
+
+                    pExt->Header.BufferId = MFX_EXTBUFF_VP9_PARAM;
+                    pExt->Header.BufferSz = sizeof(mfxExtVP9Param);
+                }
+                else
+                {
+                    pExt = reinterpret_cast<mfxExtVP9Param *>(ppExt->get());
+                }
+            }
+
+            pExt->FrameHeight = val;
+            m_ExtBuffers.get()->push_back(pExt);
+
+            argv++;
+        }
         else if (m_OptProc.Check(argv[0], VM_STRING("-reset_start"), VM_STRING("after reaching this frame, encoder will be reset with new parameters, followed after this command and before -reset_end"),OPT_SPECIAL, VM_STRING("frame number")))
         {
             MFX_CHECK(1 + argv != argvEnd);
@@ -2155,9 +2217,8 @@ mfxStatus MFXTranscodingPipeline::CheckParams()
     if (!m_extVP8CodingOptions.IsZero())
         m_components[eREN].m_extParams.push_back(m_extVP8CodingOptions);
 
-    // TODO: uncomment when buffer will be added to API
-    /*if (!m_extVP9CodingOptions.IsZero())
-        m_components[eREN].m_extParams.push_back(m_extVP9CodingOptions);*/
+    if (!m_extVP9Param.IsZero())
+        m_components[eREN].m_extParams.push_back(m_extVP9Param);
 
     if (!m_extEncoderRoi.IsZero())
         m_components[eREN].m_extParams.push_back(m_extEncoderRoi);

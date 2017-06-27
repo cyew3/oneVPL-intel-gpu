@@ -86,8 +86,7 @@ protected:
     MFXExtBufferPtr<mfxExtHEVCTiles> m_extHEVCTiles;
     MFXExtBufferPtr<mfxExtHEVCParam> m_extHEVCParam;
     MFXExtBufferPtr<mfxExtVP8CodingOption>  m_extVP8CodingOptions;
-    // TODO: uncomment when buffer will be added to API
-    //MFXExtBufferPtr<mfxExtVP9CodingOption>  m_extVP9CodingOptions;
+    MFXExtBufferPtr<mfxExtVP9Param>  m_extVP9Param;
     MFXExtBufferPtr<mfxExtEncoderROI>  m_extEncoderRoi;
     MFXExtBufferPtr<mfxExtDirtyRect>  m_extDirtyRect;
     MFXExtBufferPtr<mfxExtMoveRect>  m_extMoveRect;

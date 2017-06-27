@@ -382,10 +382,19 @@ void MFXStructureRef <mfxExtVP8CodingOption>::ConstructValues() const
     SERIALIZE_INT(NumFramesForIVFHeader);
 }
 
-// TODO: uncomment when buffer will be added to API
-/*void MFXStructureRef <mfxExtVP9CodingOption>::ConstructValues() const
+void MFXStructureRef <mfxExtVP9Param>::ConstructValues() const
 {
-}*/
+    SERIALIZE_INT(FrameWidth);
+    SERIALIZE_INT(FrameHeight);
+    SERIALIZE_INT(WriteIVFHeaders);
+
+    SERIALIZE_POD_ARRAY(LoopFilterRefDelta, 4);
+    SERIALIZE_POD_ARRAY(LoopFilterModeDelta, 2);
+
+    SERIALIZE_INT(QIndexDeltaLumaDC);
+    SERIALIZE_INT(QIndexDeltaChromaAC);
+    SERIALIZE_INT(QIndexDeltaChromaDC);
+}
 
 void MFXStructureRef <mfxFrameInfo>::ConstructValues () const
 {
@@ -1029,11 +1038,10 @@ void MFXStructureRef <mfxExtBuffer>:: ConstructValues () const {
             SerializeStruct(VM_STRING("VP8."), *(mfxExtVP8CodingOption*)m_pStruct);
             break;
         }
-        // TODO: uncomment when buffer will be added to API
-        /*case MFX_EXTBUFF_CODING_OPTION_VP9 :{
-            SerializeStruct(VM_STRING("VP9."), *(mfxExtVP9CodingOption*)m_pStruct);
+        case MFX_EXTBUFF_VP9_PARAM:{
+            SerializeStruct(VM_STRING("VP9."), *(mfxExtVP9Param*)m_pStruct);
             break;
-        }*/
+        }
         case MFX_EXTBUFF_MVC_SEQ_DESC : {
             SerializeStruct(VM_STRING("MVC."), *(mfxExtMVCSeqDesc*)m_pStruct);
             break;

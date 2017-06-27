@@ -608,25 +608,24 @@ protected:
     virtual void ConstructValues () const;
 };
 
-// TODO: uncomment when buffer will be added to API
-/*template<>
-class MFXStructureRef <mfxExtVP9CodingOption>
-    : public MFXStructureBase<mfxExtVP9CodingOption>
+template<>
+class MFXStructureRef <mfxExtVP9Param>
+    : public MFXStructureBase<mfxExtVP9Param>
 {
 public:
     MFXStructureRef(mfxExtBuffer & refStruct, int flags = 0)
-        : MFXStructureBase<mfxExtVP9CodingOption>((mfxExtVP9CodingOption &)refStruct, flags)
+        : MFXStructureBase<mfxExtVP9Param>((mfxExtVP9Param &)refStruct, flags)
     {
     }
 
-    MFXStructureRef(mfxExtVP9CodingOption & refStruct, int flags = 0)
-        :MFXStructureBase<mfxExtVP9CodingOption>(refStruct, flags)
+    MFXStructureRef(mfxExtVP9Param & refStruct, int flags = 0)
+        :MFXStructureBase<mfxExtVP9Param>(refStruct, flags)
     {
     }
 
 protected:
     virtual void ConstructValues () const;
-};*/
+};
 
 template<>
 class MFXStructureRef <mfxFrameInfo>
