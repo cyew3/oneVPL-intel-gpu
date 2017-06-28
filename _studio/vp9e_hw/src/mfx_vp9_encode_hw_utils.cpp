@@ -323,7 +323,7 @@ mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
         frameParam.modeRefDeltaEnabled = 1;
         frameParam.modeRefDeltaUpdate = 1;
 #if defined (PRE_SI_TARGET_PLATFORM_GEN11)
-        if (platform.CodeName == MFX_PLATFORM_ICELAKE && par.mfx.CodecProfile > MFX_PROFILE_VP9_0)
+        if (platform.CodeName == MFX_PLATFORM_ICELAKE /*&& par.mfx.CodecProfile > MFX_PROFILE_VP9_0*/)
         {
             // REXT is being encoded. Need to disable mode and ref LF deltas to workaround driver issue.
             frameParam.modeRefDeltaEnabled = 0;
