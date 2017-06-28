@@ -403,11 +403,11 @@ void H265Encoder::SetPPS()
     m_pps.uniform_spacing_flag = 1;
     m_pps.loop_filter_across_tiles_enabled_flag = m_videoParam.NumTiles > 1 ? m_videoParam.deblockBordersFlag : 0;
     m_pps.pps_loop_filter_across_slices_enabled_flag = m_videoParam.NumSlices > 1 ? m_videoParam.deblockBordersFlag : 0;
-    m_pps.deblocking_filter_control_present_flag = !m_videoParam.deblockingFlag;
+    m_pps.deblocking_filter_control_present_flag = !m_videoParam.deblockingFlag || m_videoParam.tcOffset || m_videoParam.betaOffset;
     m_pps.deblocking_filter_override_enabled_flag = 0;
     m_pps.pps_deblocking_filter_disabled_flag = !m_videoParam.deblockingFlag;
-    m_pps.pps_beta_offset_div2 = 0;
-    m_pps.pps_tc_offset_div2 = 0;
+    m_pps.pps_beta_offset_div2 = m_videoParam.betaOffset;
+    m_pps.pps_tc_offset_div2 = m_videoParam.tcOffset;
     m_pps.lists_modification_present_flag = 1;
     m_pps.log2_parallel_merge_level = m_videoParam.log2ParallelMergeLevel;
 }
@@ -427,7 +427,6 @@ const Ipp32f tab_rdLambdaBPyramid5[5]         = {0.442f, 0.3536f, 0.3536f, 0.353
 const Ipp32f tab_rdLambdaBPyramid4[4]         = {0.442f, 0.3536f, 0.3536f, 0.68f};
 const Ipp32f tab_rdLambdaBPyramid_LoCmplx[4]  = {0.442f, 0.3536f, 0.4000f, 0.68f};
 const Ipp32f tab_rdLambdaBPyramid_MidCmplx[4] = {0.442f, 0.3536f, 0.3817f, 0.60f};
-//const Ipp32f tab_rdLambdaBPyramid_HiCmplx[4]  = {0.442f, 0.2793f, 0.3536f, 0.50f}; //
 const Ipp32f tab_rdLambdaBPyramid_HiCmplx[4]  = {0.442f, 0.3536f, 0.3536f, 0.50f}; 
 
 
@@ -533,7 +532,35 @@ void H265Encoder::SetSlice(H265Slice *slice, Ipp32u curr_slice, Frame *frame)
 
 namespace H265Enc {
 
-    bool SliceLambdaMultiplier(CostType &rd_lambda_slice, H265VideoParam const & videoParam, Ipp8u slice_type, const Frame *currFrame, bool isHiCmplxGop, bool isMidCmplxGop)
+    void GetGopComplexity(H265VideoParam const & par, const Frame *frame, bool& IsHiCmplxGOP, bool& IsMedCmplxGOP) 
+    {
+        Statistics* stats = frame->m_stats[0];
+        if (par.DeltaQpMode&AMT_DQP_CAL) {
+            Ipp32f SADpp = stats->avgTSC;
+            Ipp32f SCpp = stats->avgsqrSCpp;
+            if (SCpp > 2.0) {
+                Ipp32f minSADpp = 0;
+                if (par.GopRefDist > 8) {
+                    minSADpp = 1.3f*SCpp - 2.6f;
+                    if (minSADpp > 0 && minSADpp < SADpp) IsHiCmplxGOP = true;
+                    if (!IsHiCmplxGOP) {
+                        Ipp32f minSADpp = 1.1f*SCpp - 2.2f;
+                        if (minSADpp > 0 && minSADpp < SADpp) IsMedCmplxGOP = true;
+                    }
+                }
+                else {
+                    minSADpp = 1.1f*SCpp - 1.5f;
+                    if (minSADpp > 0 && minSADpp < SADpp) IsHiCmplxGOP = true;
+                    if (!IsHiCmplxGOP) {
+                        Ipp32f minSADpp = 1.0f*SCpp - 2.0f;
+                        if (minSADpp > 0 && minSADpp < SADpp) IsMedCmplxGOP = true;
+                    }
+                }
+            }
+        }
+    }
+
+    bool SliceLambdaMultiplier(CostType &rd_lambda_slice, H265VideoParam const & videoParam, Ipp8u slice_type, const Frame *currFrame, bool isHiCmplxGop, bool isMidCmplxGop, bool useCAL)
     {
         bool mult = false;
         switch (slice_type) {
@@ -560,7 +587,7 @@ namespace H265Enc {
         case B_SLICE:
             if (videoParam.BiPyramidLayers > 1 && OPT_LAMBDA_PYRAMID) {
                 Ipp8u layer = currFrame->m_pyramidLayer;
-                if (videoParam.DeltaQpMode&AMT_DQP_CAL) {
+                if ((videoParam.DeltaQpMode&AMT_DQP_CAL) && useCAL) {
                     if (isHiCmplxGop)
                         rd_lambda_slice = tab_rdLambdaBPyramid_HiCmplx[layer];
                     else if (isMidCmplxGop)
@@ -627,7 +654,7 @@ namespace H265Enc {
 
 #ifdef AMT_HROI_PSY_AQ
 
-    void setRoiDeltaQP(const H265VideoParam *par, Frame *frame) 
+    void setRoiDeltaQP(const H265VideoParam *par, Frame *frame, Ipp8u useBrc)
     {
         const Ipp32f l2f = log(2.0f);
         const Ipp32f dB[9]= {1.0f, 0.891f, 0.794f, 0.707f, 0.623f, 0.561f, 0.5f, 0.445f, 0.39f};
@@ -650,8 +677,9 @@ namespace H265Enc {
 
         Ipp32s fni = 0;
         Ipp32s numAct = 0;
-
-        if (frame->m_picCodeType == MFX_FRAMETYPE_I && !(par->DeltaQpMode&AMT_DQP_PSY)) {
+        Ipp32s qpa = frame->m_sliceQpY - (frame->m_pyramidLayer - ((frame->m_picCodeType == MFX_FRAMETYPE_I) ? 1 : 0));
+        if ( (frame->m_picCodeType == MFX_FRAMETYPE_I && !(par->DeltaQpMode&AMT_DQP_PSY)) || (qpa  < 16) ) 
+        {
             // reset
             for(Ipp32s i = 0; i < (int) par->PicHeightInCtbs; i++) {
                 for(Ipp32s j = 0; j < (int) par->PicWidthInCtbs; j++) {
@@ -694,9 +722,10 @@ namespace H265Enc {
 
         // Control
         Ipp32s maxFq = -1, minBq = 0;
-        Ipp32s qpa =  frame->m_sliceQpY - frame->m_pyramidLayer - ((frame->m_picCodeType == MFX_FRAMETYPE_I)?1:0);
+        
         Ipp32s          qrange = 7;
-        if     (qpa<16) qrange = 2;
+        
+        if     (qpa<18) qrange = 2;
         else if(qpa<23) qrange = 3;
         else if(qpa<28) qrange = 4;
         else if(qpa<34) qrange = 5;
@@ -708,12 +737,15 @@ namespace H265Enc {
         if((par->DeltaQpMode&AMT_DQP_PAQ) && par->BiPyramidLayers >1 && frame->m_pyramidLayer==0) qrange--;
         if(par->BiPyramidLayers >1 && frame->m_pyramidLayer<=par->refLayerLimit[0]) qrange--;
         
-        if(qrange<1) qrange = 1;
+        if(qrange<1) 
+            qrange = 1;
 
         if(frame->m_picCodeType == MFX_FRAMETYPE_I) {
             qrange=(qrange+1)/2;
         }
-
+        
+        if (useBrc && fn == 0) qrange = ((par->enableCmFlag) ? IPP_MIN(qrange, 2) : 1);  // Till we solve MT Slowdown problem (Psy now auto on for BRC)
+        
         // VSM (Visual Sensitivity Map)
         Ipp32f mult = pow(2.0f, (Ipp32f)qrange/6.0f);
 
@@ -929,19 +961,17 @@ namespace H265Enc {
                         iter++;
                         dqpb_act = sumQpb/bn;
                     }
-
-                }
-
+                } // BG
             }
-        }
+        } // Balance
     }
 
-    void ApplyHRoiDeltaQp(Frame* frame, const H265VideoParam &par)
+    void ApplyHRoiDeltaQp(Frame* frame, const H265VideoParam &par, Ipp8u useBrc)
     {
         Ipp32s numCtb = par.PicHeightInCtbs * par.PicWidthInCtbs; 
         Statistics* stats = frame->m_stats[0];
 
-        setRoiDeltaQP(&par, frame); 
+        setRoiDeltaQP(&par, frame, useBrc); 
 
         Ipp32s hasRoi = 0;
         if(par.DeltaQpMode & AMT_DQP_HROI) {
@@ -974,36 +1004,15 @@ namespace H265Enc {
             qp = Saturate(minqp, 51, qp);
 
             pLcuQP[ctb] = (Ipp8s)qp;
+
         }
 
         bool IsHiCplxGOP = false;
         bool IsMedCplxGOP = false;
-        if (par.DeltaQpMode&AMT_DQP_CAL) {
-            Ipp32f SADpp = stats->avgTSC; 
-            Ipp32f SCpp  = stats->avgsqrSCpp;
-            if (SCpp > 2.0) {
-                Ipp32f minSADpp = 0;
-                if (par.GopRefDist > 8) {
-                    minSADpp = 1.3f*SCpp - 2.6f;
-                    if (minSADpp>0 && minSADpp<SADpp) IsHiCplxGOP = true;
-                    if (!IsHiCplxGOP) {
-                        Ipp32f minSADpp = 1.1f*SCpp - 2.2f;
-                        if(minSADpp>0 && minSADpp<SADpp) IsMedCplxGOP = true;
-                    }
-                } 
-                else {
-                    minSADpp = 1.1f*SCpp - 1.5f;
-                    if (minSADpp>0 && minSADpp<SADpp) IsHiCplxGOP = true;
-                    if (!IsHiCplxGOP) {
-                        Ipp32f minSADpp = 1.0f*SCpp - 2.0f;
-                        if (minSADpp>0 && minSADpp<SADpp) IsMedCplxGOP = true;
-                    }
-                }
-            }
-        }
+        GetGopComplexity(par, frame, IsHiCplxGOP, IsMedCplxGOP);
 
         CostType rd_lamba_multiplier;
-        bool extraMult = SliceLambdaMultiplier(rd_lamba_multiplier, par, frame->m_slices[0].slice_type, frame, IsHiCplxGOP, IsMedCplxGOP);
+        bool extraMult = SliceLambdaMultiplier(rd_lamba_multiplier, par, frame->m_slices[0].slice_type, frame, IsHiCplxGOP, IsMedCplxGOP, true);
 
         Ipp32s numQpValues = 52 + (par.bitDepthLuma - 8)*6;
         frame->m_roiSlice.resize(numQpValues);
@@ -1011,6 +1020,7 @@ namespace H265Enc {
             SetSliceLambda(par, &frame->m_roiSlice[i], i -  (par.bitDepthLuma - 8)*6, frame, rd_lamba_multiplier, extraMult);
 
         ApplyDeltaQpOnRoi(frame, par);
+
     }
 
 #endif
@@ -1041,7 +1051,7 @@ namespace H265Enc {
         }
 
         CostType rd_lamba_multiplier;
-        bool extraMult = SliceLambdaMultiplier(rd_lamba_multiplier, par, frame->m_slices[0].slice_type, frame, 0, 0);
+        bool extraMult = SliceLambdaMultiplier(rd_lamba_multiplier, par, frame->m_slices[0].slice_type, frame, 0, 0, false);
 
         Ipp32s numQpValues = 52 + (par.bitDepthLuma - 8)*6;
         frame->m_roiSlice.resize(numQpValues);
@@ -2539,6 +2549,7 @@ mfxStatus H265FrameEncoder::PerformThreadingTask(ThreadingTaskSpecifier action, 
             m_bsf[bsf_id].CtxRestore(m_bs[bs_id].m_base.context_array);
             // here should be slice lambda always ?? Why?
             cu_ithread->m_rdLambda = m_frame->m_slices[curr_slice_id].rd_lambda_slice;
+
 #ifdef AMT_DQP_FIX
 #ifdef AMT_HROI_PSY_AQ
             if (m_videoParam.UseDQP && (m_videoParam.numRoi > 0 || (m_videoParam.DeltaQpMode & AMT_DQP_PSY_HROI))) {
@@ -2550,6 +2561,7 @@ mfxStatus H265FrameEncoder::PerformThreadingTask(ThreadingTaskSpecifier action, 
                 cu_ithread->SetCuLambda(m_frame);
             }
 #endif
+
             if (m_videoParam.enableCmPostProc) {
                 Ipp32s numCtbs = m_videoParam.PicWidthInCtbs * m_videoParam.PicHeightInCtbs;
                 Ipp32s compCount = m_videoParam.SAOChromaFlag ? 3 : 1;

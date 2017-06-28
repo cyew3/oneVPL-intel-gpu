@@ -44,6 +44,8 @@
 #include "mfx_ext_buffers.h"
 #include "mfxbrc.h"
 
+#define LOW_COMPLX_PAQ
+#define AMT_NEW_ICRA_SW
 #define AMT_MAX_FRAME_SIZE
 //#define AMT_MAX_FRAME_SIZE_DEBUG
 

@@ -111,10 +111,10 @@ namespace H265Enc {
         m_bestSatdHist.resize(33, -1);
 
         // for content analysis (paq/calq)
-        m_interSad.resize(numBlk);
+        m_interSad.resize(numBlk, 0);
 
-        m_interSad_pdist_past.resize(numBlk);
-        m_interSad_pdist_future.resize(numBlk);
+        m_interSad_pdist_past.resize(numBlk, 0);
+        m_interSad_pdist_future.resize(numBlk, 0);
 
         H265MV initMv = {0,0};
         m_mv.resize(numBlk, initMv);

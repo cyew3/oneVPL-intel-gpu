@@ -604,6 +604,13 @@ static void TaskLogDump()
 #endif
             }
         }
+#ifdef LOW_COMPLX_PAQ
+        if (intParam.deblockingFlag && (intParam.DeltaQpMode&AMT_DQP_PSY_HROI)) {
+            // smooth out variations
+            intParam.tcOffset = 1;
+            intParam.betaOffset = 1;
+        }
+#endif
 
         intParam.RepackForMaxFrameSize = (optHevc.RepackForMaxFrameSize == ON);
 
@@ -1887,7 +1894,7 @@ void H265Encoder::EnqueueFrameEncoder(H265EncodeTaskInputParams *inputParam)
             frame->m_ttSubmitGpuIntra.poc = frame->m_frameOrder;
             for (Ipp32s i = 0; i < 4; i++)
                 if (!frame->m_feiIntraAngModes[i])
-                   frame->m_feiIntraAngModes[i] = m_feiAngModesPool[i].Allocate();
+                    frame->m_feiIntraAngModes[i] = m_feiAngModesPool[i].Allocate();
             AddTaskDependencyThreaded(&frame->m_ttSubmitGpuIntra, &frame->m_ttSubmitGpuCopySrc); // GPU_SUBMIT_INTRA <- GPU_SUBMIT_COPY_SRC
 
             frame->m_ttWaitGpuIntra.numDownstreamDependencies = 0;
@@ -2020,13 +2027,13 @@ void H265Encoder::EnqueueFrameEncoder(H265EncodeTaskInputParams *inputParam)
 
     Ipp32s numCtb = m_videoParam.PicHeightInCtbs * m_videoParam.PicWidthInCtbs;
     memset(frame->m_lcuQps[0].data(), frame->m_sliceQpY, sizeof(frame->m_sliceQpY)*numCtb);
-    memset(frame->m_lcuQps[1].data(), frame->m_sliceQpY, sizeof(frame->m_sliceQpY)*(numCtb<<2));
-    memset(frame->m_lcuQps[2].data(), frame->m_sliceQpY, sizeof(frame->m_sliceQpY)*(numCtb<<4));
-    memset(frame->m_lcuQps[3].data(), frame->m_sliceQpY, sizeof(frame->m_sliceQpY)*(numCtb<<6));
+    memset(frame->m_lcuQps[1].data(), frame->m_sliceQpY, sizeof(frame->m_sliceQpY)*(numCtb << 2));
+    memset(frame->m_lcuQps[2].data(), frame->m_sliceQpY, sizeof(frame->m_sliceQpY)*(numCtb << 4));
+    memset(frame->m_lcuQps[3].data(), frame->m_sliceQpY, sizeof(frame->m_sliceQpY)*(numCtb << 6));
     memset(&frame->m_lcuQpOffs[0][0], 0, sizeof(frame->m_sliceQpY)*numCtb);
-    memset(&frame->m_lcuQpOffs[1][0], 0, sizeof(frame->m_sliceQpY)*(numCtb<<2));
-    memset(&frame->m_lcuQpOffs[2][0], 0, sizeof(frame->m_sliceQpY)*(numCtb<<4));
-    memset(&frame->m_lcuQpOffs[3][0], 0, sizeof(frame->m_sliceQpY)*(numCtb<<6));
+    memset(&frame->m_lcuQpOffs[1][0], 0, sizeof(frame->m_sliceQpY)*(numCtb << 2));
+    memset(&frame->m_lcuQpOffs[2][0], 0, sizeof(frame->m_sliceQpY)*(numCtb << 4));
+    memset(&frame->m_lcuQpOffs[3][0], 0, sizeof(frame->m_sliceQpY)*(numCtb << 6));
 
     if (m_videoParam.RegionIdP1 > 0)
         for (Ipp32s i = 0; i < numCtb << m_videoParam.Log2NumPartInCU; i++)
@@ -2034,17 +2041,22 @@ void H265Encoder::EnqueueFrameEncoder(H265EncodeTaskInputParams *inputParam)
 
     // setup slices
     H265Slice *currSlices = &frame->m_slices[0];
-    for (Ipp8u i = 0; i < m_videoParam.NumSlices; i++) {
-        (currSlices + i)->slice_qp_delta = frame->m_sliceQpY - m_pps.init_qp;
-//        SetAllLambda(m_videoParam, (currSlices + i), frame->m_sliceQpY, frame);
-        CostType rd_lamba_multiplier;
-        bool extraMult = SliceLambdaMultiplier(rd_lamba_multiplier, m_videoParam,  (currSlices + i)->slice_type, frame, 0, 0);
-        SetSliceLambda(m_videoParam, currSlices + i, frame->m_sliceQpY, frame, rd_lamba_multiplier, extraMult);
+    {
+        bool IsHiCplxGOP = false;
+        bool IsMedCplxGOP = false;
+        GetGopComplexity(m_videoParam, frame, IsHiCplxGOP, IsMedCplxGOP);
+        for (Ipp8u i = 0; i < m_videoParam.NumSlices; i++) {
+            (currSlices + i)->slice_qp_delta = frame->m_sliceQpY - m_pps.init_qp;
+            //        SetAllLambda(m_videoParam, (currSlices + i), frame->m_sliceQpY, frame);
+            CostType rd_lamba_multiplier;
+            bool extraMult = SliceLambdaMultiplier(rd_lamba_multiplier, m_videoParam, (currSlices + i)->slice_type, frame, IsHiCplxGOP, IsMedCplxGOP, false);
+            SetSliceLambda(m_videoParam, currSlices + i, frame->m_sliceQpY, frame, rd_lamba_multiplier, extraMult);
+        }
     }
 
 #ifdef AMT_HROI_PSY_AQ
     if ((m_videoParam.DeltaQpMode & AMT_DQP_PSY_HROI) && m_videoParam.UseDQP)
-        ApplyHRoiDeltaQp(frame, m_videoParam);
+        ApplyHRoiDeltaQp(frame, m_videoParam, m_brc ? 1 : 0);
     else 
 #endif
     if (m_videoParam.numRoi && m_videoParam.UseDQP)
@@ -2103,8 +2115,9 @@ mfxStatus H265Encoder::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *s
             if (m_videoParam.SceneCut)     buffering += /*10 +*/ 1 + 1;
             if (m_videoParam.AnalyzeCmplx) buffering += m_videoParam.RateControlDepth;
             if (m_videoParam.DeltaQpMode) {
-                if      (m_videoParam.DeltaQpMode&(AMT_DQP_PAQ|AMT_DQP_CAL)) buffering += 2 * m_videoParam.GopRefDist + 1;
-                else if (m_videoParam.DeltaQpMode&(AMT_DQP_CAQ))             buffering += 1;
+                if      (m_videoParam.DeltaQpMode&(AMT_DQP_PAQ)) buffering += 2 * m_videoParam.GopRefDist + 1;
+                else if (m_videoParam.DeltaQpMode&(AMT_DQP_CAL)) buffering += m_videoParam.GopRefDist + 1;
+                else if (m_videoParam.DeltaQpMode&(AMT_DQP_CAQ)) buffering += 1;
             }
         }
     } else {
@@ -3309,8 +3322,8 @@ void FillDeblockParam(DeblockParam & deblockParam, const H265Enc::H265VideoParam
     deblockParam.Height = (Ipp16u)videoParam.Height;
     deblockParam.PicWidthInCtbs = (Ipp16u)videoParam.PicWidthInCtbs;
     deblockParam.PicHeightInCtbs = (Ipp16u)videoParam.PicHeightInCtbs;
-    deblockParam.tcOffset = 0;//videoParam.tcOffset;
-    deblockParam.betaOffset = 0;//videoParam.betaOffset;
+    deblockParam.tcOffset = videoParam.tcOffset << 1;
+    deblockParam.betaOffset = videoParam.betaOffset << 1;
     deblockParam.crossSliceBoundaryFlag = 0;//videoParam.crossSliceBoundaryFlag;
     deblockParam.crossTileBoundaryFlag = 0;//videoParam.crossTileBoundaryFlag;
     deblockParam.TULog2MinSize = (Ipp8u)videoParam.QuadtreeTULog2MinSize;
@@ -3392,8 +3405,8 @@ void SetPostProcParam(PostProcParam & postprocParam, const H265Enc::H265VideoPar
     postprocParam.Height = (Ipp16u)videoParam.Height;
     postprocParam.PicWidthInCtbs = (Ipp16u)videoParam.PicWidthInCtbs;
     postprocParam.PicHeightInCtbs = (Ipp16u)videoParam.PicHeightInCtbs;
-    postprocParam.tcOffset = 0;//videoParam.tcOffset;
-    postprocParam.betaOffset = 0;//videoParam.betaOffset;
+    postprocParam.tcOffset = videoParam.tcOffset << 1;
+    postprocParam.betaOffset  = videoParam.betaOffset << 1;
     postprocParam.crossSliceBoundaryFlag = 0;//videoParam.crossSliceBoundaryFlag;
     postprocParam.crossTileBoundaryFlag = 0;//videoParam.crossTileBoundaryFlag;
     postprocParam.TULog2MinSize = (Ipp8u)videoParam.QuadtreeTULog2MinSize;

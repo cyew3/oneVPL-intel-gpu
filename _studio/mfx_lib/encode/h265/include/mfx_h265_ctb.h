@@ -343,7 +343,7 @@ public:
     Ipp32s  m_STC[5][MAX_NUM_PARTITIONS];
     Ipp32f  m_bestInterSADpp;
     Ipp32s  m_colocSTC;
-#ifdef AMT_NEW_ICRA
+
     struct {
         Ipp32s  sadBest[(MAX_CU_SIZE>>3)*(MAX_CU_SIZE>>3)];
         Ipp32s  mvd[(MAX_CU_SIZE>>3)*(MAX_CU_SIZE>>3)];
@@ -353,7 +353,6 @@ public:
         Ipp32s  splitHist[5];
         bool    done;
     } m_ief;
-#endif
 
     Ipp32s  m_mvdMax;
     Ipp32s  m_mvdCost;
@@ -908,13 +907,14 @@ public:
     // Support
     void CmMvPred(mfxI16Pair *mv, Ipp32s p, Ipp32s x, Ipp32s y,  Ipp32s best_list, Ipp32s best_ref, Ipp32s puSize, Frame *colPic, mfxI16Pair &mvd_best) const;
     // Main
-    void InitIEFs();
     bool HasIEF() const;
     bool IsForceIntraIEF() const;
     bool IsDisableIntraIEF() const;
     bool IsDisableSkipIEF() const;
     void CalcIEFs(Ipp32s absPartIdx, Ipp32s depth, Ipp32s partAddr, Ipp32s partDepth, Ipp8s qp, Ipp8u& splitMode);
 #endif
+    void InitIEFs();
+    bool IsFirst(Ipp8u depth) const;
     void BestCmBlockDist(Ipp32s x, Ipp32s bX, Ipp32s y, Ipp32s bY, Ipp32s puSize, Ipp32s& dist_best, Ipp32s& best_list, Ipp32s& best_ref) const;
     void CalcMAD();
 

@@ -76,14 +76,14 @@ namespace H265Enc {
 
     void AverageComplexity(Frame *in, H265VideoParam& videoParam, Frame *next);
 
-    void AverageRsCs(Frame *in);
+    void AverageRsCs(Frame *in, H265VideoParam& videoParam);
     void BackPropagateAvgTsc(FrameIter prevRef, FrameIter currRef);
 
     Ipp32s BuildQpMap(FrameIter begin, FrameIter end, Ipp32s frameOrderCentral, H265VideoParam& videoParam, Ipp32s doUpdateState);
     void DetermineQpMap_PFrame(FrameIter begin, FrameIter curr, FrameIter end, H265VideoParam & videoParam);
     void DetermineQpMap_IFrame(FrameIter curr, FrameIter end, H265VideoParam& videoParam);
 
-    void DoPDistInterAnalysis_OneRow(Frame* curr, Frame* prevP, Frame* nextP, Ipp32s region_row, Ipp32s lowresRowsInRegion, Ipp32s originRowsInRegion, Ipp8u LowresFactor);
+    void DoPDistInterAnalysis_OneRow(Frame* curr, Frame* prevP, Frame* nextP, Ipp32s region_row, Ipp32s lowresRowsInRegion, Ipp32s originRowsInRegion, Ipp8u LowresFactor, Ipp8u FullresMetrics);
 
     int  DetectSceneCut_AMT(Frame* input, Frame* prev);
 

@@ -85,6 +85,8 @@ namespace H265Enc {
         Ipp8u num_cand_2[8];
 
         Ipp8u  deblockingFlag; // Deblocking
+        Ipp8s  tcOffset;
+        Ipp8s  betaOffset;
         Ipp8u  deblockBordersFlag;
         Ipp8u  SBHFlag;  // Sign Bit Hiding
         Ipp8u  RDOQFlag; // RDO Quantization
@@ -350,11 +352,12 @@ namespace H265Enc {
     void AddTaskDependencyThreaded(ThreadingTask *downstream, ThreadingTask *upstream, ObjectPool<ThreadingTask> *ttHubPool = NULL);
 
 #ifdef AMT_HROI_PSY_AQ
-    void ApplyHRoiDeltaQp(Frame* frame, const H265VideoParam & par);
+    void ApplyHRoiDeltaQp(Frame* frame, const H265VideoParam & par, Ipp8u useBrc = 0);
 #endif
     void ApplyRoiDeltaQp(Frame* frame, const H265VideoParam & par);
-
-    bool SliceLambdaMultiplier(CostType &rd_lambda_slice, H265VideoParam const & videoParam, Ipp8u slice_type, const Frame *currFrame, bool isHiCmplxGop, bool isMidCmplxGop);
+    
+    void GetGopComplexity(H265VideoParam const & par, const Frame *frame, bool& IsHiCmplxGOP, bool& IsMedCmplxGOP);
+    bool SliceLambdaMultiplier(CostType &rd_lambda_slice, H265VideoParam const & videoParam, Ipp8u slice_type, const Frame *currFrame, bool isHiCmplxGop, bool isMidCmplxGop, bool useCAL);
     void SetSliceLambda(H265VideoParam const & videoParam, H265Slice *slice, Ipp32s qp, const Frame *currFrame, CostType lambdaMult, bool extraMult);
 
     class H265BsReal;
