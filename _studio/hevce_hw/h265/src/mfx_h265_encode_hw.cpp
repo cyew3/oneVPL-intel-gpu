@@ -1158,17 +1158,12 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
             }
             if (m_brc)
             {
-               mfxI8 prevQP  = taskForExecute->m_qpY;
-               taskForExecute->m_qpY = (mfxI8)m_brc->GetQP(m_vpar,*taskForExecute);
-               MFX_CHECK((taskForExecute->m_qpY <= 51) && (taskForExecute->m_qpY >= 1 - 6*m_vpar.m_sps.bit_depth_luma_minus8), MFX_ERR_UNDEFINED_BEHAVIOR);
+               if (m_vpar.m_platform.CodeName == MFX_PLATFORM_KABYLAKE || IsOn(m_vpar.mfx.LowPower))
+                   taskForExecute->m_qpY = (mfxI8)Clip3( 0, 51, m_brc->GetQP(m_vpar, *taskForExecute));  //driver limitation
+               else
+                   taskForExecute->m_qpY = (mfxI8)Clip3( -6 * m_vpar.m_sps.bit_depth_luma_minus8, 51, m_brc->GetQP(m_vpar, *taskForExecute));
+ 
                taskForExecute->m_sh.slice_qp_delta = mfxI8(taskForExecute->m_qpY - (m_vpar.m_pps.init_qp_minus26 + 26));
-
-               if (taskForExecute->m_recode && prevQP == taskForExecute->m_qpY)
-               {
-                    taskForExecute->m_bSkipped = true;
-               }
-
-
                if (taskForExecute->m_recode && m_vpar.AsyncDepth > 1)
                {
                    taskForExecute->m_sh.temporal_mvp_enabled_flag = 0; // WA
