@@ -120,6 +120,9 @@ CTranscodingPipeline::CTranscodingPipeline():
     MSDK_ZERO_MEMORY(m_RotateParam);
     MSDK_ZERO_MEMORY(m_mfxPreEncParams);
 
+    MSDK_ZERO_MEMORY(m_threadsPar);
+    MSDK_ZERO_MEMORY(m_initPar);
+
     MSDK_ZERO_MEMORY(m_mfxDecResponse);
     MSDK_ZERO_MEMORY(m_mfxEncResponse);
 
@@ -199,6 +202,8 @@ CTranscodingPipeline::CTranscodingPipeline():
     m_bIsFieldSplitting = false;
     m_bUseOverlay = false;
     m_bStopOverlay = false;
+    m_bIsInterOrJoined = false;
+    m_bIsRobust = false;
 } //CTranscodingPipeline::CTranscodingPipeline()
 
 CTranscodingPipeline::~CTranscodingPipeline()
@@ -581,8 +586,8 @@ mfxStatus CTranscodingPipeline::DecodeOneFrame(ExtendedSurface *pExtSurface)
     // HEVC SW requires additional sychronization
     if( MFX_ERR_NONE == sts && isHEVCSW)
     {
-        m_pmfxSession->SyncOperation(pExtSurface->Syncp,MSDK_WAIT_INTERVAL);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        sts = m_pmfxSession->SyncOperation(pExtSurface->Syncp, MSDK_WAIT_INTERVAL);
+        MSDK_CHECK_STATUS(sts, "m_pmfxSession->SyncOperation failed");
     }
     return sts;
 
@@ -627,8 +632,8 @@ mfxStatus CTranscodingPipeline::DecodeLastFrame(ExtendedSurface *pExtSurface)
     // HEVC SW requires additional sychronization
     if( MFX_ERR_NONE == sts && isHEVCSW)
     {
-        m_pmfxSession->SyncOperation(pExtSurface->Syncp,MSDK_WAIT_INTERVAL);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        sts = m_pmfxSession->SyncOperation(pExtSurface->Syncp,  MSDK_WAIT_INTERVAL);
+        MSDK_CHECK_STATUS(sts, "m_pmfxSession->SyncOperation failed");
     }
 
     return sts;
@@ -3173,6 +3178,7 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     // use external allocator
     m_pMFXAllocator = pMFXAllocator;
     m_pBSProcessor = pBSProc;
+    m_hdl = hdl;
 
     m_pParentPipeline = pParentPipeline;
     shouldUseGreedyFormula = pParams->shouldUseGreedyFormula;
@@ -3183,6 +3189,7 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     m_FrameNumberPreference = pParams->FrameNumberPreference;
     m_numEncoders = 0;
     m_bUseOverlay = pParams->DecodeId == MFX_CODEC_RGB4 ? true : false;
+    m_bIsRobust = pParams->bRobust;
 
 #if _MSDK_API >= MSDK_API(1,22)
     m_ROIData = pParams->m_ROIData;
@@ -3274,42 +3281,36 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
 
     m_pBuffer = pBuffer;
 
-    mfxInitParam initPar;
-    mfxExtThreadsParam threadsPar;
     mfxExtBuffer* extBufs[1];
 
-    MSDK_ZERO_MEMORY(initPar);
-    MSDK_ZERO_MEMORY(threadsPar);
-
     // we set version to 1.0 and later we will query actual version of the library which will got leaded
-    initPar.Version.Major = 1;
-    initPar.Version.Minor = 0;
-    initPar.Implementation = pParams->libType;
+    m_initPar.Version.Major = 1;
+    m_initPar.Version.Minor = 0;
+    m_initPar.Implementation = pParams->libType;
 
-    init_ext_buffer(threadsPar);
+    init_ext_buffer(m_threadsPar);
 
     bool needInitExtPar = false;
 
     if (pParams->nThreadsNum) {
-        threadsPar.NumThread = pParams->nThreadsNum;
+        m_threadsPar.NumThread = pParams->nThreadsNum;
         needInitExtPar = true;
     }
     if (needInitExtPar) {
-        extBufs[0] = (mfxExtBuffer*)&threadsPar;
-        initPar.ExtParam = extBufs;
-        initPar.NumExtParam = 1;
+        extBufs[0] = (mfxExtBuffer*)&m_threadsPar;
+        m_initPar.ExtParam = extBufs;
+        m_initPar.NumExtParam = 1;
     }
 
     //--- GPU Copy settings
-    initPar.GPUCopy = pParams->nGpuCopyMode;
+    m_initPar.GPUCopy = pParams->nGpuCopyMode;
 
     // init session
     m_pmfxSession.reset(new MFXVideoSession);
 
     // Initializing library
-    sts = m_pmfxSession->InitEx(initPar);
+    sts = m_pmfxSession->InitEx(m_initPar);
     MSDK_CHECK_STATUS(sts, "m_pmfxSession->InitEx failed");
-
     // check the API version of actually loaded library
     sts = m_pmfxSession->QueryVersion(&m_Version);
     MSDK_CHECK_STATUS(sts, "m_pmfxSession->QueryVersion failed");
@@ -3317,56 +3318,20 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     sts = CheckRequiredAPIVersion(m_Version, pParams);
     MSDK_CHECK_STATUS(sts, "CheckRequiredAPIVersion failed");
 
-    mfxIMPL impl = 0;
-    m_pmfxSession->QueryIMPL(&impl);
-
     // opaque memory feature is available starting with API 1.3 and
     // can be used within 1 intra session or joined inter sessions only
     if (m_Version.Major >= 1 && m_Version.Minor >= 3 &&
-        (pParams->eMode == Native || pParams->bIsJoin) )
+        (pParams->eMode == Native || pParams->bIsJoin))
     {
         m_bUseOpaqueMemory = true;
     }
-
-    if (!pParams->bUseOpaqueMemory || pParams->EncodeId==MFX_CODEC_DUMP) // Don't use opaque in case of yuv output or if it was specified explicitly
+    if (!pParams->bUseOpaqueMemory || pParams->EncodeId == MFX_CODEC_DUMP) // Don't use opaque in case of yuv output or if it was specified explicitly
         m_bUseOpaqueMemory = false;
 
-    // Media SDK session doesn't require external allocator if the application uses opaque memory
-    if (!m_bUseOpaqueMemory)
-    {
-        sts = m_pmfxSession->SetFrameAllocator(m_pMFXAllocator);
-        MSDK_CHECK_STATUS(sts, "m_pmfxSession->SetFrameAllocator failed");
-    }
+    m_bIsInterOrJoined = pParams->eMode == Sink || pParams->eMode == Source || pParams->bIsJoin;
 
-    bool bIsInterOrJoined = pParams->eMode == Sink || pParams->eMode == Source || pParams->bIsJoin;
-
-    mfxHandleType handleType = (mfxHandleType)0;
-    bool bIsMustSetExternalHandle = 0;
-
-    if (MFX_IMPL_VIA_D3D11 == MFX_IMPL_VIA_MASK(impl))
-    {
-        handleType = MFX_HANDLE_D3D11_DEVICE;
-        bIsMustSetExternalHandle = false;
-    }
-    else if (MFX_IMPL_VIA_D3D9 == MFX_IMPL_VIA_MASK(impl))
-    {
-        handleType = MFX_HANDLE_D3D9_DEVICE_MANAGER;
-        bIsMustSetExternalHandle = false;
-    }
-#ifdef LIBVA_SUPPORT
-    else if (MFX_IMPL_VIA_VAAPI == MFX_IMPL_VIA_MASK(impl))
-    {
-        handleType = MFX_HANDLE_VA_DISPLAY;
-        bIsMustSetExternalHandle = true;
-    }
-#endif
-
-    if (hdl && (bIsMustSetExternalHandle || (bIsInterOrJoined || !m_bUseOpaqueMemory)))
-    {
-      sts = m_pmfxSession->SetHandle(handleType, hdl);
-      MSDK_CHECK_STATUS(sts, "m_pmfxSession->SetHandle failed");
-      m_hdl = hdl; // save handle
-    }
+    sts = SetAllocatorAndHandleIfRequired();
+    MSDK_CHECK_STATUS(sts, "SetAllocatorAndHandleIfRequired failed");
 
     // Joining sessions if required
     if (pParams->bIsJoin && pParentPipeline)
@@ -3516,6 +3481,7 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
 #endif //_MSDK_API >= MSDK_API(1,22)
     }
     m_bIsInit = true;
+
     return sts;
 } //mfxStatus CTranscodingPipeline::Init(sInputParams *pParams)
 
@@ -3676,6 +3642,53 @@ void CTranscodingPipeline::SetNumFramesForReset(mfxU32 nFrames)
     m_NumFramesForReset = nFrames;
 }
 
+mfxStatus CTranscodingPipeline::SetAllocatorAndHandleIfRequired()
+{
+    mfxStatus sts = MFX_ERR_NONE;
+    mfxIMPL impl = 0;
+    m_pmfxSession->QueryIMPL(&impl);
+
+    // Media SDK session doesn't require external allocator if the application uses opaque memory
+    if (!m_bUseOpaqueMemory)
+    {
+        sts = m_pmfxSession->SetFrameAllocator(m_pMFXAllocator);
+        MSDK_CHECK_STATUS(sts, "m_pmfxSession->SetFrameAllocator failed");
+    }
+
+    mfxHandleType handleType = (mfxHandleType)0;
+    bool bIsMustSetExternalHandle = 0;
+
+    if (MFX_IMPL_VIA_D3D11 == MFX_IMPL_VIA_MASK(impl))
+    {
+        handleType = MFX_HANDLE_D3D11_DEVICE;
+        bIsMustSetExternalHandle = false;
+    }
+    else if (MFX_IMPL_VIA_D3D9 == MFX_IMPL_VIA_MASK(impl))
+    {
+        handleType = MFX_HANDLE_D3D9_DEVICE_MANAGER;
+        bIsMustSetExternalHandle = false;
+    }
+#ifdef LIBVA_SUPPORT
+    else if (MFX_IMPL_VIA_VAAPI == MFX_IMPL_VIA_MASK(impl))
+    {
+        handleType = MFX_HANDLE_VA_DISPLAY;
+        bIsMustSetExternalHandle = true;
+    }
+#endif
+
+    if (m_hdl && (bIsMustSetExternalHandle || (m_bIsInterOrJoined || !m_bUseOpaqueMemory)))
+    {
+        sts = m_pmfxSession->SetHandle(handleType, m_hdl);
+        MSDK_CHECK_STATUS(sts, "m_pmfxSession->SetHandle failed");
+    }
+    return sts;
+}
+
+bool CTranscodingPipeline::IsRobust()
+{
+    return m_bIsRobust;
+}
+
 void CTranscodingPipeline::Close()
 {
     if (m_pmfxDEC.get())
@@ -3730,6 +3743,105 @@ void CTranscodingPipeline::Close()
     m_bIsInit = false;
 
 } // void CTranscodingPipeline::Close()
+
+mfxStatus CTranscodingPipeline::Reset()
+{
+    mfxStatus sts = MFX_ERR_NONE;
+    bool isDec = m_pmfxDEC.get() ? true : false,
+        isEnc = m_pmfxENC.get() ? true : false,
+        isVPP = m_pmfxVPP.get() ? true : false,
+        isPreEnc = m_pmfxPreENC.get() ? true : false;
+
+    // Close components being used
+    if (isDec)
+    {
+        m_pmfxDEC->Close();
+        m_pmfxDEC.reset();
+    }
+
+    if (isVPP)
+    {
+        m_pmfxVPP->Close();
+        m_pmfxVPP.reset();
+    }
+
+    if (isPreEnc)
+    {
+        m_pmfxPreENC->Close();
+        m_pmfxPreENC.reset();
+    }
+
+    if (isEnc)
+    {
+        m_pmfxENC->Close();
+        m_pmfxENC.reset();
+    }
+    m_pmfxSession->Close();
+    m_pmfxSession.reset();
+
+    m_pmfxSession.reset(new MFXVideoSession());
+    sts = m_pmfxSession->InitEx(m_initPar);
+    MSDK_CHECK_STATUS(sts, "m_pmfxSession->InitEx failed");
+
+    // Release dec and enc surface pools
+    for (int i = 0; i < m_pSurfaceDecPool.size(); i++)
+    {
+        m_pSurfaceDecPool[i]->Data.Locked = 0;
+    }
+    for (int i = 0; i < m_pSurfaceEncPool.size(); i++)
+    {
+        m_pSurfaceEncPool[i]->Data.Locked = 0;
+    }
+
+    // Release all safety buffers
+    SafetySurfaceBuffer* sptr = m_pBuffer;
+    while (sptr)
+    {
+        sptr->ReleaseSurfaceAll();
+        sptr = sptr->m_pNext;
+    }
+
+    // Release output bitstram pools
+    m_BSPool.clear();
+    m_pBSStore->ReleaseAll();
+
+    sts = SetAllocatorAndHandleIfRequired();
+    MSDK_CHECK_STATUS(sts, "SetAllocatorAndHandleIfRequired failed");
+
+    if (isDec)
+        m_pmfxDEC.reset(new MFXVideoDECODE((mfxSession)*m_pmfxSession));
+    if (isVPP)
+        m_pmfxVPP.reset(new MFXVideoMultiVPP((mfxSession)*m_pmfxSession));
+    if (isPreEnc)
+        m_pmfxPreENC.reset(new MFXVideoENC((mfxSession)*m_pmfxSession));
+    if (isEnc)
+        m_pmfxENC.reset(new MFXVideoENCODE((mfxSession)*m_pmfxSession));
+
+    if (isDec)
+    {
+        sts = m_pmfxDEC->Init(&m_mfxDecParams);
+        MSDK_CHECK_STATUS(sts, "m_pmfxDEC->Init failed");
+    }
+
+    if (isVPP)
+    {
+        sts = m_pmfxVPP->Init(&m_mfxVppParams);
+        MSDK_CHECK_STATUS(sts, "m_pmfxVPP->Init failed");
+    }
+
+    if (isPreEnc)
+    {
+        sts = m_pmfxPreENC->Init(&m_mfxPreEncParams);
+        MSDK_CHECK_STATUS(sts, "m_pmfxPreENC->Init failed");
+    }
+
+    if (isEnc)
+    {
+        sts = m_pmfxENC->Init(&m_mfxEncParams);
+        MSDK_CHECK_STATUS(sts, "m_pmfxENC->Init failed");
+    }
+    return sts;
+}
 
 mfxStatus CTranscodingPipeline::AllocAndInitVppDoNotUse(sInputParams *pInParams)
 {
@@ -3935,6 +4047,15 @@ mfxStatus SafetySurfaceBuffer::ReleaseSurface(mfxFrameSurface1* pSurf)
     }
     m_mutex.Unlock();
     return MFX_ERR_UNKNOWN;
+
+} // mfxStatus SafetySurfaceBuffer::ReleaseSurface(mfxFrameSurface1* pSurf)
+mfxStatus SafetySurfaceBuffer::ReleaseSurfaceAll()
+{
+    AutomaticMutex guard(m_mutex);
+
+    m_SList.clear();
+    m_IsBufferingAllowed = true;
+    return MFX_ERR_NONE;
 
 } // mfxStatus SafetySurfaceBuffer::ReleaseSurface(mfxFrameSurface1* pSurf)
 

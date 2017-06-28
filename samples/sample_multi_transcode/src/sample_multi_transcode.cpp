@@ -384,24 +384,36 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
 
 void Launcher::Run()
 {
-    mfxU32 totalSessions;
-
     msdk_printf(MSDK_STRING("Transcoding started\n"));
 
     // mark start time
     m_StartTime = GetTick();
 
+    // Robust flag is applied to every seession if enabled in one
+    if (m_pSessionArray[0]->pPipeline->IsRobust())
+    {
+        DoRobustTranscoding();
+    }
+    else
+    {
+        DoTranscoding();
+    }
+
+    msdk_printf(MSDK_STRING("\nTranscoding finished\n"));
+
+} // mfxStatus Launcher::Init()
+
+void Launcher::DoTranscoding()
+{
+    mfxStatus sts = MFX_ERR_NONE;
+
     // get parallel sessions parameters
-    totalSessions = (mfxU32) m_pSessionArray.size();
-
-    mfxStatus sts;
-
-    MSDKThread * pthread = NULL;
+    mfxU32 totalSessions = (mfxU32)m_pSessionArray.size();;
+    MSDKThread* pthread = 0;
 
     for (mfxU32 i = 0; i < totalSessions; i++)
     {
         pthread = new MSDKThread(sts, ThranscodeRoutine, (void *)m_pSessionArray[i]);
-
         m_HDLArray.push_back(pthread);
     }
 
@@ -442,10 +454,46 @@ void Launcher::Run()
             m_HDLArray.clear();
         }
     }
+}
 
-    msdk_printf(MSDK_STRING("\nTranscoding finished\n"));
+void Launcher::DoRobustTranscoding()
+{
+    mfxStatus sts = MFX_ERR_NONE;
 
-} // mfxStatus Launcher::Init()
+    // Cycle for handling MFX_ERR_GPU_HANG during transcoding
+    // If it's returned, reset all the pipelines and start over from the last point
+    bool bGPUHang = false;
+    for ( ; ; )
+    {
+        if (bGPUHang)
+        {
+            for (size_t i = 0; i < m_pSessionArray.size(); i++)
+            {
+                sts = m_pSessionArray[i]->pPipeline->Reset();
+                if (sts)
+                {
+                    msdk_printf(MSDK_STRING("\n[WARNING] GPU Hang recovery wasn't succeed. Exiting...\n"));
+                    return;
+                }
+            }
+            bGPUHang = false;
+            msdk_printf(MSDK_STRING("\n[WARNING] Successfully recovered. Continue transcoding.\n"));
+        }
+
+        DoTranscoding();
+
+        for (size_t i = 0; i < m_pSessionArray.size(); i++)
+        {
+            if (m_pSessionArray[i]->transcodingSts == MFX_ERR_GPU_HANG)
+            {
+                bGPUHang = true;
+            }
+        }
+        if (!bGPUHang)
+            break;
+        msdk_printf(MSDK_STRING("\n[WARNING] GPU Hang has happened. Trying to recover...\n"));
+    }
+}
 
 mfxStatus Launcher::ProcessResult()
 {
@@ -548,6 +596,15 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
             for (mfxU32 j = 0; j < m_InputParamsArray.size(); j++)
             {
                 m_InputParamsArray[j].nTimeout = m_InputParamsArray[i].nTimeout;
+            }
+        }
+
+        // All sessions have to know if robust mode enabled
+        if (m_InputParamsArray[i].bRobust)
+        {
+            for (mfxU32 j = 0; j < m_InputParamsArray.size(); j++)
+            {
+                m_InputParamsArray[j].bRobust = true;
             }
         }
 

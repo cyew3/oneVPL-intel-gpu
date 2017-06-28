@@ -129,6 +129,7 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("                      -hw - platform-specific on default display adapter (default)\n"));
     msdk_printf(MSDK_STRING("                      -hw_d3d11 - platform-specific via d3d11\n"));
     msdk_printf(MSDK_STRING("                      -sw - software\n"));
+    msdk_printf(MSDK_STRING("  -robust       Recover from gpu hang errors as the come\n"));
     msdk_printf(MSDK_STRING("  -async        Depth of asynchronous pipeline. default value 1\n"));
     msdk_printf(MSDK_STRING("  -join         Join session with other session(s), by default sessions are not joined\n"));
     msdk_printf(MSDK_STRING("  -priority     Use priority for join sessions. 0 - Low, 1 - Normal, 2 - High. Normal by default\n"));
@@ -335,6 +336,7 @@ CmdProcessor::CmdProcessor()
     statisticsWindowSize = 0;
     statisticsLogFile = NULL;
     shouldUseGreedyFormula=false;
+    m_bRobust = false;
 
 } //CmdProcessor::CmdProcessor()
 
@@ -402,6 +404,10 @@ mfxStatus CmdProcessor::ParseCmdLine(int argc, msdk_char *argv[])
                 msdk_printf(MSDK_STRING("error: -timeout \"%s\" is invalid"), argv[0]);
                 return MFX_ERR_UNSUPPORTED;
             }
+        }
+        else if (0 == msdk_strcmp(argv[0], MSDK_STRING("-robust")))
+        {
+            m_bRobust = true;
         }
         else if (0 == msdk_strcmp(argv[0], MSDK_STRING("-?")) )
         {
@@ -726,6 +732,8 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
     TranscodingSample::sInputParams InputParams;
     if (m_nTimeout)
         InputParams.nTimeout = m_nTimeout;
+    if (m_bRobust)
+        InputParams.bRobust = true;
 
     InputParams.shouldUseGreedyFormula = shouldUseGreedyFormula;
 
@@ -856,6 +864,10 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-perf_opt")))
         {
             InputParams.bIsPerf = true;
+        }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-robust")))
+        {
+            InputParams.bRobust = true;
         }
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-threads")))
         {
@@ -1388,7 +1400,10 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
             }
             skipped+=2;
         }
-
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-robust")))
+        {
+            InputParams.bRobust = true;
+        }
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-opencl")))
         {
             msdk_opt_read(MSDK_OCL_ROTATE_PLUGIN, InputParams.strVPPPluginDLLPath);

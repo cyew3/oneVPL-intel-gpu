@@ -123,6 +123,7 @@ namespace TranscodingSample
         mfxIMPL libType;  // Type of used mediaSDK library
         bool   bIsPerf;   // special performance mode. Use pre-allocated bitstreams, output
         mfxU16 nThreadsNum; // number of internal session threads number
+        bool   bRobust;   // Robust transcoding mode. Allows auto-recovery after hardware errors
 
         mfxU32 EncodeId; // type of output coded video
         mfxU32 DecodeId; // type of input coded video
@@ -376,6 +377,14 @@ namespace TranscodingSample
             }
             return;
         }
+        void ReleaseAll()
+        {
+            for (mfxU32 i = 0; i < m_pExtBS.size(); i++)
+            {
+                m_pExtBS[i].IsFree = true;
+            }
+            return;
+        }
     protected:
         std::vector<ExtendedBS> m_pExtBS;
 
@@ -404,6 +413,7 @@ namespace TranscodingSample
         void              AddSurface(ExtendedSurface Surf);
         mfxStatus         GetSurface(ExtendedSurface &Surf);
         mfxStatus         ReleaseSurface(mfxFrameSurface1* pSurf);
+        mfxStatus         ReleaseSurfaceAll();
         void              CancelBuffering();
 
         SafetySurfaceBuffer               *m_pNext;
@@ -460,6 +470,7 @@ namespace TranscodingSample
         // frames allocation is suspended for heterogeneous pipeline
         virtual mfxStatus CompleteInit();
         virtual void      Close();
+        virtual mfxStatus Reset();
         virtual mfxStatus Join(MFXVideoSession *pChildSession);
         virtual mfxStatus Run();
         virtual mfxStatus FlushLastFrames(){return MFX_ERR_NONE;}
@@ -474,6 +485,7 @@ namespace TranscodingSample
         inline void SetPipelineID(mfxU32 id){m_nID = id;}
         void StopOverlay();
         bool IsOverlayUsed();
+        bool IsRobust();
     protected:
         virtual mfxStatus CheckRequiredAPIVersion(mfxVersion& version, sInputParams *pParams);
 
@@ -548,6 +560,8 @@ namespace TranscodingSample
         mfxU32 GetNumFramesForReset();
         void   SetNumFramesForReset(mfxU32 nFrames);
 
+        mfxStatus   SetAllocatorAndHandleIfRequired();
+
         mfxBitstream        *m_pmfxBS;  // contains encoded input data
 
         mfxVersion m_Version; // real API version with which library is initialized
@@ -569,6 +583,7 @@ namespace TranscodingSample
 
         MFXFrameAllocator              *m_pMFXAllocator;
         void*                           m_hdl; // Diret3D device manager
+        bool                            m_bIsInterOrJoined;
 
         mfxU32                          m_numEncoders;
 
@@ -593,6 +608,9 @@ namespace TranscodingSample
         // transcoding pipeline specific
         typedef std::list<ExtendedBS*>       BSList;
         BSList  m_BSPool;
+
+        mfxInitParam                   m_initPar;
+        mfxExtThreadsParam             m_threadsPar;
 
         bool                           m_bStopOverlay;
 
@@ -671,6 +689,7 @@ namespace TranscodingSample
         mfxU32          m_NumFramesForReset;
         MSDKMutex       m_mReset;
         MSDKMutex       m_mStopOverlay;
+        bool            m_bIsRobust;
 
         bool isHEVCSW;
 
