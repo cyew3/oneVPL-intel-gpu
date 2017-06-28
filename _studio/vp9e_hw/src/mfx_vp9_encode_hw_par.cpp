@@ -265,7 +265,7 @@ inline mfxStatus SetOrCopySupportedParams(mfxExtVP9TemporalLayers *pDst, mfxExtV
         ZeroExtBuffer(*pDst);
     }
 
-    for (mfxU8 i = 0; i < MAX_NUM_TEMP_LAYERS_SUPPORTED; i++)
+    for (mfxU8 i = 0; i < MAX_NUM_TEMP_LAYERS; i++)
     {
         SET_OR_COPY_PAR_DONT_INHERIT(Layer[i].FrameRateScale);
         SET_OR_COPY_PAR_DONT_INHERIT(Layer[i].TargetKbps);
