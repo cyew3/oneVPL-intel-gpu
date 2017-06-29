@@ -1122,16 +1122,16 @@ UMC::Status TaskSupplier_H265::xDecodeSPS(H265HeadersBitstream *bs)
 UMC::Status TaskSupplier_H265::xDecodePPS(H265HeadersBitstream * bs)
 {
     H265PicParamSet pps;
-
     pps.Reset();
-    UMC::Status s = bs->GetPictureParamSetFull(&pps);
-    if(s != UMC::UMC_OK)
-        return s;
 
-    // Initialize tiles data
+    bs->GetPictureParamSetPart1(&pps);
     H265SeqParamSet *sps = m_Headers.m_SeqParams.GetHeader(pps.pps_seq_parameter_set_id);
     if (!sps)
         throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
+    UMC::Status s = bs->GetPictureParamSetFull(&pps, sps);
+    if(s != UMC::UMC_OK)
+        return s;
 
     // additional PPS members checks:
     Ipp32s QpBdOffsetY = 6 * (sps->bit_depth_luma - 8);

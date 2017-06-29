@@ -312,7 +312,8 @@ public:
     UMC::Status GetSequenceParamSet(H265SeqParamSet *sps);
 
     // Parse PPS header
-    UMC::Status GetPictureParamSetFull(H265PicParamSet  *pps);
+    void GetPictureParamSetPart1(H265PicParamSet *pps);
+    UMC::Status GetPictureParamSetFull(H265PicParamSet  *pps, H265SeqParamSet const*);
     UMC::Status GetWPPTileInfo(H265SliceHeader *hdr,
                             const H265PicParamSet *pps,
                             const H265SeqParamSet *sps);

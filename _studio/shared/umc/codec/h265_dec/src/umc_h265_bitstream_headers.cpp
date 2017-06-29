@@ -818,7 +818,8 @@ UMC::Status H265HeadersBitstream::GetSequenceParamSet(H265SeqParamSet *pcSPS)
         pcSPS->sps_scc_extension_flag = Get1Bit();
         Ipp32u sps_extension_4bits = GetBits(4);
 
-        if (pcSPS->sps_range_extension_flag)
+        if (pcSPS->sps_range_extension_flag &&
+            pcSPS->getPTL()->GetGeneralPTL()->profile_idc == H265_PROFILE_FREXT)
         {
             pcSPS->transform_skip_rotation_enabled_flag = Get1Bit();
             pcSPS->transform_skip_context_enabled_flag = Get1Bit();
@@ -831,7 +832,8 @@ UMC::Status H265HeadersBitstream::GetSequenceParamSet(H265SeqParamSet *pcSPS)
             pcSPS->cabac_bypass_alignment_enabled_flag = Get1Bit();
         }
 
-        if (pcSPS->sps_scc_extension_flag)
+        if (pcSPS->sps_scc_extension_flag &&
+            pcSPS->getPTL()->GetGeneralPTL()->profile_idc == H265_PROFILE_SCC)
         {
             pcSPS->sps_curr_pic_ref_enabled_flag = Get1Bit();
             pcSPS->palette_mode_enabled_flag = Get1Bit();
@@ -1011,13 +1013,28 @@ bool H265HeadersBitstream::MoreRbspData()
 }
 
 // Parse PPS header
-UMC::Status H265HeadersBitstream::GetPictureParamSetFull(H265PicParamSet  *pcPPS)
+void H265HeadersBitstream::GetPictureParamSetPart1(H265PicParamSet *pcPPS)
 {
     if (!pcPPS)
         throw h265_exception(UMC::UMC_ERR_NULL_PTR);
 
     pcPPS->pps_pic_parameter_set_id = GetVLCElementU();
+    if (pcPPS->pps_pic_parameter_set_id > 63)
+        throw h265_exception(UMC::UMC_ERR_NULL_PTR);
+
     pcPPS->pps_seq_parameter_set_id = GetVLCElementU();
+    if (pcPPS->pps_seq_parameter_set_id > 15)
+        throw h265_exception(UMC::UMC_ERR_NULL_PTR);
+}
+
+UMC::Status H265HeadersBitstream::GetPictureParamSetFull(H265PicParamSet  *pcPPS, H265SeqParamSet const* pcSPS)
+{
+    if (!pcPPS)
+        throw h265_exception(UMC::UMC_ERR_NULL_PTR);
+
+    if (!pcSPS)
+        throw h265_exception(UMC::UMC_ERR_NULL_PTR);
+
     pcPPS->dependent_slice_segments_enabled_flag = Get1Bit();
     pcPPS->output_flag_present_flag = Get1Bit();
     pcPPS->num_extra_slice_header_bits = GetBits(3);
@@ -1141,7 +1158,8 @@ UMC::Status H265HeadersBitstream::GetPictureParamSetFull(H265PicParamSet  *pcPPS
         pcPPS->pps_scc_extension_flag = Get1Bit();
         Ipp32u pps_extension_4bits = GetBits(4);
 
-        if (pcPPS->pps_range_extensions_flag)
+        if (pcPPS->pps_range_extensions_flag &&
+            pcSPS->getPTL()->GetGeneralPTL()->profile_idc == H265_PROFILE_FREXT)
         {
             if (pcPPS->transform_skip_enabled_flag)
             {
@@ -1174,7 +1192,8 @@ UMC::Status H265HeadersBitstream::GetPictureParamSetFull(H265PicParamSet  *pcPPS
             pcPPS->log2_sao_offset_scale_chroma = GetVLCElementU();
         }
 
-        if (pcPPS->pps_scc_extension_flag)
+        if (pcPPS->pps_scc_extension_flag &&
+            pcSPS->getPTL()->GetGeneralPTL()->profile_idc == H265_PROFILE_SCC)
         {
             pcPPS->pps_curr_pic_ref_enabled_flag = Get1Bit();
             pcPPS->residual_adaptive_colour_transform_enabled_flag = Get1Bit();
@@ -1200,6 +1219,10 @@ UMC::Status H265HeadersBitstream::GetPictureParamSetFull(H265PicParamSet  *pcPPS
             pcPPS->pps_palette_predictor_initializer_present_flag = Get1Bit();
             if (pcPPS->pps_palette_predictor_initializer_present_flag)
             {
+                if (pcSPS->palette_max_size == 0 || !pcSPS->palette_mode_enabled_flag)
+                    //pps_palette_predictor_initializer_present_flag shall be equal to 0 when either palette_max_size is equal to 0 or palette_mode_enabled_flag is equal to 0
+                    throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
                 pcPPS->pps_num_palette_predictor_initializer = GetVLCElementU();
                 if (pcPPS->pps_num_palette_predictor_initializer > 128)
                     //accord. to spec. pps_num_palette_predictor_initializer can't exceed PaletteMaxPredictorSize
