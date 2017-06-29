@@ -1017,9 +1017,6 @@ CEncodingPipeline::CEncodingPipeline()
     m_bTimeOutExceed = false;
     m_bInsertIDR = false;
 
-#ifdef ENABLE_FF
-    HEVCExtBRC::Destroy(m_ExtBRC);
-#endif
 }
 
 CEncodingPipeline::~CEncodingPipeline()
@@ -1385,6 +1382,11 @@ void CEncodingPipeline::Close()
 
     MSDK_SAFE_DELETE(m_pmfxENC);
     MSDK_SAFE_DELETE(m_pmfxVPP);
+
+#ifdef ENABLE_FF
+    HEVCExtBRC::Destroy(m_ExtBRC);
+#endif
+
 
     FreeMVCSeqDesc();
     FreeVppDoNotUse();

@@ -386,6 +386,7 @@ namespace HEVCExtBRC
         if(m_BRC.pthis != NULL)
         {
             delete (ExtBRC*)m_BRC.pthis;
+            m_BRC.pthis = 0;
             m_BRC.Init = 0;
             m_BRC.Reset = 0;
             m_BRC.Close = 0;
