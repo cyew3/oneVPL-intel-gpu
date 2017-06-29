@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2015-2017 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_decoder.h"
 #include "ts_struct.h"
 #include "ts_bitstream.h"
@@ -25,11 +35,26 @@ public:
     static const unsigned int n_cases;
 
 private:
+
+    enum
+    {
+        MFX_PAR = 1,
+        ALLOC_OPAQUE = 8,
+    };
+
     struct tc_struct
     {
         mfxStatus sts;
         std::string stream;
         mfxU16 nframes;
+        mfxU32 mem_type;
+        struct f_pair
+        {
+            mfxU32 ext_type;
+            const  tsStruct::Field* f;
+            mfxF32 v;
+        } set_par[MAX_NPARS];
+        
     };
 
     static const tc_struct test_case[];
@@ -140,6 +165,27 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*04*/ MFX_ERR_NONE, "conformance/mpeg2/streams/normal.mpg", 1000},
     {/*05*/ MFX_ERR_NONE, "conformance/mpeg2/streams/tcela-15.bits", 60},
     {/*06*/ MFX_ERR_NONE, "conformance/mpeg2/streams/still.mpg", 1000},
+    {/*07*/ MFX_ERR_NONE, "conformance/mpeg2/bsd_pak_test/bugs_int_IPB.mpg", 30, ALLOC_OPAQUE,
+        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
+    },
+    {/*08*/ MFX_ERR_NONE, "conformance/mpeg2/bsd_pak_test/bugs_prg_I.mpg", 30, ALLOC_OPAQUE,
+        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
+    },
+    {/*09*/ MFX_ERR_NONE, "conformance/mpeg2/bsd_pak_test/bugs_prg_IP.mpg", 30, ALLOC_OPAQUE,
+        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
+    },
+    {/*10*/ MFX_ERR_NONE, "conformance/mpeg2/bsd_pak_test/bugs_prg_IPB.mpg", 30, ALLOC_OPAQUE,
+        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
+    },
+    {/*11*/ MFX_ERR_NONE, "conformance/mpeg2/streams/normal.mpg", 1000, ALLOC_OPAQUE,
+        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
+    },
+    {/*12*/ MFX_ERR_NONE, "conformance/mpeg2/streams/tcela-15.bits", 60, ALLOC_OPAQUE,
+        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
+    },
+    {/*13*/ MFX_ERR_NONE, "conformance/mpeg2/streams/still.mpg", 1000, ALLOC_OPAQUE,
+        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
+    },
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -219,8 +265,28 @@ int TestSuite::RunTest(unsigned int id)
 
     } while(hdr);
 
-    Init();
-    AllocSurfaces();
+
+    if (tc.mem_type == ALLOC_OPAQUE)
+    {
+        SETPARS(m_pPar, MFX_PAR);
+        AllocSurfaces();
+
+        m_par.AddExtBuffer(MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION, sizeof(mfxExtOpaqueSurfaceAlloc));
+        mfxExtOpaqueSurfaceAlloc *osa = (mfxExtOpaqueSurfaceAlloc*)m_par.GetExtBuffer(MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
+
+        m_request.Type = MFX_MEMTYPE_OPAQUE_FRAME;
+        m_request.NumFrameSuggested = m_request.NumFrameMin;
+
+        MFXVideoDECODE_QueryIOSurf(m_session, m_pPar, &m_request);
+
+        AllocOpaque(m_request, *osa);
+        Init(m_session, m_pPar);
+    }
+    else
+    {
+        AllocSurfaces();
+        Init();
+    }
 
     for (mfxU32 i = 0; i < PoolSize(); i++)
     {

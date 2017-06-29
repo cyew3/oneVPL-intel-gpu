@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2015-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2015-2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -32,6 +32,12 @@ private:
 
     enum
     {
+        MFX_PAR = 1,
+        ALLOC_OPAQUE = 8,
+    };
+
+    enum
+    {
         READ_BY_FRAME  = 0x001,
         COMPLETE_FRAME = 0x010,
         ALWAYS_READ    = 0x100
@@ -41,8 +47,10 @@ private:
     {
         mfxStatus sts;
         mfxU32 mode;
+        mfxU32 mem_type;
         struct f_pair 
         {
+            mfxU32 ext_type;
             const  tsStruct::Field* f;
             mfxU32 v;
         } set_par[n_par];
@@ -57,12 +65,30 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     // ALWAYS_READ: read frames for all statuses from DecodeFrameAsync
     // COMPLETE_FRAME: set complete frame flag. Can be used inly with READ_BY_FRAME
 
-    {/*00*/ MFX_ERR_NONE},
-    {/*01*/ MFX_ERR_NONE, TestSuite::READ_BY_FRAME},
-    {/*02*/ MFX_ERR_NONE, TestSuite::READ_BY_FRAME|TestSuite::COMPLETE_FRAME},
-    {/*03*/ MFX_ERR_NONE, TestSuite::ALWAYS_READ},
-    {/*04*/ MFX_ERR_NONE, TestSuite::ALWAYS_READ|TestSuite::READ_BY_FRAME},
-    {/*05*/ MFX_ERR_NONE, TestSuite::ALWAYS_READ|TestSuite::READ_BY_FRAME|TestSuite::COMPLETE_FRAME},
+    {/*00*/ MFX_ERR_NONE, 0, 0},
+    {/*01*/ MFX_ERR_NONE, TestSuite::READ_BY_FRAME, 0},
+    {/*02*/ MFX_ERR_NONE, TestSuite::READ_BY_FRAME|TestSuite::COMPLETE_FRAME, 0},
+    {/*03*/ MFX_ERR_NONE, TestSuite::ALWAYS_READ, 0},
+    {/*04*/ MFX_ERR_NONE, TestSuite::ALWAYS_READ|TestSuite::READ_BY_FRAME, 0},
+    {/*05*/ MFX_ERR_NONE, TestSuite::ALWAYS_READ|TestSuite::READ_BY_FRAME|TestSuite::COMPLETE_FRAME, 0},
+    {/*06*/ MFX_ERR_NONE, 0, ALLOC_OPAQUE,
+        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
+    },
+    {/*07*/ MFX_ERR_NONE, TestSuite::READ_BY_FRAME, ALLOC_OPAQUE,
+        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
+    },
+    {/*08*/ MFX_ERR_NONE, TestSuite::READ_BY_FRAME|TestSuite::COMPLETE_FRAME, ALLOC_OPAQUE,
+        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
+    },
+    {/*09*/ MFX_ERR_NONE, TestSuite::ALWAYS_READ, ALLOC_OPAQUE,
+        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
+    },
+    {/*10*/ MFX_ERR_NONE, TestSuite::ALWAYS_READ|TestSuite::READ_BY_FRAME, ALLOC_OPAQUE,
+        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
+    },
+    {/*11*/ MFX_ERR_NONE, TestSuite::ALWAYS_READ|TestSuite::READ_BY_FRAME|TestSuite::COMPLETE_FRAME, ALLOC_OPAQUE,
+        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
+    },
 
 };
 
@@ -239,7 +265,27 @@ int TestSuite::RunTest(unsigned int id)
     m_par_set = false;
 
     m_par.AsyncDepth = 1;
-    Init();
+    
+    if (tc.mem_type == ALLOC_OPAQUE)
+    {
+        SETPARS(m_pPar, MFX_PAR);
+        AllocSurfaces();
+
+        m_par.AddExtBuffer(MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION, sizeof(mfxExtOpaqueSurfaceAlloc));
+        mfxExtOpaqueSurfaceAlloc *osa = (mfxExtOpaqueSurfaceAlloc*)m_par.GetExtBuffer(MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
+
+        m_request.Type = MFX_MEMTYPE_OPAQUE_FRAME;
+        m_request.NumFrameSuggested = m_request.NumFrameMin;
+
+        MFXVideoDECODE_QueryIOSurf(m_session, m_pPar, &m_request);
+
+        AllocOpaque(m_request, *osa);
+        Init(m_session, m_pPar);
+    }
+    else
+    {
+        Init();
+    }
 
     mfxU32 decoded = 0;
     mfxU32 submitted = 0;

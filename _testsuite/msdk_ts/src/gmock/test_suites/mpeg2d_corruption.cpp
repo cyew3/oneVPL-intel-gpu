@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2015-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2015-2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -248,6 +248,12 @@ public:
 
     enum
     {
+        MFX_PAR = 1,
+        ALLOC_OPAQUE = 8,
+    };
+
+    enum
+    {
         fDecodeFrameAsync     = 1,
         fDecodeFrameAsync_new = 1 << 2,
         fGetVideoParam        = 1 << 3,
@@ -276,6 +282,15 @@ private:
             mfxU8       flags[32];
             mfxU8       stream;
         } streams[NSTREAMS];
+
+        mfxU32 mem_type;
+
+        struct f_pair
+        {
+            mfxU32 ext_type;
+            const  tsStruct::Field* f;
+            mfxF32 v;
+        } set_par[MAX_NPARS];
     };
 
     int RunTestDecodeFrameAsync(const tc_struct& tc);
@@ -510,6 +525,57 @@ const TestSuite::tc_struct TestSuite::test_case[] =
                                                  {8, 0, {0}, 1},
                                                  {6, "forBehaviorTest/corrupted/iceage_720x576_6_IPP_1I_cr.mp2" , {MAJOR,REF_FRAME,REF_FRAME,0,0,0},}
                                                }, },
+    {/*18*/ fDecodeFrameAsync, MFX_ERR_NONE, {6, "forBehaviorTest/corrupted/iceage_720x576_6_IPP_1I_cr.mp2", {MAJOR,REF_FRAME,REF_FRAME,0,0,0},}, ALLOC_OPAQUE,
+        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
+    },
+    {/*19*/ fDecodeFrameAsync, MFX_ERR_NONE, {6, "forBehaviorTest/corrupted/iceage_720x576_6_IPP_2I_cr.mp2", {0,0,0,MAJOR,REF_FRAME,REF_FRAME},}, ALLOC_OPAQUE,
+        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
+    },
+    {/*20*/ fDecodeFrameAsync|noFlagCheck, MFX_ERR_NONE, {100, "forBehaviorTest/corrupted/cq23973/gvp_segfault_001.m2v", {0},}, ALLOC_OPAQUE,
+        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
+    },
+    {/*21*/ fDecodeFrameAsync|noFlagCheck, MFX_ERR_NONE, {100, "forBehaviorTest/corrupted/cq23973/gvp_segfault_002.m2v", {0},}, ALLOC_OPAQUE,
+        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
+    },
+    {/*22*/ fDecodeFrameAsync|noFlagCheck, MFX_ERR_NONE, {100, "forBehaviorTest/corrupted/cq23973/gvp_segfault_003.m2v", {0},}, ALLOC_OPAQUE,
+        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
+    },
+    {/*23*/ fDecodeFrameAsync|noFlagCheck, MFX_ERR_NONE, {100, "forBehaviorTest/corrupted/cq23973/gvp_segfault_004.m2v", {0},}, ALLOC_OPAQUE,
+        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
+    },
+    {/*24*/ fDecodeFrameAsync|noFlagCheck, MFX_ERR_NONE, {100, "forBehaviorTest/corrupted/cq23973/gvp_segfault_005.m2v", {0},}, ALLOC_OPAQUE,
+        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
+    },
+    {/*25*/ fDecodeFrameAsync|noFlagCheck, MFX_ERR_NONE, {100, "forBehaviorTest/corrupted/cq23973/gvp_segfault_006.m2v", {0},}, ALLOC_OPAQUE,
+        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
+    },
+    {/*26*/ fDecodeFrameAsync|noFlagCheck, MFX_ERR_NONE, {100, "forBehaviorTest/corrupted/cq23973/gvp_segfault_007.m2v", {0},}, ALLOC_OPAQUE,
+        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
+    },
+    {/*27*/ fDecodeFrameAsync|noFlagCheck, MFX_ERR_NONE, {100, "forBehaviorTest/corrupted/cq23973/gvp_segfault_008.m2v", {0},}, ALLOC_OPAQUE,
+        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
+    },
+    {/*28*/ fDecodeFrameAsync|noFlagCheck, MFX_ERR_NONE, {100, "forBehaviorTest/corrupted/cq23973/gvp_segfault_009.m2v", {0},}, ALLOC_OPAQUE,
+        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
+    },
+    {/*29*/ fDecodeFrameAsync|noFlagCheck, MFX_ERR_NONE, {100, "forBehaviorTest/corrupted/cq23973/gvp_segfault_010.m2v", {0},}, ALLOC_OPAQUE,
+        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
+    },
+    {/*30*/ fDecodeFrameAsync|noFlagCheck, MFX_ERR_NONE, {100, "forBehaviorTest/corrupted/cq23973/gvp_segfault_011.m2v", {0},}, ALLOC_OPAQUE,
+        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
+    },
+    {/*31*/ fDecodeFrameAsync|noFlagCheck, MFX_ERR_NONE, {100, "forBehaviorTest/corrupted/cq23973/gvp_segfault_012.m2v", {0},}, ALLOC_OPAQUE,
+        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
+    },
+    {/*32*/ fDecodeFrameAsync|noFlagCheck, MFX_ERR_NONE, {100, "forBehaviorTest/corrupted/cq23973/gvp_segfault_013.m2v", {0},}, ALLOC_OPAQUE,
+        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
+    },
+    {/*33*/ fDecodeFrameAsync|noFlagCheck, MFX_ERR_NONE, {100, "forBehaviorTest/corrupted/cq23973/gvp_segfault_014.m2v", {0},}, ALLOC_OPAQUE,
+        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
+    },
+    {/*34*/ fDecodeFrameAsync|noFlagCheck, MFX_ERR_NONE, {100, "forBehaviorTest/corrupted/cq23973/gvp_segfault_015.m2v", {0},}, ALLOC_OPAQUE,
+        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
+    },
 
 };
 
