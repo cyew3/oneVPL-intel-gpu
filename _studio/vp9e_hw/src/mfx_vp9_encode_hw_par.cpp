@@ -1480,6 +1480,7 @@ mfxStatus SetDefaults(
     ENCODE_CAPS_VP9 const &caps,
     mfxPlatform const & platform)
 {
+    platform;
     SetDefault(par.AsyncDepth, GetDefaultAsyncDepth(par));
 
     // mfxInfoMfx
@@ -1519,29 +1520,19 @@ mfxStatus SetDefaults(
     }
 
     mfxExtCodingOption2& opt2 = GetExtBufferRef(par);
-    mfxExtVP9Segmentation& seg = GetExtBufferRef(par);
+    /*mfxExtVP9Segmentation& seg = GetExtBufferRef(par);
     if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
         caps.AutoSegmentationSupport && !AllMandatorySegMapParams(seg))
     {
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-        if (platform.CodeName == MFX_PLATFORM_ICELAKE)
-        {
-            // workaround for issues with auto segmentation for ICL platform
-            SetDefault(opt2.MBBRC, MFX_CODINGOPTION_OFF);
-        }
-        else
-        {
-            SetDefault(opt2.MBBRC, MFX_CODINGOPTION_ON);
-        }
-#else //PRE_SI_TARGET_PLATFORM_GEN11
         SetDefault(opt2.MBBRC, MFX_CODINGOPTION_ON);
-        platform;
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
     }
     else
     {
         SetDefault(opt2.MBBRC, MFX_CODINGOPTION_OFF);
-    }
+    }*/
+
+    // by default disable auto-segmentation (aka MBBRC) for all configurations and platforms
+    SetDefault(opt2.MBBRC, MFX_CODINGOPTION_OFF);
 
     if (false == SetTwoDefaults(fi.FrameRateExtN, fi.FrameRateExtD, 30, 1))
     {
