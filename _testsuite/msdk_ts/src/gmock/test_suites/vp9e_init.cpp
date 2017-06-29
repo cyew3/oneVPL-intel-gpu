@@ -20,11 +20,32 @@ namespace vp9e_init
     public:
         TestSuite() : tsVideoEncoder(MFX_CODEC_VP9){}
         ~TestSuite() { }
-        int RunTest(unsigned int id);
+
+        struct tc_struct
+        {
+            mfxStatus sts;
+            mfxU32 type;
+            mfxU32 sub_type;
+            struct f_pair
+            {
+                mfxU32 ext_type;
+                const  tsStruct::Field* f;
+                mfxU32 v;
+            } set_par[MAX_NPARS];
+        };
+
+        template<mfxU32 fourcc>
+        int RunTest_Subtype(const unsigned int id);
+
+        int RunTest(const tc_struct& tc, unsigned int fourcc_id);
         static const unsigned int n_cases;
 
-    private:
+        static const unsigned int n_cases_nv12;
+        static const unsigned int n_cases_p010;
+        static const unsigned int n_cases_ayuv;
+        static const unsigned int n_cases_y410;
 
+    private:
         enum
         {
             MFX_PAR,
@@ -54,40 +75,23 @@ namespace vp9e_init
             MEMORY_TYPE
         };
 
-        struct tc_struct
-        {
-            mfxStatus sts;
-            mfxU32 type;
-            mfxU32 sub_type;
-            struct f_pair
-            {
-                mfxU32 ext_type;
-                const  tsStruct::Field* f;
-                mfxU32 v;
-            } set_par[MAX_NPARS];
-        };
-
         static const tc_struct test_case[];
     };
 
     const TestSuite::tc_struct TestSuite::test_case[] =
     {
-       
         {/*00 Call with correct default params*/ MFX_ERR_NONE, NONE, NONE,
             {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_NV12 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY }
             }
         },
         {/*01 Check System memory*/ MFX_ERR_NONE, MEMORY_TYPE, NONE,
             {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_NV12 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY }
             }
         },
         {/*02 Check Opaque memory*/ MFX_ERR_NONE, MEMORY_TYPE, NONE,
             {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_NV12 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY }
             }
         },
@@ -198,6 +202,39 @@ namespace vp9e_init
                 { MFX_PAR, &tsStruct::mfxVideoParam.AsyncDepth, 10 },
             }
         },
+        {/*33 Chroma format is not set*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, NONE,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, 0 },
+            }
+        },
+        {/*34 Bit depth luma is not set*/ MFX_ERR_NONE, NONE, NONE,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, 0 },
+            }
+        },
+        {/*35 Bit depth luma is wrong*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, NONE,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, 9 },
+            }
+        },
+        {/*36 Bit depth chroma is not set*/ MFX_ERR_NONE, NONE, NONE,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, 0 },
+            }
+        },
+        {/*37 Bit depth chroma is wrong*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, NONE,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, 9 },
+            }
+        },
+        {/*38 Bit depths and chroma format are not set*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, NONE,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, 0 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, 0 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, 0 },
+            }
+        },
+
         /* Check this on Post-Si (on Pre-Si long hanging)
         {MFX_ERR_MEMORY_ALLOC, NONE, NONE,
             {
@@ -209,11 +246,21 @@ namespace vp9e_init
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
 
-    int TestSuite::RunTest(unsigned int id)
+    const unsigned int TestSuite::n_cases_nv12 = n_cases;
+    const unsigned int TestSuite::n_cases_p010 = n_cases;
+    const unsigned int TestSuite::n_cases_ayuv = n_cases;
+    const unsigned int TestSuite::n_cases_y410 = n_cases;
+
+    template<mfxU32 fourcc>
+    int TestSuite::RunTest_Subtype(const unsigned int id)
+    {
+        const tc_struct& tc = test_case[id];
+        return RunTest(tc, fourcc);
+    }
+
+    int TestSuite::RunTest(const tc_struct& tc, unsigned int fourcc_id)
     {
         TS_START;
-
-        const tc_struct& tc = test_case[id];
 
         mfxStatus sts;
 
@@ -226,6 +273,37 @@ namespace vp9e_init
 
         m_par.mfx.FrameInfo.Width  = m_par.mfx.FrameInfo.CropW = 720;
         m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 480;
+
+        if (fourcc_id == MFX_FOURCC_NV12)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
+        }
+        else if (fourcc_id == MFX_FOURCC_P010)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_P010;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+            m_par.mfx.FrameInfo.Shift = 1;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
+        }
+        else if (fourcc_id == MFX_FOURCC_AYUV)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_AYUV;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
+        }
+        else if (fourcc_id == MFX_FOURCC_Y410)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y410;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
+        }
+        else
+        {
+            g_tsLog << "ERROR: invalid fourcc_id parameter: " << fourcc_id << "\n";
+            return 0;
+        }
 
         SETPARS(m_pPar, MFX_PAR);
 
@@ -243,24 +321,20 @@ namespace vp9e_init
 
         if (0 == memcmp(m_uid->Data, MFX_PLUGINID_VP9E_HW.Data, sizeof(MFX_PLUGINID_VP9E_HW.Data)))
         {
-            if (g_tsHWtype < MFX_HW_CNL) // unsupported on platform less CNL
+            // MFX_PLUGIN_VP9E_HW unsupported on platform less CNL(NV12) and ICL(P010, AYUV, Y410)
+            if ((fourcc_id == MFX_FOURCC_NV12 && g_tsHWtype < MFX_HW_CNL)
+                || ((fourcc_id == MFX_FOURCC_P010 || fourcc_id == MFX_FOURCC_AYUV
+                    || fourcc_id == MFX_FOURCC_Y410) && g_tsHWtype < MFX_HW_ICL))
             {
                 g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
                 g_tsLog << "WARNING: Unsupported HW Platform!\n";
-                sts = MFXVideoENCODE_Query(m_session, m_pPar, m_pParOut);
-                g_tsStatus.check(sts);
+                Query();
                 return 0;
             }
-        } else {
-            g_tsLog << "WARNING: only HW Platform supported!\n";
-            sts = MFXVideoENCODE_Query(m_session, m_pPar, m_pParOut);
-            g_tsStatus.check(sts);
-            return 0;
         }
-
-        if (m_pPar->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12)
-        {
-            sts = MFX_ERR_UNSUPPORTED;
+        else {
+            g_tsLog << "WARNING: loading encoder from plugin failed!\n";
+            return 0;
         }
 
         if (tc.type == EXT_BUFF)
@@ -341,5 +415,8 @@ namespace vp9e_init
         return 0;
     }
 
-    TS_REG_TEST_SUITE_CLASS(vp9e_init);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9e_init,              RunTest_Subtype<MFX_FOURCC_NV12>, n_cases_nv12);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9e_10b_420_p010_init, RunTest_Subtype<MFX_FOURCC_P010>, n_cases_p010);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9e_8b_444_ayuv_init,  RunTest_Subtype<MFX_FOURCC_AYUV>, n_cases_ayuv);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9e_10b_444_y410_init, RunTest_Subtype<MFX_FOURCC_Y410>, n_cases_y410);
 }
