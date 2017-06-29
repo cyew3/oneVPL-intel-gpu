@@ -995,11 +995,11 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         mfxU32& fourcc         = fi.FourCC;
         mfxU16& inFormat       = fi.ChromaFormat;
         mfxU16& inDepthLuma    = fi.BitDepthLuma;
-        mfxU16& inDepthChroma  = fi.BitDepthLuma;
+        mfxU16& inDepthChroma  = fi.BitDepthChroma;
         mfxU16& profile        = par.mfx.CodecProfile;
         mfxU16& outFormatP1    = opt3.TargetChromaFormatPlus1;
         mfxU16& outDepthLuma   = opt3.TargetBitDepthLuma;
-        mfxU16& outDepthChroma = opt3.TargetBitDepthLuma;
+        mfxU16& outDepthChroma = opt3.TargetBitDepthChroma;
 
         if (fourcc != 0
             && false == CheckFourcc(fourcc))
