@@ -3784,11 +3784,11 @@ mfxStatus CTranscodingPipeline::Reset()
     MSDK_CHECK_STATUS(sts, "m_pmfxSession->InitEx failed");
 
     // Release dec and enc surface pools
-    for (int i = 0; i < m_pSurfaceDecPool.size(); i++)
+    for (size_t i = 0; i < m_pSurfaceDecPool.size(); i++)
     {
         m_pSurfaceDecPool[i]->Data.Locked = 0;
     }
-    for (int i = 0; i < m_pSurfaceEncPool.size(); i++)
+    for (size_t i = 0; i < m_pSurfaceEncPool.size(); i++)
     {
         m_pSurfaceEncPool[i]->Data.Locked = 0;
     }
