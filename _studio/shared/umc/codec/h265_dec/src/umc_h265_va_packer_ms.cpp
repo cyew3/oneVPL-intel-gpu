@@ -242,6 +242,7 @@ namespace UMC_HEVC_DECODER
             }
         }
 
+        m_refFrameListCacheSize = count;
         for (int n = count; n < sizeof(pPicParam->RefPicList) / sizeof(pPicParam->RefPicList[0]); n++)
         {
             pPicParam->RefPicList[n].bPicEntry = (UCHAR)0xff;

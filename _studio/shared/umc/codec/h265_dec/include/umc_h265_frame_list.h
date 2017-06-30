@@ -93,7 +93,7 @@ public:
     H265DecoderFrame *findShortRefPic(Ipp32s picPOC);
 
     // Searches DPB for a long term reference frame with specified POC
-    H265DecoderFrame *findLongTermRefPic(const H265DecoderFrame *excludeFrame, Ipp32s picPOC, Ipp32u bitsForPOC, bool isUseMask) const;
+    H265DecoderFrame *findLongTermRefPic(const H265DecoderFrame *excludeFrame, Ipp32s picPOC, Ipp32u bitsForPOC, bool isUseMask);
 
     // Returns the number of frames in DPB
     Ipp32u countAllFrames();

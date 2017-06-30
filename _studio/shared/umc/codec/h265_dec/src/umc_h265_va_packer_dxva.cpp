@@ -26,6 +26,7 @@ namespace UMC_HEVC_DECODER
     PackerDXVA2::PackerDXVA2(VideoAccelerator * va)
         : Packer(va)
         , m_statusReportFeedbackCounter(1)
+        , m_refFrameListCacheSize(0)
     {
     }
 
@@ -55,7 +56,6 @@ namespace UMC_HEVC_DECODER
         if (!pSlice)
             return;
         const H265SeqParamSet *pSeqParamSet = pSlice->GetSeqParam();
-        const H265PicParamSet *pPicParamSet = pSlice->GetPicParam();
         H265DecoderFrame *pCurrentFrame = pSlice->GetCurrentFrame();
 
         Ipp32s first_slice = 0;
@@ -67,11 +67,6 @@ namespace UMC_HEVC_DECODER
             if (pSeqParamSet->scaling_list_enabled_flag)
             {
                 PackQmatrix(pSlice);
-            }
-
-            if (pPicParamSet->tiles_enabled_flag || pPicParamSet->entropy_coding_sync_enabled_flag)
-            {
-                PackSubsets(frame);
             }
 
             Ipp32u sliceNum = 0;
@@ -118,9 +113,6 @@ namespace UMC_HEVC_DECODER
             break;
         }
     }
-
-    void PackerDXVA2::PackSubsets(const H265DecoderFrame *)
-    { /**/ }
 
     template <typename T>
     void PackerDXVA2::PackQmatrix(H265Slice const* pSlice, T* pQmatrix)

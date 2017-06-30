@@ -47,7 +47,6 @@ namespace UMC_HEVC_DECODER
         void PackAU(const H265DecoderFrame *frame, TaskSupplier_H265 * supplier);
 
         using Packer::PackQmatrix;
-        virtual void PackSubsets(const H265DecoderFrame *pCurrentFrame);
 
     protected:
 
@@ -57,6 +56,7 @@ namespace UMC_HEVC_DECODER
     protected:
 
         Ipp32u              m_statusReportFeedbackCounter;
+        int                 m_refFrameListCacheSize;
     };
 }
 

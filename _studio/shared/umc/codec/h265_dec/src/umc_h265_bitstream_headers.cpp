@@ -1914,14 +1914,21 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
             entryPointOffset[idx] = GetBits(offsetLenMinus1 + 1) + 1;
         }
 
-        pSlice->allocateTileLocation(sliceHdr->num_entry_point_offsets + 1);
-
-        unsigned prevPos = 0;
-        pSlice->m_tileByteLocation[0] = 0;
-        for (int idx = 1; idx < pSlice->getTileLocationCount(); idx++)
+        if (pps->tiles_enabled_flag)
         {
-            pSlice->m_tileByteLocation[idx] = prevPos + entryPointOffset[idx - 1];
-            prevPos += entryPointOffset[idx - 1];
+            pSlice->allocateTileLocation(sliceHdr->num_entry_point_offsets + 1);
+
+            unsigned prevPos = 0;
+            pSlice->m_tileByteLocation[0] = 0;
+            for (int idx = 1; idx < pSlice->getTileLocationCount(); idx++)
+            {
+                pSlice->m_tileByteLocation[idx] = prevPos + entryPointOffset[idx - 1];
+                prevPos += entryPointOffset[idx - 1];
+            }
+        }
+        else if (pps->entropy_coding_sync_enabled_flag)
+        {
+            // we don't use wpp offsets
         }
 
         delete[] entryPointOffset;
