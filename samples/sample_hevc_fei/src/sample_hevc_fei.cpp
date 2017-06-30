@@ -18,7 +18,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 \**********************************************************************************/
 
 #include "version.h"
-#include "sample_hevc_fei_defs.h"
+#include "pipeline_fei.h"
 
 mfxStatus CheckOptions(const sInputParams params, const msdk_char* appName);
 void AdjustOptions(sInputParams& params);
@@ -247,12 +247,16 @@ int _tmain(int argc, msdk_char *argv[])
 int main(int argc, char *argv[])
 #endif
 {
-    msdk_printf(MSDK_STRING("Intel(R) Media SDK HEVC FEI Sample Version %s\n"), GetMSDKSampleVersion().c_str());
     sInputParams userParams;    // parameters from command line
 
-    mfxStatus sts = MFX_ERR_NONE; // return value check
+    mfxStatus sts = MFX_ERR_NONE;
 
     sts = ParseInputString(argv, (mfxU8)argc, userParams);
+    MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
+
+    CEncodingPipeline pipeline(userParams);
+
+    sts = pipeline.Init();
     MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
 
     return 0;
