@@ -263,12 +263,14 @@
     <ClInclude Include="..\mfx_lib\shared\include\mfx_brc_common.h" />
     <ClInclude Include="..\shared\include\auxiliary_device.h" />
     <ClInclude Include="h265_fei\include\mfx_h265_fei_encode_hw.h" />
+    <ClInclude Include="h265_fei\include\mfx_h265_fei_encode_vaapi.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\mfx_lib\shared\src\mfx_brc_common.cpp" />
     <ClCompile Include="..\shared\src\auxiliary_device.cpp" />
     <ClCompile Include="h265_fei\src\export.cpp" />
     <ClCompile Include="h265_fei\src\mfx_h265_fei_encode_hw.cpp" />
+    <ClCompile Include="h265_fei\src\mfx_h265_fei_encode_vaapi.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -249,7 +249,7 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
         ddiType = ENCODER_REXT;
 #endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
 
-    m_ddi.reset( CreatePlatformH265Encoder(&m_core, ddiType) );
+    m_ddi.reset( CreateHWh265Encoder(&m_core, ddiType) );
     MFX_CHECK(m_ddi.get(), MFX_ERR_UNSUPPORTED);
 
     sts = m_ddi->CreateAuxilliaryDevice(

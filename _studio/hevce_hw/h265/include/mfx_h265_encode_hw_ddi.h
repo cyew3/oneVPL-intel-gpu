@@ -189,6 +189,18 @@ public:
 
     virtual
     ENCODE_PACKEDHEADER_DATA* PackHeader(Task const & task, mfxU32 nut) = 0;
+
+    // Functions below are used in HEVC FEI encoder
+
+    virtual mfxStatus PreSubmitExtraStage()
+    {
+        return MFX_ERR_NONE;
+    }
+
+    virtual mfxStatus PostQueryExtraStage()
+    {
+        return MFX_ERR_NONE;
+    }
 };
 
 class DDIHeaderPacker

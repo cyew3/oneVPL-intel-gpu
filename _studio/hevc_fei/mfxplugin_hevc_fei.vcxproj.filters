@@ -9,6 +9,7 @@
       <Filter>External</Filter>
     </ClCompile>
     <ClCompile Include="h265_fei\src\mfx_h265_fei_encode_hw.cpp" />
+    <ClCompile Include="h265_fei\src\mfx_h265_fei_encode_vaapi.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\shared\include\auxiliary_device.h">
@@ -45,6 +46,7 @@
       <Filter>API</Filter>
     </ClInclude>
     <ClInclude Include="h265_fei\include\mfx_h265_fei_encode_hw.h" />
+    <ClInclude Include="h265_fei\include\mfx_h265_fei_encode_vaapi.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="External">

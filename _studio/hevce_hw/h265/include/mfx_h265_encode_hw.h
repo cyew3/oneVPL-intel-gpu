@@ -107,7 +107,13 @@ protected:
 
     mfxStatus InitImpl(mfxVideoParam *par);
     void      FreeResources();
-    mfxStatus      WaitingForAsyncTasks(bool bResetTasks);
+    mfxStatus WaitingForAsyncTasks(bool bResetTasks);
+
+    virtual DriverEncoder* CreateHWh265Encoder(MFXCoreInterface* core, ENCODER_TYPE type = ENCODER_DEFAULT)
+    {
+        return CreatePlatformH265Encoder(core, type);
+    };
+
     bool m_createdByDispatcher;
     MFXPluginAdapter<MFXEncoderPlugin> m_adapter;
 

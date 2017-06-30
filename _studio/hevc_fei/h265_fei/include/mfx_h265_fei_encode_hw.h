@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2017 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -14,6 +14,7 @@
 #if defined(MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
 
 #include "mfx_h265_encode_hw.h"
+#include "mfx_h265_fei_encode_vaapi.h"
 
 namespace MfxHwH265FeiEncode
 {
@@ -30,7 +31,7 @@ public:
 
     static mfxStatus CreateByDispatcher(mfxPluginUID guid, mfxPlugin* mfxPlg)
     {
-        if (memcmp(&guid , &MFX_PLUGINID_HEVC_FEI_ENCODE, sizeof(mfxPluginUID)))
+        if (memcmp(&guid, &MFX_PLUGINID_HEVC_FEI_ENCODE, sizeof(mfxPluginUID)))
         {
             return MFX_ERR_NOT_FOUND;
         }
@@ -76,6 +77,13 @@ protected:
     explicit H265FeiEncodePlugin(bool CreateByDispatcher);
     virtual ~H265FeiEncodePlugin();
 
+    virtual MfxHwH265Encode::DriverEncoder* CreateHWh265Encoder(MFXCoreInterface* core, MfxHwH265Encode::ENCODER_TYPE type = MfxHwH265Encode::ENCODER_DEFAULT)
+    {
+        core;
+        type;
+
+        return new VAAPIh265FeiEncoder;
+    };
 };
 
 } //MfxHwH265FeiEncode
