@@ -561,6 +561,7 @@ namespace TranscodingSample
         void   SetNumFramesForReset(mfxU32 nFrames);
 
         mfxStatus   SetAllocatorAndHandleIfRequired();
+        mfxStatus   LoadGenericPlugin();
 
         mfxBitstream        *m_pmfxBS;  // contains encoded input data
 
@@ -728,6 +729,9 @@ namespace TranscodingSample
         mfxU32            m_GOPSize;
         mfxU32            m_QPforI;
         mfxU32            m_QPforP;
+
+        msdk_string       m_sGenericPluginPath;
+        mfxU16            m_nRotationAngle;
 
         void FillMBQPBuffer(mfxExtMBQP &qpMap, mfxU16 pictStruct);
 #endif //_MSDK_API >= MSDK_API(1,22)
