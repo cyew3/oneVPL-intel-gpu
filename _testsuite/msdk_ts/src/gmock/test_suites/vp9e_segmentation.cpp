@@ -335,7 +335,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
 
         // init + get_v_param: map-buffer and NumSegmentIdAlloc have small sizes - error
-        {/*16*/ MFX_ERR_INVALID_VIDEO_PARAM, CHECK_GET_V_PARAM | CHECK_NO_BUFFER,
+        {/*16*/ MFX_ERR_INVALID_VIDEO_PARAM, CHECK_GET_V_PARAM,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.SegmentIdBlockSize, MFX_VP9_SEGMENT_ID_BLOCK_SIZE_32x32 },
