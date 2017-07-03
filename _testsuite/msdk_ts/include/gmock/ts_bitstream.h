@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -48,10 +48,16 @@ class tsBitstreamWriter : public tsBitstreamProcessor
 private:
     FILE* m_file;
 public:
-    tsBitstreamWriter(const char* fname);
+    tsBitstreamWriter(const char* fname, bool append = false);
     virtual ~tsBitstreamWriter();
     mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames);
 };
+
+inline mfxStatus WriteBitstream(const char* fname, mfxBitstream& bs, bool append = false)
+{
+    tsBitstreamWriter wr(fname, append);
+    return wr.ProcessBitstream(bs, 1);
+}
 
 class tsBitstreamReader : public tsBitstreamProcessor, public tsReader
 {
@@ -105,6 +111,7 @@ public:
     bool    m_eos;
     mfxU8*  m_buf;
     mfxU32  m_buf_size;
+    const char* m_dump;
 
     inline Ipp32u GetCRC() { return m_crc; }
     tsBitstreamCRC32()
@@ -112,6 +119,7 @@ public:
         , m_eos(false)
         , m_buf(new mfxU8[1024*1024])
         , m_buf_size(1024*1024)
+        , m_dump(0)
     {
     }
     tsBitstreamCRC32(mfxBitstream bs, mfxU32 buf_size);

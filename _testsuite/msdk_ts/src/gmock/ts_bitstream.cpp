@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -74,11 +74,11 @@ mfxBitstream* tsBitstreamProcessor::ProcessBitstream(mfxBitstream& bs)
 }
 
 
-tsBitstreamWriter::tsBitstreamWriter(const char* fname)
+tsBitstreamWriter::tsBitstreamWriter(const char* fname, bool append)
 {
     
 #pragma warning(disable:4996)
-    m_file = fopen(fname, "wb");  
+    m_file = fopen(fname, append ? "ab" : "wb");
 #pragma warning(default:4996)
 }
 
@@ -290,6 +290,7 @@ tsBitstreamCRC32::tsBitstreamCRC32(mfxBitstream bs, mfxU32 buf_size)
     , m_eos(false)
     , m_buf(new mfxU8[buf_size])
     , m_buf_size(buf_size)
+    , m_dump(0)
 {
 }
 
@@ -314,6 +315,9 @@ mfxStatus tsBitstreamCRC32::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
         g_tsLog << "ERROR: cannot calculate CRC32 IppStatus=" << sts << "\n";
         return MFX_ERR_ABORTED;
     }
+
+    if (m_dump)
+        WriteBitstream(m_dump, bs, true);
 
     bs.DataLength = 0;
 

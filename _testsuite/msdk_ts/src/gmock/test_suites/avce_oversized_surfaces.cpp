@@ -211,7 +211,11 @@ int TestSuite::RunTest(unsigned int id)
     m_pPar->mfx.FrameInfo.Height = (m_par.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE)?
                                    MSDK_ALIGN16(m_pPar->mfx.FrameInfo.CropH) : MSDK_ALIGN32(m_pPar->mfx.FrameInfo.CropH);
 
-    m_reader = new tsRawReader(g_tsStreamPool.Get(tc.stream), m_pPar->mfx.FrameInfo);
+    {
+        auto fi = m_pPar->mfx.FrameInfo;
+        fi.FourCC = MFX_FOURCC_YV12;
+        m_reader = new tsRawReader(g_tsStreamPool.Get(tc.stream), fi);
+    }
     g_tsStreamPool.Reg();
 
     //save the correct resolution frame information
@@ -223,13 +227,15 @@ int TestSuite::RunTest(unsigned int id)
     m_pPar->mfx.FrameInfo.Height = (m_pPar->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE)?
                                    MSDK_ALIGN16(m_pPar->mfx.FrameInfo.CropH) : MSDK_ALIGN32(m_pPar->mfx.FrameInfo.CropH);
 
-    mfxU32 nf = frameNumber;
+    mfxU32 nf = g_tsConfig.sim ? 5 : frameNumber;
+    m_max = nf; //some stupid comment about m_max being max number of frames in base tsSurfaceProcessor before returning zero-ptrs
     ///////////////////////////////////////////////////////////////////////////
     g_tsStatus.expect(tc.sts);
 
 // 1. encode with oversized surfaces
     tsBitstreamCRC32 bs_crc;
     m_bs_processor = &bs_crc;
+    //bs_crc.m_dump = "avce_oversized_surfaces0.264";
 
     MFXInit();
     if (m_pPar->IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY) {
@@ -244,7 +250,7 @@ int TestSuite::RunTest(unsigned int id)
     //re-load the correct surface resolution and reset encoder
     m_pPar->mfx.FrameInfo = SavedInfo;
     Reset();
-    AllocBitstream((m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height) * 1024 * 1024 * nf);
+    AllocBitstream();
     EncodeFrames(nf);
     DrainEncodedBitstream();
     Ipp32u crc = bs_crc.GetCRC();
@@ -252,14 +258,16 @@ int TestSuite::RunTest(unsigned int id)
 // reset
     Close();
     m_reader->ResetFile();
+    m_cur = 0; //some stupid comment about reseting current frame counter in base tsSurfaceProcessor to make it provide the same number of frames as in previous cycle
     memset(&m_bitstream, 0, sizeof(mfxBitstream));
 
 // 2. encode with "correct"-size surfaces
     tsBitstreamCRC32 bs_cmp_crc;
     m_bs_processor = &bs_cmp_crc;
+    //bs_cmp_crc.m_dump = "avce_oversized_surfaces1.264";
 
+    QueryIOSurf(); //update m_request with exact surf. size
     AllocSurfaces();
-    AllocBitstream((m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height) * 1024 * 1024 * nf);
     EncodeFrames(nf);
     DrainEncodedBitstream();
     Ipp32u cmp_crc = bs_cmp_crc.GetCRC();
