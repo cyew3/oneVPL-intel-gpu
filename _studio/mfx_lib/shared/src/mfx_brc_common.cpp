@@ -95,10 +95,11 @@ mfxStatus cBRCParams::Init(mfxVideoParam* par)
               MFX_ERR_UNDEFINED_BEHAVIOR);
 
     mfxU32 k = par->mfx.BRCParamMultiplier == 0 ?  1: par->mfx.BRCParamMultiplier;
+    mfxU32 bpsScale  = (par->mfx.CodecId == MFX_CODEC_AVC) ? 10 : 6;
 
     rateControlMethod  = par->mfx.RateControlMethod;
-    targetbps = (((k*par->mfx.TargetKbps*1000) >> 6) << 6 );
-    maxbps =    (((k*par->mfx.MaxKbps*1000) >> 6) << 6 );
+    targetbps = (((k*par->mfx.TargetKbps*1000) >> bpsScale) << bpsScale);
+    maxbps =    (((k*par->mfx.MaxKbps*1000) >> bpsScale) << bpsScale);
 
     maxbps = (par->mfx.RateControlMethod == MFX_RATECONTROL_CBR) ? 
         targetbps : ((maxbps >= targetbps) ? maxbps : targetbps);
