@@ -10,7 +10,15 @@
 
 #include "ts_encoder.h"
 
-void SkipDecision(mfxVideoParam& par)
+enum eEncoderFunction
+{
+      INIT
+    , RESET
+    , QUERY
+    , QUERYIOSURF
+};
+
+void SkipDecision(mfxVideoParam& par, eEncoderFunction function)
 {
     if (g_tsConfig.lowpower == MFX_CODINGOPTION_ON)
     {
@@ -35,6 +43,39 @@ void SkipDecision(mfxVideoParam& par)
                 g_tsStatus.disable();
                 throw tsSKIP;
             }
+        }
+    }
+
+    if (   par.mfx.CodecId == MFX_CODEC_AVC && g_tsHWtype >= HWType::MFX_HW_CNL
+        && function != QUERYIOSURF)
+    {
+        mfxExtCodingOption2* CO2 = GetExtBufferPtr(par);
+        mfxExtCodingOption3* CO3 = GetExtBufferPtr(par);
+        mfxStatus expect = g_tsStatus.m_expected;
+        bool unsupported = false;
+
+        if (   (CO2 && CO2->MaxSliceSize && par.mfx.LowPower == MFX_CODINGOPTION_ON)
+            || (CO3 && CO3->FadeDetection == MFX_CODINGOPTION_ON))
+        {
+            expect = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+            unsupported = true;
+        }
+
+        if (   par.mfx.RateControlMethod == MFX_RATECONTROL_LA
+            || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ
+            || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT
+            || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD)
+        {
+            expect = MFX_ERR_UNSUPPORTED;
+            unsupported = true;
+        }
+
+        if (unsupported)
+        {
+            if (function != QUERY && expect == MFX_ERR_UNSUPPORTED)
+                expect = MFX_ERR_INVALID_VIDEO_PARAM;
+            g_tsStatus.last();
+            g_tsStatus.expect(expect);
         }
     }
 }
@@ -235,7 +276,7 @@ mfxStatus tsVideoEncoder::Init(mfxSession session, mfxVideoParam *par)
     TRACE_FUNC2(MFXVideoENCODE_Init, session, par);
     if (par)
     {
-        SkipDecision(*par);
+        SkipDecision(*par, INIT);
     }
     g_tsStatus.check( MFXVideoENCODE_Init(session, par) );
 
@@ -297,7 +338,7 @@ mfxStatus tsVideoEncoder::Query(mfxSession session, mfxVideoParam *in, mfxVideoP
     TRACE_FUNC3(MFXVideoENCODE_Query, session, in, out);
     if (in)
     {
-        SkipDecision(*in);
+        SkipDecision(*in, QUERY);
     }
     g_tsStatus.check( MFXVideoENCODE_Query(session, in, out) );
     TS_TRACE(out);
@@ -326,7 +367,7 @@ mfxStatus tsVideoEncoder::QueryIOSurf(mfxSession session, mfxVideoParam *par, mf
     TRACE_FUNC3(MFXVideoENCODE_QueryIOSurf, session, par, request);
     if (par)
     {
-        SkipDecision(*par);
+        SkipDecision(*par, QUERYIOSURF);
     }
     g_tsStatus.check( MFXVideoENCODE_QueryIOSurf(session, par, request) );
     TS_TRACE(request);
@@ -344,7 +385,7 @@ mfxStatus tsVideoEncoder::Reset(mfxSession session, mfxVideoParam *par)
     TRACE_FUNC2(MFXVideoENCODE_Reset, session, par);
     if (par)
     {
-        SkipDecision(*par);
+        SkipDecision(*par, RESET);
     }
     g_tsStatus.check( MFXVideoENCODE_Reset(session, par) );
 

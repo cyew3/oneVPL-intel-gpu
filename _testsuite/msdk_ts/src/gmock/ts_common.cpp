@@ -247,6 +247,7 @@ void MFXVideoTest::SetUp()
     else if (lowpower == "OFF") { g_tsConfig.lowpower = MFX_CODINGOPTION_OFF; }
 
     g_tsConfig.cfg_filename = cfg_file;
+    g_tsStatus.reset();
 
     if(platform.size())
     {
@@ -374,16 +375,22 @@ void MFXVideoTest::TearDown()
 }
 
 tsStatus::tsStatus()
-        : m_status(MFX_ERR_NONE)
-        , m_expected(MFX_ERR_NONE)
-        , m_failed(false)
-        , m_throw_exceptions(true)
-        , m_disable(0)
 {
+    reset();
 }
 
 tsStatus::~tsStatus()
 {
+}
+
+void tsStatus::reset()
+{
+    m_status = MFX_ERR_NONE;
+    m_expected = MFX_ERR_NONE;
+    m_failed = false;
+    m_throw_exceptions = true;
+    m_last = false;
+    m_disable = 0;
 }
 
 bool tsStatus::check()
@@ -402,12 +409,23 @@ bool tsStatus::check()
         g_tsLog << "FAILED\n";
         m_expected = MFX_ERR_NONE;
         ADD_FAILURE() << "returned status is wrong";
-        if(m_throw_exceptions)
+        if (m_last)
+        {
+            g_tsLog << "FORCED TEST FINISH!\n";
+            disable();
+        }
+        if(m_throw_exceptions || m_last)
             throw tsFAIL;
         return m_failed = true;
     }
     g_tsLog << "OK\n";
     m_expected = MFX_ERR_NONE;
+    if (m_last)
+    {
+        g_tsLog << "FORCED TEST FINISH!\n";
+        disable();
+        throw tsOK;
+    }
     return m_failed;
 }
 

@@ -2360,11 +2360,40 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         unsupported = true;
         par.mfx.RateControlMethod = 0;
     }
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
+    if (platform >= MFX_HW_CNL)
+    {
+        //no CM kernels implemented
+
+        if (bRateControlLA(par.mfx.RateControlMethod))
+        {
+            unsupported = true;
+            par.mfx.RateControlMethod = 0;
+            extOpt2->LookAheadDepth = 0;
+            extOpt2->LookAheadDS = 0;
+        }
+
+        if (extOpt2->MaxSliceSize && !(IsOn(par.mfx.LowPower) && hwCaps.SliceLevelRateCtrl))
+        {
+            changed = true;
+            extOpt2->MaxSliceSize = 0;
+        }
+
+        if (IsOn(extOpt3->FadeDetection))
+        {
+            changed = true;
+            extOpt3->FadeDetection = MFX_CODINGOPTION_OFF;
+        }
+    }
+#endif //defined(PRE_SI_TARGET_PLATFORM_GEN10)
+
     if (bRateControlLA(par.mfx.RateControlMethod) && IsOn(extOpt->CAVLC))
     {
         extOpt->CAVLC = MFX_CODINGOPTION_OFF;
         changed = true;
     }
+
     if (extOpt2->MaxSliceSize)
     {
         if (par.mfx.GopRefDist > 1)
@@ -2372,7 +2401,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
             changed = true;
             par.mfx.GopRefDist = 1;
         }
-        if (par.mfx.RateControlMethod != MFX_RATECONTROL_LA && !(par.mfx.LowPower == MFX_CODINGOPTION_ON && hwCaps.SliceLevelRateCtrl))
+        if (par.mfx.RateControlMethod != MFX_RATECONTROL_LA && !(IsOn(par.mfx.LowPower) && hwCaps.SliceLevelRateCtrl))
         {
             par.mfx.RateControlMethod = MFX_RATECONTROL_LA;
             changed = true;
@@ -2407,8 +2436,6 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
             extOpt2->NumMbPerSlice = 0;
             unsupported = true;
         }
-
-
     }
     else if (extOpt2->LookAheadDepth > 0)
     {

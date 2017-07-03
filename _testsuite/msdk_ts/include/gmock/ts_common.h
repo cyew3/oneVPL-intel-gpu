@@ -56,10 +56,13 @@ public:
     mfxStatus m_expected;
     bool      m_failed;
     bool      m_throw_exceptions;
+    bool      m_last;
     mfxU16    m_disable;
 
     tsStatus();
     ~tsStatus();
+
+    void reset();
 
     bool check(mfxStatus status);
     bool check();
@@ -68,6 +71,7 @@ public:
     inline void      disable_next_check()        { m_disable = 1; }
     inline void      disable()                   { m_disable = 2; }
     inline void      enable()                    { m_disable = 0; }
+    inline void      last(bool bLast = true)     { m_last = bLast; }
 };
 
 extern mfxIMPL      g_tsImpl;

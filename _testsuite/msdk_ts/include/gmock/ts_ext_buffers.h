@@ -245,5 +245,31 @@ inline bool operator==(const tsExtBufType<TB>& lhs, const tsExtBufType<TB>& rhs)
 
     return true;
 }
+
+class GetExtBufferPtr
+{
+private:
+    mfxExtBuffer ** m_b;
+    mfxU16          m_n;
+public:
+    GetExtBufferPtr(mfxExtBuffer ** b, mfxU16 n)
+        : m_b(b)
+        , m_n(n)
+    {
+    }
+    template <class T> GetExtBufferPtr(T& storage)
+        : GetExtBufferPtr(storage.ExtParam, storage.NumExtParam)
+    {}
+
+    template <class T> operator T*()
+    {
+        if (m_b)
+            for (mfxU16 i = 0; i < m_n; i++)
+                if (m_b[i] && m_b[i]->BufferId == tsExtBufTypeToId<T>::id)
+                    return (T*)m_b[i];
+        return 0;
+    }
+};
+
 template <typename TB>
 inline bool operator!=(const tsExtBufType<TB>& lhs, const tsExtBufType<TB>& rhs){return !(lhs == rhs);}
