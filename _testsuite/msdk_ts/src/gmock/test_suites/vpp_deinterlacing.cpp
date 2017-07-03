@@ -44,6 +44,7 @@ private:
     {
         mfxStatus sts;
         mfxU32 mode;
+        mfxU32 nFramesToProcess;
         struct f_pair
         {
             mfxU32 ext_type;
@@ -57,47 +58,63 @@ private:
 
 const TestSuite::tc_struct TestSuite::test_case[] =
 {
-    {/*00*/ MFX_ERR_NONE, 0, {{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode,  MFX_DEINTERLACING_BOB}}},
+    {/*00*/ MFX_ERR_NONE, 0, 0,{{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode,  MFX_DEINTERLACING_BOB}}},
 
-    {/*01*/ MFX_ERR_NONE, 0, {{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode,  MFX_DEINTERLACING_BOB},
+    {/*01*/ MFX_ERR_NONE, 0, 0,{{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode,  MFX_DEINTERLACING_BOB},
                               {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC,  MFX_FOURCC_Y210},
                               {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_Y210}}},
 
-    {/*02*/ MFX_ERR_NONE, 0, {{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode,  MFX_DEINTERLACING_ADVANCED}}},
+    {/*02*/ MFX_ERR_NONE, 0, 0,{{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode,  MFX_DEINTERLACING_ADVANCED}}},
 
-    {/*03*/ MFX_ERR_NONE, 0, {{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode,  MFX_DEINTERLACING_ADVANCED},
+    {/*03*/ MFX_ERR_NONE, 0, 0,{{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode,  MFX_DEINTERLACING_ADVANCED},
                               {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC,  MFX_FOURCC_Y210},
                               {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_Y210}}},
 
-    {/*04*/ MFX_ERR_NONE, 0, {{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode,  MFX_DEINTERLACING_ADVANCED_NOREF}}},
+    {/*04*/ MFX_ERR_NONE, 0, 0,{{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode,  MFX_DEINTERLACING_ADVANCED_NOREF}}},
 
-    {/*05*/ MFX_ERR_NONE, 0, {{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode,  MFX_DEINTERLACING_ADVANCED_NOREF},
+    {/*05*/ MFX_ERR_NONE, 0, 0,{{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode,  MFX_DEINTERLACING_ADVANCED_NOREF},
                               {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC,  MFX_FOURCC_Y210},
                               {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_Y210}}},
 
-    {/*06*/ MFX_ERR_NONE, 0, {{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode,  MFX_DEINTERLACING_ADVANCED_SCD}}},
+    {/*06*/ MFX_ERR_NONE, 0, 0,{{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode,  MFX_DEINTERLACING_ADVANCED_SCD}}},
 
-    {/*07*/ MFX_ERR_NONE, 0, {{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode,  MFX_DEINTERLACING_ADVANCED_SCD},
+    {/*07*/ MFX_ERR_NONE, 0, 0,{{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode,  MFX_DEINTERLACING_ADVANCED_SCD},
                               {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC,  MFX_FOURCC_Y210},
                               {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_Y210}}},
 
     // PTIR modes are unsupported by regular VPP
-    {/*08*/ MFX_ERR_UNSUPPORTED, 0, {{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_AUTO_DOUBLE}}},
-    {/*09*/ MFX_ERR_UNSUPPORTED, 0, {{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_AUTO_SINGLE}}},
-    {/*10*/ MFX_ERR_UNSUPPORTED, 0, {{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_FULL_FR_OUT}}},
-    {/*11*/ MFX_ERR_UNSUPPORTED, 0, {{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_HALF_FR_OUT}}},
-    {/*12*/ MFX_ERR_UNSUPPORTED, 0, {{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_24FPS_OUT}}},
-    {/*13*/ MFX_ERR_UNSUPPORTED, 0, {{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_FIXED_TELECINE_PATTERN}}},
-    {/*14*/ MFX_ERR_UNSUPPORTED, 0, {{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_30FPS_OUT}}},
-    {/*15*/ MFX_ERR_UNSUPPORTED, 0, {{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_DETECT_INTERLACE}}},
-    {/*16*/ MFX_ERR_UNSUPPORTED, 0, {
+    {/*08*/ MFX_ERR_UNSUPPORTED, 0, 0,{{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_AUTO_DOUBLE}}},
+    {/*09*/ MFX_ERR_UNSUPPORTED, 0, 0,{{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_AUTO_SINGLE}}},
+    {/*10*/ MFX_ERR_UNSUPPORTED, 0, 0,{{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_FULL_FR_OUT}}},
+    {/*11*/ MFX_ERR_UNSUPPORTED, 0, 0,{{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_HALF_FR_OUT}}},
+    {/*12*/ MFX_ERR_UNSUPPORTED, 0, 0,{{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_24FPS_OUT}}},
+    {/*13*/ MFX_ERR_UNSUPPORTED, 0, 0,{{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_FIXED_TELECINE_PATTERN}}},
+    {/*14*/ MFX_ERR_UNSUPPORTED, 0, 0,{{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_30FPS_OUT}}},
+    {/*15*/ MFX_ERR_UNSUPPORTED, 0, 0,{{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_DETECT_INTERLACE}}},
+    {/*16*/ MFX_ERR_UNSUPPORTED, 0, 0,{
         {MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_DETECT_INTERLACE},
         {MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.TelecinePattern, 1},
         {MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.TelecineLocation, 1}}
     },
 
     // customer case: reset after processing 1 frame
-    {/*17*/ MFX_ERR_NONE, RESET, {{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode,  MFX_DEINTERLACING_ADVANCED}}},
+    {/*17*/ MFX_ERR_NONE, RESET, 1,{{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode,  MFX_DEINTERLACING_ADVANCED},
+                                    {MFX_PAR, &tsStruct::mfxVideoParam.AsyncDepth,  5} }},
+    {/*18*/ MFX_ERR_NONE, RESET, 3,{{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode,  MFX_DEINTERLACING_ADVANCED},
+                                    {MFX_PAR, &tsStruct::mfxVideoParam.AsyncDepth,  5} }},
+
+    {/*19*/ MFX_ERR_NONE, RESET, 1,{{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode,  MFX_DEINTERLACING_ADVANCED},
+                                    {MFX_PAR, &tsStruct::mfxVideoParam.AsyncDepth,  5},
+                                    {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtN, 30},
+                                    {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtD, 1},
+                                    {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtN, 60},
+                                    {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD, 1} }},
+    {/*20*/ MFX_ERR_NONE, RESET, 4,{{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode,  MFX_DEINTERLACING_ADVANCED},
+                                    {MFX_PAR, &tsStruct::mfxVideoParam.AsyncDepth,  5},
+                                    {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtN, 30},
+                                    {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtD, 1},
+                                    {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtN, 60},
+                                    {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD, 1} }},
 
 };
 
@@ -116,7 +133,6 @@ int TestSuite::RunTest(unsigned int id)
     m_par.AsyncDepth = 1;
 
     SETPARS(&m_par, MFX_PAR);
-
 
     mfxExtVPPDeinterlacing* extVPPDi = (mfxExtVPPDeinterlacing*)m_par.GetExtBuffer(MFX_EXTBUFF_VPP_DEINTERLACING);
     if (MFX_DEINTERLACING_ADVANCED_SCD == extVPPDi->Mode)
@@ -138,7 +154,7 @@ int TestSuite::RunTest(unsigned int id)
 
     if (RESET == tc.mode)
     {
-        ProcessFrames(1);
+        ProcessFrames(tc.nFramesToProcess);
         Reset();
         // library should free input surfaces used as reference
         mfxStatus locked_sts = m_pSurfPoolIn->CheckLockedCounter();
