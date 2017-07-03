@@ -24,6 +24,7 @@ if( Linux OR Darwin )
   string( SUBSTRING ${hevc_version} 0 1 ver )
 
   set(HEVCE_HW_version_defs  "-DMFX_PLUGIN_FILE_VERSION=\"\\\"${ver}${cur_date}\"\\\" -DMFX_PLUGIN_PRODUCT_VERSION=\"\\\"${hevc_version}\"\\\"")
+  set(HEVCE_FEI_HW_version_defs  "-DMFX_PLUGIN_FILE_VERSION=\"\\\"${ver}${cur_date}\"\\\" -DMFX_PLUGIN_PRODUCT_VERSION=\"\\\"${hevc_version}\"\\\"")
 endif( )
 
 # =============================================================================
@@ -92,11 +93,11 @@ endforeach()
     ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
   )
 
-set( defs "-DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVCE_HW_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${HEVCE_HW_DESCRIPTION}\"\\\" ${HEVCE_HW_version_defs}" )
+set( defs "-DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVC_FEI_HW_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${HEVC_FEI_HW_DESCRIPTION}\"\\\" ${HEVCE_FEI_HW_version_defs}" )
 
 gen_plugins_cfg("HEVC_Encoder_HW" ${HEVC_FEI_Encoder_HW_GUID} "mfx_hevc_fei_hw64" "02" "HEVC")
 
-set( defs " -DAS_HEVCE_PLUGIN ${defs} ${WARNING_FLAGS}" )
+set( defs " -DAS_HEVCE_PLUGIN -DAS_HEVC_FEI_ENCODE_PLUGIN ${defs} ${WARNING_FLAGS}" )
 make_library( mfx_hevc_fei_hw64 hw shared )
 msdk_install( mfx_hevc_fei_hw64 ${MFX_PLUGINS_DIR} )
 set( defs "" )

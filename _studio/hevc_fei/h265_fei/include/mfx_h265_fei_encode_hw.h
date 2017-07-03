@@ -11,14 +11,14 @@
 #pragma once
 
 #include "mfx_config.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
+#if defined(MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
 
 #include "mfx_h265_encode_hw.h"
 
 namespace MfxHwH265FeiEncode
 {
 
-static const mfxPluginUID  MFX_PLUGINID_HEVC_FEI = {{0x54, 0x18, 0xa7, 0x06, 0x66, 0xf9, 0x4d, 0x5c, 0xb4, 0xf7, 0xb1, 0xca, 0xee, 0x86, 0x33, 0x9b}};
+static const mfxPluginUID  MFX_PLUGINID_HEVC_FEI_ENCODE = {{0x54, 0x18, 0xa7, 0x06, 0x66, 0xf9, 0x4d, 0x5c, 0xb4, 0xf7, 0xb1, 0xca, 0xee, 0x86, 0x33, 0x9b}};
 
 class H265FeiEncodePlugin : public MfxHwH265Encode::Plugin
 {
@@ -30,7 +30,7 @@ public:
 
     static mfxStatus CreateByDispatcher(mfxPluginUID guid, mfxPlugin* mfxPlg)
     {
-        if (memcmp(&guid , &MFX_PLUGINID_HEVC_FEI, sizeof(mfxPluginUID)))
+        if (memcmp(&guid , &MFX_PLUGINID_HEVC_FEI_ENCODE, sizeof(mfxPluginUID)))
         {
             return MFX_ERR_NOT_FOUND;
         }

@@ -7,8 +7,10 @@
 //
 // Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
+
+#include "mfx_common.h"
 #include "mfx_config.h"
-#if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
+#if defined (MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
 #include "mfx_h265_fei_encode_hw.h"
 
 using namespace MfxHwH265Encode;
@@ -30,7 +32,7 @@ mfxStatus H265FeiEncodePlugin::GetPluginParam(mfxPluginParam *par)
 {
     MFX_CHECK_NULL_PTR1(par);
 
-    par->PluginUID        = MFX_PLUGINID_HEVC_FEI;
+    par->PluginUID        = MFX_PLUGINID_HEVC_FEI_ENCODE;
     par->PluginVersion    = 1;
     par->ThreadPolicy     = MFX_THREADPOLICY_SERIAL;
     par->MaxThreadNum     = 1;
