@@ -308,6 +308,11 @@ bool CheckDXVAConfig(Ipp32s profile_flags, T *config, ProtectedVA * protectedVA)
     case H265_VLD_444_SCC:
     case H265_10_VLD_444_SCC:
 #endif //PRE_SI_TARGET_PLATFORM_GEN12
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+        if (profile_flags & VA_PROFILE_REXT)
+            res = 3 == config->ConfigBitstreamRaw;
+        else
+#endif
         if (profile_flags & VA_LONG_SLICE_MODE)
             res = (2 == config->ConfigBitstreamRaw || 3 == config->ConfigBitstreamRaw);
         else if (profile_flags & VA_SHORT_SLICE_MODE)

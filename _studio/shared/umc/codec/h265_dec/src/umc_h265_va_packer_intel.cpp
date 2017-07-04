@@ -20,6 +20,12 @@
 #include "umc_hevc_ddi.h"
 #include "umc_h265_va_packer_dxva.h"
 
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    #if DDI_VERSION < 943
+        #error "Gen11/Gen12 should be compiled with DDI_VERSION >= 0.943"
+    #endif
+#endif
+
 using namespace UMC;
 
 namespace UMC_HEVC_DECODER
@@ -472,6 +478,7 @@ namespace UMC_HEVC_DECODER
         }
     }
 
+#if DDI_VERSION >= 943
     inline
     void PackSliceHeader(H265Slice const* pSlice, DXVA_Intel_PicParams_HEVC const* pp, size_t prefix_size, DXVA_Intel_Slice_HEVC_Rext_Long* header)
     {
@@ -514,6 +521,7 @@ namespace UMC_HEVC_DECODER
 
         header->SliceRextFlags.fields.cu_chroma_qp_offset_enabled_flag = ssh->cu_chroma_qp_offset_enabled_flag;
     }
+#endif
 
     bool PackerDXVA2intel::PackSliceParams(H265Slice *pSlice, Ipp32u &, bool isLastSlice)
     {

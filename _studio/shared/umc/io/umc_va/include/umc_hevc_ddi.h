@@ -11,7 +11,7 @@
 #ifndef __UMC_HEVC_DDI_H
 #define __UMC_HEVC_DDI_H
 
-//#define version_0_89
+#define DDI_VERSION 945
 
 #pragma warning(disable: 4201)
 
@@ -166,6 +166,7 @@ typedef struct _DXVA_Intel_PicParams_HEVC
 
 } DXVA_Intel_PicParams_HEVC, *LPDXVA_Intel_PicParams_HEVC;
 
+#if DDI_VERSION >= 943
 typedef struct _DXVA_Intel_PicParams_HEVC_Rext
 {
     DXVA_Intel_PicParams_HEVC  PicParamsMain;
@@ -201,7 +202,7 @@ typedef struct _DXVA_Intel_PicParams_HEVC_Rext
     CHAR    cb_qp_offset_list[6];             // [-12..12]
     CHAR    cr_qp_offset_list[6];             // [-12..12]
 } DXVA_Intel_PicParams_HEVC_Rext, *LPDXVA_Intel_PicParams_HEVC_Rext;
-
+#endif //DDI_VERSION > 943
 /****************************************************************************/
 
 
@@ -259,12 +260,13 @@ typedef struct _DXVA_Intel_Slice_HEVC_Long
     CHAR    ChromaOffsetL1[15][2];
     UCHAR   five_minus_max_num_merge_cand;
 
-#ifdef version_0_89
+#if DDI_VERSION >= 890
     USHORT  num_entry_point_offsets;               // [0..540]
     USHORT  EntryOffsetToSubsetArray;              // [0..540]
 #endif
 } DXVA_Intel_Slice_HEVC_Long, *LPDXVA_Intel_Slice_HEVC_Long;
 
+#if DDI_VERSION >= 943
 typedef struct _DXVA_Intel_Slice_HEVC_Rext_Long
 {
     UINT    BSNALunitDataLocation;
@@ -319,8 +321,8 @@ typedef struct _DXVA_Intel_Slice_HEVC_Rext_Long
     SHORT   ChromaOffsetL1[15][2];
     UCHAR   five_minus_max_num_merge_cand;
 
-    //USHORT  num_entry_point_offsets;               // [0..540]
-    //USHORT  EntryOffsetToSubsetArray;              // [0..540]
+    USHORT  num_entry_point_offsets;               // [0..540]
+    USHORT  EntryOffsetToSubsetArray;              // [0..540]
 
     union
     {
@@ -333,6 +335,7 @@ typedef struct _DXVA_Intel_Slice_HEVC_Rext_Long
     } SliceRextFlags;
 
 } DXVA_Intel_Slice_HEVC_Rext_Long, *LPDXVA_Intel_Slice_HEVC_Rext_Long;
+#endif //DDI_VERSION > 943
 
 typedef struct _DXVA_Intel_Slice_HEVC_Short
 {
