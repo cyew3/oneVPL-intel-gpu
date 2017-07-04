@@ -22,6 +22,8 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include <assert.h>
 #include "sample_defs.h"
+#include "mfxvideo.h"
+#include "mfxvideo++.h"
 
 struct sInputParams
 {

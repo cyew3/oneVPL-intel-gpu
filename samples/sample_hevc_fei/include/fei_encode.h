@@ -16,52 +16,33 @@ This sample was distributed or derived from the Intel's Media Samples package.
 The original version of this sample may be obtained from https://software.intel.com/en-us/intel-media-server-studio
 or https://software.intel.com/en-us/media-client-solutions-support.
 \**********************************************************************************/
-#ifndef __PIPELINE_FEI_H__
-#define __PIPELINE_FEI_H__
 
+#ifndef __SAMPLE_FEI_ENCODE_H__
+#define __SAMPLE_FEI_ENCODE_H__
+
+#include <vector>
 #include "sample_hevc_fei_defs.h"
-#include "mfxplugin.h"
-#include "mfxplugin++.h"
-#include "plugin_utils.h"
-#include "plugin_loader.h"
-#include "vaapi_device.h"
-#include "fei_utils.h"
-#include "fei_encode.h"
 
-/* This class implements a FEI pipeline */
-class CEncodingPipeline
+class FEI_Encode
 {
 public:
-    CEncodingPipeline(sInputParams& userInput);
-    ~CEncodingPipeline();
+    FEI_Encode(MFXVideoSession* session, const mfxFrameInfo& frameInfo, const sInputParams& encParams);
+    ~FEI_Encode();
 
     mfxStatus Init();
-    void Close();
+    mfxStatus Query();
+    mfxStatus Reset(mfxVideoParam& par);
+    mfxStatus QueryIOSurf(mfxFrameAllocRequest* request);
+    mfxStatus GetVideoParam(mfxVideoParam& par);
+    mfxFrameInfo* GetFrameInfo();
 
 private:
-    const sInputParams m_inParams; /* collection of user parameters, adjusted in parsing and
-                                      shouldn't be modified during processing to not lose
-                                      initial settings */
+    MFXVideoSession*    m_pmfxSession;
+    MFXVideoENCODE      m_mfxENCODE;
 
-    mfxIMPL                  m_impl;
-    MFXVideoSession          m_mfxSession;
-    std::auto_ptr<MFXPlugin> m_pPlugin;
-    mfxPluginUID             m_pluginGuid;
+    MfxVideoParamsWrapper m_videoParams;
 
-    std::auto_ptr<MFXFrameAllocator>  m_pMFXAllocator;
-    std::auto_ptr<mfxAllocatorParams> m_pMFXAllocatorParams;
-    std::auto_ptr<CHWDevice>          m_pHWdev;
-
-    std::auto_ptr<FEI_Encode> m_pFEI_Encode;
-
-    SurfacesPool m_EncSurfPool;
-
-    mfxStatus LoadFEIPlugin();
-    mfxStatus CreateAllocator();
-    mfxStatus CreateHWDevice();
-    mfxStatus FillInputFrameInfo(mfxFrameInfo& fi);
-    mfxStatus AllocFrames();
-
+    void SetEncodeParameters(const sInputParams& encParams);
 };
 
-#endif // __PIPELINE_FEI_H__
+#endif // __SAMPLE_FEI_ENCODE_H__

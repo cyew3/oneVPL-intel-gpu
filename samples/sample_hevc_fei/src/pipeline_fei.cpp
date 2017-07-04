@@ -22,6 +22,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 CEncodingPipeline::CEncodingPipeline(sInputParams& userInput)
     : m_inParams(userInput)
     , m_impl(MFX_IMPL_HARDWARE_ANY | MFX_IMPL_VIA_VAAPI)
+    , m_EncSurfPool()
 {
 }
 
@@ -43,6 +44,25 @@ mfxStatus CEncodingPipeline::Init()
     // create and init frame allocator
     sts = CreateAllocator();
     MSDK_CHECK_STATUS(sts, "CreateAllocator failed");
+
+    mfxFrameInfo frameInfo;
+    MSDK_ZERO_MEMORY(frameInfo);
+    sts = FillInputFrameInfo(frameInfo);
+    MSDK_CHECK_STATUS(sts, "FillInputFrameInfo failed");
+
+    if (m_inParams.bENCODE)
+    {
+        m_pFEI_Encode.reset(new FEI_Encode(&m_mfxSession, frameInfo, m_inParams));
+        // call Query to check that Encode's parameters are valid
+        sts = m_pFEI_Encode->Query();
+        MSDK_CHECK_STATUS(sts, "FEI ENCODE Query failed");
+    }
+
+    sts = AllocFrames();
+    MSDK_CHECK_STATUS(sts, "AllocFrames failed");
+
+    sts = m_pFEI_Encode->Init();
+    MSDK_CHECK_STATUS(sts, "FEI ENCODE Init failed");
 
     return sts;
 }
@@ -111,6 +131,53 @@ mfxStatus CEncodingPipeline::CreateHWDevice()
 
     sts = m_pHWdev->Init(NULL, 0, MSDKAdapter::GetNumber(m_mfxSession));
     MSDK_CHECK_STATUS(sts, "m_pHWdev->Init failed");
+
+    return sts;
+}
+
+
+// fill FrameInfo structure with user parameters taking into account that input stream sequence
+// will be stored in MSDK surfaces, i.e. width/height should be aligned, FourCC within supported formats
+mfxStatus CEncodingPipeline::FillInputFrameInfo(mfxFrameInfo& fi)
+{
+    bool isProgressive = (MFX_PICSTRUCT_PROGRESSIVE == m_inParams.nPicStruct);
+    fi.FourCC       = MFX_FOURCC_NV12;
+    fi.ChromaFormat = FourCCToChroma(fi.FourCC);
+    fi.PicStruct    = m_inParams.nPicStruct;
+
+    fi.CropX = 0;
+    fi.CropY = 0;
+    fi.CropW = m_inParams.nWidth;
+    fi.CropH = m_inParams.nHeight;
+    fi.Width = MSDK_ALIGN16(fi.CropW);
+    fi.Height = isProgressive ? MSDK_ALIGN16(fi.CropH) : MSDK_ALIGN32(fi.CropH);
+
+    mfxStatus sts = ConvertFrameRate(m_inParams.dFrameRate, &fi.FrameRateExtN, &fi.FrameRateExtD);
+    MSDK_CHECK_STATUS(sts, "ConvertFrameRate failed");
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus CEncodingPipeline::AllocFrames()
+{
+    mfxStatus sts = MFX_ERR_NOT_INITIALIZED;
+
+    mfxFrameAllocRequest encRequest;
+    MSDK_ZERO_MEMORY(encRequest);
+
+    if (m_pFEI_Encode.get())
+    {
+        sts = m_pFEI_Encode->QueryIOSurf(&encRequest);
+        MSDK_CHECK_STATUS(sts, "m_pFEI_Encode->QueryIOSurf failed");
+
+        // prepare allocation requests
+        MSDK_MEMCPY_VAR(encRequest.Info, m_pFEI_Encode->GetFrameInfo(), sizeof(mfxFrameInfo));
+        encRequest.Type |= MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET;
+
+        m_EncSurfPool.SetAllocator(m_pMFXAllocator.get());
+        sts = m_EncSurfPool.AllocSurfaces(encRequest);
+        MSDK_CHECK_STATUS(sts, "EncSurfPool->AllocSurfaces failed");
+    }
 
     return sts;
 }
