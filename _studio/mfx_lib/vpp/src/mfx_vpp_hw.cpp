@@ -1947,9 +1947,7 @@ mfxStatus  VideoVPPHW::Init(
         m_pCmCopy = QueryCoreInterface<CmCopyWrapper>(m_pCore, MFXICORECMCOPYWRAPPER_GUID);
         if ( m_pCmCopy )
         {
-            sts = m_pCmCopy->Initialize();
-            MFX_CHECK_STS(sts);
-            sts = m_pCmCopy->InitializeSwapKernels(m_pCore->GetHWType());
+            sts = m_pCmCopy->Initialize(m_pCore->GetHWType());
             MFX_CHECK_STS(sts);
         }
     }
