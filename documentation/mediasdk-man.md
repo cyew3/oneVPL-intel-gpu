@@ -5234,16 +5234,25 @@ The `mfxExtLAControl` structure is used to control standalone look ahead behavio
 
 This LA is intended for one to N transcoding scenario, where one input bitstream is transcoded to several output ones with different bitrates and resolutions. Usage of integrated into the SDK encoder LA in this scenario is also possible but not efficient in term of performance and memory consumption. Standalone LA by **ENC** class of functions is executed only once for input bitstream in contrast to the integrated LA where LA is executed for each of output streams.
 
-This structure is used at **ENC** initialization time and should be attached to the **mfxVideoParam** structure.
+This structure is used at **ENC** initialization time and should be attached to the [mfxVideoParam](#mfxVideoParam) structure.
+
+The algorithm of QP calculation is the following:
+1. Analyze `LookAheadDepth` frames to find per-frame costs using a sliding window of `DependencyDepth` frames.
+2. After such analysis we have costs for `(LookAheadDepth - DependencyDepth)` frames. Cost is the estimation of frame complexity based on inter-prediction.
+3. Calculate QP for the first frame using costs of `(LookAheadDepth - DependencyDepth)` frames.
+
+###### Figure 6: LookAhead BRC QP Calculation Algorithm
+
+![LookAhead QP calculation algorithm](./pic/lookahead_qp_calulation_algo.png)
 
 **Members**
 
 | | |
 --- | ---
-`Header.BufferId` | Must be **MFX_EXTBUFF_LOOKAHEAD_CTRL**.
-`LookAheadDepth` | Look ahead depth. This parameter has exactly the same meaning as **LookAheadDepth** in the [mfxExtCodingOption2](#mfxExtCodingOption2) structure.
-`DependencyDepth` | Dependency depth. This parameter specifies the number of frames that SDK analyzes to calculate inter-frame dependency. It should be less than **LookAheadDepth** filed.
-`DownScaleFactor` | Down scale factor. This parameter has exactly the same meaning as **LookAheadDS** in the [mfxExtCodingOption2](#mfxExtCodingOption2) structure. It is recommended to execute LA on downscaled image to improve performance without significant quality degradation.
+`Header.BufferId` | Must be [MFX_EXTBUFF_LOOKAHEAD_CTRL](#ExtendedBufferID).
+`LookAheadDepth` | Look ahead depth. This parameter has exactly the same meaning as `LookAheadDepth` in the [mfxExtCodingOption2](#mfxExtCodingOption2) structure.
+`DependencyDepth` | Dependency depth. This parameter specifies the number of frames that SDK analyzes to calculate inter-frame dependency. The recommendation is to set this parameter in the following range: greater than (GopRefDist + 1) and less than (LookAheadDepth/4).
+`DownScaleFactor` | Down scale factor. This parameter has exactly the same meaning as `LookAheadDS` in the [mfxExtCodingOption2](#mfxExtCodingOption2) structure. It is recommended to execute LA on downscaled image to improve performance without significant quality degradation.
 `BPyramid` | Turn ON this flag to enable BPyramid feature (this mode is not supported by h264 encoder). See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option.
 `NumOutStream` | Number of output streams in one to N transcode scenario.
 `OutStream` | Output stream parameters.
@@ -7487,7 +7496,7 @@ The application must be able to:
 
 Encoding can then continue on the current segment using either the same or the similar encoding parameters.
 
-###### Figure 6: Multiple-Segment Encoding
+###### Figure 7: Multiple-Segment Encoding
 
 | Segment already Encoded | Segment in encoding | Segment to be encoded |
 | --- | --- | --- |
