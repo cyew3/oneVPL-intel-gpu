@@ -278,6 +278,7 @@
     <ClCompile Include="src\gmock\test_suites\avce_mbqp.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_mb_disable_skip_map.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_mb_per_sec.cpp" />
+    <ClCompile Include="src\gmock\test_suites\avce_move_rect.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_nummbperslice.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_qp_report.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_repeat_pps.cpp" />

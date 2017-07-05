@@ -141,7 +141,7 @@ public:
         RefreshBuffers();
     }
 
-    template <typename T> void AddExtBuffer(mfxU32 nbBytesExtraSize)
+    template <typename T> void AddExtBuffer(mfxU32 nbBytesExtraSize = 0)
     {
         return AddExtBuffer(tsExtBufTypeToId<T>::id, sizeof(T), nbBytesExtraSize);
     }
