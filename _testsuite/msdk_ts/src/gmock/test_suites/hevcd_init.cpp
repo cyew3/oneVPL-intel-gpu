@@ -200,8 +200,6 @@ int TestSuite::RunTest(tc_struct const& tc)
     return 0;
 }
 
-struct bits;
-struct chromas;
 template <unsigned v>
 struct int_ : std::integral_constant<unsigned, v> {};
 
@@ -209,17 +207,16 @@ static const tsStruct::Field* const FourCC        (&tsStruct::mfxVideoParam.mfx.
 static const tsStruct::Field* const ChromaFormat  (&tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat);
 static const tsStruct::Field* const BitDepthLuma  (&tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma);
 
-template <unsigned profile, unsigned fourcc, typename, typename>
+template <unsigned profile, unsigned fourcc, typename Bits, typename Chromas>
 struct TestSuiteExt;
 
-//should be cpp11's variadics ...
 template <
     unsigned profile,
     unsigned fourcc,
-    typename b1, typename b2, typename b3,
-    typename c1, typename c2, typename c3
+    typename b1, typename ...b2, //correct, wrong...
+    typename c1, typename ...c2  //correct, wrong...
 >
-struct TestSuiteExt<profile, fourcc, bits(b1, b2, b3), chromas(c1, c2, c3)>
+struct TestSuiteExt<profile, fourcc, void(b1, b2...), void(c1, c2...)>
     : public TestSuite
 {
     static
@@ -230,31 +227,52 @@ struct TestSuiteExt<profile, fourcc, bits(b1, b2, b3), chromas(c1, c2, c3)>
     static tc_struct const test_cases[];
 };
 
+namespace detail
+{
+    template <unsigned bit_depth>
+    constexpr
+    TestSuite::tc_struct
+    make_bit_depth_tc(mfxStatus status, mfxU32 alloc_mode, unsigned fourcc, int_<bit_depth>)
+    {
+        return
+            TestSuite::tc_struct{ status, alloc_mode, false, 0, 1,{ { FourCC, fourcc },{ BitDepthLuma, bit_depth } } };
+    }
+
+    template <unsigned chroma_format>
+    constexpr
+    TestSuite::tc_struct
+    make_chroma_format_tc(mfxStatus status, mfxU32 alloc_mode, unsigned fourcc, int_<chroma_format>)
+    {
+        return
+            TestSuite::tc_struct{ status, alloc_mode, false, 0, 1,{ { FourCC, fourcc },{ ChromaFormat, chroma_format } } };
+    }
+}
+
 template <
     unsigned profile,
     unsigned fourcc,
-    typename b1, typename b2, typename b3, //default correct wrong
-    typename c1, typename c2, typename c3  //correct wrong...
+    typename b1, typename ...b2, //correct, wrong...
+    typename c1, typename ...c2  //correct, wrong...
 >
-TestSuite::tc_struct const TestSuiteExt<profile, fourcc, bits(b1, b2, b3), chromas(c1, c2, c3)>::test_cases[] =
+TestSuite::tc_struct const TestSuiteExt<profile, fourcc, void(b1, b2...), void(c1, c2...)>::test_cases[] =
 {
-    {/*24*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 1, {{FourCC, fourcc}, {BitDepthLuma, b1::value}}},
-    {/*25*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 1, {{FourCC, fourcc}, {BitDepthLuma, b2::value}}},
-    {/*26*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 1, {{FourCC, fourcc}, {ChromaFormat, c1::value}}},
+    {/*28*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 1, {{FourCC, fourcc}, {BitDepthLuma, b1::value}}},
+    {/*29*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 1, {{FourCC, fourcc}, {ChromaFormat, c1::value}}},
 
-    {/*27*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1, {{FourCC, fourcc}, {BitDepthLuma, b3::value}}},
+    //c3 pack specifies wrong chroma formats
+    detail::make_chroma_format_tc(MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, fourcc, c2{})...,
 
-    {/*28*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1, {{FourCC, fourcc}, {ChromaFormat, c2::value}}},
-    {/*29*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1, {{FourCC, fourcc}, {ChromaFormat, c3::value}}},
+    //b3 pack specifies wrong bit depths
+    detail::make_bit_depth_tc(MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, fourcc, b2{})...
 };
 
 template <
     unsigned profile,
     unsigned fourcc,
-    typename b1, typename b2, typename b3,
-    typename c1, typename c2, typename c3
+    typename b1, typename ...b2,
+    typename c1, typename ...c2
 >
-int TestSuiteExt<profile, fourcc, bits(b1, b2, b3), chromas(c1, c2, c3)>::RunTest(unsigned int id)
+int TestSuiteExt<profile, fourcc, void(b1, b2...), void(c1, c2...)>::RunTest(unsigned int id)
 {
     auto tc =
         id >= TestSuite::n_cases ?
@@ -269,15 +287,20 @@ int TestSuiteExt<profile, fourcc, bits(b1, b2, b3), chromas(c1, c2, c3)>::RunTes
 template <
     unsigned profile,
     unsigned fourcc,
-    typename b1, typename b2, typename b3,
-    typename c1, typename c2, typename c3
+    typename b1, typename ...b2,
+    typename c1, typename ...c2
 >
-unsigned int TestSuiteExt<profile, fourcc, bits(b1, b2, b3), chromas(c1, c2, c3)>::GetCount()
-{ return TestSuite::n_cases + 6; }
+unsigned int TestSuiteExt<profile, fourcc, void(b1, b2...), void(c1, c2...)>::GetCount()
+{ return TestSuite::n_cases + 2 + sizeof...(b2) + sizeof...(c2); }
 
-#define TS_SEQ(type, a, b, c)  type(int_<a>, int_<b>, int_<c>)
-#define TS_BITS(b1, b2, b3)    TS_SEQ(bits,    b1, b2, b3)
-#define TS_CHROMAS(c1, c2, c3) TS_SEQ(chromas, c1, c2, c3)
+namespace detail
+{
+    template <typename T, T... t>
+    struct repack { using type = void(int_<t>...); };
+}
+
+#define TS_BITS(...)       typename detail::repack<unsigned, __VA_ARGS__>::type
+#define TS_CHROMAS(...)    typename detail::repack<unsigned, __VA_ARGS__>::type
 
 #define TS_REG_TEST_SUITE_TMPL(name, profile, fourcc, bits, chromas) \
     TS_REG_TEST_SUITE(name,                                          \
@@ -289,47 +312,67 @@ TS_REG_TEST_SUITE_TMPL(
     hevcd_init,
     MFX_PROFILE_HEVC_MAIN,
     MFX_FOURCC_NV12,
-    TS_BITS(0, 8, 10), TS_CHROMAS(MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV444, MFX_CHROMAFORMAT_YUV422)
+    TS_BITS(8, 10, 12), TS_CHROMAS(MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV444, MFX_CHROMAFORMAT_YUV422)
 );
 
 TS_REG_TEST_SUITE_TMPL(
     hevcd_422_init,
     MFX_PROFILE_HEVC_REXT,
     MFX_FOURCC_YUY2,
-    TS_BITS(0, 8, 10), TS_CHROMAS(MFX_CHROMAFORMAT_YUV422, MFX_CHROMAFORMAT_YUV444, MFX_CHROMAFORMAT_YUV420)
+    TS_BITS(8, 10, 12), TS_CHROMAS(MFX_CHROMAFORMAT_YUV422, MFX_CHROMAFORMAT_YUV444, MFX_CHROMAFORMAT_YUV420)
 );
 
 TS_REG_TEST_SUITE_TMPL(
     hevcd_444_init,
     MFX_PROFILE_HEVC_REXT,
     MFX_FOURCC_AYUV,
-    TS_BITS(0, 8, 10), TS_CHROMAS(MFX_CHROMAFORMAT_YUV444, MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV422)
+    TS_BITS(8, 10, 12), TS_CHROMAS(MFX_CHROMAFORMAT_YUV444, MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV422)
 );
 
 TS_REG_TEST_SUITE_TMPL(
     hevc10d_init,
     MFX_PROFILE_HEVC_MAIN10,
     MFX_FOURCC_P010,
-    TS_BITS(0, 10, 8), TS_CHROMAS(MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV444, MFX_CHROMAFORMAT_YUV422)
+    TS_BITS(10, 8, 12), TS_CHROMAS(MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV444, MFX_CHROMAFORMAT_YUV422)
 );
 
 TS_REG_TEST_SUITE_TMPL(
     hevc10d_422_init,
     MFX_PROFILE_HEVC_REXT,
     MFX_FOURCC_Y210,
-    TS_BITS(0, 10, 8), TS_CHROMAS(MFX_CHROMAFORMAT_YUV422, MFX_CHROMAFORMAT_YUV444, MFX_CHROMAFORMAT_YUV420)
+    TS_BITS(10, 8, 12), TS_CHROMAS(MFX_CHROMAFORMAT_YUV422, MFX_CHROMAFORMAT_YUV444, MFX_CHROMAFORMAT_YUV420)
 );
 
 TS_REG_TEST_SUITE_TMPL(
     hevc10d_444_init,
     MFX_PROFILE_HEVC_REXT,
     MFX_FOURCC_Y410,
-    TS_BITS(0, 10, 8), TS_CHROMAS(MFX_CHROMAFORMAT_YUV444, MFX_CHROMAFORMAT_YUV422, MFX_CHROMAFORMAT_YUV420)
+    TS_BITS(10, 8, 12), TS_CHROMAS(MFX_CHROMAFORMAT_YUV444, MFX_CHROMAFORMAT_YUV422, MFX_CHROMAFORMAT_YUV420)
 );
 
-#undef SEQ
-#undef BITS
-#undef CHROMAS
+TS_REG_TEST_SUITE_TMPL(
+    hevc12d_init,
+    MFX_PROFILE_HEVC_REXT,
+    MFX_FOURCC_P016,
+    TS_BITS(12, 8, 10), TS_CHROMAS(MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV444, MFX_CHROMAFORMAT_YUV422)
+);
+
+TS_REG_TEST_SUITE_TMPL(
+    hevc12d_422_init,
+    MFX_PROFILE_HEVC_REXT,
+    MFX_FOURCC_Y210,
+    TS_BITS(12, 8, 10), TS_CHROMAS(MFX_CHROMAFORMAT_YUV422, MFX_CHROMAFORMAT_YUV444, MFX_CHROMAFORMAT_YUV420)
+);
+
+TS_REG_TEST_SUITE_TMPL(
+    hevc12d_444_init,
+    MFX_PROFILE_HEVC_REXT,
+    MFX_FOURCC_Y410,
+    TS_BITS(12, 8, 10), TS_CHROMAS(MFX_CHROMAFORMAT_YUV444, MFX_CHROMAFORMAT_YUV422, MFX_CHROMAFORMAT_YUV420)
+);
+
+#undef TS_BITS
+#undef TS_CHROMAS
 
 #undef TS_REG_TEST_SUITE_TMPL
 }
