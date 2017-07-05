@@ -325,10 +325,13 @@ mfxU32 CalculateFourcc(mfxU16 codecProfile, mfxFrameInfo const* frameInfo)
     if (!CheckChromaFormat(codecProfile, frameInfo->ChromaFormat))
         return 0;
 
+    if (!CheckBitDepth(codecProfile, frameInfo->BitDepthLuma))
+        return 0;
+    if (!CheckBitDepth(codecProfile, frameInfo->BitDepthChroma))
+        return 0;
+
     mfxU16 bit_depth =
        IPP_MAX(frameInfo->BitDepthLuma, frameInfo->BitDepthChroma);
-    if (!CheckBitDepth(codecProfile, bit_depth))
-        return 0;
 
     //map chroma fmt & bit depth onto fourcc (NOTE: we currently don't support bit depth above 10 bit)
     mfxU32 const map[][4] =
