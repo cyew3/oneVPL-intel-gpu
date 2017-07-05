@@ -47,6 +47,9 @@ namespace vp9e_brc
         int RunTest(const tc_struct& tc, unsigned int fourcc_id);
 
         static const unsigned int n_cases_nv12;
+        static const unsigned int n_cases_p010;
+        static const unsigned int n_cases_ayuv;
+        static const unsigned int n_cases_y410;
 
     private:
         enum
@@ -63,23 +66,21 @@ namespace vp9e_brc
 
     const TestSuite::tc_struct TestSuite::test_case[] =
     {
-        {/*00*/ MFX_ERR_NONE, NONE, NONE},
-
-        {/*01*/ MFX_ERR_NONE, NONE,
+        {/*00*/ MFX_ERR_NONE, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
             }
         },
 
-        {/*02 bitrate unspecified for CBR*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE,
+        {/*01 bitrate unspecified for CBR*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 0 },
             }
         },
 
-        {/*03 MaxKbps is less than TargetKbps CBR*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE,
+        {/*02 MaxKbps is less than TargetKbps CBR*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
@@ -87,7 +88,7 @@ namespace vp9e_brc
             }
         },
 
-        {/*04 too small 'InitialDelayInKB'*/ MFX_ERR_NONE, NONE,
+        {/*03 too small 'InitialDelayInKB'*/ MFX_ERR_NONE, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
@@ -95,7 +96,7 @@ namespace vp9e_brc
             }
         },
 
-        {/*05 too small 'BufferSizeInKB'*/ MFX_ERR_NONE, NONE,
+        {/*04 too small 'BufferSizeInKB'*/ MFX_ERR_NONE, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
@@ -103,7 +104,7 @@ namespace vp9e_brc
             }
         },
 
-        {/*06 'BufferSizeInKB' smaller than 'InitialDelayInKB'*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE,
+        {/*05 'BufferSizeInKB' smaller than 'InitialDelayInKB'*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
@@ -112,7 +113,7 @@ namespace vp9e_brc
             }
         },
 
-        {/*07 check Multiplier for normal values*/ MFX_ERR_NONE, MULTIPLIER_CHECK,
+        {/*06 check Multiplier for normal values*/ MFX_ERR_NONE, MULTIPLIER_CHECK,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
@@ -122,7 +123,7 @@ namespace vp9e_brc
             }
         },
 
-        {/*08 check Multiplier for out-of-range values*/ MFX_ERR_NONE, MULTIPLIER_CHECK,
+        {/*07 check Multiplier for out-of-range values*/ MFX_ERR_NONE, MULTIPLIER_CHECK,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 30000 },
@@ -132,7 +133,7 @@ namespace vp9e_brc
             }
         },
 
-        {/*09*/ MFX_ERR_NONE, NONE,
+        {/*08*/ MFX_ERR_NONE, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
@@ -140,7 +141,7 @@ namespace vp9e_brc
             }
         },
 
-        {/*10 'MaxKbps' is smaller than 'TargetKbps'*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE,
+        {/*09 'MaxKbps' is smaller than 'TargetKbps'*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
@@ -148,7 +149,7 @@ namespace vp9e_brc
             }
         },
 
-        {/*11*/ MFX_ERR_NONE, NONE,
+        {/*10*/ MFX_ERR_NONE, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 150 },
@@ -156,7 +157,7 @@ namespace vp9e_brc
             }
         },
 
-        {/*12*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE,
+        {/*11*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 0 },
@@ -164,7 +165,7 @@ namespace vp9e_brc
             }
         },
 
-        {/*13 QP out of range*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE,
+        {/*12 QP out of range*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, VP9E_MAX_QP_VALUE + 1 },
@@ -173,41 +174,41 @@ namespace vp9e_brc
         },
 
         // Check all unsupported brc methods
-        {/*14*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE,{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR } },
-        {/*15*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED1 } },
-        {/*16*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED2 } },
-        {/*17*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED3 } },
-        {/*18*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED4 } },
-        {/*19*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA } },
-        {/*20*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VCM } },
-        {/*21*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_ICQ } },
-        {/*22*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_EXT } },
-        {/*23*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_HRD } },
-        {/*24*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_QVBR } },
-        {/*25*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VME } },
-        {/*26*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, 16 } },
+        {/*13*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE,{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR } },
+        {/*14*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED1 } },
+        {/*15*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED2 } },
+        {/*16*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED3 } },
+        {/*17*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED4 } },
+        {/*18*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA } },
+        {/*19*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VCM } },
+        {/*20*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_ICQ } },
+        {/*21*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_EXT } },
+        {/*22*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_HRD } },
+        {/*23*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_QVBR } },
+        {/*24*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VME } },
+        {/*25*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, 16 } },
 
-        {/*27 unspecified both brc-type and kbps)*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE,
+        {/*26 unspecified both brc-type and kbps)*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, 0 },
             }
         },
 
-        {/*28 unspecified brc type, but correct kbps => map to CBR)*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE,
+        {/*27 unspecified brc type, but correct kbps => map to CBR)*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, 0 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
             }
         },
 
-        {/*29*/ MFX_ERR_NONE, CHECK_BITRATE_DYNAMIC_CHANGE,
+        {/*28*/ MFX_ERR_NONE, CHECK_BITRATE_DYNAMIC_CHANGE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
             }
         },
 
-        {/*30*/ MFX_ERR_NONE, CHECK_BITRATE_DYNAMIC_CHANGE,
+        {/*29*/ MFX_ERR_NONE, CHECK_BITRATE_DYNAMIC_CHANGE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
@@ -251,9 +252,12 @@ ICQ-based brc is not supported by the driver now, cases are left for the future 
 */
     };
 
-    const unsigned int TestSuite::n_cases_nv12 = n_cases;
-
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
+
+    const unsigned int TestSuite::n_cases_nv12 = n_cases;
+    const unsigned int TestSuite::n_cases_p010 = n_cases;
+    const unsigned int TestSuite::n_cases_ayuv = n_cases;
+    const unsigned int TestSuite::n_cases_y410 = n_cases;
 
     struct streamDesc
     {
@@ -263,15 +267,21 @@ ICQ-based brc is not supported by the driver now, cases are left for the future 
     };
 
     const streamDesc streams[] = {
-        {720, 480, "YUV/calendar_720x480_600_nv12.yuv"},
+        { 720, 480, "YUV/calendar_720x480_600_nv12.yuv"},
+        { 352, 288, "YUV10bit420_ms/Kimono1_352x288_24_p010_shifted.yuv" },
+        { 352, 288, "YUV8bit444/Kimono1_352x288_24_ayuv.yuv" },
+        { 352, 288, "YUV10bit444/Kimono1_352x288_24_y410.yuv" },
     };
 
     const streamDesc& getStreamDesc(const mfxU32& id)
     {
         switch(id)
         {
-        case MFX_FOURCC_NV12: return streams[0];
-        default: assert(0); return streams[0];
+            case MFX_FOURCC_NV12: return streams[0];
+            case MFX_FOURCC_P010: return streams[1];
+            case MFX_FOURCC_AYUV: return streams[2];
+            case MFX_FOURCC_Y410: return streams[3];
+            default: assert(0); return streams[0];
         }
     }
 
@@ -300,10 +310,27 @@ ICQ-based brc is not supported by the driver now, cases are left for the future 
 
         SETPARS(m_pPar, MFX_PAR);
 
-        if(fourcc_id == MFX_FOURCC_NV12)
+        if (fourcc_id == MFX_FOURCC_NV12)
         {
             m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
             m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+        }
+        else if (fourcc_id == MFX_FOURCC_P010)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_P010;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+        }
+        else if (fourcc_id == MFX_FOURCC_AYUV)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_AYUV;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
+        }
+        else if (fourcc_id == MFX_FOURCC_Y410)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y410;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
         }
         else
         {
@@ -315,14 +342,19 @@ ICQ-based brc is not supported by the driver now, cases are left for the future 
 
         if (0 == memcmp(m_uid->Data, MFX_PLUGINID_VP9E_HW.Data, sizeof(MFX_PLUGINID_VP9E_HW.Data)))
         {
-            if (fourcc_id == MFX_FOURCC_NV12 && g_tsHWtype < MFX_HW_CNL) // MFX_PLUGIN_VP9E_HW unsupported on platform less CNL
+            // MFX_PLUGIN_VP9E_HW unsupported on platform less CNL (ICL for REXTs)
+            if ((fourcc_id == MFX_FOURCC_NV12 && g_tsHWtype < MFX_HW_CNL)
+                || ((fourcc_id == MFX_FOURCC_P010 || fourcc_id == MFX_FOURCC_AYUV
+                    || fourcc_id == MFX_FOURCC_Y410) && g_tsHWtype < MFX_HW_ICL))
             {
                 g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
                 g_tsLog << "WARNING: Unsupported HW Platform!\n";
                 Query();
                 return 0;
             }
-        } else {
+        }
+        else
+        {
             g_tsLog << "WARNING: loading encoder from plugin failed!\n";
             return 0;
         }
@@ -340,7 +372,10 @@ ICQ-based brc is not supported by the driver now, cases are left for the future 
             GetVideoParam(m_session, &new_par); TS_CHECK_MFX
 
             EXPECT_EQ(new_par.mfx.TargetKbps * new_par.mfx.BRCParamMultiplier, m_pPar->mfx.TargetKbps * m_pPar->mfx.BRCParamMultiplier) << "ERROR: Multiplying did not apply to: TargetKbps";
-            EXPECT_EQ(new_par.mfx.MaxKbps * new_par.mfx.BRCParamMultiplier, m_pPar->mfx.MaxKbps * m_pPar->mfx.BRCParamMultiplier) << "ERROR: Multiplying did not apply to: MaxKbps";
+            if (m_pPar->mfx.MaxKbps)
+            {
+                EXPECT_EQ(new_par.mfx.MaxKbps * new_par.mfx.BRCParamMultiplier, m_pPar->mfx.MaxKbps * m_pPar->mfx.BRCParamMultiplier) << "ERROR: Multiplying did not apply to: MaxKbps";
+            }
             EXPECT_EQ(new_par.mfx.InitialDelayInKB * new_par.mfx.BRCParamMultiplier, m_pPar->mfx.InitialDelayInKB * m_pPar->mfx.BRCParamMultiplier) << "ERROR: Multiplying did not apply to: InitialDelayInKB";
             EXPECT_EQ(new_par.mfx.BufferSizeInKB * new_par.mfx.BRCParamMultiplier, m_pPar->mfx.BufferSizeInKB * m_pPar->mfx.BRCParamMultiplier) << "ERROR: Multiplying did not apply to: BufferSizeInKB";
         }
@@ -439,7 +474,8 @@ ICQ-based brc is not supported by the driver now, cases are left for the future 
                         throw tsFAIL;
                     }
 
-                    mfxStatus second_encode_status = EncodeFrames(1);
+                    m_pBitstream->DataLength = m_pBitstream->DataOffset = 0;
+                    mfxStatus second_encode_status = EncodeFrames(2);
                     if (second_encode_status == MFX_ERR_NONE)
                     {
                         DrainEncodedBitstream();
@@ -465,5 +501,8 @@ ICQ-based brc is not supported by the driver now, cases are left for the future 
         return 0;
     }
 
-    TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9e_brc, RunTest_Subtype<MFX_FOURCC_NV12>, n_cases_nv12);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9e_brc,              RunTest_Subtype<MFX_FOURCC_NV12>, n_cases_nv12);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9e_10b_420_p010_brc, RunTest_Subtype<MFX_FOURCC_P010>, n_cases_p010);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9e_8b_444_ayuv_brc,  RunTest_Subtype<MFX_FOURCC_AYUV>, n_cases_ayuv);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9e_10b_444_y410_brc, RunTest_Subtype<MFX_FOURCC_Y410>, n_cases_y410);
 };
