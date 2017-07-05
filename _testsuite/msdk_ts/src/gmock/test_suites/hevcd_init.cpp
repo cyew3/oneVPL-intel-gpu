@@ -93,6 +93,10 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*21*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 4},
     {/*22*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 5},
     {/*23*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 6},
+    {/*24*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1,{ &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, 1 } },
+    {/*25*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1,{ &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, 1 } },
+    {/*26*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1,{ &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, 42 } },
+    {/*27*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1,{ &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, 42 } },
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
