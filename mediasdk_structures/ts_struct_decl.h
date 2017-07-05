@@ -479,6 +479,7 @@ STRUCT(mfxExtEncoderROI_Entry,
 STRUCT(mfxExtEncoderROI,
     FIELD_S(mfxExtBuffer, Header)
     FIELD_T(mfxI16, NumROI)
+    FIELD_T(mfxU16, ROIMode)
     FIELD_S(mfxExtEncoderROI_Entry, ROI)
 )
 
