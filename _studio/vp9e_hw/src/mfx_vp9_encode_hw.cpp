@@ -365,6 +365,10 @@ MFX_CHECK_STS(sts);
     MFX_CHECK_STS(sts);
     request.NumFrameMin = request.NumFrameSuggested = (mfxU16)CalcNumTasks(m_video);
 
+    // increase Height to allocate bigger buffer if inited BufferSizeInKB exceeds recommendation of the driver
+    mfxU16 tmp_width = request.Info.Width ? request.Info.Width : m_video.mfx.FrameInfo.Width;
+    request.Info.Height = MFX_MAX( ( static_cast<mfxU16>( (m_video.m_bufferSizeInKb * 1000) / tmp_width) ), request.Info.Height);
+
     sts = m_outBitstreams.Init(m_pmfxCore, &request);
     MFX_CHECK_STS(sts);
     sts = m_ddi->Register(m_outBitstreams.GetFrameAllocReponse(), D3DDDIFMT_INTELENCODE_BITSTREAMDATA);
