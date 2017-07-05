@@ -508,6 +508,20 @@ char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOUR
 char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_Y410>)
 { return "conformance/hevc/StressBitstreamEncode/rext444_10b/Stress_HEVC_Rext444_10bHT62_432x240_30fps_302_inter_stress_2.2.hevc"; }
 
+/* 12 bit */
+char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_P016>)
+{
+    return "conformance/hevc/12bit/420format/GENERAL_12b_420_RExt_Sony_1.bit";
+}
+char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_Y216>)
+{
+    return "conformance/hevc/12bit/422format/GENERAL_12b_422_RExt_Sony_1.bit";
+}
+char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_Y416>)
+{
+    return "conformance/hevc/12bit/444format/GENERAL_12b_444_RExt_Sony_1.bit";
+}
+
 template <unsigned fourcc>
 struct TestSuiteEx
     : public TestSuite
@@ -531,5 +545,9 @@ TS_REG_TEST_SUITE(hevcd_444_get_video_param, TestSuiteEx<MFX_FOURCC_AYUV>::RunTe
 TS_REG_TEST_SUITE(hevc10d_get_video_param,     TestSuiteEx<MFX_FOURCC_P010>::RunTest, TestSuiteEx<MFX_FOURCC_P010>::n_cases);
 TS_REG_TEST_SUITE(hevc10d_422_get_video_param, TestSuiteEx<MFX_FOURCC_Y210>::RunTest, TestSuiteEx<MFX_FOURCC_Y210>::n_cases);
 TS_REG_TEST_SUITE(hevc10d_444_get_video_param, TestSuiteEx<MFX_FOURCC_Y410>::RunTest, TestSuiteEx<MFX_FOURCC_Y410>::n_cases);
+
+TS_REG_TEST_SUITE(hevc12d_get_video_param,     TestSuiteEx<MFX_FOURCC_P016>::RunTest, TestSuiteEx<MFX_FOURCC_P016>::n_cases);
+TS_REG_TEST_SUITE(hevc12d_422_get_video_param, TestSuiteEx<MFX_FOURCC_Y216>::RunTest, TestSuiteEx<MFX_FOURCC_Y216>::n_cases);
+TS_REG_TEST_SUITE(hevc12d_444_get_video_param, TestSuiteEx<MFX_FOURCC_Y416>::RunTest, TestSuiteEx<MFX_FOURCC_Y416>::n_cases);
 
 }
