@@ -6,7 +6,6 @@ include_directories (
 #  /usr/include/c++/4.6/bits
   ${MSDK_SAMPLES_ROOT}/sample_common/include/vm
   ${MSDK_SAMPLES_ROOT}/sample_common/include
-  ${MSDK_SAMPLES_ROOT}/sample_misc/wayland/include
   ${CMAKE_HOME_DIRECTORY}/mdp_msdk-val-tools/bs_parser/include
   ${CMAKE_HOME_DIRECTORY}/mdp_msdk-api/mediasdk_structures
 # ${CMAKE_HOME_DIRECTORY}/igfx_s3dcontrol/include
@@ -60,15 +59,6 @@ list(APPEND sources
    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_transcoder.cpp
    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_encpak.cpp
 )
-# in case if wayland installed on build machine 
-if ( PKG_WAYLAND_CLIENT_FOUND )
-    list(APPEND sources
-     ${MSDK_SAMPLES_ROOT}/sample_misc/wayland/src/class_wayland.cpp
-     ${MSDK_SAMPLES_ROOT}/sample_misc/wayland/src/listener_wayland.cpp
-     ${MSDK_SAMPLES_ROOT}/sample_misc/wayland/src/wayland-drm-protocol.c
-     )
-endif ( PKG_WAYLAND_CLIENT_FOUND )
-
 
 file( GLOB_RECURSE srcs "${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/*.cpp" )
 list( APPEND sources ${srcs})
@@ -88,9 +78,6 @@ list( APPEND LIBS
   ippi_l ippdc_l ipps_l ippcore_l ippcc_l
   pthread
   mfx_serializer
-  drm
-  drm_intel
-  wayland-client
 )
 list( APPEND LIBS_SUFFIX gmock )
 
