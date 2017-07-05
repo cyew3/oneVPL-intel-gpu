@@ -745,7 +745,7 @@ mfxStatus   Plugin::WaitingForAsyncTasks(bool bResetTasks)
 
 mfxStatus  Plugin::Reset(mfxVideoParam *par)
 {
-    mfxStatus sts = MFX_ERR_NONE;
+    mfxStatus sts = MFX_ERR_NONE, qsts = MFX_ERR_NONE;
     MFX_CHECK_NULL_PTR1(par);
 
     MFX_CHECK(m_bInit, MFX_ERR_NOT_INITIALIZED);
@@ -765,8 +765,8 @@ mfxStatus  Plugin::Reset(mfxVideoParam *par)
     InheritDefaultValues(m_vpar, parNew);
     parNew.SyncVideoToCalculableParam();
 
-    sts = CheckVideoParam(parNew, m_caps);
-    MFX_CHECK(sts >= MFX_ERR_NONE, sts);
+    qsts = CheckVideoParam(parNew, m_caps);
+    MFX_CHECK(qsts >= MFX_ERR_NONE, qsts);
 
     SetDefaults(parNew, m_caps);
 
@@ -933,7 +933,7 @@ mfxStatus  Plugin::Reset(mfxVideoParam *par)
 
     m_ddi->Reset(m_vpar, brcReset);
 
-    return sts;
+    return qsts;
 }
 
 mfxStatus Plugin::GetVideoParam(mfxVideoParam *par)

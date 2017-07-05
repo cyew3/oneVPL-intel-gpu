@@ -342,7 +342,7 @@ namespace hevce_reset
 
         },
         //Frame Rate
-        {/* 34*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE, FRAMERATE, CHANGE, 1,
+        {/* 34*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, FRAMERATE, CHANGE, 1,
             { "forBehaviorTest/foster_720x576.yuv", "" },
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 60 },
@@ -367,7 +367,7 @@ namespace hevce_reset
 
         },
         // PicStruct
-        {/* 37*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, PIC_STRUCT, CHANGE, 1,
+        {/* 37*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, PIC_STRUCT, CHANGE, 1,
             { "forBehaviorTest/foster_720x576.yuv", "" },
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, 255 },
