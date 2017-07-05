@@ -1213,6 +1213,9 @@ VAAPIEncoder::VAAPIEncoder()
     , m_mbqp_buffer()
 #endif
     , m_mb_noskip_buffer()
+#ifdef MFX_ENABLE_MFE
+    , m_mfe(0)
+#endif
 {
     m_videoParam.mfx.CodecProfile = MFX_PROFILE_AVC_HIGH; // QueryHwCaps will use this value
 } // VAAPIEncoder::VAAPIEncoder(VideoCORE* core)
@@ -1636,6 +1639,16 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
             &m_vaContextEncode);
     }
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+#ifdef MFX_ENABLE_MFE
+    if (par.mfx.m_numPipelineStreams > 1) {
+        m_mfe = CreatePlatformMFEEncoder(m_core);
+        if (0 == m_mfe)
+            return MFX_ERR_DEVICE_FAILED;
+        m_mfe->Create(par, m_vaDisplay);
+        m_mfe->Join(m_vaContextEncode);
+    }
+#endif
 
     mfxU16 maxNumSlices = GetMaxNumSlices(par);
 
@@ -2951,6 +2964,10 @@ mfxStatus VAAPIEncoder::Execute(
             vaUnmapBuffer( m_vaDisplay, codedBuffer );
         }
     }
+#ifdef MFX_ENABLE_MFE
+    if (m_mfe)
+        m_mfe->Submit(m_vaContextEncode, task.m_mfeTimeToWait);
+#endif
 
     //------------------------------------------------------------------
     // PostStage

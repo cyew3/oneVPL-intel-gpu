@@ -15,6 +15,7 @@
 #include "mfx_mfe_adapter.h"
 #include "vm_interlocked.h"
 #include <assert.h>
+#include <iterator>
 
 #ifndef MFX_CHECK_WITH_ASSERT
 #define MFX_CHECK_WITH_ASSERT(EXPR, ERR) { assert(EXPR); MFX_CHECK(EXPR, ERR); }
@@ -24,13 +25,16 @@ MFEVAAPIEncoder::MFEVAAPIEncoder() :
   m_refCounter(1)
 , m_vaDisplay(0)
 , m_mfe_context(VA_INVALID_ID)
-, m_framesToCombine(1)
+, m_framesToCombine(0)
+, m_maxFramesToCombine(0)
 , m_framesCollected(0)
 , m_mfe_vmtick_msec_frequency(vm_time_get_frequency()/1000)
 {
-    m_streams.resize(64);
     vm_cond_set_invalid(&m_mfe_wait);
     vm_mutex_set_invalid(&m_mfe_guard);
+
+    m_contexts.reserve(MAX_FRAMES_TO_COMBINE);
+    m_streams.reserve(MAX_FRAMES_TO_COMBINE);
 }
 
 MFEVAAPIEncoder::~MFEVAAPIEncoder()
@@ -70,14 +74,12 @@ mfxStatus MFEVAAPIEncoder::Create(mfxVideoParam const & par, VADisplay vaDisplay
         return MFX_ERR_MEMORY_ALLOC;
     }
 
-    m_framesToCombine = par.mfx.m_numPipelineStreams ? par.mfx.m_numPipelineStreams : 2;
+    m_framesToCombine = 0;
+    m_maxFramesToCombine = par.mfx.m_numPipelineStreams ?
+                        par.mfx.m_numPipelineStreams : MAX_FRAMES_TO_COMBINE;
 
-    for (std::vector<m_stream_ids_s>::iterator it = m_streams.begin(); it != m_streams.end(); it++)
-    {
-        it->sts = MFX_ERR_NONE;
-        it->ctx = VA_INVALID_ID;
-        it->isSubmitted = 0;
-    }
+    m_streams_pool.clear();
+    m_toSubmit.clear();
 
     VAStatus vaSts = vaCreateMFEContext(m_vaDisplay, &m_mfe_context);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
@@ -88,6 +90,13 @@ mfxStatus MFEVAAPIEncoder::Join(VAContextID ctx)
 {
     VAStatus vaSts = vaAddContext(m_vaDisplay, ctx, m_mfe_context);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    // append the pool with a new item;
+    m_streams_pool.push_back(m_stream_ids_s());
+    // to deal with the situation when a number of sessions < requested
+    if (m_framesToCombine < m_maxFramesToCombine)
+        ++m_framesToCombine;
+
     return MFX_ERR_NONE;
 }
 
@@ -95,6 +104,8 @@ mfxStatus MFEVAAPIEncoder::Disjoin(VAContextID ctx)
 {
     VAStatus vaSts = vaReleaseContext(m_vaDisplay, ctx, m_mfe_context);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+    if (m_framesToCombine > 0)
+        --m_framesToCombine;
     return MFX_ERR_NONE;
 }
 
@@ -105,30 +116,35 @@ mfxStatus MFEVAAPIEncoder::Destroy()
     m_mfe_context = VA_INVALID_ID;
     vm_mutex_destroy(&m_mfe_guard);
     vm_cond_destroy(&m_mfe_wait);
+    m_streams_pool.clear();
     return MFX_ERR_NONE;
 }
 
-mfxStatus MFEVAAPIEncoder::Submit(VAContextID context, mfxU32 stream_id, mfxU32 timeToWait)
+mfxStatus MFEVAAPIEncoder::Submit(VAContextID context, mfxU32 timeToWait)
 {
     vm_mutex_lock(&m_mfe_guard);
 
-    std::vector<m_stream_ids_t>::iterator strm = m_streams.begin() + stream_id;
+    // take next element from the pool and insert it to the end
+    StreamsIter_t cur_stream;
+    MFX_CHECK_WITH_ASSERT(!m_streams_pool.empty(), MFX_ERR_MEMORY_ALLOC);
+    MFX_CHECK_WITH_ASSERT(m_framesToCombine > 0, MFX_ERR_UNDEFINED_BEHAVIOR);
 
-    strm->ctx = context;
-    strm->isSubmitted = 0;
-
-    m_framesCollected++;
-
+    cur_stream = m_streams_pool.begin();
+    // prepare it
+    cur_stream->ctx = context;
+    cur_stream->sts = MFX_ERR_NONE;
+    m_toSubmit.splice(m_toSubmit.end(), m_streams_pool, m_streams_pool.begin());
+    ++m_framesCollected;
 
     vm_tick start_tick = vm_time_get_tick(), end_tick;
     mfxU32 spent_ms, wait_time = timeToWait;
 
-    while (m_framesCollected < m_framesToCombine && 0 == strm->isSubmitted &&  wait_time > 0)
-    {
+    // no more collected frames then m_framesToCombine
+    while (m_framesCollected < m_framesToCombine &&
+           !cur_stream->isSubmitted() && wait_time > 0){
         vm_status res = vm_cond_timedwait(&m_mfe_wait, &m_mfe_guard, wait_time);
         if ((VM_OK == res) || (VM_TIMEOUT == res)) {
             end_tick = vm_time_get_tick();
-
             spent_ms = (end_tick - start_tick)/m_mfe_vmtick_msec_frequency;
             if (spent_ms >= wait_time)
             {
@@ -138,72 +154,58 @@ mfxStatus MFEVAAPIEncoder::Submit(VAContextID context, mfxU32 stream_id, mfxU32 
             start_tick = end_tick;
         } else {
             vm_mutex_unlock(&m_mfe_guard);
-
             return MFX_ERR_UNKNOWN;
         }
     }
-
-    if (strm->isSubmitted)
+    //TODO: if timer expires || wait_time <=0, to move the current stream up-front
+    if (!cur_stream->isSubmitted())
     {
-        vm_mutex_unlock(&m_mfe_guard);
-        return MFX_ERR_NONE;
-    }
-    else if(strm->sts != MFX_ERR_NONE)
-    {
-        vm_mutex_unlock(&m_mfe_guard);
-        return strm->sts;
-    }
-
-    std::vector<m_stream_ids_t*> toSubmit;
-    std::vector<VAContextID> contexts;
-
-    if (VA_INVALID_ID != m_streams[stream_id].ctx)
-    {
-        toSubmit.push_back(&m_streams[stream_id]);
-        contexts.push_back(m_streams[stream_id].ctx);
-    }
-
-    for (mfxU32 idx = 0; idx < m_streams.size() && toSubmit.size() < (mfxU32)m_framesToCombine; idx++)
-    {
-        if (idx == stream_id)
-            continue;
-
-        if (VA_INVALID_ID != m_streams[idx].ctx)
-        {
-            toSubmit.push_back(&m_streams[idx]);
-            contexts.push_back(m_streams[idx].ctx);
+        // To form a linear array of contexts
+        for (StreamsIter_t it = m_toSubmit.begin(); it != m_toSubmit.end(); ++it){
+            if (!it->isSubmitted()){
+                m_contexts.push_back(it->ctx);
+                m_streams.push_back(it);
+            }
         }
-    }
 
-    VAStatus vaSts = vaMFESubmit(m_vaDisplay, m_mfe_context, &contexts[0], contexts.size());
-    //proper error handling and passing to correct encoder TBD with VPG and implementation
-    if(VA_STATUS_SUCCESS == vaSts)
-    {
-        for (std::vector<m_stream_ids_s*>::iterator it = toSubmit.begin(); it != toSubmit.end(); it++)
+        if (m_framesCollected < m_contexts.size() || m_contexts.empty())
         {
-            (*it)->isSubmitted = 1;
-            (*it)->ctx = VA_INVALID_ID;
-            (*it)->sts = MFX_ERR_NONE;
+            for (std::vector<StreamsIter_t>::iterator it = m_streams.begin(); it != m_streams.end(); ++it)
+            {
+                (*it)->ctx = VA_INVALID_ID;
+                (*it)->sts = MFX_ERR_UNDEFINED_BEHAVIOR;
+            }
+            // if cur_stream is not in m_streams (somehow)
+            cur_stream->ctx = VA_INVALID_ID;
+            cur_stream->sts = MFX_ERR_UNDEFINED_BEHAVIOR;
         }
-    }
-    else
-    {
-        for (std::vector<m_stream_ids_s*>::iterator it = toSubmit.begin(); it != toSubmit.end(); it++)
+        else
         {
-            (*it)->isSubmitted = 0;
-            (*it)->ctx = VA_INVALID_ID;
-            (*it)->sts = MFX_ERR_DEVICE_FAILED;
+            VAStatus vaSts = vaMFESubmit(m_vaDisplay, m_mfe_context,
+                                         &m_contexts[0], m_contexts.size());
+            // Proper error handling and passing to correct encoder
+            // TBD with VPG and implementation
+            mfxStatus tmp_res = VA_STATUS_SUCCESS == vaSts ? MFX_ERR_NONE : MFX_ERR_DEVICE_FAILED;
+            for (std::vector<StreamsIter_t>::iterator it = m_streams.begin(); it != m_streams.end(); ++it)
+            {
+                (*it)->ctx = VA_INVALID_ID;
+                (*it)->sts = tmp_res;
+            }
+            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+            m_framesCollected -= m_contexts.size();
         }
+        // Broadcast is done before unlock for this case to simplify the code avoiding extra ifs
+        vm_cond_broadcast(&m_mfe_wait);
+        m_contexts.clear();
+        m_streams.clear();
     }
 
-    m_framesCollected -= toSubmit.size();
-    assert(m_framesCollected >= 0);
-    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-
-    vm_cond_broadcast(&m_mfe_wait);
+    // This frame can be already submitted. in this case
+    // we have to return strm back to the pool, release mutex and exit
+    mfxStatus res = cur_stream->sts;
+    m_streams_pool.splice(m_streams_pool.end(), m_toSubmit, cur_stream);
     vm_mutex_unlock(&m_mfe_guard);
-
-    return MFX_ERR_NONE;
+    return res;
 }
 
 #endif //MFX_VA_LINUX && MFX_ENABLE_MFE

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -27,6 +27,10 @@
     #include "encoding_ddi.h"
 #elif defined(MFX_VA_LINUX)
     #include "mfx_h264_encode_struct_vaapi.h"
+#endif
+
+#ifdef MFX_ENABLE_MFE
+#include "mfx_mfe_adapter.h"
 #endif
 
 namespace MfxHwH264Encode
@@ -160,12 +164,15 @@ namespace MfxHwH264Encode
         virtual
         mfxStatus SetEncCtrlCaps(
             ENCODE_ENC_CTRL_CAPS const & caps) { caps; return MFX_ERR_UNSUPPORTED; };
-            
     };
 
     DriverEncoder* CreatePlatformH264Encoder( VideoCORE* core ); 
 #ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
     DriverEncoder* CreatePlatformSvcEncoder( VideoCORE* core );
+#endif
+
+#ifdef MFX_ENABLE_MFE
+    MFEVAAPIEncoder* CreatePlatformMFEEncoder( VideoCORE* core );
 #endif
 
 }; // namespace

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2017 Intel Corporation. All Rights Reserved.
 //
 
 /* ****************************************************************************** */
@@ -15,7 +15,9 @@
 #if defined (MFX_ENABLE_H264_VIDEO_ENCODE_HW) && defined (MFX_VA)
 
 #include "mfx_h264_encode_interface.h"
-
+#ifdef MFX_ENABLE_MFE
+#include "libmfx_core_interface.h"
+#endif
 #if defined (MFX_VA_WIN)   
 #include "mfxvideo++int.h"
 #include "mfx_h264_encode_d3d9.h"   
@@ -89,6 +91,22 @@ DriverEncoder* MfxHwH264Encode::CreatePlatformH264Encoder( VideoCORE* core )
 #endif
 
 } // DriverEncoder* MfxHwH264Encode::CreatePlatformH264Encoder( VideoCORE* core )
+
+#ifdef MFX_ENABLE_MFE
+MFEVAAPIEncoder* MfxHwH264Encode::CreatePlatformMFEEncoder(VideoCORE* core)
+{
+    assert( core );
+
+    // needs to search, thus use special GUID
+    ComPtrCore<MFEVAAPIEncoder> *pVideoEncoder = QueryCoreInterface<ComPtrCore<MFEVAAPIEncoder> >(core, MFXMFEDDIENCODER_SEARCH_GUID);
+    if (!pVideoEncoder->get())
+        *pVideoEncoder = new MFEVAAPIEncoder;
+
+    return pVideoEncoder->get();
+
+} // MFEVAAPIEncoder* MfxHwH264Encode::CreatePlatformMFEEncoder( VideoCORE* core )
+#endif
+
 
 #endif // #if defined (MFX_ENABLE_H264_VIDEO_ENCODE_HW)
 /* EOF */

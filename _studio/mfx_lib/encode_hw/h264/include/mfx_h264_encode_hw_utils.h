@@ -969,6 +969,9 @@ namespace MfxHwH264Encode
             , m_cmHistSys(0)
             , m_isENCPAK(false)
             , m_startTime(0)
+#ifdef MFX_ENABLE_MFE
+            , m_mfeTimeToWait(0)
+#endif
         {
             Zero(m_ctrl);
             Zero(m_internalListCtrl);
@@ -1171,6 +1174,10 @@ namespace MfxHwH264Encode
         std::vector<SliceStructInfo> m_SliceInfo;
 
         mfxU32 m_startTime;
+#ifdef MFX_ENABLE_MFE
+        // max time to wait for frames to combine before unconditional submit
+        mfxU32 m_mfeTimeToWait;
+#endif
     };
 
     typedef std::list<DdiTask>::iterator DdiTaskIter;
