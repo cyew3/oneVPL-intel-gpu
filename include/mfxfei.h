@@ -499,7 +499,8 @@ typedef enum {
     MFX_FEI_FUNCTION_ENCODE     =2,
     MFX_FEI_FUNCTION_ENC        =3,
     MFX_FEI_FUNCTION_PAK        =4,
-    MFX_FEI_FUNCTION_DEC        =5
+    MFX_FEI_FUNCTION_DEC        =5,
+    RESERVED                    =6 /* This field reserved for FEI HEVC ENCODE */
 } mfxFeiFunction;
 
 enum {
