@@ -22,9 +22,11 @@ Copyright(c) 2008-2017 Intel Corporation. All Rights Reserved.
 #define D3DFMT_P010 (D3DFORMAT)MAKEFOURCC('P','0','1','0')
 #define D3DFMT_Y210 (D3DFORMAT)MFX_FOURCC_Y210
 #define D3DFMT_P210 (D3DFORMAT)MFX_FOURCC_P210
-#define D3DFMT_Y216 (D3DFORMAT)MFX_FOURCC_Y216
 #define D3DFMT_Y410 (D3DFORMAT)MFX_FOURCC_Y410
 #define D3DFMT_AYUV (D3DFORMAT)MFX_FOURCC_AYUV
+#define D3DFMT_Y216 (D3DFORMAT)MFX_FOURCC_P016
+#define D3DFMT_P016 (D3DFORMAT)MFX_FOURCC_Y216
+#define D3DFMT_Y416 (D3DFORMAT)MFX_FOURCC_Y416
 
 D3DFORMAT ConvertMfxFourccToD3dFormat(mfxU32 fourcc)
 {
@@ -52,16 +54,23 @@ D3DFORMAT ConvertMfxFourccToD3dFormat(mfxU32 fourcc)
         return D3DFMT_R16F;
     case MFX_FOURCC_ARGB16:
         return D3DFMT_A16B16G16R16;
-    case MFX_FOURCC_Y210:
-        return D3DFMT_Y210;
     case MFX_FOURCC_P210:
         return D3DFMT_P210;
-    case MFX_FOURCC_Y216:
-        return D3DFMT_Y216;
-    case MFX_FOURCC_Y410:
-        return D3DFMT_Y410;
     case MFX_FOURCC_AYUV:
         return D3DFMT_AYUV;
+
+    case MFX_FOURCC_Y210:
+        return D3DFMT_Y210;
+    case MFX_FOURCC_Y410:
+        return D3DFMT_Y410;
+
+    case MFX_FOURCC_P016:
+        return D3DFMT_P016;
+    case MFX_FOURCC_Y216:
+        return D3DFMT_Y216;
+    case MFX_FOURCC_Y416:
+        return D3DFMT_Y416;
+
     default:
         return D3DFMT_UNKNOWN;
     }
@@ -176,12 +185,14 @@ mfxStatus D3DFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         desc.Format != D3DFMT_P8 &&
         desc.Format != D3DFMT_P010 &&
         desc.Format != D3DFMT_A2R10G10B10 &&
-        desc.Format != D3DFMT_R16F && 
+        desc.Format != D3DFMT_R16F &&
         desc.Format != D3DFMT_A16B16G16R16 &&
-        desc.Format != D3DFMT_Y410 &&
         desc.Format != D3DFMT_AYUV &&
         desc.Format != D3DFMT_Y210 &&
-        desc.Format != D3DFMT_Y216)
+        desc.Format != D3DFMT_Y410 &&
+        desc.Format != D3DFMT_P016 &&
+        desc.Format != D3DFMT_Y216 &&
+        desc.Format != D3DFMT_Y416)
         return MFX_ERR_LOCK_MEMORY;
 
     D3DLOCKED_RECT locked;
@@ -190,105 +201,102 @@ mfxStatus D3DFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
     if (FAILED(hr))
         return MFX_ERR_LOCK_MEMORY;
 
+    ptr->PitchHigh = (mfxU16)(locked.Pitch / (1 << 16));
+    ptr->PitchLow  = (mfxU16)(locked.Pitch % (1 << 16));
     switch ((DWORD)desc.Format)
     {
     case D3DFMT_NV12:
-        ptr->PitchHigh = (mfxU16)(locked.Pitch / (1 << 16));
-        ptr->PitchLow  = (mfxU16)(locked.Pitch % (1 << 16));
         ptr->Y = (mfxU8 *)locked.pBits;
         ptr->U = (mfxU8 *)locked.pBits + desc.Height * locked.Pitch;
         ptr->V = ptr->U + 1;
         break;
+
     case D3DFMT_P010:
-        ptr->PitchHigh = (mfxU16)(locked.Pitch / (1 << 16));
-        ptr->PitchLow  = (mfxU16)(locked.Pitch % (1 << 16));
+    case D3DFMT_P016:
         ptr->Y = (mfxU8 *)locked.pBits;
         ptr->U = (mfxU8 *)locked.pBits + desc.Height * locked.Pitch;
         ptr->V = ptr->U + 1;
         break;
+
     case D3DFMT_A2R10G10B10:
-        ptr->PitchHigh = (mfxU16)(locked.Pitch / (1 << 16));
-        ptr->PitchLow  = (mfxU16)(locked.Pitch % (1 << 16));
         ptr->B = (mfxU8 *)locked.pBits;
         ptr->G = ptr->B + 1;
         ptr->R = ptr->B + 2;
         ptr->A = ptr->B + 3;
         break;
+
     case D3DFMT_A16B16G16R16:
-        ptr->PitchHigh = (mfxU16)(locked.Pitch / (1 << 16));
-        ptr->PitchLow  = (mfxU16)(locked.Pitch % (1 << 16));
         ptr->B = (mfxU8 *)locked.pBits;
         ptr->Y16 = (mfxU16 *)locked.pBits;
         ptr->G = ptr->B + 2;
         ptr->R = ptr->B + 4;
         ptr->A = ptr->B + 6;
         break;
+
     case D3DFMT_YV12:
-        ptr->PitchHigh = (mfxU16)(locked.Pitch / (1 << 16));
-        ptr->PitchLow  = (mfxU16)(locked.Pitch % (1 << 16));
         ptr->Y = (mfxU8 *)locked.pBits;
         ptr->V = ptr->Y + desc.Height * locked.Pitch;
         ptr->U = ptr->V + (desc.Height * locked.Pitch) / 4;
         break;
+
     case D3DFMT_YUY2:
-        ptr->PitchHigh = (mfxU16)(locked.Pitch / (1 << 16));
-        ptr->PitchLow  = (mfxU16)(locked.Pitch % (1 << 16));
         ptr->Y = (mfxU8 *)locked.pBits;
         ptr->U = ptr->Y + 1;
         ptr->V = ptr->Y + 3;
         break;
+
     case D3DFMT_R8G8B8:
-        ptr->PitchHigh = (mfxU16)(locked.Pitch / (1 << 16));
-        ptr->PitchLow  = (mfxU16)(locked.Pitch % (1 << 16));
         ptr->B = (mfxU8 *)locked.pBits;
         ptr->G = ptr->B + 1;
         ptr->R = ptr->B + 2;
         break;
+
     case D3DFMT_A8R8G8B8:
     case D3DFMT_AYUV:
-        ptr->PitchHigh = (mfxU16)(locked.Pitch / (1 << 16));
-        ptr->PitchLow  = (mfxU16)(locked.Pitch % (1 << 16));
         ptr->B = (mfxU8 *)locked.pBits;
         ptr->G = ptr->B + 1;
         ptr->R = ptr->B + 2;
         ptr->A = ptr->B + 3;
         break;
+
     case D3DFMT_A8B8G8R8:
-        ptr->PitchHigh = (mfxU16)(locked.Pitch / (1 << 16));
-        ptr->PitchLow  = (mfxU16)(locked.Pitch % (1 << 16));
         ptr->R = (mfxU8 *)locked.pBits;
         ptr->G = ptr->R + 1;
         ptr->B = ptr->R + 2;
         ptr->A = ptr->R + 3;
         break;
+
     case D3DFMT_P8:
-        ptr->PitchHigh = (mfxU16)(locked.Pitch / (1 << 16));
-        ptr->PitchLow  = (mfxU16)(locked.Pitch % (1 << 16));
         ptr->Y = (mfxU8 *)locked.pBits;
         ptr->U = 0;
         ptr->V = 0;
         break;
+
     case D3DFMT_R16F:
-        ptr->Pitch = (mfxU16)locked.Pitch;
         ptr->Y16 = (mfxU16 *)locked.pBits;
         ptr->U16 = 0;
         ptr->V16 = 0;
         break;
+
     case D3DFMT_Y210:
     case D3DFMT_Y216:
-        ptr->PitchHigh = (mfxU16)(locked.Pitch / (1 << 16));
-        ptr->PitchLow = (mfxU16)(locked.Pitch % (1 << 16));
         ptr->Y16 = (mfxU16*)locked.pBits;
         ptr->U16 = ptr->Y16 + 1;
         ptr->V16 = ptr->U16 + 3;
         break;
+
     case D3DFMT_Y410:
-        ptr->PitchHigh = (mfxU16)(locked.Pitch / (1 << 16));
-        ptr->PitchLow = (mfxU16)(locked.Pitch % (1 << 16));
-        ptr->Y410 = (mfxY410 *) locked.pBits;
+        ptr->Y410 = (mfxY410 *)locked.pBits;
         ptr->Y = 0;
         ptr->V = 0;
         ptr->A = 0;
+        break;
+
+    case D3DFMT_Y416:
+        ptr->A = (mfxU8 *)locked.pBits;
+        ptr->V16 = ((mfxU16*)ptr->A) + 1;
+        ptr->Y16 = ptr->V16 + 1;
+        ptr->U16 = ptr->Y16 + 1;
         break;
     }
 

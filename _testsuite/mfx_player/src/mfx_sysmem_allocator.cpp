@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -77,70 +77,79 @@ mfxStatus SysMemFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
     sFrame *fs = 0;
     mfxStatus sts = m_pBufferAllocator->Lock(m_pBufferAllocator->pthis, mid,(mfxU8 **)&fs);
 
-    if (MFX_ERR_NONE != sts) 
+    if (MFX_ERR_NONE != sts)
         return sts;
-   
+
     if (ID_FRAME != fs->id) 
     {
         m_pBufferAllocator->Unlock(m_pBufferAllocator->pthis, mid);
         return MFX_ERR_INVALID_HANDLE;
-    }    
+    }
 
     mfxU16 Width2 = (mfxU16)MSDK_ALIGN32(fs->info.Width);
     mfxU16 Height2 = (mfxU16)MSDK_ALIGN32(fs->info.Height);
     ptr->B = ptr->Y = (mfxU8 *)fs + MSDK_ALIGN32(sizeof(sFrame));
 
-    switch (fs->info.FourCC) 
+    switch (fs->info.FourCC)
     {
     case MFX_FOURCC_P010:
+    case MFX_FOURCC_P016:
         ptr->U = ptr->Y + Width2 * Height2 * 2;
         ptr->V = ptr->U + 2;
         ptr->PitchHigh = 0;
         ptr->PitchLow = Width2 * 2;
         break;
+
      case MFX_FOURCC_P210:
         ptr->U = ptr->Y + Width2 * Height2 * 2;
         ptr->V = ptr->U + 2;
         ptr->PitchHigh = 0;
         ptr->PitchLow = Width2 * 2;
         break;
+
     case MFX_FOURCC_NV12:
         ptr->U = ptr->Y + Width2 * Height2;
         ptr->V = ptr->U + 1;
         ptr->PitchHigh = 0;
         ptr->PitchLow = Width2;
         break;
+
     case MFX_FOURCC_NV16:
         ptr->U = ptr->Y + Width2 * Height2;
         ptr->V = ptr->U + 1;
         ptr->PitchHigh = 0;
         ptr->PitchLow = Width2;
         break;
+
     case MFX_FOURCC_YV12:
         ptr->V = ptr->Y + Width2 * Height2;
         ptr->U = ptr->V + (Width2 >> 1) * (Height2 >> 1);
         ptr->PitchHigh = 0;
         ptr->PitchLow = Width2;
         break;
+
     case MFX_FOURCC_YUY2:
         ptr->U = ptr->Y + 1;
         ptr->V = ptr->Y + 3;
         ptr->PitchHigh = (mfxU16)((2 * (mfxU32)Width2) / (1 << 16));
         ptr->PitchLow  = (mfxU16)((2 * (mfxU32)Width2) % (1 << 16));
-        break;    
-    case MFX_FOURCC_RGB3:        
+        break;
+
+    case MFX_FOURCC_RGB3:
         ptr->G = ptr->B + 1;
         ptr->R = ptr->B + 2;
         ptr->PitchHigh = (mfxU16)((3 * (mfxU32)Width2) / (1 << 16));
         ptr->PitchLow  = (mfxU16)((3 * (mfxU32)Width2) % (1 << 16));
         break;
-    case MFX_FOURCC_RGB4:        
+
+    case MFX_FOURCC_RGB4:
         ptr->G = ptr->B + 1;
         ptr->R = ptr->B + 2;
         ptr->A = ptr->B + 3;
         ptr->PitchHigh = (mfxU16)((4 * (mfxU32)Width2) / (1 << 16));
         ptr->PitchLow  = (mfxU16)((4 * (mfxU32)Width2) % (1 << 16));
         break;
+
     case MFX_FOURCC_AYUV:
         ptr->V = ptr->B;
         ptr->U = ptr->V + 1;
@@ -149,24 +158,28 @@ mfxStatus SysMemFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->PitchHigh = (mfxU16)((4 * (mfxU32)Width2) / (1 << 16));
         ptr->PitchLow = (mfxU16)((4 * (mfxU32)Width2) % (1 << 16));
         break;
-    case MFX_FOURCC_A2RGB10:        
+
+    case MFX_FOURCC_A2RGB10:
         ptr->G = ptr->B + 1;
         ptr->R = ptr->B + 2;
         ptr->A = ptr->B + 3;
         ptr->PitchHigh = (mfxU16)((4 * (mfxU32)Width2) / (1 << 16));
         ptr->PitchLow  = (mfxU16)((4 * (mfxU32)Width2) % (1 << 16));
-        break; 
+        break;
+
     case MFX_FOURCC_R16:
         ptr->Y16 = (mfxU16 *)ptr->B;
         ptr->Pitch = 2 * Width2;
         break;
+
     case MFX_FOURCC_ARGB16:
         ptr->V16 = (mfxU16*)ptr->B;
         ptr->U16 = ptr->V16 + 1;
-        ptr->Y16 = ptr->V16 + 2; 
+        ptr->Y16 = ptr->V16 + 2;
         ptr->A = (mfxU8*)(ptr->V16 + 3);
         ptr->Pitch = 8 * Width2;
         break;
+
     case MFX_FOURCC_Y210:
     case MFX_FOURCC_Y216:
         ptr->Y16 = (mfxU16*)ptr->B;
@@ -175,6 +188,7 @@ mfxStatus SysMemFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->PitchHigh = (mfxU16)((4 * (mfxU32)Width2) / (1 << 16));
         ptr->PitchLow  = (mfxU16)((4 * (mfxU32)Width2) % (1 << 16));
         break;
+
     case MFX_FOURCC_Y410:
         ptr->Y410 = (mfxY410 *) ptr->B;
         ptr->Y = 0;
@@ -182,8 +196,18 @@ mfxStatus SysMemFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->A = 0;
         ptr->Pitch = 4 * Width2;
         break;
+
+    case MFX_FOURCC_Y416:
+        ptr->A = (mfxU8 *)ptr->B;
+        ptr->V16 = ((mfxU16*)ptr->A) + 1;
+        ptr->Y16 = ptr->V16 + 1;
+        ptr->U16 = ptr->Y16 + 1;
+        ptr->PitchHigh = (mfxU16)((8 * (mfxU32)Width2) / (1 << 16));
+        ptr->PitchLow  = (mfxU16)((8 * (mfxU32)Width2) % (1 << 16));
+        break;
+
     default:
-        return MFX_ERR_UNSUPPORTED;    
+        return MFX_ERR_UNSUPPORTED;
     }
 
     return MFX_ERR_NONE;
@@ -244,10 +268,13 @@ mfxStatus SysMemFrameAllocator::AllocImpl(mfxFrameSurface1 *surface)
         nbytes = Width2*Height2 + (Width2>>1)*(Height2>>1) + (Width2>>1)*(Height2>>1);
         break;
     case MFX_FOURCC_P010:
+    case MFX_FOURCC_P016:
         nbytes = Width2*Height2 + (Width2>>1)*(Height2>>1) + (Width2>>1)*(Height2>>1);
         nbytes *= 2; // 16bits
         break;
     case MFX_FOURCC_P210:
+    case MFX_FOURCC_Y210:
+    case MFX_FOURCC_Y216:
         nbytes = Width2*Height2 + (Width2>>1)*(Height2) + (Width2>>1)*(Height2);
         nbytes *= 2; // 16bits
         break;
@@ -272,6 +299,13 @@ mfxStatus SysMemFrameAllocator::AllocImpl(mfxFrameSurface1 *surface)
     case MFX_FOURCC_ARGB16:
         nbytes = (Width2*Height2 + Width2*Height2 + Width2*Height2 + Width2*Height2) << 1;
         break;
+    case MFX_FOURCC_Y410:
+        nbytes = 4 * Width2*Height2;
+        break;
+    case MFX_FOURCC_Y416:
+        nbytes = 8 * Width2*Height2;
+        break;
+
       default:
         return MFX_ERR_UNSUPPORTED;
     }
@@ -321,6 +355,7 @@ mfxStatus SysMemFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFram
         nbytes = Width2*Height2 + (Width2>>1)*(Height2>>1) + (Width2>>1)*(Height2>>1);
         break;
     case MFX_FOURCC_P010:
+    case MFX_FOURCC_P016:
         nbytes = Width2*Height2 + (Width2>>1)*(Height2>>1) + (Width2>>1)*(Height2>>1);
         nbytes *= 2; // 16bits
         break;
@@ -331,7 +366,7 @@ mfxStatus SysMemFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFram
         nbytes *= 2; // 16bits
         break;
     case MFX_FOURCC_Y410:
-        nbytes = 4* Width2*Height2;
+        nbytes = 4 * Width2*Height2;
         break;
     case MFX_FOURCC_RGB3:
         nbytes = Width2*Height2 + Width2*Height2 + Width2*Height2;
@@ -351,14 +386,14 @@ mfxStatus SysMemFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFram
         nbytes = 2*Width2*Height2;
         break;
     case MFX_FOURCC_ARGB16:
-    //case MFX_FOURCC_Y416:
-        nbytes = (Width2*Height2 + Width2*Height2 + Width2*Height2 + Width2*Height2) << 1;
+    case MFX_FOURCC_Y416:
+        nbytes = 8 * Width2*Height2;
         break;
       default:
         return MFX_ERR_UNSUPPORTED;
     }
 
-    safe_array<mfxMemId> mids(new mfxMemId[request->NumFrameSuggested]);  
+    safe_array<mfxMemId> mids(new mfxMemId[request->NumFrameSuggested]);
     if (!mids.get())
         return MFX_ERR_MEMORY_ALLOC;
 
