@@ -105,7 +105,7 @@ inline
 bool CheckGUID(VideoCORE * core, eMFXHWType type, mfxVideoParam const* param)
 {
     mfxVideoParam vp = *param;
-    mfxU16 profile = vp.mfx.CodecProfile && 0xFF;
+    mfxU16 profile = vp.mfx.CodecProfile & 0xFF;
     if (profile == MFX_PROFILE_UNKNOWN)
     {
         profile = MatchProfile(vp.mfx.FrameInfo.FourCC);
