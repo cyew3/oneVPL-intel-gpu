@@ -138,10 +138,10 @@ enum VideoAccelerationProfile
     VA_PROFILE_10               = 0x10000,
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     VA_PROFILE_REXT             = 0x20000,
-    VA_PROFILE_SCC              = 0x40000,
 #endif
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     VA_PROFILE_12               = 0x40000,
+    VA_PROFILE_SCC              = 0x80000,
 #endif
 
     // configurations
