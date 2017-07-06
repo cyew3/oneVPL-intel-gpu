@@ -456,7 +456,7 @@ mfxStatus MFX_DecodeInterface::DecodeOneFrame(mfxFrameSurface1 * & pSurf_out)
 
         case MFX_ERR_MORE_DATA:
             sts = m_BSReader.ReadNextFrame(&m_mfxBS); // read more data to input bit stream
-            MSDK_BREAK_ON_ERROR(sts); // Reached end of bitstream
+            if (sts == MFX_ERR_MORE_DATA) { return sts; } // Reached end of bitstream
             break;
 
         case MFX_ERR_MORE_SURFACE:
