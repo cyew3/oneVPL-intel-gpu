@@ -266,11 +266,16 @@ UMC::Status mfx_UMC_FrameAllocator::InitMfx(UMC::FrameAllocatorParams *,
         params->mfx.FrameInfo.FourCC == MFX_FOURCC_P210
 #if defined (PRE_SI_TARGET_PLATFORM_GEN11)
         || params->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210
-        || params->mfx.FrameInfo.FourCC == MFX_FOURCC_Y216 //NOTE: Y216 is used for 10 bit 422 due to lack of Y210
         || params->mfx.FrameInfo.FourCC == MFX_FOURCC_Y410
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
         )
         bit_depth = 10;
+#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
+    else if (params->mfx.FrameInfo.FourCC == MFX_FOURCC_P016 ||
+             params->mfx.FrameInfo.FourCC == MFX_FOURCC_Y216 ||
+             params->mfx.FrameInfo.FourCC == MFX_FOURCC_Y416)
+        bit_depth = 12;
+#endif //PRE_SI_TARGET_PLATFORM_GEN12
     else
         bit_depth = 8;
 
@@ -306,11 +311,19 @@ UMC::Status mfx_UMC_FrameAllocator::InitMfx(UMC::FrameAllocatorParams *,
     case MFX_FOURCC_Y210:
         color_format = UMC::Y210;
         break;
+    case MFX_FOURCC_Y410:
+        color_format = UMC::Y410;
+        break;
+#endif
+#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
+    case MFX_FOURCC_P016:
+        color_format = UMC::P016;
+        break;
     case MFX_FOURCC_Y216:
         color_format = UMC::Y216;
         break;
-    case MFX_FOURCC_Y410:
-        color_format = UMC::Y410;
+    case MFX_FOURCC_Y416:
+        color_format = UMC::Y416;
         break;
 #endif
 #if defined (MFX_VA_WIN)

@@ -91,14 +91,22 @@ DXGI_FORMAT mfxDefaultAllocatorD3D11::MFXtoDXGI(mfxU32 format)
         return DXGI_FORMAT_R16G16B16A16_UNORM;
     case MFX_FOURCC_A2RGB10:
         return DXGI_FORMAT_R10G10B10A2_UNORM;
+
 #if defined (PRE_SI_TARGET_PLATFORM_GEN11)
     case MFX_FOURCC_Y210:
         return DXGI_FORMAT_Y210;
-    case MFX_FOURCC_Y216:
-        return DXGI_FORMAT_Y216;
     case MFX_FOURCC_Y410:
         return DXGI_FORMAT_Y410;
 #endif // PRE_SI_TARGET_PLATFORM_GEN11
+
+#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
+    case MFX_FOURCC_P016:
+        return DXGI_FORMAT_P016;
+    case MFX_FOURCC_Y216:
+        return DXGI_FORMAT_Y216;
+    case MFX_FOURCC_Y416:
+        return DXGI_FORMAT_Y416;
+#endif // PRE_SI_TARGET_PLATFORM_GEN12
     }
     return DXGI_FORMAT_UNKNOWN;
 
