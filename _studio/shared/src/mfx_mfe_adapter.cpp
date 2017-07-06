@@ -26,13 +26,11 @@ MFEVAAPIEncoder::MFEVAAPIEncoder() :
 , m_mfe_context(VA_INVALID_ID)
 , m_framesToCombine(1)
 , m_framesCollected(0)
+, m_mfe_vmtick_msec_frequency(vm_time_get_frequency()/1000)
 {
     m_streams.resize(64);
     vm_cond_set_invalid(&m_mfe_wait);
     vm_mutex_set_invalid(&m_mfe_guard);
-
-    //set just once
-    static_cast<vm_tick>(m_vmtick_msec_frequency) = vm_time_get_frequency()/1000;
 }
 
 MFEVAAPIEncoder::~MFEVAAPIEncoder()
@@ -125,13 +123,13 @@ mfxStatus MFEVAAPIEncoder::Submit(VAContextID context, mfxU32 stream_id, mfxU32 
     vm_tick start_tick = vm_time_get_tick(), end_tick;
     mfxU32 spent_ms, wait_time = timeToWait;
 
-    while (m_framesCollected < (mfxU32)m_framesToCombine && 0 == strm->isSubmitted &&  wait_time > 0)
+    while (m_framesCollected < m_framesToCombine && 0 == strm->isSubmitted &&  wait_time > 0)
     {
         vm_status res = vm_cond_timedwait(&m_mfe_wait, &m_mfe_guard, wait_time);
         if ((VM_OK == res) || (VM_TIMEOUT == res)) {
             end_tick = vm_time_get_tick();
 
-            spent_ms = (end_tick - start_tick)/m_vmtick_msec_frequency;
+            spent_ms = (end_tick - start_tick)/m_mfe_vmtick_msec_frequency;
             if (spent_ms >= wait_time)
             {
                 break;

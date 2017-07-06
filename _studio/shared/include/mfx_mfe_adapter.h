@@ -58,11 +58,11 @@ private:
 
     // A counter frames collected for the next submission. These
     // frames will be submitted together either when get equal to
-    // m_pipelineStreams or when collection timeout elapse.
+    // m_pipelineStreams or when collection timeout elapses.
     mfxU32 m_framesCollected;
 
     // a number of tics per milisecond
-    const vm_tick m_vmtick_msec_frequency;
+    const vm_tick m_mfe_vmtick_msec_frequency;
 };
 #endif // MFX_VA_LINUX && MFX_ENABLE_MFE
 

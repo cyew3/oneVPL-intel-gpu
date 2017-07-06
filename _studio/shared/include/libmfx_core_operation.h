@@ -123,7 +123,8 @@ public:
         }
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
-    // functor to get fuction from child cores
+
+    // functor to get instance from child cores
     template <typename obj, typename func, typename arg>
     void* QueryGUID(func functor, arg par)
     {
@@ -139,6 +140,7 @@ public:
         }
         return NULL;
     }
+
     // functor to run fuction from child cores
     template <typename func, typename arg>
     mfxFrameSurface1* GetSurface(func functor, arg par)

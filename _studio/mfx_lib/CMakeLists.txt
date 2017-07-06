@@ -77,6 +77,8 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src )
     ${prefix}/mfx_timing.cpp
     ${prefix}/mfx_dxva2_device.cpp
     ${prefix}/mfx_static_assert_structs.cpp
+    #=======MFE==============
+    ${prefix}/mfx_mfe_adapter.cpp
   )
 endforeach()
 

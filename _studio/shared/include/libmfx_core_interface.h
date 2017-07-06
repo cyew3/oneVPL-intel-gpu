@@ -15,21 +15,21 @@
 #include <mfxvideo++int.h>
 
 // {1F5BB140-6BB4-416e-81FF-4A8C030FBDC6}
-static const 
-MFX_GUID  MFXIVideoCORE_GUID = 
+static const
+MFX_GUID  MFXIVideoCORE_GUID =
 { 0x1f5bb140, 0x6bb4, 0x416e, { 0x81, 0xff, 0x4a, 0x8c, 0x3, 0xf, 0xbd, 0xc6 } };
 
 // {3F3C724E-E7DC-469a-A062-B6A23102F7D2}
-static const 
-MFX_GUID  MFXICORED3D_GUID = 
+static const
+MFX_GUID  MFXICORED3D_GUID =
 { 0x3f3c724e, 0xe7dc, 0x469a, { 0xa0, 0x62, 0xb6, 0xa2, 0x31, 0x2, 0xf7, 0xd2 } };
 
 // {C9613F63-3EA3-4D8C-8B5C-96AF6DC2DB0F}
-static const MFX_GUID  MFXICORED3D11_GUID = 
+static const MFX_GUID  MFXICORED3D11_GUID =
 { 0xc9613f63, 0x3ea3, 0x4d8c, { 0x8b, 0x5c, 0x96, 0xaf, 0x6d, 0xc2, 0xdb, 0xf } };
 
 // {B0FCB183-1A6D-4f00-8BAF-93F285ACEC93}
-static const MFX_GUID MFXICOREVAAPI_GUID = 
+static const MFX_GUID MFXICOREVAAPI_GUID =
 { 0xb0fcb183, 0x1a6d, 0x4f00, { 0x8b, 0xaf, 0x93, 0xf2, 0x85, 0xac, 0xec, 0x93 } };
 
 // {86dc1aab-eb20-47a2-a461-428a7bd60183}
@@ -43,43 +43,46 @@ static const MFX_GUID MFXICORE_API_1_19_GUID =
 
 
 // {6ED94B99-DB70-4EBB-BC5C-C7E348FC2396}
-static const 
-MFX_GUID  MFXIHWCAPS_GUID = 
+static const
+MFX_GUID  MFXIHWCAPS_GUID =
 { 0x6ed94b99, 0xdb70, 0x4ebb, {0xbc, 0x5c, 0xc7, 0xe3, 0x48, 0xfc, 0x23, 0x96 } };
 
 // {0CF4CE38-EA46-456d-A179-8A026AE4E101}
-static const 
-MFX_GUID  MFXIHWMBPROCRATE_GUID = 
+static const
+MFX_GUID  MFXIHWMBPROCRATE_GUID =
 {0xcf4ce38, 0xea46, 0x456d, {0xa1, 0x79, 0x8a, 0x2, 0x6a, 0xe4, 0xe1, 0x1} };
 
 // {6A0665ED-2DE0-403B-A5EE-944E5AAFA8E5}
 static const
-MFX_GUID  MFXID3D11DECODER_GUID = 
+MFX_GUID  MFXID3D11DECODER_GUID =
 {0x6a0665ed, 0x2de0, 0x403b, {0xa5, 0xee, 0x94, 0x4e, 0x5a, 0xaf, 0xa8, 0xe5} };
 
 static const
-MFX_GUID MFXICORECM_GUID = 
+MFX_GUID MFXICORECM_GUID =
 {0xe0b78bba, 0x39d9, 0x48dc,{ 0x99, 0x29, 0xc5, 0xd6, 0x5e, 0xa, 0x6a, 0x66} };
 
 // {1D143E80-4EA8-4238-989C-3A3ED894EFEF}
 static const
-MFX_GUID MFXICORECMCOPYWRAPPER_GUID = 
+MFX_GUID MFXICORECMCOPYWRAPPER_GUID =
 { 0x1d143e80, 0x4ea8, 0x4238, { 0x98, 0x9c, 0x3a, 0x3e, 0xd8, 0x94, 0xef, 0xef } };
 
-static const 
-MFX_GUID  MFXIEXTERNALLOC_GUID = 
+static const
+MFX_GUID  MFXIEXTERNALLOC_GUID =
 { 0x3e273bfb, 0x5e28, 0x4643, { 0x9f, 0x1d, 0x25, 0x4b, 0x0, 0xb, 0xeb, 0x96 } };
 
 
 // {2AAFDAE8-F7BA-46ED-B277-B87E94F2D384}
-static const 
+static const
 MFX_GUID MFXICMEnabledCore_GUID =
 { 0x2aafdae8, 0xf7ba, 0x46ed, { 0xb2, 0x77, 0xb8, 0x7e, 0x94, 0xf2, 0xd3, 0x84 } };
 
+#ifdef MFX_ENABLE_MFE
 // {E4E4823F-90D2-4945-823E-00B5F3F3184C}
-static const 
-MFX_GUID MFXMFEDDIENCODER_GUID = 
+static const
+MFX_GUID MFXMFEDDIENCODER_GUID =
 { 0xe4e4823f, 0x90d2, 0x4945, { 0x82, 0x3e, 0x0, 0xb5, 0xf3, 0xf3, 0x18, 0x4c } };
+
+#endif
 
 // Try to obtain required interface
 // Declare a template to query an interface
@@ -123,7 +126,7 @@ public:
             m_caps = NULL;
         }
     };
-    template <class CAPS> 
+    template <class CAPS>
     mfxStatus GetHWCaps(GUID encode_guid, CAPS *hwCaps, mfxU32 array_size = 1)
     {
         if (m_caps)
@@ -137,7 +140,7 @@ public:
         return MFX_ERR_UNDEFINED_BEHAVIOR;
 
     }
-    template <class CAPS> 
+    template <class CAPS>
     mfxStatus SetHWCaps(GUID encode_guid, CAPS *hwCaps, mfxU32 array_size = 1)
     {
         if (!m_caps)
@@ -169,10 +172,11 @@ private:
 template <class T>
 class ComPtrCore
 {
-public: 
+public:
     static const MFX_GUID getGuid()
     {
-#if defined(MFX_VA_WIN)
+
+#if defined(MFX_VA_WIN) || !defined(MFX_ENABLE_MFE)
         return MFXID3D11DECODER_GUID;
 #else
         return MFXMFEDDIENCODER_GUID;
@@ -226,7 +230,7 @@ struct D3D9Interface
                                                  mfxU16 height,
                                                  IDirectXVideoDecoderService **ppVideoService = NULL,
                                                  bool isTemporal = false) = 0;
-    
+
     virtual IDirect3DDeviceManager9 * GetD3D9DeviceManager(void) = 0;
 };
 
