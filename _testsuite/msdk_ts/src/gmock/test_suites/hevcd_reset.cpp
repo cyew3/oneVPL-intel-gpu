@@ -13,7 +13,7 @@
 namespace hevcd_reset
 {
 
-class TestSuite : tsVideoDecoder
+class TestSuite : public tsVideoDecoder
 {
     static const mfxU32 max_num_ctrl     = 3;
     static const mfxU32 max_num_ctrl_par = 4;
@@ -362,6 +362,61 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_Y410>::test_cases[] =
 template <>
 unsigned int const TestSuiteExt<MFX_FOURCC_Y410>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_Y410>::test_cases) / sizeof(TestSuite::tc_struct);
 
+/* 12b 420 */
+template <>
+TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_P016>::test_cases[] =
+{
+    {/* 0*/ MFX_ERR_NONE,{ "conformance/hevc/12bit/420format/GENERAL_12b_420_RExt_Sony_1.bit", "" },
+    { { INIT | ALLOCATOR, 0,{ frame_allocator::SOFTWARE, frame_allocator::ALLOC_MAX } },
+    { REPEAT, 0,{ 2 } } }
+    },
+
+    {/* 1*/ MFX_ERR_NONE,{ "conformance/hevc/12bit/420format/GENERAL_12b_420_RExt_Sony_1.bit", "" },
+    { { INIT | MFXVPAR, &tsStruct::mfxVideoParam.IOPattern,{ MFX_IOPATTERN_OUT_VIDEO_MEMORY } },
+    { REPEAT, 0,{ 2 } } }
+    },
+
+    {/* 2*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,{ "conformance/hevc/12bit/420format/GENERAL_12b_420_RExt_Sony_1.bit", "conformance/hevc/itu/RPS_B_qualcomm_5.bit" } },
+};
+template <>
+unsigned int const TestSuiteExt<MFX_FOURCC_P016>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_P016>::test_cases) / sizeof(TestSuite::tc_struct);
+
+/* 12b 422 */
+template <>
+TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_Y216>::test_cases[] =
+{
+    {/* 0*/ MFX_ERR_NONE,{ "conformance/hevc/12bit/422format/GENERAL_12b_422_RExt_Sony_1.bit", "" },
+    { { INIT | ALLOCATOR, 0,{ frame_allocator::SOFTWARE, frame_allocator::ALLOC_MAX } },
+    { REPEAT, 0,{ 2 } } }
+    },
+
+    {/* 1*/ MFX_ERR_NONE,{ "conformance/hevc/12bit/422format/GENERAL_12b_422_RExt_Sony_1.bit", "" },
+    { { INIT | MFXVPAR, &tsStruct::mfxVideoParam.IOPattern,{ MFX_IOPATTERN_OUT_VIDEO_MEMORY } },
+    { REPEAT, 0,{ 2 } } }
+    },
+    {/* 2*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,{ "conformance/hevc/12bit/422format/GENERAL_12b_422_RExt_Sony_1.bit", "conformance/hevc/itu/RPS_B_qualcomm_5.bit" } },
+};
+template <>
+unsigned int const TestSuiteExt<MFX_FOURCC_Y216>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_Y216>::test_cases) / sizeof(TestSuite::tc_struct);
+
+/* 12b 444 */
+template <>
+TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_Y416>::test_cases[] =
+{
+    {/* 0*/ MFX_ERR_NONE,{ "conformance/hevc/12bit/444format/GENERAL_12b_444_RExt_Sony_1.bit", "" },
+    { { INIT | ALLOCATOR, 0,{ frame_allocator::SOFTWARE, frame_allocator::ALLOC_MAX } },
+    { REPEAT, 0,{ 2 } } }
+    },
+
+    {/* 1*/ MFX_ERR_NONE,{ "conformance/hevc/12bit/444format/GENERAL_12b_444_RExt_Sony_1.bit", "" },
+    { { INIT | MFXVPAR, &tsStruct::mfxVideoParam.IOPattern,{ MFX_IOPATTERN_OUT_VIDEO_MEMORY } },
+    { REPEAT, 0,{ 2 } } }
+    },
+    {/* 2*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,{ "conformance/hevc/12bit/444format/GENERAL_12b_444_RExt_Sony_1.bit", "conformance/hevc/itu/RPS_B_qualcomm_5.bit" } },
+};
+template <>
+unsigned int const TestSuiteExt<MFX_FOURCC_Y416>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_Y416>::test_cases) / sizeof(TestSuite::tc_struct);
+
 template <unsigned fourcc>
 int TestSuiteExt<fourcc>::RunTest(unsigned int id)
 {
@@ -380,4 +435,9 @@ TS_REG_TEST_SUITE(hevcd_444_reset, TestSuiteExt<MFX_FOURCC_AYUV>::RunTest, TestS
 TS_REG_TEST_SUITE(hevc10d_reset,     TestSuiteExt<MFX_FOURCC_P010>::RunTest, TestSuiteExt<MFX_FOURCC_P010>::n_cases);
 TS_REG_TEST_SUITE(hevc10d_422_reset, TestSuiteExt<MFX_FOURCC_Y210>::RunTest, TestSuiteExt<MFX_FOURCC_Y210>::n_cases);
 TS_REG_TEST_SUITE(hevc10d_444_reset, TestSuiteExt<MFX_FOURCC_Y410>::RunTest, TestSuiteExt<MFX_FOURCC_Y410>::n_cases);
+
+TS_REG_TEST_SUITE(hevc12d_reset,     TestSuiteExt<MFX_FOURCC_P016>::RunTest, TestSuiteExt<MFX_FOURCC_P016>::n_cases);
+TS_REG_TEST_SUITE(hevc12d_422_reset, TestSuiteExt<MFX_FOURCC_Y216>::RunTest, TestSuiteExt<MFX_FOURCC_Y216>::n_cases);
+TS_REG_TEST_SUITE(hevc12d_444_reset, TestSuiteExt<MFX_FOURCC_Y416>::RunTest, TestSuiteExt<MFX_FOURCC_Y416>::n_cases);
+
 }
