@@ -217,9 +217,14 @@ mfxStatus CheckOptions(const sInputParams params, const msdk_char* appName)
         PrintHelp(appName, "-w -h is not specified");
         return MFX_ERR_UNSUPPORTED;
     }
-    if (params.QP == 0 || params.QP > 51)
+    if (params.QP > 51)
     {
-        PrintHelp(appName, "Wrong QP value (must be in range [1, 51])");
+        PrintHelp(appName, "Wrong QP value (must be in range [0, 51])");
+        return MFX_ERR_UNSUPPORTED;
+    }
+    if (!params.bENCODE)
+    {
+        PrintHelp(appName, "Pipeline is undefined. Supported pipeline: ENCODE");
         return MFX_ERR_UNSUPPORTED;
     }
 
