@@ -20,6 +20,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #pragma once
 
 #include <assert.h>
+#include <algorithm>
 #include "mfxstructures.h"
 #include "sample_hevc_fei_defs.h"
 
@@ -63,5 +64,77 @@ typedef struct _HevcTask : HevcDpbFrame
     mfxU8        m_numRefActive[2]; // L0 and L1 lists
     mfxI32       m_lastIPoc;
     HevcDpbArray m_dpb[TASK_DPB_NUM];
-
 } HevcTask;
+
+inline bool operator ==(HevcTask const & l, HevcTask const & r)
+{
+    return l.m_poc == r.m_poc;
+}
+
+class EncodeOrderControl
+{
+public:
+    EncodeOrderControl(const MfxVideoParamsWrapper & par) :
+    m_par(par),
+    m_frameOrder(0),
+    m_lastIDR(0)
+    {
+        Reset();
+        Fill(m_lastTask, IDX_INVALID);
+    }
+
+    ~EncodeOrderControl()
+    {
+    }
+
+    void  Reset()
+    {
+        m_free.resize(MaxTask(m_par));
+        m_reordering.resize(0);
+        m_encoding.resize(0);
+    }
+
+    HevcTask* GetTask(mfxFrameSurface1 * surface)
+    {
+        HevcTask* task = ReorderFrame(surface);
+        if (task)
+        {
+            ConstructRPL(*task, m_lastTask);
+        }
+        return task;
+    }
+
+    void FreeTask(HevcTask* pTask)
+    {
+        if (pTask)
+        {
+            TaskList::iterator it = std::find(m_encoding.begin(), m_encoding.end(), *pTask);
+            if (it != m_encoding.end())
+            {
+                m_free.splice(m_free.end(), m_encoding, it);
+            }
+        }
+    }
+
+private:
+    HevcTask* ReorderFrame(mfxFrameSurface1* in);
+    void ConstructRPL(HevcTask & task, const HevcTask & prevTask);
+
+    inline mfxU16 MaxTask(MfxVideoParamsWrapper const & par)
+    {
+        return par.AsyncDepth + par.mfx.GopRefDist - 1 + ((par.AsyncDepth > 1)? 1: 0);
+    }
+
+private:
+    const MfxVideoParamsWrapper & m_par;
+
+    typedef std::list<HevcTask>   TaskList;
+    TaskList                      m_free;
+    TaskList                      m_reordering;
+    TaskList                      m_encoding;
+
+    HevcTask                      m_lastTask;
+
+    mfxU32                        m_frameOrder;
+    mfxU32                        m_lastIDR;
+};

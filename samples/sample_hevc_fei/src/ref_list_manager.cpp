@@ -127,8 +127,21 @@ namespace HevcRplUtils
         return mfxU8(MAX_DPB_SIZE);
     }
 
+
+    bool isBPyramid(MfxVideoParamsWrapper const & par)
+    {
+        mfxExtCodingOption2 * CO2 = par.get<mfxExtCodingOption2>();
+        return CO2 ? CO2->BRefType == MFX_B_REF_PYRAMID : false;
+    }
+
+    bool isLowDelay(MfxVideoParamsWrapper const & par)
+    {
+        mfxExtCodingOption3 * CO3 = par.get<mfxExtCodingOption3>();
+        return CO3 ? CO3->PRefType == MFX_P_REF_PYRAMID : false;
+    }
+
     template<class T> T FindFrameToEncode(
-        mfxVideoParam const & par,
+        MfxVideoParamsWrapper const & par,
         HevcDpbArray const & dpb,
         T begin,
         T end,
@@ -138,13 +151,11 @@ namespace HevcRplUtils
         T b0 = end; // 1st non-ref B with L1 > 0
         std::vector<T> brefs;
 
-        bool isBPyramid = false; // FIXME
-
         while ( top != end && (top->m_frameType & MFX_FRAMETYPE_B))
         {
             if (CountL1(dpb, top->m_poc))
             {
-                if (isBPyramid)
+                if (isBPyramid(par))
                     brefs.push_back(top);
                 else if (top->m_frameType & MFX_FRAMETYPE_REF)
                 {
@@ -218,7 +229,7 @@ namespace HevcRplUtils
     }
 
     void UpdateDPB(
-        mfxVideoParam const & par,
+        MfxVideoParamsWrapper const & par,
         HevcDpbFrame const & task,
         HevcDpbArray & dpb,
         mfxExtAVCRefListCtrl * pLCtrl)
@@ -280,7 +291,7 @@ namespace HevcRplUtils
     }
 
     mfxU8 GetFrameType(
-        mfxVideoParam const & video,
+        MfxVideoParamsWrapper const & video,
         mfxU32                frameOrder)
     {
         mfxU32 gopOptFlag = video.mfx.GopOptFlag;
@@ -543,5 +554,123 @@ namespace HevcRplUtils
             for (mfxU16 i = 0; i < std::min<mfxU16>(l0, NumRefLX[1]); i++)
                 RPL[1][l1++] = RPL[0][i];
         }
+    }
+}
+
+using namespace HevcRplUtils;
+
+HevcTask* EncodeOrderControl::ReorderFrame(mfxFrameSurface1 * surface)
+{
+    HevcTask* free_task = 0;
+
+    if (surface)
+    {
+        if (!m_free.empty())
+        {
+            free_task = &m_free.front();
+            m_reordering.splice(m_reordering.end(), m_free, m_free.begin());
+        }
+    }
+
+    if (free_task)
+    {
+        MSDK_ZERO_MEMORY(*free_task);
+
+        free_task->m_surf = surface;
+        free_task->m_frameType = GetFrameType(m_par, m_frameOrder - m_lastIDR);
+
+        if (free_task->m_frameType & MFX_FRAMETYPE_IDR)
+            m_lastIDR = m_frameOrder;
+
+        free_task->m_poc = m_frameOrder - m_lastIDR;
+        free_task->m_fo =  m_frameOrder;
+        free_task->m_bpo = (mfxU32)MFX_FRAMEORDER_UNKNOWN;
+        free_task->m_idxRec = m_frameOrder; // Workaround
+        m_frameOrder ++;
+    }
+
+    HevcTask* task_to_encode = 0;
+    {
+        bool flush = !surface;
+        TaskList::iterator begin = m_reordering.begin();
+        TaskList::iterator end   = m_reordering.begin();
+
+        while (end != m_reordering.end())
+        {
+            if ((end != begin) && (end->m_frameType & MFX_FRAMETYPE_IDR))
+            {
+                flush = true;
+                break;
+            }
+            end++;
+        }
+        TaskList::iterator top = FindFrameToEncode(m_par, m_lastTask.m_dpb[TASK_DPB_AFTER], begin, end, flush);
+        if (top != end)
+            task_to_encode = &*top;
+    }
+
+    if (task_to_encode)
+    {
+        for (TaskList::iterator it = m_reordering.begin(); it != m_reordering.end(); it ++)
+        {
+            if (task_to_encode == &*it)
+            {
+                m_encoding.splice(m_encoding.end(), m_reordering, it);
+                break;
+            }
+        }
+
+        HevcTask & task = *task_to_encode;
+        task.m_lastIPoc = m_lastTask.m_lastIPoc;
+
+        InitDPB(task, m_lastTask, NULL);
+
+        // update dpb
+        {
+            if (task.m_frameType & MFX_FRAMETYPE_IDR)
+                Fill(task.m_dpb[TASK_DPB_AFTER], IDX_INVALID);
+            else
+                Copy(task.m_dpb[TASK_DPB_AFTER], task.m_dpb[TASK_DPB_ACTIVE]);
+
+            if (task.m_frameType & MFX_FRAMETYPE_REF)
+            {
+                if (task.m_frameType & MFX_FRAMETYPE_I)
+                    task.m_lastIPoc = task.m_poc;
+
+                UpdateDPB(m_par, task, task.m_dpb[TASK_DPB_AFTER], NULL);
+            }
+        }
+
+        m_lastTask = task;
+    }
+
+    return task_to_encode;
+}
+
+void EncodeOrderControl::ConstructRPL(HevcTask & task, const HevcTask & prevTask)
+{
+    MSDK_ZERO_MEMORY(task.m_numRefActive);
+    Fill(task.m_refPicList, IDX_INVALID);
+
+    mfxExtCodingOption3 * CO3 = m_par.get<mfxExtCodingOption3>();
+    assert(CO3);
+
+    if (task.m_frameType & MFX_FRAMETYPE_B)
+    {
+        mfxI32 layer = isBPyramid(m_par) ? Clip3<mfxI32>(0, 7, task.m_level - 1) : 0;
+
+        task.m_numRefActive[0] = (mfxU8)CO3->NumRefActiveBL0[layer];
+        task.m_numRefActive[1] = (mfxU8)CO3->NumRefActiveBL1[layer];
+    }
+
+    if (task.m_frameType & MFX_FRAMETYPE_P)
+    {
+        task.m_numRefActive[0] = (mfxU8)CO3->NumRefActiveP[0];
+    }
+
+    if ( !(task.m_frameType & MFX_FRAMETYPE_I) )
+    {
+        HevcRplUtils::ConstructRPL(task.m_dpb[TASK_DPB_ACTIVE], !!(task.m_frameType & MFX_FRAMETYPE_B), task.m_poc, task.m_tid,
+            task.m_refPicList, task.m_numRefActive, NULL, NULL);
     }
 }
