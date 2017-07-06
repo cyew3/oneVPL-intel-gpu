@@ -539,6 +539,9 @@ template<>struct mfx_ext_buffer_id<mfxExtCodingOption>{
 template<>struct mfx_ext_buffer_id<mfxExtCodingOption2>{
     enum {id = MFX_EXTBUFF_CODING_OPTION2};
 };
+template<>struct mfx_ext_buffer_id<mfxExtCodingOption3>{
+    enum {id = MFX_EXTBUFF_CODING_OPTION3};
+};
 template<>struct mfx_ext_buffer_id<mfxExtAvcTemporalLayers>{
     enum {id = MFX_EXTBUFF_AVC_TEMPORAL_LAYERS};
 };
