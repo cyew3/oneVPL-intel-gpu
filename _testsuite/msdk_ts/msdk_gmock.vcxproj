@@ -424,6 +424,7 @@
     <ClCompile Include="src\gmock\test_suites\vp9e_reset.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp9e_segmentation.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp9e_temporal_scalability.cpp" />
+    <ClCompile Include="src\gmock\test_suites\vp9e_tiles.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp9e_trans_opaque.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp10bit.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_roi.cpp" />
