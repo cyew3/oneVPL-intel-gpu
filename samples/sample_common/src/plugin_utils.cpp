@@ -107,6 +107,15 @@ const mfxPluginUID & msdkGetPluginUID(mfxIMPL impl, msdkComponentType type, mfxU
                 return MFX_PLUGINID_VP8E_HW;
             }
             break;
+#if MFX_VERSION >= 1024
+        case (MSDK_VENCODE | MSDK_FEI):
+            switch (uCodecid)
+            {
+            case MFX_CODEC_HEVC:
+                return MFX_PLUGINID_HEVC_FEI_ENCODE;
+            }
+            break;
+#endif
         case MSDK_VENC:
             switch(uCodecid)
             {
