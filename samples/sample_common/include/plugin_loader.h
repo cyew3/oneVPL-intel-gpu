@@ -94,6 +94,11 @@ private:
         else if(AreGuidsEqual(guid, MFX_PLUGINID_ITELECINE_HW))
             return MSDK_STRING("Intel (R) Media SDK PTIR plugin (HW)");
         else
+#if MFX_VERSION >= 1024
+        if (AreGuidsEqual(guid, MFX_PLUGINID_HEVC_FEI_ENCODE))
+            return MSDK_STRING("Intel (R) Media SDK HW plugin for HEVC FEI ENCODE");
+        else
+#endif
             return MSDK_STRING("Unknown plugin");
     }
 
