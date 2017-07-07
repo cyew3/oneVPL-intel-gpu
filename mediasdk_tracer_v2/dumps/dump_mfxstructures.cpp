@@ -1288,6 +1288,8 @@ std::string DumpContext::dump(const std::string structName, const  mfxExtVP9Para
     DUMP_FIELD(QIndexDeltaLumaDC);
     DUMP_FIELD(QIndexDeltaChromaAC);
     DUMP_FIELD(QIndexDeltaChromaDC);
+    DUMP_FIELD(NumTileRows);
+    DUMP_FIELD(NumTileColumns);
 
     return str;
 }

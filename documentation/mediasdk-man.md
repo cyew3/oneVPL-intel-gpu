@@ -6172,7 +6172,10 @@ typedef struct {
     mfxI16  QIndexDeltaLumaDC;
     mfxI16  QIndexDeltaChromaAC;
     mfxI16  QIndexDeltaChromaDC;
-    mfxU16  reserved[112];
+
+    mfxU16  NumTileRows;
+    mfxU16  NumTileColumns;
+    mfxU16  reserved[110];
 } mfxExtVP9Param;
 ```
 
@@ -6191,6 +6194,8 @@ Attached to the [mfxVideoParam](#mfxVideoParam) structure extends it with VP9-sp
 `LoopFilterRefDelta[4]` | Contains the adjustment needed for the filter level based on the chosen reference frame, see [VP9ReferenceFrame](#VP9ReferenceFrame) enum for array idx.
 `LoopFilterModeDelta[2]`| Contains the adjustment needed for the filter level based on the chosen mode.
 `QIndexDeltaLumaDC`,<br>`QIndexDeltaChromaAC`,<br>`QIndexDeltaChromaDC` | Specifies an offset for a particular quantization parameter.
+`NumTileRows`           | Number of tile rows. Should be power of two. Should not exceed frame height in superblocks. Maximum supported number of tile rows may depend on underlying hardware platform. Use **Query** function to check if particular pair of values (NumTileRows, NumTileColumns) is supported.
+`NumTileColumns`        | Number of tile columns. Should be power of two. Restricted with maximum and minimum tile width in pixels defined in VP9 specification (4096 and 256 respectively). Maximum supported number of tile columns may depend on underlying hardware platform. Use **Query** function to check if particular pair of values (NumTileRows, NumTileColumns) is supported.
 
 **Change History**
 

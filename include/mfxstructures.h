@@ -1864,7 +1864,11 @@ typedef struct {
     mfxI16  QIndexDeltaLumaDC;
     mfxI16  QIndexDeltaChromaAC;
     mfxI16  QIndexDeltaChromaDC;
-    mfxU16  reserved[112];
+
+    mfxU16  NumTileRows;
+    mfxU16  NumTileColumns;
+
+    mfxU16  reserved[110];
 } mfxExtVP9Param;
 
 #ifdef __cplusplus

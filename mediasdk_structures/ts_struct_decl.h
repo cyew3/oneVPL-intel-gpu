@@ -948,6 +948,8 @@ STRUCT(mfxExtVP9Param,
     FIELD_T(mfxI16      , QIndexDeltaLumaDC)
     FIELD_T(mfxI16      , QIndexDeltaChromaAC)
     FIELD_T(mfxI16      , QIndexDeltaChromaDC)
+    FIELD_T(mfxU16      , NumTileRows)
+    FIELD_T(mfxU16      , NumTileColumns)
 )
 
 STRUCT(mfxExtMBForceIntra,
