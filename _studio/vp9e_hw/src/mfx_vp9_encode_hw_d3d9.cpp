@@ -534,6 +534,18 @@ void HardcodeCaps(ENCODE_CAPS_VP9& caps, mfxCoreInterface* pCore)
         // in addition on ICL driver incoprrectly reports CAPS related to REXTs support. Need to fix them.
         caps.YUV444ReconSupport = 1;
         caps.MaxEncodedBitDepth = 1;
+
+
+        // for now driver reports in caps.NumScalablePipesMinus1 log2 of max supported number of tile columns
+        // need to process this capability respectively. TODO: change once driver behavior will be fixed.
+        if (caps.NumScalablePipesMinus1 > 2)
+        {
+            caps.NumScalablePipesMinus1 = 0;
+        }
+        else
+        {
+            caps.NumScalablePipesMinus1 = (1 << caps.NumScalablePipesMinus1) - 1;
+        }
     }
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
 

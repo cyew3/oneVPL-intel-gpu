@@ -374,6 +374,9 @@ mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
         }
     }
 
+    frameParam.log2TileRows = static_cast<mfxU8>(CeilLog2(extPar.NumTileRows));
+    frameParam.log2TileCols = static_cast<mfxU8>(CeilLog2(extPar.NumTileColumns));
+
     return MFX_ERR_NONE;
 }
 

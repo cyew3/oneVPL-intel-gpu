@@ -132,12 +132,6 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
     }
     else
     {
-        // check that [in] and [out] have same number of ext buffers
-        if (in->NumExtParam != out->NumExtParam || !in->ExtParam != !out->ExtParam)
-        {
-            return MFX_ERR_UNSUPPORTED;
-        }
-
         // check attached buffers (all are supported by encoder, no duplications, etc.)
         mfxStatus sts = CheckExtBufferHeaders(in->NumExtParam, in->ExtParam);
         MFX_CHECK_STS(sts);
@@ -480,6 +474,7 @@ mfxStatus Plugin::Reset(mfxVideoParam *par)
         m_frameOrderInGop = 0;
         m_frameOrderInRefStructure = 0;
         Zero(m_prevFrameParam);
+        m_bStartIVFSequence = true;
         //m_bStartIVFSequence = true;
         // below commented code is to completely reset encoding pipeline
         /*

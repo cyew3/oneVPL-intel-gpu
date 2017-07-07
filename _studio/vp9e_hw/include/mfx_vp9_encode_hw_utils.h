@@ -69,6 +69,13 @@ namespace MfxHwVP9Encode
 #define MAX_UPSCALE_RATIO 16
 #define MAX_DOWNSCALE_RATIO 2
 
+#define MIN_TILE_WIDTH 256
+#define MAX_TILE_WIDTH 4096
+#define MAX_NUM_TILE_ROWS 4
+#define MAX_NUM_TILES 16
+
+#define SB_SIZE 64
+
 const mfxU16 segmentSkipMask = 0xf0;
 const mfxU16 segmentRefMask = 0x0f;
 
@@ -254,6 +261,7 @@ enum // identifies memory type at encoder input w/o any details
 
     inline mfxU32 CeilDiv(mfxU32 x, mfxU32 y) { return (x + y - 1) / y; }
     inline mfxU32 CeilLog2(mfxU32 x) { mfxU32 l = 0; while (x > (1U << l)) l++; return l; }
+    inline mfxU32 FloorLog2(mfxU32 x) { mfxU32 l = 0; while (x >= (1U << (l + 1))) l++; return l; }
 
     inline bool IsOn(mfxU16 opt)
     {

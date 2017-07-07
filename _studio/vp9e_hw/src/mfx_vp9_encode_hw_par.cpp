@@ -121,15 +121,9 @@ if (pSrc)\
     COPY_PAR_IF_ZERO(pDst, pSrc, PTR); \
 }\
 
-inline mfxStatus SetOrCopySupportedParams(mfxInfoMFX *pDst, mfxInfoMFX const *pSrc = 0, bool zeroDst = true)
+inline void SetOrCopy(mfxInfoMFX *pDst, mfxInfoMFX const *pSrc = 0, bool zeroDst = true)
 {
-    if (zeroDst)
-    {
-        Zero(*pDst);
-    }
-
-    MFX_CHECK_NULL_PTR1(pDst);
-
+    zeroDst;
     SET_OR_COPY_PAR(FrameInfo.Width);
     SET_OR_COPY_PAR(FrameInfo.Height);
     SET_OR_COPY_PAR(FrameInfo.CropW);
@@ -161,19 +155,10 @@ inline mfxStatus SetOrCopySupportedParams(mfxInfoMFX *pDst, mfxInfoMFX const *pS
     SET_OR_COPY_PAR(MaxKbps);
     SET_OR_COPY_PAR(BRCParamMultiplier);
     SET_OR_COPY_PAR(NumRefFrame);
-
-    return MFX_ERR_NONE;
 }
 
-inline mfxStatus SetOrCopySupportedParams(mfxExtVP9Param *pDst, mfxExtVP9Param const *pSrc = 0, bool zeroDst = true)
+inline void SetOrCopy(mfxExtVP9Param *pDst, mfxExtVP9Param const *pSrc = 0, bool zeroDst = true)
 {
-    MFX_CHECK_NULL_PTR1(pDst);
-
-    if (zeroDst)
-    {
-        ZeroExtBuffer(*pDst);
-    }
-
     SET_OR_COPY_PAR_DONT_INHERIT(FrameWidth);
     SET_OR_COPY_PAR_DONT_INHERIT(FrameHeight);
 
@@ -194,51 +179,30 @@ inline mfxStatus SetOrCopySupportedParams(mfxExtVP9Param *pDst, mfxExtVP9Param c
     SET_OR_COPY_PAR(QIndexDeltaChromaDC);
     */
 
-    return MFX_ERR_NONE;
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    SET_OR_COPY_PAR(NumTileRows);
+    SET_OR_COPY_PAR(NumTileColumns);
+#endif // PRE_SI_TARGET_PLATFORM_GEN11
 }
 
-inline mfxStatus SetOrCopySupportedParams(mfxExtCodingOption2 *pDst, mfxExtCodingOption2 const *pSrc = 0, bool zeroDst = true)
+inline void SetOrCopy(mfxExtCodingOption2 *pDst, mfxExtCodingOption2 const *pSrc = 0, bool zeroDst = true)
 {
-    MFX_CHECK_NULL_PTR1(pDst);
-
-    if (zeroDst)
-    {
-        ZeroExtBuffer(*pDst);
-    }
-
+    zeroDst;
     SET_OR_COPY_PAR(MBBRC);
-
-    return MFX_ERR_NONE;
 }
 
-inline mfxStatus SetOrCopySupportedParams(mfxExtCodingOption3 *pDst, mfxExtCodingOption3 const *pSrc = 0, bool zeroDst = true)
+inline void SetOrCopy(mfxExtCodingOption3 *pDst, mfxExtCodingOption3 const *pSrc = 0, bool zeroDst = true)
 {
-    pSrc;
-    MFX_CHECK_NULL_PTR1(pDst);
-
-    if (zeroDst)
-    {
-        ZeroExtBuffer(*pDst);
-    }
-
+    pSrc; pDst; zeroDst;
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     SET_OR_COPY_PAR(TargetChromaFormatPlus1);
     SET_OR_COPY_PAR(TargetBitDepthLuma);
     SET_OR_COPY_PAR(TargetBitDepthChroma);
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
-
-    return MFX_ERR_NONE;
 }
 
-inline mfxStatus SetOrCopySupportedParams(mfxExtVP9Segmentation *pDst, mfxExtVP9Segmentation const *pSrc = 0, bool zeroDst = true)
+inline void SetOrCopy(mfxExtVP9Segmentation *pDst, mfxExtVP9Segmentation const *pSrc = 0, bool zeroDst = true)
 {
-    MFX_CHECK_NULL_PTR1(pDst);
-
-    if (zeroDst)
-    {
-        ZeroExtBuffer(*pDst);
-    }
-
     SET_OR_COPY_PAR_DONT_INHERIT(NumSegments);
     SET_OR_COPY_PAR(SegmentIdBlockSize);
     SET_OR_COPY_PAR(NumSegmentIdAlloc);
@@ -252,11 +216,19 @@ inline mfxStatus SetOrCopySupportedParams(mfxExtVP9Segmentation *pDst, mfxExtVP9
     }
 
     COPY_PTR(SegmentId);
-
-    return MFX_ERR_NONE;
 }
 
-inline mfxStatus SetOrCopySupportedParams(mfxExtVP9TemporalLayers *pDst, mfxExtVP9TemporalLayers const *pSrc = 0, bool zeroDst = true)
+inline void SetOrCopy(mfxExtVP9TemporalLayers *pDst, mfxExtVP9TemporalLayers const *pSrc = 0, bool zeroDst = true)
+{
+    for (mfxU8 i = 0; i < MAX_NUM_TEMP_LAYERS; i++)
+    {
+        SET_OR_COPY_PAR_DONT_INHERIT(Layer[i].FrameRateScale);
+        SET_OR_COPY_PAR_DONT_INHERIT(Layer[i].TargetKbps);
+    }
+}
+
+template<class T>
+inline mfxStatus SetOrCopySupportedParams(T* pDst, T const *pSrc = 0, bool zeroDst = true)
 {
     MFX_CHECK_NULL_PTR1(pDst);
 
@@ -265,13 +237,33 @@ inline mfxStatus SetOrCopySupportedParams(mfxExtVP9TemporalLayers *pDst, mfxExtV
         ZeroExtBuffer(*pDst);
     }
 
-    for (mfxU8 i = 0; i < MAX_NUM_TEMP_LAYERS; i++)
-    {
-        SET_OR_COPY_PAR_DONT_INHERIT(Layer[i].FrameRateScale);
-        SET_OR_COPY_PAR_DONT_INHERIT(Layer[i].TargetKbps);
-    }
+    SetOrCopy(pDst, pSrc, zeroDst);
 
     return MFX_ERR_NONE;
+}
+
+template<>
+inline mfxStatus SetOrCopySupportedParams<mfxInfoMFX>(mfxInfoMFX* pDst, mfxInfoMFX const *pSrc, bool zeroDst)
+{
+    MFX_CHECK_NULL_PTR1(pDst);
+
+    if (zeroDst)
+    {
+        Zero(*pDst);
+    }
+
+    SetOrCopy(pDst, pSrc, zeroDst);
+
+    return MFX_ERR_NONE;
+}
+
+#define SET_SUPPORTED_PARAMS(type)      \
+{                                       \
+    type * pExt = GetExtBuffer(par);    \
+    if (pExt != 0)                      \
+    {                                   \
+        SetOrCopySupportedParams(pExt); \
+    }                                   \
 }
 
 mfxStatus SetSupportedParameters(mfxVideoParam & par)
@@ -290,29 +282,10 @@ mfxStatus SetSupportedParameters(mfxVideoParam & par)
     mfxStatus sts = CheckExtBufferHeaders(par.NumExtParam, par.ExtParam);
     MFX_CHECK_STS(sts);
 
-    mfxExtVP9Param *pPar = GetExtBuffer(par);
-    if (pPar != 0)
-    {
-        SetOrCopySupportedParams(pPar);
-    }
-
-    mfxExtCodingOption2 *pOpt2 = GetExtBuffer(par);
-    if (pOpt2 != 0)
-    {
-        SetOrCopySupportedParams(pOpt2);
-    }
-
-    mfxExtCodingOption3 *pOpt3 = GetExtBuffer(par);
-    if (pOpt3 != 0)
-    {
-        SetOrCopySupportedParams(pOpt3);
-    }
-
-    mfxExtVP9TemporalLayers *pTL = GetExtBuffer(par);
-    if (pTL != 0)
-    {
-        SetOrCopySupportedParams(pTL);
-    }
+    SET_SUPPORTED_PARAMS(mfxExtVP9Param);
+    SET_SUPPORTED_PARAMS(mfxExtCodingOption2);
+    SET_SUPPORTED_PARAMS(mfxExtCodingOption3);
+    SET_SUPPORTED_PARAMS(mfxExtVP9TemporalLayers);
 
     return MFX_ERR_NONE;
 }
@@ -369,27 +342,22 @@ bool CheckRangeDflt(T & opt, U min, U max, U deflt)
     return true;
 }
 
+#define INHERIT_DEFAULTS(type, zeroDst)            \
+{                                                  \
+    type& dst = GetExtBufferRef(defaultsDst);      \
+    type& src = GetExtBufferRef(defaultsSrc);      \
+    SetOrCopySupportedParams(&dst, &src, zeroDst); \
+}
+
 void InheritDefaults(VP9MfxVideoParam& defaultsDst, VP9MfxVideoParam const & defaultsSrc)
 {
     // inherit default from mfxInfoMfx
     SetOrCopySupportedParams(&defaultsDst.mfx, &defaultsSrc.mfx, false);
 
-    // inherit defaults from mfxExtVP9Param
-    mfxExtVP9Param* pParDst = GetExtBuffer(defaultsDst);
-    mfxExtVP9Param* pParSrc = GetExtBuffer(defaultsSrc);
-    SetOrCopySupportedParams(pParDst, pParSrc, false);
+    INHERIT_DEFAULTS(mfxExtVP9Param, false);
+    INHERIT_DEFAULTS(mfxExtCodingOption2, false);
+    INHERIT_DEFAULTS(mfxExtCodingOption3, false);
 
-    // inherit defaults from mfxExtCodingOption2
-    mfxExtCodingOption2* pOpt2Dst = GetExtBuffer(defaultsDst);
-    mfxExtCodingOption2* pOpt2Src = GetExtBuffer(defaultsSrc);
-    SetOrCopySupportedParams(pOpt2Dst, pOpt2Src, false);
-
-    // inherit defaults from mfxExtCodingOption3
-    mfxExtCodingOption3* pOpt3Dst = GetExtBuffer(defaultsDst);
-    mfxExtCodingOption3* pOpt3Src = GetExtBuffer(defaultsSrc);
-    SetOrCopySupportedParams(pOpt3Dst, pOpt3Src, false);
-
-    // inherit defaults from mfxExtVP9Segmentation
     mfxExtVP9Segmentation* pSegDst = GetExtBuffer(defaultsDst);
     mfxExtVP9Segmentation* pSegSrc = GetExtBuffer(defaultsSrc);
     if (defaultsDst.m_segBufPassed == true)
@@ -407,12 +375,20 @@ void InheritDefaults(VP9MfxVideoParam& defaultsDst, VP9MfxVideoParam const & def
         SetOrCopySupportedParams(pSegDst, pSegSrc);
     }
 
-    // inherit defaults from mfxExtVP9TemporalLayers
-    mfxExtVP9TemporalLayers* pTLDst = GetExtBuffer(defaultsDst);
-    mfxExtVP9TemporalLayers* pTLSrc = GetExtBuffer(defaultsSrc);
-    SetOrCopySupportedParams(pTLDst, pTLSrc, !defaultsDst.m_tempLayersBufPassed);
-
+    INHERIT_DEFAULTS(mfxExtVP9TemporalLayers, !defaultsDst.m_tempLayersBufPassed);
 }
+
+#define CLEAN_OUT_UNSUPPORTED_PARAMETERS(type)  \
+{                                               \
+    type& tmpBuf = GetExtBufferRef(tmp);        \
+    type& inBuf = GetExtBufferRef(par);         \
+    SetOrCopySupportedParams(&inBuf, &tmpBuf);  \
+    if (memcmp(&inBuf, &tmpBuf, sizeof(type)))  \
+    {                                           \
+        sts = MFX_ERR_UNSUPPORTED;              \
+    }                                           \
+}
+
 
 mfxStatus CleanOutUnsupportedParameters(VP9MfxVideoParam &par)
 {
@@ -424,29 +400,11 @@ mfxStatus CleanOutUnsupportedParameters(VP9MfxVideoParam &par)
         sts = MFX_ERR_UNSUPPORTED;
     }
 
-    mfxExtVP9Param &parTmp = GetExtBufferRef(tmp);
-    mfxExtVP9Param &parPar = GetExtBufferRef(par);
-    SetOrCopySupportedParams(&parPar, &parTmp);
-    if (memcmp(&parPar, &parTmp, sizeof(mfxExtVP9Param)))
-    {
-        sts = MFX_ERR_UNSUPPORTED;
-    }
-
-    mfxExtVP9Segmentation &segTmp = GetExtBufferRef(tmp);
-    mfxExtVP9Segmentation &segPar = GetExtBufferRef(par);
-    SetOrCopySupportedParams(&segPar, &segTmp);
-    if (memcmp(&segPar, &segTmp, sizeof(mfxExtVP9Segmentation)))
-    {
-        sts = MFX_ERR_UNSUPPORTED;
-    }
-
-    mfxExtVP9TemporalLayers &tlTmp = GetExtBufferRef(tmp);
-    mfxExtVP9TemporalLayers &tlPar = GetExtBufferRef(par);
-    SetOrCopySupportedParams(&tlPar, &tlTmp);
-    if (memcmp(&tlPar, &tlTmp, sizeof(mfxExtVP9TemporalLayers)))
-    {
-        sts = MFX_ERR_UNSUPPORTED;
-    }
+    CLEAN_OUT_UNSUPPORTED_PARAMETERS(mfxExtVP9Param);
+    CLEAN_OUT_UNSUPPORTED_PARAMETERS(mfxExtCodingOption2);
+    CLEAN_OUT_UNSUPPORTED_PARAMETERS(mfxExtCodingOption3);
+    CLEAN_OUT_UNSUPPORTED_PARAMETERS(mfxExtVP9Segmentation);
+    CLEAN_OUT_UNSUPPORTED_PARAMETERS(mfxExtVP9TemporalLayers);
 
     return sts;
 }
@@ -1378,9 +1336,12 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         changed = true;
     }
 
+    mfxU16 width = extPar.FrameWidth ? extPar.FrameWidth : fi.Width;
+    mfxU16 height = extPar.FrameHeight ? extPar.FrameHeight : fi.Height;
+
     mfxExtVP9Segmentation& seg = GetExtBufferRef(par);
 
-    mfxStatus segSts = CheckSegmentationParam(seg, extPar.FrameWidth, extPar.FrameHeight, caps, 0);
+    mfxStatus segSts = CheckSegmentationParam(seg, width, height, caps, 0);
     ConvertStatusToBools(changed, unsupported, segSts);
 
     if (IsOn(opt2.MBBRC) && seg.NumSegments)
@@ -1389,6 +1350,74 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         opt2.MBBRC = MFX_CODINGOPTION_OFF;
         unsupported = true;
     }
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    mfxU16& rows = extPar.NumTileRows;
+    mfxU16& cols = extPar.NumTileColumns;
+    if (rows * cols  > 1 && caps.TileSupport == 0)
+    {
+        rows = cols = 1;
+        unsupported = true;
+    }
+
+    if (rows && height)
+    {
+        mfxU16 heightInSBs = static_cast<mfxU16>(CeilDiv(height, SB_SIZE));
+        mfxU16 maxPossibleRows = MFX_MIN(heightInSBs, MAX_NUM_TILE_ROWS);
+        if (rows > maxPossibleRows)
+        {
+            rows = maxPossibleRows;
+            changed = true;
+        }
+        if (rows)
+        {
+            mfxU16 lowerPowOf2 = (1 << FloorLog2(rows));
+            if (rows != lowerPowOf2)
+            {
+                rows = lowerPowOf2;
+                changed = true;
+            }
+        }
+    }
+
+    if (cols && width)
+    {
+        mfxU16 widthInMinTileCols = static_cast<mfxU16>(width / MIN_TILE_WIDTH);
+        mfxU16 maxPossibleCols = MFX_MIN(widthInMinTileCols, MAX_NUM_TILES);
+        if (cols > maxPossibleCols)
+        {
+            cols = maxPossibleCols;
+            changed = true;
+        }
+
+        mfxU16 lowerPowOf2 = (1 << FloorLog2(cols));
+        mfxU16 correctValue = lowerPowOf2;
+        mfxU16 minPossibleCols = static_cast<mfxU16>(CeilDiv(width, MAX_TILE_WIDTH));
+        if (cols < minPossibleCols)
+        {
+            cols = minPossibleCols;
+            changed = true;
+            mfxU16 higherPowOf2 = (1 << CeilLog2(cols));
+            correctValue = higherPowOf2;
+        }
+
+        if (cols != correctValue)
+        {
+            cols = correctValue;
+            changed = true;
+        }
+    }
+
+    mfxU16 numPipes = static_cast<mfxU16>(caps.NumScalablePipesMinus1 + 1);
+
+    if (cols > numPipes && rows > 1 ||
+        rows * cols > MAX_NUM_TILES)
+    {
+        cols = 0;
+        rows = 0;
+        unsupported = true;
+    }
+#endif // PRE_SI_TARGET_PLATFORM_GEN11
 
     return GetCheckStatus(changed, unsupported);
 }

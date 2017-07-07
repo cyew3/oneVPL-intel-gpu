@@ -59,7 +59,7 @@ typedef struct tagENCODE_CAPS_VP9
             UINT    TemporalLayerRateCtrl     : 3;
             UINT    DynamicScaling            : 1;
             UINT    TileSupport               : 1;
-            UINT    MaxLog2TileCols           : 3;
+            UINT    NumScalablePipesMinus1    : 3;
             UINT    YUV422ReconSupport        : 1;
             UINT    YUV444ReconSupport        : 1;
             UINT    MaxEncodedBitDepth        : 2;
