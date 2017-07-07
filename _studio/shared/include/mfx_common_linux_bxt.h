@@ -88,6 +88,10 @@
 #define MFX_ENABLE_USER_ENC
 #define MFX_ENABLE_USER_VPP
 
+// undefine unsupported features DirtyRect and MoveRect on Linux
+#undef MFX_ENABLE_AVCE_DIRTY_RECTANGLE
+#undef MFX_ENABLE_AVCE_MOVE_RECTANGLE
+
 // aac
 #define MFX_ENABLE_AAC_AUDIO_DECODE
 #define MFX_ENABLE_AAC_AUDIO_ENCODE

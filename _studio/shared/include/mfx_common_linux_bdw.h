@@ -78,6 +78,10 @@
 #define MFX_ENABLE_H265FEI_HW
 #endif
 
+// undefine unsupported features DirtyRect and MoveRect on Linux
+#undef MFX_ENABLE_AVCE_DIRTY_RECTANGLE
+#undef MFX_ENABLE_AVCE_MOVE_RECTANGLE
+
 // user plugin for decoder, encoder, and vpp
 #define MFX_ENABLE_USER_DECODE
 #define MFX_ENABLE_USER_ENCODE

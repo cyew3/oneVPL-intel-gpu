@@ -6377,6 +6377,7 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
         }
     }
 
+#if defined(MFX_ENABLE_AVCE_DIRTY_RECTANGLE)
     mfxExtDirtyRect const * extDirtyRect = GetExtBuffer(*ctrl);
 
     if (extDirtyRect)
@@ -6401,7 +6402,17 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
                 checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
         }
     }
+#else
+    mfxExtDirtyRect const * extDirtyRect = GetExtBuffer(*ctrl);
+    
+    if (extDirtyRect)
+    {
+        checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+    }
 
+#endif
+
+#if defined(MFX_ENABLE_AVCE_MOVE_RECTANGLE)
     mfxExtMoveRect const * extMoveRect = GetExtBuffer(*ctrl);
 
     if (extMoveRect)
@@ -6420,7 +6431,15 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
                 checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
         }
     }
+#else
+    mfxExtMoveRect const * extMoveRect = GetExtBuffer(*ctrl);
 
+    if (extMoveRect)
+    {
+        checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+    }
+
+#endif
     return checkSts;
 }
 

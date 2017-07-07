@@ -61,6 +61,11 @@
 // vpp
 #define MFX_ENABLE_VPP
 #define MFX_ENABLE_HW_ONLY_VPP
+
+// undefine unsupported features DirtyRect and MoveRect on Linux
+#undef MFX_ENABLE_AVCE_DIRTY_RECTANGLE
+#undef MFX_ENABLE_AVCE_MOVE_RECTANGLE
+
 //#define MFX_ENABLE_DENOISE_VIDEO_VPP
 //#define MFX_ENABLE_IMAGE_STABILIZATION_VPP
 
