@@ -40,8 +40,11 @@ mfxStatus CEncodingPipeline::Init()
         sts = m_mfxSession.Init(m_impl, NULL);
         MSDK_CHECK_STATUS(sts, "m_mfxSession.Init failed");
 
-        sts = LoadFEIPlugin();
-        MSDK_CHECK_STATUS(sts, "LoadPlugin failed");
+        if (m_inParams.bENCODE)
+        {
+            sts = LoadFEIPlugin();
+            MSDK_CHECK_STATUS(sts, "LoadPlugin failed");
+        }
 
         // create and init frame allocator
         sts = CreateAllocator();
@@ -53,6 +56,14 @@ mfxStatus CEncodingPipeline::Init()
         MSDK_CHECK_STATUS(sts, "FillInputFrameInfo failed");
 
         m_pYUVSource.reset(new YUVReader(m_inParams, frameInfo, &m_EncSurfPool));
+
+
+        if (m_inParams.bPREENC)
+        {
+            m_pFEI_PreENC.reset(new FEI_Preenc(&m_mfxSession, frameInfo));
+            sts = m_pFEI_PreENC->SetParameters(m_inParams);
+            MSDK_CHECK_STATUS(sts, "PreENC: Parameters initialization failed");
+        }
 
         if (m_inParams.bENCODE)
         {
@@ -173,22 +184,33 @@ mfxStatus CEncodingPipeline::AllocFrames()
 {
     mfxStatus sts = MFX_ERR_NOT_INITIALIZED;
 
-    mfxFrameAllocRequest encRequest;
-    MSDK_ZERO_MEMORY(encRequest);
+    mfxFrameAllocRequest request;
+    MSDK_ZERO_MEMORY(request);
 
-    if (m_pFEI_Encode.get())
+    if (m_pFEI_Encode.get()) // pipeline: ENCODE, PreENC + ENCODE
     {
-        sts = m_pFEI_Encode->QueryIOSurf(&encRequest);
+        sts = m_pFEI_Encode->QueryIOSurf(&request);
         MSDK_CHECK_STATUS(sts, "m_pFEI_Encode->QueryIOSurf failed");
 
         // prepare allocation requests
-        MSDK_MEMCPY_VAR(encRequest.Info, m_pFEI_Encode->GetFrameInfo(), sizeof(mfxFrameInfo));
-        encRequest.Type |= MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET;
-
-        m_EncSurfPool.SetAllocator(m_pMFXAllocator.get());
-        sts = m_EncSurfPool.AllocSurfaces(encRequest);
-        MSDK_CHECK_STATUS(sts, "EncSurfPool->AllocSurfaces failed");
+        MSDK_MEMCPY_VAR(request.Info, m_pFEI_Encode->GetFrameInfo(), sizeof(mfxFrameInfo));
+        request.Type |= MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET;
     }
+    else if (m_pFEI_PreENC.get()) // pipeline: PreENC only
+    {
+        sts = m_pFEI_PreENC->QueryIOSurf(&request);
+        MSDK_CHECK_STATUS(sts, "m_pFEI_PreENC->QueryIOSurf failed");
+
+        // prepare allocation requests
+        MSDK_MEMCPY_VAR(request.Info, m_pFEI_PreENC->GetFrameInfo(), sizeof(mfxFrameInfo));
+    }
+
+    if (m_pFEI_PreENC.get())
+        request.Type |= MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET | MFX_MEMTYPE_FROM_ENC;
+
+    m_EncSurfPool.SetAllocator(m_pMFXAllocator.get());
+    sts = m_EncSurfPool.AllocSurfaces(request);
+    MSDK_CHECK_STATUS(sts, "AllocFrames::EncSurfPool->AllocSurfaces failed");
 
     return sts;
 }
@@ -203,6 +225,14 @@ mfxStatus CEncodingPipeline::InitComponents()
 
     MfxVideoParamsWrapper param;
 
+    if (m_pFEI_PreENC.get())
+    {
+        sts = m_pFEI_PreENC->Init();
+        MSDK_CHECK_STATUS(sts, "FEI PreENC Init failed");
+
+        param = m_pFEI_PreENC->GetVideoParam();
+    }
+
     if (m_pFEI_Encode.get())
     {
         sts = m_pFEI_Encode->Init();
@@ -215,7 +245,6 @@ mfxStatus CEncodingPipeline::InitComponents()
     {
         m_pOrderCtrl.reset(new EncodeOrderControl(param));
     }
-
 
     return sts;
 }

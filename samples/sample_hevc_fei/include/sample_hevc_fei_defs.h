@@ -24,6 +24,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "sample_defs.h"
 #include "mfxvideo.h"
 #include "mfxvideo++.h"
+#include <mfxfei.h>
 
 struct sInputParams
 {
@@ -31,6 +32,7 @@ struct sInputParams
     msdk_char  strDstFile[MSDK_MAX_FILENAME_LEN];
 
     bool bENCODE;
+    bool bPREENC;
     bool bEncodedOrder;      // use EncodeOrderControl for external reordering
     mfxU32 ColorFormat;
     mfxU16 nPicStruct;
@@ -53,6 +55,7 @@ struct sInputParams
 
     sInputParams()
         : bENCODE(false)
+        , bPREENC(false)
         , bEncodedOrder(false)
         , ColorFormat(MFX_FOURCC_I420)
         , nPicStruct(MFX_PICSTRUCT_PROGRESSIVE)
@@ -98,6 +101,9 @@ template<class T, class U> inline void Copy(T & dst, U const & src)
 }
 
 /**********************************************************************************/
+template<>struct mfx_ext_buffer_id<mfxExtFeiParam> {
+    enum { id = MFX_EXTBUFF_FEI_PARAM };
+};
 // TODO: rework implementation for wrapper class
 union MfxExtBuffer
 {
@@ -105,8 +111,9 @@ union MfxExtBuffer
     mfxExtCodingOption opt;
     mfxExtCodingOption2 opt2;
     mfxExtCodingOption3 opt3;
+    mfxExtFeiParam feipar;
 };
-const mfxI32 HEVC_FEI_ENCODE_VIDEOPARAM_EXTBUF_MAX_NUM = 4;
+const mfxI32 HEVC_FEI_ENCODE_VIDEOPARAM_EXTBUF_MAX_NUM = 5;
 
 /** MfxParamsWrapper is an utility class which
  * encapsulates mfxVideoParam and a list of 'attached' mfxExtBuffer objects.
@@ -244,6 +251,10 @@ struct MfxParamsWrapper: public T
             ext_buf[idx].opt3.Header.BufferId = MFX_EXTBUFF_CODING_OPTION3;
             ext_buf[idx].opt3.Header.BufferSz = sizeof(mfxExtCodingOption3);
             return idx;
+          case MFX_EXTBUFF_FEI_PARAM:
+            ext_buf[idx].feipar.Header.BufferId = MFX_EXTBUFF_FEI_PARAM;
+            ext_buf[idx].feipar.Header.BufferSz = sizeof(mfxExtFeiParam);
+            return idx;
           default:
             assert(!"add index to getEnabledMapIdx!");
             return -1;
@@ -272,14 +283,16 @@ protected:
         if (!N) return -1;
         switch (bufferid)
         {
-          case MFX_EXTBUFF_CODING_OPTION3:
+        case MFX_EXTBUFF_FEI_PARAM:
             ++idx;
-          case MFX_EXTBUFF_CODING_OPTION2:
+        case MFX_EXTBUFF_CODING_OPTION3:
             ++idx;
-          case MFX_EXTBUFF_CODING_OPTION:
+        case MFX_EXTBUFF_CODING_OPTION2:
+            ++idx;
+        case MFX_EXTBUFF_CODING_OPTION:
             if (idx >= HEVC_FEI_ENCODE_VIDEOPARAM_EXTBUF_MAX_NUM) return -1;
             return idx;
-          default:
+        default:
             return -1;
         };
     }

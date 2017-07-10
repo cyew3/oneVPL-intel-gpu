@@ -71,7 +71,7 @@ void PrintHelp(const msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-bref] - arrange B frames in B pyramid reference structure\n"));
     msdk_printf(MSDK_STRING("   [-nobref] - do not use B-pyramid (by default the decision is made by library)\n"));
     msdk_printf(MSDK_STRING("   [-l numSlices] - number of slices \n"));
-
+    msdk_printf(MSDK_STRING("   [-preenc] - use extended FEI interface PREENC (RC is forced to constant QP)\n"));
     msdk_printf(MSDK_STRING("\n"));
 }
 
@@ -94,6 +94,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU32 nArgNum, sInputParams& 
         if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-encode")))
         {
             params.bENCODE = true;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-preenc")))
+        {
+            params.bPREENC = true;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-EncodedOrder")))
         {
@@ -250,9 +254,9 @@ mfxStatus CheckOptions(const sInputParams params, const msdk_char* appName)
         PrintHelp(appName, "Wrong QP value (must be in range [0, 51])");
         return MFX_ERR_UNSUPPORTED;
     }
-    if (!params.bENCODE)
+    if (!params.bENCODE && !params.bPREENC)
     {
-        PrintHelp(appName, "Pipeline is undefined. Supported pipeline: ENCODE");
+        PrintHelp(appName, "Pipeline is unsupported. Supported pipeline: ENCODE, PreENC, PreENC + ENCODE");
         return MFX_ERR_UNSUPPORTED;
     }
 
@@ -271,7 +275,11 @@ void AdjustOptions(sInputParams& params)
     {
         params.nNumRef = tune(params.nNumRef, 1, params.nPicStruct == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2);
     }
-
+    // PreENC works only in encoder order mode
+    if (params.bPREENC)
+    {
+        params.bEncodedOrder = true;
+    }
 }
 
 #if defined(_WIN32) || defined(_WIN64)

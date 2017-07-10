@@ -16,65 +16,35 @@ This sample was distributed or derived from the Intel's Media Samples package.
 The original version of this sample may be obtained from https://software.intel.com/en-us/intel-media-server-studio
 or https://software.intel.com/en-us/media-client-solutions-support.
 \**********************************************************************************/
-#ifndef __PIPELINE_FEI_H__
-#define __PIPELINE_FEI_H__
+
+#ifndef __SAMPLE_FEI_PREENC_H__
+#define __SAMPLE_FEI_PREENC_H__
 
 #include "sample_hevc_fei_defs.h"
-#include "mfxplugin.h"
-#include "mfxplugin++.h"
-#include "plugin_utils.h"
-#include "plugin_loader.h"
-#include "vaapi_device.h"
-#include "fei_utils.h"
-#include "hevc_fei_encode.h"
-#include "hevc_fei_preenc.h"
-#include "ref_list_manager.h"
 
-/* This class implements a FEI pipeline */
-class CEncodingPipeline
+class FEI_Preenc
 {
 public:
-    CEncodingPipeline(sInputParams& userInput);
-    ~CEncodingPipeline();
+    FEI_Preenc(MFXVideoSession* session, const mfxFrameInfo& frameInfo);
+    ~FEI_Preenc();
 
     mfxStatus Init();
-    mfxStatus Execute();
-    void Close();
+    mfxStatus Reset(mfxU16 width = 0, mfxU16 height = 0);
+    mfxStatus QueryIOSurf(mfxFrameAllocRequest* request);
+    mfxStatus SetParameters(const sInputParams& params);
+    const MfxVideoParamsWrapper& GetVideoParam();
+    mfxFrameInfo* GetFrameInfo();
 
 private:
-    const sInputParams m_inParams; /* collection of user parameters, adjusted in parsing and
-                                      shouldn't be modified during processing to not lose
-                                      initial settings */
+    MFXVideoSession* m_pmfxSession;
+    MFXVideoENC      m_mfxPREENC;
 
-    mfxIMPL                  m_impl;
-    MFXVideoSession          m_mfxSession;
-    std::auto_ptr<MFXPlugin> m_pPlugin;
-    mfxPluginUID             m_pluginGuid;
-
-    std::auto_ptr<MFXFrameAllocator>  m_pMFXAllocator;
-    std::auto_ptr<mfxAllocatorParams> m_pMFXAllocatorParams;
-    std::auto_ptr<CHWDevice>          m_pHWdev;
-
-    std::auto_ptr<IVideoReader> m_pYUVSource; // source of raw data for encoder (can be either reading from file,
-                                              // or decoding bitstream)
-    std::auto_ptr<FEI_Encode>   m_pFEI_Encode;
-    std::auto_ptr<FEI_Preenc>   m_pFEI_PreENC;
-
-    std::auto_ptr<EncodeOrderControl> m_pOrderCtrl;
-
-    SurfacesPool m_EncSurfPool;
-
-    mfxStatus LoadFEIPlugin();
-    mfxStatus CreateAllocator();
-    mfxStatus CreateHWDevice();
-    mfxStatus FillInputFrameInfo(mfxFrameInfo& fi);
-    mfxStatus AllocFrames();
-    mfxStatus InitComponents();
-    mfxStatus DrainBufferedFrames();
+    MfxVideoParamsWrapper m_videoParams;
 
     // forbid copy constructor and operator
-    CEncodingPipeline(const CEncodingPipeline& pipeline);
-    CEncodingPipeline& operator=(const CEncodingPipeline& pipeline);
+    FEI_Preenc(const FEI_Preenc& preenc);
+    FEI_Preenc& operator=(const FEI_Preenc& preenc);
+
 };
 
-#endif // __PIPELINE_FEI_H__
+#endif // __SAMPLE_FEI_PREENC_H__

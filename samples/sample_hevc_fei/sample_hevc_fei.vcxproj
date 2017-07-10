@@ -75,6 +75,7 @@
   <ItemGroup>
     <ClCompile Include="src\fei_utils.cpp" />
     <ClCompile Include="src\hevc_fei_encode.cpp" />
+    <ClCompile Include="src\hevc_fei_preenc.cpp" />
     <ClCompile Include="src\pipeline_hevc_fei.cpp" />
     <ClCompile Include="src\ref_list_manager.cpp" />
     <ClCompile Include="src\sample_hevc_fei.cpp" />
@@ -82,6 +83,7 @@
   <ItemGroup>
     <ClInclude Include="include\fei_utils.h" />
     <ClInclude Include="include\hevc_fei_encode.h" />
+    <ClInclude Include="include\hevc_fei_preenc.h" />
     <ClInclude Include="include\pipeline_hevc_fei.h" />
     <ClInclude Include="include\ref_list_manager.h" />
     <ClInclude Include="include\sample_hevc_fei_defs.h" />
