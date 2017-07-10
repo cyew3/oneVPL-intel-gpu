@@ -23,6 +23,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "sample_defs.h"
 #include "sample_utils.h"
 #include "base_allocator.h"
+#include "sample_hevc_fei_defs.h"
 
 class SurfacesPool
 {
@@ -41,5 +42,40 @@ private:
     std::vector<mfxFrameSurface1> m_pool;
     mfxFrameAllocResponse m_response;
 };
+
+class IVideoReader
+{
+public:
+    IVideoReader(const sInputParams& inPars, const mfxFrameInfo& fi, SurfacesPool* sp);
+    virtual ~IVideoReader() {}
+
+    virtual mfxStatus Init() = 0;
+    virtual mfxStatus GetOneFrame(mfxFrameSurface1* & pSurf) = 0;
+    virtual void      Close() = 0;
+
+protected:
+    std::string   m_srcFileName;
+    mfxFrameInfo  m_frameInfo; // info about video frames properties
+    SurfacesPool* m_pOutSurfPool;
+};
+
+// reader of raw frames
+class YUVReader : public IVideoReader
+{
+public:
+    YUVReader(const sInputParams& inPars, const mfxFrameInfo& fi, SurfacesPool* sp);
+    ~YUVReader();
+
+    mfxStatus Init();
+    mfxStatus GetOneFrame(mfxFrameSurface1* & pSurf);
+    void      Close();
+
+private:
+    CSmplYUVReader   m_FileReader;
+    mfxU32           m_srcColorFormat;
+};
+
+// TODO: implement decoder functionality
+// class MFX_Decode : public IVideoReader {};
 
 #endif // #define __FEI_UTILS_H__

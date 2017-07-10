@@ -50,6 +50,8 @@ mfxStatus CEncodingPipeline::Init()
     sts = FillInputFrameInfo(frameInfo);
     MSDK_CHECK_STATUS(sts, "FillInputFrameInfo failed");
 
+    m_pInputSource.reset(new YUVReader(m_inParams, frameInfo, &m_EncSurfPool));
+
     if (m_inParams.bENCODE)
     {
         m_pFEI_Encode.reset(new FEI_Encode(&m_mfxSession, frameInfo, m_inParams));
@@ -61,10 +63,7 @@ mfxStatus CEncodingPipeline::Init()
     sts = AllocFrames();
     MSDK_CHECK_STATUS(sts, "AllocFrames failed");
 
-    sts = m_pFEI_Encode->Init();
-    MSDK_CHECK_STATUS(sts, "FEI ENCODE Init failed");
-
-    return sts;
+    return InitComponents();
 }
 
 void CEncodingPipeline::Close()
@@ -177,6 +176,23 @@ mfxStatus CEncodingPipeline::AllocFrames()
         m_EncSurfPool.SetAllocator(m_pMFXAllocator.get());
         sts = m_EncSurfPool.AllocSurfaces(encRequest);
         MSDK_CHECK_STATUS(sts, "EncSurfPool->AllocSurfaces failed");
+    }
+
+    return sts;
+}
+
+mfxStatus CEncodingPipeline::InitComponents()
+{
+    mfxStatus sts = MFX_ERR_NONE;
+
+    MSDK_CHECK_POINTER(m_pInputSource.get(), MFX_ERR_UNSUPPORTED);
+    sts = m_pInputSource->Init();
+    MSDK_CHECK_STATUS(sts, "m_pYUVSource->Init failed");
+
+    if (m_pFEI_Encode.get())
+    {
+        sts = m_pFEI_Encode->Init();
+        MSDK_CHECK_STATUS(sts, "FEI ENCODE Init failed");
     }
 
     return sts;

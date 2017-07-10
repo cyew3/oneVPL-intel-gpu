@@ -100,3 +100,56 @@ mfxStatus SurfacesPool::UnlockSurface(mfxFrameSurface1* pSurf)
 
     return sts;
 }
+
+IVideoReader::IVideoReader(const sInputParams& inPars, const mfxFrameInfo& fi, SurfacesPool* sp)
+    : m_srcFileName(inPars.strSrcFile)
+    , m_frameInfo(fi)
+    , m_pOutSurfPool(sp)
+{
+}
+
+YUVReader::YUVReader(const sInputParams& inPars, const mfxFrameInfo& fi, SurfacesPool* sp)
+    : IVideoReader(inPars, fi, sp)
+    , m_srcColorFormat(inPars.ColorFormat)
+{
+}
+
+YUVReader::~YUVReader()
+{
+    Close();
+}
+
+void YUVReader::Close()
+{
+    m_FileReader.Close();
+}
+
+mfxStatus YUVReader::Init()
+{
+    std::list<msdk_string> in_file_names;
+    in_file_names.push_back(msdk_string(m_srcFileName));
+    return m_FileReader.Init(in_file_names, m_srcColorFormat);
+}
+
+mfxStatus YUVReader::GetOneFrame(mfxFrameSurface1* & pSurf)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+
+    // point pSurf to surface from shared surface pool
+    pSurf = m_pOutSurfPool->GetFreeSurface();
+    MSDK_CHECK_POINTER(pSurf, MFX_ERR_MEMORY_ALLOC);
+
+    // need to call Lock to access surface data and...
+    sts = m_pOutSurfPool->LockSurface(pSurf);
+    MSDK_CHECK_STATUS(sts, "LockSurface failed");
+
+    // load frame from file to surface data
+    sts = m_FileReader.LoadNextFrame(pSurf);
+    MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, sts);
+
+    // ... after we're done call Unlock
+    sts = m_pOutSurfPool->UnlockSurface(pSurf);
+    MSDK_CHECK_STATUS(sts, "UnlockSurface failed");
+
+    return sts;
+}
