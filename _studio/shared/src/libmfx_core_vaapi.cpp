@@ -1272,14 +1272,18 @@ void* VAAPIVideoCORE::QueryCoreInterface(const MFX_GUID &guid)
         return (void*) &m_encode_caps;
     }
 #ifdef MFX_ENABLE_MFE
-    else if (MFXMFEDDIENCODER_GUID == guid)
+    else if (MFXMFEDDIENCODER_SEARCH_GUID == guid)
     {
         if (!m_mfe.get())
         {
-            m_mfe = (MFEVAAPIEncoder*)m_session->m_pOperatorCore->QueryGUID<ComPtrCore<MFEVAAPIEncoder> >(&VideoCORE::QueryCoreInterface, guid);
+            m_mfe = (MFEVAAPIEncoder*)m_session->m_pOperatorCore->QueryGUID<ComPtrCore<MFEVAAPIEncoder> >(&VideoCORE::QueryCoreInterface, MFXMFEDDIENCODER_GUID);
             if (m_mfe.get())
                 m_mfe.get()->AddRef();
         }
+        return (void*)&m_mfe;
+    }
+    else if (MFXMFEDDIENCODER_GUID == guid)
+    {
         return (void*)&m_mfe;
     }
 #endif
