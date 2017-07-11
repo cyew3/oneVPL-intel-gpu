@@ -30,9 +30,10 @@ namespace
         MfxVideoParam &     par,
         ENCODE_CAPS const & hwCaps,
         bool                setExtAlloc,
-        eMFXHWType          platform = MFX_HW_UNKNOWN)
+        eMFXHWType          platform = MFX_HW_UNKNOWN,
+        eMFXVAType          vaType = MFX_HW_NO)
     {
-        mfxStatus sts = CheckVideoParam(par, hwCaps, setExtAlloc, platform);
+        mfxStatus sts = CheckVideoParam(par, hwCaps, setExtAlloc, platform, vaType);
 
         /*
         mfxExtMVCSeqDesc * extMvc = GetExtBuffer(par);
@@ -1010,7 +1011,7 @@ mfxStatus ImplementationMvc::Init(mfxVideoParam *par)
     m_currentPlatform = m_core->GetHWType();
 
     m_video = *par;
-    mfxStatus checkStatus = CheckVideoParamMvc(m_video, m_ddiCaps, m_core->IsExternalFrameAllocator(), m_currentPlatform);
+    mfxStatus checkStatus = CheckVideoParamMvc(m_video, m_ddiCaps, m_core->IsExternalFrameAllocator(), m_currentPlatform, m_core->GetVAType());
     if (checkStatus == MFX_WRN_PARTIAL_ACCELERATION)
         return Warning(MFX_WRN_PARTIAL_ACCELERATION);
     else if (checkStatus < MFX_ERR_NONE)
@@ -1211,7 +1212,7 @@ mfxStatus ImplementationMvc::Reset(mfxVideoParam *par)
 
     InheritDefaultValues(m_video, newPar);
 
-    mfxStatus checkStatus = CheckVideoParamMvc(newPar, m_ddiCaps, m_core->IsExternalFrameAllocator(), m_currentPlatform);
+    mfxStatus checkStatus = CheckVideoParamMvc(newPar, m_ddiCaps, m_core->IsExternalFrameAllocator(), m_currentPlatform, m_core->GetVAType());
     if (checkStatus == MFX_WRN_PARTIAL_ACCELERATION)
         return Error(MFX_ERR_INVALID_VIDEO_PARAM);
     else if (checkStatus < MFX_ERR_NONE)

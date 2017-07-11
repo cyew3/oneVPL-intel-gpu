@@ -41,6 +41,8 @@ const mfxU32 MAX_BITRATE_RATIO = mfxU32(1.5 * 1000); //  MaxBps = MAX_BITRATE_RA
 
 const mfxU32 MIN_LOOKAHEAD_DEPTH = 10;
 
+const mfxU32 DEFAULT_ASYNC_DEPTH_TO_WA_D3D9_128_SURFACE_LIMIT = 10; //  Use this value in case of d3d9 and when par.AsyncDepth parameter is set to a very big value
+
 namespace
 {
     static const mfxU8 EXTENDED_SAR = 0xff;
@@ -2652,6 +2654,20 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 
             unsupported = true;
             par.mfx.FrameInfo.CropH = par.mfx.FrameInfo.Height - par.mfx.FrameInfo.CropY;
+        }
+    }
+
+    // WA for MVCe with d3d9. AsyncDepth parameter is checked here
+    if (vaType == MFX_HW_D3D9 && par.AsyncDepth > 0 && IsMvcProfile(par.mfx.CodecProfile))
+    {
+        mfxU32 numEncs = (extOpt->ViewOutput == MFX_CODINGOPTION_ON) ? 2 : 1;
+        mfxU32 numView = (extMvc->NumView == 0) ? 1 : extMvc->NumView;
+        mfxU32 numSurfBitstream = mfxU32(CalcNumSurfBitstream(par) * (numEncs > 1 ? 1 : numView));
+        mfxU32 numSurfRecon = mfxU32(CalcNumSurfRecon(par) * (numEncs > 1 ? 1 : numView));
+        if (numSurfBitstream > 128 || numSurfRecon > 128)
+        {
+            changed = true;
+            par.AsyncDepth = DEFAULT_ASYNC_DEPTH_TO_WA_D3D9_128_SURFACE_LIMIT;
         }
     }
 
