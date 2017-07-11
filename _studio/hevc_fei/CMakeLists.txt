@@ -70,6 +70,7 @@ set( sources.plus "" )
 set( USE_STRICT_NAME TRUE )
 set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${MFX_ROOTDIR}/mfx_lib/plugin/libmfxsw_plugin.map" )
 
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../hevce_hw/h265/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/h265_fei/include )
 
 foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/h265_fei/src )

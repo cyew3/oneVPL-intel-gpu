@@ -130,15 +130,15 @@ void VABuffersHandler::_CheckPool(mfxU32 pool)
     }
 }
 
-VABufferID& VABuffersHandler::VABuffersNew(IdType id, mfxU32 pool, mfxU32 num)
+VABufferID& VABuffersHandler::VABuffersNew(mfxU32 id, mfxU32 pool, mfxU32 num)
 {
     std::vector<VABufferID>::iterator begin = _PoolBegin(pool);
     std::vector<VABufferID>::iterator end   = _PoolEnd(pool);
     std::vector<VABufferID>::iterator it    = begin;
 
-    std::vector<IdType>::iterator idBegin = m_id.begin() + std::distance(m_buf.begin(), begin);
-    std::vector<IdType>::iterator idEnd   = idBegin + std::distance(begin, end);
-    std::vector<IdType>::iterator idIt    = idBegin;
+    std::vector<mfxU32>::iterator idBegin = m_id.begin() + std::distance(m_buf.begin(), begin);
+    std::vector<mfxU32>::iterator idEnd   = idBegin + std::distance(begin, end);
+    std::vector<mfxU32>::iterator idIt    = idBegin;
 
     for (;it != end && *idIt != id; it++, idIt++);
 
@@ -195,7 +195,7 @@ void VABuffersHandler::VABuffersDestroyPool(mfxU32 pool)
         , it;
     size_t poolSize = std::distance(begin, end);
 
-    std::vector<IdType>::iterator idBegin = m_id.begin() + std::distance(m_buf.begin(), begin);
+    std::vector<mfxU32>::iterator idBegin = m_id.begin() + std::distance(m_buf.begin(), begin);
 
     for (it = begin; it != end; it++)
         MFX_DESTROY_VABUFFER(*it, m_vaDisplay);
@@ -1658,7 +1658,7 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
     }
 
     // In case of HEVC FEI encoding, configure some additional buffers
-    MFX_CHECK_WITH_ASSERT(PreSubmitExtraStage() == MFX_ERR_NONE, MFX_ERR_DEVICE_FAILED);
+    MFX_CHECK_WITH_ASSERT(PreSubmitExtraStage(task) == MFX_ERR_NONE, MFX_ERR_DEVICE_FAILED);
 
     mfxU32 storedSize = 0;
 

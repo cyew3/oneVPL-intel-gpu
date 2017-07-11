@@ -13,8 +13,8 @@
 #include "mfx_config.h"
 #if defined(MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
 
-#include "mfx_h265_encode_hw.h"
 #include "mfx_h265_fei_encode_vaapi.h"
+#include "mfx_h265_encode_hw.h"
 
 namespace MfxHwH265FeiEncode
 {
@@ -77,13 +77,7 @@ protected:
     explicit H265FeiEncodePlugin(bool CreateByDispatcher);
     virtual ~H265FeiEncodePlugin();
 
-    virtual MfxHwH265Encode::DriverEncoder* CreateHWh265Encoder(MFXCoreInterface* core, MfxHwH265Encode::ENCODER_TYPE type = MfxHwH265Encode::ENCODER_DEFAULT)
-    {
-        core;
-        type;
-
-        return new VAAPIh265FeiEncoder;
-    };
+    virtual MfxHwH265Encode::DriverEncoder* CreateHWh265Encoder(MFXCoreInterface* core, MfxHwH265Encode::ENCODER_TYPE type = MfxHwH265Encode::ENCODER_DEFAULT);
 };
 
 } //MfxHwH265FeiEncode

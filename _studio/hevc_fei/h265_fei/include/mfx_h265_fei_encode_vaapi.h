@@ -12,22 +12,43 @@
 #include "mfx_config.h"
 #if defined(MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
 
+#include "mfxfeihevc.h"
 #include "mfx_h265_encode_vaapi.h"
+#include "mfx_h265_encode_hw_utils.h"
 
 namespace MfxHwH265FeiEncode
 {
-    class VAAPIh265FeiEncoder : public MfxHwH265Encode::VAAPIEncoder
+    template <class T> mfxExtBuffer* GetBufById(const T & par, mfxU32 id)
     {
-    protected:
-        virtual mfxStatus PreSubmitExtraStage()
+        if (par.NumExtParam && !par.ExtParam)
+            return NULL;
+
+        for (mfxU16 i = 0; i<par.NumExtParam; ++i)
         {
-            return MFX_ERR_NONE;
+            if (par.ExtParam[i] && par.ExtParam[i]->BufferId == id)
+            {
+                return par.ExtParam[i];
+            }
         }
 
-        virtual mfxStatus PostQueryExtraStage()
-        {
-            return MFX_ERR_NONE;
-        }
+        return NULL;
+    }
+
+    enum VA_BUFFER_STORAGE_ID
+    {
+        VABID_FEI_FRM_CTRL = MfxHwH265Encode::VABuffersHandler::VABID_END_OF_LIST + 1
+    };
+
+    class VAAPIh265FeiEncoder : public MfxHwH265Encode::VAAPIEncoder
+    {
+    public:
+        VAAPIh265FeiEncoder();
+        virtual ~VAAPIh265FeiEncoder();
+
+    protected:
+        virtual mfxStatus PreSubmitExtraStage(MfxHwH265Encode::Task const & task);
+
+        virtual mfxStatus PostQueryExtraStage();
     };
 }
 
