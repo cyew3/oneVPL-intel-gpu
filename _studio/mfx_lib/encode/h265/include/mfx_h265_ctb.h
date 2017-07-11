@@ -220,7 +220,7 @@ public:
     __ALIGN64 PixType       m_recStoredY[5+1][MAX_CU_SIZE * MAX_CU_SIZE];       // (+1 for Intra_NxN)
     __ALIGN64 PixType       m_recStoredC[5+1][MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV * 2];   // (+1 for Intra Chroma, temp until code is cleaned up)
     __ALIGN64 PixType       m_interRecWorkY[MAX_CU_SIZE * MAX_CU_SIZE];
-    __ALIGN64 PixType       m_interRecWorkC[MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV];
+    __ALIGN64 PixType       m_interRecWorkC[MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV * 2];
 
     // inter prediction pixels
     __ALIGN64 PixType       m_interPredBufsY[5][2][MAX_CU_SIZE * MAX_CU_SIZE];

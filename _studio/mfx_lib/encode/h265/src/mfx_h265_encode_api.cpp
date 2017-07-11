@@ -1456,11 +1456,15 @@ namespace {
 
         if (optHevc.DeltaQpMode == 0) {
 #ifdef LOW_COMPLX_PAQ
-            if (mfx.RateControlMethod == AVBR) {
+            if (IsCbrOrVbrOrAvbr(mfx.RateControlMethod)) {
                 Ipp32s dqpFlags = defaultOptHevc.DeltaQpMode - 1;
-                optHevc.DeltaQpMode = (dqpFlags | AMT_DQP_PAQ | AMT_DQP_PSY) + 1;
-            }
-            else
+                if (mfx.RateControlMethod == AVBR) {
+                    optHevc.DeltaQpMode = (dqpFlags | AMT_DQP_PAQ | AMT_DQP_PSY) + 1;
+                } else {
+                    dqpFlags = dqpFlags&~AMT_DQP_PAQ;
+                    optHevc.DeltaQpMode = (dqpFlags | AMT_DQP_PSY) + 1;
+                }
+            } else
 #endif
             {
                 optHevc.DeltaQpMode = defaultOptHevc.DeltaQpMode;

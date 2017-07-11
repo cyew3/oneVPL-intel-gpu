@@ -518,6 +518,7 @@ public:
         m_minSize = 0;
         mIsInit = 0;
         m_pBRC = 0;
+        memset(&ppframe, 0, sizeof(mfxLAFrameInfo));
     }
     virtual ~WrapExtBRC() {
         Close();

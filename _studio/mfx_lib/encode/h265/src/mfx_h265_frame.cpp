@@ -642,6 +642,8 @@ namespace H265Enc {
         m_sliceQpY    = 0;
 
         m_fzCmplx      = 0.0;
+        m_fzCmplxK     = 0.0;
+        m_fzRateE      = 0.0;
         m_avCmplx      = 0.0;
         m_CmplxQstep   = 0.0;
         m_qpBase       = 0;

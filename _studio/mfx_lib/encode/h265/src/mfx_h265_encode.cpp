@@ -669,7 +669,7 @@ static void TaskLogDump()
         intParam.randomRepackThreshold = Ipp32s(optHevc.RepackProb / 100.0 * MYRAND_MAX);
         intParam.bCalcIEFs = false;
 #ifdef AMT_NEW_ICRA
-        if (intParam.enableCmFlag && intParam.fastSkip && intParam.bitDepthLuma == 8 && intParam.BiPyramidLayers == 4)
+        if (intParam.enableCmFlag && intParam.fastSkip && (intParam.bitDepthLuma == 8) && intParam.BiPyramidLayers == 4)
             intParam.bCalcIEFs = true;
 #endif
 

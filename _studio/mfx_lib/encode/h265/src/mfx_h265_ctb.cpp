@@ -3215,7 +3215,8 @@ template <typename PixType>
 void H265CU<PixType>::MemoizeInit() 
 {
     Ipp32s j,k,l;
-    if (!m_par->enableCmFlag || m_par->numBiRefineIter > 1) {
+    if (!m_par->enableCmFlag || m_par->numBiRefineIter > 1) 
+    {
         for(j=0;j<m_currFrame->m_numRefUnique;j++) {
             m_memBestMV[3][j].Init();
             m_memBestMV[2][j].Init();
@@ -5728,7 +5729,7 @@ void H265CU<PixType>::MeCu(Ipp32s absPartIdx, Ipp8u depth)
 #ifdef AMT_NEW_ICRA
     if(IsDisableSkipIEF()) {
         Ipp32u numParts = m_par->NumPartInCU >> (2 * depth);
-        Ipp32s idx422 = (m_par->chroma422 && (m_par->AnalyseFlags & HEVC_COST_CHROMA)) ? (numParts >> 1) : 0;
+        //Ipp32s idx422 = (m_par->chroma422 && (m_par->AnalyseFlags & HEVC_COST_CHROMA)) ? (numParts >> 1) : 0;
         H265CUData *dataCu = m_data + absPartIdx;
         Ipp8u cuWidth = (Ipp8u)(m_par->MaxCUSize >> depth);
         Ipp8s qp = dataCu->qp;
@@ -6154,7 +6155,7 @@ void H265CU<PixType>::CuCost(Ipp32s absPartIdx, Ipp8u depth, const H265MEInfo *b
         InterPredCu<TEXT_LUMA>(absPartIdx, depth, m_interPredY, MAX_CU_SIZE);
     }
     if (m_par->AnalyseFlags & HEVC_COST_CHROMA)
-        InterPredCu<TEXT_CHROMA>(absPartIdx, depth, m_interPredC, MAX_CU_SIZE);
+        InterPredCu<TEXT_CHROMA>(absPartIdx, depth, m_interPredC, MAX_CU_SIZE << m_par->chromaShiftWInv);
 
     const PixType *srcY = m_ySrc + GetLumaOffset(m_par, absPartIdx, m_pitchSrcLuma);
     const PixType *predY = interPredY;
