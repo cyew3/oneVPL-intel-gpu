@@ -4,7 +4,9 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2017 Intel Corporation. All Rights Reserved.
+
+File Name: vp9e_close.cpp
 
 \* ****************************************************************************** */
 
@@ -17,26 +19,12 @@ namespace vp9e_close
     class TestSuite : tsVideoEncoder
     {
     public:
-        static const unsigned int n_cases;
 
         TestSuite() : tsVideoEncoder(MFX_CODEC_VP9)
         {
 
         }
         ~TestSuite() {}
-        int RunTest(unsigned int id);
-
-    private:
-        enum
-        {
-            MFX_PAR,
-            NULL_SESSION,
-            NOT_INIT,
-            FAILED_INIT,
-            CLOSED,
-            NOT_SYNC,
-            NONE
-        };
 
         struct tc_struct
         {
@@ -50,7 +38,31 @@ namespace vp9e_close
             } set_par[MAX_NPARS];
         };
 
+        template<mfxU32 fourcc>
+        int RunTest_Subtype(const unsigned int id);
+
+        int RunTest(const tc_struct& tc, unsigned int fourcc_id);
+
         static const tc_struct test_case[];
+
+        static const unsigned int n_cases;
+
+        static const unsigned int n_cases_nv12;
+        static const unsigned int n_cases_p010;
+        static const unsigned int n_cases_ayuv;
+        static const unsigned int n_cases_y410;
+
+    private:
+        enum
+        {
+            MFX_PAR,
+            NULL_SESSION,
+            NOT_INIT,
+            FAILED_INIT,
+            CLOSED,
+            NOT_SYNC,
+            NONE
+        };
     };
 
     const TestSuite::tc_struct TestSuite::test_case[] =
@@ -69,14 +81,56 @@ namespace vp9e_close
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
 
-    int TestSuite::RunTest(unsigned int id)
+    const unsigned int TestSuite::n_cases_nv12 = n_cases;
+    const unsigned int TestSuite::n_cases_p010 = n_cases;
+    const unsigned int TestSuite::n_cases_ayuv = n_cases;
+    const unsigned int TestSuite::n_cases_y410 = n_cases;
+
+    template<mfxU32 fourcc>
+    int TestSuite::RunTest_Subtype(const unsigned int id)
+    {
+        const tc_struct& tc = test_case[id];
+        return RunTest(tc, fourcc);
+    }
+
+    int TestSuite::RunTest(const tc_struct& tc, unsigned int fourcc_id)
     {
         TS_START;
 
-        const tc_struct& tc = test_case[id];
-
         MFXInit();
+
         Load();
+
+        if (fourcc_id == MFX_FOURCC_NV12)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
+        }
+        else if (fourcc_id == MFX_FOURCC_P010)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_P010;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+            m_par.mfx.FrameInfo.Shift = 1;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
+        }
+        else if (fourcc_id == MFX_FOURCC_AYUV)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_AYUV;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
+        }
+        else if (fourcc_id == MFX_FOURCC_Y410)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y410;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
+        }
+        else
+        {
+            g_tsLog << "ERROR: invalid fourcc_id parameter: " << fourcc_id << "\n";
+            return 0;
+        }
 
         SETPARS(m_pPar, MFX_PAR);
 
@@ -84,13 +138,18 @@ namespace vp9e_close
 
         if (0 == memcmp(m_uid->Data, MFX_PLUGINID_VP9E_HW.Data, sizeof(MFX_PLUGINID_VP9E_HW.Data)))
         {
-            if (g_tsHWtype < MFX_HW_CNL) // unsupported on platform less CNL
+            // MFX_PLUGIN_VP9E_HW unsupported on platform less CNL(NV12) and ICL(P010, AYUV, Y410)
+            if ((fourcc_id == MFX_FOURCC_NV12 && g_tsHWtype < MFX_HW_CNL)
+                || ((fourcc_id == MFX_FOURCC_P010 || fourcc_id == MFX_FOURCC_AYUV
+                    || fourcc_id == MFX_FOURCC_Y410) && g_tsHWtype < MFX_HW_ICL))
             {
                 g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
                 g_tsLog << "WARNING: Unsupported HW Platform!\n";
+                Query();
                 return 0;
             }
-        }  else {
+        }
+        else {
             g_tsLog << "WARNING: loading encoder from plugin failed!\n";
             return 0;
         }
@@ -147,5 +206,8 @@ namespace vp9e_close
         return 0;
     }
 
-    TS_REG_TEST_SUITE_CLASS(vp9e_close);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9e_close,              RunTest_Subtype<MFX_FOURCC_NV12>, n_cases_nv12);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9e_10b_420_p010_close, RunTest_Subtype<MFX_FOURCC_P010>, n_cases_p010);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9e_8b_444_ayuv_close,  RunTest_Subtype<MFX_FOURCC_AYUV>, n_cases_ayuv);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9e_10b_444_y410_close, RunTest_Subtype<MFX_FOURCC_Y410>, n_cases_y410);
 };
