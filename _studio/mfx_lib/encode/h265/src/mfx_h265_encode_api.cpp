@@ -902,12 +902,12 @@ namespace {
                      Ipp16u mask = (1 << 6) - 1;
                      if (roi->ROI[i].Left & mask)
                          roi->ROI[i].Left &= ~mask, wrnIncompatible = true;
-                     if (roi->ROI[i].Right & mask)
-                         roi->ROI[i].Right &= ~mask, wrnIncompatible = true;
                      if (roi->ROI[i].Top & mask)
                          roi->ROI[i].Top &= ~mask, wrnIncompatible = true;
+                     if (roi->ROI[i].Right & mask)
+                         roi->ROI[i].Right = (roi->ROI[i].Right + mask) & ~mask, wrnIncompatible = true;
                      if (roi->ROI[i].Bottom & mask)
-                         roi->ROI[i].Bottom &= ~mask, wrnIncompatible = true;
+                         roi->ROI[i].Bottom = (roi->ROI[i].Bottom + mask) & ~mask, wrnIncompatible = true;
                  }
 
                  if (mfx.RateControlMethod == CQP) {

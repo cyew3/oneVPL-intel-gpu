@@ -1041,7 +1041,7 @@ namespace H265Enc {
             for (Ipp32s ctb = start; ctb <= end; ctb++) {
                 Ipp32s col =  (ctb % par.PicWidthInCtbs) * par.MaxCUSize;
                 Ipp32s row =  (ctb / par.PicWidthInCtbs) * par.MaxCUSize;
-                if (col >= par.roi[i].left && col <= par.roi[i].right && row >= par.roi[i].top && row <= par.roi[i].bottom) {
+                if (col >= par.roi[i].left && col < par.roi[i].right && row >= par.roi[i].top && row < par.roi[i].bottom) {
                     //Ipp32s qp = frame->m_lcuQps[0][ctb] + par.roi[i].priority;
                     //Ipp32s minqp = (8 - par.bitDepthLuma) * 6;
                     //qp = Saturate(minqp, 51, qp);
