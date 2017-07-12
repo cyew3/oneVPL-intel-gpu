@@ -64,6 +64,9 @@ private:
     mfxStatus AllocFrames();
     mfxStatus InitComponents();
 
+    // forbid copy constructor and operator
+    CEncodingPipeline(const CEncodingPipeline& pipeline);
+    CEncodingPipeline& operator=(const CEncodingPipeline& pipeline);
 };
 
 #endif // __PIPELINE_FEI_H__

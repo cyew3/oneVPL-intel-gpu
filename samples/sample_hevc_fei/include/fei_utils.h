@@ -41,6 +41,10 @@ private:
     MFXFrameAllocator* m_pAllocator;
     std::vector<mfxFrameSurface1> m_pool;
     mfxFrameAllocResponse m_response;
+
+    // forbid copy constructor and operator
+    SurfacesPool(const SurfacesPool& pool);
+    SurfacesPool& operator=(const SurfacesPool& pool);
 };
 
 class IVideoReader
@@ -57,6 +61,11 @@ protected:
     std::string   m_srcFileName;
     mfxFrameInfo  m_frameInfo; // info about video frames properties
     SurfacesPool* m_pOutSurfPool;
+
+private:
+    // forbid copy constructor and operator
+    IVideoReader(const IVideoReader& reader);
+    IVideoReader& operator=(const IVideoReader& reader);
 };
 
 // reader of raw frames
@@ -73,6 +82,10 @@ public:
 private:
     CSmplYUVReader   m_FileReader;
     mfxU32           m_srcColorFormat;
+
+    // forbid copy constructor and operator
+    YUVReader(const YUVReader& reader);
+    YUVReader& operator=(const YUVReader& reader);
 };
 
 // TODO: implement decoder functionality

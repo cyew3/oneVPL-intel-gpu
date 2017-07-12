@@ -43,6 +43,10 @@ private:
     MfxVideoParamsWrapper m_videoParams;
 
     void SetEncodeParameters(const sInputParams& encParams);
+
+    // forbid copy constructor and operator
+    FEI_Encode(const FEI_Encode& encode);
+    FEI_Encode& operator=(const FEI_Encode& encode);
 };
 
 #endif // __SAMPLE_FEI_ENCODE_H__

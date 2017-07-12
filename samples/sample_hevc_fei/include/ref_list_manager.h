@@ -137,4 +137,9 @@ private:
 
     mfxU32                        m_frameOrder;
     mfxU32                        m_lastIDR;
+
+private:
+    // forbid copy constructor and operator
+    EncodeOrderControl(const EncodeOrderControl& encOrderCtrl);
+    EncodeOrderControl& operator=(const EncodeOrderControl& encOrderCtrl);
 };
