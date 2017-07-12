@@ -43,8 +43,8 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_AYUV, res_change_tag>::test_c
     {/* 0*/ {"hevc/444format/Kimono1_704x576_24_444_8.265"}, {"hevc/444format/GENERAL_8b_444_RExt_Sony_1.bit"}},
     {/* 1*/ {"hevc/444format/GENERAL_8b_444_RExt_Sony_1.bit"}, {"hevc/444format/Kimono1_704x576_24_444_8.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
     {/* 2*/ {"hevc/444format/Kimono1_704x576_24_444_8.265", 5}, {"hevc/444format/GENERAL_8b_444_RExt_Sony_1.bit", 5}},
-    {/* 3*/ {"hevc/444format/Kimono1_704x576_24_444_8.265", 5}, {"hevc/444format/GENERAL_8b_444_RExt_Sony_1.bit", 5}, {"hevc/TSCTX_10bit_RExt_SHARP_1_converted_to_444_8.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
-    {/* 4*/ {"hevc/TSCTX_10bit_RExt_SHARP_1_converted_to_444_8.265", 5}, {"hevc/444format/Kimono1_704x576_24_444_8.265", 5}, {"hevc/444format/GENERAL_8b_444_RExt_Sony_1.bit", 5}},
+    {/* 3*/ {"hevc/444format/Kimono1_704x576_24_444_8.265", 5}, {"hevc/444format/GENERAL_8b_444_RExt_Sony_1.bit", 5}, {"hevc/444format/TSCTX_10bit_RExt_SHARP_1_converted_to_444_8.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
+    {/* 4*/ {"hevc/444format/TSCTX_10bit_RExt_SHARP_1_converted_to_444_8.265", 5}, {"hevc/444format/Kimono1_704x576_24_444_8.265", 5}, {"hevc/444format/GENERAL_8b_444_RExt_Sony_1.bit", 5}},
 };
 template <>
 unsigned int const TestSuiteExt<MFX_FOURCC_AYUV, res_change_tag>::n_cases = sizeof(TestSuiteExt<MFX_FOURCC_AYUV, res_change_tag>::test_cases) / sizeof(TestSuite::tc_struct[max_num_ctrl]);
