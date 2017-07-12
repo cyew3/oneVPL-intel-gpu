@@ -170,7 +170,7 @@ namespace hevcd_close
     TS_REG_TEST_SUITE(hevc10d_422_close, TestSuiteEx<MFX_FOURCC_Y210>::RunTest, TestSuiteEx<MFX_FOURCC_Y210>::n_cases);
     TS_REG_TEST_SUITE(hevc10d_444_close, TestSuiteEx<MFX_FOURCC_Y410>::RunTest, TestSuiteEx<MFX_FOURCC_Y410>::n_cases);
 
-    TS_REG_TEST_SUITE(hevc12d_close,     TestSuiteEx<MFX_FOURCC_P016>::RunTest, TestSuiteEx<MFX_FOURCC_P016>::n_cases);
-    TS_REG_TEST_SUITE(hevc12d_422_close, TestSuiteEx<MFX_FOURCC_Y216>::RunTest, TestSuiteEx<MFX_FOURCC_Y216>::n_cases);
-    TS_REG_TEST_SUITE(hevc12d_444_close, TestSuiteEx<MFX_FOURCC_Y416>::RunTest, TestSuiteEx<MFX_FOURCC_Y416>::n_cases);
+    TS_REG_TEST_SUITE(hevc12d_420_p016_close, TestSuiteEx<MFX_FOURCC_P016>::RunTest, TestSuiteEx<MFX_FOURCC_P016>::n_cases);
+    TS_REG_TEST_SUITE(hevc12d_422_y216_close, TestSuiteEx<MFX_FOURCC_Y216>::RunTest, TestSuiteEx<MFX_FOURCC_Y216>::n_cases);
+    TS_REG_TEST_SUITE(hevc12d_444_y416_close, TestSuiteEx<MFX_FOURCC_Y416>::RunTest, TestSuiteEx<MFX_FOURCC_Y416>::n_cases);
 };
