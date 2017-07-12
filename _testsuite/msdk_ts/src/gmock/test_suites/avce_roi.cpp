@@ -10,20 +10,20 @@ Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
 
 #include "ts_encoder.h"
 
-namespace 
+namespace
 {
 
 #if defined(LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN) || defined (WIN32)
   #define PLATFOM_SUPPORT_ROI_DELTA_QP
 #endif
 
-typedef struct 
+typedef struct
 {
     mfxSession      session;
     mfxVideoParam*  pPar;
 }InitPar;
 
-typedef struct 
+typedef struct
 {
     mfxSession          session;
     mfxEncodeCtrl*      pCtrl;
@@ -151,7 +151,7 @@ void ROI_ctrl(tsVideoEncoder& enc, mfxVideoParam* , mfxU32 p0, mfxU32 p1, mfxU32
     }
 }
 
-typedef struct 
+typedef struct
 {
     mfxU32      func;
     mfxStatus   sts;
@@ -170,8 +170,11 @@ typedef struct
 #define MFX_OFFSET(field)        (offsetof(mfxVideoParam, mfx) + offsetof(mfxInfoMFX, field))
 #define EXT_BUF_PAR(eb) tsExtBufTypeToId<eb>::id, sizeof(eb)
 
+// When LowPower is ON, hwCaps.ROIBRCDeltaQPLevelSupport and hwCaps.ROIBRCPriorityLevelSupport don't
+// supported in driver for all RateMethodControl except CQP. So need to correct expected status(corrected in run time)
+
 #if (defined(_WIN32) || defined(_WIN64)) && !defined( PLATFOM_SUPPORT_ROI_DELTA_QP)
-tc_struct test_case[] = 
+tc_struct test_case[] =
 {
     //Query function
 //    {/*00*/ Query|Inplace, MFX_ERR_NONE,  CBR,  0, 2000,    0,  ROI_1, 2,   2, 0 },
@@ -216,7 +219,7 @@ tc_struct test_case[] =
     {/*35*/ Init,          MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 4, -25, 0 },
 //    {/*36*/ Init,          MFX_ERR_INVALID_VIDEO_PARAM,  CBR,  0, 5000,    0,  ROI_1, 2,   2, 15 },
 //    {/*37*/ Init,          MFX_ERR_INVALID_VIDEO_PARAM, AVBR,  4, 5000,    5,  ROI_1, 3,   2, 15 },
-    {/*38*/ Init,          MFX_ERR_INVALID_VIDEO_PARAM,  CQP, 24,   24,   24,  ROI_1, 2, -25, 15 },
+    {/*38*/ Init,          MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,  CQP, 24,   24,   24,  ROI_1, 2, -25, 15 },
     //Reset function
 //    {/*39*/ Reset|WithROIInit, MFX_ERR_NONE,  CBR,  0, 5000,    0,  ROI_1, 1,   3, 0 },
 //    {/*40*/ Reset|WithROIInit, MFX_ERR_NONE,  VBR,  0, 5000, 6000,  ROI_1, 1,   3, 0 },
@@ -321,7 +324,7 @@ tc_struct test_case[] =
 
 };
 #else
-tc_struct test_case[] = 
+tc_struct test_case[] =
 {
     //Query function
     {/*00*/ Query|Inplace, MFX_ERR_UNSUPPORTED,  CQP, 24,   24,   24,  ROI_1, 2, -25, 0 },
@@ -363,7 +366,8 @@ int test(unsigned int id)
     enc.m_par.mfx.FrameInfo.Height = enc.m_par.mfx.FrameInfo.CropH = 480;
 
     InitPar par = {enc.m_session, &enc.m_par};
-    
+
+    mfxStatus sts = MFX_ERR_NONE;
     g_tsStatus.expect(tc.sts);
     if(Query & tc.func)
     {
@@ -371,15 +375,15 @@ int test(unsigned int id)
             (*tc.set_rc)(enc, &enc.m_par, tc.p0, tc.p1, tc.p2);
         if(tc.set_par)
             (*tc.set_par)(enc, &enc.m_par, tc.p3, tc.p4, tc.p5);
-        if(Inplace & tc.func)
+        if (Inplace & tc.func)
             enc.Query(enc.m_session, &enc.m_par, &enc.m_par);
         if(InOut & tc.func)
         {
             tsExtBufType<mfxVideoParam> pout;
             pout.mfx.CodecId = enc.m_par.mfx.CodecId;
-            mfxExtEncoderROI& roi = pout; 
-            enc.Query(enc.m_session, &enc.m_par, &pout);
-            if(MFX_ERR_NONE == tc.sts) //Check that buffer was copied
+            mfxExtEncoderROI& roi = pout;
+            sts = enc.Query(enc.m_session, &enc.m_par, &pout);
+            if(MFX_ERR_NONE == sts) //Check that buffer was copied
             {
                 EXPECT_EQ(0,(memcmp(*enc.m_pPar->ExtParam, &roi, sizeof(mfxExtEncoderROI))) );
             }
@@ -421,11 +425,12 @@ int test(unsigned int id)
             (*tc.set_rc)(enc, &enc.m_par, tc.p0, tc.p1, tc.p2);
         if(tc.set_par)
             (*tc.set_par)(enc, &enc.m_par, tc.p3, tc.p4, tc.p5);
-        enc.Init(enc.m_session, &enc.m_par);
-        if(MFX_ERR_NONE == tc.sts) //Check that buffer was copied
+
+        sts = enc.Init(enc.m_session, &enc.m_par);
+        if(MFX_ERR_NONE == sts) //Check that buffer was copied
         {
             tsExtBufType<mfxVideoParam> pout;
-            mfxExtEncoderROI& roi = pout; 
+            mfxExtEncoderROI& roi = pout;
             enc.GetVideoParam(enc.m_session, &pout);
             EXPECT_EQ(0,(memcmp(*enc.m_pPar->ExtParam, &roi, sizeof(mfxExtEncoderROI))) );
         }
@@ -447,20 +452,27 @@ int test(unsigned int id)
         }
         if(tc.set_rc)
             (*tc.set_rc)(enc, &enc.m_par, tc.p0, tc.p1, tc.p2);
+
         g_tsStatus.expect(MFX_ERR_NONE);
-        enc.Init(enc.m_session, &enc.m_par);
+        sts = enc.Init(enc.m_session, &enc.m_par);
+
+        if (   enc.m_par.mfx.LowPower == MFX_CODINGOPTION_ON
+            && enc.m_par.mfx.RateControlMethod != MFX_RATECONTROL_CQP
+            && sts == MFX_ERR_INVALID_VIDEO_PARAM)
+            tc.sts = MFX_ERR_NOT_INITIALIZED;
 
         if(WoROIInit & tc.func)
         {
             if(tc.set_par)
                 (*tc.set_par)(enc, &enc.m_par, tc.p3, tc.p4, tc.p5);
         }
+
         g_tsStatus.expect(tc.sts);
-        enc.Reset(enc.m_session, &enc.m_par);
-        if(MFX_ERR_NONE == tc.sts) //Check that buffer was copied
+        sts = enc.Reset(enc.m_session, &enc.m_par);
+        if(MFX_ERR_NONE == sts) //Check that buffer was copied
         {
             tsExtBufType<mfxVideoParam> pout;
-            mfxExtEncoderROI& roi = pout; 
+            mfxExtEncoderROI& roi = pout;
             enc.GetVideoParam(enc.m_session, &pout);
             EXPECT_EQ(0,(memcmp(*enc.m_pPar->ExtParam, &roi, sizeof(mfxExtEncoderROI))) );
         }
@@ -475,26 +487,29 @@ int test(unsigned int id)
                 (*tc.set_par)(enc, &enc.m_par, tc.p3, tc.p4, tc.p5);
         }
         g_tsStatus.expect(MFX_ERR_NONE);
-        enc.Init(enc.m_session, &enc.m_par);
-        enc.AllocSurfaces();
-        enc.AllocBitstream();
-        EFApar par = {enc.m_session, enc.m_pCtrl, enc.GetSurface(), enc.m_pBitstream, enc.m_pSyncPoint};
-
-        g_tsStatus.expect(tc.sts);
-        for(;;)
+        sts = enc.Init(enc.m_session, &enc.m_par);
+        if (sts != MFX_ERR_INVALID_VIDEO_PARAM)
         {
-            if(!(WOBuf & tc.func))
-                ROI_ctrl(enc,0, tc.p3, tc.p4, tc.p5);
-            enc.EncodeFrameAsync(enc.m_session, par.pCtrl, par.pSurf, enc.m_pBitstream, enc.m_pSyncPoint);
+            enc.AllocSurfaces();
+            enc.AllocBitstream();
+            EFApar par = { enc.m_session, enc.m_pCtrl, enc.GetSurface(), enc.m_pBitstream, enc.m_pSyncPoint };
 
-            if(g_tsStatus.get() == MFX_ERR_MORE_DATA && par.pSurf && g_tsStatus.m_expected >= 0)
+            g_tsStatus.expect(tc.sts);
+            for (;;)
             {
-                par.pSurf = enc.GetSurface();
-                continue;
+                if (!(WOBuf & tc.func))
+                    ROI_ctrl(enc, 0, tc.p3, tc.p4, tc.p5);
+                enc.EncodeFrameAsync(enc.m_session, par.pCtrl, par.pSurf, enc.m_pBitstream, enc.m_pSyncPoint);
+
+                if (g_tsStatus.get() == MFX_ERR_MORE_DATA && par.pSurf && g_tsStatus.m_expected >= 0)
+                {
+                    par.pSurf = enc.GetSurface();
+                    continue;
+                }
+                break;
             }
-            break;
+            g_tsStatus.check();
         }
-        g_tsStatus.check();
     }
     else
     {

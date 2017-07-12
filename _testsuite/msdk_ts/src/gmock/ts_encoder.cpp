@@ -78,6 +78,34 @@ void SkipDecision(mfxVideoParam& par, eEncoderFunction function)
             g_tsStatus.expect(expect);
         }
     }
+
+    if (   par.mfx.LowPower == MFX_CODINGOPTION_ON
+        && par.mfx.RateControlMethod != MFX_RATECONTROL_CQP
+        && function != QUERYIOSURF)
+    {
+        mfxExtEncoderROI* roi = GetExtBufferPtr(par);
+        mfxStatus expect = g_tsStatus.m_expected;
+
+        if (roi && roi->NumROI)
+        {
+            switch (function)
+            {
+            case INIT:
+                expect = MFX_ERR_INVALID_VIDEO_PARAM;
+                break;
+            case RESET:
+                if (expect != MFX_ERR_NOT_INITIALIZED)
+                    expect = MFX_ERR_INVALID_VIDEO_PARAM;
+                break;
+            case QUERY:
+                expect = MFX_ERR_UNSUPPORTED;
+                break;
+            default:
+                break;
+            }
+        }
+        g_tsStatus.expect(expect);
+    }
 }
 
 void SetFrameTypeIfRequired(mfxEncodeCtrl * pCtrl, mfxVideoParam * pPar, mfxFrameSurface1 * pSurf)
