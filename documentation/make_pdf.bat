@@ -38,7 +38,7 @@ goto :CLEANUP
 echo Converting "%_Title%"(%_Name%)...
 powershell -Command "(gc header-template.md) -replace '#\*\*Title\*\*', '#**%_Title%**' | Out-File -encoding UTF8 header-%_Name%.md"
 pandoc --from=markdown_github -t html5 -i header-%_Name%.md -o header.html --css=styles/intel_css_styles.css
-pandoc --from=markdown_github -t html5 --columns 920 -i %_Name%.md -o body.html --css=styles/intel_css_styles_4pdf.css
+pandoc --from=markdown_github -t html5 --columns 9999 -i %_Name%.md -o body.html --css=styles/intel_css_styles_4pdf.css
 wkhtmltopdf -B 14mm -T 14mm --title "%_Title%" header.html --zoom 1.5 toc --xsl-style-sheet styles/toc.xsl body.html %_PDF_BODY_OPT% --footer-line --footer-center "%_Title%" --footer-right "%_APIVersion%" --footer-left [page] --footer-font-size 8 --footer-font-name Verdana --footer-spacing 4 PDF/%_Name%.pdf
 
 del header.html

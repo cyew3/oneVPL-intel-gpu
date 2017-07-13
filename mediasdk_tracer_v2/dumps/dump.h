@@ -47,7 +47,7 @@ File Name: dump.h
 #include "mfxjpeg.h"
 #include "mfxmvc.h"
 #include "mfxprivate.h"
-
+#include "mfxbrc.h"
 
 
 
@@ -429,6 +429,9 @@ public:
                         case MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO:
                             str += dump(name, *((mfxExtContentLightLevelInfo*)_struct.ExtParam[i])) + "\n";
                             break;
+                        case MFX_EXTBUFF_BRC:
+                            str += dump(name, *((mfxExtBRC*)_struct.ExtParam[i])) + "\n";
+                            break;
                         default:
                             str += dump(name, *(_struct.ExtParam[i])) + "\n";
                             break;
@@ -610,6 +613,9 @@ public:
 
     //mfxprivate
     DEFINE_DUMP_FUNCTION(mfxExtAVCEncodeCtrl);
+
+    //mfxbrc
+    DEFINE_DUMP_FUNCTION(mfxExtBRC);
 
 };
 #endif //DUMP_H_

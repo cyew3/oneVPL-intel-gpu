@@ -45,6 +45,7 @@ boldface, such as [mfxStatus](#mfxStatus).
 **YV12** | A color format for raw video frames
 **GPB** | Generalized P/B picture. B-picture, containing only forward references in both L0 and L1
 **HDR** | High Dynamic Range
+**BRC** | Bit Rate Control
 
 <div style="page-break-before:always" />
 
@@ -197,8 +198,8 @@ The application must use the include file, **mfxvideo.h** (for C programming), o
 
 Include these files:
 ```C
-    #include “mfxvideo.h”    /* The SDK include file */
-    #include “mfxvideo++.h”  /* Optional for C++ development */
+    #include "mfxvideo.h"    /* The SDK include file */
+    #include "mfxvideo++.h"  /* Optional for C++ development */
 ```
 Link this library:
 ```
@@ -419,9 +420,230 @@ MFXVideoENCODE_Close();
 free_pool_of_frame_surfaces();
 ```
 
+### External Bit Rate Control
+
+The application can make encoder use external BRC instead of native one. In order to do that it should attach to [mfxVideoParam](#mfxVideoParam) structure [mfxExtCodingOption2](#mfxExtCodingOption2) with `ExtBRC = MFX_CODINGOPTION_ON` and callback structure [mfxExtBRC](#mfxExtBRC) during encoder [initialization](#MFXVideoENCODE_Init). Callbacks `Init`, `Reset` and `Close` will be invoked inside [MFXVideoENCODE_Init](#MFXVideoENCODE_Init), [MFXVideoENCODE_Reset](#MFXVideoENCODE_Reset) and [MFXVideoENCODE_Close](#MFXVideoENCODE_Close) correspondingly. Figure 4 illustrates usage of `GetFrameCtrl` and `Update`. 
+
+###### Figure 4: Asynchronous Encoding Flow With External BRC
+
+![Asynchronous Encoding Flow With External BRC](./pic/extbrc_async.png)
+
+_**IntAsyncDepth** is the SDK max internal asynchronous encoding queue size; it is always less than or equal to [mfxVideoParam](#mfxVideoParam)`::AsyncDepth`._
+
+###### Example 3: External BRC Pseudo Code
+
+```C
+#include "mfxvideo.h"
+#include "mfxbrc.h"
+
+typedef struct {
+    mfxU32 EncodedOrder;
+    mfxI32 QP;
+    mfxU32 MaxSize;
+    mfxU32 MinSize;
+    mfxU16 Status;
+    mfxU64 StartTime;
+    ...
+} MyBrcFrame;
+
+typedef struct {
+    MyBrcFrame* frame_queue;
+    mfxU32 frame_queue_size;
+    mfxU32 frame_queue_max_size;
+    mfxI32 max_qp[3]; //I,P,B
+    mfxI32 min_qp[3]; //I,P,B
+    ...
+} MyBrcContext;
+
+mfxStatus MyBrcInit(mfxHDL pthis, mfxVideoParam* par) {
+    MyBrcContext* ctx = (MyBrcContext*)pthis;
+    mfxI32 QpBdOffset;
+    mfxExtCodingOption2* co2;
+
+    if (!pthis || !par)
+        return MFX_ERR_NULL_PTR;
+
+    if (!IsParametersSupported(par))
+        return MFX_ERR_UNSUPPORTED;
+
+    frame_queue_max_size = par->AsyncDepth;
+    frame_queue = (MyBrcFrame*)malloc(sizeof(MyBrcFrame) * frame_queue_max_size);
+
+    if (!frame_queue)
+        return MFX_ERR_MEMORY_ALLOC;
+
+    co2 = (mfxExtCodingOption2*)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_CODING_OPTION2);
+    QpBdOffset = (par->BitDepthLuma > 8) : (6 * (par->BitDepthLuma - 8)) : 0;
+
+    for (<X = I,P,B>) {
+        ctx->max_qp[X] = (co2 && co2->MaxQPX) ? (co2->MaxQPX - QpBdOffset) : <Default>;
+        ctx->min_qp[X] = (co2 && co2->MinQPX) ? (co2->MinQPX - QpBdOffset) : <Default>;
+    }
+
+    ... //initialize other BRC parameters
+
+    frame_queue_size = 0;
+    
+    return MFX_ERR_NONE;
+}
+
+mfxStatus MyBrcReset(mfxHDL pthis, mfxVideoParam* par) {
+    MyBrcContext* ctx = (MyBrcContext*)pthis;
+
+    if (!pthis || !par)
+        return MFX_ERR_NULL_PTR;
+
+    if (!IsParametersSupported(par))
+        return MFX_ERR_UNSUPPORTED;
+
+    if (!IsResetPossible(ctx, par))
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+
+    ... //reset BRC parameters if required
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus MyBrcClose(mfxHDL pthis) {
+    MyBrcContext* ctx = (MyBrcContext*)pthis;
+
+    if (!pthis)
+        return MFX_ERR_NULL_PTR;
+
+    if (ctx->frame_queue) {
+        free(ctx->frame_queue);
+        ctx->frame_queue = NULL;
+        ctx->frame_queue_max_size = 0;
+        ctx->frame_queue_size = 0;
+    }
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus MyBrcGetFrameCtrl(mfxHDL pthis, mfxBRCFrameParam* par, mfxBRCFrameCtrl* ctrl) {
+    MyBrcContext* ctx = (MyBrcContext*)pthis;
+    MyBrcFrame* frame = NULL;
+    mfxU32 cost;
+
+    if (!pthis || !par || !ctrl)
+        return MFX_ERR_NULL_PTR;
+
+    if (par->NumRecode > 0)
+        frame = GetFrame(ctx->frame_queue, ctx->frame_queue_size, par->EncodedOrder);
+    else if (ctx->frame_queue_size < ctx->frame_queue_max_size)
+        frame = ctx->frame_queue[ctx->frame_queue_size++];
+
+    if (!frame)
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+    if (par->NumRecode == 0) {
+        frame->EncodedOrder = par->EncodedOrder;
+        cost = GetFrameCost(par->FrameType, par->PyramidLayer);
+        frame->MinSize = GetMinSize(ctx, cost);
+        frame->MaxSize = GetMaxSize(ctx, cost);
+        frame->QP = GetInitQP(ctx, frame->MinSize, frame->MaxSize, cost); // from QP/size stat
+        frame->StartTime = GetTime();
+    }
+
+    ctrl->QpY = frame->QP;
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus MyBrcUpdate(mfxHDL pthis, mfxBRCFrameParam* par, mfxBRCFrameCtrl* ctrl, mfxBRCFrameStatus* status) {
+    MyBrcContext* ctx = (MyBrcContext*)pthis;
+    MyBrcFrame* frame = NULL;
+    bool panic = false;
+    
+    if (!pthis || !par || !ctrl || !status)
+        return MFX_ERR_NULL_PTR;
+
+    frame = GetFrame(ctx->frame_queue, ctx->frame_queue_size, par->EncodedOrder);
+    if (!frame)
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+    ...// update QP/size stat
+
+    if (   frame->Status == MFX_BRC_PANIC_BIG_FRAME
+        || frame->Status == MFX_BRC_PANIC_SMALL_FRAME_FRAME)
+        panic = true;
+
+    if (panic || (par->CodedFrameSize >= frame->MinSize && par->CodedFrameSize <= frame->MaxSize)) {
+        UpdateBRCState(par->CodedFrameSize, ctx);
+        RemoveFromQueue(ctx->frame_queue, ctx->frame_queue_size, frame);
+        ctx->frame_queue_size--;
+        status->BRCStatus = MFX_BRC_OK;
+
+        ...//update Min/MaxSize for all queued frames
+
+        return MFX_ERR_NONE;
+    }
+
+    panic = ((GetTime() - frame->StartTime) >= GetMaxFrameEncodingTime(ctx));
+
+    if (par->CodedFrameSize > frame->MaxSize) {
+        if (panic || (frame->QP >= ctx->max_qp[X])) {
+            frame->Status = MFX_BRC_PANIC_BIG_FRAME;
+        } else {
+            frame->Status = MFX_BRC_BIG_FRAME;
+            frame->QP = <increase QP>;
+        }
+    }
+
+    if (par->CodedFrameSize < frame->MinSize) {
+        if (panic || (frame->QP <= ctx->min_qp[X])) {
+            frame->Status = MFX_BRC_PANIC_SMALL_FRAME;
+            status->MinFrameSize = frame->MinSize;
+        } else {
+            frame->Status = MFX_BRC_SMALL_FRAME;
+            frame->QP = <decrease QP>;
+        }
+    }
+
+    status->BRCStatus = frame->Status;
+
+    return MFX_ERR_NONE;
+}
+
+    ...
+    //initialize encoder
+    MyBrcContext brc_ctx;
+    mfxExtBRC ext_brc;
+    mfxExtCodingOption2 co2;
+    mfxExtBuffer* ext_buf[2] = {&co2.Header, &ext_brc.Header};
+
+    memset(&brc_ctx, 0, sizeof(MyBrcContext));
+    memset(&ext_brc, 0, sizeof(mfxExtBRC));
+    memset(&co2, 0, sizeof(mfxExtCodingOption2));
+
+    vpar.ExtParam = ext_buf;
+    vpar.NumExtParam = sizeof(ext_buf) / sizeof(ext_buf[0]);
+
+    co2.Header.BufferId = MFX_EXTBUFF_CODING_OPTION2;
+    co2.Header.BufferSz = sizeof(mfxExtCodingOption2);
+    co2.ExtBRC = MFX_CODINGOPTION_ON;
+
+    ext_brc.Header.BufferId = MFX_EXTBUFF_BRC;
+    ext_brc.Header.BufferSz = sizeof(mfxExtBRC);
+    ext_brc.pthis           = &brc_ctx;
+    ext_brc.Init            = MyBrcInit;
+    ext_brc.Reset           = MyBrcReset;
+    ext_brc.Close           = MyBrcClose;
+    ext_brc.GetFrameCtrl    = MyBrcGetFrameCtrl;
+    ext_brc.Update          = MyBrcUpdate;
+
+    status = MFXVideoENCODE_Query(session, &vpar, &vpar);
+    if (status == MFX_ERR_UNSUPPOERTED || co2.ExtBRC != MFX_CODINGOPTION_ON)
+        ...//unsupported
+    else 
+        status = MFXVideoENCODE_Init(session, &vpar);
+
+    ...
+```
+
 ## Video Processing Procedures
 
-Example 3 shows the pseudo code of the video processing procedure. The following describes a few key points:
+Example 4 shows the pseudo code of the video processing procedure. The following describes a few key points:
 
 - The application uses the [MFXVideoVPP_QueryIOSurf](#MFXVideoVPP_QueryIOSurf) function to obtain the number of frame surfaces needed for input and output. The application must allocate two frame surface pools, one for the input and the other for the output.
 - The video processing function [MFXVideoVPP_RunFrameVPPAsync](#MFXVideoVPP_RunFrameVPPAsyncAsync) is asynchronous. The application must synchronize to make the output result ready, through the [MFXVideoCORE_SyncOperation](#MFXVideoCORE_SyncOperation) function.
@@ -430,7 +652,7 @@ Example 3 shows the pseudo code of the video processing procedure. The following
 - If the number of frames consumed at input is more than the number of frames generated at output,  **VPP** returns [MFX_ERR_MORE_DATA](#mfxStatus) for additional input until an output is ready. When the output is ready, **VPP** returns [MFX_ERR_NONE](#mfxStatus)**.** The application must process the output frame after synchronization and provide a `NULL` input at the end of sequence to drain any remaining frames.
 - If the number of frames consumed at input is less than the number of frames generated at output, **VPP** returns either [MFX_ERR_MORE_SURFACE](#mfxStatus) (when more than one output is ready), or [MFX_ERR_NONE](#mfxStatus) (when one output is ready and **VPP** expects new input). In both cases, the application must process the output frame after synchronization and provide a `NULL` input at the end of sequence to drain any remaining frames.
 
-###### Example 3: Video Processing Pseudo Code
+###### Example 4: Video Processing Pseudo Code
 
 ```C
 MFXVideoVPP_QueryIOSurf(session, &init_param, response);
@@ -486,9 +708,9 @@ The SDK ensures that all filters necessary to convert input format to output one
 `MFX_EXTBUFF_VPP_PROCAMP`               | [mfxExtVPPProcAmp](#mfxExtVPPProcAmp)
 `MFX_EXTBUFF_VPP_FIELD_PROCESSING`      | [mfxExtVPPFieldProcessing](#mfxExtVPPFieldProcessing)
 
-Example 4 shows how to configure the SDK video processing.
+Example 5 shows how to configure the SDK video processing.
 
-###### Example 4: Configure Video Processing
+###### Example 5: Configure Video Processing
 
 ```C
     /* enable image stabilization filter with default settings */
@@ -522,9 +744,9 @@ Example 4 shows how to configure the SDK video processing.
 
 ### Region of Interest
 
-During video processing operations, the application can specify a region of interest for each frame, as illustrated in Figure 4.
+During video processing operations, the application can specify a region of interest for each frame, as illustrated in Figure 5.
 
-###### Figure 4: VPP Region of Interest Operation
+###### Figure 5: VPP Region of Interest Operation
 
 ![VPP Region of Interest Operation](./pic/vpp_region_of_interest_operation.png)
 
@@ -547,9 +769,9 @@ The application can use the SDK encoding, decoding and video processing function
 
 ### Asynchronous Pipeline
 
-The application passes the output of an upstream SDK function to the input of the downstream SDK function to construct an asynchronous pipeline. Such pipeline construction is done at runtime and can be dynamically changed, as illustrated in Example 5.
+The application passes the output of an upstream SDK function to the input of the downstream SDK function to construct an asynchronous pipeline. Such pipeline construction is done at runtime and can be dynamically changed, as illustrated in Example 6.
 
-###### Example 5: Pseudo Code of Asynchronous Pipeline Construction
+###### Example 6: Pseudo Code of Asynchronous Pipeline Construction
 
 ```C
 mfxSyncPoint sp;
@@ -565,7 +787,7 @@ MFXVideoCORE_SyncOperation(session,sp_e,INFINITE);
 
 The SDK simplifies the requirement for asynchronous pipeline synchronization. The application only needs to synchronize after the last SDK function. Explicit synchronization of intermediate results is not required and in fact can slow performance.
 
-The SDK tracks the dynamic pipeline construction and verifies dependency on input and output parameters to ensure the execution order of the pipeline function. In Example 5, the SDK will ensure [MFXVideoENCODE_EncodeFrameAsync](#MFXVideoENCODE_EncodeFrameAsync) does not begin its operation until [MFXVideoDECODE_DecodeFrameAsync](#MFXVideoDECODE_DecodeFrameAsync) or [MFXVideoVPP_RunFrameVPPAsync](#MFXVideoVPP_RunFrameVPPAsyncAsync) has finished.
+The SDK tracks the dynamic pipeline construction and verifies dependency on input and output parameters to ensure the execution order of the pipeline function. In Example 6, the SDK will ensure [MFXVideoENCODE_EncodeFrameAsync](#MFXVideoENCODE_EncodeFrameAsync) does not begin its operation until [MFXVideoDECODE_DecodeFrameAsync](#MFXVideoDECODE_DecodeFrameAsync) or [MFXVideoVPP_RunFrameVPPAsync](#MFXVideoVPP_RunFrameVPPAsyncAsync) has finished.
 
 During the execution of an asynchronous pipeline, the application must consider the input data in use and must not change it until the execution has completed. The application must also consider output data unavailable until the execution has finished. In addition, for encoders, the application must consider extended and payload buffers in use while the input surface is locked.
 
@@ -582,9 +804,9 @@ When connecting SDK function **A** to SDK function **B**, the application must t
 
 For performance considerations, the application must submit multiple operations and delays synchronization as much as possible, which gives the SDK flexibility to organize internal pipelining. For example, the operation sequence, **ENCODE(f1)->SYNC(f1)->ENCODE(f2)->SYNC(f2)** is recommended, compared with **ENCODE(f1)->SYNC(f1)->ENCODE(f2)->SYNC(f2)**.
 
-In this case, the surface pool needs additional surfaces to take into account multiple asynchronous operations before synchronization. The application can use the **AsyncDepth** parameter of the [mfxVideoParam](#mfxVideoParam) structure to inform an SDK function that how many asynchronous operations the application plans to perform before synchronization. The corresponding SDK **QueryIOSurf** function will reflect such consideration in the `NumFrameSuggested` value. Example 6 shows a way of calculating the surface needs based on `NumFrameSuggested` values.
+In this case, the surface pool needs additional surfaces to take into account multiple asynchronous operations before synchronization. The application can use the **AsyncDepth** parameter of the [mfxVideoParam](#mfxVideoParam) structure to inform an SDK function that how many asynchronous operations the application plans to perform before synchronization. The corresponding SDK **QueryIOSurf** function will reflect such consideration in the `NumFrameSuggested` value. Example 7 shows a way of calculating the surface needs based on `NumFrameSuggested` values.
 
-###### Example 6: Calculate Surface Pool Size
+###### Example 7: Calculate Surface Pool Size
 
 ```C
 async_depth=4;
@@ -612,9 +834,9 @@ The hardware acceleration support in application consists of video memory suppor
 device support.
 
 Depending on usage model, the application can use video memory on different stages of pipeline.
-Three major scenarios are illustrated on Figure 5.
+Three major scenarios are illustrated on Figure 6.
 
-###### Figure 5 Usage of video memory for hardware acceleration
+###### Figure 6 Usage of video memory for hardware acceleration
 
 ![Usage of video memory for hardware acceleration](./pic/usage_of_video_memory_for_hardware_acceleration.png)
 
@@ -628,9 +850,9 @@ The SDK supports two different infrastructures for hardware acceleration on Micr
 
 The application must create the Direct3D9* device with the flag **D3DCREATE_MULTITHREADED**. Additionally the flag **D3DCREATE_FPU_PRESERVE** is recommended. This influences floating-point calculations, including PTS values.
 
-The application must also set multithreading mode for Direct3D11* device. Example 7 Setting multithreading mode illustrates how to do it.
+The application must also set multithreading mode for Direct3D11* device. Example 8 Setting multithreading mode illustrates how to do it.
 
-###### Example 7 Setting multithreading mode
+###### Example 8 Setting multithreading mode
 
 ```C
 ID3D11Device            *pD11Device;
@@ -689,9 +911,9 @@ supports RGB32 output.
 The SDK supports single infrastructure for hardware acceleration on Linux* - “VA API”. The application should use the **VADisplay** interface as the acceleration device handle for this infrastructure and share it with the SDK through the **MFXVideoCORE_SetHandle** function. Because the SDK does not create internal acceleration device on Linux, the application must always share it with the SDK. This sharing should be done before any actual usage of the SDK, including capability
 query and component initialization. If the application fails to share the device, the SDK operation will fail.
 
-Example 8 Obtaining VA display from X Window System and Example 9 Obtaining VA display from Direct Rendering Manager show how to obtain and share VA display with the SDK.
+Example 9 Obtaining VA display from X Window System and Example 9 Obtaining VA display from Direct Rendering Manager show how to obtain and share VA display with the SDK.
 
-###### Example 8 Obtaining VA display from X Window System
+###### Example 9 Obtaining VA display from X Window System
 
 ```C
 Display   *x11_display;
@@ -705,7 +927,7 @@ MFXVideoCORE_SetHandle(session, MFX_HANDLE_VA_DISPLAY,
 
 ```
 
-###### Example 9 Obtaining VA display from Direct Rendering Manager
+###### Example 10 Obtaining VA display from Direct Rendering Manager
 
 ```C
 int card;
@@ -751,9 +973,9 @@ The external frame allocator can allocate different frame types:
 - in system memory and
 - in video memory, as “decoder render targets” or “processor render targets.” See the section [Working with hardware acceleration](#hardware_acceleration) for additional details.
 
-The external frame allocator responds only to frame allocation requests for the requested memory type and returns [MFX_ERR_UNSUPPORTED](#mfxStatus) for all others. The allocation request uses flags, part of memory type field, to indicate which SDK class initiates the request, so the external frame allocator can respond accordingly. Example 10 illustrates a simple external frame allocator.
+The external frame allocator responds only to frame allocation requests for the requested memory type and returns [MFX_ERR_UNSUPPORTED](#mfxStatus) for all others. The allocation request uses flags, part of memory type field, to indicate which SDK class initiates the request, so the external frame allocator can respond accordingly. Example 11 illustrates a simple external frame allocator.
 
-###### Example 10: Example Frame Allocator
+###### Example 11: Example Frame Allocator
 
 ```C
 typedef struct {
@@ -821,13 +1043,13 @@ The application uses the following procedure to use opaque surface, assuming a t
 - During initialization, the application communicates the allocated surface pool to both SDK components by attaching the [mfxExtOpaqueSurfaceAlloc](#mfxExtOpaqueSurfaceAlloc) structure as part of the initialization parameters. The application needs to use [MFX_IOPATTERN_IN_OPAQUE_MEMORY](#IOPattern) and/or [MFX_IOPATTERN_OUT_OPAQUE_MEMORY](#IOPattern) while specifying the I/O pattern.
 - During decoding, encoding, and video processing, the application manages the surface pool and passes individual frame surface to SDK component **A** and **B** as described in section *Decoding Procedures*, section *Encoding Procedures*, and section *Video Processing Procedures*, respectively.
 
-Example 11 shows the opaque procedure sample code.
+Example 12 shows the opaque procedure sample code.
 
 Since the SDK manages the association of opaque surface to “real” surface types internally, the application cannot read the content of opaque surfaces. Also the application does not get any opaque-type surface allocation requests if the application specifies an external frame allocator.
 
 If the application shares opaque surfaces among different SDK sessions, the application must join the sessions before SDK component initialization and ensure that all joined sessions have the same hardware acceleration device handle. Setting device handle is optional only if all components in pipeline belong to the same session. The application should not disjoin the session which share opaque memory until the SDK components are not closed.
 
-###### Example 11: Pseudo-Code of Opaque Surface Procedure
+###### Example 12: Pseudo-Code of Opaque Surface Procedure
 
 ```C
 mfxExtOpqueSurfaceAlloc osa, *posa=&osa;
@@ -878,11 +1100,11 @@ The SDK accelerates decoding, encoding and video processing through a hardware d
 
 SDK functions **Query**, **QueryIOSurf**, and **Init** return [MFX_WRN_PARTIAL_ACCELERATION](#mfxStatus) to indicate that the encoding, decoding or video processing operation can be partially hardware accelerated or not hardware accelerated at all. The application can ignore this warning and proceed with the operation. (Note that SDK functions may return errors or other warnings overwriting [MFX_WRN_PARTIAL_ACCELERATION](#mfxStatus), as it is a lower priority warning.)
 
-SDK functions return [MFX_WRN_DEVICE_BUSY](#mfxStatus) to indicate that the hardware device is busy and unable to take commands at this time. Resume the operation by waiting for a few milliseconds and resubmitting the request. Example 12 shows the decoding pseudo-code. The same procedure applies to encoding and video processing.
+SDK functions return [MFX_WRN_DEVICE_BUSY](#mfxStatus) to indicate that the hardware device is busy and unable to take commands at this time. Resume the operation by waiting for a few milliseconds and resubmitting the request. Example 13 shows the decoding pseudo-code. The same procedure applies to encoding and video processing.
 
 SDK functions return [MFX_ERR_DEVICE_LOST](#mfxStatus) or [MFX_ERR_DEVICE_FAILED](#mfxStatus) to indicate that there is a complete failure in hardware acceleration. The application must close and reinitialize the SDK function class. If the application has provided a hardware acceleration device handle to the SDK, the application must reset the device.
 
-###### Example 12: Pseudo-Code to Handle MFX_ERR_DEVICE_BUSY
+###### Example 13: Pseudo-Code to Handle MFX_ERR_DEVICE_BUSY
 
 ```C
 mfxStatus sts=MFX_ERR_NONE;
@@ -1719,7 +1941,7 @@ This function is available since SDK API 1.0.
 
 **Remarks**
 
-If the [EncodedOrder](#EncodedOrder) field in the [mfxInfoMFX](#mfxInfoMFX) structure is true, input frames enter the encoder in the order of their encoding. However, the [FrameOrder](#FrameOrder) field in the [mfxFrameData](#mfxFrameData) structure of each frame must be set to the display order. If [EncodedOrder](#EncodedOrder) is false, the function ignores the [FrameOrder](#FrameOrder) field.
+If the `EncodedOrder` field in the [mfxInfoMFX](#mfxInfoMFX) structure is true, input frames enter the encoder in the order of their encoding. However, the [FrameOrder](#FrameOrder) field in the [mfxFrameData](#mfxFrameData) structure of each frame must be set to the display order. If `EncodedOrder` is false, the function ignores the [FrameOrder](#FrameOrder) field.
 
 ## MFXVideoENC
 
@@ -3191,15 +3413,15 @@ The application can attach this extended buffer to the [mfxVideoParam](#mfxVideo
 
 | | |
 --- | ---
-`Header.BufferId` | Must be [MFX_EXTBUFF_CODING_OPTION2](#ExtendedBufferID)**.**
+`Header.BufferId` | Must be [MFX_EXTBUFF_CODING_OPTION2](#ExtendedBufferID).
 `IntRefType` | Specifies intra refresh type. The major goal of intra refresh is improvement of error resilience without significant impact on encoded bitstream size caused by I frames. The SDK encoder achieves this by encoding part of each frame in refresh cycle using intra MBs. Zero value means no refresh. One means vertical refresh, by column of MBs. This parameter is valid only during initialization. When used with [temporal scalability](#Temporal_scalability), intra refresh applied only to base layer.
 `IntRefCycleSize` | Specifies number of pictures within refresh cycle starting from 2. 0 and 1 are invalid values. This parameter is valid only during initialization
 `IntRefQPDelta` | Specifies QP difference for inserted intra MBs. This is signed value in [-51, 51] range. This parameter is valid during initialization and runtime.
 `MaxFrameSize` | Specify maximum encoded frame size in byte. This parameter is used in AVBR and VBR bitrate control modes and ignored in others. The SDK encoder tries to keep frame size below specified limit but minor overshoots are possible to preserve visual quality. This parameter is valid during initialization and runtime.
-`MaxSliceSize` | Specify maximum slice size in bytes. If this parameter is specified other controls over number of slices are ignored.<br><br>Not all codecs and SDK implementations support this value. Use **Query** function to check if this feature is supported.
+`MaxSliceSize` | Specify maximum slice size in bytes. If this parameter is specified other controls over number of slices are ignored.<br><br>Not all codecs and SDK implementations support this value. Use [Query](#MFXVideoENCODE_Query) function to check if this feature is supported.
 `BitrateLimit` | Turn off this flag to remove bitrate limitations imposed by the SDK encoder. This flag is intended for special usage models and usually the application should not set it. Setting this flag may lead to violation of HRD conformance and severe visual artifacts. See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option. The default value is ON, i.e. bitrate is limitted. This parameter is valid only during initialization.
 `MBBRC` | Setting this flag enables macroblock level bitrate control that generally improves subjective visual quality. Enabling this flag may have negative impact on performance and objective visual quality metric. See the CodingOptionValue enumerator for values of this option. The default value depends on target usage settings.
-`ExtBRC` | Deprecated.
+`ExtBRC` | Turn ON this option to enable [external BRC](#mfxExtBRC). See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option. Use [Query](#MFXVideoENCODE_Query) function to check if this feature is supported.
 `LookAheadDepth` | Specifies the depth of look ahead rate control algorithm. It is the number of frames that SDK encoder analyzes before encoding. Valid value range is from 10 to 100 inclusive. To instruct the SDK encoder to use the default value the application should zero this field.
 `Trellis` | This option is used to control trellis quantization in AVC encoder. See [TrellisControl](#TrellisControl) enumerator for possible values of this option. This parameter is valid only during initialization.
 `RepeatPPS` | This flag controls picture parameter set repetition in AVC encoder. Turn ON this flag to repeat PPS with each frame. See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option. The default value is ON. This parameter is valid only during initialization.
@@ -3208,14 +3430,14 @@ The application can attach this extended buffer to the [mfxVideoParam](#mfxVideo
 `AdaptiveB` | This flag controls changing of frame type from B to P. Turn ON this flag to allow such changing. This option is ignored if `GopOptFlag` in [mfxInfoMFX](#mfxInfoMFX) structure is equal to `MFX_GOP_STRICT`. See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option. This parameter is valid only during initialization.
 `LookAheadDS` | This option controls down sampling in look ahead bitrate control mode. See [LookAheadDownSampling](#LookAheadDownSampling) enumerator for possible values of this option. This parameter is valid only during initialization.
 `NumMbPerSlice` | This option specifies suggested slice size in number of macroblocks. The SDK can adjust this number based on platform capability. If this option is specified, i.e. if it is not equal to zero, the SDK ignores [mfxInfoMFX](#mfxInfoMFX)`::NumSlice` parameter.
-`SkipFrame` | This option enables usage of [mfxEncodeCtrl](#mfxEncodeCtrl)`::SkipFrame`parameter. See the [SkipFrame](#SkipFrame) enumerator for values of this option.<br><br>Not all codecs and SDK implementations support this value. Use **Query** function to check if this feature is supported.
-`MinQPI, MaxQPI`, `MinQPP, MaxQPP`, `MinQPB, MinQPB` | Minimum and maximum allowed QP values for different frame types. Valid range is 1..51 inclusive. Zero means default value, i.e.no limitations on QP.<br><br>Not all codecs and SDK implementations support this value. Use **Query** function to check if this feature is supported.
-`FixedFrameRate` | This option sets fixed_frame_rate_flag in VUI.<br><br>Not all codecs and SDK implementations support this value. Use **Query** function to check if this feature is supported.
-`DisableDeblockingIdc` | This option disable deblocking.<br><br>Not all codecs and SDK implementations support this value. Use **Query** function to check if this feature is supported.
-`DisableVUI` | This option completely disables VUI in output bitstream.<br><br>Not all codecs and SDK implementations support this value. Use **Query** function to check if this feature is supported.
+`SkipFrame` | This option enables usage of [mfxEncodeCtrl](#mfxEncodeCtrl)`::SkipFrame`parameter. See the [SkipFrame](#SkipFrame) enumerator for values of this option.<br><br>Not all codecs and SDK implementations support this value. Use [Query](#MFXVideoENCODE_Query) function to check if this feature is supported.
+`MinQPI, MaxQPI`, `MinQPP, MaxQPP`, `MinQPB, MinQPB` | Minimum and maximum allowed QP values for different frame types. Valid range is 1..51 inclusive. Zero means default value, i.e.no limitations on QP.<br><br>Not all codecs and SDK implementations support this value. Use [Query](#MFXVideoENCODE_Query) function to check if this feature is supported.
+`FixedFrameRate` | This option sets fixed_frame_rate_flag in VUI.<br><br>Not all codecs and SDK implementations support this value. Use [Query](#MFXVideoENCODE_Query) function to check if this feature is supported.
+`DisableDeblockingIdc` | This option disable deblocking.<br><br>Not all codecs and SDK implementations support this value. Use [Query](#MFXVideoENCODE_Query) function to check if this feature is supported.
+`DisableVUI` | This option completely disables VUI in output bitstream.<br><br>Not all codecs and SDK implementations support this value. Use [Query](#MFXVideoENCODE_Query) function to check if this feature is supported.
 `BufferingPeriodSEI` | This option controls insertion of buffering period SEI in the encoded bitstream. It should be one of the following values:<br>`MFX_BPSEI_DEFAULT` – encoder decides when to insert BP SEI,<br>`MFX_BPSEI_IFRAME` – BP SEI should be inserted with every I frame.
 `EnableMAD` | Turn ON this flag to enable per-frame reporting of Mean Absolute Difference. This parameter is valid only during initialization.
-`UseRawRef` | Turn ON this flag to use raw frames for reference instead of reconstructed frames. This parameter is valid during initialization and runtime (only if was turned ON during initialization).<br><br>Not all codecs and SDK implementations support this value. Use **Query** function to check if this feature is supported.
+`UseRawRef` | Turn ON this flag to use raw frames for reference instead of reconstructed frames. This parameter is valid during initialization and runtime (only if was turned ON during initialization).<br><br>Not all codecs and SDK implementations support this value. Use [Query](#MFXVideoENCODE_Query) function to check if this feature is supported.
 
 **Change History**
 
@@ -3236,6 +3458,8 @@ The SDK API 1.11 adds `EnableMAD` field.
 The SDK API 1.13 adds `UseRawRef` field.
 
 The SDK API 1.17 deprecates `ExtBRC` field.
+
+The SDK API **TBD** returns `ExtBRC` field.
 
 ## <a id='mfxExtCodingOption3'>mfxExtCodingOption3</a>
 
@@ -4812,33 +5036,33 @@ This structure specifies configurations for decoding, encoding and transcoding p
 
 | | |
 --- | ---
-`LowPower` | For encoders set this flag to ON to reduce power consumption and GPU usage. See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option. Use **Query** function to check if this feature is supported.
-`BRCParamMultiplier` | Specifies a multiplier for bitrate control parameters. Affects next four variables `InitialDelayInKB, BufferSizeInKB, TargetKbps, MaxKbps`. If this value is not equal to zero encoder calculates BRC parameters as value * `BRCParamMultiplier.`
-`FrameInfo` | [mfxFrameInfo](#mfxFrameInfo) structure that specifies frame parameters
-`CodecId` | Specifies the codec format identifier in the FOURCC code; see the [CodecFormatFourCC](#CodecFormatFourCC) enumerator for details. This is a mandated input parameter for **QueryIOSurf** and **Init** functions.
-`CodecProfile` | Specifies the codec profile; see the [CodecProfile](#CodecProfile) enumerator for details. Specify the codec profile explicitly or the SDK functions will determine the correct profile from other sources, such as resolution and bitrate.
-`CodecLevel` | Codec level; see the [CodecLevel](#CodecLevel) enumerator for details. Specify the codec level explicitly or the SDK functions will determine the correct level from other sources, such as resolution and bitrate.
-`GopPicSize` | Number of pictures within the current GOP (Group of Pictures); if `GopPicSize`=0, then the GOP size is unspecified. If `GopPicSize`=1, only I-frames are used. See Example 13 for pseudo-code that demonstrates how SDK uses this parameter.
-`GopRefDist` | Distance between I- or P (or GPB) - key frames; if it is zero, the GOP structure is unspecified. Note: If `GopRefDist` = 1, there are no regular B-frames used (only P or GPB); if [mfxExtCodingOption3](#mfxExtCodingOption3)`::GPB` is ON, GPB frames (B without backward references) are used instead of P. See Example 13 for pseudo-code that demonstrates how SDK uses this parameter.
-`GopOptFlag` | ORs of the [GopOptFlag](#GopOptFlag) enumerator indicate the additional flags for the GOP specification; see Example 13 for an example of pseudo-code that demonstrates how to use this parameter.
-`IdrInterval` | For H.264, **IdrInterval** specifies IDR-frame interval in terms of I-frames; if **IdrInterval=0**, then every I-frame is an IDR-frame. If **IdrInterval=1**, then every other I-frame is an IDR-frame, etc.<br><br>For HEVC, if **IdrInterval=0**, then only first I-frame is an IDR-frame. If **IdrInterval=1**, then every I-frame is an IDR-frame. If **IdrInterval=2**, then every other I-frame is an IDR-frame, etc.<br><br>For MPEG2, **IdrInterval** defines sequence header interval in terms of I-frames. If **IdrInterval=N**, SDK inserts the sequence header before every **Nth** I-frame. If **IdrInterval=0** (default), SDK inserts the sequence header once at the beginning of the stream.<br><br>If **GopPicSize** or **GopRefDist** is zero, **IdrInterval** is undefined.
-`TargetUsage` | Target usage model that guides the encoding process; see the [TargetUsage](#TargetUsage) enumerator for details.
-`RateControlMethod` | Rate control method; see the [RateControlMethod](#RateControlMethod) enumerator for details.
-`InitialDelayInKB`, `TargetKbps`, `MaxKbps` | These parameters are for the constant bitrate (CBR), variable bitrate control (VBR) and [CQP HRD](#Appendix_F:_CQP) algorithms.<br><br>The SDK encoders follow the Hypothetical Reference Decoding (HRD) model. The HRD model assumes that data flows into a buffer of the fixed size `BufferSizeInKB` with a constant bitrate `TargetKbps`**.** (Estimate the targeted frame size by dividing the framerate by the bitrate.)<br><br>The decoder starts decoding after the buffer reaches the initial size `InitialDelayInKB`, which is equivalent to reaching an initial delay of `InitialDelayInKB`*8000/`TargetKbps`ms. Note: In this context, KB is 1000 bytes and Kbps is 1000 bps.<br><br>If `InitialDelayInKB` or `BufferSizeInKB` is equal to zero, the value is calculated using bitrate, frame rate, profile, level, and so on.<br><br>`TargetKbps` must be specified for encoding initialization.<br><br>For variable bitrate control, the `MaxKbps` parameter specifies the maximum bitrate at which the encoded data enters the Video Buffering Verifier (VBV) buffer. If `MaxKbps` is equal to zero, the value is calculated from bitrate, frame rate, profile, level, and so on.
-`QPI, QPP, QPB` | Quantization Parameters (`QP)  `for `I`, `P` and `B` frames, respectively, for the constant `QP` (CQP) mode.
-`TargetKbps`, `Accuracy`, `Convergence` | These parameters are for the average variable bitrate control (AVBR) algorithm. The algorithm focuses on overall encoding quality while meeting the specified bitrate, **TargetKbps**, within the accuracy range **Accuracy**, after a **Convergence** period. This method does not follow HRD and the instant bitrate is not capped or padded.<br><br>The **Accuracy** value is specified in the unit of tenth of percent.<br><br>The **Convergence** value is specified in the unit of 100 frames.<br><br>The **TargetKbps** value is specified in the unit of 1000 bits per second.
-`ICQQuality` | This parameter is for Intelligent Constant Quality (ICQ) bitrate control algorithm. It is value in the 1…51 range, where 1 corresponds the best quality.
-`BufferSizeInKB`,  | `BufferSizeInKB` represents the maximum possible size of any compressed frames.
-`NumSlice` | Number of slices in each video frame; each slice contains one or more macro-block rows. If `NumSlice` equals zero, the encoder may choose any slice partitioning allowed by the codec standard.<br><br>See also **mfxExtCodingOption2::NumMbPerSlice**.
-`NumRefFrame` | Number of reference frames; if `NumRefFrame` = 0, this parameter is not specified.
-<a id='EncodedOrder'> `EncodedOrder`</a>| If not zero, `EncodedOrder` specifies that **ENCODE** takes the input surfaces in the encoded order and uses explicit frame type control. Application still must provide **GopRefDist** and **mfxExtCodingOption2::BRefType** so SDK can pack headers and build reference lists correctly.
-`NumThread` | Deprecated; Used to represent the number of threads the underlying implementation can use on the host processor. Always set this parameter to zero.
-`DecodedOrder` | Deprecated; Used to instruct the decoder to decoded output in the decoded order. Always set this parameter to zero.
-`ExtendedPicStruct` | Instructs **DECODE** to output extended picture structure values for additional display attributes. See the [PicStruct](#PicStruct) description for details.
-`TimeStampCalc` | Time stamp calculation method; see the [TimeStampCalc](#TimeStampCalc) description for details.
-`SliceGroupsPresent` | Nonzero value indicates that slice groups are present in the bitstream. Only AVC decoder uses this field.
-`MaxDecFrameBuffering` | Nonzero value specifies the maximum required size of the decoded picture buffer in frames for AVC and HEVC decoders.
-`EnableReallocRequest` | For decoders supporting dynamic resolution change (VP9), set this option to ON to allow `MFXVideoDECODE_DecodeFrameAsync` return [MFX_ERR_REALLOC_SURFACE](#mfxStatus).<br><br>See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option. Use **Query** function to check if this feature is supported.
+`LowPower`              | For encoders set this flag to ON to reduce power consumption and GPU usage. See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option. Use [Query](#MFXVideoENCODE_Query) function to check if this feature is supported.
+`BRCParamMultiplier`    | Specifies a multiplier for bitrate control parameters. Affects next four variables `InitialDelayInKB, BufferSizeInKB, TargetKbps, MaxKbps`. If this value is not equal to zero encoder calculates BRC parameters as `value * BRCParamMultiplier`.
+`FrameInfo`             | [mfxFrameInfo](#mfxFrameInfo) structure that specifies frame parameters
+`CodecId`               | Specifies the codec format identifier in the FOURCC code; see the [CodecFormatFourCC](#CodecFormatFourCC) enumerator for details. This is a mandated input parameter for [QueryIOSurf](#MFXVideoENCODE_QueryIOSurf) and [Init](#MFXVideoENCODE_Init) functions.
+`CodecProfile`          | Specifies the codec profile; see the [CodecProfile](#CodecProfile) enumerator for details. Specify the codec profile explicitly or the SDK functions will determine the correct profile from other sources, such as resolution and bitrate.
+`CodecLevel`            | Codec level; see the [CodecLevel](#CodecLevel) enumerator for details. Specify the codec level explicitly or the SDK functions will determine the correct level from other sources, such as resolution and bitrate.
+`GopPicSize`            | Number of pictures within the current GOP (Group of Pictures); if `GopPicSize = 0`, then the GOP size is unspecified. If `GopPicSize = 1`, only I-frames are used. See Example 14 for pseudo-code that demonstrates how SDK uses this parameter.
+`GopRefDist`            | Distance between I- or P (or GPB) - key frames; if it is zero, the GOP structure is unspecified. Note: If `GopRefDist = 1`, there are no regular B-frames used (only P or GPB); if [mfxExtCodingOption3](#mfxExtCodingOption3)`::GPB` is ON, GPB frames (B without backward references) are used instead of P. See Example 14 for pseudo-code that demonstrates how SDK uses this parameter.
+`GopOptFlag`            | ORs of the [GopOptFlag](#GopOptFlag) enumerator indicate the additional flags for the GOP specification; see Example 14 for an example of pseudo-code that demonstrates how to use this parameter.
+`IdrInterval`           | For H.264, `IdrInterval` specifies IDR-frame interval in terms of I-frames; if `IdrInterval = 0`, then every I-frame is an IDR-frame. If `IdrInterval = 1`, then every other I-frame is an IDR-frame, etc.<br><br>For HEVC, if `IdrInterval = 0`, then only first I-frame is an IDR-frame. If `IdrInterval = 1`, then every I-frame is an IDR-frame. If `IdrInterval = 2`, then every other I-frame is an IDR-frame, etc.<br><br>For MPEG2, `IdrInterval` defines sequence header interval in terms of I-frames. If `IdrInterval = N`, SDK inserts the sequence header before every `Nth` I-frame. If `IdrInterval = 0` (default), SDK inserts the sequence header once at the beginning of the stream.<br><br>If `GopPicSize` or `GopRefDist` is zero, `IdrInterval` is undefined.
+`TargetUsage`           | Target usage model that guides the encoding process; see the [TargetUsage](#TargetUsage) enumerator for details.
+`RateControlMethod`     | Rate control method; see the [RateControlMethod](#RateControlMethod) enumerator for details.
+`InitialDelayInKB`, `TargetKbps`, `MaxKbps` | These parameters are for the constant bitrate (CBR), variable bitrate control (VBR) and [CQP HRD](#Appendix_F:_CQP) algorithms.<br><br>The SDK encoders follow the Hypothetical Reference Decoding (HRD) model. The HRD model assumes that data flows into a buffer of the fixed size `BufferSizeInKB` with a constant bitrate `TargetKbps`. (Estimate the targeted frame size by dividing the framerate by the bitrate.)<br><br>The decoder starts decoding after the buffer reaches the initial size `InitialDelayInKB`, which is equivalent to reaching an initial delay of `InitialDelayInKB*8000/TargetKbps`ms. Note: In this context, KB is 1000 bytes and Kbps is 1000 bps.<br><br>If `InitialDelayInKB` or `BufferSizeInKB` is equal to zero, the value is calculated using bitrate, frame rate, profile, level, and so on.<br><br>`TargetKbps` must be specified for encoding initialization.<br><br>For variable bitrate control, the `MaxKbps` parameter specifies the maximum bitrate at which the encoded data enters the Video Buffering Verifier (VBV) buffer. If `MaxKbps` is equal to zero, the value is calculated from bitrate, frame rate, profile, level, and so on.
+`QPI, QPP, QPB`         | Quantization Parameters (`QP)  `for `I`, `P` and `B` frames, respectively, for the constant `QP` (CQP) mode.
+`TargetKbps`, `Accuracy`, `Convergence` | These parameters are for the average variable bitrate control (AVBR) algorithm. The algorithm focuses on overall encoding quality while meeting the specified bitrate, `TargetKbps`, within the accuracy range `Accuracy`, after a `Convergence` period. This method does not follow HRD and the instant bitrate is not capped or padded.<br><br>The `Accuracy` value is specified in the unit of tenth of percent.<br><br>The `Convergence` value is specified in the unit of 100 frames.<br><br>The `TargetKbps` value is specified in the unit of 1000 bits per second.
+`ICQQuality`            | This parameter is for Intelligent Constant Quality (ICQ) bitrate control algorithm. It is value in the 1…51 range, where 1 corresponds the best quality.
+`BufferSizeInKB`        | `BufferSizeInKB` represents the maximum possible size of any compressed frames.
+`NumSlice`              | Number of slices in each video frame; each slice contains one or more macro-block rows. If `NumSlice` equals zero, the encoder may choose any slice partitioning allowed by the codec standard. See also [mfxExtCodingOption2](#mfxExtCodingOption2)`::NumMbPerSlice`.
+`NumRefFrame`           | Number of reference frames; if `NumRefFrame = 0`, this parameter is not specified.
+`EncodedOrder`          | If not zero, `EncodedOrder` specifies that **ENCODE** takes the input surfaces in the encoded order and uses explicit frame type control. Application still must provide `GopRefDist` and [mfxExtCodingOption2](#mfxExtCodingOption2)`::BRefType` so SDK can pack headers and build reference lists correctly.
+`NumThread`             | Deprecated; Used to represent the number of threads the underlying implementation can use on the host processor. Always set this parameter to zero.
+`DecodedOrder`          | Deprecated; Used to instruct the decoder to decoded output in the decoded order. Always set this parameter to zero.
+`ExtendedPicStruct`     | Instructs **DECODE** to output extended picture structure values for additional display attributes. See the [PicStruct](#PicStruct) description for details.
+`TimeStampCalc`         | Time stamp calculation method; see the [TimeStampCalc](#TimeStampCalc) description for details.
+`SliceGroupsPresent`    | Nonzero value indicates that slice groups are present in the bitstream. Only AVC decoder uses this field.
+`MaxDecFrameBuffering`  | Nonzero value specifies the maximum required size of the decoded picture buffer in frames for AVC and HEVC decoders.
+`EnableReallocRequest`  | For decoders supporting dynamic resolution change (VP9), set this option to ON to allow `MFXVideoDECODE_DecodeFrameAsync` return [MFX_ERR_REALLOC_SURFACE](#mfxStatus).<br><br>See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option. Use [Query](#MFXVideoDECODE_Query) function to check if this feature is supported.
 
 **Change History**
 
@@ -4859,7 +5083,7 @@ SDK API 1.16 adds `MaxDecFrameBuffering` field.
 
 SDK API 1.19 adds `EnableReallocRequest` field.
 
-###### Example 13: Pseudo-Code for GOP Structure Parameters
+###### Example 14: Pseudo-Code for GOP Structure Parameters
 
 ```C
 mfxU16 get_gop_sequence (…) {
@@ -6201,6 +6425,292 @@ Attached to the [mfxVideoParam](#mfxVideoParam) structure extends it with VP9-sp
 
 This structure is available since SDK API **TBD**.
 
+## <a id='mfxExtBRC'>mfxExtBRC</a>
+
+**Definition**
+
+```C
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU32 reserved[14];
+    mfxHDL pthis;
+
+    mfxStatus (*Init)         (mfxHDL pthis, mfxVideoParam* par);
+    mfxStatus (*Reset)        (mfxHDL pthis, mfxVideoParam* par);
+    mfxStatus (*Close)        (mfxHDL pthis);
+    mfxStatus (*GetFrameCtrl) (mfxHDL pthis, mfxBRCFrameParam* par, mfxBRCFrameCtrl* ctrl);
+    mfxStatus (*Update)       (mfxHDL pthis, mfxBRCFrameParam* par, mfxBRCFrameCtrl* ctrl,
+                                                                    mfxBRCFrameStatus* status);
+
+    mfxHDL reserved1[10];
+} mfxExtBRC;
+```
+
+**Description**
+
+Structure contains set of callbacks to perform external bit rate control. Can be attached to [mfxVideoParam](#mfxVideoParam) structure during encoder [initialization](#MFXVideoENCODE_Init).Turn [mfxExtCodingOption2](#mfxExtCodingOption2)`::ExtBRC` option ON to make encoder use external BRC instead of native one.
+
+**Members**
+
+| | |
+--- | ---
+`Header.BufferId`               | Must be [MFX_EXTBUFF_BRC](#ExtendedBufferID).
+`pthis`                         | Pointer to the BRC object
+[Init](#BRCInit)                | Pointer to the function that initializes BRC session
+[Reset](#BRCReset)              | Pointer to the function that resets initialization parameters for BRC session
+[Close](#BRCClose)              | Pointer to the function that closes BRC session
+[GetFrameCtrl](#BRCGetFrameCtrl)| Pointer to the function that returns controls required for next frame encoding
+[Update](#BRCUpdate)            | Pointer to the function that updates BRC state after each frame encoding
+
+**Change History**
+
+This structure is available since SDK API **TBD**.
+
+### <a id='BRCInit'>Init</a>
+
+**Syntax**
+
+```C
+mfxStatus (*Init) (mfxHDL pthis, mfxVideoParam* par);
+```
+
+**Parameters**
+
+| | |
+--- | ---
+`pthis` | Pointer to the BRC object
+`par`   | Pointer to the [mfxVideoParam](#mfxVideoParam) structure that was used for the encoder [initialization](#MFXVideoENCODE_Init)
+
+**Description**
+
+This function initializes BRC session according to parameters from input [mfxVideoParam](#mfxVideoParam) and attached structures. It does not modify in any way the input [mfxVideoParam](#mfxVideoParam) and attached structures. Invoked during [MFXVideoENCODE_Init](#MFXVideoENCODE_Init).
+
+**Return Status**
+
+| | |
+--- | ---
+`MFX_ERR_NONE` | The function successfully initialized BRC session.
+`MFX_ERR_UNSUPPORTED` | The function detected unsupported video parameters.
+
+**Change History**
+
+This function is available since SDK API **TBD**.
+
+
+### <a id='BRCReset'>Reset</a>
+
+**Syntax**
+
+```C
+mfxStatus (*Reset) (mfxHDL pthis, mfxVideoParam* par);
+```
+
+**Parameters**
+
+| | |
+--- | ---
+`pthis` | Pointer to the BRC object
+`par`   | Pointer to the [mfxVideoParam](#mfxVideoParam) structure that was used for the encoder [reset](#MFXVideoENCODE_Reset)
+
+**Description**
+
+This function resets BRC session according to new parameters. It does not modify in any way the input [mfxVideoParam](#mfxVideoParam) and attached structures. Invoked during [MFXVideoENCODE_Reset](#MFXVideoENCODE_Reset).
+
+**Return Status**
+
+| | |
+--- | ---
+`MFX_ERR_NONE` | The function successfully reset BRC session.
+`MFX_ERR_UNSUPPORTED` | The function detected unsupported video parameters.
+`MFX_ERR_INCOMPATIBLE_VIDEO_PARAM` | The function detected that provided by the application video parameters are incompatible with initialization parameters. Reset requires additional memory allocation and cannot be executed.
+
+**Change History**
+
+This function is available since SDK API **TBD**.
+
+### <a id='BRCClose'>Close</a>
+
+**Syntax**
+
+```C
+mfxStatus (*Close) (mfxHDL pthis);
+```
+
+**Parameters**
+
+| | |
+--- | ---
+`pthis` | Pointer to the BRC object
+
+**Description**
+
+This function de-allocates any internal resources acquired in [Init](#BRCInit) for this BRC session. Invoked during [MFXVideoENCODE_Close](#MFXVideoENCODE_Close).
+
+**Return Status**
+
+| | |
+--- | ---
+`MFX_ERR_NONE` | The function completed successfully.
+
+**Change History**
+
+This function is available since SDK API **TBD**.
+
+
+### <a id='BRCGetFrameCtrl'>GetFrameCtrl</a>
+
+**Syntax**
+
+```C
+mfxStatus (*GetFrameCtrl) (mfxHDL pthis, mfxBRCFrameParam* par, mfxBRCFrameCtrl* ctrl);
+```
+
+**Parameters**
+
+| | |
+--- | ---
+`pthis` | Pointer to the BRC object
+`par`   | Pointer to the input [mfxBRCFrameParam](#mfxBRCFrameParam) structure
+`ctrl`  | Pointer to the output [mfxBRCFrameCtrl](#mfxBRCFrameCtrl) structure
+
+**Description**
+
+This function returns [controls](#mfxBRCFrameCtrl) (`ctrl`) to encode next frame based on info from input [mfxBRCFrameParam](#mfxBRCFrameParam) structure (`par`) and internal BRC state. Invoked **asynchronously** before each frame encoding or recoding.
+
+**Return Status**
+
+| | |
+--- | ---
+`MFX_ERR_NONE` | The function completed successfully.
+
+**Change History**
+
+This function is available since SDK API **TBD**.
+
+
+### <a id='BRCUpdate'>Update</a>
+
+**Syntax**
+
+```C
+mfxStatus (*Update) (mfxHDL pthis, mfxBRCFrameParam* par, mfxBRCFrameCtrl* ctrl, mfxBRCFrameStatus* status);
+```
+
+**Parameters**
+
+| | |
+--- | ---
+`pthis`     | Pointer to the BRC object
+`par`       | Pointer to the input [mfxBRCFrameParam](#mfxBRCFrameParam) structure
+`ctrl`      | Pointer to the input [mfxBRCFrameCtrl](#mfxBRCFrameCtrl) structure
+`status`    | Pointer to the output [mfxBRCFrameStatus](#mfxBRCFrameStatus) structure
+
+**Description**
+
+This function updates internal BRC state and returns [status](#mfxBRCFrameStatus) to instruct encoder whether it should recode previous frame, skip it, do padding or proceed to next frame based on info from input [mfxBRCFrameParam](#mfxBRCFrameParam) and [mfxBRCFrameCtrl](#mfxBRCFrameCtrl) structures. Invoked **asynchronously** after each frame encoding or recoding.
+
+**Return Status**
+
+| | |
+--- | ---
+`MFX_ERR_NONE` | The function completed successfully.
+
+**Change History**
+
+This function is available since SDK API **TBD**.
+
+## <a id='mfxBRCFrameParam'>mfxBRCFrameParam</a>
+
+**Definition**
+
+```C
+typedef struct {
+    mfxU32 reserved[25];
+    mfxU32 EncodedOrder;
+    mfxU32 DisplayOrder;
+    mfxU32 CodedFrameSize;
+    mfxU16 FrameType;
+    mfxU16 PyramidLayer;
+    mfxU16 NumRecode;
+    mfxU16 NumExtParam;
+    mfxExtBuffer** ExtParam;
+} mfxBRCFrameParam;
+```
+
+**Description**
+
+Structure describes frame parameters required for external BRC functions.
+
+**Members**
+
+| | |
+--- | ---
+`EncodedOrder`            | The frame number in a sequence of reordered frames starting from encoder [Init](#MFXVideoENCODE_Init)
+`DisplayOrder`            | The frame number in a sequence of frames in display order starting from last IDR
+`CodedFrameSize`          | Size of the frame in bytes after encoding
+`FrameType`               | See [FrameType](#FrameType) enumerator
+`PyramidLayer`            | B-pyramid or P-pyramid layer the frame belongs to
+`NumRecode`               | Number of recodings performed for this frame
+`NumExtParam`, `ExtParam` | Reserved for future extension
+
+**Change History**
+
+This structure is available since SDK API **TBD**.
+
+## <a id='mfxBRCFrameCtrl'>mfxBRCFrameCtrl</a>
+
+**Definition**
+
+```C
+typedef struct {
+    mfxI32 QpY;
+    mfxU32 reserved1[13];
+    mfxHDL reserved2;
+} mfxBRCFrameCtrl;
+```
+
+**Description**
+
+Structure specifies controls for next frame encoding provided by external BRC functions.
+
+**Members**
+
+| | |
+--- | ---
+`QpY` | Frame-level Luma QP
+
+**Change History**
+
+This structure is available since SDK API **TBD**.
+
+## <a id='mfxBRCFrameStatus'>mfxBRCFrameStatus</a>
+
+**Definition**
+
+```C
+typedef struct {
+    mfxU32 MinFrameSize;
+    mfxU16 BRCStatus;
+    mfxU16 reserved[25];
+    mfxHDL reserved1;
+} mfxBRCFrameStatus;
+```
+
+**Description**
+
+Structure specifies instructions for the SDK encoder provided by external BRC after each frame encoding. See the [BRCStatus](#BRCStatus) enumerator for details.
+
+**Members**
+
+| | |
+--- | ---
+`MinFrameSize` | Size in bytes the coded frame must be padded to when `BRCStatus` is `MFX_BRC_PANIC_SMALL_FRAME`
+`BRCStatus`    | See the [BRCStatus](#BRCStatus) enumerator
+
+**Change History**
+
+This structure is available since SDK API **TBD**
 
 # Enumerator Reference
 
@@ -6489,6 +6999,7 @@ The `ExtendedBufferID` enumerator itemizes and defines identifiers (`BufferId`) 
 `MFX_EXTBUFF_VP9_PARAM` | Extends [mfxVideoParam](#mfxVideoParam) structure with VP9-specific parameters. See the [mfxExtVP9Param](#mfxExtVP9Param) structure for details.
 `MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME` | This extended buffer configures HDR SEI message. See the [mfxExtMasteringDisplayColourVolume](#mfxExtMasteringDisplayColourVolume) structure for details.
 `MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO` | This extended buffer configures HDR SEI message. See the [mfxExtContentLightLevelInfo](#mfxExtContentLightLevelInfo) structure for details.
+`MFX_EXTBUFF_BRC` | See the [mfxExtBRC](#mfxExtBRC) structure for details.
 
 **Change History**
 
@@ -6517,7 +7028,7 @@ SDK API 1.22 adds `MFX_EXTBUFF_DEC_VIDEO_PROCESSING`.
 
 SDK API 1.23 adds `MFX_EXTBUFF_MB_FORCE_INTRA`.
 
-SDK API **TBD** adds `MFX_EXTBUFF_VP9_PARAM`, `MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO`, `MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME`.
+SDK API **TBD** adds `MFX_EXTBUFF_VP9_PARAM`, `MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO`, `MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME` and `MFX_EXTBUFF_BRC`.
 
 See additional change history in the structure definitions.
 
@@ -7416,6 +7927,26 @@ The `SampleAdaptiveOffset` enumerator uses bit-ORed values to itemize correspodi
 
 This enumerator is available since SDK API **TBD**.
 
+## <a id='BRCStatus'>BRCStatus</a>
+
+**Description**
+
+The `BRCStatus` enumerator itemizes instructions to the SDK encoder by [mfxExtBrc::Update](#BRCUpdate).
+
+**Name/Description**
+
+| | |
+--- | ---
+`MFX_BRC_OK`                | Coded frame size is acceptable, no further operations required, proceed to next frame
+`MFX_BRC_BIG_FRAME`         | Coded frame is too big, recoding required
+`MFX_BRC_SMALL_FRAME`       | Coded frame is too small, recoding required
+`MFX_BRC_PANIC_BIG_FRAME`   | Coded frame is too big, no further recoding possible - skip frame
+`MFX_BRC_PANIC_SMALL_FRAME` | Coded frame is too small, no further recoding possible - required padding to [mfxBRCFrameStatus](#mfxBRCFrameStatus)`::MinFrameSize`
+
+**Change History**
+
+This enumerator is available since SDK API **TBD**.
+
 # Appendices
 
 ## Appendix A: Configuration Parameter Constraints
@@ -7518,7 +8049,7 @@ The following table summarizes how to specify the configuration parameters durin
 
 ## Appendix B: Multiple-Segment Encoding
 
-Multiple-segment encoding is useful in video editing applications when during production; the encoder encodes multiple video clips according to their time line. In general, one can define multiple-segment encoding as dividing an input sequence of frames into segments and encoding them in different encoding sessions with the same or different parameter sets, as illustrated in Figure 6. (Note that different encoders can also be used.)
+Multiple-segment encoding is useful in video editing applications when during production; the encoder encodes multiple video clips according to their time line. In general, one can define multiple-segment encoding as dividing an input sequence of frames into segments and encoding them in different encoding sessions with the same or different parameter sets, as illustrated in Figure 7. (Note that different encoders can also be used.)
 
 The application must be able to:
 
@@ -7549,9 +8080,9 @@ The encoder can use the [mfxExtCodingOptionSPSPPS](#mfxExtCodingOptionSPSPPS) st
 
 The encoder must encode frames to a GOP sequence starting with an IDR frame for H.264 (or I frame for MPEG-2) to ensure that the current segment encoding does not refer to any frames in the previous segment. This ensures that the encoded segment is self-contained, allowing the application to insert it anywhere in the final bitstream. After encoding, each encoded segment is HRD compliant. However, the concatenated segments may not be HRD compliant.
 
-Example 14 shows an example of the encoder initialization procedure that imports H.264 sequence and picture parameter sets.
+Example 15 shows an example of the encoder initialization procedure that imports H.264 sequence and picture parameter sets.
 
-###### Example 14: Pseudo-code to Import H.264 SPS/PPS Parameters
+###### Example 15: Pseudo-code to Import H.264 SPS/PPS Parameters
 
 ```C
 mfxStatus init_encoder(…) {
@@ -7710,9 +8241,9 @@ If the interruption occurs during decoding, video processing, or encoding operat
 
 The SDK takes care of all memory and synchronization related operations in VA API. However, in some cases the application may need to extend the SDK functionality by working directly with VA API for Linux*. For example, to implement customized external allocator or **USER** functions (also known as “plug-in”). This chapter describes some basic memory management and synchronization techniques.
 
-To create VA surface pool the application should call vaCreateSurfaces as it is shown in Example 15.
+To create VA surface pool the application should call vaCreateSurfaces as it is shown in Example 16.
 
-###### Example 15: Creation of VA surfaces
+###### Example 16: Creation of VA surfaces
 
 ```C
 VASurfaceAttrib attrib;
@@ -7730,9 +8261,9 @@ vaCreateSurfaces(va_display, VA_RT_FORMAT_YUV420,
                  &attrib, 1);
 ```
 
-To destroy surface pool the application should call vaDestroySurfaces as it is shown in Example 16.
+To destroy surface pool the application should call vaDestroySurfaces as it is shown in Example 17.
 
-###### Example 16: Destroying of VA surfaces
+###### Example 17: Destroying of VA surfaces
 
 ```C
 vaDestroySurfaces(va_display, surfaces, NUM_SURFACES);
@@ -7740,9 +8271,9 @@ vaDestroySurfaces(va_display, surfaces, NUM_SURFACES);
 
 If the application works with hardware acceleration through the SDK then it can access surface data immediately after successful completion of MFXVideoCORE_SyncOperation call. If the application works with hardware acceleration directly then it has to check surface status before accessing data in video memory. This check can be done asynchronously by calling vaQuerySurfaceStatus function or synchronously by vaSyncSurface function.
 
-After successful synchronization the application can access surface data. It is performed in two steps. At the first step VAImage is created from surface and at the second step image buffer is mapped to system memory. After mapping VAImage.offsets[3] array holds offsets to each color plain in mapped buffer and VAImage.pitches[3] array holds color plain pitches, in bytes. For packed data formats, only first entries in these arrays are valid. Example 17 shows how to access data in NV12 surface.
+After successful synchronization the application can access surface data. It is performed in two steps. At the first step VAImage is created from surface and at the second step image buffer is mapped to system memory. After mapping VAImage.offsets[3] array holds offsets to each color plain in mapped buffer and VAImage.pitches[3] array holds color plain pitches, in bytes. For packed data formats, only first entries in these arrays are valid. Example 18 shows how to access data in NV12 surface.
 
-###### Example 17: Accessing data in VA surface
+###### Example 18: Accessing data in VA surface
 
 ```C
 VAImage image;
@@ -7757,18 +8288,18 @@ U = buffer + image.offsets[1];
 V = U + 1;
 ```
 
-After processing data in VA surface the application should release resources allocated for mapped buffer and VAImage object. Example 18 shows how to do it.
+After processing data in VA surface the application should release resources allocated for mapped buffer and VAImage object. Example 19 shows how to do it.
 
-###### Example 18: unmapping buffer and destroying VAImage
+###### Example 19: unmapping buffer and destroying VAImage
 
 ```C
 vaUnmapBuffer(va_display, image.buf);
 vaDestroyImage(va_display, image.image_id);
 ```
 
-In some cases, for example, to retrieve encoded bitstream from video memory, the application has to use VABuffer to store data. Example 19 shows how to create, use and then destroy VA buffer. Note, that vaMapBuffer function returns pointers to different objects depending on mapped buffer type. It is plain data buffer for VAImage and VACodedBufferSegment structure for encoded bitstream. The application cannot use VABuffer for synchronization and in case of encoding it is recommended to synchronize by input VA surface as described above.
+In some cases, for example, to retrieve encoded bitstream from video memory, the application has to use VABuffer to store data. Example 20 shows how to create, use and then destroy VA buffer. Note, that vaMapBuffer function returns pointers to different objects depending on mapped buffer type. It is plain data buffer for VAImage and VACodedBufferSegment structure for encoded bitstream. The application cannot use VABuffer for synchronization and in case of encoding it is recommended to synchronize by input VA surface as described above.
 
-###### Example 19: Working with encoded bitstream buffer
+###### Example 20: Working with encoded bitstream buffer
 
 ```C
 /* create buffer */

@@ -25,6 +25,7 @@ set(headers
 set(sources
   "${TRACER_DIR}/config/config.cpp"
   "${TRACER_DIR}/dumps/dump.cpp"
+  "${TRACER_DIR}/dumps/dump_mfxbrc.cpp"
   "${TRACER_DIR}/dumps/dump_mfxcommon.cpp"
   "${TRACER_DIR}/dumps/dump_mfxdefs.cpp"
   "${TRACER_DIR}/dumps/dump_mfxenc.cpp"

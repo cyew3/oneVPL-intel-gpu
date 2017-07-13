@@ -93,3 +93,8 @@ EXTBUF(mfxExtVP9TemporalLayers      , MFX_EXTBUFF_VP9_TEMPORAL_LAYERS       )
 EXTBUF(mfxExtVP9Param               , MFX_EXTBUFF_VP9_PARAM                 )
 
 EXTBUF(mfxExtHEVCParam              , MFX_EXTBUFF_HEVC_PARAM                )
+EXTBUF(mfxExtPredWeightTable        , MFX_EXTBUFF_PRED_WEIGHT_TABLE         )
+
+#if defined(__MFXBRC_H__)
+EXTBUF(mfxExtBRC, MFX_EXTBUFF_BRC)
+#endif // defined(__MFXBRC_H__)

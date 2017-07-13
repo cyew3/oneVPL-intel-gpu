@@ -975,3 +975,24 @@ STRUCT(mfxExtContentLightLevelInfo,
     FIELD_T(mfxU16      , MaxContentLightLevel)
     FIELD_T(mfxU16      , MaxPicAverageLightLevel)
 )
+
+STRUCT(mfxExtPredWeightTable,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU16, LumaLog2WeightDenom)
+    FIELD_T(mfxU16, ChromaLog2WeightDenom)
+    FIELD_T(mfxU16, LumaWeightFlag)
+    FIELD_T(mfxU16, ChromaWeightFlag)
+    FIELD_T(mfxI16, Weights)
+)
+
+#if defined(__MFXBRC_H__)
+STRUCT(mfxExtBRC,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxHDL, pthis)
+    FIELD_T(mfxHDL, Init)
+    FIELD_T(mfxHDL, Reset)
+    FIELD_T(mfxHDL, Close)
+    FIELD_T(mfxHDL, GetFrameCtrl)
+    FIELD_T(mfxHDL, Update)
+)
+#endif // defined(__MFXBRC_H__)

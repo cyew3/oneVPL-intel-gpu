@@ -159,6 +159,7 @@
   <ItemGroup>
     <ClCompile Include="config\config.cpp" />
     <ClCompile Include="dumps\dump.cpp" />
+    <ClCompile Include="dumps\dump_mfxbrc.cpp" />
     <ClCompile Include="dumps\dump_mfxcommon.cpp" />
     <ClCompile Include="dumps\dump_mfxdefs.cpp" />
     <ClCompile Include="dumps\dump_mfxenc.cpp" />
