@@ -630,7 +630,7 @@ class BSConvert<MFX_FOURCC_Y210, MFX_FOURCC_Y210>
 public:
     BSConvert()
     {
-        m_sample_size = 2;
+        m_sample_size = 4;
     }
 
 protected:
