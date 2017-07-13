@@ -242,18 +242,6 @@ struct MfxParamsWrapper: public T
         return NULL;
     }
 
-    bool isBPyramid() const
-    {
-        mfxExtCodingOption2 * CO2 = get<mfxExtCodingOption2>();
-        return CO2 ? CO2->BRefType == MFX_B_REF_PYRAMID : false;
-    }
-
-    bool isLowDelay() const
-    {
-        mfxExtCodingOption3 * CO3 = get<mfxExtCodingOption3>();
-        return CO3 ? CO3->PRefType == MFX_P_REF_PYRAMID : false;
-    }
-
 protected:
     int getEnabledMapIdx(mfxU32 bufferid) const
     {
