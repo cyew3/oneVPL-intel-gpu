@@ -2249,6 +2249,11 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     return sts;
 }
 
+/*
+    Setting up default values for video parameters, based on hwCaps.
+
+    Default value for LowPower is setting up in function SetLowpowerDefault
+*/
 void SetDefaults(
     MfxVideoParam &          par,
     ENCODE_CAPS_HEVC const & hwCaps)
@@ -2263,9 +2268,6 @@ void SetDefaults(
 
     mfxExtCodingOption2& CO2 = par.m_ext.CO2;
     mfxExtCodingOption3& CO3 = par.m_ext.CO3;
-
-    if (!par.mfx.LowPower)
-        par.mfx.LowPower = MFX_CODINGOPTION_OFF;
 
     if (!par.LCUSize)
         par.LCUSize = GetDefaultLCUSize(par, hwCaps);

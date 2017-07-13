@@ -21,6 +21,7 @@ namespace MfxHwH265Encode
 mfxStatus CheckVideoParam(MfxVideoParam & par, ENCODE_CAPS_HEVC const & caps, bool bInit = false);
 void      SetDefaults    (MfxVideoParam & par, ENCODE_CAPS_HEVC const & hwCaps);
 void      InheritDefaultValues(MfxVideoParam const & parInit, MfxVideoParam &  parReset);
+bool      CheckTriStateOption(mfxU16 & opt);
 
 Plugin::Plugin(bool CreateByDispatcher)
     : m_createdByDispatcher(CreateByDispatcher)
@@ -195,6 +196,36 @@ bool GetRecInfo(const MfxVideoParam& par, mfxFrameInfo& rec)
 }
 #endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
 
+/*
+    Setting default value for LowPower option.
+    By default LowPower is OFF (using DualPipe)
+    For CNL: if no B-frames found and LowPower is Unknown then LowPower is ON
+
+    Return value:
+    MFX_WRN_INCOMPATIBLE_VIDEO_PARAM - if initial value of par.mfx.LowPower is not equal to MFX_CODINGOPTION_ON, MFX_CODINGOPTION_OFF or MFX_CODINGOPTION_UNKNOWN
+    MFX_ERR_NONE - if no errors
+*/
+mfxStatus SetLowpowerDefault(MfxVideoParam& par)
+{
+    mfxStatus sts = CheckTriStateOption(par.mfx.LowPower) == false ? MFX_ERR_NONE : MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
+    if (par.m_platform.CodeName == MFX_PLATFORM_CANNONLAKE
+        && par.mfx.TargetUsage >= MFX_TARGETUSAGE_6
+        && par.mfx.GopRefDist < 2
+        && par.mfx.LowPower == MFX_CODINGOPTION_UNKNOWN)
+    {
+        par.mfx.LowPower = MFX_CODINGOPTION_ON;
+        return sts;
+    }
+#endif
+
+    if (par.mfx.LowPower == MFX_CODINGOPTION_UNKNOWN)
+        par.mfx.LowPower = MFX_CODINGOPTION_OFF;
+
+    return sts;
+}
+
 mfxStatus LoadSPSPPS(MfxVideoParam& par, mfxExtCodingOptionSPSPPS* pSPSPPS)
 {
     mfxStatus sts = MFX_ERR_NONE;
@@ -241,6 +272,8 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
 
     sts = m_core.QueryPlatform(&m_vpar.m_platform);
     MFX_CHECK_STS(sts);
+
+    mfxStatus lpsts = SetLowpowerDefault(m_vpar);
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     if (   m_vpar.m_ext.CO3.TargetChromaFormatPlus1 != (MFX_CHROMAFORMAT_YUV420 + 1)
@@ -330,6 +363,9 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
 
     qsts = CheckVideoParam(m_vpar, m_caps, true);
     MFX_CHECK(qsts >= MFX_ERR_NONE, qsts);
+
+    if (qsts == MFX_ERR_NONE && lpsts != MFX_ERR_NONE)
+        qsts = lpsts;
 
     SetDefaults(m_vpar, m_caps);
 
@@ -533,6 +569,8 @@ mfxStatus Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request,
 
     m_core.QueryPlatform(&tmp.m_platform);
 
+    (void)SetLowpowerDefault(tmp);
+
     sts = QueryHwCaps(&m_core, GetGUID(tmp), caps);
     MFX_CHECK_STS(sts);
 
@@ -619,6 +657,8 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
             sts = MFX_ERR_UNSUPPORTED;
         MFX_CHECK_STS(sts);
 
+        mfxStatus lpsts = SetLowpowerDefault(tmp);
+
         if (m_ddi.get())
         {
             sts = m_ddi->QueryEncodeCaps(caps);
@@ -659,6 +699,8 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
         if (sts == MFX_ERR_INVALID_VIDEO_PARAM)
             sts = MFX_ERR_UNSUPPORTED;
 
+        if (sts == MFX_ERR_NONE && lpsts != MFX_ERR_NONE)
+            sts = lpsts;
 
         tmp.FillPar(*out, true);
     }
