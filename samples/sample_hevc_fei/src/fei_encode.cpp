@@ -21,16 +21,23 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 FEI_Encode::FEI_Encode(MFXVideoSession* session, const mfxFrameInfo& frameInfo, const sInputParams& encParams)
     : m_pmfxSession(session)
     , m_mfxENCODE(*m_pmfxSession)
+    , m_syncPoint(0)
+    , m_dstFileName(encParams.strDstFile)
 {
     MSDK_MEMCPY_VAR(m_videoParams.mfx.FrameInfo, &frameInfo, sizeof(mfxFrameInfo));
-
     SetEncodeParameters(encParams);
+
+    MSDK_ZERO_MEMORY(m_encodeCtrl);
+    m_encodeCtrl.FrameType = MFX_FRAMETYPE_UNKNOWN;
+    m_encodeCtrl.QP = m_videoParams.mfx.QPI;
+    MSDK_ZERO_MEMORY(m_bitstream);
 }
 
 FEI_Encode::~FEI_Encode()
 {
     m_mfxENCODE.Close();
     m_pmfxSession = NULL;
+    WipeMfxBitstream(&m_bitstream);
 }
 
 void FEI_Encode::SetEncodeParameters(const sInputParams& encParams)
@@ -42,6 +49,8 @@ void FEI_Encode::SetEncodeParameters(const sInputParams& encParams)
     m_videoParams.mfx.TargetKbps        = 0;
     m_videoParams.AsyncDepth  = 1; // inherited limitation from AVC FEI
     m_videoParams.IOPattern   = MFX_IOPATTERN_IN_VIDEO_MEMORY;
+
+    m_videoParams.mfx.EncodedOrder = 0;
 
     // user defined settings
     m_videoParams.mfx.QPI = m_videoParams.mfx.QPP = m_videoParams.mfx.QPB = encParams.QP;
@@ -70,6 +79,13 @@ mfxStatus FEI_Encode::Query()
 
 mfxStatus FEI_Encode::Init()
 {
+    mfxStatus sts = m_FileWriter.Init(m_dstFileName.c_str());
+    MSDK_CHECK_STATUS(sts, "FileWriter Init failed");
+
+    mfxU32 nEncodedDataBufferSize = m_videoParams.mfx.FrameInfo.Width * m_videoParams.mfx.FrameInfo.Height * 4;
+    sts = InitMfxBitstream(&m_bitstream, nEncodedDataBufferSize);
+    MSDK_CHECK_STATUS_SAFE(sts, "InitMfxBitstream failed", WipeMfxBitstream(&m_bitstream));
+
     return m_mfxENCODE.Init(&m_videoParams);
 }
 
@@ -92,4 +108,77 @@ mfxStatus FEI_Encode::Reset(mfxVideoParam& par)
 mfxStatus FEI_Encode::GetVideoParam(mfxVideoParam& par)
 {
     return m_mfxENCODE.GetVideoParam(&par);
+}
+
+mfxStatus FEI_Encode::EncodeOneFrame(mfxFrameSurface1* pSurf)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+
+    for (;;)
+    {
+
+        sts = m_mfxENCODE.EncodeFrameAsync(&m_encodeCtrl, pSurf, &m_bitstream, &m_syncPoint);
+
+        if (MFX_ERR_NONE < sts && !m_syncPoint) // repeat the call if warning and no output
+        {
+            if (MFX_WRN_DEVICE_BUSY == sts)
+            {
+                WaitForDeviceToBecomeFree(*m_pmfxSession, m_syncPoint, sts);
+            }
+            continue;
+        }
+
+        if (MFX_ERR_NONE <= sts && m_syncPoint) // ignore warnings if output is available
+        {
+            sts = SyncOperation();
+            break;
+        }
+
+        if (MFX_ERR_NOT_ENOUGH_BUFFER == sts)
+        {
+            sts = AllocateSufficientBuffer();
+            MSDK_CHECK_STATUS(sts, "FEI Encode: AllocateSufficientBuffer failed");
+        }
+
+        MSDK_BREAK_ON_ERROR(sts);
+
+    } // for (;;)
+
+    // when pSurf==NULL, MFX_ERR_MORE_DATA indicates all cached frames within encoder were drained, return as is
+    // otherwise encoder need more input surfaces, ignore status
+    if (MFX_ERR_MORE_DATA == sts && pSurf)
+    {
+        MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
+    }
+
+    return sts;
+}
+
+mfxStatus FEI_Encode::SyncOperation()
+{
+    mfxStatus sts = MFX_ERR_NONE;
+
+    sts = m_pmfxSession->SyncOperation(m_syncPoint, MSDK_WAIT_INTERVAL);
+    MSDK_CHECK_STATUS(sts, "FEI Encode: SyncOperation failed");
+
+    sts = m_FileWriter.WriteNextFrame(&m_bitstream);
+    MSDK_CHECK_STATUS(sts, "FEI Encode: WriteNextFrame failed");
+
+    return sts;
+}
+
+mfxStatus FEI_Encode::AllocateSufficientBuffer()
+{
+    mfxVideoParam par;
+    MSDK_ZERO_MEMORY(par);
+
+    // find out the required buffer size
+    mfxStatus sts = GetVideoParam(par);
+    MSDK_CHECK_STATUS(sts, "FEI Encode GetVideoParam failed");
+
+    // reallocate bigger buffer for output
+    sts = ExtendMfxBitstream(&m_bitstream, par.mfx.BufferSizeInKB * 1000);
+    MSDK_CHECK_STATUS_SAFE(sts, "ExtendMfxBitstream failed", WipeMfxBitstream(&m_bitstream));
+
+    return sts;
 }

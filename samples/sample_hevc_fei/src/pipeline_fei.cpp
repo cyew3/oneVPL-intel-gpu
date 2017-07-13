@@ -197,3 +197,59 @@ mfxStatus CEncodingPipeline::InitComponents()
 
     return sts;
 }
+
+mfxStatus CEncodingPipeline::Execute()
+{
+    mfxStatus sts = MFX_ERR_NONE;
+
+    mfxFrameSurface1* pSurf = NULL; // points to frame being processed
+
+    mfxU32 frameCount = 0;
+
+    while (MFX_ERR_NONE <= sts || MFX_ERR_MORE_DATA == sts)
+    {
+        if (m_inParams.nNumFrames && m_inParams.nNumFrames <= frameCount) // frame encoding limit
+            break;
+
+        sts = m_pInputSource->GetOneFrame(pSurf);
+        MSDK_BREAK_ON_ERROR(sts);
+
+        frameCount++;
+
+        if (m_pFEI_Encode.get())
+        {
+            sts = m_pFEI_Encode->EncodeOneFrame(pSurf);
+            MSDK_BREAK_ON_ERROR(sts);
+        }
+
+    } // while (MFX_ERR_NONE <= sts || MFX_ERR_MORE_DATA == sts)
+
+    MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
+    // exit in case of other errors
+    MSDK_CHECK_STATUS(sts, "Frame processing failed");
+
+    sts = DrainBufferedFrames();
+    MSDK_CHECK_STATUS(sts, "Buffered frames processing failed");
+
+    return sts;
+}
+
+mfxStatus CEncodingPipeline::DrainBufferedFrames()
+{
+    mfxStatus sts = MFX_ERR_NONE;
+
+    if (m_pFEI_Encode.get())
+    {
+        while (MFX_ERR_NONE <= sts)
+        {
+            sts = m_pFEI_Encode->EncodeOneFrame(NULL);
+        }
+
+        // MFX_ERR_MORE_DATA indicates that there are no more buffered frames
+        MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
+        // exit in case of other errors
+        MSDK_CHECK_STATUS(sts, "EncodeOneFrame failed");
+    }
+
+    return sts;
+}

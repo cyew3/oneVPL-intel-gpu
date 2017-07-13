@@ -35,14 +35,23 @@ public:
     mfxStatus QueryIOSurf(mfxFrameAllocRequest* request);
     mfxStatus GetVideoParam(mfxVideoParam& par);
     mfxFrameInfo* GetFrameInfo();
+    mfxStatus EncodeOneFrame(mfxFrameSurface1* pSurf);
 
 private:
     MFXVideoSession*    m_pmfxSession;
     MFXVideoENCODE      m_mfxENCODE;
 
     MfxVideoParamsWrapper m_videoParams;
+    mfxEncodeCtrl         m_encodeCtrl;
+    mfxBitstream          m_bitstream;
+    mfxSyncPoint          m_syncPoint;
+
+    std::string          m_dstFileName;
+    CSmplBitstreamWriter m_FileWriter; // bitstream writer
 
     void SetEncodeParameters(const sInputParams& encParams);
+    mfxStatus SyncOperation();
+    mfxStatus AllocateSufficientBuffer();
 
     // forbid copy constructor and operator
     FEI_Encode(const FEI_Encode& encode);

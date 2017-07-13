@@ -36,6 +36,7 @@ public:
     ~CEncodingPipeline();
 
     mfxStatus Init();
+    mfxStatus Execute();
     void Close();
 
 private:
@@ -63,6 +64,7 @@ private:
     mfxStatus FillInputFrameInfo(mfxFrameInfo& fi);
     mfxStatus AllocFrames();
     mfxStatus InitComponents();
+    mfxStatus DrainBufferedFrames();
 
     // forbid copy constructor and operator
     CEncodingPipeline(const CEncodingPipeline& pipeline);
