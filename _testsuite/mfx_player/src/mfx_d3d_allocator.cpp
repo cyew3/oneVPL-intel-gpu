@@ -24,8 +24,8 @@ Copyright(c) 2008-2017 Intel Corporation. All Rights Reserved.
 #define D3DFMT_P210 (D3DFORMAT)MFX_FOURCC_P210
 #define D3DFMT_Y410 (D3DFORMAT)MFX_FOURCC_Y410
 #define D3DFMT_AYUV (D3DFORMAT)MFX_FOURCC_AYUV
-#define D3DFMT_Y216 (D3DFORMAT)MFX_FOURCC_P016
-#define D3DFMT_P016 (D3DFORMAT)MFX_FOURCC_Y216
+#define D3DFMT_P016 (D3DFORMAT)MFX_FOURCC_P016
+#define D3DFMT_Y216 (D3DFORMAT)MFX_FOURCC_Y216
 #define D3DFMT_Y416 (D3DFORMAT)MFX_FOURCC_Y416
 
 D3DFORMAT ConvertMfxFourccToD3dFormat(mfxU32 fourcc)
@@ -293,10 +293,10 @@ mfxStatus D3DFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         break;
 
     case D3DFMT_Y416:
-        ptr->A = (mfxU8 *)locked.pBits;
-        ptr->V16 = ((mfxU16*)ptr->A) + 1;
-        ptr->Y16 = ptr->V16 + 1;
-        ptr->U16 = ptr->Y16 + 1;
+        ptr->U16 = (mfxU16*)locked.pBits;
+        ptr->Y16 = ptr->U16 + 1;
+        ptr->V16 = ptr->Y16 + 1;
+        ptr->A   = (mfxU8 *)ptr->V16 + 1;
         break;
     }
 

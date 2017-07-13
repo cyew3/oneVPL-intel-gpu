@@ -198,10 +198,10 @@ mfxStatus SysMemFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         break;
 
     case MFX_FOURCC_Y416:
-        ptr->A = (mfxU8 *)ptr->B;
-        ptr->V16 = ((mfxU16*)ptr->A) + 1;
-        ptr->Y16 = ptr->V16 + 1;
-        ptr->U16 = ptr->Y16 + 1;
+        ptr->U16 = (mfxU16*)ptr->B;
+        ptr->Y16 = ptr->U16 + 1;
+        ptr->V16 = ptr->Y16 + 1;
+        ptr->A   = (mfxU8 *)ptr->V16 + 1;
         ptr->PitchHigh = (mfxU16)((8 * (mfxU32)Width2) / (1 << 16));
         ptr->PitchLow  = (mfxU16)((8 * (mfxU32)Width2) % (1 << 16));
         break;

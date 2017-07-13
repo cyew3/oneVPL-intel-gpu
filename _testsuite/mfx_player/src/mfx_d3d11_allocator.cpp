@@ -272,10 +272,10 @@ mfxStatus D3D11FrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
             break;
 
         case DXGI_FORMAT_Y416:
-            ptr->A = (mfxU8 *)lockedRect.pData;
-            ptr->V16 = ((mfxU16*)ptr->A) + 1;
-            ptr->Y16 = ptr->V16 + 1;
-            ptr->U16 = ptr->Y16 + 1;
+            ptr->U16 = (mfxU16*)lockedRect.pData;
+            ptr->Y16 = ptr->U16 + 1;
+            ptr->V16 = ptr->Y16 + 1;
+            ptr->A   = (mfxU8 *)ptr->V16 + 1;
             break;
 
         default:
