@@ -1148,7 +1148,11 @@ inline bool isSAOSupported(MfxVideoParam const & par)
                     || par.mfx.FrameInfo.BitDepthLuma == 10
                     || par.mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
 #endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
-                || (IsOn(par.mfx.LowPower) && (par.m_ext.CO2.MaxSliceSize != 0)))))
+                || (IsOn(par.mfx.LowPower) && (par.m_ext.CO2.MaxSliceSize != 0))
+                || par.mfx.RateControlMethod != MFX_RATECONTROL_CQP //@TODO Remove this line when support will ready
+               )
+           )
+       )
     {
         return false;
     }
