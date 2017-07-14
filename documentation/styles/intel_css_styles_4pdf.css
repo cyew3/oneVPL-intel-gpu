@@ -197,6 +197,9 @@ p{
     margin-bottom:5pt;
     padding-left:0pt;
 }
+.indent{
+    padding-left:2em;
+}
 /* ------------------------------------------------- */
 /* Table styles                                      */
 table{

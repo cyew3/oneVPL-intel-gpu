@@ -4,7 +4,7 @@ for /f "tokens=*" %%i in ('findstr /C:"API Version" header-template.md') do (
     set _APIVersion=%%i
 )
 
-echo %_APIVersion% 
+echo %_APIVersion%
 
 rmdir /s /q PDF
 mkdir PDF
@@ -35,6 +35,11 @@ call :CONVERT
 
 set _Name=mediasdkvp8-man
 set _Title=SDK Developer Reference for VP8
+call :CONVERT
+
+set _PDF_BODY_OPT=--zoom 1.5
+set _Name=mediasdkfei-man
+set _Title=SDK Developer Reference for FEI
 call :CONVERT
 
 goto :CLEANUP
