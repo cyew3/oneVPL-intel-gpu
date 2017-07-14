@@ -53,9 +53,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "plugin_loader.h"
 #include "sample_defs.h"
 
-#ifdef ENABLE_FF
 #include "brc_routines.h"
-#endif
 
 #include "vpp_ext_buffers_storage.h"
 
@@ -235,11 +233,9 @@ namespace TranscodingSample
 
         mfxU16 nExtBRC;
 
-#ifdef ENABLE_FF
         mfxU16 numMFEFrames;
         mfxU16 MFMode;
         mfxU32 mfeTimeout;
-#endif
 
 #if defined(LIBVA_WAYLAND_SUPPORT)
         mfxU16 nRenderWinX;
@@ -702,9 +698,7 @@ namespace TranscodingSample
         // HEVC
         mfxExtHEVCParam          m_ExtHEVCParam;
 
-#ifdef ENABLE_FF
         mfxExtBRC                m_ExtBRC;
-#endif
 
 #ifdef ENABLE_FF
         // MFE mode and number of frames

@@ -238,9 +238,7 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("  -WeightedPred 0/1/2/3\n"));
     msdk_printf(MSDK_STRING("  -WeightedBiPred 0/1/2/3 - 0 - unknown, 1 - default, 2 - explicit, 3 - implicit\n"));
 
-#ifdef ENABLE_FF
     msdk_printf(MSDK_STRING("  -extbrc::<on,off>           Enables external BRC for HEVC encoder"));
-#endif
     msdk_printf(MSDK_STRING("  -vpp_comp <sourcesNum>      Enables composition from several decoding sessions. Result is written to the file\n"));
     msdk_printf(MSDK_STRING("  -vpp_comp_only <sourcesNum> Enables composition from several decoding sessions. Result is shown on screen\n"));
     msdk_printf(MSDK_STRING("  -vpp_comp_num_tiles <Num>   Quantity of tiles for composition. if equal to 0 tiles processing ignored\n"));
@@ -1600,7 +1598,6 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         {
             InputParams.enableQSVFF=true;
         }
-#ifdef ENABLE_FF
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-extbrc::on")))
         {
             InputParams.nExtBRC= MFX_CODINGOPTION_ON;
@@ -1609,7 +1606,6 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         {
             InputParams.nExtBRC = MFX_CODINGOPTION_OFF;
         }
-#endif
         MOD_SMT_PARSE_INPUT
         else if((stsExtBuf = CVPPExtBuffersStorage::ParseCmdLine(argv,argc,i,&InputParams,skipped))
             !=MFX_ERR_MORE_DATA)

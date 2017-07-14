@@ -543,7 +543,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->nGPB = MFX_CODINGOPTION_OFF;
         }
-#ifdef ENABLE_FF
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-extbrc:on")))
         {
             pParams->nExtBRC= MFX_CODINGOPTION_ON;
@@ -552,7 +551,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->nExtBRC = MFX_CODINGOPTION_OFF;
         }
-#endif
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-qsv-ff")))
         {
             pParams->enableQSVFF=true;

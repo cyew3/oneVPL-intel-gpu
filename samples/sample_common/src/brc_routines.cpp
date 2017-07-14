@@ -17,8 +17,6 @@ The original version of this sample may be obtained from https://software.intel.
 or https://software.intel.com/en-us/media-client-solutions-support.
 \**********************************************************************************/
 
-#ifdef ENABLE_FF
-
 #include "brc_routines.h"
 #include "math.h"
 #include <algorithm>
@@ -988,5 +986,3 @@ mfxStatus ExtBRC::Reset(mfxVideoParam *par )
     }
     return sts;
 }
-
-#endif
