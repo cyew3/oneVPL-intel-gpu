@@ -34,12 +34,14 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #define D3DFMT_NV16 (D3DFORMAT)MAKEFOURCC('N','V','1','6')
 #define D3DFMT_P010 (D3DFORMAT)MAKEFOURCC('P','0','1','0')
 #define D3DFMT_P210 (D3DFORMAT)MAKEFOURCC('P','2','1','0')
-#define D3DFMT_Y210 (D3DFORMAT)MAKEFOURCC('Y','2','1','0')
 #define D3DFMT_IMC3 (D3DFORMAT)MAKEFOURCC('I','M','C','3')
 #define D3DFMT_AYUV (D3DFORMAT)MAKEFOURCC('A','Y','U','V')
 #ifdef ENABLE_PS
 #define D3DFMT_Y210 (D3DFORMAT)MAKEFOURCC('Y','2','1','0')
 #define D3DFMT_Y410 (D3DFORMAT)MAKEFOURCC('Y','4','1','0')
+#define D3DFMT_P016 (D3DFORMAT)MAKEFOURCC('P','0','1','6')
+#define D3DFMT_Y216 (D3DFORMAT)MAKEFOURCC('Y','2','1','6')
+#define D3DFMT_Y416 (D3DFORMAT)MAKEFOURCC('Y','4','1','6')
 #endif
 
 #define MFX_FOURCC_IMC3 (MFX_MAKEFOURCC('I','M','C','3')) // This line should be moved into mfxstructures.h in new API version
@@ -73,6 +75,12 @@ D3DFORMAT ConvertMfxFourccToD3dFormat(mfxU32 fourcc)
         return D3DFMT_Y210;
     case MFX_FOURCC_Y410:
         return D3DFMT_Y410;
+    case MFX_FOURCC_P016:
+        return D3DFMT_P016;
+    case MFX_FOURCC_Y216:
+        return D3DFMT_Y216;
+    case MFX_FOURCC_Y416:
+        return D3DFMT_Y416;
 #endif
     case MFX_FOURCC_A2RGB10:
         return D3DFMT_A2R10G10B10;
@@ -173,6 +181,9 @@ mfxStatus D3DFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
     {
     case D3DFMT_NV12:
     case D3DFMT_P010:
+#ifdef ENABLE_PS
+    case D3DFMT_P016:
+#endif
         ptr->Pitch = (mfxU16)locked.Pitch;
         ptr->Y = (mfxU8 *)locked.pBits;
         ptr->U = (mfxU8 *)locked.pBits + desc.Height * locked.Pitch;
@@ -233,6 +244,7 @@ mfxStatus D3DFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         break;
 #ifdef ENABLE_PS
     case D3DFMT_Y210:
+    case D3DFMT_Y216:
         ptr->Pitch = (mfxU16)locked.Pitch;
         ptr->Y16 = (mfxU16 *)locked.pBits;
         ptr->U16 = ptr->Y16 + 1;
@@ -244,6 +256,13 @@ mfxStatus D3DFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->Y = 0;
         ptr->V = 0;
         ptr->A = 0;
+        break;
+    case D3DFMT_Y416:
+        ptr->Pitch = (mfxU16)locked.Pitch;
+        ptr->U16 = (mfxU16*)locked.pBits;
+        ptr->Y16 = ptr->U16 + 1;
+        ptr->V16 = ptr->Y16 + 1;
+        ptr->A   = (mfxU8 *)ptr->V16 + 1;
         break;
 #endif
     }

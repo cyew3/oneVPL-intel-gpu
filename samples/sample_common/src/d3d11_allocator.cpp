@@ -150,8 +150,11 @@ mfxStatus D3D11FrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                 DXGI_FORMAT_P010 != desc.Format &&
                 DXGI_FORMAT_AYUV != desc.Format
 #ifdef ENABLE_PS
-                && DXGI_FORMAT_Y210 != desc.Format &&
-                DXGI_FORMAT_Y410 != desc.Format
+                && DXGI_FORMAT_Y210 != desc.Format
+                && DXGI_FORMAT_Y410 != desc.Format
+                && DXGI_FORMAT_P016 != desc.Format
+                && DXGI_FORMAT_Y216 != desc.Format
+                && DXGI_FORMAT_Y416 != desc.Format
 #endif
 )
             {
@@ -186,6 +189,9 @@ mfxStatus D3D11FrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
     switch (desc.Format)
     {
         case DXGI_FORMAT_P010:
+#ifdef ENABLE_PS
+        case DXGI_FORMAT_P016:
+#endif
         case DXGI_FORMAT_NV12:
             ptr->Pitch = (mfxU16)lockedRect.RowPitch;
             ptr->Y = (mfxU8 *)lockedRect.pData;
@@ -252,6 +258,7 @@ mfxStatus D3D11FrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
             break;
 #ifdef ENABLE_PS
         case DXGI_FORMAT_Y210:
+        case DXGI_FORMAT_Y216:
             ptr->PitchHigh = (mfxU16)(lockedRect.RowPitch / (1 << 16));
             ptr->PitchLow  = (mfxU16)(lockedRect.RowPitch % (1 << 16));
             ptr->Y16 = (mfxU16 *)lockedRect.pData;
@@ -269,7 +276,16 @@ mfxStatus D3D11FrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
             ptr->A = 0;
 
             break;
+
+        case DXGI_FORMAT_Y416:
+            ptr->PitchHigh = (mfxU16)(lockedRect.RowPitch / (1 << 16));
+            ptr->PitchLow = (mfxU16)(lockedRect.RowPitch % (1 << 16));
+            ptr->U16 = (mfxU16*)lockedRect.pData;
+            ptr->Y16 = ptr->U16 + 1;
+            ptr->V16 = ptr->Y16 + 1;
+            break;
 #endif
+
         default:
 
             return MFX_ERR_LOCK_MEMORY;
@@ -532,9 +548,19 @@ DXGI_FORMAT D3D11FrameAllocator::ConverColortFormat(mfxU32 fourcc)
         case DXGI_FORMAT_AYUV:
         case MFX_FOURCC_AYUV:
             return DXGI_FORMAT_AYUV;
+
 #ifdef ENABLE_PS
+        case MFX_FOURCC_Y210:
+            return DXGI_FORMAT_Y210;
         case MFX_FOURCC_Y410:
             return DXGI_FORMAT_Y410;
+
+        case MFX_FOURCC_P016:
+            return DXGI_FORMAT_P016;
+        case MFX_FOURCC_Y216:
+            return DXGI_FORMAT_Y216;
+        case MFX_FOURCC_Y416:
+            return DXGI_FORMAT_Y416;
 #endif
 
         default:
