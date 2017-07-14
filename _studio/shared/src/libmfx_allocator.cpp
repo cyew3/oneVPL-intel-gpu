@@ -233,6 +233,7 @@ mfxStatus mfxDefaultAllocator::AllocFrames(mfxHDL pthis, mfxFrameAllocRequest *r
         Pitch=ALIGN32(request->Info.Width*2);
         nbytes=Pitch*Height2 + (Pitch>>1)*(Height2) + (Pitch>>1)*(Height2);
         break;
+
     case MFX_FOURCC_Y410:
         Pitch=ALIGN32(request->Info.Width*4);
         nbytes=Pitch*Height2;
@@ -310,6 +311,9 @@ mfxStatus mfxDefaultAllocator::LockFrame(mfxHDL pthis, mfxHDL mid, mfxFrameData 
         ptr->V = ptr->U + 1;
         break;
     case MFX_FOURCC_P010:
+#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
+    case MFX_FOURCC_P016:
+#endif
         ptr->PitchHigh=0;
         ptr->PitchLow=(mfxU16)ALIGN32(fs->info.Width*2);
         ptr->Y = sptr;
@@ -374,13 +378,16 @@ mfxStatus mfxDefaultAllocator::LockFrame(mfxHDL pthis, mfxHDL mid, mfxFrameData 
         break;
 #if defined (PRE_SI_TARGET_PLATFORM_GEN11)
     case MFX_FOURCC_Y210:
+#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
     case MFX_FOURCC_Y216:
+#endif
         ptr->PitchHigh = (mfxU16)((4 * ALIGN32(fs->info.Width)) / (1 << 16));
         ptr->PitchLow  = (mfxU16)((4 * ALIGN32(fs->info.Width)) % (1 << 16));
         ptr->Y16 = (mfxU16*)sptr;
         ptr->U16 = ptr->Y16 + 1;
         ptr->V16 = ptr->Y16 + 3;
         break;
+
     case MFX_FOURCC_Y410:
         ptr->PitchHigh = (mfxU16)((4 * ALIGN32(fs->info.Width)) / (1 << 16));
         ptr->PitchLow  = (mfxU16)((4 * ALIGN32(fs->info.Width)) % (1 << 16));
@@ -390,6 +397,18 @@ mfxStatus mfxDefaultAllocator::LockFrame(mfxHDL pthis, mfxHDL mid, mfxFrameData 
         ptr->A = 0;
         break;
 #endif // PRE_SI_TARGET_PLATFORM_GEN11
+
+#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
+    case MFX_FOURCC_Y416:
+        ptr->PitchHigh = (mfxU16)(8 * ALIGN32(fs->info.Width) / (1 << 16));
+        ptr->PitchLow  = (mfxU16)(8 * ALIGN32(fs->info.Width) % (1 << 16));
+        ptr->U16 = (mfxU16*)sptr;
+        ptr->Y16 = ptr->U16 + 1;
+        ptr->V16 = ptr->Y16 + 1;
+        ptr->A   = (mfxU8 *)ptr->V16 + 1;
+        break;
+#endif //#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
+
     default:
         return MFX_ERR_UNSUPPORTED;
     }

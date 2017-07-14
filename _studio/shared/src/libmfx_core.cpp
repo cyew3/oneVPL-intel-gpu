@@ -1245,6 +1245,9 @@ mfxStatus CommonCORE::DoSWFastCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSr
     switch (pDst->Info.FourCC)
     {
     case MFX_FOURCC_P010:
+#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
+    case MFX_FOURCC_P016:
+#endif
 #if defined(_WIN32) || defined(_WIN64)
         if (pSrc->Info.Shift != pDst->Info.Shift)
         {
@@ -1368,9 +1371,12 @@ mfxStatus CommonCORE::DoSWFastCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSr
 
 #if defined (PRE_SI_TARGET_PLATFORM_GEN12)
     case MFX_FOURCC_Y416:
+        MFX_CHECK_NULL_PTR1(pSrc->Data.U16);
+        //we use 8u copy, so we need to increase ROI to handle 16 bit samples
         roi.width *= 8;
 
-        sts = pFastCopy->Copy(pDst->Data.A, dstPitch, pSrc->Data.A, srcPitch, roi, copyFlag);
+        sts = pFastCopy->Copy((mfxU8*)pDst->Data.U16, dstPitch, (mfxU8*)pSrc->Data.U16, srcPitch, roi, copyFlag);
+
         MFX_CHECK_STS(sts);
         break;
 #endif //PRE_SI_TARGET_PLATFORM_GEN12

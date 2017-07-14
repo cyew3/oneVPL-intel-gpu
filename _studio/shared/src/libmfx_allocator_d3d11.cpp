@@ -436,10 +436,10 @@ mfxStatus mfxDefaultAllocatorD3D11::SetFrameData(const D3D11_TEXTURE2D_DESC &Des
     case DXGI_FORMAT_Y416:
         ptr->PitchHigh = (mfxU16)(LockedRect.RowPitch / (1 << 16));
         ptr->PitchLow = (mfxU16)(LockedRect.RowPitch % (1 << 16));
-        ptr->A   = (mfxU8 *)LockedRect.pData;
-        ptr->V16 = ((mfxU16*)ptr->A) + 1;
-        ptr->Y16 = ptr->V16 + 1;
-        ptr->U16 = ptr->Y16 + 1;
+        ptr->U16 = (mfxU16*)LockedRect.pData;
+        ptr->Y16 = ptr->U16 + 1;
+        ptr->V16 = ptr->Y16 + 1;
+        ptr->A   = (mfxU8 *)ptr->V16 + 1;
         break;
 #endif
 

@@ -320,10 +320,10 @@ mfxStatus mfxDefaultAllocatorD3D9::SetFrameData(const D3DSURFACE_DESC &desc, con
     case D3DFMT_Y416:
         ptr->PitchHigh = (mfxU16)(LockedRect.Pitch / (1 << 16));
         ptr->PitchLow = (mfxU16)(LockedRect.Pitch % (1 << 16));
-        ptr->A   = (mfxU8 *)LockedRect.pBits;
-        ptr->V16 = ((mfxU16*)ptr->A) + 1;
-        ptr->Y16 = ptr->V16 + 1;
-        ptr->U16 = ptr->Y16 + 1;
+        ptr->U16 = (mfxU16*)LockedRect.pBits;
+        ptr->Y16 = ptr->U16 + 1;
+        ptr->V16 = ptr->Y16 + 1;
+        ptr->A   = (mfxU8 *)ptr->V16 + 1;
         break;
 #endif //#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
 
