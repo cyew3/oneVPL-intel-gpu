@@ -7,6 +7,10 @@
 *.user
 _build
 *.VC.*
+/samples/SampleDecodeUWP/SampleDecodeUWP/Generated Files
+Debug/
+Release/
+
 # CMake intermidiate files
 __cmake
 .project
