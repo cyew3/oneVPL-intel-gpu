@@ -58,5 +58,102 @@ mfxStatus H265FeiEncodePlugin::Close()
     return MFX_ERR_NONE;
 }
 
+mfxStatus H265FeiEncodePlugin::ExtraParametersCheck(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs)
+{
+    MFX_CHECK(ctrl, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+    mfxPlatform p = {};
+
+    mfxStatus sts = m_core.QueryPlatform(&p);
+    MFX_CHECK_STS(sts);
+
+    bool isSKL = p.CodeName == MFX_PLATFORM_SKYLAKE, isICLplus = p.CodeName >= MFX_PLATFORM_ICELAKE;
+#if 0
+    // mfxExtFeiHevcEncFrameCtrl is a mandatory buffer
+    mfxExtFeiHevcEncFrameCtrl* EncFrameCtrl = reinterpret_cast<mfxExtFeiHevcEncFrameCtrl*>GetBufById(ctrl, MFX_EXTBUFF_HEVCFEI_ENC_CTRL);
+    MFX_CHECK(EncFrameCtrl, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+    // Check HW limitations for mfxExtFeiHevcEncFrameCtrl parameters
+    MFX_CHECK(EncFrameCtrl->NumMvPredictorsL0 <= 4,  MFX_ERR_UNDEFINED_BEHAVIOR);
+    MFX_CHECK(EncFrameCtrl->NumMvPredictorsL1 <= 4,  MFX_ERR_UNDEFINED_BEHAVIOR);
+
+    MFX_CHECK(EncFrameCtrl->MultiPredL0       <= isICLplus ? 2 : 1,
+                                                     MFX_ERR_UNDEFINED_BEHAVIOR);
+    MFX_CHECK(EncFrameCtrl->MultiPredL1       <= isICLplus ? 2 : 1,
+                                                     MFX_ERR_UNDEFINED_BEHAVIOR);
+    MFX_CHECK(EncFrameCtrl->SubPelMode        <= 3 &&
+              EncFrameCtrl->SubPelMode        != 2,  MFX_ERR_UNDEFINED_BEHAVIOR);
+
+    MFX_CHECK(   EncFrameCtrl->MVPredictor == 0
+              || EncFrameCtrl->MVPredictor == 1
+              || EncFrameCtrl->MVPredictor == 2
+              || EncFrameCtrl->MVPredictor == 3 && isICLplus
+              || EncFrameCtrl->MVPredictor == 7,           MFX_ERR_UNDEFINED_BEHAVIOR);
+
+    MFX_CHECK(EncFrameCtrl->CoLocatedCtbDistortion <= 1,   MFX_ERR_UNDEFINED_BEHAVIOR);
+
+    MFX_CHECK(EncFrameCtrl->ForceLcuSplit <= isSKL ? 1: 0, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+    if (EncFrameCtrl->SearchWindow)
+    {
+        MFX_CHECK(EncFrameCtrl->AdaptiveSearch == 0
+               && EncFrameCtrl->LenSP          == 0
+               && EncFrameCtrl->SearchPath     == 0
+               && EncFrameCtrl->RefWidth       == 0
+               && EncFrameCtrl->RefHeight      == 0, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+        MFX_CHECK(EncFrameCtrl->SearchWindow <= 6,   MFX_ERR_UNDEFINED_BEHAVIOR);
+    }
+    else
+    {
+        MFX_CHECK(EncFrameCtrl->AdaptiveSearch <= 1,  MFX_ERR_UNDEFINED_BEHAVIOR);
+        MFX_CHECK(EncFrameCtrl->SearchPath     <= 2,  MFX_ERR_UNDEFINED_BEHAVIOR);
+        MFX_CHECK(EncFrameCtrl->LenSP          >= 1 &&
+                  EncFrameCtrl->LenSP          <= 63, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+        if (EncFrameCtrl->AdaptiveSearch)
+        {
+            MFX_CHECK(EncFrameCtrl->LenSP      >= 2,  MFX_ERR_UNDEFINED_BEHAVIOR);
+        }
+
+        if (isSKL)
+        {
+            mfxU16 frameType = GetFrameType(m_vpar, m_frameOrder - m_lastIDR);
+
+            MFX_CHECK(EncFrameCtrl->RefWidth  % 4 == 0
+                   && EncFrameCtrl->RefHeight % 4 == 0
+                   && EncFrameCtrl->RefWidth  <= (frameType & MFX_FRAMETYPE_B) ? 32 : 64
+                   && EncFrameCtrl->RefHeight <= 32,
+                   MFX_ERR_UNDEFINED_BEHAVIOR);
+        }
+        else
+        {
+            // ICL+
+            MFX_CHECK(  (EncFrameCtrl->RefWidth == 64 && EncFrameCtrl->RefHeight == 64)
+                     || (EncFrameCtrl->RefWidth == 48 && EncFrameCtrl->RefHeight == 40),
+                     MFX_ERR_UNDEFINED_BEHAVIOR);
+        }
+    }
+
+    // Check if requested buffers are provided
+
+    if (EncFrameCtrl->MVPredictor)
+    {
+        MFX_CHECK(GetBufById(ctrl, MFX_EXTBUFF_HEVCFEI_ENC_MV_PRED), MFX_ERR_UNDEFINED_BEHAVIOR);
+    }
+
+    if (EncFrameCtrl->PerCtbQp)
+    {
+        MFX_CHECK(GetBufById(ctrl, MFX_EXTBUFF_HEVCFEI_ENC_QP), MFX_ERR_UNDEFINED_BEHAVIOR);
+    }
+
+    if (EncFrameCtrl->PerCtbInput)
+    {
+        MFX_CHECK(GetBufById(ctrl, MFX_EXTBUFF_HEVCFEI_ENC_CTB_CTRL), MFX_ERR_UNDEFINED_BEHAVIOR);
+    }
+#endif
+    return MFX_ERR_NONE;
+}
+
 };
 #endif

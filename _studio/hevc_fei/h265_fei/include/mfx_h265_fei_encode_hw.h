@@ -78,6 +78,8 @@ protected:
     virtual ~H265FeiEncodePlugin();
 
     virtual MfxHwH265Encode::DriverEncoder* CreateHWh265Encoder(MFXCoreInterface* core, MfxHwH265Encode::ENCODER_TYPE type = MfxHwH265Encode::ENCODER_DEFAULT);
+
+    virtual mfxStatus ExtraParametersCheck(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs);
 };
 
 } //MfxHwH265FeiEncode

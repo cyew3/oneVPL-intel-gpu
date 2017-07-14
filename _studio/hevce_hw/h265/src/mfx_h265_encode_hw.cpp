@@ -981,6 +981,9 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
         MFX_CHECK_NULL_PTR1(bs->Data);
     }
 
+    sts = ExtraParametersCheck(ctrl, surface, bs);
+    MFX_CHECK_STS(sts);
+
     if (surface)
     {
         task = m_task.New();
