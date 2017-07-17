@@ -428,6 +428,10 @@ mfxStatus MFX_DecodeInterface::GetOneFrame(mfxFrameSurface1* & pSurf)
             break;
         }
     }
+    if (sts == MFX_ERR_MORE_DATA)
+    {
+        return sts;
+    }
     MSDK_CHECK_STATUS(sts, "Decode<One|Last>Frame failed");
 
     if (m_pAppConfig->bDECODESTREAMOUT)
