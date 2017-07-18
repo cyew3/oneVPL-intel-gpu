@@ -2332,7 +2332,11 @@ void SetDefaults(
         rawBits = rawBits / 8 * par.mfx.FrameInfo.BitDepthLuma;
         maxQP += 6 * (par.mfx.FrameInfo.BitDepthLuma - 8);
 
-        if (IsOn(par.mfx.LowPower) || par.m_platform.CodeName == MFX_PLATFORM_KABYLAKE)
+        if (IsOn(par.mfx.LowPower) || par.m_platform.CodeName >= MFX_PLATFORM_KABYLAKE
+#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
+            && par.m_platform.CodeName < MFX_PLATFORM_CANNONLAKE
+#endif
+            )
             minQP += 6 * (par.mfx.FrameInfo.BitDepthLuma - 8);
     }
 #endif

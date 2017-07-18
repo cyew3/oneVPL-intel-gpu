@@ -2222,6 +2222,7 @@ mfxStatus CmCopyWrapper::InitializeSwapKernels(eMFXHWType hwtype)
         case MFX_HW_KBL:
 #ifndef MFX_CLOSED_PLATFORMS_DISABLE
         case MFX_HW_GLK:
+        case MFX_HW_CFL:
 #endif
             cmSts = m_pCmDevice->LoadProgram((void*)skl_copy_kernel_genx,sizeof(skl_copy_kernel_genx),m_pCmProgram,"nojitter");
             break;

@@ -34,6 +34,7 @@ enum HWType
 
     MFX_HW_KBL       = 0xb00000,
     MFX_HW_GLK       = MFX_HW_KBL + 1,
+    MFX_HW_CFL       = MFX_HW_KBL + 2,
 
     MFX_HW_CNL       = 0xc00000,
 
