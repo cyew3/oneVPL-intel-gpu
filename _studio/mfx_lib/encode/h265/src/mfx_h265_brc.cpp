@@ -67,6 +67,9 @@ static int brc_fprintf(char *fmt, ...)
 #define brc_fprintf
 #endif
 
+#define BRC_MAX_LOAN_LENGTH 75
+#define BRC_LOAN_RATIO 0.075
+
 #define BRC_QSTEP_SCALE_EXPONENT 0.7
 
 #define BRC_RATE_CMPLX_EXPONENT 0.5
@@ -233,6 +236,16 @@ mfxStatus H265BRC::Init(const mfxVideoParam *params,  H265VideoParam &video, Ipp
     mRecodedFrame_encOrder = -1;
 
     if (video.AnalyzeCmplx) {
+        if (video.MaxFrameSizeInBits) {
+            mMaxFrameSizeInBitsI = mMaxFrameSizeInBits = video.MaxFrameSizeInBits;
+        } 
+#ifdef LOW_COMPLX_PAQ
+        else if ((video.DeltaQpMode&AMT_DQP_PAQ) && video.FullresMetrics == 1 
+            && mParams.bitDepthLuma == 8 && params->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE && mRCMode != MFX_RATECONTROL_AVBR) {
+            // Dynamic Safe Init/Scene change
+            mMaxFrameSizeInBitsI = (BRC_MAX_LOAN_LENGTH * BRC_LOAN_RATIO * 2.0f + 1.5f) * mBitsDesiredFrame;
+        }
+#endif
         InitMinQForMaxFrameSize(&video);
 
         mTotalDeviation = 0;
@@ -252,6 +265,7 @@ mfxStatus H265BRC::Init(const mfxVideoParam *params,  H265VideoParam &video, Ipp
         mTotMeanComplx = 0;
         mTotTarget = mBitsDesiredFrame;
         mLoanLength = 0;
+        mLoanRatio = 0;
         mLoanBitsPerFrame = 0;
 
         //mLoanLengthP = 0;
@@ -287,6 +301,7 @@ mfxStatus H265BRC::Init(const mfxVideoParam *params,  H265VideoParam &video, Ipp
         mCmplxRate = 20.*pow((Ipp64f)fs, 0.8); // adjustment for subpel
         if (mQuantOffset)
             mCmplxRate *= (1 << mQuantOffset / 6) * 0.9;
+
         mQstepScale0 = mQstepScale = pow(mCmplxRate / mTotTarget, BRC_QSTEP_SCALE_EXPONENT);// * (1 << mQuantOffset / 6);
 
         Ipp64f sum = 1;
@@ -962,9 +977,9 @@ void H265BRC::ResetMinQForMaxFrameSize(H265VideoParam *video, Frame *f)
     }
 }
 
-void H265BRC::UpdateMinQForMaxFrameSize(H265VideoParam *video, Frame *f, Ipp32s bits, Ipp32s layer, mfxBRCStatus Sts)
+void H265BRC::UpdateMinQForMaxFrameSize(Ipp32u maxFrameSizeInBits, H265VideoParam *video, Frame *f, Ipp32s bits, Ipp32s layer, mfxBRCStatus Sts)
 {
-    if(!video->MaxFrameSizeInBits) return;
+    if(!maxFrameSizeInBits) return;
     if(!bits) bits = 8;
     if(layer == 0) {
 
@@ -995,10 +1010,10 @@ void H265BRC::UpdateMinQForMaxFrameSize(H265VideoParam *video, Frame *f, Ipp32s 
         if(Sts & MFX_BRC_ERR_MAX_FRAME) {
             Ipp32s qp_prev = f->m_sliceQpY; //Qstep2QP(QstepScaleComputed, mQuantOffset);
             if(qp_prev < 51 + mQuantOffset) {
-                Ipp64f rateQstepNew = pow( (Ipp64f) mfs / (Ipp64f) video->MaxFrameSizeInBits, BRC_CONST_EXP_R_I8);
+                Ipp64f rateQstepNew = pow( (Ipp64f) mfs / (Ipp64f) maxFrameSizeInBits, BRC_CONST_EXP_R_I8);
                 Ipp64f QstepScaleUpdtComputed = rateQstepNew * mMinQstepCmplxK[0] * cmplxExp;
                 Ipp32s qp_now = Qstep2QP(QstepScaleUpdtComputed, mQuantOffset);
-                Ipp32s off = IPP_MAX(1, ((Ipp32f)(bits - video->MaxFrameSizeInBits)/((Ipp32f)bits*0.16) + 0.5));
+                Ipp32s off = IPP_MAX(1, ((Ipp32f)(bits - maxFrameSizeInBits)/((Ipp32f)bits*0.16) + 0.5));
                 if(qp_prev + off > qp_now) {
                     qp_now = IPP_MIN(51, qp_prev + off);
                     QstepScaleUpdtComputed = QP2Qstep(qp_now);
@@ -1010,7 +1025,7 @@ void H265BRC::UpdateMinQForMaxFrameSize(H265VideoParam *video, Frame *f, Ipp32s 
 
     } else if(layer == 1) {
 
-        if(f->m_encOrder < mMinQstepCmplxKInitEncOrder && bits < (Ipp32s) video->MaxFrameSizeInBits) return;
+        if(f->m_encOrder < mMinQstepCmplxKInitEncOrder && bits < (Ipp32s) maxFrameSizeInBits) return;
 
         Ipp64f iCmplx = IPP_MAX(BRC_MIN_CMPLX_FACTOR, f->m_stats[mLowres]->m_avgIntraSatd);
         Ipp64f fzCmplx = f->m_fzCmplx;
@@ -1042,10 +1057,10 @@ void H265BRC::UpdateMinQForMaxFrameSize(H265VideoParam *video, Frame *f, Ipp32s 
         if(Sts & MFX_BRC_ERR_MAX_FRAME) {
             Ipp32s qp_prev = f->m_sliceQpY; // Qstep2QP(QstepScaleComputed, mQuantOffset));
             if(qp_prev < 51 + mQuantOffset) {
-                Ipp64f rateQstepNew = pow( (Ipp64f) mfs / (Ipp64f) video->MaxFrameSizeInBits, mMinQstepRateEP);
+                Ipp64f rateQstepNew = pow( (Ipp64f) mfs / (Ipp64f) maxFrameSizeInBits, mMinQstepRateEP);
                 Ipp64f QstepScaleUpdtComputed = rateQstepNew * mMinQstepCmplxK[1] * cmplxExp;
                 Ipp32s qp_now = Qstep2QP(QstepScaleUpdtComputed, mQuantOffset);
-                Ipp32s off = IPP_MAX(1, ((Ipp32f)(bits - video->MaxFrameSizeInBits)/((Ipp32f)bits*0.16) + 0.5));
+                Ipp32s off = IPP_MAX(1, ((Ipp32f)(bits - maxFrameSizeInBits)/((Ipp32f)bits*0.16) + 0.5));
                 if(qp_prev + off > qp_now) {
                     qp_now = IPP_MIN(51, qp_prev + off);
                     QstepScaleUpdtComputed = QP2Qstep(qp_now);
@@ -1059,7 +1074,7 @@ void H265BRC::UpdateMinQForMaxFrameSize(H265VideoParam *video, Frame *f, Ipp32s 
 
         // update only if enough bits (coeffs coded most probably not just overhead)
         if(bits < (Ipp32f)mBitsDesiredFrame*0.66f) return;
-        if(f->m_encOrder < mMinQstepCmplxKInitEncOrder && bits < (Ipp32s) video->MaxFrameSizeInBits) return;
+        if(f->m_encOrder < mMinQstepCmplxKInitEncOrder && bits < (Ipp32s) maxFrameSizeInBits) return;
 
         Ipp64f iCmplx = IPP_MAX(BRC_MIN_CMPLX_FACTOR, f->m_stats[mLowres]->m_avgIntraSatd);
         Ipp64f fzCmplx = f->m_fzCmplx;
@@ -1087,10 +1102,10 @@ void H265BRC::UpdateMinQForMaxFrameSize(H265VideoParam *video, Frame *f, Ipp32s 
         if(Sts & MFX_BRC_ERR_MAX_FRAME) {
             Ipp32s qp_prev = f->m_sliceQpY; // Qstep2QP(QstepScaleComputed, mQuantOffset);
             if(qp_prev < 51 + mQuantOffset) {
-                Ipp64f rateQstepNew = pow( (Ipp64f) mfs / (Ipp64f) video->MaxFrameSizeInBits, BRC_CONST_EXP_R_B1);
+                Ipp64f rateQstepNew = pow( (Ipp64f) mfs / (Ipp64f) maxFrameSizeInBits, BRC_CONST_EXP_R_B1);
                 Ipp64f QstepScaleUpdtComputed = rateQstepNew * mMinQstepCmplxK[layer] * cmplxExp;
                 Ipp32s qp_now = Qstep2QP(QstepScaleUpdtComputed, mQuantOffset);
-                Ipp32s off = IPP_MAX(1, ((Ipp32f)(bits - video->MaxFrameSizeInBits)/((Ipp32f)bits*0.16) + 0.5));
+                Ipp32s off = IPP_MAX(1, ((Ipp32f)(bits - maxFrameSizeInBits)/((Ipp32f)bits*0.16) + 0.5));
                 if(qp_prev + off > qp_now) {
                     qp_now = IPP_MIN(51, qp_prev + off);
                     QstepScaleUpdtComputed = QP2Qstep(qp_now);
@@ -1103,7 +1118,7 @@ void H265BRC::UpdateMinQForMaxFrameSize(H265VideoParam *video, Frame *f, Ipp32s 
 
         // update only if enough bits (coeffs coded most probably not just overhead)
         if(bits < (Ipp32f)mBitsDesiredFrame*0.66f) return;
-        if(f->m_encOrder < mMinQstepCmplxKInitEncOrder && bits < (Ipp32s) video->MaxFrameSizeInBits) return;
+        if(f->m_encOrder < mMinQstepCmplxKInitEncOrder && bits < (Ipp32s) maxFrameSizeInBits) return;
 
         Ipp64f iCmplx = IPP_MAX(BRC_MIN_CMPLX_FACTOR, f->m_stats[mLowres]->m_avgIntraSatd);
         Ipp64f fzCmplx = f->m_fzCmplx;
@@ -1131,10 +1146,10 @@ void H265BRC::UpdateMinQForMaxFrameSize(H265VideoParam *video, Frame *f, Ipp32s 
         if(Sts & MFX_BRC_ERR_MAX_FRAME) {
             Ipp32s qp_prev = f->m_sliceQpY; // Qstep2QP(QstepScaleComputed, mQuantOffset);
             if(qp_prev < 51 + mQuantOffset) {
-                Ipp64f rateQstepNew = pow( (Ipp64f) mfs / (Ipp64f) video->MaxFrameSizeInBits, BRC_CONST_EXP_R_B2);
+                Ipp64f rateQstepNew = pow( (Ipp64f) mfs / (Ipp64f) maxFrameSizeInBits, BRC_CONST_EXP_R_B2);
                 Ipp64f QstepScaleUpdtComputed = rateQstepNew * mMinQstepCmplxK[layer] * cmplxExp;
                 Ipp32s qp_now = Qstep2QP(QstepScaleUpdtComputed, mQuantOffset);
-                Ipp32s off = IPP_MAX(1, ((Ipp32f)(bits - video->MaxFrameSizeInBits)/((Ipp32f)bits*0.16) + 0.5));
+                Ipp32s off = IPP_MAX(1, ((Ipp32f)(bits - maxFrameSizeInBits)/((Ipp32f)bits*0.16) + 0.5));
                 if(qp_prev + off > qp_now) {
                     qp_now = IPP_MIN(51, qp_prev + off);
                     QstepScaleUpdtComputed = QP2Qstep(qp_now);
@@ -1147,7 +1162,7 @@ void H265BRC::UpdateMinQForMaxFrameSize(H265VideoParam *video, Frame *f, Ipp32s 
 
         // update only if enough bits (coeffs coded most probably not just overhead)
         if(bits < (Ipp32f)mBitsDesiredFrame*0.4f) return;
-        if(f->m_encOrder < mMinQstepCmplxKInitEncOrder && bits < (Ipp32s) video->MaxFrameSizeInBits) return;
+        if(f->m_encOrder < mMinQstepCmplxKInitEncOrder && bits < (Ipp32s) maxFrameSizeInBits) return;
 
         Ipp64f iCmplx = IPP_MAX(BRC_MIN_CMPLX_FACTOR, f->m_stats[mLowres]->m_avgIntraSatd);
         Ipp64f fzCmplx = f->m_fzCmplx;
@@ -1176,10 +1191,10 @@ void H265BRC::UpdateMinQForMaxFrameSize(H265VideoParam *video, Frame *f, Ipp32s 
         if(Sts & MFX_BRC_ERR_MAX_FRAME) {
             Ipp32s qp_prev = f->m_sliceQpY; // Qstep2QP(QstepScaleComputed, mQuantOffset);
             if(qp_prev < 51 + mQuantOffset) {
-                Ipp64f rateQstepNew = pow( (Ipp64f) mfs / (Ipp64f) video->MaxFrameSizeInBits, BRC_CONST_EXP_R_B3);
+                Ipp64f rateQstepNew = pow( (Ipp64f) mfs / (Ipp64f) maxFrameSizeInBits, BRC_CONST_EXP_R_B3);
                 Ipp64f QstepScaleUpdtComputed = rateQstepNew * mMinQstepCmplxK[layer] * cmplxExp;
                 Ipp32s qp_now = Qstep2QP(QstepScaleUpdtComputed, mQuantOffset);
-                Ipp32s off = IPP_MAX(1, ((Ipp32f)(bits - video->MaxFrameSizeInBits)/((Ipp32f)bits*0.16) + 0.5));
+                Ipp32s off = IPP_MAX(1, ((Ipp32f)(bits - maxFrameSizeInBits)/((Ipp32f)bits*0.16) + 0.5));
                 if(qp_prev + off > qp_now) {
                     qp_now = IPP_MIN(51, qp_prev + off);
                     QstepScaleUpdtComputed = QP2Qstep(qp_now);
@@ -1192,12 +1207,14 @@ void H265BRC::UpdateMinQForMaxFrameSize(H265VideoParam *video, Frame *f, Ipp32s 
 }
 #endif
 
-Ipp64f H265BRC::GetMinQForMaxFrameSize(H265VideoParam *video, Frame *f, Ipp32s layer, Frame *maxpoc, Ipp32s myPos)
+Ipp64f H265BRC::GetMinQForMaxFrameSize(Ipp32u maxFrameSizeInBits, H265VideoParam *video, Frame *f, Ipp32s layer, Frame *maxpoc, Ipp32s myPos)
 {
 #ifndef AMT_MAX_FRAME_SIZE
     return 0;
 #else
-    if(!video->MaxFrameSizeInBits) return 0;
+    if (!maxFrameSizeInBits) {
+        return 0;
+    }
 
     if (f->m_picCodeType == MFX_FRAMETYPE_I) {
         Ipp64f fzCmplx = f->m_stats[mLowres]->m_avgIntraSatd;
@@ -1216,7 +1233,7 @@ Ipp64f H265BRC::GetMinQForMaxFrameSize(H265VideoParam *video, Frame *f, Ipp32s l
         }
         f->m_fzCmplxK = mMinQstepCmplxK[0];
 
-        Ipp64f BitsDesiredFrame = (Ipp64f) video->MaxFrameSizeInBits;
+        Ipp64f BitsDesiredFrame = (Ipp64f) maxFrameSizeInBits;
         if (mMinQstepCmplxKUpdt[0]) {
             BitsDesiredFrame *= (1.0 - 0.165 - IPP_MIN(0.115, mMinQstepCmplxKUpdtErr[0]));
         }
@@ -1238,7 +1255,7 @@ Ipp64f H265BRC::GetMinQForMaxFrameSize(H265VideoParam *video, Frame *f, Ipp32s l
         Frame *rf = f->m_refPicList[0].m_refFrames[0];
         Ipp64f minQI = 0.0;
         // For All
-        Ipp64f BitsDesiredI = (Ipp64f) video->MaxFrameSizeInBits;
+        Ipp64f BitsDesiredI = (Ipp64f) maxFrameSizeInBits;
 
         if (mMinQstepCmplxKUpdt[0]) {
             BitsDesiredI *= (1.0 - 0.165 - IPP_MIN(0.115, mMinQstepCmplxKUpdtErr[0]));
@@ -1305,7 +1322,7 @@ Ipp64f H265BRC::GetMinQForMaxFrameSize(H265VideoParam *video, Frame *f, Ipp32s l
 
         f->m_fzCmplxK = mMinQstepCmplxK[1];
         f->m_fzRateE = mMinQstepRateEP;
-        Ipp64f BitsDesiredFrame = (Ipp64f) video->MaxFrameSizeInBits;
+        Ipp64f BitsDesiredFrame = (Ipp64f) maxFrameSizeInBits;
         if (mMinQstepCmplxKUpdt[1]) {
             BitsDesiredFrame *= (1.0 - 0.165 - IPP_MIN(0.115, mMinQstepCmplxKUpdtErr[1]));
         }
@@ -1355,7 +1372,7 @@ Ipp64f H265BRC::GetMinQForMaxFrameSize(H265VideoParam *video, Frame *f, Ipp32s l
 
     } else if(layer == 2) {
 
-        Ipp64f BitsDesiredFrame = (Ipp64f) video->MaxFrameSizeInBits;
+        Ipp64f BitsDesiredFrame = (Ipp64f) maxFrameSizeInBits;
         if (mMinQstepCmplxKUpdt[layer]) {
             BitsDesiredFrame *= (1.0 - 0.16 - IPP_MIN(0.10, mMinQstepCmplxKUpdtErr[layer]));
         }
@@ -1405,7 +1422,7 @@ Ipp64f H265BRC::GetMinQForMaxFrameSize(H265VideoParam *video, Frame *f, Ipp32s l
 
     } else if(layer == 3) {
 
-        Ipp64f BitsDesiredFrame = (Ipp64f) video->MaxFrameSizeInBits;
+        Ipp64f BitsDesiredFrame = (Ipp64f) maxFrameSizeInBits;
         if (mMinQstepCmplxKUpdt[layer]) {
             BitsDesiredFrame *= (1.0 - 0.16 - IPP_MIN(0.10, mMinQstepCmplxKUpdtErr[layer]));
         }
@@ -1450,7 +1467,7 @@ Ipp64f H265BRC::GetMinQForMaxFrameSize(H265VideoParam *video, Frame *f, Ipp32s l
 
     } else if(layer == 4) {
 
-        Ipp64f BitsDesiredFrame = (Ipp64f) video->MaxFrameSizeInBits;
+        Ipp64f BitsDesiredFrame = (Ipp64f) maxFrameSizeInBits;
         if (mMinQstepCmplxKUpdt[layer]) {
             BitsDesiredFrame *= (1.0 - 0.16 - IPP_MIN(0.10, mMinQstepCmplxKUpdtErr[layer]));
         }
@@ -1628,7 +1645,7 @@ Ipp32s H265BRC::GetQP(H265VideoParam *video, Frame *frames[], Ipp32s numFrames)
         Ipp32s mypos = histsize - IPP_MIN(histsize, IPP_MAX(0, (maxpoc - frames[0]->m_poc)));
 
         // Get Min mQStepScale based on Cmplx Rate Model based Prediction
-        Ipp64f minQ = GetMinQForMaxFrameSize(video, frames[0], layer, frames[maxpocpos], mypos);
+        Ipp64f minQ = GetMinQForMaxFrameSize(frames[0]->m_picCodeType == MFX_FRAMETYPE_I ? mMaxFrameSizeInBitsI : mMaxFrameSizeInBits, video, frames[0], layer, frames[maxpocpos], mypos);
 
         Ipp64f q = frames[0]->m_CmplxQstep * mQstepScale;
 
@@ -1712,7 +1729,7 @@ Ipp32s H265BRC::GetQP(H265VideoParam *video, Frame *frames[], Ipp32s numFrames)
             UpdateMiniGopData(frames[0], qp);
 
             Ipp32s predbufFul;
-            qpbase = qp + 1 - layer;
+            qpbase = IPP_MAX(qp + 1 - layer, 1);
             Ipp32s refqp = -1;
 
             for (;;) {
@@ -2129,9 +2146,29 @@ mfxBRCStatus H265BRC::UpdateAndCheckHRD(Ipp32s frameBits, Ipp64f inputBitsPerFra
 #define P_WEIGHT 0.25
 #define B_WEIGHT 0.2
 
-#define BRC_MAX_LOAN_LENGTH 75
-#define BRC_LOAN_RATIO 0.075
-
+#ifdef LOW_COMPLX_PAQ
+#define BRC_BIT_LOAN \
+{ \
+    if (picType == MFX_FRAMETYPE_I) { \
+        if (video->DeltaQpMode & AMT_DQP_PAQ) { \
+            mLoanRatio = BRC_LOAN_RATIO * pow(2.0f, -1.0f * pFrame->m_stats[0]->m_avgDPAQ / 6.0f); \
+        } else { \
+            mLoanRatio = BRC_LOAN_RATIO; \
+        } \
+        if (mLoanLength) \
+            bitsEncoded += mLoanLength * mLoanBitsPerFrame; \
+        mLoanLength = video->GopPicSize; \
+        if (mLoanLength > BRC_MAX_LOAN_LENGTH || mLoanLength == 0) \
+            mLoanLength = BRC_MAX_LOAN_LENGTH; \
+        Ipp32s bitsEncodedI = (Ipp32s)((Ipp64f)bitsEncoded  / (mLoanLength * mLoanRatio + 1)); \
+        mLoanBitsPerFrame = (bitsEncoded - bitsEncodedI) / mLoanLength; \
+        bitsEncoded = bitsEncodedI; \
+    } else if (mLoanLength) { \
+        bitsEncoded += mLoanBitsPerFrame; \
+        mLoanLength--; \
+    } \
+}
+#else
 #define BRC_BIT_LOAN \
 { \
     if (picType == MFX_FRAMETYPE_I) { \
@@ -2148,6 +2185,7 @@ mfxBRCStatus H265BRC::UpdateAndCheckHRD(Ipp32s frameBits, Ipp64f inputBitsPerFra
         mLoanLength--; \
     } \
 }
+#endif
 
 
 //#define BRC_BIT_LOAN_P \
@@ -2281,7 +2319,7 @@ mfxBRCStatus H265BRC::PostPackFrame(H265VideoParam *video, Ipp8s sliceQpY, Frame
             }
 #ifdef AMT_MAX_FRAME_SIZE
             if(video->RepackForMaxFrameSize && video->MaxFrameSizeInBits && totalFrameBits > (Ipp32s) video->MaxFrameSizeInBits && pFrame->m_sliceQpY < 51) Sts = MFX_BRC_ERR_MAX_FRAME;
-            UpdateMinQForMaxFrameSize(video, pFrame, totalFrameBits, layer, Sts);
+            UpdateMinQForMaxFrameSize(picType == MFX_FRAMETYPE_I ? mMaxFrameSizeInBitsI : mMaxFrameSizeInBits, video, pFrame, totalFrameBits, layer, Sts);
             if (Sts & MFX_BRC_ERR_MAX_FRAME) return Sts;
 #endif
 
@@ -2292,6 +2330,7 @@ mfxBRCStatus H265BRC::PostPackFrame(H265VideoParam *video, Ipp8s sliceQpY, Frame
             brc_fprintf("L%d %d %d %d %d %d %d %d %f \n", layer, pFrame->m_encOrder, sliceQpY, totalFrameBits, bitsEncoded, pFrame->m_predBits, (int)mHRD.bufFullness, mPredBufFulness, mPrevCmplxLayer[layer]);
 
             BRC_BIT_LOAN;
+
 //            BRC_BIT_LOAN_P;
 
             if (mRCMode == MFX_RATECONTROL_CBR) {
@@ -2338,7 +2377,7 @@ mfxBRCStatus H265BRC::PostPackFrame(H265VideoParam *video, Ipp8s sliceQpY, Frame
         } else { // AVBR
 #ifdef AMT_MAX_FRAME_SIZE
             if(video->RepackForMaxFrameSize && video->MaxFrameSizeInBits && totalFrameBits > (Ipp32s) video->MaxFrameSizeInBits && pFrame->m_sliceQpY < 51) Sts = MFX_BRC_ERR_MAX_FRAME;
-            UpdateMinQForMaxFrameSize(video, pFrame, totalFrameBits, layer, Sts);
+            UpdateMinQForMaxFrameSize(picType == MFX_FRAMETYPE_I ? mMaxFrameSizeInBitsI : mMaxFrameSizeInBits, video, pFrame, totalFrameBits, layer, Sts);
             if (Sts & MFX_BRC_ERR_MAX_FRAME) return Sts;
 #endif
 

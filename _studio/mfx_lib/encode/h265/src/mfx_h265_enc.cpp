@@ -975,7 +975,7 @@ namespace H265Enc {
 
         Ipp32s hasRoi = 0;
         if(par.DeltaQpMode & AMT_DQP_HROI) {
-            if(stats->roi_pic.numCtbRoi[1]|+stats->roi_pic.numCtbRoi[2])
+            if(stats->roi_pic.numCtbRoi[1]+stats->roi_pic.numCtbRoi[2])
                 hasRoi = 1;
         }
 
@@ -988,7 +988,12 @@ namespace H265Enc {
             // assign PAQ deltaQp
             if (par.DeltaQpMode&AMT_DQP_PAQ) {
                 Ipp32s padqp = stats->qp_mask[0][ctb];
-
+#ifdef LOW_COMPLX_PAQ
+                if (padqp < 0 && frame->m_sliceQpY - MAX_DQP < 16) {
+                    padqp = IPP_MIN(IPP_MAX(15, frame->m_sliceQpY + padqp) - frame->m_sliceQpY, 0);
+                    stats->qp_mask[0][ctb] = padqp;
+                }
+#endif
                 if(hasRoi) {
                     if(stats->ctbStats[ctb].roiLevel) {
                         dqp = IPP_MIN(0, dqp+padqp);
@@ -1004,8 +1009,15 @@ namespace H265Enc {
             qp = Saturate(minqp, 51, qp);
 
             pLcuQP[ctb] = (Ipp8s)qp;
-
         }
+
+#ifdef LOW_COMPLX_PAQ
+        if (par.DeltaQpMode&AMT_DQP_PAQ) {
+            Ipp32f avgDQp = std::accumulate(stats->qp_mask[0].begin(), stats->qp_mask[0].end(), 0);
+            avgDQp /= stats->qp_mask[0].size();
+            stats->m_avgDPAQ = avgDQp;
+        }
+#endif
 
         bool IsHiCplxGOP = false;
         bool IsMedCplxGOP = false;

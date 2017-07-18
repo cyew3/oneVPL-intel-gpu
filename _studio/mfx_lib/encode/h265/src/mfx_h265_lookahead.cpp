@@ -1356,12 +1356,13 @@ void H265Enc::DetermineQpMap_IFrame(FrameIter curr, FrameIter end, H265VideoPara
         }
     }
     REF_DIST = IPP_MIN(8, (inFrame->m_frameOrder - futr_frame->m_frameOrder));
-
+    
     for (Ipp32s row=0; row<heightInCtbs; row++) {
         for (Ipp32s col=0; col<widthInCtbs; col++) {
             Ipp32s pelX = col * videoParam.MaxCUSize;
             Ipp32s pelY = row * videoParam.MaxCUSize;
             Ipp32s MaxDepth = IPP_MIN((Ipp32s) videoParam.Log2MaxCUSize - log2SubBlk, videoParam.MaxCuDQPDepth);
+            
             for (Ipp32s depth = 0; depth <= MaxDepth; depth++) { // 64x64 -> 8x8
                 Ipp32s log2BlkSize = videoParam.Log2MaxCUSize - depth;
                 Ipp32s pitchRsCs = inFrame->m_stats[0]->m_pitchRsCs4 >> (log2BlkSize-2);
@@ -1375,6 +1376,17 @@ void H265Enc::DetermineQpMap_IFrame(FrameIter curr, FrameIter end, H265VideoPara
                         Ipp32f Cs2 = inFrame->m_stats[0]->m_cs[log2BlkSize-2][idx];
                         Ipp32s blkW4 = IPP_MIN(blkSize, width-x) >> 2;
                         Ipp32s blkH4 = IPP_MIN(blkSize, height-y) >> 2;
+                        Ipp32s numSubBlkw = blkW4 >> (log2SubBlk - 2);
+                        Ipp32s numSubBlkh = blkH4 >> (log2SubBlk - 2);
+#ifdef LOW_COMPLX_PAQ
+                        if (numSubBlkh*(1 << log2SubBlk) < height || numSubBlkw*(1 << log2SubBlk) < width) {
+                            Ipp32s widthInTiles = widthInCtbs << depth;
+                            Ipp32s off = ((pelY + y)*widthInTiles + (pelX + x)) >> log2BlkSize;
+                            inFrame->m_stats[0]->coloc_futr[depth][off] = 0;
+                            inFrame->m_stats[0]->qp_mask[depth][off] = 0;
+                            continue;
+                        }
+#endif
                         Rs2/=(blkW4*blkH4);
                         Cs2/=(blkW4*blkH4);
                         Ipp32f SC = sqrt(Rs2 + Cs2);
@@ -1392,8 +1404,6 @@ void H265Enc::DetermineQpMap_IFrame(FrameIter curr, FrameIter end, H265VideoPara
                             }
                         }
 
-                        Ipp32s numSubBlkw = blkW4>>(log2SubBlk-2);
-                        Ipp32s numSubBlkh = blkH4>>(log2SubBlk-2);
                         FrameIter itStart = ++FrameIter(curr);
                         int coloc=0;
                         Ipp32f pdsad_futr=0.0f;
@@ -1533,7 +1543,7 @@ void H265Enc::DetermineQpMap_PFrame(FrameIter begin, FrameIter curr, FrameIter e
             break;
         }
     }
-
+    
     for (Ipp32s row=0; row<heightInCtbs; row++) {
         for (Ipp32s col=0; col<widthInCtbs; col++) {
             Ipp32s pelX = col * videoParam.MaxCUSize;
@@ -1552,6 +1562,19 @@ void H265Enc::DetermineQpMap_PFrame(FrameIter begin, FrameIter curr, FrameIter e
                         Ipp32f Cs2 = inFrame->m_stats[0]->m_cs[log2BlkSize-2][idx];
                         Ipp32s blkW4 = IPP_MIN(blkSize, width-x) >> 2;
                         Ipp32s blkH4 = IPP_MIN(blkSize, height-y) >> 2;
+
+                        Ipp32s numSubBlkw = blkW4 >> (log2SubBlk - 2);
+                        Ipp32s numSubBlkh = blkH4 >> (log2SubBlk - 2);
+#ifdef LOW_COMPLX_PAQ
+                        if (numSubBlkh*(1 << log2SubBlk) < height || numSubBlkw*(1 << log2SubBlk) < width) {
+                            Ipp32s widthInTiles = widthInCtbs << depth;
+                            Ipp32s off = ((pelY + y)*widthInTiles + (pelX + x)) >> log2BlkSize;
+                            inFrame->m_stats[0]->coloc_futr[depth][off] = 0;
+                            inFrame->m_stats[0]->qp_mask[depth][off] = 0;
+                            continue;
+                        }
+#endif
+
                         Rs2/=(blkW4*blkH4);
                         Cs2/=(blkW4*blkH4);
                         Ipp32f SC = sqrt(Rs2 + Cs2);
@@ -1570,8 +1593,7 @@ void H265Enc::DetermineQpMap_PFrame(FrameIter begin, FrameIter curr, FrameIter e
                         }
 
                         // RTF RTS logic for P Frame is based on MC Error
-                        Ipp32s numSubBlkw = blkW4>>(log2SubBlk - 2);
-                        Ipp32s numSubBlkh = blkH4>>(log2SubBlk - 2);
+
                         Ipp32f pdsad_past=0.0f;
                         Ipp32f pdsad_futr=0.0f;
                         FrameIter itStart = ++FrameIter(itCurr);
@@ -2352,6 +2374,7 @@ Ipp32s H265Enc::BuildQpMap(FrameIter begin, FrameIter end, Ipp32s frameOrderCent
                 BackPropagateAvgTsc(itPrevRef, curr);
             }
         }
+        
         //WriteQpMap(*curr, m_videoParam);
     }
 
@@ -2656,7 +2679,16 @@ void H265Enc::ApplyDeltaQp(Frame* frame, const H265VideoParam & par, Ipp8u useBr
                 frame->m_lcuQps[depth][blk] = (Ipp8s)lcuQp;
             }
         }
+#ifdef LOW_COMPLX_PAQ
+        if (par.DeltaQpMode&AMT_DQP_PAQ) {
+            Ipp32f avgDQp = std::accumulate(frame->m_stats[0]->qp_mask[0].begin(), frame->m_stats[0]->qp_mask[0].end(), 0);
+            avgDQp /= frame->m_stats[0]->qp_mask[0].size();
+            frame->m_stats[0]->m_avgDPAQ = avgDQp;
+        }
+#endif
     }
+
+
     // recalc (align) CTB lambdas with CTB Qp
     for (Ipp8u i = 0; i < par.NumSlices; i++)
         UpdateAllLambda(frame, par);

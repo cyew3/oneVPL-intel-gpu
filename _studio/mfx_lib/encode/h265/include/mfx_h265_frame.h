@@ -102,6 +102,7 @@ namespace H265Enc {
         Ipp32s* m_rs[5];
         Ipp32s* m_cs[5];
         std::vector<Ipp32s> qp_mask[4];
+        Ipp32f m_avgDPAQ;
         std::vector<Ipp32s> coloc_futr[4];
 
         std::vector<Ipp32s> m_intraSatd;
@@ -135,6 +136,7 @@ namespace H265Enc {
         
         void ResetAvgMetrics()
         {
+            m_avgDPAQ = 0.0f;
             m_frameRs = 0.0;
             m_frameCs = 0.0;
             SC = 0.0;

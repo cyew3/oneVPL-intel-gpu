@@ -355,6 +355,8 @@ public:
         Zero(mParams);
         mfs = 0;
 #ifdef AMT_MAX_FRAME_SIZE
+        mMaxFrameSizeInBits = 0;
+        mMaxFrameSizeInBitsI = 0;
         mMinQstepCmplxKInitEncOrder = 0;
         mMinQstepRateEP = 0;
         mMinQstepICmplxEP = 0;
@@ -384,8 +386,8 @@ public:
 
     void InitMinQForMaxFrameSize(H265VideoParam *video);
     void ResetMinQForMaxFrameSize(H265VideoParam *video, Frame *f);
-    Ipp64f GetMinQForMaxFrameSize(H265VideoParam *video, Frame *f, Ipp32s layer, Frame *maxpoc, Ipp32s myPos);
-    void UpdateMinQForMaxFrameSize(H265VideoParam *video, Frame *f, Ipp32s bits, Ipp32s layer, mfxBRCStatus Sts);
+    Ipp64f GetMinQForMaxFrameSize(Ipp32u maxFrameSizeInBits, H265VideoParam *video, Frame *f, Ipp32s layer, Frame *maxpoc, Ipp32s myPos);
+    void UpdateMinQForMaxFrameSize(Ipp32u maxFrameSizeInBits, H265VideoParam *video, Frame *f, Ipp32s bits, Ipp32s layer, mfxBRCStatus Sts);
 
     mfxStatus SetQP(Ipp32s qp, Ipp16u frameType);
 
@@ -447,11 +449,14 @@ protected:
     Ipp64f mQstepScale;
     Ipp64f mQstepScale0;
     Ipp32s mLoanLength;
+    Ipp32f mLoanRatio;
     Ipp32s mLoanBitsPerFrame;
 
     // MinQ for Max Frame Size
     Ipp32s mfs;
 #ifdef AMT_MAX_FRAME_SIZE
+    Ipp32u mMaxFrameSizeInBitsI;
+    Ipp32u mMaxFrameSizeInBits;
     Ipp64f mMinQstepCmplxK[5];              // Layers
     Ipp64f mMinQstepRateEP;                 // Var based on GopRefDist
     Ipp64f mMinQstepICmplxEP;               // Var based on GopRefDist
