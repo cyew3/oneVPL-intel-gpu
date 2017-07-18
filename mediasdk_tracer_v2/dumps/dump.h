@@ -432,6 +432,12 @@ public:
                         case MFX_EXTBUFF_BRC:
                             str += dump(name, *((mfxExtBRC*)_struct.ExtParam[i])) + "\n";
                             break;
+                        case MFX_EXTBUFF_MULTI_FRAME_PARAM:
+                            str += dump(name, *((mfxExtMultiFrameParam*)_struct.ExtParam[i])) + "\n";
+                            break;
+                        case MFX_EXTBUFF_MULTI_FRAME_CONTROL:
+                            str += dump(name, *((mfxExtMultiFrameControl*)_struct.ExtParam[i])) + "\n";
+                            break;
                         default:
                             str += dump(name, *(_struct.ExtParam[i])) + "\n";
                             break;
@@ -540,6 +546,8 @@ public:
     DEFINE_DUMP_FUNCTION(mfxExtVP9Param);
     DEFINE_DUMP_FUNCTION(mfxExtMasteringDisplayColourVolume);
     DEFINE_DUMP_FUNCTION(mfxExtContentLightLevelInfo);
+    DEFINE_DUMP_FUNCTION(mfxExtMultiFrameParam);
+    DEFINE_DUMP_FUNCTION(mfxExtMultiFrameControl);
 
     //mfxsession
     DEFINE_DUMP_FUNCTION(mfxSession);

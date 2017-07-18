@@ -996,3 +996,15 @@ STRUCT(mfxExtBRC,
     FIELD_T(mfxHDL, Update)
 )
 #endif // defined(__MFXBRC_H__)
+
+STRUCT(mfxExtMultiFrameParam,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU16      , MFMode)
+    FIELD_T(mfxU16      , MaxNumFrames)
+)
+
+STRUCT(mfxExtMultiFrameControl,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU32      , Timeout)
+    FIELD_T(mfxU16      , Flush)
+)

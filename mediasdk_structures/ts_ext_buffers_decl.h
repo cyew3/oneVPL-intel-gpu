@@ -36,6 +36,8 @@ EXTBUF(mfxExtLAControl                   , MFX_EXTBUFF_LOOKAHEAD_CTRL           
 EXTBUF(mfxExtVPPFieldProcessing          , MFX_EXTBUFF_VPP_FIELD_PROCESSING            )
 EXTBUF(mfxExtContentLightLevelInfo       , MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO        )
 EXTBUF(mfxExtMasteringDisplayColourVolume, MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME )
+EXTBUF(mfxExtMultiFrameParam             , MFX_EXTBUFF_MULTI_FRAME_PARAM               )
+EXTBUF(mfxExtMultiFrameControl           , MFX_EXTBUFF_MULTI_FRAME_CONTROL             )
 // FEI
 EXTBUF(mfxExtFeiParam               , MFX_EXTBUFF_FEI_PARAM                 )
 EXTBUF(mfxExtFeiSPS                 , MFX_EXTBUFF_FEI_SPS                   )

@@ -844,7 +844,9 @@ enum {
     MFX_EXTBUFF_VP9_TEMPORAL_LAYERS             = MFX_MAKEFOURCC('9','T','M','L'),
     MFX_EXTBUFF_VP9_PARAM                       = MFX_MAKEFOURCC('9','P','A','R'),
     MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO        = MFX_MAKEFOURCC('L','L','I','S'),
-    MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME = MFX_MAKEFOURCC('D','C','V','S')
+    MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME = MFX_MAKEFOURCC('D','C','V','S'),
+    MFX_EXTBUFF_MULTI_FRAME_PARAM               = MFX_MAKEFOURCC('M','F','R','P'),
+    MFX_EXTBUFF_MULTI_FRAME_CONTROL             = MFX_MAKEFOURCC('M','F','R','C')
 };
 
 /* VPP Conf: Do not use certain algorithms  */
@@ -1870,6 +1872,34 @@ typedef struct {
 
     mfxU16  reserved[110];
 } mfxExtVP9Param;
+
+/* Multi-Frame Mode */
+enum {
+    MFX_MF_DEFAULT = 0,
+    MFX_MF_DISABLED = 1,
+    MFX_MF_AUTO = 2,
+    MFX_MF_MANUAL = 3
+};
+
+/* Multi-Frame Initialization parameters */
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU16      MFMode;
+    mfxU16      MaxNumFrames;
+
+    mfxU16      reserved[58];
+} mfxExtMultiFrameParam;
+
+/* Multi-Frame Run-time controls */
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU32      Timeout;      /* timeout in millisecond */
+    mfxU16      Flush;        /* Flush internal frame buffer, e.g. submit all collected frames. */
+
+    mfxU16      reserved[57];
+} mfxExtMultiFrameControl;
 
 #ifdef __cplusplus
 } // extern "C"

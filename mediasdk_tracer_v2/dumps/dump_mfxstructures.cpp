@@ -1321,3 +1321,23 @@ std::string DumpContext::dump(const std::string structName, const  mfxExtContent
     DUMP_FIELD_RESERVED(reserved);
     return str;
 }
+
+std::string DumpContext::dump(const std::string structName, const  mfxExtMultiFrameParam &_struct) {
+    std::string str;
+    str += dump(structName + ".Header", _struct.Header) + "\n";
+    str += structName + ".MFMode=" + ToString(_struct.MFMode) + "\n";
+    str += structName + ".MaxNumFrames=" + ToString(_struct.MaxNumFrames) + "\n";
+
+    DUMP_FIELD_RESERVED(reserved);
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const  mfxExtMultiFrameControl &_struct) {
+    std::string str;
+    str += dump(structName + ".Header", _struct.Header) + "\n";
+    str += structName + ".Timeout=" + ToString(_struct.Timeout) + "\n";
+    str += structName + ".Flush=" + ToString(_struct.Flush) + "\n";
+
+    DUMP_FIELD_RESERVED(reserved);
+    return str;
+}

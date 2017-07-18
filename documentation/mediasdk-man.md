@@ -6712,6 +6712,70 @@ Structure specifies instructions for the SDK encoder provided by external BRC af
 
 This structure is available since SDK API **TBD**
 
+## <a id='mfxExtMultiFrameParam'>mfxExtMultiFrameParam</a>
+
+**Definition**
+
+```C
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU16      MFMode;
+    mfxU16      MaxNumFrames;
+
+    mfxU16      reserved[58];
+} mfxExtMultiFrameParam;
+```
+
+**Description**
+
+Attached to the [mfxVideoParam](#mfxVideoParam) structure used to [query](#MFXVideoENCODE_Query) supported parameters for multi frame submission operation and [initialize](#MFXVideoENCODE_Init) encoder with particular values.
+Multi Frame submission will gather frames from several [joined](#MFXJoinSession) sessions and combine into single submission.
+
+**Members**
+
+| | |
+--- | ---
+`Header.BufferId`       | Must be [MFX_EXTBUFF_MULTI_FRAME_PARAM](#ExtendedBufferID).
+`MFMode    `            | Multi frame submission [mode](#MFMode).
+`MaxNumFrames`          | Maximum number of frames to be used for combining. Each encoder in [joined](#MFXJoinSession) sessions has to be [initialized](#MFXVideoENCODE_Init) with the same value.
+
+**Change History**
+
+This structure is available since SDK API **TBD**.
+
+## <a id='mfxExtMultiFrameControl'>mfxExtMultiFrameControl</a>
+
+**Definition**
+
+```C
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU32      Timeout;
+    mfxU16      Flush;
+
+    mfxU16      reserved[57];
+} mfxExtMultiFrameControl;
+```
+
+**Description**
+
+If application attaches this structure to the [mfxEncodeCtrl](#mfxEncodeCtrl) structure at [runtime](#MFXVideoENCODE_EncodeFrameAsync), allow to manage timeout on per frame basis or force flushing internal frame buffer immediately.
+If applicaiton attaches this structure to the [mfxVideoParam](#mfxVideoParam) structure at [initialization](#MFXVideoENCODE_Init) and/or [reset](#MFXVideoENCODE_Reset) - set default Timeout for this stream, that will be used for all frames of current encoder session, if per-frame timeout not set.
+
+**Members**
+
+| | |
+--- | ---
+`Header.BufferId`       | Must be [MFX_EXTBUFF_MULTI_FRAME_CONTROL](#ExtendedBufferID).
+`Flush    `             | Flushes internal frame buffer with current frame despite whether MaxNumFrames specified during [initialization](#MFXVideoENCODE_Init) through [mfxExtMultiFrameParam](#mfxExtMultiFrameParam)) reached or not, available with 'MF_MODE_MANUAL' only, otherwise ignored, see [MFMode](#MFMode).
+`Timeout`               | Time in miliseconds specifying how long this encoder will wait for internal buffer of frames to collect MaxNumFrames specified during [initialization](#MFXVideoENCODE_Init) through [mfxExtMultiFrameParam](#mfxExtMultiFrameParam)), if elapse it'll flush internal buffer. Ignored with 'MF_MODE_MANUAL'.
+
+**Change History**
+
+This structure is available since SDK API **TBD**.
+
 # Enumerator Reference
 
 ## <a id='BitstreamDataFlag'>BitstreamDataFlag</a>
@@ -7000,6 +7064,8 @@ The `ExtendedBufferID` enumerator itemizes and defines identifiers (`BufferId`) 
 `MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME` | This extended buffer configures HDR SEI message. See the [mfxExtMasteringDisplayColourVolume](#mfxExtMasteringDisplayColourVolume) structure for details.
 `MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO` | This extended buffer configures HDR SEI message. See the [mfxExtContentLightLevelInfo](#mfxExtContentLightLevelInfo) structure for details.
 `MFX_EXTBUFF_BRC` | See the [mfxExtBRC](#mfxExtBRC) structure for details.
+`MFX_EXTBUFF_MULTI_FRAME_PARAM` | This extended buffer allow to specify multi-frame submission parameters.
+`MFX_EXTBUFF_MULTI_FRAME_CONTROL` | This extended buffer allow to manage multi-frame submission in runtime.
 
 **Change History**
 
@@ -7029,6 +7095,8 @@ SDK API 1.22 adds `MFX_EXTBUFF_DEC_VIDEO_PROCESSING`.
 SDK API 1.23 adds `MFX_EXTBUFF_MB_FORCE_INTRA`.
 
 SDK API **TBD** adds `MFX_EXTBUFF_VP9_PARAM`, `MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO`, `MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME` and `MFX_EXTBUFF_BRC`.
+
+SDK API **TBD** adds `MFX_EXTBUFF_MULTI_FRAME_PARAM` and `MFX_EXTBUFF_MULTI_FRAME_CONTROL`
 
 See additional change history in the structure definitions.
 
@@ -7942,6 +8010,25 @@ The `BRCStatus` enumerator itemizes instructions to the SDK encoder by [mfxExtBr
 `MFX_BRC_SMALL_FRAME`       | Coded frame is too small, recoding required
 `MFX_BRC_PANIC_BIG_FRAME`   | Coded frame is too big, no further recoding possible - skip frame
 `MFX_BRC_PANIC_SMALL_FRAME` | Coded frame is too small, no further recoding possible - required padding to [mfxBRCFrameStatus](#mfxBRCFrameStatus)`::MinFrameSize`
+
+**Change History**
+
+This enumerator is available since SDK API **TBD**.
+
+## <a id='MFMode'>MFMode</a>
+
+**Description**
+
+The `MFMode` enumerator defines multi-frame submission mode.
+
+**Name/Description**
+
+| | |
+--- | ---
+`MFX_MF_DEFAULT`  | The SDK decides if multi-frame submission is enabled or disabled based on parameters, target encoder, platform, etc.
+`MFX_MF_DISABLED` | Explicitly disables multi-frame submission.
+`MFX_MF_AUTO`     | The SDK manages multi-frame submission.
+`MFX_MF_MANUAL`   | Applicaiton manages multi-frame submission.
 
 **Change History**
 
