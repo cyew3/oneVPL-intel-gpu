@@ -809,7 +809,7 @@ mfxStatus CEncodingPipeline::SetSequenceParameters()
     /* Initialize task pool */
     m_inputTasks.Init(m_appCfg.EncodedOrder,
                     2 + !m_appCfg.preencDSstrength, // (ENC + PAK structs always present) + 1 (if DS not present)
-                    m_refDist, m_gopOptFlag, m_numRefFrame, m_numRefFrame + 1, m_log2frameNumMax);
+                    m_refDist, m_gopOptFlag, m_numRefFrame, m_bRefType, m_numRefFrame + 1, m_log2frameNumMax);
 
     m_taskInitializationParams.PicStruct       = m_picStruct;
     m_taskInitializationParams.GopPicSize      = m_gopSize;
