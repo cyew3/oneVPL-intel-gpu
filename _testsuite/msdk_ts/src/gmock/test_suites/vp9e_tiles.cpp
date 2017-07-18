@@ -14,6 +14,10 @@ Copyright(c) 2017 Intel Corporation. All Rights Reserved.
 #include "ts_decoder.h"
 #include "ts_parser.h"
 #include "ts_struct.h"
+#include "mfx_ext_buffers.h"
+#if defined (WIN32)||(WIN64)
+#include "windows.h"
+#endif
 
 namespace vp9e_tiles
 {
@@ -55,7 +59,6 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
 #define MAX_PIPES_SUPPORTED 2
 #define BASIC_NUM_TILE_COLS 4
 
-#define MFX_MAX( a, b ) ( ((a) > (b)) ? (a) : (b) )
 #define MFX_MIN( a, b ) ( ((a) < (b)) ? (a) : (b) )
 
     struct tc_struct
@@ -106,7 +109,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         MAX_TILE_COLS = 0x4000 | CHECK_FULL_INITIALIZATION,
         MAX_TILE_W = 0x8000 | CHECK_FULL_INITIALIZATION,
         MIN_TILE_W = 0x010000 | CHECK_FULL_INITIALIZATION,
-        SCALABLE_PIPE = 0x020000 | CHECK_FULL_INITIALIZATION,
+        SCALABLE_PIPE = 0x020000,
         UNALIGNED_RESOL = 0x040000 | CHECK_FULL_INITIALIZATION,
         DYNAMIC_CHANGE = 0x080000 | CHECK_FULL_INITIALIZATION,
         EXPERIMENTAL = 0x800000
@@ -130,7 +133,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         // MAX_TILE_COLS, // this case requires 8K encoding - disabled for Pre-Si
         MIN_TILE_W,
         // MAX_TILE_W,    // this case requires 8K encoding - disabled for Pre-Si
-        //SCALABLE_PIPE,  // scalable encoding is blocked so far because it cannot work with HuC enabled.
+        SCALABLE_PIPE,
         UNALIGNED_RESOL,
         DYNAMIC_CHANGE,
         //EXPERIMENTAL
@@ -218,32 +221,32 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
 
         // below cases check support of tile rows together with tile columns
         // rows and cols together are supported only for scalable pipeline. In this case number of cols is limited with MAX_PIPES_SUPPORTED
-        {/*19*/ MFX_ERR_NONE, SCALABLE_PIPE | CQP | TU1,
-            { { ITER_LENGTH, SET_W(1408), SET_H(1152), SET_NUM_ROWS(MAX_NUM_TILES/MAX_PIPES_SUPPORTED), SET_NUM_COLS(MAX_PIPES_SUPPORTED) } }
+        {/*19*/ MFX_ERR_NONE, SCALABLE_PIPE | CQP | TU1 | CHECK_FULL_INITIALIZATION,
+            { { ITER_LENGTH, SET_W(1408), SET_H(1152), SET_NUM_ROWS(MAX_NUM_ROWS), SET_NUM_COLS(MAX_PIPES_SUPPORTED) } }
         },
-        {/*20*/ MFX_ERR_NONE, SCALABLE_PIPE | CQP | TU4,
-            { { ITER_LENGTH, SET_W(1408), SET_H(1152), SET_NUM_ROWS(MAX_NUM_TILES/MAX_PIPES_SUPPORTED), SET_NUM_COLS(MAX_PIPES_SUPPORTED) } }
+        {/*20*/ MFX_ERR_NONE, SCALABLE_PIPE | CQP | TU4 | CHECK_FULL_INITIALIZATION,
+            { { ITER_LENGTH, SET_W(1408), SET_H(1152), SET_NUM_ROWS(MAX_NUM_ROWS), SET_NUM_COLS(MAX_PIPES_SUPPORTED) } }
         },
-        {/*21*/ MFX_ERR_NONE, SCALABLE_PIPE | CQP | TU7,
-            { { ITER_LENGTH, SET_W(1408), SET_H(1152), SET_NUM_ROWS(MAX_NUM_TILES/MAX_PIPES_SUPPORTED), SET_NUM_COLS(MAX_PIPES_SUPPORTED) } }
+        {/*21*/ MFX_ERR_NONE, SCALABLE_PIPE | CQP | TU7 | CHECK_FULL_INITIALIZATION,
+            { { ITER_LENGTH, SET_W(1408), SET_H(1152), SET_NUM_ROWS(MAX_NUM_ROWS), SET_NUM_COLS(MAX_PIPES_SUPPORTED) } }
         },
-        {/*22*/ MFX_ERR_NONE, SCALABLE_PIPE | CBR | TU1,
-            { { ITER_LENGTH, SET_W(1408), SET_H(1152), SET_NUM_ROWS(MAX_NUM_TILES/MAX_PIPES_SUPPORTED), SET_NUM_COLS(MAX_PIPES_SUPPORTED) } }
+        {/*22*/ MFX_ERR_NONE, SCALABLE_PIPE | CBR | TU1 | CHECK_FULL_INITIALIZATION,
+            { { ITER_LENGTH, SET_W(1408), SET_H(1152), SET_NUM_ROWS(MAX_NUM_ROWS), SET_NUM_COLS(MAX_PIPES_SUPPORTED) } }
         },
-        {/*23*/ MFX_ERR_NONE, SCALABLE_PIPE | CBR | TU4,
-            { { ITER_LENGTH, SET_W(1408), SET_H(1152), SET_NUM_ROWS(MAX_NUM_TILES/MAX_PIPES_SUPPORTED), SET_NUM_COLS(MAX_PIPES_SUPPORTED) } }
+        {/*23*/ MFX_ERR_NONE, SCALABLE_PIPE | CBR | TU4 | CHECK_FULL_INITIALIZATION,
+            { { ITER_LENGTH, SET_W(1408), SET_H(1152), SET_NUM_ROWS(MAX_NUM_ROWS), SET_NUM_COLS(MAX_PIPES_SUPPORTED) } }
         },
-        {/*24*/ MFX_ERR_NONE, SCALABLE_PIPE | CBR | TU7,
-            { { ITER_LENGTH, SET_W(1408), SET_H(1152), SET_NUM_ROWS(MAX_NUM_TILES/MAX_PIPES_SUPPORTED), SET_NUM_COLS(MAX_PIPES_SUPPORTED) } }
+        {/*24*/ MFX_ERR_NONE, SCALABLE_PIPE | CBR | TU7 | CHECK_FULL_INITIALIZATION,
+            { { ITER_LENGTH, SET_W(1408), SET_H(1152), SET_NUM_ROWS(MAX_NUM_ROWS), SET_NUM_COLS(MAX_PIPES_SUPPORTED) } }
         },
-        {/*25*/ MFX_ERR_NONE, SCALABLE_PIPE | VBR | TU1,
-            { { ITER_LENGTH, SET_W(1408), SET_H(1152), SET_NUM_ROWS(MAX_NUM_TILES/MAX_PIPES_SUPPORTED), SET_NUM_COLS(MAX_PIPES_SUPPORTED) } }
+        {/*25*/ MFX_ERR_NONE, SCALABLE_PIPE | VBR | TU1 | CHECK_FULL_INITIALIZATION,
+            { { ITER_LENGTH, SET_W(1408), SET_H(1152), SET_NUM_ROWS(MAX_NUM_ROWS), SET_NUM_COLS(MAX_PIPES_SUPPORTED) } }
         },
-        {/*26*/ MFX_ERR_NONE, SCALABLE_PIPE | VBR | TU4,
-            { { ITER_LENGTH, SET_W(1408), SET_H(1152), SET_NUM_ROWS(MAX_NUM_TILES/MAX_PIPES_SUPPORTED), SET_NUM_COLS(MAX_PIPES_SUPPORTED) } }
+        {/*26*/ MFX_ERR_NONE, SCALABLE_PIPE | VBR | TU4 | CHECK_FULL_INITIALIZATION,
+            { { ITER_LENGTH, SET_W(1408), SET_H(1152), SET_NUM_ROWS(MAX_NUM_ROWS), SET_NUM_COLS(MAX_PIPES_SUPPORTED) } }
         },
-        {/*27*/ MFX_ERR_NONE, SCALABLE_PIPE | VBR | TU7,
-            { { ITER_LENGTH, SET_W(1408), SET_H(1152), SET_NUM_ROWS(MAX_NUM_TILES/MAX_PIPES_SUPPORTED), SET_NUM_COLS(MAX_PIPES_SUPPORTED) } }
+        {/*27*/ MFX_ERR_NONE, SCALABLE_PIPE | VBR | TU7 | CHECK_FULL_INITIALIZATION,
+            { { ITER_LENGTH, SET_W(1408), SET_H(1152), SET_NUM_ROWS(MAX_NUM_ROWS), SET_NUM_COLS(MAX_PIPES_SUPPORTED) } }
         },
 
         // below case checks support of smallest possible tile width
@@ -381,7 +384,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                                                       CHECK_NUM_ROWS(1), CHECK_NUM_COLS(2) }}
         },
         // NumTileColumns is bigger than max number of tiles for VP9
-        {/*54*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY,
+        {/*54*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,  INIT | GET_VIDEO_PARAM,
             {{ NO_ENCODING, SET_W(7680), SET_H(6288), SET_NUM_ROWS(1), SET_NUM_COLS(MAX_NUM_TILES + 1),
                                                       CHECK_NUM_ROWS(1), CHECK_NUM_COLS(MAX_NUM_TILES) }}
         },
@@ -448,7 +451,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         // NumTileColumns is bigger than number of pipes for scalable encoding
         {/*62*/ MFX_ERR_INVALID_VIDEO_PARAM, RESET | CQP | SCALABLE_PIPE,
             {
-                { NO_ENCODING, SET_W(2816), SET_H(2304), SET_NUM_ROWS(1), SET_NUM_COLS(1) },
+                { ITER_LENGTH, SET_W(2816), SET_H(2304), SET_NUM_ROWS(1), SET_NUM_COLS(1) },
                 { NO_ENCODING, SET_NUM_ROWS(MAX_NUM_ROWS), SET_NUM_COLS(MAX_PIPES_SUPPORTED * 2) }
             }
         },
@@ -480,7 +483,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, SET_NUM_ROWS(2), SET_NUM_COLS(1) },
             }
         },
-        {/*66*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CQP | SCALABLE_PIPE,
+        {/*66*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CQP | SCALABLE_PIPE | CHECK_FULL_INITIALIZATION,
             {
                 { ITER_LENGTH, SET_W(1408), SET_H(1152),
                                SET_NUM_ROWS(4), SET_NUM_COLS(MAX_PIPES_SUPPORTED) },
@@ -518,7 +521,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, SET_NUM_ROWS(2), SET_NUM_COLS(1) },
             }
         },
-        {/*70*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CBR | SCALABLE_PIPE,
+        {/*70*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CBR | SCALABLE_PIPE | CHECK_FULL_INITIALIZATION,
             {
                 { ITER_LENGTH, SET_W(1408), SET_H(1152),
                                SET_NUM_ROWS(4), SET_NUM_COLS(MAX_PIPES_SUPPORTED) },
@@ -556,7 +559,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, SET_NUM_ROWS(2), SET_NUM_COLS(1) },
             }
         },
-        {/*74*/ MFX_ERR_NONE, DYNAMIC_CHANGE | VBR | SCALABLE_PIPE,
+        {/*74*/ MFX_ERR_NONE, DYNAMIC_CHANGE | VBR | SCALABLE_PIPE | CHECK_FULL_INITIALIZATION,
             {
                 { ITER_LENGTH, SET_W(1408), SET_H(1152),
                                SET_NUM_ROWS(4), SET_NUM_COLS(MAX_PIPES_SUPPORTED) },
@@ -723,6 +726,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
     public:
         mfxVideoParam m_param[3];
         mfxExtVP9Param m_extParam[3];
+        mfxExtCodingOptionDDI m_extDDI;
         mfxExtEncoderResetOption m_extResetOpt;
         mfxU32 m_firstFrame;
         mfxU32 m_numFramesToEncode;
@@ -998,6 +1002,119 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         return MFX_ERR_NONE;
     }
 
+#if defined (WIN32)||(WIN64)
+#define FAIL_ON_ERROR(STS)                                                   \
+{                                                                            \
+    if (STS != ERROR_SUCCESS)                                                \
+    {                                                                        \
+        ADD_FAILURE() << "ERROR: failed to set or restore registry values";  \
+        throw tsFAIL;                                                        \
+    }                                                                        \
+}
+
+#ifdef UNICODE
+    typedef std::wstring tstring;
+#else
+    typedef std::string tstring;
+#endif
+
+    struct RegValue
+    {
+        HKEY    rootKey;
+        tstring subKey;
+        tstring valueName;
+        bool    existedBefore;
+        mfxU32  initialValueData;
+        mfxU32  newValueData;
+    };
+
+    class tsRegistryEditor
+    {
+        std::vector<RegValue> m_regValues;
+    public:
+        void SetRegKey(
+            HKEY rootKey,
+            const tstring& subKey,
+            const tstring& valueName,
+            mfxU32 valueData,
+            bool forceZero = false);
+        void RestoreRegKeys();
+        ~tsRegistryEditor();
+    };
+
+    void tsRegistryEditor::SetRegKey(
+        HKEY rootKey,
+        const tstring& subKey,
+        const tstring& valueName,
+        mfxU32 valueData,
+        bool forceZero)
+    {
+        HKEY hkey;
+        long sts = RegOpenKeyEx(rootKey, subKey.c_str(), 0, KEY_ALL_ACCESS, &hkey);
+        FAIL_ON_ERROR(sts);
+
+        RegValue value = {};
+        value.rootKey = rootKey;
+        value.subKey = subKey;
+        value.valueName = valueName;
+        value.existedBefore = true;
+
+        DWORD size = sizeof(DWORD);
+        sts = RegGetValue(rootKey, subKey.c_str(), valueName.c_str(), RRF_RT_REG_DWORD, NULL, (PVOID)&value.initialValueData, &size);
+        if (sts == ERROR_FILE_NOT_FOUND)
+        {
+            value.existedBefore = false;
+            value.initialValueData = 0;
+        }
+        else FAIL_ON_ERROR(sts);
+
+        bool needToSetValue = (valueData != value.initialValueData || value.existedBefore == false && valueData == 0 && forceZero == true);
+
+        if (needToSetValue)
+        {
+            sts = RegSetValueEx(hkey, valueName.c_str(), 0, REG_DWORD, (LPBYTE)&valueData, sizeof(DWORD));
+            FAIL_ON_ERROR(sts);
+            value.newValueData = valueData;
+            m_regValues.push_back(value);
+        }
+
+        sts = RegCloseKey(hkey);
+        FAIL_ON_ERROR(sts);
+    }
+
+    void tsRegistryEditor::RestoreRegKeys()
+    {
+        for (std::vector<RegValue>::iterator i = m_regValues.begin(); i != m_regValues.end(); i++)
+        {
+            HKEY hkey;
+            long sts = RegOpenKeyEx(i->rootKey, i->subKey.c_str(), 0, KEY_ALL_ACCESS, &hkey);
+            FAIL_ON_ERROR(sts);
+
+            if (i->existedBefore == false)
+            {
+                sts = RegDeleteValue(hkey, i->valueName.c_str());
+            }
+            else
+            {
+                sts = RegSetValueEx(hkey, i->valueName.c_str(), 0, REG_DWORD, (LPBYTE)&i->initialValueData, sizeof(DWORD));
+            }
+            FAIL_ON_ERROR(sts);
+
+            sts = RegCloseKey(hkey);
+            FAIL_ON_ERROR(sts);
+        }
+
+        m_regValues.clear();
+    }
+
+    tsRegistryEditor::~tsRegistryEditor()
+    {
+        RestoreRegKeys();
+    }
+
+
+#endif
+
     mfxU32 CalcIterations(const tc_struct& tc, mfxU32& totalFramesToEncode)
     {
         // calculate number of iterations set by tc_struct
@@ -1058,6 +1175,15 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             return 0;
         }
 
+        if (tc.type & SCALABLE_PIPE && tc.type & (CBR | VBR))
+        {
+            // don't run cases for scalable pipeline with BRC - return respective error instead
+            // known driver issue - scalable pipes cannot work with HuC (HuC is required for BRC)
+            // TODO: remove once support of scalable pipline together with HuC is unblocked in the driver
+            ADD_FAILURE() << "ERROR: Scalable pipeline isn't supported together with BRC";
+            throw tsFAIL;
+        }
+
         if (g_tsHWtype < MFX_HW_CNL) // unsupported on platform less CNL
         {
             g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
@@ -1066,6 +1192,26 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             g_tsStatus.check(sts);
             return 0;
         }
+
+#if defined (WIN32)|(WIN64)
+        // do "magic" with registry to unblock scalable and non-scalable encoding for tiles
+        // TODO: remove once:
+        // (1) support of scalable pipline together with HuC is unblocked in the driver ("VP9 Encode HUC Enable" eliminated)
+        // (2) driver is capable to dynamically switch between scalable and non-scalable pipelines ("Disable Media Encode Scalability" eliminated)
+        tsRegistryEditor reg;
+        const HKEY rootKey = HKEY_CURRENT_USER;
+
+        if (tc.type & SCALABLE_PIPE)
+        {
+            reg.SetRegKey(rootKey, TEXT("Software\\Intel\\Display\\DXVA"), TEXT("VP9 Encode HUC Enable"), 0);
+            reg.SetRegKey(rootKey, TEXT("Software\\Intel\\Display\\DXVA"), TEXT("Disable Media Encode Scalability"), 0);
+        }
+        else
+        {
+            reg.SetRegKey(rootKey, TEXT("Software\\Intel\\Display\\DXVA"), TEXT("VP9 Encode HUC Enable"), 1);
+            reg.SetRegKey(rootKey, TEXT("Software\\Intel\\Display\\DXVA"), TEXT("Disable Media Encode Scalability"), 1);
+        }
+#endif
 
         // prepare pool of input streams
         std::map<Resolution, std::string> inputStreams;
@@ -1078,18 +1224,23 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         inputStreams.emplace(Resolution(7680, 6288), g_tsStreamPool.Get("forBehaviorTest/salesman_7680x6288_2.yuv"));
         g_tsStreamPool.Reg();
 
-        bool errorExpected = false;
-
         std::vector<Iteration*> iterations;
-        std::map<mfxU32, mfxU8*> inputFrames;
-        std::map<mfxU32, mfxU8*>* pInputFrames = errorExpected ?
-            0 : &inputFrames; // if error is expected from Reset, there is no need to check PSNR
-                              // and thus no need to save input frames
 
         // prepare all iterations for the test
         mfxU32 totalFramesToEncode = 0;
         const mfxU32 numIterations = CalcIterations(tc, totalFramesToEncode);
         mfxU32 iterationStart = 0;
+
+        std::map<mfxU32, mfxU8*> inputFrames;
+        std::map<mfxU32, mfxU8*>* pInputFrames = totalFramesToEncode ?
+            &inputFrames : 0;
+
+        if (totalFramesToEncode && tc.type & SCALABLE_PIPE)
+        {
+            // workaround for decoder issue - it crashes simics on attempt to decode frames with both tile rows and columns
+            // TODO: remove this once decoder issue is fixed
+            pInputFrames = 0;
+        }
 
         for (mfxU8 idx = 0; idx < numIterations; idx++)
         {
@@ -1114,13 +1265,13 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
 
         m_filler = feeder;
 
-        // prepare bitstream checker
-        BitstreamChecker bs(&iterations, pInputFrames, tc.type, id);
-        m_bs_processor = &bs;
-
         // run the test
         MFXInit(); TS_CHECK_MFX;
         Load();
+
+        // prepare bitstream checker
+        BitstreamChecker bs(&iterations, pInputFrames, tc.type, id);
+        m_bs_processor = &bs;
 
         *m_pPar = iterations[0]->m_param[SET];
         mfxVideoParam* pOutPar = &iterations[0]->m_param[GET];
@@ -1130,6 +1281,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         {
             g_tsStatus.expect(tc.sts);
             TS_TRACE(m_pPar);
+            TRACE_FUNC3(MFXVideoENCODE_Query, m_session, m_pPar, pOutPar);
             mfxStatus sts = MFXVideoENCODE_Query(m_session, m_pPar, pOutPar);
             TS_TRACE(pOutPar);
             g_tsStatus.check(sts);
@@ -1137,11 +1289,29 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         }
 
         // INIT SECTION
-        if (tc.type & INIT || RESET | totalFramesToEncode)
+        if ((tc.type & (INIT | RESET)) || totalFramesToEncode)
         {
             g_tsStatus.expect(tc.sts);
             TS_TRACE(m_pPar);
+            // workaround for issue with [scalable pipeline + HuC]:
+            // refresh of CABAC contexts should be disabled - attach special ext buffer
+            // TODO: remove once support of scalable pipline together with HuC is unblocked in the driver
+            if (tc.type & SCALABLE_PIPE)
+            {
+                mfxExtCodingOptionDDI& extDdi = iterations[0]->m_extDDI;
+                InitExtBuffer(MFX_EXTBUFF_DDI, extDdi);
+                extDdi.RefreshFrameContext = MFX_CODINGOPTION_OFF;
+                m_pPar->ExtParam[m_pPar->NumExtParam++] = (mfxExtBuffer*)&extDdi;
+            }
+            TRACE_FUNC2(MFXVideoENCODE_Init, m_session, m_pPar);
             mfxStatus sts = MFXVideoENCODE_Init(m_session, m_pPar);
+            // workaround for issue with [scalable pipeline + HuC]:
+            // detach special ext buffer
+            // TODO: remove once support of scalable pipline together with HuC is unblocked in the driver
+            if (tc.type & SCALABLE_PIPE)
+            {
+                m_pPar->ExtParam[--m_pPar->NumExtParam] = 0;
+            }
             TS_TRACE(&m_pPar);
             if (tc.type & INIT)
             {
@@ -1154,6 +1324,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         if (tc.type & GET_VIDEO_PARAM && tc.sts >= MFX_ERR_NONE)
         {
             g_tsStatus.expect(MFX_ERR_NONE);
+            TRACE_FUNC2(MFXVideoENCODE_GetVideoParam, m_session, pOutPar);
             mfxStatus sts = MFXVideoENCODE_GetVideoParam(m_session, pOutPar);
             TS_TRACE(pOutPar);
             g_tsStatus.check(sts);
@@ -1177,12 +1348,14 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             *m_pPar = iterations[idx]->m_param[SET];
             g_tsStatus.expect(tc.sts);
             TS_TRACE(m_pPar)
+            TRACE_FUNC2(MFXVideoENCODE_Reset, m_session, m_pPar);
             mfxStatus sts = MFXVideoENCODE_Reset(m_session, m_pPar);
             if (tc.type & RESET)
             {
                 g_tsStatus.check(sts);
             }
             pOutPar = &iterations[idx]->m_param[GET];
+            TRACE_FUNC2(MFXVideoENCODE_GetVideoParam, m_session, pOutPar);
             sts = MFXVideoENCODE_GetVideoParam(m_session, pOutPar);
             TS_TRACE(pOutPar);
             if (tc.type & RESET && tc.sts >= MFX_ERR_NONE)
