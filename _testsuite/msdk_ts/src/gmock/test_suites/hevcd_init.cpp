@@ -256,7 +256,7 @@ template <
 >
 TestSuite::tc_struct const TestSuiteExt<profile, fourcc, void(b1, b2...), void(c1, c2...)>::test_cases[] =
 {
-    {/*28*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 1, {{FourCC, fourcc}, {BitDepthLuma, b1::value}}},
+    {/*28*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 1, {{FourCC, fourcc}, {BitDepthLuma, b1::value},{ ChromaFormat, c1::value } }},
     {/*29*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 1, {{FourCC, fourcc}, {ChromaFormat, c1::value}}},
 
     //c3 pack specifies wrong chroma formats
