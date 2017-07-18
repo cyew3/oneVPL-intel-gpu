@@ -63,8 +63,10 @@ void PrintHelp(const msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-f frameRate] - video frame rate (frames per second)\n"));
     msdk_printf(MSDK_STRING("   [-idr_interval size] - idr interval, default 0 means every I is an IDR, 1 means every other I frame is an IDR etc (default is infinite)\n"));
     msdk_printf(MSDK_STRING("   [-g size] - GOP size (1(default) means I-frames only)\n"));
+    msdk_printf(MSDK_STRING("   [-gop_opt closed|strict] - GOP optimization flags (can be used together)\n"));
     msdk_printf(MSDK_STRING("   [-r (-GopRefDist) distance] - Distance between I- or P- key frames (1 means no B-frames) (0 - by default(I frames))\n"));
     msdk_printf(MSDK_STRING("   [-num_ref (-NumRefFrame) numRefs] - number of reference frames \n"));
+    msdk_printf(MSDK_STRING("   [-gpb:<on,off>] - make HEVC encoder use regular P-frames (off) or GPB (on) (on - by default)\n"));
     msdk_printf(MSDK_STRING("   [-bref] - arrange B frames in B pyramid reference structure\n"));
     msdk_printf(MSDK_STRING("   [-nobref] - do not use B-pyramid (by default the decision is made by library)\n"));
     msdk_printf(MSDK_STRING("   [-l numSlices] - number of slices \n"));
@@ -177,6 +179,27 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU32 nArgNum, sInputParams& 
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-mixed")))
         {
             params.nPicStruct = MFX_PICSTRUCT_UNKNOWN;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-gop_opt")))
+        {
+            CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
+            ++i;
+            if (0 == msdk_strcmp(strInput[i], MSDK_STRING("closed")))
+            {
+                params.nGopOptFlag |= MFX_GOP_CLOSED;
+            }
+            else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("strict")))
+            {
+                params.nGopOptFlag |= MFX_GOP_STRICT;
+            }
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-gpb:on")))
+        {
+            params.GPB = MFX_CODINGOPTION_ON;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-gpb:off")))
+        {
+            params.GPB = MFX_CODINGOPTION_OFF;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("?")))
         {

@@ -56,6 +56,7 @@ void FEI_Encode::SetEncodeParameters(const sInputParams& encParams)
     m_videoParams.mfx.QPI = m_videoParams.mfx.QPP = m_videoParams.mfx.QPB = encParams.QP;
     m_videoParams.mfx.GopRefDist  = encParams.nRefDist;
     m_videoParams.mfx.GopPicSize  = encParams.nGopSize;
+    m_videoParams.mfx.GopOptFlag  = encParams.nGopOptFlag;
     m_videoParams.mfx.IdrInterval = encParams.nIdrInterval;
     m_videoParams.mfx.NumRefFrame = encParams.nNumRef;
     m_videoParams.mfx.NumSlice    = encParams.nNumSlices;
@@ -64,6 +65,10 @@ void FEI_Encode::SetEncodeParameters(const sInputParams& encParams)
     m_videoParams.enableExtParam(MFX_EXTBUFF_CODING_OPTION2);
     mfxExtCodingOption2* pCodingOption2 = m_videoParams.get<mfxExtCodingOption2>();
     pCodingOption2->BRefType = encParams.BRefType;
+
+    m_videoParams.enableExtParam(MFX_EXTBUFF_CODING_OPTION3);
+    mfxExtCodingOption3* pCO3 = m_videoParams.get<mfxExtCodingOption3>();
+    pCO3->GPB = encParams.GPB;
 }
 
 mfxStatus FEI_Encode::Query()
