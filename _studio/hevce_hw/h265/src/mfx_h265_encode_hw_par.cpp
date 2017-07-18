@@ -1779,7 +1779,11 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 #endif
 #endif
 
-    if (par.mfx.FrameInfo.FourCC == MFX_FOURCC_P010 && isInVideoMem(par))
+    if ((par.mfx.FrameInfo.FourCC == MFX_FOURCC_P010
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+        || par.mfx.FrameInfo.FourCC == MFX_FOURCC_Y210
+#endif
+        ) && isInVideoMem(par))
         changed += CheckMin(par.mfx.FrameInfo.Shift, 1);
 
     if (par.mfx.FrameInfo.FrameRateExtN && par.mfx.FrameInfo.FrameRateExtD) // FR <= 300

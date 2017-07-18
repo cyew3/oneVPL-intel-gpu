@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __FAST_COPY_H__
@@ -147,6 +147,8 @@ public:
         }
 
         mfxCopyRect<mfxU8>((mfxU8*)pSrc, srcPitch, (mfxU8*)pDst, dstPitch, roi, flag);
+
+        roi.width >>= 1;
         if(rshift)
             ippiRShiftC_16u_C1IR(rshift, (mfxU16*)pDst, dstPitch,roi);
         if(lshift)

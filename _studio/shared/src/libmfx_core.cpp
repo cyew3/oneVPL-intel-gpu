@@ -1246,16 +1246,23 @@ mfxStatus CommonCORE::DoSWFastCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSr
     {
     case MFX_FOURCC_P010:
 #if defined(_WIN32) || defined(_WIN64)
-        if(pDst->Info.Shift != pSrc->Info.Shift)
+        if (pSrc->Info.Shift != pDst->Info.Shift)
         {
+            mfxU8 lshift = 0;
+            mfxU8 rshift = 0;
+            if(pSrc->Info.Shift != 0)
+                rshift = (Ipp8u)(16 - pDst->Info.BitDepthLuma);
+            else
+                lshift = (Ipp8u)(16 - pDst->Info.BitDepthLuma);
+
             roi.width <<= 1;
 
-            sts = pFastCopy->CopyAndShift((mfxU16*)(pDst->Data.Y), dstPitch, (mfxU16 *)pSrc->Data.Y, srcPitch, roi, 0, (Ipp8u)(16-pDst->Info.BitDepthLuma), copyFlag);
+            sts = pFastCopy->CopyAndShift((mfxU16*)(pDst->Data.Y), dstPitch, (mfxU16 *)pSrc->Data.Y, srcPitch, roi, lshift, rshift, copyFlag);
             MFX_CHECK_STS(sts);
 
             roi.height >>= 1;
 
-            sts = pFastCopy->CopyAndShift((mfxU16*)(pDst->Data.UV), dstPitch, (mfxU16 *)pSrc->Data.UV, srcPitch, roi, 0, (Ipp8u)(16-pDst->Info.BitDepthChroma), copyFlag);
+            sts = pFastCopy->CopyAndShift((mfxU16*)(pDst->Data.UV), dstPitch, (mfxU16 *)pSrc->Data.UV, srcPitch, roi, lshift, rshift, copyFlag);
             MFX_CHECK_STS(sts);
         }
         else

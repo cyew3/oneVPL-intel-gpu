@@ -440,7 +440,11 @@ mfxStatus CopyRawSurfaceToVideoMemory(
         mfxFrameSurface1 surfSrc = { {}, video.mfx.FrameInfo, sysSurf };
         mfxFrameSurface1 surfDst = { {}, video.mfx.FrameInfo, d3dSurf };
 
-        if (surfDst.Info.FourCC == MFX_FOURCC_P010)
+        if (surfDst.Info.FourCC == MFX_FOURCC_P010
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+            || surfDst.Info.FourCC == MFX_FOURCC_Y210
+#endif
+            )
             surfDst.Info.Shift = 1; // convert to native shift in core.CopyFrame() if required
 
         if (!sysSurf.Y)

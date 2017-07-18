@@ -541,7 +541,8 @@ mfxStatus Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request,
 
     request->Info = tmp.mfx.FrameInfo;
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-    request->Info.Shift = tmp.mfx.FrameInfo.FourCC == MFX_FOURCC_P010 ? 1: 0;
+    request->Info.Shift = (tmp.mfx.FrameInfo.FourCC == MFX_FOURCC_P010 ||
+                           tmp.mfx.FrameInfo.FourCC == MFX_FOURCC_Y210) ? 1: 0;
 #else
     request->Info.Shift = tmp.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10? 1: 0;
 #endif
