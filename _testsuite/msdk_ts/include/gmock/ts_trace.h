@@ -22,6 +22,7 @@ Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
 #include "mfxfeih265.h"
 #include "mfxla.h"
 #include "mfxsc.h"
+#include "mfxbrc.h"
 
 #include "bs_parser.h"
 #include <iostream>

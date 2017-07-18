@@ -982,5 +982,8 @@
     <ClCompile Include="src\gmock\test_suites\vp9e_tiles.cpp">
       <Filter>Source Files\test_suites\vp9e</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\encoders_extbrc.cpp">
+      <Filter>Source Files\test_suites</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
