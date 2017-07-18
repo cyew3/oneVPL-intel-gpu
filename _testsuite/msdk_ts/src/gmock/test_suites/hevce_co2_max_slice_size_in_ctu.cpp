@@ -150,11 +150,11 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     /*03*/{MFX_ERR_NONE, RESET, {}},
     /*04*/{MFX_ERR_NONE, RESET|INIT, {}},
     /*05*/{MFX_ERR_NONE, INIT, {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30},
-                                       {MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1}}},
+                                {MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1}}},
     /*06*/{MFX_ERR_NONE, INIT|RESET, {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30},
-                             {MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 10}}},
+                                      {MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 10}}},
     /*07*/{MFX_ERR_NONE, INIT|RESET, {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30},
-                                       {MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 8}}},
+                                      {MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 8}}},
     /*08*/{MFX_ERR_NONE, INIT|RESET, {
         {MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 700},
         {MFX_PAR, &tsStruct::mfxVideoParam.mfx.MaxKbps, 0},
@@ -227,6 +227,9 @@ int TestSuite::RunTest(unsigned int id)
         if (tc.mode & RESET) {
             mfxExtCodingOption2& cod2 = m_par;
             cod2.NumMbPerSlice = rand() % m_numLCU;
+            if (   (m_par.mfx.NumSlice != 0)
+                && (m_par.mfx.NumSlice != (m_numLCU + cod2.NumMbPerSlice - 1) / cod2.NumMbPerSlice))
+                g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
             m_expected = cod2.NumMbPerSlice;
             Reset();
             m_max = frameNumber;
