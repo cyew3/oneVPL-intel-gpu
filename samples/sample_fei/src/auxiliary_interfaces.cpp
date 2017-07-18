@@ -168,7 +168,7 @@ mfxStatus MFX_VppInterface::VPPoneFrame(mfxFrameSurface1* pSurf_in, mfxFrameSurf
     for (;;)
     {
         sts = m_pmfxVPP->RunFrameVPPAsync(pSurf_in, pSurf_out, NULL, &m_SyncPoint);
-        MSDK_BREAK_ON_ERROR(sts); // Remove to allow warnings here
+        MSDK_CHECK_WRN(sts, "WRN during RunFrameVPPAsync");
 
         if (MFX_ERR_NONE < sts && !m_SyncPoint)
         {
@@ -391,7 +391,7 @@ mfxStatus MFX_DecodeInterface::GetOneFrame(mfxFrameSurface1* & pSurf)
         {
             sts = DecodeLastFrame(pSurf);
         }
-        MSDK_BREAK_ON_ERROR(sts); // Remove to allow warnings here
+        MSDK_CHECK_WRN(sts, "WRN during Decode<One|Last>Frame");
 
         if (MFX_ERR_NONE < sts && !m_SyncPoint)
         {

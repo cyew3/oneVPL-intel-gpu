@@ -1060,7 +1060,7 @@ mfxStatus FEI_EncPakInterface::EncPakOneFrame(iTask* eTask)
             for (;;)
             {
                 sts = m_pmfxENC->ProcessFrameAsync(&eTask->ENC_in, &eTask->ENC_out, &m_SyncPoint);
-                MSDK_BREAK_ON_ERROR(sts); // Remove to allow warnings here
+                MSDK_CHECK_WRN(sts, "WRN during ProcessFrameAsync");
 
                 if (MFX_ERR_NONE < sts && !m_SyncPoint)
                 {
@@ -1125,7 +1125,7 @@ mfxStatus FEI_EncPakInterface::EncPakOneFrame(iTask* eTask)
             for (;;)
             {
                 sts = m_pmfxPAK->ProcessFrameAsync(&eTask->PAK_in, &eTask->PAK_out, &m_SyncPoint);
-                MSDK_BREAK_ON_ERROR(sts); // Remove to allow warnings here
+                MSDK_CHECK_WRN(sts, "WRN during ProcessFrameAsync");
 
                 if (MFX_ERR_NONE < sts && !m_SyncPoint)
                 {

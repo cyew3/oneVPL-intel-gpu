@@ -659,7 +659,7 @@ mfxStatus FEI_EncodeInterface::EncodeOneFrame(iTask* eTask)
 
             // Encoding goes below
             sts = m_pmfxENCODE->EncodeFrameAsync(&m_encodeControl, encodeSurface, &m_mfxBS, &m_SyncPoint);
-            MSDK_BREAK_ON_ERROR(sts); // Remove to allow warnings here
+            MSDK_CHECK_WRN(sts, "WRN during EncodeFrameAsync");
 
             if (MFX_ERR_NONE < sts && !m_SyncPoint) // repeat the call if warning and no output
             {
