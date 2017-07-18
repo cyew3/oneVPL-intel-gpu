@@ -212,8 +212,15 @@ mfxU16 QueryMaxProfile(eMFXHWType type)
 #else
     if (type < MFX_HW_ICL)
         return MFX_PROFILE_HEVC_MAIN10;
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+    else if (type < MFX_HW_TGL_LP)
+        return MFX_PROFILE_HEVC_REXT;
+    else
+        return MFX_PROFILE_HEVC_SCC;
+#else
     else
         return MFX_PROFILE_HEVC_REXT;
+#endif //PRE_SI_TARGET_PLATFORM_GEN12
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
 #endif //MFX_VA
 }
@@ -1263,7 +1270,11 @@ bool CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType type)
     if (in->mfx.CodecProfile != MFX_PROFILE_HEVC_MAIN &&
         in->mfx.CodecProfile != MFX_PROFILE_HEVC_MAIN10 &&
         in->mfx.CodecProfile != MFX_PROFILE_HEVC_MAINSP &&
-        in->mfx.CodecProfile != MFX_PROFILE_HEVC_REXT)
+        in->mfx.CodecProfile != MFX_PROFILE_HEVC_REXT
+#ifdef PRE_SI_TARGET_PLATFORM_GEN12
+        && in->mfx.CodecProfile != MFX_PROFILE_HEVC_SCC
+#endif
+        )
         return false;
 
     //BitDepthLuma & BitDepthChroma is also checked here
