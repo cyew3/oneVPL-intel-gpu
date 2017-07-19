@@ -249,6 +249,8 @@ struct sInputParams
         MSDK_ZERO_MEMORY(strSrcFile);
         MSDK_ZERO_MEMORY(strPerfFile);
         strDstFiles.clear();
+        uChromaSiting = 0;
+        bChromaSiting = false;
     }
 };
 

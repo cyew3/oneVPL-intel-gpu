@@ -111,7 +111,8 @@ CTranscodingPipeline::CTranscodingPipeline():
     m_nOutputFramesNum(0),
     shouldUseGreedyFormula(false),
     isHEVCSW(false),
-    m_vppCompDumpRenderMode(0)
+    m_vppCompDumpRenderMode(0),
+    m_nRotationAngle(0)
 {
     MSDK_ZERO_MEMORY(m_mfxDecParams);
     MSDK_ZERO_MEMORY(m_mfxVppParams);
@@ -1475,8 +1476,11 @@ void CTranscodingPipeline::SetEncCtrlRT(ExtendedSurface& extSurface, mfxEncodeCt
 
         // Copy all extended buffer pointers from pExtSurface.pAuxCtrl.encCtrl
         m_extBuffPtrStorage[keyId].clear();
-        for (unsigned int i=0; i<pCtrl->NumExtParam; i++)
-            m_extBuffPtrStorage[keyId].push_back(extSurface.pAuxCtrl->encCtrl.ExtParam[i]);
+        if (extSurface.pAuxCtrl)
+        {
+            for (unsigned int i = 0; i < pCtrl->NumExtParam; i++)
+                m_extBuffPtrStorage[keyId].push_back(extSurface.pAuxCtrl->encCtrl.ExtParam[i]);
+        }
 
         // Attach additional buffer with either MBQP or ROI information
         if (m_bUseQPMap)
