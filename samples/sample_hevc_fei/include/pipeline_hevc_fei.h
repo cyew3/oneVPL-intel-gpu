@@ -26,7 +26,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "plugin_loader.h"
 #include "vaapi_device.h"
 #include "fei_utils.h"
-#include "fei_encode.h"
+#include "hevc_fei_encode.h"
 
 /* This class implements a FEI pipeline */
 class CEncodingPipeline

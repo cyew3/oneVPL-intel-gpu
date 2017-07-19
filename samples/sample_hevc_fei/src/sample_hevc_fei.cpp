@@ -18,7 +18,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 \**********************************************************************************/
 
 #include "version.h"
-#include "pipeline_fei.h"
+#include "pipeline_hevc_fei.h"
 
 mfxStatus CheckOptions(const sInputParams params, const msdk_char* appName);
 void AdjustOptions(sInputParams& params);

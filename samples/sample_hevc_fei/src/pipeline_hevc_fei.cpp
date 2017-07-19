@@ -17,7 +17,7 @@ The original version of this sample may be obtained from https://software.intel.
 or https://software.intel.com/en-us/media-client-solutions-support.
 \**********************************************************************************/
 
-#include "pipeline_fei.h"
+#include "pipeline_hevc_fei.h"
 
 CEncodingPipeline::CEncodingPipeline(sInputParams& userInput)
     : m_inParams(userInput)
