@@ -1553,6 +1553,9 @@ mfxStatus ConvertVideoParamBack_H264enc(mfxVideoInternalParam *parMFX, const UMC
             parMFX->mfx.FrameInfo.AspectRatioW = enc->m_SeqParamSet->vui_parameters.sar_width;
             parMFX->mfx.FrameInfo.AspectRatioH = enc->m_SeqParamSet->vui_parameters.sar_height;
         } else {
+            // Limit valid range of the vui_parameters.aspect_ratio_idc to 1..16
+            if (enc->m_SeqParamSet->vui_parameters.aspect_ratio_idc == 0 || enc->m_SeqParamSet->vui_parameters.aspect_ratio_idc >= sizeof(tab_AspectRatio) / sizeof(tab_AspectRatio[0]))
+                return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
             parMFX->mfx.FrameInfo.AspectRatioW = tab_AspectRatio[enc->m_SeqParamSet->vui_parameters.aspect_ratio_idc][0];
             parMFX->mfx.FrameInfo.AspectRatioH = tab_AspectRatio[enc->m_SeqParamSet->vui_parameters.aspect_ratio_idc][1];
         }
