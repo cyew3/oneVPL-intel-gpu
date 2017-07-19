@@ -34,6 +34,11 @@ namespace MfxHwH265FeiEncode
         return NULL;
     }
 
+    template <class T> mfxExtBuffer* GetBufById(const T * par, mfxU32 id)
+    {
+        return par ? GetBufById(*par, id) : NULL;
+    }
+
     enum VA_BUFFER_STORAGE_ID
     {
         VABID_FEI_FRM_CTRL = MfxHwH265Encode::VABuffersHandler::VABID_END_OF_LIST + 1
