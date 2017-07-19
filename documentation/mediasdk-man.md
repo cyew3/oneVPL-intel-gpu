@@ -6564,6 +6564,103 @@ Attached to the [mfxVideoParam](#mfxVideoParam) structure extends it with VP9-sp
 
 This structure is available since SDK API **TBD**.
 
+## <a id='mfxExtVP9Segmentation'>mfxExtVP9Segmentation</a>
+
+**Definition**
+
+```C
+typedef struct {
+    mfxU16  FeatureEnabled;
+    mfxI16  QIndexDelta;
+    mfxI16  LoopFilterLevelDelta;
+    mfxU16  ReferenceFrame;
+    mfxU16  reserved[12];
+} mfxVP9SegmentParam;
+
+
+typedef struct {
+    mfxExtBuffer        Header;
+    mfxU16              NumSegments;
+    mfxVP9SegmentParam  Segment[8];
+    mfxU16              SegmentIdBlockSize;
+    mfxU32              NumSegmentIdAlloc;
+    union {
+        mfxU8           *SegmentId;
+        mfxU64          reserved1;
+    };
+    mfxU16  reserved[52];
+} mfxExtVP9Segmentation;
+```
+
+**Description**
+
+In VP9 encoder it’s possible to divide a frame to up to 8 segments and apply particular features (like delta for quantization index or for loop filter level) on segment basis. “Uncompressed header” of every frame indicates if segmentation is enabled for current frame, and (if segmentation enabled) contains full information about features applied to every segment. Every “Mode info block” of coded frame has segment_id in the range \[0, 7\].
+
+To enable Segmentation `mfxExtVP9Segmentation` structure with correct settings should be passed to the encoder. It can be attached to the [mfxVideoParam](#mfxVideoParam) structure during [initialization](#MFXVideoENCODE_Init) or [MFXVideoENCODE_Reset](#MFXVideoENCODE_Reset) call (static configuration). If `mfxExtVP9Segmentation` buffer isn’t attached during initialization, segmentation is disabled for static configuration. If the buffer isn’t attached for [Reset](#MFXVideoENCODE_Reset) call, encoder continues to use static configuration for segmentation which was actual before this [Reset](#MFXVideoENCODE_Reset) call. If `mfxExtVP9Segmentation` buffer with `NumSegments=0` is provided during [initialization](#MFXVideoENCODE_Init) or [Reset](#MFXVideoENCODE_Reset) call, segmentation becomes disabled for static configuration.
+
+Also the buffer can be attached to the [mfxEncodeCtrl](#mfxEncodeCtrl) structure during [runtime](#MFXVideoENCODE_EncodeFrameAsync) (dynamic configuration). Dynamic configuration is applied to current frame only (after encoding of current frame SDK Encoder will switch to next dynamic configuration, or to static configuration if dynamic isn’t provided for next frame).
+
+
+**Members**
+
+| | |
+--- | ---
+`FeatureEnabled`        | Indicates which features are enabled for the segment. See [SegmentFeature](#SegmentFeature) enumerator for values for this option. Values from the enumerator can be bit-OR’ed. Support of particular feature depends on underlying HW platform. Application can check which features are supported by calling of [Query](#MFXVideoENCODE_Query).
+`QIndexDelta`           | Quantization index delta for the segment. Ignored if `MFX_VP9_SEGMENT_FEATURE_QINDEX` isn’t set in `FeatureEnabled`. Valid range for this parameter is \[-255, 255\]. If `QIndexDelta` is out of this range, it will be ignored. If `QIndexDelta` is within valid range, but sum of base quantization index and `QIndexDelta` is out of \[0, 255\], `QIndexDelta` will be clamped.
+`LoopFilterLevelDelta`  | Loop filter level delta for the segment. Ignored if `MFX_VP9_SEGMENT_FEATURE_LOOP_FILTER` isn’t set in `FeatureEnabled`. Valid range for this parameter is \[-63, 63\]. If LoopFilterLevelDelta is out of this range, it will be ignored. If `LoopFilterLevelDelta` is within valid range, but sum of base loop filter level and LoopFilterLevelDelta is out of \[0, 63\], LoopFilterLevelDelta will be clamped.
+`ReferenceFrame`        | Reference frame for the segment. See [VP9ReferenceFrame](#VP9ReferenceFrame) enumerator for values for this option. Ignored if `MFX_VP9_SEGMENT_FEATURE_REFERENCE` isn’t set in `FeatureEnabled`.
+`Header.BufferId`       | Must be [MFX_EXTBUFF_VP9_SEGMENTATION](#ExtendedBufferID).
+`NumSegments`           | Number of segments for frame. Value 0 means that segmentation is disabled. Sending of 0 for particular frame will disable segmentation for this frame only. Sending of 0 to [Reset](#MFXVideoENCODE_Reset) function will disable segmentation permanently (can be enabled again by subsequent [Reset](#MFXVideoENCODE_Reset) call).
+`Segment`               | Array of structures `mfxVP9SegmentParam` containing features and parameters for every segment. Entries with indexes bigger than `NumSegments-1` are ignored. See the [mfxVP9SegmentParam](#mfxVP9SegmentParam) structure for definitions of segment features and their parameters.
+`SegmentIdBlockSize`,<br>`NumSegmentIdAlloc`,<br>`SegmentId` | These three parameters represent segmentation map. Here, segmentation map is array of segment_ids (one byte per segment_id) for blocks of size NxN in raster scan order. Size NxN is specified by application and is constant for whole frame. If `mfxExtVP9Segmentation` is attached during initialization and/or during runtime, all three parameters should be set to proper values not conflicting with each other and with `NumSegments`. If any of them not set, or any conflict/error in these parameters detected by SDK, segmentation map discarded.
+`SegmentIdBlockSize`    | Size of block (NxN) for segmentation map. See [SegmentIdBlockSize](#SegmentIdBlockSize) enumerator for values for this option. Encoded block which is bigger than `SegmentIdBlockSize` uses segment_id taken from it’s top-left sub-block from segmentation map. Application can check if particular block size is supported by calling of [Query](#MFXVideoENCODE_Query).
+`NumSegmentIdAlloc`     | Size of buffer allocated for segmentation map (in bytes). Application must assure that `NumSegmentIdAlloc` is enough to cover frame resolution with blocks of size `SegmentIdBlockSize`. Otherwise segmentation map will be discarded.
+`SegmentId`             | Pointer to segmentation map buffer which holds array of segment_ids in raster scan order. Application is responsible for allocation and release of this memory. Buffer pointed by SegmentId provided during initialization or [Reset](#MFXVideoENCODE_Reset) call should be considered in use until another SegmentId is provided via [Reset](#MFXVideoENCODE_Reset) call (if any), or until call of [MFXVideoENCODE_Close](#MFXVideoENCODE_Close). Buffer pointed by SegmentId provided with [mfxEncodeCtrl](#mfxEncodeCtrl) should be considered in use while input surface is locked by SDK. Every segment_id in the map should be in the range of \[0, `NumSegments-1`\]. If some segment_id is out of valid range, segmentation map cannot be applied. If buffer `mfxExtVP9Segmentation` is attached to [mfxEncodeCtrl](#mfxEncodeCtrl) in runtime, `SegmentId` can be zero. In this case segmentation map from static configuration will be used.
+
+
+**Change History**
+
+This structure is available since SDK API **TBD**.
+
+## <a id='mfxExtVP9TemporalLayers'>mfxExtVP9TemporalLayers</a>
+
+**Definition**
+
+```C
+typedef struct {
+    mfxU16 FrameRateScale;
+    mfxU16 TargetKbps
+    mfxU16 reserved[14];
+} mfxVP9TemporalLayer;
+
+typedef struct {
+    mfxExtBuffer        Header;
+    mfxVP9TemporalLayer Layer[8];
+    mfxU16              reserved[60];
+} mfxExtVP9TemporalLayers;
+```
+
+**Description**
+
+The SDK allows to encode VP9 bitstream that contains several subset bitstreams that differ in frame rates also called “temporal layers”. On decoder side each temporal layer can be extracted from coded stream and decoded separately.
+The `mfxExtVP9TemporalLayers` structure configures the temporal layers for SDK VP9 encoder. It can be attached to the [mfxVideoParam](#mfxVideoParam) structure during [initialization](#MFXVideoENCODE_Init) or [MFXVideoENCODE_Reset](#MFXVideoENCODE_Reset) call. If `mfxExtVP9TemporalLayers` buffer isn’t attached during initialization, temporal scalability is disabled. If the buffer isn’t attached for [Reset](#MFXVideoENCODE_Reset) call, encoder continues to use temporal scalability configuration which was actual before this [Reset](#MFXVideoENCODE_Reset) call.
+In SDK API temporal layers are ordered by their frame rates in ascending order. Temporal layer 0 (having lowest frame rate) is called base layer. Each next temporal layer includes all previous layers.
+Temporal scalability feature has requirements for minimum number of allocated reference frames (controlled by SDK API parameter [NumRefFrame](#mfxInfoMFX)). If [NumRefFrame](#mfxInfoMFX) set by application isn’t enough to build reference structure for requested number of temporal layers, the SDK corrects [NumRefFrame](#mfxInfoMFX).
+Temporal layer structure is reset (re-started) after key-frames.
+
+**Members**
+
+| | |
+--- | ---
+`FrameRateScale`  | The ratio between the frame rates of the current temporal layer and the base layer. The SDK treats particular temporal layer as “defined” if it has `FrameRateScale > 0`. If base layer defined, it must have `FrameRateScale` equal to 1. `FrameRateScale` of each next layer (if defined) must be multiple of and greater than `FrameRateScale` of previous layer.
+`TargetKbps`      | Target bitrate for current temporal layer (ignored if [RateControlMethod](#mfxInfoMFX) is CQP). If [RateControlMethod](#mfxInfoMFX) is not CQP, application must provide `TargetKbps` for every defined temporal layer. `TargetKbps` of each next layer (if defined) must be greater than TargetKbps of previous layer.
+`Header.BufferId` | Must be [MFX_EXTBUFF_VP9_TEMPORAL_LAYERS](#ExtendedBufferID).
+`Layer`           | The array of temporal layers. `Layer[0]` specifies base layer. The SDK reads layers from the array while they are defined (have `FrameRateScale>0`). All layers starting from first layer with `FrameRateScale=0` are ignored. Last layer which is not ignored is “highest layer”. Highest layer has frame rate specified in [mfxVideoParam](#mfxVideoParam). Frame rates of lower layers are calculated using their FrameRateScale. TargetKbps of highest layer should be equal to [TargetKbps](#mfxInfoMFX) specified in [mfxVideoParam](#mfxVideoParam). If it’s not true, `TargetKbps` of highest temporal layers has priority. If there are no defined layers in `Layer` array, temporal scalability feature is disabled. E.g. to disable temporal scalability in runtime, application should pass to [Reset](#MFXVideoENCODE_Reset) call `mfxExtVP9TemporalLayers` buffer with all `FrameRateScale` set to 0.
+
+**Change History**
+
+This structure is available since SDK API **TBD**
+
 ## <a id='mfxExtBRC'>mfxExtBRC</a>
 
 **Definition**
@@ -7330,6 +7427,8 @@ The `ExtendedBufferID` enumerator itemizes and defines identifiers (`BufferId`) 
 `MFX_EXTBUFF_VPP_COLORFILL` | See the [mfxExtVPPColorFill](#mfxExtVPPColorFill) structure for details.
 `MFX_EXTBUFF_DEC_VIDEO_PROCESSING` | See the [mfxExtDecVideoProcessing](#mfxExtDecVideoProcessing) structure for details.
 `MFX_EXTBUFF_VP9_PARAM` | Extends [mfxVideoParam](#mfxVideoParam) structure with VP9-specific parameters. See the [mfxExtVP9Param](#mfxExtVP9Param) structure for details.
+`MFX_EXTBUFF_VP9_SEGMENTATION` | Extends [mfxVideoParam](#mfxVideoParam) structure with VP9 segmentation parameters. See the [mfxExtVP9Segmentation](#mfxExtVP9Segmentation) structure for details.
+`MFX_EXTBUFF_VP9_TEMPORAL_LAYERS` | Extends [mfxVideoParam](#mfxVideoParam) structure with parameters for VP9 temporal scalability. See the [mfxExtVP9TemporalLayers](#mfxExtVP9TemporalLayers) structure for details.
 `MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME` | This extended buffer configures HDR SEI message. See the [mfxExtMasteringDisplayColourVolume](#mfxExtMasteringDisplayColourVolume) structure for details.
 `MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO` | This extended buffer configures HDR SEI message. See the [mfxExtContentLightLevelInfo](#mfxExtContentLightLevelInfo) structure for details.
 `MFX_EXTBUFF_BRC` | See the [mfxExtBRC](#mfxExtBRC) structure for details.
@@ -7371,7 +7470,7 @@ SDK API 1.24 adds `MFX_EXTBUFF_BRC`.
 
 SDK API 1.25 adds `MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO`, `MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME`, `MFX_EXTBUFF_MULTI_FRAME_PARAM`, `MFX_EXTBUFF_MULTI_FRAME_CONTROL`, `MFX_EXTBUFF_ENCODED_UNITS_INFO` and `MFX_EXTBUFF_DECODE_ERROR_REPORT`.
 
-SDK API **TBD** adds `MFX_EXTBUFF_VP9_PARAM`, `MFX_EXTBUFF_TASK_DEPENDENCY`, `MFX_EXTBUFF_VPP_MCTF`.
+SDK API **TBD** adds `MFX_EXTBUFF_VP9_PARAM`, `MFX_EXTBUFF_VP9_SEGMENTATION`, `MFX_EXTBUFF_VP9_TEMPORAL_LAYERS`, `MFX_EXTBUFF_TASK_DEPENDENCY`, `MFX_EXTBUFF_VPP_MCTF`.
 
 See additional change history in the structure definitions.
 
@@ -8243,7 +8342,7 @@ This enumerator is available since SDK API 1.19.
 
 **Description**
 
-The `VP9ReferenceFrame` enumerator itemizes reference frame type.
+The `VP9ReferenceFrame` enumerator itemizes reference frame type by [mfxVP9SegmentParam](#mfxVP9SegmentParam)**::ReferenceFrame** parameter.
 
 **Name/Description**
 
@@ -8257,6 +8356,48 @@ The `VP9ReferenceFrame` enumerator itemizes reference frame type.
 **Change History**
 
 This enumerator is available since SDK API **TBD**.
+
+
+## <a id='SegmentIdBlockSize'>SegmentIdBlockSize</a>
+
+**Description**
+
+The `SegmentIdBlockSize` enumerator indicates the block size represented by each segment_id in segmentation map. These values are used with the [mfxExtVP9Segmentation](#mfxExtVP9Segmentation)**::SegmentIdBlockSize** parameter.
+
+**Name/Description**
+
+| | |
+--- | ---
+`MFX_VP9_SEGMENT_ID_BLOCK_SIZE_UNKNOWN` | Unspecified block size
+`MFX_VP9_SEGMENT_ID_BLOCK_SIZE_8x8`     | 8x8 block size
+`MFX_VP9_SEGMENT_ID_BLOCK_SIZE_16x16`   | 16x16 block size
+`MFX_VP9_SEGMENT_ID_BLOCK_SIZE_32x32`   | 32x32 block size
+`MFX_VP9_SEGMENT_ID_BLOCK_SIZE_64x64`   | 64x64 block size
+
+**Change History**
+
+This enumerator is available since SDK API **TBD**.
+
+
+## <a id='SegmentFeature'>SegmentFeature</a>
+
+**Description**
+
+The `SegmentFeature` enumerator indicates features enabled for the segment. These values are used with the [mfxVP9SegmentParam](#mfxVP9SegmentParam)**::FeatureEnabled** parameter.
+
+**Name/Description**
+
+| | |
+--- | ---
+`MFX_VP9_SEGMENT_FEATURE_QINDEX`        | Quantization index delta
+`MFX_VP9_SEGMENT_FEATURE_LOOP_FILTER`   | Loop filter level delta
+`MFX_VP9_SEGMENT_FEATURE_REFERENCE`     | Reference frame
+`MFX_VP9_SEGMENT_FEATURE_SKIP`          | Skip
+
+**Change History**
+
+This enumerator is available since SDK API **TBD**.
+
 
 ## <a id='InsertHDRPayload'>InsertHDRPayload</a>
 
