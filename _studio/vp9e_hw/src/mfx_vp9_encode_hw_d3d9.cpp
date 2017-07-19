@@ -535,17 +535,10 @@ void HardcodeCaps(ENCODE_CAPS_VP9& caps, mfxCoreInterface* pCore)
         caps.YUV444ReconSupport = 1;
         caps.MaxEncodedBitDepth = 1;
 
-
         // for now driver reports in caps.NumScalablePipesMinus1 log2 of max supported number of tile columns
-        // need to process this capability respectively. TODO: change once driver behavior will be fixed.
-        if (caps.NumScalablePipesMinus1 > 2)
-        {
-            caps.NumScalablePipesMinus1 = 0;
-        }
-        else
-        {
-            caps.NumScalablePipesMinus1 = (1 << caps.NumScalablePipesMinus1) - 1;
-        }
+        // need to hardcode this caps to real number of scalable pipes supported by Gen11 LP
+        // TODO: remove this once driver behavior will be fixed.
+        caps.NumScalablePipesMinus1 = 1;
     }
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
 
