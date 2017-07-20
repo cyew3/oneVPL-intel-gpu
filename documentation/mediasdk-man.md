@@ -8830,13 +8830,21 @@ In all modes, the SDK encoders will respond to the bitrate changes as quickly as
 
 Alternatively, the application may use the CQP (constant quantization parameter) encoding mode to perform customized bitrate adjustment on a per-frame base. The application may use any of the encoded or display order modes to use per-frame CQP.
 
-### Dynamic resolution change
+### <a id='Dynamic_resolution_change'>Dynamic resolution change</a>
 
 The SDK encoder supports dynamic resolution change in all bitrate control modes. The application may change resolution by calling [MFXVideoENCODE_Reset](#MFXVideoENCODE_Reset) function. The application may decrease or increase resolution up to the size specified during encoder initialization.
 
-Resolution change always results in insertion of key IDR frame and new sequence parameter set header. The SDK encoder does not guarantee HRD conformance across resolution change point.
+Resolution change always results in insertion of key IDR frame and new sequence parameter set header. The only exception is SDK VP9 encoder (see section for [Dynamic reference frame scaling](#Dynamic_scaling) below). The SDK encoder does not guarantee HRD conformance across resolution change point.
 
 The SDK encoder may change some of the initialization parameters provided by the application during initialization. That in turn may lead to incompatibility of parameters provide by the application during reset and working set of parameters used by the SDK encoder. That is why it is strongly recommended to retrieve the actual working parameters set by [MFXVideoENCODE_GetVideoParam](#MFXVideoENCODE_GetVideoParam) function before making any resolution change.
+
+### <a id='Dynamic_scaling'>Dynamic reference frame scaling</a>
+
+VP9 standard allows to change resolution without insertion of key-frame. It's possible because of native built-in capability of VP9 decoder to upscale and downscale reference frames to match resolution of frame which is being encoded. By default SDK VP9 encoder doesn't insert key-frame when application does [Dynamic Resolution Change](#Dynamic_resolution_change). In this case first frame with new resolution is encoded using Inter prediction from scaled reference frame of previous resolution. Dynamic scaling has following limitation coming from VP9 specification: resolution of any active reference frame cannot exceed 2x resolution of current frame, and can't be smaller than 1/16 of current frame resolution. In case of dynamic scaling SDK VP9 encoder always uses single active reference frame for first frame after resolution change. So SDK VP9 encoder has following limitation for dynamic resolution change: new resolution shouln't exceed 16x and be below than 1/2 of current resolution.
+
+Application may force insertion of key-frame at the place of resolution change by invoking [encoder reset](#MFXVideoENCODE_Reset) with [mfxExtEncoderResetOption](#mfxExtEncoderResetOption)`::StartNewSequence` set to `MFX_CODINGOPTION_ON`. In case of inserted key-frame above limitations for new resolution are not in force.
+
+It should be noted that resolution change with dynamic reference scaling is compatible with multiref ([mfxVideoParam](#mfxVideoParam)::[mfx](#mfxInfoMFX)::`NumRefFrame` > 1). For multiref configuration SDK VP9 encoder uses multiple references within stream pieces of same resolution, and uses single reference at the place of resolution change.
 
 ### Forced Key Frame Generation
 
