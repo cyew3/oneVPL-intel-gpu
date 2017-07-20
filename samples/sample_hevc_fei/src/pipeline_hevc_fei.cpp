@@ -50,7 +50,7 @@ mfxStatus CEncodingPipeline::Init()
     sts = FillInputFrameInfo(frameInfo);
     MSDK_CHECK_STATUS(sts, "FillInputFrameInfo failed");
 
-    m_pInputSource.reset(new YUVReader(m_inParams, frameInfo, &m_EncSurfPool));
+    m_pYUVSource.reset(new YUVReader(m_inParams, frameInfo, &m_EncSurfPool));
 
     if (m_inParams.bENCODE)
     {
@@ -185,8 +185,8 @@ mfxStatus CEncodingPipeline::InitComponents()
 {
     mfxStatus sts = MFX_ERR_NONE;
 
-    MSDK_CHECK_POINTER(m_pInputSource.get(), MFX_ERR_UNSUPPORTED);
-    sts = m_pInputSource->Init();
+    MSDK_CHECK_POINTER(m_pYUVSource.get(), MFX_ERR_UNSUPPORTED);
+    sts = m_pYUVSource->Init();
     MSDK_CHECK_STATUS(sts, "m_pYUVSource->Init failed");
 
     if (m_pFEI_Encode.get())
@@ -204,27 +204,27 @@ mfxStatus CEncodingPipeline::Execute()
 
     mfxFrameSurface1* pSurf = NULL; // points to frame being processed
 
-    mfxU32 frameCount = 0;
+    mfxU32 numSubmitted = 0;
 
     while (MFX_ERR_NONE <= sts || MFX_ERR_MORE_DATA == sts)
     {
-        if (m_inParams.nNumFrames && m_inParams.nNumFrames <= frameCount) // frame encoding limit
+        if (m_inParams.nNumFrames <= numSubmitted) // frame encoding limit
             break;
 
-        sts = m_pInputSource->GetOneFrame(pSurf);
+        sts = m_pYUVSource->GetFrame(pSurf);
         MSDK_BREAK_ON_ERROR(sts);
 
-        frameCount++;
+        numSubmitted++;
 
         if (m_pFEI_Encode.get())
         {
-            sts = m_pFEI_Encode->EncodeOneFrame(pSurf);
+            sts = m_pFEI_Encode->EncodeFrame(pSurf);
             MSDK_BREAK_ON_ERROR(sts);
         }
 
     } // while (MFX_ERR_NONE <= sts || MFX_ERR_MORE_DATA == sts)
 
-    MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
+    MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA); // reached end of input file
     // exit in case of other errors
     MSDK_CHECK_STATUS(sts, "Frame processing failed");
 
@@ -242,13 +242,13 @@ mfxStatus CEncodingPipeline::DrainBufferedFrames()
     {
         while (MFX_ERR_NONE <= sts)
         {
-            sts = m_pFEI_Encode->EncodeOneFrame(NULL);
+            sts = m_pFEI_Encode->EncodeFrame(NULL);
         }
 
         // MFX_ERR_MORE_DATA indicates that there are no more buffered frames
         MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
         // exit in case of other errors
-        MSDK_CHECK_STATUS(sts, "EncodeOneFrame failed");
+        MSDK_CHECK_STATUS(sts, "EncodeFrame failed");
     }
 
     return sts;

@@ -131,7 +131,7 @@ mfxStatus YUVReader::Init()
     return m_FileReader.Init(in_file_names, m_srcColorFormat);
 }
 
-mfxStatus YUVReader::GetOneFrame(mfxFrameSurface1* & pSurf)
+mfxStatus YUVReader::GetFrame(mfxFrameSurface1* & pSurf)
 {
     mfxStatus sts = MFX_ERR_NONE;
 

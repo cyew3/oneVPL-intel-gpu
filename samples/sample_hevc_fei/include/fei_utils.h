@@ -54,7 +54,7 @@ public:
     virtual ~IVideoReader() {}
 
     virtual mfxStatus Init() = 0;
-    virtual mfxStatus GetOneFrame(mfxFrameSurface1* & pSurf) = 0;
+    virtual mfxStatus GetFrame(mfxFrameSurface1* & pSurf) = 0;
     virtual void      Close() = 0;
 
 protected:
@@ -76,7 +76,7 @@ public:
     ~YUVReader();
 
     mfxStatus Init();
-    mfxStatus GetOneFrame(mfxFrameSurface1* & pSurf);
+    mfxStatus GetFrame(mfxFrameSurface1* & pSurf);
     void      Close();
 
 private:

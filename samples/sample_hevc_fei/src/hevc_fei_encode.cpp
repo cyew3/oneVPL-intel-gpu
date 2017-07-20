@@ -115,7 +115,7 @@ mfxStatus FEI_Encode::GetVideoParam(mfxVideoParam& par)
     return m_mfxENCODE.GetVideoParam(&par);
 }
 
-mfxStatus FEI_Encode::EncodeOneFrame(mfxFrameSurface1* pSurf)
+mfxStatus FEI_Encode::EncodeFrame(mfxFrameSurface1* pSurf)
 {
     mfxStatus sts = MFX_ERR_NONE;
 

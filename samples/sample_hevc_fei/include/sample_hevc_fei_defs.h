@@ -55,7 +55,7 @@ struct sInputParams
         , nWidth(0)
         , nHeight(0)
         , dFrameRate(30.0)
-        , nNumFrames(0)
+        , nNumFrames(0xffff)
         , nNumSlices(1)
         , nRefDist(1)
         , nGopSize(1)

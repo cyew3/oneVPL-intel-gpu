@@ -35,7 +35,7 @@ public:
     mfxStatus QueryIOSurf(mfxFrameAllocRequest* request);
     mfxStatus GetVideoParam(mfxVideoParam& par);
     mfxFrameInfo* GetFrameInfo();
-    mfxStatus EncodeOneFrame(mfxFrameSurface1* pSurf);
+    mfxStatus EncodeFrame(mfxFrameSurface1* pSurf);
 
 private:
     MFXVideoSession*    m_pmfxSession;

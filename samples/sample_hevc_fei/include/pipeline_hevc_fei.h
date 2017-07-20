@@ -53,8 +53,9 @@ private:
     std::auto_ptr<mfxAllocatorParams> m_pMFXAllocatorParams;
     std::auto_ptr<CHWDevice>          m_pHWdev;
 
-    std::auto_ptr<IVideoReader> m_pInputSource;
-    std::auto_ptr<FEI_Encode>  m_pFEI_Encode;
+    std::auto_ptr<IVideoReader> m_pYUVSource; // source of raw data for encoder (can be either reading from file,
+                                              // or decoding bitstream)
+    std::auto_ptr<FEI_Encode>   m_pFEI_Encode;
 
     SurfacesPool m_EncSurfPool;
 
