@@ -3388,7 +3388,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
             extOpt3->LowDelayHrd = MFX_CODINGOPTION_OFF;
     }
 
-    if (extDdi->WeightedBiPredIdc == 1 || extDdi->WeightedBiPredIdc > 2)
+    if (extDdi->WeightedBiPredIdc > 2)
     {
         changed = true;
         extDdi->WeightedBiPredIdc = 0;
@@ -4006,8 +4006,6 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
                 extPps->numSliceGroupsMinus1 > 0                       ||
                 extPps->numRefIdxL0DefaultActiveMinus1 > 31            ||
                 extPps->numRefIdxL1DefaultActiveMinus1 > 31            ||
-                extPps->weightedPredFlag != 0                          ||
-                extPps->weightedBipredIdc == 1                         ||
                 extPps->picInitQpMinus26 < -26                         ||
                 extPps->picInitQpMinus26 > 25                          ||
                 extPps->picInitQsMinus26 != 0                          ||
@@ -4699,15 +4697,6 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         changed = true;
     }
 #endif
-
-    // Remove this check when WP B is also supported.
-    if (isENCPAK
-        && (extOpt3->WeightedBiPred == MFX_WEIGHTED_PRED_EXPLICIT ||
-            extOpt3->WeightedBiPred == MFX_WEIGHTED_PRED_IMPLICIT))
-    {
-        extOpt3->WeightedBiPred = MFX_WEIGHTED_PRED_DEFAULT;
-        changed = true;
-    }
 
     if ((isENCPAK) && (extOpt3->FadeDetection  == MFX_CODINGOPTION_ON))
     {
@@ -6800,7 +6789,7 @@ mfxStatus MfxHwH264Encode::CheckFEIRunTimeExtBuffersContent(
         case MFX_EXTBUFF_PRED_WEIGHT_TABLE:
         {
             mfxExtPredWeightTable* feiWeightTable = reinterpret_cast<mfxExtPredWeightTable*>(ctrl->ExtParam[i]);
-            const mfxU32 iWeight = 0, iOffset = 1, iY = 0, iCb = 1, iCr = 2, iL0 = 0;
+            const mfxU32 iWeight = 0, iOffset = 1, iY = 0, iCb = 1, iCr = 2;
 
             if (feiWeightTable->LumaLog2WeightDenom > 7)
             {
@@ -6811,48 +6800,73 @@ mfxStatus MfxHwH264Encode::CheckFEIRunTimeExtBuffersContent(
 
             if (feiWeightTable->ChromaLog2WeightDenom > 7)
             {
-                // for FEI Encode, chrome weight pred is not supported
+                // for FEI Encode, chroma weight pred is not supported, so set default value 0
                 feiWeightTable->ChromaLog2WeightDenom = 0;
                 return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
             }
 
-            // Validate weights & offset. Currently for P frame only.
-            for (mfxU32 n = 0; n < 32; n++) // [ref list entry]
+            for (mfxU32 m = 0; m < 2; m++) // l0, l1
             {
-                if (feiWeightTable->LumaWeightFlag[iL0][n])
+                for (mfxU32 n = 0; n < 32; n++) // [ref list entry]
                 {
-                    // check luma weights
-                    if (feiWeightTable->Weights[iL0][n][iY][iWeight] > 127 ||
-                        feiWeightTable->Weights[iL0][n][iY][iWeight] < -128)
+                    if (feiWeightTable->LumaWeightFlag[m][n])
                     {
-                        // out_of_scope, use default value pow(2, Denom)
-                        feiWeightTable->Weights[iL0][n][iY][iWeight] = (1 << feiWeightTable->LumaLog2WeightDenom);
-                        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-                    }
-
-                    // check luma offset
-                    if (feiWeightTable->Weights[iL0][n][iY][iOffset] > 127 ||
-                        feiWeightTable->Weights[iL0][n][iY][iOffset] < -128)
-                    {
-                        // out_of_scope, use default value 0
-                        feiWeightTable->Weights[iL0][n][iY][iOffset] = 0;
-                        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-                    }
-                }
-
-                if (feiWeightTable->ChromaWeightFlag[iL0][n])
-                {
-                    for (mfxU32 x = iCb; x <= iCr; x++) // [Cb, Cr]
-                    {
-                        for (mfxU32 y = iWeight; y <= iOffset; y++) // [weight, offset]
+                        // check luma weights
+                        if (feiWeightTable->Weights[m][n][iY][iWeight] > 127 ||
+                            feiWeightTable->Weights[m][n][iY][iWeight] < -128)
                         {
-                            if (feiWeightTable->Weights[iL0][n][x][y] > 127 ||
-                                feiWeightTable->Weights[iL0][n][x][y] < -128)
+                            // out_of_scope, use default value pow(2, Denom)
+                            feiWeightTable->Weights[m][n][iY][iWeight] = (1 << feiWeightTable->LumaLog2WeightDenom);
+                            return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+                        }
+
+                        // check luma offset
+                        if (feiWeightTable->Weights[m][n][iY][iOffset] > 127 ||
+                            feiWeightTable->Weights[m][n][iY][iOffset] < -128)
+                        {
+                            // out_of_scope, use default value 0
+                            feiWeightTable->Weights[m][n][iY][iOffset] = 0;
+                            return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+                        }
+                    }
+
+                    if (feiWeightTable->ChromaWeightFlag[m][n])
+                    {
+                        for (mfxU32 x = iCb; x <= iCr; x++) // [Cb, Cr]
+                        {
+                            for (mfxU32 y = iWeight; y <= iOffset; y++) // [weight, offset]
                             {
-                                feiWeightTable->Weights[iL0][n][x][y] = 0;
-                                return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+                                if (feiWeightTable->Weights[m][n][x][y] > 127 ||
+                                    feiWeightTable->Weights[m][n][x][y] < -128)
+                                {
+                                    feiWeightTable->Weights[m][n][x][y] = 0;
+                                    return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+                                }
                             }
                         }
+                    }
+                }
+            }
+
+            // checking for (8-298) in H.264-201704 spec:
+            // −128 <= w0C + w1C <= ( ( logWDC == 7 ) ? 127 : 128 )
+            for (mfxU32 m = 0; m < 32; m++) // L0 index
+            {
+                for (mfxU32 n = 0; n < 32; n++) // L1 index
+                {
+                    if (feiWeightTable->LumaWeightFlag[0][m] && feiWeightTable->LumaWeightFlag[1][n])
+                    {
+                        if ((feiWeightTable->Weights[0][m][0][0] + feiWeightTable->Weights[1][n][0][0] < -128) ||
+                            (feiWeightTable->Weights[0][m][0][0] + feiWeightTable->Weights[1][n][0][0] > ((feiWeightTable->LumaLog2WeightDenom == 7) ? 127 : 128)))
+                            return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+                    }
+                    if (feiWeightTable->ChromaWeightFlag[0][m] && feiWeightTable->ChromaWeightFlag[1][n])
+                    {
+                        if (((feiWeightTable->Weights[0][m][1][0] + feiWeightTable->Weights[1][n][1][0] < -128) ||
+                             (feiWeightTable->Weights[0][m][1][0] + feiWeightTable->Weights[1][n][1][0] > ((feiWeightTable->ChromaLog2WeightDenom == 7) ? 127 : 128))) ||
+                            ((feiWeightTable->Weights[0][m][2][0] + feiWeightTable->Weights[1][n][2][0] < -128) ||
+                             (feiWeightTable->Weights[0][m][2][0] + feiWeightTable->Weights[1][n][2][0] > ((feiWeightTable->ChromaLog2WeightDenom == 7) ? 127 : 128))))
+                            return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
                     }
                 }
             }
