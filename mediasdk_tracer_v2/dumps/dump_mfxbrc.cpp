@@ -49,3 +49,43 @@ std::string DumpContext::dump(const std::string structName, const mfxExtBRC &_st
 
     return str;
 }
+
+std::string DumpContext::dump(const std::string structName, const mfxBRCFrameParam &_struct)
+{
+    std::string str;
+
+    DUMP_FIELD_RESERVED(reserved);
+
+    DUMP_FIELD(EncodedOrder);
+    DUMP_FIELD(DisplayOrder);
+    DUMP_FIELD(CodedFrameSize);
+    DUMP_FIELD(FrameType);
+    DUMP_FIELD(PyramidLayer);
+    DUMP_FIELD(NumRecode);
+    dump_mfxExtParams(structName, _struct);
+
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxBRCFrameCtrl &_struct)
+{
+    std::string str;
+
+    DUMP_FIELD(QpY);
+    DUMP_FIELD_RESERVED(reserved1);
+    DUMP_FIELD(reserved2);
+
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxBRCFrameStatus &_struct)
+{
+    std::string str;
+
+    DUMP_FIELD(MinFrameSize);
+    DUMP_FIELD(BRCStatus);
+    DUMP_FIELD_RESERVED(reserved);
+    DUMP_FIELD(reserved1);
+
+    return str;
+}

@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2015 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2017 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -46,7 +46,7 @@ LogFile::LogFile()
     if (!Log::useGUI)
     {
         strproc_id = std::string("_") + strproc_id;
-        unsigned int pos = _file_path.rfind(".");
+        size_t pos = _file_path.rfind(".");
         if (pos == std::string::npos)
             _file_path.insert(_file_path.length(), strproc_id);
         else if((_file_path.length() - pos) > std::string(".log").length())
@@ -72,7 +72,7 @@ void LogFile::WriteLog(const std::string &log)
         std::stringstream str_stream;
         str_stream << log;
         std::string spase = "";
-        while(true) {
+        for(;;) {
             spase = "";
             std::string logstr;
             getline(str_stream, logstr);

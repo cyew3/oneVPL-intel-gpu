@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2016 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2017 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -34,6 +34,191 @@ File Name: mfx_video_core.cpp
 #include "../loggers/timer.h"
 #include "../tracer/functions_table.h"
 #include "mfx_structures.h"
+
+#if TRACE_CALLBACKS
+mfxStatus mfxFrameAllocator_Alloc(mfxHDL _pthis, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response)
+{
+    try
+    {
+        DumpContext context;
+        context.context = DUMPCONTEXT_MFX;
+
+        mfxLoader *loader = (mfxLoader*)_pthis;
+
+        if (!loader) return MFX_ERR_INVALID_HANDLE;
+        mfxHDL pthis = loader->callbacks[emfxFrameAllocator_Alloc_tracer][1];
+
+        Log::WriteLog("callback: mfxFrameAllocator::Alloc(mfxHDL pthis=" + ToString(pthis)
+            + ", mfxFrameAllocRequest *request=" + ToString(request)
+            + ", mfxFrameAllocResponse *response=" + ToString(response) + ") +");
+
+        if (!loader) return MFX_ERR_INVALID_HANDLE;
+
+        fmfxFrameAllocator_Alloc proc = (fmfxFrameAllocator_Alloc)loader->callbacks[emfxFrameAllocator_Alloc_tracer][0];
+        if (!proc) return MFX_ERR_INVALID_HANDLE;
+
+        Log::WriteLog(context.dump("pthis", pthis));
+        if (request) Log::WriteLog(context.dump("request", *request));
+        if (response) Log::WriteLog(context.dump("response", *response));
+
+        Timer t;
+        mfxStatus status = (*proc) (pthis, request, response);
+        std::string elapsed = TimeToString(t.GetTime());
+        Log::WriteLog(">> callback: mfxFrameAllocator::Alloc called");
+        if (response) Log::WriteLog(context.dump("response", *response));
+        Log::WriteLog("callback: mfxFrameAllocator::Alloc(" + elapsed + ", " + context.dump_mfxStatus("status", status) + ") - \n\n");
+        return status;
+    }
+    catch (std::exception& e)
+    {
+        std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
+    }
+}
+
+mfxStatus mfxFrameAllocator_Lock(mfxHDL _pthis, mfxMemId mid, mfxFrameData *ptr)
+{
+    try
+    {
+        DumpContext context;
+        context.context = DUMPCONTEXT_MFX;
+        mfxLoader *loader = (mfxLoader*)_pthis;
+
+        if (!loader) return MFX_ERR_INVALID_HANDLE;
+        mfxHDL pthis = loader->callbacks[emfxFrameAllocator_Lock_tracer][1];
+
+        Log::WriteLog("callback: mfxFrameAllocator::Lock(mfxHDL pthis=" + ToString(pthis)
+            + ", mfxMemId mid=" + ToString(mid)
+            + ", mfxFrameData *ptr=" + ToString(ptr) + ") +");
+
+        fmfxFrameAllocator_Lock proc = (fmfxFrameAllocator_Lock)loader->callbacks[emfxFrameAllocator_Lock_tracer][0];
+        if (!proc) return MFX_ERR_INVALID_HANDLE;
+
+        Log::WriteLog(context.dump("pthis", pthis));
+        if (ptr) Log::WriteLog(context.dump("ptr", *ptr));
+
+        Timer t;
+        mfxStatus status = (*proc) (pthis, mid, ptr);
+        std::string elapsed = TimeToString(t.GetTime());
+        Log::WriteLog(">> callback: mfxFrameAllocator::Lock called");
+        if (ptr) Log::WriteLog(context.dump("ptr", *ptr));
+        Log::WriteLog("callback: mfxFrameAllocator::Lock(" + elapsed + ", " + context.dump_mfxStatus("status", status) + ") - \n\n");
+        return status;
+    }
+    catch (std::exception& e)
+    {
+        std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
+    }
+}
+
+mfxStatus mfxFrameAllocator_Unlock(mfxHDL _pthis, mfxMemId mid, mfxFrameData *ptr)
+{
+    try
+    {
+        DumpContext context;
+        context.context = DUMPCONTEXT_MFX;
+        mfxLoader *loader = (mfxLoader*)_pthis;
+
+        if (!loader) return MFX_ERR_INVALID_HANDLE;
+        mfxHDL pthis = loader->callbacks[emfxFrameAllocator_Unlock_tracer][1];
+
+        Log::WriteLog("callback: mfxFrameAllocator::Unlock(mfxHDL pthis=" + ToString(pthis)
+            + ", mfxMemId mid=" + ToString(mid)
+            + ", mfxFrameData *ptr=" + ToString(ptr) + ") +");
+
+        fmfxFrameAllocator_Unlock proc = (fmfxFrameAllocator_Unlock)loader->callbacks[emfxFrameAllocator_Unlock_tracer][0];
+        if (!proc) return MFX_ERR_INVALID_HANDLE;
+
+        Log::WriteLog(context.dump("pthis", pthis));
+        if (ptr) Log::WriteLog(context.dump("ptr", *ptr));
+
+        Timer t;
+        mfxStatus status = (*proc) (pthis, mid, ptr);
+        std::string elapsed = TimeToString(t.GetTime());
+        Log::WriteLog(">> callback: mfxFrameAllocator::Unlock called");
+        if (ptr) Log::WriteLog(context.dump("ptr", *ptr));
+        Log::WriteLog("callback: mfxFrameAllocator::Unlock(" + elapsed + ", " + context.dump_mfxStatus("status", status) + ") - \n\n");
+        return status;
+    }
+    catch (std::exception& e)
+    {
+        std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
+    }
+}
+
+mfxStatus mfxFrameAllocator_GetHDL(mfxHDL _pthis, mfxMemId mid, mfxHDL *handle)
+{
+    try
+    {
+        DumpContext context;
+        context.context = DUMPCONTEXT_MFX;
+        mfxLoader *loader = (mfxLoader*)_pthis;
+
+        if (!loader) return MFX_ERR_INVALID_HANDLE;
+        mfxHDL pthis = loader->callbacks[emfxFrameAllocator_GetHDL_tracer][1];
+
+        Log::WriteLog("callback: mfxFrameAllocator::GetHDL(mfxHDL pthis=" + ToString(pthis)
+            + ", mfxMemId mid=" + ToString(mid)
+            + ", mfxHDL *handle=" + ToString(handle) + ") +");
+
+        fmfxFrameAllocator_GetHDL proc = (fmfxFrameAllocator_GetHDL)loader->callbacks[emfxFrameAllocator_GetHDL_tracer][0];
+        if (!proc) return MFX_ERR_INVALID_HANDLE;
+
+        Log::WriteLog(context.dump("pthis", pthis));
+        if (handle) Log::WriteLog(context.dump("handle", *handle));
+
+        Timer t;
+        mfxStatus status = (*proc) (pthis, mid, handle);
+        std::string elapsed = TimeToString(t.GetTime());
+        Log::WriteLog(">> callback: mfxFrameAllocator::GetHDL called");
+        if (handle) Log::WriteLog(context.dump("handle", *handle));
+        Log::WriteLog("callback: mfxFrameAllocator::GetHDL(" + elapsed + ", " + context.dump_mfxStatus("status", status) + ") - \n\n");
+        return status;
+    }
+    catch (std::exception& e)
+    {
+        std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
+    }
+}
+
+mfxStatus mfxFrameAllocator_Free(mfxHDL _pthis, mfxFrameAllocResponse *response)
+{
+    try
+    {
+        DumpContext context;
+        context.context = DUMPCONTEXT_MFX;
+        mfxLoader *loader = (mfxLoader*)_pthis;
+
+        if (!loader) return MFX_ERR_INVALID_HANDLE;
+        mfxHDL pthis = loader->callbacks[emfxFrameAllocator_Free_tracer][1];
+
+        Log::WriteLog("callback: mfxFrameAllocator::Free(mfxHDL pthis=" + ToString(pthis)
+            + ", mfxFrameAllocResponse *response=" + ToString(response) + ") +");
+
+        fmfxFrameAllocator_Free proc = (fmfxFrameAllocator_Free)loader->callbacks[emfxFrameAllocator_Free_tracer][0];
+        if (!proc) return MFX_ERR_INVALID_HANDLE;
+
+        Log::WriteLog(context.dump("pthis", pthis));
+        if (response) Log::WriteLog(context.dump("response", *response));
+
+        Timer t;
+        mfxStatus status = (*proc) (pthis, response);
+        std::string elapsed = TimeToString(t.GetTime());
+        Log::WriteLog(">> callback: mfxFrameAllocator::Free called");
+        if (response) Log::WriteLog(context.dump("response", *response));
+        Log::WriteLog("callback: mfxFrameAllocator::Free(" + elapsed + ", " + context.dump_mfxStatus("status", status) + ") - \n\n");
+        return status;
+    }
+    catch (std::exception& e)
+    {
+        std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
+    }
+}
+#endif //TRACE_CALLBACKS
 
 // CORE interface functions
 mfxStatus MFXVideoCORE_SetBufferAllocator(mfxSession session, mfxBufferAllocator *allocator)
@@ -85,13 +270,38 @@ mfxStatus MFXVideoCORE_SetFrameAllocator(mfxSession session, mfxFrameAllocator *
         Log::WriteLog(context.dump("session", session));
         if(allocator) Log::WriteLog(context.dump("allocator", *allocator));
 
+#if TRACE_CALLBACKS
+        INIT_CALLBACK_BACKUP(loader->callbacks);
+        mfxFrameAllocator proxyAllocator;
+
+        if (allocator)
+        {
+            proxyAllocator = *allocator;
+            allocator = &proxyAllocator;
+            SET_CALLBACK(mfxFrameAllocator, allocator->, Alloc,  allocator->pthis);
+            SET_CALLBACK(mfxFrameAllocator, allocator->, Lock,   allocator->pthis);
+            SET_CALLBACK(mfxFrameAllocator, allocator->, Unlock, allocator->pthis);
+            SET_CALLBACK(mfxFrameAllocator, allocator->, GetHDL, allocator->pthis);
+            SET_CALLBACK(mfxFrameAllocator, allocator->, Free,   allocator->pthis);
+            if (allocator->pthis)
+                allocator->pthis = loader;
+        }
+#endif //TRACE_CALLBACKS
+
         Timer t;
         mfxStatus status = (*(fMFXVideoCORE_SetFrameAllocator) proc) (session, allocator);
         std::string elapsed = TimeToString(t.GetTime());
         Log::WriteLog(">> MFXVideoCORE_SetFrameAllocator called");
-        Log::WriteLog(context.dump("session", session));
-        if(allocator) Log::WriteLog(context.dump("allocator", *allocator));
+        //No need to dump input-only parameters twice!!!
+        //Log::WriteLog(context.dump("session", session));
+        //if(allocator) Log::WriteLog(context.dump("allocator", *allocator));
         Log::WriteLog("function: MFXVideoCORE_SetFrameAllocator(" + elapsed + ", " + context.dump_mfxStatus("status", status) + ") - \n\n");
+
+#if TRACE_CALLBACKS
+        if (status != MFX_ERR_NONE)
+            callbacks.RevertAll();
+#endif //TRACE_CALLBACKS
+
         return status;
     }
     catch (std::exception& e){

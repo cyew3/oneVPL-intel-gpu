@@ -201,6 +201,7 @@
     <ClInclude Include="loggers\thread_info.h" />
     <ClInclude Include="loggers\timer.h" />
     <ClInclude Include="tools\shared_mem_server.h" />
+    <ClInclude Include="tracer\bits\mfxcallbacks.h" />
     <ClInclude Include="tracer\bits\mfxfunctions.h" />
     <ClInclude Include="tracer\functions_table.h" />
     <ClInclude Include="tracer\tracer.h" />

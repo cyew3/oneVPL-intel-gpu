@@ -365,7 +365,7 @@ std::string GetIOPattern(mfxU32 io) {
 bool _IsBadReadPtr(void *ptr, size_t size)
 {
 #if defined(_WIN32) || defined(_WIN64)
-    return IsBadReadPtr(ptr, size);
+    return !!IsBadReadPtr(ptr, size);
 #else
     int fb[2];
     if (pipe(fb) >= 0)

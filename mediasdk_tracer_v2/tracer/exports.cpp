@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2016 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2017 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -61,7 +61,7 @@ SDK_ANALYZER_EXPORT(void) msdk_analyzer_dll()
 SDK_ANALYZER_EXPORT(void) convert_etl_to_text(HWND hwnd, HINSTANCE hinst, LPSTR lpszCmdLine, int nCmdShow)
 {
 //
-
+    hwnd; hinst; lpszCmdLine; nCmdShow;
 }
 
 
@@ -191,7 +191,7 @@ SDK_ANALYZER_EXPORT(UINT) FUNCTION(install)(TCHAR *installDir,
                                   TCHAR *appdata,
                                   TCHAR *confPath)
 {
-
+    appdata;
     FUNCTION(uninstall)();
 
 

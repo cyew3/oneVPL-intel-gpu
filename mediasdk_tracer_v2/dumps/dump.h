@@ -160,6 +160,20 @@ public:
     }
 
     template<typename T>
+    std::string dump_hex_array(T* data, size_t size)
+    {
+        std::stringstream result;
+        result << "{ "  << std::hex << std::uppercase;
+        for (size_t i = 0; i < size; ++i)
+            result << std::setw(sizeof(T) * 2) << std::setfill('0') << (mfxU64)data[i];
+        result << " }";
+        return result.str();
+    }
+    template<typename T, size_t N>
+    inline std::string dump_hex_array(T (&data)[N]) { return dump_hex_array(data, N); }
+
+
+    template<typename T>
     inline const char* get_type(){ return typeid(T).name(); }
 
     template<typename T>
@@ -168,6 +182,12 @@ public:
         std::string str = get_type<T>();
         str += "* " + structName + "=" + ToHexFormatString(_struct) + "\n";
         if (_struct) str += dump("  " + structName, *_struct);
+        return str;
+    }
+    std::string dump(const std::string structName, const void *_struct)
+    {
+        std::string str = "void";
+        str += "* " + structName + "=" + ToHexFormatString(_struct) + "\n";
         return str;
     }
 
@@ -479,6 +499,7 @@ public:
     DEFINE_DUMP_FUNCTION(mfxPlugin);
     DEFINE_DUMP_FUNCTION(mfxCoreParam);
     DEFINE_DUMP_FUNCTION(mfxPluginParam);
+    DEFINE_DUMP_FUNCTION(mfxCoreInterface);
 
     //mfxstructures
     DEFINE_DUMP_FUNCTION(mfxDecodeStat);
@@ -624,6 +645,9 @@ public:
 
     //mfxbrc
     DEFINE_DUMP_FUNCTION(mfxExtBRC);
+    DEFINE_DUMP_FUNCTION(mfxBRCFrameParam);
+    DEFINE_DUMP_FUNCTION(mfxBRCFrameCtrl);
+    DEFINE_DUMP_FUNCTION(mfxBRCFrameStatus);
 
 };
 #endif //DUMP_H_

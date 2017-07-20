@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2015 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2017 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -34,6 +34,197 @@ File Name: mfx_video_encode.cpp
 #include "../loggers/timer.h"
 #include "../tracer/functions_table.h"
 #include "mfx_structures.h"
+#include <vector>
+
+#if TRACE_CALLBACKS
+// BRC callbacs
+mfxStatus mfxExtBRC_Init(mfxHDL _pthis, mfxVideoParam* par)
+{
+    try
+    {
+        DumpContext context;
+        context.context = DUMPCONTEXT_MFX;
+
+        mfxLoader *loader = (mfxLoader*)_pthis;
+
+        if (!loader) return MFX_ERR_INVALID_HANDLE;
+        mfxHDL pthis = loader->callbacks[emfxExtBRC_Init_tracer][1];
+
+        Log::WriteLog("callback: mfxExtBRC::Init(mfxHDL pthis=" + ToString(pthis)
+            + ", mfxVideoParam* par=" + ToString(par) + ") +");
+
+        if (!loader) return MFX_ERR_INVALID_HANDLE;
+
+        fmfxExtBRC_Init proc = (fmfxExtBRC_Init)loader->callbacks[emfxExtBRC_Init_tracer][0];
+        if (!proc) return MFX_ERR_INVALID_HANDLE;
+
+        Log::WriteLog(context.dump("pthis", pthis));
+        if (par) Log::WriteLog(context.dump("par", *par));
+
+        Timer t;
+        mfxStatus status = (*proc) (pthis, par);
+        std::string elapsed = TimeToString(t.GetTime());
+        Log::WriteLog(">> callback: mfxExtBRC::Init called");
+        Log::WriteLog("callback: mfxExtBRC::Init(" + elapsed + ", " + context.dump_mfxStatus("status", status) + ") - \n\n");
+        return status;
+    }
+    catch (std::exception& e)
+    {
+        std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
+    }
+}
+mfxStatus mfxExtBRC_Reset(mfxHDL _pthis, mfxVideoParam* par)
+{
+    try
+    {
+        DumpContext context;
+        context.context = DUMPCONTEXT_MFX;
+
+        mfxLoader *loader = (mfxLoader*)_pthis;
+
+        if (!loader) return MFX_ERR_INVALID_HANDLE;
+        mfxHDL pthis = loader->callbacks[emfxExtBRC_Reset_tracer][1];
+
+        Log::WriteLog("callback: mfxExtBRC::Reset(mfxHDL pthis=" + ToString(pthis)
+            + ", mfxVideoParam* par=" + ToString(par) + ") +");
+
+        if (!loader) return MFX_ERR_INVALID_HANDLE;
+
+        fmfxExtBRC_Reset proc = (fmfxExtBRC_Reset)loader->callbacks[emfxExtBRC_Reset_tracer][0];
+        if (!proc) return MFX_ERR_INVALID_HANDLE;
+
+        Log::WriteLog(context.dump("pthis", pthis));
+        if (par) Log::WriteLog(context.dump("par", *par));
+
+        Timer t;
+        mfxStatus status = (*proc) (pthis, par);
+        std::string elapsed = TimeToString(t.GetTime());
+        Log::WriteLog(">> callback: mfxExtBRC::Reset called");
+        Log::WriteLog("callback: mfxExtBRC::Reset(" + elapsed + ", " + context.dump_mfxStatus("status", status) + ") - \n\n");
+        return status;
+    }
+    catch (std::exception& e)
+    {
+        std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
+    }
+}
+mfxStatus mfxExtBRC_Close(mfxHDL _pthis)
+{
+    try
+    {
+        DumpContext context;
+        context.context = DUMPCONTEXT_MFX;
+
+        mfxLoader *loader = (mfxLoader*)_pthis;
+
+        if (!loader) return MFX_ERR_INVALID_HANDLE;
+        mfxHDL pthis = loader->callbacks[emfxExtBRC_Close_tracer][1];
+
+        Log::WriteLog("callback: mfxExtBRC::Close(mfxHDL pthis=" + ToString(pthis) + ") +");
+
+        if (!loader) return MFX_ERR_INVALID_HANDLE;
+
+        fmfxExtBRC_Close proc = (fmfxExtBRC_Close)loader->callbacks[emfxExtBRC_Close_tracer][0];
+        if (!proc) return MFX_ERR_INVALID_HANDLE;
+
+        Log::WriteLog(context.dump("pthis", pthis));
+
+        Timer t;
+        mfxStatus status = (*proc) (pthis);
+        std::string elapsed = TimeToString(t.GetTime());
+        Log::WriteLog(">> callback: mfxExtBRC::Close called");
+        Log::WriteLog("callback: mfxExtBRC::Close(" + elapsed + ", " + context.dump_mfxStatus("status", status) + ") - \n\n");
+        return status;
+    }
+    catch (std::exception& e)
+    {
+        std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
+    }
+}
+mfxStatus mfxExtBRC_GetFrameCtrl(mfxHDL _pthis, mfxBRCFrameParam* par, mfxBRCFrameCtrl* ctrl)
+{
+    try
+    {
+        DumpContext context;
+        context.context = DUMPCONTEXT_MFX;
+
+        mfxLoader *loader = (mfxLoader*)_pthis;
+
+        if (!loader) return MFX_ERR_INVALID_HANDLE;
+        mfxHDL pthis = loader->callbacks[emfxExtBRC_GetFrameCtrl_tracer][1];
+
+        Log::WriteLog("callback: mfxExtBRC::GetFrameCtrl(mfxHDL pthis=" + ToString(pthis)
+            + ", mfxBRCFrameParam* par" + ToString(par)
+            + ", mfxBRCFrameCtrl* ctrl" + ToString(ctrl) + ") +");
+
+        if (!loader) return MFX_ERR_INVALID_HANDLE;
+
+        fmfxExtBRC_GetFrameCtrl proc = (fmfxExtBRC_GetFrameCtrl)loader->callbacks[emfxExtBRC_GetFrameCtrl_tracer][0];
+        if (!proc) return MFX_ERR_INVALID_HANDLE;
+
+        Log::WriteLog(context.dump("pthis", pthis));
+        if (par) Log::WriteLog(context.dump("par", *par));
+        if (ctrl) Log::WriteLog(context.dump("ctrl", *ctrl));
+
+        Timer t;
+        mfxStatus status = (*proc) (pthis, par, ctrl);
+        std::string elapsed = TimeToString(t.GetTime());
+        Log::WriteLog(">> callback: mfxExtBRC::GetFrameCtrl called");
+        if (ctrl) Log::WriteLog(context.dump("ctrl", *ctrl));
+        Log::WriteLog("callback: mfxExtBRC::GetFrameCtrl(" + elapsed + ", " + context.dump_mfxStatus("status", status) + ") - \n\n");
+        return status;
+    }
+    catch (std::exception& e)
+    {
+        std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
+    }
+}
+mfxStatus mfxExtBRC_Update(mfxHDL _pthis, mfxBRCFrameParam* par, mfxBRCFrameCtrl* ctrl, mfxBRCFrameStatus* status)
+{
+    try
+    {
+        DumpContext context;
+        context.context = DUMPCONTEXT_MFX;
+
+        mfxLoader *loader = (mfxLoader*)_pthis;
+
+        if (!loader) return MFX_ERR_INVALID_HANDLE;
+        mfxHDL pthis = loader->callbacks[emfxExtBRC_Update_tracer][1];
+
+        Log::WriteLog("callback: mfxExtBRC::Update(mfxHDL pthis=" + ToString(pthis)
+            + ", mfxBRCFrameParam* par" + ToString(par)
+            + ", mfxBRCFrameCtrl* ctrl" + ToString(ctrl)
+            + ", mfxBRCFrameStatus* status" + ToString(status) + ") +");
+
+        if (!loader) return MFX_ERR_INVALID_HANDLE;
+
+        fmfxExtBRC_Update proc = (fmfxExtBRC_Update)loader->callbacks[emfxExtBRC_Update_tracer][0];
+        if (!proc) return MFX_ERR_INVALID_HANDLE;
+
+        Log::WriteLog(context.dump("pthis", pthis));
+        if (par) Log::WriteLog(context.dump("par", *par));
+        if (ctrl) Log::WriteLog(context.dump("ctrl", *ctrl));
+        if (status) Log::WriteLog(context.dump("ctrl", *status));
+
+        Timer t;
+        mfxStatus sts = (*proc) (pthis, par, ctrl, status);
+        std::string elapsed = TimeToString(t.GetTime());
+        Log::WriteLog(">> callback: mfxExtBRC::Update called");
+        if (status) Log::WriteLog(context.dump("ctrl", *status));
+        Log::WriteLog("callback: mfxExtBRC::Update(" + elapsed + ", " + context.dump_mfxStatus("status", sts) + ") - \n\n");
+        return sts;
+    }
+    catch (std::exception& e)
+    {
+        std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
+    }
+}
+#endif //TRACE_CALLBACKS
 
 // ENCODE interface functions
 mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam *out)
@@ -121,13 +312,61 @@ mfxStatus MFXVideoENCODE_Init(mfxSession session, mfxVideoParam *par)
         Log::WriteLog(context.dump("session", session));
         if(par) Log::WriteLog(context.dump("par", *par));
 
+#if TRACE_CALLBACKS
+        INIT_CALLBACK_BACKUP(loader->callbacks);
+        mfxExtBRC *pBRC = 0, BRC;
+        mfxExtCodingOption2* pCO2 = 0;
+        mfxVideoParam proxyPar;
+        std::vector<mfxExtBuffer*> ExtParam;
+
+        if (par && par->NumExtParam)
+        {
+            proxyPar = *par;
+            ExtParam.resize(proxyPar.NumExtParam);
+            proxyPar.ExtParam = &ExtParam[0];
+
+            for (mfxU16 i = 0; i < proxyPar.NumExtParam; i++)
+            {
+                proxyPar.ExtParam[i] = par->ExtParam[i];
+
+                if (proxyPar.ExtParam[i]->BufferId == MFX_EXTBUFF_BRC)
+                {
+                    BRC = *(mfxExtBRC*)proxyPar.ExtParam[i];
+                    pBRC = &BRC;
+                    proxyPar.ExtParam[i] = &BRC.Header;
+                }
+                if (proxyPar.ExtParam[i]->BufferId == MFX_EXTBUFF_CODING_OPTION2)
+                    pCO2 = (mfxExtCodingOption2*)proxyPar.ExtParam[i];
+            }
+        }
+
+        if (pBRC && pCO2 && pCO2->ExtBRC == MFX_CODINGOPTION_ON)
+        {
+            par = &proxyPar;
+            SET_CALLBACK(mfxExtBRC, pBRC->, Init,           pBRC->pthis);
+            SET_CALLBACK(mfxExtBRC, pBRC->, Reset,          pBRC->pthis);
+            SET_CALLBACK(mfxExtBRC, pBRC->, Close,          pBRC->pthis);
+            SET_CALLBACK(mfxExtBRC, pBRC->, GetFrameCtrl,   pBRC->pthis);
+            SET_CALLBACK(mfxExtBRC, pBRC->, Update,         pBRC->pthis);
+            if (pBRC->pthis)
+                pBRC->pthis = loader;
+        }
+#endif //TRACE_CALLBACKS
+
         Timer t;
         mfxStatus status = (*(fMFXVideoENCODE_Init) proc) (session, par);
         std::string elapsed = TimeToString(t.GetTime());
         Log::WriteLog(">> MFXVideoENCODE_Init called");
-        Log::WriteLog(context.dump("session", session));
-        if(par) Log::WriteLog(context.dump("par", *par));
+        //No need to dump input-only parameters twice!!!
+        //Log::WriteLog(context.dump("session", session));
+        //if(par) Log::WriteLog(context.dump("par", *par));
         Log::WriteLog("function: MFXVideoENCODE_Init(" + elapsed + ", " + context.dump_mfxStatus("status", status) + ") - \n\n");
+
+#if TRACE_CALLBACKS
+        if (status < MFX_ERR_NONE)
+            callbacks.RevertAll();
+#endif //TRACE_CALLBACKS
+
         return status;
     }
     catch (std::exception& e){
