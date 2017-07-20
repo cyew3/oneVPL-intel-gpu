@@ -1016,11 +1016,11 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
 
-    VAEntrypoint entryPoint = VAEntrypointEncSlice;
+    VAEntrypoint entryPoint = GetVAEntryPoint();
     bool bEncodeEnable = false;
     for( entrypointsIndx = 0; entrypointsIndx < numEntrypoints; entrypointsIndx++ )
     {
-        if( VAEntrypointEncSlice == pEntrypoints[entrypointsIndx] )
+        if (entryPoint == pEntrypoints[entrypointsIndx])
         {
             bEncodeEnable = true;
             break;
@@ -1032,18 +1032,20 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
     }
 
     // Configuration
-    VAConfigAttrib attrib[2];
-    mfxI32 numAttrib = 0;
+    std::vector<VAConfigAttrib> attrib(2);
+
     mfxU32 flag = VA_PROGRESSIVE;
 
     attrib[0].type = VAConfigAttribRTFormat;
     attrib[1].type = VAConfigAttribRateControl;
-    numAttrib = 2;
 
-   vaSts = vaGetConfigAttributes(m_vaDisplay,
+    mfxStatus sts = ConfigureExtraVAattribs(attrib);
+    MFX_CHECK_STS(sts);
+
+    vaSts = vaGetConfigAttributes(m_vaDisplay,
                           ConvertProfileTypeMFX2VAAPI(par.mfx.CodecProfile),
                           entryPoint,
-                          &attrib[0], numAttrib);
+                          attrib.data(), (mfxI32)attrib.size());
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
     if ((attrib[0].value & VA_RT_FORMAT_YUV420) == 0)
@@ -1057,12 +1059,15 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
     attrib[0].value = VA_RT_FORMAT_YUV420;
     attrib[1].value = vaRCType;
 
+    sts = CheckExtraVAattribs(attrib);
+    MFX_CHECK_STS(sts);
+
     vaSts = vaCreateConfig(
         m_vaDisplay,
         ConvertProfileTypeMFX2VAAPI(par.mfx.CodecProfile),
         entryPoint,
-        attrib,
-        numAttrib,
+        attrib.data(),
+        (mfxI32)attrib.size(),
         &m_vaConfig);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 

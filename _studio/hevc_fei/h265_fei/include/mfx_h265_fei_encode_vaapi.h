@@ -16,14 +16,18 @@
 #include "mfx_h265_encode_vaapi.h"
 #include "mfx_h265_encode_hw_utils.h"
 
+
+#define MFX_CHECK_WITH_ASSERT(EXPR, ERR) { assert(EXPR); MFX_CHECK(EXPR, ERR); }
+
 namespace MfxHwH265FeiEncode
 {
-    template <class T> mfxExtBuffer* GetBufById(const T & par, mfxU32 id)
+
+    template <typename T> mfxExtBuffer* GetBufById(T & par, mfxU32 id)
     {
         if (par.NumExtParam && !par.ExtParam)
             return NULL;
 
-        for (mfxU16 i = 0; i<par.NumExtParam; ++i)
+        for (mfxU16 i = 0; i < par.NumExtParam; ++i)
         {
             if (par.ExtParam[i] && par.ExtParam[i]->BufferId == id)
             {
@@ -34,7 +38,7 @@ namespace MfxHwH265FeiEncode
         return NULL;
     }
 
-    template <class T> mfxExtBuffer* GetBufById(const T * par, mfxU32 id)
+    template <typename T> mfxExtBuffer* GetBufById(T * par, mfxU32 id)
     {
         return par ? GetBufById(*par, id) : NULL;
     }
@@ -54,6 +58,15 @@ namespace MfxHwH265FeiEncode
         virtual mfxStatus PreSubmitExtraStage(MfxHwH265Encode::Task const & task);
 
         virtual mfxStatus PostQueryExtraStage();
+
+        virtual VAEntrypoint GetVAEntryPoint()
+        {
+            return VAEntrypointEncFEIIntel;
+        }
+
+        virtual mfxStatus ConfigureExtraVAattribs(std::vector<VAConfigAttrib> & attrib);
+
+        virtual mfxStatus CheckExtraVAattribs(std::vector<VAConfigAttrib> & attrib);
     };
 }
 

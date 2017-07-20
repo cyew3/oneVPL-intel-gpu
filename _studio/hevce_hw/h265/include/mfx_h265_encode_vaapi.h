@@ -155,7 +155,7 @@ mfxStatus SetSkipFrame(
         mfxU32 size;
     } ExtVASurface;
 
-    class VAAPIEncoder : public DriverEncoder, DDIHeaderPacker, VABuffersHandler
+    class VAAPIEncoder : public DriverEncoder, DDIHeaderPacker, protected VABuffersHandler
     {
     public:
         VAAPIEncoder();
@@ -215,7 +215,25 @@ mfxStatus SetSkipFrame(
             return DDIHeaderPacker::PackHeader(task, nut);
         }
 
+        virtual
+        VAEntrypoint GetVAEntryPoint()
+        {
+            return VAEntrypointEncSlice;
+        }
+
     protected:
+        virtual
+        mfxStatus ConfigureExtraVAattribs(std::vector<VAConfigAttrib> & attrib)
+        {
+            return MFX_ERR_NONE;
+        }
+
+        virtual
+        mfxStatus CheckExtraVAattribs(std::vector<VAConfigAttrib> & attrib)
+        {
+            return MFX_ERR_NONE;
+        }
+
         VAAPIEncoder(const VAAPIEncoder&);
         VAAPIEncoder& operator=(const VAAPIEncoder&);
 

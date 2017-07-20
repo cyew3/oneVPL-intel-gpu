@@ -25,6 +25,38 @@ namespace MfxHwH265FeiEncode
     VAAPIh265FeiEncoder::~VAAPIh265FeiEncoder()
     {}
 
+    mfxStatus VAAPIh265FeiEncoder::ConfigureExtraVAattribs(std::vector<VAConfigAttrib> & attrib)
+    {
+        attrib.reserve(attrib.size() + 2);
+
+        VAConfigAttrib attr = {};
+
+        attr.type = (VAConfigAttribType) VAConfigAttribEncFunctionTypeIntel;
+        attrib.push_back(attr);
+
+        attr.type = (VAConfigAttribType) VAConfigAttribFeiInterfaceRevIntel;
+        attrib.push_back(attr);
+
+        return MFX_ERR_NONE;
+    }
+
+    mfxStatus VAAPIh265FeiEncoder::CheckExtraVAattribs(std::vector<VAConfigAttrib> & attrib)
+    {
+        mfxU32 i = 0;
+        for (; i < attrib.size(); ++i)
+        {
+            if (attrib[i].type == (VAConfigAttribType) VAConfigAttribEncFunctionTypeIntel)
+                break;
+        }
+        MFX_CHECK(i < attrib.size(), MFX_ERR_DEVICE_FAILED);
+
+        MFX_CHECK(attrib[i].value & VA_ENC_FUNCTION_ENC_PAK_INTEL, MFX_ERR_DEVICE_FAILED);
+
+        attrib[i].value = VA_ENC_FUNCTION_ENC_PAK_INTEL;
+
+        return MFX_ERR_NONE;
+    }
+
     mfxStatus VAAPIh265FeiEncoder::PreSubmitExtraStage(Task const & task)
     {
 #if 0
@@ -35,7 +67,7 @@ namespace MfxHwH265FeiEncode
 
             {
                 MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaCreateBuffer");
-                vaSts = vaCreateBuffer(m_vaDisplay,
+                VAStatus vaSts = vaCreateBuffer(m_vaDisplay,
                     m_vaContextEncode,
                     VAEncMiscParameterBufferType,
                     sizeof(VAEncMiscParameterBuffer) + sizeof (VAEncMiscParameterFEIFrameControlHevc),
@@ -53,14 +85,14 @@ namespace MfxHwH265FeiEncode
                     (void **)&miscParam);
             }
 
-            miscParam->type = (VAEncMiscParameterType)VAEncMiscParameterTypeFEIFrameControl;
+            miscParam->type = (VAEncMiscParameterType)VAEncMiscParameterTypeFEIFrameControlIntel;
             VAEncMiscParameterFEIFrameControlHevc* vaFeiFrameControl = (VAEncMiscParameterFEIFrameControlHevc*)miscParam->data;
             memset(vaFeiFrameControl, 0, sizeof(VAEncMiscParameterFEIFrameControlHevc));
 
-            mfxExtFeiHevcEncFrameCtrl* EncFrameCtrl = reinterpret_cast<mfxExtFeiHevcEncFrameCtrl*>GetBufById(task.m_ctrl, MFX_EXTBUFF_HEVCFEI_ENC_CTRL);
+            mfxExtFeiHevcEncFrameCtrl* EncFrameCtrl = reinterpret_cast<mfxExtFeiHevcEncFrameCtrl*>(GetBufById(task.m_ctrl, MFX_EXTBUFF_HEVCFEI_ENC_CTRL));
             MFX_CHECK(EncFrameCtrl, MFX_ERR_UNDEFINED_BEHAVIOR);
 
-            vaFeiFrameControl->function                 = ENC_FUNCTION_ENC_PAK;
+            vaFeiFrameControl->function                 = VA_ENC_FUNCTION_ENC_PAK_INTEL;
             vaFeiFrameControl->search_path              = EncFrameCtrl->SearchPath;
             vaFeiFrameControl->len_sp                   = EncFrameCtrl->LenSP;
             vaFeiFrameControl->ref_width                = EncFrameCtrl->RefWidth;
@@ -79,23 +111,23 @@ namespace MfxHwH265FeiEncode
             vaFeiFrameControl->force_lcu_split          = EncFrameCtrl->ForceLcuSplit;
 
             // Input buffers
-            mfxExtFeiHevcEncMVPredictors* mvp = reinterpret_cast<mfxExtFeiHevcEncMVPredictors*>GetBufById(task.m_ctrl, MFX_EXTBUFF_HEVCFEI_ENC_MV_PRED);
+            mfxExtFeiHevcEncMVPredictors* mvp = reinterpret_cast<mfxExtFeiHevcEncMVPredictors*>(GetBufById(task.m_ctrl, MFX_EXTBUFF_HEVCFEI_ENC_MV_PRED));
             vaFeiFrameControl->mv_predictor = mvp ? mvp->VaBufferID : VA_INVALID_ID;
 
-            mfxExtFeiHevcEncQP* qp = reinterpret_cast<mfxExtFeiHevcEncQP*>GetBufById(task.m_ctrl, MFX_EXTBUFF_HEVCFEI_ENC_QP);
+            mfxExtFeiHevcEncQP* qp = reinterpret_cast<mfxExtFeiHevcEncQP*>(GetBufById(task.m_ctrl, MFX_EXTBUFF_HEVCFEI_ENC_QP));
             vaFeiFrameControl->qp = qp ? qp->VaBufferID : VA_INVALID_ID;
 
-            mfxExtFeiHevcEncCtbCtrl* ctbctrl = reinterpret_cast<mfxExtFeiHevcEncCtbCtrl*>GetBufById(task.m_ctrl, MFX_EXTBUFF_HEVCFEI_ENC_CTB_CTRL);
+            mfxExtFeiHevcEncCtbCtrl* ctbctrl = reinterpret_cast<mfxExtFeiHevcEncCtbCtrl*>(GetBufById(task.m_ctrl, MFX_EXTBUFF_HEVCFEI_ENC_CTB_CTRL));
             vaFeiFrameControl->ctb_ctrl = ctbctrl ? ctbctrl->VaBufferID : VA_INVALID_ID;
 
             // Output buffers
-            mfxExtFeiHevcPakCtbRecordV0* ctbcmd = reinterpret_cast<mfxExtFeiHevcPakCtbRecordV0*>GetBufById(task.m_bs, MFX_EXTBUFF_HEVCFEI_PAK_CTB_REC);
+            mfxExtFeiHevcPakCtbRecordV0* ctbcmd = reinterpret_cast<mfxExtFeiHevcPakCtbRecordV0*>(GetBufById(task.m_bs, MFX_EXTBUFF_HEVCFEI_PAK_CTB_REC));
             vaFeiFrameControl->ctb_cmd = ctbcmd ? ctbcmd->VaBufferID : VA_INVALID_ID;
 
-            mfxExtFeiHevcPakCuRecordV0* curec = reinterpret_cast<mfxExtFeiHevcPakCuRecordV0*>GetBufById(task.m_bs, MFX_EXTBUFF_HEVCFEI_PAK_CU_REC);
+            mfxExtFeiHevcPakCuRecordV0* curec = reinterpret_cast<mfxExtFeiHevcPakCuRecordV0*>(GetBufById(task.m_bs, MFX_EXTBUFF_HEVCFEI_PAK_CU_REC));
             vaFeiFrameControl->cu_record = curec ? curec->VaBufferID : VA_INVALID_ID;
 
-            mfxExtFeiHevcDistortion* distortion = reinterpret_cast<mfxExtFeiHevcDistortion*>GetBufById(task.m_bs, MFX_EXTBUFF_HEVCFEI_ENC_DIST);
+            mfxExtFeiHevcDistortion* distortion = reinterpret_cast<mfxExtFeiHevcDistortion*>(GetBufById(task.m_bs, MFX_EXTBUFF_HEVCFEI_ENC_DIST));
             vaFeiFrameControl->distortion = distortion ? distortion->VaBufferID : VA_INVALID_ID;
         }
 #endif

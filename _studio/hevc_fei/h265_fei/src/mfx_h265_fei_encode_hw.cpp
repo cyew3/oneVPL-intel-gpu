@@ -70,7 +70,7 @@ mfxStatus H265FeiEncodePlugin::ExtraParametersCheck(mfxEncodeCtrl *ctrl, mfxFram
     bool isSKL = p.CodeName == MFX_PLATFORM_SKYLAKE, isICLplus = p.CodeName >= MFX_PLATFORM_ICELAKE;
 #if 0
     // mfxExtFeiHevcEncFrameCtrl is a mandatory buffer
-    mfxExtFeiHevcEncFrameCtrl* EncFrameCtrl = reinterpret_cast<mfxExtFeiHevcEncFrameCtrl*>GetBufById(ctrl, MFX_EXTBUFF_HEVCFEI_ENC_CTRL);
+    mfxExtFeiHevcEncFrameCtrl* EncFrameCtrl = reinterpret_cast<mfxExtFeiHevcEncFrameCtrl*>(GetBufById(ctrl, MFX_EXTBUFF_HEVCFEI_ENC_CTRL));
     MFX_CHECK(EncFrameCtrl, MFX_ERR_UNDEFINED_BEHAVIOR);
 
     // Check HW limitations for mfxExtFeiHevcEncFrameCtrl parameters
@@ -84,11 +84,11 @@ mfxStatus H265FeiEncodePlugin::ExtraParametersCheck(mfxEncodeCtrl *ctrl, mfxFram
     MFX_CHECK(EncFrameCtrl->SubPelMode        <= 3 &&
               EncFrameCtrl->SubPelMode        != 2,  MFX_ERR_UNDEFINED_BEHAVIOR);
 
-    MFX_CHECK(   EncFrameCtrl->MVPredictor == 0
-              || EncFrameCtrl->MVPredictor == 1
-              || EncFrameCtrl->MVPredictor == 2
-              || EncFrameCtrl->MVPredictor == 3 && isICLplus
-              || EncFrameCtrl->MVPredictor == 7,           MFX_ERR_UNDEFINED_BEHAVIOR);
+    MFX_CHECK(EncFrameCtrl->MVPredictor == 0
+          ||  EncFrameCtrl->MVPredictor == 1
+          ||  EncFrameCtrl->MVPredictor == 2
+          || (EncFrameCtrl->MVPredictor == 3 && isICLplus)
+          ||  EncFrameCtrl->MVPredictor == 7,        MFX_ERR_UNDEFINED_BEHAVIOR);
 
     MFX_CHECK(EncFrameCtrl->CoLocatedCtbDistortion <= 1,   MFX_ERR_UNDEFINED_BEHAVIOR);
 
