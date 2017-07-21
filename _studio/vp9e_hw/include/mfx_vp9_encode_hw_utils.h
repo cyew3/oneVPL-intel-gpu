@@ -60,7 +60,8 @@ namespace MfxHwVP9Encode
 #define MAX_Q_INDEX 255
 #define MAX_ICQ_QUALITY_INDEX 255
 #define MAX_LF_LEVEL 63
-#define MAX_ABS_Q_INDEX_DELTA 15
+
+#define MAX_ABS_COEFF_TYPE_Q_INDEX_DELTA 15
 
 #define MAX_TASK_ID 0xffff
 #define MAX_NUM_TEMP_LAYERS 8

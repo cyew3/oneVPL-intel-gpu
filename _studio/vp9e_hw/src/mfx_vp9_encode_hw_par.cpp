@@ -173,11 +173,11 @@ inline void SetOrCopy(mfxExtVP9Param *pDst, mfxExtVP9Param const *pSrc = 0, bool
     {
         SET_OR_COPY_PAR(LoopFilterModeDelta[i]);
     }
+    */
 
     SET_OR_COPY_PAR(QIndexDeltaLumaDC);
     SET_OR_COPY_PAR(QIndexDeltaChromaAC);
     SET_OR_COPY_PAR(QIndexDeltaChromaDC);
-    */
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     SET_OR_COPY_PAR(NumTileRows);
@@ -324,6 +324,24 @@ bool CheckTriStateOption(mfxU16 & opt)
         opt != MFX_CODINGOPTION_OFF)
     {
         opt = MFX_CODINGOPTION_UNKNOWN;
+        return false;
+    }
+
+    return true;
+}
+
+template <class T, class U>
+bool CheckRange(T & opt, U min, U max)
+{
+    if (opt < min)
+    {
+        opt = static_cast<T>(min);
+        return false;
+    }
+
+    if (opt > max)
+    {
+        opt = static_cast<T>(max);
         return false;
     }
 
@@ -862,6 +880,28 @@ inline mfxU16 MinRefsForTemporalLayers(mfxU16 numTL)
     }
 }
 
+bool CheckAndFixCTQIdxDeltas(mfxExtVP9Param& extPar)
+{
+    bool isOk = true;
+
+    if (false == CheckRange(extPar.QIndexDeltaLumaDC, -MAX_ABS_COEFF_TYPE_Q_INDEX_DELTA, MAX_ABS_COEFF_TYPE_Q_INDEX_DELTA)) isOk = false;
+    if (false == CheckRange(extPar.QIndexDeltaChromaAC, -MAX_ABS_COEFF_TYPE_Q_INDEX_DELTA, MAX_ABS_COEFF_TYPE_Q_INDEX_DELTA)) isOk = false;
+    if (false == CheckRange(extPar.QIndexDeltaChromaDC, -MAX_ABS_COEFF_TYPE_Q_INDEX_DELTA, MAX_ABS_COEFF_TYPE_Q_INDEX_DELTA)) isOk = false;
+
+    return isOk;
+}
+
+bool CheckAndFixCTQIdxDeltasQPBased(mfxExtVP9Param& extPar, mfxU16 qIndex)
+{
+    bool isOk = true;
+
+    if (false == CheckAndFixQIndexDelta(extPar.QIndexDeltaLumaDC, qIndex)) isOk = false;
+    if (false == CheckAndFixQIndexDelta(extPar.QIndexDeltaChromaAC, qIndex)) isOk = false;
+    if (false == CheckAndFixQIndexDelta(extPar.QIndexDeltaChromaDC, qIndex)) isOk = false;
+
+    return isOk;
+}
+
 mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
 {
     Bool changed = false;
@@ -1278,30 +1318,25 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
          unsupported = true;
      }*/
 
-    // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
-    /*if (false == CheckTriStateOption(opt.EnableMultipleSegments))
+    if (false == CheckAndFixCTQIdxDeltas(extPar))
     {
         changed = true;
     }
-
-    if (false == CheckRangeDflt(opt.QIndexDeltaLumaDC, -MAX_ABS_Q_INDEX_DELTA, MAX_ABS_Q_INDEX_DELTA, 0))
+    if (brcMode == MFX_RATECONTROL_CQP)
     {
-        changed = true;
+        if (false == CheckAndFixCTQIdxDeltasQPBased(extPar, par.mfx.QPI))
+        {
+            changed = true;
+        }
+        if (false == CheckAndFixCTQIdxDeltasQPBased(extPar, par.mfx.QPP))
+        {
+            changed = true;
+        }
     }
 
-    if (false == CheckRangeDflt(opt.QIndexDeltaChromaAC, -MAX_ABS_Q_INDEX_DELTA, MAX_ABS_Q_INDEX_DELTA, 0))
+    /*for (mfxU8 i = 0; i < MAX_REF_LF_DELTAS; i++)
     {
-        changed = true;
-    }
-
-    if (false == CheckRangeDflt(opt.QIndexDeltaChromaDC, -MAX_ABS_Q_INDEX_DELTA, MAX_ABS_Q_INDEX_DELTA, 0))
-    {
-        changed = true;
-    }
-
-    for (mfxU8 i = 0; i < MAX_REF_LF_DELTAS; i++)
-    {
-        if (false == CheckRangeDflt(opt.LoopFilterRefDelta[i], -MAX_LF_LEVEL, MAX_LF_LEVEL, 0))
+        if (false == CheckRangeDflt(extPar.LoopFilterRefDelta[i], -MAX_LF_LEVEL, MAX_LF_LEVEL, 0))
         {
             changed = true;
         }
@@ -1309,7 +1344,7 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
 
     for (mfxU8 i = 0; i < MAX_MODE_LF_DELTAS; i++)
     {
-        if (false == CheckRangeDflt(opt.LoopFilterModeDelta[i], -MAX_LF_LEVEL, MAX_LF_LEVEL, 0))
+        if (false == CheckRangeDflt(extPar.LoopFilterModeDelta[i], -MAX_LF_LEVEL, MAX_LF_LEVEL, 0))
         {
             changed = true;
         }
@@ -1341,7 +1376,7 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
 
     mfxExtVP9Segmentation& seg = GetExtBufferRef(par);
 
-    mfxStatus segSts = CheckSegmentationParam(seg, width, height, caps, 0);
+    mfxStatus segSts = CheckSegmentationParam(seg, width, height, caps, par.mfx.QPI);
     ConvertStatusToBools(changed, unsupported, segSts);
 
     if (IsOn(opt2.MBBRC) && seg.NumSegments)
@@ -1769,19 +1804,31 @@ mfxStatus CheckAndFixCtrl(
         checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
     }
 
-    const mfxExtVP9Param* pExtParRuntime = GetExtBuffer(ctrl);
+    mfxExtVP9Param* pExtParRuntime = GetExtBuffer(ctrl);
     const mfxExtVP9Param& extParInit = GetExtBufferRef(video);
 
     if (pExtParRuntime)
     {
-        if (pExtParRuntime->FrameWidth != extParInit.FrameWidth ||
-            pExtParRuntime->FrameHeight != extParInit.FrameHeight)
+        if (false == CheckAndFixCTQIdxDeltas(*pExtParRuntime))
         {
-            // runtime values of FrameWidth/FrameHeight should be same as static values
-            // we cannot just remove whole mfxExtVP9Param since it has other parameters
-            // so just return error to app to notify
             checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
         }
+        if (false == CheckAndFixCTQIdxDeltasQPBased(*pExtParRuntime, ctrl.QP))
+        {
+            checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+        }
+
+        if (pExtParRuntime->FrameWidth && pExtParRuntime->FrameWidth != extParInit.FrameWidth ||
+            pExtParRuntime->FrameHeight && pExtParRuntime->FrameHeight != extParInit.FrameHeight)
+        {
+            // if set, runtime values of FrameWidth/FrameHeight should be same as static values
+            // we cannot just remove whole mfxExtVP9Param since it has other parameters
+            // so just return warning to app to notify
+            checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+        }
+
+        pExtParRuntime->FrameWidth = extParInit.FrameWidth;
+        pExtParRuntime->FrameHeight = extParInit.FrameHeight;
     }
 
     mfxExtVP9Segmentation* seg = GetExtBuffer(ctrl);

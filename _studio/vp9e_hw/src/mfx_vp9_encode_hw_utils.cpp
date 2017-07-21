@@ -266,7 +266,6 @@ mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
     frameParam.width  = frameParam.renderWidth = extPar.FrameWidth;
     frameParam.height = frameParam.renderHeight = extPar.FrameHeight;
 
-    // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
     /*frameParam.sharpness = (mfxU8)opt.SharpnessLevel;
 
     for (mfxU8 i = 0; i < 4; i ++)
@@ -275,15 +274,12 @@ mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
     }
 
     frameParam.lfModeDelta[0] = (mfxI8)opt.LoopFilterModeDelta[0];
-    frameParam.lfModeDelta[1] = (mfxI8)opt.LoopFilterModeDelta[1];
+    frameParam.lfModeDelta[1] = (mfxI8)opt.LoopFilterModeDelta[1];*/
 
-    frameParam.qIndexDeltaLumaDC   = (mfxI8)opt.QIndexDeltaLumaDC;
-    frameParam.qIndexDeltaChromaAC = (mfxI8)opt.QIndexDeltaChromaAC;
-    frameParam.qIndexDeltaChromaDC = (mfxI8)opt.QIndexDeltaChromaDC;
 
-    frameParam.qIndexDeltaLumaDC   = (mfxI8)pOpt->QIndexDeltaLumaDC;
-    frameParam.qIndexDeltaChromaAC = (mfxI8)pOpt->QIndexDeltaChromaAC;
-    frameParam.qIndexDeltaChromaDC = (mfxI8)pOpt->QIndexDeltaChromaDC;*/
+    frameParam.qIndexDeltaLumaDC   = static_cast<mfxI8>(extPar.QIndexDeltaLumaDC);
+    frameParam.qIndexDeltaChromaAC = static_cast<mfxI8>(extPar.QIndexDeltaChromaAC);
+    frameParam.qIndexDeltaChromaDC = static_cast<mfxI8>(extPar.QIndexDeltaChromaDC);
 
     frameParam.errorResilentMode = 0;
 
