@@ -2676,7 +2676,11 @@ void HeaderPacker::GetPrefixSEI(Task const & task, mfxU8*& buf, mfxU32& sizeInBy
     std::list<const mfxPayload*>::iterator plIt;
     mfxU32 prevNALUBytes = 0;
     mfxPayload BPSEI = {}, PTSEI = {};
-    bool insertBP = false, insertPT = false, insertDisplayColour = false, insertLightLevel = false;
+    bool insertBP = false, insertPT = false;
+
+#ifdef MFX_ENABLE_HEVCE_HDR_SEI   
+    bool insertLightLevel = false, insertDisplayColour = false;
+#endif
 
     for (mfxU16 i = 0; i < task.m_ctrl.NumPayload; i++)
     {

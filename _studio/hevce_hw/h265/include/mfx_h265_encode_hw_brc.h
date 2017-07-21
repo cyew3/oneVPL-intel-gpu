@@ -18,8 +18,7 @@
 #include <memory>
 #include <mfx_brc_common.h>
 
-#define NEW_BRC
-#ifdef NEW_BRC
+#if !defined(MFX_EXT_BRC_DISABLE)
 #include "mfxbrc.h"
 #endif
 
@@ -156,6 +155,7 @@ public:
     mfxStatus Init( MfxVideoParam &video, mfxI32 enableRecode = 1);
     mfxStatus Reset(MfxVideoParam &video, mfxI32 enableRecode = 1) 
     { 
+        Close();
         return  Init( video, enableRecode);
     }
 
@@ -216,136 +216,10 @@ protected:
 
 };
 
-#ifndef NEW_BRC
-enum eMfxBRCRecode
-{
-    MFX_BRC_RECODE_NONE           = 0,
-    MFX_BRC_RECODE_QP             = 1,
-    MFX_BRC_RECODE_PANIC          = 2,
-    MFX_BRC_RECODE_EXT_QP         = 3,
-    MFX_BRC_RECODE_EXT_PANIC      = 4,
-    MFX_BRC_EXT_FRAMESKIP         = 16
-};
-
-struct HRDState
-{
-    mfxF64 bufFullness;
-    mfxF64 prevBufFullness;
-    mfxI32 frameNum;
-    mfxI32 minFrameSize;
-    mfxI32 maxFrameSize;
-    mfxI32 underflowQuant;
-    mfxI32 overflowQuant;
-};
-struct BRCParams
-{
-    mfxU16 rateControlMethod;
-    mfxU32 bufferSizeInBytes;
-    mfxU32 initialDelayInBytes;
-    mfxU32 targetbps;
-    mfxU32 maxbps;
-    mfxF64 frameRate;
-    mfxU16 width;
-    mfxU16 height;
-    mfxU16 chromaFormat;
-    mfxU16 bitDepthLuma;
-    mfxF64 inputBitsPerFrame;
-    mfxU16 gopPicSize;
-    mfxU16 gopRefDist;
-
-};
-
-class H265BRC : public BrcIface
-{
-
-public:
-
-    H265BRC()
-    {
-        m_IsInit = false;
-        memset(&m_par, 0, sizeof(m_par));
-        memset(&m_hrdState, 0, sizeof(m_hrdState));
-        ResetParams();
-    }
-    virtual ~H265BRC()
-    {
-        Close();
-    }
 
 
-
-
-    virtual mfxStatus   Init(MfxVideoParam &video, mfxI32 enableRecode = 1);
-    virtual mfxStatus   Close();
-    virtual mfxStatus   Reset(MfxVideoParam &video, mfxI32 enableRecode = 1);
-    virtual mfxBRCStatus PostPackFrame(MfxVideoParam &video, Task &task, mfxI32 bitsEncodedFrame, mfxI32 overheadBits, mfxI32 recode = 0);
-    virtual mfxI32      GetQP(MfxVideoParam &video, Task &task);
-    virtual mfxStatus   SetQP(mfxI32 qp, Ipp16u frameType, bool bLowDelay);
-    //virtual mfxStatus   GetInitialCPBRemovalDelay(mfxU32 *initial_cpb_removal_delay, mfxI32 recode = 0);
-    virtual void        GetMinMaxFrameSize(mfxI32 *minFrameSizeInBits, mfxI32 *maxFrameSizeInBits);
-
-
-    virtual void        PreEnc(mfxU32 /* frameType */, std::vector<VmeData *> const & /* vmeData */, mfxU32 /* encOrder */) {}
-    virtual mfxStatus SetFrameVMEData(const mfxExtLAFrameStatistics*, mfxU32 , mfxU32 )
-    {
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
-    }
-    virtual bool IsVMEBRC()  {return false;}
-
-protected:
-
-    bool   m_IsInit;
-
-    BRCParams m_par;
-    HRDState  m_hrdState;
-
-    mfxI32  mQuantI, mQuantP, mQuantB, mQuantMax, mQuantMin, mQuantPrev, mQuantOffset, mQPprev;
-    mfxI32  mMinQp;
-    mfxI32  mMaxQp;
-
-    //mfxI64  mBF, mBFsaved; // buffer fullness
-    mfxI32  mBitsDesiredFrame; //average frame size
-    Ipp16u  mQuantUpdated;
-    mfxU32  mRecodedFrame_encOrder;
-    bool    m_bRecodeFrame;
-    mfxU32  mPicType;
-
-    mfxI32 mRecode;
-    mfxI64  mBitsEncodedTotal, mBitsDesiredTotal;
-    mfxI32  mQp;
-    mfxI32  mRCfap, mRCqap, mRCbap, mRCq;
-    mfxF64  mRCqa, mRCfa, mRCqa0;
-    mfxF64  mRCfa_short;
-    mfxI32  mQuantRecoded;
-    mfxI32  mQuantIprev, mQuantPprev, mQuantBprev;
-    mfxI32  mBitsEncoded;
-    mfxI32  mSceneChange;
-    mfxI32  mBitsEncodedP, mBitsEncodedPrev;
-    mfxI32  mPoc, mSChPoc;
-    mfxU32  mEOLastIntra;
-
-    void   ResetParams();
-    mfxU32 GetInitQP();
-    mfxBRCStatus UpdateAndCheckHRD(mfxI32 frameBits, mfxF64 inputBitsPerFrame, mfxI32 recode);
-    void  SetParamsForRecoding (mfxI32 encOrder);
-
-    mfxBRCStatus UpdateQuant(mfxI32 bEncoded, mfxI32 totalPicBits, mfxI32 layer = 0, mfxI32 recode = 0);
-    mfxBRCStatus UpdateQuantHRD(mfxI32 bEncoded, mfxBRCStatus sts, mfxI32 overheadBits = 0, mfxI32 layer = 0, mfxI32 recode = 0);
-    mfxStatus   SetParams(MfxVideoParam &video);
-
-    bool        isFrameBeforeIntra (mfxU32 order);
-
-
-    mfxStatus InitHRD();
- 
-};
-#endif
 }
-
-#ifdef NEW_BRC
-
-
-
+#if !defined(MFX_EXT_BRC_DISABLE)
 namespace MfxHwH265Encode
 {
 class H265BRCNew : public BrcIface

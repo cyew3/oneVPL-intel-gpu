@@ -664,9 +664,16 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     ExtBuffer::Construct(par, m_ext.Opaque, m_ext.m_extParam, base.NumExtParam);
     ExtBuffer::Construct(par, m_ext.CO,  m_ext.m_extParam, base.NumExtParam);
     ExtBuffer::Construct(par, m_ext.CO2, m_ext.m_extParam, base.NumExtParam);
+#if !defined(MFX_EXT_BRC_DISABLE)
     ExtBuffer::Construct(par, m_ext.CO3, m_ext.m_extParam, base.NumExtParam);
+#endif
     ExtBuffer::Construct(par, m_ext.DDI, m_ext.m_extParam, base.NumExtParam);
     ExtBuffer::Construct(par, m_ext.AVCTL, m_ext.m_extParam, base.NumExtParam);
+
+#if !defined(MFX_EXT_BRC_DISABLE)
+    ExtBuffer::Construct(par, m_ext.ResetOpt, m_ext.m_extParam, base.NumExtParam);
+#endif
+
 #ifdef MFX_UNDOCUMENTED_DUMP_FILES
     ExtBuffer::Construct(par, m_ext.DumpFiles, m_ext.m_extParam, base.NumExtParam);
 #endif
@@ -710,6 +717,11 @@ mfxStatus MfxVideoParam::GetExtBuffers(mfxVideoParam& par, bool query)
     ExtBuffer::Set(par, m_ext.CO);
     ExtBuffer::Set(par, m_ext.CO2);
     ExtBuffer::Set(par, m_ext.CO3);
+
+#if !defined(MFX_EXT_BRC_DISABLE)
+    ExtBuffer::Set(par, m_ext.ResetOpt);
+#endif
+
     ExtBuffer::Set(par, m_ext.DDI);
     ExtBuffer::Set(par, m_ext.AVCTL);
     ExtBuffer::Set(par, m_ext.ROI);
@@ -786,6 +798,11 @@ bool MfxVideoParam::CheckExtBufferParam()
     bUnsupported += ExtBuffer::CheckBufferParams(m_ext.CO, true);
     bUnsupported += ExtBuffer::CheckBufferParams(m_ext.CO2, true);
     bUnsupported += ExtBuffer::CheckBufferParams(m_ext.CO3, true);
+
+#if !defined(MFX_EXT_BRC_DISABLE)
+    bUnsupported += ExtBuffer::CheckBufferParams(m_ext.ResetOpt, true);
+#endif
+
     bUnsupported += ExtBuffer::CheckBufferParams(m_ext.DDI, true);
     bUnsupported += ExtBuffer::CheckBufferParams(m_ext.AVCTL, true);
 #ifdef MFX_UNDOCUMENTED_DUMP_FILES

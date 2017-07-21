@@ -529,10 +529,11 @@ mfxStatus ImplementationAvc::Query(
 
         MfxVideoParam newPar = *in;
         bool isIdrRequired = false;
+        bool isBRCReset = false;
 
         ImplementationAvc * AVCEncoder = (ImplementationAvc*)state;
 
-        checkSts = AVCEncoder->ProcessAndCheckNewParameters(newPar, isIdrRequired);
+        checkSts = AVCEncoder->ProcessAndCheckNewParameters(newPar, isBRCReset, isIdrRequired);
         if (checkSts < MFX_ERR_NONE)
             return checkSts;
 
@@ -820,7 +821,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
     // CQP enabled
     mfxExtCodingOption2 * extOpt2 = GetExtBuffer(m_video);
-#if defined(MFX_ENABLE_VIDEO_BRC_COMMON_1)
+#if !defined(MFX_EXT_BRC_DISABLE)
     m_enabledSwBrc = bRateControlLA(m_video.mfx.RateControlMethod) || (IsOn(extOpt2->ExtBRC) && (m_video.mfx.RateControlMethod == MFX_RATECONTROL_CBR || m_video.mfx.RateControlMethod == MFX_RATECONTROL_VBR));
 #else
     m_enabledSwBrc = bRateControlLA(m_video.mfx.RateControlMethod);
@@ -1320,6 +1321,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
 mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
     MfxVideoParam & newPar,
+    bool & brcReset,
     bool & isIdrRequired,
     mfxVideoParam const * newParIn)
 {
@@ -1416,7 +1418,7 @@ mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
     mfxExtCodingOption * extOptNew = GetExtBuffer(newPar);
     mfxExtCodingOption * extOptOld = GetExtBuffer(m_video);
 
-    bool brcReset =
+    brcReset =
         m_video.calcParam.targetKbps != newPar.calcParam.targetKbps ||
         m_video.calcParam.maxKbps    != newPar.calcParam.maxKbps;
 
@@ -1433,7 +1435,8 @@ mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
         m_video.mfx.RateControlMethod      == newPar.mfx.RateControlMethod      &&
         m_videoInit.mfx.FrameInfo.Width    >= newPar.mfx.FrameInfo.Width        &&
         m_videoInit.mfx.FrameInfo.Height   >= newPar.mfx.FrameInfo.Height       &&
-        m_video.mfx.FrameInfo.ChromaFormat == newPar.mfx.FrameInfo.ChromaFormat,
+        m_video.mfx.FrameInfo.ChromaFormat == newPar.mfx.FrameInfo.ChromaFormat &&
+        extOpt2Old->ExtBRC                 == extOpt2New->ExtBRC,
         MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
     if (m_video.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
@@ -1476,6 +1479,24 @@ mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
                   MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
     }
 
+#if !defined(MFX_EXT_BRC_DISABLE)
+
+    if (IsOn(extOpt2Old->ExtBRC))
+    {
+        mfxExtBRC*   extBRCInit       = GetExtBuffer(m_video);
+        mfxExtBRC*   extBRCReset      = GetExtBuffer(newPar);
+
+        MFX_CHECK(
+        extBRCInit->pthis == extBRCReset->pthis &&
+        extBRCInit->Init == extBRCReset->Init &&
+        extBRCInit->Reset == extBRCReset->Reset &&
+        extBRCInit->Close == extBRCReset->Close &&
+        extBRCInit->GetFrameCtrl == extBRCReset->GetFrameCtrl &&
+        extBRCInit->Update == extBRCReset->Update, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+    }
+
+#endif
+
     return checkStatus;
 } // ProcessAndCheckNewParameters
 
@@ -1493,8 +1514,9 @@ mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
     mfxExtCodingOption2 * extOpt2Old = GetExtBuffer(m_video);
 
     bool isIdrRequired = false;
+    bool isBRCReset = false;
 
-    mfxStatus checkStatus = ProcessAndCheckNewParameters(newPar, isIdrRequired, par);
+    mfxStatus checkStatus = ProcessAndCheckNewParameters(newPar, isBRCReset, isIdrRequired, par);
     if (checkStatus < MFX_ERR_NONE)
         return checkStatus;
 
@@ -1627,8 +1649,20 @@ mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
             MFX_CHECK_STS(sts);
         }
     }
-
     m_video = newPar;
+
+#if !defined(MFX_EXT_BRC_DISABLE)
+    if (IsOn(extOpt2New->ExtBRC))
+    {
+        mfxExtEncoderResetOption * resetOption = GetExtBuffer(newPar);
+        if (isIdrRequired)
+        {
+            resetOption->StartNewSequence = true;
+        }
+        sts = m_brc.Reset(newPar);
+        MFX_CHECK_STS(sts);
+    }
+#endif
     return checkStatus;
 }
 

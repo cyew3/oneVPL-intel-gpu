@@ -1044,7 +1044,9 @@ void InheritDefaultValues(
     InheritOption(extOpt2Init->IntRefCycleSize, extOpt2Reset->IntRefCycleSize);
     InheritOption(extOpt2Init->IntRefQPDelta,   extOpt2Reset->IntRefQPDelta);
     InheritOption(extOpt2Init->MBBRC,      extOpt2Reset->MBBRC);
+#if !defined(MFX_EXT_BRC_DISABLE)
     InheritOption(extOpt2Init->ExtBRC,      extOpt2Reset->ExtBRC);
+#endif
 
     InheritOption(extOpt2Init->BRefType,   extOpt2Reset->BRefType);
     InheritOption(extOpt2Init->NumMbPerSlice,   extOpt2Reset->NumMbPerSlice);
@@ -1100,6 +1102,23 @@ void InheritDefaultValues(
     // InheritOption(parInit.mfx.FrameInfo.PicStruct,      parReset.mfx.FrameInfo.PicStruct);
     // InheritOption(parInit.IOPattern,                    parReset.IOPattern);
     // InheritOption(parInit.mfx.FrameInfo.ChromaFormat,   parReset.mfx.FrameInfo.ChromaFormat);
+#if !defined(MFX_EXT_BRC_DISABLE)
+
+    mfxExtBRC const *   extBRCInit = &parInit.m_ext.extBRC;
+    mfxExtBRC*   extBRCReset = &parReset.m_ext.extBRC;
+
+    if (!extBRCReset->pthis &&
+        !extBRCReset->Init &&
+        !extBRCReset->Reset &&
+        !extBRCReset->Close &&
+        !extBRCReset->GetFrameCtrl &&
+        !extBRCReset->Update)
+    {
+        *extBRCReset= *extBRCInit;
+    }
+
+
+#endif
 }
 
 inline bool isInVideoMem(MfxVideoParam const & par)
@@ -1721,10 +1740,35 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         changed += CheckOption(par.m_ext.CO2.MBBRC, (mfxU32)MFX_CODINGOPTION_ON, 0);
 
 #if !defined(MFX_EXT_BRC_DISABLE)
-    if (par.m_ext.extBRC.pthis!=0 && !(par.m_ext.CO2.ExtBRC && (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR || par.mfx.RateControlMethod == MFX_RATECONTROL_VBR)))
+ 
+    if (IsOn(par.m_ext.CO2.ExtBRC) && par.mfx.RateControlMethod != 0 && par.mfx.RateControlMethod != MFX_RATECONTROL_CBR && par.mfx.RateControlMethod != MFX_RATECONTROL_VBR)
+    {
+        par.m_ext.CO2.ExtBRC = MFX_CODINGOPTION_OFF;
+        changed ++;
+    }
+
+    if ((!IsOn(par.m_ext.CO2.ExtBRC)) && 
+        (par.m_ext.extBRC.pthis || par.m_ext.extBRC.Init || par.m_ext.extBRC.Close || par.m_ext.extBRC.GetFrameCtrl || par.m_ext.extBRC.Update || par.m_ext.extBRC.Reset))
     {
         par.m_ext.extBRC.pthis = 0;
-        changed ++;
+        par.m_ext.extBRC.Init = 0;
+        par.m_ext.extBRC.Close = 0;
+        par.m_ext.extBRC.GetFrameCtrl = 0;
+        par.m_ext.extBRC.Update = 0;
+        par.m_ext.extBRC.Reset = 0;
+        changed++;
+    }
+    if ((par.m_ext.extBRC.pthis || par.m_ext.extBRC.Init || par.m_ext.extBRC.Close || par.m_ext.extBRC.GetFrameCtrl || par.m_ext.extBRC.Update || par.m_ext.extBRC.Reset) &&
+        (!par.m_ext.extBRC.pthis || !par.m_ext.extBRC.Init || !par.m_ext.extBRC.Close || !par.m_ext.extBRC.GetFrameCtrl || !par.m_ext.extBRC.Update || !par.m_ext.extBRC.Reset))
+    {
+        par.m_ext.extBRC.pthis = 0;
+        par.m_ext.extBRC.Init = 0;
+        par.m_ext.extBRC.Close = 0;
+        par.m_ext.extBRC.GetFrameCtrl = 0;
+        par.m_ext.extBRC.Update = 0;
+        par.m_ext.extBRC.Reset = 0;
+        par.m_ext.CO2.ExtBRC = 0;
+        bInit ? invalid ++ : changed++;
     }
 #endif
 
@@ -2451,6 +2495,11 @@ void SetDefaults(
         else
             par.m_ext.CO2.BRefType = MFX_B_REF_OFF;
     }
+
+#if !defined(MFX_EXT_BRC_DISABLE)
+    if (par.m_ext.CO2.ExtBRC == MFX_CODINGOPTION_UNKNOWN)
+        par.m_ext.CO2.ExtBRC = MFX_CODINGOPTION_OFF;
+#endif
 
     if (par.m_ext.CO3.PRefType == MFX_P_REF_DEFAULT)
     {

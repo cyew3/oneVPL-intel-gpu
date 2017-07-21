@@ -811,6 +811,23 @@ mfxStatus  Plugin::Reset(mfxVideoParam *par)
         ,  MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 #endif //defined PRE_SI_TARGET_PLATFORM_GEN11
 
+#if !defined(MFX_EXT_BRC_DISABLE)
+    MFX_CHECK(m_vpar.m_ext.CO2.ExtBRC == parNew.m_ext.CO2.ExtBRC, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+    if (IsOn(m_vpar.m_ext.CO2.ExtBRC))
+    {
+        mfxExtBRC*   extBRCInit = &m_vpar.m_ext.extBRC;
+        mfxExtBRC*   extBRCReset = &parNew.m_ext.extBRC;
+
+        MFX_CHECK(
+            extBRCInit->pthis == extBRCReset->pthis &&
+            extBRCInit->Init == extBRCReset->Init &&
+            extBRCInit->Reset == extBRCReset->Reset &&
+            extBRCInit->Close == extBRCReset->Close &&
+            extBRCInit->GetFrameCtrl == extBRCReset->GetFrameCtrl &&
+            extBRCInit->Update == extBRCReset->Update, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+    }
+#endif
+
     if (m_vpar.mfx.RateControlMethod == MFX_RATECONTROL_CBR ||
         m_vpar.mfx.RateControlMethod == MFX_RATECONTROL_VBR || 
         m_vpar.mfx.RateControlMethod == MFX_RATECONTROL_VCM)
@@ -915,20 +932,14 @@ mfxStatus  Plugin::Reset(mfxVideoParam *par)
 
     m_hrd.Reset(m_vpar.m_sps);
 
-    if (m_brc && brcReset )
+    if (m_brc )
     {
         if (isIdrRequired)
         {
-            m_brc->Close();
-            sts = m_brc->Init(m_vpar, m_vpar.InsertHRDInfo);
-            MFX_CHECK_STS(sts);
-            m_hrd.Init(m_vpar.m_sps, m_vpar.InitialDelayInKB);
+            parNew.m_ext.ResetOpt.StartNewSequence = MFX_CODINGOPTION_ON;
         }
-        else
-        {
-            sts = m_brc->Reset(m_vpar);
-            MFX_CHECK_STS(sts);
-        }
+        sts = m_brc->Reset(parNew);
+        MFX_CHECK_STS(sts);
         brcReset = false;
     }
 
@@ -1247,7 +1258,7 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
                 MFX_CHECK(brcStatus != MFX_BRC_ERROR,  MFX_ERR_NOT_ENOUGH_BUFFER);
                 MFX_CHECK(!taskForQuery->m_bSkipped, MFX_ERR_NOT_ENOUGH_BUFFER);
 
-                if (((brcStatus & MFX_BRC_NOT_ENOUGH_BUFFER) || (taskForQuery->m_recode > 2)) && (brcStatus & MFX_BRC_ERR_SMALL_FRAME))
+                if ((brcStatus & MFX_BRC_NOT_ENOUGH_BUFFER) && (brcStatus & MFX_BRC_ERR_SMALL_FRAME))
                 {
                     mfxI32 minSize = 0, maxSize = 0;
                     //padding is needed

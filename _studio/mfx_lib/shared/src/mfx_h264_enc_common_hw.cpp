@@ -2144,6 +2144,11 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     mfxExtMoveRect *           extMoveRect  = GetExtBuffer(par);
     mfxExtPredWeightTable *    extPwt       = GetExtBuffer(par);
     mfxExtFeiParam *           feiParam     = GetExtBuffer(par);
+
+#if !defined(MFX_EXT_BRC_DISABLE)
+    mfxExtBRC*                 extBRC       = GetExtBuffer(par);
+#endif
+
     bool isENCPAK = (feiParam->Func == MFX_FEI_FUNCTION_ENCODE) ||
                     (feiParam->Func == MFX_FEI_FUNCTION_ENC)    ||
                     (feiParam->Func == MFX_FEI_FUNCTION_PAK);
@@ -2292,19 +2297,6 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         }
     }
 
-    //disable SW brc
-    /*if (IsOn(extOpt2->ExtBRC) && par.mfx.RateControlMethod == MFX_RATECONTROL_LA && IsLookAheadSupported(par, platform))
-    {
-        // turn on ExtBRC if LA will be used
-        changed = true;
-        extOpt2->ExtBRC = MFX_CODINGOPTION_OFF;
-    }*/
-
-    /*if (par.AsyncDepth > 1 && IsOn(extOpt2->ExtBRC))
-    {
-        changed = true;
-        par.AsyncDepth = 1;
-    }*/
 
     if (par.mfx.TargetUsage > 7)
     {
@@ -3677,6 +3669,38 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         unsupported = true;
     }
 
+#if !defined(MFX_EXT_BRC_DISABLE)
+    if (IsOn(extOpt2->ExtBRC) && par.mfx.RateControlMethod != 0 && par.mfx.RateControlMethod !=MFX_RATECONTROL_CBR && par.mfx.RateControlMethod !=MFX_RATECONTROL_VBR)
+    {
+        extOpt2->ExtBRC = MFX_CODINGOPTION_OFF;
+        changed = true;    
+    }
+    
+    if ((!IsOn(extOpt2->ExtBRC)) && (extBRC->pthis || extBRC->Init || extBRC->Close || extBRC->GetFrameCtrl || extBRC->Update || extBRC->Reset) )
+    {
+        extBRC->pthis = 0;
+        extBRC->Init = 0;
+        extBRC->Close = 0;
+        extBRC->GetFrameCtrl = 0;
+        extBRC->Update = 0;
+        extBRC->Reset = 0; 
+        changed = true;
+    }
+    if ((extBRC->pthis  || extBRC->Init || extBRC->Close   || extBRC->GetFrameCtrl  || extBRC->Update  || extBRC->Reset) && 
+        (!extBRC->pthis || !extBRC->Init || !extBRC->Close || !extBRC->GetFrameCtrl || !extBRC->Update || !extBRC->Reset))
+    {
+        extOpt2->ExtBRC = 0;
+        extBRC->pthis = 0;
+        extBRC->Init = 0;
+        extBRC->Close = 0;
+        extBRC->GetFrameCtrl = 0;
+        extBRC->Update = 0;
+        extBRC->Reset = 0; 
+        unsupported = true;
+    }
+   
+#endif
+
     if (par.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE)
     {
         if (par.mfx.CodecLevel != 0 && par.mfx.CodecLevel < MFX_LEVEL_AVC_21)
@@ -5030,6 +5054,10 @@ void MfxHwH264Encode::InheritDefaultValues(
     InheritOption(extOpt2Init->DisableVUI,      extOpt2Reset->DisableVUI);
     InheritOption(extOpt2Init->SkipFrame,       extOpt2Reset->SkipFrame);
 
+#if !defined(MFX_EXT_BRC_DISABLE)
+     InheritOption(extOpt2Init->ExtBRC,  extOpt2Reset->ExtBRC);
+#endif
+
     mfxExtCodingOption3 const * extOpt3Init  = GetExtBuffer(parInit);
     mfxExtCodingOption3 *       extOpt3Reset = GetExtBuffer(parReset);
 
@@ -5056,6 +5084,23 @@ void MfxHwH264Encode::InheritDefaultValues(
     // NumRefFrame can't be increased by Reset
     // so WiDi WA for dummy frames is continued after Reset() w/o additional checks
     InheritOption(extSpecModesInit->refDummyFramesForWiDi, extSpecModesReset->refDummyFramesForWiDi);
+#endif
+
+#if !defined(MFX_EXT_BRC_DISABLE)
+
+    mfxExtBRC*   extBRCInit       = GetExtBuffer(parInit);
+    mfxExtBRC*   extBRCReset      = GetExtBuffer(parReset);
+
+    if (!extBRCReset->pthis &&
+        !extBRCReset->Init &&
+        !extBRCReset->Reset &&
+        !extBRCReset->Close &&
+        !extBRCReset->GetFrameCtrl &&
+        !extBRCReset->Update)
+    {
+        *extBRCReset = *extBRCInit;
+    }
+
 #endif
 
     parReset.SyncVideoToCalculableParam();
@@ -5485,8 +5530,10 @@ void MfxHwH264Encode::SetDefaults(
     if (extDdi->Hme == MFX_CODINGOPTION_UNKNOWN)
         extDdi->Hme = MFX_CODINGOPTION_ON;
 
-    //if (extOpt2->ExtBRC == MFX_CODINGOPTION_UNKNOWN)
-    //    extOpt2->ExtBRC = MFX_CODINGOPTION_OFF;
+#if !defined(MFX_EXT_BRC_DISABLE)
+    if (extOpt2->ExtBRC == MFX_CODINGOPTION_UNKNOWN)
+        extOpt2->ExtBRC = MFX_CODINGOPTION_OFF;
+#endif
 
     if (extOpt2->LookAheadDepth == 0)
     {

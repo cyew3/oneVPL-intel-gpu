@@ -21,7 +21,10 @@
 #include "mfxla.h"
 #include "mfxpcp.h"
 #include "mfxwidi.h"
+
+#if !defined(MFX_EXT_BRC_DISABLE)
 #include "mfxbrc.h"
+#endif
 
 #define MFX_EXTBUFF_CU_QP_ENABLE 1
 #define DEBUG_REC_FRAMES_INFO 0   // dependency from fwrite(). Custom writing to file shouldn't be present in MSDK releases w/o documentation and testing
@@ -848,6 +851,7 @@ public:
         mfxExtMasteringDisplayColourVolume   DisplayColour;
         mfxExtContentLightLevelInfo LightLevel;
 #endif
+        mfxExtEncoderResetOption   ResetOpt;
         mfxExtBuffer *              m_extParam[SIZE_OF_ARRAY(ExtBuffer::allowed_buffers)];
     } m_ext;
 

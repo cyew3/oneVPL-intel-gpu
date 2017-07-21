@@ -64,7 +64,8 @@ mfxStatus ConvertVideoParam_Brc(const mfxVideoParam *parMFX, UMC::VideoBrcParams
     return MFX_ERR_NONE;
 }
 #endif
-#if defined(MFX_ENABLE_VIDEO_BRC_COMMON_1)
+
+#if (defined (MFX_ENABLE_H264_VIDEO_ENCODE) || defined (MFX_ENABLE_H265_VIDEO_ENCODE)) && !defined(MFX_EXT_BRC_DISABLE)
 namespace MfxHwH265EncodeBRC
 {
 
@@ -940,21 +941,30 @@ mfxStatus ExtBRC::Reset(mfxVideoParam *par )
     mfxStatus sts = MFX_ERR_NONE;
     MFX_CHECK_NULL_PTR1(par);
     MFX_CHECK(m_bInit, MFX_ERR_NOT_INITIALIZED);
-    MFX_CHECK (m_par.rateControlMethod == MFX_RATECONTROL_VBR, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
-    sts = m_par.Init(par);
-    MFX_CHECK_STS(sts);
+    mfxExtEncoderResetOption  * pRO = (mfxExtEncoderResetOption *)Hevc_GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_ENCODER_RESET_OPTION);
+    if (pRO && pRO->StartNewSequence == MFX_CODINGOPTION_ON)
+    {
+        Close();
+        sts = Init(par);
+    }
+    else
+    { 
+        MFX_CHECK (m_par.rateControlMethod == MFX_RATECONTROL_VBR, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+        sts = m_par.Init(par);
+        MFX_CHECK_STS(sts);
 
 
-    m_ctx.Quant = (mfxI32)(1./m_ctx.dQuantAb * pow(m_ctx.fAbLong/m_par.inputBitsPerFrame, 0.32) + 0.5); 
-    BRC_CLIP(m_ctx.Quant, m_par.quantMinI, m_par.quantMaxI); 
+        m_ctx.Quant = (mfxI32)(1./m_ctx.dQuantAb * pow(m_ctx.fAbLong/m_par.inputBitsPerFrame, 0.32) + 0.5); 
+        BRC_CLIP(m_ctx.Quant, m_par.quantMinI, m_par.quantMaxI); 
     
-    UpdateQPParams(m_ctx.Quant, MFX_FRAMETYPE_I , m_ctx, 0, m_par.quantMinI, m_par.quantMaxI, 0);
+        UpdateQPParams(m_ctx.Quant, MFX_FRAMETYPE_I , m_ctx, 0, m_par.quantMinI, m_par.quantMaxI, 0);
 
-    m_ctx.dQuantAb = 1./m_ctx.Quant;
-    m_ctx.fAbLong  = m_par.inputBitsPerFrame;
-    m_ctx.fAbShort = m_par.inputBitsPerFrame;
-
+        m_ctx.dQuantAb = 1./m_ctx.Quant;
+        m_ctx.fAbLong  = m_par.inputBitsPerFrame;
+        m_ctx.fAbShort = m_par.inputBitsPerFrame;
+    }
     return sts;
 }
 

@@ -1341,7 +1341,7 @@ namespace MfxHwH264Encode
         mfxF64 sumxy;
         mfxF64 sumxx;
     };
-#if defined(MFX_ENABLE_VIDEO_BRC_COMMON_1)
+#if !defined(MFX_EXT_BRC_DISABLE)
     struct BRCFrameParams: mfxBRCFrameParam
     {
         mfxU16 picStruct;
@@ -1376,7 +1376,8 @@ namespace MfxHwH264Encode
     {
     public:
         virtual ~BrcIface() {};
-        virtual void Init(MfxVideoParam  & video) = 0;
+        virtual mfxStatus Init(MfxVideoParam  & video) = 0;
+        virtual mfxStatus Reset(MfxVideoParam  & video) = 0;
         virtual void Close() = 0;
         virtual void PreEnc(const BRCFrameParams& par, std::vector<VmeData *> const & vmeData) = 0;
         virtual mfxU8 GetQp(const BRCFrameParams& par) = 0;
@@ -1405,9 +1406,13 @@ namespace MfxHwH264Encode
         ~Brc()
         {
         }
-        void Init(MfxVideoParam  & video)
+        mfxStatus Init(MfxVideoParam  & video)
         {
-            m_impl->Init(video);
+            return m_impl->Init(video);
+        }
+        mfxStatus Reset(MfxVideoParam  & video)
+        {
+            return m_impl->Reset(video);
         }
         void Close()
         {
@@ -1454,8 +1459,8 @@ namespace MfxHwH264Encode
     public:
         ~UmcBrc() { Close(); }
 
-        void Init(MfxVideoParam  & video);
-
+        mfxStatus Init(MfxVideoParam  & video);
+        mfxStatus Reset(MfxVideoParam  & ) { return MFX_ERR_NONE; };
         void Close();
 
         mfxU8 GetQp(const BRCFrameParams& par);
@@ -1562,7 +1567,8 @@ namespace MfxHwH264Encode
     public:
         ~LookAheadBrc2() { Close(); }
 
-        void Init(MfxVideoParam  & video);
+        mfxStatus Init (MfxVideoParam  & video);
+        mfxStatus Reset(MfxVideoParam  & ) { return MFX_ERR_NONE; };
 
         void Close();
 
@@ -1627,8 +1633,8 @@ namespace MfxHwH264Encode
     public:
         ~VMEBrc() { Close(); }
 
-        void Init(MfxVideoParam  & video);
-
+        mfxStatus Init(MfxVideoParam  & video);
+        mfxStatus Reset(MfxVideoParam  & ) { return MFX_ERR_NONE; }
         void Close();
 
         mfxU8 GetQp(const BRCFrameParams& par);
@@ -1690,7 +1696,8 @@ namespace MfxHwH264Encode
     public:
         ~LookAheadCrfBrc() { Close(); }
 
-        void Init(MfxVideoParam  & video);
+        mfxStatus Init(MfxVideoParam  & video);
+        mfxStatus Reset(MfxVideoParam  & ) {return MFX_ERR_NONE;};
 
         void Close() {}
 
@@ -1715,7 +1722,7 @@ namespace MfxHwH264Encode
         mfxU32  m_interCost;
         mfxU32  m_propCost;
     };
-#if defined(MFX_ENABLE_VIDEO_BRC_COMMON_1)
+#if !defined(MFX_EXT_BRC_DISABLE)
     class H264SWBRC : public BrcIface
     {
     public:
@@ -1731,7 +1738,7 @@ namespace MfxHwH264Encode
         }
 
 
-        void   Init(MfxVideoParam &video)
+        mfxStatus   Init(MfxVideoParam &video)
         {
             mfxStatus sts = MFX_ERR_NONE;
             mfxExtBRC * extBRC = GetExtBuffer(video);
@@ -1746,14 +1753,15 @@ namespace MfxHwH264Encode
                 sts = HEVCExtBRC::Create(m_BRCLocal);
                 m_pBRC = &m_BRCLocal;
             }
-            m_pBRC->Init(m_pBRC->pthis, &video);
+            sts = m_pBRC->Init(m_pBRC->pthis, &video);
+            return sts;
         }
         void  Close()
         {
             m_pBRC->Close(m_pBRC->pthis);
             HEVCExtBRC::Destroy(m_BRCLocal);
         }
-        mfxStatus   Reset(MfxVideoParam &video )
+        mfxStatus  Reset(MfxVideoParam &video )
         {
             return m_pBRC->Reset(m_pBRC->pthis,&video);    
         }
@@ -2183,6 +2191,7 @@ namespace MfxHwH264Encode
 
         mfxStatus ProcessAndCheckNewParameters(
             MfxVideoParam & newPar,
+            bool & isBRCReset,
             bool & isIdrRequired,
             mfxVideoParam const * newParIn = 0);
 

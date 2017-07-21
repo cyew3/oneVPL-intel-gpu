@@ -25,8 +25,8 @@
 mfxStatus ConvertVideoParam_Brc(const mfxVideoParam *parMFX, UMC::VideoBrcParams *parUMC);
 #endif
 
-#if (defined (MFX_ENABLE_H264_VIDEO_ENCODE) || defined (MFX_ENABLE_H265_VIDEO_ENCODE)) && defined(__MFXBRC_H__)
-#define MFX_ENABLE_VIDEO_BRC_COMMON_1
+ 
+#if (defined (MFX_ENABLE_H264_VIDEO_ENCODE) || defined (MFX_ENABLE_H265_VIDEO_ENCODE)) && !defined(MFX_EXT_BRC_DISABLE)
 
 namespace MfxHwH265EncodeBRC
 {
