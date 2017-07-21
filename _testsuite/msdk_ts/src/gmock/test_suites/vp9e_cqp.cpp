@@ -147,12 +147,10 @@ namespace vp9e_cqp
 
             if(tc.type == USE_EXT_BUFFER_FRAME)
             {
-                /*
                 // Check how to extract QIndex-s with new VP9-API
-                ((mfxExtCodingOptionVP9*)m_ExtBuff.get())->QIndexDeltaLumaDC = VP9E_CQP_QIndexDeltaLumaDC+cycle_counter;
-                ((mfxExtCodingOptionVP9*)m_ExtBuff.get())->QIndexDeltaChromaAC = VP9E_CQP_QIndexDeltaChromaAC+cycle_counter;
-                ((mfxExtCodingOptionVP9*)m_ExtBuff.get())->QIndexDeltaChromaDC = VP9E_CQP_QIndexDeltaChromaDC+cycle_counter;
-                */
+                ((mfxExtVP9Param*)m_ExtBuff.get())->QIndexDeltaLumaDC = VP9E_CQP_QIndexDeltaLumaDC+cycle_counter;
+                ((mfxExtVP9Param*)m_ExtBuff.get())->QIndexDeltaChromaAC = VP9E_CQP_QIndexDeltaChromaAC+cycle_counter;
+                ((mfxExtVP9Param*)m_ExtBuff.get())->QIndexDeltaChromaDC = VP9E_CQP_QIndexDeltaChromaDC+cycle_counter;
 
                 m_pCtrl->NumExtParam = 1;
                 m_pCtrl->ExtParam = (mfxExtBuffer **)&m_ExtBuff;
@@ -183,7 +181,6 @@ namespace vp9e_cqp
                 encoded += submitted;
                 submitted = 0;
                 async = TS_MIN(async, (frames_count - encoded));
-                        
                 BSErr bserror = set_buffer(m_pBitstream->Data, m_pBitstream->DataLength);
                 ASSERT_EQ(bserror, BS_ERR_NONE) << "FAILED: Set buffer to stream parser error!";
 
@@ -285,23 +282,21 @@ namespace vp9e_cqp
 
         if(tc.type == USE_EXT_BUFFER || tc.type == USE_EXT_BUFFER_FRAME)
         {
-            /*
             // Check how to extract QIndex-s with new VP9-API
-            m_ExtBuff.reset((mfxExtBuffer*)(new mfxExtCodingOptionVP9()));
-            memset(m_ExtBuff.get(), 0, sizeof(mfxExtCodingOptionVP9));
-            m_ExtBuff->BufferId = MFX_EXTBUFF_CODING_OPTION_VP9;
-            m_ExtBuff->BufferSz = sizeof(mfxExtCodingOptionVP9);
+            m_ExtBuff.reset((mfxExtBuffer*)(new mfxExtVP9Param()));
+            memset(m_ExtBuff.get(), 0, sizeof(mfxExtVP9Param));
+            m_ExtBuff->BufferId = MFX_EXTBUFF_VP9_PARAM;
+            m_ExtBuff->BufferSz = sizeof(mfxExtVP9Param);
 
-            ((mfxExtCodingOptionVP9*)m_ExtBuff.get())->QIndexDeltaLumaDC = VP9E_CQP_QIndexDeltaLumaDC;
-            ((mfxExtCodingOptionVP9*)m_ExtBuff.get())->QIndexDeltaChromaAC = VP9E_CQP_QIndexDeltaChromaAC;
-            ((mfxExtCodingOptionVP9*)m_ExtBuff.get())->QIndexDeltaChromaDC = VP9E_CQP_QIndexDeltaChromaDC;
+            ((mfxExtVP9Param*)m_ExtBuff.get())->QIndexDeltaLumaDC = VP9E_CQP_QIndexDeltaLumaDC;
+            ((mfxExtVP9Param*)m_ExtBuff.get())->QIndexDeltaChromaAC = VP9E_CQP_QIndexDeltaChromaAC;
+            ((mfxExtVP9Param*)m_ExtBuff.get())->QIndexDeltaChromaDC = VP9E_CQP_QIndexDeltaChromaDC;
 
             if(tc.type == USE_EXT_BUFFER)
             {
                 m_pPar->NumExtParam = 1;
                 m_pPar->ExtParam = (mfxExtBuffer **)&m_ExtBuff;
             }
-            */
         }
 
         InitAndSetAllocator();
@@ -334,7 +329,7 @@ namespace vp9e_cqp
         {
             //for these tests Init() will overwrite some params - it's ok
             g_tsStatus.expect(MFX_ERR_NONE);
-        } 
+        }
         else
         {
             if( g_tsStatus.m_status != tc.sts)
