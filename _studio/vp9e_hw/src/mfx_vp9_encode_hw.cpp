@@ -143,7 +143,7 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
         // get HW caps from driver
         ENCODE_CAPS_VP9 caps = {};
         mfxPlatform platform = {};
-        MFX_CHECK(MFX_ERR_NONE == QueryCapsAndPlatform(m_pmfxCore, caps, platform, GetGuid(toValidate)), MFX_ERR_UNSUPPORTED);
+        MFX_CHECK(MFX_ERR_NONE == QueryCapsAndPlatform(m_pmfxCore, caps, platform, GetGuid(toValidate), in->mfx.FrameInfo.Width, in->mfx.FrameInfo.Height), MFX_ERR_UNSUPPORTED);
 
         // validate input parameters
         sts = CheckParameters(toValidate, caps);
@@ -202,7 +202,7 @@ mfxStatus Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in, mfxF
     // get HW caps from driver
     ENCODE_CAPS_VP9 caps = {};
     mfxPlatform platform = {};
-    MFX_CHECK(MFX_ERR_NONE == QueryCapsAndPlatform(m_pmfxCore, caps, platform, GetGuid(toValidate)), MFX_ERR_UNSUPPORTED);
+    MFX_CHECK(MFX_ERR_NONE == QueryCapsAndPlatform(m_pmfxCore, caps, platform, GetGuid(toValidate), par->mfx.FrameInfo.Width, par->mfx.FrameInfo.Height), MFX_ERR_UNSUPPORTED);
 
     // get validated and properly initialized set of parameters
     CheckParameters(toValidate, caps);

@@ -18,6 +18,10 @@
 
 namespace MfxHwVP9Encode
 {
+
+#define MFX_VP9E_HW_D3D11_DEFAULT_WIDTH  (1920)
+#define MFX_VP9E_HW_D3D11_DEFAULT_HEIGHT (1088)
+
 #if defined (MFX_VA_WIN)
 
     DriverEncoder* CreatePlatformVp9Encoder(mfxCoreInterface* pCore)
@@ -85,8 +89,19 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
     mfxU32 count = 0;
 
     m_guid = guid;
-    m_width = width;
-    m_height = height;
+
+    if (width && height)
+    {
+        m_width = width;
+        m_height = height;
+    }
+    else
+    {
+        // default width and height are used because GetVideoDecoderConfigCount()
+        //  does not work with null-values
+        m_width = MFX_VP9E_HW_D3D11_DEFAULT_WIDTH;
+        m_height = MFX_VP9E_HW_D3D11_DEFAULT_HEIGHT;
+    }
 
     // [0] Get device/context
     {

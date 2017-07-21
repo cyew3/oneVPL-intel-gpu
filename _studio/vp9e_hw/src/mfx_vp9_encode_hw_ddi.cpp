@@ -16,14 +16,14 @@
 namespace MfxHwVP9Encode
 {
 
-    mfxStatus QueryCapsAndPlatform(mfxCoreInterface * pCore, ENCODE_CAPS_VP9 & caps, mfxPlatform & platform, GUID guid)
+    mfxStatus QueryCapsAndPlatform(mfxCoreInterface * pCore, ENCODE_CAPS_VP9 & caps, mfxPlatform & platform, GUID guid, mfxU32 width, mfxU32 height)
     {
         std::auto_ptr<DriverEncoder> ddi;
 
         ddi.reset(CreatePlatformVp9Encoder(pCore));
         MFX_CHECK(ddi.get() != NULL, MFX_WRN_PARTIAL_ACCELERATION);
 
-        mfxStatus sts = ddi.get()->CreateAuxilliaryDevice(pCore, guid, 1920, 1088);
+        mfxStatus sts = ddi.get()->CreateAuxilliaryDevice(pCore, guid, width, height);
         MFX_CHECK_STS(sts);
 
         sts = ddi.get()->QueryEncodeCaps(caps);
