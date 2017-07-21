@@ -532,6 +532,10 @@ DXGI_FORMAT D3D11FrameAllocator::ConverColortFormat(mfxU32 fourcc)
         case DXGI_FORMAT_AYUV:
         case MFX_FOURCC_AYUV:
             return DXGI_FORMAT_AYUV;
+#ifdef ENABLE_PS
+        case MFX_FOURCC_Y410:
+            return DXGI_FORMAT_Y410;
+#endif
 
         default:
             return DXGI_FORMAT_UNKNOWN;
