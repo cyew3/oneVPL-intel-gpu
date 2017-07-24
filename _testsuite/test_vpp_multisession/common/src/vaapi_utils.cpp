@@ -10,9 +10,9 @@ Copyright(c) 2011-2017 Intel Corporation. All Rights Reserved.
 
 #ifdef LIBVA_SUPPORT
 
-
 #include <dlfcn.h>
 #include <stdexcept>
+#include <iostream>
 #include "vaapi_utils.h"
 //#if defined(LIBVA_DRM_SUPPORT)
 #include "vaapi_utils_drm.h"
@@ -25,7 +25,13 @@ namespace MfxLoader
 
     SimpleLoader::SimpleLoader(const char * name)
     {
+        dlerror();
         so_handle = dlopen(name, RTLD_GLOBAL | RTLD_NOW);
+        if (NULL == so_handle)
+        {
+            std::cerr << dlerror() << std::endl;
+            throw std::runtime_error("Can't load library");
+        }
     }
 
     void * SimpleLoader::GetFunction(const char * name)
@@ -53,7 +59,7 @@ namespace MfxLoader
 
 #if defined(LIBVA_SUPPORT)
     VA_Proxy::VA_Proxy()
-        : lib("libva.so.1")
+        : lib("libva.so.2")
         , SIMPLE_LOADER_FUNCTION(vaInitialize)
         , SIMPLE_LOADER_FUNCTION(vaTerminate)
         , SIMPLE_LOADER_FUNCTION(vaCreateSurfaces)
@@ -73,7 +79,7 @@ namespace MfxLoader
 
 #if defined(LIBVA_DRM_SUPPORT)
     VA_DRMProxy::VA_DRMProxy()
-        : lib("libva-drm.so.1")
+        : lib("libva-drm.so.2")
         , SIMPLE_LOADER_FUNCTION(vaGetDisplayDRM)
     {
     }
@@ -84,7 +90,7 @@ namespace MfxLoader
 
 #if defined(LIBVA_X11_SUPPORT)
     VA_X11Proxy::VA_X11Proxy()
-        : lib("libva-x11.so.1")
+        : lib("libva-x11.so.2")
         , SIMPLE_LOADER_FUNCTION(vaGetDisplay)
         , SIMPLE_LOADER_FUNCTION(vaPutSurface)
     {

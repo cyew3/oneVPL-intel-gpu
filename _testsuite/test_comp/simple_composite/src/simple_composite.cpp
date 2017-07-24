@@ -79,12 +79,18 @@ namespace MfxLoader
 
         void * so_handle;
     };
-    
+
     SimpleLoader::SimpleLoader(const char * name)
     {
+        dlerror();
         so_handle = dlopen(name, RTLD_GLOBAL | RTLD_NOW);
+        if (NULL == so_handle)
+        {
+            std::cerr << dlerror() << std::endl;
+            throw std::runtime_error("Can't load library");
+        }
     }
-  
+
     void * SimpleLoader::GetFunction(const char * name)
     {
         void * fn_ptr = dlsym(so_handle, name);
@@ -92,12 +98,12 @@ namespace MfxLoader
             throw std::runtime_error("Can't find function");
         return fn_ptr;
     }
-  
+
     SimpleLoader::~SimpleLoader()
     {
         dlclose(so_handle);
     }
-   
+
     #define SIMPLE_LOADER_STRINGIFY1( x) #x
     #define SIMPLE_LOADER_STRINGIFY(x) SIMPLE_LOADER_STRINGIFY1(x)
     #define SIMPLE_LOADER_DECORATOR1(fun,suffix) fun ## _ ## suffix
@@ -144,7 +150,7 @@ namespace MfxLoader
     };
 
     VA_Proxy::VA_Proxy()
-    : lib("libva.so.1")
+    : lib("libva.so.2")
     , SIMPLE_LOADER_FUNCTION(vaInitialize)
     , SIMPLE_LOADER_FUNCTION(vaTerminate)
     , SIMPLE_LOADER_FUNCTION(vaCreateSurfaces)
@@ -177,9 +183,9 @@ namespace MfxLoader
 
         const vaGetDisplayDRM_type vaGetDisplayDRM;
     };
-    
+
     VA_DRMProxy::VA_DRMProxy()
-    : lib("libva-drm.so.1")
+    : lib("libva-drm.so.2")
     , SIMPLE_LOADER_FUNCTION(vaGetDisplayDRM)
     {
     }
@@ -187,8 +193,8 @@ namespace MfxLoader
     VA_DRMProxy::~VA_DRMProxy()
     {}
     //#endif
-    
-    
+
+
 } // namespace MfxLoader
 #endif // #ifdef LIBVA_SUPPORT
 
@@ -375,7 +381,7 @@ ProgramArguments ParseInputString(const vector<string> &args)
 
     if (find(args.begin(), args.end(), "-d3d11") != args.end())
         pa.impl |= MFX_IMPL_VIA_D3D11;
-    
+
     if (find(args.begin(), args.end(), "-sw") != args.end())
     {
         isActivatedSW = true;
@@ -1229,7 +1235,7 @@ int main(int argc, char *argv[])
     // Search for the required display adapter
     int i = 0, nFoundAdapters = 0;
     int nodesNumbers[] = {0,0};
-    
+
     while ((i < adapters_num) && (nFoundAdapters != numberOfRequiredIntelAdapter))
     {
         if (adapters[i].vendor_id == IntelVendorID)

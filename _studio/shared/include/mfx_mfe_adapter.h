@@ -20,6 +20,7 @@
 #include "vm_cond.h"
 #include "vm_time.h"
 #include <mfxstructures.h>
+#define MFE_UNIFIED
 
 class MFEVAAPIEncoder
 {
@@ -124,7 +125,7 @@ private:
 
     // currently up-to-to 3 frames worth combining
     static const mfxU32 MAX_FRAMES_TO_COMBINE = 3;
-
+#ifndef MFE_UNIFIED
     // symbol is pointed by  VPG_EXT_VA_CREATE_MFECONTEXT
     vaExtCreateMfeContext vaCreateMFEContext;
     // symbol is pointed by  VPG_EXT_VA_ADD_CONTEXT
@@ -133,6 +134,7 @@ private:
     vaExtReleaseContext vaReleaseContext;
     // symbol is pointed by  VPG_EXT_VA_MFE_SUBMIT
     vaExtMfeSubmit vaMFESubmit;
+#endif
 };
 #endif // MFX_VA_LINUX && MFX_ENABLE_MFE
 

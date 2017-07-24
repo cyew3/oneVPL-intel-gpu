@@ -33,10 +33,12 @@ MFEVAAPIEncoder::MFEVAAPIEncoder() :
     , m_framesToCombine(0)
     , m_maxFramesToCombine(0)
     , m_framesCollected(0)
+#ifndef MFE_UNIFIED
     , vaCreateMFEContext(NULL)
     , vaAddContext(NULL)
     , vaReleaseContext(NULL)
     , vaMFESubmit(NULL)
+#endif
 {
     vm_cond_set_invalid(&m_mfe_wait);
     vm_mutex_set_invalid(&m_mfe_guard);
@@ -99,7 +101,7 @@ mfxStatus MFEVAAPIEncoder::Create(mfxExtMultiFrameParam  const & par, VADisplay 
 
     m_streams_pool.clear();
     m_toSubmit.clear();
-
+#ifndef MFE_UNIFIED
     VADriverContextP ctx = CTX(vaDisplay);
     void* handle = ctx->handle;
 
@@ -126,12 +128,25 @@ mfxStatus MFEVAAPIEncoder::Create(mfxExtMultiFrameParam  const & par, VADisplay 
     {
         return MFX_ERR_DEVICE_FAILED;
     }
+#else
+    VAStatus vaSts = vaCreateMFContext(m_vaDisplay, &m_mfe_context);
+    if (VA_STATUS_SUCCESS == vaSts)
+        return MFX_ERR_NONE;
+    else if (VA_STATUS_ERROR_UNIMPLEMENTED == vaSts)
+        return MFX_ERR_UNSUPPORTED;
+    else
+        return MFX_ERR_DEVICE_FAILED;
+#endif
 }
 
 mfxStatus MFEVAAPIEncoder::Join(VAContextID ctx, bool doubleField)
 {
     vm_mutex_lock(&m_mfe_guard);//need to protect in case there are streams added/removed in runtime.
+#ifndef MFE_UNIFIED
     VAStatus vaSts = vaAddContext(m_vaDisplay, ctx, m_mfe_context);
+#else
+    VAStatus vaSts = vaMFAddContext(m_vaDisplay, m_mfe_context, ctx);
+#endif
     mfxStatus sts = MFX_ERR_NONE;
     switch (vaSts)
     {
@@ -175,7 +190,11 @@ mfxStatus MFEVAAPIEncoder::Join(VAContextID ctx, bool doubleField)
 mfxStatus MFEVAAPIEncoder::Disjoin(VAContextID ctx)
 {
     vm_mutex_lock(&m_mfe_guard);//need to protect in case there are streams added/removed in runtime
+#ifndef MFE_UNIFIED
     VAStatus vaSts = vaReleaseContext(m_vaDisplay, ctx, m_mfe_context);
+#else
+    VAStatus vaSts = vaMFReleaseContext(m_vaDisplay, m_mfe_context, ctx);
+#endif
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     if (m_framesToCombine > 0)
         --m_framesToCombine;
@@ -185,6 +204,16 @@ mfxStatus MFEVAAPIEncoder::Disjoin(VAContextID ctx)
 
 mfxStatus MFEVAAPIEncoder::Destroy()
 {
+/* Disabled for now in case driver ignores doesn't support properly. 
+    for(StreamsIter_t it = m_streams_pool.begin();it == m_streams_pool.end(); it++)
+    {
+#ifndef MFE_UNIFIED
+        VAStatus vaSts = vaReleaseContext(m_vaDisplay, it->ctx, m_mfe_context);
+#else
+        VAStatus vaSts = vaMFReleaseContext(m_vaDisplay, m_mfe_context, it->ctx);
+#endif
+    }
+*/
     VAStatus vaSts = vaDestroyContext(m_vaDisplay, VAContextID(m_mfe_context));
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     m_mfe_context = VA_INVALID_ID;
@@ -192,11 +221,12 @@ mfxStatus MFEVAAPIEncoder::Destroy()
     vm_mutex_destroy(&m_mfe_guard);
     vm_cond_destroy(&m_mfe_wait);
     m_streams_pool.clear();
-
+#ifndef MFE_UNIFIED
     vaCreateMFEContext = NULL;
     vaAddContext = NULL;
     vaReleaseContext = NULL;
     vaMFESubmit = NULL;
+#endif
     return MFX_ERR_NONE;
 }
 
@@ -299,9 +329,13 @@ mfxStatus MFEVAAPIEncoder::Submit(VAContextID context, vm_tick timeToWait)
         }
         else
         {
+#ifndef MFE_UNIFIED
             VAStatus vaSts = vaMFESubmit(m_vaDisplay, m_mfe_context,
                                          &m_contexts[0], m_contexts.size());
-
+#else
+            VAStatus vaSts = vaMFSubmit(m_vaDisplay, m_mfe_context,
+                                         &m_contexts[0], m_contexts.size());
+#endif
             mfxStatus tmp_res = VA_STATUS_SUCCESS == vaSts ? MFX_ERR_NONE : MFX_ERR_DEVICE_FAILED;
             for (std::vector<StreamsIter_t>::iterator it = m_streams.begin();
                  it != m_streams.end(); ++it)

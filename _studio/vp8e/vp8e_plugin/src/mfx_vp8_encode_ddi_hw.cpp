@@ -337,7 +337,7 @@ void FillBrcStructures(
     vaBrcPar.bits_per_second = par.mfx.MaxKbps * 1000;
     if(par.mfx.MaxKbps)
         vaBrcPar.target_percentage = (unsigned int)(100.0 * (mfxF64)par.mfx.TargetKbps / (mfxF64)par.mfx.MaxKbps);
-    vaFrameRate.framerate = (unsigned int)(100.0 * (mfxF64)par.mfx.FrameInfo.FrameRateExtN / (mfxF64)par.mfx.FrameInfo.FrameRateExtD);
+    vaFrameRate.framerate = (par.mfx.FrameInfo.FrameRateExtD << 16 )| par.mfx.FrameInfo.FrameRateExtN;
 }
 
 mfxStatus SetRateControl(
@@ -494,11 +494,7 @@ mfxStatus SetFrameRate(
     misc_param->type = VAEncMiscParameterTypeFrameRate;
     frameRate_param = (VAEncMiscParameterFrameRate *)misc_param->data;
 
-#ifndef MFX_VAAPI_UPSTREAM
-    frameRate_param->framerate = (unsigned int)(100.0 * (mfxF64)par.mfx.FrameInfo.FrameRateExtN / (mfxF64)par.mfx.FrameInfo.FrameRateExtD);
-#else
-    frameRate_param->framerate = (par.mfx.FrameInfo.FrameRateExtD << 16 ) | par.mfx.FrameInfo.FrameRateExtN;
-#endif
+    frameRate_param->framerate = (par.mfx.FrameInfo.FrameRateExtD << 16 )| par.mfx.FrameInfo.FrameRateExtN;
 
     vaUnmapBuffer(m_vaDisplay, frameRateBufId);
 

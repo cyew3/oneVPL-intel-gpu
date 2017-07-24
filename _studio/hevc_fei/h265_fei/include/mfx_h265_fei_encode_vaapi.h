@@ -62,7 +62,7 @@ namespace MfxHwH265FeiEncode
 
         virtual VAEntrypoint GetVAEntryPoint()
         {
-            return VAEntrypointEncFEIIntel;
+            return VAEntrypointFEI;
         }
 
         virtual mfxStatus ConfigureExtraVAattribs(std::vector<VAConfigAttrib> & attrib);

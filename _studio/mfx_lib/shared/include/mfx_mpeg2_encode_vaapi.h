@@ -94,6 +94,7 @@ namespace MfxHwMpeg2Encode
         mfxStatus Init(ENCODE_FUNC func, ExecuteBuffers* pExecuteBuffers);
         mfxStatus FillSlices(ExecuteBuffers* pExecuteBuffers);
         mfxStatus FillMiscParameterBuffer(ExecuteBuffers* pExecuteBuffers);
+        mfxStatus FillQualityLevelBuffer(ExecuteBuffers* pExecuteBuffers);
         mfxStatus FillUserDataBuffer(mfxU8 *pUserData, mfxU32 userDataLen);
         mfxStatus FillVideoSignalInfoBuffer(ExecuteBuffers* pExecuteBuffers);
         mfxStatus FillMBQPBuffer(ExecuteBuffers* pExecuteBuffers, mfxU8* mbqp, mfxU32 numMB);
@@ -117,24 +118,25 @@ namespace MfxHwMpeg2Encode
         VABufferID                          m_ppsBufferId;
         VABufferID                          m_qmBufferId;
         VAEncSliceParameterBufferMPEG2      m_sliceParam[MAX_SLICES];
-        VABufferID                          m_sliceParamBufferId[MAX_SLICES];  /* Slice level parameter, multil slices */
+        VABufferID                          m_sliceParamBufferId[MAX_SLICES];  /* Slice level parameter, multi slices */
         int                                 m_numSliceGroups;
         mfxU32                              m_codedbufISize;
         mfxU32                              m_codedbufPBSize;
 
         VAEncMiscParameterBuffer           *m_pMiscParamsFps;
-        VAEncMiscParameterBuffer           *m_pMiscParamsPrivate;
+        VAEncMiscParameterBuffer           *m_pMiscParamsQuality;
         VAEncMiscParameterBuffer           *m_pMiscParamsSeqInfo;
         VAEncMiscParameterBuffer           *m_pMiscParamsSkipFrame;
 
 
         VABufferID                          m_miscParamFpsId;
-        VABufferID                          m_miscParamPrivateId;
+        VABufferID                          m_miscParamQualityId;
         VABufferID                          m_miscParamSeqInfoId;
         VABufferID                          m_miscParamSkipFrameId;
         VABufferID                          m_packedUserDataParamsId;
         VABufferID                          m_packedUserDataId;
         VABufferID                          m_mbqpBufferId;
+        VABufferID                          m_miscQualityParamId;
 #if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
         VABufferID                          m_triggerGpuHangBufferId;
 #endif

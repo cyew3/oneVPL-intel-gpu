@@ -115,9 +115,9 @@ private:
         {
 #if MFX_VERSION >= MFX_VERSION_NEXT
         case MFX_EXTBUFF_HEVCFEI_ENC_QP:
-            return VAEncQpBufferType;
+            return VAEncQPBufferType;
         case MFX_EXTBUFF_HEVCFEI_ENC_MV_PRED:
-            return VAEncFEIMVPredictorBufferTypeIntel;
+            return VAEncFEIMVPredictorBufferType;
 #endif
         default:
             throw mfxError(MFX_ERR_UNSUPPORTED, "Unsupported buffer type");

@@ -12,31 +12,21 @@
 #define _MFX_CONFIG_H_
 
 #define CMAPIUPDATE
-
-#ifdef LINUX_TARGET_PLATFORM_UPSTREAM
-    #define MFX_VAAPI_UPSTREAM
-#endif
-
-#ifndef MFX_VAAPI_UPSTREAM
-    #define MFX_ENABLE_VPP_COMPOSITION
-    //#define MFX_ENABLE_VPP_FRC
-    #define MFX_ENABLE_VPP_ROTATION
-    #define MFX_ENABLE_VPP_VIDEO_SIGNAL
-#endif
+#define MFX_ENABLE_VPP_COMPOSITION
+//#define MFX_ENABLE_VPP_FRC
+#define MFX_ENABLE_VPP_ROTATION
+#define MFX_ENABLE_VPP_VIDEO_SIGNAL
 
 #ifndef OPEN_SOURCE
 // disable additional features
 //#define MFX_FADE_DETECTION_FEATURE_DISABLE
-#ifdef MFX_VAAPI_UPSTREAM
-    #define MFX_PROTECTED_FEATURE_DISABLE
-#endif
 //#define MFX_PRIVATE_AVC_ENCODE_CTRL_DISABLE
 //#define MFX_DEC_VIDEO_POSTPROCESS_DISABLE
 //#define MFX_EXT_BRC_DISABLE
 //#define MFX_CLOSED_PLATFORMS_DISABLE
 //#define MFX_ADAPTIVE_PLAYBACK_DISABLE
 //#define MFX_EXT_DPB_HEVC_DISABLE
-//#define MFX_CAMERA_FEATURE_DISABLE 
+//#define MFX_CAMERA_FEATURE_DISABLE
 //#define MFX_FUTURE_FEATURE_DISABLE
 
 #define MFX_EXTBUFF_GPU_HANG_ENABLE
@@ -288,18 +278,15 @@
     #endif
 
 #else // LINUX_TARGET_PLATFORM
-    #if defined(LINUX_TARGET_PLATFORM_UPSTREAM)
-        // mfx_common_linux_upstream.h was derived from mfx_common_linux_bdw.h
-        #include "mfx_common_linux_upstream.h"
-    #elif defined(LINUX_TARGET_PLATFORM_CFL) // PRE_SI_GEN == 9
+    #if defined(LINUX_TARGET_PLATFORM_CFL)      // PRE_SI_GEN == 9
         #include "mfx_common_linux_cfl.h"
     #elif defined(LINUX_TARGET_PLATFORM_BXTMIN) // PRE_SI_GEN == 9
         #include "mfx_common_linux_bxtmin.h"
-    #elif defined(LINUX_TARGET_PLATFORM_BXT) // PRE_SI_GEN == 9
+    #elif defined(LINUX_TARGET_PLATFORM_BXT)    // PRE_SI_GEN == 9
         #include "mfx_common_linux_bxt.h"
     #elif defined(LINUX_TARGET_PLATFORM_BSW)
         #include "mfx_common_linux_bsw.h"
-    #elif defined(LINUX_TARGET_PLATFORM_BDW) // PRE_SI_GEN == 9
+    #elif defined(LINUX_TARGET_PLATFORM_BDW)    // PRE_SI_GEN == 9
         #include "mfx_common_linux_bdw.h"
     #elif defined(LINUX_TARGET_PLATFORM_TBD)
         #include "mfx_common_lnx_tbd.h"

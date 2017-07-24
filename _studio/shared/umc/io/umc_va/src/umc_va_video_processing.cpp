@@ -90,7 +90,6 @@ Status VideoProcessingVA::Init(mfxVideoParam * vpParams, mfxExtDecVideoProcessin
 
     output_surface_array[0] = 0;
 
-#ifndef MFX_VAAPI_UPSTREAM
     pipelineBuf->rotation_state = VA_ROTATION_NONE;
     pipelineBuf->blend_state = 0;
     pipelineBuf->mirror_state = 0;
@@ -99,7 +98,6 @@ Status VideoProcessingVA::Init(mfxVideoParam * vpParams, mfxExtDecVideoProcessin
     pipelineBuf->num_additional_outputs = 1;
 
     pipelineBuf->input_surface_flag = 0;
-#endif
 
     return UMC_OK;
 }

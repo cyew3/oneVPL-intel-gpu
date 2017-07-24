@@ -168,19 +168,10 @@ class PointerProxy
         void* mp;
 };
 
-inline bool IsSupported__VAEncMiscParameterPrivate(void)
-{
-#if !defined(MFX_VAAPI_UPSTREAM)
-    return true;
-#else
-    return false;
-#endif
-}
-
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 inline bool IsSupported__VAHDCPEncryptionParameterBuffer(void)
 {
-#if defined(ANDROID) && !defined(MFX_VAAPI_UPSTREAM)
+#if defined(ANDROID)
     return true;
 #else
     return false;

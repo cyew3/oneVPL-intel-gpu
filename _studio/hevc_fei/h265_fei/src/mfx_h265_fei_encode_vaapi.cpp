@@ -26,14 +26,11 @@ namespace MfxHwH265FeiEncode
 
     mfxStatus VAAPIh265FeiEncoder::ConfigureExtraVAattribs(std::vector<VAConfigAttrib> & attrib)
     {
-        attrib.reserve(attrib.size() + 2);
+        attrib.reserve(attrib.size() + 1);
 
         VAConfigAttrib attr = {};
 
-        attr.type = (VAConfigAttribType) VAConfigAttribEncFunctionTypeIntel;
-        attrib.push_back(attr);
-
-        attr.type = (VAConfigAttribType) VAConfigAttribFeiInterfaceRevIntel;
+        attr.type = (VAConfigAttribType) VAConfigAttribFEIFunctionType;
         attrib.push_back(attr);
 
         return MFX_ERR_NONE;
@@ -44,14 +41,14 @@ namespace MfxHwH265FeiEncode
         mfxU32 i = 0;
         for (; i < attrib.size(); ++i)
         {
-            if (attrib[i].type == (VAConfigAttribType) VAConfigAttribEncFunctionTypeIntel)
+            if (attrib[i].type == (VAConfigAttribType) VAConfigAttribFEIFunctionType)
                 break;
         }
         MFX_CHECK(i < attrib.size(), MFX_ERR_DEVICE_FAILED);
 
-        MFX_CHECK(attrib[i].value & VA_ENC_FUNCTION_ENC_PAK_INTEL, MFX_ERR_DEVICE_FAILED);
+        MFX_CHECK(attrib[i].value & VA_FEI_FUNCTION_ENC_PAK, MFX_ERR_DEVICE_FAILED);
 
-        attrib[i].value = VA_ENC_FUNCTION_ENC_PAK_INTEL;
+        attrib[i].value = VA_FEI_FUNCTION_ENC_PAK;
 
         return MFX_ERR_NONE;
     }
@@ -84,14 +81,14 @@ namespace MfxHwH265FeiEncode
                 MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
             }
 
-            miscParam->type = (VAEncMiscParameterType)VAEncMiscParameterTypeFEIFrameControlIntel;
+            miscParam->type = (VAEncMiscParameterType)VAEncMiscParameterTypeFEIFrameControl;
             VAEncMiscParameterFEIFrameControlHevc* vaFeiFrameControl = (VAEncMiscParameterFEIFrameControlHevc*)miscParam->data;
             memset(vaFeiFrameControl, 0, sizeof(VAEncMiscParameterFEIFrameControlHevc));
 
             mfxExtFeiHevcEncFrameCtrl* EncFrameCtrl = reinterpret_cast<mfxExtFeiHevcEncFrameCtrl*>(GetBufById(task.m_ctrl, MFX_EXTBUFF_HEVCFEI_ENC_CTRL));
             MFX_CHECK(EncFrameCtrl, MFX_ERR_UNDEFINED_BEHAVIOR);
 
-            vaFeiFrameControl->function                           = VA_ENC_FUNCTION_ENC_PAK_INTEL;
+            vaFeiFrameControl->function                           = VA_FEI_FUNCTION_ENC_PAK;
             vaFeiFrameControl->search_path                        = EncFrameCtrl->SearchPath;
             vaFeiFrameControl->len_sp                             = EncFrameCtrl->LenSP;
             vaFeiFrameControl->ref_width                          = EncFrameCtrl->RefWidth;

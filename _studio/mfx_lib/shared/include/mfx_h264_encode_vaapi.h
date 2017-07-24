@@ -51,14 +51,14 @@ mfxStatus SetHRD(
     VAContextID  vaContextEncode,
     VABufferID & hrdBuf_id);
 
-mfxStatus SetPrivateParams(
+mfxStatus SetQualityParams(
     MfxHwH264Encode::MfxVideoParam const & par,
     VADisplay    vaDisplay,
     VAContextID  vaContextEncode,
-    VABufferID & privateParams_id,
+    VABufferID & qualityParams_id,
     mfxEncodeCtrl const * pCtrl = 0);
 
-mfxStatus SetQualityLevelParams(
+mfxStatus SetQualityLevel(
     MfxHwH264Encode::MfxVideoParam const & par,
     VADisplay    vaDisplay,
     VAContextID  vaContextEncode,
@@ -220,13 +220,13 @@ namespace MfxHwH264Encode
         // encode buffer to send vaRender()
         VABufferID m_spsBufferId;
         VABufferID m_hrdBufferId;
-        VABufferID m_rateParamBufferId; // VAEncMiscParameterRateControl
-        VABufferID m_frameRateId; // VAEncMiscParameterFrameRate
-        VABufferID m_qualityLevelId;  // VAEncMiscParameterBufferQualityLevel
-        VABufferID m_maxFrameSizeId; // VAEncMiscParameterFrameRate
-        VABufferID m_quantizationId;  // VAEncMiscParameterQuantization
-        VABufferID m_rirId;           // VAEncMiscParameterRIR
-        VABufferID m_privateParamsId; // VAEncMiscParameterPrivate
+        VABufferID m_rateParamBufferId;         // VAEncMiscParameterRateControl
+        VABufferID m_frameRateId;               // VAEncMiscParameterFrameRate
+        VABufferID m_qualityLevelId;            // VAEncMiscParameterBufferQualityLevel
+        VABufferID m_maxFrameSizeId;            // VAEncMiscParameterFrameRate
+        VABufferID m_quantizationId;            // VAEncMiscParameterQuantization
+        VABufferID m_rirId;                     // VAEncMiscParameterRIR
+        VABufferID m_qualityParamsId;           // VAEncMiscParameterEncQuality
         VABufferID m_miscParameterSkipBufferId; // VAEncMiscParameterSkipFrame
         VABufferID m_roiBufferId;
         VABufferID m_ppsBufferId;
@@ -290,7 +290,7 @@ namespace MfxHwH264Encode
         enum {
             NO_SKIP,
             NORMAL_MODE,
-#ifndef MFX_PROTECTED_FEATURE_DISABLE        
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
             PAVP_MODE
 #endif
         };
@@ -302,9 +302,9 @@ namespace MfxHwH264Encode
 
         VAEncMiscParameterRateControl  m_vaBrcPar;
         VAEncMiscParameterFrameRate    m_vaFrameRate;
-#ifndef MFX_VAAPI_UPSTREAM
-        std::vector<VAEncQpBufferH264> m_mbqp_buffer;
-#endif
+
+        std::vector<VAEncQPBufferH264> m_mbqp_buffer;
+
         std::vector<mfxU8>             m_mb_noskip_buffer;
 #ifdef MFX_ENABLE_MFE
         MFEVAAPIEncoder*               m_mfe;

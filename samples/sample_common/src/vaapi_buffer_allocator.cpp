@@ -27,14 +27,14 @@ vaapiBufferAllocator::vaapiBufferAllocator(VADisplay dpy) :
     m_context(VA_INVALID_ID)
 {
     VAConfigAttrib attrib;
-    attrib.type = VAConfigAttribStatisticsIntel;
+    attrib.type = VAConfigAttribStats;
 
-    VAStatus vaSts = m_libva.vaGetConfigAttributes(m_dpy, VAProfileNone, VAEntrypointStatisticsIntel, &attrib, 1);
+    VAStatus vaSts = m_libva.vaGetConfigAttributes(m_dpy, VAProfileNone, VAEntrypointStats, &attrib, 1);
     if (VA_STATUS_SUCCESS != vaSts) {
         throw mfxError(MFX_ERR_DEVICE_FAILED, "Failed to get VA config attributes for buffer allocator");
     }
 
-    vaSts = m_libva.vaCreateConfig(m_dpy, VAProfileNone, VAEntrypointStatisticsIntel, &attrib, 1, &m_config);
+    vaSts = m_libva.vaCreateConfig(m_dpy, VAProfileNone, VAEntrypointStats, &attrib, 1, &m_config);
     if (VA_STATUS_SUCCESS != vaSts) {
         throw mfxError(MFX_ERR_DEVICE_FAILED, "Failed to create VA config for buffer allocator");
     }
