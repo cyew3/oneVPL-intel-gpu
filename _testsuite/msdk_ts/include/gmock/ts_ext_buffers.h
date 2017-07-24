@@ -68,11 +68,26 @@ public:
         memset(&base, 0, sizeof(TB));
     }
 
+    tsExtBufType(const TB& that)
+    {
+        TB& base = *this;
+        base = that;
+        ReserveBuffers(that.NumExtParam);
+        RefreshBuffers();
+        for (mfxU16 i = 0; i < that.NumExtParam; i++)
+        {
+            auto b = that.ExtParam[i];
+            if (!b || !b->BufferSz) continue;
+            AddExtBuffer(b->BufferId, b->BufferSz);
+            memcpy(GetExtBuffer(b->BufferId), b, b->BufferSz);
+        }
+    }
+
     tsExtBufType(const tsExtBufType& that)
     {
         TB& base = *this;
         memset(&base, 0, sizeof(TB));
-        *this = that;
+        *this = (const TB&)that;
     }
 
     ~tsExtBufType()

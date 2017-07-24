@@ -18,11 +18,16 @@ namespace encoders_extbrc
 
 typedef enum _eBRCFunc
 {
-    BRC_Init
-    , BRC_Reset
-    , BRC_Close
-    , BRC_GetFrameCtrl
-    , BRC_Update
+      BRC0_Init
+    , BRC0_Reset
+    , BRC0_Close
+    , BRC0_GetFrameCtrl
+    , BRC0_Update
+    , BRC1_Init
+    , BRC1_Reset
+    , BRC1_Close
+    , BRC1_GetFrameCtrl
+    , BRC1_Update
     , BRC_NoCall
 } eBRCFunc;
 
@@ -78,35 +83,35 @@ mfxStatus BRC0Init(mfxHDL pthis, mfxVideoParam* par)
 {
     TRACE_FUNC2(BRC0Init, pthis, par);
     TestSuite* pTest = (TestSuite*)pthis;
-    pTest->m_lastBRCcall = BRC_Init;
+    pTest->m_lastBRCcall = BRC0_Init;
     return pTest->m_brcSts;
 }
 mfxStatus BRC0Reset(mfxHDL pthis, mfxVideoParam* par)
 {
     TRACE_FUNC2(BRC0Reset, pthis, par);
     TestSuite* pTest = (TestSuite*)pthis;
-    pTest->m_lastBRCcall = BRC_Reset;
+    pTest->m_lastBRCcall = BRC0_Reset;
     return pTest->m_brcSts;
 }
 mfxStatus BRC0Close(mfxHDL pthis)
 {
     TRACE_FUNC1(BRC0Close, pthis);
     TestSuite* pTest = (TestSuite*)pthis;
-    pTest->m_lastBRCcall = BRC_Close;
+    pTest->m_lastBRCcall = BRC0_Close;
     return pTest->m_brcSts;
 }
 mfxStatus BRC0GetFrameCtrl(mfxHDL pthis, mfxBRCFrameParam* par, mfxBRCFrameCtrl* ctrl)
 {
     TRACE_FUNC3(BRC0GetFrameCtrl, pthis, par, ctrl);
     TestSuite* pTest = (TestSuite*)pthis;
-    pTest->m_lastBRCcall = BRC_GetFrameCtrl;
+    pTest->m_lastBRCcall = BRC0_GetFrameCtrl;
     return pTest->m_brcSts;
 }
 mfxStatus BRC0Update(mfxHDL pthis, mfxBRCFrameParam* par, mfxBRCFrameCtrl* ctrl, mfxBRCFrameStatus* status)
 {
     TRACE_FUNC4(BRC0Update, pthis, par, ctrl, status);
     TestSuite* pTest = (TestSuite*)pthis;
-    pTest->m_lastBRCcall = BRC_Update;
+    pTest->m_lastBRCcall = BRC0_Update;
     return pTest->m_brcSts;
 }
 
@@ -115,35 +120,45 @@ mfxStatus BRC1Init(mfxHDL pthis, mfxVideoParam* par)
     TRACE_FUNC2(BRC1Init, pthis, par);
     TestSuite* pTest = (TestSuite*)pthis;
     pTest--;
-    return BRC0Init(pTest, par);
+    mfxStatus sts = BRC0Init(pTest, par);
+    pTest->m_lastBRCcall = BRC1_Init;
+    return sts;
 }
 mfxStatus BRC1Reset(mfxHDL pthis, mfxVideoParam* par)
 {
     TRACE_FUNC2(BRC1Reset, pthis, par);
     TestSuite* pTest = (TestSuite*)pthis;
     pTest--;
-    return BRC0Reset(pTest, par);
+    mfxStatus sts = BRC0Reset(pTest, par);
+    pTest->m_lastBRCcall = BRC1_Reset;
+    return sts;
 }
 mfxStatus BRC1Close(mfxHDL pthis)
 {
     TRACE_FUNC1(BRC1Close, pthis);
     TestSuite* pTest = (TestSuite*)pthis;
     pTest--;
-    return BRC0Close(pTest);
+    mfxStatus sts = BRC0Close(pTest);
+    pTest->m_lastBRCcall = BRC1_Close;
+    return sts;
 }
 mfxStatus BRC1GetFrameCtrl(mfxHDL pthis, mfxBRCFrameParam* par, mfxBRCFrameCtrl* ctrl)
 {
     TRACE_FUNC3(BRC1GetFrameCtrl, pthis, par, ctrl);
     TestSuite* pTest = (TestSuite*)pthis;
     pTest--;
-    return BRC0GetFrameCtrl(pTest, par, ctrl);
+    mfxStatus sts = BRC0GetFrameCtrl(pTest, par, ctrl);
+    pTest->m_lastBRCcall = BRC1_GetFrameCtrl;
+    return sts;
 }
 mfxStatus BRC1Update(mfxHDL pthis, mfxBRCFrameParam* par, mfxBRCFrameCtrl* ctrl, mfxBRCFrameStatus* status)
 {
     TRACE_FUNC4(BRC1Update, pthis, par, ctrl, status);
     TestSuite* pTest = (TestSuite*)pthis;
     pTest--;
-    return BRC0Update(pTest, par, ctrl, status);
+    mfxStatus sts = BRC0Update(pTest, par, ctrl, status);
+    pTest->m_lastBRCcall = BRC1_Update;
+    return sts;
 }
 
 #undef TestSuite
@@ -171,11 +186,12 @@ void TestSuite<CodecID>::BRCFieldZero()
         tsStruct::set(pBRC, *pField, 0);
 }
 
-bool IsBRCSet(mfxVideoParam& par)
+bool IsBRCValid(mfxVideoParam& par)
 {
     mfxExtBRC* pBRC = GetExtBufferPtr(par);
-    return pBRC
-        && pBRC->pthis
+    if (!pBRC)
+        return true; //internal BRC is always valid
+    return pBRC->pthis
         && pBRC->Init
         && pBRC->Reset
         && pBRC->Close
@@ -231,7 +247,7 @@ int TestSuite<CodecID>::RunTest(unsigned int id)
     m_pTC = &tc;
     mfxExtCodingOption2& CO2 = m_par;
 
-    m_par.mfx.RateControlMethod = MFX_RATECONTROL_CBR;
+    m_par.mfx.RateControlMethod = MFX_RATECONTROL_VBR; //Reset is unsupported by internal SWBRC in CBR, not a target for this test
     m_par.mfx.TargetKbps = 1000;
     m_par.mfx.MaxKbps = 1000;
     m_par.mfx.InitialDelayInKB = 64;
@@ -244,31 +260,35 @@ int TestSuite<CodecID>::RunTest(unsigned int id)
     if (tc.init.mod)
         (this->*tc.init.mod)();
 
-    bool invalid = (CO2.ExtBRC == MFX_CODINGOPTION_ON) && !IsBRCSet(m_par);
+    bool invalid = (CO2.ExtBRC == MFX_CODINGOPTION_ON) && !IsBRCValid(m_par);
+    bool brcSet = !!((mfxExtBRC*)GetExtBufferPtr(m_par));
     if (invalid)
         g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
 
+    auto parOut(m_par);
+    mfxExtCodingOption2& outCO2 = parOut;
+    m_pParOut = &parOut;
     Query();
 
     if (invalid)
     {
-        EXPECT_EQ(0, CO2.ExtBRC);
+        EXPECT_EQ(0, outCO2.ExtBRC);
     }
 
     if (invalid)
         g_tsStatus.expect(MFX_ERR_INVALID_VIDEO_PARAM);
 
     Init();
-    GetVideoParam();
+    if (!invalid)
+        GetVideoParam();
 
-    if (CO2.ExtBRC == MFX_CODINGOPTION_ON)
+    if (CO2.ExtBRC == MFX_CODINGOPTION_ON && brcSet && !invalid)
     {
-        EXPECT_EQ(BRC_Init, m_lastBRCcall);
+        EXPECT_EQ(BRC0_Init, m_lastBRCcall);
     }
 
     if (invalid)
     {
-        EXPECT_EQ(MFX_CODINGOPTION_OFF, CO2.ExtBRC);
         return 0;
     }
 
@@ -295,16 +315,16 @@ int TestSuite<CodecID>::RunTest(unsigned int id)
     Reset();
     GetVideoParam();
 
-    if (CO2.ExtBRC == MFX_CODINGOPTION_ON)
+    if (CO2.ExtBRC == MFX_CODINGOPTION_ON && brcSet && !invalid)
     {
-        EXPECT_EQ(BRC_Reset, m_lastBRCcall);
+        EXPECT_EQ(BRC0_Reset, m_lastBRCcall);
     }
 
     Close();
 
-    if (CO2.ExtBRC == MFX_CODINGOPTION_ON)
+    if (CO2.ExtBRC == MFX_CODINGOPTION_ON && brcSet)
     {
-        EXPECT_EQ(BRC_Close, m_lastBRCcall);
+        EXPECT_EQ(BRC0_Close, m_lastBRCcall);
     }
 
     TS_END;
