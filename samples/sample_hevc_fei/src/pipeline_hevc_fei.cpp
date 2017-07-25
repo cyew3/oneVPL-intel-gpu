@@ -74,11 +74,9 @@ void CEncodingPipeline::Close()
 
 mfxStatus CEncodingPipeline::LoadFEIPlugin()
 {
-    // m_pluginGuid = msdkGetPluginUID(m_impl, MSDK_VENC, MFX_CODEC_HEVC);
-    m_pluginGuid = msdkGetPluginUID(m_impl, MSDK_VENCODE, MFX_CODEC_HEVC); // use HW HEVC for debug
+    m_pluginGuid = msdkGetPluginUID(m_impl, MSDK_VENCODE | MSDK_FEI, MFX_CODEC_HEVC); // remove '| MSDK_FEI' to use HW HEVC for debug
     MSDK_CHECK_ERROR(AreGuidsEqual(m_pluginGuid, MSDK_PLUGINGUID_NULL), true, MFX_ERR_NOT_FOUND);
 
-    // m_pPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENC, m_mfxSession, m_pluginGuid, 1));
     m_pPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, m_mfxSession, m_pluginGuid, 1));
     MSDK_CHECK_POINTER(m_pPlugin.get(), MFX_ERR_UNSUPPORTED);
 
