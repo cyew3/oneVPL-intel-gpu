@@ -858,7 +858,12 @@ mfxStatus CTranscodingPipeline::Decode()
                 if (sts == MFX_ERR_NONE)
                 {
                     m_nProcessedFramesNum++;
-                    if (statisticsWindowSize && m_nProcessedFramesNum && 0 == m_nProcessedFramesNum % statisticsWindowSize)
+                    // print statistics if m_nProcessedFramesNum is multiple of
+                    // statisticsWindowSize OR we at the end of file AND
+                    // statisticsWindowSize is not zero
+                    if (statisticsWindowSize && m_nProcessedFramesNum &&
+                        ((0 == m_nProcessedFramesNum % statisticsWindowSize) || bEndOfFile)
+                       )
                     {
                         inputStatistics.PrintStatistics(GetPipelineID());
                         inputStatistics.ResetStatistics();
@@ -1279,9 +1284,14 @@ mfxStatus CTranscodingPipeline::Encode()
         MSDK_CHECK_STATUS(sts, "<EncodeOneFrame|Surface2BS> failed");
 
         m_nProcessedFramesNum++;
-        if (statisticsWindowSize && m_nOutputFramesNum && 0 == m_nOutputFramesNum % statisticsWindowSize)
+        // output statistics if several conditions are true OR we've approached
+        // the end, and statisticsWindowSize is not 0, but number of frames is
+        // not multiple of statisticsWindowSize; should use m_nProcessedFramesNum
+        // as it simplifies conditions
+        if ( (statisticsWindowSize && m_nOutputFramesNum && 0 == m_nProcessedFramesNum % statisticsWindowSize) ||
+             (statisticsWindowSize && (m_nProcessedFramesNum >= m_MaxFramesForTranscode)))
         {
-            inputStatistics.PrintStatistics(GetPipelineID());
+            outputStatistics.PrintStatistics(GetPipelineID());
             outputStatistics.ResetStatistics();
         }
 
@@ -1777,7 +1787,7 @@ mfxStatus CTranscodingPipeline::Transcode()
                 outputStatistics.PrintStatistics(
                     GetPipelineID(),
                     (m_mfxEncParams.mfx.FrameInfo.FrameRateExtD)?
-                        (mfxF64)m_mfxEncParams.mfx.FrameInfo.FrameRateExtN/(mfxF64)m_mfxEncParams.mfx.FrameInfo.FrameRateExtD: -1);
+                    (mfxF64)m_mfxEncParams.mfx.FrameInfo.FrameRateExtN/(mfxF64)m_mfxEncParams.mfx.FrameInfo.FrameRateExtD: -1);
                 inputStatistics.ResetStatistics();
                 outputStatistics.ResetStatistics();
             }
@@ -3240,6 +3250,11 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     MSDK_CHECK_POINTER(pBSProc, MFX_ERR_NULL_PTR);
     mfxStatus sts = MFX_ERR_NONE;
     m_MaxFramesForTranscode = pParams->MaxFrameNumber;
+    // if no number of frames for a particular session is undefined, default
+    // value is 0xFFFFFFFF. Thus, use it as a marker to assign parent
+    // MaxFramesForTranscode to m_MaxFramesForTranscode
+    if((0xFFFFFFFF == m_MaxFramesForTranscode) && pParentPipeline->m_MaxFramesForTranscode)
+        m_MaxFramesForTranscode = pParentPipeline->m_MaxFramesForTranscode;
     // use external allocator
     m_pMFXAllocator = pMFXAllocator;
     m_pBSProcessor = pBSProc;
@@ -3265,12 +3280,18 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
 #endif //_MSDK_API >= MSDK_API(1,22)
 
     statisticsWindowSize = pParams->statisticsWindowSize;
+    if (statisticsWindowSize > m_MaxFramesForTranscode)
+        statisticsWindowSize = m_MaxFramesForTranscode;
     if (pParams->statisticsLogFile)
     {
+        //same log file for intput/output
         inputStatistics.SetOutputFile(pParams->statisticsLogFile);
         outputStatistics.SetOutputFile(pParams->statisticsLogFile);
     }
-
+// if no statistic-window is passed but overall stat-log exist:
+    // is requested, set statisticsWindowSize to m_MaxFramesForTranscode
+    if (pParams->statisticsLogFile && 0 == statisticsWindowSize)
+        statisticsWindowSize = m_MaxFramesForTranscode;
     if (m_bEncodeEnable)
     {
         m_pBSStore.reset(new ExtendedBSStore(m_AsyncDepth));

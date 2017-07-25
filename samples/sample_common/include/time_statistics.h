@@ -85,9 +85,17 @@ public:
         return MSDK_GET_TIME(msdk_time_get_tick(), start, GetFrequency());
     }
 
+    inline mfxF64 GetDeltaTimeInMiliSeconds()
+    {
+        return GetDeltaTime() * 1000;
+    }
+
     inline void PrintStatistics(const msdk_char* prefix)
     {
-        msdk_printf(MSDK_STRING("%s Total:%.3lf(%lld smpls),Avg %.3lf,StdDev:%.3lf,Min:%.3lf,Max:%.3lf\n"),prefix,totalTime*1000,numMeasurements,GetAvgTime()*1000,GetTimeStdDev()*1000,minTime*1000,maxTime*1000);
+        msdk_printf(MSDK_STRING("%s Total:%.3lfms(%lld smpls),Avg %.3lfms,StdDev:%.3lfms,Min:%.3lfms,Max:%.3lfms\n"),
+                prefix,totalTime,numMeasurements,
+                GetAvgTime(false),GetTimeStdDev(false),
+                GetMinTime(false),GetMaxTime(false));
     }
 
     inline mfxU64 GetNumMeasurements()
@@ -95,30 +103,46 @@ public:
         return numMeasurements;
     }
 
-    inline mfxF64 GetAvgTime()
+    inline mfxF64 GetAvgTime(bool inSeconds=true)
     {
-        return numMeasurements ? totalTime/numMeasurements : 0;
+        if (inSeconds)
+            return (numMeasurements ? totalTime/numMeasurements : 0);
+        else
+            return (numMeasurements ? totalTime/numMeasurements : 0) * 1000;
     }
 
-    inline mfxF64 GetTimeStdDev()
+    inline mfxF64 GetTimeStdDev(bool inSeconds=true)
     {
         mfxF64 avg = GetAvgTime();
-        return numMeasurements ? sqrt(totalTimeSquares/numMeasurements-avg*avg) : 0;
+        mfxF64 ftmp = (numMeasurements ? sqrt(totalTimeSquares/numMeasurements-avg*avg) : 0.0);
+        if(inSeconds)
+            return ftmp;
+        else
+            return ftmp * 1000;
     }
 
-    inline mfxF64 GetMinTime()
+    inline mfxF64 GetMinTime(bool inSeconds=true)
     {
-        return minTime;
+        if (inSeconds)
+            return (minTime);
+        else
+            return (minTime * 1000);
     }
 
-    inline mfxF64 GetMaxTime()
+    inline mfxF64 GetMaxTime(bool inSeconds=true)
     {
-        return maxTime;
+        if (inSeconds)
+            return (maxTime);
+        else
+            return (maxTime * 1000);
     }
 
-    inline mfxF64 GetTotalTime()
+    inline mfxF64 GetTotalTime(bool inSeconds=true)
     {
-        return  totalTime;
+        if (inSeconds)
+            return  (totalTime);
+        else
+            return  (totalTime * 1000);
     }
 
     inline void ResetStatistics()
@@ -176,6 +200,11 @@ public:
         return 0;
     }
 
+    inline mfxF64 GetDeltaTimeInMiliSeconds()
+    {
+        return 0;
+    }
+
     inline void PrintStatistics(const msdk_char* prefix)
     {
     }
@@ -185,27 +214,27 @@ public:
         return 0;
     }
 
-    inline mfxF64 GetAvgTime()
+    inline mfxF64 GetAvgTime(bool)
     {
         return 0;
     }
 
-    inline mfxF64 GetTimeStdDev()
+    inline mfxF64 GetTimeStdDev(bool)
     {
         return 0;
     }
 
-    inline mfxF64 GetMinTime()
+    inline mfxF64 GetMinTime(bool)
     {
         return 0;
     }
 
-    inline mfxF64 GetMaxTime()
+    inline mfxF64 GetMaxTime(bool)
     {
         return 0;
     }
 
-    inline mfxF64 GetTotalTime()
+    inline mfxF64 GetTotalTime(bool)
     {
         return  0;
     }

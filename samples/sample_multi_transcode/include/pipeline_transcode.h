@@ -331,12 +331,13 @@ namespace TranscodingSample
 
             inline void PrintStatistics(mfxU32 numPipelineid, mfxF64 target_framerate = -1 /*default stands for infinite*/)
             {
-                msdk_fprintf(ofile, MSDK_STRING("stat[%d.%llu]: %s=%d;Framerate=%.3f;Total=%.3lf;Samples=%lld;StdDev=%.3lf;Min=%.3lf;Max=%.3lf;Avg=%.3lf\n"),
-                    msdk_get_current_pid(), rdtsc(),
-                    bufDir, numPipelineid,
-                    target_framerate,
-                    totalTime*1000, numMeasurements,
-                    GetTimeStdDev()*1000, minTime*1000, maxTime*1000, GetAvgTime()*1000);
+                // print timings in ms
+                msdk_fprintf(   ofile, MSDK_STRING("stat[%d.%llu]: %s=%d;Framerate=%.3f;Total=%.3lf;Samples=%lld;StdDev=%.3lf;Min=%.3lf;Max=%.3lf;Avg=%.3lf\n"),
+                                msdk_get_current_pid(), rdtsc(),
+                                bufDir, numPipelineid,
+                                target_framerate,
+                                GetTotalTime(false), GetNumMeasurements(),
+                                GetTimeStdDev(false), GetMinTime(false), GetMaxTime(false), GetAvgTime(false));
                 fflush(ofile);
             }
         protected:
