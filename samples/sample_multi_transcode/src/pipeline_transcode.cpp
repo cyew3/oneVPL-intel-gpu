@@ -3292,10 +3292,22 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
         inputStatistics.SetOutputFile(pParams->statisticsLogFile);
         outputStatistics.SetOutputFile(pParams->statisticsLogFile);
     }
+
+    if(!pParams->pDumpLogFileName->empty()){
+        std::string tmp = *(pParams->pDumpLogFileName);
+        tmp = tmp + "_input";
+        inputStatistics.SetDumpName(&tmp);
+        tmp = *(pParams->pDumpLogFileName);
+        tmp = tmp + "_output";
+        outputStatistics.SetDumpName(&tmp);
+    }
+
 // if no statistic-window is passed but overall stat-log exist:
     // is requested, set statisticsWindowSize to m_MaxFramesForTranscode
-    if (pParams->statisticsLogFile && 0 == statisticsWindowSize)
+    if ((pParams->statisticsLogFile || !pParams->pDumpLogFileName->empty()) && 
+        0 == statisticsWindowSize)
         statisticsWindowSize = m_MaxFramesForTranscode;
+
     if (m_bEncodeEnable)
     {
         m_pBSStore.reset(new ExtendedBSStore(m_AsyncDepth));

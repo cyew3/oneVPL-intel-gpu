@@ -125,6 +125,8 @@ namespace TranscodingSample
         msdk_char                                    *m_parName;
         mfxU32                                       statisticsWindowSize;
         FILE                                         *statisticsLogFile;
+        //store a name of a Logfile
+        std::string                                  DumpLogFileName;
         mfxU32                                       m_nTimeout;
         bool                                         m_bRobust;
         bool                                         shouldUseGreedyFormula;

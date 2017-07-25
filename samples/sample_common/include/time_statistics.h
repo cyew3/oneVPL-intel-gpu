@@ -23,6 +23,8 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "vm/time_defs.h"
 #include "vm/strings_defs.h"
 #include "math.h"
+#include <vector>
+#include <stdio.h>
 
 #pragma warning(disable:4100)
 
@@ -33,6 +35,7 @@ public:
     {
         ResetStatistics();
         start=0;
+        m_bNeedDumping = false;
     }
 
     static msdk_tick GetFrequency()
@@ -59,6 +62,9 @@ public:
         mfxF64 delta=GetDeltaTime();
         totalTime+=delta;
         totalTimeSquares+=delta*delta;
+        // dump in ms:
+        if(m_bNeedDumping)
+            m_time_deltas.push_back(delta * 1000);
 
         if(delta<minTime)
         {
@@ -90,12 +96,31 @@ public:
         return GetDeltaTime() * 1000;
     }
 
+    inline void TurnOnDumping(){m_bNeedDumping = true; }
+
+    inline void TurnOffDumping(){m_bNeedDumping = false; }
+
     inline void PrintStatistics(const msdk_char* prefix)
     {
         msdk_printf(MSDK_STRING("%s Total:%.3lfms(%lld smpls),Avg %.3lfms,StdDev:%.3lfms,Min:%.3lfms,Max:%.3lfms\n"),
                 prefix,totalTime,numMeasurements,
                 GetAvgTime(false),GetTimeStdDev(false),
                 GetMinTime(false),GetMaxTime(false));
+    }
+
+    inline void DumpDeltas(const char* file_name)
+    {
+        if (m_time_deltas.empty())
+            return;
+
+        FILE* dump_file = fopen(file_name, "a");
+        if (dump_file){
+            for (std::vector<mfxF64>::const_iterator it = m_time_deltas.begin(); it != m_time_deltas.end(); ++it){
+                fprintf(dump_file, "%.3f, ", (*it));
+            }
+            fclose(dump_file);
+        }else
+            perror("DumpDeltas: file cannot be open");
     }
 
     inline mfxU64 GetNumMeasurements()
@@ -152,6 +177,8 @@ public:
         minTime=1E100;
         maxTime=-1;
         numMeasurements=0;
+        m_time_deltas.clear();
+        TurnOffDumping();
     }
 
 protected:
@@ -163,6 +190,8 @@ protected:
     mfxF64 minTime;
     mfxF64 maxTime;
     mfxU64 numMeasurements;
+    std::vector<mfxF64> m_time_deltas;
+    bool m_bNeedDumping;
 
 };
 
@@ -204,6 +233,10 @@ public:
     {
         return 0;
     }
+
+    inline void TurnOnDumping() {}
+
+    inline void TurnOffDumping() {}
 
     inline void PrintStatistics(const msdk_char* prefix)
     {

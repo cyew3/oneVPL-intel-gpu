@@ -195,6 +195,7 @@ namespace TranscodingSample
 
         mfxU32 statisticsWindowSize;
         FILE* statisticsLogFile;
+        std::string* pDumpLogFileName;
 
         bool bLABRC; // use look ahead bitrate control algorithm
         mfxU16 nLADepth; // depth of the look ahead bitrate control  algorithm
@@ -301,6 +302,7 @@ namespace TranscodingSample
               , ofile(stdout)
             {
                 MSDK_ZERO_MEMORY(bufDir);
+                DumpLogFileName.clear();
             }
 
             CIOStat(const msdk_char *dir)
@@ -318,6 +320,14 @@ namespace TranscodingSample
             inline void SetOutputFile(FILE *file)
             {
                 ofile = file;
+            }
+
+            inline void SetDumpName(const std::string* name){
+                DumpLogFileName = *name;
+                if(!DumpLogFileName.empty())
+                    TurnOnDumping();
+                else
+                    TurnOffDumping();
             }
 
             inline void SetDirection(const msdk_char *dir)
@@ -339,8 +349,15 @@ namespace TranscodingSample
                                 GetTotalTime(false), GetNumMeasurements(),
                                 GetTimeStdDev(false), GetMinTime(false), GetMaxTime(false), GetAvgTime(false));
                 fflush(ofile);
+
+                if(!DumpLogFileName.empty()){
+                    char buf[128];
+                    msdk_sprintf(buf, "%s_ID_%d.log", DumpLogFileName.c_str(), numPipelineid);
+                    DumpDeltas(buf);
+                }
             }
         protected:
+            std::string DumpLogFileName;
             FILE*     ofile;
             msdk_char bufDir[MAX_PREF_LEN];
     };

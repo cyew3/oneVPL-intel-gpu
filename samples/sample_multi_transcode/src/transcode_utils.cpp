@@ -108,6 +108,10 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("                Output statistic every N transcoding cycles\n"));
     msdk_printf(MSDK_STRING("  -stat-log <name>\n"));
     msdk_printf(MSDK_STRING("                Output statistic to the specified file (opened in append mode)\n"));
+    msdk_printf(MSDK_STRING("  -stat-per-frame <name>\n"));
+    msdk_printf(MSDK_STRING("                Output per-frame latency values to a file (opened in append mode). The file name will be for an input sesssion: <name>_input_ID_<N>.log\n"));
+    msdk_printf(MSDK_STRING("                or, for output session: <name>_output_ID_<N>.log; <N> - a number of a session.\n"));
+
     msdk_printf(MSDK_STRING("Options:\n"));
     //                     ("  ............xx
     msdk_printf(MSDK_STRING("  -?            Print this help and exit\n"));
@@ -346,6 +350,7 @@ CmdProcessor::CmdProcessor()
     m_nTimeout = 0;
     statisticsWindowSize = 0;
     statisticsLogFile = NULL;
+    DumpLogFileName.clear();
     shouldUseGreedyFormula=false;
     m_bRobust = false;
 
@@ -484,6 +489,18 @@ mfxStatus CmdProcessor::ParseCmdLine(int argc, msdk_char *argv[])
                 msdk_printf(MSDK_STRING("error: statistics file \"%s\" not found"), argv[0]);
                 return MFX_ERR_UNSUPPORTED;
             }
+        }
+        else if (0 == msdk_strcmp(argv[0], MSDK_STRING("-stat-per-frame")))
+        {
+            if (!DumpLogFileName.empty()){
+                msdk_printf(MSDK_STRING("error: only one dump file is supported"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            --argc;
+            ++argv;
+            if (!argv[0])
+                 msdk_printf(MSDK_STRING("error: no argument given for 'stat-dump' option\n"));
+            DumpLogFileName = argv[0];
         }
         else
         {
