@@ -235,13 +235,6 @@ typedef struct {
     mfxFeiHevcDistortionCTB *Data;
 } mfxExtFeiHevcDistortion;
 
-
-/* AVC FEI function enums are in mfxfei.h */
-typedef enum {
-    MFX_FEI_FUNCTION_ENCODE_HEVC     =6
-} mfxFeiFunction;
-
-
 enum {
     MFX_EXTBUFF_HEVCFEI_ENC_CTRL       = MFX_MAKEFOURCC('F','H','C','T'),
     MFX_EXTBUFF_HEVCFEI_ENC_MV_PRED    = MFX_MAKEFOURCC('F','H','P','D'),
@@ -259,4 +252,3 @@ enum {
 
 
 #endif
-
