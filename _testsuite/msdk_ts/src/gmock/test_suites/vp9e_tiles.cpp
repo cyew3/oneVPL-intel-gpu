@@ -59,6 +59,8 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
 #define MAX_PIPES_SUPPORTED 2
 #define BASIC_NUM_TILE_COLS 4
 
+#define MAX_U16 0xffff
+
 #define MFX_MIN( a, b ) ( ((a) < (b)) ? (a) : (b) )
 
     struct tc_struct
@@ -84,11 +86,17 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
 
         TestSuite() : tsVideoEncoder(MFX_CODEC_VP9) {}
         ~TestSuite() {}
+        template <mfxU32 fourcc>
+        int RunTest_Subtype(const unsigned int id);
 
-        int RunTest(unsigned int id);
+        static const unsigned int n_cases_nv12;
+        static const unsigned int n_cases_p010;
+        static const unsigned int n_cases_ayuv;
+        static const unsigned int n_cases_y410;
 
     private:
         static const tc_struct test_case[];
+        int RunTest(const tc_struct& tc, mfxU32 fourcc, const unsigned int id);
     };
 
     enum TestSubtype
@@ -573,26 +581,47 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
 
     const unsigned int TestSuite::n_cases = sizeof(test_cases) / sizeof(tc_struct);
 
+    const unsigned int TestSuite::n_cases_nv12 = n_cases;
+    const unsigned int TestSuite::n_cases_p010 = n_cases;
+    const unsigned int TestSuite::n_cases_ayuv = n_cases;
+    const unsigned int TestSuite::n_cases_y410 = n_cases;
+
     class SurfaceFeeder : public tsRawReader
     {
-        std::map<mfxU32, mfxU8*>* m_pInputFrames;
+        std::map<mfxU32, mfxFrameSurface1*>* m_pInputSurfaces;
         mfxU32 m_frameOrder;
-        mfxU32 m_frameWidth;
-        mfxU32 m_frameHeight;
+
+        tsSurfacePool surfaceStorage;
     public:
         SurfaceFeeder(
-            std::map<mfxU32, mfxU8*>* pSurfaces,
-            mfxU32 actualFrameWidth,
-            mfxU32 actualFrameHeight,
+            std::map<mfxU32, mfxFrameSurface1*>* pInSurfaces,
+            const mfxVideoParam& par,
             mfxU32 frameOrder,
             const char* fname,
             mfxFrameInfo fi,
             mfxU32 n_frames = 0xFFFFFFFF)
             : tsRawReader(fname, fi, n_frames)
-            , m_pInputFrames(pSurfaces)
+            , m_pInputSurfaces(pInSurfaces)
             , m_frameOrder(frameOrder)
-            , m_frameWidth(actualFrameWidth)
-            , m_frameHeight(actualFrameHeight) {};
+        {
+            if (m_pInputSurfaces)
+            {
+                const mfxU32 numInternalSurfaces = par.AsyncDepth ? par.AsyncDepth : 5;
+                mfxFrameAllocRequest req = {};
+                req.Info = fi;
+                req.NumFrameMin = req.NumFrameSuggested = numInternalSurfaces;
+                req.Type = MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_FROM_DECODE;
+                surfaceStorage.AllocSurfaces(req);
+            }
+        };
+
+        ~SurfaceFeeder()
+        {
+            if (m_pInputSurfaces)
+            {
+                surfaceStorage.FreeSurfaces();
+            }
+        }
 
         mfxFrameSurface1* ProcessSurface(mfxFrameSurface1* ps, mfxFrameAllocator* pfa);
     };
@@ -600,18 +629,14 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
     mfxFrameSurface1* SurfaceFeeder::ProcessSurface(mfxFrameSurface1* ps, mfxFrameAllocator* pfa)
     {
         mfxFrameSurface1* pSurf = tsSurfaceProcessor::ProcessSurface(ps, pfa);
-        if (m_pInputFrames)
+        if (m_pInputSurfaces)
         {
-            mfxU32 w = m_frameWidth;
-            mfxU32 h = m_frameHeight;
-            mfxU32 pitch = (pSurf->Data.PitchHigh << 16) + pSurf->Data.PitchLow;
-
-            mfxU8* pBuf = new mfxU8[w * h];
-            for (mfxU32 i = 0; i < h; i++)
-            {
-                memcpy(pBuf + i * w, pSurf->Data.Y + i * pitch, w);
-            }
-            (*m_pInputFrames)[m_frameOrder] = pBuf;
+            mfxFrameSurface1* pStorageSurf = surfaceStorage.GetSurface();
+            pStorageSurf->Data.Locked++;
+            tsFrame in = tsFrame(*pSurf);
+            tsFrame store = tsFrame(*pStorageSurf);
+            store = in;
+            (*m_pInputSurfaces)[m_frameOrder] = pStorageSurf;
         }
         m_frameOrder++;
 
@@ -667,23 +692,66 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         }
     };
 
-    mfxU32 GetDefaultTargetKbps(const Resolution& resol)
+    mfxU16 GetDefaultTargetKbps(const Resolution& resol, mfxU32 fourcc, mfxU16& brcMult)
     {
-        if (resol <= Resolution(176, 144)) return 100;
-        if (resol <= Resolution(352, 288)) return 400;
-        if (resol <= Resolution(704, 576)) return 1600;
-        if (resol <= Resolution(1408, 1152)) return 6400;
-        if (resol <= Resolution(2816, 2304)) return 25600;
-        if (resol <= Resolution(2816, 2304)) return 25600;
+        mfxU32 kbps = 0;
+        if (resol <= Resolution(176, 144)) kbps = 100;
+        else if (resol <= Resolution(352, 288)) kbps = 400;
+        else if (resol <= Resolution(704, 576)) kbps = 1600;
+        else if (resol <= Resolution(1408, 1152)) kbps = 6400;
+        else if (resol <= Resolution(2816, 2304)) kbps = 25600;
+        else kbps = 53200;
 
-        return 0;
+        mfxU16 mult = (fourcc == MFX_FOURCC_NV12) ? 1 : 2;
+        brcMult = mult;
+
+        if (kbps * mult < MAX_U16)
+        {
+            brcMult = 1;
+            return kbps * mult;
+        }
+        else
+        {
+            return kbps;
+        }
     }
 
-    void SetAdditionalParams(mfxVideoParam& par, const mfxExtVP9Param& extPar, mfxU32 testType)
+    void SetAdditionalParams(mfxVideoParam& par, const mfxExtVP9Param& extPar, mfxU32 fourcc, mfxU32 testType)
     {
-        par.mfx.FrameInfo.CropX = par.mfx.FrameInfo.CropY = 0;
-        par.mfx.FrameInfo.CropW = par.mfx.FrameInfo.Width;
-        par.mfx.FrameInfo.CropH = par.mfx.FrameInfo.Height;
+        mfxFrameInfo& fi = par.mfx.FrameInfo;
+        if (fourcc == MFX_FOURCC_NV12)
+        {
+            fi.FourCC = MFX_FOURCC_NV12;
+            fi.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+        }
+        else if (fourcc == MFX_FOURCC_P010)
+        {
+            fi.FourCC = MFX_FOURCC_P010;
+            fi.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+            fi.BitDepthLuma = fi.BitDepthChroma = 10;
+            fi.Shift = 1;
+        }
+        else if (fourcc == MFX_FOURCC_AYUV)
+        {
+            fi.FourCC = MFX_FOURCC_AYUV;
+            fi.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            fi.BitDepthLuma = fi.BitDepthChroma = 8;
+        }
+        else if (fourcc == MFX_FOURCC_Y410)
+        {
+            fi.FourCC = MFX_FOURCC_Y410;
+            fi.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            fi.BitDepthLuma = fi.BitDepthChroma = 10;
+        }
+        else
+        {
+            ADD_FAILURE() << "ERROR: Invalid fourcc in the test: " << fourcc;
+            throw tsFAIL;
+        }
+
+        fi.CropX = fi.CropY = 0;
+        fi.CropW = fi.Width;
+        fi.CropH = fi.Height;
 
         if (testType & CQP) par.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
         else if (testType & CBR) par.mfx.RateControlMethod = MFX_RATECONTROL_CBR;
@@ -703,9 +771,9 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             }
             else
             {
-                mfxU32 w = extPar.FrameWidth ? extPar.FrameWidth : par.mfx.FrameInfo.Width;
-                mfxU32 h = extPar.FrameHeight ? extPar.FrameHeight : par.mfx.FrameInfo.Height;
-                par.mfx.TargetKbps = GetDefaultTargetKbps(Resolution(w, h));
+                mfxU32 w = extPar.FrameWidth ? extPar.FrameWidth : fi.Width;
+                mfxU32 h = extPar.FrameHeight ? extPar.FrameHeight : fi.Height;
+                par.mfx.TargetKbps = GetDefaultTargetKbps(Resolution(w, h), fourcc, par.mfx.BRCParamMultiplier);
                 if (par.mfx.RateControlMethod == MFX_RATECONTROL_VBR)
                 {
                     par.mfx.MaxKbps = static_cast<mfxU16>(par.mfx.TargetKbps * 1.25);
@@ -736,6 +804,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         Iteration(
             const mfxVideoParam& defaults,
             const tc_struct::params_for_iteration& iterPar,
+            mfxU32 fourcc,
             mfxU32 type,
             mfxU32 firstFrame);
     };
@@ -743,6 +812,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
     Iteration::Iteration(
         const mfxVideoParam& defaults,
         const tc_struct::params_for_iteration& iterPar,
+        mfxU32 fourcc,
         mfxU32 type,
         mfxU32 firstFrame)
         : m_firstFrame(firstFrame)
@@ -761,7 +831,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         {
             m_param[SET].ExtParam[m_param[SET].NumExtParam++] = (mfxExtBuffer*)&m_extParam[SET];
         }
-        SetAdditionalParams(m_param[SET], m_extParam[SET], type);
+        SetAdditionalParams(m_param[SET], m_extParam[SET], fourcc, type);
 
         // prepare parameters to "get" encoder configuration
         // e.g. from Query or GetVideoParam calls
@@ -780,53 +850,64 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         SETPARSITER(&m_extParam[CHECK], MFX_EXT_VP9PARAM_CHECK); // overwrite "set" parameterss by "check" parameters which were provided explicitly
     }
 
+    mfxU16 GetCodecProfile(mfxU32 fourcc)
+    {
+        switch (fourcc)
+        {
+        case MFX_FOURCC_NV12: return MFX_PROFILE_VP9_0;
+        case MFX_FOURCC_AYUV: return MFX_PROFILE_VP9_1;
+        case MFX_FOURCC_P010: return MFX_PROFILE_VP9_2;
+        case MFX_FOURCC_Y410: return MFX_PROFILE_VP9_3;
+        default: return 0;
+        }
+    }
+
     class BitstreamChecker : public tsBitstreamProcessor, public tsParserVP9, public tsVideoDecoder
     {
         std::vector<Iteration*>* m_pIterations;
-        std::map<mfxU32, mfxU8*>* m_pInputFrames;
+        std::map<mfxU32, mfxFrameSurface1*>* m_pInputSurfaces;
         mfxU32 m_testType;
         mfxU32 m_testId;
-        mfxU8* m_pDecodedFrame;
     public:
         BitstreamChecker(
             std::vector<Iteration*>* pIterations,
-            std::map<mfxU32, mfxU8*>* pSurfaces,
+            std::map<mfxU32, mfxFrameSurface1*>* pSurfaces,
             mfxU32 testType,
             mfxU32 testId)
             : tsVideoDecoder(MFX_CODEC_VP9)
             , m_pIterations(pIterations)
-            , m_pInputFrames(pSurfaces)
+            , m_pInputSurfaces(pSurfaces)
             , m_testType(testType)
             , m_testId(testId)
         {
             // first iteration always has biggest possible resolution
             // we use it to allocate buffers to store decoded frame
-            mfxU32 w = (*m_pIterations)[0]->m_param[CHECK].mfx.FrameInfo.Width;
-            mfxU32 h = (*m_pIterations)[0]->m_param[CHECK].mfx.FrameInfo.Height;
-            m_pDecodedFrame = new mfxU8[w*h];
+            const mfxFrameInfo& targetFi = (*m_pIterations)[0]->m_param[CHECK].mfx.FrameInfo;
+            mfxU32 w = targetFi.Width;
+            mfxU32 h = targetFi.Height;
 
             mfxFrameInfo& fi = m_pPar->mfx.FrameInfo;
             mfxInfoMFX& mfx = m_pPar->mfx;
+            fi.AspectRatioW = fi.AspectRatioH = 1;
             fi.Width = fi.CropW = w;
             fi.Height = fi.CropH = h;
-            fi.AspectRatioW = fi.AspectRatioH = 1;
-            fi.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-            mfx.CodecProfile = MFX_PROFILE_VP9_0;
+            fi.FourCC = targetFi.FourCC;
+            fi.ChromaFormat = targetFi.ChromaFormat;
+            fi.BitDepthLuma = targetFi.BitDepthLuma;
+            fi.BitDepthChroma = targetFi.BitDepthChroma;
+            fi.Shift = targetFi.Shift;
+            mfx.CodecProfile = GetCodecProfile(fi.FourCC);
             mfx.CodecLevel = 0;
             m_pPar->AsyncDepth = 1;
             m_par_set = true;
 
-            if (m_pInputFrames)
+            if (m_pInputSurfaces)
             {
                 g_tsStatus.expect(MFX_ERR_NONE);
                 AllocSurfaces();
                 Init();
             }
         };
-        ~BitstreamChecker()
-        {
-            delete[] m_pDecodedFrame;
-        }
         mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames);
     };
 
@@ -871,21 +952,6 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         mfxU32 m_frameIdx;
     };
 
-    mfxF64 PSNR_Y_8bit(mfxU8 *ref, mfxU8 *src, mfxU32 length)
-    {
-        mfxF64 max = (1 << 8) - 1;
-        mfxI32 diff = 0;
-        mfxU64 dist = 0;
-
-        for (mfxU32 y = 0; y < length; y++)
-        {
-            diff = ref[y] - src[y];
-            dist += (diff * diff);
-        }
-
-        return (10. * log10(max * max * ((mfxF64)length / dist)));
-    }
-
     mfxF64 GetMinPSNR(const mfxVideoParam& par)
     {
         if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
@@ -924,6 +990,13 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
 
         const Iteration& iter = **curIter;
 
+        mfxU32 profileExpected = m_pPar->mfx.CodecProfile - 1;
+        if (hdr.uh.profile != profileExpected)
+        {
+            ADD_FAILURE() << "ERROR: profile in uncompressed header of frame " << hdr.FrameOrder << " is incorrect: " << hdr.uh.profile
+                << ", expected " << profileExpected; throw tsFAIL;
+        }
+
         mfxU32 log2RowsExpected = CeilLog2(iter.m_extParam[CHECK].NumTileRows);
         if (hdr.uh.log2_tile_rows != log2RowsExpected)
         {
@@ -938,7 +1011,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         }
 
         // decode frame and calculate PSNR for Y plane
-        if (m_pInputFrames)
+        if (m_pInputSurfaces)
         {
             const mfxU32 ivfSize = hdr.FrameOrder == 0 ? MAX_IVF_HEADER_SIZE : IVF_PIC_HEADER_SIZE_BYTES;
 
@@ -969,32 +1042,46 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             // frame is decoded correctly - let's calculate and check PSNR for Y plane
 
             // check that respective source frame is stored
-            if (m_pInputFrames->find(hdr.FrameOrder) == m_pInputFrames->end())
+            if (m_pInputSurfaces->find(hdr.FrameOrder) == m_pInputSurfaces->end())
             {
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
             }
 
-            // copy decoded frame to buffer for PSNR calculations
-            mfxU32 w = iter.m_extParam[CHECK].FrameWidth;
-            mfxU32 h = iter.m_extParam[CHECK].FrameHeight;
-            mfxU32 pitch = (m_pSurf->Data.PitchHigh << 16) + m_pSurf->Data.PitchLow;
+            mfxU32 w = iter.m_extParam[CHECK].FrameWidth ?
+                iter.m_extParam[CHECK].FrameWidth : iter.m_param[CHECK].mfx.FrameInfo.Width;
+            mfxU32 h = iter.m_extParam[CHECK].FrameHeight ?
+                iter.m_extParam[CHECK].FrameHeight : iter.m_param[CHECK].mfx.FrameInfo.Height;
+            //mfxU32 pitch = (m_pSurf->Data.PitchHigh << 16) + m_pSurf->Data.PitchLow;
             //DumpDecodedFrame(m_pSurf->Data.Y, m_pSurf->Data.UV, w, h, pitch);
-            for (mfxU32 i = 0; i < h; i++)
-            {
-                memcpy(m_pDecodedFrame + i*w, m_pSurf->Data.Y + i*pitch, w);
-            }
 
-            mfxU8* pInputFrame = (*m_pInputFrames)[hdr.FrameOrder];
-            mfxF64 psnr = PSNR_Y_8bit(pInputFrame, m_pDecodedFrame, w * h);
+            mfxFrameSurface1* pInputSurface = (*m_pInputSurfaces)[hdr.FrameOrder];
+            tsFrame src = tsFrame(*pInputSurface);
+            tsFrame res = tsFrame(*m_pSurf);
+            src.m_info.CropX = src.m_info.CropY = res.m_info.CropX = res.m_info.CropY = 0;
+            src.m_info.CropW = res.m_info.CropW = w;
+            src.m_info.CropH = res.m_info.CropH = h;
+
+            const mfxF64 psnrY = PSNR(src, res, 0);
+            const mfxF64 psnrU = PSNR(src, res, 1);
+            const mfxF64 psnrV = PSNR(src, res, 2);
+            pInputSurface->Data.Locked--;
+            m_pInputSurfaces->erase(hdr.FrameOrder);
             const mfxF64 minPsnr = GetMinPSNR(iter.m_param[CHECK]);
-            if (psnr < minPsnr)
+            if (psnrY < minPsnr)
             {
-                ADD_FAILURE() << "ERROR: PSNR-Y of frame " << hdr.FrameOrder << " is equal to " << psnr << " and lower than threshold: " << minPsnr;
+                ADD_FAILURE() << "ERROR: PSNR-Y of frame " << hdr.FrameOrder << " is equal to " << psnrY << " and lower than threshold: " << minPsnr;
                 throw tsFAIL;
             }
-
-            delete[] pInputFrame;
-            m_pInputFrames->erase(hdr.FrameOrder);
+            if (psnrU < minPsnr)
+            {
+                ADD_FAILURE() << "ERROR: PSNR-U of frame " << hdr.FrameOrder << " is equal to " << psnrU << " and lower than threshold: " << minPsnr;
+                throw tsFAIL;
+            }
+            if (psnrV < minPsnr)
+            {
+                ADD_FAILURE() << "ERROR: PSNR-V of frame " << hdr.FrameOrder << " is equal to " << psnrV << " and lower than threshold: " << minPsnr;
+                throw tsFAIL;
+            }
         }
 
         bs.DataLength = bs.DataOffset = 0;
@@ -1164,11 +1251,16 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         return needToRun;
     }
 
-    int TestSuite::RunTest(unsigned int id)
+    template <mfxU32 fourcc>
+    int TestSuite::RunTest_Subtype(const unsigned int id)
+    {
+        const tc_struct& tc = test_cases[id];
+        return RunTest(tc, fourcc, id);
+    }
+
+    int TestSuite::RunTest(const tc_struct& tc, mfxU32 fourcc, const unsigned int id)
     {
         TS_START;
-
-        const tc_struct& tc = test_cases[id];
 
         if (false == NeedToRun(tc.type))
         {
@@ -1215,13 +1307,46 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
 
         // prepare pool of input streams
         std::map<Resolution, std::string> inputStreams;
-        inputStreams.emplace(Resolution(176, 144), g_tsStreamPool.Get("forBehaviorTest/salesman_176x144_50.yuv"));
-        inputStreams.emplace(Resolution(352, 288), g_tsStreamPool.Get("forBehaviorTest/salesman_352x288_50.yuv"));
-        inputStreams.emplace(Resolution(704, 576), g_tsStreamPool.Get("forBehaviorTest/salesman_704x576_50.yuv"));
-        inputStreams.emplace(Resolution(1408, 1152), g_tsStreamPool.Get("forBehaviorTest/salesman_1408X1152_50.yuv"));
-        inputStreams.emplace(Resolution(2816, 2304), g_tsStreamPool.Get("forBehaviorTest/salesman_2816x2304_50.yuv"));
-        inputStreams.emplace(Resolution(5632, 4608), g_tsStreamPool.Get("forBehaviorTest/salesman_5632x4608_2.yuv"));
-        inputStreams.emplace(Resolution(7680, 6288), g_tsStreamPool.Get("forBehaviorTest/salesman_7680x6288_2.yuv"));
+        if (fourcc == MFX_FOURCC_NV12)
+        {
+            inputStreams.emplace(Resolution(176, 144), g_tsStreamPool.Get("forBehaviorTest/salesman_176x144_50.yuv"));
+            inputStreams.emplace(Resolution(352, 288), g_tsStreamPool.Get("forBehaviorTest/salesman_352x288_50.yuv"));
+            inputStreams.emplace(Resolution(704, 576), g_tsStreamPool.Get("forBehaviorTest/salesman_704x576_50.yuv"));
+            inputStreams.emplace(Resolution(1408, 1152), g_tsStreamPool.Get("forBehaviorTest/salesman_1408X1152_50.yuv"));
+            inputStreams.emplace(Resolution(2816, 2304), g_tsStreamPool.Get("forBehaviorTest/salesman_2816x2304_50.yuv"));
+            inputStreams.emplace(Resolution(5632, 4608), g_tsStreamPool.Get("forBehaviorTest/salesman_5632x4608_2.yuv"));
+            inputStreams.emplace(Resolution(7680, 6288), g_tsStreamPool.Get("forBehaviorTest/salesman_7680x6288_2.yuv"));
+        }
+        else if (fourcc == MFX_FOURCC_AYUV)
+        {
+            inputStreams.emplace(Resolution(176, 144), g_tsStreamPool.Get("forBehaviorTest/Kimono1_176x144_24_ayuv.yuv"));
+            inputStreams.emplace(Resolution(352, 288), g_tsStreamPool.Get("forBehaviorTest/Kimono1_352x288_24_ayuv_50.yuv"));
+            inputStreams.emplace(Resolution(704, 576), g_tsStreamPool.Get("forBehaviorTest/Kimono1_704x576_24_ayuv_50.yuv"));
+            inputStreams.emplace(Resolution(1408, 1152), g_tsStreamPool.Get("forBehaviorTest/Kimono1_1408X1152_24_ayuv_10.yuv"));
+            inputStreams.emplace(Resolution(2816, 2304), g_tsStreamPool.Get("forBehaviorTest/Kimono1_2816x2304_24_ayuv_10.yuv"));
+            inputStreams.emplace(Resolution(5632, 4608), g_tsStreamPool.Get("forBehaviorTest/Kimono1_5632x4608_24_ayuv_2.yuv"));
+            inputStreams.emplace(Resolution(7680, 6288), g_tsStreamPool.Get("forBehaviorTest/Kimono1_7680x6288_24_ayuv_2.yuv"));
+        }
+        else if (fourcc == MFX_FOURCC_P010)
+        {
+            inputStreams.emplace(Resolution(176, 144), g_tsStreamPool.Get("forBehaviorTest/Kimono1_176x144_24_p010_shifted.yuv"));
+            inputStreams.emplace(Resolution(352, 288), g_tsStreamPool.Get("forBehaviorTest/Kimono1_352x288_24_p010_shifted_50.yuv"));
+            inputStreams.emplace(Resolution(704, 576), g_tsStreamPool.Get("forBehaviorTest/Kimono1_704x576_24_p010_shifted_50.yuv"));
+            inputStreams.emplace(Resolution(1408, 1152), g_tsStreamPool.Get("forBehaviorTest/Kimono1_1408X1152_24_p010_shifted_10.yuv"));
+            inputStreams.emplace(Resolution(2816, 2304), g_tsStreamPool.Get("forBehaviorTest/Kimono1_2816x2304_24_p010_shifted_10.yuv"));
+            inputStreams.emplace(Resolution(5632, 4608), g_tsStreamPool.Get("forBehaviorTest/Kimono1_5632x4608_24_p010_shifted_2.yuv"));
+            inputStreams.emplace(Resolution(7680, 6288), g_tsStreamPool.Get("forBehaviorTest/Kimono1_7680x6288_24_p010_shifted_2.yuv"));
+        }
+        else if (fourcc == MFX_FOURCC_Y410)
+        {
+            inputStreams.emplace(Resolution(176, 144), g_tsStreamPool.Get("forBehaviorTest/Kimono1_176x144_24_y410.yuv"));
+            inputStreams.emplace(Resolution(352, 288), g_tsStreamPool.Get("forBehaviorTest/Kimono1_352x288_24_y410_50.yuv"));
+            inputStreams.emplace(Resolution(704, 576), g_tsStreamPool.Get("forBehaviorTest/Kimono1_704x576_24_y410_50.yuv"));
+            inputStreams.emplace(Resolution(1408, 1152), g_tsStreamPool.Get("forBehaviorTest/Kimono1_1408X1152_24_y410_10.yuv"));
+            inputStreams.emplace(Resolution(2816, 2304), g_tsStreamPool.Get("forBehaviorTest/Kimono1_2816x2304_24_y410_10.yuv"));
+            inputStreams.emplace(Resolution(5632, 4608), g_tsStreamPool.Get("forBehaviorTest/Kimono1_5632x4608_24_y410_2.yuv"));
+            inputStreams.emplace(Resolution(7680, 6288), g_tsStreamPool.Get("forBehaviorTest/Kimono1_7680x6288_24_y410_2.yuv"));
+        }
         g_tsStreamPool.Reg();
 
         std::vector<Iteration*> iterations;
@@ -1231,21 +1356,21 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         const mfxU32 numIterations = CalcIterations(tc, totalFramesToEncode);
         mfxU32 iterationStart = 0;
 
-        std::map<mfxU32, mfxU8*> inputFrames;
-        std::map<mfxU32, mfxU8*>* pInputFrames = totalFramesToEncode ?
-            &inputFrames : 0;
+        std::map<mfxU32, mfxFrameSurface1*> inputSurfaces;
+        std::map<mfxU32, mfxFrameSurface1*>* pInputSurfaces = totalFramesToEncode ?
+            &inputSurfaces : 0;
 
         if (totalFramesToEncode && tc.type & SCALABLE_PIPE)
         {
             // workaround for decoder issue - it crashes simics on attempt to decode frames with both tile rows and columns
             // TODO: remove this once decoder issue is fixed
-            pInputFrames = 0;
+            pInputSurfaces = 0;
         }
 
         for (mfxU8 idx = 0; idx < numIterations; idx++)
         {
             const mfxVideoParam& defaults = (idx == 0) ? *m_pPar : iterations[idx - 1]->m_param[CHECK];
-            Iteration* pIter = new Iteration(defaults, tc.iteration_par[idx], tc.type, iterationStart);
+            Iteration* pIter = new Iteration(defaults, tc.iteration_par[idx], fourcc, tc.type, iterationStart);
 
             iterationStart += pIter->m_numFramesToEncode;
             iterations.push_back(pIter);
@@ -1256,9 +1381,8 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         const mfxU32 frameWidth = iterations[0]->m_extParam[CHECK].FrameWidth;
         const mfxU32 frameHeight = iterations[0]->m_extParam[CHECK].FrameHeight;
         tsRawReader* feeder = new SurfaceFeeder(
-            pInputFrames,
-            frameWidth ? frameWidth : fi.Width,
-            frameHeight ? frameHeight : fi.Height,
+            pInputSurfaces,
+            iterations[0]->m_param[SET],
             iterations[0]->m_firstFrame,
             inputStreams[Resolution(fi.Width, fi.Height)].c_str(),
             fi);
@@ -1270,7 +1394,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         Load();
 
         // prepare bitstream checker
-        BitstreamChecker bs(&iterations, pInputFrames, tc.type, id);
+        BitstreamChecker bs(&iterations, pInputSurfaces, tc.type, id);
         m_bs_processor = &bs;
 
         *m_pPar = iterations[0]->m_param[SET];
@@ -1375,15 +1499,6 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             Close();
         }
 
-        if (pInputFrames)
-        {
-            for (std::map<mfxU32, mfxU8*>::iterator i = inputFrames.begin(); i != inputFrames.end(); i++)
-            {
-                delete[] i->second;
-            }
-            inputFrames.clear();
-        }
-
         for (std::vector<Iteration*>::iterator i = iterations.begin(); i != iterations.end(); i++)
         {
             if (*i != 0)
@@ -1404,6 +1519,9 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         TS_END;
     }
 
-    TS_REG_TEST_SUITE_CLASS(vp9e_tiles);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9e_tiles, RunTest_Subtype<MFX_FOURCC_NV12>, n_cases_nv12);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9e_10b_420_p010_tiles, RunTest_Subtype<MFX_FOURCC_P010>, n_cases_p010);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9e_8b_444_ayuv_tiles, RunTest_Subtype<MFX_FOURCC_AYUV>, n_cases_ayuv);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9e_10b_444_y410_tiles, RunTest_Subtype<MFX_FOURCC_Y410>, n_cases_y410);
 }
 
