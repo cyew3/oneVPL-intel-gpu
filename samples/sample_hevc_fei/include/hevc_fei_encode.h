@@ -22,6 +22,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include <vector>
 #include "sample_hevc_fei_defs.h"
+#include "ref_list_manager.h"
 
 class FEI_Encode
 {
@@ -36,6 +37,7 @@ public:
     mfxStatus GetVideoParam(mfxVideoParam& par);
     mfxFrameInfo* GetFrameInfo();
     mfxStatus EncodeFrame(mfxFrameSurface1* pSurf);
+    mfxStatus SetCtrlParams(const HevcTask& task); // for encoded order
 
 private:
     MFXVideoSession*    m_pmfxSession;

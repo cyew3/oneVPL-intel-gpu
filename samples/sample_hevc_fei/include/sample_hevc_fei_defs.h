@@ -31,6 +31,7 @@ struct sInputParams
     msdk_char  strDstFile[MSDK_MAX_FILENAME_LEN];
 
     bool bENCODE;
+    bool bEncodedOrder;      // use EncodeOrderControl for external reordering
     mfxU32 ColorFormat;
     mfxU16 nPicStruct;
     mfxU8  QP;
@@ -49,6 +50,7 @@ struct sInputParams
 
     sInputParams()
         : bENCODE(false)
+        , bEncodedOrder(false)
         , ColorFormat(MFX_FOURCC_I420)
         , nPicStruct(MFX_PICSTRUCT_PROGRESSIVE)
         , QP(26)

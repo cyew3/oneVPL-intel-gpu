@@ -50,8 +50,6 @@ void FEI_Encode::SetEncodeParameters(const sInputParams& encParams)
     m_videoParams.AsyncDepth  = 1; // inherited limitation from AVC FEI
     m_videoParams.IOPattern   = MFX_IOPATTERN_IN_VIDEO_MEMORY;
 
-    m_videoParams.mfx.EncodedOrder = 0;
-
     // user defined settings
     m_videoParams.mfx.QPI = m_videoParams.mfx.QPP = m_videoParams.mfx.QPB = encParams.QP;
     m_videoParams.mfx.GopRefDist  = encParams.nRefDist;
@@ -60,6 +58,7 @@ void FEI_Encode::SetEncodeParameters(const sInputParams& encParams)
     m_videoParams.mfx.IdrInterval = encParams.nIdrInterval;
     m_videoParams.mfx.NumRefFrame = encParams.nNumRef;
     m_videoParams.mfx.NumSlice    = encParams.nNumSlices;
+    m_videoParams.mfx.EncodedOrder= encParams.bEncodedOrder;
 
     // configure B-pyramid settings
     m_videoParams.enableExtParam(MFX_EXTBUFF_CODING_OPTION2);
@@ -157,6 +156,13 @@ mfxStatus FEI_Encode::EncodeFrame(mfxFrameSurface1* pSurf)
     }
 
     return sts;
+}
+
+mfxStatus FEI_Encode::SetCtrlParams(const HevcTask& task)
+{
+    m_encodeCtrl.FrameType = task.m_frameType;
+    //m_encodeCtrl.QP = ; // should be changed here?
+    return MFX_ERR_NONE;
 }
 
 mfxStatus FEI_Encode::SyncOperation()

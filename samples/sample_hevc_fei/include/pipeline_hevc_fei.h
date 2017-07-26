@@ -27,6 +27,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "vaapi_device.h"
 #include "fei_utils.h"
 #include "hevc_fei_encode.h"
+#include "ref_list_manager.h"
 
 /* This class implements a FEI pipeline */
 class CEncodingPipeline
@@ -56,6 +57,8 @@ private:
     std::auto_ptr<IVideoReader> m_pYUVSource; // source of raw data for encoder (can be either reading from file,
                                               // or decoding bitstream)
     std::auto_ptr<FEI_Encode>   m_pFEI_Encode;
+
+    std::auto_ptr<EncodeOrderControl> m_pOrderCtrl;
 
     SurfacesPool m_EncSurfPool;
 

@@ -187,11 +187,21 @@ mfxStatus CEncodingPipeline::InitComponents()
     sts = m_pYUVSource->Init();
     MSDK_CHECK_STATUS(sts, "m_pYUVSource->Init failed");
 
+    mfxVideoParam param;
+
     if (m_pFEI_Encode.get())
     {
         sts = m_pFEI_Encode->Init();
         MSDK_CHECK_STATUS(sts, "FEI ENCODE Init failed");
+
+        m_pFEI_Encode->GetVideoParam(param);
     }
+
+    if (m_inParams.bEncodedOrder)
+    {
+        m_pOrderCtrl.reset(new EncodeOrderControl(param));
+    }
+
 
     return sts;
 }
@@ -214,11 +224,23 @@ mfxStatus CEncodingPipeline::Execute()
 
         numSubmitted++;
 
+        if (m_pOrderCtrl.get())
+        {
+            HevcTask* task = m_pOrderCtrl->GetTask(pSurf);
+            if (!task)
+                continue; // frame is buffered here
+            pSurf = task->m_surf;
+            if (m_pFEI_Encode.get())
+                m_pFEI_Encode->SetCtrlParams(*task);
+            m_pOrderCtrl->FreeTask(task);
+        }
+
         if (m_pFEI_Encode.get())
         {
             sts = m_pFEI_Encode->EncodeFrame(pSurf);
             MSDK_BREAK_ON_ERROR(sts);
         }
+
 
     } // while (MFX_ERR_NONE <= sts || MFX_ERR_MORE_DATA == sts)
 
@@ -235,6 +257,24 @@ mfxStatus CEncodingPipeline::Execute()
 mfxStatus CEncodingPipeline::DrainBufferedFrames()
 {
     mfxStatus sts = MFX_ERR_NONE;
+
+    if (m_pOrderCtrl.get())
+    {
+        HevcTask* task;
+        while ( NULL != (task = m_pOrderCtrl->GetTask(NULL)))
+        {
+            if (m_pFEI_Encode.get())
+            {
+                m_pFEI_Encode->SetCtrlParams(*task);
+                sts = m_pFEI_Encode->EncodeFrame(task->m_surf);
+                // exit in case of other errors
+                MSDK_CHECK_STATUS(sts, "EncodeFrame drain failed");
+            }
+            m_pOrderCtrl->FreeTask(task);
+        }
+        return sts;
+    }
+
 
     if (m_pFEI_Encode.get())
     {
