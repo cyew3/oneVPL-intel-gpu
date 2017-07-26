@@ -807,7 +807,8 @@ namespace MfxHwH264Encode
         ENCODE_CAPS const & hwCaps,
         bool                setExtAlloc,
         eMFXHWType          platform = MFX_HW_UNKNOWN,
-        eMFXVAType          vaType = MFX_HW_NO);
+        eMFXVAType          vaType = MFX_HW_NO,
+        bool                bInit = false);
 
     mfxStatus CheckVideoParamFEI(
         MfxVideoParam &     par);

@@ -134,6 +134,62 @@ mfxStatus cBRCParams::Init(mfxVideoParam* par)
     return MFX_ERR_NONE;
 }
 
+mfxStatus   cBRCParams::GetBRCResetType(mfxVideoParam* par, bool bNewSequence, bool &bBRCReset, bool &bSlidingWindowReset)
+{
+    bBRCReset = false;
+    bSlidingWindowReset = false;
+
+    if (bNewSequence)
+        return MFX_ERR_NONE;
+
+    cBRCParams new_par;
+    mfxStatus sts = new_par.Init(par);
+    MFX_CHECK_STS(sts);
+
+    MFX_CHECK(new_par.rateControlMethod == rateControlMethod, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM) ;
+    MFX_CHECK(new_par.bHRDConformance == bHRDConformance, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM) ;
+    MFX_CHECK(new_par.frameRate == frameRate, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+    MFX_CHECK(new_par.width == width, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+    MFX_CHECK(new_par.height == height, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+    MFX_CHECK(new_par.chromaFormat == chromaFormat, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+    MFX_CHECK(new_par.bitDepthLuma == bitDepthLuma, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+    if (bHRDConformance)
+    {
+        MFX_CHECK(new_par.bufferSizeInBytes   == bufferSizeInBytes, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+        MFX_CHECK(new_par.initialDelayInBytes == initialDelayInBytes, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);  
+        MFX_CHECK(new_par.targetbps == targetbps, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+        MFX_CHECK(new_par.maxbps == maxbps, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);        
+    }
+    else
+    {
+        if (new_par.targetbps != targetbps || new_par.maxbps != maxbps)
+        {
+            MFX_CHECK(new_par.rateControlMethod == MFX_RATECONTROL_VBR, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+            bBRCReset = true;
+        }
+    }
+
+    if (new_par.WinBRCMaxAvgKbps != WinBRCMaxAvgKbps)
+    {
+        bBRCReset = true;
+        bSlidingWindowReset = true;
+    }
+
+    if (new_par.maxFrameSizeInBits != maxFrameSizeInBits) bBRCReset = true;
+    if (new_par.gopPicSize != gopPicSize) bBRCReset = true;
+    if (new_par.gopRefDist != gopRefDist) bBRCReset = true;
+    if (new_par.bPyr != bPyr) bBRCReset = true;
+    if (new_par.quantMaxI != quantMaxI) bBRCReset = true;
+    if (new_par.quantMinI != quantMinI) bBRCReset = true;
+    if (new_par.quantMaxP != quantMaxP) bBRCReset = true;
+    if (new_par.quantMinP != quantMinP) bBRCReset = true;
+    if (new_par.quantMaxB != quantMaxB) bBRCReset = true;
+    if (new_par.quantMinB != quantMinB) bBRCReset = true;
+
+    return MFX_ERR_NONE;
+}
+
 
 
 enum
@@ -903,20 +959,32 @@ mfxStatus ExtBRC::Reset(mfxVideoParam *par )
     }
     else
     { 
-        MFX_CHECK (m_par.rateControlMethod == MFX_RATECONTROL_VBR, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+        bool brcReset = false;
+        bool slidingWindowReset = false;
 
-        sts = m_par.Init(par);
+        sts = m_par.GetBRCResetType(par, false, brcReset, slidingWindowReset);
         MFX_CHECK_STS(sts);
 
+        if (brcReset)
+        {
+            sts = m_par.Init(par);
+            MFX_CHECK_STS(sts);
 
-        m_ctx.Quant = (mfxI32)(1./m_ctx.dQuantAb * pow(m_ctx.fAbLong/m_par.inputBitsPerFrame, 0.32) + 0.5); 
-        BRC_CLIP(m_ctx.Quant, m_par.quantMinI, m_par.quantMaxI); 
-    
-        UpdateQPParams(m_ctx.Quant, MFX_FRAMETYPE_I , m_ctx, 0, m_par.quantMinI, m_par.quantMaxI, 0);
+            m_ctx.Quant = (mfxI32)(1. / m_ctx.dQuantAb * pow(m_ctx.fAbLong / m_par.inputBitsPerFrame, 0.32) + 0.5);
+            BRC_CLIP(m_ctx.Quant, m_par.quantMinI, m_par.quantMaxI);
 
-        m_ctx.dQuantAb = 1./m_ctx.Quant;
-        m_ctx.fAbLong  = m_par.inputBitsPerFrame;
-        m_ctx.fAbShort = m_par.inputBitsPerFrame;
+            UpdateQPParams(m_ctx.Quant, MFX_FRAMETYPE_I, m_ctx, 0, m_par.quantMinI, m_par.quantMaxI, 0);
+
+            m_ctx.dQuantAb = 1. / m_ctx.Quant;
+            m_ctx.fAbLong = m_par.inputBitsPerFrame;
+            m_ctx.fAbShort = m_par.inputBitsPerFrame;
+
+            if (slidingWindowReset)
+            {
+                m_avg.reset(new AVGBitrate(m_par.WinBRCSize, (mfxU32)(m_par.WinBRCMaxAvgKbps*1000.0 / m_par.frameRate), (mfxU32)m_par.inputBitsPerFrame));
+                MFX_CHECK_NULL_PTR1(m_avg.get());
+            }
+        }
     }
     return sts;
 }

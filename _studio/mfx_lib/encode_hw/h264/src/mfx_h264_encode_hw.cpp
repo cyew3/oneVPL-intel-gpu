@@ -811,7 +811,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
     mfxStatus spsppsSts = CopySpsPpsToVideoParam(m_video);
 
-    mfxStatus checkStatus = CheckVideoParam(m_video, m_caps, m_core->IsExternalFrameAllocator(), m_currentPlatform, m_currentVaType);
+    mfxStatus checkStatus = CheckVideoParam(m_video, m_caps, m_core->IsExternalFrameAllocator(), m_currentPlatform, m_currentVaType, true);
     if (checkStatus == MFX_WRN_PARTIAL_ACCELERATION)
         return MFX_WRN_PARTIAL_ACCELERATION;
     else if (checkStatus < MFX_ERR_NONE)

@@ -118,6 +118,7 @@ public:
     {}
 
     mfxStatus Init(mfxVideoParam* par);
+    mfxStatus GetBRCResetType(mfxVideoParam* par, bool bNewSequence, bool &bReset, bool &bSlidingWindowReset );
 };
 class cHRD
 {

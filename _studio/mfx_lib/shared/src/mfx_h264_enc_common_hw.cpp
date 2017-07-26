@@ -1745,7 +1745,8 @@ mfxStatus MfxHwH264Encode::CheckVideoParam(
     ENCODE_CAPS const & hwCaps,
     bool                setExtAlloc,
     eMFXHWType          platform,
-    eMFXVAType          vaType)
+    eMFXVAType          vaType,
+    bool                bInit)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MfxHwH264Encode::CheckVideoParam");
     mfxStatus checkSts = MFX_ERR_NONE;
@@ -1767,6 +1768,29 @@ mfxStatus MfxHwH264Encode::CheckVideoParam(
     MFX_CHECK(par.mfx.TargetUsage            <= 7, MFX_ERR_INVALID_VIDEO_PARAM);
     MFX_CHECK(par.mfx.FrameInfo.ChromaFormat != 0, MFX_ERR_INVALID_VIDEO_PARAM);
     MFX_CHECK(par.IOPattern                  != 0, MFX_ERR_INVALID_VIDEO_PARAM);
+  
+ 
+#if !defined(MFX_EXT_BRC_DISABLE)
+    if (bInit)
+    { 
+    mfxExtBRC*                 extBRC = GetExtBuffer(par);
+    mfxExtCodingOption2 *      extOpt2 = GetExtBuffer(par);
+    if ((extBRC->pthis || extBRC->Init || extBRC->Close || extBRC->GetFrameCtrl || extBRC->Update || extBRC->Reset) &&
+        (!extBRC->pthis || !extBRC->Init || !extBRC->Close || !extBRC->GetFrameCtrl || !extBRC->Update || !extBRC->Reset))
+    {
+        extOpt2->ExtBRC = 0;
+        extBRC->pthis = 0;
+        extBRC->Init = 0;
+        extBRC->Close = 0;
+        extBRC->GetFrameCtrl = 0;
+        extBRC->Update = 0;
+        extBRC->Reset = 0;
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+    }
+    }
+ #else
+    bInit;
+#endif
 
     mfxStatus sts = MFX_ERR_NONE;
 
@@ -3696,7 +3720,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         extBRC->GetFrameCtrl = 0;
         extBRC->Update = 0;
         extBRC->Reset = 0; 
-        unsupported = true;
+        changed = true;
     }
    
 #endif
