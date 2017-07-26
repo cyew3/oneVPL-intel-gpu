@@ -74,10 +74,7 @@ void FEI_Encode::SetEncodeParameters(const sInputParams& encParams)
 mfxStatus FEI_Encode::Query()
 {
     mfxStatus sts = m_mfxENCODE.Query(&m_videoParams, &m_videoParams);
-    if (MFX_WRN_PARTIAL_ACCELERATION == sts)
-    {
-        msdk_printf(MSDK_STRING("WARNING: partial acceleration\n"));
-    }
+    MSDK_CHECK_WRN(sts, "FEI Encode Query");
 
     return sts;
 }
@@ -91,7 +88,9 @@ mfxStatus FEI_Encode::Init()
     sts = InitMfxBitstream(&m_bitstream, nEncodedDataBufferSize);
     MSDK_CHECK_STATUS_SAFE(sts, "InitMfxBitstream failed", WipeMfxBitstream(&m_bitstream));
 
-    return m_mfxENCODE.Init(&m_videoParams);
+    sts = m_mfxENCODE.Init(&m_videoParams);
+    MSDK_CHECK_WRN(sts, "FEI Encode Init");
+    return sts;
 }
 
 mfxStatus FEI_Encode::QueryIOSurf(mfxFrameAllocRequest* request)
@@ -123,6 +122,7 @@ mfxStatus FEI_Encode::EncodeFrame(mfxFrameSurface1* pSurf)
     {
 
         sts = m_mfxENCODE.EncodeFrameAsync(&m_encodeCtrl, pSurf, &m_bitstream, &m_syncPoint);
+        MSDK_CHECK_WRN(sts, "FEI EncodeFrameAsync");
 
         if (MFX_ERR_NONE < sts && !m_syncPoint) // repeat the call if warning and no output
         {
