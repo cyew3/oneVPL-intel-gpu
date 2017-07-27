@@ -59,6 +59,13 @@ bool CheckHardwareSupport(VideoCORE *p_core, mfxVideoParam *p_video_param)
     // todo : VA API alternative ?
 #endif
 
+#ifdef ANDROID
+    if (p_video_param->mfx.FrameInfo.Width > 4096 || p_video_param->mfx.FrameInfo.Height > 4096)
+    {
+        return false;
+    }
+#endif
+
     return true;
 }
 
