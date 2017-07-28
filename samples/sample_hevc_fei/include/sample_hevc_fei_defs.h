@@ -100,10 +100,10 @@ union MfxExtBuffer
     mfxExtCodingOption2 opt2;
     mfxExtCodingOption3 opt3;
 };
-#define HEVC_FEI_ENCODE_VIDEOPARAM_EXTBUF_MAX_NUM 4
+const mfxI32 HEVC_FEI_ENCODE_VIDEOPARAM_EXTBUF_MAX_NUM = 4;
 
 /** MfxParamsWrapper is an utility class which
- * incapsulates mfxVideoParam and a list of 'attached' mfxExtBuffer objects.
+ * encapsulates mfxVideoParam and a list of 'attached' mfxExtBuffer objects.
  */
 template<typename T, size_t N>
 struct MfxParamsWrapper: public T
@@ -113,7 +113,7 @@ struct MfxParamsWrapper: public T
     struct
     {
         bool enabled;
-        int  idx;
+        mfxI32  idx;
     } ext_buf_idxmap[HEVC_FEI_ENCODE_VIDEOPARAM_EXTBUF_MAX_NUM];
 
     MfxParamsWrapper()
@@ -183,9 +183,9 @@ struct MfxParamsWrapper: public T
         this->ExtParam = (N)? ext_buf_ptrs: NULL;
     }
     /** Function returns index of the already enabled buffer */
-    int getExtParamIdx(mfxU32 bufferid) const
+    mfxI32 getExtParamIdx(mfxU32 bufferid) const
     {
-        int idx_map = getEnabledMapIdx(bufferid);
+        mfxI32 idx_map = getEnabledMapIdx(bufferid);
 
         if (idx_map < 0) return -1;
 
@@ -195,9 +195,9 @@ struct MfxParamsWrapper: public T
     /** Function returns index of the enabled buffer
      * and enables it if it is not yet enabled.
      */
-    int enableExtParam(mfxU32 bufferid)
+    mfxI32 enableExtParam(mfxU32 bufferid)
     {
-        int idx_map = getEnabledMapIdx(bufferid);
+        mfxI32 idx_map = getEnabledMapIdx(bufferid);
 
         if (idx_map < 0) return -1;
 
@@ -208,7 +208,7 @@ struct MfxParamsWrapper: public T
             return -1;
         }
 
-        int idx = this->NumExtParam++;
+        mfxI32 idx = this->NumExtParam++;
 
         ext_buf_idxmap[idx_map].enabled = true;
         ext_buf_idxmap[idx_map].idx = idx;
@@ -237,7 +237,7 @@ struct MfxParamsWrapper: public T
     template<typename ExtBufType>
     ExtBufType* get() const
     {
-        int idx_map = getEnabledMapIdx(mfx_ext_buffer_id<ExtBufType>::id);
+        mfxI32 idx_map = getEnabledMapIdx(mfx_ext_buffer_id<ExtBufType>::id);
 
         if (idx_map < 0) {
             return NULL;
@@ -249,9 +249,9 @@ struct MfxParamsWrapper: public T
     }
 
 protected:
-    int getEnabledMapIdx(mfxU32 bufferid) const
+    mfxI32 getEnabledMapIdx(mfxU32 bufferid) const
     {
-        int idx = 0;
+        mfxI32 idx = 0;
 
         if (!N) return -1;
         switch (bufferid)
