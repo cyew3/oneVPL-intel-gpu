@@ -284,17 +284,24 @@ int main(int argc, char *argv[])
 
     mfxStatus sts = MFX_ERR_NONE;
 
-    sts = ParseInputString(argv, (mfxU8)argc, userParams);
-    MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
+    try
+    {
+        sts = ParseInputString(argv, (mfxU8)argc, userParams);
+        MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
 
-    CEncodingPipeline pipeline(userParams);
+        CEncodingPipeline pipeline(userParams);
 
-    sts = pipeline.Init();
-    MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
+        sts = pipeline.Init();
+        MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
 
-    sts = pipeline.Execute();
-    MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
-
+        sts = pipeline.Execute();
+        MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
+    }
+    catch(...)
+    {
+        msdk_printf(MSDK_STRING("\nUnexpected exception!!\n"));
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
 
     return 0;
 }

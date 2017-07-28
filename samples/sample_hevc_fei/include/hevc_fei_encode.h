@@ -51,7 +51,7 @@ private:
     std::string          m_dstFileName;
     CSmplBitstreamWriter m_FileWriter; // bitstream writer
 
-    void SetEncodeParameters(const sInputParams& encParams);
+    mfxStatus SetEncodeParameters(const sInputParams& encParams);
     mfxStatus SyncOperation();
     mfxStatus AllocateSufficientBuffer();
 

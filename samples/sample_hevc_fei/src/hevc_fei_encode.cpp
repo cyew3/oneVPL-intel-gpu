@@ -25,7 +25,8 @@ FEI_Encode::FEI_Encode(MFXVideoSession* session, const mfxFrameInfo& frameInfo, 
     , m_dstFileName(encParams.strDstFile)
 {
     MSDK_MEMCPY_VAR(m_videoParams.mfx.FrameInfo, &frameInfo, sizeof(mfxFrameInfo));
-    SetEncodeParameters(encParams);
+    mfxStatus sts = SetEncodeParameters(encParams);
+    if (sts != MFX_ERR_NONE) throw std::exception();
 
     MSDK_ZERO_MEMORY(m_encodeCtrl);
     m_encodeCtrl.FrameType = MFX_FRAMETYPE_UNKNOWN;
@@ -40,7 +41,7 @@ FEI_Encode::~FEI_Encode()
     WipeMfxBitstream(&m_bitstream);
 }
 
-void FEI_Encode::SetEncodeParameters(const sInputParams& encParams)
+mfxStatus FEI_Encode::SetEncodeParameters(const sInputParams& encParams)
 {
     // default settings
     m_videoParams.mfx.CodecId           = MFX_CODEC_HEVC;
@@ -63,11 +64,15 @@ void FEI_Encode::SetEncodeParameters(const sInputParams& encParams)
     // configure B-pyramid settings
     m_videoParams.enableExtParam(MFX_EXTBUFF_CODING_OPTION2);
     mfxExtCodingOption2* pCodingOption2 = m_videoParams.get<mfxExtCodingOption2>();
+    MSDK_CHECK_POINTER(pCodingOption2, MFX_ERR_NOT_INITIALIZED);
     pCodingOption2->BRefType = encParams.BRefType;
 
     m_videoParams.enableExtParam(MFX_EXTBUFF_CODING_OPTION3);
     mfxExtCodingOption3* pCO3 = m_videoParams.get<mfxExtCodingOption3>();
+    MSDK_CHECK_POINTER(pCO3, MFX_ERR_NOT_INITIALIZED);
     pCO3->GPB = encParams.GPB;
+
+    return MFX_ERR_NONE;
 }
 
 mfxStatus FEI_Encode::Query()

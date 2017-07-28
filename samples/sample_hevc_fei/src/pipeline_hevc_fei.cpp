@@ -35,35 +35,49 @@ mfxStatus CEncodingPipeline::Init()
 {
     mfxStatus sts = MFX_ERR_NONE;
 
-    sts = m_mfxSession.Init(m_impl, NULL);
-    MSDK_CHECK_STATUS(sts, "m_mfxSession.Init failed");
-
-    sts = LoadFEIPlugin();
-    MSDK_CHECK_STATUS(sts, "LoadPlugin failed");
-
-    // create and init frame allocator
-    sts = CreateAllocator();
-    MSDK_CHECK_STATUS(sts, "CreateAllocator failed");
-
-    mfxFrameInfo frameInfo;
-    MSDK_ZERO_MEMORY(frameInfo);
-    sts = FillInputFrameInfo(frameInfo);
-    MSDK_CHECK_STATUS(sts, "FillInputFrameInfo failed");
-
-    m_pYUVSource.reset(new YUVReader(m_inParams, frameInfo, &m_EncSurfPool));
-
-    if (m_inParams.bENCODE)
+    try
     {
-        m_pFEI_Encode.reset(new FEI_Encode(&m_mfxSession, frameInfo, m_inParams));
-        // call Query to check that Encode's parameters are valid
-        sts = m_pFEI_Encode->Query();
-        MSDK_CHECK_STATUS(sts, "FEI ENCODE Query failed");
+        sts = m_mfxSession.Init(m_impl, NULL);
+        MSDK_CHECK_STATUS(sts, "m_mfxSession.Init failed");
+
+        sts = LoadFEIPlugin();
+        MSDK_CHECK_STATUS(sts, "LoadPlugin failed");
+
+        // create and init frame allocator
+        sts = CreateAllocator();
+        MSDK_CHECK_STATUS(sts, "CreateAllocator failed");
+
+        mfxFrameInfo frameInfo;
+        MSDK_ZERO_MEMORY(frameInfo);
+        sts = FillInputFrameInfo(frameInfo);
+        MSDK_CHECK_STATUS(sts, "FillInputFrameInfo failed");
+
+        m_pYUVSource.reset(new YUVReader(m_inParams, frameInfo, &m_EncSurfPool));
+
+        if (m_inParams.bENCODE)
+        {
+            m_pFEI_Encode.reset(new FEI_Encode(&m_mfxSession, frameInfo, m_inParams));
+            // call Query to check that Encode's parameters are valid
+            sts = m_pFEI_Encode->Query();
+            MSDK_CHECK_STATUS(sts, "FEI ENCODE Query failed");
+        }
+
+        sts = AllocFrames();
+        MSDK_CHECK_STATUS(sts, "AllocFrames failed");
+
+        sts = InitComponents();
+        MSDK_CHECK_STATUS(sts, "InitComponents failed");
+    }
+    catch(std::exception& ex)
+    {
+        MSDK_CHECK_STATUS(MFX_ERR_UNDEFINED_BEHAVIOR, ex.what());
+    }
+    catch(...)
+    {
+        MSDK_CHECK_STATUS(MFX_ERR_UNDEFINED_BEHAVIOR, "Undefined exception in Pipeline::Init");
     }
 
-    sts = AllocFrames();
-    MSDK_CHECK_STATUS(sts, "AllocFrames failed");
-
-    return InitComponents();
+    return sts;
 }
 
 void CEncodingPipeline::Close()
