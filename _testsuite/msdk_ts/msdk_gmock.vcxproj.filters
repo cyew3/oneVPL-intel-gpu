@@ -1039,5 +1039,8 @@
     <ClCompile Include="src\gmock\test_suites\hevce_idr_insertion.cpp">
       <Filter>Source Files\test_suites\hevce</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\hevce_intra_refresh.cpp">
+      <Filter>Source Files\test_suites\hevce</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
