@@ -301,6 +301,7 @@ public:
         mQuantMax = 0;
         mMaxBitrate = 0;
         mLoanLength = 0;
+        mLoanRatio = 0;
         mEncOrderCoded = -1;
         mRCq = 0;
         mRCbap = 0;
