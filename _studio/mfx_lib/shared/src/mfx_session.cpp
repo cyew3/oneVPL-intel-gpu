@@ -998,34 +998,9 @@ mfxStatus _mfxSession_1_10::InitEx(mfxInitParam& par)
         }
         else
         {
-            const wchar_t* d3d9dllname = L"d3d9.dll";
-            DWORD prevErrorMode = 0;
-            // set the silent error mode
-            #if (_WIN32_WINNT >= 0x0600) && !(__GNUC__)
-            SetThreadErrorMode(SEM_FAILCRITICALERRORS, &prevErrorMode);
-            #else
-            prevErrorMode = SetErrorMode(SEM_FAILCRITICALERRORS);
-            #endif
-
-            // this is safety check for universal build for d3d9 aviability.
-            HMODULE hD3D9Lib = LoadLibraryExW(d3d9dllname, NULL, 0);
-
-            // set the previous error mode
-            #if (_WIN32_WINNT >= 0x0600) && !(__GNUC__)
-            SetThreadErrorMode(prevErrorMode, NULL);
-            #else
-            SetErrorMode(prevErrorMode);
-            #endif
-
-            if (hD3D9Lib == nullptr)
-            {
-                return MFX_ERR_UNSUPPORTED;
-            }
-            else
-            {
-                (void)FreeLibrary(hD3D9Lib);
-                hD3D9Lib = nullptr;
-            }
+            D3D9DllCallHelper d3d9hlp;
+            if (d3d9hlp.isD3D9Available() == false)
+                return  MFX_ERR_UNSUPPORTED;
 
             m_pCORE.reset(FactoryCORE::CreateCORE(MFX_HW_D3D9, m_adapterNum, maxNumThreads, this));
         }

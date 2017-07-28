@@ -36,13 +36,15 @@ using namespace UMC;
 DEFINE_GUID(DXVADDI_Intel_Decode_PrivateData_Report,
 0x49761bec, 0x4b63, 0x4349, 0xa5, 0xff, 0x87, 0xff, 0xdf, 0x8, 0x84, 0x66);
 
-mfxStatus CreateD3DDevice(IDirect3D9        **pD3D,
+mfxStatus CreateD3DDevice(D3D9DllCallHelper& d3d9hlp,
+                          IDirect3D9        **pD3D,
                           IDirect3DDevice9  **pDirect3DDevice,
                           const mfxU32      adapterNum,
                           mfxU16            width,
                           mfxU16            height)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "CreateD3DDevice");
+
     D3DPRESENT_PARAMETERS d3dpp;
     memset(&d3dpp, 0, sizeof(D3DPRESENT_PARAMETERS));
 
@@ -67,7 +69,7 @@ mfxStatus CreateD3DDevice(IDirect3D9        **pD3D,
 
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "Direct3DCreate9Ex");
-            Direct3DCreate9Ex(D3D_SDK_VERSION, &pD3DEx);
+            (void)d3d9hlp.Direct3DCreate9Ex(D3D_SDK_VERSION, &pD3DEx);
         }
         if(NULL == pD3DEx)
             return MFX_ERR_DEVICE_FAILED;
@@ -93,7 +95,7 @@ mfxStatus CreateD3DDevice(IDirect3D9        **pD3D,
             //1 create DX device
             {
                 MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "Direct3DCreate9");
-                *pD3D = Direct3DCreate9(D3D_SDK_VERSION);
+                *pD3D = d3d9hlp.Direct3DCreate9(D3D_SDK_VERSION);
             }
             if (0 == *pD3D)
                 return MFX_ERR_DEVICE_FAILED;
@@ -677,7 +679,7 @@ mfxStatus D3D9VideoCORE::InitializeService(bool isTemporalCall)
     {
         if (!m_pDirect3DDevice)
         {
-            MFX_CHECK_STS(CreateD3DDevice(&m_pD3D, &m_pDirect3DDevice, m_adapterNum, 0, 0));
+            MFX_CHECK_STS(CreateD3DDevice(m_d3d9hlp, &m_pD3D, &m_pDirect3DDevice, m_adapterNum, 0, 0));
         }
 
         UINT resetToken;

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -32,16 +32,106 @@ namespace UMC
     class ProtectedVA;
 };
 
-mfxStatus              CreateD3DDevice(IDirect3D9        **pD3D, 
-                                       IDirect3DDevice9  **pDirect3DDevice,
-                                       const mfxU32       adapterNum,
-                                       mfxU16             width, 
-                                       mfxU16             height,
-                                       mfxU32             DecId);
-
-
 class AuxiliaryDevice;
 
+class D3D9DllCallHelper
+{
+public:
+    D3D9DllCallHelper() :
+        mDllHModule(0)
+    {
+        const wchar_t* d3d9dllname = L"d3d9.dll";
+        DWORD prevErrorMode = 0;
+        // set the silent error mode
+#if (_WIN32_WINNT >= 0x0600) && !(__GNUC__)
+        SetThreadErrorMode(SEM_FAILCRITICALERRORS, &prevErrorMode);
+#else
+        prevErrorMode = SetErrorMode(SEM_FAILCRITICALERRORS);
+#endif
+        // this is safety check for universal build for d3d9 aviability.
+        mDllHModule = LoadLibraryExW(d3d9dllname, NULL, 0);
+
+        // set the previous error mode
+#if (_WIN32_WINNT >= 0x0600) && !(__GNUC__)
+        SetThreadErrorMode(prevErrorMode, NULL);
+#else
+        SetErrorMode(prevErrorMode);
+#endif
+    };
+
+    HRESULT Direct3DCreate9Ex(UINT         SDKVersion, IDirect3D9Ex **ppD3D)
+    {
+        typedef HRESULT(WINAPI *Direct3DCreate9ExFn)(
+            _In_  UINT         SDKVersion,
+            _Out_ IDirect3D9Ex **ppD3D
+            );
+
+        if (ppD3D == NULL)
+        {
+            return  E_POINTER;
+        }
+
+        *ppD3D = NULL;
+
+        if (mDllHModule == 0)
+        {
+            return  D3DERR_NOTAVAILABLE;
+        }
+
+        Direct3DCreate9ExFn pfn = (Direct3DCreate9ExFn)GetProcAddress(mDllHModule, "Direct3DCreate9Ex");
+
+        if (pfn == NULL)
+        {
+            return ERROR_INVALID_FUNCTION;
+        }
+
+        return pfn(SDKVersion, ppD3D);
+    }
+
+    IDirect3D9 * Direct3DCreate9(UINT SDKVersion)
+    {
+        typedef IDirect3D9* (WINAPI *Direct3DCreate9Fn)(
+            _In_  UINT         SDKVersion
+            );
+        if (mDllHModule == 0)
+        {
+            return  NULL;
+        }
+
+        Direct3DCreate9Fn pfn = (Direct3DCreate9Fn)GetProcAddress(mDllHModule, "Direct3DCreate9");
+
+        if (pfn == NULL)
+        {
+            return NULL;
+        }
+
+        return pfn(SDKVersion);
+    }
+
+    bool isD3D9Available()
+    {
+        return mDllHModule != 0;
+    }
+
+    ~D3D9DllCallHelper()
+    {
+        if (mDllHModule)
+        {
+            FreeLibrary(mDllHModule);
+            mDllHModule = 0;
+        }
+    }
+private:
+    HMODULE mDllHModule;
+};
+
+mfxStatus               CreateD3DDevice(D3D9DllCallHelper& d3d9hlp,
+                                        IDirect3D9        **pD3D,
+                                        IDirect3DDevice9  **pDirect3DDevice,
+                                        const mfxU32       adapterNum,
+                                        mfxU16             width,
+                                        mfxU16             height,
+                                        mfxU32             DecId);
 
 class D3D9VideoCORE : public CommonCORE
 {
@@ -176,6 +266,8 @@ private:
     s_ptr<CmCopyWrapper, true>            m_pCmCopy;
     s_ptr<D3D9Adapter, true>              m_pAdapter;
     s_ptr<CMEnabledCoreAdapter, true>     m_pCmAdapter;
+
+    D3D9DllCallHelper m_d3d9hlp;
 };
 
 #endif
