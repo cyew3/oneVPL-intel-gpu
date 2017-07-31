@@ -123,11 +123,18 @@ private:
 
                 auto& s = *au.nalu[i]->slice;
                 if (s.NumCU != m_expected) {
-                    if (i != (au.NumUnits - 1) || s.NumCU > m_expected)
+                    if (s.NumCU > m_expected)
                     {
-                        g_tsLog << "ERROR: Slice's LCU num is bigger than expected.\n"
+                        g_tsLog << "ERROR: Slice's LCU num exceeds expected value.\n"
                             << "frame#" << m_nFrame <<": Slice's LCU num = " << (mfxU32)s.NumCU
-                            << " > " << (mfxU32)m_expected << " (expected maxium value).\n";
+                            << " > " << (mfxU32)m_expected << " (expected value).\n";
+                        return MFX_ERR_ABORTED;
+                    } else
+                    if (i != (au.NumUnits - 1))
+                    {
+                        g_tsLog << "ERROR: Slice's LCU num is not as expected and it is not the last slice.\n"
+                            << "frame#" << m_nFrame <<": Slice's LCU num = " << (mfxU32)s.NumCU
+                            << " != " << (mfxU32)m_expected << " (expected value).\n";
                         return MFX_ERR_ABORTED;
                     }
                 }
@@ -194,7 +201,10 @@ int TestSuite::RunTest(unsigned int id)
         SETPARS(&cod2, EXT_COD2);
     } else if (tc.mode & INIT) {
         mfxExtCodingOption2& cod2 = m_par;
-        cod2.NumMbPerSlice = rand() % m_numLCU;
+        if (g_tsHWtype >= MFX_HW_CNL)   // row aligned
+            cod2.NumMbPerSlice = (rand() % heightLCU) * widthLCU;
+        else
+            cod2.NumMbPerSlice = rand() % m_numLCU;
         m_expected = cod2.NumMbPerSlice;
     }
 
@@ -226,7 +236,14 @@ int TestSuite::RunTest(unsigned int id)
 
         if (tc.mode & RESET) {
             mfxExtCodingOption2& cod2 = m_par;
-            cod2.NumMbPerSlice = rand() % m_numLCU;
+            if (g_tsHWtype >= MFX_HW_CNL)   // row aligned
+                cod2.NumMbPerSlice = (rand() % heightLCU) * widthLCU;
+            else
+                cod2.NumMbPerSlice = rand() % m_numLCU;
+
+            if ((m_par.mfx.NumSlice != 0)
+                && (m_par.mfx.NumSlice != (m_numLCU + cod2.NumMbPerSlice - 1) / cod2.NumMbPerSlice))
+                g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
             if (   (m_par.mfx.NumSlice != 0)
                 && (m_par.mfx.NumSlice != (m_numLCU + cod2.NumMbPerSlice - 1) / cod2.NumMbPerSlice))
                 g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
