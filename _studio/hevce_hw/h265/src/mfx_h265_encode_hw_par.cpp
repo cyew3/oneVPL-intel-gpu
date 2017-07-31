@@ -1996,6 +1996,9 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
             changed += CheckOption(par.mfx.GopRefDist, 1, 0);
     }
 
+    changed += CheckRangeDflt(par.m_ext.CO2.IntRefQPDelta, -51, 51, 0);
+    invalid += CheckMax(par.m_ext.CO2.IntRefType, 2);
+
     if (caps.RollingIntraRefresh == 0)
     {
         invalid += CheckOption(par.m_ext.CO2.IntRefType, 0);
