@@ -8,11 +8,9 @@ Copyright(c) 2016-2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
-#include "ts_transcoder.h"
-//#include "ts_encoder.h"
+#include "ts_encoder.h"
 #include "ts_parser.h"
 #include "ts_struct.h"
-#include "ts_decoder.h"
 #include <memory>
 
 namespace vp9e_goppattern
@@ -24,24 +22,9 @@ namespace vp9e_goppattern
         INTRA_REQUEST
     };
 
-    struct tc_struct
-    {
-        mfxStatus sts;
-        mfxU32 type;
-        mfxU16 num_frames;
-        struct f_pair
-        {
-            mfxU32 ext_type;
-            const  tsStruct::Field* f;
-            mfxU32 v;
-        } set_par[MAX_NPARS];
-    };
-
     class TestSuite : tsVideoEncoder, BS_VP9_parser
     {
     public:
-        static const unsigned int n_cases;
-
         TestSuite() : tsVideoEncoder(MFX_CODEC_VP9)
         {
 
@@ -58,11 +41,38 @@ namespace vp9e_goppattern
             }
         }
 
+        template<mfxU32 fourcc>
+        int RunTest_Subtype(const unsigned int id);
+
+        struct tc_struct
+        {
+            mfxStatus sts;
+            mfxU32 type;
+            mfxU16 num_frames;
+            struct f_pair
+            {
+                mfxU32 ext_type;
+                const  tsStruct::Field* f;
+                mfxU32 v;
+            } set_par[MAX_NPARS];
+        };
+
+        int RunTest(const tc_struct& tc, unsigned int fourcc_id);
+
+        static const tc_struct test_case_nv12[];
+        static const tc_struct test_case_rext[];
+
+        static const unsigned int n_cases;
+        static const unsigned int n_cases_nv12;
+        static const unsigned int n_cases_p010;
+        static const unsigned int n_cases_ayuv;
+        static const unsigned int n_cases_y410;
+
     private:
         static const tc_struct test_case[];
     };
 
-    const tc_struct TestSuite::test_case[] =
+    const TestSuite::tc_struct TestSuite::test_case[] =
     {
         // Default case
         {/*00*/ MFX_ERR_NONE, NONE, 18, {
@@ -71,57 +81,150 @@ namespace vp9e_goppattern
                                  }
         },
 
-        // Corner-case: not enoupgh frames for a GOP
-        {/*01*/ MFX_ERR_NONE, NONE, 5, {
+        // Big async depth
+        {/*01*/ MFX_ERR_NONE, NONE, 18, {
+                                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 0 },
+                                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 6 },
+                                { MFX_PAR, &tsStruct::mfxVideoParam.AsyncDepth, 5 },
+                                 }
+        },
+
+        // BRC=CBR
+        {/*02*/ MFX_ERR_NONE, NONE, 18, {
+                                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 0 },
+                                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 6 },
+                                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
+                                 }
+        },
+
+        // Multiref is ON
+        {/*03*/ MFX_ERR_NONE, NONE, 18,{
+                                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 0 },
+                                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 6 },
+                                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 3 },
+                                 }
+        },
+
+        // Corner-case: not enoupgh frames for a full GOP
+        {/*04*/ MFX_ERR_NONE, NONE, 5, {
                                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 0 },
                                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 6 }
                                  }
         },
 
         // Corner-case: 1 frame in the end for a new GOP
-        {/*02*/ MFX_ERR_NONE, NONE, 7, {
+        {/*05*/ MFX_ERR_NONE, NONE, 7, {
                                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 0 },
                                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 6 }
                                   }
         },
 
-        // 1-frame GOP
-        {/*03*/ MFX_ERR_NONE, NONE, 3, {
+        // 1-frame GOP (only I frames)
+        {/*06*/ MFX_ERR_NONE, NONE, 3, {
                                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 0 },
                                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 1 }
                                   }
         },
 
-        // Deault GOP
-        {/*04*/ MFX_ERR_NONE, NONE, 3, {
+        // Default GOP
+        {/*07*/ MFX_ERR_NONE, NONE, 3, {
                                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 0 },
                                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 0 }
                                   }
         },
 
         // Request Intra-frame
-        {/*05*/ MFX_ERR_NONE, INTRA_REQUEST, 10, {
+        {/*08*/ MFX_ERR_NONE, INTRA_REQUEST, 10, {
                                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 0 },
                                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 5 }
                                   }
         },
 
-        // Very long GOP
-        {/*06*/ MFX_ERR_NONE, NONE, 260, {
-                                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 0 },
-                                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 257 }
-                                    }
-        }
     };
 
-    const unsigned int TestSuite::n_cases = sizeof(test_case) / sizeof(tc_struct);
+    const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
 
-    int TestSuite::RunTest(unsigned int id)
+    const TestSuite::tc_struct TestSuite::test_case_nv12[] =
+    {
+        // Very long GOP
+        {/*09*/ MFX_ERR_NONE, NONE, 260,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 0 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 257 }
+            }
+        }
+    };
+    const unsigned int TestSuite::n_cases_nv12 = sizeof(TestSuite::test_case_nv12) / sizeof(TestSuite::tc_struct) + n_cases;
+
+    const TestSuite::tc_struct TestSuite::test_case_rext[] =
+    {
+        // Very long GOP
+        {/*09*/ MFX_ERR_NONE, NONE, 240,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 0 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 237 }
+            }
+        }
+    };
+    const unsigned int TestSuite::n_cases_p010 = sizeof(TestSuite::test_case_rext) / sizeof(TestSuite::tc_struct) + n_cases;
+    const unsigned int TestSuite::n_cases_ayuv = sizeof(TestSuite::test_case_rext) / sizeof(TestSuite::tc_struct) + n_cases;
+    const unsigned int TestSuite::n_cases_y410 = sizeof(TestSuite::test_case_rext) / sizeof(TestSuite::tc_struct) + n_cases;
+
+    struct streamDesc
+    {
+        mfxU16 w;
+        mfxU16 h;
+        const char *name;
+    };
+
+    const streamDesc streams[] = {
+        { 176, 144, "YUV/salesman_176x144_449.yuv" },
+        { 176, 144, "YUV10bit420_ms/Kimono1_176x144_24_p010_shifted.yuv" },
+        { 176, 144, "YUV8bit444/Kimono1_176x144_24_ayuv.yuv" },
+        { 176, 144, "YUV10bit444/Kimono1_176x144_24_y410.yuv" },
+    };
+
+    const streamDesc& getStreamDesc(const mfxU32& id)
+    {
+        switch (id)
+        {
+        case MFX_FOURCC_NV12: return streams[0];
+        case MFX_FOURCC_P010: return streams[1];
+        case MFX_FOURCC_AYUV: return streams[2];
+        case MFX_FOURCC_Y410: return streams[3];
+        default: assert(0); return streams[0];
+        }
+    }
+
+    const TestSuite::tc_struct* getTestTable(const mfxU32& fourcc)
+    {
+        switch (fourcc)
+        {
+        case MFX_FOURCC_NV12:
+            return TestSuite::test_case_nv12;
+        case MFX_FOURCC_P010:
+        case MFX_FOURCC_AYUV:
+        case MFX_FOURCC_Y410:
+            return TestSuite::test_case_rext;
+        default:
+            assert(0); return 0;
+        }
+    }
+
+    template<mfxU32 fourcc>
+    int TestSuite::RunTest_Subtype(const unsigned int id)
+    {
+        const tc_struct* fourcc_table = getTestTable(fourcc);
+        const unsigned int real_id = (id < n_cases) ? (id) : (id - n_cases);
+        const tc_struct& tc = (real_id == id) ? test_case[real_id] : fourcc_table[real_id];
+        return RunTest(tc, fourcc);
+    }
+
+    int TestSuite::RunTest(const tc_struct& tc, unsigned int fourcc_id)
     {
         TS_START;
 
-        const tc_struct& tc = test_case[id];
-        const char* stream = g_tsStreamPool.Get("YUV/salesman_176x144_449.yuv");
+        const char* stream = g_tsStreamPool.Get(getStreamDesc(fourcc_id).name);
         g_tsStreamPool.Reg();
         tsSurfaceProcessor *reader;
 
@@ -130,27 +233,65 @@ namespace vp9e_goppattern
 
         SETPARS(m_pPar, MFX_PAR);
 
+        if (fourcc_id == MFX_FOURCC_NV12)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+        }
+        else if (fourcc_id == MFX_FOURCC_P010)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_P010;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+        }
+        else if (fourcc_id == MFX_FOURCC_AYUV)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_AYUV;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
+        }
+        else if (fourcc_id == MFX_FOURCC_Y410)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y410;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
+        }
+        else
+        {
+            g_tsLog << "WARNING: invalid fourcc_id parameter: " << fourcc_id << "\n";
+            return 0;
+        }
+
         //set default params
-        m_par.mfx.FrameInfo.Width  = m_par.mfx.FrameInfo.CropW = 176;
-        m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 144;
-        m_par.mfx.QPI = m_par.mfx.QPP = 100;
+        m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = getStreamDesc(fourcc_id).w;
+        m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = getStreamDesc(fourcc_id).h;
+        if (m_par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+        {
+            m_par.mfx.QPI = m_par.mfx.QPP = 100;
+        }
+        else if (m_par.mfx.RateControlMethod == MFX_RATECONTROL_CBR)
+        {
+            m_par.mfx.TargetKbps = 500;
+        }
 
         InitAndSetAllocator();
 
         if (0 == memcmp(m_uid->Data, MFX_PLUGINID_VP9E_HW.Data, sizeof(MFX_PLUGINID_VP9E_HW.Data)))
         {
-            if (g_tsHWtype < MFX_HW_CNL) // unsupported on platform less CNL
+            // MFX_PLUGIN_VP9E_HW unsupported on platform less CNL(NV12) and ICL(P010, AYUV, Y410)
+            if ((fourcc_id == MFX_FOURCC_NV12 && g_tsHWtype < MFX_HW_CNL)
+                || ((fourcc_id == MFX_FOURCC_P010 || fourcc_id == MFX_FOURCC_AYUV
+                    || fourcc_id == MFX_FOURCC_Y410) && g_tsHWtype < MFX_HW_ICL))
             {
                 g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
                 g_tsLog << "WARNING: Unsupported HW Platform!\n";
+                Query();
                 return 0;
             }
-        }  else {
+        }
+        else {
             g_tsLog << "WARNING: loading encoder from plugin failed!\n";
             return 0;
         }
-
-        mfxU32 async = TS_MAX(1, m_par.AsyncDepth);
 
         //set reader
         reader = new tsRawReader(stream, m_pPar->mfx.FrameInfo);
@@ -163,7 +304,9 @@ namespace vp9e_goppattern
 
         std::unique_ptr<mfxU32[]> frame_types_expected (new mfxU32[frames_count]);
         std::unique_ptr<mfxU32[]> frame_types_encoded (new mfxU32[frames_count]);
-        
+        std::unique_ptr<mfxU32[]> frame_sizes_encoded(new mfxU32[frames_count]);
+
+        //create expected sequence of I and P frames for the later check with the actual one
         mfxU32 gop_frame_count = 0;
         for(mfxU32 i = 0; i < frames_count; i++)
         {
@@ -203,10 +346,7 @@ namespace vp9e_goppattern
         {
             mfxU32 encoded = 0;
             mfxU32 submitted = 0;
-            mfxU32 async = TS_MAX(1, m_par.AsyncDepth);
             mfxSyncPoint sp;
-
-            async = TS_MIN(frames_count, async - 1);
 
             mfxU32 i = 0;
             while(encoded < frames_count)
@@ -221,80 +361,99 @@ namespace vp9e_goppattern
                 }
                 i++;
 
-                //call test function
-                if(MFX_ERR_MORE_DATA == EncodeFrameAsync())
+                //submit source frames to the encoder
+                m_pBitstream->DataLength = m_pBitstream->DataOffset = 0;
+                if (submitted < frames_count)
                 {
-                    if(!m_pSurf)
+                    g_tsLog << "INFO: Submitting frame #" << submitted << "\n";
+                    if (MFX_ERR_MORE_DATA == EncodeFrameAsync())
                     {
-                        if(submitted)
-                        {
-                            encoded += submitted;
-                            SyncOperation(sp);
-                        }
+                        submitted++;
+                        continue;
+                    }
+                    else
+                    {
+                        submitted++;
+                    }
+                }
+                else if (m_pPar->AsyncDepth > 1)
+                {
+                    g_tsLog << "INFO: Draining encoded frames\n";
+                    mfxStatus mfxRes_drain = EncodeFrameAsync(m_session, 0, NULL, m_pBitstream, m_pSyncPoint);
+                    if (MFX_ERR_MORE_DATA == mfxRes_drain)
+                    {
                         break;
                     }
-                    continue;
+                    else if (mfxRes_drain != MFX_ERR_NONE)
+                    {
+                        ADD_FAILURE() << "ERROR: Unexpected state on drain: " << mfxRes_drain << "\n";
+                        throw tsFAIL;
+                    }
                 }
 
                 g_tsStatus.check();TS_CHECK_MFX;
                 sp = m_syncpoint;
 
-                if(++submitted >= async)
-                {
-                    SyncOperation();TS_CHECK_MFX;
+                SyncOperation();TS_CHECK_MFX;
+                encoded++;
 
-                    encoded += submitted;
-                    submitted = 0;
-                    async = TS_MIN(async, (frames_count - encoded));
-                        
-                    BSErr bserror = set_buffer(m_pBitstream->Data, m_pBitstream->DataLength);
-                    EXPECT_EQ(bserror, BS_ERR_NONE) << "FAILED: Set buffer to stream parser error!";
+                BSErr bserror = set_buffer(m_pBitstream->Data, m_pBitstream->DataLength);
+                EXPECT_EQ(bserror, BS_ERR_NONE) << "ERROR: Set buffer to stream parser error!";
 
-                    bserror = parse_next_unit();
-                    EXPECT_EQ(bserror, BS_ERR_NONE) << "FAILED: Parsing encoded frame's header error!";
+                bserror = parse_next_unit();
+                EXPECT_EQ(bserror, BS_ERR_NONE) << "ERROR: Parsing encoded frame's header error!";
 
-                    void *ptr = get_header();
-                    if(ptr == nullptr) {
-                        ADD_FAILURE() << "FAILED: Obtaining headers from the encoded stream error!";
-                    }
-
-                    BS_VP9::Frame* hdr = static_cast<BS_VP9::Frame*>(ptr);
-
-                    if(hdr->FrameOrder > frames_count)
-                    {
-                        g_tsStatus.expect(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
-                        ADD_FAILURE() << "FAILED: BS_VP9::Frame->FrameOrder=" << hdr->FrameOrder << " exceeds frames_count=" << frames_count;
-                    }
-
-                    if( (hdr->uh.frame_is_intra && m_pBitstream->FrameType != MFX_FRAMETYPE_I ) || (!hdr->uh.frame_is_intra && m_pBitstream->FrameType != MFX_FRAMETYPE_P ) )
-                    {
-                        g_tsStatus.expect(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
-                        ADD_FAILURE() << "FAILED: 'm_pBitstream->FrameType' does not match to 'BS_VP9::Frame->uh.frame_is_intra'";
-                    }
-
-                    frame_types_encoded[hdr->FrameOrder] = hdr->uh.frame_is_intra ? MFX_FRAMETYPE_I : MFX_FRAMETYPE_P;
-
-                    g_tsLog << "INFO: got encoded frame #" << hdr->FrameOrder << " of size=" << m_pBitstream->DataLength << " type=" << hdr->uh.frame_is_intra << "\n";
-
-                    m_pBitstream->DataLength = m_pBitstream->DataOffset = 0;
-
-                    if(frame_types_expected[hdr->FrameOrder] != frame_types_encoded[hdr->FrameOrder])
-                    {
-                        g_tsStatus.expect(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
-                        ADD_FAILURE() << "FAILED: GOP-pattern in the encoded frame does not match to the expected: frame[" << hdr->FrameOrder << "].type=" << FrameTypeByMFXEnum(frame_types_encoded[hdr->FrameOrder]) << ", expected " << FrameTypeByMFXEnum(frame_types_expected[hdr->FrameOrder]);
-                    }
+                void *ptr = get_header();
+                if(ptr == nullptr) {
+                    ADD_FAILURE() << "ERROR: Obtaining headers from the encoded stream error!";
+                    throw tsFAIL;
                 }
+
+                BS_VP9::Frame* hdr = static_cast<BS_VP9::Frame*>(ptr);
+
+                g_tsLog << "INFO: got encoded frame #" << hdr->FrameOrder << " of size=" << m_pBitstream->DataLength << " type=" << hdr->uh.frame_is_intra << "\n";
+
+                if(hdr->FrameOrder > frames_count)
+                {
+                    ADD_FAILURE() << "ERROR: BS_VP9::Frame->FrameOrder=" << hdr->FrameOrder << " exceeds frames_count=" << frames_count;
+                    throw tsFAIL;
+                }
+
+                if( (hdr->uh.frame_is_intra && m_pBitstream->FrameType != MFX_FRAMETYPE_I ) || (!hdr->uh.frame_is_intra && m_pBitstream->FrameType != MFX_FRAMETYPE_P ) )
+                {
+                    ADD_FAILURE() << "ERROR: m_pBitstream->FrameType (" << m_pBitstream->FrameType
+                        << ") does not match to BS_VP9::Frame->uh.frame_is_intra (" << hdr->uh.frame_is_intra << ")";
+                    throw tsFAIL;
+                }
+
+                frame_types_encoded[hdr->FrameOrder] = hdr->uh.frame_is_intra ? MFX_FRAMETYPE_I : MFX_FRAMETYPE_P;
+                frame_sizes_encoded[hdr->FrameOrder] = m_pBitstream->DataLength;
+
+                if(frame_types_expected[hdr->FrameOrder] != frame_types_encoded[hdr->FrameOrder])
+                {
+                    ADD_FAILURE() << "ERROR: GOP-pattern in the encoded frame does not match to the expected: frame["
+                        << hdr->FrameOrder << "].type=" << FrameTypeByMFXEnum(frame_types_encoded[hdr->FrameOrder])
+                        << ", expected " << FrameTypeByMFXEnum(frame_types_expected[hdr->FrameOrder]);
+                    throw tsFAIL;
+                }
+
             }
         }
 
+        //print results of the encoding
+        g_tsLog << "\nTEST RESULTS:\n";
         for(mfxU32 i = 0; i < frames_count; i++)
         {
-            g_tsLog << "frame[" << i << "] type=" << FrameTypeByMFXEnum(frame_types_encoded[i]) << " expected_type=" << FrameTypeByMFXEnum(frame_types_expected[i]) << "\n";
+            g_tsLog << "frame[" << i << "] type=" << FrameTypeByMFXEnum(frame_types_encoded[i]) << " expected_type="
+                << FrameTypeByMFXEnum(frame_types_expected[i]) << " size=" << frame_sizes_encoded[i] << "\n";
         }
 
         TS_END;
         return 0;
     }
 
-    TS_REG_TEST_SUITE_CLASS(vp9e_goppattern);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9e_goppattern,              RunTest_Subtype<MFX_FOURCC_NV12>, n_cases_nv12);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9e_10b_420_p010_goppattern, RunTest_Subtype<MFX_FOURCC_P010>, n_cases_p010);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9e_8b_444_ayuv_goppattern,  RunTest_Subtype<MFX_FOURCC_AYUV>, n_cases_ayuv);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9e_10b_444_y410_goppattern, RunTest_Subtype<MFX_FOURCC_Y410>, n_cases_y410);
 };
