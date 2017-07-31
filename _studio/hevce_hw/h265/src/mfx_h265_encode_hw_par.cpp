@@ -1943,6 +1943,13 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 
     changed += CheckOption(par.mfx.NumSlice, MakeSlices(par, caps.SliceStructure), 0);
 
+#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
+    if (par.m_ext.CO2.NumMbPerSlice != 0)
+    {
+        changed += CheckOption(par.m_ext.CO2.NumMbPerSlice, par.m_slice[0].NumLCU);
+    }
+#endif
+
     if (   par.m_ext.CO2.BRefType == MFX_B_REF_PYRAMID
            && par.mfx.GopRefDist > 0
            && ( par.mfx.GopRefDist < 2
