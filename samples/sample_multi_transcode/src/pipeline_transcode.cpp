@@ -205,6 +205,7 @@ CTranscodingPipeline::CTranscodingPipeline():
     m_bStopOverlay = false;
     m_bIsInterOrJoined = false;
     m_bIsRobust = false;
+    m_nRotationAngle = 0;
 } //CTranscodingPipeline::CTranscodingPipeline()
 
 CTranscodingPipeline::~CTranscodingPipeline()
@@ -374,24 +375,8 @@ mfxStatus CTranscodingPipeline::VPPPreInit(sInputParams *pParams)
             m_bIsPlugin = true;
             sts = InitPluginMfxParams(pParams);
             MSDK_CHECK_STATUS(sts, "InitPluginMfxParams failed");
-
-            std::auto_ptr<MFXVideoVPPPlugin> pVPPPlugin(new MFXVideoVPPPlugin(*m_pmfxSession.get()));
-            MSDK_CHECK_POINTER(pVPPPlugin.get(), MFX_ERR_NULL_PTR);
-
-            sts = pVPPPlugin->LoadDLL(pParams->strVPPPluginDLLPath);
-            MSDK_CHECK_STATUS(sts, "pVPPPlugin->LoadDLL failed");
-
-            m_RotateParam.Angle = pParams->nRotationAngle;
-            sts = pVPPPlugin->SetAuxParam(&m_RotateParam, sizeof(m_RotateParam));
-            MSDK_CHECK_STATUS(sts, "pVPPPlugin->SetAuxParam failed");
-
-            if(!m_bUseOpaqueMemory)
-            {
-                sts = pVPPPlugin->SetFrameAllocator(m_pMFXAllocator);
-                MSDK_CHECK_STATUS(sts, "pVPPPlugin->SetFrameAllocator failed");
-            }
-
-            m_pmfxVPP.reset(pVPPPlugin.release());
+            sts = LoadGenericPlugin();
+            MSDK_CHECK_STATUS(sts, "LoadGenericPlugin failed");
         }
 
         if (!m_bIsPlugin && m_bIsVpp) // only VPP was requested
@@ -1045,8 +1030,7 @@ mfxStatus CTranscodingPipeline::Encode()
     bool shouldReadNextFrame=true;
     while (MFX_ERR_NONE == sts ||  MFX_ERR_MORE_DATA == sts)
     {
-        msdk_tick nBeginTime = msdk_time_get_tick(); // microseconds.
-
+        msdk_tick nBeginTime = msdk_time_get_tick(); // microseconds
         if(shouldReadNextFrame)
         {
             if(isQuit)
@@ -3194,6 +3178,8 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     m_numEncoders = 0;
     m_bUseOverlay = pParams->DecodeId == MFX_CODEC_RGB4 ? true : false;
     m_bIsRobust = pParams->bRobust;
+    m_nRotationAngle = pParams->nRotationAngle;
+    m_sGenericPluginPath = pParams->strVPPPluginDLLPath;
 
 #if _MSDK_API >= MSDK_API(1,22)
     m_ROIData = pParams->m_ROIData;
@@ -3688,6 +3674,30 @@ mfxStatus CTranscodingPipeline::SetAllocatorAndHandleIfRequired()
     return sts;
 }
 
+mfxStatus CTranscodingPipeline::LoadGenericPlugin()
+{
+    mfxStatus sts = MFX_ERR_NONE;
+
+    std::auto_ptr<MFXVideoVPPPlugin> pVPPPlugin(new MFXVideoVPPPlugin(*m_pmfxSession.get()));
+    MSDK_CHECK_POINTER(pVPPPlugin.get(), MFX_ERR_NULL_PTR);
+
+    sts = pVPPPlugin->LoadDLL((msdk_char*)m_sGenericPluginPath.c_str());
+    MSDK_CHECK_STATUS(sts, "pVPPPlugin->LoadDLL failed");
+
+    m_RotateParam.Angle = m_nRotationAngle;
+    sts = pVPPPlugin->SetAuxParam(&m_RotateParam, sizeof(m_RotateParam));
+    MSDK_CHECK_STATUS(sts, "pVPPPlugin->SetAuxParam failed");
+
+    if (!m_bUseOpaqueMemory)
+    {
+        sts = pVPPPlugin->SetFrameAllocator(m_pMFXAllocator);
+        MSDK_CHECK_STATUS(sts, "pVPPPlugin->SetFrameAllocator failed");
+    }
+
+    m_pmfxVPP.reset(pVPPPlugin.release());
+    return MFX_ERR_NONE;
+}
+
 bool CTranscodingPipeline::IsRobust()
 {
     return m_bIsRobust;
@@ -3754,7 +3764,8 @@ mfxStatus CTranscodingPipeline::Reset()
     bool isDec = m_pmfxDEC.get() ? true : false,
         isEnc = m_pmfxENC.get() ? true : false,
         isVPP = m_pmfxVPP.get() ? true : false,
-        isPreEnc = m_pmfxPreENC.get() ? true : false;
+        isPreEnc = m_pmfxPreENC.get() ? true : false,
+        isGenericPLugin = m_nRotationAngle ? true : false;
 
     // Close components being used
     if (isDec)
@@ -3827,9 +3838,26 @@ mfxStatus CTranscodingPipeline::Reset()
         MSDK_CHECK_STATUS(sts, "m_pmfxDEC->Init failed");
     }
 
+    if (isGenericPLugin)
+    {
+        sts = LoadGenericPlugin();
+        MSDK_CHECK_STATUS(sts, "LoadGenericPlugin failed");
+    }
+
     if (isVPP)
     {
-        sts = m_pmfxVPP->Init(&m_mfxVppParams);
+        if (m_bIsPlugin && m_bIsVpp)
+        {
+            mfxFrameAllocRequest request[2] = { 0 };
+            sts = m_pmfxVPP->QueryIOSurf(&m_mfxPluginParams, request, &m_mfxVppParams);
+            MSDK_CHECK_STATUS(sts, "m_pmfxVPP->QueryIOSurf failed");
+
+            sts = m_pmfxVPP->Init(&m_mfxPluginParams, &m_mfxVppParams);
+        }
+        else if (m_bIsPlugin)
+            sts = m_pmfxVPP->Init(&m_mfxPluginParams);
+        else
+            sts = m_pmfxVPP->Init(&m_mfxVppParams);
         MSDK_CHECK_STATUS(sts, "m_pmfxVPP->Init failed");
     }
 
@@ -3843,6 +3871,14 @@ mfxStatus CTranscodingPipeline::Reset()
     {
         sts = m_pmfxENC->Init(&m_mfxEncParams);
         MSDK_CHECK_STATUS(sts, "m_pmfxENC->Init failed");
+    }
+
+    // Joining sessions if required
+    if (m_bIsJoinSession && m_pParentPipeline)
+    {
+        sts = m_pParentPipeline->Join(m_pmfxSession.get());
+        MSDK_CHECK_STATUS(sts, "m_pParentPipeline->Join failed");
+        m_bIsJoinSession = true;
     }
     return sts;
 }
