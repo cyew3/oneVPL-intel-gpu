@@ -16,6 +16,8 @@
 
 #if defined (MFX_ENABLE_MPEG2_VIDEO_ENCODE)
 
+#include <umc_mutex.h>
+
 #include "mfx_mpeg2_encode_interface.h"
 #include "mfxvideo++int.h"
 #include "mfx_mpeg2_encode_utils_hw.h"
@@ -368,6 +370,7 @@ public:
 
         mfxU32  GetFreeIntTask() 
         {
+            UMC::AutomaticUMCMutex lock(m_guard);
             for (mfxU32 i = 0; i< m_nFrameTasks; i++)
             {
                 if (m_pFrameTasks[i].m_taskStatus == NOT_STARTED)
@@ -388,6 +391,8 @@ public:
 
 
     private:
+        UMC::Mutex                       m_guard;
+
         VideoCORE *                      m_pCore;
         ControllerBase*                  m_pController;
         MFXVideoENCODEMPEG2_HW_DDI*      m_pENCODE;  

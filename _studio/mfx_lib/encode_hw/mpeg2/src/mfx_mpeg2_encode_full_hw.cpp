@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -468,8 +468,10 @@ mfxStatus FullEncode::SubmitFrame(sExtTask2 *pExtTask)
 
 
         pExtTask->m_nInternalTask = nIntTask;
-        pIntTask->m_taskStatus = ENC_STARTED; 
-        
+        {
+            UMC::AutomaticUMCMutex lock(m_guard);
+            pIntTask->m_taskStatus = ENC_STARTED;
+        }
     }
 
     return MFX_ERR_NONE;
@@ -502,6 +504,7 @@ mfxStatus FullEncode::QueryFrame(sExtTask2 *pExtTask)
 
     if (sts != MFX_WRN_DEVICE_BUSY)
     {
+        UMC::AutomaticUMCMutex lock(m_guard);
         pIntTask->m_taskStatus = NOT_STARTED;
         pIntTask->m_Frames.ReleaseFrames(m_pCore);
         m_pController->FinishFrame(bs->DataLength - dataLen);
