@@ -489,52 +489,16 @@ D3D9Encoder::~D3D9Encoder()
 // this function is aimed to workaround all CAPS reporting problems in mainline driver
 void HardcodeCaps(ENCODE_CAPS_VP9& caps, mfxCoreInterface* pCore)
 {
-    mfxCoreParam corePar;
-    pCore->GetCoreParam(pCore->pthis, &corePar);
+    //mfxCoreParam corePar;
+    //pCore->GetCoreParam(pCore->pthis, &corePar);
 
     mfxPlatform platform;
     pCore->QueryPlatform(pCore->pthis, &platform);
-
-    if ((corePar.Impl & 0xF00) == MFX_IMPL_VIA_D3D11)
-    {
-        // for DX11 driver doesn't report CAPS at all. Need to hardcode them with CAPS from DX9.
-        Zero(caps);
-
-        caps.CodingLimitSet = 1;
-        caps.ForcedSegmentationSupport = 1;
-        caps.BRCReset = 1;
-        caps.AutoSegmentationSupport = 1;
-        caps.TemporalLayerRateCtrl = 1;
-        caps.DynamicScaling = 1;
-
-        caps.EncodeFunc = 1;
-        caps.EncFunc = 1;
-
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-        if (platform.CodeName >= MFX_PLATFORM_ICELAKE)
-        {
-            caps.MaxPicWidth = 7680;
-            caps.MaxPicHeight = 7680;
-        }
-        else
-        {
-            caps.MaxPicWidth = 4096;
-            caps.MaxPicHeight = 4096;
-            caps.Color420Only = 1;
-        }
-#else //PRE_SI_TARGET_PLATFORM_GEN11
-        caps.MaxPicWidth = 4096;
-        caps.MaxPicHeight = 4096;
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
-    }
+    caps;
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     if (platform.CodeName == MFX_PLATFORM_ICELAKE)
     {
-        // in addition on ICL driver incoprrectly reports CAPS related to REXTs support. Need to fix them.
-        caps.YUV444ReconSupport = 1;
-        caps.MaxEncodedBitDepth = 1;
-
         // for now driver reports in caps.NumScalablePipesMinus1 log2 of max supported number of tile columns
         // need to hardcode this caps to real number of scalable pipes supported by Gen11 LP
         // TODO: remove this once driver behavior will be fixed.

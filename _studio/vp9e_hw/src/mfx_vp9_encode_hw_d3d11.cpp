@@ -185,8 +185,8 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
 
         // mainline driver returns an error on attempt to query CAPS for VP9 encoder for DX11
         // hardcoded caps are used to workaround this issue
-        //hr = m_pVContext->DecoderExtension(m_pVDecoder, &ext);
-        //MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
+        hr = m_pVContext->DecoderExtension(m_pVDecoder, &ext);
+        MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
         HardcodeCaps(m_caps, pCore);
     }
 
