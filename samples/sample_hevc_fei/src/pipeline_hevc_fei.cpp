@@ -188,6 +188,7 @@ mfxStatus CEncodingPipeline::InitComponents()
     MSDK_CHECK_STATUS(sts, "m_pYUVSource->Init failed");
 
     mfxVideoParam param;
+    MSDK_ZERO_MEMORY(param);
 
     if (m_pFEI_Encode.get())
     {
