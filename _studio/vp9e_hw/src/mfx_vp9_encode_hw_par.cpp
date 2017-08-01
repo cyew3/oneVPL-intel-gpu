@@ -1383,7 +1383,7 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
     {
         // explicit segmentation overwrites MBBRC
         opt2.MBBRC = MFX_CODINGOPTION_OFF;
-        unsupported = true;
+        changed = true;
     }
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
