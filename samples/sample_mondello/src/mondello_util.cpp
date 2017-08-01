@@ -182,7 +182,7 @@ void MondelloDevice::MondelloInit()
 #ifdef ANDROID
     ret = camera_device_config_streams(m_device_id, &m_StreamList, &m_streams[0]);
 #else
-    ret = camera_device_config_streams(m_device_id, &m_StreamList, m_streams[0].format);
+    ret = camera_device_config_streams(m_device_id, &m_StreamList);
 #endif
     BYE_ON(ret < 0, "failed to add stream: %s\n", ERRSTR);
     m_stream_id = m_streams[0].id;
