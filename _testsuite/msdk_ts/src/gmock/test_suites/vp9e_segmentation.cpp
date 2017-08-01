@@ -371,10 +371,12 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
 
         // all routines: MBBRC with segmentation - warning and MBBRC should be switched off by Init
-        {/*21*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_QUERY | CHECK_GET_V_PARAM | CHECK_GET_V_PARAM,
+        {/*21*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM,
             {
                 { CDO2_PAR, &tsStruct::mfxExtCodingOption2.MBBRC, MFX_CODINGOPTION_ON },
-                { CDO2_PAR, &tsStruct::mfxExtCodingOption2.FixedFrameRate, 29 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 500 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.MaxKbps, 500 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 1 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.SegmentIdBlockSize, MFX_VP9_SEGMENT_ID_BLOCK_SIZE_32x32 },
             }
