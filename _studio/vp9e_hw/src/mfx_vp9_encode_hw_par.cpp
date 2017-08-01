@@ -1553,7 +1553,16 @@ mfxStatus SetDefaults(
     SetDefault(par.mfx.GopRefDist, 1);
     SetDefault(par.mfx.NumRefFrame, 1);
     SetDefault(par.mfx.BRCParamMultiplier, 1);
-    SetDefault(par.mfx.RateControlMethod, MFX_RATECONTROL_CBR);
+
+    if (par.mfx.TargetKbps && (par.mfx.TargetKbps < par.mfx.MaxKbps))
+    {
+        SetDefault(par.mfx.RateControlMethod, MFX_RATECONTROL_VBR);
+    }
+    else
+    {
+        SetDefault(par.mfx.RateControlMethod, MFX_RATECONTROL_CBR);
+    }
+
     if (IsBufferBasedBRC(par.mfx.RateControlMethod))
     {
         SetDefault(par.m_initialDelayInKb, par.m_bufferSizeInKb / 2);

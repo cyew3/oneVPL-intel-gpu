@@ -61,12 +61,13 @@ void VP9MfxVideoParam::CalculateInternalParams()
     m_targetKbps = m_maxKbps = m_bufferSizeInKb = m_initialDelayInKb = 0;
     mfxU16 mult = MFX_MAX(mfx.BRCParamMultiplier, 1);
 
-    if (IsBitrateBasedBRC(mfx.RateControlMethod))
+    //"RateControlMethod == 0" always maps to CBR or VBR depending on TargetKbps and MaxKbps
+    if (IsBitrateBasedBRC(mfx.RateControlMethod) || mfx.RateControlMethod == 0)
     {
         m_targetKbps = mult * mfx.TargetKbps;
         m_maxKbps = mult * mfx.MaxKbps;
 
-        if (IsBufferBasedBRC(mfx.RateControlMethod))
+        if (IsBufferBasedBRC(mfx.RateControlMethod) || mfx.RateControlMethod == 0)
         {
             m_bufferSizeInKb = mult * mfx.BufferSizeInKB;
             m_initialDelayInKb = mult * mfx.InitialDelayInKB;
