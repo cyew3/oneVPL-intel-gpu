@@ -560,7 +560,7 @@ mfxStatus Plugin::RemoveObsoleteParameters()
 
 mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxThreadTask *task)
 {
-    VP9_LOG("\n (VP9_LOG) Frame ?? Plugin::EncodeFrameSubmit +");
+    VP9_LOG("\n (VP9_LOG) Frame %d Plugin::EncodeFrameSubmit +", m_frameArrivalOrder);
 
     if (m_initialized == false || m_videoForParamChange.size() == 0)
     {
@@ -673,7 +673,7 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
 
     *task = (mfxThreadTask)surface;
 
-    VP9_LOG("\n (VP9_LOG) Frame %d Plugin::EncodeFrameSubmit -", pTask->m_frameOrder);
+    VP9_LOG("\n (VP9_LOG) Frame %d Plugin::EncodeFrameSubmit -", m_frameArrivalOrder);
 
     MFX_CHECK_STS(bufferingSts);
 
@@ -852,6 +852,7 @@ mfxStatus Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
         sts = m_ddi->QueryStatus(frameToGet);
         if (sts == MFX_WRN_DEVICE_BUSY)
         {
+            VP9_LOG("\n (VP9_LOG) Frame %d Plugin::QueryFrame - (MFX_WRN_DEVICE_BUSY)", frameToGet.m_frameOrder);
             return MFX_TASK_BUSY;
         }
         MFX_CHECK_STS(sts);
@@ -868,7 +869,7 @@ mfxStatus Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
             m_free.splice(m_free.end(), m_submitted, m_submitted.begin());
         }
 
-        VP9_LOG("\n (VP9_LOG) Frame %d Plugin::QueryFrame -", pTask->m_frameOrder);
+        VP9_LOG("\n (VP9_LOG) Frame %d Plugin::QueryFrame -", frameToGet.m_frameOrder);
     }
 
     return MFX_TASK_DONE;

@@ -704,7 +704,7 @@ mfxStatus D3D9Encoder::Execute(
     Task const & task,
     mfxHDL          surface)
 {
-    VP9_LOG("\n (VP9_LOG) D3D9Encoder::Execute +");
+    VP9_LOG("\n (VP9_LOG) Frame %d D3D9Encoder::Execute +", task.m_frameOrder);
 
     std::vector<ENCODE_COMPBUFFERDESC> compBufferDesc;
     compBufferDesc.resize(MAX_NUM_COMP_BUFFERS_VP9);
@@ -789,7 +789,7 @@ mfxStatus D3D9Encoder::Execute(
         return MFX_ERR_DEVICE_FAILED;
     }
 
-    VP9_LOG("\n (VP9_LOG) D3D9Encoder::Execute -");
+    VP9_LOG("\n (VP9_LOG) Frame %d D3D9Encoder::Execute -", task.m_frameOrder);
 
     return MFX_ERR_NONE;
 
@@ -799,7 +799,7 @@ mfxStatus D3D9Encoder::Execute(
 mfxStatus D3D9Encoder::QueryStatus(
     Task & task)
 {
-    VP9_LOG("\n (VP9_LOG) D3D9Encoder::QueryStatus +");
+    VP9_LOG("\n (VP9_LOG) Frame %d D3D9Encoder::QueryStatus +", task.m_frameOrder);
 
     // first check cache.
     const ENCODE_QUERY_STATUS_PARAMS* feedback = m_feedbackCached.Hit(task.m_taskIdForDriver); // TODO: fix to unique status report number
@@ -856,7 +856,7 @@ mfxStatus D3D9Encoder::QueryStatus(
         sts = MFX_ERR_DEVICE_FAILED;
     }
 
-    VP9_LOG("\n (VP9_LOG) D3D9Encoder::QueryStatus -");
+    VP9_LOG("\n (VP9_LOG) Frame %d D3D9Encoder::QueryStatus -", task.m_frameOrder);
     return sts;
 } // mfxStatus D3D9Encoder::QueryStatus(mfxU32 feedbackNumber, mfxU32& bytesWritten)
 
