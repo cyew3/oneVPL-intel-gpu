@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include <mfxvideo.h>
@@ -411,7 +411,7 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsync(mfxSession session, mfxFrameSurface1 *in,
                 task.pOwner = session->m_pVPP.get();
                 task.entryPoint = entryPoints[0];
                 task.priority = session->m_priority;
-                task.threadingPolicy = MFX_TASK_THREADING_DEDICATED;
+                task.threadingPolicy = session->m_pVPP->GetThreadingPolicy();
                 // fill dependencies
                 task.pSrc[0] = in;
                 task.pDst[0] = entryPoints[0].pParam;
@@ -428,12 +428,7 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsync(mfxSession session, mfxFrameSurface1 *in,
                 task.pOwner = session->m_pVPP.get();
                 task.entryPoint = entryPoints[1];
                 task.priority = session->m_priority;
-#if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
-                if (MFX_HW_VAAPI == session->m_pCORE->GetVAType())
-                    task.threadingPolicy = MFX_TASK_THREADING_WAIT;
-                else
-#endif
-                    task.threadingPolicy = MFX_TASK_THREADING_DEDICATED_WAIT;
+                task.threadingPolicy = session->m_pVPP->GetThreadingPolicy();
                 
                 // fill dependencies
                 task.pSrc[0] = entryPoints[0].pParam;

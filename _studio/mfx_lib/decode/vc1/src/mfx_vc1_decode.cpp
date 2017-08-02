@@ -541,7 +541,7 @@ mfxTaskThreadingPolicy MFXVideoDECODEVC1::GetThreadingPolicy(void)
 #if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
     else if (MFX_HW_VAAPI == m_pCore->GetVAType())
     {
-        return MFX_TASK_THREADING_WAIT;
+        return MFX_TASK_THREADING_INTRA;
     }
 #endif
     else

@@ -1423,7 +1423,7 @@ mfxStatus VideoDECODEVP8_HW::GetFrame(MediaData* /*in*/, FrameData** /*out*/)
 
 mfxTaskThreadingPolicy VideoDECODEVP8_HW::GetThreadingPolicy()
 {
-    return MFX_TASK_THREADING_DEDICATED_WAIT;
+    return MFX_TASK_THREADING_DEDICATED;
 }
 
 mfxStatus VideoDECODEVP8_HW::GetVideoParam(mfxVideoParam *pPar)
