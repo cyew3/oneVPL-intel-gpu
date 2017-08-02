@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #if (defined(LINUX32) || defined(LINUX64))
 #include <stdlib.h>
 #include <unistd.h>
@@ -192,6 +202,11 @@ int TestSuite::RunTest(unsigned int id)
 
     SETPARS(&m_init_par, INIT_PAR);
 
+    // regardless of test mode ext buffer mfxExtThreadsParam is attached to mfxInitParam
+    // Windows doesn't support external treading so doesn't allow any ext buffers to be attached
+    if (g_tsOSFamily == MFX_OS_FAMILY_WINDOWS)
+        expect = MFX_ERR_UNSUPPORTED;
+
     if (tc.mode == EXT_BUF)
     {
         tp.NumThread = 1;
@@ -203,8 +218,6 @@ int TestSuite::RunTest(unsigned int id)
             tp.NumThread = std::thread::hardware_concurrency();
         }
 
-        if (g_tsOSFamily == MFX_OS_FAMILY_WINDOWS)
-            expect = MFX_ERR_UNSUPPORTED;
 #if (defined(LINUX32) || defined(LINUX64))
         if (((tp.SchedulingType == TS_SCHED_FIFO) || (tp.SchedulingType == TS_SCHED_RR)) &&
             geteuid()) { // this last condition checks whether test was started under root
