@@ -6024,11 +6024,11 @@ void MfxHwH264Encode::SetDefaults(
         extSps->picHeightInMapUnitsMinus1       = (fi.Height / 16 / (2 - extSps->frameMbsOnlyFlag)) - 1;
         extSps->direct8x8InferenceFlag          = 1;
 
-        mfxU16 cropUnitX = CROP_UNIT_X[fi.ChromaFormat];
         //Fix cropping for ARGB and YUY2 formats, need to redesign in case real 444 or 422 support in AVC.
         mfxU16 croma_format = fi.ChromaFormat;
         if(croma_format == MFX_CHROMAFORMAT_YUV444 || croma_format == MFX_CHROMAFORMAT_YUV422)
             croma_format = MFX_CHROMAFORMAT_YUV420;
+        mfxU16 cropUnitX = CROP_UNIT_X[croma_format];
         mfxU16 cropUnitY = CROP_UNIT_Y[croma_format] * (2 - extSps->frameMbsOnlyFlag);
 
         extSps->frameCropLeftOffset   = (fi.CropX / cropUnitX);
