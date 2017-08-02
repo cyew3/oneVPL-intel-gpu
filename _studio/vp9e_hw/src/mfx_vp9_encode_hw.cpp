@@ -51,6 +51,8 @@ Plugin::Plugin(bool CreateByDispatcher)
     m_prevSegment.Header.BufferId = MFX_EXTBUFF_VP9_SEGMENTATION;
     m_prevSegment.Header.BufferSz = sizeof(mfxExtVP9Segmentation);
     ZeroExtBuffer(m_prevSegment);
+
+    Zero(m_prevFrameParam);
 }
 
 mfxStatus Plugin::PluginInit(mfxCoreInterface * pCore)

@@ -61,6 +61,10 @@ D3D11Encoder::D3D11Encoder()
     , m_width(0)
     , m_height(0)
 {
+    m_pContext.Release();
+    m_pVDecoder.Release();
+    m_pVDevice.Release();
+    m_pVContext.Release();
 } // D3D11Encoder::D3D11Encoder(VideoCORE* core)
 
 
