@@ -55,7 +55,7 @@ void MFEVAAPIEncoder::Release()
         delete this;
 }
 
-mfxStatus MFEVAAPIEncoder::Create(mfxVideoParam const & par, VADisplay vaDisplay)
+mfxStatus MFEVAAPIEncoder::Create(mfxExtMultiFrameParam  const & par, VADisplay vaDisplay)
 {
     assert(vaDisplay);
 
@@ -75,8 +75,9 @@ mfxStatus MFEVAAPIEncoder::Create(mfxVideoParam const & par, VADisplay vaDisplay
     }
 
     m_framesToCombine = 0;
-    m_maxFramesToCombine = par.mfx.m_numPipelineStreams ?
-                        par.mfx.m_numPipelineStreams : MAX_FRAMES_TO_COMBINE;
+
+    m_maxFramesToCombine = par.MaxNumFrames ?
+            par.MaxNumFrames : MAX_FRAMES_TO_COMBINE;
 
     m_streams_pool.clear();
     m_toSubmit.clear();

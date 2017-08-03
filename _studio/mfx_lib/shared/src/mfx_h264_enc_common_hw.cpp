@@ -1476,6 +1476,9 @@ bool MfxHwH264Encode::IsRunTimeExtBufferIdSupported(MfxVideoParam const & video,
 #if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
         || id == MFX_EXTBUFF_GPU_HANG
 #endif
+#if defined (MFX_ENABLE_MFE)
+        || id == MFX_EXTBUFF_MULTI_FRAME_CONTROL
+#endif
 #if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
         || (isFeiENCPAK &&
              (  id == MFX_EXTBUFF_FEI_SLICE
@@ -1588,6 +1591,11 @@ bool MfxHwH264Encode::IsVideoParamExtBufferIdSupported(mfxU32 id)
         || id == MFX_EXTBUFF_FEI_SLICE
         || id == MFX_EXTBUFF_FEI_SPS
         || id == MFX_EXTBUFF_FEI_PPS
+#endif
+
+#if defined (MFX_ENABLE_MFE)
+        || id == MFX_EXTBUFF_MULTI_FRAME_PARAM
+        || id == MFX_EXTBUFF_MULTI_FRAME_CONTROL
 #endif
         );
 }
@@ -4621,6 +4629,21 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         unsupported = true;
     }
 
+#ifdef MFX_ENABLE_MFE
+        //ToDo: move MFE check to separate function
+        mfxExtMultiFrameParam & mfeParam = GetExtBufferRef(par);
+        if (mfeParam.MFMode > MFX_MF_MANUAL){
+            mfeParam.MFMode = MFX_MF_DEFAULT;
+            changed = true;
+        }
+        // Replace 3 with function to detect maximum allowed number of frames
+        if (mfeParam.MaxNumFrames > 3){
+            mfeParam.MaxNumFrames =
+              (mfeParam.MFMode >= MF_MF_AUTO) ? 3: 1;
+            changed = true;
+        }
+#endif
+
     return unsupported
         ? MFX_ERR_UNSUPPORTED
         : (changed || warning)
@@ -6481,7 +6504,7 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
     }
 #else
     mfxExtDirtyRect const * extDirtyRect = GetExtBuffer(*ctrl);
-    
+
     if (extDirtyRect)
     {
         checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
@@ -6523,6 +6546,28 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
     }
 
 #endif
+
+#if defined(MFX_ENABLE_MFE)
+
+    mfxExtMultiFrameParam const & mfeParam = GetExtBufferRef(video);
+    mfxExtMultiFrameControl * mfeCtrl = GetExtBuffer(*ctrl);
+
+    if(mfeCtrl && mfeParam->MFMode >= MFX_MF_AUTO)
+    {
+        if(mfeParam->MFMode = MFX_MF_MANUAL && mfeCtrl->timeout)
+        {
+            checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+            mfeCtrl->timeout = 0;
+        }
+
+        if(mfeParam->MFMode = MFX_MF_AUTO && mfeCtrl->flush)
+        {
+            checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+            mfeCtrl->flush = 0;
+        }
+    }
+#endif
+
     return checkSts;
 }
 
@@ -7425,6 +7470,10 @@ MfxVideoParam::MfxVideoParam()
     , m_extBRC()
 #endif
     , calcParam()
+#if defined(MFX_ENABLE_MFE)
+    , m_MfeParam()
+    , m_MfeControl()
+#endif
 {
     memset(m_extParam, 0, sizeof(m_extParam));
     memset(m_extFeiSlice, 0, sizeof(m_extFeiSlice));
@@ -7716,6 +7765,12 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
 #if defined(__MFXBRC_H__)
     CONSTRUCT_EXT_BUFFER(mfxExtBRC,                  m_extBRC);
 #endif
+
+#if defined(MFX_ENABLE_MFE)
+    CONSTRUCT_EXT_BUFFER(mfxExtMultiFrameParam, m_MfeGeneralOptions);
+    CONSTRUCT_EXT_BUFFER(mfxExtMultiFrameControl, m_MfeFrameOptions);
+#endif
+
 
 #undef CONSTRUCT_EXT_BUFFER
 #undef CONSTRUCT_EXT_BUFFER_EX

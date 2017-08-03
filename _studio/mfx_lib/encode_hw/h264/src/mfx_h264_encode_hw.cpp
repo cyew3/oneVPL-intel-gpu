@@ -310,6 +310,7 @@ mfxStatus ImplementationAvc::Query(
     if (queryMode == 0)
         return MFX_ERR_UNDEFINED_BEHAVIOR; // input parameters are contradictory and don't allow to choose Query mode
 
+
     if (queryMode == 1) // see MSDK spec for details related to Query mode 1
     {
         Zero(out->mfx);
@@ -400,6 +401,21 @@ mfxStatus ImplementationAvc::Query(
                 return MFX_ERR_UNSUPPORTED;
             }
         }
+
+#ifdef MFX_ENABLE_MFE
+        if(mfxExtMultiFrameParam* ExtMultiFrameParam = GetExtBuffer(*out))
+        {
+            ExtMultiFrameParam->MaxNumFrames = 1;
+            ExtMultiFrameParam->MFMode = 1;
+        }
+
+        if(mfxExtMultiFrameControl* ExtMultiFrameControl = GetExtBuffer(*out))
+        {
+            ExtMultiFrameControl->Timeout = 1;
+            ExtMultiFrameControl->Flush = 1;
+        }
+#endif
+
     }
     else if (queryMode == 2)  // see MSDK spec for details related to Query mode 2
     {
@@ -2943,9 +2959,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                 task->m_AUStartsFromSlice[f] = 1;
             else
                 task->m_AUStartsFromSlice[f] = 0;
-#ifdef MFX_ENABLE_MFE
-            task->m_mfeTimeToWait = 12;
-#endif
+
             mfxStatus sts = m_ddi->Execute(task->m_handleRaw.first, *task, task->m_fid[f], m_sei);
             MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
 

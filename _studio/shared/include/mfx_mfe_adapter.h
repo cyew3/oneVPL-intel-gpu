@@ -40,7 +40,8 @@ public:
 
     virtual
         ~MFEVAAPIEncoder();
-    mfxStatus Create(mfxVideoParam const & par, VADisplay vaDisplay);
+    mfxStatus Create(mfxExtMultiFrameParam const & par, VADisplay vaDisplay);
+
 
     mfxStatus Join(VAContextID ctx);
     mfxStatus Disjoin(VAContextID ctx);

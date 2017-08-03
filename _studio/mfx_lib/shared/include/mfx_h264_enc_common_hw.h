@@ -246,6 +246,11 @@ namespace MfxHwH264Encode
     BIND_EXTBUF_TYPE_TO_ID (mfxExtBRC,        MFX_EXTBUFF_BRC          );
 #endif
 
+#ifdef MFX_ENABLE_MFE
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtMultiFrameControl,     MFX_EXTBUFF_MULTI_FRAME_CONTROL     );
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtMultiFrameParam,       MFX_EXTBUFF_MULTI_FRAME_PARAM       );
+#endif
+
 #undef BIND_EXTBUF_TYPE_TO_ID
 
     template <class T> inline void InitExtBufHeader(T & extBuf)
@@ -597,7 +602,7 @@ namespace MfxHwH264Encode
         void ConstructMvcSeqDesc(mfxExtMVCSeqDesc const & desc);
 
     private:
-        mfxExtBuffer *              m_extParam[30];
+        mfxExtBuffer *              m_extParam[32];
         // external, documented
         mfxExtCodingOption          m_extOpt;
         mfxExtCodingOption2         m_extOpt2;
@@ -639,6 +644,11 @@ namespace MfxHwH264Encode
 
 #if defined(__MFXBRC_H__)
         mfxExtBRC                   m_extBRC;
+#endif
+
+#if defined (MFX_ENABLE_MFE)
+        mfxExtMultiFrameParam    m_MfeParam;
+        mfxExtMultiFrameControl  m_MfeControl;
 #endif
         std::vector<mfxMVCViewDependency> m_storageView;
         std::vector<mfxMVCOperationPoint> m_storageOp;

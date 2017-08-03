@@ -1218,6 +1218,7 @@ VAAPIEncoder::VAAPIEncoder()
 #endif
 {
     m_videoParam.mfx.CodecProfile = MFX_PROFILE_AVC_HIGH; // QueryHwCaps will use this value
+
 } // VAAPIEncoder::VAAPIEncoder(VideoCORE* core)
 
 
@@ -1641,11 +1642,14 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
 #ifdef MFX_ENABLE_MFE
-    if (par.mfx.m_numPipelineStreams > 1) {
+    const mfxExtMultiFrameParam & mfeParam = GetExtBufferRef(par);
+
+    if (mfeParam.MaxNumFrames > 1) {
         m_mfe = CreatePlatformMFEEncoder(m_core);
         if (0 == m_mfe)
             return MFX_ERR_DEVICE_FAILED;
-        m_mfe->Create(par, m_vaDisplay);
+
+        m_mfe->Create(mfeParam, m_vaDisplay);
         m_mfe->Join(m_vaContextEncode);
     }
 #endif
@@ -2965,8 +2969,15 @@ mfxStatus VAAPIEncoder::Execute(
         }
     }
 #ifdef MFX_ENABLE_MFE
-    if (m_mfe)
-        m_mfe->Submit(m_vaContextEncode, task.m_mfeTimeToWait);
+    if (m_mfe){
+        const mfxExtMultiFrameControl * mfeCtrl = GetExtBuffer(task.m_ctrl);
+        mfxU32 timeout = 12;//to be replaced by adaptive calculated
+        //if control set, either use timeout from it, or submit immediately in case of flush.
+        if(mfeCtrl)
+            timeout = mfeCtrl.Timeout;
+
+        m_mfe->Submit(m_vaContextEncode, timeout);
+    }
 #endif
 
     //------------------------------------------------------------------
