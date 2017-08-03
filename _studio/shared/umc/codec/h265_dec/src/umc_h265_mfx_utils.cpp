@@ -245,7 +245,7 @@ bool CheckChromaFormat(mfxU16 profile, mfxU16 format)
 #if !defined(MFX_VA)
         { MFX_CHROMAFORMAT_YUV400, MFX_CHROMAFORMAT_YUV422 }, //MFX_PROFILE_HEVC_REXT
 #elif defined(PRE_SI_TARGET_PLATFORM_GEN11)
-        { MFX_CHROMAFORMAT_YUV400, MFX_CHROMAFORMAT_YUV444 }, //MFX_PROFILE_HEVC_REXT
+        { MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV444 }, //MFX_PROFILE_HEVC_REXT
 #else
         { MFX_CHROMAFORMAT_YUV444 + 1, MFX_CHROMAFORMAT_YUV444 + 1 }, //MFX_PROFILE_HEVC_REXT - unsupported
 #endif
@@ -254,8 +254,7 @@ bool CheckChromaFormat(mfxU16 profile, mfxU16 format)
     return
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
         profile == MFX_PROFILE_HEVC_SCC ?
-            (format == MFX_CHROMAFORMAT_YUV400 ||
-             format == MFX_CHROMAFORMAT_YUV420 ||
+            (format == MFX_CHROMAFORMAT_YUV420 ||
              format == MFX_CHROMAFORMAT_YUV444)
         :
 #endif
@@ -343,12 +342,12 @@ mfxU32 CalculateFourcc(mfxU16 codecProfile, mfxFrameInfo const* frameInfo)
         { MFX_FOURCC_NV16, MFX_FOURCC_P210,               0, 0 }, //422
         {               0,               0,               0, 0 }, //444
 #elif defined(PRE_SI_TARGET_PLATFORM_GEN12)
-        { MFX_FOURCC_NV12, MFX_FOURCC_P010, MFX_FOURCC_P016, 0 }, //400
+        {               0,               0,               0, 0 }, //400
         { MFX_FOURCC_NV12, MFX_FOURCC_P010, MFX_FOURCC_P016, 0 }, //420
         { MFX_FOURCC_YUY2, MFX_FOURCC_Y210, MFX_FOURCC_Y216, 0 }, //422
         { MFX_FOURCC_AYUV, MFX_FOURCC_Y410, MFX_FOURCC_Y416, 0 }  //444
 #elif defined(PRE_SI_TARGET_PLATFORM_GEN11)
-        { MFX_FOURCC_NV12, MFX_FOURCC_P010,               0, 0 }, //400
+        {               0,               0,               0, 0 }, //400
         { MFX_FOURCC_NV12, MFX_FOURCC_P010,               0, 0 }, //420
         { MFX_FOURCC_YUY2, MFX_FOURCC_Y210,               0, 0 }, //422
         { MFX_FOURCC_AYUV, MFX_FOURCC_Y410,               0, 0 }  //444
