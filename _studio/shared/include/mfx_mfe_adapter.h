@@ -13,6 +13,7 @@
 
 #if defined(MFX_VA_LINUX) && defined(MFX_ENABLE_MFE)
 #include <va/va.h>
+#include <va/va_private.h>
 #include <vector>
 #include <list>
 #include "vm_mutex.h"
@@ -93,7 +94,14 @@ private:
     // currently up-to-to 3 frames worth combining
     static const mfxU32 MAX_FRAMES_TO_COMBINE = 3;
 
-
+    // symbol is pointed by  VPG_EXT_VA_CREATE_MFECONTEXT
+    vaExtCreateMfeContext vaCreateMFEContext;
+    // symbol is pointed by  VPG_EXT_VA_ADD_CONTEXT
+    vaExtAddContext vaAddContext;
+    // symbol is pointed by  VPG_EXT_VA_RELEASE_CONTEXT
+    vaExtReleaseContext vaReleaseContext;
+    // symbol is pointed by  VPG_EXT_VA_MFE_SUBMIT
+    vaExMfeSubmit vaMFESubmit;
 };
 #endif // MFX_VA_LINUX && MFX_ENABLE_MFE
 

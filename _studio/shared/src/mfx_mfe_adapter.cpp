@@ -13,6 +13,8 @@
 #if defined(MFX_VA_LINUX) && defined(MFX_ENABLE_MFE)
 
 #include "mfx_mfe_adapter.h"
+#include <va/va_backend.h>
+#include <dlfcn.h>
 #include "vm_interlocked.h"
 #include <assert.h>
 #include <iterator>
@@ -20,6 +22,9 @@
 #ifndef MFX_CHECK_WITH_ASSERT
 #define MFX_CHECK_WITH_ASSERT(EXPR, ERR) { assert(EXPR); MFX_CHECK(EXPR, ERR); }
 #endif
+
+#define CTX(dpy) (((VADisplayContextP)dpy)->pDriverContext)
+
 
 MFEVAAPIEncoder::MFEVAAPIEncoder() :
   m_refCounter(1)
@@ -29,6 +34,10 @@ MFEVAAPIEncoder::MFEVAAPIEncoder() :
 , m_maxFramesToCombine(0)
 , m_framesCollected(0)
 , m_mfe_vmtick_msec_frequency(vm_time_get_frequency()/1000)
+, vaCreateMFEContext(NULL)
+, vaAddContext(NULL)
+, vaReleaseContext(NULL)
+, vaMFESubmit(NULL)
 {
     vm_cond_set_invalid(&m_mfe_wait);
     vm_mutex_set_invalid(&m_mfe_guard);
@@ -82,9 +91,27 @@ mfxStatus MFEVAAPIEncoder::Create(mfxExtMultiFrameParam  const & par, VADisplay 
     m_streams_pool.clear();
     m_toSubmit.clear();
 
-    VAStatus vaSts = vaCreateMFEContext(m_vaDisplay, &m_mfe_context);
-    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-    return MFX_ERR_NONE;
+    VADriverContextP ctx = CTX(vaDisplay);
+    void* handle = ctx->handle;
+
+    if (handle)
+    {
+        vaCreateMFEContext = (vaExtCreateMfeContext)dlsym(handle, VPG_EXT_VA_CREATE_MFECONTEXT);
+
+        vaAddContext = (vaExtAddContext)dlsym(handle, VPG_EXT_VA_ADD_CONTEXT);
+
+        vaReleaseContext = (vaExtReleaseContext)dlsym(handle, VPG_EXT_VA_RELEASE_CONTEXT);
+
+        vaMFESubmit = (vaExMfeSubmit)dlsym(handle, VPG_EXT_VA_MFE_SUBMIT);
+
+        VAStatus vaSts = vaCreateMFEContext(m_vaDisplay, &m_mfe_context);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+        return MFX_ERR_NONE;
+    }
+    else
+    {
+        return MFX_ERR_DEVICE_FAILED;
+    }
 }
 
 mfxStatus MFEVAAPIEncoder::Join(VAContextID ctx)
@@ -112,12 +139,18 @@ mfxStatus MFEVAAPIEncoder::Disjoin(VAContextID ctx)
 
 mfxStatus MFEVAAPIEncoder::Destroy()
 {
-    VAStatus vaSts = vaDestroyContext(m_vaDisplay, m_mfe_context);
+    VAStatus vaSts = vaDestroyContext(m_vaDisplay, VAContextID(m_mfe_context));
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     m_mfe_context = VA_INVALID_ID;
     vm_mutex_destroy(&m_mfe_guard);
     vm_cond_destroy(&m_mfe_wait);
     m_streams_pool.clear();
+
+    vaCreateMFEContext = NULL;
+    vaAddContext = NULL;
+    vaReleaseContext = NULL;
+    vaMFESubmit = NULL;
+
     return MFX_ERR_NONE;
 }
 
