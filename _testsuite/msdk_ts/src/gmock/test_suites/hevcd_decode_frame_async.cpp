@@ -265,7 +265,21 @@ char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOUR
 char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_Y416>)
 { return "conformance/hevc/12bit/444format/GENERAL_12b_444_RExt_Sony_1.bit"; }
 
-template <unsigned fourcc>
+template <unsigned fourcc, unsigned profile>
+char const* query_stream(unsigned int id, std::integral_constant<unsigned, fourcc>, std::integral_constant<unsigned, profile>)
+{ return query_stream(id, std::integral_constant<unsigned, fourcc>{}); }
+
+/* SCC */
+char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_NV12>, std::integral_constant<unsigned, MFX_PROFILE_HEVC_SCC>)
+{ return "conformance/hevc/scc/scc-main/020_main_palette_all_lf.hevc"; }
+char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_P010>, std::integral_constant<unsigned, MFX_PROFILE_HEVC_SCC>)
+{ return "conformance/hevc/scc/scc-main10/020_main10_palette_all_lf.hevc"; }
+char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_AYUV>, std::integral_constant<unsigned, MFX_PROFILE_HEVC_SCC>)
+{ return "conformance/hevc/scc/scc-main444/020_main444_palette_all_lf.hevc"; }
+char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_Y410>, std::integral_constant<unsigned, MFX_PROFILE_HEVC_SCC>)
+{ return "conformance/hevc/scc/scc-main444_10/020_main444_10_palette_all_lf.hevc"; }
+
+template <unsigned fourcc, unsigned profile = MFX_PROFILE_UNKNOWN>
 struct TestSuite
     : public DecodeSuite
 {
@@ -273,7 +287,7 @@ struct TestSuite
     int RunTest(unsigned int id)
     {
         const char* sname =
-            g_tsStreamPool.Get(query_stream(id, std::integral_constant<unsigned, fourcc>()));
+            g_tsStreamPool.Get(query_stream(id, std::integral_constant<unsigned, fourcc>(), std::integral_constant<unsigned, profile>{}));
         g_tsStreamPool.Reg();
 
         DecodeSuite suite;
@@ -292,5 +306,10 @@ TS_REG_TEST_SUITE(hevc10d_444_decode_frame_async, TestSuite<MFX_FOURCC_Y410>::Ru
 TS_REG_TEST_SUITE(hevc12d_420_p016_decode_frame_async, TestSuite<MFX_FOURCC_P016>::RunTest, TestSuite<MFX_FOURCC_P016>::n_cases);
 TS_REG_TEST_SUITE(hevc12d_422_y216_decode_frame_async, TestSuite<MFX_FOURCC_Y216>::RunTest, TestSuite<MFX_FOURCC_Y216>::n_cases);
 TS_REG_TEST_SUITE(hevc12d_444_y416_decode_frame_async, TestSuite<MFX_FOURCC_Y416>::RunTest, TestSuite<MFX_FOURCC_Y416>::n_cases);
+
+TS_REG_TEST_SUITE(hevcd_420_nv12_scc_decode_frame_async,   (TestSuite<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_SCC>::RunTest), (TestSuite<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_SCC>::n_cases));
+TS_REG_TEST_SUITE(hevcd_444_ayuv_scc_decode_frame_async,   (TestSuite<MFX_FOURCC_AYUV, MFX_PROFILE_HEVC_SCC>::RunTest), (TestSuite<MFX_FOURCC_AYUV, MFX_PROFILE_HEVC_SCC>::n_cases));
+TS_REG_TEST_SUITE(hevc10d_420_p010_scc_decode_frame_async, (TestSuite<MFX_FOURCC_P010, MFX_PROFILE_HEVC_SCC>::RunTest), (TestSuite<MFX_FOURCC_P010, MFX_PROFILE_HEVC_SCC>::n_cases));
+TS_REG_TEST_SUITE(hevc10d_444_y410_scc_decode_frame_async, (TestSuite<MFX_FOURCC_Y410, MFX_PROFILE_HEVC_SCC>::RunTest), (TestSuite<MFX_FOURCC_Y410, MFX_PROFILE_HEVC_SCC>::n_cases));
 
 }
