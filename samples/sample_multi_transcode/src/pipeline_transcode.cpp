@@ -78,6 +78,10 @@ void sInputParams::Reset()
     m_hwdev = NULL;
     DenoiseLevel=-1;
     DetailLevel=-1;
+#ifdef ENABLE_FF
+    MFEMode = MFX_MF_DEFAULT;
+    mfeTimeout = 0;
+#endif
 }
 
 CTranscodingPipeline::CTranscodingPipeline():
@@ -159,6 +163,17 @@ CTranscodingPipeline::CTranscodingPipeline():
     MSDK_ZERO_MEMORY(m_ExtBRC);
     m_ExtBRC.Header.BufferId = MFX_EXTBUFF_BRC;
     m_ExtBRC.Header.BufferSz = sizeof(m_ExtBRC);
+#endif
+
+#ifdef ENABLE_FF
+    MSDK_ZERO_MEMORY(m_ExtMFEParam);
+    MSDK_ZERO_MEMORY(m_ExtMFEControl);
+
+    m_ExtMFEControl.Header.BufferId = MFX_EXTBUFF_MULTI_FRAME_CONTROL;
+    m_ExtMFEControl.Header.BufferSz = sizeof(mfxExtMultiFrameControl);
+
+    m_ExtMFEParam.Header.BufferId = MFX_EXTBUFF_MULTI_FRAME_PARAM;
+    m_ExtMFEParam.Header.BufferSz = sizeof(mfxExtMultiFrameParam);
 #endif
 
 #if _MSDK_API >= MSDK_API(1,22)
@@ -1524,6 +1539,12 @@ void CTranscodingPipeline::SetEncCtrlRT(ExtendedSurface& extSurface, mfxEncodeCt
                 m_extBuffPtrStorage[keyId].push_back((mfxExtBuffer *)&m_ROIData[m_nSubmittedFramesNum]);
         }
 
+#ifdef ENABLE_FF
+        m_extBuffPtrStorage[keyId].push_back((mfxExtBuffer *)&(m_ExtMFEParam));
+        m_extBuffPtrStorage[keyId].push_back((mfxExtBuffer *)&(m_ExtMFEControl));
+
+#endif
+
         // Replace the buffers pointer to pre-allocated storage
         pCtrl->NumExtParam = (mfxU16)m_extBuffPtrStorage[keyId].size();
         pCtrl->ExtParam = &(m_extBuffPtrStorage[keyId][0]);
@@ -2166,6 +2187,16 @@ mfxStatus CTranscodingPipeline::InitEncMfxParams(sInputParams *pInParams)
     m_mfxEncParams.mfx.CodecId                 = pInParams->EncodeId;
     m_mfxEncParams.mfx.TargetUsage             = pInParams->nTargetUsage; // trade-off between quality and speed
     m_mfxEncParams.AsyncDepth                  = m_AsyncDepth;
+
+#ifdef ENABLE_FF
+    m_ExtMFEParam.MaxNumFrames = pInParams->numMFEFrames;
+    m_ExtMFEParam.MFMode = pInParams->MFMode;
+    m_ExtMFEControl.Timeout = pInParams->mfeTimeout;
+
+    m_EncExtParams.push_back((mfxExtBuffer*)&m_ExtMFEParam);
+    m_EncExtParams.push_back((mfxExtBuffer*)&m_ExtMFEControl);
+
+#endif
 
     if (m_pParentPipeline && m_pParentPipeline->m_pmfxPreENC.get())
     {

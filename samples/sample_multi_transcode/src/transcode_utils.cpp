@@ -129,6 +129,17 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("                      -hw - platform-specific on default display adapter (default)\n"));
     msdk_printf(MSDK_STRING("                      -hw_d3d11 - platform-specific via d3d11\n"));
     msdk_printf(MSDK_STRING("                      -sw - software\n"));
+#ifdef ENABLE_FF
+    msdk_printf(MSDK_STRING("  -mfe_frames <N> maximum number of frames to be combined in multi-frame encode pipeline"))
+    msdk_printf(MSDK_STRING("               0 - default for platform will be used\n"));
+    msdk_printf(MSDK_STRING("  -mfe_mode 0|1|2|3 multi-frame encode operation mode - should be the same for all sessions\n"));
+    msdk_printf(MSDK_STRING("            0, MFE operates as DEFAULT mode, decided by SDK if MFE enabled\n"));
+    msdk_printf(MSDK_STRING("            1, MFE is disabled\n"));
+    msdk_printf(MSDK_STRING("            2, MFE operates as AUTO mode\n"));
+    msdk_printf(MSDK_STRING("            3, MFE operates as MANUAL mode\n"));
+
+    msdk_printf(MSDK_STRING("  -mfe_timeout <N> multi-frame encode timeout in milliseconds - set per sessions control\n"));
+#endif
     msdk_printf(MSDK_STRING("  -robust       Recover from gpu hang errors as the come\n"));
     msdk_printf(MSDK_STRING("  -async        Depth of asynchronous pipeline. default value 1\n"));
     msdk_printf(MSDK_STRING("  -join         Join session with other session(s), by default sessions are not joined\n"));
@@ -1389,6 +1400,36 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
                 msdk_opt_read(MSDK_CPU_ROTATE_PLUGIN, InputParams.strVPPPluginDLLPath);
             }
         }
+#ifdef ENABLE_FF
+        else if(0 == msdk_strcmp(argv[i], MSDK_STRING("-mfe_frames")))
+        {
+            VAL_CHECK(i+1 == argc, i, argv[i]);
+            i++;
+            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.numMFEFrames))
+            {
+                PrintError(MSDK_STRING("-mfe_frames %s num frames is invalid"), argv[i]);
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }else if(0 == msdk_strcmp(argv[i], MSDK_STRING("-mfe_mode")))
+        {
+            VAL_CHECK(i+1 == argc, i, argv[i]);
+            i++;
+            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.MFMode))
+            {
+                PrintError(MSDK_STRING("-mfe_mode %s is invalid"), argv[i]);
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }else if(0 == msdk_strcmp(argv[i], MSDK_STRING("-mfe_timeout")))
+        {
+            VAL_CHECK(i+1 == argc, i, argv[i]);
+            i++;
+            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.mfeTimeout))
+            {
+                PrintError(MSDK_STRING("-mfe_timeout %s is invalid"), argv[i]);
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+#endif
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-timeout")))
         {
             VAL_CHECK(i+1 == argc, i, argv[i]);

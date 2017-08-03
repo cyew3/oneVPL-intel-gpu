@@ -240,6 +240,12 @@ namespace TranscodingSample
 
         mfxU16 nExtBRC;
 
+#ifdef ENABLE_FF
+        mfxU16 numMFEFrames;
+        mfxU16 MFMode;
+        mfxU32 mfeTimeout;
+#endif
+
 #if defined(LIBVA_WAYLAND_SUPPORT)
         mfxU16 nRenderWinX;
         mfxU16 nRenderWinY;
@@ -653,6 +659,13 @@ namespace TranscodingSample
 
 #ifdef ENABLE_FF
         mfxExtBRC                m_ExtBRC;
+#endif
+
+#ifdef ENABLE_FF
+        // MFE mode and number of frames
+        mfxExtMultiFrameParam    m_ExtMFEParam;
+        // here we pass general timeout per session.
+        mfxExtMultiFrameControl  m_ExtMFEControl;
 #endif
 
         // for opaque memory

@@ -557,6 +557,66 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
 
     mfxU16 minAsyncDepth = 0;
     bool bUseExternalAllocator = false;
+
+#ifdef ENABLE_FF
+    bool allMFEModesEqual=true;
+    bool allMFEFramesEqual=true;
+    bool allMFESessionsJoined = true;
+    mfxU16 usedMFEMaxFrames = 0;
+    mfxU16 usedMFEMode = 0;
+
+    mfxU32 refi =  m_InputParamsArray.size();
+    for (mfxU32 i = 0; i < m_InputParamsArray.size(); i++)
+    {
+        // loop over all sessions and check mfe-specific params
+        // for mfe is required to have sessions joined, HW impl
+        if(m_InputParamsArray[i].numMFEFrames > 1)
+        {
+            usedNumFrames = m_InputParamsArray[i].numMFEFrames;
+            for (mfxU32 j = 0; j < m_InputParamsArray.size(); j++)
+            {
+                if(Source == m_InputParamsArray[i].eMode &&
+                   m_InputParamsArray[j].numMFEFrames != usedNumFrames)
+                {
+                    m_InputParamsArray[j].numMFEFrames = usedNumFrames;
+                    allMFEFramesEqual = false;
+                    m_InputParamsArray[i].MFMode = m_InputParamsArray[i].MFMode < MFX_MF_AUTO
+                      ? MFX_MF_AUTO : m_InputParamsArray[i].MFMode;
+                }
+                if(m_InputParamsArray[j].bIsJoin == false)
+                {
+                    allMFESessionsJoined = false;
+                    m_InputParamsArray[j].bIsJoin = true;
+                }
+            }
+        }
+        if(m_InputParamsArray[i].MFMode >= MFX_MF_AUTO)
+        {
+            usedMFEMode = m_InputParamsArray[i].MFMode;
+            for (mfxU32 j = 0; j < m_InputParamsArray.size(); j++)
+            {
+                if(Source == m_InputParamsArray[i].eMode &&
+                   m_InputParamsArray[j].MFMode != usedMFEMode)
+                {
+                    m_InputParamsArray[j].MFMode = usedMFEMode;
+                    allMFEModesEqual = false;
+                }
+                if(m_InputParamsArray[j].bIsJoin == false)
+                {
+                    allMFESessionsJoined = false;
+                    m_InputParamsArray[j].bIsJoin = true;
+                }
+            }
+        }
+    }
+    if(!allMFEFramesEqual)
+        msdk_printf(MSDK_STRING("WARNING: All sessions for MFE should have the same number of MFE frames!\n used ammount of frame for MFE: %d\n",  (int)usedNumFrames));
+    if(!allMFEModesEqual)
+        msdk_printf(MSDK_STRING("WARNING: All sessions for MFE should have the same mode!\n, used mode: %d\n",  (int)usedMFEMode));
+    if(!allMFESessionsJoined)
+        msdk_printf(MSDK_STRING("WARNING: Sessions for MFE should be joined! All sessions forced to be joined\n"));
+#endif
+
     for (mfxU32 i = 0; i < m_InputParamsArray.size(); i++)
     {
         if (!m_InputParamsArray[i].bUseOpaqueMemory &&
