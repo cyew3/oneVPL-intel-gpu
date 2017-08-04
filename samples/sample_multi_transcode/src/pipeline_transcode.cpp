@@ -3180,6 +3180,8 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     m_bIsRobust = pParams->bRobust;
     m_nRotationAngle = pParams->nRotationAngle;
     m_sGenericPluginPath = pParams->strVPPPluginDLLPath;
+    m_decoderPluginParams = pParams->decoderPluginParams;
+    m_encoderPluginParams = pParams->encoderPluginParams;
 
 #if _MSDK_API >= MSDK_API(1,22)
     m_ROIData = pParams->m_ROIData;
@@ -3765,7 +3767,10 @@ mfxStatus CTranscodingPipeline::Reset()
         isEnc = m_pmfxENC.get() ? true : false,
         isVPP = m_pmfxVPP.get() ? true : false,
         isPreEnc = m_pmfxPreENC.get() ? true : false,
-        isGenericPLugin = m_nRotationAngle ? true : false;
+        isGenericPLugin = m_nRotationAngle ? true : false,
+        isDecoderPlugin = m_pUserDecoderPlugin.get() ? true : false,
+        isEncoderPlugin = m_pUserEncoderPlugin.get() ? true : false,
+        isPreEncPlugin = m_pUserEncPlugin.get() ? true : false;
 
     // Close components being used
     if (isDec)
@@ -3790,6 +3795,18 @@ mfxStatus CTranscodingPipeline::Reset()
     {
         m_pmfxENC->Close();
         m_pmfxENC.reset();
+    }
+
+    if (isDecoderPlugin)
+    {
+        m_pUserDecoderPlugin.reset();
+        m_pUserDecoderModule.reset();
+    }
+
+    if (isEncoderPlugin)
+    {
+        m_pUserEncoderPlugin.reset();
+        m_pUserEncoderModule.reset();
     }
     m_pmfxSession->Close();
     m_pmfxSession.reset();
@@ -3819,6 +3836,62 @@ mfxStatus CTranscodingPipeline::Reset()
     // Release output bitstram pools
     m_BSPool.clear();
     m_pBSStore->ReleaseAll();
+
+    // Load external decoder plugin
+    if (isDecoderPlugin)
+    {
+        if (m_decoderPluginParams.type == MFX_PLUGINLOAD_TYPE_FILE && msdk_strnlen(m_decoderPluginParams.strPluginPath, sizeof(m_decoderPluginParams.strPluginPath)))
+        {
+            m_pUserDecoderModule.reset(new MFXVideoUSER(*m_pmfxSession.get()));
+            m_pUserDecoderPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_DECODE, *m_pmfxSession.get(), m_decoderPluginParams.pluginGuid, 1, m_decoderPluginParams.strPluginPath, (mfxU32)msdk_strnlen(m_decoderPluginParams.strPluginPath, sizeof(m_decoderPluginParams.strPluginPath))));
+            if (m_pUserDecoderPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
+        }
+        else
+        {
+            if (AreGuidsEqual(m_decoderPluginParams.pluginGuid, MSDK_PLUGINGUID_NULL))
+            {
+                m_decoderPluginParams.pluginGuid = msdkGetPluginUID(m_initPar.Implementation, MSDK_VDECODE, m_mfxDecParams.mfx.CodecId);
+            }
+            if (!AreGuidsEqual(m_decoderPluginParams.pluginGuid, MSDK_PLUGINGUID_NULL))
+            {
+                m_pUserDecoderPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_DECODE, *m_pmfxSession.get(), m_decoderPluginParams.pluginGuid, 1));
+                if (m_pUserDecoderPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
+            }
+        }
+        MSDK_CHECK_STATUS(sts, "LoadPlugin failed");
+    }
+
+    // Load external encoder plugin
+    if (isEncoderPlugin)
+    {
+        if (m_encoderPluginParams.type == MFX_PLUGINLOAD_TYPE_FILE && msdk_strnlen(m_encoderPluginParams.strPluginPath, sizeof(m_encoderPluginParams.strPluginPath)))
+        {
+            m_pUserEncoderModule.reset(new MFXVideoUSER(*m_pmfxSession.get()));
+            m_pUserEncoderPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, *m_pmfxSession.get(), m_encoderPluginParams.pluginGuid, 1, m_encoderPluginParams.strPluginPath, (mfxU32)msdk_strnlen(m_encoderPluginParams.strPluginPath, sizeof(m_encoderPluginParams.strPluginPath))));
+            if (m_pUserEncoderPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
+        }
+        else
+        {
+            if (AreGuidsEqual(m_encoderPluginParams.pluginGuid, MSDK_PLUGINGUID_NULL))
+            {
+                m_decoderPluginParams.pluginGuid = msdkGetPluginUID(m_initPar.Implementation, MSDK_VENCODE, m_mfxEncParams.mfx.CodecId);
+            }
+            if (!AreGuidsEqual(m_encoderPluginParams.pluginGuid, MSDK_PLUGINGUID_NULL))
+            {
+                m_pUserEncoderPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, *m_pmfxSession.get(), m_encoderPluginParams.pluginGuid, 1));
+                if (m_pUserEncoderPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
+            }
+        }
+        MSDK_CHECK_STATUS(sts, "LoadPlugin failed");
+    }
+
+    // Load external pre-enc plugin
+    if (isPreEncPlugin)
+    {
+        m_pUserEncPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, *m_pmfxSession.get(), MFX_PLUGINID_H264LA_HW, 1));
+        if (m_pUserEncPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
+        MSDK_CHECK_STATUS(sts, "LoadPlugin failed");
+    }
 
     sts = SetAllocatorAndHandleIfRequired();
     MSDK_CHECK_STATUS(sts, "SetAllocatorAndHandleIfRequired failed");

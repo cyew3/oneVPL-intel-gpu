@@ -615,6 +615,9 @@ namespace TranscodingSample
 
         bool                           m_bStopOverlay;
 
+        sPluginParams                  m_decoderPluginParams;
+        sPluginParams                  m_encoderPluginParams;
+
         mfxVideoParam                  m_mfxDecParams;
         mfxVideoParam                  m_mfxEncParams;
         mfxVideoParam                  m_mfxVppParams;
