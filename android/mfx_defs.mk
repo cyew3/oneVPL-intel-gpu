@@ -46,6 +46,10 @@ MFX_CFLAGS += \
 # LibVA support.
 MFX_CFLAGS_LIBVA := -DLIBVA_SUPPORT -DLIBVA_ANDROID_SUPPORT
 
+ifneq ($(filter $(MFX_ANDROID_VERSION), MFX_O),)
+  MFX_CFLAGS_LIBVA += -DANDROID_O
+endif
+
 # Setting usual paths to include files
 MFX_C_INCLUDES := \
   $(LOCAL_PATH)/include \
