@@ -284,10 +284,10 @@ mfxStatus D3D9Encoder::Execute(DdiTask &task, mfxHDL surface)
     MFX_CHECK_WITH_ASSERT(m_pAuxDevice, MFX_ERR_NOT_INITIALIZED);
     ExecuteBuffers *pExecuteBuffers = task.m_pDdiData;
 
-    mfxU32 compBufferCount = 2 + 
-        (pExecuteBuffers->m_pps.NumQuantTable ? 1 : 0) + 
-        (pExecuteBuffers->m_pps.NumCodingTable ? 1 : 0) + 
-        (pExecuteBuffers->m_pps.NumScan ? 1 : 0) + 
+    mfxU32 compBufferCount = 2 +
+        (pExecuteBuffers->m_pps.NumQuantTable ? 1 : 0) +
+        (pExecuteBuffers->m_pps.NumCodingTable ? 1 : 0) +
+        (pExecuteBuffers->m_pps.NumScan ? 1 : 0) +
         (pExecuteBuffers->m_payload_list.size() ? 1 : 0);
     std::vector<ENCODE_COMPBUFFERDESC>  encodeCompBufferDesc;
     encodeCompBufferDesc.resize(compBufferCount);
@@ -387,7 +387,7 @@ mfxStatus D3D9Encoder::QueryStatus(DdiTask & task)
 
     // After SNB once reported ENCODE_OK for a certain feedbackNumber
     // it will keep reporting ENCODE_NOTAVAILABLE for same feedbackNumber.
-    // As we won't get all bitstreams we need to cache all other statuses. 
+    // As we won't get all bitstreams we need to cache all other statuses.
 
     // first check cache.
     const ENCODE_QUERY_STATUS_PARAMS* feedback = m_feedbackCached.Hit(task.m_statusReportNumber);

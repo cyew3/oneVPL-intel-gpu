@@ -596,7 +596,7 @@ JERRCODE CJPEGEncoder::SetParams(
       else
         jerr = AttachQuantTable(id[0], i);
     }
-    
+
     if(JPEG_OK != jerr)
       return jerr;
 
@@ -842,7 +842,7 @@ Ipp16u CJPEGEncoder::GetNumQuantTables()
 
     return numTables;
 } // CJPEGEncoder::GetNumQuantTables()
-  
+
 
 JERRCODE CJPEGEncoder::FillQuantTable(int numTable, Ipp16u* pTable)
 {
@@ -925,7 +925,7 @@ JERRCODE CJPEGEncoder::SetACTable(int numTable, Ipp8u* pBits, Ipp8u* pValues)
     jerr = m_actbl[numTable].Create();
     if(JPEG_OK != jerr)
         return jerr;
-    
+
     jerr = InitHuffmanTable(pBits, pValues, numTable, AC);
     if(JPEG_OK != jerr)
         return jerr;
@@ -943,7 +943,7 @@ JERRCODE CJPEGEncoder::SetDCTable(int numTable, Ipp8u* pBits, Ipp8u* pValues)
     jerr = m_dctbl[numTable].Create();
     if(JPEG_OK != jerr)
         return jerr;
-    
+
     jerr = InitHuffmanTable(pBits, pValues, numTable, DC);
     if(JPEG_OK != jerr)
         return jerr;
@@ -984,19 +984,19 @@ JERRCODE CJPEGEncoder::SetDefaultACTable()
     m_externalHuffmanTable = false;
 
     JERRCODE jerr = JPEG_OK;
-    
+
     jerr = m_actbl[0].Create();
     if(JPEG_OK != jerr)
       return jerr;
-    
+
     jerr = InitHuffmanTable((Ipp8u*)DefaultLuminanceACBits, (Ipp8u*)DefaultLuminanceACValues, 0, AC);
     if(JPEG_OK != jerr)
       return jerr;
-    
+
     jerr = m_actbl[1].Create();
     if(JPEG_OK != jerr)
       return jerr;
-    
+
     jerr = InitHuffmanTable((Ipp8u*)DefaultChrominanceACBits, (Ipp8u*)DefaultChrominanceACValues, 1, AC);
     if(JPEG_OK != jerr)
       return jerr;
@@ -1006,23 +1006,23 @@ JERRCODE CJPEGEncoder::SetDefaultACTable()
 
 
 JERRCODE CJPEGEncoder::SetDefaultDCTable()
-{    
+{
     m_externalHuffmanTable = false;
 
     JERRCODE jerr = JPEG_OK;
-    
+
     jerr = m_dctbl[0].Create();
     if(JPEG_OK != jerr)
       return jerr;
-    
+
     jerr = InitHuffmanTable((Ipp8u*)DefaultLuminanceDCBits, (Ipp8u*)DefaultLuminanceDCValues, 0, DC);
     if(JPEG_OK != jerr)
       return jerr;
-    
+
     jerr = m_dctbl[1].Create();
     if(JPEG_OK != jerr)
       return jerr;
-    
+
     jerr = InitHuffmanTable((Ipp8u*)DefaultChrominanceDCBits, (Ipp8u*)DefaultChrominanceDCValues, 1, DC);
     if(JPEG_OK != jerr)
       return jerr;
@@ -1044,7 +1044,7 @@ bool CJPEGEncoder::IsACTableInited()
 
 
 bool CJPEGEncoder::IsDCTableInited()
-{    
+{
     return m_dctbl[0].IsValid();
 } // CJPEGEncoder::IsDCTableInited()
 
@@ -1449,7 +1449,7 @@ JERRCODE CJPEGEncoder::WriteSOF0(void)
 
   for(int i = 0; i < m_jpeg_ncomp; i++)
   {
-    jerr = m_BitStreamOut.WriteByte(i);
+    jerr = m_BitStreamOut.WriteByte(i+1);
     if(JPEG_OK != jerr)
       return jerr;
 
@@ -1505,7 +1505,7 @@ JERRCODE CJPEGEncoder::WriteSOF1(void)
 
   for(int i = 0; i < m_jpeg_ncomp; i++)
   {
-    jerr = m_BitStreamOut.WriteByte(i);
+    jerr = m_BitStreamOut.WriteByte(i+1);
     if(JPEG_OK != jerr)
       return jerr;
 
@@ -1564,7 +1564,7 @@ JERRCODE CJPEGEncoder::WriteSOF2(void)
 
   for(int i = 0; i < m_jpeg_ncomp; i++)
   {
-    jerr = m_BitStreamOut.WriteByte(i);
+    jerr = m_BitStreamOut.WriteByte(i+1);
     if(JPEG_OK != jerr)
       return jerr;
 
@@ -1625,7 +1625,7 @@ JERRCODE CJPEGEncoder::WriteSOF3(void)
 
   for(int i = 0; i < m_jpeg_ncomp; i++)
   {
-    jerr = m_BitStreamOut.WriteByte(i);
+    jerr = m_BitStreamOut.WriteByte(i+1);
     if(JPEG_OK != jerr)
       return jerr;
 
@@ -1907,7 +1907,7 @@ JERRCODE CJPEGEncoder::WriteSOS(void)
 
   for(int i = m_curr_scan.first_comp; i < m_curr_scan.first_comp + m_curr_scan.ncomps; i++)
   {
-    jerr = m_BitStreamOut.WriteByte(i);
+    jerr = m_BitStreamOut.WriteByte(i+1);
     if(JPEG_OK != jerr)
       return jerr;
 
@@ -2782,7 +2782,7 @@ JERRCODE CJPEGEncoder::ColorConvert(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU/
     convert = 1;
 
     dstStep = m_ccomp[0].m_cc_step;
-    
+
     if(m_src.precision <= 8)
     {
       pDst8u[0] = m_ccomp[0].GetCCBufferPtr(0/*thread_id*/);
@@ -4656,7 +4656,7 @@ JERRCODE CJPEGEncoder::EncodeScanBaseline(void)
         omp_unset_lock(&locks[curr_row]);
 #endif
       }
-      
+
       // increment interators
       m_mcu_encoded += (maxMCU - colMCU);
       m_mcu_to_encode -= (maxMCU - colMCU);

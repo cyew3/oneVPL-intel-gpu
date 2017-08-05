@@ -41,11 +41,11 @@ namespace
     {
 #ifdef DEBUG
         printf("\rDecoderExtension: context=%p decoder=%p function=%d\n", context, decoder, param.Function); fflush(stdout);
-#endif 
+#endif
         HRESULT hr = context->DecoderExtension(decoder, &param);
 #ifdef DEBUG
         printf("\rDecoderExtension: hresult=%d\n", hr); fflush(stdout);
-#endif 
+#endif
         return hr;
     }
 };
@@ -82,8 +82,8 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
 
     mfxStatus sts = Init(
         DXVA2_Intel_Encode_JPEG,
-        pD3d11->GetD3D11VideoDevice(isTemporal), 
-        pD3d11->GetD3D11VideoContext(isTemporal), 
+        pD3d11->GetD3D11VideoDevice(isTemporal),
+        pD3d11->GetD3D11VideoContext(isTemporal),
         width,
         height);
 
@@ -107,7 +107,7 @@ mfxStatus D3D11Encoder::QueryBitstreamBufferInfo(mfxFrameAllocRequest& request)
         ENCODE_FORMAT_COUNT encodeFormatCount;
         encodeFormatCount.CompressedBufferInfoCount = 0;
         encodeFormatCount.UncompressedFormatCount   = 0;
-        
+
         //HRESULT hr = m_auxDevice->Execute(ENCODE_FORMAT_COUNT_ID, guid, encodeFormatCount);
         D3D11_VIDEO_DECODER_EXTENSION decoderExtParam;
         decoderExtParam.Function = ENCODE_FORMAT_COUNT_ID;
@@ -205,7 +205,7 @@ mfxStatus D3D11Encoder::RegisterBitstreamBuffer(mfxFrameAllocResponse& response)
     m_bsQueue.resize(response.NumFrameActual);
 
     for (mfxU32 i = 0; i < response.NumFrameActual; i++)
-    {   
+    {
         mfxHDLPair handlePair;
 
         mfxStatus sts = m_core->GetFrameHDL(response.mids[i], (mfxHDL *)&handlePair);
@@ -239,13 +239,13 @@ mfxStatus D3D11Encoder::Execute(DdiTask &task, mfxHDL surface)
     resourceList[RES_ID_BITSTREAM]   = static_cast<ID3D11Resource*>(m_bsQueue[task.m_idxBS].first);
     resourceList[RES_ID_ORIGINAL]    = pInputD3D11Res;
 
-    // [1]. buffers in system memory (configuration buffers)    
+    // [1]. buffers in system memory (configuration buffers)
     //const mfxU32 NUM_COMP_BUFFER = 16;
     //ENCODE_COMPBUFFERDESC encodeCompBufferDesc[NUM_COMP_BUFFER];
-    mfxU32 compBufferCount = 2 + 
-        (pExecuteBuffers->m_pps.NumQuantTable ? 1 : 0) + 
-        (pExecuteBuffers->m_pps.NumCodingTable ? 1 : 0) + 
-        (pExecuteBuffers->m_pps.NumScan ? 1 : 0) + 
+    mfxU32 compBufferCount = 2 +
+        (pExecuteBuffers->m_pps.NumQuantTable ? 1 : 0) +
+        (pExecuteBuffers->m_pps.NumCodingTable ? 1 : 0) +
+        (pExecuteBuffers->m_pps.NumScan ? 1 : 0) +
         (pExecuteBuffers->m_payload_list.size() ? 1 : 0);
     std::vector<ENCODE_COMPBUFFERDESC>  encodeCompBufferDesc;
     encodeCompBufferDesc.resize(compBufferCount);
@@ -323,7 +323,7 @@ mfxStatus D3D11Encoder::Execute(DdiTask &task, mfxHDL surface)
         encodeCompBufferDesc[bufCnt].pCompBuffer = (void*)pExecuteBuffers->m_payload_base.data;
         bufCnt++;
     }
-    
+
     // [2.4] send to driver
     D3D11_VIDEO_DECODER_EXTENSION decoderExtParams = { 0 };
     decoderExtParams.Function              = ENCODE_ENC_PAK_ID;
@@ -346,7 +346,7 @@ mfxStatus D3D11Encoder::QueryStatus(DdiTask & task)
 
     // After SNB once reported ENCODE_OK for a certain feedbackNumber
     // it will keep reporting ENCODE_NOTAVAILABLE for same feedbackNumber.
-    // As we won't get all bitstreams we need to cache all other statuses. 
+    // As we won't get all bitstreams we need to cache all other statuses.
 
     // first check cache.
     const ENCODE_QUERY_STATUS_PARAMS* feedback = m_feedbackCached.Hit(task.m_statusReportNumber);
@@ -444,7 +444,7 @@ mfxStatus D3D11Encoder::Destroy()
 
 mfxStatus D3D11Encoder::Init(
     GUID guid,
-    ID3D11VideoDevice *pVideoDevice, 
+    ID3D11VideoDevice *pVideoDevice,
     ID3D11VideoContext *pVideoContext,
     mfxU32      width,
     mfxU32      height)
@@ -493,13 +493,13 @@ mfxStatus D3D11Encoder::Init(
     CHECK_HRES(hRes);
 
     //for (int i = 0; i < count; i++)
-    //{               
+    //{
     //    hRes = m_pVideoDevice->GetVideoDecoderConfig(&video_desc, i, &video_config);
     //    CHECK_HRES(hRes);
 
         // mfxSts = CheckDXVAConfig(video_desc->Guid, pConfig));
         // MFX_CHECK_STS( mfxSts );
-    //}    
+    //}
 
     // [2] Calling other D3D11 Video Decoder API (as for normal proc)
 
@@ -518,7 +518,7 @@ mfxStatus D3D11Encoder::Init(
     CHECK_HRES(hRes);
 
 #if 1
-    // [3] Query the encoding device capabilities 
+    // [3] Query the encoding device capabilities
     D3D11_VIDEO_DECODER_EXTENSION decoderExtParam;
     memset(&m_caps, 0, sizeof(m_caps));
     decoderExtParam.Function = 0x110; //ENCODE_QUERY_ACCEL_CAPS_ID = 0x110;
