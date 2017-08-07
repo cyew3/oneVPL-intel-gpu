@@ -444,6 +444,11 @@ MFXFileWriteRender::MFXFileWriteRender(const FileWriterRenderInputParams &params
     , m_yv12Surface()
     , m_copier(0)
 {
+#if defined(_WIN32) || defined(_WIN64)
+    if (m_nFourCC == DXGI_FORMAT_AYUV)
+        m_nFourCC = MFX_FOURCC_AYUV;
+#endif
+
     //m_fDest = NULL;
     m_nTimesClosed = 0;
     m_bCreateNewFileOnClose = false;
