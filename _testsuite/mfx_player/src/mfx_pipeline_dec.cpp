@@ -284,8 +284,11 @@ mfxStatus MFXDecPipeline::BuildMFXPart()
         memcpy(&params, &m_components[eREN].m_params, sizeof(params));
 
         std::auto_ptr<MFXExtBufferVector> m_ExtBuffers(new MFXExtBufferVector(m_components[eREN].m_params));
-        params.ExtParam = &(m_ExtBuffers.get()->operator [](0));
-        params.NumExtParam = (mfxU16)m_ExtBuffers.get()->size();
+        if (!m_ExtBuffers->empty())
+        {
+            params.ExtParam = &(m_ExtBuffers.get()->operator [](0));
+            params.NumExtParam = (mfxU16)m_ExtBuffers.get()->size();
+        }
 
         MFX_CHECK_STS_CUSTOM_HANDLER(m_pRender->Query(&params, &m_components[eREN].m_params), {
             PipelineTrace((VM_STRING("%s"), MFXStructuresPair<mfxVideoParam>(params, m_components[eREN].m_params).Serialize().c_str()));
