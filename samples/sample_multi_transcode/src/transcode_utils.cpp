@@ -163,6 +163,8 @@ void TranscodingSample::PrintHelp()
     MOD_SMT_PRINT_HELP;
     msdk_printf(MSDK_STRING("  -b <Kbits per second>\n"));
     msdk_printf(MSDK_STRING("                Encoded bit rate, valid for H.264, MPEG2 and MVC encoders\n"));
+    msdk_printf(MSDK_STRING("  -bm           Bitrate multiplier. Use it when required bitrate isn't fit into 16-bit\n"));
+    msdk_printf(MSDK_STRING("                Affects following parameters: InitialDelayInKB, BufferSizeInKB, TargetKbps, MaxKbps\n"));
     msdk_printf(MSDK_STRING("  -f <frames per second>\n"));
     msdk_printf(MSDK_STRING("                Video frame rate for the FRC and deinterlace options\n"));
     msdk_printf(MSDK_STRING("  -fe <frames per second>\n"));
@@ -951,6 +953,16 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
             if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.nBitRate))
             {
                 PrintError(MSDK_STRING("BitRate \"%s\" is invalid"), argv[i]);
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-bm")))
+        {
+            VAL_CHECK(i + 1 == argc, i, argv[i]);
+            i++;
+            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.nBitRateMultiplier))
+            {
+                PrintError(MSDK_STRING("Bitrate multiplier \"%s\" is invalid"), argv[i]);
                 return MFX_ERR_UNSUPPORTED;
             }
         }
