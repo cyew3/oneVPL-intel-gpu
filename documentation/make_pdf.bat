@@ -18,6 +18,11 @@ set _Name=mediasdkusr-man
 set _Title=SDK Developer Reference Extensions for User-Defined Functions
 call :CONVERT
 
+set _PDF_BODY_OPT=--zoom 1.3
+set _Name=mediasdkhevcfei-man
+set _Title=Reference Manual for HEVC FEI
+call :CONVERT
+
 set _PDF_BODY_OPT=
 
 set _Name=mediasdkjpeg-man
