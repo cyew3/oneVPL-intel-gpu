@@ -98,7 +98,7 @@ template<class T, class U> inline void Copy(T & dst, U const & src)
 }
 
 /**********************************************************************************/
-
+// TODO: rework implementation for wrapper class
 union MfxExtBuffer
 {
     mfxExtBuffer header;
@@ -176,11 +176,21 @@ struct MfxParamsWrapper: public T
         MSDK_ZERO_MEMORY(ext_buf);
         MSDK_ZERO_MEMORY(ext_buf_idxmap);
 
-        this->ExtParam = ext_buf_ptrs;
+        this->ResetExtParams();
         for (size_t i = 0; i < N; ++i)
         {
             ext_buf_ptrs[i] = (mfxExtBuffer*)&ext_buf[i];
         }
+
+        if (!src->NumExtParam) return *this;
+
+        for (size_t i = 0; i < src->NumExtParam; ++i)
+        {
+            mfxI32 idx = this->enableExtParam(src->ExtParam[i]->BufferId);
+            if (idx < 0) throw std::exception();
+            MSDK_MEMCPY(ext_buf_ptrs[idx], src->ExtParam[i], src->ExtParam[i]->BufferSz);
+        }
+
         return *this;
     }
     void ResetExtParams()
