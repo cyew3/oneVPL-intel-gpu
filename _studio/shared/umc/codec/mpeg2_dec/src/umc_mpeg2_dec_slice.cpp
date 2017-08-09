@@ -243,16 +243,21 @@ static IppStatus mp2_HuffmanTableInitAlloc(Ipp32s *tbl, Ipp32s bits_table0, mp2_
 }
 
 MPEG2VideoDecoderSW::MPEG2VideoDecoderSW()
-    : m_Spec()
-    , vlcMBAdressing()
+    : vlcMBAdressing()
     , vlcMBType()
     , vlcMBPattern()
     , vlcMotionVector()
 {
+    m_Spec_raw_memory_ptr = malloc(sizeof(DecodeSpec) + 15);
+    m_Spec = new((void*)(((Ipp64u)m_Spec_raw_memory_ptr + 15) >> 4 << 4)) DecodeSpec();
 }
 
 MPEG2VideoDecoderSW::~MPEG2VideoDecoderSW()
 {
+    // Here should have been an explicit m_Spec destructor call, but due to its triviality, it's not here
+    free(m_Spec_raw_memory_ptr);
+    m_Spec_raw_memory_ptr = NULL;
+    m_Spec = NULL;
 }
 
 bool MPEG2VideoDecoderSW::InitTables()
@@ -611,9 +616,9 @@ void MPEG2VideoDecoderSW::quant_matrix_extension(int task_num)
             q_matrix[0][i] = (Ipp8u)code;
         }
         for (i = 0; i < m_nNumberOfThreads; i++) {
-          ippiDecodeIntraInit_MPEG2(q_matrix[0], IPPVC_LEAVE_SCAN_UNCHANGED, PictureHeader[task_num].intra_vlc_format, PictureHeader[task_num].curr_intra_dc_multi, &m_Spec.decodeIntraSpec);
+          ippiDecodeIntraInit_MPEG2(q_matrix[0], IPPVC_LEAVE_SCAN_UNCHANGED, PictureHeader[task_num].intra_vlc_format, PictureHeader[task_num].curr_intra_dc_multi, &m_Spec->decodeIntraSpec);
         }
-        m_Spec.flag = IPPVC_LEAVE_SCAN_UNCHANGED;
+        m_Spec->flag = IPPVC_LEAVE_SCAN_UNCHANGED;
     }
 
     GET_1BIT(video->bs,load_non_intra_quantizer_matrix)
@@ -624,9 +629,9 @@ void MPEG2VideoDecoderSW::quant_matrix_extension(int task_num)
             q_matrix[1][i] = (Ipp8u)code;
         }
         for (i = 0; i < m_nNumberOfThreads; i++) {
-          ippiDecodeInterInit_MPEG2(q_matrix[1], IPPVC_LEAVE_SCAN_UNCHANGED, &m_Spec.decodeInterSpec);
+          ippiDecodeInterInit_MPEG2(q_matrix[1], IPPVC_LEAVE_SCAN_UNCHANGED, &m_Spec->decodeInterSpec);
         }
-        m_Spec.flag = IPPVC_LEAVE_SCAN_UNCHANGED;
+        m_Spec->flag = IPPVC_LEAVE_SCAN_UNCHANGED;
     }
 
     GET_1BIT(video->bs,load_chroma_intra_quantizer_matrix);
@@ -637,14 +642,14 @@ void MPEG2VideoDecoderSW::quant_matrix_extension(int task_num)
             q_matrix[2][i] = (Ipp8u)code;
         }
         for (i = 0; i < m_nNumberOfThreads; i++) {
-            ippiDecodeIntraInit_MPEG2(q_matrix[2], IPPVC_LEAVE_SCAN_UNCHANGED, PictureHeader[task_num].intra_vlc_format, PictureHeader[task_num].curr_intra_dc_multi, &m_Spec.decodeIntraSpecChroma);
+            ippiDecodeIntraInit_MPEG2(q_matrix[2], IPPVC_LEAVE_SCAN_UNCHANGED, PictureHeader[task_num].intra_vlc_format, PictureHeader[task_num].curr_intra_dc_multi, &m_Spec->decodeIntraSpecChroma);
         }
-        m_Spec.flag = IPPVC_LEAVE_SCAN_UNCHANGED;
+        m_Spec->flag = IPPVC_LEAVE_SCAN_UNCHANGED;
     }
     else
     {
         for (i = 0; i < m_nNumberOfThreads; i++) {
-            m_Spec.decodeIntraSpecChroma = m_Spec.decodeIntraSpec;
+            m_Spec->decodeIntraSpecChroma = m_Spec->decodeIntraSpec;
         }
     }
 
@@ -656,14 +661,14 @@ void MPEG2VideoDecoderSW::quant_matrix_extension(int task_num)
             q_matrix[2][i] = (Ipp8u)code;
         }
         for (i = 0; i < m_nNumberOfThreads; i++) {
-            ippiDecodeInterInit_MPEG2(q_matrix[3], IPPVC_LEAVE_SCAN_UNCHANGED, &m_Spec.decodeInterSpecChroma);
+            ippiDecodeInterInit_MPEG2(q_matrix[3], IPPVC_LEAVE_SCAN_UNCHANGED, &m_Spec->decodeInterSpecChroma);
         }
-        m_Spec.flag = IPPVC_LEAVE_SCAN_UNCHANGED;
+        m_Spec->flag = IPPVC_LEAVE_SCAN_UNCHANGED;
     }
     else
     {
         for (i = 0; i < m_nNumberOfThreads; i++) {
-            m_Spec.decodeInterSpecChroma = m_Spec.decodeInterSpec;
+            m_Spec->decodeInterSpecChroma = m_Spec->decodeInterSpec;
         }
     }
 
@@ -676,8 +681,8 @@ Status MPEG2VideoDecoderSW::ProcessRestFrame(int task_num)
         int j;
 
         //Intra
-        Video[task_num][i]->decodeIntraSpec.intraVLCFormat = m_Spec.decodeIntraSpec.intraVLCFormat;
-        Video[task_num][i]->decodeIntraSpec.intraShiftDC = m_Spec.decodeIntraSpec.intraShiftDC;
+        Video[task_num][i]->decodeIntraSpec.intraVLCFormat = m_Spec->decodeIntraSpec.intraVLCFormat;
+        Video[task_num][i]->decodeIntraSpec.intraShiftDC = m_Spec->decodeIntraSpec.intraShiftDC;
 
         Video[task_num][i]->stream_type = m_ClipInfo.stream_type;
         Video[task_num][i]->color_format = m_ClipInfo.color_format;
@@ -685,9 +690,9 @@ Status MPEG2VideoDecoderSW::ProcessRestFrame(int task_num)
         Video[task_num][i]->clip_info_height = m_ClipInfo.clip_info.height;
 
         for (j = 0; j < 64; j++)
-            Video[task_num][i]->decodeIntraSpec._quantMatrix[j] = m_Spec.decodeIntraSpec._quantMatrix[j];
+            Video[task_num][i]->decodeIntraSpec._quantMatrix[j] = m_Spec->decodeIntraSpec._quantMatrix[j];
 
-        if (m_Spec.decodeIntraSpec.quantMatrix)
+        if (m_Spec->decodeIntraSpec.quantMatrix)
         {
             Video[task_num][i]->decodeIntraSpec.quantMatrix = Video[task_num][i]->decodeIntraSpec._quantMatrix;
         }
@@ -696,16 +701,16 @@ Status MPEG2VideoDecoderSW::ProcessRestFrame(int task_num)
             Video[task_num][i]->decodeIntraSpec.quantMatrix = NULL;
         }
 
-        Video[task_num][i]->decodeIntraSpec.scanMatrix = m_Spec.decodeIntraSpec.scanMatrix;
+        Video[task_num][i]->decodeIntraSpec.scanMatrix = m_Spec->decodeIntraSpec.scanMatrix;
 
         //IntraChroma
-        Video[task_num][i]->decodeIntraSpecChroma.intraVLCFormat = m_Spec.decodeIntraSpecChroma.intraVLCFormat;
-        Video[task_num][i]->decodeIntraSpecChroma.intraShiftDC = m_Spec.decodeIntraSpecChroma.intraShiftDC;
+        Video[task_num][i]->decodeIntraSpecChroma.intraVLCFormat = m_Spec->decodeIntraSpecChroma.intraVLCFormat;
+        Video[task_num][i]->decodeIntraSpecChroma.intraShiftDC = m_Spec->decodeIntraSpecChroma.intraShiftDC;
 
         for (j = 0; j < 64; j++)
-            Video[task_num][i]->decodeIntraSpecChroma._quantMatrix[j] = m_Spec.decodeIntraSpecChroma._quantMatrix[j];
+            Video[task_num][i]->decodeIntraSpecChroma._quantMatrix[j] = m_Spec->decodeIntraSpecChroma._quantMatrix[j];
 
-        if (m_Spec.decodeIntraSpecChroma.quantMatrix)
+        if (m_Spec->decodeIntraSpecChroma.quantMatrix)
         {
             Video[task_num][i]->decodeIntraSpecChroma.quantMatrix = Video[task_num][i]->decodeIntraSpecChroma._quantMatrix;
         }
@@ -714,13 +719,13 @@ Status MPEG2VideoDecoderSW::ProcessRestFrame(int task_num)
             Video[task_num][i]->decodeIntraSpecChroma.quantMatrix = NULL;
         }
 
-        Video[task_num][i]->decodeIntraSpecChroma.scanMatrix = m_Spec.decodeIntraSpecChroma.scanMatrix;
+        Video[task_num][i]->decodeIntraSpecChroma.scanMatrix = m_Spec->decodeIntraSpecChroma.scanMatrix;
 
         //Inter
         for (j = 0; j < 64; j++)
-            Video[task_num][i]->decodeInterSpec._quantMatrix[j] = m_Spec.decodeInterSpec._quantMatrix[j];
+            Video[task_num][i]->decodeInterSpec._quantMatrix[j] = m_Spec->decodeInterSpec._quantMatrix[j];
 
-        if (m_Spec.decodeInterSpec.quantMatrix)
+        if (m_Spec->decodeInterSpec.quantMatrix)
         {
             Video[task_num][i]->decodeInterSpec.quantMatrix = Video[task_num][i]->decodeInterSpec._quantMatrix;
         }
@@ -729,13 +734,13 @@ Status MPEG2VideoDecoderSW::ProcessRestFrame(int task_num)
             Video[task_num][i]->decodeInterSpec.quantMatrix = NULL;
         }
 
-        Video[task_num][i]->decodeInterSpec.scanMatrix = m_Spec.decodeInterSpec.scanMatrix;
+        Video[task_num][i]->decodeInterSpec.scanMatrix = m_Spec->decodeInterSpec.scanMatrix;
 
         //InterChroma
         for (j = 0; j < 64; j++)
-            Video[task_num][i]->decodeInterSpecChroma._quantMatrix[j] = m_Spec.decodeInterSpecChroma._quantMatrix[j];
+            Video[task_num][i]->decodeInterSpecChroma._quantMatrix[j] = m_Spec->decodeInterSpecChroma._quantMatrix[j];
 
-        if (m_Spec.decodeInterSpecChroma.quantMatrix)
+        if (m_Spec->decodeInterSpecChroma.quantMatrix)
         {
             Video[task_num][i]->decodeInterSpecChroma.quantMatrix = Video[task_num][i]->decodeInterSpecChroma._quantMatrix;
         }
@@ -744,7 +749,7 @@ Status MPEG2VideoDecoderSW::ProcessRestFrame(int task_num)
             Video[task_num][i]->decodeInterSpecChroma.quantMatrix = NULL;
         }
 
-        Video[task_num][i]->decodeInterSpecChroma.scanMatrix = m_Spec.decodeInterSpecChroma.scanMatrix;
+        Video[task_num][i]->decodeInterSpecChroma.scanMatrix = m_Spec->decodeInterSpecChroma.scanMatrix;
 
     } // for
 
@@ -755,14 +760,14 @@ void MPEG2VideoDecoderSW::OnDecodePicHeaderEx(int task_num)
 {
     for (Ipp32s i = 0; i < m_nNumberOfThreads; i++) {
         Ipp32s flag = PictureHeader[task_num].alternate_scan | IPPVC_LEAVE_QUANT_UNCHANGED;
-        ippiDecodeInterInit_MPEG2(NULL, flag, &m_Spec.decodeInterSpec);
-        m_Spec.decodeIntraSpec.intraVLCFormat = PictureHeader[task_num].intra_vlc_format;
-        m_Spec.decodeIntraSpec.intraShiftDC = PictureHeader[task_num].curr_intra_dc_multi;
-        ippiDecodeIntraInit_MPEG2(NULL, flag, m_Spec.decodeIntraSpec.intraVLCFormat, m_Spec.decodeIntraSpec.intraShiftDC, &m_Spec.decodeIntraSpec);
+        ippiDecodeInterInit_MPEG2(NULL, flag, &m_Spec->decodeInterSpec);
+        m_Spec->decodeIntraSpec.intraVLCFormat = PictureHeader[task_num].intra_vlc_format;
+        m_Spec->decodeIntraSpec.intraShiftDC = PictureHeader[task_num].curr_intra_dc_multi;
+        ippiDecodeIntraInit_MPEG2(NULL, flag, m_Spec->decodeIntraSpec.intraVLCFormat, m_Spec->decodeIntraSpec.intraShiftDC, &m_Spec->decodeIntraSpec);
 
-        ippiDecodeInterInit_MPEG2(NULL, flag, &m_Spec.decodeInterSpecChroma);
-        ippiDecodeIntraInit_MPEG2(NULL, flag, m_Spec.decodeIntraSpec.intraVLCFormat, m_Spec.decodeIntraSpec.intraShiftDC, &m_Spec.decodeIntraSpecChroma);
-        m_Spec.flag = flag;
+        ippiDecodeInterInit_MPEG2(NULL, flag, &m_Spec->decodeInterSpecChroma);
+        ippiDecodeIntraInit_MPEG2(NULL, flag, m_Spec->decodeIntraSpec.intraVLCFormat, m_Spec->decodeIntraSpec.intraShiftDC, &m_Spec->decodeIntraSpecChroma);
+        m_Spec->flag = flag;
     }
 }
 
@@ -850,39 +855,39 @@ Status MPEG2VideoDecoderSW::UpdateFrameBuffer(int task_num, Ipp8u* iqm, Ipp8u*ni
   // Alloc frames
 
     Ipp32s flag_mpeg1 = (m_ClipInfo.stream_type == MPEG1_VIDEO) ? IPPVC_MPEG1_STREAM : 0;
-    ippiDecodeIntraInit_MPEG2(NULL, flag_mpeg1, PictureHeader[task_num].intra_vlc_format, PictureHeader[task_num].curr_intra_dc_multi, &m_Spec.decodeIntraSpec);
-    ippiDecodeInterInit_MPEG2(NULL, flag_mpeg1, &m_Spec.decodeInterSpec);
+    ippiDecodeIntraInit_MPEG2(NULL, flag_mpeg1, PictureHeader[task_num].intra_vlc_format, PictureHeader[task_num].curr_intra_dc_multi, &m_Spec->decodeIntraSpec);
+    ippiDecodeInterInit_MPEG2(NULL, flag_mpeg1, &m_Spec->decodeInterSpec);
 
-    m_Spec.decodeInterSpecChroma = m_Spec.decodeInterSpec;
-    m_Spec.decodeIntraSpecChroma = m_Spec.decodeIntraSpec;
-    m_Spec.flag = flag_mpeg1;
+    m_Spec->decodeInterSpecChroma = m_Spec->decodeInterSpec;
+    m_Spec->decodeIntraSpecChroma = m_Spec->decodeIntraSpec;
+    m_Spec->flag = flag_mpeg1;
 
     if (iqm)
     {
-        ippiDecodeIntraInit_MPEG2(iqm, flag_mpeg1, PictureHeader[task_num].intra_vlc_format, PictureHeader[task_num].curr_intra_dc_multi, &m_Spec.decodeIntraSpec);
-        m_Spec.decodeIntraSpecChroma = m_Spec.decodeIntraSpec;
+        ippiDecodeIntraInit_MPEG2(iqm, flag_mpeg1, PictureHeader[task_num].intra_vlc_format, PictureHeader[task_num].curr_intra_dc_multi, &m_Spec->decodeIntraSpec);
+        m_Spec->decodeIntraSpecChroma = m_Spec->decodeIntraSpec;
     }
 
     if (niqm)
     {
-        ippiDecodeInterInit_MPEG2(niqm, flag_mpeg1, &m_Spec.decodeInterSpec);
-        m_Spec.decodeInterSpecChroma = m_Spec.decodeInterSpec;
+        ippiDecodeInterInit_MPEG2(niqm, flag_mpeg1, &m_Spec->decodeInterSpec);
+        m_Spec->decodeInterSpecChroma = m_Spec->decodeInterSpec;
     }
 
-    m_Spec.flag = flag_mpeg1;
+    m_Spec->flag = flag_mpeg1;
   
     return UMC_OK;
 }
 
 Status MPEG2VideoDecoderSW::ThreadingSetup(Ipp32s maxThreads)
 {
-    memset(&m_Spec.decodeIntraSpec, 0, sizeof(IppiDecodeIntraSpec_MPEG2));
-    memset(&m_Spec.decodeInterSpec, 0, sizeof(IppiDecodeInterSpec_MPEG2));
-    ippiDecodeInterInit_MPEG2(NULL, IPPVC_MPEG1_STREAM, &m_Spec.decodeInterSpec);
-    m_Spec.decodeInterSpecChroma = m_Spec.decodeInterSpec;
-    m_Spec.decodeInterSpec.idxLastNonZero = 63;
-    m_Spec.decodeIntraSpec.intraVLCFormat = PictureHeader[0].intra_vlc_format;
-    m_Spec.decodeIntraSpec.intraShiftDC = PictureHeader[0].curr_intra_dc_multi;
+    memset(&m_Spec->decodeIntraSpec, 0, sizeof(IppiDecodeIntraSpec_MPEG2));
+    memset(&m_Spec->decodeInterSpec, 0, sizeof(IppiDecodeInterSpec_MPEG2));
+    ippiDecodeInterInit_MPEG2(NULL, IPPVC_MPEG1_STREAM, &m_Spec->decodeInterSpec);
+    m_Spec->decodeInterSpecChroma = m_Spec->decodeInterSpec;
+    m_Spec->decodeInterSpec.idxLastNonZero = 63;
+    m_Spec->decodeIntraSpec.intraVLCFormat = PictureHeader[0].intra_vlc_format;
+    m_Spec->decodeIntraSpec.intraShiftDC = PictureHeader[0].curr_intra_dc_multi;
 
     Status sts = MPEG2VideoDecoderBase::ThreadingSetup(maxThreads);
     if (sts != UMC_OK)

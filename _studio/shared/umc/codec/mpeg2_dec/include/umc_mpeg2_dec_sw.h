@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 //  MPEG-2 is a international standard promoted by ISO/IEC and
@@ -95,7 +95,8 @@ public:
 
 
 protected:
-    DecodeSpec                m_Spec;
+    DecodeSpec*               m_Spec;
+    void*                     m_Spec_raw_memory_ptr;
 
     mp2_VLCTable              vlcMBAdressing;
     mp2_VLCTable              vlcMBType[3];
@@ -166,6 +167,10 @@ protected:
     Status                  mc_mp2_422b_skip(VideoContext *video, int task_num);
     Status                  mc_mp2_420_skip(VideoContext *video, int task_num);
     Status                  mc_mp2_422_skip(VideoContext *video, int task_num);
+
+private:
+    MPEG2VideoDecoderSW(MPEG2VideoDecoderSW const&);
+    MPEG2VideoDecoderSW& operator=(MPEG2VideoDecoderSW const&);
 
 };
 }
