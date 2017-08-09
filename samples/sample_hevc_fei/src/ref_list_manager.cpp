@@ -620,6 +620,8 @@ HevcTask* EncodeOrderControl::ReorderFrame(mfxFrameSurface1 * surface)
             }
         }
 
+        task_to_encode->m_surf->Data.FrameOrder = task_to_encode->m_fo;
+
         HevcTask & task = *task_to_encode;
         task.m_lastIPoc = m_lastTask.m_lastIPoc;
 
