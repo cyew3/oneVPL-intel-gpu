@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_asf_spl.h"
@@ -241,7 +241,7 @@ Status ASFSplitter::ReadDataPacket()
                         frameSize = value8u;
 
                         MediaData *pIn = new MediaData;
-                        Ipp32u iES = 0;
+                        iES = 0;
                         umcRes = m_ppFBuffer[iES]->LockInputBuffer(pIn);
                         while (umcRes == UMC_ERR_NOT_ENOUGH_BUFFER)
                         {

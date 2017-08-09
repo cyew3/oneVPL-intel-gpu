@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2005-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2005-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include <ipps.h>
@@ -412,20 +412,20 @@ Status Mpeg2PesParser::ParsePmtInfo(Mpeg2TsPmt &pmt)
                 {
                     if (uiLen < 2) continue;
                     Ipp16u esId = GET_16U(pPtr);
-                    Ipp32u i;
-                    for (i = 0; i < pmt.uiESs; i++)
+                    Ipp32u esIdx;
+                    for (esIdx = 0; esIdx < pmt.uiESs; esIdx++)
                     {
-                        if (pmt.pESs[i].pESDSs && pmt.pESs[i].pESDSs->uiEsId == esId)
+                        if (pmt.pESs[esIdx].pESDSs && pmt.pESs[esIdx].pESDSs->uiEsId == esId)
                         {
                             UMC_NEW(m_pInfo[iTrack]->m_pDecSpecInfo, MediaData);
                             m_pInfo[iTrack]->m_pDecSpecInfo->SetBufferPointer(
-                                pmt.pESs[i].pESDSs->pDecSpecInfo, pmt.pESs[i].pESDSs->uiDecSpecInfoLen);
-                            m_pInfo[iTrack]->m_pDecSpecInfo->SetDataSize(pmt.pESs[i].pESDSs->uiDecSpecInfoLen);
+                                pmt.pESs[esIdx].pESDSs->pDecSpecInfo, pmt.pESs[esIdx].pESDSs->uiDecSpecInfoLen);
+                            m_pInfo[iTrack]->m_pDecSpecInfo->SetDataSize(pmt.pESs[esIdx].pESDSs->uiDecSpecInfoLen);
 
                             if (m_pInfo[iTrack]->m_Type & TRACK_ANY_VIDEO)
-                                ((VideoStreamInfo *)m_pInfo[iTrack]->m_pStreamInfo)->bitrate = pmt.pESs[i].pESDSs->avgBitrate;
+                                ((VideoStreamInfo *)m_pInfo[iTrack]->m_pStreamInfo)->bitrate = pmt.pESs[esIdx].pESDSs->avgBitrate;
                             else if (m_pInfo[iTrack]->m_Type & TRACK_ANY_AUDIO)
-                                ((AudioStreamInfo *)m_pInfo[iTrack]->m_pStreamInfo)->bitrate = pmt.pESs[i].pESDSs->avgBitrate;
+                                ((AudioStreamInfo *)m_pInfo[iTrack]->m_pStreamInfo)->bitrate = pmt.pESs[esIdx].pESDSs->avgBitrate;
                             break;
                         }
                     }

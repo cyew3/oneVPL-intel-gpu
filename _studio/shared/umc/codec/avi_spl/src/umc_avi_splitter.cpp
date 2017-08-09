@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "vm_debug.h"
@@ -1029,15 +1029,15 @@ Status AVISplitter::InitIndexUsingNewAVIIndex(Ipp32u nTrackNum, Ipp8u *pIndexBuf
             buf += 4;
             buf += 4; // ignore dwDuration
 
-            Ipp8u *pIndexBuffer = new Ipp8u[dwSize];
-            Status umcRes = m_AviChunkReader.GetData(qwOffset, pIndexBuffer, dwSize);
+            Ipp8u *pSuperIndexBuffer = new Ipp8u[dwSize];
+            umcRes = m_AviChunkReader.GetData(qwOffset, pSuperIndexBuffer, dwSize);
             if (umcRes == UMC_OK)
             {
                 // skip standard chunk header - 8 bytes
-                umcRes = InitIndexUsingNewAVIIndex(nTrackNum, pIndexBuffer + 8, dwSize - 8);
+                umcRes = InitIndexUsingNewAVIIndex(nTrackNum, pSuperIndexBuffer + 8, dwSize - 8);
             }
 
-            delete[] pIndexBuffer;
+            delete[] pSuperIndexBuffer;
         }
     }
     else
