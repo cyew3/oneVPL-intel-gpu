@@ -879,7 +879,53 @@ mfxStatus CTranscodingPipeline::Decode()
 
         if (m_pmfxVPP.get())
         {
-            sts = VPPOneFrame(&DecExtSurface, &VppExtSurface);
+            if (m_bIsFieldWeaving)
+            {
+                if (!(m_nProcessedFramesNum % 2))
+                {
+                    if (DecExtSurface.pSurface)
+                    {
+                        if ((DecExtSurface.pSurface->Info.PicStruct & MFX_PICSTRUCT_FIELD_TFF))
+                        {
+                            m_mfxVppParams.vpp.Out.PicStruct = MFX_PICSTRUCT_FIELD_TFF;
+                        }
+                        if (DecExtSurface.pSurface->Info.PicStruct & MFX_PICSTRUCT_FIELD_BFF)
+                        {
+                            m_mfxVppParams.vpp.Out.PicStruct = MFX_PICSTRUCT_FIELD_BFF;
+                        }
+                    }
+                }
+                sts = VPPOneFrame(&DecExtSurface, &VppExtSurface);
+            }
+            else
+            {
+                if (m_bIsFieldSplitting)
+                {
+                    if (DecExtSurface.pSurface)
+                    {
+                        if (DecExtSurface.pSurface->Info.PicStruct & MFX_PICSTRUCT_FIELD_TFF || DecExtSurface.pSurface->Info.PicStruct & MFX_PICSTRUCT_FIELD_BFF)
+                        {
+                            m_mfxVppParams.vpp.Out.PicStruct = MFX_PICSTRUCT_FIELD_SINGLE;
+                            sts = VPPOneFrame(&DecExtSurface, &VppExtSurface);
+                        }
+                        else
+                        {
+                            VppExtSurface.pSurface = DecExtSurface.pSurface;
+                            VppExtSurface.pAuxCtrl = DecExtSurface.pAuxCtrl;
+                            VppExtSurface.Syncp = DecExtSurface.Syncp;
+                        }
+                    }
+                    else
+                    {
+                        sts = VPPOneFrame(&DecExtSurface, &VppExtSurface);
+                    }
+                }
+                else
+                {
+                    sts = VPPOneFrame(&DecExtSurface, &VppExtSurface);
+                }
+            }
+            // check for interlaced stream
         }
         else // no VPP - just copy pointers
         {
