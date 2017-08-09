@@ -602,15 +602,19 @@ bool MfxH264FEIcommon::FirstFieldProcessingDone(T* inParams, const DdiTask & tas
 {
 #if MFX_VERSION >= 1023
     mfxExtFeiPPS * pDataPPS = GetExtBufferFEI(inParams, 0);
+    mfxExtFeiPreEncCtrl * pDataPreEncCtrl = GetExtBufferFEI(inParams, 0);
 
-    if (!pDataPPS)
+    if (!!pDataPPS == !!pDataPreEncCtrl)
     {
-        // In this case absence of PPS will be discovered at parameters check stage
+        // In this case absence of PPS and PreENC will be discovered at parameters check stage
         return 0;
     }
 
-    switch (pDataPPS->PictureType)
+    mfxU16  PictureType = pDataPPS ? pDataPPS->PictureType : pDataPreEncCtrl->PictureType;
+
+    switch (PictureType)
     {
+        //For PAK or PREENC, Picturetype will be obtained from only one on them
     case MFX_PICTYPE_TOPFIELD:
         return task.m_fid[1] == 0; // i.e. Bottom Field was already coded and current picstruct is BFF
         break;
@@ -719,6 +723,14 @@ bool MfxH264FEIcommon::IsRunTimeInputExtBufferIdSupported(MfxVideoParam const & 
                    || id == MFX_EXTBUFF_FEI_ENC_MB
                    || id == MFX_EXTBUFF_FEI_ENC_QP
                    );
+        case MFX_FEI_FUNCTION_PREENC:
+            return (  id == MFX_EXTBUFF_FEI_PREENC_CTRL
+                   || id == MFX_EXTBUFF_FEI_PREENC_MV_PRED
+                   || id == MFX_EXTBUFF_FEI_ENC_QP
+#if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
+                   || id == MFX_EXTBUFF_GPU_HANG
+#endif
+                   );
         default:
             return true;
     }
@@ -726,10 +738,34 @@ bool MfxH264FEIcommon::IsRunTimeInputExtBufferIdSupported(MfxVideoParam const & 
 
 bool MfxH264FEIcommon::IsRunTimeOutputExtBufferIdSupported(MfxVideoParam const & owned_video, mfxU32 id)
 {
-    return (  id == MFX_EXTBUFF_FEI_ENC_MV
-           || id == MFX_EXTBUFF_FEI_ENC_MB_STAT
-           || id == MFX_EXTBUFF_FEI_PAK_CTRL
-           );
+    mfxExtFeiParam const * feiParam = GetExtBuffer(owned_video);
+    switch(feiParam->Func)
+    {
+        case MFX_FEI_FUNCTION_ENC:
+            return (  id == MFX_EXTBUFF_FEI_ENC_MV
+                   || id == MFX_EXTBUFF_FEI_ENC_MB_STAT
+                   || id == MFX_EXTBUFF_FEI_PAK_CTRL
+                   );
+        case MFX_FEI_FUNCTION_PREENC:
+            return (  id == MFX_EXTBUFF_FEI_PREENC_MV
+                   || id == MFX_EXTBUFF_FEI_PREENC_MB
+                   );
+        case MFX_FEI_FUNCTION_PAK:
+#if MFX_VERSION >= 1023
+            return false;
+#else
+            return (  id == MFX_EXTBUFF_FEI_PPS
+                   || id == MFX_EXTBUFF_FEI_SLICE
+                   || id == MFX_EXTBUFF_FEI_PAK_CTRL
+                   || id == MFX_EXTBUFF_FEI_ENC_MV
+#if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
+                   || id == MFX_EXTBUFF_GPU_HANG
+#endif
+                   );
+#endif
+        default:
+            return true;
+     }
 }
 
 template mfxStatus MfxH264FEIcommon::CheckRuntimeExtBuffers<>(mfxENCInput* input, mfxENCOutput* output, const MfxVideoParam & owned_video, const DdiTask & task);
