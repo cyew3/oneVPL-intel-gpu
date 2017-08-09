@@ -196,7 +196,7 @@ mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocReq
 
     if((request->Type&MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET) && (request->Type & MFX_MEMTYPE_INTERNAL_FRAME))
     {
-        Desc.BindFlags = D3D11_BIND_VIDEO_ENCODER;
+        Desc.BindFlags = D3D11_BIND_DECODER | D3D11_BIND_VIDEO_ENCODER;
     }
     else
         Desc.BindFlags = D3D11_BIND_DECODER;

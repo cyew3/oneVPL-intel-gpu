@@ -435,6 +435,8 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
         request.Info.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
     }
 #endif
+    //For MMCD encoder bind flag is required.
+    request.Type |= MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET;
     sts = m_rec.Alloc(&m_core, request, false);
     MFX_CHECK_STS(sts);
 

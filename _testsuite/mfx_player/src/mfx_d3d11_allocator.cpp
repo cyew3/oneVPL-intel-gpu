@@ -541,7 +541,12 @@ mfxStatus D3D11FrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
         desc.Usage = D3D11_USAGE_DEFAULT;
         desc.MiscFlags = m_initParams.uncompressedResourceMiscFlags;
 
-        desc.BindFlags = D3D11_BIND_DECODER;
+        if ((request->Type&MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET) && (request->Type & MFX_MEMTYPE_INTERNAL_FRAME))
+        {
+            desc.BindFlags = D3D11_BIND_DECODER | D3D11_BIND_VIDEO_ENCODER;
+        }
+        else
+            desc.BindFlags = D3D11_BIND_DECODER;
 
         if ( (MFX_MEMTYPE_FROM_VPPIN & request->Type) && (DXGI_FORMAT_YUY2 == desc.Format) ||
              (DXGI_FORMAT_B8G8R8A8_UNORM == desc.Format) ||
