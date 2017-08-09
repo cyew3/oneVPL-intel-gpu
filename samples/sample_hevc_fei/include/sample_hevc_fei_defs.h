@@ -47,6 +47,9 @@ struct sInputParams
     mfxU16 nNumRef;         // number of reference frames (DPB size)
     mfxU16 nGopOptFlag;     // STRICT | CLOSED, default is OPEN GOP
     mfxU16 GPB;             // indicates that HEVC encoder use regular P-frames or GPB
+    mfxU16 NumRefActiveP;   // maximal number of references for P frames
+    mfxU16 NumRefActiveBL0; // maximal number of backward references for B frames
+    mfxU16 NumRefActiveBL1; // maximal number of forward references for B frames
 
     sInputParams()
         : bENCODE(false)
@@ -66,6 +69,9 @@ struct sInputParams
         , nNumRef(1)
         , nGopOptFlag(0)               // OPEN GOP
         , GPB(MFX_CODINGOPTION_ON)     // use GPB frames
+        , NumRefActiveP(4)
+        , NumRefActiveBL0(2)
+        , NumRefActiveBL1(1)
     {
         MSDK_ZERO_MEMORY(strSrcFile);
         MSDK_ZERO_MEMORY(strDstFile);
