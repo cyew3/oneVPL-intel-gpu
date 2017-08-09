@@ -98,7 +98,13 @@ mfxStatus FEI_Encode::Init()
     MSDK_CHECK_STATUS_SAFE(sts, "InitMfxBitstream failed", WipeMfxBitstream(&m_bitstream));
 
     sts = m_mfxENCODE.Init(&m_videoParams);
+    MSDK_CHECK_STATUS(sts, "FEI Encode Init failed");
     MSDK_CHECK_WRN(sts, "FEI Encode Init");
+
+    // just in case, call GetVideoParam to get current Encoder state
+    sts = m_mfxENCODE.GetVideoParam(&m_videoParams);
+    MSDK_CHECK_STATUS(sts, "FEI Encode GetVideoParam failed");
+
     return sts;
 }
 
@@ -115,12 +121,20 @@ mfxFrameInfo* FEI_Encode::GetFrameInfo()
 mfxStatus FEI_Encode::Reset(mfxVideoParam& par)
 {
     m_videoParams = par;
-    return m_mfxENCODE.Reset(&m_videoParams);
+    mfxStatus sts = m_mfxENCODE.Reset(&m_videoParams);
+    MSDK_CHECK_STATUS(sts, "FEI Encode Reset failed");
+    MSDK_CHECK_WRN(sts, "FEI Encode Reset");
+
+    // just in case, call GetVideoParam to get current Encoder state
+    sts = m_mfxENCODE.GetVideoParam(&m_videoParams);
+    MSDK_CHECK_STATUS(sts, "FEI Encode GetVideoParam failed");
+
+    return sts;
 }
 
-mfxStatus FEI_Encode::GetVideoParam(mfxVideoParam& par)
+const MfxVideoParamsWrapper& FEI_Encode::GetVideoParam()
 {
-    return m_mfxENCODE.GetVideoParam(&par);
+    return m_videoParams;
 }
 
 mfxStatus FEI_Encode::EncodeFrame(mfxFrameSurface1* pSurf)
@@ -190,15 +204,13 @@ mfxStatus FEI_Encode::SyncOperation()
 
 mfxStatus FEI_Encode::AllocateSufficientBuffer()
 {
-    mfxVideoParam par;
-    MSDK_ZERO_MEMORY(par);
-
     // find out the required buffer size
-    mfxStatus sts = GetVideoParam(par);
+    // call GetVideoParam to get current Encoder state
+    mfxStatus sts = m_mfxENCODE.GetVideoParam(&m_videoParams);
     MSDK_CHECK_STATUS(sts, "FEI Encode GetVideoParam failed");
 
     // reallocate bigger buffer for output
-    sts = ExtendMfxBitstream(&m_bitstream, par.mfx.BufferSizeInKB * 1000);
+    sts = ExtendMfxBitstream(&m_bitstream, m_videoParams.mfx.BufferSizeInKB * 1000);
     MSDK_CHECK_STATUS_SAFE(sts, "ExtendMfxBitstream failed", WipeMfxBitstream(&m_bitstream));
 
     return sts;

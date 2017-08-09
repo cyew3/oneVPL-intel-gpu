@@ -115,7 +115,7 @@ template<typename T, size_t N>
 struct MfxParamsWrapper: public T
 {
     mfxExtBuffer* ext_buf_ptrs[N];
-    MfxExtBuffer ext_buf[N];
+    MfxExtBuffer  ext_buf[N];
     struct
     {
         bool enabled;
@@ -137,7 +137,7 @@ struct MfxParamsWrapper: public T
             ext_buf_ptrs[i] = (mfxExtBuffer*)&ext_buf[i];
         }
     }
-    MfxParamsWrapper(const MfxParamsWrapper& ref)
+    explicit MfxParamsWrapper(const MfxParamsWrapper& ref)
     {
         *this = ref; // call to operator=
     }
@@ -160,7 +160,7 @@ struct MfxParamsWrapper: public T
         }
         return *this;
     }
-    MfxParamsWrapper(const T& ref)
+    explicit MfxParamsWrapper(const T& ref)
     {
         *this = ref; // call to operator=
     }

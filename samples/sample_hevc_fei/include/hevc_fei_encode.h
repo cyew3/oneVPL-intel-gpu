@@ -34,7 +34,7 @@ public:
     mfxStatus Query();
     mfxStatus Reset(mfxVideoParam& par);
     mfxStatus QueryIOSurf(mfxFrameAllocRequest* request);
-    mfxStatus GetVideoParam(mfxVideoParam& par);
+    const MfxVideoParamsWrapper& GetVideoParam();
     mfxFrameInfo* GetFrameInfo();
     mfxStatus EncodeFrame(mfxFrameSurface1* pSurf);
     mfxStatus SetCtrlParams(const HevcTask& task); // for encoded order
@@ -43,7 +43,7 @@ private:
     MFXVideoSession*    m_pmfxSession;
     MFXVideoENCODE      m_mfxENCODE;
 
-    MfxVideoParamsWrapper m_videoParams;
+    MfxVideoParamsWrapper m_videoParams; // reflects current state Encode parameters
     mfxEncodeCtrl         m_encodeCtrl;
     mfxBitstream          m_bitstream;
     mfxSyncPoint          m_syncPoint;

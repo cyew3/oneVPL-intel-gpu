@@ -125,8 +125,7 @@ private:
         return par.AsyncDepth + par.mfx.GopRefDist - 1 + ((par.AsyncDepth > 1)? 1: 0);
     }
 
-private:
-    const MfxVideoParamsWrapper & m_par;
+    const MfxVideoParamsWrapper m_par;
 
     typedef std::list<HevcTask>   TaskList;
     TaskList                      m_free;
