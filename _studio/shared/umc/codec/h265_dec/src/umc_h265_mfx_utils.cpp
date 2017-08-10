@@ -190,7 +190,7 @@ bool IsBugSurfacePoolApplicable(eMFXHWType hwtype, mfxVideoParam * par)
         return true;
 
     //On SKL and BXT 10 bit decoder is hybrid (doesn't work) and 8 bit is supported by FF decoder that tested to works well
-    if ((hwtype == MFX_HW_SCL) || (hwtype == MFX_HW_APL) && par->mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN)
+    if (hwtype >= MFX_HW_SCL && par->mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN)
         return true;
 #endif
 
