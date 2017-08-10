@@ -1276,7 +1276,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             throw tsFAIL;
         }
 
-        if (g_tsHWtype < MFX_HW_CNL) // unsupported on platform less CNL
+        if (g_tsHWtype < MFX_HW_ICL) // unsupported on platform less ICL
         {
             g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
             g_tsLog << "WARNING: Unsupported HW Platform!\n";
@@ -1386,6 +1386,8 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             iterations[0]->m_firstFrame,
             inputStreams[Resolution(fi.Width, fi.Height)].c_str(),
             fi);
+
+        feeder->m_disable_shift_hack = true;  // this hack adds shift if fi.Shift != 0!!! Need to disable it.
 
         m_filler = feeder;
 
