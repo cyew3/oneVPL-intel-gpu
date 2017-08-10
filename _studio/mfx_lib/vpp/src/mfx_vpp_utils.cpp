@@ -1585,6 +1585,11 @@ mfxStatus CheckFrameInfo(mfxFrameInfo* info, mfxU32 request)
         case MFX_FOURCC_Y210:
         case MFX_FOURCC_Y410:
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
+#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
+        case MFX_FOURCC_P016:
+        case MFX_FOURCC_Y216:
+        case MFX_FOURCC_Y416:
+#endif //PRE_SI_TARGET_PLATFORM_GEN12
             break;
         case MFX_FOURCC_IMC3:
         case MFX_FOURCC_YV12:
