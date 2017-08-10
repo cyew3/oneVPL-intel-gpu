@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2015-2017 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_encoder.h"
 #include "ts_struct.h"
 #include "ts_parser.h"
@@ -45,10 +55,10 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/* 0*/ MFX_ERR_NONE, {
                               {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.AspectRatioW,4},
                               {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.AspectRatioH,3},
-                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,196},
-                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,232},
-                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.Width,MSDK_ALIGN16(196)},
-                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.Height,MSDK_ALIGN16(232)}}},
+                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,200},
+                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,200 },
+                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.Width,MSDK_ALIGN16(200)},
+                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.Height,MSDK_ALIGN16(200)}}},
 
     {/* 1*/ MFX_ERR_NONE, {
                               {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.AspectRatioW,1},
@@ -65,10 +75,10 @@ const TestSuite::tc_struct TestSuite::test_case[] =
                               {MFXINIT,&tsStruct::mfxVideoParam.mfx.FrameInfo.Height,MSDK_ALIGN16(232)},
                               {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.AspectRatioW,16},
                               {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.AspectRatioH,9},
-                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,180},
-                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,200},
+                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,180 },
+                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,180 },
                               {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.Width,MSDK_ALIGN16(180)},
-                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.Height,MSDK_ALIGN16(200)}}},
+                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.Height,MSDK_ALIGN16(180)}}},
 
     {/* 3*/ MFX_ERR_NONE, {
                               {MFXINIT,&tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,198},
@@ -99,12 +109,12 @@ const TestSuite::tc_struct TestSuite::test_case[] =
                               {MFXINIT,&tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,1080},
                               {MFXINIT,&tsStruct::mfxVideoParam.mfx.FrameInfo.Width,MSDK_ALIGN16(1920)},
                               {MFXINIT,&tsStruct::mfxVideoParam.mfx.FrameInfo.Height,MSDK_ALIGN16(1080)},
-                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.AspectRatioW,16},
-                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.AspectRatioH,19},
-                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,1280},
-                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,720},
-                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.Width,MSDK_ALIGN16(1280)},
-                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.Height,MSDK_ALIGN16(720)}}},
+                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.AspectRatioW,221},
+                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.AspectRatioH,100},
+                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,500},
+                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,500},
+                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.Width,MSDK_ALIGN16(500)},
+                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.Height,MSDK_ALIGN16(500)}}},
 
     {/* 6*/ MFX_ERR_NONE, {
                               {MFXINIT,&tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,1280},
@@ -125,10 +135,10 @@ const TestSuite::tc_struct TestSuite::test_case[] =
                               {MFXINIT,&tsStruct::mfxVideoParam.mfx.FrameInfo.Height,MSDK_ALIGN16(720)},
                               {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.AspectRatioW,4},
                               {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.AspectRatioH,3},
-                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,720},
-                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,480},
-                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.Width,MSDK_ALIGN16(720)},
-                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.Height,MSDK_ALIGN16(480)}}},
+                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,600},
+                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,450},
+                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.Width,MSDK_ALIGN16(600)},
+                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.Height,MSDK_ALIGN16(450)}}},
 
     {/* 8*/ MFX_ERR_NONE, {
                               {MFXINIT,&tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,720},
@@ -149,10 +159,10 @@ const TestSuite::tc_struct TestSuite::test_case[] =
                               {MFXINIT,&tsStruct::mfxVideoParam.mfx.FrameInfo.Height,MSDK_ALIGN16(480)},
                               {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.AspectRatioW,4},
                               {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.AspectRatioH,3},
-                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,352},
-                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,288},
-                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.Width,MSDK_ALIGN16(352)},
-                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.Height,MSDK_ALIGN16(288)}}},
+                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,663},
+                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,400},
+                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.Width,MSDK_ALIGN16(663)},
+                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.Height,MSDK_ALIGN16(400)}}},
 
     {/*10*/ MFX_ERR_NONE, {
                               {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.AspectRatioW,1},
@@ -167,11 +177,11 @@ const TestSuite::tc_struct TestSuite::test_case[] =
                               {MFXINIT,&tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,232},
                               {MFXINIT,&tsStruct::mfxVideoParam.mfx.FrameInfo.Width,MSDK_ALIGN16(194)},
                               {MFXINIT,&tsStruct::mfxVideoParam.mfx.FrameInfo.Height,MSDK_ALIGN16(232)},
-                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.AspectRatioW,4},
-                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.AspectRatioH,3},
-                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,180},
+                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.AspectRatioW,16},
+                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.AspectRatioH,9},
+                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,150},
                               {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,200},
-                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.Width,MSDK_ALIGN16(180)},
+                              {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.Width,MSDK_ALIGN16(150)},
                               {MFXRESET,&tsStruct::mfxVideoParam.mfx.FrameInfo.Height,MSDK_ALIGN16(200)}}},
 };
 
@@ -181,12 +191,16 @@ class Verifier : public tsBitstreamProcessor, public tsParserMPEG2AU
 {
     mfxU16 m_aspectratioW;
     mfxU16 m_aspectratioH;
+    mfxU16 width;
+    mfxU16 height;
 public:
     Verifier() : m_aspectratioW(0),m_aspectratioH(0) {}
-    mfxStatus Init(mfxU16 ar_w, mfxU16 ar_h)
+    mfxStatus Init(mfxU16 ar_w, mfxU16 ar_h, mfxU16 w, mfxU16 h)
     {
         m_aspectratioW = ar_w;
         m_aspectratioH = ar_h;
+        width          = w;
+        height         = h;
         return MFX_ERR_NONE;
     }
     mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
@@ -196,65 +210,81 @@ public:
         while (1)
         {
             BSErr sts = parse_next_unit();
-
             if (sts == BS_ERR_NOT_IMPLEMENTED) continue;
             if (sts) break;
+        }
 
-            BS_MPEG2_header* pHdr = (BS_MPEG2_header*)get_header();
-            if (pHdr->seq_hdr != 0)
+        bs.DataLength = 0;
+
+        BS_MPEG2_header* pHdr = (BS_MPEG2_header*)get_header();
+        if (pHdr->seq_hdr != 0)
+        {
+            mfxU8 aspectratio_info = 0;
+            aspectratio_info |= pHdr->seq_hdr->aspect_ratio_information;
+            if (aspectratio_info < 1 || aspectratio_info > 4)
             {
-                mfxU8 aspectratio_info = 0;
-                aspectratio_info |= pHdr->seq_hdr->aspect_ratio_information;
-                if(aspectratio_info < 1 || aspectratio_info > 4)
+                g_tsLog << "ERROR: not defined aspect_ratio_information :" << aspectratio_info << "\n";
+                return MFX_ERR_ABORTED;
+            }
+
+            if (aspectratio_info == 1)
+            {
+                if ((m_aspectratioW == 1 && m_aspectratioH == 1) || (m_aspectratioW == 0 && m_aspectratioH == 0))
                 {
-                    g_tsLog << "ERROR: not defined aspect_ratio_information :" << aspectratio_info << "\n";
+                    return MFX_ERR_NONE;
+                }
+                else
+                {
+                    g_tsLog << "ERROR: aspect_ratio_information is not set correctly." << "\n";
                     return MFX_ERR_ABORTED;
                 }
+            }
 
-                if(aspectratio_info == 1)
+            mfxU64 k = ((mfxU64)(m_aspectratioW != 0 ? m_aspectratioW : 1) * width * 1000) / ((m_aspectratioH != 0 ? m_aspectratioH : 1) * height);
+            
+            //according to Table 6-3 in ITU-T H.262
+            if (k >= 1332 && k <= 1334)
+            {
+                if (aspectratio_info == 2)
                 {
-                    if((m_aspectratioW == 1 && m_aspectratioH == 1) || (m_aspectratioW == 0 && m_aspectratioH == 0))
-                    {
-                        return MFX_ERR_NONE;
-                    }
-                    else
-                    {
-                        g_tsLog << "ERROR: aspect_ratio_information is not set correctly." << "\n";
-                        return MFX_ERR_ABORTED;
-                    }
+                    return MFX_ERR_NONE;
                 }
-
-                //according to Table 6-3 in ITU-T H.262
-                if(m_aspectratioW == 4 && m_aspectratioH == 3)
+                else
                 {
-                    if(aspectratio_info == 2) return MFX_ERR_NONE;
-                    else
-                    {
-                        g_tsLog << "ERROR: aspect_ratio_information is:" << aspectratio_info << ", but expected 2 here. " << "\n";
-                        return MFX_ERR_ABORTED;
-                    }
-                }
-                if(m_aspectratioW == 16 && m_aspectratioH == 9)
-                {
-                    if(aspectratio_info == 3) return MFX_ERR_NONE;
-                    else
-                    {
-                        g_tsLog << "ERROR: aspect_ratio_information is:" << aspectratio_info << ", but expected 3 here. " << "\n";
-                        return MFX_ERR_ABORTED;
-                    }
-                }
-                if((m_aspectratioW == 2 && m_aspectratioH == 1) || (m_aspectratioW == 21 && m_aspectratioH == 1))
-                {
-                    if(aspectratio_info == 4) return MFX_ERR_NONE;
-                    else
-                    {
-                        g_tsLog << "ERROR: aspect_ratio_information is:" << aspectratio_info << ", but expected 4 here. " << "\n";
-                        return MFX_ERR_ABORTED;
-                    }
+                    g_tsLog << "ERROR: aspect_ratio_information is:" << aspectratio_info << ", but expected 2 here. " << "\n";
+                    return MFX_ERR_ABORTED;
                 }
             }
+            else if (k >= 1776 && k <= 1778)
+            {
+                if (aspectratio_info == 3)
+                {
+                    return MFX_ERR_NONE;
+                }
+                else
+                {
+                    g_tsLog << "ERROR: aspect_ratio_information is:" << aspectratio_info << ", but expected 3 here. " << "\n";
+                    return MFX_ERR_ABORTED;
+                }
+            }
+            else if (k >= 2209 && k <= 2211)
+            {
+                if (aspectratio_info == 4)
+                {
+                    return MFX_ERR_NONE;
+                }
+                else
+                {
+                    g_tsLog << "ERROR: aspect_ratio_information is:" << aspectratio_info << ", but expected 4 here. " << "\n";
+                    return MFX_ERR_ABORTED;
+                }
+            }
+            else
+            {
+                g_tsLog << "ERROR: aspect_ratio_information is not set correctly." << "\n";
+                return MFX_ERR_ABORTED;
+            }
         }
-        bs.DataLength = 0;
         return MFX_ERR_NONE;
     }
 };
@@ -308,6 +338,11 @@ int TestSuite::RunTest(unsigned int id)
     m_bs_processor = &verifier;
     ResChange resolution;
     m_filler = &resolution;
+
+    verifier.Init(m_pPar->mfx.FrameInfo.AspectRatioW, m_pPar->mfx.FrameInfo.AspectRatioH,
+        (m_pPar->mfx.FrameInfo.CropW != 0) ? m_pPar->mfx.FrameInfo.CropW : m_pPar->mfx.FrameInfo.Width,
+        (m_pPar->mfx.FrameInfo.CropH != 0) ? m_pPar->mfx.FrameInfo.CropH : m_pPar->mfx.FrameInfo.Height);
+
     EncodeFrames(nframes);
 
     bool b_reset = false;
@@ -322,7 +357,9 @@ int TestSuite::RunTest(unsigned int id)
     if(b_reset) {
         SETPARS(&m_par, MFXRESET);
         resolution.Init(m_pPar->mfx.FrameInfo.Width, m_pPar->mfx.FrameInfo.Height);
-        verifier.Init(m_pPar->mfx.FrameInfo.AspectRatioW,m_pPar->mfx.FrameInfo.AspectRatioH);
+        verifier.Init(m_pPar->mfx.FrameInfo.AspectRatioW,m_pPar->mfx.FrameInfo.AspectRatioH,
+            (m_pPar->mfx.FrameInfo.CropW != 0) ? m_pPar->mfx.FrameInfo.CropW : m_pPar->mfx.FrameInfo.Width,
+            (m_pPar->mfx.FrameInfo.CropH != 0) ? m_pPar->mfx.FrameInfo.CropH : m_pPar->mfx.FrameInfo.Height);
 
         Reset();
         EncodeFrames(nframes);
