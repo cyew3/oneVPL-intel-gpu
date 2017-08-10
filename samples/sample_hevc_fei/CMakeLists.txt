@@ -1,5 +1,4 @@
-#find_path( FEI_INCLUDE mfxfeihevc.h PATHS ${MFX_INCLUDE} )
-find_path( FEI_INCLUDE PATHS ${MFX_INCLUDE} )
+find_path( FEI_INCLUDE mfxfeihevc.h PATHS ${MFX_INCLUDE} )
 
 if(FEI_INCLUDE MATCHES NOTFOUND)
   set(skipping _force_skipping)
