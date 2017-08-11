@@ -6352,6 +6352,9 @@ mfxStatus MFXVideoENCODEH264::EncodeFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternal
 
     mfxStatus mfxRes = MFX_ERR_MORE_DATA;
     if (UMC_OK == res && cur_enc->m_pCurrentFrame) {
+        if (!bs)
+            return MFX_ERR_NULL_PTR;
+
         //Copy timestamp to output.
         mfxFrameSurface1* surf = 0;
         bs->TimeStamp = GetMfxTimeStamp(m_data_out.GetTime());
@@ -6361,7 +6364,7 @@ mfxStatus MFXVideoENCODEH264::EncodeFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternal
             bs->DecodeTimeStamp = CalculateDTSFromPTS_H264enc(
                 m_base.m_mfxVideoParam.mfx.FrameInfo,
                 cur_enc->m_SEIData.PictureTiming.dpb_output_delay,
-                bs->TimeStamp);            
+                bs->TimeStamp);
             m_core->DecreaseReference(&(surf->Data));
             cur_enc->m_pCurrentFrame->m_pAux[0] = cur_enc->m_pCurrentFrame->m_pAux[1] = 0;
         }
