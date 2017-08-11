@@ -66,6 +66,7 @@ protected:
 
         const vm_char   *description;
         IBinderCall<mfxStatus> * pHandler;
+        mfxU32 codecId;
     } OptContainer;
     typedef std::list<OptContainer>::iterator OptIter;
     std::list<OptContainer> m_pOptions;
