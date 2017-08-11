@@ -1005,8 +1005,11 @@ mfxStatus CTranscodingPipeline::Decode()
         }
         MSDK_BREAK_ON_ERROR(sts);
 
-        // if session is not joined and it is not parent - synchronize
-        if (!m_bIsJoinSession && m_pParentPipeline)
+        // If session is not joined and it is not parent - synchronize.
+        // If there was PreENC plugin in the pipeline - synchronize, because
+        // plugin will output data to the extended buffers and mediasdk can't
+        // track such dependency on its own.
+        if (!m_bIsJoinSession && m_pParentPipeline || m_pmfxPreENC.get())
         {
             MFX_ITT_TASK("SyncOperation");
             sts = m_pmfxSession->SyncOperation(PreEncExtSurface.Syncp, MSDK_WAIT_INTERVAL);
