@@ -171,22 +171,19 @@ mfxStatus MFEVAAPIEncoder::Submit(VAContextID context, mfxU32 timeToWait)
     ++m_framesCollected;
 
     vm_tick start_tick = vm_time_get_tick(), end_tick;
-    mfxU32 spent_ms = 0, wait_time = timeToWait;
-    // to prevent rounding errors in calculating spent_ms
-    // everything is calculated in ticks
-    wait_time *= m_mfe_vmtick_msec_frequency;
+    vm_tick spent_ticks = 0, wait_time = timeToWait * m_mfe_vmtick_msec_frequency;
 
-    // no more collected frames then m_framesToCombine
+    // such a condition with ticks allows to go into loop if at least 1ms
+    // is needed to wait
     while (m_framesCollected < m_framesToCombine &&
-           !cur_stream->isSubmitted() && wait_time > spent_ms){
-        vm_status res = vm_cond_timedwait(&m_mfe_wait, &m_mfe_guard, wait_time - spent_ms);
+           !cur_stream->isSubmitted() &&
+           wait_time >= (spent_ticks + m_mfe_vmtick_msec_frequency)){
+        // now time is expressed in "vm_ticks", thus to pass ms need to convert
+        vm_status res = vm_cond_timedwait(&m_mfe_wait, &m_mfe_guard,
+                                          (wait_time - spent_ticks)/m_mfe_vmtick_msec_frequency);
         if ((VM_OK == res) || (VM_TIMEOUT == res)) {
             end_tick = vm_time_get_tick();
-            spent_ms += (end_tick - start_tick);
-            if (spent_ms >= wait_time)
-            {
-                break;
-            }
+            spent_ticks += (end_tick - start_tick);
             start_tick = end_tick;
         } else {
             vm_mutex_unlock(&m_mfe_guard);
@@ -206,7 +203,8 @@ mfxStatus MFEVAAPIEncoder::Submit(VAContextID context, mfxU32 timeToWait)
 
         if (m_framesCollected < m_contexts.size() || m_contexts.empty())
         {
-            for (std::vector<StreamsIter_t>::iterator it = m_streams.begin(); it != m_streams.end(); ++it)
+            for (std::vector<StreamsIter_t>::iterator it = m_streams.begin();
+                 it != m_streams.end(); ++it)
             {
                 (*it)->ctx = VA_INVALID_ID;
                 (*it)->sts = MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -222,7 +220,8 @@ mfxStatus MFEVAAPIEncoder::Submit(VAContextID context, mfxU32 timeToWait)
             // Proper error handling and passing to correct encoder
             // TBD with VPG and implementation
             mfxStatus tmp_res = VA_STATUS_SUCCESS == vaSts ? MFX_ERR_NONE : MFX_ERR_DEVICE_FAILED;
-            for (std::vector<StreamsIter_t>::iterator it = m_streams.begin(); it != m_streams.end(); ++it)
+            for (std::vector<StreamsIter_t>::iterator it = m_streams.begin();
+                 it != m_streams.end(); ++it)
             {
                 (*it)->ctx = VA_INVALID_ID;
                 (*it)->sts = tmp_res;
