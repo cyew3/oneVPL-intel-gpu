@@ -1886,8 +1886,8 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
     mfxU32 const finalBitDepthChroma =
         params->useSameBitDepthForComponents ? finalBitDepth : originalBDChroma;
 
-    mfxI32 const l_shift = params->VpxDec16bFormat ? 0 : (pSurfaceIn->Info.Shift ? (16 - finalBitDepth) : originalBDLuma   - finalBitDepthLuma);
-    mfxI32 const c_shift = params->VpxDec16bFormat ? 0 : (pSurfaceIn->Info.Shift ? (16 - finalBitDepth) : originalBDChroma - finalBitDepthChroma);
+    mfxI32 const l_shift = params->VpxDec16bFormat ? 0 : (pSurfaceIn->Info.Shift ? (16 - finalBitDepthLuma)   : originalBDLuma   - finalBitDepthLuma);
+    mfxI32 const c_shift = params->VpxDec16bFormat ? 0 : (pSurfaceIn->Info.Shift ? (16 - finalBitDepthChroma) : originalBDChroma - finalBitDepthChroma);
 
     if (pSurfaceOut->Info.FourCC == MFX_FOURCC_YUV420_16)
     {
