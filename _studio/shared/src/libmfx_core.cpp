@@ -1396,6 +1396,7 @@ mfxStatus CommonCORE::DoSWFastCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSr
 
     case MFX_FOURCC_AYUV:
     case MFX_FOURCC_RGB4:
+    case MFX_FOURCC_BGR4:
     case MFX_FOURCC_A2RGB10:
         {
             mfxU8* ptrSrc = IPP_MIN(IPP_MIN(pSrc->Data.R, pSrc->Data.G), pSrc->Data.B);

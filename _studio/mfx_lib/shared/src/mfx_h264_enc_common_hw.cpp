@@ -2868,6 +2868,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     if (par.mfx.FrameInfo.FourCC != 0 &&
         par.mfx.FrameInfo.FourCC != MFX_FOURCC_NV12 &&
         par.mfx.FrameInfo.FourCC != MFX_FOURCC_RGB4 &&
+        par.mfx.FrameInfo.FourCC != MFX_FOURCC_BGR4 &&
         par.mfx.FrameInfo.FourCC != MFX_FOURCC_YUY2)
     {
         unsupported = true;
@@ -2895,7 +2896,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
     }
 
-    if (par.mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4 &&
+    if ((par.mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4 || par.mfx.FrameInfo.FourCC == MFX_FOURCC_BGR4) &&
         par.mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV444)
     {
         if (extBits->SPSBuffer)

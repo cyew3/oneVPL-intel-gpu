@@ -572,6 +572,7 @@ mfxStatus CheckFrameData(const mfxFrameSurface1 *surface)
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
             break;
         case MFX_FOURCC_RGB4:
+        case MFX_FOURCC_BGR4:
         case MFX_FOURCC_AYUV:
             if (!surface->Data.A || !surface->Data.R || !surface->Data.G || !surface->Data.B)
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
