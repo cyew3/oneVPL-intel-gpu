@@ -1417,7 +1417,7 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
 
     if (cols && width)
     {
-        mfxU16 widthInMinTileCols = static_cast<mfxU16>(width / MIN_TILE_WIDTH);
+        mfxU16 widthInMinTileCols = static_cast<mfxU16>(CeilDiv(width, MIN_TILE_WIDTH));
         mfxU16 maxPossibleCols = MFX_MIN(widthInMinTileCols, MAX_NUM_TILES);
         if (cols > maxPossibleCols)
         {
@@ -1625,6 +1625,9 @@ mfxStatus SetDefaults(
     SetDefault(fi.BitDepthLuma, 8);
     SetDefault(fi.BitDepthChroma, 8);
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
+
+    SetDefault(extPar.NumTileColumns, (extPar.FrameWidth + MAX_TILE_WIDTH - 1) / MAX_TILE_WIDTH);
+    SetDefault(extPar.NumTileRows, 1);
 
     // ext buffers
     // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
