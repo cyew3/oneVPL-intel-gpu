@@ -391,15 +391,20 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             {{ NO_ENCODING, SET_W(7680), SET_H(6288), SET_NUM_ROWS(1), SET_NUM_COLS(1),
                                                       CHECK_NUM_ROWS(1), CHECK_NUM_COLS(2) }}
         },
+        // NumTileColumns is 0 - check that is set to proper default value for big resolution
+        {/*54*/ MFX_ERR_NONE, INIT | GET_VIDEO_PARAM,
+            {{ NO_ENCODING, SET_W(7680), SET_H(6288), SET_NUM_ROWS(0), SET_NUM_COLS(0),
+                                                      CHECK_NUM_ROWS(1), CHECK_NUM_COLS(2) }}
+        },
         // NumTileColumns is bigger than max number of tiles for VP9
-        {/*54*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,  INIT | GET_VIDEO_PARAM,
+        {/*55*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,  INIT | GET_VIDEO_PARAM,
             {{ NO_ENCODING, SET_W(7680), SET_H(6288), SET_NUM_ROWS(1), SET_NUM_COLS(MAX_NUM_TILES + 1),
                                                       CHECK_NUM_ROWS(1), CHECK_NUM_COLS(MAX_NUM_TILES) }}
         },
 
         // below cases check reaction of Reset to incorrect NumTileRows
         // NumTileRows not power of 2
-        {/*55*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, RESET | CQP,
+        {/*56*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, RESET | CQP,
             {
                 { ITER_LENGTH, SET_W(1408), SET_H(1152), SET_NUM_ROWS(1), SET_NUM_COLS(1) },
                 { NO_ENCODING, SET_NUM_ROWS(3), SET_NUM_COLS(1),
@@ -407,7 +412,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             }
         },
         // NumTileRows is power of 2 but bigger than number of SB in Height
-        {/*56*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, RESET | CQP,
+        {/*57*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, RESET | CQP,
             {
                 { ITER_LENGTH, SET_W(176), SET_H(144), SET_NUM_ROWS(1), SET_NUM_COLS(1) },
                 { NO_ENCODING, SET_NUM_ROWS(4), SET_NUM_COLS(1),
@@ -415,7 +420,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             }
         },
         // NumTileRows is bigger than max supported by VP9
-        {/*57*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, RESET | CQP,
+        {/*58*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, RESET | CQP,
             {
                 { ITER_LENGTH, SET_W(1408), SET_H(1152), SET_NUM_ROWS(1), SET_NUM_COLS(1) },
                 { NO_ENCODING, SET_NUM_ROWS(MAX_NUM_ROWS + 1), SET_NUM_COLS(1),
@@ -425,7 +430,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
 
         // below cases check reaction of Reset to incorrect NumTileColumns
         // NumTileColumns is bigger than max number of tiles for VP9
-        {/*58*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, RESET | CQP,
+        {/*59*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, RESET | CQP,
             {
                 { ITER_LENGTH, SET_W(1408), SET_H(1152), SET_NUM_ROWS(1), SET_NUM_COLS(1) },
                 { NO_ENCODING, SET_NUM_ROWS(1), SET_NUM_COLS(3),
@@ -433,7 +438,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             }
         },
         // NumTileColumns is power of 2 but bigger than minimum tile width (256) allows
-        {/*59*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, RESET | CQP,
+        {/*60*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, RESET | CQP,
             {
                 { ITER_LENGTH, SET_W(704), SET_H(576), SET_NUM_ROWS(1), SET_NUM_COLS(1) },
                 { NO_ENCODING, SET_NUM_ROWS(1), SET_NUM_COLS(4),
@@ -441,7 +446,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             }
         },
         // NumTileColumns is power of 2 but smaller than maximum tile width (4096) allows
-        {/*60*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, RESET | CQP,
+        {/*61*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, RESET | CQP,
             {
                 { NO_ENCODING, SET_W(7680), SET_H(6288), SET_NUM_ROWS(1), SET_NUM_COLS(2) }, // 8K is too big to encode for Pre-Si. TODO: do real encoding here for Post-Si.
                 { NO_ENCODING, SET_NUM_ROWS(1), SET_NUM_COLS(1),
@@ -449,7 +454,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             }
         },
         // NumTileColumns is bigger than max number of tiles for VP9
-        {/*61*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, RESET | CQP,
+        {/*62*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, RESET | CQP,
             {
                 { NO_ENCODING, SET_W(7680), SET_H(6288), SET_NUM_ROWS(1), SET_NUM_COLS(1) }, // 8K is too big to encode for Pre-Si. TODO: do real encoding here for Post-Si.
                 { NO_ENCODING, SET_NUM_ROWS(1), SET_NUM_COLS(MAX_NUM_TILES + 1),
@@ -457,7 +462,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             }
         },
         // NumTileColumns is bigger than number of pipes for scalable encoding
-        {/*62*/ MFX_ERR_INVALID_VIDEO_PARAM, RESET | CQP | SCALABLE_PIPE,
+        {/*63*/ MFX_ERR_INVALID_VIDEO_PARAM, RESET | CQP | SCALABLE_PIPE,
             {
                 { ITER_LENGTH, SET_W(2816), SET_H(2304), SET_NUM_ROWS(1), SET_NUM_COLS(1) },
                 { NO_ENCODING, SET_NUM_ROWS(MAX_NUM_ROWS), SET_NUM_COLS(MAX_PIPES_SUPPORTED * 2) }
@@ -465,7 +470,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
 
         // below test cases check on-the-fly change of number of tile rows and tile columns for CQP
-        {/*63*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CQP,
+        {/*64*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CQP,
             {
                 { ITER_LENGTH, SET_W(1408), SET_H(1152),
                                SET_NUM_ROWS(1), SET_NUM_COLS(1) },
@@ -473,7 +478,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, SET_NUM_ROWS(2), SET_NUM_COLS(1) },
             }
         },
-        {/*64*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CQP,
+        {/*65*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CQP,
             {
                 { ITER_LENGTH, SET_W(1408), SET_H(1152),
                                SET_NUM_ROWS(1), SET_NUM_COLS(1) },
@@ -481,7 +486,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, SET_NUM_ROWS(1), SET_NUM_COLS(2) },
             }
         },
-        {/*65*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CQP,
+        {/*66*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CQP,
             {
                 { ITER_LENGTH, SET_W(1408), SET_H(1152),
                                SET_NUM_ROWS(4), SET_NUM_COLS(1) },
@@ -491,7 +496,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, SET_NUM_ROWS(2), SET_NUM_COLS(1) },
             }
         },
-        {/*66*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CQP | SCALABLE_PIPE | CHECK_FULL_INITIALIZATION,
+        {/*67*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CQP | SCALABLE_PIPE | CHECK_FULL_INITIALIZATION,
             {
                 { ITER_LENGTH, SET_W(1408), SET_H(1152),
                                SET_NUM_ROWS(4), SET_NUM_COLS(MAX_PIPES_SUPPORTED) },
@@ -503,7 +508,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
 
         // below test cases check on-the-fly change of number of tile rows and tile columns for CBR
-        {/*67*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CBR,
+        {/*68*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CBR,
             {
                 { ITER_LENGTH, SET_W(1408), SET_H(1152),
                                SET_NUM_ROWS(1), SET_NUM_COLS(1) },
@@ -511,7 +516,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, SET_NUM_ROWS(2), SET_NUM_COLS(1) },
             }
         },
-        {/*68*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CBR,
+        {/*69*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CBR,
             {
                 { ITER_LENGTH, SET_W(1408), SET_H(1152),
                                SET_NUM_ROWS(1), SET_NUM_COLS(1) },
@@ -519,7 +524,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, SET_NUM_ROWS(1), SET_NUM_COLS(2) },
             }
         },
-        {/*69*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CBR,
+        {/*70*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CBR,
             {
                 { ITER_LENGTH, SET_W(1408), SET_H(1152),
                                SET_NUM_ROWS(4), SET_NUM_COLS(1) },
@@ -529,7 +534,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, SET_NUM_ROWS(2), SET_NUM_COLS(1) },
             }
         },
-        {/*70*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CBR | SCALABLE_PIPE | CHECK_FULL_INITIALIZATION,
+        {/*71*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CBR | SCALABLE_PIPE | CHECK_FULL_INITIALIZATION,
             {
                 { ITER_LENGTH, SET_W(1408), SET_H(1152),
                                SET_NUM_ROWS(4), SET_NUM_COLS(MAX_PIPES_SUPPORTED) },
@@ -541,7 +546,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
 
         // below test cases check on-the-fly change of number of tile rows and tile columns for VBR
-        {/*71*/ MFX_ERR_NONE, DYNAMIC_CHANGE | VBR,
+        {/*72*/ MFX_ERR_NONE, DYNAMIC_CHANGE | VBR,
             {
                 { ITER_LENGTH, SET_W(1408), SET_H(1152),
                                SET_NUM_ROWS(1), SET_NUM_COLS(1) },
@@ -549,7 +554,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, SET_NUM_ROWS(2), SET_NUM_COLS(1) },
             }
         },
-        {/*72*/ MFX_ERR_NONE, DYNAMIC_CHANGE | VBR,
+        {/*73*/ MFX_ERR_NONE, DYNAMIC_CHANGE | VBR,
             {
                 { ITER_LENGTH, SET_W(1408), SET_H(1152),
                                SET_NUM_ROWS(1), SET_NUM_COLS(1) },
@@ -557,7 +562,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, SET_NUM_ROWS(1), SET_NUM_COLS(2) },
             }
         },
-        {/*73*/ MFX_ERR_NONE, DYNAMIC_CHANGE | VBR,
+        {/*74*/ MFX_ERR_NONE, DYNAMIC_CHANGE | VBR,
             {
                 { ITER_LENGTH, SET_W(1408), SET_H(1152),
                                SET_NUM_ROWS(4), SET_NUM_COLS(1) },
@@ -567,7 +572,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, SET_NUM_ROWS(2), SET_NUM_COLS(1) },
             }
         },
-        {/*74*/ MFX_ERR_NONE, DYNAMIC_CHANGE | VBR | SCALABLE_PIPE | CHECK_FULL_INITIALIZATION,
+        {/*75*/ MFX_ERR_NONE, DYNAMIC_CHANGE | VBR | SCALABLE_PIPE | CHECK_FULL_INITIALIZATION,
             {
                 { ITER_LENGTH, SET_W(1408), SET_H(1152),
                                SET_NUM_ROWS(4), SET_NUM_COLS(MAX_PIPES_SUPPORTED) },
