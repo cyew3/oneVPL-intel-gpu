@@ -123,6 +123,9 @@ public:
     }
 private:
     HMODULE mDllHModule;
+    // Do not allow copying of the object
+    D3D9DllCallHelper(const D3D9DllCallHelper&);
+    D3D9DllCallHelper& operator=(const D3D9DllCallHelper&);
 };
 
 mfxStatus               CreateD3DDevice(D3D9DllCallHelper& d3d9hlp,
