@@ -317,6 +317,13 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_HEVC_PARAM(PicHeightInLumaSamples,    OPT_UINT_16,    "HEVC encoded picture height (SPS.pic_height_in_luma_samples)"),
         HANDLE_HEVC_PARAM(SampleAdaptiveOffset,      OPT_UINT_16,    "HEVC SAO public API: 0=unknown, 1=disabled, 2=luma, 4=chroma, 6=luma&chroma"),
 
+        HANDLE_VP8_OPTION(EnableMultipleSegments, OPT_UINT_16, "0-maxU32"),
+        HANDLE_VP8_OPTION(LoopFilterType, OPT_UINT_16, "0-maxU16"),
+        HANDLE_VP8_OPTION(SharpnessLevel, OPT_UINT_16, "0-maxU16"),
+        HANDLE_VP8_OPTION(NumTokenPartitions, OPT_UINT_16, "0-maxU16"),
+        HANDLE_VP8_OPTION(WriteIVFHeaders, OPT_UINT_16, "0-maxU16"),
+        HANDLE_VP8_OPTION(NumFramesForIVFHeader, OPT_UINT_32, "0-maxU32"),
+
         // mfxExtVP9Param
         HANDLE_VP9_PARAM(FrameWidth,          OPT_UINT_32, "0-maxU32"),
         HANDLE_VP9_PARAM(FrameHeight,         OPT_UINT_32, "0-maxU32"),
@@ -324,13 +331,8 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_VP9_PARAM(QIndexDeltaLumaDC,   OPT_INT_16, ""),
         HANDLE_VP9_PARAM(QIndexDeltaChromaAC, OPT_INT_16, ""),
         HANDLE_VP9_PARAM(QIndexDeltaChromaDC, OPT_INT_16, ""),
-
-        HANDLE_VP8_OPTION(EnableMultipleSegments,OPT_UINT_16,   "0-maxU32"),
-        HANDLE_VP8_OPTION(LoopFilterType,        OPT_UINT_16,   "0-maxU16"),
-        HANDLE_VP8_OPTION(SharpnessLevel,        OPT_UINT_16,   "0-maxU16"),
-        HANDLE_VP8_OPTION(NumTokenPartitions,    OPT_UINT_16,   "0-maxU16"),
-        HANDLE_VP8_OPTION(WriteIVFHeaders,       OPT_UINT_16,   "0-maxU16"),
-        HANDLE_VP8_OPTION(NumFramesForIVFHeader, OPT_UINT_32,   "0-maxU32"),
+        HANDLE_VP9_PARAM(NumTileRows,         OPT_INT_16, "number of tile rows (1 - default)"),
+        HANDLE_VP9_PARAM(NumTileColumns,      OPT_INT_16, "number of tile columns (1 - default)"),
 
         // mfxExtCodingOption2
         HANDLE_EXT_OPTION2(IntRefType,             OPT_UINT_16,   ""),
@@ -1367,6 +1369,112 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
 
             pExt->FrameHeight = val;
             m_ExtBuffers.get()->push_back(pExt);
+
+            argv++;
+        }
+        else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-NumTileRows"), VM_STRING("")))
+        {
+            mfxU32 val;
+            MFX_CHECK(1 + argv != argvEnd);
+            MFX_PARSE_INT(val, argv[1]);
+
+            if (m_EncParams.mfx.CodecId == MFX_CODEC_VP9)
+            {
+                mfxExtVP9Param *pExt = NULL;
+
+                {
+                    MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_VP9_PARAM);
+                    if (!ppExt)
+                    {
+                        pExt = new mfxExtVP9Param();
+
+                        pExt->Header.BufferId = MFX_EXTBUFF_VP9_PARAM;
+                        pExt->Header.BufferSz = sizeof(mfxExtVP9Param);
+                    }
+                    else
+                    {
+                        pExt = reinterpret_cast<mfxExtVP9Param *>(ppExt->get());
+                    }
+                }
+
+                pExt->NumTileRows = val;
+                m_ExtBuffers.get()->push_back(pExt);
+            }
+            else
+            {
+                mfxExtHEVCTiles *pExt = NULL;
+
+                {
+                    MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_HEVC_TILES);
+                    if (!ppExt)
+                    {
+                        pExt = new mfxExtHEVCTiles();
+
+                        pExt->Header.BufferId = MFX_EXTBUFF_HEVC_TILES;
+                        pExt->Header.BufferSz = sizeof(mfxExtHEVCTiles);
+                    }
+                    else
+                    {
+                        pExt = reinterpret_cast<mfxExtHEVCTiles *>(ppExt->get());
+                    }
+                }
+
+                pExt->NumTileRows = val;
+                m_ExtBuffers.get()->push_back(pExt);
+            }
+
+            argv++;
+        }
+        else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-NumTileColumns"), VM_STRING("")))
+        {
+            mfxU32 val;
+            MFX_CHECK(1 + argv != argvEnd);
+            MFX_PARSE_INT(val, argv[1]);
+
+            if (m_EncParams.mfx.CodecId == MFX_CODEC_VP9)
+            {
+                mfxExtVP9Param *pExt = NULL;
+
+                {
+                    MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_VP9_PARAM);
+                    if (!ppExt)
+                    {
+                        pExt = new mfxExtVP9Param();
+
+                        pExt->Header.BufferId = MFX_EXTBUFF_VP9_PARAM;
+                        pExt->Header.BufferSz = sizeof(mfxExtVP9Param);
+                    }
+                    else
+                    {
+                        pExt = reinterpret_cast<mfxExtVP9Param *>(ppExt->get());
+                    }
+                }
+
+                pExt->NumTileColumns = val;
+                m_ExtBuffers.get()->push_back(pExt);
+            }
+            else
+            {
+                mfxExtHEVCTiles *pExt = NULL;
+
+                {
+                    MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_HEVC_TILES);
+                    if (!ppExt)
+                    {
+                        pExt = new mfxExtHEVCTiles();
+
+                        pExt->Header.BufferId = MFX_EXTBUFF_HEVC_TILES;
+                        pExt->Header.BufferSz = sizeof(mfxExtHEVCTiles);
+                    }
+                    else
+                    {
+                        pExt = reinterpret_cast<mfxExtHEVCTiles *>(ppExt->get());
+                    }
+                }
+
+                pExt->NumTileColumns = val;
+                m_ExtBuffers.get()->push_back(pExt);
+            }
 
             argv++;
         }

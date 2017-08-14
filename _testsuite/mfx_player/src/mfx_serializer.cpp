@@ -394,6 +394,9 @@ void MFXStructureRef <mfxExtVP9Param>::ConstructValues() const
     SERIALIZE_INT(QIndexDeltaLumaDC);
     SERIALIZE_INT(QIndexDeltaChromaAC);
     SERIALIZE_INT(QIndexDeltaChromaDC);
+
+    SERIALIZE_INT(NumTileRows);
+    SERIALIZE_INT(NumTileColumns);
 }
 
 void MFXStructureRef <mfxFrameInfo>::ConstructValues () const
