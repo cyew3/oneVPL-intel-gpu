@@ -402,7 +402,10 @@ mfxStatus DXVAHDVideoProcessor::CreateInternalDevice()
         IDirect3D9Ex *pD3DEx = NULL;
         IDirect3DDevice9Ex  *pDirect3DDeviceEx = NULL;
 
-        Direct3DCreate9Ex(D3D_SDK_VERSION, &pD3DEx); 
+        if(m_d3d9Helper.isD3D9Available() == false)
+            return MFX_ERR_DEVICE_FAILED;
+
+        m_d3d9Helper.Direct3DCreate9Ex(D3D_SDK_VERSION, &pD3DEx);
         if(NULL == pD3DEx)
             return MFX_ERR_DEVICE_FAILED;
 
@@ -422,7 +425,7 @@ mfxStatus DXVAHDVideoProcessor::CreateInternalDevice()
             pD3DEx->Release();
 
             //1 create DX device
-            m_pD3D = Direct3DCreate9(D3D_SDK_VERSION);
+            m_pD3D = m_d3d9Helper.Direct3DCreate9(D3D_SDK_VERSION);
             if (0 == m_pD3D)
                 return MFX_ERR_DEVICE_FAILED; 
 

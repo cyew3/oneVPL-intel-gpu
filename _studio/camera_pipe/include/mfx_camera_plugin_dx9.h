@@ -764,7 +764,7 @@ private:
     HRESULT   InitVersion();
 
     
-
+    D3D9DllCallHelper       m_d3d9Helper;
     IDirect3DDeviceManager9 *m_pD3Dmanager;
     IDirect3D9              *m_pD3D;
     IDirect3DDevice9        *m_pD3DDevice;
@@ -997,5 +997,4 @@ private:
     IDirect3DDeviceManager9      *m_pD3Dmanager;
     std::vector<s_InternalSurf>   m_inputSurf;
     std::vector<s_InternalSurf>   m_outputSurf;
-
 };
