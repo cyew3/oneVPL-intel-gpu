@@ -191,10 +191,11 @@ namespace vp9e_brc
         {/*26 unspecified both brc-type and kbps)*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, 0 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 0 },
             }
         },
 
-        {/*27 unspecified brc type, but correct kbps => map to CBR)*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE,
+        {/*27 unspecified brc type, but correct kbps => map to CBR)*/ MFX_ERR_NONE, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, 0 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
