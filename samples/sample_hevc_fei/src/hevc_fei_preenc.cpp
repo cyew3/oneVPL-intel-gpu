@@ -114,21 +114,18 @@ mfxStatus FEI_Preenc::SetParameters(const sInputParams& params)
     m_videoParams.mfx.EncodedOrder = params.bEncodedOrder;
 
     /* Create extension buffer to Init FEI PREENC */
-    m_videoParams.enableExtParam(MFX_EXTBUFF_FEI_PARAM);
-    mfxExtFeiParam* pExtBufInit = m_videoParams.get<mfxExtFeiParam>();
+    mfxExtFeiParam* pExtBufInit = m_videoParams.AddExtBuffer<mfxExtFeiParam>();
     MSDK_CHECK_POINTER(pExtBufInit, MFX_ERR_NULL_PTR);
 
     pExtBufInit->Func = MFX_FEI_FUNCTION_PREENC;
 
     // configure B-pyramid settings
-    m_videoParams.enableExtParam(MFX_EXTBUFF_CODING_OPTION2);
-    mfxExtCodingOption2* pCodingOption2 = m_videoParams.get<mfxExtCodingOption2>();
-    MSDK_CHECK_POINTER(pCodingOption2, MFX_ERR_NULL_PTR);
+    mfxExtCodingOption2* pCO2 = m_videoParams.AddExtBuffer<mfxExtCodingOption2>();
+    MSDK_CHECK_POINTER(pCO2, MFX_ERR_NULL_PTR);
 
-    pCodingOption2->BRefType = params.BRefType;
+    pCO2->BRefType = params.BRefType;
 
-    m_videoParams.enableExtParam(MFX_EXTBUFF_CODING_OPTION3);
-    mfxExtCodingOption3* pCO3 = m_videoParams.get<mfxExtCodingOption3>();
+    mfxExtCodingOption3* pCO3 = m_videoParams.AddExtBuffer<mfxExtCodingOption3>();
     MSDK_CHECK_POINTER(pCO3, MFX_ERR_NULL_PTR);
 
     pCO3->GPB = params.GPB;
@@ -204,8 +201,7 @@ mfxStatus FEI_Preenc::PreEncOneFrame(HevcTask & currTask, const RefIdxPair & ref
     in.NumFrameL0 = (refFramesIdx.RefL0 != IDX_INVALID);
     in.NumFrameL1 = (refFramesIdx.RefL1 != IDX_INVALID);
 
-    in.enableExtParam(MFX_EXTBUFF_FEI_PREENC_CTRL);
-    mfxExtFeiPreEncCtrl* ctrl = in.get<mfxExtFeiPreEncCtrl>();
+    mfxExtFeiPreEncCtrl* ctrl = in.AddExtBuffer<mfxExtFeiPreEncCtrl>();
     MSDK_CHECK_POINTER(ctrl, MFX_ERR_NULL_PTR);
 
     ctrl->PictureType     = MFX_PICTYPE_FRAME;
@@ -220,27 +216,23 @@ mfxStatus FEI_Preenc::PreEncOneFrame(HevcTask & currTask, const RefIdxPair & ref
 
     if (refFramesIdx.RefL0 != IDX_INVALID || refFramesIdx.RefL1 != IDX_INVALID)
     {
-        out.enableExtParam(MFX_EXTBUFF_FEI_PREENC_MV);
-
-        mfxExtFeiPreEncMV * mv = out.get<mfxExtFeiPreEncMV>();
+        mfxExtFeiPreEncMV * mv = out.AddExtBuffer<mfxExtFeiPreEncMV>();
         MSDK_CHECK_POINTER(mv, MFX_ERR_NULL_PTR);
 
         mfxExtFeiPreEncMVExtended * ext_mv = AcquireResource(m_mvs);
         MSDK_CHECK_POINTER_SAFE(ext_mv, MFX_ERR_MEMORY_ALLOC, msdk_printf(MSDK_STRING("ERROR: No free buffer in mfxExtFeiPreEncMVExtended\n")));
 
         mfxExtFeiPreEncMV & free_mv = *ext_mv;
-        Copy(*mv, free_mv); // This will be avoided once we move to a new wrapper class for mfxExtBuffer's
+        Copy(*mv, free_mv);
 
-        out.enableExtParam(MFX_EXTBUFF_FEI_PREENC_MB);
-
-        mfxExtFeiPreEncMBStat* mb = out.get<mfxExtFeiPreEncMBStat>();
+        mfxExtFeiPreEncMBStat* mb = out.AddExtBuffer<mfxExtFeiPreEncMBStat>();
         MSDK_CHECK_POINTER(mb, MFX_ERR_NULL_PTR);
 
         mfxExtFeiPreEncMBStatExtended * ext_mb = AcquireResource(m_mbs);
         MSDK_CHECK_POINTER_SAFE(ext_mb, MFX_ERR_MEMORY_ALLOC, msdk_printf(MSDK_STRING("ERROR: No free buffer in mfxExtFeiPreEncMBStatExtended\n")));
 
         mfxExtFeiPreEncMBStat & free_mb = *ext_mb;
-        Copy(*mb, free_mb); // This will be avoided once we move to a new wrapper class for mfxExtBuffer's
+        Copy(*mb, free_mb);
 
         PreENCOutput stat;
         stat.m_mv = ext_mv;

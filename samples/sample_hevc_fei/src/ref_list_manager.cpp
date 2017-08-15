@@ -130,13 +130,13 @@ namespace HevcRplUtils
 
     bool isBPyramid(MfxVideoParamsWrapper const & par)
     {
-        mfxExtCodingOption2 * CO2 = par.get<mfxExtCodingOption2>();
+        mfxExtCodingOption2 * CO2 = par;
         return CO2 ? CO2->BRefType == MFX_B_REF_PYRAMID : false;
     }
 
     bool isLowDelay(MfxVideoParamsWrapper const & par)
     {
-        mfxExtCodingOption3 * CO3 = par.get<mfxExtCodingOption3>();
+        mfxExtCodingOption3 * CO3 = par;
         return CO3 ? CO3->PRefType == MFX_P_REF_PYRAMID : false;
     }
 
@@ -658,7 +658,7 @@ void EncodeOrderControl::ConstructRPL(HevcTask & task, const HevcTask & prevTask
     MSDK_ZERO_MEMORY(task.m_numRefActive);
     Fill(task.m_refPicList, IDX_INVALID);
 
-    mfxExtCodingOption3 * CO3 = m_par.get<mfxExtCodingOption3>();
+    mfxExtCodingOption3 * CO3 = m_par;
     assert(CO3);
 
     if (task.m_frameType & MFX_FRAMETYPE_B)

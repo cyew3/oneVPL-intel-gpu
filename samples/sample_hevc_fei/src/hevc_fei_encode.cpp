@@ -61,15 +61,13 @@ mfxStatus FEI_Encode::SetEncodeParameters(const sInputParams& encParams)
     m_videoParams.mfx.NumSlice    = encParams.nNumSlices;
     m_videoParams.mfx.EncodedOrder= encParams.bEncodedOrder;
 
-    m_videoParams.enableExtParam(MFX_EXTBUFF_CODING_OPTION2);
-    mfxExtCodingOption2* pCodingOption2 = m_videoParams.get<mfxExtCodingOption2>();
-    MSDK_CHECK_POINTER(pCodingOption2, MFX_ERR_NOT_INITIALIZED);
+    mfxExtCodingOption2* pCO2 = m_videoParams.AddExtBuffer<mfxExtCodingOption2>();
+    MSDK_CHECK_POINTER(pCO2, MFX_ERR_NOT_INITIALIZED);
 
     // configure B-pyramid settings
-    pCodingOption2->BRefType = encParams.BRefType;
+    pCO2->BRefType = encParams.BRefType;
 
-    m_videoParams.enableExtParam(MFX_EXTBUFF_CODING_OPTION3);
-    mfxExtCodingOption3* pCO3 = m_videoParams.get<mfxExtCodingOption3>();
+    mfxExtCodingOption3* pCO3 = m_videoParams.AddExtBuffer<mfxExtCodingOption3>();
     MSDK_CHECK_POINTER(pCO3, MFX_ERR_NOT_INITIALIZED);
 
     pCO3->GPB = encParams.GPB;
