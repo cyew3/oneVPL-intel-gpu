@@ -314,6 +314,8 @@ int main(int argc, char *argv[])
         sts = pipeline.Init();
         MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
 
+        pipeline.PrintInfo();
+
         sts = pipeline.Execute();
         MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
     }

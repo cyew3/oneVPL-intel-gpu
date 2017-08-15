@@ -18,9 +18,11 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 \**********************************************************************************/
 
 #include "pipeline_hevc_fei.h"
+#include <version.h>
 
 CEncodingPipeline::CEncodingPipeline(sInputParams& userInput)
     : m_inParams(userInput)
+    , m_processedFrames(0)
     , m_impl(MFX_IMPL_HARDWARE_ANY | MFX_IMPL_VIA_VAAPI)
     , m_EncSurfPool()
 {
@@ -97,8 +99,53 @@ mfxStatus CEncodingPipeline::Init()
 
 void CEncodingPipeline::Close()
 {
+    msdk_printf(MSDK_STRING("\nFrames processed: %u\n"), m_processedFrames);
     m_pPlugin.reset(); // Unload plugin by destructing object PluginLoader
     m_mfxSession.Close();
+}
+
+void CEncodingPipeline::PrintInfo()
+{
+    msdk_printf(MSDK_STRING("\nIntel(R) Media SDK HEVC FEI Encoding Sample Version %s\n"), GetMSDKSampleVersion().c_str());
+
+    const msdk_char* sPipeline = m_inParams.bPREENC && m_inParams.bENCODE ? MSDK_STRING("PreENC + Encode") : (m_inParams.bPREENC ? MSDK_STRING("PreENC") : MSDK_STRING("Encode"));
+    msdk_printf(MSDK_STRING("\nPipeline:\t%s"), sPipeline);
+
+    mfxFrameInfo sourceFrameInfo;
+    FillInputFrameInfo(sourceFrameInfo);
+
+    msdk_printf(MSDK_STRING("\nResolution:\t%dx%d"), sourceFrameInfo.Width, sourceFrameInfo.Height);
+    msdk_printf(MSDK_STRING("\nFrame rate:\t%d/%d = %.2f"), sourceFrameInfo.FrameRateExtN, sourceFrameInfo.FrameRateExtD, CalculateFrameRate(sourceFrameInfo.FrameRateExtN, sourceFrameInfo.FrameRateExtD));
+
+    MfxVideoParamsWrapper param;
+    if (m_pFEI_Encode.get())
+        param = m_pFEI_Encode->GetVideoParam();
+    else if (m_pFEI_PreENC.get())
+        param = m_pFEI_PreENC->GetVideoParam();
+
+    msdk_printf(MSDK_STRING("\n%s order"), param.mfx.EncodedOrder ? MSDK_STRING("Encoded") : MSDK_STRING("Display"));
+    msdk_printf(MSDK_STRING("\nGop Size:\t%d"), param.mfx.GopPicSize);
+
+    mfxU16 gopOptFlag = param.mfx.GopOptFlag;
+    const msdk_char* GopClosed = (gopOptFlag & MFX_GOP_CLOSED) == 0 ? MSDK_STRING("Open") : MSDK_STRING("Closed");
+    const msdk_char* GopStrict = (gopOptFlag & MFX_GOP_STRICT) == 0 ? MSDK_STRING("Not Strict") : MSDK_STRING("Strict");
+    msdk_printf(MSDK_STRING("\nGopOptFlag:\t%s, %s"), GopClosed, GopStrict);
+
+    msdk_char idrInterval[6];
+    msdk_itoa_decimal(param.mfx.IdrInterval, idrInterval);
+    msdk_printf(MSDK_STRING("\nIDR Interval:\t%s"), param.mfx.IdrInterval == 0xffff ? MSDK_STRING("Infinite") : MSDK_STRING(idrInterval));
+
+    msdk_printf(MSDK_STRING("\nGopRefDist:\t%d"), param.mfx.GopRefDist);
+    msdk_printf(MSDK_STRING("\nNumRefFrame:\t%d"), param.mfx.NumRefFrame);
+
+    mfxU16 bRefType = param.GetExtBuffer<mfxExtCodingOption2>()->BRefType;
+    msdk_printf(MSDK_STRING("\nB-pyramid\t%s"), bRefType ? (bRefType == MFX_B_REF_OFF ? MSDK_STRING("Off") : MSDK_STRING("On")) : MSDK_STRING("MSDK default"));
+
+    mfxVersion ver;
+    m_mfxSession.QueryVersion(&ver);
+    msdk_printf(MSDK_STRING("\n\nMedia SDK version\t%d.%d"), ver.Major, ver.Minor);
+
+    msdk_printf(MSDK_STRING("\n"));
 }
 
 mfxStatus CEncodingPipeline::LoadFEIPlugin()
@@ -302,6 +349,7 @@ mfxStatus CEncodingPipeline::Execute()
         }
         if (m_pOrderCtrl.get())
             m_pOrderCtrl->FreeTask(task);
+        m_processedFrames++;
     } // while (MFX_ERR_NONE <= sts || MFX_ERR_MORE_DATA == sts)
 
     MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA); // reached end of input file
@@ -334,6 +382,8 @@ mfxStatus CEncodingPipeline::DrainBufferedFrames()
                 sts = m_pFEI_Encode->EncodeFrame(task->m_surf);
                 // exit in case of other errors
                 MSDK_CHECK_STATUS(sts, "EncodeFrame drain failed");
+
+                m_processedFrames++;
             }
             m_pOrderCtrl->FreeTask(task);
         }

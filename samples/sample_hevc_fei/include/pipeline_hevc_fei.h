@@ -41,10 +41,14 @@ public:
     mfxStatus Execute();
     void Close();
 
+    void PrintInfo();
+
 private:
     const sInputParams m_inParams; /* collection of user parameters, adjusted in parsing and
                                       shouldn't be modified during processing to not lose
                                       initial settings */
+
+    mfxU32                   m_processedFrames;
 
     mfxIMPL                  m_impl;
     MFXVideoSession          m_mfxSession;
