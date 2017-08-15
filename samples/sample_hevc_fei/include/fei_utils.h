@@ -88,6 +88,22 @@ private:
     YUVReader& operator=(const YUVReader& reader);
 };
 
+template<typename T>
+T* AcquireResource(std::vector<T> & pool)
+{
+    T * freeBuffer = NULL;
+    for (size_t i = 0; i < pool.size(); i++)
+    {
+        if (pool[i].m_locked == 0)
+        {
+            freeBuffer = &pool[i];
+            msdk_atomic_inc16((volatile mfxU16*)&pool[i].m_locked);
+            break;
+        }
+    }
+    return freeBuffer;
+}
+
 // TODO: implement decoder functionality
 // class MFX_Decode : public IVideoReader {};
 

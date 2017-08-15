@@ -208,6 +208,8 @@ namespace HevcRplUtils
             Copy(task.m_dpb[TASK_DPB_ACTIVE], prevTask.m_dpb[TASK_DPB_AFTER]);
         }
 
+        Copy(task.m_dpb[TASK_DPB_BEFORE], prevTask.m_dpb[TASK_DPB_AFTER]);
+
         {
             HevcDpbArray& dpb = task.m_dpb[TASK_DPB_ACTIVE];
 
@@ -565,17 +567,18 @@ HevcTask* EncodeOrderControl::ReorderFrame(mfxFrameSurface1 * surface)
 
     if (surface)
     {
-        surface->Data.Locked++; // buffered must be locked, lock all
         if (!m_free.empty())
         {
             free_task = &m_free.front();
             m_reordering.splice(m_reordering.end(), m_free, m_free.begin());
+
+            msdk_atomic_inc16((volatile mfxU16*)&surface->Data.Locked);
         }
     }
 
     if (free_task)
     {
-        MSDK_ZERO_MEMORY(*free_task);
+        free_task->Reset();
 
         free_task->m_surf = surface;
         free_task->m_frameType = GetFrameType(m_par, m_frameOrder - m_lastIDR);
@@ -645,7 +648,6 @@ HevcTask* EncodeOrderControl::ReorderFrame(mfxFrameSurface1 * surface)
         }
 
         m_lastTask = task;
-        task_to_encode->m_surf->Data.Locked--; // all input surfaces were locked, unlock output
     }
 
     return task_to_encode;
@@ -677,4 +679,57 @@ void EncodeOrderControl::ConstructRPL(HevcTask & task, const HevcTask & prevTask
         HevcRplUtils::ConstructRPL(task.m_dpb[TASK_DPB_ACTIVE], !!(task.m_frameType & MFX_FRAMETYPE_B), task.m_poc, task.m_tid,
             task.m_refPicList, task.m_numRefActive, NULL, NULL);
     }
+}
+
+void Release(PreENCOutput & statistic)
+{
+    if (statistic.m_mv)
+        msdk_atomic_dec16((volatile mfxU16*)&statistic.m_mv->m_locked);
+    statistic.m_mv = NULL;
+
+    if (statistic.m_mb)
+        msdk_atomic_dec16((volatile mfxU16*)&statistic.m_mb->m_locked);
+    statistic.m_mb = NULL;
+}
+
+void EncodeOrderControl::ReleaseResources(HevcTask & task)
+{
+    if (m_lockRawRef)
+    {
+        if (!(task.m_frameType & MFX_FRAMETYPE_REF))
+        {
+            if (task.m_surf)
+            {
+                msdk_atomic_dec16((volatile mfxU16*)&task.m_surf->Data.Locked);
+                task.m_surf = NULL;
+            }
+        }
+
+        for (mfxU16 i = 0, j = 0; !isDpbEnd(task.m_dpb[TASK_DPB_BEFORE], i); i ++)
+        {
+            for (j = 0; !isDpbEnd(task.m_dpb[TASK_DPB_AFTER], j); j ++)
+                if (task.m_dpb[TASK_DPB_BEFORE][i].m_idxRec == task.m_dpb[TASK_DPB_AFTER][j].m_idxRec)
+                    break;
+
+            if (isDpbEnd(task.m_dpb[TASK_DPB_AFTER], j))
+            {
+                if (task.m_dpb[TASK_DPB_BEFORE][i].m_surf)
+                {
+                    msdk_atomic_dec16((volatile mfxU16*)&task.m_dpb[TASK_DPB_BEFORE][i].m_surf->Data.Locked);
+                    task.m_dpb[TASK_DPB_BEFORE][i].m_surf = NULL;
+                }
+            }
+        }
+    }
+    else
+    {
+        if (task.m_surf)
+        {
+            msdk_atomic_dec16((volatile mfxU16*)&task.m_surf->Data.Locked);
+            task.m_surf = NULL;
+        }
+    }
+
+    std::for_each(task.m_preEncOutput.begin(), task.m_preEncOutput.end(), Release);
+    task.m_preEncOutput.clear();
 }

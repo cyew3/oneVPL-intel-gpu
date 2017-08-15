@@ -24,63 +24,25 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "mfxstructures.h"
 #include "sample_hevc_fei_defs.h"
 
-template<class T> inline void Zero(std::vector<T> & vec) { memset(&vec[0], 0, sizeof(T) * vec.size()); }
-template<class T> inline void Zero(T * first, size_t cnt) { memset(first, 0, sizeof(T) * cnt); }
-template<class T> inline void Fill(T & obj, int val) { memset(&obj, val, sizeof(obj)); }
-template<class T> inline T Clip3(T min, T max, T x) { return std::min(std::max(min, x), max); }
-
-enum
-{
-    MAX_DPB_SIZE = 15,
-    IDX_INVALID = 0xFF,
-};
-
-typedef struct _HevcDpbFrame
-{
-    mfxI32   m_poc;
-    mfxU32   m_fo;    // FrameOrder
-    mfxU32   m_eo;    // Encoded order
-    mfxU32   m_bpo;   // Bpyramid order
-    mfxU32   m_level; // pyramid level
-    mfxU8    m_tid;
-    bool     m_ltr;   // is "long-term"
-    bool     m_ldb;   // is "low-delay B"
-    mfxU8    m_codingType;
-    mfxU8    m_idxRec;
-    mfxFrameSurface1 * m_surf; //input surface
-} HevcDpbFrame, HevcDpbArray[MAX_DPB_SIZE];
-
-enum
-{
-    TASK_DPB_ACTIVE = 0, // available during task execution
-    TASK_DPB_AFTER,      // after task execution (ACTIVE + curTask if ref)
-    TASK_DPB_NUM
-};
-
-typedef struct _HevcTask : HevcDpbFrame
-{
-    mfxU16       m_frameType;
-    mfxU8        m_refPicList[2][MAX_DPB_SIZE];
-    mfxU8        m_numRefActive[2]; // L0 and L1 lists
-    mfxI32       m_lastIPoc;
-    HevcDpbArray m_dpb[TASK_DPB_NUM];
-} HevcTask;
-
-inline bool operator ==(HevcTask const & l, HevcTask const & r)
-{
-    return l.m_poc == r.m_poc;
-}
-
 class EncodeOrderControl
 {
 public:
-    EncodeOrderControl(const MfxVideoParamsWrapper & par) :
+    EncodeOrderControl(const MfxVideoParamsWrapper & par, bool bIsPreENC) :
     m_par(par),
+    m_lockRawRef(bIsPreENC),
     m_frameOrder(0),
     m_lastIDR(0)
     {
         Reset();
-        Fill(m_lastTask, IDX_INVALID);
+        // make m_lastTask invalid:
+        Fill(static_cast<HevcDpbFrame & >(m_lastTask), IDX_INVALID);
+        m_lastTask.m_frameType = IDX_INVALID;
+        Fill(m_lastTask.m_refPicList, IDX_INVALID);
+        Fill(m_lastTask.m_numRefActive, IDX_INVALID);
+        m_lastTask.m_lastIPoc = IDX_INVALID;
+        Fill(m_lastTask.m_dpb[TASK_DPB_ACTIVE], IDX_INVALID);
+        Fill(m_lastTask.m_dpb[TASK_DPB_AFTER],  IDX_INVALID);
+        Fill(m_lastTask.m_dpb[TASK_DPB_BEFORE], IDX_INVALID);
     }
 
     ~EncodeOrderControl()
@@ -104,10 +66,13 @@ public:
         return task;
     }
 
+    void ReleaseResources(HevcTask & task);
+
     void FreeTask(HevcTask* pTask)
     {
         if (pTask)
         {
+            ReleaseResources(*pTask);
             TaskList::iterator it = std::find(m_encoding.begin(), m_encoding.end(), *pTask);
             if (it != m_encoding.end())
             {
@@ -125,7 +90,9 @@ private:
         return par.AsyncDepth + par.mfx.GopRefDist - 1 + ((par.AsyncDepth > 1)? 1: 0);
     }
 
+private:
     const MfxVideoParamsWrapper m_par;
+    const bool m_lockRawRef;
 
     typedef std::list<HevcTask>   TaskList;
     TaskList                      m_free;

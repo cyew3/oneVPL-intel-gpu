@@ -35,11 +35,25 @@ public:
     const MfxVideoParamsWrapper& GetVideoParam();
     mfxFrameInfo* GetFrameInfo();
 
+    mfxStatus PreEncFrame(HevcTask * task);
+
+private:
+    mfxStatus PreEncMultiFrames(HevcTask * task);
+    mfxStatus PreEncOneFrame(HevcTask & currTask, const RefIdxPair & refFramesIdx, const bool bDownsampleInput);
+
+    mfxStatus ResetExtBuffers(const MfxVideoParamsWrapper & videoParams);
+
 private:
     MFXVideoSession* m_pmfxSession;
     MFXVideoENC      m_mfxPREENC;
 
     MfxVideoParamsWrapper m_videoParams;
+
+    typedef std::pair<mfxSyncPoint, std::pair<mfxENCInputWrap, mfxENCOutputWrap> > SyncPair;
+    SyncPair m_syncp;
+
+    std::vector<mfxExtFeiPreEncMVExtended>     m_mvs;
+    std::vector<mfxExtFeiPreEncMBStatExtended> m_mbs;
 
     // forbid copy constructor and operator
     FEI_Preenc(const FEI_Preenc& preenc);

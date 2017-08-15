@@ -17,8 +17,8 @@ The original version of this sample may be obtained from https://software.intel.
 or https://software.intel.com/en-us/media-client-solutions-support.
 \**********************************************************************************/
 
+#include "fei_utils.h"
 #include "hevc_fei_preenc.h"
-
 
 FEI_Preenc::FEI_Preenc(MFXVideoSession * session, const mfxFrameInfo& frameInfo)
     : m_pmfxSession(session)
@@ -30,12 +30,25 @@ FEI_Preenc::FEI_Preenc(MFXVideoSession * session, const mfxFrameInfo& frameInfo)
 FEI_Preenc::~FEI_Preenc()
 {
     m_mfxPREENC.Close();
+
+    for (size_t i = 0; i < m_mvs.size(); ++i)
+    {
+        delete[] m_mvs[i].MB;
+    }
+    for (size_t i = 0; i < m_mbs.size(); ++i)
+    {
+        delete[] m_mbs[i].MB;
+    }
+
     m_pmfxSession = NULL;
 }
 
 mfxStatus FEI_Preenc::Init()
 {
-    mfxStatus sts = m_mfxPREENC.Init(&m_videoParams);
+    mfxStatus sts = ResetExtBuffers(m_videoParams);
+    MSDK_CHECK_STATUS(sts, "FEI PreENC ResetExtBuffers failed");
+
+    sts = m_mfxPREENC.Init(&m_videoParams);
     MSDK_CHECK_STATUS(sts, "FEI PreENC Init failed");
     MSDK_CHECK_WRN(sts, "FEI PreENC Init");
 
@@ -45,7 +58,6 @@ mfxStatus FEI_Preenc::Init()
 
     return sts;
 }
-
 
 mfxStatus FEI_Preenc::Reset(mfxU16 width, mfxU16 height)
 {
@@ -68,25 +80,15 @@ mfxStatus FEI_Preenc::Reset(mfxU16 width, mfxU16 height)
 
 mfxStatus FEI_Preenc::QueryIOSurf(mfxFrameAllocRequest* request)
 {
-    mfxStatus sts;
+    MSDK_CHECK_NOT_EQUAL(m_videoParams.AsyncDepth , 1, MFX_ERR_UNSUPPORTED);
+    // PreENC works with raw references.
+    // So it needs to have a NumRefFrame number of frames.
+    MSDK_MEMCPY_VAR(request->Info, &m_videoParams.mfx.FrameInfo, sizeof(mfxFrameInfo));
+    request->NumFrameMin =
+    request->NumFrameSuggested = m_videoParams.mfx.NumRefFrame + 1;
 
-    // temporary session is created to avoid potential conflicts with components in current session
-    MFXVideoSession tmpSession;
-    sts = tmpSession.Init(MFX_IMPL_HARDWARE_ANY | MFX_IMPL_VIA_VAAPI, NULL);
-    MSDK_CHECK_STATUS(sts, "tmpSession.Init failed");
-    // temporary ENCODE component is created to init surfaces, as PreENC and ENCODE share the same surfaces pool,
-    // and as PreENC doesn't support QueryIOSurf without DS.
-    MFXVideoENCODE tmpEncode(tmpSession);
-    MfxVideoParamsWrapper tmpVideoParamsWrapper(m_videoParams);
 
-    mfxExtFeiParam* pExtBufInit = tmpVideoParamsWrapper.get<mfxExtFeiParam>();
-    MSDK_CHECK_POINTER(pExtBufInit, MFX_ERR_NULL_PTR);
-    pExtBufInit->Func = MFX_FEI_FUNCTION_ENCODE;
-
-    sts = tmpEncode.QueryIOSurf(static_cast<mfxVideoParam*>(&tmpVideoParamsWrapper), request);
-    MSDK_CHECK_STATUS(sts, "FEI PreENC QueryIOSurf failed");
-
-    return sts;
+    return MFX_ERR_NONE;
 }
 
 mfxStatus FEI_Preenc::SetParameters(const sInputParams& params)
@@ -110,7 +112,6 @@ mfxStatus FEI_Preenc::SetParameters(const sInputParams& params)
     m_videoParams.mfx.NumRefFrame  = params.nNumRef;
     m_videoParams.mfx.NumSlice     = params.nNumSlices;
     m_videoParams.mfx.EncodedOrder = params.bEncodedOrder;
-
 
     /* Create extension buffer to Init FEI PREENC */
     m_videoParams.enableExtParam(MFX_EXTBUFF_FEI_PARAM);
@@ -143,8 +144,149 @@ const MfxVideoParamsWrapper& FEI_Preenc::GetVideoParam()
     return m_videoParams;
 }
 
-
 mfxFrameInfo * FEI_Preenc::GetFrameInfo()
 {
     return &m_videoParams.mfx.FrameInfo;
+}
+
+mfxStatus FEI_Preenc::ResetExtBuffers(const MfxVideoParamsWrapper & videoParams)
+{
+    for (size_t i = 0; i < m_mvs.size(); ++i)
+    {
+        delete[] m_mvs[i].MB;
+        m_mvs[i].MB = 0;
+        m_mvs[i].NumMBAlloc = 0;
+    }
+    for (size_t i = 0; i < m_mbs.size(); ++i)
+    {
+        delete[] m_mbs[i].MB;
+        m_mbs[i].MB = 0;
+        m_mbs[i].NumMBAlloc = 0;
+    }
+
+    MSDK_CHECK_NOT_EQUAL(m_videoParams.AsyncDepth , 1, MFX_ERR_UNSUPPORTED);
+
+    mfxU32 nMB = videoParams.mfx.FrameInfo.Width * videoParams.mfx.FrameInfo.Height >> 8;
+    mfxU8 nBuffers = videoParams.mfx.NumRefFrame;
+
+    m_mvs.resize(nBuffers);
+    m_mbs.resize(nBuffers);
+    for (size_t i = 0; i < nBuffers; ++i)
+    {
+        MSDK_ZERO_MEMORY(m_mvs[i]);
+        m_mvs[i].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_MV;
+        m_mvs[i].Header.BufferSz = sizeof(mfxExtFeiPreEncMV);
+        m_mvs[i].MB = new mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB[nMB];
+        m_mvs[i].NumMBAlloc = nMB;
+
+        MSDK_ZERO_MEMORY(m_mbs[i]);
+        m_mbs[i].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_MB;
+        m_mbs[i].Header.BufferSz = sizeof(mfxExtFeiPreEncMBStat);
+        m_mbs[i].MB = new mfxExtFeiPreEncMBStat::mfxExtFeiPreEncMBStatMB[nMB];
+        m_mbs[i].NumMBAlloc = nMB;
+    }
+    return MFX_ERR_NONE;
+}
+
+mfxStatus FEI_Preenc::PreEncFrame(HevcTask * task)
+{
+    return PreEncMultiFrames(task);
+}
+
+mfxStatus FEI_Preenc::PreEncOneFrame(HevcTask & currTask, const RefIdxPair & refFramesIdx, const bool bDownsampleInput)
+{
+    mfxStatus sts;
+    HevcDpbArray & DPB = currTask.m_dpb[TASK_DPB_ACTIVE];
+
+    mfxENCInputWrap & in = m_syncp.second.first;
+
+    in.InSurface  = currTask.m_surf;
+    in.NumFrameL0 = (refFramesIdx.RefL0 != IDX_INVALID);
+    in.NumFrameL1 = (refFramesIdx.RefL1 != IDX_INVALID);
+
+    in.enableExtParam(MFX_EXTBUFF_FEI_PREENC_CTRL);
+    mfxExtFeiPreEncCtrl* ctrl = in.get<mfxExtFeiPreEncCtrl>();
+    MSDK_CHECK_POINTER(ctrl, MFX_ERR_NULL_PTR);
+
+    ctrl->PictureType     = MFX_PICTYPE_FRAME;
+    ctrl->DownsampleInput = bDownsampleInput ? MFX_CODINGOPTION_ON : MFX_CODINGOPTION_OFF;
+    ctrl->RefPictureType[0] = ctrl->RefPictureType[1] = MFX_PICTYPE_FRAME;
+    ctrl->DownsampleReference[0] = ctrl->DownsampleReference[1] = MFX_CODINGOPTION_OFF;
+
+    ctrl->RefFrame[0] = refFramesIdx.RefL0 != IDX_INVALID ? DPB[refFramesIdx.RefL0].m_surf : NULL;
+    ctrl->RefFrame[1] = refFramesIdx.RefL1 != IDX_INVALID ? DPB[refFramesIdx.RefL1].m_surf : NULL;
+
+    mfxENCOutputWrap & out = m_syncp.second.second;
+
+    if (refFramesIdx.RefL0 != IDX_INVALID || refFramesIdx.RefL1 != IDX_INVALID)
+    {
+        out.enableExtParam(MFX_EXTBUFF_FEI_PREENC_MV);
+
+        mfxExtFeiPreEncMV * mv = out.get<mfxExtFeiPreEncMV>();
+        MSDK_CHECK_POINTER(mv, MFX_ERR_NULL_PTR);
+
+        mfxExtFeiPreEncMVExtended * ext_mv = AcquireResource(m_mvs);
+        MSDK_CHECK_POINTER_SAFE(ext_mv, MFX_ERR_MEMORY_ALLOC, msdk_printf(MSDK_STRING("ERROR: No free buffer in mfxExtFeiPreEncMVExtended\n")));
+
+        mfxExtFeiPreEncMV & free_mv = *ext_mv;
+        Copy(*mv, free_mv); // This will be avoided once we move to a new wrapper class for mfxExtBuffer's
+
+        out.enableExtParam(MFX_EXTBUFF_FEI_PREENC_MB);
+
+        mfxExtFeiPreEncMBStat* mb = out.get<mfxExtFeiPreEncMBStat>();
+        MSDK_CHECK_POINTER(mb, MFX_ERR_NULL_PTR);
+
+        mfxExtFeiPreEncMBStatExtended * ext_mb = AcquireResource(m_mbs);
+        MSDK_CHECK_POINTER_SAFE(ext_mb, MFX_ERR_MEMORY_ALLOC, msdk_printf(MSDK_STRING("ERROR: No free buffer in mfxExtFeiPreEncMBStatExtended\n")));
+
+        mfxExtFeiPreEncMBStat & free_mb = *ext_mb;
+        Copy(*mb, free_mb); // This will be avoided once we move to a new wrapper class for mfxExtBuffer's
+
+        PreENCOutput stat;
+        stat.m_mv = ext_mv;
+        stat.m_mb = ext_mb;
+        stat.m_refIdxPair = refFramesIdx;
+        currTask.m_preEncOutput.push_back(stat);
+    }
+
+    mfxSyncPoint & syncp = m_syncp.first;
+    sts = m_mfxPREENC.ProcessFrameAsync(&in, &out, &syncp);
+    MSDK_CHECK_STATUS(sts, "FEI PreEnc ProcessFrameAsync failed");
+    MSDK_CHECK_POINTER(syncp, MFX_ERR_UNDEFINED_BEHAVIOR)
+
+    sts = m_pmfxSession->SyncOperation(syncp, MSDK_WAIT_INTERVAL);
+    MSDK_CHECK_STATUS(sts, "FEI PreEnc SyncOperation failed");
+
+    return sts;
+}
+
+mfxStatus FEI_Preenc::PreEncMultiFrames(HevcTask* pTask)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+    HevcTask & currFrame = *pTask;
+    HevcTask & task = *pTask;
+    HevcDpbArray & DPB = task.m_dpb[TASK_DPB_ACTIVE];
+    mfxU8 const (&RPL)[2][MAX_DPB_SIZE] = task.m_refPicList;
+
+    bool bDownsampleInput = true;
+    // Iterate thru L0/L1 frames
+    for (size_t idxL0 = 0, idxL1 = 0; idxL0 < task.m_numRefActive[0] || idxL1 < task.m_numRefActive[1]; ++idxL0, ++idxL1)
+    {
+        RefIdxPair refFrames = {IDX_INVALID, IDX_INVALID};
+
+        if (RPL[0][idxL0] < 15)
+            refFrames.RefL0 = RPL[0][idxL0];
+
+        if (RPL[1][idxL1] < 15)
+            refFrames.RefL1 = RPL[1][idxL1];
+
+        mfxStatus sts = PreEncOneFrame(currFrame, refFrames, bDownsampleInput);
+        MSDK_CHECK_STATUS(sts, "FEI PreEncOneFrame failed");
+
+        // If input surface is not changed between PreENC calls
+        // an application can avoid redundant downsampling on driver side.
+        bDownsampleInput = false;
+    }
+
+    return sts;
 }

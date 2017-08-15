@@ -100,20 +100,39 @@ template<class T, class U> inline void Copy(T & dst, U const & src)
     MSDK_MEMCPY(&dst, &src, sizeof(dst));
 }
 
+template<class T> inline void Zero(std::vector<T> & vec)  { memset(vec.data(), 0, sizeof(T) * vec.size()); }
+template<class T> inline void Zero(T * first, size_t cnt) { memset(first, 0, sizeof(T) * cnt); }
+template<class T> inline void Fill(T & obj, int val) { memset(&obj, val, sizeof(obj)); }
+template<class T> inline T Clip3(T min, T max, T x) { return std::min(std::max(min, x), max); }
+
 /**********************************************************************************/
+
 template<>struct mfx_ext_buffer_id<mfxExtFeiParam> {
     enum { id = MFX_EXTBUFF_FEI_PARAM };
 };
+template<>struct mfx_ext_buffer_id<mfxExtFeiPreEncCtrl> {
+    enum { id = MFX_EXTBUFF_FEI_PREENC_CTRL };
+};
+template<>struct mfx_ext_buffer_id<mfxExtFeiPreEncMV>{
+    enum {id = MFX_EXTBUFF_FEI_PREENC_MV};
+};
+template<>struct mfx_ext_buffer_id<mfxExtFeiPreEncMBStat>{
+    enum {id = MFX_EXTBUFF_FEI_PREENC_MB};
+};
+
 // TODO: rework implementation for wrapper class
 union MfxExtBuffer
 {
-    mfxExtBuffer header;
-    mfxExtCodingOption opt;
-    mfxExtCodingOption2 opt2;
-    mfxExtCodingOption3 opt3;
-    mfxExtFeiParam feipar;
+    mfxExtBuffer           header;
+    mfxExtCodingOption     opt;
+    mfxExtCodingOption2    opt2;
+    mfxExtCodingOption3    opt3;
+    mfxExtFeiParam         feipar;
+    mfxExtFeiPreEncCtrl    preenc;
+    mfxExtFeiPreEncMV      mv;
+    mfxExtFeiPreEncMBStat  mb;
 };
-const mfxI32 HEVC_FEI_ENCODE_VIDEOPARAM_EXTBUF_MAX_NUM = 5;
+const mfxI32 HEVC_FEI_ENCODE_VIDEOPARAM_EXTBUF_MAX_NUM = 8;
 
 /** MfxParamsWrapper is an utility class which
  * encapsulates mfxVideoParam and a list of 'attached' mfxExtBuffer objects.
@@ -122,7 +141,7 @@ template<typename T, size_t N>
 struct MfxParamsWrapper: public T
 {
     mfxExtBuffer* ext_buf_ptrs[N];
-    MfxExtBuffer  ext_buf[N];
+    MfxExtBuffer ext_buf[N];
     struct
     {
         bool enabled;
@@ -255,6 +274,18 @@ struct MfxParamsWrapper: public T
             ext_buf[idx].feipar.Header.BufferId = MFX_EXTBUFF_FEI_PARAM;
             ext_buf[idx].feipar.Header.BufferSz = sizeof(mfxExtFeiParam);
             return idx;
+          case MFX_EXTBUFF_FEI_PREENC_CTRL:
+            ext_buf[idx].preenc.Header.BufferId = MFX_EXTBUFF_FEI_PREENC_CTRL;
+            ext_buf[idx].preenc.Header.BufferSz = sizeof(mfxExtFeiPreEncCtrl);
+            return idx;
+          case MFX_EXTBUFF_FEI_PREENC_MV:
+            ext_buf[idx].mv.Header.BufferId = MFX_EXTBUFF_FEI_PREENC_MV;
+            ext_buf[idx].mv.Header.BufferSz = sizeof(mfxExtFeiPreEncMV);
+            return idx;
+          case MFX_EXTBUFF_FEI_PREENC_MB:
+            ext_buf[idx].mb.Header.BufferId = MFX_EXTBUFF_FEI_PREENC_MB;
+            ext_buf[idx].mb.Header.BufferSz = sizeof(mfxExtFeiPreEncMBStat);
+            return idx;
           default:
             assert(!"add index to getEnabledMapIdx!");
             return -1;
@@ -283,6 +314,12 @@ protected:
         if (!N) return -1;
         switch (bufferid)
         {
+        case MFX_EXTBUFF_FEI_PREENC_MB:
+            ++idx;
+        case MFX_EXTBUFF_FEI_PREENC_MV:
+            ++idx;
+        case MFX_EXTBUFF_FEI_PREENC_CTRL:
+            ++idx;
         case MFX_EXTBUFF_FEI_PARAM:
             ++idx;
         case MFX_EXTBUFF_CODING_OPTION3:
@@ -301,5 +338,105 @@ protected:
 typedef
     MfxParamsWrapper<mfxVideoParam, HEVC_FEI_ENCODE_VIDEOPARAM_EXTBUF_MAX_NUM>
     MfxVideoParamsWrapper;
+
+typedef
+    MfxParamsWrapper<mfxENCInput, 2>
+    mfxENCInputWrap;
+
+typedef
+    MfxParamsWrapper<mfxENCOutput, 3>
+    mfxENCOutputWrap;
+
+/**********************************************************************************/
+
+enum
+{
+    MAX_DPB_SIZE = 15,
+    IDX_INVALID = 0xFF,
+};
+
+enum
+{
+    TASK_DPB_ACTIVE = 0, // available during task execution (modified dpb[BEFORE] )
+    TASK_DPB_AFTER,      // after task execution (ACTIVE + curTask if ref)
+    TASK_DPB_BEFORE,     // after previous task execution (prevTask dpb[AFTER])
+    TASK_DPB_NUM
+};
+
+template<typename T>
+struct ExtBufferWithCounter: public T
+{
+    ExtBufferWithCounter() : T()
+    , m_locked(0)
+    {}
+
+    mfxU16  m_locked;
+};
+
+typedef ExtBufferWithCounter<mfxExtFeiPreEncMV>     mfxExtFeiPreEncMVExtended;
+typedef ExtBufferWithCounter<mfxExtFeiPreEncMBStat> mfxExtFeiPreEncMBStatExtended;
+
+struct RefIdxPair
+{
+    mfxU8 RefL0;
+    mfxU8 RefL1;
+};
+
+struct PreENCOutput
+{
+    mfxExtFeiPreEncMVExtended     * m_mv;
+    mfxExtFeiPreEncMBStatExtended * m_mb;
+    RefIdxPair m_refIdxPair;
+};
+
+struct HevcDpbFrame
+{
+    mfxI32   m_poc;
+    mfxU32   m_fo;    // FrameOrder
+    mfxU32   m_eo;    // Encoded order
+    mfxU32   m_bpo;   // Bpyramid order
+    mfxU32   m_level; // pyramid level
+    mfxU8    m_tid;
+    bool     m_ltr;   // is "long-term"
+    bool     m_ldb;   // is "low-delay B"
+    mfxU8    m_codingType;
+    mfxU8    m_idxRec;
+    mfxFrameSurface1 * m_surf; //input surface
+    void Reset()
+    {
+        Fill(*this, 0);
+    }
+};
+
+typedef HevcDpbFrame HevcDpbArray[MAX_DPB_SIZE];
+
+struct HevcTask : HevcDpbFrame
+{
+    mfxU16       m_frameType;
+    mfxU8        m_refPicList[2][MAX_DPB_SIZE];
+    mfxU8        m_numRefActive[2]; // L0 and L1 lists
+    mfxI32       m_lastIPoc;
+    HevcDpbArray m_dpb[TASK_DPB_NUM];
+    std::list<PreENCOutput> m_preEncOutput;
+
+
+    void Reset()
+    {
+        HevcDpbFrame::Reset();
+        m_frameType = 0;
+        Fill(m_refPicList, 0);
+        Fill(m_numRefActive, 0);
+        m_lastIPoc = 0;
+        Fill(m_dpb[TASK_DPB_ACTIVE], 0);
+        Fill(m_dpb[TASK_DPB_AFTER],  0);
+        Fill(m_dpb[TASK_DPB_BEFORE], 0);
+        m_preEncOutput.clear();
+    }
+};
+
+inline bool operator ==(HevcTask const & l, HevcTask const & r)
+{
+    return l.m_poc == r.m_poc;
+}
 
 #endif // #define __SAMPLE_HEVC_FEI_DEFS_H__

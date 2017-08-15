@@ -184,32 +184,41 @@ mfxStatus CEncodingPipeline::AllocFrames()
 {
     mfxStatus sts = MFX_ERR_NOT_INITIALIZED;
 
-    mfxFrameAllocRequest request;
-    MSDK_ZERO_MEMORY(request);
+    // Here we build a final alloc request from alloc requests from several components.
+    // TODO: This code is a good candidate to become a 'builder' utility class.
+    mfxFrameAllocRequest allocRequest;
+    MSDK_ZERO_MEMORY(allocRequest);
 
-    if (m_pFEI_Encode.get()) // pipeline: ENCODE, PreENC + ENCODE
+    if (m_pFEI_Encode.get())
     {
-        sts = m_pFEI_Encode->QueryIOSurf(&request);
+        mfxFrameAllocRequest encodeRequest;
+        MSDK_ZERO_MEMORY(encodeRequest);
+
+        sts = m_pFEI_Encode->QueryIOSurf(&encodeRequest);
         MSDK_CHECK_STATUS(sts, "m_pFEI_Encode->QueryIOSurf failed");
 
-        // prepare allocation requests
-        MSDK_MEMCPY_VAR(request.Info, m_pFEI_Encode->GetFrameInfo(), sizeof(mfxFrameInfo));
-        request.Type |= MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET;
+        MSDK_MEMCPY_VAR(allocRequest.Info, m_pFEI_Encode->GetFrameInfo(), sizeof(mfxFrameInfo));
+        allocRequest.Type = encodeRequest.Type | MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET;
+        allocRequest.NumFrameMin = allocRequest.NumFrameSuggested = encodeRequest.NumFrameSuggested;
     }
-    else if (m_pFEI_PreENC.get()) // pipeline: PreENC only
+    if (m_pFEI_PreENC.get())
     {
-        sts = m_pFEI_PreENC->QueryIOSurf(&request);
+        mfxFrameAllocRequest preEncRequest;
+        MSDK_ZERO_MEMORY(preEncRequest);
+        sts = m_pFEI_PreENC->QueryIOSurf(&preEncRequest);
         MSDK_CHECK_STATUS(sts, "m_pFEI_PreENC->QueryIOSurf failed");
 
-        // prepare allocation requests
-        MSDK_MEMCPY_VAR(request.Info, m_pFEI_PreENC->GetFrameInfo(), sizeof(mfxFrameInfo));
+        MSDK_MEMCPY_VAR(allocRequest.Info, &preEncRequest.Info, sizeof(mfxFrameInfo));
+        allocRequest.Type |= preEncRequest.Type | MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET | MFX_MEMTYPE_FROM_ENC;
+        // Formula below is not fully correct.
+        // While it's safe to use it, it needs to be optimized for reasonable resource allocation.
+        // TODO: Find a reasonable minimal number of requered surfaces for YUVSource+PreENC+ENCODE pileline
+        allocRequest.NumFrameSuggested += preEncRequest.NumFrameSuggested;
+        allocRequest.NumFrameMin = allocRequest.NumFrameSuggested;
     }
 
-    if (m_pFEI_PreENC.get())
-        request.Type |= MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET | MFX_MEMTYPE_FROM_ENC;
-
     m_EncSurfPool.SetAllocator(m_pMFXAllocator.get());
-    sts = m_EncSurfPool.AllocSurfaces(request);
+    sts = m_EncSurfPool.AllocSurfaces(allocRequest);
     MSDK_CHECK_STATUS(sts, "AllocFrames::EncSurfPool->AllocSurfaces failed");
 
     return sts;
@@ -224,7 +233,6 @@ mfxStatus CEncodingPipeline::InitComponents()
     MSDK_CHECK_STATUS(sts, "m_pYUVSource->Init failed");
 
     MfxVideoParamsWrapper param;
-
     if (m_pFEI_PreENC.get())
     {
         sts = m_pFEI_PreENC->Init();
@@ -243,7 +251,7 @@ mfxStatus CEncodingPipeline::InitComponents()
 
     if (m_inParams.bEncodedOrder)
     {
-        m_pOrderCtrl.reset(new EncodeOrderControl(param));
+        m_pOrderCtrl.reset(new EncodeOrderControl(param, !!(m_pFEI_PreENC.get())));
     }
 
     return sts;
@@ -276,17 +284,20 @@ mfxStatus CEncodingPipeline::Execute()
             pSurf = task->m_surf;
             if (m_pFEI_Encode.get())
                 m_pFEI_Encode->SetCtrlParams(*task);
-        }
 
+        }
+        if (m_pFEI_PreENC.get())
+        {
+            sts = m_pFEI_PreENC->PreEncFrame(task);
+            MSDK_BREAK_ON_ERROR(sts);
+        }
         if (m_pFEI_Encode.get())
         {
             sts = m_pFEI_Encode->EncodeFrame(pSurf);
             MSDK_BREAK_ON_ERROR(sts);
         }
-
         if (m_pOrderCtrl.get())
             m_pOrderCtrl->FreeTask(task);
-
     } // while (MFX_ERR_NONE <= sts || MFX_ERR_MORE_DATA == sts)
 
     MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA); // reached end of input file
@@ -308,6 +319,11 @@ mfxStatus CEncodingPipeline::DrainBufferedFrames()
         HevcTask* task;
         while ( NULL != (task = m_pOrderCtrl->GetTask(NULL)))
         {
+            if (m_pFEI_PreENC.get())
+            {
+                sts = m_pFEI_PreENC->PreEncFrame(task);
+                MSDK_CHECK_STATUS(sts, "PreEncFrame drain failed");
+            }
             if (m_pFEI_Encode.get())
             {
                 m_pFEI_Encode->SetCtrlParams(*task);
