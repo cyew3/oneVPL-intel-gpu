@@ -38,6 +38,9 @@ namespace UMC_HEVC_DECODER
     void PackerDXVA2::BeginFrame(H265DecoderFrame*)
     {
         m_statusReportFeedbackCounter++;
+        // WA: DXVA_Intel_Status_HEVC::StatusReportFeedbackNumber - USHORT, can't be 0 - reported status will be ignored
+        if (m_statusReportFeedbackCounter > USHRT_MAX)
+            m_statusReportFeedbackCounter = 1;
     }
 
     void PackerDXVA2::EndFrame()
