@@ -128,34 +128,7 @@ namespace vp9e_big_resolution
         , m_DecodedFramesCount(0)
         , m_DecoderInited(false)
         , m_pInputSurfaces(pSurfaces)
-    {
-        m_pPar->mfx.FrameInfo.ChromaFormat = m_EncoderPar.mfx.FrameInfo.ChromaFormat;
-        m_pPar->mfx.FrameInfo.FourCC = m_EncoderPar.mfx.FrameInfo.FourCC;
-        m_pPar->mfx.FrameInfo.Width = m_EncoderPar.mfx.FrameInfo.Width;
-        m_pPar->mfx.FrameInfo.Height = m_EncoderPar.mfx.FrameInfo.Height;
-        m_pPar->AsyncDepth = 1;
-
-        mfxStatus init_status = Init();
-        m_par_set = true;
-        if (init_status >= 0)
-        {
-            mfxStatus alloc_status = AllocSurfaces();
-            if (alloc_status >= 0)
-            {
-                m_DecoderInited = true;
-            }
-            else
-            {
-                ADD_FAILURE() << "ERROR: Could not allocate surfaces for the decoder, status " << alloc_status;
-                throw tsFAIL;
-            }
-        }
-        else
-        {
-            ADD_FAILURE() << "ERROR: Could not inilialize the decoder, Init() returned " << init_status;
-            throw tsFAIL;
-        }
-    }
+    { }
 
     mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
     {
@@ -173,6 +146,49 @@ namespace vp9e_big_resolution
         while (checked++ < nFrames)
         {
             tsParserVP9::UnitType& hdr = ParseOrDie();
+
+            // do the decoder initialisation on the first encoded frame
+            if (m_DecodedFramesCount == 0)
+            {
+                const mfxU32 headers_shift = 12/*header*/ + (m_DecodedFramesCount == 0 ? 32/*ivf_header*/ : 0);
+                m_pBitstream->Data = bs.Data + headers_shift;
+                m_pBitstream->DataOffset = 0;
+                m_pBitstream->DataLength = bs.DataLength - headers_shift;
+                m_pBitstream->MaxLength = bs.MaxLength;
+
+                m_pPar->AsyncDepth = 1;
+
+                mfxStatus decode_header_status = DecodeHeader();
+
+                mfxStatus init_status = Init();
+                m_par_set = true;
+                if (init_status >= 0)
+                {
+                    if (m_default && !m_request.NumFrameMin)
+                    {
+                        QueryIOSurf();
+                    }
+                    // This is a workaround for the decoder (there is an issue with NumFrameSuggested and decoding superframes)
+                    m_request.NumFrameMin = 5;
+                    m_request.NumFrameSuggested = 10;
+
+                    mfxStatus alloc_status = tsSurfacePool::AllocSurfaces(m_request, !m_use_memid);
+                    if (alloc_status >= 0)
+                    {
+                        m_DecoderInited = true;
+                    }
+                    else
+                    {
+                        ADD_FAILURE() << "WARNING: Could not allocate surfaces for the decoder, status " << alloc_status;
+                        throw tsFAIL;
+                    }
+                }
+                else
+                {
+                    ADD_FAILURE() << "WARNING: Could not inilialize the decoder, Init() returned " << init_status;
+                    throw tsFAIL;
+                }
+            }
 
             if (m_DecoderInited)
             {
@@ -342,6 +358,7 @@ namespace vp9e_big_resolution
         //set default params
         m_par.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
         m_par.mfx.QPI = m_par.mfx.QPP = 50;
+        m_par.AsyncDepth = 1;
 
         char* stream = nullptr;
 
@@ -350,7 +367,7 @@ namespace vp9e_big_resolution
             m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
             m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
             m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
-            if(tc.type == CHECK_4K)
+            if (tc.type == CHECK_4K)
                 stream = const_cast<char *>(g_tsStreamPool.Get("forBehaviorTest/Kimono1_4096x4096_24_nv12.yuv"));
             else if (tc.type == CHECK_8K)
                 stream = const_cast<char *>(g_tsStreamPool.Get("forBehaviorTest/Kimono1_7680x7680_24_nv12.yuv"));
