@@ -47,10 +47,16 @@ mfxStatus MFXVideoRender::Query(mfxVideoParam *in, mfxVideoParam *out)
 {
     MFX_CHECK_POINTER(out);
 
+    mfxExtBuffer** ptr = out->ExtParam;
+    mfxU16 num = out->NumExtParam;
+
     if (in == 0)
         memset(out, 0, sizeof(*out));
     else
         memcpy(out, in, sizeof(*out));
+
+    out->ExtParam = ptr;
+    out->NumExtParam = num;
 
     return MFX_ERR_NONE;
 }
