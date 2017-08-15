@@ -203,8 +203,40 @@ typedef struct _DXVA_Intel_PicParams_HEVC_Rext
     CHAR    cr_qp_offset_list[6];             // [-12..12]
 } DXVA_Intel_PicParams_HEVC_Rext, *LPDXVA_Intel_PicParams_HEVC_Rext;
 #endif //DDI_VERSION > 943
-/****************************************************************************/
 
+#if DDI_VERSION >= 944
+typedef struct _DXVA_Intel_PicParams_HEVC_SCC
+{
+    DXVA_Intel_PicParams_HEVC_Rext PicParamsRext;
+
+    union
+    {
+        struct
+        {
+            UINT32  pps_curr_pic_ref_enabled_flag                   : 1;
+            UINT32  palette_mode_enabled_flag                       : 1;
+            UINT32  motion_vector_resolution_control_idc            : 2; //[0..2]
+            UINT32  intra_boundary_filtering_disabled_flag          : 1;
+            UINT32  residual_adaptive_colour_transform_enabled_flag : 1;
+            UINT32  pps_slice_act_qp_offsets_present_flag           : 1;
+            UINT32  ReservedBits6                                   : 25;
+        } fields;
+
+        UINT        dwScreenContentCodingPropertyFlags;
+    } PicSCCExtensionFlags;
+
+    UCHAR           palette_max_size;                 // [0..64]
+    UCHAR           delta_palette_max_predictor_size; // [0..128]
+    UCHAR           PredictorPaletteSize;             // [0..127]
+    USHORT          PredictorPaletteEntries[3][128];
+    CHAR            pps_act_y_qp_offset_plus5;        // [-7..17]
+    CHAR            pps_act_cb_qp_offset_plus5;       // [-7..17]
+    CHAR            pps_act_cr_qp_offset_plus3;       // [-9..15]
+
+} DXVA_Intel_PicParams_HEVC_SCC, *LPDXVA_Intel_PicParams_HEVC_SCC;
+#endif //DDI_VERSION > 944
+
+/****************************************************************************/
 
 typedef struct _DXVA_Intel_Slice_HEVC_Long
 {
