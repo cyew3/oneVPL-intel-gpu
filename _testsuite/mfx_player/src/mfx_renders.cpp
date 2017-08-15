@@ -832,6 +832,7 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
             break;
         }
         case MFX_FOURCC_P010:
+        case MFX_FOURCC_P016:
         {
             m_Current.m_comp = VM_STRING('Y');
             m_Current.m_pixX = 0;
