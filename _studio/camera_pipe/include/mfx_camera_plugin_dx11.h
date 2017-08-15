@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -193,7 +193,7 @@ public:
         if (m_ddi.get())
             m_ddi->DestroyDevice();
 
-        m_ddi.release();
+        m_ddi.reset();
         return MFX_ERR_NONE;
     }
 
