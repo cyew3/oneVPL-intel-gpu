@@ -283,13 +283,6 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
 
     mfxStatus lpsts = SetLowpowerDefault(m_vpar);
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-    if (   m_vpar.m_ext.CO3.TargetChromaFormatPlus1 != (MFX_CHROMAFORMAT_YUV420 + 1)
-        || m_vpar.m_ext.CO3.TargetBitDepthLuma > 10
-        || m_vpar.mfx.CodecProfile == MFX_PROFILE_HEVC_REXT)
-        ddiType = ENCODER_REXT;
-#endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
-
     m_ddi.reset( CreateHWh265Encoder(&m_core, ddiType) );
     MFX_CHECK(m_ddi.get(), MFX_ERR_UNSUPPORTED);
 
