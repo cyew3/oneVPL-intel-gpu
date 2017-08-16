@@ -497,7 +497,7 @@ void HardcodeCaps(ENCODE_CAPS_VP9& caps, mfxCoreInterface* pCore)
     caps;
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-    if (platform.CodeName == MFX_PLATFORM_ICELAKE)
+    if (platform.CodeName >= MFX_PLATFORM_ICELAKE)
     {
         // for now driver reports in caps.NumScalablePipesMinus1 log2 of max supported number of tile columns
         // need to hardcode this caps to real number of scalable pipes supported by Gen11 LP

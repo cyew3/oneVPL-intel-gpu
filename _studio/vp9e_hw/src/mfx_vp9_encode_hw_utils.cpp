@@ -320,9 +320,10 @@ mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
         frameParam.modeRefDeltaEnabled = 1;
         frameParam.modeRefDeltaUpdate = 1;
 #if defined (PRE_SI_TARGET_PLATFORM_GEN11)
-        if (platform.CodeName == MFX_PLATFORM_ICELAKE /*&& par.mfx.CodecProfile > MFX_PROFILE_VP9_0*/)
+        if (platform.CodeName >= MFX_PLATFORM_ICELAKE /*&& par.mfx.CodecProfile > MFX_PROFILE_VP9_0*/)
         {
-            // REXT is being encoded. Need to disable mode and ref LF deltas to workaround driver issue.
+            // driver writes corrupted uncompressed frame header when mode or ref deltas are written by MSDK
+            // TODO: remove this once driver behavior fixed
             frameParam.modeRefDeltaEnabled = 0;
             frameParam.modeRefDeltaUpdate = 0;
         }
@@ -340,6 +341,14 @@ mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
     {
         // context switching isn't supported by driver now. So refresh_frame_context is disabled for temporal scalability
         frameParam.refreshFrameContext = par.m_numLayers ? 0 : 1;
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+        if (platform.CodeName >= MFX_PLATFORM_TIGERLAKE)
+        {
+            // for now driver doesn't support refresh of entropy contexts for TGL
+            // TODO: remove this once driver behavior fixed
+            frameParam.refreshFrameContext = 0;
+        }
+#endif //PRE_SI_TARGET_PLATFORM_GEN11
     }
 
     frameParam.allowHighPrecisionMV = 1;
