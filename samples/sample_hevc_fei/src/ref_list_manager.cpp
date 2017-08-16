@@ -565,6 +565,7 @@ HevcTask* EncodeOrderControl::ReorderFrame(mfxFrameSurface1 * surface)
 
     if (surface)
     {
+        surface->Data.Locked++; // buffered must be locked, lock all
         if (!m_free.empty())
         {
             free_task = &m_free.front();
@@ -644,6 +645,7 @@ HevcTask* EncodeOrderControl::ReorderFrame(mfxFrameSurface1 * surface)
         }
 
         m_lastTask = task;
+        task_to_encode->m_surf->Data.Locked--; // all input surfaces were locked, unlock output
     }
 
     return task_to_encode;
