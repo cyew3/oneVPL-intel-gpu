@@ -350,3 +350,134 @@ FileHandler::~FileHandler()
         fclose(m_file);
     }
 }
+
+MFX_VPP::MFX_VPP(MFXVideoSession* session, MFXFrameAllocator* allocator, MfxVideoParamsWrapper& vpp_pars)
+    : m_pmfxSession(session)
+    , m_mfxVPP(*m_pmfxSession)
+    , m_outSurfPool(allocator)
+    , m_videoParams(vpp_pars)
+{}
+
+MFX_VPP::~MFX_VPP()
+{
+    m_mfxVPP.Close();
+}
+
+mfxStatus MFX_VPP::PreInit()
+{
+    mfxStatus sts = Query();
+    return sts;
+}
+
+mfxStatus MFX_VPP::Init()
+{
+    mfxStatus sts = m_mfxVPP.Init(&m_videoParams);
+    MSDK_CHECK_STATUS(sts, "VPP Init failed");
+    MSDK_CHECK_WRN(sts, "VPP Init");
+
+    // just in case, call GetVideoParam to get current VPP state
+    sts = m_mfxVPP.GetVideoParam(&m_videoParams);
+    MSDK_CHECK_STATUS(sts, "VPP GetVideoParam failed");
+
+    return sts;
+}
+
+mfxStatus MFX_VPP::Query()
+{
+    mfxStatus sts = m_mfxVPP.Query(&m_videoParams, &m_videoParams);
+    MSDK_CHECK_WRN(sts, "VPP Query");
+
+    return sts;
+}
+
+mfxStatus MFX_VPP::Reset(mfxVideoParam& par)
+{
+    m_videoParams = par;
+
+    mfxStatus sts = m_mfxVPP.Reset(&m_videoParams);
+    MSDK_CHECK_STATUS(sts, "VPP Reset failed");
+    MSDK_CHECK_WRN(sts, "VPP Reset");
+
+    // just in case, call GetVideoParam to get current VPP state
+    sts = m_mfxVPP.GetVideoParam(&m_videoParams);
+    MSDK_CHECK_STATUS(sts, "VPP GetVideoParam failed");
+
+    return sts;
+}
+
+mfxStatus MFX_VPP::QueryIOSurf(mfxFrameAllocRequest* request)
+{
+    return m_mfxVPP.QueryIOSurf(&m_videoParams, request);
+}
+
+// component manages its output surface pool taking into account external request for surfaces
+// which can be passed from another component (e.g. Encode)
+mfxStatus MFX_VPP::AllocOutFrames(mfxFrameAllocRequest* ext_request)
+{
+    mfxFrameAllocRequest vpp_request[2];
+    MSDK_ZERO_MEMORY(vpp_request[0]); //VPP in
+    MSDK_ZERO_MEMORY(vpp_request[1]); //VPP out
+
+    mfxStatus sts = QueryIOSurf(vpp_request);
+    MSDK_CHECK_STATUS(sts, "MFX VPP QueryIOSurf failed");
+
+    MSDK_CHECK_POINTER(ext_request, MFX_ERR_NOT_INITIALIZED);
+
+    vpp_request[1].Type |= ext_request->Type;
+    vpp_request[1].NumFrameMin = vpp_request[1].NumFrameSuggested += ext_request->NumFrameSuggested;
+
+    sts = m_outSurfPool.AllocSurfaces(vpp_request[1]);
+    MSDK_CHECK_STATUS(sts, "MFX VPP Alloc Output surfaces failed");
+
+
+    return sts;
+}
+
+const mfxFrameInfo& MFX_VPP::GetOutFrameInfo()
+{
+    return m_videoParams.vpp.Out;
+}
+
+mfxStatus MFX_VPP::ProcessFrame(mfxFrameSurface1* pInSurf, mfxFrameSurface1* & pOutSurf)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+
+    for (;;)
+    {
+        mfxSyncPoint syncp;
+        MSDK_ZERO_MEMORY(syncp);
+
+        pOutSurf = m_outSurfPool.GetFreeSurface();
+        MSDK_CHECK_POINTER(pOutSurf, MFX_ERR_MEMORY_ALLOC);
+
+        sts = m_mfxVPP.RunFrameVPPAsync(pInSurf, pOutSurf, NULL, &syncp);
+        MSDK_CHECK_WRN(sts, "VPP RunFrameVPPAsync");
+
+        if (MFX_ERR_NONE < sts && !syncp) // repeat the call if warning and no output
+        {
+            if (MFX_WRN_DEVICE_BUSY == sts)
+            {
+                WaitForDeviceToBecomeFree(*m_pmfxSession, syncp, sts);
+            }
+            continue;
+        }
+
+        if (MFX_ERR_NONE <= sts && syncp) // ignore warnings if output is available
+        {
+            sts = m_pmfxSession->SyncOperation(syncp, MSDK_WAIT_INTERVAL);
+            break;
+        }
+
+        MSDK_BREAK_ON_ERROR(sts);
+    }
+
+    // when pInSurf==NULL, MFX_ERR_MORE_DATA indicates all cached frames within VPP were drained,
+    // return status as is
+    // otherwise fetch more input for VPP, ignore status
+    if (MFX_ERR_MORE_DATA == sts && pInSurf)
+    {
+        MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
+    }
+
+    return sts;
+}

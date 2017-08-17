@@ -36,8 +36,8 @@ struct SourceFrameInfo
     mfxU32     DecodeId;   // type of input coded video
     mfxU32     ColorFormat;
     mfxU16     nPicStruct;
-    mfxU16     nWidth;
-    mfxU16     nHeight;
+    mfxU16     nWidth;      // source picture width
+    mfxU16     nHeight;     // source picture height
     mfxF64     dFrameRate;
 
     SourceFrameInfo()
@@ -66,6 +66,8 @@ struct sInputParams
     bool bPREENC;
     bool bEncodedOrder;      // use EncodeOrderControl for external reordering
     mfxU8  QP;
+    mfxU16 dstWidth;       // destination picture width
+    mfxU16 dstHeight;      // destination picture height
     mfxU32 nNumFrames;
     mfxU16 nNumSlices;
     mfxU16 nRefDist;        // distance between I- or P (or GPB) - key frames, GopRefDist = 1, there are no regular B-frames used
