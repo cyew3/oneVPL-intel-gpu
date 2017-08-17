@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\MSDK.Api.props" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -89,7 +90,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>include;../include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\include;..\opensource\mfx_dispatch\include;..\..\shared\include;..\..\mdp_msdk-lib\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;../include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\include;..\opensource\mfx_dispatch\include;..\..\shared\include;$(MSDK_LIB_ROOT)\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;MFX_DISPATCHER_EXPOSED_PREFIX;MFX_DISPATCHER_LOG;MFX_VA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -114,7 +115,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>include;../include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\include;..\opensource\mfx_dispatch\include;..\..\mdp_msdk-lib\_studio\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;../include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\include;..\opensource\mfx_dispatch\include;$(MSDK_LIB_ROOT)\_studio\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_DEBUG;_LIB;MFX_DISPATCHER_EXPOSED_PREFIX;MFX_DISPATCHER_LOG;MFX_VA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -142,7 +143,7 @@
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <AdditionalIncludeDirectories>include;../include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\include;..\opensource\mfx_dispatch\include;..\..\mdp_msdk-lib\_studio\shared\include;..\..\mdp_msdk-lib\shared\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;../include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\include;..\opensource\mfx_dispatch\include;$(MSDK_LIB_ROOT)\_studio\shared\include;$(MSDK_LIB_ROOT)\shared\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;MFX_DISPATCHER_EXPOSED_PREFIX;MFX_DISPATCHER_LOG;MFX_VA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -164,7 +165,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>include;../include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\include;..\opensource\mfx_dispatch\include;..\..\mdp_msdk-lib\_studio\shared\include;..\..\mdp_msdk-lib\shared\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;../include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\include;..\opensource\mfx_dispatch\include;$(MSDK_LIB_ROOT)\_studio\shared\include;$(MSDK_LIB_ROOT)\shared\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;MFX_DISPATCHER_EXPOSED_PREFIX;MFX_DISPATCHER_LOG;MFX_VA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
