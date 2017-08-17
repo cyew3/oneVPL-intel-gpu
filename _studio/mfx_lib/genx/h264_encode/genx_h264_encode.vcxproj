@@ -142,6 +142,17 @@ embed_isa genx_skl_histogram.isa
 move genx_skl_histogram.cpp .\src\genx_skl_histogram_isa.cpp
 move genx_skl_histogram.h .\include\genx_skl_histogram_isa.h
 
+icl /c /Qxcm /Qxcm_release /Qxcm_jit_target=gen10 .\src\genx_bdw_simple_me.cpp /mCM_print_asm_count
+move genx_bdw_simple_me.isa genx_cnl_simple_me.isa
+embed_isa genx_cnl_simple_me.isa
+move genx_cnl_simple_me.cpp .\src\genx_cnl_simple_me_isa.cpp
+move genx_cnl_simple_me.h .\include\genx_cnl_simple_me_isa.h
+
+icl /c /Qxcm /Qxcm_release /Qxcm_jit_target=gen10 .\src\genx_histogram.cpp /mCM_print_asm_count
+move genx_histogram.isa genx_cnl_histogram.isa
+embed_isa genx_cnl_histogram.isa
+move genx_cnl_histogram.cpp .\src\genx_cnl_histogram_isa.cpp
+move genx_cnl_histogram.h .\include\genx_cnl_histogram_isa.h
 </Command>
     </PreBuildEvent>
     <CustomBuildStep>

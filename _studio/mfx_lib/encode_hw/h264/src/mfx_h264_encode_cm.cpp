@@ -29,6 +29,10 @@
 #include "genx_skl_simple_me_isa.h"
 #include "genx_skl_histogram_isa.h"
 #include "genx_hsw_histogram_isa.h"
+#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
+#include "genx_cnl_simple_me_isa.h"
+#include "genx_cnl_histogram_isa.h"
+#endif
 
 namespace MfxHwH264EncodeHW
 {
@@ -836,6 +840,12 @@ void CmContext::Setup(
         m_program = ReadProgram(m_device, genx_skl_simple_me, SizeOf(genx_skl_simple_me));
         m_programHist = ReadProgram(m_device, genx_skl_histogram, SizeOf(genx_skl_histogram));
         break;
+#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
+    case MFX_HW_CNL:
+        m_program = ReadProgram(m_device, genx_cnl_simple_me, SizeOf(genx_cnl_simple_me));
+        m_programHist = ReadProgram(m_device, genx_cnl_histogram, SizeOf(genx_cnl_histogram));
+        break;
+#endif
     default:
         throw CmRuntimeError();
     }

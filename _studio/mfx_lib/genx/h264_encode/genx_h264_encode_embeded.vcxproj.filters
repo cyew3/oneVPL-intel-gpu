@@ -38,6 +38,12 @@
     <ClCompile Include="src\genx_histogram.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\genx_cnl_histogram_isa.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\genx_cnl_simple_me_isa.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\genx_hsw_simple_me_isa.h">
@@ -53,6 +59,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\genx_hsw_histogram_isa.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\genx_cnl_histogram_isa.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\genx_cnl_simple_me_isa.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

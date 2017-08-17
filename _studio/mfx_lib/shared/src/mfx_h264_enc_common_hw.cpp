@@ -2388,16 +2388,6 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 #if defined(PRE_SI_TARGET_PLATFORM_GEN10)
     if (platform >= MFX_HW_CNL)
     {
-        //no CM kernels implemented
-
-        if (bRateControlLA(par.mfx.RateControlMethod))
-        {
-            unsupported = true;
-            par.mfx.RateControlMethod = 0;
-            extOpt2->LookAheadDepth = 0;
-            extOpt2->LookAheadDS = 0;
-        }
-
         if (extOpt2->MaxSliceSize && !(IsOn(par.mfx.LowPower) && hwCaps.SliceLevelRateCtrl))
         {
             changed = true;

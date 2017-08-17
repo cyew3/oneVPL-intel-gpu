@@ -390,6 +390,8 @@ copy $(MEDIASDK_ROOT)\CMRT\compiler\lib\x86\libcm.dll ..\..\..\..\build\win_$(Pl
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="src\genx_bdw_simple_me_isa.cpp" />
+    <ClCompile Include="src\genx_cnl_histogram_isa.cpp" />
+    <ClCompile Include="src\genx_cnl_simple_me_isa.cpp" />
     <ClCompile Include="src\genx_histogram.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_THM|Win32'">true</ExcludedFromBuild>
@@ -424,6 +426,8 @@ copy $(MEDIASDK_ROOT)\CMRT\compiler\lib\x86\libcm.dll ..\..\..\..\build\win_$(Pl
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\genx_bdw_simple_me_isa.h" />
+    <ClInclude Include="include\genx_cnl_histogram_isa.h" />
+    <ClInclude Include="include\genx_cnl_simple_me_isa.h" />
     <ClInclude Include="include\genx_hsw_histogram_isa.h" />
     <ClInclude Include="include\genx_hsw_simple_me_isa.h" />
     <ClInclude Include="include\genx_skl_histogram_isa.h" />
