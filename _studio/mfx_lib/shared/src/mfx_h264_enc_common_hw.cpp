@@ -4639,7 +4639,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         // Replace 3 with function to detect maximum allowed number of frames
         if (mfeParam.MaxNumFrames > 3){
             mfeParam.MaxNumFrames =
-              (mfeParam.MFMode >= MF_MF_AUTO) ? 3: 1;
+              (mfeParam.MFMode >= MFX_MF_AUTO) ? 3: 1;
             changed = true;
         }
 #endif
@@ -6552,18 +6552,18 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
     mfxExtMultiFrameParam const & mfeParam = GetExtBufferRef(video);
     mfxExtMultiFrameControl * mfeCtrl = GetExtBuffer(*ctrl);
 
-    if(mfeCtrl && mfeParam->MFMode >= MFX_MF_AUTO)
+    if(mfeCtrl && mfeParam.MFMode >= MFX_MF_AUTO)
     {
-        if(mfeParam->MFMode = MFX_MF_MANUAL && mfeCtrl->timeout)
+        if(mfeParam.MFMode == MFX_MF_MANUAL && mfeCtrl->Timeout)
         {
             checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-            mfeCtrl->timeout = 0;
+            mfeCtrl->Timeout = 0;
         }
 
-        if(mfeParam->MFMode = MFX_MF_AUTO && mfeCtrl->flush)
+        if(mfeParam.MFMode == MFX_MF_AUTO && mfeCtrl->Flush)
         {
             checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-            mfeCtrl->flush = 0;
+            mfeCtrl->Flush = 0;
         }
     }
 #endif
@@ -7767,8 +7767,8 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
 #endif
 
 #if defined(MFX_ENABLE_MFE)
-    CONSTRUCT_EXT_BUFFER(mfxExtMultiFrameParam, m_MfeGeneralOptions);
-    CONSTRUCT_EXT_BUFFER(mfxExtMultiFrameControl, m_MfeFrameOptions);
+    CONSTRUCT_EXT_BUFFER(mfxExtMultiFrameParam, m_MfeParam);
+    CONSTRUCT_EXT_BUFFER(mfxExtMultiFrameControl, m_MfeControl);
 #endif
 
 

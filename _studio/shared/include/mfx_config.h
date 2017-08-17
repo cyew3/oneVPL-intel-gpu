@@ -69,6 +69,10 @@
 #endif
 #endif // #if defined(_WIN32) || defined(_WIN64)
 
+#if defined(LINUX64)
+    //#define MFX_ENABLE_MFE
+#endif
+
 #ifdef MFX_VA
     #if defined(LINUX32) || defined(LINUX64)
         #undef  MFX_VA_LINUX

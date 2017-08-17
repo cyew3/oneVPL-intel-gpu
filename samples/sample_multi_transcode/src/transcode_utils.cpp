@@ -130,7 +130,7 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("                      -hw_d3d11 - platform-specific via d3d11\n"));
     msdk_printf(MSDK_STRING("                      -sw - software\n"));
 #ifdef ENABLE_FF
-    msdk_printf(MSDK_STRING("  -mfe_frames <N> maximum number of frames to be combined in multi-frame encode pipeline"))
+    msdk_printf(MSDK_STRING("  -mfe_frames <N> maximum number of frames to be combined in multi-frame encode pipeline"));
     msdk_printf(MSDK_STRING("               0 - default for platform will be used\n"));
     msdk_printf(MSDK_STRING("  -mfe_mode 0|1|2|3 multi-frame encode operation mode - should be the same for all sessions\n"));
     msdk_printf(MSDK_STRING("            0, MFE operates as DEFAULT mode, decided by SDK if MFE enabled\n"));

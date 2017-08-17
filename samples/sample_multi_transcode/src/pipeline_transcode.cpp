@@ -79,7 +79,7 @@ void sInputParams::Reset()
     DenoiseLevel=-1;
     DetailLevel=-1;
 #ifdef ENABLE_FF
-    MFEMode = MFX_MF_DEFAULT;
+    MFMode = MFX_MF_DEFAULT;
     mfeTimeout = 0;
 #endif
 }
