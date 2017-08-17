@@ -200,6 +200,7 @@ bool GetRecInfo(const MfxVideoParam& par, mfxFrameInfo& rec)
     Setting default value for LowPower option.
     By default LowPower is OFF (using DualPipe)
     For CNL: if no B-frames found and LowPower is Unknown then LowPower is ON
+    For LKF: use LowPower by default i.e. if LowPower is Unknown then LowPower is ON
 
     Return value:
     MFX_WRN_INCOMPATIBLE_VIDEO_PARAM - if initial value of par.mfx.LowPower is not equal to MFX_CODINGOPTION_ON, MFX_CODINGOPTION_OFF or MFX_CODINGOPTION_UNKNOWN
@@ -219,7 +220,14 @@ mfxStatus SetLowpowerDefault(MfxVideoParam& par)
         return sts;
     }
 #endif
-
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    if (par.m_platform.CodeName == MFX_PLATFORM_LAKEFIELD
+        && par.mfx.LowPower == MFX_CODINGOPTION_UNKNOWN)
+    {
+        par.mfx.LowPower = MFX_CODINGOPTION_ON;
+        return sts;
+    }
+#endif
     if (par.mfx.LowPower == MFX_CODINGOPTION_UNKNOWN)
         par.mfx.LowPower = MFX_CODINGOPTION_OFF;
 
