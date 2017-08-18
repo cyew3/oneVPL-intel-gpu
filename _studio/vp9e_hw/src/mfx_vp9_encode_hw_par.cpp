@@ -1199,7 +1199,7 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         {
             if (opt2.MBBRC != 0)
             {
-                opt2.MBBRC = 0;
+                opt2.MBBRC = MFX_CODINGOPTION_OFF;
                 changed = true;
             }
 
