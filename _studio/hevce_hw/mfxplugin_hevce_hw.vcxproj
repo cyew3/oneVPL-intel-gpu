@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\..\builder\MSDK.Common.props" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -114,7 +115,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.\h265\include;..\mfx_lib\cmrt_cross_platform\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\..\mdp_msdk-api\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\h265\include;..\mfx_lib\cmrt_cross_platform\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;$(MSDK_API_ROOT)\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_HEVCE_PLUGIN;MFX_D3D11_ENABLED;WIN32;_DEBUG;_WINDOWS;_USRDLL;MFX_VA;MFX_VA_WIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -135,7 +136,7 @@
       <SubSystem>Console</SubSystem>
     </Link>
     <PostBuildEvent>
-      <Command>cmd /c $(ProjectDir)\make_plugin_cfg.bat 1 $(ProjectName) 02 0 "$(OutDir)" "..\..\..\mdp_msdk-api\include\" _d</Command>
+      <Command>cmd /c $(ProjectDir)\make_plugin_cfg.bat 1 $(ProjectName) 02 0 "$(OutDir)" "$(MSDK_API_ROOT)\include\" _d</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>
@@ -145,7 +146,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.\h265\include;..\mfx_lib\cmrt_cross_platform\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\..\mdp_msdk-api\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\h265\include;..\mfx_lib\cmrt_cross_platform\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;$(MSDK_API_ROOT)\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_HEVCE_PLUGIN;MFX_D3D11_ENABLED;MFX_VA;MFX_VA_WIN;WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -165,7 +166,7 @@
       <SubSystem>Console</SubSystem>
     </Link>
     <PostBuildEvent>
-      <Command>cmd /c $(ProjectDir)\make_plugin_cfg.bat 1 $(ProjectName) 02 0 "$(OutDir)" "..\..\..\mdp_msdk-api\include\" _d</Command>
+      <Command>cmd /c $(ProjectDir)\make_plugin_cfg.bat 1 $(ProjectName) 02 0 "$(OutDir)" "$(MSDK_API_ROOT)\include\" _d</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>
@@ -174,7 +175,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\h265\include;..\mfx_lib\cmrt_cross_platform\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\..\mdp_msdk-api\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\h265\include;..\mfx_lib\cmrt_cross_platform\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;$(MSDK_API_ROOT)\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_HEVCE_PLUGIN;MFX_D3D11_ENABLED;MFX_VA;MFX_VA_WIN;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -196,7 +197,7 @@
       <ImportLibrary>$(OutDir)\..\..\lib\$(TargetName).lib</ImportLibrary>
     </Link>
     <PostBuildEvent>
-      <Command>cmd /c $(ProjectDir)\make_plugin_cfg.bat 1 $(ProjectName) 02 0 "$(OutDir)" "..\..\..\mdp_msdk-api\include\"</Command>
+      <Command>cmd /c $(ProjectDir)\make_plugin_cfg.bat 1 $(ProjectName) 02 0 "$(OutDir)" "$(MSDK_API_ROOT)\include\"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>
@@ -205,7 +206,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\h265\include;..\mfx_lib\cmrt_cross_platform\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\..\mdp_msdk-api\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\h265\include;..\mfx_lib\cmrt_cross_platform\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;$(MSDK_API_ROOT)\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_HEVCE_PLUGIN;MFX_D3D11_ENABLED;MFX_VA;MFX_VA_WIN;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -226,7 +227,7 @@
       <ImportLibrary>$(OutDir)\..\..\lib\$(TargetName).lib</ImportLibrary>
     </Link>
     <PostBuildEvent>
-      <Command>cmd /c $(ProjectDir)\make_plugin_cfg.bat 1 $(ProjectName) 02 0 "$(OutDir)" "..\..\..\mdp_msdk-api\include\"</Command>
+      <Command>cmd /c $(ProjectDir)\make_plugin_cfg.bat 1 $(ProjectName) 02 0 "$(OutDir)" "$(MSDK_API_ROOT)\include\"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>
@@ -251,15 +252,15 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxbrc.h" />
-    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxcommon.h" />
-    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxdefs.h" />
-    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxplugin++.h" />
-    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxplugin.h" />
-    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxsession.h" />
-    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxstructures.h" />
-    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxvideo++.h" />
-    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxvideo.h" />
+    <ClInclude Include="$(MSDK_API_ROOT)\include\mfxbrc.h" />
+    <ClInclude Include="$(MSDK_API_ROOT)\include\mfxcommon.h" />
+    <ClInclude Include="$(MSDK_API_ROOT)\include\mfxdefs.h" />
+    <ClInclude Include="$(MSDK_API_ROOT)\include\mfxplugin++.h" />
+    <ClInclude Include="$(MSDK_API_ROOT)\include\mfxplugin.h" />
+    <ClInclude Include="$(MSDK_API_ROOT)\include\mfxsession.h" />
+    <ClInclude Include="$(MSDK_API_ROOT)\include\mfxstructures.h" />
+    <ClInclude Include="$(MSDK_API_ROOT)\include\mfxvideo++.h" />
+    <ClInclude Include="$(MSDK_API_ROOT)\include\mfxvideo.h" />
     <ClInclude Include="..\mfx_lib\shared\include\mfx_brc_common.h" />
     <ClInclude Include="..\shared\include\auxiliary_device.h" />
     <ClInclude Include="h265\include\mfx_h265_encode_hw.h" />
