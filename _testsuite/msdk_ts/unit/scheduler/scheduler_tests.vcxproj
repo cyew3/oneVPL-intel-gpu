@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\..\..\..\builder\MSDK.Common.props" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -103,7 +104,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_VARIADIC_MAX=10;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\..\..\..\_studio\mfx_lib\fs_det\include\;..\..\..\..\..\mdp_msdk-contrib\gmock\include;..\..\..\..\..\mdp_msdk-contrib\gmock\gtest\include;..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\_studio\mfx_lib\encode\h265\include;..\..\..\..\_studio\mfx_lib\optimization\h265\include;..\..\..\..\_studio\shared\include;..\..\..\..\_studio\mfx_lib\shared\include;..\..\..\..\_studio\shared\umc\core\umc\include;..\..\..\..\_studio\shared\umc\core\vm\include;..\..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\..\_studio\mfx_lib\fei\h265\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..\_studio\mfx_lib\fs_det\include\;..\..\..\..\..\mdp_msdk-contrib\gmock\include;..\..\..\..\..\mdp_msdk-contrib\gmock\gtest\include;$(MSDK_API_ROOT)\include;..\..\..\..\_studio\mfx_lib\encode\h265\include;..\..\..\..\_studio\mfx_lib\optimization\h265\include;..\..\..\..\_studio\shared\include;..\..\..\..\_studio\mfx_lib\shared\include;..\..\..\..\_studio\shared\umc\core\umc\include;..\..\..\..\_studio\shared\umc\core\vm\include;..\..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\..\_studio\mfx_lib\fei\h265\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <Cpp0xSupport>true</Cpp0xSupport>
     </ClCompile>
@@ -123,7 +124,7 @@
       <PreprocessorDefinitions>_VARIADIC_MAX=10;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>
       </SDLCheck>
-      <AdditionalIncludeDirectories>..\..\..\..\_studio\mfx_lib\scheduler\include;..\..\..\..\_studio\mfx_lib\fs_det\include\;..\..\..\..\..\mdp_msdk-contrib\gmock\include;..\..\..\..\..\mdp_msdk-contrib\gmock\gtest\include;..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\_studio\mfx_lib\encode\h265\include;..\..\..\..\_studio\mfx_lib\optimization\h265\include;..\..\..\..\_studio\shared\include;..\..\..\..\_studio\mfx_lib\shared\include;..\..\..\..\_studio\shared\umc\core\umc\include;..\..\..\..\_studio\shared\umc\core\vm\include;..\..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\..\_studio\mfx_lib\fei\h265\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..\_studio\mfx_lib\scheduler\include;..\..\..\..\_studio\mfx_lib\fs_det\include\;..\..\..\..\..\mdp_msdk-contrib\gmock\include;..\..\..\..\..\mdp_msdk-contrib\gmock\gtest\include;$(MSDK_API_ROOT)\include;..\..\..\..\_studio\mfx_lib\encode\h265\include;..\..\..\..\_studio\mfx_lib\optimization\h265\include;..\..\..\..\_studio\shared\include;..\..\..\..\_studio\mfx_lib\shared\include;..\..\..\..\_studio\shared\umc\core\umc\include;..\..\..\..\_studio\shared\umc\core\vm\include;..\..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\..\_studio\mfx_lib\fei\h265\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <Cpp0xSupport>true</Cpp0xSupport>
     </ClCompile>
@@ -145,7 +146,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_VARIADIC_MAX=10;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\..\..\..\_studio\mfx_lib\scheduler\include;..\..\..\..\_studio\mfx_lib\fs_det\include\;..\..\..\..\..\mdp_msdk-contrib\gmock\include;..\..\..\..\..\mdp_msdk-contrib\gmock\gtest\include;..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\_studio\mfx_lib\encode\h265\include;..\..\..\..\_studio\mfx_lib\optimization\h265\include;..\..\..\..\_studio\shared\include;..\..\..\..\_studio\mfx_lib\shared\include;..\..\..\..\_studio\shared\umc\core\umc\include;..\..\..\..\_studio\shared\umc\core\vm\include;..\..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\..\_studio\mfx_lib\fei\h265\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..\_studio\mfx_lib\scheduler\include;..\..\..\..\_studio\mfx_lib\fs_det\include\;..\..\..\..\..\mdp_msdk-contrib\gmock\include;..\..\..\..\..\mdp_msdk-contrib\gmock\gtest\include;$(MSDK_API_ROOT)\include;..\..\..\..\_studio\mfx_lib\encode\h265\include;..\..\..\..\_studio\mfx_lib\optimization\h265\include;..\..\..\..\_studio\shared\include;..\..\..\..\_studio\mfx_lib\shared\include;..\..\..\..\_studio\shared\umc\core\umc\include;..\..\..\..\_studio\shared\umc\core\vm\include;..\..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\..\_studio\mfx_lib\fei\h265\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <Cpp0xSupport>true</Cpp0xSupport>
     </ClCompile>
@@ -167,7 +168,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_VARIADIC_MAX=10;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\..\..\..\_studio\mfx_lib\scheduler\include;..\..\..\..\_studio\mfx_lib\fs_det\include\;..\..\..\..\..\mdp_msdk-contrib\gmock\include;..\..\..\..\..\mdp_msdk-contrib\gmock\gtest\include;..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\_studio\mfx_lib\encode\h265\include;..\..\..\..\_studio\mfx_lib\optimization\h265\include;..\..\..\..\_studio\shared\include;..\..\..\..\_studio\mfx_lib\shared\include;..\..\..\..\_studio\shared\umc\core\umc\include;..\..\..\..\_studio\shared\umc\core\vm\include;..\..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\..\_studio\mfx_lib\fei\h265\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..\_studio\mfx_lib\scheduler\include;..\..\..\..\_studio\mfx_lib\fs_det\include\;..\..\..\..\..\mdp_msdk-contrib\gmock\include;..\..\..\..\..\mdp_msdk-contrib\gmock\gtest\include;$(MSDK_API_ROOT)\include;..\..\..\..\_studio\mfx_lib\encode\h265\include;..\..\..\..\_studio\mfx_lib\optimization\h265\include;..\..\..\..\_studio\shared\include;..\..\..\..\_studio\mfx_lib\shared\include;..\..\..\..\_studio\shared\umc\core\umc\include;..\..\..\..\_studio\shared\umc\core\vm\include;..\..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\..\_studio\mfx_lib\fei\h265\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <Cpp0xSupport>true</Cpp0xSupport>
     </ClCompile>

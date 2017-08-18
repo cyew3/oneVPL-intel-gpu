@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\..\..\..\..\builder\MSDK.Common.props" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -84,7 +85,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..\..\..\..\..\mdp_msdk-api\include;include;..\..\include;..\sample_common_protected\include;..\..\..\..\..\pavp\include\;..\..\..\..\..\pavp\samples\pavp_video\pavp_video_lib\;..\..\..\..\..\pavp\samples\pavp_sample_common\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MSDK_API_ROOT)\include;include;..\..\include;..\sample_common_protected\include;..\..\..\..\..\pavp\include\;..\..\..\..\..\pavp\samples\pavp_video\pavp_video_lib\;..\..\..\..\..\pavp\samples\pavp_sample_common\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -106,7 +107,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..\..\..\..\..\mdp_msdk-api\include;include;..\..\include;..\sample_common_protected\include;..\..\..\..\..\pavp\include\;..\..\..\..\..\pavp\samples\pavp_video\pavp_video_lib\;..\..\..\..\..\pavp\samples\pavp_sample_common\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MSDK_API_ROOT)\include;include;..\..\include;..\sample_common_protected\include;..\..\..\..\..\pavp\include\;..\..\..\..\..\pavp\samples\pavp_video\pavp_video_lib\;..\..\..\..\..\pavp\samples\pavp_sample_common\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -124,7 +125,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\..\..\..\..\mdp_msdk-api\include;include;..\..\include;..\sample_common_protected\include;..\..\..\..\..\pavp\include\;..\..\..\..\..\pavp\samples\pavp_video\pavp_video_lib\;..\..\..\..\..\pavp\samples\pavp_sample_common\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MSDK_API_ROOT)\include;include;..\..\include;..\sample_common_protected\include;..\..\..\..\..\pavp\include\;..\..\..\..\..\pavp\samples\pavp_video\pavp_video_lib\;..\..\..\..\..\pavp\samples\pavp_sample_common\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -144,7 +145,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\..\..\..\..\mdp_msdk-api\include;include;..\..\include;..\sample_common_protected\include;..\..\..\..\..\pavp\include\;..\..\..\..\..\pavp\samples\pavp_video\pavp_video_lib\;..\..\..\..\..\pavp\samples\pavp_sample_common\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MSDK_API_ROOT)\include;include;..\..\include;..\sample_common_protected\include;..\..\..\..\..\pavp\include\;..\..\..\..\..\pavp\samples\pavp_video\pavp_video_lib\;..\..\..\..\..\pavp\samples\pavp_sample_common\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>

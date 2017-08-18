@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\..\builder\MSDK.Common.props" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -114,7 +115,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_VARIADIC_MAX=10;WIN32;_DEBUG;_CONSOLE;ENABLE_PS
 ;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../../mdp_msdk-api/mediasdk_structures;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;../../samples/sample_common/include/vm;../../samples/sample_common/include;../../../mdp_msdk-contrib/igfx_s3dcontrol/include;../../../mdp_msdk-val-tools/bs_parser/include;../../../mdp_msdk-contrib/gmock/gtest/include;../../../mdp_msdk-contrib/gmock/include;../../../mdp_msdk-api/include;./include/gmock;./include;../mfx_serializer/include;../../../mdp_msdk-contrib/yaml-cpp/include;../../igfx_s3dcontrol/include/API;../../_studio\shared\include;../../_studio/shared/umc/core/vm/include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MSDK_API_ROOT)/mediasdk_structures;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;../../samples/sample_common/include/vm;../../samples/sample_common/include;../../../mdp_msdk-contrib/igfx_s3dcontrol/include;../../../mdp_msdk-val-tools/bs_parser/include;../../../mdp_msdk-contrib/gmock/gtest/include;../../../mdp_msdk-contrib/gmock/include;$(MSDK_API_ROOT)/include;./include/gmock;./include;../mfx_serializer/include;../../../mdp_msdk-contrib/yaml-cpp/include;../../igfx_s3dcontrol/include/API;../../_studio\shared\include;../../_studio/shared/umc/core/vm/include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <DebugInformationFormat>OldStyle</DebugInformationFormat>
     </ClCompile>
@@ -133,7 +134,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_VARIADIC_MAX=10;WIN32;_DEBUG;_CONSOLE;ENABLE_PS
 ;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../../mdp_msdk-api/mediasdk_structures;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;../../samples/sample_common/include/vm;../../samples/sample_common/include;../../../mdp_msdk-contrib/igfx_s3dcontrol/include;../../../mdp_msdk-val-tools/bs_parser/include;../../../mdp_msdk-contrib/gmock/gtest/include;../../../mdp_msdk-contrib/gmock/include;../../../mdp_msdk-api/include;./include/gmock;./include;../mfx_serializer/include;../../../mdp_msdk-contrib/yaml-cpp/include;../../igfx_s3dcontrol/include/API;../../_studio\shared\include;../../_studio/shared/umc/core/vm/include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MSDK_API_ROOT)/mediasdk_structures;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;../../samples/sample_common/include/vm;../../samples/sample_common/include;../../../mdp_msdk-contrib/igfx_s3dcontrol/include;../../../mdp_msdk-val-tools/bs_parser/include;../../../mdp_msdk-contrib/gmock/gtest/include;../../../mdp_msdk-contrib/gmock/include;$(MSDK_API_ROOT)/include;./include/gmock;./include;../mfx_serializer/include;../../../mdp_msdk-contrib/yaml-cpp/include;../../igfx_s3dcontrol/include/API;../../_studio\shared\include;../../_studio/shared/umc/core/vm/include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <DebugInformationFormat>OldStyle</DebugInformationFormat>
     </ClCompile>
@@ -154,7 +155,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_VARIADIC_MAX=10;WIN32;NDEBUG;_CONSOLE;ENABLE_PS
 ;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../../mdp_msdk-api/mediasdk_structures;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;../../samples/sample_common/include/vm;../../samples/sample_common/include;../../../mdp_msdk-contrib/igfx_s3dcontrol/include;../../../mdp_msdk-val-tools/bs_parser/include;../../../mdp_msdk-contrib/gmock/gtest/include;../../../mdp_msdk-contrib/gmock/include;../../../mdp_msdk-api/include;./include/gmock;./include;../mfx_serializer/include;../../../mdp_msdk-contrib/yaml-cpp/include;../../igfx_s3dcontrol/include/API;../../_studio\shared\include;../../_studio/shared/umc/core/vm/include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MSDK_API_ROOT)/mediasdk_structures;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;../../samples/sample_common/include/vm;../../samples/sample_common/include;../../../mdp_msdk-contrib/igfx_s3dcontrol/include;../../../mdp_msdk-val-tools/bs_parser/include;../../../mdp_msdk-contrib/gmock/gtest/include;../../../mdp_msdk-contrib/gmock/include;$(MSDK_API_ROOT)/include;./include/gmock;./include;../mfx_serializer/include;../../../mdp_msdk-contrib/yaml-cpp/include;../../igfx_s3dcontrol/include/API;../../_studio\shared\include;../../_studio/shared/umc/core/vm/include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <ControlFlowGuard>Guard</ControlFlowGuard>
     </ClCompile>
@@ -177,7 +178,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_VARIADIC_MAX=10;WIN32;NDEBUG;_CONSOLE;ENABLE_PS
 ;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;../../samples/sample_common/include/vm;../../samples/sample_common/include;../../../mdp_msdk-contrib/igfx_s3dcontrol/include;../../../mdp_msdk-val-tools/bs_parser/include;../../../mdp_msdk-contrib/gmock/gtest/include;../../../mdp_msdk-contrib/gmock/include;../../../mdp_msdk-api/mediasdk_structures;../../../mdp_msdk-api/include;./include/gmock;./include;../mfx_serializer/include;../../../mdp_msdk-contrib/yaml-cpp/include;../../igfx_s3dcontrol/include/API;../../_studio\shared\include;../../_studio/shared/umc/core/vm/include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;../../samples/sample_common/include/vm;../../samples/sample_common/include;../../../mdp_msdk-contrib/igfx_s3dcontrol/include;../../../mdp_msdk-val-tools/bs_parser/include;../../../mdp_msdk-contrib/gmock/gtest/include;../../../mdp_msdk-contrib/gmock/include;$(MSDK_API_ROOT)/mediasdk_structures;$(MSDK_API_ROOT)/include;./include/gmock;./include;../mfx_serializer/include;../../../mdp_msdk-contrib/yaml-cpp/include;../../igfx_s3dcontrol/include/API;../../_studio\shared\include;../../_studio/shared/umc/core/vm/include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <ControlFlowGuard>Guard</ControlFlowGuard>
     </ClCompile>
@@ -495,7 +496,7 @@
     <ClCompile Include="src\test_sample_allocator.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\mdp_msdk-api\opensource\mfx_dispatch\mfx_dispatch_trace_lib.vcxproj">
+    <ProjectReference Include="$(MSDK_API_ROOT)\opensource\mfx_dispatch\mfx_dispatch_trace_lib.vcxproj">
       <Project>{430e22ba-bdf6-497c-bfc5-ec6907f90018}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\..\mdp_msdk-contrib\gmock\msvc\2015\gmock_main.vcxproj">

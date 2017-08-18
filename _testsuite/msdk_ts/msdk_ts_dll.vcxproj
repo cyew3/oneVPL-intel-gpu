@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\..\builder\MSDK.Common.props" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -101,7 +102,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(PerlDir)lib\core\;../../samples/sample_common/include;../../samples/sample_common/include/vm;../../../mdp_msdk-contrib/igfx_s3dcontrol/external/include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\include;./include;../../../mdp_msdk-api/include;../../../mdp_msdk-lib/_studio/shared/include;../../../mdp_msdk-lib/_studio/shared/umc/core/vm/include;../../../mdp_msdk-val-tools/bs_parser/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PerlDir)lib\core\;../../samples/sample_common/include;../../samples/sample_common/include/vm;../../../mdp_msdk-contrib/igfx_s3dcontrol/external/include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\include;./include;$(MSDK_API_ROOT)/include;../../../mdp_msdk-lib/_studio/shared/include;../../../mdp_msdk-lib/_studio/shared/umc/core/vm/include;../../../mdp_msdk-val-tools/bs_parser/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;MSDK_TS_DLL_EXPORTS;USE_SAMPLE_ALLOCATOR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -129,7 +130,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(PerlDir)lib\core\;../../samples/sample_common/include;../../samples/sample_common/include/vm;../../../mdp_msdk-contrib/igfx_s3dcontrol/external/include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\include;./include;../../../mdp_msdk-api/include;../../../mdp_msdk-lib/_studio/shared/include;../../../mdp_msdk-lib/_studio/shared/umc/core/vm/include;../../../mdp_msdk-val-tools/bs_parser/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PerlDir)lib\core\;../../samples/sample_common/include;../../samples/sample_common/include/vm;../../../mdp_msdk-contrib/igfx_s3dcontrol/external/include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\include;./include;$(MSDK_API_ROOT)/include;../../../mdp_msdk-lib/_studio/shared/include;../../../mdp_msdk-lib/_studio/shared/umc/core/vm/include;../../../mdp_msdk-val-tools/bs_parser/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;MSDK_TS_DLL_EXPORTS;USE_SAMPLE_ALLOCATOR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -153,7 +154,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(PerlDir)lib\core\;../../samples/sample_common/include;../../samples/sample_common/include/vm;../../../mdp_msdk-contrib/igfx_s3dcontrol/external/include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\include;./include;../../../mdp_msdk-api/include;../../../mdp_msdk-lib/_studio\shared\include;../../../mdp_msdk-lib/_studio/shared/umc/core/vm/include;../../../mdp_msdk-val-tools/bs_parser/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PerlDir)lib\core\;../../samples/sample_common/include;../../samples/sample_common/include/vm;../../../mdp_msdk-contrib/igfx_s3dcontrol/external/include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\include;./include;$(MSDK_API_ROOT)/include;../../../mdp_msdk-lib/_studio\shared\include;../../../mdp_msdk-lib/_studio/shared/umc/core/vm/include;../../../mdp_msdk-val-tools/bs_parser/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;MSDK_TS_DLL_EXPORTS;USE_SAMPLE_ALLOCATOR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -181,7 +182,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(PerlDir)lib\core\;../../samples/sample_common/include;../../samples/sample_common/include/vm;../../../mdp_msdk-contrib/igfx_s3dcontrol/external/include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\include;./include;../../../mdp_msdk-api/include;../../../mdp_msdk-lib/_studio/shared/include;../../../mdp_msdk-lib/_studio/shared/umc/core/vm/include;../../../mdp_msdk-val-tools/bs_parser/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PerlDir)lib\core\;../../samples/sample_common/include;../../samples/sample_common/include/vm;../../../mdp_msdk-contrib/igfx_s3dcontrol/external/include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\include;./include;$(MSDK_API_ROOT)/include;../../../mdp_msdk-lib/_studio/shared/include;../../../mdp_msdk-lib/_studio/shared/umc/core/vm/include;../../../mdp_msdk-val-tools/bs_parser/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;MSDK_TS_DLL_EXPORTS;USE_SAMPLE_ALLOCATOR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -241,7 +242,7 @@
     <ClInclude Include="include\test_trace.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\mdp_msdk-api\opensource\mfx_dispatch\mfx_dispatch_trace_lib_vs2012.vcxproj">
+    <ProjectReference Include="$(MSDK_API_ROOT)\opensource\mfx_dispatch\mfx_dispatch_trace_lib_vs2012.vcxproj">
       <Project>{430e22ba-bdf6-497c-bfc5-ec6907f90018}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\_studio\shared\umc\core\vm\vm_vs2012.vcxproj">
