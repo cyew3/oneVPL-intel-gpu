@@ -3,5 +3,6 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros">
     <MSDK_STUDIO_ROOT>$(MSBuildThisFileDirectory)..\_studio</MSDK_STUDIO_ROOT>
+    <MSDK_API_ROOT>$(MSBuildThisFileDirectory)..\..\mdp_msdk-api</MSDK_API_ROOT>
   </PropertyGroup>
 </Project>

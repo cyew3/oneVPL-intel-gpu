@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\..\builder\MSDK.Common.props" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug_THM|Win32">
       <Configuration>Debug_THM</Configuration>
@@ -171,7 +172,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>include;..\..\..\mdp_msdk-api\include;..\..\_studio\shared\include;..\..\_studio\mfx_lib\shared\include;..\..\_studio\shared\umc\core\umc\include;..\..\_studio\shared\umc\core\vm\include;..\..\_studio\shared\umc\core\vm_plus\include;..\..\_studio\shared\umc\codec\h264_dec\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;$(MSDK_API_ROOT)\include;..\..\_studio\shared\include;..\..\_studio\mfx_lib\shared\include;..\..\_studio\shared\umc\core\umc\include;..\..\_studio\shared\umc\core\vm\include;..\..\_studio\shared\umc\core\vm_plus\include;..\..\_studio\shared\umc\codec\h264_dec\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -186,7 +187,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_THM|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>include;..\..\..\mdp_msdk-api\include;..\..\_studio\shared\include;..\..\_studio\mfx_lib\shared\include;..\..\_studio\shared\umc\core\umc\include;..\..\_studio\shared\umc\core\vm\include;..\..\_studio\shared\umc\core\vm_plus\include;..\..\_studio\shared\umc\codec\h264_dec\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;$(MSDK_API_ROOT)\include;..\..\_studio\shared\include;..\..\_studio\mfx_lib\shared\include;..\..\_studio\shared\umc\core\umc\include;..\..\_studio\shared\umc\core\vm\include;..\..\_studio\shared\umc\core\vm_plus\include;..\..\_studio\shared\umc\codec\h264_dec\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_ATL_NO_WIN_SUPPORT;WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -204,7 +205,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>include;..\..\..\mdp_msdk-api\include;..\..\_studio\shared\include;..\..\_studio\mfx_lib\shared\include;..\..\_studio\shared\umc\core\umc\include;..\..\_studio\shared\umc\core\vm\include;..\..\_studio\shared\umc\core\vm_plus\include;..\..\_studio\shared\umc\codec\h264_dec\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;$(MSDK_API_ROOT)\include;..\..\_studio\shared\include;..\..\_studio\mfx_lib\shared\include;..\..\_studio\shared\umc\core\umc\include;..\..\_studio\shared\umc\core\vm\include;..\..\_studio\shared\umc\core\vm_plus\include;..\..\_studio\shared\umc\codec\h264_dec\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -222,7 +223,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>include;..\..\..\mdp_msdk-api\include;..\..\_studio\shared\include;..\..\_studio\mfx_lib\shared\include;..\..\_studio\shared\umc\core\umc\include;..\..\_studio\shared\umc\core\vm\include;..\..\_studio\shared\umc\core\vm_plus\include;..\..\_studio\shared\umc\codec\h264_dec\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;$(MSDK_API_ROOT)\include;..\..\_studio\shared\include;..\..\_studio\mfx_lib\shared\include;..\..\_studio\shared\umc\core\umc\include;..\..\_studio\shared\umc\core\vm\include;..\..\_studio\shared\umc\core\vm_plus\include;..\..\_studio\shared\umc\codec\h264_dec\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -236,7 +237,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>include;..\..\..\mdp_msdk-api\include;..\..\_studio\shared\include;..\..\_studio\mfx_lib\shared\include;..\..\_studio\shared\umc\core\umc\include;..\..\_studio\shared\umc\core\vm\include;..\..\_studio\shared\umc\core\vm_plus\include;..\..\_studio\shared\umc\codec\h264_dec\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;$(MSDK_API_ROOT)\include;..\..\_studio\shared\include;..\..\_studio\mfx_lib\shared\include;..\..\_studio\shared\umc\core\umc\include;..\..\_studio\shared\umc\core\vm\include;..\..\_studio\shared\umc\core\vm_plus\include;..\..\_studio\shared\umc\codec\h264_dec\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -251,7 +252,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_THM|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>include;..\..\..\mdp_msdk-api\include;..\..\_studio\shared\include;..\..\_studio\mfx_lib\shared\include;..\..\_studio\shared\umc\core\umc\include;..\..\_studio\shared\umc\core\vm\include;..\..\_studio\shared\umc\core\vm_plus\include;..\..\_studio\shared\umc\codec\h264_dec\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;$(MSDK_API_ROOT)\include;..\..\_studio\shared\include;..\..\_studio\mfx_lib\shared\include;..\..\_studio\shared\umc\core\umc\include;..\..\_studio\shared\umc\core\vm\include;..\..\_studio\shared\umc\core\vm_plus\include;..\..\_studio\shared\umc\codec\h264_dec\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -268,7 +269,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>include;..\..\..\mdp_msdk-api\include;..\..\_studio\shared\include;..\..\_studio\mfx_lib\shared\include;..\..\_studio\shared\umc\core\umc\include;..\..\_studio\shared\umc\core\vm\include;..\..\_studio\shared\umc\core\vm_plus\include;..\..\_studio\shared\umc\codec\h264_dec\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;$(MSDK_API_ROOT)\include;..\..\_studio\shared\include;..\..\_studio\mfx_lib\shared\include;..\..\_studio\shared\umc\core\umc\include;..\..\_studio\shared\umc\core\vm\include;..\..\_studio\shared\umc\core\vm_plus\include;..\..\_studio\shared\umc\codec\h264_dec\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -286,7 +287,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>include;..\..\..\mdp_msdk-api\include;..\..\_studio\shared\include;..\..\_studio\mfx_lib\shared\include;..\..\_studio\shared\umc\core\umc\include;..\..\_studio\shared\umc\core\vm\include;..\..\_studio\shared\umc\core\vm_plus\include;..\..\_studio\shared\umc\codec\h264_dec\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;$(MSDK_API_ROOT)\include;..\..\_studio\shared\include;..\..\_studio\mfx_lib\shared\include;..\..\_studio\shared\umc\core\umc\include;..\..\_studio\shared\umc\core\vm\include;..\..\_studio\shared\umc\core\vm_plus\include;..\..\_studio\shared\umc\codec\h264_dec\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>

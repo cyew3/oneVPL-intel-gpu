@@ -4,7 +4,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_PropertySheetDisplayName>common_props</_PropertySheetDisplayName>
-    <IncludePath>$(MfxIppIncludeDir);.\include;.\h263_dec\include;..\..\..\mdp_msdk-api\include;..\..\_studio\mfx_lib\shared\include;..\..\_studio\shared\umc\core\vm\include;..\..\_studio\shared\include;..\..\_studio\shared\umc\core\vm_plus\include;..\..\_studio\shared\umc\core\umc\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(MfxIppIncludeDir);.\include;.\h263_dec\include;$(MSDK_API_ROOT)\include;..\..\_studio\mfx_lib\shared\include;..\..\_studio\shared\umc\core\vm\include;..\..\_studio\shared\include;..\..\_studio\shared\umc\core\vm_plus\include;..\..\_studio\shared\umc\core\umc\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
 
   <ItemDefinitionGroup>

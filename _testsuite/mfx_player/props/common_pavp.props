@@ -16,7 +16,7 @@
   </Target>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\..\_studio\shared\umc\core\umc\include;$(SolutionDir)..\..\_studio\shared\umc\core\vm\include;$(SolutionDir)..\..\_studio\shared\umc\core\vm_plus\include;$(SolutionDir)..\..\_studio\shared\umc\io\umc_io\include;$(SolutionDir)..\..\_studio\shared\include;$(SolutionDir)..\..\..\mdp_msdk-api\include;$(SolutionDir)../../pavp/include;$(SolutionDir)../../pavp/samples/pavp_sample_common;$(SolutionDir)../../pavp/samples/pavp_video/pavp_video_lib;$(SolutionDir)../../pavp/samples/win8ui_video/win8ui_video_lib;$(SolutionDir)..\mfx_pavp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\..\_studio\shared\umc\core\umc\include;$(SolutionDir)..\..\_studio\shared\umc\core\vm\include;$(SolutionDir)..\..\_studio\shared\umc\core\vm_plus\include;$(SolutionDir)..\..\_studio\shared\umc\io\umc_io\include;$(SolutionDir)..\..\_studio\shared\include;$(MSDK_API_ROOT)\include;$(SolutionDir)../../pavp/include;$(SolutionDir)../../pavp/samples/pavp_sample_common;$(SolutionDir)../../pavp/samples/pavp_video/pavp_video_lib;$(SolutionDir)../../pavp/samples/win8ui_video/win8ui_video_lib;$(SolutionDir)..\mfx_pavp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>MFX_VA;_CONSOLE;PSAPI_VERSION=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>

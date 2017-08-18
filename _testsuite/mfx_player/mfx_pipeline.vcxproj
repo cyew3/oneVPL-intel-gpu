@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\..\builder\MSDK.Common.props" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug (Lucas DLL)|Win32">
       <Configuration>Debug (Lucas DLL)</Configuration>
@@ -569,16 +570,16 @@
     <ClInclude Include="include\mfx_vpp_hw.h" />
     <ClInclude Include="include\mf_hw_platform.h" />
     <ClInclude Include="include\trace_utils.h" />
-    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxdefs.h" />
-    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxjpeg.h" />
-    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxmvc.h" />
-    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxpcp.h" />
-    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxplugin++.h" />
-    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxplugin.h" />
-    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxstructures.h" />
-    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxsvc.h" />
-    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxvideo++.h" />
-    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxvideo.h" />
+    <ClInclude Include="$(MSDK_API_ROOT)\include\mfxdefs.h" />
+    <ClInclude Include="$(MSDK_API_ROOT)\include\mfxjpeg.h" />
+    <ClInclude Include="$(MSDK_API_ROOT)\include\mfxmvc.h" />
+    <ClInclude Include="$(MSDK_API_ROOT)\include\mfxpcp.h" />
+    <ClInclude Include="$(MSDK_API_ROOT)\include\mfxplugin++.h" />
+    <ClInclude Include="$(MSDK_API_ROOT)\include\mfxplugin.h" />
+    <ClInclude Include="$(MSDK_API_ROOT)\include\mfxstructures.h" />
+    <ClInclude Include="$(MSDK_API_ROOT)\include\mfxsvc.h" />
+    <ClInclude Include="$(MSDK_API_ROOT)\include\mfxvideo++.h" />
+    <ClInclude Include="$(MSDK_API_ROOT)\include\mfxvideo.h" />
     <ClInclude Include="include\mfx_iadapter.h" />
     <ClInclude Include="include\mfx_iallocator_factory.h" />
     <ClInclude Include="include\mfx_ibitstream_converter.h" />
