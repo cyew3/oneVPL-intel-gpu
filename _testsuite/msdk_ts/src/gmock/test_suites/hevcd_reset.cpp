@@ -252,7 +252,7 @@ int TestSuite::RunTest(tc_struct const& tc)
     return 0;
 }
 
-template <unsigned fourcc>
+template <unsigned fourcc, unsigned profile = MFX_PROFILE_UNKNOWN>
 struct TestSuiteExt
     : public TestSuite
 {
@@ -417,8 +417,80 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_Y416>::test_cases[] =
 template <>
 unsigned int const TestSuiteExt<MFX_FOURCC_Y416>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_Y416>::test_cases) / sizeof(TestSuite::tc_struct);
 
-template <unsigned fourcc>
-int TestSuiteExt<fourcc>::RunTest(unsigned int id)
+/* 8b 420 SCC */
+template <>
+TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_SCC>::test_cases[] =
+{
+    {/* 0*/ MFX_ERR_NONE, {"conformance/hevc/scc/scc-main/020_main_palette_all_lf.hevc", ""},
+    {{INIT|ALLOCATOR, 0, {frame_allocator::SOFTWARE, frame_allocator::ALLOC_MAX}},
+    {REPEAT, 0, {2}}}
+    },
+
+    {/* 1*/ MFX_ERR_NONE, {"conformance/hevc/scc/scc-main/020_main_palette_all_lf.hevc", ""},
+        {{INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
+        {REPEAT, 0, {2}}}
+    },
+    {/* 2*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, {"conformance/hevc/scc/scc-main/020_main_palette_all_lf.hevc", "<TODO>"}},
+};
+template <>
+unsigned int const TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_SCC>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_SCC>::test_cases) / sizeof(TestSuite::tc_struct);
+
+/* 8b 444 SCC */
+template <>
+TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_AYUV, MFX_PROFILE_HEVC_SCC>::test_cases[] =
+{
+    {/* 0*/ MFX_ERR_NONE, {"conformance/hevc/scc/scc-main444/020_main444_palette_all_lf.hevc", ""},
+    {{INIT|ALLOCATOR, 0, {frame_allocator::SOFTWARE, frame_allocator::ALLOC_MAX}},
+    {REPEAT, 0, {2}}}
+    },
+
+    {/* 1*/ MFX_ERR_NONE, {"conformance/hevc/scc/scc-main444/020_main444_palette_all_lf.hevc", ""},
+        {{INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
+        {REPEAT, 0, {2}}}
+    },
+    {/* 2*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, {"conformance/hevc/scc/scc-main444/020_main444_palette_all_lf.hevc", "<TODO>"}},
+};
+template <>
+unsigned int const TestSuiteExt<MFX_FOURCC_AYUV, MFX_PROFILE_HEVC_SCC>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_AYUV, MFX_PROFILE_HEVC_SCC>::test_cases) / sizeof(TestSuite::tc_struct);
+
+/* 10b 420 SCC */
+template <>
+TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_HEVC_SCC>::test_cases[] =
+{
+    {/* 0*/ MFX_ERR_NONE, {"conformance/hevc/scc/scc-main10/020_main10_palette_all_lf.hevc", ""},
+    {{INIT|ALLOCATOR, 0, {frame_allocator::SOFTWARE, frame_allocator::ALLOC_MAX}},
+    {REPEAT, 0, {2}}}
+    },
+
+    {/* 1*/ MFX_ERR_NONE, {"conformance/hevc/scc/scc-main10/020_main10_palette_all_lf.hevc", ""},
+        {{INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
+        {REPEAT, 0, {2}}}
+    },
+    {/* 2*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, {"conformance/hevc/scc/scc-main10/020_main10_palette_all_lf.hevc", "<TODO>"}},
+};
+template <>
+unsigned int const TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_HEVC_SCC>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_HEVC_SCC>::test_cases) / sizeof(TestSuite::tc_struct);
+
+/* 10b 444 SCC */
+template <>
+TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_Y410, MFX_PROFILE_HEVC_SCC>::test_cases[] =
+{
+    {/* 0*/ MFX_ERR_NONE, {"conformance/hevc/scc/scc-main444_10/020_main444_10_palette_all_lf.hevc", ""},
+    {{INIT|ALLOCATOR, 0, {frame_allocator::SOFTWARE, frame_allocator::ALLOC_MAX}},
+    {REPEAT, 0, {2}}}
+    },
+
+    {/* 1*/ MFX_ERR_NONE, {"conformance/hevc/scc/scc-main444_10/020_main444_10_palette_all_lf.hevc", ""},
+        {{INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
+        {REPEAT, 0, {2}}}
+    },
+    {/* 2*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, {"conformance/hevc/scc/scc-main444_10/020_main444_10_palette_all_lf.hevc", "<TODO>"}},
+};
+template <>
+unsigned int const TestSuiteExt<MFX_FOURCC_Y410, MFX_PROFILE_HEVC_SCC>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_Y410, MFX_PROFILE_HEVC_SCC>::test_cases) / sizeof(TestSuite::tc_struct);
+
+template <unsigned fourcc, unsigned profile>
+int TestSuiteExt<fourcc, profile>::RunTest(unsigned int id)
 {
     auto tc =
         id >= TestSuite::n_cases ?
@@ -439,5 +511,10 @@ TS_REG_TEST_SUITE(hevc10d_444_reset, TestSuiteExt<MFX_FOURCC_Y410>::RunTest, Tes
 TS_REG_TEST_SUITE(hevc12d_420_p016_reset, TestSuiteExt<MFX_FOURCC_P016>::RunTest, TestSuiteExt<MFX_FOURCC_P016>::n_cases);
 TS_REG_TEST_SUITE(hevc12d_422_y216_reset, TestSuiteExt<MFX_FOURCC_Y216>::RunTest, TestSuiteExt<MFX_FOURCC_Y216>::n_cases);
 TS_REG_TEST_SUITE(hevc12d_444_y416_reset, TestSuiteExt<MFX_FOURCC_Y416>::RunTest, TestSuiteExt<MFX_FOURCC_Y416>::n_cases);
+
+TS_REG_TEST_SUITE(hevcd_420_nv12_scc_reset,   (TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_SCC>::RunTest), (TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_SCC>::n_cases));
+TS_REG_TEST_SUITE(hevcd_444_ayuv_scc_reset,   (TestSuiteExt<MFX_FOURCC_AYUV, MFX_PROFILE_HEVC_SCC>::RunTest), (TestSuiteExt<MFX_FOURCC_AYUV, MFX_PROFILE_HEVC_SCC>::n_cases));
+TS_REG_TEST_SUITE(hevc10d_420_p010_scc_reset, (TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_HEVC_SCC>::RunTest), (TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_HEVC_SCC>::n_cases));
+TS_REG_TEST_SUITE(hevc10d_444_y410_scc_reset, (TestSuiteExt<MFX_FOURCC_Y410, MFX_PROFILE_HEVC_SCC>::RunTest), (TestSuiteExt<MFX_FOURCC_Y410, MFX_PROFILE_HEVC_SCC>::n_cases));
 
 }
