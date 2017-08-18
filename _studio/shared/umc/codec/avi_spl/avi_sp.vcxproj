@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\..\..\..\..\builder\MSDK.Common.props" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug_THM|Win32">
       <Configuration>Debug_THM</Configuration>
@@ -149,7 +150,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\common\include;..\..\codec\spl_common\include;./../../io/media_buffers/include;%(AdditionalIncludeDirectories);..\..\..\..\..\..\mdp_msdk-api\include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\common\include;..\..\codec\spl_common\include;./../../io/media_buffers/include;%(AdditionalIncludeDirectories);$(MSDK_API_ROOT)\include;</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
@@ -157,7 +158,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_THM|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\common\include;..\..\codec\spl_common\include;./../../io/media_buffers/include;%(AdditionalIncludeDirectories);..\..\..\..\..\..\mdp_msdk-api\include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\common\include;..\..\codec\spl_common\include;./../../io/media_buffers/include;%(AdditionalIncludeDirectories);$(MSDK_API_ROOT)\include;</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
@@ -165,7 +166,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>include;$(MfxIppIncludeDir);..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\common\include;./../../io/media_buffers/include;./../../codec/mpeg4_spl/include;..\..\codec\spl_common\include;%(AdditionalIncludeDirectories);..\..\..\..\..\..\mdp_msdk-api\include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;$(MfxIppIncludeDir);..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\common\include;./../../io/media_buffers/include;./../../codec/mpeg4_spl/include;..\..\codec\spl_common\include;%(AdditionalIncludeDirectories);$(MSDK_API_ROOT)\include;</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
@@ -173,7 +174,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_THM|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>include;$(MfxIppIncludeDir);..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\common\include;./../../io/media_buffers/include;./../../codec/mpeg4_spl/include;..\..\codec\spl_common\include;%(AdditionalIncludeDirectories);..\..\..\..\..\..\mdp_msdk-api\include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;$(MfxIppIncludeDir);..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\common\include;./../../io/media_buffers/include;./../../codec/mpeg4_spl/include;..\..\codec\spl_common\include;%(AdditionalIncludeDirectories);$(MSDK_API_ROOT)\include;</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
@@ -181,21 +182,21 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\common\include;..\..\codec\spl_common\include;./../../io/media_buffers/include;%(AdditionalIncludeDirectories);..\..\..\..\..\..\mdp_msdk-api\include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\common\include;..\..\codec\spl_common\include;./../../io/media_buffers/include;%(AdditionalIncludeDirectories);$(MSDK_API_ROOT)\include;</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Lib />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_THM|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\common\include;..\..\codec\spl_common\include;./../../io/media_buffers/include;%(AdditionalIncludeDirectories);..\..\..\..\..\..\mdp_msdk-api\include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\common\include;..\..\codec\spl_common\include;./../../io/media_buffers/include;%(AdditionalIncludeDirectories);$(MSDK_API_ROOT)\include;</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Lib />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>include;$(MfxIppIncludeDir);..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\common\include;./../../io/media_buffers/include;./../../codec/mpeg4_spl/include;..\..\codec\spl_common\include;%(AdditionalIncludeDirectories);..\..\..\..\..\..\mdp_msdk-api\include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;$(MfxIppIncludeDir);..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\common\include;./../../io/media_buffers/include;./../../codec/mpeg4_spl/include;..\..\codec\spl_common\include;%(AdditionalIncludeDirectories);$(MSDK_API_ROOT)\include;</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
@@ -203,7 +204,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_THM|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>include;$(MfxIppIncludeDir);..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\common\include;./../../io/media_buffers/include;./../../codec/mpeg4_spl/include;..\..\codec\spl_common\include;%(AdditionalIncludeDirectories);..\..\..\..\..\..\mdp_msdk-api\include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;$(MfxIppIncludeDir);..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\common\include;./../../io/media_buffers/include;./../../codec/mpeg4_spl/include;..\..\codec\spl_common\include;%(AdditionalIncludeDirectories);$(MSDK_API_ROOT)\include;</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Lib />

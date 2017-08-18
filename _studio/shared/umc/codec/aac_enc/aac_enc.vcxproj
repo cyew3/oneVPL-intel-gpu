@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\..\..\..\..\builder\MSDK.Common.props" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -119,7 +120,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\..\..\..\mdp_msdk-api\include;include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\color_space_converter\include;..\..\codec\me\include;..\..\codec\scene_analyzer\include;..\..\codec\vc1_common\include;..\..\io\media_buffers\include;..\..\io\umc_io\include;..\..\..\include;..\..\..\..\..\include;..\..\..\..\mfx_lib\shared\include;..\..\codec\aac_common\include;..\..\codec\common\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);$(MSDK_API_ROOT)\include;include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\color_space_converter\include;..\..\codec\me\include;..\..\codec\scene_analyzer\include;..\..\codec\vc1_common\include;..\..\io\media_buffers\include;..\..\io\umc_io\include;..\..\..\include;..\..\..\..\..\include;..\..\..\..\mfx_lib\shared\include;..\..\codec\aac_common\include;..\..\codec\common\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Lib />
@@ -132,7 +133,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\..\..\..\mdp_msdk-api\include;include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\color_space_converter\include;..\..\codec\me\include;..\..\codec\scene_analyzer\include;..\..\codec\vc1_common\include;..\..\io\media_buffers\include;..\..\io\umc_io\include;..\..\..\include;..\..\..\..\..\include;..\..\..\..\mfx_lib\shared\include;..\..\codec\aac_common\include;..\..\codec\common\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);$(MSDK_API_ROOT)\include;include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\color_space_converter\include;..\..\codec\me\include;..\..\codec\scene_analyzer\include;..\..\codec\vc1_common\include;..\..\io\media_buffers\include;..\..\io\umc_io\include;..\..\..\include;..\..\..\..\..\include;..\..\..\..\mfx_lib\shared\include;..\..\codec\aac_common\include;..\..\codec\common\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Lib />
@@ -142,7 +143,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\..\..\..\mdp_msdk-api\include;include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\color_space_converter\include;..\..\codec\me\include;..\..\codec\scene_analyzer\include;..\..\codec\vc1_common\include;..\..\io\media_buffers\include;..\..\io\umc_io\include;..\..\..\include;..\..\..\..\..\include;..\..\..\..\mfx_lib\shared\include;..\..\codec\aac_common\include;..\..\codec\common\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);$(MSDK_API_ROOT)\include;include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\color_space_converter\include;..\..\codec\me\include;..\..\codec\scene_analyzer\include;..\..\codec\vc1_common\include;..\..\io\media_buffers\include;..\..\io\umc_io\include;..\..\..\include;..\..\..\..\..\include;..\..\..\..\mfx_lib\shared\include;..\..\codec\aac_common\include;..\..\codec\common\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;VM_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Lib />
@@ -155,7 +156,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\..\..\..\mdp_msdk-api\include;include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\color_space_converter\include;..\..\codec\me\include;..\..\codec\scene_analyzer\include;..\..\codec\vc1_common\include;..\..\io\media_buffers\include;..\..\io\umc_io\include;..\..\..\include;..\..\..\..\..\include;..\..\..\..\mfx_lib\shared\include;..\..\codec\aac_common\include;..\..\codec\common\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);$(MSDK_API_ROOT)\include;include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\color_space_converter\include;..\..\codec\me\include;..\..\codec\scene_analyzer\include;..\..\codec\vc1_common\include;..\..\io\media_buffers\include;..\..\io\umc_io\include;..\..\..\include;..\..\..\..\..\include;..\..\..\..\mfx_lib\shared\include;..\..\codec\aac_common\include;..\..\codec\common\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_DEBUG;_LIB;VM_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Lib />
