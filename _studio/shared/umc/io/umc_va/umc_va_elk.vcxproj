@@ -146,7 +146,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_THM|Win32'" />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\..\mfx_hw\shared\include;include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;.\..\..\codec\color_space_converter\include;.\..\..\io\umc_va\include;$(MSDK_STUDIO_ROOT)\shared\include;..\..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\mfx_lib\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\..\mfx_hw\shared\include;include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;.\..\..\codec\color_space_converter\include;.\..\..\io\umc_va\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_API_ROOT)\include;..\..\..\..\mfx_lib\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;UMC_VA_DXVA;VC1_EAGLELAKE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
     </ClCompile>
@@ -154,7 +154,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_THM|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\..\mfx_hw\shared\include;include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;.\..\..\codec\color_space_converter\include;.\..\..\io\umc_va\include;$(MSDK_STUDIO_ROOT)\shared\include;..\..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\mfx_lib\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\..\mfx_hw\shared\include;include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;.\..\..\codec\color_space_converter\include;.\..\..\io\umc_va\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_API_ROOT)\include;..\..\..\..\mfx_lib\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;UMC_VA_DXVA;VC1_EAGLELAKE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
     </ClCompile>
@@ -162,42 +162,42 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\..\mfx_hw\shared\include;include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;.\..\..\codec\color_space_converter\include;.\..\..\io\umc_va\include;$(MSDK_STUDIO_ROOT)\shared\include;..\..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\mfx_lib\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\..\mfx_hw\shared\include;include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;.\..\..\codec\color_space_converter\include;.\..\..\io\umc_va\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_API_ROOT)\include;..\..\..\..\mfx_lib\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;UMC_VA_DXVA;VC1_EAGLELAKE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_THM|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\..\mfx_hw\shared\include;include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;.\..\..\codec\color_space_converter\include;.\..\..\io\umc_va\include;$(MSDK_STUDIO_ROOT)\shared\include;..\..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\mfx_lib\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\..\mfx_hw\shared\include;include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;.\..\..\codec\color_space_converter\include;.\..\..\io\umc_va\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_API_ROOT)\include;..\..\..\..\mfx_lib\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;UMC_VA_DXVA;VC1_EAGLELAKE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\..\mfx_hw\shared\include;include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;.\..\..\codec\color_space_converter\include;.\..\..\io\umc_va\include;$(MSDK_STUDIO_ROOT)\shared\include;..\..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\mfx_lib\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\..\mfx_hw\shared\include;include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;.\..\..\codec\color_space_converter\include;.\..\..\io\umc_va\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_API_ROOT)\include;..\..\..\..\mfx_lib\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;UMC_VA_DXVA;VC1_EAGLELAKE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Lib />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_THM|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\..\mfx_hw\shared\include;include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;.\..\..\codec\color_space_converter\include;.\..\..\io\umc_va\include;$(MSDK_STUDIO_ROOT)\shared\include;..\..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\mfx_lib\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\..\mfx_hw\shared\include;include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;.\..\..\codec\color_space_converter\include;.\..\..\io\umc_va\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_API_ROOT)\include;..\..\..\..\mfx_lib\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;UMC_VA_DXVA;VC1_EAGLELAKE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Lib />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\..\mfx_hw\shared\include;include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;.\..\..\codec\color_space_converter\include;.\..\..\io\umc_va\include;$(MSDK_STUDIO_ROOT)\shared\include;..\..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\mfx_lib\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\..\mfx_hw\shared\include;include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;.\..\..\codec\color_space_converter\include;.\..\..\io\umc_va\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_API_ROOT)\include;..\..\..\..\mfx_lib\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_DEBUG;_LIB;UMC_VA_DXVA;VC1_EAGLELAKE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Lib />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_THM|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\..\mfx_hw\shared\include;include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;.\..\..\codec\color_space_converter\include;.\..\..\io\umc_va\include;$(MSDK_STUDIO_ROOT)\shared\include;..\..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\mfx_lib\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\..\mfx_hw\shared\include;include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;.\..\..\codec\color_space_converter\include;.\..\..\io\umc_va\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_API_ROOT)\include;..\..\..\..\mfx_lib\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_DEBUG;_LIB;UMC_VA_DXVA;VC1_EAGLELAKE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Lib />
