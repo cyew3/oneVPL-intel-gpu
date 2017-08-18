@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\..\builder\MSDK.Common.props" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -104,7 +105,7 @@
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;MFX_D3D11_ENABLED;_CONSOLE;MFX_D3D11_SUPPORT=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\..\mdp_msdk-contrib\igfx_s3dcontrol\external\include;common\include\vm;common\include;include;..\..\..\mdp_msdk-api\include;..\shared\include;..\..\_studio\shared\umc\core\vm\include;..\..\_studio\shared\include;..\..\_studio\mfx_lib\shared\include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\mdp_msdk-contrib\igfx_s3dcontrol\external\include;common\include\vm;common\include;include;$(MSDK_API_ROOT)\include;..\shared\include;..\..\_studio\shared\umc\core\vm\include;..\..\_studio\shared\include;..\..\_studio\mfx_lib\shared\include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatWarningAsError>false</TreatWarningAsError>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
@@ -124,7 +125,7 @@
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;MFX_D3D11_ENABLED;_CONSOLE;MFX_D3D11_SUPPORT=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\..\mdp_msdk-contrib\igfx_s3dcontrol\external\\include;common\include\vm;common\include;include;..\..\..\mdp_msdk-api\include;..\shared\include;..\..\_studio\shared\umc\core\vm\include;..\..\_studio\shared\include;..\..\_studio\mfx_lib\shared\include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\mdp_msdk-contrib\igfx_s3dcontrol\external\\include;common\include\vm;common\include;include;$(MSDK_API_ROOT)\include;..\shared\include;..\..\_studio\shared\umc\core\vm\include;..\..\_studio\shared\include;..\..\_studio\mfx_lib\shared\include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatWarningAsError>false</TreatWarningAsError>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
@@ -146,7 +147,7 @@
       <FunctionLevelLinking>false</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;MFX_D3D11_SUPPORT=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\..\mdp_msdk-contrib\igfx_s3dcontrol\external\\include;common\include\vm;common\include;include;..\..\..\mdp_msdk-api\include;..\shared\include;..\..\_studio\shared\umc\core\vm\include;..\..\_studio\shared\include;..\..\_studio\mfx_lib\shared\include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\mdp_msdk-contrib\igfx_s3dcontrol\external\\include;common\include\vm;common\include;include;$(MSDK_API_ROOT)\include;..\shared\include;..\..\_studio\shared\umc\core\vm\include;..\..\_studio\shared\include;..\..\_studio\mfx_lib\shared\include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <UseFullPaths>true</UseFullPaths>
     </ClCompile>
@@ -168,7 +169,7 @@
       <FunctionLevelLinking>false</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;MFX_D3D11_SUPPORT=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>common\include\vm;common\include;include;..\..\..\mdp_msdk-contrib\igfx_s3dcontrol\external\\include;..\..\..\mdp_msdk-api\include;..\shared\include;..\..\_studio\shared\umc\core\vm\include;..\..\_studio\shared\include;..\..\_studio\mfx_lib\shared\include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>common\include\vm;common\include;include;..\..\..\mdp_msdk-contrib\igfx_s3dcontrol\external\\include;$(MSDK_API_ROOT)\include;..\shared\include;..\..\_studio\shared\umc\core\vm\include;..\..\_studio\shared\include;..\..\_studio\mfx_lib\shared\include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <UseFullPaths>true</UseFullPaths>
     </ClCompile>
@@ -251,7 +252,7 @@
     <ClCompile Include="src\test_vpp_utils.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\mdp_msdk-api\opensource\mfx_dispatch\libmfx_vs2015.vcxproj">
+    <ProjectReference Include="$(MSDK_API_ROOT)\opensource\mfx_dispatch\libmfx_vs2015.vcxproj">
       <Project>{9e7b3527-11aa-46ba-a82f-c58761f9b56f}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\_studio\shared\umc\core\vm\vm.vcxproj">
