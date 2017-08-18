@@ -158,7 +158,7 @@
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\..\..\mdp_msdk-api\include;$(MSDK_STUDIO_ROOT)\shared\include;..\..\encode\h265\include;..\..\genx\h265_encode\include;include;..\..\..\..\include;..\..\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;..\..\optimization\h265\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\cmrt_cross_platform\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;..\..\encode\h265\include;..\..\genx\h265_encode\include;include;..\..\..\..\include;..\..\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;..\..\optimization\h265\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\cmrt_cross_platform\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatWarningAsError>false</TreatWarningAsError>
       <PreprocessorDefinitions>AS_HEVCE_PLUGIN;MFX_VA;WIN32;_DEBUG;_LIB;VM_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
@@ -171,7 +171,7 @@
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\..\..\mdp_msdk-api\include;$(MSDK_STUDIO_ROOT)\shared\include;..\..\encode\h265\include;..\..\genx\h265_encode\include;include;..\..\..\..\include;..\..\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;..\..\optimization\h265\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\cmrt_cross_platform\include;..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;..\..\encode\h265\include;..\..\genx\h265_encode\include;include;..\..\..\..\include;..\..\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;..\..\optimization\h265\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\cmrt_cross_platform\include;..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatWarningAsError>false</TreatWarningAsError>
       <PreprocessorDefinitions>AS_H265FEI_PLUGIN;AS_HEVCE_PLUGIN;MFX_VA;WIN32;_DEBUG;_LIB;VM_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -185,7 +185,7 @@
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\..\..\mdp_msdk-api\include;$(MSDK_STUDIO_ROOT)\shared\include;..\..\encode\h265\include;..\..\genx\h265_encode\include;include;..\..\..\..\include;..\..\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;..\..\optimization\h265\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\cmrt_cross_platform\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;..\..\encode\h265\include;..\..\genx\h265_encode\include;include;..\..\..\..\include;..\..\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;..\..\optimization\h265\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\cmrt_cross_platform\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatWarningAsError>false</TreatWarningAsError>
       <PreprocessorDefinitions>AS_HEVCE_PLUGIN;MFX_VA;WIN32;_DEBUG;_LIB;VM_DEBUG;CMRT_EMU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -199,7 +199,7 @@
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\..\..\mdp_msdk-api\include;$(MSDK_STUDIO_ROOT)\shared\include;..\..\encode\h265\include;..\..\genx\h265_encode\include;include;..\..\..\..\include;..\..\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;..\..\optimization\h265\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\cmrt_cross_platform\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;..\..\encode\h265\include;..\..\genx\h265_encode\include;include;..\..\..\..\include;..\..\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;..\..\optimization\h265\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\cmrt_cross_platform\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatWarningAsError>false</TreatWarningAsError>
       <PreprocessorDefinitions>AS_HEVCE_PLUGIN;MFX_VA;WIN64;_DEBUG;_LIB;VM_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
@@ -212,7 +212,7 @@
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\..\..\mdp_msdk-api\include;$(MSDK_STUDIO_ROOT)\shared\include;..\..\encode\h265\include;..\..\genx\h265_encode\include;include;..\..\..\..\include;..\..\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;..\..\optimization\h265\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\cmrt_cross_platform\include;..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;..\..\encode\h265\include;..\..\genx\h265_encode\include;include;..\..\..\..\include;..\..\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;..\..\optimization\h265\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\cmrt_cross_platform\include;..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatWarningAsError>false</TreatWarningAsError>
       <PreprocessorDefinitions>AS_H265FEI_PLUGIN;AS_HEVCE_PLUGIN;MFX_VA;WIN64;_DEBUG;_LIB;VM_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -226,7 +226,7 @@
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\..\..\mdp_msdk-api\include;$(MSDK_STUDIO_ROOT)\shared\include;..\..\encode\h265\include;..\..\genx\h265_encode\include;include;..\..\..\..\include;..\..\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;..\..\optimization\h265\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\cmrt_cross_platform\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;..\..\encode\h265\include;..\..\genx\h265_encode\include;include;..\..\..\..\include;..\..\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;..\..\optimization\h265\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\cmrt_cross_platform\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatWarningAsError>false</TreatWarningAsError>
       <PreprocessorDefinitions>AS_HEVCE_PLUGIN;MFX_VA;WIN32;_DEBUG;_LIB;VM_DEBUG;CMRT_EMU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -242,7 +242,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\..\..\mdp_msdk-api\include;$(MSDK_STUDIO_ROOT)\shared\include;..\..\encode\h265\include;..\..\genx\h265_encode\include;include;..\..\..\..\include;..\..\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;..\..\optimization\h265\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\cmrt_cross_platform\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;..\..\encode\h265\include;..\..\genx\h265_encode\include;include;..\..\..\..\include;..\..\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;..\..\optimization\h265\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\cmrt_cross_platform\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_HEVCE_PLUGIN;MFX_VA;WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -264,7 +264,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>
       </SDLCheck>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\..\..\mdp_msdk-api\include;$(MSDK_STUDIO_ROOT)\shared\include;..\..\encode\h265\include;..\..\genx\h265_encode\include;include;..\..\..\..\include;..\..\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;..\..\optimization\h265\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\cmrt_cross_platform\include;..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;..\..\encode\h265\include;..\..\genx\h265_encode\include;include;..\..\..\..\include;..\..\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;..\..\optimization\h265\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\cmrt_cross_platform\include;..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_H265FEI_PLUGIN;AS_HEVCE_PLUGIN;MFX_VA;WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -286,7 +286,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\..\..\mdp_msdk-api\include;$(MSDK_STUDIO_ROOT)\shared\include;..\..\encode\h265\include;..\..\genx\h265_encode\include;include;..\..\..\..\include;..\..\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;..\..\optimization\h265\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\cmrt_cross_platform\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;..\..\encode\h265\include;..\..\genx\h265_encode\include;include;..\..\..\..\include;..\..\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;..\..\optimization\h265\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\cmrt_cross_platform\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_HEVCE_PLUGIN;MFX_VA;WIN64;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -308,7 +308,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>
       </SDLCheck>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\..\..\mdp_msdk-api\include;$(MSDK_STUDIO_ROOT)\shared\include;..\..\encode\h265\include;..\..\genx\h265_encode\include;include;..\..\..\..\include;..\..\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;..\..\optimization\h265\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\cmrt_cross_platform\include;..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;..\..\encode\h265\include;..\..\genx\h265_encode\include;include;..\..\..\..\include;..\..\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;..\..\optimization\h265\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\cmrt_cross_platform\include;..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_H265FEI_PLUGIN;AS_HEVCE_PLUGIN;MFX_VA;WIN64;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>
       </PrecompiledHeader>
