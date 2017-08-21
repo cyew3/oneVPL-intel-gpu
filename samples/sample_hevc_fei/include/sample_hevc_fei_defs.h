@@ -32,6 +32,9 @@ struct sInputParams
     msdk_char  strSrcFile[MSDK_MAX_FILENAME_LEN];
     msdk_char  strDstFile[MSDK_MAX_FILENAME_LEN];
 
+    msdk_char  mvoutFile[MSDK_MAX_FILENAME_LEN];
+    msdk_char  mbstatoutFile[MSDK_MAX_FILENAME_LEN];
+
     bool bENCODE;
     bool bPREENC;
     bool bEncodedOrder;      // use EncodeOrderControl for external reordering
@@ -79,6 +82,8 @@ struct sInputParams
     {
         MSDK_ZERO_MEMORY(strSrcFile);
         MSDK_ZERO_MEMORY(strDstFile);
+        MSDK_ZERO_MEMORY(mvoutFile);
+        MSDK_ZERO_MEMORY(mbstatoutFile);
     }
 
 };

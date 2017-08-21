@@ -25,6 +25,16 @@ FEI_Preenc::FEI_Preenc(MFXVideoSession * session, const mfxFrameInfo& frameInfo)
     , m_mfxPREENC(*m_pmfxSession)
 {
     MSDK_MEMCPY_VAR(m_videoParams.mfx.FrameInfo, &frameInfo, sizeof(mfxFrameInfo));
+
+    /* Default value for I-frames */
+    for (size_t i = 0; i < 16; i++)
+    {
+        for (size_t j = 0; j < 2; j++)
+        {
+            m_default_MVMB.MV[i][j].x = (mfxI16)0x8000;
+            m_default_MVMB.MV[i][j].y = (mfxI16)0x8000;
+        }
+    }
 }
 
 FEI_Preenc::~FEI_Preenc()
@@ -133,6 +143,16 @@ mfxStatus FEI_Preenc::SetParameters(const sInputParams& params)
     pCO3->NumRefActiveBL0[0] = params.NumRefActiveBL0;
     pCO3->NumRefActiveBL1[0] = params.NumRefActiveBL1;
 
+    if (0 != msdk_strlen(params.mvoutFile))
+    {
+        m_pFile_MV_out.reset(new FileHandler(params.mvoutFile, MSDK_STRING("wb")));
+    }
+
+    if (0 != msdk_strlen(params.mbstatoutFile))
+    {
+        m_pFile_MBstat_out.reset(new FileHandler(params.mbstatoutFile, MSDK_STRING("wb")));
+    }
+
     return sts;
 }
 
@@ -185,9 +205,55 @@ mfxStatus FEI_Preenc::ResetExtBuffers(const MfxVideoParamsWrapper & videoParams)
     return MFX_ERR_NONE;
 }
 
+mfxStatus FEI_Preenc::DumpResult(HevcTask* task)
+{
+    MSDK_CHECK_POINTER(task, MFX_ERR_NULL_PTR);
+
+    if (m_pFile_MBstat_out.get())
+    {
+        for (std::list<PreENCOutput>::iterator it = task->m_preEncOutput.begin(); it != task->m_preEncOutput.end(); ++it)
+        {
+            mfxStatus sts = m_pFile_MBstat_out->Write(it->m_mb->MB, sizeof(it->m_mb->MB[0]) * it->m_mb->NumMBAlloc, 1);
+            MSDK_CHECK_STATUS(sts, "Write MB stat output to file failed in DumpResult");
+        }
+    }
+
+    if (m_pFile_MV_out.get())
+    {
+        if (task->m_frameType & MFX_FRAMETYPE_I)
+        {
+            // count number of MB 16x16, as PreENC works as AVC
+            mfxU32 numMB = (MSDK_ALIGN16(task->m_surf->Info.Width) * MSDK_ALIGN16(task->m_surf->Info.Height)) >> 8;
+
+            for (mfxU32 k = 0; k < numMB; k++)
+            {
+                mfxStatus sts = m_pFile_MV_out->Write(&m_default_MVMB, sizeof(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB), 1);
+                MSDK_CHECK_STATUS(sts, "Write MV output to file failed in DumpResult");
+            }
+        }
+        else
+        {
+            for (std::list<PreENCOutput>::iterator it = task->m_preEncOutput.begin(); it != task->m_preEncOutput.end(); ++it)
+            {
+                mfxStatus sts = m_pFile_MV_out->Write(it->m_mv->MB, sizeof(it->m_mv->MB[0]) * it->m_mv->NumMBAlloc, 1);
+                MSDK_CHECK_STATUS(sts, "Write MV output to file failed in DumpResult");
+            }
+        }
+    }
+
+    return MFX_ERR_NONE;
+}
+
 mfxStatus FEI_Preenc::PreEncFrame(HevcTask * task)
 {
-    return PreEncMultiFrames(task);
+    mfxStatus sts =  PreEncMultiFrames(task);
+    MSDK_CHECK_STATUS(sts, "PreENC: PreEncMultiFrames failed");
+
+    //drop output data to output file
+    sts = DumpResult(task);
+    MSDK_CHECK_STATUS(sts, "PreENC: DumpResult failed");
+
+    return sts;
 }
 
 mfxStatus FEI_Preenc::PreEncOneFrame(HevcTask & currTask, const RefIdxPair & refFramesIdx, const bool bDownsampleInput)

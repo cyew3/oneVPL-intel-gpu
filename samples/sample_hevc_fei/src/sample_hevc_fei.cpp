@@ -56,7 +56,7 @@ void PrintHelp(const msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("Options: \n"));
     msdk_printf(MSDK_STRING("   [-nv12] - input is in NV12 color format, if not specified YUV420 is expected\n"));
     msdk_printf(MSDK_STRING("   [-tff|bff|mixed] - input stream is interlaced, top|bottom field first, if not specified progressive is expected.\n"));
-    msdk_printf(MSDK_STRING("                    - mixed means that picture structre should be obtained from the input stream\n"));
+    msdk_printf(MSDK_STRING("                    - mixed means that picture structure should be obtained from the input stream\n"));
     msdk_printf(MSDK_STRING("   [-encode] - use extended FEI interface ENC+PAK (FEI ENCODE) (RC is forced to constant QP)\n"));
     msdk_printf(MSDK_STRING("   [-EncodedOrder] - use app-level reordering to encoded order (default is display; ENCODE only)\n"));
     msdk_printf(MSDK_STRING("   [-n number] - number of frames to process\n"));
@@ -72,6 +72,8 @@ void PrintHelp(const msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-nobref] - do not use B-pyramid (by default the decision is made by library)\n"));
     msdk_printf(MSDK_STRING("   [-l numSlices] - number of slices \n"));
     msdk_printf(MSDK_STRING("   [-preenc] - use extended FEI interface PREENC (RC is forced to constant QP)\n"));
+    msdk_printf(MSDK_STRING("   [-mvout file] - use this to output MV predictors after PreENC\n"));
+    msdk_printf(MSDK_STRING("   [-mbstat file] - use this to output per MB distortions for each frame after PreENC\n"));
     msdk_printf(MSDK_STRING("\n"));
 }
 
@@ -157,6 +159,16 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU32 nArgNum, sInputParams& 
         {
             CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
             PARSE_CHECK(msdk_opt_read(strInput[++i], params.nNumSlices), "NumSlices", isParseInvalid);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-mvout")))
+        {
+            CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
+            PARSE_CHECK(msdk_opt_read(strInput[++i], params.mvoutFile), "MV out File", isParseInvalid);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-mbstat")))
+        {
+            CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
+            PARSE_CHECK(msdk_opt_read(strInput[++i], params.mbstatoutFile), "MB stat out File", isParseInvalid);
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-bref")))
         {

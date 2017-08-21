@@ -153,3 +153,22 @@ mfxStatus YUVReader::GetFrame(mfxFrameSurface1* & pSurf)
 
     return sts;
 }
+
+FileHandler::FileHandler(const msdk_char* _filename, const msdk_char* _mode)
+    : m_file(NULL)
+{
+    MSDK_FOPEN(m_file, _filename, _mode);
+    if (m_file == NULL)
+    {
+        msdk_printf(MSDK_STRING("Can't open file %s in mode %s\n"), _filename, _mode);
+        throw mfxError(MFX_ERR_NOT_INITIALIZED, "Opening file failed");
+    }
+}
+
+FileHandler::~FileHandler()
+{
+    if (m_file)
+    {
+        fclose(m_file);
+    }
+}

@@ -104,6 +104,34 @@ T* AcquireResource(std::vector<T> & pool)
     return freeBuffer;
 }
 
+class FileHandler : private no_copy
+{
+public:
+    FileHandler(const msdk_char* _filename, const msdk_char* _mode);
+    ~FileHandler();
+
+    template <typename T>
+    mfxStatus Read(T* ptr, size_t size, size_t count)
+    {
+        if (m_file && (fread(ptr, size, count, m_file) != count))
+            return MFX_ERR_DEVICE_FAILED;
+
+        return MFX_ERR_NONE;
+    }
+
+    template <typename T>
+    mfxStatus Write(T* ptr, size_t size, size_t count)
+    {
+        if (m_file && (fwrite(ptr, size, count, m_file) != count))
+            return MFX_ERR_DEVICE_FAILED;
+
+        return MFX_ERR_NONE;
+    }
+
+private:
+    FILE* m_file;
+};
+
 // TODO: implement decoder functionality
 // class MFX_Decode : public IVideoReader {};
 

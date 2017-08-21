@@ -79,6 +79,10 @@ mfxStatus CEncodingPipeline::Init()
         sts = InitComponents();
         MSDK_CHECK_STATUS(sts, "InitComponents failed");
     }
+    catch (mfxError& ex)
+    {
+        MSDK_CHECK_STATUS(ex.GetStatus(), ex.GetMessage());
+    }
     catch(std::exception& ex)
     {
         MSDK_CHECK_STATUS(MFX_ERR_UNDEFINED_BEHAVIOR, ex.what());
@@ -212,7 +216,7 @@ mfxStatus CEncodingPipeline::AllocFrames()
         allocRequest.Type |= preEncRequest.Type | MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET | MFX_MEMTYPE_FROM_ENC;
         // Formula below is not fully correct.
         // While it's safe to use it, it needs to be optimized for reasonable resource allocation.
-        // TODO: Find a reasonable minimal number of requered surfaces for YUVSource+PreENC+ENCODE pileline
+        // TODO: Find a reasonable minimal number of required surfaces for YUVSource+PreENC+ENCODE pipeline
         allocRequest.NumFrameSuggested += preEncRequest.NumFrameSuggested;
         allocRequest.NumFrameMin = allocRequest.NumFrameSuggested;
     }

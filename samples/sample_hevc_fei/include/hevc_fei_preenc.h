@@ -43,6 +43,8 @@ private:
 
     mfxStatus ResetExtBuffers(const MfxVideoParamsWrapper & videoParams);
 
+    mfxStatus DumpResult(HevcTask* task);
+
 private:
     MFXVideoSession* m_pmfxSession;
     MFXVideoENC      m_mfxPREENC;
@@ -54,6 +56,12 @@ private:
 
     std::vector<mfxExtFeiPreEncMVExtended>     m_mvs;
     std::vector<mfxExtFeiPreEncMBStatExtended> m_mbs;
+
+    mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB m_default_MVMB;
+
+    /* For I/O operations with extension buffers */
+    std::auto_ptr<FileHandler> m_pFile_MV_out;
+    std::auto_ptr<FileHandler> m_pFile_MBstat_out;
 
     // forbid copy constructor and operator
     FEI_Preenc(const FEI_Preenc& preenc);
