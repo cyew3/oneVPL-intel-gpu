@@ -338,22 +338,28 @@ int TestSuite::RunTest(unsigned int id)
 
     MFXInit();
 
-    tsExtBufType<mfxVideoParam> def (m_par);
+    tsExtBufType<mfxVideoParam> def(m_par);
 
     SETPARS(&m_par, INIT);
-
-    mfxExtOpaqueSurfaceAlloc* pOSA = (mfxExtOpaqueSurfaceAlloc*)m_par.GetExtBuffer(MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
-
-    if (m_par.IOPattern&MFX_IOPATTERN_IN_OPAQUE_MEMORY && pOSA && !pOSA->In.Surfaces)
-        pOSA->In.Surfaces = new mfxFrameSurface1*[pOSA->In.NumSurface+1];
-
-    if (m_par.IOPattern&MFX_IOPATTERN_OUT_OPAQUE_MEMORY && pOSA && !pOSA->Out.Surfaces)
-        pOSA->Out.Surfaces = new mfxFrameSurface1*[pOSA->Out.NumSurface+1];
 
     CreateAllocators();
     SetFrameAllocator();
     SetHandle();
-    AllocSurfaces();
+
+    mfxExtOpaqueSurfaceAlloc* pOSA = (mfxExtOpaqueSurfaceAlloc*)m_par.GetExtBuffer(MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
+
+    if (m_par.IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY || m_par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
+    {
+        QueryIOSurf();
+
+        m_request[0].NumFrameMin = m_request[0].NumFrameSuggested = pOSA->In.NumSurface;
+        m_request[1].NumFrameMin = m_request[1].NumFrameSuggested = pOSA->Out.NumSurface;
+    }
+
+    if (m_par.IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY)
+        m_pSurfPoolIn->AllocOpaque(m_request[0], *pOSA);
+    if (m_par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
+        m_pSurfPoolOut->AllocOpaque(m_request[1], *pOSA);
 
     g_tsStatus.expect(MFX_ERR_NONE);
     Init(m_session, &m_par);
@@ -439,9 +445,6 @@ int TestSuite::RunTest(unsigned int id)
 
         if (dnu && dnu->AlgList) delete[] dnu->AlgList;
     }
-
-    if (pOSA && pOSA->In.Surfaces)  delete[] pOSA->In.Surfaces;
-    if (pOSA && pOSA->Out.Surfaces) delete[] pOSA->Out.Surfaces;
 
     TS_END;
     return 0;
