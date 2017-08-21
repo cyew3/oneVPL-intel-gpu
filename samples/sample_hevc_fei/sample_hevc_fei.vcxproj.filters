@@ -29,6 +29,9 @@
     <ClCompile Include="src\hevc_fei_preenc.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\fei_predictors_repaking.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\fei_utils.h">
@@ -47,6 +50,9 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="include\hevc_fei_preenc.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\fei_predictors_repacking.h">
       <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>

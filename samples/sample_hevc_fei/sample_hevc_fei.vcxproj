@@ -73,6 +73,7 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\fei_predictors_repaking.cpp" />
     <ClCompile Include="src\fei_utils.cpp" />
     <ClCompile Include="src\hevc_fei_encode.cpp" />
     <ClCompile Include="src\hevc_fei_preenc.cpp" />
@@ -81,6 +82,7 @@
     <ClCompile Include="src\sample_hevc_fei.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\fei_predictors_repacking.h" />
     <ClInclude Include="include\fei_utils.h" />
     <ClInclude Include="include\hevc_fei_encode.h" />
     <ClInclude Include="include\hevc_fei_preenc.h" />
