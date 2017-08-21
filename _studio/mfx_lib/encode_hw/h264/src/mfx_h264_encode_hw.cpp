@@ -420,29 +420,32 @@ mfxStatus ImplementationAvc::Query(
     else if (queryMode == 2)  // see MSDK spec for details related to Query mode 2
     {
         ENCODE_CAPS hwCaps = { };
+        MfxVideoParam tmp = *in; // deep copy, create all supported extended buffers
 
+        eMFXHWType platfrom = core->GetHWType();
+        mfxStatus lpSts = SetLowPowerDefault(tmp, platfrom);
         // let use dedault values if input resolution is 0x0
         mfxU32 Width  = in->mfx.FrameInfo.Width == 0 ? 1920: in->mfx.FrameInfo.Width;
         mfxU32 Height =  in->mfx.FrameInfo.Height == 0 ? 1088: in->mfx.FrameInfo.Height;
         if (Width > 4096 || Height > 4096)
             sts = MFX_ERR_UNSUPPORTED;
         else
-            sts = QueryHwCaps(core, hwCaps, in);
+            sts = QueryHwCaps(core, hwCaps, &tmp);
 
         if (sts != MFX_ERR_NONE)
             return IsOn(in->mfx.LowPower)? MFX_ERR_UNSUPPORTED: MFX_WRN_PARTIAL_ACCELERATION;
 
-        MfxVideoParam tmp = *in; // deep copy, create all supported extended buffers
-
         sts = ReadSpsPpsHeaders(tmp);
         MFX_CHECK_STS(sts);
 
-        mfxStatus checkSts = CheckVideoParamQueryLike(tmp, hwCaps, core->GetHWType(), core->GetVAType());
+        mfxStatus checkSts = CheckVideoParamQueryLike(tmp, hwCaps, platfrom, core->GetVAType());
 
         if (checkSts == MFX_WRN_PARTIAL_ACCELERATION)
             return MFX_WRN_PARTIAL_ACCELERATION;
         else if (checkSts == MFX_ERR_INCOMPATIBLE_VIDEO_PARAM)
             checkSts = MFX_ERR_UNSUPPORTED;
+        else if (checkSts == MFX_ERR_NONE && lpSts != MFX_ERR_NONE) // transfer MFX_WRN_INCOMPATIBLE_VIDEO_PARAM to upper level
+            checkSts = lpSts;
 
         /* FEI ENCODE additional check for input parameters */
         mfxExtFeiParam* feiParam = GetExtBuffer(*in);
@@ -453,6 +456,17 @@ mfxStatus ImplementationAvc::Query(
         out->Protected  = tmp.Protected;
         out->AsyncDepth = tmp.AsyncDepth;
         out->mfx = tmp.mfx;
+
+        // SetLowPowerDefault may change LowPower to default value
+        // if LowPower was invalid set it to Zero to mimic Query behaviour
+        if (lpSts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)
+        {
+            out->mfx.LowPower = 0;
+        }
+        else // otherwise 'hide' default vbalue;
+        {
+            out->mfx.LowPower = in->mfx.LowPower;
+        }
 
         // should have same number of buffers
         if (in->NumExtParam != out->NumExtParam || !in->ExtParam != !out->ExtParam)
@@ -577,8 +591,12 @@ mfxStatus ImplementationAvc::Query(
         if (extCaps == 0)
             return MFX_ERR_UNDEFINED_BEHAVIOR; // can't return MB processing rate since mfxExtEncoderCapability isn't attached to "out"
 
+        MfxVideoParam tmp = *in;
+        eMFXHWType platfrom = core->GetHWType();
+        (void)SetLowPowerDefault(tmp, platfrom);
+
         // query MB processing rate from driver
-        sts = QueryMbProcRate(core, *out, mbPerSec, in);
+        sts = QueryMbProcRate(core, *out, mbPerSec, &tmp);
         if (IsOn(in->mfx.LowPower) && sts != MFX_ERR_NONE)
             return MFX_ERR_UNSUPPORTED;
 
@@ -642,13 +660,15 @@ mfxStatus ImplementationAvc::QueryIOSurf(
         MFX_ERR_INVALID_VIDEO_PARAM);
 
     ENCODE_CAPS hwCaps = {};
-    mfxStatus sts = QueryHwCaps(core, hwCaps, par);
+    MfxVideoParam tmp(*par);
+    eMFXHWType platfrom = core->GetHWType();
+    mfxStatus lpSts = SetLowPowerDefault(tmp, platfrom);
+
+    mfxStatus sts = QueryHwCaps(core, hwCaps, &tmp);
     if (IsOn(par->mfx.LowPower) && sts != MFX_ERR_NONE)
     {
         return MFX_ERR_UNSUPPORTED;
     }
-
-    MfxVideoParam tmp(*par);
 
     sts = ReadSpsPpsHeaders(tmp);
     MFX_CHECK_STS(sts);
@@ -660,9 +680,11 @@ mfxStatus ImplementationAvc::QueryIOSurf(
     if (sts < MFX_ERR_NONE)
         return sts;
 
-    mfxStatus checkSts = CheckVideoParamQueryLike(tmp, hwCaps, core->GetHWType(), core->GetVAType());
+    mfxStatus checkSts = CheckVideoParamQueryLike(tmp, hwCaps, platfrom, core->GetVAType());
     if (checkSts == MFX_WRN_PARTIAL_ACCELERATION)
         return MFX_WRN_PARTIAL_ACCELERATION; // return immediately
+    else if (checkSts == MFX_ERR_NONE && lpSts != MFX_ERR_NONE)
+        checkSts = lpSts;
 
     SetDefaults(tmp, hwCaps, true, core->GetHWType(), core->GetVAType());
     mfxExtCodingOption3 const &   extOpt3 = GetExtBufferRef(tmp);
@@ -787,6 +809,8 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
 
     m_video = *par;
+    eMFXHWType platform = m_core->GetHWType();
+    mfxStatus lpSts = SetLowPowerDefault(m_video, platform);
 
     sts = ReadSpsPpsHeaders(m_video);
     MFX_CHECK_STS(sts);
@@ -822,7 +846,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     if (sts != MFX_ERR_NONE)
         return MFX_WRN_PARTIAL_ACCELERATION;
 
-    m_currentPlatform = m_core->GetHWType();
+    m_currentPlatform = platform;
     m_currentVaType   = m_core->GetVAType();
 
     mfxStatus spsppsSts = CopySpsPpsToVideoParam(m_video);
@@ -834,6 +858,9 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         return checkStatus;
     else if (checkStatus == MFX_ERR_NONE)
         checkStatus = spsppsSts;
+
+    if (checkStatus == MFX_ERR_NONE && lpSts != MFX_ERR_NONE) // transfer MFX_WRN_INCOMPATIBLE_VIDEO_PARAM to upper level
+        checkStatus = lpSts;
 
     // CQP enabled
     mfxExtCodingOption2 * extOpt2 = GetExtBuffer(m_video);

@@ -1206,6 +1206,46 @@ mfxU8 MfxHwH264Encode::DetermineQueryMode(mfxVideoParam * in)
     }
 }
 
+/*
+Setting default value for LowPower option.
+By default LowPower is OFF (using DualPipe)
+For LKF: use LowPower by default i.e. if LowPower is Unknown then LowPower is ON
+
+Return value:
+MFX_WRN_INCOMPATIBLE_VIDEO_PARAM - if initial value of par.mfx.LowPower is not equal to MFX_CODINGOPTION_ON, MFX_CODINGOPTION_OFF or MFX_CODINGOPTION_UNKNOWN
+MFX_ERR_NONE - if no errors
+*/
+mfxStatus MfxHwH264Encode::SetLowPowerDefault(MfxVideoParam& par, const eMFXHWType& platfrom)
+{
+    mfxStatus sts = CheckTriStateOption(par.mfx.LowPower) == false ? MFX_ERR_NONE : MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+    (void)platfrom; // fix wrn for non Gen11 build
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    if (platfrom == MFX_HW_LKF
+        && par.mfx.LowPower == MFX_CODINGOPTION_UNKNOWN)
+    {
+        par.mfx.LowPower = MFX_CODINGOPTION_ON;
+        return sts;
+    }
+#endif
+    if (par.mfx.LowPower == MFX_CODINGOPTION_UNKNOWN)
+        par.mfx.LowPower = MFX_CODINGOPTION_OFF;
+
+    return sts;
+}
+
+/*
+Return cached caps if they are.
+Select GUID depends on LowPower option.
+creates AuxilliaryDevice
+request and cache EncodercCaps
+
+Return value:
+MFX_ERR_UNDEFINED_BEHAVIOR -  failed to get EncodeHWCaps iterface from Core
+MFX_ERR_DEVICE_FAILED  failed to create DDIEncoder/AuxilliaryDevice of
+    requestcaps call fails
+MFX_ERR_NONE - if no errors
+*/
 mfxStatus MfxHwH264Encode::QueryHwCaps(VideoCORE* core, ENCODE_CAPS & hwCaps, mfxVideoParam * par)
 {
     GUID guid = MSDK_Private_Guid_Encode_AVC_Query;
@@ -5006,6 +5046,7 @@ void MfxHwH264Encode::InheritDefaultValues(
     InheritOption(parInit.mfx.BufferSizeInKB,     parReset.mfx.BufferSizeInKB);
     InheritOption(parInit.mfx.NumSlice,           parReset.mfx.NumSlice);
     InheritOption(parInit.mfx.NumRefFrame,        parReset.mfx.NumRefFrame);
+    InheritOption(parInit.mfx.LowPower,           parReset.mfx.LowPower);
 
     if (parInit.mfx.RateControlMethod == MFX_RATECONTROL_CBR && parReset.mfx.RateControlMethod == MFX_RATECONTROL_CBR)
     {
