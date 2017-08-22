@@ -3256,8 +3256,9 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     // if no number of frames for a particular session is undefined, default
     // value is 0xFFFFFFFF. Thus, use it as a marker to assign parent
     // MaxFramesForTranscode to m_MaxFramesForTranscode
-    if((0xFFFFFFFF == m_MaxFramesForTranscode) && pParentPipeline->m_MaxFramesForTranscode)
-        m_MaxFramesForTranscode = pParentPipeline->m_MaxFramesForTranscode;
+    if(pParentPipeline)
+        if((0xFFFFFFFF == m_MaxFramesForTranscode) && pParentPipeline->m_MaxFramesForTranscode)
+            m_MaxFramesForTranscode = pParentPipeline->m_MaxFramesForTranscode;
     // use external allocator
     m_pMFXAllocator = pMFXAllocator;
     m_pBSProcessor = pBSProc;
