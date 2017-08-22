@@ -348,16 +348,16 @@ unsigned int const TestSuiteExt<MFX_FOURCC_Y210>::n_cases = TestSuite::n_cases +
 template <>
 TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_Y410>::test_cases[] =
 {
-    {/* 0*/ MFX_ERR_NONE, {"conformance/hevc/StressBitstreamEncode/rext444_10b/Stress_HEVC_Rext444_10bHT62_432x240_30fps_302_inter_stress_2.2.hevc", ""},
+    {/* 0*/ MFX_ERR_NONE, {"conformance/hevc/10bit/GENERAL_10b_444_RExt_Sony_1.bit", ""},
     {{INIT|ALLOCATOR, 0, {frame_allocator::SOFTWARE, frame_allocator::ALLOC_MAX}},
     {REPEAT, 0, {2}}}
     },
 
-    {/* 1*/ MFX_ERR_NONE, {"conformance/hevc/StressBitstreamEncode/rext444_10b/Stress_HEVC_Rext444_10bHT62_432x240_30fps_302_inter_stress_2.2.hevc", ""},
+    {/* 1*/ MFX_ERR_NONE, {"conformance/hevc/10bit/GENERAL_10b_444_RExt_Sony_1.bit", ""},
         {{INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
         {REPEAT, 0, {2}}}
     },
-    {/* 2*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, {"conformance/hevc/StressBitstreamEncode/rext444_10b/Stress_HEVC_Rext444_10bHT62_432x240_30fps_302_inter_stress_2.2.hevc", "conformance/hevc/itu/RPS_B_qualcomm_5.bit"}},
+    {/* 2*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, {"conformance/hevc/10bit/GENERAL_10b_444_RExt_Sony_1.bit", "conformance/hevc/itu/RPS_B_qualcomm_5.bit"}},
 };
 template <>
 unsigned int const TestSuiteExt<MFX_FOURCC_Y410>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_Y410>::test_cases) / sizeof(TestSuite::tc_struct);
