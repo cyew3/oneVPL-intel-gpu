@@ -764,7 +764,7 @@ Status MP4Splitter::FillMPEGAudioInfo(Ipp32u nTrack)
 
   pAudioInfo->stream_type = MPEGAStreamType[id][layer - 1];
 
-  ippFree(p_frame);
+  delete[] p_frame;
   return UMC_OK;
 }
 
