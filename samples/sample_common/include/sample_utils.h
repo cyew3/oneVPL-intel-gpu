@@ -492,7 +492,7 @@ mfxU16 CalculateDefaultBitrate(mfxU32 nCodecId, mfxU32 nTargetUsage, mfxU32 nWid
 
 //serialization fnc set
 std::basic_string<msdk_char> CodecIdToStr(mfxU32 nFourCC);
-mfxU16 StrToTargetUsage(msdk_char* strInput);
+mfxU16 StrToTargetUsage(msdk_string strInput);
 const msdk_char* TargetUsageToStr(mfxU16 tu);
 const msdk_char* ColorFormatToStr(mfxU32 format);
 const msdk_char* MfxStatusToStr(mfxStatus sts);

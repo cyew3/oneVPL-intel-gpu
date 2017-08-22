@@ -738,7 +738,7 @@ namespace TranscodingSample
 
         msdk_tick m_nReqFrameTime; // time required to transcode one frame
 
-        int       statisticsWindowSize; // Sliding window size for Statistics
+        mfxU32    statisticsWindowSize; // Sliding window size for Statistics
         mfxU32    m_nOutputFramesNum;
 
         CIOStat inputStatistics;

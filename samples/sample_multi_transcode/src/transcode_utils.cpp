@@ -172,7 +172,8 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("  -override_encoder_framerate <framerate> \n"));
     msdk_printf(MSDK_STRING("                Overwrites framerate of stream going into encoder input with provided value (this option does not enable FRC, it just ovewrites framerate value)\n"));
 
-    msdk_printf(MSDK_STRING("  -u 1|4|7      Target usage: quality (1), balanced (4) or speed (7); valid for H.264, MPEG2 and MVC encoders. Default is balanced\n"));
+    msdk_printf(MSDK_STRING("  -u <usage>    Target usage. Valid for H.265, H.264, MPEG2 and MVC encoders. Expected values:\n"));
+    msdk_printf(MSDK_STRING("                veryslow(quality), slower, slow, medium(balanced), fast, faster, veryfast(speed)\n"));
     msdk_printf(MSDK_STRING("  -q <quality>  Quality parameter for JPEG encoder; in range [1,100], 100 is the best quality\n"));
     msdk_printf(MSDK_STRING("  -l numSlices  Number of slices for encoder; default value 0 \n"));
     msdk_printf(MSDK_STRING("  -mss maxSliceSize \n"));
@@ -1067,10 +1068,11 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         {
             VAL_CHECK(i+1 == argc, i, argv[i]);
             i++;
-            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.nTargetUsage))
+            InputParams.nTargetUsage = StrToTargetUsage(argv[i]);
+            if (!InputParams.nTargetUsage)
             {
-                PrintError(MSDK_STRING(" \"%s\" target usage is invalid"), argv[i]);
-                return MFX_ERR_UNSUPPORTED;
+                PrintError(MSDK_STRING(" \"%s\" target usage is invalid. Balanced will be used."), argv[i]);
+                InputParams.nTargetUsage = MFX_TARGETUSAGE_BALANCED;
             }
         }
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-WeightedPred")))
