@@ -439,12 +439,30 @@ void Launcher::DoTranscoding()
             }
         }
 
+        // Stop all the sessions if an error happened in one
+        for (size_t i = 0; i < m_pSessionArray.size(); i++)
+        {
+            if (m_pSessionArray[i]->transcodingSts < 0)
+            {
+                // But do not stop in robust mode when gpu hang's happened
+                if (m_pSessionArray[i]->transcodingSts == MFX_ERR_GPU_HANG &&
+                    m_pSessionArray[i]->pPipeline->IsRobust())
+                    break;
+
+                for (size_t j = 0; j < m_pSessionArray.size(); j++)
+                {
+                    m_pSessionArray[j]->pPipeline->StopSession();
+                }
+            }
+        }
+
         // Overlay threads stop last (in N:1 case we have an encoding thread + overlay threads
         if (m_HDLArray.size() <= nOverlayThreads + 1)
         {
             for (size_t i = 0; i < m_pSessionArray.size(); i++)
             {
-                m_pSessionArray[i]->pPipeline->StopOverlay();
+                if (m_pSessionArray[i]->pPipeline->IsOverlayUsed())
+                    m_pSessionArray[i]->pPipeline->StopSession();
             }
             for (MSDKThreadsIterator it = m_HDLArray.begin(); it != m_HDLArray.end(); it++)
             {

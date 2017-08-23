@@ -227,7 +227,7 @@ CTranscodingPipeline::CTranscodingPipeline():
     m_bIsFieldWeaving = false;
     m_bIsFieldSplitting = false;
     m_bUseOverlay = false;
-    m_bStopOverlay = false;
+    m_bForceStop = false;
     m_bIsInterOrJoined = false;
     m_bIsRobust = false;
     m_nRotationAngle = 0;
@@ -570,6 +570,12 @@ mfxStatus CTranscodingPipeline::DecodeOneFrame(ExtendedSurface *pExtSurface)
         {
             // Find new working surface
             pmfxSurface = GetFreeSurface(true, MSDK_SURFACE_WAIT_INTERVAL);
+            AutomaticMutex guard(m_mStopOverlay);
+            if (m_bForceStop)
+            {
+                NoMoreFramesSignal();
+                return MFX_WRN_VALUE_NOT_CHANGED;
+            }
             MSDK_CHECK_POINTER_SAFE(pmfxSurface, MFX_ERR_MEMORY_ALLOC, msdk_printf(MSDK_STRING("ERROR: No free surfaces in decoder pool (during long period)\n"))); // return an error if a free surface wasn't found
         }
 
@@ -785,10 +791,10 @@ void CTranscodingPipeline::NoMoreFramesSignal()
     }
 }
 
-void CTranscodingPipeline::StopOverlay()
+void CTranscodingPipeline::StopSession()
 {
     AutomaticMutex guard(m_mStopOverlay);
-    m_bStopOverlay = true;
+    m_bForceStop = true;
 }
 
 bool CTranscodingPipeline::IsOverlayUsed()
@@ -810,19 +816,26 @@ mfxStatus CTranscodingPipeline::Decode()
     bool bLastCycle = false;
     time_t start = time(0);
 
+    m_mStopOverlay.Lock();
+    if (m_bForceStop)
+    {
+        m_mStopOverlay.Unlock();
+        // add surfaces in queue for all sinks
+        NoMoreFramesSignal();
+        return MFX_WRN_VALUE_NOT_CHANGED;
+    }
+    m_mStopOverlay.Unlock();
+
     if (m_bUseOverlay)
     {
-        AutomaticMutex guard(m_mStopOverlay);
-        if (m_bStopOverlay)
-        {
-            // add surfaces in queue for all sinks
-            NoMoreFramesSignal();
-            return MFX_WRN_VALUE_NOT_CHANGED;
-        }
         PreEncExtSurface.pSurface = m_pSurfaceDecPool[0];
 
-        // add surfaces in queue for all sinks
-        pNextBuffer->AddSurface(PreEncExtSurface);
+        if (pNextBuffer->GetLength() == 0)
+        {
+            // add surfaces in queue for all sinks
+            pNextBuffer->AddSurface(PreEncExtSurface);
+            m_nProcessedFramesNum++;
+        }
         return MFX_ERR_NONE;
     }
 
@@ -840,71 +853,57 @@ mfxStatus CTranscodingPipeline::Decode()
 
         if(shouldReadNextFrame)
         {
-            if (m_MaxFramesForTranscode != m_nProcessedFramesNum)
+            if (!bEndOfFile)
             {
-                if (!bEndOfFile)
+                if (!m_bUseOverlay)
                 {
-                    if (!m_bUseOverlay)
+                    sts = DecodeOneFrame(&DecExtSurface);
+                    if (MFX_ERR_MORE_DATA == sts)
                     {
-                        sts = DecodeOneFrame(&DecExtSurface);
-                        if (MFX_ERR_MORE_DATA == sts)
-                        {
-                            sts = bLastCycle ? DecodeLastFrame(&DecExtSurface) : MFX_ERR_MORE_DATA;
-                            bEndOfFile = bLastCycle ? true : false;
-                        }
-                    }
-                    else
-                    {
-                        // Use preloaded overlay frame
-                        DecExtSurface.pSurface = m_pSurfaceDecPool[0];
-                        sts = MFX_ERR_NONE;
+                        sts = bLastCycle ? DecodeLastFrame(&DecExtSurface) : MFX_ERR_MORE_DATA;
+                        bEndOfFile = bLastCycle ? true : false;
                     }
                 }
                 else
                 {
-                    sts = DecodeLastFrame(&DecExtSurface);
-                }
-
-                if (sts == MFX_ERR_NONE)
-                {
-                    m_nProcessedFramesNum++;
-                    // print statistics if m_nProcessedFramesNum is multiple of
-                    // statisticsWindowSize OR we at the end of file AND
-                    // statisticsWindowSize is not zero
-                    if (statisticsWindowSize && m_nProcessedFramesNum &&
-                        ((0 == m_nProcessedFramesNum % statisticsWindowSize) || bEndOfFile)
-                       )
-                    {
-                        inputStatistics.PrintStatistics(GetPipelineID());
-                        inputStatistics.ResetStatistics();
-                    }
-                }
-                if (sts == MFX_ERR_MORE_DATA && (m_pmfxVPP.get() || m_pmfxPreENC.get()))
-                {
-                    DecExtSurface.pSurface = NULL;  // to get buffered VPP or ENC frames
+                    // Use preloaded overlay frame
+                    DecExtSurface.pSurface = m_pSurfaceDecPool[0];
                     sts = MFX_ERR_NONE;
                 }
-                if (!bLastCycle && (DecExtSurface.pSurface == NULL) )
-                {
-                    m_pBSProcessor->ResetInput();
-
-                    if (!GetNumFramesForReset())
-                        SetNumFramesForReset(m_nProcessedFramesNum);
-                    sts = MFX_ERR_NONE;
-                    continue;
-                }
-                MSDK_BREAK_ON_ERROR(sts);
-            }
-            else if ( m_pmfxVPP.get() || m_pmfxPreENC.get())
-            {
-                DecExtSurface.pSurface = NULL;  // to get buffered VPP or ENC frames
-                bEndOfFile = true;
-                sts = MFX_ERR_NONE;
             }
             else
             {
-                break;
+                sts = DecodeLastFrame(&DecExtSurface);
             }
+
+            if (sts == MFX_ERR_NONE)
+            {
+                // print statistics if m_nProcessedFramesNum is multiple of
+                // statisticsWindowSize OR we at the end of file AND
+                // statisticsWindowSize is not zero
+                if (statisticsWindowSize && m_nProcessedFramesNum &&
+                    ((0 == m_nProcessedFramesNum % statisticsWindowSize) || bEndOfFile)
+                    )
+                {
+                    inputStatistics.PrintStatistics(GetPipelineID());
+                    inputStatistics.ResetStatistics();
+                }
+            }
+            if (sts == MFX_ERR_MORE_DATA && (m_pmfxVPP.get() || m_pmfxPreENC.get()))
+            {
+                DecExtSurface.pSurface = NULL;  // to get buffered VPP or ENC frames
+                sts = MFX_ERR_NONE;
+            }
+            if (!bLastCycle && (DecExtSurface.pSurface == NULL) )
+            {
+                m_pBSProcessor->ResetInput();
+
+                if (!GetNumFramesForReset())
+                    SetNumFramesForReset(m_nProcessedFramesNum);
+                sts = MFX_ERR_NONE;
+                continue;
+            }
+            MSDK_BREAK_ON_ERROR(sts);
         }
 
         if (m_pmfxVPP.get())
@@ -974,6 +973,10 @@ mfxStatus CTranscodingPipeline::Decode()
             shouldReadNextFrame=true;
         }
 
+        if (++m_nProcessedFramesNum >= m_MaxFramesForTranscode)
+        {
+            StopSession();
+        }
 
         if (sts == MFX_ERR_MORE_DATA || !VppExtSurface.pSurface)
         {
@@ -1027,11 +1030,23 @@ mfxStatus CTranscodingPipeline::Decode()
             MSDK_CHECK_STATUS(sts, "m_pmfxSession->SyncOperation failed");
         }
 
-
+        size_t i = 0;
         // Do not exceed buffer length (it should be not longer than AsyncDepth after adding newly processed surface)
         while(pNextBuffer->GetLength()>=m_AsyncDepth)
         {
-            if (MFX_ERR_NONE != pNextBuffer->WaitForSurfaceRelease(MSDK_SURFACE_WAIT_INTERVAL)) {
+            {
+                AutomaticMutex guard(m_mStopOverlay);
+                if (m_bForceStop)
+                {
+                    NoMoreFramesSignal();
+                    return MFX_WRN_VALUE_NOT_CHANGED;
+                }
+            }
+
+            pNextBuffer->WaitForSurfaceRelease(MSDK_SURFACE_WAIT_INTERVAL / 1000);
+
+            if (++i > 1000)
+            {
                 msdk_printf(MSDK_STRING("ERROR: timed out waiting surface release by downstream component\n"));
                 return MFX_ERR_NOT_FOUND;
             }
@@ -1371,6 +1386,8 @@ mfxStatus CTranscodingPipeline::Encode()
         /* Exit condition */
         if (m_nProcessedFramesNum == m_MaxFramesForTranscode)
         {
+            if (m_pParentPipeline)
+                m_pParentPipeline->StopSession();
             break;
         }
 
@@ -3274,9 +3291,9 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     // if no number of frames for a particular session is undefined, default
     // value is 0xFFFFFFFF. Thus, use it as a marker to assign parent
     // MaxFramesForTranscode to m_MaxFramesForTranscode
-    if(pParentPipeline)
-        if((0xFFFFFFFF == m_MaxFramesForTranscode) && pParentPipeline->m_MaxFramesForTranscode)
-            m_MaxFramesForTranscode = pParentPipeline->m_MaxFramesForTranscode;
+    if(pParentPipeline && (0xFFFFFFFF == m_MaxFramesForTranscode) && pParentPipeline->m_MaxFramesForTranscode)
+        m_MaxFramesForTranscode = pParentPipeline->m_MaxFramesForTranscode;
+
     // use external allocator
     m_pMFXAllocator = pMFXAllocator;
     m_pBSProcessor = pBSProc;
@@ -3688,6 +3705,12 @@ mfxFrameSurface1* CTranscodingPipeline::GetFreeSurface(bool isDec, mfxU64 timeou
     t.Start();
     do
     {
+        {
+            AutomaticMutex guard(m_mStopOverlay);
+            if (m_bForceStop)
+                break;
+        }
+
         SurfPointersArray & workArray = isDec ? m_pSurfaceDecPool : m_pSurfaceEncPool;
 
         for (mfxU32 i = 0; i < workArray.size(); i++)

@@ -530,7 +530,7 @@ namespace TranscodingSample
         { MSDK_CHECK_POINTER(m_pmfxSession.get(), MFX_ERR_NULL_PTR); return m_pmfxSession->QueryVersion(version); };
         inline mfxU32 GetPipelineID(){return m_nID;}
         inline void SetPipelineID(mfxU32 id){m_nID = id;}
-        void StopOverlay();
+        void StopSession();
         bool IsOverlayUsed();
         bool IsRobust();
     protected:
@@ -660,7 +660,7 @@ namespace TranscodingSample
         mfxInitParam                   m_initPar;
         mfxExtThreadsParam             m_threadsPar;
 
-        bool                           m_bStopOverlay;
+        volatile bool                  m_bForceStop;
 
         sPluginParams                  m_decoderPluginParams;
         sPluginParams                  m_encoderPluginParams;
