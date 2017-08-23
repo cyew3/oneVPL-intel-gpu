@@ -278,9 +278,16 @@ mfxStatus FEI_Preenc::PreEncOneFrame(HevcTask & currTask, const RefIdxPair & ref
     ctrl->RefFrame[0] = refFramesIdx.RefL0 != IDX_INVALID ? DPB[refFramesIdx.RefL0].m_surf : NULL;
     ctrl->RefFrame[1] = refFramesIdx.RefL1 != IDX_INVALID ? DPB[refFramesIdx.RefL1].m_surf : NULL;
 
+    // disable MV output for I frames / if no reference frames provided
+    ctrl->DisableMVOutput = (currTask.m_frameType & MFX_FRAMETYPE_I) || (refFramesIdx.RefL0 != IDX_INVALID || refFramesIdx.RefL1 != IDX_INVALID);
+    // enable only if mbstat dump is required
+    ctrl->DisableStatisticsOutput = m_pFile_MBstat_out.get() ? 0 : 1;
+
     mfxENCOutputWrap & out = m_syncp.second.second;
 
-    if (refFramesIdx.RefL0 != IDX_INVALID || refFramesIdx.RefL1 != IDX_INVALID)
+    PreENCOutput stat;
+    MSDK_ZERO_MEMORY(stat);
+    if (!ctrl->DisableMVOutput)
     {
         mfxExtFeiPreEncMV * mv = out.AddExtBuffer<mfxExtFeiPreEncMV>();
         MSDK_CHECK_POINTER(mv, MFX_ERR_NULL_PTR);
@@ -291,6 +298,12 @@ mfxStatus FEI_Preenc::PreEncOneFrame(HevcTask & currTask, const RefIdxPair & ref
         mfxExtFeiPreEncMV & free_mv = *ext_mv;
         Copy(*mv, free_mv);
 
+        stat.m_mv = ext_mv;
+        stat.m_refIdxPair = refFramesIdx;
+    }
+
+    if (!ctrl->DisableStatisticsOutput)
+    {
         mfxExtFeiPreEncMBStat* mb = out.AddExtBuffer<mfxExtFeiPreEncMBStat>();
         MSDK_CHECK_POINTER(mb, MFX_ERR_NULL_PTR);
 
@@ -300,12 +313,11 @@ mfxStatus FEI_Preenc::PreEncOneFrame(HevcTask & currTask, const RefIdxPair & ref
         mfxExtFeiPreEncMBStat & free_mb = *ext_mb;
         Copy(*mb, free_mb);
 
-        PreENCOutput stat;
-        stat.m_mv = ext_mv;
         stat.m_mb = ext_mb;
-        stat.m_refIdxPair = refFramesIdx;
-        currTask.m_preEncOutput.push_back(stat);
     }
+
+    if (stat.m_mb || stat.m_mv)
+        currTask.m_preEncOutput.push_back(stat);
 
     mfxSyncPoint & syncp = m_syncp.first;
     sts = m_mfxPREENC.ProcessFrameAsync(&in, &out, &syncp);
@@ -327,8 +339,10 @@ mfxStatus FEI_Preenc::PreEncMultiFrames(HevcTask* pTask)
     mfxU8 const (&RPL)[2][MAX_DPB_SIZE] = task.m_refPicList;
 
     bool bDownsampleInput = true;
-    // Iterate thru L0/L1 frames
-    for (size_t idxL0 = 0, idxL1 = 0; idxL0 < task.m_numRefActive[0] || idxL1 < task.m_numRefActive[1]; ++idxL0, ++idxL1)
+    for (size_t idxL0 = 0, idxL1 = 0;
+         idxL0 < task.m_numRefActive[0] || idxL1 < task.m_numRefActive[1] // Iterate thru L0/L1 frames
+         || idxL0 < !!(task.m_frameType & MFX_FRAMETYPE_I); // tricky: use idxL0 for 1 iteration for I-frame
+         ++idxL0, ++idxL1)
     {
         RefIdxPair refFrames = {IDX_INVALID, IDX_INVALID};
 
