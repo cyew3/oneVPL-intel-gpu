@@ -271,7 +271,7 @@ char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOUR
 char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_P010>)
 { return "conformance/hevc/10bit/WP_A_MAIN10_Toshiba_3.bit"; }
 char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_Y210>)
-{ return "conformance/hevc/10bit/inter_422_10.bin"; }
+{ return "conformance/hevc/10bit/Main_422_10_A_RExt_Sony_2.bin"; }
 char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_Y410>)
 { return "conformance/hevc/10bit/GENERAL_10b_444_RExt_Sony_1.bit"; }
 
