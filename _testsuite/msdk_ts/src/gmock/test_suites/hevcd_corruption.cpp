@@ -5,7 +5,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2016 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2017 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -196,8 +196,15 @@ const TestSuite::tc_struct TestSuite::test_case[] =
                                                                              REF_FRAME,REF_FRAME,REF_FRAME,REF_FRAME,REF_FRAME,REF_FRAME,REF_FRAME},},},
     {/*01*/ {6, "forBehaviorTest/corrupted/hevc/AMP_F_Hisilicon_3_firstB.bit" , {0,MAJOR,REF_FRAME,REF_FRAME,REF_FRAME,REF_FRAME},},},
     {/*02*/ {6, "forBehaviorTest/corrupted/hevc/AMP_F_Hisilicon_3_lastB.bit" , {0,0,0,0,0,MAJOR},},},
-    {/*03*/ {13, "forBehaviorTest/corrupted/hevc/4K_BodyPainting_10M_1B3P.265" , {0,0,MAJOR,REF_FRAME,REF_FRAME,0,
-                                                                                  0,0,0,REF_FRAME,REF_FRAME,REF_FRAME,MAJOR},},},
+
+    // NOTE - Gen9 HW does not set the corrupt flags correctly unless the error occurs in the last slice (reset after each slice).
+    //   Because the errors in this bistream are in slice 1 of 4, the corrupt flags will all be 0 for SKL/BXT/KBL/CFL.
+    //   See MDP-17699, MDP-27066, MDP-32230, HSD-1208699222
+    //
+    //   When/if this is fixed, this test is expected to fail and the expected values for these flags will need to be updated as follows:
+    //   {0, REF_FRAME, MAJOR, REF_FRAME, 0, 0, 0, 0, 0, REF_FRAME, REF_FRAME, REF_FRAME, MAJOR}
+    //   This bitream has errors in frame 2 (ref for 1,3) and in frame 12 (ref for 9,10,11)
+    {/*03*/ {13, "forBehaviorTest/corrupted/hevc/4K_BodyPainting_10M_1B3P.265" , {0,0,0,0,0,0,0,0,0,0,0,0,0},},},
 
 };
 
