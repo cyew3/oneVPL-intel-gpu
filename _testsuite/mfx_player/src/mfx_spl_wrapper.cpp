@@ -372,6 +372,7 @@ mfxStatus UMCSplWrapper::GetStreamInfo(sStreamInfo * pParams)
         case VC1_VIDEO  : pParams->videoType = MFX_CODEC_VC1;   break;
         case VP8_VIDEO  : pParams->videoType = MFX_CODEC_VP8;   break;
         case VP9_VIDEO  : pParams->videoType = MFX_CODEC_VP9;   break;
+        case AV1_VIDEO  : pParams->videoType = MFX_CODEC_AV1;   break;
         case UNCOMPRESSED_VIDEO : 
         {
             if (m_pVideoInfo->color_format == YV12)

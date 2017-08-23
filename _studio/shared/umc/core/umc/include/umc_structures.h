@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_STRUCTURES_H__
@@ -268,7 +268,8 @@ namespace UMC
         AVS_VIDEO               = 0x00060000,
         VP8_VIDEO               = 0x00070000,
         VP9_VIDEO               = 0x00080000,
-        HEVC_VIDEO              = 0x00100000
+        HEVC_VIDEO              = 0x00100000,
+        AV1_VIDEO               = 0x00200000
     };
 
     enum VideoRenderType

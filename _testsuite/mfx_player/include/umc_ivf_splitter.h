@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2012-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2012-2017 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -67,7 +67,8 @@ namespace UMC
             if (MFX_MAKEFOURCC('D','K','I','F') != m_hdr.dkif)
                 return UMC_ERR_INVALID_STREAM;
             if ((MFX_MAKEFOURCC('V','P','8','0') != m_hdr.codec_FourCC) &&
-                (MFX_MAKEFOURCC('V','P','9','0') != m_hdr.codec_FourCC))
+                (MFX_MAKEFOURCC('V','P','9','0') != m_hdr.codec_FourCC) &&
+                (MFX_MAKEFOURCC('A','V','0','1') != m_hdr.codec_FourCC))
                 return UMC_ERR_INVALID_STREAM;
 
             if (0 == m_hdr.time_scale)
@@ -85,6 +86,8 @@ namespace UMC
                 m_videoInfo.stream_type = VP8_VIDEO;
             if (MFX_MAKEFOURCC('V','P','9','0') == m_hdr.codec_FourCC)
                 m_videoInfo.stream_type = VP9_VIDEO;
+            if (MFX_MAKEFOURCC('A', 'V', '0', '1') == m_hdr.codec_FourCC)
+                m_videoInfo.stream_type = AV1_VIDEO;
 
             if (0 != m_videoInfo.framerate)
             {
