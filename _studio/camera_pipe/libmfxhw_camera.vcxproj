@@ -1,6 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\builder\MSDK.Common.props" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -26,7 +25,6 @@
     <ProjectName>libmfxhw_camera</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <Import Project=".\Intel.Mfx.Common.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -54,180 +52,29 @@
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\mfx_lib\Intel.Mfx.StaticLib.props" />
+    <Import Project="..\..\builder\props\defs\debug.props" />
+    <Import Project="..\..\builder\props\defs\desktop.props" />
+    <Import Project="$(ProjectName).props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\mfx_lib\Intel.Mfx.StaticLib.props" />
+    <Import Project="..\..\builder\props\defs\release.props" />
+    <Import Project="..\..\builder\props\defs\desktop.props" />
+    <Import Project="$(ProjectName).props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\mfx_lib\Intel.Mfx.StaticLib.props" />
+    <Import Project="..\..\builder\props\defs\debug.props" />
+    <Import Project="..\..\builder\props\defs\desktop.props" />
+    <Import Project="$(ProjectName).props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\mfx_lib\Intel.Mfx.StaticLib.props" />
+    <Import Project="..\..\builder\props\defs\release.props" />
+    <Import Project="..\..\builder\props\defs\desktop.props" />
+    <Import Project="$(ProjectName).props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup>
-    <_ProjectFileVersion>10.0.40117.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(MfxBuildDir)win_$(Platform)\lib\</OutDir>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(MfxBuildDir)win_$(Platform)\lib\</OutDir>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(MfxBuildDir)win_$(Platform)\lib\</OutDir>
-    <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</IgnoreImportLibrary>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(MfxBuildDir)win_$(Platform)\lib\</OutDir>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectName)32_d</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectName)32</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectName)64_d</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectName)64</TargetName>
-    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
-    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
-    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
-    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
-    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
-    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
-    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
-    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
-    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
-    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
-    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
-    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.lib</TargetExt>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.lib</TargetExt>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.lib</TargetExt>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.lib</TargetExt>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(MfxBuildDir)win_$(Platform)\objs\$(Configuration)\$(ProjectName)\</IntDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(MfxBuildDir)win_$(Platform)\objs\$(Configuration)\$(ProjectName)\</IntDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(MfxBuildDir)win_$(Platform)\objs\$(Configuration)\$(ProjectName)\</IntDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(MfxBuildDir)win_$(Platform)\objs\$(Configuration)\$(ProjectName)\</IntDir>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(WindowsSdk8Path)\Include\um;$(WindowsSdk8Path)\Include\shared;$(IncludePath)</IncludePath>
-    <LibraryPath>$(WindowsSdk8Path)\Lib\win8\um\x86;$(LibraryPath)</LibraryPath>
-    <ExecutablePath>$(VCInstallDir)PlatformSDK\bin;$(ExecutablePath)</ExecutablePath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(WindowsSdk8Path)\Include\um;$(WindowsSdk8Path)\Include\shared;$(IncludePath)</IncludePath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(WindowsSdk8Path)\Include\um;$(WindowsSdk8Path)\Include\shared;$(IncludePath)</IncludePath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>$(WindowsSdk8Path)\Include\um;$(WindowsSdk8Path)\Include\shared;$(IncludePath)</IncludePath>
-  </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <ClCompile>
-      <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\mfx_lib\genx\copy_kernels\include;..\mfx_lib\genx\field_copy\src;..\shared\umc\codec\vc1_dec\include;..\mfx_lib\fei\include;..\shared\umc\codec\color_space_converter\include;..\mfx_lib\cmrt_cross_platform\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\shared\umc\io\umc_va\include;$(MfxIppIncludeDir);$(MEDIASDK_ROOT)/CMRT/runtime/include;..\mfx_lib\shared\include;..\mfx_lib\scheduler\include;$(MSDK_API_ROOT)\include;..\shared\include;..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\codec\me\include;..\shared\umc\io\media_buffers\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\vpp\include;..\shared\umc\codec\brc\include;..\mfx_lib\plugin\include</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>MFX_D3D11_ENABLED;WIN32;MFX_VA;MFX_VA_WIN;_DEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_VPP_PLUGIN;MFX_RT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <MinimalRebuild>true</MinimalRebuild>
-      <ExceptionHandling>Async</ExceptionHandling>
-      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <WarningLevel>Level4</WarningLevel>
-      <TreatWarningAsError>false</TreatWarningAsError>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-    </ClCompile>
-    <Link>
-      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <ModuleDefinitionFile>libmfx.def</ModuleDefinitionFile>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
-      <SubSystem>Console</SubSystem>
-      <ImportLibrary>$(OutDir)..\lib\$(TargetName).lib</ImportLibrary>
-      <TargetMachine>MachineX86</TargetMachine>
-    </Link>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <Midl>
-      <TargetEnvironment>X64</TargetEnvironment>
-    </Midl>
-    <ClCompile>
-      <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\mfx_lib\genx\copy_kernels\include;..\mfx_lib\genx\field_copy\src;..\shared\umc\codec\vc1_dec\include;..\mfx_lib\fei\include;..\shared\umc\codec\color_space_converter\include;..\mfx_lib\cmrt_cross_platform\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\shared\umc\io\umc_va\include;$(MfxIppIncludeDir);$(MEDIASDK_ROOT)/CMRT/runtime/include;..\mfx_lib\shared\include;..\mfx_lib\scheduler\include;$(MSDK_API_ROOT)\include;..\shared\include;..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\codec\me\include;..\shared\umc\io\media_buffers\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\vpp\include;..\shared\umc\codec\brc\include;..\mfx_lib\plugin\include</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>MFX_VA;MFX_VA_WIN;MFX_D3D11_ENABLED;_WIN64;WIN64;_DEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_VPP_PLUGIN;MFX_RT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <MinimalRebuild>true</MinimalRebuild>
-      <ExceptionHandling>Async</ExceptionHandling>
-      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <WarningLevel>Level4</WarningLevel>
-      <TreatWarningAsError>true</TreatWarningAsError>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-    </ClCompile>
-    <Link>
-      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies);</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <ModuleDefinitionFile>libmfx.def</ModuleDefinitionFile>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
-      <SubSystem>Windows</SubSystem>
-      <ImportLibrary>$(OutDir)..\lib\$(TargetName).lib</ImportLibrary>
-      <TargetMachine>MachineX64</TargetMachine>
-    </Link>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <ClCompile>
-      <AdditionalOptions>$(CPPFLAGS) %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>..\mfx_lib\genx\copy_kernels\include;..\mfx_lib\genx\field_copy\src;..\shared\umc\codec\vc1_dec\include;..\mfx_lib\fei\include;..\shared\umc\codec\color_space_converter\include;..\mfx_lib\cmrt_cross_platform\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\shared\umc\io\umc_va\include;$(MfxIppIncludeDir);$(MEDIASDK_ROOT)/CMRT/runtime/include;..\mfx_lib\shared\include;..\mfx_lib\scheduler\include;$(MSDK_API_ROOT)\include;..\shared\include;..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\codec\me\include;..\shared\umc\io\media_buffers\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\vpp\include;..\shared\umc\codec\brc\include;..\mfx_lib\plugin\include</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>MFX_D3D11_ENABLED;MFX_VA;MFX_VA_WIN;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_VPP_PLUGIN;MFX_RT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ExceptionHandling>Async</ExceptionHandling>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <WarningLevel>Level4</WarningLevel>
-      <TreatWarningAsError>false</TreatWarningAsError>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <SDLCheck>true</SDLCheck>
-    </ClCompile>
-    <Link>
-      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <IgnoreSpecificDefaultLibraries>svml_disp.lib;libirc.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <ModuleDefinitionFile>libmfx.def</ModuleDefinitionFile>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
-      <SubSystem>Console</SubSystem>
-      <OptimizeReferences>true</OptimizeReferences>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <ImportLibrary>$(OutDir)..\lib\$(TargetName).lib</ImportLibrary>
-      <TargetMachine>MachineX86</TargetMachine>
-      <Profile>false</Profile>
-    </Link>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <Midl>
-      <TargetEnvironment>X64</TargetEnvironment>
-    </Midl>
-    <ClCompile>
-      <AdditionalIncludeDirectories>..\mfx_lib\genx\copy_kernels\include;..\mfx_lib\genx\field_copy\src;..\shared\umc\codec\vc1_dec\include;..\mfx_lib\fei\include;..\shared\umc\codec\color_space_converter\include;..\mfx_lib\cmrt_cross_platform\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\shared\umc\io\umc_va\include;$(MfxIppIncludeDir);$(MEDIASDK_ROOT)/CMRT/runtime/include;..\mfx_lib\shared\include;..\mfx_lib\scheduler\include;$(MSDK_API_ROOT)\include;..\shared\include;..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\codec\me\include;..\shared\umc\io\media_buffers\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\vpp\include;..\shared\umc\codec\brc\include;..\mfx_lib\plugin\include</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN64;MFX_VA;MFX_VA_WIN;MFX_D3D11_ENABLED;_WIN64;NDEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_VPP_PLUGIN;MFX_RT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ExceptionHandling>Async</ExceptionHandling>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <WarningLevel>Level4</WarningLevel>
-      <TreatWarningAsError>true</TreatWarningAsError>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <SDLCheck>true</SDLCheck>
-    </ClCompile>
-    <Link>
-      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <ModuleDefinitionFile>libmfx.def</ModuleDefinitionFile>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
-      <SubSystem>Windows</SubSystem>
-      <OptimizeReferences>true</OptimizeReferences>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <ImportLibrary>$(OutDir)..\lib\$(TargetName).lib</ImportLibrary>
-      <TargetMachine>MachineX64</TargetMachine>
-      <Profile>false</Profile>
-    </Link>
-  </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\mfx_lib\genx\copy_kernels\src\genx_icllp_copy_isa.cpp" />
     <ClCompile Include="..\mfx_lib\genx\copy_kernels\src\genx_skl_copy_isa.cpp" />

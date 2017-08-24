@@ -1,0 +1,81 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets">
+    <Import Project="..\..\builder\MSDK.Common.props" Condition="'$(MSDKCommonPropsImported)' != 'true'"/>
+    <Import Project="..\..\builder\props\common_properties.props" Condition="'$(CommonPropsImported)' != 'true'"/>
+    <Import Project="..\..\builder\props\config_properties.props" Condition="'$(ConfigPropsImported)' != 'true'"/>
+    <Import Project="..\..\builder\props\platform_properties.props" Condition="'$(PlatformPropsImported)' != 'true'"/>
+    <Import Project="..\..\builder\props\mfx_ipp.props" Condition="'$(MfxIppPropsImported)' != 'true'"/>
+    <Import Project="..\..\builder\props\build_dirs.props" Condition="'$(BuildDirsPropsImported)' != 'true'"/>
+    <Import Project="..\..\builder\props\presilicon.props" Condition=" '$(PreSiliconPropsImported)' != 'true' "/>
+    <Import Project="..\..\builder\props\mfx_static_lib.props" Condition="'$(MfxStaticLibPropsImported)' != 'true' and '$(ConfigurationType)'=='StaticLibrary'"/>
+    <Import Project="..\..\builder\props\d3d11_enabled.props" Condition="'$(D3D11EnabledPropsImported)' != 'true'"/>
+    <Import Project="..\..\builder\props\unicode_enabled.props" Condition="'$(UnicodeEnabledPropsImported)' != 'true'"/>
+  </ImportGroup>
+
+  <!-- Common properties -->
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.40117.1</_ProjectFileVersion>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules/>
+    <CodeAnalysisRuleAssemblies/>
+  </PropertyGroup>
+
+  <!-- Debug properties -->
+  <PropertyGroup Condition="'$(DevConfiguration)'=='Debug'">
+  </PropertyGroup>
+
+  <!-- Release properties -->
+  <PropertyGroup Condition="'$(DevConfiguration)'=='Release'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+
+  <!-- WIN32 properties -->
+  <PropertyGroup Condition="'$(Platform)'=='Win32'">
+    <TargetName Condition="'$(DevConfiguration)'=='Debug'">$(ProjectName)32_d</TargetName>
+    <TargetName Condition="'$(DevConfiguration)'=='Release'">$(ProjectName)32</TargetName>
+  </PropertyGroup>
+
+  <!-- WIN64 properties -->
+  <PropertyGroup Condition="'$(Platform)'=='x64'">
+    <TargetName Condition="'$(DevConfiguration)'=='Debug'">$(ProjectName)64_d</TargetName>
+    <TargetName Condition="'$(DevConfiguration)'=='Release'">$(ProjectName)64</TargetName>
+  </PropertyGroup>
+
+  <!-- Common item definitions -->
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(MSDK_API_ROOT)\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;$(MfxIppIncludeDir);..\mfx_lib\cmrt_cross_platform\include;..\mfx_lib\genx\copy_kernels\include;..\mfx_lib\plugin\include;..\mfx_lib\scheduler\include;..\mfx_lib\shared\include;..\shared\umc\core\vm_plus\include;..\shared\umc\core\vm\include;..\shared\umc\core\umc\include;..\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_USRDLL;LIBMFXSW_EXPORTS;_WINDOWS;AS_VPP_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <!-- Debug item definitions -->
+  <ItemDefinitionGroup Condition="'$(DevConfiguration)'=='Debug'">
+    <Link>
+      <ImportLibrary>$(OutDir)..\lib\$(TargetName).lib</ImportLibrary>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <!-- Release item definitions -->
+  <ItemDefinitionGroup Condition="'$(DevConfiguration)'=='Release'">
+    <Link>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <!-- WIN32 item definitions -->
+  <ItemDefinitionGroup Condition="'$(Platform)'=='Win32'">
+  </ItemDefinitionGroup>
+
+  <!-- WIN64 item definitions -->
+  <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
+  </ItemDefinitionGroup>
+  <ItemGroup />
+</Project>

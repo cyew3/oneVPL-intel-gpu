@@ -1,0 +1,85 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets">
+    <Import Project="camera_pipe.props" />
+  </ImportGroup>
+
+  <!-- Common properties -->
+  <PropertyGroup>
+    <OutDir>$(MSDK_MFX_BUILD_DIR)\win_$(Platform)\bin\54542616243341e693ae899942ce7355\</OutDir>
+    <PreBuildEventUseInBuild />
+  </PropertyGroup>
+
+  <!-- Debug properties -->
+  <PropertyGroup Condition="'$(DevConfiguration)'=='Debug'">
+  </PropertyGroup>
+
+  <!-- Release properties -->
+  <PropertyGroup Condition="'$(DevConfiguration)'=='Release'">
+  </PropertyGroup>
+
+  <!-- WIN32 properties -->
+  <PropertyGroup Condition="'$(Platform)'=='Win32'">
+  </PropertyGroup>
+
+  <!-- WIN64 properties -->
+  <PropertyGroup Condition="'$(Platform)'=='x64'">
+  </PropertyGroup>
+
+  <!-- Common item definitions -->
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>genx\src;genx\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PrecompiledHeader />
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>d3d11.lib;dxgi.lib;dxva2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+
+  <!-- Debug item definitions -->
+  <ItemDefinitionGroup Condition="'$(DevConfiguration)'=='Debug'">
+    <ClCompile>
+      <ExceptionHandling>Async</ExceptionHandling>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
+  <!-- Release item definitions -->
+  <ItemDefinitionGroup Condition="'$(DevConfiguration)'=='Release'">
+    <Link>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+      <SubSystem>Windows</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <!-- WIN32 item definitions -->
+  <ItemDefinitionGroup Condition="'$(Platform)'=='Win32'">
+    <Link>
+      <IgnoreSpecificDefaultLibraries Condition="'$(DevConfiguration)'=='Debug'">svml_disp.lib;libirc.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\cmrt\compiler\lib\x86;$(MEDIASDK_ROOT)\cmrt\runtime\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <PostBuildEvent>
+      <Command Condition="'$(DevConfiguration)'=='Debug'">copy "$(SolutionDir)54542616243341e693ae899942ce7355\plugin_for_debug.cfg" "$(OutDir)plugin.cfg" /y &amp; xcopy "$(OutDir)$(TargetName)*" "$(ProjectDir)..\..\samples\_build\Win32\Debug\54542616243341e693ae899942ce7355" /y /i &amp; copy "$(SolutionDir)54542616243341e693ae899942ce7355\plugin_for_debug.cfg" "$(ProjectDir)..\..\samples\_build\Win32\Debug\54542616243341e693ae899942ce7355\plugin.cfg" /y</Command>
+      <Command Condition="'$(DevConfiguration)'=='Release'">copy "$(SolutionDir)54542616243341e693ae899942ce7355\plugin.cfg" "$(OutDir)plugin.cfg" /y &amp; xcopy "$(OutDir)$(TargetName)*" "$(ProjectDir)..\..\samples\_build\Win32\Release\54542616243341e693ae899942ce7355" /y /i &amp; copy "$(SolutionDir)54542616243341e693ae899942ce7355\plugin.cfg" "$(ProjectDir)..\..\samples\_build\Win32\Release\54542616243341e693ae899942ce7355\plugin.cfg" /y</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+
+  <!-- WIN64 item definitions -->
+  <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories Condition="'$(DevConfiguration)'=='Debug'">..\mfx_lib\vpp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\cmrt\compiler\lib\x64;$(MEDIASDK_ROOT)\cmrt\runtime\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <PostBuildEvent>
+      <Command Condition="'$(DevConfiguration)'=='Debug'">copy "$(SolutionDir)54542616243341e693ae899942ce7355\plugin_for_debug.cfg" "$(OutDir)plugin.cfg" /y &amp; xcopy "$(OutDir)$(TargetName)*" "$(ProjectDir)..\..\samples\_build\x64\Debug\54542616243341e693ae899942ce7355" /y /i &amp; copy "$(SolutionDir)54542616243341e693ae899942ce7355\plugin_for_debug.cfg" "$(ProjectDir)..\..\samples\_build\x64\Debug\54542616243341e693ae899942ce7355\plugin.cfg" /y</Command>
+      <Command Condition="'$(DevConfiguration)'=='Release'">copy "$(SolutionDir)54542616243341e693ae899942ce7355\plugin.cfg" "$(OutDir)plugin.cfg" /y &amp; xcopy "$(OutDir)$(TargetName)*" "$(ProjectDir)..\..\samples\_build\x64\Release\54542616243341e693ae899942ce7355" /y /i &amp; copy "$(SolutionDir)54542616243341e693ae899942ce7355\plugin.cfg" "$(ProjectDir)..\..\samples\_build\x64\Release\54542616243341e693ae899942ce7355\plugin.cfg" /y</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup />
+</Project>

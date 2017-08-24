@@ -1,0 +1,72 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets">
+    <Import Project="camera_pipe.props" />
+  </ImportGroup>
+
+  <!-- Common properties -->
+  <PropertyGroup>
+  </PropertyGroup>
+
+  <!-- Debug properties -->
+  <PropertyGroup Condition="'$(DevConfiguration)'=='Debug'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+
+  <!-- Release properties -->
+  <PropertyGroup Condition="'$(DevConfiguration)'=='Release'">
+  </PropertyGroup>
+
+  <!-- WIN32 properties -->
+  <PropertyGroup Condition="'$(Platform)'=='Win32'">
+    <ExecutablePath Condition="'$(DevConfiguration)'=='Debug'">$(VCInstallDir)PlatformSDK\bin;$(ExecutablePath)</ExecutablePath>
+    <IgnoreImportLibrary Condition="'$(DevConfiguration)'=='Release'">false</IgnoreImportLibrary>
+  </PropertyGroup>
+
+  <!-- WIN64 properties -->
+  <PropertyGroup Condition="'$(Platform)'=='x64'">
+  </PropertyGroup>
+
+  <!-- Common item definitions -->
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\mfx_lib\genx\field_copy\src;..\shared\umc\codec\vc1_dec\include;..\mfx_lib\fei\include;..\shared\umc\codec\color_space_converter\include;..\shared\umc\io\umc_va\include;..\shared\umc\codec\me\include;..\shared\umc\io\media_buffers\include;..\mfx_lib\vpp\include;..\shared\umc\codec\brc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>MFX_VA;MFX_VA_WIN;MFX_RT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ExceptionHandling>Async</ExceptionHandling>
+    </ClCompile>
+    <Link>
+      <ModuleDefinitionFile>libmfx.def</ModuleDefinitionFile>
+      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <!-- Debug item definitions -->
+  <ItemDefinitionGroup Condition="'$(DevConfiguration)'=='Debug'">
+  </ItemDefinitionGroup>
+
+  <!-- Release item definitions -->
+  <ItemDefinitionGroup Condition="'$(DevConfiguration)'=='Release'">
+    <Link>
+      <Profile>false</Profile>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <!-- WIN32 item definitions -->
+  <ItemDefinitionGroup Condition="'$(Platform)'=='Win32'">
+    <Link>
+      <IgnoreSpecificDefaultLibraries Condition="'$(DevConfiguration)'=='Release'">svml_disp.lib;libirc.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <SubSystem>Console</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <!-- WIN64 item definitions -->
+  <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
+    <Link>
+      <SubSystem>Windows</SubSystem>
+    </Link>
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemGroup />
+</Project>

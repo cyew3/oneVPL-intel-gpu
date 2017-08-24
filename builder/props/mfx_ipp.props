@@ -4,6 +4,7 @@
   <PropertyGroup>
     <MfxIppPropsImported>true</MfxIppPropsImported>
   </PropertyGroup>
+
   <PropertyGroup Condition="'$(Platform)'=='Win32'" Label="UserMacros" >
     <MfxIppIncludeDir>$(MEDIASDK_ROOT)\ipp\ipp81goldGuard\windows\ia32\include</MfxIppIncludeDir>
     <MfxIppLibraryDir>$(MEDIASDK_ROOT)\ipp\ipp81goldGuard\windows\ia32\lib</MfxIppLibraryDir>
@@ -13,10 +14,13 @@
     <MfxIppLibraryDir>$(MEDIASDK_ROOT)\ipp\ipp81goldGuard\windows\em64t\lib</MfxIppLibraryDir>
   </PropertyGroup>
 
+  <ItemDefinitionGroup>
+    <Link>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
   <Target Name="MediaSdkRootCheck" BeforeTargets="Build">
     <Warning Text="Unable to find MEDIASDK_ROOT environment variable. Build may fail due to missing IPP libraries."
        Condition ="!Exists('$(MEDIASDK_ROOT)')" />
   </Target>
-  <ItemDefinitionGroup />
-  <ItemGroup />
 </Project>

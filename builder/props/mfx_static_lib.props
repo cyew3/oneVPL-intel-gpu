@@ -3,6 +3,7 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup>
     <MfxStaticLibPropsImported>true</MfxStaticLibPropsImported>
+    <TargetExt>.lib</TargetExt>
   </PropertyGroup>
   <Import Project="mfx_trace_itt.props" Condition=" '$(TraceIttPropsImported)' != 'true' and '$(UseITT)' == 'true'"/>
   <Import Project="win_sdk_path.props" Condition=" '$(WinSDKPathPropsImported)' != 'true' "/>
