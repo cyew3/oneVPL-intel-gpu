@@ -1979,7 +1979,7 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
             Y410Pixel const* pSrc = (Y410Pixel*)pSurfaceIn->Data.U;
 
             pitchOut /= sizeof(mfxU16);
-            pitchIn  /= pitchIn / sizeof(Y410Pixel);
+            pitchIn  /= sizeof(Y410Pixel);
 
             for (size_t i = 0; i < pSurfaceIn->Info.Height; i++)
             {
