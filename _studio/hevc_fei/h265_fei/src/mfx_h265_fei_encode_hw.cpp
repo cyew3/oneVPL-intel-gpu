@@ -55,6 +55,7 @@ mfxStatus H265FeiEncodePlugin::GetPluginParam(mfxPluginParam *par)
 
 mfxStatus H265FeiEncodePlugin::Close()
 {
+    Plugin::Close();
     return MFX_ERR_NONE;
 }
 
