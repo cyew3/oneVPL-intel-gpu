@@ -5,10 +5,9 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2014 Intel Corporation. All Rights Reserved.
+// Copyright(c) 2012-2017 Intel Corporation. All Rights Reserved.
 //
-
 #ifndef __genx_skl_histogram__
 #define __genx_skl_histogram__
-extern const unsigned char genx_skl_histogram[88585];
+extern const unsigned char genx_skl_histogram[86646];
 #endif

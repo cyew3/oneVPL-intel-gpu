@@ -24,11 +24,11 @@
 #include "mfx_h264_encode_cm_defs.h"
 #include "mfx_h264_encode_cm.h"
 #include "mfx_h264_encode_hw_utils.h"
-#include "genx_hsw_simple_me_isa.h"
+#if !defined(_WIN32) && !defined(_WIN64)
 #include "genx_bdw_simple_me_isa.h"
+#endif
 #include "genx_skl_simple_me_isa.h"
 #include "genx_skl_histogram_isa.h"
-#include "genx_hsw_histogram_isa.h"
 #if defined(PRE_SI_TARGET_PLATFORM_GEN10)
 #include "genx_cnl_simple_me_isa.h"
 #include "genx_cnl_histogram_isa.h"
@@ -821,15 +821,12 @@ void CmContext::Setup(
 
     switch (core->GetHWType())
     {
-    case MFX_HW_HSW:
-    case MFX_HW_HSW_ULT:
-        m_program = ReadProgram(m_device, genx_hsw_simple_me, SizeOf(genx_hsw_simple_me));
-        m_programHist = ReadProgram(m_device, genx_hsw_histogram, SizeOf(genx_hsw_histogram));
-        break;
+#if !defined(_WIN32) && !defined(_WIN64)
     case MFX_HW_BDW:
     case MFX_HW_CHT:
         m_program = ReadProgram(m_device, genx_bdw_simple_me, SizeOf(genx_bdw_simple_me));
         break;
+#endif
     case MFX_HW_SCL:
     case MFX_HW_APL:
     case MFX_HW_KBL:

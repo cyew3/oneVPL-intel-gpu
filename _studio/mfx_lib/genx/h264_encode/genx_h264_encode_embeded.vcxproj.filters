@@ -14,25 +14,16 @@
     <ClCompile Include="src\genx_hsw_simple_me.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\genx_hsw_simple_me_isa.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\genx_hsw_simple_me_proto.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\genx_bdw_simple_me.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\genx_bdw_simple_me_isa.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\genx_skl_simple_me_isa.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\genx_skl_histogram_isa.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\genx_hsw_histogram_isa.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\genx_histogram.cpp">
@@ -46,19 +37,10 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\genx_hsw_simple_me_isa.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\genx_bdw_simple_me_isa.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\genx_skl_simple_me_isa.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\genx_skl_histogram_isa.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\genx_hsw_histogram_isa.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\genx_cnl_histogram_isa.h">

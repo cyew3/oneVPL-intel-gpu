@@ -389,7 +389,6 @@ copy $(MEDIASDK_ROOT)\CMRT\compiler\lib\x86\libcm.dll ..\..\..\..\build\win_$(Pl
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_THM|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="src\genx_bdw_simple_me_isa.cpp" />
     <ClCompile Include="src\genx_cnl_histogram_isa.cpp" />
     <ClCompile Include="src\genx_cnl_simple_me_isa.cpp" />
     <ClCompile Include="src\genx_histogram.cpp">
@@ -404,7 +403,6 @@ copy $(MEDIASDK_ROOT)\CMRT\compiler\lib\x86\libcm.dll ..\..\..\..\build\win_$(Pl
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="src\genx_hsw_histogram_isa.cpp" />
     <ClCompile Include="src\genx_hsw_simple_me.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_THM|Win32'">true</ExcludedFromBuild>
@@ -416,7 +414,6 @@ copy $(MEDIASDK_ROOT)\CMRT\compiler\lib\x86\libcm.dll ..\..\..\..\build\win_$(Pl
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_THM|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="src\genx_hsw_simple_me_isa.cpp" />
     <ClCompile Include="src\genx_hsw_simple_me_proto.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_THM|Win32'">false</ExcludedFromBuild>
@@ -425,11 +422,8 @@ copy $(MEDIASDK_ROOT)\CMRT\compiler\lib\x86\libcm.dll ..\..\..\..\build\win_$(Pl
     <ClCompile Include="src\genx_skl_simple_me_isa.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\genx_bdw_simple_me_isa.h" />
     <ClInclude Include="include\genx_cnl_histogram_isa.h" />
     <ClInclude Include="include\genx_cnl_simple_me_isa.h" />
-    <ClInclude Include="include\genx_hsw_histogram_isa.h" />
-    <ClInclude Include="include\genx_hsw_simple_me_isa.h" />
     <ClInclude Include="include\genx_skl_histogram_isa.h" />
     <ClInclude Include="include\genx_skl_simple_me_isa.h" />
   </ItemGroup>
