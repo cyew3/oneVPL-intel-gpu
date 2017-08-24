@@ -7024,6 +7024,7 @@ The `CodecFormatFourCC` enumerator itemizes codecs in the FourCC format.
 `MFX_CODEC_VC1` | VC-1 codec
 `MFX_CODEC_HEVC` | HEVC codec
 `MFX_CODEC_VP9` | VP9 codec
+`MFX_CODEC_AV1` | AV1 codec
 
 **Change History**
 
@@ -7032,6 +7033,8 @@ This enumerator is available since SDK API 1.0.
 SDK API 1.8 added `MFX_CODEC_HEVC` definition.
 
 SDK API 1.19 added `MFX_CODEC_VP9` definition.
+
+SDK API **TBD** added `MFX_CODEC_AV1` definition.
 
 ## <a id='CodecLevel'>CodecLevel</a>
 

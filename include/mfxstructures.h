@@ -382,7 +382,8 @@ enum {
     MFX_CODEC_MPEG2       =MFX_MAKEFOURCC('M','P','G','2'),
     MFX_CODEC_VC1         =MFX_MAKEFOURCC('V','C','1',' '),
     MFX_CODEC_CAPTURE     =MFX_MAKEFOURCC('C','A','P','T'),
-    MFX_CODEC_VP9         =MFX_MAKEFOURCC('V','P','9',' ')
+    MFX_CODEC_VP9         =MFX_MAKEFOURCC('V','P','9',' '),
+    MFX_CODEC_AV1         =MFX_MAKEFOURCC('A','V','1',' ')
 };
 
 /* CodecProfile, CodecLevel */
