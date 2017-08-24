@@ -764,7 +764,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\camera_pipe\genx\src\genx_bdw_camerapipe_isa.cpp" />
-    <ClCompile Include="..\..\camera_pipe\genx\src\genx_hsw_camerapipe_isa.cpp" />
+    <ClCompile Include="..\..\camera_pipe\genx\src\genx_cnl_camerapipe_isa.cpp" />
     <ClCompile Include="..\..\camera_pipe\genx\src\genx_skl_camerapipe_isa.cpp" />
     <ClCompile Include="..\..\camera_pipe\src\mfx_camera_plugin.cpp" />
     <ClCompile Include="..\..\camera_pipe\src\mfx_camera_plugin_cm.cpp" />

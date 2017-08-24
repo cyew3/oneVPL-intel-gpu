@@ -284,7 +284,16 @@ cl .\src\embed_isa.c
 embed_isa genx_skl_camerapipe.isa
 move genx_skl_camerapipe.cpp .\src\genx_skl_camerapipe_isa.cpp
 move  genx_skl_camerapipe.h .\include\genx_skl_camerapipe_isa.h
-del .\src\genx_skl_camerapipe.cpp</Command>
+del .\src\genx_skl_camerapipe.cpp
+
+SET CM_RT_PLATFORM=cnl
+copy  .\src\camerapipe_genx_skl.cpp .\src\genx_cnl_camerapipe.cpp /Y
+icl /c  /Qxcm /Qxcm_release /Qxcm_jit_target=gen10 .\src\genx_cnl_camerapipe.cpp /mCM_print_asm_count /mPAROPT_resource_multiplier=256
+cl .\src\embed_isa.c
+embed_isa genx_cnl_camerapipe.isa
+move genx_cnl_camerapipe.cpp .\src\genx_cnl_camerapipe_isa.cpp
+move  genx_cnl_camerapipe.h .\include\genx_cnl_camerapipe_isa.h
+del .\src\genx_cnl_camerapipe.cpp</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'">
