@@ -26,6 +26,7 @@ list(APPEND sources
    ${MSDK_SAMPLES_ROOT}/sample_common/src/base_allocator.cpp
    ${MSDK_SAMPLES_ROOT}/sample_common/src/vaapi_device.cpp
    ${MSDK_SAMPLES_ROOT}/sample_common/src/vaapi_allocator.cpp
+   ${MSDK_SAMPLES_ROOT}/sample_common/src/vaapi_buffer_allocator.cpp
    ${MSDK_SAMPLES_ROOT}/sample_common/src/vaapi_utils.cpp
    ${MSDK_SAMPLES_ROOT}/sample_common/src/vaapi_utils_drm.cpp
    ${MSDK_SAMPLES_ROOT}/sample_common/src/vaapi_utils_x11.cpp
