@@ -56,10 +56,14 @@ namespace mfx_reflect
     void AccessorField::SetFieldAddress()
     {
         m_P = (*m_Iterator)->GetAddress(m_BaseStruct.m_P);
+        char *result = (char*)m_P;
+        result += m_pReflection->FieldType->Size * m_IndexElement;
+        m_P = (void*)result;
     }
 
     AccessorField& AccessorField::operator++()
     {
+        m_IndexElement = 0;
         m_Iterator++;
         if (IsValid())
         {
@@ -83,7 +87,7 @@ namespace mfx_reflect
     {
         if (m_pReflection->m_Fields.end() != iter)
         {
-            return AccessorField(*this, iter); //Address of base, not field.
+            return AccessorField(*this, iter); // Address of base, not field.
         }
         else
         {
@@ -100,6 +104,11 @@ namespace mfx_reflect
     AccessorField AccessorType::AccessFirstField() const
     {
         return AccessField(m_pReflection->m_Fields.begin());
+    }
+
+    AccessorType AccessorType::AccessSubtype(const std::string& fieldName) const
+    {
+        return AccessField(fieldName).AccessSubtype();
     }
 
     ReflectedType::ReflectedType(ReflectedTypesCollection *pCollection, TypeIndex typeIndex, const std::string& typeName, size_t size, bool isPointer, mfxU32 extBufferId)
@@ -249,7 +258,6 @@ namespace mfx_reflect
         {
             stream << "0x" << field.Get<void*>();
         }
-
         else
         {
             bool bPrinted = false;
@@ -269,12 +277,20 @@ namespace mfx_reflect
         }
     }
 
+    void PrintFieldName(std::ostream &stream, AccessorField field)
+    {
+        stream << field.m_pReflection->FieldName;
+        if (field.m_pReflection->Count > 1)
+        {
+            stream << "[" << field.GetIndexElement() << "]";
+        }
+    }
+
     std::ostream& operator<< (std::ostream& stream, AccessorField field)
     {
-        std::ostringstream ss;
-        ss << field.m_pReflection->FieldName << " = ";
-        PrintFieldValue(ss, field);
-        stream << ss.str();
+        PrintFieldName(stream, field);
+        stream << " = ";
+        PrintFieldValue(stream, field);
         return stream;
     }
 
@@ -297,14 +313,14 @@ namespace mfx_reflect
     TypeComparisonResultP CompareExtBufferLists(mfxExtBuffer** pExtParam1, mfxU16 numExtParam1, mfxExtBuffer** pExtParam2, mfxU16 numExtParam2, ReflectedTypesCollection* collection);
     AccessorTypeP GetAccessorOfExtBufferOriginalType(mfxExtBuffer& pExtInnerParam, ReflectedTypesCollection& collection);
 
-    TypeComparisonResultP CompareTwoStructs(AccessorType data1, AccessorType data2) //always return not null result
+    TypeComparisonResultP CompareTwoStructs(AccessorType data1, AccessorType data2) // Always return not null result
     {
         TypeComparisonResultP result = MAKE_SHARED(TypeComparisonResult,());
         if (data1.m_pReflection != data2.m_pReflection)
         {
             throw std::invalid_argument(std::string("Types mismatch"));
         }
-        for (AccessorField field1 = data1.AccessFirstField(); field1.IsValid(); ++field1) //TODO: compare arrays
+        for (AccessorField field1 = data1.AccessFirstField(); field1.IsValid(); ++field1)
         {
             AccessorField field2 = data2.AccessField(field1.m_Iterator);
             ReflectedType::SP p_mfxExtBufferType = field1.m_pReflection->m_pCollection->FindExistingType<mfxExtBuffer**>();
@@ -332,23 +348,30 @@ namespace mfx_reflect
                     throw std::invalid_argument(std::string("Unexpected behavior - ExtBuffer comparison result is NULL"));
                 }
             }
-            AccessorType subtype1 = field1.AccessSubtype();
 
-            TypeComparisonResultP subtypeResult = NULL;
-
-            if (subtype1.m_pReflection->m_Fields.size() > 0)
+            for (size_t i = 0; i < field1.m_pReflection->Count; ++i)
             {
-                AccessorType subtype2 = field2.AccessSubtype();
-                if (subtype1.m_pReflection != subtype2.m_pReflection)
+                field1.SetIndexElement(i);
+                field2.SetIndexElement(i);
+
+                AccessorType subtype1 = field1.AccessSubtype();
+                TypeComparisonResultP subtypeResult = NULL;
+
+                if (subtype1.m_pReflection->m_Fields.size() > 0)
                 {
-                    throw std::invalid_argument(std::string("Subtypes mismatch - should never happen for same types"));
+                    AccessorType subtype2 = field2.AccessSubtype();
+                    if (subtype1.m_pReflection != subtype2.m_pReflection)
+                    {
+                        throw std::invalid_argument(std::string("Subtypes mismatch - should never happen for same types"));
+                    }
+                    subtypeResult = CompareTwoStructs(subtype1, subtype2);
                 }
-                subtypeResult = CompareTwoStructs(subtype1, subtype2);
-            }
-            if (!field1.Equal(field2))
-            {
-                FieldComparisonResult fields = { field1 , field2, subtypeResult };
-                result->push_back(fields);
+
+                if (!field1.Equal(field2))
+                {
+                    FieldComparisonResult fields = { field1 , field2, subtypeResult};
+                    result->push_back(fields);
+                }
             }
         }
         return result;
@@ -400,7 +423,7 @@ namespace mfx_reflect
         return result;
     }
 
-    void PrintStuctsComparisonResult(std::ostream& comparisonResult, std::string prefix, TypeComparisonResultP result)
+    void PrintStuctsComparisonResult(std::ostream& comparisonResult, const std::string& prefix, const TypeComparisonResultP& result)
     {
         for (std::list<FieldComparisonResult>::iterator i = result->begin(); i != result->end(); ++i)
         {
@@ -411,8 +434,13 @@ namespace mfx_reflect
 
             if (NULL != subtypeResult)
             {
-                std::string strFieldName = i->accessorField1.m_pReflection->FieldName;
-                std::string newprefix = prefix.empty() ? (strTypeName + "." + strFieldName) : (prefix + "." + strFieldName);
+                std::stringstream fieldName;
+                PrintFieldName(fieldName, i->accessorField1);
+
+                std::string strFieldName = fieldName.str();
+                std::string newprefix;
+
+                newprefix = prefix.empty() ? (strTypeName + "." + strFieldName) : (prefix + "." + strFieldName);
                 PrintStuctsComparisonResult(comparisonResult, newprefix, subtypeResult);
             }
             else

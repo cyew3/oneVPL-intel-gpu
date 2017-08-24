@@ -143,12 +143,7 @@ namespace mfx_reflect
         AccessorBase(void *p, const T &reflection)
             : m_P(p)
             , m_pReflection(&reflection)
-        {
-            if (NULL == m_pReflection)
-            {
-                m_pReflection = NULL;
-            }
-        }
+        {}
         typedef mfx_cpp11::shared_ptr<T> P;
 
         template <class ORIGINAL_TYPE>
@@ -175,21 +170,33 @@ namespace mfx_reflect
     class AccessorField : public IterableAccessor < ReflectedField, ReflectedField::FieldsCollectionCI >
     {
     public:
-        const AccessorType &m_BaseStruct;
         AccessorField(const AccessorType &baseStruct, ReflectedField::FieldsCollectionCI iterator)
             : IterableAccessor(NULL, iterator)
             , m_BaseStruct(baseStruct)
         {
+            m_IndexElement = 0;
             SetFieldAddress();
         }
 
-        void SetFieldAddress();
-
-        void SetIterator(ReflectedField::FieldsCollectionCI iterator)
+        size_t GetIndexElement() const
         {
-            m_Iterator = iterator;
-            m_pReflection = (*m_Iterator).get();
+            return m_IndexElement;
+        }
+
+        void SetIndexElement(size_t index)
+        {
+            if (index >= m_pReflection->Count)
+            {
+                throw std::invalid_argument(std::string("Index is not valid"));
+            }
+
+            m_IndexElement = index;
             SetFieldAddress();
+        }
+
+        void Move(std::ptrdiff_t delta)
+        {
+            this->m_P = (char*)this->m_P + delta;
         }
 
         AccessorField& operator++();
@@ -200,6 +207,12 @@ namespace mfx_reflect
             {
                 throw std::invalid_argument(std::string("Types mismatch"));
             }
+
+            if (field.m_IndexElement != m_IndexElement)
+            {
+                throw std::invalid_argument(std::string("Indices mismatch"));
+            }
+
             size_t size = m_pReflection->FieldType->Size;
             return (0 == memcmp(m_P, field.m_P, size));
         }
@@ -207,6 +220,18 @@ namespace mfx_reflect
         AccessorType AccessSubtype() const;
 
         bool IsValid() const;
+
+    protected:
+        void SetFieldAddress();
+        const AccessorType &m_BaseStruct;
+        size_t m_IndexElement;
+
+        void SetIterator(ReflectedField::FieldsCollectionCI iterator)
+        {
+            m_Iterator = iterator;
+            m_pReflection = (*m_Iterator).get();
+            SetFieldAddress();
+        }
     };
 
     class AccessorType : public AccessorBase < ReflectedType >
@@ -217,6 +242,7 @@ namespace mfx_reflect
         AccessorField AccessField(ReflectedField::FieldsCollectionCI iter) const;
         AccessorField AccessField(const std::string& fieldName) const;
         AccessorField AccessFirstField() const;
+        AccessorType AccessSubtype(const std::string& fieldName) const;
     };
 
     class AccessibleTypesCollection : public ReflectedTypesCollection
@@ -262,10 +288,12 @@ namespace mfx_reflect
     TypeComparisonResultP CompareTwoStructs(AccessorType data1, AccessorType data2);
 
     std::string CompareStructsToString(AccessorType data1, AccessorType data2);
-    void PrintStuctsComparisonResult(std::ostream& comparisonResult, std::string prefix, TypeComparisonResultP result);
+    void PrintStuctsComparisonResult(std::ostream& comparisonResult, const std::string& prefix, const TypeComparisonResultP& result);
 
     template <class T> bool PrintFieldIfTypeMatches(std::ostream& stream, AccessorField field);
     void PrintFieldValue(std::ostream &stream, AccessorField field);
     std::ostream& operator<< (std::ostream& stream, AccessorField field);
     std::ostream& operator<< (std::ostream& stream, AccessorType data);
+
+    template <class T> ReflectedType::SP DeclareTypeT(ReflectedTypesCollection& collection, const std::string typeName);
 }
