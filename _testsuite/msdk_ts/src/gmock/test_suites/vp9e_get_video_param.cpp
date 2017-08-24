@@ -21,6 +21,7 @@ namespace vp9e_get_video_param
 #define DEFAULT_QPP 133
 #define DEFAULT_TARGET_USAGE MFX_TARGETUSAGE_BALANCED
 #define DEFAULT_NUMREFFRAME 1
+#define DEFAULT_LOWPOWER MFX_CODINGOPTION_ON
 
     class TestSuite : tsVideoEncoder
     {
@@ -264,6 +265,8 @@ namespace vp9e_get_video_param
                     << "ERROR: Default TargetUsage expected to be " << DEFAULT_TARGET_USAGE << ", but it is " << requested_par.mfx.TargetUsage;
                 EXPECT_EQ(requested_par.mfx.NumRefFrame, DEFAULT_NUMREFFRAME)
                     << "ERROR: Default NumRefFrame expected to be " << DEFAULT_NUMREFFRAME << ", but it is " << requested_par.mfx.NumRefFrame;
+                EXPECT_EQ(requested_par.mfx.LowPower, DEFAULT_LOWPOWER)
+                    << "ERROR: Default LowPower expected to be " << DEFAULT_LOWPOWER << ", but it is " << requested_par.mfx.LowPower;
 
                 if (m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_NV12 || m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_AYUV)
                 {

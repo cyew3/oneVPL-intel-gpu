@@ -907,6 +907,11 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
     Bool changed = false;
     Bool unsupported = false;
 
+    if (false == CheckTriStateOption(par.mfx.LowPower))
+    {
+        changed = true;
+    }
+
     if (MFX_ERR_UNSUPPORTED == CleanOutUnsupportedParameters(par))
     {
         unsupported = true;
@@ -1197,12 +1202,6 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         }
         else if (brcMode == MFX_RATECONTROL_CQP)
         {
-            if (opt2.MBBRC != 0)
-            {
-                opt2.MBBRC = MFX_CODINGOPTION_OFF;
-                changed = true;
-            }
-
             if (par.mfx.QPI > MAX_Q_INDEX)
             {
                 par.mfx.QPI = MAX_Q_INDEX;
@@ -1360,6 +1359,12 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
     {
         opt2.MBBRC = MFX_CODINGOPTION_OFF;
         unsupported = true;
+    }
+
+    if (brcMode == MFX_RATECONTROL_CQP && IsOn(opt2.MBBRC))
+    {
+        opt2.MBBRC = MFX_CODINGOPTION_OFF;
+        changed = true;
     }
 
     mfxExtOpaqueSurfaceAlloc& opaq = GetExtBufferRef(par);
@@ -1553,6 +1558,7 @@ mfxStatus SetDefaults(
     SetDefault(par.mfx.GopRefDist, 1);
     SetDefault(par.mfx.NumRefFrame, 1);
     SetDefault(par.mfx.BRCParamMultiplier, 1);
+    SetDefault(par.mfx.LowPower, MFX_CODINGOPTION_ON);
 
     if (par.mfx.TargetKbps && (par.mfx.TargetKbps < par.mfx.MaxKbps))
     {

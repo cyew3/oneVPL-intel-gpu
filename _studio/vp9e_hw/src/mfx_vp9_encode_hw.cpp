@@ -94,32 +94,36 @@ inline GUID GetGuid(VP9MfxVideoParam  par)
         SetDefailtsForProfileAndFrameInfo(par);
     }
 
+    // Currently we don't support LP=OFF
+    // so it is mapped to GUID_NULL
+    // it will cause Query/Init fails with Unsupported
+    // ever when driver support LP=OFF
     switch (par.mfx.CodecProfile)
     {
     case MFX_PROFILE_VP9_0:
         return (par.mfx.LowPower != MFX_CODINGOPTION_OFF) ?
-        DXVA2_Intel_LowpowerEncode_VP9_Profile0 : DXVA2_Intel_Encode_VP9_Profile0;
+            DXVA2_Intel_LowpowerEncode_VP9_Profile0 : GUID_NULL; //DXVA2_Intel_Encode_VP9_Profile0;
         break;
     case MFX_PROFILE_VP9_1:
         return (par.mfx.LowPower != MFX_CODINGOPTION_OFF) ?
-        DXVA2_Intel_LowpowerEncode_VP9_Profile1 : DXVA2_Intel_Encode_VP9_Profile1;
+            DXVA2_Intel_LowpowerEncode_VP9_Profile1 : GUID_NULL; //DXVA2_Intel_Encode_VP9_Profile1;
         break;
     case MFX_PROFILE_VP9_2:
         return (par.mfx.LowPower != MFX_CODINGOPTION_OFF) ?
-        DXVA2_Intel_LowpowerEncode_VP9_10bit_Profile2 : DXVA2_Intel_Encode_VP9_10bit_Profile2;
+            DXVA2_Intel_LowpowerEncode_VP9_10bit_Profile2 : GUID_NULL; // DXVA2_Intel_Encode_VP9_10bit_Profile2;
         break;
     case MFX_PROFILE_VP9_3:
         return (par.mfx.LowPower != MFX_CODINGOPTION_OFF) ?
-        DXVA2_Intel_LowpowerEncode_VP9_10bit_Profile3 : DXVA2_Intel_Encode_VP9_10bit_Profile3;
+            DXVA2_Intel_LowpowerEncode_VP9_10bit_Profile3 : GUID_NULL; // DXVA2_Intel_Encode_VP9_10bit_Profile3;
         break;
     default:
         // profile cannot be identified. Use Profile0 so far
         return (par.mfx.LowPower != MFX_CODINGOPTION_OFF) ?
-        DXVA2_Intel_LowpowerEncode_VP9_Profile0 : DXVA2_Intel_Encode_VP9_Profile0;
+            DXVA2_Intel_LowpowerEncode_VP9_Profile0 : GUID_NULL; // DXVA2_Intel_Encode_VP9_Profile0;
     }
 #else //PRE_SI_TARGET_PLATFORM_GEN11
     return (par.mfx.LowPower != MFX_CODINGOPTION_OFF) ?
-    DXVA2_Intel_LowpowerEncode_VP9_Profile0 : DXVA2_Intel_Encode_VP9_Profile0;
+        DXVA2_Intel_LowpowerEncode_VP9_Profile0 : GUID_NULL; // DXVA2_Intel_Encode_VP9_Profile0;
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
 }
 
@@ -447,6 +451,7 @@ mfxStatus Plugin::Reset(mfxVideoParam *par)
     MFX_CHECK(checkSts >= 0, checkSts);
 
     // check that no re-allocation is required
+    // make sure LowPower not changed - i.e. encoder type the same
     MFX_CHECK(parBeforeReset.mfx.CodecProfile == parAfterReset.mfx.CodecProfile
         && parBeforeReset.AsyncDepth == parAfterReset.AsyncDepth
         && parBeforeReset.m_inMemType == parAfterReset.m_inMemType
@@ -457,7 +462,8 @@ mfxStatus Plugin::Reset(mfxVideoParam *par)
         && (parAfterReset.m_inMemType == INPUT_VIDEO_MEMORY
             || m_rawLocalFrames.Num() >= CalcNumSurfRaw(parAfterReset))
         && m_reconFrames.Num() >= CalcNumSurfRecon(parAfterReset)
-        && parBeforeReset.mfx.RateControlMethod == parAfterReset.mfx.RateControlMethod,
+        && parBeforeReset.mfx.RateControlMethod == parAfterReset.mfx.RateControlMethod
+        && parBeforeReset.mfx.LowPower == parAfterReset.mfx.LowPower,
         MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
     m_video = parAfterReset;

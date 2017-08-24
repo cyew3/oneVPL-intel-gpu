@@ -204,6 +204,12 @@ namespace vp9e_reset
 
         {/*64 check error status on attempt to change format*/ MFX_ERR_INVALID_VIDEO_PARAM,
             {}, 0, { &TestSuite::set_par, MFX_RESET, offsetof(mfxVideoParam, mfx) + offsetof(mfxInfoMFX, CodecProfile), sizeof(mfxU16), MFX_PROFILE_VP9_FULL_CHANGE }, 0 },
+
+        {/*65 check error status on attempt to change lowPower ON(Default)->OFF*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+            {}, 0,{ &TestSuite::set_par, MFX_RESET, offsetof(mfxVideoParam, mfx) + offsetof(mfxInfoMFX, LowPower), sizeof(mfxU16), MFX_CODINGOPTION_OFF }, 0 },
+        {/*66 check status on attempt to change lowPower ON->Default(ON)*/ MFX_ERR_NONE,
+            { &TestSuite::set_par, MFX_INIT,  offsetof(mfxVideoParam, mfx) + offsetof(mfxInfoMFX, LowPower), sizeof(mfxU16), MFX_CODINGOPTION_ON }, 0,
+            { &TestSuite::set_par, MFX_RESET, offsetof(mfxVideoParam, mfx) + offsetof(mfxInfoMFX, LowPower), sizeof(mfxU16), MFX_CODINGOPTION_UNKNOWN }, 0 },
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);

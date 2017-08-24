@@ -305,6 +305,11 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*96*/ MFX_ERR_NONE, NONE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 3 } },
     {/*97 out of range*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 4 } },
     {/*98 out of range*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 0xffff } },
+    // LowPower
+    {/*99 out of range*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE,{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_ADAPTIVE } },
+    {/*100 out of range*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE,{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, 0xffff } },
+    {/*101 default value*/ MFX_ERR_NONE, NONE, NONE,{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_UNKNOWN } },
+    {/*102 off-unsupported value*/ MFX_ERR_UNSUPPORTED, NONE, NONE,{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_OFF } },
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
