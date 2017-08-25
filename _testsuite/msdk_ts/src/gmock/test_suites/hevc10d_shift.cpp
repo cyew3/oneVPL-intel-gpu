@@ -206,6 +206,11 @@ int TestSuite::RunTest(unsigned int id)
     m_bs_processor = &reader;
     tc = test_case[id];
 
+    m_init_par.Implementation = m_impl;
+    m_init_par.Version = m_version;
+    m_init_par.GPUCopy = g_tsConfig.GPU_copy_mode;
+    MFXInitEx();
+
     Load();
     SETPARS(m_pPar, MFXPAR);
 
