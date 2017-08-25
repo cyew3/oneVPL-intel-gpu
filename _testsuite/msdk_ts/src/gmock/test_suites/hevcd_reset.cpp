@@ -61,6 +61,8 @@ protected:
 
     void apply_par(const tc_struct& p, mfxU32 stage)
     {
+        bool use_customized_allocator = false;
+
         for(mfxU32 i = 0; i < max_num_ctrl; i ++)
         {
             auto c = p.ctrl[i];
@@ -89,6 +91,7 @@ protected:
                                  false
                              );
                 m_use_memid = true;
+                use_customized_allocator = true;
                 break;
             }
             case CLOSE_DEC : Close(); break;
@@ -104,6 +107,13 @@ protected:
                     //no way to have persistent pointers here, the only valid value is NULL
                     *base = NULL;
             }
+        }
+
+        // now default allocator is incorrectly setup for this type memory in the base class
+        // so we need this fix on per-suite basis
+        if(!use_customized_allocator && m_pVAHandle &&
+            m_par.IOPattern == MFX_IOPATTERN_OUT_VIDEO_MEMORY) {
+            SetAllocator(m_pVAHandle, true);
         }
     }
 };
