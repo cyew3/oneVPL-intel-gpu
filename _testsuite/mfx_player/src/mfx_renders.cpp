@@ -460,14 +460,6 @@ MFXFileWriteRender::MFXFileWriteRender(const FileWriterRenderInputParams &params
     m_bCreateNewFileOnClose = false;
 
     MFX_ZERO_MEM(m_surfaceForCopy);
-    m_copier = HWtoSYSCopier::CreateGenericPlugin(core->GetMFXSession());
-    if (!m_copier)
-    {
-        if (status)
-            *status = MFX_ERR_MEMORY_ALLOC;
-        else
-            throw 1;
-    }
 }
 
 MFXFileWriteRender::~MFXFileWriteRender()
@@ -484,8 +476,6 @@ MFXFileWriteRender::~MFXFileWriteRender()
         }
     }
 #endif
-
-    HWtoSYSCopier::UnloadGenericPlugin(m_copier, m_pSessionWrapper->GetMFXSession());
 }
 
 MFXFileWriteRender * MFXFileWriteRender::Clone()
@@ -577,6 +567,12 @@ mfxStatus MFXFileWriteRender::Init(mfxVideoParam *pInit, const vm_char *pFilenam
         }
     }
 
+    m_copier = HWtoSYSCopier::CreateGenericPlugin(m_pSessionWrapper->GetMFXSession());
+    if (!m_copier)
+    {
+        return MFX_ERR_MEMORY_ALLOC;
+    }
+
     return MFX_ERR_NONE;
 }
 
@@ -593,6 +589,9 @@ mfxStatus MFXFileWriteRender::Close()
     MFX_ZERO_MEM(m_surfaceForCopy);
 
     m_nTimesClosed++;
+
+    HWtoSYSCopier::UnloadGenericPlugin(m_copier, m_pSessionWrapper->GetMFXSession());
+    m_copier = 0;
     
     return MFX_ERR_NONE;
 }
