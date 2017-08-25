@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -227,12 +227,13 @@ int TestSuite::RunTest(unsigned int id)
         SetHandle(m_session, type, hdl);
         m_is_handle_set = (g_tsStatus.get() >= 0);
     }// must be called before DecodeHeader()
+
     DecodeHeader();
     QueryIOSurf();
 
     if (tc.mode == SHIFT_INIT)
     {
-        m_par.mfx.FrameInfo.Shift = tc.shift;
+        m_request.Info.Shift = m_par.mfx.FrameInfo.Shift = tc.shift;
         g_tsStatus.expect(tc.sts);
     }
 
