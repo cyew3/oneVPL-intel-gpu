@@ -458,6 +458,9 @@ public:
                         case MFX_EXTBUFF_MULTI_FRAME_CONTROL:
                             str += dump(name, *((mfxExtMultiFrameControl*)_struct.ExtParam[i])) + "\n";
                             break;
+                        case MFX_EXTBUFF_ENCODED_UNITS_INFO:
+                            str += dump(name, *((mfxExtEncodedUnitsInfo*)_struct.ExtParam[i])) + "\n";
+                            break;
                         default:
                             str += dump(name, *(_struct.ExtParam[i])) + "\n";
                             break;
@@ -569,6 +572,7 @@ public:
     DEFINE_DUMP_FUNCTION(mfxExtContentLightLevelInfo);
     DEFINE_DUMP_FUNCTION(mfxExtMultiFrameParam);
     DEFINE_DUMP_FUNCTION(mfxExtMultiFrameControl);
+    DEFINE_DUMP_FUNCTION(mfxExtEncodedUnitsInfo);
 
     //mfxsession
     DEFINE_DUMP_FUNCTION(mfxSession);

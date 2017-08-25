@@ -3521,7 +3521,11 @@ typedef struct {
     mfxU16      LowDelayBRC;               /* tri-state option */
     mfxU16      EnableMBForceIntra;        /* tri-state option */
 
-    mfxU16      reserved[171];
+    mfxU16      reserved5[5];
+
+    mfxU16      SliceSizeReport;           /* tri-state option */
+
+    mfxU16      reserved[165];
 } mfxExtCodingOption3;
 ```
 
@@ -3569,6 +3573,7 @@ The application can attach this extended buffer to the [mfxVideoParam](#mfxVideo
 `EnableMBForceIntra` | Turn ON this option to enable usage of [mfxExtMBForceIntra](#mfxExtMBForceIntra) for AVC encoder. See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option. This parameter is valid only during initialization.
 `AdaptiveMaxFrameSize` | If this option is ON, BRC may decide a larger P or B frame size than what [MaxFrameSizeP](#MaxFrameSizeP) dictates when the scene change is detected. It may benefit the video quality.
 `RepartitionCheckEnable` | Controls AVC encoder attempts to predict from small partitions. Default value allows encoder to choose preferred mode, `MFX_CODINGOPTION_ON` forces encoder to favor quality, `MFX_CODINGOPTION_OFF` forces encoder to favor performance.
+`SliceSizeReport` | Turn this option ON to make slice info available in [mfxExtEncodedUnitsInfo](#mfxExtEncodedUnitsInfo).
 
 
 **Change History**
@@ -3592,6 +3597,8 @@ EnableQPOffset, QPOffset, NumRefActiveP, NumRefActiveBL0, NumRefActiveBL1` field
 The SDK API 1.21 adds `BRCPanicMode` field.
 
 The SDK API 1.23 adds `LowDelayBRC`, `EnableMBForceIntra`, `AdaptiveMaxFrameSize`, `RepartitionCheckEnable` fields.
+
+The SDK API **TBD** adds `SliceSizeReport` field.
 
 ## <a id='mfxExtCodingOptionSPSPPS'>mfxExtCodingOptionSPSPPS</a>
 
@@ -6776,6 +6783,55 @@ If applicaiton attaches this structure to the [mfxVideoParam](#mfxVideoParam) st
 
 This structure is available since SDK API **TBD**.
 
+## <a id='mfxExtEncodedUnitsInfo'>mfxExtEncodedUnitsInfo</a>
+
+**Definition**
+
+```C
+typedef struct {
+    mfxU16 Type;
+    mfxU16 reserved1;
+    mfxU32 Offset;
+    mfxU32 Size;
+    mfxU32 reserved[5];
+} mfxEncodedUnitInfo;
+
+typedef struct {
+    mfxExtBuffer Header;
+
+    union {
+        mfxEncodedUnitInfo *UnitInfo;
+        mfxU64  reserved1;
+    };
+    mfxU16 NumUnitsAlloc;
+    mfxU16 NumUnitsEncoded;
+
+    mfxU16 reserved[22];
+} mfxExtEncodedUnitsInfo;
+```
+
+**Description**
+
+When attached to the [mfxBitstream](#mfxBitstream) structure during [encoding](#MFXVideoENCODE_EncodeFrameAsync), structure `mfxExtEncodedUnitsInfo` is used to report information about coding units in the resulting bitstream. **Note:** If [mfxExtCodingOption3](#mfxExtCodingOption3)`::SliceSizeReport` wasn't set to `MFX_CODINGOPTION_ON` during encoder [initialization](#MFXVideoENCODE_Init), information about coded slices may be missed.
+
+**Members**
+
+| | |
+--- | ---
+`Type`             | Codec-dependent coding unit type (NALU type for AVC/HEVC, start_code for MPEG2 etc).
+`Offset`           | Offset relatively to associated [mfxBitstream](#mfxBitstream)`::DataOffset`.
+`Size`             | Unit size including delimiter.
+`Header.BufferId`  | Must be [MFX_EXTBUFF_ENCODED_UNITS_INFO](#ExtendedBufferID).
+`UnitInfo`         | Pointer to an array of structures `mfxEncodedUnitsInfo` of size equal to or greater than `NumUnitsAlloc`.
+`NumUnitsAlloc`    | `UnitInfo` array size.
+`NumUnitsEncoded`  | Output field. Number of coding units to report. If `NumUnitsEncoded` is greater than `NumUnitsAlloc`, `UnitInfo` array will contain information only for the first `NumUnitsAlloc` units; user may consider to reallocate `UnitInfo` array to avoid this for consequent frames.
+
+The number of filled items in `UnitInfo` is `min(NumUnitsEncoded, NumUnitsAlloc)`.
+
+**Change History**
+
+This structure is available since SDK API **TBD**.
+
 # Enumerator Reference
 
 ## <a id='BitstreamDataFlag'>BitstreamDataFlag</a>
@@ -7066,6 +7122,7 @@ The `ExtendedBufferID` enumerator itemizes and defines identifiers (`BufferId`) 
 `MFX_EXTBUFF_BRC` | See the [mfxExtBRC](#mfxExtBRC) structure for details.
 `MFX_EXTBUFF_MULTI_FRAME_PARAM` | This extended buffer allow to specify multi-frame submission parameters.
 `MFX_EXTBUFF_MULTI_FRAME_CONTROL` | This extended buffer allow to manage multi-frame submission in runtime.
+`MFX_EXTBUFF_ENCODED_UNITS_INFO` | See the [mfxExtEncodedUnitsInfo](#mfxExtEncodedUnitsInfo) structure for details.
 
 **Change History**
 
@@ -7094,9 +7151,7 @@ SDK API 1.22 adds `MFX_EXTBUFF_DEC_VIDEO_PROCESSING`.
 
 SDK API 1.23 adds `MFX_EXTBUFF_MB_FORCE_INTRA`.
 
-SDK API **TBD** adds `MFX_EXTBUFF_VP9_PARAM`, `MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO`, `MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME` and `MFX_EXTBUFF_BRC`.
-
-SDK API **TBD** adds `MFX_EXTBUFF_MULTI_FRAME_PARAM` and `MFX_EXTBUFF_MULTI_FRAME_CONTROL`
+SDK API **TBD** adds `MFX_EXTBUFF_VP9_PARAM`, `MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO`, `MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME`, `MFX_EXTBUFF_BRC`, `MFX_EXTBUFF_MULTI_FRAME_PARAM`, `MFX_EXTBUFF_MULTI_FRAME_CONTROL`, `MFX_EXTBUFF_ENCODED_UNITS_INFO`.
 
 See additional change history in the structure definitions.
 

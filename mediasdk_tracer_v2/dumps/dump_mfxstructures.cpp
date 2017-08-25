@@ -194,6 +194,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCodingOp
     DUMP_FIELD(QuantScaleType);
     DUMP_FIELD(IntraVLCFormat);
     DUMP_FIELD(ScanType);
+    DUMP_FIELD(SliceSizeReport);
     DUMP_FIELD_RESERVED(reserved);
     return str;
 }
@@ -1337,6 +1338,31 @@ std::string DumpContext::dump(const std::string structName, const  mfxExtMultiFr
     str += dump(structName + ".Header", _struct.Header) + "\n";
     str += structName + ".Timeout=" + ToString(_struct.Timeout) + "\n";
     str += structName + ".Flush=" + ToString(_struct.Flush) + "\n";
+
+    DUMP_FIELD_RESERVED(reserved);
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const  mfxExtEncodedUnitsInfo &_struct) {
+    std::string str;
+    str += dump(structName + ".Header", _struct.Header) + "\n";
+    str += structName + ".NumUnitsAlloc="    + ToString(_struct.NumUnitsAlloc)    + "\n";
+    str += structName + ".NumUnitsEncoded="  + ToString(_struct.NumUnitsEncoded)  + "\n";
+
+    if(_struct.UnitInfo != NULL)
+    {
+        int count = min(_struct.NumUnitsEncoded, _struct.NumUnitsAlloc);
+        for (int i = 0; i < count; i++)
+        {
+            str += structName + ".UnitInfo[" + ToString(i) + "].Type="   + ToString(_struct.UnitInfo[i].Type)   + "\n";
+            str += structName + ".UnitInfo[" + ToString(i) + "].Offset=" + ToString(_struct.UnitInfo[i].Offset) + "\n";
+            str += structName + ".UnitInfo[" + ToString(i) + "].Size="   + ToString(_struct.UnitInfo[i].Size)   + "\n";
+        }
+    }
+    else
+    {
+        str += structName + ".UnitInfo=NULL\n";
+    }
 
     DUMP_FIELD_RESERVED(reserved);
     return str;

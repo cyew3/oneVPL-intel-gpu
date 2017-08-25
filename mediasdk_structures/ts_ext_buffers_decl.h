@@ -100,3 +100,5 @@ EXTBUF(mfxExtPredWeightTable        , MFX_EXTBUFF_PRED_WEIGHT_TABLE         )
 #if defined(__MFXBRC_H__)
 EXTBUF(mfxExtBRC, MFX_EXTBUFF_BRC)
 #endif // defined(__MFXBRC_H__)
+
+EXTBUF(mfxExtEncodedUnitsInfo       , MFX_EXTBUFF_ENCODED_UNITS_INFO        )

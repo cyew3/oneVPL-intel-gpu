@@ -750,7 +750,9 @@ typedef struct {
     mfxU16      IntraVLCFormat;            /* For MPEG2 specifies which table shall be used for coding of DCT coefficients of intra macroblocks (see IntraVLCFormat enum) */
     mfxU16      ScanType;                  /* For MPEG2 specifies transform coefficients scan pattern (see ScanType enum) */
 
-    mfxU16      reserved[166];
+    mfxU16      SliceSizeReport;           /* tri-state option */
+
+    mfxU16      reserved[165];
 } mfxExtCodingOption3;
 
 /* IntraPredBlockSize/InterPredBlockSize */
@@ -846,7 +848,8 @@ enum {
     MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO        = MFX_MAKEFOURCC('L','L','I','S'),
     MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME = MFX_MAKEFOURCC('D','C','V','S'),
     MFX_EXTBUFF_MULTI_FRAME_PARAM               = MFX_MAKEFOURCC('M','F','R','P'),
-    MFX_EXTBUFF_MULTI_FRAME_CONTROL             = MFX_MAKEFOURCC('M','F','R','C')
+    MFX_EXTBUFF_MULTI_FRAME_CONTROL             = MFX_MAKEFOURCC('M','F','R','C'),
+    MFX_EXTBUFF_ENCODED_UNITS_INFO              = MFX_MAKEFOURCC('E','N','U','I')
 };
 
 /* VPP Conf: Do not use certain algorithms  */
@@ -1900,6 +1903,27 @@ typedef struct {
 
     mfxU16      reserved[57];
 } mfxExtMultiFrameControl;
+
+typedef struct {
+    mfxU16 Type;
+    mfxU16 reserved1;
+    mfxU32 Offset;
+    mfxU32 Size;
+    mfxU32 reserved[5];
+} mfxEncodedUnitInfo;
+
+typedef struct {
+    mfxExtBuffer Header;
+
+    union {
+        mfxEncodedUnitInfo *UnitInfo;
+        mfxU64  reserved1;
+    };
+    mfxU16 NumUnitsAlloc;
+    mfxU16 NumUnitsEncoded;
+
+    mfxU16 reserved[22];
+} mfxExtEncodedUnitsInfo;
 
 #ifdef __cplusplus
 } // extern "C"

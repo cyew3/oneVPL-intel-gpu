@@ -754,6 +754,7 @@ STRUCT(mfxExtCodingOption3,
     FIELD_T(mfxU16      , QuantScaleType                )
     FIELD_T(mfxU16      , IntraVLCFormat                )
     FIELD_T(mfxU16      , ScanType                      )
+    FIELD_T(mfxU16      , SliceSizeReport               )
 )
 
 STRUCT(mfxExtLAControl,
@@ -1009,4 +1010,17 @@ STRUCT(mfxExtMultiFrameControl,
     FIELD_S(mfxExtBuffer, Header)
     FIELD_T(mfxU32      , Timeout)
     FIELD_T(mfxU16      , Flush)
+)
+
+STRUCT(mfxEncodedUnitInfo,
+    FIELD_T(mfxU16, Type)
+    FIELD_T(mfxU32, Offset)
+    FIELD_T(mfxU32, Size)
+)
+
+STRUCT(mfxExtEncodedUnitsInfo,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxEncodedUnitInfo*, UnitInfo)
+    FIELD_T(mfxU16, NumUnitsAlloc)
+    FIELD_T(mfxU16, NumUnitsEncoded)
 )
