@@ -1172,9 +1172,9 @@ namespace TUDefault
         {
             /*1*/   MFX_SAO_ENABLE_LUMA | MFX_SAO_ENABLE_CHROMA,
             /*2*/   MFX_SAO_ENABLE_LUMA | MFX_SAO_ENABLE_CHROMA,
-            /*3*/   MFX_SAO_UNKNOWN,
-            /*4*/   MFX_SAO_UNKNOWN,
-            /*5*/   MFX_SAO_UNKNOWN,
+            /*3*/   MFX_SAO_ENABLE_LUMA | MFX_SAO_ENABLE_CHROMA,
+            /*4*/   MFX_SAO_ENABLE_LUMA | MFX_SAO_ENABLE_CHROMA,
+            /*5*/   MFX_SAO_ENABLE_LUMA | MFX_SAO_ENABLE_CHROMA,
             /*6*/   MFX_SAO_DISABLE,
             /*7*/   MFX_SAO_DISABLE
         };
