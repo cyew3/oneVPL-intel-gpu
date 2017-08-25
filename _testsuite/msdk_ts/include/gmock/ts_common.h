@@ -27,6 +27,7 @@ typedef enum {
 typedef struct {
     mfxU32      lowpower;
     bool        sim;
+    mfxU16      GPU_copy_mode;
     std::string cfg_filename;
 } tsConfig;
 

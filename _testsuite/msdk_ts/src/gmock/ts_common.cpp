@@ -25,7 +25,7 @@ mfxVersion   g_tsVersion  = {MFX_VERSION_MINOR, MFX_VERSION_MAJOR};
 mfxU32       g_tsTrace    = 1;
 tsPlugin     g_tsPlugin;
 tsStreamPool g_tsStreamPool;
-tsConfig     g_tsConfig = {0, false, ""};
+tsConfig     g_tsConfig = {0, false, MFX_GPUCOPY_DEFAULT, ""};
 
 bool operator == (const mfxFrameInfo& v1, const mfxFrameInfo& v2)
 {
@@ -234,17 +234,22 @@ void set_chromaformat_vpp(tsExtBufType<mfxVideoParam>* p)
 
 void MFXVideoTest::SetUp()
 {
-    std::string platform = ENV("TS_PLATFORM", "auto");
-    std::string trace    = ENV("TS_TRACE", "1");
-    std::string plugins  = ENV("TS_PLUGINS", "");
-    std::string lowpower = ENV("TS_LOWPOWER", "");
-    std::string cfg_file = ENV("TS_CONFIG_FILE", "");
+    std::string platform  = ENV("TS_PLATFORM", "auto");
+    std::string trace     = ENV("TS_TRACE", "1");
+    std::string plugins   = ENV("TS_PLUGINS", "");
+    std::string lowpower  = ENV("TS_LOWPOWER", "");
+    std::string cfg_file  = ENV("TS_CONFIG_FILE", "");
+    std::string copy_mode = ENV("TS_GPUCOPY_MODE", "");
 
     g_tsConfig.sim = (ENV("TS_SIM", "0") == "1");
 
     g_tsConfig.lowpower = MFX_CODINGOPTION_UNKNOWN;
     if      (lowpower ==  "ON") { g_tsConfig.lowpower =  MFX_CODINGOPTION_ON; }
     else if (lowpower == "OFF") { g_tsConfig.lowpower = MFX_CODINGOPTION_OFF; }
+
+    g_tsConfig.GPU_copy_mode = MFX_GPUCOPY_DEFAULT;
+    if      (copy_mode ==  "ON") { g_tsConfig.GPU_copy_mode =  MFX_GPUCOPY_ON; }
+    else if (copy_mode == "OFF") { g_tsConfig.GPU_copy_mode = MFX_GPUCOPY_OFF; }
 
     g_tsConfig.cfg_filename = cfg_file;
     g_tsStatus.reset();
