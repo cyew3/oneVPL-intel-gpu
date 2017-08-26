@@ -63,6 +63,8 @@ private:
 
     void apply_par(const tc_struct& p, mfxU32 stage)
     {
+        bool use_customized_allocator = false;
+
         for(mfxU32 i = 0; i < max_num_ctrl; i ++)
         {
             auto c = p.ctrl[i];
@@ -80,15 +82,22 @@ private:
             case SYNCP     : base = (void**)&m_pSyncPoint;   break;
             case MFXVPAR   : base = (void**)&m_pPar;         break;
             case MEMID     : m_use_memid = !!c.par[0];    break;
-            case ALLOCATOR : SetAllocator(
-                                 new frame_allocator(
-                                    (frame_allocator::AllocatorType)    ((m_par.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) || (m_request.Type & MFX_MEMTYPE_SYSTEM_MEMORY)) ? frame_allocator::SOFTWARE : frame_allocator::HARDWARE,
-                                    (frame_allocator::AllocMode)        c.par[0],
-                                    (frame_allocator::LockMode)         c.par[1],
-                                    (frame_allocator::OpaqueAllocMode)  c.par[2]
-                                 ),
-                                 false
-                             ); break;
+            case ALLOCATOR :
+                if (m_pVAHandle && (c.par[0] == frame_allocator::HARDWARE)) {
+                    SetAllocator(m_pVAHandle, true);
+                } else {
+                    SetAllocator(
+                        new frame_allocator(
+                            (frame_allocator::AllocatorType)    ((m_par.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) || (m_request.Type & MFX_MEMTYPE_SYSTEM_MEMORY)) ? frame_allocator::SOFTWARE : frame_allocator::HARDWARE,
+                            (frame_allocator::AllocMode)        c.par[0],
+                            (frame_allocator::LockMode)         c.par[1],
+                            (frame_allocator::OpaqueAllocMode)  c.par[2]
+                        ),
+                        false
+                    );
+                }
+                use_customized_allocator = true;
+                break;
             case CLOSE_DEC : Close(); break;
             default: break;
             }
@@ -101,6 +110,13 @@ private:
                     //no way to have persistent pointers here, the only valid value is NULL
                     *base = NULL;
             }
+        }
+
+        // now default allocator is incorrectly setup for this type memory in the base class
+        // so we need this fix on per-suite basis
+        if(!use_customized_allocator && m_pVAHandle &&
+            m_par.IOPattern == MFX_IOPATTERN_OUT_VIDEO_MEMORY) {
+            SetAllocator(m_pVAHandle, true);
         }
     }
 };
@@ -186,6 +202,8 @@ int DecodeSuite::run(unsigned int id, const char* sname)
     m_bs_processor = &reader;
     auto tc = test_case[id];
     mfxStatus expected = tc.sts;
+
+    MFXInit();
 
     if (tc.sts == MFX_ERR_INCOMPATIBLE_VIDEO_PARAM)
         DecodeHeader();
