@@ -519,6 +519,125 @@ public:
     }
 };
 
+//generic swop converter for RGBA/BGRA
+template <int in_fmt, int out_fmt>
+class BSConverterRGBASwop
+    : public BSConvertBase<in_fmt, out_fmt>
+{
+public:
+    BSConverterRGBASwop()
+        : m_sample_size()
+    {
+    }
+    virtual mfxStatus Transform(mfxBitstream * bs, mfxFrameSurface1 *surface)
+    {
+        mfxU32 w, h, i, j, pitch;
+        mfxU8  *ptr;
+        mfxU8 t_swop;
+
+        mfxFrameData &data = surface->Data;
+        mfxFrameInfo &info = surface->Info;
+
+        w = info.CropW;
+        h = info.CropH;
+
+        pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
+        ptr = start_pointer(surface);
+
+        if (pitch == w)
+        {
+            //copy data directly
+            MFX_CHECK_WITH_ERR(w * h * m_sample_size == BSUtil::MoveNBytes(ptr, bs, w * h * m_sample_size), MFX_ERR_MORE_DATA);
+            //swop
+            for (i = 0; i < h; i++)
+                for (j = 0; j < w * m_sample_size; j = j + m_sample_size)
+                {
+                    t_swop = ptr[i * h + j];
+                    ptr[i * h + j] = ptr[i * h + j + 2];
+                    ptr[i * h + j + 2] = t_swop;
+                }
+        }
+        else
+        {
+            for (i = 0; i < h; i++)
+            {
+                MFX_CHECK_WITH_ERR(w * m_sample_size == BSUtil::MoveNBytes(ptr, bs, w * m_sample_size), MFX_ERR_MORE_DATA);
+                //swop
+                for (j = 0; j < w * m_sample_size; j = j + m_sample_size)
+                {
+                    t_swop = ptr[j];
+                    ptr[j] = ptr[j + 2];
+                    ptr[j + 2] = t_swop;
+                }
+                ptr += pitch;
+            }
+        }
+
+        return MFX_ERR_NONE;
+    }
+protected:
+
+    virtual mfxU8* start_pointer(mfxFrameSurface1 *surface)
+    {
+        mfxFrameData &data = surface->Data;
+        mfxFrameInfo &info = surface->Info;
+
+        mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
+
+        return data.R + info.CropX * m_sample_size + info.CropY * pitch;
+    }
+
+    mfxU8 m_sample_size;
+};
+
+template <>
+class BSConvert<MFX_FOURCC_RGB4, MFX_FOURCC_BGR4>
+    : public BSConverterRGBASwop<MFX_FOURCC_RGB4, MFX_FOURCC_BGR4>
+{
+    IMPLEMENT_CLONE(BSConvert<MFX_FOURCC_RGB4 MFX_PP_COMMA() MFX_FOURCC_BGR4>);
+public:
+    BSConvert()
+    {
+        m_sample_size = 4;
+    }
+protected:
+
+    virtual mfxU8* start_pointer(mfxFrameSurface1 *surface)
+    {
+        mfxFrameData &data = surface->Data;
+        mfxFrameInfo &info = surface->Info;
+
+        mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
+
+        return data.R + info.CropX * m_sample_size + info.CropY * pitch;
+    }
+
+};
+
+template <>
+class BSConvert<MFX_FOURCC_BGR4, MFX_FOURCC_RGB4>
+    : public BSConverterRGBASwop<MFX_FOURCC_BGR4, MFX_FOURCC_RGB4>
+{
+    IMPLEMENT_CLONE(BSConvert<MFX_FOURCC_BGR4 MFX_PP_COMMA() MFX_FOURCC_RGB4>);
+public:
+    BSConvert()
+    {
+        m_sample_size = 4;
+    }
+protected:
+
+    virtual mfxU8* start_pointer(mfxFrameSurface1 *surface)
+    {
+        mfxFrameData &data = surface->Data;
+        mfxFrameInfo &info = surface->Info;
+
+        mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
+
+        return data.B + info.CropX * m_sample_size + info.CropY * pitch;
+    }
+
+};
+
 //generic copy converter for packeted formats
 template <int in_fmt, int out_fmt>
 class BSConverterPacketedCopy
@@ -580,6 +699,18 @@ class BSConvert<MFX_FOURCC_RGB4, MFX_FOURCC_RGB4>
     : public BSConverterPacketedCopy<MFX_FOURCC_RGB4, MFX_FOURCC_RGB4>
 {
     IMPLEMENT_CLONE(BSConvert<MFX_FOURCC_RGB4 MFX_PP_COMMA() MFX_FOURCC_RGB4>);
+public:
+    BSConvert()
+    {
+        m_sample_size = 4;//base class donot touch this member
+    }
+};
+
+template <>
+class BSConvert<MFX_FOURCC_BGR4, MFX_FOURCC_BGR4>
+    : public BSConverterPacketedCopy<MFX_FOURCC_BGR4, MFX_FOURCC_BGR4>
+{
+    IMPLEMENT_CLONE(BSConvert<MFX_FOURCC_BGR4 MFX_PP_COMMA() MFX_FOURCC_BGR4>);
 public:
     BSConvert()
     {

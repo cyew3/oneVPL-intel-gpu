@@ -153,6 +153,9 @@ IBitstreamConverterFactory * MFXPipelineFactory::CreateBitstreamCVTFactory( IPip
     fac->Register(new BSConvert<MFX_FOURCC_YV12, MFX_FOURCC_NV12>());
     fac->Register(new BSConvert<MFX_FOURCC_YV12, MFX_FOURCC_YV12>());
     fac->Register(new BSConvert<MFX_FOURCC_RGB4, MFX_FOURCC_RGB4>());
+    fac->Register(new BSConvert<MFX_FOURCC_BGR4, MFX_FOURCC_BGR4>());
+    fac->Register(new BSConvert<MFX_FOURCC_RGB4, MFX_FOURCC_BGR4>());
+    fac->Register(new BSConvert<MFX_FOURCC_BGR4, MFX_FOURCC_RGB4>());
     fac->Register(new BSConvert<MFX_FOURCC_RGB3, MFX_FOURCC_RGB4>());
     fac->Register(new BSConvert<MFX_FOURCC_RGB3, MFX_FOURCC_RGB3>());
     fac->Register(new BSConvert<MFX_FOURCC_YUY2, MFX_FOURCC_YUY2>());
