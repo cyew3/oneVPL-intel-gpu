@@ -110,6 +110,7 @@ enum LibVABackend
 #define MSDK_INVALID_SURF_IDX 0xFFFF
 
 #define MSDK_MAX_FILENAME_LEN 1024
+#define MSDK_MAX_USER_DATA_UNREG_SEI_LEN 80
 
 #define MSDK_PRINT_RET_MSG(ERR,MSG) {msdk_stringstream tmpStr1;tmpStr1<<std::endl<<"[ERROR], sts=" \
     <<StatusToString(ERR)<<"("<<ERR<<")"<<", "<<__FUNCTION__<<", "<<MSG<<" at "<<__FILE__<<":"<<__LINE__<<std::endl;msdk_err<<tmpStr1.str();}

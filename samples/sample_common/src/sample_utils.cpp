@@ -1755,6 +1755,49 @@ void ConfigureAspectRatioConversion(mfxInfoVPP* pVppInfo)
     }
 }
 
+void SEICalcSizeType(std::vector<mfxU8>& data, mfxU16 type, mfxU32 size)
+{
+    mfxU32 B = type;
+
+    while (B > 255)
+    {
+        data.push_back(255);
+        B -= 255;
+    }
+    data.push_back(mfxU8(B));
+
+    B = size;
+
+    while (B > 255)
+    {
+        data.push_back(255);
+        B -= 255;
+    }
+    data.push_back(mfxU8(B));
+}
+
+mfxU8 Char2Hex(mfxI8 ch)
+{
+    mfxI8 value = ch;
+    if(value >= '0' && value <='9')
+    {
+        value -= '0';
+    }
+    else if (value >= 'a' && value <='f')
+    {
+        value = value - 'a' + 10;
+    }
+    else if (value >= 'A' && value <='F')
+    {
+        value = value - 'A' + 10;
+    }
+    else
+    {
+        value = 0;
+    }
+    return value;
+}
+
 namespace {
     int g_trace_level = MSDK_TRACE_LEVEL_INFO;
 }

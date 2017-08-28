@@ -147,6 +147,7 @@ struct sInputParams
     bool shouldUseShiftedP010VPP;
 
     msdk_char DumpFileName[MSDK_MAX_FILENAME_LEN];
+    msdk_char uSEI[MSDK_MAX_USER_DATA_UNREG_SEI_LEN];
 
 #if defined (ENABLE_V4L2_SUPPORT)
     msdk_char DeviceName[MSDK_MAX_FILENAME_LEN];
@@ -277,6 +278,8 @@ protected:
     // external parameters for each component are stored in a vector
     std::vector<mfxExtBuffer*> m_VppExtParams;
     std::vector<mfxExtBuffer*> m_EncExtParams;
+
+    std::vector<mfxPayload*> m_UserDataUnregSEI;
 
     CHWDevice *m_hwdev;
 

@@ -128,6 +128,8 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("   [-membuf]                - size of memory buffer in frames\n"));
     msdk_printf(MSDK_STRING("   [-uncut]                 - do not cut output file in looped mode (in case of -timeout option)\n"));
     msdk_printf(MSDK_STRING("   [-dump fileName]         - dump MSDK components configuration to the file in text form\n"));
+    msdk_printf(MSDK_STRING("   [-usei]                  - insert user data unregistered SEI. eg: 7fc92488825d11e7bb31be2e44b06b34:0:MSDK (uuid:type<0-preifx/1-suffix>:message)\n"));
+    msdk_printf(MSDK_STRING("                              the suffix SEI for HEVCe can be inserted when CQP used or HRD disabled\n"));
 
     msdk_printf(MSDK_STRING("   [-extbrc:<on,off>]       - External BRC for HEVC encoder"));
 
@@ -502,6 +504,20 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->DumpFileName))
             {
                 PrintHelp(strInput[0], MSDK_STRING("File Name for dumping MSDK library configuration should be provided"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-usei")))
+        {
+            VAL_CHECK(i+1 >= nArgNum, i, strInput[i]);
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->uSEI))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("error: option '-usei' expects arguments\n"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            if (strlen(pParams->uSEI) < 32)
+            {
+                PrintHelp(strInput[0], MSDK_STRING("error: option '-usei' expects at least 32 char uuid\n"));
                 return MFX_ERR_UNSUPPORTED;
             }
         }

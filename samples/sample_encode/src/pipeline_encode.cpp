@@ -442,6 +442,69 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     m_mfxEncParams.mfx.FrameInfo.CropW = pInParams->nDstWidth;
     m_mfxEncParams.mfx.FrameInfo.CropH = pInParams->nDstHeight;
 
+    if(*pInParams->uSEI && (pInParams->CodecId == MFX_CODEC_AVC ||
+                pInParams->CodecId == MFX_CODEC_HEVC))
+    {
+        mfxPayload* pl = new mfxPayload;
+        mfxU8 size = 0;
+        std::vector<mfxU8> data;
+        std::vector<mfxU8> uuid;
+        std::vector<mfxI8> msg;
+        mfxU16 type = 5; //user data unregister
+        pl->CtrlFlags = 0;
+
+        mfxU16 index = 0;
+        for(; index < 16; index++)
+        {
+            mfxU8 bt = Char2Hex(pInParams->uSEI[index * 2]) * 16 +
+                Char2Hex(pInParams->uSEI[index * 2 + 1]);
+            uuid.push_back(bt);
+        }
+        index = 32; //32 charactors for uuid
+
+        if(strlen(pInParams->uSEI) > index)
+        {
+            index++; //skip the delimiter
+            if(pInParams->CodecId == MFX_CODEC_HEVC)
+            {
+                pl->CtrlFlags = pInParams->uSEI[index++] == '0' ? 0 : MFX_PAYLOAD_CTRL_SUFFIX;
+            }
+            else
+            {
+                pl->CtrlFlags = pInParams->uSEI[index++] == '0';
+            }
+        }
+        if(strlen(pInParams->uSEI) > index)
+        {
+            index++;
+            for(index; index < strlen(pInParams->uSEI); index++)
+            {
+                msg.push_back(pInParams->uSEI[index]);
+            }
+        }
+        size = uuid.size();
+        size += msg.size();
+        SEICalcSizeType(data, type, size);
+        mfxU8 calc_size = data.size();
+        size += calc_size;
+        pl->BufSize = mfxU16(size);
+        pl->Data    = new mfxU8[pl->BufSize];
+        pl->NumBit  = pl->BufSize * 8;
+        pl->Type    = mfxU16(type);
+
+        mfxU8* p = pl->Data;
+        memcpy(p, &data[0], calc_size);
+        p += calc_size;
+        memcpy(p, &uuid[0], uuid.size());
+        p += uuid.size();
+        memcpy(p, &msg[0], msg.size());
+
+        m_UserDataUnregSEI.push_back(pl);
+
+        m_encCtrl.Payload = m_UserDataUnregSEI.data();
+        m_encCtrl.NumPayload = m_UserDataUnregSEI.size();
+    }
+
     // we don't specify profile and level and let the encoder choose those basing on parameters
     // we must specify profile only for MVC codec
     if (MVC_ENABLED & m_MVCflags)
@@ -457,8 +520,8 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     {
         // ViewOuput option requested
         m_CodingOption.ViewOutput = MFX_CODINGOPTION_ON;
-        m_EncExtParams.push_back((mfxExtBuffer *)&m_CodingOption);
     }
+    m_EncExtParams.push_back((mfxExtBuffer *)&m_CodingOption);
 
     // configure the depth of the look ahead BRC if specified in command line
     if (pInParams->nLADepth || pInParams->nMaxSliceSize || pInParams->nMaxFrameSize || pInParams->nBRefType || (pInParams->nExtBRC && (pInParams->CodecId == MFX_CODEC_HEVC || pInParams->CodecId == MFX_CODEC_AVC)))
@@ -1398,6 +1461,16 @@ void CEncodingPipeline::Close()
 #endif
     }
 
+    if (m_UserDataUnregSEI.size() > 0)
+    {
+        for (auto & i_pl : m_UserDataUnregSEI)
+        {
+            if (i_pl) delete[] i_pl->Data;
+            delete i_pl;
+        }
+        m_UserDataUnregSEI.clear();
+    }
+
     MSDK_SAFE_DELETE(m_pmfxENC);
     MSDK_SAFE_DELETE(m_pmfxVPP);
 
@@ -1597,7 +1670,6 @@ mfxStatus CEncodingPipeline::Run()
         msdk_printf(MSDK_STRING("Press Ctrl+C to terminate this application\n"));
     }
 #endif
-
     // main loop, preprocessing and encoding
     while (MFX_ERR_NONE <= sts || MFX_ERR_MORE_DATA == sts)
     {
