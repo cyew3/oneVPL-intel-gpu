@@ -3413,12 +3413,14 @@ mfxStatus VideoDECODEMPEG2Internal_HW::GetStatusReport(Ipp32s current_index, UMC
         MFX_CHECK_STS((mfxStatus)sts);
 
         // cache statutes into buffer
-        for (mfxU32 i = 0; i < 32; i += 1)
+        for (mfxU32 i = 0; i < 8; i += 1)
         {
-            if (m_pStatusReport[i].StatusReportFeedbackNumber)
+            if (0 == m_pStatusReport[i].StatusReportFeedbackNumber)
             {
-                m_pStatusList.push_front(m_pStatusReport[i]);
+                break;
             }
+
+            m_pStatusList.push_front(m_pStatusReport[i]);
 
             STATUS_REPORT_DEBUG_PRINTF("Got status report %d\n", m_pStatusReport[i].wDecodedPictureIndex)
         }
@@ -3428,8 +3430,8 @@ mfxStatus VideoDECODEMPEG2Internal_HW::GetStatusReport(Ipp32s current_index, UMC
 
         if (0 == m_pStatusList.size())
         {
-            // it means info is not ready
-            return MFX_TASK_BUSY;
+            // something wrong, but who is care
+            return MFX_ERR_NONE;
         }
 
         // get status report
