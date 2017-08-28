@@ -80,6 +80,7 @@ void sInputParams::Reset()
     DetailLevel=-1;
 #ifdef ENABLE_FF
     MFMode = MFX_MF_DEFAULT;
+    numMFEFrames = 0;
     mfeTimeout = 0;
 #endif
 }
@@ -2202,12 +2203,19 @@ mfxStatus CTranscodingPipeline::InitEncMfxParams(sInputParams *pInParams)
     m_mfxEncParams.AsyncDepth                  = m_AsyncDepth;
 
 #ifdef ENABLE_FF
-    m_ExtMFEParam.MaxNumFrames = pInParams->numMFEFrames;
-    m_ExtMFEParam.MFMode = pInParams->MFMode;
-    m_ExtMFEControl.Timeout = pInParams->mfeTimeout;
+    if(pInParams->numMFEFrames || pInParams->MFMode)
+    {
+        m_ExtMFEParam.MaxNumFrames = pInParams->numMFEFrames;
+        m_ExtMFEParam.MFMode = pInParams->MFMode;
 
-    m_EncExtParams.push_back((mfxExtBuffer*)&m_ExtMFEParam);
-    m_EncExtParams.push_back((mfxExtBuffer*)&m_ExtMFEControl);
+        m_EncExtParams.push_back((mfxExtBuffer*)&m_ExtMFEParam);
+    }
+
+    if(pInParams->mfeTimeout)
+    {
+        m_ExtMFEControl.Timeout = pInParams->mfeTimeout;
+        m_EncExtParams.push_back((mfxExtBuffer*)&m_ExtMFEControl);
+    }
 
 #endif
 

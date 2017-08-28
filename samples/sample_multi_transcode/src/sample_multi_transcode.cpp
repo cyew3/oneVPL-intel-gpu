@@ -565,7 +565,6 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
     mfxU16 usedMFEMaxFrames = 0;
     mfxU16 usedMFEMode = 0;
 
-
     for (mfxU32 i = 0; i < m_InputParamsArray.size(); i++)
     {
         // loop over all sessions and check mfe-specific params
@@ -575,13 +574,13 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
             usedMFEMaxFrames = m_InputParamsArray[i].numMFEFrames;
             for (mfxU32 j = 0; j < m_InputParamsArray.size(); j++)
             {
-                if(Source == m_InputParamsArray[i].eMode &&
+                if(m_InputParamsArray[j].numMFEFrames &&
                    m_InputParamsArray[j].numMFEFrames != usedMFEMaxFrames)
                 {
                     m_InputParamsArray[j].numMFEFrames = usedMFEMaxFrames;
                     allMFEFramesEqual = false;
-                    m_InputParamsArray[i].MFMode = m_InputParamsArray[i].MFMode < MFX_MF_AUTO
-                      ? MFX_MF_AUTO : m_InputParamsArray[i].MFMode;
+                    m_InputParamsArray[j].MFMode = m_InputParamsArray[j].MFMode < MFX_MF_AUTO
+                      ? MFX_MF_AUTO : m_InputParamsArray[j].MFMode;
                 }
                 if(m_InputParamsArray[j].bIsJoin == false)
                 {
@@ -595,7 +594,7 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
             usedMFEMode = m_InputParamsArray[i].MFMode;
             for (mfxU32 j = 0; j < m_InputParamsArray.size(); j++)
             {
-                if(Source == m_InputParamsArray[i].eMode &&
+                if(m_InputParamsArray[j].MFMode &&
                    m_InputParamsArray[j].MFMode != usedMFEMode)
                 {
                     m_InputParamsArray[j].MFMode = usedMFEMode;
