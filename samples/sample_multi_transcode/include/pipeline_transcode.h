@@ -51,6 +51,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include "hw_device.h"
 #include "plugin_loader.h"
+#include "sample_defs.h"
 
 #ifdef ENABLE_FF
 #include "brc_routines.h"
@@ -195,7 +196,7 @@ namespace TranscodingSample
 
         mfxU32 statisticsWindowSize;
         FILE* statisticsLogFile;
-        std::string* pDumpLogFileName;
+        msdk_string DumpLogFileName;
 
         bool bLABRC; // use look ahead bitrate control algorithm
         mfxU16 nLADepth; // depth of the look ahead bitrate control  algorithm
@@ -322,12 +323,17 @@ namespace TranscodingSample
                 ofile = file;
             }
 
-            inline void SetDumpName(const std::string* name){
+            inline void SetDumpName(const msdk_char* name)
+            {
                 DumpLogFileName = *name;
-                if(!DumpLogFileName.empty())
+                if (!DumpLogFileName.empty())
+                {
                     TurnOnDumping();
+                }
                 else
+                {
                     TurnOffDumping();
+                }
             }
 
             inline void SetDirection(const msdk_char *dir)
@@ -350,14 +356,35 @@ namespace TranscodingSample
                                 GetTimeStdDev(false), GetMinTime(false), GetMaxTime(false), GetAvgTime(false));
                 fflush(ofile);
 
-                if(!DumpLogFileName.empty()){
-                    char buf[128];
-                    msdk_sprintf(buf, "%s_ID_%d.log", DumpLogFileName.c_str(), numPipelineid);
+                if(!DumpLogFileName.empty())
+                {
+                    msdk_char buf[MSDK_MAX_FILENAME_LEN];
+                    msdk_sprintf(buf, MSDK_STRING("%s_ID_%d.log"), DumpLogFileName.c_str(), numPipelineid);
                     DumpDeltas(buf);
                 }
             }
+
+            inline void DumpDeltas(msdk_char* file_name)
+            {
+                if (m_time_deltas.empty())
+                    return;
+
+                FILE* dump_file = NULL;
+                if (!MSDK_FOPEN(dump_file, file_name, MSDK_STRING("a")))
+                {
+                    for (std::vector<mfxF64>::const_iterator it = m_time_deltas.begin(); it != m_time_deltas.end(); ++it)
+                    {
+                        fprintf(dump_file, "%.3f, ", (*it));
+                    }
+                    fclose(dump_file);
+                }
+                else
+                {
+                    perror("DumpDeltas: file cannot be open");
+                }
+            }
         protected:
-            std::string DumpLogFileName;
+            msdk_tstring DumpLogFileName;
             FILE*     ofile;
             msdk_char bufDir[MAX_PREF_LEN];
     };

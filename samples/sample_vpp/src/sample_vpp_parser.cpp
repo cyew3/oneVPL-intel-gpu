@@ -170,7 +170,7 @@ msdk_printf(MSDK_STRING("   [-rotate (angle)]   - enable rotation. Supported ang
 msdk_printf(MSDK_STRING("   [-scaling_mode (mode)] - specify type of scaling to be used for resize.\n"));
 msdk_printf(MSDK_STRING("   [-denoise (level)]  - enable denoise algorithm. Level is optional \n"));
 #ifdef ENABLE_FF
-msdk_printf(MSDK_STRING("   [-chroma_siting (vmode hmode)] - specify chroma siting mode for VPP color conversion, allowwed values: vtop|vcen|vbot hleft|hcen\n"));
+msdk_printf(MSDK_STRING("   [-chroma_siting (vmode hmode)] - specify chroma siting mode for VPP color conversion, allowed values: vtop|vcen|vbot hleft|hcen\n"));
 #endif
 msdk_printf(MSDK_STRING("                         range of  noise level is [0, 100]\n"));
 msdk_printf(MSDK_STRING("   [-detail  (level)]  - enable detail enhancement algorithm. Level is optional \n"));

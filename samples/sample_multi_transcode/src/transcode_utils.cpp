@@ -500,7 +500,9 @@ mfxStatus CmdProcessor::ParseCmdLine(int argc, msdk_char *argv[])
             --argc;
             ++argv;
             if (!argv[0])
-                 msdk_printf(MSDK_STRING("error: no argument given for 'stat-dump' option\n"));
+            {
+                msdk_printf(MSDK_STRING("error: no argument given for 'stat-dump' option\n"));
+            }
             DumpLogFileName = argv[0];
         }
         else

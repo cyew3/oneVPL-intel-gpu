@@ -108,21 +108,6 @@ public:
                 GetMinTime(false),GetMaxTime(false));
     }
 
-    inline void DumpDeltas(const char* file_name)
-    {
-        if (m_time_deltas.empty())
-            return;
-
-        FILE* dump_file = fopen(file_name, "a");
-        if (dump_file){
-            for (std::vector<mfxF64>::const_iterator it = m_time_deltas.begin(); it != m_time_deltas.end(); ++it){
-                fprintf(dump_file, "%.3f, ", (*it));
-            }
-            fclose(dump_file);
-        }else
-            perror("DumpDeltas: file cannot be open");
-    }
-
     inline mfxU64 GetNumMeasurements()
     {
         return numMeasurements;
@@ -131,43 +116,35 @@ public:
     inline mfxF64 GetAvgTime(bool inSeconds=true)
     {
         if (inSeconds)
-            return (numMeasurements ? totalTime/numMeasurements : 0);
+        {
+            return (numMeasurements ? totalTime / numMeasurements : 0);
+        }
         else
-            return (numMeasurements ? totalTime/numMeasurements : 0) * 1000;
+        {
+            return (numMeasurements ? totalTime / numMeasurements : 0) * 1000;
+        }
     }
 
     inline mfxF64 GetTimeStdDev(bool inSeconds=true)
     {
         mfxF64 avg = GetAvgTime();
         mfxF64 ftmp = (numMeasurements ? sqrt(totalTimeSquares/numMeasurements-avg*avg) : 0.0);
-        if(inSeconds)
-            return ftmp;
-        else
-            return ftmp * 1000;
+        return inSeconds ? ftmp : ftmp * 1000;
     }
 
     inline mfxF64 GetMinTime(bool inSeconds=true)
     {
-        if (inSeconds)
-            return (minTime);
-        else
-            return (minTime * 1000);
+        return inSeconds ? minTime : minTime * 1000;
     }
 
     inline mfxF64 GetMaxTime(bool inSeconds=true)
     {
-        if (inSeconds)
-            return (maxTime);
-        else
-            return (maxTime * 1000);
+        return inSeconds ? maxTime : maxTime * 1000;
     }
 
     inline mfxF64 GetTotalTime(bool inSeconds=true)
     {
-        if (inSeconds)
-            return  (totalTime);
-        else
-            return  (totalTime * 1000);
+        return inSeconds ? totalTime : totalTime * 1000;
     }
 
     inline void ResetStatistics()
