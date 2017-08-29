@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2016 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2017 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -40,6 +40,7 @@ File Name: mfx_dispatcher.h
 #include "mfxenc.h"
 #include "mfxpak.h"
 
+#define INTEL_VENDOR_ID 0x8086
 
 mfxStatus MFXQueryVersion(mfxSession session, mfxVersion *version);
 

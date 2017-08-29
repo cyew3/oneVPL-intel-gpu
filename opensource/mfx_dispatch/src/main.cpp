@@ -240,7 +240,6 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
     // Load HW library or RT from system location
     curImplIdx = implTypesRange[implMethod].minIndex;
     maxImplIdx = implTypesRange[implMethod].maxIndex;
-    mfxU32 hwImplIdx = 0;
     do
     {
         int currentStorage = MFX::MFX_STORAGE_ID_FIRST;
@@ -280,8 +279,6 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
                         break;
                     }
                     DISPATCHER_LOG_INFO((("loading library %S\n"), MSDK2WIDE(dllName)));
-                    if (MFX_LIB_HARDWARE == implTypes[curImplIdx].implType)
-                        hwImplIdx = curImplIdx;
                     // try to load the selected DLL
                     curImpl = implTypes[curImplIdx].impl;
                     mfxRes = pHandle->LoadSelectedDLL(dllName, implType, curImpl, implInterface, par);
@@ -378,11 +375,6 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
     curImplIdx = implTypesRange[implMethod].minIndex;
     do
     {
-        mfxU32 backupIdx = curImplIdx;
-        if (MFX_LIB_HARDWARE == implTypes[curImplIdx].implType)
-        {
-            curImplIdx = hwImplIdx;
-        }
         implInterface = implInterfaceOrig;
 
         if (par.Implementation & MFX_IMPL_AUDIO)
@@ -409,7 +401,10 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
                     {
                         implInterface = MFX_IMPL_VIA_ANY;
                     }
-                    mfxRes = MFX::SelectImplementationType(implTypes[curImplIdx].adapterID, &implInterface, NULL, NULL);
+                    mfxU32 curVendorID = 0, curDeviceID = 0;
+                    mfxRes = MFX::SelectImplementationType(implTypes[curImplIdx].adapterID, &implInterface, &curVendorID, &curDeviceID);
+                    if (curVendorID != INTEL_VENDOR_ID)
+                        mfxRes = MFX_ERR_UNKNOWN;
                 }
                 if (MFX_ERR_NONE == mfxRes)
                 {
@@ -433,7 +428,6 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
                     pHandle = new MFX_DISP_HANDLE(requiredVersion);
                 }
         }
-        curImplIdx = backupIdx;
     }
     while ((MFX_ERR_NONE > mfxRes) && (++curImplIdx <= maxImplIdx));
     delete pHandle;
