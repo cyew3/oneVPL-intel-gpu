@@ -696,23 +696,15 @@ public:
 
     ~DXVAHDVideoProcessor()    
     {
-        delete [] m_cameraFGC.pSegment;
-        m_cachedReadyTaskIndex.clear();
-        std::map<void *, DXVAHD_STREAM_DATA *>::iterator it;
-        for (it = m_Streams.begin() ; it != m_Streams.end(); it++)
+        DestroyDevice();
+
+        if (m_cameraFGC.pSegment)
         {
-            SAFE_DELETE_ARRAY(it->second);
+            delete[] m_cameraFGC.pSegment;
+            m_cameraFGC.pSegment = NULL;
         }
-
-        if (m_camera3DLUT17)
-            free(m_camera3DLUT17);
-
-        if(m_camera3DLUT33)
-            free(m_camera3DLUT33);
-
-        if(m_camera3DLUT65)
-            free(m_camera3DLUT65);
     };
+
     mfxStatus DestroyDevice(void);
     mfxStatus CreateDevice(VideoCORE *core, mfxVideoParam *par, bool temporary);
     mfxStatus QueryCapabilities( MfxHwVideoProcessing::mfxVppCaps &caps );

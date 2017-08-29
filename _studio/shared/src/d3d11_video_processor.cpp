@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2017 Intel Corporation. All Rights Reserved.
 //
 
 #if defined (MFX_D3D11_ENABLED)
@@ -728,16 +728,28 @@ mfxStatus D3D11VideoProcessor::Close()
         m_file = 0;
     }
     if (m_cameraFGC.pFGSegment)
-        delete [] m_cameraFGC.pFGSegment;
+    {
+        delete[] m_cameraFGC.pFGSegment;
+        m_cameraFGC.pFGSegment = 0;
+    }
 
     if (m_camera3DLUT17)
+    {
         free(m_camera3DLUT17);
+        m_camera3DLUT17 = NULL;
+    }
 
-    if(m_camera3DLUT33)
+    if (m_camera3DLUT33)
+    {
         free(m_camera3DLUT33);
+        m_camera3DLUT33 = NULL;
+    }
 
-    if(m_camera3DLUT65)
+    if (m_camera3DLUT65)
+    {
         free(m_camera3DLUT65);
+        m_camera3DLUT65 = NULL;
+    }
 
     return MFX_ERR_NONE;
 
