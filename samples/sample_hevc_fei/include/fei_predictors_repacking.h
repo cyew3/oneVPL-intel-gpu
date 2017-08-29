@@ -29,20 +29,25 @@ public:
     PredictorsRepaking();
     ~PredictorsRepaking() {}
 
-    mfxStatus Init(mfxU8 mode, mfxU8 preencDSstrength, const mfxVideoParam& videoParams);
+    mfxStatus Init(const mfxVideoParam& videoParams, mfxU8 preencDSstrength = 1);
     mfxStatus RepackPredictors(const HevcTask& eTask, mfxExtFeiHevcEncMVPredictors& mvp);
+
     enum
     {
         PERFORMANCE = 0,
         QUALITY     = 1
     };
+
+    inline void SetPerfomanceRepackingMode() { m_repakingMode = PERFORMANCE; }
+    inline void SetQualityRepackingMode() { m_repakingMode = QUALITY; }
+
 private:
     const mfxU8  m_max_fei_enc_mvp_num;// maximum number of predictors for encoder
     //variables
     mfxU8  m_repakingMode;       // repaking type: PERFORMANCE or QUALITY
     mfxU16 m_width;              // input surface width
     mfxU16 m_height;             // input surface height
-    mfxU8  m_preencDSstrength;   // power of 2 for down-sampling: 0..3
+    mfxU8  m_downsample_power2;  // power of 2 for down-sampling: 0..3
     mfxU16 m_widthCU_ds;         // width in CU (16x16) of ds surface
     mfxU16 m_heightCU_ds;        // height in CU (16x16) of ds surface
     mfxU16 m_widthCU_enc;        // width in CU (16x16) for encoder
@@ -51,6 +56,7 @@ private:
     //functions
     mfxStatus RepackPredictorsPerformance(const HevcTask& eTask, mfxExtFeiHevcEncMVPredictors& mvp);
     mfxStatus RepackPredictorsQuality(const HevcTask& eTask, mfxExtFeiHevcEncMVPredictors& mvp);
+    mfxU8 ConvertDSratioPower2(mfxU8 DSfactor);
 };
 
 #endif // #define __FEI_PREDICTORS_REPACKING_H__

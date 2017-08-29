@@ -27,30 +27,46 @@ PredictorsRepaking::PredictorsRepaking() :
     m_repakingMode(PERFORMANCE),
     m_width(0),
     m_height(0),
-    m_preencDSstrength(0),
+    m_downsample_power2(0),
     m_widthCU_ds(0),
     m_heightCU_ds(0),
     m_widthCU_enc(0),
     m_heightCU_enc(0)
 {};
 
-mfxStatus PredictorsRepaking::Init(mfxU8 mode, mfxU8 preencDSstrength, const mfxVideoParam& videoParams)
+mfxStatus PredictorsRepaking::Init(const mfxVideoParam& videoParams, mfxU8 downsample_ratio)
 {
     if (videoParams.mfx.FrameInfo.Width == 0 || videoParams.mfx.FrameInfo.Height == 0)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
-    m_repakingMode = mode;
     m_width = videoParams.mfx.FrameInfo.Width;
     m_height = videoParams.mfx.FrameInfo.Height;
-    m_preencDSstrength = preencDSstrength;
+    m_downsample_power2 = ConvertDSratioPower2(downsample_ratio);
 
-    m_widthCU_ds   = (MSDK_ALIGN16((MSDK_ALIGN16(m_width) >> m_preencDSstrength))) >> 4;
-    m_heightCU_ds  = (MSDK_ALIGN16((MSDK_ALIGN16(m_height) >> m_preencDSstrength))) >> 4;
+    m_widthCU_ds   = (MSDK_ALIGN16((MSDK_ALIGN16(m_width) >> m_downsample_power2))) >> 4;
+    m_heightCU_ds  = (MSDK_ALIGN16((MSDK_ALIGN16(m_height) >> m_downsample_power2))) >> 4;
     m_widthCU_enc  = (MSDK_ALIGN32(m_width)) >> 4;
     m_heightCU_enc = (MSDK_ALIGN32(m_height)) >> 4;
 
     return MFX_ERR_NONE;
 };
+
+mfxU8 PredictorsRepaking::ConvertDSratioPower2(mfxU8 downsample_ratio)
+{
+    switch (downsample_ratio)
+    {
+        case 1:
+            return 0;
+        case 2:
+            return 1;
+        case 4:
+            return 2;
+        case 8:
+            return 3;
+        default:
+            return 0;
+    }
+}
 
 mfxStatus PredictorsRepaking::RepackPredictors(const HevcTask& eTask, mfxExtFeiHevcEncMVPredictors& mvp)
 {
@@ -115,7 +131,7 @@ mfxStatus PredictorsRepaking::RepackPredictorsPerformance(const HevcTask& eTask,
                 mvp.Data[permutEncIdx].RefIdx[j].RefL0 = refIdx_vec[j]->RefL0;
                 mvp.Data[permutEncIdx].RefIdx[j].RefL1 = refIdx_vec[j]->RefL1;
 
-                if (m_preencDSstrength == 0)// w/o VPP
+                if (m_downsample_power2 == 0)// w/o VPP
                 {
                     if (colIdx >= m_widthCU_ds || rowIdx >= m_heightCU_ds)
                     {
@@ -135,7 +151,7 @@ mfxStatus PredictorsRepaking::RepackPredictorsPerformance(const HevcTask& eTask,
                     mfxU32 colMVIdx;    // column index for motion vector
                     mfxU32 preencMVIdx; // linear index for motion vector
 
-                    switch (m_preencDSstrength)
+                    switch (m_downsample_power2)
                     {
                     case 1:
                         preencCUIdx = (rowIdx >> 1) * m_widthCU_ds + (colIdx >> 1);
@@ -163,10 +179,10 @@ mfxStatus PredictorsRepaking::RepackPredictorsPerformance(const HevcTask& eTask,
                     mvp.Data[permutEncIdx].MV[j][0] = mvs_vec[j]->MB[preencCUIdx].MV[ZigzagOrder[preencMVIdx]][0];
                     mvp.Data[permutEncIdx].MV[j][1] = mvs_vec[j]->MB[preencCUIdx].MV[ZigzagOrder[preencMVIdx]][1];
 
-                    mvp.Data[permutEncIdx].MV[j][0].x <<= m_preencDSstrength;
-                    mvp.Data[permutEncIdx].MV[j][0].y <<= m_preencDSstrength;
-                    mvp.Data[permutEncIdx].MV[j][1].x <<= m_preencDSstrength;
-                    mvp.Data[permutEncIdx].MV[j][1].y <<= m_preencDSstrength;
+                    mvp.Data[permutEncIdx].MV[j][0].x <<= m_downsample_power2;
+                    mvp.Data[permutEncIdx].MV[j][0].y <<= m_downsample_power2;
+                    mvp.Data[permutEncIdx].MV[j][1].x <<= m_downsample_power2;
+                    mvp.Data[permutEncIdx].MV[j][1].y <<= m_downsample_power2;
                 }
             }
         }
