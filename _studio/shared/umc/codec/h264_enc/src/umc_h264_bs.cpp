@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -2409,6 +2409,8 @@ Status H264BsReal_ResidualBlock_CABAC(
     // There is no need to encode the encode the existence of the last significant coefficient in the coefficient map
     if (nLastNonZeroCoeff == maxNumCoeff - 1)
         maxNumCoeff--;
+    else if (nLastNonZeroCoeff >= maxNumCoeff)
+        return UMC_ERR_INVALID_PARAMS;
 
     switch (ctxBlockCat)
     {
@@ -2638,6 +2640,8 @@ Status H264BsFake_ResidualBlock_CABAC(
     // There is no need to encode the encode the existence of the last significant coefficient in the coefficient map
     if (nLastNonZeroCoeff == maxNumCoeff - 1)
         maxNumCoeff--;
+    else if (nLastNonZeroCoeff >= maxNumCoeff)
+        return UMC_ERR_INVALID_PARAMS;
 
     switch (ctxBlockCat)
     {
