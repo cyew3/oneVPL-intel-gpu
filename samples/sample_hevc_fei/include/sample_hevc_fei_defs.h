@@ -162,7 +162,7 @@ public:
         }
     }
 
-    explicit ExtBufWrapper(const ExtBufWrapper& ref)
+    ExtBufWrapper(const ExtBufWrapper& ref)
     {
         *this = ref; // call to operator=
     }

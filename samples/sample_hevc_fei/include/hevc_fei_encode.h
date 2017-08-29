@@ -23,25 +23,31 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include <vector>
 #include "sample_hevc_fei_defs.h"
 #include "ref_list_manager.h"
+#include "vaapi_buffer_allocator.h"
 
 class FEI_Encode
 {
 public:
-    FEI_Encode(MFXVideoSession* session, const mfxFrameInfo& frameInfo, const sInputParams& encParams);
+    FEI_Encode(MFXVideoSession* session, mfxHDL hdl, MfxVideoParamsWrapper& encode_pars, const msdk_char* dst_output);
     ~FEI_Encode();
 
     mfxStatus Init();
     mfxStatus Query();
     mfxStatus Reset(mfxVideoParam& par);
     mfxStatus QueryIOSurf(mfxFrameAllocRequest* request);
+
+    // prepare required internal resources (e.g. buffer allocation) for component initialization
+    mfxStatus PreInit();
+
     const MfxVideoParamsWrapper& GetVideoParam();
     mfxFrameInfo* GetFrameInfo();
     mfxStatus EncodeFrame(mfxFrameSurface1* pSurf);
     mfxStatus SetCtrlParams(const HevcTask& task); // for encoded order
 
 private:
-    MFXVideoSession*    m_pmfxSession;
-    MFXVideoENCODE      m_mfxENCODE;
+    MFXVideoSession*        m_pmfxSession;
+    MFXVideoENCODE          m_mfxENCODE;
+    vaapiBufferAllocator    m_buf_allocator;
 
     MfxVideoParamsWrapper m_videoParams; // reflects current state Encode parameters
     mfxEncodeCtrl         m_encodeCtrl;

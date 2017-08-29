@@ -18,16 +18,15 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 \**********************************************************************************/
 #include "hevc_fei_encode.h"
 
-FEI_Encode::FEI_Encode(MFXVideoSession* session, const mfxFrameInfo& frameInfo, const sInputParams& encParams)
+FEI_Encode::FEI_Encode(MFXVideoSession* session, mfxHDL hdl, MfxVideoParamsWrapper& encode_pars,
+        const msdk_char* dst_output)
     : m_pmfxSession(session)
     , m_mfxENCODE(*m_pmfxSession)
+    , m_buf_allocator(hdl)
+    , m_videoParams(encode_pars)
     , m_syncPoint(0)
-    , m_dstFileName(encParams.strDstFile)
+    , m_dstFileName(dst_output)
 {
-    MSDK_MEMCPY_VAR(m_videoParams.mfx.FrameInfo, &frameInfo, sizeof(mfxFrameInfo));
-    mfxStatus sts = SetEncodeParameters(encParams);
-    if (sts != MFX_ERR_NONE) throw std::exception();
-
     MSDK_ZERO_MEMORY(m_encodeCtrl);
     m_encodeCtrl.FrameType = MFX_FRAMETYPE_UNKNOWN;
     m_encodeCtrl.QP = m_videoParams.mfx.QPI;
@@ -41,39 +40,15 @@ FEI_Encode::~FEI_Encode()
     WipeMfxBitstream(&m_bitstream);
 }
 
-mfxStatus FEI_Encode::SetEncodeParameters(const sInputParams& encParams)
+mfxStatus FEI_Encode::PreInit()
 {
-    // default settings
-    m_videoParams.mfx.CodecId           = MFX_CODEC_HEVC;
-    m_videoParams.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
-    m_videoParams.mfx.TargetUsage       = 0;
-    m_videoParams.mfx.TargetKbps        = 0;
-    m_videoParams.AsyncDepth  = 1; // inherited limitation from AVC FEI
-    m_videoParams.IOPattern   = MFX_IOPATTERN_IN_VIDEO_MEMORY;
+    // call Query to check that Encode's parameters are valid
+    mfxStatus sts = Query();
+    MSDK_CHECK_STATUS(sts, "FEI Encode Query failed");
 
-    // user defined settings
-    m_videoParams.mfx.QPI = m_videoParams.mfx.QPP = m_videoParams.mfx.QPB = encParams.QP;
-    m_videoParams.mfx.GopRefDist  = encParams.nRefDist;
-    m_videoParams.mfx.GopPicSize  = encParams.nGopSize;
-    m_videoParams.mfx.GopOptFlag  = encParams.nGopOptFlag;
-    m_videoParams.mfx.IdrInterval = encParams.nIdrInterval;
-    m_videoParams.mfx.NumRefFrame = encParams.nNumRef;
-    m_videoParams.mfx.NumSlice    = encParams.nNumSlices;
-    m_videoParams.mfx.EncodedOrder= encParams.bEncodedOrder;
-
-    mfxExtCodingOption2* pCO2 = m_videoParams.AddExtBuffer<mfxExtCodingOption2>();
-    MSDK_CHECK_POINTER(pCO2, MFX_ERR_NOT_INITIALIZED);
-
-    // configure B-pyramid settings
-    pCO2->BRefType = encParams.BRefType;
-
-    mfxExtCodingOption3* pCO3 = m_videoParams.AddExtBuffer<mfxExtCodingOption3>();
-    MSDK_CHECK_POINTER(pCO3, MFX_ERR_NOT_INITIALIZED);
-
-    pCO3->GPB = encParams.GPB;
-    pCO3->NumRefActiveP[0]   = encParams.NumRefActiveP;
-    pCO3->NumRefActiveBL0[0] = encParams.NumRefActiveBL0;
-    pCO3->NumRefActiveBL1[0] = encParams.NumRefActiveBL1;
+    mfxU32 nEncodedDataBufferSize = m_videoParams.mfx.FrameInfo.Width * m_videoParams.mfx.FrameInfo.Height * 4;
+    sts = InitMfxBitstream(&m_bitstream, nEncodedDataBufferSize);
+    MSDK_CHECK_STATUS_SAFE(sts, "InitMfxBitstream failed", WipeMfxBitstream(&m_bitstream));
 
     return MFX_ERR_NONE;
 }
@@ -90,10 +65,6 @@ mfxStatus FEI_Encode::Init()
 {
     mfxStatus sts = m_FileWriter.Init(m_dstFileName.c_str());
     MSDK_CHECK_STATUS(sts, "FileWriter Init failed");
-
-    mfxU32 nEncodedDataBufferSize = m_videoParams.mfx.FrameInfo.Width * m_videoParams.mfx.FrameInfo.Height * 4;
-    sts = InitMfxBitstream(&m_bitstream, nEncodedDataBufferSize);
-    MSDK_CHECK_STATUS_SAFE(sts, "InitMfxBitstream failed", WipeMfxBitstream(&m_bitstream));
 
     sts = m_mfxENCODE.Init(&m_videoParams);
     MSDK_CHECK_STATUS(sts, "FEI Encode Init failed");

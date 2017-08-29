@@ -20,11 +20,21 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "fei_utils.h"
 #include "hevc_fei_preenc.h"
 
-FEI_Preenc::FEI_Preenc(MFXVideoSession * session, const mfxFrameInfo& frameInfo)
+FEI_Preenc::FEI_Preenc(MFXVideoSession* session, MfxVideoParamsWrapper& preenc_pars,
+    const msdk_char* mvoutFile, const msdk_char* mbstatoutFile)
     : m_pmfxSession(session)
     , m_mfxPREENC(*m_pmfxSession)
+    , m_videoParams(preenc_pars)
 {
-    MSDK_MEMCPY_VAR(m_videoParams.mfx.FrameInfo, &frameInfo, sizeof(mfxFrameInfo));
+    if (0 != msdk_strlen(mvoutFile))
+    {
+        m_pFile_MV_out.reset(new FileHandler(mvoutFile, MSDK_STRING("wb")));
+    }
+
+    if (0 != msdk_strlen(mbstatoutFile))
+    {
+        m_pFile_MBstat_out.reset(new FileHandler(mbstatoutFile, MSDK_STRING("wb")));
+    }
 
     /* Default value for I-frames */
     for (size_t i = 0; i < 16; i++)
@@ -55,10 +65,7 @@ FEI_Preenc::~FEI_Preenc()
 
 mfxStatus FEI_Preenc::Init()
 {
-    mfxStatus sts = ResetExtBuffers(m_videoParams);
-    MSDK_CHECK_STATUS(sts, "FEI PreENC ResetExtBuffers failed");
-
-    sts = m_mfxPREENC.Init(&m_videoParams);
+    mfxStatus sts = m_mfxPREENC.Init(&m_videoParams);
     MSDK_CHECK_STATUS(sts, "FEI PreENC Init failed");
     MSDK_CHECK_WRN(sts, "FEI PreENC Init");
 
@@ -97,61 +104,15 @@ mfxStatus FEI_Preenc::QueryIOSurf(mfxFrameAllocRequest* request)
     request->NumFrameMin =
     request->NumFrameSuggested = m_videoParams.mfx.NumRefFrame + 1;
 
-
     return MFX_ERR_NONE;
 }
 
-mfxStatus FEI_Preenc::SetParameters(const sInputParams& params)
+mfxStatus FEI_Preenc::PreInit()
 {
     mfxStatus sts = MFX_ERR_NONE;
 
-    // default settings
-    m_videoParams.mfx.CodecId           = MFX_CODEC_AVC; // not MFX_CODEC_HEVC until PreENC is changed for HEVC
-    m_videoParams.mfx.RateControlMethod = MFX_RATECONTROL_CQP; // For now FEI work with RATECONTROL_CQP only
-    m_videoParams.mfx.TargetUsage       = 0; // FEI doesn't have support of
-    m_videoParams.mfx.TargetKbps        = 0; // these features
-    m_videoParams.AsyncDepth            = 1; // inherited limitation from AVC FEI
-    m_videoParams.IOPattern             = MFX_IOPATTERN_IN_VIDEO_MEMORY;
-
-    // user defined settings
-    m_videoParams.mfx.QPI = m_videoParams.mfx.QPP = m_videoParams.mfx.QPB = params.QP;
-    m_videoParams.mfx.GopRefDist   = params.nRefDist;
-    m_videoParams.mfx.GopPicSize   = params.nGopSize;
-    m_videoParams.mfx.GopOptFlag   = params.nGopOptFlag;
-    m_videoParams.mfx.IdrInterval  = params.nIdrInterval;
-    m_videoParams.mfx.NumRefFrame  = params.nNumRef;
-    m_videoParams.mfx.NumSlice     = params.nNumSlices;
-    m_videoParams.mfx.EncodedOrder = params.bEncodedOrder;
-
-    /* Create extension buffer to Init FEI PREENC */
-    mfxExtFeiParam* pExtBufInit = m_videoParams.AddExtBuffer<mfxExtFeiParam>();
-    MSDK_CHECK_POINTER(pExtBufInit, MFX_ERR_NULL_PTR);
-
-    pExtBufInit->Func = MFX_FEI_FUNCTION_PREENC;
-
-    // configure B-pyramid settings
-    mfxExtCodingOption2* pCO2 = m_videoParams.AddExtBuffer<mfxExtCodingOption2>();
-    MSDK_CHECK_POINTER(pCO2, MFX_ERR_NULL_PTR);
-
-    pCO2->BRefType = params.BRefType;
-
-    mfxExtCodingOption3* pCO3 = m_videoParams.AddExtBuffer<mfxExtCodingOption3>();
-    MSDK_CHECK_POINTER(pCO3, MFX_ERR_NULL_PTR);
-
-    pCO3->GPB = params.GPB;
-    pCO3->NumRefActiveP[0]   = params.NumRefActiveP;
-    pCO3->NumRefActiveBL0[0] = params.NumRefActiveBL0;
-    pCO3->NumRefActiveBL1[0] = params.NumRefActiveBL1;
-
-    if (0 != msdk_strlen(params.mvoutFile))
-    {
-        m_pFile_MV_out.reset(new FileHandler(params.mvoutFile, MSDK_STRING("wb")));
-    }
-
-    if (0 != msdk_strlen(params.mbstatoutFile))
-    {
-        m_pFile_MBstat_out.reset(new FileHandler(params.mbstatoutFile, MSDK_STRING("wb")));
-    }
+    sts = ResetExtBuffers(m_videoParams);
+    MSDK_CHECK_STATUS(sts, "FEI PreENC ResetExtBuffers failed");
 
     return sts;
 }

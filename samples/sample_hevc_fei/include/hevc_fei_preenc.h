@@ -25,13 +25,17 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 class FEI_Preenc
 {
 public:
-    FEI_Preenc(MFXVideoSession* session, const mfxFrameInfo& frameInfo);
+    FEI_Preenc(MFXVideoSession* session, MfxVideoParamsWrapper& preenc_pars,
+        const msdk_char* mvoutFile, const msdk_char* mbstatoutFile);
     ~FEI_Preenc();
 
     mfxStatus Init();
     mfxStatus Reset(mfxU16 width = 0, mfxU16 height = 0);
     mfxStatus QueryIOSurf(mfxFrameAllocRequest* request);
-    mfxStatus SetParameters(const sInputParams& params);
+
+    // prepare required internal resources (e.g. buffer allocation) for component initialization
+    mfxStatus PreInit();
+
     const MfxVideoParamsWrapper& GetVideoParam();
     mfxFrameInfo* GetFrameInfo();
 

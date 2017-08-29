@@ -76,9 +76,17 @@ private:
     mfxStatus InitComponents();
     mfxStatus DrainBufferedFrames();
 
+    FEI_Preenc* CreatePreENC(mfxFrameInfo& in_fi);
+    FEI_Encode* CreateEncode(mfxFrameInfo& in_fi);
+
     // forbid copy constructor and operator
     CEncodingPipeline(const CEncodingPipeline& pipeline);
     CEncodingPipeline& operator=(const CEncodingPipeline& pipeline);
 };
+
+// function-utils for creating mfxVideoParam for every component in pipeline
+MfxVideoParamsWrapper GetCommonEncodeParams(const sInputParams& user_pars, const mfxFrameInfo& in_fi);
+MfxVideoParamsWrapper GetPreEncParams(const sInputParams& user_pars, const mfxFrameInfo& in_fi);
+MfxVideoParamsWrapper GetEncodeParams(const sInputParams& user_pars, const mfxFrameInfo& in_fi);
 
 #endif // __PIPELINE_FEI_H__
