@@ -1751,6 +1751,47 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
             refPicListModification->ref_pic_list_modification_flag_l1 = 0;
         }
 
+        //RPL sanity check
+        {
+            Ipp32u i = 0;
+            ReferencePictureSet* rps = pSlice->getRPS();
+
+            Ipp32u NumPocStCurr0 = 0;
+            for(i = 0; i < rps->getNumberOfNegativePictures(); i++)
+            {
+                if(rps->getUsed(i))
+                    NumPocStCurr0++;
+            }
+
+            Ipp32u NumPocStCurr1 = 0;
+            for(; i < rps->getNumberOfNegativePictures() + rps->getNumberOfPositivePictures(); i++)
+            {
+                if(rps->getUsed(i))
+                    NumPocStCurr1++;
+            }
+
+            Ipp32u NumPocLtCurr = 0;
+            for (i = rps->getNumberOfNegativePictures() + rps->getNumberOfPositivePictures();
+                 i < rps->getNumberOfNegativePictures() + rps->getNumberOfPositivePictures() + rps->getNumberOfLongtermPictures(); i++)
+            {
+                if (rps->getUsed(i))
+                    NumPocLtCurr++;
+            }
+
+            //7.4.7.2 value of list_entry_l0/list_entry_l1[ i ] shall be in the range of 0 to NumPicTotalCurr - 1, inclusive
+            Ipp32u const numPocTotalCurr = NumPocStCurr0 + NumPocStCurr1 + NumPocLtCurr;
+            for (int idx = 0; idx < pSlice->getNumRefIdx(REF_PIC_LIST_0); idx++)
+            {
+                if (refPicListModification->list_entry_l0[idx] >= numPocTotalCurr)
+                    throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+            }
+            for (int idx = 0; idx < pSlice->getNumRefIdx(REF_PIC_LIST_1); idx++)
+            {
+                if (refPicListModification->list_entry_l1[idx] >= numPocTotalCurr)
+                    throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+            }
+        }
+
         if (sliceHdr->slice_type == B_SLICE)
         {
             sliceHdr->mvd_l1_zero_flag = Get1Bit();

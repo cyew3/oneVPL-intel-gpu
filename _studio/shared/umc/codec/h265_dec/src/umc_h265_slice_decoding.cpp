@@ -471,9 +471,9 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
     }
 
     // ref_pic_list_init
-    H265DecoderFrame *refPicListTemp0[MAX_NUM_REF_PICS + 1];
-    H265DecoderFrame *refPicListTemp1[MAX_NUM_REF_PICS + 1];
-    Ipp32s numPocTotalCurr = NumPocStCurr0 + NumPocStCurr1 + NumPocLtCurr;
+    H265DecoderFrame *refPicListTemp0[MAX_NUM_REF_PICS + 1] = {};
+    H265DecoderFrame *refPicListTemp1[MAX_NUM_REF_PICS + 1] = {};
+    Ipp32u const numPocTotalCurr = NumPocStCurr0 + NumPocStCurr1 + NumPocLtCurr;
 
     if (!numPocTotalCurr) // this is error
     {
@@ -559,7 +559,7 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
 
         H265DecoderFrame *missedReference = 0;
 
-        for (Ipp32s k = 0; !missedReference && k < numPocTotalCurr; k++)
+        for (Ipp32u k = 0; !missedReference && k < numPocTotalCurr; k++)
         {
             missedReference = refPicListTemp0[k];
         }
