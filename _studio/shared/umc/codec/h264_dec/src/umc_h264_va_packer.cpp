@@ -1474,6 +1474,9 @@ Ipp32s PackerDXVA2::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s c
 void PackerDXVA2::BeginFrame(H264DecoderFrame*, Ipp32s)
 {
     m_statusReportFeedbackCounter++;
+    // WA: StatusReportFeedbackNumber - UINT, can't be 0 - reported status will be ignored
+    if (m_statusReportFeedbackCounter >= UINT_MAX)
+        m_statusReportFeedbackCounter = 1;
     m_picParams = 0;
 }
 

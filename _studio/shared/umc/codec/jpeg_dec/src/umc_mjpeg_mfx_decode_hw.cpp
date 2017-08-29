@@ -19,6 +19,7 @@
 #include "vm_debug.h"
 #include "membuffin.h"
 #include <algorithm>
+#include <limits.h>
 
 namespace UMC
 {
@@ -358,6 +359,8 @@ Status MJPEGVideoDecoderMFX_HW::GetFrameHW(MediaDataEx* in)
         return UMC_ERR_NOT_INITIALIZED;
 
     m_statusReportFeedbackCounter++;
+    if (m_statusReportFeedbackCounter >= UINT_MAX)
+        m_statusReportFeedbackCounter = 1;
 
     sts = m_va->BeginFrame(m_frameData.GetFrameMID());
     if (sts != UMC_OK)
