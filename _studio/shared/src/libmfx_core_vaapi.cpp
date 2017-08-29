@@ -226,6 +226,7 @@ typedef struct {
     { 0x5A45, MFX_HW_CNL},
     { 0x5A4A, MFX_HW_CNL},
     { 0x5A4D, MFX_HW_CNL},
+    { 0x5A49, MFX_HW_CNL},
     { 0x5A50, MFX_HW_CNL},
     { 0x5A51, MFX_HW_CNL},
     { 0x5A52, MFX_HW_CNL},
