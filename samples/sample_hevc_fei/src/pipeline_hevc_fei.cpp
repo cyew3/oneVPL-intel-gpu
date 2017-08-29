@@ -335,20 +335,20 @@ mfxStatus CEncodingPipeline::Execute()
             if (!task)
                 continue; // frame is buffered here
             pSurf = task->m_surf;
-            if (m_pFEI_Encode.get())
-                m_pFEI_Encode->SetCtrlParams(*task);
-
         }
+
         if (m_pFEI_PreENC.get())
         {
             sts = m_pFEI_PreENC->PreEncFrame(task);
             MSDK_BREAK_ON_ERROR(sts);
         }
+
         if (m_pFEI_Encode.get())
         {
-            sts = m_pFEI_Encode->EncodeFrame(pSurf);
+            sts = task ? m_pFEI_Encode->EncodeFrame(task) : m_pFEI_Encode->EncodeFrame(pSurf);
             MSDK_BREAK_ON_ERROR(sts);
         }
+
         if (m_pOrderCtrl.get())
             m_pOrderCtrl->FreeTask(task);
         m_processedFrames++;
@@ -368,6 +368,7 @@ mfxStatus CEncodingPipeline::DrainBufferedFrames()
 {
     mfxStatus sts = MFX_ERR_NONE;
 
+    // encode order
     if (m_pOrderCtrl.get())
     {
         HevcTask* task;
@@ -378,9 +379,9 @@ mfxStatus CEncodingPipeline::DrainBufferedFrames()
                 sts = m_pFEI_PreENC->PreEncFrame(task);
                 MSDK_CHECK_STATUS(sts, "PreEncFrame drain failed");
             }
+
             if (m_pFEI_Encode.get())
             {
-                m_pFEI_Encode->SetCtrlParams(*task);
                 sts = m_pFEI_Encode->EncodeFrame(task->m_surf);
                 // exit in case of other errors
                 MSDK_CHECK_STATUS(sts, "EncodeFrame drain failed");
@@ -392,12 +393,13 @@ mfxStatus CEncodingPipeline::DrainBufferedFrames()
         return sts;
     }
 
-
+    // display order
     if (m_pFEI_Encode.get())
     {
+        mfxFrameSurface1* null_surf = NULL;
         while (MFX_ERR_NONE <= sts)
         {
-            sts = m_pFEI_Encode->EncodeFrame(NULL);
+            sts = m_pFEI_Encode->EncodeFrame(null_surf);
         }
 
         // MFX_ERR_MORE_DATA indicates that there are no more buffered frames
@@ -500,13 +502,19 @@ FEI_Encode* CEncodingPipeline::CreateEncode(mfxFrameInfo& in_fi)
 
     mfxHDL hdl = NULL;
     mfxStatus sts = m_pHWdev->GetHandle(MFX_HANDLE_VA_DISPLAY, &hdl);
-    if (sts < MFX_ERR_NONE)
-    {
-        msdk_printf("CreateEncode::m_pHWdev->GetHandle failed");
-        return NULL;
-    }
+    CHECK_STS_AND_RETURN(sts, "CreateEncode::m_pHWdev->GetHandle failed", NULL);
 
     MfxVideoParamsWrapper encode_pars = GetEncodeParams(m_inParams, in_fi);
 
-    return new FEI_Encode(&m_mfxSession, hdl, encode_pars, m_inParams.strDstFile);
+    PredictorsRepaking* repacker = NULL;
+    if (m_inParams.bPREENC)
+    {
+        repacker = new PredictorsRepaking();
+        sts = repacker->Init(encode_pars);
+        CHECK_STS_AND_RETURN(sts, "CreateEncode::repacker->Init failed", NULL);
+
+        repacker->SetPerfomanceRepackingMode();
+    }
+
+    return new FEI_Encode(&m_mfxSession, hdl, encode_pars, m_inParams.strDstFile, repacker);
 }

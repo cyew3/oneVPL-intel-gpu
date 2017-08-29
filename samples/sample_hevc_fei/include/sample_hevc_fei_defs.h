@@ -24,8 +24,11 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "sample_defs.h"
 #include "mfxvideo.h"
 #include "mfxvideo++.h"
-#include <mfxfei.h>
+#include "mfxfei.h"
+#include "mfxfeihevc.h"
 #include <algorithm>
+
+#define CHECK_STS_AND_RETURN(X, MSG, RET) {if ((X) < MFX_ERR_NONE) {MSDK_PRINT_RET_MSG(X, MSG); return RET;}}
 
 struct sInputParams
 {
@@ -125,6 +128,18 @@ template<>struct mfx_ext_buffer_id<mfxExtFeiPreEncMV>{
 };
 template<>struct mfx_ext_buffer_id<mfxExtFeiPreEncMBStat>{
     enum {id = MFX_EXTBUFF_FEI_PREENC_MB};
+};
+template<>struct mfx_ext_buffer_id<mfxExtFeiHevcEncFrameCtrl>{
+    enum {id = MFX_EXTBUFF_HEVCFEI_ENC_CTRL};
+};
+template<>struct mfx_ext_buffer_id<mfxExtFeiHevcEncMVPredictors>{
+    enum {id = MFX_EXTBUFF_HEVCFEI_ENC_MV_PRED};
+};
+template<>struct mfx_ext_buffer_id<mfxExtFeiHevcEncQP>{
+    enum {id = MFX_EXTBUFF_HEVCFEI_ENC_QP};
+};
+template<>struct mfx_ext_buffer_id<mfxExtFeiHevcEncCtbCtrl>{
+    enum {id = MFX_EXTBUFF_HEVCFEI_ENC_CTB_CTRL};
 };
 
 struct CmpExtBufById
@@ -322,6 +337,8 @@ private:
 };
 
 typedef ExtBufWrapper<mfxVideoParam> MfxVideoParamsWrapper;
+
+typedef ExtBufWrapper<mfxEncodeCtrl> mfxEncodeCtrlWrap;
 
 typedef ExtBufWrapper<mfxENCInput>   mfxENCInputWrap;
 

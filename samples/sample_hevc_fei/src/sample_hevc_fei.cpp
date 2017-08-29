@@ -352,9 +352,19 @@ int main(int argc, char *argv[])
         sts = pipeline.Execute();
         MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
     }
+    catch(mfxError& ex)
+    {
+        msdk_printf("\n%s!\n", ex.GetMessage().c_str());
+        return ex.GetStatus();
+    }
+    catch(std::exception& ex)
+    {
+        msdk_printf("\nUnexpected exception!! %s\n", ex.what());
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
     catch(...)
     {
-        msdk_printf(MSDK_STRING("\nUnexpected exception!!\n"));
+        msdk_printf("\nUnexpected exception!!\n");
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
 

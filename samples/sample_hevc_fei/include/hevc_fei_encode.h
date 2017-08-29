@@ -24,11 +24,13 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "sample_hevc_fei_defs.h"
 #include "ref_list_manager.h"
 #include "vaapi_buffer_allocator.h"
+#include "fei_predictors_repacking.h"
 
 class FEI_Encode
 {
 public:
-    FEI_Encode(MFXVideoSession* session, mfxHDL hdl, MfxVideoParamsWrapper& encode_pars, const msdk_char* dst_output);
+    FEI_Encode(MFXVideoSession* session, mfxHDL hdl, MfxVideoParamsWrapper& encode_pars, 
+        const msdk_char* dst_output, PredictorsRepaking* rpck);
     ~FEI_Encode();
 
     mfxStatus Init();
@@ -42,7 +44,7 @@ public:
     const MfxVideoParamsWrapper& GetVideoParam();
     mfxFrameInfo* GetFrameInfo();
     mfxStatus EncodeFrame(mfxFrameSurface1* pSurf);
-    mfxStatus SetCtrlParams(const HevcTask& task); // for encoded order
+    mfxStatus EncodeFrame(HevcTask* task);
 
 private:
     MFXVideoSession*        m_pmfxSession;
@@ -50,16 +52,20 @@ private:
     vaapiBufferAllocator    m_buf_allocator;
 
     MfxVideoParamsWrapper m_videoParams; // reflects current state Encode parameters
-    mfxEncodeCtrl         m_encodeCtrl;
+    mfxEncodeCtrlWrap     m_encodeCtrl;
     mfxBitstream          m_bitstream;
     mfxSyncPoint          m_syncPoint;
 
     std::string          m_dstFileName;
     CSmplBitstreamWriter m_FileWriter; // bitstream writer
 
+    std::auto_ptr<PredictorsRepaking> m_repacker;
+
     mfxStatus SetEncodeParameters(const sInputParams& encParams);
     mfxStatus SyncOperation();
     mfxStatus AllocateSufficientBuffer();
+    mfxStatus SetCtrlParams(const HevcTask& task); // for encoded order
+    mfxStatus ResetExtBuffers(const MfxVideoParamsWrapper & videoParams);
 
     // forbid copy constructor and operator
     FEI_Encode(const FEI_Encode& encode);
