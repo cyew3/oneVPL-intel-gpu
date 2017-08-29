@@ -279,7 +279,7 @@ mfxStatus FEI_Preenc::PreEncOneFrame(HevcTask & currTask, const RefIdxPair & ref
     ctrl->RefFrame[1] = refFramesIdx.RefL1 != IDX_INVALID ? DPB[refFramesIdx.RefL1].m_surf : NULL;
 
     // disable MV output for I frames / if no reference frames provided
-    ctrl->DisableMVOutput = (currTask.m_frameType & MFX_FRAMETYPE_I) || (refFramesIdx.RefL0 != IDX_INVALID || refFramesIdx.RefL1 != IDX_INVALID);
+    ctrl->DisableMVOutput = (currTask.m_frameType & MFX_FRAMETYPE_I) || (IDX_INVALID == refFramesIdx.RefL0 && IDX_INVALID == refFramesIdx.RefL1);
     // enable only if mbstat dump is required
     ctrl->DisableStatisticsOutput = m_pFile_MBstat_out.get() ? 0 : 1;
 
