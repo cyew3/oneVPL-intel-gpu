@@ -707,7 +707,7 @@ mfxStatus D3D11VideoProcessor::Close()
         SAFE_RELEASE(itVPOV->second);
     }
 
-    for(size_t refIdx = 0; refIdx > m_pInputView.size(); refIdx++ )
+    for(size_t refIdx = 0; refIdx < m_pInputView.size(); refIdx++ )
     {
         SAFE_RELEASE(m_pInputView[refIdx]);
     }
