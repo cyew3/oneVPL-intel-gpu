@@ -197,7 +197,6 @@ namespace TranscodingSample
 
         mfxU32 statisticsWindowSize;
         FILE* statisticsLogFile;
-        msdk_string DumpLogFileName;
 
         bool bLABRC; // use look ahead bitrate control algorithm
         mfxU16 nLADepth; // depth of the look ahead bitrate control  algorithm
@@ -207,14 +206,7 @@ namespace TranscodingSample
         mfxU16 nQPI;
         mfxU16 nQPP;
         mfxU16 nQPB;
-
-#if _MSDK_API >= MSDK_API(1,22)
-        std::vector<mfxExtEncoderROI> m_ROIData;
-
-        bool bDecoderPostProcessing;
-        bool bROIasQPMAP;
-#endif //_MSDK_API >= MSDK_API(1,22)
-
+        
         bool bOpenCL;
         mfxU16 reserved[4];
 
@@ -264,6 +256,13 @@ namespace TranscodingSample
 
     struct sInputParams: public __sInputParams
     {
+        msdk_string DumpLogFileName;    
+#if _MSDK_API >= MSDK_API(1,22)
+        std::vector<mfxExtEncoderROI> m_ROIData;
+
+        bool bDecoderPostProcessing;
+        bool bROIasQPMAP;
+#endif //_MSDK_API >= MSDK_API(1,22)        
         sInputParams();
         void Reset();
     };

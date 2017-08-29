@@ -773,6 +773,9 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
     InputParams.statisticsWindowSize = statisticsWindowSize;
     InputParams.statisticsLogFile = statisticsLogFile;
 
+    //bind to a dump-log-file name
+    InputParams.DumpLogFileName = DumpLogFileName;
+
     if (0 == msdk_strcmp(argv[0], MSDK_STRING("set")))
     {
         if (argc != 3) {

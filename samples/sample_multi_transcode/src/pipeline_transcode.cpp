@@ -83,6 +83,12 @@ void sInputParams::Reset()
     numMFEFrames = 0;
     mfeTimeout = 0;
 #endif
+    DumpLogFileName.clear();
+#if _MSDK_API >= MSDK_API(1,22)
+    m_ROIData.clear();
+    bDecoderPostProcessing = false;
+    bROIasQPMAP = false;
+#endif //_MSDK_API >= MSDK_API(1,22)
 }
 
 CTranscodingPipeline::CTranscodingPipeline():
@@ -1785,7 +1791,8 @@ mfxStatus CTranscodingPipeline::Transcode()
         m_nProcessedFramesNum++;
         if(statisticsWindowSize)
         {
-            if (m_nOutputFramesNum && 0 == m_nOutputFramesNum % statisticsWindowSize)
+        if ( (statisticsWindowSize && m_nOutputFramesNum && 0 == m_nProcessedFramesNum % statisticsWindowSize) ||
+             (statisticsWindowSize && (m_nProcessedFramesNum >= m_MaxFramesForTranscode)))            
             {
                 inputStatistics.PrintStatistics(GetPipelineID());
                 outputStatistics.PrintStatistics(
