@@ -1217,7 +1217,7 @@ MFX_ERR_NONE - if no errors
 */
 mfxStatus MfxHwH264Encode::SetLowPowerDefault(MfxVideoParam& par, const eMFXHWType& platfrom)
 {
-    mfxStatus sts = CheckTriStateOption(par.mfx.LowPower) == false ? MFX_ERR_NONE : MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+    mfxStatus sts = CheckTriStateOption(par.mfx.LowPower) == false ? MFX_WRN_INCOMPATIBLE_VIDEO_PARAM : MFX_ERR_NONE;
     (void)platfrom; // fix wrn for non Gen11 build
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
