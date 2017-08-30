@@ -23,6 +23,9 @@ Copyright(c) 2016-2017 Intel Corporation. All Rights Reserved.
 #define VP9E_CQP_QIndexDeltaChromaAC (8)
 #define VP9E_CQP_QIndexDeltaChromaDC (9)
 
+#define VP9E_MAX_QP (255)
+#define VP9E_MAX_ABS_Q_INDEX_DELTA (15)
+
 namespace vp9e_cqp
 {
     enum
@@ -35,7 +38,9 @@ namespace vp9e_cqp
         BIG_QP,
         REQUEST_QP,
         USE_EXT_BUFFER,
-        USE_EXT_BUFFER_FRAME
+        USE_EXT_BUFFER_FRAME,
+        CHECK_QP_OVERFLOW,
+        CHECK_BIG_Q_DELTA
     };
 
     struct tc_struct
@@ -61,7 +66,11 @@ namespace vp9e_cqp
 
         }
         ~TestSuite() {}
-        int RunTest(unsigned int id);
+
+        template<mfxU32 fourcc>
+        int RunTest_Subtype(const unsigned int id);
+
+        int RunTest(const tc_struct& tc, unsigned int fourcc_id);
 
     private:
         void EncodingCycle(const tc_struct& tc, const mfxU32& frames_count);
@@ -108,16 +117,24 @@ namespace vp9e_cqp
                                  }
         },
 
+        // Check overall QP overflow: QP_FRAME + Q_DELTA > MAX_FRAME_QP
+        {/*06*/ MFX_ERR_NONE, CHECK_QP_OVERFLOW, 2, { }
+        },
+
+        // Check QP_Delta overflow: Q_DELTA > MAX_QP_DELTA
+        {/*07*/ MFX_ERR_NONE, CHECK_BIG_Q_DELTA, 2, { }
+        },
+
         // Request QP for a frame
-        {/*06*/ MFX_ERR_NONE, REQUEST_QP, 8, {}
+        {/*08*/ MFX_ERR_NONE, REQUEST_QP, 8, {}
         },
 
         // Request cqp-related codec-specific options via m_ExtBuffer for whole encoding
-        {/*07*/ MFX_ERR_NONE, USE_EXT_BUFFER, 3, {}
+        {/*09*/ MFX_ERR_NONE, USE_EXT_BUFFER, 3, {}
         },
 
         // Request cqp-related codec-specific options via m_ExtBuffer for each frame
-        {/*08*/ MFX_ERR_NONE, USE_EXT_BUFFER_FRAME, 5, {}
+        {/*10*/ MFX_ERR_NONE, USE_EXT_BUFFER_FRAME, 5, {}
         },
 
     };
@@ -144,8 +161,27 @@ namespace vp9e_cqp
                 requested_qp = ((VP9E_CQP_QP_FOR_REQUEST*cycle_counter++)%255) + 1;
                 m_pCtrl->QP = requested_qp;
             }
+            else if (tc.type == CHECK_QP_OVERFLOW)
+            {
+                m_pCtrl->QP = 250;
 
-            if(tc.type == USE_EXT_BUFFER_FRAME)
+                ((mfxExtVP9Param*)m_ExtBuff.get())->QIndexDeltaLumaDC = 10;
+                ((mfxExtVP9Param*)m_ExtBuff.get())->QIndexDeltaChromaAC = 10;
+                ((mfxExtVP9Param*)m_ExtBuff.get())->QIndexDeltaChromaDC = 10;
+
+                m_pCtrl->NumExtParam = 1;
+                m_pCtrl->ExtParam = (mfxExtBuffer **)&m_ExtBuff;
+            }
+            else if (tc.type == CHECK_BIG_Q_DELTA)
+            {
+                ((mfxExtVP9Param*)m_ExtBuff.get())->QIndexDeltaLumaDC = VP9E_MAX_ABS_Q_INDEX_DELTA + 1;
+                ((mfxExtVP9Param*)m_ExtBuff.get())->QIndexDeltaChromaAC = -VP9E_MAX_ABS_Q_INDEX_DELTA - 1;
+                ((mfxExtVP9Param*)m_ExtBuff.get())->QIndexDeltaChromaDC = VP9E_MAX_ABS_Q_INDEX_DELTA + 1;
+
+                m_pCtrl->NumExtParam = 1;
+                m_pCtrl->ExtParam = (mfxExtBuffer **)&m_ExtBuff;
+            }
+            else if(tc.type == USE_EXT_BUFFER_FRAME)
             {
                 // Check how to extract QIndex-s with new VP9-API
                 ((mfxExtVP9Param*)m_ExtBuff.get())->QIndexDeltaLumaDC = VP9E_CQP_QIndexDeltaLumaDC+cycle_counter;
@@ -154,7 +190,6 @@ namespace vp9e_cqp
 
                 m_pCtrl->NumExtParam = 1;
                 m_pCtrl->ExtParam = (mfxExtBuffer **)&m_ExtBuff;
-
             }
 
             if(MFX_ERR_MORE_DATA == EncodeFrameAsync())
@@ -171,8 +206,15 @@ namespace vp9e_cqp
                 continue;
             }
 
+            if (tc.type == CHECK_QP_OVERFLOW || tc.type == CHECK_BIG_Q_DELTA)
+            {
+                g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
+            }
+
             g_tsStatus.check(); if(g_tsStatus.m_failed) {ADD_FAILURE() << "FAILED encoding frame"; throw tsFAIL;}
             sp = m_syncpoint;
+
+            g_tsStatus.expect(MFX_ERR_NONE);
 
             if(++submitted >= async)
             {
@@ -240,18 +282,38 @@ namespace vp9e_cqp
                         ADD_FAILURE() << "FAILED: Unexpected frame type m_pBitstream->FrameType=" << m_pBitstream->FrameType;
                     }
                 }
-
-                if(tc.type == USE_EXT_BUFFER)
+                else if(tc.type == USE_EXT_BUFFER)
                 {
-                    ASSERT_EQ(hdr->uh.quant.y_dc.delta*(hdr->uh.quant.y_dc.sign ? -1 : 1), VP9E_CQP_QIndexDeltaLumaDC) << "FAILED: Global codec-specific params not match (DeltaLumaDC)";
-                    ASSERT_EQ(hdr->uh.quant.uv_ac.delta*(hdr->uh.quant.uv_ac.sign ? -1 : 1), VP9E_CQP_QIndexDeltaChromaAC) << "FAILED: Global codec-specific params not match (DeltaChromaAC)";
-                    ASSERT_EQ(hdr->uh.quant.uv_dc.delta*(hdr->uh.quant.uv_dc.sign ? -1 : 1), VP9E_CQP_QIndexDeltaChromaDC) << "FAILED: Global codec-specific params not match (DeltaChromaDC)";
+                    ASSERT_EQ(hdr->uh.quant.y_dc.delta*(hdr->uh.quant.y_dc.sign ? -1 : 1), VP9E_CQP_QIndexDeltaLumaDC)
+                        << "FAILED: Global codec-specific params not match (DeltaLumaDC)";
+                    ASSERT_EQ(hdr->uh.quant.uv_ac.delta*(hdr->uh.quant.uv_ac.sign ? -1 : 1), VP9E_CQP_QIndexDeltaChromaAC)
+                        << "FAILED: Global codec-specific params not match (DeltaChromaAC)";
+                    ASSERT_EQ(hdr->uh.quant.uv_dc.delta*(hdr->uh.quant.uv_dc.sign ? -1 : 1), VP9E_CQP_QIndexDeltaChromaDC)
+                        << "FAILED: Global codec-specific params not match (DeltaChromaDC)";
                 }
                 else if(tc.type == USE_EXT_BUFFER_FRAME)
                 {
-                    ASSERT_EQ(hdr->uh.quant.y_dc.delta*(hdr->uh.quant.y_dc.sign ? -1 : 1), VP9E_CQP_QIndexDeltaLumaDC+cycle_counter_encoded) << "FAILED: Codec-specific params for a frame not match (DeltaLumaDC)";
-                    ASSERT_EQ(hdr->uh.quant.uv_ac.delta*(hdr->uh.quant.uv_ac.sign ? -1 : 1), VP9E_CQP_QIndexDeltaChromaAC+cycle_counter_encoded) << "FAILED: Codec-specific params for a frame not match (DeltaChromaAC)";
-                    ASSERT_EQ(hdr->uh.quant.uv_dc.delta*(hdr->uh.quant.uv_dc.sign ? -1 : 1), VP9E_CQP_QIndexDeltaChromaDC+cycle_counter_encoded) << "FAILED: Codec-specific params for a frame not match (DeltaChromaDC)";
+                    ASSERT_EQ(hdr->uh.quant.y_dc.delta*(hdr->uh.quant.y_dc.sign ? -1 : 1), VP9E_CQP_QIndexDeltaLumaDC+cycle_counter_encoded)
+                        << "FAILED: Codec-specific params for a frame not match (DeltaLumaDC)";
+                    ASSERT_EQ(hdr->uh.quant.uv_ac.delta*(hdr->uh.quant.uv_ac.sign ? -1 : 1), VP9E_CQP_QIndexDeltaChromaAC+cycle_counter_encoded)
+                       << "FAILED: Codec-specific params for a frame not match (DeltaChromaAC)";
+                    ASSERT_EQ(hdr->uh.quant.uv_dc.delta*(hdr->uh.quant.uv_dc.sign ? -1 : 1), VP9E_CQP_QIndexDeltaChromaDC+cycle_counter_encoded)
+                        << "FAILED: Codec-specific params for a frame not match (DeltaChromaDC)";
+                }
+                else if (tc.type == CHECK_QP_OVERFLOW)
+                {
+                    ASSERT_EQ(hdr->uh.quant.base_qindex + hdr->uh.quant.y_dc.delta, VP9E_MAX_QP) << "FAILED: QP_FRAME + QP_Y_DELTA > MAX_QP, QP_DELTA expected to be clamped, but unc_header.base_qindex="
+                        << (mfxU32)hdr->uh.quant.base_qindex << ", unc_header.y.delta=" << (mfxU32)hdr->uh.quant.y_dc.delta;
+                    ASSERT_EQ(hdr->uh.quant.base_qindex + hdr->uh.quant.uv_ac.delta, VP9E_MAX_QP) << "FAILED: QP_FRAME + QP_U_DELTA > MAX_QP, QP_DELTA expected to be clamped, but unc_header.base_qindex="
+                        << (mfxU32)hdr->uh.quant.base_qindex << ", unc_header.u.delta=" << (mfxU32)hdr->uh.quant.uv_ac.delta;
+                    ASSERT_EQ(hdr->uh.quant.base_qindex + hdr->uh.quant.uv_dc.delta, VP9E_MAX_QP) << "FAILED: QP_FRAME + QP_V_DELTA > MAX_QP, QP_DELTA expected to be clamped, but unc_header.base_qindex="
+                        << (mfxU32)hdr->uh.quant.base_qindex << ", unc_header.v.delta=" << (mfxU32)hdr->uh.quant.uv_dc.delta;
+                }
+                else if (tc.type == CHECK_BIG_Q_DELTA)
+                {
+                    ASSERT_EQ(hdr->uh.quant.y_dc.delta, 0) << "FAILED: Q_Y_DELTA expected to be reset to 0 due to overflow, but unc_header.y.delta=" << (mfxU32)hdr->uh.quant.y_dc.delta;
+                    ASSERT_EQ(hdr->uh.quant.uv_ac.delta, 0) << "FAILED: Q_U_DELTA expected to be reset to 0 due to overflow, but unc_header.uv_ac.delta=" << (mfxU32)hdr->uh.quant.uv_ac.delta;
+                    ASSERT_EQ(hdr->uh.quant.uv_dc.delta, 0) << "FAILED: Q_V_DELTA expected to be reset to 0 due to overflow, but unc_header.uv_dc.delta=" << (mfxU32)hdr->uh.quant.uv_dc.delta;
                 }
 
                 m_pBitstream->DataLength = m_pBitstream->DataOffset = 0;
@@ -259,13 +321,18 @@ namespace vp9e_cqp
         }
     }
 
-    int TestSuite::RunTest(unsigned int id)
+    template<mfxU32 fourcc>
+    int TestSuite::RunTest_Subtype(const unsigned int id)
+    {
+        const tc_struct& tc = test_case[id];
+        return RunTest(tc, fourcc);
+    }
+
+    int TestSuite::RunTest(const tc_struct& tc, unsigned int fourcc_id)
     {
         TS_START;
 
-        const tc_struct& tc = test_case[id];
-        const char* stream = g_tsStreamPool.Get("YUV/salesman_176x144_449.yuv");
-        g_tsStreamPool.Reg();
+        char* stream = nullptr;
         tsSurfaceProcessor *reader;
 
         MFXInit();
@@ -277,10 +344,45 @@ namespace vp9e_cqp
         m_par.mfx.QPP = VP9E_CQP_DEFAULT_QPP;
         m_par.mfx.FrameInfo.Width  = m_par.mfx.FrameInfo.CropW = 176;
         m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 144;
+        m_par.AsyncDepth = 1;
 
         SETPARS(m_pPar, MFX_PAR);
 
-        if(tc.type == USE_EXT_BUFFER || tc.type == USE_EXT_BUFFER_FRAME)
+        if (fourcc_id == MFX_FOURCC_NV12)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+            stream = const_cast<char *>(g_tsStreamPool.Get("YUV/salesman_176x144_449.yuv"));
+        }
+        else if (fourcc_id == MFX_FOURCC_P010)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_P010;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+            stream = const_cast<char *>(g_tsStreamPool.Get("YUV10bit420/Kimono1_176x144_24_p010.yuv"));
+        }
+        else if (fourcc_id == MFX_FOURCC_AYUV)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_AYUV;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
+            stream = const_cast<char *>(g_tsStreamPool.Get("YUV8bit444/Kimono1_176x144_24_ayuv.yuv"));
+        }
+        else if (fourcc_id == MFX_FOURCC_Y410)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y410;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
+            stream = const_cast<char *>(g_tsStreamPool.Get("YUV10bit444/Kimono1_176x144_24_y410.yuv"));
+        }
+        else
+        {
+            g_tsLog << "WARNING: invalid fourcc_id parameter: " << fourcc_id << "\n";
+            return 0;
+        }
+
+        g_tsStreamPool.Reg();
+
+        if(tc.type == USE_EXT_BUFFER || tc.type == USE_EXT_BUFFER_FRAME || tc.type == CHECK_QP_OVERFLOW || tc.type == CHECK_BIG_Q_DELTA)
         {
             // Check how to extract QIndex-s with new VP9-API
             m_ExtBuff.reset((mfxExtBuffer*)(new mfxExtVP9Param()));
@@ -303,13 +405,18 @@ namespace vp9e_cqp
 
         if (0 == memcmp(m_uid->Data, MFX_PLUGINID_VP9E_HW.Data, sizeof(MFX_PLUGINID_VP9E_HW.Data)))
         {
-            if (g_tsHWtype < MFX_HW_CNL) // unsupported on platform less CNL
+            // MFX_PLUGIN_VP9E_HW unsupported on platform less CNL(NV12) and ICL(P010, AYUV, Y410)
+            if ((fourcc_id == MFX_FOURCC_NV12 && g_tsHWtype < MFX_HW_CNL)
+                || ((fourcc_id == MFX_FOURCC_P010 || fourcc_id == MFX_FOURCC_AYUV
+                    || fourcc_id == MFX_FOURCC_Y410) && g_tsHWtype < MFX_HW_ICL))
             {
                 g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
                 g_tsLog << "WARNING: Unsupported HW Platform!\n";
+                Query();
                 return 0;
             }
-        }  else {
+        }
+        else {
             g_tsLog << "WARNING: loading encoder from plugin failed!\n";
             return 0;
         }
@@ -348,5 +455,8 @@ namespace vp9e_cqp
         return 0;
     }
 
-    TS_REG_TEST_SUITE_CLASS(vp9e_cqp);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9e_cqp,              RunTest_Subtype<MFX_FOURCC_NV12>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9e_10b_420_p010_cqp, RunTest_Subtype<MFX_FOURCC_P010>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9e_8b_444_ayuv_cqp,  RunTest_Subtype<MFX_FOURCC_AYUV>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9e_10b_444_y410_cqp, RunTest_Subtype<MFX_FOURCC_Y410>, n_cases);
 };
