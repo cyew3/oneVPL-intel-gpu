@@ -808,6 +808,7 @@ STRUCT(mfxInitParam,
     FIELD_T(mfxU16         , ExternalThreads)
     FIELD_T(mfxExtBuffer** , ExtParam       )
     FIELD_T(mfxU16         , NumExtParam    )
+    FIELD_T(mfxU16         , GPUCopy        )
 )
 
 STRUCT(mfxExtThreadsParam,
