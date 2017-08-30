@@ -20,11 +20,61 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "fei_utils.h"
 #include "hevc_fei_preenc.h"
 
+IPreENC::IPreENC(MfxVideoParamsWrapper& preenc_pars)
+    : m_videoParams(preenc_pars)
+{
+}
+
+mfxStatus IPreENC::PreInit()
+{
+    mfxStatus sts = ResetExtBuffers(m_videoParams);
+    return sts;
+}
+
+mfxStatus IPreENC::ResetExtBuffers(const MfxVideoParamsWrapper & videoParams)
+{
+    for (size_t i = 0; i < m_mvs.size(); ++i)
+    {
+        delete[] m_mvs[i].MB;
+        m_mvs[i].MB = 0;
+        m_mvs[i].NumMBAlloc = 0;
+    }
+    for (size_t i = 0; i < m_mbs.size(); ++i)
+    {
+        delete[] m_mbs[i].MB;
+        m_mbs[i].MB = 0;
+        m_mbs[i].NumMBAlloc = 0;
+    }
+
+    MSDK_CHECK_NOT_EQUAL(m_videoParams.AsyncDepth, 1, MFX_ERR_UNSUPPORTED);
+
+    mfxU32 nMB = videoParams.mfx.FrameInfo.Width * videoParams.mfx.FrameInfo.Height >> 8;
+    mfxU8 nBuffers = videoParams.mfx.NumRefFrame;
+
+    m_mvs.resize(nBuffers);
+    m_mbs.resize(nBuffers);
+    for (size_t i = 0; i < nBuffers; ++i)
+    {
+        MSDK_ZERO_MEMORY(m_mvs[i]);
+        m_mvs[i].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_MV;
+        m_mvs[i].Header.BufferSz = sizeof(mfxExtFeiPreEncMV);
+        m_mvs[i].MB = new mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB[nMB];
+        m_mvs[i].NumMBAlloc = nMB;
+
+        MSDK_ZERO_MEMORY(m_mbs[i]);
+        m_mbs[i].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_MB;
+        m_mbs[i].Header.BufferSz = sizeof(mfxExtFeiPreEncMBStat);
+        m_mbs[i].MB = new mfxExtFeiPreEncMBStat::mfxExtFeiPreEncMBStatMB[nMB];
+        m_mbs[i].NumMBAlloc = nMB;
+    }
+    return MFX_ERR_NONE;
+}
+
 FEI_Preenc::FEI_Preenc(MFXVideoSession* session, MfxVideoParamsWrapper& preenc_pars,
     const msdk_char* mvoutFile, const msdk_char* mbstatoutFile)
-    : m_pmfxSession(session)
+    : IPreENC(preenc_pars)
+    , m_pmfxSession(session)
     , m_mfxPREENC(*m_pmfxSession)
-    , m_videoParams(preenc_pars)
 {
     if (0 != msdk_strlen(mvoutFile))
     {
@@ -109,61 +159,20 @@ mfxStatus FEI_Preenc::QueryIOSurf(mfxFrameAllocRequest* request)
 
 mfxStatus FEI_Preenc::PreInit()
 {
-    mfxStatus sts = MFX_ERR_NONE;
-
-    sts = ResetExtBuffers(m_videoParams);
+    mfxStatus sts = IPreENC::PreInit();
     MSDK_CHECK_STATUS(sts, "FEI PreENC ResetExtBuffers failed");
 
     return sts;
 }
 
-const MfxVideoParamsWrapper& FEI_Preenc::GetVideoParam()
+const MfxVideoParamsWrapper& IPreENC::GetVideoParam()
 {
     return m_videoParams;
 }
 
-mfxFrameInfo * FEI_Preenc::GetFrameInfo()
+mfxFrameInfo * IPreENC::GetFrameInfo()
 {
     return &m_videoParams.mfx.FrameInfo;
-}
-
-mfxStatus FEI_Preenc::ResetExtBuffers(const MfxVideoParamsWrapper & videoParams)
-{
-    for (size_t i = 0; i < m_mvs.size(); ++i)
-    {
-        delete[] m_mvs[i].MB;
-        m_mvs[i].MB = 0;
-        m_mvs[i].NumMBAlloc = 0;
-    }
-    for (size_t i = 0; i < m_mbs.size(); ++i)
-    {
-        delete[] m_mbs[i].MB;
-        m_mbs[i].MB = 0;
-        m_mbs[i].NumMBAlloc = 0;
-    }
-
-    MSDK_CHECK_NOT_EQUAL(m_videoParams.AsyncDepth , 1, MFX_ERR_UNSUPPORTED);
-
-    mfxU32 nMB = videoParams.mfx.FrameInfo.Width * videoParams.mfx.FrameInfo.Height >> 8;
-    mfxU8 nBuffers = videoParams.mfx.NumRefFrame;
-
-    m_mvs.resize(nBuffers);
-    m_mbs.resize(nBuffers);
-    for (size_t i = 0; i < nBuffers; ++i)
-    {
-        MSDK_ZERO_MEMORY(m_mvs[i]);
-        m_mvs[i].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_MV;
-        m_mvs[i].Header.BufferSz = sizeof(mfxExtFeiPreEncMV);
-        m_mvs[i].MB = new mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB[nMB];
-        m_mvs[i].NumMBAlloc = nMB;
-
-        MSDK_ZERO_MEMORY(m_mbs[i]);
-        m_mbs[i].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_MB;
-        m_mbs[i].Header.BufferSz = sizeof(mfxExtFeiPreEncMBStat);
-        m_mbs[i].MB = new mfxExtFeiPreEncMBStat::mfxExtFeiPreEncMBStatMB[nMB];
-        m_mbs[i].NumMBAlloc = nMB;
-    }
-    return MFX_ERR_NONE;
 }
 
 mfxStatus FEI_Preenc::DumpResult(HevcTask* task)

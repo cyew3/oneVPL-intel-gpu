@@ -22,7 +22,39 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include "sample_hevc_fei_defs.h"
 
-class FEI_Preenc
+class IPreENC
+{
+public:
+    IPreENC(MfxVideoParamsWrapper& preenc_pars);
+    virtual ~IPreENC() {}
+
+    virtual mfxStatus Init() = 0;
+    virtual mfxStatus QueryIOSurf(mfxFrameAllocRequest* request) = 0;
+
+    // prepare required internal resources (e.g. buffer allocation) for component initialization
+    virtual mfxStatus PreInit();
+
+    const MfxVideoParamsWrapper& GetVideoParam();
+    mfxFrameInfo* GetFrameInfo();
+
+    virtual mfxStatus PreEncFrame(HevcTask * task) = 0;
+
+protected:
+    mfxStatus ResetExtBuffers(const MfxVideoParamsWrapper & videoParams);
+
+protected:
+    MfxVideoParamsWrapper m_videoParams;
+
+    std::vector<mfxExtFeiPreEncMVExtended>     m_mvs;
+    std::vector<mfxExtFeiPreEncMBStatExtended> m_mbs;
+
+private:
+    // forbid copy constructor and operator
+    IPreENC(const IPreENC& preenc);
+    IPreENC& operator=(const IPreENC& preenc);
+};
+
+class FEI_Preenc : public IPreENC
 {
 public:
     FEI_Preenc(MFXVideoSession* session, MfxVideoParamsWrapper& preenc_pars,
@@ -36,16 +68,11 @@ public:
     // prepare required internal resources (e.g. buffer allocation) for component initialization
     mfxStatus PreInit();
 
-    const MfxVideoParamsWrapper& GetVideoParam();
-    mfxFrameInfo* GetFrameInfo();
-
     mfxStatus PreEncFrame(HevcTask * task);
 
 private:
     mfxStatus PreEncMultiFrames(HevcTask * task);
     mfxStatus PreEncOneFrame(HevcTask & currTask, const RefIdxPair & refFramesIdx, const bool bDownsampleInput);
-
-    mfxStatus ResetExtBuffers(const MfxVideoParamsWrapper & videoParams);
 
     mfxStatus DumpResult(HevcTask* task);
 
@@ -53,13 +80,8 @@ private:
     MFXVideoSession* m_pmfxSession;
     MFXVideoENC      m_mfxPREENC;
 
-    MfxVideoParamsWrapper m_videoParams;
-
     typedef std::pair<mfxSyncPoint, std::pair<mfxENCInputWrap, mfxENCOutputWrap> > SyncPair;
     SyncPair m_syncp;
-
-    std::vector<mfxExtFeiPreEncMVExtended>     m_mvs;
-    std::vector<mfxExtFeiPreEncMBStatExtended> m_mbs;
 
     mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB m_default_MVMB;
 

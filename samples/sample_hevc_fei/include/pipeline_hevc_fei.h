@@ -62,7 +62,7 @@ private:
     std::auto_ptr<IVideoReader> m_pYUVSource; // source of raw data for encoder (can be either reading from file,
                                               // or decoding bitstream)
     std::auto_ptr<FEI_Encode>   m_pFEI_Encode;
-    std::auto_ptr<FEI_Preenc>   m_pFEI_PreENC;
+    std::auto_ptr<IPreENC>      m_pFEI_PreENC;
 
     std::auto_ptr<EncodeOrderControl> m_pOrderCtrl;
 
