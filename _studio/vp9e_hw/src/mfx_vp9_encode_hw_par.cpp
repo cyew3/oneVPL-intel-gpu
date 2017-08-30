@@ -227,6 +227,14 @@ inline void SetOrCopy(mfxExtVP9TemporalLayers *pDst, mfxExtVP9TemporalLayers con
     }
 }
 
+inline void SetOrCopy(mfxExtCodingOptionDDI *pDst, mfxExtCodingOptionDDI const *pSrc = 0, bool zeroDst = true)
+{
+    zeroDst;
+    SET_OR_COPY_PAR(RefreshFrameContext);
+    SET_OR_COPY_PAR(ChangeFrameContextIdxForTS);
+    SET_OR_COPY_PAR(SuperFrameForTS);
+}
+
 template<class T>
 inline mfxStatus SetOrCopySupportedParams(T* pDst, T const *pSrc = 0, bool zeroDst = true)
 {
@@ -394,6 +402,7 @@ void InheritDefaults(VP9MfxVideoParam& defaultsDst, VP9MfxVideoParam const & def
     }
 
     INHERIT_DEFAULTS(mfxExtVP9TemporalLayers, !defaultsDst.m_tempLayersBufPassed);
+    INHERIT_DEFAULTS(mfxExtCodingOptionDDI, false);
 }
 
 #define CLEAN_OUT_UNSUPPORTED_PARAMETERS(type)  \
