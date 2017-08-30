@@ -854,15 +854,16 @@ public:
             m_ddi.get()->DestroyDevice();
 
         m_ddi.reset();
+        size_t i = 0;
         if (m_systemMemIn)
-            for (int i = 0; i < m_inputSurf.size(); i++)
+            for (i = 0; i < m_inputSurf.size(); i++)
             {
                 m_inputSurf[i].Release();
             }
 
         m_inputSurf.resize(0);
 
-        for (int i = 0; i < m_outputSurf.size(); i++)
+        for (i = 0; i < m_outputSurf.size(); i++)
         {
             m_outputSurf[i].Release();
         }
