@@ -214,27 +214,31 @@ typedef struct {
 
 #ifndef MFX_CLOSED_PLATFORMS_DISABLE
     /* CNL */
+    //ToDo: remove simulation Ids for OSS.
     /* SImulation */
     { 0x0A00, MFX_HW_CNL},
     { 0x0A01, MFX_HW_CNL},
     { 0x0A02, MFX_HW_CNL},
     { 0x0A05, MFX_HW_CNL},
     { 0x0A08, MFX_HW_CNL},
-
-    { 0x5A40, MFX_HW_CNL},
-    { 0x5A42, MFX_HW_CNL},
-    { 0x5A45, MFX_HW_CNL},
-    { 0x5A4A, MFX_HW_CNL},
-    { 0x5A4D, MFX_HW_CNL},
-    { 0x5A49, MFX_HW_CNL},
-    { 0x5A50, MFX_HW_CNL},
-    { 0x5A51, MFX_HW_CNL},
-    { 0x5A52, MFX_HW_CNL},
-    { 0x5A54, MFX_HW_CNL},
-    { 0x5A55, MFX_HW_CNL},
-    { 0x5A5A, MFX_HW_CNL},
-    { 0x5A60, MFX_HW_CNL},
-    { 0x5A62, MFX_HW_CNL}
+    //ToDo: cleaup device Ids which won't be manufactured(Halo/Desctop/etc) before adding to OSS.
+    { 0x5A51, MFX_HW_CNL },//ICNL_5x8_ULX_DEVICE_F0_ID
+    { 0x5A52, MFX_HW_CNL },//ICNL_5x8_ULT_DEVICE_F0_ID
+    { 0x5A5A, MFX_HW_CNL },//ICNL_4x8_ULT_DEVICE_F0_ID
+    { 0x5A42, MFX_HW_CNL },//ICNL_3x8_ULT_DEVICE_F0_ID
+    { 0x5A4A, MFX_HW_CNL },//ICNL_2x8_ULT_DEVICE_F0_ID
+    { 0x5A62, MFX_HW_CNL },//ICNL_9x8_ULT_DEVICE_F0_ID
+    { 0x5A60, MFX_HW_CNL },//ICNL_9x8_SUPERSKU_DEVICE_F0_ID
+    { 0x5A50, MFX_HW_CNL },//ICNL_5x8_SUPERSKU_DEVICE_F0_ID
+    { 0x5A40, MFX_HW_CNL },//ICNL_1x6_5x8_SUPERSKU_DEVICE_F0_ID
+    { 0x5A54, MFX_HW_CNL },//ICNL_5x8_HALO_DEVICE_F0_ID
+    { 0x5A44, MFX_HW_CNL },//ICNL_3x8_HALO_DEVICE_F0_ID
+    { 0x5A55, MFX_HW_CNL },//ICNL_5x8_DESKTOP_DEVICE_F0_ID
+    { 0x5A45, MFX_HW_CNL },//ICNL_3x8_DESKTOP_DEVICE_F0_ID
+    { 0x5A59, MFX_HW_CNL },//ICNL_4x8_ULX_DEVICE_F0_ID
+    { 0x5A41, MFX_HW_CNL },//ICNL_3x8_ULX_DEVICE_F0_ID
+    { 0x5A49, MFX_HW_CNL },//ICNL_2x8_ULX_DEVICE_F0_ID
+    { 0x5A5C, MFX_HW_CNL } //ICNL_4x8_HALO_DEVICE_F0_ID
 #endif
 };
 
