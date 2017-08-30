@@ -136,6 +136,10 @@ void CEncodingPipeline::PrintInfo()
     msdk_printf(MSDK_STRING("\nGopRefDist:\t%d"), param.mfx.GopRefDist);
     msdk_printf(MSDK_STRING("\nNumRefFrame:\t%d"), param.mfx.NumRefFrame);
 
+    msdk_printf(MSDK_STRING("\nNumRefActiveP  :\t%d"), param.GetExtBuffer<mfxExtCodingOption3>()->NumRefActiveP[0]);
+    msdk_printf(MSDK_STRING("\nNumRefActiveBL0:\t%d"), param.GetExtBuffer<mfxExtCodingOption3>()->NumRefActiveBL0[0]);
+    msdk_printf(MSDK_STRING("\nNumRefActiveBL1:\t%d"), param.GetExtBuffer<mfxExtCodingOption3>()->NumRefActiveBL1[0]);
+
     mfxU16 bRefType = param.GetExtBuffer<mfxExtCodingOption2>()->BRefType;
     msdk_printf(MSDK_STRING("\nB-pyramid\t%s"), bRefType ? (bRefType == MFX_B_REF_OFF ? MSDK_STRING("Off") : MSDK_STRING("On")) : MSDK_STRING("MSDK default"));
 

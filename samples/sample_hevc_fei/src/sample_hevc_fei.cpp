@@ -66,7 +66,10 @@ void PrintHelp(const msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-g size] - GOP size (1(default) means I-frames only)\n"));
     msdk_printf(MSDK_STRING("   [-gop_opt closed|strict] - GOP optimization flags (can be used together)\n"));
     msdk_printf(MSDK_STRING("   [-r (-GopRefDist) distance] - Distance between I- or P- key frames (1 means no B-frames) (0 - by default(I frames))\n"));
-    msdk_printf(MSDK_STRING("   [-num_ref (-NumRefFrame) numRefs] - number of reference frames \n"));
+    msdk_printf(MSDK_STRING("   [-num_ref (-NumRefFrame) numRefs] - number of reference frames\n"));
+    msdk_printf(MSDK_STRING("   [-NumRefActiveP   numRefs] - number of maximum allowed references for P frames (up to 4).\n"));
+    msdk_printf(MSDK_STRING("   [-NumRefActiveBL0 numRefs] - number of maximum allowed backward references for B frames (up to 4).\n"));
+    msdk_printf(MSDK_STRING("   [-NumRefActiveBL1 numRefs] - number of maximum allowed forward references for B frames (up to 2).\n"));
     msdk_printf(MSDK_STRING("   [-gpb:<on,off>] - make HEVC encoder use regular P-frames (off) or GPB (on) (on - by default)\n"));
     msdk_printf(MSDK_STRING("   [-bref] - arrange B frames in B pyramid reference structure\n"));
     msdk_printf(MSDK_STRING("   [-nobref] - do not use B-pyramid (by default the decision is made by library)\n"));
@@ -189,6 +192,21 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU32 nArgNum, sInputParams& 
             CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
             PARSE_CHECK(msdk_opt_read(strInput[++i], params.nNumRef), "NumRefFrame", isParseInvalid);
         }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-NumRefActiveP")))
+        {
+            CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
+            PARSE_CHECK(msdk_opt_read(strInput[++i], params.NumRefActiveP), "NumRefActiveP", isParseInvalid);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-NumRefActiveBL0")))
+        {
+            CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
+            PARSE_CHECK(msdk_opt_read(strInput[++i], params.NumRefActiveBL0), "NumRefActiveBL0", isParseInvalid);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-NumRefActiveBL1")))
+        {
+            CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
+            PARSE_CHECK(msdk_opt_read(strInput[++i], params.NumRefActiveBL1), "NumRefActiveBL1", isParseInvalid);
+        }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-tff")))
         {
             params.nPicStruct = MFX_PICSTRUCT_FIELD_TFF;
@@ -264,6 +282,21 @@ mfxStatus CheckOptions(const sInputParams params, const msdk_char* appName)
     if (params.QP > 51)
     {
         PrintHelp(appName, "Wrong QP value (must be in range [0, 51])");
+        return MFX_ERR_UNSUPPORTED;
+    }
+    if (params.NumRefActiveP > 4)
+    {
+        PrintHelp(appName, "Wrong NumRefActiveP values (must be in range [0,4])");
+        return MFX_ERR_UNSUPPORTED;
+    }
+    if (params.NumRefActiveBL0 > 4)
+    {
+        PrintHelp(appName, "Wrong NumRefActiveBL0 values (must be in range [0,4])");
+        return MFX_ERR_UNSUPPORTED;
+    }
+    if (params.NumRefActiveBL1 > 2)
+    {
+        PrintHelp(appName, "Wrong NumRefActiveBL1 values (must be in range [0,2])");
         return MFX_ERR_UNSUPPORTED;
     }
     if (!params.bENCODE && !params.bPREENC)
