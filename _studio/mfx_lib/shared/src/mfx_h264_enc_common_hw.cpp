@@ -7808,7 +7808,7 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
 
     ExtParam = m_extParam;
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE) && defined (MFX_UNDOCUMENTED_DUMP_FILES) && defined(MFX_ENABLE_SVC_VIDEO_ENCODE_HW)
-    assert(NumExtParam == mfxU16(sizeof m_extParam / sizeof m_extParam[0]));
+    assert(NumExtParam <= mfxU16(sizeof m_extParam / sizeof m_extParam[0]));
 #endif
 }
 
