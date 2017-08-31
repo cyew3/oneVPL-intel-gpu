@@ -40,6 +40,8 @@ enum HWType
 
     MFX_HW_ICL       = 0xd00000,
 
+    MFX_HW_LKF       = MFX_HW_ICL + 10,
+
     MFX_HW_TGL       = 0xe00000,
 };
 

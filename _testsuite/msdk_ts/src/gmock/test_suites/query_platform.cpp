@@ -71,6 +71,10 @@ mfxStatus CheckPlatform(mfxPlatform platform)
             {
                 return ((g_tsHWtype == MFX_HW_ICL) || (g_tsHWtype == MFX_HW_UNKNOWN)) ? MFX_ERR_NONE : MFX_ERR_UNKNOWN;
             }
+        case MFX_PLATFORM_LAKEFIELD:
+        {
+            return ((g_tsHWtype == MFX_HW_LKF) || (g_tsHWtype == MFX_HW_UNKNOWN)) ? MFX_ERR_NONE : MFX_ERR_UNKNOWN;
+        }
         case MFX_PLATFORM_TIGERLAKE:
             {
                 return ((g_tsHWtype == MFX_HW_TGL) || (g_tsHWtype == MFX_HW_UNKNOWN)) ? MFX_ERR_NONE : MFX_ERR_UNKNOWN;
