@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2015-2017 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_decoder.h"
 
 namespace screen_capture_query_io_surf
@@ -89,7 +99,7 @@ int test(unsigned int id)
 
     QIOSpar par = {dec.m_session, &dec.m_par, &dec.m_request};
     dec.m_par.IOPattern  = tc.IOPattern;
-    dec.m_par.AsyncDepth = tc.AsyncDepth;
+    dec.m_par.AsyncDepth = 0;
     dec.m_par.mfx.FrameInfo.FourCC = tc.FourCC;
     if (tc.FourCC == MFX_FOURCC_RGB4)
     {
