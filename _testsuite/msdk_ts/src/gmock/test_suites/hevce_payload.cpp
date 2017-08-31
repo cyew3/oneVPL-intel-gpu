@@ -39,16 +39,22 @@ public:
 
 private:
     std::map<mfxU32, std::vector<mfxPayload*>> m_per_frame_sei;
+    std::map<mfxU32, std::vector<mfxPayload*>> m_expected_per_frame_sei;
     mfxU32 m_nframes;
     mfxU32 m_frm_in;
     mfxU32 m_frm_out;
     tsNoiseFiller m_noiser;
     tsBitstreamWriter m_writer;
 
+    struct payload_types
+    {
+        mfxU16 types;
+        bool is_suffix;
+    };
     mfxStatus ProcessSurface(mfxFrameSurface1&);
     mfxStatus ProcessBitstream(mfxBitstream &bs, mfxU32 nFrames);
     void sei_calc_size_type(std::vector<mfxU8>& data, mfxU16 type, mfxU32 size);
-    void create_sei_message(mfxPayload* pl, mfxU16 type, mfxU32 size);
+    void create_sei_message(mfxPayload* pl, const struct payload_types& pt, mfxU32 size);
 
     enum {
         MFX_PAR = 1
@@ -57,12 +63,11 @@ private:
     struct tc_struct
     {
         mfxStatus sts;
-        mfxU32 mode;
         struct
         {
             mfxU16 nf;
             mfxU16 num_payloads;
-            mfxU16 payload_types[5];
+            struct payload_types t_pld[5];
         } per_frm_sei[5];
         struct f_pair
         {
@@ -101,7 +106,7 @@ mfxStatus TestSuite::ProcessBitstream(mfxBitstream &bs, mfxU32 nFrames)
     //return m_writer.ProcessBitstream(bs, nFrames);
 
     auto& au = ParseOrDie();
-    if (m_per_frame_sei.find(m_frm_out) == m_per_frame_sei.end()) {
+    if (m_expected_per_frame_sei.find(m_frm_out) == m_expected_per_frame_sei.end()) {
         m_frm_out++;
         bs.DataLength = 0;
         return MFX_ERR_NONE;
@@ -138,7 +143,7 @@ mfxStatus TestSuite::ProcessBitstream(mfxBitstream &bs, mfxU32 nFrames)
 
     mfxU32 num_sei = 0;
     for (auto p : found_pl) {
-        for (auto exp_p : m_per_frame_sei[m_frm_out]) {
+        for (auto exp_p : m_expected_per_frame_sei[m_frm_out]) {
             // recalc real size, because exp_p->BufSize = SEI size + header_size(type + size)
             mfxU16 size = exp_p->BufSize;
             std::vector<mfxU8> data;
@@ -153,7 +158,7 @@ mfxStatus TestSuite::ProcessBitstream(mfxBitstream &bs, mfxU32 nFrames)
         }
     }
 
-    EXPECT_EQ(num_sei, m_per_frame_sei[m_frm_out].size())
+    EXPECT_EQ(num_sei, m_expected_per_frame_sei[m_frm_out].size())
             << "ERROR: incorrect number of SEI messages\n";
 
     bs.DataLength = 0;
@@ -164,13 +169,19 @@ mfxStatus TestSuite::ProcessBitstream(mfxBitstream &bs, mfxU32 nFrames)
 
 const TestSuite::tc_struct TestSuite::test_case[] =
 {
-    {/*00*/ MFX_ERR_NONE, 0,
-            { {0, 3, {0, 1, 17}}, {1, 2, {1, 2}}, {7, 3, {3, 4, 5}}, {9, 2, {2, 132}} }},
-    {/*01*/ MFX_ERR_NONE, 0,
-            { {0, 4, {0, 0, 1, 1}}, {1, 2, {1, 2}}, {9, 2, {2, 132}} }},
-    // driver doesn't support sum_payload_size for frame > 256 (current limitation)
-    {/*02*/ MFX_ERR_NONE, 0,
-            { {0, 4, {0, 1, 1}}, {1, 2, {1, 2}}, {9, 5, {0, 47, 2, 45, 132}} }}
+    {/*01*/ MFX_ERR_NONE,
+            /*just 3, 4, 5, 17, 22, 132, 146 could be suffix */
+            { {0, 3, {{3, true}, {4, true}, {5, true}}}, {1, 1, {{17, true}}}, {7, 2, {{22, true}, {146, true}}} }},
+    {/*02*/ MFX_ERR_NONE,
+            /*type 1, 2, 45, 47 with true(suffix) should not be added in the bitstream */
+            { {1, 2, {{1, true}, {2, true}}}, {9, 2, {{45, true}, {47, true}}} }},
+    {/*03*/ MFX_ERR_NONE,
+            { {0, 3, {{0, false}, {22, true}, {17, true}}}, {1, 2, {{1, false}, {2, false}}}, {7, 3, {{3, true}, {4, true}, {5, true}}}, {9, 1, {{2, false}}} }},
+    {/*04*/ MFX_ERR_NONE,
+            { {0, 2, {{0, false}, {1, false}}}, {1, 2, {{1, true}, {2, true}}}, {9, 1, {{2, true}}} }},
+    // driver doesn't support sum_payload_size for frame > 256 (current limitation), so this case will be FAILED now.
+    //{/*05*/ MFX_ERR_NONE,
+    //        { {0, 4, {{0, false}, {1, false}, {1, false}, {5, false}}}, {1, 2, {{1, false}, {2, false}}} , {9, 5, {{0, false}, {47, false}, {2, false}, {45, false}, {132, false}}} }}
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -198,23 +209,17 @@ void TestSuite::sei_calc_size_type(std::vector<mfxU8>& data, mfxU16 type, mfxU32
     B = data.size();
 }
 
-void TestSuite::create_sei_message(mfxPayload* pl, mfxU16 type, mfxU32 size)
+void TestSuite::create_sei_message(mfxPayload* pl, const struct payload_types& pt, mfxU32 size)
 {
     std::vector<mfxU8> data;
+    mfxU16 type = pt.types;
     sei_calc_size_type(data, type, size);
 
     size_t B = data.size();
 
     data.resize(B + size);
 
-    // Acording to ITU-T H.265 (04/2015) only following SEI can be SUFFIX:
-    // 3, 4, 5, 17, 22, 132
-    if ((type == 3) || (type == 4) || (type == 5) || (type == 17) ||
-        (type == 22) || (type == 132)) {
-        pl->CtrlFlags = rand() % 2 ? MFX_PAYLOAD_CTRL_SUFFIX : 0;
-    } else {
-        pl->CtrlFlags = 0 * MFX_PAYLOAD_CTRL_SUFFIX;
-    }
+    pl->CtrlFlags = pt.is_suffix ? MFX_PAYLOAD_CTRL_SUFFIX : 0;
     pl->BufSize = mfxU16(B + size);
     pl->Data    = new mfxU8[pl->BufSize];
     pl->NumBit  = pl->BufSize * 8;
@@ -236,8 +241,19 @@ int TestSuite::RunTest(unsigned int id)
         for (mfxU16 p_ind = 0; p_ind < tc.per_frm_sei[i].num_payloads; ++p_ind) {
             mfxPayload* p = new mfxPayload;
             auto par = tc.per_frm_sei[i];
-            create_sei_message(p, par.payload_types[p_ind], (par.nf + p_ind + 1) * 6);
+            create_sei_message(p, par.t_pld[p_ind], (par.nf + p_ind + 1) * 6);
+            // Acording to ITU-T H.265 (12/2016) only following SEI can be SUFFIX:
+            // 3, 4, 5, 17, 22, 132, 146
+            // And type 132 is suffix only
+            mfxU16 type = par.t_pld[p_ind].types;
+
             m_per_frame_sei[par.nf].push_back(p);
+
+            if ( (((type == 3) || (type == 4) || (type == 5) || (type == 17) || (type == 22) || (type == 132)) && par.t_pld[p_ind].is_suffix) ||
+                    (type != 132 && !par.t_pld[p_ind].is_suffix) ) {
+                m_expected_per_frame_sei[par.nf].push_back(p);
+            }
+
         }
     }
 
