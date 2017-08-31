@@ -893,9 +893,9 @@ bool CheckAndFixCTQIdxDeltas(mfxExtVP9Param& extPar)
 {
     bool isOk = true;
 
-    if (false == CheckRange(extPar.QIndexDeltaLumaDC, -MAX_ABS_COEFF_TYPE_Q_INDEX_DELTA, MAX_ABS_COEFF_TYPE_Q_INDEX_DELTA)) isOk = false;
-    if (false == CheckRange(extPar.QIndexDeltaChromaAC, -MAX_ABS_COEFF_TYPE_Q_INDEX_DELTA, MAX_ABS_COEFF_TYPE_Q_INDEX_DELTA)) isOk = false;
-    if (false == CheckRange(extPar.QIndexDeltaChromaDC, -MAX_ABS_COEFF_TYPE_Q_INDEX_DELTA, MAX_ABS_COEFF_TYPE_Q_INDEX_DELTA)) isOk = false;
+    if (false == CheckRangeDflt(extPar.QIndexDeltaLumaDC, -MAX_ABS_COEFF_TYPE_Q_INDEX_DELTA, MAX_ABS_COEFF_TYPE_Q_INDEX_DELTA, 0)) isOk = false;
+    if (false == CheckRangeDflt(extPar.QIndexDeltaChromaAC, -MAX_ABS_COEFF_TYPE_Q_INDEX_DELTA, MAX_ABS_COEFF_TYPE_Q_INDEX_DELTA, 0)) isOk = false;
+    if (false == CheckRangeDflt(extPar.QIndexDeltaChromaDC, -MAX_ABS_COEFF_TYPE_Q_INDEX_DELTA, MAX_ABS_COEFF_TYPE_Q_INDEX_DELTA, 0)) isOk = false;
 
     return isOk;
 }
