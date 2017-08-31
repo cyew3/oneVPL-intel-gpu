@@ -121,7 +121,8 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
                             the encoded data enters the Video Buffering Verifier buffer\n"));
     msdk_printf(MSDK_STRING("   [-LowDelayBRC]           - strictly obey average frame size set by MaxKbps\n"));
     msdk_printf(MSDK_STRING("   [-signal:tm ]            - represents transfer matrix coefficients for mfxExtVideoSignalInfo. 0 - unknown, 1 - BT709, 2 - BT601\n"));
-
+    msdk_printf(MSDK_STRING("   [-WeightedPred: 1/2/3]\n"));
+    msdk_printf(MSDK_STRING("   [-WeightedBiPred: 1/2/3>] - 1 - default, 2 - explicit, 3 - implicit\n"));
     msdk_printf(MSDK_STRING("   [-timeout]               - encoding in cycle not less than specific time in seconds\n"));
     msdk_printf(MSDK_STRING("   [-membuf]                - size of memory buffer in frames\n"));
     msdk_printf(MSDK_STRING("   [-uncut]                 - do not cut output file in looped mode (in case of -timeout option)\n"));

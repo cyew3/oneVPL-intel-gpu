@@ -235,8 +235,8 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("  -w            Destination picture width, invokes VPP resize\n"));
     msdk_printf(MSDK_STRING("  -h            Destination picture height, invokes VPP resize\n"));
     msdk_printf(MSDK_STRING("  -field_processing t2t|t2b|b2t|b2b|fr2fr - Field Copy feature\n"));
-    msdk_printf(MSDK_STRING("  -WeightedPred 0/1/2/3\n"));
-    msdk_printf(MSDK_STRING("  -WeightedBiPred 0/1/2/3 - 0 - unknown, 1 - default, 2 - explicit, 3 - implicit\n"));
+    msdk_printf(MSDK_STRING("  -WeightedPred 1/2/3\n"));
+    msdk_printf(MSDK_STRING("  -WeightedBiPred 1/2/3 - 1 - default, 2 - explicit, 3 - implicit\n"));
 
     msdk_printf(MSDK_STRING("  -extbrc::<on,off>           Enables external BRC for HEVC encoder"));
     msdk_printf(MSDK_STRING("  -vpp_comp <sourcesNum>      Enables composition from several decoding sessions. Result is written to the file\n"));
