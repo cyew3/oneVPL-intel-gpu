@@ -197,5 +197,46 @@ void SetParam(tsExtBufType<T> *base, const std::string name, const mfxU32 offset
 template <typename T>
 void SetParam(tsExtBufType<T>& base, const std::string name, const mfxU32 offset, const mfxU32 size, mfxU64 value);
 
+
+namespace tsStruct
+{
+    class Field;
+}
+
+bool CompareParam(void* base, const tsStruct::Field& field, mfxU64 value);
+
+template <typename T>
+bool CompareParam(tsExtBufType<T> *base, const tsStruct::Field& field, mfxU64 value);
+
+template <typename T>
+bool CompareParam(tsExtBufType<T>& base, const tsStruct::Field& field, mfxU64 value);
+
+enum CompareLog
+{
+    LOG_NOTHING,
+    LOG_MISMATCH,
+    LOG_EVERYTHING
+};
+template <typename TC_STRUCT, typename TYPE_ENUM, typename T>
+bool CompareParams(TC_STRUCT tc, T p, TYPE_ENUM type, CompareLog log = LOG_MISMATCH)
+{
+    bool match = true;
+    for (mfxU32 i = 0; i < sizeof(tc.set_par)/sizeof(tc.set_par[0]); i++)
+    {
+        if (tc.set_par[i].f && tc.set_par[i].ext_type == type)
+        {
+            bool m = CompareParam(p, *(tc.set_par[i].f), tc.set_par[i].v);
+            if (log == LOG_EVERYTHING || (m == false && log == LOG_MISMATCH))
+            {
+                g_tsLog << "WARNING: CompareParams[" << i << "]." << tc.set_par[i].f->name << ( m ? "==":"!=" ) << tc.set_par[i].v << "\n";
+            }
+            match = match && m;
+        }
+    }
+    return match;
+}
+
+#define COMPAREPARS(p, type)  CompareParams(tc, p, type)
+
 //Interrupt test-case execution and return FAILED immediately if at least one check failed (EXPECT_EQ etc.)
 inline void BreakOnFailure() { if (testing::Test::HasFailure()) throw tsFAIL; }

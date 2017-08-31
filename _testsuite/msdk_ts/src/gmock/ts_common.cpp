@@ -9,6 +9,7 @@ Copyright(c) 2016-2017 Intel Corporation. All Rights Reserved.
 \* ****************************************************************************** */
 
 #include "ts_common.h"
+#include "ts_struct.h"
 
 #if defined(_WIN32) || defined(_WIN64)
     #include "..\opensource\mfx_dispatch\include\mfx_dxva2_device.h"
@@ -496,3 +497,44 @@ void SetParam(tsExtBufType<T>& base, const std::string name, const mfxU32 offset
 template void SetParam(tsExtBufType<mfxVideoParam>& base, const std::string name, const mfxU32 offset, const mfxU32 size, mfxU64 value);
 template void SetParam(tsExtBufType<mfxBitstream>& base, const std::string name, const mfxU32 offset, const mfxU32 size, mfxU64 value);
 template void SetParam(tsExtBufType<mfxInitParam>& base, const std::string name, const mfxU32 offset, const mfxU32 size, mfxU64 value);
+
+template <typename T>
+bool CompareParam(tsExtBufType<T>& base, const tsStruct::Field& field, mfxU64 value)
+{
+    assert(!field.name.empty());
+    void* ptr = &base;
+
+    if ((std::is_same<T, mfxVideoParam>::value && (field.name.find("mfxVideoParam") == std::string::npos)) ||
+        (std::is_same<T, mfxBitstream>::value  && (field.name.find("mfxBitstream") == std::string::npos)) ||
+        (std::is_same<T, mfxEncodeCtrl>::value && (field.name.find("mfxEncodeCtrl") == std::string::npos)) ||
+        (std::is_same<T, mfxInitParam>::value  && (field.name.find("mfxInitParam") == std::string::npos)))
+    {
+        mfxU32 bufId = 0, bufSz = 0;
+        GetBufferIdSz(field.name, bufId, bufSz);
+        ptr = base.GetExtBuffer(bufId);
+        if (ptr==NULL)
+        {
+            g_tsLog << "WARNING: CompareParams expectedto find ExtBuf[" << field.name <<"] attached but it is missed\n";
+            return false;
+        }
+    }
+    return CompareParam(ptr, field, value);
+}
+
+template bool CompareParam(tsExtBufType<mfxVideoParam>& base, const tsStruct::Field& field, mfxU64 value);
+template bool CompareParam(tsExtBufType<mfxBitstream>& base, const tsStruct::Field& field, mfxU64 value);
+template bool CompareParam(tsExtBufType<mfxInitParam>& base, const tsStruct::Field& field, mfxU64 value);
+template bool CompareParam(tsExtBufType<mfxEncodeCtrl>& base, const tsStruct::Field& field, mfxU64 value);
+
+bool CompareParam(void* base, const tsStruct::Field& field, mfxU64 value)
+{
+    return memcmp((mfxU8*)base + field.offset, &value, field.size) == 0;
+}
+
+template <typename T>
+bool CompareParam(tsExtBufType<T> *base, const tsStruct::Field& field, mfxU64 value)
+{
+    assert(0 != base);
+    if (base)    return CompareParam(*base, field, value);
+    else return false;
+}
