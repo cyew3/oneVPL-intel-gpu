@@ -707,6 +707,9 @@ bool MfxH264FEIcommon::IsRunTimeInputExtBufferIdSupported(MfxVideoParam const & 
                    || id == MFX_EXTBUFF_FEI_SLICE
                    || id == MFX_EXTBUFF_FEI_PAK_CTRL
                    || id == MFX_EXTBUFF_FEI_ENC_MV
+#if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
+                   || id == MFX_EXTBUFF_GPU_HANG
+#endif
                    );
         case MFX_FEI_FUNCTION_ENC:
             return (  id == MFX_EXTBUFF_FEI_PPS

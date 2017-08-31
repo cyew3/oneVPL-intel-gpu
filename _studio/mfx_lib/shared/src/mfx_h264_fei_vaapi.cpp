@@ -2404,6 +2404,23 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
         mdprintf(stderr, "m_sliceBufferId[%zu]=%d\n", i, m_sliceBufferId[i]);
     }
 
+#if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
+    if ((mfxExtIntGPUHang*)GetExtBufferFEI(in, 0))
+    {
+        unsigned int trigger_hang = 1;
+        MFX_DESTROY_VABUFFER(m_triggerGpuHangBufferId, m_vaDisplay);
+        vaSts = vaCreateBuffer(m_vaDisplay,
+                               m_vaContextEncode,
+                               VATriggerCodecHangBufferType,
+                               sizeof(trigger_hang),
+                               1,
+                               &trigger_hang,
+                               &m_triggerGpuHangBufferId);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+        configBuffers[buffersCount++] = m_triggerGpuHangBufferId;
+    }
+#endif
+
     assert(buffersCount <= configBuffers.size());
 
 
@@ -2558,18 +2575,33 @@ mfxStatus VAAPIFEIPAKEncoder::QueryStatus(
                 MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
             }
 
-            task.m_bsDataLength[feiFieldId] = codedBufferSegment->size;
+            if (codedBufferSegment->status & VA_CODED_BUF_STATUS_BAD_BITSTREAM)
+            {
+                sts = MFX_ERR_GPU_HANG;
+            }
+            else if (!codedBufferSegment->size || !codedBufferSegment->buf)
+            {
+                sts = MFX_ERR_DEVICE_FAILED;
+            }
+            else
+            {
+                task.m_bsDataLength[feiFieldId] = codedBufferSegment->size;
 
-            FastCopyBufferVid2Sys(task.m_bs->Data + task.m_bs->DataLength, codedBufferSegment->buf, codedBufferSegment->size);
+                FastCopyBufferVid2Sys(task.m_bs->Data + task.m_bs->DataLength,
+                                      codedBufferSegment->buf, codedBufferSegment->size);
 
-            task.m_bs->DataLength += codedBufferSegment->size;
-            //Update other fields in mfxBitstream
-            task.m_bs->TimeStamp = task.m_timeStamp;
-            task.m_bs->DecodeTimeStamp = CalcDTSFromPTS(m_videoParam.mfx.FrameInfo, mfxU16(task.m_dpbOutputDelay), task.m_timeStamp);
-            task.m_bs->PicStruct = task.GetPicStructForDisplay();
-            task.m_bs->FrameType = task.m_type[task.GetFirstField()] & ~MFX_FRAMETYPE_KEYPIC;
-            if (task.m_fieldPicFlag)
-                task.m_bs->FrameType = mfxU16(task.m_bs->FrameType | ((task.m_type[!task.GetFirstField()]& ~MFX_FRAMETYPE_KEYPIC) << 8));
+                task.m_bs->DataLength += codedBufferSegment->size;
+                //Update other fields in mfxBitstream
+                task.m_bs->TimeStamp = task.m_timeStamp;
+                task.m_bs->DecodeTimeStamp = CalcDTSFromPTS(m_videoParam.mfx.FrameInfo,
+                                             mfxU16(task.m_dpbOutputDelay), task.m_timeStamp);
+                task.m_bs->PicStruct = task.GetPicStructForDisplay();
+                task.m_bs->FrameType = task.m_type[task.GetFirstField()] & ~MFX_FRAMETYPE_KEYPIC;
+                if (task.m_fieldPicFlag)
+                    task.m_bs->FrameType = mfxU16(task.m_bs->FrameType |
+                    ((task.m_type[!task.GetFirstField()]& ~MFX_FRAMETYPE_KEYPIC) << 8));
+                sts = MFX_ERR_NONE;
+            }
 
             {
                 MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
@@ -2581,7 +2613,6 @@ mfxStatus VAAPIFEIPAKEncoder::QueryStatus(
             // remove task
             m_statFeedbackCache.erase(m_statFeedbackCache.begin() + indxSurf);
         }
-            sts = MFX_ERR_NONE;
             break;
         case VASurfaceRendering:
         case VASurfaceDisplaying:
