@@ -49,10 +49,10 @@ struct sInputParams
     mfxF64 dFrameRate;
     mfxU32 nNumFrames;
     mfxU16 nNumSlices;
-    mfxU16 nRefDist;        // number of frames to next I,P
+    mfxU16 nRefDist;        // distance between I- or P (or GPB) - key frames, GopRefDist = 1, there are no regular B-frames used
     mfxU16 nGopSize;        // number of frames to next I
     mfxU16 nIdrInterval;    // distance between IDR frames in GOPs
-    mfxU16 BRefType;        // B-pyramid ON/OFF/UNKNOWN (default, let MSDK lib to decide)
+    mfxU16 BRefType;        // B-pyramid ON/OFF/UNKNOWN (let MSDK lib to decide)
     mfxU16 nNumRef;         // number of reference frames (DPB size)
     mfxU16 nGopOptFlag;     // STRICT | CLOSED, default is OPEN GOP
     mfxU16 GPB;             // indicates that HEVC encoder use regular P-frames or GPB
@@ -72,16 +72,16 @@ struct sInputParams
         , dFrameRate(30.0)
         , nNumFrames(0xffff)
         , nNumSlices(1)
-        , nRefDist(1)
-        , nGopSize(1)
+        , nRefDist(0)
+        , nGopSize(0)
         , nIdrInterval(0xffff)         // Infinite IDR interval
         , BRefType(MFX_B_REF_UNKNOWN)  // MSDK library make decision itself about enabling B-pyramid or not
         , nNumRef(1)
         , nGopOptFlag(0)               // OPEN GOP
         , GPB(MFX_CODINGOPTION_ON)     // use GPB frames
-        , NumRefActiveP(4)
-        , NumRefActiveBL0(2)
-        , NumRefActiveBL1(1)
+        , NumRefActiveP(0)
+        , NumRefActiveBL0(0)
+        , NumRefActiveBL1(0)
     {
         MSDK_ZERO_MEMORY(strSrcFile);
         MSDK_ZERO_MEMORY(strDstFile);
