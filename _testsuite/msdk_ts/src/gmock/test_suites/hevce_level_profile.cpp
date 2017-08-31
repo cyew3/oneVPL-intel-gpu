@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2015-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2015-2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -53,6 +53,7 @@ namespace hevce_level_profile
         /*  6.2  */{ 4278190080, 240000, 800000, 6 },
     };
 
+inline mfxU16 CeilDiv(mfxU16 x, mfxU16 y) { return (x + y - 1) / y; }
 class TestSuite : tsVideoEncoder
 {
 public:
@@ -217,7 +218,7 @@ private:
                            m_par.mfx.FrameInfo.Height = TS_MIN(((MaxLumaPs / m_par.mfx.FrameInfo.Width) & ~0x1f), 2176);
                            m_par.mfx.FrameInfo.FrameRateExtN = TS_MIN( (MaxLumaSr / (m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height)), 299);
                            m_par.mfx.FrameInfo.FrameRateExtD = 1;
-                           m_par.mfx.NumSlice = TS_MIN( TS_MIN( MaxSSPP, 68 ), (m_par.mfx.FrameInfo.Height / 64) );
+                           m_par.mfx.NumSlice = TS_MIN( TS_MIN( MaxSSPP, 68 ), CeilDiv(m_par.mfx.FrameInfo.Height, 64) );
                        }
                        break;
         }
