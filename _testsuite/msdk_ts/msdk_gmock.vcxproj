@@ -181,6 +181,7 @@
       <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;../../samples/sample_common/include/vm;../../samples/sample_common/include;../../../mdp_msdk-contrib/igfx_s3dcontrol/include;../../../mdp_msdk-val-tools/bs_parser/include;../../../mdp_msdk-contrib/gmock/gtest/include;../../../mdp_msdk-contrib/gmock/include;$(MSDK_API_ROOT)/mediasdk_structures;$(MSDK_API_ROOT)/include;./include/gmock;./include;../mfx_serializer/include;../../../mdp_msdk-contrib/yaml-cpp/include;../../igfx_s3dcontrol/include/API;../../_studio\shared\include;../../_studio/shared/umc/core/vm/include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <ControlFlowGuard>Guard</ControlFlowGuard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -234,6 +235,7 @@
     <ClCompile Include="..\..\samples\sample_common\src\vm\thread.cpp" />
     <ClCompile Include="..\..\samples\sample_common\src\vm\thread_windows.cpp" />
     <ClCompile Include="..\..\samples\sample_common\src\vm\time.cpp" />
+    <ClCompile Include="src\gmock\test_suites\avce_default_lowpower.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_encoder_roi.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_dirty_rect.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_sps_frame_crop_offset.cpp" />
