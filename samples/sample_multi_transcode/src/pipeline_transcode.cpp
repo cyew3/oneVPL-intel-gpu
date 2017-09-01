@@ -1099,7 +1099,6 @@ mfxStatus CTranscodingPipeline::Encode()
     bool bInsertIDR = false;
     int nFramesAlreadyPut = 0;
     SafetySurfaceBuffer   *curBuffer = m_pBuffer;
-    mfxEncodeCtrl   eCtrl;
 
     bool shouldReadNextFrame=true;
     while (MFX_ERR_NONE == sts ||  MFX_ERR_MORE_DATA == sts)
@@ -1247,7 +1246,7 @@ mfxStatus CTranscodingPipeline::Encode()
             m_pBSProcessor->ResetOutput();
         }
 
-        SetEncCtrlRT(VppExtSurface, &eCtrl, bInsertIDR);
+        SetEncCtrlRT(VppExtSurface, bInsertIDR);
         bInsertIDR = false;
 
         if ((m_nVPPCompEnable != VppCompOnly) || (m_nVPPCompEnable == VppCompOnlyEncode))
@@ -1504,83 +1503,100 @@ void CTranscodingPipeline::FillMBQPBuffer(mfxExtMBQP &qpMap, mfxU16 pictStruct)
 }
 #endif //_MSDK_API >= MSDK_API(1,22)
 
-void CTranscodingPipeline::SetEncCtrlRT(ExtendedSurface& extSurface, mfxEncodeCtrl *pCtrl, bool bInsertIDR)
+void CTranscodingPipeline::SetEncCtrlRT(ExtendedSurface& extSurface, bool bInsertIDR)
 {
-    MSDK_ZERO_MEMORY(*pCtrl);
-
     extSurface.pEncCtrl = NULL;
     if (extSurface.pAuxCtrl)
+    {
         extSurface.pEncCtrl = &extSurface.pAuxCtrl->encCtrl;
 
 #if _MSDK_API >= MSDK_API(1,22)
 
-    if (extSurface.pSurface)
-    {
-        void* keyId = (void*) extSurface.pSurface;
-
-        // Use encoded surface pointer to find placeholders for run-time structures in maps
-        if(m_bufExtMBQP.find(keyId) == m_bufExtMBQP.end())
+        if (extSurface.pSurface)
         {
-            m_extBuffPtrStorage[keyId] = std::vector<mfxExtBuffer*> ();
+            void* keyId = (void*)extSurface.pSurface;
 
-            m_qpMapStorage[keyId] = std::vector<mfxU8> ();
-            m_qpMapStorage[keyId].resize(m_QPmapWidth*m_QPmapHeight);
+            // Use encoded surface pointer to find placeholders for run-time structures in maps
+            if (m_bUseQPMap && m_bufExtMBQP.find(keyId) == m_bufExtMBQP.end())
+            {
+                m_extBuffPtrStorage[keyId] = std::vector<mfxExtBuffer*>();
 
-            m_bufExtMBQP[keyId] = mfxExtMBQP ();
-            m_bufExtMBQP[keyId].Header.BufferId = MFX_EXTBUFF_MBQP;
-            m_bufExtMBQP[keyId].Header.BufferSz = sizeof(mfxExtMBQP);
-            m_bufExtMBQP[keyId].NumQPAlloc = m_QPmapWidth*m_QPmapHeight;
-            m_bufExtMBQP[keyId].QP = &(m_qpMapStorage[keyId][0]);
-        }
+                m_qpMapStorage[keyId] = std::vector<mfxU8>();
+                m_qpMapStorage[keyId].resize(m_QPmapWidth*m_QPmapHeight);
 
-        // Initialize *pCtrl optionally copying content of the pExtSurface.pAuxCtrl.encCtrl
-        if (extSurface.pEncCtrl)
-            *pCtrl = *extSurface.pEncCtrl;
+                m_bufExtMBQP[keyId] = mfxExtMBQP();
+                m_bufExtMBQP[keyId].Header.BufferId = MFX_EXTBUFF_MBQP;
+                m_bufExtMBQP[keyId].Header.BufferSz = sizeof(mfxExtMBQP);
+                m_bufExtMBQP[keyId].NumQPAlloc = m_QPmapWidth*m_QPmapHeight;
+                m_bufExtMBQP[keyId].QP = &(m_qpMapStorage[keyId][0]);
+            }
 
-        // Copy all extended buffer pointers from pExtSurface.pAuxCtrl.encCtrl
-        m_extBuffPtrStorage[keyId].clear();
-        if (extSurface.pAuxCtrl)
-        {
-            for (unsigned int i = 0; i < pCtrl->NumExtParam; i++)
-                m_extBuffPtrStorage[keyId].push_back(extSurface.pAuxCtrl->encCtrl.ExtParam[i]);
-        }
+            // Initialize *pCtrl optionally copying content of the pExtSurface.pAuxCtrl.encCtrl
+            mfxEncodeCtrl& ctrl = encControlStorage[keyId];
+            MSDK_ZERO_MEMORY(ctrl);
 
-        // Attach additional buffer with either MBQP or ROI information
-        if (m_bUseQPMap)
-        {
-            FillMBQPBuffer(m_bufExtMBQP[keyId], extSurface.pSurface->Info.PicStruct);
-            m_extBuffPtrStorage[keyId].push_back((mfxExtBuffer *)&m_bufExtMBQP[keyId]);
-        }
-        else
-        {
-            if (m_ROIData.size() > m_nSubmittedFramesNum)
-                m_extBuffPtrStorage[keyId].push_back((mfxExtBuffer *)&m_ROIData[m_nSubmittedFramesNum]);
-        }
+            if (extSurface.pEncCtrl)
+            {
+                ctrl = *extSurface.pEncCtrl;
+            }
+
+            // Copy all extended buffer pointers from pExtSurface.pAuxCtrl.encCtrl
+            m_extBuffPtrStorage[keyId].clear();
+            if (extSurface.pAuxCtrl)
+            {
+                for (unsigned int i = 0; i < ctrl.NumExtParam; i++)
+                {
+                    m_extBuffPtrStorage[keyId].push_back(extSurface.pAuxCtrl->encCtrl.ExtParam[i]);
+                }
+            }
+
+            // Attach additional buffer with either MBQP or ROI information
+            if (m_bUseQPMap)
+            {
+                FillMBQPBuffer(m_bufExtMBQP[keyId], extSurface.pSurface->Info.PicStruct);
+                m_extBuffPtrStorage[keyId].push_back((mfxExtBuffer *)&m_bufExtMBQP[keyId]);
+            }
+            else
+            {
+                if (m_ROIData.size() > m_nSubmittedFramesNum)
+                    m_extBuffPtrStorage[keyId].push_back((mfxExtBuffer *)&m_ROIData[m_nSubmittedFramesNum]);
+            }
 
 #ifdef ENABLE_FF
-        m_extBuffPtrStorage[keyId].push_back((mfxExtBuffer *)&(m_ExtMFEParam));
-        m_extBuffPtrStorage[keyId].push_back((mfxExtBuffer *)&(m_ExtMFEControl));
+            m_extBuffPtrStorage[keyId].push_back((mfxExtBuffer *)&(m_ExtMFEParam));
+            m_extBuffPtrStorage[keyId].push_back((mfxExtBuffer *)&(m_ExtMFEControl));
 
 #endif
 
-        // Replace the buffers pointer to pre-allocated storage
-        pCtrl->NumExtParam = (mfxU16)m_extBuffPtrStorage[keyId].size();
-        pCtrl->ExtParam = &(m_extBuffPtrStorage[keyId][0]);
+            // Replace the buffers pointer to pre-allocated storage
+            ctrl.NumExtParam = (mfxU16)m_extBuffPtrStorage[keyId].size();
+            if (ctrl.NumExtParam)
+            {
+                ctrl.ExtParam = &(m_extBuffPtrStorage[keyId][0]);
+            }
 
-        extSurface.pEncCtrl = pCtrl;
-        m_nSubmittedFramesNum++;
+            extSurface.pEncCtrl = &ctrl;
+            m_nSubmittedFramesNum++;
+        }
     }
 #endif //_MSDK_API >= MSDK_API(1,22)
 
-    if (bInsertIDR)
+    if (bInsertIDR && extSurface.pSurface)
     {
-        if(extSurface.pEncCtrl == NULL) extSurface.pEncCtrl = pCtrl;
+        if (extSurface.pEncCtrl == NULL)
+        {
+            mfxEncodeCtrl& ctrl = encControlStorage[(void*)extSurface.pSurface];
+            MSDK_ZERO_MEMORY(ctrl);
+            extSurface.pEncCtrl = &ctrl;
+        }
         extSurface.pEncCtrl->FrameType = MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF;
     }
     else
     {
-        if(extSurface.pEncCtrl)
+        if (extSurface.pEncCtrl)
+        {
             extSurface.pEncCtrl->FrameType = 0;
+        }
     }
 }
 
@@ -1595,7 +1611,6 @@ mfxStatus CTranscodingPipeline::Transcode()
     bool bLastCycle = false;
     bool bInsertIDR = false;
     bool shouldReadNextFrame=true;
-    mfxEncodeCtrl   eCtrl;
 
     time_t start = time(0);
     while (MFX_ERR_NONE == sts )
@@ -1748,10 +1763,12 @@ mfxStatus CTranscodingPipeline::Transcode()
 
         m_BSPool.push_back(pBS);
 
-        // encode frame only if it wasn't encoded enough
-        SetEncCtrlRT(VppExtSurface, &eCtrl, bInsertIDR);
+        // Set Encoding control if it is required.
+
+        SetEncCtrlRT(VppExtSurface, bInsertIDR);
         bInsertIDR = false;
 
+        // encode frame only if it wasn't encoded enough
         if(bNeedDecodedFrames)
         {
             if(m_mfxEncParams.mfx.CodecId != MFX_CODEC_DUMP)

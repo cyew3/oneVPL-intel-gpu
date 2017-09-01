@@ -573,7 +573,7 @@ namespace TranscodingSample
         mfxFrameSurface1* GetFreeSurface(bool isDec, mfxU64 timeout);
         mfxU32 GetFreeSurfacesCount(bool isDec);
         PreEncAuxBuffer*  GetFreePreEncAuxBuffer();
-        void SetEncCtrlRT(ExtendedSurface& extSurface, mfxEncodeCtrl *pCtrl, bool bInsertIDR);
+        void SetEncCtrlRT(ExtendedSurface& extSurface, bool bInsertIDR);
 
         // parameters configuration functions
         mfxStatus InitDecMfxParams(sInputParams *pInParams);
@@ -778,6 +778,7 @@ namespace TranscodingSample
         std::map<void*, mfxExtMBQP> m_bufExtMBQP;
         std::map<void*, std::vector<mfxU8> > m_qpMapStorage;
         std::map<void*, std::vector<mfxExtBuffer*> > m_extBuffPtrStorage;
+        std::map<void*, mfxEncodeCtrl > encControlStorage;
 
         mfxU32            m_QPmapWidth;
         mfxU32            m_QPmapHeight;
