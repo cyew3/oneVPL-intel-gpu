@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -234,13 +234,6 @@ namespace UMC_VP9_DECODER
     };
 
     inline
-    Ipp32s clamp(Ipp32s value, Ipp32s low, Ipp32s high)
-    {
-        return
-            value < low ? low : (value > high ? high : value);
-    }
-
-    inline
     Ipp16s vp9_dc_quant(Ipp32s qindex, Ipp32s delta, Ipp32u bit_depth)
     {
         switch (bit_depth) {
@@ -349,6 +342,61 @@ namespace UMC_VP9_DECODER
         }
 #endif
 
+    }
+
+    void SetSegData(VP9Segmentation & seg, Ipp8u segmentId, SEG_LVL_FEATURES featureId, Ipp32s seg_data)
+    {
+        VM_ASSERT(seg_data <= SEG_FEATURE_DATA_MAX[featureId]);
+        if (seg_data < 0)
+        {
+            VM_ASSERT(SEG_FEATURE_DATA_SIGNED[featureId]);
+            VM_ASSERT(-seg_data <= SEG_FEATURE_DATA_MAX[featureId]);
+        }
+
+        seg.featureData[segmentId][featureId] = seg_data;
+    }
+
+    void SetupPastIndependence(UMC_VP9_DECODER::VP9DecoderFrame & info)
+    {
+        // Reset the segment feature data to the default stats:
+        // Features disabled, 0, with delta coding (Default state).
+
+        ClearAllSegFeatures(info.segmentation);
+        info.segmentation.absDelta = UMC_VP9_DECODER::SEGMENT_DELTADATA;
+
+        // set_default_lf_deltas()
+        info.lf.modeRefDeltaEnabled = 1;
+        info.lf.modeRefDeltaUpdate = 1;
+
+        info.lf.refDeltas[INTRA_FRAME] = 1;
+        info.lf.refDeltas[LAST_FRAME] = 0;
+        info.lf.refDeltas[GOLDEN_FRAME] = -1;
+        info.lf.refDeltas[ALTREF_FRAME] = -1;
+
+        info.lf.modeDeltas[0] = 0;
+        info.lf.modeDeltas[1] = 0;
+
+        memset(info.refFrameSignBias, 0, sizeof(info.refFrameSignBias));
+    }
+
+    void GetTileNBits(const Ipp32s miCols, Ipp32s & minLog2TileCols, Ipp32s & maxLog2TileCols)
+    {
+        const Ipp32s sbCols = ALIGN_POWER_OF_TWO(miCols, MI_BLOCK_SIZE_LOG2) >> MI_BLOCK_SIZE_LOG2;
+        Ipp32s minLog2 = 0, maxLog2 = 0;
+
+        while ((sbCols >> maxLog2) >= MIN_TILE_WIDTH_B64)
+            ++maxLog2;
+        --maxLog2;
+        if (maxLog2 < 0)
+            maxLog2 = 0;
+
+        while ((MAX_TILE_WIDTH_B64 << minLog2) < sbCols)
+            ++minLog2;
+
+        VM_ASSERT(minLog2 <= maxLog2);
+
+        minLog2TileCols = minLog2;
+        maxLog2TileCols = maxLog2;
     }
 } //UMC_VP9_DECODER
 
