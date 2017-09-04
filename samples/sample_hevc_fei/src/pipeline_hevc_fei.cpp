@@ -389,13 +389,13 @@ mfxStatus CEncodingPipeline::DrainBufferedFrames()
 
             if (m_pFEI_Encode.get())
             {
-                sts = m_pFEI_Encode->EncodeFrame(task->m_surf);
+                sts = m_pFEI_Encode->EncodeFrame(task);
                 // exit in case of other errors
                 MSDK_CHECK_STATUS(sts, "EncodeFrame drain failed");
 
-                m_processedFrames++;
             }
             m_pOrderCtrl->FreeTask(task);
+            m_processedFrames++;
         }
         return sts;
     }
