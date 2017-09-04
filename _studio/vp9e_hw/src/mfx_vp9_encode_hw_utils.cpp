@@ -341,14 +341,6 @@ mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
     {
         // context switching isn't supported by driver now. So refresh_frame_context is disabled for temporal scalability
         frameParam.refreshFrameContext = par.m_numLayers ? 0 : 1;
-#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
-        if (platform.CodeName >= MFX_PLATFORM_TIGERLAKE)
-        {
-            // for now driver doesn't support refresh of entropy contexts for TGL
-            // TODO: remove this once driver behavior fixed
-            frameParam.refreshFrameContext = 0;
-        }
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
     }
 
     frameParam.allowHighPrecisionMV = 1;
