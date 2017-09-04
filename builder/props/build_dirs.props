@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(DevWinEdition)' == 'Desktop'">
+    <OutDir Condition="'$(ConfigurationType)'=='StaticLibrary'">$(MSDK_MFX_BUILD_DIR)\win_$(Platform)\lib\</OutDir>
+    <OutDir Condition="'$(ConfigurationType)'=='DynamicLibrary' or '$(ConfigurationType)'=='Application'" >$(MSDK_MFX_BUILD_DIR)\win_$(Platform)\bin\</OutDir>
+    <IntDir>$(MSDK_MFX_BUILD_DIR)\win_$(Platform)\objs\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(DevWinEdition)' == 'Mobile' and '$(Platform)'=='Win32'">
+    <OutDir Condition="'$(ConfigurationType)'=='StaticLibrary'">$(MSDK_MFX_BUILD_DIR)\win_thm32\lib\</OutDir>
+    <OutDir Condition="'$(ConfigurationType)'=='DynamicLibrary' or '$(ConfigurationType)'=='Application'">$(MSDK_MFX_BUILD_DIR)\win_thm32\bin\</OutDir>
+    <IntDir>$(MSDK_MFX_BUILD_DIR)\win_thm32\objs\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(DevWinEdition)' == 'Mobile' and '$(Platform)'=='x64'">
+    <OutDir Condition="'$(ConfigurationType)'=='StaticLibrary'">$(MSDK_MFX_BUILD_DIR)\win_thm64\lib\</OutDir>
+    <OutDir Condition="'$(ConfigurationType)'=='DynamicLibrary' or '$(ConfigurationType)'=='Application'">$(MSDK_MFX_BUILD_DIR)\win_thm64\bin\</OutDir>
+    <IntDir>$(MSDK_MFX_BUILD_DIR)\win_thm64\objs\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <Target Name="MediaSdkBuildDirCheck" BeforeTargets="Build">
+    <Warning Text="Unable to find MSDK_MFX_BUILD_DIR user macro."
+       Condition ="!Exists('$(MSDK_MFX_BUILD_DIR)')" />
+  </Target>
+</Project>

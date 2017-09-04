@@ -4,5 +4,6 @@
   <PropertyGroup Label="UserMacros">
     <MSDK_STUDIO_ROOT>$(MSBuildThisFileDirectory)..\_studio</MSDK_STUDIO_ROOT>
     <MSDK_API_ROOT>$(MSBuildThisFileDirectory)..\..\mdp_msdk-api</MSDK_API_ROOT>
+    <MSDK_MFX_BUILD_DIR>$(MSBuildThisFileDirectory)..\..\build</MSDK_MFX_BUILD_DIR>
   </PropertyGroup>
 </Project>
