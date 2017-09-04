@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2017 Intel Corporation. All Rights Reserved.
 
 File Name: test_thread_safety_output.cpp
 
@@ -84,17 +84,21 @@ mfxI32 OutputRegistrator::CommitData(mfxHDL handle, void* ptr, mfxU32 len)
             UMC::AutomaticUMCMutex guard(m_counterMutex);
             m_numCommit--;
             last = (m_numCommit == 0);
-            if (ptr == 0 && m_numRegistered > 0)
-            {
-                // came here from UnRegister
-                m_numRegistered--;
-            }
         }
 
         if (last)
         {
             m_allIn.Reset();
             m_allOut.Set();
+        }
+    }
+
+    {
+        UMC::AutomaticUMCMutex guard(m_counterMutex);
+        if (ptr == 0 && m_numRegistered > 0)
+        {
+            // came here from UnRegister
+            m_numRegistered--;
         }
     }
 

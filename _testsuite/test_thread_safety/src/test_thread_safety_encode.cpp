@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -60,15 +60,7 @@ mfxStatus OutputBitstreamTester::Init(mfxVideoParam *par, const vm_char *)
 mfxStatus OutputBitstreamTester::PutBsData(mfxBitstream *pBS)
 {
     if (NULL == pBS)
-    {
-        if (m_handle != 0)
-        {
-            outReg->UnRegister(m_handle);
-            m_handle = 0;
-        }
-
         return MFX_ERR_NONE;
-    }
 
     if (outReg->CommitData(m_handle, pBS->Data + pBS->DataOffset, pBS->DataLength) < 0)
         return MFX_ERR_UNKNOWN;
