@@ -66,6 +66,11 @@ public:
         return task;
     }
 
+    inline mfxU16 GetNumReorderFrames()
+    {
+        return MaxTask(m_par);
+    }
+
     void ReleaseResources(HevcTask & task);
 
     void FreeTask(HevcTask* pTask)

@@ -574,6 +574,10 @@ HevcTask* EncodeOrderControl::ReorderFrame(mfxFrameSurface1 * surface)
 
             msdk_atomic_inc16((volatile mfxU16*)&surface->Data.Locked);
         }
+        else
+        {
+            assert(!"No free task in pool");
+        }
     }
 
     if (free_task)

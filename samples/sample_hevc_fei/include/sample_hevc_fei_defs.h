@@ -75,7 +75,7 @@ struct sInputParams
         , nRefDist(0)
         , nGopSize(0)
         , nIdrInterval(0xffff)         // Infinite IDR interval
-        , BRefType(MFX_B_REF_UNKNOWN)  // MSDK library make decision itself about enabling B-pyramid or not
+        , BRefType(MFX_B_REF_UNKNOWN)
         , nNumRef(1)
         , nGopOptFlag(0)               // OPEN GOP
         , GPB(MFX_CODINGOPTION_ON)     // use GPB frames

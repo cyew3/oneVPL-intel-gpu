@@ -73,11 +73,11 @@ mfxStatus CEncodingPipeline::Init()
             MSDK_CHECK_STATUS(sts, "FEI ENCODE PreInit failed");
         }
 
-        sts = AllocFrames();
-        MSDK_CHECK_STATUS(sts, "AllocFrames failed");
-
         sts = InitComponents();
         MSDK_CHECK_STATUS(sts, "InitComponents failed");
+
+        sts = AllocFrames();
+        MSDK_CHECK_STATUS(sts, "AllocFrames failed");
     }
     catch (mfxError& ex)
     {
@@ -267,6 +267,13 @@ mfxStatus CEncodingPipeline::AllocFrames()
         // While it's safe to use it, it needs to be optimized for reasonable resource allocation.
         // TODO: Find a reasonable minimal number of required surfaces for YUVSource+PreENC+ENCODE pipeline
         allocRequest.NumFrameSuggested += preEncRequest.NumFrameSuggested;
+        allocRequest.NumFrameMin = allocRequest.NumFrameSuggested;
+    }
+    if (m_pOrderCtrl.get())
+    {
+        // encode order ctrl buffering surfaces in own pools, 
+        // so add number of required frames for it
+        allocRequest.NumFrameSuggested += m_pOrderCtrl->GetNumReorderFrames();
         allocRequest.NumFrameMin = allocRequest.NumFrameSuggested;
     }
 
