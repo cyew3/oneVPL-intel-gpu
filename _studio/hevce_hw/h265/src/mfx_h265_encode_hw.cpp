@@ -706,6 +706,17 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
             sts = lpsts;
 
         tmp.FillPar(*out, true);
+
+        // SetLowPowerDefault may change LowPower to default value
+        // if LowPower was invalid set it to Zero to mimic Query behaviour
+        if (lpsts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)
+        {
+            out->mfx.LowPower = 0;
+        }
+        else // otherwise 'hide' default vbalue;
+        {
+            out->mfx.LowPower = in->mfx.LowPower;
+        }
     }
 
     return sts;
