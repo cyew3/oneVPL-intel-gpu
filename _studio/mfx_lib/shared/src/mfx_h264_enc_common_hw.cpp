@@ -810,7 +810,46 @@ namespace
         mfxU16 const DEFAULT_BY_TU[] = { 0, 3, 3, 3, 2, 1, 1, 1 };
         return DEFAULT_BY_TU[targetUsage];
     }
-
+#if defined(MFX_ENABLE_MFE)
+    //ToDo: add number of slices handling
+    mfxU16 GetDefaultNumMfeFrames(mfxU32 targetUsage, const mfxFrameInfo& info,
+        eMFXHWType platform, mfxFeiFunction func)
+    {
+        targetUsage;//no specific check for TU now, can be added later
+        if (
+#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
+            platform == MFX_HW_CNL || 
+#endif
+            platform <= MFX_HW_BDW)//no MFE support now for CNL and prior to SKL.
+            return 1;
+        else if (platform 
+#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
+            < MFX_HW_CNL
+#else
+            == MFX_HW_SKL
+#endif
+            )
+        {
+            if ( func == MFX_FEI_FUNCTION_ENCODE)//other functions either already rejected(PAK, ENC/PreEnc absense of support) or can run bigger amount of frames(for PreEnc).
+            {
+                return 2;
+            }
+            //TODO: this need to be verified which resolution should decrease number of MFE frames and how this depend on TU and SKU
+            else if (info.CropH > 1088 && info.CropH > 1920)
+            {
+                return 2;
+            }
+            else
+            {
+                return 3;//for legacy now - need to look for potential decrease due to added controls like MBQP, etc.
+            }
+        }
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+        else//platform >= MFX_HW_ICL
+            return 4;//to be adjusted based on final performance measurements, depending on SKU and resolution this can be 2->16
+#endif
+    }
+#endif
     mfxU16 GetDefaultMaxNumRefActivePL0(mfxU32 targetUsage,
                                         eMFXHWType platform,
                                         bool isLowPower,
@@ -4660,18 +4699,20 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     }
 
 #ifdef MFX_ENABLE_MFE
-        //ToDo: move MFE check to separate function
-        mfxExtMultiFrameParam & mfeParam = GetExtBufferRef(par);
-        if (mfeParam.MFMode > MFX_MF_MANUAL){
-            mfeParam.MFMode = MFX_MF_DEFAULT;
-            changed = true;
-        }
-        // Replace 3 with function to detect maximum allowed number of frames
-        if (mfeParam.MaxNumFrames > 3){
-            mfeParam.MaxNumFrames =
-              (mfeParam.MFMode >= MFX_MF_AUTO) ? 3: 1;
-            changed = true;
-        }
+    mfxExtMultiFrameParam & mfeParam = GetExtBufferRef(par);
+    if (mfeParam.MFMode > MFX_MF_MANUAL)
+    {
+        mfeParam.MFMode = MFX_MF_DEFAULT;
+        changed = true;
+    }
+    //explicitly force defualt number of frames, higher number will cause performance degradation.
+    mfxU32 numFrames = GetDefaultNumMfeFrames(par.mfx.TargetUsage, par.mfx.FrameInfo, platform, feiParam->Func);
+    if (mfeParam.MaxNumFrames > numFrames)
+    {
+        mfeParam.MaxNumFrames =
+        (mfeParam.MFMode >= MFX_MF_AUTO) ? numFrames : 1;
+        changed = true;
+    }
 #endif
 
     return unsupported
@@ -5245,6 +5286,9 @@ void MfxHwH264Encode::SetDefaults(
 #endif
     mfxExtChromaLocInfo*       extCli  = GetExtBuffer(par);
     mfxExtFeiParam* feiParam = (mfxExtFeiParam*)GetExtBuffer(par);
+#if defined(MFX_ENABLE_MFE)
+    mfxExtMultiFrameParam* mfeParam = GetExtBuffer(par);
+#endif
     bool isENCPAK = (feiParam->Func == MFX_FEI_FUNCTION_ENCODE) ||
                     (feiParam->Func == MFX_FEI_FUNCTION_ENC)    ||
                     (feiParam->Func == MFX_FEI_FUNCTION_PAK);
@@ -5293,7 +5337,17 @@ void MfxHwH264Encode::SetDefaults(
                 par.mfx.RateControlMethod = MFX_RATECONTROL_CBR;
         }
     }
-
+#if defined(MFX_ENABLE_MFE)
+    if(mfeParam){
+        //to be changed
+        if (!mfeParam->MFMode)
+            mfeParam->MFMode = MFX_MF_DISABLED;//disabled by defualt now, change here to enable
+        if (mfeParam->MFMode >= MFX_MF_AUTO && !mfeParam->MaxNumFrames)
+        {
+            mfeParam->MaxNumFrames = GetDefaultNumMfeFrames(par.mfx.TargetUsage,par.mfx.FrameInfo,platform,feiParam->Func);
+        }
+    }
+#endif
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (IsProtectionPavp(par.Protected))
     {

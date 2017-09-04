@@ -105,8 +105,12 @@ mfxStatus MFEVAAPIEncoder::Create(mfxExtMultiFrameParam  const & par, VADisplay 
         vaMFESubmit = (vaExMfeSubmit)dlsym(handle, VPG_EXT_VA_MFE_SUBMIT);
 
         VAStatus vaSts = vaCreateMFEContext(m_vaDisplay, &m_mfe_context);
-        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-        return MFX_ERR_NONE;
+        if (VA_STATUS_SUCCESS == vaSts)
+            return MFX_ERR_NONE;
+        else if (VA_STATUS_ERROR_UNIMPLEMENTED == vaSts)
+            return MFX_ERR_UNSUPPORTED;
+        else
+            return MFX_ERR_DEVICE_FAILED;
     }
     else
     {
@@ -117,7 +121,32 @@ mfxStatus MFEVAAPIEncoder::Create(mfxExtMultiFrameParam  const & par, VADisplay 
 mfxStatus MFEVAAPIEncoder::Join(VAContextID ctx)
 {
     VAStatus vaSts = vaAddContext(m_vaDisplay, ctx, m_mfe_context);
-    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+    mfxStatus sts = MFX_ERR_NONE;
+    switch(vaSts)
+    {
+        //invalid context means we are adding context
+        //with entry point or codec conrudicting to already added
+        //So it is not supported for single MFE adapter to use HEVC and AVC simultaneosly
+        case VA_STATUS_ERROR_INVALID_CONTEXT:
+            sts = MFX_ERR_UNDEFINED_BEHAVIOR;
+            break;
+        //entry point not supported by current driver implementation
+        case VA_STATUS_ERROR_UNSUPPORTED_ENTRYPOINT:
+            sts = MFX_ERR_UNSUPPORTED;
+            break;
+        //profile not supported
+        case VA_STATUS_ERROR_UNSUPPORTED_PROFILE:
+            sts = MFX_ERR_UNSUPPORTED;//keep separate for future possible expansion
+            break;
+        case VA_STATUS_SUCCESS:
+            sts = MFX_ERR_NONE;
+            break;
+        default:
+            sts = MFX_ERR_DEVICE_FAILED;
+            break;
+    }
+
+    MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == sts, sts);
 
     // append the pool with a new item;
     m_streams_pool.push_back(m_stream_ids_s());

@@ -1649,8 +1649,10 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
         if (0 == m_mfe)
             return MFX_ERR_DEVICE_FAILED;
 
-        m_mfe->Create(mfeParam, m_vaDisplay);
-        m_mfe->Join(m_vaContextEncode);
+        mfxStatus sts = m_mfe->Create(mfeParam, m_vaDisplay);
+        MFX_CHECK_STS(sts);
+        sts = m_mfe->Join(m_vaContextEncode);
+        MFX_CHECK_STS(sts);
     }
 #endif
 
