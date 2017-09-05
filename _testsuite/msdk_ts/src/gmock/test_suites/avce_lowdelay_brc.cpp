@@ -158,6 +158,16 @@ namespace TEST_NAME
                 }
             }
         }
+        
+        if (m_par.mfx.RateControlMethod == MFX_RATECONTROL_VCM || m_par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR)
+        {
+            if (g_tsOSFamily == MFX_OS_FAMILY_LINUX && g_tsHWtype < MFX_HW_KBL)
+            {
+                g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
+                g_tsLog << "WARNING: Unsupported HW Platform!\n";
+                return 0;
+            }
+        }
 
         g_tsStatus.expect(tc.sts);
         if (m_par.mfx.RateControlMethod == MFX_RATECONTROL_VCM) {
