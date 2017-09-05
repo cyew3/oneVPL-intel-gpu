@@ -287,10 +287,8 @@ struct AppConfig
         , refDist(1)             // Only I frames
         , gopSize(1)             // Only I frames
         , QP(26)
-#ifdef ENABLE_FF
         , RateControlMethod(MFX_RATECONTROL_CQP)
         , TargetKbps(0)
-#endif
         , numSlices(1)
         , numRef(1)              // One ref by default
         , NumRefActiveP(0)
