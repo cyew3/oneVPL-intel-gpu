@@ -14,10 +14,16 @@
 extern "C"
 {
 
+#if !defined(_WIN32) && !defined(_WIN64)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wattributes"
+#endif
+
 #include <ittnotify.h>
+
+#if !defined(_WIN32) && !defined(_WIN64)
 #pragma GCC diagnostic pop
+#endif
 
 #include <stdio.h>
 #include "mfx_trace_utils.h"
