@@ -32,9 +32,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ts_struct.h"
 #include "ts_fei_warning.h"
 
-/*
- * [MDP-33148] check the weighted prediction setting in PPS/SliceHeader for FEI ENCODE.
- * only support P-frame checking currently.
+/* Check the ext buffer of weighted prediction table and related paramter settings in
+ * pps/slice header for AVC FEI ENCODE.
+ * [MDP-33148] Added support for P-frame.
+ * [MDP-36509] Added support for B-frame
  */
 
 namespace fei_encode_weighted_prediction
@@ -140,7 +141,6 @@ public:
         mfxExtPredWeightTable *feiEncPWT = NULL;
         mfxExtFeiEncFrameCtrl *feiFrmCtl = NULL;
         const mfxU32 iWeight = 0, iOffset = 1, iY = 0, iCb = 1, iCr = 2;
-        //mfxU16 hasBframe = (m_par.mfx.GopRefDist == 1) ? 0 : 1;
 
         s.Data.TimeStamp = m_frameCnt;
         m_frameType = GetFrameType(m_par, s.Data.TimeStamp, 0);
@@ -184,7 +184,7 @@ public:
 
         if(m_hasPWT) {
             for (mfxU32 fieldId = 0; fieldId < numField; fieldId++) {
-                if ((m_frameType & MFX_FRAMETYPE_P) || ((m_frameType & MFX_FRAMETYPE_IDR) && numField == 2)) {
+                if ((m_frameType & MFX_FRAMETYPE_P) || (m_frameType & MFX_FRAMETYPE_B) || ((m_frameType & MFX_FRAMETYPE_IDR) && numField == 2)) {
                     //assign PredWeightTable
                     if (fieldId == 0) {
                         feiEncPWT = new mfxExtPredWeightTable[numField];
@@ -196,24 +196,85 @@ public:
                     feiEncPWT[fieldId].LumaLog2WeightDenom = GetRandomNumber(0, 7);
                     feiEncPWT[fieldId].ChromaLog2WeightDenom = GetRandomNumber(0, 7);
 
-                    for (mfxU32 lx = 0; lx <= 0 /*hasBframe*/; lx++) {
-                        for (mfxU32 ref = 0; ref < m_par.mfx.NumRefFrame; ref++) {
-                            feiEncPWT[fieldId].LumaWeightFlag[lx][ref] = GetRandomNumber(0, 1);
-                            if (feiEncPWT[fieldId].LumaWeightFlag[lx][ref] == 1) {
-                                feiEncPWT[fieldId].Weights[lx][ref][iY][iWeight] = GetRandomNumber(-128, 127);
-                                feiEncPWT[fieldId].Weights[lx][ref][iY][iOffset] = GetRandomNumber(-128, 127);
+                    mfxU16 hasBframe = !!(m_frameType & MFX_FRAMETYPE_B);
+                    for (mfxU32 lx = 0; lx <= hasBframe; lx++) {
+                        for (mfxU32 ref = 0; ref < 32; ref++) {
+                            if (ref < m_par.mfx.NumRefFrame) {
+                                feiEncPWT[fieldId].LumaWeightFlag[lx][ref] = GetRandomNumber(0, 1);
+                                if (feiEncPWT[fieldId].LumaWeightFlag[lx][ref] == 1) {
+                                    feiEncPWT[fieldId].Weights[lx][ref][iY][iWeight] = GetRandomNumber(-128, 127);
+                                    feiEncPWT[fieldId].Weights[lx][ref][iY][iOffset] = GetRandomNumber(-128, 127);
+
+                                }
+                            } else {
+                                feiEncPWT[fieldId].LumaWeightFlag[lx][ref] = 0;
+                                feiEncPWT[fieldId].Weights[lx][ref][iY][iWeight] = 0;
+                                feiEncPWT[fieldId].Weights[lx][ref][iY][iOffset] = 0;
                             }
                         }
                     }
 
-                    for (mfxU32 lx = 0; lx <= 0 /*hasBframe*/; lx++) {
-                        for (mfxU32 ref = 0; ref < m_par.mfx.NumRefFrame; ref++) {
-                            feiEncPWT[fieldId].ChromaWeightFlag[lx][ref] = GetRandomNumber(0, 1);
-                            if (feiEncPWT[fieldId].ChromaWeightFlag[lx][ref] == 1) {
-                                feiEncPWT[fieldId].Weights[lx][ref][iCb][iWeight] = GetRandomNumber(-128, 127);
-                                feiEncPWT[fieldId].Weights[lx][ref][iCb][iOffset] = GetRandomNumber(-128, 127);
-                                feiEncPWT[fieldId].Weights[lx][ref][iCr][iWeight] = GetRandomNumber(-128, 127);
-                                feiEncPWT[fieldId].Weights[lx][ref][iCr][iOffset] = GetRandomNumber(-128, 127);
+                    for (mfxU32 lx = 0; lx <= hasBframe; lx++) {
+                        for (mfxU32 ref = 0; ref < 32; ref++) {
+                            if (ref < m_par.mfx.NumRefFrame) {
+                                feiEncPWT[fieldId].ChromaWeightFlag[lx][ref] = GetRandomNumber(0, 1);
+                                if (feiEncPWT[fieldId].ChromaWeightFlag[lx][ref] == 1) {
+                                    feiEncPWT[fieldId].Weights[lx][ref][iCb][iWeight] = GetRandomNumber(-128, 127);
+                                    feiEncPWT[fieldId].Weights[lx][ref][iCb][iOffset] = GetRandomNumber(-128, 127);
+                                    feiEncPWT[fieldId].Weights[lx][ref][iCr][iWeight] = GetRandomNumber(-128, 127);
+                                    feiEncPWT[fieldId].Weights[lx][ref][iCr][iOffset] = GetRandomNumber(-128, 127);
+                                }
+                            } else {
+                                feiEncPWT[fieldId].ChromaWeightFlag[lx][ref] = 0;
+                                feiEncPWT[fieldId].Weights[lx][ref][iCb][iWeight] = 0;
+                                feiEncPWT[fieldId].Weights[lx][ref][iCb][iOffset] = 0;
+                                feiEncPWT[fieldId].Weights[lx][ref][iCr][iWeight] = 0;
+                                feiEncPWT[fieldId].Weights[lx][ref][iCr][iOffset] = 0;
+                            }
+                        }
+                    }
+
+                    if (m_frameType & MFX_FRAMETYPE_B) {
+                        for (mfxU32 l0 = 0; l0 < 32; l0++) {
+                            for (mfxU32 l1 = 0; l1 < 32; l1++) {
+                                //CHECK Y
+                                if (feiEncPWT[fieldId].LumaWeightFlag[0][l0] && feiEncPWT[fieldId].LumaWeightFlag[1][l1]) {
+                                    mfxI16 weightYL0 = feiEncPWT[fieldId].Weights[0][l0][iY][iWeight];
+                                    mfxI16 weightYL1 = feiEncPWT[fieldId].Weights[1][l1][iY][iWeight];
+                                    if (weightYL0 + weightYL1 < -128) {
+                                        feiEncPWT[fieldId].Weights[0][l0][iY][iWeight] = weightYL0 < -64 ? -64 : weightYL0;
+                                        feiEncPWT[fieldId].Weights[1][l1][iY][iWeight] = weightYL1 < -64 ? -64 : weightYL1;
+                                    }
+                                    mfxU16 lwd = (feiEncPWT[fieldId].LumaLog2WeightDenom == 7) ? 127 : 128;
+                                    if (weightYL0 + weightYL1 > lwd) {
+                                        feiEncPWT[fieldId].Weights[0][l0][iY][iWeight] = weightYL0 > lwd/2 ? lwd/2 : weightYL0;
+                                        feiEncPWT[fieldId].Weights[1][l1][iY][iWeight] = weightYL1 > lwd/2 ? lwd/2 : weightYL1;
+                                    }
+                                }
+                                //CHECK UV
+                                if (feiEncPWT[fieldId].ChromaWeightFlag[0][l0] && feiEncPWT[fieldId].ChromaWeightFlag[1][l1]) {
+                                    mfxI16 weightCbL0 = feiEncPWT[fieldId].Weights[0][l0][iCb][iWeight];
+                                    mfxI16 weightCbL1 = feiEncPWT[fieldId].Weights[1][l1][iCb][iWeight];
+                                    mfxI16 weightCrL0 = feiEncPWT[fieldId].Weights[0][l0][iCr][iWeight];
+                                    mfxI16 weightCrL1 = feiEncPWT[fieldId].Weights[1][l1][iCr][iWeight];
+                                    if (weightCbL0 + weightCbL1 < -128) {
+                                        feiEncPWT[fieldId].Weights[0][l0][iCb][iWeight] = weightCbL0 < -64 ? -64 : weightCbL0;
+                                        feiEncPWT[fieldId].Weights[1][l1][iCb][iWeight] = weightCbL1 < -64 ? -64 : weightCbL1;
+                                    }
+                                    if (weightCrL0 + weightCrL1 < -128) {
+                                        feiEncPWT[fieldId].Weights[0][l0][iCr][iWeight] = weightCrL0 < -64 ? -64 : weightCrL0;
+                                        feiEncPWT[fieldId].Weights[1][l1][iCr][iWeight] = weightCrL1 < -64 ? -64 : weightCrL1;
+                                    }
+                                    mfxU16 lwd = (feiEncPWT[fieldId].ChromaLog2WeightDenom == 7) ? 127 : 128;
+                                    if (weightCbL0 + weightCbL1 > lwd) {
+                                        feiEncPWT[fieldId].Weights[0][l0][iCb][iWeight] = weightCbL0 > lwd/2 ? lwd/2 : weightCbL0;
+                                        feiEncPWT[fieldId].Weights[1][l1][iCb][iWeight] = weightCbL1 > lwd/2 ? lwd/2 : weightCbL1;
+                                    }
+                                    if (weightCrL0 + weightCrL1 > lwd) {
+                                        feiEncPWT[fieldId].Weights[0][l0][iCr][iWeight] = weightCrL0 > lwd/2 ? lwd/2 : weightCrL0;
+                                        feiEncPWT[fieldId].Weights[1][l1][iCr][iWeight] = weightCrL1 > lwd/2 ? lwd/2 : weightCrL1;
+                                    }
+                                }
                             }
                         }
                     }
@@ -253,11 +314,13 @@ public:
                     slice_header  *slice = nalu->slice_hdr;
                     pic_param_set *pps = slice->pps_active;
                     mfxU8 weighted_pred_flag = mfxU8(CO3.WeightedPred == MFX_WEIGHTED_PRED_EXPLICIT);
+                    mfxU8 weighted_bipred_idc = mfxU8(CO3.WeightedBiPred ? mfxU8(CO3.WeightedBiPred - 1) : 0);
 
                     EXPECT_EQ(pps->weighted_pred_flag, weighted_pred_flag) << "--ERROR: wrong weighted_pred_flag in PPS.\n";
+                    EXPECT_EQ(pps->weighted_bipred_idc, weighted_bipred_idc) << "--ERROR: wrong weighted_bipred_idc in PPS.\n";
 
-                    if (weighted_pred_flag && slice->slice_type % 5 == SLICE_P) {
-
+                    if ((weighted_pred_flag && (slice->slice_type % 5 == SLICE_P))
+                         || ((weighted_bipred_idc == 1) && (slice->slice_type % 5 == SLICE_B))) {
                         // buffers are attached by order, i.e. first field buffer goes first
                         switch (m_par.mfx.FrameInfo.PicStruct)
                         {
@@ -316,6 +379,7 @@ public:
         mfxU16 GopRefDist;
         mfxU16 PicStruct;
         mfxU16 WeightedPredMode;
+        mfxU16 WeightedBiPredMode;
         mfxU16 WeightedPredTable;
     };
 
@@ -375,42 +439,90 @@ void TestSuite::ComparePWT(mfxExtPredWeightTable *feiEncPWT, slice_header *slice
             }
         }
     }
+
 }
+
 
 const TestSuite::tc_struct TestSuite::test_case[] =
 {
-    /*01*/ {1, 1, MFX_PICSTRUCT_PROGRESSIVE, MFX_WEIGHTED_PRED_DEFAULT,  NO_PWT_BUFF},
-    /*02*/ {2, 1, MFX_PICSTRUCT_FIELD_TFF,   MFX_WEIGHTED_PRED_DEFAULT,  NO_PWT_BUFF},
-    /*03*/ {2, 1, MFX_PICSTRUCT_FIELD_BFF,   MFX_WEIGHTED_PRED_DEFAULT,  NO_PWT_BUFF},
+    /*01*/ {1, 1, MFX_PICSTRUCT_PROGRESSIVE, MFX_WEIGHTED_PRED_DEFAULT,  MFX_WEIGHTED_PRED_DEFAULT, NO_PWT_BUFF},
+    /*02*/ {2, 1, MFX_PICSTRUCT_FIELD_TFF,   MFX_WEIGHTED_PRED_DEFAULT,  MFX_WEIGHTED_PRED_DEFAULT, NO_PWT_BUFF},
+    /*03*/ {2, 1, MFX_PICSTRUCT_FIELD_BFF,   MFX_WEIGHTED_PRED_DEFAULT,  MFX_WEIGHTED_PRED_DEFAULT, NO_PWT_BUFF},
 
-    /*04*/ {1, 1, MFX_PICSTRUCT_PROGRESSIVE, MFX_WEIGHTED_PRED_DEFAULT,  WITH_PWT_BUFF},
-    /*05*/ {2, 1, MFX_PICSTRUCT_FIELD_TFF,   MFX_WEIGHTED_PRED_DEFAULT,  WITH_PWT_BUFF},
-    /*06*/ {2, 1, MFX_PICSTRUCT_FIELD_BFF,   MFX_WEIGHTED_PRED_DEFAULT,  WITH_PWT_BUFF},
+    /*04*/ {1, 1, MFX_PICSTRUCT_PROGRESSIVE, MFX_WEIGHTED_PRED_DEFAULT,  MFX_WEIGHTED_PRED_DEFAULT, WITH_PWT_BUFF},
+    /*05*/ {2, 1, MFX_PICSTRUCT_FIELD_TFF,   MFX_WEIGHTED_PRED_DEFAULT,  MFX_WEIGHTED_PRED_DEFAULT, WITH_PWT_BUFF},
+    /*06*/ {2, 1, MFX_PICSTRUCT_FIELD_BFF,   MFX_WEIGHTED_PRED_DEFAULT,  MFX_WEIGHTED_PRED_DEFAULT, WITH_PWT_BUFF},
 
-    /*07*/ {1, 1, MFX_PICSTRUCT_PROGRESSIVE, MFX_WEIGHTED_PRED_UNKNOWN,  NO_PWT_BUFF},
-    /*08*/ {2, 1, MFX_PICSTRUCT_FIELD_TFF,   MFX_WEIGHTED_PRED_UNKNOWN,  NO_PWT_BUFF},
-    /*09*/ {2, 1, MFX_PICSTRUCT_FIELD_BFF,   MFX_WEIGHTED_PRED_UNKNOWN,  NO_PWT_BUFF},
+    /*07*/ {1, 1, MFX_PICSTRUCT_PROGRESSIVE, MFX_WEIGHTED_PRED_UNKNOWN,  MFX_WEIGHTED_PRED_DEFAULT, NO_PWT_BUFF},
+    /*08*/ {2, 1, MFX_PICSTRUCT_FIELD_TFF,   MFX_WEIGHTED_PRED_UNKNOWN,  MFX_WEIGHTED_PRED_DEFAULT, NO_PWT_BUFF},
+    /*09*/ {2, 1, MFX_PICSTRUCT_FIELD_BFF,   MFX_WEIGHTED_PRED_UNKNOWN,  MFX_WEIGHTED_PRED_DEFAULT, NO_PWT_BUFF},
 
-    /*10*/ {1, 1, MFX_PICSTRUCT_PROGRESSIVE, MFX_WEIGHTED_PRED_UNKNOWN,  WITH_PWT_BUFF},
-    /*11*/ {2, 1, MFX_PICSTRUCT_FIELD_TFF,   MFX_WEIGHTED_PRED_UNKNOWN,  WITH_PWT_BUFF},
-    /*12*/ {2, 1, MFX_PICSTRUCT_FIELD_BFF,   MFX_WEIGHTED_PRED_UNKNOWN,  WITH_PWT_BUFF},
+    /*10*/ {1, 1, MFX_PICSTRUCT_PROGRESSIVE, MFX_WEIGHTED_PRED_UNKNOWN,  MFX_WEIGHTED_PRED_DEFAULT, WITH_PWT_BUFF},
+    /*11*/ {2, 1, MFX_PICSTRUCT_FIELD_TFF,   MFX_WEIGHTED_PRED_UNKNOWN,  MFX_WEIGHTED_PRED_DEFAULT, WITH_PWT_BUFF},
+    /*12*/ {2, 1, MFX_PICSTRUCT_FIELD_BFF,   MFX_WEIGHTED_PRED_UNKNOWN,  MFX_WEIGHTED_PRED_DEFAULT, WITH_PWT_BUFF},
 
-    /*13*/ {1, 1, MFX_PICSTRUCT_PROGRESSIVE, MFX_WEIGHTED_PRED_EXPLICIT, NO_PWT_BUFF},
-    /*14*/ {2, 1, MFX_PICSTRUCT_FIELD_TFF,   MFX_WEIGHTED_PRED_EXPLICIT, NO_PWT_BUFF},
-    /*15*/ {2, 1, MFX_PICSTRUCT_FIELD_BFF,   MFX_WEIGHTED_PRED_EXPLICIT, NO_PWT_BUFF},
+    /*13*/ {1, 1, MFX_PICSTRUCT_PROGRESSIVE, MFX_WEIGHTED_PRED_EXPLICIT, MFX_WEIGHTED_PRED_DEFAULT, NO_PWT_BUFF},
+    /*14*/ {2, 1, MFX_PICSTRUCT_FIELD_TFF,   MFX_WEIGHTED_PRED_EXPLICIT, MFX_WEIGHTED_PRED_DEFAULT, NO_PWT_BUFF},
+    /*15*/ {2, 1, MFX_PICSTRUCT_FIELD_BFF,   MFX_WEIGHTED_PRED_EXPLICIT, MFX_WEIGHTED_PRED_DEFAULT, NO_PWT_BUFF},
 
-    /*16*/ {1, 1, MFX_PICSTRUCT_PROGRESSIVE, MFX_WEIGHTED_PRED_EXPLICIT, WITH_PWT_BUFF},
-    /*17*/ {2, 1, MFX_PICSTRUCT_FIELD_TFF,   MFX_WEIGHTED_PRED_EXPLICIT, WITH_PWT_BUFF},
-    /*18*/ {2, 1, MFX_PICSTRUCT_FIELD_BFF,   MFX_WEIGHTED_PRED_EXPLICIT, WITH_PWT_BUFF},
+    /*16*/ {1, 1, MFX_PICSTRUCT_PROGRESSIVE, MFX_WEIGHTED_PRED_EXPLICIT, MFX_WEIGHTED_PRED_DEFAULT, WITH_PWT_BUFF},
+    /*17*/ {2, 1, MFX_PICSTRUCT_FIELD_TFF,   MFX_WEIGHTED_PRED_EXPLICIT, MFX_WEIGHTED_PRED_DEFAULT, WITH_PWT_BUFF},
+    /*18*/ {2, 1, MFX_PICSTRUCT_FIELD_BFF,   MFX_WEIGHTED_PRED_EXPLICIT, MFX_WEIGHTED_PRED_DEFAULT, WITH_PWT_BUFF},
 
-    /*19*/ {4, 1, MFX_PICSTRUCT_PROGRESSIVE, MFX_WEIGHTED_PRED_EXPLICIT, WITH_PWT_BUFF},
-    /*20*/ {4, 1, MFX_PICSTRUCT_FIELD_TFF,   MFX_WEIGHTED_PRED_EXPLICIT, WITH_PWT_BUFF},
-    /*21*/ {4, 1, MFX_PICSTRUCT_FIELD_BFF,   MFX_WEIGHTED_PRED_EXPLICIT, WITH_PWT_BUFF},
+    /*19*/ {4, 1, MFX_PICSTRUCT_PROGRESSIVE, MFX_WEIGHTED_PRED_EXPLICIT, MFX_WEIGHTED_PRED_DEFAULT, WITH_PWT_BUFF},
+    /*20*/ {4, 1, MFX_PICSTRUCT_FIELD_TFF,   MFX_WEIGHTED_PRED_EXPLICIT, MFX_WEIGHTED_PRED_DEFAULT, WITH_PWT_BUFF},
+    /*21*/ {4, 1, MFX_PICSTRUCT_FIELD_BFF,   MFX_WEIGHTED_PRED_EXPLICIT, MFX_WEIGHTED_PRED_DEFAULT, WITH_PWT_BUFF},
 
-    /*22*/ {4, 4, MFX_PICSTRUCT_PROGRESSIVE, MFX_WEIGHTED_PRED_EXPLICIT, WITH_PWT_BUFF},
-    /*23*/ {4, 4, MFX_PICSTRUCT_FIELD_TFF,   MFX_WEIGHTED_PRED_EXPLICIT, WITH_PWT_BUFF},
-    /*24*/ {4, 4, MFX_PICSTRUCT_FIELD_BFF,   MFX_WEIGHTED_PRED_EXPLICIT, WITH_PWT_BUFF},
-
+    /*22*/ {4, 4, MFX_PICSTRUCT_PROGRESSIVE, MFX_WEIGHTED_PRED_EXPLICIT, MFX_WEIGHTED_PRED_DEFAULT, WITH_PWT_BUFF},
+    /*23*/ {4, 4, MFX_PICSTRUCT_FIELD_TFF,   MFX_WEIGHTED_PRED_EXPLICIT, MFX_WEIGHTED_PRED_DEFAULT, WITH_PWT_BUFF},
+    /*24*/ {4, 4, MFX_PICSTRUCT_FIELD_BFF,   MFX_WEIGHTED_PRED_EXPLICIT, MFX_WEIGHTED_PRED_DEFAULT, WITH_PWT_BUFF},
+    /*test case for B-frame*/
+    //IP mode, explicit for B, w/ wpt
+    /*25*/ {1, 1, MFX_PICSTRUCT_PROGRESSIVE, MFX_WEIGHTED_PRED_DEFAULT,  MFX_WEIGHTED_PRED_EXPLICIT, WITH_PWT_BUFF},
+    /*26*/ {2, 1, MFX_PICSTRUCT_FIELD_TFF,   MFX_WEIGHTED_PRED_DEFAULT,  MFX_WEIGHTED_PRED_EXPLICIT, WITH_PWT_BUFF},
+    /*27*/ {2, 1, MFX_PICSTRUCT_FIELD_BFF,   MFX_WEIGHTED_PRED_DEFAULT,  MFX_WEIGHTED_PRED_EXPLICIT, WITH_PWT_BUFF},
+    //IP mode, explicit for B, w/o wpt
+    /*28*/ {1, 1, MFX_PICSTRUCT_PROGRESSIVE, MFX_WEIGHTED_PRED_DEFAULT,  MFX_WEIGHTED_PRED_EXPLICIT, NO_PWT_BUFF},
+    /*29*/ {2, 1, MFX_PICSTRUCT_FIELD_TFF,   MFX_WEIGHTED_PRED_DEFAULT,  MFX_WEIGHTED_PRED_EXPLICIT, NO_PWT_BUFF},
+    /*30*/ {2, 1, MFX_PICSTRUCT_FIELD_BFF,   MFX_WEIGHTED_PRED_DEFAULT,  MFX_WEIGHTED_PRED_EXPLICIT, NO_PWT_BUFF},
+    //IPB mode, explicit for B, w/ wpt
+    /*31*/ {1, 2, MFX_PICSTRUCT_PROGRESSIVE, MFX_WEIGHTED_PRED_DEFAULT,   MFX_WEIGHTED_PRED_EXPLICIT, WITH_PWT_BUFF},
+    /*32*/ {2, 2, MFX_PICSTRUCT_FIELD_TFF,   MFX_WEIGHTED_PRED_DEFAULT,   MFX_WEIGHTED_PRED_EXPLICIT, WITH_PWT_BUFF},
+    /*33*/ {2, 2, MFX_PICSTRUCT_FIELD_BFF,   MFX_WEIGHTED_PRED_DEFAULT,   MFX_WEIGHTED_PRED_EXPLICIT, WITH_PWT_BUFF},
+    //IPB mode, explicit for B, w/o wpt
+    /*34*/ {1, 2, MFX_PICSTRUCT_PROGRESSIVE, MFX_WEIGHTED_PRED_DEFAULT,   MFX_WEIGHTED_PRED_EXPLICIT, NO_PWT_BUFF},
+    /*35*/ {2, 2, MFX_PICSTRUCT_FIELD_TFF,   MFX_WEIGHTED_PRED_DEFAULT,   MFX_WEIGHTED_PRED_EXPLICIT, NO_PWT_BUFF},
+    /*36*/ {2, 2, MFX_PICSTRUCT_FIELD_BFF,   MFX_WEIGHTED_PRED_DEFAULT,   MFX_WEIGHTED_PRED_EXPLICIT, NO_PWT_BUFF},
+    //IPB mode, implicit for B, w/ wpt
+    /*37*/ {1, 2, MFX_PICSTRUCT_PROGRESSIVE, MFX_WEIGHTED_PRED_DEFAULT,   MFX_WEIGHTED_PRED_IMPLICIT, WITH_PWT_BUFF},
+    /*38*/ {2, 2, MFX_PICSTRUCT_FIELD_TFF,   MFX_WEIGHTED_PRED_DEFAULT,   MFX_WEIGHTED_PRED_IMPLICIT, WITH_PWT_BUFF},
+    /*39*/ {2, 2, MFX_PICSTRUCT_FIELD_BFF,   MFX_WEIGHTED_PRED_DEFAULT,   MFX_WEIGHTED_PRED_IMPLICIT, WITH_PWT_BUFF},
+    //IPB mode, implicit for B, w/o wpt
+    /*40*/ {1, 2, MFX_PICSTRUCT_PROGRESSIVE, MFX_WEIGHTED_PRED_DEFAULT,   MFX_WEIGHTED_PRED_IMPLICIT, NO_PWT_BUFF},
+    /*41*/ {2, 2, MFX_PICSTRUCT_FIELD_TFF,   MFX_WEIGHTED_PRED_DEFAULT,   MFX_WEIGHTED_PRED_IMPLICIT, NO_PWT_BUFF},
+    /*42*/ {2, 2, MFX_PICSTRUCT_FIELD_BFF,   MFX_WEIGHTED_PRED_DEFAULT,   MFX_WEIGHTED_PRED_IMPLICIT, NO_PWT_BUFF},
+    //IPB mode, explicit for PB, w/ wpt
+    /*43*/ {1, 2, MFX_PICSTRUCT_PROGRESSIVE, MFX_WEIGHTED_PRED_EXPLICIT,  MFX_WEIGHTED_PRED_EXPLICIT, WITH_PWT_BUFF},
+    /*44*/ {2, 2, MFX_PICSTRUCT_FIELD_TFF,   MFX_WEIGHTED_PRED_EXPLICIT,  MFX_WEIGHTED_PRED_EXPLICIT, WITH_PWT_BUFF},
+    /*45*/ {2, 2, MFX_PICSTRUCT_FIELD_BFF,   MFX_WEIGHTED_PRED_EXPLICIT,  MFX_WEIGHTED_PRED_EXPLICIT, WITH_PWT_BUFF},
+    /*46*/ {4, 2, MFX_PICSTRUCT_PROGRESSIVE, MFX_WEIGHTED_PRED_EXPLICIT,  MFX_WEIGHTED_PRED_EXPLICIT, WITH_PWT_BUFF},
+    /*47*/ {4, 2, MFX_PICSTRUCT_FIELD_TFF,   MFX_WEIGHTED_PRED_EXPLICIT,  MFX_WEIGHTED_PRED_EXPLICIT, WITH_PWT_BUFF},
+    /*48*/ {4, 2, MFX_PICSTRUCT_FIELD_BFF,   MFX_WEIGHTED_PRED_EXPLICIT,  MFX_WEIGHTED_PRED_EXPLICIT, WITH_PWT_BUFF},
+    /*49*/ {4, 4, MFX_PICSTRUCT_PROGRESSIVE, MFX_WEIGHTED_PRED_EXPLICIT,  MFX_WEIGHTED_PRED_EXPLICIT, WITH_PWT_BUFF},
+    /*50*/ {4, 4, MFX_PICSTRUCT_FIELD_TFF,   MFX_WEIGHTED_PRED_EXPLICIT,  MFX_WEIGHTED_PRED_EXPLICIT, WITH_PWT_BUFF},
+    /*51*/ {4, 4, MFX_PICSTRUCT_FIELD_BFF,   MFX_WEIGHTED_PRED_EXPLICIT,  MFX_WEIGHTED_PRED_EXPLICIT, WITH_PWT_BUFF},
+    //IPB mode, explicit for PB, w/o wpt
+    /*52*/ {1, 2, MFX_PICSTRUCT_PROGRESSIVE, MFX_WEIGHTED_PRED_EXPLICIT,  MFX_WEIGHTED_PRED_EXPLICIT, NO_PWT_BUFF},
+    /*53*/ {2, 2, MFX_PICSTRUCT_FIELD_TFF,   MFX_WEIGHTED_PRED_EXPLICIT,  MFX_WEIGHTED_PRED_EXPLICIT, NO_PWT_BUFF},
+    /*54*/ {2, 2, MFX_PICSTRUCT_FIELD_BFF,   MFX_WEIGHTED_PRED_EXPLICIT,  MFX_WEIGHTED_PRED_EXPLICIT, NO_PWT_BUFF},
+    //IPB mode, explicit for P, implicit for B, w/ wpt
+    /*55*/ {1, 2, MFX_PICSTRUCT_PROGRESSIVE, MFX_WEIGHTED_PRED_EXPLICIT,  MFX_WEIGHTED_PRED_IMPLICIT, WITH_PWT_BUFF},
+    /*56*/ {2, 2, MFX_PICSTRUCT_FIELD_TFF,   MFX_WEIGHTED_PRED_EXPLICIT,  MFX_WEIGHTED_PRED_IMPLICIT, WITH_PWT_BUFF},
+    /*57*/ {2, 2, MFX_PICSTRUCT_FIELD_BFF,   MFX_WEIGHTED_PRED_EXPLICIT,  MFX_WEIGHTED_PRED_IMPLICIT, WITH_PWT_BUFF},
+    //IPB mode, explicit for P, implicit for B, w/o wpt
+    /*58*/ {1, 2, MFX_PICSTRUCT_PROGRESSIVE, MFX_WEIGHTED_PRED_EXPLICIT,  MFX_WEIGHTED_PRED_IMPLICIT, NO_PWT_BUFF},
+    /*59*/ {2, 2, MFX_PICSTRUCT_FIELD_TFF,   MFX_WEIGHTED_PRED_EXPLICIT,  MFX_WEIGHTED_PRED_IMPLICIT, NO_PWT_BUFF},
+    /*60*/ {2, 2, MFX_PICSTRUCT_FIELD_BFF,   MFX_WEIGHTED_PRED_EXPLICIT,  MFX_WEIGHTED_PRED_IMPLICIT, NO_PWT_BUFF},
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -420,7 +532,6 @@ int TestSuite::RunTest(unsigned int id)
     TS_START;
 
     CHECK_FEI_SUPPORT();
-    mfxStatus sts;
     const tc_struct& tc = test_case[id];
     mfxExtCodingOption3& CO3 = m_par;
 
@@ -434,6 +545,7 @@ int TestSuite::RunTest(unsigned int id)
     m_par.mfx.GopRefDist           = tc.GopRefDist;
     m_par.mfx.FrameInfo.PicStruct  = tc.PicStruct;
     CO3.WeightedPred               = tc.WeightedPredMode;
+    CO3.WeightedBiPred             = tc.WeightedBiPredMode;
     m_hasPWT                       = tc.WeightedPredTable;
 
     g_tsStatus.check(Init());
