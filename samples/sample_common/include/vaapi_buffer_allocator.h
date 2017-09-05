@@ -107,17 +107,9 @@ protected:
         {
         case MFX_EXTBUFF_HEVCFEI_ENC_QP:
             return VAEncQpBufferType;
-        // HEVC FEI buffers are unsupported since VAAPI is not available for them
+        // FEI buffers are unsupported since VAAPI is not available for them
         // case MFX_EXTBUFF_HEVCFEI_ENC_MV_PRED:
-        //     return VAEncFEIMVPredictorHevc;
-        // case MFX_EXTBUFF_HEVCFEI_ENC_CTB_CTRL:
-        //     return VAEncFEICTBControlHevc;
-        // case MFX_EXTBUFF_HEVCFEI_PAK_CTB_REC:
-        //     return VAEncFEICTBCmdHevc;
-        // case MFX_EXTBUFF_HEVCFEI_PAK_CU_REC:
-        //     return VAEncFEICURecordHevc;
-        // case MFX_EXTBUFF_HEVCFEI_ENC_DIST:
-        //     return VAEncFEIDistortionHevc;
+        //     return VAEncFEIMVPredictorBufferType;
         default:
             throw mfxError(MFX_ERR_UNSUPPORTED, "Unsupported buffer type");
         }
