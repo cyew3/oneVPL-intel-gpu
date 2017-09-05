@@ -29,8 +29,8 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 class FEI_Encode
 {
 public:
-    FEI_Encode(MFXVideoSession* session, mfxHDL hdl, MfxVideoParamsWrapper& encode_pars,
-        const msdk_char* dst_output, PredictorsRepaking* rpck);
+    FEI_Encode(MFXVideoSession* session, mfxHDL hdl, MfxVideoParamsWrapper& encode_pars, 
+        const msdk_char* dst_output, const msdk_char* mvpInFile, PredictorsRepaking* rpck);
     ~FEI_Encode();
 
     mfxStatus Init();
@@ -69,6 +69,9 @@ private:
     mfxStatus AllocateSufficientBuffer();
     mfxStatus SetCtrlParams(const HevcTask& task); // for encoded order
     mfxStatus ResetExtBuffers(const MfxVideoParamsWrapper & videoParams);
+
+    /* For I/O operations with extension buffers */
+    std::auto_ptr<FileHandler> m_pFile_MVP_in;
 
     // forbid copy constructor and operator
     FEI_Encode(const FEI_Encode& encode);

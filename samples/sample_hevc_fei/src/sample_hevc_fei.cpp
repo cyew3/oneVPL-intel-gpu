@@ -77,6 +77,8 @@ void PrintHelp(const msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-preenc] - use extended FEI interface PREENC (RC is forced to constant QP)\n"));
     msdk_printf(MSDK_STRING("   [-mvout file] - use this to output MV predictors after PreENC\n"));
     msdk_printf(MSDK_STRING("   [-mbstat file] - use this to output per MB distortions for each frame after PreENC\n"));
+    msdk_printf(MSDK_STRING("   [-mvpin file] - use this to input MV predictors for ENCODE (Encoded Order will be enabled automatically).\n"));
+
     msdk_printf(MSDK_STRING("\n"));
 }
 
@@ -162,6 +164,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU32 nArgNum, sInputParams& 
         {
             CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
             PARSE_CHECK(msdk_opt_read(strInput[++i], params.nNumSlices), "NumSlices", isParseInvalid);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-mvpin")))
+        {
+            CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
+            PARSE_CHECK(msdk_opt_read(strInput[++i], params.mvpInFile), "MVP in File", isParseInvalid);
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-mvout")))
         {
@@ -325,8 +332,11 @@ void AdjustOptions(sInputParams& params)
     params.nIdrInterval = tune(params.nIdrInterval, 0, 0xffff);
 
     // PreENC works only in encoder order mode
-    if (params.bPREENC)
+    // ENCODE uses display order by default, but input MV predictors are in encoded order.
+    if (params.bPREENC || (params.bENCODE && 0 != msdk_strlen(params.mvpInFile)))
     {
+        if (!params.bEncodedOrder)
+            MSDK_CHECK_WRN(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, "Encoded order enabled.");
         params.bEncodedOrder = true;
     }
 

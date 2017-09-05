@@ -16,10 +16,12 @@ This sample was distributed or derived from the Intel's Media Samples package.
 The original version of this sample may be obtained from https://software.intel.com/en-us/intel-media-server-studio
 or https://software.intel.com/en-us/media-client-solutions-support.
 \**********************************************************************************/
+
+#include "fei_utils.h"
 #include "hevc_fei_encode.h"
 
 FEI_Encode::FEI_Encode(MFXVideoSession* session, mfxHDL hdl, MfxVideoParamsWrapper& encode_pars,
-        const msdk_char* dst_output, PredictorsRepaking* repacker)
+        const msdk_char* dst_output, const msdk_char* mvpInFile, PredictorsRepaking* repacker)
     : m_pmfxSession(session)
     , m_mfxENCODE(*m_pmfxSession)
 // driver doesn't support HEVC FEI buffers, allocator can't be initialized
@@ -30,6 +32,11 @@ FEI_Encode::FEI_Encode(MFXVideoSession* session, mfxHDL hdl, MfxVideoParamsWrapp
     , m_syncPoint(0)
     , m_dstFileName(dst_output)
 {
+    if (0 != msdk_strlen(mvpInFile))
+    {
+        m_pFile_MVP_in.reset(new FileHandler(mvpInFile, MSDK_STRING("rb")));
+    }
+
     m_encodeCtrl.FrameType = MFX_FRAMETYPE_UNKNOWN;
     m_encodeCtrl.QP = m_videoParams.mfx.QPI;
     MSDK_ZERO_MEMORY(m_bitstream);
@@ -59,7 +66,7 @@ FEI_Encode::~FEI_Encode()
     }
     catch(...)
     {
-        msdk_printf("Exception raised in FEI Encode desctructor\n");
+        msdk_printf("Exception raised in FEI Encode destructor\n");
     }
 #endif
 
@@ -75,9 +82,8 @@ mfxStatus FEI_Encode::PreInit()
     sts = InitMfxBitstream(&m_bitstream, nEncodedDataBufferSize);
     MSDK_CHECK_STATUS_SAFE(sts, "InitMfxBitstream failed", WipeMfxBitstream(&m_bitstream));
 
-     // repacker repacks PreENC MV to Encode MV predictors,
-     // alloc required ext buffer for Encode
-    if (m_repacker.get())
+    // allocate ext buffer for input MV predictors required for Encode.
+    if (m_repacker.get() || m_pFile_MVP_in.get())
     {
 // driver doesn't support HEVC FEI buffers
 #if 0
@@ -263,9 +269,23 @@ mfxStatus FEI_Encode::SetCtrlParams(const HevcTask& task)
        MSDK_CHECK_STATUS(sts, "FEI Encode::RepackPredictors failed");
 #endif
     }
-
     m_encodeCtrl.FrameType = task.m_frameType;
     //m_encodeCtrl.QP = ; // should be changed here?
+
+    if (m_pFile_MVP_in.get())
+    {
+// driver doesn't support HEVC FEI buffers
+#if 0
+        mfxExtFeiHevcEncMVPredictors* pMVP = m_encodeCtrl.GetExtBuffer<mfxExtFeiHevcEncMVPredictors>();
+        MSDK_CHECK_POINTER(pMVP, MFX_ERR_NOT_INITIALIZED);
+
+        AutoBufferLocker<mfxExtFeiHevcEncMVPredictors> lock(m_buf_allocator, *pMVP);
+        mfxStatus sts = m_pFile_MVP_in->Read(pMVP->Data, 1, pMVP->DataSize);
+
+        MSDK_CHECK_STATUS(sts, "FEI Encode. Read MV predictors failed");
+#endif
+    }
+
     return MFX_ERR_NONE;
 }
 

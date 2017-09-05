@@ -37,6 +37,7 @@ struct sInputParams
 
     msdk_char  mvoutFile[MSDK_MAX_FILENAME_LEN];
     msdk_char  mbstatoutFile[MSDK_MAX_FILENAME_LEN];
+    msdk_char  mvpInFile[MSDK_MAX_FILENAME_LEN];
 
     bool bENCODE;
     bool bPREENC;
@@ -87,6 +88,7 @@ struct sInputParams
         MSDK_ZERO_MEMORY(strDstFile);
         MSDK_ZERO_MEMORY(mvoutFile);
         MSDK_ZERO_MEMORY(mbstatoutFile);
+        MSDK_ZERO_MEMORY(mvpInFile);
     }
 
 };

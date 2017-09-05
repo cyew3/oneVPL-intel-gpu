@@ -523,5 +523,5 @@ FEI_Encode* CEncodingPipeline::CreateEncode(mfxFrameInfo& in_fi)
         repacker->SetPerfomanceRepackingMode();
     }
 
-    return new FEI_Encode(&m_mfxSession, hdl, encode_pars, m_inParams.strDstFile, repacker);
+    return new FEI_Encode(&m_mfxSession, hdl, encode_pars, m_inParams.strDstFile, m_inParams.mvpInFile, repacker);
 }
