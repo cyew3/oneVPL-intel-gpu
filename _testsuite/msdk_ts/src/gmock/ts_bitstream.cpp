@@ -155,7 +155,31 @@ mfxStatus tsBitstreamReader::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
 
 mfxStatus tsBitstreamReaderIVF::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
 {
-    mfxU32 header_size = m_first_call * 32 + 12;
+#pragma pack(push, 4)
+    struct IVF_file_header
+    {
+        union{
+            mfxU32 _signature;
+            mfxU8  signature[4]; //DKIF
+        };
+        mfxU16 version;
+        mfxU16 header_length; //bytes
+        mfxU32 FourCC;
+        mfxU16 witdh;
+        mfxU16 height;
+        mfxU32 frame_rate;
+        mfxU32 time_scale;
+        mfxU32 n_frames;
+        mfxU32 unused;
+    } ;
+
+    struct IVF_frame_header
+    {
+        mfxU32 frame_size; //bytes
+        mfxU64 time_stamp;
+    };
+#pragma pack(pop)
+
     mfxU32 frame_size = 0;
 
     if(m_eos)
@@ -177,24 +201,47 @@ mfxStatus tsBitstreamReaderIVF::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrame
     }
     bs.DataOffset = 0;
 
+    if(m_first_call)
+    {
+        mfxU32 skip_size = 0;
+        unsigned char dummy[sizeof(IVF_file_header)];
+        bool found = false;
+        do
+        {
+            skip_size = Read(dummy, sizeof(dummy));
+            if (skip_size != sizeof(dummy))
+            {
+                m_eos = true;
+                return MFX_ERR_MORE_DATA;
+            }
+
+            for (mfxU32 i = 0; i < skip_size; ++i)
+                if(!strcmp((char const*)(dummy + i), "DKIF"))
+                {
+                    skip_size -= i;
+                    found = true;
+                    break;
+                }
+        }
+        while (!found);
+
+        skip_size = sizeof(dummy) - skip_size;
+        Read(dummy, skip_size);
+
+        m_first_call = false;
+    }
+
+    mfxU32 const header_size = sizeof(IVF_frame_header);
     if(header_size != Read(bs.Data + bs.DataLength, header_size))
     {
         m_eos = true;
         return MFX_ERR_MORE_DATA;
     }
 
-    if(m_first_call)
-    {
-        bs.DataLength += header_size; //assumed 1st call for DecodeHeader
-        m_first_call = false;
-    } 
-    else 
-    {
-        bs.DataOffset += header_size;
-    }
+    auto fh = reinterpret_cast<IVF_frame_header const*>(bs.Data + bs.DataOffset + bs.DataLength);
+    frame_size = fh->frame_size;
 
-    frame_size = *(mfxU32*)(bs.Data + bs.DataOffset + bs.DataLength - 12);
-
+    bs.DataOffset += header_size;
     if(bs.MaxLength - bs.DataLength < frame_size)
     {
         return MFX_ERR_NOT_ENOUGH_BUFFER;
@@ -205,9 +252,9 @@ mfxStatus tsBitstreamReaderIVF::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrame
         m_eos = true;
         return MFX_ERR_MORE_DATA;
     }
+
     bs.DataLength += frame_size;
     bs.DataFlag = MFX_BITSTREAM_COMPLETE_FRAME;
-    
 
     return MFX_ERR_NONE;
 }
