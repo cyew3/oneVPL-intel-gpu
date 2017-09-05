@@ -74,6 +74,8 @@
     </Filter>
     <Filter Include="Source Files\test_suites\avc_fei">
       <UniqueIdentifier>{daa0ed0f-66be-4a35-a33b-623791b5fadd}</UniqueIdentifier>
+    <Filter Include="Source Files\test_suites\av1">
+      <UniqueIdentifier>{366be671-3709-4890-9232-b07d797a3577}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -1050,6 +1052,14 @@
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\vpp_field_weaving_splitting.cpp">
       <Filter>Source Files\test_suites\vpp</Filter>
+    <ClCompile Include="src\gmock\test_suites\av1d_decode_header.cpp">
+      <Filter>Source Files\test_suites\av1</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\av1d_query.cpp">
+      <Filter>Source Files\test_suites\av1</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\av1d_query_io_surf.cpp">
+      <Filter>Source Files\test_suites\av1</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
