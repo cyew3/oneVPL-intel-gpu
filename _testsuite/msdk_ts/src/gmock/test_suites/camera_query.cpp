@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -353,9 +353,10 @@ int TestSuite::RunTest(unsigned int id)
 
     if(tc.mode & SET_HANDLE_AFTER)
     {
-        mfxHDL hdl;
-        mfxHandleType type; 
-        m_spool_in.GetAllocator()->get_hdl(type, hdl); 
+        mfxHDL hdl = 0;
+        mfxHandleType type = MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9;
+        if (g_tsImpl & MFX_IMPL_VIA_D3D11) 
+            type = MFX_HANDLE_D3D11_DEVICE;
         g_tsStatus.expect(MFX_ERR_UNDEFINED_BEHAVIOR); //API 1.4 behavior is not acceptable since 1.6 API
         SetHandle(m_session, type, hdl);
     }
