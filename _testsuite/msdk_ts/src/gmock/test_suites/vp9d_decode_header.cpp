@@ -16,130 +16,6 @@ Copyright(c) 2016-2017 Intel Corporation. All Rights Reserved.
 namespace TEST_NAME
 {
 
-class tsIvfReader : public tsBitstreamProcessor, public tsReader
-{
-    #pragma pack(push, 4)
-    typedef struct
-    {
-        union{
-            mfxU32 _signature;
-            mfxU8  signature[4]; //DKIF
-        };
-        mfxU16 version;
-        mfxU16 header_length; //bytes
-        mfxU32 FourCC;        //CodecId
-        mfxU16 witdh;
-        mfxU16 height;
-        mfxU32 frame_rate;
-        mfxU32 time_scale;
-        mfxU32 n_frames;
-        mfxU32 unused;
-    } IVF_file_header;
-
-    typedef struct
-    {
-        mfxU32 frame_size; //bytes
-        mfxU64 time_stamp;
-    } IVF_frame_header;
-    #pragma pack(pop)
-
-    IVF_file_header file_header;
-    IVF_frame_header frame_header;
-    size_t count;
-
-public:
-    bool    m_eos;
-    mfxU8*  m_buf;
-    size_t  m_buf_size;
-    mfxU8*  inter_buf;
-    size_t  inter_buf_lenth;
-    size_t  inter_buf_size;
-
-    tsIvfReader(const char* fname, mfxU32 buf_size)
-        : tsReader(fname)
-        , count(0)
-        , m_eos(false)
-        , m_buf(new mfxU8[buf_size])
-        , m_buf_size(buf_size)
-        , inter_buf(new mfxU8[buf_size])
-        , inter_buf_lenth(0)
-        , inter_buf_size(buf_size)
-    {
-        inter_buf_lenth += Read(inter_buf, inter_buf_size);
-        assert(inter_buf_lenth >= (sizeof(IVF_file_header) + sizeof(IVF_frame_header)));
-        for(size_t i(0); i < inter_buf_lenth; ++i)
-        {
-            if(0 == strcmp((char*)(inter_buf + i), "DKIF"))
-            {
-                inter_buf_lenth -= i;
-                memmove(inter_buf, inter_buf + i, inter_buf_lenth);
-                break;
-            }
-        }
-        IVF_file_header const * const fl_hdr = (IVF_file_header*) inter_buf;
-        file_header = *fl_hdr;
-        IVF_frame_header const * const fr_hdr = (IVF_frame_header*) (inter_buf + file_header.header_length);
-        frame_header = *fr_hdr;
-
-        inter_buf_lenth -= file_header.header_length + sizeof(IVF_frame_header);
-        memmove(inter_buf, inter_buf + file_header.header_length + sizeof(IVF_frame_header), inter_buf_lenth);
-
-        inter_buf_lenth += Read(inter_buf+inter_buf_lenth, (inter_buf_size - inter_buf_lenth));
-    };
-    virtual ~tsIvfReader()
-    {
-        if(m_buf)
-        {
-            delete[] m_buf;
-            m_buf = 0;
-        }
-        if(inter_buf)
-        {
-            delete[] inter_buf;
-            inter_buf = 0;
-        }
-    }
-
-    mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
-    {
-        if(m_eos)
-            return MFX_ERR_MORE_DATA;
-        if(bs.DataLength + bs.DataOffset > m_buf_size)
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
-        if(bs.DataLength)
-            return MFX_ERR_NONE;
-
-        bs.Data      = m_buf;
-        bs.MaxLength = m_buf_size;
-
-        bs.DataOffset = 0;
-        bs.DataLength = frame_header.frame_size;
-        bs.TimeStamp  = frame_header.time_stamp;
-
-        memcpy(bs.Data, inter_buf, bs.DataLength);
-        ++count;
-
-        if(count == file_header.n_frames)
-        {
-            m_eos = true;
-        }
-        else
-        {
-            const IVF_frame_header fr_hdr_next = *((IVF_frame_header*) (inter_buf + frame_header.frame_size));
-            assert(inter_buf_lenth >= (frame_header.frame_size + sizeof(IVF_frame_header)) );
-            inter_buf_lenth -= frame_header.frame_size + sizeof(IVF_frame_header);
-            memmove(inter_buf, inter_buf + frame_header.frame_size + sizeof(IVF_frame_header), inter_buf_lenth);
-
-            inter_buf_lenth += Read(inter_buf+inter_buf_lenth, (inter_buf_size - inter_buf_lenth));
-
-            frame_header = fr_hdr_next;
-        }
-
-        return MFX_ERR_NONE;
-    }
-
-};
-
 class TestSuite : tsVideoDecoder
 {
 public:
@@ -329,7 +205,7 @@ void TestSuite::ReadStream()
 {
     const char* sname = g_tsStreamPool.Get(m_input_stream_name);
     g_tsStreamPool.Reg();
-    m_bs_reader.reset(new tsIvfReader(sname, 1024*1024) );
+    m_bs_reader.reset(new tsBitstreamReaderIVF(sname, 1024*1024) );
     m_bs_processor = m_bs_reader.get();
 
     m_pBitstream = m_bs_processor->ProcessBitstream(m_bitstream);
