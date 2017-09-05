@@ -622,7 +622,7 @@ mfxStatus CheckFrameData(const mfxFrameSurface1 *surface)
     return MFX_ERR_NONE;
 }
 
-mfxStatus CheckDecodersExtendedBuffers(mfxVideoParam* par)
+mfxStatus CheckDecodersExtendedBuffers(mfxVideoParam const* par)
 {
     static const mfxU32 g_commonSupportedExtBuffers[]       = {
                                                                MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION,

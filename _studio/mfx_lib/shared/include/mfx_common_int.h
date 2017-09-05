@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFX_COMMON_INT_H__
@@ -37,7 +37,7 @@ mfxStatus CheckAudioFrame(const mfxAudioFrame *aFrame);
 mfxStatus CheckEncryptedBitstream(const mfxBitstream *bs);
 mfxStatus CheckFrameData(const mfxFrameSurface1 *surface);
 
-mfxStatus CheckDecodersExtendedBuffers(mfxVideoParam* par);
+mfxStatus CheckDecodersExtendedBuffers(mfxVideoParam const* par);
 
 mfxExtBuffer* GetExtendedBuffer(mfxExtBuffer** extBuf, mfxU32 numExtBuf, mfxU32 id);
 mfxExtBuffer* GetExtendedBufferInternal(mfxExtBuffer** extBuf, mfxU32 numExtBuf, mfxU32 id);
