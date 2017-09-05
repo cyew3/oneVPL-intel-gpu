@@ -30,6 +30,6 @@ list( APPEND LIBS
     pthread
 )
 
-set( defs "${defs} ${WARNING_FLAGS}" )
+set( defs "${defs} -DMFX_VERSION_USE_LATEST ${WARNING_FLAGS}" )
 make_executable( test_vpp_multisession universal )
 set( defs "" )

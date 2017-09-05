@@ -150,6 +150,7 @@
     <ClCompile>
       <AdditionalIncludeDirectories>..\cmrt_cross_platform\include;$(MSDK_API_ROOT)\include;..\shared\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_dec\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_common\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_spl\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\mpeg2_dec\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\h264_enc\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;$(MSDK_STUDIO_ROOT)\shared\umc\io\media_buffers\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\brc\include;..\..\mfx_lib\encode_hw\h264\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;MFX_VA;MFX_D3D11_ENABLED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -160,6 +161,7 @@
     <ClCompile>
       <AdditionalIncludeDirectories>..\cmrt_cross_platform\include;$(MSDK_API_ROOT)\include;..\shared\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_dec\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_common\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_spl\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\mpeg2_dec\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\h264_enc\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;$(MSDK_STUDIO_ROOT)\shared\umc\io\media_buffers\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\brc\include;..\..\mfx_lib\encode_hw\h264\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;MFX_VA;MFX_D3D11_ENABLED;_ATL_NO_WIN_SUPPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -173,6 +175,7 @@
     <ClCompile>
       <AdditionalIncludeDirectories>..\cmrt_cross_platform\include;$(MSDK_API_ROOT)\include;..\shared\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_dec\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_common\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_spl\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\mpeg2_dec\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\h264_enc\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\brc\include;$(MSDK_STUDIO_ROOT)\shared\umc\io\media_buffers\include;..\..\mfx_lib\encode_hw\h264\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_DEBUG;_LIB;MFX_VA;MFX_D3D11_ENABLED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -186,6 +189,7 @@
     <ClCompile>
       <AdditionalIncludeDirectories>..\cmrt_cross_platform\include;$(MSDK_API_ROOT)\include;..\shared\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_dec\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_common\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_spl\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\mpeg2_dec\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\h264_enc\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\brc\include;$(MSDK_STUDIO_ROOT)\shared\umc\io\media_buffers\include;..\..\mfx_lib\encode_hw\h264\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_DEBUG;_LIB;MFX_VA;MFX_D3D11_ENABLED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -197,6 +201,7 @@
       <AdditionalIncludeDirectories>..\cmrt_cross_platform\include;$(MSDK_API_ROOT)\include;..\shared\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_dec\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_common\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_spl\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\mpeg2_dec\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\h264_enc\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;$(MSDK_STUDIO_ROOT)\shared\umc\io\media_buffers\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\brc\include;..\..\mfx_lib\encode_hw\h264\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;MFX_VA;MFX_D3D11_ENABLED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -208,6 +213,7 @@
       <AdditionalIncludeDirectories>..\cmrt_cross_platform\include;$(MSDK_API_ROOT)\include;..\shared\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_dec\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_common\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_spl\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\mpeg2_dec\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\h264_enc\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;$(MSDK_STUDIO_ROOT)\shared\umc\io\media_buffers\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\brc\include;..\..\mfx_lib\encode_hw\h264\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_ATL_NO_WIN_SUPPORT;WIN32;NDEBUG;_LIB;MFX_VA;MFX_D3D11_ENABLED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -222,6 +228,7 @@
       <AdditionalIncludeDirectories>..\cmrt_cross_platform\include;$(MSDK_API_ROOT)\include;..\shared\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_dec\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_common\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_spl\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\mpeg2_dec\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\h264_enc\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;$(MSDK_STUDIO_ROOT)\shared\umc\io\media_buffers\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\brc\include;..\..\mfx_lib\encode_hw\h264\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;MFX_VA;MFX_D3D11_ENABLED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -236,6 +243,7 @@
       <AdditionalIncludeDirectories>..\cmrt_cross_platform\include;$(MSDK_API_ROOT)\include;..\shared\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_dec\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_common\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_spl\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\mpeg2_dec\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\h264_enc\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;$(MSDK_STUDIO_ROOT)\shared\umc\io\media_buffers\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\brc\include;..\..\mfx_lib\encode_hw\h264\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;MFX_VA;MFX_D3D11_ENABLED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Lib />
     <Bscmake>

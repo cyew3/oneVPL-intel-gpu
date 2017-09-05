@@ -2724,12 +2724,14 @@ void CmContext::Setup(
 
     if(m_platform == MFX_HW_BDW || m_platform == MFX_HW_CHT)
         m_program = ReadProgram(m_device, genx_bdw_camerapipe, SizeOf(genx_bdw_camerapipe));
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     // Temporary fix for cases when stream resolution is > 8K and output format is ARGB16 (CM FALLBACK is used)
     else if(m_platform >= MFX_HW_SCL && m_platform < MFX_HW_CNL)
         m_program = ReadProgram(m_device, genx_skl_camerapipe, SizeOf(genx_skl_camerapipe));
 #ifdef PRE_SI_TARGET_PLATFORM_GEN10
     else if(m_platform == MFX_HW_CNL)
         m_program = ReadProgram(m_device, genx_cnl_camerapipe, SizeOf(genx_cnl_camerapipe));
+#endif
 #endif
 
     // Valid for HSW/BDW

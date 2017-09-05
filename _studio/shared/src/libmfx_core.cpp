@@ -867,7 +867,7 @@ mfxStatus CommonCORE::QueryPlatform(mfxPlatform* platform)
     case MFX_HW_SCL    : platform->CodeName = MFX_PLATFORM_SKYLAKE;     break;
     case MFX_HW_APL    : platform->CodeName = MFX_PLATFORM_APOLLOLAKE;  break;
     case MFX_HW_KBL    : platform->CodeName = MFX_PLATFORM_KABYLAKE;    break;
-#ifndef MFX_CLOSED_PLATFORMS_DISABLE
+#if !defined(MFX_CLOSED_PLATFORMS_DISABLE) && (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_HW_GLK    : platform->CodeName = MFX_PLATFORM_GEMINILAKE;  break;
     case MFX_HW_CFL    : platform->CodeName = MFX_PLATFORM_COFFEELAKE;  break;
     case MFX_HW_CNL    : platform->CodeName = MFX_PLATFORM_CANNONLAKE;  break;
@@ -1259,7 +1259,7 @@ mfxStatus CommonCORE::DoSWFastCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSr
     switch (pDst->Info.FourCC)
     {
     case MFX_FOURCC_P010:
-#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
+#if defined (PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_P016:
 #endif
 #if defined(_WIN32) || defined(_WIN64)
@@ -1355,9 +1355,9 @@ mfxStatus CommonCORE::DoSWFastCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSr
         break;
 
 #ifndef OPEN_SOURCE
-#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_Y210:
-#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
+#if defined (PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_Y216:
 #endif
 
@@ -1383,7 +1383,7 @@ mfxStatus CommonCORE::DoSWFastCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSr
         break;
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
 
-#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
+#if defined (PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_Y416:
         MFX_CHECK_NULL_PTR1(pSrc->Data.U16);
         //we use 8u copy, so we need to increase ROI to handle 16 bit samples

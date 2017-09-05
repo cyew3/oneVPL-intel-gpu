@@ -12,7 +12,7 @@
 #define __UMC_VA_BASE_H__
 
 #include <vector>
-#include "mfx_config.h"
+#include "mfx_common.h"
 #include "mfxstructures-int.h"
 
 #if defined (UMC_VA) || defined (MFX_VA) || defined (UMC_VA_DXVA) || defined(UMC_VA_LINUX)

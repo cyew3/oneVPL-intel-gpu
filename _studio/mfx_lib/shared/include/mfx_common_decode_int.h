@@ -12,7 +12,7 @@
 #define __MFX_COMMON_DECODE_INT_H__
 
 #include <vector>
-#include "mfx_config.h"
+#include "mfx_common.h"
 #include "mfx_common_int.h"
 #include "umc_video_decoder.h"
 

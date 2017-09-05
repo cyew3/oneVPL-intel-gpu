@@ -35,7 +35,7 @@ const mfxU32 g_TABLE_DO_NOT_USE [] =
     MFX_EXTBUFF_VPP_COMPOSITE,
     MFX_EXTBUFF_VPP_ROTATION,
     MFX_EXTBUFF_VPP_SCALING,
-#ifndef MFX_FUTURE_FEATURE_DISABLE
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     MFX_EXTBUFF_VPP_COLOR_CONVERSION,
 #endif
     MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO,
@@ -55,7 +55,7 @@ const mfxU32 g_TABLE_DO_USE [] =
     MFX_EXTBUFF_VPP_COMPOSITE,
     MFX_EXTBUFF_VPP_ROTATION,
     MFX_EXTBUFF_VPP_SCALING,
-#ifndef MFX_FUTURE_FEATURE_DISABLE
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     MFX_EXTBUFF_VPP_COLOR_CONVERSION,
 #endif
 #ifdef MFX_UNDOCUMENTED_VPP_VARIANCE_REPORT
@@ -83,7 +83,7 @@ const mfxU32 g_TABLE_CONFIG [] =
     MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO,
     MFX_EXTBUFF_VPP_FIELD_PROCESSING,
     MFX_EXTBUFF_VPP_SCALING,
-#ifndef MFX_FUTURE_FEATURE_DISABLE
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     MFX_EXTBUFF_VPP_COLOR_CONVERSION,
 #endif
     MFX_EXTBUFF_VPP_MIRRORING
@@ -114,7 +114,7 @@ const mfxU32 g_TABLE_EXT_PARAM [] =
     MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO,
     MFX_EXTBUFF_VPP_FIELD_PROCESSING,
     MFX_EXTBUFF_VPP_SCALING,
-#ifndef MFX_FUTURE_FEATURE_DISABLE
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     MFX_EXTBUFF_VPP_COLOR_CONVERSION,
 #endif
     MFX_EXTBUFF_VPP_MIRRORING
@@ -1054,7 +1054,7 @@ void ReorderPipelineListForQuality( std::vector<mfxU32> & pipelineList )
         index++;
     }
 
-#ifndef MFX_FUTURE_FEATURE_DISABLE
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     if (IsFilterFound(&pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_COLOR_CONVERSION))
     {
         newList[index] = MFX_EXTBUFF_VPP_COLOR_CONVERSION;
@@ -1443,7 +1443,7 @@ mfxStatus GetPipelineList(
         }
     }
 
-#ifndef MFX_FUTURE_FEATURE_DISABLE
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     if (IsFilterFound(&configList[0], configCount, MFX_EXTBUFF_VPP_COLOR_CONVERSION) && !IsFilterFound(&pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_COLOR_CONVERSION))
     {
         if (!IsFilterFound(&pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_COLOR_CONVERSION))
@@ -1581,7 +1581,7 @@ mfxStatus CheckFrameInfo(mfxFrameInfo* info, mfxU32 request)
         case MFX_FOURCC_NV16:
         case MFX_FOURCC_YUY2:
         case MFX_FOURCC_AYUV:
-#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= MFX_VERSION_NEXT)
         case MFX_FOURCC_Y210:
         case MFX_FOURCC_Y410:
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
@@ -2443,7 +2443,7 @@ mfxStatus CheckLimitationsSW(
     }
 
     if (param.vpp.In.FourCC == MFX_FOURCC_AYUV
-#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= MFX_VERSION_NEXT)
         || param.vpp.In.FourCC == MFX_FOURCC_Y210
         || param.vpp.In.FourCC == MFX_FOURCC_Y410
 #endif // PRE_SI_TARGET_PLATFORM_GEN11
@@ -2457,7 +2457,7 @@ mfxStatus CheckLimitationsSW(
         }
     }
     if (param.vpp.Out.FourCC == MFX_FOURCC_AYUV
-#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= MFX_VERSION_NEXT)
         || param.vpp.Out.FourCC == MFX_FOURCC_Y210
         || param.vpp.Out.FourCC == MFX_FOURCC_Y410
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
@@ -2613,7 +2613,7 @@ void ConvertCaps2ListDoUse(MfxHwVideoProcessing::mfxVppCaps& caps, std::vector<m
         list.push_back(MFX_EXTBUFF_VPP_SCALING);
     }
 
-#ifndef MFX_FUTURE_FEATURE_DISABLE
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     if (caps.uChromaSiting)
     {
         list.push_back(MFX_EXTBUFF_VPP_COLOR_CONVERSION);

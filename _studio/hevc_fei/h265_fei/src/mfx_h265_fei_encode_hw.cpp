@@ -9,7 +9,6 @@
 //
 
 #include "mfx_common.h"
-#include "mfx_config.h"
 #if defined (MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
 #include "mfx_h265_fei_encode_hw.h"
 
@@ -68,7 +67,12 @@ mfxStatus H265FeiEncodePlugin::ExtraParametersCheck(mfxEncodeCtrl *ctrl, mfxFram
     mfxStatus sts = m_core.QueryPlatform(&p);
     MFX_CHECK_STS(sts);
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     bool isSKL = p.CodeName == MFX_PLATFORM_SKYLAKE, isICLplus = p.CodeName >= MFX_PLATFORM_ICELAKE;
+#else
+    bool isSKL = p.CodeName == MFX_PLATFORM_SKYLAKE, isICLplus = false;
+#endif
+
 
     // mfxExtFeiHevcEncFrameCtrl is a mandatory buffer
     mfxExtFeiHevcEncFrameCtrl* EncFrameCtrl = reinterpret_cast<mfxExtFeiHevcEncFrameCtrl*>(GetBufById(ctrl, MFX_EXTBUFF_HEVCFEI_ENC_CTRL));

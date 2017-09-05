@@ -72,10 +72,6 @@
 #endif
 #endif // #if defined(_WIN32) || defined(_WIN64)
 
-#if defined(LINUX64) && !defined(LINUX_TARGET_PLATFORM_BXT) && !defined(AS_H264LA_PLUGIN) && !defined(LINUX_TARGET_PLATFORM_CFL) && !defined(ANDROID)
-    #define MFX_ENABLE_MFE
-#endif
-
 #ifdef MFX_VA
     #if defined(LINUX32) || defined(LINUX64)
         #undef  MFX_VA_LINUX

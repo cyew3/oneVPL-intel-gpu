@@ -303,6 +303,7 @@
       <WarningLevel>Level4</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <AdditionalDependencies>ippcoremt.lib;ipps_s_p8.lib;ippvc_s_p8.lib;ippi_s_p8.lib;ippcc_s_p8.lib;ippcv_s_p8.lib;ippj_s_p8.lib;ippmsdk_s_p8.lib;D3d9.lib;dxva2.lib;version.lib;D3D11.lib;DXGI.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -328,6 +329,7 @@
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <DisableSpecificWarnings>4316</DisableSpecificWarnings>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <AdditionalDependencies>dxva2.lib;version.lib;D3D11.lib;DXGI.lib;ippcoremt.lib;ipps_s_p8.lib;ippvc_s_p8.lib;ippi_s_p8.lib;ippcc_s_p8.lib;ippcv_s_p8.lib;ippj_s_p8.lib;ippmsdk_s_p8.lib;uuid.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -380,6 +382,7 @@
       <WarningLevel>Level4</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <AdditionalDependencies>ippcoremt.lib;ipps_s_y8.lib;ippvc_s_y8.lib;ippi_s_y8.lib;ippcc_s_y8.lib;ippcv_s_y8.lib;ippj_s_y8.lib;ippmsdk_s_y8.lib;D3d9.lib;dxva2.lib;version.lib;D3D11.lib;DXGI.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -406,6 +409,7 @@
       <WarningLevel>Level4</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <AdditionalDependencies>dxva2.lib;version.lib;D3D11.lib;DXGI.lib;ippcoremt.lib;ipps_s_y8.lib;ippvc_s_y8.lib;ippi_s_y8.lib;ippcc_s_y8.lib;ippcv_s_y8.lib;ippj_s_y8.lib;ippmsdk_s_y8.lib;onecore.lib;uuid.lib;d3d9.lib</AdditionalDependencies>
@@ -458,6 +462,7 @@
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <SDLCheck>true</SDLCheck>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <AdditionalDependencies>ippcoremt.lib;ipps_s_p8.lib;ippvc_s_p8.lib;ippi_s_p8.lib;ippcc_s_p8.lib;ippcv_s_p8.lib;ippj_s_p8.lib;ippmsdk_s_p8.lib;D3d9.lib;dxva2.lib;version.lib;D3D11.lib;DXGI.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -482,6 +487,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <DisableSpecificWarnings>4316</DisableSpecificWarnings>
       <SDLCheck>true</SDLCheck>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <AdditionalDependencies>dxva2.lib;version.lib;D3D11.lib;DXGI.lib;ippcoremt.lib;ipps_s_p8.lib;ippvc_s_p8.lib;ippi_s_p8.lib;ippcc_s_p8.lib;ippcv_s_p8.lib;ippj_s_p8.lib;ippmsdk_s_p8.lib;uuid.lib;d3d9.lib</AdditionalDependencies>
@@ -533,6 +539,7 @@
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <SDLCheck>true</SDLCheck>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <AdditionalDependencies>ippcoremt.lib;ipps_s_y8.lib;ippvc_s_y8.lib;ippi_s_y8.lib;ippcc_s_y8.lib;ippcv_s_y8.lib;ippj_s_y8.lib;ippmsdk_s_y8.lib;D3d9.lib;dxva2.lib;version.lib;D3D11.lib;DXGI.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -559,6 +566,7 @@
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <SDLCheck>true</SDLCheck>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <AdditionalDependencies>dxva2.lib;version.lib;D3D11.lib;DXGI.lib;ippcoremt.lib;ipps_s_y8.lib;ippvc_s_y8.lib;ippi_s_y8.lib;ippcc_s_y8.lib;ippcv_s_y8.lib;ippj_s_y8.lib;ippmsdk_s_y8.lib;d3d9.lib;%(AdditionalDependencies)</AdditionalDependencies>

@@ -2287,7 +2287,7 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         MFX_CHECK_STS(sts);
     }
 
-#ifndef MFX_FUTURE_FEATURE_DISABLE
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     if (m_vpreCaps.bChromaSitingControl)
     {
         VPE_VPREP_CHROMASITING_PARAM chromaSitingParams = { 0 };
@@ -2841,7 +2841,7 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         Color.YCbCr.Cr = ((pParams->iBackgroundColor      ) & 0xff) / 255.0f;
     }
     if (outInfo->FourCC == MFX_FOURCC_P010 ||
-#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= MFX_VERSION_NEXT)
         outInfo->FourCC == MFX_FOURCC_Y210 ||
         outInfo->FourCC == MFX_FOURCC_Y410 ||
 #endif // PRE_SI_TARGET_PLATFORM_GEN11

@@ -66,12 +66,12 @@ mfxStatus CheckFrameInfoCommon(mfxFrameInfo  *info, mfxU32 /* codecId */)
     case MFX_FOURCC_P210:
     case MFX_FOURCC_AYUV:
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_Y210:
     case MFX_FOURCC_Y410:
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_P016:
     case MFX_FOURCC_Y216:
     case MFX_FOURCC_Y416:
@@ -92,12 +92,12 @@ mfxStatus CheckFrameInfoCommon(mfxFrameInfo  *info, mfxU32 /* codecId */)
         case MFX_FOURCC_P010:
         case MFX_FOURCC_P210:
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= MFX_VERSION_NEXT)
         case MFX_FOURCC_Y210:
         case MFX_FOURCC_Y410:
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
         case MFX_FOURCC_P016:
         case MFX_FOURCC_Y216:
         case MFX_FOURCC_Y416:
@@ -113,10 +113,10 @@ mfxStatus CheckFrameInfoCommon(mfxFrameInfo  *info, mfxU32 /* codecId */)
     if (info->Shift)
     {
         if (   info->FourCC != MFX_FOURCC_P010 && info->FourCC != MFX_FOURCC_P210
-#ifdef PRE_SI_TARGET_PLATFORM_GEN11
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= MFX_VERSION_NEXT)
             && info->FourCC != MFX_FOURCC_Y210
 #endif
-#ifdef PRE_SI_TARGET_PLATFORM_GEN12
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
             && info->FourCC != MFX_FOURCC_P016 && info->FourCC != MFX_FOURCC_Y216
             && info->FourCC != MFX_FOURCC_Y416
 #endif
@@ -200,7 +200,7 @@ mfxStatus CheckFrameInfoCodecs(mfxFrameInfo  *info, mfxU32 codecId, bool isHW)
     case MFX_CODEC_VP9:
         if (info->FourCC != MFX_FOURCC_NV12
             && info->FourCC != MFX_FOURCC_P010
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= MFX_VERSION_NEXT)
             && info->FourCC != MFX_FOURCC_AYUV
             && info->FourCC != MFX_FOURCC_Y410
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
@@ -220,12 +220,12 @@ mfxStatus CheckFrameInfoCodecs(mfxFrameInfo  *info, mfxU32 codecId, bool isHW)
             info->FourCC != MFX_FOURCC_P010 &&
             info->FourCC != MFX_FOURCC_NV16 &&
             info->FourCC != MFX_FOURCC_P210
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= MFX_VERSION_NEXT)
             && info->FourCC != MFX_FOURCC_AYUV
             && info->FourCC != MFX_FOURCC_Y210
             && info->FourCC != MFX_FOURCC_Y410
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
             && info->FourCC != MFX_FOURCC_P016
             && info->FourCC != MFX_FOURCC_Y216
             && info->FourCC != MFX_FOURCC_Y416
@@ -580,7 +580,7 @@ mfxStatus CheckFrameData(const mfxFrameSurface1 *surface)
             if (pitch > 0x3FFFF)
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
             break;
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= MFX_VERSION_NEXT)
         case MFX_FOURCC_Y210:
             if (!surface->Data.Y16 || !surface->Data.U16 || !surface->Data.V16)
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -590,7 +590,7 @@ mfxStatus CheckFrameData(const mfxFrameSurface1 *surface)
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
             break;
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
         case MFX_FOURCC_P016:
             if (!surface->Data.Y || !surface->Data.U || !surface->Data.V)
                 return MFX_ERR_UNDEFINED_BEHAVIOR;

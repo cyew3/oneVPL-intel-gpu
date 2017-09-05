@@ -28,7 +28,9 @@
 #include "mfxla.h"
 #include "mfxsc.h"
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
 #include "ts_typedef.h"
+
 
 #include <memory>
 
@@ -492,3 +494,5 @@ namespace mfx_reflect
 #include "ts_struct_decl.h"
     }
 }
+
+#endif

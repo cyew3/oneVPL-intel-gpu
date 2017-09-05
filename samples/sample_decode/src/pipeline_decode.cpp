@@ -127,11 +127,11 @@ CDecodingPipeline::CDecodingPipeline()
     m_VppVideoSignalInfo.Header.BufferId = MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO;
     m_VppVideoSignalInfo.Header.BufferSz = sizeof(m_VppVideoSignalInfo);
 
-#if _MSDK_API >= MSDK_API(1,22)
+#if MFX_VERSION >= 1022
     MSDK_ZERO_MEMORY(m_DecoderPostProcessing);
     m_DecoderPostProcessing.Header.BufferId = MFX_EXTBUFF_DEC_VIDEO_PROCESSING;
     m_DecoderPostProcessing.Header.BufferSz = sizeof(mfxExtDecVideoProcessing);
-#endif //_MSDK_API >= MSDK_API(1,22)
+#endif //MFX_VERSION >= 1022
 
     m_hwdev = NULL;
 
@@ -479,14 +479,14 @@ bool CDecodingPipeline::IsVppRequired(sInputParams *pParams)
         (m_mfxVideoParams.mfx.FrameInfo.CropH != pParams->Height) )
     {
         bVppIsUsed |= pParams->Width && pParams->Height;
-#if _MSDK_API >= MSDK_API(1,22)
+#if MFX_VERSION >= 1022
         if ((MODE_DECODER_POSTPROC_AUTO == pParams->nDecoderPostProcessing) ||
             (MODE_DECODER_POSTPROC_FORCE == pParams->nDecoderPostProcessing) )
         {
             /* Decoder will make decision about internal post-processing usage slightly later */
             bVppIsUsed = false;
         }
-#endif //_MSDK_API >= MSDK_API(1,22)
+#endif //MFX_VERSION >= 1022
     }
     // JPEG and Capture decoders can provide output in nv12 and rgb4 formats
     if ((pParams->videoType == MFX_CODEC_JPEG) ||
@@ -791,7 +791,7 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
         }
     }
 
-#if _MSDK_API >= MSDK_API(1,22)
+#if MFX_VERSION >= 1022
     /* Lets make final decision how to use VPP...*/
     if (!m_bVppIsUsed)
     {
@@ -841,7 +841,7 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
                 msdk_printf(MSDK_STRING("Decoder post-processing is unsupported for this stream, VPP is used for resizing\n") );
         }
     }
-#endif //_MSDK_API >= MSDK_API(1,22)
+#endif //MFX_VERSION >= 1022
 
     // If MVC mode we need to detect number of views in stream
     if (m_bIsMVC)

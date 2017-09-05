@@ -539,7 +539,7 @@ mfxStatus VideoVPPBase::GetVideoParam(mfxVideoParam *par)
                     case MFX_EXTBUFF_VPP_DI_30i60p:
                     case MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO:
                     case MFX_EXTBUFF_VPP_MIRRORING:
-#ifndef MFX_FUTURE_FEATURE_DISABLE
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
                     case MFX_EXTBUFF_VPP_COLOR_CONVERSION:
 #endif
                     {
@@ -1036,7 +1036,7 @@ mfxStatus VideoVPPBase::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam
             out->vpp.In.FourCC != MFX_FOURCC_P010 &&
             out->vpp.In.FourCC != MFX_FOURCC_UYVY &&
             out->vpp.In.FourCC != MFX_FOURCC_P210 &&
-#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= MFX_VERSION_NEXT)
             out->vpp.In.FourCC != MFX_FOURCC_Y210 &&
             out->vpp.In.FourCC != MFX_FOURCC_Y410 &&
 #endif // PRE_SI_TARGET_PLATFORM_GEN11
@@ -1096,7 +1096,7 @@ mfxStatus VideoVPPBase::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam
             out->vpp.Out.FourCC != MFX_FOURCC_RGB4 &&
             out->vpp.Out.FourCC != MFX_FOURCC_P010 &&
             out->vpp.Out.FourCC != MFX_FOURCC_P210 &&
-#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= MFX_VERSION_NEXT)
             out->vpp.Out.FourCC != MFX_FOURCC_Y210 &&
             out->vpp.Out.FourCC != MFX_FOURCC_Y410 &&
 #endif // PRE_SI_TARGET_PLATFORM_GEN11

@@ -18,10 +18,10 @@ list( APPEND sources ${srcs})
 
 list( REMOVE_ITEM sources ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_transcoder.cpp)
 
-set( defs "${WARNING_FLAGS}" )
+set( defs "-DMFX_VERSION_USE_LATEST ${WARNING_FLAGS}" )
 make_library( mfx_trans_pipeline universal static )
 
-set( defs "-DLUCAS_DLL ${WARNING_FLAGS}" )
+set( defs "-DMFX_VERSION_USE_LATEST -DLUCAS_DLL ${WARNING_FLAGS}" )
 make_library( mfx_trans_pipeline_lucas universal static )
 
 # =============================================================================
@@ -52,10 +52,10 @@ list( APPEND LIBS
     ippvc_l ippcc_l ippdc_l ippi_l ipps_l ippcp_l ippcore_l
     pthread dl
 )
-set( defs "${WARNING_FLAGS}" )
+set( defs "-DMFX_VERSION_USE_LATEST ${WARNING_FLAGS}" )
 make_executable( mfx_transcoder universal static )
 
-set( defs "-DLUCAS_DLL ${WARNING_FLAGS}" )
+set( defs "-DMFX_VERSION_USE_LATEST -DLUCAS_DLL ${WARNING_FLAGS}" )
 set( LIBS "" )
 list( APPEND LIBS
     mfx_trans_pipeline_lucas

@@ -15,7 +15,7 @@
 #include "mfx_config.h"
 #include "vm_strings.h"
 
-#ifdef OPEN_SOURCE
+#if (MFX_VERSION < MFX_VERSION_NEXT)
 enum {
     MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET = MFX_MEMTYPE_RESERVED2
 };

@@ -1046,7 +1046,7 @@ mfxStatus FastCompositingDDI::ConvertExecute2BltParams( mfxExecuteParams *pExecu
         pBltParams->BackgroundColor.Cb    = ((pExecuteParams->iBackgroundColor >> 16) & 0xff) << 8;
         pBltParams->BackgroundColor.Cr    = ((pExecuteParams->iBackgroundColor      ) & 0xff) << 8;
     }
-#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= MFX_VERSION_NEXT)
     if (outInfo->FourCC == MFX_FOURCC_Y210 ||
         outInfo->FourCC == MFX_FOURCC_Y410 )
     {
@@ -1202,7 +1202,7 @@ mfxStatus FastCompositingDDI::Execute(mfxExecuteParams *pParams)
     //}
 
     //{
-#ifndef MFX_FUTURE_FEATURE_DISABLE
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         FASTCOMP_CHROMASUBSAMPLING_PARAMS_V1_0 chromaSitingParams = { 0 };
         FASTCOMP_BLT_PARAMS_OBJECT chromaSitingObject;
         bool  bExternalChromeSiting = true;

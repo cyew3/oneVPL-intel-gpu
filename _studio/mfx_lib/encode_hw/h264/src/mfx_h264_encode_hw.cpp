@@ -584,7 +584,6 @@ mfxStatus ImplementationAvc::Query(
     else if (4 == queryMode)// Query mode 4: Query should do a single thing - report MB processing rate
     {
         mfxU32 mbPerSec[16] = {0, };
-        mfxU32 inputTiling = 0;
         // let use dedault values if input resolution is 0x0, 1920x1088 - should cover almost all cases
         out->mfx.TargetUsage = in->mfx.TargetUsage == 0 ? 4: in->mfx.TargetUsage;
         mfxExtEncoderCapability * extCaps = GetExtBuffer(*out);
@@ -616,7 +615,10 @@ mfxStatus ImplementationAvc::Query(
             // driver returned status OK and MAX_MB_PER_SEC = 0. Treat this as driver doesn't support reporting of MAX_MB_PER_SEC for requested encoding configuration
             return MFX_ERR_UNSUPPORTED;
         }
-#if !defined(MFX_VA_WIN) && !defined(OPEN_SOURCE)
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        mfxU32 inputTiling = 0;
+    #if !defined(MFX_VA_WIN)
         mfxU32 Width  = in->mfx.FrameInfo.Width == 0 ? 1920: in->mfx.FrameInfo.Width;
         mfxU32 Height = in->mfx.FrameInfo.Height == 0 ? 1088: in->mfx.FrameInfo.Height;
         // query input tiling support from the driver
@@ -629,9 +631,9 @@ mfxStatus ImplementationAvc::Query(
 
             return MFX_WRN_PARTIAL_ACCELERATION; // any other HW problem
         }
-#endif
-#ifndef OPEN_SOURCE
+    #else
         extCaps->InputMemoryTiling = (mfxU16)inputTiling;
+    #endif
 #endif
         return MFX_ERR_NONE;
     }

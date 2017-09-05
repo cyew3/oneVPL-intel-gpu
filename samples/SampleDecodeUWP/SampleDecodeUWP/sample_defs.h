@@ -29,8 +29,10 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "vm/time_defs.h"
 #include "sample_types.h"
 
-#define _MSDK_API (MFX_VERSION_MAJOR*256+MFX_VERSION_MINOR)
-#define MSDK_API(M,MM) (M*256+MM)
+
+#ifndef MFX_VERSION
+    #define MFX_VERSION (MFX_VERSION_MAJOR * 1000 + MFX_VERSION_MINOR)
+#endif
 
 #if defined(WIN32) || defined(WIN64)
 

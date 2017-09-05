@@ -185,6 +185,7 @@
     <ClCompile>
       <AdditionalIncludeDirectories>include;$(MSDK_API_ROOT)\include;..\..\mfx_hw\shared\include\;..\shared\include;..\..\shared\include;vc1\include;mjpeg\include;h264\include;..\..\shared\umc\codec\vc1_enc\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\brc\vc1\include;..\..\shared\umc\codec\mpeg2_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\me\include;$(MEDIASDK_ROOT)\ipp\ipp71gold\windows\ia32\include;..\..\shared\umc\core\vm_plus\include;..\enc_hw\mpeg2\include;..\pak\mpeg2\include;..\pak\h264\include;..\pak\vp8\include;..\..\shared\umc\io\umc_va\include;..\..\shared\umc\codec\brc\include;..\encode\h264\include;..\..\shared\umc\codec\jpeg_common\include;..\..\shared\umc\codec\jpeg_enc\include;mpeg2\include;vp8\include;svc\include;..\..\..\..\..\mdp_msdk-contrib\vp8_cmodel;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;MFX_VA;ENABLE_CM;CM_GEN7_5;USE_HSW_VME;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Lib />
     <PostBuildEvent>
@@ -205,6 +206,7 @@
     <ClCompile>
       <AdditionalIncludeDirectories>include;$(MSDK_API_ROOT)\include;..\..\mfx_hw\shared\include\;..\shared\include;..\..\shared\include;vc1\include;mjpeg\include;h264\include;..\..\shared\umc\codec\vc1_enc\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\brc\vc1\include;..\..\shared\umc\codec\mpeg2_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\me\include;$(MEDIASDK_ROOT)\ipp\ipp71gold\windows\ia32\include;..\..\shared\umc\core\vm_plus\include;..\enc_hw\mpeg2\include;..\pak\mpeg2\include;..\pak\h264\include;..\pak\vp8\include;..\..\shared\umc\io\umc_va\include;..\..\shared\umc\codec\brc\include;..\encode\h264\include;..\..\shared\umc\codec\jpeg_common\include;..\..\shared\umc\codec\jpeg_enc\include;mpeg2\include;vp8\include;svc\include;..\..\..\..\..\mdp_msdk-contrib\vp8_cmodel;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;MFX_VA;ENABLE_CM;CM_GEN7_5;USE_HSW_VME;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Lib />
     <PostBuildEvent>
@@ -226,6 +228,7 @@
       <AdditionalIncludeDirectories>include;$(MSDK_API_ROOT)\include;..\..\mfx_hw\shared\include\;..\shared\include;..\..\shared\include;vc1\include;mjpeg\include;h264\include;..\..\shared\umc\codec\vc1_enc\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\brc\vc1\include;..\..\shared\umc\codec\mpeg2_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\me\include;$(MEDIASDK_ROOT)\ipp\ipp71gold\windows\ia32\include;..\..\shared\umc\core\vm_plus\include;..\enc_hw\mpeg2\include;..\pak\mpeg2\include;..\pak\h264\include;..\pak\vp8\include;..\..\shared\umc\io\umc_va\include;..\..\shared\umc\codec\brc\include;..\encode\h264\include;..\..\shared\umc\codec\jpeg_common\include;..\..\shared\umc\codec\jpeg_enc\include;mpeg2\include;vp8\include;svc\include;..\..\..\thirdparty\vp8_cmodel;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;MFX_VA;ENABLE_CM;CM_GEN7_5;USE_HSW_VME;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -250,6 +253,7 @@
       <AdditionalIncludeDirectories>include;$(MSDK_API_ROOT)\include;..\..\mfx_hw\shared\include\;..\shared\include;..\..\shared\include;vc1\include;mjpeg\include;h264\include;..\..\shared\umc\codec\vc1_enc\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\brc\vc1\include;..\..\shared\umc\codec\mpeg2_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\me\include;$(MEDIASDK_ROOT)\ipp\ipp71gold\windows\ia32\include;..\..\shared\umc\core\vm_plus\include;..\enc_hw\mpeg2\include;..\pak\mpeg2\include;..\pak\h264\include;..\pak\vp8\include;..\..\shared\umc\io\umc_va\include;..\..\shared\umc\codec\brc\include;..\encode\h264\include;..\..\shared\umc\codec\jpeg_common\include;..\..\shared\umc\codec\jpeg_enc\include;mpeg2\include;vp8\include;svc\include;..\..\..\thirdparty\vp8_cmodel;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;MFX_VA;ENABLE_CM;CM_GEN7_5;USE_HSW_VME;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -296,6 +300,7 @@ copy $(MEDIASDK_ROOT)\CMRT\compiler\lib\x86\libcm.dll ..\..\..\..\build\win_$(Pl
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -315,6 +320,7 @@ copy $(MEDIASDK_ROOT)\CMRT\compiler\lib\x86\libcm.dll ..\..\..\..\build\win_$(Pl
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -333,6 +339,7 @@ copy $(MEDIASDK_ROOT)\CMRT\compiler\lib\x86\libcm.dll ..\..\..\..\build\win_$(Pl
       <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;MFX_VA;ENABLE_CM;CM_GEN7_5;USE_HSW_VME;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <SDLCheck>true</SDLCheck>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -351,6 +358,7 @@ copy $(MEDIASDK_ROOT)\CMRT\compiler\lib\x86\libcm.dll ..\..\..\..\build\win_$(Pl
       <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;MFX_VA;ENABLE_CM;CM_GEN7_5;USE_HSW_VME;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <SDLCheck>true</SDLCheck>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Lib />
     <Bscmake>

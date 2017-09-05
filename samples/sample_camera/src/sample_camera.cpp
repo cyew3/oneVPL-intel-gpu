@@ -423,7 +423,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 pParams->frameInfo[VPP_OUT].FourCC = MFX_FOURCC_ARGB16;
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("abgr16")))
                 pParams->frameInfo[VPP_OUT].FourCC = MFX_FOURCC_ABGR16;
-#if _MSDK_API >= MSDK_API(1, 23)
+#if MFX_VERSION >= 1023
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("nv12"))) {
                 pParams->frameInfo[VPP_OUT].FourCC = MFX_FOURCC_NV12;
                 pParams->bRGBToYUV = true;

@@ -5,16 +5,18 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFXUTILS_H__
 #define __MFXUTILS_H__
 
+#include "mfx_config.h"
+
 #include "umc_structures.h"
 #include "mfx_trace.h"
 #include "mfx_timing.h"
-#include "mfx_config.h"
+
 
 #ifndef MFX_DEBUG_TRACE
 #define MFX_STS_TRACE(sts) sts
@@ -94,6 +96,12 @@ mfxU64 GetMfxTimeStamp(mfxF64 ts)
 #endif
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
+
+#if (MFX_VERSION < MFX_VERSION_NEXT)
+#define MFX_PROTECTION_WIDEVINE_CLASSIC MFX_PROTECTION_RESERVED1
+#define MFX_PROTECTION_WIDEVINE_GOOGLE_DASH MFX_PROTECTION_RESERVED2
+#endif
+
 #define IS_PROTECTION_PAVP_ANY(val) (MFX_PROTECTION_PAVP == (val) || MFX_PROTECTION_GPUCP_PAVP == (val))
 #define IS_PROTECTION_WIDEVINE(val) (MFX_PROTECTION_WIDEVINE_CLASSIC == (val) || MFX_PROTECTION_WIDEVINE_GOOGLE_DASH == (val))
 #define IS_PROTECTION_ANY(val) (IS_PROTECTION_PAVP_ANY(val) || MFX_PROTECTION_GPUCP_AES128_CTR == (val) || IS_PROTECTION_WIDEVINE(val))

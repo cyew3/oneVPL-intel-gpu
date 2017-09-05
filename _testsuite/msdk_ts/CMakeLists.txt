@@ -74,7 +74,7 @@ endif()
 
 add_definitions( -D_VARIADIC_MAX=10 )
 add_definitions( -DENABLE_PS=1 )
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 
 set( LIBS "" )
 set( LIBS_SUFFIX "" )
@@ -90,7 +90,7 @@ list( APPEND LIBS
 )
 list( APPEND LIBS_SUFFIX gmock )
 
-set( defs "${WARNING_FLAGS}" )
+set( defs "-DMFX_VERSION_USE_LATEST ${WARNING_FLAGS}" )
 make_executable( msdk_gmock universal )
 set( defs "" )
 
@@ -99,7 +99,6 @@ set( defs "" )
 set (sources "")
 
 include_directories (
-#  /usr/include/c++/4.6/bits
   ${CMAKE_CURRENT_SOURCE_DIR}/include
   ${CMAKE_HOME_DIRECTORY}/mdp_msdk-val-tools/bs_parser/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../shared/include
@@ -135,7 +134,7 @@ list( APPEND LIBS
   pthread
 )
 
-set( defs "${WARNING_FLAGS}" )
+set( defs "-DMFX_VERSION_USE_LATEST ${WARNING_FLAGS}" )
 make_executable( msdk_ts universal )
 set( defs "" )
 
@@ -217,6 +216,4 @@ list( APPEND LIBS
   ${PERL_LIBRARY}
 )
 
-# set( defs "${WARNING_FLAGS}" )
 make_library( msdk_ts_dll universal shared )
-# set( defs "" )

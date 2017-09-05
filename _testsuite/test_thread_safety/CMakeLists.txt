@@ -26,5 +26,5 @@ list( APPEND LIBS
     ippvc_l ippcc_l ippdc_l ippi_l ipps_l ippcp_l ippcore_l
     pthread dl
 )
-set( defs "${WARNING_FLAGS}" )
+set( defs "-DMFX_VERSION_USE_LATEST ${WARNING_FLAGS}" )
 make_executable( shortname universal )

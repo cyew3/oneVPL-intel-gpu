@@ -7,7 +7,9 @@
 //
 // Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
-#include "mfx_config.h"
+
+#include "mfx_common.h"
+
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
 
 #pragma once
@@ -15,7 +17,6 @@
 #include "hevce_ddi_main.h"
 #include "mfx_h265_encode_hw_set.h"
 #include "mfx_ext_buffers.h"
-#include "mfx_common.h"
 #include "mfxplugin++.h"
 #include "umc_mutex.h"
 #include "mfxla.h"
@@ -418,6 +419,7 @@ struct remove_const<const T>
 };
 
 class MfxVideoParam;
+
 
 namespace ExtBuffer
 {

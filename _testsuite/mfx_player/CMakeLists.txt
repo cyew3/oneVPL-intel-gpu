@@ -13,7 +13,7 @@ include_directories (
 
 # =============================================================================
 
-set( defs "" )
+set( defs "-DMFX_VERSION_USE_LATEST" )
 set( sources "" )
 set( sources.plus "" )
 file( GLOB_RECURSE srcs "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp" )
@@ -24,12 +24,12 @@ list( REMOVE_ITEM sources ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_player.cpp)
 set( defs "${defs} ${WARNING_FLAGS}" )
 make_library( mfx_pipeline universal static )
 
-set( defs "-DLUCAS_DLL -Wall -Werror" )
+set( defs "-DLUCAS_DLL -DMFX_VERSION_USE_LATEST -Wall -Werror" )
 make_library( mfx_pipeline_lucas universal static )
 
 # =============================================================================
 
-set( defs "" )
+set( defs "-DMFX_VERSION_USE_LATEST" )
 set( sources "" )
 set( sources.plus "" )
 list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_player.cpp)
@@ -54,7 +54,7 @@ list( APPEND LIBS
 set( defs "${defs} ${WARNING_FLAGS}" )
 make_executable( mfx_player universal static )
 
-set( defs "-DLUCAS_DLL" )
+set( defs "-DMFX_VERSION_USE_LATEST -DLUCAS_DLL" )
 set( LIBS "" )
 list( APPEND LIBS
     mfx_pipeline_lucas

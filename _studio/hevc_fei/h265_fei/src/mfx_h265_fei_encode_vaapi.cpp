@@ -9,7 +9,6 @@
 //
 
 #include "mfx_common.h"
-#include "mfx_config.h"
 #if defined(MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
 
 #include "mfx_h265_fei_encode_vaapi.h"

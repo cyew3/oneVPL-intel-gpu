@@ -75,7 +75,7 @@ namespace MfxHwVideoProcessing
         MFX_FOURCC_AYUV      ,
         MFX_FOURCC_AYUV_RGB4 ,
         MFX_FOURCC_UYVY
-#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= MFX_VERSION_NEXT)
         , MFX_FOURCC_Y210
         , MFX_FOURCC_Y216
         , MFX_FOURCC_Y410
@@ -416,7 +416,7 @@ namespace MfxHwVideoProcessing
 #endif
                ,rotation(0)
                ,scalingMode(MFX_SCALING_MODE_DEFAULT)
-#ifndef MFX_FUTURE_FEATURE_DISABLE
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
                ,chromaSiting(MFX_CHROMA_SITING_UNKNOWN)
 #endif
                ,bEOS(false)

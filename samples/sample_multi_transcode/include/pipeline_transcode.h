@@ -253,12 +253,12 @@ namespace TranscodingSample
     struct sInputParams: public __sInputParams
     {
         msdk_string DumpLogFileName;
-#if _MSDK_API >= MSDK_API(1,22)
+#if MFX_VERSION >= 1022
         std::vector<mfxExtEncoderROI> m_ROIData;
 
         bool bDecoderPostProcessing;
         bool bROIasQPMAP;
-#endif //_MSDK_API >= MSDK_API(1,22)
+#endif //MFX_VERSION >= 1022
         sInputParams();
         void Reset();
     };
@@ -685,9 +685,9 @@ namespace TranscodingSample
         bool m_bOwnMVCSeqDescMemory; // true if the pipeline owns memory allocated for MVCSeqDesc structure fields
 
         mfxExtVPPComposite       m_VppCompParams;
-#if _MSDK_API >= MSDK_API(1,22)
+#if MFX_VERSION >= 1022
         mfxExtDecVideoProcessing m_decPostProcessing;
-#endif //_MSDK_API >= MSDK_API(1,22)
+#endif //MFX_VERSION >= 1022
 
         mfxExtLAControl          m_ExtLAControl;
         // for setting MaxSliceSize
@@ -700,7 +700,7 @@ namespace TranscodingSample
 
         mfxExtBRC                m_ExtBRC;
 
-#if _MSDK_API > MSDK_API(1,24)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         // MFE mode and number of frames
         mfxExtMultiFrameParam    m_ExtMFEParam;
         // here we pass general timeout per session.
@@ -767,7 +767,7 @@ namespace TranscodingSample
 
         bool shouldUseGreedyFormula;
 
-#if _MSDK_API >= MSDK_API(1,22)
+#if MFX_VERSION >= 1022
         // ROI data
         std::vector<mfxExtEncoderROI> m_ROIData;
         mfxU32         m_nSubmittedFramesNum;
@@ -790,7 +790,7 @@ namespace TranscodingSample
         mfxU16            m_nRotationAngle;
 
         void FillMBQPBuffer(mfxExtMBQP &qpMap, mfxU16 pictStruct);
-#endif //_MSDK_API >= MSDK_API(1,22)
+#endif //MFX_VERSION >= 1022
     private:
         DISALLOW_COPY_AND_ASSIGN(CTranscodingPipeline);
 

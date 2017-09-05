@@ -6,7 +6,7 @@
 // or disclosed except in accordance with the terms of that agreement.
 //
 // Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
-#include "mfx_config.h"
+#include "mfx_common.h"
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
 
 #pragma once

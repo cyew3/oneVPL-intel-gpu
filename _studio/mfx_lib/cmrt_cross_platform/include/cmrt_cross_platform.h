@@ -12,7 +12,7 @@
 #ifndef __CMRT_CROSS_PLATFORM_H__
 #define __CMRT_CROSS_PLATFORM_H__
 
-#include "mfx_config.h"
+#include "mfx_common.h"
 
 #if !defined(OSX)
 

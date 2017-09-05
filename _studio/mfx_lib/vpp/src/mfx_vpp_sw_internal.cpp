@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2010-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2010-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "math.h"
@@ -833,7 +833,7 @@ mfxStatus GetExternalFramesCount(mfxVideoParam* pParam,
                 break;
             }
 
-#ifndef MFX_FUTURE_FEATURE_DISABLE
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
             case (mfxU32)MFX_EXTBUFF_VPP_COLOR_CONVERSION:
             {
                 break;

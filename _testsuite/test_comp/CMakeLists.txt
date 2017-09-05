@@ -13,7 +13,6 @@ file( GLOB_RECURSE srcs2 "${CMAKE_CURRENT_SOURCE_DIR}/common/*.cpp")
 list( APPEND sources ${srcs})
 list( APPEND sources ${srcs2})
 
-set (CMAKE_CXX_FLAGS "-std=c++0x")
 set( LIBS "" )
 list( APPEND LIBS
     mfx
@@ -21,6 +20,6 @@ list( APPEND LIBS
     dl
 )
 
-set( defs "${defs} ${WARNING_FLAGS}" )
+set( defs "${defs} -DMFX_VERSION_USE_LATEST ${WARNING_FLAGS}" )
 make_executable( test_comp universal )
 set( defs "" )
