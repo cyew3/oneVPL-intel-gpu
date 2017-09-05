@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common_decode_int.h"
@@ -101,7 +101,7 @@ mfxStatus ConvertUMCStatusToMfx(UMC::Status status)
     return sts;
 }
 
-void ConvertMFXParamsToUMC(mfxVideoParam *par, UMC::VideoStreamInfo *umcVideoParams)
+void ConvertMFXParamsToUMC(mfxVideoParam const* par, UMC::VideoStreamInfo *umcVideoParams)
 {
     umcVideoParams->clip_info.height = par->mfx.FrameInfo.Height;
     umcVideoParams->clip_info.width = par->mfx.FrameInfo.Width;
@@ -181,7 +181,7 @@ void ConvertMFXParamsToUMC(mfxVideoParam *par, UMC::VideoStreamInfo *umcVideoPar
     umcVideoParams->level = par->mfx.CodecLevel;
 }
 
-void ConvertMFXParamsToUMC(mfxVideoParam *par, UMC::VideoDecoderParams *umcVideoParams)
+void ConvertMFXParamsToUMC(mfxVideoParam const* par, UMC::VideoDecoderParams *umcVideoParams)
 {
     ConvertMFXParamsToUMC(par, &umcVideoParams->info);
 
@@ -200,6 +200,107 @@ void ConvertMFXParamsToUMC(mfxVideoParam *par, UMC::VideoDecoderParams *umcVideo
         VM_ASSERT(false);
         break;
     }
+}
+
+mfxU32 ConvertUMCColorFormatToFOURCC(UMC::ColorFormat format)
+{
+    switch (format)
+    {
+        case UMC::NV12:    return MFX_FOURCC_NV12;
+        case UMC::RGB32:   return MFX_FOURCC_RGB4;
+        case UMC::RGB24:   return MFX_FOURCC_RGB3;
+        case UMC::YUY2:    return MFX_FOURCC_YUY2;
+        case UMC::YV12:    return MFX_FOURCC_YV12;
+        case UMC::P010:    return MFX_FOURCC_P010;
+        case UMC::P210:    return MFX_FOURCC_P210;
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+        case UMC::Y210:    return MFX_FOURCC_Y210;
+        case UMC::Y410:    return MFX_FOURCC_Y410;
+#endif //PRE_SI_TARGET_PLATFORM_GEN11
+#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
+        case UMC::P016:    return MFX_FOURCC_P016;
+        case UMC::Y216:    return MFX_FOURCC_Y216;
+        case UMC::Y416:    return MFX_FOURCC_Y416;
+#endif //PRE_SI_TARGET_PLATFORM_GEN12
+        case UMC::YUV444A: return MFX_FOURCC_AYUV;
+        case UMC::IMC3:    return MFX_FOURCC_IMC3;
+        case UMC::YUV411:  return MFX_FOURCC_YUV411;
+        case UMC::YUV444:  return MFX_FOURCC_YUV444;
+        case UMC::UYVY:    return MFX_FOURCC_UYVY;
+
+        default:
+            VM_ASSERT(!"Unknown color format");
+            return MFX_FOURCC_NV12;
+    }
+}
+
+inline
+mfxU32 ConvertUMCStreamTypeToCodec(UMC::VideoStreamType type)
+{
+    switch (type)
+    {
+        case UMC::MPEG2_VIDEO: return MFX_CODEC_MPEG2;
+        case UMC::VC1_VIDEO:   return MFX_CODEC_VC1;
+        case UMC::H264_VIDEO:  return MFX_CODEC_AVC;
+        case UMC::HEVC_VIDEO:  return MFX_CODEC_HEVC;
+        case UMC::VP9_VIDEO:   return MFX_CODEC_VP9;
+
+        default:
+            VM_ASSERT(!"Unknown stream type");
+            return 0;
+    }
+}
+
+void ConvertUMCParamsToMFX(UMC::VideoStreamInfo const* si, mfxVideoParam* par)
+{
+    par->mfx.CodecId      = ConvertUMCStreamTypeToCodec(si->stream_type);
+    par->mfx.CodecProfile = mfxU16(si->profile);
+    par->mfx.CodecLevel   = mfxU16(si->level);
+
+    par->mfx.FrameInfo.Height = UMC::align_value<mfxU16>(si->clip_info.height, 16);
+    par->mfx.FrameInfo.Width  = UMC::align_value<mfxU16>(si->clip_info.width,  16);
+    par->mfx.FrameInfo.CropH  = mfxU16(si->disp_clip_info.height);
+    par->mfx.FrameInfo.CropW  = mfxU16(si->disp_clip_info.width);
+
+    par->mfx.FrameInfo.BitDepthLuma = 0;
+        par->mfx.FrameInfo.BitDepthChroma = 0;
+
+    par->mfx.FrameInfo.FourCC = ConvertUMCColorFormatToFOURCC(si->color_format);
+
+    switch (si->interlace_type)
+    {
+        case UMC::PROGRESSIVE:
+            par->mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+            break;
+
+        case UMC::INTERLEAVED_BOTTOM_FIELD_FIRST:
+            par->mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_FIELD_BFF;
+            break;
+
+        case UMC::INTERLEAVED_TOP_FIELD_FIRST:
+            par->mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_FIELD_TFF;
+            break;
+
+        default:
+            par->mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_UNKNOWN;
+    }
+
+    //TODO: si->framerate
+    par->mfx.FrameInfo.FrameRateExtN = par->mfx.FrameInfo.FrameRateExtD = 1;
+
+    par->mfx.FrameInfo.AspectRatioW =  mfxU16(si->aspect_ratio_width);
+    par->mfx.FrameInfo.AspectRatioH =  mfxU16(si->aspect_ratio_height);
+}
+
+void ConvertUMCParamsToMFX(UMC::VideoDecoderParams const* vp, mfxVideoParam* par)
+{
+    ConvertUMCParamsToMFX(&vp->info, par);
+
+    par->mfx.NumThread = mfxU16(vp->numThreads);
+    par->mfx.TimeStampCalc = mfxU16(
+        vp->lFlags & UMC::FLAG_VDEC_TELECINE_PTS ?
+        MFX_TIMESTAMPCALC_TELECINE : MFX_TIMESTAMPCALC_UNKNOWN
+    );
 }
 
 bool IsNeedChangeVideoParam(mfxVideoParam *)

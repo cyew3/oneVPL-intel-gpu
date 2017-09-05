@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFX_COMMON_DECODE_INT_H__
@@ -27,8 +27,12 @@ public:
 
 mfxStatus ConvertUMCStatusToMfx(UMC::Status status);
 
-void ConvertMFXParamsToUMC(mfxVideoParam *par, UMC::VideoDecoderParams *umcVideoParams);
-void ConvertMFXParamsToUMC(mfxVideoParam *par, UMC::VideoStreamInfo *umcVideoParams);
+void ConvertMFXParamsToUMC(mfxVideoParam const* par, UMC::VideoStreamInfo* umcVideoParams);
+void ConvertMFXParamsToUMC(mfxVideoParam const* par, UMC::VideoDecoderParams* umcVideoParams);
+
+mfxU32 ConvertUMCColorFormatToFOURCC(UMC::ColorFormat);
+void ConvertUMCParamsToMFX(UMC::VideoStreamInfo const*, mfxVideoParam*);
+void ConvertUMCParamsToMFX(UMC::VideoDecoderParams const*, mfxVideoParam*);
 
 bool IsNeedChangeVideoParam(mfxVideoParam *par);
 
