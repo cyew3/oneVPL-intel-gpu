@@ -36,6 +36,7 @@ extern "C"
 {
 #endif
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
 
 typedef struct {
     mfxExtBuffer Header;
@@ -248,6 +249,7 @@ enum {
 #endif
 };
 
+#endif // MFX_VERSION
 
 #ifdef __cplusplus
 } /* extern "C" */

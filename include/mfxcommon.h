@@ -61,19 +61,20 @@ enum  {
     MFX_IMPL_HARDWARE2    = 0x0005,  /* Hardware accelerated implementation (2nd device) */
     MFX_IMPL_HARDWARE3    = 0x0006,  /* Hardware accelerated implementation (3rd device) */
     MFX_IMPL_HARDWARE4    = 0x0007,  /* Hardware accelerated implementation (4th device) */
-    MFX_IMPL_RUNTIME      = 0x0008, 
+    MFX_IMPL_RUNTIME      = 0x0008,
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     MFX_IMPL_SINGLE_THREAD    = 0x0009,
-  
+#endif
     MFX_IMPL_VIA_ANY      = 0x0100,
     MFX_IMPL_VIA_D3D9     = 0x0200,
     MFX_IMPL_VIA_D3D11    = 0x0300,
     MFX_IMPL_VIA_VAAPI    = 0x0400,
 
     MFX_IMPL_AUDIO                     = 0x8000,
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     MFX_IMPL_EXTERNAL_THREADING        = 0x10000,
+#endif
 
-
-     
     MFX_IMPL_UNSUPPORTED  = 0x0000  /* One of the MFXQueryIMPL returns */
 };
 
@@ -139,8 +140,12 @@ typedef struct {
         mfxU16  reserved2[5];
     };
     mfxU16      GPUCopy;
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     mfxU16      AltDependencies;
     mfxU16      reserved[20];
+#else
+    mfxU16      reserved[21];
+#endif
 } mfxInitParam;
 
 enum {
@@ -168,12 +173,14 @@ enum {
     MFX_PLATFORM_SKYLAKE        = 7,
     MFX_PLATFORM_APOLLOLAKE     = 8,
     MFX_PLATFORM_KABYLAKE       = 9,
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     MFX_PLATFORM_GEMINILAKE     = 10,
     MFX_PLATFORM_COFFEELAKE     = 11,
     MFX_PLATFORM_CANNONLAKE     = 20,
     MFX_PLATFORM_ICELAKE        = 30,
     MFX_PLATFORM_LAKEFIELD      = 31,
     MFX_PLATFORM_TIGERLAKE      = 40,
+#endif
 };
 
 typedef struct {

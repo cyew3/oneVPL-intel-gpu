@@ -36,6 +36,8 @@ File Name: mfxvp9.h
 extern "C" {
 #endif
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+
 /* Extended Buffer Ids */
 enum {
     MFX_EXTBUFF_VP9_DECODED_FRAME_INFO = MFX_MAKEFOURCC('9','D','F','I')
@@ -50,6 +52,7 @@ typedef struct {
     mfxU16       reserved[58];
 } mfxExtVP9DecodedFrameInfo;
 
+#endif
 
 #ifdef __cplusplus
 } // extern "C"

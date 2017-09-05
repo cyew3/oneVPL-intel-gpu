@@ -85,7 +85,9 @@ std::string DumpContext::dump(const std::string structName, const mfxInitParam &
     str += structName + ".ExtParam=" + ToHexFormatString(_struct.ExtParam) + "\n";
     str += structName + ".reserved2[]=" + DUMP_RESERVED_ARRAY(_struct.reserved2) + "\n";
     str += structName + ".GPUCopy=" + ToString(_struct.GPUCopy) + "\n";
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     DUMP_FIELD(AltDependencies);
+#endif
     DUMP_FIELD_RESERVED(reserved);
 
     return str;

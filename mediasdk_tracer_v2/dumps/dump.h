@@ -258,6 +258,12 @@ public:
                         case  MFX_EXTBUF_CAM_LENS_GEOM_DIST_CORRECTION:
                             str += dump(name, *((mfxExtCamLensGeomDistCorrection*)_struct.ExtParam[i])) + "\n";
                             break;
+                        case  MFX_EXTBUF_CAM_TOTAL_COLOR_CONTROL:
+                            str += dump(name, *((mfxExtCamTotalColorControl*)_struct.ExtParam[i])) + "\n";
+                            break;
+                        case  MFX_EXTBUF_CAM_CSC_YUV_RGB:
+                            str += dump(name, *((mfxExtCamCscYuvRgb*)_struct.ExtParam[i])) + "\n";
+                            break;
                         case  MFX_EXTBUFF_LOOKAHEAD_CTRL:
                             str += dump(name, *((mfxExtLAControl*)_struct.ExtParam[i])) + "\n";
                             break;
@@ -332,9 +338,6 @@ public:
                             break;
                         case  MFX_EXTBUFF_DECODED_FRAME_INFO:
                             str += dump(name, *((mfxExtDecodedFrameInfo*)_struct.ExtParam[i])) + "\n";
-                            break;
-                        case  MFX_EXTBUFF_DECODE_ERROR_REPORT:
-                            str += dump(name, *((mfxExtDecodeErrorReport*)_struct.ExtParam[i])) + "\n";
                             break;
                         case  MFX_EXTBUFF_TIME_CODE:
                             str += dump(name, *((mfxExtTimeCode*)_struct.ExtParam[i])) + "\n";
@@ -441,6 +444,10 @@ public:
                         case MFX_EXTBUFF_DEC_VIDEO_PROCESSING:
                             str += dump(name, *((mfxExtDecVideoProcessing*)_struct.ExtParam[i])) + "\n";
                             break;
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+                        case  MFX_EXTBUFF_DECODE_ERROR_REPORT:
+                            str += dump(name, *((mfxExtDecodeErrorReport*)_struct.ExtParam[i])) + "\n";
+                            break;
                         case MFX_EXTBUFF_VP9_SEGMENTATION:
                             str += dump(name, *((mfxExtVP9Segmentation*)_struct.ExtParam[i])) + "\n";
                             break;
@@ -468,6 +475,7 @@ public:
                         case MFX_EXTBUFF_ENCODED_UNITS_INFO:
                             str += dump(name, *((mfxExtEncodedUnitsInfo*)_struct.ExtParam[i])) + "\n";
                             break;
+#endif
                         default:
                             str += dump(name, *(_struct.ExtParam[i])) + "\n";
                             break;
@@ -554,7 +562,6 @@ public:
     DEFINE_DUMP_FUNCTION(mfxExtHEVCParam);
     DEFINE_DUMP_FUNCTION(mfxExtHEVCRegion);
     DEFINE_DUMP_FUNCTION(mfxExtDecodedFrameInfo);
-    DEFINE_DUMP_FUNCTION(mfxExtDecodeErrorReport);
     DEFINE_DUMP_FUNCTION(mfxExtTimeCode);
     DEFINE_DUMP_FUNCTION(mfxExtPredWeightTable);
     DEFINE_DUMP_FUNCTION(mfxExtEncoderCapability);
@@ -571,6 +578,8 @@ public:
     DEFINE_DUMP_FUNCTION(mfxExtMVOverPicBoundaries);
     DEFINE_DUMP_FUNCTION(mfxExtVPPColorFill);
     DEFINE_DUMP_FUNCTION(mfxExtDecVideoProcessing);
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    DEFINE_DUMP_FUNCTION(mfxExtDecodeErrorReport);
     DEFINE_DUMP_FUNCTION(mfxVP9SegmentParam);
     DEFINE_DUMP_FUNCTION(mfxExtVP9Segmentation);
     DEFINE_DUMP_FUNCTION(mfxVP9TemporalLayer);
@@ -581,6 +590,7 @@ public:
     DEFINE_DUMP_FUNCTION(mfxExtMultiFrameParam);
     DEFINE_DUMP_FUNCTION(mfxExtMultiFrameControl);
     DEFINE_DUMP_FUNCTION(mfxExtEncodedUnitsInfo);
+#endif
 
     //mfxsession
     DEFINE_DUMP_FUNCTION(mfxSession);
@@ -641,6 +651,8 @@ public:
     DEFINE_DUMP_FUNCTION(mfxCamFwdGammaSegment);
     DEFINE_DUMP_FUNCTION(mfxExtCamFwdGamma);
     DEFINE_DUMP_FUNCTION(mfxExtCamLensGeomDistCorrection);
+    DEFINE_DUMP_FUNCTION(mfxExtCamTotalColorControl);
+    DEFINE_DUMP_FUNCTION(mfxExtCamCscYuvRgb);
 
     //mfxjpeg
     DEFINE_DUMP_FUNCTION(mfxExtJPEGQuantTables);

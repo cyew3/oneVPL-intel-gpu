@@ -183,12 +183,15 @@ typedef struct {
         mfxU32    ForceToIntra     : 1;
         mfxU32    ForceToSkip      : 1;
         mfxU32    ForceToNoneSkip  : 1;
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         mfxU32    DirectBiasAdjustment        : 1;
         mfxU32    GlobalMotionBiasAdjustment  : 1;
         mfxU32    MVCostScalingFactor         : 3;
 
         mfxU32    reserved1        : 24;
-
+#else
+        mfxU32    reserved1        : 29;
+#endif
         mfxU32    reserved2;
         mfxU32    reserved3;
 

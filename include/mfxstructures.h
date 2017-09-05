@@ -107,7 +107,9 @@ enum {
     MFX_FOURCC_P8           = 41,                                /*  D3DFMT_P8   */
     MFX_FOURCC_P8_TEXTURE   = MFX_MAKEFOURCC('P','8','M','B'),
     MFX_FOURCC_P010         = MFX_MAKEFOURCC('P','0','1','0'),
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     MFX_FOURCC_P016         = MFX_MAKEFOURCC('P','0','1','6'),
+#endif
     MFX_FOURCC_P210         = MFX_MAKEFOURCC('P','2','1','0'),
     MFX_FOURCC_BGR4         = MFX_MAKEFOURCC('B','G','R','4'),   /* ABGR in that order, A channel is 8 MSBs */
     MFX_FOURCC_A2RGB10      = MFX_MAKEFOURCC('R','G','1','0'),   /* ARGB in that order, A channel is two MSBs */
@@ -117,10 +119,12 @@ enum {
     MFX_FOURCC_AYUV         = MFX_MAKEFOURCC('A','Y','U','V'),   /* YUV 4:4:4, AYUV in that order, A channel is 8 MSBs */
     MFX_FOURCC_AYUV_RGB4    = MFX_MAKEFOURCC('A','V','U','Y'),   /* ARGB in that order, A channel is 8 MSBs stored in AYUV surface*/
     MFX_FOURCC_UYVY         = MFX_MAKEFOURCC('U','Y','V','Y'),
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     MFX_FOURCC_Y210         = MFX_MAKEFOURCC('Y','2','1','0'),
     MFX_FOURCC_Y216         = MFX_MAKEFOURCC('Y','2','1','6'),
     MFX_FOURCC_Y410         = MFX_MAKEFOURCC('Y','4','1','0'),
-    MFX_FOURCC_Y416         = MFX_MAKEFOURCC('Y','4','1','6')
+    MFX_FOURCC_Y416         = MFX_MAKEFOURCC('Y','4','1','6'),
+#endif
 };
 
 /* PicStruct */
@@ -177,6 +181,8 @@ enum {
     MFX_CORRUPTION_REFERENCE_LIST  = 0x0020
 };
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+
 #pragma pack(push, 4)
 typedef struct
 {
@@ -194,6 +200,8 @@ typedef struct
     mfxU32 A :  2;
 } mfxA2RGB10;
 #pragma pack(pop)
+
+#endif
 
 /* Frame Data Info */
 typedef struct {
@@ -230,14 +238,18 @@ typedef struct {
         mfxU8   *U;
         mfxU16  *U16;
         mfxU8   *G;
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         mfxY410 *Y410;          /* for Y410 format (merged AVYU) */
+#endif
     };
     union {
         mfxU8   *Cr;
         mfxU8   *V;
         mfxU16  *V16;
         mfxU8   *B;
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         mfxA2RGB10 *A2RGB10;    /* for A2RGB10 format (merged ARGB) */
+#endif
     };
     mfxU8       *A;
     mfxMemId    MemId;
@@ -446,7 +458,9 @@ enum {
     MFX_PROFILE_HEVC_MAIN10           =2,
     MFX_PROFILE_HEVC_MAINSP           =3,
     MFX_PROFILE_HEVC_REXT             =4,
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     MFX_PROFILE_HEVC_SCC              =9,
+#endif
 
     MFX_LEVEL_HEVC_1   = 10,
     MFX_LEVEL_HEVC_2   = 20,
@@ -511,7 +525,9 @@ enum {
     MFX_RATECONTROL_LA_EXT    =12,
     MFX_RATECONTROL_LA_HRD    =13,
     MFX_RATECONTROL_QVBR      =14,
-    MFX_RATECONTROL_VME       =15
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    MFX_RATECONTROL_VME       =15,
+#endif
 };
 
 /* Trellis control*/
@@ -659,6 +675,8 @@ enum {
     MFX_P_REF_PYRAMID = 2
 };
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+
 /* QuantScaleType */
 enum {
     MFX_MPEG2_QUANT_SCALE_TYPE_DEFAULT    = 0,
@@ -679,6 +697,8 @@ enum {
     MFX_MPEG2_SCAN_TYPE_ZIGZAG    = 1, /* alternate_scan = 0 */
     MFX_MPEG2_SCAN_TYPE_ALTERNATE = 2  /* alternate_scan = 1 */
 };
+
+#endif
 
 typedef struct {
     mfxExtBuffer Header;
@@ -708,21 +728,29 @@ typedef struct {
     mfxU16      BitstreamRestriction;           /* tri-state option */
     mfxU16      LowDelayHrd;                    /* tri-state option */
     mfxU16      MotionVectorsOverPicBoundaries; /* tri-state option */
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     mfxU16      Log2MaxMvLengthHorizontal;      /* 0..16 */
     mfxU16      Log2MaxMvLengthVertical;        /* 0..16 */
+#else
+    mfxU16      reserved1[2];
+#endif
 
     mfxU16      ScenarioInfo;
     mfxU16      ContentInfo;
 
     mfxU16      PRefType;
     mfxU16      FadeDetection;            /* tri-state option */
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     mfxI16      DeblockingAlphaTcOffset;  /* -12..12 (slice_alpha_c0_offset_div2 << 1) */
     mfxI16      DeblockingBetaOffset;     /* -12..12 (slice_beta_offset_div2 << 1) */
+#else
+    mfxU16      reserved2[2];
+#endif
     mfxU16      GPB;                      /* tri-state option */
 
     mfxU32      MaxFrameSizeI;
     mfxU32      MaxFrameSizeP;
-    mfxU32      reserved1[3];
+    mfxU32      reserved3[3];
 
     mfxU16      EnableQPOffset;           /* tri-state option */
     mfxI16      QPOffset[8];              /* FrameQP = QPX + QPOffset[pyramid_layer]; QPX = QPB for B-pyramid, QPP for P-pyramid */
@@ -731,13 +759,16 @@ typedef struct {
     mfxU16      NumRefActiveBL0[8];
     mfxU16      NumRefActiveBL1[8];
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     mfxU16      ConstrainedIntraPredFlag;  /* tri-state option */
     mfxU16      TransformSkip;             /* tri-state option; HEVC transform_skip_enabled_flag */
 
     mfxU16      TargetChromaFormatPlus1;   /* Minus 1 specifies target encoding chroma format (see ColorFormat enum). May differ from input one. */
     mfxU16      TargetBitDepthLuma;        /* Target encoding bit depth for luma samples. May differ from input one. */
     mfxU16      TargetBitDepthChroma;      /* Target encoding bit depth for chroma samples. May differ from input one. */
-
+#else
+    mfxU16      reserved4[5];
+#endif
     mfxU16      BRCPanicMode;              /* tri-state option */
 
     mfxU16      LowDelayBRC;               /* tri-state option */
@@ -745,7 +776,7 @@ typedef struct {
     mfxU16      AdaptiveMaxFrameSize;      /* tri-state option */
 
     mfxU16      RepartitionCheckEnable;    /* tri-state option */
-
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     mfxU16      QuantScaleType;            /* For MPEG2 specifies mapping between quantiser_scale_code and quantiser_scale (see QuantScaleType enum) */
     mfxU16      IntraVLCFormat;            /* For MPEG2 specifies which table shall be used for coding of DCT coefficients of intra macroblocks (see IntraVLCFormat enum) */
     mfxU16      ScanType;                  /* For MPEG2 specifies transform coefficients scan pattern (see ScanType enum) */
@@ -753,6 +784,9 @@ typedef struct {
     mfxU16      SliceSizeReport;           /* tri-state option */
 
     mfxU16      reserved[165];
+#else
+    mfxU16      reserved[169];
+#endif
 } mfxExtCodingOption3;
 
 /* IntraPredBlockSize/InterPredBlockSize */
@@ -820,18 +854,13 @@ enum {
     MFX_EXTBUFF_MB_FORCE_INTRA                  = MFX_MAKEFOURCC('M','B','F','I'),
     MFX_EXTBUFF_HEVC_TILES                      = MFX_MAKEFOURCC('2','6','5','T'),
     MFX_EXTBUFF_MB_DISABLE_SKIP_MAP             = MFX_MAKEFOURCC('M','D','S','M'),
-    MFX_EXTBUFF_DPB                             = MFX_MAKEFOURCC('E','D','P','B'),
     MFX_EXTBUFF_HEVC_PARAM                      = MFX_MAKEFOURCC('2','6','5','P'),
-    MFX_EXTBUFF_DECODE_ERROR_REPORT             = MFX_MAKEFOURCC('D','E','R','R'),
     MFX_EXTBUFF_DECODED_FRAME_INFO              = MFX_MAKEFOURCC('D','E','F','I'),
     MFX_EXTBUFF_TIME_CODE                       = MFX_MAKEFOURCC('T','M','C','D'),
     MFX_EXTBUFF_HEVC_REGION                     = MFX_MAKEFOURCC('2','6','5','R'),
     MFX_EXTBUFF_PRED_WEIGHT_TABLE               = MFX_MAKEFOURCC('E','P','W','T'),
-    MFX_EXTBUFF_TEMPORAL_LAYERS                 = MFX_MAKEFOURCC('T','M','P','L'),
     MFX_EXTBUFF_DIRTY_RECTANGLES                = MFX_MAKEFOURCC('D','R','O','I'),
     MFX_EXTBUFF_MOVING_RECTANGLES               = MFX_MAKEFOURCC('M','R','O','I'),
-    MFX_EXTBUFF_AVC_SCALING_MATRIX              = MFX_MAKEFOURCC('A','V','S','M'),
-    MFX_EXTBUFF_MPEG2_QUANT_MATRIX              = MFX_MAKEFOURCC('M','2','Q','M'),
     MFX_EXTBUFF_CODING_OPTION_VPS               = MFX_MAKEFOURCC('C','O','V','P'),
     MFX_EXTBUFF_VPP_ROTATION                    = MFX_MAKEFOURCC('R','O','T',' '),
     MFX_EXTBUFF_ENCODED_SLICES_INFO             = MFX_MAKEFOURCC('E','N','S','I'),
@@ -842,6 +871,12 @@ enum {
     MFX_EXTBUFF_VPP_MIRRORING                   = MFX_MAKEFOURCC('M','I','R','R'),
     MFX_EXTBUFF_MV_OVER_PIC_BOUNDARIES          = MFX_MAKEFOURCC('M','V','P','B'),
     MFX_EXTBUFF_VPP_COLORFILL                   = MFX_MAKEFOURCC('V','C','L','F'),
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    MFX_EXTBUFF_DECODE_ERROR_REPORT             = MFX_MAKEFOURCC('D','E','R','R'),
+    MFX_EXTBUFF_DPB                             = MFX_MAKEFOURCC('E','D','P','B'),
+    MFX_EXTBUFF_TEMPORAL_LAYERS                 = MFX_MAKEFOURCC('T','M','P','L'),
+    MFX_EXTBUFF_AVC_SCALING_MATRIX              = MFX_MAKEFOURCC('A','V','S','M'),
+    MFX_EXTBUFF_MPEG2_QUANT_MATRIX              = MFX_MAKEFOURCC('M','2','Q','M'),
     MFX_EXTBUFF_VPP_COLOR_CONVERSION            = MFX_MAKEFOURCC('V','C','S','C'),
     MFX_EXTBUFF_VP9_SEGMENTATION                = MFX_MAKEFOURCC('9','S','E','G'),
     MFX_EXTBUFF_VP9_TEMPORAL_LAYERS             = MFX_MAKEFOURCC('9','T','M','L'),
@@ -851,7 +886,8 @@ enum {
     MFX_EXTBUFF_MULTI_FRAME_PARAM               = MFX_MAKEFOURCC('M','F','R','P'),
     MFX_EXTBUFF_MULTI_FRAME_CONTROL             = MFX_MAKEFOURCC('M','F','R','C'),
     MFX_EXTBUFF_ENCODED_UNITS_INFO              = MFX_MAKEFOURCC('E','N','U','I'),
-    MFX_EXTBUFF_TASK_DEPENDENCY                 = MFX_MAKEFOURCC('S','Y','N','C')
+    MFX_EXTBUFF_TASK_DEPENDENCY                 = MFX_MAKEFOURCC('S','Y','N','C'),
+#endif
 };
 
 /* VPP Conf: Do not use certain algorithms  */
@@ -977,8 +1013,11 @@ enum {
     MFX_MEMTYPE_OPAQUE_FRAME    = 0x0004,
     MFX_MEMTYPE_EXPORT_FRAME    = 0x0008,
     MFX_MEMTYPE_SHARED_RESOURCE = MFX_MEMTYPE_EXPORT_FRAME,
-
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET = 0x1000
+#else
+    MFX_MEMTYPE_RESERVED2       = 0x1000
+#endif
 };
 
 typedef struct {
@@ -999,7 +1038,11 @@ typedef struct {
     mfxU32      reserved[3];
     mfxMemId    *mids;      /* the array allocated by application */
     mfxU16      NumFrameActual;
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     mfxU16      MemType;
+#else
+    mfxU16      reserved2;
+#endif
 } mfxFrameAllocResponse;
 
 /* FrameType */
@@ -1030,9 +1073,11 @@ typedef enum {
     MFX_HANDLE_D3D11_DEVICE                     = 3,
     MFX_HANDLE_VA_DISPLAY                       = 4,
     MFX_HANDLE_RESERVED3                        = 5,
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     MFX_HANDLE_VA_CONFIG_ID                     = 6,
     MFX_HANDLE_VA_CONTEXT_ID                    = 7,
     MFX_HANDLE_CM_DEVICE                        = 8
+#endif
 } mfxHandleType;
 
 typedef enum {
@@ -1132,6 +1177,8 @@ typedef struct {
     mfxU16  reserved[11];
 } mfxExtVPPImageStab;
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+
 enum {
     MFX_PAYLOAD_OFF = 0,
     MFX_PAYLOAD_IDR = 1
@@ -1160,6 +1207,7 @@ typedef struct {
     mfxU16 MaxPicAverageLightLevel;
 } mfxExtContentLightLevelInfo;
 
+#endif
 
 typedef struct {
   mfxExtBuffer    Header;
@@ -1196,18 +1244,26 @@ typedef struct {
     }Layer[8];
 } mfxExtAvcTemporalLayers;
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+
 enum {
     MFX_MEMORY_TILING_LINEAR = 0x0001,
     MFX_MEMORY_TILING_Y      = 0x0002,
     MFX_MEMORY_TILING_X      = 0x0004
 };
 
+#endif
+
 typedef struct {
     mfxExtBuffer Header;
 
     mfxU32      MBPerSec;
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     mfxU16      InputMemoryTiling;
     mfxU16      reserved[57];
+#else
+    mfxU16      reserved[58];
+#endif
 } mfxExtEncoderCapability;
 
 typedef struct {
@@ -1494,7 +1550,7 @@ typedef struct {
 
 typedef struct {
     mfxExtBuffer Header;
-    
+
     mfxU32 reserved[11];
     mfxU32 MapSize;
     union {
@@ -1502,6 +1558,8 @@ typedef struct {
         mfxU64  reserved2;
     };
 } mfxExtMBDisableSkipMap;
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
 
 typedef struct {
     mfxExtBuffer    Header;
@@ -1517,6 +1575,8 @@ typedef struct {
     } DPB[32];
 } mfxExtDPB;
 
+#endif
+
 /*GeneralConstraintFlags*/
 enum {
     /* REXT Profile constraint flags*/
@@ -1531,6 +1591,8 @@ enum {
     MFX_HEVC_CONSTR_REXT_LOWER_BIT_RATE     = (1 << 8)
 };
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+
 /* SampleAdaptiveOffset */
 enum {
     MFX_SAO_UNKNOWN       = 0x00,
@@ -1539,6 +1601,8 @@ enum {
     MFX_SAO_ENABLE_CHROMA = 0x04
 };
 
+#endif
+
 #pragma pack(push, 4)
 typedef struct {
     mfxExtBuffer    Header;
@@ -1546,12 +1610,17 @@ typedef struct {
     mfxU16          PicWidthInLumaSamples;
     mfxU16          PicHeightInLumaSamples;
     mfxU64          GeneralConstraintFlags;
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     mfxU16          SampleAdaptiveOffset;   /* see enum SampleAdaptiveOffset, valid during Init and Runtime */
     mfxU16          LCUSize;
     mfxU16          reserved[116];
+#else
+    mfxU16          reserved[118];
+#endif
 } mfxExtHEVCParam;
 #pragma pack(pop)
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
 /*ErrorTypes in mfxExtDecodeErrorReport*/
 enum {
     MFX_ERROR_PPS           = (1 << 0),
@@ -1567,6 +1636,8 @@ typedef struct {
     mfxU32          ErrorTypes;
     mfxU16          reserved[10];
 } mfxExtDecodeErrorReport;
+
+#endif
 
 typedef struct {
     mfxExtBuffer Header;
@@ -1617,6 +1688,8 @@ typedef struct {
     mfxU16       reserved[58];
 } mfxExtPredWeightTable;
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+
 typedef struct {
     mfxExtBuffer Header;
 
@@ -1634,6 +1707,8 @@ typedef struct {
         mfxU16   reserved1[20];
     } Layer[8];
 } mfxExtTemporalLayers;
+
+#endif
 
 typedef struct {
     mfxExtBuffer Header;
@@ -1668,6 +1743,8 @@ typedef struct {
         mfxU16  reserved2[4];
     } Rect[256];
 } mfxExtMoveRect;
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
 
 /* ScalingMatrixType */
 enum {
@@ -1704,6 +1781,8 @@ typedef struct {
     mfxU8  LoadMatrix[4]; // [LumaIntra, LumaInter, ChromaIntra, ChromaInter]
     mfxU8  Matrix[4][64]; // [LumaIntra, LumaInter, ChromaIntra, ChromaInter]
 } mfxExtMPEG2QuantMatrix;
+
+#endif
 
 /* Angle */
 enum {
@@ -1749,6 +1828,8 @@ typedef struct {
     mfxU16 reserved[11];
 } mfxExtVPPScaling;
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+
 /* SceneChangeType */
 enum {
     MFX_SCENE_NO_CHANGE = 0,
@@ -1762,6 +1843,8 @@ typedef struct {
     mfxU16 Type;
     mfxU16 reserved[11];
 } mfxExtSceneChange;
+
+#endif
 
 typedef mfxExtAVCRefListCtrl mfxExtHEVCRefListCtrl;
 typedef mfxExtAVCRefLists mfxExtHEVCRefLists;
@@ -1798,6 +1881,8 @@ typedef struct {
     mfxU16 Enable;        /* tri-state option */
     mfxU16 reserved[11];
 } mfxExtVPPColorFill;
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
 
 /* ChromaSiting */
 enum {
@@ -1943,6 +2028,8 @@ typedef struct {
 
     mfxU16 reserved[22];
 } mfxExtEncodedUnitsInfo;
+
+#endif
 
 #ifdef __cplusplus
 } // extern "C"
