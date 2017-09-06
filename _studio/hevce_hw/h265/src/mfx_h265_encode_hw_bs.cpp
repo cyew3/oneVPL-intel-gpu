@@ -2595,16 +2595,16 @@ void PackPTPayload(BitstreamWriter& rbsp, MfxVideoParam const & par, Task const 
         pt.pic_struct       = 0;
         pt.source_scan_type = 1;
         break;
-    case mfxU16(MFX_PICSTRUCT_FIELD_TFF):
-        pt.pic_struct       = 3;
+    case mfxU16(MFX_PICSTRUCT_FIELD_TOP):
+        pt.pic_struct       = 1;
         pt.source_scan_type = 0;
         break;
     case mfxU16(MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FIELD_TFF):
         pt.pic_struct       = 3;
         pt.source_scan_type = 1;
         break;
-    case mfxU16(MFX_PICSTRUCT_FIELD_BFF):
-        pt.pic_struct       = 4;
+    case mfxU16(MFX_PICSTRUCT_FIELD_BOTTOM):
+        pt.pic_struct       = 2;
         pt.source_scan_type = 0;
         break;
     case mfxU16(MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FIELD_BFF):

@@ -369,5 +369,6 @@
     #endif // PRE_SI_TARGET_PLATFORM_GEN11
 #endif
 
+#define MFX_ENABLE_HEVCE_INTERLACE
 
 #endif // _MFX_CONFIG_H_

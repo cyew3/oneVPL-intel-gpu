@@ -295,6 +295,7 @@ typedef struct _DpbFrame
     mfxU8    m_tid;
     bool     m_ltr; // is "long-term"
     bool     m_ldb; // is "low-delay B"
+    bool     m_secondField;
     mfxU8    m_codingType;
     mfxU8    m_idxRaw;
     mfxU8    m_idxRec;
@@ -892,6 +893,7 @@ public:
     bool isLowDelay() const { return ((m_ext.CO3.PRefType == MFX_P_REF_PYRAMID) && !isTL()); }
     bool isTL()       const { return NumTL() > 1; }
     bool isSWBRC()    const {return  (IsOn(m_ext.CO2.ExtBRC) && (mfx.RateControlMethod == MFX_RATECONTROL_CBR || mfx.RateControlMethod == MFX_RATECONTROL_VBR))|| mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT ;}
+    bool isField()    const { return  !!(mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_SINGLE); }
 
 private:
     void Construct(mfxVideoParam const & par);
@@ -952,6 +954,42 @@ protected:
     mfxF64 m_prevBpAuNominalRemovalTime;
     mfxU32 m_prevBpEncOrder;
 };
+class SecondFieldInfo
+{
+public:
+    mfxI32     m_poc;
+    bool       m_bReference;
+    mfxU32     m_level;
+
+    SecondFieldInfo() :
+        m_poc(-1),
+        m_bReference(false),
+        m_level(0) {}
+
+    void Reset()
+    {
+        m_poc = -1;
+        m_bReference = false;
+        m_level = 0;
+    }
+    void SaveInfo(Task const* task)
+    {
+        m_poc = task->m_poc + 1;
+        m_bReference = ((task->m_frameType & MFX_FRAMETYPE_REF) != 0);
+        m_level = task->m_level;
+    }
+    void CorrectTaskInfo(Task* task)
+    {
+        if (m_poc != task->m_poc || !task->m_secondField)
+            return;
+        if (m_bReference)
+            task->m_frameType |= MFX_FRAMETYPE_REF;
+        task->m_level = m_level;
+
+        Reset();
+    }
+    bool bSecondField() { return m_poc != -1; }
+};
 
 class TaskManager
 {
@@ -977,6 +1015,7 @@ private:
     TaskList   m_querying;
     UMC::Mutex m_listMutex;
     mfxU16     m_resetHeaders;
+    SecondFieldInfo  m_secondFieldInfo;
 };
 
 class FrameLocker : public mfxFrameData
@@ -1023,6 +1062,7 @@ void ConstructRPL(
     bool isB,
     mfxI32 poc,
     mfxU8  tid,
+    bool  bSecondField,
     mfxU8 (&RPL)[2][MAX_DPB_SIZE],
     mfxU8 (&numRefActive)[2],
     mfxExtAVCRefLists * pExtLists,
@@ -1034,10 +1074,11 @@ inline void ConstructRPL(
     bool isB,
     mfxI32 poc,
     mfxU8  tid,
+    bool  bSecondField,
     mfxU8(&RPL)[2][MAX_DPB_SIZE],
     mfxU8(&numRefActive)[2])
 {
-    ConstructRPL(par, DPB, isB, poc, tid, RPL, numRefActive, 0, 0);
+    ConstructRPL(par, DPB, isB, poc, tid, bSecondField, RPL, numRefActive, 0, 0);
 }
 
 void UpdateDPB(
@@ -1093,7 +1134,8 @@ IntraRefreshState GetIntraRefreshState(
 
 mfxU8 GetNumReorderFrames(
     mfxU32 BFrameRate,
-    bool BPyramid);
+    bool BPyramid,
+    bool bField);
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 bool Increment(

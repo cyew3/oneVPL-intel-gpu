@@ -211,7 +211,7 @@ mfxStatus CheckProfile(mfxVideoParam& par, mfxU16 platform)
 
     return sts;
 }
-mfxU16 minRefForPyramid(mfxU16 GopRefDist)
+mfxU16 minRefForPyramid(mfxU16 GopRefDist, bool bField)
 {
     assert(GopRefDist > 0);
     mfxU16 refB  = (GopRefDist - 1) / 2;
@@ -222,7 +222,7 @@ mfxU16 minRefForPyramid(mfxU16 GopRefDist)
         refB -= x;
     }
 
-    return 2 + refB;
+    return (bField ? 2:1)*(2 + refB);
 }
 
 mfxU32 GetMaxDpbSizeByLevel(MfxVideoParam const & par)
@@ -296,7 +296,7 @@ mfxStatus CorrectLevel(MfxVideoParam& par, bool bCheckOnly)
             || par.m_ext.HEVCTiles.NumTileColumns > MaxTileCols
             || par.m_ext.HEVCTiles.NumTileRows > MaxTileRows
             || (mfxU32)par.mfx.NumSlice > MaxSSPP
-            || (par.isBPyramid() && MaxDpbSize < minRefForPyramid(par.mfx.GopRefDist)))
+            || (par.isBPyramid() && MaxDpbSize < minRefForPyramid(par.mfx.GopRefDist,par.isField())))
         {
             lidx ++;
             continue;
@@ -1776,8 +1776,16 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     }
 #endif
 
-    changed += CheckOption(par.mfx.FrameInfo.PicStruct, (mfxU16)MFX_PICSTRUCT_PROGRESSIVE, 0);
-
+#ifdef MFX_ENABLE_HEVCE_INTERLACE
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+    {
+        changed += CheckOption(par.mfx.FrameInfo.PicStruct, (mfxU16)MFX_PICSTRUCT_PROGRESSIVE, MFX_PICSTRUCT_FIELD_TOP, MFX_PICSTRUCT_FIELD_BOTTOM, MFX_PICSTRUCT_FIELD_SINGLE, 0);
+    }
+    else
+#endif
+    {
+        changed += CheckOption(par.mfx.FrameInfo.PicStruct, (mfxU16)MFX_PICSTRUCT_PROGRESSIVE, 0);
+    }
     if (par.m_ext.HEVCParam.PicWidthInLumaSamples > 0)
     {
         changed += CheckRange(par.mfx.FrameInfo.CropX, 0, par.m_ext.HEVCParam.PicWidthInLumaSamples);
@@ -1953,8 +1961,8 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     if (   par.m_ext.CO2.BRefType == MFX_B_REF_PYRAMID
            && par.mfx.GopRefDist > 0
            && ( par.mfx.GopRefDist < 2
-            || minRefForPyramid(par.mfx.GopRefDist) > 16
-            || (par.mfx.NumRefFrame && minRefForPyramid(par.mfx.GopRefDist) > par.mfx.NumRefFrame)))
+            || minRefForPyramid(par.mfx.GopRefDist, par.isField()) > 16
+            || (par.mfx.NumRefFrame && minRefForPyramid(par.mfx.GopRefDist, par.isField()) > par.mfx.NumRefFrame)))
     {
         par.m_ext.CO2.BRefType = MFX_B_REF_OFF;
         changed ++;
@@ -2380,8 +2388,8 @@ void SetDefaults(
     if (!par.mfx.FrameInfo.AspectRatioH)
         par.mfx.FrameInfo.AspectRatioH = 1;
 
-    if (!par.mfx.FrameInfo.PicStruct)
-        par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+    //if (!par.mfx.FrameInfo.PicStruct)
+    //    par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
 
 #if !defined(PRE_SI_TARGET_PLATFORM_GEN11)
     if (!par.mfx.FrameInfo.ChromaFormat)
@@ -2508,7 +2516,7 @@ void SetDefaults(
 
     if (par.m_ext.CO2.BRefType == MFX_B_REF_UNKNOWN)
     {
-        if (par.mfx.GopRefDist > 3 && ((minRefForPyramid(par.mfx.GopRefDist) <= par.mfx.NumRefFrame) || par.mfx.NumRefFrame ==0))
+        if (par.mfx.GopRefDist > 3 && ((minRefForPyramid(par.mfx.GopRefDist, par.isField()) <= par.mfx.NumRefFrame) || par.mfx.NumRefFrame ==0))
             par.m_ext.CO2.BRefType = MFX_B_REF_PYRAMID;
         else
             par.m_ext.CO2.BRefType = MFX_B_REF_OFF;
@@ -2529,7 +2537,7 @@ void SetDefaults(
 
     if (!par.mfx.NumRefFrame)
     {
-        par.mfx.NumRefFrame = par.isBPyramid() ? mfxU16(minRefForPyramid(par.mfx.GopRefDist)) : (par.NumRefLX[0] + (par.mfx.GopRefDist > 1) * par.NumRefLX[1]);
+        par.mfx.NumRefFrame = par.isBPyramid() ? mfxU16(minRefForPyramid(par.mfx.GopRefDist,par.isField())) : (((par.NumRefLX[0] + (par.mfx.GopRefDist > 1) * (par.NumRefLX[1]))*(par.isField()?2:1)));
         par.mfx.NumRefFrame = Max(mfxU16(par.NumTL() - 1), par.mfx.NumRefFrame);
         par.mfx.NumRefFrame = Min(maxDPB, par.mfx.NumRefFrame);
     }
