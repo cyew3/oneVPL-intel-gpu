@@ -22,7 +22,10 @@ FEI_Encode::FEI_Encode(MFXVideoSession* session, mfxHDL hdl, MfxVideoParamsWrapp
         const msdk_char* dst_output, PredictorsRepaking* repacker)
     : m_pmfxSession(session)
     , m_mfxENCODE(*m_pmfxSession)
+// driver doesn't support HEVC FEI buffers, allocator can't be initialized
+#if 0
     , m_buf_allocator(hdl)
+#endif
     , m_videoParams(encode_pars)
     , m_syncPoint(0)
     , m_dstFileName(dst_output)

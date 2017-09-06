@@ -29,7 +29,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 class FEI_Encode
 {
 public:
-    FEI_Encode(MFXVideoSession* session, mfxHDL hdl, MfxVideoParamsWrapper& encode_pars, 
+    FEI_Encode(MFXVideoSession* session, mfxHDL hdl, MfxVideoParamsWrapper& encode_pars,
         const msdk_char* dst_output, PredictorsRepaking* rpck);
     ~FEI_Encode();
 
@@ -49,7 +49,10 @@ public:
 private:
     MFXVideoSession*        m_pmfxSession;
     MFXVideoENCODE          m_mfxENCODE;
+// driver doesn't support HEVC FEI buffers, allocator can't be initialized
+#if 0
     vaapiBufferAllocator    m_buf_allocator;
+#endif
 
     MfxVideoParamsWrapper m_videoParams; // reflects current state Encode parameters
     mfxEncodeCtrlWrap     m_encodeCtrl;
