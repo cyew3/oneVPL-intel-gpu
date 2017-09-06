@@ -239,6 +239,7 @@
     <ClCompile Include="..\..\samples\sample_common\src\vm\time.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_default_lowpower.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_encoder_roi.cpp" />
+    <ClCompile Include="src\gmock\test_suites\av1d_decode_frame_async.cpp" />
     <ClCompile Include="src\gmock\test_suites\av1d_decode_header.cpp" />
     <ClCompile Include="src\gmock\test_suites\av1d_query.cpp" />
     <ClCompile Include="src\gmock\test_suites\av1d_query_io_surf.cpp" />
