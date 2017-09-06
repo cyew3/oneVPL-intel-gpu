@@ -25,10 +25,63 @@ HEVC FEI is built as extension of AVC FEI. It uses the same classes of functions
 
 ## Direct access to VA buffers
 
-To improve performance, HEVC FEI eliminates additional data copy inside SDK library by allowing direct access to VA buffers. 
+To improve performance, HEVC FEI eliminates additional data copy inside SDK library (see Figure 1) by allowing direct access to VA buffers, as illustrated in Figure 2.
 
-**TODO add more about direct buffer exposure, including diagram and new buffer allocator description **
+###### Figure 1: mfxExtBuffer mapping to VA buffers
 
+![mfxExtBuffer mapping to VA buffers](./pic/ext_buffers_mapping.png)
+
+###### Figure 2: Direct access to VA buffers
+
+![Direct access to VA buffers](./pic/va_buffers_direct_access.png)
+
+The application manages extension buffer allocation through VA API for Linux*. In order to do that, it is recommended to implement a buffer allocator and use it across the entire application. Example 1 shows the pseudo code of the buffer allocator implementation and its usage.
+Note that only extension buffers with field `VaBufferID` support direct access to VA buffers. Others must be allocated in system memory.
+
+###### Example 1: Buffer Allocator Pseudo Code
+```C
+#include <va/va.h>
+#include "mfxfeihevc.h"
+
+class mfxBufferAllocator
+{
+    Alloc(mfxExtBuffer buffer)
+    {
+        vaCreateBuffer(VADisplay, VAContextID, VABufferType, buffer_size, num_elem, NULL, buffer.VaBufferID);
+        buffer.DataSize = buffer_size * num_elem;
+        buffer.Data = NULL;
+    }
+    Free(mfxExtBuffer buffer)
+    {
+        vaDestroyBuffer(VADisplay, buffer.VaBufferID);
+    }
+    Lock(mfxExtBuffer buffer)
+    {
+        vaMapBuffer(VADisplay, buffer.VaBufferID, buffer.Data);
+    }
+    Unlock(mfxExtBuffer buffer)
+    {
+        vaUnmapBuffer(VADisplay, buffer.VaBufferID);
+        buffer.Data = NULL;
+    }
+}
+
+mfxBufferAllocator allocator(VADisplay);
+mfxExtFeiHevcEncQP qp;
+allocator.Alloc(qp, num_ctu);
+
+for (;;)
+{
+    allocator.Lock(qp);
+    FillInQpBuffer(qp);
+    allocator.Unlock(qp);
+
+    EncodeFrame(qp);
+}
+allocator.Free(qp);
+```
+
+Please refer to Appendix E in the *SDK API Reference Manual* for more details about working directly with VA API.
 
 
 <div style="page-break-before:always" />
@@ -248,5 +301,3 @@ This structure is used during runtime and should be attached to the `mfxEncodeCt
 **Change History**
 
 This structure is available since SDK API 1.25
-
-
