@@ -993,4 +993,34 @@ typedef struct _VAMotionVectorIntel {
 
 #endif // OPEN_SOURCE
 
+typedef VAGenericID VAMFEContextID;
+
+#define VPG_EXT_VA_CREATE_MFECONTEXT  "DdiMedia_CreateMfeContext"
+typedef VAStatus (*vaExtCreateMfeContext)(
+    VADisplay           dpy,
+    VAMFEContextID      *mfe_context
+);
+
+#define VPG_EXT_VA_ADD_CONTEXT  "DdiMedia_AddContext"
+typedef VAStatus (*vaExtAddContext)(
+    VADisplay           dpy,
+    VAContextID         context,
+    VAMFEContextID      mfe_context
+);
+
+#define VPG_EXT_VA_RELEASE_CONTEXT  "DdiMedia_ReleaseContext"
+typedef VAStatus (*vaExtReleaseContext)(
+    VADisplay           dpy,
+    VAContextID         context,
+    VAMFEContextID      mfe_context
+);
+
+#define VPG_EXT_VA_MFE_SUBMIT  "DdiMedia_MfeSubmit"
+typedef VAStatus (*vaExtMfeSubmit)(
+    VADisplay           dpy,
+    VAMFEContextID      mfe_context,
+    VAContextID         *contexts,
+    int                 num_contexts
+);
+
 #endif // __VAAPI_EXT_INTERFACE_H__

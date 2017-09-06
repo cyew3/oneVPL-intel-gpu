@@ -69,8 +69,8 @@
 #endif
 #endif // #if defined(_WIN32) || defined(_WIN64)
 
-#if defined(LINUX64)
-    //#define MFX_ENABLE_MFE
+#if defined(LINUX64) && !defined(LINUX_TARGET_PLATFORM_BXT) && !defined(AS_H264LA_PLUGIN)
+    #define MFX_ENABLE_MFE
 #endif
 
 #ifdef MFX_VA

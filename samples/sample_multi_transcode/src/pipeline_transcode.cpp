@@ -78,11 +78,13 @@ void sInputParams::Reset()
     m_hwdev = NULL;
     DenoiseLevel=-1;
     DetailLevel=-1;
-#ifdef ENABLE_FF
+
+#if _MSDK_API > MSDK_API(1,24)
     MFMode = MFX_MF_DEFAULT;
     numMFEFrames = 0;
     mfeTimeout = 0;
 #endif
+
     DumpLogFileName.clear();
 #if _MSDK_API >= MSDK_API(1,22)
     m_ROIData.clear();
@@ -166,11 +168,13 @@ CTranscodingPipeline::CTranscodingPipeline():
     m_ExtHEVCParam.Header.BufferId = MFX_EXTBUFF_HEVC_PARAM;
     m_ExtHEVCParam.Header.BufferSz = sizeof(mfxExtHEVCParam);
 
+
     MSDK_ZERO_MEMORY(m_ExtBRC);
     m_ExtBRC.Header.BufferId = MFX_EXTBUFF_BRC;
     m_ExtBRC.Header.BufferSz = sizeof(m_ExtBRC);
 
-#ifdef ENABLE_FF
+#if _MSDK_API > MSDK_API(1,24)
+
     MSDK_ZERO_MEMORY(m_ExtMFEParam);
     MSDK_ZERO_MEMORY(m_ExtMFEControl);
 
@@ -179,6 +183,7 @@ CTranscodingPipeline::CTranscodingPipeline():
 
     m_ExtMFEParam.Header.BufferId = MFX_EXTBUFF_MULTI_FRAME_PARAM;
     m_ExtMFEParam.Header.BufferSz = sizeof(mfxExtMultiFrameParam);
+
 #endif
 
 #if _MSDK_API >= MSDK_API(1,22)
@@ -1561,13 +1566,10 @@ void CTranscodingPipeline::SetEncCtrlRT(ExtendedSurface& extSurface, bool bInser
                 if (m_ROIData.size() > m_nSubmittedFramesNum)
                     m_extBuffPtrStorage[keyId].push_back((mfxExtBuffer *)&m_ROIData[m_nSubmittedFramesNum]);
             }
-
-#ifdef ENABLE_FF
+#if _MSDK_API > MSDK_API(1,24)
             m_extBuffPtrStorage[keyId].push_back((mfxExtBuffer *)&(m_ExtMFEParam));
             m_extBuffPtrStorage[keyId].push_back((mfxExtBuffer *)&(m_ExtMFEControl));
-
 #endif
-
             // Replace the buffers pointer to pre-allocated storage
             ctrl.NumExtParam = (mfxU16)m_extBuffPtrStorage[keyId].size();
             if (ctrl.NumExtParam)
@@ -1807,7 +1809,7 @@ mfxStatus CTranscodingPipeline::Transcode()
         if(statisticsWindowSize)
         {
         if ( (statisticsWindowSize && m_nOutputFramesNum && 0 == m_nProcessedFramesNum % statisticsWindowSize) ||
-             (statisticsWindowSize && (m_nProcessedFramesNum >= m_MaxFramesForTranscode)))            
+             (statisticsWindowSize && (m_nProcessedFramesNum >= m_MaxFramesForTranscode)))
             {
                 inputStatistics.PrintStatistics(GetPipelineID());
                 outputStatistics.PrintStatistics(
@@ -2223,8 +2225,7 @@ mfxStatus CTranscodingPipeline::InitEncMfxParams(sInputParams *pInParams)
     m_mfxEncParams.mfx.CodecId                 = pInParams->EncodeId;
     m_mfxEncParams.mfx.TargetUsage             = pInParams->nTargetUsage; // trade-off between quality and speed
     m_mfxEncParams.AsyncDepth                  = m_AsyncDepth;
-
-#ifdef ENABLE_FF
+#if _MSDK_API > MSDK_API(1,24)
     if(pInParams->numMFEFrames || pInParams->MFMode)
     {
         m_ExtMFEParam.MaxNumFrames = pInParams->numMFEFrames;
@@ -2238,9 +2239,7 @@ mfxStatus CTranscodingPipeline::InitEncMfxParams(sInputParams *pInParams)
         m_ExtMFEControl.Timeout = pInParams->mfeTimeout;
         m_EncExtParams.push_back((mfxExtBuffer*)&m_ExtMFEControl);
     }
-
 #endif
-
     if (m_pParentPipeline && m_pParentPipeline->m_pmfxPreENC.get())
     {
         m_mfxEncParams.mfx.RateControlMethod       = MFX_RATECONTROL_LA_EXT;

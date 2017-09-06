@@ -820,15 +820,15 @@ namespace
         targetUsage;//no specific check for TU now, can be added later
         if (
 #if defined(PRE_SI_TARGET_PLATFORM_GEN10)
-            platform == MFX_HW_CNL || 
+            platform == MFX_HW_CNL ||
 #endif
             platform <= MFX_HW_BDW)//no MFE support now for CNL and prior to SKL.
             return 1;
-        else if (platform 
+        else if (platform
 #if defined(PRE_SI_TARGET_PLATFORM_GEN10)
             < MFX_HW_CNL
 #else
-            == MFX_HW_SKL
+            == MFX_HW_SCL
 #endif
             )
         {
@@ -846,10 +846,8 @@ namespace
                 return 3;//for legacy now - need to look for potential decrease due to added controls like MBQP, etc.
             }
         }
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
         else//platform >= MFX_HW_ICL
             return 4;//to be adjusted based on final performance measurements, depending on SKU and resolution this can be 2->16
-#endif
     }
 #endif
     mfxU16 GetDefaultMaxNumRefActivePL0(mfxU32 targetUsage,
@@ -7570,11 +7568,11 @@ MfxVideoParam::MfxVideoParam()
 #if defined(__MFXBRC_H__)
     , m_extBRC()
 #endif
-    , calcParam()
 #if defined(MFX_ENABLE_MFE)
     , m_MfeParam()
     , m_MfeControl()
 #endif
+    , calcParam()
 {
     memset(m_extParam, 0, sizeof(m_extParam));
     memset(m_extFeiSlice, 0, sizeof(m_extFeiSlice));

@@ -2976,7 +2976,7 @@ mfxStatus VAAPIEncoder::Execute(
         mfxU32 timeout = 12;//to be replaced by adaptive calculated
         //if control set, either use timeout from it, or submit immediately in case of flush.
         if(mfeCtrl)
-            timeout = mfeCtrl.Timeout;
+            timeout = mfeCtrl->Timeout;
 
         m_mfe->Submit(m_vaContextEncode, timeout);
     }

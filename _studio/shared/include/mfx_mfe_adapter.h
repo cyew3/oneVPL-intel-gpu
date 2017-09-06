@@ -13,7 +13,7 @@
 
 #if defined(MFX_VA_LINUX) && defined(MFX_ENABLE_MFE)
 #include <va/va.h>
-#include <va/va_private.h>
+#include <vaapi_ext_interface.h>
 #include <vector>
 #include <list>
 #include "vm_mutex.h"
@@ -101,7 +101,7 @@ private:
     // symbol is pointed by  VPG_EXT_VA_RELEASE_CONTEXT
     vaExtReleaseContext vaReleaseContext;
     // symbol is pointed by  VPG_EXT_VA_MFE_SUBMIT
-    vaExMfeSubmit vaMFESubmit;
+    vaExtMfeSubmit vaMFESubmit;
 };
 #endif // MFX_VA_LINUX && MFX_ENABLE_MFE
 

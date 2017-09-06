@@ -18,16 +18,16 @@
 #ifdef MFX_ENABLE_MFE
 #include "libmfx_core_interface.h"
 #endif
-#if defined (MFX_VA_WIN)   
+#if defined (MFX_VA_WIN)
 #include "mfxvideo++int.h"
-#include "mfx_h264_encode_d3d9.h"   
+#include "mfx_h264_encode_d3d9.h"
 
 #if defined  (MFX_D3D11_ENABLED)
-    #include "mfx_h264_encode_d3d11.h"    
+    #include "mfx_h264_encode_d3d11.h"
 #endif
 
 #elif defined (MFX_VA_LINUX)
-    #include "mfx_h264_encode_vaapi.h"    
+    #include "mfx_h264_encode_vaapi.h"
 
 #elif defined (MFX_VA_OSX)
     //#include "mfx_h264_encode_macos.h"
@@ -45,7 +45,7 @@ DriverEncoder* MfxHwH264Encode::CreatePlatformSvcEncoder( VideoCORE * core )
     assert( core );
 #ifdef MFX_VA_WIN
     if(MFX_HW_D3D9 == core->GetVAType())
-    {       
+    {
         return new D3D9SvcEncoder;//( core );
     }
   #ifdef MFX_D3D11_ENABLED
@@ -65,9 +65,9 @@ DriverEncoder* MfxHwH264Encode::CreatePlatformH264Encoder( VideoCORE* core )
     //MFX_CHECK_NULL_PTR1( core );
     assert( core );
 
-#if   defined (MFX_VA_WIN) 
+#if   defined (MFX_VA_WIN)
     if(MFX_HW_D3D9 == core->GetVAType())
-    {       
+    {
         return new D3D9Encoder;//( core );
     }
     #if defined  (MFX_D3D11_ENABLED)
@@ -92,7 +92,7 @@ DriverEncoder* MfxHwH264Encode::CreatePlatformH264Encoder( VideoCORE* core )
 
 } // DriverEncoder* MfxHwH264Encode::CreatePlatformH264Encoder( VideoCORE* core )
 
-#ifdef MFX_ENABLE_MFE
+#if defined(MFX_ENABLE_MFE) && !defined(AS_H264LA_PLUGIN)
 MFEVAAPIEncoder* MfxHwH264Encode::CreatePlatformMFEEncoder(VideoCORE* core)
 {
     assert( core );

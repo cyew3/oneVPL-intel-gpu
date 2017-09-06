@@ -204,7 +204,7 @@ namespace TranscodingSample
         mfxU16 nQPI;
         mfxU16 nQPP;
         mfxU16 nQPB;
-        
+
         bool bOpenCL;
         mfxU16 reserved[4];
 
@@ -252,13 +252,13 @@ namespace TranscodingSample
 
     struct sInputParams: public __sInputParams
     {
-        msdk_string DumpLogFileName;    
+        msdk_string DumpLogFileName;
 #if _MSDK_API >= MSDK_API(1,22)
         std::vector<mfxExtEncoderROI> m_ROIData;
 
         bool bDecoderPostProcessing;
         bool bROIasQPMAP;
-#endif //_MSDK_API >= MSDK_API(1,22)        
+#endif //_MSDK_API >= MSDK_API(1,22)
         sInputParams();
         void Reset();
     };
@@ -700,7 +700,7 @@ namespace TranscodingSample
 
         mfxExtBRC                m_ExtBRC;
 
-#ifdef ENABLE_FF
+#if _MSDK_API > MSDK_API(1,24)
         // MFE mode and number of frames
         mfxExtMultiFrameParam    m_ExtMFEParam;
         // here we pass general timeout per session.

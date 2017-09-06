@@ -102,7 +102,7 @@ mfxStatus MFEVAAPIEncoder::Create(mfxExtMultiFrameParam  const & par, VADisplay 
 
         vaReleaseContext = (vaExtReleaseContext)dlsym(handle, VPG_EXT_VA_RELEASE_CONTEXT);
 
-        vaMFESubmit = (vaExMfeSubmit)dlsym(handle, VPG_EXT_VA_MFE_SUBMIT);
+        vaMFESubmit = (vaExtMfeSubmit)dlsym(handle, VPG_EXT_VA_MFE_SUBMIT);
 
         VAStatus vaSts = vaCreateMFEContext(m_vaDisplay, &m_mfe_context);
         if (VA_STATUS_SUCCESS == vaSts)

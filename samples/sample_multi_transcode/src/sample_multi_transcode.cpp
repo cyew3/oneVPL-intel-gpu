@@ -558,7 +558,7 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
     mfxU16 minAsyncDepth = 0;
     bool bUseExternalAllocator = false;
 
-#ifdef ENABLE_FF
+#if _MSDK_API > MSDK_API(1,24)
     bool allMFEModesEqual=true;
     bool allMFEFramesEqual=true;
     bool allMFESessionsJoined = true;

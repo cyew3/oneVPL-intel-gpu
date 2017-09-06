@@ -1434,7 +1434,6 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
                 msdk_opt_read(MSDK_CPU_ROTATE_PLUGIN, InputParams.strVPPPluginDLLPath);
             }
         }
-#ifdef ENABLE_FF
         else if(0 == msdk_strcmp(argv[i], MSDK_STRING("-mfe_frames")))
         {
             VAL_CHECK(i+1 == argc, i, argv[i]);
@@ -1444,7 +1443,8 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
                 PrintError(MSDK_STRING("-mfe_frames %s num frames is invalid"), argv[i]);
                 return MFX_ERR_UNSUPPORTED;
             }
-        }else if(0 == msdk_strcmp(argv[i], MSDK_STRING("-mfe_mode")))
+        }
+        else if(0 == msdk_strcmp(argv[i], MSDK_STRING("-mfe_mode")))
         {
             VAL_CHECK(i+1 == argc, i, argv[i]);
             i++;
@@ -1453,7 +1453,8 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
                 PrintError(MSDK_STRING("-mfe_mode %s is invalid"), argv[i]);
                 return MFX_ERR_UNSUPPORTED;
             }
-        }else if(0 == msdk_strcmp(argv[i], MSDK_STRING("-mfe_timeout")))
+        }
+        else if(0 == msdk_strcmp(argv[i], MSDK_STRING("-mfe_timeout")))
         {
             VAL_CHECK(i+1 == argc, i, argv[i]);
             i++;
@@ -1463,7 +1464,6 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
                 return MFX_ERR_UNSUPPORTED;
             }
         }
-#endif
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-timeout")))
         {
             VAL_CHECK(i+1 == argc, i, argv[i]);
