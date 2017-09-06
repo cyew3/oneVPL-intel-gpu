@@ -919,31 +919,43 @@ namespace MPEG2EncoderHW
             }
 
 
-            if (out->mfx.RateControlMethod != 0 &&
-                out->mfx.RateControlMethod != MFX_RATECONTROL_CBR &&
-                out->mfx.RateControlMethod != MFX_RATECONTROL_VBR &&
-                out->mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
-                out->mfx.RateControlMethod != MFX_RATECONTROL_AVBR &&
-                out->mfx.RateControlMethod != MFX_RATECONTROL_VCM &&
-                out->mfx.RateControlMethod != MFX_RATECONTROL_ICQ &&
-                out->mfx.RateControlMethod != MFX_RATECONTROL_QVBR &&
-                out->mfx.RateControlMethod != MFX_RATECONTROL_LA &&
-                out->mfx.RateControlMethod != MFX_RATECONTROL_LA_ICQ &&
-                out->mfx.RateControlMethod != MFX_RATECONTROL_LA_EXT &&
-                out->mfx.RateControlMethod != MFX_RATECONTROL_LA_HRD)
+            // invalid modes
+            if (out->mfx.RateControlMethod == MFX_RATECONTROL_VCM ||
+                out->mfx.RateControlMethod == MFX_RATECONTROL_ICQ ||
+                out->mfx.RateControlMethod == MFX_RATECONTROL_QVBR ||
+                out->mfx.RateControlMethod == MFX_RATECONTROL_LA ||
+                out->mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ ||
+                out->mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT ||
+                out->mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD ||
+                out->mfx.RateControlMethod == MFX_RATECONTROL_RESERVED1 ||
+                out->mfx.RateControlMethod == MFX_RATECONTROL_RESERVED2 ||
+                out->mfx.RateControlMethod == MFX_RATECONTROL_RESERVED3 ||
+                out->mfx.RateControlMethod == MFX_RATECONTROL_RESERVED4)
             {
+                out->mfx.RateControlMethod = 0;
+                bUnsupported = true;
+            }
+
+#if !(defined(_WIN32) || defined(_WIN64))
+            if (out->mfx.RateControlMethod == MFX_RATECONTROL_AVBR)
+            {
+                // AVBR mapped to VBR on Linux - see ConvertRateControlMFX2VAAPI()
                 out->mfx.RateControlMethod = MFX_RATECONTROL_VBR;
                 bWarning = true;
             }
+#endif
+
+            // unknown mode - set to VBR with warning
             if (out->mfx.RateControlMethod != MFX_RATECONTROL_CBR  &&
                 out->mfx.RateControlMethod != MFX_RATECONTROL_VBR  &&
                 out->mfx.RateControlMethod != MFX_RATECONTROL_AVBR &&
                 out->mfx.RateControlMethod != MFX_RATECONTROL_CQP  &&
                 out->mfx.RateControlMethod != 0)
             {
-                out->mfx.RateControlMethod = 0;
-                bUnsupported = true;
+                out->mfx.RateControlMethod = MFX_RATECONTROL_VBR;
+                bWarning = true;
             }
+
             mfxExtCodingOption2 * extOpt2 = (mfxExtCodingOption2 *)GetExtendedBuffer(out->ExtParam, out->NumExtParam, MFX_EXTBUFF_CODING_OPTION2);
             if (extOpt2 && extOpt2->SkipFrame)
             {
@@ -975,6 +987,17 @@ namespace MPEG2EncoderHW
                 extOpt3->EnableMBQP = MFX_CODINGOPTION_OFF;
             }
 
+            if (extOpt3 && (extOpt3->WeightedPred != MFX_WEIGHTED_PRED_UNKNOWN || extOpt3->WeightedBiPred != MFX_WEIGHTED_PRED_UNKNOWN))
+            {
+                extOpt3->WeightedPred = 0;
+                bUnsupported = true;
+            }
+
+            if (extOpt3 && (extOpt3->FadeDetection == MFX_CODINGOPTION_ON))
+            {
+                extOpt3->FadeDetection = 0;
+                bUnsupported = true;
+            }
 
             mfxU16 gof = out->mfx.GopOptFlag & (MFX_GOP_CLOSED | MFX_GOP_STRICT);
             if (out->mfx.GopOptFlag != gof)
@@ -1384,29 +1407,40 @@ namespace MPEG2EncoderHW
         }
 
         mfxU16& RateControl = m_VideoParamsEx.mfxVideoParams.mfx.RateControlMethod;
-        if (RateControl != MFX_RATECONTROL_CBR &&
-            RateControl != MFX_RATECONTROL_VBR &&
-            RateControl != MFX_RATECONTROL_CQP &&
-            RateControl != MFX_RATECONTROL_AVBR &&
-            RateControl != MFX_RATECONTROL_VCM &&
-            RateControl != MFX_RATECONTROL_ICQ &&
-            RateControl != MFX_RATECONTROL_QVBR &&
-            RateControl != MFX_RATECONTROL_LA &&
-            RateControl != MFX_RATECONTROL_LA_ICQ &&
-            RateControl != MFX_RATECONTROL_LA_EXT &&
-            RateControl != MFX_RATECONTROL_LA_HRD)
+
+        // invalid modes
+        if (RateControl == MFX_RATECONTROL_VCM ||
+            RateControl == MFX_RATECONTROL_ICQ ||
+            RateControl == MFX_RATECONTROL_QVBR ||
+            RateControl == MFX_RATECONTROL_LA ||
+            RateControl == MFX_RATECONTROL_LA_ICQ ||
+            RateControl == MFX_RATECONTROL_LA_EXT ||
+            RateControl == MFX_RATECONTROL_LA_HRD ||
+            RateControl == MFX_RATECONTROL_RESERVED1 ||
+            RateControl == MFX_RATECONTROL_RESERVED2 ||
+            RateControl == MFX_RATECONTROL_RESERVED3 ||
+            RateControl == MFX_RATECONTROL_RESERVED4)
         {
-            /*if RateControlMethod was undefined MSDK have to use default one */
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+        }
+
+#if !(defined(_WIN32) || defined(_WIN64))
+        if (RateControl == MFX_RATECONTROL_AVBR) {
+            // AVBR mapped to VBR on Linux - see ConvertRateControlMFX2VAAPI()
             RateControl = MFX_RATECONTROL_VBR;
             bCorrected = true;
         }
+#endif
 
+        // unknown mode - set to VBR with warning
         if (RateControl != MFX_RATECONTROL_CBR  &&
             RateControl != MFX_RATECONTROL_VBR  &&
             RateControl != MFX_RATECONTROL_AVBR &&
             RateControl != MFX_RATECONTROL_CQP)
         {
-            return MFX_ERR_INVALID_VIDEO_PARAM;
+            /*if RateControlMethod was undefined MSDK have to use default one */
+            RateControl = MFX_RATECONTROL_VBR;
+            bCorrected = true;
         }
 
         mfxExtCodingOption2 * extOpt2 = (mfxExtCodingOption2 *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_CODING_OPTION2);
@@ -1453,6 +1487,11 @@ namespace MPEG2EncoderHW
             }
 
             m_VideoParamsEx.bDisablePanicMode = true;
+        }
+
+        if (extOpt3 && (extOpt3->WeightedPred != MFX_WEIGHTED_PRED_UNKNOWN || extOpt3->WeightedBiPred != MFX_WEIGHTED_PRED_UNKNOWN || extOpt3->FadeDetection == MFX_CODINGOPTION_ON))
+        {
+            return MFX_ERR_INVALID_VIDEO_PARAM;
         }
 
         Ipp64f fr = CalculateUMCFramerate(m_VideoParamsEx.mfxVideoParams.mfx.FrameInfo.FrameRateExtN,

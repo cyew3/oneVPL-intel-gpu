@@ -132,14 +132,14 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     //MPEG2 rate controls
     {/*00*/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {RateCtrlMthd, MFX_RATECONTROL_LA       , true}, set_brc_params },
     {/*01*/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {RateCtrlMthd, MFX_RATECONTROL_LA_HRD   , true}, set_brc_params },
-    {/*02*/ ENCODE, MFX_CODEC_MPEG2, W_INCOMP, W_INCOMP, {{RateCtrlMthd, MFX_RATECONTROL_RESERVED1, true},
+    {/*02*/ ENCODE, MFX_CODEC_MPEG2, W_INCOMP, W_INCOMP, {{RateCtrlMthd, 0xffffffff, true}, // wrapper corrects unknown rate control value with warning
                                                         { InitialDelayInKB, 150, false },
                                                         { TargetKbps, 600, false },
                                                         { MaxKbps, 900, false }},
                                                         set_brc_params },
 #if !(defined(_WIN32) || defined(_WIN64))
     //Rate control
-    {/*3*/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID,{ RateCtrlMthd, MFX_RATECONTROL_AVBR     , true }, set_brc_params },
+    {/*3*/ ENCODE, MFX_CODEC_MPEG2, W_INCOMP, W_INCOMP,{ RateCtrlMthd, MFX_RATECONTROL_AVBR     , true }, set_brc_params },
     {/*4*/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID,{ RateCtrlMthd, MFX_RATECONTROL_RESERVED1, true }, set_brc_params },
     {/*5*/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID,{ RateCtrlMthd, MFX_RATECONTROL_RESERVED2, true }, set_brc_params },
     {/*6*/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID,{ RateCtrlMthd, MFX_RATECONTROL_RESERVED3, true }, set_brc_params },
@@ -304,6 +304,15 @@ int TestSuite::RunTestQueryInitComponent(const tc_struct& tc)
             queryParIn.mfx.CodecLevel = MFX_LEVEL_VC1_0;
         }
     }
+
+    if(typeid(T) == typeid(tsVideoEncoder))
+    {
+        if (tc.codec == MFX_CODEC_MPEG2 && g_tsHWtype == MFX_HW_APL) {
+            g_tsLog << "[ SKIPPED ] MPEG2 encode not supported on this platform\n";
+            return 0;
+        }
+    }
+
     SetParams(queryParIn, tc.set_par);
     if(tc.func)
     {
@@ -315,9 +324,9 @@ int TestSuite::RunTestQueryInitComponent(const tc_struct& tc)
 
 
     //Query(session, in, out) test:
-    if ((MFX_CODEC_AVC == tc.codec) && !(component.m_impl & MFX_IMPL_VIA_D3D11) && (queryParIn.GetExtBuffer(MFX_EXTBUFF_ENCODER_CAPABILITY)))
+    if ((MFX_CODEC_AVC == tc.codec) && !(g_tsImpl & MFX_IMPL_VIA_D3D11) && (g_tsOSFamily != MFX_OS_FAMILY_LINUX) && (queryParIn.GetExtBuffer(MFX_EXTBUFF_ENCODER_CAPABILITY)))
     {
-        g_tsStatus.expect(MFX_ERR_UNSUPPORTED);//MBPerSec, InputMemoryTiling supported only by D3D11
+        g_tsStatus.expect(MFX_ERR_UNSUPPORTED);//MBPerSec, InputMemoryTiling supported only by D3D11 or VAAPI
     }
     else
     {
@@ -333,9 +342,9 @@ int TestSuite::RunTestQueryInitComponent(const tc_struct& tc)
     queryParIn = tmpPar;
 
     //Query(session, in, in) test:
-    if ((MFX_CODEC_AVC == tc.codec) && !(component.m_impl & MFX_IMPL_VIA_D3D11) && (queryParIn.GetExtBuffer(MFX_EXTBUFF_ENCODER_CAPABILITY)))
+    if ((MFX_CODEC_AVC == tc.codec) && !(g_tsImpl & MFX_IMPL_VIA_D3D11) && (g_tsOSFamily != MFX_OS_FAMILY_LINUX) && (queryParIn.GetExtBuffer(MFX_EXTBUFF_ENCODER_CAPABILITY)))
     {
-        g_tsStatus.expect(MFX_ERR_UNSUPPORTED);//MBPerSec, InputMemoryTiling supported only by D3D11
+        g_tsStatus.expect(MFX_ERR_UNSUPPORTED);//MBPerSec, InputMemoryTiling supported only by D3D11 or VAAPI
     }
     else
     {
