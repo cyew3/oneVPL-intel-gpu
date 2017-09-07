@@ -3869,7 +3869,7 @@ mfxStatus ImplementationAvc::UpdateBitstream(
 
     // Update hrd buffer
     m_hrd.RemoveAccessUnit(
-        task.m_bsDataLength[fid],
+        task.m_bs->DataLength - initialDataLength,
         task.m_fieldPicFlag,
         (task.m_type[fid] & MFX_FRAMETYPE_IDR) != 0);
 
