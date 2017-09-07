@@ -69,7 +69,7 @@
 #endif
 #endif // #if defined(_WIN32) || defined(_WIN64)
 
-#if defined(LINUX64) && !defined(LINUX_TARGET_PLATFORM_BXT) && !defined(AS_H264LA_PLUGIN)
+#if defined(LINUX64) && !defined(LINUX_TARGET_PLATFORM_BXT) && !defined(AS_H264LA_PLUGIN) && !defined(LINUX_TARGET_PLATFORM_CFL)
     #define MFX_ENABLE_MFE
 #endif
 
@@ -292,6 +292,8 @@
     #if defined(LINUX_TARGET_PLATFORM_UPSTREAM)
         // mfx_common_linux_upstream.h was derived from mfx_common_linux_bdw.h
         #include "mfx_common_linux_upstream.h"
+    #elif defined(LINUX_TARGET_PLATFORM_CFL) // PRE_SI_GEN == 9
+        #include "mfx_common_linux_cfl.h"
     #elif defined(LINUX_TARGET_PLATFORM_BXTMIN) // PRE_SI_GEN == 9
         #include "mfx_common_linux_bxtmin.h"
     #elif defined(LINUX_TARGET_PLATFORM_BXT) // PRE_SI_GEN == 9
