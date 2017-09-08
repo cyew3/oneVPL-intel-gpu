@@ -574,6 +574,19 @@ namespace hevce_init
                 else
                     if (tc.sts != MFX_ERR_NONE)
                         sts = MFX_ERR_INVALID_VIDEO_PARAM;
+
+                // encoder aligns PicWidthInLumaSamples and PicHeightInLumaSamples to next multiple of 16 (if necessary),
+                //   but libva returns VA_STATUS_ERROR_RESOLUTION_NOT_SUPPORTED for resolutions < 32x32
+                //   so on Linux we expect MFX_ERR_UNSUPPORTED
+                if (g_tsOSFamily == MFX_OS_FAMILY_LINUX && tc.sub_type == MFX_EXTBUFF_HEVC_PARAM)
+                {
+                    mfxU16 W = ((mfxExtHEVCParam *)(m_pPar->ExtParam[0]))->PicWidthInLumaSamples;
+                    mfxU16 H = ((mfxExtHEVCParam *)(m_pPar->ExtParam[0]))->PicHeightInLumaSamples;
+                    if (W > 0 && W <= 16)
+                        sts = MFX_ERR_UNSUPPORTED;
+                    if (H > 0 && H <= 16)
+                        sts = MFX_ERR_UNSUPPORTED;
+                }
             }
 
             if (tc.type == RATE_CONTROL)

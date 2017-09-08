@@ -1088,6 +1088,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
             reconSurf.size(),
             &m_vaContextEncode);
     }
+    MFX_CHECK(VA_STATUS_ERROR_RESOLUTION_NOT_SUPPORTED != vaSts, MFX_ERR_UNSUPPORTED);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
     mfxU16 maxNumSlices = par.m_slice.size();
