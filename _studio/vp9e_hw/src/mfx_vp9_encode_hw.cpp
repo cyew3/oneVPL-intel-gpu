@@ -365,9 +365,48 @@ MFX_CHECK_STS(sts);
     MFX_CHECK_STS(sts);
     request.NumFrameMin = request.NumFrameSuggested = (mfxU16)CalcNumTasks(m_video);
 
-    // increase Height to allocate bigger buffer if inited BufferSizeInKB exceeds recommendation of the driver
-    mfxU16 tmp_width = request.Info.Width ? request.Info.Width : m_video.mfx.FrameInfo.Width;
-    request.Info.Height = MFX_MAX( ( static_cast<mfxU16>( (m_video.m_bufferSizeInKb * 1000) / tmp_width) ), request.Info.Height);
+    if (!request.Info.Width)
+    {
+        request.Info.Width = m_video.mfx.FrameInfo.Width;
+    }
+    if (!request.Info.Height)
+    {
+        request.Info.Height = m_video.mfx.FrameInfo.Height;
+    }
+
+    // maximum buffer size for output bitstream is equal to two uncompressed frames of NV12 format
+    //  with an assumption that in the worst case encoded frame size exceeds the uncompressed size (allowed by VP9 standard)
+    mfxU32 max_buffer_size = m_video.mfx.FrameInfo.Width*m_video.mfx.FrameInfo.Height*3;
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    if (m_video.mfx.FrameInfo.FourCC == MFX_FOURCC_P010 || m_video.mfx.FrameInfo.FourCC == MFX_FOURCC_Y410) {
+        // doubling the size of the bitstream buffer if 10-bit format is used
+        max_buffer_size *= 2;
+    }
+#endif //PRE_SI_TARGET_PLATFORM_GEN11
+
+    // increase Width and Height in the request to allocate bigger buffer if estimated maximum size exceeds recommendation of the driver
+    if (static_cast<mfxU32>(request.Info.Width * request.Info.Height) < max_buffer_size)
+    {
+        mfxU32 tmp_width = static_cast<mfxU32>(request.Info.Width);
+        mfxU32 tmp_height = CeilDiv(max_buffer_size, static_cast<mfxU32>(request.Info.Width));
+
+        // TODO: maximum supported width and height need to be checked on dependence on a platform and other possible factors
+        const mfxU32 max_dx_dimension_size = 16384;
+
+        if (tmp_height > max_dx_dimension_size)
+        {
+            tmp_height = max_dx_dimension_size;
+            tmp_width = CeilDiv(max_buffer_size, max_dx_dimension_size);
+            if (tmp_width > max_dx_dimension_size)
+            {
+                tmp_width = max_dx_dimension_size;
+            }
+        }
+
+        request.Info.Width = static_cast<mfxU16>(tmp_width);
+        request.Info.Height = static_cast<mfxU16>(tmp_height);
+    }
 
     sts = m_outBitstreams.Init(m_pmfxCore, &request);
     MFX_CHECK_STS(sts);
