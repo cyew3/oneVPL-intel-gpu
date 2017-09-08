@@ -585,6 +585,23 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
     mdprintf(stderr, "statParamsId=%d\n", statParamsId);
     configBuffers[buffersCount++] = statParamsId;
 
+#if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
+    if ((mfxExtIntGPUHang*)GetExtBufferFEI(in, 0))
+    {
+        unsigned int trigger_hang = 1;
+        MFX_DESTROY_VABUFFER(m_triggerGpuHangBufferId, m_vaDisplay);
+        vaSts = vaCreateBuffer(m_vaDisplay,
+                               m_vaContextEncode,
+                               VATriggerCodecHangBufferType,
+                               sizeof(trigger_hang),
+                               1,
+                               &trigger_hang,
+                               &m_triggerGpuHangBufferId);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+        configBuffers[buffersCount++] = m_triggerGpuHangBufferId;
+    }
+#endif
+
     assert(buffersCount <= configBuffers.size());
 
     //------------------------------------------------------------------
@@ -731,7 +748,16 @@ mfxStatus VAAPIFEIPREENCEncoder::QueryStatus(
                             statMVid,
                             (void **) (&mvs));
                 }
-                MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+                if(VA_STATUS_ERROR_ENCODING_ERROR == vaSts)
+                {
+                    sts = MFX_ERR_GPU_HANG;
+                    break;
+                }
+                else
+                {
+                    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+                }
 
                 FastCopyBufferVid2Sys(mvsOut->MB, mvs, 16 * sizeof (VAMotionVectorIntel) * mvsOut->NumMBAlloc);
 
@@ -753,7 +779,16 @@ mfxStatus VAAPIFEIPREENCEncoder::QueryStatus(
                             statOUTid,
                             (void **) (&mbstat));
                 }
-                MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+                if(VA_STATUS_ERROR_ENCODING_ERROR == vaSts)
+                {
+                    sts = MFX_ERR_GPU_HANG;
+                    break;
+                }
+                else
+                {
+                    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+                }
 
                 FastCopyBufferVid2Sys(mbstatOut->MB, mbstat, sizeof (VAStatsStatistics16x16Intel) * mbstatOut->NumMBAlloc);
 
