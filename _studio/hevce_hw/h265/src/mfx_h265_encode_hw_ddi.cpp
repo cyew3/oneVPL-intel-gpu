@@ -446,7 +446,13 @@ mfxStatus FillCUQPDataDDI(Task& task, MfxVideoParam &par, MFXCoreInterface& core
                     lock.Y[i * lock.Pitch +j] = mbqp->QP[i*k_input/k_dr_h* pitch_MBQP + j*k_input/k_dr_w];
         else
             for (mfxU32 i = 0; i < CUQPFrameInfo.Height; i++)
+            {
+#ifndef OPEN_SOURCE
                 ippsSet_8u((mfxU8)task.m_qpY, (Ipp8u *)&lock.Y[i * lock.Pitch], (int)CUQPFrameInfo.Width);
+#else
+                memset((Ipp8u *)&lock.Y[i * lock.Pitch],(mfxU8)task.m_qpY, (size_t)CUQPFrameInfo.Width);
+#endif
+            }
     }
     return mfxSts;
     
