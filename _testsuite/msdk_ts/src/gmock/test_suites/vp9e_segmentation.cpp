@@ -8,7 +8,6 @@ Copyright(c) 2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
-#include <mutex>
 #include "ts_encoder.h"
 #include "ts_decoder.h"
 #include "ts_parser.h"
@@ -22,8 +21,12 @@ namespace vp9e_segmentation
 #define VP9E_MAX_POSITIVE_LF_DELTA (63)
 #define VP9E_MAX_NEGATIVE_LF_DELTA (-63)
 #define VP9E_MAGIC_NUM_WRONG_SIZE (11)
-#define VP9E_PSNR_THRESHOLD (20.0)
+#define PSNR_THRESHOLD (20)
 #define VP9E_DEFAULT_ENCODING_SEQUENCE_COUNT (3)
+
+#define IVF_SEQ_HEADER_SIZE_BYTES (32)
+#define IVF_PIC_HEADER_SIZE_BYTES (12)
+#define MAX_IVF_HEADER_SIZE IVF_SEQ_HEADER_SIZE_BYTES + IVF_PIC_HEADER_SIZE_BYTES
 
     enum
     {
@@ -112,20 +115,24 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         test_iteration()
             : encoding_count(VP9E_DEFAULT_ENCODING_SEQUENCE_COUNT)
             , segmentation_type_expected(SEGMENTATION_DISABLED)
-        {}
+        { }
     };
 
     struct FrameStatStruct : public mfxExtVP9Segmentation
     {
         mfxU32 type;
         mfxU32 encoded_size;
-        double psnr;
+        double psnr_y;
+        double psnr_u;
+        double psnr_v;
         mfxU32 change_type;
         mfxExtVP9Segmentation segm_params;
         FrameStatStruct()
             : type(SEGMENTATION_DISABLED)
             , encoded_size(0)
-            , psnr(0.0)
+            , psnr_y(0.0)
+            , psnr_u(0.0)
+            , psnr_v(0.0)
             , change_type(CHANGE_TYPE_NONE)
         {
             memset(&segm_params, 0, sizeof(mfxExtVP9Segmentation));
@@ -139,8 +146,6 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         mfxExtVP9Segmentation *m_InitedSegmentExtParams;
         mfxU32 m_SourceWidth;
         mfxU32 m_SourceHeight;
-        std::map<mfxU32, mfxU8 *> m_source_frames_y;
-        std::mutex  m_frames_storage_mtx;
         std::map<mfxU32, FrameStatStruct> m_EncodedFramesStat;
         std::vector<test_iteration> m_StressTestScenario;
 
@@ -161,7 +166,11 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 delete[]m_InitedSegmentExtParams->SegmentId;
             }
         }
-        int RunTest(unsigned int id);
+
+        template<mfxU32 fourcc>
+        int RunTest_Subtype(const unsigned int id);
+
+        int RunTest(const tc_struct& tc, unsigned int fourcc_id);
 
         mfxVideoParam const & GetEncodingParams() { return m_par; }
 
@@ -570,49 +579,25 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
     class BitstreamChecker : public tsBitstreamProcessor, public tsParserVP9, public tsVideoDecoder
     {
         TestSuite *m_TestPtr;
+        std::map<mfxU32, mfxFrameSurface1*>* m_pInputSurfaces;
+        bool m_CheckPSNR;
     public:
-        BitstreamChecker(TestSuite *testPtr, bool check_psnr = false);
+        BitstreamChecker(TestSuite *testPtr, std::map<mfxU32, mfxFrameSurface1*>* pSurfaces, bool check_psnr = false);
         mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames);
         mfxU32 m_AllFramesSize;
         mfxU32 m_DecodedFramesCount;
         bool m_DecoderInited;
     };
 
-    BitstreamChecker::BitstreamChecker(TestSuite *testPtr, bool check_psnr)
+    BitstreamChecker::BitstreamChecker(TestSuite *testPtr, std::map<mfxU32, mfxFrameSurface1*>* pSurfaces, bool check_psnr)
         : tsVideoDecoder(MFX_CODEC_VP9)
         , m_TestPtr(testPtr)
+        , m_pInputSurfaces(pSurfaces)
+        , m_CheckPSNR(check_psnr)
         , m_AllFramesSize(0)
         , m_DecodedFramesCount(0)
         , m_DecoderInited(false)
-    {
-        if (check_psnr)
-        {
-            m_pPar->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-            m_pPar->mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
-            m_pPar->mfx.FrameInfo.Width = m_TestPtr->m_SourceWidth;
-            m_pPar->mfx.FrameInfo.Height = m_TestPtr->m_SourceHeight;
-            m_pPar->AsyncDepth = 1;
-
-            mfxStatus init_status = Init();
-            m_par_set = true;
-            if (init_status >= 0)
-            {
-                mfxStatus alloc_status = AllocSurfaces();
-                if (alloc_status >= 0)
-                {
-                    m_DecoderInited = true;
-                }
-                else
-                {
-                    g_tsLog << "WARNING: Could not allocate surfaces for the decoder, status " << alloc_status;
-                }
-            }
-            else
-            {
-                g_tsLog << "WARNING: Could not inilialize the decoder, Init() returned " << init_status;
-            }
-        }
-    }
+    {}
 
     int sign_value(Bs16u sign)
     {
@@ -622,21 +607,6 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             return 1;
         else
             return 0;
-    }
-
-    mfxF64 PSNR_Y_8bit(mfxU8 *ref, mfxU8 *src, mfxU32 length)
-    {
-        mfxF64 max = (1 << 8) - 1;
-        mfxI32 diff = 0;
-        mfxU64 dist = 0;
-
-        for (mfxU32 y = 0; y < length; y++)
-        {
-            diff = ref[y] - src[y];
-            dist += (diff * diff);
-        }
-
-        return (10. * log10(max * max * ((mfxF64)length / dist)));
     }
 
     mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
@@ -651,7 +621,6 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         fwrite(bs.Data, encoded_size, 1, fp_vp9);
         fflush(fp_vp9);
         */
-
         while (checked++ < nFrames)
         {
             tsParserVP9::UnitType& hdr = ParseOrDie();
@@ -793,9 +762,47 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 }
             }
 
+            // do the decoder initialisation on the first encoded frame
+            if (m_CheckPSNR && m_DecodedFramesCount == 0 && !m_DecoderInited)
+            {
+                const mfxU32 headers_shift = IVF_PIC_HEADER_SIZE_BYTES + (m_DecodedFramesCount == 0 ? IVF_SEQ_HEADER_SIZE_BYTES : 0);
+                m_pBitstream->Data = bs.Data + headers_shift;
+                m_pBitstream->DataOffset = 0;
+                m_pBitstream->DataLength = bs.DataLength - headers_shift;
+                m_pBitstream->MaxLength = bs.MaxLength;
+
+                m_pPar->AsyncDepth = 1;
+
+                mfxStatus decode_header_status = DecodeHeader();
+
+                mfxStatus init_status = Init();
+                m_par_set = true;
+                if (init_status >= 0)
+                {
+                    if (m_default && !m_request.NumFrameMin)
+                    {
+                        QueryIOSurf();
+                    }
+
+                    mfxStatus alloc_status = tsSurfacePool::AllocSurfaces(m_request, !m_use_memid);
+                    if (alloc_status >= 0)
+                    {
+                        m_DecoderInited = true;
+                    }
+                    else
+                    {
+                        ADD_FAILURE() << "WARNING: Could not allocate surfaces for the decoder, status " << alloc_status;
+                    }
+                }
+                else
+                {
+                    ADD_FAILURE() << "WARNING: Could not inilialize the decoder, Init() returned " << init_status;
+                }
+            }
+
             if (m_DecoderInited)
             {
-                const mfxU32 headers_shift = 12/*header*/ + (m_DecodedFramesCount == 0 ? 32/*ivf_header*/ : 0);
+                const mfxU32 headers_shift = IVF_PIC_HEADER_SIZE_BYTES + (m_DecodedFramesCount == 0 ? IVF_SEQ_HEADER_SIZE_BYTES : 0);
                 m_pBitstream->Data = bs.Data + headers_shift;
                 m_pBitstream->DataOffset = 0;
                 m_pBitstream->DataLength = m_pBitstream->MaxLength = bs.DataLength - headers_shift;
@@ -805,39 +812,54 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                     mfxStatus sync_status = SyncOperation(*m_pSyncPoint);
                     if (sync_status >= 0)
                     {
-                        mfxU8 *ptr_decoded = new mfxU8[m_TestPtr->m_SourceWidth*m_TestPtr->m_SourceHeight];
-                        for (mfxU32 i = 0; i < m_TestPtr->m_SourceHeight; i++)
+                        mfxU32 w = m_pPar->mfx.FrameInfo.Width;
+                        mfxU32 h = m_pPar->mfx.FrameInfo.Height;
+
+                        mfxFrameSurface1* pInputSurface = (*m_pInputSurfaces)[hdr.FrameOrder];
+                        tsFrame src = tsFrame(*pInputSurface);
+                        tsFrame res = tsFrame(*m_pSurf);
+                        src.m_info.CropX = src.m_info.CropY = res.m_info.CropX = res.m_info.CropY = 0;
+                        src.m_info.CropW = res.m_info.CropW = w;
+                        src.m_info.CropH = res.m_info.CropH = h;
+
+                        const mfxF64 psnrY = PSNR(src, res, 0);
+                        const mfxF64 psnrU = PSNR(src, res, 1);
+                        const mfxF64 psnrV = PSNR(src, res, 2);
+                        pInputSurface->Data.Locked--;
+                        m_pInputSurfaces->erase(hdr.FrameOrder);
+                        const mfxF64 minPsnr = PSNR_THRESHOLD;
+
+                        g_tsLog << "INFO: frame[" << hdr.FrameOrder << "]: PSNR-Y=" << psnrY << " PSNR-U="
+                            << psnrU << " PSNR-V=" << psnrV << " size=" << bs.DataLength << "\n";
+
+                        m_TestPtr->m_EncodedFramesStat[m_DecodedFramesCount].psnr_y = psnrY;
+                        m_TestPtr->m_EncodedFramesStat[m_DecodedFramesCount].psnr_u = psnrU;
+                        m_TestPtr->m_EncodedFramesStat[m_DecodedFramesCount].psnr_v = psnrV;
+
+                        if (psnrY < minPsnr)
                         {
-                            memcpy(ptr_decoded + i*m_TestPtr->m_SourceWidth, m_pSurf->Data.Y + i*m_pSurf->Data.Pitch, m_TestPtr->m_SourceWidth);
+                            ADD_FAILURE() << "ERROR: PSNR-Y of frame " << hdr.FrameOrder << " is equal to " << psnrY << " and lower than threshold: " << minPsnr;
+                            throw tsFAIL;
                         }
-
-                        m_TestPtr->m_frames_storage_mtx.lock();
-                        mfxF64 psnr = PSNR_Y_8bit(m_TestPtr->m_source_frames_y[m_DecodedFramesCount], ptr_decoded, m_TestPtr->m_SourceWidth*m_TestPtr->m_SourceHeight);
-
-                        m_TestPtr->m_EncodedFramesStat[m_DecodedFramesCount].psnr = psnr;
-
-                        // source frame is not needed anymore
-                        delete[]m_TestPtr->m_source_frames_y[m_DecodedFramesCount];
-
-                        m_TestPtr->m_frames_storage_mtx.unlock();
-
-                        if (psnr < VP9E_PSNR_THRESHOLD)
+                        if (psnrU < minPsnr)
                         {
-                            ADD_FAILURE() << "ERROR: Y-PSNR of the decoded frame is too low: " << psnr << ", threshold is " << VP9E_PSNR_THRESHOLD; throw tsFAIL;
+                            ADD_FAILURE() << "ERROR: PSNR-U of frame " << hdr.FrameOrder << " is equal to " << psnrU << " and lower than threshold: " << minPsnr;
+                            throw tsFAIL;
                         }
-                        else
+                        if (psnrV < minPsnr)
                         {
-                            g_tsLog << "INFO: Y-PSNR for the decoded frame is " << psnr << "\n";
+                            ADD_FAILURE() << "ERROR: PSNR-V of frame " << hdr.FrameOrder << " is equal to " << psnrV << " and lower than threshold: " << minPsnr;
+                            throw tsFAIL;
                         }
                     }
                     else
                     {
-                        ADD_FAILURE() << "ERROR: DecodeFrameAsync->SyncOperation() failed with status: " << sync_status; throw tsFAIL;
+                        g_tsLog << "ERROR: DecodeFrameAsync->SyncOperation() failed with status: " << sync_status << "\n"; throw tsFAIL;
                     }
                 }
                 else
                 {
-                    ADD_FAILURE() << "ERROR: DecodeFrameAsync() failed with status: " << decode_status; throw tsFAIL;
+                    g_tsLog << "ERROR: DecodeFrameAsync() failed with status: " << decode_status << "\n"; throw tsFAIL;
                 }
             }
 
@@ -858,7 +880,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         {
             ADD_FAILURE() << "ERROR: " << caller_method_name << ": NumSegments_in=" << input.NumSegments << " NumSegments_out=" << output.NumSegments
                 << " NumSegments_expected=" << 0;
-            return false;
+            throw tsFAIL;
         }
         for (mfxU16 i = 0; i < input.NumSegments; ++i)
         {
@@ -866,26 +888,26 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             {
                 ADD_FAILURE() << "ERROR: " << caller_method_name << ": QIndexDelta_in=" << input.Segment[i].QIndexDelta << " QIndexDelta_out=" << output.Segment[i].QIndexDelta
                     << " QIndexDelta_expected=" << 0;
-                return false;
+                throw tsFAIL;
             }
             if (input.Segment[i].QIndexDelta < VP9E_MAX_NEGATIVE_Q_INDEX_DELTA && output.Segment[i].QIndexDelta != 0)
             {
                 ADD_FAILURE() << "ERROR: " << caller_method_name << ": QIndexDelta_in=" << input.Segment[i].QIndexDelta << " QIndexDelta_out=" << output.Segment[i].QIndexDelta
                     << " QIndexDelta_expected=" << 0;
-                return false;
+                throw tsFAIL;
             }
 
             if (input.Segment[i].LoopFilterLevelDelta > VP9E_MAX_POSITIVE_LF_DELTA && output.Segment[i].LoopFilterLevelDelta != 0)
             {
                 ADD_FAILURE() << "ERROR: " << caller_method_name << ": LoopFilterLevelDelta_in=" << input.Segment[i].LoopFilterLevelDelta << " LoopFilterLevelDelta_out="
                     << output.Segment[i].LoopFilterLevelDelta << " LoopFilterLevelDelta_expected=" << 0;
-                return false;
+                throw tsFAIL;
             }
             if (input.Segment[i].LoopFilterLevelDelta < VP9E_MAX_NEGATIVE_LF_DELTA && output.Segment[i].LoopFilterLevelDelta != 0)
             {
                 ADD_FAILURE() << "ERROR: " << caller_method_name << ": LoopFilterLevelDelta_in=" << input.Segment[i].LoopFilterLevelDelta << " LoopFilterLevelDelta_out="
                     << output.Segment[i].LoopFilterLevelDelta << " LoopFilterLevelDelta_expected=" << 0;
-                return false;
+                throw tsFAIL;
             }
         }
 
@@ -1012,9 +1034,6 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             {
                 memcpy(ptr + i*m_SourceWidth, m_pSurf->Data.Y + i*m_pSurf->Data.Pitch, m_SourceWidth);
             }
-            m_frames_storage_mtx.lock();
-            m_source_frames_y[m_SourceFrameCount] = ptr;
-            m_frames_storage_mtx.unlock();
 
             submitted++;
             m_SourceFrameCount++;
@@ -1172,7 +1191,8 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 change_type_status = "CHANGE_BY_RUNTIME_PARAMS";
             }
 
-            g_tsLog << "encoded_frame[" << iter.first << "|" << change_type_status << "].segmentation_status=" << segm_status_text << ", size=" << iter.second.encoded_size << ", psnr=" << iter.second.psnr << "\n";
+            g_tsLog << "encoded_frame[" << iter.first << "|" << change_type_status << "].segmentation_status=" << segm_status_text << ", size=" << iter.second.encoded_size
+                << ", psnr=" << iter.second.psnr_y << "|" << iter.second.psnr_u << "|" << iter.second.psnr_v << "\n";
             if (iter.second.change_type > CHANGE_TYPE_NONE)
             {
                 g_tsLog << "             num_segments=" << iter.second.segm_params.NumSegments << " block_size=" << iter.second.segm_params.SegmentIdBlockSize
@@ -1181,13 +1201,125 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         }
     }
 
-    int TestSuite::RunTest(unsigned int id)
+    class SurfaceFeeder : public tsRawReader
+    {
+        std::map<mfxU32, mfxFrameSurface1*>* m_pInputSurfaces;
+        mfxU32 m_frameOrder;
+
+        tsSurfacePool surfaceStorage;
+    public:
+        SurfaceFeeder(
+            std::map<mfxU32, mfxFrameSurface1*>* pInSurfaces,
+            const mfxVideoParam& par,
+            const char* fname,
+            mfxU32 n_frames = 0xFFFFFFFF)
+            : tsRawReader(fname, par.mfx.FrameInfo, n_frames)
+            , m_pInputSurfaces(pInSurfaces)
+            , m_frameOrder(0)
+        {
+            if (m_pInputSurfaces)
+            {
+                const mfxU32 numInternalSurfaces = par.AsyncDepth ? par.AsyncDepth : 5;
+                mfxFrameAllocRequest req = {};
+                req.Info = par.mfx.FrameInfo;
+                req.NumFrameMin = req.NumFrameSuggested = numInternalSurfaces;
+                req.Type = MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_FROM_DECODE;
+                surfaceStorage.AllocSurfaces(req);
+            }
+        };
+
+        ~SurfaceFeeder()
+        {
+            if (m_pInputSurfaces)
+            {
+                surfaceStorage.FreeSurfaces();
+            }
+        }
+
+        mfxFrameSurface1* ProcessSurface(mfxFrameSurface1* ps, mfxFrameAllocator* pfa);
+    };
+
+    mfxFrameSurface1* SurfaceFeeder::ProcessSurface(mfxFrameSurface1* ps, mfxFrameAllocator* pfa)
+    {
+        mfxFrameSurface1* pSurf = tsSurfaceProcessor::ProcessSurface(ps, pfa);
+        if (m_pInputSurfaces)
+        {
+            mfxFrameSurface1* pStorageSurf = surfaceStorage.GetSurface();
+            pStorageSurf->Data.Locked++;
+            tsFrame in = tsFrame(*pSurf);
+            tsFrame store = tsFrame(*pStorageSurf);
+            store = in;
+            (*m_pInputSurfaces)[m_frameOrder] = pStorageSurf;
+        }
+        m_frameOrder++;
+
+        return pSurf;
+    }
+
+    template<mfxU32 fourcc>
+    int TestSuite::RunTest_Subtype(const unsigned int id)
+    {
+        const tc_struct& tc = test_case[id];
+        return RunTest(tc, fourcc);
+    }
+
+    int TestSuite::RunTest(const tc_struct& tc, unsigned int fourcc_id)
     {
         TS_START;
 
-        const tc_struct& tc = test_case[id];
+        std::map<mfxU32, mfxFrameSurface1*> inputSurfaces;
+        char* stream = nullptr;
 
-        const char* stream = g_tsStreamPool.Get("YUV/salesman_176x144_449.yuv");
+        if (fourcc_id == MFX_FOURCC_NV12)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
+
+            stream = const_cast<char *>(g_tsStreamPool.Get("forBehaviorTest/foreman_cif.nv12"));
+
+            m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 352;
+            m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 288;
+        }
+        else if (fourcc_id == MFX_FOURCC_P010)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_P010;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+            m_par.mfx.FrameInfo.Shift = 1;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
+
+            stream = const_cast<char *>(g_tsStreamPool.Get("YUV10bit420_ms/Kimono1_176x144_24_p010_shifted.yuv"));
+
+            m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 176;
+            m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 144;
+        }
+        else if (fourcc_id == MFX_FOURCC_AYUV)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_AYUV;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
+
+            stream = const_cast<char *>(g_tsStreamPool.Get("YUV8bit444/Kimono1_176x144_24_ayuv.yuv"));
+
+            m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 176;
+            m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 144;
+        }
+        else if (fourcc_id == MFX_FOURCC_Y410)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y410;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
+
+            stream = const_cast<char *>(g_tsStreamPool.Get("YUV10bit444/Kimono1_176x144_24_y410.yuv"));
+
+            m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 176;
+            m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 144;
+        }
+        else
+        {
+            g_tsLog << "ERROR: invalid fourcc_id parameter: " << fourcc_id << "\n";
+            return 0;
+        }
 
         g_tsStreamPool.Reg();
         tsRawReader *reader = nullptr;
@@ -1198,12 +1330,12 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         Load();
 
         //set default params
-        m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = m_SourceWidth = 176;
-        m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = m_SourceHeight = 144;
+        m_SourceWidth = m_par.mfx.FrameInfo.Width;
+        m_SourceHeight = m_par.mfx.FrameInfo.Height;
         m_par.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
         m_par.mfx.QPI = m_par.mfx.QPP = 50;
 
-        BitstreamChecker bs_checker(this, tc.type & CHECK_PSNR ? true : false);
+        BitstreamChecker bs_checker(this, &inputSurfaces, tc.type & CHECK_PSNR ? true : false);
         m_bs_processor = &bs_checker;
 
         if (!(tc.type & CHECK_RESET_WITH_SEG_AFTER_ONLY))
@@ -1234,33 +1366,44 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
 
         if (0 == memcmp(m_uid->Data, MFX_PLUGINID_VP9E_HW.Data, sizeof(MFX_PLUGINID_VP9E_HW.Data)))
         {
-            if (g_tsHWtype < MFX_HW_CNL) // unsupported on platform less CNL
+            // MFX_PLUGIN_VP9E_HW unsupported on platform less CNL(NV12) and ICL(P010, AYUV, Y410)
+            if ((fourcc_id == MFX_FOURCC_NV12 && g_tsHWtype < MFX_HW_CNL)
+                || ((fourcc_id == MFX_FOURCC_P010 || fourcc_id == MFX_FOURCC_AYUV
+                    || fourcc_id == MFX_FOURCC_Y410) && g_tsHWtype < MFX_HW_ICL))
             {
                 g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
                 g_tsLog << "WARNING: Unsupported HW Platform!\n";
+                Query();
                 return 0;
             }
-        }  else {
+        }
+        else {
             g_tsLog << "WARNING: loading encoder from plugin failed!\n";
             return 0;
         }
 
         if (tc.type & CHECK_STRESS_SCENARIO_1)
         {
+            m_par.mfx.QPI = m_par.mfx.QPP = 128;
+
             test_iteration cycle1;
             cycle1.encoding_count = 5;
-            cycle1.reset_params[0] = { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 1 };
+            cycle1.reset_params[0] = { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 3 };
             cycle1.reset_params[1] = { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.SegmentIdBlockSize, MFX_VP9_SEGMENT_ID_BLOCK_SIZE_32x32 };
             cycle1.reset_params[2] = { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.Segment[0].QIndexDelta, 100 };
+            cycle1.reset_params[3] = { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.Segment[2].QIndexDelta, (mfxU32)(-100) };
             cycle1.segmentation_type_expected = SEGMENTATION_MAP_UPDATE | SEGMENTATION_DATA_UPDATE;
 
             mfxExtVP9Segmentation cycle1_runtime_params;
             memset(&cycle1_runtime_params, 0, sizeof(mfxExtVP9Segmentation));
-            cycle1_runtime_params.NumSegments = 8;
+            cycle1_runtime_params.NumSegments = 5;
             cycle1_runtime_params.SegmentIdBlockSize = MFX_VP9_SEGMENT_ID_BLOCK_SIZE_32x32;
             AllocateAndSetMap(cycle1_runtime_params);
-            cycle1_runtime_params.Segment[0].QIndexDelta = 10;
-            cycle1_runtime_params.Segment[2].QIndexDelta = 15;
+            cycle1_runtime_params.Segment[0].QIndexDelta = -100;
+            cycle1_runtime_params.Segment[1].QIndexDelta = -50;
+            cycle1_runtime_params.Segment[2].QIndexDelta = 0;
+            cycle1_runtime_params.Segment[3].QIndexDelta = 50;
+            cycle1_runtime_params.Segment[4].QIndexDelta = 100;
             SetFeatureEnable(cycle1_runtime_params);
             cycle1.runtime_params[3] = cycle1_runtime_params;
 
@@ -1275,6 +1418,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             test_iteration cycle3;
             cycle3.encoding_count = 5;
             cycle3.reset_params[0] = { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 3 };
+            cycle3.reset_params[1] = { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.Segment[1].QIndexDelta, 100 };
             cycle3.segmentation_type_expected = SEGMENTATION_DATA_UPDATE;
             m_StressTestScenario.push_back(cycle3);
         }
@@ -1332,12 +1476,12 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             mfxExtVP9Segmentation *segment_ext_params_query = reinterpret_cast <mfxExtVP9Segmentation*>(par_query_out.GetExtBuffer(MFX_EXTBUFF_VP9_SEGMENTATION));
             if (m_InitedSegmentExtParams != nullptr && segment_ext_params_query == nullptr)
             {
-                ADD_FAILURE() << "ERROR: Query() does not have mfxExtVP9Segmentation in the output while input has one";
+                ADD_FAILURE() << "ERROR: Query() does not have mfxExtVP9Segmentation in the output while input has one"; throw tsFAIL;
             }
 
             if (m_InitedSegmentExtParams && !SegmentationParamsChecker("Query", *m_InitedSegmentExtParams, *segment_ext_params_query))
             {
-                ADD_FAILURE() << "ERROR: Query() parameters check failed!";
+                ADD_FAILURE() << "ERROR: Query() parameters check failed!"; throw tsFAIL;
             }
 
             mfxExtCodingOption2 *codopt2_ext_params_query = reinterpret_cast <mfxExtCodingOption2*>(par_query_out.GetExtBuffer(MFX_EXTBUFF_CODING_OPTION2));
@@ -1345,7 +1489,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             {
                 if (segment_ext_params_query != 0 && codopt2_ext_params_query->MBBRC == MFX_CODINGOPTION_ON)
                 {
-                    ADD_FAILURE() << "ERROR: Query() left mfxExtCodingOption2.MBBRC=MFX_CODINGOPTION_ON and segmentation";
+                    ADD_FAILURE() << "ERROR: Query() left mfxExtCodingOption2.MBBRC=MFX_CODINGOPTION_ON and segmentation"; throw tsFAIL;
                 }
             }
 
@@ -1364,7 +1508,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             {
                 m_initialized = true;
             }
-            g_tsLog << "Init() returned with status " << init_result_status << ", expected status " << tc.sts << "\n";
+            g_tsLog << "Init() F " << init_result_status << ", expected status " << tc.sts << "\n";
             g_tsStatus.check(init_result_status);
             m_EncodedFramesStat[m_SourceFrameCount].change_type = CHANGE_TYPE_INIT;
             if (m_InitedSegmentExtParams)
@@ -1385,7 +1529,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             mfxExtVP9Segmentation *segment_ext_params_getvparam = reinterpret_cast <mfxExtVP9Segmentation*>(getvpar_out_par.GetExtBuffer(MFX_EXTBUFF_VP9_SEGMENTATION));
             if (m_InitedSegmentExtParams != nullptr && segment_ext_params_getvparam == nullptr)
             {
-                ADD_FAILURE() << "ERROR: GetVideoParam() does not have mfxExtVP9Segmentation in the output while input has one";
+                ADD_FAILURE() << "ERROR: GetVideoParam() does not have mfxExtVP9Segmentation in the output while input has one"; throw tsFAIL;
             }
 
             if (m_InitedSegmentExtParams && !SegmentationParamsChecker("GetVideoParam", *m_InitedSegmentExtParams, *segment_ext_params_getvparam))
@@ -1407,7 +1551,15 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             //set reader
             if (reader == nullptr)
             {
-                reader = new tsRawReader(stream, m_pPar->mfx.FrameInfo);
+                if (tc.type & CHECK_PSNR)
+                {
+                    reader = new SurfaceFeeder(&inputSurfaces, m_par, stream);
+                }
+                else
+                {
+                    reader = new tsRawReader(stream, m_par.mfx.FrameInfo, 0xFFFFFFFF);
+                }
+                reader->m_disable_shift_hack = true;  // this hack adds shift if fi.Shift != 0!!! Need to disable it.
                 m_filler = reader;
             }
 
@@ -1519,7 +1671,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                     if (frames_size_after_reset < frames_size*1.5)
                     {
                         ADD_FAILURE() << "ERROR: Stream size of the second encoding part expected to be significantly bigger due to better quality, but it is not";
-                        return MFX_ERR_INVALID_VIDEO_PARAM;
+                        throw tsFAIL;
                     }
                 }
             }
@@ -1535,5 +1687,8 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         return 0;
     }
 
-    TS_REG_TEST_SUITE_CLASS(vp9e_segmentation);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9e_segmentation,              RunTest_Subtype<MFX_FOURCC_NV12>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9e_10b_420_p010_segmentation, RunTest_Subtype<MFX_FOURCC_P010>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9e_8b_444_ayuv_segmentation,  RunTest_Subtype<MFX_FOURCC_AYUV>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9e_10b_444_y410_segmentation, RunTest_Subtype<MFX_FOURCC_Y410>, n_cases);
 };
