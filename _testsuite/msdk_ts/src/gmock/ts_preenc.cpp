@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -92,6 +92,8 @@ tsVideoPreENC::~tsVideoPreENC()
 
 mfxStatus tsVideoPreENC::Init()
 {
+    mfxStatus sts = MFX_ERR_NONE;
+
     if(m_default)
     {
         if(!m_session)
@@ -106,11 +108,21 @@ mfxStatus tsVideoPreENC::Init()
             && (   (m_request.Type & (MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET|MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET))
                 || (m_par.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY)))
         {
+            m_pFrameAllocator = m_pVAHandle;
+
             if(!GetAllocator())
             {
-                UseDefaultAllocator(false);
+                if (m_pFrameAllocator)
+                {
+                    SetAllocator(m_pFrameAllocator, true);
+                }
+                else
+                {
+                    UseDefaultAllocator(false);
+                    m_pFrameAllocator = GetAllocator();
+                }
             }
-            m_pFrameAllocator = GetAllocator();
+
             SetFrameAllocator();TS_CHECK_MFX;
         }
         if(m_par.IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY)
@@ -119,7 +131,12 @@ mfxStatus tsVideoPreENC::Init()
             AllocOpaque(m_request, m_par);
         }
     }
-    return Init(m_session, m_pPar);
+
+    sts = Init(m_session, m_pPar);
+    if(MFX_ERR_NONE == sts)
+        m_par.AllocId = (mfxU64)&(m_session) & 0xffffffff;
+
+    return sts;
 }
 
 mfxStatus tsVideoPreENC::Init(mfxSession session, mfxVideoParam *par)
