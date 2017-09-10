@@ -813,9 +813,9 @@ namespace
         return DEFAULT_BY_TU[targetUsage];
     }
 #if defined(MFX_ENABLE_MFE)
-    //ToDo: add number of slices handling
+
     mfxU16 GetDefaultNumMfeFrames(mfxU32 targetUsage, const mfxFrameInfo& info,
-        eMFXHWType platform, mfxFeiFunction func)
+        eMFXHWType platform, mfxFeiFunction func, int slices)
     {
         targetUsage;//no specific check for TU now, can be added later
         if (
@@ -840,6 +840,15 @@ namespace
             else if (info.CropH > 1088 && info.CropH > 1920)
             {
                 return 2;
+            }
+            else if (slices > 1)
+            {
+                /*1 for now, on SKL MFE can only support slice map(not enabled yet)
+                  way which performance is worse than standard multi-slice
+                  for low number of slices MFE can be useful, so need to ajust check after
+                  after performance data can be gathered.
+                  for MSS or NumMbPerSlice just set -1 in slices*/
+                return 1;
             }
             else
             {
@@ -1855,11 +1864,11 @@ mfxStatus MfxHwH264Encode::CheckVideoParam(
     MFX_CHECK(par.mfx.TargetUsage            <= 7, MFX_ERR_INVALID_VIDEO_PARAM);
     MFX_CHECK(par.mfx.FrameInfo.ChromaFormat != 0, MFX_ERR_INVALID_VIDEO_PARAM);
     MFX_CHECK(par.IOPattern                  != 0, MFX_ERR_INVALID_VIDEO_PARAM);
-  
- 
+
+
 #if !defined(MFX_EXT_BRC_DISABLE)
     if (bInit)
-    { 
+    {
     mfxExtBRC*                 extBRC = GetExtBuffer(par);
     mfxExtCodingOption2 *      extOpt2 = GetExtBuffer(par);
     if ((extBRC->pthis || extBRC->Init || extBRC->Close || extBRC->GetFrameCtrl || extBRC->Update || extBRC->Reset) &&
@@ -3788,9 +3797,9 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     if (IsOn(extOpt2->ExtBRC) && par.mfx.RateControlMethod != 0 && par.mfx.RateControlMethod !=MFX_RATECONTROL_CBR && par.mfx.RateControlMethod !=MFX_RATECONTROL_VBR)
     {
         extOpt2->ExtBRC = MFX_CODINGOPTION_OFF;
-        changed = true;    
+        changed = true;
     }
-    
+
     if ((!IsOn(extOpt2->ExtBRC)) && (extBRC->pthis || extBRC->Init || extBRC->Close || extBRC->GetFrameCtrl || extBRC->Update || extBRC->Reset) )
     {
         extBRC->pthis = 0;
@@ -3798,10 +3807,10 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         extBRC->Close = 0;
         extBRC->GetFrameCtrl = 0;
         extBRC->Update = 0;
-        extBRC->Reset = 0; 
+        extBRC->Reset = 0;
         changed = true;
     }
-    if ((extBRC->pthis  || extBRC->Init || extBRC->Close   || extBRC->GetFrameCtrl  || extBRC->Update  || extBRC->Reset) && 
+    if ((extBRC->pthis  || extBRC->Init || extBRC->Close   || extBRC->GetFrameCtrl  || extBRC->Update  || extBRC->Reset) &&
         (!extBRC->pthis || !extBRC->Init || !extBRC->Close || !extBRC->GetFrameCtrl || !extBRC->Update || !extBRC->Reset))
     {
         extOpt2->ExtBRC = 0;
@@ -3810,10 +3819,10 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         extBRC->Close = 0;
         extBRC->GetFrameCtrl = 0;
         extBRC->Update = 0;
-        extBRC->Reset = 0; 
+        extBRC->Reset = 0;
         changed = true;
     }
-   
+
 #endif
 
     if (par.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE)
@@ -4572,7 +4581,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         }
     }
     if (!CheckTriStateOption(extOpt3->BRCPanicMode)) changed = true;
-    if (IsOff(extOpt3->BRCPanicMode) 
+    if (IsOff(extOpt3->BRCPanicMode)
      && ((par.mfx.RateControlMethod == MFX_RATECONTROL_CQP) || (vaType != MFX_HW_VAAPI))) // neither CQP nor Windows support BRC panic mode disabling
     {
         extOpt3->BRCPanicMode = MFX_CODINGOPTION_UNKNOWN;
@@ -4591,7 +4600,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     if (!CheckTriStateOption(extOpt3->EnableMBForceIntra)) changed = true;
 
     #ifdef ENABLE_H264_MBFORCE_INTRA
-    if ( IsOn(extOpt3->EnableMBForceIntra) && 
+    if ( IsOn(extOpt3->EnableMBForceIntra) &&
        ( IsOn(par.mfx.LowPower) || // LowPower ON
        (par.mfx.FrameInfo.PicStruct != 0 && par.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE ) // Not Progressive stream
        ))
@@ -4720,7 +4729,14 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         changed = true;
     }
     //explicitly force defualt number of frames, higher number will cause performance degradation.
-    mfxU32 numFrames = GetDefaultNumMfeFrames(par.mfx.TargetUsage, par.mfx.FrameInfo, platform, feiParam->Func);
+    mfxU16 numFrames = GetDefaultNumMfeFrames(par.mfx.TargetUsage, par.mfx.FrameInfo, platform, feiParam->Func,
+        /*multi-slice can be supported only through slice map control for MFE, but not enabled as there is no
+        option to force slice map control, only through slice configuration, disable any multi-slice now
+        ToDo: after driver always force slice map for multiframe change function internals based on performance
+        results - 1 encoder vs multiple, on SKL cases with slice Map and LA MSS should scale the same way as single slice,
+        set -1 for MSS and NumMbPerSlice, big number of slices most likely will be more efficient without MFE,
+        but need to measure exact data*/
+        1 + (par.mfx.NumSlice > 1 || extOpt2->MaxSliceSize || extOpt2->NumMbPerSlice) );
     if (mfeParam.MaxNumFrames > numFrames)
     {
         mfeParam.MaxNumFrames =
@@ -5358,7 +5374,8 @@ void MfxHwH264Encode::SetDefaults(
             mfeParam->MFMode = MFX_MF_DISABLED;//disabled by defualt now, change here to enable
         if (mfeParam->MFMode >= MFX_MF_AUTO && !mfeParam->MaxNumFrames)
         {
-            mfeParam->MaxNumFrames = GetDefaultNumMfeFrames(par.mfx.TargetUsage,par.mfx.FrameInfo,platform,feiParam->Func);
+            mfeParam->MaxNumFrames = GetDefaultNumMfeFrames(par.mfx.TargetUsage,par.mfx.FrameInfo,platform,feiParam->Func,
+               1 + (par.mfx.NumSlice > 1 || extOpt2->MaxSliceSize || extOpt2->NumMbPerSlice));
         }
     }
 #endif
@@ -9183,7 +9200,7 @@ void HeaderPacker::Init(
 
     Zero(m_sps);
     Zero(m_pps);
-    
+
     Zero(m_packedAud);
     Zero(m_packedSps);
     Zero(m_packedPps);
