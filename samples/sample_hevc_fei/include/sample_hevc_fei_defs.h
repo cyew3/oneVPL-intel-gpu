@@ -30,9 +30,30 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #define CHECK_STS_AND_RETURN(X, MSG, RET) {if ((X) < MFX_ERR_NONE) {MSDK_PRINT_RET_MSG(X, MSG); return RET;}}
 
-struct sInputParams
+struct SourceFrameInfo
 {
     msdk_char  strSrcFile[MSDK_MAX_FILENAME_LEN];
+    mfxU32     ColorFormat;
+    mfxU16     nPicStruct;
+    mfxU16     nWidth;
+    mfxU16     nHeight;
+    mfxF64     dFrameRate;
+
+    SourceFrameInfo()
+        : ColorFormat(MFX_FOURCC_I420)
+        , nPicStruct(MFX_PICSTRUCT_PROGRESSIVE)
+        , nWidth(0)
+        , nHeight(0)
+        , dFrameRate(30.0)
+    {
+        MSDK_ZERO_MEMORY(strSrcFile);
+    }
+};
+
+struct sInputParams
+{
+    SourceFrameInfo input;
+
     msdk_char  strDstFile[MSDK_MAX_FILENAME_LEN];
 
     msdk_char  mvoutFile[MSDK_MAX_FILENAME_LEN];
@@ -42,12 +63,7 @@ struct sInputParams
     bool bENCODE;
     bool bPREENC;
     bool bEncodedOrder;      // use EncodeOrderControl for external reordering
-    mfxU32 ColorFormat;
-    mfxU16 nPicStruct;
     mfxU8  QP;
-    mfxU16 nWidth;          // source picture width
-    mfxU16 nHeight;         // source picture height
-    mfxF64 dFrameRate;
     mfxU32 nNumFrames;
     mfxU16 nNumSlices;
     mfxU16 nRefDist;        // distance between I- or P (or GPB) - key frames, GopRefDist = 1, there are no regular B-frames used
@@ -65,12 +81,7 @@ struct sInputParams
         : bENCODE(false)
         , bPREENC(false)
         , bEncodedOrder(false)
-        , ColorFormat(MFX_FOURCC_I420)
-        , nPicStruct(MFX_PICSTRUCT_PROGRESSIVE)
         , QP(26)
-        , nWidth(0)
-        , nHeight(0)
-        , dFrameRate(30.0)
         , nNumFrames(0xffff)
         , nNumSlices(1)
         , nRefDist(0)
@@ -84,7 +95,6 @@ struct sInputParams
         , NumRefActiveBL0(0)
         , NumRefActiveBL1(0)
     {
-        MSDK_ZERO_MEMORY(strSrcFile);
         MSDK_ZERO_MEMORY(strDstFile);
         MSDK_ZERO_MEMORY(mvoutFile);
         MSDK_ZERO_MEMORY(mbstatoutFile);

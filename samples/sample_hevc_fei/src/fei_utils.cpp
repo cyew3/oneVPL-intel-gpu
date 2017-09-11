@@ -102,7 +102,7 @@ mfxStatus SurfacesPool::UnlockSurface(mfxFrameSurface1* pSurf)
 }
 
 IVideoReader::IVideoReader(const sInputParams& inPars, const mfxFrameInfo& fi, SurfacesPool* sp)
-    : m_srcFileName(inPars.strSrcFile)
+    : m_srcFileName(inPars.input.strSrcFile)
     , m_frameInfo(fi)
     , m_pOutSurfPool(sp)
 {
@@ -110,7 +110,7 @@ IVideoReader::IVideoReader(const sInputParams& inPars, const mfxFrameInfo& fi, S
 
 YUVReader::YUVReader(const sInputParams& inPars, const mfxFrameInfo& fi, SurfacesPool* sp)
     : IVideoReader(inPars, fi, sp)
-    , m_srcColorFormat(inPars.ColorFormat)
+    , m_srcColorFormat(inPars.input.ColorFormat)
 {
 }
 

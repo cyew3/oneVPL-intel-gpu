@@ -207,19 +207,19 @@ mfxStatus CEncodingPipeline::CreateHWDevice()
 // will be stored in MSDK surfaces, i.e. width/height should be aligned, FourCC within supported formats
 mfxStatus CEncodingPipeline::FillInputFrameInfo(mfxFrameInfo& fi)
 {
-    bool isProgressive = (MFX_PICSTRUCT_PROGRESSIVE == m_inParams.nPicStruct);
+    bool isProgressive = (MFX_PICSTRUCT_PROGRESSIVE == m_inParams.input.nPicStruct);
     fi.FourCC       = MFX_FOURCC_NV12;
     fi.ChromaFormat = FourCCToChroma(fi.FourCC);
-    fi.PicStruct    = m_inParams.nPicStruct;
+    fi.PicStruct    = m_inParams.input.nPicStruct;
 
     fi.CropX = 0;
     fi.CropY = 0;
-    fi.CropW = m_inParams.nWidth;
-    fi.CropH = m_inParams.nHeight;
+    fi.CropW = m_inParams.input.nWidth;
+    fi.CropH = m_inParams.input.nHeight;
     fi.Width = MSDK_ALIGN16(fi.CropW);
     fi.Height = isProgressive ? MSDK_ALIGN16(fi.CropH) : MSDK_ALIGN32(fi.CropH);
 
-    mfxStatus sts = ConvertFrameRate(m_inParams.dFrameRate, &fi.FrameRateExtN, &fi.FrameRateExtD);
+    mfxStatus sts = ConvertFrameRate(m_inParams.input.dFrameRate, &fi.FrameRateExtN, &fi.FrameRateExtD);
     MSDK_CHECK_STATUS(sts, "ConvertFrameRate failed");
 
     return MFX_ERR_NONE;
@@ -263,7 +263,7 @@ mfxStatus CEncodingPipeline::AllocFrames()
     }
     if (m_pOrderCtrl.get())
     {
-        // encode order ctrl buffering surfaces in own pools, 
+        // encode order ctrl buffering surfaces in own pools,
         // so add number of required frames for it
         allocRequest.NumFrameSuggested += m_pOrderCtrl->GetNumReorderFrames();
         allocRequest.NumFrameMin = allocRequest.NumFrameSuggested;

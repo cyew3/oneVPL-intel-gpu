@@ -112,7 +112,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU32 nArgNum, sInputParams& 
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-nv12")))
         {
-            params.ColorFormat = MFX_FOURCC_NV12;
+            params.input.ColorFormat = MFX_FOURCC_NV12;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-qp")))
         {
@@ -122,7 +122,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU32 nArgNum, sInputParams& 
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-i")))
         {
             CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
-            PARSE_CHECK(msdk_opt_read(strInput[++i], params.strSrcFile), "Input file", isParseInvalid);
+            PARSE_CHECK(msdk_opt_read(strInput[++i], params.input.strSrcFile), "Input file", isParseInvalid);
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-o")))
         {
@@ -132,17 +132,17 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU32 nArgNum, sInputParams& 
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-w")))
         {
             CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
-            PARSE_CHECK(msdk_opt_read(strInput[++i], params.nWidth), "Width", isParseInvalid);
+            PARSE_CHECK(msdk_opt_read(strInput[++i], params.input.nWidth), "Width", isParseInvalid);
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-h")))
         {
             CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
-            PARSE_CHECK(msdk_opt_read(strInput[++i], params.nHeight), "Height", isParseInvalid);
+            PARSE_CHECK(msdk_opt_read(strInput[++i], params.input.nHeight), "Height", isParseInvalid);
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-f")))
         {
             CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
-            PARSE_CHECK(msdk_opt_read(strInput[++i], params.dFrameRate), "FrameRate", isParseInvalid);
+            PARSE_CHECK(msdk_opt_read(strInput[++i], params.input.dFrameRate), "FrameRate", isParseInvalid);
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-n")))
         {
@@ -216,15 +216,15 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU32 nArgNum, sInputParams& 
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-tff")))
         {
-            params.nPicStruct = MFX_PICSTRUCT_FIELD_TFF;
+            params.input.nPicStruct = MFX_PICSTRUCT_FIELD_TFF;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-bff")))
         {
-            params.nPicStruct = MFX_PICSTRUCT_FIELD_BFF;
+            params.input.nPicStruct = MFX_PICSTRUCT_FIELD_BFF;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-mixed")))
         {
-            params.nPicStruct = MFX_PICSTRUCT_UNKNOWN;
+            params.input.nPicStruct = MFX_PICSTRUCT_UNKNOWN;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-gop_opt")))
         {
@@ -276,12 +276,12 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU32 nArgNum, sInputParams& 
 
 mfxStatus CheckOptions(const sInputParams params, const msdk_char* appName)
 {
-    if (0 == msdk_strlen(params.strSrcFile))
+    if (0 == msdk_strlen(params.input.strSrcFile))
     {
         PrintHelp(appName, "Source file name not found");
         return MFX_ERR_UNSUPPORTED;
     }
-    if (0 == params.nWidth || 0 == params.nHeight || params.nWidth < 0 || params.nHeight < 0)
+    if (0 == params.input.nWidth || 0 == params.input.nHeight || params.input.nWidth < 0 || params.input.nHeight < 0)
     {
         PrintHelp(appName, "-w -h is not specified");
         return MFX_ERR_UNSUPPORTED;
@@ -327,9 +327,9 @@ mfxStatus CheckOptions(const sInputParams params, const msdk_char* appName)
 
 void AdjustOptions(sInputParams& params)
 {
-    params.dFrameRate   = tune(params.dFrameRate, 0.0, 30.0);
-    params.nNumSlices   = tune(params.nNumSlices, 0, 1);
-    params.nIdrInterval = tune(params.nIdrInterval, 0, 0xffff);
+    params.input.dFrameRate = tune(params.input.dFrameRate, 0.0, 30.0);
+    params.nNumSlices       = tune(params.nNumSlices, 0, 1);
+    params.nIdrInterval     = tune(params.nIdrInterval, 0, 0xffff);
 
     // PreENC works only in encoder order mode
     // ENCODE uses display order by default, but input MV predictors are in encoded order.
