@@ -42,69 +42,76 @@ private:
     std::vector<mfxFrameSurface1> m_pool;
     mfxFrameAllocResponse m_response;
 
-    // forbid copy constructor and operator
-    SurfacesPool(const SurfacesPool& pool);
-    SurfacesPool& operator=(const SurfacesPool& pool);
+private:
+    DISALLOW_COPY_AND_ASSIGN(SurfacesPool);
 };
 
-class IVideoReader
+/**********************************************************************************/
+
+class IYUVSource
 {
 public:
-    IVideoReader(const sInputParams& inPars, const mfxFrameInfo& fi, SurfacesPool* sp);
-    virtual ~IVideoReader() {}
+    IYUVSource(const SourceFrameInfo& inPars, SurfacesPool* sp)
+        : m_inPars(inPars)
+        , m_pOutSurfPool(sp)
+    {
+        MSDK_ZERO_MEMORY(m_frameInfo);
+    }
 
-    virtual mfxStatus Init() = 0;
+    virtual ~IYUVSource() {}
+
+    virtual mfxStatus QueryIOSurf(mfxFrameAllocRequest* request) = 0;
+    virtual mfxStatus PreInit() = 0;
+    virtual mfxStatus Init()    = 0;
+    virtual void      Close()   = 0;
+
+    virtual mfxStatus GetActualFrameInfo(mfxFrameInfo & info) = 0;
     virtual mfxStatus GetFrame(mfxFrameSurface1* & pSurf) = 0;
-    virtual void      Close() = 0;
 
 protected:
-    std::string   m_srcFileName;
-    mfxFrameInfo  m_frameInfo; // info about video frames properties
-    SurfacesPool* m_pOutSurfPool;
+    SourceFrameInfo m_inPars; 
+    mfxFrameInfo    m_frameInfo;
+    SurfacesPool*   m_pOutSurfPool;
 
 private:
-    // forbid copy constructor and operator
-    IVideoReader(const IVideoReader& reader);
-    IVideoReader& operator=(const IVideoReader& reader);
+    DISALLOW_COPY_AND_ASSIGN(IYUVSource);
 };
 
 // reader of raw frames
-class YUVReader : public IVideoReader
+class YUVReader : public IYUVSource
 {
 public:
-    YUVReader(const sInputParams& inPars, const mfxFrameInfo& fi, SurfacesPool* sp);
-    ~YUVReader();
+    YUVReader(const SourceFrameInfo& inPars, SurfacesPool* sp)
+        : IYUVSource(inPars, sp)
+        , m_srcColorFormat(inPars.ColorFormat)
+    {
+    }
 
-    mfxStatus Init();
-    mfxStatus GetFrame(mfxFrameSurface1* & pSurf);
-    void      Close();
+    virtual ~YUVReader();
 
-private:
+    virtual mfxStatus QueryIOSurf(mfxFrameAllocRequest* request);
+    virtual mfxStatus PreInit();
+    virtual mfxStatus Init();
+    virtual void      Close();
+
+    virtual mfxStatus GetActualFrameInfo(mfxFrameInfo & info);
+    virtual mfxStatus GetFrame(mfxFrameSurface1* & pSurf);
+
+protected:
+    mfxStatus FillInputFrameInfo(mfxFrameInfo& fi);
+
+protected:
     CSmplYUVReader   m_FileReader;
     mfxU32           m_srcColorFormat;
 
-    // forbid copy constructor and operator
-    YUVReader(const YUVReader& reader);
-    YUVReader& operator=(const YUVReader& reader);
+private:
+    DISALLOW_COPY_AND_ASSIGN(YUVReader);
 };
 
-template<typename T>
-T* AcquireResource(std::vector<T> & pool)
-{
-    T * freeBuffer = NULL;
-    for (size_t i = 0; i < pool.size(); i++)
-    {
-        if (pool[i].m_locked == 0)
-        {
-            freeBuffer = &pool[i];
-            msdk_atomic_inc16((volatile mfxU16*)&pool[i].m_locked);
-            break;
-        }
-    }
-    return freeBuffer;
-}
 
-class FileHandler : private no_copy
+/**********************************************************************************/
+
+class FileHandler
 {
 public:
     FileHandler(const msdk_char* _filename, const msdk_char* _mode);
@@ -130,9 +137,27 @@ public:
 
 private:
     FILE* m_file;
+
+private:
+    DISALLOW_COPY_AND_ASSIGN(FileHandler);
 };
 
-// TODO: implement decoder functionality
-// class MFX_Decode : public IVideoReader {};
+/**********************************************************************************/
+
+template<typename T>
+T* AcquireResource(std::vector<T> & pool)
+{
+    T * freeBuffer = NULL;
+    for (size_t i = 0; i < pool.size(); i++)
+    {
+        if (pool[i].m_locked == 0)
+        {
+            freeBuffer = &pool[i];
+            msdk_atomic_inc16((volatile mfxU16*)&pool[i].m_locked);
+            break;
+        }
+    }
+    return freeBuffer;
+}
 
 #endif // #define __FEI_UTILS_H__

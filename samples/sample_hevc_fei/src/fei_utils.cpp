@@ -101,18 +101,7 @@ mfxStatus SurfacesPool::UnlockSurface(mfxFrameSurface1* pSurf)
     return sts;
 }
 
-IVideoReader::IVideoReader(const sInputParams& inPars, const mfxFrameInfo& fi, SurfacesPool* sp)
-    : m_srcFileName(inPars.input.strSrcFile)
-    , m_frameInfo(fi)
-    , m_pOutSurfPool(sp)
-{
-}
-
-YUVReader::YUVReader(const sInputParams& inPars, const mfxFrameInfo& fi, SurfacesPool* sp)
-    : IVideoReader(inPars, fi, sp)
-    , m_srcColorFormat(inPars.input.ColorFormat)
-{
-}
+/**********************************************************************************/
 
 YUVReader::~YUVReader()
 {
@@ -124,10 +113,59 @@ void YUVReader::Close()
     m_FileReader.Close();
 }
 
+mfxStatus YUVReader::QueryIOSurf(mfxFrameAllocRequest* request)
+{
+    if (request)
+    {
+        MSDK_ZERO_MEMORY(*request);
+
+        MSDK_MEMCPY_VAR(request->Info, &m_frameInfo, sizeof(mfxFrameInfo));
+        request->NumFrameSuggested = request->NumFrameMin = 1;
+    }
+
+    return MFX_ERR_NONE;
+}
+
+// fill FrameInfo structure with user parameters taking into account that input stream sequence
+// will be stored in MSDK surfaces, i.e. width/height should be aligned, FourCC within supported formats
+mfxStatus YUVReader::FillInputFrameInfo(mfxFrameInfo& fi)
+{
+    MSDK_ZERO_MEMORY(fi);
+
+    bool isProgressive = (MFX_PICSTRUCT_PROGRESSIVE == m_inPars.nPicStruct);
+    fi.FourCC          = MFX_FOURCC_NV12;
+    fi.ChromaFormat    = FourCCToChroma(fi.FourCC);
+    fi.PicStruct       = m_inPars.nPicStruct;
+
+    fi.CropX  = 0;
+    fi.CropY  = 0;
+    fi.CropW  = m_inPars.nWidth;
+    fi.CropH  = m_inPars.nHeight;
+    fi.Width  = MSDK_ALIGN16(fi.CropW);
+    fi.Height = isProgressive ? MSDK_ALIGN16(fi.CropH) : MSDK_ALIGN32(fi.CropH);
+
+    mfxStatus sts = ConvertFrameRate(m_inPars.dFrameRate, &fi.FrameRateExtN, &fi.FrameRateExtD);
+    MSDK_CHECK_STATUS(sts, "ConvertFrameRate failed");
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus YUVReader::PreInit()
+{
+    return FillInputFrameInfo(m_frameInfo);
+}
+
+mfxStatus YUVReader::GetActualFrameInfo(mfxFrameInfo & info)
+{
+    info = m_frameInfo;
+
+    return MFX_ERR_NONE;
+}
+
 mfxStatus YUVReader::Init()
 {
     std::list<msdk_string> in_file_names;
-    in_file_names.push_back(msdk_string(m_srcFileName));
+    in_file_names.push_back(msdk_string(m_inPars.strSrcFile));
     return m_FileReader.Init(in_file_names, m_srcColorFormat);
 }
 

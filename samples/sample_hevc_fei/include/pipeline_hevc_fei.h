@@ -59,7 +59,7 @@ private:
 
     SurfacesPool                      m_EncSurfPool;
 
-    std::auto_ptr<IVideoReader>       m_pYUVSource; // source of raw YUV data for encoder (e.g. YUV file reader, decoder, etc)
+    std::auto_ptr<IYUVSource>         m_pYUVSource; // source of raw YUV data for encoder (e.g. YUV file reader, decoder, etc)
     std::auto_ptr<EncodeOrderControl> m_pOrderCtrl;
     std::auto_ptr<FEI_Preenc>         m_pFEI_PreENC;
     std::auto_ptr<FEI_Encode>         m_pFEI_Encode;
@@ -75,6 +75,7 @@ private:
     mfxStatus InitComponents();
     mfxStatus DrainBufferedFrames();
 
+    IYUVSource* CreateYUVSource();
     FEI_Preenc* CreatePreENC(mfxFrameInfo& in_fi);
     FEI_Encode* CreateEncode(mfxFrameInfo& in_fi);
 

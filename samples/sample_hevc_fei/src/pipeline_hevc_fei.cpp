@@ -47,11 +47,15 @@ mfxStatus CEncodingPipeline::Init()
         MSDK_CHECK_STATUS(sts, "CreateAllocator failed");
 
         mfxFrameInfo frameInfo;
-        MSDK_ZERO_MEMORY(frameInfo);
-        sts = FillInputFrameInfo(frameInfo);
-        MSDK_CHECK_STATUS(sts, "FillInputFrameInfo failed");
 
-        m_pYUVSource.reset(new YUVReader(m_inParams, frameInfo, &m_EncSurfPool));
+        m_pYUVSource.reset(CreateYUVSource());
+        {
+            sts = m_pYUVSource->PreInit();
+            MSDK_CHECK_STATUS(sts, "m_pYUVSource PreInit failed");
+
+            sts = m_pYUVSource->GetActualFrameInfo(frameInfo);
+            MSDK_CHECK_STATUS(sts, "m_pYUVSource GetActualFrameInfo failed");
+        }
 
         m_pFEI_PreENC.reset(CreatePreENC(frameInfo));
         if (m_pFEI_PreENC.get())
@@ -102,7 +106,7 @@ void CEncodingPipeline::PrintInfo()
     msdk_printf(MSDK_STRING("\nPipeline:\t%s"), sPipeline);
 
     mfxFrameInfo sourceFrameInfo;
-    FillInputFrameInfo(sourceFrameInfo);
+    m_pYUVSource->GetActualFrameInfo(sourceFrameInfo);
 
     msdk_printf(MSDK_STRING("\nResolution:\t%dx%d"), sourceFrameInfo.Width, sourceFrameInfo.Height);
     msdk_printf(MSDK_STRING("\nFrame rate:\t%d/%d = %.2f"), sourceFrameInfo.FrameRateExtN, sourceFrameInfo.FrameRateExtD, CalculateFrameRate(sourceFrameInfo.FrameRateExtN, sourceFrameInfo.FrameRateExtD));
@@ -203,37 +207,28 @@ mfxStatus CEncodingPipeline::CreateHWDevice()
 }
 
 
-// fill FrameInfo structure with user parameters taking into account that input stream sequence
-// will be stored in MSDK surfaces, i.e. width/height should be aligned, FourCC within supported formats
-mfxStatus CEncodingPipeline::FillInputFrameInfo(mfxFrameInfo& fi)
-{
-    bool isProgressive = (MFX_PICSTRUCT_PROGRESSIVE == m_inParams.input.nPicStruct);
-    fi.FourCC       = MFX_FOURCC_NV12;
-    fi.ChromaFormat = FourCCToChroma(fi.FourCC);
-    fi.PicStruct    = m_inParams.input.nPicStruct;
-
-    fi.CropX = 0;
-    fi.CropY = 0;
-    fi.CropW = m_inParams.input.nWidth;
-    fi.CropH = m_inParams.input.nHeight;
-    fi.Width = MSDK_ALIGN16(fi.CropW);
-    fi.Height = isProgressive ? MSDK_ALIGN16(fi.CropH) : MSDK_ALIGN32(fi.CropH);
-
-    mfxStatus sts = ConvertFrameRate(m_inParams.input.dFrameRate, &fi.FrameRateExtN, &fi.FrameRateExtD);
-    MSDK_CHECK_STATUS(sts, "ConvertFrameRate failed");
-
-    return MFX_ERR_NONE;
-}
-
 mfxStatus CEncodingPipeline::AllocFrames()
 {
     mfxStatus sts = MFX_ERR_NOT_INITIALIZED;
 
     // Here we build a final alloc request from alloc requests from several components.
     // TODO: This code is a good candidate to become a 'builder' utility class.
+    // While it's safe to use it, it needs to be optimized for reasonable resource allocation.
+    // TODO: Find a reasonable minimal number of required surfaces for YUVSource+Reorderer+PreENC+ENCODE pipeline_hevc_fei
+
     mfxFrameAllocRequest allocRequest;
     MSDK_ZERO_MEMORY(allocRequest);
 
+    MSDK_CHECK_POINTER(m_pYUVSource.get(), MFX_ERR_UNSUPPORTED);
+    {
+        mfxFrameAllocRequest request;
+        MSDK_ZERO_MEMORY(request);
+
+        sts = m_pYUVSource->QueryIOSurf(&request);
+        MSDK_CHECK_STATUS(sts, "m_pYUVSource->QueryIOSurf failed");
+
+        allocRequest = request;
+    }
     if (m_pFEI_Encode.get())
     {
         mfxFrameAllocRequest encodeRequest;
@@ -242,9 +237,9 @@ mfxStatus CEncodingPipeline::AllocFrames()
         sts = m_pFEI_Encode->QueryIOSurf(&encodeRequest);
         MSDK_CHECK_STATUS(sts, "m_pFEI_Encode->QueryIOSurf failed");
 
-        MSDK_MEMCPY_VAR(allocRequest.Info, m_pFEI_Encode->GetFrameInfo(), sizeof(mfxFrameInfo));
-        allocRequest.Type = encodeRequest.Type | MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET;
-        allocRequest.NumFrameMin = allocRequest.NumFrameSuggested = encodeRequest.NumFrameSuggested;
+        allocRequest.Type |= encodeRequest.Type | MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET;
+        allocRequest.NumFrameSuggested += encodeRequest.NumFrameSuggested;
+        allocRequest.NumFrameMin = allocRequest.NumFrameSuggested;
     }
     if (m_pFEI_PreENC.get())
     {
@@ -253,11 +248,7 @@ mfxStatus CEncodingPipeline::AllocFrames()
         sts = m_pFEI_PreENC->QueryIOSurf(&preEncRequest);
         MSDK_CHECK_STATUS(sts, "m_pFEI_PreENC->QueryIOSurf failed");
 
-        MSDK_MEMCPY_VAR(allocRequest.Info, &preEncRequest.Info, sizeof(mfxFrameInfo));
         allocRequest.Type |= preEncRequest.Type | MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET | MFX_MEMTYPE_FROM_ENC;
-        // Formula below is not fully correct.
-        // While it's safe to use it, it needs to be optimized for reasonable resource allocation.
-        // TODO: Find a reasonable minimal number of required surfaces for YUVSource+PreENC+ENCODE pipeline
         allocRequest.NumFrameSuggested += preEncRequest.NumFrameSuggested;
         allocRequest.NumFrameMin = allocRequest.NumFrameSuggested;
     }
@@ -482,6 +473,11 @@ MfxVideoParamsWrapper GetEncodeParams(const sInputParams& user_pars, const mfxFr
     pCO3->GPB = user_pars.GPB;
 
     return pars;
+}
+
+IYUVSource* CEncodingPipeline::CreateYUVSource()
+{
+    return new YUVReader(m_inParams.input, &m_EncSurfPool);
 }
 
 FEI_Preenc* CEncodingPipeline::CreatePreENC(mfxFrameInfo& in_fi)
