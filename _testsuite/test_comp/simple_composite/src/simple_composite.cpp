@@ -144,7 +144,7 @@ namespace MfxLoader
     };
 
     VA_Proxy::VA_Proxy()
-    : lib("libva.so")
+    : lib("libva.so.1")
     , SIMPLE_LOADER_FUNCTION(vaInitialize)
     , SIMPLE_LOADER_FUNCTION(vaTerminate)
     , SIMPLE_LOADER_FUNCTION(vaCreateSurfaces)
@@ -179,7 +179,7 @@ namespace MfxLoader
     };
     
     VA_DRMProxy::VA_DRMProxy()
-    : lib("libva-drm.so")
+    : lib("libva-drm.so.1")
     , SIMPLE_LOADER_FUNCTION(vaGetDisplayDRM)
     {
     }

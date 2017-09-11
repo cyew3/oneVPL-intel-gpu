@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2015 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -53,7 +53,7 @@ namespace MfxLoader
 
 #if defined(LIBVA_SUPPORT)
     VA_Proxy::VA_Proxy()
-        : lib("libva.so")
+        : lib("libva.so.1")
         , SIMPLE_LOADER_FUNCTION(vaInitialize)
         , SIMPLE_LOADER_FUNCTION(vaTerminate)
         , SIMPLE_LOADER_FUNCTION(vaCreateSurfaces)
@@ -73,7 +73,7 @@ namespace MfxLoader
 
 #if defined(LIBVA_DRM_SUPPORT)
     VA_DRMProxy::VA_DRMProxy()
-        : lib("libva-drm.so")
+        : lib("libva-drm.so.1")
         , SIMPLE_LOADER_FUNCTION(vaGetDisplayDRM)
     {
     }
@@ -84,7 +84,7 @@ namespace MfxLoader
 
 #if defined(LIBVA_X11_SUPPORT)
     VA_X11Proxy::VA_X11Proxy()
-        : lib("libva-x11.so")
+        : lib("libva-x11.so.1")
         , SIMPLE_LOADER_FUNCTION(vaGetDisplay)
         , SIMPLE_LOADER_FUNCTION(vaPutSurface)
     {
