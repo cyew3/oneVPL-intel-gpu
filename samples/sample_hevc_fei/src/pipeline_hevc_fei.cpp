@@ -22,9 +22,9 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 CEncodingPipeline::CEncodingPipeline(sInputParams& userInput)
     : m_inParams(userInput)
-    , m_processedFrames(0)
     , m_impl(MFX_IMPL_HARDWARE_ANY | MFX_IMPL_VIA_VAAPI)
     , m_EncSurfPool()
+    , m_processedFrames(0)
 {
 }
 
@@ -41,12 +41,6 @@ mfxStatus CEncodingPipeline::Init()
     {
         sts = m_mfxSession.Init(m_impl, NULL);
         MSDK_CHECK_STATUS(sts, "m_mfxSession.Init failed");
-
-        if (m_inParams.bENCODE)
-        {
-            sts = LoadFEIPlugin();
-            MSDK_CHECK_STATUS(sts, "LoadPlugin failed");
-        }
 
         // create and init frame allocator
         sts = CreateAllocator();
@@ -98,8 +92,6 @@ mfxStatus CEncodingPipeline::Init()
 void CEncodingPipeline::Close()
 {
     msdk_printf(MSDK_STRING("\nFrames processed: %u\n"), m_processedFrames);
-    m_pPlugin.reset(); // Unload plugin by destructing object PluginLoader
-    m_mfxSession.Close();
 }
 
 void CEncodingPipeline::PrintInfo()
@@ -152,11 +144,11 @@ void CEncodingPipeline::PrintInfo()
 
 mfxStatus CEncodingPipeline::LoadFEIPlugin()
 {
-    m_pluginGuid = msdkGetPluginUID(m_impl, MSDK_VENCODE | MSDK_FEI, MFX_CODEC_HEVC); // remove '| MSDK_FEI' to use HW HEVC for debug
-    MSDK_CHECK_ERROR(AreGuidsEqual(m_pluginGuid, MSDK_PLUGINGUID_NULL), true, MFX_ERR_NOT_FOUND);
+    mfxPluginUID pluginGuid = msdkGetPluginUID(m_impl, MSDK_VENCODE | MSDK_FEI, MFX_CODEC_HEVC); // remove '| MSDK_FEI' to use HW HEVC for debug
+    MSDK_CHECK_ERROR(AreGuidsEqual(pluginGuid, MSDK_PLUGINGUID_NULL), true, MFX_ERR_NOT_FOUND);
 
-    m_pPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, m_mfxSession, m_pluginGuid, 1));
-    MSDK_CHECK_POINTER(m_pPlugin.get(), MFX_ERR_UNSUPPORTED);
+    m_pHEVCePlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, m_mfxSession, pluginGuid, 1));
+    MSDK_CHECK_POINTER(m_pHEVCePlugin.get(), MFX_ERR_UNSUPPORTED);
 
     return MFX_ERR_NONE;
 }
@@ -507,8 +499,13 @@ FEI_Encode* CEncodingPipeline::CreateEncode(mfxFrameInfo& in_fi)
     if (!m_inParams.bENCODE)
         return NULL;
 
+    mfxStatus sts = MFX_ERR_NONE;
+
+    sts = LoadFEIPlugin();
+    CHECK_STS_AND_RETURN(sts, "LoadFEIPlugin failed", NULL);
+
     mfxHDL hdl = NULL;
-    mfxStatus sts = m_pHWdev->GetHandle(MFX_HANDLE_VA_DISPLAY, &hdl);
+    sts = m_pHWdev->GetHandle(MFX_HANDLE_VA_DISPLAY, &hdl);
     CHECK_STS_AND_RETURN(sts, "CreateEncode::m_pHWdev->GetHandle failed", NULL);
 
     MfxVideoParamsWrapper encode_pars = GetEncodeParams(m_inParams, in_fi);

@@ -48,26 +48,25 @@ private:
                                       shouldn't be modified during processing to not lose
                                       initial settings */
 
-    mfxU32                   m_processedFrames;
-
-    mfxIMPL                  m_impl;
-    MFXVideoSession          m_mfxSession;
-    std::auto_ptr<MFXPlugin> m_pPlugin;
-    mfxPluginUID             m_pluginGuid;
-
-    std::auto_ptr<MFXFrameAllocator>  m_pMFXAllocator;
-    std::auto_ptr<mfxAllocatorParams> m_pMFXAllocatorParams;
+    mfxIMPL                           m_impl;
     std::auto_ptr<CHWDevice>          m_pHWdev;
 
-    std::auto_ptr<IVideoReader> m_pYUVSource; // source of raw data for encoder (can be either reading from file,
-                                              // or decoding bitstream)
-    std::auto_ptr<FEI_Encode>   m_pFEI_Encode;
-    std::auto_ptr<IPreENC>      m_pFEI_PreENC;
+    std::auto_ptr<mfxAllocatorParams> m_pMFXAllocatorParams;
+    std::auto_ptr<MFXFrameAllocator>  m_pMFXAllocator;
 
+    MFXVideoSession                   m_mfxSession;
+    std::auto_ptr<MFXPlugin>          m_pHEVCePlugin;
+
+    SurfacesPool                      m_EncSurfPool;
+
+    std::auto_ptr<IVideoReader>       m_pYUVSource; // source of raw YUV data for encoder (e.g. YUV file reader, decoder, etc)
     std::auto_ptr<EncodeOrderControl> m_pOrderCtrl;
+    std::auto_ptr<FEI_Preenc>         m_pFEI_PreENC;
+    std::auto_ptr<FEI_Encode>         m_pFEI_Encode;
 
-    SurfacesPool m_EncSurfPool;
+    mfxU32                            m_processedFrames;
 
+private:
     mfxStatus LoadFEIPlugin();
     mfxStatus CreateAllocator();
     mfxStatus CreateHWDevice();
