@@ -1511,75 +1511,65 @@ void CTranscodingPipeline::FillMBQPBuffer(mfxExtMBQP &qpMap, mfxU16 pictStruct)
 void CTranscodingPipeline::SetEncCtrlRT(ExtendedSurface& extSurface, bool bInsertIDR)
 {
     extSurface.pEncCtrl = NULL;
-    if (extSurface.pAuxCtrl)
-    {
+    if (extSurface.pAuxCtrl) {
         extSurface.pEncCtrl = &extSurface.pAuxCtrl->encCtrl;
+    }
 
 #if _MSDK_API >= MSDK_API(1,22)
 
-        if (extSurface.pSurface)
-        {
-            void* keyId = (void*)extSurface.pSurface;
+    if (extSurface.pSurface) {
+        void* keyId = (void*)extSurface.pSurface;
 
-            // Use encoded surface pointer to find placeholders for run-time structures in maps
-            if (m_bUseQPMap && m_bufExtMBQP.find(keyId) == m_bufExtMBQP.end())
-            {
-                m_extBuffPtrStorage[keyId] = std::vector<mfxExtBuffer*>();
+        // Use encoded surface pointer to find placeholders for run-time structures in maps
+        if (m_bUseQPMap && m_bufExtMBQP.find(keyId) == m_bufExtMBQP.end()) {
+            m_extBuffPtrStorage[keyId] = std::vector<mfxExtBuffer*>();
 
-                m_qpMapStorage[keyId] = std::vector<mfxU8>();
-                m_qpMapStorage[keyId].resize(m_QPmapWidth*m_QPmapHeight);
+            m_qpMapStorage[keyId] = std::vector<mfxU8>();
+            m_qpMapStorage[keyId].resize(m_QPmapWidth*m_QPmapHeight);
 
-                m_bufExtMBQP[keyId] = mfxExtMBQP();
-                m_bufExtMBQP[keyId].Header.BufferId = MFX_EXTBUFF_MBQP;
-                m_bufExtMBQP[keyId].Header.BufferSz = sizeof(mfxExtMBQP);
-                m_bufExtMBQP[keyId].NumQPAlloc = m_QPmapWidth*m_QPmapHeight;
-                m_bufExtMBQP[keyId].QP = &(m_qpMapStorage[keyId][0]);
-            }
-
-            // Initialize *pCtrl optionally copying content of the pExtSurface.pAuxCtrl.encCtrl
-            mfxEncodeCtrl& ctrl = encControlStorage[keyId];
-            MSDK_ZERO_MEMORY(ctrl);
-
-            if (extSurface.pEncCtrl)
-            {
-                ctrl = *extSurface.pEncCtrl;
-            }
-
-            // Copy all extended buffer pointers from pExtSurface.pAuxCtrl.encCtrl
-            m_extBuffPtrStorage[keyId].clear();
-            if (extSurface.pAuxCtrl)
-            {
-                for (unsigned int i = 0; i < ctrl.NumExtParam; i++)
-                {
-                    m_extBuffPtrStorage[keyId].push_back(extSurface.pAuxCtrl->encCtrl.ExtParam[i]);
-                }
-            }
-
-            // Attach additional buffer with either MBQP or ROI information
-            if (m_bUseQPMap)
-            {
-                FillMBQPBuffer(m_bufExtMBQP[keyId], extSurface.pSurface->Info.PicStruct);
-                m_extBuffPtrStorage[keyId].push_back((mfxExtBuffer *)&m_bufExtMBQP[keyId]);
-            }
-            else
-            {
-                if (m_ROIData.size() > m_nSubmittedFramesNum)
-                    m_extBuffPtrStorage[keyId].push_back((mfxExtBuffer *)&m_ROIData[m_nSubmittedFramesNum]);
-            }
-#if _MSDK_API > MSDK_API(1,24)
-            m_extBuffPtrStorage[keyId].push_back((mfxExtBuffer *)&(m_ExtMFEParam));
-            m_extBuffPtrStorage[keyId].push_back((mfxExtBuffer *)&(m_ExtMFEControl));
-#endif
-            // Replace the buffers pointer to pre-allocated storage
-            ctrl.NumExtParam = (mfxU16)m_extBuffPtrStorage[keyId].size();
-            if (ctrl.NumExtParam)
-            {
-                ctrl.ExtParam = &(m_extBuffPtrStorage[keyId][0]);
-            }
-
-            extSurface.pEncCtrl = &ctrl;
-            m_nSubmittedFramesNum++;
+            m_bufExtMBQP[keyId] = mfxExtMBQP();
+            m_bufExtMBQP[keyId].Header.BufferId = MFX_EXTBUFF_MBQP;
+            m_bufExtMBQP[keyId].Header.BufferSz = sizeof(mfxExtMBQP);
+            m_bufExtMBQP[keyId].NumQPAlloc = m_QPmapWidth*m_QPmapHeight;
+            m_bufExtMBQP[keyId].QP = &(m_qpMapStorage[keyId][0]);
         }
+
+        // Initialize *pCtrl optionally copying content of the pExtSurface.pAuxCtrl.encCtrl
+        mfxEncodeCtrl& ctrl = encControlStorage[keyId];
+        MSDK_ZERO_MEMORY(ctrl);
+
+        if (extSurface.pEncCtrl) {
+            ctrl = *extSurface.pEncCtrl;
+        }
+
+        // Copy all extended buffer pointers from pExtSurface.pAuxCtrl.encCtrl
+        m_extBuffPtrStorage[keyId].clear();
+        if (extSurface.pAuxCtrl) {
+            for (unsigned int i = 0; i < ctrl.NumExtParam; i++) {
+                 m_extBuffPtrStorage[keyId].push_back(extSurface.pAuxCtrl->encCtrl.ExtParam[i]);
+            }
+        }
+
+        // Attach additional buffer with either MBQP or ROI information
+        if (m_bUseQPMap) {
+            FillMBQPBuffer(m_bufExtMBQP[keyId], extSurface.pSurface->Info.PicStruct);
+            m_extBuffPtrStorage[keyId].push_back((mfxExtBuffer *)&m_bufExtMBQP[keyId]);
+        } else {
+            if (m_ROIData.size() > m_nSubmittedFramesNum)
+                m_extBuffPtrStorage[keyId].push_back((mfxExtBuffer *)&m_ROIData[m_nSubmittedFramesNum]);
+        }
+#if _MSDK_API > MSDK_API(1,24)
+        m_extBuffPtrStorage[keyId].push_back((mfxExtBuffer *)&(m_ExtMFEParam));
+        m_extBuffPtrStorage[keyId].push_back((mfxExtBuffer *)&(m_ExtMFEControl));
+#endif
+        // Replace the buffers pointer to pre-allocated storage
+        ctrl.NumExtParam = (mfxU16)m_extBuffPtrStorage[keyId].size();
+        if (ctrl.NumExtParam) {
+            ctrl.ExtParam = &(m_extBuffPtrStorage[keyId][0]);
+        }
+
+        extSurface.pEncCtrl = &ctrl;
+        m_nSubmittedFramesNum++;
     }
 #endif //_MSDK_API >= MSDK_API(1,22)
 
