@@ -3351,7 +3351,7 @@ void ConfigureTask(
 
     if (rtDirtyRect && rtDirtyRect->NumRect)
     {
-        mfxStatus sts = CheckAndFixDirtyRect(caps, rtDirtyRect);
+        mfxStatus sts = CheckAndFixDirtyRect(caps, par, rtDirtyRect);
         if (sts == MFX_ERR_INVALID_VIDEO_PARAM)
             parDirtyRect = 0;
         else

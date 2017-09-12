@@ -1175,6 +1175,7 @@ mfxStatus CheckAndFixRoi(
 
 mfxStatus CheckAndFixDirtyRect(
     ENCODE_CAPS_HEVC const & caps,
+    MfxVideoParam const & par,
     mfxExtDirtyRect * DirtyRect);
 mfxStatus GetCUQPMapBlockSize(mfxU16 frameWidth, mfxU16 frameHeight,
     mfxU16 CUQPWidth, mfxU16 CUHeight,

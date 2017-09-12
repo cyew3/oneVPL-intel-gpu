@@ -916,12 +916,16 @@ mfxStatus CheckAndFixRoi(MfxVideoParam  const & par, ENCODE_CAPS_HEVC const & ca
 #endif // MFX_ENABLE_HEVCE_ROI
 
 #ifdef MFX_ENABLE_HEVCE_DIRTY_RECT
-mfxStatus CheckAndFixDirtyRect(ENCODE_CAPS_HEVC const & caps, mfxExtDirtyRect *DirtyRect)
+mfxStatus CheckAndFixDirtyRect(ENCODE_CAPS_HEVC const & caps, MfxVideoParam const & par, mfxExtDirtyRect *DirtyRect)
 {
     mfxStatus sts = MFX_ERR_NONE;
     mfxU32 changed = 0, invalid = 0;
 
-    invalid += (caps.DirtyRectSupport == 0);
+    if (caps.DirtyRectSupport == 0)
+    {
+        invalid++;
+        DirtyRect->NumRect = 0;
+    }
 
 #if (HEVCE_DDI_VERSION >= 967)
     changed += CheckMax(DirtyRect->NumRect, caps.MaxNumOfDirtyRect);
@@ -931,13 +935,28 @@ mfxStatus CheckAndFixDirtyRect(ENCODE_CAPS_HEVC const & caps, mfxExtDirtyRect *D
 
     for (mfxU16 i = 0; i < DirtyRect->NumRect; i++)
     {
-        // check that rectangle dimensions don't conflict with each other and don't exceed frame size
         RectData *rect = (RectData *)&(DirtyRect->Rect[i]);
+
+        if (rect->Left == 0 && rect->Right == 0 && rect->Top == 0 && rect->Bottom == 0) continue;
 
         invalid += (rect->Left > rect->Right);
         invalid += (rect->Top > rect->Bottom);
 
-        // Driver trims rects itself
+#if defined(WIN64) || defined (WIN32)
+        mfxU32 blkSize = 1 << (caps.BlockSize + 3);
+
+        // check that rectangle is aligned to MB, correct it if not
+        changed += AlignDown(rect->Left, blkSize);
+        changed += AlignDown(rect->Top,  blkSize);
+        changed += AlignUp(rect->Right,  blkSize);
+        changed += AlignUp(rect->Bottom, blkSize);
+
+        // check that rectangle dimensions don't conflict with each other and don't exceed frame size
+        if (rect->Left < mfxU32(0) || rect->Left > mfxU32(par.mfx.FrameInfo.Width  - blkSize))                { rect->Left = 0;   invalid++; }
+        if (rect->Top  < mfxU32(0) || rect->Top  > mfxU32(par.mfx.FrameInfo.Height - blkSize))                { rect->Top = 0;    invalid++; }
+        if (rect->Right  < mfxU32(rect->Left + blkSize) || rect->Right  > mfxU32(par.mfx.FrameInfo.Width))    { rect->Right = 0;  invalid++; }
+        if (rect->Bottom < mfxU32(rect->Top  + blkSize) || rect->Bottom > mfxU32(par.mfx.FrameInfo.Height))   { rect->Bottom = 0; invalid++; }
+#endif
     }
 
     if (changed)
@@ -2157,9 +2176,12 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 
 #ifdef MFX_ENABLE_HEVCE_DIRTY_RECT
     if (DirtyRect->NumRect) {
-        sts = CheckAndFixDirtyRect(caps, DirtyRect);
+        sts = CheckAndFixDirtyRect(caps, par, DirtyRect);
         if (sts == MFX_ERR_INVALID_VIDEO_PARAM) {
             invalid++;
+        }
+        else if (sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM) {
+            changed++;
         }
         else if (sts != MFX_ERR_NONE) {
             if (bInit) invalid++;
