@@ -49,6 +49,8 @@ mfxStatus CEncodingPipeline::Init()
         mfxFrameInfo frameInfo;
 
         m_pYUVSource.reset(CreateYUVSource());
+        MSDK_CHECK_POINTER(m_pYUVSource.get(), MFX_ERR_UNSUPPORTED);
+
         {
             sts = m_pYUVSource->PreInit();
             MSDK_CHECK_STATUS(sts, "m_pYUVSource PreInit failed");
@@ -219,7 +221,6 @@ mfxStatus CEncodingPipeline::AllocFrames()
     mfxFrameAllocRequest allocRequest;
     MSDK_ZERO_MEMORY(allocRequest);
 
-    MSDK_CHECK_POINTER(m_pYUVSource.get(), MFX_ERR_UNSUPPORTED);
     {
         mfxFrameAllocRequest request;
         MSDK_ZERO_MEMORY(request);
@@ -478,7 +479,19 @@ MfxVideoParamsWrapper GetEncodeParams(const sInputParams& user_pars, const mfxFr
 IYUVSource* CEncodingPipeline::CreateYUVSource()
 {
     if (m_inParams.input.DecodeId)
+    {
+        mfxPluginUID pluginGuid = MSDK_PLUGINGUID_NULL;
+        pluginGuid = msdkGetPluginUID(m_impl, MSDK_VDECODE, m_inParams.input.DecodeId);
+
+        if (!AreGuidsEqual(pluginGuid, MSDK_PLUGINGUID_NULL))
+        {
+            m_pDecoderPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_DECODE, m_mfxSession, pluginGuid, 1));
+            if (m_pDecoderPlugin.get() == NULL)
+                return NULL;
+        }
+
         return new Decoder(m_inParams.input, &m_EncSurfPool, &m_mfxSession);
+    }
     else
         return new YUVReader(m_inParams.input, &m_EncSurfPool);
 }

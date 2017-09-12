@@ -55,7 +55,7 @@ void PrintHelp(const msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("Options: \n"));
     msdk_printf(MSDK_STRING("   [-i <file-name>] - input YUV file\n"));
-    msdk_printf(MSDK_STRING("   [-i::h264|mpeg2|vc1 <file-name>] - input file and decoder type\n"));
+    msdk_printf(MSDK_STRING("   [-i::h264|mpeg2|vc1|h265 <file-name>] - input file and decoder type\n"));
     msdk_printf(MSDK_STRING("   [-w] - width of input YUV file\n"));
     msdk_printf(MSDK_STRING("   [-h] - height of input YUV file\n"));
     msdk_printf(MSDK_STRING("   [-nv12] - input is in NV12 color format, if not specified YUV420 is expected\n"));
@@ -151,9 +151,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU32 nArgNum, sInputParams& 
             case MFX_CODEC_MPEG2:
             case MFX_CODEC_AVC:
             case MFX_CODEC_VC1:
+            case MFX_CODEC_HEVC:
                 break;
             default:
-                PrintHelp(strInput[0], MSDK_STRING("ERROR: Unsupported encoded input (only AVC, MPEG2, VC1 is supported)"));
+                PrintHelp(strInput[0], MSDK_STRING("ERROR: Unsupported encoded input (only AVC, HEVC, MPEG2, VC1 is supported)"));
                 return MFX_ERR_UNSUPPORTED;
             }
         }

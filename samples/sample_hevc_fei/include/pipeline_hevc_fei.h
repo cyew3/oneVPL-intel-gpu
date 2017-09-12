@@ -55,6 +55,7 @@ private:
     std::auto_ptr<MFXFrameAllocator>  m_pMFXAllocator;
 
     MFXVideoSession                   m_mfxSession;
+    std::auto_ptr<MFXPlugin>          m_pDecoderPlugin;
     std::auto_ptr<MFXPlugin>          m_pHEVCePlugin;
 
     SurfacesPool                      m_EncSurfPool;
