@@ -61,13 +61,14 @@ namespace MfxHwH265FeiEncode
     {
 #if 0
         {
+            VAStatus vaSts;
             VABufferID &vaFeiFrameControlId = VABufferNew(VABID_FEI_FRM_CTRL, 0);
 
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "FrameCtrl");
 
             {
                 MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaCreateBuffer");
-                VAStatus vaSts = vaCreateBuffer(m_vaDisplay,
+                vaSts = vaCreateBuffer(m_vaDisplay,
                     m_vaContextEncode,
                     VAEncMiscParameterBufferType,
                     sizeof(VAEncMiscParameterBuffer) + sizeof (VAEncMiscParameterFEIFrameControlHevc),
@@ -80,9 +81,10 @@ namespace MfxHwH265FeiEncode
             VAEncMiscParameterBuffer *miscParam;
             {
                 MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaMapBuffer");
-                vaMapBuffer(m_vaDisplay,
+                vaSts = vaMapBuffer(m_vaDisplay,
                     vaFeiFrameControlId,
                     (void **)&miscParam);
+                MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
             }
 
             miscParam->type = (VAEncMiscParameterType)VAEncMiscParameterTypeFEIFrameControlIntel;
@@ -129,6 +131,12 @@ namespace MfxHwH265FeiEncode
 
             mfxExtFeiHevcDistortion* distortion = reinterpret_cast<mfxExtFeiHevcDistortion*>(GetBufById(task.m_bs, MFX_EXTBUFF_HEVCFEI_ENC_DIST));
             vaFeiFrameControl->distortion = distortion ? distortion->VaBufferID : VA_INVALID_ID;
+
+            {
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
+                vaSts = vaUnmapBuffer(m_vaDisplay, vaFeiFrameControlId);
+                MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+            }
         }
 #endif
         return MFX_ERR_NONE;
