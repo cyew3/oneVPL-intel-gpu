@@ -102,8 +102,8 @@ namespace avce_dirty_rect {
 
     const tc_struct TestSuite::test_case[] =
     {
-        {/*00*/{ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE },
-            QUERY | INIT,{
+        {/*00*/{ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
+            QUERY | INIT | ENCODE, {
             RECT_PARS(DIRTYRECT,                0, 1,   0, 0, 0, 0),
             RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, 0, 0, 0)
         } },
