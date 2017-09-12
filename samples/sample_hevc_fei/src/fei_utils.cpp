@@ -192,6 +192,146 @@ mfxStatus YUVReader::GetFrame(mfxFrameSurface1* & pSurf)
     return sts;
 }
 
+/**********************************************************************************/
+
+mfxStatus Decoder::QueryIOSurf(mfxFrameAllocRequest* request)
+{
+    return m_DEC->QueryIOSurf(&m_par, request);
+}
+
+mfxStatus Decoder::PreInit()
+{
+    mfxStatus sts = MFX_ERR_NONE;
+
+    sts = m_FileReader.Init(m_inPars.strSrcFile);
+    MSDK_CHECK_STATUS(sts, "Can't open input file");
+
+    sts = InitMfxBitstream(&m_Bitstream, 1024 * 1024);
+    MSDK_CHECK_STATUS(sts, "InitMfxBitstream failed");
+
+    m_DEC.reset(new MFXVideoDECODE(*m_session));
+
+    m_par.AsyncDepth  = 1;
+    m_par.mfx.CodecId = m_inPars.DecodeId;
+    m_par.IOPattern   = MFX_IOPATTERN_OUT_VIDEO_MEMORY;
+
+    sts = InitDecParams(m_par);
+    MSDK_CHECK_STATUS(sts, "Can't initialize decoder params");
+
+    return sts;
+}
+
+mfxStatus Decoder::GetActualFrameInfo(mfxFrameInfo & info)
+{
+    info = m_par.mfx.FrameInfo;
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus Decoder::Init()
+{
+    mfxStatus sts = MFX_ERR_NONE;
+
+    sts = m_DEC->Init(&m_par);
+    MSDK_CHECK_STATUS(sts, "Decoder initialization failed");
+
+    return sts;
+}
+
+mfxStatus Decoder::GetFrame(mfxFrameSurface1* & outSrf)
+{
+    mfxStatus sts = MFX_ERR_MORE_SURFACE;
+    mfxFrameSurface1 * workSrf = NULL;
+    mfxSyncPoint syncp = NULL;
+    bool bEOS = false;
+
+    while (MFX_ERR_MORE_DATA == sts || MFX_ERR_MORE_SURFACE == sts || MFX_ERR_NONE < sts)
+    {
+        if (MFX_WRN_DEVICE_BUSY == sts)
+        {
+            WaitForDeviceToBecomeFree(*m_session, m_LastSyncp, sts);
+        }
+        else if (MFX_ERR_MORE_DATA == sts)
+        {
+            sts = m_FileReader.ReadNextFrame(&m_Bitstream);
+            if (MFX_ERR_MORE_DATA == sts)
+            {
+                bEOS = true;
+                sts = MFX_ERR_NONE;
+            }
+            MSDK_BREAK_ON_ERROR(sts);
+        }
+        else if (MFX_ERR_MORE_SURFACE == sts)
+        {
+            workSrf = m_pOutSurfPool->GetFreeSurface();
+            MSDK_CHECK_POINTER(workSrf, MFX_ERR_MEMORY_ALLOC);
+        }
+
+        sts = m_DEC->DecodeFrameAsync(bEOS ? NULL : &m_Bitstream, workSrf, &outSrf, &syncp);
+
+        if (bEOS && MFX_ERR_MORE_DATA == sts)
+            break;
+
+        if (MFX_ERR_NONE == sts)
+        {
+            m_LastSyncp = syncp;
+        }
+
+        if (syncp && MFX_ERR_NONE < sts)
+        {
+            sts = MFX_ERR_NONE;
+        }
+
+    }
+    if (MFX_ERR_NONE == sts && syncp)
+    {
+        sts = m_session->SyncOperation(syncp, MSDK_WAIT_INTERVAL);
+        MSDK_CHECK_STATUS(sts, "Decoder SyncOperation failed");
+    }
+
+    return sts;
+}
+
+void Decoder::Close()
+{
+    return;
+}
+
+mfxStatus Decoder::InitDecParams(MfxVideoParamsWrapper & par)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+
+    sts = m_FileReader.ReadNextFrame(&m_Bitstream);
+    if (MFX_ERR_MORE_DATA == sts)
+        return sts;
+
+    MSDK_CHECK_STATUS(sts, "ReadNextFrame failed");
+
+    for (;;)
+    {
+        sts = m_DEC->DecodeHeader(&m_Bitstream, &par);
+
+        if (MFX_ERR_MORE_DATA == sts)
+        {
+            if (m_Bitstream.MaxLength == m_Bitstream.DataLength)
+            {
+                sts = ExtendMfxBitstream(&m_Bitstream, m_Bitstream.MaxLength * 2);
+                MSDK_CHECK_STATUS(sts, "ExtendMfxBitstream failed");
+            }
+
+            sts = m_FileReader.ReadNextFrame(&m_Bitstream);
+            if (MFX_ERR_MORE_DATA == sts)
+                return sts;
+        }
+        else
+            break;
+    }
+
+    return sts;
+}
+
+/**********************************************************************************/
+
 FileHandler::FileHandler(const msdk_char* _filename, const msdk_char* _mode)
     : m_file(NULL)
 {

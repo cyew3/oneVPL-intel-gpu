@@ -33,6 +33,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 struct SourceFrameInfo
 {
     msdk_char  strSrcFile[MSDK_MAX_FILENAME_LEN];
+    mfxU32     DecodeId;   // type of input coded video
     mfxU32     ColorFormat;
     mfxU16     nPicStruct;
     mfxU16     nWidth;
@@ -40,7 +41,8 @@ struct SourceFrameInfo
     mfxF64     dFrameRate;
 
     SourceFrameInfo()
-        : ColorFormat(MFX_FOURCC_I420)
+        : DecodeId(0)
+        , ColorFormat(MFX_FOURCC_I420)
         , nPicStruct(MFX_PICSTRUCT_PROGRESSIVE)
         , nWidth(0)
         , nHeight(0)

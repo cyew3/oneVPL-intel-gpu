@@ -51,11 +51,15 @@ void PrintHelp(const msdk_char *strAppName, const msdk_char *strErrorMessage)
     {
         msdk_printf(MSDK_STRING("ERROR: %s\n"), strErrorMessage);
     }
-    msdk_printf(MSDK_STRING("Usage: %s [<options>] -i InputYUVFile -o OutputEncodedFile -w width -h height\n"), strAppName);
+    msdk_printf(MSDK_STRING("Usage: %s [<options>] -i InputFile -o OutputEncodedFile -w width -h height\n"), strAppName);
     msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("Options: \n"));
+    msdk_printf(MSDK_STRING("   [-i <file-name>] - input YUV file\n"));
+    msdk_printf(MSDK_STRING("   [-i::h264|mpeg2|vc1 <file-name>] - input file and decoder type\n"));
+    msdk_printf(MSDK_STRING("   [-w] - width of input YUV file\n"));
+    msdk_printf(MSDK_STRING("   [-h] - height of input YUV file\n"));
     msdk_printf(MSDK_STRING("   [-nv12] - input is in NV12 color format, if not specified YUV420 is expected\n"));
-    msdk_printf(MSDK_STRING("   [-tff|bff|mixed] - input stream is interlaced, top|bottom field first, if not specified progressive is expected.\n"));
+    msdk_printf(MSDK_STRING("   [-tff|bff|mixed] - input stream is interlaced, top|bottom field first, if not specified progressive is expected\n"));
     msdk_printf(MSDK_STRING("                    - mixed means that picture structure should be obtained from the input stream\n"));
     msdk_printf(MSDK_STRING("   [-encode] - use extended FEI interface ENC+PAK (FEI ENCODE) (RC is forced to constant QP)\n"));
     msdk_printf(MSDK_STRING("   [-EncodedOrder] - use app-level reordering to encoded order (default is display; ENCODE only)\n"));
@@ -75,9 +79,9 @@ void PrintHelp(const msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-nobref] - do not use B-pyramid (by default the decision is made by library)\n"));
     msdk_printf(MSDK_STRING("   [-l numSlices] - number of slices \n"));
     msdk_printf(MSDK_STRING("   [-preenc] - use extended FEI interface PREENC (RC is forced to constant QP)\n"));
-    msdk_printf(MSDK_STRING("   [-mvout file] - use this to output MV predictors after PreENC\n"));
-    msdk_printf(MSDK_STRING("   [-mbstat file] - use this to output per MB distortions for each frame after PreENC\n"));
-    msdk_printf(MSDK_STRING("   [-mvpin file] - use this to input MV predictors for ENCODE (Encoded Order will be enabled automatically).\n"));
+    msdk_printf(MSDK_STRING("   [-mvout <file-name>] - use this to output MV predictors after PreENC\n"));
+    msdk_printf(MSDK_STRING("   [-mbstat <file-name>] - use this to output per MB distortions for each frame after PreENC\n"));
+    msdk_printf(MSDK_STRING("   [-mvpin <file-name>] - use this to input MV predictors for ENCODE (Encoded Order will be enabled automatically).\n"));
 
     msdk_printf(MSDK_STRING("\n"));
 }
@@ -123,6 +127,35 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU32 nArgNum, sInputParams& 
         {
             CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
             PARSE_CHECK(msdk_opt_read(strInput[++i], params.input.strSrcFile), "Input file", isParseInvalid);
+        }
+        else if (0 == msdk_strncmp(MSDK_STRING("-i::"), strInput[i], msdk_strlen(MSDK_STRING("-i::"))))
+        {
+            mfxStatus sts = StrFormatToCodecFormatFourCC(strInput[i] + 4, params.input.DecodeId);
+            if (sts != MFX_ERR_NONE)
+            {
+                PrintHelp(strInput[0], MSDK_STRING("ERROR: Failed to extract decoder type"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            i++;
+
+            if (msdk_strlen(strInput[i]) < MSDK_ARRAY_LEN(params.input.strSrcFile)){
+                msdk_opt_read(strInput[i], params.input.strSrcFile);
+            }
+            else{
+                PrintHelp(strInput[0], MSDK_STRING("ERROR: Too long input filename (limit is 1023 characters)!"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+
+            switch (params.input.DecodeId)
+            {
+            case MFX_CODEC_MPEG2:
+            case MFX_CODEC_AVC:
+            case MFX_CODEC_VC1:
+                break;
+            default:
+                PrintHelp(strInput[0], MSDK_STRING("ERROR: Unsupported encoded input (only AVC, MPEG2, VC1 is supported)"));
+                return MFX_ERR_UNSUPPORTED;
+            }
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-o")))
         {
@@ -281,7 +314,7 @@ mfxStatus CheckOptions(const sInputParams params, const msdk_char* appName)
         PrintHelp(appName, "Source file name not found");
         return MFX_ERR_UNSUPPORTED;
     }
-    if (0 == params.input.nWidth || 0 == params.input.nHeight || params.input.nWidth < 0 || params.input.nHeight < 0)
+    if ((0 == params.input.DecodeId) && (0 == params.input.nWidth || 0 == params.input.nHeight || params.input.nWidth < 0 || params.input.nHeight < 0))
     {
         PrintHelp(appName, "-w -h is not specified");
         return MFX_ERR_UNSUPPORTED;

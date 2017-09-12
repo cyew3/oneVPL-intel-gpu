@@ -69,7 +69,7 @@ public:
     virtual mfxStatus GetFrame(mfxFrameSurface1* & pSurf) = 0;
 
 protected:
-    SourceFrameInfo m_inPars; 
+    SourceFrameInfo m_inPars;
     mfxFrameInfo    m_frameInfo;
     SurfacesPool*   m_pOutSurfPool;
 
@@ -108,6 +108,46 @@ private:
     DISALLOW_COPY_AND_ASSIGN(YUVReader);
 };
 
+class Decoder : public IYUVSource
+{
+public:
+    Decoder(const SourceFrameInfo& inPars, SurfacesPool* sp, MFXVideoSession* session)
+        : IYUVSource(inPars, sp)
+        , m_session(session)
+    {
+        MSDK_ZERO_MEMORY(m_Bitstream);
+        m_Bitstream.TimeStamp=(mfxU64)-1;
+    }
+
+    virtual ~Decoder()
+    {
+        WipeMfxBitstream(&m_Bitstream);
+    }
+
+    virtual mfxStatus QueryIOSurf(mfxFrameAllocRequest* request);
+    virtual mfxStatus PreInit();
+    virtual mfxStatus Init();
+    virtual void      Close();
+
+    virtual mfxStatus GetActualFrameInfo(mfxFrameInfo & info);
+    virtual mfxStatus GetFrame(mfxFrameSurface1* & pSurf);
+
+protected:
+    mfxStatus InitDecParams(MfxVideoParamsWrapper & par);
+
+protected:
+    CSmplBitstreamReader           m_FileReader;
+    mfxBitstream                   m_Bitstream;
+
+    MFXVideoSession*               m_session;
+    std::auto_ptr<MFXVideoDECODE>  m_DEC;
+    MfxVideoParamsWrapper          m_par;
+
+    mfxSyncPoint                   m_LastSyncp;
+
+private:
+    DISALLOW_COPY_AND_ASSIGN(Decoder);
+};
 
 /**********************************************************************************/
 

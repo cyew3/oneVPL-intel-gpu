@@ -71,11 +71,11 @@ mfxStatus CEncodingPipeline::Init()
             MSDK_CHECK_STATUS(sts, "FEI ENCODE PreInit failed");
         }
 
-        sts = InitComponents();
-        MSDK_CHECK_STATUS(sts, "InitComponents failed");
-
         sts = AllocFrames();
         MSDK_CHECK_STATUS(sts, "AllocFrames failed");
+
+        sts = InitComponents();
+        MSDK_CHECK_STATUS(sts, "InitComponents failed");
     }
     catch (mfxError& ex)
     {
@@ -477,7 +477,10 @@ MfxVideoParamsWrapper GetEncodeParams(const sInputParams& user_pars, const mfxFr
 
 IYUVSource* CEncodingPipeline::CreateYUVSource()
 {
-    return new YUVReader(m_inParams.input, &m_EncSurfPool);
+    if (m_inParams.input.DecodeId)
+        return new Decoder(m_inParams.input, &m_EncSurfPool, &m_mfxSession);
+    else
+        return new YUVReader(m_inParams.input, &m_EncSurfPool);
 }
 
 FEI_Preenc* CEncodingPipeline::CreatePreENC(mfxFrameInfo& in_fi)
