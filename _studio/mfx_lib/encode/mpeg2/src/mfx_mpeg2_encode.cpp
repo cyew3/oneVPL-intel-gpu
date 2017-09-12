@@ -1034,7 +1034,13 @@ mfxStatus MFXVideoENCODEMPEG2::ResetImpl(mfxVideoParam *par_input)
     m_BitstreamLen        = 0;
     m_nFrameInGOP         = 0;
 
-    m_GopOptFlag  = par->mfx.GopOptFlag;
+    m_GopOptFlag = par->mfx.GopOptFlag;
+    if (m_GopOptFlag & MFX_GOP_STRICT)
+    {
+        m_GopOptFlag &= ~MFX_GOP_STRICT;
+        warning = true;
+    }
+
     m_IdrInterval = par->mfx.IdrInterval;
     m_bAddEOS     = (ext && (ext->EndOfSequence == MFX_CODINGOPTION_ON));
 
