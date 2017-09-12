@@ -6004,11 +6004,12 @@ Used by the application to specify dirty regions within a frame during encoding.
 `Header.BufferId` | Must be [MFX_EXTBUFF_DIRTY_RECTANGLES](#ExtendedBufferID).
 `NumRect` | Number of dirty rectangles.
 `Rect` | Array of dirty rectangles.
-`Left`, `Top`, `Right`, `Bottom` | Dirty region location. Should be aligned to MB boundaries (should be dividable by 16). If not, the SDK encoder truncates it to MB boundaries, for example, both 17 and 31 will be truncated to 16.
+`Left`, `Top`, `Right`, `Bottom` | Dirty region location. Dirty rectangle definition is using end-point exclusive notation. In other words, the pixel with (Right, Bottom) coordinates lies immediately outside of the Dirty rectangle. Left, Top, Right, Bottom should be aligned by codec-specific block boundaries (should be dividable by 16 for AVC, or by block size (8, 16, 32 or 64, depends on platform) for HEVC). Every Dirty rectangle with unaligned coordinates will be expanded by SDK to minimal-area block-aligned Dirty rectangle, enclosing the original one. For example (5, 5, 15, 31) Dirty rectangle will be expanded to (0, 0, 16, 32) for AVC encoder, or to (0, 0, 32, 32) for HEVC, if block size is 32. Dirty rectangle (0, 0, 0, 0) is a valid dirty rectangle and means that frame is not changed.
 
 **Change History**
 
 This structure is available since SDK API 1.16.
+The SDK API **TBD** adds clarification that Dirty rectangle Right, Bottom are considered exclusive and alignment rules changed. Added clarification about (0, 0, 0, 0) Dirty rectangle case.
 
 ## <a id='mfxExtMoveRect'>mfxExtMoveRect</a>
 
