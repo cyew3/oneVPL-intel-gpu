@@ -134,8 +134,8 @@ namespace avce_dirty_rect {
 
         {/*05*/{ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE },
             QUERY | INIT,{
-            RECT_PARS(DIRTYRECT,                0, 1,   0, 0, 16, 0), // Top == Bottom
-            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, 0, 16, 0)
+            RECT_PARS(DIRTYRECT,                0, 1,   0, 16, 32, 16), // Top == Bottom
+            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, 16, 32,  0)
         } },
 
         {/*06*/{ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE },
@@ -150,13 +150,39 @@ namespace avce_dirty_rect {
             RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, 0, 16,    0)
         } },
 
-        {/*08*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE },
-            QUERY | INIT | ENCODE,{
-            RECT_PARS(DIRTYRECT,                0, 1,   1, 1, 33, 33),
-            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, 0, 32, 32)
+        {/*08*/{ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE },
+        QUERY | INIT,{
+            RECT_PARS(DIRTYRECT,                0, 1,   32, 0, 16, 16), // Left > Rigth
+            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   32, 0, 0,  16)
         } },
 
-        {/*09*/{ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
+        {/*09*/{ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE },
+        QUERY | INIT,{
+            RECT_PARS(DIRTYRECT,                0, 1,   0, 32, 16, 16), // Top > Bottom
+            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, 32, 16,  0)
+        } },
+
+        {/*10*/{ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE },
+        QUERY | INIT,{
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  0 },
+            RECT_PARS(DIRTYRECT,                0, 1,   32, 0, 16, 16), // Left > Rigth, Width = 0
+            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   32, 0, 0,  16)
+        } },
+
+        {/*11*/{ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE },
+        QUERY | INIT,{
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height,  0 },
+            RECT_PARS(DIRTYRECT,                0, 1,   0, 32, 16, 16), // Top > Bottom, Height = 0
+            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, 32, 16,  0)
+        } },
+
+        {/*12*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE },
+            QUERY | INIT | ENCODE,{
+            RECT_PARS(DIRTYRECT,                0, 1,   1, 1, 33, 33),
+            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, 0, 48, 48)
+        } },
+
+        {/*13*/{ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
             QUERY | INIT | ENCODE,{
             RECT_PARS(DIRTYRECT,                0, 2,   0, 0, 16, 16), //Rect[0]
             RECT_PARS(DIRTYRECT,                1, 2,   0, 0, 32, 32), //Rect[1]
@@ -165,13 +191,13 @@ namespace avce_dirty_rect {
             RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 1, 2,   0, 0, 32, 32),
         } },
 
-        {/*10*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE },
+        {/*14*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE },
             QUERY | INIT,{
             { DIRTYRECT, &tsStruct::mfxExtDirtyRect.NumRect, 300 }, // MAX NumRect is 256
             { DIRTYRECT_EXPECTED_QUERY, &tsStruct::mfxExtDirtyRect.NumRect, 256 }
         } },
 
-        {/*11*/{ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
+        {/*15*/{ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
             ENCODE,{
             RECT_PARS(DIRTYRECT,                0, 1,   0, 0, 32, 32),
             RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, 0, 32, 32)
@@ -211,6 +237,7 @@ namespace avce_dirty_rect {
         m_pParOut = &out_par;
 
         if (tc.type & QUERY) {
+            SETPARS(m_par, MFX_PAR);
             SETPARS(extDirtyRect, DIRTYRECT);
             int num_rect = ((mfxExtDirtyRect*)extDirtyRect)->NumRect;
             if (num_rect == 300)
@@ -234,6 +261,7 @@ namespace avce_dirty_rect {
         }
 
         if (tc.type & INIT) {
+            SETPARS(m_par, MFX_PAR);
             SETPARS(extDirtyRect, DIRTYRECT);
             int num_rect = ((mfxExtDirtyRect*)extDirtyRect)->NumRect;
             if (num_rect == 300)
@@ -272,6 +300,7 @@ namespace avce_dirty_rect {
             m_ctrl.AddExtBuffer(MFX_EXTBUFF_DIRTY_RECTANGLES, sizeof(mfxExtDirtyRect));
             extDirtyRect = m_ctrl.GetExtBuffer(MFX_EXTBUFF_DIRTY_RECTANGLES);
 
+            SETPARS(m_par, MFX_PAR);
             SETPARS(extDirtyRect, DIRTYRECT);
             int num_rect = ((mfxExtDirtyRect*)extDirtyRect)->NumRect;
 

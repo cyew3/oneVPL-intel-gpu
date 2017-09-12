@@ -2105,34 +2105,7 @@ mfxStatus MfxHwH264Encode::CheckAndFixRectQueryLike(
     if (rect->Left == 0 && rect->Right == 0 && rect->Top == 0 && rect->Bottom == 0)
         return checkSts;
 
-    // check that rectangle is aligned to MB, correct it if not
-    if (!CheckMbAlignment(rect->Left))   checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-    if (!CheckMbAlignment(rect->Right))  checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-    if (!CheckMbAlignment(rect->Top))    checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-    if (!CheckMbAlignment(rect->Bottom)) checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-
-    // check that rectangle dimensions don't conflict with each other and don't exceed frame size
-    if (par.mfx.FrameInfo.Width)
-    {
-        if(!CheckRangeDflt(rect->Left, mfxU32(0), mfxU32(par.mfx.FrameInfo.Width -16), mfxU32(0))) checkSts = MFX_ERR_UNSUPPORTED;
-        if(!CheckRangeDflt(rect->Right, mfxU32(rect->Left + 16), mfxU32(par.mfx.FrameInfo.Width), mfxU32(0))) checkSts = MFX_ERR_UNSUPPORTED;
-    }
-    else if(rect->Right && rect->Right < (rect->Left + 16))
-        {
-            checkSts = MFX_ERR_UNSUPPORTED;
-            rect->Right = 0;
-        }
-
-    if (par.mfx.FrameInfo.Height)
-    {
-        if(!CheckRangeDflt(rect->Top, mfxU32(0), mfxU32(par.mfx.FrameInfo.Height -16), mfxU32(0))) checkSts = MFX_ERR_UNSUPPORTED;
-        if(!CheckRangeDflt(rect->Bottom, mfxU32(rect->Top + 16), mfxU32(par.mfx.FrameInfo.Height), mfxU32(0))) checkSts = MFX_ERR_UNSUPPORTED;
-    }
-    else if(rect->Bottom && rect->Bottom < (rect->Top + 16))
-        {
-            checkSts = MFX_ERR_UNSUPPORTED;
-            rect->Bottom = 0;
-        }
+    checkSts = CheckAndFixOpenRectQueryLike(par, rect);
 
     return checkSts;
 }
@@ -2158,10 +2131,10 @@ mfxStatus MfxHwH264Encode::CheckAndFixOpenRectQueryLike(
     mfxStatus checkSts = MFX_ERR_NONE;
 
     // check that rectangle is aligned to MB, correct it if not
-    if (!CheckMbAlignment(rect->Left))   checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-    if (!CheckMbAlignmentAndUp(rect->Right))  checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-    if (!CheckMbAlignment(rect->Top))    checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-    if (!CheckMbAlignmentAndUp(rect->Bottom)) checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+    if (!CheckMbAlignment(rect->Left))          checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+    if (!CheckMbAlignment(rect->Top))           checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+    if (!CheckMbAlignmentAndUp(rect->Right))    checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+    if (!CheckMbAlignmentAndUp(rect->Bottom))   checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
 
     // check that rectangle dimensions don't conflict with each other and don't exceed frame size
     if (par.mfx.FrameInfo.Width)
@@ -2170,7 +2143,7 @@ mfxStatus MfxHwH264Encode::CheckAndFixOpenRectQueryLike(
         if (!CheckRangeDflt(rect->Right, mfxU32(rect->Left + 16), mfxU32(par.mfx.FrameInfo.Width), mfxU32(0))) checkSts = MFX_ERR_UNSUPPORTED;
     }
 
-    if (rect->Right && rect->Right < rect->Left )
+    if (rect->Right && rect->Right < rect->Left)
     {
         checkSts = MFX_ERR_UNSUPPORTED;
         rect->Right = 0;
@@ -2182,7 +2155,7 @@ mfxStatus MfxHwH264Encode::CheckAndFixOpenRectQueryLike(
         if (!CheckRangeDflt(rect->Bottom, mfxU32(rect->Top + 16), mfxU32(par.mfx.FrameInfo.Height), mfxU32(0))) checkSts = MFX_ERR_UNSUPPORTED;
     }
 
-    if (rect->Bottom && rect->Bottom <= rect->Top )
+    if (rect->Bottom && rect->Bottom <= rect->Top)
     {
         checkSts = MFX_ERR_UNSUPPORTED;
         rect->Bottom = 0;
