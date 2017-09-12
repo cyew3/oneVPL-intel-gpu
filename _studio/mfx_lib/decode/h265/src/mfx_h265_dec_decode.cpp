@@ -297,6 +297,23 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
         m_response_alien = m_response;
         m_FrameAllocator->SetExternalFramesResponse(&m_response_alien);
         request = request_internal;
+
+        if (m_platform != MFX_PLATFORM_SOFTWARE)
+        {
+            if (   par->mfx.FrameInfo.FourCC == MFX_FOURCC_P010
+    #ifdef PRE_SI_TARGET_PLATFORM_GEN11
+                || par->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210
+    #endif
+    #ifdef PRE_SI_TARGET_PLATFORM_GEN12
+                || par->mfx.FrameInfo.FourCC == MFX_FOURCC_P016
+                || par->mfx.FrameInfo.FourCC == MFX_FOURCC_Y216
+                || par->mfx.FrameInfo.FourCC == MFX_FOURCC_Y416
+    #endif
+                )
+
+                request.Info.Shift = 1;
+        }
+
         mfxSts = m_core->AllocFrames(&request_internal, &m_response, true);
         if (mfxSts < MFX_ERR_NONE)
             return mfxSts;
