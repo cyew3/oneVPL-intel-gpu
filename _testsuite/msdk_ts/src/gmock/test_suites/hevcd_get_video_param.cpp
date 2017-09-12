@@ -518,7 +518,7 @@ char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOUR
 char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_Y210>)
 { return "conformance/hevc/10bit/inter_422_10.bin"; }
 char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_Y410>)
-{ return "conformance/hevc/StressBitstreamEncode/rext444_10b/Stress_HEVC_Rext444_10bHT62_432x240_30fps_302_inter_stress_2.2.hevc"; }
+{ return "conformance/hevc/10bit/GENERAL_10b_444_RExt_Sony_1.bit"; }
 
 /* 12 bit */
 char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_P016>)
