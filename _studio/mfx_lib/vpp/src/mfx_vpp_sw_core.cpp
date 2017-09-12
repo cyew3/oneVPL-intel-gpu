@@ -539,6 +539,9 @@ mfxStatus VideoVPPBase::GetVideoParam(mfxVideoParam *par)
                     case MFX_EXTBUFF_VPP_DI_30i60p:
                     case MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO:
                     case MFX_EXTBUFF_VPP_MIRRORING:
+#ifndef MFX_FUTURE_FEATURE_DISABLE
+                    case MFX_EXTBUFF_VPP_COLOR_CONVERSION:
+#endif
                     {
                         if(numUsedFilters + 1 > pVPPHint->NumAlg)
                             return MFX_ERR_UNDEFINED_BEHAVIOR;
