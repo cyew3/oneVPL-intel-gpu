@@ -377,10 +377,11 @@ Example 2 shows the pseudo code of the encoding procedure. The following describ
   [MFXVideoCORE_SyncOperation](#MFXVideoCORE_SyncOperation) function to synchronize the encoding operation before retrieving the encoded bitstream.
 - At the end of the stream, the application continuously calls the [MFXVideoENCODE_EncodeFrameAsync](#MFXVideoENCODE_EncodeFrameAsync) function with NULL surface pointer to drain any remaining bitstreams cached within the SDK encoder, until the function returns [MFX_ERR_MORE_DATA](#mfxStatus).
 
+**Note:** It is the application's responsibility to fill pixels outside of crop window when it is smaller than frame to be encoded. Especially in cases when crops are not aligned to minimum coding block size (16 for AVC, 8 for HEVC and VP9).
+
 ### Configuration Change
 
-The application changes configuration during encoding by calling [MFXVideoENCODE_Reset](#MFXVideoENCODE_Reset) function. Depending on difference in configuration parameters before and after change, the SDK encoder either continues current sequence or starts a new one. If the SDK encoder starts a new sequence it completely resets internal state and begins a
-new sequence with IDR frame.
+The application changes configuration during encoding by calling [MFXVideoENCODE_Reset](#MFXVideoENCODE_Reset) function. Depending on difference in configuration parameters before and after change, the SDK encoder either continues current sequence or starts a new one. If the SDK encoder starts a new sequence it completely resets internal state and begins a new sequence with IDR frame.
 
 The application controls encoder behavior during parameter change by attaching [mfxExtEncoderResetOption](#mfxExtEncoderResetOption) to [mfxVideoParam](#mfxVideoParam) structure during reset. By using this structure, the application instructs encoder to start or not to start a new sequence after reset. In some cases request to continue current sequence cannot be satisfied and encoder fails during reset. To avoid such cases the application may query reset outcome before actual reset by calling [MFXVideoENCODE_Query](#MFXVideoENCODE_Query) function with [mfxExtEncoderResetOption](#mfxExtEncoderResetOption) attached to [mfxVideoParam](#mfxVideoParam) structure.
 
