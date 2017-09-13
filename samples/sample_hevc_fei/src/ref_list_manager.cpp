@@ -666,6 +666,10 @@ HevcTask* EncodeOrderControl::ReorderFrame(mfxFrameSurface1 * surface)
 
         task_to_encode->m_surf->Data.FrameOrder = task_to_encode->m_fo;
 
+        // get free pointer for DS surface which will be filled in PreENC class
+        std::vector<mfxFrameSurface1*>::iterator it = std::find(m_ds_pSurf.begin(), m_ds_pSurf.end(), (mfxFrameSurface1*)NULL);
+        task_to_encode->m_ds_surf = it != m_ds_pSurf.end() ? &(*it) : NULL;
+
         HevcTask & task = *task_to_encode;
         task.m_lastIPoc = m_lastTask.m_lastIPoc;
         task.m_lastRAP  = m_lastTask.m_lastRAP;
@@ -748,6 +752,11 @@ void EncodeOrderControl::ReleaseResources(HevcTask & task)
                 msdk_atomic_dec16((volatile mfxU16*)&task.m_surf->Data.Locked);
                 task.m_surf = NULL;
             }
+            if (task.m_ds_surf && *task.m_ds_surf)
+            {
+                msdk_atomic_dec16((volatile mfxU16*)&(*task.m_ds_surf)->Data.Locked);
+                *task.m_ds_surf = NULL;
+            }
         }
 
         for (mfxU16 i = 0, j = 0; !isDpbEnd(task.m_dpb[TASK_DPB_BEFORE], i); i ++)
@@ -762,6 +771,11 @@ void EncodeOrderControl::ReleaseResources(HevcTask & task)
                 {
                     msdk_atomic_dec16((volatile mfxU16*)&task.m_dpb[TASK_DPB_BEFORE][i].m_surf->Data.Locked);
                     task.m_dpb[TASK_DPB_BEFORE][i].m_surf = NULL;
+                }
+                if (task.m_dpb[TASK_DPB_BEFORE][i].m_ds_surf && *task.m_dpb[TASK_DPB_BEFORE][i].m_ds_surf)
+                {
+                    msdk_atomic_dec16((volatile mfxU16*)&(*task.m_dpb[TASK_DPB_BEFORE][i].m_ds_surf)->Data.Locked);
+                    *task.m_dpb[TASK_DPB_BEFORE][i].m_ds_surf = NULL;
                 }
             }
         }

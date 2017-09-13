@@ -98,6 +98,14 @@ public:
         m_reordering.resize(0);
         m_encoding.resize(0);
         m_secondFieldInfo.Reset();
+
+        // DS surfaces will be assigned to task after reorder, so pointer to surface will be null
+        // in tasks where this surface is present in DPB. It will lead to surfaces lock.
+        // To avoid it, create pool of pointers to mfxFrameSurface1* and assign free pointer to task
+        // when DS surface will be put in task, every tasks with this pointer in DPB will be updated
+        // because of shallow copy in reorder class
+        m_ds_pSurf.resize(MAX_DPB_SIZE);
+        std::fill(m_ds_pSurf.begin(), m_ds_pSurf.end(), (mfxFrameSurface1*)NULL);
     }
 
     HevcTask* GetTask(mfxFrameSurface1 * surface)
@@ -143,17 +151,19 @@ private:
     const MfxVideoParamsWrapper m_par;
     const bool m_lockRawRef;
 
-    typedef std::list<HevcTask>   TaskList;
-    TaskList                      m_free;
-    TaskList                      m_reordering;
-    TaskList                      m_encoding;
+    typedef std::list<HevcTask>     TaskList;
+    TaskList                        m_free;
+    TaskList                        m_reordering;
+    TaskList                        m_encoding;
 
-    HevcTask                      m_lastTask;
+    std::vector<mfxFrameSurface1*>  m_ds_pSurf; // list of pointers to downsampled frames
 
-    mfxU32                        m_frameOrder;
-    mfxU32                        m_lastIDR;
+    HevcTask                        m_lastTask;
 
-    SecondFieldInfo               m_secondFieldInfo;
+    mfxU32                          m_frameOrder;
+    mfxU32                          m_lastIDR;
+
+    SecondFieldInfo                 m_secondFieldInfo;
 
 private:
     DISALLOW_COPY_AND_ASSIGN(EncodeOrderControl);

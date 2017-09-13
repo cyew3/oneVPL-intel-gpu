@@ -619,7 +619,7 @@ mfxStatus MFX_VPP::QueryIOSurf(mfxFrameAllocRequest* request)
     return m_mfxVPP.QueryIOSurf(&m_videoParams, request);
 }
 
-const mfxFrameInfo& MFX_VPP::GetOutFrameInfo()
+mfxFrameInfo MFX_VPP::GetOutFrameInfo()
 {
     return m_videoParams.vpp.Out;
 }

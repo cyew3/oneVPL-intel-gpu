@@ -315,7 +315,7 @@ public:
     mfxStatus QueryIOSurf(mfxFrameAllocRequest* request);
 
     mfxStatus PreInit();
-    const mfxFrameInfo& GetOutFrameInfo();
+    mfxFrameInfo GetOutFrameInfo();
 
     mfxStatus ProcessFrame(mfxFrameSurface1* pInSurf, mfxFrameSurface1* & pOutSurf);
 

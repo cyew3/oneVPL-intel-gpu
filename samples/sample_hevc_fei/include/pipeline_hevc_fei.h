@@ -62,7 +62,7 @@ private:
 
     std::auto_ptr<IYUVSource>              m_pYUVSource; // source of raw YUV data for encoder (e.g. YUV file reader, decoder, etc)
     std::auto_ptr<EncodeOrderControl>      m_pOrderCtrl;
-    std::auto_ptr<FEI_Preenc>              m_pFEI_PreENC;
+    std::auto_ptr<IPreENC>                 m_pFEI_PreENC;
     std::auto_ptr<FEI_Encode>              m_pFEI_Encode;
 
     std::auto_ptr<HEVCEncodeParamsChecker> m_pParamChecker;
@@ -79,7 +79,7 @@ private:
     mfxStatus DrainBufferedFrames();
 
     IYUVSource* CreateYUVSource();
-    FEI_Preenc* CreatePreENC(mfxFrameInfo& in_fi);
+    IPreENC*    CreatePreENC(mfxFrameInfo& in_fi);
     FEI_Encode* CreateEncode(mfxFrameInfo& in_fi);
 
     DISALLOW_COPY_AND_ASSIGN(CEncodingPipeline);

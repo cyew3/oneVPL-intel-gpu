@@ -36,6 +36,13 @@ MfxVideoParamsWrapper IPreENC::GetVideoParam()
     return m_videoParams;
 }
 
+mfxStatus IPreENC::UpdateFrameInfo(mfxFrameInfo& info)
+{
+    m_videoParams.mfx.FrameInfo = info;
+
+    return MFX_ERR_NONE;
+}
+
 mfxStatus IPreENC::ResetExtBuffers(const MfxVideoParamsWrapper & videoParams)
 {
     for (size_t i = 0; i < m_mvs.size(); ++i)
@@ -122,7 +129,9 @@ FEI_Preenc::~FEI_Preenc()
 
 mfxStatus FEI_Preenc::Init()
 {
-    mfxStatus sts = m_mfxPREENC.Init(&m_videoParams);
+    mfxStatus sts = MFX_ERR_NONE;
+
+    sts = m_mfxPREENC.Init(&m_videoParams);
     MSDK_CHECK_STATUS(sts, "FEI PreENC Init failed");
     MSDK_CHECK_WRN(sts, "FEI PreENC Init");
 
@@ -155,6 +164,8 @@ mfxStatus FEI_Preenc::Reset(mfxU16 width, mfxU16 height)
 mfxStatus FEI_Preenc::QueryIOSurf(mfxFrameAllocRequest* request)
 {
     MSDK_CHECK_NOT_EQUAL(m_videoParams.AsyncDepth , 1, MFX_ERR_UNSUPPORTED);
+    MSDK_CHECK_POINTER(request, MFX_ERR_NULL_PTR);
+
     // PreENC works with raw references.
     // So it needs to have a NumRefFrame number of frames.
     MSDK_MEMCPY_VAR(request->Info, &m_videoParams.mfx.FrameInfo, sizeof(mfxFrameInfo));
@@ -225,6 +236,10 @@ mfxStatus FEI_Preenc::DumpResult(HevcTask* task)
         {
             // count number of MB 16x16, as PreENC works as AVC
             mfxU32 numMB = (MSDK_ALIGN16(task->m_surf->Info.Width) * MSDK_ALIGN16(task->m_surf->Info.Height)) >> 8;
+            if (*task->m_ds_surf)
+            {
+                numMB = (MSDK_ALIGN16((*task->m_ds_surf)->Info.Width) * MSDK_ALIGN16((*task->m_ds_surf)->Info.Height)) >> 8;
+            }
 
             for (mfxU32 k = 0; k < numMB; k++)
             {
@@ -247,7 +262,9 @@ mfxStatus FEI_Preenc::DumpResult(HevcTask* task)
 
 mfxStatus FEI_Preenc::PreEncFrame(HevcTask * task)
 {
-    mfxStatus sts =  PreEncMultiFrames(task);
+    mfxStatus sts = MFX_ERR_NONE;
+
+    sts =  PreEncMultiFrames(task);
     MSDK_CHECK_STATUS(sts, "PreENC: PreEncMultiFrames failed");
 
     //drop output data to output file
@@ -264,7 +281,7 @@ mfxStatus FEI_Preenc::PreEncOneFrame(HevcTask & currTask, const RefIdxPair & ref
 
     mfxENCInputWrap & in = m_syncp.second.first;
 
-    in.InSurface  = currTask.m_surf;
+    in.InSurface  = *currTask.m_ds_surf ? *currTask.m_ds_surf : currTask.m_surf;
     in.NumFrameL0 = (refFramesIdx.RefL0 != IDX_INVALID);
     in.NumFrameL1 = (refFramesIdx.RefL1 != IDX_INVALID);
 
@@ -276,8 +293,22 @@ mfxStatus FEI_Preenc::PreEncOneFrame(HevcTask & currTask, const RefIdxPair & ref
     ctrl->RefPictureType[0] = ctrl->RefPictureType[1] = MFX_PICTYPE_FRAME;
     ctrl->DownsampleReference[0] = ctrl->DownsampleReference[1] = MFX_CODINGOPTION_OFF;
 
-    ctrl->RefFrame[0] = refFramesIdx.RefL0 != IDX_INVALID ? DPB[refFramesIdx.RefL0].m_surf : NULL;
-    ctrl->RefFrame[1] = refFramesIdx.RefL1 != IDX_INVALID ? DPB[refFramesIdx.RefL1].m_surf : NULL;
+    ctrl->RefFrame[0] = NULL;
+    ctrl->RefFrame[1] = NULL;
+    if (refFramesIdx.RefL0 != IDX_INVALID)
+    {
+        if (*currTask.m_ds_surf)
+            ctrl->RefFrame[0] = *DPB[refFramesIdx.RefL0].m_ds_surf;
+        else
+            ctrl->RefFrame[0] = DPB[refFramesIdx.RefL0].m_surf;
+    }
+    if (refFramesIdx.RefL1 != IDX_INVALID)
+    {
+        if (*currTask.m_ds_surf)
+            ctrl->RefFrame[1] = *DPB[refFramesIdx.RefL1].m_ds_surf;
+        else
+            ctrl->RefFrame[1] = DPB[refFramesIdx.RefL1].m_surf;
+    }
 
     // disable MV output for I frames / if no reference frames provided
     ctrl->DisableMVOutput = (currTask.m_frameType & MFX_FRAMETYPE_I) || (IDX_INVALID == refFramesIdx.RefL0 && IDX_INVALID == refFramesIdx.RefL1);
@@ -362,4 +393,174 @@ mfxStatus FEI_Preenc::PreEncMultiFrames(HevcTask* pTask)
     }
 
     return sts;
+}
+
+/**************************************************************************************************/
+
+PreencDownsampler::PreencDownsampler(IPreENC* preenc, mfxU16 ds_factor, MFXVideoSession* parent_session,
+    MFXFrameAllocator* allocator)
+    : m_preenc(preenc)
+    , m_parentSession(parent_session)
+    , m_ds_factor(ds_factor)
+    , m_DsSurfacePool(allocator)
+{
+    if (!m_parentSession)
+        throw mfxError(MFX_ERR_NOT_INITIALIZED, "Not defined parent session in PreencDownsampler");
+    if (!m_preenc.get())
+        throw mfxError(MFX_ERR_NOT_INITIALIZED, "Not defined PreENC in PreencDownsampler");
+}
+
+PreencDownsampler::~PreencDownsampler()
+{
+    m_VPP.reset();
+}
+
+mfxStatus PreencDownsampler::Init()
+{
+    mfxStatus sts = m_VPP->Init();
+    MSDK_CHECK_STATUS(sts, "VPP DS Init failed");
+
+    sts = m_preenc->Init();
+    MSDK_CHECK_STATUS(sts, "PreENC Init failed");
+
+    return sts;
+}
+
+mfxStatus PreencDownsampler::QueryIOSurf(mfxFrameAllocRequest* request)
+{
+    MSDK_CHECK_POINTER(request, MFX_ERR_NULL_PTR);
+
+    mfxStatus sts = m_preenc->QueryIOSurf(request);
+    MSDK_CHECK_STATUS(sts, "PreENC QueryIOSurf failed");
+
+    // reorder works before VPP DS and it locks full resolution surface even if it's not required,
+    // so return VPP input + PreEnc requests instead of only VPP input request
+    // to avoid lack full resolution surfaces in pipeline
+    mfxFrameAllocRequest vpp_request[2];
+    Zero(&vpp_request[0], 2);
+    sts = m_VPP->QueryIOSurf(vpp_request);
+    MSDK_CHECK_STATUS(sts, "VPP DS QueryIOSurf failed");
+
+    request->Info = vpp_request[0].Info;
+    request->NumFrameMin += request->NumFrameSuggested += vpp_request[0].NumFrameSuggested;
+    request->Type |= vpp_request[0].Type;
+
+    return sts;
+}
+
+mfxStatus PreencDownsampler::PreInit()
+{
+    mfxStatus sts = MFX_ERR_NONE;
+
+    // create session for VPP DS
+    {
+        sts = m_vpp_session.Init(MFX_IMPL_HARDWARE_ANY | MFX_IMPL_VIA_VAAPI, NULL);
+        MSDK_CHECK_STATUS(sts, "Init mfxSession for VPP DS failed");
+
+        mfxHDL hdl = NULL;
+        sts = m_parentSession->GetHandle(MFX_HANDLE_VA_DISPLAY, &hdl);
+        MSDK_CHECK_STATUS(sts, "PreencDownsampler: m_parentSession->GetHandle failed");
+
+        sts = m_vpp_session.SetHandle(MFX_HANDLE_VA_DISPLAY, hdl);
+        MSDK_CHECK_STATUS(sts, "SetHandle mfxSession for VPP DS failed");
+
+        sts = m_parentSession->JoinSession(m_vpp_session);
+        MSDK_CHECK_STATUS(sts, "PreencDownsampler: m_parentSession->JoinSession failed");
+
+        MFXFrameAllocator * allocator = m_DsSurfacePool.GetAllocator();
+        MSDK_CHECK_POINTER(allocator, MFX_ERR_NOT_INITIALIZED);
+
+        sts = m_vpp_session.SetFrameAllocator(allocator);
+        MSDK_CHECK_STATUS(sts, "SetFrameAllocator mfxSession for VPP DS failed");
+    }
+
+    // Fill params and create VPP instance
+    {
+        MfxVideoParamsWrapper par = CreateVppDSParams(m_preenc->GetVideoParam().mfx.FrameInfo);
+
+        m_VPP.reset(new MFX_VPP(&m_vpp_session, par, &m_DsSurfacePool));
+        MSDK_CHECK_POINTER(m_VPP.get(), MFX_ERR_NOT_INITIALIZED);
+
+        sts = m_VPP->PreInit();
+        MSDK_CHECK_STATUS(sts, "VPP DS PreInit failed");
+    }
+
+    mfxFrameInfo vpp_out = m_VPP->GetOutFrameInfo();
+    sts = m_preenc->UpdateFrameInfo(vpp_out);
+    MSDK_CHECK_STATUS(sts, "PreENC UpdateFrameInfo failed");
+
+    sts = m_preenc->PreInit();
+    MSDK_CHECK_STATUS(sts, "PreENC PreInit failed");
+
+
+    // alloc frames for VPP downsampler and PreENC
+    {
+        mfxFrameAllocRequest alloc_request;
+        MSDK_ZERO_MEMORY(alloc_request);
+
+        // get preenc request
+        sts = m_preenc->QueryIOSurf(&alloc_request);
+        MSDK_CHECK_STATUS(sts, "FEI PreENC QueryIOSurf failed");
+
+        // get VPP request
+        mfxFrameAllocRequest vpp_request[2];
+        Zero(&vpp_request[0], 2);
+        sts = m_VPP->QueryIOSurf(vpp_request);
+        MSDK_CHECK_STATUS(sts, "VPP DS QueryIOSurf failed");
+
+        alloc_request.Type |= vpp_request[1].Type;
+        alloc_request.NumFrameSuggested += vpp_request[1].NumFrameSuggested;
+        alloc_request.NumFrameMin = alloc_request.NumFrameSuggested;
+        sts = m_DsSurfacePool.AllocSurfaces(alloc_request);
+        MSDK_CHECK_STATUS(sts, "Alloc DS surfaces failed");
+    }
+
+    return sts;
+}
+
+MfxVideoParamsWrapper PreencDownsampler::GetVideoParam()
+{
+    return m_preenc->GetVideoParam();
+}
+
+mfxStatus PreencDownsampler::PreEncFrame(HevcTask * task)
+{
+    mfxStatus sts = DownSampleFrame(*task);
+    MSDK_CHECK_STATUS(sts, "DownSampleFrame failed");
+
+    sts = m_preenc->PreEncFrame(task);
+
+    return sts;
+}
+
+mfxStatus PreencDownsampler::DownSampleFrame(HevcTask & task)
+{
+    mfxFrameSurface1* pOutSurf = NULL;
+    mfxStatus sts = m_VPP->ProcessFrame(task.m_surf, pOutSurf);
+    MSDK_CHECK_STATUS(sts, "VPP Downsampling failed");
+
+    *task.m_ds_surf = pOutSurf;
+    // HACK: lock ds surf here, but unlock in reorder
+    msdk_atomic_inc16((volatile mfxU16*)&pOutSurf->Data.Locked);
+
+    return MFX_ERR_NONE;
+}
+
+MfxVideoParamsWrapper PreencDownsampler::CreateVppDSParams(mfxFrameInfo in_fi)
+{
+    MfxVideoParamsWrapper pars;
+    pars.AsyncDepth = 1;
+    pars.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY;
+
+    MSDK_MEMCPY_VAR(pars.vpp.In, &in_fi, sizeof(mfxFrameInfo));
+    MSDK_MEMCPY_VAR(pars.vpp.Out, &pars.vpp.In, sizeof(mfxFrameInfo));
+
+    pars.vpp.Out.CropX = pars.vpp.Out.CropY = 0;
+    pars.vpp.Out.CropW = pars.vpp.Out.Width = MSDK_ALIGN16(pars.vpp.In.Width / m_ds_factor);
+    pars.vpp.Out.CropH = pars.vpp.Out.Height =
+        (MFX_PICSTRUCT_PROGRESSIVE & pars.vpp.Out.PicStruct)
+        ? MSDK_ALIGN16(pars.vpp.In.Height / m_ds_factor)
+        : MSDK_ALIGN32(pars.vpp.In.Height / m_ds_factor);
+
+    return pars;
 }

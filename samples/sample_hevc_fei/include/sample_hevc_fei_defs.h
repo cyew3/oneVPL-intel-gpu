@@ -83,6 +83,7 @@ struct sInputParams
     mfxU16 NumRefActiveP;   // maximal number of references for P frames
     mfxU16 NumRefActiveBL0; // maximal number of backward references for B frames
     mfxU16 NumRefActiveBL1; // maximal number of forward references for B frames
+    mfxU16 preencDSfactor;  // downsample input before passing to preenc (2/4/8x are supported)
     mfxU16 PicTimingSEI;    // picture timing SEI
 
     sInputParams()
@@ -102,6 +103,7 @@ struct sInputParams
         , nNumRef(1)
         , nGopOptFlag(0)               // OPEN GOP
         , GPB(MFX_CODINGOPTION_ON)     // use GPB frames
+        , preencDSfactor(1)            // no downsampling
         , NumRefActiveP(1)
         , NumRefActiveBL0(1)
         , NumRefActiveBL1(1)
@@ -426,7 +428,10 @@ struct HevcDpbFrame
     bool     m_secondField;
     mfxU8    m_codingType;
     mfxU8    m_idxRec;
-    mfxFrameSurface1 * m_surf; //input surface
+
+    mfxFrameSurface1 *  m_surf;     // full resolution input surface
+    mfxFrameSurface1 ** m_ds_surf;  // pointer to input dowsampled surface, used in preenc
+
     void Reset()
     {
         Fill(*this, 0);

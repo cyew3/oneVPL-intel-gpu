@@ -65,6 +65,9 @@ void PrintHelp(const msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-tff|bff|mixed] - input stream is interlaced, top|bottom field first, if not specified progressive is expected\n"));
     msdk_printf(MSDK_STRING("                    - mixed means that picture structure should be obtained from the input stream\n"));
     msdk_printf(MSDK_STRING("   [-encode] - use extended FEI interface ENC+PAK (FEI ENCODE) (RC is forced to constant QP)\n"));
+    msdk_printf(MSDK_STRING("   [-preenc dsStrength] - use extended FEI interface PREENC\n"));
+    msdk_printf(MSDK_STRING("                           if ds_strength parameter is missed or less than 2, PREENC is used on the full resolution\n"));
+    msdk_printf(MSDK_STRING("                           otherwise PREENC is used on downscaled (by VPP resize in ds_strength times) surfaces\n"));
     msdk_printf(MSDK_STRING("   [-EncodedOrder] - use app-level reordering to encoded order (default is display; ENCODE only)\n"));
     msdk_printf(MSDK_STRING("   [-n number] - number of frames to process\n"));
     msdk_printf(MSDK_STRING("   [-qp qp_value] - QP value for frames (default is 26)\n"));
@@ -83,7 +86,6 @@ void PrintHelp(const msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-nobref] - do not use B-pyramid (by default the decision is made by library)\n"));
     msdk_printf(MSDK_STRING("   [-l numSlices] - number of slices \n"));
     msdk_printf(MSDK_STRING("   [-PicTimingSEI] - inserts picture timing SEI\n"));
-    msdk_printf(MSDK_STRING("   [-preenc] - use extended FEI interface PREENC (RC is forced to constant QP)\n"));
     msdk_printf(MSDK_STRING("   [-mvout <file-name>] - use this to output MV predictors after PreENC\n"));
     msdk_printf(MSDK_STRING("   [-mbstat <file-name>] - use this to output per MB distortions for each frame after PreENC\n"));
     msdk_printf(MSDK_STRING("   [-mvpin <file-name>] - use this to input MV predictors for ENCODE (Encoded Order will be enabled automatically).\n"));
@@ -114,6 +116,12 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU32 nArgNum, sInputParams& 
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-preenc")))
         {
             params.bPREENC = true;
+            i++; // try to parse preenc DS strength
+            if (i >= nArgNum || MFX_ERR_NONE != msdk_opt_read(strInput[i], params.preencDSfactor))
+            {
+                params.preencDSfactor = 1;
+                i--;
+            }
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-EncodedOrder")))
         {

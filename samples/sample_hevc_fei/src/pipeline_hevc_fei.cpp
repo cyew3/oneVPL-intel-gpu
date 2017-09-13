@@ -496,7 +496,7 @@ IYUVSource* CEncodingPipeline::CreateYUVSource()
     return pSource;
 }
 
-FEI_Preenc* CEncodingPipeline::CreatePreENC(mfxFrameInfo& in_fi)
+IPreENC* CEncodingPipeline::CreatePreENC(mfxFrameInfo& in_fi)
 {
     if (!m_inParams.bPREENC)
         return NULL;
@@ -514,7 +514,14 @@ FEI_Preenc* CEncodingPipeline::CreatePreENC(mfxFrameInfo& in_fi)
     if (!pExtBufInit) throw mfxError(MFX_ERR_NOT_INITIALIZED, "Failed to attach mfxExtFeiParam");
     pExtBufInit->Func = MFX_FEI_FUNCTION_PREENC;
 
-    return new FEI_Preenc(&m_mfxSession, pars, m_inParams.mvoutFile, m_inParams.mbstatoutFile);
+    IPreENC* pPreENC = new FEI_Preenc(&m_mfxSession, pars, m_inParams.mvoutFile, m_inParams.mbstatoutFile);
+
+    if (m_inParams.preencDSfactor > 1)
+    {
+        pPreENC = new PreencDownsampler(pPreENC, m_inParams.preencDSfactor, &m_mfxSession, m_pMFXAllocator.get());
+    }
+
+    return pPreENC;
 }
 
 FEI_Encode* CEncodingPipeline::CreateEncode(mfxFrameInfo& in_fi)
@@ -535,7 +542,7 @@ FEI_Encode* CEncodingPipeline::CreateEncode(mfxFrameInfo& in_fi)
     if (m_inParams.bPREENC)
     {
         repacker = new PredictorsRepaking();
-        sts = repacker->Init(pars);
+        sts = repacker->Init(pars, m_inParams.preencDSfactor);
         CHECK_STS_AND_RETURN(sts, "CreateEncode::repacker->Init failed", NULL);
 
         repacker->SetPerfomanceRepackingMode();

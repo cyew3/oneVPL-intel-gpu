@@ -25,6 +25,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 class IPreENC
 {
 public:
+    IPreENC() {}
     IPreENC(MfxVideoParamsWrapper& preenc_pars);
     virtual ~IPreENC() {}
 
@@ -34,7 +35,8 @@ public:
     // prepare required internal resources (e.g. buffer allocation) for component initialization
     virtual mfxStatus PreInit();
 
-    MfxVideoParamsWrapper   GetVideoParam();
+    virtual MfxVideoParamsWrapper GetVideoParam();
+    virtual mfxStatus UpdateFrameInfo(mfxFrameInfo& info);
 
     virtual mfxStatus PreEncFrame(HevcTask * task) = 0;
 
@@ -88,6 +90,38 @@ private:
 
     DISALLOW_COPY_AND_ASSIGN(FEI_Preenc);
 
+};
+
+/*************************************************************************************************/
+// PreENC wrapper for surface downsampling before PreENC call
+class PreencDownsampler : public IPreENC
+{
+public:
+    PreencDownsampler(IPreENC* preenc, mfxU16 ds_factor, MFXVideoSession* parent_session, MFXFrameAllocator* allocator);
+    ~PreencDownsampler();
+
+    mfxStatus Init();
+    mfxStatus QueryIOSurf(mfxFrameAllocRequest* request);
+    mfxStatus PreInit();
+    mfxStatus PreEncFrame(HevcTask * task);
+
+    MfxVideoParamsWrapper GetVideoParam();
+
+private:
+    mfxStatus DownSampleFrame(HevcTask & task);
+    MfxVideoParamsWrapper CreateVppDSParams(mfxFrameInfo in_fi);
+
+private:
+    std::auto_ptr<IPreENC>  m_preenc;
+    MFXVideoSession*        m_parentSession;
+
+    mfxU16                  m_ds_factor;
+    MFXVideoSession         m_vpp_session;
+    std::auto_ptr<MFX_VPP>  m_VPP;
+
+    SurfacesPool            m_DsSurfacePool;
+
+    DISALLOW_COPY_AND_ASSIGN(PreencDownsampler);
 };
 
 #endif // __SAMPLE_FEI_PREENC_H__
