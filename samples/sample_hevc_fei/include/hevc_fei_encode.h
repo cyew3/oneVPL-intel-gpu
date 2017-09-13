@@ -29,7 +29,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 class FEI_Encode
 {
 public:
-    FEI_Encode(MFXVideoSession* session, mfxHDL hdl, MfxVideoParamsWrapper& encode_pars, 
+    FEI_Encode(MFXVideoSession* session, mfxHDL hdl, MfxVideoParamsWrapper& encode_pars,
         const msdk_char* dst_output, const msdk_char* mvpInFile, PredictorsRepaking* rpck);
     ~FEI_Encode();
 
@@ -73,9 +73,7 @@ private:
     /* For I/O operations with extension buffers */
     std::auto_ptr<FileHandler> m_pFile_MVP_in;
 
-    // forbid copy constructor and operator
-    FEI_Encode(const FEI_Encode& encode);
-    FEI_Encode& operator=(const FEI_Encode& encode);
+    DISALLOW_COPY_AND_ASSIGN(FEI_Encode);
 };
 
 #endif // __SAMPLE_FEI_ENCODE_H__

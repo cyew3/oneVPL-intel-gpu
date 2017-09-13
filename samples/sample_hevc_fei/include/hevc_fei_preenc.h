@@ -49,9 +49,7 @@ protected:
     std::vector<mfxExtFeiPreEncMBStatExtended> m_mbs;
 
 private:
-    // forbid copy constructor and operator
-    IPreENC(const IPreENC& preenc);
-    IPreENC& operator=(const IPreENC& preenc);
+    DISALLOW_COPY_AND_ASSIGN(IPreENC);
 };
 
 class FEI_Preenc : public IPreENC
@@ -89,9 +87,7 @@ private:
     std::auto_ptr<FileHandler> m_pFile_MV_out;
     std::auto_ptr<FileHandler> m_pFile_MBstat_out;
 
-    // forbid copy constructor and operator
-    FEI_Preenc(const FEI_Preenc& preenc);
-    FEI_Preenc& operator=(const FEI_Preenc& preenc);
+    DISALLOW_COPY_AND_ASSIGN(FEI_Preenc);
 
 };
 

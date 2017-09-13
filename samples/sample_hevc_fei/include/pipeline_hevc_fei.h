@@ -80,9 +80,7 @@ private:
     FEI_Preenc* CreatePreENC(mfxFrameInfo& in_fi);
     FEI_Encode* CreateEncode(mfxFrameInfo& in_fi);
 
-    // forbid copy constructor and operator
-    CEncodingPipeline(const CEncodingPipeline& pipeline);
-    CEncodingPipeline& operator=(const CEncodingPipeline& pipeline);
+    DISALLOW_COPY_AND_ASSIGN(CEncodingPipeline);
 };
 
 // function-utils for creating mfxVideoParam for every component in pipeline

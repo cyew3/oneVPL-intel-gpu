@@ -110,7 +110,5 @@ private:
     mfxU32                        m_lastIDR;
 
 private:
-    // forbid copy constructor and operator
-    EncodeOrderControl(const EncodeOrderControl& encOrderCtrl);
-    EncodeOrderControl& operator=(const EncodeOrderControl& encOrderCtrl);
+    DISALLOW_COPY_AND_ASSIGN(EncodeOrderControl);
 };

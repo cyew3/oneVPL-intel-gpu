@@ -57,6 +57,8 @@ private:
     mfxStatus RepackPredictorsPerformance(const HevcTask& eTask, mfxExtFeiHevcEncMVPredictors& mvp);
     mfxStatus RepackPredictorsQuality(const HevcTask& eTask, mfxExtFeiHevcEncMVPredictors& mvp);
     mfxU8 ConvertDSratioPower2(mfxU8 DSfactor);
+
+    DISALLOW_COPY_AND_ASSIGN(PredictorsRepaking);
 };
 
 #endif // #define __FEI_PREDICTORS_REPACKING_H__
