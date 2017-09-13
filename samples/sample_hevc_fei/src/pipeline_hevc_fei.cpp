@@ -73,6 +73,16 @@ mfxStatus CEncodingPipeline::Init()
             MSDK_CHECK_STATUS(sts, "FEI PreENC PreInit failed");
         }
 
+        if (m_inParams.bEncodedOrder)
+        {
+            MfxVideoParamsWrapper param = GetEncodeParams(m_inParams, frameInfo);
+
+            sts = m_pParamChecker->Query(param);
+            MSDK_CHECK_STATUS(sts, "m_pParamChecker->Query failed");
+
+            m_pOrderCtrl.reset(new EncodeOrderControl(param, !!(m_pFEI_PreENC.get())));
+        }
+
         m_pFEI_Encode.reset(CreateEncode(frameInfo));
         if (m_pFEI_Encode.get())
         {
@@ -298,11 +308,6 @@ mfxStatus CEncodingPipeline::InitComponents()
         MSDK_CHECK_STATUS(sts, "FEI ENCODE Init failed");
 
         param = m_pFEI_Encode->GetVideoParam();
-    }
-
-    if (m_inParams.bEncodedOrder)
-    {
-        m_pOrderCtrl.reset(new EncodeOrderControl(param, !!(m_pFEI_PreENC.get())));
     }
 
     return sts;
