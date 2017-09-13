@@ -4,6 +4,11 @@ if(FEI_INCLUDE MATCHES NOTFOUND)
   set(skipping _force_skipping)
 endif()
 
+find_path( VA_HEVC_FEI va/va_fei_hevc.h PATHS ${PKG_LIBVA_INCLUDEDIR} )
+if(VA_HEVC_FEI MATCHES NOTFOUND)
+  set(skipping _force_skipping)
+endif()
+
 include_directories (
   ${CMAKE_CURRENT_SOURCE_DIR}/../sample_common/include
   ${CMAKE_CURRENT_SOURCE_DIR}/include

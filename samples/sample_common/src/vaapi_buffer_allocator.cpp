@@ -26,8 +26,6 @@ vaapiBufferAllocator::vaapiBufferAllocator(VADisplay dpy) :
     m_config(VA_INVALID_ID),
     m_context(VA_INVALID_ID)
 {
-// FEI entrypoint and attributes are not supported because VAAPI is not available
-#if 0
     VAConfigAttrib attrib;
     attrib.type = VAConfigAttribStatisticsIntel;
 
@@ -45,9 +43,6 @@ vaapiBufferAllocator::vaapiBufferAllocator(VADisplay dpy) :
     if (VA_STATUS_SUCCESS != vaSts) {
         throw mfxError(MFX_ERR_DEVICE_FAILED, "Failed to create VA context for buffer allocator");
     }
-#else
-    throw mfxError(MFX_ERR_UNSUPPORTED, "Unsupported by driver");
-#endif
 }
 
 vaapiBufferAllocator::~vaapiBufferAllocator()

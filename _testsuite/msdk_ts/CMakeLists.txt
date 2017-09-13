@@ -64,6 +64,14 @@ list(APPEND sources
 file( GLOB_RECURSE srcs "${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/*.cpp" )
 list( APPEND sources ${srcs})
 
+find_path( VA_FEI va/va_fei.h PATHS ${PKG_LIBVA_INCLUDEDIR} )
+get_cmake_property(_variableNames VARIABLES)
+if(VA_FEI MATCHES NOTFOUND)
+  list( REMOVE_ITEM sources ${MSDK_SAMPLES_ROOT}/sample_common/src/vaapi_buffer_allocator.cpp)
+  file( GLOB_RECURSE hevc_fei_src "${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/hevc_fei*.cpp")
+  list( REMOVE_ITEM sources ${hevc_fei_src})
+endif()
+
 add_definitions( -D_VARIADIC_MAX=10 )
 add_definitions( -DENABLE_PS=1 )
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")

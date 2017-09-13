@@ -49,10 +49,8 @@ public:
 private:
     MFXVideoSession*        m_pmfxSession;
     MFXVideoENCODE          m_mfxENCODE;
-// driver doesn't support HEVC FEI buffers, allocator can't be initialized
-#if 0
+
     vaapiBufferAllocator    m_buf_allocator;
-#endif
 
     MfxVideoParamsWrapper m_videoParams; // reflects current state Encode parameters
     mfxEncodeCtrlWrap     m_encodeCtrl;

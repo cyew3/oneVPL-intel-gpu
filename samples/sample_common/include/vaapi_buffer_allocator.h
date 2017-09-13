@@ -107,9 +107,8 @@ protected:
         {
         case MFX_EXTBUFF_HEVCFEI_ENC_QP:
             return VAEncQpBufferType;
-        // FEI buffers are unsupported since VAAPI is not available for them
-        // case MFX_EXTBUFF_HEVCFEI_ENC_MV_PRED:
-        //     return VAEncFEIMVPredictorBufferType;
+        case MFX_EXTBUFF_HEVCFEI_ENC_MV_PRED:
+            return VAEncFEIMVPredictorBufferTypeIntel;
         default:
             throw mfxError(MFX_ERR_UNSUPPORTED, "Unsupported buffer type");
         }
