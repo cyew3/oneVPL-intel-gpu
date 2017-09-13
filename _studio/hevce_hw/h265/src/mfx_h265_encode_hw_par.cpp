@@ -823,18 +823,40 @@ bool CheckLCUSize(mfxU32 LCUSizeSupported, mfxU32& LCUSize)
 #endif // PRE_SI_TARGET_PLATFORM_GEN10
 
 #ifdef MFX_ENABLE_HEVCE_ROI
-mfxStatus CheckAndFixRoi(MfxVideoParam const & par, ENCODE_CAPS_HEVC const & caps, mfxExtEncoderROI *ROI)
+mfxStatus CheckAndFixRoi(MfxVideoParam  const & par, ENCODE_CAPS_HEVC const & caps, mfxExtEncoderROI *ROI, bool &bROIViaMBQP)
 {
     mfxStatus sts = MFX_ERR_NONE;
     mfxU32 changed = 0, invalid = 0;
 
-    invalid += (caps.MaxNumOfROI == 0);
+    bROIViaMBQP = false;
 
-//// TODO: remove below macro conditional statement when ROI related caps will be correctly set up by the driver
+    if (!(par.mfx.RateControlMethod == MFX_RATECONTROL_CBR ||
+        par.mfx.RateControlMethod == MFX_RATECONTROL_VBR ||
+        par.mfx.RateControlMethod == MFX_RATECONTROL_CQP))
+    {
+        invalid++;
+    }
+    if (caps.MaxNumOfROI == 0)
+    {
+        if (par.isSWBRC())
+            bROIViaMBQP = true;
+        else
+            invalid++;
+    }
+
+    //// TODO: remove below macro conditional statement when ROI related caps will be correctly set up by the driver
 #if !defined(LINUX_TARGET_PLATFORM_BXTMIN) && !defined(LINUX_TARGET_PLATFORM_BXT)
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP) {
         invalid += (caps.ROIDeltaQPSupport == 0);
-    } else {
+    }
+    else if (par.isSWBRC())
+    {
+        if (caps.ROIDeltaQPSupport == 0)
+            bROIViaMBQP = true;
+
+    }
+    else
+    {
 #if MFX_VERSION > 1021
         if (ROI->ROIMode == MFX_ROI_MODE_QP_DELTA)
             invalid += (caps.ROIDeltaQPSupport == 0);
@@ -846,7 +868,7 @@ mfxStatus CheckAndFixRoi(MfxVideoParam const & par, ENCODE_CAPS_HEVC const & cap
     }
 #endif  // LINUX_TARGET_PLATFORM_BXTMIN
 
-    mfxU16 maxNumOfRoi = caps.MaxNumOfROI <= MAX_NUM_ROI ? caps.MaxNumOfROI : MAX_NUM_ROI;
+    mfxU16 maxNumOfRoi = (caps.MaxNumOfROI <= MAX_NUM_ROI  && (!bROIViaMBQP)) ? caps.MaxNumOfROI : MAX_NUM_ROI;
 
     changed += CheckMax(ROI->NumROI, maxNumOfRoi);
 
@@ -2123,10 +2145,11 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 
 #ifdef MFX_ENABLE_HEVCE_ROI
     if (ROI->NumROI) {   // !!! if ENCODE_BLOCKQPDATA is provided NumROI is assumed to be 0
-        sts = CheckAndFixRoi(par, caps, ROI);
+        sts = CheckAndFixRoi(par, caps, ROI, par.bROIViaMBQP);
         if (sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM) {
             changed++;
         } else if (sts != MFX_ERR_NONE) {
+            ROI->NumROI = 0;
             invalid++;
         }
     }
@@ -2145,15 +2168,23 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     }
 #endif // MFX_ENABLE_HEVCE_DIRTY_RECT
 
-    if (CO3.EnableMBQP !=0)
+    if (CO3.EnableMBQP !=0 || par.bROIViaMBQP)
     {
         if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP && !par.isSWBRC())
-            changed += CheckOption(CO3.EnableMBQP, (mfxU16)MFX_CODINGOPTION_UNKNOWN, (mfxU16)MFX_CODINGOPTION_ON);
+            changed += CheckOption(CO3.EnableMBQP, (mfxU16)MFX_CODINGOPTION_UNKNOWN, (mfxU16)MFX_CODINGOPTION_ON); 
 #if MFX_EXTBUFF_CU_QP_ENABLE
-        if (par.isSWBRC())
+        else if (caps.MbQpDataSupport == 0)
+        {
+#ifdef MFX_ENABLE_HEVCE_ROI
+            if (par.bROIViaMBQP)
+            {
+                ROI->NumROI = 0;
+                invalid++;
+                par.bROIViaMBQP = false;
+            }
+#endif
             changed += CheckOption(CO3.EnableMBQP, (mfxU16)MFX_CODINGOPTION_UNKNOWN, (mfxU16)MFX_CODINGOPTION_OFF);
-        if (caps.MbQpDataSupport == 0 && par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
-            changed += CheckOption(CO3.EnableMBQP, (mfxU16)MFX_CODINGOPTION_UNKNOWN, (mfxU16)MFX_CODINGOPTION_OFF);
+        }
 #else
         else
              changed += CheckOption(CO3.EnableMBQP, (mfxU16)MFX_CODINGOPTION_UNKNOWN, (mfxU16)MFX_CODINGOPTION_OFF);

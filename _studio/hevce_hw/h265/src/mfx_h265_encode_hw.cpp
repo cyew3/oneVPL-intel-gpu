@@ -370,6 +370,12 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
 
     SetDefaults(m_vpar, m_caps);
 
+#if MFX_EXTBUFF_CU_QP_ENABLE
+    m_vpar.bMBQPInput = IsOn(m_vpar.m_ext.CO3.EnableMBQP) &&
+        (m_vpar.mfx.RateControlMethod == MFX_RATECONTROL_CQP);
+
+#endif
+
     m_vpar.SyncCalculableToVideoParam();
 
     if (!pSPSPPS || !pSPSPPS->SPSBuffer)
@@ -462,31 +468,29 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
     sts = m_ddi->Register(m_bs, D3DDDIFMT_INTELENCODE_BITSTREAMDATA);
     MFX_CHECK_STS(sts);
 
- #if MFX_EXTBUFF_CU_QP_ENABLE
- #if defined(MFX_VA_WIN)
-    if (IsOn(m_vpar.m_ext.CO3.EnableMBQP) && m_vpar.mfx.RateControlMethod == MFX_RATECONTROL_CQP && ((coreParams.Impl & 0xF00) != MFX_HW_VAAPI))
+#if MFX_EXTBUFF_CU_QP_ENABLE
+#if defined(MFX_VA_WIN)
+    if ((m_vpar.bMBQPInput ||
+        m_vpar.bROIViaMBQP) &&
+        ((coreParams.Impl & 0xF00) != MFX_HW_VAAPI))
     {
           sts = m_ddi->QueryCompBufferInfo(D3DDDIFMT_INTELENCODE_MBQPDATA, request);
           MFX_CHECK_STS(sts);
 
+
           request.Type        = MFX_MEMTYPE_D3D_INT;
           request.NumFrameMin = MaxBs(m_vpar);
-
-          /*if (MFX_HW_D3D11 == (coreParams.Impl & 0xF00))
-            request.Info.FourCC = MFX_FOURCC_P8_TEXTURE;
-          else
-            request.Info.FourCC = MFX_FOURCC_P8;
-
-          request.Info.Width  = IPP_MAX(request.Info.Width,  (m_vpar.m_ext.HEVCParam.PicWidthInLumaSamples   + par.LCUSize  - 1) / par.LCUSize);
-          request.Info.Height = IPP_MAX(request.Info.Height, (m_vpar.m_ext.HEVCParam.PicHeightInLumaSamples   + par.LCUSize  - 1) / par.LCUSize);*/
-
-          //printf("init MB data for driver: size %d, %d,  forCC %x, num %d\n", request.Info.Width, request.Info.Height, request.Info.FourCC,request.NumFrameMin);
 
           sts = m_CuQp.Alloc(&m_core, request, true);
           MFX_CHECK_STS(sts);
 
           sts = m_ddi->Register(m_CuQp, D3DDDIFMT_INTELENCODE_MBQPDATA);
           MFX_CHECK_STS(sts);
+          sts = GetCUQPMapBlockSize(m_vpar.mfx.FrameInfo.Width, m_vpar.mfx.FrameInfo.Height,
+                                    request.Info.Width, request.Info.Height,
+                                    request.Info.AspectRatioW, request.Info.AspectRatioH); //save block info in aspect ratio parameters
+          MFX_CHECK_STS(sts);
+
     }
 #endif
 #endif

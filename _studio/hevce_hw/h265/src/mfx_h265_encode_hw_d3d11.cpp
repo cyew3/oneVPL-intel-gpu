@@ -489,7 +489,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, 
     ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_BITSTREAMDATA,    RES_ID_BS,  1);
 
 #if MFX_EXTBUFF_CU_QP_ENABLE
-    if (m_pps.cu_qp_delta_enabled_flag && m_sps.RateControlMethod == MFX_RATECONTROL_CQP )
+    if (task.m_bCUQPMap)
     {
         mfxU32 idxCUQp  = task.m_idxCUQp;
         ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_MBQPDATA, idxCUQp,  1);

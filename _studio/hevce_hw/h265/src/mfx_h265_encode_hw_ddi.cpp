@@ -386,7 +386,7 @@ ENCODE_PACKEDHEADER_DATA* DDIHeaderPacker::PackSkippedSlice(Task const & task, m
     return &*m_cur;
 }
 #if MFX_EXTBUFF_CU_QP_ENABLE
-mfxStatus FillCUQPDataDDI(Task& task, MfxVideoParam &par, MFXCoreInterface& core, mfxFrameInfo &CUQPFrameInfo )
+mfxStatus FillCUQPDataDDI(Task& task, MfxVideoParam &par, MFXCoreInterface& core, mfxFrameInfo &CUQPFrameInfo)
 {
     mfxStatus mfxSts = MFX_ERR_NONE;
     mfxCoreParam coreParams = {};
@@ -394,66 +394,67 @@ mfxStatus FillCUQPDataDDI(Task& task, MfxVideoParam &par, MFXCoreInterface& core
     if (core.GetCoreParam(&coreParams))
        return  MFX_ERR_UNSUPPORTED;
 
-    if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP || !IsOn(par.m_ext.CO3.EnableMBQP) || ((coreParams.Impl & 0xF00) == MFX_HW_VAAPI))
+    if (!task.m_bCUQPMap || ((coreParams.Impl & 0xF00) == MFX_HW_VAAPI))
         return MFX_ERR_NONE;
 
-    mfxU32 minWidthQPData = (par.m_ext.HEVCParam.PicWidthInLumaSamples   + par.LCUSize  - 1) / par.LCUSize;
-    mfxU32 minHeightQPData = (par.m_ext.HEVCParam.PicHeightInLumaSamples  + par.LCUSize  - 1) / par.LCUSize;
-    mfxU32 minQPSize = minWidthQPData*minHeightQPData;
-    mfxU32 driverQPsize = CUQPFrameInfo.Width * CUQPFrameInfo.Height;
-
-    if (!(driverQPsize >= minQPSize && minQPSize > 0))
-        mfxSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-    mfxU32 k_dr_w   =  1;
-    mfxU32 k_dr_h   =  1;
-    mfxU32 k_input = 1;
-    
-    if (driverQPsize > minQPSize)
-    {
-        k_dr_w = CUQPFrameInfo.Width/minWidthQPData;
-        k_dr_h = minHeightQPData/minHeightQPData;
-        if (!(minWidthQPData*k_dr_w == CUQPFrameInfo.Width && minHeightQPData*k_dr_h == CUQPFrameInfo.Height))
-            mfxSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-        if (!(k_dr_w == 1 ||k_dr_w == 2 || k_dr_w == 4 || k_dr_w == 8))
-            mfxSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-        if (!(k_dr_h == 1 ||k_dr_h == 2 || k_dr_h == 4 || k_dr_h == 8))
-            mfxSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-    }
-
     mfxExtMBQP *mbqp = ExtBuffer::Get(task.m_ctrl);
-    mfxU32 BlockSize = 16;
-    mfxU32 pitch_MBQP = (par.mfx.FrameInfo.Width  + BlockSize - 1)/BlockSize;
-    mfxU32 height_MBQP = (par.mfx.FrameInfo.Height  + BlockSize - 1)/BlockSize;
-    if (mbqp)
+#ifdef MFX_ENABLE_HEVCE_ROI
+    mfxExtEncoderROI* roi = ExtBuffer::Get(task.m_ctrl);
+#endif
+
+    MFX_CHECK(CUQPFrameInfo.Width && CUQPFrameInfo.Height, MFX_ERR_UNDEFINED_BEHAVIOR);
+    MFX_CHECK(CUQPFrameInfo.AspectRatioW && CUQPFrameInfo.AspectRatioH, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+    mfxU32 drBlkW  = CUQPFrameInfo.AspectRatioW;  // block size of driver
+    mfxU32 drBlkH  = CUQPFrameInfo.AspectRatioH;  // block size of driver       
+    mfxU16 inBlkSize = 16;                            //mbqp->BlockSize ? mbqp->BlockSize : 16;  //input block size
+
+    mfxU32 pitch_MBQP = (par.mfx.FrameInfo.Width  + inBlkSize - 1)/ inBlkSize;
+
+    if (mbqp && mbqp->NumQPAlloc)
     {
-        mfxU16 blockSize = 16; //mbqp->BlockSize ? mbqp->BlockSize : 16;
-        k_input = par.LCUSize/blockSize;
-        if (!(par.LCUSize == blockSize*k_input))
-            mfxSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-        if (mbqp->NumQPAlloc < ((height_MBQP*pitch_MBQP)) )
-            mfxSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-        if (!(k_input == 1 ||k_input == 2 || k_input == 4 || k_input == 8))
-            mfxSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-    }
-    
-    {
+        if ((mbqp->NumQPAlloc *  inBlkSize *  inBlkSize) < 
+            (drBlkW  *  drBlkH  *  CUQPFrameInfo.Width  *  CUQPFrameInfo.Height))
+        {
+            task.m_bCUQPMap = false;
+            return  MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+        }
+
         FrameLocker lock(&core, task.m_midCUQp);
         MFX_CHECK(lock.Y, MFX_ERR_LOCK_MEMORY);
 
-        if ((mbqp) && (MFX_ERR_NONE == mfxSts))
-             for (mfxU32 i = 0; i < CUQPFrameInfo.Height; i++)
-                 for (mfxU32 j = 0; j < CUQPFrameInfo.Width; j++)
-                    lock.Y[i * lock.Pitch +j] = mbqp->QP[i*k_input/k_dr_h* pitch_MBQP + j*k_input/k_dr_w];
-        else
-            for (mfxU32 i = 0; i < CUQPFrameInfo.Height; i++)
+        for (mfxU32 i = 0; i < CUQPFrameInfo.Height; i++)
+            for (mfxU32 j = 0; j < CUQPFrameInfo.Width; j++)
+                    lock.Y[i * lock.Pitch + j] = mbqp->QP[i*drBlkH/inBlkSize * pitch_MBQP + j*drBlkW/inBlkSize];
+
+    } 
+#ifdef MFX_ENABLE_HEVCE_ROI
+    else if (roi)
+    {
+        FrameLocker lock(&core, task.m_midCUQp);
+        MFX_CHECK(lock.Y, MFX_ERR_LOCK_MEMORY);
+        for (mfxU32 i = 0; i < CUQPFrameInfo.Height; i++)
+        {
+            for (mfxU32 j = 0; j < CUQPFrameInfo.Width; j++)
             {
-#ifndef OPEN_SOURCE
-                ippsSet_8u((mfxU8)task.m_qpY, (Ipp8u *)&lock.Y[i * lock.Pitch], (int)CUQPFrameInfo.Width);
-#else
-                memset((Ipp8u *)&lock.Y[i * lock.Pitch],(mfxU8)task.m_qpY, (size_t)CUQPFrameInfo.Width);
-#endif
+                mfxU8 qp = (mfxU8)task.m_qpY;
+                mfxI32 diff = 0;
+                for (mfxU32 n = 0; n < roi->NumROI; n++)
+                {
+                    mfxU32 x = i*drBlkW;
+                    mfxU32 y = i*drBlkH;
+                    if (x >= roi->ROI[n].Left  &&  x < roi->ROI[n].Right  && y >= roi->ROI[n].Top && y < roi->ROI[n].Bottom)
+                    {
+                        diff = (task.m_bPriorityToDQPpar? (-1) : 1) * roi->ROI[n].Priority;
+                        break;
+                    }
+
+                }
+                lock.Y[i * lock.Pitch + j] = (mfxU8)(qp + diff);
             }
+        }
     }
+#endif
     return mfxSts;
     
 }
@@ -777,8 +778,8 @@ void FillSpsBuffer(
     sps.pcm_sample_bit_depth_luma_minus1        = (mfxU8)par.m_sps.pcm_sample_bit_depth_luma_minus1;
     sps.pcm_sample_bit_depth_chroma_minus1      = (mfxU8)par.m_sps.pcm_sample_bit_depth_chroma_minus1;
 
-    if (par.m_ext.ROI.NumROI) {
-        if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP) {
+    if (par.m_ext.ROI.NumROI && !par.bROIViaMBQP) {
+        if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP || par.isSWBRC()) {
             sps.ROIValueInDeltaQP = 1;
         } else {
             sps.ROIValueInDeltaQP = 0;  // 0 means Priorities (if supported in caps)
@@ -871,9 +872,15 @@ void FillPpsBuffer(
     }*/
 
     // ROI
-    pps.NumROI = (mfxU8)par.m_ext.ROI.NumROI;
+    pps.NumROI = (par.bROIViaMBQP) ? 0 : (mfxU8)par.m_ext.ROI.NumROI;
     if (pps.NumROI)
     {
+#if MFX_VERSION > 1021
+        bool priorityToDQPpar = (par.m_ext.ROI.ROIMode == MFX_ROI_MODE_PRIORITY) && par.isSWBRC(); //priority must be converted into dqp 
+#else
+        bool priorityToDQPpar = par.isSWBRC();  //priority is by default. must be converted in dqp. 
+#endif
+
         mfxU32 blkSize = 1 << (caps.BlockSize + 3);
         for (mfxU16 i = 0; i < pps.NumROI; i ++)
         {   // trimming should be done by driver
@@ -881,7 +888,7 @@ void FillPpsBuffer(
             pps.ROI[i].Roi.Top = (mfxU16)(par.m_ext.ROI.ROI[i].Top / blkSize);
             pps.ROI[i].Roi.Right = (mfxU16)(par.m_ext.ROI.ROI[i].Right / blkSize);
             pps.ROI[i].Roi.Bottom = (mfxU16)(par.m_ext.ROI.ROI[i].Bottom / blkSize);
-            pps.ROI[i].PriorityLevelOrDQp = (mfxU8)par.m_ext.ROI.ROI[i].Priority;
+            pps.ROI[i].PriorityLevelOrDQp = (mfxI8)(priorityToDQPpar ? (-1)*par.m_ext.ROI.ROI[i].Priority : par.m_ext.ROI.ROI[i].Priority);
         }
         pps.MaxDeltaQp = 51;    // is used for BRC only
         pps.MinDeltaQp = -51;
@@ -932,7 +939,7 @@ void FillPpsBuffer(
             pps.ROI[i].Roi.Top = (mfxU16)(task.m_roi[i].Top / blkSize);
             pps.ROI[i].Roi.Right = (mfxU16)(task.m_roi[i].Right / blkSize);
             pps.ROI[i].Roi.Bottom = (mfxU16)(task.m_roi[i].Bottom / blkSize);
-            pps.ROI[i].PriorityLevelOrDQp = (mfxU8)task.m_roi[i].Priority;
+            pps.ROI[i].PriorityLevelOrDQp = (mfxI8)(task.m_bPriorityToDQPpar ? (-1)*task.m_roi[i].Priority: task.m_roi[i].Priority);
         }
         
         pps.MaxDeltaQp = 51;    // is used for BRC only

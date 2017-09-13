@@ -349,6 +349,7 @@ typedef struct _Task : DpbFrame
 #endif
     mfxU32 m_idxBs;
     mfxU8  m_idxCUQp;
+    bool   m_bCUQPMap;
 
     mfxU8 m_refPicList[2][MAX_DPB_SIZE];
     mfxU8 m_numRefActive[2];
@@ -383,6 +384,7 @@ typedef struct _Task : DpbFrame
     RoiData       m_roi[MAX_NUM_ROI];
     mfxU16        m_roiMode;    // BRC only
     mfxU16        m_numRoi;
+    bool          m_bPriorityToDQPpar;
 
 #ifdef MFX_ENABLE_HEVCE_DIRTY_RECT
     RectData      m_dirtyRect[MAX_NUM_DIRTY_RECT];
@@ -865,6 +867,8 @@ public:
     mfxU32 LCUSize;
     bool   InsertHRDInfo;
     bool   RawRef;
+    bool   bROIViaMBQP;
+    bool   bMBQPInput;
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     bool   WiDi;
@@ -1166,11 +1170,15 @@ mfxStatus CodeAsSkipFrame(
 mfxStatus CheckAndFixRoi(
     MfxVideoParam const & par,
     ENCODE_CAPS_HEVC const & caps,
-    mfxExtEncoderROI * ROI);
+    mfxExtEncoderROI * ROI,
+    bool &bROIViaMBQP);
 
 mfxStatus CheckAndFixDirtyRect(
     ENCODE_CAPS_HEVC const & caps,
     mfxExtDirtyRect * DirtyRect);
+mfxStatus GetCUQPMapBlockSize(mfxU16 frameWidth, mfxU16 frameHeight,
+    mfxU16 CUQPWidth, mfxU16 CUHeight,
+    mfxU16 &blkWidth, mfxU16 &blkHeight);
 
 #if DEBUG_REC_FRAMES_INFO
     inline vm_file * OpenFile(vm_char const * name, vm_char const * mode)

@@ -155,6 +155,30 @@ mfxStatus SetSkipFrame(
         mfxU32 size;
     } ExtVASurface;
 
+#if MFX_EXTBUFF_CU_QP_ENABLE
+    class CUQPMap
+    {
+    public:
+        mfxU32                            m_width;
+        mfxU32                            m_height;
+        mfxU32                            m_pitch;
+        mfxU32                            m_h_aligned;
+        
+        mfxU32                            m_block_width;
+        mfxU32                            m_block_height;
+        std::vector<mfxI8>                m_buffer;
+
+        CUQPMap():
+            m_width(0),
+            m_height(0),
+            m_pitch(0),
+            m_h_aligned(0),
+            m_block_width(0),
+            m_block_height(0) {}
+
+            void Init(mfxU32 picWidthInLumaSamples, mfxU32 picHeightInLumaSamples);
+    };
+#endif
     class VAAPIEncoder : public DriverEncoder, DDIHeaderPacker, protected VABuffersHandler
     {
     public:
@@ -260,11 +284,7 @@ mfxStatus SetSkipFrame(
         ENCODE_CAPS_HEVC m_caps;
 
 #if MFX_EXTBUFF_CU_QP_ENABLE
-        std::vector<mfxI8>                m_cuqp_buffer;
-        mfxU32                            m_cuqp_width;
-        mfxU32                            m_cuqp_height;
-        mfxU32                            m_cuqp_pitch;
-        mfxU32                            m_cuqp_h_aligned;
+        CUQPMap    m_cuqpMap;
 #endif
         std::vector<VAEncROI> m_arrayVAEncROI;
 

@@ -571,6 +571,8 @@ MfxVideoParam::MfxVideoParam()
     , LCUSize         (0)
     , InsertHRDInfo   (false)
     , RawRef          (false)
+    , bROIViaMBQP     (false)
+    , bMBQPInput      (false)
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     , WiDi            (false)
 #endif
@@ -601,6 +603,8 @@ MfxVideoParam::MfxVideoParam(mfxVideoParam const & par)
     , LCUSize         (0)
     , InsertHRDInfo   (false)
     , RawRef          (false)
+    , bROIViaMBQP     (false)
+    , bMBQPInput      (false)
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     , WiDi            (false)
 #endif
@@ -624,6 +628,8 @@ void MfxVideoParam::CopyCalcParams(MfxVideoParam const & par)
     LCUSize          = par.LCUSize;
     InsertHRDInfo    = par.InsertHRDInfo;
     RawRef           = par.RawRef;
+    bROIViaMBQP      = par.bROIViaMBQP;
+    bMBQPInput       = par.bMBQPInput;
     SetTL(par.m_ext.AVCTL);
 
 }
@@ -846,6 +852,8 @@ void MfxVideoParam::SyncVideoToCalculableParam()
 
     InsertHRDInfo = !(IsOff(m_ext.CO.NalHrdConformance) || IsOff(m_ext.CO.VuiNalHrdParameters) || IsOff(m_ext.CO.PicTimingSEI));
     RawRef        = false;
+    bROIViaMBQP = false;
+    bMBQPInput = false;
 
     m_slice.resize(0);
 
@@ -1733,11 +1741,11 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
 #endif
         m_pps.transform_skip_enabled_flag = 0;
 
-    m_pps.cu_qp_delta_enabled_flag = ((mfx.RateControlMethod == MFX_RATECONTROL_CQP && !IsOn(m_ext.CO3.EnableMBQP)) || isSWBRC()) ? 0 : 1;
+    m_pps.cu_qp_delta_enabled_flag = IsOn(m_ext.CO3.EnableMBQP);
 
     if (m_ext.CO2.MaxSliceSize)
         m_pps.cu_qp_delta_enabled_flag = 1;
-#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
+#ifdef MFX_ENABLE_HEVCE_ROI
     if (m_ext.ROI.NumROI)
         m_pps.cu_qp_delta_enabled_flag = 1;
 #endif
@@ -3271,34 +3279,47 @@ void ConfigureTask(
             task.m_SkipMode = 0;
         }
     }
+#if MFX_EXTBUFF_CU_QP_ENABLE
+
+    mfxExtMBQP *mbqp = ExtBuffer::Get(task.m_ctrl);
+    if (mbqp && mbqp->NumQPAlloc > 0)
+        task.m_bCUQPMap = 1;
+
+#endif
 #ifdef MFX_ENABLE_HEVCE_ROI
     // process roi
     mfxExtEncoderROI const * parRoi = &par.m_ext.ROI;
     mfxExtEncoderROI * rtRoi = ExtBuffer::Get(task.m_ctrl);
 
+
     if (rtRoi && rtRoi->NumROI)
     {
-        mfxStatus sts = CheckAndFixRoi(par, caps, rtRoi);
-        if (sts == MFX_ERR_INVALID_VIDEO_PARAM)
+        bool bTryROIViaMBQP;
+        mfxStatus sts = CheckAndFixRoi(par, caps, rtRoi, bTryROIViaMBQP);
+        if (sts == MFX_ERR_INVALID_VIDEO_PARAM  || (bTryROIViaMBQP && !par.bROIViaMBQP))
             parRoi = 0;
         else
             parRoi = (mfxExtEncoderROI const *)rtRoi;
             
     }
+    if (parRoi->NumROI && par.bROIViaMBQP)
+        task.m_bCUQPMap = 1;
 
     task.m_numRoi = 0;
-    if (parRoi && parRoi->NumROI)
+    if (parRoi && parRoi->NumROI && !par.bROIViaMBQP)
     {
         for (mfxU16 i = 0; i < parRoi->NumROI; i ++)
         {
             memcpy_s(&task.m_roi[i], sizeof(RoiData), &parRoi->ROI[i], sizeof(RoiData));
             task.m_numRoi ++;
-        }
+        }        
 #if MFX_VERSION > 1021
+        task.m_bPriorityToDQPpar = (par.isSWBRC() && task.m_roiMode == MFX_ROI_MODE_PRIORITY);
         if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
             task.m_roiMode = parRoi->ROIMode;
 #endif // MFX_VERSION > 1021
     }
+
 #else
     caps;
 #endif // MFX_ENABLE_HEVCE_ROI
@@ -3620,6 +3641,41 @@ mfxStatus CodeAsSkipFrame(     MFXCoreInterface &            core,
 
 
     return sts;
+}
+
+mfxStatus GetCUQPMapBlockSize(mfxU16 frameWidth, mfxU16 frameHeight,
+    mfxU16 CUQPWidth, mfxU16 CUHeight,
+    mfxU16 &blkWidth,
+    mfxU16 &blkHeight)
+{
+
+    MFX_CHECK(CUQPWidth && CUHeight, MFX_ERR_UNDEFINED_BEHAVIOR);
+    mfxU16 BlkSizes[] = {4, 8, 16, 32, 64};
+    mfxU32 numBlk = sizeof(BlkSizes) / sizeof(BlkSizes[0]);
+
+    blkWidth = blkHeight = 0;
+
+    for (mfxU32 blk = 0; blk < numBlk; blk++)
+    {
+        if (BlkSizes[blk] * CUQPWidth >= frameWidth)
+        {
+            blkWidth = BlkSizes[blk];
+            break;
+        }
+    }
+    for (mfxU32 blk = 0; blk < numBlk; blk++)
+    {
+        if (BlkSizes[blk] * CUHeight >= frameHeight)
+        {
+            blkHeight = BlkSizes[blk];
+            break;
+        }
+    }
+    MFX_CHECK(blkWidth &&  blkHeight &&
+        (blkWidth   * (CUQPWidth - 1) < frameWidth) &&
+        (blkHeight  * (CUHeight - 1) < frameHeight), MFX_ERR_UNDEFINED_BEHAVIOR);
+
+    return MFX_ERR_NONE;
 }
 
 #if DEBUG_REC_FRAMES_INFO
