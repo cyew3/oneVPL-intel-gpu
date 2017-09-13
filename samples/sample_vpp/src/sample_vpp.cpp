@@ -112,6 +112,7 @@ static
     pParams->bChromaSiting = false;
     pParams->uChromaSiting = 0;
     pParams->numFrames    = 0;
+    pParams->fccSource = MFX_FOURCC_NV12;
 
     // Optional video processing features
     pParams->mirroringParam.clear();        pParams->mirroringParam.push_back(      *pDefaultFiltersParam->pMirroringParam      );
@@ -136,7 +137,6 @@ static
     pParams->roiCheckParam.srcSeed = 0;
     pParams->roiCheckParam.dstSeed = 0;
     pParams->forcedOutputFourcc = 0;
-    pParams->isInI420 = false;
 
     // plug-in GUID
     pParams->need_plugin = false;
@@ -246,8 +246,8 @@ void ownToMfxFrameInfo( sOwnFrameInfo* in, mfxFrameInfo* out, bool copyCropParam
         out->CropW          = in->nWidth;
         out->CropH          = in->nHeight;
     }
+    out->FourCC = in->FourCC;
 
-    out->FourCC         = in->FourCC;
     out->PicStruct      = in->PicStruct;
     out->BitDepthLuma   = in->BitDepthLuma;
     out->BitDepthChroma = in->BitDepthChroma;
@@ -388,6 +388,17 @@ int main(int argc, msdk_char *argv[])
         ptsMaker.reset(new PTSMaker);
     }
 
+    // D3D11 does not support I420 and YV12 surfaces. So file reader will convert them into nv12.
+    // It may be slower than using vpp
+    bool bInPlaceConversion = (Params.ImpLib & 0x0f00) == MFX_IMPL_VIA_D3D11 &&
+        Params.fccSource == MFX_FOURCC_I420 || Params.fccSource == MFX_FOURCC_YV12;
+    if (bInPlaceConversion)
+    {
+        msdk_printf(MSDK_STRING("[WARNING] D3D11 does not support YV12 and I420 surfaces. \
+            Input will be converted to NV12 by file reader.\n"));
+        Params.inFrameInfo[0].FourCC = MFX_FOURCC_NV12;
+        Params.frameInfoIn[0].FourCC = MFX_FOURCC_NV12;
+    }
     //prepare file reader (YUV/RGB file)
     Resources.numSrcFiles = 1;
     if (Params.compositionParam.mode == VPP_FILTER_ENABLED_CONFIGURED)
@@ -397,14 +408,14 @@ int main(int argc, msdk_char *argv[])
         {
             ownToMfxFrameInfo( &(Params.inFrameInfo[i]), &(realFrameInfoIn[i]), true);
             // Set ptsMaker for the first stream only - it will store PTSes
-            sts = yuvReaders[i].Init(Params.compositionParam.streamInfo[i].streamName, i==0 ? ptsMaker.get() : NULL, Params.isInI420);
+            sts = yuvReaders[i].Init(Params.compositionParam.streamInfo[i].streamName, i==0 ? ptsMaker.get() : NULL, Params.fccSource);
             MSDK_CHECK_STATUS(sts, "yuvReaders[i].Init failed");
         }
     }
     else
     {
         ownToMfxFrameInfo( &(Params.frameInfoIn[0]),  &realFrameInfoIn[0]);
-        sts = yuvReaders[VPP_IN].Init(Params.strSrcFile,ptsMaker.get(),Params.isInI420);
+        sts = yuvReaders[VPP_IN].Init(Params.strSrcFile,ptsMaker.get(), Params.fccSource);
         MSDK_CHECK_STATUS(sts, "yuvReaders[VPP_IN].Init failed");
     }
     ownToMfxFrameInfo( &(Params.frameInfoOut[0]), &realFrameInfoOut);
