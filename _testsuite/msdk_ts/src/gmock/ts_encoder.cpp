@@ -54,19 +54,9 @@ void SkipDecision(mfxVideoParam& par, eEncoderFunction function)
         mfxStatus expect = g_tsStatus.m_expected;
         bool unsupported = false;
 
-        if (   (CO2 && CO2->MaxSliceSize && par.mfx.LowPower == MFX_CODINGOPTION_ON)
-            || (CO3 && CO3->FadeDetection == MFX_CODINGOPTION_ON))
+        if (CO3 && CO3->FadeDetection == MFX_CODINGOPTION_ON)
         {
             expect = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-            unsupported = true;
-        }
-
-        if (   par.mfx.RateControlMethod == MFX_RATECONTROL_LA
-            || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ
-            || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT
-            || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD)
-        {
-            expect = MFX_ERR_UNSUPPORTED;
             unsupported = true;
         }
 

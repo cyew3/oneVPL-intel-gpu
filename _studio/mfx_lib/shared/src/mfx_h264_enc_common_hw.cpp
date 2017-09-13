@@ -2476,12 +2476,6 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 #if defined(PRE_SI_TARGET_PLATFORM_GEN10)
     if (platform >= MFX_HW_CNL)
     {
-        if (extOpt2->MaxSliceSize && !(IsOn(par.mfx.LowPower) && hwCaps.SliceLevelRateCtrl))
-        {
-            changed = true;
-            extOpt2->MaxSliceSize = 0;
-        }
-
         if (IsOn(extOpt3->FadeDetection))
         {
             changed = true;
