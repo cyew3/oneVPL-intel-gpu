@@ -21,6 +21,12 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #define __FEI_UTILS_H__
 
 #include "sample_defs.h"
+
+#include "mfxplugin.h"
+#include "mfxplugin++.h"
+#include "plugin_utils.h"
+#include "plugin_loader.h"
+
 #include "sample_utils.h"
 #include "base_allocator.h"
 #include "sample_hevc_fei_defs.h"
@@ -180,6 +186,51 @@ private:
 
 private:
     DISALLOW_COPY_AND_ASSIGN(FileHandler);
+};
+
+/**********************************************************************************/
+
+class HEVCEncodeParamsChecker
+{
+public:
+    HEVCEncodeParamsChecker(mfxIMPL impl, mfxHDL device)
+    {
+        mfxStatus sts = m_session.Init(impl, NULL);
+        if (MFX_ERR_NONE != sts) throw mfxError(MFX_ERR_NOT_INITIALIZED, "m_session.Init failed");
+
+        sts = m_session.SetHandle(MFX_HANDLE_VA_DISPLAY, device);
+        if (MFX_ERR_NONE != sts) throw mfxError(MFX_ERR_NOT_INITIALIZED, "m_session.SetHandle failed");
+
+        mfxPluginUID pluginGuid = msdkGetPluginUID(impl, MSDK_VENCODE | MSDK_FEI, MFX_CODEC_HEVC);
+        if (AreGuidsEqual(pluginGuid, MSDK_PLUGINGUID_NULL) == true)
+            throw mfxError(MFX_ERR_NOT_INITIALIZED, "Can't load plug-in");
+
+        m_plugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, m_session, pluginGuid, 1));
+        if (!m_plugin.get()) throw mfxError(MFX_ERR_NOT_INITIALIZED, "Can't load plug-in");
+
+        m_encode.reset(new MFXVideoENCODE(m_session));
+    }
+
+    ~HEVCEncodeParamsChecker()
+    {
+    }
+
+    mfxStatus Query(MfxVideoParamsWrapper & pars) // in/out
+    {
+        mfxStatus sts = m_encode->Query(&pars, &pars);
+        MSDK_IGNORE_MFX_STS(sts, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
+        MSDK_CHECK_STATUS(sts, "HEVCEncodeParamsChecker Query failed");
+
+        return sts;
+    }
+
+private:
+    MFXVideoSession  m_session;
+    std::auto_ptr<MFXPlugin>        m_plugin;
+    std::auto_ptr<MFXVideoENCODE>   m_encode;
+
+private:
+    DISALLOW_COPY_AND_ASSIGN(HEVCEncodeParamsChecker);
 };
 
 /**********************************************************************************/

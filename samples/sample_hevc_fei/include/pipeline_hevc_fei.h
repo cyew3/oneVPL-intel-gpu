@@ -48,24 +48,26 @@ private:
                                       shouldn't be modified during processing to not lose
                                       initial settings */
 
-    mfxIMPL                           m_impl;
-    std::auto_ptr<CHWDevice>          m_pHWdev;
+    mfxIMPL                                m_impl;
+    std::auto_ptr<CHWDevice>               m_pHWdev;
 
-    std::auto_ptr<mfxAllocatorParams> m_pMFXAllocatorParams;
-    std::auto_ptr<MFXFrameAllocator>  m_pMFXAllocator;
+    std::auto_ptr<mfxAllocatorParams>      m_pMFXAllocatorParams;
+    std::auto_ptr<MFXFrameAllocator>       m_pMFXAllocator;
 
-    MFXVideoSession                   m_mfxSession;
-    std::auto_ptr<MFXPlugin>          m_pDecoderPlugin;
-    std::auto_ptr<MFXPlugin>          m_pHEVCePlugin;
+    MFXVideoSession                        m_mfxSession;
+    std::auto_ptr<MFXPlugin>               m_pDecoderPlugin;
+    std::auto_ptr<MFXPlugin>               m_pHEVCePlugin;
 
-    SurfacesPool                      m_EncSurfPool;
+    SurfacesPool                           m_EncSurfPool;
 
-    std::auto_ptr<IYUVSource>         m_pYUVSource; // source of raw YUV data for encoder (e.g. YUV file reader, decoder, etc)
-    std::auto_ptr<EncodeOrderControl> m_pOrderCtrl;
-    std::auto_ptr<FEI_Preenc>         m_pFEI_PreENC;
-    std::auto_ptr<FEI_Encode>         m_pFEI_Encode;
+    std::auto_ptr<IYUVSource>              m_pYUVSource; // source of raw YUV data for encoder (e.g. YUV file reader, decoder, etc)
+    std::auto_ptr<EncodeOrderControl>      m_pOrderCtrl;
+    std::auto_ptr<FEI_Preenc>              m_pFEI_PreENC;
+    std::auto_ptr<FEI_Encode>              m_pFEI_Encode;
 
-    mfxU32                            m_processedFrames;
+    std::auto_ptr<HEVCEncodeParamsChecker> m_pParamChecker;
+
+    mfxU32                                 m_processedFrames;
 
 private:
     mfxStatus LoadFEIPlugin();
@@ -83,9 +85,6 @@ private:
     DISALLOW_COPY_AND_ASSIGN(CEncodingPipeline);
 };
 
-// function-utils for creating mfxVideoParam for every component in pipeline
-MfxVideoParamsWrapper GetCommonEncodeParams(const sInputParams& user_pars, const mfxFrameInfo& in_fi);
-MfxVideoParamsWrapper GetPreEncParams(const sInputParams& user_pars, const mfxFrameInfo& in_fi);
 MfxVideoParamsWrapper GetEncodeParams(const sInputParams& user_pars, const mfxFrameInfo& in_fi);
 
 #endif // __PIPELINE_FEI_H__

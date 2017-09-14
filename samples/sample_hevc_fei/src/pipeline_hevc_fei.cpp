@@ -46,6 +46,13 @@ mfxStatus CEncodingPipeline::Init()
         sts = CreateAllocator();
         MSDK_CHECK_STATUS(sts, "CreateAllocator failed");
 
+        {
+            mfxHDL hdl = NULL;
+            sts = m_pHWdev->GetHandle(MFX_HANDLE_VA_DISPLAY, &hdl);
+            MSDK_CHECK_STATUS(sts, "m_pHWdev->GetHandle failed");
+            m_pParamChecker.reset(new HEVCEncodeParamsChecker(m_impl, hdl));
+        }
+
         mfxFrameInfo frameInfo;
 
         m_pYUVSource.reset(CreateYUVSource());
@@ -402,14 +409,16 @@ mfxStatus CEncodingPipeline::DrainBufferedFrames()
     return sts;
 }
 
-// function generate common mfxVideoParam for components like PreENC and ENCODE
-// from user cmd line parameters and frame info from previous component in pipeline
-MfxVideoParamsWrapper GetCommonEncodeParams(const sInputParams& user_pars, const mfxFrameInfo& in_fi)
+// Function generates common mfxVideoParam ENCODE
+// from user cmd line parameters and frame info from upstream component in pipeline.
+MfxVideoParamsWrapper GetEncodeParams(const sInputParams& user_pars, const mfxFrameInfo& in_fi)
 {
     MfxVideoParamsWrapper pars;
 
     // frame info from previous component
     MSDK_MEMCPY_VAR(pars.mfx.FrameInfo, &in_fi, sizeof(mfxFrameInfo));
+
+    pars.mfx.CodecId = MFX_CODEC_HEVC;
 
     // default settings
     pars.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
@@ -438,38 +447,9 @@ MfxVideoParamsWrapper GetCommonEncodeParams(const sInputParams& user_pars, const
     mfxExtCodingOption3* pCO3 = pars.AddExtBuffer<mfxExtCodingOption3>();
     if (!pCO3) throw mfxError(MFX_ERR_NOT_INITIALIZED, "Failed to attach mfxExtCodingOption3");
 
-    std::fill(pCO3->NumRefActiveP, pCO3->NumRefActiveP + 8,     user_pars.NumRefActiveP);
+    std::fill(pCO3->NumRefActiveP,   pCO3->NumRefActiveP + 8,   user_pars.NumRefActiveP);
     std::fill(pCO3->NumRefActiveBL0, pCO3->NumRefActiveBL0 + 8, user_pars.NumRefActiveBL0);
     std::fill(pCO3->NumRefActiveBL1, pCO3->NumRefActiveBL1 + 8, user_pars.NumRefActiveBL1);
-
-    return pars;
-}
-
-MfxVideoParamsWrapper GetPreEncParams(const sInputParams& user_pars, const mfxFrameInfo& in_fi)
-{
-    MfxVideoParamsWrapper pars = GetCommonEncodeParams(user_pars, in_fi);
-
-    // PreENC specific parameters
-    pars.mfx.CodecId = MFX_CODEC_AVC;
-
-    // attach buffer to set FEI PreENC usage model
-    mfxExtFeiParam* pExtBufInit = pars.AddExtBuffer<mfxExtFeiParam>();
-    if (!pExtBufInit) throw mfxError(MFX_ERR_NOT_INITIALIZED, "Failed to attach mfxExtFeiParam");
-
-    pExtBufInit->Func = MFX_FEI_FUNCTION_PREENC;
-
-    return pars;
-}
-
-MfxVideoParamsWrapper GetEncodeParams(const sInputParams& user_pars, const mfxFrameInfo& in_fi)
-{
-    MfxVideoParamsWrapper pars = GetCommonEncodeParams(user_pars, in_fi);
-
-    // HEVC ENCODE specific parameters
-    pars.mfx.CodecId = MFX_CODEC_HEVC;
-
-    mfxExtCodingOption3* pCO3 = pars.GetExtBuffer<mfxExtCodingOption3>();
-    if (!pCO3) throw mfxError(MFX_ERR_NOT_INITIALIZED, "Failed to attach mfxExtCodingOption3");
 
     pCO3->GPB = user_pars.GPB;
 
@@ -501,9 +481,20 @@ FEI_Preenc* CEncodingPipeline::CreatePreENC(mfxFrameInfo& in_fi)
     if (!m_inParams.bPREENC)
         return NULL;
 
-    MfxVideoParamsWrapper preenc_pars = GetPreEncParams(m_inParams, in_fi);
+    MfxVideoParamsWrapper pars = GetEncodeParams(m_inParams, in_fi);
 
-    return new FEI_Preenc(&m_mfxSession, preenc_pars, m_inParams.mvoutFile, m_inParams.mbstatoutFile);
+    mfxStatus sts = m_pParamChecker->Query(pars);
+    CHECK_STS_AND_RETURN(sts, "m_pParamChecker>Query failed", NULL);
+
+    // PreENC specific parameters
+    pars.mfx.CodecId = MFX_CODEC_AVC;
+
+    // attach buffer to set FEI PreENC usage model
+    mfxExtFeiParam* pExtBufInit = pars.AddExtBuffer<mfxExtFeiParam>();
+    if (!pExtBufInit) throw mfxError(MFX_ERR_NOT_INITIALIZED, "Failed to attach mfxExtFeiParam");
+    pExtBufInit->Func = MFX_FEI_FUNCTION_PREENC;
+
+    return new FEI_Preenc(&m_mfxSession, pars, m_inParams.mvoutFile, m_inParams.mbstatoutFile);
 }
 
 FEI_Encode* CEncodingPipeline::CreateEncode(mfxFrameInfo& in_fi)
@@ -516,21 +507,23 @@ FEI_Encode* CEncodingPipeline::CreateEncode(mfxFrameInfo& in_fi)
     sts = LoadFEIPlugin();
     CHECK_STS_AND_RETURN(sts, "LoadFEIPlugin failed", NULL);
 
-    mfxHDL hdl = NULL;
-    sts = m_pHWdev->GetHandle(MFX_HANDLE_VA_DISPLAY, &hdl);
-    CHECK_STS_AND_RETURN(sts, "CreateEncode::m_pHWdev->GetHandle failed", NULL);
-
-    MfxVideoParamsWrapper encode_pars = GetEncodeParams(m_inParams, in_fi);
+    MfxVideoParamsWrapper pars = GetEncodeParams(m_inParams, in_fi);
+    sts = m_pParamChecker->Query(pars);
+    CHECK_STS_AND_RETURN(sts, "m_pParamChecker>Query failed", NULL);
 
     PredictorsRepaking* repacker = NULL;
     if (m_inParams.bPREENC)
     {
         repacker = new PredictorsRepaking();
-        sts = repacker->Init(encode_pars);
+        sts = repacker->Init(pars);
         CHECK_STS_AND_RETURN(sts, "CreateEncode::repacker->Init failed", NULL);
 
         repacker->SetPerfomanceRepackingMode();
     }
 
-    return new FEI_Encode(&m_mfxSession, hdl, encode_pars, m_inParams.strDstFile, m_inParams.mvpInFile, repacker);
+    mfxHDL hdl = NULL;
+    sts = m_pHWdev->GetHandle(MFX_HANDLE_VA_DISPLAY, &hdl);
+    CHECK_STS_AND_RETURN(sts, "CreateEncode::m_pHWdev->GetHandle failed", NULL);
+
+    return new FEI_Encode(&m_mfxSession, hdl, pars, m_inParams.strDstFile, m_inParams.mvpInFile, repacker);
 }

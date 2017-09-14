@@ -376,6 +376,9 @@ void AdjustOptions(sInputParams& params)
     params.input.dFrameRate = tune(params.input.dFrameRate, 0.0, 30.0);
     params.nNumSlices       = tune(params.nNumSlices, 0, 1);
     params.nIdrInterval     = tune(params.nIdrInterval, 0, 0xffff);
+    mfxU16 nMinRefFrame     = std::max(params.NumRefActiveP, (mfxU16)(params.NumRefActiveBL0 + params.NumRefActiveBL1));
+    if (nMinRefFrame > params.nNumRef)
+        params.nNumRef      = nMinRefFrame;
 
     // PreENC works only in encoder order mode
     // ENCODE uses display order by default, but input MV predictors are in encoded order.
@@ -384,34 +387,6 @@ void AdjustOptions(sInputParams& params)
         if (!params.bEncodedOrder)
             MSDK_CHECK_WRN(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, "Encoded order enabled.");
         params.bEncodedOrder = true;
-    }
-
-    // gop structure options adjustment
-    // adjustment values is related with driver/library behavior
-    if (params.nGopSize > 1)
-    {
-        if (params.nRefDist < 3 && params.BRefType != MFX_B_REF_OFF)
-            params.BRefType = MFX_B_REF_OFF;
-        if (params.nRefDist > 2 && params.BRefType == MFX_B_REF_UNKNOWN)
-            params.BRefType = MFX_B_REF_PYRAMID;
-
-        mfxU16 min_ref = params.nRefDist < 2 ? 1 : 2;
-        if (params.BRefType == MFX_B_REF_PYRAMID)
-            min_ref = params.nRefDist > 4 ? 4 : 3;
-        params.nNumRef = std::max(params.nNumRef, min_ref);
-
-        mfxU16 min_active_ref_l0 = params.nNumRef;
-        mfxU16 max_active_ref_l0 = 4;
-        if (params.nRefDist > 1 && params.BRefType == MFX_B_REF_OFF)
-            min_active_ref_l0 = params.nNumRef - 1;
-
-        params.NumRefActiveP = Clip3(min_active_ref_l0, max_active_ref_l0, params.NumRefActiveP);
-        params.NumRefActiveBL0 = Clip3(min_active_ref_l0, max_active_ref_l0, params.NumRefActiveBL0);
-
-        mfxU16 min_active_ref_l1 = 1;
-        mfxU16 max_active_ref_l1 = 2;
-        params.NumRefActiveBL1 = Clip3(min_active_ref_l1, max_active_ref_l1, params.NumRefActiveBL1);
-
     }
 }
 
