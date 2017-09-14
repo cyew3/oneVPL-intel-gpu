@@ -2088,6 +2088,7 @@ void Lookahead::AnalyzeSceneCut_AndUpdateState_Atul(Frame* in)
     FrameIter curr = std::find_if(m_inputQueue.begin(), m_inputQueue.end(), isEqual(in->m_frameOrder));
     Frame* prev = curr == m_inputQueue.begin() ? NULL : *(--FrameIter(curr));
     Ipp32s sceneCut = DetectSceneCut_AMT(in, prev);
+    if (sceneCut && in->m_frameOrder < 2) sceneCut = 0;
 
 #if 0
     if (sceneCut) {
@@ -2110,7 +2111,7 @@ void Lookahead::AnalyzeSceneCut_AndUpdateState_Atul(Frame* in)
     in->m_sceneOrder = m_enc.m_sceneOrder;
 
     //special case for interlace mode to keep (P | I) pair instead of (I | P)
-    Ipp32s rightAnchor = (m_videoParam.picStruct == MFX_PICSTRUCT_PROGRESSIVE || (m_videoParam.picStruct != MFX_PICSTRUCT_PROGRESSIVE && in->m_secondFieldFlag));
+    Ipp32s rightAnchor = (m_videoParam.picStruct == MFX_PICSTRUCT_PROGRESSIVE || (m_videoParam.picStruct != MFX_PICSTRUCT_PROGRESSIVE && in->m_secondFieldFlag) || m_videoParam.GopRefDist==1);
 
     Ipp8u insertKey = 0;
     if (sceneCut) {
@@ -2120,6 +2121,9 @@ void Lookahead::AnalyzeSceneCut_AndUpdateState_Atul(Frame* in)
             if  (rightAnchor){
                 m_pendingSceneCut = 0;
                 insertKey = 1;
+            }
+            else {
+                m_pendingSceneCut = 1;
             }
         }
     } else if (m_pendingSceneCut && (in->m_picCodeType != MFX_FRAMETYPE_B) && rightAnchor) {
@@ -2256,7 +2260,7 @@ void H265Enc::AverageComplexity(Frame *in, H265VideoParam& videoParam, Frame *ne
             Ipp32f tabCorrFactor[] = {1.5f, 2.f};
             scaleFactor = tabCorrFactor[res];
         }
-        if(videoParam.picStruct != MFX_PICSTRUCT_PROGRESSIVE) scaleFactor *= 1.29;
+        //if(videoParam.picStruct != MFX_PICSTRUCT_PROGRESSIVE) scaleFactor *= 1.29;
         if (in->m_stats[0]) {
             in->m_stats[0]->m_avgBestSatd /= scaleFactor;
             in->m_stats[0]->m_avgIntraSatd /= scaleFactor;
@@ -3028,16 +3032,22 @@ mfxStatus Lookahead::Execute(ThreadingTask& task)
             }
 #endif
 
-            if (in[0] && in[0]->m_frameOrder > 0 && 
-                (m_videoParam.AnalyzeCmplx || (m_videoParam.DeltaQpMode & (AMT_DQP_PAQ|AMT_DQP_CAL)) )) // PAQ/CAL disable in encOrder
+            for (Ipp32s fieldNum = 0; fieldNum < fieldCount; fieldNum++) 
             {
-                for (Ipp32s fieldNum = 0; fieldNum < fieldCount; fieldNum++) {
+                if (in[fieldNum] && in[fieldNum]->m_frameOrder > 0 &&
+                    (m_videoParam.AnalyzeCmplx || (m_videoParam.DeltaQpMode & (AMT_DQP_PAQ | AMT_DQP_CAL)))) // PAQ/CAL disable in encOrder
+                {
                     Frame* curr = in[fieldNum];
                     FrameIter it = std::find_if(begin, end, isEqual(curr->m_frameOrder));
                     if (it == begin || it == end) {
                         it = end;
                     } else {
                         it--;
+                        if (fieldCount > 1 && m_videoParam.MaxRefIdxP[0] > 1) {  // condition for field parity analysis
+                            if (it != begin && (*it)->m_picCodeType != MFX_FRAMETYPE_I && curr->m_frameOrder > 1) { // check for I frame
+                                it--; // maintain Interlace field parity
+                            }
+                        }
                     }
 
                     // ME (prev, curr)
@@ -3090,9 +3100,8 @@ mfxStatus Lookahead::Execute(ThreadingTask& task)
                         }
                     }
 #endif
-                } // foreach fieldNum
-            } else {
-                for (Ipp32s fieldNum = 0; fieldNum < fieldCount; fieldNum++) {
+                } // foreach field
+                else {
                     Frame* curr = in[fieldNum];
                     Statistics* stat = curr->m_stats[ useLowres ? 1 : 0 ];
                     FrameData* frame = useLowres ? curr->m_lowres : curr->m_origin;
@@ -3188,6 +3197,13 @@ mfxStatus Lookahead::Execute(ThreadingTask& task)
                         it = end;
                     } else {
                         it--;
+                        if(fieldCount > 1 && m_videoParam.MaxRefIdxP[0] > 1) {  // condition for field parity analysis
+                            if (it == begin) {
+                                it = end;   // don't release
+                            } else {
+                                it--;       // release same field parity
+                            }
+                        }
                     }
                     if (it != end) (*it)->m_lookaheadRefCounter--;
                 }

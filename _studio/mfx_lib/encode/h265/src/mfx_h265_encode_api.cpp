@@ -124,6 +124,7 @@ namespace {
         dst->VPSId = src->VPSId;
     }
 
+    
     void CopyParam(mfxVideoParam &dst, const mfxVideoParam &src)
     {
         dst.AsyncDepth = src.AsyncDepth;
@@ -142,6 +143,41 @@ namespace {
                 }
             }
         }
+    }
+    
+    Ipp32s CheckParamHasOnlyBRCBitrateChange(const mfxVideoParam &src, const mfxVideoParam &ref)
+    {
+        mfxVideoParam       mfxParam;
+        H265Enc::ExtBuffers extBuffers;
+        Zero(mfxParam);
+        extBuffers.CleanUp();
+        mfxParam.NumExtParam = sizeof(extBuffers.extParamAll) / sizeof(extBuffers.extParamAll[0]);
+        mfxParam.ExtParam = extBuffers.extParamAll;
+        CopyParam(mfxParam, src);
+        //mfxParam.mfx.BRCParamMultiplier = ref.mfx.BRCParamMultiplier; // (Cannot change or will change all RC parameters)
+        mfxParam.mfx.TargetKbps = ref.mfx.TargetKbps;
+        bool noChange = memcmp(&mfxParam.mfx, &ref.mfx, sizeof(mfxInfoMFX)) == 0;
+        if (noChange && src.NumExtParam) {
+            // Check others
+            if (src.NumExtParam > ref.NumExtParam) noChange = 0;    // something more
+            for (Ipp32u i = 0; i < ref.NumExtParam && noChange; i++) {
+                mfxExtBuffer *d = GetExtBufferById(src.ExtParam, src.NumExtParam, ref.ExtParam[i]->BufferId);
+                if (d && d->BufferSz == ref.ExtParam[i]->BufferSz) {
+                    if (d->BufferId == MFX_EXTBUFF_CODING_OPTION2) {
+                        // Allows Max Frame Size to Change (Does not effect HRD)
+                        mfxExtBuffer *c = GetExtBufferById(mfxParam.ExtParam, mfxParam.NumExtParam, ref.ExtParam[i]->BufferId);
+                        mfxExtCodingOption2 *opt2 = (mfxExtCodingOption2*)c;
+                        mfxExtCodingOption2 *opt2ref = (mfxExtCodingOption2*)ref.ExtParam[i];
+                        if(opt2ref->MaxFrameSize) 
+                            opt2->MaxFrameSize = opt2ref->MaxFrameSize;         // Cannot introduce MaxFrameSize only change
+                        noChange = memcmp(c, ref.ExtParam[i], d->BufferSz) == 0;
+                    } else {
+                        noChange = memcmp(d, ref.ExtParam[i], d->BufferSz) == 0;
+                    }
+                }
+            }
+        }
+        return noChange;
     }
 
     const struct LevelLimits {
@@ -1039,7 +1075,9 @@ namespace {
             if (initialDelayInKB) // initialDelayInKB >= 1 average compressed frames
                 wrnIncompatible = !CheckMinSat(initialDelayInKB, avgFrameInKB);
         }
-        if (opt2 && opt2->MaxFrameSize && (mfx.RateControlMethod == VBR || mfx.RateControlMethod == AVBR) && fi.FrameRateExtN && fi.FrameRateExtD && fi.FourCC != P010 && fi.FourCC != P210 && fi.PicStruct == PROGR) {
+        if (opt2 && opt2->MaxFrameSize && (mfx.RateControlMethod == VBR || mfx.RateControlMethod == AVBR) 
+            && fi.FrameRateExtN && fi.FrameRateExtD && fi.FourCC != P010 && fi.FourCC != P210 
+            && (fi.PicStruct == PROGR || (fi.PicStruct != PROGR && mfx.GopRefDist == 1))) {
             Ipp32u MaxFrameSize = opt2->MaxFrameSize;
             const Ipp32u avgFrameInBytes = (Ipp32u)MIN(MAX_UINT/2, (Ipp64f)targetKbps * 1000 * fi.FrameRateExtD / fi.FrameRateExtN / 8) + 1;
             wrnIncompatible = !CheckMinSat(MaxFrameSize, avgFrameInBytes);
@@ -1245,6 +1283,8 @@ namespace {
         if (optHevc.FramesInParallel == 0) {
             if (par.AsyncDepth == 1 || mfx.NumSlice > 1 || numTile > 1)
                 optHevc.FramesInParallel = (fi.PicStruct == TFF || fi.PicStruct == BFF) ? 2 : 1; // at least 2 for Interlace
+            else if (par.AsyncDepth == 2 && mfx.GopRefDist == 1 && mfx.NumThread >= 4)
+                optHevc.FramesInParallel = (fi.PicStruct == TFF || fi.PicStruct == BFF) ? 4 : 2; // special case (low delay and some frames in parallel)
             else if (optHevc.EnableCm == ON)
                 optHevc.FramesInParallel = 7; // need 7 frames for the best CPU/GPU parallelism
             else {
@@ -1520,8 +1560,13 @@ namespace {
         if (optHevc.AnalyzeCmplx == 0)
             optHevc.AnalyzeCmplx = IsCbrOrVbrOrAvbr(mfx.RateControlMethod) ? 2 : 1;
         if (optHevc.RateControlDepth == 0)
-            if (optHevc.AnalyzeCmplx == 2)
-                optHevc.RateControlDepth = mfx.GopRefDist + 1;
+            if (optHevc.AnalyzeCmplx == 2) {
+                if (par.AsyncDepth == 1) {
+                    optHevc.RateControlDepth = 1;
+                } else {
+                    optHevc.RateControlDepth = mfx.GopRefDist + 1;
+                }
+            }
         if (optHevc.LowresFactor == 0)
             optHevc.LowresFactor = defaultOptHevc.LowresFactor;
         if (optHevc.DeblockBorders == 0 && region.RegionEncoding == MFX_HEVC_REGION_ENCODING_OFF)
@@ -1724,11 +1769,34 @@ mfxStatus MFXVideoENCODEH265::QueryIOSurf(MFXCoreInterface1 *core, mfxVideoParam
     return MFX_ERR_NONE;
 }
 
-
 mfxStatus MFXVideoENCODEH265::Reset(mfxVideoParam *par)
 {
     if (m_impl.get() == 0)
         return MFX_ERR_NOT_INITIALIZED;
+    // Check that only BRC Params (Bitrate and MFS) have changed for VBR/AVBR only (MFS cannot be new param, BRCParamMultiplier cannot change)
+    if (par && (par->mfx.RateControlMethod == VBR || par->mfx.RateControlMethod == AVBR) && CheckParamHasOnlyBRCBitrateChange(*par, m_mfxParam)) {
+        // Check new Params
+        ErrorFlag wrnIncompatible = false;
+        CopyParam(m_mfxParam, *par);    // safe to copy since everything is the same as before (memcmp based check, no recheck of params)
+        if (par->mfx.RateControlMethod == VBR) {
+            Ipp32s brcMultiplier = m_mfxParam.mfx.BRCParamMultiplier;
+            Ipp32s maxRateKbps = MIN(0xffff, GetMaxBrForLevel(REXT, H62) / 1000 / brcMultiplier);
+            wrnIncompatible = !CheckMaxSat(m_mfxParam.mfx.TargetKbps, maxRateKbps);
+            wrnIncompatible = !CheckMaxSat(m_mfxParam.mfx.MaxKbps, maxRateKbps);
+        }
+        mfxExtCodingOption2 *opt2 = GetExtBuffer(m_mfxParam);
+        if (opt2 && opt2->MaxFrameSize) {
+            mfxFrameInfo &fi = m_mfxParam.mfx.FrameInfo;
+            Ipp32u targetKbps = m_mfxParam.mfx.BRCParamMultiplier * m_mfxParam.mfx.TargetKbps;
+            const Ipp32u avgFrameInBytes = (Ipp32u)MIN(MAX_UINT / 2, (Ipp64f)targetKbps * 1000 * fi.FrameRateExtD / fi.FrameRateExtN / 8) + 1;
+            wrnIncompatible = !CheckMinSat(opt2->MaxFrameSize, avgFrameInBytes);
+        }
+        // Reinit BRC
+        mfxStatus sts =  m_impl->ResetBRC(m_mfxParam);
+        if (sts != MFX_ERR_NONE) return sts;
+        if(wrnIncompatible) return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+        return MFX_ERR_NONE;
+    }
     Close();
     return Init(par);
 }
@@ -1795,9 +1863,9 @@ mfxStatus MFXVideoENCODEH265::EncodeFrameCheck(
     if (surface) { // check frame parameters
         if (surface->Info.ChromaFormat != m_mfxParam.mfx.FrameInfo.ChromaFormat)
             return MFX_ERR_INVALID_VIDEO_PARAM;
-        if (surface->Info.Width != m_mfxParam.mfx.FrameInfo.Width)
+        if (surface->Info.Width < m_mfxParam.mfx.FrameInfo.Width)
             return MFX_ERR_INVALID_VIDEO_PARAM;
-        if (surface->Info.Height != m_mfxParam.mfx.FrameInfo.Height)
+        if (surface->Info.Height < m_mfxParam.mfx.FrameInfo.Height)
             return MFX_ERR_INVALID_VIDEO_PARAM;
 
         if (surface->Data.Y) {

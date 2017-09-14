@@ -45,6 +45,7 @@
 #define H265FEI_Close(...) (MFX_ERR_NONE)
 #define H265FEI_GetSurfaceDimensions(...) (MFX_ERR_NONE)
 #define H265FEI_GetSurfaceDimensions_new(...) (MFX_ERR_NONE)
+#define H265FEI_GetSurfaceDimensions_Initialized(...) (MFX_ERR_NONE)
 #define H265FEI_Init(...) (MFX_ERR_NONE)
 #define H265FEI_ProcessFrameAsync(...) (MFX_ERR_NONE)
 #define H265FEI_SyncOperation(...) (MFX_ERR_NONE)
@@ -342,7 +343,8 @@ static void TaskLogDump()
             }
         }
 
-        intParam.PGopPicSize = (intParam.GopRefDist == 1 && intParam.MaxRefIdxP[0] > 1) ? PGOP_PIC_SIZE : 1;
+        // BRC not P Gop aware, Interlace P gop not supported
+        intParam.PGopPicSize = (intParam.GopRefDist == 1 && intParam.MaxRefIdxP[0] > 1 && fi.PicStruct == PROGR && mfx.RateControlMethod == CQP) ? PGOP_PIC_SIZE : 1;
 
         intParam.AnalyseFlags = 0;
         if (optHevc.AnalyzeChroma == ON) intParam.AnalyseFlags |= HEVC_ANALYSE_CHROMA;
@@ -1018,8 +1020,31 @@ namespace {
     }
 };
 
-
-
+mfxStatus H265Encoder::ResetBRC(mfxVideoParam &par)
+{ 
+    if (m_brc) {
+        if (par.mfx.RateControlMethod != CQP) {
+            const mfxExtCodingOption2 &opt2 = GetExtBuffer(par);
+            // Check validity prior to call
+            // Rate control specific internal params
+            m_videoParam.hrdPresentFlag = (opt2.DisableVUI == OFF && (par.mfx.RateControlMethod == CBR || par.mfx.RateControlMethod == VBR));
+            m_videoParam.cbrFlag = (par.mfx.RateControlMethod == CBR);
+            m_videoParam.targetBitrate = MIN(0xfffffed8, (Ipp64u)par.mfx.TargetKbps * par.mfx.BRCParamMultiplier * 1000);
+            if (m_videoParam.hrdPresentFlag) {
+                m_videoParam.cpbSize = MIN(0xffffE380, (Ipp64u)par.mfx.BufferSizeInKB * par.mfx.BRCParamMultiplier * 8000);
+                m_videoParam.initDelay = MIN(0xffffE380, (Ipp64u)par.mfx.InitialDelayInKB * par.mfx.BRCParamMultiplier * 8000);
+                m_videoParam.hrdBitrate = m_videoParam.cbrFlag ? m_videoParam.targetBitrate : MIN(0xfffffed8, (Ipp64u)par.mfx.MaxKbps * par.mfx.BRCParamMultiplier * 1000);
+            }
+            
+            if (opt2.MaxFrameSize && (par.mfx.RateControlMethod == VBR || par.mfx.RateControlMethod == AVBR)) {
+                m_videoParam.MaxFrameSizeInBits = opt2.MaxFrameSize * 8;  // bits
+            }
+        }
+        return m_brc->Init(&par, m_videoParam);
+        //return m_brc->Reset(&par, m_videoParam);
+    } 
+    return MFX_ERR_NOT_INITIALIZED;
+}
 
 mfxStatus H265Encoder::Init(const mfxVideoParam &par)
 {
@@ -1238,6 +1263,16 @@ mfxStatus H265Encoder::Init(const mfxVideoParam &par)
 
         mfxExtFEIH265Alloc feiAlloc = {};
         MFXCoreInterface core(m_core.m_core);
+
+#ifndef OLD_INIT_2xCREATEDEVICE
+        mfxStatus sts = H265FEI_Init(&m_fei, &feiParams, &core);
+        if (sts != MFX_ERR_NONE)
+            return sts;
+        
+        sts = H265FEI_GetSurfaceDimensions_Initialized(m_fei, &feiParams, &feiAlloc);
+        if (sts != MFX_ERR_NONE)
+            return sts;
+#else
         mfxStatus sts = H265FEI_GetSurfaceDimensions_new(&core, &feiParams, &feiAlloc);
         if (sts != MFX_ERR_NONE)
             return sts;
@@ -1245,6 +1280,7 @@ mfxStatus H265Encoder::Init(const mfxVideoParam &par)
         sts = H265FEI_Init(&m_fei, &feiParams, &core);
         if (sts != MFX_ERR_NONE)
             return sts;
+#endif
 
         FeiOutData::AllocInfo feiOutAllocInfo;
         feiOutAllocInfo.feiHdl = m_fei;
@@ -2108,18 +2144,26 @@ mfxStatus H265Encoder::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *s
 
     Ipp32s buffering = 0;
     if (!m_videoParam.encodedOrder) {
-        buffering += m_videoParam.GopRefDist - 1;
-        buffering += m_videoParam.m_framesInParallel - 1;
-        buffering += 1; // RsCs
+        Ipp32s enc_buffering = 0;
+        Ipp32s la_buffering = 0;                                        // num la frames needed to release one frame to reorder queue
+        enc_buffering += m_videoParam.GopRefDist - 1;                   // reorder queue
+        if (m_videoParam.picStruct == PROGR) {
+            enc_buffering += m_videoParam.m_framesInParallel - 1;               // pipeline
+        } else {
+            enc_buffering += IPP_MAX(1, (m_videoParam.m_framesInParallel+1)/2) - 1; // pipeline in Frames
+        }
+        enc_buffering += IPP_MAX(0, m_videoParam.RateControlDepth - 1); // Look ahead Analysis for BRC
+        la_buffering += 1;                                              // RsCs for simple Enc
         if (m_videoParam.SceneCut || m_videoParam.AnalyzeCmplx || m_videoParam.DeltaQpMode) {
-            if (m_videoParam.SceneCut)     buffering += /*10 +*/ 1 + 1;
-            if (m_videoParam.AnalyzeCmplx) buffering += m_videoParam.RateControlDepth;
+            if (m_videoParam.AnalyzeCmplx) la_buffering = IPP_MAX(la_buffering, 2);       // only prev frame needed
+            if (m_videoParam.SceneCut)     la_buffering = IPP_MAX(la_buffering, 2);       // new AMT scene cut (only prev frame/ prev field needed)
             if (m_videoParam.DeltaQpMode) {
-                if      (m_videoParam.DeltaQpMode&(AMT_DQP_PAQ)) buffering += 2 * m_videoParam.GopRefDist + 1;
-                else if (m_videoParam.DeltaQpMode&(AMT_DQP_CAL)) buffering += m_videoParam.GopRefDist + 1;
-                else if (m_videoParam.DeltaQpMode&(AMT_DQP_CAQ)) buffering += 1;
+                if      (m_videoParam.DeltaQpMode&(AMT_DQP_PAQ)) la_buffering = IPP_MAX(la_buffering, 2 * m_videoParam.GopRefDist + 1);
+                else if (m_videoParam.DeltaQpMode&(AMT_DQP_CAL)) la_buffering = IPP_MAX(la_buffering, m_videoParam.GopRefDist + 1);
+                else if (m_videoParam.DeltaQpMode&(AMT_DQP_CAQ)) la_buffering = IPP_MAX(la_buffering, 1); // same as RsCs
             }
         }
+        buffering += (enc_buffering + la_buffering);
     } else {
         buffering += m_videoParam.m_framesInParallel;
         buffering += 1; // RsCs or CAQ

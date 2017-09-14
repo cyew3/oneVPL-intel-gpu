@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef _MFX_H265_FEI_H
@@ -423,6 +423,7 @@ mfxStatus H265FEI_DestroySavedSyncPoint(mfxFEIH265 feih265, mfxFEISyncPoint sync
 
 mfxStatus H265FEI_GetSurfaceDimensions(void *core, mfxU32 width, mfxU32 height, mfxExtFEIH265Alloc *extAlloc);
 mfxStatus H265FEI_GetSurfaceDimensions_new(void *core, mfxFEIH265Param *param, mfxExtFEIH265Alloc *extAlloc);
+mfxStatus H265FEI_GetSurfaceDimensions_Initialized(mfxFEIH265 feih265, mfxFEIH265Param *param, mfxExtFEIH265Alloc *extAlloc);
 mfxStatus H265FEI_AllocateSurfaceUp(mfxFEIH265 feih265, mfxU8 *sysMemLu, mfxU8 *sysMemCh, mfxHDL *pInSurf);
 mfxStatus H265FEI_AllocateInputSurface(mfxFEIH265 feih265, mfxHDL *pInSurf);
 mfxStatus H265FEI_AllocateReconSurface(mfxFEIH265 feih265, mfxHDL *pRecSurf);

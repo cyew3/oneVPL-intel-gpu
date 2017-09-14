@@ -1500,10 +1500,18 @@ void H265Encoder::ConfigureInputFrame(Frame* frame, bool bEncOrder, bool bEncCtr
                     frame->m_poc = 0;
                 }
             } else if (m_videoParam.GopPicSize > 0 && (frame->m_frameOrder/2 - frame->m_frameOrderOfLastIntra/2) % m_videoParam.GopPicSize == 0) {
-                if (frame->m_frameOrder & 1)
-                    frame->m_picCodeType = MFX_FRAMETYPE_I;
-                else
-                    frame->m_picCodeType = MFX_FRAMETYPE_P;
+                if (m_videoParam.GopRefDist == 1) {
+                    if (frame->m_frameOrder & 1)
+                        frame->m_picCodeType = MFX_FRAMETYPE_P;
+                    else
+                        frame->m_picCodeType = MFX_FRAMETYPE_I;
+                }
+                else {
+                    if (frame->m_frameOrder & 1)
+                        frame->m_picCodeType = MFX_FRAMETYPE_I;
+                    else
+                        frame->m_picCodeType = MFX_FRAMETYPE_P;
+                }
             } else if ((frame->m_frameOrder/2 - frame->m_frameOrderOfLastAnchor/2) % m_videoParam.GopRefDist == 0) {
                 frame->m_picCodeType = MFX_FRAMETYPE_P;
             } else {

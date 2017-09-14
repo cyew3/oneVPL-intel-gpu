@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -79,11 +79,12 @@ namespace H265Enc {
 
         mfxStatus Init(const mfxVideoParam &par);
         mfxStatus Reset(const mfxVideoParam &par);
+        mfxStatus ResetBRC(mfxVideoParam &par);
 
         const Ipp8u *GetVps(Ipp16u &size) const { assert(m_vpsBufSize<=0xffff); size = (Ipp16u)m_vpsBufSize; return m_vpsBuf; }
         const Ipp8u *GetSps(Ipp16u &size) const { assert(m_spsBufSize<=0xffff); size = (Ipp16u)m_spsBufSize; return m_spsBuf; }
         const Ipp8u *GetPps(Ipp16u &size) const { assert(m_ppsBufSize<=0xffff); size = (Ipp16u)m_ppsBufSize; return m_ppsBuf; }
-
+        
         void GetEncodeStat(mfxEncodeStat &stat);
 
         mfxStatus EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, MFX_ENTRY_POINT &entryPoint);

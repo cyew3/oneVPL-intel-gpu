@@ -242,6 +242,10 @@ static mfxStatus GetSurfaceDimensions(CmDevice *device, mfxFEIH265Param *param, 
     return MFX_ERR_NONE;
 }
 
+mfxStatus H265CmCtx::GetSurfaceDimensions(mfxFEIH265Param *param, mfxExtFEIH265Alloc *extAlloc) {
+    return H265Enc::GetSurfaceDimensions(device, param, extAlloc);
+}
+
 /* allocate a single input surface (source or recon) or output surface */
 void * H265CmCtx::AllocateSurface(mfxFEIH265SurfaceType surfaceType, void *sysMem1, void *sysMem2, mfxSurfInfoENC *surfInfo)
 {
@@ -1119,6 +1123,27 @@ MSDK_PLUGIN_API(mfxStatus) H265FEI_GetSurfaceDimensions_new(void *core, mfxFEIH2
 
     return MFX_ERR_NONE;
 }
+
+/* calculate dimensions for Cm output buffers (2DUp surfaces)
+* NOTE - assumes the device has been Init()
+*/
+MSDK_PLUGIN_API(mfxStatus) H265FEI_GetSurfaceDimensions_Initialized(mfxFEIH265 feih265,  mfxFEIH265Param *param, mfxExtFEIH265Alloc *extAlloc)
+{
+    //MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "H265FEI_GetSurfaceDimensions");
+
+    if (!param->Width || !param->Height || !extAlloc)
+        return MFX_ERR_NULL_PTR;
+
+    H265CmCtx *hcm = (H265CmCtx *)feih265;
+
+    //MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "H265FEI_AllocateInputSurface");
+
+    if (!hcm)
+        return MFX_ERR_INVALID_HANDLE;
+
+    return hcm->GetSurfaceDimensions(param, extAlloc);
+}
+
 
 MSDK_PLUGIN_API(mfxStatus) H265FEI_AllocateSurfaceUp(mfxFEIH265 feih265, mfxU8 *sysMemLu, mfxU8 *sysMemCh, mfxHDL *pInSurf)
 {

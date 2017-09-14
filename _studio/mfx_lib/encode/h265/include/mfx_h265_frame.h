@@ -420,6 +420,7 @@ namespace H265Enc {
         SceneStats* m_sceneStats;
 
         // BRC info
+        Ipp32u m_maxFrameSizeInBitsSet;
         Ipp64f m_fzCmplx;
         Ipp64f m_fzCmplxK;
         Ipp64f m_fzRateE;

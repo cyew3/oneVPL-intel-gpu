@@ -641,6 +641,7 @@ namespace H265Enc {
         m_forceTryIntra = 0;
         m_sliceQpY    = 0;
 
+        m_maxFrameSizeInBitsSet = 0;
         m_fzCmplx      = 0.0;
         m_fzCmplxK     = 0.0;
         m_fzRateE      = 0.0;

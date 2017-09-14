@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef _MFX_H265_ENC_CM_FEI_H
@@ -125,6 +125,7 @@ private:
 
 public:
     /* called from C wrapper (public) */
+    mfxStatus GetSurfaceDimensions(mfxFEIH265Param *param, mfxExtFEIH265Alloc *extAlloc);
     void * AllocateSurface(mfxFEIH265SurfaceType surfaceType, void *sysMem1, void *sysMem2, mfxSurfInfoENC *surfInfo);
     mfxStatus FreeSurface(mfxFEIH265Surface *s);
     mfxStatus FreeBuffer(mfxFEIH265Surface *s);
