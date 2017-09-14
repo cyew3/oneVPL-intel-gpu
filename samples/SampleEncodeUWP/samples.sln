@@ -1,0 +1,40 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "simple_encoder_uwp", "simple_encoder_uwp\simple_encoder_uwp.vcxproj", "{B5CEF93B-C13B-48CB-AAFD-848B6740A749}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug (insecure libmfx load)|x64 = Debug (insecure libmfx load)|x64
+		Debug (insecure libmfx load)|x86 = Debug (insecure libmfx load)|x86
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B5CEF93B-C13B-48CB-AAFD-848B6740A749}.Debug (insecure libmfx load)|x64.ActiveCfg = Debug (insecure libmfx load)|x64
+		{B5CEF93B-C13B-48CB-AAFD-848B6740A749}.Debug (insecure libmfx load)|x64.Build.0 = Debug (insecure libmfx load)|x64
+		{B5CEF93B-C13B-48CB-AAFD-848B6740A749}.Debug (insecure libmfx load)|x64.Deploy.0 = Debug (insecure libmfx load)|x64
+		{B5CEF93B-C13B-48CB-AAFD-848B6740A749}.Debug (insecure libmfx load)|x86.ActiveCfg = Debug (insecure libmfx load)|Win32
+		{B5CEF93B-C13B-48CB-AAFD-848B6740A749}.Debug (insecure libmfx load)|x86.Build.0 = Debug (insecure libmfx load)|Win32
+		{B5CEF93B-C13B-48CB-AAFD-848B6740A749}.Debug (insecure libmfx load)|x86.Deploy.0 = Debug (insecure libmfx load)|Win32
+		{B5CEF93B-C13B-48CB-AAFD-848B6740A749}.Debug|x64.ActiveCfg = Debug|x64
+		{B5CEF93B-C13B-48CB-AAFD-848B6740A749}.Debug|x64.Build.0 = Debug|x64
+		{B5CEF93B-C13B-48CB-AAFD-848B6740A749}.Debug|x64.Deploy.0 = Debug|x64
+		{B5CEF93B-C13B-48CB-AAFD-848B6740A749}.Debug|x86.ActiveCfg = Debug|Win32
+		{B5CEF93B-C13B-48CB-AAFD-848B6740A749}.Debug|x86.Build.0 = Debug|Win32
+		{B5CEF93B-C13B-48CB-AAFD-848B6740A749}.Debug|x86.Deploy.0 = Debug|Win32
+		{B5CEF93B-C13B-48CB-AAFD-848B6740A749}.Release|x64.ActiveCfg = Release|x64
+		{B5CEF93B-C13B-48CB-AAFD-848B6740A749}.Release|x64.Build.0 = Release|x64
+		{B5CEF93B-C13B-48CB-AAFD-848B6740A749}.Release|x64.Deploy.0 = Release|x64
+		{B5CEF93B-C13B-48CB-AAFD-848B6740A749}.Release|x86.ActiveCfg = Release|Win32
+		{B5CEF93B-C13B-48CB-AAFD-848B6740A749}.Release|x86.Build.0 = Release|Win32
+		{B5CEF93B-C13B-48CB-AAFD-848B6740A749}.Release|x86.Deploy.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

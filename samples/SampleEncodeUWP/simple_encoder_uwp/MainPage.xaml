@@ -1,0 +1,38 @@
+﻿<Page
+    x:Class="simple_encoder.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:simple_encoder"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <TextBlock HorizontalAlignment="Left" Margin="10,30,0,0" TextWrapping="Wrap" Text="Source File" VerticalAlignment="Top"/>
+        <TextBlock HorizontalAlignment="Left" Margin="10,148,0,0" TextWrapping="Wrap" Text="Destination File" VerticalAlignment="Top"/>
+        <TextBox x:Name="textBoxSourceFileName" IsReadOnly="True" Margin="10,67,45,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" HorizontalAlignment="Stretch" PlaceholderText="Select Input file with YUV content"/>
+        <TextBox x:Name="textBoxDestinationFileName" IsReadOnly="True" Margin="10,187,45,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" HorizontalAlignment="Stretch" PlaceholderText="Select Output File where to save encoded H.264 stream"/>
+        <TextBlock x:Name="statusBar" HorizontalAlignment="Stretch" Margin="10,224,10,77" TextWrapping="Wrap" Text="" VerticalAlignment="Stretch" Foreground="#FF6F2A2A"/>
+
+        <Button x:Name="buttonSelectInput"                    Content="..."    HorizontalAlignment="Right" Margin="0,67,10,0"  VerticalAlignment="Top"    Click="FileOpenPickerClick" Width="30" Height="32"/>
+        <Button x:Name="buttonSelectOutput" IsEnabled="False" Content="..."    HorizontalAlignment="Right" Margin="0,187,10,0" VerticalAlignment="Top"    Click="FileSavePickerClick" Width="30" Height="32"/>
+        <Button x:Name="buttonRunEncoding" IsEnabled="False"  Content="Encode" HorizontalAlignment="right" Margin="0,0,10,10"  VerticalAlignment="Bottom"                             Width="73" Height="32"/>
+
+        <ProgressBar x:Name="progressBar" HorizontalAlignment="Stretch" IsEnabled="False" Height="20" Margin="10,0,10,52" VerticalAlignment="Bottom"/>
+        <TextBox x:Name="textBoxWidth" HorizontalAlignment="Left" Margin="93,104,0,0" TextWrapping="Wrap" PlaceholderText="176" VerticalAlignment="Top"/>
+        <TextBlock HorizontalAlignment="Left" Margin="13,110,0,0" TextWrapping="Wrap" Text="Width" VerticalAlignment="Top" Height="18" Width="78"/>
+        <TextBox x:Name="textBoxHeight" HorizontalAlignment="Left" Margin="278,103,0,0" TextWrapping="Wrap" PlaceholderText="144" VerticalAlignment="Top"/>
+        <TextBlock HorizontalAlignment="Left" Margin="199,110,0,0" TextWrapping="Wrap" Text="Height" VerticalAlignment="Top" Height="18" Width="78"/>
+        <TextBlock HorizontalAlignment="Left" Margin="397,110,0,0" TextWrapping="Wrap" Text="FCC" VerticalAlignment="Top" Height="18" Width="73"/>
+        <ComboBox x:Name="FccComboBox" HorizontalAlignment="Stretch" Margin="475,103,45,0" VerticalAlignment="Top" SelectedIndex="0">
+            <TextBlock Text="NV12"/>
+            <TextBlock Text="NV16"/>
+            <TextBlock Text="YUV422"/>
+            <TextBlock Text="YUV444"/>
+            <TextBlock Text="RGB24"/>
+            <TextBlock Text="P010"/>
+            <TextBlock Text="P210"/>
+        </ComboBox>
+
+    </Grid>
+</Page>

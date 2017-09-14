@@ -8,9 +8,12 @@
 _build
 *.VC.*
 /samples/SampleDecodeUWP/SampleDecodeUWP/Generated Files
+/samples/SampleDecodeUWP/SampleDecodeUWP/x64/
+/samples/SampleDecodeUWP/x64/
+/samples/SampleDecodeUWP/ConsoleTest/Generated Files
+/samples/SampleDecodeUWP/ConsoleTest/x64/
 Debug/
 Release/
-
 # CMake intermidiate files
 __cmake
 .project
