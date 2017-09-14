@@ -364,7 +364,7 @@
     <ClCompile Include="src\gmock\test_suites\mjpegd_corruption.cpp" />
     <ClCompile Include="src\gmock\test_suites\mjpegd_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\mjpegd_payload.cpp" />
-    <ClCompile Include="src\gmock\test_suites\mjpegd_tables.cpp" />
+    <ClCompile Include="src\gmock\test_suites\mjpege_tables.cpp" />
     <ClCompile Include="src\gmock\test_suites\mpeg2d_aspect_ratio_change.cpp" />
     <ClCompile Include="src\gmock\test_suites\mpeg2d_bs_dataflag.cpp" />
     <ClCompile Include="src\gmock\test_suites\mpeg2d_corruption.cpp" />

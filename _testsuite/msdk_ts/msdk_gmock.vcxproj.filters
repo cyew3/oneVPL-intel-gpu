@@ -69,6 +69,9 @@
     <Filter Include="sample_common\vm">
       <UniqueIdentifier>{003c70d9-687d-4ac7-8c3d-8039a5fc544f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\test_suites\mjpege">
+      <UniqueIdentifier>{a7ad8334-a11e-47a2-9415-efa0f99428c4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\test_sample_allocator.h">
@@ -781,9 +784,6 @@
     <ClCompile Include="src\gmock\test_suites\mjpegd_payload.cpp">
       <Filter>Source Files\test_suites\mjpegd</Filter>
     </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\mjpegd_tables.cpp">
-      <Filter>Source Files\test_suites\mjpegd</Filter>
-    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\mpeg2d_timecode.cpp">
       <Filter>Source Files\test_suites\mpeg2d</Filter>
     </ClCompile>
@@ -1002,6 +1002,9 @@
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\hevce_default_lowpower.cpp">
       <Filter>Source Files\test_suites\hevce</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\mjpege_tables.cpp">
+      <Filter>Source Files\test_suites\mjpege</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

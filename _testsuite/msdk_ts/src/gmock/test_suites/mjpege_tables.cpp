@@ -158,7 +158,7 @@ mfxExtJPEGHuffmanTables JPEG_DEFAULT_HT = {
 
 //#define EXT_BUF_PAR(eb) tsExtBufTypeToId<eb>::id, sizeof(eb)
 
-namespace mjpegd_tables
+namespace mjpege_tables
 {
 
     mfxExtJPEGQuantTables ChangeQt(mfxExtJPEGQuantTables qt)
@@ -767,6 +767,6 @@ exit:
         return 0;
     }
 
-    TS_REG_TEST_SUITE_CLASS(mjpegd_tables);
+    TS_REG_TEST_SUITE_CLASS(mjpege_tables);
 
 }
