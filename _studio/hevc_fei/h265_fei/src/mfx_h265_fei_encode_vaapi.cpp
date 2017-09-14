@@ -59,13 +59,11 @@ namespace MfxHwH265FeiEncode
 
     mfxStatus VAAPIh265FeiEncoder::PreSubmitExtraStage(Task const & task)
     {
-#if 0
         {
             VAStatus vaSts;
-            VABufferID &vaFeiFrameControlId = VABufferNew(VABID_FEI_FRM_CTRL, 0);
-
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "FrameCtrl");
 
+            VABufferID &vaFeiFrameControlId = VABufferNew(VABID_FEI_FRM_CTRL, 0);
             {
                 MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaCreateBuffer");
                 vaSts = vaCreateBuffer(m_vaDisplay,
@@ -138,7 +136,7 @@ namespace MfxHwH265FeiEncode
                 MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
             }
         }
-#endif
+
         return MFX_ERR_NONE;
     }
 

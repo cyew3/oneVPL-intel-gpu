@@ -69,7 +69,7 @@ mfxStatus H265FeiEncodePlugin::ExtraParametersCheck(mfxEncodeCtrl *ctrl, mfxFram
     MFX_CHECK_STS(sts);
 
     bool isSKL = p.CodeName == MFX_PLATFORM_SKYLAKE, isICLplus = p.CodeName >= MFX_PLATFORM_ICELAKE;
-#if 0
+
     // mfxExtFeiHevcEncFrameCtrl is a mandatory buffer
     mfxExtFeiHevcEncFrameCtrl* EncFrameCtrl = reinterpret_cast<mfxExtFeiHevcEncFrameCtrl*>(GetBufById(ctrl, MFX_EXTBUFF_HEVCFEI_ENC_CTRL));
     MFX_CHECK(EncFrameCtrl, MFX_ERR_UNDEFINED_BEHAVIOR);
@@ -152,7 +152,7 @@ mfxStatus H265FeiEncodePlugin::ExtraParametersCheck(mfxEncodeCtrl *ctrl, mfxFram
     {
         MFX_CHECK(GetBufById(ctrl, MFX_EXTBUFF_HEVCFEI_ENC_CTB_CTRL), MFX_ERR_UNDEFINED_BEHAVIOR);
     }
-#endif
+
     return MFX_ERR_NONE;
 }
 

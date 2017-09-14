@@ -16,6 +16,7 @@
 #include "mfx_h265_encode_vaapi.h"
 #include "mfx_h265_encode_hw_utils.h"
 
+#include <va/va_fei_hevc.h>
 
 #define MFX_CHECK_WITH_ASSERT(EXPR, ERR) { assert(EXPR); MFX_CHECK(EXPR, ERR); }
 
