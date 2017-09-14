@@ -218,7 +218,8 @@ mfxStatus CheckFrameInfoCodecs(mfxFrameInfo  *info, mfxU32 codecId, bool isHW)
         if (info->FourCC != MFX_FOURCC_NV12 &&
             info->FourCC != MFX_FOURCC_YUY2 &&
             info->FourCC != MFX_FOURCC_P010 &&
-            info->FourCC != MFX_FOURCC_NV16
+            info->FourCC != MFX_FOURCC_NV16 &&
+            info->FourCC != MFX_FOURCC_P210
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
             && info->FourCC != MFX_FOURCC_AYUV
             && info->FourCC != MFX_FOURCC_Y210
