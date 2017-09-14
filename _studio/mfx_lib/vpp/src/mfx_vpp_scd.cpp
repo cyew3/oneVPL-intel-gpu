@@ -9,11 +9,19 @@
 //
 
 #include "mfx_vpp_scd.h"
+#include "libmfx_core_interface.h"
+
+#include "mfx_utils.h"
+#include "mfx_task.h"
+#include "mfx_vpp_defs.h"
+
 
 #if defined (MFX_ENABLE_VPP) && defined(MFX_VA_LINUX) && defined(MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP)
 
 #define EXTRANEIGHBORS
 #define SAD_SEARCH_VSTEP 2  // 1=FS 2=FHS
+#define NUM_VIDEO_SAMPLE_LAYERS 3
+#define SAMPLE_VIDEO_INPUT_INDEX 2
 
 #define _mm_loadh_epi64(a, ptr) _mm_castps_si128(_mm_loadh_pi(_mm_castsi128_ps(a), (__m64 *)(ptr)))
 
@@ -1471,19 +1479,24 @@ void SceneChangeDetector::RsCsCalc(imageData *exBuffer, ImDetails vidCar) {
 }
 
 /// Provide input surface to scene change detector
+// input frame to SCD is subWidth x subHeight
 mfxStatus SceneChangeDetector::MapFrame(mfxFrameSurface1 *frame)
 {
     MFX_CHECK_NULL_PTR1(frame);
-    CmDevice* cmdevice  = device->GetDevice();
-    MFX_CHECK_NULL_PTR1(cmdevice);
+
     CmSurface2D *surface;
+
+    int res = 0;
+    int streamParity = Get_stream_parity();
+    int ouputWidth = subWidth;
+    int subImage_height = gpustep_h;
 
     std::map<void *, CmSurface2D *>::iterator it;
     it = m_tableCmRelations.find(frame->Data.MemId);
 
     if (m_tableCmRelations.end() == it)
     {
-        int res = cmdevice->CreateSurface2D(frame->Data.MemId, surface);
+        int res = m_pCmDevice->CreateSurface2D(frame->Data.MemId, surface);
         if (res!=0)
         {
             return MFX_ERR_DEVICE_FAILED;
@@ -1495,26 +1508,30 @@ mfxStatus SceneChangeDetector::MapFrame(mfxFrameSurface1 *frame)
         surface = it->second;
     }
 
-    kernel_p->SetKernelArg(0, *surface);
-    kernel_p->SetKernelArg(1, *surfaceOut);
-    kernel_p->SetKernelArg(2, subWidth);
-    kernel_p->SetKernelArg(3, gpustep_w);
-    kernel_p->SetKernelArg(4, gpustep_h);
-    kernel_p->SetThreadCount(threadSpace->ThreadCount());
+    // Check for interlace
+    if ((streamParity == topfieldfirst_frame) || (streamParity == bottomfieldFirst_frame)) {
+        subImage_height = gpustep_h / 2;
+    }
 
-    kernel_t->SetKernelArg(0, *surface);
-    kernel_t->SetKernelArg(1, *surfaceOut);
-    kernel_t->SetKernelArg(2, subWidth);
-    kernel_t->SetKernelArg(3, gpustep_w);
-    kernel_t->SetKernelArg(4, gpustep_h / 2);   // interlaced
-    kernel_t->SetThreadCount(threadSpace->ThreadCount());
+    // Get surface and Buffer index
+    SurfaceIndex * pSurfaceIndex = NULL;
+    SurfaceIndex * pOuputBufferIndex = NULL;
+    res = surface->GetIndex(pSurfaceIndex);
+    if (res!=0) return MFX_ERR_DEVICE_FAILED;
+    res = m_pCmBufferOut->GetIndex(pOuputBufferIndex);
+    if (res!=0) return MFX_ERR_DEVICE_FAILED;
 
-    kernel_b->SetKernelArg(0, *surface);
-    kernel_b->SetKernelArg(1, *surfaceOut);
-    kernel_b->SetKernelArg(2, subWidth);
-    kernel_b->SetKernelArg(3, gpustep_w);
-    kernel_b->SetKernelArg(4, gpustep_h / 2);   // interlaced
-    kernel_b->SetThreadCount(threadSpace->ThreadCount());
+    res = m_pCmKernel->SetKernelArg(0, sizeof(SurfaceIndex), pSurfaceIndex);
+    if (res!=0) return MFX_ERR_DEVICE_FAILED;
+    res = m_pCmKernel->SetKernelArg(1, sizeof(SurfaceIndex), pOuputBufferIndex);
+    if (res!=0) return MFX_ERR_DEVICE_FAILED;
+    res = m_pCmKernel->SetKernelArg(2, sizeof(int), &ouputWidth);
+    if (res!=0) return MFX_ERR_DEVICE_FAILED;
+    res = m_pCmKernel->SetKernelArg(3, sizeof(int), &gpustep_w);
+    if (res!=0) return MFX_ERR_DEVICE_FAILED;
+    res = m_pCmKernel->SetKernelArg(4, sizeof(int), &subImage_height);
+    if (res!=0) return MFX_ERR_DEVICE_FAILED;
+
     return MFX_ERR_NONE;
 }
 
@@ -1801,6 +1818,17 @@ BOOL SceneChangeDetector::Get_Last_frame_Data() {
     return(dataReady);
 }
 
+/// function return Progressive, TFF or BFF
+mfxI32 SceneChangeDetector::Get_stream_parity()
+{
+    if (!m_dataIn->interlaceMode)
+        return (progressive_frame);
+    else if (m_dataIn->currentField == TopField)
+        return (topfieldfirst_frame);
+    else
+        return (bottomfieldFirst_frame);
+}
+
 /// Get input data to scene change detector for one interlace field
 /*!
  This function gets the image data for one field as an 64x112 picture to perform scene detection
@@ -1964,17 +1992,22 @@ void Pdmem_disposeGeneral(imageData *Buffer) {
 }
 
 void SceneChangeDetector::VidSample_dispose() {
-    for(mfxI32 i = 1; i >= 0; i--) {
+    // videoData[0] and videoData[1] have image data and statistics
+    for(mfxI32 i = (SAMPLE_VIDEO_INPUT_INDEX - 1); i >= 0; i--) {
         if(videoData[i] != NULL) {
             Pdmem_disposeGeneral(videoData[i]->layer);
             delete videoData[i]->layer;
             delete (videoData[i]);
         }
     }
+    // videoData[2] has data only
 #if ! defined(MFX_VA_LINUX)
-    _aligned_free(videoData[2]->layer[0].Image.data);
+    _aligned_free(videoData[SAMPLE_VIDEO_INPUT_INDEX]->layer[0].Image.data);
 #else
-    free(videoData[2]->layer[0].Image.data);
+    free(videoData[SAMPLE_VIDEO_INPUT_INDEX]->layer[0].Image.data);
+    videoData[SAMPLE_VIDEO_INPUT_INDEX]->layer[0].Image.data = NULL;
+    delete videoData[SAMPLE_VIDEO_INPUT_INDEX]->layer;
+    delete (videoData[SAMPLE_VIDEO_INPUT_INDEX]);
 #endif
 }
 
@@ -11661,62 +11694,112 @@ mfxStatus SceneChangeDetector::SetDimensions(mfxI32 Width, mfxI32 Height, mfxI32
     return MFX_ERR_NONE;
 }
 
+/// Load kernel in CM device
+/// Initialize input image with input data
 mfxStatus SceneChangeDetector::SubSampleImage(mfxU32 srcWidth, mfxU32 srcHeight, const unsigned char * pData)
 {
+    int res = 0;
+
     m_gpuwidth  = srcWidth;
     m_gpuheight = srcHeight;
 
     gpustep_w = srcWidth / subWidth;
     gpustep_h = srcHeight / subHeight;
 
-    eMFXHWType  platform = m_pCore->GetHWType();;
+    eMFXHWType  platform = m_pCore->GetHWType();
+    mfxI32 streamParity = Get_stream_parity();
 
-    if(platform == MFX_HW_HSW || platform == MFX_HW_HSW_ULT)
-        device = std::unique_ptr<mdfut::CmDeviceEx>(new mdfut::CmDeviceEx(asc_genx_hsw, sizeof(asc_genx_hsw), m_pCmDevice, m_mfxDeviceType, m_mfxDeviceHdl));
-    else if (platform == MFX_HW_SCL)
-        device = std::unique_ptr<mdfut::CmDeviceEx>(new mdfut::CmDeviceEx(asc_genx_skl, sizeof(asc_genx_skl), m_pCmDevice, m_mfxDeviceType, m_mfxDeviceHdl));
-    else
-        device = std::unique_ptr<mdfut::CmDeviceEx>(new mdfut::CmDeviceEx(asc_genx_bdw, sizeof(asc_genx_bdw), m_pCmDevice, m_mfxDeviceType, m_mfxDeviceHdl));
-
-    queue  = std::unique_ptr<mdfut::CmQueueEx>(new mdfut::CmQueueEx(DeviceEx()));
-
-    // select the fastest kernels for the given input surface size
-    if (gpustep_w == 6 && gpustep_h == 7) {
-        kernel_p = std::unique_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_480p)));
-        kernel_t = std::unique_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_480t)));
-        kernel_b = std::unique_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_480b)));
-    }
-    else if (gpustep_w == 11 && gpustep_h == 11) {
-        kernel_p = std::unique_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_720p)));
-        kernel_t = std::unique_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_720t)));
-        kernel_b = std::unique_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_720b)));
-    }
-    else if (gpustep_w == 17 && gpustep_h == 16) {
-        kernel_p = std::unique_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_1080p)));
-        kernel_t = std::unique_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_1080t)));
-        kernel_b = std::unique_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_1080b)));
-    }
-    else if (gpustep_w == 34 && gpustep_h == 33) {
-        kernel_p = std::unique_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_2160p)));
-        kernel_t = std::unique_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_2160t)));
-        kernel_b = std::unique_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_2160b)));
-    }
-    else if (gpustep_w <= 32) {
-        kernel_p = std::unique_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_var_p)));
-        kernel_t = std::unique_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_var_t)));
-        kernel_b = std::unique_ptr<mdfut::CmKernelEx>(new mdfut::CmKernelEx(DeviceEx(), CM_KERNEL_FUNCTION(SubSample_var_b)));
-    }
-    else
+    // Load kernels
+    if (NULL == m_pCmKernel)
     {
-        return MFX_ERR_UNSUPPORTED;
+     if(platform == MFX_HW_HSW || platform == MFX_HW_HSW_ULT)
+         res = m_pCmDevice->LoadProgram((void *)asc_genx_hsw, sizeof(asc_genx_hsw), m_pCmProgram);
+     else if (platform == MFX_HW_SCL)
+         res = m_pCmDevice->LoadProgram((void *)asc_genx_skl, sizeof(asc_genx_skl), m_pCmProgram);
+     else
+         res = m_pCmDevice->LoadProgram((void *)asc_genx_bdw, sizeof(asc_genx_bdw), m_pCmProgram);
+     if(res != 0 ) return MFX_ERR_DEVICE_FAILED;
     }
 
-    surfaceOut = std::unique_ptr<mdfut::CmBufferUPEx>(new mdfut::CmBufferUPEx(DeviceEx(), pData, subWidth * subHeight));
+    if (NULL == m_pCmKernel)
+    {
+          // select the fastest kernels for the given input surface size
+          if (gpustep_w == 6 && gpustep_h == 7) {
+              if (progressive_frame == streamParity)
+                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_480p), m_pCmKernel);
+              else if (topfieldfirst_frame == streamParity)
+                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_480t), m_pCmKernel);
+              else
+                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_480b), m_pCmKernel);
+          }
+          else if (gpustep_w == 11 && gpustep_h == 11) {
+              if (progressive_frame == streamParity)
+                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_720p), m_pCmKernel);
+              else if (topfieldfirst_frame == streamParity)
+                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_720t), m_pCmKernel);
+              else
+                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_720b), m_pCmKernel);
+          }
+          else if (gpustep_w == 17 && gpustep_h == 16) {
+              if (progressive_frame == streamParity)
+                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_1080p), m_pCmKernel);
+              else if (topfieldfirst_frame == streamParity)
+                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_1080t), m_pCmKernel);
+              else
+                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_1080b), m_pCmKernel);
+          }
+          else if (gpustep_w == 34 && gpustep_h == 33) {
+              if (progressive_frame == streamParity)
+                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_2160p), m_pCmKernel);
+              else if (topfieldfirst_frame == streamParity)
+                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_2160t), m_pCmKernel);
+              else
+                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_2160b), m_pCmKernel);
+          }
+          else if (gpustep_w <= 32) {
+              if (progressive_frame == streamParity)
+                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_var_p), m_pCmKernel);
+              else if (topfieldfirst_frame == streamParity)
+                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_var_t), m_pCmKernel);
+              else
+                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_var_b), m_pCmKernel);
+          }
+          else {
+             return MFX_ERR_UNSUPPORTED;
+          }
+          if(res != 0 ) return MFX_ERR_DEVICE_FAILED;
+    } // (NULL == m_pCmKernel)
 
+    if (NULL == m_pCmQueue)
+    {
+        res = m_pCmDevice->CreateQueue(m_pCmQueue);
+        if(res != 0 ) return MFX_ERR_DEVICE_FAILED;
+    }
+
+    res = m_pCmDevice->CreateBufferUP(subWidth * subHeight, (void *)pData, m_pCmBufferOut);
+    if(res != 0 || m_pCmBufferOut == NULL) {
+        return MFX_ERR_DEVICE_FAILED;
+    }
+
+    SurfaceIndex * pOuputBufferIndex = NULL;
+    res = m_pCmBufferOut->GetIndex(pOuputBufferIndex);
+    if (res!=0) {
+        return MFX_ERR_DEVICE_FAILED;
+    }
+
+    // create 2D Threadspace to handle kernels
     assert((subWidth % OUT_BLOCK) == 0);
     UINT threadsWidth = subWidth / OUT_BLOCK;
     UINT threadsHeight = subHeight;
-    threadSpace = std::unique_ptr<mdfut::CmThreadSpaceEx>(new mdfut::CmThreadSpaceEx(DeviceEx(), threadsWidth, threadsHeight));
+
+    res = m_pCmKernel->SetThreadCount(threadsWidth * threadsHeight);
+    if(res != 0 ) return MFX_ERR_DEVICE_FAILED;
+
+    res = m_pCmDevice->CreateThreadSpace(threadsWidth, threadsHeight, m_pCmThreadSpace);
+    if(res != 0 ) return MFX_ERR_DEVICE_FAILED;
+
+    res = m_pCmThreadSpace->SelectThreadDependencyPattern(CM_NONE_DEPENDENCY);
+    if(res != 0 ) return MFX_ERR_DEVICE_FAILED;
 
     return MFX_ERR_NONE;
 }
@@ -11740,24 +11823,52 @@ void SceneChangeDetector::ReadOutputImage()
 
 void SceneChangeDetector::GPUProcess()
 {
-    if (m_dataIn->interlaceMode) {
-        if (m_dataIn->currentField == TopField) {
-            QueueEx().Enqueue(*kernel_t, *threadSpace); // interlaced, top field
-        } else {
-            QueueEx().Enqueue(*kernel_b, *threadSpace); // interlaced, bottom field
-        }
+    CmTask * task = NULL;
+    CmEvent * e = NULL;
+    int res;
+    mfxStatus status = MFX_ERR_NONE;
+
+    res = m_pCmDevice->CreateTask(task);
+    if(res != 0 ) status = MFX_ERR_DEVICE_FAILED;
+
+
+    res = task->AddKernel(m_pCmKernel);
+    if(res != 0 ) status = MFX_ERR_DEVICE_FAILED;
+
+
+
+    res = m_pCmQueue->Enqueue(task, e, m_pCmThreadSpace);
+     // wait result here!!!
+    INT sts;
+
+    if (CM_SUCCESS == res && e)
+    {
+        sts = e->WaitForTaskFinished();
+        if(sts == CM_EXCEED_MAX_TIMEOUT)
+            status = MFX_ERR_GPU_HANG;
     } else {
-        QueueEx().Enqueue(*kernel_p, *threadSpace);     // progressive
+        status = MFX_ERR_DEVICE_FAILED;
     }
-    QueueEx().WaitForFinished();
+
+    if(e) m_pCmQueue->DestroyEvent(e);
+    m_pCmDevice->DestroyTask(task);
 }
 
-mfxStatus SceneChangeDetector::Init(VideoCORE   *core, mfxI32 Width, mfxI32 Height, mfxI32 Pitch, mfxU32 interlaceMode, CmDevice  *pCmDevice, mfxHandleType _mfxDeviceType, mfxHDL _mfxDeviceHdl) {
+/// Initialize Scene Change Detector Class
+/*
+  \param[in] core a Video core
+  \param[in] Width
+  \param[in] Height
+  \param[in] Pitch
+  \param[in] interlaceMode
+  \param[in] _mfxDeviceType notify that Handle is for D3D9, D3D11 or VAAPI device
+  \param[in] _mfxDeviceHdl handle to the device
+ */
+mfxStatus SceneChangeDetector::Init(VideoCORE   *core, mfxI32 Width, mfxI32 Height, mfxI32 Pitch, mfxU32 interlaceMode, mfxHandleType _mfxDeviceType, mfxHDL _mfxDeviceHdl) {
 
     mfxStatus sts   = MFX_ERR_NONE;
     m_mfxDeviceType = _mfxDeviceType;
     m_mfxDeviceHdl  = _mfxDeviceHdl;
-    m_pCmDevice     =  pCmDevice;
 
     if ( m_bInited )
         return MFX_ERR_NONE;
@@ -11774,11 +11885,17 @@ mfxStatus SceneChangeDetector::Init(VideoCORE   *core, mfxI32 Width, mfxI32 Heig
     m_dataIn->layer = new ImDetails;
     MFX_CHECK_NULL_PTR1(m_dataIn->layer);
 
+    // Get CM device from core
+    if (m_pCmDevice == NULL)
+        m_pCmDevice = QueryCoreInterface<CmDevice>(m_pCore, MFXICORECM_GUID);
+    MFX_CHECK_NULL_PTR1(m_pCmDevice);
+
     Params_Init();
 
     // [1] GetPlatformType()
     Ipp32u cpuIdInfoRegs[4];
     Ipp64u featuresMask;
+
     IppStatus ippSts = ippGetCpuFeatures( &featuresMask, cpuIdInfoRegs);
 
     m_cpuOpt = CPU_NONE;
@@ -11799,9 +11916,9 @@ mfxStatus SceneChangeDetector::Init(VideoCORE   *core, mfxI32 Width, mfxI32 Heig
     m_dataIn->interlaceMode = ( interlaceMode & MFX_PICSTRUCT_PROGRESSIVE ) ? progressive_frame :
                               ( interlaceMode & MFX_PICSTRUCT_FIELD_TFF )   ? topfieldfirst_frame : bottomfieldFirst_frame;
 
-    videoData = new VidSample *[3];/**[2];*/
+    videoData = new VidSample *[NUM_VIDEO_SAMPLE_LAYERS];
     MFX_CHECK_NULL_PTR1(videoData);
-    for(mfxI32 i = 0; i < 3; i++)
+    for(mfxI32 i = 0; i < NUM_VIDEO_SAMPLE_LAYERS; i++)
     {
         videoData[i] = new VidSample;
         MFX_CHECK_NULL_PTR1(videoData[i]);
@@ -11878,17 +11995,30 @@ mfxStatus SceneChangeDetector::Close()
         m_dataIn = NULL;
     }
 
-    CmDevice* cmdevice  = device->GetDevice();
-    MFX_CHECK_NULL_PTR1(cmdevice);
-
     std::map<void *, CmSurface2D *>::iterator itSrc;
 
-    for (itSrc = m_tableCmRelations.begin() ; itSrc != m_tableCmRelations.end(); itSrc++)
-    {
-        CmSurface2D *temp = itSrc->second;
-        cmdevice->DestroySurface(temp);
+
+    if (m_pCmDevice) {
+        for (itSrc = m_tableCmRelations.begin() ; itSrc != m_tableCmRelations.end(); itSrc++)
+        {
+            CmSurface2D *temp = itSrc->second;
+            m_pCmDevice->DestroySurface(temp);
+        }
+        m_tableCmRelations.clear();
+
+        m_pCmDevice->DestroyThreadSpace(m_pCmThreadSpace);
+        m_pCmDevice->DestroyBufferUP(m_pCmBufferOut);
+        m_pCmDevice->DestroyKernel(m_pCmKernel);
+        m_pCmDevice->DestroyProgram(m_pCmProgram);
+
+        m_pCmKernel = NULL;
+        m_pCmThreadSpace = NULL;
+        m_pCmProgram = NULL;
+        m_pCmQueue = NULL;
+        m_pCmBufferOut = NULL;
+        m_pCmDevice = NULL;
     }
-    m_tableCmRelations.clear();
+
 
 
     m_bInited = false;
@@ -11899,10 +12029,7 @@ mfxStatus SceneChangeDetector::Close()
 void SceneChangeDetector::GpuSubSampleASC_Image(mfxI32 srcWidth, mfxI32 srcHeight, mfxI32 inputPitch, Layers dstIdx, mfxU32 parity)
 {
     parity;  inputPitch; srcHeight; srcWidth;
-    void*
-        pDst = videoData[Current_Frame]->layer[dstIdx].Image.Y; pDst;
-    mfxU32
-        pitch = m_dataIn->layer[dstIdx].pitch; pitch;
+
     GPUProcess();
     ReadOutputImage();
 }

@@ -21,6 +21,8 @@
 
 // Include needed for CM wrapper
 #include "cmrtex.h"
+#include "cmrt_cross_platform.h"
+
 #include <limits.h>
 #ifdef MFX_VA_LINUX
   #include <immintrin.h> // SSE, AVX
@@ -365,7 +367,8 @@ public:
        }
     }
 
-    mfxStatus Init(VideoCORE   *core, mfxI32 width, mfxI32 height, mfxI32 pitch, mfxU32 interlaceMode, CmDevice *pCmDevice, mfxHandleType _mfxDeviceType, mfxHDL _mfxDeviceHdl);
+    mfxStatus Init(VideoCORE   *core, mfxI32 width, mfxI32 height, mfxI32 pitch, mfxU32 interlaceMode, mfxHandleType _mfxDeviceType, mfxHDL _mfxDeviceHdl);
+
     mfxStatus Close();
 
     mfxStatus SetGoPSize(mfxU32 GoPSize);
@@ -394,6 +397,7 @@ private:
     BOOL   Get_GoPcorrected_frame_shot_Decision();
     mfxI32 Get_frame_Spatial_complexity();
     mfxI32 Get_frame_Temporal_complexity();
+    mfxI32 Get_stream_parity();
     BOOL   SCDetectGPU(mfxF64 diffMVdiffVal, mfxF64 RsCsDiff,   mfxF64 MVDiff,   mfxF64 Rs,       mfxF64 AFD,
                                 mfxF64 CsDiff,        mfxF64 diffTSC,    mfxF64 TSC,      mfxF64 gchDC,    mfxF64 diffRsCsdiff,
                                 mfxF64 posBalance,    mfxF64 SC,         mfxF64 TSCindex, mfxF64 Scindex,  mfxF64 Cs,
@@ -429,11 +433,6 @@ private:
     void GeneralBufferRotation();
     BOOL RunFrame(mfxU32 parity);
 
-    mdfut::CmDeviceEx & DeviceEx() { return *device; }
-    mdfut::CmQueueEx  & QueueEx()  { return *queue; }
-    const mdfut::CmDeviceEx & DeviceEx() const { return *device; }
-    const mdfut::CmQueueEx &  QueueEx()  const { return *queue; }
-
     void RsCsCalc(imageData *exBuffer, ImDetails vidCar);
 
     /* Motion estimation stuff */
@@ -442,21 +441,18 @@ private:
 
     mfxHandleType m_mfxDeviceType;
     mfxHDL        m_mfxDeviceHdl;
-    CmDevice     *m_pCmDevice;
 
-    std::unique_ptr<mdfut::CmDeviceEx> device;
-    std::unique_ptr<mdfut::CmQueueEx>  queue;
-
-    std::unique_ptr<mdfut::CmKernelEx> kernel_p; // progressive frame
-    std::unique_ptr<mdfut::CmKernelEx> kernel_t; // interlaced, top field
-    std::unique_ptr<mdfut::CmKernelEx> kernel_b; // interlaced, bottom field
-    std::unique_ptr<mdfut::CmThreadSpaceEx> threadSpace;
+    CmDevice        *m_pCmDevice;
+    CmProgram       *m_pCmProgram;
+    CmKernel        *m_pCmKernel;
+    CmQueue         *m_pCmQueue;
+    CmBufferUP      *m_pCmBufferOut;
+    CmThreadSpace   * m_pCmThreadSpace;
 
     std::map<void *, CmSurface2D *> m_tableCmRelations;
-    std::unique_ptr<mdfut::CmBufferUPEx> surfaceOut;
 
-    static const int subWidth = 112;
-    static const int subHeight = 64;
+    static const int subWidth = 112; // width of SCD output image
+    static const int subHeight = 64; // heigh of SCD output image
 
     int gpustep_w;
     int gpustep_h;
@@ -467,7 +463,7 @@ private:
     mfxU16       m_cpuOpt; // CPU optimizations available
     VidRead     *support;
     VidData     *m_dataIn;
-    VidSample   **videoData;
+    VidSample   **videoData; // contains image data and statistics. videoData[2] only has video data
     BOOL         dataReady;
     BOOL         GPUProc;
     mfxI32      _width, _height, _pitch;
