@@ -775,6 +775,9 @@ namespace MfxHwH264Encode
     bool IsRunTimeExtBufferIdSupported(
         MfxVideoParam const & video, mfxU32 id);
 
+    bool IsBitstreamExtBufferIdSupported(
+        mfxU32 id);
+
     bool IsRunTimeExtBufferPairAllowed(
         MfxVideoParam const & video, mfxU32 id);
 
@@ -1516,6 +1519,10 @@ namespace MfxHwH264Encode
         bool isSvcPrefixUsed() const { return m_needPrefixNalUnit; }
 
         void ResizeSlices(mfxU32 num);
+
+#ifndef MFX_AVC_ENCODING_UNIT_DISABLE
+        void GetHeadersInfo(std::vector<mfxEncodedUnitInfo> &HeadersMap, DdiTask const& task, mfxU32 fid);
+#endif
 
     private:
 

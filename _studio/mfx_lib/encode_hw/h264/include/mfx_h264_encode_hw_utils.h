@@ -100,6 +100,20 @@ namespace MfxHwH264Encode
         DISP = 1
     };
 
+    /*
+        NAL unit types for internal usage
+    */
+    enum {
+        NALU_NON_IDR = 1,
+        NALU_IDR = 5,
+        NALU_SEI = 6,
+        NALU_SPS = 7,
+        NALU_PPS = 8,
+        NALU_AUD = 9,
+        NALU_PREFIX = 14,
+        NALU_CODED_SLICE_EXT = 20,
+    };
+
     static const mfxU32 NO_INDEX      = 0xffffffff;
     static const mfxU8  NO_INDEX_U8   = 0xff;
     static const mfxU16  NO_INDEX_U16 = 0xffff;
@@ -989,6 +1003,11 @@ namespace MfxHwH264Encode
             Zero(m_fid);
             Zero(m_pwt);
             m_FrameName[0] = 0;
+#ifndef MFX_AVC_ENCODING_UNIT_DISABLE
+            m_collectUnitsInfo = false;
+            m_headersCache[0].reserve(10);
+            m_headersCache[1].reserve(10);
+#endif
         }
 
         bool operator == (const DdiTask& task)
@@ -1192,6 +1211,10 @@ namespace MfxHwH264Encode
         bool m_userTimeout;
 #endif
         eMFXHWType m_hwType;  // keep HW type information
+#ifndef MFX_AVC_ENCODING_UNIT_DISABLE
+        bool m_collectUnitsInfo;
+        mutable std::vector<mfxEncodedUnitInfo> m_headersCache[2]; //Headers for every field
+#endif
     };
 
     typedef std::list<DdiTask>::iterator DdiTaskIter;
@@ -2055,6 +2078,14 @@ namespace MfxHwH264Encode
             DdiTask & task,
             mfxU32    fid); // 0 - top/progressive, 1 - bottom
 
+#ifndef MFX_AVC_ENCODING_UNIT_DISABLE
+        void FillEncodingUnitsInfo(
+            DdiTask &task,
+            mfxU8 *sbegin,
+            mfxU8 *send,
+            mfxExtEncodedUnitsInfo *encUnitsInfo,
+            mfxU32 fid);
+#endif
 
         mfxStatus AsyncRoutine(
             mfxBitstream * bs);

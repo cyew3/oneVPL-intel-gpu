@@ -2442,7 +2442,6 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 #endif
 #endif
 
-
     if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_ACCEPT_FRAME)
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "Avc::STG_BIT_ACCEPT_FRAME");
@@ -2979,11 +2978,13 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
         for (mfxU32 f = 0; f <= task->m_fieldPicFlag; f++)
         {
+            mfxU32 fieldId = task->m_fid[f];
+
             if (m_useWAForHighBitrates)
-                task->m_fillerSize[task->m_fid[f]] = PaddingBytesToWorkAroundHrdIssue(
+                task->m_fillerSize[fieldId] = PaddingBytesToWorkAroundHrdIssue(
                     m_video, m_hrd, m_encoding, task->m_fieldPicFlag, f);
 
-            PrepareSeiMessageBuffer(m_video, *task, task->m_fid[f], m_sei);
+            PrepareSeiMessageBuffer(m_video, *task, fieldId, m_sei);
 
 #ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
             bool needSvcPrefix = IsSvcProfile(m_video.mfx.CodecProfile) || (m_video.calcParam.numTemporalLayer > 0);
@@ -3000,8 +3001,20 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
             else
                 task->m_AUStartsFromSlice[f] = 0;
 
-            mfxStatus sts = m_ddi->Execute(task->m_handleRaw.first, *task, task->m_fid[f], m_sei);
+            mfxStatus sts = m_ddi->Execute(task->m_handleRaw.first, *task, fieldId, m_sei);
             MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
+
+#ifndef MFX_AVC_ENCODING_UNIT_DISABLE
+            if (task->m_collectUnitsInfo && m_sei.Size() > 0)
+            {
+                mfxU32 offset = task->m_headersCache[fieldId].size() > 0 ? task->m_headersCache[fieldId].back().Offset + task->m_headersCache[fieldId].back().Size : 0;
+
+                task->m_headersCache[fieldId].emplace_back();
+                task->m_headersCache[fieldId].back().Type = NALU_SEI;
+                task->m_headersCache[fieldId].back().Size = m_sei.Size();
+                task->m_headersCache[fieldId].back().Offset = offset;
+            }
+#endif
 
             /* FEI Field processing mode: store first field */
             if (task->m_singleFieldMode && (0 == m_fieldCounter))
@@ -3010,13 +3023,13 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
                 task->m_bsDataLength[0] = task->m_bsDataLength[1] = 0;
 
-                sts = QueryStatus(*task, task->m_fid[f]);
+                sts = QueryStatus(*task, fieldId);
                 MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
 
                 if ((NULL == task->m_bs) && (bs != NULL))
                     task->m_bs = bs;
 
-                sts = UpdateBitstream(*task, task->m_fid[f]);
+                sts = UpdateBitstream(*task, fieldId);
                 MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
 
                 /*DO NOT submit second field for execution in this case
@@ -3755,6 +3768,18 @@ mfxStatus ImplementationAvc::UpdateBitstream(
         MFX_CHECK_STS(sts);
     }
 
+#ifndef MFX_AVC_ENCODING_UNIT_DISABLE
+    mfxExtEncodedUnitsInfo * encUnitsInfo = NULL;
+    if (task.m_collectUnitsInfo
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
+        && (!m_video.Protected || task.m_notProtected)
+#endif
+        )
+    {
+        encUnitsInfo = (mfxExtEncodedUnitsInfo*)GetExtBuffer(task.m_bs->ExtParam, task.m_bs->NumExtParam, MFX_EXTBUFF_ENCODED_UNITS_INFO);
+    }
+#endif
+
     if (doPatch)
     {
         mfxU8 * dbegin = bsData;
@@ -3806,10 +3831,10 @@ mfxStatus ImplementationAvc::UpdateBitstream(
 
     mfxExtCodingOption * extOpt = GetExtBuffer(m_video);
 
-    // setting of mfxExtAVCEncodedFrameInfo isn't supported for FieldOutput mode at the moment
-    if (IsOff(extOpt->FieldOutput))
+    if (task.m_bs->NumExtParam > 0)
     {
-        if (task.m_bs->NumExtParam == 1)  //only 1 ext buffer is supported for mfxBitstream at the moment. Treat other number as incorrect and ignore ext buffers
+        // setting of mfxExtAVCEncodedFrameInfo isn't supported for FieldOutput mode at the moment
+        if (IsOff(extOpt->FieldOutput))
         {
             mfxExtAVCEncodedFrameInfo * encFrameInfo = (mfxExtAVCEncodedFrameInfo*)GetExtBuffer(task.m_bs->ExtParam, task.m_bs->NumExtParam, MFX_EXTBUFF_ENCODED_FRAME_INFO);
             if (encFrameInfo)
@@ -3853,7 +3878,23 @@ mfxStatus ImplementationAvc::UpdateBitstream(
                 }
             }
         }
-    }
+
+#ifndef MFX_AVC_ENCODING_UNIT_DISABLE
+        if (task.m_collectUnitsInfo)
+        {
+            FillEncodingUnitsInfo(
+                task,
+                task.m_bs->Data + task.m_bs->DataOffset,
+                task.m_bs->Data + task.m_bs->DataOffset + task.m_bs->DataLength,
+                encUnitsInfo,
+                fid
+            );
+
+        }
+        if (task.m_headersCache[fid].size() > 0) //if we have previously collected data about headers/slices
+            task.m_headersCache[fid].clear();
+#endif
+    } //if (task.m_bs->NumExtParam > 0)
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (m_video.Protected != 0 && !task.m_notProtected)
@@ -3875,6 +3916,96 @@ mfxStatus ImplementationAvc::UpdateBitstream(
 
     return MFX_ERR_NONE;
 }
+
+#ifndef MFX_AVC_ENCODING_UNIT_DISABLE
+/*
+Method for filling mfxExtEncodedUnitsInfo ext-buffer
+
+task         - in  - DDITask
+sbegin       - in  - pointer to the start of bitstream, might be NULL if encUnitsList->size()>0
+send         - in  - pointer to the end of bitstream, might be NULL if encUnitsList->size()>0
+encUnitsInfo - out - destination ext-buffer
+fid          - in  - field id
+*/
+void ImplementationAvc::FillEncodingUnitsInfo(
+    DdiTask &task,
+    mfxU8 *sbegin,
+    mfxU8 *send,
+    mfxExtEncodedUnitsInfo *encUnitsInfo,
+    mfxU32 fid
+    )
+{
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "NALU Reporting");
+    if (!encUnitsInfo)
+        return;
+
+    if (sbegin != NULL && send != NULL)
+    {
+        mfxU32 offset = 0;
+
+        if (fid == 0)
+        {
+            encUnitsInfo->NumUnitsEncoded = 0;
+        }
+        else //calculate starting offset in bitstream for second field
+        {
+            offset = task.m_bsDataLength[0];
+        }
+
+        if (offset)
+        {
+            for (size_t i = 0; i < task.m_headersCache[fid].size(); ++i)
+            {
+                task.m_headersCache[fid][i].Offset += offset; //actualize offsets
+            }
+        }
+
+        if (encUnitsInfo->NumUnitsAlloc > encUnitsInfo->NumUnitsEncoded)
+        {
+            memcpy_s(
+                encUnitsInfo->UnitInfo + encUnitsInfo->NumUnitsEncoded,
+                sizeof(mfxEncodedUnitInfo) * (encUnitsInfo->NumUnitsAlloc - encUnitsInfo->NumUnitsEncoded),
+                &task.m_headersCache[fid].front(),
+                sizeof(mfxEncodedUnitInfo) * std::min(size_t(encUnitsInfo->NumUnitsAlloc) - encUnitsInfo->NumUnitsEncoded, task.m_headersCache[fid].size())
+            );
+        }
+
+        if (task.m_headersCache[fid].size() > 0)
+        {
+            offset = task.m_headersCache[fid].back().Offset + task.m_headersCache[fid].back().Size; //in case we have hidden units
+        }
+
+        encUnitsInfo->NumUnitsEncoded += mfxU16(std::min(size_t(encUnitsInfo->NumUnitsAlloc) - encUnitsInfo->NumUnitsEncoded, task.m_headersCache[fid].size()));
+
+        if (task.m_SliceInfo.size() <= 1 &&
+            task.m_numSlice.top <= 1 && task.m_numSlice.bot <= 1
+            && task.m_fieldPicFlag == false) //if we have only one slice in bitstream
+        {
+            if (encUnitsInfo->NumUnitsEncoded < encUnitsInfo->NumUnitsAlloc) {
+                encUnitsInfo->UnitInfo[encUnitsInfo->NumUnitsEncoded].Type = sbegin[offset+3] & 0x1F;
+                encUnitsInfo->UnitInfo[encUnitsInfo->NumUnitsEncoded].Size = (mfxU32)((ptrdiff_t)send - (ptrdiff_t)sbegin - offset);
+                encUnitsInfo->UnitInfo[encUnitsInfo->NumUnitsEncoded].Offset = offset;
+            }
+            ++encUnitsInfo->NumUnitsEncoded;
+        }
+        else
+        {
+            for (NaluIterator nalu(sbegin + offset, send); nalu != NaluIterator(); ++nalu)
+            {
+                if (nalu->type != NALU_IDR && nalu->type != NALU_NON_IDR) break; //End of field
+                if (encUnitsInfo->NumUnitsEncoded < encUnitsInfo->NumUnitsAlloc)
+                {
+                    encUnitsInfo->UnitInfo[encUnitsInfo->NumUnitsEncoded].Type = nalu->type;
+                    encUnitsInfo->UnitInfo[encUnitsInfo->NumUnitsEncoded].Size = mfxU32(nalu->end - nalu->begin);
+                    encUnitsInfo->UnitInfo[encUnitsInfo->NumUnitsEncoded].Offset = offset;
+                    offset += encUnitsInfo->UnitInfo[encUnitsInfo->NumUnitsEncoded].Size;
+                }
+                ++encUnitsInfo->NumUnitsEncoded;
+            }
+        }
+    }
+} //ImplementationAvc::FillEncodingUnitsInfo
+#endif
 
 #if 0
 mfxStatus ImplementationAvc::AdaptiveGOP(

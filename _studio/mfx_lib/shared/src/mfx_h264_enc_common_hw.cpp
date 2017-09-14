@@ -1532,6 +1532,9 @@ bool MfxHwH264Encode::IsRunTimeOnlyExtBuffer(mfxU32 id)
         || id == MFX_EXTBUFF_MB_FORCE_INTRA
 #endif
         || id == MFX_EXTBUFF_MB_DISABLE_SKIP_MAP
+#ifndef MFX_AVC_ENCODING_UNIT_DISABLE
+        || id == MFX_EXTBUFF_ENCODED_UNITS_INFO
+#endif
         ;
 }
 
@@ -1587,6 +1590,16 @@ bool MfxHwH264Encode::IsRunTimeExtBufferIdSupported(MfxVideoParam const & video,
            ))
 #endif
         );
+}
+
+bool MfxHwH264Encode::IsBitstreamExtBufferIdSupported(mfxU32 id)
+{
+    return
+            id == MFX_EXTBUFF_ENCODED_FRAME_INFO
+#ifndef MFX_AVC_ENCODING_UNIT_DISABLE
+            || id == MFX_EXTBUFF_ENCODED_UNITS_INFO
+#endif
+            ;
 }
 
 bool MfxHwH264Encode::IsRunTimeExtBufferPairAllowed(MfxVideoParam const & video, mfxU32 id)
@@ -4735,6 +4748,22 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 
 #endif
 
+#ifndef MFX_AVC_ENCODING_UNIT_DISABLE
+    if (!CheckTriStateOption(extOpt3->EncodedUnitsInfo))  changed = true;
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
+    if ((par.Protected) && IsOn(extOpt3->EncodedUnitsInfo))
+    {
+        extOpt3->EncodedUnitsInfo = MFX_CODINGOPTION_OFF;
+        unsupported = true;
+    }
+#endif
+    if (par.calcParam.numTemporalLayer > 1 || IsMvcProfile(par.mfx.CodecProfile))
+    {
+        extOpt3->EncodedUnitsInfo = MFX_CODINGOPTION_OFF;
+        unsupported = true;
+    }
+#endif
+
     return unsupported
         ? MFX_ERR_UNSUPPORTED
         : (changed || warning)
@@ -6295,6 +6324,10 @@ void MfxHwH264Encode::SetDefaults(
         extPps->secondChromaQpIndexOffset             = 0;
     }
 
+#ifndef MFX_AVC_ENCODING_UNIT_DISABLE
+    SetDefaultOff(extOpt3->EncodedUnitsInfo);
+#endif
+
     par.SyncCalculableToVideoParam();
     par.AlignCalcWithBRCParamMultiplier();
 }
@@ -6388,6 +6421,14 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
 
     mfxExtFeiParam const * feiParam = GetExtBuffer(video);
     bool single_field_mode = IsOn(feiParam->SingleFieldProcessing);
+
+    for (mfxU32 i = 0; i < bs->NumExtParam; i++)
+    {
+        MFX_CHECK_NULL_PTR1(bs->ExtParam[i]);
+
+        if (!IsBitstreamExtBufferIdSupported(ctrl->ExtParam[i]->BufferId))
+            checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM; // don't return error in runtime, just ignore unsupported ext buffer and return warning
+    }
 
     for (mfxU32 i = 0; i < ctrl->NumExtParam; i++)
     {
@@ -6929,6 +6970,8 @@ mfxStatus MfxHwH264Encode::CheckFEIRunTimeExtBuffersContent(
 #endif
 
             default:
+                if (IsBitstreamExtBufferIdSupported(ctrl->ExtParam[i]->BufferId))
+                    break; //Allow supported buffers
                 //unsupported output extbuffer is attached.
                 return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
@@ -8703,7 +8746,7 @@ mfxU32 MfxHwH264Encode::WriteSpsHeader(
 
     writer.PutBit(0); // forbiddenZeroBit
     writer.PutBits(sps.nalRefIdc, 2);
-    writer.PutBits(7, 5); // nalUnitType
+    writer.PutBits(NALU_SPS, 5); // nalUnitType
     WriteSpsData(writer, sps);
     writer.PutTrailingBits();
 
@@ -8763,7 +8806,7 @@ mfxU32 MfxHwH264Encode::WritePpsHeader(
 
     writer.PutBit(0); // forbiddenZeroBit
     writer.PutBits(pps.nalRefIdc, 2);
-    writer.PutBits(8, 5); // nalUnitType
+    writer.PutBits(NALU_PPS, 5); // nalUnitType
     writer.PutUe(pps.picParameterSetId);
     writer.PutUe(pps.seqParameterSetId);
     writer.PutBit(pps.entropyCodingModeFlag);
@@ -8926,7 +8969,7 @@ mfxU32 MfxHwH264Encode::WriteAud(
     writer.PutRawBytes(header, header + sizeof header / sizeof header[0]);
     writer.PutBit(0);
     writer.PutBits(0, 2);
-    writer.PutBits(9, 5);
+    writer.PutBits(NALU_AUD, 5);
     writer.PutBits(ConvertFrameTypeMfx2Ddi(frameType) - 1, 3);
     writer.PutTrailingBits();
 
@@ -9336,6 +9379,47 @@ void HeaderPacker::ResizeSlices(mfxU32 num)
     Zero(m_packedSlices);
 }
 
+#ifndef MFX_AVC_ENCODING_UNIT_DISABLE
+/*
+    Filling information about headers in HeadersInfo.
+*/
+void HeaderPacker::GetHeadersInfo(std::vector<mfxEncodedUnitInfo> &HeadersInfo, DdiTask const& task, mfxU32 fid)
+{
+    std::vector<ENCODE_PACKEDHEADER_DATA>::iterator it;
+    mfxU32 offset = 0;
+    if (task.m_insertAud[fid])
+    {
+        HeadersInfo.emplace_back();
+        HeadersInfo.back().Type = NALU_AUD;
+        HeadersInfo.back().Size = m_packedAud.DataLength;
+        HeadersInfo.back().Offset = offset;
+        offset += HeadersInfo.back().Size;
+    }
+    if (task.m_insertSps[fid])
+    {
+        for (it = m_packedSps.begin(); it < m_packedSps.end(); ++it)
+        {
+            HeadersInfo.emplace_back();
+            HeadersInfo.back().Type = NALU_SPS;
+            HeadersInfo.back().Size = it->DataLength;
+            HeadersInfo.back().Offset = offset;
+            offset += HeadersInfo.back().Size;
+        }
+    }
+    if (task.m_insertPps[fid])
+    {
+        for (it = m_packedPps.begin(); it < m_packedPps.end(); ++it)
+        {
+            HeadersInfo.emplace_back();
+            HeadersInfo.back().Type = NALU_PPS;
+            HeadersInfo.back().Size = it->DataLength;
+            HeadersInfo.back().Offset = offset;
+            offset += HeadersInfo.back().Size;
+        }
+    }
+}
+#endif
+
 ENCODE_PACKEDHEADER_DATA const & HeaderPacker::PackAud(
     DdiTask const & task,
     mfxU32          fieldId)
@@ -9484,7 +9568,7 @@ mfxU32 HeaderPacker::WriteSlice(
     mfxU32 refPicFlag   = !!(task.m_type[fieldId] & MFX_FRAMETYPE_REF);
     mfxU32 idrPicFlag   = !!(task.m_type[fieldId] & MFX_FRAMETYPE_IDR);
     mfxU32 nalRefIdc    = task.m_nalRefIdc[fieldId];
-    mfxU32 nalUnitType  = (task.m_did == 0 && task.m_qid == 0) ? (idrPicFlag ? 5 : 1) : 20;
+    mfxU32 nalUnitType  = (task.m_did == 0 && task.m_qid == 0) ? (idrPicFlag ? NALU_IDR : NALU_NON_IDR) : NALU_CODED_SLICE_EXT;
     mfxU32 fieldPicFlag = task.GetPicStructForEncode() != MFX_PICSTRUCT_PROGRESSIVE;
 
     mfxExtSpsHeader const & sps = task.m_viewIdx ? m_sps[task.m_viewIdx] : m_sps[m_spsIdx[task.m_did][task.m_qid]];

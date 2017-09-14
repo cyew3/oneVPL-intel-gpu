@@ -340,6 +340,10 @@
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtVPPVideoSignalInfo     ,48  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtEncoderROI             ,8224)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtVPPDeinterlacing       ,32  )
+      #ifndef MFX_AVC_ENCODING_UNIT_DISABLE
+        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxEncodedUnitInfo           ,32  )
+        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtEncodedUnitsInfo       ,64  )
+      #endif
     #elif defined(_WIN32) || defined(LINUX32)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxVideoParam                ,196 )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxFrameId                   ,8   )
@@ -378,6 +382,10 @@
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtVPPVideoSignalInfo     ,48  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtEncoderROI             ,8224)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtVPPDeinterlacing       ,32  )
+      #ifndef MFX_AVC_ENCODING_UNIT_DISABLE
+        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxEncodedUnitInfo           ,32  )
+        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtEncodedUnitsInfo       ,64  )
+      #endif
     #endif
 #endif //defined (__MFXSTRUCTURES_H__)
 

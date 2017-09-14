@@ -2275,6 +2275,10 @@ void MfxHwH264Encode::ConfigureTask(
             task.m_sliceBetaOffsetDiv2[task.m_fid[field]].push_back(sliceBetaOffsetDiv2);
         } // for (mfxU32 i = 0; i < task.m_numSlice[field]; i++)
     } // for (mfxU32 field = 0; field < fieldMaxCount; field++)
+
+#ifndef MFX_AVC_ENCODING_UNIT_DISABLE
+    task.m_collectUnitsInfo = IsOn(extOpt3->EncodedUnitsInfo);
+#endif
 }
 
 

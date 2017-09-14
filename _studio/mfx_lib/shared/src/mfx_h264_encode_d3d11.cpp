@@ -675,6 +675,12 @@ mfxStatus D3D11Encoder::Execute(
 
     assert(bufCnt <= m_compBufDesc.size());
 
+#ifndef MFX_AVC_ENCODING_UNIT_DISABLE
+    if (task.m_collectUnitsInfo)
+    {
+        m_headerPacker.GetHeadersInfo(task.m_headersCache[fieldId], task, fieldId);
+    }
+#endif
 
     if(SkipFlag != 1)
     {
@@ -1401,7 +1407,7 @@ namespace
         obs.PutBits(1, 24);                     // 001
         obs.PutBits(0, 1);                      // forbidden_zero_flag
         obs.PutBits(nalRefIdc, 2);              // nal_ref_idc
-        obs.PutBits(0xe, 5);                    // nal_unit_type
+        obs.PutBits(NALU_PREFIX, 5);            // nal_unit_type
         obs.PutBits(1, 1);                      // svc_extension_flag
         obs.PutBits(idrFlag, 1);                // idr_flag
         obs.PutBits(task.m_pid, 6);             // priority_id

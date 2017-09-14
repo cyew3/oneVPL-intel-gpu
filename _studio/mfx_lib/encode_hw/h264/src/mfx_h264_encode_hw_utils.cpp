@@ -4335,7 +4335,7 @@ mfxU32 MfxHwH264Encode::PutScalableInfoSeiMessage(
     mfxU32 lengthInBytes = (PutScalableInfoSeiPayload(tmp, par) + 7) / 8;
 
     mfxU32 initialNumBits = obs.GetNumBits();
-    mfxU8 const header[5] = { 0, 0, 0, 1, 6 };
+    mfxU8 const header[5] = { 0, 0, 0, 1, NALU_SEI };
     obs.PutRawBytes(header, header + sizeof(header));
     PutSeiHeader(obs, SEI_TYPE_SCALABILITY_INFO, lengthInBytes);
     PutScalableInfoSeiPayload(obs, par);

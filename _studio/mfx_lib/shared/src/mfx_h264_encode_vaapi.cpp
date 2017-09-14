@@ -2810,6 +2810,13 @@ mfxStatus VAAPIEncoder::Execute(
 
     mfxU32 storedSize = 0;
 
+#ifndef MFX_AVC_ENCODING_UNIT_DISABLE
+    if (task.m_collectUnitsInfo)
+    {
+        m_headerPacker.GetHeadersInfo(task.m_headersCache[fieldId], task, fieldId);
+    }
+#endif
+
     if (skipFlag != NORMAL_MODE)
     {
         MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetSkipFrame(m_vaDisplay, m_vaContextEncode, m_miscParameterSkipBufferId,

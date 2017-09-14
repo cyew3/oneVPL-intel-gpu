@@ -645,14 +645,14 @@ namespace
         DdiTask const & task,
         mfxU32          fieldId)
     {
-        mfxU32 nalUnitType = (task.m_did == 0 && task.m_qid == 0) ? 14 : 20;
+        mfxU32 nalUnitType = (task.m_did == 0 && task.m_qid == 0) ? NALU_PREFIX : NALU_CODED_SLICE_EXT;
 
         begin = PackPrefixNalUnitSvc(begin, end, true, task, fieldId, nalUnitType);
 
-        if (nalUnitType == 14)
+        if (nalUnitType == NALU_PREFIX)
         {
             mfxU8 nalRefIdc   = (task.m_type[fieldId] & MFX_FRAMETYPE_REF) ? 1 : 0;
-            mfxU8 nalUnitTypeU8 = (task.m_type[fieldId] & MFX_FRAMETYPE_IDR) ? 5 : 1;
+            mfxU8 nalUnitTypeU8 = (task.m_type[fieldId] & MFX_FRAMETYPE_IDR) ? (mfxU8)NALU_IDR : (mfxU8)NALU_NON_IDR;
             *begin++ = 0;
             *begin++ = 0;
             *begin++ = 1;
@@ -1718,6 +1718,13 @@ mfxStatus D3D9Encoder::Execute(
     }
 
     assert(bufCnt <= m_compBufDesc.size());
+
+#ifndef MFX_AVC_ENCODING_UNIT_DISABLE
+    if (task.m_collectUnitsInfo)
+    {
+        m_headerPacker.GetHeadersInfo(task.m_headersCache[fieldId], task, fieldId);
+    }
+#endif
 
     if (SkipFlag != 1)
     {
