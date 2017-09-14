@@ -140,6 +140,7 @@ struct ID3D11Device;
 #define CM_INVALID_LIBVA_INITIALIZE                 -66
 
 #ifndef OPEN_SOURCE
+
 #define CM_MAX_THREADSPACE_WIDTH        511
 #define CM_MAX_THREADSPACE_HEIGHT       511
 
@@ -172,6 +173,7 @@ typedef enum _GPU_PLATFORM{
 #define CM_MAX_TIMEOUT 2
 //Time in milliseconds before kernel should timeout
 #define CM_MAX_TIMEOUT_MS CM_MAX_TIMEOUT*1000
+#define CM_MAX_TIMEOUT_SIM    300000
 
 extern class CmEvent *CM_NO_EVENT;
 

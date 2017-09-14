@@ -72,6 +72,7 @@ CmCopyWrapper::CmCopyWrapper()
 
     m_surfacesInCreationOrder.clear();
     m_buffersInCreationOrder.clear();
+    m_timeout = 0;
 } // CmCopyWrapper::CmCopyWrapper(void)
 CmCopyWrapper::~CmCopyWrapper(void)
 {
@@ -134,9 +135,9 @@ mfxStatus CmCopyWrapper::EnqueueCopySwapRBGPUtoCPU(   CmSurface2D* pSurface,
                                     unsigned char* pSysMem,
                                     int width,
                                     int height,
-                                    const UINT widthStride, 
+                                    const UINT widthStride,
                                     const UINT heightStride,
-                                    mfxU32 format, 
+                                    mfxU32 format,
                                     const UINT option,
                                     CmEvent* & pEvent )
 {
@@ -162,14 +163,14 @@ mfxStatus CmCopyWrapper::EnqueueCopySwapRBGPUtoCPU(   CmSurface2D* pSurface,
     UINT            width_dword             = 0;
     UINT            width_byte              = 0;
     UINT            copy_width_byte         = 0;
-    UINT            copy_height_row         = 0; 
+    UINT            copy_height_row         = 0;
     UINT            slice_copy_height_row   = 0;
     UINT            sliceCopyBufferUPSize   = 0;
     INT             totalBufferUPSize       = 0;
     UINT            start_x                 = 0;
     UINT            start_y                 = 0;
 
-    
+
 
     if ( !pSurface )
     {
@@ -188,7 +189,7 @@ mfxStatus CmCopyWrapper::EnqueueCopySwapRBGPUtoCPU(   CmSurface2D* pSurface,
         height_stride_in_rows = height;
    }
 
-    // the actual copy region 
+    // the actual copy region
     copy_width_byte = IPP_MIN(stride_in_bytes, width_byte);
     copy_height_row = IPP_MIN(height_stride_in_rows, (UINT)height);
 
@@ -204,17 +205,16 @@ mfxStatus CmCopyWrapper::EnqueueCopySwapRBGPUtoCPU(   CmSurface2D* pSurface,
     }
 
     //Calculate actual total size of system memory
-    
+
     totalBufferUPSize = stride_in_bytes * height_stride_in_rows;
 
     pLinearAddress  = (size_t)pSysMem;
-    
 
     while (totalBufferUPSize > 0)
     {
-#if defined(WIN64) || defined(LINUX64)//64-bit 
+#if defined(WIN64) || defined(LINUX64)//64-bit
             pLinearAddressAligned        = pLinearAddress & ADDRESS_PAGE_ALIGNMENT_MASK_X64;
-#else  //32-bit 
+#else  //32-bit
             pLinearAddressAligned        = pLinearAddress & ADDRESS_PAGE_ALIGNMENT_MASK_X86;
 #endif
 
@@ -231,7 +231,7 @@ mfxStatus CmCopyWrapper::EnqueueCopySwapRBGPUtoCPU(   CmSurface2D* pSurface,
             slice_copy_height_row = copy_height_row;
             sliceCopyBufferUPSize = totalBufferUPSize;
         }
-        
+
         pBufferIndexCM = CreateUpBuffer((mfxU8*)pLinearAddressAligned,sliceCopyBufferUPSize,m_tableSysRelations2,m_tableSysIndex2);
         CHECK_CM_HR(hr);
         hr = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(surfaceCopy_readswap_32x32), m_pCmKernel);
@@ -296,7 +296,7 @@ mfxStatus CmCopyWrapper::EnqueueCopySwapRBGPUtoCPU(   CmSurface2D* pSurface,
         }
         else //Last one event, need keep or destroy it
         {
-            hr = pInternalEvent->WaitForTaskFinished();
+            hr = pInternalEvent->WaitForTaskFinished(m_timeout);
             if(hr == CM_EXCEED_MAX_TIMEOUT)
                 return MFX_ERR_GPU_HANG;
             else
@@ -313,9 +313,9 @@ mfxStatus CmCopyWrapper::EnqueueCopyGPUtoCPU(   CmSurface2D* pSurface,
                                     unsigned char* pSysMem,
                                     int width,
                                     int height,
-                                    const UINT widthStride, 
+                                    const UINT widthStride,
                                     const UINT heightStride,
-                                    mfxU32 format, 
+                                    mfxU32 format,
                                     const UINT option,
                                     CmEvent* & pEvent )
 {
@@ -475,7 +475,7 @@ mfxStatus CmCopyWrapper::EnqueueCopyGPUtoCPU(   CmSurface2D* pSurface,
         }
         else //Last one event, need keep or destroy it
         {
-            hr = pInternalEvent->WaitForTaskFinished();
+            hr = pInternalEvent->WaitForTaskFinished(m_timeout);
             if(hr == CM_EXCEED_MAX_TIMEOUT)
                 return MFX_ERR_GPU_HANG;
             else
@@ -657,7 +657,7 @@ mfxStatus CmCopyWrapper::EnqueueCopySwapRBCPUtoGPU(   CmSurface2D* pSurface,
         }
         else //Last one event, need keep or destroy it
         {
-            hr = pInternalEvent->WaitForTaskFinished();
+            hr = pInternalEvent->WaitForTaskFinished(m_timeout);
             if(hr == CM_EXCEED_MAX_TIMEOUT)
                 return MFX_ERR_GPU_HANG;
             else
@@ -840,7 +840,7 @@ mfxStatus CmCopyWrapper::EnqueueCopyCPUtoGPU(   CmSurface2D* pSurface,
         }
         else //Last one event, need keep or destroy it
         {
-            hr = pInternalEvent->WaitForTaskFinished();
+            hr = pInternalEvent->WaitForTaskFinished(m_timeout);
             if(hr == CM_EXCEED_MAX_TIMEOUT)
                 return MFX_ERR_GPU_HANG;
             else
@@ -922,7 +922,7 @@ mfxStatus CmCopyWrapper::EnqueueCopySwapRBGPUtoGPU(   CmSurface2D* pSurfaceIn,
     CHECK_CM_HR(hr);
     hr = m_pCmDevice->DestroyKernel(m_pCmKernel);
     CHECK_CM_HR(hr);
-    hr = pInternalEvent->WaitForTaskFinished();
+    hr = pInternalEvent->WaitForTaskFinished(m_timeout);
     
     if(hr == CM_EXCEED_MAX_TIMEOUT)
         return MFX_ERR_GPU_HANG;
@@ -1004,7 +1004,7 @@ mfxStatus CmCopyWrapper::EnqueueCopyMirrorGPUtoGPU(   CmSurface2D* pSurfaceIn,
     CHECK_CM_HR(hr);
     hr = m_pCmDevice->DestroyKernel(m_pCmKernel);
     CHECK_CM_HR(hr);
-    hr = pInternalEvent->WaitForTaskFinished();
+    hr = pInternalEvent->WaitForTaskFinished(m_timeout);
 
     if(hr == CM_EXCEED_MAX_TIMEOUT)
         return MFX_ERR_GPU_HANG;
@@ -1181,7 +1181,7 @@ mfxStatus CmCopyWrapper::EnqueueCopyMirrorNV12GPUtoCPU(   CmSurface2D* pSurface,
         }
         else //Last one event, need keep or destroy it
         {
-            hr = pInternalEvent->WaitForTaskFinished();
+            hr = pInternalEvent->WaitForTaskFinished(m_timeout);
             if(hr == CM_EXCEED_MAX_TIMEOUT)
                 return MFX_ERR_GPU_HANG;
             else
@@ -1361,7 +1361,7 @@ mfxStatus CmCopyWrapper::EnqueueCopyNV12GPUtoCPU(   CmSurface2D* pSurface,
         }
         else //Last one event, need keep or destroy it
         {
-            hr = pInternalEvent->WaitForTaskFinished();
+            hr = pInternalEvent->WaitForTaskFinished(m_timeout);
             if(hr == CM_EXCEED_MAX_TIMEOUT)
                 return MFX_ERR_GPU_HANG;
             else
@@ -1540,7 +1540,7 @@ mfxStatus CmCopyWrapper::EnqueueCopyMirrorNV12CPUtoGPU(CmSurface2D* pSurface,
         }
         else //Last one event, need keep or destroy it
         {
-            hr = pInternalEvent->WaitForTaskFinished();
+            hr = pInternalEvent->WaitForTaskFinished(m_timeout);
             if(hr == CM_EXCEED_MAX_TIMEOUT)
                 return MFX_ERR_GPU_HANG;
             else
@@ -1726,7 +1726,7 @@ mfxStatus CmCopyWrapper::EnqueueCopyNV12CPUtoGPU(CmSurface2D* pSurface,
         }
         else //Last one event, need keep or destroy it
         {
-            hr = pInternalEvent->WaitForTaskFinished();
+            hr = pInternalEvent->WaitForTaskFinished(m_timeout);
             if(hr == CM_EXCEED_MAX_TIMEOUT)
                 return MFX_ERR_GPU_HANG;
             else
@@ -1909,7 +1909,7 @@ mfxStatus CmCopyWrapper::EnqueueCopyShiftP010GPUtoCPU(   CmSurface2D* pSurface,
         }
         else //Last one event
         {
-            hr = pInternalEvent->WaitForTaskFinished();
+            hr = pInternalEvent->WaitForTaskFinished(m_timeout);
             if(hr == CM_EXCEED_MAX_TIMEOUT)
                 return MFX_ERR_GPU_HANG;
             else
@@ -2088,7 +2088,7 @@ mfxStatus CmCopyWrapper::EnqueueCopyShiftP010CPUtoGPU(   CmSurface2D* pSurface,
         }
         else //Last one event, need keep or destroy it
         {
-            hr = pInternalEvent->WaitForTaskFinished();
+            hr = pInternalEvent->WaitForTaskFinished(m_timeout);
             if(hr == CM_EXCEED_MAX_TIMEOUT)
                 return MFX_ERR_GPU_HANG;
             else
@@ -2109,44 +2109,16 @@ mfxStatus CmCopyWrapper::Initialize(eMFXHWType hwtype)
         return MFX_ERR_DEVICE_FAILED;
 
     m_HWType = hwtype;
-
 #if defined (MFX_VA_LINUX)
     if (m_HWType == MFX_HW_UNKNOWN)  // sometimes linux don't know platform
         m_HWType = MFX_HW_IVB;
 #endif
 
-#if 0
-    void *pCommonISACode = new mfxU32[CM_CODE_SIZE];
-
-    if (false == pCommonISACode)
-    {
-        return MFX_ERR_DEVICE_FAILED;
-    }
-
-    memcpy((char*)pCommonISACode, cm_code, CM_CODE_SIZE);
-
-    cmSts = m_pCmDevice->LoadProgram(pCommonISACode, CM_CODE_SIZE, m_pCmProgram);
-    CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
-
-    delete [] pCommonISACode;
-
-    cmSts = m_pCmDevice->CreateKernel(m_pCmProgram, _NAME(surfaceCopy_2DToBuffer_Single_nv12_128_full) , m_pCmKernel1);
-    CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
-
-    cmSts = m_pCmDevice->CreateKernel(m_pCmProgram, _NAME(surfaceCopy_BufferTo2D_Single_nv12_128_full) , m_pCmKernel2);
-    CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
-
-    mfxU32 width_ = ALIGN128(width);
-
-    mfxU32 threadWidth = (unsigned int)ceil((double)width / 128);
-    mfxU32 threadHeight = (unsigned int)ceil((double)height / 8);
-
-    m_pCmKernel1->SetThreadCount(threadWidth * threadHeight);
-    m_pCmKernel2->SetThreadCount(threadWidth * threadHeight);
-
-    m_pCmDevice->CreateThreadSpace(threadWidth, threadHeight, m_pThreadSpace);
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    m_timeout = m_HWType >= MFX_HW_ICL ? CM_MAX_TIMEOUT_SIM : CM_MAX_TIMEOUT_MS;
+#else
+    m_timeout = CM_MAX_TIMEOUT_MS;
 #endif
-
     if(hwtype >= MFX_HW_SCL)
         InitializeSwapKernels(hwtype);
     cmSts = m_pCmDevice->CreateQueue(m_pCmQueue);
@@ -2156,19 +2128,6 @@ mfxStatus CmCopyWrapper::Initialize(eMFXHWType hwtype)
     m_tableSysRelations2.clear();
     m_tableSysIndex2.clear();
 
-#if 0
-    cmSts = m_pCmDevice->CreateTask(m_pCmTask1);
-    CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
-
-    cmSts = m_pCmDevice->CreateTask(m_pCmTask2);
-    CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED)
-
-    cmSts = m_pCmTask1->AddKernel(m_pCmKernel1);
-    CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
-
-    cmSts = m_pCmTask2->AddKernel(m_pCmKernel2);
-    CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
-#endif
     return MFX_ERR_NONE;
 
 } // mfxStatus CmCopyWrapper::Initialize(void)
@@ -2181,37 +2140,7 @@ mfxStatus CmCopyWrapper::InitializeSwapKernels(eMFXHWType hwtype)
         return MFX_ERR_DEVICE_FAILED;
 
 
-#if 0
-    void *pCommonISACode = new mfxU32[CM_CODE_SIZE];
 
-    if (false == pCommonISACode)
-    {
-        return MFX_ERR_DEVICE_FAILED;
-    }
-
-    memcpy((char*)pCommonISACode, cm_code, CM_CODE_SIZE);
-
-    cmSts = m_pCmDevice->LoadProgram(pCommonISACode, CM_CODE_SIZE, m_pCmProgram);
-    CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
-
-    delete [] pCommonISACode;
-
-    cmSts = m_pCmDevice->CreateKernel(m_pCmProgram, _NAME(surfaceCopy_2DToBuffer_Single_nv12_128_full) , m_pCmKernel1);
-    CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
-
-    cmSts = m_pCmDevice->CreateKernel(m_pCmProgram, _NAME(surfaceCopy_BufferTo2D_Single_nv12_128_full) , m_pCmKernel2);
-    CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
-
-    mfxU32 width_ = ALIGN128(width);
-
-    mfxU32 threadWidth = (unsigned int)ceil((double)width / 128);
-    mfxU32 threadHeight = (unsigned int)ceil((double)height / 8);
-
-    m_pCmKernel1->SetThreadCount(threadWidth * threadHeight);
-    m_pCmKernel2->SetThreadCount(threadWidth * threadHeight);
-
-    m_pCmDevice->CreateThreadSpace(threadWidth, threadHeight, m_pThreadSpace);
-#endif
     #if defined(WIN64) || defined(WIN32)
         switch (hwtype)
         {
@@ -2248,19 +2177,6 @@ mfxStatus CmCopyWrapper::InitializeSwapKernels(eMFXHWType hwtype)
         CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
     #endif
 
-#if 0
-    cmSts = m_pCmDevice->CreateTask(m_pCmTask1);
-    CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
-
-    cmSts = m_pCmDevice->CreateTask(m_pCmTask2);
-    CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED)
-
-    cmSts = m_pCmTask1->AddKernel(m_pCmKernel1);
-    CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
-
-    cmSts = m_pCmTask2->AddKernel(m_pCmKernel2);
-    CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
-#endif
     return MFX_ERR_NONE;
 
 } // mfxStatus CmCopyWrapper::Initialize(void)
@@ -2417,7 +2333,7 @@ mfxStatus CmCopyWrapper::CopySystemToVideoMemoryAPI(void *pDst, mfxU32 dstPitch,
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "CmCopyWrapper::CopySystemToVideoMemoryAPI");
     cmStatus cmSts = 0;
 
-    CmEvent* e = (CmEvent*)(-1);//NULL;
+    CmEvent* e = NULL;
     //CM_STATUS sts;
     mfxStatus status = MFX_ERR_NONE;
 
@@ -2426,26 +2342,26 @@ mfxStatus CmCopyWrapper::CopySystemToVideoMemoryAPI(void *pDst, mfxU32 dstPitch,
 
      // create or find already associated cm surface 2d
     CmSurface2D *pCmSurface2D;
-    //m_pCmDevice->CreateSurface2D((AbstractSurfaceHandle*)pDst,pCmSurface2D);
+
     pCmSurface2D = CreateCmSurface2D(pDst, width, height, false, m_tableCmRelations2, m_tableCmIndex2);
     CHECK_CM_NULL_PTR(pCmSurface2D, MFX_ERR_DEVICE_FAILED);
 
     cmSts = m_pCmQueue->EnqueueCopyCPUToGPUFullStride(pCmSurface2D, pSrc, srcPitch, srcUVOffset, 1, e);
 
-    if (CM_SUCCESS == cmSts )
+    if (CM_SUCCESS == cmSts)
     {
-        return status;
-    }
-    else if(cmSts == CM_EXCEED_MAX_TIMEOUT)
-    {
-        status = MFX_ERR_GPU_HANG;
+        cmSts = e->WaitForTaskFinished(m_timeout);
+        if(cmSts == CM_EXCEED_MAX_TIMEOUT)
+        {
+            status = MFX_ERR_GPU_HANG;
+        }
     }
     else
     {
         status = MFX_ERR_DEVICE_FAILED;
     }
-    //if(e) m_pCmQueue->DestroyEvent(e);
-    //m_pCmDevice->DestroySurface(pCmSurface2D);
+    m_pCmQueue->DestroyEvent(e);
+
     return status;
 }
 mfxStatus CmCopyWrapper::CopySystemToVideoMemory(void *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, mfxU32 srcUVOffset, IppiSize roi, mfxU32 format)
@@ -2550,7 +2466,7 @@ mfxStatus CmCopyWrapper::CopyVideoToSystemMemoryAPI(mfxU8 *pDst, mfxU32 dstPitch
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "CmCopyWrapper::CopyVideoToSystemMemoryAPI");
     cmStatus cmSts = 0;
-    CmEvent* e = (CmEvent*)-1;//NULL;
+    CmEvent* e = NULL;
     mfxStatus status = MFX_ERR_NONE;
     mfxU32 width  = roi.width;
     mfxU32 height = roi.height;
@@ -2563,14 +2479,17 @@ mfxStatus CmCopyWrapper::CopyVideoToSystemMemoryAPI(mfxU8 *pDst, mfxU32 dstPitch
     
     if (CM_SUCCESS == cmSts)
     {
-        return status;
+        cmSts = e->WaitForTaskFinished(m_timeout);
+        if (cmSts == CM_EXCEED_MAX_TIMEOUT)
+        {
+            status = MFX_ERR_GPU_HANG;
+        }
     }
-    else if(cmSts == CM_EXCEED_MAX_TIMEOUT)
+    else
     {
-        status = MFX_ERR_GPU_HANG;
-    }else{
         status = MFX_ERR_DEVICE_FAILED;
     }
+    m_pCmQueue->DestroyEvent(e);
 
     return status;
 }
@@ -2672,7 +2591,7 @@ mfxStatus CmCopyWrapper::CopyVideoToVideoMemoryAPI(void *pDst, void *pSrc, IppiS
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "CmCopyWrapper::CopyVideoToVideoMemoryAPI");
     cmStatus cmSts = 0;
 
-    CmEvent* e = (CmEvent*)-1;//NULL;
+    CmEvent* e = NULL;
     mfxStatus status = MFX_ERR_NONE;
 
     mfxU32 width  = roi.width;
@@ -2691,17 +2610,17 @@ mfxStatus CmCopyWrapper::CopyVideoToVideoMemoryAPI(void *pDst, void *pSrc, IppiS
 
     if (CM_SUCCESS == cmSts)
     {
-        return status;
-    }
-    else if(cmSts == CM_EXCEED_MAX_TIMEOUT)
-    {
-        status = MFX_ERR_GPU_HANG;
+        cmSts = e->WaitForTaskFinished(m_timeout);
+        if (cmSts == CM_EXCEED_MAX_TIMEOUT)
+        {
+            status = MFX_ERR_GPU_HANG;
+        }
     }
     else
     {
         status = MFX_ERR_DEVICE_FAILED;
     }
-
+    m_pCmQueue->DestroyEvent(e);
     return status;
 }
 mfxStatus CmCopyWrapper::CopySwapVideoToVideoMemory(void *pDst, void *pSrc, IppiSize roi, mfxU32 format)

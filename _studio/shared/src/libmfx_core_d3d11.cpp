@@ -71,9 +71,7 @@ mfxStatus D3D11VideoCORE::InternalInit()
     m_HWType = MFX::GetHardwareType(m_adapterNum, platformFromDriver);
 
 #ifndef MFX_CLOSED_PLATFORMS_DISABLE
-    if ((m_HWType == MFX_HW_ICL) ||
-        (m_HWType == MFX_HW_ICL_LP) ||
-        (m_HWType == MFX_HW_LKF) ||
+    if ((m_HWType == MFX_HW_LKF) ||
         (m_HWType == MFX_HW_TGL_LP) ||
         (m_HWType == MFX_HW_TGL_HP))
         m_bCmCopyAllowed = false;   // !!! temporarily for pre-si

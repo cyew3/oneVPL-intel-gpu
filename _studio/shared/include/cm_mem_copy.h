@@ -278,6 +278,7 @@ protected:
     eMFXHWType m_HWType;
     CmDevice  *m_pCmDevice;
     CmProgram *m_pCmProgram;
+	INT m_timeout;
 
     CmThreadSpace *m_pThreadSpace;
 
