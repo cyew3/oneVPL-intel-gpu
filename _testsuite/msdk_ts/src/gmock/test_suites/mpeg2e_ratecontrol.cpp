@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2017 Intel Corporation. All Rights Reserved.
 
 File Name: mpeg2e_ratecontrol.cpp
 
@@ -48,10 +48,10 @@ namespace mpeg2e_ratecontrol
         {/*00*/ MFX_ERR_NONE,                      MFX_ERR_NONE,                        {MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR}},
         {/*01*/ MFX_ERR_NONE,                      MFX_ERR_NONE,                        {MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR}},
         {/*02*/ MFX_ERR_NONE,                      MFX_ERR_NONE,                        {MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP}},
-        {/*03*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,  MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,    {MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED1}},
-        {/*04*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,  MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,    {MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED2}},
-        {/*05*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,  MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,    {MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED3}},
-        {/*06*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,  MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,    {MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED4}},
+        {/*03*/ MFX_ERR_UNSUPPORTED,               MFX_ERR_INVALID_VIDEO_PARAM     ,    {MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED1}},
+        {/*04*/ MFX_ERR_UNSUPPORTED,               MFX_ERR_INVALID_VIDEO_PARAM     ,    {MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED2}},
+        {/*05*/ MFX_ERR_UNSUPPORTED,               MFX_ERR_INVALID_VIDEO_PARAM     ,    {MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED3}},
+        {/*06*/ MFX_ERR_UNSUPPORTED,               MFX_ERR_INVALID_VIDEO_PARAM     ,    {MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED4}},
         {/*07*/ MFX_ERR_UNSUPPORTED,               MFX_ERR_INVALID_VIDEO_PARAM     ,    {MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA}},
         {/*08*/ MFX_ERR_UNSUPPORTED,               MFX_ERR_INVALID_VIDEO_PARAM     ,    {MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_ICQ}},
         {/*09*/ MFX_ERR_UNSUPPORTED,               MFX_ERR_INVALID_VIDEO_PARAM     ,    {MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VCM}},
