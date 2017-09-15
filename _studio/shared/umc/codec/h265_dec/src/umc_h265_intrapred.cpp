@@ -68,7 +68,21 @@ namespace UMC_HEVC_DECODER
 
             UpdateRecNeighboursBuffersN(XInc, YInc, Size, true);
 
+            Ipp32u num4x4InCU =
+                (m_cu->GetWidth(AbsPartIdx) >> TrDepth) / 4;
             if (Size == 4)
+                //scesial case - virtually increase count for 4x4 since we gather chroma from 8x8
+                //and should calc pred. pels accord. to correct neigbors
+                num4x4InCU *= 2;
+
+            Ipp32u const scale = m_pSeqParamSet->ChromaArrayType == CHROMA_FORMAT_422 ? 1 : 2;
+            Ipp32u const avlMask  = (1 << (num4x4InCU * scale)) - 1;
+
+            if (Size != 4)
+            {
+                IntraRecChromaBlk(TrDepth, AbsPartIdx, ChromaPredMode, tpIf, lfIf & avlMask, tlIf);
+            }
+            else
             {
                 if ((AbsPartIdx & 0x03) == 0)
                 {
@@ -80,10 +94,8 @@ namespace UMC_HEVC_DECODER
 
                 if ((AbsPartIdx & 0x03) == 3)
                 {
-                    IntraRecChromaBlk(TrDepth-1, AbsPartIdx-3, ChromaPredMode, save_tpIf, save_lfIf, save_tlIf);
+                    IntraRecChromaBlk(TrDepth-1, AbsPartIdx-3, ChromaPredMode, save_tpIf, save_lfIf & avlMask, save_tlIf);
                 }
-            } else {
-                IntraRecChromaBlk(TrDepth, AbsPartIdx, ChromaPredMode, tpIf, lfIf, tlIf);
             }
         }
         else
@@ -281,20 +293,26 @@ namespace UMC_HEVC_DECODER
         if (m_pSeqParamSet->ChromaArrayType == CHROMA_FORMAT_422)
         {
             Ipp32u num4x4InCU = m_cu->GetWidth(AbsPartIdx) >> TrDepth >> 2;
+            Ipp32u const avlMask = (((Ipp32u)(1<<((num4x4InCU))))-1);
 
+            //we always have top from U/V
+            tpIf = avlMask;
+
+            //re-use Left flags from U/V to calculate U1/V1 TopLeft flag:
+            //peek first half (U/V) and get lowest position - this is MSB bit
+            Ipp32u const TL_idx = (num4x4InCU / 2) - 1;
+            Ipp32u const TL_mask = 1 << TL_idx;
+            tlIf = !!(lfIf & TL_mask);
+
+            //update Left flags
             Ipp32s XInc = m_cu->m_rasterToPelX[AbsPartIdx] >> 2;
             Ipp32s YInc = m_cu->m_rasterToPelY[AbsPartIdx] >> 2;
-
-            YInc += num4x4InCU >> 1;
-            Ipp32s diagId = XInc + (m_pSeqParamSet->MaxCUSize >> 2) - YInc - 1;
-
+            YInc += num4x4InCU >> 1; //shift flags for U1/V1
             lfIf = m_context->m_RecLfIntraFlags[XInc] >> (YInc);
-            tlIf = (*m_context->m_RecTLIntraFlags >> diagId) & 0x1;
-            tpIf = m_context->m_RecTpIntraFlags[YInc] >> (XInc);
+            lfIf &= avlMask;
 
-            tlIf = lfIf & 0x01;
-
-            Ipp32u bottomOffset = (Size*RecIPredStride) << m_pSeqParamSet->need16bitOutput;
+            Ipp32u const bottomOffset =
+                (Size*RecIPredStride) << m_pSeqParamSet->need16bitOutput;
 
             m_reconstructor->GetPredPelsChromaNV12(m_pCurrentFrame->GetCbCrAddr(m_cu->CUAddr, AbsPartIdx) + bottomOffset,
                 PredPel, 2*Size, m_pCurrentFrame->pitch_chroma(), tpIf, lfIf, tlIf, m_pSeqParamSet->bit_depth_chroma);
