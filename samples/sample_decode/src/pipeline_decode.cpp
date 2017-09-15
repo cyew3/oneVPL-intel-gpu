@@ -1047,12 +1047,9 @@ mfxStatus CDecodingPipeline::AllocFrames()
     MSDK_ZERO_MEMORY(VppRequest[0]);
     MSDK_ZERO_MEMORY(VppRequest[1]);
 
-    if (m_mfxVideoParams.mfx.FrameInfo.FourCC != MFX_FOURCC_P210) // TODO: workaround for P210, delete later
-    {
-        sts = m_pmfxDEC->Query(&m_mfxVideoParams, &m_mfxVideoParams);
-        MSDK_IGNORE_MFX_STS(sts, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
-        MSDK_CHECK_STATUS(sts, "m_pmfxDEC->Query failed");
-    }
+    sts = m_pmfxDEC->Query(&m_mfxVideoParams, &m_mfxVideoParams);
+    MSDK_IGNORE_MFX_STS(sts, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
+    MSDK_CHECK_STATUS(sts, "m_pmfxDEC->Query failed");
 
     // calculate number of surfaces required for decoder
     sts = m_pmfxDEC->QueryIOSurf(&m_mfxVideoParams, &Request);
