@@ -1997,7 +1997,11 @@ void H265SegmentDecoder::ParseCoeffNxNCABACOptimized(CoeffsPtr pCoef, Ipp32u Abs
     Ipp16s *pDequantCoef = NULL;
     bool shift_right = true;
 
-    if (scaling_list_enabled_flag)
+    bool use_scaling_list =
+        scaling_list_enabled_flag &&
+        //We take into account the value of [transform_skip_flag] only for nTbS which is greater than 4. See 8.6.3 Scaling process for transform coefficients
+        (!m_cu->GetTransformSkip(plane, AbsPartIdx) || L2Width == 0);
+    if (use_scaling_list)
     {
         Ipp32s QPRem = m_context->m_ScaledQP[plane].m_QPRem;
         Ipp32s QPPer = m_context->m_ScaledQP[plane].m_QPPer;
@@ -2204,7 +2208,7 @@ void H265SegmentDecoder::ParseCoeffNxNCABACOptimized(CoeffsPtr pCoef, Ipp32u Abs
                 else
                 {
                     Ipp32s coeffQ;
-                    if (scaling_list_enabled_flag)
+                    if (use_scaling_list)
                     {
                         if (shift_right)
                             coeffQ = (coef * pDequantCoef[blkPos] + Add) >> Shift;
