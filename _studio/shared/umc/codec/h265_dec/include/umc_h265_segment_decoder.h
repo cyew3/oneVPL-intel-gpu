@@ -201,6 +201,7 @@ public:
 protected:
 
     Ipp32s          m_LastValidQP;
+    Ipp32s          m_LastValidOffsetIndex;
 };
 
 // Main single thread decoder class

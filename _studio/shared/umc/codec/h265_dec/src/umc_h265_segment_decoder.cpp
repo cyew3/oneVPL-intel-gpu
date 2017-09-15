@@ -32,6 +32,7 @@ DecodingContext::DecodingContext()
     m_CurrCTBFlags = 0;
     m_CurrCTBStride = 0;
     m_LastValidQP = 0;
+    m_LastValidOffsetIndex = -1;
 
     m_needToSplitDecAndRec = true;
     m_RecTpIntraFlags = 0;
@@ -102,6 +103,7 @@ void DecodingContext::Init(H265Task *task)
     {
         ResetRowBuffer();
         m_LastValidQP = slice->m_SliceHeader.SliceQP ^ 1; // Force QP recalculation because QP offsets may be different in new slice
+        m_LastValidOffsetIndex = -1;
         SetNewQP(slice->m_SliceHeader.SliceQP);
     }
 
@@ -294,47 +296,35 @@ void DecodingContext::ResetRecRowBuffer()
 // Set new QP value and calculate scaled values for luma and chroma
 void DecodingContext::SetNewQP(Ipp32s newQP, Ipp32s chroma_offset_idx)
 {
-    if (chroma_offset_idx != -1) // update chroma part
-    {
-        Ipp32s qpOffsetCb = m_pps->pps_cb_qp_offset + m_sh->slice_cb_qp_offset + m_pps->cb_qp_offset_list[chroma_offset_idx];
-        Ipp32s qpOffsetCr = m_pps->pps_cr_qp_offset + m_sh->slice_cr_qp_offset + m_pps->cr_qp_offset_list[chroma_offset_idx];
-        Ipp32s qpBdOffsetC = m_sps->m_QPBDOffsetC;
-        Ipp32s qpScaledCb = Clip3(-qpBdOffsetC, 57, m_LastValidQP + qpOffsetCb);
-        Ipp32s qpScaledCr = Clip3(-qpBdOffsetC, 57, m_LastValidQP + qpOffsetCr);
-
-        Ipp32s chromaScaleIndex = m_sps->ChromaArrayType != CHROMA_FORMAT_420 ? 1 : 0;
-
-        if (qpScaledCb < 0)
-            qpScaledCb = qpScaledCb + qpBdOffsetC;
-        else
-            qpScaledCb = g_ChromaScale[chromaScaleIndex][qpScaledCb] + qpBdOffsetC;
-
-        if (qpScaledCr < 0)
-            qpScaledCr = qpScaledCr + qpBdOffsetC;
-        else
-            qpScaledCr = g_ChromaScale[chromaScaleIndex][qpScaledCr] + qpBdOffsetC;
-
-        m_ScaledQP[COMPONENT_CHROMA_U].m_QPRem = qpScaledCb % 6;
-        m_ScaledQP[COMPONENT_CHROMA_U].m_QPPer = qpScaledCb / 6;
-        m_ScaledQP[COMPONENT_CHROMA_U].m_QPScale =
-            g_invQuantScales[m_ScaledQP[COMPONENT_CHROMA_U].m_QPRem] << m_ScaledQP[COMPONENT_CHROMA_U].m_QPPer;
-
-        m_ScaledQP[COMPONENT_CHROMA_V].m_QPRem = qpScaledCr % 6;
-        m_ScaledQP[COMPONENT_CHROMA_V].m_QPPer = qpScaledCr / 6;
-        m_ScaledQP[COMPONENT_CHROMA_V].m_QPScale =
-            g_invQuantScales[m_ScaledQP[COMPONENT_CHROMA_V].m_QPRem] << m_ScaledQP[COMPONENT_CHROMA_V].m_QPPer;
-
-        return;
-    }
-
     if (newQP == m_LastValidQP)
         return;
 
-    m_LastValidQP = newQP;
+    if (chroma_offset_idx == -1)
+    {
+        m_LastValidQP = newQP;
 
-    Ipp32s qpScaledY = m_LastValidQP + m_sps->m_QPBDOffsetY;
+        Ipp32s qpScaledY = m_LastValidQP + m_sps->m_QPBDOffsetY;
+        m_ScaledQP[COMPONENT_LUMA].m_QPRem = qpScaledY % 6;
+        m_ScaledQP[COMPONENT_LUMA].m_QPPer = qpScaledY / 6;
+        m_ScaledQP[COMPONENT_LUMA].m_QPScale =
+            g_invQuantScales[m_ScaledQP[COMPONENT_LUMA].m_QPRem] << m_ScaledQP[COMPONENT_LUMA].m_QPPer;
+    }
+
+    if (chroma_offset_idx == -1)
+        chroma_offset_idx = m_LastValidOffsetIndex;
+    else if (chroma_offset_idx == 0)
+        m_LastValidOffsetIndex = -1;
+    else
+        m_LastValidOffsetIndex = chroma_offset_idx;
+
     Ipp32s qpOffsetCb = m_pps->pps_cb_qp_offset + m_sh->slice_cb_qp_offset;
     Ipp32s qpOffsetCr = m_pps->pps_cr_qp_offset + m_sh->slice_cr_qp_offset;
+    if (chroma_offset_idx != -1)
+    {
+        qpOffsetCb += m_pps->cb_qp_offset_list[chroma_offset_idx];
+        qpOffsetCr += m_pps->cr_qp_offset_list[chroma_offset_idx];
+    }
+
     Ipp32s qpBdOffsetC = m_sps->m_QPBDOffsetC;
     Ipp32s qpScaledCb = Clip3(-qpBdOffsetC, 57, m_LastValidQP + qpOffsetCb);
     Ipp32s qpScaledCr = Clip3(-qpBdOffsetC, 57, m_LastValidQP + qpOffsetCr);
@@ -350,11 +340,6 @@ void DecodingContext::SetNewQP(Ipp32s newQP, Ipp32s chroma_offset_idx)
         qpScaledCr = qpScaledCr + qpBdOffsetC;
     else
         qpScaledCr = g_ChromaScale[chromaScaleIndex][qpScaledCr] + qpBdOffsetC;
-
-    m_ScaledQP[COMPONENT_LUMA].m_QPRem = qpScaledY % 6;
-    m_ScaledQP[COMPONENT_LUMA].m_QPPer = qpScaledY / 6;
-    m_ScaledQP[COMPONENT_LUMA].m_QPScale =
-        g_invQuantScales[m_ScaledQP[COMPONENT_LUMA].m_QPRem] << m_ScaledQP[COMPONENT_LUMA].m_QPPer;
 
     m_ScaledQP[COMPONENT_CHROMA_U].m_QPRem = qpScaledCb % 6;
     m_ScaledQP[COMPONENT_CHROMA_U].m_QPPer = qpScaledCb / 6;
@@ -1764,7 +1749,10 @@ void H265SegmentDecoder::DecodeQPChromaAdujst()
 {
     Ipp32u cu_chroma_qp_offset_flag = m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffsetHEVC[CU_CHROMA_QP_OFFSET_FLAG]);
     if (!cu_chroma_qp_offset_flag)
+    {
+        m_context->SetNewQP(0, 0);
         return;
+    }
 
     Ipp32u cu_chroma_qp_offset_idx = 1;
     if (cu_chroma_qp_offset_flag && m_pPicParamSet->chroma_qp_offset_list_len > 1)
@@ -1825,7 +1813,7 @@ void H265SegmentDecoder::ParseDeltaQPCABAC(Ipp32u AbsPartIdx)
 void H265SegmentDecoder::FinishDecodeCU(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u& IsLast)
 {
     IsLast = DecodeSliceEnd(AbsPartIdx, Depth);
-    if (m_pSliceHeader->cu_chroma_qp_offset_enabled_flag)
+    if (m_pSliceHeader->cu_chroma_qp_offset_enabled_flag && !m_IsCuChromaQpOffsetCoded)
         m_context->SetNewQP(0, 0); // clear chroma qp offsets
 }
 
@@ -2526,8 +2514,6 @@ void H265SegmentDecoder::UpdateNeighborDecodedQP(Ipp32u AbsPartIdx, Ipp32u Depth
     Ipp32s YInc = m_cu->m_rasterToPelY[AbsPartIdx] >> m_pSeqParamSet->log2_min_transform_block_size;
     Ipp32s PartSize = m_pSeqParamSet->NumPartitionsInCUSize >> Depth;
     Ipp32s qp = m_context->GetQP();
-
-    m_context->SetNewQP(qp);
 
     for (Ipp32s y = YInc; y < YInc + PartSize; y++)
         for (Ipp32s x = XInc; x < XInc + PartSize; x++)
