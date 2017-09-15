@@ -383,7 +383,7 @@ void H265SegmentDecoder::DeblockOneCross(Ipp32s curPixelColumn, Ipp32s curPixelR
             if (m_cu->m_CUPelX)
             {
                 curLCUTemp = m_pCurrentFrame->getCU(m_cu->CUAddr - 1);
-                if (curLCUTemp->m_SliceHeader->slice_deblocking_filter_disabled_flag)
+                if (curLCUTemp->m_SliceIdx < 0 || curLCUTemp->m_SliceHeader->slice_deblocking_filter_disabled_flag)
                 {
                     hor_edge++;
                     continue;
@@ -501,8 +501,8 @@ void H265SegmentDecoder::DeblockOneLCU(Ipp32s curLCUAddr)
             if (m_cu->m_AvailBorder.m_left)
             {
                 H265CodingUnit* refCU = m_pCurrentFrame->getCU(curLCUAddr - 1);
-                Ipp32u          refSA = refCU->m_SliceHeader->SliceCurStartCUAddr;
-                Ipp32u          SA = m_cu->m_SliceHeader->SliceCurStartCUAddr;
+                Ipp32s          refSA = refCU->m_SliceIdx == -1 ? -1 : refCU->m_SliceHeader->SliceCurStartCUAddr;
+                Ipp32s          SA = m_cu->m_SliceHeader->SliceCurStartCUAddr;
 
                 m_cu->m_AvailBorder.m_left = refSA == SA ? true : false;
             }
@@ -515,8 +515,8 @@ void H265SegmentDecoder::DeblockOneLCU(Ipp32s curLCUAddr)
             if (m_cu->m_AvailBorder.m_top)
             {
                 H265CodingUnit* refCU = m_pCurrentFrame->getCU(curLCUAddr - numLCUInPicWidth);
-                Ipp32u          refSA = refCU->m_SliceHeader->SliceCurStartCUAddr;
-                Ipp32u          SA = m_cu->m_SliceHeader->SliceCurStartCUAddr;
+                Ipp32s          refSA = refCU->m_SliceIdx == -1 ? -1 : refCU->m_SliceHeader->SliceCurStartCUAddr;
+                Ipp32s          SA = m_cu->m_SliceHeader->SliceCurStartCUAddr;
 
                 m_cu->m_AvailBorder.m_top = refSA == SA ? true : false;
             }

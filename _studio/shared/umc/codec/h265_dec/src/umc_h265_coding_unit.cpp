@@ -85,8 +85,9 @@ void H265CodingUnit::initCU(H265SegmentDecoderMultiThreaded* sd, Ipp32u iCUAddr)
     H265DecoderFrame *Pic = sd->m_pCurrentFrame;
 
     m_Frame = Pic;
-    m_SliceIdx = sd->m_pSlice->GetSliceNum();
     m_SliceHeader = sd->m_pSliceHeader;
+    // ORDER of initialization is important. m_SliceIdx after m_SliceHeader! For deblocking
+    m_SliceIdx = sd->m_pSlice->GetSliceNum();
     CUAddr = iCUAddr;
     m_CUPelX = (iCUAddr % sps->WidthInCU) * sps->MaxCUSize;
     m_CUPelY = (iCUAddr / sps->WidthInCU) * sps->MaxCUSize;
