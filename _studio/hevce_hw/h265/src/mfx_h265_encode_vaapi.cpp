@@ -871,7 +871,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
 
     VAStatus vaSts = vaGetConfigAttributes(m_vaDisplay,
                           ConvertProfileTypeMFX2VAAPI(m_videoParam.mfx.CodecProfile),
-                          VAEntrypointEncSlice,
+                          GetVAEntryPoint(),
                           Begin(attrs), attrs.size());
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
