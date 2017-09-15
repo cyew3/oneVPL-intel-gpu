@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -122,7 +122,7 @@ public:
     void SetMaxMB(Ipp32s x) {m_iMaxMB = x;}
 
     // Build reference lists from slice reference pic set. HEVC spec 8.3.2
-    virtual UMC::Status UpdateReferenceList(H265DBPList *dpb);
+    virtual UMC::Status UpdateReferenceList(H265DBPList *dpb, H265DecoderFrame* curr_ref);
 
     bool IsError() const {return m_bError;}
 

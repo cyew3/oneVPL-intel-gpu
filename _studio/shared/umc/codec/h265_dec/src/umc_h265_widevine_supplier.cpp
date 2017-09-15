@@ -158,7 +158,7 @@ UMC::Status WidevineTaskSupplier::ParseWidevineVPSSPSPPS(DecryptParametersWrappe
             sps.NumPartitionsInCU = 1 << (sps.MaxCUDepth << 1);
             sps.NumPartitionsInFrameWidth = sps.WidthInCU * sps.NumPartitionsInCUSize;
 
-            Ipp8u newDPBsize = (Ipp8u)CalculateDPBSize(sps.getPTL()->GetGeneralPTL()->level_idc,
+            Ipp8u newDPBsize = (Ipp8u)CalculateDPBSize(sps.getPTL()->GetGeneralPTL()->profile_idc, sps.getPTL()->GetGeneralPTL()->level_idc,
                                         sps.pic_width_in_luma_samples,
                                         sps.pic_height_in_luma_samples,
                                         sps.sps_max_dec_pic_buffering[HighestTid]);
@@ -177,7 +177,7 @@ UMC::Status WidevineTaskSupplier::ParseWidevineVPSSPSPPS(DecryptParametersWrappe
                 for (size_t i = 0; i < sizeof(levelIndexArray)/sizeof(levelIndexArray[0]); i++)
                 {
                     level_idc = levelIndexArray[i];
-                    newDPBsize = (Ipp8u)CalculateDPBSize(level_idc,
+                    newDPBsize = (Ipp8u)CalculateDPBSize(sps.getPTL()->GetGeneralPTL()->profile_idc, level_idc,
                                             sps.pic_width_in_luma_samples,
                                             sps.pic_height_in_luma_samples,
                                             sps.sps_max_dec_pic_buffering[HighestTid]);

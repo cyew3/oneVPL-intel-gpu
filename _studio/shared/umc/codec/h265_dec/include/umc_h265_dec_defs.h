@@ -722,6 +722,8 @@ struct ReferencePictureSet
     int getPOC(int index) const             { return m_POC[index]; }
 
     Ipp8u getCheckLTMSBPresent(Ipp32s bufferNum) const { return delta_poc_msb_present_flag[bufferNum]; }
+
+    Ipp32u getNumberOfUsedPictures() const;
 };
 
 // Reference picture list data structure

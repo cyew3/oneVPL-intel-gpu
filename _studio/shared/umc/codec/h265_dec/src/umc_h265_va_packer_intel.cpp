@@ -167,11 +167,12 @@ namespace UMC_HEVC_DECODER
             cntRefPicSetLtCurr = 0;
         ReferencePictureSet *rps = pSlice->getRPS();
         VM_ASSERT(rps);
+
         for (H265DecoderFrame const* frame = dpb->head(); frame && count < sizeof(pPicParam->RefFrameList) / sizeof(pPicParam->RefFrameList[0]); frame = frame->future())
         {
             if (frame != pCurrentFrame)
             {
-                int refType = frame->isShortTermRef() ? SHORT_TERM_REFERENCE : (frame->isLongTermRef() ? LONG_TERM_REFERENCE : NO_REFERENCE);
+                int refType = (frame->isShortTermRef() ? SHORT_TERM_REFERENCE : (frame->isLongTermRef() ? LONG_TERM_REFERENCE : NO_REFERENCE));
 
                 if (refType != NO_REFERENCE)
                 {
@@ -183,6 +184,16 @@ namespace UMC_HEVC_DECODER
                     count++;
                 }
             }
+        }
+
+        if (pPicParamSet->pps_curr_pic_ref_enabled_flag)
+        {
+            pPicParam->PicOrderCntValList[count] = pCurrentFrame->m_PicOrderCnt;
+
+            pPicParam->RefFrameList[count].Index7bits = pCurrentFrame->m_index;
+            pPicParam->RefFrameList[count].long_term_ref_flag = 1;
+
+            count++;
         }
 
         Ipp32u index;

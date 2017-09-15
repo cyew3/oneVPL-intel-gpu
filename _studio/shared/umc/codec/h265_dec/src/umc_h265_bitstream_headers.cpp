@@ -1762,41 +1762,22 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
 
         //RPL sanity check
         {
-            Ipp32u i = 0;
-            ReferencePictureSet* rps = pSlice->getRPS();
+            ReferencePictureSet const* rps = pSlice->getRPS();
+            VM_ASSERT(rps);
 
-            Ipp32u NumPocStCurr0 = 0;
-            for(i = 0; i < rps->getNumberOfNegativePictures(); i++)
-            {
-                if(rps->getUsed(i))
-                    NumPocStCurr0++;
-            }
-
-            Ipp32u NumPocStCurr1 = 0;
-            for(; i < rps->getNumberOfNegativePictures() + rps->getNumberOfPositivePictures(); i++)
-            {
-                if(rps->getUsed(i))
-                    NumPocStCurr1++;
-            }
-
-            Ipp32u NumPocLtCurr = 0;
-            for (i = rps->getNumberOfNegativePictures() + rps->getNumberOfPositivePictures();
-                 i < rps->getNumberOfNegativePictures() + rps->getNumberOfPositivePictures() + rps->getNumberOfLongtermPictures(); i++)
-            {
-                if (rps->getUsed(i))
-                    NumPocLtCurr++;
-            }
+            Ipp32u numPicTotalCurr = rps->getNumberOfUsedPictures();
+            if (pps->pps_curr_pic_ref_enabled_flag)
+                numPicTotalCurr++;
 
             //7.4.7.2 value of list_entry_l0/list_entry_l1[ i ] shall be in the range of 0 to NumPicTotalCurr - 1, inclusive
-            Ipp32u const numPocTotalCurr = NumPocStCurr0 + NumPocStCurr1 + NumPocLtCurr;
             for (int idx = 0; idx < pSlice->getNumRefIdx(REF_PIC_LIST_0); idx++)
             {
-                if (refPicListModification->list_entry_l0[idx] >= numPocTotalCurr)
+                if (refPicListModification->list_entry_l0[idx] >= numPicTotalCurr)
                     throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
             }
             for (int idx = 0; idx < pSlice->getNumRefIdx(REF_PIC_LIST_1); idx++)
             {
-                if (refPicListModification->list_entry_l1[idx] >= numPocTotalCurr)
+                if (refPicListModification->list_entry_l1[idx] >= numPicTotalCurr)
                     throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
             }
         }
