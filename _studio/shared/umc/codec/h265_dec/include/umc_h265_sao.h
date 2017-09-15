@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -118,6 +118,7 @@ protected:
 
     Ipp32u              m_PicWidth;
     Ipp32u              m_PicHeight;
+    Ipp32u              m_chroma_format_idc;
     Ipp32u              m_bitdepth_luma;
     Ipp32u              m_bitdepth_chroma;
     Ipp32u              m_MaxCUSize;

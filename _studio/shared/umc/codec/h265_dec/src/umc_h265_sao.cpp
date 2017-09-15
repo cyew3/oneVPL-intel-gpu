@@ -58,6 +58,7 @@ H265SampleAdaptiveOffsetTemplate<PlaneType>::H265SampleAdaptiveOffsetTemplate()
     m_chromaTableBo = 0;
     m_bitdepth_luma = 0;
     m_bitdepth_chroma = 0;
+    m_chroma_format_idc = 0;
 
     m_TmpU[0] = 0;
     m_TmpU[1] = 0;
@@ -109,7 +110,8 @@ template<typename PlaneType>
 bool H265SampleAdaptiveOffsetTemplate<PlaneType>::isNeedReInit(const H265SeqParamSet* sps)
 {
     if (m_isInitialized && m_PicWidth  == sps->pic_width_in_luma_samples && m_PicHeight == sps->pic_height_in_luma_samples &&
-        m_bitdepth_luma == sps->bit_depth_luma && m_bitdepth_chroma == sps->bit_depth_chroma)
+        m_bitdepth_luma == sps->bit_depth_luma && m_bitdepth_chroma == sps->bit_depth_chroma &&
+        m_chroma_format_idc == sps->chroma_format_idc)
         return false;
 
     return true;
@@ -132,6 +134,8 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::init(const H265SeqParamSet* sp
 
     m_bitdepth_luma = sps->bit_depth_luma;
     m_bitdepth_chroma = sps->bit_depth_chroma;
+
+    m_chroma_format_idc = sps->chroma_format_idc;
 
     Ipp32u uiPixelRangeY = 1 << sps->bit_depth_luma;
     Ipp32u uiBoRangeShiftY = sps->bit_depth_luma - SAO_BO_BITS;
@@ -226,7 +230,7 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::init(const H265SeqParamSet* sp
     m_TmpL[1] = h265_new_array_throw<PlaneType>(3*SAO_PRED_SIZE);
 
     // Temporary buffer to store PCM and tranquant bypass samples which may require to be skipped in filtering
-    m_tempPCMBuffer = h265_new_array_throw<PlaneType>((64*64 *3) /2); // one CU data
+    m_tempPCMBuffer = h265_new_array_throw<PlaneType>(64*64*3); // one CU data
 
     m_isInitialized = true;
 }
@@ -1226,15 +1230,22 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::PCMSampleRestoration(H265Codin
         }
     }
 
-    src = (PlaneType *)m_Frame->GetCbCrAddr(pcCU->CUAddr, AbsZorderIdx);
-    PlaneType * pcmChroma = m_tempPCMBuffer + 64*64 + GetAddrOffset(cd, AbsZorderIdx, 32);
+    if (!m_chroma_format_idc) //Monochrome case
+        return;
 
+    src = (PlaneType *)m_Frame->GetCbCrAddr(pcCU->CUAddr, AbsZorderIdx);
+    PlaneType * pcmChroma = m_tempPCMBuffer + 64*64 + GetAddrOffset(cd, AbsZorderIdx, 32*(1 << (m_chroma_format_idc - 1)));
     pitch = m_Frame->pitch_chroma();
     width >>= 1;
 
+    Ipp32u height;
+    height = width;
+    if (m_chroma_format_idc == 2)
+        height <<= 1;
+
     if (restore)
     {
-        for(Ipp32u Y = 0; Y < width; Y++)
+        for(Ipp32u Y = 0; Y < height; Y++)
         {
             for(Ipp32u X = 0; X < 2*width; X++)
                 src[X] = pcmChroma[X];
@@ -1245,7 +1256,7 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::PCMSampleRestoration(H265Codin
     }
     else
     {
-        for(Ipp32u Y = 0; Y < width; Y++)
+        for(Ipp32u Y = 0; Y < height; Y++)
         {
             for(Ipp32u X = 0; X < 2*width; X++)
                 pcmChroma[X] = src[X];
