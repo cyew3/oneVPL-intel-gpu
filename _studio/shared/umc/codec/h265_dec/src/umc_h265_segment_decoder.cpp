@@ -326,7 +326,7 @@ void DecodingContext::SetNewQP(Ipp32s newQP, Ipp32s chroma_offset_idx)
 
         return;
     }
-    
+
     if (newQP == m_LastValidQP)
         return;
 
@@ -1951,7 +1951,7 @@ void H265SegmentDecoder::ParseCoeffNxNCABACOptimized(CoeffsPtr pCoef, Ipp32u Abs
     const Ipp32u baseCoeffGroupCtxIdx = ctxIdxOffsetHEVC[SIG_COEFF_GROUP_FLAG_HEVC] + (IsLuma ? 0 : NUM_CONTEXT_SIG_COEFF_GROUP_FLAG);
     const Ipp32u baseCtxIdx = ctxIdxOffsetHEVC[SIG_FLAG_HEVC] + ( IsLuma ? 0 : NUM_CONTEXT_SIG_FLAG_LUMA);
 
-   if (m_pPicParamSet->transform_skip_enabled_flag && !L2Width && !isBypass)
+   if (m_pPicParamSet->transform_skip_enabled_flag && L2Width <= m_pPicParamSet->log2_max_transform_skip_block_size_minus2 && !isBypass)
         ParseTransformSkipFlags(AbsPartIdx, plane);
 
     // adujst U1, V1 to U/V
@@ -2005,8 +2005,8 @@ void H265SegmentDecoder::ParseCoeffNxNCABACOptimized(CoeffsPtr pCoef, Ipp32u Abs
     Ipp32u TransformShift = MAX_TR_DYNAMIC_RANGE - bit_depth - c_Log2TrSize;
 
     Ipp32s Shift;
-    Ipp32s Add(0), Scale;
-    Ipp16s *pDequantCoef;
+    Ipp32s Add(0), Scale(0);
+    Ipp16s *pDequantCoef = NULL;
     bool shift_right = true;
 
     if (scaling_list_enabled_flag)

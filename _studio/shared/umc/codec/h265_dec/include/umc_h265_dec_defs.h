@@ -1076,7 +1076,7 @@ struct H265PicParamSetBase
     Ipp8u  pps_scc_extension_flag;
 
     // pps range extension
-    Ipp32u log2_max_transform_skip_block_size;
+    Ipp32u log2_max_transform_skip_block_size_minus2;
 
     Ipp8u cross_component_prediction_enabled_flag;
     Ipp8u chroma_qp_offset_list_enabled_flag;

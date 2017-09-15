@@ -1167,7 +1167,7 @@ UMC::Status H265HeadersBitstream::GetPictureParamSetFull(H265PicParamSet  *pcPPS
         {
             if (pcPPS->transform_skip_enabled_flag)
             {
-                pcPPS->log2_max_transform_skip_block_size = GetVLCElementU() + 2;
+                pcPPS->log2_max_transform_skip_block_size_minus2 = GetVLCElementU();
             }
 
             pcPPS->cross_component_prediction_enabled_flag = Get1Bit();

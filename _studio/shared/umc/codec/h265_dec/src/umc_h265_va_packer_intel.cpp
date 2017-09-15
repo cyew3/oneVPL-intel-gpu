@@ -367,7 +367,7 @@ namespace UMC_HEVC_DECODER
         pPicParam->chroma_qp_offset_list_len_minus1 = pPicParamSet->chroma_qp_offset_list_enabled_flag ? (UCHAR)pPicParamSet->chroma_qp_offset_list_len - 1 : 0;
         pPicParam->log2_sao_offset_scale_luma = (UCHAR)pPicParamSet->log2_sao_offset_scale_luma;
         pPicParam->log2_sao_offset_scale_chroma = (UCHAR)pPicParamSet->log2_sao_offset_scale_chroma;
-        pPicParam->log2_max_transform_skip_block_size_minus2 = pPicParamSet->pps_range_extensions_flag && pPicParamSet->transform_skip_enabled_flag ? (UCHAR)pPicParamSet->log2_max_transform_skip_block_size - 2 : 0;
+        pPicParam->log2_max_transform_skip_block_size_minus2 = pPicParamSet->pps_range_extensions_flag && pPicParamSet->transform_skip_enabled_flag ? (UCHAR)pPicParamSet->log2_max_transform_skip_block_size_minus2 : 0;
 
         for (Ipp32u i = 0; i < pPicParamSet->chroma_qp_offset_list_len; i++)
         {
