@@ -106,7 +106,7 @@ Ipp32u H265BaseBitstream::GetBits_BMI(Ipp32u nbits)
 #define _cmovnz_intrin( _M_flag, _M_dest, _M_src ) _M_dest = (_M_flag) ? (_M_src) : (_M_dest)
 #endif
 
-#if defined( __INTEL_COMPILER ) && (defined( __x86_64__ ) || defined ( _WIN64 ))
+#if INSTRUMENTED_CABAC == 0 && defined( __INTEL_COMPILER ) && (defined( __x86_64__ ) || defined ( _WIN64 ))
 
 typedef Ipp32u (H265Bitstream::* t_DecodeSingleBin_CABAC)(Ipp32u ctxIdx);
 extern t_DecodeSingleBin_CABAC s_pDecodeSingleBin_CABAC_dispatched;

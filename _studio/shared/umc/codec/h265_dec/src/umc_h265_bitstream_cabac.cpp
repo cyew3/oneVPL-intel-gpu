@@ -139,7 +139,7 @@ void H265Bitstream::ResetBac_CABAC()
 }
 
 
-#if defined( __INTEL_COMPILER ) && (defined( __x86_64__ ) || defined ( _WIN64 ))
+#if INSTRUMENTED_CABAC == 0 && defined( __INTEL_COMPILER ) && (defined( __x86_64__ ) || defined ( _WIN64 ))
 
 Ipp32u H265Bitstream::DecodeSingleBin_CABAC_cmov(Ipp32u ctxIdx)
 {
