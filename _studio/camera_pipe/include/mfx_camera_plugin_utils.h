@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef _MFX_CAMERA_PLUGIN_UTILS_H
@@ -24,12 +24,11 @@
 #include "mfxcamera.h"
 
 #pragma warning(disable:4505)
-#include "cm_def.h" // Needed for CM Vector
+#include "cmrt_cross_platform.h"
 #pragma warning(push)
 #pragma warning(disable:4100)
-#include "cm_vm.h"  //
+#include "cmvm.h" 
 #pragma warning(pop)
-#include "cmrt_cross_platform.h"
 #include "vm_time.h"
 #include "Campipe.h"
 //#include "mfx_camera_plugin_cm.h"

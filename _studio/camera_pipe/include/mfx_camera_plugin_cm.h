@@ -226,8 +226,8 @@ public:
     void CreateThreadSpaces(CameraParams *pFrameSize);
     void CopyMfxSurfToCmSurf(CmSurface2D *cmSurf, mfxFrameSurface1* mfxSurf);
     void CopyMemToCmSurf(CmSurface2D *cmSurf, void *mem);
-    CmEvent *EnqueueCopyGPUToCPU(CmSurface2D *cmSurf, void *mem, mfxU32 stride = 0);
-    CmEvent *EnqueueCopyCPUToGPU(CmSurface2D *cmSurf, void *mem, mfxU32 stride = 0);
+    CmEvent *EnqueueCopyGPUToCPU(CmSurface2D *cmSurf, void *mem, mfxU32 strideWidth=0, mfxU32 strideHeight=0);
+    CmEvent *EnqueueCopyCPUToGPU(CmSurface2D *cmSurf, void *mem, mfxU32 strideWidth=0, mfxU32 strideHeight=0);
 
     void CreateTask_Padding(SurfaceIndex inSurfIndex,
                             SurfaceIndex paddedSurfIndex,

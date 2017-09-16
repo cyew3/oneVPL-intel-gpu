@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2017 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -19,8 +19,7 @@
 #pragma warning(disable: 4201)
 
 #if !defined(OSX)
-#include "cm_def.h"
-#include "cm_vm.h"
+#include "cmvm.h"
 
 namespace MfxHwH264Encode
 {

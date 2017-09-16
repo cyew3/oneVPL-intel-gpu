@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -102,7 +102,7 @@ inline std::tuple<mfxU64,mfxU64,mfxU64> GetAccurateGpuTime(CmQueue *queue, const
     mfxU64 mintime2 = mfxU64(-1);
     for (int i=0; i<10; i++) {
         for (int j=0; j<10; j++) {
-            queue->EnqueueCopyCPUToGPUStride(copyParam.gpumem, copyParam.cpumem, copyParam.pitch, e1);
+            queue->EnqueueCopyCPUToGPUFullStride(copyParam.gpumem, copyParam.cpumem, copyParam.pitch, 0, 0, e1);
             queue->Enqueue(task, e2, ts);
         }
         e2->WaitForTaskFinished();

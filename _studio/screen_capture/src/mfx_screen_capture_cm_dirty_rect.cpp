@@ -172,7 +172,7 @@ mfxStatus CmDirtyRectFilter::Init(const mfxVideoParam* par, bool isSysMem, bool 
             break;
 
         case PLATFORM_INTEL_SKL:
-        case PLATFORM_INTEL_APL:
+        case PLATFORM_INTEL_BXT:
             jit = false;
             buffer = dirty_rect_genx_skl;
             len = sizeof(dirty_rect_genx_skl);
@@ -609,7 +609,7 @@ mfxStatus CmDirtyRectFilter::CMCopySysToGpu(CmSurface2D* cmDst, mfxFrameSurface1
             cmSts = m_pQueue->EnqueueCopyCPUToGPUFullStride(cmDst, mfxSrc->Data.Y, srcPitch, (mfxU32) srcUVOffset, 0, e);
         }
         else{
-            cmSts = m_pQueue->EnqueueCopyCPUToGPUStride(cmDst, mfxSrc->Data.Y, srcPitch, e);
+            cmSts = m_pQueue->EnqueueCopyCPUToGPUFullStride(cmDst, mfxSrc->Data.Y, srcPitch, 0, 0, e);
         }
     }
     else

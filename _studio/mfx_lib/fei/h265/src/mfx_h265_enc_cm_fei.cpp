@@ -509,7 +509,7 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
     kernelMe.AddKernel(device, programRefine64x64, "RefineMeP64x64",
         width4x / 16, height4x / 16, CM_NONE_DEPENDENCY, true);
 
-    if (width / 16 > CM_MAX_THREADSPACE_WIDTH) {  // split into 2 parts
+    if (width / 16 > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {  // split into 2 parts
         mfxU32 width0 = ((width / 16) >> 1) & ~1;  // must be even for 32x32 blocks
         kernelMe.AddKernel(device, programMe16Refine32x32, "Me16AndRefine32x32",
             width0, height / 16, CM_NONE_DEPENDENCY, false);
@@ -541,9 +541,9 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
             width16x / 4, height16x, CM_NONE_DEPENDENCY);
 
     if (enableInterp) {
-        if (interpBlocksW > CM_MAX_THREADSPACE_WIDTH) {
-            mfxU32 nW = (interpBlocksW / 2 > CM_MAX_THREADSPACE_WIDTH) ? 3 : 2;
-            mfxU32 nH = (interpBlocksH > CM_MAX_THREADSPACE_HEIGHT) ? 2 : 1;
+        if (interpBlocksW > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {
+            mfxU32 nW = (interpBlocksW / 2 > CM_MAX_THREADSPACE_WIDTH_FOR_MW) ? 3 : 2;
+            mfxU32 nH = (interpBlocksH > CM_MAX_THREADSPACE_HEIGHT_FOR_MW) ? 2 : 1;
             mfxU32 wStep = interpBlocksW / nW;
             mfxU32 hStep = interpBlocksH / nH;
             for (mfxU32 j = 1; j < nH; j++) {
@@ -565,7 +565,7 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
     }
 
     mfxU32 dblTsWidth = (width + 12 + 15) / 16;
-    if (dblTsWidth > CM_MAX_THREADSPACE_WIDTH) {  // split into 2 parts
+    if (dblTsWidth > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {  // split into 2 parts
         mfxU32 dblTsWidth0 = dblTsWidth / 2;
         kernelDeblock.AddKernel(device, programDeblock, "Deblock",
             dblTsWidth0, (height + 12 + 15) / 16, CM_NONE_DEPENDENCY);
@@ -727,9 +727,9 @@ mfxStatus H265CmCtx::CopyReconFrameToGPU(CmEvent **lastEvent, mfxFEIH265Input *i
 
     if (enableInterp) {
         // coupling of interp
-        if (interpBlocksW > CM_MAX_THREADSPACE_WIDTH) {
-            mfxU32 nW = (interpBlocksW / 2 > CM_MAX_THREADSPACE_WIDTH) ? 3 : 2;
-            mfxU32 nH = (interpBlocksH > CM_MAX_THREADSPACE_HEIGHT) ? 2 : 1;
+        if (interpBlocksW > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {
+            mfxU32 nW = (interpBlocksW / 2 > CM_MAX_THREADSPACE_WIDTH_FOR_MW) ? 3 : 2;
+            mfxU32 nH = (interpBlocksH > CM_MAX_THREADSPACE_HEIGHT_FOR_MW) ? 2 : 1;
             mfxU32 wStep = interpBlocksW / nW;
             mfxU32 hStep = interpBlocksH / nH;
             mfxU32 iker = 1;
@@ -828,7 +828,7 @@ void * H265CmCtx::RunVme(mfxFEIH265Input *feiIn, mfxExtFEIH265Output *feiOut)
         SetKernelArg(kernelMe.m_kernel[0], meControl, *refs16x, *refs8x, *refs4x, *refs2x,
             data[MFX_FEI_H265_BLK_64x64], data[MFX_FEI_H265_BLK_32x32], data[MFX_FEI_H265_BLK_16x16]);
         SetKernelArg(kernelMe.m_kernel[1], data[MFX_FEI_H265_BLK_64x64], surfIn->bufOrigNv12, surfRef->bufOrigNv12);
-        if (width / 16 > CM_MAX_THREADSPACE_WIDTH) {  // split into 2 parts
+        if (width / 16 > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {  // split into 2 parts
             SetKernelArg(kernelMe.m_kernel[2], meControl, *refs, data[MFX_FEI_H265_BLK_32x32], data[MFX_FEI_H265_BLK_16x16],
                 data[MFX_FEI_H265_BLK_8x8], surfIn->bufOrigNv12, surfRef->bufOrigNv12, 0, 0);
             mfxU32 startMbX = ((width / 16) >> 1) & ~1;  // must be even for 32x32 blocks
@@ -900,7 +900,7 @@ void * H265CmCtx::RunVme(mfxFEIH265Input *feiIn, mfxExtFEIH265Output *feiOut)
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Deblock+Sao");
             mfxU32 dblTsWidth = (width + 12 + 15) / 16;
 
-            if (dblTsWidth > CM_MAX_THREADSPACE_WIDTH) {  // split into 2 parts
+            if (dblTsWidth > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {  // split into 2 parts
                 int kernelIdx = 0;
                 SetKernelArg(kernelFullPostProc.m_kernel[kernelIdx++], recUpLu, recUpCh, AlignValue(padding<<bppShift,64)>>bppShift, AlignValue(paddingChroma<<bppShift,64)>>bppShift, doSao ? deblocked : recon, cuData, postprocParam, 0, 0); // Deblocking1
                 mfxU32 startMbX = dblTsWidth / 2;
@@ -937,7 +937,7 @@ void * H265CmCtx::RunVme(mfxFEIH265Input *feiIn, mfxExtFEIH265Output *feiOut)
         } else {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Deblock");
             mfxU32 dblTsWidth = (width + 12 + 15) / 16;
-            if (dblTsWidth > CM_MAX_THREADSPACE_WIDTH) {  // split into 2 parts
+            if (dblTsWidth > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {  // split into 2 parts
                 SetKernelArg(kernelDeblock.m_kernel[0], recUpLu, recUpCh, AlignValue(padding<<bppShift,64)>>bppShift, AlignValue(paddingChroma<<bppShift,64)>>bppShift, doSao ? deblocked : recon, cuData, postprocParam, 0, 0); // Deblocking1
                 mfxU32 startMbX = dblTsWidth / 2;
                 SetKernelArg(kernelDeblock.m_kernel[1], recUpLu, recUpCh, AlignValue(padding<<bppShift,64)>>bppShift, AlignValue(paddingChroma<<bppShift,64)>>bppShift, doSao ? deblocked : recon, cuData, postprocParam, startMbX, 0); // Deblocking2

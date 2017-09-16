@@ -794,7 +794,7 @@ mfxStatus CMCameraProcessor::CreateEnqueueTasks(AsyncParams *pParam)
                 if (1 == pParam->FrameSizeExtra.tileNumHor && static_cast<mfxU16>(pParam->surf_out->Info.CropW*8) == out_pitch)
                     e = m_cmCtx->EnqueueCopyGPUToCPU(m_gammaOutSurf, pParam->surf_out->Data.B);
                 else
-                    e = m_cmCtx->EnqueueCopyGPUToCPU(m_gammaOutSurf, pParam->surf_out->Data.B  + out_shift,out_pitch);
+                    e = m_cmCtx->EnqueueCopyGPUToCPU(m_gammaOutSurf, pParam->surf_out->Data.B  + out_shift, out_pitch);
             }
             else
             {
@@ -804,7 +804,10 @@ mfxStatus CMCameraProcessor::CreateEnqueueTasks(AsyncParams *pParam)
                 }
                 else
                 {
-                    e = m_cmCtx->EnqueueCopyGPUToCPU(m_gammaOutSurf, pParam->surf_out->Data.B + out_shift, out_pitch);
+                    if(pParam->surf_out->Info.FourCC == MFX_FOURCC_NV12)
+                        e = m_cmCtx->EnqueueCopyGPUToCPU(m_gammaOutSurf, pParam->surf_out->Data.Y + out_shift, out_pitch, static_cast<mfxU32>(pParam->surf_out->Data.UV - pParam->surf_out->Data.Y) / out_pitch);
+                    else
+                        e = m_cmCtx->EnqueueCopyGPUToCPU(m_gammaOutSurf, pParam->surf_out->Data.B + out_shift, out_pitch, pParam->surf_out->Info.CropH);
                 }
             }
         }
@@ -1747,13 +1750,13 @@ void CmContext::CopyMemToCmSurf(CmSurface2D *cmSurf, void *mem) //, gpucopy/cpuc
         throw CmRuntimeError();
 }
 
-CmEvent *CmContext::EnqueueCopyCPUToGPU(CmSurface2D *cmSurf, void *mem, mfxU32 stride)
+CmEvent *CmContext::EnqueueCopyCPUToGPU(CmSurface2D *cmSurf, void *mem, mfxU32 strideWidth, mfxU32 strideHeight)
 {
     int result = CM_SUCCESS;
     CmEvent* event_transfer = NULL;
 
-    if (stride > 0)
-        result = m_queue->EnqueueCopyCPUToGPUStride(cmSurf, (unsigned char *)mem, (unsigned int)stride, event_transfer);
+    if (strideWidth)
+        result = m_queue->EnqueueCopyCPUToGPUFullStride(cmSurf, (unsigned char *)mem, (unsigned int)strideWidth, (unsigned int)strideHeight, 0, event_transfer);
     else
         result = m_queue->EnqueueCopyCPUToGPU(cmSurf, (unsigned char *)mem, event_transfer);
 
@@ -1763,13 +1766,13 @@ CmEvent *CmContext::EnqueueCopyCPUToGPU(CmSurface2D *cmSurf, void *mem, mfxU32 s
     return event_transfer;
 }
 
-CmEvent *CmContext::EnqueueCopyGPUToCPU(CmSurface2D *cmSurf, void *mem, mfxU32 stride)
+CmEvent *CmContext::EnqueueCopyGPUToCPU(CmSurface2D *cmSurf, void *mem, mfxU32 strideWidth, mfxU32 strideHeight)
 {
     int result = CM_SUCCESS;
     CmEvent* event_transfer = NULL;
 
-    if (stride > 0)
-        result = m_queue->EnqueueCopyGPUToCPUStride(cmSurf, (unsigned char *)mem, (unsigned int)stride, event_transfer);
+    if (strideWidth)
+        result = m_queue->EnqueueCopyGPUToCPUFullStride(cmSurf, (unsigned char *)mem, (unsigned int)strideWidth, (unsigned int)strideHeight, 0, event_transfer);
     else
         result = m_queue->EnqueueCopyGPUToCPU(cmSurf, (unsigned char *)mem, event_transfer);
 

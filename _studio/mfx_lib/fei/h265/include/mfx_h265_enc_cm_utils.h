@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef _MFX_H265_ENC_CM_UTILS_H
@@ -13,13 +13,12 @@
 
 #pragma warning(disable: 4100; disable: 4505)
 
-#include "cm_def.h"
-#include "cm_vm.h"
+#include "cmrt_cross_platform.h"
+#include "cmvm.h"
 
 ///#include "mfx_h265_enc.h"
 #include "libmfx_core_interface.h"
 #include "mfxplugin++.h"
-#include "cmrt_cross_platform.h"
 
 #include <vector>
 ///#include <assert.h>

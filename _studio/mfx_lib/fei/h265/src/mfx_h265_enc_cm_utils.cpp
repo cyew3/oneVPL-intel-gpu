@@ -268,7 +268,7 @@ void EnqueueCopyCPUToGPUStride(CmQueue *queue, CmSurface2D *surface, const void 
         queue->DestroyEvent(event);
 
     int result = CM_SUCCESS;
-    if ((result = queue->EnqueueCopyCPUToGPUStride(surface, (const mfxU8 *)sysMem, pitch, event)) != CM_SUCCESS)
+    if ((result = queue->EnqueueCopyCPUToGPUFullStride(surface, (const mfxU8 *)sysMem, pitch, 0, 0, event)) != CM_SUCCESS)
         throw CmRuntimeError();
 }
 
@@ -279,7 +279,7 @@ void EnqueueCopyGPUToCPUStride(CmQueue *queue, CmSurface2D *surface, void *sysMe
         queue->DestroyEvent(event);
 
     int result = CM_SUCCESS;
-    if ((result = queue->EnqueueCopyGPUToCPUStride(surface, (mfxU8 *)sysMem, pitch, event)) != CM_SUCCESS)
+    if ((result = queue->EnqueueCopyGPUToCPUFullStride(surface, (mfxU8 *)sysMem, pitch, 0, 0, event)) != CM_SUCCESS)
         throw CmRuntimeError();
 }
 

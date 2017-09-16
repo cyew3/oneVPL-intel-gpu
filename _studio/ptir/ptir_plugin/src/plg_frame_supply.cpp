@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "ptir_wrap.h"
@@ -387,7 +387,11 @@ mfxStatus frameSupplier::CMCopyGPUToGpu(CmSurface2D* cmSurfOut, CmSurface2D* cmS
     CM_STATUS sts;
     mfxStatus mfxSts = MFX_ERR_NONE;
     CmEvent* e = NULL;
+#ifdef CMAPIUPDATE
+    cmSts = m_pCmQueue->EnqueueCopyGPUToGPU(cmSurfOut, cmSurfIn, 0, e);
+#else
     cmSts = m_pCmQueue->EnqueueCopyGPUToGPU(cmSurfOut, cmSurfIn, e);
+#endif
 
     if (CM_SUCCESS == cmSts && e)
     {
@@ -443,7 +447,7 @@ mfxStatus frameSupplier::CMCopySysToGpu(mfxFrameSurface1*& mfxSurf, CmSurface2D*
         cmSts = m_pCmQueue->EnqueueCopyCPUToGPUFullStride(cmSurfOut, mfxSurf->Data.Y, srcPitch, (mfxU32) srcUVOffset, 0, e);
     }
     else{
-        cmSts = m_pCmQueue->EnqueueCopyCPUToGPUStride(cmSurfOut, mfxSurf->Data.Y, srcPitch, e);
+        cmSts = m_pCmQueue->EnqueueCopyCPUToGPUFullStride(cmSurfOut, mfxSurf->Data.Y, srcPitch, 0, 0, e);
     }
 
     if (CM_SUCCESS == cmSts && e)
@@ -508,7 +512,7 @@ mfxStatus frameSupplier::CMCopyGpuToSys(CmSurface2D*& cmSurfIn, mfxFrameSurface1
         cmSts = m_pCmQueue->EnqueueCopyGPUToCPUFullStride(cmSurfIn, mfxSurf->Data.Y, dstPitch, (mfxU32) dstUVOffset, 0, e);
     }
     else{
-        cmSts = m_pCmQueue->EnqueueCopyGPUToCPUStride(cmSurfIn, mfxSurf->Data.Y, dstPitch, e);
+        cmSts = m_pCmQueue->EnqueueCopyGPUToCPUFullStride(cmSurfIn, mfxSurf->Data.Y, dstPitch, 0, 0, e);
     }
     if (CM_SUCCESS == cmSts && e)
     {
