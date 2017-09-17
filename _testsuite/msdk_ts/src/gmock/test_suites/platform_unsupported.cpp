@@ -229,7 +229,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         //MFX_FOURCC_UYVY
     {/*50*/ DECODE|ENCODE, MFX_CODEC_AVC,   E_UNSPRT, E_INVLID, {mfxFourCC, MFX_FOURCC_UYVY, true}, set_chromaformat_mfx },
     {/*51*/ DECODE|ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {mfxFourCC, MFX_FOURCC_UYVY, true}, set_chromaformat_mfx },
-    {/*52*/ VPP,           0,               E_UNSPRT, E_INVLID, { {inFourCC, MFX_FOURCC_UYVY, true}, {outFourCC, MFX_FOURCC_UYVY, true} }, set_chromaformat_vpp },
+    {/*52*/ VPP,           0,               E_UNSPRT, E_INVLID, { {inFourCC, MFX_FOURCC_UYVY, false}, {outFourCC, MFX_FOURCC_UYVY, true} }, set_chromaformat_vpp },
     {/*53*/ ENCODE, MFX_CODEC_AVC,   E_UNSPRT, E_INVLID, {&tsStruct::mfxExtCodingOption3.FadeDetection, MFX_CODINGOPTION_ON, true }, },
         //TODO:
         //mfxVideoParam::AllocId
