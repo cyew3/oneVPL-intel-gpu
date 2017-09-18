@@ -427,7 +427,7 @@ The application can make encoder use external BRC instead of native one. In orde
 
 ###### Figure 4: Asynchronous Encoding Flow With External BRC
 
-![Asynchronous Encoding Flow With External BRC](./pic/extbrc_async.png)
+![Asynchronous Encoding Flow With External BRC](./pic/extbrc_async.svg)
 
 _**IntAsyncDepth** is the SDK max internal asynchronous encoding queue size; it is always less than or equal to [mfxVideoParam](#mfxVideoParam)`::AsyncDepth`._
 
