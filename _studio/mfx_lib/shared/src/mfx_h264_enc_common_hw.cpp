@@ -9517,8 +9517,7 @@ mfxU32 HeaderPacker::WriteSlice(
 #if !defined(ANDROID)
     if (!m_longStartCodes)
     {
-        //to avoid slice header corruption due to LowPower limitation - we need to pass packed slice without zero byte and patch after encoding
-        if (task.m_AUStartsFromSlice[fieldId] == false || m_hwCaps.SliceLevelRateCtrl || sliceId > 0)
+        if (task.m_AUStartsFromSlice[fieldId] == false || sliceId > 0)
             pStartCode++;
     }
 #endif

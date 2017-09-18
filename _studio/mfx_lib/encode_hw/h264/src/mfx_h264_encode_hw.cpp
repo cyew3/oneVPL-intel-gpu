@@ -3645,7 +3645,7 @@ mfxStatus ImplementationAvc::UpdateBitstream(
         m_video.calcParam.numTemporalLayer > 0 ||
         (IsSlicePatchNeeded(task, fid) || (m_video.mfx.NumRefFrame & 1));
 
-    bool doPatch = (IsOn(m_video.mfx.LowPower) && (m_video.calcParam.numTemporalLayer > 0 || task.m_AUStartsFromSlice[fid])) ||
+    bool doPatch = (IsOn(m_video.mfx.LowPower) && (m_video.calcParam.numTemporalLayer > 0)) ||
         needIntermediateBitstreamBuffer ||
         IsInplacePatchNeeded(m_video, task, fid);
 
@@ -3654,7 +3654,7 @@ mfxStatus ImplementationAvc::UpdateBitstream(
         m_resetBRC = true;
 #endif
 
-    if ((!((IsOn(m_video.mfx.LowPower) && (m_video.calcParam.numTemporalLayer > 0 || task.m_AUStartsFromSlice[fid]))) &&
+    if ((!((IsOn(m_video.mfx.LowPower) && (m_video.calcParam.numTemporalLayer > 0))) &&
         m_caps.HeaderInsertion == 0 &&
         (m_currentPlatform != MFX_HW_IVB || m_core->GetVAType() != MFX_HW_VAAPI))
         || m_video.Protected != 0)
@@ -3753,12 +3753,6 @@ mfxStatus ImplementationAvc::UpdateBitstream(
         {
             dbegin = task.m_bs->Data + task.m_bs->DataOffset + task.m_bs->DataLength;
             dend   = task.m_bs->Data + task.m_bs->MaxLength;
-        }
-        //for LowPower mode slice header size need to add zero byte to first slice when it is first AU in picture.
-        if(IsOn(m_video.mfx.LowPower) && task.m_AUStartsFromSlice[fid])
-        {
-            *dbegin = 0;
-            dbegin++;
         }
 
         mfxU8 * endOfPatchedBitstream =
