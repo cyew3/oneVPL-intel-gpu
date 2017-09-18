@@ -150,6 +150,7 @@ extern tsConfig     g_tsConfig;
 #define TS_FAIL_TEST(err, sts) { g_tsLog << "ERROR: " << err << "\n"; ADD_FAILURE(); return sts; }
 #define TS_MAX(x,y) ((x)>(y) ? (x) : (y))
 #define TS_MIN(x,y) ((x)<(y) ? (x) : (y))
+#define CEIL_DIV(x,y) ((x + y - 1) / y)
 #define TS_START try {
 #define TS_END   } catch(tsRes r)                             \
     {                                                         \

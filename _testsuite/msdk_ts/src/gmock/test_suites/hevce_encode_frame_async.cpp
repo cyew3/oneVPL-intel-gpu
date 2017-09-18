@@ -14,11 +14,8 @@ File Name: hevce_encode_frame_async.cpp
 #include "ts_parser.h"
 #include "ts_struct.h"
 
-
 namespace hevce_encode_frame_async
 {
-
-
     class TestSuite : tsVideoEncoder
     {
     public:
@@ -196,6 +193,16 @@ namespace hevce_encode_frame_async
 
         reader = new tsRawReader(stream, m_pPar->mfx.FrameInfo);
         m_filler = reader;
+
+        if (g_tsHWtype == MFX_HW_CNL && m_par.mfx.LowPower == MFX_CODINGOPTION_ON && m_par.mfx.NumSlice > 1) {
+            mfxU16 nRows = CEIL_DIV(m_par.mfx.FrameInfo.Height, 64); //64 is LCUsize
+            mfxU16 perSlice = nRows / (m_par.mfx.NumSlice - 1);
+            mfxU16 lastSlice = nRows - perSlice * (m_par.mfx.NumSlice - 1);
+            if (perSlice < lastSlice || lastSlice == 0)
+            {
+                g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
+            }
+        }
 
         //init
         if (tc.type == FAILED_INIT)
