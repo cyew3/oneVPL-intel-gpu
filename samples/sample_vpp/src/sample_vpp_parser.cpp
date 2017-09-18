@@ -1049,8 +1049,8 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
                 pParams->bChromaSiting = bVfound && bHfound;
                 if (!pParams->bChromaSiting)
                 {
-                  vppPrintHelp(strInput[0], MSDK_STRING("Invalid chroma siting flags\n"));
-                  return MFX_ERR_UNSUPPORTED
+                    vppPrintHelp(strInput[0], MSDK_STRING("Invalid chroma siting flags\n"));
+                    return MFX_ERR_UNSUPPORTED;
                 }
                 i++;
             }
