@@ -280,25 +280,18 @@ bool H265Prediction::CheckIdenticalMotion(H265CodingUnit* pCU, const H265MVInfo 
 
 // Expand source border in case motion vector points outside of the frame
 template <EnumTextType c_plane_type, typename PlaneType>
-static void PrepareInterpSrc( H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefPicList RefPicList,
+static void PrepareInterpSrc( H265CodingUnit* pCU, H265PUInfo &PUi, H265MotionVector const& MV, EnumRefPicList RefPicList,
                               H265InterpolationParams_8u& interpolateInfo, PlaneType* temp_interpolarion_buffer)
 {
     VM_ASSERT(PUi.interinfo->m_refIdx[RefPicList] >= 0);
 
     Ipp32u PartAddr = PUi.PartAddr;
-    H265MotionVector MV = PUi.interinfo->m_mv[RefPicList];
     H265DecoderFrame *PicYUVRef = PUi.refFrame[RefPicList];
 
     Ipp32s in_SrcPitch = (c_plane_type == TEXT_CHROMA) ? PicYUVRef->pitch_chroma() : PicYUVRef->pitch_luma();
 
     interpolateInfo.pSrc = (c_plane_type == TEXT_CHROMA) ? (const Ipp8u*)PicYUVRef->m_pUVPlane : (const Ipp8u*)PicYUVRef->m_pYPlane;
     interpolateInfo.srcStep = in_SrcPitch;
-
-    if (c_plane_type == TEXT_CHROMA)
-    {
-        MV.Horizontal = (Ipp16s)(MV.Horizontal * 2 / pCU->m_SliceHeader->m_SeqParamSet->SubWidthC());
-        MV.Vertical = (Ipp16s)(MV.Vertical * 2 / pCU->m_SliceHeader->m_SeqParamSet->SubHeightC());
-    }
 
     interpolateInfo.pointVector.x = MV.Horizontal;
     interpolateInfo.pointVector.y = MV.Vertical;
@@ -323,6 +316,53 @@ static void PrepareInterpSrc( H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefPicLi
     }
 
     (c_plane_type == TEXT_CHROMA) ? ippiInterpolateChromaBlock(&interpolateInfo, temp_interpolarion_buffer) : ippiInterpolateLumaBlock(&interpolateInfo, temp_interpolarion_buffer);
+}
+
+template <EnumTextType c_plane_type, bool c_bi>
+inline
+void clipMV(H265MotionVector* MV, IppiSize const& size, H265CodingUnit const* CU)
+{
+    VM_ASSERT(CU);
+    H265SeqParamSet const* sps = CU->m_SliceHeader->m_SeqParamSet;
+    VM_ASSERT(sps);
+
+#if 0
+    //NOTE: temporary left for test purpose, should be removed after validation
+    if (c_plane_type == TEXT_CHROMA)
+    {
+        MV->Horizontal = (Ipp16s)(MV->Horizontal * 2 / sps->SubWidthC());
+        MV->Vertical   = (Ipp16s)(MV->Vertical * 2 / sps->SubHeightC());
+    }
+#else
+    Ipp32u const tap = 8;
+    Ipp32u const frac_shift = 2;
+
+    Ipp32s const x_max =
+        ((size.width  - 1) - CU->m_CUPelX + tap) << frac_shift;
+    Ipp32s const y_max =
+        ((size.height - 1) - CU->m_CUPelY + tap) << frac_shift;
+
+    Ipp32s const x_min =
+        ((-sps->MaxCUSize + 1) - CU->m_CUPelX - tap) << frac_shift;
+    Ipp32s const y_min =
+        ((-sps->MaxCUSize + 1) - CU->m_CUPelY - tap) << frac_shift;
+
+    //take care of fraction - we have to restore them after clipping
+    Ipp32u const  low_bits_mask = 3;
+    Ipp32u const x_frac =
+        MV->Horizontal & low_bits_mask;
+    MV->Horizontal = Clip3(x_min, x_max, MV->Horizontal) | x_frac;
+
+    Ipp32u const y_frac =
+        MV->Vertical & low_bits_mask;
+    MV->Vertical    = Clip3(y_min, y_max, MV->Vertical)  | y_frac;
+
+    if (c_plane_type == TEXT_CHROMA)
+    {
+        MV->Horizontal = (Ipp16s)(MV->Horizontal * 2 / sps->SubWidthC());
+        MV->Vertical   = (Ipp16s)(MV->Vertical * 2 / sps->SubHeightC());
+    }
+#endif
 }
 
 // Interpolate one reference frame block
@@ -350,7 +390,12 @@ void H265Prediction::PredInterUni(H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefP
         interpolateSrc.frameSize.height >>= m_context->m_sps->chromaShiftH;
     }
 
-    PrepareInterpSrc <c_plane_type, PlaneType>(pCU, PUi, RefPicList, interpolateSrc, (PlaneType*)m_temp_interpolarion_buffer);
+    IppiSize clip_size =
+        { (int)m_context->m_sps->pic_width_in_luma_samples, (int)m_context->m_sps->pic_height_in_luma_samples };
+    H265MotionVector MV = PUi.interinfo->m_mv[RefPicList];
+    clipMV<c_plane_type, c_bi>(&MV, clip_size, pCU);
+
+    PrepareInterpSrc <c_plane_type, PlaneType>(pCU, PUi, MV, RefPicList, interpolateSrc, (PlaneType*)m_temp_interpolarion_buffer);
     const PlaneType * in_pSrc = (const PlaneType *)interpolateSrc.pSrc;
     Ipp32s in_SrcPitch = (Ipp32s)interpolateSrc.srcStep;
     Ipp32s in_SrcPic2Pitch = 0;
@@ -358,24 +403,16 @@ void H265Prediction::PredInterUni(H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefP
     const PlaneType *in_pSrcPic2 = NULL;
     if ( eAddAverage == MFX_HEVC_PP::AVERAGE_FROM_PIC )
     {
-        PrepareInterpSrc <c_plane_type, PlaneType>(pCU, PUi, (EnumRefPicList)(RefPicList ^ 1), interpolateSrc, (PlaneType*)m_temp_interpolarion_buffer + (128*128) );
+        EnumRefPicList RefPicList2 = static_cast<EnumRefPicList>(RefPicList ^ 1);
+        H265MotionVector MV2 = PUi.interinfo->m_mv[RefPicList2];
+        clipMV<c_plane_type, c_bi>(&MV2, clip_size, pCU);
+
+        PrepareInterpSrc <c_plane_type, PlaneType>(pCU, PUi, MV2, RefPicList2, interpolateSrc, (PlaneType*)m_temp_interpolarion_buffer + (128*128) );
         in_pSrcPic2 = (const PlaneType *)interpolateSrc.pSrc;
         in_SrcPic2Pitch = (Ipp32s)interpolateSrc.srcStep;
     }
 
-    Ipp32s tap = ( c_plane_type == TEXT_CHROMA ) ? 4 : 8;
-    Ipp32s shift = c_bi ? bitDepth - 8 : 6;
-    Ipp16s offset = c_bi ? 0 : (1 << (shift - 1));
-
     const Ipp32s low_bits_mask = ( c_plane_type == TEXT_CHROMA ) ? 7 : 3;
-    H265MotionVector MV = PUi.interinfo->m_mv[RefPicList];
-
-    if (c_plane_type == TEXT_CHROMA)
-    {
-        MV.Horizontal = (Ipp16s)(MV.Horizontal * 2 / m_context->m_sps->SubWidthC());
-        MV.Vertical = (Ipp16s)(MV.Vertical * 2 / m_context->m_sps->SubHeightC());
-    }
-
     Ipp32s in_dx = MV.Horizontal & low_bits_mask;
     Ipp32s in_dy = MV.Vertical & low_bits_mask;
 
@@ -390,6 +427,10 @@ void H265Prediction::PredInterUni(H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefP
     PlaneType *pPicDst = ( c_plane_type == TEXT_CHROMA ) ?
                 (PlaneType*)pCU->m_Frame->GetCbCrAddr(pCU->CUAddr) + GetAddrOffset(PartAddr, PicDstStride >> m_context->m_sps->chromaShiftH) :
                 (PlaneType*)pCU->m_Frame->GetLumaAddr(pCU->CUAddr) + GetAddrOffset(PartAddr, PicDstStride);
+
+    Ipp32s const tap    = ( c_plane_type == TEXT_CHROMA ) ? 4 : 8;
+    Ipp32s shift  = c_bi ? bitDepth - 8 : 6;
+    Ipp16s offset = c_bi ? 0 : (1 << (shift - 1));
 
     if ((in_dx == 0) && (in_dy == 0))
     {
