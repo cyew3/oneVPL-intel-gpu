@@ -2301,7 +2301,9 @@ void ImplementationAvc::OnEncodingQueried(DdiTaskIter task)
     m_stat.NumBit += numBits;
     m_stat.NumCachedFrame--;
     m_stat.NumFrame++;
-
+#if defined (MFX_ENABLE_MFE)
+    m_lastTask.m_endTime = vm_time_get_tick();
+#endif
     m_free.splice(m_free.end(), m_encoding, task);
 }
 
@@ -3264,6 +3266,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                 m_listOfPairsForFieldOutputMode.pop_front();
             }
         }
+
     }
 
     /* FEI Field processing mode: second (last) field processing */
@@ -3441,7 +3444,6 @@ mfxStatus ImplementationAvc::EncodeFrameCheckNormalWay(
 
         // Copy ctrl with all settings and Extension buffers
         m_encoding.front().m_ctrl = *ctrl;
-
         return status;
     }
 
@@ -3486,6 +3488,26 @@ mfxStatus ImplementationAvc::EncodeFrameCheckNormalWay(
         m_free.front().m_roi.Resize(MaxNumOfROI);
 
         m_stat.NumCachedFrame++;
+#ifdef MFX_ENABLE_MFE
+        mfxExtMultiFrameControl * mfeCtrl = GetExtBuffer(*ctrl);
+        if (mfeCtrl && mfeCtrl->Timeout)// Use user timeout to wait for frames
+        {
+            m_free.front().m_userTimeout = true;
+            m_free.front().m_mfeTimeToWait = mfeCtrl->Timeout;
+        }
+        else if (mfeCtrl && mfeCtrl->Flush)// Force submission with current frame
+        {
+            m_free.front().m_flushMfe = true;
+        }
+        else //otherwise use calculated timeout or passed by user at inialization.
+        {
+            mfxExtMultiFrameControl & mfeInitCtrl = GetExtBufferRef(m_video);
+            m_free.front().m_userTimeout = false;
+            m_free.front().m_mfeTimeToWait = mfeInitCtrl.Timeout;
+        }
+
+        m_free.front().m_beginTime = vm_time_get_tick();
+#endif
         m_incoming.splice(m_incoming.end(), m_free, m_free.begin());
     }
 

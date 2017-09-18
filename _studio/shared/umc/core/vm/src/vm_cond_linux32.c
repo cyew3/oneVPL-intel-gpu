@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2015-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2015-2017 Intel Corporation. All Rights Reserved.
 //
 
 #if defined(LINUX32) || defined(__APPLE__)
@@ -112,6 +112,39 @@ vm_status vm_cond_timedwait(vm_cond *cond, vm_mutex *mutex, Ipp32u msec)
         gettimeofday(&tval, NULL);
         // NOTE: micro_sec _should_ be Ipp64u, not Ipp32u to avoid overflow
         micro_sec = 1000 * msec + tval.tv_usec;
+        tspec.tv_sec = tval.tv_sec + (Ipp32u)(micro_sec / 1000000);
+        tspec.tv_nsec = (Ipp32u)(micro_sec % 1000000) * 1000;
+
+        res = pthread_cond_timedwait(&cond->handle, &mutex->handle, &tspec);
+        if (0 == res)
+            umc_res = VM_OK;
+        else if (ETIMEDOUT == res)
+            umc_res = VM_TIMEOUT;
+        else
+            umc_res = VM_OPERATION_FAILED;
+    }
+    return umc_res;
+} /* vm_status vm_cond_timedwait(vm_cond *cond, vm_mutex *mutex, Ipp32u msec) */
+
+/* Sleeps  in microseconds on the specified condition variable and releases the specified critical section as an atomic operation */
+vm_status vm_cond_timed_uwait(vm_cond *cond, vm_mutex *mutex, vm_tick usec)
+{
+    vm_status umc_res = VM_NOT_INITIALIZED;
+
+    /* check error(s) */
+    if (NULL == cond || NULL == mutex)
+        return VM_NULL_PTR;
+
+    if (cond->is_valid && mutex->is_valid)
+    {
+        struct timeval tval;
+        struct timespec tspec;
+        Ipp32s res;
+        Ipp64u micro_sec;
+
+        gettimeofday(&tval, NULL);
+        // NOTE: micro_sec _should_ be Ipp64u, not Ipp32u to avoid overflow
+        micro_sec = usec + tval.tv_usec;
         tspec.tv_sec = tval.tv_sec + (Ipp32u)(micro_sec / 1000000);
         tspec.tv_nsec = (Ipp32u)(micro_sec % 1000000) * 1000;
 

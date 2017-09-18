@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2015 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2015-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __VM_COND_H__
@@ -13,6 +13,7 @@
 
 #include "vm_types.h"
 #include "vm_mutex.h"
+#include "vm_time.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,6 +33,9 @@ vm_status vm_cond_wait(vm_cond *cond, vm_mutex *mutex);
 
 /* Sleeps on the specified condition variable and releases the specified critical section as an atomic operation */
 vm_status vm_cond_timedwait(vm_cond *cond, vm_mutex *mutex, Ipp32u msec);
+
+
+vm_status vm_cond_timed_uwait(vm_cond *cond, vm_mutex *mutex, vm_tick usec);
 
 /* Wake a single thread waiting on the specified condition variable */
 vm_status vm_cond_signal(vm_cond *cond);

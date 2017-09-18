@@ -33,7 +33,6 @@ MFEVAAPIEncoder::MFEVAAPIEncoder() :
 , m_framesToCombine(0)
 , m_maxFramesToCombine(0)
 , m_framesCollected(0)
-, m_mfe_vmtick_msec_frequency(vm_time_get_frequency()/1000)
 , vaCreateMFEContext(NULL)
 , vaAddContext(NULL)
 , vaReleaseContext(NULL)
@@ -183,7 +182,7 @@ mfxStatus MFEVAAPIEncoder::Destroy()
     return MFX_ERR_NONE;
 }
 
-mfxStatus MFEVAAPIEncoder::Submit(VAContextID context, mfxU32 timeToWait)
+mfxStatus MFEVAAPIEncoder::Submit(VAContextID context, vm_tick timeToWait)
 {
     vm_mutex_lock(&m_mfe_guard);
 
@@ -199,21 +198,19 @@ mfxStatus MFEVAAPIEncoder::Submit(VAContextID context, mfxU32 timeToWait)
     m_toSubmit.splice(m_toSubmit.end(), m_streams_pool, m_streams_pool.begin());
     ++m_framesCollected;
 
-    vm_tick start_tick = vm_time_get_tick(), end_tick;
-    vm_tick spent_ticks = 0, wait_time = timeToWait * m_mfe_vmtick_msec_frequency;
+    vm_tick start_tick = vm_time_get_tick();
+    vm_tick spent_ticks = 0;
 
     // such a condition with ticks allows to go into loop if at least 1ms
     // is needed to wait
     while (m_framesCollected < m_framesToCombine &&
            !cur_stream->isSubmitted() &&
-           wait_time >= (spent_ticks + m_mfe_vmtick_msec_frequency)){
+           timeToWait > spent_ticks){
         // now time is expressed in "vm_ticks", thus to pass ms need to convert
-        vm_status res = vm_cond_timedwait(&m_mfe_wait, &m_mfe_guard,
-                                          (wait_time - spent_ticks)/m_mfe_vmtick_msec_frequency);
+        vm_status res = vm_cond_timed_uwait(&m_mfe_wait, &m_mfe_guard,
+                                          (timeToWait - spent_ticks));
         if ((VM_OK == res) || (VM_TIMEOUT == res)) {
-            end_tick = vm_time_get_tick();
-            spent_ticks += (end_tick - start_tick);
-            start_tick = end_tick;
+            spent_ticks = (vm_time_get_tick() - start_tick);
         } else {
             vm_mutex_unlock(&m_mfe_guard);
             return MFX_ERR_UNKNOWN;

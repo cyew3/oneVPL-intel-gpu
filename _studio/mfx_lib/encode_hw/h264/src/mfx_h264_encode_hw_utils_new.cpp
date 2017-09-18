@@ -2163,7 +2163,11 @@ void MfxHwH264Encode::ConfigureTask(
         }
     }
 #endif
-
+#if defined(MFX_ENABLE_MFE)
+    //if previous frame finished later than current submitted(e.g. reordering or async) - use sync-sync time for counting timeout for better performance
+    //otherwise if current frame submitted later than previous finished - use submit->sync time for better performance handling
+    task.m_beginTime = IPP_MAX(task.m_beginTime, prevTask.m_endTime);
+#endif
     const mfxExtCodingOption2* extOpt2Cur = (extOpt2Runtime ? extOpt2Runtime : &extOpt2);
 
     if (task.m_type[ffid] & MFX_FRAMETYPE_I)

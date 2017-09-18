@@ -2972,13 +2972,20 @@ mfxStatus VAAPIEncoder::Execute(
     }
 #ifdef MFX_ENABLE_MFE
     if (m_mfe){
-        const mfxExtMultiFrameControl * mfeCtrl = GetExtBuffer(task.m_ctrl);
-        mfxU32 timeout = 12;//to be replaced by adaptive calculated
-        //if control set, either use timeout from it, or submit immediately in case of flush.
-        if(mfeCtrl)
-            timeout = mfeCtrl->Timeout;
-
-        m_mfe->Submit(m_vaContextEncode, timeout);
+        mfxU32 timeout = task.m_mfeTimeToWait;
+        if(!task.m_userTimeout)
+        {
+            mfxU32 passed = (task.m_beginTime - vm_time_get_tick());
+            if (passed < task.m_mfeTimeToWait)
+            {
+                timeout = timeout - passed;//-time for encode;//need to add a table with encoding times to
+            }
+            else
+            {
+                timeout = 0;
+            }
+        }
+        m_mfe->Submit(m_vaContextEncode, (task.m_flushMfe? 0 : timeout));
     }
 #endif
 

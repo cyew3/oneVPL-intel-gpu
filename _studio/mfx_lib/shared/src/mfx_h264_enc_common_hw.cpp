@@ -820,9 +820,9 @@ namespace
         targetUsage;//no specific check for TU now, can be added later
         if (
 #if defined(PRE_SI_TARGET_PLATFORM_GEN10)
-            platform == MFX_HW_CNL ||
+            platform == MFX_HW_CNL ||//no MFE support for CNL now
 #endif
-            platform <= MFX_HW_BDW)//no MFE support now for CNL and prior to SKL.
+            platform <= MFX_HW_BDW)//no MFE support prior to SKL.
             return 1;
         else if (platform
 #if defined(PRE_SI_TARGET_PLATFORM_GEN10)
@@ -855,8 +855,14 @@ namespace
                 return 3;//for legacy now - need to look for potential decrease due to added controls like MBQP, etc.
             }
         }
-        else//platform >= MFX_HW_ICL
-            return 4;//to be adjusted based on final performance measurements, depending on SKU and resolution this can be 2->16
+        else
+            return 4;//to be adjusted based on final performance measurements
+    }
+
+    mfxU32 calculateMfeTimeout(const mfxFrameInfo& info)
+    {
+        //Just calculate based on latency expectation from framerate in microsecond now, can be changed in future
+        return mfxU32((mfxU64)info.FrameRateExtD * 1000000 / info.FrameRateExtN);
     }
 #endif
     mfxU16 GetDefaultMaxNumRefActivePL0(mfxU32 targetUsage,
@@ -4715,6 +4721,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         mfeParam.MFMode = MFX_MF_DEFAULT;
         changed = true;
     }
+
     //explicitly force defualt number of frames, higher number will cause performance degradation.
     mfxU16 numFrames = GetDefaultNumMfeFrames(par.mfx.TargetUsage, par.mfx.FrameInfo, platform, feiParam->Func,
         /*multi-slice can be supported only through slice map control for MFE, but not enabled as there is no
@@ -4726,10 +4733,21 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         1 + (par.mfx.NumSlice > 1 || extOpt2->MaxSliceSize || extOpt2->NumMbPerSlice) );
     if (mfeParam.MaxNumFrames > numFrames)
     {
-        mfeParam.MaxNumFrames =
-        (mfeParam.MFMode >= MFX_MF_AUTO) ? numFrames : 1;
+        mfeParam.MaxNumFrames = numFrames;
         changed = true;
     }
+    if (mfeParam.MaxNumFrames && mfeParam.MFMode < MFX_MF_AUTO)
+    {
+        mfeParam.MFMode = MFX_MF_AUTO;
+        changed = true;
+    }
+    mfxExtMultiFrameControl & mfeControl = GetExtBufferRef(par);
+    if (mfeControl.Timeout && mfeParam.MFMode != MFX_MF_AUTO)
+    {
+        mfeControl.Timeout = 0;
+        changed = true;
+    }
+
 #endif
 
     return unsupported
@@ -5305,6 +5323,7 @@ void MfxHwH264Encode::SetDefaults(
     mfxExtFeiParam* feiParam = (mfxExtFeiParam*)GetExtBuffer(par);
 #if defined(MFX_ENABLE_MFE)
     mfxExtMultiFrameParam* mfeParam = GetExtBuffer(par);
+    mfxExtMultiFrameControl* mfeControl = GetExtBuffer(par);
 #endif
     bool isENCPAK = (feiParam->Func == MFX_FEI_FUNCTION_ENCODE) ||
                     (feiParam->Func == MFX_FEI_FUNCTION_ENC)    ||
@@ -5339,7 +5358,7 @@ void MfxHwH264Encode::SetDefaults(
             par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
         if (par.AsyncDepth == 0)
             par.AsyncDepth = 1;
-        if(par.mfx.LowPower != MFX_CODINGOPTION_ON)
+        if (par.mfx.LowPower != MFX_CODINGOPTION_ON)
         {
             if (par.mfx.RateControlMethod == 0)
                 par.mfx.RateControlMethod = MFX_RATECONTROL_LA;
@@ -5355,17 +5374,26 @@ void MfxHwH264Encode::SetDefaults(
         }
     }
 #if defined(MFX_ENABLE_MFE)
-    if(mfeParam){
-        //to be changed
-        if (!mfeParam->MFMode)
-            mfeParam->MFMode = MFX_MF_DISABLED;//disabled by defualt now, change here to enable
+    if (mfeParam)
+    {
+        //can be changed
+        if (!mfeParam->MFMode && mfeParam->MaxNumFrames)
+            mfeParam->MFMode = MFX_MF_AUTO;
         if (mfeParam->MFMode >= MFX_MF_AUTO && !mfeParam->MaxNumFrames)
         {
-            mfeParam->MaxNumFrames = GetDefaultNumMfeFrames(par.mfx.TargetUsage,par.mfx.FrameInfo,platform,feiParam->Func,
-               1 + (par.mfx.NumSlice > 1 || extOpt2->MaxSliceSize || extOpt2->NumMbPerSlice));
+            mfeParam->MaxNumFrames = GetDefaultNumMfeFrames(par.mfx.TargetUsage, par.mfx.FrameInfo, platform, feiParam->Func,
+                1 + (par.mfx.NumSlice > 1 || extOpt2->MaxSliceSize || extOpt2->NumMbPerSlice));
+        }
+    }
+    if (mfeControl)
+    {
+        if (!mfeControl->Timeout)
+        {
+            mfeControl->Timeout = calculateMfeTimeout(par.mfx.FrameInfo);
         }
     }
 #endif
+
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (IsProtectionPavp(par.Protected))
     {
@@ -6655,22 +6683,12 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
     mfxExtMultiFrameParam const & mfeParam = GetExtBufferRef(video);
     mfxExtMultiFrameControl * mfeCtrl = GetExtBuffer(*ctrl);
 
-    if(mfeCtrl && mfeParam.MFMode >= MFX_MF_AUTO)
+    if(mfeCtrl && mfeParam.MFMode == MFX_MF_MANUAL && mfeCtrl->Timeout)
     {
-        if(mfeParam.MFMode == MFX_MF_MANUAL && mfeCtrl->Timeout)
-        {
-            checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-            mfeCtrl->Timeout = 0;
-        }
-
-        if(mfeParam.MFMode == MFX_MF_AUTO && mfeCtrl->Flush)
-        {
-            checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-            mfeCtrl->Flush = 0;
-        }
+        checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+        mfeCtrl->Timeout = 0;
     }
 #endif
-
     return checkSts;
 }
 

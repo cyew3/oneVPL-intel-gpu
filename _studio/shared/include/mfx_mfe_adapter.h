@@ -47,7 +47,7 @@ public:
     mfxStatus Join(VAContextID ctx);
     mfxStatus Disjoin(VAContextID ctx);
     mfxStatus Destroy();
-    mfxStatus Submit(VAContextID context, mfxU32 timeToWait);
+    mfxStatus Submit(VAContextID context, vm_tick timeToWait);//time passed in vm_tick, so milliseconds to be multiplied by vm_frequency/1000
 
     virtual void AddRef();
     virtual void Release();
@@ -87,9 +87,6 @@ private:
     std::vector<VAContextID> m_contexts;
     // store iterators to particular items
     std::vector<StreamsIter_t> m_streams;
-
-    // a number of tics per milisecond
-    const vm_tick m_mfe_vmtick_msec_frequency;
 
     // currently up-to-to 3 frames worth combining
     static const mfxU32 MAX_FRAMES_TO_COMBINE = 3;
