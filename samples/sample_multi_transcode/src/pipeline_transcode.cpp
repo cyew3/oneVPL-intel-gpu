@@ -973,7 +973,7 @@ mfxStatus CTranscodingPipeline::Decode()
             shouldReadNextFrame=true;
         }
 
-        if (++m_nProcessedFramesNum >= m_MaxFramesForTranscode)
+        if (m_nProcessedFramesNum++ >= m_MaxFramesForTranscode)
         {
             StopSession();
         }
