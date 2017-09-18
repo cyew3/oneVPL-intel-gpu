@@ -4006,6 +4006,9 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
                 extPps->numSliceGroupsMinus1 > 0                       ||
                 extPps->numRefIdxL0DefaultActiveMinus1 > 31            ||
                 extPps->numRefIdxL1DefaultActiveMinus1 > 31            ||
+                //Check of weightedPredFlag is actually not needed, as it was read from 1 bit in extBits->PPSBuffer
+                extPps->weightedPredFlag > 1                           ||
+                extPps->weightedBipredIdc > 2                          ||
                 extPps->picInitQpMinus26 < -26                         ||
                 extPps->picInitQpMinus26 > 25                          ||
                 extPps->picInitQsMinus26 != 0                          ||
