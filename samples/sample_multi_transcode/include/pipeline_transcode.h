@@ -744,7 +744,7 @@ namespace TranscodingSample
 
         mfxU32          m_NumFramesForReset;
         MSDKMutex       m_mReset;
-        MSDKMutex       m_mStopOverlay;
+        MSDKMutex       m_mStopSession;
         bool            m_bIsRobust;
 
         bool isHEVCSW;

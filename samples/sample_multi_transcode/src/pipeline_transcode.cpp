@@ -570,7 +570,7 @@ mfxStatus CTranscodingPipeline::DecodeOneFrame(ExtendedSurface *pExtSurface)
         {
             // Find new working surface
             pmfxSurface = GetFreeSurface(true, MSDK_SURFACE_WAIT_INTERVAL);
-            AutomaticMutex guard(m_mStopOverlay);
+            AutomaticMutex guard(m_mStopSession);
             if (m_bForceStop)
             {
                 NoMoreFramesSignal();
@@ -793,7 +793,7 @@ void CTranscodingPipeline::NoMoreFramesSignal()
 
 void CTranscodingPipeline::StopSession()
 {
-    AutomaticMutex guard(m_mStopOverlay);
+    AutomaticMutex guard(m_mStopSession);
     m_bForceStop = true;
 }
 
@@ -816,15 +816,15 @@ mfxStatus CTranscodingPipeline::Decode()
     bool bLastCycle = false;
     time_t start = time(0);
 
-    m_mStopOverlay.Lock();
+    m_mStopSession.Lock();
     if (m_bForceStop)
     {
-        m_mStopOverlay.Unlock();
+        m_mStopSession.Unlock();
         // add surfaces in queue for all sinks
         NoMoreFramesSignal();
         return MFX_WRN_VALUE_NOT_CHANGED;
     }
-    m_mStopOverlay.Unlock();
+    m_mStopSession.Unlock();
 
     if (m_bUseOverlay)
     {
@@ -973,11 +973,6 @@ mfxStatus CTranscodingPipeline::Decode()
             shouldReadNextFrame=true;
         }
 
-        if (m_nProcessedFramesNum++ >= m_MaxFramesForTranscode)
-        {
-            StopSession();
-        }
-
         if (sts == MFX_ERR_MORE_DATA || !VppExtSurface.pSurface)
         {
             if (!bEndOfFile )
@@ -1034,14 +1029,14 @@ mfxStatus CTranscodingPipeline::Decode()
         // Do not exceed buffer length (it should be not longer than AsyncDepth after adding newly processed surface)
         while(pNextBuffer->GetLength()>=m_AsyncDepth)
         {
+            m_mStopSession.Lock();
+            if (m_bForceStop)
             {
-                AutomaticMutex guard(m_mStopOverlay);
-                if (m_bForceStop)
-                {
-                    NoMoreFramesSignal();
-                    return MFX_WRN_VALUE_NOT_CHANGED;
-                }
+                m_mStopSession.Unlock();
+                NoMoreFramesSignal();
+                return MFX_WRN_VALUE_NOT_CHANGED;
             }
+            m_mStopSession.Unlock();
 
             pNextBuffer->WaitForSurfaceRelease(MSDK_SURFACE_WAIT_INTERVAL / 1000);
 
@@ -1096,6 +1091,10 @@ mfxStatus CTranscodingPipeline::Decode()
         if (nFrameTime < m_nReqFrameTime)
         {
             MSDK_USLEEP((mfxU32)(m_nReqFrameTime - nFrameTime));
+        }
+        if (++m_nProcessedFramesNum >= m_MaxFramesForTranscode)
+        {
+            break;
         }
     }
 
@@ -1386,8 +1385,8 @@ mfxStatus CTranscodingPipeline::Encode()
         /* Exit condition */
         if (m_nProcessedFramesNum == m_MaxFramesForTranscode)
         {
-            if (m_pParentPipeline)
-                m_pParentPipeline->StopSession();
+            //if (m_pParentPipeline)
+            //    m_pParentPipeline->StopSession();
             break;
         }
 
@@ -3702,11 +3701,13 @@ mfxFrameSurface1* CTranscodingPipeline::GetFreeSurface(bool isDec, mfxU64 timeou
     t.Start();
     do
     {
+        m_mStopSession.Lock();
+        if (m_bForceStop)
         {
-            AutomaticMutex guard(m_mStopOverlay);
-            if (m_bForceStop)
-                break;
+            m_mStopSession.Unlock();
+            break;
         }
+        m_mStopSession.Unlock();
 
         SurfPointersArray & workArray = isDec ? m_pSurfaceDecPool : m_pSurfaceEncPool;
 
