@@ -593,7 +593,7 @@ HevcTask* EncodeOrderControl::ReorderFrame(mfxFrameSurface1 * surface)
         free_task->m_poc = m_frameOrder - m_lastIDR;
         free_task->m_fo =  m_frameOrder;
         free_task->m_bpo = (mfxU32)MFX_FRAMEORDER_UNKNOWN;
-        free_task->m_idxRec = m_frameOrder; // Workaround
+        free_task->m_idxRec = m_frameOrder & 0x7f; // Workaround to get unique idx and != IDX_INVALID (0xff)
         m_frameOrder ++;
     }
 
