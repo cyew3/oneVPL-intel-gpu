@@ -48,6 +48,8 @@ namespace UMC_HEVC_DECODER
 
         using Packer::PackQmatrix;
 
+        virtual void PackSubsets(const H265DecoderFrame *pCurrentFrame);
+
     protected:
 
         template <typename T>

@@ -1975,13 +1975,14 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
 
     // Update entry points
     size_t offsets = removed_offsets.size();
-    if (pSlice->GetPicParam()->tiles_enabled_flag && pSlice->getTileLocationCount() > 0 && offsets > 0)
+    if ((pSlice->GetPicParam()->tiles_enabled_flag || pSlice->GetPicParam()->entropy_coding_sync_enabled_flag) &&
+        pSlice->getTileLocationCount() > 0 && offsets > 0)
     {
         Ipp32u removed_bytes = 0;
         std::vector<Ipp32u>::iterator it = removed_offsets.begin();
         Ipp32u emul_offset = *it;
 
-        for (Ipp32s tile = 0; tile < (Ipp32s)pSlice->getTileLocationCount(); tile++)
+        for (Ipp32u tile = 0; tile < pSlice->getTileLocationCount(); tile++)
         {
             while ((pSlice->m_tileByteLocation[tile] + currOffsetWithEmul >= emul_offset) && removed_bytes < offsets)
             {
@@ -2007,7 +2008,7 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
         }
     }
 
-    for (Ipp32s tile = 0; tile < pSlice->getTileLocationCount(); tile++)
+    for (Ipp32u tile = 0; tile < pSlice->getTileLocationCount(); tile++)
     {
         pSlice->m_tileByteLocation[tile] = pSlice->m_tileByteLocation[tile] + currOffset;
     }

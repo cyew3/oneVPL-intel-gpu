@@ -383,7 +383,6 @@ void H265Slice::CopyFromBaseSlice(const H265Slice * s)
     m_SliceHeader.slice_sao_luma_flag = slice->slice_sao_luma_flag;
     m_SliceHeader.slice_sao_chroma_flag = slice->slice_sao_chroma_flag;
     m_SliceHeader.cabac_init_flag        = slice->cabac_init_flag;
-    m_SliceHeader.num_entry_point_offsets = slice->num_entry_point_offsets;
 
     m_SliceHeader.mvd_l1_zero_flag = slice->mvd_l1_zero_flag;
     m_SliceHeader.slice_loop_filter_across_slices_enabled_flag  = slice->slice_loop_filter_across_slices_enabled_flag;

@@ -1941,12 +1941,6 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
         }
     }
 
-    if (!pps->tiles_enabled_flag)
-    {
-        pSlice->allocateTileLocation(1);
-        pSlice->m_tileByteLocation[0] = 0;
-    }
-
     if (pps->tiles_enabled_flag || pps->entropy_coding_sync_enabled_flag)
     {
         sliceHdr->num_entry_point_offsets = GetVLCElementU();
@@ -1970,34 +1964,28 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
                 throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
         }
 
-        Ipp32u* entryPointOffset = new Ipp32u[sliceHdr->num_entry_point_offsets];
+        std::vector<Ipp32u> entryPointOffsets(sliceHdr->num_entry_point_offsets);
         for (Ipp32u idx = 0; idx < sliceHdr->num_entry_point_offsets; idx++)
         {
-            entryPointOffset[idx] = GetBits(offsetLenMinus1 + 1) + 1;
+            entryPointOffsets[idx] = GetBits(offsetLenMinus1 + 1) + 1;
         }
 
-        if (pps->tiles_enabled_flag)
+        pSlice->allocateTileLocation(sliceHdr->num_entry_point_offsets + 1);
+
+        unsigned prevPos = 0;
+        pSlice->m_tileByteLocation[0] = 0;
+        for (Ipp32u idx = 1; idx < pSlice->getTileLocationCount(); idx++)
         {
-            pSlice->allocateTileLocation(sliceHdr->num_entry_point_offsets + 1);
-
-            unsigned prevPos = 0;
-            pSlice->m_tileByteLocation[0] = 0;
-            for (int idx = 1; idx < pSlice->getTileLocationCount(); idx++)
-            {
-                pSlice->m_tileByteLocation[idx] = prevPos + entryPointOffset[idx - 1];
-                prevPos += entryPointOffset[idx - 1];
-            }
+            pSlice->m_tileByteLocation[idx] = prevPos + entryPointOffsets[idx - 1];
+            prevPos += entryPointOffsets[idx - 1];
         }
-        else if (pps->entropy_coding_sync_enabled_flag)
-        {
-            // we don't use wpp offsets
-        }
-
-        delete[] entryPointOffset;
     }
     else
     {
         sliceHdr->num_entry_point_offsets = 0;
+
+        pSlice->allocateTileLocation(1);
+        pSlice->m_tileByteLocation[0] = 0;
     }
 
     if(pps->slice_segment_header_extension_present_flag)

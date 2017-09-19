@@ -26,6 +26,8 @@
     #endif
 #endif
 
+#include <numeric>
+
 using namespace UMC;
 
 namespace UMC_HEVC_DECODER
@@ -45,6 +47,7 @@ namespace UMC_HEVC_DECODER
         void PackQmatrix(const H265Slice *pSlice);
         void PackPicParams(const H265DecoderFrame *pCurrentFrame, H265DecoderFrameInfo * pSliceInfo, TaskSupplier_H265 *supplier);
         bool PackSliceParams(H265Slice *pSlice, Ipp32u &, bool isLastSlice);
+        void PackSubsets(const H265DecoderFrame *pCurrentFrame);
     };
 
     Packer * CreatePackerIntel(UMC::VideoAccelerator* va)
@@ -273,6 +276,21 @@ namespace UMC_HEVC_DECODER
         pPicParam->wNumBitsForShortTermRPSInSlice = (USHORT)sliceHeader->wNumBitsForShortTermRPSInSlice;
         pPicParam->ucNumDeltaPocsOfRefRpsIdx = (UCHAR)pPicParam->wNumBitsForShortTermRPSInSlice;
 
+        Ipp32u num_offsets = 0;
+        for (Ipp32u i = 0; i < pSliceInfo->GetSliceCount(); ++i)
+        {
+            H265Slice const* slice = pSliceInfo->GetSlice(i);
+            if (!slice)
+                throw h265_exception(UMC_ERR_FAILED);
+
+            H265SliceHeader const* sh = slice->GetSliceHeader();
+            VM_ASSERT(sh);
+
+            num_offsets += sh->num_entry_point_offsets;
+        }
+
+        pPicParam->TotalNumEntryPointOffsets = (USHORT)num_offsets;
+
         // dwCodingParamToolFlags
         //
         pPicParam->fields.scaling_list_enabled_flag = pSeqParamSet->scaling_list_enabled_flag;
@@ -489,11 +507,11 @@ namespace UMC_HEVC_DECODER
         VM_ASSERT(pSlice);
         VM_ASSERT(pp);
 
-        H265SliceHeader const* ssh = pSlice->GetSliceHeader();
-        VM_ASSERT(ssh);
+        H265SliceHeader const* sh = pSlice->GetSliceHeader();
+        VM_ASSERT(sh);
 
         header->ByteOffsetToSliceData = (UINT)(pSlice->m_BitStream.BytesDecoded() + prefix_size);
-        header->slice_segment_address = ssh->slice_segment_address;
+        header->slice_segment_address = sh->slice_segment_address;
 
         const H265DecoderFrame *pCurrentFrame = pSlice->GetCurrentFrame();
         VM_ASSERT(pCurrentFrame);
@@ -537,34 +555,64 @@ namespace UMC_HEVC_DECODER
 
         // LongSliceFlags
         //        header->LongSliceFlags.fields.LastSliceOfPic = isLastSlice;
-        header->LongSliceFlags.fields.dependent_slice_segment_flag = (UINT)ssh->dependent_slice_segment_flag;   // dependent_slices_enabled_flag
-        header->LongSliceFlags.fields.slice_type = (UINT)ssh->slice_type;
+        header->LongSliceFlags.fields.dependent_slice_segment_flag = (UINT)sh->dependent_slice_segment_flag;   // dependent_slices_enabled_flag
+        header->LongSliceFlags.fields.slice_type = (UINT)sh->slice_type;
         header->LongSliceFlags.fields.color_plane_id = 0; // field is left for future expansion
-        header->LongSliceFlags.fields.slice_sao_luma_flag = (UINT)ssh->slice_sao_luma_flag;
-        header->LongSliceFlags.fields.slice_sao_chroma_flag = (UINT)ssh->slice_sao_chroma_flag;
-        header->LongSliceFlags.fields.mvd_l1_zero_flag = (UINT)ssh->mvd_l1_zero_flag;
-        header->LongSliceFlags.fields.cabac_init_flag = (UINT)ssh->cabac_init_flag;
-        header->LongSliceFlags.fields.slice_temporal_mvp_enabled_flag = (UINT)ssh->slice_temporal_mvp_enabled_flag;
-        header->LongSliceFlags.fields.slice_deblocking_filter_disabled_flag = (UINT)ssh->slice_deblocking_filter_disabled_flag;
-        header->LongSliceFlags.fields.collocated_from_l0_flag = (UINT)ssh->collocated_from_l0_flag;
-        header->LongSliceFlags.fields.slice_loop_filter_across_slices_enabled_flag = (UINT)ssh->slice_loop_filter_across_slices_enabled_flag;
+        header->LongSliceFlags.fields.slice_sao_luma_flag = (UINT)sh->slice_sao_luma_flag;
+        header->LongSliceFlags.fields.slice_sao_chroma_flag = (UINT)sh->slice_sao_chroma_flag;
+        header->LongSliceFlags.fields.mvd_l1_zero_flag = (UINT)sh->mvd_l1_zero_flag;
+        header->LongSliceFlags.fields.cabac_init_flag = (UINT)sh->cabac_init_flag;
+        header->LongSliceFlags.fields.slice_temporal_mvp_enabled_flag = (UINT)sh->slice_temporal_mvp_enabled_flag;
+        header->LongSliceFlags.fields.slice_deblocking_filter_disabled_flag = (UINT)sh->slice_deblocking_filter_disabled_flag;
+        header->LongSliceFlags.fields.collocated_from_l0_flag = (UINT)sh->collocated_from_l0_flag;
+        header->LongSliceFlags.fields.slice_loop_filter_across_slices_enabled_flag = (UINT)sh->slice_loop_filter_across_slices_enabled_flag;
 
         //
         H265PicParamSet const* pps = pSlice->GetPicParam();
         VM_ASSERT(pps);
 
-        header->collocated_ref_idx = (UCHAR)(ssh->slice_type != I_SLICE ? ssh->collocated_ref_idx : -1);
+        header->collocated_ref_idx = (UCHAR)(sh->slice_type != I_SLICE ? sh->collocated_ref_idx : -1);
         header->num_ref_idx_l0_active_minus1 = (UCHAR)pSlice->getNumRefIdx(REF_PIC_LIST_0) - 1;
         header->num_ref_idx_l1_active_minus1 = (UCHAR)pSlice->getNumRefIdx(REF_PIC_LIST_1) - 1;
-        header->slice_qp_delta = (CHAR)(ssh->SliceQP - pps->init_qp);
-        header->slice_cb_qp_offset = (CHAR)ssh->slice_cb_qp_offset;
-        header->slice_cr_qp_offset = (CHAR)ssh->slice_cr_qp_offset;
-        header->slice_beta_offset_div2 = (CHAR)(ssh->slice_beta_offset >> 1);
-        header->slice_tc_offset_div2 = (CHAR)(ssh->slice_tc_offset >> 1);
-        header->luma_log2_weight_denom = (UCHAR)ssh->luma_log2_weight_denom;
-        header->delta_chroma_log2_weight_denom = (UCHAR)(ssh->chroma_log2_weight_denom - ssh->luma_log2_weight_denom);
+        header->slice_qp_delta = (CHAR)(sh->SliceQP - pps->init_qp);
+        header->slice_cb_qp_offset = (CHAR)sh->slice_cb_qp_offset;
+        header->slice_cr_qp_offset = (CHAR)sh->slice_cr_qp_offset;
+        header->slice_beta_offset_div2 = (CHAR)(sh->slice_beta_offset >> 1);
+        header->slice_tc_offset_div2 = (CHAR)(sh->slice_tc_offset >> 1);
+        header->luma_log2_weight_denom = (UCHAR)sh->luma_log2_weight_denom;
+        header->delta_chroma_log2_weight_denom = (UCHAR)(sh->chroma_log2_weight_denom - sh->luma_log2_weight_denom);
 
-        header->five_minus_max_num_merge_cand = (UCHAR)(5 - ssh->max_num_merge_cand);
+        header->five_minus_max_num_merge_cand = (UCHAR)(5 - sh->max_num_merge_cand);
+
+        //WPP/tiles
+        header->num_entry_point_offsets = static_cast<USHORT>(sh->num_entry_point_offsets);
+        if (header->num_entry_point_offsets)
+        {
+            H265DecoderFrame* frame = pSlice->GetCurrentFrame();
+            if (!frame)
+                throw h265_exception(UMC_ERR_FAILED);
+
+            H265DecoderFrameInfo* fi = frame->GetAU();
+            if (!fi)
+                throw h265_exception(UMC_ERR_FAILED);
+
+            Ipp32u offset = 0;
+            Ipp32u const count = fi->GetSliceCount();
+            for (Ipp32u i = 0; i < count; ++i)
+            {
+                H265Slice const* slice = fi->GetSlice(i);
+                VM_ASSERT(slice);
+
+                if (slice == pSlice)
+                    break;
+
+                H265SliceHeader const* h = slice->GetSliceHeader();
+                VM_ASSERT(h);
+                offset += h->num_entry_point_offsets;
+            }
+
+            header->EntryOffsetToSubsetArray = static_cast<USHORT>(offset);
+        }
     }
 
     inline
@@ -614,15 +662,15 @@ namespace UMC_HEVC_DECODER
     {
         PackSliceHeaderCommon(pSlice, pp, prefix_size, header);
 
-        H265SliceHeader const* ssh = pSlice->GetSliceHeader();
-        VM_ASSERT(ssh);
+        H265SliceHeader const* sh = pSlice->GetSliceHeader();
+        VM_ASSERT(sh);
 
         for (int l = 0; l < 2; l++)
         {
             EnumRefPicList eRefPicList = (l == 1 ? REF_PIC_LIST_1 : REF_PIC_LIST_0);
             for (int iRefIdx = 0; iRefIdx < pSlice->getNumRefIdx(eRefPicList); iRefIdx++)
             {
-                wpScalingParam const* wp = ssh->pred_weight_table[eRefPicList][iRefIdx];
+                wpScalingParam const* wp = sh->pred_weight_table[eRefPicList][iRefIdx];
 
                 if (eRefPicList == REF_PIC_LIST_0)
                 {
@@ -649,7 +697,7 @@ namespace UMC_HEVC_DECODER
             }
         }
 
-        header->SliceRextFlags.fields.cu_chroma_qp_offset_enabled_flag = ssh->cu_chroma_qp_offset_enabled_flag;
+        header->SliceRextFlags.fields.cu_chroma_qp_offset_enabled_flag = sh->cu_chroma_qp_offset_enabled_flag;
     }
 #endif
 
@@ -676,8 +724,6 @@ namespace UMC_HEVC_DECODER
         {
             UMCVACompBuffer *compBuf;
             DXVA_Intel_PicParams_HEVC const* pp = (DXVA_Intel_PicParams_HEVC*)m_va->GetCompBuffer(DXVA_PICTURE_DECODE_BUFFER, &compBuf);
-
-            const H265SeqParamSet *pSeqParamSet = pSlice->GetSeqParam();
 
 #if !defined(PRE_SI_TARGET_PLATFORM_GEN11)
             {
@@ -721,6 +767,55 @@ namespace UMC_HEVC_DECODER
         memset(pQmatrix, 0, sizeof(DXVA_Intel_Qmatrix_HEVC));
 
         PackerDXVA2::PackQmatrix(pSlice, pQmatrix);
+    }
+
+    void PackerDXVA2intel::PackSubsets(H265DecoderFrame const* frame)
+    {
+#if defined(MFX_ENABLE_HEVCD_WPP)
+        if (m_va->m_HWPlatform < MFX_HW_TGL_LP)
+            return;
+
+        UMCVACompBuffer *compBuf;
+        DXVA_Intel_PicParams_HEVC const* pp = (DXVA_Intel_PicParams_HEVC*)m_va->GetCompBuffer(DXVA_PICTURE_DECODE_BUFFER, &compBuf);
+        if (!pp)
+            throw h265_exception(UMC_ERR_FAILED);
+
+        if (!pp->TotalNumEntryPointOffsets)
+            return;
+
+        SUBSET_HEVC* subset =
+            reinterpret_cast<SUBSET_HEVC*>(m_va->GetCompBuffer(D3DDDIFMT_INTEL_HEVC_SUBSET, &compBuf));
+        if (!subset)
+            throw h265_exception(UMC_ERR_FAILED);
+
+        compBuf->SetDataSize(sizeof(SUBSET_HEVC));
+        memset(subset, 0, compBuf->GetDataSize());
+
+        H265DecoderFrameInfo* fi = frame->GetAU();
+        if (!fi)
+            throw h265_exception(UMC_ERR_FAILED);
+
+        auto offset = &subset->entry_point_offset_minus1[0];
+        Ipp32u const count = fi->GetSliceCount();
+        for (Ipp32u i = 0; i < count; ++i)
+        {
+            H265Slice const* slice = fi->GetSlice(i);
+            if (!slice)
+                throw h265_exception(UMC_ERR_FAILED);
+
+            H265SliceHeader const* sh = slice->GetSliceHeader();
+            VM_ASSERT(sh);
+            VM_ASSERT(sh->num_entry_point_offsets + 1 == slice->getTileLocationCount());
+
+            auto location = offset;
+            std::accumulate(slice->m_tileByteLocation + 1, slice->m_tileByteLocation + slice->getTileLocationCount(), slice->m_tileByteLocation[0],
+                [&location](Ipp32u position, Ipp32u entry)
+                { return *location++ = entry - (position  + 1); }
+            );
+
+            offset += sh->num_entry_point_offsets;
+        }
+#endif //MFX_ENABLE_HEVCD_WPP
     }
 }
 

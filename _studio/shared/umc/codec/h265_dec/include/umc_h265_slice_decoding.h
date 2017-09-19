@@ -188,7 +188,7 @@ public:
     Ipp32s m_tileCount;
     Ipp32u *m_tileByteLocation;
 
-    Ipp32s getTileLocationCount() const   { return m_tileCount; }
+    Ipp32u getTileLocationCount() const   { return m_tileCount; }
     void allocateTileLocation(Ipp32s val)
     {
         if (m_tileCount < val)

@@ -188,15 +188,30 @@ D3D11_VIDEO_DECODER_BUFFER_TYPE MFXD3D11Accelerator::MapDXVAToD3D11BufType(const
         return (D3D11_VIDEO_DECODER_BUFFER_TYPE)(DXVA2_VC1PICTURE_PARAMS_EXT_BUFFER - 1);
     case DXVA2_VC1BITPLANE_EXT_BUFFER:
         return (D3D11_VIDEO_DECODER_BUFFER_TYPE)(DXVA2_VC1BITPLANE_EXT_BUFFER - 1);
-    case D3DDDIFMT_INTEL_JPEGDECODE_PPSDATA:
-    case D3DDDIFMT_INTEL_JPEGDECODE_QUANTDATA:
-    case D3DDDIFMT_INTEL_JPEGDECODE_HUFFTBLDATA:
-    case D3DDDIFMT_INTEL_JPEGDECODE_SCANDATA:
-        return (D3D11_VIDEO_DECODER_BUFFER_TYPE)(DXVABufType - 1);
-
-    default:
-        return (D3D11_VIDEO_DECODER_BUFFER_TYPE)-1;
     }
+
+    int const codec = m_Profile & VA_CODEC;
+    switch (codec)
+    {
+    case VA_JPEG:
+        switch (DXVABufType)
+        {
+        case D3DDDIFMT_INTEL_JPEGDECODE_PPSDATA:
+        case D3DDDIFMT_INTEL_JPEGDECODE_QUANTDATA:
+        case D3DDDIFMT_INTEL_JPEGDECODE_HUFFTBLDATA:
+        case D3DDDIFMT_INTEL_JPEGDECODE_SCANDATA:    return (D3D11_VIDEO_DECODER_BUFFER_TYPE)(DXVABufType - 1);
+        }
+        break;
+
+    case VA_H265:
+        switch (DXVABufType)
+        {
+        case D3DDDIFMT_INTEL_HEVC_SUBSET:            return (D3D11_VIDEO_DECODER_BUFFER_TYPE)(DXVABufType - 1);
+        }
+        break;
+    }
+
+    return (D3D11_VIDEO_DECODER_BUFFER_TYPE)-1;
 } // D3D11_VIDEO_DECODER_BUFFER_TYPE MFXD3D11Accelerator::MapDXVAToD3D11BufType(const Ipp32s DXDVABufType)
 
 Status  MFXD3D11Accelerator::BeginFrame(Ipp32s index)

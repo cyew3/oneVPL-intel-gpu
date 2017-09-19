@@ -387,6 +387,20 @@ typedef struct _DXVA_Intel_Qmatrix_HEVC
     UCHAR   ucScalingListDCCoefSizeID3[2];
 } DXVA_Intel_Qmatrix_HEVC, *LPDXVA_Intel_Qmatrix_HEVC;
 
+#if DDI_VERSION >= 944
+typedef struct _SUBSET_HEVC
+{
+    UINT    entry_point_offset_minus1[540];
+} SUBSET_HEVC;
+
+#define D3DDDIFMT_INTEL_HEVC_SUBSET           12
+
+typedef enum D3D11_INTEL_VIDEO_DECODER_BUFFER_HEVC_TYPE
+{
+    D3D11_INTEL_VIDEO_DECODER_BUFFER_HEVC_SUBSET = 11
+} D3D11_INTEL_VIDEO_DECODER_BUFFER_HEVC_TYPE;
+#endif //DDI_VERSION > 944
+
 #pragma pack()
 
 #endif // __UMC_HEVC_DDI_H

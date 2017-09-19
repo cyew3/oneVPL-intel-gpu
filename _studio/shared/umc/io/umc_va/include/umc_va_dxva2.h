@@ -21,6 +21,8 @@
 #include "umc_vp8_ddi.h"
 #include "umc_vp9_ddi.h"
 #include "umc_mvc_ddi.h"
+#include "umc_hevc_ddi.h"
+
 #define DEFINE_GUID_(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \
     static const GUID name = { l, w1, w2, { b1, b2,  b3,  b4,  b5,  b6,  b7,  b8 } }
 

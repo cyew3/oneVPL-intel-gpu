@@ -58,8 +58,15 @@ namespace UMC_HEVC_DECODER
         H265Slice *pSlice = sliceInfo->GetSlice(0);
         if (!pSlice)
             return;
+
         const H265SeqParamSet *pSeqParamSet = pSlice->GetSeqParam();
-        H265DecoderFrame *pCurrentFrame = pSlice->GetCurrentFrame();
+        const H265PicParamSet *pPicParamSet = pSlice->GetPicParam();
+        if (!pSeqParamSet || !pPicParamSet)
+            throw h265_exception(UMC_ERR_FAILED);
+
+        H265DecoderFrame const* pCurrentFrame = pSlice->GetCurrentFrame();
+        if (!pCurrentFrame)
+            throw h265_exception(UMC_ERR_FAILED);
 
         Ipp32s first_slice = 0;
 
@@ -70,6 +77,11 @@ namespace UMC_HEVC_DECODER
             if (pSeqParamSet->scaling_list_enabled_flag)
             {
                 PackQmatrix(pSlice);
+            }
+
+            if (pPicParamSet->tiles_enabled_flag || pPicParamSet->entropy_coding_sync_enabled_flag)
+            {
+                PackSubsets(frame);
             }
 
             Ipp32u sliceNum = 0;
@@ -116,6 +128,9 @@ namespace UMC_HEVC_DECODER
             break;
         }
     }
+
+    void PackerDXVA2::PackSubsets(const H265DecoderFrame *)
+    { /* Nothing to do here, derived classes could extend behavior */ }
 
     template <typename T>
     void PackerDXVA2::PackQmatrix(H265Slice const* pSlice, T* pQmatrix)
