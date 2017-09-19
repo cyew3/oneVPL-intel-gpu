@@ -146,10 +146,10 @@ mfxStatus PredictorsRepaking::RepackPredictorsPerformance(const HevcTask& eTask,
                 }
                 else
                 {
-                    mfxU32 preencCUIdx; // index CU from PreENC output
-                    mfxU32 rowMVIdx;    // row index for motion vector
-                    mfxU32 colMVIdx;    // column index for motion vector
-                    mfxU32 preencMVIdx; // linear index for motion vector
+                    mfxU32 preencCUIdx = 0; // index CU from PreENC output
+                    mfxU32 rowMVIdx;        // row index for motion vector
+                    mfxU32 colMVIdx;        // column index for motion vector
+                    mfxU32 preencMVIdx = 0; // linear index for motion vector
 
                     switch (m_downsample_power2)
                     {
@@ -172,7 +172,6 @@ mfxStatus PredictorsRepaking::RepackPredictorsPerformance(const HevcTask& eTask,
                         preencMVIdx = rowMVIdx / 2 * 4 + colMVIdx / 2;
                         break;
                     default:
-                        preencMVIdx = 0;
                         break;
                     }
 
@@ -260,10 +259,10 @@ mfxStatus PredictorsRepaking::RepackPredictorsQuality(const HevcTask& eTask, mfx
                 }
                 else
                 {
-                    mfxU32 preencCUIdx; // index CU from PreENC output
-                    mfxU32 rowMVIdx;    // row index for motion vector
-                    mfxU32 colMVIdx;    // column index for motion vector
-                    mfxU32 preencMVIdx; // linear index for motion vector
+                    mfxU32 preencCUIdx = 0; // index CU from PreENC output
+                    mfxU32 rowMVIdx;        // row index for motion vector
+                    mfxU32 colMVIdx;        // column index for motion vector
+                    mfxU32 preencMVIdx = 0; // linear index for motion vector
 
                     switch (m_downsample_power2)
                     {
