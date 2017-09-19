@@ -26,6 +26,8 @@
 
 #include "umc_frame_allocator.h"
 
+#include <algorithm>
+
 #define OVERFLOW_CHECK_VALUE    0x11
 
 using namespace UMC;
@@ -71,6 +73,87 @@ private:
     T * m_ptr;
     deleter_func m_func;
 };
+
+void* DXAccelerator::GetCompBuffer(Ipp32s type, UMCVACompBuffer **buf, Ipp32s /*size*/, Ipp32s /*index*/)
+{
+    UMCVACompBuffer* buffer = FindBuffer(type);
+    if (!buffer->GetPtr())
+    {
+        buffer->type = type;
+        Status sts = GetCompBufferInternal(buffer);
+        if (sts != UMC_OK)
+            return NULL;
+
+        m_bufferOrder.push_back(type);
+    }
+
+    Ipp8u* data = reinterpret_cast<Ipp8u*>(buffer->GetPtr());
+    if (!data)
+        return NULL;
+
+#if defined(DEBUG) || defined(_DEBUG)
+    Ipp32s const buffer_size = buffer->GetBufferSize();
+    data[buffer_size - 1] = OVERFLOW_CHECK_VALUE;
+#endif
+
+    if (buf)
+    {
+        *buf = buffer;
+    }
+
+    return data;
+}
+
+//////////////////////////////////////////////////////////////
+
+Status DXAccelerator::ReleaseBuffer(Ipp32s type)
+{
+    UMCVACompBuffer* buffer = FindBuffer(type);
+    if (!buffer)
+        return UMC_ERR_FAILED;
+
+#if defined(DEBUG) || defined(_DEBUG)
+    if (type == DXVA_SLICE_CONTROL_BUFFER ||
+        type == DXVA_BITSTREAM_DATA_BUFFER ||
+        type == DXVA_MACROBLOCK_CONTROL_BUFFER ||
+        type == DXVA_RESIDUAL_DIFFERENCE_BUFFER)
+    {
+        Ipp8u const* data = reinterpret_cast<Ipp8u const*>(buffer->GetPtr());
+        Ipp32s const buffer_size = buffer->GetBufferSize();
+
+        if (data[buffer_size - 1] != OVERFLOW_CHECK_VALUE)
+        {
+            vm_debug_trace4(VM_DEBUG_ERROR, VM_STRING("Buffer%d overflow!!! %x[%d] = %x\n"), type, data, buffer_size, data[buffer_size - 1]);
+        }
+
+        //VM_ASSERT(pBuffer[buffer_size - 1] == OVERFLOW_CHECK_VALUE);
+    }
+#endif
+
+    return ReleaseBufferInternal(buffer);
+}
+
+inline
+Ipp32s GetBufferIndex(Ipp32s buffer_type)
+{
+    //use incoming [buffer_type] as direct index in [UMCVACompBuffer] if it less then DXVA_NUM_TYPES_COMP_BUFFERS,
+    //otherwise re-index it in a way to fall in a range (DXVA_NUM_TYPES_COMP_BUFFERS, MAX_BUFFER_TYPES)
+    return buffer_type > DXVA_NUM_TYPES_COMP_BUFFERS ?
+        DXVA_NUM_TYPES_COMP_BUFFERS + (buffer_type % (MAX_BUFFER_TYPES - DXVA_NUM_TYPES_COMP_BUFFERS)) :
+        buffer_type
+        ;
+}
+
+UMCVACompBuffer* DXAccelerator::FindBuffer(Ipp32s type)
+{
+    Ipp32s const buffer_index = GetBufferIndex(type);
+
+    UMC_CHECK(buffer_index >= 0, NULL);
+    UMC_CHECK(buffer_index < MAX_BUFFER_TYPES, NULL);
+
+    return
+        &m_pCompBuffer[buffer_index];
+}
 
 DXVA2Accelerator::DXVA2Accelerator():
     m_pDirect3DDeviceManager9(NULL),
@@ -141,94 +224,19 @@ Status DXVA2Accelerator::BeginFrame(Ipp32s index)
 
 Status DXVA2Accelerator::EndFrame(void * handle)
 {
-    for (Ipp32u j = 0; j < m_bufferOrder.size(); ++j)
-    {
-        ReleaseBuffer(m_bufferOrder[j]);
-    }
+    std::for_each(std::begin(m_bufferOrder), std::end(m_bufferOrder),
+        [this](Ipp32s type)
+        { ReleaseBuffer(type);  }
+    );
 
     m_bufferOrder.clear();
 
-    for (int i = 0; i < MAX_BUFFER_TYPES; i++)
-    {
-        m_pCompBuffer[i].SetBufferPointer(NULL, 0);
-    }
-
     HRESULT hr = m_pDXVAVideoDecoder->EndFrame((HANDLE*)handle);
-
     if (FAILED(hr))
         return UMC::UMC_ERR_DEVICE_FAILED;
 
     CHECK_HR(hr);
     return UMC::UMC_OK;
-}
-
-//////////////////////////////////////////////////////////////
-
-void* DXVA2Accelerator::GetCompBuffer(Ipp32s buffer_type, UMCVACompBuffer **buf, Ipp32s /*size*/, Ipp32s /*index*/)
-{
-    UMC_CHECK(buffer_type >= 0, NULL);
-    UMC_CHECK(buffer_type < MAX_BUFFER_TYPES, NULL);
-    UMCVACompBuffer *pCompBuffer = &m_pCompBuffer[buffer_type];
-
-    if (!pCompBuffer->GetPtr())
-    {
-        void *pBuffer = NULL;
-        UINT uBufferSize = 0;
-        HRESULT hr = m_pDXVAVideoDecoder->GetBuffer(buffer_type - 1, &pBuffer, &uBufferSize);
-        if (FAILED(hr))
-        {
-            vm_trace_x(hr);
-            VM_ASSERT(SUCCEEDED(hr));
-            return NULL;
-        }
-        pCompBuffer->type = buffer_type;
-        pCompBuffer->SetBufferPointer((Ipp8u*)pBuffer, uBufferSize);
-        pCompBuffer->SetDataSize(0);
-
-#if defined(DEBUG) || defined(_DEBUG)
-        ((Ipp8u*)pBuffer)[uBufferSize - 1] = OVERFLOW_CHECK_VALUE;
-#endif
-
-        m_bufferOrder.push_back(buffer_type);
-    }
-
-    if (buf)
-    {
-        *buf = pCompBuffer;
-    }
-
-    return pCompBuffer->GetPtr();
-}
-
-//////////////////////////////////////////////////////////////
-
-Status DXVA2Accelerator::ReleaseBuffer(Ipp32s type)
-{
-    HRESULT hr = S_OK;
-    UMCVACompBuffer *pCompBuffer = &m_pCompBuffer[type];
-
-    hr = m_pDXVAVideoDecoder->ReleaseBuffer(type - 1);
-    CHECK_HR(hr);
-
-#if defined(DEBUG) || defined(_DEBUG)
-    if (type == DXVA_SLICE_CONTROL_BUFFER ||
-        type == DXVA_BITSTREAM_DATA_BUFFER ||
-        type == DXVA_MACROBLOCK_CONTROL_BUFFER ||
-        type == DXVA_RESIDUAL_DIFFERENCE_BUFFER)
-    {
-        Ipp8u *pBuffer = (Ipp8u*)pCompBuffer->GetPtr();
-        Ipp32s buffer_size = pCompBuffer->GetBufferSize();
-        if (pBuffer[buffer_size - 1] != OVERFLOW_CHECK_VALUE)
-        {
-            vm_debug_trace4(VM_DEBUG_ERROR, VM_STRING("Buffer%d overflow!!! %x[%d] = %x\n"), type, pBuffer, buffer_size, pBuffer[buffer_size - 1]);
-        }
-        //VM_ASSERT(pBuffer[buffer_size - 1] == OVERFLOW_CHECK_VALUE);
-    }
-#endif
-
-    pCompBuffer->SetBufferPointer(NULL, 0);
-
-    return UMC_OK;
 }
 
 //////////////////////////////////////////////////////////////
@@ -256,11 +264,10 @@ Status DXVA2Accelerator::Execute()
 
     ZeroMemory(pBufferDesc, sizeof(pBufferDesc));
 
-    for (Ipp32u j = 0; j < m_bufferOrder.size(); ++j)
+    for (Ipp32s const type : m_bufferOrder)
     {
-        Ipp32u i = m_bufferOrder[j];
+        UMCVACompBuffer const* pCompBuffer = FindBuffer(type);
 
-        UMCVACompBuffer *pCompBuffer = &m_pCompBuffer[i];
         if (!pCompBuffer->GetPtr()) continue;
         if (!pCompBuffer->GetBufferSize()) continue;
 
@@ -269,7 +276,7 @@ Status DXVA2Accelerator::Execute()
         if (pCompBuffer->FirstMb > 0) FirstMb = pCompBuffer->FirstMb;
         if (pCompBuffer->NumOfMB > 0) NumOfMB = pCompBuffer->NumOfMB;
 
-        pBufferDesc[n].CompressedBufferType = i - 1;
+        pBufferDesc[n].CompressedBufferType = pCompBuffer->type - 1;
         pBufferDesc[n].NumMBsInBuffer = NumOfMB;
         pBufferDesc[n].DataSize = pCompBuffer->GetDataSize();
         pBufferDesc[n].BufferIndex = 0;
@@ -284,7 +291,7 @@ Status DXVA2Accelerator::Execute()
 
         //dumpFile(pCompBuffer->GetPtr(), pCompBuffer->GetDataSize(), n);
 
-        ReleaseBuffer(i);
+        ReleaseBuffer(type);
     }
 
     pExecuteParams->NumCompBuffers = n;
@@ -368,6 +375,42 @@ Status DXVA2Accelerator::ExecuteStatusReportBuffer(void * buffer, Ipp32s size)
         return UMC::UMC_ERR_DEVICE_FAILED;
 
     CHECK_HR(hr);
+    return UMC_OK;
+}
+
+Status DXVA2Accelerator::GetCompBufferInternal(UMCVACompBuffer* buffer)
+{
+    VM_ASSERT(buffer);
+
+    Ipp32s const type = buffer->GetType();
+
+    void* data = NULL;
+    UINT buffer_size = 0;
+    HRESULT hr = m_pDXVAVideoDecoder->GetBuffer(type - 1, &data, &buffer_size);
+    if (FAILED(hr))
+    {
+        vm_trace_x(hr);
+        VM_ASSERT(SUCCEEDED(hr));
+
+        return UMC_ERR_FAILED;
+    }
+
+    buffer->SetBufferPointer(reinterpret_cast<Ipp8u*>(data), buffer_size);
+    buffer->SetDataSize(0);
+
+    return UMC_OK;
+}
+
+Status DXVA2Accelerator::ReleaseBufferInternal(UMCVACompBuffer* buffer)
+{
+    VM_ASSERT(buffer);
+
+    Ipp32s const type = buffer->GetType();
+    HRESULT hr = m_pDXVAVideoDecoder->ReleaseBuffer(type - 1);
+    CHECK_HR(hr);
+
+    buffer->SetBufferPointer(NULL, 0);
+
     return UMC_OK;
 }
 

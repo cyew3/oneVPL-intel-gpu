@@ -167,40 +167,6 @@ mfxStatus MFXD3D11Accelerator::GetSuitVideoDecoderConfig(const mfxVideoParam    
 
 } //mfxStatus MFXD3D11Accelerator::GetSuitVideoDecoderConfig
 
-void* MFXD3D11Accelerator::GetCompBuffer(Ipp32s buffer_type, UMC::UMCVACompBuffer **buf, Ipp32s size, Ipp32s index)
-{
-    size; index;
-    UMC_CHECK(buffer_type >= 0, NULL);
-    UMC_CHECK(buffer_type < MAX_BUFFER_TYPES, NULL);
-    UMCVACompBuffer *pCompBuffer = &m_pCompBuffer[buffer_type];
-
-    if (!pCompBuffer->GetPtr())
-    {
-        void *pBuffer = NULL;
-        UINT uBufferSize = 0;
-        HRESULT hr = m_pVideoContext->GetDecoderBuffer(m_pDecoder, MapDXVAToD3D11BufType(buffer_type), &uBufferSize,  &pBuffer);
-        if (FAILED(hr))
-        {
-            vm_trace_x(hr);
-            VM_ASSERT(SUCCEEDED(hr));
-            return NULL;
-        }
-
-        pCompBuffer->type = buffer_type;
-        pCompBuffer->SetBufferPointer((Ipp8u*)pBuffer, uBufferSize);
-        pCompBuffer->SetDataSize(0);
-
-        m_bufferOrder.push_back(buffer_type);
-    }
-
-    if (buf)
-    {
-        *buf = pCompBuffer;
-    }
-
-    return pCompBuffer->GetPtr();
-
-} // void* MFXD3D11Accelerator::GetCompBuffer(Ipp32s buffer_type, UMC::UMCVACompBuffer **buf, Ipp32s size, Ipp32s index)
 
 D3D11_VIDEO_DECODER_BUFFER_TYPE MFXD3D11Accelerator::MapDXVAToD3D11BufType(const Ipp32s DXVABufType) const
 {
@@ -270,10 +236,10 @@ Status  MFXD3D11Accelerator::BeginFrame(Ipp32s index)
 
 Status MFXD3D11Accelerator::EndFrame(void *handle)
 {
-    for (Ipp32u j = 0; j < m_bufferOrder.size(); ++j)
-    {
-        ReleaseBuffer(m_bufferOrder[j]); 
-    }
+    std::for_each(std::begin(m_bufferOrder), std::end(m_bufferOrder),
+        [this](Ipp32s type)
+        { ReleaseBuffer(type);  }
+    );
 
     m_bufferOrder.clear();
 
@@ -283,7 +249,7 @@ Status MFXD3D11Accelerator::EndFrame(void *handle)
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "DecoderEndFrame");
         hr = m_pVideoContext->DecoderEndFrame(m_pDecoder);
     }
-    if SUCCEEDED(hr)
+    if (SUCCEEDED(hr))
     {
         //Sleep(100);
         return UMC_OK;
@@ -293,16 +259,39 @@ Status MFXD3D11Accelerator::EndFrame(void *handle)
 
 } //Status MFXD3D11Accelerator::EndFrame(void *handle)
 
-Status MFXD3D11Accelerator::ReleaseBuffer(Ipp32s type)
+Status MFXD3D11Accelerator::GetCompBufferInternal(UMCVACompBuffer* buffer)
 {
-    HRESULT hr = S_OK;
-    UMCVACompBuffer *pCompBuffer = &m_pCompBuffer[type];
+    VM_ASSERT(buffer);
 
-    hr = m_pVideoContext->ReleaseDecoderBuffer(m_pDecoder, MapDXVAToD3D11BufType(type));
+    Ipp32s const type = buffer->GetType();
+
+    void* data = NULL;
+    UINT buffer_size = 0;
+    HRESULT hr = m_pVideoContext->GetDecoderBuffer(m_pDecoder, MapDXVAToD3D11BufType(type), &buffer_size,  &data);
+    if (FAILED(hr))
+    {
+        vm_trace_x(hr);
+        VM_ASSERT(SUCCEEDED(hr));
+
+        return UMC_ERR_FAILED;
+    }
+
+    buffer->SetBufferPointer(reinterpret_cast<Ipp8u*>(data), buffer_size);
+    buffer->SetDataSize(0);
+
+    return UMC_OK;
+}
+
+Status MFXD3D11Accelerator::ReleaseBufferInternal(UMCVACompBuffer* buffer)
+{
+    VM_ASSERT(buffer);
+
+    Ipp32s const type = buffer->GetType();
+    HRESULT hr = m_pVideoContext->ReleaseDecoderBuffer(m_pDecoder, MapDXVAToD3D11BufType(type));
     if (FAILED(hr))
         return UMC_ERR_DEVICE_FAILED;
-    
-    pCompBuffer->SetBufferPointer(NULL, 0);
+
+    buffer->SetBufferPointer(NULL, 0);
     return UMC_OK;
 
 } // Status MFXD3D11Accelerator::ReleaseBuffer(Ipp32s type)
@@ -316,11 +305,10 @@ Status MFXD3D11Accelerator::Execute()
 
     ZeroMemory(pSentBuffer, sizeof(pSentBuffer));
 
-    for (Ipp32u j = 0; j < m_bufferOrder.size(); ++j)
+    for (Ipp32s const type : m_bufferOrder)
     {
-        Ipp32u i = m_bufferOrder[j];
+        UMCVACompBuffer const* pCompBuffer = FindBuffer(type);
 
-        UMCVACompBuffer *pCompBuffer = &m_pCompBuffer[i];
         if (!pCompBuffer->GetPtr()) continue;
         if (!pCompBuffer->GetBufferSize()) continue;
 
@@ -343,9 +331,10 @@ Status MFXD3D11Accelerator::Execute()
         pSentBuffer[n].IVSize = pCompBuffer->GetPVPStateSize();
         pSentBuffer[n].PartialEncryption = FALSE;
         n++;
-        ReleaseBuffer(i);
+
+        ReleaseBuffer(type);
     }
-    
+
     {
         //MFX_AUTO_LTRACE_WITHID(MFX_TRACE_LEVEL_EXTCALL, "DXVA2_DecodeExecute");
         {
@@ -354,6 +343,7 @@ Status MFXD3D11Accelerator::Execute()
         }
 
     }
+
     m_bufferOrder.clear();
 
     if (FAILED(hr))

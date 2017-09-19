@@ -150,9 +150,34 @@ namespace UMC
 {
 
 ///////////////////////////////////////////////////////////////////////////////////
-class DXVA2Accelerator : public VideoAccelerator
+
+class DXAccelerator : public VideoAccelerator
 {
-    DYNAMIC_CAST_DECL(DXVA2Accelerator, VideoAccelerator);
+    DYNAMIC_CAST_DECL(DXAccelerator, VideoAccelerator);
+
+public:
+
+    void* GetCompBuffer(Ipp32s type, UMCVACompBuffer **buf = NULL, Ipp32s size = -1, Ipp32s index = -1);
+    Status ReleaseBuffer(Ipp32s type);
+
+private:
+
+    virtual Status GetCompBufferInternal(UMCVACompBuffer*) = 0;
+    virtual Status ReleaseBufferInternal(UMCVACompBuffer*) = 0;
+
+protected:
+
+    UMCVACompBuffer* FindBuffer(Ipp32s type);
+
+protected:
+
+    UMCVACompBuffer         m_pCompBuffer[MAX_BUFFER_TYPES];
+    std::vector<Ipp32s>     m_bufferOrder;
+};
+
+class DXVA2Accelerator : public DXAccelerator
+{
+    DYNAMIC_CAST_DECL(DXVA2Accelerator, DXAccelerator);
 
 public:
     DXVA2Accelerator();
@@ -164,13 +189,11 @@ public:
     virtual Status Close(void);
 
     virtual Status BeginFrame(Ipp32s index);
-    virtual void* GetCompBuffer(Ipp32s buffer_type, UMCVACompBuffer **buf = NULL, Ipp32s size = -1, Ipp32s index = -1);
     virtual Status Execute();
     virtual Status ExecuteExtensionBuffer(void * buffer);
     virtual Status ExecuteStatusReportBuffer(void * buffer, Ipp32s size);
     virtual Status SyncTask(Ipp32s index, void * error = NULL) { index; error; return UMC_ERR_UNSUPPORTED;}
     virtual Status QueryTaskStatus(Ipp32s , void *, void * ) { return UMC_ERR_UNSUPPORTED;}
-    virtual Status ReleaseBuffer(Ipp32s type);
     virtual Status EndFrame(void * handle = 0);
 
     virtual bool IsIntelCustomGUID() const;
@@ -195,21 +218,24 @@ protected:
                           DXVA2_ConfigPictureDecode     *pDecoderConfig,
                           int                           cNumberSurfaces);
 
+private:
+
+    Status GetCompBufferInternal(UMCVACompBuffer*);
+    Status ReleaseBufferInternal(UMCVACompBuffer*);
+
+protected:
+
     BOOL                    m_bInitilized;
     GUID                    m_guidDecoder;
     DXVA2_ConfigPictureDecode m_Config;
     DXVA2_VideoDesc         m_videoDesc;
-    UMCVACompBuffer         m_pCompBuffer[MAX_BUFFER_TYPES];
 
     IDirect3DDeviceManager9 *m_pDirect3DDeviceManager9;
     IDirectXVideoDecoderService *m_pDecoderService;
     IDirectXVideoDecoder    *m_pDXVAVideoDecoder;
     HANDLE                  m_hDevice;
 
-protected:
     bool    m_bIsExtManager;
-
-    std::vector<Ipp32s>  m_bufferOrder;
 };
 
 #ifndef SAFE_RELEASE
