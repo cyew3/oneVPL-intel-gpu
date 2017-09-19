@@ -3460,7 +3460,7 @@ The SDK API 1.13 adds `UseRawRef` field.
 
 The SDK API 1.17 deprecates `ExtBRC` field.
 
-The SDK API **TBD** returns `ExtBRC` field.
+The SDK API 1.24 returns `ExtBRC` field.
 
 ## <a id='mfxExtCodingOption3'>mfxExtCodingOption3</a>
 
@@ -3521,8 +3521,12 @@ typedef struct {
     mfxU16      BRCPanicMode;              /* tri-state option */
     mfxU16      LowDelayBRC;               /* tri-state option */
     mfxU16      EnableMBForceIntra;        /* tri-state option */
+    mfxU16      AdaptiveMaxFrameSize;      /* tri-state option */
+    mfxU16      RepartitionCheckEnable;    /* tri-state option */
 
-    mfxU16      reserved5[5];
+    mfxU16      QuantScaleType;
+    mfxU16      IntraVLCFormat;
+    mfxU16      ScanType;
 
     mfxU16      SliceSizeReport;           /* tri-state option */
 
@@ -3574,6 +3578,9 @@ The application can attach this extended buffer to the [mfxVideoParam](#mfxVideo
 `EnableMBForceIntra` | Turn ON this option to enable usage of [mfxExtMBForceIntra](#mfxExtMBForceIntra) for AVC encoder. See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option. This parameter is valid only during initialization.
 `AdaptiveMaxFrameSize` | If this option is ON, BRC may decide a larger P or B frame size than what [MaxFrameSizeP](#MaxFrameSizeP) dictates when the scene change is detected. It may benefit the video quality.
 `RepartitionCheckEnable` | Controls AVC encoder attempts to predict from small partitions. Default value allows encoder to choose preferred mode, `MFX_CODINGOPTION_ON` forces encoder to favor quality, `MFX_CODINGOPTION_OFF` forces encoder to favor performance.
+`QuantScaleType` | For MPEG2 specifies mapping between quantiser_scale_code and quantiser_scale (see [QuantScaleType](#QuantScaleType) enum).
+`IntraVLCFormat` | For MPEG2 specifies which table shall be used for coding of DCT coefficients of intra macroblocks (see [IntraVLCFormat](#IntraVLCFormat) enum).
+`ScanType` | For MPEG2 specifies transform coefficients scan pattern (see [ScanType](#ScanType) enum).
 `SliceSizeReport` | Turn this option ON to make slice info available in [mfxExtEncodedUnitsInfo](#mfxExtEncodedUnitsInfo).
 
 
@@ -6473,7 +6480,7 @@ Structure contains set of callbacks to perform external bit rate control. Can be
 
 **Change History**
 
-This structure is available since SDK API **TBD**.
+This structure is available since SDK API 1.24.
 
 ### <a id='BRCInit'>Init</a>
 
@@ -6503,7 +6510,7 @@ This function initializes BRC session according to parameters from input [mfxVid
 
 **Change History**
 
-This function is available since SDK API **TBD**.
+This function is available since SDK API 1.24.
 
 
 ### <a id='BRCReset'>Reset</a>
@@ -6535,7 +6542,7 @@ This function resets BRC session according to new parameters. It does not modify
 
 **Change History**
 
-This function is available since SDK API **TBD**.
+This function is available since SDK API 1.24.
 
 ### <a id='BRCClose'>Close</a>
 
@@ -6563,7 +6570,7 @@ This function de-allocates any internal resources acquired in [Init](#BRCInit) f
 
 **Change History**
 
-This function is available since SDK API **TBD**.
+This function is available since SDK API 1.24.
 
 
 ### <a id='BRCGetFrameCtrl'>GetFrameCtrl</a>
@@ -6594,7 +6601,7 @@ This function returns [controls](#mfxBRCFrameCtrl) (`ctrl`) to encode next frame
 
 **Change History**
 
-This function is available since SDK API **TBD**.
+This function is available since SDK API 1.24.
 
 
 ### <a id='BRCUpdate'>Update</a>
@@ -6626,7 +6633,7 @@ This function updates internal BRC state and returns [status](#mfxBRCFrameStatus
 
 **Change History**
 
-This function is available since SDK API **TBD**.
+This function is available since SDK API 1.24.
 
 ## <a id='mfxBRCFrameParam'>mfxBRCFrameParam</a>
 
@@ -6664,7 +6671,7 @@ Structure describes frame parameters required for external BRC functions.
 
 **Change History**
 
-This structure is available since SDK API **TBD**.
+This structure is available since SDK API 1.24.
 
 ## <a id='mfxBRCFrameCtrl'>mfxBRCFrameCtrl</a>
 
@@ -6690,7 +6697,7 @@ Structure specifies controls for next frame encoding provided by external BRC fu
 
 **Change History**
 
-This structure is available since SDK API **TBD**.
+This structure is available since SDK API 1.24.
 
 ## <a id='mfxBRCFrameStatus'>mfxBRCFrameStatus</a>
 
@@ -6718,7 +6725,7 @@ Structure specifies instructions for the SDK encoder provided by external BRC af
 
 **Change History**
 
-This structure is available since SDK API **TBD**
+This structure is available since SDK API 1.24.
 
 ## <a id='mfxExtMultiFrameParam'>mfxExtMultiFrameParam</a>
 
@@ -7151,6 +7158,8 @@ SDK API 1.19 adds `MFX_EXTBUFF_ENCODED_SLICES_INFO`, `MFX_EXTBUFF_MV_OVER_PIC_BO
 SDK API 1.22 adds `MFX_EXTBUFF_DEC_VIDEO_PROCESSING`.
 
 SDK API 1.23 adds `MFX_EXTBUFF_MB_FORCE_INTRA`.
+
+SDK API 1.24 adds `MFX_EXTBUFF_BRC`.
 
 SDK API **TBD** adds `MFX_EXTBUFF_VP9_PARAM`, `MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO`, `MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME`, `MFX_EXTBUFF_BRC`, `MFX_EXTBUFF_MULTI_FRAME_PARAM`, `MFX_EXTBUFF_MULTI_FRAME_CONTROL`, `MFX_EXTBUFF_ENCODED_UNITS_INFO`.
 
@@ -8069,7 +8078,7 @@ The `BRCStatus` enumerator itemizes instructions to the SDK encoder by [mfxExtBr
 
 **Change History**
 
-This enumerator is available since SDK API **TBD**.
+This enumerator is available since SDK API 1.24.
 
 ## <a id='MFMode'>MFMode</a>
 
