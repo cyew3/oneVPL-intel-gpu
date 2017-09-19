@@ -34,7 +34,22 @@ File Name: mfx_dxva2_device.h
 #if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
 
-#define MFX_D3D9_ENABLED
+#define TOSTRING(L) #L
+#define STRINGIFY(L) TOSTRING(L)
+
+#if defined(MEDIASDK_UWP_LOADER) || defined(MEDIASDK_UWP_PROCTABLE)
+    #if defined(MFX_D3D9_ENABLED) && !defined(MFX_FORCE_D3D9_ENABLED)
+        #undef MFX_D3D9_ENABLED
+        // if you really like to use D3D9 from intel_gfx_api-x64/x86.dll, use MFX_FORCE_D3D9_ENABLED
+        #pragma message("\n\nATTENTION:\nin file\n\t" __FILE__ " (" STRINGIFY(__LINE__) "):\nUsing of D3D9 disabled for UWP!\n\n")
+    #endif
+    #if defined(MFX_FORCE_D3D9_ENABLED)
+        #define MFX_D3D9_ENABLED
+    #endif
+#else
+    #define MFX_D3D9_ENABLED
+    #pragma message("\n\nATTENTION:\nin file\n\t" __FILE__ " (" STRINGIFY(__LINE__) "):\nUsing of D3D9 enabled!\n\n")
+#endif
 
 #endif // #if defined(_WIN32) || defined(_WIN64)
 
@@ -46,7 +61,7 @@ File Name: mfx_dxva2_device.h
 #define DXVA2DEVICE_TRACE_OPERATION(expr) expr;
 #else
 #define DXVA2DEVICE_TRACE(expr)
-#define DXVA2DEVICE_TRACE_OPERATION(expr) 
+#define DXVA2DEVICE_TRACE_OPERATION(expr)
 #endif
 
 namespace MFX

@@ -104,26 +104,30 @@ void DXDevice::Close(void)
 
 void DXDevice::LoadDLLModule(const wchar_t *pModuleName)
 {
-    DWORD prevErrorMode = 0;
-
     // unload the module if it is required
     UnloadDLLModule();
 
+#if !defined(MEDIASDK_UWP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE)
+    DWORD prevErrorMode = 0;
     // set the silent error mode
 #if (_WIN32_WINNT >= 0x0600) && !(__GNUC__)
     SetThreadErrorMode(SEM_FAILCRITICALERRORS, &prevErrorMode); 
 #else
     prevErrorMode = SetErrorMode(SEM_FAILCRITICALERRORS);
 #endif
+#endif // !defined(MEDIASDK_UWP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE)
+
     // load specified library
     m_hModule = LoadLibraryExW(pModuleName, NULL, 0);
 
+#if !defined(MEDIASDK_UWP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE)
     // set the previous error mode
 #if (_WIN32_WINNT >= 0x0600) && !(__GNUC__)
     SetThreadErrorMode(prevErrorMode, NULL);
 #else
     SetErrorMode(prevErrorMode);
 #endif
+#endif //!defined(MEDIASDK_UWP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE)
 
 } // void LoadDLLModule(const wchar_t *pModuleName)
 
@@ -329,15 +333,17 @@ bool DXGI1Device::Init(const mfxU32 adapterNum)
 
     if (m_hModule)
     {
-        DXGICreateFactoryFunc pFunc;
-        IDXGIFactory1 *pFactory;
-        IDXGIAdapter1 *pAdapter;
-        DXGI_ADAPTER_DESC1 desc;
-        mfxU32 curAdapter, maxAdapters;
-        HRESULT hRes;
+        DXGICreateFactoryFunc pFunc = nullptr;
+        IDXGIFactory1 *pFactory = nullptr;
+        IDXGIAdapter1 *pAdapter = nullptr;
+        DXGI_ADAPTER_DESC1 desc = { 0 };
+        mfxU32 curAdapter = 0;
+        mfxU32 maxAdapters = 0;
+        HRESULT hRes = E_FAIL;
 
         // load address of procedure to create DXGI 1.1 factory
         pFunc = (DXGICreateFactoryFunc) GetProcAddress(m_hModule, "CreateDXGIFactory1");
+
         if (NULL == pFunc)
         {
             return false;

@@ -1,0 +1,51 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="src\mfx_dispatcher.cpp" />
+    <ClCompile Include="src\mfx_dispatcher_log.cpp" />
+    <ClCompile Include="src\mfx_function_table.cpp" />
+    <ClCompile Include="src\main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\mfxaudio_exposed_functions_list.h" />
+    <ClInclude Include="include\mfx_dispatcher.h" />
+    <ClInclude Include="include\mfx_dispatcher_defs.h" />
+    <ClInclude Include="include\mfx_dispatcher_log.h" />
+    <ClInclude Include="include\mfx_exposed_functions_list.h" />
+    <ClInclude Include="include\mfx_vector.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Documentation">
+      <UniqueIdentifier>{a76fc74b-469b-40f4-888b-abe6d364d3e2}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\documentation\header-template.md">
+      <Filter>Documentation</Filter>
+    </None>
+    <None Include="..\..\documentation\media-raw-accelerator-man.md">
+      <Filter>Documentation</Filter>
+    </None>
+    <None Include="..\..\documentation\mediasdkfei-man.md">
+      <Filter>Documentation</Filter>
+    </None>
+    <None Include="..\..\documentation\mediasdkjpeg-man.md">
+      <Filter>Documentation</Filter>
+    </None>
+    <None Include="..\..\documentation\mediasdk-man.md">
+      <Filter>Documentation</Filter>
+    </None>
+    <None Include="..\..\documentation\mediasdkmvc-man.md">
+      <Filter>Documentation</Filter>
+    </None>
+    <None Include="..\..\documentation\mediasdkscreencap-man.md">
+      <Filter>Documentation</Filter>
+    </None>
+    <None Include="..\..\documentation\mediasdkusr-man.md">
+      <Filter>Documentation</Filter>
+    </None>
+    <None Include="..\..\documentation\mediasdkvp8-man.md">
+      <Filter>Documentation</Filter>
+    </None>
+  </ItemGroup>
+</Project>

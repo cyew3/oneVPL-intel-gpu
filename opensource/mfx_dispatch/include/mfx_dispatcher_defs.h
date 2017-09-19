@@ -37,6 +37,9 @@ File Name: mfx_dispatcher_defs.h
 #include <string.h>
 #endif
 
+#define MAX_PLUGIN_PATH 4096
+#define MAX_PLUGIN_NAME 4096
+
 #if defined(_WIN32) || defined(_WIN64)
 typedef wchar_t  msdk_disp_char;
 #define MSDK2WIDE(x) x

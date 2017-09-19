@@ -110,6 +110,8 @@ MFX::PluginModule::~PluginModule(void)
     Tidy();
 }
 
+#if !defined(MEDIASDK_UWP_PROCTABLE)
+
 bool MFX::MFXPluginFactory::RunVerification( const mfxPlugin & plg, const PluginDescriptionRecord &dsc, mfxPluginParam &pluginParams)
 {
     if (plg.PluginInit == 0)
@@ -457,3 +459,5 @@ void MFX::MFXPluginFactory::DestroyPlugin( FactoryRecord & record)
         TRACE_PLUGIN_INFO(" MFXVideoUSER_Unregister for Type=%d, returned %d\n", record.plgParams.Type, sts);
     }
 }
+
+#endif //!defined(MEDIASDK_UWP_PROCTABLE)
