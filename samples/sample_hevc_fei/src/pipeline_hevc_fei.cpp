@@ -122,13 +122,13 @@ void CEncodingPipeline::PrintInfo()
     msdk_printf(MSDK_STRING("\nIntel(R) Media SDK HEVC FEI Encoding Sample Version %s\n"), GetMSDKSampleVersion().c_str());
 
     const msdk_char* sPipeline = m_inParams.bPREENC && m_inParams.bENCODE ? MSDK_STRING("PreENC + Encode") : (m_inParams.bPREENC ? MSDK_STRING("PreENC") : MSDK_STRING("Encode"));
-    msdk_printf(MSDK_STRING("\nPipeline:\t%s"), sPipeline);
+    msdk_printf(MSDK_STRING("\nPipeline         :\t%s"), sPipeline);
 
     mfxFrameInfo sourceFrameInfo;
     m_pYUVSource->GetActualFrameInfo(sourceFrameInfo);
 
-    msdk_printf(MSDK_STRING("\nResolution:\t%dx%d"), sourceFrameInfo.Width, sourceFrameInfo.Height);
-    msdk_printf(MSDK_STRING("\nFrame rate:\t%d/%d = %.2f"), sourceFrameInfo.FrameRateExtN, sourceFrameInfo.FrameRateExtD, CalculateFrameRate(sourceFrameInfo.FrameRateExtN, sourceFrameInfo.FrameRateExtD));
+    msdk_printf(MSDK_STRING("\nResolution       :\t%dx%d"), sourceFrameInfo.Width, sourceFrameInfo.Height);
+    msdk_printf(MSDK_STRING("\nFrame rate       :\t%d/%d = %.2f"), sourceFrameInfo.FrameRateExtN, sourceFrameInfo.FrameRateExtD, CalculateFrameRate(sourceFrameInfo.FrameRateExtN, sourceFrameInfo.FrameRateExtD));
 
     MfxVideoParamsWrapper param;
     if (m_pFEI_Encode.get())
@@ -136,27 +136,27 @@ void CEncodingPipeline::PrintInfo()
     else if (m_pFEI_PreENC.get())
         param = m_pFEI_PreENC->GetVideoParam();
 
-    msdk_printf(MSDK_STRING("\n%s order"), param.mfx.EncodedOrder ? MSDK_STRING("Encoded") : MSDK_STRING("Display"));
-    msdk_printf(MSDK_STRING("\nGop Size:\t%d"), param.mfx.GopPicSize);
+    msdk_printf(MSDK_STRING("\nProcessing order :\t%s"), param.mfx.EncodedOrder ? MSDK_STRING("Encoded") : MSDK_STRING("Display"));
+    msdk_printf(MSDK_STRING("\nGop Size         :\t%d"), param.mfx.GopPicSize);
 
     mfxU16 gopOptFlag = param.mfx.GopOptFlag;
     const msdk_char* GopClosed = (gopOptFlag & MFX_GOP_CLOSED) == 0 ? MSDK_STRING("Open") : MSDK_STRING("Closed");
     const msdk_char* GopStrict = (gopOptFlag & MFX_GOP_STRICT) == 0 ? MSDK_STRING("Not Strict") : MSDK_STRING("Strict");
-    msdk_printf(MSDK_STRING("\nGopOptFlag:\t%s, %s"), GopClosed, GopStrict);
+    msdk_printf(MSDK_STRING("\nGopOptFlag       :\t%s, %s"), GopClosed, GopStrict);
 
     msdk_char idrInterval[6];
     msdk_itoa_decimal(param.mfx.IdrInterval, idrInterval);
-    msdk_printf(MSDK_STRING("\nIDR Interval:\t%s"), param.mfx.IdrInterval == 0xffff ? MSDK_STRING("Infinite") : MSDK_STRING(idrInterval));
+    msdk_printf(MSDK_STRING("\nIDR Interval     :\t%s"), param.mfx.IdrInterval == 0xffff ? MSDK_STRING("Infinite") : MSDK_STRING(idrInterval));
 
-    msdk_printf(MSDK_STRING("\nGopRefDist:\t%d"), param.mfx.GopRefDist);
-    msdk_printf(MSDK_STRING("\nNumRefFrame:\t%d"), param.mfx.NumRefFrame);
+    msdk_printf(MSDK_STRING("\nGopRefDist       :\t%d"), param.mfx.GopRefDist);
+    msdk_printf(MSDK_STRING("\nNumRefFrame      :\t%d"), param.mfx.NumRefFrame);
 
-    msdk_printf(MSDK_STRING("\nNumRefActiveP  :\t%d"), param.GetExtBuffer<mfxExtCodingOption3>()->NumRefActiveP[0]);
-    msdk_printf(MSDK_STRING("\nNumRefActiveBL0:\t%d"), param.GetExtBuffer<mfxExtCodingOption3>()->NumRefActiveBL0[0]);
-    msdk_printf(MSDK_STRING("\nNumRefActiveBL1:\t%d"), param.GetExtBuffer<mfxExtCodingOption3>()->NumRefActiveBL1[0]);
+    msdk_printf(MSDK_STRING("\nNumRefActiveP    :\t%d"), param.GetExtBuffer<mfxExtCodingOption3>()->NumRefActiveP[0]);
+    msdk_printf(MSDK_STRING("\nNumRefActiveBL0  :\t%d"), param.GetExtBuffer<mfxExtCodingOption3>()->NumRefActiveBL0[0]);
+    msdk_printf(MSDK_STRING("\nNumRefActiveBL1  :\t%d"), param.GetExtBuffer<mfxExtCodingOption3>()->NumRefActiveBL1[0]);
 
     mfxU16 bRefType = param.GetExtBuffer<mfxExtCodingOption2>()->BRefType;
-    msdk_printf(MSDK_STRING("\nB-pyramid\t%s"), bRefType ? (bRefType == MFX_B_REF_OFF ? MSDK_STRING("Off") : MSDK_STRING("On")) : MSDK_STRING("MSDK default"));
+    msdk_printf(MSDK_STRING("\nB-pyramid        :\t%s"), bRefType ? (bRefType == MFX_B_REF_OFF ? MSDK_STRING("Off") : MSDK_STRING("On")) : MSDK_STRING("MSDK default"));
 
     mfxVersion ver;
     m_mfxSession.QueryVersion(&ver);
