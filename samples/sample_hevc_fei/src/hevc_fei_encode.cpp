@@ -85,22 +85,16 @@ mfxStatus FEI_Encode::PreInit()
     // add FEI frame ctrl with default values
     mfxExtFeiHevcEncFrameCtrl* ctrl = m_encodeCtrl.AddExtBuffer<mfxExtFeiHevcEncFrameCtrl>();
     MSDK_CHECK_POINTER(ctrl, MFX_ERR_NOT_INITIALIZED);
-    ctrl->SearchPath                = 0;
-    ctrl->LenSP                     = 57;
-    ctrl->RefWidth                  = 32;
-    ctrl->RefHeight                 = 32;
-    ctrl->SearchWindow              = 5;
-    ctrl->NumMvPredictorsL0         = 0;
-    ctrl->NumMvPredictorsL1         = 0;
-    ctrl->MultiPredL0               = 0;
-    ctrl->MultiPredL1               = 0;
-    ctrl->SubPelMode                = 3;
-    ctrl->AdaptiveSearch            = 0;
-    ctrl->MVPredictor               = 0;
-    ctrl->PerCtbQp                  = 0;
-    ctrl->PerCtbInput               = 0;
-    ctrl->CoLocatedCtbDistortion    = 0;
-    ctrl->ForceLcuSplit             = 0;
+    ctrl->SubPelMode   = 3;
+    ctrl->SearchWindow = 5;
+    if (!ctrl->SearchWindow)
+    {
+        ctrl->SearchPath     = 0;
+        ctrl->LenSP          = 57;
+        ctrl->RefWidth       = 32;
+        ctrl->RefHeight      = 32;
+        ctrl->AdaptiveSearch = 1;
+    }
 
     // allocate ext buffer for input MV predictors required for Encode.
     if (m_repacker.get() || m_pFile_MVP_in.get())
