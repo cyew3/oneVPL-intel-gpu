@@ -8,7 +8,6 @@ Copyright(c) 2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
-#include <mutex>
 #include <map>
 #include "ts_encoder.h"
 #include "ts_decoder.h"
@@ -40,7 +39,6 @@ namespace vp9e_big_resolution
         CHECK_16K
     };
 
-
     struct tc_struct
     {
         mfxStatus sts;
@@ -57,16 +55,9 @@ namespace vp9e_big_resolution
     {
     public:
         static const unsigned int n_cases;
-        mfxExtVP9Segmentation *m_InitedSegmentExtParams;
-        mfxU32 m_SourceWidth;
-        mfxU32 m_SourceHeight;
-        std::mutex  m_frames_storage_mtx;
-
 
         TestSuite()
             : tsVideoEncoder(MFX_CODEC_VP9)
-            , m_SourceWidth(0)
-            , m_SourceHeight(0)
         {}
 
         ~TestSuite()
@@ -76,8 +67,6 @@ namespace vp9e_big_resolution
         int RunTest_Subtype(const unsigned int id);
 
         int RunTest(const tc_struct& tc, unsigned int fourcc_id);
-
-        mfxVideoParam const & GetEncodingParams() { return m_par; }
 
     private:
         static const tc_struct test_case[];
@@ -138,7 +127,7 @@ namespace vp9e_big_resolution
         /*
         // Dump stream to file
         const int encoded_size = bs.DataLength;
-        static FILE *fp_vp9 = fopen("vp9e_encoded_segmentation.vp9", "wb");
+        static FILE *fp_vp9 = fopen("vp9e_encoded.vp9", "wb");
         fwrite(bs.Data, encoded_size, 1, fp_vp9);
         fflush(fp_vp9);
         */
@@ -148,9 +137,9 @@ namespace vp9e_big_resolution
             tsParserVP9::UnitType& hdr = ParseOrDie();
 
             // do the decoder initialisation on the first encoded frame
-            if (m_DecodedFramesCount == 0)
+            if (m_DecodedFramesCount == 0 && !m_DecoderInited)
             {
-                const mfxU32 headers_shift = 12/*header*/ + (m_DecodedFramesCount == 0 ? 32/*ivf_header*/ : 0);
+                const mfxU32 headers_shift = IVF_PIC_HEADER_SIZE_BYTES + (m_DecodedFramesCount == 0 ? IVF_SEQ_HEADER_SIZE_BYTES : 0);
                 m_pBitstream->Data = bs.Data + headers_shift;
                 m_pBitstream->DataOffset = 0;
                 m_pBitstream->DataLength = bs.DataLength - headers_shift;
@@ -168,9 +157,6 @@ namespace vp9e_big_resolution
                     {
                         QueryIOSurf();
                     }
-                    // This is a workaround for the decoder (there is an issue with NumFrameSuggested and decoding superframes)
-                    m_request.NumFrameMin = 5;
-                    m_request.NumFrameSuggested = 10;
 
                     mfxStatus alloc_status = tsSurfacePool::AllocSurfaces(m_request, !m_use_memid);
                     if (alloc_status >= 0)
@@ -179,13 +165,13 @@ namespace vp9e_big_resolution
                     }
                     else
                     {
-                        ADD_FAILURE() << "WARNING: Could not allocate surfaces for the decoder, status " << alloc_status;
+                        g_tsLog << "ERROR: Could not allocate surfaces for the decoder, status " << alloc_status;
                         throw tsFAIL;
                     }
                 }
                 else
                 {
-                    ADD_FAILURE() << "WARNING: Could not inilialize the decoder, Init() returned " << init_status;
+                    g_tsLog << "ERROR: Could not inilialize the decoder, Init() returned " << init_status;
                     throw tsFAIL;
                 }
             }
@@ -207,14 +193,14 @@ namespace vp9e_big_resolution
 
                 if (sts < 0)
                 {
-                    ADD_FAILURE() << "ERROR: DecodeFrameAsync for frame " << hdr.FrameOrder << " failed with status: " << sts;
+                    g_tsLog << "ERROR: DecodeFrameAsync for frame " << hdr.FrameOrder << " failed with status: " << sts;
                     throw tsFAIL;
                 }
 
                 sts = SyncOperation();
                 if (sts < 0)
                 {
-                    ADD_FAILURE() << "ERROR: SyncOperation for frame " << hdr.FrameOrder << " failed with status: " << sts;
+                    g_tsLog << "ERROR: SyncOperation for frame " << hdr.FrameOrder << " failed with status: " << sts;
                     throw tsFAIL;
                 }
 
@@ -340,13 +326,13 @@ namespace vp9e_big_resolution
 
         if (g_tsHWtype < MFX_HW_TGL && tc.type == CHECK_16K)
         {
-            g_tsLog << "WARNING: the case unsupported and skipped for current platform!\n";
-            return 0;
+            g_tsLog << "\n\nWARNING: SKIP test (unsupported on current platform)\n\n";
+            throw tsSKIP;
         }
         else if (g_tsHWtype < MFX_HW_ICL && tc.type == CHECK_8K)
         {
-            g_tsLog << "WARNING: the case unsupported and skipped for current platform!\n";
-            return 0;
+            g_tsLog << "\n\nWARNING: SKIP test (unsupported on current platform)\n\n";
+            throw tsSKIP;
         }
 
         tsRawReader *reader = nullptr;
@@ -421,8 +407,8 @@ namespace vp9e_big_resolution
 
         SETPARS(m_par, MFX_PAR);
 
-        m_SourceWidth = m_par.mfx.FrameInfo.CropW = m_par.mfx.FrameInfo.Width;
-        m_SourceHeight = m_par.mfx.FrameInfo.CropH = m_par.mfx.FrameInfo.Height;
+        m_par.mfx.FrameInfo.CropW = m_par.mfx.FrameInfo.Width;
+        m_par.mfx.FrameInfo.CropH = m_par.mfx.FrameInfo.Height;
 
         BitstreamChecker bs_checker(m_par, &inputSurfaces);
         m_bs_processor = &bs_checker;
