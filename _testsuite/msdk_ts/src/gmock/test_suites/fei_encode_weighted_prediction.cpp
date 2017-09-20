@@ -33,9 +33,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ts_fei_warning.h"
 
 /* Check the ext buffer of weighted prediction table and related paramter settings in
- * pps/slice header for AVC FEI ENCODE.
- * [MDP-33148] Added support for P-frame.
- * [MDP-36509] Added support for B-frame
+ * pps/slice header for AVC FEI ENCODE. Added support for both P-frame and B-frame.
  */
 
 namespace fei_encode_weighted_prediction
@@ -184,7 +182,8 @@ public:
 
         if(m_hasPWT) {
             for (mfxU32 fieldId = 0; fieldId < numField; fieldId++) {
-                if ((m_frameType & MFX_FRAMETYPE_P) || (m_frameType & MFX_FRAMETYPE_B) || ((m_frameType & MFX_FRAMETYPE_IDR) && numField == 2)) {
+                if ((m_frameType & (MFX_FRAMETYPE_P | MFX_FRAMETYPE_B)) ||
+                        (m_frameType & (MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR) && numField == 2)) {
                     //assign PredWeightTable
                     if (fieldId == 0) {
                         feiEncPWT = new mfxExtPredWeightTable[numField];
@@ -234,7 +233,7 @@ public:
                         }
                     }
 
-                    if (m_frameType & MFX_FRAMETYPE_B) {
+                    if (hasBframe) {
                         for (mfxU32 l0 = 0; l0 < 32; l0++) {
                             for (mfxU32 l1 = 0; l1 < 32; l1++) {
                                 //CHECK Y
