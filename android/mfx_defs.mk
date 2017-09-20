@@ -14,6 +14,26 @@ include $(MFX_HOME)/mdp_msdk-lib/android/mfx_env.mk
 
 MFX_CFLAGS := -DANDROID
 
+# Android version preference:
+ifneq ($(filter 8.% O ,$(PLATFORM_VERSION)),)
+  MFX_ANDROID_VERSION:= MFX_O
+endif
+ifneq ($(filter 7.% N ,$(PLATFORM_VERSION)),)
+  MFX_ANDROID_VERSION:= MFX_N
+endif
+ifneq ($(filter 6.% M ,$(PLATFORM_VERSION)),)
+  MFX_ANDROID_VERSION:= MFX_MM
+endif
+ifneq ($(filter 5.% L ,$(PLATFORM_VERSION)),)
+  MFX_ANDROID_VERSION:= MFX_MCG_LD
+endif
+ifneq ($(filter 4.4 4.4.4 ,$(PLATFORM_VERSION)),)
+  MFX_ANDROID_VERSION:= MFX_MCG_KK
+endif
+ifneq ($(filter 4.2.2 4.3 ,$(PLATFORM_VERSION)),)
+ MFX_ANDROID_VERSION:= MFX_MCG_JB
+endif
+
 ifdef RESOURCES_LIMIT
   MFX_CFLAGS += \
     -DMFX_RESOURCES_LIMIT=$(RESOURCES_LIMIT)
