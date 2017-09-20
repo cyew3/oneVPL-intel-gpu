@@ -51,7 +51,13 @@ File Name: mfx_plugin_hive_linux.cpp
 namespace
 {
 #ifdef ANDROID
+
+#if ((MFX_ANDROID_VERSION & MFX_ANDROID_NAME) >= MFX_O)
+    const char rootPluginPath[] = "/vendor/etc/mediasdk_plugins.cfg";
+#else
     const char rootPluginPath[] = "/etc/mediasdk_plugins.cfg";
+#endif
+
 #else
     const char rootPluginPath[] = MFX_PLUGINS_DIR"/plugins.cfg";
 #endif
