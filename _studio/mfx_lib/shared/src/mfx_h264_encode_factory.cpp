@@ -92,7 +92,7 @@ DriverEncoder* MfxHwH264Encode::CreatePlatformH264Encoder( VideoCORE* core )
 
 } // DriverEncoder* MfxHwH264Encode::CreatePlatformH264Encoder( VideoCORE* core )
 
-#if defined(MFX_ENABLE_MFE) && !defined(AS_H264LA_PLUGIN)
+#if defined(MFX_ENABLE_MFE) && !defined(AS_H264LA_PLUGIN) && !defined(MFX_VA_WIN)
 MFEVAAPIEncoder* MfxHwH264Encode::CreatePlatformMFEEncoder(VideoCORE* core)
 {
     assert( core );

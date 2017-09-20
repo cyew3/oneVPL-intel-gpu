@@ -171,7 +171,7 @@ namespace MfxHwH264Encode
     DriverEncoder* CreatePlatformSvcEncoder( VideoCORE* core );
 #endif
 
-#ifdef MFX_ENABLE_MFE
+#if defined(MFX_ENABLE_MFE) && !defined(MFX_VA_WIN)
     MFEVAAPIEncoder* CreatePlatformMFEEncoder( VideoCORE* core );
 #endif
 

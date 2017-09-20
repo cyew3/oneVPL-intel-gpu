@@ -928,7 +928,7 @@ namespace
             if (((ft[0] | ft[1]) & MFX_FRAMETYPE_REF) &&    // one of fields is ref pic
                 numLayers > 1 &&                            // more than one temporal layer
                 lastLayerScale == 2 &&                      // highest layer is dyadic
-                task.m_tidx + 1 == numLayers)               // this is the highest layer
+                (task.m_tidx + 1U) == numLayers)               // this is the highest layer
             {
                 ft[0] &= ~MFX_FRAMETYPE_REF;
                 ft[1] &= ~MFX_FRAMETYPE_REF;
@@ -969,7 +969,7 @@ namespace
     }
 
 
-    void UpdateMaxLongTermFrameIdxPlus1(ArrayU8x8 & arr, mfxU32 curTidx, mfxU32 val)
+    void UpdateMaxLongTermFrameIdxPlus1(ArrayU8x8 & arr, mfxU8 curTidx, mfxU8 val)
     {
         std::fill(arr.Begin() + curTidx, arr.End(), val);
     }
@@ -1423,7 +1423,7 @@ namespace
 
         if (refPicFlag &&                                   // only ref frames occupy slot in dpb
             video.calcParam.tempScalabilityMode == 0 &&     // no long term refs in temporal scalability
-            numLayers > 1 && task.m_tidx + 1 != numLayers)  // no dpb commands for last-not-based temporal laeyr
+            numLayers > 1 && (task.m_tidx + 1U) != numLayers)  // no dpb commands for last-not-based temporal laeyr
         {
             // find oldest ref frame from the same temporal layer
             DpbFrame const * toRemove = FindOldestRef(task.m_dpb[0], task.m_tid);
@@ -1933,7 +1933,7 @@ void MfxHwH264Encode::ConfigureTask(
     task.m_pid  = task.m_tidx + extTemp.BaseLayerPID;
 
     DecideOnRefPicFlag(video, task); // for temporal layers
-    
+
     if (task.m_ctrl.SkipFrame != 0 && SkipMode != MFX_SKIPFRAME_BRC_ONLY)
     {
         task.m_ctrl.SkipFrame = (extOpt2.SkipFrame) ? 1 : 0;

@@ -279,7 +279,7 @@ namespace MfxHwH264Encode
     PairU8 ExtendFrameType(
         mfxU32 type);
 
-    mfxU32 CalcTemporalLayerIndex(
+    mfxU8 CalcTemporalLayerIndex(
         MfxVideoParam const & video,
         mfxI32                frameOrder);
 
@@ -727,7 +727,7 @@ namespace MfxHwH264Encode
         PairU16 m_picStruct;
         mfxU32  m_extFrameTag;
         mfxU32  m_tid;              // temporal_id
-        mfxU32  m_tidx;             // temporal layer index (in acsending order of temporal_id)
+        mfxU8  m_tidx;             // temporal layer index (in acsending order of temporal_id)
         mfxU8   m_panicMode;
     };
 
