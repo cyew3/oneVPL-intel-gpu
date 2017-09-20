@@ -1575,10 +1575,7 @@ void CTranscodingPipeline::SetEncCtrlRT(ExtendedSurface& extSurface, bool bInser
             if (m_ROIData.size() > m_nSubmittedFramesNum)
                 m_extBuffPtrStorage[keyId].push_back((mfxExtBuffer *)&m_ROIData[m_nSubmittedFramesNum]);
         }
-#if _MSDK_API > MSDK_API(1,24)
-        m_extBuffPtrStorage[keyId].push_back((mfxExtBuffer *)&(m_ExtMFEParam));
-        m_extBuffPtrStorage[keyId].push_back((mfxExtBuffer *)&(m_ExtMFEControl));
-#endif
+
         // Replace the buffers pointer to pre-allocated storage
         ctrl.NumExtParam = (mfxU16)m_extBuffPtrStorage[keyId].size();
         if (ctrl.NumExtParam) {
