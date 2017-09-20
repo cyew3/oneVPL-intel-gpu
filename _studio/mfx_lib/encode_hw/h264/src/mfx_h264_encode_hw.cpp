@@ -1162,7 +1162,9 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     if (   IsOn(extOpt3.FadeDetection)
         || bIntRateControlLA(m_video.mfx.RateControlMethod))
     {
-        m_cmDevice.Reset(CreateCmDevicePtr(m_core));
+        m_cmDevice.Reset(TryCreateCmDevicePtr(m_core));
+        if (m_cmDevice == NULL)
+            return MFX_ERR_UNSUPPORTED;
         m_cmCtx.reset(new CmContext(m_video, m_cmDevice, m_core));
     }
 
@@ -1225,8 +1227,12 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     if (extOpt2->AdaptiveB & MFX_CODINGOPTION_ON)//AGOP
     {
         const int agopLength = 10;
-        if(!m_cmDevice)
-            m_cmDevice.Reset(CreateCmDevicePtr(m_core));
+        if (!m_cmDevice)
+        {
+            m_cmDevice.Reset(TryCreateCmDevicePtr(m_core));
+            if (m_cmDevice == NULL)
+                return MFX_ERR_UNSUPPORTED;
+        }
 
         if(!m_cmCtx.get())
             m_cmCtx.reset(new CmContext(m_video, m_cmDevice));

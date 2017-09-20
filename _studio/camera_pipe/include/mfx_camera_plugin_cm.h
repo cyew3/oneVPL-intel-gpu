@@ -546,7 +546,9 @@ public:
         m_FramesTillHardReset = CAMERA_FRAMES_TILL_HARD_RESET;
 
         m_Params = *FrameParams;
-        m_cmDevice.Reset(CreateCmDevicePtr(m_core));
+        m_cmDevice.Reset(TryCreateCmDevicePtr(m_core));
+        if (m_cmDevice == NULL)
+            return MFX_ERR_UNSUPPORTED;
 
         m_platform = m_core->GetHWType();
 

@@ -445,7 +445,9 @@ mfxStatus VideoENC_LA::Init(mfxVideoParam *par)
         MFX_CHECK(sts >=0, sts);
     }
 
-    m_cmDevice.Reset(MfxHwH264Encode::CreateCmDevicePtr(m_core));
+    m_cmDevice.Reset(MfxHwH264Encode::TryCreateCmDevicePtr(m_core));
+    if (m_cmDevice == NULL)
+        return MFX_ERR_UNSUPPORTED;
     m_cmCtx.reset(new CmContextLA(m_video, m_cmDevice, m_core));
     
  

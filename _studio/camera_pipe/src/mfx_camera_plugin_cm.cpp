@@ -207,7 +207,9 @@ mfxStatus CMCameraProcessor::AsyncRoutine(AsyncParams *pParam)
             m_cmDevice.Reset(0);
 
             // Init again
-            m_cmDevice.Reset(CreateCmDevicePtr(m_core));
+            m_cmDevice.Reset(TryCreateCmDevicePtr(m_core));
+            if (m_cmDevice == NULL)
+                return MFX_ERR_UNSUPPORTED;
             m_cmCtx.reset(new CmContext(m_Params, m_cmDevice, &m_Params.Caps, m_platform));
             m_cmCtx->CreateThreadSpaces(&m_Params);
             sts = AllocateInternalSurfaces();
