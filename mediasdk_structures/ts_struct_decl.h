@@ -852,6 +852,7 @@ STRUCT(mfxInitParam,
     FIELD_T(mfxExtBuffer** , ExtParam       )
     FIELD_T(mfxU16         , NumExtParam    )
     FIELD_T(mfxU16         , GPUCopy        )
+    FIELD_T(mfxU16         , AltDependencies)
 )
 
 STRUCT(mfxExtThreadsParam,

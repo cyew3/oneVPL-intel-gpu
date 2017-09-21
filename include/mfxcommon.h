@@ -139,7 +139,8 @@ typedef struct {
         mfxU16  reserved2[5];
     };
     mfxU16      GPUCopy;
-    mfxU16      reserved[21];
+    mfxU16      AltDependencies;
+    mfxU16      reserved[20];
 } mfxInitParam;
 
 enum {

@@ -775,8 +775,8 @@ The application passes the output of an upstream SDK function to the input of th
 ###### Example 6: Pseudo Code of Asynchronous Pipeline Construction
 
 ```C
-mfxSyncPoint sp;
-MFXVideoDECODE_DecodeFrameAsync(session,bs,work,vin, &sp_d);
+mfxSyncPoint sp_d, sp_e;
+MFXVideoDECODE_DecodeFrameAsync(session,bs,work,&vin, &sp_d);
 if (going_through_vpp) {
     MFXVideoVPP_RunFrameVPPAsync(session,vin,vout, &sp_d);
     MFXVideoENCODE_EncodeFrameAsync(session,NULL,vout,bits2,&sp_e);
@@ -799,15 +799,56 @@ There are two exceptions with respect to intermediate synchronization:
 - The application must synchronize any input before calling the SDK function [MFXVideoDECODE_DecodeFrameAsync](#MFXVideoDECODE_DecodeFrameAsync), if the input is from any asynchronous operation.
 - When the application calls an asynchronous function to generate an output surface in video memory   and passes that surface to a non-SDK component, it must explicitly synchronize the operation before passing the surface to the non-SDK component.
 
+#### <a id='Alternative_Dependencies'>Alternative Dependencies</a>
+
+The applicaiton can overwrite default dependencies by attaching to output parameters of base function and input parameters of dependent function [mfxExtBuffer](#mfxExtBuffer) with `BufferId =` [MFX_EXTBUFF_TASK_DEPENDENCY](#ExtendedBufferID). (Note that the dependency check works on the **pointer** to the structure only).
+
+[mfxInitParam](#mfxInitParam)`::AltDependencies` must be set during session [initialization](#MFXInitEx) to enable alternative dependencies.
+
+Places to attach dependency buffer are specified in the table bellow:
+
+| Function                                                            | In              | Out                     |
+| ------------------------------------------------------------------- | --------------- | ----------------------- |
+| [MFXVideoDECODE_DecodeFrameAsync](#MFXVideoDECODE_DecodeFrameAsync) | N/A             | `surface_work->Data`\*  |
+| [MFXVideoVPP_RunFrameVPPAsync](#MFXVideoVPP_RunFrameVPPAsync)       | `in->Data`      | `out->Data`             |
+| [MFXVideoENC_ProcessFrameAsync](#MFXVideoENC_ProcessFrameAsync)     | `*in`           | `*out`                  |
+| [MFXVideoENCODE_EncodeFrameAsync](#MFXVideoENCODE_EncodeFrameAsync) | `surface->Data` | `*bs`                   |
+
+_\*Application should attach dependency buffer to surface_work but take it from surface_out to attach to dependent function input._
+
+**Note:** Using this mechanics is the only way to build asynchronous pipeline including (pre-)**ENC->ENCODE** chain properly since **ENC** output is not passed to **ENCODE** input directly.
+
+###### Example 7: Pseudo Code of Asynchronous ENC->ENCODE Pipeline Construction
+
+```C
+    mfxENCInput enc_in = ...;
+    mfxENCOutput enc_out = ...;
+    mfxSyncPoint sp_e, sp_n;
+    mfxFrameSurface1* surface = get_frame_to_encode();
+    mfxExtBuffer dependency;
+    dependency.BufferId = MFX_EXTBUFF_TASK_DEPENDENCY;
+    dependency.BufferSz = sizeof(mfxExtBuffer);
+
+    enc_in.InSurface = surface;
+    enc_out.ExtParam[enc_out.NumExtParam++] = &dependency;
+    MFXVideoENC_ProcessFrameAsync(session, &enc_in, &enc_out, &sp_e);
+
+    surface->Data.ExtParam[surface->Data.NumExtParam++] = &dependency;
+    MFXVideoENCODE_EncodeFrameAsync(session, NULL, surface, &bs, &sp_n);
+
+    MFXVideoCORE_SyncOperation(session, sp_n, INFINITE);
+    surface->Data.NumExtParam--;
+```
+
 ### <a id='Surface_Pool_Allocation'>Surface Pool Allocation</a>
 
 When connecting SDK function **A** to SDK function **B**, the application must take into account the needs of both functions to calculate the number of frame surfaces in the surface pool. Typically, the application can use the formula **Na+Nb**, where **Na** is the frame surface needs from SDK function **A** output, and **Nb** is the frame surface needs from SDK function **B** input.
 
-For performance considerations, the application must submit multiple operations and delays synchronization as much as possible, which gives the SDK flexibility to organize internal pipelining. For example, the operation sequence, **ENCODE(f1)->SYNC(f1)->ENCODE(f2)->SYNC(f2)** is recommended, compared with **ENCODE(f1)->SYNC(f1)->ENCODE(f2)->SYNC(f2)**.
+For performance considerations, the application must submit multiple operations and delays synchronization as much as possible, which gives the SDK flexibility to organize internal pipelining. For example, the operation sequence, **ENCODE(f1)->ENCODE(f2)->SYNC(f1)->SYNC(f2)** is recommended, compared with **ENCODE(f1)->SYNC(f1)->ENCODE(f2)->SYNC(f2)**.
 
-In this case, the surface pool needs additional surfaces to take into account multiple asynchronous operations before synchronization. The application can use the **AsyncDepth** parameter of the [mfxVideoParam](#mfxVideoParam) structure to inform an SDK function that how many asynchronous operations the application plans to perform before synchronization. The corresponding SDK **QueryIOSurf** function will reflect such consideration in the `NumFrameSuggested` value. Example 7 shows a way of calculating the surface needs based on `NumFrameSuggested` values.
+In this case, the surface pool needs additional surfaces to take into account multiple asynchronous operations before synchronization. The application can use the **AsyncDepth** parameter of the [mfxVideoParam](#mfxVideoParam) structure to inform an SDK function that how many asynchronous operations the application plans to perform before synchronization. The corresponding SDK **QueryIOSurf** function will reflect such consideration in the `NumFrameSuggested` value. Example 8 shows a way of calculating the surface needs based on `NumFrameSuggested` values.
 
-###### Example 7: Calculate Surface Pool Size
+###### Example 8: Calculate Surface Pool Size
 
 ```C
 async_depth=4;
@@ -851,9 +892,9 @@ The SDK supports two different infrastructures for hardware acceleration on Micr
 
 The application must create the Direct3D9* device with the flag **D3DCREATE_MULTITHREADED**. Additionally the flag **D3DCREATE_FPU_PRESERVE** is recommended. This influences floating-point calculations, including PTS values.
 
-The application must also set multithreading mode for Direct3D11* device. Example 8 Setting multithreading mode illustrates how to do it.
+The application must also set multithreading mode for Direct3D11* device. Example 9 Setting multithreading mode illustrates how to do it.
 
-###### Example 8 Setting multithreading mode
+###### Example 9 Setting multithreading mode
 
 ```C
 ID3D11Device            *pD11Device;
@@ -912,9 +953,9 @@ supports RGB32 output.
 The SDK supports single infrastructure for hardware acceleration on Linux* - “VA API”. The application should use the **VADisplay** interface as the acceleration device handle for this infrastructure and share it with the SDK through the **MFXVideoCORE_SetHandle** function. Because the SDK does not create internal acceleration device on Linux, the application must always share it with the SDK. This sharing should be done before any actual usage of the SDK, including capability
 query and component initialization. If the application fails to share the device, the SDK operation will fail.
 
-Example 9 Obtaining VA display from X Window System and Example 9 Obtaining VA display from Direct Rendering Manager show how to obtain and share VA display with the SDK.
+Example 10 Obtaining VA display from X Window System and Example 10 Obtaining VA display from Direct Rendering Manager show how to obtain and share VA display with the SDK.
 
-###### Example 9 Obtaining VA display from X Window System
+###### Example 10 Obtaining VA display from X Window System
 
 ```C
 Display   *x11_display;
@@ -928,7 +969,7 @@ MFXVideoCORE_SetHandle(session, MFX_HANDLE_VA_DISPLAY,
 
 ```
 
-###### Example 10 Obtaining VA display from Direct Rendering Manager
+###### Example 11 Obtaining VA display from Direct Rendering Manager
 
 ```C
 int card;
@@ -974,9 +1015,9 @@ The external frame allocator can allocate different frame types:
 - in system memory and
 - in video memory, as “decoder render targets” or “processor render targets.” See the section [Working with hardware acceleration](#hardware_acceleration) for additional details.
 
-The external frame allocator responds only to frame allocation requests for the requested memory type and returns [MFX_ERR_UNSUPPORTED](#mfxStatus) for all others. The allocation request uses flags, part of memory type field, to indicate which SDK class initiates the request, so the external frame allocator can respond accordingly. Example 11 illustrates a simple external frame allocator.
+The external frame allocator responds only to frame allocation requests for the requested memory type and returns [MFX_ERR_UNSUPPORTED](#mfxStatus) for all others. The allocation request uses flags, part of memory type field, to indicate which SDK class initiates the request, so the external frame allocator can respond accordingly. Example 12 illustrates a simple external frame allocator.
 
-###### Example 11: Example Frame Allocator
+###### Example 12: Example Frame Allocator
 
 ```C
 typedef struct {
@@ -1044,13 +1085,13 @@ The application uses the following procedure to use opaque surface, assuming a t
 - During initialization, the application communicates the allocated surface pool to both SDK components by attaching the [mfxExtOpaqueSurfaceAlloc](#mfxExtOpaqueSurfaceAlloc) structure as part of the initialization parameters. The application needs to use [MFX_IOPATTERN_IN_OPAQUE_MEMORY](#IOPattern) and/or [MFX_IOPATTERN_OUT_OPAQUE_MEMORY](#IOPattern) while specifying the I/O pattern.
 - During decoding, encoding, and video processing, the application manages the surface pool and passes individual frame surface to SDK component **A** and **B** as described in section *Decoding Procedures*, section *Encoding Procedures*, and section *Video Processing Procedures*, respectively.
 
-Example 12 shows the opaque procedure sample code.
+Example 13 shows the opaque procedure sample code.
 
 Since the SDK manages the association of opaque surface to “real” surface types internally, the application cannot read the content of opaque surfaces. Also the application does not get any opaque-type surface allocation requests if the application specifies an external frame allocator.
 
 If the application shares opaque surfaces among different SDK sessions, the application must join the sessions before SDK component initialization and ensure that all joined sessions have the same hardware acceleration device handle. Setting device handle is optional only if all components in pipeline belong to the same session. The application should not disjoin the session which share opaque memory until the SDK components are not closed.
 
-###### Example 12: Pseudo-Code of Opaque Surface Procedure
+###### Example 13: Pseudo-Code of Opaque Surface Procedure
 
 ```C
 mfxExtOpqueSurfaceAlloc osa, *posa=&osa;
@@ -1101,11 +1142,11 @@ The SDK accelerates decoding, encoding and video processing through a hardware d
 
 SDK functions **Query**, **QueryIOSurf**, and **Init** return [MFX_WRN_PARTIAL_ACCELERATION](#mfxStatus) to indicate that the encoding, decoding or video processing operation can be partially hardware accelerated or not hardware accelerated at all. The application can ignore this warning and proceed with the operation. (Note that SDK functions may return errors or other warnings overwriting [MFX_WRN_PARTIAL_ACCELERATION](#mfxStatus), as it is a lower priority warning.)
 
-SDK functions return [MFX_WRN_DEVICE_BUSY](#mfxStatus) to indicate that the hardware device is busy and unable to take commands at this time. Resume the operation by waiting for a few milliseconds and resubmitting the request. Example 13 shows the decoding pseudo-code. The same procedure applies to encoding and video processing.
+SDK functions return [MFX_WRN_DEVICE_BUSY](#mfxStatus) to indicate that the hardware device is busy and unable to take commands at this time. Resume the operation by waiting for a few milliseconds and resubmitting the request. Example 14 shows the decoding pseudo-code. The same procedure applies to encoding and video processing.
 
 SDK functions return [MFX_ERR_DEVICE_LOST](#mfxStatus) or [MFX_ERR_DEVICE_FAILED](#mfxStatus) to indicate that there is a complete failure in hardware acceleration. The application must close and reinitialize the SDK function class. If the application has provided a hardware acceleration device handle to the SDK, the application must reset the device.
 
-###### Example 13: Pseudo-Code to Handle MFX_ERR_DEVICE_BUSY
+###### Example 14: Pseudo-Code to Handle MFX_ERR_DEVICE_BUSY
 
 ```C
 mfxStatus sts=MFX_ERR_NONE;
@@ -5057,9 +5098,9 @@ This structure specifies configurations for decoding, encoding and transcoding p
 `CodecId`               | Specifies the codec format identifier in the FOURCC code; see the [CodecFormatFourCC](#CodecFormatFourCC) enumerator for details. This is a mandated input parameter for [QueryIOSurf](#MFXVideoENCODE_QueryIOSurf) and [Init](#MFXVideoENCODE_Init) functions.
 `CodecProfile`          | Specifies the codec profile; see the [CodecProfile](#CodecProfile) enumerator for details. Specify the codec profile explicitly or the SDK functions will determine the correct profile from other sources, such as resolution and bitrate.
 `CodecLevel`            | Codec level; see the [CodecLevel](#CodecLevel) enumerator for details. Specify the codec level explicitly or the SDK functions will determine the correct level from other sources, such as resolution and bitrate.
-`GopPicSize`            | Number of pictures within the current GOP (Group of Pictures); if `GopPicSize = 0`, then the GOP size is unspecified. If `GopPicSize = 1`, only I-frames are used. See Example 14 for pseudo-code that demonstrates how SDK uses this parameter.
-`GopRefDist`            | Distance between I- or P (or GPB) - key frames; if it is zero, the GOP structure is unspecified. Note: If `GopRefDist = 1`, there are no regular B-frames used (only P or GPB); if [mfxExtCodingOption3](#mfxExtCodingOption3)`::GPB` is ON, GPB frames (B without backward references) are used instead of P. See Example 14 for pseudo-code that demonstrates how SDK uses this parameter.
-`GopOptFlag`            | ORs of the [GopOptFlag](#GopOptFlag) enumerator indicate the additional flags for the GOP specification; see Example 14 for an example of pseudo-code that demonstrates how to use this parameter.
+`GopPicSize`            | Number of pictures within the current GOP (Group of Pictures); if `GopPicSize = 0`, then the GOP size is unspecified. If `GopPicSize = 1`, only I-frames are used. See Example 15 for pseudo-code that demonstrates how SDK uses this parameter.
+`GopRefDist`            | Distance between I- or P (or GPB) - key frames; if it is zero, the GOP structure is unspecified. Note: If `GopRefDist = 1`, there are no regular B-frames used (only P or GPB); if [mfxExtCodingOption3](#mfxExtCodingOption3)`::GPB` is ON, GPB frames (B without backward references) are used instead of P. See Example 15 for pseudo-code that demonstrates how SDK uses this parameter.
+`GopOptFlag`            | ORs of the [GopOptFlag](#GopOptFlag) enumerator indicate the additional flags for the GOP specification; see Example 15 for an example of pseudo-code that demonstrates how to use this parameter.
 `IdrInterval`           | For H.264, `IdrInterval` specifies IDR-frame interval in terms of I-frames; if `IdrInterval = 0`, then every I-frame is an IDR-frame. If `IdrInterval = 1`, then every other I-frame is an IDR-frame, etc.<br><br>For HEVC, if `IdrInterval = 0`, then only first I-frame is an IDR-frame. If `IdrInterval = 1`, then every I-frame is an IDR-frame. If `IdrInterval = 2`, then every other I-frame is an IDR-frame, etc.<br><br>For MPEG2, `IdrInterval` defines sequence header interval in terms of I-frames. If `IdrInterval = N`, SDK inserts the sequence header before every `Nth` I-frame. If `IdrInterval = 0` (default), SDK inserts the sequence header once at the beginning of the stream.<br><br>If `GopPicSize` or `GopRefDist` is zero, `IdrInterval` is undefined.
 `TargetUsage`           | Target usage model that guides the encoding process; see the [TargetUsage](#TargetUsage) enumerator for details.
 `RateControlMethod`     | Rate control method; see the [RateControlMethod](#RateControlMethod) enumerator for details.
@@ -5098,7 +5139,7 @@ SDK API 1.16 adds `MaxDecFrameBuffering` field.
 
 SDK API 1.19 adds `EnableReallocRequest` field.
 
-###### Example 14: Pseudo-Code for GOP Structure Parameters
+###### Example 15: Pseudo-Code for GOP Structure Parameters
 
 ```C
 mfxU16 get_gop_sequence (…) {
@@ -5173,7 +5214,8 @@ typedef struct {
         mfxU16  reserved2[5];
     };
     mfxU16      GPUCopy;
-    mfxU16      reserved[21];
+    mfxU16      AltDependencies;
+    mfxU16      reserved[20];
 } mfxInitParam;
 ```
 
@@ -5187,10 +5229,12 @@ The `mfxInitParam` structure specifies advanced initialization parameters. A zer
 --- | ---
 `Implementation` | [mfxIMPL](#mfxIMPL) enumerator that indicates the desired SDK implementation
 `Version` | [Structure](#mfxVersion) which specifies minimum library version or zero, if not specified
-`ExternalThreads` | Desired threading mode. Value 0 means internal threading, 1 – external.
+`ExternalThreads` | Desired threading mode. Value `0` means internal threading, `1` – external.
 `NumExtParam` | The number of extra configuration structures attached to this structure.
 `ExtParam` | Points to an array of pointers to the extra configuration structures; see the [ExtendedBufferID](#ExtendedBufferID) enumerator for a list of extended configurations.
 `GPUCopy` | Enables or disables GPU accelerated copying between video and system memory in the SDK components. See the [GPUCopy](#GPUCopy) enumerator for a list of valid values.
+`AltDependencies` | Enables [Alternative Dependencies](#Alternative_Dependencies). `0` - disabled, `1` - enabled.
+
 
 **Change History**
 
@@ -5199,6 +5243,8 @@ This structure is available since SDK API 1.14.
 The SDK API 1.15 adds `NumExtParam` and `ExtParam` fields.
 
 The SDK API 1.16 adds `GPUCopy` field.
+
+The SDK API **TBD** adds `AltDependencies` field.
 
 ## <a id='mfxPlatform'>mfxPlatform</a>
 
@@ -7200,6 +7246,7 @@ The `ExtendedBufferID` enumerator itemizes and defines identifiers (`BufferId`) 
 `MFX_EXTBUFF_MULTI_FRAME_CONTROL` | This extended buffer allow to manage multi-frame submission in runtime.
 `MFX_EXTBUFF_ENCODED_UNITS_INFO` | See the [mfxExtEncodedUnitsInfo](#mfxExtEncodedUnitsInfo) structure for details.
 `MFX_EXTBUFF_VPP_COLOR_CONVERSION` | See the [mfxExtColorConversion](#mfxExtColorConversion) structure for details.
+`MFX_EXTBUFF_TASK_DEPENDENCY` | See the [Alternative Dependencies](#Alternative_Dependencies) chapter for details.
 
 **Change History**
 
@@ -7230,7 +7277,7 @@ SDK API 1.23 adds `MFX_EXTBUFF_MB_FORCE_INTRA`.
 
 SDK API 1.24 adds `MFX_EXTBUFF_BRC`.
 
-SDK API **TBD** adds `MFX_EXTBUFF_VP9_PARAM`, `MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO`, `MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME`, `MFX_EXTBUFF_BRC`, `MFX_EXTBUFF_MULTI_FRAME_PARAM`, `MFX_EXTBUFF_MULTI_FRAME_CONTROL`, `MFX_EXTBUFF_ENCODED_UNITS_INFO`, `MFX_EXTBUFF_DECODE_ERROR_REPORT`.
+SDK API **TBD** adds `MFX_EXTBUFF_VP9_PARAM`, `MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO`, `MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME`, `MFX_EXTBUFF_BRC`, `MFX_EXTBUFF_MULTI_FRAME_PARAM`, `MFX_EXTBUFF_MULTI_FRAME_CONTROL`, `MFX_EXTBUFF_ENCODED_UNITS_INFO`, `MFX_EXTBUFF_DECODE_ERROR_REPORT`, `MFX_EXTBUFF_TASK_DEPENDENCY.
 
 See additional change history in the structure definitions.
 
@@ -8345,9 +8392,9 @@ The encoder can use the [mfxExtCodingOptionSPSPPS](#mfxExtCodingOptionSPSPPS) st
 
 The encoder must encode frames to a GOP sequence starting with an IDR frame for H.264 (or I frame for MPEG-2) to ensure that the current segment encoding does not refer to any frames in the previous segment. This ensures that the encoded segment is self-contained, allowing the application to insert it anywhere in the final bitstream. After encoding, each encoded segment is HRD compliant. However, the concatenated segments may not be HRD compliant.
 
-Example 15 shows an example of the encoder initialization procedure that imports H.264 sequence and picture parameter sets.
+Example 16 shows an example of the encoder initialization procedure that imports H.264 sequence and picture parameter sets.
 
-###### Example 15: Pseudo-code to Import H.264 SPS/PPS Parameters
+###### Example 16: Pseudo-code to Import H.264 SPS/PPS Parameters
 
 ```C
 mfxStatus init_encoder(…) {
@@ -8506,9 +8553,9 @@ If the interruption occurs during decoding, video processing, or encoding operat
 
 The SDK takes care of all memory and synchronization related operations in VA API. However, in some cases the application may need to extend the SDK functionality by working directly with VA API for Linux*. For example, to implement customized external allocator or **USER** functions (also known as “plug-in”). This chapter describes some basic memory management and synchronization techniques.
 
-To create VA surface pool the application should call vaCreateSurfaces as it is shown in Example 16.
+To create VA surface pool the application should call vaCreateSurfaces as it is shown in Example 17.
 
-###### Example 16: Creation of VA surfaces
+###### Example 17: Creation of VA surfaces
 
 ```C
 VASurfaceAttrib attrib;
@@ -8526,9 +8573,9 @@ vaCreateSurfaces(va_display, VA_RT_FORMAT_YUV420,
                  &attrib, 1);
 ```
 
-To destroy surface pool the application should call vaDestroySurfaces as it is shown in Example 17.
+To destroy surface pool the application should call vaDestroySurfaces as it is shown in Example 18.
 
-###### Example 17: Destroying of VA surfaces
+###### Example 18: Destroying of VA surfaces
 
 ```C
 vaDestroySurfaces(va_display, surfaces, NUM_SURFACES);
@@ -8536,9 +8583,9 @@ vaDestroySurfaces(va_display, surfaces, NUM_SURFACES);
 
 If the application works with hardware acceleration through the SDK then it can access surface data immediately after successful completion of MFXVideoCORE_SyncOperation call. If the application works with hardware acceleration directly then it has to check surface status before accessing data in video memory. This check can be done asynchronously by calling vaQuerySurfaceStatus function or synchronously by vaSyncSurface function.
 
-After successful synchronization the application can access surface data. It is performed in two steps. At the first step VAImage is created from surface and at the second step image buffer is mapped to system memory. After mapping VAImage.offsets[3] array holds offsets to each color plain in mapped buffer and VAImage.pitches[3] array holds color plain pitches, in bytes. For packed data formats, only first entries in these arrays are valid. Example 18 shows how to access data in NV12 surface.
+After successful synchronization the application can access surface data. It is performed in two steps. At the first step VAImage is created from surface and at the second step image buffer is mapped to system memory. After mapping VAImage.offsets[3] array holds offsets to each color plain in mapped buffer and VAImage.pitches[3] array holds color plain pitches, in bytes. For packed data formats, only first entries in these arrays are valid. Example 19 shows how to access data in NV12 surface.
 
-###### Example 18: Accessing data in VA surface
+###### Example 19: Accessing data in VA surface
 
 ```C
 VAImage image;
@@ -8553,18 +8600,18 @@ U = buffer + image.offsets[1];
 V = U + 1;
 ```
 
-After processing data in VA surface the application should release resources allocated for mapped buffer and VAImage object. Example 19 shows how to do it.
+After processing data in VA surface the application should release resources allocated for mapped buffer and VAImage object. Example 20 shows how to do it.
 
-###### Example 19: unmapping buffer and destroying VAImage
+###### Example 20: unmapping buffer and destroying VAImage
 
 ```C
 vaUnmapBuffer(va_display, image.buf);
 vaDestroyImage(va_display, image.image_id);
 ```
 
-In some cases, for example, to retrieve encoded bitstream from video memory, the application has to use VABuffer to store data. Example 20 shows how to create, use and then destroy VA buffer. Note, that vaMapBuffer function returns pointers to different objects depending on mapped buffer type. It is plain data buffer for VAImage and VACodedBufferSegment structure for encoded bitstream. The application cannot use VABuffer for synchronization and in case of encoding it is recommended to synchronize by input VA surface as described above.
+In some cases, for example, to retrieve encoded bitstream from video memory, the application has to use VABuffer to store data. Example 21 shows how to create, use and then destroy VA buffer. Note, that vaMapBuffer function returns pointers to different objects depending on mapped buffer type. It is plain data buffer for VAImage and VACodedBufferSegment structure for encoded bitstream. The application cannot use VABuffer for synchronization and in case of encoding it is recommended to synchronize by input VA surface as described above.
 
-###### Example 20: Working with encoded bitstream buffer
+###### Example 21: Working with encoded bitstream buffer
 
 ```C
 /* create buffer */
@@ -8597,9 +8644,9 @@ vaDestroyBuffer(va_display, buf_id);
 
 Application can configure AVC encoder to work in CQP rate control mode with HRD model parameters. SDK will place HRD information to SPS/VUI and choose appropriate profile/level. It’s responsibility of application to provide per-frame QP, track HRD conformance and insert required SEI messages to the bitstream.
 
-Example 21 shows how to enable CQP HRD mode. Application should set `RateControlMethod` to CQP, `VuiNalHrdParameters` to ON, `NalHrdConformance` to OFF and set rate control parameters similar to CBR or VBR modes (instead of QPI, QPP and QPB). SDK will choose CBR or VBR HRD mode based on `MaxKbps` parameter. If `MaxKbps` is set to zero, SDK will use CBR HRD model (write cbr_flag = 1 to VUI), otherwise VBR model will be used (and cbr_flag = 0 is written to VUI).
+Example 22 shows how to enable CQP HRD mode. Application should set `RateControlMethod` to CQP, `VuiNalHrdParameters` to ON, `NalHrdConformance` to OFF and set rate control parameters similar to CBR or VBR modes (instead of QPI, QPP and QPB). SDK will choose CBR or VBR HRD mode based on `MaxKbps` parameter. If `MaxKbps` is set to zero, SDK will use CBR HRD model (write cbr_flag = 1 to VUI), otherwise VBR model will be used (and cbr_flag = 0 is written to VUI).
 
-###### Example 21: Pseudo-code to enable CQP HRD mode
+###### Example 22: Pseudo-code to enable CQP HRD mode
 
 ```C
     mfxExtCodingOption option, *option_array;

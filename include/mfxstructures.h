@@ -850,7 +850,8 @@ enum {
     MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME = MFX_MAKEFOURCC('D','C','V','S'),
     MFX_EXTBUFF_MULTI_FRAME_PARAM               = MFX_MAKEFOURCC('M','F','R','P'),
     MFX_EXTBUFF_MULTI_FRAME_CONTROL             = MFX_MAKEFOURCC('M','F','R','C'),
-    MFX_EXTBUFF_ENCODED_UNITS_INFO              = MFX_MAKEFOURCC('E','N','U','I')
+    MFX_EXTBUFF_ENCODED_UNITS_INFO              = MFX_MAKEFOURCC('E','N','U','I'),
+    MFX_EXTBUFF_TASK_DEPENDENCY                 = MFX_MAKEFOURCC('S','Y','N','C')
 };
 
 /* VPP Conf: Do not use certain algorithms  */
