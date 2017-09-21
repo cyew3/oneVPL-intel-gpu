@@ -204,10 +204,10 @@ mfxStatus VideoVPPBase::Init(mfxVideoParam *par)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 #endif
 
-    sts = CheckFrameInfo( &(par->vpp.In), VPP_IN );
+    sts = CheckFrameInfo( &(par->vpp.In), VPP_IN, m_core->GetHWType());
     MFX_CHECK_STS( sts );
 
-    sts = CheckFrameInfo( &(par->vpp.Out), VPP_OUT );
+    sts = CheckFrameInfo( &(par->vpp.Out), VPP_OUT, m_core->GetHWType());
     MFX_CHECK_STS(sts);
 
     PicStructMode picStructMode = GetPicStructMode(par->vpp.In.PicStruct, par->vpp.Out.PicStruct);
@@ -365,14 +365,13 @@ mfxStatus VideoVPPBase::VppFrameCheck(mfxFrameSurface1 *in, mfxFrameSurface1 *ou
 mfxStatus VideoVPPBase::QueryIOSurf(VideoCORE* core, mfxVideoParam *par, mfxFrameAllocRequest *request)
 {
     mfxStatus mfxSts;
-    core;
 
     MFX_CHECK_NULL_PTR2(par, request);
 
-    mfxSts = CheckFrameInfo( &(par->vpp.In), VPP_IN);
+    mfxSts = CheckFrameInfo( &(par->vpp.In), VPP_IN, core->GetHWType());
     MFX_CHECK_STS( mfxSts );
 
-    mfxSts = CheckFrameInfo( &(par->vpp.Out), VPP_OUT);
+    mfxSts = CheckFrameInfo( &(par->vpp.Out), VPP_OUT, core->GetHWType());
     MFX_CHECK_STS( mfxSts );
 
     // make sense?
@@ -1220,10 +1219,10 @@ mfxStatus VideoVPPBase::Reset(mfxVideoParam *par)
 
     VPP_CHECK_NOT_INITIALIZED;
 
-    sts = CheckFrameInfo( &(par->vpp.In),  VPP_IN );
+    sts = CheckFrameInfo( &(par->vpp.In),  VPP_IN, m_core->GetHWType());
     MFX_CHECK_STS( sts );
 
-    sts = CheckFrameInfo( &(par->vpp.Out), VPP_OUT );
+    sts = CheckFrameInfo( &(par->vpp.Out), VPP_OUT, m_core->GetHWType());
     MFX_CHECK_STS(sts);
 
     //-----------------------------------------------------

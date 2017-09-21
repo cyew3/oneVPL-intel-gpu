@@ -144,8 +144,8 @@ int TestSuite::RunTest(unsigned int id)
             sts = MFX_ERR_UNSUPPORTED; // only Linux for BDW & SKL supports SCD mode for now
     }
 
-    if ((MFX_FOURCC_Y210 == m_par.vpp.In.FourCC || MFX_FOURCC_Y210 == m_par.vpp.Out.FourCC) && g_tsHWtype < MFX_HW_CNL)
-        sts = MFX_ERR_INVALID_VIDEO_PARAM; // y210 deinterlacing works since CNL
+    if ((MFX_FOURCC_Y210 == m_par.vpp.In.FourCC || MFX_FOURCC_Y210 == m_par.vpp.Out.FourCC) && g_tsHWtype < MFX_HW_ICL)
+        sts = MFX_ERR_INVALID_VIDEO_PARAM; // Y210 deinterlacing works since ICL
 
     SetHandle();
 

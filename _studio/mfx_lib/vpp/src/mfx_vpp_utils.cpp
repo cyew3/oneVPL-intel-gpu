@@ -1567,7 +1567,7 @@ mfxStatus CheckProtectedMode( mfxU16 mode )
 #endif
 
 /* check each field of FrameInfo excluding PicStruct */
-mfxStatus CheckFrameInfo(mfxFrameInfo* info, mfxU32 request)
+mfxStatus CheckFrameInfo(mfxFrameInfo* info, mfxU32 request, eMFXHWType platform)
 {
     mfxStatus mfxSts = MFX_ERR_NONE;
 
@@ -1581,16 +1581,22 @@ mfxStatus CheckFrameInfo(mfxFrameInfo* info, mfxU32 request)
         case MFX_FOURCC_NV16:
         case MFX_FOURCC_YUY2:
         case MFX_FOURCC_AYUV:
+            break;
 #if defined (PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= MFX_VERSION_NEXT)
         case MFX_FOURCC_Y210:
         case MFX_FOURCC_Y410:
+            if (platform < MFX_HW_ICL)
+                return MFX_ERR_INVALID_VIDEO_PARAM;
+            break;
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
 #if defined (PRE_SI_TARGET_PLATFORM_GEN12)
         case MFX_FOURCC_P016:
         case MFX_FOURCC_Y216:
         case MFX_FOURCC_Y416:
-#endif //PRE_SI_TARGET_PLATFORM_GEN12
+            if (platform < MFX_HW_TGL_LP)
+                return MFX_ERR_INVALID_VIDEO_PARAM;
             break;
+#endif //PRE_SI_TARGET_PLATFORM_GEN12
         case MFX_FOURCC_IMC3:
         case MFX_FOURCC_YV12:
         case MFX_FOURCC_YUV400:

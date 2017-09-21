@@ -81,7 +81,7 @@ mfxStatus GetPipelineList(
     //mfxU32* pLen,
     bool    bExtended = false);
 
-mfxStatus CheckFrameInfo(mfxFrameInfo* info, mfxU32 request);
+mfxStatus CheckFrameInfo(mfxFrameInfo* info, mfxU32 request, eMFXHWType platform);
 
 mfxStatus CheckCropParam( mfxFrameInfo* info );
 
