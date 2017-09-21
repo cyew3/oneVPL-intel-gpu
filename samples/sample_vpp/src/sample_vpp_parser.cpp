@@ -1254,10 +1254,10 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
                 pParams->fccSource = pParams->frameInfoIn[0].FourCC
                     = Str2FourCC(strInput[i]);
 
-                if (MFX_FOURCC_I420 == pParams->frameInfoIn[0].FourCC)
-                {
-                    pParams->frameInfoIn[0].FourCC = MFX_FOURCC_YV12; // I420 input is implemented using YV12 internally
-                }
+                //if (MFX_FOURCC_I420 == pParams->frameInfoIn[0].FourCC)
+                //{
+                //    pParams->frameInfoIn[0].FourCC = MFX_FOURCC_YV12; // I420 input is implemented using YV12 internally
+                //}
 
             }
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dcc")))
