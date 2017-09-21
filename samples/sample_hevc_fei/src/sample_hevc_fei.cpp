@@ -58,6 +58,9 @@ void PrintHelp(const msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-i::h264|mpeg2|vc1|h265 <file-name>] - input file and decoder type\n"));
     msdk_printf(MSDK_STRING("   [-w] - width of input YUV file\n"));
     msdk_printf(MSDK_STRING("   [-h] - height of input YUV file\n"));
+    msdk_printf(MSDK_STRING("   [-dstw width]  - destination picture width, invokes VPP resizing\n"));
+    msdk_printf(MSDK_STRING("   [-dsth height] - destination picture height, invokes VPP resizing\n"));
+    msdk_printf(MSDK_STRING("   [-fieldSplitting] - use VPP field splitting (works only with interlaced input)\n"));
     msdk_printf(MSDK_STRING("   [-nv12] - input is in NV12 color format, if not specified YUV420 is expected\n"));
     msdk_printf(MSDK_STRING("   [-tff|bff|mixed] - input stream is interlaced, top|bottom field first, if not specified progressive is expected\n"));
     msdk_printf(MSDK_STRING("                    - mixed means that picture structure should be obtained from the input stream\n"));
@@ -79,8 +82,6 @@ void PrintHelp(const msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-nobref] - do not use B-pyramid (by default the decision is made by library)\n"));
     msdk_printf(MSDK_STRING("   [-l numSlices] - number of slices \n"));
     msdk_printf(MSDK_STRING("   [-preenc] - use extended FEI interface PREENC (RC is forced to constant QP)\n"));
-    msdk_printf(MSDK_STRING("   [-dstw width]  - destination picture width, invokes VPP resizing\n"));
-    msdk_printf(MSDK_STRING("   [-dsth height] - destination picture height, invokes VPP resizing\n"));
     msdk_printf(MSDK_STRING("   [-mvout <file-name>] - use this to output MV predictors after PreENC\n"));
     msdk_printf(MSDK_STRING("   [-mbstat <file-name>] - use this to output per MB distortions for each frame after PreENC\n"));
     msdk_printf(MSDK_STRING("   [-mvpin <file-name>] - use this to input MV predictors for ENCODE (Encoded Order will be enabled automatically).\n"));
@@ -184,6 +185,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU32 nArgNum, sInputParams& 
         {
             CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
             PARSE_CHECK(msdk_opt_read(strInput[++i], params.dstHeight), "Destination height", isParseInvalid);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-fieldSplitting")))
+        {
+            params.input.fieldSplitting = true;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-f")))
         {

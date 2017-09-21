@@ -33,12 +33,13 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 struct SourceFrameInfo
 {
     msdk_char  strSrcFile[MSDK_MAX_FILENAME_LEN];
-    mfxU32     DecodeId;   // type of input coded video
+    mfxU32     DecodeId;       // type of input coded video
     mfxU32     ColorFormat;
     mfxU16     nPicStruct;
-    mfxU16     nWidth;      // source picture width
-    mfxU16     nHeight;     // source picture height
+    mfxU16     nWidth;         // source picture width
+    mfxU16     nHeight;        // source picture height
     mfxF64     dFrameRate;
+    bool       fieldSplitting; // VPP field splitting
 
     SourceFrameInfo()
         : DecodeId(0)
@@ -47,6 +48,7 @@ struct SourceFrameInfo
         , nWidth(0)
         , nHeight(0)
         , dFrameRate(30.0)
+        , fieldSplitting(false)
     {
         MSDK_ZERO_MEMORY(strSrcFile);
     }
@@ -64,10 +66,10 @@ struct sInputParams
 
     bool bENCODE;
     bool bPREENC;
-    bool bEncodedOrder;      // use EncodeOrderControl for external reordering
+    bool bEncodedOrder;     // use EncodeOrderControl for external reordering
     mfxU8  QP;
-    mfxU16 dstWidth;       // destination picture width
-    mfxU16 dstHeight;      // destination picture height
+    mfxU16 dstWidth;        // destination picture width
+    mfxU16 dstHeight;       // destination picture height
     mfxU32 nNumFrames;
     mfxU16 nNumSlices;
     mfxU16 nRefDist;        // distance between I- or P (or GPB) - key frames, GopRefDist = 1, there are no regular B-frames used
@@ -86,6 +88,8 @@ struct sInputParams
         , bPREENC(false)
         , bEncodedOrder(false)
         , QP(26)
+        , dstWidth(0)
+        , dstHeight(0)
         , nNumFrames(0xffff)
         , nNumSlices(1)
         , nRefDist(0)

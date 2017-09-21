@@ -46,6 +46,8 @@ mfxStatus CEncodingPipeline::Init()
         sts = CreateAllocator();
         MSDK_CHECK_STATUS(sts, "CreateAllocator failed");
 
+        m_EncSurfPool.SetAllocator(m_pMFXAllocator.get());
+
         {
             mfxHDL hdl = NULL;
             sts = m_pHWdev->GetHandle(MFX_HANDLE_VA_DISPLAY, &hdl);
@@ -278,7 +280,6 @@ mfxStatus CEncodingPipeline::AllocFrames()
         allocRequest.NumFrameMin = allocRequest.NumFrameSuggested;
     }
 
-    m_EncSurfPool.SetAllocator(m_pMFXAllocator.get());
     sts = m_EncSurfPool.AllocSurfaces(allocRequest);
     MSDK_CHECK_STATUS(sts, "AllocFrames::EncSurfPool->AllocSurfaces failed");
 
@@ -463,6 +464,7 @@ MfxVideoParamsWrapper GetEncodeParams(const sInputParams& user_pars, const mfxFr
 
 IYUVSource* CEncodingPipeline::CreateYUVSource()
 {
+    IYUVSource * pSource = NULL;
     if (m_inParams.input.DecodeId)
     {
         mfxPluginUID pluginGuid = MSDK_PLUGINGUID_NULL;
@@ -475,10 +477,17 @@ IYUVSource* CEncodingPipeline::CreateYUVSource()
                 return NULL;
         }
 
-        return new Decoder(m_inParams.input, &m_EncSurfPool, &m_mfxSession);
+        pSource = new Decoder(m_inParams.input, &m_EncSurfPool, &m_mfxSession);
     }
     else
-        return new YUVReader(m_inParams.input, &m_EncSurfPool);
+        pSource = new YUVReader(m_inParams.input, &m_EncSurfPool);
+
+    if (m_inParams.input.fieldSplitting)
+    {
+        pSource = new FieldSplitter(pSource, m_inParams.input, &m_EncSurfPool, &m_mfxSession);
+    }
+
+    return pSource;
 }
 
 FEI_Preenc* CEncodingPipeline::CreatePreENC(mfxFrameInfo& in_fi)

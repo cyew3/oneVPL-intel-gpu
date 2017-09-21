@@ -39,6 +39,10 @@ public:
 
     mfxStatus AllocSurfaces(mfxFrameAllocRequest& request);
     void SetAllocator(MFXFrameAllocator* allocator);
+    MFXFrameAllocator * GetAllocator(void)
+    {
+        return m_pAllocator;
+    }
     mfxFrameSurface1* GetFreeSurface();
     mfxStatus LockSurface(mfxFrameSurface1* pSurf);
     mfxStatus UnlockSurface(mfxFrameSurface1* pSurf);
@@ -66,6 +70,10 @@ public:
 
     virtual ~IYUVSource() {}
 
+    virtual void SetSurfacePool(SurfacesPool* sp)
+    {
+        m_pOutSurfPool = sp;
+    }
     virtual mfxStatus QueryIOSurf(mfxFrameAllocRequest* request) = 0;
     virtual mfxStatus PreInit() = 0;
     virtual mfxStatus Init()    = 0;
@@ -153,6 +161,48 @@ protected:
 
 private:
     DISALLOW_COPY_AND_ASSIGN(Decoder);
+};
+
+class FieldSplitter : public IYUVSource
+{
+public:
+    FieldSplitter(IYUVSource * pTarget, const SourceFrameInfo& inPars, SurfacesPool* sp, MFXVideoSession* parentSession)
+        : IYUVSource(inPars, sp)
+        , m_pTarget(pTarget)
+        , m_parentSession(parentSession)
+        , m_pLastInSurface(NULL)
+    {
+    }
+    virtual ~FieldSplitter()
+    {
+        m_pTarget.reset();
+    }
+    virtual mfxStatus QueryIOSurf(mfxFrameAllocRequest* request);
+    virtual mfxStatus PreInit();
+    virtual mfxStatus Init();
+    virtual void      Close();
+
+    virtual mfxStatus GetActualFrameInfo(mfxFrameInfo & info);
+    virtual mfxStatus GetFrame(mfxFrameSurface1* & pSurf);
+
+protected:
+    mfxStatus VPPOneFrame(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1** pSurfaceOut);
+
+protected:
+    std::auto_ptr<IYUVSource>   m_pTarget;
+    MFXVideoSession *           m_parentSession;
+
+    SurfacesPool                m_InSurfacePool;
+
+    MFXVideoSession             m_session;
+    std::auto_ptr<MFXVideoVPP>  m_VPP;
+    MfxVideoParamsWrapper       m_par;
+
+    mfxFrameSurface1 *          m_pLastInSurface;
+    mfxSyncPoint                m_LastSyncp;
+
+private:
+    DISALLOW_COPY_AND_ASSIGN(FieldSplitter);
 };
 
 /**********************************************************************************/
@@ -250,6 +300,8 @@ T* AcquireResource(std::vector<T> & pool)
     }
     return freeBuffer;
 }
+
+/**********************************************************************************/
 
 class MFX_VPP
 {
