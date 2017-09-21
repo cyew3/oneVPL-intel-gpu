@@ -87,6 +87,7 @@ mfxStatus FEI_Encode::PreInit()
     MSDK_CHECK_POINTER(ctrl, MFX_ERR_NOT_INITIALIZED);
     ctrl->SubPelMode   = 3;
     ctrl->SearchWindow = 5;
+
     if (!ctrl->SearchWindow)
     {
         ctrl->SearchPath     = 0;
@@ -292,6 +293,12 @@ mfxStatus FEI_Encode::SetCtrlParams(const HevcTask& task)
 #if 0
         mfxExtFeiHevcEncMVPredictors* pMVP = m_encodeCtrl.GetExtBuffer<mfxExtFeiHevcEncMVPredictors>();
         MSDK_CHECK_POINTER(pMVP, MFX_ERR_NOT_INITIALIZED);
+
+        mfxExtFeiHevcEncFrameCtrl* ctrl = m_encodeCtrl.GetExtBuffer<mfxExtFeiHevcEncFrameCtrl>();
+        MSDK_CHECK_POINTER(ctrl, MFX_ERR_NOT_INITIALIZED);
+
+        // Switch predictors off for I-frames
+        ctrl->MVPredictor = (m_encodeCtrl.FrameType & MFX_FRAMETYPE_I) == 0;
 
         AutoBufferLocker<mfxExtFeiHevcEncMVPredictors> lock(m_buf_allocator, *pMVP);
         mfxStatus sts = m_pFile_MVP_in->Read(pMVP->Data, 1, pMVP->DataSize);
