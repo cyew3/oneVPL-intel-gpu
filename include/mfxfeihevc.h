@@ -38,29 +38,27 @@ extern "C"
 
 
 typedef struct {
-    mfxExtBuffer    Header;
+    mfxExtBuffer Header;
 
-    mfxU16    SearchPath;
-    mfxU16    LenSP;
-    mfxU16    RefWidth;
-    mfxU16    RefHeight;
-    mfxU16    SearchWindow;
+    mfxU16  SearchPath;
+    mfxU16  LenSP;
+    mfxU16  RefWidth;
+    mfxU16  RefHeight;
+    mfxU16  SearchWindow;
 
-    mfxU16    NumMvPredictorsL0;
-    mfxU16    NumMvPredictorsL1;
-    mfxU16    MultiPredL0;
-    mfxU16    MultiPredL1;
+    mfxU16  NumMvPredictors[2]; /* 0 for L0 and 1 for L1 */
+    mfxU16  MultiPred[2];       /* 0 for L0 and 1 for L1 */
 
-    mfxU16    SubPelMode;
-    mfxU16    AdaptiveSearch;
-    mfxU16    MVPredictor;
+    mfxU16  SubPelMode;
+    mfxU16  AdaptiveSearch;
+    mfxU16  MVPredictor;
 
-    mfxU16    PerCtbQp;
-    mfxU16    PerCtbInput;
-    mfxU16    CoLocatedCtbDistortion;
-    mfxU16    ForceLcuSplit;
+    mfxU16  PerCuQp;
+    mfxU16  PerCtuInput;
+    mfxU16  ForceCtuSplit;
+    mfxU16  NumFramePartitions;
 
-    mfxU16    reserved0[108];
+    mfxU16  reserved0[108];
 } mfxExtFeiHevcEncFrameCtrl;
 
 
@@ -97,25 +95,25 @@ typedef struct {
 
 
 typedef struct {
-    mfxU32    ForceToIntra : 1;
-    mfxU32    reserved0    : 31;
+    mfxU32  ForceToIntra    : 1;
+    mfxU32  ForceToInter    : 1;
+    mfxU32  reserved0       : 30;
 
-    mfxU32    reserved1;
-    mfxU32    reserved2;
-    mfxU32    reserved3;
-} mfxFeiHevcEncCtbCtrl;
+    mfxU32  reserved1[3];
+} mfxFeiHevcEncCtuCtrl;
 
 
 typedef struct {
-    mfxExtBuffer  Header;
-    mfxU32        VaBufferID;
-    mfxU32        DataSize;
-    mfxU16        reserved0[56];
+    mfxExtBuffer Header;
+    mfxU32  VaBufferID;
+    mfxU32  DataSize;
+    mfxU16  reserved0[56];
 
-    mfxFeiHevcEncCtbCtrl *Data;
-} mfxExtFeiHevcEncCtbCtrl;
+    mfxFeiHevcEncCtuCtrl *Data;
+} mfxExtFeiHevcEncCtuCtrl;
 
 
+#if MFX_VERSION >= 1025
 typedef struct  {
     /* DWORD 0 */
     mfxU32    reserved0;
@@ -129,17 +127,17 @@ typedef struct  {
     mfxU32    SplitLevel0            : 1;
     mfxU32    reserved10             : 3;
     mfxU32    CuCountMinus1          : 6;
-    mfxU32    LastCtbOfTileFlag      : 1;
-    mfxU32    LastCtbOfSliceFlag     : 1;
+    mfxU32    LastCtuOfTileFlag      : 1;
+    mfxU32    LastCtuOfSliceFlag     : 1;
 
 
     /* DWORD 2 */
-    mfxU32    LcuAddrX               : 16;
-    mfxU32    LcuAddrY               : 16;
+    mfxU32    CtuAddrX               : 16;
+    mfxU32    CtuAddrY               : 16;
 
     /* DWORD 3 */
     mfxU32    reserved3;
-} mfxFeiHevcPakCtbRecordV0;
+} mfxFeiHevcPakCtuRecordV0;
 
 
 typedef struct {
@@ -148,8 +146,8 @@ typedef struct {
     mfxU32        DataSize;
     mfxU16        reserved0[56];
 
-    mfxFeiHevcPakCtbRecordV0 *Data;
-} mfxExtFeiHevcPakCtbRecordV0;
+    mfxFeiHevcPakCtuRecordV0 *Data;
+} mfxExtFeiHevcPakCtuRecordV0;
 
 
 typedef struct  {
@@ -222,8 +220,8 @@ typedef struct {
 
 typedef struct {
     mfxU32        BestDistortion;
-    mfxU32        CoLocatedCTBDistortion;
-} mfxFeiHevcDistortionCTB;
+    mfxU32        ColocatedCtuDistortion;
+} mfxFeiHevcDistortionCtu;
 
 
 typedef struct {
@@ -232,17 +230,22 @@ typedef struct {
     mfxU32        DataSize;
     mfxU16        reserved[8];
 
-    mfxFeiHevcDistortionCTB *Data;
+    mfxFeiHevcDistortionCtu *Data;
 } mfxExtFeiHevcDistortion;
+#endif
+
 
 enum {
     MFX_EXTBUFF_HEVCFEI_ENC_CTRL       = MFX_MAKEFOURCC('F','H','C','T'),
     MFX_EXTBUFF_HEVCFEI_ENC_MV_PRED    = MFX_MAKEFOURCC('F','H','P','D'),
     MFX_EXTBUFF_HEVCFEI_ENC_QP         = MFX_MAKEFOURCC('F','H','Q','P'),
-    MFX_EXTBUFF_HEVCFEI_ENC_CTB_CTRL   = MFX_MAKEFOURCC('F','H','E','C'),
-    MFX_EXTBUFF_HEVCFEI_PAK_CTB_REC    = MFX_MAKEFOURCC('F','H','T','B'),
+    MFX_EXTBUFF_HEVCFEI_ENC_CTU_CTRL   = MFX_MAKEFOURCC('F','H','E','C'),
+
+#if MFX_VERSION >= 1025
+    MFX_EXTBUFF_HEVCFEI_PAK_CTU_REC    = MFX_MAKEFOURCC('F','H','T','B'),
     MFX_EXTBUFF_HEVCFEI_PAK_CU_REC     = MFX_MAKEFOURCC('F','H','C','U'),
     MFX_EXTBUFF_HEVCFEI_ENC_DIST       = MFX_MAKEFOURCC('F','H','D','S')
+#endif
 };
 
 
@@ -251,4 +254,4 @@ enum {
 #endif /* __cplusplus */
 
 
-#endif
+#endif // __MFXFEIHEVC_H__
