@@ -24,3 +24,7 @@ ifeq ($(MFX_OMX_PAVP),true)
       $(TOP)/vendor/intel/ufo/$(UFO_ENABLE_GEN)_dev/include/libpavp
   endif
 endif
+
+ifeq ($(BOARD_USES_GRALLOC1),true)
+  MFX_C_INCLUDES_OMX += $(INTEL_MINIGBM)/cros_gralloc
+endif

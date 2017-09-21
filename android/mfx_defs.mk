@@ -54,6 +54,11 @@ ifeq ($(MFX_OMX_PAVP),true)
     -DMFX_OMX_PAVP
 endif
 
+ifeq ($(BOARD_USES_GRALLOC1),true)
+  MFX_CFLAGS += \
+    -DMFX_OMX_USE_GRALLOC_1
+endif
+
 # Setting version information for the binaries
 ifeq ($(MFX_VERSION),)
   MFX_VERSION = "6.0.010"
