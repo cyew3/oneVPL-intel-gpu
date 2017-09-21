@@ -96,12 +96,13 @@ mfxStatus MFEVAAPIEncoder::Create(mfxExtMultiFrameParam  const & par, VADisplay 
     if (handle)
     {
         vaCreateMFEContext = (vaExtCreateMfeContext)dlsym(handle, VPG_EXT_VA_CREATE_MFECONTEXT);
-
+        MFX_CHECK_NULL_PTR1(vaCreateMFEContext);
         vaAddContext = (vaExtAddContext)dlsym(handle, VPG_EXT_VA_ADD_CONTEXT);
-
+        MFX_CHECK_NULL_PTR1(vaAddContext);
         vaReleaseContext = (vaExtReleaseContext)dlsym(handle, VPG_EXT_VA_RELEASE_CONTEXT);
-
+        MFX_CHECK_NULL_PTR1(vaReleaseContext);
         vaMFESubmit = (vaExtMfeSubmit)dlsym(handle, VPG_EXT_VA_MFE_SUBMIT);
+        MFX_CHECK_NULL_PTR1(vaMFESubmit);
 
         VAStatus vaSts = vaCreateMFEContext(m_vaDisplay, &m_mfe_context);
         if (VA_STATUS_SUCCESS == vaSts)
@@ -153,7 +154,7 @@ mfxStatus MFEVAAPIEncoder::Join(VAContextID ctx)
     if (m_framesToCombine < m_maxFramesToCombine)
         ++m_framesToCombine;
 
-    return MFX_ERR_NONE;
+    return sts;
 }
 
 mfxStatus MFEVAAPIEncoder::Disjoin(VAContextID ctx)
