@@ -7330,10 +7330,11 @@ The `mfxHandleType` enumerator itemizes system handle types that SDK implementat
 
 | | |
 --- | ---
-`MFX_HANDLE_D3D9_DEVICE_MANAGER` | Pointer to the **IDirect3DDeviceManager9** interface. See Working with Microsoft* DirectX* Applications for more details on how to use this handle.
-`MFX_HANDLE_D3D11_DEVICE` | Pointer to the **ID3D11Device** interface. See Working with Microsoft* DirectX* Applications for more details on how to use this handle.
-`MFX_HANDLE_VA_DISPLAY` | Pointer to VADisplay interface. See Working with VA API Applications for more details on how to use this handle.
+`MFX_HANDLE_D3D9_DEVICE_MANAGER` | Pointer to the `IDirect3DDeviceManager9` interface. See Working with Microsoft* DirectX* Applications for more details on how to use this handle.
+`MFX_HANDLE_D3D11_DEVICE`   | Pointer to the `ID3D11Device` interface. See Working with Microsoft* DirectX* Applications for more details on how to use this handle.
+`MFX_HANDLE_VA_DISPLAY`     | Pointer to VADisplay interface. See Working with VA API Applications for more details on how to use this handle.
 `MFX_HANDLE_ENCODE_CONTEXT` | Pointer to VAContextID interface. It represents encoder context.
+`MFX_HANDLE_CM_DEVICE`      | Pointer to `CmDevice` interface ( [Intel® C for media](https://github.com/01org/cmrt) ).
 
 **Change History**
 
@@ -7342,6 +7343,8 @@ This enumerator is available since SDK API 1.0.
 SDK API 1.4 added `MFX_HANDLE_D3D11_DEVICE` definition.
 
 SDK API 1.8 added `MFX_HANDLE_VA_DISPLAY` and `MFX_HANDLE_ENCODE_CONTEXT` definitions.
+
+SDK API **TBD** added `MFX_HANDLE_CM_DEVICE` definition.
 
 ## <a id='mfxIMPL'>mfxIMPL</a>
 

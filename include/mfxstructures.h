@@ -1029,7 +1029,8 @@ typedef enum {
     MFX_HANDLE_VA_DISPLAY                       = 4,
     MFX_HANDLE_RESERVED3                        = 5,
     MFX_HANDLE_VA_CONFIG_ID                     = 6,
-    MFX_HANDLE_VA_CONTEXT_ID                    = 7
+    MFX_HANDLE_VA_CONTEXT_ID                    = 7,
+    MFX_HANDLE_CM_DEVICE                        = 8
 } mfxHandleType;
 
 typedef enum {
