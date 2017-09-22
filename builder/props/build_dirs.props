@@ -1,22 +1,23 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ImportGroup Label="PropertySheets" />
-  <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(DevWinEdition)' == 'Desktop'">
-    <OutDir Condition="'$(ConfigurationType)'=='StaticLibrary'">$(MSDK_MFX_BUILD_DIR)\win_$(Platform)\lib\</OutDir>
-    <OutDir Condition="'$(ConfigurationType)'=='DynamicLibrary' or '$(ConfigurationType)'=='Application'" >$(MSDK_MFX_BUILD_DIR)\win_$(Platform)\bin\</OutDir>
-    <IntDir>$(MSDK_MFX_BUILD_DIR)\win_$(Platform)\objs\$(Configuration)\$(ProjectName)\</IntDir>
+  <PropertyGroup>
+    <BuildDirsPropsImported>true</BuildDirsPropsImported>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(DevWinEdition)' == 'Mobile' and '$(Platform)'=='Win32'">
-    <OutDir Condition="'$(ConfigurationType)'=='StaticLibrary'">$(MSDK_MFX_BUILD_DIR)\win_thm32\lib\</OutDir>
-    <OutDir Condition="'$(ConfigurationType)'=='DynamicLibrary' or '$(ConfigurationType)'=='Application'">$(MSDK_MFX_BUILD_DIR)\win_thm32\bin\</OutDir>
-    <IntDir>$(MSDK_MFX_BUILD_DIR)\win_thm32\objs\$(Configuration)\$(ProjectName)\</IntDir>
+
+  <PropertyGroup Label="UserMacros">
+    <TypeSuffix Condition="'$(ConfigurationType)'=='StaticLibrary'">lib</TypeSuffix>
+    <TypeSuffix Condition="'$(ConfigurationType)'=='DynamicLibrary' or '$(ConfigurationType)'=='Application'">bin</TypeSuffix>
+    <PlatformDir Condition="'$(DevWinEdition)' == 'Desktop'">win_$(Platform)</PlatformDir>
+    <PlatformDir Condition="'$(DevWinEdition)' == 'Mobile' and '$(Platform)'=='Win32'">win_thm32</PlatformDir>
+    <PlatformDir Condition="'$(DevWinEdition)' == 'Mobile' and '$(Platform)'=='x64'">win_thm64</PlatformDir>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(DevWinEdition)' == 'Mobile' and '$(Platform)'=='x64'">
-    <OutDir Condition="'$(ConfigurationType)'=='StaticLibrary'">$(MSDK_MFX_BUILD_DIR)\win_thm64\lib\</OutDir>
-    <OutDir Condition="'$(ConfigurationType)'=='DynamicLibrary' or '$(ConfigurationType)'=='Application'">$(MSDK_MFX_BUILD_DIR)\win_thm64\bin\</OutDir>
-    <IntDir>$(MSDK_MFX_BUILD_DIR)\win_thm64\objs\$(Configuration)\$(ProjectName)\</IntDir>
+
+  <PropertyGroup>
+    <IntDir>$(MSDK_MFX_BUILD_DIR)\$(PlatformDir)\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir>$(MSDK_MFX_BUILD_DIR)\$(PlatformDir)\$(TypeSuffix)\</OutDir>
   </PropertyGroup>
+
   <Target Name="MediaSdkBuildDirCheck" BeforeTargets="Build">
     <Warning Text="Unable to find MSDK_MFX_BUILD_DIR user macro."
        Condition ="!Exists('$(MSDK_MFX_BUILD_DIR)')" />

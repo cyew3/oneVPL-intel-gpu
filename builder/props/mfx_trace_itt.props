@@ -5,17 +5,17 @@
   <PropertyGroup>
     <TraceIttPropsImported>true</TraceIttPropsImported>
   </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(UseITT)'=='true'">
+  <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)..\..\..\mdp_msdk-contrib\itt\windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)\..\..\..\mdp_msdk-contrib\itt\windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>MFX_TRACE_ENABLE_ITT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link Condition="'$(Platform)'=='Win32'">
-      <AdditionalLibraryDirectories>$(MSBuildThisFileDirectory)..\..\..\mdp_msdk-contrib\itt\windows\lib32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MSBuildThisFileDirectory)\..\..\..\mdp_msdk-contrib\itt\windows\lib32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>libittnotify.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Link Condition="'$(Platform)'=='x64'">
-      <AdditionalLibraryDirectories>$(MSBuildThisFileDirectory)..\..\..\mdp_msdk-contrib\itt\windows\lib64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MSBuildThisFileDirectory)\..\..\..\mdp_msdk-contrib\itt\windows\lib64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>libittnotify.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>

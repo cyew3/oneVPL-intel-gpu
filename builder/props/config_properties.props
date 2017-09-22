@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup>
+    <ConfigPropsImported>true</ConfigPropsImported>
+  </PropertyGroup>
+
+  <!-- Debug properties -->
+  <PropertyGroup Condition="'$(DevConfiguration)'=='Debug'">
+    <TargetName>$(ProjectName)_d</TargetName>
+  </PropertyGroup>
+
+  <!-- Release properties -->
+  <PropertyGroup Condition="'$(DevConfiguration)'=='Release'">
+    <TargetName>$(ProjectName)</TargetName>
+  </PropertyGroup>
+
+  <!-- Debug item definitions -->
+  <ItemDefinitionGroup Condition="'$(DevConfiguration)'=='Debug'">
+    <ClCompile>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <MinimalRebuild>true</MinimalRebuild>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
+  <!-- Release item definitions -->
+  <ItemDefinitionGroup Condition="'$(DevConfiguration)'=='Release'">
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <ControlFlowGuard>Guard</ControlFlowGuard>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+    </ClCompile>
+  </ItemDefinitionGroup>
+</Project>

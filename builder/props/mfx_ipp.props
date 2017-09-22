@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ImportGroup Label="PropertySheets" />
-  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <MfxIppPropsImported>true</MfxIppPropsImported>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Platform)'=='Win32'" Label="UserMacros" >
     <MfxIppIncludeDir>$(MEDIASDK_ROOT)\ipp\ipp81goldGuard\windows\ia32\include</MfxIppIncludeDir>
     <MfxIppLibraryDir>$(MEDIASDK_ROOT)\ipp\ipp81goldGuard\windows\ia32\lib</MfxIppLibraryDir>

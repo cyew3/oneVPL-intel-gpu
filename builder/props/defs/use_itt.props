@@ -3,7 +3,6 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <UseIttPropsImported>true</UseIttPropsImported>
     <UseITT>true</UseITT>
   </PropertyGroup>
   <ItemGroup />
