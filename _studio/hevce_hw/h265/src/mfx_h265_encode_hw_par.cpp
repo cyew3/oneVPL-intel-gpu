@@ -1831,7 +1831,9 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 #endif
 
 #ifdef MFX_ENABLE_HEVCE_INTERLACE
-    if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP || 
+        (IsOn(par.m_ext.CO2.ExtBRC) && (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR || par.mfx.RateControlMethod == MFX_RATECONTROL_VBR)))
     {
         changed += CheckOption(par.mfx.FrameInfo.PicStruct, (mfxU16)MFX_PICSTRUCT_PROGRESSIVE, MFX_PICSTRUCT_FIELD_TOP, MFX_PICSTRUCT_FIELD_BOTTOM, MFX_PICSTRUCT_FIELD_SINGLE, 0);
     }
@@ -1981,16 +1983,18 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     changed += CheckTriStateOption(par.m_ext.CO.VuiNalHrdParameters);
     changed += CheckTriStateOption(par.m_ext.CO.NalHrdConformance);
 
-    if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+    if (par.mfx.RateControlMethod != MFX_RATECONTROL_CBR && 
+        par.mfx.RateControlMethod != MFX_RATECONTROL_VBR && 
+        par.mfx.RateControlMethod != MFX_RATECONTROL_VCM)
     {
        changed += CheckOption(par.m_ext.CO.VuiNalHrdParameters, (mfxU32)MFX_CODINGOPTION_OFF, 0);
        changed += CheckOption(par.m_ext.CO.NalHrdConformance,  (mfxU32)MFX_CODINGOPTION_OFF, 0);
-       par.InsertHRDInfo = false;
+       par.HRDConformance = false;
     }
     if (IsOff(par.m_ext.CO.NalHrdConformance))
     {
        changed += CheckOption(par.m_ext.CO.VuiNalHrdParameters, (mfxU32)MFX_CODINGOPTION_OFF, 0);
-       par.InsertHRDInfo = false;
+       par.HRDConformance = false;
     }
 
     changed += CheckTriStateOption(par.m_ext.CO.PicTimingSEI);
@@ -2655,10 +2659,14 @@ void SetDefaults(
         par.m_ext.CO2.IntRefCycleSize =
             (mfxU16)((par.mfx.FrameInfo.FrameRateExtN + par.mfx.FrameInfo.FrameRateExtD - 1) / par.mfx.FrameInfo.FrameRateExtD);
     }
-    if (IsOff(par.m_ext.CO.NalHrdConformance))
-    {
-       par.m_ext.CO.VuiNalHrdParameters = MFX_CODINGOPTION_OFF;
-    }
+    if (!par.m_ext.CO.NalHrdConformance)
+        par.m_ext.CO.NalHrdConformance =(mfxU16) (par.HRDConformance ? MFX_CODINGOPTION_ON : MFX_CODINGOPTION_OFF);
+
+    if (!par.m_ext.CO.VuiNalHrdParameters)
+        par.m_ext.CO.VuiNalHrdParameters = (mfxU16) (par.HRDConformance ? MFX_CODINGOPTION_ON : MFX_CODINGOPTION_OFF);
+
+     if (!par.m_ext.CO.PicTimingSEI)
+        par.m_ext.CO.PicTimingSEI = (mfxU16)(par.HRDConformance || par.isField() ? MFX_CODINGOPTION_ON: MFX_CODINGOPTION_OFF);
 
     if (!par.m_ext.CO.AUDelimiter)
         par.m_ext.CO.AUDelimiter = MFX_CODINGOPTION_OFF;

@@ -174,7 +174,7 @@ enum
 
     HW_SURF_ALIGN_W         = 16,
     HW_SURF_ALIGN_H         = 16,
-    
+
     HW_SURF_ALIGN_LOWPOWER_W  = 32,
     HW_SURF_ALIGN_LOWPOWER_H  = HW_SURF_ALIGN_H,
 
@@ -359,6 +359,7 @@ typedef struct _Task : DpbFrame
     mfxU8  m_shNUT;
     mfxI8  m_qpY;
     mfxI32 m_lastIPoc;
+    mfxI32 m_lastRAP;
 
     mfxU32 m_statusReportNumber;
     mfxU32 m_bsDataLength;
@@ -541,7 +542,7 @@ namespace ExtBuffer
 
     inline void CopySupportedParams (mfxExtCodingOption& buf_dst, mfxExtCodingOption& buf_src)
     {
-        //_CopyPar1(PicTimingSEI);
+        _CopyPar1(PicTimingSEI);
         _CopyPar1(VuiNalHrdParameters);
         _CopyPar1(NalHrdConformance);
         _CopyPar1(AUDelimiter);
@@ -865,10 +866,11 @@ public:
     mfxU16 NumRefLX[2]; // max num active refs
     mfxU32 LTRInterval;
     mfxU32 LCUSize;
-    bool   InsertHRDInfo;
+    bool   HRDConformance;
     bool   RawRef;
     bool   bROIViaMBQP;
     bool   bMBQPInput;
+    bool   RAPIntra;
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     bool   WiDi;
@@ -1206,9 +1208,9 @@ enum
 class HevcSkipMode
 {
 public:
-    HevcSkipMode(): m_mode(0) 
+    HevcSkipMode(): m_mode(0)
     {};
-    HevcSkipMode(mfxU16 mode): m_mode(mode) 
+    HevcSkipMode(mfxU16 mode): m_mode(mode)
     {};
 private:
     mfxU16 m_mode;
@@ -1228,12 +1230,12 @@ public:
             break;
         default:
             m_mode = HEVC_SKIPFRAME_NO;
-            break;        
-        }  
+            break;
+        }
     }
     void SetPseudoSkip ()
     {
-        m_mode = HEVC_SKIPFRAME_EXT_PSEUDO;    
+        m_mode = HEVC_SKIPFRAME_EXT_PSEUDO;
     }
     mfxU16 GetMode() {return m_mode;}
 

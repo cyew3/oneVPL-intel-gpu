@@ -520,7 +520,7 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
     m_brc = CreateBrc(m_vpar);
     if (m_brc)
     {
-        sts = m_brc->Init(m_vpar, m_vpar.InsertHRDInfo);
+        sts = m_brc->Init(m_vpar, m_vpar.HRDConformance);
         MFX_CHECK_STS(sts);
     }
 
