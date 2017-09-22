@@ -8,7 +8,6 @@ Copyright(c) 2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
-#include <mutex>
 #include "ts_encoder.h"
 #include "ts_decoder.h"
 #include "ts_parser.h"
@@ -17,9 +16,12 @@ Copyright(c) 2017 Intel Corporation. All Rights Reserved.
 namespace vp9e_temporal_scalability
 {
 #define VP9E_MAX_TEMPORAL_LAYERS (4)
-#define VP9E_DEFAULT_BITRATE (200)
+#define VP9E_DEFAULT_BITRATE (500)
 #define VP9E_PSNR_THRESHOLD (20.0)
 #define VP9E_MAX_FRAMES_IN_TEST_SEQUENCE (256)
+
+#define IVF_SEQ_HEADER_SIZE_BYTES (32)
+#define IVF_PIC_HEADER_SIZE_BYTES (12)
 
     enum
     {
@@ -67,11 +69,7 @@ namespace vp9e_temporal_scalability
     public:
         static const unsigned int n_cases;
         mfxExtVP9TemporalLayers *temporal_layers_ext_params;
-        mfxU32 m_SourceWidth;
-        mfxU32 m_SourceHeight;
-        std::map<mfxU32, mfxU8 *> m_source_frames_y;
         std::map<mfxU32, mfxU32> m_encoded_frame_sizes;
-        std::mutex  m_frames_storage_mtx;
         mfxI8 m_LayerNestingLevel[VP9E_MAX_FRAMES_IN_TEST_SEQUENCE];
         mfxI8 m_LayerToCheck;
         mfxU32 m_SourceFrameCount = 0;
@@ -80,15 +78,17 @@ namespace vp9e_temporal_scalability
             : tsVideoEncoder(MFX_CODEC_VP9)
             , m_RuntimeSettingsCtrl(0)
             , temporal_layers_ext_params(nullptr)
-            , m_SourceWidth(0)
-            , m_SourceHeight(0)
             , m_LayerToCheck(-1)
             , m_SourceFrameCount(0)
         {
             memset(m_LayerNestingLevel, -1, VP9E_MAX_FRAMES_IN_TEST_SEQUENCE);
         }
         ~TestSuite() {}
-        int RunTest(unsigned int id);
+
+        template<mfxU32 fourcc>
+        int RunTest_Subtype(const unsigned int id);
+
+        int RunTest(const tc_struct& tc, unsigned int fourcc_id);
     };
 
     const tc_struct TestSuite::test_case[] =
@@ -530,9 +530,10 @@ namespace vp9e_temporal_scalability
     {
     private:
         TestSuite *m_TestPtr;
+        std::map<mfxU32, mfxFrameSurface1*>* m_pInputSurfaces;
         bool m_CheckPsnr;
     public:
-        BitstreamChecker(TestSuite *testPtr, bool check_psnr = false);
+        BitstreamChecker(TestSuite *testPtr, std::map<mfxU32, mfxFrameSurface1*>* pSurfaces, bool check_psnr = false);
         mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames);
         mfxU32 m_AllFramesSize;
         mfxU32 m_DecodedFramesCount;
@@ -540,30 +541,16 @@ namespace vp9e_temporal_scalability
         mfxU32 m_ChunkCount;
     };
 
-    BitstreamChecker::BitstreamChecker(TestSuite *testPtr, bool check_psnr)
+    BitstreamChecker::BitstreamChecker(TestSuite *testPtr, std::map<mfxU32, mfxFrameSurface1*>* pSurfaces, bool check_psnr)
         : tsVideoDecoder(MFX_CODEC_VP9)
         , m_TestPtr(testPtr)
+        , m_pInputSurfaces(pSurfaces)
         , m_CheckPsnr(check_psnr)
         , m_AllFramesSize(0)
         , m_DecodedFramesCount(0)
         , m_DecoderInited(false)
         , m_ChunkCount(0)
     {}
-
-    mfxF64 PSNR_Y_8bit(mfxU8 *ref, mfxU8 *src, mfxU32 length)
-    {
-        mfxF64 max = (1 << 8) - 1;
-        mfxI32 diff = 0;
-        mfxU64 dist = 0;
-
-        for (mfxU32 y = 0; y < length; y++)
-        {
-            diff = ref[y] - src[y];
-            dist += (diff * diff);
-        }
-
-        return (10. * log10(max * max * ((mfxF64)length / dist)));
-    }
 
     mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
     {
@@ -633,22 +620,24 @@ namespace vp9e_temporal_scalability
                             }
                             else
                             {
-                                ADD_FAILURE() << "ERROR: Invalid superframe index [headers in the beginning and in the end do not match]"; throw tsFAIL;
+                                ADD_FAILURE() << "ERROR: Invalid superframe index [headers in the beginning and in the end do not match] for chunk #" << m_ChunkCount;
+                                throw tsFAIL;
                             }
                         }
                         else
                         {
-                            ADD_FAILURE() << "ERROR: Index size calculated as " << index_size << " bytes, but whole chunk is only " << bs.DataLength << " bytes"; throw tsFAIL;
+                            ADD_FAILURE() << "ERROR: Index size calculated as " << index_size << " bytes, but whole chunk #" << m_ChunkCount
+                                << " is only " << bs.DataLength << " bytes"; throw tsFAIL;
                         }
                     }
                     else
                     {
-                        ADD_FAILURE() << "ERROR: Superframe index is not found in the end of the chunk"; throw tsFAIL;
+                        ADD_FAILURE() << "ERROR: Superframe index is not found in the end of the chunk #" << m_ChunkCount; throw tsFAIL;
                     }
 
                     if (hdr.uh.show_frame != 0)
                     {
-                        ADD_FAILURE() << "ERROR: first frame in the superframe expected show_frame=false, but it is not"; throw tsFAIL;
+                        ADD_FAILURE() << "ERROR: first frame in the superframe expected be with flag show_frame=false, but it is not"; throw tsFAIL;
                     }
                 }
                 else
@@ -671,10 +660,10 @@ namespace vp9e_temporal_scalability
                 }
             }
 
-            // do the decoder initialisation on the first encoded frame
+            // do the decoder initialization on the first encoded frame
             if (m_DecodedFramesCount == 0 && m_CheckPsnr)
             {
-                const mfxU32 headers_shift = 12/*header*/ + (m_DecodedFramesCount == 0 ? 32/*ivf_header*/ : 0);
+                const mfxU32 headers_shift = IVF_PIC_HEADER_SIZE_BYTES + (m_DecodedFramesCount == 0 ? IVF_SEQ_HEADER_SIZE_BYTES : 0);
                 m_pBitstream->Data = bs.Data + headers_shift;
                 m_pBitstream->DataOffset = 0;
                 m_pBitstream->DataLength = bs.DataLength - headers_shift;
@@ -692,9 +681,6 @@ namespace vp9e_temporal_scalability
                     {
                         QueryIOSurf();
                     }
-                    // This is a workaround for the decoder (there is an issue with NumFrameSuggested and decoding superframes)
-                    m_request.NumFrameMin = 5;
-                    m_request.NumFrameSuggested = 10;
 
                     mfxStatus alloc_status = tsSurfacePool::AllocSurfaces(m_request, !m_use_memid);
                     if (alloc_status >= 0)
@@ -703,12 +689,14 @@ namespace vp9e_temporal_scalability
                     }
                     else
                     {
-                        g_tsLog << "WARNING: Could not allocate surfaces for the decoder, status " << alloc_status;
+                        g_tsLog << "ERROR: Could not allocate surfaces for the decoder, status " << alloc_status;
+                        throw tsFAIL;
                     }
                 }
                 else
                 {
-                    g_tsLog << "WARNING: Could not inilialize the decoder, Init() returned " << init_status;
+                    g_tsLog << "ERROR: Could not inilialize the decoder, Init() returned " << init_status;
+                    throw tsFAIL;
                 }
             }
 
@@ -716,13 +704,14 @@ namespace vp9e_temporal_scalability
             {
                 if (m_TestPtr->m_LayerToCheck != -1 && m_TestPtr->m_LayerNestingLevel[m_ChunkCount] > m_TestPtr->m_LayerToCheck)
                 {
-                    g_tsLog << "INFO: Frame " << m_ChunkCount << " is not sending to the decoder cause layer " << (mfxI32)m_TestPtr->m_LayerToCheck << " is being checked\n";
+                    g_tsLog << "INFO: Frame " << m_ChunkCount << " is not sending to the decoder because layer " << (mfxI32)m_TestPtr->m_LayerToCheck
+                        << " is being checked\n";
                 }
                 else
                 {
                     g_tsLog << "INFO: Decoding frame " << m_ChunkCount << ", checked layer is " << (mfxI32)m_TestPtr->m_LayerToCheck << "\n";
 
-                    const mfxU32 headers_shift = 12/*header*/ + (m_DecodedFramesCount == 0 ? 32/*ivf_header*/ : 0);
+                    const mfxU32 headers_shift = IVF_PIC_HEADER_SIZE_BYTES + (m_DecodedFramesCount == 0 ? IVF_SEQ_HEADER_SIZE_BYTES : 0);
                     m_pBitstream->Data = bs.Data + headers_shift;
                     m_pBitstream->DataOffset = 0;
                     m_pBitstream->DataLength = bs.DataLength - headers_shift;
@@ -735,42 +724,49 @@ namespace vp9e_temporal_scalability
 
                     if (decode_status >= 0)
                     {
-                        SyncOperation();
-
-                        mfxU8 *ptr_decoded = new mfxU8[m_TestPtr->m_SourceWidth*m_TestPtr->m_SourceHeight];
-
-                        for (mfxU32 i = 0; i < m_TestPtr->m_SourceHeight; i++)
+                        mfxStatus sync_status = SyncOperation();
+                        if (sync_status >= 0)
                         {
-                            memcpy(ptr_decoded + i*m_TestPtr->m_SourceWidth, m_pSurf->Data.Y + i*m_pSurf->Data.Pitch, m_TestPtr->m_SourceWidth);
-                        }
+                            mfxU32 w = m_pPar->mfx.FrameInfo.Width;
+                            mfxU32 h = m_pPar->mfx.FrameInfo.Height;
 
-                        m_TestPtr->m_frames_storage_mtx.lock();
-                        mfxF64 psnr = PSNR_Y_8bit(m_TestPtr->m_source_frames_y[m_ChunkCount], ptr_decoded, m_TestPtr->m_SourceWidth*m_TestPtr->m_SourceHeight);
+                            mfxFrameSurface1* pInputSurface = (*m_pInputSurfaces)[hdr.FrameOrder];
+                            tsFrame src = tsFrame(*pInputSurface);
+                            tsFrame res = tsFrame(*m_pSurf);
+                            src.m_info.CropX = src.m_info.CropY = res.m_info.CropX = res.m_info.CropY = 0;
+                            src.m_info.CropW = res.m_info.CropW = w;
+                            src.m_info.CropH = res.m_info.CropH = h;
 
-                        // old source frames are not needed anymore
-                        for (mfxU32 i = 0; i <= m_ChunkCount; i++)
-                        {
-                            if (m_TestPtr->m_source_frames_y[m_ChunkCount])
+                            const mfxF64 psnrY = PSNR(src, res, 0);
+                            const mfxF64 psnrU = PSNR(src, res, 1);
+                            const mfxF64 psnrV = PSNR(src, res, 2);
+                            pInputSurface->Data.Locked--;
+                            m_pInputSurfaces->erase(hdr.FrameOrder);
+                            const mfxF64 minPsnr = VP9E_PSNR_THRESHOLD;
+
+                            g_tsLog << "INFO: frame[" << hdr.FrameOrder << "]: PSNR-Y=" << psnrY << " PSNR-U="
+                                << psnrU << " PSNR-V=" << psnrV << " size=" << bs.DataLength << "\n";
+
+                            if (psnrY < minPsnr)
                             {
-                                delete[]m_TestPtr->m_source_frames_y[m_ChunkCount];
-                                m_TestPtr->m_source_frames_y[m_ChunkCount] = 0;
+                                ADD_FAILURE() << "ERROR: PSNR-Y of frame " << hdr.FrameOrder << " is equal to " << psnrY << " and lower than threshold: " << minPsnr;
+                                throw tsFAIL;
                             }
-                        }
-
-                        m_TestPtr->m_frames_storage_mtx.unlock();
-
-                        if (psnr < VP9E_PSNR_THRESHOLD)
-                        {
-                            ADD_FAILURE() << "ERROR: Y-PSNR of the decoded_frame[" << m_ChunkCount << "] is too low: " << psnr << ", threshold is " << VP9E_PSNR_THRESHOLD; throw tsFAIL;
-                        }
-                        else
-                        {
-                            g_tsLog << "INFO: Y-PSNR for the decoded_frame[" << m_ChunkCount << "] is " << psnr << "\n";
+                            if (psnrU < minPsnr)
+                            {
+                                ADD_FAILURE() << "ERROR: PSNR-U of frame " << hdr.FrameOrder << " is equal to " << psnrU << " and lower than threshold: " << minPsnr;
+                                throw tsFAIL;
+                            }
+                            if (psnrV < minPsnr)
+                            {
+                                ADD_FAILURE() << "ERROR: PSNR-V of frame " << hdr.FrameOrder << " is equal to " << psnrV << " and lower than threshold: " << minPsnr;
+                                throw tsFAIL;
+                            }
                         }
                     }
                     else
                     {
-                        ADD_FAILURE() << "ERROR: DecodeFrameAsync() failed with status " << decode_status; throw tsFAIL;
+                        g_tsLog << "ERROR: DecodeFrameAsync() failed with status " << decode_status; throw tsFAIL;
                     }
 
                     m_DecodedFramesCount++;
@@ -855,20 +851,6 @@ namespace vp9e_temporal_scalability
             {
                 // Temporal Scalability is not supported on the frame level params
                 return MFX_ERR_NONE;
-            }
-
-            // save source y-surface for checking PSNR if necessary
-            if (flags & CHECK_PSNR)
-            {
-                mfxU8 *ptr = new mfxU8[m_SourceWidth*m_SourceHeight];
-                for (mfxU32 i = 0; i < m_SourceHeight; i++)
-                {
-                    memcpy(ptr + i*m_SourceWidth, m_pSurf->Data.Y + i*m_pSurf->Data.Pitch, m_SourceWidth);
-                }
-
-                m_frames_storage_mtx.lock();
-                m_source_frames_y[m_SourceFrameCount] = ptr;
-                m_frames_storage_mtx.unlock();
             }
 
             submitted++;
@@ -995,13 +977,125 @@ namespace vp9e_temporal_scalability
         return MFX_ERR_NONE;
     }
 
-    int TestSuite::RunTest(unsigned int id)
+    class SurfaceFeeder : public tsRawReader
+    {
+        std::map<mfxU32, mfxFrameSurface1*>* m_pInputSurfaces;
+        mfxU32 m_frameOrder;
+
+        tsSurfacePool surfaceStorage;
+    public:
+        SurfaceFeeder(
+            std::map<mfxU32, mfxFrameSurface1*>* pInSurfaces,
+            const mfxVideoParam& par,
+            const char* fname,
+            mfxU32 n_frames = 0xFFFFFFFF)
+            : tsRawReader(fname, par.mfx.FrameInfo, n_frames)
+            , m_pInputSurfaces(pInSurfaces)
+            , m_frameOrder(0)
+        {
+            if (m_pInputSurfaces)
+            {
+                const mfxU32 numInternalSurfaces = par.AsyncDepth ? par.AsyncDepth : 5;
+                mfxFrameAllocRequest req = {};
+                req.Info = par.mfx.FrameInfo;
+                req.NumFrameMin = req.NumFrameSuggested = numInternalSurfaces;
+                req.Type = MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_FROM_DECODE;
+                surfaceStorage.AllocSurfaces(req);
+            }
+        };
+
+        ~SurfaceFeeder()
+        {
+            if (m_pInputSurfaces)
+            {
+                surfaceStorage.FreeSurfaces();
+            }
+        }
+
+        mfxFrameSurface1* ProcessSurface(mfxFrameSurface1* ps, mfxFrameAllocator* pfa);
+    };
+
+    mfxFrameSurface1* SurfaceFeeder::ProcessSurface(mfxFrameSurface1* ps, mfxFrameAllocator* pfa)
+    {
+        mfxFrameSurface1* pSurf = tsSurfaceProcessor::ProcessSurface(ps, pfa);
+        if (m_pInputSurfaces)
+        {
+            mfxFrameSurface1* pStorageSurf = surfaceStorage.GetSurface();
+            pStorageSurf->Data.Locked++;
+            tsFrame in = tsFrame(*pSurf);
+            tsFrame store = tsFrame(*pStorageSurf);
+            store = in;
+            (*m_pInputSurfaces)[m_frameOrder] = pStorageSurf;
+        }
+        m_frameOrder++;
+
+        return pSurf;
+    }
+
+    template<mfxU32 fourcc>
+    int TestSuite::RunTest_Subtype(const unsigned int id)
+    {
+        const tc_struct& tc = test_case[id];
+        return RunTest(tc, fourcc);
+    }
+
+    int TestSuite::RunTest(const tc_struct& tc, unsigned int fourcc_id)
     {
         TS_START;
 
-        const tc_struct& tc = test_case[id];
+        std::map<mfxU32, mfxFrameSurface1*> inputSurfaces;
+        char* stream = nullptr;
 
-        const char* stream = g_tsStreamPool.Get("YUV/salesman_176x144_449.yuv");
+        if (fourcc_id == MFX_FOURCC_NV12)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
+
+            stream = const_cast<char *>(g_tsStreamPool.Get("forBehaviorTest/foreman_cif.nv12"));
+
+            m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 352;
+            m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 288;
+        }
+        else if (fourcc_id == MFX_FOURCC_P010)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_P010;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+            m_par.mfx.FrameInfo.Shift = 1;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
+
+            stream = const_cast<char *>(g_tsStreamPool.Get("YUV10bit420_ms/Kimono1_176x144_24_p010_shifted.yuv"));
+
+            m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 176;
+            m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 144;
+        }
+        else if (fourcc_id == MFX_FOURCC_AYUV)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_AYUV;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
+
+            stream = const_cast<char *>(g_tsStreamPool.Get("YUV8bit444/Kimono1_176x144_24_ayuv.yuv"));
+
+            m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 176;
+            m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 144;
+        }
+        else if (fourcc_id == MFX_FOURCC_Y410)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y410;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
+
+            stream = const_cast<char *>(g_tsStreamPool.Get("YUV10bit444/Kimono1_176x144_24_y410.yuv"));
+
+            m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 176;
+            m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 144;
+        }
+        else
+        {
+            g_tsLog << "ERROR: invalid fourcc_id parameter: " << fourcc_id << "\n";
+            return 0;
+        }
 
         g_tsStreamPool.Reg();
         tsRawReader *reader = nullptr;
@@ -1012,12 +1106,10 @@ namespace vp9e_temporal_scalability
         Load();
 
         //set default params
-        m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = m_SourceWidth = 176;
-        m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = m_SourceHeight = 144;
         m_par.mfx.InitialDelayInKB = m_par.mfx.TargetKbps = m_par.mfx.MaxKbps = 0;
         m_par.mfx.RateControlMethod = MFX_RATECONTROL_CBR;
 
-        BitstreamChecker bs_checker(this, tc.type & CHECK_PSNR ? true : false);
+        BitstreamChecker bs_checker(this, &inputSurfaces, tc.type & CHECK_PSNR ? true : false);
         m_bs_processor = &bs_checker;
 
         SETPARS(m_par, MFX_PAR);
@@ -1031,13 +1123,18 @@ namespace vp9e_temporal_scalability
 
         if (0 == memcmp(m_uid->Data, MFX_PLUGINID_VP9E_HW.Data, sizeof(MFX_PLUGINID_VP9E_HW.Data)))
         {
-            if (g_tsHWtype < MFX_HW_CNL) // unsupported on platform less CNL
+            // MFX_PLUGIN_VP9E_HW unsupported on platform less CNL(NV12) and ICL(P010, AYUV, Y410)
+            if ((fourcc_id == MFX_FOURCC_NV12 && g_tsHWtype < MFX_HW_CNL)
+                || ((fourcc_id == MFX_FOURCC_P010 || fourcc_id == MFX_FOURCC_AYUV
+                    || fourcc_id == MFX_FOURCC_Y410) && g_tsHWtype < MFX_HW_ICL))
             {
                 g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
                 g_tsLog << "WARNING: Unsupported HW Platform!\n";
+                Query();
                 return 0;
             }
-        }  else {
+        }
+        else {
             g_tsLog << "WARNING: loading encoder from plugin failed!\n";
             return 0;
         }
@@ -1112,8 +1209,19 @@ namespace vp9e_temporal_scalability
         if ((tc.type & CHECK_ENCODE || tc.type & CHECK_RESET) && m_initialized)
         {
             //set reader
-            reader = new tsRawReader(stream, m_pPar->mfx.FrameInfo);
-            m_filler = reader;
+            if (reader == nullptr)
+            {
+                if (tc.type & CHECK_PSNR)
+                {
+                    reader = new SurfaceFeeder(&inputSurfaces, m_par, stream);
+                }
+                else
+                {
+                    reader = new tsRawReader(stream, m_par.mfx.FrameInfo);
+                }
+                reader->m_disable_shift_hack = true;  // this hack adds shift if fi.Shift != 0!!! Need to disable it.
+                m_filler = reader;
+            }
 
             if (tc.sts >= MFX_ERR_NONE)
             {
@@ -1204,5 +1312,8 @@ namespace vp9e_temporal_scalability
         return 0;
     }
 
-    TS_REG_TEST_SUITE_CLASS(vp9e_temporal_scalability);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9e_temporal_scalability,              RunTest_Subtype<MFX_FOURCC_NV12>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9e_10b_420_p010_temporal_scalability, RunTest_Subtype<MFX_FOURCC_P010>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9e_8b_444_ayuv_temporal_scalability,  RunTest_Subtype<MFX_FOURCC_AYUV>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9e_10b_444_y410_temporal_scalability, RunTest_Subtype<MFX_FOURCC_Y410>, n_cases);
 };
