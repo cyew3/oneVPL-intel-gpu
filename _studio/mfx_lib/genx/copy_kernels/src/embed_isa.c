@@ -92,7 +92,7 @@ int main(int argc, char** argv)
              make_copyright(f);
             //fprintf(f,"#ifndef __%s__\n#define __%s__\n",bufname,bufname);
             fprintf(f,"#include \"../include/%s_isa.h\"\n\n", bufname);
-            fprintf(f,"const unsigned char %s[%d] = { \n",bufname, size);
+            fprintf(f,"const unsigned char %s[%d] = {\n",bufname, size);
             for(i=0; i<size; i++)
             {
                 fprintf(f,"0x%02x", buf[i]);

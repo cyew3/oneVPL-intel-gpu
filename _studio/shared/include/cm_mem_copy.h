@@ -21,7 +21,12 @@
 #endif  // PRE_SI_TARGET_PLATFORM_GEN10
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
 #include "icl_copy_kernel_genx_isa.h"
+#include "icllp_copy_kernel_genx_isa.h"
 #endif  // PRE_SI_TARGET_PLATFORM_GEN11
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#include "tgl_copy_kernel_genx_isa.h"
+#include "tgllp_copy_kernel_genx_isa.h"
+#endif  // PRE_SI_TARGET_PLATFORM_GEN12
 #if !(defined(AS_VPP_PLUGIN) || defined(UNIFIED_PLUGIN) || defined(AS_H265FEI_PLUGIN) || defined(AS_H264LA_PLUGIN))
 #include "cht_copy_kernel_genx_isa.h"
 #endif
@@ -85,7 +90,7 @@ class CmCopyWrapper
 {
 public:
     
-    // constructor   
+    // constructor
     CmCopyWrapper();
 
     // destructor
@@ -278,7 +283,7 @@ protected:
     eMFXHWType m_HWType;
     CmDevice  *m_pCmDevice;
     CmProgram *m_pCmProgram;
-	INT m_timeout;
+    INT m_timeout;
 
     CmThreadSpace *m_pThreadSpace;
 

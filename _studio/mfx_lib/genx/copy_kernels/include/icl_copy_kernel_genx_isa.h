@@ -5,9 +5,9 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(c) 2017 Intel Corporation. All Rights Reserved.
+// Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 //
 #ifndef __icl_copy_kernel_genx__
 #define __icl_copy_kernel_genx__
-extern const unsigned char icl_copy_kernel_genx[549803];
+extern const unsigned char icl_copy_kernel_genx[1053519];
 #endif

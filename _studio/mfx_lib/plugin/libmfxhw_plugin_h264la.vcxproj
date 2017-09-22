@@ -648,9 +648,12 @@
     <ClCompile Include="..\..\shared\src\mfx_dxva2_device.cpp" />
     <ClCompile Include="..\..\shared\src\mfx_search_dll.cpp" />
     <ClCompile Include="..\..\shared\src\mfx_vpp_vaapi.cpp" />
+    <ClCompile Include="..\genx\copy_kernels\src\genx_icllp_copy_isa.cpp" />
     <ClCompile Include="..\genx\copy_kernels\src\genx_skl_copy_isa.cpp" />
     <ClCompile Include="..\genx\copy_kernels\src\genx_cnl_copy_isa.cpp" />
     <ClCompile Include="..\genx\copy_kernels\src\genx_icl_copy_isa.cpp" />
+    <ClCompile Include="..\genx\copy_kernels\src\genx_tgllp_copy_isa.cpp" />
+    <ClCompile Include="..\genx\copy_kernels\src\genx_tgl_copy_isa.cpp" />
     <ClCompile Include="..\shared\src\libmfxsw.cpp" />
     <ClCompile Include="..\shared\src\libmfxsw_async.cpp" />
     <ClCompile Include="..\shared\src\libmfxsw_enc.cpp" />

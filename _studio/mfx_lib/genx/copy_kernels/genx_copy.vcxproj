@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug_HSW_Emu|Win32">
       <Configuration>Debug_HSW_Emu</Configuration>
@@ -31,38 +31,39 @@
     <ProjectGuid>{395F37F9-1F3C-40B6-83FA-43AB91B4F026}</ProjectGuid>
     <RootNamespace>encode</RootNamespace>
     <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
@@ -91,12 +92,13 @@
     <_ProjectFileVersion>11.0.61030.0</_ProjectFileVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>..\..\..\..\build\win_$(Platform)\</OutDir>
-    <IntDir>$(OutDir)objs\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir>..\..\..\..\..\build\win_$(Platform)\</OutDir>
+    <IntDir>$(OutDir)objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetName>$(ProjectName)_d</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>..\..\..\build\win_$(Platform)\</OutDir>
-    <IntDir>$(OutDir)objs\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir>..\..\..\..\..\build\win_$(Platform)\</OutDir>
+    <IntDir>$(OutDir)objs\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|Win32'">
     <OutDir>..\..\..\..\build\win_$(Platform)\</OutDir>
@@ -116,37 +118,21 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <PreBuildEvent>
-      <Command>SET INSTALLDIR=$(MEDIASDK_ROOT)\CMRT
+      <Command>rem MDF 6.0 or higher should be used
+SET INSTALLDIR=$(MEDIASDK_ROOT)\CMRT
 SET ICLDIR=%25INSTALLDIR%25\compiler
 SET PATH=%25ICLDIR%25\bin%3b%25ICLDIR%25\lib%3b%25PATH%25
 SET INCLUDE=%25ICLDIR%25\include%3b%25ICLDIR%25\include\cm%3b%25INCLUDE%25
-icl /c /Qxcm /Qxcm_release /Qxcm_jit_target=gen8 .\src\cht_copy_kernel_genx.cpp /mCM_print_asm_count
-icl /c /Qxcm /Qxcm_release /Qxcm_jit_target=gen9 .\src\skl_copy_kernel_genx.cpp /mCM_print_asm_count
-copy  .\src\skl_copy_kernel_genx.cpp  .\src\cnl_copy_kernel_genx.cpp
 copy  .\src\skl_copy_kernel_genx.cpp  .\src\icl_copy_kernel_genx.cpp
-icl /c /Qxcm /Qxcm_release /Qxcm_jit_target=gen10 .\src\cnl_copy_kernel_genx.cpp /mCM_print_asm_count
-icl /c /Qxcm /Qxcm_release /Qxcm_jit_target=gen11 .\src\icl_copy_kernel_genx.cpp /mCM_print_asm_count
-cl .\src\embed_isa.c
-embed_isa cht_copy_kernel_genx.isa
-embed_isa skl_copy_kernel_genx.isa
-embed_isa cnl_copy_kernel_genx.isa
-embed_isa icl_copy_kernel_genx.isa
-move cht_copy_kernel_genx.cpp .\src\genx_cht_copy_isa.cpp
-move cht_copy_kernel_genx.h .\include\cht_copy_kernel_genx_isa.h
-move skl_copy_kernel_genx.cpp .\src\genx_skl_copy_isa.cpp
-move skl_copy_kernel_genx.h .\include\skl_copy_kernel_genx_isa.h
-move cnl_copy_kernel_genx.cpp .\src\genx_cnl_copy_isa.cpp
-move cnl_copy_kernel_genx.h .\include\cnl_copy_kernel_genx_isa.h
-move icl_copy_kernel_genx.cpp .\src\genx_icl_copy_isa.cpp
-move icl_copy_kernel_genx.h .\include\icl_copy_kernel_genx_isa.h
+cmc -c -Qxcm_jit_target=icllp .\src\icl_copy_kernel_genx.cpp -Qxcm_print_asm_count -mCM_printregusage
 
-</Command>
+cmc -c -Qxcm_jit_target=gen11lp .\src\icl_copy_kernel_genx.cpp  -Qxcm_print_asm_count -mCM_printregusage</Command>
     </PreBuildEvent>
     <CustomBuildStep>
       <Command />
     </CustomBuildStep>
     <Lib>
-      <OutputFile>$(OutDir)lib\$(ProjectName)_d.lib</OutputFile>
+      <OutputFile>$(OutDir)lib\$(TargetName).lib</OutputFile>
     </Lib>
     <PostBuildEvent>
       <Command />
@@ -154,23 +140,42 @@ move icl_copy_kernel_genx.h .\include\icl_copy_kernel_genx_isa.h
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <PreBuildEvent>
-      <Command>SET INSTALLDIR=$(MEDIASDK_ROOT)\CMRT
+      <Command>rem tuned for MDF_NF ww32 2017
+SET INSTALLDIR=$(MEDIASDK_ROOT)\CMRT
+SET ICLDIR=%25INSTALLDIR%25\compiler
+SET INSTALLDIR=$(MEDIASDK_ROOT)\CMRT
 SET ICLDIR=%25INSTALLDIR%25\compiler
 SET PATH=%25ICLDIR%25\bin%3b%25ICLDIR%25\lib%3b%25PATH%25
 SET INCLUDE=%25ICLDIR%25\include%3b%25ICLDIR%25\include\cm%3b%25INCLUDE%25
-icl /c /Qxcm /Qxcm_jit_target=gen7_5 .\src\genx_hsw_simple_me.cpp /mCM_print_asm_count
-icl /c /Qxcm /Qxcm_jit_target=gen8 .\src\genx_bdw_simple_me.cpp /mCM_print_asm_count
+cmc -c -Qxcm_jit_target=gen8 .\src\cht_copy_kernel_genx.cpp -Qxcm_print_asm_count -mCM_printregusage -o cht_copy_kernel_genx.isa
+cmc -c -Qxcm_jit_target=gen9 .\src\skl_copy_kernel_genx.cpp -Qxcm_print_asm_count -mCM_printregusage -o skl_copy_kernel_genx.isa
+cmc -c -Qxcm_jit_target=gen10 .\src\skl_copy_kernel_genx.cpp -Qxcm_print_asm_count -mCM_printregusage -o cnl_copy_kernel_genx.isa
+cmc -c -Qxcm_jit_target=gen11lp .\src\skl_copy_kernel_genx.cpp -Qxcm_print_asm_count -mCM_printregusage -o icllp_copy_kernel_genx.isa
+cmc -c -Qxcm_jit_target=gen11 .\src\skl_copy_kernel_genx.cpp -Qxcm_print_asm_count -mCM_printregusage -o icl_copy_kernel_genx.isa
+cmc -c -Qxcm_jit_target=gen12lp .\src\skl_copy_kernel_genx.cpp -Qxcm_print_asm_count -mCM_printregusage -o tgllp_copy_kernel_genx.isa
+cmc -c -Qxcm_jit_target=gen12 .\src\skl_copy_kernel_genx.cpp -Qxcm_print_asm_count -mCM_printregusage -o tgl_copy_kernel_genx.isa
 cl .\src\embed_isa.c
-embed_isa genx_hsw_simple_me.isa
-move genx_hsw_simple_me.cpp .\src\genx_hsw_simple_me_isa.cpp
-move genx_hsw_simple_me.h .\include\genx_hsw_simple_me_isa.h
-embed_isa genx_bdw_simple_me.isa
-move genx_bdw_simple_me.cpp .\src\genx_bdw_simple_me_isa.cpp
-move genx_bdw_simple_me.h .\include\genx_bdw_simple_me_isa.h
-
-rem copy genx_hsw_simple_me.isa ..\..\..\..\build\win_$(Platform)\bin
-rem copy %25INSTALLDIR%25\runtime\lib\x86\igfxcmrt32.dll ..\..\..\..\build\win_$(Platform)\bin
-rem copy %25INSTALLDIR%25\runtime\lib\x86\igfxcmjit32.dll ..\..\..\..\build\win_$(Platform)\bin
+embed_isa cht_copy_kernel_genx.isa
+embed_isa skl_copy_kernel_genx.isa
+embed_isa cnl_copy_kernel_genx.isa
+embed_isa icllp_copy_kernel_genx.isa
+embed_isa icl_copy_kernel_genx.isa
+embed_isa tgllp_copy_kernel_genx.isa
+embed_isa tgl_copy_kernel_genx.isa
+move cht_copy_kernel_genx.cpp .\src\genx_cht_copy_isa.cpp
+move cht_copy_kernel_genx.h .\include\cht_copy_kernel_genx_isa.h
+move skl_copy_kernel_genx.cpp .\src\genx_skl_copy_isa.cpp
+move skl_copy_kernel_genx.h .\include\skl_copy_kernel_genx_isa.h
+move cnl_copy_kernel_genx.cpp .\src\genx_cnl_copy_isa.cpp
+move cnl_copy_kernel_genx.h .\include\cnl_copy_kernel_genx_isa.h
+move icllp_copy_kernel_genx.cpp .\src\genx_icllp_copy_isa.cpp
+move icllp_copy_kernel_genx.h .\include\icllp_copy_kernel_genx_isa.h
+move icl_copy_kernel_genx.cpp .\src\genx_icl_copy_isa.cpp
+move icl_copy_kernel_genx.h .\include\icl_copy_kernel_genx_isa.h
+move tgllp_copy_kernel_genx.cpp .\src\genx_tgllp_copy_isa.cpp
+move tgllp_copy_kernel_genx.h .\include\tgllp_copy_kernel_genx_isa.h
+move tgl_copy_kernel_genx.cpp .\src\genx_tgl_copy_isa.cpp
+move tgl_copy_kernel_genx.h .\include\tgl_copy_kernel_genx_isa.h
 </Command>
     </PreBuildEvent>
     <CustomBuildStep>
@@ -187,7 +192,7 @@ rem copy %25INSTALLDIR%25\runtime\lib\x86\igfxcmjit32.dll ..\..\..\..\build\win_
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Lib>
-      <OutputFile>$(OutDir)lib\$(ProjectName).lib</OutputFile>
+      <OutputFile>$(OutDir)lib\$(TargetName).lib</OutputFile>
     </Lib>
     <Bscmake>
       <OutputFile>$(TargetDir)/$(ProjectName).bsc</OutputFile>
@@ -290,6 +295,7 @@ copy $(MEDIASDK_ROOT)\CMRT\compiler\lib\x86\libcm.dll ..\..\..\..\build\win_$(Pl
   <ItemGroup>
     <ClCompile Include="src\cht_copy_kernel_genx.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="src\embed_isa.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|Win32'">true</ExcludedFromBuild>
@@ -300,6 +306,7 @@ copy $(MEDIASDK_ROOT)\CMRT\compiler\lib\x86\libcm.dll ..\..\..\..\build\win_$(Pl
     <ClCompile Include="src\genx_skl_copy_isa.cpp" />
     <ClCompile Include="src\skl_copy_kernel_genx.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
