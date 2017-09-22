@@ -75,15 +75,15 @@ mfxStatus H265FeiEncodePlugin::ExtraParametersCheck(mfxEncodeCtrl *ctrl, mfxFram
     MFX_CHECK(EncFrameCtrl, MFX_ERR_UNDEFINED_BEHAVIOR);
 
     // Check HW limitations for mfxExtFeiHevcEncFrameCtrl parameters
-    MFX_CHECK(EncFrameCtrl->NumMvPredictorsL0 <= 4,  MFX_ERR_UNDEFINED_BEHAVIOR);
-    MFX_CHECK(EncFrameCtrl->NumMvPredictorsL1 <= 4,  MFX_ERR_UNDEFINED_BEHAVIOR);
+    MFX_CHECK(EncFrameCtrl->NumMvPredictors[0] <= 4, MFX_ERR_UNDEFINED_BEHAVIOR);
+    MFX_CHECK(EncFrameCtrl->NumMvPredictors[1] <= 4, MFX_ERR_UNDEFINED_BEHAVIOR);
 
-    MFX_CHECK(EncFrameCtrl->MultiPredL0       <= isICLplus ? 2 : 1,
+    MFX_CHECK(EncFrameCtrl->MultiPred[0]       <= isICLplus ? 2 : 1,
                                                      MFX_ERR_UNDEFINED_BEHAVIOR);
-    MFX_CHECK(EncFrameCtrl->MultiPredL1       <= isICLplus ? 2 : 1,
+    MFX_CHECK(EncFrameCtrl->MultiPred[1]       <= isICLplus ? 2 : 1,
                                                      MFX_ERR_UNDEFINED_BEHAVIOR);
-    MFX_CHECK(EncFrameCtrl->SubPelMode        <= 3 &&
-              EncFrameCtrl->SubPelMode        != 2,  MFX_ERR_UNDEFINED_BEHAVIOR);
+    MFX_CHECK(EncFrameCtrl->SubPelMode         <= 3 &&
+              EncFrameCtrl->SubPelMode         != 2, MFX_ERR_UNDEFINED_BEHAVIOR);
 
     MFX_CHECK(EncFrameCtrl->MVPredictor == 0
           ||  EncFrameCtrl->MVPredictor == 1
@@ -91,9 +91,19 @@ mfxStatus H265FeiEncodePlugin::ExtraParametersCheck(mfxEncodeCtrl *ctrl, mfxFram
           || (EncFrameCtrl->MVPredictor == 3 && isICLplus)
           ||  EncFrameCtrl->MVPredictor == 7,        MFX_ERR_UNDEFINED_BEHAVIOR);
 
-    MFX_CHECK(EncFrameCtrl->CoLocatedCtbDistortion <= 1,   MFX_ERR_UNDEFINED_BEHAVIOR);
+    MFX_CHECK(EncFrameCtrl->ForceCtuSplit <= isSKL ? 1: 0, MFX_ERR_UNDEFINED_BEHAVIOR);
 
-    MFX_CHECK(EncFrameCtrl->ForceLcuSplit <= isSKL ? 1: 0, MFX_ERR_UNDEFINED_BEHAVIOR);
+    switch (EncFrameCtrl->NumFramePartitions)
+    {
+    case 1:
+    case 2:
+    case 4:
+    case 8:
+    case 16:
+        break;
+    default:
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
 
     if (EncFrameCtrl->SearchWindow)
     {
@@ -143,14 +153,14 @@ mfxStatus H265FeiEncodePlugin::ExtraParametersCheck(mfxEncodeCtrl *ctrl, mfxFram
         MFX_CHECK(GetBufById(ctrl, MFX_EXTBUFF_HEVCFEI_ENC_MV_PRED), MFX_ERR_UNDEFINED_BEHAVIOR);
     }
 
-    if (EncFrameCtrl->PerCtbQp)
+    if (EncFrameCtrl->PerCuQp)
     {
         MFX_CHECK(GetBufById(ctrl, MFX_EXTBUFF_HEVCFEI_ENC_QP), MFX_ERR_UNDEFINED_BEHAVIOR);
     }
 
-    if (EncFrameCtrl->PerCtbInput)
+    if (EncFrameCtrl->PerCtuInput)
     {
-        MFX_CHECK(GetBufById(ctrl, MFX_EXTBUFF_HEVCFEI_ENC_CTB_CTRL), MFX_ERR_UNDEFINED_BEHAVIOR);
+        MFX_CHECK(GetBufById(ctrl, MFX_EXTBUFF_HEVCFEI_ENC_CTU_CTRL), MFX_ERR_UNDEFINED_BEHAVIOR);
     }
 
     return MFX_ERR_NONE;

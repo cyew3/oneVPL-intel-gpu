@@ -85,8 +85,9 @@ mfxStatus FEI_Encode::PreInit()
     // add FEI frame ctrl with default values
     mfxExtFeiHevcEncFrameCtrl* ctrl = m_encodeCtrl.AddExtBuffer<mfxExtFeiHevcEncFrameCtrl>();
     MSDK_CHECK_POINTER(ctrl, MFX_ERR_NOT_INITIALIZED);
-    ctrl->SubPelMode   = 3;
-    ctrl->SearchWindow = 5;
+    ctrl->SubPelMode         = 3;
+    ctrl->SearchWindow       = 5;
+    ctrl->NumFramePartitions = 4;
 
     if (!ctrl->SearchWindow)
     {

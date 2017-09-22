@@ -41,19 +41,19 @@ public:
     TestSuite()
         : tsVideoEncoder(MFX_CODEC_HEVC)
         , tsParserHEVCAU(BS_HEVC::INIT_MODE_CABAC)
-        , m_reader()
+        , m_reader(NULL)
         , m_fo(0)
         , mode(0)
         , test_type(0)
         , block_size(32)
     {
-        m_filler = this;
+        m_filler       = this;
         m_bs_processor = this;
 
-        m_pPar->mfx.FrameInfo.Width = m_pPar->mfx.FrameInfo.CropW = 720;
+        m_pPar->mfx.FrameInfo.Width  = m_pPar->mfx.FrameInfo.CropW = 720;
         m_pPar->mfx.FrameInfo.Height = m_pPar->mfx.FrameInfo.CropH = 480;
         m_pPar->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-        m_pPar->mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+        m_pPar->mfx.FrameInfo.FourCC       = MFX_FOURCC_NV12;
 
         m_reader = new tsRawReader(g_tsStreamPool.Get("YUV/iceage_720x480_491.yuv"),
                                    m_pPar->mfx.FrameInfo);
@@ -83,7 +83,7 @@ public:
         m_qp.resize(size);
 
         mfxExtFeiHevcEncFrameCtrl& hevcFeiEncCtrl = m_ctrl;
-        if (!hevcFeiEncCtrl.PerCtbQp)
+        if (!hevcFeiEncCtrl.PerCuQp)
         {
             if (mode & QP_FRAME)
             {
@@ -350,19 +350,20 @@ int TestSuite::RunTest(unsigned int id)
 
     mfxExtFeiHevcEncFrameCtrl& feiCtrl =  m_ctrl;
 
-    feiCtrl.SearchPath = 2;
-    feiCtrl.LenSP = 57;
-    feiCtrl.MultiPredL0 = 0;
-    feiCtrl.MultiPredL1 = 0;
-    feiCtrl.SubPelMode = 3;
-    feiCtrl.AdaptiveSearch = 0;
-    feiCtrl.MVPredictor = 0;
-    feiCtrl.NumMvPredictorsL0 = 1;
-    feiCtrl.NumMvPredictorsL1 = 1;
-    feiCtrl.PerCtbInput = 0;
-    feiCtrl.RefHeight = 32;
-    feiCtrl.RefWidth = 32;
-    feiCtrl.SearchWindow = 5;
+    feiCtrl.SearchPath         = 2;
+    feiCtrl.LenSP              = 57;
+    feiCtrl.MultiPred[0]       = 0;
+    feiCtrl.MultiPred[1]       = 0;
+    feiCtrl.SubPelMode         = 3;
+    feiCtrl.AdaptiveSearch     = 0;
+    feiCtrl.MVPredictor        = 0;
+    feiCtrl.NumMvPredictors[0] = 0;
+    feiCtrl.NumMvPredictors[1] = 0;
+    feiCtrl.PerCuQp            = 0;
+    feiCtrl.RefHeight          = 32;
+    feiCtrl.RefWidth           = 32;
+    feiCtrl.SearchWindow       = 5;
+    feiCtrl.NumFramePartitions = 4;
 
     mfxU32 widthLCU  = (m_par.mfx.FrameInfo.Width  + block_size - 1)/block_size;
     mfxU32 heightLCU = (m_par.mfx.FrameInfo.Height + block_size - 1)/block_size;
@@ -380,7 +381,7 @@ int TestSuite::RunTest(unsigned int id)
 
     if (test_type & LCU_CHECK)
     {
-        feiCtrl.PerCtbQp = 1;
+        feiCtrl.PerCuQp = 1;
         mfxExtFeiHevcEncQP& hevcFeiEncQp = m_ctrl;
         m_hevcFeiAllocator->Alloc(&hevcFeiEncQp, size);
         EncodeFrames(nf);
@@ -391,7 +392,7 @@ int TestSuite::RunTest(unsigned int id)
         // 1. encode with frame level qp
         tsBitstreamCRC32 bs_crc;
         m_bs_processor = &bs_crc;
-        feiCtrl.PerCtbQp = 0;
+        feiCtrl.PerCuQp = 0;
 
         AllocBitstream((m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height) * 1024 * 1024 * nf);
         EncodeFrames(nf);
@@ -410,7 +411,7 @@ int TestSuite::RunTest(unsigned int id)
 
         //to alloc more surfaces
         AllocSurfaces();
-        feiCtrl.PerCtbQp = 1;
+        feiCtrl.PerCuQp = 1;
         EncodeFrames(nf);
         Ipp32u cmp_crc = bs_cmp_crc.GetCRC();
         g_tsLog << "crc = " << crc << "\n";

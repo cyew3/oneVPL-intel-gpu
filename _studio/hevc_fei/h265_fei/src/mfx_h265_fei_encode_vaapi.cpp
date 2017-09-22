@@ -92,23 +92,23 @@ namespace MfxHwH265FeiEncode
             mfxExtFeiHevcEncFrameCtrl* EncFrameCtrl = reinterpret_cast<mfxExtFeiHevcEncFrameCtrl*>(GetBufById(task.m_ctrl, MFX_EXTBUFF_HEVCFEI_ENC_CTRL));
             MFX_CHECK(EncFrameCtrl, MFX_ERR_UNDEFINED_BEHAVIOR);
 
-            vaFeiFrameControl->function                 = VA_ENC_FUNCTION_ENC_PAK_INTEL;
-            vaFeiFrameControl->search_path              = EncFrameCtrl->SearchPath;
-            vaFeiFrameControl->len_sp                   = EncFrameCtrl->LenSP;
-            vaFeiFrameControl->ref_width                = EncFrameCtrl->RefWidth;
-            vaFeiFrameControl->ref_height               = EncFrameCtrl->RefHeight;
-            vaFeiFrameControl->search_window            = EncFrameCtrl->SearchWindow;
-            vaFeiFrameControl->num_mv_predictors_l0     = EncFrameCtrl->NumMvPredictorsL0;
-            vaFeiFrameControl->num_mv_predictors_l1     = EncFrameCtrl->NumMvPredictorsL1;
-            vaFeiFrameControl->multi_pred_l0            = EncFrameCtrl->MultiPredL0;
-            vaFeiFrameControl->multi_pred_l1            = EncFrameCtrl->MultiPredL1;
-            vaFeiFrameControl->sub_pel_mode             = EncFrameCtrl->SubPelMode;
-            vaFeiFrameControl->adaptive_search          = EncFrameCtrl->AdaptiveSearch;
-            vaFeiFrameControl->mv_predictor_input       = EncFrameCtrl->MVPredictor;
-            vaFeiFrameControl->per_block_qp             = EncFrameCtrl->PerCtbQp;
-            vaFeiFrameControl->per_ctb_input            = EncFrameCtrl->PerCtbInput;
-            vaFeiFrameControl->colocated_ctb_distortion = EncFrameCtrl->CoLocatedCtbDistortion;
-            vaFeiFrameControl->force_lcu_split          = EncFrameCtrl->ForceLcuSplit;
+            vaFeiFrameControl->function                           = VA_ENC_FUNCTION_ENC_PAK_INTEL;
+            vaFeiFrameControl->search_path                        = EncFrameCtrl->SearchPath;
+            vaFeiFrameControl->len_sp                             = EncFrameCtrl->LenSP;
+            vaFeiFrameControl->ref_width                          = EncFrameCtrl->RefWidth;
+            vaFeiFrameControl->ref_height                         = EncFrameCtrl->RefHeight;
+            vaFeiFrameControl->search_window                      = EncFrameCtrl->SearchWindow;
+            vaFeiFrameControl->num_mv_predictors_l0               = EncFrameCtrl->NumMvPredictors[0];
+            vaFeiFrameControl->num_mv_predictors_l1               = EncFrameCtrl->NumMvPredictors[1];
+            vaFeiFrameControl->multi_pred_l0                      = EncFrameCtrl->MultiPred[0];
+            vaFeiFrameControl->multi_pred_l1                      = EncFrameCtrl->MultiPred[1];
+            vaFeiFrameControl->sub_pel_mode                       = EncFrameCtrl->SubPelMode;
+            vaFeiFrameControl->adaptive_search                    = EncFrameCtrl->AdaptiveSearch;
+            vaFeiFrameControl->mv_predictor_input                 = EncFrameCtrl->MVPredictor;
+            vaFeiFrameControl->per_block_qp                       = EncFrameCtrl->PerCuQp;
+            vaFeiFrameControl->per_ctb_input                      = EncFrameCtrl->PerCtuInput;
+            vaFeiFrameControl->force_lcu_split                    = EncFrameCtrl->ForceCtuSplit;
+            vaFeiFrameControl->num_concurrent_enc_frame_partition = EncFrameCtrl->NumFramePartitions;
 
             // Input buffers
             mfxExtFeiHevcEncMVPredictors* mvp = reinterpret_cast<mfxExtFeiHevcEncMVPredictors*>(GetBufById(task.m_ctrl, MFX_EXTBUFF_HEVCFEI_ENC_MV_PRED));
@@ -117,18 +117,24 @@ namespace MfxHwH265FeiEncode
             mfxExtFeiHevcEncQP* qp = reinterpret_cast<mfxExtFeiHevcEncQP*>(GetBufById(task.m_ctrl, MFX_EXTBUFF_HEVCFEI_ENC_QP));
             vaFeiFrameControl->qp = qp ? qp->VaBufferID : VA_INVALID_ID;
 
-            mfxExtFeiHevcEncCtbCtrl* ctbctrl = reinterpret_cast<mfxExtFeiHevcEncCtbCtrl*>(GetBufById(task.m_ctrl, MFX_EXTBUFF_HEVCFEI_ENC_CTB_CTRL));
-            vaFeiFrameControl->ctb_ctrl = ctbctrl ? ctbctrl->VaBufferID : VA_INVALID_ID;
+            mfxExtFeiHevcEncCtuCtrl* ctuctrl = reinterpret_cast<mfxExtFeiHevcEncCtuCtrl*>(GetBufById(task.m_ctrl, MFX_EXTBUFF_HEVCFEI_ENC_CTU_CTRL));
+            vaFeiFrameControl->ctb_ctrl = ctuctrl ? ctuctrl->VaBufferID : VA_INVALID_ID;
 
             // Output buffers
-            mfxExtFeiHevcPakCtbRecordV0* ctbcmd = reinterpret_cast<mfxExtFeiHevcPakCtbRecordV0*>(GetBufById(task.m_bs, MFX_EXTBUFF_HEVCFEI_PAK_CTB_REC));
-            vaFeiFrameControl->ctb_cmd = ctbcmd ? ctbcmd->VaBufferID : VA_INVALID_ID;
+#if MFX_VERSION >= 1025
+            mfxExtFeiHevcPakCtuRecordV0* ctucmd = reinterpret_cast<mfxExtFeiHevcPakCtuRecordV0*>(GetBufById(task.m_bs, MFX_EXTBUFF_HEVCFEI_PAK_CTU_REC));
+            vaFeiFrameControl->ctb_cmd = ctucmd ? ctucmd->VaBufferID : VA_INVALID_ID;
 
             mfxExtFeiHevcPakCuRecordV0* curec = reinterpret_cast<mfxExtFeiHevcPakCuRecordV0*>(GetBufById(task.m_bs, MFX_EXTBUFF_HEVCFEI_PAK_CU_REC));
             vaFeiFrameControl->cu_record = curec ? curec->VaBufferID : VA_INVALID_ID;
 
             mfxExtFeiHevcDistortion* distortion = reinterpret_cast<mfxExtFeiHevcDistortion*>(GetBufById(task.m_bs, MFX_EXTBUFF_HEVCFEI_ENC_DIST));
             vaFeiFrameControl->distortion = distortion ? distortion->VaBufferID : VA_INVALID_ID;
+#else
+            vaFeiFrameControl->ctb_cmd    = VA_INVALID_ID;
+            vaFeiFrameControl->cu_record  = VA_INVALID_ID;
+            vaFeiFrameControl->distortion = VA_INVALID_ID;
+#endif
 
             {
                 MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");

@@ -158,8 +158,8 @@ template<>struct mfx_ext_buffer_id<mfxExtFeiHevcEncMVPredictors>{
 template<>struct mfx_ext_buffer_id<mfxExtFeiHevcEncQP>{
     enum {id = MFX_EXTBUFF_HEVCFEI_ENC_QP};
 };
-template<>struct mfx_ext_buffer_id<mfxExtFeiHevcEncCtbCtrl>{
-    enum {id = MFX_EXTBUFF_HEVCFEI_ENC_CTB_CTRL};
+template<>struct mfx_ext_buffer_id<mfxExtFeiHevcEncCtuCtrl>{
+    enum {id = MFX_EXTBUFF_HEVCFEI_ENC_CTU_CTRL};
 };
 
 struct CmpExtBufById
