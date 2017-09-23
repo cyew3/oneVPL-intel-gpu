@@ -75,7 +75,8 @@ struct sInputParams
     mfxU16 nRefDist;        // distance between I- or P (or GPB) - key frames, GopRefDist = 1, there are no regular B-frames used
     mfxU16 nGopSize;        // number of frames to next I
     mfxU16 nIdrInterval;    // distance between IDR frames in GOPs
-    mfxU16 BRefType;        // B-pyramid ON/OFF/UNKNOWN (let MSDK lib to decide)
+    mfxU16 BRefType;        // B-pyramid ON/OFF/UNKNOWN (let MSDK lib decide)
+    mfxU16 PRefType;        // P-pyramid ON/OFF
     mfxU16 nNumRef;         // number of reference frames (DPB size)
     mfxU16 nGopOptFlag;     // STRICT | CLOSED, default is OPEN GOP
     mfxU16 GPB;             // indicates that HEVC encoder use regular P-frames or GPB
@@ -96,6 +97,7 @@ struct sInputParams
         , nGopSize(0)
         , nIdrInterval(0xffff)         // Infinite IDR interval
         , BRefType(MFX_B_REF_UNKNOWN)
+        , PRefType(MFX_P_REF_SIMPLE)
         , nNumRef(1)
         , nGopOptFlag(0)               // OPEN GOP
         , GPB(MFX_CODINGOPTION_ON)     // use GPB frames

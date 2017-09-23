@@ -78,6 +78,7 @@ void PrintHelp(const msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-NumRefActiveBL0 numRefs] - number of maximum allowed backward references for B frames (up to 4).\n"));
     msdk_printf(MSDK_STRING("   [-NumRefActiveBL1 numRefs] - number of maximum allowed forward references for B frames (up to 2).\n"));
     msdk_printf(MSDK_STRING("   [-gpb:<on,off>] - make HEVC encoder use regular P-frames (off) or GPB (on) (on - by default)\n"));
+    msdk_printf(MSDK_STRING("   [-ppyr:<on,off>] - enables P-pyramid\n"));
     msdk_printf(MSDK_STRING("   [-bref] - arrange B frames in B pyramid reference structure\n"));
     msdk_printf(MSDK_STRING("   [-nobref] - do not use B-pyramid (by default the decision is made by library)\n"));
     msdk_printf(MSDK_STRING("   [-l numSlices] - number of slices \n"));
@@ -230,6 +231,14 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU32 nArgNum, sInputParams& 
         {
             CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
             PARSE_CHECK(msdk_opt_read(strInput[++i], params.mbstatoutFile), "MB stat out File", isParseInvalid);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-ppyr:on")))
+        {
+            params.PRefType = MFX_P_REF_PYRAMID;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-ppyr:off")))
+        {
+            params.PRefType = MFX_P_REF_SIMPLE;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-bref")))
         {

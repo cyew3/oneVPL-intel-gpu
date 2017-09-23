@@ -160,6 +160,10 @@ void CEncodingPipeline::PrintInfo()
     mfxU16 bRefType = param.GetExtBuffer<mfxExtCodingOption2>()->BRefType;
     msdk_printf(MSDK_STRING("\nB-pyramid        :\t%s"), bRefType ? (bRefType == MFX_B_REF_OFF ? MSDK_STRING("Off") : MSDK_STRING("On")) : MSDK_STRING("MSDK default"));
 
+    static std::string PRefStrs[] = {"DEFAULT", "SIMPLE", "PYRAMID" };
+    mfxU16 pRefType = param.GetExtBuffer<mfxExtCodingOption3>()->PRefType;
+    msdk_printf(MSDK_STRING("\nP-pyramid        :\t%s"), PRefStrs[pRefType].c_str());
+
     mfxVersion ver;
     m_mfxSession.QueryVersion(&ver);
     msdk_printf(MSDK_STRING("\n\nMedia SDK version\t%d.%d"), ver.Major, ver.Minor);
@@ -452,6 +456,8 @@ MfxVideoParamsWrapper GetEncodeParams(const sInputParams& user_pars, const mfxFr
 
     mfxExtCodingOption3* pCO3 = pars.AddExtBuffer<mfxExtCodingOption3>();
     if (!pCO3) throw mfxError(MFX_ERR_NOT_INITIALIZED, "Failed to attach mfxExtCodingOption3");
+
+    pCO3->PRefType             = user_pars.PRefType;
 
     std::fill(pCO3->NumRefActiveP,   pCO3->NumRefActiveP + 8,   user_pars.NumRefActiveP);
     std::fill(pCO3->NumRefActiveBL0, pCO3->NumRefActiveBL0 + 8, user_pars.NumRefActiveBL0);
