@@ -2142,7 +2142,7 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
              * "white line"-like artifacts on transparent-opaque borders.
              * Setting nothing here triggers using a BLEND_SOURCE approach that is used on
              * Windows and looks to be free of such kind of artifacts */
-            blend_state[refIdx].flags |= VA_BLEND_PREMULTIPLIED_ALPHA;
+            blend_state[refIdx].flags |= 0;
         }
         if ((pParams->dstRects[refIdx-1].GlobalAlphaEnable != 0) ||
                 (pParams->dstRects[refIdx-1].LumaKeyEnable != 0) ||
