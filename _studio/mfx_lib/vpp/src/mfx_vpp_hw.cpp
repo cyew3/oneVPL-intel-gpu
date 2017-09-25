@@ -1797,6 +1797,10 @@ mfxStatus  VideoVPPHW::Init(
     caps = m_ddi->GetCaps();
 
     sts = ValidateParams(&m_params, &caps, m_pCore);
+    if( MFX_ERR_UNSUPPORTED == sts )
+    {
+        sts = MFX_ERR_INVALID_VIDEO_PARAM;
+    }
     if( MFX_WRN_FILTER_SKIPPED == sts )
     {
         bIsFilterSkipped = true;

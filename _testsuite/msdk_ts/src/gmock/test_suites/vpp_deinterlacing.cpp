@@ -83,15 +83,15 @@ const TestSuite::tc_struct TestSuite::test_case[] =
                               {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_Y210}}},
 
     // PTIR modes are unsupported by regular VPP
-    {/*08*/ MFX_ERR_UNSUPPORTED, 0, 0,{{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_AUTO_DOUBLE}}},
-    {/*09*/ MFX_ERR_UNSUPPORTED, 0, 0,{{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_AUTO_SINGLE}}},
-    {/*10*/ MFX_ERR_UNSUPPORTED, 0, 0,{{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_FULL_FR_OUT}}},
-    {/*11*/ MFX_ERR_UNSUPPORTED, 0, 0,{{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_HALF_FR_OUT}}},
-    {/*12*/ MFX_ERR_UNSUPPORTED, 0, 0,{{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_24FPS_OUT}}},
-    {/*13*/ MFX_ERR_UNSUPPORTED, 0, 0,{{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_FIXED_TELECINE_PATTERN}}},
-    {/*14*/ MFX_ERR_UNSUPPORTED, 0, 0,{{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_30FPS_OUT}}},
-    {/*15*/ MFX_ERR_UNSUPPORTED, 0, 0,{{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_DETECT_INTERLACE}}},
-    {/*16*/ MFX_ERR_UNSUPPORTED, 0, 0,{
+    {/*08*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 0,{{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_AUTO_DOUBLE}}},
+    {/*09*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 0,{{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_AUTO_SINGLE}}},
+    {/*10*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 0,{{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_FULL_FR_OUT}}},
+    {/*11*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 0,{{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_HALF_FR_OUT}}},
+    {/*12*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 0,{{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_24FPS_OUT}}},
+    {/*13*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 0,{{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_FIXED_TELECINE_PATTERN}}},
+    {/*14*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 0,{{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_30FPS_OUT}}},
+    {/*15*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 0,{{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_DETECT_INTERLACE}}},
+    {/*16*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 0,{
         {MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_DETECT_INTERLACE},
         {MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.TelecinePattern, 1},
         {MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.TelecineLocation, 1}}
