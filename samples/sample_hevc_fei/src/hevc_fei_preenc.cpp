@@ -70,6 +70,8 @@ mfxStatus IPreENC::ResetExtBuffers(const MfxVideoParamsWrapper & videoParams)
     return MFX_ERR_NONE;
 }
 
+/**********************************************************************************/
+
 FEI_Preenc::FEI_Preenc(MFXVideoSession* session, MfxVideoParamsWrapper& preenc_pars,
     const msdk_char* mvoutFile, const msdk_char* mbstatoutFile)
     : IPreENC(preenc_pars)
@@ -161,6 +163,11 @@ mfxStatus FEI_Preenc::PreInit()
 {
     mfxStatus sts = IPreENC::PreInit();
     MSDK_CHECK_STATUS(sts, "FEI PreENC ResetExtBuffers failed");
+
+    /* The sample is dedicated to hevc encode where FIELD_SINGLE PicStruct is possible but
+     * AVC PreENC doesn't know this PicStruct. So we replace FIELD_SINGLE with PROGRESSIVE */
+    if (MFX_PICSTRUCT_FIELD_SINGLE == m_videoParams.mfx.FrameInfo.PicStruct)
+        m_videoParams.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
 
     mfxExtFeiPreEncCtrl* ctrl = m_syncp.second.first.AddExtBuffer<mfxExtFeiPreEncCtrl>();
     MSDK_CHECK_POINTER(ctrl, MFX_ERR_NULL_PTR);
