@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2016-2017 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -235,16 +235,16 @@ TestSuite::tc_struct const& query_case(unsigned int id, std::integral_constant<u
         {
             /*  0*/ MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF,
             /*  1*/ MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF,
-            /*  2*/ MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF,
+            /*  2*/ MFX_FRAMETYPE_B | MFX_FRAMETYPE_REF,
             /*  3*/ MFX_FRAMETYPE_B | MFX_FRAMETYPE_REF,
-            /*  4*/ MFX_FRAMETYPE_B | MFX_FRAMETYPE_REF,
+            /*  4*/ MFX_FRAMETYPE_B,
             /*  5*/ MFX_FRAMETYPE_B,
             /*  6*/ MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF,
             /*  7*/ MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF,
             /*  8*/ MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF,
-            /*  9*/ MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF,
+            /*  9*/ MFX_FRAMETYPE_B | MFX_FRAMETYPE_REF,
             /* 10*/ MFX_FRAMETYPE_B | MFX_FRAMETYPE_REF,
-            /* 11*/ MFX_FRAMETYPE_B | MFX_FRAMETYPE_REF,
+            /* 11*/ MFX_FRAMETYPE_B,
             /* 12*/ MFX_FRAMETYPE_B,
             /* 13*/ MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF
         }
