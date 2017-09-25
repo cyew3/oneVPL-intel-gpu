@@ -307,13 +307,11 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_MAIN>:
     {/*36*/ MFX_ERR_UNSUPPORTED,
         { { MFX_IN|VARIED, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, { MFX_CHROMAFORMAT_YUV422 }, MFX_HW_ICL },
           { MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC,{ MFX_FOURCC_NV12 } } },
-        MFX_OS_FAMILY_WINDOWS, MFX_HW_ICL
     },
 
     {/*37*/ MFX_ERR_UNSUPPORTED,
         { { MFX_IN|VARIED, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, { MFX_CHROMAFORMAT_YUV444 }, MFX_HW_ICL },
           { MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC,{ MFX_FOURCC_NV12 } } },
-        MFX_OS_FAMILY_WINDOWS, MFX_HW_ICL
     },
 
     {/*38*/ MFX_ERR_NONE,
@@ -542,7 +540,8 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_HEVC_MAIN10
     {/*34*/ MFX_ERR_NONE,
         { { MFX_IN|VARIED, &tsStruct::mfxVideoParam.mfx.CodecProfile, {MFX_PROFILE_HEVC_REXT}, MFX_HW_ICL },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV420} },
-          { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_P010} } }
+          { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_P010} } },
+        MFX_OS_FAMILY_WINDOWS, MFX_HW_ICL
     },
 
     {/*35*/ MFX_ERR_NONE,
@@ -550,7 +549,8 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_HEVC_MAIN10
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV420} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, {10} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, {10} },
-          { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_P010} } }
+          { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_P010} } },
+        MFX_OS_FAMILY_WINDOWS, MFX_HW_ICL
     }
 };
 template <>
