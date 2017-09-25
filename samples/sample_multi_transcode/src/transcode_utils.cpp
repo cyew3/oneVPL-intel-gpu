@@ -149,7 +149,13 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("  -join         Join session with other session(s), by default sessions are not joined\n"));
     msdk_printf(MSDK_STRING("  -priority     Use priority for join sessions. 0 - Low, 1 - Normal, 2 - High. Normal by default\n"));
     msdk_printf(MSDK_STRING("  -threads num  Number of session internal threads to create\n"));
-    msdk_printf(MSDK_STRING("  -n            Number of frames to transcode \n"));
+    msdk_printf(MSDK_STRING("  -n            Number of frames to transcode\n") \
+        MSDK_STRING("                  (session ends after this number of frames is reached). \n") \
+        MSDK_STRING("                In decoding sessions (-o::sink) this parameter limits number\n") \
+        MSDK_STRING("                   of frames acquired from decoder.\n") \
+        MSDK_STRING("                In encoding sessions (-o::source) and transcoding sessions \n") \
+        MSDK_STRING("                  this parameter limits number of frames sent to encoder.\n"));
+
     msdk_printf(MSDK_STRING("  -ext_allocator    Force usage of external allocators\n"));
     msdk_printf(MSDK_STRING("  -sys          Force usage of external system allocator\n"));
     msdk_printf(MSDK_STRING("  -fps <frames per second>\n"));
