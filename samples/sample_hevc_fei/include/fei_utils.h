@@ -306,16 +306,13 @@ T* AcquireResource(std::vector<T> & pool)
 class MFX_VPP
 {
 public:
-    MFX_VPP(MFXVideoSession* session, MFXFrameAllocator* allocator, MfxVideoParamsWrapper& vpp_pars);
+    MFX_VPP(MFXVideoSession* session, MfxVideoParamsWrapper& vpp_pars, SurfacesPool* sp);
     ~MFX_VPP();
 
     mfxStatus Init();
     mfxStatus Reset(mfxVideoParam& par);
 
     mfxStatus QueryIOSurf(mfxFrameAllocRequest* request);
-    // component manages its output surface pool taking into account external request for surfaces
-    // which can be passed from another component
-    mfxStatus AllocOutFrames(mfxFrameAllocRequest* ext_request);
 
     mfxStatus PreInit();
     const mfxFrameInfo& GetOutFrameInfo();
@@ -328,7 +325,7 @@ private:
     MFXVideoSession*    m_pmfxSession; // pointer to MFX session shared by external interface
 
     MFXVideoVPP             m_mfxVPP;
-    SurfacesPool            m_outSurfPool;
+    SurfacesPool*           m_pOutSurfPool;
     MfxVideoParamsWrapper   m_videoParams; // reflects current state VPP parameters
 
 private:

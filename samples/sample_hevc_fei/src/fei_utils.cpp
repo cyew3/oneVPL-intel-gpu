@@ -560,10 +560,10 @@ FileHandler::~FileHandler()
     }
 }
 
-MFX_VPP::MFX_VPP(MFXVideoSession* session, MFXFrameAllocator* allocator, MfxVideoParamsWrapper& vpp_pars)
+MFX_VPP::MFX_VPP(MFXVideoSession* session, MfxVideoParamsWrapper& vpp_pars, SurfacesPool* sp)
     : m_pmfxSession(session)
     , m_mfxVPP(*m_pmfxSession)
-    , m_outSurfPool(allocator)
+    , m_pOutSurfPool(sp)
     , m_videoParams(vpp_pars)
 {}
 
@@ -619,29 +619,6 @@ mfxStatus MFX_VPP::QueryIOSurf(mfxFrameAllocRequest* request)
     return m_mfxVPP.QueryIOSurf(&m_videoParams, request);
 }
 
-// component manages its output surface pool taking into account external request for surfaces
-// which can be passed from another component (e.g. Encode)
-mfxStatus MFX_VPP::AllocOutFrames(mfxFrameAllocRequest* ext_request)
-{
-    mfxFrameAllocRequest vpp_request[2];
-    MSDK_ZERO_MEMORY(vpp_request[0]); //VPP in
-    MSDK_ZERO_MEMORY(vpp_request[1]); //VPP out
-
-    mfxStatus sts = QueryIOSurf(vpp_request);
-    MSDK_CHECK_STATUS(sts, "MFX VPP QueryIOSurf failed");
-
-    MSDK_CHECK_POINTER(ext_request, MFX_ERR_NOT_INITIALIZED);
-
-    vpp_request[1].Type |= ext_request->Type;
-    vpp_request[1].NumFrameMin = vpp_request[1].NumFrameSuggested += ext_request->NumFrameSuggested;
-
-    sts = m_outSurfPool.AllocSurfaces(vpp_request[1]);
-    MSDK_CHECK_STATUS(sts, "MFX VPP Alloc Output surfaces failed");
-
-
-    return sts;
-}
-
 const mfxFrameInfo& MFX_VPP::GetOutFrameInfo()
 {
     return m_videoParams.vpp.Out;
@@ -656,7 +633,7 @@ mfxStatus MFX_VPP::ProcessFrame(mfxFrameSurface1* pInSurf, mfxFrameSurface1* & p
         mfxSyncPoint syncp;
         MSDK_ZERO_MEMORY(syncp);
 
-        pOutSurf = m_outSurfPool.GetFreeSurface();
+        pOutSurf = m_pOutSurfPool->GetFreeSurface();
         MSDK_CHECK_POINTER(pOutSurf, MFX_ERR_MEMORY_ALLOC);
 
         sts = m_mfxVPP.RunFrameVPPAsync(pInSurf, pOutSurf, NULL, &syncp);
