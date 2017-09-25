@@ -243,31 +243,36 @@ bool CheckChromaFormat(mfxU16 profile, mfxU16 format)
     if (format > MFX_CHROMAFORMAT_YUV444)
         return false;
 
-    static const mfxU16 minmax[][2] =
+    struct supported_t
     {
-        {                       0,                       0 }, //MFX_PROFILE_UNKNOWN is not allowed, just placeholder here
-        { MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV420 }, //MFX_PROFILE_HEVC_MAIN
-        { MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV420 }, //MFX_PROFILE_HEVC_MAIN10
-        { MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV420 }, //MFX_PROFILE_HEVC_MAINSP
+        mfxU16 profile;
+        mfxI8  chroma[4];
+    } static const supported[] =
+    {
+        { MFX_PROFILE_HEVC_MAIN,   {                      -1, MFX_CHROMAFORMAT_YUV420,                      -1,                      -1 } },
+        { MFX_PROFILE_HEVC_MAIN10, {                      -1, MFX_CHROMAFORMAT_YUV420,                      -1,                      -1 } },
+        { MFX_PROFILE_HEVC_MAINSP, {                      -1, MFX_CHROMAFORMAT_YUV420,                      -1,                      -1 } },
+
 #if !defined(MFX_VA)
-        { MFX_CHROMAFORMAT_YUV400, MFX_CHROMAFORMAT_YUV422 }, //MFX_PROFILE_HEVC_REXT
+        { MFX_PROFILE_HEVC_REXT,   { MFX_CHROMAFORMAT_YUV400, MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV422,                      -1 } },
 #elif defined(PRE_SI_TARGET_PLATFORM_GEN11)
-        { MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV444 }, //MFX_PROFILE_HEVC_REXT
-#else
-        { MFX_CHROMAFORMAT_YUV444 + 1, MFX_CHROMAFORMAT_YUV444 + 1 }, //MFX_PROFILE_HEVC_REXT - unsupported
+        { MFX_PROFILE_HEVC_REXT,   {                      -1, MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV422, MFX_CHROMAFORMAT_YUV444 } },
+#endif
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+        { MFX_PROFILE_HEVC_SCC,    {                      -1, MFX_CHROMAFORMAT_YUV420,                      -1, MFX_CHROMAFORMAT_YUV444 } },
 #endif
     };
 
+    supported_t const
+        *f = supported,
+        *l = f + sizeof(supported) / sizeof(supported[0]);
+    for (; f != l; ++f)
+        if (f->profile == profile)
+            break;
+
     return
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-        profile == MFX_PROFILE_HEVC_SCC ?
-            (format == MFX_CHROMAFORMAT_YUV420 ||
-             format == MFX_CHROMAFORMAT_YUV444)
-        :
-#endif
-        !(format < minmax[profile][0]) &&
-        !(format > minmax[profile][1])
-        ;
+        f != l && (*f).chroma[format] != -1;
 }
 
 inline
