@@ -175,9 +175,9 @@ mfxStatus FEI_Encode::QueryIOSurf(mfxFrameAllocRequest* request)
     return m_mfxENCODE.QueryIOSurf(&m_videoParams, request);
 }
 
-mfxFrameInfo* FEI_Encode::GetFrameInfo()
+MfxVideoParamsWrapper FEI_Encode::GetVideoParam()
 {
-    return &m_videoParams.mfx.FrameInfo;
+    return m_videoParams;
 }
 
 mfxStatus FEI_Encode::Reset(mfxVideoParam& par)
@@ -192,11 +192,6 @@ mfxStatus FEI_Encode::Reset(mfxVideoParam& par)
     MSDK_CHECK_STATUS(sts, "FEI Encode GetVideoParam failed");
 
     return sts;
-}
-
-const MfxVideoParamsWrapper& FEI_Encode::GetVideoParam()
-{
-    return m_videoParams;
 }
 
 // in encoded order

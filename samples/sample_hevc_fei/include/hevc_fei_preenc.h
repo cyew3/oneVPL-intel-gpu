@@ -34,8 +34,7 @@ public:
     // prepare required internal resources (e.g. buffer allocation) for component initialization
     virtual mfxStatus PreInit();
 
-    const MfxVideoParamsWrapper& GetVideoParam();
-    mfxFrameInfo* GetFrameInfo();
+    MfxVideoParamsWrapper   GetVideoParam();
 
     virtual mfxStatus PreEncFrame(HevcTask * task) = 0;
 

@@ -31,6 +31,11 @@ mfxStatus IPreENC::PreInit()
     return sts;
 }
 
+MfxVideoParamsWrapper IPreENC::GetVideoParam()
+{
+    return m_videoParams;
+}
+
 mfxStatus IPreENC::ResetExtBuffers(const MfxVideoParamsWrapper & videoParams)
 {
     for (size_t i = 0; i < m_mvs.size(); ++i)
@@ -199,16 +204,6 @@ mfxStatus FEI_Preenc::PreInit()
     ctrl->Enable8x8Stat           = 0; // default value from AVC PreENC initialization
 
     return sts;
-}
-
-const MfxVideoParamsWrapper& IPreENC::GetVideoParam()
-{
-    return m_videoParams;
-}
-
-mfxFrameInfo * IPreENC::GetFrameInfo()
-{
-    return &m_videoParams.mfx.FrameInfo;
 }
 
 mfxStatus FEI_Preenc::DumpResult(HevcTask* task)
