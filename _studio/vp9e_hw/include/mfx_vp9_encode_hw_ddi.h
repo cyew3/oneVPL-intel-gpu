@@ -41,7 +41,6 @@ static const GUID DXVA2_Intel_LowpowerEncode_VP9_10bit_Profile3 =
 { 0x353aca91, 0xd945, 0x4c13, {0xae, 0x7e, 0x46, 0x90, 0x60, 0xfa, 0xc8, 0xd8 } };
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
 
-//#define DDI_VER_0960
 #define DDI_FROM_MAINLINE_DRIVER
 
 typedef struct tagENCODE_CAPS_VP9
@@ -65,7 +64,10 @@ typedef struct tagENCODE_CAPS_VP9
             UINT    MaxEncodedBitDepth        : 2;
             UINT    UserMaxFrameSizeSupport   : 1;
             UINT    SegmentFeatureSupport     : 4;
-            UINT                              : 9;
+            UINT    DirtyRectSupport          : 1;
+            UINT    MoveRectSupport           : 1;
+            UINT                              : 7;
+
         };
 
         UINT        CodingLimits;
@@ -86,6 +88,9 @@ typedef struct tagENCODE_CAPS_VP9
 
     UINT            MaxPicWidth;
     UINT            MaxPicHeight;
+    USHORT          MaxNumOfDirtyRect;
+    USHORT          MaxNumOfMoveRect;
+
 
 } ENCODE_CAPS_VP9;
 
