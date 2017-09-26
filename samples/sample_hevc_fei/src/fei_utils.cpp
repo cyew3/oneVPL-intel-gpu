@@ -458,6 +458,8 @@ mfxStatus FieldSplitter::VPPOneFrame(mfxFrameSurface1* pSurfaceIn, mfxFrameSurfa
     mfxFrameSurface1 * pOutSrf = m_pOutSurfPool->GetFreeSurface();
     MSDK_CHECK_POINTER(pOutSrf, MFX_ERR_MEMORY_ALLOC);
 
+    pOutSrf->Info.PicStruct = m_par.vpp.Out.PicStruct;
+
     mfxStatus sts = MFX_ERR_NONE;
     for(;;)
     {
@@ -482,9 +484,9 @@ mfxStatus FieldSplitter::VPPOneFrame(mfxFrameSurface1* pSurfaceIn, mfxFrameSurfa
     {
         mfxStatus sts = m_session.SyncOperation(syncp, MSDK_WAIT_INTERVAL);
         MSDK_CHECK_STATUS(sts, "Field splitting SyncOperation failed");
-    }
 
-    *pSurfaceOut = pOutSrf;
+        *pSurfaceOut = pOutSrf;
+    }
 
     return sts;
 }
@@ -492,17 +494,17 @@ mfxStatus FieldSplitter::VPPOneFrame(mfxFrameSurface1* pSurfaceIn, mfxFrameSurfa
 mfxStatus FieldSplitter::GetFrame(mfxFrameSurface1* & pOutSrf)
 {
     mfxStatus sts = MFX_ERR_NONE;
-    mfxFrameSurface1 * pDecOutSrf = m_pLastInSurface;
+    mfxFrameSurface1 * pInSrf = m_pInSurface;
 
-    if (NULL == pDecOutSrf)
+    if (NULL == pInSrf)
     {
-        sts = m_pTarget->GetFrame(pDecOutSrf);
+        sts = m_pTarget->GetFrame(pInSrf);
         if (MFX_ERR_MORE_DATA == sts) sts = MFX_ERR_NONE;
         MSDK_CHECK_STATUS(sts, "m_pTarget->GetFrame failed");
 
-        if (pDecOutSrf)
+        if (pInSrf)
         {
-            if (MFX_PICSTRUCT_FIELD_TFF != pDecOutSrf->Info.PicStruct && MFX_PICSTRUCT_FIELD_BFF != pDecOutSrf->Info.PicStruct)
+            if (MFX_PICSTRUCT_FIELD_TFF != pInSrf->Info.PicStruct && MFX_PICSTRUCT_FIELD_BFF != pInSrf->Info.PicStruct)
             {
                 msdk_printf(MSDK_STRING("\nERROR: VPP Field Splitting can not process non-interlace frame\n"));
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -510,18 +512,24 @@ mfxStatus FieldSplitter::GetFrame(mfxFrameSurface1* & pOutSrf)
         }
     }
 
-    mfxFrameSurface1 * pVPPOutSrf = NULL;
-    sts = VPPOneFrame(pDecOutSrf, &pVPPOutSrf);
+    sts = VPPOneFrame(pInSrf, &pOutSrf);
+    MSDK_CHECK_POINTER(pOutSrf, MFX_ERR_NULL_PTR);
 
-    if (MFX_ERR_MORE_SURFACE == sts)
+    if (MFX_ERR_MORE_SURFACE == sts) // even field
     {
-        m_pLastInSurface = pDecOutSrf;
+        m_pInSurface = pInSrf; // Keep a VPP input surface in a cache to process a next (odd) field
         sts = MFX_ERR_NONE;
-    }
-    else
-        m_pLastInSurface = NULL;
 
-    pOutSrf = pVPPOutSrf;
+        pOutSrf->Info.PicStruct = pInSrf->Info.PicStruct | MFX_PICSTRUCT_FIELD_SINGLE;
+    }
+    else if (MFX_ERR_NONE == sts) // odd field
+    {
+        pOutSrf->Info.PicStruct  = MFX_PICSTRUCT_FIELD_SINGLE;
+        pOutSrf->Info.PicStruct |= (pInSrf->Info.PicStruct & MFX_PICSTRUCT_FIELD_TFF ?
+                                        MFX_PICSTRUCT_FIELD_BFF :
+                                        MFX_PICSTRUCT_FIELD_TFF);
+        m_pInSurface = NULL;
+    }
 
     return sts;
 }

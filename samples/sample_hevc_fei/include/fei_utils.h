@@ -170,7 +170,7 @@ public:
         : IYUVSource(inPars, sp)
         , m_pTarget(pTarget)
         , m_parentSession(parentSession)
-        , m_pLastInSurface(NULL)
+        , m_pInSurface(NULL)
     {
     }
     virtual ~FieldSplitter()
@@ -198,7 +198,7 @@ protected:
     std::auto_ptr<MFXVideoVPP>  m_VPP;
     MfxVideoParamsWrapper       m_par;
 
-    mfxFrameSurface1 *          m_pLastInSurface;
+    mfxFrameSurface1 *          m_pInSurface;
     mfxSyncPoint                m_LastSyncp;
 
 private:
