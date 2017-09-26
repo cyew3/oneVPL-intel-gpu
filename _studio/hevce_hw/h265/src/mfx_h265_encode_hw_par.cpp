@@ -471,7 +471,7 @@ mfxU16 MakeSlices(MfxVideoParam& par, mfxU32 SliceStructure)
         Fewer slices than tiles is illegal (e.g. 3 slice, 2x2 tiles)
         More slices than tiles is legal as long as the slices do not cross tile boundaries; the app needs to use the slice segment address and number of LCUs in the slice to define the slices within the tiles.  
     */
-    if (par.m_platform.CodeName <= MFX_PLATFORM_ICELAKE)
+    if (par.m_platform.CodeName < MFX_PLATFORM_TIGERLAKE)
     {
         nSlice = Max(nSlice, nTile);
     }
