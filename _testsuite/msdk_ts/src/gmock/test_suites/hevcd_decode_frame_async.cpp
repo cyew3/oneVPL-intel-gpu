@@ -63,7 +63,10 @@ private:
 
     void apply_par(const tc_struct& p, mfxU32 stage)
     {
-        bool use_customized_allocator = false;
+        bool use_customized_allocator = true;
+#if (defined(LINUX32) || defined(LINUX64))
+        use_customized_allocator = false;
+#endif
 
         for(mfxU32 i = 0; i < max_num_ctrl; i ++)
         {
