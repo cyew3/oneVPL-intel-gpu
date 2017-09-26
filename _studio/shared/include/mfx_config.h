@@ -375,5 +375,6 @@
 #endif
 
 #define MFX_ENABLE_HEVCE_INTERLACE
+#define MFX_ENABLE_GET_CM_DEVICE
 
 #endif // _MFX_CONFIG_H_

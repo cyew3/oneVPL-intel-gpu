@@ -765,6 +765,15 @@ mfxStatus CommonCORE::GetHandle(mfxHandleType type, mfxHDL *handle)
             return MFX_ERR_NOT_FOUND;
 
     }
+#if defined (MFX_ENABLE_GET_CM_DEVICE)
+    else if (MFX_HANDLE_CM_DEVICE == type)
+    {
+        *handle = ::QueryCoreInterface<void>(this, MFXICORECM_GUID);
+        if (*handle)
+            return MFX_ERR_NONE;
+        return MFX_ERR_NOT_FOUND;
+    }
+#endif //defined (MFX_ENABLE_GET_CM_DEVICE)
 
 #endif // #if defined(_WIN32) || defined(_WIN64)
 #if defined(LINUX32) || defined(LINUX64) || defined(MFX_VA_LINUX)
