@@ -32,6 +32,75 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 namespace HevcRplUtils
 {
+    enum NALU_TYPE
+    {
+        TRAIL_N = 0,
+        TRAIL_R,
+        TSA_N,
+        TSA_R,
+        STSA_N,
+        STSA_R,
+        RADL_N,
+        RADL_R,
+        RASL_N,
+        RASL_R,
+        RSV_VCL_N10,
+        RSV_VCL_R11,
+        RSV_VCL_N12,
+        RSV_VCL_R13,
+        RSV_VCL_N14,
+        RSV_VCL_R15,
+        BLA_W_LP,
+        BLA_W_RADL,
+        BLA_N_LP,
+        IDR_W_RADL,
+        IDR_N_LP,
+        CRA_NUT,
+        RSV_IRAP_VCL22,
+        RSV_IRAP_VCL23,
+        RSV_VCL24,
+        RSV_VCL25,
+        RSV_VCL26,
+        RSV_VCL27,
+        RSV_VCL28,
+        RSV_VCL29,
+        RSV_VCL30,
+        RSV_VCL31,
+        VPS_NUT,
+        SPS_NUT,
+        PPS_NUT,
+        AUD_NUT,
+        EOS_NUT,
+        EOB_NUT,
+        FD_NUT,
+        PREFIX_SEI_NUT,
+        SUFFIX_SEI_NUT,
+        RSV_NVCL41,
+        RSV_NVCL42,
+        RSV_NVCL43,
+        RSV_NVCL44,
+        RSV_NVCL45,
+        RSV_NVCL46,
+        RSV_NVCL47,
+        UNSPEC48,
+        UNSPEC49,
+        UNSPEC50,
+        UNSPEC51,
+        UNSPEC52,
+        UNSPEC53,
+        UNSPEC54,
+        UNSPEC55,
+        UNSPEC56,
+        UNSPEC57,
+        UNSPEC58,
+        UNSPEC59,
+        UNSPEC60,
+        UNSPEC61,
+        UNSPEC62,
+        UNSPEC63,
+        num_NALU_TYPE
+    };
+
     template<class T, class A> mfxStatus Insert(A& _to, mfxU32 _where, T const & _what)
     {
         MSDK_CHECK_NOT_EQUAL(_where + 1 < (sizeof(_to) / sizeof(_to[0])), true, MFX_ERR_UNDEFINED_BEHAVIOR);
@@ -145,7 +214,8 @@ namespace HevcRplUtils
         HevcDpbArray const & dpb,
         T begin,
         T end,
-        bool flush)
+        bool flush,
+        bool bFields)
     {
         T top  = begin;
         T b0 = end; // 1st non-ref B with L1 > 0
@@ -153,13 +223,13 @@ namespace HevcRplUtils
 
         while ( top != end && (top->m_frameType & MFX_FRAMETYPE_B))
         {
-            if (CountL1(dpb, top->m_poc))
+            if (CountL1(dpb, top->m_poc) && (!top->m_secondField))
             {
                 if (isBPyramid(par))
                     brefs.push_back(top);
                 else if (top->m_frameType & MFX_FRAMETYPE_REF)
                 {
-                    if (b0 == end || (top->m_poc - b0->m_poc < 2))
+                    if (b0 == end || (top->m_poc - b0->m_poc < bFields + 2))
                         return top;
                 }
                 else if (b0 == end)
@@ -180,6 +250,11 @@ namespace HevcRplUtils
         {
             top --;
             top->m_frameType = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
+            if (top->m_secondField && top != begin)
+            {
+                top--;
+                top->m_frameType = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
+            }
         }
 
         return top;
@@ -189,8 +264,8 @@ namespace HevcRplUtils
         HevcTask &        task,
         HevcTask const &  prevTask)
     {
-        if (task.m_poc > task.m_lastIPoc
-            && prevTask.m_poc <= prevTask.m_lastIPoc) // 1st TRAIL
+        if (task.m_poc > task.m_lastRAP &&
+            prevTask.m_poc <= prevTask.m_lastRAP) // 1st TRAIL
         {
             Fill(task.m_dpb[TASK_DPB_ACTIVE], IDX_INVALID);
 
@@ -198,7 +273,7 @@ namespace HevcRplUtils
             {
                 const HevcDpbFrame& ref = prevTask.m_dpb[TASK_DPB_AFTER][i];
 
-                if (ref.m_poc == task.m_lastIPoc || ref.m_ltr)
+                if (ref.m_poc == task.m_lastRAP || ref.m_ltr)
                     task.m_dpb[TASK_DPB_ACTIVE][j++] = ref;
             }
         }
@@ -225,6 +300,8 @@ namespace HevcRplUtils
     {
         mfxU16 end = 0; // DPB end
         mfxU16 st0 = 0; // first ST ref in DPB
+        static const mfxU16 maxNumRefL0 = 3;
+        mfxU16 k = isField(par) ? 2 : 1;
 
         while (!isDpbEnd(dpb, end)) end ++;
         for (st0 = 0; st0 < end && dpb[st0].m_ltr; st0++);
@@ -238,6 +315,14 @@ namespace HevcRplUtils
         // sliding window over STRs
         if (end && end == par.mfx.NumRefFrame)
         {
+            if (isPPyramid(par) && st0 == 0)
+            {
+                if (isField(par) && (dpb[1].m_poc / 2 != dpb[0].m_poc / 2))
+                    st0 = 0;
+                else
+                    for (st0 = 1; ((dpb[st0].m_poc/k - dpb[0].m_poc/k) % maxNumRefL0 ) == 0 && st0 < end; st0++);
+            }
+            else
             {
                 for (st0 = 0; dpb[st0].m_ltr && st0 < end; st0 ++);
             }
@@ -264,16 +349,20 @@ namespace HevcRplUtils
         if (gopPicSize == 0xffff) //infinite GOP
             idrPicDist = gopPicSize = 0xffffffff;
 
-        if (idrPicDist && frameOrder % idrPicDist == 0)
-            return (MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_IDR);
+        bool bField = isField(video);
+        mfxU32 fo = bField ? frameOrder / 2 : frameOrder;
+        bool   bSecondField = bField ? (frameOrder & 1) != 0 : false;
+        bool   bIdr = (idrPicDist ? fo % idrPicDist : fo) == 0;
 
-        if (!idrPicDist && frameOrder == 0)
-            return (MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_IDR);
+        if (bIdr)
+        {
+            return bSecondField ? (MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF) : (MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_IDR);
+        }
 
-        if (frameOrder % gopPicSize == 0)
-            return (MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF);
+        if (fo % gopPicSize == 0)
+            return (mfxU8)(bSecondField ? MFX_FRAMETYPE_P : MFX_FRAMETYPE_I) | MFX_FRAMETYPE_REF;
 
-        if (frameOrder % gopPicSize % gopRefDist == 0)
+        if (fo % gopPicSize % gopRefDist == 0)
             return (MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF);
 
         if (((frameOrder + 1) % gopPicSize == 0 && (gopOptFlag & MFX_GOP_CLOSED)) ||
@@ -304,11 +393,19 @@ namespace HevcRplUtils
         return (poc == LTRCandidate) || (LTRCandidate == 0 && poc >= (mfxI32)LTRInterval);
     }
 
+/* 0 - the nearest  filds are used as reference in RPL,
+ * 1 - the first reference is the same polarity field,
+ * 2 - the same polarity fields are used for reference (if possible)
+ */
+
+#define HEVCE_FIELD_MODE 2
+
     void ConstructRPL(
         MfxVideoParamsWrapper const & par,
         HevcDpbArray const & DPB,
         bool isB,
         mfxI32 poc,
+        bool   bSecondField,
         mfxU8  tid,
         mfxU8(&RPL)[2][MAX_DPB_SIZE],
         mfxU8(&numRefActive)[2])
@@ -322,7 +419,6 @@ namespace HevcRplUtils
 
         // was with par
         mfxU32 par_LTRInterval = 0;
-        mfxU16 par_NumRefLX[2] = { 1, 1 };
 
         l0 = l1 = 0;
 
@@ -346,15 +442,32 @@ namespace HevcRplUtils
 
         if (l0 > NumStRefL0)
         {
-            MFX_SORT_COMMON(RPL[0], numRefActive[0], std::abs(DPB[RPL[0][_i]].m_poc - poc) < std::abs(DPB[RPL[0][_j]].m_poc - poc));
+            if (isField(par))
+            {
+#if   (HEVCE_FIELD_MODE == 0)
+                MFX_SORT_COMMON(RPL[0], numRefActive[0],
+                                std::abs(DPB[RPL[0][_i]].m_poc - poc) < std::abs(DPB[RPL[0][_j]].m_poc - poc));
+#elif (HEVCE_FIELD_MODE == 1)
+                MFX_SORT_COMMON(RPL[0], numRefActive[0],
+                                std::abs(DPB[RPL[0][_i]].m_poc - poc) / 2 + ((DPB[RPL[0][_i]].m_secondField == bSecondField) ? 0 : 1)< (std::abs(DPB[RPL[0][_j]].m_poc - poc) / 2) + ((DPB[RPL[0][_j]].m_secondField == bSecondField) ? 0 : 1));
+#elif (HEVCE_FIELD_MODE == 2)
+                MFX_SORT_COMMON(RPL[0], numRefActive[0],
+                                std::abs(DPB[RPL[0][_i]].m_poc - poc) / 2 + ((DPB[RPL[0][_i]].m_secondField == bSecondField) ? 0 : 16)< (std::abs(DPB[RPL[0][_j]].m_poc - poc) / 2) + ((DPB[RPL[0][_j]].m_secondField == bSecondField) ? 0 : 16));
+#endif
+            }
+            else
+            {
+                MFX_SORT_COMMON(RPL[0], numRefActive[0], std::abs(DPB[RPL[0][_i]].m_poc - poc) < std::abs(DPB[RPL[0][_j]].m_poc - poc));
+            }
             if (isPPyramid(par))
             {
                 while (l0 > NumStRefL0)
                 {
                     mfxI32 i;
+                    mfxI32 k = isField(par) ? 2 : 1;
 
-                    // !!! par_NumRefLX[0] used here as distance between "strong" STR, not NumRefActive for current frame
-                    for (i = 0; (i < l0) && (((DPB[RPL[0][0]].m_poc - DPB[RPL[0][i]].m_poc) % par_NumRefLX[0]) == 0); i++);
+                    // NumRefLX[0] used here as distance between "strong" STR, not NumRefActive for current frame
+                    for (i = 0; (i < l0) && (((DPB[RPL[0][0]].m_poc/k - DPB[RPL[0][i]].m_poc/k) % NumRefLX[0]) == 0) /*&& (DPB[RPL[0][i]].m_secondField == bSecondField)*/; i++);
 
                     Remove(RPL[0], (i >= l0 - 1) ? 0 : i);
                     l0--;
@@ -368,7 +481,23 @@ namespace HevcRplUtils
         }
         if (l1 > NumRefLX[1])
         {
-            MFX_SORT_COMMON(RPL[1], numRefActive[1], std::abs(DPB[RPL[1][_i]].m_poc - poc) > std::abs(DPB[RPL[1][_j]].m_poc - poc));
+            if (isField(par))
+            {
+#if   (HEVCE_FIELD_MODE == 0)
+                    MFX_SORT_COMMON(RPL[1], numRefActive[1],
+                                    std::abs(DPB[RPL[1][_i]].m_poc - poc) > std::abs(DPB[RPL[1][_j]].m_poc - poc));
+#elif (HEVCE_FIELD_MODE == 1)
+                    MFX_SORT_COMMON(RPL[1], numRefActive[1],
+                                    std::abs(DPB[RPL[1][_i]].m_poc - poc) / 2 + ((DPB[RPL[1][_i]].m_secondField == bSecondField) ? 0 : 1) > (std::abs(DPB[RPL[1][_j]].m_poc - poc) / 2) + ((DPB[RPL[1][_j]].m_secondField == bSecondField) ? 0 : 1));
+#elif (HEVCE_FIELD_MODE == 2)
+                    MFX_SORT_COMMON(RPL[1], numRefActive[1],
+                                    std::abs(DPB[RPL[1][_i]].m_poc - poc) / 2 + ((DPB[RPL[1][_i]].m_secondField == bSecondField) ? 0 : 16) > (std::abs(DPB[RPL[1][_j]].m_poc - poc) / 2) + ((DPB[RPL[1][_j]].m_secondField == bSecondField) ? 0 : 16));
+#endif
+            }
+            else
+            {
+                MFX_SORT_COMMON(RPL[1], numRefActive[1], std::abs(DPB[RPL[1][_i]].m_poc - poc) > std::abs(DPB[RPL[1][_j]].m_poc - poc));
+            }
             Remove(RPL[1], NumRefLX[1], l1 - NumRefLX[1]);
             l1 = (mfxU8)NumRefLX[1];
         }
@@ -401,6 +530,46 @@ namespace HevcRplUtils
             for (mfxU16 i = 0; i < std::min<mfxU16>(l0, NumRefLX[1]); i++)
                 RPL[1][l1++] = RPL[0][i];
         }
+    }
+
+    mfxU8 GetSHNUT(HevcTask const & task, bool RAPIntra)
+    {
+        const bool isI   = !!(task.m_frameType & MFX_FRAMETYPE_I);
+        const bool isRef = !!(task.m_frameType & MFX_FRAMETYPE_REF);
+        const bool isIDR = !!(task.m_frameType & MFX_FRAMETYPE_IDR);
+
+        if (isIDR)
+            return IDR_W_RADL;
+
+        if (isI && RAPIntra)
+        {
+            const HevcDpbArray& DPB = task.m_dpb[TASK_DPB_AFTER];
+            for (mfxU16 i = 0; !isDpbEnd(DPB, i); i++)
+            {
+                if (DPB[i].m_ltr && DPB[i].m_idxRec != task.m_idxRec)
+                {
+                    //following frames may refer to prev. GOP
+                    return TRAIL_R;
+                }
+            }
+            return CRA_NUT;
+        }
+
+        if (task.m_tid > 0)
+        {
+            if (isRef)
+                return TSA_R;
+            return TSA_N;
+        }
+
+        if (task.m_poc > task.m_lastRAP)
+        {
+            return isRef ? TRAIL_R : TRAIL_N;
+        }
+
+        if (isRef)
+            return RASL_R;
+        return RASL_N;
     }
 }
 
@@ -438,6 +607,7 @@ HevcTask* EncodeOrderControl::ReorderFrame(mfxFrameSurface1 * surface)
         free_task->m_poc = m_frameOrder - m_lastIDR;
         free_task->m_fo =  m_frameOrder;
         free_task->m_bpo = (mfxU32)MFX_FRAMEORDER_UNKNOWN;
+        free_task->m_secondField = isField(m_par) ? (!!(free_task->m_poc & 1)) : false;
         free_task->m_idxRec = m_frameOrder & 0x7f; // Workaround to get unique idx and != IDX_INVALID (0xff)
         m_frameOrder ++;
     }
@@ -457,9 +627,30 @@ HevcTask* EncodeOrderControl::ReorderFrame(mfxFrameSurface1 * surface)
             }
             end++;
         }
-        TaskList::iterator top = FindFrameToEncode(m_par, m_lastTask.m_dpb[TASK_DPB_AFTER], begin, end, flush);
-        if (top != end)
-            task_to_encode = &*top;
+
+        if (isField(m_par) && m_secondFieldInfo.bSecondField())
+        {
+            while (begin != end && begin->m_poc != m_secondFieldInfo.m_poc)
+                begin++;
+
+            if (begin != end)
+            {
+                m_secondFieldInfo.CorrectTaskInfo(&*begin);
+                task_to_encode = &*begin;
+            }
+        }
+        else
+        {
+
+            TaskList::iterator top = FindFrameToEncode(m_par, m_lastTask.m_dpb[TASK_DPB_AFTER], begin, end, flush, isField(m_par));
+            if (top != end)
+                task_to_encode = &*top;
+
+            if (isField(m_par))
+            {
+                m_secondFieldInfo.SaveInfo(&*top);
+            }
+        }
     }
 
     if (task_to_encode)
@@ -477,6 +668,7 @@ HevcTask* EncodeOrderControl::ReorderFrame(mfxFrameSurface1 * surface)
 
         HevcTask & task = *task_to_encode;
         task.m_lastIPoc = m_lastTask.m_lastIPoc;
+        task.m_lastRAP  = m_lastTask.m_lastRAP;
 
         InitDPB(task, m_lastTask);
 
@@ -495,6 +687,10 @@ HevcTask* EncodeOrderControl::ReorderFrame(mfxFrameSurface1 * surface)
                 UpdateDPB(m_par, task, task.m_dpb[TASK_DPB_AFTER]);
             }
         }
+
+        task.m_shNUT = GetSHNUT(task, !isField(m_par));
+        if (task.m_shNUT == CRA_NUT || task.m_shNUT == IDR_W_RADL)
+            task.m_lastRAP = task.m_poc;
 
         m_lastTask = task;
     }
@@ -525,8 +721,8 @@ void EncodeOrderControl::ConstructRPL(HevcTask & task, const HevcTask & prevTask
 
     if ( !(task.m_frameType & MFX_FRAMETYPE_I) )
     {
-        HevcRplUtils::ConstructRPL(m_par, task.m_dpb[TASK_DPB_ACTIVE], !!(task.m_frameType & MFX_FRAMETYPE_B), task.m_poc, task.m_tid,
-            task.m_refPicList, task.m_numRefActive);
+        HevcRplUtils::ConstructRPL(m_par, task.m_dpb[TASK_DPB_ACTIVE], !!(task.m_frameType & MFX_FRAMETYPE_B),
+                                   task.m_poc, task.m_tid, task.m_secondField, task.m_refPicList, task.m_numRefActive);
     }
 }
 

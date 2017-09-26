@@ -416,10 +416,11 @@ struct HevcDpbFrame
     mfxU32   m_fo;    // FrameOrder
     mfxU32   m_eo;    // Encoded order
     mfxU32   m_bpo;   // Bpyramid order
-    mfxU32   m_level; // pyramid level
+    mfxU32   m_level; // Pyramid level
     mfxU8    m_tid;
     bool     m_ltr;   // is "long-term"
     bool     m_ldb;   // is "low-delay B"
+    bool     m_secondField;
     mfxU8    m_codingType;
     mfxU8    m_idxRec;
     mfxFrameSurface1 * m_surf; //input surface
@@ -436,7 +437,9 @@ struct HevcTask : HevcDpbFrame
     mfxU16       m_frameType;
     mfxU8        m_refPicList[2][MAX_DPB_SIZE];
     mfxU8        m_numRefActive[2]; // L0 and L1 lists
+    mfxU8        m_shNUT;           // NALU type
     mfxI32       m_lastIPoc;
+    mfxI32       m_lastRAP;
     HevcDpbArray m_dpb[TASK_DPB_NUM];
     std::list<PreENCOutput> m_preEncOutput;
 

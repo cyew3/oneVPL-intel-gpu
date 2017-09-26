@@ -24,6 +24,48 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "mfxstructures.h"
 #include "sample_hevc_fei_defs.h"
 
+inline bool isField(MfxVideoParamsWrapper const & par)
+{
+    return !!(par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_SINGLE);
+}
+
+class SecondFieldInfo
+{
+public:
+    mfxI32     m_poc;
+    bool       m_bReference;
+    mfxU32     m_level;
+
+    SecondFieldInfo() :
+        m_poc(-1),
+        m_bReference(false),
+        m_level(0) {}
+
+    void Reset()
+    {
+        m_poc = -1;
+        m_bReference = false;
+        m_level = 0;
+    }
+    void SaveInfo(HevcTask const* task)
+    {
+        m_poc = task->m_poc + 1;
+        m_bReference = ((task->m_frameType & MFX_FRAMETYPE_REF) != 0);
+        m_level = task->m_level;
+    }
+    void CorrectTaskInfo(HevcTask* task)
+    {
+        if (m_poc != task->m_poc || !task->m_secondField)
+            return;
+        if (m_bReference)
+            task->m_frameType |= MFX_FRAMETYPE_REF;
+        task->m_level = m_level;
+
+        Reset();
+    }
+    bool bSecondField() { return m_poc != -1; }
+};
+
 class EncodeOrderControl
 {
 public:
@@ -40,6 +82,7 @@ public:
         Fill(m_lastTask.m_refPicList, IDX_INVALID);
         Fill(m_lastTask.m_numRefActive, IDX_INVALID);
         m_lastTask.m_lastIPoc = IDX_INVALID;
+        m_lastTask.m_lastRAP = IDX_INVALID;
         Fill(m_lastTask.m_dpb[TASK_DPB_ACTIVE], IDX_INVALID);
         Fill(m_lastTask.m_dpb[TASK_DPB_AFTER],  IDX_INVALID);
         Fill(m_lastTask.m_dpb[TASK_DPB_BEFORE], IDX_INVALID);
@@ -54,6 +97,7 @@ public:
         m_free.resize(MaxTask(m_par));
         m_reordering.resize(0);
         m_encoding.resize(0);
+        m_secondFieldInfo.Reset();
     }
 
     HevcTask* GetTask(mfxFrameSurface1 * surface)
@@ -108,6 +152,8 @@ private:
 
     mfxU32                        m_frameOrder;
     mfxU32                        m_lastIDR;
+
+    SecondFieldInfo               m_secondFieldInfo;
 
 private:
     DISALLOW_COPY_AND_ASSIGN(EncodeOrderControl);
