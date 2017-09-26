@@ -114,8 +114,12 @@ mfxStatus FEI_Encode::PreInit()
 
 mfxStatus FEI_Encode::ResetExtBuffers(const MfxVideoParamsWrapper & videoParams)
 {
-    mfxU32 ctu_size = 32; // default MSDK value
-    mfxU32 numCTU = (MSDK_ALIGN32(videoParams.mfx.FrameInfo.Width) / ctu_size) * (MSDK_ALIGN32(videoParams.mfx.FrameInfo.Height) / ctu_size);
+    /* Driver uses blocks of 16x16 pixels for CTUs representation.
+       The layout of data inside those blocks is related to CTU size,
+       but the buffer size itself - doesn't.
+    */
+    static const mfxU32 element_size = 16; // Buffers granularity is always 16x16 blocks
+    mfxU32 numElements = (MSDK_ALIGN32(videoParams.mfx.FrameInfo.Width) / element_size) * (MSDK_ALIGN32(videoParams.mfx.FrameInfo.Height) / element_size);
 
 // driver doesn't support HEVC FEI buffers
 #if 0
@@ -126,7 +130,7 @@ mfxStatus FEI_Encode::ResetExtBuffers(const MfxVideoParamsWrapper & videoParams)
         {
             m_buf_allocator.Free(pMVP);
 
-            m_buf_allocator.Alloc(pMVP, numCTU);
+            m_buf_allocator.Alloc(pMVP, numElements);
         }
 
         // TODO: add condition when buffer is required
@@ -135,7 +139,7 @@ mfxStatus FEI_Encode::ResetExtBuffers(const MfxVideoParamsWrapper & videoParams)
         // {
         //     m_buf_allocator.Free(pQP);
         //
-        //     m_buf_allocator.Alloc(pQP, numCTU);
+        //     m_buf_allocator.Alloc(pQP, numElements);
         // }
     }
     catch (mfxError& ex)
