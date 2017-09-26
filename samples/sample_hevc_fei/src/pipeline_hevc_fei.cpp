@@ -298,21 +298,16 @@ mfxStatus CEncodingPipeline::InitComponents()
     sts = m_pYUVSource->Init();
     MSDK_CHECK_STATUS(sts, "m_pYUVSource->Init failed");
 
-    MfxVideoParamsWrapper param;
     if (m_pFEI_PreENC.get())
     {
         sts = m_pFEI_PreENC->Init();
         MSDK_CHECK_STATUS(sts, "FEI PreENC Init failed");
-
-        param = m_pFEI_PreENC->GetVideoParam();
     }
 
     if (m_pFEI_Encode.get())
     {
         sts = m_pFEI_Encode->Init();
         MSDK_CHECK_STATUS(sts, "FEI ENCODE Init failed");
-
-        param = m_pFEI_Encode->GetVideoParam();
     }
 
     return sts;

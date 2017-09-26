@@ -52,13 +52,13 @@ private:
 
     vaapiBufferAllocator    m_buf_allocator;
 
-    MfxVideoParamsWrapper m_videoParams; // reflects current state Encode parameters
+    MfxVideoParamsWrapper m_videoParams;
     mfxEncodeCtrlWrap     m_encodeCtrl;
     mfxBitstream          m_bitstream;
     mfxSyncPoint          m_syncPoint;
 
-    std::string          m_dstFileName;
-    CSmplBitstreamWriter m_FileWriter; // bitstream writer
+    std::string           m_dstFileName;
+    CSmplBitstreamWriter  m_FileWriter; // bitstream writer
 
     std::auto_ptr<PredictorsRepaking> m_repacker;
 

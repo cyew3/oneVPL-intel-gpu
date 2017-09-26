@@ -134,7 +134,7 @@ namespace HevcRplUtils
         return CO2 ? CO2->BRefType == MFX_B_REF_PYRAMID : false;
     }
 
-    bool isLowDelay(MfxVideoParamsWrapper const & par)
+    bool isPPyramid(MfxVideoParamsWrapper const & par)
     {
         mfxExtCodingOption3 * CO3 = par;
         return CO3 ? CO3->PRefType == MFX_P_REF_PYRAMID : false;
@@ -187,8 +187,7 @@ namespace HevcRplUtils
 
     void InitDPB(
         HevcTask &        task,
-        HevcTask const &  prevTask,
-        mfxExtAVCRefListCtrl * pLCtrl)
+        HevcTask const &  prevTask)
     {
         if (task.m_poc > task.m_lastIPoc
             && prevTask.m_poc <= prevTask.m_lastIPoc) // 1st TRAIL
@@ -216,25 +215,13 @@ namespace HevcRplUtils
             for (mfxI16 i = 0; !isDpbEnd(dpb, i); i++)
                 if (dpb[i].m_tid > 0 && dpb[i].m_tid >= task.m_tid)
                     Remove(dpb, i--);
-
-            if (pLCtrl)
-            {
-                for (mfxU16 i = 0; i < 16 && pLCtrl->RejectedRefList[i].FrameOrder != static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN); i++)
-                {
-                    mfxU16 idx = GetDPBIdxByFO(dpb, pLCtrl->RejectedRefList[i].FrameOrder);
-
-                    if (idx < MAX_DPB_SIZE && dpb[idx].m_ltr)
-                        Remove(dpb, idx);
-                }
-            }
         }
     }
 
     void UpdateDPB(
         MfxVideoParamsWrapper const & par,
         HevcDpbFrame const & task,
-        HevcDpbArray & dpb,
-        mfxExtAVCRefListCtrl * pLCtrl)
+        HevcDpbArray & dpb)
     {
         mfxU16 end = 0; // DPB end
         mfxU16 st0 = 0; // first ST ref in DPB
@@ -263,33 +250,6 @@ namespace HevcRplUtils
             dpb[end++] = task;
         else
             assert(!"DPB overflow, no space for new frame");
-
-        if (pLCtrl)
-        {
-            bool sort = false;
-
-            for (st0 = 0; dpb[st0].m_ltr && st0 < end; st0++);
-
-            for (mfxU16 i = 0; i < 16 && pLCtrl->LongTermRefList[i].FrameOrder != static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN); i++)
-            {
-                mfxU16 idx = GetDPBIdxByFO(dpb, pLCtrl->LongTermRefList[i].FrameOrder);
-
-                if (idx < MAX_DPB_SIZE && !dpb[idx].m_ltr)
-                {
-                    HevcDpbFrame ltr = dpb[idx];
-                    ltr.m_ltr = true;
-                    Remove(dpb, idx);
-                    Insert(dpb, st0, ltr);
-                    st0++;
-                    sort = true;
-                }
-            }
-
-            if (sort)
-            {
-                MFX_SORT_STRUCT(dpb, st0, m_poc, >);
-            }
-        }
     }
 
     mfxU8 GetFrameType(
@@ -345,14 +305,13 @@ namespace HevcRplUtils
     }
 
     void ConstructRPL(
+        MfxVideoParamsWrapper const & par,
         HevcDpbArray const & DPB,
         bool isB,
         mfxI32 poc,
         mfxU8  tid,
         mfxU8(&RPL)[2][MAX_DPB_SIZE],
-        mfxU8(&numRefActive)[2],
-        mfxExtAVCRefLists * pExtLists,
-        mfxExtAVCRefListCtrl * pLCtrl)
+        mfxU8(&numRefActive)[2])
     {
         mfxU8 NumRefLX[2] = { numRefActive[0], numRefActive[1] };
         mfxU8& l0 = numRefActive[0];
@@ -364,184 +323,70 @@ namespace HevcRplUtils
         // was with par
         mfxU32 par_LTRInterval = 0;
         mfxU16 par_NumRefLX[2] = { 1, 1 };
-        bool par_isLowDelay/*()*/ = 0;
 
         l0 = l1 = 0;
 
-        if (pExtLists)
+        for (mfxU8 i = 0; !isDpbEnd(DPB, i); i++)
         {
-            for (mfxU32 i = 0; i < pExtLists->NumRefIdxL0Active; i++)
+            if (DPB[i].m_tid > tid)
+                continue;
+
+            if (poc > DPB[i].m_poc)
             {
-                mfxU8 idx = GetDPBIdxByFO(DPB, (mfxI32)pExtLists->RefPicList0[i].FrameOrder);
-
-                if (idx < MAX_DPB_SIZE)
-                {
-                    RPL[0][l0++] = idx;
-
-                    if (l0 == NumRefLX[0])
-                        break;
-                }
+                if (DPB[i].m_ltr || (par_LTRInterval && isLTR(DPB, par_LTRInterval, DPB[i].m_poc)))
+                    LTR[nLTR++] = i;
+                else
+                    RPL[0][l0++] = i;
             }
-
-            for (mfxU32 i = 0; i < pExtLists->NumRefIdxL1Active; i++)
-            {
-                mfxU8 idx = GetDPBIdxByFO(DPB, (mfxI32)pExtLists->RefPicList1[i].FrameOrder);
-
-                if (idx < MAX_DPB_SIZE)
-                    RPL[1][l1++] = idx;
-
-                if (l1 == NumRefLX[1])
-                    break;
-            }
+            else if (isB)
+                RPL[1][l1++] = i;
         }
 
-        if (l0 == 0)
+        NumStRefL0 -= !!nLTR;
+
+        if (l0 > NumStRefL0)
         {
-            l1 = 0;
-
-            for (mfxU8 i = 0; !isDpbEnd(DPB, i); i++)
+            MFX_SORT_COMMON(RPL[0], numRefActive[0], std::abs(DPB[RPL[0][_i]].m_poc - poc) < std::abs(DPB[RPL[0][_j]].m_poc - poc));
+            if (isPPyramid(par))
             {
-                if (DPB[i].m_tid > tid)
-                    continue;
-
-                if (poc > DPB[i].m_poc)
+                while (l0 > NumStRefL0)
                 {
-                    if (DPB[i].m_ltr || (par_LTRInterval && isLTR(DPB, par_LTRInterval, DPB[i].m_poc)))
-                        LTR[nLTR++] = i;
-                    else
-                        RPL[0][l0++] = i;
+                    mfxI32 i;
+
+                    // !!! par_NumRefLX[0] used here as distance between "strong" STR, not NumRefActive for current frame
+                    for (i = 0; (i < l0) && (((DPB[RPL[0][0]].m_poc - DPB[RPL[0][i]].m_poc) % par_NumRefLX[0]) == 0); i++);
+
+                    Remove(RPL[0], (i >= l0 - 1) ? 0 : i);
+                    l0--;
                 }
-                else if (isB)
-                    RPL[1][l1++] = i;
-            }
-
-            if (pLCtrl)
-            {
-                // reorder STRs to POC descending order
-                for (mfxU8 lx = 0; lx < 2; lx++)
-                    MFX_SORT_COMMON(RPL[lx], numRefActive[lx],
-                        std::abs(DPB[RPL[lx][_i]].m_poc - poc) > std::abs(DPB[RPL[lx][_j]].m_poc - poc));
-
-                while (nLTR)
-                    RPL[0][l0++] = LTR[--nLTR];
             }
             else
             {
-                NumStRefL0 -= !!nLTR;
-
-                if (l0 > NumStRefL0)
-                {
-                    MFX_SORT_COMMON(RPL[0], numRefActive[0], std::abs(DPB[RPL[0][_i]].m_poc - poc) < std::abs(DPB[RPL[0][_j]].m_poc - poc));
-                    if (par_isLowDelay/*()*/)
-                    {
-                        while (l0 > NumStRefL0)
-                        {
-                            mfxI32 i;
-
-                            // !!! par_NumRefLX[0] used here as distance between "strong" STR, not NumRefActive for current frame
-                            for (i = 0; (i < l0) && (((DPB[RPL[0][0]].m_poc - DPB[RPL[0][i]].m_poc) % par_NumRefLX[0]) == 0); i++);
-
-                            Remove(RPL[0], (i >= l0 - 1) ? 0 : i);
-                            l0--;
-                        }
-                    }
-                    else
-                    {
-                        Remove(RPL[0], (par_LTRInterval && !nLTR && l0 > 1), l0 - NumStRefL0);
-                        l0 = NumStRefL0;
-                    }
-                }
-                if (l1 > NumRefLX[1])
-                {
-                    MFX_SORT_COMMON(RPL[1], numRefActive[1], std::abs(DPB[RPL[1][_i]].m_poc - poc) > std::abs(DPB[RPL[1][_j]].m_poc - poc));
-                    Remove(RPL[1], NumRefLX[1], l1 - NumRefLX[1]);
-                    l1 = (mfxU8)NumRefLX[1];
-                }
-
-                // reorder STRs to POC descending order
-                for (mfxU8 lx = 0; lx < 2; lx++)
-                    MFX_SORT_COMMON(RPL[lx], numRefActive[lx],
-                        DPB[RPL[lx][_i]].m_poc < DPB[RPL[lx][_j]].m_poc);
-
-                if (nLTR)
-                {
-                    MFX_SORT(LTR, nLTR, <);
-                    // use LTR as 2nd reference
-                    Insert(RPL[0], !!l0, LTR[0]);
-                    l0++;
-
-                    for (mfxU16 i = 1; i < nLTR && l0 < NumRefLX[0]; i++, l0++)
-                        Insert(RPL[0], l0, LTR[i]);
-                }
+                Remove(RPL[0], (par_LTRInterval && !nLTR && l0 > 1), l0 - NumStRefL0);
+                l0 = NumStRefL0;
             }
         }
-
-        assert(l0 > 0);
-
-        if (pLCtrl)
+        if (l1 > NumRefLX[1])
         {
-            mfxU16 MaxRef[2] = { NumRefLX[0], NumRefLX[1] };
-            mfxU16 pref[2] = {};
+            MFX_SORT_COMMON(RPL[1], numRefActive[1], std::abs(DPB[RPL[1][_i]].m_poc - poc) > std::abs(DPB[RPL[1][_j]].m_poc - poc));
+            Remove(RPL[1], NumRefLX[1], l1 - NumRefLX[1]);
+            l1 = (mfxU8)NumRefLX[1];
+        }
 
-            if (pLCtrl->NumRefIdxL0Active)
-                MaxRef[0] = std::min(pLCtrl->NumRefIdxL0Active, MaxRef[0]);
+        // reorder STRs to POC descending order
+        for (mfxU8 lx = 0; lx < 2; lx++)
+            MFX_SORT_COMMON(RPL[lx], numRefActive[lx],
+                DPB[RPL[lx][_i]].m_poc < DPB[RPL[lx][_j]].m_poc);
 
-            if (pLCtrl->NumRefIdxL1Active)
-                MaxRef[1] = std::min(pLCtrl->NumRefIdxL1Active, MaxRef[1]);
+        if (nLTR)
+        {
+            MFX_SORT(LTR, nLTR, <);
+            // use LTR as 2nd reference
+            Insert(RPL[0], !!l0, LTR[0]);
+            l0++;
 
-            for (mfxU16 i = 0; i < 16 && pLCtrl->RejectedRefList[i].FrameOrder != static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN); i++)
-            {
-                mfxU8 idx = GetDPBIdxByFO(DPB, pLCtrl->RejectedRefList[i].FrameOrder);
-
-                if (idx < MAX_DPB_SIZE)
-                {
-                    for (mfxU16 lx = 0; lx < 2; lx++)
-                    {
-                        for (mfxU16 j = 0; j < numRefActive[lx]; j++)
-                        {
-                            if (RPL[lx][j] == idx)
-                            {
-                                Remove(RPL[lx], j);
-                                numRefActive[lx]--;
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-
-            for (mfxU16 i = 0; i < 16 && pLCtrl->PreferredRefList[i].FrameOrder != static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN); i++)
-            {
-                mfxU8 idx = GetDPBIdxByFO(DPB, pLCtrl->PreferredRefList[i].FrameOrder);
-
-                if (idx < MAX_DPB_SIZE)
-                {
-                    for (mfxU16 lx = 0; lx < 2; lx++)
-                    {
-                        for (mfxU16 j = 0; j < numRefActive[lx]; j++)
-                        {
-                            if (RPL[lx][j] == idx)
-                            {
-                                Remove(RPL[lx], j);
-                                Insert(RPL[lx], pref[lx]++, idx);
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-
-            for (mfxU16 lx = 0; lx < 2; lx++)
-            {
-                if (numRefActive[lx] > MaxRef[lx])
-                {
-                    Remove(RPL[lx], MaxRef[lx], (numRefActive[lx] - MaxRef[lx]));
-                    numRefActive[lx] = (mfxU8)MaxRef[lx];
-                }
-            }
-
-            if (l0 == 0)
-                RPL[0][l0++] = 0;
+            for (mfxU16 i = 1; i < nLTR && l0 < NumRefLX[0]; i++, l0++)
+                Insert(RPL[0], l0, LTR[i]);
         }
 
         assert(l0 > 0);
@@ -551,7 +396,7 @@ namespace HevcRplUtils
 
         if (!isB)
         {
-            l1 = 0; //ignore l1 != l0 in pExtLists for LDB (unsupported by HW)
+            l1 = 0; //ignore l1 != l0
 
             for (mfxU16 i = 0; i < std::min<mfxU16>(l0, NumRefLX[1]); i++)
                 RPL[1][l1++] = RPL[0][i];
@@ -633,7 +478,7 @@ HevcTask* EncodeOrderControl::ReorderFrame(mfxFrameSurface1 * surface)
         HevcTask & task = *task_to_encode;
         task.m_lastIPoc = m_lastTask.m_lastIPoc;
 
-        InitDPB(task, m_lastTask, NULL);
+        InitDPB(task, m_lastTask);
 
         // update dpb
         {
@@ -647,7 +492,7 @@ HevcTask* EncodeOrderControl::ReorderFrame(mfxFrameSurface1 * surface)
                 if (task.m_frameType & MFX_FRAMETYPE_I)
                     task.m_lastIPoc = task.m_poc;
 
-                UpdateDPB(m_par, task, task.m_dpb[TASK_DPB_AFTER], NULL);
+                UpdateDPB(m_par, task, task.m_dpb[TASK_DPB_AFTER]);
             }
         }
 
@@ -680,8 +525,8 @@ void EncodeOrderControl::ConstructRPL(HevcTask & task, const HevcTask & prevTask
 
     if ( !(task.m_frameType & MFX_FRAMETYPE_I) )
     {
-        HevcRplUtils::ConstructRPL(task.m_dpb[TASK_DPB_ACTIVE], !!(task.m_frameType & MFX_FRAMETYPE_B), task.m_poc, task.m_tid,
-            task.m_refPicList, task.m_numRefActive, NULL, NULL);
+        HevcRplUtils::ConstructRPL(m_par, task.m_dpb[TASK_DPB_ACTIVE], !!(task.m_frameType & MFX_FRAMETYPE_B), task.m_poc, task.m_tid,
+            task.m_refPicList, task.m_numRefActive);
     }
 }
 
