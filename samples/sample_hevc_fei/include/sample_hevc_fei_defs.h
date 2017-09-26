@@ -165,6 +165,9 @@ template<>struct mfx_ext_buffer_id<mfxExtFeiHevcEncQP>{
 template<>struct mfx_ext_buffer_id<mfxExtFeiHevcEncCtuCtrl>{
     enum {id = MFX_EXTBUFF_HEVCFEI_ENC_CTU_CTRL};
 };
+template<>struct mfx_ext_buffer_id<mfxExtHEVCRefLists>{
+    enum {id = MFX_EXTBUFF_HEVC_REFLISTS};
+};
 
 struct CmpExtBufById
 {

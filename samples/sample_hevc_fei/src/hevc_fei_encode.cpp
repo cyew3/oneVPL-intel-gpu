@@ -92,6 +92,9 @@ mfxStatus FEI_Encode::PreInit()
         ctrl->AdaptiveSearch = 1;
     }
 
+    mfxExtHEVCRefLists* pRefLists = m_encodeCtrl.AddExtBuffer<mfxExtHEVCRefLists>();
+    MSDK_CHECK_POINTER(pRefLists, MFX_ERR_NOT_INITIALIZED);
+
     // allocate ext buffer for input MV predictors required for Encode.
     if (m_repacker.get() || m_pFile_MVP_in.get())
     {
@@ -258,9 +261,37 @@ mfxStatus FEI_Encode::EncodeFrame(mfxFrameSurface1* pSurf)
     return sts;
 }
 
+void FillHEVCRefLists(const HevcTask& task, mfxExtHEVCRefLists & refLists)
+{
+    const mfxU8 (&RPL)[2][MAX_DPB_SIZE] = task.m_refPicList;
+    const HevcDpbArray & DPB = task.m_dpb[TASK_DPB_ACTIVE];
+
+    refLists.NumRefIdxL0Active = task.m_numRefActive[0];
+    refLists.NumRefIdxL1Active = task.m_numRefActive[1];
+
+    for (mfxU32 direction = 0; direction < 2; ++direction)
+    {
+        mfxExtHEVCRefLists::mfxRefPic (&refPicList)[32] = (direction == 0) ? refLists.RefPicList0 : refLists.RefPicList1;
+        for (mfxU32 i = 0; i < MAX_DPB_SIZE; ++i)
+        {
+            const mfxU8 & idx = RPL[direction][i];
+            if (idx < MAX_DPB_SIZE)
+            {
+                refPicList[i].FrameOrder = DPB[idx].m_surf->Data.FrameOrder;
+                refPicList[i].PicStruct  = DPB[idx].m_surf->Info.PicStruct;
+            }
+        }
+    }
+}
+
 mfxStatus FEI_Encode::SetCtrlParams(const HevcTask& task)
 {
     m_encodeCtrl.FrameType = task.m_frameType;
+
+    mfxExtHEVCRefLists* pRefLists = m_encodeCtrl.GetExtBuffer<mfxExtHEVCRefLists>();
+    MSDK_CHECK_POINTER(pRefLists, MFX_ERR_NOT_INITIALIZED);
+
+    FillHEVCRefLists(task, *pRefLists);
 
     if (m_repacker.get() || m_pFile_MVP_in.get())
     {
