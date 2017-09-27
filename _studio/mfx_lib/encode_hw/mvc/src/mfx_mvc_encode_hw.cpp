@@ -1189,7 +1189,7 @@ mfxStatus ImplementationMvc::Close()
 
 mfxTaskThreadingPolicy ImplementationMvc::GetThreadingPolicy()
 {
-    return MFX_TASK_THREADING_DEDICATED;
+    return MFX_TASK_THREADING_INTRA;
 }
 
 mfxStatus ImplementationMvc::Reset(mfxVideoParam *par)
