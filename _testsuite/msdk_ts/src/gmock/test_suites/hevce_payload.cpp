@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2015-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2015-2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 #include "ts_encoder.h"
@@ -253,6 +253,18 @@ int TestSuite::RunTest(unsigned int id)
 
     g_tsStatus.expect(tc.sts);
     EncodeFrames(m_nframes, true);
+
+    // Clean up dynamic memory
+    for (auto & i_map : m_per_frame_sei)
+    {
+        for (auto & i_pl : i_map.second)
+        {
+            if (i_pl) delete[] i_pl->Data;
+
+            delete i_pl;
+        }
+        i_map.second.clear();
+    }
 
     TS_END;
     return 0;
