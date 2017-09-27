@@ -92,7 +92,7 @@ private:
 
     inline mfxU16 MaxTask(MfxVideoParamsWrapper const & par)
     {
-        return par.AsyncDepth + par.mfx.GopRefDist - 1 + ((par.AsyncDepth > 1)? 1: 0);
+        return std::max(1, par.AsyncDepth + par.mfx.GopRefDist - 1 + ((par.AsyncDepth > 1)? 1: 0));
     }
 
 private:

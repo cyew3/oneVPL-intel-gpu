@@ -102,9 +102,10 @@ struct sInputParams
         , nNumRef(1)
         , nGopOptFlag(0)               // OPEN GOP
         , GPB(MFX_CODINGOPTION_ON)     // use GPB frames
-        , NumRefActiveP(0)
-        , NumRefActiveBL0(0)
-        , NumRefActiveBL1(0)
+        , NumRefActiveP(1)
+        , NumRefActiveBL0(1)
+        , NumRefActiveBL1(1)
+        , PicTimingSEI(MFX_CODINGOPTION_OFF)
         , PicTimingSEI(MFX_CODINGOPTION_OFF)
     {
         MSDK_ZERO_MEMORY(strDstFile);
