@@ -595,7 +595,7 @@ namespace MFX_HEVC_PP
 
         HEVCPP_API( PTR_ComputeRsCs_8u,  void, h265_ComputeRsCs_8u,  (const Ipp8u *ySrc,  Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s pitchRsCs, Ipp32s width, Ipp32s height) );
         HEVCPP_API( PTR_ComputeRsCs_16u, void, h265_ComputeRsCs_16u, (const Ipp16u *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s pitchRsCs, Ipp32s width, Ipp32s height) );
-#if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) || !defined(ANDROID)
         HEVCPP_API( PTR_AddClipNv12UV_8u,void, h265_AddClipNv12UV_8u,(Ipp8u *dstNv12, Ipp32s pitchDst, const Ipp8u *src1Nv12, Ipp32s pitchSrc1, const CoeffsType *src2Yv12U, const CoeffsType *src2Yv12V, Ipp32s pitchSrc2, Ipp32s size) );
 #endif
         HEVCPP_API( PTR_DiffDc_8u,  Ipp32s, h265_DiffDc_8u,  (const Ipp8u  *src, Ipp32s pitchSrc, const Ipp8u  *pred, Ipp32s pitchPred, Ipp32s width));
@@ -1298,7 +1298,7 @@ namespace MFX_HEVC_PP
     {
         MFX_HEVC_PP::NAME(h265_ComputeRsCs_16u)(ySrc, pitchSrc, lcuRs, lcuCs, pitchRsCs, width, height);
     }
-#if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) || !defined(ANDROID)
     static inline void h265_ComputeRsCsDiff(Ipp32f* pRs0, Ipp32f* pCs0, Ipp32f* pRs1, Ipp32f* pCs1, Ipp32s len, Ipp32f* pRsDiff, Ipp32f* pCsDiff) 
     {
         MFX_HEVC_PP::NAME(h265_ComputeRsCsDiff)(pRs0, pCs0, pRs1, pCs1, len, pRsDiff, pCsDiff);
@@ -1334,7 +1334,7 @@ namespace MFX_HEVC_PP
     {
         MFX_HEVC_PP::NAME(h265_InterpLumaPack_d16)(src, pitchSrc, dst, pitchDst, width, height, bitDepth);
     }
-#if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) || !defined(ANDROID)
     static inline void h265_ConvertShiftR(const Ipp16s *src, Ipp32s pitchSrc, Ipp8u *dst, Ipp32s pitchDst, Ipp32s width, Ipp32s height, Ipp32s rshift)
     {
         MFX_HEVC_PP::NAME(h265_ConvertShiftR)(src, pitchSrc, dst, pitchDst, width, height, rshift);
