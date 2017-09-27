@@ -41,17 +41,20 @@ public:
         if (!buffer) throw mfxError(MFX_ERR_NULL_PTR);
         if (buffer->Data != NULL) throw mfxError(MFX_ERR_UNDEFINED_BEHAVIOR, "Buffer is already allocated and using in app");
 
-        mfxU32 size = sizeof(*(T::Data));
+        // driver limitation for vaCreateBuffer: num_elements should be always 1
+        // and size is total size of Data array
+        mfxU32 va_num_elem = 1;
+        mfxU32 va_data_size = sizeof(*(T::Data)) * num_elem;
 
         VABufferType type = GetVABufferType(buffer->Header.BufferId);
 
-        VAStatus sts = m_libva.vaCreateBuffer(m_dpy, m_context, type, size, num_elem, NULL, &buffer->VaBufferID);
+        VAStatus sts = m_libva.vaCreateBuffer(m_dpy, m_context, type, va_data_size, va_num_elem, NULL, &buffer->VaBufferID);
         if (sts != VA_STATUS_SUCCESS) {
             buffer->VaBufferID = VA_INVALID_ID;
             throw mfxError(MFX_ERR_MEMORY_ALLOC, "vaCreateBuffer failed");
         }
 
-        buffer->DataSize = size * num_elem;
+        buffer->DataSize = va_data_size;
         buffer->Data = NULL;
     };
 
