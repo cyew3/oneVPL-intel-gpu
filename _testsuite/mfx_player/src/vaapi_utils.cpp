@@ -54,7 +54,11 @@ namespace MfxLoader
 
 #if defined(LIBVA_SUPPORT)
     VA_Proxy::VA_Proxy()
+#if defined(ANDROID)
+        : lib("libva.so")
+#else
         : lib("libva.so.1")
+#endif
         , SIMPLE_LOADER_FUNCTION(vaInitialize)
         , SIMPLE_LOADER_FUNCTION(vaTerminate)
         , SIMPLE_LOADER_FUNCTION(vaCreateSurfaces)
