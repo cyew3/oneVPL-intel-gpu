@@ -47,8 +47,6 @@ FEI_Encode::~FEI_Encode()
     m_pmfxSession = NULL;
     WipeMfxBitstream(&m_bitstream);
 
-// driver doesn't support HEVC FEI buffers
-#if 0
     try
     {
         mfxExtFeiHevcEncMVPredictors* pMVP = m_encodeCtrl.GetExtBuffer<mfxExtFeiHevcEncMVPredictors>();
@@ -65,7 +63,6 @@ FEI_Encode::~FEI_Encode()
     {
         msdk_printf("Exception raised in FEI Encode destructor\n");
     }
-#endif
 
 }
 
@@ -98,12 +95,9 @@ mfxStatus FEI_Encode::PreInit()
     // allocate ext buffer for input MV predictors required for Encode.
     if (m_repacker.get() || m_pFile_MVP_in.get())
     {
-// driver doesn't support HEVC FEI buffers
-#if 0
         mfxExtFeiHevcEncMVPredictors* pMVP = m_encodeCtrl.AddExtBuffer<mfxExtFeiHevcEncMVPredictors>();
         MSDK_CHECK_POINTER(pMVP, MFX_ERR_NOT_INITIALIZED);
         pMVP->VaBufferID = VA_INVALID_ID;
-#endif
     }
 
     sts = ResetExtBuffers(m_videoParams);
@@ -121,8 +115,6 @@ mfxStatus FEI_Encode::ResetExtBuffers(const MfxVideoParamsWrapper & videoParams)
     static const mfxU32 element_size = 16; // Buffers granularity is always 16x16 blocks
     mfxU32 numElements = (MSDK_ALIGN32(videoParams.mfx.FrameInfo.Width) / element_size) * (MSDK_ALIGN32(videoParams.mfx.FrameInfo.Height) / element_size);
 
-// driver doesn't support HEVC FEI buffers
-#if 0
     try
     {
         mfxExtFeiHevcEncMVPredictors* pMVP = m_encodeCtrl.GetExtBuffer<mfxExtFeiHevcEncMVPredictors>();
@@ -150,7 +142,6 @@ mfxStatus FEI_Encode::ResetExtBuffers(const MfxVideoParamsWrapper & videoParams)
     {
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
-#endif
 
     return MFX_ERR_NONE;
 }
@@ -274,39 +265,40 @@ mfxStatus FEI_Encode::EncodeFrame(mfxFrameSurface1* pSurf)
 
 mfxStatus FEI_Encode::SetCtrlParams(const HevcTask& task)
 {
-    if (m_repacker.get())
-    {
-// driver doesn't support HEVC FEI buffers
-#if 0
-       mfxExtFeiHevcEncMVPredictors* pMVP = m_encodeCtrl.GetExtBuffer<mfxExtFeiHevcEncMVPredictors>();
-       MSDK_CHECK_POINTER(pMVP, MFX_ERR_NOT_INITIALIZED);
-
-       AutoBufferLocker<mfxExtFeiHevcEncMVPredictors> lock(m_buf_allocator, *pMVP);
-       mfxStatus sts = m_repacker->RepackPredictors(task, *pMVP);
-       MSDK_CHECK_STATUS(sts, "FEI Encode::RepackPredictors failed");
-#endif
-    }
     m_encodeCtrl.FrameType = task.m_frameType;
-    //m_encodeCtrl.QP = ; // should be changed here?
 
-    if (m_pFile_MVP_in.get())
+    if (m_repacker.get() || m_pFile_MVP_in.get())
     {
-// driver doesn't support HEVC FEI buffers
-#if 0
-        mfxExtFeiHevcEncMVPredictors* pMVP = m_encodeCtrl.GetExtBuffer<mfxExtFeiHevcEncMVPredictors>();
-        MSDK_CHECK_POINTER(pMVP, MFX_ERR_NOT_INITIALIZED);
-
         mfxExtFeiHevcEncFrameCtrl* ctrl = m_encodeCtrl.GetExtBuffer<mfxExtFeiHevcEncFrameCtrl>();
         MSDK_CHECK_POINTER(ctrl, MFX_ERR_NOT_INITIALIZED);
 
-        // Switch predictors off for I-frames
+        // switch predictors off for I-frames
         ctrl->MVPredictor = (m_encodeCtrl.FrameType & MFX_FRAMETYPE_I) == 0;
+        ctrl->NumMvPredictors[0] = ctrl->NumMvPredictors[1] = 0;
+        if (m_encodeCtrl.FrameType & MFX_FRAMETYPE_P)
+        {
+            ctrl->NumMvPredictors[0] = m_videoParams.GetExtBuffer<mfxExtCodingOption3>()->NumRefActiveP[0];
+        }
+        else if (m_encodeCtrl.FrameType & MFX_FRAMETYPE_B)
+        {
+            ctrl->NumMvPredictors[0] = m_videoParams.GetExtBuffer<mfxExtCodingOption3>()->NumRefActiveBL0[0];
+            ctrl->NumMvPredictors[1] = m_videoParams.GetExtBuffer<mfxExtCodingOption3>()->NumRefActiveBL1[0];
+        }
 
+        mfxExtFeiHevcEncMVPredictors* pMVP = m_encodeCtrl.GetExtBuffer<mfxExtFeiHevcEncMVPredictors>();
+        MSDK_CHECK_POINTER(pMVP, MFX_ERR_NOT_INITIALIZED);
         AutoBufferLocker<mfxExtFeiHevcEncMVPredictors> lock(m_buf_allocator, *pMVP);
-        mfxStatus sts = m_pFile_MVP_in->Read(pMVP->Data, 1, pMVP->DataSize);
 
-        MSDK_CHECK_STATUS(sts, "FEI Encode. Read MV predictors failed");
-#endif
+        if (m_repacker.get())
+        {
+            mfxStatus sts = m_repacker->RepackPredictors(task, *pMVP);
+            MSDK_CHECK_STATUS(sts, "FEI Encode::RepackPredictors failed");
+        }
+        else
+        {
+            mfxStatus sts = m_pFile_MVP_in->Read(pMVP->Data, pMVP->DataSize, 1);
+            MSDK_CHECK_STATUS(sts, "FEI Encode. Read MV predictors failed");
+        }
     }
 
     return MFX_ERR_NONE;
