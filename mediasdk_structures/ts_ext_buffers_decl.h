@@ -8,6 +8,7 @@ Copyright(c) 2016-2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
+
 EXTBUF(mfxExtCodingOption                , MFX_EXTBUFF_CODING_OPTION                   )
 EXTBUF(mfxExtCodingOptionSPSPPS          , MFX_EXTBUFF_CODING_OPTION_SPSPPS            )
 EXTBUF(mfxExtVPPDoNotUse                 , MFX_EXTBUFF_VPP_DONOTUSE                    )
@@ -51,6 +52,10 @@ EXTBUF(mfxExtFeiPakMBCtrl           , MFX_EXTBUFF_FEI_PAK_CTRL              )
 EXTBUF(mfxExtFEIH265Param           , MFX_EXTBUFF_FEI_H265_PARAM            )
 EXTBUF(mfxExtFEIH265Input           , MFX_EXTBUFF_FEI_H265_INPUT            )
 EXTBUF(mfxExtFEIH265Output          , MFX_EXTBUFF_FEI_H265_OUTPUT           )
+EXTBUF(mfxExtFeiHevcEncFrameCtrl    , MFX_EXTBUFF_HEVCFEI_ENC_CTRL          )
+EXTBUF(mfxExtFeiHevcEncMVPredictors , MFX_EXTBUFF_HEVCFEI_ENC_MV_PRED       )
+EXTBUF(mfxExtFeiHevcEncQP           , MFX_EXTBUFF_HEVCFEI_ENC_QP            )
+EXTBUF(mfxExtFeiHevcEncCtuCtrl      , MFX_EXTBUFF_HEVCFEI_ENC_CTU_CTRL      )
 // end of FEI
 // Camera
 EXTBUF(mfxExtCamTotalColorControl   , MFX_EXTBUF_CAM_TOTAL_COLOR_CONTROL     )

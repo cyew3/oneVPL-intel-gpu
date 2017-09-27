@@ -609,6 +609,42 @@ STRUCT(mfxExtFeiPakMBCtrl,
     FIELD_T(mfxFeiPakMBCtrl*, MB)
 )
 
+STRUCT(mfxExtFeiHevcEncFrameCtrl,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU16,       LenSP)
+    FIELD_T(mfxU16,       RefWidth)
+    FIELD_T(mfxU16,       RefHeight)
+    FIELD_T(mfxU16,       SearchWindow)
+    FIELD_T(mfxU16,       NumMvPredictors)
+    FIELD_T(mfxU16,       MultiPred)
+    FIELD_T(mfxU16,       SubPelMode)
+    FIELD_T(mfxU16,       AdaptiveSearch)
+    FIELD_T(mfxU16,       MVPredictor)
+    FIELD_T(mfxU16,       PerCuQp)
+    FIELD_T(mfxU16,       PerCtuInput)
+    FIELD_T(mfxU16,       ForceCtuSplit)
+    FIELD_T(mfxU16,       NumFramePartitions)
+)
+
+STRUCT(mfxExtFeiHevcEncMVPredictors,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU32,       VaBufferID)
+    FIELD_T(mfxU32,       DataSize)
+)
+
+STRUCT(mfxExtFeiHevcEncCtuCtrl,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU32,       VaBufferID)
+    FIELD_T(mfxU32,       DataSize)
+)
+
+STRUCT(mfxExtFeiHevcEncQP,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU32,       VaBufferID)
+    FIELD_T(mfxU32,       DataSize)
+    FIELD_T(mfxU8*,       Data)
+)
+
 STRUCT(mfxExtCamGammaCorrection,
     FIELD_S(mfxExtBuffer, Header         )
     FIELD_T(mfxU16,       Mode           )
