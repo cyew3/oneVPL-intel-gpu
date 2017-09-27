@@ -20,6 +20,7 @@ Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
 #include "mfxcamera.h"
 #include "mfxfei.h"
 #include "mfxfeih265.h"
+#include "mfxfeihevc.h"
 #include "mfxla.h"
 #include "mfxsc.h"
 #include "mfxbrc.h"
@@ -33,7 +34,7 @@ class tsAutoTrace : public std::ostream
 public:
     std::string m_off;
 
-    tsAutoTrace(std::streambuf* sb) 
+    tsAutoTrace(std::streambuf* sb)
         : std::ostream(sb)
         , m_off("")
     {}
@@ -44,14 +45,14 @@ public:
     inline tsAutoTrace& operator<<(void* p) { (std::ostream&)*this << p; return *this; }
     inline tsAutoTrace& operator<<(mfxU8* p) { *this << (void*)p; return *this; }
     inline tsAutoTrace& operator<<(mfxEncryptedData*& p){ *this << (void*)p; return *this; }
-    inline tsAutoTrace& operator<<(mfx4CC& p) 
+    inline tsAutoTrace& operator<<(mfx4CC& p)
     {
         for(size_t i = 0; i < 4; ++i)
         {
             if(p.c[i])  (std::ostream&)*this << p.c[i];
             else        (std::ostream&)*this << "\\0";
         }
-        (std::ostream&)*this << std::hex << "(0x" << p.n << ')' << std::dec; 
+        (std::ostream&)*this << std::hex << "(0x" << p.n << ')' << std::dec;
         return *this;
     }
 
@@ -78,7 +79,7 @@ inline tsAutoTrace& operator<<(tsAutoTrace& os, const unsigned char p)
 {
     if(p)  (std::ostream&)os << p;
     else   (std::ostream&)os << "\\0";
-    (std::ostream&)os << " (" << +p << ')'; 
+    (std::ostream&)os << " (" << +p << ')';
     return os;
 }
 inline tsAutoTrace& operator<<(tsAutoTrace& os, const char* p)              { (std::ostream&)os << p; return os; }
@@ -103,7 +104,7 @@ private:
 public:
     tsTrace(std::streambuf* sb) : tsAutoTrace(sb), m_interpret_ext_buf(true) {}
 
-    
+
     tsTrace& operator << (const mfxExtBuffer& p);
     tsTrace& operator << (const mfxVideoParam& p);
     tsTrace& operator << (const mfxEncodeCtrl& p);
@@ -114,8 +115,8 @@ public:
     tsTrace& operator << (const mfxExtDirtyRect_Entry& p);
     tsTrace& operator << (const mfxExtMoveRect_Entry& p);
     tsTrace& operator << (const mfxExtCamGammaCorrection& p);
-	tsTrace& operator << (const mfxExtCamTotalColorControl& p);
-	tsTrace& operator << (const mfxExtCamCscYuvRgb& p);
+    tsTrace& operator << (const mfxExtCamTotalColorControl& p);
+    tsTrace& operator << (const mfxExtCamCscYuvRgb& p);
     tsTrace& operator << (const mfxExtCamVignetteCorrection& p);
     tsTrace& operator << (const mfxInfoMFX& p);
     tsTrace& operator << (const mfxPluginUID& p);
@@ -134,7 +135,7 @@ public:
     template<typename T> tsTrace& operator << (T* p) { (tsAutoTrace&)*this << p; return *this; }
 };
 
-typedef struct 
+typedef struct
 {
     unsigned char* data;
     unsigned int size;

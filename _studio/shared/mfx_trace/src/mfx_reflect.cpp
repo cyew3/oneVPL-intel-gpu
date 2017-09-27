@@ -24,6 +24,7 @@
 #include "mfxcamera.h"
 #include "mfxfei.h"
 #include "mfxfeih265.h"
+#include "mfxfeihevc.h"
 #include "mfxla.h"
 #include "mfxsc.h"
 
