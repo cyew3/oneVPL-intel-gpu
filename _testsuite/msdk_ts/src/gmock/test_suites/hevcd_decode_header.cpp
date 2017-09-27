@@ -414,7 +414,28 @@ int TestSuite::RunTest(unsigned int id)
         EXPECT_EQ(sps.bit_depth_luma_minus8 + 8, m_par.mfx.FrameInfo.BitDepthLuma);
         EXPECT_EQ(sps.bit_depth_chroma_minus8 + 8, m_par.mfx.FrameInfo.BitDepthChroma);
 
-        if (m_par.mfx.FrameInfo.ChromaFormat == 0 || m_par.mfx.FrameInfo.ChromaFormat == 1)
+        if (m_par.mfx.FrameInfo.ChromaFormat == 0)
+        {
+            if (g_tsImpl != MFX_IMPL_SOFTWARE)
+                EXPECT_EQ(0, m_par.mfx.FrameInfo.FourCC);
+            else
+            {
+                if (m_par.mfx.FrameInfo.BitDepthLuma == 8)
+                {
+                    EXPECT_EQ(MFX_FOURCC_NV12, m_par.mfx.FrameInfo.FourCC);
+                }
+                else if (m_par.mfx.FrameInfo.BitDepthLuma == 10)
+                {
+                    EXPECT_EQ(MFX_FOURCC_P010, m_par.mfx.FrameInfo.FourCC);
+                }
+                else
+                {
+                    ADD_FAILURE() << "FAILED: Non supported bitdepth = " << m_par.mfx.FrameInfo.BitDepthLuma << " for chroma_format = "
+                        << m_par.mfx.FrameInfo.ChromaFormat;
+                }
+            }
+        }
+        else if (m_par.mfx.FrameInfo.ChromaFormat == 1)
         {
             if (m_par.mfx.FrameInfo.BitDepthLuma == 8)
             {
@@ -433,7 +454,7 @@ int TestSuite::RunTest(unsigned int id)
             }
             else
             {
-                ADD_FAILURE() << "FAILED: Non supported bitdepth = " << m_par.mfx.FrameInfo.BitDepthLuma << " for chroma_format = " 
+                ADD_FAILURE() << "FAILED: Non supported bitdepth = " << m_par.mfx.FrameInfo.BitDepthLuma << " for chroma_format = "
                     << m_par.mfx.FrameInfo.ChromaFormat;
             }
         }
