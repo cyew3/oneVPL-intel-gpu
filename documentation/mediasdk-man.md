@@ -6841,6 +6841,44 @@ The number of filled items in `UnitInfo` is `min(NumUnitsEncoded, NumUnitsAlloc)
 
 This structure is available since SDK API **TBD**.
 
+## <a id='mfxExtColorConversion'>mfxExtColorConversion</a>
+
+**Definition**
+
+```C
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU16 ChromaSiting;
+    mfxU16 reserved[27];
+} mfxExtColorConversion;
+```
+
+**Description**
+
+The mfxExtColorConversion structure is a hint structure that tunes the VPP Color Conversion algorithm,
+when attached to the [mfxVideoParam](#mfxVideoParam) structure during [VPP Init](#MFXVideoVPP_Init).
+
+**Members**
+
+| | |
+--- | ---
+`Header.BufferId`        | Must be [MFX_EXTBUFF_VPP_COLOR_CONVERSION](#ExtendedBufferID).
+`ChromaSiting`           | See [ChromaSiting](#ChromaSiting) enumerator for details.
+
+ChromaSiting is applied on input or output surface depending on the scenario:
+
+**VPP Input** | **VPP Output** |
+--- | --- | ---
+`MFX_CHROMAFORMAT_YUV420` or `MFX_CHROMAFORMAT_YUV422` | `MFX_CHROMAFORMAT_YUV444` |  the ChromaSiting indicates the input chroma location.
+`MFX_CHROMAFORMAT_YUV444` | `MFX_CHROMAFORMAT_YUV420` or `MFX_CHROMAFORMAT_YUV422` |  the ChromaSiting indicates the output chroma location.
+`MFX_CHROMAFORMAT_YUV420` | `MFX_CHROMAFORMAT_YUV420` |  the chroma siting location indicates chroma location for both input and output.
+`MFX_CHROMAFORMAT_YUV420` | `MFX_CHROMAFORMAT_YUV422` |  the chroma siting location indicates horizontal location for both input and output, and vertical location for input.
+
+**Change History**
+
+This structure is available since SDK API **TBD**.
+
 # Enumerator Reference
 
 ## <a id='BitstreamDataFlag'>BitstreamDataFlag</a>
@@ -7132,6 +7170,7 @@ The `ExtendedBufferID` enumerator itemizes and defines identifiers (`BufferId`) 
 `MFX_EXTBUFF_MULTI_FRAME_PARAM` | This extended buffer allow to specify multi-frame submission parameters.
 `MFX_EXTBUFF_MULTI_FRAME_CONTROL` | This extended buffer allow to manage multi-frame submission in runtime.
 `MFX_EXTBUFF_ENCODED_UNITS_INFO` | See the [mfxExtEncodedUnitsInfo](#mfxExtEncodedUnitsInfo) structure for details.
+`MFX_EXTBUFF_VPP_COLOR_CONVERSION` | See the [mfxExtColorConversion](#mfxExtColorConversion) structure for details.
 
 **Change History**
 
@@ -8098,6 +8137,27 @@ The `MFMode` enumerator defines multi-frame submission mode.
 `MFX_MF_DISABLED` | Explicitly disables multi-frame submission.
 `MFX_MF_AUTO`     | The SDK controls multi-frame submission based on timeout management, by default timeout is calculated based on requirement to reach particular output rate equal to framerate.
 `MFX_MF_MANUAL`   | Applicaiton manages multi-frame submission, The SDK will always wait for [mfxExtMultiFrameControl](#mfxExtMultiFrameControl)`::MaxNumFrames` to submit frames or until application specify [mfxExtMultiFrameControl](#mfxExtMultiFrameControl)`::Flush` with one of frames
+
+**Change History**
+
+This enumerator is available since SDK API **TBD**.
+
+## <a id='ChromaSiting'>ChromaSiting</a>
+
+**Description**
+
+The `ChromaSiting` enumerator defines chroma location. Use bit-OR’ed values to specify the desired location.
+
+**Name/Description**
+
+| | |
+--- | ---
+`MFX_CHROMA_SITING_UNKNOWN`             | Unspecified.
+`MFX_CHROMA_SITING_VERTICAL_TOP`        | Chroma samples are co-sited vertically on the top with the luma samples.
+`MFX_CHROMA_SITING_VERTICAL_CENTER`     | Chroma samples are not co-sited vertically with the luma samples.
+`MFX_CHROMA_SITING_VERTICAL_BOTTOM`     | Chroma samples are co-sited vertically on the bottom with the luma samples.
+`MFX_CHROMA_SITING_HORIZONTAL_LEFT`     | Chroma samples are co-sited horizontally on the left with the luma samples.
+`MFX_CHROMA_SITING_HORIZONTAL_CENTER`   | Chroma samples are not co-sited horizontally with the luma samples.
 
 **Change History**
 
