@@ -106,7 +106,6 @@ struct sInputParams
         , NumRefActiveBL0(1)
         , NumRefActiveBL1(1)
         , PicTimingSEI(MFX_CODINGOPTION_OFF)
-        , PicTimingSEI(MFX_CODINGOPTION_OFF)
     {
         MSDK_ZERO_MEMORY(strDstFile);
         MSDK_ZERO_MEMORY(mvoutFile);
