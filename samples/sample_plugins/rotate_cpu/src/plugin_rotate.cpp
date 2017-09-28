@@ -20,11 +20,16 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "mfx_samples_config.h"
 
 #include <stdio.h>
+#include <mutex>
+#include <map>
 #include "plugin_rotate.h"
 
 // disable "unreferenced formal parameter" warning -
 // not all formal parameters of interface functions will be used by sample plugin
 #pragma warning(disable : 4100)
+
+std::mutex mapping_mutex;
+std::map<mfxMemId, int> mappingResourceManager;
 
 #define SWAP_BYTES(a, b) {mfxU8 tmp; tmp = a; a = b; b = tmp;}
 
@@ -402,28 +407,52 @@ mfxStatus Processor::Init(mfxFrameSurface1 *frame_in, mfxFrameSurface1 *frame_ou
 
 mfxStatus Processor::LockFrame(mfxFrameSurface1 *frame)
 {
-    MSDK_CHECK_POINTER(frame, MFX_ERR_NULL_PTR);
-
-    //no allocator used, no need to do lock
-    if (frame->Data.Y != 0 && !frame->Data.MemId)
-        return MFX_ERR_NONE;
-    //lock required
     MSDK_CHECK_POINTER(m_pAlloc, MFX_ERR_NULL_PTR);
-    return m_pAlloc->Lock(m_pAlloc->pthis, frame->Data.MemId, &frame->Data);
+    MSDK_CHECK_POINTER(frame, MFX_ERR_NULL_PTR);
+    mfxStatus currentSts = MFX_ERR_NONE;
+    /* mutex locker */
+    std::lock_guard<std::mutex> locker(mapping_mutex);
+
+    auto currentSurface = mappingResourceManager.find(frame->Data.MemId);
+    if(currentSurface == mappingResourceManager.end())
+    {
+        currentSts = m_pAlloc->Lock(m_pAlloc->pthis, frame->Data.MemId, &frame->Data);
+        mappingResourceManager[frame->Data.MemId]=1;
+    }
+    else /* Surface was mapped before */
+        currentSurface->second++;
+
+    return currentSts;
 }
 
 mfxStatus Processor::UnlockFrame(mfxFrameSurface1 *frame)
 {
-    MSDK_CHECK_POINTER(frame, MFX_ERR_NULL_PTR);
-    //unlock not possible, no allocator used
-    if (frame->Data.Y != 0 && frame->Data.MemId ==0)
-        return MFX_ERR_NONE;
-    //already unlocked
-    if (frame->Data.Y == 0)
-        return MFX_ERR_NONE;
-    //unlock required
     MSDK_CHECK_POINTER(m_pAlloc, MFX_ERR_NULL_PTR);
-    return m_pAlloc->Unlock(m_pAlloc->pthis, frame->Data.MemId, &frame->Data);
+    MSDK_CHECK_POINTER(frame, MFX_ERR_NULL_PTR);
+    mfxStatus currentSts = MFX_ERR_NONE;
+    /* mutex locker */
+    std::lock_guard<std::mutex> locker(mapping_mutex);
+
+    auto currentSurface = mappingResourceManager.find(frame->Data.MemId);
+
+    /* Surface did not find in mapping map, this is fatal error */
+    if(currentSurface == mappingResourceManager.end())
+        currentSts = MFX_ERR_LOCK_MEMORY;
+    else /* Surface found, do processing */
+    {
+        currentSurface->second--;
+        if (0 == currentSurface->second)
+        {
+            /* need to delete this element from map
+             * This may help in case resetting of pipeline
+             * */
+            mappingResourceManager.erase(currentSurface);
+            currentSts = m_pAlloc->Unlock(m_pAlloc->pthis, frame->Data.MemId, &frame->Data);
+            MSDK_CHECK_STATUS(currentSts, "UnlockFrame() in plugin failed");
+        }
+    }
+
+    return currentSts;
 }
 
 
@@ -460,11 +489,6 @@ mfxStatus Rotator180::Process(DataChunk *chunk)
 
     m_YOut.resize(m_pOut->Info.Height * out_pitch);
     m_UVOut.resize(m_pOut->Info.Height * out_pitch / 2);
-
-    sts = UnlockFrame(m_pIn);
-    MSDK_CHECK_STATUS(sts, "UnlockFrame(m_pIn) failed");
-    sts = UnlockFrame(m_pOut);
-    MSDK_CHECK_STATUS(sts, "UnlockFrame(m_pOut) failed");
 
     mfxU8 *in_luma = &m_YIn.front() + m_pIn->Info.CropY * in_pitch + m_pIn->Info.CropX;
     mfxU8 *out_luma = &m_YOut.front() + m_pOut->Info.CropY * out_pitch + m_pOut->Info.CropX;
@@ -510,11 +534,14 @@ mfxStatus Rotator180::Process(DataChunk *chunk)
     }
 
     // copy data from temporary buffer to output surface
-    sts = LockFrame(m_pOut);
-   MSDK_CHECK_STATUS(sts, "LockFrame(m_pOut) failed");
     MSDK_MEMCPY_BUF(m_pOut->Data.Y, chunk->StartLine * out_pitch, m_YOut.size(), &m_YOut.front(), m_YOut.size());
     MSDK_MEMCPY_BUF(m_pOut->Data.UV, chunk->StartLine * out_pitch, m_UVOut.size(), &m_UVOut.front(), m_UVOut.size());
+
+    sts = UnlockFrame(m_pIn);
+    MSDK_CHECK_STATUS(sts, "UnlockFrame(m_pIn) failed");
     sts = UnlockFrame(m_pOut);
+    MSDK_CHECK_STATUS(sts, "UnlockFrame(m_pOut) failed");
+
 
     return sts;
 }
