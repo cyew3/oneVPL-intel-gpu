@@ -349,7 +349,7 @@ mfxStatus D3D11Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequ
     request.Info.Width = m_compBufInfo[i].CreationWidth;
     request.Info.Height = m_compBufInfo[i].CreationHeight;
     request.Info.FourCC = ConvertDXGIFormatToMFXFourCC((DXGI_FORMAT)m_compBufInfo[i].CompressedFormats);
-    if (type == D3DDDIFMT_INTELENCODE_MBSEGMENTMAP)
+    if (type == D3D11_DDI_VIDEO_ENCODER_BUFFER_MBSEGMENTMAP)
     {
         // per DDI document buffer for segmentation map should be 2D
         request.Info.FourCC = MFX_FOURCC_P8_TEXTURE;
