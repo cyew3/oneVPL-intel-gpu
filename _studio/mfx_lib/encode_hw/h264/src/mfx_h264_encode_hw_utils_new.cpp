@@ -1328,6 +1328,19 @@ namespace
                                 currDpb.End(),
                                 FindInDpbByLtrIdx(longTermIdx));
 
+                            if (toRemove == currDpb.End() && currDpb.Size() == video.mfx.NumRefFrame)
+                            {
+                                toRemove = std::min_element(currDpb.Begin(), currDpb.End(), OrderByFrameNumWrap);
+
+                                if (toRemove != currDpb.End())
+                                {
+                                    if (toRemove->m_longterm)
+                                        toRemove = currDpb.End();
+                                    else
+                                        marking.PushBack(MMCO_ST_TO_UNUSED, task.m_picNum[fid] - toRemove->m_picNum[0] - 1);
+                                }
+                            }
+
                             if (toRemove != currDpb.End())
                                 currDpb.Erase(toRemove);
 
