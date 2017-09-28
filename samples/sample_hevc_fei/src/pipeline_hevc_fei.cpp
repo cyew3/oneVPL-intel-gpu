@@ -443,6 +443,11 @@ MfxVideoParamsWrapper GetEncodeParams(const sInputParams& user_pars, const mfxFr
     pars.mfx.NumSlice    = user_pars.nNumSlices;
     pars.mfx.EncodedOrder= user_pars.bEncodedOrder;
 
+    mfxExtCodingOption* pCO = pars.AddExtBuffer<mfxExtCodingOption>();
+    if (!pCO) throw mfxError(MFX_ERR_NOT_INITIALIZED, "Failed to attach mfxExtCodingOption");
+
+    pCO->PicTimingSEI = user_pars.PicTimingSEI;
+
     mfxExtCodingOption2* pCO2 = pars.AddExtBuffer<mfxExtCodingOption2>();
     if (!pCO2) throw mfxError(MFX_ERR_NOT_INITIALIZED, "Failed to attach mfxExtCodingOption2");
 

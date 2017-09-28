@@ -82,6 +82,7 @@ void PrintHelp(const msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-bref] - arrange B frames in B pyramid reference structure\n"));
     msdk_printf(MSDK_STRING("   [-nobref] - do not use B-pyramid (by default the decision is made by library)\n"));
     msdk_printf(MSDK_STRING("   [-l numSlices] - number of slices \n"));
+    msdk_printf(MSDK_STRING("   [-PicTimingSEI] - inserts picture timing SEI\n"));
     msdk_printf(MSDK_STRING("   [-preenc] - use extended FEI interface PREENC (RC is forced to constant QP)\n"));
     msdk_printf(MSDK_STRING("   [-mvout <file-name>] - use this to output MV predictors after PreENC\n"));
     msdk_printf(MSDK_STRING("   [-mbstat <file-name>] - use this to output per MB distortions for each frame after PreENC\n"));
@@ -306,6 +307,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU32 nArgNum, sInputParams& 
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-gpb:off")))
         {
             params.GPB = MFX_CODINGOPTION_OFF;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-PicTimingSEI")))
+        {
+            params.PicTimingSEI = MFX_CODINGOPTION_ON;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("?")))
         {

@@ -83,6 +83,7 @@ struct sInputParams
     mfxU16 NumRefActiveP;   // maximal number of references for P frames
     mfxU16 NumRefActiveBL0; // maximal number of backward references for B frames
     mfxU16 NumRefActiveBL1; // maximal number of forward references for B frames
+    mfxU16 PicTimingSEI;    // picture timing SEI
 
     sInputParams()
         : bENCODE(false)
@@ -104,6 +105,7 @@ struct sInputParams
         , NumRefActiveP(0)
         , NumRefActiveBL0(0)
         , NumRefActiveBL1(0)
+        , PicTimingSEI(MFX_CODINGOPTION_OFF)
     {
         MSDK_ZERO_MEMORY(strDstFile);
         MSDK_ZERO_MEMORY(mvoutFile);
