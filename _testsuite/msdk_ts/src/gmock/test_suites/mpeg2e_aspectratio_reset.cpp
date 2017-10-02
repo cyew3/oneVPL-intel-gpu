@@ -325,9 +325,13 @@ int TestSuite::RunTest(unsigned int id)
 {
     TS_START;
     auto& tc = test_case[id];
-    int nframes = 10;
+    int nframes = g_tsConfig.sim ? 3 : 10;
 
     MFXInit();
+
+    //default frame size is different for hw and sim - set explicitly
+    m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 720;
+    m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 480;
 
     SETPARS(&m_par, MFXINIT);
     AllocBitstream((m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height) * nframes);
