@@ -2452,16 +2452,28 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         par.mfx.RateControlMethod = 0;
     }
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
-    if (platform >= MFX_HW_CNL)
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    if (platform >= MFX_HW_ICL)
     {
+        if (bRateControlLA(par.mfx.RateControlMethod))
+        {
+            unsupported = true;
+            par.mfx.RateControlMethod = 0;
+        }
+
+        if (extOpt2->MaxSliceSize && !(IsOn(par.mfx.LowPower) && hwCaps.SliceLevelRateCtrl))
+        {
+            changed = true;
+            extOpt2->MaxSliceSize = 0;
+        }
+
         if (IsOn(extOpt3->FadeDetection))
         {
             changed = true;
             extOpt3->FadeDetection = MFX_CODINGOPTION_OFF;
         }
     }
-#endif //defined(PRE_SI_TARGET_PLATFORM_GEN10)
+#endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
 
     if (bRateControlLA(par.mfx.RateControlMethod) && IsOn(extOpt->CAVLC))
     {
