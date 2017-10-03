@@ -702,7 +702,7 @@ typedef enum _GPU_PLATFORM {
 #define CM_MAX_TIMEOUT 2
 //Time in milliseconds before kernel should timeout
 #define CM_MAX_TIMEOUT_MS CM_MAX_TIMEOUT*1000
-#define CM_MAX_TIMEOUT_SIM    300000
+#define CM_MAX_TIMEOUT_SIM    600000
 
 typedef enum _CM_STATUS
 {
