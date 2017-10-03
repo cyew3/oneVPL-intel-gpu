@@ -52,7 +52,7 @@ namespace
 {
 #ifdef ANDROID
 
-#if ((MFX_ANDROID_VERSION & MFX_ANDROID_NAME) >= MFX_O)
+#if (MFX_ANDROID_VERSION >= MFX_O)
     const char rootPluginPath[] = "/vendor/etc/mediasdk_plugins.cfg";
 #else
     const char rootPluginPath[] = "/etc/mediasdk_plugins.cfg";
