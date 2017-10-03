@@ -650,7 +650,7 @@ public:
     virtual ~PosibleMVC();
 
     virtual UMC::Status DecodeHeader(UMC::MediaData* params, mfxBitstream *bs, mfxVideoParam *out);
-    virtual UMC::Status ProcessNalUnit(UMC::MediaData * data);
+    virtual UMC::Status ProcessNalUnit(UMC::MediaData * data, mfxBitstream *bs);
     virtual bool IsEnough() const;
 
 #ifdef MFX_ENABLE_SVC_VIDEO_DECODE
@@ -764,7 +764,7 @@ UMC::Status PosibleMVC::DecodeHeader(UMC::MediaData * data, mfxBitstream *bs, mf
             bs->DataLength = (mfxU32)data->GetDataSize();
         }
 
-        umcRes = ProcessNalUnit(data);
+        umcRes = ProcessNalUnit(data, bs);
         if (umcRes == UMC::UMC_ERR_UNSUPPORTED)
             umcRes = UMC::UMC_OK;
 
@@ -818,8 +818,13 @@ UMC::Status PosibleMVC::DecodeHeader(UMC::MediaData * data, mfxBitstream *bs, mf
     return UMC::UMC_ERR_NOT_ENOUGH_DATA;
 }
 
-UMC::Status PosibleMVC::ProcessNalUnit(UMC::MediaData * data)
+UMC::Status PosibleMVC::ProcessNalUnit(UMC::MediaData * data, mfxBitstream * bs)
 {
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    mfxExtDecodeErrorReport * pDecodeErrorReport = (mfxExtDecodeErrorReport*)GetExtendedBuffer(bs->ExtParam, bs->NumExtParam, MFX_EXTBUFF_DECODE_ERROR_REPORT);
+#endif
+
     try
     {
         Ipp32s startCode = m_supplier->GetNalUnitSplitter()->CheckNalUnitType(data);
@@ -933,7 +938,11 @@ UMC::Status PosibleMVC::ProcessNalUnit(UMC::MediaData * data)
         {
             try
             {
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+                UMC::Status umcRes = m_supplier->ProcessNalUnit(nalUnit, pDecodeErrorReport);
+#else
                 UMC::Status umcRes = m_supplier->ProcessNalUnit(nalUnit);
+#endif
                 if (umcRes < UMC::UMC_OK)
                 {
                     return UMC::UMC_OK;

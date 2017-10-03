@@ -50,6 +50,11 @@ void MFXMediaDataAdapter::Save(mfxBitstream *pBitstream)
     pBitstream->DataLength = (mfxU32)GetDataSize();
 }
 
+void MFXMediaDataAdapter::SetExtBuffer(mfxExtBuffer* extbuf)
+{
+    if (extbuf)
+        SetAuxInfo(extbuf, extbuf->BufferSz, extbuf->BufferId);
+}
 
 mfxStatus ConvertUMCStatusToMfx(UMC::Status status)
 {

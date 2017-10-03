@@ -32,6 +32,18 @@
 namespace UMC
 {
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+inline void SetDecodeErrorTypes(NAL_Unit_Type nalUnit, mfxExtDecodeErrorReport *pDecodeErrorReport)
+{
+    switch (nalUnit)
+    {
+        case NAL_UT_SPS: pDecodeErrorReport->ErrorTypes |= MFX_ERROR_SPS; break;
+        case NAL_UT_PPS: pDecodeErrorReport->ErrorTypes |= MFX_ERROR_PPS; break;
+        default: break;
+    };
+}
+#endif
+
 /****************************************************************************************************/
 // DPBOutput class routine
 /****************************************************************************************************/
@@ -3163,7 +3175,11 @@ Status TaskSupplier::AddSource(MediaData * pSource)
     return umcRes;
 }
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+Status TaskSupplier::ProcessNalUnit(NalUnit *nalUnit, mfxExtDecodeErrorReport * pDecodeErrorReport)
+#else
 Status TaskSupplier::ProcessNalUnit(NalUnit *nalUnit)
+#endif
 {
     Status umcRes = UMC_OK;
 
@@ -3188,6 +3204,12 @@ Status TaskSupplier::ProcessNalUnit(NalUnit *nalUnit)
     case NAL_UT_SUBSET_SPS:
     case NAL_UT_PREFIX:
         umcRes = DecodeHeaders(nalUnit);
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        if (pDecodeErrorReport && umcRes == UMC_ERR_INVALID_STREAM)
+           SetDecodeErrorTypes(nalUnit->GetNalUnitType(), pDecodeErrorReport);
+#endif
+
         break;
 
     case NAL_UT_SEI:
@@ -3237,6 +3259,11 @@ Status TaskSupplier::AddOneFrame(MediaData * pSource)
 
     do
     {
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        MediaData::AuxInfo* aux = (pSource) ? pSource->GetAuxInfo(MFX_EXTBUFF_DECODE_ERROR_REPORT) : NULL;
+        mfxExtDecodeErrorReport* pDecodeErrorReport = (aux) ? reinterpret_cast<mfxExtDecodeErrorReport*>(aux->ptr) : NULL;
+#endif
+
         NalUnit *nalUnit = m_pNALSplitter->GetNalUnits(pSource);
 
         if (!nalUnit && pSource)
@@ -3300,6 +3327,12 @@ Status TaskSupplier::AddOneFrame(MediaData * pSource)
                     Ipp32s size = (Ipp32s)nalUnit->GetDataSize();
                     pSource->MoveDataPointer(- size - 3);
                 }
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+                if (pDecodeErrorReport && umsRes == UMC_ERR_INVALID_STREAM)
+                    SetDecodeErrorTypes(nalUnit->GetNalUnitType(), pDecodeErrorReport);
+#endif
+
                 return umsRes;
             }
 

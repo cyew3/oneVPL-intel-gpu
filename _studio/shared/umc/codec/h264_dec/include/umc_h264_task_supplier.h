@@ -507,7 +507,11 @@ public:
     virtual Status AddSource(DecryptParametersWrapper* pDecryptParams) {pDecryptParams; return MFX_ERR_UNSUPPORTED;}
 #endif
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    Status ProcessNalUnit(NalUnit *nalUnit, mfxExtDecodeErrorReport *pDecodeErrorReport);
+#else
     Status ProcessNalUnit(NalUnit *nalUnit);
+#endif
 
     void SetMemoryAllocator(MemoryAllocator *pMemoryAllocator)
     {

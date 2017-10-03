@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2011 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_MEDIA_DATA_H__
@@ -13,6 +13,8 @@
 
 #include "umc_structures.h"
 #include "umc_dynamic_cast.h"
+
+#include <list>
 
 namespace UMC
 {
@@ -28,6 +30,16 @@ public:
         FLAG_VIDEO_DATA_NOT_FULL_FRAME = 1,
         FLAG_VIDEO_DATA_NOT_FULL_UNIT  = 2,
         FLAG_VIDEO_DATA_END_OF_STREAM  = 4
+    };
+
+    struct AuxInfo
+    {
+        void*  ptr;
+        size_t size;
+        int    type;
+
+        bool operator==(AuxInfo const& i) const
+        { return type == i.type; }
     };
 
     // Default constructor
@@ -80,6 +92,17 @@ public:
     //  Set time stamp of media data block;
     virtual Status SetTime(Ipp64f start, Ipp64f end = 0);
 
+    void SetAuxInfo(void* ptr, size_t size, int type);
+    void ClearAuxInfo(int type);
+
+    AuxInfo* GetAuxInfo(int type)
+    {
+        return
+            const_cast<AuxInfo*>(const_cast<MediaData const*>(this)->GetAuxInfo(type)) ;
+    }
+
+    AuxInfo const* GetAuxInfo(int type) const;
+
     // Set frame type
     inline Status SetFrameType(FrameType ft);
     // Get frame type
@@ -121,6 +144,7 @@ protected:
     // On count of this, we use type Ipp32u.
     Ipp32u m_bMemoryAllocated; // (Ipp32u) is memory owned by object
 
+    std::list<AuxInfo> m_AuxInfo;
 };
 
 

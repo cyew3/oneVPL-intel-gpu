@@ -23,6 +23,8 @@ public:
 
     void Load(mfxBitstream *pBitstream);
     void Save(mfxBitstream *pBitstream);
+
+    void SetExtBuffer(mfxExtBuffer*);
 };
 
 mfxStatus ConvertUMCStatusToMfx(UMC::Status status);

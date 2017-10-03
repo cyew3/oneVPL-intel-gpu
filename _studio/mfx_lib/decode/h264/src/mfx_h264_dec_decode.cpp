@@ -1360,6 +1360,16 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
 
         MFXMediaDataAdapter src(bs);
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        mfxExtBuffer* extbuf = (bs) ? GetExtendedBuffer(bs->ExtParam, bs->NumExtParam, MFX_EXTBUFF_DECODE_ERROR_REPORT) : NULL;
+
+        if (extbuf)
+        {
+            ((mfxExtDecodeErrorReport *)extbuf)->ErrorTypes = 0;
+            src.SetExtBuffer(extbuf);
+        }
+#endif
+
         for (;;)
         {
 #if (defined(MFX_VA_WIN) || defined (MFX_VA_LINUX)) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
