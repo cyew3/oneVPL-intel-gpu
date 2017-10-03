@@ -198,7 +198,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*28*/ ENCODE, MFX_CODEC_MPEG2, NONE, NONE, {RateCtrlMthd, MFX_RATECONTROL_VBR      }, set_brc_params },
     {/*29*/ ENCODE, MFX_CODEC_MPEG2, NONE, NONE, {RateCtrlMthd, MFX_RATECONTROL_CQP      }, set_brc_params },
     //supported (officially not but hard to turn off in component) /*AVBR via CBR*/
-    {/*30*/ ENCODE, MFX_CODEC_MPEG2, W_INCOMP, W_INCOMP, {RateCtrlMthd, MFX_RATECONTROL_AVBR}, set_brc_params },
+    {/*30*/ ENCODE, MFX_CODEC_MPEG2, NONE, W_INCOMP, {RateCtrlMthd, MFX_RATECONTROL_AVBR}, set_brc_params },
     //unsupported
     {/*31*/ ENCODE, MFX_CODEC_MPEG2, W_INCOMP, E_INCOMP, {RateCtrlMthd, 0xFFFFFFFF               , true} },
     {/*32*/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {RateCtrlMthd, MFX_RATECONTROL_LA       , true}, set_brc_params },

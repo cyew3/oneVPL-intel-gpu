@@ -139,7 +139,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
                                                         set_brc_params },
 #if !(defined(_WIN32) || defined(_WIN64))
     //Rate control
-    {/*3*/ ENCODE, MFX_CODEC_MPEG2, W_INCOMP, W_INCOMP,{ RateCtrlMthd, MFX_RATECONTROL_AVBR     , true }, set_brc_params },
+    {/*3*/ ENCODE, MFX_CODEC_MPEG2, NONE,     W_INCOMP,{ RateCtrlMthd, MFX_RATECONTROL_AVBR     , false }, set_brc_params },
     {/*4*/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID,{ RateCtrlMthd, MFX_RATECONTROL_RESERVED1, true }, set_brc_params },
     {/*5*/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID,{ RateCtrlMthd, MFX_RATECONTROL_RESERVED2, true }, set_brc_params },
     {/*6*/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID,{ RateCtrlMthd, MFX_RATECONTROL_RESERVED3, true }, set_brc_params },

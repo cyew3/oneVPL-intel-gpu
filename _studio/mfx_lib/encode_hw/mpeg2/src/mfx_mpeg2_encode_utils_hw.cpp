@@ -936,15 +936,6 @@ namespace MPEG2EncoderHW
                 bUnsupported = true;
             }
 
-#if !(defined(_WIN32) || defined(_WIN64))
-            if (out->mfx.RateControlMethod == MFX_RATECONTROL_AVBR)
-            {
-                // AVBR mapped to VBR on Linux - see ConvertRateControlMFX2VAAPI()
-                out->mfx.RateControlMethod = MFX_RATECONTROL_VBR;
-                bWarning = true;
-            }
-#endif
-
             // unknown mode - set to VBR with warning
             if (out->mfx.RateControlMethod != MFX_RATECONTROL_CBR  &&
                 out->mfx.RateControlMethod != MFX_RATECONTROL_VBR  &&
@@ -1423,14 +1414,6 @@ namespace MPEG2EncoderHW
         {
             return MFX_ERR_INVALID_VIDEO_PARAM;
         }
-
-#if !(defined(_WIN32) || defined(_WIN64))
-        if (RateControl == MFX_RATECONTROL_AVBR) {
-            // AVBR mapped to VBR on Linux - see ConvertRateControlMFX2VAAPI()
-            RateControl = MFX_RATECONTROL_VBR;
-            bCorrected = true;
-        }
-#endif
 
         // unknown mode - set to VBR with warning
         if (RateControl != MFX_RATECONTROL_CBR  &&
