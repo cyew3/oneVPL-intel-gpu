@@ -1272,15 +1272,6 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             return 0;
         }
 
-        if (tc.type & SCALABLE_PIPE && tc.type & (CBR | VBR))
-        {
-            // don't run cases for scalable pipeline with BRC - return respective error instead
-            // known driver issue - scalable pipes cannot work with HuC (HuC is required for BRC)
-            // TODO: remove once support of scalable pipline together with HuC is unblocked in the driver
-            ADD_FAILURE() << "ERROR: Scalable pipeline isn't supported together with BRC";
-            throw tsFAIL;
-        }
-
         if (g_tsHWtype < MFX_HW_ICL) // unsupported on platform less ICL
         {
             g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
