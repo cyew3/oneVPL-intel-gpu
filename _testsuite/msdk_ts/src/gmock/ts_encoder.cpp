@@ -9,6 +9,7 @@
 */
 
 #include "ts_encoder.h"
+#include "ts_aux_dev.h"
 
 enum eEncoderFunction
 {
@@ -323,6 +324,151 @@ mfxStatus tsVideoEncoder::Init(mfxSession session, mfxVideoParam *par)
     }
 
     return g_tsStatus.get();
+}
+
+typedef enum tagENCODE_FUNC
+{
+    ENCODE_ENC = 0x0001,
+    ENCODE_PAK = 0x0002,
+    ENCODE_ENC_PAK = 0x0004,
+    ENCODE_HybridPAK = 0x0008,
+    ENCODE_WIDI = 0x8000
+} ENCODE_FUNC;
+
+// Decode Extension Functions for DXVA11 Encode
+#define ENCODE_QUERY_ACCEL_CAPS_ID 0x110
+
+mfxStatus tsVideoEncoder::GetCaps(void *pCaps, mfxU32 *pCapsSize)
+{
+    TRACE_FUNC2(GetCaps, pCaps, pCapsSize);
+    mfxHandleType hdl_type;
+    mfxU32 count = 0;
+    mfxStatus sts = MFX_ERR_UNSUPPORTED;
+
+#if defined(_WIN32) || defined(_WIN64)
+
+    static const GUID DXVA2_Intel_Encode_HEVC_Main = { 0x28566328, 0xf041, 0x4466,{ 0x8b, 0x14, 0x8f, 0x58, 0x31, 0xe7, 0x8f, 0x8b } };
+    static const GUID DXVA2_Intel_LowpowerEncode_HEVC_Main = { 0xb8b28e0c, 0xecab, 0x4217,{ 0x8c, 0x82, 0xea, 0xaa, 0x97, 0x55, 0xaa, 0xf0 } };
+    static const GUID DXVA_NoEncrypt = { 0x1b81beD0, 0xa0c7, 0x11d3,{ 0xb9, 0x84, 0x00, 0xc0, 0x4f, 0x2e, 0x73, 0xc5 } };
+
+    HRESULT hr;
+    GUID guid;
+    if (g_tsConfig.lowpower & MFX_CODINGOPTION_ON)
+        guid = DXVA2_Intel_LowpowerEncode_HEVC_Main;
+    else
+        guid = DXVA2_Intel_Encode_HEVC_Main;
+
+    if (g_tsImpl & MFX_IMPL_VIA_D3D11) {
+        ID3D11Device* device;
+        D3D11_VIDEO_DECODER_DESC    desc = {};
+        D3D11_VIDEO_DECODER_CONFIG  config = {};
+        hdl_type = mfxHandleType::MFX_HANDLE_D3D11_DEVICE;
+        sts = MFXVideoCORE_GetHandle(m_session, hdl_type, (mfxHDL*)&device);
+        MFX_CHECK((sts == MFX_ERR_NONE), MFX_ERR_DEVICE_FAILED);
+
+        CComPtr<ID3D11DeviceContext>                m_context;
+        CComPtr<ID3D11VideoDecoder>                 m_vdecoder;
+        CComQIPtr<ID3D11VideoDevice>                m_vdevice;
+        CComQIPtr<ID3D11VideoContext>               m_vcontext;
+
+        device->GetImmediateContext(&m_context);
+        MFX_CHECK(m_context, MFX_ERR_DEVICE_FAILED);
+
+        m_vdevice = device;
+        m_vcontext = m_context;
+        MFX_CHECK(m_vdevice, MFX_ERR_DEVICE_FAILED);
+        MFX_CHECK(m_vcontext, MFX_ERR_DEVICE_FAILED);
+
+        // Query supported decode profiles
+        {
+            bool isFound = false;
+
+            UINT profileCount = m_vdevice->GetVideoDecoderProfileCount();
+            assert(profileCount > 0);
+
+            for (UINT i = 0; i < profileCount; i++)
+            {
+                GUID profileGuid;
+                hr = m_vdevice->GetVideoDecoderProfile(i, &profileGuid);
+                MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
+
+                if (guid == profileGuid)
+                {
+                    isFound = true;
+                    break;
+                }
+            }
+            MFX_CHECK(isFound, MFX_ERR_UNSUPPORTED);
+        }
+
+        // Query the supported encode functions
+        {
+            desc.SampleWidth = m_pPar->mfx.FrameInfo.Width;
+            desc.SampleHeight = m_pPar->mfx.FrameInfo.Height;
+            desc.OutputFormat = DXGI_FORMAT_NV12;
+            desc.Guid = guid;
+
+            hr = m_vdevice->GetVideoDecoderConfigCount(&desc, &count);
+            MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
+        }
+
+        // CreateVideoDecoder
+        {
+            desc.SampleWidth = m_pPar->mfx.FrameInfo.Width;
+            desc.SampleHeight = m_pPar->mfx.FrameInfo.Height;
+            desc.OutputFormat = DXGI_FORMAT_NV12;
+            desc.Guid = guid;
+
+            config.ConfigDecoderSpecific = ENCODE_ENC_PAK;
+            config.guidConfigBitstreamEncryption = DXVA_NoEncrypt;
+            if (!!m_vdecoder)
+                m_vdecoder.Release();
+
+            hr = m_vdevice->CreateVideoDecoder(&desc, &config, &m_vdecoder);
+            MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
+        }
+
+        // Query the encoding device capabilities
+        {
+            D3D11_VIDEO_DECODER_EXTENSION ext = {};
+            ext.Function = ENCODE_QUERY_ACCEL_CAPS_ID;
+            ext.pPrivateInputData = 0;
+            ext.PrivateInputDataSize = 0;
+            ext.pPrivateOutputData = pCaps;
+            ext.PrivateOutputDataSize = *pCapsSize;
+            ext.ResourceCount = 0;
+            ext.ppResourceList = 0;
+
+            HRESULT hr;
+            hr = m_vcontext->DecoderExtension(m_vdecoder, &ext);
+            MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
+        }
+
+    } else {
+        IDirect3DDeviceManager9 *device = 0;
+        hdl_type = mfxHandleType::MFX_HANDLE_D3D9_DEVICE_MANAGER;
+        sts = MFXVideoCORE_GetHandle(m_session, hdl_type, (mfxHDL*)&device);
+        MFX_CHECK((sts == MFX_ERR_NONE), MFX_ERR_DEVICE_FAILED);
+
+        std::auto_ptr<AuxiliaryDevice> auxDevice(new AuxiliaryDevice());
+        sts = auxDevice->Initialize(device);
+        MFX_CHECK((sts == MFX_ERR_NONE), MFX_ERR_DEVICE_FAILED);
+
+        sts = auxDevice->IsAccelerationServiceExist(guid);
+        MFX_CHECK((sts == MFX_ERR_NONE), MFX_ERR_DEVICE_FAILED);
+        sts = auxDevice->QueryAccelCaps(&guid, pCaps, pCapsSize);
+        MFX_CHECK((sts == MFX_ERR_NONE), MFX_ERR_DEVICE_FAILED);
+    }
+#else
+    ENCODE_CAPS_HEVC* hevc_caps = (ENCODE_CAPS_HEVC*)pCaps;
+    hevc_caps->BlockSize = 2;   // 32x32
+    hevc_caps->SliceStructure = 2;  // arbitrary aligned
+    if (g_tsHWtype >= MFX_HW_CNL)
+        hevc_caps->SliceStructure = 4;  // raw aligned
+    sts = MFX_ERR_NONE;
+#endif
+
+    return sts;
 }
 
 mfxStatus tsVideoEncoder::Close()

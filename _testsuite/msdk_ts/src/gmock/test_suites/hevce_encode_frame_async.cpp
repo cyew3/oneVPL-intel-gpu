@@ -13,6 +13,7 @@ File Name: hevce_encode_frame_async.cpp
 #include "ts_encoder.h"
 #include "ts_parser.h"
 #include "ts_struct.h"
+#include "ts_aux_dev.h"
 
 namespace hevce_encode_frame_async
 {
@@ -41,6 +42,9 @@ namespace hevce_encode_frame_async
             FAILED_INIT,
             CLOSED,
             CROP_XY,
+            NSLICE_EQ_MAX,
+            NSLICE_GT_MAX,
+            NSLICE_LT_MAX,
             NONE
         };
 
@@ -110,18 +114,9 @@ namespace hevce_encode_frame_async
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropY, 1 },
             }
         },
-        // NumMb % NumSlice > NumSlice / 2
-        {/*14*/ MFX_ERR_NONE, NONE,
-            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 44 }
-        },
-        // NumMb % (NumMb % NumSlice) == 0
-        {/*15*/ MFX_ERR_NONE, NONE,
-            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 33 }
-        },
-        // NumMb % (NumMb % NumSlice) != 0
-        {/*16*/ MFX_ERR_NONE, NONE,
-            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 7 }
-        },
+        {/*14*/ MFX_ERR_NONE, NSLICE_GT_MAX },  // NumSlice > MAX
+        {/*15*/ MFX_ERR_NONE, NSLICE_LT_MAX },  // NumSlice < MAX
+        {/*16*/ MFX_ERR_NONE, NSLICE_EQ_MAX },  // NumSlice == MAX
 
     };
 
@@ -170,7 +165,6 @@ namespace hevce_encode_frame_async
 
         SETPARS(m_pPar, MFX_PAR);
 
-
         if (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data)))
         {
             if (g_tsHWtype < MFX_HW_SKL) // MFX_PLUGIN_HEVCE_HW - unsupported on platform less SKL
@@ -194,15 +188,17 @@ namespace hevce_encode_frame_async
         reader = new tsRawReader(stream, m_pPar->mfx.FrameInfo);
         m_filler = reader;
 
-        if (g_tsHWtype == MFX_HW_CNL && m_par.mfx.LowPower == MFX_CODINGOPTION_ON && m_par.mfx.NumSlice > 1) {
-            mfxU16 nRows = CEIL_DIV(m_par.mfx.FrameInfo.Height, 64); //64 is LCUsize
-            mfxU16 perSlice = nRows / (m_par.mfx.NumSlice - 1);
-            mfxU16 lastSlice = nRows - perSlice * (m_par.mfx.NumSlice - 1);
-            if (perSlice < lastSlice || lastSlice == 0)
-            {
-                g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
-            }
-        }
+
+        mfxU16 LCUSize = 64;    // LCUSize=32 is for internal use only (ICL DP mode) and is not supposeed to be tested
+        ENCODE_CAPS_HEVC caps = {};
+        mfxU32 capSize = sizeof(ENCODE_CAPS_HEVC);
+
+        g_tsStatus.check(GetCaps(&caps, &capSize));
+
+        //g_tsLog << "CAPS: LCUSizeSupported = " << caps.LCUSizeSupported << "\n";
+        //g_tsLog << "CAPS: SliceStructure = " << caps.SliceStructure << "\n";
+        //g_tsLog << "CAPS: BlockSize = " << (mfxU32)caps.BlockSize << "\n";
+        //g_tsLog << "CAPS: ROICaps = " << (mfxU32)caps.ROICaps << "\n";
 
         //init
         if (tc.type == FAILED_INIT)
@@ -212,6 +208,27 @@ namespace hevce_encode_frame_async
         }
         else if (tc.type != NOT_INIT)
         {
+            mfxU32 nLCUrow = CEIL_DIV(m_pPar->mfx.FrameInfo.CropW, LCUSize);
+            mfxU32 nLCUcol = CEIL_DIV(m_pPar->mfx.FrameInfo.CropH, LCUSize);
+            mfxU32 maxSlices = 0;
+            bool RowAlignedSlice = false;
+            if ((caps.SliceStructure == 2) || (m_pPar->mfx.LowPower & MFX_CODINGOPTION_ON))
+                RowAlignedSlice = true;
+
+            if (RowAlignedSlice)
+                maxSlices = nLCUcol;
+            else
+                maxSlices = nLCUrow * nLCUcol;
+
+            if (tc.type == NSLICE_GT_MAX) {
+                m_pPar->mfx.NumSlice = maxSlices + 1;
+                g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
+            } else if (tc.type == NSLICE_LT_MAX) {
+                m_pPar->mfx.NumSlice = maxSlices - 1;
+            } else if (tc.type == NSLICE_EQ_MAX) {
+                m_pPar->mfx.NumSlice = maxSlices;
+            }
+
             Init();
 
             // set test param
@@ -230,7 +247,6 @@ namespace hevce_encode_frame_async
         {
             Close();
         }
-
 
         //call test function
         if (tc.sts >= MFX_ERR_NONE)

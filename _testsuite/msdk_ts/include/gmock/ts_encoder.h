@@ -79,6 +79,8 @@ public:
     mfxStatus Init();
     mfxStatus Init(mfxSession session, mfxVideoParam *par);
 
+    mfxStatus GetCaps(void *pCaps, mfxU32 *pCapsSize);
+
     mfxStatus Close();
     mfxStatus Close(mfxSession session);
 
@@ -132,3 +134,83 @@ public:
 private:
     tsVideoEncoder& m_enc;
 };
+
+
+typedef struct tagENCODE_CAPS_HEVC
+{
+    union {
+        struct {
+            mfxU32    CodingLimitSet : 1;
+            mfxU32    BitDepth8Only : 1;
+            mfxU32    Color420Only : 1;
+            mfxU32    SliceStructure : 3;
+            mfxU32    SliceIPOnly : 1;
+            mfxU32    SliceIPBOnly : 1;
+            mfxU32    NoWeightedPred : 1;
+            mfxU32    NoMinorMVs : 1;
+            mfxU32    RawReconRefToggle : 1;
+            mfxU32    NoInterlacedField : 1;
+            mfxU32    BRCReset : 1;
+            mfxU32    RollingIntraRefresh : 1;
+            mfxU32    UserMaxFrameSizeSupport : 1;
+            mfxU32    FrameLevelRateCtrl : 1;
+            mfxU32    SliceByteSizeCtrl : 1;
+            mfxU32    VCMBitRateControl : 1;
+            mfxU32    ParallelBRC : 1;
+            mfxU32    TileSupport : 1;
+            mfxU32    SkipFrame : 1;
+            mfxU32    MbQpDataSupport : 1;
+            mfxU32    SliceLevelWeightedPred : 1;
+            mfxU32    LumaWeightedPred : 1;
+            mfxU32    ChromaWeightedPred : 1;
+            mfxU32    QVBRBRCSupport : 1;
+            mfxU32    HMEOffsetSupport : 1;
+            mfxU32    YUV422ReconSupport : 1;
+            mfxU32    YUV444ReconSupport : 1;
+            mfxU32    RGBReconSupport : 1;
+            mfxU32    MaxEncodedBitDepth : 2;
+        };
+        mfxU32    CodingLimits;
+    };
+
+    mfxU32    MaxPicWidth;
+    mfxU32    MaxPicHeight;
+    mfxU8   MaxNum_Reference0;
+    mfxU8   MaxNum_Reference1;
+    mfxU8   MBBRCSupport;
+    mfxU8   TUSupport;
+
+    union {
+        struct {
+            mfxU8    MaxNumOfROI : 5; // [0..16]
+            mfxU8    ROIBRCPriorityLevelSupport : 1;
+            mfxU8    BlockSize : 2;
+        };
+        mfxU8    ROICaps;
+    };
+
+    union {
+        struct {
+            mfxU32    SliceLevelReportSupport : 1;
+            mfxU32    CTULevelReportSupport : 1;
+            mfxU32    SearchWindow64Support : 1;
+            mfxU32    reserved : 2;
+            mfxU32    IntraRefreshBlockUnitSize : 2;
+            mfxU32    LCUSizeSupported : 3;
+            mfxU32    MaxNumDeltaQP : 4;
+            mfxU32    DirtyRectSupport : 1;
+            mfxU32    MoveRectSupport : 1;
+            mfxU32    FrameSizeToleranceSupport : 1;
+            mfxU32    HWCounterAutoIncrementSupport : 2;
+            mfxU32    ROIDeltaQPSupport : 1;
+            mfxU32    MaxNumOfTileColumnsMinus1 : 5;
+            mfxU32 : 7; // For future expansion
+        };
+        mfxU32    CodingLimits2;
+    };
+
+    mfxU8    MaxNum_WeightedPredL0;
+    mfxU8    MaxNum_WeightedPredL1;
+    mfxU16   MaxNumOfDirtyRect;
+    mfxU16   MaxNumOfMoveRect;
+} ENCODE_CAPS_HEVC;

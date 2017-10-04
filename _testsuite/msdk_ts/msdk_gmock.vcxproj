@@ -91,6 +91,7 @@
     <LocalDebuggerCommandArguments>--gtest_filter=test_name./*</LocalDebuggerCommandArguments>
     <LocalDebuggerWorkingDirectory>$(OutDir)</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <TargetName>$(ProjectName)_d</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LocalDebuggerCommandArguments>--gtest_filter=test_name./*</LocalDebuggerCommandArguments>
@@ -101,6 +102,7 @@
     <LocalDebuggerCommandArguments>--gtest_filter=test_name./*</LocalDebuggerCommandArguments>
     <LocalDebuggerWorkingDirectory>$(OutDir)</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <TargetName>$(ProjectName)_d</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LocalDebuggerCommandArguments>--gtest_filter=test_name./*</LocalDebuggerCommandArguments>
@@ -134,7 +136,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_VARIADIC_MAX=10;WIN32;_DEBUG;_CONSOLE;ENABLE_PS
 ;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(MSDK_API_ROOT)/mediasdk_structures;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;../../samples/sample_common/include/vm;../../samples/sample_common/include;../../../mdp_msdk-contrib/igfx_s3dcontrol/include;../../../mdp_msdk-val-tools/bs_parser/include;../../../mdp_msdk-contrib/gmock/gtest/include;../../../mdp_msdk-contrib/gmock/include;$(MSDK_API_ROOT)/include;./include/gmock;./include;../mfx_serializer/include;../../../mdp_msdk-contrib/yaml-cpp/include;../../igfx_s3dcontrol/include/API;../../_studio\shared\include;../../_studio/shared/umc/core/vm/include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MSDK_API_ROOT)/mediasdk_structures;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;../../samples/sample_common/include/vm;../../samples/sample_common/include;../../../mdp_msdk-contrib/igfx_s3dcontrol/include;../../../mdp_msdk-val-tools/bs_parser/include;../../../mdp_msdk-contrib/gmock/gtest/include;../../../mdp_msdk-contrib/gmock/include;$(MSDK_API_ROOT)/include;./include/gmock;./include;../mfx_serializer/include;../../../mdp_msdk-contrib/yaml-cpp/include;../../igfx_s3dcontrol/include/API;../../_studio/shared/include;../../_studio/shared/umc/core/vm/include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <DebugInformationFormat>OldStyle</DebugInformationFormat>
     </ClCompile>
@@ -484,6 +486,7 @@
     <ClCompile Include="src\gmock\test_suites\avce_oversized_surfaces.cpp" />
     <ClCompile Include="src\gmock\test_suites\fei_encode_oversized_surfaces.cpp" />
     <ClCompile Include="src\gmock\ts_alloc.cpp" />
+    <ClCompile Include="src\gmock\ts_aux_dev.cpp" />
     <ClCompile Include="src\gmock\ts_bitstream.cpp" />
     <ClCompile Include="src\gmock\ts_common.cpp" />
     <ClCompile Include="src\gmock\ts_decoder.cpp" />
