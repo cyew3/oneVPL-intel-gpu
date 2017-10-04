@@ -113,7 +113,7 @@ public:
         HevcTask* task = ReorderFrame(surface);
         if (task)
         {
-            ConstructRPL(*task, m_lastTask);
+            ConstructRPL(*task);
         }
         return task;
     }
@@ -140,7 +140,7 @@ public:
 
 private:
     HevcTask* ReorderFrame(mfxFrameSurface1* in);
-    void ConstructRPL(HevcTask & task, const HevcTask & prevTask);
+    void ConstructRPL(HevcTask & task);
 
     inline mfxU16 MaxTask(MfxVideoParamsWrapper const & par)
     {

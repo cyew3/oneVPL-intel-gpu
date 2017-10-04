@@ -702,7 +702,7 @@ HevcTask* EncodeOrderControl::ReorderFrame(mfxFrameSurface1 * surface)
     return task_to_encode;
 }
 
-void EncodeOrderControl::ConstructRPL(HevcTask & task, const HevcTask & prevTask)
+void EncodeOrderControl::ConstructRPL(HevcTask & task)
 {
     MSDK_ZERO_MEMORY(task.m_numRefActive);
     Fill(task.m_refPicList, IDX_INVALID);
