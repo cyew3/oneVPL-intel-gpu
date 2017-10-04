@@ -534,6 +534,9 @@ namespace ExtBuffer
 #if defined(PRE_SI_TARGET_PLATFORM_GEN10)
         _CopyPar1(SampleAdaptiveOffset);
 #endif //defined(PRE_SI_TARGET_PLATFORM_GEN10)
+#ifndef OPEN_SOURCE
+        _CopyPar1(LCUSize);
+#endif
     }
 
     inline void  CopySupportedParams(mfxExtHEVCTiles& buf_dst, mfxExtHEVCTiles& buf_src)
