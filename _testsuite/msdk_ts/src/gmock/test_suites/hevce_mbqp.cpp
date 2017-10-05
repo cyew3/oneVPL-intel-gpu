@@ -122,8 +122,9 @@ private:
         m_mbqp.clear();
         /* Granularity of MBQP buffer 16x16 blocks */
         int BlockSize = 16;
-        mfxU32 w = (m_par.mfx.FrameInfo.Width  + BlockSize - 1)/BlockSize;
-        mfxU32 h = (m_par.mfx.FrameInfo.Height + BlockSize - 1)/BlockSize;
+        mfxExtHEVCParam& hp = m_par;
+        mfxU32 w = (hp.PicWidthInLumaSamples  + BlockSize - 1)/BlockSize;
+        mfxU32 h = (hp.PicHeightInLumaSamples + BlockSize - 1)/BlockSize;
         m_mbqp.resize(w*h);
         mfxU32 numMB = w*h;
         for (size_t i = 0; i <  m_mbqp.size(); ++i)
@@ -228,9 +229,9 @@ void SetQP(std::vector< std::vector<Bs16u> >& QP, BS_HEVC::CQT const & cqt, Bs32
               mfxU32 k_lcu_w = 32 / (1 << Log2MinTrafoSize);
               m_cu = 0;
               mfxU32 m_cu_old = 0;
-
+              mfxExtHEVCParam& hp = m_par;
               mfxU32 BlockSize = 16;
-              mfxU32 pitch_MBQP = (m_par.mfx.FrameInfo.Width  + BlockSize - 1)/BlockSize;
+              mfxU32 pitch_MBQP = (hp.PicWidthInLumaSamples  + BlockSize - 1)/BlockSize;
               for (Bs32u y = 0; y < (Height >> Log2MinTrafoSize); y++)
               {
                  //16x32 only: driver limitation
@@ -310,6 +311,7 @@ int TestSuite::RunTest(unsigned int id)
     SETPARS(m_pPar, MFX_PAR);
     mfxExtCodingOption3& cod3 = m_par;
     SETPARS(&cod3, EXT_COD3);
+    mfxExtHEVCParam& hp = m_par;
     m_par.AsyncDepth = 1;
     m_framesToEncode = 1;
     m_mbqp_on = true;
