@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2016-2017 Intel Corporation.  All rights reserved.
+Copyright (C) 2017 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -29,6 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ts_encoder.h"
 #include "ts_struct.h"
 #include "ts_parser.h"
+#include <random>
 
 namespace hevce_interlace_sei_sps_flags
 {
@@ -43,7 +44,7 @@ namespace hevce_interlace_sei_sps_flags
             , tsParserHEVCAU(BS_HEVC::INIT_MODE_CABAC)
             , m_reader(NULL)
         {
-            m_filler = this;
+            m_filler       = this;
             m_bs_processor = this;
 
             m_pPar->mfx.FrameInfo.Width  = m_pPar->mfx.FrameInfo.CropW = 720;
@@ -55,15 +56,26 @@ namespace hevce_interlace_sei_sps_flags
                 m_pPar->mfx.FrameInfo);
             g_tsStreamPool.Reg();
 
+#ifdef DEBUG_TEST
+            m_writer = new tsBitstreamWriter("debug_stream.265");
+#endif
+
+            m_Gen.seed(0);
         }
+
         ~TestSuite()
         {
             delete m_reader;
+
+#ifdef DEBUG_TEST
+            delete m_writer;
+#endif
         }
 
         int RunTest(unsigned int id);
         static const unsigned int n_cases;
 
+        // See T-REC-H.265-201612 : Table D.2 – Interpretation of pic_struct
         mfxU16 ConvertMFXfieldTypeToHEVC(mfxU16 ft)
         {
             switch (ft)
@@ -74,23 +86,59 @@ namespace hevce_interlace_sei_sps_flags
             case MFX_PICSTRUCT_FIELD_BOTTOM:
                 return 2;
 
-            default:                            // TODO: Extend on repeated fields as well
+            case MFX_PICSTRUCT_FIELD_TOP | MFX_PICSTRUCT_FIELD_PAIRED_PREV:
+                return 9;
+
+            case MFX_PICSTRUCT_FIELD_BOTTOM | MFX_PICSTRUCT_FIELD_PAIRED_PREV:
+                return 10;
+
+            case MFX_PICSTRUCT_FIELD_TOP | MFX_PICSTRUCT_FIELD_PAIRED_NEXT:
+                return 11;
+
+            case MFX_PICSTRUCT_FIELD_BOTTOM | MFX_PICSTRUCT_FIELD_PAIRED_NEXT:
+                return 12;
+
+            default:
                 return 0xffff;
             }
+        }
+
+        // Generates 0 or 1 with probability 0.5
+        mfxU32 GetRandomBit()
+        {
+            std::bernoulli_distribution distr(0.5);
+            return distr(m_Gen);
         }
 
         mfxStatus ProcessSurface(mfxFrameSurface1& s)
         {
             mfxStatus sts = m_reader->ProcessSurface(s);
 
-            static const mfxU16 FieldStructs[] = { MFX_PICSTRUCT_FIELD_TOP, MFX_PICSTRUCT_FIELD_BOTTOM };
+            s.Data.TimeStamp = s.Data.FrameOrder;
+
+            static const mfxU16 FieldStructs[]  = { MFX_PICSTRUCT_FIELD_TOP, MFX_PICSTRUCT_FIELD_BOTTOM };
+            static const mfxU16 PairedStructs[] = { MFX_PICSTRUCT_FIELD_PAIRED_NEXT, MFX_PICSTRUCT_FIELD_PAIRED_PREV };
 
             mfxU32 isBff = (m_pPar->mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_BFF) ? 1 : 0;
-            mfxU32 cur_field_index = (s.Data.FrameOrder & 1) ^ isBff;
+            mfxU32 isOdd = s.Data.FrameOrder & 1;
 
-            m_assigned_picstructs.push_back(FieldStructs[cur_field_index]);
+            mfxU32 cur_field_index = (m_generation_mode & DEFAULT)
+                ? isOdd ^ isBff    // Default mode - just alter picstructs
+                : GetRandomBit();  // Random mode - assign random picstruct
+
 
             s.Info.PicStruct = FieldStructs[cur_field_index];
+
+            if (m_generation_mode & PAIRED)
+            {
+                // In case of PAIRED test decorate picstructs with flag which idicates relations between fields
+
+                mfxU32 cur_paired_idx = isBff ? 1 - cur_field_index : cur_field_index;
+
+                s.Info.PicStruct |= PairedStructs[cur_paired_idx];
+            }
+
+            m_assigned_picstructs[s.Data.FrameOrder] = s.Info.PicStruct;
 
             return sts;
         }
@@ -99,7 +147,10 @@ namespace hevce_interlace_sei_sps_flags
         mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
         {
             set_buffer(bs.Data + bs.DataOffset, bs.DataLength);
-            //m_ts = bs.TimeStamp;
+
+#ifdef DEBUG_TEST
+            m_writer->ProcessBitstream(bs, nFrames);
+#endif
 
             while (nFrames--)
             {
@@ -127,8 +178,11 @@ namespace hevce_interlace_sei_sps_flags
 
                         PicTiming* pt = it->pt;
 
-                        EXPECT_EQ(ConvertMFXfieldTypeToHEVC(m_assigned_picstructs.front()), pt->pic_struct);
-                        m_assigned_picstructs.pop_front();
+                        EXPECT_NE(m_assigned_picstructs.find(bs.TimeStamp), m_assigned_picstructs.end())
+                            << "Invalid TimeStamp in bitstream: " << bs.TimeStamp;
+
+                        EXPECT_EQ(ConvertMFXfieldTypeToHEVC(m_assigned_picstructs[bs.TimeStamp]), pt->pic_struct);
+                        m_assigned_picstructs.erase(bs.TimeStamp);
 
                         EXPECT_EQ(0, pt->source_scan_type);
 
@@ -156,12 +210,23 @@ namespace hevce_interlace_sei_sps_flags
     private:
         enum
         {
-            MFX_PAR = 1
+            MFX_PAR = 1,
+            EXT_COD2,
+            EXT_COD3
+        };
+
+        enum
+        {
+            DEFAULT = 1,
+            RANDOM,
+            PAIRED = 0x100
         };
 
         struct tc_struct
         {
             mfxStatus sts;
+
+            mfxU32 mode;
 
             struct f_pair
             {
@@ -175,26 +240,170 @@ namespace hevce_interlace_sei_sps_flags
 
         tsRawReader *m_reader;
 
-        //mfxU32 m_ts;
+#ifdef DEBUG_TEST
+        tsBitstreamWriter* m_writer;
+#endif
+
+        mfxU32 m_generation_mode = DEFAULT;
 
         bool m_sps_checked = false;
 
-        std::list<mfxU16> m_assigned_picstructs;
+        std::map<mfxU32, mfxU16> m_assigned_picstructs;
+
+        std::mt19937 m_Gen; // random number generator
     };
 
 #define mfx_PicStruct  tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct
 #define mfx_GopPicSize tsStruct::mfxVideoParam.mfx.GopPicSize
 #define mfx_GopRefDist tsStruct::mfxVideoParam.mfx.GopRefDist
+#define mfx_PRefType tsStruct::mfxExtCodingOption3.PRefType
+#define mfx_BRefType tsStruct::mfxExtCodingOption2.BRefType
 
     const TestSuite::tc_struct TestSuite::test_case[] =
     {
-        {/*00*/ MFX_ERR_NONE, {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
-                               { MFX_PAR, &mfx_GopPicSize, 30 },
-                               { MFX_PAR, &mfx_GopRefDist, 1 }}},
+        {/*00*/ MFX_ERR_NONE, DEFAULT,          {{ MFX_PAR,  &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
+                                                 { MFX_PAR,  &mfx_GopPicSize, 30 },
+                                                 { MFX_PAR,  &mfx_GopRefDist, 1 },
+                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
+                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
 
-        {/*01*/ MFX_ERR_NONE, {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BOTTOM },
-                               { MFX_PAR, &mfx_GopPicSize, 30 },
-                               { MFX_PAR, &mfx_GopRefDist, 1 }}}
+        {/*01*/ MFX_ERR_NONE, DEFAULT,          {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BOTTOM },
+                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
+                                                 { MFX_PAR, &mfx_GopRefDist, 1 },
+                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
+                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
+
+        {/*02*/ MFX_ERR_NONE, RANDOM,           {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
+                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
+                                                 { MFX_PAR, &mfx_GopRefDist, 1 },
+                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
+                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
+
+        {/*03*/ MFX_ERR_NONE, RANDOM,           {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BOTTOM },
+                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
+                                                 { MFX_PAR, &mfx_GopRefDist, 1 },
+                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
+                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
+
+        {/*04*/ MFX_ERR_NONE, DEFAULT | PAIRED, {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
+                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
+                                                 { MFX_PAR, &mfx_GopRefDist, 1 },
+                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
+                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
+
+        {/*05*/ MFX_ERR_NONE, DEFAULT | PAIRED, {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BOTTOM },
+                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
+                                                 { MFX_PAR, &mfx_GopRefDist, 1 },
+                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
+                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
+
+        {/*06*/ MFX_ERR_NONE, RANDOM | PAIRED,  {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
+                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
+                                                 { MFX_PAR, &mfx_GopRefDist, 1 },
+                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
+                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
+
+        {/*07*/ MFX_ERR_NONE, RANDOM | PAIRED,  {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BOTTOM },
+                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
+                                                 { MFX_PAR, &mfx_GopRefDist, 1 },
+                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
+                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
+
+        {/*08*/ MFX_ERR_NONE, DEFAULT,          {{ MFX_PAR,  &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
+                                                 { MFX_PAR,  &mfx_GopPicSize, 30 },
+                                                 { MFX_PAR,  &mfx_GopRefDist, 1 },
+                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_PYRAMID },
+                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
+
+        {/*09*/ MFX_ERR_NONE, DEFAULT,          {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BOTTOM },
+                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
+                                                 { MFX_PAR, &mfx_GopRefDist, 1 },
+                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_PYRAMID },
+                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
+
+        {/*10*/ MFX_ERR_NONE, RANDOM,           {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
+                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
+                                                 { MFX_PAR, &mfx_GopRefDist, 1 },
+                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_PYRAMID },
+                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
+
+        {/*11*/ MFX_ERR_NONE, RANDOM,           {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BOTTOM },
+                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
+                                                 { MFX_PAR, &mfx_GopRefDist, 1 },
+                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_PYRAMID },
+                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
+
+        {/*12*/ MFX_ERR_NONE, DEFAULT | PAIRED, {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
+                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
+                                                 { MFX_PAR, &mfx_GopRefDist, 1 },
+                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_PYRAMID },
+                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
+
+        {/*13*/ MFX_ERR_NONE, DEFAULT | PAIRED, {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BOTTOM },
+                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
+                                                 { MFX_PAR, &mfx_GopRefDist, 1 },
+                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_PYRAMID },
+                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
+
+        {/*14*/ MFX_ERR_NONE, RANDOM | PAIRED,  {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
+                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
+                                                 { MFX_PAR, &mfx_GopRefDist, 1 },
+                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_PYRAMID },
+                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
+
+        {/*15*/ MFX_ERR_NONE, RANDOM | PAIRED,  {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BOTTOM },
+                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
+                                                 { MFX_PAR, &mfx_GopRefDist, 1 },
+                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_PYRAMID },
+                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
+
+        {/*16*/ MFX_ERR_NONE, DEFAULT,          {{ MFX_PAR,  &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
+                                                 { MFX_PAR,  &mfx_GopPicSize, 30 },
+                                                 { MFX_PAR,  &mfx_GopRefDist, 5 },
+                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
+                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_PYRAMID }}},
+
+        {/*17*/ MFX_ERR_NONE, DEFAULT,          {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BOTTOM },
+                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
+                                                 { MFX_PAR, &mfx_GopRefDist, 5 },
+                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
+                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_PYRAMID }}},
+
+        {/*18*/ MFX_ERR_NONE, RANDOM,           {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
+                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
+                                                 { MFX_PAR, &mfx_GopRefDist, 5 },
+                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
+                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_PYRAMID }}},
+
+        {/*19*/ MFX_ERR_NONE, RANDOM,           {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BOTTOM },
+                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
+                                                 { MFX_PAR, &mfx_GopRefDist, 5 },
+                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
+                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_PYRAMID }}},
+
+        {/*20*/ MFX_ERR_NONE, DEFAULT | PAIRED, {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
+                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
+                                                 { MFX_PAR, &mfx_GopRefDist, 5 },
+                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
+                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_PYRAMID }}},
+
+        {/*21*/ MFX_ERR_NONE, DEFAULT | PAIRED, {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BOTTOM },
+                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
+                                                 { MFX_PAR, &mfx_GopRefDist, 5 },
+                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
+                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_PYRAMID }}},
+
+        {/*22*/ MFX_ERR_NONE, RANDOM | PAIRED,  {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
+                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
+                                                 { MFX_PAR, &mfx_GopRefDist, 5 },
+                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
+                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_PYRAMID }}},
+
+        {/*23*/ MFX_ERR_NONE, RANDOM | PAIRED,  {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BOTTOM },
+                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
+                                                 { MFX_PAR, &mfx_GopRefDist, 5 },
+                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
+                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_PYRAMID }}}
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
@@ -205,19 +414,22 @@ namespace hevce_interlace_sei_sps_flags
     {
         TS_START;
 
-
         const tc_struct& tc = test_case[id];
 
-        //set parameters for mfxVideoParam
+        m_generation_mode = tc.mode;
+
+        // Set parameters for mfxVideoParam
         SETPARS(m_pPar, MFX_PAR);
         m_pPar->AsyncDepth = 1;
         m_pPar->mfx.RateControlMethod = MFX_RATECONTROL_CQP;
 
-        mfxExtCodingOption& CO = m_par;
-        CO.PicTimingSEI = MFX_CODINGOPTION_ON;
+        // Set CodingOption2 parameters
+        mfxExtCodingOption2& CO2 = m_par;
+        SETPARS(&CO2, EXT_COD2);
 
-        //set parameters for mfxEncodeCtrl
-        //SETPARS(m_pCtrl, MFX_FRM_CTRL);
+        // Set CodingOption3 parameters
+        mfxExtCodingOption3& CO3 = m_par;
+        SETPARS(&CO3, EXT_COD3);
 
         ///////////////////////////////////////////////////////////////////////////
         g_tsStatus.expect(tc.sts);
@@ -234,7 +446,6 @@ namespace hevce_interlace_sei_sps_flags
         Close();
 
         EXPECT_EQ(true, m_sps_checked) << "SPS wasn't found in stream";
-        //EXPECT_EQ(true, m_sei_checked) << "SEI wasn't found in stream";
 
         TS_END;
         return 0;
