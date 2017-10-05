@@ -11,7 +11,7 @@
 #ifndef _MFX_CONFIG_H_
 #define _MFX_CONFIG_H_
 
-//#define CMAPIUPDATE
+#define CMAPIUPDATE
 
 #ifdef LINUX_TARGET_PLATFORM_UPSTREAM
     #define MFX_VAAPI_UPSTREAM
