@@ -879,6 +879,25 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
                 return MFX_ERR_UNSUPPORTED;
             }
         }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-p")))
+        {
+            if (m_PerfFILE)
+            {
+                msdk_printf(MSDK_STRING("error: only one performance file is supported"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            --argc;
+            ++argv;
+            if (!argv[i]) {
+                msdk_printf(MSDK_STRING("error: no argument given for '-p' option\n"));
+            }
+            MSDK_FOPEN(m_PerfFILE, argv[i], MSDK_STRING("w"));
+            if (NULL == m_PerfFILE)
+            {
+                msdk_printf(MSDK_STRING("error: performance file \"%s\" not found"), argv[i]);
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-roi_qpmap")))
         {
             InputParams.bROIasQPMAP = true;
