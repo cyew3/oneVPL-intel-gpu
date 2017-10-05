@@ -783,6 +783,7 @@ STRUCT(mfxExtCodingOption3,
     FIELD_T(mfxU16      , NumRefActiveP                 )
     FIELD_T(mfxU16      , NumRefActiveBL0               )
     FIELD_T(mfxU16      , NumRefActiveBL1               )
+    FIELD_T(mfxU16      , BRCPanicMode                  )
     FIELD_T(mfxU16      , LowDelayBRC                   )
     FIELD_T(mfxU16      , EnableMBForceIntra            )
     FIELD_T(mfxU16      , AdaptiveMaxFrameSize          )
