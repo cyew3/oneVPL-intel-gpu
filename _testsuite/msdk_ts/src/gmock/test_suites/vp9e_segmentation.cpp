@@ -106,6 +106,16 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             mfxU32 ext_type;
             const tsStruct::Field* f;
             mfxU32 v;
+            reset_params_str()
+                : ext_type(0)
+                , f(nullptr)
+                , v(0)
+            {}
+            reset_params_str(mfxU32 _ext_type, const tsStruct::Field* _f, mfxU32 _v)
+                : ext_type(_ext_type)
+                , f(_f)
+                , v(_v)
+            {}
         } reset_params[MAX_NPARS];
 
         mfxU32 segmentation_type_expected;
@@ -617,7 +627,8 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         /*
         // Dump stream to file
         const int encoded_size = bs.DataLength;
-        static FILE *fp_vp9 = fopen("vp9e_encoded_segmentation.vp9", "wb");
+        std::string fname = "vp9e_segmentation_" + std::to_string(time(0)) + ".vp9";
+        static FILE *fp_vp9 = fopen(fname.c_str(), "wb");
         fwrite(bs.Data, encoded_size, 1, fp_vp9);
         fflush(fp_vp9);
         */
@@ -1575,6 +1586,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
 
         const mfxU32 launch_steps = (mfxU32)(m_StressTestScenario.size() > 0 ? m_StressTestScenario.size() : 1);
         const mfxU32 setup_steps = m_StressTestScenario.size() > 0 ? 1 : 0;
+
         for (mfxU32 st = 0; st < launch_steps; ++st)
         {
 
