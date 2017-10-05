@@ -93,11 +93,10 @@ mfxStatus PredictorsRepaking::RepackPredictorsPerformance(const HevcTask& eTask,
     std::vector<const RefIdxPair*>          refIdx_vec;
 
     mfxU8 numPredPairs = (std::min)(m_max_fei_enc_mvp_num, (std::max)(eTask.m_numRefActive[0], eTask.m_numRefActive[1]));
-    if (numPredPairs != eTask.m_preEncOutput.size())
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
 
+    // I-frames, nothing to do
     if (numPredPairs == 0 || (eTask.m_frameType & MFX_FRAMETYPE_I))
-        return MFX_ERR_NONE; // I-frame
+        return MFX_ERR_NONE;
 
     mvs_vec.reserve(m_max_fei_enc_mvp_num);
     refIdx_vec.reserve(m_max_fei_enc_mvp_num);
@@ -105,9 +104,16 @@ mfxStatus PredictorsRepaking::RepackPredictorsPerformance(const HevcTask& eTask,
     // PreENC parameters reading
     for (std::list<PreENCOutput>::const_iterator it = eTask.m_preEncOutput.begin(); it != eTask.m_preEncOutput.end(); ++it)
     {
+        if (!it->m_mv)
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+
         mvs_vec.push_back((*it).m_mv);
         refIdx_vec.push_back(&(*it).m_refIdxPair);
     }
+
+    // check that task has enough PreENC motion vectors dumps to create MVPredictors for Encode
+    if (numPredPairs > mvs_vec.size())
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
 
     const mfxI16Pair zeroPair = { 0, 0 };
 
@@ -199,11 +205,10 @@ mfxStatus PredictorsRepaking::RepackPredictorsQuality(const HevcTask& eTask, mfx
     std::vector<const RefIdxPair*>              refIdx_vec;
 
     mfxU8 numPredPairs = (std::min)(m_max_fei_enc_mvp_num, (std::max)(eTask.m_numRefActive[0], eTask.m_numRefActive[1]));
-    if (numPredPairs != eTask.m_preEncOutput.size())
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
 
+    // I-frames, nothing to do
     if (numPredPairs == 0 || (eTask.m_frameType & MFX_FRAMETYPE_I))
-        return MFX_ERR_NONE; // I-frame
+        return MFX_ERR_NONE;
 
     mvs_vec.reserve(m_max_fei_enc_mvp_num);
     mbs_vec.reserve(m_max_fei_enc_mvp_num);
@@ -212,10 +217,16 @@ mfxStatus PredictorsRepaking::RepackPredictorsQuality(const HevcTask& eTask, mfx
     // PreENC parameters reading
     for (std::list<PreENCOutput>::const_iterator it = eTask.m_preEncOutput.begin(); it != eTask.m_preEncOutput.end(); ++it)
     {
+        if (!it->m_mv || !it->m_mb)
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
         mvs_vec.push_back((*it).m_mv);
         mbs_vec.push_back((*it).m_mb);
         refIdx_vec.push_back(&(*it).m_refIdxPair);
     }
+
+    // check that task has enough PreENC motion vectors dumps to create MVPredictors for Encode
+    if (numPredPairs > mvs_vec.size())
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
 
     const mfxI16Pair zeroPair = { 0, 0 };
 
