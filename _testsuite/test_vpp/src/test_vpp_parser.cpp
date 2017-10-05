@@ -55,7 +55,7 @@ void vppPrintHelp(const vm_char *strAppName, const vm_char *strErrorMessage)
     vm_string_printf(VM_STRING("   [-dcrW  w]        - cropW  of dst video (def: width)\n"));
     vm_string_printf(VM_STRING("   [-dcrH  h]        - cropH  of dst video (def: height)\n"));
     vm_string_printf(VM_STRING("   [-df  frameRate]  - frame rate of dst video (def: 30.0)\n"));
-    vm_string_printf(VM_STRING("   [-dcc format]     - format (FourCC) of dst video (def: nv12. support nv12|yuy2|rgb4|yv12|ayuv|y210|y410)\n"));
+    vm_string_printf(VM_STRING("   [-dcc format]     - format (FourCC) of dst video (def: nv12. support nv12|yuy2|rgb4|yv12|ayuv|p010|p016|y210|y216|y410|y416)\n"));
     vm_string_printf(VM_STRING("   [-dbitshift 0|1]  - shift data to right or keep it the same way as in Microsoft's P010\n"));
 
     vm_string_printf(VM_STRING("   [-dpic value]     - picture structure of dst video\n")); 
@@ -232,6 +232,10 @@ mfxU32 Str2FourCC( vm_char* strInput )
     {
         fourcc = MFX_FOURCC_P010;
     }
+    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("p016")) ) 
+    {
+        fourcc = MFX_FOURCC_P016;
+    }
     else if ( 0 == vm_string_strcmp(strInput, VM_STRING("p210")) ) 
     {
         fourcc = MFX_FOURCC_P210;
@@ -256,9 +260,17 @@ mfxU32 Str2FourCC( vm_char* strInput )
     {
         fourcc = MFX_FOURCC_Y210;
     }
+    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("y216")) )
+    {
+        fourcc = MFX_FOURCC_Y216;
+    }
     else if ( 0 == vm_string_strcmp(strInput, VM_STRING("y410")) )
     {
         fourcc = MFX_FOURCC_Y410;
+    }
+    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("y416")) )
+    {
+        fourcc = MFX_FOURCC_Y416;
     }
 
     return fourcc;

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011 - 2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011 - 2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 #if (defined(_WIN32) || defined(_WIN64))
@@ -125,6 +125,7 @@ mfxStatus D3D11FrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
 
             if (DXGI_FORMAT_NV12 != desc.Format &&
                 DXGI_FORMAT_P010 != desc.Format &&
+                DXGI_FORMAT_P016 != desc.Format &&
                 DXGI_FORMAT_420_OPAQUE != desc.Format &&
                 DXGI_FORMAT_YUY2 != desc.Format &&
                 DXGI_FORMAT_P8 != desc.Format &&
@@ -135,7 +136,9 @@ mfxStatus D3D11FrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                 DXGI_FORMAT_R16_UNORM != desc.Format &&
                 DXGI_FORMAT_AYUV != desc.Format &&
                 DXGI_FORMAT_Y210 != desc.Format &&
-                DXGI_FORMAT_Y410 != desc.Format)
+                DXGI_FORMAT_Y216 != desc.Format &&
+                DXGI_FORMAT_Y410 != desc.Format &&
+                DXGI_FORMAT_Y416 != desc.Format)
             {
                 return MFX_ERR_LOCK_MEMORY;
             }
@@ -176,6 +179,7 @@ mfxStatus D3D11FrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
             break;
 
         case DXGI_FORMAT_P010:
+        case DXGI_FORMAT_P016:
             ptr->PitchHigh = (mfxU16)(lockedRect.RowPitch / (1 << 16));
             ptr->PitchLow  = (mfxU16)(lockedRect.RowPitch % (1 << 16));
             ptr->Y = (mfxU8 *)lockedRect.pData;
@@ -252,6 +256,7 @@ mfxStatus D3D11FrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
             break;
 
         case DXGI_FORMAT_Y210:
+        case DXGI_FORMAT_Y216:
             ptr->PitchHigh = (mfxU16)(lockedRect.RowPitch / (1 << 16));
             ptr->PitchLow  = (mfxU16)(lockedRect.RowPitch % (1 << 16));
             ptr->Y16 = (mfxU16 *)lockedRect.pData;
@@ -267,6 +272,16 @@ mfxStatus D3D11FrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
             ptr->Y = 0;
             ptr->V = 0;
             ptr->A = 0;
+
+            break;
+
+        case DXGI_FORMAT_Y416:
+            ptr->PitchHigh = (mfxU16)(lockedRect.RowPitch / (1 << 16));
+            ptr->PitchLow  = (mfxU16)(lockedRect.RowPitch % (1 << 16));
+            ptr->U16 = (mfxU16*)lockedRect.pData;
+            ptr->Y16 = ptr->U16 + 1;
+            ptr->V16 = ptr->Y16 + 1;
+            ptr->A   = (mfxU8 *)ptr->V16 + 1;
 
             break;
 
@@ -445,7 +460,7 @@ mfxStatus D3D11FrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
 
             if (FAILED(hRes))
             {
-                msdk_printf(MSDK_STRING("CreateTexture2D(%d) failed, hr = 0x%08lx\n"), i, hRes);
+                msdk_printf(MSDK_STRING("CreateTexture2D(%zu) failed, hr = 0x%08lx\n"), i, hRes);
                 return MFX_ERR_MEMORY_ALLOC;
             }
             newTexture.textures.push_back(pTexture2D);
@@ -463,7 +478,7 @@ mfxStatus D3D11FrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
 
             if (FAILED(hRes))
             {
-                printf("Create staging texture(%d) failed hr = 0x%X\n", i, (unsigned int)hRes);
+                msdk_printf(MSDK_STRING("Create staging texture(%zu) failed hr = 0x%X\n"), i, (unsigned int)hRes);
                 return MFX_ERR_MEMORY_ALLOC;
             }
             newTexture.stagingTexture.push_back(pTexture2D);

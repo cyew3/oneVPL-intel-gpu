@@ -126,6 +126,7 @@ mfxStatus SysMemFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->Pitch = 4 * Width2;
         break;
     case MFX_FOURCC_P010: // tmp kta!!!
+    case MFX_FOURCC_P016:
    // case MFX_FOURCC_R16:
         ptr->Y16 = (mfxU16 *)ptr->B;
         ptr->U = ptr->Y + Width2 * Height2 * 2;
@@ -146,6 +147,7 @@ mfxStatus SysMemFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->Pitch = 4 * Width2;
         break;
     case MFX_FOURCC_Y210:
+    case MFX_FOURCC_Y216:
         ptr->Y16 = (mfxU16 *)ptr->B;
         ptr->U16 = ptr->Y16 + 1;
         ptr->V16 = ptr->Y16 + 3;
@@ -154,6 +156,14 @@ mfxStatus SysMemFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
     case MFX_FOURCC_Y410:
         ptr->U = ptr->V = ptr->A = ptr->Y;
         ptr->Pitch = 4 * Width2;
+        break;
+    case MFX_FOURCC_Y416:
+        ptr->PitchHigh = (mfxU16)(8 * Width2 / (1 << 16));
+        ptr->PitchLow  = (mfxU16)(8 * Width2 % (1 << 16));
+        ptr->U16 = (mfxU16*)ptr->B;
+        ptr->Y16 = ptr->U16 + 1;
+        ptr->V16 = ptr->Y16 + 1;
+        ptr->A   = (mfxU8 *)ptr->V16 + 1;
         break;
     default:
         return MFX_ERR_UNSUPPORTED;
@@ -236,12 +246,17 @@ mfxStatus SysMemFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFram
         nbytes = Width2*Height2 + (Width2>>1)*(Height2) + (Width2>>1)*(Height2);
         break;
     case MFX_FOURCC_P010: // tmp!!! kta
+    case MFX_FOURCC_P016:
 //    case MFX_FOURCC_R16:
         nbytes = 3*Width2*Height2;
         break;
     case MFX_FOURCC_P210:
     case MFX_FOURCC_Y210:
+    case MFX_FOURCC_Y216:
         nbytes = 4*Width2*Height2;
+        break;
+    case MFX_FOURCC_Y416:
+        nbytes = 8*Width2*Height2;
         break;
 
     default:

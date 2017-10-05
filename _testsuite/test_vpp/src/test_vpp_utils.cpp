@@ -1217,7 +1217,7 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
         }
     }
-    else if( pInfo->FourCC == MFX_FOURCC_P010 )
+    else if( pInfo->FourCC == MFX_FOURCC_P010 || pInfo->FourCC == MFX_FOURCC_P016 )
     {
         ptr = pData->Y + pInfo->CropX * 2 + pInfo->CropY * pitch;
 
@@ -1347,7 +1347,7 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, 4*w, MFX_ERR_MORE_DATA);
         }
     }
-    else if (pInfo->FourCC == MFX_FOURCC_Y210)
+    else if (pInfo->FourCC == MFX_FOURCC_Y210 || pInfo->FourCC == MFX_FOURCC_Y216)
     {
         ptr = (mfxU8*)pData->Y16 + pInfo->CropX + pInfo->CropY * pitch;
 
@@ -1365,6 +1365,16 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
         {
             nBytesRead = (mfxU32)vm_file_fread(ptr + i * pitch, 1, 4*w, m_fSrc);
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, 4*w, MFX_ERR_MORE_DATA);
+        }
+    }
+    else if (pInfo->FourCC == MFX_FOURCC_Y416)
+    {
+        ptr = (mfxU8*)pData->U16 + pInfo->CropX + pInfo->CropY * pitch;
+
+        for(i = 0; i < h; i++)
+        {
+            nBytesRead = (mfxU32)vm_file_fread(ptr + i * pitch, 1, 8*w, m_fSrc);
+            IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, 8*w, MFX_ERR_MORE_DATA);
         }
     }
     else
