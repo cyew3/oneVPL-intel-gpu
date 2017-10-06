@@ -221,6 +221,7 @@
     <ClInclude Include="include\gmock\ts_trace.h" />
     <ClInclude Include="include\gmock\ts_transcoder.h" />
     <ClInclude Include="include\gmock\ts_typedef.h" />
+    <ClInclude Include="include\gmock\ts_utils.h" />
     <ClInclude Include="include\gmock\ts_vpp.h" />
     <ClInclude Include="include\test_sample_allocator.h" />
   </ItemGroup>
@@ -535,6 +536,7 @@
     <ClCompile Include="src\gmock\ts_surface.cpp" />
     <ClCompile Include="src\gmock\ts_trace.cpp" />
     <ClCompile Include="src\gmock\ts_transcoder.cpp" />
+    <ClCompile Include="src\gmock\ts_utils.cpp" />
     <ClCompile Include="src\gmock\ts_vpp.cpp" />
     <ClCompile Include="src\test_sample_allocator.cpp" />
   </ItemGroup>

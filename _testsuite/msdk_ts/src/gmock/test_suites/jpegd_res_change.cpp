@@ -4,14 +4,24 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2015-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2015-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
 #include "ts_decoder.h"
 #include "ts_struct.h"
+#include "ts_utils.h"
+
+#ifdef _LOG_TO_FILE
+#include <fstream>
+#endif // _LOG_TO_FILE
 
 #define TEST_NAME jpegd_res_change
+
+#define STOP_IF_ANY            1
+#define STOP_IF_ALL            2
+#define PSNR_STOP_CRITERIA     STOP_IF_ANY
+#define PSNR_THRESHOLD         55.0
 
 namespace TEST_NAME
 {
@@ -57,15 +67,12 @@ private:
 
 const TestSuite::tc_struct TestSuite::test_case[][max_num_ctrl] = 
 {
-    {/* 0*/ {"bbc_640x480_10.mjpeg"},    {"bbc_352x288_10.mjpeg"}, {} },
+    {/* 0*/ {"bbc_640x480_10.mjpeg", 5}, {"bbc_352x288_10.mjpeg", 5}, {} },
     {/* 1*/ {"bbc_352x288_10.mjpeg"},    {"bbc_640x480_10.mjpeg", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
-    {/* 2*/ {"bbc_640x480_10.mjpeg", 5}, {"bbc_352x288_10.mjpeg", 5}, {} },
-    {/* 3*/ {"bbc_640x480_10.mjpeg"},    {"bbc_352x288_10.mjpeg"},    {"bbc_704x576_10.mjpeg", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM} },
-    {/* 4*/ {"bbc_704x576_10.mjpeg"},    {"bbc_640x480_10.mjpeg"},    {"bbc_352x288_10.mjpeg"} },
-    {/* 5*/ {"bbc_704x576_10.mjpeg", 5}, {"bbc_640x480_10.mjpeg", 5}, {"bbc_352x288_10.mjpeg", 5} },
-    {/* 6*/ {"bbc_704x576_10.mjpeg"},    {"bbc_352x288_10.mjpeg"},    {"bbc_640x480_10.mjpeg"} },
-    {/* 7*/ {"bbc_704x576_10.mjpeg", 5}, {"bbc_352x288_10.mjpeg", 5}, {"bbc_640x480_10.mjpeg", 5} },
-    {/* 8*/ {"bbc_704x576_10.mjpeg", 5}, {"bbc_640x480_10.mjpeg", 5}, {"bbc_704x576_10.mjpeg", 5} },
+    {/* 2*/ {"bbc_640x480_10.mjpeg"},    {"bbc_352x288_10.mjpeg"},    {"bbc_704x576_10.mjpeg", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM} },
+    {/* 3*/ {"bbc_704x576_10.mjpeg", 5}, {"bbc_640x480_10.mjpeg", 5}, {"bbc_352x288_10.mjpeg", 5} },
+    {/* 4*/ {"bbc_704x576_10.mjpeg", 5}, {"bbc_352x288_10.mjpeg", 5}, {"bbc_640x480_10.mjpeg", 5} },
+    {/* 5*/ {"bbc_704x576_10.mjpeg", 5}, {"bbc_640x480_10.mjpeg", 5}, {"bbc_704x576_10.mjpeg", 5} },
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct[max_num_ctrl]);
@@ -116,25 +123,70 @@ public:
         const mfxU16& ref_pitch = ref_surf->Data.Pitch;
         mfxU8* ref_ptr = ref_surf->Data.Y + ref_surf->Info.CropX + ref_surf->Info.CropY * ref_pitch;
 
-        size_t height = std::min(ref_surf->Info.CropH, s.Info.CropH);
-        size_t width  = std::min(ref_surf->Info.CropW, s.Info.CropW);
-        for(size_t i(0); i < height; ++i)
+        double Y_MSE = 0.0, UV_MSE = 0.0, A_MSE = 0.0;
+        double Y_PSNR = 0.0, UV_PSNR = 0.0, A_PSNR = 0.0;
+        size_t i = 0;
+        IppiSize size;
+        size.width = std::min(ref_surf->Info.CropW, s.Info.CropW);
+        size.height = std::min(ref_surf->Info.CropH, s.Info.CropH);
+
+        Y_MSE = CalcMSE(ref_ptr, ref_pitch, s_ptr, s_pitch, size);
+        Y_PSNR = MSEToPSNR(Y_MSE, 255.0);
+
+#if PSNR_STOP_CRITERIA == STOP_IF_ANY
+        if (Y_PSNR < PSNR_THRESHOLD)
+            YDifferes = true;
+#endif
+
+#ifdef _LOG_TO_FILE
+        FILE * decoded_surface;
+        FILE * ref_decoded_surface;
+        decoded_surface = fopen("decoded_surface.yuv", "ab");
+        ref_decoded_surface = fopen("ref_decoded_surface.yuv", "ab");
+
+        for (i = 0; i < size.height; ++i)
         {
-            if(memcmp(s_ptr + i * s_pitch, ref_ptr + i * ref_pitch, width))
-                YDifferes = true;
+            fwrite(s_ptr + i * s_pitch, sizeof(mfxU8), size.width, decoded_surface);
+            fwrite(ref_ptr + i * ref_pitch, sizeof(mfxU8), size.width, ref_decoded_surface);
         }
-        height >>= 1;
+#endif // _LOG_TO_FILE
+
+        size.height >>= 1;
         s_ptr = s.Data.UV + s.Info.CropX + (s.Info.CropY >> 1) * s_pitch;
         ref_ptr = ref_surf->Data.UV + ref_surf->Info.CropX + (ref_surf->Info.CropY >> 1) * ref_pitch;
-        for(size_t i(0); i < height; ++i)
-        {
-            if(memcmp(s_ptr + i * s_pitch, ref_ptr + i * ref_pitch, width))
-                UVDifferes = true;
+
+        UV_MSE = CalcMSE(ref_ptr, ref_pitch, s_ptr, s_pitch, size);
+        UV_PSNR = MSEToPSNR(UV_MSE, 255.0);
+
+#if PSNR_STOP_CRITERIA == STOP_IF_ANY
+        if (UV_PSNR < PSNR_THRESHOLD)
+            UVDifferes = true;
+#endif
+
+        A_MSE = (4.0 * Y_MSE + UV_MSE) / 6.0;
+        A_PSNR = MSEToPSNR(A_MSE, 255.0);
+
+#if PSNR_STOP_CRITERIA == STOP_IF_ALL
+        if (A_PSNR < PSNR_THRESHOLD) {
+            YDifferes = true;
+            UVDifferes = true;
         }
+#endif
+
+#ifdef _LOG_TO_FILE
+        for (i = 0; i < size.height; ++i)
+        {
+            fwrite(s_ptr + i * s_pitch, sizeof(mfxU8), size.width, decoded_surface);
+            fwrite(ref_ptr + i * ref_pitch, sizeof(mfxU8), size.width, ref_decoded_surface);
+        }
+
+        fclose(decoded_surface);
+        fclose(ref_decoded_surface);
+#endif // _LOG_TO_FILE
 
         /* https://jira01.devtools.intel.com/browse/MQ-507 */
         EXPECT_FALSE(YDifferes || UVDifferes)
-            << "ERROR: Surface #"<< frame <<" decoded by resolution-changed session is not b2b with surface decoded by verification session!!!\n";
+            << "ERROR: Surface #"<< frame <<" decoded by resolution-changed session has PSNR which is lower than the threshold value (compared with surface decoded by verification session)!!!\n";
 
         frame++;
         return MFX_ERR_NONE;
@@ -192,6 +244,7 @@ private:
         surf_pool = new mfxFrameSurface1[surf_pool_size];
         memset(surf_pool, 0, sizeof(mfxFrameSurface1) * surf_pool_size);
         assert(MFX_FOURCC_NV12 == par.mfx.FrameInfo.FourCC);
+
         for(size_t i(0); i < surf_pool_size; ++i)
         {
             surf_pool[i].Info = par.mfx.FrameInfo;
@@ -200,8 +253,6 @@ private:
             surf_pool[i].Data.Pitch = request.Info.Width;
         }
 
-        par.mfx.FrameInfo.CropW = par.mfx.FrameInfo.CropH = 0;
-        par.mfx.FrameInfo.AspectRatioH = par.mfx.FrameInfo.AspectRatioW = 0;
         sts = MFXVideoDECODE_Init(m_ses, &par);
         EXPECT_EQ_THROW(MFX_ERR_NONE, sts, "ERROR: Failed to Init verificaton decoder isntance\n");
 
@@ -321,9 +372,6 @@ int TestSuite::RunTest(unsigned int id)
         
         m_bitstream.DataLength = 0;
         DecodeHeader();
-
-        m_par.mfx.FrameInfo.CropW = m_par.mfx.FrameInfo.CropH = 0;
-        m_par.mfx.FrameInfo.AspectRatioH = m_par.mfx.FrameInfo.AspectRatioW = 0;
 
         if(m_initialized)
         {

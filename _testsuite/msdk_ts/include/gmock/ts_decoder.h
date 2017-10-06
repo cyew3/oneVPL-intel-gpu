@@ -13,7 +13,6 @@ Copyright(c) 2016-2018 Intel Corporation. All Rights Reserved.
 #include "ts_session.h"
 #include "ts_ext_buffers.h"
 #include "ts_surface.h"
-#include <map>
 
 class tsVideoDecoder : virtual public tsSession, virtual public tsSurfacePool
 {

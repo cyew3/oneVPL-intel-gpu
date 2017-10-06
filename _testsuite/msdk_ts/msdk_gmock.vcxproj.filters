@@ -105,6 +105,9 @@
     <ClInclude Include="include\gmock\ts_typedef.h" />
     <ClInclude Include="include\gmock\ts_vpp.h" />
     <ClInclude Include="include\test_sample_allocator.h" />
+    <ClInclude Include="include\gmock\ts_utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\test_sample_allocator.cpp">
@@ -994,6 +997,9 @@
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\hevce_interlace_sei_sps_flags.cpp">
       <Filter>Source Files\test_suites\hevce</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\ts_utils.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\hevce_default_ref_lists.cpp">
       <Filter>Source Files\test_suites\hevce</Filter>
