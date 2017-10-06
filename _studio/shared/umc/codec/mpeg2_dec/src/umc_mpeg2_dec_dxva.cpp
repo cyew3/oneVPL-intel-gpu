@@ -466,29 +466,11 @@ PackVA::SaveVLDParameters(
     pPictureParam->bBitstreamConcealmentMethod = 0;
     pPictureParam->bReservedBits = 0;
 
+    if (UMC::UMC_OK != ReserveSyncStatus(frame_buffer->curr_index[task_num], pict_struct))
+        return UMC_ERR_DEVICE_FAILED;
   }
 
   return UMC_OK;
-}
-
-Status PackVA::GetStatusReport(DXVA_Status_VC1 *pStatusReport)
-{
-    UMC::Status sts = UMC_OK;
-    unsigned int iterNum = 1;
-
-    while (!pStatusReport->StatusReportFeedbackNumber && UMC_OK == sts && iterNum != 0)
-    {
-        iterNum -= 1;
-
-        sts = m_va->ExecuteStatusReportBuffer((void*)pStatusReport, sizeof(DXVA_Status_VC1) * 32);
-
-        if (pStatusReport->StatusReportFeedbackNumber)
-        {
-            break;
-        }
-    }
-
-    return sts;
 }
 
 #elif defined UMC_VA_LINUX
@@ -705,6 +687,9 @@ PackVA::SaveVLDParameters(
         pPictureParam->picture_coding_extension.bits.progressive_frame = PictureHeader->progressive_frame;
         pPictureParam->picture_coding_extension.bits.is_first_field = !((PictureHeader->picture_structure != FRAME_PICTURE)
                                             && (field_buffer_index == 1));
+
+        if (UMC::UMC_OK != ReserveSyncStatus(frame_buffer->curr_index[task_num], PictureHeader->picture_structure))
+            return UMC_ERR_DEVICE_FAILED;
     }
 
     return UMC_OK;
