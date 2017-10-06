@@ -590,18 +590,24 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             {
                 deint.algorithm = VAProcDeinterlacingBob;
             }
+            else if(0 == pParams->iDeinterlacingAlgorithm) // skip DI for progressive frames
+            {
+                deint.algorithm = VAProcDeinterlacingNone;
+            }
             else
             {
                 deint.algorithm = VAProcDeinterlacingMotionAdaptive;
             }
 
-            mfxDrvSurface* pRefSurf_frameInfo = &(pParams->pRefSurfaces[0]);
+            // Get picture structure of ouput frame
+            mfxDrvSurface* pRefSurf_frameInfo = &(pParams->pRefSurfaces[0]); // previous input frame
+            mfxDrvSurface *pCurSurf_frameInfo = &(pParams->pRefSurfaces[pParams->bkwdRefCount]); // current input frame
 
             // PicStruc can take values: MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_REPEATED=0x10
             // default deint.flags = 0 is for top field in TFF frame.
-            if (pRefSurf_frameInfo->frameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE)
+            if (pCurSurf_frameInfo->frameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE)
                 deint.flags = VA_DEINTERLACING_ONE_FIELD;
-            else if (pRefSurf_frameInfo->frameInfo.PicStruct & MFX_PICSTRUCT_FIELD_BFF)
+            else if (pCurSurf_frameInfo->frameInfo.PicStruct & MFX_PICSTRUCT_FIELD_BFF)
                 deint.flags = VA_DEINTERLACING_BOTTOM_FIELD_FIRST | VA_DEINTERLACING_BOTTOM_FIELD;
 
             /* Deinterlacer:
@@ -615,13 +621,13 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             // ADI 30i->30p: To get first field of current frame , set deint.flags second output field.
             if(deint.algorithm == VAProcDeinterlacingMotionAdaptive && (pParams->refCount > 1))
             {
-                if (MFX_PICSTRUCT_FIELD_TFF & pRefSurf_frameInfo->frameInfo.PicStruct)
+                if (MFX_PICSTRUCT_FIELD_TFF & pCurSurf_frameInfo->frameInfo.PicStruct)
                     deint.flags = VA_DEINTERLACING_BOTTOM_FIELD;
                 else /* For BFF, second field is Top */
                     deint.flags = VA_DEINTERLACING_BOTTOM_FIELD_FIRST;
 
                 #if defined(LINUX_TARGET_PLATFORM_BXT) || defined(LINUX_TARGET_PLATFORM_BXTMIN)
-                if (MFX_PICSTRUCT_FIELD_TFF & pRefSurf_frameInfo->frameInfo.PicStruct)
+                if (MFX_PICSTRUCT_FIELD_TFF & pCurSurf_frameInfo->frameInfo.PicStruct)
                     deint.flags = VA_DEINTERLACING_ONE_FIELD;
                 else /* For BFF case required to set all bits  */
                     deint.flags = VA_DEINTERLACING_BOTTOM_FIELD_FIRST | VA_DEINTERLACING_BOTTOM_FIELD | VA_DEINTERLACING_ONE_FIELD;
@@ -659,18 +665,18 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
                 }
 
                 // Set deinterlace flag depending on parity and field to display
-                if (bIsFirstField)
+                if (bIsFirstField) // output is second field of previous input
                 {
                     if (MFX_PICSTRUCT_FIELD_TFF & pRefSurf_frameInfo->frameInfo.PicStruct)
                         deint.flags = 0;
-                    else /**/
+                    else
                         deint.flags = VA_DEINTERLACING_BOTTOM_FIELD_FIRST | VA_DEINTERLACING_BOTTOM_FIELD;
                 }
-                else
+                else // output is first field of current input
                 {
-                    if (MFX_PICSTRUCT_FIELD_TFF & pRefSurf_frameInfo->frameInfo.PicStruct)
+                    if (MFX_PICSTRUCT_FIELD_TFF & pCurSurf_frameInfo->frameInfo.PicStruct)
                         deint.flags = VA_DEINTERLACING_BOTTOM_FIELD;
-                    else /**/
+                    else
                         deint.flags = VA_DEINTERLACING_BOTTOM_FIELD_FIRST;
                 }
             } //  if ((30i->60p) && (pParams->refCount > 1)) /* 30i->60p mode only*/
@@ -684,7 +690,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
                     // In case of multiple scene changes, use BOB with same field to avoid out of frame order
                     if(VPP_MORE_SCENE_CHANGE_DETECTED == pParams->scene)
                     {
-                        if (MFX_PICSTRUCT_FIELD_TFF & pRefSurf_frameInfo->frameInfo.PicStruct)
+                        if (MFX_PICSTRUCT_FIELD_TFF & pCurSurf_frameInfo->frameInfo.PicStruct)
                             deint.flags = 0;
                         else /* BFF */
                             deint.flags = VA_DEINTERLACING_BOTTOM_FIELD_FIRST | VA_DEINTERLACING_BOTTOM_FIELD;
@@ -692,7 +698,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
                 }
                 else /* BOB 30i->30p use First Field to generate output*/
                 {
-                    if (MFX_PICSTRUCT_FIELD_TFF & pRefSurf_frameInfo->frameInfo.PicStruct)
+                    if (MFX_PICSTRUCT_FIELD_TFF & pCurSurf_frameInfo->frameInfo.PicStruct)
                         deint.flags = 0;
                     else /* Frame is BFF */
                         deint.flags = VA_DEINTERLACING_BOTTOM_FIELD_FIRST | VA_DEINTERLACING_BOTTOM_FIELD;
@@ -976,13 +982,15 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
     /* in 30i->60p mode, when scene change occurs, BOB is used and needs current input frame.
         * Current frame = ADI reference for odd output frames
         * Current frame = ADI input for even output frames
+        * when mixed picture is progressive, even frame use reference frame for output due to ADI delay
     **/
-    if(pParams->bDeinterlace30i60p && (VPP_SCENE_NEW == pParams->scene))
+    if(pParams->bDeinterlace30i60p && ((VPP_SCENE_NEW == pParams->scene)|| (pParams->iDeinterlacingAlgorithm == 0)))
     {
         if(m_deintFrameCount % 2)
             pSrcInputSurf = &(pParams->pRefSurfaces[0]); // point to reference frame
     }
-    VASurfaceID* srf = (VASurfaceID*)(pSrcInputSurf->hdl.first);
+
+    VASurfaceID *srf = (VASurfaceID *)(pSrcInputSurf->hdl.first);
     m_pipelineParam[0].surface = *srf;
 
 #ifdef MFX_ENABLE_VPP_ROTATION

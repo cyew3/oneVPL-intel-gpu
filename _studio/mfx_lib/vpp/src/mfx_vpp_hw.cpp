@@ -613,7 +613,14 @@ mfxStatus ResMngr::DoAdvGfx(
 
 } // mfxStatus ResMngr::DoAdvGfx(...)
 
-
+/// This function requests for new decoded frame if needed in
+/// 30i->60p mode
+/*
+  \param[in] input input surface
+  \param[in] output output surface
+  \param [out] intSts :MFX_ERR_NONE will request for decoded frame,
+                       MFX_ERR_MORE_SURFACE will call VPP on previously decoded surface
+ */
 mfxStatus ResMngr::DoMode30i60p(
     mfxFrameSurface1 *input,
     mfxFrameSurface1 *output,
@@ -644,21 +651,21 @@ mfxStatus ResMngr::DoMode30i60p(
             {
                 *intSts = MFX_ERR_NONE;
                 m_outputIndexCountPerCycle = 3; //was 3
-                m_bkwdRefCount = 0;
+                m_bkwdRefCount = 0; // First frame does not have reference
             }
             else
             {
                 m_bOutputReady = true;
                 *intSts = MFX_ERR_MORE_SURFACE;
                 m_outputIndexCountPerCycle = 2;
-                if(true == m_bRefFrameEnable)
+
+                if (true == m_bRefFrameEnable) // ADI
                 {
                     // need one backward reference to enable motion adaptive ADI
                     m_bkwdRefCount = 1;
                 }
                 else
                 {
-                    // no reference frame, use ADI with spatial info
                     m_bkwdRefCount = 0;
                 }
             }
@@ -2937,6 +2944,8 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
     std::vector<ExtSurface> surfQueue(numSamples);
 
     mfxU32 indx = 0;
+    mfxU32 deinterlaceAlgorithm = 0;
+
     // bkwdFrames
     for(i = 0; i < pTask->bkwdRefCount; i++)
     {
@@ -3291,9 +3300,6 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
         } //end switch
     }  // if (MFX_DEINTERLACING_ADVANCED_SCD == m_executeParams.iDeinterlacingAlgorithm)
 
-
-    // increment ADI frame number
-    m_frame_num++;
 #endif
 
     m_executeParams.refCount     = numSamples;
@@ -3306,11 +3312,66 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
 
     m_executeParams.iTargetInterlacingMode = DEINTERLACE_ENABLE;
 
-    if( !(m_executeParams.targetSurface.frameInfo.PicStruct & (MFX_PICSTRUCT_PROGRESSIVE)) )
+    if( !(m_executeParams.targetSurface.frameInfo.PicStruct & (MFX_PICSTRUCT_PROGRESSIVE)))
     {
         m_executeParams.iTargetInterlacingMode = DEINTERLACE_DISABLE;
         m_executeParams.iDeinterlacingAlgorithm = 0;
     }
+
+    // Check for progressive frames in interlace streams
+    deinterlaceAlgorithm = m_executeParams.iDeinterlacingAlgorithm;
+
+    static mfxU32 num_progressive = 0;
+    mfxU32 currFramePicStruct = m_executeSurf[pTask->bkwdRefCount].frameInfo.PicStruct;
+    mfxU32 refFramePicStruct = m_executeSurf[0].frameInfo.PicStruct;
+    bool isFirstField = true;
+    bool isCurrentProgressive = false;
+    bool isPreviousProgressive = false;
+
+
+    // check for progressive frames marked as progressive or pict_struct=5,6,7,8 in H.264
+    if ((currFramePicStruct == MFX_PICSTRUCT_PROGRESSIVE) ||
+        (currFramePicStruct & MFX_PICSTRUCT_FIELD_REPEATED) ||
+        (currFramePicStruct & MFX_PICSTRUCT_FRAME_DOUBLING) ||
+        (currFramePicStruct & MFX_PICSTRUCT_FRAME_TRIPLING))
+    {
+        isCurrentProgressive = true;
+    }
+
+    if ((refFramePicStruct == MFX_PICSTRUCT_PROGRESSIVE) ||
+        (refFramePicStruct & MFX_PICSTRUCT_FIELD_REPEATED) ||
+        (refFramePicStruct & MFX_PICSTRUCT_FRAME_DOUBLING) ||
+        (refFramePicStruct & MFX_PICSTRUCT_FRAME_TRIPLING))
+    {
+        isPreviousProgressive = true;
+    }
+
+    // Process progressive frame
+    if (MFX_PICSTRUCT_PROGRESSIVE == m_executeSurf[pTask->bkwdRefCount].frameInfo.PicStruct)
+    {
+        m_executeParams.iDeinterlacingAlgorithm = 0;
+    }
+
+    // Need special handling for progressive frame in 30i->60p ADI mode
+    if ((pTask->bkwdRefCount == 1) && m_executeParams.bDeinterlace30i60p) {
+        if ((m_frame_num % 2) == 0)
+            isFirstField = false; // 30i->60p ADI second field correspond to even output frame except for first and last
+
+        // Process progressive current frame
+        if (isCurrentProgressive)
+        {
+            // First field comes from interlace reference
+            if ((!isPreviousProgressive) && isFirstField)
+                m_executeParams.iDeinterlacingAlgorithm = deinterlaceAlgorithm;
+            else
+                m_executeParams.iDeinterlacingAlgorithm = 0; // Disable DI for current frame
+        }
+
+        // Disable DI when previous frame is progressive and current frame is interlace
+        if (isPreviousProgressive && (!isCurrentProgressive) && isFirstField)
+            m_executeParams.iDeinterlacingAlgorithm = 0; // Disable DI for first output frame
+    }
+
 
     MfxHwVideoProcessing::mfxExecuteParams  execParams = m_executeParams;
     sts = MergeRuntimeParams(pTask, &execParams);
@@ -3338,6 +3399,9 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
     sts = PostWorkInputSurface(numSamples);
     MFX_CHECK_STS(sts);
 
+    // restore value for m_executeParams.iDeinterlacingAlgorithm
+    m_executeParams.iDeinterlacingAlgorithm = deinterlaceAlgorithm;
+    m_frame_num++; // used to derive first or second field
     return MFX_ERR_NONE;
 
 } // mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
