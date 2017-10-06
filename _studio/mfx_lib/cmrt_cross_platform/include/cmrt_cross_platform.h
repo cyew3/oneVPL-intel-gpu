@@ -33,9 +33,9 @@
 #ifndef CM_NOINLINE
 #ifndef CM_EMU
 #ifndef __GNUC__
-#define CM_NOINLINE __declspec(noinline) 
+#define CM_NOINLINE __declspec(noinline)
 #else
-#define CM_NOINLINE __attribute__((noinline)) 
+#define CM_NOINLINE __attribute__((noinline))
 #endif
 #else
 #define CM_NOINLINE
@@ -53,33 +53,33 @@
 class SurfaceIndex
 {
 public:
-	CM_NOINLINE SurfaceIndex() { index = 0; };
-	CM_NOINLINE SurfaceIndex(const SurfaceIndex& _src) { index = _src.index; };
-	CM_NOINLINE SurfaceIndex(const unsigned int& _n) { index = _n; };
-	CM_NOINLINE SurfaceIndex& operator = (const unsigned int& _n) { this->index = _n; return *this; };
-	CM_NOINLINE SurfaceIndex& operator + (const unsigned int& _n) { this->index += _n; return *this; };
-	virtual unsigned int get_data(void) { return index; };
+    CM_NOINLINE SurfaceIndex() { index = 0; };
+    CM_NOINLINE SurfaceIndex(const SurfaceIndex& _src) { index = _src.index; };
+    CM_NOINLINE SurfaceIndex(const unsigned int& _n) { index = _n; };
+    CM_NOINLINE SurfaceIndex& operator = (const unsigned int& _n) { this->index = _n; return *this; };
+    CM_NOINLINE SurfaceIndex& operator + (const unsigned int& _n) { this->index += _n; return *this; };
+    virtual unsigned int get_data(void) { return index; };
 
 private:
-	unsigned int index;
+    unsigned int index;
 #ifdef CM_LINUX
-	unsigned char extra_byte;
+    unsigned char extra_byte;
 #endif
 };
 
 class SamplerIndex
 {
 public:
-	CM_NOINLINE SamplerIndex() { index = 0; };
-	CM_NOINLINE SamplerIndex(SamplerIndex& _src) { index = _src.get_data(); };
-	CM_NOINLINE SamplerIndex(const unsigned int& _n) { index = _n; };
-	CM_NOINLINE SamplerIndex& operator = (const unsigned int& _n) { this->index = _n; return *this; };
-	virtual unsigned int get_data(void) { return index; };
+    CM_NOINLINE SamplerIndex() { index = 0; };
+    CM_NOINLINE SamplerIndex(SamplerIndex& _src) { index = _src.get_data(); };
+    CM_NOINLINE SamplerIndex(const unsigned int& _n) { index = _n; };
+    CM_NOINLINE SamplerIndex& operator = (const unsigned int& _n) { this->index = _n; return *this; };
+    virtual unsigned int get_data(void) { return index; };
 
 private:
-	unsigned int index;
+    unsigned int index;
 #ifdef CM_LINUX
-	unsigned char extra_byte;
+    unsigned char extra_byte;
 #endif
 };
 
@@ -147,26 +147,26 @@ typedef signed long long INT64;
 typedef unsigned long long UINT64;
 
 typedef enum _VACMTEXTUREADDRESS {
-	VACMTADDRESS_WRAP = 1,
-	VACMTADDRESS_MIRROR = 2,
-	VACMTADDRESS_CLAMP = 3,
-	VACMTADDRESS_BORDER = 4,
-	VACMTADDRESS_MIRRORONCE = 5,
+    VACMTADDRESS_WRAP = 1,
+    VACMTADDRESS_MIRROR = 2,
+    VACMTADDRESS_CLAMP = 3,
+    VACMTADDRESS_BORDER = 4,
+    VACMTADDRESS_MIRRORONCE = 5,
 
-	VACMTADDRESS_FORCE_DWORD = 0x7fffffff
+    VACMTADDRESS_FORCE_DWORD = 0x7fffffff
 } VACMTEXTUREADDRESS;
 
 typedef enum _VACMTEXTUREFILTERTYPE {
-	VACMTEXF_NONE = 0,
-	VACMTEXF_POINT = 1,
-	VACMTEXF_LINEAR = 2,
-	VACMTEXF_ANISOTROPIC = 3,
-	VACMTEXF_FLATCUBIC = 4,
-	VACMTEXF_GAUSSIANCUBIC = 5,
-	VACMTEXF_PYRAMIDALQUAD = 6,
-	VACMTEXF_GAUSSIANQUAD = 7,
-	VACMTEXF_CONVOLUTIONMONO = 8,    // Convolution filter for monochrome textures
-	VACMTEXF_FORCE_DWORD = 0x7fffffff
+    VACMTEXF_NONE = 0,
+    VACMTEXF_POINT = 1,
+    VACMTEXF_LINEAR = 2,
+    VACMTEXF_ANISOTROPIC = 3,
+    VACMTEXF_FLATCUBIC = 4,
+    VACMTEXF_GAUSSIANCUBIC = 5,
+    VACMTEXF_PYRAMIDALQUAD = 6,
+    VACMTEXF_GAUSSIANQUAD = 7,
+    VACMTEXF_CONVOLUTIONMONO = 8,    // Convolution filter for monochrome textures
+    VACMTEXF_FORCE_DWORD = 0x7fffffff
 } VACMTEXTUREFILTERTYPE;
 
 #define CM_MAX_TIMEOUT 2
@@ -175,37 +175,37 @@ typedef enum _VACMTEXTUREFILTERTYPE {
 
 typedef enum _VA_CM_FORMAT {
 
-	VA_CM_FMT_UNKNOWN = 0,
+    VA_CM_FMT_UNKNOWN = 0,
 
-	VA_CM_FMT_A8R8G8B8 = 21,
-	VA_CM_FMT_X8R8G8B8 = 22,
-	VA_CM_FMT_A8 = 28,
-	VA_CM_FMT_A2B10G10R10 = 31,
-	VA_CM_FMT_A8B8G8R8 = 32,
-	VA_CM_FMT_A16B16G16R16 = 36,
-	VA_CM_FMT_P8 = 41,
-	VA_CM_FMT_L8 = 50,
-	VA_CM_FMT_A8L8 = 51,
-	VA_CM_FMT_R16U = 57,
-	VA_CM_FMT_V8U8 = 60,
-	VA_CM_FMT_R8U = 62,
-	VA_CM_FMT_D16 = 80,
-	VA_CM_FMT_L16 = 81,
-	VA_CM_FMT_A16B16G16R16F = 113,
-	VA_CM_FMT_R32F = 114,
-	VA_CM_FMT_NV12 = VA_FOURCC_NV12,
-	VA_CM_FMT_UYVY = VA_FOURCC_UYVY,
-	VA_CM_FMT_YUY2 = VA_FOURCC_YUY2,
-	VA_CM_FMT_444P = VA_FOURCC_444P,
-	VA_CM_FMT_411P = VA_FOURCC_411P,
-	VA_CM_FMT_422H = VA_FOURCC_422H,
-	VA_CM_FMT_422V = VA_FOURCC_422V,
-	VA_CM_FMT_IMC3 = VA_FOURCC_IMC3,
-	VA_CM_FMT_YV12 = VA_FOURCC_YV12,
-	VA_CM_FMT_P010 = VA_FOURCC_P010,
-	VA_CM_FMT_P016 = VA_FOURCC_P016,
+    VA_CM_FMT_A8R8G8B8 = 21,
+    VA_CM_FMT_X8R8G8B8 = 22,
+    VA_CM_FMT_A8 = 28,
+    VA_CM_FMT_A2B10G10R10 = 31,
+    VA_CM_FMT_A8B8G8R8 = 32,
+    VA_CM_FMT_A16B16G16R16 = 36,
+    VA_CM_FMT_P8 = 41,
+    VA_CM_FMT_L8 = 50,
+    VA_CM_FMT_A8L8 = 51,
+    VA_CM_FMT_R16U = 57,
+    VA_CM_FMT_V8U8 = 60,
+    VA_CM_FMT_R8U = 62,
+    VA_CM_FMT_D16 = 80,
+    VA_CM_FMT_L16 = 81,
+    VA_CM_FMT_A16B16G16R16F = 113,
+    VA_CM_FMT_R32F = 114,
+    VA_CM_FMT_NV12 = VA_FOURCC_NV12,
+    VA_CM_FMT_UYVY = VA_FOURCC_UYVY,
+    VA_CM_FMT_YUY2 = VA_FOURCC_YUY2,
+    VA_CM_FMT_444P = VA_FOURCC_444P,
+    VA_CM_FMT_411P = VA_FOURCC_411P,
+    VA_CM_FMT_422H = VA_FOURCC_422H,
+    VA_CM_FMT_422V = VA_FOURCC_422V,
+    VA_CM_FMT_IMC3 = VA_FOURCC_IMC3,
+    VA_CM_FMT_YV12 = VA_FOURCC_YV12,
+    VA_CM_FMT_P010 = VA_FOURCC_P010,
+    VA_CM_FMT_P016 = VA_FOURCC_P016,
 
-	VA_CM_FMT_MAX = 0xFFFFFFFF
+    VA_CM_FMT_MAX = 0xFFFFFFFF
 } VA_CM_FORMAT;
 
 // FIXME temp solution to have same type name as generated by VC++
@@ -229,38 +229,38 @@ template<> inline const char * CM_TYPE_NAME_UNMANGLED<double>() { return "double
 
 inline void * CM_ALIGNED_MALLOC(size_t size, size_t alignment)
 {
-	return memalign(alignment, size);
+    return memalign(alignment, size);
 }
 
 inline void CM_ALIGNED_FREE(void * memory)
 {
-	free(memory);
+    free(memory);
 }
 
-//multi-thread API: 
+//multi-thread API:
 #define THREAD_HANDLE pthread_t
 inline void CM_THREAD_CREATE(THREAD_HANDLE *handle, void * start_routine, void * arg)
 {
-	int err = 0;
-	err = pthread_create(handle, NULL, (void * (*)(void *))start_routine, arg);
-	if (err) {
-		printf(" cm create thread failed! \n");
-		exit(-1);
-	}
+    int err = 0;
+    err = pthread_create(handle, NULL, (void * (*)(void *))start_routine, arg);
+    if (err) {
+        printf(" cm create thread failed! \n");
+        exit(-1);
+    }
 }
 inline void CM_THREAD_EXIT(void * retval)
 {
-	pthread_exit(retval);
+    pthread_exit(retval);
 }
 
 inline int CM_THREAD_JOIN(THREAD_HANDLE *handle_array, int thread_cnt)
 {
-	void *tret;
-	for (int i = 0; i < thread_cnt; i++)
-	{
-		pthread_join(handle_array[i], &tret);
-	}
-	return 0;
+    void *tret;
+    for (int i = 0; i < thread_cnt; i++)
+    {
+        pthread_join(handle_array[i], &tret);
+    }
+    return 0;
 }
 
 #define CM_SURFACE_FORMAT                       VA_CM_FORMAT
@@ -283,7 +283,7 @@ inline int CM_THREAD_JOIN(THREAD_HANDLE *handle_array, int thread_cnt)
 #define CM_SURFACE_FORMAT_D16                   VA_CM_FMT_D16
 #define CM_SURFACE_FORMAT_L16                   VA_CM_FMT_L16
 #define CM_SURFACE_FORMAT_A16B16G16R16          VA_CM_FMT_A16B16G16R16
-#define CM_SURFACE_FORMAT_R10G10B10A2           VA_CM_FMT_A2B10G10R10 
+#define CM_SURFACE_FORMAT_R10G10B10A2           VA_CM_FMT_A2B10G10R10
 #define CM_SURFACE_FORMAT_A16B16G16R16F         VA_CM_FMT_A16B16G16R16F
 
 #define CM_SURFACE_FORMAT_444P                  VA_CM_FMT_444P
@@ -316,7 +316,7 @@ inline int CM_THREAD_JOIN(THREAD_HANDLE *handle_array, int thread_cnt)
 
 /* Surrport for common-used data type */
 #define  _TCHAR char
-#define __cdecl 
+#define __cdecl
 #ifndef TRUE
 #define TRUE 1
 #endif
@@ -328,9 +328,9 @@ typedef unsigned int* PUINT;
 
 typedef float FLOAT;
 typedef unsigned long long DWORDLONG;
-#ifndef ULONG_PTR 
-#define ULONG_PTR unsigned long 
-#endif 
+#ifndef ULONG_PTR
+#define ULONG_PTR unsigned long
+#endif
 
 /* Handle Type */
 typedef void *HMODULE;
@@ -367,11 +367,11 @@ typedef LONG HRESULT;
 typedef long long LONGLONG;
 
 typedef union _LARGE_INTEGER {
-	struct {
-		uint32_t LowPart;
-		int32_t HighPart;
-	} u;
-	int64_t QuadPart;
+    struct {
+        uint32_t LowPart;
+        int32_t HighPart;
+    } u;
+    int64_t QuadPart;
 } LARGE_INTEGER;
 
 //Performance
@@ -380,34 +380,34 @@ EXTERN_C INT QueryPerformanceCounter(LARGE_INTEGER *lpPerformanceCount);
 
 struct BITMAPFILEHEADER
 {
-	WORD  bfType;
-	DWORD bfSize;
-	WORD  bfReserved1;
-	WORD  bfReserved2;
-	DWORD bfOffBits;
+    WORD  bfType;
+    DWORD bfSize;
+    WORD  bfReserved1;
+    WORD  bfReserved2;
+    DWORD bfOffBits;
 }  __attribute__((packed));
 
 struct BITMAPINFOHEADER
 {
-	DWORD biSize;
-	DWORD  biWidth;
-	DWORD  biHeight;
-	WORD  biPlanes;
-	WORD  biBitCount;
-	DWORD biCompression;
-	DWORD biSizeImage;
-	DWORD  biXPelsPerMeter;
-	DWORD  biYPelsPerMeter;
-	DWORD biClrUsed;
-	DWORD biClrImportant;
+    DWORD biSize;
+    DWORD  biWidth;
+    DWORD  biHeight;
+    WORD  biPlanes;
+    WORD  biBitCount;
+    DWORD biCompression;
+    DWORD biSizeImage;
+    DWORD  biXPelsPerMeter;
+    DWORD  biYPelsPerMeter;
+    DWORD biClrUsed;
+    DWORD biClrImportant;
 };
 
 struct RGBQUAD
 {
-	BYTE rgbBlue;
-	BYTE rgbGreen;
-	BYTE rgbRed;
-	BYTE rgbReserved;
+    BYTE rgbBlue;
+    BYTE rgbGreen;
+    BYTE rgbRed;
+    BYTE rgbReserved;
 };
 
 
@@ -416,7 +416,7 @@ struct RGBQUAD
 template<typename kernelFunctionTy>
 inline void * CM_KERNEL_FUNCTION_TO_POINTER(kernelFunctionTy kernelFunction)
 {
-	return (void *)kernelFunction;
+    return (void *)kernelFunction;
 }
 #define CM_KERNEL_FUNCTION2(...) #__VA_ARGS__, CM_KERNEL_FUNCTION_TO_POINTER(__VA_ARGS__)
 #else
@@ -428,7 +428,7 @@ inline void * CM_KERNEL_FUNCTION_TO_POINTER(kernelFunctionTy kernelFunction)
 template<typename kernelFunctionTy>
 inline void * CM_KERNEL_FUNCTION_POINTER(kernelFunctionTy kernelFunction)
 {
-	return (void *)kernelFunction;
+    return (void *)kernelFunction;
 }
 #define _NAME(...) #__VA_ARGS__, CM_KERNEL_FUNCTION_POINTER(__VA_ARGS__)
 #else
@@ -442,30 +442,30 @@ inline void * CM_KERNEL_FUNCTION_POINTER(kernelFunctionTy kernelFunction)
 
 inline void * CM_ALIGNED_MALLOC(size_t size, size_t alignment)
 {
-	return _aligned_malloc(size, alignment);
+    return _aligned_malloc(size, alignment);
 }
 
 inline void CM_ALIGNED_FREE(void * memory)
 {
-	_aligned_free(memory);
+    _aligned_free(memory);
 }
 
 #if !CM_METRO
-//multi-thread API: 
+//multi-thread API:
 #define THREAD_HANDLE HANDLE
 inline void CM_THREAD_CREATE(THREAD_HANDLE *handle, void * start_routine, void * arg)
 {
-	handle[0] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)start_routine, (LPVOID)arg, 0, NULL);
+    handle[0] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)start_routine, (LPVOID)arg, 0, NULL);
 }
 inline void CM_THREAD_EXIT(void * retval)
 {
-	ExitThread(0);
+    ExitThread(0);
 }
 
 inline int CM_THREAD_JOIN(THREAD_HANDLE *handle_array, int thread_cnt)
 {
-	DWORD ret = WaitForMultipleObjects(thread_cnt, handle_array, true, INFINITE);
-	return ret;
+    DWORD ret = WaitForMultipleObjects(thread_cnt, handle_array, true, INFINITE);
+    return ret;
 }
 #endif
 
@@ -474,7 +474,7 @@ inline int CM_THREAD_JOIN(THREAD_HANDLE *handle_array, int thread_cnt)
 #define CM_SURFACE_FORMAT_UNKNOWN               D3DFMT_UNKNOWN
 #define CM_SURFACE_FORMAT_A8R8G8B8              D3DFMT_A8R8G8B8
 #define CM_SURFACE_FORMAT_X8R8G8B8              D3DFMT_X8R8G8B8
-#define CM_SURFACE_FORMAT_A8B8G8R8              D3DFMT_A8B8G8R8 
+#define CM_SURFACE_FORMAT_A8B8G8R8              D3DFMT_A8B8G8R8
 #define CM_SURFACE_FORMAT_A8                    D3DFMT_A8
 #define CM_SURFACE_FORMAT_P8                    D3DFMT_P8
 #define CM_SURFACE_FORMAT_R32F                  D3DFMT_R32F
@@ -495,7 +495,7 @@ inline int CM_THREAD_JOIN(THREAD_HANDLE *handle_array, int thread_cnt)
 #define CM_SURFACE_FORMAT_IRW2                  (D3DFORMAT)MAKEFOURCC('I','R','W','2')
 #define CM_SURFACE_FORMAT_IRW3                  (D3DFORMAT)MAKEFOURCC('I','R','W','3')
 #define CM_SURFACE_FORMAT_R16_FLOAT             D3DFMT_R16F  //beryl
-#define CM_SURFACE_FORMAT_A8P8                  D3DFMT_A8P8 
+#define CM_SURFACE_FORMAT_A8P8                  D3DFMT_A8P8
 #define CM_SURFACE_FORMAT_I420                  (D3DFORMAT)MAKEFOURCC('I','4','2','0')
 #define CM_SURFACE_FORMAT_IMC3                  (D3DFORMAT)MAKEFOURCC('I','M','C','3')
 #define CM_SURFACE_FORMAT_IA44                  (D3DFORMAT)MAKEFOURCC('I','A','4','4')
