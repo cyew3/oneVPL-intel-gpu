@@ -643,9 +643,32 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
              */
             if (pParams->bDeinterlace30i60p == true)
             {
+                mfxU32 refFramePicStruct = pRefSurf_frameInfo->frameInfo.PicStruct;
+                mfxU32 currFramePicStruct = pCurSurf_frameInfo->frameInfo.PicStruct;
+                bool isCurrentProgressive = false;
+                bool isPreviousProgressive = false;
+                bool isSameParity = false;
+
                 // Deinterlace with reference can be used after first frame is processed
                 if(pParams->refCount > 1 && m_deintFrameCount)
                     bUseReference = true;
+
+                // Check if previous is progressive
+                if ((refFramePicStruct == MFX_PICSTRUCT_PROGRESSIVE) ||
+                (refFramePicStruct & MFX_PICSTRUCT_FIELD_REPEATED) ||
+                (refFramePicStruct & MFX_PICSTRUCT_FRAME_DOUBLING) ||
+                (refFramePicStruct & MFX_PICSTRUCT_FRAME_TRIPLING))
+                {
+                    isPreviousProgressive = true;
+                }
+
+                if ((currFramePicStruct == MFX_PICSTRUCT_PROGRESSIVE) ||
+                    (currFramePicStruct & MFX_PICSTRUCT_FIELD_REPEATED) ||
+                    (currFramePicStruct & MFX_PICSTRUCT_FRAME_DOUBLING) ||
+                    (currFramePicStruct & MFX_PICSTRUCT_FRAME_TRIPLING))
+                {
+                    isCurrentProgressive = true;
+                }
 
                 // Use BOB when scene change occur
                 if ( MFX_DEINTERLACING_ADVANCED_SCD == pParams->iDeinterlacingAlgorithm &&
@@ -678,6 +701,31 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
                         deint.flags = VA_DEINTERLACING_BOTTOM_FIELD;
                     else
                         deint.flags = VA_DEINTERLACING_BOTTOM_FIELD_FIRST;
+                }
+
+                // case where previous and current have different parity -> use ADI no ref on current
+                // To avoid frame duplication
+
+                if((refFramePicStruct & MFX_PICSTRUCT_FIELD_TFF) && (currFramePicStruct & MFX_PICSTRUCT_FIELD_TFF))
+                    isSameParity = true;
+                else if((refFramePicStruct & MFX_PICSTRUCT_FIELD_BFF) && (currFramePicStruct & MFX_PICSTRUCT_FIELD_BFF))
+                    isSameParity = true;
+
+                if((!isPreviousProgressive) && (!isCurrentProgressive) && (!isSameParity))
+                {
+                    // Current is BFF
+                    if(!bIsFirstField && (currFramePicStruct & MFX_PICSTRUCT_FIELD_BFF))
+                    {
+                        deint.flags = VA_DEINTERLACING_BOTTOM_FIELD_FIRST | VA_DEINTERLACING_BOTTOM_FIELD;
+                        pParams->refCount =1; // Force ADI no ref on first Field of current frame
+                    }
+
+                    // Current is TFF
+                    if(!bIsFirstField && (currFramePicStruct & MFX_PICSTRUCT_FIELD_TFF))
+                    {
+                        deint.flags = 0;
+                        pParams->refCount =1; // Force ADI no ref on first Field of current frame
+                    }
                 }
             } //  if ((30i->60p) && (pParams->refCount > 1)) /* 30i->60p mode only*/
 

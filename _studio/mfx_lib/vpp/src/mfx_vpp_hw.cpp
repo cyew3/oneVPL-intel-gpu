@@ -3347,7 +3347,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
     }
 
     // Process progressive frame
-    if (MFX_PICSTRUCT_PROGRESSIVE == m_executeSurf[pTask->bkwdRefCount].frameInfo.PicStruct)
+    if (isCurrentProgressive)
     {
         m_executeParams.iDeinterlacingAlgorithm = 0;
     }
