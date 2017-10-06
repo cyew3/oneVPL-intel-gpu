@@ -24,7 +24,6 @@
 #if defined(_WIN32) || defined(_WIN64)
 #include <d3d11.h>
 #include <d3d9.h>
-#include <dxva2api.h>
 #define CM_WIN
 #else
 #define CM_LINUX
