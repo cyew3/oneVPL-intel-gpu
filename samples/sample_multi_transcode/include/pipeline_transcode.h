@@ -76,7 +76,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 namespace TranscodingSample
 {
-    extern mfxU32 MFX_STDCALL ThranscodeRoutine(void   *pObj);
+    extern mfxU32 MFX_STDCALL TranscodeRoutine(void   *pObj);
 
     enum PipelineMode
     {
@@ -814,6 +814,16 @@ namespace TranscodingSample
         mfxU32 numTransFrames;
         // Status of the finished session
         mfxStatus transcodingSts;
+
+        ThreadTranscodeContext()
+        {
+            pBSProcessor = NULL;
+            implType = MFX_IMPL_AUTO;
+            startStatus = MFX_ERR_NONE;
+            working_time = 0;
+            numTransFrames = 0;
+            transcodingSts = MFX_ERR_NONE;
+        }
     };
 }
 

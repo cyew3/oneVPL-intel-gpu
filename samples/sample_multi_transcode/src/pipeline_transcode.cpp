@@ -39,7 +39,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 using namespace TranscodingSample;
 
-mfxU32 MFX_STDCALL TranscodingSample::ThranscodeRoutine(void   *pObj)
+mfxU32 MFX_STDCALL TranscodingSample::TranscodeRoutine(void   *pObj)
 {
     mfxU64 start = TranscodingSample::GetTick();
     ThreadTranscodeContext *pContext = (ThreadTranscodeContext*)pObj;
@@ -59,7 +59,7 @@ mfxU32 MFX_STDCALL TranscodingSample::ThranscodeRoutine(void   *pObj)
     pContext->numTransFrames = pContext->pPipeline->GetProcessFrames();
 
     return 0;
-} // mfxU32 __stdcall ThranscodeRoutine(void   *pObj)
+} // mfxU32 __stdcall TranscodeRoutine(void   *pObj)
 
 // set structure to define values
 sInputParams::sInputParams()
