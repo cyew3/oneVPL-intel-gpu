@@ -2427,11 +2427,12 @@ mfxU32 HRD::GetInitCpbRemovalDelay(const Task &pic)
 }
 
 TaskManager::TaskManager()
-    :m_resetHeaders(0)
+    :m_bFieldMode(false)
+    ,m_resetHeaders(0)
 {
 }
 
-void TaskManager::Reset(mfxU32 numTask, mfxU16 resetHeaders)
+void TaskManager::Reset(bool bFieldMode, mfxU32 numTask, mfxU16 resetHeaders)
 {
     if (numTask)
     {
@@ -2446,7 +2447,8 @@ void TaskManager::Reset(mfxU32 numTask, mfxU16 resetHeaders)
             vm_time_sleep(1);
     }
     m_resetHeaders = resetHeaders;
-    m_secondFieldInfo.Reset();
+    m_bFieldMode = bFieldMode;
+    m_lastFieldInfo.Reset();
 }
 
 Task* TaskManager::New()
@@ -2497,19 +2499,17 @@ Task* TaskManager::Reorder(
         }
         end++;
     }
-    if (par.isField() && m_secondFieldInfo.bSecondField())
+    if (m_bFieldMode && m_lastFieldInfo.bFirstField())
     {
-       while (begin != end && begin->m_poc != m_secondFieldInfo.m_poc)
+       while (begin != end && !m_lastFieldInfo.isCorrespondSecondField(&*begin))
             begin++;
 
         if (begin != end)
         {
-            m_secondFieldInfo.CorrectTaskInfo(&*begin);
+            m_lastFieldInfo.CorrectTaskInfo(&*begin);
             return &*begin;
         }
-        else
-           m_secondFieldInfo.Reset();
-
+        begin = m_reordering.begin();
     }
 
     TaskList::iterator top = MfxHwH265Encode::Reorder(par, dpb, begin, end, flush, par.isField());
@@ -2526,12 +2526,7 @@ Task* TaskManager::Reorder(
     {
         top->m_insertHeaders |= m_resetHeaders;
         m_resetHeaders = 0;
-    }
-    if (par.isField())
-    {
-        m_secondFieldInfo.SaveInfo(&*top);
-    }
-
+    } 
     return &*top;
 }
 

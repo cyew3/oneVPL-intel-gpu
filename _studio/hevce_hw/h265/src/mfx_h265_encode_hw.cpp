@@ -495,7 +495,7 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
     }
 #endif
 #endif
-    m_task.Reset(MaxTask(m_vpar));
+    m_task.Reset(m_vpar.isField(), MaxTask(m_vpar));
 
     Fill(m_lastTask, IDX_INVALID);
 
@@ -789,7 +789,7 @@ mfxStatus   Plugin::WaitingForAsyncTasks(bool bResetTasks)
     }
 
 
-    m_task.Reset();
+    m_task.Reset(m_vpar.isField());
 
     m_raw.Unlock();
     m_rawSkip.Unlock();
@@ -1195,6 +1195,8 @@ mfxStatus Plugin::PrepareTask(Task& input_task)
         MFX_CHECK(task->m_midRec && task->m_midBs, MFX_ERR_UNDEFINED_BEHAVIOR);  
 
         ConfigureTask(*task, m_lastTask, m_vpar, m_caps, m_baseLayerOrder);
+
+        m_task.SaveFieldInfo(task);
         m_lastTask = *task;
         m_task.Submit(task);
     }

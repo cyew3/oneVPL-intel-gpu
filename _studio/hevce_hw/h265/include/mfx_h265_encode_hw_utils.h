@@ -962,48 +962,57 @@ protected:
     mfxF64 m_prevBpAuNominalRemovalTime;
     mfxU32 m_prevBpEncOrder;
 };
-class SecondFieldInfo
+class LastReordFieldInfo
 {
 public:
     mfxI32     m_poc;
     bool       m_bReference;
     mfxU32     m_level;
+    bool       m_bFirstField;
 
-    SecondFieldInfo() :
+    LastReordFieldInfo() :
         m_poc(-1),
         m_bReference(false),
-        m_level(0) {}
+        m_level(0),
+        m_bFirstField(false){}
 
     void Reset()
     {
         m_poc = -1;
         m_bReference = false;
         m_level = 0;
+        m_bFirstField = false;
     }
     void SaveInfo(Task const* task)
     {
-        m_poc = task->m_poc + 1;
+        m_poc = task->m_poc;
         m_bReference = ((task->m_frameType & MFX_FRAMETYPE_REF) != 0);
         m_level = task->m_level;
+        m_bFirstField = !task->m_secondField;
     }
     void CorrectTaskInfo(Task* task)
     {
-        if (m_poc != task->m_poc || !task->m_secondField)
+        if (!isCorrespondSecondField(task))
             return;
+        // copy params in second field
         if (m_bReference)
             task->m_frameType |= MFX_FRAMETYPE_REF;
         task->m_level = m_level;
-
-        Reset();
     }
-    bool bSecondField() { return m_poc != -1; }
+    bool isCorrespondSecondField(Task const* task) 
+    { 
+        if (m_poc + 1 != task->m_poc || !task->m_secondField || !m_bFirstField)
+            return false;
+        return true;
+    }
+    bool bFirstField() { return m_bFirstField; }
 };
 
 class TaskManager
 {
 public:
     TaskManager();
-    void  Reset     (mfxU32 numTask = 0, mfxU16 resetHeaders = 0);
+    void  Reset     (bool bFieldMode , mfxU32 numTask = 0, mfxU16 resetHeaders = 0);
     Task* New       ();
     Task* Reorder   (MfxVideoParam const & par, DpbArray const & dpb, bool flush);
     void  Submit    (Task* task);
@@ -1015,15 +1024,21 @@ public:
     void  SkipTask  (Task* task);
     Task* GetNewTask();
     mfxStatus PutTasksForRecode(Task* pTask);
+    void SaveFieldInfo(Task* task) 
+    {
+        if (m_bFieldMode)   this->m_lastFieldInfo.SaveInfo(task);
+    };
 
 private:
+    bool       m_bFieldMode;
     TaskList   m_free;
     TaskList   m_reordering;
     TaskList   m_encoding;
     TaskList   m_querying;
     UMC::Mutex m_listMutex;
     mfxU16     m_resetHeaders;
-    SecondFieldInfo  m_secondFieldInfo;
+    LastReordFieldInfo  m_lastFieldInfo;
+
 };
 
 class FrameLocker : public mfxFrameData
