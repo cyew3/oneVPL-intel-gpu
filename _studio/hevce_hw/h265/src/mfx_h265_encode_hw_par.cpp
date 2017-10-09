@@ -895,11 +895,13 @@ mfxStatus CheckAndFixRoi(MfxVideoParam  const & par, ENCODE_CAPS_HEVC const & ca
         changed += CheckRange(roi->Top, mfxU32(0), mfxU32(par.mfx.FrameInfo.Height));
         changed += CheckRange(roi->Bottom, mfxU32(0), mfxU32(par.mfx.FrameInfo.Height));
 
-        // align to LCU size
-        changed += AlignDown(roi->Left, par.LCUSize);
-        changed += AlignDown(roi->Top, par.LCUSize);
-        changed += AlignUp(roi->Right, par.LCUSize);
-        changed += AlignUp(roi->Bottom, par.LCUSize);
+        // align to BlockSize size
+        mfxU32 blkSize = 1 << (caps.BlockSize + 3);
+
+        changed += AlignDown(roi->Left, blkSize);
+        changed += AlignDown(roi->Top, blkSize);
+        changed += AlignUp(roi->Right, blkSize);
+        changed += AlignUp(roi->Bottom, blkSize);
 
         invalid += (roi->Left > roi->Right);
         invalid += (roi->Top > roi->Bottom);

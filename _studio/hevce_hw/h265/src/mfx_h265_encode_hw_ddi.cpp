@@ -127,6 +127,7 @@ mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, MFXCoreInterface* core, GUID guid
     if (pltfm.CodeName < MFX_PLATFORM_CANNONLAKE) {
         if (!caps.LCUSizeSupported)     // not set until CNL now
             caps.LCUSizeSupported = 0b10;   // 32x32 lcu is only supported
+            caps.BlockSize = 2; // 32x32
     } else {
         if (IsEncPak(guid))
             caps.LCUSizeSupported |= 0b10;   // add support of 32x32 lcu for ENC+PAK
@@ -158,6 +159,7 @@ mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, MFXCoreInterface* core, GUID guid
 #else
     if (!caps.LCUSizeSupported)
         caps.LCUSizeSupported = 2;
+    caps.BlockSize = 2; // 32x32
     (void)core;
     (void)guid;
 #endif
