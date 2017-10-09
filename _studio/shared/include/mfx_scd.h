@@ -341,7 +341,9 @@ public:
     SceneChangeDetector()
         : m_pCmDevice(0)
         , m_pCmProgram(0)
-        , m_pCmKernel(0)
+        , m_pCmKernelTopField(0)
+        , m_pCmKernelBotField(0)
+        , m_pCmKernelFrame(0)
         , m_pCmQueue(0)
         , gpustep_w(0)
         , gpustep_h(0)
@@ -442,7 +444,9 @@ private:
 
     CmDevice        *m_pCmDevice;
     CmProgram       *m_pCmProgram;
-    CmKernel        *m_pCmKernel;
+    CmKernel        *m_pCmKernelTopField; //top field only, not TFF frame !!!
+    CmKernel        *m_pCmKernelBotField; //bottom field only, not BFF frame !!!
+    CmKernel        *m_pCmKernelFrame;
     CmQueue         *m_pCmQueue;
     CmBufferUP      *m_pCmBufferOut;
     CmThreadSpace   * m_pCmThreadSpace;

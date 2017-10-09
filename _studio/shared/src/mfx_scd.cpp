@@ -1508,11 +1508,6 @@ mfxStatus SceneChangeDetector::MapFrame(mfxFrameSurface1 *frame)
         surface = it->second;
     }
 
-    // Check for interlace
-    if ((streamParity == topfieldfirst_frame) || (streamParity == bottomfieldFirst_frame)) {
-        subImage_height = gpustep_h / 2;
-    }
-
     // Get surface and Buffer index
     SurfaceIndex * pSurfaceIndex = NULL;
     SurfaceIndex * pOuputBufferIndex = NULL;
@@ -1521,16 +1516,24 @@ mfxStatus SceneChangeDetector::MapFrame(mfxFrameSurface1 *frame)
     res = m_pCmBufferOut->GetIndex(pOuputBufferIndex);
     if (res!=0) return MFX_ERR_DEVICE_FAILED;
 
-    res = m_pCmKernel->SetKernelArg(0, sizeof(SurfaceIndex), pSurfaceIndex);
-    if (res!=0) return MFX_ERR_DEVICE_FAILED;
-    res = m_pCmKernel->SetKernelArg(1, sizeof(SurfaceIndex), pOuputBufferIndex);
-    if (res!=0) return MFX_ERR_DEVICE_FAILED;
-    res = m_pCmKernel->SetKernelArg(2, sizeof(int), &ouputWidth);
-    if (res!=0) return MFX_ERR_DEVICE_FAILED;
-    res = m_pCmKernel->SetKernelArg(3, sizeof(int), &gpustep_w);
-    if (res!=0) return MFX_ERR_DEVICE_FAILED;
-    res = m_pCmKernel->SetKernelArg(4, sizeof(int), &subImage_height);
-    if (res!=0) return MFX_ERR_DEVICE_FAILED;
+    for (CmKernel* pCmKernel : { m_pCmKernelTopField, m_pCmKernelBotField, m_pCmKernelFrame })
+    {
+        if (!pCmKernel)
+            continue;
+
+        subImage_height = (m_pCmKernelFrame == pCmKernel) ? gpustep_h : gpustep_h / 2;
+
+        res = pCmKernel->SetKernelArg(0, sizeof(SurfaceIndex), pSurfaceIndex);
+        if (res!=0) return MFX_ERR_DEVICE_FAILED;
+        res = pCmKernel->SetKernelArg(1, sizeof(SurfaceIndex), pOuputBufferIndex);
+        if (res!=0) return MFX_ERR_DEVICE_FAILED;
+        res = pCmKernel->SetKernelArg(2, sizeof(int), &ouputWidth);
+        if (res!=0) return MFX_ERR_DEVICE_FAILED;
+        res = pCmKernel->SetKernelArg(3, sizeof(int), &gpustep_w);
+        if (res!=0) return MFX_ERR_DEVICE_FAILED;
+        res = pCmKernel->SetKernelArg(4, sizeof(int), &subImage_height);
+        if (res!=0) return MFX_ERR_DEVICE_FAILED;
+    }
 
     return MFX_ERR_NONE;
 }
@@ -2005,10 +2008,10 @@ void SceneChangeDetector::VidSample_dispose() {
     _aligned_free(videoData[SAMPLE_VIDEO_INPUT_INDEX]->layer[0].Image.data);
 #else
     free(videoData[SAMPLE_VIDEO_INPUT_INDEX]->layer[0].Image.data);
+#endif
     videoData[SAMPLE_VIDEO_INPUT_INDEX]->layer[0].Image.data = NULL;
     delete videoData[SAMPLE_VIDEO_INPUT_INDEX]->layer;
     delete (videoData[SAMPLE_VIDEO_INPUT_INDEX]);
-#endif
 }
 
 void SceneChangeDetector::VidRead_dispose() {
@@ -11740,53 +11743,52 @@ mfxStatus SceneChangeDetector::SubSampleImage(mfxU32 srcWidth, mfxU32 srcHeight,
      if(res != 0 ) return MFX_ERR_DEVICE_FAILED;
     }
 
-    if (NULL == m_pCmKernel)
+    if (NULL == m_pCmKernelTopField || NULL == m_pCmKernelBotField || NULL == m_pCmKernelFrame)
     {
           // select the fastest kernels for the given input surface size
           if (gpustep_w == 6 && gpustep_h == 7) {
-              if (progressive_frame == streamParity)
-                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_480p), m_pCmKernel);
-              else if (topfieldfirst_frame == streamParity)
-                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_480t), m_pCmKernel);
-              else
-                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_480b), m_pCmKernel);
+                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_480p), m_pCmKernelFrame);
+                  if (res != 0) return MFX_ERR_DEVICE_FAILED;
+                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_480t), m_pCmKernelTopField);
+                  if (res != 0) return MFX_ERR_DEVICE_FAILED;
+                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_480b), m_pCmKernelBotField);
+                  if (res != 0) return MFX_ERR_DEVICE_FAILED;
           }
           else if (gpustep_w == 11 && gpustep_h == 11) {
-              if (progressive_frame == streamParity)
-                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_720p), m_pCmKernel);
-              else if (topfieldfirst_frame == streamParity)
-                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_720t), m_pCmKernel);
-              else
-                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_720b), m_pCmKernel);
+                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_720p), m_pCmKernelFrame);
+                  if (res != 0) return MFX_ERR_DEVICE_FAILED;
+                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_720t), m_pCmKernelTopField);
+                  if (res != 0) return MFX_ERR_DEVICE_FAILED;
+                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_720b), m_pCmKernelBotField);
+                  if (res != 0) return MFX_ERR_DEVICE_FAILED;
           }
           else if (gpustep_w == 17 && gpustep_h == 16) {
-              if (progressive_frame == streamParity)
-                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_1080p), m_pCmKernel);
-              else if (topfieldfirst_frame == streamParity)
-                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_1080t), m_pCmKernel);
-              else
-                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_1080b), m_pCmKernel);
+                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_1080p), m_pCmKernelFrame);
+                  if (res != 0) return MFX_ERR_DEVICE_FAILED;
+                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_1080t), m_pCmKernelTopField);
+                  if (res != 0) return MFX_ERR_DEVICE_FAILED;
+                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_1080b), m_pCmKernelBotField);
+                  if (res != 0) return MFX_ERR_DEVICE_FAILED;
           }
           else if (gpustep_w == 34 && gpustep_h == 33) {
-              if (progressive_frame == streamParity)
-                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_2160p), m_pCmKernel);
-              else if (topfieldfirst_frame == streamParity)
-                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_2160t), m_pCmKernel);
-              else
-                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_2160b), m_pCmKernel);
+                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_2160p), m_pCmKernelFrame);
+                  if (res != 0) return MFX_ERR_DEVICE_FAILED;
+                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_2160t), m_pCmKernelTopField);
+                  if (res != 0) return MFX_ERR_DEVICE_FAILED;
+                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_2160b), m_pCmKernelBotField);
+                  if (res != 0) return MFX_ERR_DEVICE_FAILED;
           }
           else if (gpustep_w <= 32) {
-              if (progressive_frame == streamParity)
-                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_var_p), m_pCmKernel);
-              else if (topfieldfirst_frame == streamParity)
-                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_var_t), m_pCmKernel);
-              else
-                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_var_b), m_pCmKernel);
+                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_var_p), m_pCmKernelFrame);
+                  if (res != 0) return MFX_ERR_DEVICE_FAILED;
+                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_var_t), m_pCmKernelTopField);
+                  if (res != 0) return MFX_ERR_DEVICE_FAILED;
+                  res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SubSample_var_b), m_pCmKernelBotField);
+                  if (res != 0) return MFX_ERR_DEVICE_FAILED;
           }
           else {
              return MFX_ERR_UNSUPPORTED;
           }
-          if(res != 0 ) return MFX_ERR_DEVICE_FAILED;
     } // (NULL == m_pCmKernel)
 
     if (NULL == m_pCmQueue)
@@ -11811,8 +11813,14 @@ mfxStatus SceneChangeDetector::SubSampleImage(mfxU32 srcWidth, mfxU32 srcHeight,
     UINT threadsWidth = subWidth / OUT_BLOCK;
     UINT threadsHeight = subHeight;
 
-    res = m_pCmKernel->SetThreadCount(threadsWidth * threadsHeight);
-    if(res != 0 ) return MFX_ERR_DEVICE_FAILED;
+    for (CmKernel* pCmKernel : { m_pCmKernelTopField, m_pCmKernelBotField, m_pCmKernelFrame })
+    {
+        if (pCmKernel)
+        {
+            res = pCmKernel->SetThreadCount(threadsWidth * threadsHeight);
+            if(res != 0 ) return MFX_ERR_DEVICE_FAILED;
+        }
+    }
 
     res = m_pCmDevice->CreateThreadSpace(threadsWidth, threadsHeight, m_pCmThreadSpace);
     if(res != 0 ) return MFX_ERR_DEVICE_FAILED;
@@ -11846,15 +11854,18 @@ void SceneChangeDetector::GPUProcess()
     CmEvent * e = NULL;
     int res;
     mfxStatus status = MFX_ERR_NONE;
+    CmKernel* pCmKernel =
+          m_dataIn->interlaceMode
+        ? (   (m_dataIn->currentField == TopField)
+            ? m_pCmKernelTopField
+            : m_pCmKernelBotField)
+        : m_pCmKernelFrame;
 
     res = m_pCmDevice->CreateTask(task);
     if(res != 0 ) status = MFX_ERR_DEVICE_FAILED;
 
-
-    res = task->AddKernel(m_pCmKernel);
+    res = task->AddKernel(pCmKernel);
     if(res != 0 ) status = MFX_ERR_DEVICE_FAILED;
-
-
 
     res = m_pCmQueue->Enqueue(task, e, m_pCmThreadSpace);
      // wait result here!!!
@@ -12026,10 +12037,14 @@ mfxStatus SceneChangeDetector::Close()
 
         m_pCmDevice->DestroyThreadSpace(m_pCmThreadSpace);
         m_pCmDevice->DestroyBufferUP(m_pCmBufferOut);
-        m_pCmDevice->DestroyKernel(m_pCmKernel);
+        m_pCmDevice->DestroyKernel(m_pCmKernelTopField);
+        m_pCmDevice->DestroyKernel(m_pCmKernelBotField);
+        m_pCmDevice->DestroyKernel(m_pCmKernelFrame);
         m_pCmDevice->DestroyProgram(m_pCmProgram);
 
-        m_pCmKernel = NULL;
+        m_pCmKernelTopField = NULL;
+        m_pCmKernelBotField = NULL;
+        m_pCmKernelFrame = NULL;
         m_pCmThreadSpace = NULL;
         m_pCmProgram = NULL;
         m_pCmQueue = NULL;
