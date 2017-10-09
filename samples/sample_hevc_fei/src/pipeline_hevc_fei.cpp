@@ -514,7 +514,7 @@ IPreENC* CEncodingPipeline::CreatePreENC(mfxFrameInfo& in_fi)
     if (!pExtBufInit) throw mfxError(MFX_ERR_NOT_INITIALIZED, "Failed to attach mfxExtFeiParam");
     pExtBufInit->Func = MFX_FEI_FUNCTION_PREENC;
 
-    IPreENC* pPreENC = new FEI_Preenc(&m_mfxSession, pars, m_inParams.mvoutFile, m_inParams.mbstatoutFile);
+    IPreENC* pPreENC = new FEI_Preenc(&m_mfxSession, pars, m_inParams.mvoutFile, m_inParams.bFormattedMVout, m_inParams.mbstatoutFile);
 
     if (m_inParams.preencDSfactor > 1)
     {

@@ -57,7 +57,7 @@ class FEI_Preenc : public IPreENC
 {
 public:
     FEI_Preenc(MFXVideoSession* session, MfxVideoParamsWrapper& preenc_pars,
-        const msdk_char* mvoutFile, const msdk_char* mbstatoutFile);
+        const msdk_char* mvoutFile, bool isMVoutFormatted, const msdk_char* mbstatoutFile);
     ~FEI_Preenc();
 
     mfxStatus Init();
@@ -87,6 +87,8 @@ private:
     /* For I/O operations with extension buffers */
     std::auto_ptr<FileHandler> m_pFile_MV_out;
     std::auto_ptr<FileHandler> m_pFile_MBstat_out;
+
+    bool m_isMVoutFormatted;
 
     DISALLOW_COPY_AND_ASSIGN(FEI_Preenc);
 

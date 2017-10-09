@@ -60,13 +60,14 @@ struct sInputParams
 
     msdk_char  strDstFile[MSDK_MAX_FILENAME_LEN];
 
-    msdk_char  mvoutFile[MSDK_MAX_FILENAME_LEN];
     msdk_char  mbstatoutFile[MSDK_MAX_FILENAME_LEN];
+    msdk_char  mvoutFile[MSDK_MAX_FILENAME_LEN];
     msdk_char  mvpInFile[MSDK_MAX_FILENAME_LEN];
 
     bool bENCODE;
     bool bPREENC;
     bool bEncodedOrder;        // use EncodeOrderControl for external reordering
+    bool bFormattedMVout;      // use internal format for dumping MVP
     mfxU8  QP;
     mfxU16 dstWidth;           // destination picture width
     mfxU16 dstHeight;          // destination picture height
@@ -92,6 +93,7 @@ struct sInputParams
         : bENCODE(false)
         , bPREENC(false)
         , bEncodedOrder(false)
+        , bFormattedMVout(false)
         , QP(26)
         , dstWidth(0)
         , dstHeight(0)
@@ -114,8 +116,8 @@ struct sInputParams
         , PicTimingSEI(MFX_CODINGOPTION_OFF)
     {
         MSDK_ZERO_MEMORY(strDstFile);
-        MSDK_ZERO_MEMORY(mvoutFile);
         MSDK_ZERO_MEMORY(mbstatoutFile);
+        MSDK_ZERO_MEMORY(mvoutFile);
         MSDK_ZERO_MEMORY(mvpInFile);
     }
 

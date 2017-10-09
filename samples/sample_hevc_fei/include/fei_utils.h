@@ -212,8 +212,23 @@ private:
 class FileHandler
 {
 public:
-    FileHandler(const msdk_char* _filename, const msdk_char* _mode);
-    ~FileHandler();
+    FileHandler(const msdk_char* _filename, const msdk_char* _mode)
+        : m_file(NULL)
+    {
+        MSDK_FOPEN(m_file, _filename, _mode);
+        if (m_file == NULL)
+        {
+            msdk_printf(MSDK_STRING("Can't open file %s in mode %s\n"), _filename, _mode);
+            throw mfxError(MFX_ERR_NOT_INITIALIZED, "Opening file failed");
+        }
+    }
+    ~FileHandler()
+    {
+        if (m_file)
+        {
+            fclose(m_file);
+        }
+    }
 
     template <typename T>
     mfxStatus Read(T* ptr, size_t size, size_t count)
@@ -228,6 +243,14 @@ public:
     mfxStatus Write(T* ptr, size_t size, size_t count)
     {
         if (m_file && (fwrite(ptr, size, count, m_file) != count))
+            return MFX_ERR_DEVICE_FAILED;
+
+        return MFX_ERR_NONE;
+    }
+
+    mfxStatus Seek(mfxI32 offset, mfxI32 origin)
+    {
+        if (!m_file || fseek(m_file, offset, origin))
             return MFX_ERR_DEVICE_FAILED;
 
         return MFX_ERR_NONE;

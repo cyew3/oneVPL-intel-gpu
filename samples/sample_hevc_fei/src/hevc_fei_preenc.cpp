@@ -85,10 +85,11 @@ mfxStatus IPreENC::ResetExtBuffers(const MfxVideoParamsWrapper & videoParams)
 /**********************************************************************************/
 
 FEI_Preenc::FEI_Preenc(MFXVideoSession* session, MfxVideoParamsWrapper& preenc_pars,
-    const msdk_char* mvoutFile, const msdk_char* mbstatoutFile)
+    const msdk_char* mvoutFile, bool isMVoutFormatted, const msdk_char* mbstatoutFile)
     : IPreENC(preenc_pars)
     , m_pmfxSession(session)
     , m_mfxPREENC(*m_pmfxSession)
+    , m_isMVoutFormatted(isMVoutFormatted)
 {
     if (0 != msdk_strlen(mvoutFile))
     {
@@ -138,6 +139,25 @@ mfxStatus FEI_Preenc::Init()
     // just in case, call GetVideoParam to get current Encoder state
     sts = m_mfxPREENC.GetVideoParam(&m_videoParams);
     MSDK_CHECK_STATUS(sts, "FEI PreENC GetVideoParam failed");
+
+    if (m_pFile_MV_out.get() && m_isMVoutFormatted) // dumping in internal output format
+    {
+        // dump info about size of block per frame (constant on the whole file)
+        // NumRefFrame is maximum available number of structures per frame
+        // Internal format is:
+        // * size of block of structures with internal info per frame (mfxU32)
+        //     * number of structures in the frame (mfxU8)
+        //         * refL0, refL0 indexes (2 x mfxU8)
+        //         * mfxExtFeiPreEncMVMB structure
+        //         - repeat two above
+        //         - zero padding if number of structure is less then NumRefFrame
+        //     - repeat the same for another frames.
+        mfxU32 numMB = (MSDK_ALIGN16(m_videoParams.mfx.FrameInfo.Width)*MSDK_ALIGN16(m_videoParams.mfx.FrameInfo.Height)) >> 8;
+        mfxU32 sizeOfBlock = sizeof(mfxU8) + m_videoParams.mfx.NumRefFrame * (2 * sizeof(mfxU8) + sizeof(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB)*(numMB));
+
+        sts = m_pFile_MV_out->Write(&sizeOfBlock, sizeof(sizeOfBlock), 1);
+        MSDK_CHECK_STATUS(sts, "FEI PreENC Write to MV out file failed.");
+    }
 
     return sts;
 }
@@ -232,27 +252,66 @@ mfxStatus FEI_Preenc::DumpResult(HevcTask* task)
 
     if (m_pFile_MV_out.get())
     {
-        if (task->m_frameType & MFX_FRAMETYPE_I)
-        {
-            // count number of MB 16x16, as PreENC works as AVC
-            mfxU32 numMB = (MSDK_ALIGN16(task->m_surf->Info.Width) * MSDK_ALIGN16(task->m_surf->Info.Height)) >> 8;
-            if (*task->m_ds_surf)
-            {
-                numMB = (MSDK_ALIGN16((*task->m_ds_surf)->Info.Width) * MSDK_ALIGN16((*task->m_ds_surf)->Info.Height)) >> 8;
-            }
+        // count number of MB 16x16, as PreENC works as AVC
+        mfxU32 numMB = (MSDK_ALIGN16(task->m_surf->Info.Width) * MSDK_ALIGN16(task->m_surf->Info.Height)) >> 8;
 
-            for (mfxU32 k = 0; k < numMB; k++)
-            {
-                mfxStatus sts = m_pFile_MV_out->Write(&m_default_MVMB, sizeof(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB), 1);
-                MSDK_CHECK_STATUS(sts, "Write MV output to file failed in DumpResult");
-            }
-        }
-        else
+        if (m_isMVoutFormatted) // dumping in internal output format
         {
+            mfxU8 numOfStructures = task->m_preEncOutput.size();
+
+            mfxStatus sts = m_pFile_MV_out->Write(&numOfStructures, sizeof(numOfStructures), 1);
+            MSDK_CHECK_STATUS(sts, "Write MV formatted output to file failed in DumpResult");
+
             for (std::list<PreENCOutput>::iterator it = task->m_preEncOutput.begin(); it != task->m_preEncOutput.end(); ++it)
             {
-                mfxStatus sts = m_pFile_MV_out->Write(it->m_mv->MB, sizeof(it->m_mv->MB[0]) * it->m_mv->NumMBAlloc, 1);
-                MSDK_CHECK_STATUS(sts, "Write MV output to file failed in DumpResult");
+                sts = m_pFile_MV_out->Write(&it->m_refIdxPair.RefL0, sizeof(it->m_refIdxPair.RefL0), 1);
+                MSDK_CHECK_STATUS(sts, "Write MV formatted output to file failed in DumpResult");
+
+                sts = m_pFile_MV_out->Write(&it->m_refIdxPair.RefL1, sizeof(it->m_refIdxPair.RefL1), 1);
+                MSDK_CHECK_STATUS(sts, "Write MV formatted output to file failed in DumpResult");
+
+                sts = m_pFile_MV_out->Write(it->m_mv->MB, sizeof(it->m_mv->MB[0]) * it->m_mv->NumMBAlloc, 1);
+                MSDK_CHECK_STATUS(sts, "Write MV formatted output to file failed in DumpResult");
+            }
+
+            RefIdxPair refFramesIdxs = { IDX_INVALID, IDX_INVALID };
+            // zero padding
+            for (mfxU32 i = numOfStructures; i < m_videoParams.mfx.NumRefFrame; i++)
+            {
+                sts = m_pFile_MV_out->Write(&refFramesIdxs.RefL0, sizeof(refFramesIdxs.RefL0), 1);
+                MSDK_CHECK_STATUS(sts, "Write MV formatted output to file failed in DumpResult");
+
+                sts = m_pFile_MV_out->Write(&refFramesIdxs.RefL1, sizeof(refFramesIdxs.RefL1), 1);
+                MSDK_CHECK_STATUS(sts, "Write MV formatted output to file failed in DumpResult");
+
+                for (mfxU32 k = 0; k < numMB; k++)
+                {
+                    sts = m_pFile_MV_out->Write(&m_default_MVMB, sizeof(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB), 1);
+                    MSDK_CHECK_STATUS(sts, "Write MV output to file failed in DumpResult");
+                }
+            }
+        }
+        else // dumping as is
+        {
+            if (task->m_frameType & MFX_FRAMETYPE_I)
+            {
+                if (*task->m_ds_surf)
+                {
+                    numMB = (MSDK_ALIGN16((*task->m_ds_surf)->Info.Width) * MSDK_ALIGN16((*task->m_ds_surf)->Info.Height)) >> 8;
+                }
+                for (mfxU32 k = 0; k < numMB; k++)
+                {
+                    mfxStatus sts = m_pFile_MV_out->Write(&m_default_MVMB, sizeof(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB), 1);
+                    MSDK_CHECK_STATUS(sts, "Write MV output to file failed in DumpResult");
+                }
+            }
+            else
+            {
+                for (std::list<PreENCOutput>::iterator it = task->m_preEncOutput.begin(); it != task->m_preEncOutput.end(); ++it)
+                {
+                    mfxStatus sts = m_pFile_MV_out->Write(it->m_mv->MB, sizeof(it->m_mv->MB[0]) * it->m_mv->NumMBAlloc, 1);
+                    MSDK_CHECK_STATUS(sts, "Write MV output to file failed in DumpResult");
+                }
             }
         }
     }

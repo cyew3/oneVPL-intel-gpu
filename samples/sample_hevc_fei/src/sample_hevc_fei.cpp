@@ -88,9 +88,10 @@ void PrintHelp(const msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-nobref] - do not use B-pyramid (by default the decision is made by library)\n"));
     msdk_printf(MSDK_STRING("   [-l numSlices] - number of slices \n"));
     msdk_printf(MSDK_STRING("   [-PicTimingSEI] - inserts picture timing SEI\n"));
-    msdk_printf(MSDK_STRING("   [-mvout <file-name>] - use this to output MV predictors after PreENC\n"));
     msdk_printf(MSDK_STRING("   [-mbstat <file-name>] - use this to output per MB distortions for each frame after PreENC\n"));
-    msdk_printf(MSDK_STRING("   [-mvpin <file-name>] - use this to input MV predictors for ENCODE (Encoded Order will be enabled automatically)\n"));
+    msdk_printf(MSDK_STRING("   [-mvout <file-name>]  - use this to output MV predictors after PreENC\n"));
+    msdk_printf(MSDK_STRING("   [-mvout::format <file-name>] - use this to output MV predictors after PreENC in an internal format (without downsampling).\n"));
+    msdk_printf(MSDK_STRING("   [-mvpin <file-name>]        - use this to input MV predictors for ENCODE (Encoded Order will be enabled automatically).\n"));
 
     msdk_printf(MSDK_STRING("\n"));
 }
@@ -237,6 +238,12 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU32 nArgNum, sInputParams& 
         {
             CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
             PARSE_CHECK(msdk_opt_read(strInput[++i], params.mvoutFile), "MV out File", isParseInvalid);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-mvout::format")))
+        {
+            CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
+            PARSE_CHECK(msdk_opt_read(strInput[++i], params.mvoutFile), "MV out formatted File", isParseInvalid);
+            params.bFormattedMVout = true;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-mbstat")))
         {
@@ -420,6 +427,11 @@ mfxStatus CheckOptions(const sInputParams params, const msdk_char* appName)
         && params.preencDSfactor != 4 && params.preencDSfactor != 8)
     {
         PrintHelp(appName, "Invalid DS strength value (must be 1, 2, 4 or 8)");
+        return MFX_ERR_UNSUPPORTED;
+    }
+    if (params.preencDSfactor != 1 && params.bFormattedMVout)
+    {
+        PrintHelp(appName, "Dumping of MV predictors in internal format with downsampling is unsupported.");
         return MFX_ERR_UNSUPPORTED;
     }
 
