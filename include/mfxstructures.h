@@ -822,6 +822,7 @@ enum {
     MFX_EXTBUFF_MB_DISABLE_SKIP_MAP             = MFX_MAKEFOURCC('M','D','S','M'),
     MFX_EXTBUFF_DPB                             = MFX_MAKEFOURCC('E','D','P','B'),
     MFX_EXTBUFF_HEVC_PARAM                      = MFX_MAKEFOURCC('2','6','5','P'),
+    MFX_EXTBUFF_DECODE_ERROR_REPORT             = MFX_MAKEFOURCC('D','E','R','R'),
     MFX_EXTBUFF_DECODED_FRAME_INFO              = MFX_MAKEFOURCC('D','E','F','I'),
     MFX_EXTBUFF_TIME_CODE                       = MFX_MAKEFOURCC('T','M','C','D'),
     MFX_EXTBUFF_HEVC_REGION                     = MFX_MAKEFOURCC('2','6','5','R'),
@@ -1549,6 +1550,22 @@ typedef struct {
     mfxU16          reserved[116];
 } mfxExtHEVCParam;
 #pragma pack(pop)
+
+/*ErrorTypes in mfxExtDecodeErrorReport*/
+enum {
+    MFX_ERROR_PPS           = (1 << 0),
+    MFX_ERROR_SPS           = (1 << 1),
+    MFX_ERROR_SLICEHEADER   = (1 << 2),
+    MFX_ERROR_SLICEDATA     = (1 << 3),
+    MFX_ERROR_FRAME_GAP     = (1 << 4),
+};
+
+typedef struct {
+    mfxExtBuffer    Header;
+
+    mfxU32          ErrorTypes;
+    mfxU16          reserved[10];
+} mfxExtDecodeErrorReport;
 
 typedef struct {
     mfxExtBuffer Header;

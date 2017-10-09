@@ -459,6 +459,15 @@ std::string DumpContext::dump(const std::string structName, const mfxExtDecodedF
     return str;
 }
 
+std::string DumpContext::dump(const std::string structName, const mfxExtDecodeErrorReport &ExtDecodeErrorReport)
+{
+    std::string str;
+    str += dump(structName + ".Header", ExtDecodeErrorReport.Header) + "\n";
+    str += structName + ".ErrorTypes=" + toString(ExtDecodeErrorReport.ErrorTypes, DUMP_HEX) + "\n";
+    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtDecodeErrorReport.reserved) + "\n";
+    return str;
+}
+
 std::string DumpContext::dump(const std::string structName, const mfxExtTimeCode &ExtTimeCode)
 {
     std::string str;

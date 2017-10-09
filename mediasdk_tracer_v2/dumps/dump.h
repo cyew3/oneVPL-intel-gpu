@@ -126,7 +126,11 @@ public:
 
     template<typename T>
     inline std::string toString( T x, eDumpFormat format = DUMP_DEC){
-        return dynamic_cast< std::ostringstream & >(( std::ostringstream() << ((format == DUMP_DEC) ? std::dec : std::hex) << x )).str();
+        return
+#if !defined(ANDROID)
+            dynamic_cast< std::ostringstream & >
+#endif
+                (( std::ostringstream() << ((format == DUMP_DEC) ? std::dec : std::hex) << x )).str();
     }
 
     const char* get_bufferid_str(mfxU32 bufferid);
@@ -328,6 +332,9 @@ public:
                             break;
                         case  MFX_EXTBUFF_DECODED_FRAME_INFO:
                             str += dump(name, *((mfxExtDecodedFrameInfo*)_struct.ExtParam[i])) + "\n";
+                            break;
+                        case  MFX_EXTBUFF_DECODE_ERROR_REPORT:
+                            str += dump(name, *((mfxExtDecodeErrorReport*)_struct.ExtParam[i])) + "\n";
                             break;
                         case  MFX_EXTBUFF_TIME_CODE:
                             str += dump(name, *((mfxExtTimeCode*)_struct.ExtParam[i])) + "\n";
@@ -547,6 +554,7 @@ public:
     DEFINE_DUMP_FUNCTION(mfxExtHEVCParam);
     DEFINE_DUMP_FUNCTION(mfxExtHEVCRegion);
     DEFINE_DUMP_FUNCTION(mfxExtDecodedFrameInfo);
+    DEFINE_DUMP_FUNCTION(mfxExtDecodeErrorReport);
     DEFINE_DUMP_FUNCTION(mfxExtTimeCode);
     DEFINE_DUMP_FUNCTION(mfxExtPredWeightTable);
     DEFINE_DUMP_FUNCTION(mfxExtEncoderCapability);

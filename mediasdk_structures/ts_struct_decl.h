@@ -840,6 +840,11 @@ STRUCT(mfxExtDecodedFrameInfo,
     FIELD_T(mfxU16      , FrameType)
 )
 
+STRUCT(mfxExtDecodeErrorReport,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU32      , ErrorTypes)
+)
+
 STRUCT(mfxInitParam,
     FIELD_T(mfxIMPL        , Implementation )
     FIELD_S(mfxVersion     , Version        )

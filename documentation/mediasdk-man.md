@@ -6879,13 +6879,41 @@ ChromaSiting is applied on input or output surface depending on the scenario:
 
 This structure is available since SDK API **TBD**.
 
+## <a id='mfxExtDecodeErrorReport'>mfxExtDecodeErrorReport</a>
+
+**Definition**
+
+```C
+typedef struct {
+    mfxExtBuffer    Header;
+
+    mfxU32          ErrorTypes;
+    mfxU16          reserved[10];
+} mfxExtDecodeErrorReport;
+```
+
+**Description**
+
+This structure is used by the SDK decoders to report bitstream error information right after DecodeHeader or DecodeFrameAsync. The application can attach this extended buffer to the [mfxBitstream](#mfxBitstream) structure at runtime.
+
+**Members**
+
+| | |
+--- | ---
+`Header.BufferId` | Must be [MFX_EXTBUFF_DECODE_ERROR_REPORT](#ExtendedBufferID)
+`ErrorTypes`      | Bitstream error types (bit-ORed values). See [ErrorTypes](#ErrorTypes) enumerator for the list of possible types.
+
+**Change History**
+
+This structure is available since SDK API **TBD**
+
 # Enumerator Reference
 
 ## <a id='BitstreamDataFlag'>BitstreamDataFlag</a>
 
 **Description**
 
-The`BitstreamDataFlag` enumerator uses bit-ORed values to itemize additional information about the bitstream buffer.
+The `BitstreamDataFlag` enumerator uses bit-ORed values to itemize additional information about the bitstream buffer.
 
 **Name/Description**
 
@@ -7149,6 +7177,7 @@ The `ExtendedBufferID` enumerator itemizes and defines identifiers (`BufferId`) 
 `MFX_EXTBUFF_HEVC_TILES` | This extended buffer defines additional encoding controls for HEVC tiles. See the [mfxExtHEVCTiles](#mfxExtHEVCTiles) structure for details. The application can attach this buffer to the [mfxVideoParam](#mfxVideoParam) structure for encoding initialization.
 `MFX_EXTBUFF_MB_DISABLE_SKIP_MAP` | This extended buffer defines macroblock map for current frame which forces specified macroblocks to be non skip. See the [mfxExtMBDisableSkipMap](#mfxExtMBDisableSkipMap) structure for details. The application can attach this buffer to the [mfxEncodeCtrl](#mfxEncodeCtrl) structure for per-frame encoding configuration.
 `MFX_EXTBUFF_DECODED_FRAME_INFO` | This extended buffer is used by SDK decoders to report additional information about decoded frame. See the [mfxExtDecodedFrameInfo](#mfxExtDecodedFrameInfo) structure for more details.
+`MFX_EXTBUFF_DECODE_ERROR_REPORT` | This extended buffer is used by SDK decoders to report error information before frames get decoded. See the [mfxExtDecodeErrorReport](#mfxExtDecodeErrorReport) structure for more details.
 `MFX_EXTBUFF_TIME_CODE` | See the [mfxExtTimeCode](#mfxExtTimeCode) structure for more details.
 `MFX_HEVC_REGION_SLICE` | This extended buffer instructs HEVC encoder to encode only one region. The application can attach this buffer to the [mfxVideoParam](#mfxVideoParam) structure for HEVC encoding initialization.
 `MFX_EXTBUFF_THREADS_PARAM` | See the [mfxExtThreadsParam](#mfxExtThreadsParam) structure for details.
@@ -7201,7 +7230,7 @@ SDK API 1.23 adds `MFX_EXTBUFF_MB_FORCE_INTRA`.
 
 SDK API 1.24 adds `MFX_EXTBUFF_BRC`.
 
-SDK API **TBD** adds `MFX_EXTBUFF_VP9_PARAM`, `MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO`, `MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME`, `MFX_EXTBUFF_BRC`, `MFX_EXTBUFF_MULTI_FRAME_PARAM`, `MFX_EXTBUFF_MULTI_FRAME_CONTROL`, `MFX_EXTBUFF_ENCODED_UNITS_INFO`.
+SDK API **TBD** adds `MFX_EXTBUFF_VP9_PARAM`, `MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO`, `MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME`, `MFX_EXTBUFF_BRC`, `MFX_EXTBUFF_MULTI_FRAME_PARAM`, `MFX_EXTBUFF_MULTI_FRAME_CONTROL`, `MFX_EXTBUFF_ENCODED_UNITS_INFO`, `MFX_EXTBUFF_DECODE_ERROR_REPORT`.
 
 See additional change history in the structure definitions.
 
@@ -8141,6 +8170,26 @@ The `MFMode` enumerator defines multi-frame submission mode.
 **Change History**
 
 This enumerator is available since SDK API **TBD**.
+
+## <a id='ErrorTypes'>ErrorTypes</a>
+
+**Description**
+
+The `ErrorTypes` enumerator uses bit-ORed values to itemize bitstream error types.
+
+**Name/Description**
+
+| | |
+--- | ---
+`MFX_ERROR_PPS`         | Invalid/corrupted PPS
+`MFX_ERROR_SPS`         | Invalid/corrupted SPS
+`MFX_ERROR_SLICEHEADER` | Invalid/corrupted slice header
+`MFX_ERROR_SLICEDATA`   | Invalid/corrupted slice data
+`MFX_ERROR_FRAME_GAP`   | Missed frames
+
+**Change History**
+
+This enumerator is available since SDK API **TBD**
 
 ## <a id='ChromaSiting'>ChromaSiting</a>
 
