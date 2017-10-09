@@ -273,9 +273,9 @@ void SearchLimitsCalc(mfxI32 xLoc, mfxI32 yLoc, mfxI32 *limitXleft, mfxI32 *limi
 
 #define MAXSPEED 0
 #define EXTRANEIGHBORS
-const MVector zero = {0,0};
 
 mfxI32 __cdecl SceneChangeDetector::HME_Low8x8fast(VidRead *videoIn, mfxI32 fPos, ImDetails dataIn, imageData *scale, imageData *scaleRef, BOOL first, mfxU32 accuracy, VidData limits) {
+    const MVector zero = {0,0};
     MVector
         lineMV[2],
         tMV,
@@ -563,7 +563,7 @@ mfxI32 __cdecl SceneChangeDetector::HME_Low8x8fast(VidRead *videoIn, mfxI32 fPos
     return(zeroSAD);
 }
 
-void SceneChangeDetector::MotionAnalysis(VidRead *support, VidData *dataIn, VidSample *videoIn, VidSample *videoRef, mfxF32 *TSC, mfxF32 *AFD, mfxF32 *MVdiffVal, Layers lyrIdx) {
+void SceneChangeDetector::MotionAnalysis(VidData *dataIn, VidSample *videoIn, VidSample *videoRef, mfxF32 *TSC, mfxF32 *AFD, mfxF32 *MVdiffVal, Layers lyrIdx) {
     mfxI32
         correction = 0;
     mfxU32
@@ -583,7 +583,7 @@ void SceneChangeDetector::MotionAnalysis(VidRead *support, VidData *dataIn, VidS
                     correction = 255;
                 else if(correction < 0)
                     correction = 0;
-                support->gainCorrection.Image.Y[j + i*dataIn->layer[lyrIdx].Extended_Width] = correction;
+                support->gainCorrection.Image.Y[j + i*dataIn->layer[lyrIdx].Extended_Width] = (mfxU8)correction;
             }
         }
         refImageIn = &support->gainCorrection;
@@ -1496,7 +1496,7 @@ mfxStatus SceneChangeDetector::MapFrame(mfxFrameSurface1 *frame)
 
     if (m_tableCmRelations.end() == it)
     {
-        int res = m_pCmDevice->CreateSurface2D(frame->Data.MemId, surface);
+        res = m_pCmDevice->CreateSurface2D(frame->Data.MemId, surface);
         if (res!=0)
         {
             return MFX_ERR_DEVICE_FAILED;
@@ -1753,7 +1753,7 @@ void SceneChangeDetector::processFrame() {
     }
     else {
         /*--------Motion data-------*/
-        MotionAnalysis(support, m_dataIn, videoData[Current_Frame], videoData[Reference_Frame], &support->logic[current_frame_data]->TSC, &support->logic[current_frame_data]->AFD, &support->logic[current_frame_data]->MVdiffVal, (Layers)0);
+        MotionAnalysis(m_dataIn, videoData[Current_Frame], videoData[Reference_Frame], &support->logic[current_frame_data]->TSC, &support->logic[current_frame_data]->AFD, &support->logic[current_frame_data]->MVdiffVal, (Layers)0);
         support->logic[current_frame_data]->TSCindex = TableLookUp(NumTSC, lmt_tsc2, support->logic[current_frame_data]->TSC);
         support->logic[current_frame_data]->SCindex = TableLookUp(NumSC, lmt_sc2, support->logic[current_frame_data]->SC);
         support->logic[current_frame_data]->pdist = support->PDistanceTable[(support->logic[current_frame_data]->TSCindex * NumSC) + support->logic[current_frame_data]->SCindex];
@@ -4132,6 +4132,9 @@ BOOL SCDetect3(mfxF64 Cs, mfxF64 refDCval, mfxF64 MVDiff, mfxF64 Rs, mfxF64 AFD,
     return 0;
 }
 BOOL SCDetect4(mfxF64 Cs, mfxF64 refDCval, mfxF64 MVDiff, mfxF64 Rs, mfxF64 AFD, mfxF64 CsDiff, mfxF64 diffTSC, mfxF64 TSC, mfxF64 diffRsCsdiff, mfxF64 posBalance, mfxF64 gchDC, mfxF64 TSCindex, mfxF64 RsCsDiff, mfxF64 Scindex, mfxF64 SC, mfxF64 RsDiff, mfxF64 diffAFD, mfxF64 negBalance, mfxF64 ssDCval, mfxF64 diffMVdiffVal) {
+    Scindex;
+    TSCindex;
+
     if (diffAFD < 11.31) {
         if (diffMVdiffVal < 91.23) {
             if (AFD < 52.46) {
@@ -4756,6 +4759,8 @@ BOOL SCDetect4(mfxF64 Cs, mfxF64 refDCval, mfxF64 MVDiff, mfxF64 Rs, mfxF64 AFD,
     return 0;
 }
 BOOL SCDetect5(mfxF64 Cs, mfxF64 refDCval, mfxF64 MVDiff, mfxF64 Rs, mfxF64 AFD, mfxF64 CsDiff, mfxF64 diffTSC, mfxF64 TSC, mfxF64 diffRsCsdiff, mfxF64 posBalance, mfxF64 gchDC, mfxF64 TSCindex, mfxF64 RsCsDiff, mfxF64 Scindex, mfxF64 SC, mfxF64 RsDiff, mfxF64 diffAFD, mfxF64 negBalance, mfxF64 ssDCval, mfxF64 diffMVdiffVal) {
+    Scindex;
+
     if (diffMVdiffVal < 100.02) {
         if (TSC < 11.66) {
             if (diffRsCsdiff < 132.55) {
@@ -5385,6 +5390,9 @@ BOOL SCDetect5(mfxF64 Cs, mfxF64 refDCval, mfxF64 MVDiff, mfxF64 Rs, mfxF64 AFD,
     return 0;
 }
 BOOL SCDetect6(mfxF64 Cs, mfxF64 refDCval, mfxF64 MVDiff, mfxF64 Rs, mfxF64 AFD, mfxF64 CsDiff, mfxF64 diffTSC, mfxF64 TSC, mfxF64 diffRsCsdiff, mfxF64 posBalance, mfxF64 gchDC, mfxF64 TSCindex, mfxF64 RsCsDiff, mfxF64 Scindex, mfxF64 SC, mfxF64 RsDiff, mfxF64 diffAFD, mfxF64 negBalance, mfxF64 ssDCval, mfxF64 diffMVdiffVal) {
+    Scindex;
+    RsCsDiff;
+
     if (diffRsCsdiff < 88.44) {
         if (diffMVdiffVal < 118) {
             if (TSC < 9.34) {
@@ -6059,6 +6067,8 @@ BOOL SCDetect6(mfxF64 Cs, mfxF64 refDCval, mfxF64 MVDiff, mfxF64 Rs, mfxF64 AFD,
     return 0;
 }
 BOOL SCDetect7(mfxF64 Cs, mfxF64 refDCval, mfxF64 MVDiff, mfxF64 Rs, mfxF64 AFD, mfxF64 CsDiff, mfxF64 diffTSC, mfxF64 TSC, mfxF64 diffRsCsdiff, mfxF64 posBalance, mfxF64 gchDC, mfxF64 TSCindex, mfxF64 RsCsDiff, mfxF64 Scindex, mfxF64 SC, mfxF64 RsDiff, mfxF64 diffAFD, mfxF64 negBalance, mfxF64 ssDCval, mfxF64 diffMVdiffVal) {
+    TSCindex;
+
     if (diffMVdiffVal < 103.5) {
         if (AFD < 26.4) {
             if (diffMVdiffVal < 54.84) {
@@ -8146,6 +8156,9 @@ BOOL SCDetect9(mfxF64 Cs, mfxF64 refDCval, mfxF64 MVDiff, mfxF64 Rs, mfxF64 AFD,
     return 0;
 }
 BOOL SCDetectA(mfxF64 Cs, mfxF64 refDCval, mfxF64 MVDiff, mfxF64 Rs, mfxF64 AFD, mfxF64 CsDiff, mfxF64 diffTSC, mfxF64 TSC, mfxF64 diffRsCsdiff, mfxF64 posBalance, mfxF64 gchDC, mfxF64 TSCindex, mfxF64 RsCsDiff, mfxF64 Scindex, mfxF64 SC, mfxF64 RsDiff, mfxF64 diffAFD, mfxF64 negBalance, mfxF64 ssDCval, mfxF64 diffMVdiffVal) {
+    Scindex;
+    TSCindex;
+
     if (diffTSC < 5.49) {
         if (diffMVdiffVal < 69.42) {
             if (ssDCval < 20.53) {
@@ -8810,6 +8823,8 @@ BOOL SCDetectA(mfxF64 Cs, mfxF64 refDCval, mfxF64 MVDiff, mfxF64 Rs, mfxF64 AFD,
     return 0;
 }
 BOOL SCDetectB(mfxF64 Cs, mfxF64 refDCval, mfxF64 MVDiff, mfxF64 Rs, mfxF64 AFD, mfxF64 CsDiff, mfxF64 diffTSC, mfxF64 TSC, mfxF64 diffRsCsdiff, mfxF64 posBalance, mfxF64 gchDC, mfxF64 TSCindex, mfxF64 RsCsDiff, mfxF64 Scindex, mfxF64 SC, mfxF64 RsDiff, mfxF64 diffAFD, mfxF64 negBalance, mfxF64 ssDCval, mfxF64 diffMVdiffVal) {
+    TSCindex;
+
     if (diffAFD < 13.19) {
         if (MVDiff < 120.46) {
             if (ssDCval < 21.08) {
@@ -10123,6 +10138,9 @@ BOOL SCDetectC(mfxF64 Cs, mfxF64 refDCval, mfxF64 MVDiff, mfxF64 Rs, mfxF64 AFD,
     return 0;
 }
 BOOL SCDetectD(mfxF64 Cs, mfxF64 refDCval, mfxF64 MVDiff, mfxF64 Rs, mfxF64 AFD, mfxF64 CsDiff, mfxF64 diffTSC, mfxF64 TSC, mfxF64 diffRsCsdiff, mfxF64 posBalance, mfxF64 gchDC, mfxF64 TSCindex, mfxF64 RsCsDiff, mfxF64 Scindex, mfxF64 SC, mfxF64 RsDiff, mfxF64 diffAFD, mfxF64 negBalance, mfxF64 ssDCval, mfxF64 diffMVdiffVal) {
+    Scindex;
+    TSCindex;
+
     if (diffMVdiffVal < 103.57) {
         if (diffAFD < 9) {
             if (AFD < 48.81) {
@@ -10871,6 +10889,8 @@ BOOL SCDetectUF1(mfxF64 diffMVdiffVal, mfxF64 RsCsDiff,   mfxF64 MVDiff,   mfxF6
                  mfxF64 CsDiff,        mfxF64 diffTSC,    mfxF64 TSC,      mfxF64 gchDC,    mfxF64 diffRsCsdiff,
                  mfxF64 posBalance,    mfxF64 SC,         mfxF64 TSCindex, mfxF64 Scindex,  mfxF64 Cs,
                  mfxF64 diffAFD,       mfxF64 negBalance, mfxF64 ssDCval,  mfxF64 refDCval, mfxF64 RsDiff) {
+    RsCsDiff;
+
     if (diffMVdiffVal <= 103.527) {
         if (diffTSC <= 6.134) {
             if (gchDC <= 15.269) {
@@ -11628,7 +11648,7 @@ BOOL SceneChangeDetector::SCDetectGPU(mfxF64 diffMVdiffVal, mfxF64 RsCsDiff,   m
                                       mfxF64 CsDiff,        mfxF64 diffTSC,    mfxF64 TSC,      mfxF64 gchDC,    mfxF64 diffRsCsdiff,
                                       mfxF64 posBalance,    mfxF64 SC,         mfxF64 TSCindex, mfxF64 Scindex,  mfxF64 Cs,
                                       mfxF64 diffAFD,       mfxF64 negBalance, mfxF64 ssDCval,  mfxF64 refDCval, mfxF64 RsDiff){
-    mfxU8 result = 0;
+    mfxI32 result = 0;
 
     result += SCDetect1(Cs, refDCval, MVDiff, Rs, AFD, CsDiff, diffTSC, TSC, diffRsCsdiff, posBalance, gchDC, RsCsDiff, SC, RsDiff, diffAFD, negBalance, ssDCval, diffMVdiffVal);
     result += SCDetect2(Cs, refDCval, MVDiff, Rs, AFD, CsDiff, diffTSC, TSC, diffRsCsdiff, posBalance, gchDC, RsCsDiff, Scindex, SC, RsDiff, diffAFD, negBalance, ssDCval, diffMVdiffVal);
@@ -11706,15 +11726,14 @@ mfxStatus SceneChangeDetector::SubSampleImage(mfxU32 srcWidth, mfxU32 srcHeight,
     gpustep_w = srcWidth / subWidth;
     gpustep_h = srcHeight / subHeight;
 
-    eMFXHWType  platform = m_pCore->GetHWType();
     mfxI32 streamParity = Get_stream_parity();
 
     // Load kernels
-    if (NULL == m_pCmKernel)
+    if (NULL == m_pCmProgram)
     {
-     if(platform == MFX_HW_HSW || platform == MFX_HW_HSW_ULT)
+        if(m_platform == PLATFORM_INTEL_HSW)
          res = m_pCmDevice->LoadProgram((void *)asc_genx_hsw, sizeof(asc_genx_hsw), m_pCmProgram);
-     else if (platform == MFX_HW_SCL)
+        else if (m_platform == PLATFORM_INTEL_SKL)
          res = m_pCmDevice->LoadProgram((void *)asc_genx_skl, sizeof(asc_genx_skl), m_pCmProgram);
      else
          res = m_pCmDevice->LoadProgram((void *)asc_genx_bdw, sizeof(asc_genx_bdw), m_pCmProgram);
@@ -11864,11 +11883,9 @@ void SceneChangeDetector::GPUProcess()
   \param[in] _mfxDeviceType notify that Handle is for D3D9, D3D11 or VAAPI device
   \param[in] _mfxDeviceHdl handle to the device
  */
-mfxStatus SceneChangeDetector::Init(VideoCORE   *core, mfxI32 Width, mfxI32 Height, mfxI32 Pitch, mfxU32 interlaceMode, mfxHandleType _mfxDeviceType, mfxHDL _mfxDeviceHdl) {
-
+mfxStatus SceneChangeDetector::Init(mfxI32 Width, mfxI32 Height, mfxI32 Pitch, mfxU32 interlaceMode, CmDevice* pCmDevice)
+{
     mfxStatus sts   = MFX_ERR_NONE;
-    m_mfxDeviceType = _mfxDeviceType;
-    m_mfxDeviceHdl  = _mfxDeviceHdl;
 
     if ( m_bInited )
         return MFX_ERR_NONE;
@@ -11877,18 +11894,19 @@ mfxStatus SceneChangeDetector::Init(VideoCORE   *core, mfxI32 Width, mfxI32 Heig
     support   = NULL;
     videoData = NULL;
 
-    m_pCore = core;
-
     m_dataIn        = new VidData;
     MFX_CHECK_NULL_PTR1(m_dataIn);
     m_dataIn->layer = NULL;
     m_dataIn->layer = new ImDetails;
     MFX_CHECK_NULL_PTR1(m_dataIn->layer);
 
-    // Get CM device from core
     if (m_pCmDevice == NULL)
-        m_pCmDevice = QueryCoreInterface<CmDevice>(m_pCore, MFXICORECM_GUID);
+        m_pCmDevice = pCmDevice;
     MFX_CHECK_NULL_PTR1(m_pCmDevice);
+
+    size_t capValueSize = sizeof(m_platform);
+    INT cmSts = m_pCmDevice->GetCaps(CAP_GPU_PLATFORM, capValueSize, &m_platform);
+    if (CM_SUCCESS != cmSts) return MFX_ERR_DEVICE_FAILED;
 
     Params_Init();
 
@@ -12028,7 +12046,7 @@ mfxStatus SceneChangeDetector::Close()
 
 void SceneChangeDetector::GpuSubSampleASC_Image(mfxI32 srcWidth, mfxI32 srcHeight, mfxI32 inputPitch, Layers dstIdx, mfxU32 parity)
 {
-    parity;  inputPitch; srcHeight; srcWidth;
+    parity;  inputPitch; srcHeight; srcWidth; dstIdx;
 
     GPUProcess();
     ReadOutputImage();

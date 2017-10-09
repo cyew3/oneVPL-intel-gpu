@@ -1921,25 +1921,9 @@ mfxStatus  VideoVPPHW::Init(
 #if defined(MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP)
     if (MFX_DEINTERLACING_ADVANCED_SCD == m_executeParams.iDeinterlacingAlgorithm)
     {
-        mfxHandleType mfxDeviceType = MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9;
-        mfxHDL mfxDeviceHdl = 0;
-        eMFXVAType vaType = m_pCore->GetVAType();
-        if(MFX_HW_D3D9 == vaType)
-        {
-            mfxDeviceType = MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9;
-        }
-        else if(MFX_HW_D3D11 == vaType)
-        {
-            mfxDeviceType = MFX_HANDLE_D3D11_DEVICE;
-        }
-        else if(MFX_HW_VAAPI == vaType)
-        {
-            mfxDeviceType = MFX_HANDLE_VA_DISPLAY;
-        }
-        sts = m_pCore->GetHandle(mfxDeviceType, &mfxDeviceHdl);
-        MFX_CHECK_STS(sts);
+        CmDevice* pCmDevice = QueryCoreInterface<CmDevice>(m_pCore, MFXICORECM_GUID);
 
-        sts = m_SCD.Init(m_pCore, par->vpp.In.CropW, par->vpp.In.CropH, par->vpp.In.Width, par->vpp.In.PicStruct, mfxDeviceType, mfxDeviceHdl);
+        sts = m_SCD.Init(par->vpp.In.CropW, par->vpp.In.CropH, par->vpp.In.Width, par->vpp.In.PicStruct, pCmDevice);
         MFX_CHECK_STS(sts);
 
         m_SCD.SetGoPSize(Immediate_GoP);
@@ -3183,7 +3167,6 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
         BOOL is30i60pConversion = 0;
         mfxU32 LastSceneInframe = 0;
         mfxU32 sc_shot_in_second_field = 0;
-        mfxU32 repeat_field = 0;
 
         {
             mfxHDL frameHandle;

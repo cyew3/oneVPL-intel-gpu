@@ -339,9 +339,10 @@ class SceneChangeDetector
 {
 public:
     SceneChangeDetector()
-        : m_mfxDeviceType()
-        , m_mfxDeviceHdl(0)
-        , m_pCmDevice(0)
+        : m_pCmDevice(0)
+        , m_pCmProgram(0)
+        , m_pCmKernel(0)
+        , m_pCmQueue(0)
         , gpustep_w(0)
         , gpustep_h(0)
         , m_gpuwidth(0)
@@ -356,7 +357,7 @@ public:
         , _width(0)
         , _height(0)
         , _pitch(0)
-        , m_pCore(NULL)
+        , m_platform(PLATFORM_INTEL_UNKNOWN)
     {};
 
     ~SceneChangeDetector()
@@ -367,7 +368,7 @@ public:
        }
     }
 
-    mfxStatus Init(VideoCORE   *core, mfxI32 width, mfxI32 height, mfxI32 pitch, mfxU32 interlaceMode, mfxHandleType _mfxDeviceType, mfxHDL _mfxDeviceHdl);
+    mfxStatus Init(mfxI32 width, mfxI32 height, mfxI32 pitch, mfxU32 interlaceMode, CmDevice* pCmDevice);
 
     mfxStatus Close();
 
@@ -436,11 +437,8 @@ private:
     void RsCsCalc(imageData *exBuffer, ImDetails vidCar);
 
     /* Motion estimation stuff */
-    void MotionAnalysis(VidRead *support, VidData *dataIn, VidSample *videoIn, VidSample *videoRef, mfxF32 *TSC, mfxF32 *AFD, mfxF32 *MVdiffVal, Layers lyrIdx);
+    void MotionAnalysis(VidData *dataIn, VidSample *videoIn, VidSample *videoRef, mfxF32 *TSC, mfxF32 *AFD, mfxF32 *MVdiffVal, Layers lyrIdx);
     mfxI32 __cdecl HME_Low8x8fast(VidRead *videoIn, mfxI32 fPos, ImDetails dataIn, imageData *scale, imageData *scaleRef, BOOL first, mfxU32 accuracy, VidData limits);
-
-    mfxHandleType m_mfxDeviceType;
-    mfxHDL        m_mfxDeviceHdl;
 
     CmDevice        *m_pCmDevice;
     CmProgram       *m_pCmProgram;
@@ -467,7 +465,7 @@ private:
     BOOL         dataReady;
     BOOL         GPUProc;
     mfxI32      _width, _height, _pitch;
-    VideoCORE   *m_pCore;
+    mfxU32      m_platform;
 };
 
 #endif //defined(MFX_VA) && defined(MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP)
