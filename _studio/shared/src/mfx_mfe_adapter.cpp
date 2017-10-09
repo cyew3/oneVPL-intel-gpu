@@ -27,16 +27,16 @@
 
 
 MFEVAAPIEncoder::MFEVAAPIEncoder() :
-  m_refCounter(1)
-, m_vaDisplay(0)
-, m_mfe_context(VA_INVALID_ID)
-, m_framesToCombine(0)
-, m_maxFramesToCombine(0)
-, m_framesCollected(0)
-, vaCreateMFEContext(NULL)
-, vaAddContext(NULL)
-, vaReleaseContext(NULL)
-, vaMFESubmit(NULL)
+      m_refCounter(1)
+    , m_vaDisplay(0)
+    , m_mfe_context(VA_INVALID_ID)
+    , m_framesToCombine(0)
+    , m_maxFramesToCombine(0)
+    , m_framesCollected(0)
+    , vaCreateMFEContext(NULL)
+    , vaAddContext(NULL)
+    , vaReleaseContext(NULL)
+    , vaMFESubmit(NULL)
 {
     vm_cond_set_invalid(&m_mfe_wait);
     vm_mutex_set_invalid(&m_mfe_guard);
@@ -67,8 +67,18 @@ mfxStatus MFEVAAPIEncoder::Create(mfxExtMultiFrameParam  const & par, VADisplay 
 {
     assert(vaDisplay);
 
+    if(par.MaxNumFrames == 1)
+        return MFX_ERR_UNDEFINED_BEHAVIOR;//encoder should not create MFE for single frame as nothing to be combined.
+
     if (VA_INVALID_ID != m_mfe_context)
-      return MFX_ERR_NONE;
+    {
+        //TMP WA for SKL due to number of frames limitation in different scenarios:
+        //to simplify submission process and not add additional checks for frame wait depending on input parameters
+        //if there are encoder want to run less frames within the same MFE Adapter(parent session) align to less now
+        //in general just if someone set 3, but another one set 2 after that(or we need to decrease due to parameters) - use 2 for all.
+        m_maxFramesToCombine = m_maxFramesToCombine > par.MaxNumFrames ? par.MaxNumFrames : m_maxFramesToCombine;
+        return MFX_ERR_NONE;
+    }
 
     m_vaDisplay = vaDisplay;
 
@@ -120,49 +130,53 @@ mfxStatus MFEVAAPIEncoder::Create(mfxExtMultiFrameParam  const & par, VADisplay 
 
 mfxStatus MFEVAAPIEncoder::Join(VAContextID ctx)
 {
+    vm_mutex_lock(&m_mfe_guard);//need to protect in case there are streams added/removed in runtime.
     VAStatus vaSts = vaAddContext(m_vaDisplay, ctx, m_mfe_context);
     mfxStatus sts = MFX_ERR_NONE;
-    switch(vaSts)
+    switch (vaSts)
     {
         //invalid context means we are adding context
-        //with entry point or codec conrudicting to already added
+        //with entry point or codec contradicting to already added
         //So it is not supported for single MFE adapter to use HEVC and AVC simultaneosly
-        case VA_STATUS_ERROR_INVALID_CONTEXT:
-            sts = MFX_ERR_UNDEFINED_BEHAVIOR;
-            break;
+    case VA_STATUS_ERROR_INVALID_CONTEXT:
+        sts = MFX_ERR_UNDEFINED_BEHAVIOR;
+        break;
         //entry point not supported by current driver implementation
-        case VA_STATUS_ERROR_UNSUPPORTED_ENTRYPOINT:
-            sts = MFX_ERR_UNSUPPORTED;
-            break;
+    case VA_STATUS_ERROR_UNSUPPORTED_ENTRYPOINT:
+        sts = MFX_ERR_UNSUPPORTED;
+        break;
         //profile not supported
-        case VA_STATUS_ERROR_UNSUPPORTED_PROFILE:
-            sts = MFX_ERR_UNSUPPORTED;//keep separate for future possible expansion
-            break;
-        case VA_STATUS_SUCCESS:
-            sts = MFX_ERR_NONE;
-            break;
-        default:
-            sts = MFX_ERR_DEVICE_FAILED;
-            break;
+    case VA_STATUS_ERROR_UNSUPPORTED_PROFILE:
+        sts = MFX_ERR_UNSUPPORTED;//keep separate for future possible expansion
+        break;
+    case VA_STATUS_SUCCESS:
+        sts = MFX_ERR_NONE;
+        break;
+    default:
+        sts = MFX_ERR_DEVICE_FAILED;
+        break;
+    }
+    if (MFX_ERR_NONE == sts)
+    {
+        // append the pool with a new item;
+        m_streams_pool.push_back(m_stream_ids_s());
+        // to deal with the situation when a number of sessions < requested
+        if (m_framesToCombine < m_maxFramesToCombine)
+            ++m_framesToCombine;
     }
 
-    MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == sts, sts);
-
-    // append the pool with a new item;
-    m_streams_pool.push_back(m_stream_ids_s());
-    // to deal with the situation when a number of sessions < requested
-    if (m_framesToCombine < m_maxFramesToCombine)
-        ++m_framesToCombine;
-
+    vm_mutex_unlock(&m_mfe_guard);
     return sts;
 }
 
 mfxStatus MFEVAAPIEncoder::Disjoin(VAContextID ctx)
 {
+    vm_mutex_lock(&m_mfe_guard);//need to protect in case there are streams added/removed in runtime
     VAStatus vaSts = vaReleaseContext(m_vaDisplay, ctx, m_mfe_context);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     if (m_framesToCombine > 0)
         --m_framesToCombine;
+    vm_mutex_unlock(&m_mfe_guard);
     return MFX_ERR_NONE;
 }
 
@@ -171,6 +185,7 @@ mfxStatus MFEVAAPIEncoder::Destroy()
     VAStatus vaSts = vaDestroyContext(m_vaDisplay, VAContextID(m_mfe_context));
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     m_mfe_context = VA_INVALID_ID;
+
     vm_mutex_destroy(&m_mfe_guard);
     vm_cond_destroy(&m_mfe_wait);
     m_streams_pool.clear();
@@ -179,7 +194,6 @@ mfxStatus MFEVAAPIEncoder::Destroy()
     vaAddContext = NULL;
     vaReleaseContext = NULL;
     vaMFESubmit = NULL;
-
     return MFX_ERR_NONE;
 }
 
@@ -206,23 +220,29 @@ mfxStatus MFEVAAPIEncoder::Submit(VAContextID context, vm_tick timeToWait)
     // is needed to wait
     while (m_framesCollected < m_framesToCombine &&
            !cur_stream->isSubmitted() &&
-           timeToWait > spent_ticks){
-        // now time is expressed in "vm_ticks", thus to pass ms need to convert
+           timeToWait > spent_ticks)
+    {
+
         vm_status res = vm_cond_timed_uwait(&m_mfe_wait, &m_mfe_guard,
                                           (timeToWait - spent_ticks));
-        if ((VM_OK == res) || (VM_TIMEOUT == res)) {
+        if ((VM_OK == res) || (VM_TIMEOUT == res))
+        {
             spent_ticks = (vm_time_get_tick() - start_tick);
-        } else {
+        }
+        else
+        {
             vm_mutex_unlock(&m_mfe_guard);
             return MFX_ERR_UNKNOWN;
         }
     }
-    //TODO: if timer expires || wait_time <=0, to move the current stream up-front
+
     if (!cur_stream->isSubmitted())
     {
         // To form a linear array of contexts
-        for (StreamsIter_t it = m_toSubmit.begin(); it != m_toSubmit.end(); ++it){
-            if (!it->isSubmitted()){
+        for (StreamsIter_t it = m_toSubmit.begin(); it != m_toSubmit.end(); ++it)
+        {
+            if (!it->isSubmitted())
+            {
                 m_contexts.push_back(it->ctx);
                 m_streams.push_back(it);
             }

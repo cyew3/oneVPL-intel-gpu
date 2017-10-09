@@ -1644,7 +1644,8 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
 #ifdef MFX_ENABLE_MFE
     const mfxExtMultiFrameParam & mfeParam = GetExtBufferRef(par);
 
-    if (mfeParam.MaxNumFrames > 1) {
+    if (mfeParam.MaxNumFrames > 1)
+    {
         m_mfe = CreatePlatformMFEEncoder(m_core);
         if (0 == m_mfe)
             return MFX_ERR_DEVICE_FAILED;

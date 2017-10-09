@@ -813,30 +813,29 @@ namespace
         return DEFAULT_BY_TU[targetUsage];
     }
 #if defined(MFX_ENABLE_MFE)
-
     mfxU16 GetDefaultNumMfeFrames(mfxU32 targetUsage, const mfxFrameInfo& info,
-        eMFXHWType platform, mfxFeiFunction func, int slices)
+        eMFXHWType platform, mfxFeiFunction func, int slices, bool extSurfUsed)
     {
         targetUsage;//no specific check for TU now, can be added later
         if (
-#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
-            platform == MFX_HW_CNL ||//no MFE support for CNL now
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+            platform < MFX_HW_TGL_HP && platform > MFX_HW_SCL ||//no MFE support before TGL except SKL
+#elif defined(PRE_SI_TARGET_PLATFORM_GEN10)
+            platform >= MFX_HW_CNL ||//no MFE support for CNL now
 #endif
             platform <= MFX_HW_BDW)//no MFE support prior to SKL.
             return 1;
-        else if (platform
-#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
-            < MFX_HW_CNL
-#else
-            == MFX_HW_SCL
-#endif
-            )
+        else if (platform == MFX_HW_SCL)
         {
-            if ( func == MFX_FEI_FUNCTION_ENCODE)//other functions either already rejected(PAK, ENC/PreEnc absense of support) or can run bigger amount of frames(for PreEnc).
+            //other functions either already rejected(PAK, ENC/PreEnc absense of support) or can run bigger amount of frames(for PreEnc).
+            //extSurfUsed - mean we are using  running into kernel limitation for max number of surfaces used in kernel
+            if ( func == MFX_FEI_FUNCTION_ENCODE || extSurfUsed)
             {
                 return 2;
             }
             //TODO: this need to be verified which resolution should decrease number of MFE frames and how this depend on TU and SKU
+            //also ABR workload can have better performance with >1080p Max resolution and some additional resolutions added.
+            //This 100% will work good way for GT3/GT4 SKUs, for GT2 - different rule can be required.
             else if (info.CropH > 1088 && info.CropH > 1920)
             {
                 return 2;
@@ -856,7 +855,7 @@ namespace
             }
         }
         else
-            return 4;//to be adjusted based on final performance measurements
+            return 1;//to be adjusted based on final performance measurements after SKL
     }
 
     mfxU32 calculateMfeTimeout(const mfxFrameInfo& info)
@@ -4700,6 +4699,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     }
 
 #ifdef MFX_ENABLE_MFE
+    //ToDo: move to separate function
     mfxExtMultiFrameParam & mfeParam = GetExtBufferRef(par);
     if (mfeParam.MFMode > MFX_MF_MANUAL)
     {
@@ -4707,15 +4707,18 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         changed = true;
     }
 
-    //explicitly force defualt number of frames, higher number will cause performance degradation.
+    /*explicitly force defualt number of frames, higher number will cause performance degradation
+    multi-slice can be supported only through slice map control for MFE, but not enabled as there is no
+    option to force slice map control, only through slice configuration, disable any multi-slice now
+    ToDo: after driver always force slice map for multiframe change function internals based on performance
+    results - 1 encoder vs multiple, on SKL cases with slice Map and LA MSS should scale the same way as single slice,
+    set -1 for MSS and NumMbPerSlice, big number of slices most likely will be more efficient without MFE,
+    but need to measure exact data.
+    Adding any of Mad/MBQP/NonSkipMap/ForceIntraMap causing additional surfaces for kernel, leading to surface state cache size overhead*/
     mfxU16 numFrames = GetDefaultNumMfeFrames(par.mfx.TargetUsage, par.mfx.FrameInfo, platform, feiParam->Func,
-        /*multi-slice can be supported only through slice map control for MFE, but not enabled as there is no
-        option to force slice map control, only through slice configuration, disable any multi-slice now
-        ToDo: after driver always force slice map for multiframe change function internals based on performance
-        results - 1 encoder vs multiple, on SKL cases with slice Map and LA MSS should scale the same way as single slice,
-        set -1 for MSS and NumMbPerSlice, big number of slices most likely will be more efficient without MFE,
-        but need to measure exact data*/
-        1 + (par.mfx.NumSlice > 1 || extOpt2->MaxSliceSize || extOpt2->NumMbPerSlice) );
+        1 + (par.mfx.NumSlice > 1 || extOpt2->MaxSliceSize || extOpt2->NumMbPerSlice),
+        (extOpt2->EnableMAD == MFX_CODINGOPTION_ON) ||  (extOpt3->EnableMBQP == MFX_CODINGOPTION_ON) ||
+        (extOpt3->MBDisableSkipMap == MFX_CODINGOPTION_ON) || (extOpt3->EnableMBForceIntra == MFX_CODINGOPTION_ON));
     if (mfeParam.MaxNumFrames > numFrames)
     {
         mfeParam.MaxNumFrames = numFrames;
@@ -5367,7 +5370,9 @@ void MfxHwH264Encode::SetDefaults(
         if (mfeParam->MFMode >= MFX_MF_AUTO && !mfeParam->MaxNumFrames)
         {
             mfeParam->MaxNumFrames = GetDefaultNumMfeFrames(par.mfx.TargetUsage, par.mfx.FrameInfo, platform, feiParam->Func,
-                1 + (par.mfx.NumSlice > 1 || extOpt2->MaxSliceSize || extOpt2->NumMbPerSlice));
+                1 + (par.mfx.NumSlice > 1 || extOpt2->MaxSliceSize || extOpt2->NumMbPerSlice),
+                (extOpt2->EnableMAD == MFX_CODINGOPTION_ON) || (extOpt3->EnableMBQP == MFX_CODINGOPTION_ON) ||
+                (extOpt3->MBDisableSkipMap == MFX_CODINGOPTION_ON) || (extOpt3->EnableMBForceIntra == MFX_CODINGOPTION_ON));
         }
     }
     if (mfeControl)
