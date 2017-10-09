@@ -631,6 +631,8 @@ UMC::Status HeadersAnalyzer::DecodeHeader(UMC::MediaData * data, mfxBitstream *b
             first_sps = m_supplier->GetHeaders()->m_SeqParams.GetCurrentHeader();
             VM_ASSERT(first_sps && "Current SPS should be valid when [m_isSPSFound]");
 
+            MFX_CHECK_NULL_PTR1(first_sps);
+
             first_sps->IncrementReference();
             sps_guard.Reset(first_sps);
         }
