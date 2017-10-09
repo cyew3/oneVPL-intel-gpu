@@ -212,6 +212,7 @@ private:
 class FileHandler
 {
 public:
+    FileHandler() : m_file(NULL) {}
     FileHandler(const msdk_char* _filename, const msdk_char* _mode)
         : m_file(NULL)
     {

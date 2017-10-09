@@ -20,10 +20,22 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "fei_utils.h"
 #include "hevc_fei_preenc.h"
 
-IPreENC::IPreENC(MfxVideoParamsWrapper& preenc_pars, const mfxExtFeiPreEncCtrl& def_ctrl)
+IPreENC::IPreENC(const MfxVideoParamsWrapper& preenc_pars, const mfxExtFeiPreEncCtrl& def_ctrl)
     : m_videoParams(preenc_pars)
     , m_defFrameCtrl(def_ctrl)
 {
+}
+
+IPreENC::~IPreENC()
+{
+    for (size_t i = 0; i < m_mvs.size(); ++i)
+    {
+        delete[] m_mvs[i].MB;
+    }
+    for (size_t i = 0; i < m_mbs.size(); ++i)
+    {
+        delete[] m_mbs[i].MB;
+    }
 }
 
 mfxStatus IPreENC::PreInit()
@@ -117,15 +129,6 @@ FEI_Preenc::~FEI_Preenc()
 {
     m_mfxPREENC.Close();
 
-    for (size_t i = 0; i < m_mvs.size(); ++i)
-    {
-        delete[] m_mvs[i].MB;
-    }
-    for (size_t i = 0; i < m_mbs.size(); ++i)
-    {
-        delete[] m_mbs[i].MB;
-    }
-
     m_pmfxSession = NULL;
 }
 
@@ -143,10 +146,11 @@ mfxStatus FEI_Preenc::Init()
 
     if (m_pFile_MV_out.get() && m_isMVoutFormatted) // dumping in internal output format
     {
-        // dump info about size of block per frame (constant on the whole file)
+        // dump info about size of data block per frame (is constant on the whole file)
         // NumRefFrame is maximum available number of structures per frame
+
         // Internal format is:
-        // * size of block of structures with internal info per frame (mfxU32)
+        // * size of data per frame. Data is a block of structures with internal info. (mfxU32)
         //     * number of structures in the frame (mfxU8)
         //         * refL0, refL0 indexes (2 x mfxU8)
         //         * mfxExtFeiPreEncMVMB structure
@@ -154,9 +158,9 @@ mfxStatus FEI_Preenc::Init()
         //         - zero padding if number of structure is less then NumRefFrame
         //     - repeat the same for another frames.
         mfxU32 numMB = (MSDK_ALIGN16(m_videoParams.mfx.FrameInfo.Width)*MSDK_ALIGN16(m_videoParams.mfx.FrameInfo.Height)) >> 8;
-        mfxU32 sizeOfBlock = sizeof(mfxU8) + m_videoParams.mfx.NumRefFrame * (2 * sizeof(mfxU8) + sizeof(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB)*(numMB));
+        mfxU32 sizeOfDataPerFrame = sizeof(mfxU8) + m_videoParams.mfx.NumRefFrame * (2 * sizeof(mfxU8) + sizeof(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB)*(numMB));
 
-        sts = m_pFile_MV_out->Write(&sizeOfBlock, sizeof(sizeOfBlock), 1);
+        sts = m_pFile_MV_out->Write(&sizeOfDataPerFrame, sizeof(sizeOfDataPerFrame), 1);
         MSDK_CHECK_STATUS(sts, "FEI PreENC Write to MV out file failed.");
     }
 
@@ -599,4 +603,115 @@ MfxVideoParamsWrapper PreencDownsampler::CreateVppDSParams(mfxFrameInfo in_fi)
         : MSDK_ALIGN32(pars.vpp.In.Height / m_ds_factor);
 
     return pars;
+}
+
+Preenc_Reader::Preenc_Reader(const MfxVideoParamsWrapper& preenc_pars, const mfxExtFeiPreEncCtrl& def_ctrl, const msdk_char* mvinFile)
+    : IPreENC(preenc_pars, def_ctrl)
+    , m_pFile_MV_in(mvinFile, MSDK_STRING("rb"))
+{
+    m_numOfStructuresPerFrame = preenc_pars.mfx.NumRefFrame; // max available number of structures
+    m_numMB = (MSDK_ALIGN16(preenc_pars.mfx.FrameInfo.Width) * MSDK_ALIGN16(preenc_pars.mfx.FrameInfo.Height)) >> 8;
+
+    mfxStatus sts = m_pFile_MV_in.Read(&m_sizeOfDataPerFrame, sizeof(mfxU32), 1);
+    if (sts < MFX_ERR_NONE)
+        throw mfxError(MFX_ERR_NOT_INITIALIZED, "Cannot read from MVP in file");
+
+    mfxU32 expectedSizeOfDataBlock = sizeof(mfxU8) + m_numOfStructuresPerFrame * (2 * sizeof(mfxU8) + sizeof(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB)*m_numMB);
+    if (expectedSizeOfDataBlock != m_sizeOfDataPerFrame)
+        throw mfxError(MFX_ERR_NOT_INITIALIZED, "Unexpected data size in MV predictors input. File contains data for another preset.");
+}
+
+mfxStatus Preenc_Reader::Init()
+{
+    return MFX_ERR_NONE;
+}
+
+mfxStatus Preenc_Reader::QueryIOSurf(mfxFrameAllocRequest * request)
+{
+    return MFX_ERR_NONE;
+}
+
+mfxStatus Preenc_Reader::PreEncFrame(HevcTask * task)
+{
+    if (!task)
+        MSDK_CHECK_STATUS(MFX_ERR_NOT_INITIALIZED, "PreencReader doesn't support display order.");
+
+    mfxU32 bytesRead = 0;
+
+    mfxU8 numOfStructures = 0;
+    mfxStatus sts = m_pFile_MV_in.Read(&numOfStructures, sizeof(numOfStructures), 1);
+    bytesRead += sizeof(numOfStructures);
+
+    if (numOfStructures > m_numOfStructuresPerFrame)
+        MSDK_CHECK_STATUS(MFX_ERR_NOT_INITIALIZED, "Inconsistent data in MV predictors input. Unexpected number of structures.");
+
+    RefIdxPair taskRefFrames, inputRefFrames;
+
+    for (size_t idxL0 = 0, idxL1 = 0;
+        idxL0 < task->m_numRefActive[0] || idxL1 < task->m_numRefActive[1] // Iterate through L0/L1 frames
+        || idxL0 < !!(task->m_frameType & MFX_FRAMETYPE_I); // tricky: use idxL0 for 1 iteration for I-frame
+        ++idxL0, ++idxL1)
+    {
+        taskRefFrames = { IDX_INVALID, IDX_INVALID };
+
+        if (task->m_refPicList[0][idxL0] < 15)
+            taskRefFrames.RefL0 = task->m_refPicList[0][idxL0];
+
+        if (task->m_refPicList[1][idxL1] < 15)
+            taskRefFrames.RefL1 = task->m_refPicList[1][idxL1];
+
+        // check if ref indexes equal or not
+        inputRefFrames = { IDX_INVALID, IDX_INVALID };
+
+        sts = m_pFile_MV_in.Read(&inputRefFrames.RefL0, sizeof(inputRefFrames.RefL0), 1);
+        bytesRead += sizeof(inputRefFrames.RefL0);
+        MSDK_CHECK_STATUS(sts, "FEI Preenc Reader. Read MV predictors failed");
+
+        sts = m_pFile_MV_in.Read(&inputRefFrames.RefL1, sizeof(inputRefFrames.RefL1), 1);
+        bytesRead += sizeof(inputRefFrames.RefL1);
+        MSDK_CHECK_STATUS(sts, "FEI Preenc Reader. Read MV predictors failed");
+
+        if (taskRefFrames.RefL0 != inputRefFrames.RefL0 || taskRefFrames.RefL1 != inputRefFrames.RefL1)
+            MSDK_CHECK_STATUS(MFX_ERR_NOT_INITIALIZED, "Inconsistent data in MV predictors input. Unexpected L0/L1 reference indexes.");
+
+        PreENCOutput stat;
+        MSDK_ZERO_MEMORY(stat);
+
+        // disable MV output for I frames / if no reference frames provided)
+        if ((task->m_frameType & MFX_FRAMETYPE_I)
+            || (inputRefFrames.RefL0 == IDX_INVALID && inputRefFrames.RefL1 == IDX_INVALID))
+        {
+            sts = m_pFile_MV_in.Seek(sizeof(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB) * m_numMB, SEEK_CUR);
+            MSDK_CHECK_STATUS(sts, "FEI Preenc Reader. File seek failed");
+
+            bytesRead += sizeof(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB) * m_numMB;
+            numOfStructures++;
+        }
+        else
+        {
+            mfxExtFeiPreEncMVExtended * ext_mv = AcquireResource(m_mvs);
+            MSDK_CHECK_POINTER_SAFE(ext_mv, MFX_ERR_MEMORY_ALLOC, msdk_printf(MSDK_STRING("ERROR: No free buffer in mfxExtFeiPreEncMVExtended\n")));
+
+            sts = m_pFile_MV_in.Read(ext_mv->MB, sizeof(ext_mv->MB[0]) * ext_mv->NumMBAlloc, 1);
+            MSDK_CHECK_STATUS(sts, "FEI Preenc Reader. Read MV predictors failed");
+            bytesRead += sizeof(ext_mv->MB[0])* ext_mv->NumMBAlloc;
+
+            stat.m_mv = ext_mv;
+            stat.m_refIdxPair = inputRefFrames;
+        }
+
+        if (stat.m_mv)
+            task->m_preEncOutput.push_back(stat);
+    }
+
+    //skip zero padding
+    mfxI32 seekOffset = (m_numOfStructuresPerFrame - numOfStructures) * (2 * sizeof(mfxU8) + sizeof(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB) * m_numMB);
+    sts = m_pFile_MV_in.Seek(seekOffset, SEEK_CUR);
+    MSDK_CHECK_STATUS(sts, "FEI Preenc Reader. Read MV predictors failed");
+    bytesRead += seekOffset;
+
+    if (bytesRead != m_sizeOfDataPerFrame)
+        MSDK_CHECK_STATUS(MFX_ERR_NOT_INITIALIZED, "File contains not the same amount of data per frame as expected.");
+
+    return sts;
 }

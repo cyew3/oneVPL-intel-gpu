@@ -68,6 +68,7 @@ struct sInputParams
     bool bPREENC;
     bool bEncodedOrder;        // use EncodeOrderControl for external reordering
     bool bFormattedMVout;      // use internal format for dumping MVP
+    bool bFormattedMVPin;      // use internal format for reading MVP
     mfxU8  QP;
     mfxU16 dstWidth;           // destination picture width
     mfxU16 dstHeight;          // destination picture height
@@ -95,6 +96,7 @@ struct sInputParams
         , bPREENC(false)
         , bEncodedOrder(false)
         , bFormattedMVout(false)
+        , bFormattedMVPin(false)
         , QP(26)
         , dstWidth(0)
         , dstHeight(0)

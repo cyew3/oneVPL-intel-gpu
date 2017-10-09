@@ -93,7 +93,9 @@ void PrintHelp(const msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-mbstat <file-name>] - use this to output per MB distortions for each frame after PreENC\n"));
     msdk_printf(MSDK_STRING("   [-mvout <file-name>]  - use this to output MV predictors after PreENC\n"));
     msdk_printf(MSDK_STRING("   [-mvout::format <file-name>] - use this to output MV predictors after PreENC in an internal format (without downsampling).\n"));
-    msdk_printf(MSDK_STRING("   [-mvpin <file-name>]        - use this to input MV predictors for ENCODE (Encoded Order will be enabled automatically).\n"));
+    msdk_printf(MSDK_STRING("   [-mvpin <file-name>]         - use this to input MV predictors for ENCODE (Encoded Order will be enabled automatically).\n"));
+    msdk_printf(MSDK_STRING("   [-mvpin::format <file-name>] - use this to input MVs for ENCODE before repacking in internal format\n"));
+    msdk_printf(MSDK_STRING("                                   (Encoded Order will be enabled automatically).\n"));
 
     msdk_printf(MSDK_STRING("\n"));
 }
@@ -235,6 +237,12 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU32 nArgNum, sInputParams& 
         {
             CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
             PARSE_CHECK(msdk_opt_read(strInput[++i], params.mvpInFile), "MVP in File", isParseInvalid);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-mvpin::format")))
+        {
+            CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
+            PARSE_CHECK(msdk_opt_read(strInput[++i], params.mvpInFile), "MV in formatted File", isParseInvalid);
+            params.bFormattedMVPin = true;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-mvout")))
         {
@@ -444,6 +452,11 @@ mfxStatus CheckOptions(const sInputParams params, const msdk_char* appName)
     if (params.preencDSfactor != 1 && params.bFormattedMVout)
     {
         PrintHelp(appName, "Dumping of MV predictors in internal format with downsampling is unsupported.");
+        return MFX_ERR_UNSUPPORTED;
+    }
+    if (params.preencDSfactor != 1 && (params.bFormattedMVout || params.bFormattedMVPin))
+    {
+        PrintHelp(appName, "Dumping/Reading of MV predictors in internal format with downsampling is unsupported.");
         return MFX_ERR_UNSUPPORTED;
     }
 

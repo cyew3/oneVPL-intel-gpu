@@ -498,7 +498,7 @@ IYUVSource* CEncodingPipeline::CreateYUVSource()
 
 IPreENC* CEncodingPipeline::CreatePreENC(mfxFrameInfo& in_fi)
 {
-    if (!m_inParams.bPREENC)
+    if (!m_inParams.bPREENC && (0 == msdk_strlen(m_inParams.mvpInFile) || !m_inParams.bFormattedMVPin))
         return NULL;
 
     MfxVideoParamsWrapper pars = GetEncodeParams(m_inParams, in_fi);
@@ -514,11 +514,33 @@ IPreENC* CEncodingPipeline::CreatePreENC(mfxFrameInfo& in_fi)
     if (!pExtBufInit) throw mfxError(MFX_ERR_NOT_INITIALIZED, "Failed to attach mfxExtFeiParam");
     pExtBufInit->Func = MFX_FEI_FUNCTION_PREENC;
 
-    IPreENC* pPreENC = new FEI_Preenc(&m_mfxSession, pars, m_inParams.preencCtrl, m_inParams.mvoutFile, m_inParams.bFormattedMVout, m_inParams.mbstatoutFile);
-
-    if (m_inParams.preencDSfactor > 1)
+    IPreENC* pPreENC = NULL;
+    try
     {
-        pPreENC = new PreencDownsampler(pPreENC, m_inParams.preencDSfactor, &m_mfxSession, m_pMFXAllocator.get());
+        if (0 == msdk_strlen(m_inParams.mvpInFile))
+        {
+            pPreENC = new FEI_Preenc(&m_mfxSession, pars, m_inParams.preencCtrl, m_inParams.mvoutFile, m_inParams.bFormattedMVout, m_inParams.mbstatoutFile);
+
+            if (m_inParams.preencDSfactor > 1)
+            {
+                // PreencDownsampler saves an auto-pointer for just created FEI_Preenc.
+                pPreENC = new PreencDownsampler(pPreENC, m_inParams.preencDSfactor, &m_mfxSession, m_pMFXAllocator.get());
+            }
+        }
+        else
+        {
+            pPreENC = new Preenc_Reader(pars, m_inParams.preencCtrl, m_inParams.mvpInFile);
+        }
+    }
+    catch(std::bad_alloc& ex)
+    {
+        if (pPreENC)
+            delete pPreENC;
+        msdk_printf(MSDK_STRING("Error with dynamic PreENC allocation."));
+    }
+    catch(...)
+    {
+        throw;
     }
 
     return pPreENC;
@@ -539,7 +561,7 @@ FEI_Encode* CEncodingPipeline::CreateEncode(mfxFrameInfo& in_fi)
     CHECK_STS_AND_RETURN(sts, "m_pParamChecker>Query failed", NULL);
 
     PredictorsRepaking* repacker = NULL;
-    if (m_inParams.bPREENC)
+    if (m_inParams.bPREENC || (0 != msdk_strlen(m_inParams.mvpInFile) && m_inParams.bFormattedMVPin))
     {
         repacker = new PredictorsRepaking();
         sts = repacker->Init(pars, m_inParams.preencDSfactor);

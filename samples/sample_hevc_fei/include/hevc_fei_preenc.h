@@ -26,8 +26,8 @@ class IPreENC
 {
 public:
     IPreENC() {}
-    IPreENC(MfxVideoParamsWrapper& preenc_pars, const mfxExtFeiPreEncCtrl& def_ctrl);
-    virtual ~IPreENC() {}
+    IPreENC(const MfxVideoParamsWrapper& preenc_pars, const mfxExtFeiPreEncCtrl& def_ctrl);
+    virtual ~IPreENC();
 
     virtual mfxStatus Init() = 0;
     virtual mfxStatus QueryIOSurf(mfxFrameAllocRequest* request) = 0;
@@ -52,6 +52,28 @@ protected:
 
 private:
     DISALLOW_COPY_AND_ASSIGN(IPreENC);
+};
+
+class Preenc_Reader : public IPreENC
+{
+public:
+    Preenc_Reader(const MfxVideoParamsWrapper& preenc_pars, const mfxExtFeiPreEncCtrl& def_ctrl, const msdk_char* mvinFile);
+    virtual ~Preenc_Reader() {}
+
+    virtual mfxStatus Init();
+    virtual mfxStatus QueryIOSurf(mfxFrameAllocRequest* request);
+
+    virtual mfxStatus PreEncFrame(HevcTask * task);
+
+private:
+    mfxU8  m_numOfStructuresPerFrame; // number of mfxExtFeiPreEncMVMB structures per frame
+    mfxU32 m_sizeOfDataPerFrame;      // to read from file, in bytes
+    mfxU32 m_numMB;
+
+    /* For I/O operations with extension buffers */
+    FileHandler m_pFile_MV_in;
+
+    DISALLOW_COPY_AND_ASSIGN(Preenc_Reader);
 };
 
 class FEI_Preenc : public IPreENC
