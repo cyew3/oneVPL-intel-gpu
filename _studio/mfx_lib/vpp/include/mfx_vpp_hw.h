@@ -26,7 +26,7 @@
 #if defined(MFX_VA)
  #include "cmrt_cross_platform.h" // Gpucopy stuff
  #if defined(MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP)
-  #include "mfx_vpp_scd.h"        // Scene change detection
+  #include "mfx_scd.h"        // Scene change detection
  #endif
  #include "cm_mem_copy.h"         // Needed for mirroring kernels
 #include "genx_fcopy_cmcode_isa.cpp" // Field copy kernel

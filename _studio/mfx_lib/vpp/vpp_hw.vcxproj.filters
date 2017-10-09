@@ -122,6 +122,9 @@
     <ClCompile Include="src\mfx_video_signal_conversion_vpp.cpp">
       <Filter>Source Files\filters</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\shared\src\mfx_scd.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\mfx_vpp_base.h">

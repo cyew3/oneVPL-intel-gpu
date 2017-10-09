@@ -8,7 +8,7 @@
 // Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
 //
 
-#include "mfx_vpp_scd.h"
+#include "mfx_scd.h"
 #include "libmfx_core_interface.h"
 
 #include "mfx_utils.h"
@@ -16,7 +16,7 @@
 #include "mfx_vpp_defs.h"
 
 
-#if defined (MFX_ENABLE_VPP) && defined(MFX_VA_LINUX) && defined(MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP)
+#if defined(MFX_VA) && defined(MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP)
 
 #define EXTRANEIGHBORS
 #define SAD_SEARCH_VSTEP 2  // 1=FS 2=FHS
@@ -12034,4 +12034,4 @@ void SceneChangeDetector::GpuSubSampleASC_Image(mfxI32 srcWidth, mfxI32 srcHeigh
     ReadOutputImage();
 }
 
-#endif //defined (MFX_ENABLE_VPP) && defined(MFX_VA_LINUX)
+#endif // defined(MFX_VA) && defined(MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP)

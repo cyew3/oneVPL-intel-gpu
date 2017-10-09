@@ -8,16 +8,16 @@
 // Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
 //
 
-#include "mfx_common.h"
-#include "mfx_platform_headers.h"
+#ifndef __MFX_SCD_H
+#define __MFX_SCD_H
 
+#include "mfx_common.h"
+
+#if defined(MFX_VA) && defined(MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP)
+
+#include "mfx_platform_headers.h"
 #include <memory>
 #include <map>
-
-#if defined (MFX_ENABLE_VPP) && defined(MFX_VA_LINUX) && defined(MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP)
-
-#ifndef __MFX_VPP_SCD_H
-#define __MFX_VPP_SCD_H
 
 // Include needed for CM wrapper
 #include "cmrtex.h"
@@ -355,7 +355,7 @@ public:
         , GPUProc(false)
         , _width(0)
         , _height(0)
-        , _pitch(0) 
+        , _pitch(0)
         , m_pCore(NULL)
     {};
 
@@ -470,5 +470,5 @@ private:
     VideoCORE   *m_pCore;
 };
 
-#endif //__MFX_VPP_SCD_H
-#endif //defined (MFX_ENABLE_VPP) && defined(MFX_VA_LINUX)
+#endif //defined(MFX_VA) && defined(MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP)
+#endif //__MFX_SCD_H
