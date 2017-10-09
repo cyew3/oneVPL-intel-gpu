@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -160,7 +160,7 @@ bool H265WidevineSlice::DecodeSliceHeader(PocDecoding * pocDecoding)
                 if (m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_BLA_W_LP || m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_BLA_W_RADL ||
                     m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_BLA_N_LP)
                 { // For BLA picture types, POCmsb is set to 0.
-  
+
                     PicOrderCntMsb = 0;
                 }
 
@@ -334,10 +334,13 @@ UMC::Status H265WidevineSlice::UpdateReferenceList(H265DBPList *pDecoderFrameLis
             Ipp32s poc = getRPS()->getPOC(i);
 
             H265DecoderFrame *pFrm = pDecoderFrameList->findLongTermRefPic(m_pCurrentFrame, poc, GetSeqParam()->log2_max_pic_order_cnt_lsb, !getRPS()->getCheckLTMSBPresent(i));
+
+            if (!pFrm)
+                continue;
+
             m_pCurrentFrame->AddReferenceFrame(pFrm);
 
-            if (pFrm)
-                pFrm->SetisLongTermRef(true);
+            pFrm->SetisLongTermRef(true);
             RefPicSetLtCurr[NumPocLtCurr] = pFrm;
             NumPocLtCurr++;
         }

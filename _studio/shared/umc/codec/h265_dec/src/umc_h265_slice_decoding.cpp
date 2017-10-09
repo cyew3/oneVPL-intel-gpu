@@ -180,7 +180,7 @@ bool H265Slice::DecodeSliceHeader(PocDecoding * pocDecoding)
                 if (m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_BLA_W_LP || m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_BLA_W_RADL ||
                     m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_BLA_N_LP)
                 { // For BLA picture types, POCmsb is set to 0.
-  
+
                     PicOrderCntMsb = 0;
                 }
 
@@ -460,10 +460,13 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
             Ipp32s poc = getRPS()->getPOC(i);
 
             H265DecoderFrame *pFrm = pDecoderFrameList->findLongTermRefPic(m_pCurrentFrame, poc, GetSeqParam()->log2_max_pic_order_cnt_lsb, !getRPS()->getCheckLTMSBPresent(i));
+
+            if (!pFrm)
+                continue;
+
             m_pCurrentFrame->AddReferenceFrame(pFrm);
 
-            if (pFrm)
-                pFrm->SetisLongTermRef(true);
+            pFrm->SetisLongTermRef(true);
             RefPicSetLtCurr[NumPocLtCurr] = pFrm;
             NumPocLtCurr++;
         }
