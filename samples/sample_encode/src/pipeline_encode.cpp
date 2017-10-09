@@ -479,16 +479,18 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
 
     // set up mfxCodingOption3
     if (pInParams->nGPB || pInParams->LowDelayBRC ||
-        pInParams->WeightedPred || pInParams->WeightedBiPred)
+        pInParams->WeightedPred || pInParams->WeightedBiPred
+        || pInParams->nPRefType)
     {
         if (pInParams->CodecId == MFX_CODEC_HEVC)
         {
             m_CodingOption3.GPB = pInParams->nGPB;
         }
 
-        m_CodingOption3.WeightedPred = pInParams->WeightedPred;
+        m_CodingOption3.WeightedPred   = pInParams->WeightedPred;
         m_CodingOption3.WeightedBiPred = pInParams->WeightedBiPred;
-        m_CodingOption3.LowDelayBRC = pInParams->LowDelayBRC;
+        m_CodingOption3.LowDelayBRC    = pInParams->LowDelayBRC;
+        m_CodingOption3.PRefType       = pInParams->nPRefType;
 
         m_EncExtParams.push_back((mfxExtBuffer *)&m_CodingOption3);
     }

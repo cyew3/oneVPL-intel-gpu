@@ -105,6 +105,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("   [-qpb]                   - constant quantizer for B frames (if bitrace control method is CQP). In range [1,51]. 0 by default, i.e.no limitations on QP.\n"));
     msdk_printf(MSDK_STRING("   [-qsv-ff]       Enable QSV-FF mode\n"));
     msdk_printf(MSDK_STRING("   [-gpb:<on,off>]          - Turn this option OFF to make HEVC encoder use regular P-frames instead of GPB\n"));
+    msdk_printf(MSDK_STRING("   [-ppyr:<on,off>]         - Turn this option ON to enable P-pyramid (by default the decision is made by library)\n"));
     msdk_printf(MSDK_STRING("   [-num_slice]             - number of slices in each video frame. 0 by default.\n"));
     msdk_printf(MSDK_STRING("                              If num_slice equals zero, the encoder may choose any slice partitioning allowed by the codec standard.\n"));
     msdk_printf(MSDK_STRING("   [-mss]                   - maximum slice size in bytes. Supported only with -hw and h264 codec. This option is not compatible with -num_slice option.\n"));
@@ -182,6 +183,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     pParams->nNumFrames = 0;
     pParams->FileInputFourCC = MFX_FOURCC_I420;
     pParams->EncodeFourCC = MFX_FOURCC_NV12;
+    pParams->nPRefType = MFX_P_REF_DEFAULT;
 #if defined (ENABLE_V4L2_SUPPORT)
     pParams->MipiPort = -1;
     pParams->MipiMode = NONE;
@@ -541,6 +543,14 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-gpb:off")))
         {
             pParams->nGPB = MFX_CODINGOPTION_OFF;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-ppyr:on")))
+        {
+            pParams->nPRefType = MFX_P_REF_PYRAMID;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-ppyr:off")))
+        {
+            pParams->nPRefType = MFX_P_REF_SIMPLE;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-extbrc:on")))
         {

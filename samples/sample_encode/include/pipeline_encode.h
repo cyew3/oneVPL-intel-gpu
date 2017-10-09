@@ -81,6 +81,7 @@ struct sInputParams
     mfxU16 nGopRefDist;
     mfxU16 nNumRefFrame;
     mfxU16 nBRefType;
+    mfxU16 nPRefType;
     mfxU16 nIdrInterval;
     mfxU16 reserved[4];
 
