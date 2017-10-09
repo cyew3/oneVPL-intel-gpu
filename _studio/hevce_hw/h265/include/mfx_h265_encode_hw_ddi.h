@@ -116,7 +116,7 @@ const GUID GuidTable[2][2][3] =
 };
 #endif
 
-mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, MFXCoreInterface* pCore, GUID guid);
+mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, MFXCoreInterface* pCore);
 
 class DriverEncoder;
 

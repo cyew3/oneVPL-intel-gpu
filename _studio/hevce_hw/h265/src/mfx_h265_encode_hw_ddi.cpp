@@ -92,23 +92,8 @@ DriverEncoder* CreatePlatformH265Encoder(MFXCoreInterface* core, ENCODER_TYPE ty
     return 0;
 }
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
-bool IsEncPak(GUID guid)
-{
-    // search among ENC+PAK guids GuidTable[0]
-
-    for (mfxU32 i = 0; i < 2; i++) {   // 8/10 bit
-        for (mfxU32 j = 0; j < sizeof(GuidTable[0][i]) / sizeof(GuidTable[0][0][0]); j++) {
-            if (guid == GuidTable[0][i][j])
-                return true;
-        }
-    }
-    return false;
-}
-#endif
-
 // this function is aimed to workaround all CAPS reporting problems in mainline driver
-mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, MFXCoreInterface* core, GUID guid)
+mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, MFXCoreInterface* core)
 {
     mfxStatus sts = MFX_ERR_NONE;
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
@@ -124,19 +109,10 @@ mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, MFXCoreInterface* core, GUID guid
     sts = core->QueryPlatform(&pltfm);
     MFX_CHECK_STS(sts);
 
-    if (pltfm.CodeName < MFX_PLATFORM_CANNONLAKE) {
-        if (!caps.LCUSizeSupported)     // not set until CNL now
-            caps.LCUSizeSupported = 0b10;   // 32x32 lcu is only supported
-            caps.BlockSize = 2; // 32x32
-    } else {
-        if (IsEncPak(guid))
-            caps.LCUSizeSupported |= 0b10;   // add support of 32x32 lcu for ENC+PAK
-    }
-
-    if (pltfm.CodeName >= MFX_PLATFORM_CANNONLAKE)
-    {
-        caps.ROIDeltaQPSupport = 1; // 0 is now on CNL !!!
-        caps.IntraRefreshBlockUnitSize = 1; // 16x16
+    if (pltfm.CodeName < MFX_PLATFORM_CANNONLAKE)
+    {   // not set until CNL now
+        caps.LCUSizeSupported = 0b10;   // 32x32 lcu is only supported
+        caps.BlockSize = 0b10; // 32x32
     }
 
 #if defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
@@ -161,7 +137,6 @@ mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, MFXCoreInterface* core, GUID guid
         caps.LCUSizeSupported = 2;
     caps.BlockSize = 2; // 32x32
     (void)core;
-    (void)guid;
 #endif
     return sts;
 }
