@@ -13,8 +13,6 @@
 
 #include "mfx_utils.h"
 #include "mfx_task.h"
-#include "mfx_vpp_defs.h"
-
 
 #if defined(MFX_VA) && defined(MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP)
 
