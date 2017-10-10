@@ -77,19 +77,19 @@ private:
 void* DXAccelerator::GetCompBuffer(Ipp32s type, UMCVACompBuffer **buf, Ipp32s /*size*/, Ipp32s /*index*/)
 {
     UMCVACompBuffer* buffer = FindBuffer(type);
+    UMC_CHECK(buffer, NULL);
+
     if (!buffer->GetPtr())
     {
         buffer->type = type;
         Status sts = GetCompBufferInternal(buffer);
-        if (sts != UMC_OK)
-            return NULL;
+        UMC_CHECK(sts == UMC_OK, NULL);
 
         m_bufferOrder.push_back(type);
     }
 
     Ipp8u* data = reinterpret_cast<Ipp8u*>(buffer->GetPtr());
-    if (!data)
-        return NULL;
+    UMC_CHECK(data, NULL);
 
 #if defined(DEBUG) || defined(_DEBUG)
     Ipp32s const buffer_size = buffer->GetBufferSize();
