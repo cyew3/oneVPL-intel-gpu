@@ -834,11 +834,11 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
         // Change DPB
         m_recFrameOrder[task.m_idxRecon] = task.m_frameOrder;
 
-        sts = Change_DPB(task.m_dpb[0],          m_rec.mids, m_recFrameOrder);
-        MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
-
-        sts = Change_DPB(task.m_dpb[1],          m_rec.mids, m_recFrameOrder);
-        MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
+        for (mfxU32 field = f_start; field <= fieldCount; ++field)
+        {
+            sts = Change_DPB(task.m_dpb[field], m_rec.mids, m_recFrameOrder);
+            MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
+        }
 
         sts = Change_DPB(task.m_dpbPostEncoding, m_rec.mids, m_recFrameOrder);
         MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
