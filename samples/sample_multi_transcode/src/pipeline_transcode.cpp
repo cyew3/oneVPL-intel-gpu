@@ -1385,8 +1385,6 @@ mfxStatus CTranscodingPipeline::Encode()
         /* Exit condition */
         if (m_nProcessedFramesNum == m_MaxFramesForTranscode)
         {
-            //if (m_pParentPipeline)
-            //    m_pParentPipeline->StopSession();
             break;
         }
 
@@ -1414,6 +1412,7 @@ mfxStatus CTranscodingPipeline::Encode()
     // Clean up decoder buffers to avoid locking them (if some decoder still have some data to decode, but does not have enough surfaces)
     if(m_nVPPCompEnable!=0)
     {
+        // Composition case - we have to clean up all buffers (all of them have data from decoders)
         for(SafetySurfaceBuffer * buf = m_pBuffer;buf!=NULL; buf=buf->m_pNext)
         {
             while (buf->GetSurface(DecExtSurface)!=MFX_ERR_MORE_SURFACE)
@@ -1432,6 +1431,14 @@ mfxStatus CTranscodingPipeline::Encode()
             m_pBuffer->ReleaseSurface(DecExtSurface.pSurface);
         }
     }
+
+    // Close encoder and decoder and clean up buffers
+    if (m_pmfxENC.get())
+        m_pmfxENC->Close();
+
+    if (m_pmfxVPP.get())
+        m_pmfxVPP->Close();
+
 
     if (MFX_ERR_NONE == sts)
         sts = MFX_WRN_VALUE_NOT_CHANGED;
