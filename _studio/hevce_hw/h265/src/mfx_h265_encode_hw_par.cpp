@@ -1438,35 +1438,42 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         , (mfxU32)MFX_FOURCC_P010
         , (mfxU32)MFX_FOURCC_A2RGB10);
 
+    if (IsOn(par.mfx.LowPower)) {   // 422 is not supported on VDENC
+        if ((par.mfx.FrameInfo.FourCC == (mfxU32)MFX_FOURCC_Y210) ||
+            (par.mfx.FrameInfo.FourCC == (mfxU32)MFX_FOURCC_P210) ||
+            (par.mfx.FrameInfo.FourCC == (mfxU32)MFX_FOURCC_YUY2))
+        invalid++;
+    }
+
+    // par.mfx.FrameInfo.ChromaFormat should be checked before Construct to set TargetChromaFormat correctly in case CO3 is absent
     switch(par.mfx.FrameInfo.FourCC)
     {
     case MFX_FOURCC_A2RGB10:
-    case MFX_FOURCC_Y410:
-        invalid += CheckOption(par.mfx.FrameInfo.ChromaFormat, (mfxU16)MFX_CHROMAFORMAT_YUV444, (mfxU16)MFX_CHROMAFORMAT_YUV422, (mfxU16)MFX_CHROMAFORMAT_YUV420);
-        invalid += CheckOption(par.mfx.FrameInfo.BitDepthLuma, 10, 8, 0);
-        invalid += CheckOption(par.mfx.FrameInfo.BitDepthChroma, 10, 8, 0);
-        break;
     case MFX_FOURCC_AYUV:
     case MFX_FOURCC_RGB4:
-        invalid += CheckOption(par.mfx.FrameInfo.ChromaFormat, (mfxU16)MFX_CHROMAFORMAT_YUV444, (mfxU16)MFX_CHROMAFORMAT_YUV422, (mfxU16)MFX_CHROMAFORMAT_YUV420);
+        invalid += CheckOption(par.mfx.FrameInfo.ChromaFormat, (mfxU16)MFX_CHROMAFORMAT_YUV444);
         invalid += CheckOption(par.mfx.FrameInfo.BitDepthLuma, 8, 0);
         invalid += CheckOption(par.mfx.FrameInfo.BitDepthChroma, 8, 0);
+    case MFX_FOURCC_Y410:
+        invalid += CheckOption(par.mfx.FrameInfo.ChromaFormat, (mfxU16)MFX_CHROMAFORMAT_YUV444);
+        invalid += CheckOption(par.mfx.FrameInfo.BitDepthLuma, 10, 0);
+        invalid += CheckOption(par.mfx.FrameInfo.BitDepthChroma, 10, 0);
         break;
     case MFX_FOURCC_P210:
     case MFX_FOURCC_Y210:
-        invalid += CheckOption(par.mfx.FrameInfo.ChromaFormat, (mfxU16)MFX_CHROMAFORMAT_YUV422, (mfxU16)MFX_CHROMAFORMAT_YUV420);
-        invalid += CheckOption(par.mfx.FrameInfo.BitDepthLuma, 10, 8, 0);
-        invalid += CheckOption(par.mfx.FrameInfo.BitDepthChroma, 10, 8, 0);
+        invalid += CheckOption(par.mfx.FrameInfo.ChromaFormat, (mfxU16)MFX_CHROMAFORMAT_YUV422);
+        invalid += CheckOption(par.mfx.FrameInfo.BitDepthLuma, 10, 0);
+        invalid += CheckOption(par.mfx.FrameInfo.BitDepthChroma, 10, 0);
         break;
     case MFX_FOURCC_YUY2:
-        invalid += CheckOption(par.mfx.FrameInfo.ChromaFormat, (mfxU16)MFX_CHROMAFORMAT_YUV422, (mfxU16)MFX_CHROMAFORMAT_YUV420);
+        invalid += CheckOption(par.mfx.FrameInfo.ChromaFormat, (mfxU16)MFX_CHROMAFORMAT_YUV422);
         invalid += CheckOption(par.mfx.FrameInfo.BitDepthLuma, 8, 0);
         invalid += CheckOption(par.mfx.FrameInfo.BitDepthChroma, 8, 0);
         break;
     case MFX_FOURCC_P010:
         invalid += CheckOption(par.mfx.FrameInfo.ChromaFormat, (mfxU16)MFX_CHROMAFORMAT_YUV420);
-        invalid += CheckOption(par.mfx.FrameInfo.BitDepthLuma, 10, 8, 0);
-        invalid += CheckOption(par.mfx.FrameInfo.BitDepthChroma, 10, 8, 0);
+        invalid += CheckOption(par.mfx.FrameInfo.BitDepthLuma, 10, 0);
+        invalid += CheckOption(par.mfx.FrameInfo.BitDepthChroma, 10, 0);
         break;
     case MFX_FOURCC_NV12:
         invalid += CheckOption(par.mfx.FrameInfo.ChromaFormat, (mfxU16)MFX_CHROMAFORMAT_YUV420);
