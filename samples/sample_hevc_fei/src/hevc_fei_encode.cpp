@@ -298,9 +298,18 @@ mfxStatus FEI_Encode::SetCtrlParams(const HevcTask& task)
         mfxExtFeiHevcEncFrameCtrl* ctrl = m_encodeCtrl.GetExtBuffer<mfxExtFeiHevcEncFrameCtrl>();
         MSDK_CHECK_POINTER(ctrl, MFX_ERR_NOT_INITIALIZED);
 
-        // switch predictors off for I-frames
-        ctrl->MVPredictor = (m_encodeCtrl.FrameType & MFX_FRAMETYPE_I) == 0;
+        // Switch predictors off for I-frames.
+        // 0 - no predictors, 7 - inherit size of block from buffers CTU setting
+        ctrl->MVPredictor = (m_encodeCtrl.FrameType & MFX_FRAMETYPE_I) ? 0 : 7;
+
+        // Switch on internal L0 predictors; 1 means spatial predictors
+        ctrl->MultiPred[0] = !!(m_encodeCtrl.FrameType & (MFX_FRAMETYPE_P | MFX_FRAMETYPE_B));
+
+        // Switch on internal L1 predictors; 1 means spatial predictors
+        ctrl->MultiPred[1] = !!(m_encodeCtrl.FrameType & MFX_FRAMETYPE_B);
+
         ctrl->NumMvPredictors[0] = ctrl->NumMvPredictors[1] = 0;
+
         if (m_encodeCtrl.FrameType & MFX_FRAMETYPE_P)
         {
             ctrl->NumMvPredictors[0] = m_videoParams.GetExtBuffer<mfxExtCodingOption3>()->NumRefActiveP[0];
