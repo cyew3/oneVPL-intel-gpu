@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 
 //  MPEG-2 is a international standard promoted by ISO/IEC and
@@ -18,9 +18,6 @@
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_MPEG2_VIDEO_DECODER)
 
-#include <list>
-#include <mutex>
-#include "assert.h"
 #include "umc_mpeg2_dec_base.h"
 
 #ifdef UMC_VA_LINUX
@@ -54,7 +51,6 @@ public:
     PackVA()
         : va_mode(VA_NO)
         , m_va(NULL)
-        , m_sq_free_nodes(2 * DPB_SIZE)
 #if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
         , bTriggerGPUHang(false)
 #endif
@@ -104,59 +100,12 @@ public:
         Ipp32s              task_num,
         Ipp32s              source_mb_height = 0);
 
-    inline UMC::Status ReserveSyncStatus(Ipp32s index, Ipp32s pic_struct) {
-        std::lock_guard<std::mutex> guard(m_sq_mutex);
-        assert((index < DPB_SIZE) || (pic_struct != FRAME_PICTURE));
-
-#ifdef UMC_VA_LINUX
-        // As for now Mpeg2 decoder submits both fields at the same time on Linux.
-        // These fields eventually shares the same output surface and considering that
-        // on Linux we always sync last submitted task for the surface, we will sync
-        // 2nd field task. Thus, we don't need 2 entries in the status queue, we just
-        // need single entry for the 2nd field. So, we will skip 1st field request and
-        // satidfy request for the 2nd field next time.
-        if ((index < DPB_SIZE) && (pic_struct != FRAME_PICTURE))
-            return UMC_OK;
+#if defined(UMC_VA_DXVA)
+    Status GetStatusReport(DXVA_Status_VC1 *pStatusReport);
 #endif
-
-        auto it = m_sq_free_nodes.begin();
-        if (it == m_sq_free_nodes.end()) {
-            assert(!"there should always be enough free nodes for status report, that's a bug");
-            return UMC_ERR_DEVICE_FAILED;
-        }
-
-        it->synced = false;
-        it->index = index;
-        it->pic_struct = pic_struct;
-        it->sts = UMC_OK;
-        it->surf_corruption = 0;
-        m_status_queue.splice(m_status_queue.end(), m_sq_free_nodes, it);
-
-        return UMC_OK;
-    }
 
     VideoAccelerationProfile va_mode;
     VideoAccelerator         *m_va;
-
-    struct TaskSyncStatus
-    {
-        TaskSyncStatus()
-            : synced(false)
-            , index(-1)
-            , sts(UMC::UMC_OK)
-            , surf_corruption(0)
-        {}
-
-        bool synced;
-        Ipp32s index;
-        Ipp32s pic_struct;
-        UMC::Status sts;
-        mfxU16 surf_corruption;
-    };
-
-    std::list<TaskSyncStatus> m_status_queue;
-    std::list<TaskSyncStatus> m_sq_free_nodes;
-    std::mutex m_sq_mutex;
 
 #if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
     bool   bTriggerGPUHang;
@@ -210,21 +159,11 @@ public:
         PackVA pack_w;
 
         virtual Status Init(BaseCodecParams *init);
-        virtual Status Reset() {
-            {
-                std::lock_guard<std::mutex> guard(pack_w.m_sq_mutex);
-                pack_w.m_sq_free_nodes.splice(pack_w.m_sq_free_nodes.end(), pack_w.m_status_queue);
-            }
-            return MPEG2VideoDecoderBase::Reset();
-        }
 
         Status SaveDecoderState();
         Status RestoreDecoderState();
         Status RestoreDecoderStateAndRemoveLastField();
         Status PostProcessFrame(int display_index, int task_num);
-
-        Status SyncNextTask();
-        Status PopTaskStatus(Ipp32s current_index);
 
     protected:
         //The purpose of protected interface to have controlled
@@ -250,8 +189,8 @@ public:
         virtual void           quant_matrix_extension(int task_num);
         virtual Status UpdateFrameBuffer(int task_num, Ipp8u* iqm, Ipp8u*niqm);
 
-    protected:
-        Status BeginVAFrame(int task_num);
+protected:
+         Status BeginVAFrame(int task_num);
     };
 }
 #pragma warning(default: 4324)

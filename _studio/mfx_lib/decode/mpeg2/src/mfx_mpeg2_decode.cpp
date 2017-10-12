@@ -3180,6 +3180,7 @@ mfxStatus VideoDECODEMPEG2Internal_HW::DecodeFrameCheck(mfxBitstream *bs,
                 m_task_param[m_task_num].task_num = m_task_num;
                 m_task_param[m_task_num].m_isSoftwareBuffer = m_isSWBuf;
 
+
                 pEntryPoint->pParam = (void *)(&(m_task_param[m_task_num]));
 
                 m_prev_task_num = m_task_num;
@@ -3291,6 +3292,219 @@ mfxStatus VideoDECODEMPEG2Internal_HW::CompleteTasks(void *pParam)
     return MFX_TASK_DONE;
 }
 
+mfxStatus VideoDECODEMPEG2Internal_HW::GetStatusReportByIndex(Ipp32s current_index, mfxU32 currIdx)
+{
+    current_index; currIdx;
+
+#ifdef MFX_VA_WIN
+
+    UMC::Status sts = UMC::UMC_OK;
+
+    DXVA_Status_VC1 currentTaskStatus = {};
+    bool isStatusExist = false;
+
+    std::list<DXVA_Status_VC1>::iterator iterator;
+
+    STATUS_REPORT_DEBUG_PRINTF("Queried task index %d \n", currIdx)
+
+    // check if status is already cached
+    if (0 != m_pStatusList.size())
+    {
+        for (iterator = m_pStatusList.begin(); iterator != m_pStatusList.end(); iterator++)
+        {
+            if (currIdx == (*iterator).wDecodedPictureIndex)
+            {
+                isStatusExist = true;
+
+                currentTaskStatus = (*iterator);
+                m_pStatusList.erase(iterator);
+
+                break;
+            }
+        }
+    }
+
+    if (false == isStatusExist)
+    {
+        //TDR handling.
+        for(int i=0; i< MPEG2_STATUS_REPORT_NUM;i++){
+            m_pStatusReport[i].bStatus = 3;
+        }
+        // ask driver to provide tasks status
+        sts = m_implUmcHW->pack_w.GetStatusReport(m_pStatusReport);
+        MFX_CHECK_STS((mfxStatus)sts);
+
+        // cache statutes into buffer
+        for (mfxU32 i = 0; i < MPEG2_STATUS_REPORT_NUM; i += 1)
+        {
+            if (0 == m_pStatusReport[i].StatusReportFeedbackNumber)
+            {
+                break;
+            }
+
+            m_pStatusList.push_front(m_pStatusReport[i]);
+        }
+
+        // clear temp buffer
+        memset(m_pStatusReport, 0, sizeof(DXVA_Status_VC1) * MPEG2_STATUS_REPORT_NUM);
+
+        // find status
+        for (iterator = m_pStatusList.begin(); iterator != m_pStatusList.end(); iterator++)
+        {
+            if (currIdx == (*iterator).wDecodedPictureIndex)
+            {
+                currentTaskStatus = (*iterator);
+                break;
+            }
+        }
+
+        m_pStatusList.erase(iterator);
+    }
+
+    switch (currentTaskStatus.bStatus)
+    {
+        case STATUS_REPORT_MINOR_PROBLEM:
+        case STATUS_REPORT_OPERATION_SUCCEEDED:
+            break;
+
+        case STATUS_REPORT_SIGNIFICANT_PROBLEM:
+            m_implUmc->SetCorruptionFlag(current_index);
+            break;
+
+        case STATUS_REPORT_SEVERE_PROBLEM:
+        case STATUS_REPORT_SEVERE_PROBLEM_OTHER:
+            return MFX_ERR_DEVICE_FAILED;
+
+        default:
+            break;
+    }
+
+#endif
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus VideoDECODEMPEG2Internal_HW::GetStatusReport(Ipp32s current_index, UMC::FrameMemID surface_id)
+{
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VideoDECODEMPEG2Internal_HW::GetStatusReport");
+    current_index; surface_id;
+#ifdef MFX_VA_WIN
+    UMC::Status sts = UMC::UMC_OK;
+
+    DXVA_Status_VC1 currentTaskStatus = {};
+
+    STATUS_REPORT_DEBUG_PRINTF("status report count %d\n", m_pStatusList.size())
+
+    // check if status is already cached
+    if (0 != m_pStatusList.size())
+    {
+        currentTaskStatus = m_pStatusList.front();
+        m_pStatusList.pop_front();
+    }
+    else
+    {
+        //TDR handling.
+        for(int i=0; i< MPEG2_STATUS_REPORT_NUM;i++){
+            m_pStatusReport[i].bStatus = 3;
+        }
+        // ask driver to provide tasks status
+        sts = m_implUmcHW->pack_w.GetStatusReport(m_pStatusReport);
+
+        MFX_CHECK_STS((mfxStatus)sts);
+
+        // cache statutes into buffer
+        for (mfxU32 i = 0; i < 8; i += 1)
+        {
+            if (0 == m_pStatusReport[i].StatusReportFeedbackNumber)
+            {
+                break;
+            }
+
+            m_pStatusList.push_front(m_pStatusReport[i]);
+
+            STATUS_REPORT_DEBUG_PRINTF("Got status report %d\n", m_pStatusReport[i].wDecodedPictureIndex)
+        }
+
+        // clear temp buffer
+        memset(m_pStatusReport, 0, sizeof(DXVA_Status_VC1) * MPEG2_STATUS_REPORT_NUM);
+
+        if (0 == m_pStatusList.size())
+        {
+            // something wrong, but who is care
+            return MFX_ERR_NONE;
+        }
+
+        // get status report
+        currentTaskStatus = m_pStatusList.front();
+        m_pStatusList.pop_front();
+    }
+
+    STATUS_REPORT_DEBUG_PRINTF("wDecodedPictureIndex %d is ready\n", currentTaskStatus.wDecodedPictureIndex)
+
+    switch (currentTaskStatus.bStatus)
+    {
+        case STATUS_REPORT_OPERATION_SUCCEEDED:
+            break;
+
+        case STATUS_REPORT_MINOR_PROBLEM:
+        case STATUS_REPORT_SIGNIFICANT_PROBLEM:
+            m_implUmc->SetCorruptionFlag(current_index);
+            break;
+
+        case STATUS_REPORT_SEVERE_PROBLEM:
+        case STATUS_REPORT_SEVERE_PROBLEM_OTHER:
+            m_implUmc->SetCorruptionFlag(current_index);
+            return MFX_ERR_DEVICE_FAILED;
+
+        default:
+            break;
+    }
+
+#endif
+
+#ifdef UMC_VA_LINUX
+    UMC::VideoAccelerator *va;
+    m_pCore->GetVA((mfxHDL*)&va, MFX_MEMTYPE_FROM_DECODE);
+
+    UMC::Status sts = UMC::UMC_OK;
+    mfxU16 surfCorruption = 0;
+
+#if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
+
+    sts = va->SyncTask(surface_id, &surfCorruption);
+
+    STATUS_REPORT_DEBUG_PRINTF("index %d with corruption: %d (sts:%d)\n", surface_id, surfCorruption, sts)
+
+    if (sts != UMC::UMC_OK)
+    {
+        mfxStatus CriticalErrorStatus = (sts == UMC::UMC_ERR_GPU_HANG) ? MFX_ERR_GPU_HANG : MFX_ERR_DEVICE_FAILED;
+        SetCriticalErrorOccured(CriticalErrorStatus);
+        return CriticalErrorStatus;
+    }
+
+#else
+    VASurfaceStatus surfSts = VASurfaceSkipped;
+
+    sts = va->QueryTaskStatus(surface_id, &surfSts, &surfCorruption);
+
+    if (sts == UMC::UMC_ERR_GPU_HANG)
+        return MFX_ERR_GPU_HANG;
+
+    if (sts != UMC::UMC_OK)
+        return MFX_ERR_DEVICE_FAILED;
+
+#endif // #if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
+
+    if (surfCorruption)
+    {
+        m_implUmc->SetCorruptionFlag(current_index);
+    }
+
+#endif // UMC_VA_LINUX
+
+    return MFX_ERR_NONE;
+}
+
 void VideoDECODEMPEG2Internal_HW::TranslateCorruptionFlag(Ipp32s disp_index, mfxFrameSurface1 * surface)
 {
     if (!surface)
@@ -3341,47 +3555,61 @@ void VideoDECODEMPEG2Internal_HW::TranslateCorruptionFlag(Ipp32s disp_index, mfx
 
 }
 
-// This function is called sequentually in the decoded order which is reflected by current_index.
 mfxStatus VideoDECODEMPEG2Internal_HW::PerformStatusCheck(void *pParam)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VideoDECODEMPEG2Internal_HW::PerformStatusCheck");
     MFX_CHECK_NULL_PTR1(pParam);
-
     MParam *parameters = (MParam *)pParam;
     Ipp32s disp_index = parameters->display_index;
-
-    // Sync next task following stream coded order
-    UMC::Status umc_sts = m_implUmcHW->SyncNextTask();
-
-    if (umc_sts != UMC::UMC_OK)
-        return MFX_ERR_DEVICE_FAILED;
+    Ipp32s current_index = parameters->curr_index;
 
     if (disp_index < 0)
+    {
+        GetStatusReport(current_index, parameters->mid[current_index]);
+
+        TranslateCorruptionFlag(disp_index, parameters->surface_work);
+
         return MFX_ERR_NONE;
+    }
+
 
     if (!IsStatusReportEnable(m_pCore))
         return MFX_ERR_NONE;
 
-    // Now we need to search for the surface which is currently subject for display
-    // order (disp_index) and remove its report from the list since we don't need it
-    // anymore: all dependent frames were already processed and we just processed the
-    // surface itself.
-    umc_sts = m_implUmcHW->PopTaskStatus(disp_index);
-    if (umc_sts == UMC::UMC_ERR_TIMEOUT)
-        return MFX_TASK_BUSY;
+    mfxStatus sts = GetStatusReport(disp_index, parameters->mid[disp_index]);
 
-    TranslateCorruptionFlag(disp_index, parameters->surface_out);
-
-    if (umc_sts != UMC::UMC_OK) {
+    if (MFX_ERR_NONE != sts)
+    {
         parameters->m_FrameAllocator->DecreaseReference(parameters->mid[disp_index]);
         parameters->m_frame_in_use[parameters->m_frame_curr] = false;
-
-        mfxStatus mfx_sts = (umc_sts == UMC::UMC_ERR_GPU_HANG)? MFX_ERR_GPU_HANG: MFX_ERR_DEVICE_FAILED;
-#ifdef MFX_VA_LINUX
-        SetCriticalErrorOccured(mfx_sts);
-#endif
-        return mfx_sts;
+        return sts;
     }
+
+    mfxU32 frameType = m_implUmc->GetFrameType(disp_index);
+    // Ipp32s fwd_index = m_implUmc->GetPrevDecodingIndex(disp_index);
+    Ipp32s bwd_index = m_implUmc->GetNextDecodingIndex(disp_index);
+
+    switch (frameType)
+    {
+        case I_PICTURE:
+        case P_PICTURE:
+            break;
+        case B_PICTURE:
+            // backward reference
+            if (bwd_index >= 0)
+            {
+                // should be similar to forward reference, but this function called in display order
+                // following call is workaround for incorrect time of this function call (previous to next_index)
+
+                GetStatusReport(bwd_index, parameters->mid[bwd_index]);
+            }
+
+            break;
+        default:
+            return MFX_ERR_UNKNOWN;
+    }
+
+    TranslateCorruptionFlag(disp_index, parameters->surface_out);
 
     return MFX_ERR_NONE;
 }

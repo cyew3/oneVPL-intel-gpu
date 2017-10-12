@@ -292,6 +292,8 @@ protected:
 
     virtual mfxStatus ConstructFrame(mfxBitstream *bs, mfxFrameSurface1 *surface_work);
     mfxStatus PerformStatusCheck(void *pParam);
+    mfxStatus GetStatusReport(Ipp32s current_index, UMC::FrameMemID surface_id);
+    mfxStatus GetStatusReportByIndex(Ipp32s current_index, mfxU32 currIdx);
     virtual mfxStatus AllocFrames(mfxVideoParam *par);
     mfxStatus RestoreDecoder(Ipp32s frame_buffer_num, UMC::FrameMemID mem_id_to_unlock, Ipp32s task_num_to_unlock, bool end_frame, bool remove_2frames, int decrease_dec_field_count);
     void TranslateCorruptionFlag(Ipp32s disp_index, mfxFrameSurface1 * surface_work);
