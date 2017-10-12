@@ -2244,6 +2244,8 @@ mfxStatus VideoDECODEMJPEGBase_HW::CheckDecodeCaps(VideoCORE * core, mfxVideoPar
 mfxStatus VideoDECODEMJPEGBase_HW::RunThread(void *params, mfxU32 threadNumber, mfxU32 )
 {
     mfxStatus mfxSts = MFX_ERR_NONE;
+    MFX_CHECK_NULL_PTR1(params);
+
     ThreadTaskInfo * info = (ThreadTaskInfo *)params;
 
     if (m_needVpp)
