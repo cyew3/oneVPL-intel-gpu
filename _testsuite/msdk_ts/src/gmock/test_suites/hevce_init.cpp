@@ -407,7 +407,7 @@ namespace hevce_init
                 { MFX_EXT_HEVCPARAM, &tsStruct::mfxExtHEVCParam.PicHeightInLumaSamples, 8 },
             }
         },
-        //GeneralConstraintFlags is not supported for HEVCE hw plugin
+        //GeneralConstraintFlags is not supported for HEVCE hw plugin upto Gen11
         {/*66*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
             {
                 { MFX_EXT_HEVCPARAM, &tsStruct::mfxExtHEVCParam.GeneralConstraintFlags, MFX_HEVC_CONSTR_REXT_MAX_12BIT },
@@ -515,7 +515,7 @@ namespace hevce_init
                 0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data))) {
                 SETPARS((mfxExtHEVCParam *)buff_in, MFX_EXT_HEVCPARAM);
                 SETPARS((mfxExtHEVCParam *)buff_out, MFX_EXT_HEVCPARAM);
-            }
+           }
 
             if (tc.sub_type == MFX_EXTBUFF_HEVC_REGION) {
                 SETPARS((mfxExtHEVCRegion *)buff_in, MFX_EXT_HEVCREGION);
@@ -541,7 +541,7 @@ namespace hevce_init
             }
             if (m_pPar->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12)
             {
-                sts = MFX_ERR_INVALID_VIDEO_PARAM;
+                    sts = MFX_ERR_INVALID_VIDEO_PARAM;
             }
             if (tc.type == PIC_STRUCT)
             {
@@ -566,7 +566,10 @@ namespace hevce_init
                     (tc.sub_type == MFX_EXTBUFF_VIDEO_SIGNAL_INFO))
                     sts = MFX_ERR_NONE;
                 else if (tc.sub_type == MFX_EXTBUFF_HEVC_PARAM)
-                    sts = tc.sts;
+                    if ((((mfxExtHEVCParam *)(m_pPar->ExtParam[0]))->GeneralConstraintFlags != 0) &&  (g_tsHWtype >= MFX_HW_ICL))
+                        sts = MFX_ERR_NONE;
+                    else
+                        sts = tc.sts;
                 else if (tc.sub_type == MFX_EXTBUFF_HEVC_REGION)
                     sts = MFX_ERR_INVALID_VIDEO_PARAM;
                 else if (tc.sub_type == NONE)
