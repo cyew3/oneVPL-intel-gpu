@@ -132,7 +132,11 @@ namespace UMC
 // Forward declaration of used classes
 struct MFX_ENTRY_POINT;
 
-// VideoCORE
+
+// Virtual table size for CommonCORE should be considered fixed.
+// Otherwise binary compatibility with already released plugins would be broken.
+// class CommonCORE : public VideoCORE
+// Therefore Virtual table size, function order, argument number and it's types and etc must be unchanged.
 class VideoCORE {
 public:
 
@@ -150,6 +154,13 @@ public:
     virtual mfxStatus  LockBuffer(mfxMemId mid, mfxU8 **ptr) = 0;
     virtual mfxStatus  UnlockBuffer(mfxMemId mid) = 0;
     virtual mfxStatus  FreeBuffer(mfxMemId mid) = 0;
+
+    // Function checks D3D device for I/O D3D surfaces
+    // If external allocator exists means that component can obtain device handle
+    // If I/O surfaces in system memory  returns MFX_ERR_NONE
+    // THIS IS DEPRECATED FUNCTION kept here only for backward compatibility.
+    virtual mfxStatus  CheckHandle() = 0;
+
 
     virtual mfxStatus  GetFrameHDL(mfxMemId mid, mfxHDL *handle, bool ExtendedSearch = true) = 0;
 
@@ -202,6 +213,8 @@ public:
     // need for correct video accelerator creation
     virtual mfxStatus DoFastCopyExtended(mfxFrameSurface1 *dst, mfxFrameSurface1 *src) = 0;
     virtual mfxStatus DoFastCopyWrapper(mfxFrameSurface1 *dst, mfxU16 dstMemType, mfxFrameSurface1 *src, mfxU16 srcMemType) = 0;
+    // DEPRECATED
+    virtual bool IsFastCopyEnabled(void) = 0;
 
     virtual bool IsExternalFrameAllocator(void) const = 0;
 

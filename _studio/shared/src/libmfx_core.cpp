@@ -112,6 +112,11 @@ mfxStatus CommonCORE::FreeBuffer(mfxHDL mid)
     UMC::AutomaticUMCMutex guard(m_guard);
     return (*m_bufferAllocator.bufferAllocator.Free)(m_bufferAllocator.bufferAllocator.pthis,mid);
 }
+// DEPRECATED
+mfxStatus  CommonCORE::CheckHandle()
+{
+   return MFX_ERR_NONE;
+} // mfxStatus  CommonCORE::CheckHandle()
 
 mfxStatus CommonCORE::AllocFrames(mfxFrameAllocRequest *request,
                                   mfxFrameAllocResponse *response,
@@ -1577,6 +1582,12 @@ mfxStatus CommonCORE::CopyFrame(mfxFrameSurface1 *dst, mfxFrameSurface1 *src)
     {
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
+}
+
+// Deprecated
+bool CommonCORE::IsFastCopyEnabled()
+{
+    return (true);
 }
 
 #ifdef MFX_DEBUG_TOOLS

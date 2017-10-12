@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __LIBMFX_CORE_H__
@@ -59,6 +59,9 @@ public:
     virtual mfxStatus  LockBuffer(mfxMemId mid, mfxU8 **ptr);
     virtual mfxStatus  UnlockBuffer(mfxMemId mid);
     virtual mfxStatus  FreeBuffer(mfxMemId mid);
+
+    // DEPRECATED
+    virtual mfxStatus  CheckHandle();
 
     virtual mfxStatus  GetFrameHDL(mfxMemId mid, mfxHDL *handle, bool ExtendedSearch = true);
 
@@ -116,6 +119,9 @@ public:
     virtual mfxStatus DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc);
     mfxStatus DoSWFastCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc, int copyFlag);
     virtual mfxStatus DoFastCopyWrapper(mfxFrameSurface1 *pDst, mfxU16 dstMemType, mfxFrameSurface1 *pSrc, mfxU16 srcMemType);
+
+    // DEPRECATED
+    virtual bool IsFastCopyEnabled(void);
 
     virtual bool IsExternalFrameAllocator() const;
     virtual eMFXHWType   GetHWType() { return MFX_HW_UNKNOWN; }
