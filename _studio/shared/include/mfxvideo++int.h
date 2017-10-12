@@ -211,6 +211,7 @@ public:
     virtual void INeedMoreThreadsInside(const void *pComponent) = 0;
 
     // need for correct video accelerator creation
+    virtual mfxStatus DoFastCopy(mfxFrameSurface1 *dst, mfxFrameSurface1 *src) = 0;
     virtual mfxStatus DoFastCopyExtended(mfxFrameSurface1 *dst, mfxFrameSurface1 *src) = 0;
     virtual mfxStatus DoFastCopyWrapper(mfxFrameSurface1 *dst, mfxU16 dstMemType, mfxFrameSurface1 *src, mfxU16 srcMemType) = 0;
     // DEPRECATED

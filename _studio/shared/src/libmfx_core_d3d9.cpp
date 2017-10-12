@@ -1054,7 +1054,7 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
             mfxMemId saveMemId = pSrc->Data.MemId;
             pSrc->Data.MemId = 0;
 
-            sts = CommonCORE::DoSWFastCopy(pDst, pSrc, COPY_VIDEO_TO_SYS); // sw copy
+            sts = CoreDoSWFastCopy(pDst, pSrc, COPY_VIDEO_TO_SYS); // sw copy
             MFX_CHECK_STS(sts);
 
             pSrc->Data.MemId = saveMemId;
@@ -1073,7 +1073,7 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
         MFX_CHECK(dstPitch < 0x8000 || pDst->Info.FourCC == MFX_FOURCC_RGB4 || pDst->Info.FourCC == MFX_FOURCC_YUY2, MFX_ERR_UNDEFINED_BEHAVIOR);
         MFX_CHECK(srcPitch < 0x8000 || pSrc->Info.FourCC == MFX_FOURCC_RGB4 || pSrc->Info.FourCC == MFX_FOURCC_YUY2, MFX_ERR_UNDEFINED_BEHAVIOR);
 
-        sts = CommonCORE::DoSWFastCopy(pDst, pSrc, COPY_SYS_TO_SYS); // sw copy
+        sts = CoreDoSWFastCopy(pDst, pSrc, COPY_SYS_TO_SYS); // sw copy
         MFX_CHECK_STS(sts);
     }
     else if (NULL != pSrc->Data.Y && NULL != pDst->Data.MemId)
@@ -1109,7 +1109,7 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
             mfxMemId saveMemId = pDst->Data.MemId;
             pDst->Data.MemId = 0;
 
-            sts = CommonCORE::DoSWFastCopy(pDst, pSrc, COPY_SYS_TO_VIDEO); // sw copy
+            sts = CoreDoSWFastCopy(pDst, pSrc, COPY_SYS_TO_VIDEO); // sw copy
             MFX_CHECK_STS(sts);
 
             pDst->Data.MemId = saveMemId;
