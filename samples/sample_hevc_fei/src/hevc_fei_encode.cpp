@@ -21,13 +21,16 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "hevc_fei_encode.h"
 
 FEI_Encode::FEI_Encode(MFXVideoSession* session, mfxHDL hdl, MfxVideoParamsWrapper& encode_pars,
-        const msdk_char* dst_output, const msdk_char* mvpInFile, PredictorsRepaking* repacker)
+        const msdk_char* dst_output, const msdk_char* mvpInFile, PredictorsRepaking* repacker,
+        mfxU16 NumMvPredictorsL0, mfxU16 NumMvPredictorsL1)
     : m_pmfxSession(session)
     , m_mfxENCODE(*m_pmfxSession)
     , m_buf_allocator(hdl)
     , m_videoParams(encode_pars)
     , m_syncPoint(0)
     , m_dstFileName(dst_output)
+    , m_NumMvPredictorsL0(NumMvPredictorsL0)
+    , m_NumMvPredictorsL1(NumMvPredictorsL1)
 {
     if (0 != msdk_strlen(mvpInFile))
     {
@@ -312,12 +315,15 @@ mfxStatus FEI_Encode::SetCtrlParams(const HevcTask& task)
 
         if (m_encodeCtrl.FrameType & MFX_FRAMETYPE_P)
         {
-            ctrl->NumMvPredictors[0] = m_videoParams.GetExtBuffer<mfxExtCodingOption3>()->NumRefActiveP[0];
+            ctrl->NumMvPredictors[0] = m_NumMvPredictorsL0 ? m_NumMvPredictorsL0 :
+                m_videoParams.GetExtBuffer<mfxExtCodingOption3>()->NumRefActiveP[0];
         }
         else if (m_encodeCtrl.FrameType & MFX_FRAMETYPE_B)
         {
-            ctrl->NumMvPredictors[0] = m_videoParams.GetExtBuffer<mfxExtCodingOption3>()->NumRefActiveBL0[0];
-            ctrl->NumMvPredictors[1] = m_videoParams.GetExtBuffer<mfxExtCodingOption3>()->NumRefActiveBL1[0];
+            ctrl->NumMvPredictors[0] = m_NumMvPredictorsL0 ? m_NumMvPredictorsL0 :
+                m_videoParams.GetExtBuffer<mfxExtCodingOption3>()->NumRefActiveBL0[0];
+            ctrl->NumMvPredictors[1] = m_NumMvPredictorsL1 ? m_NumMvPredictorsL1 :
+                m_videoParams.GetExtBuffer<mfxExtCodingOption3>()->NumRefActiveBL1[0];
         }
 
         mfxExtFeiHevcEncMVPredictors* pMVP = m_encodeCtrl.GetExtBuffer<mfxExtFeiHevcEncMVPredictors>();

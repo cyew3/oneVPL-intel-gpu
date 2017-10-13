@@ -30,7 +30,9 @@ class FEI_Encode
 {
 public:
     FEI_Encode(MFXVideoSession* session, mfxHDL hdl, MfxVideoParamsWrapper& encode_pars,
-        const msdk_char* dst_output, const msdk_char* mvpInFile, PredictorsRepaking* rpck);
+        const msdk_char* dst_output, const msdk_char* mvpInFile, PredictorsRepaking* rpck,
+        mfxU16 NumMvPredictorsL0, mfxU16 NumMvPredictorsL1);
+
     ~FEI_Encode();
 
     mfxStatus Init();
@@ -62,7 +64,9 @@ private:
 
     std::auto_ptr<PredictorsRepaking> m_repacker;
 
-    mfxStatus SetEncodeParameters(const sInputParams& encParams);
+    mfxU16 m_NumMvPredictorsL0;  // Number of L0 MV predictors
+    mfxU16 m_NumMvPredictorsL1;  // Number of L1 MV predictors
+
     mfxStatus SyncOperation();
     mfxStatus AllocateSufficientBuffer();
     mfxStatus SetCtrlParams(const HevcTask& task); // for encoded order

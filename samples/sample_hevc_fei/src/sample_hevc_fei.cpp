@@ -77,9 +77,11 @@ void PrintHelp(const msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-gop_opt closed|strict] - GOP optimization flags (can be used together)\n"));
     msdk_printf(MSDK_STRING("   [-r (-GopRefDist) distance] - Distance between I- or P- key frames (1 means no B-frames) (0 - by default(I frames))\n"));
     msdk_printf(MSDK_STRING("   [-num_ref (-NumRefFrame) numRefs] - number of reference frames\n"));
-    msdk_printf(MSDK_STRING("   [-NumRefActiveP   numRefs] - number of maximum allowed references for P frames (up to 4).\n"));
-    msdk_printf(MSDK_STRING("   [-NumRefActiveBL0 numRefs] - number of maximum allowed backward references for B frames (up to 4).\n"));
-    msdk_printf(MSDK_STRING("   [-NumRefActiveBL1 numRefs] - number of maximum allowed forward references for B frames (up to 2).\n"));
+    msdk_printf(MSDK_STRING("   [-NumRefActiveP   numRefs] - number of maximum allowed references for P frames (up to 4)\n"));
+    msdk_printf(MSDK_STRING("   [-NumRefActiveBL0 numRefs] - number of maximum allowed backward references for B frames (up to 4)\n"));
+    msdk_printf(MSDK_STRING("   [-NumRefActiveBL1 numRefs] - number of maximum allowed forward references for B frames (up to 2)\n"));
+    msdk_printf(MSDK_STRING("   [-NumPredictorsL0 numPreds] - number of L0 predictors (default - assign depending on the frame type)\n"));
+    msdk_printf(MSDK_STRING("   [-NumPredictorsL1 numPreds] - number of L1 predictors (default - assign depending on the frame type)\n"));
     msdk_printf(MSDK_STRING("   [-gpb:<on,off>] - make HEVC encoder use regular P-frames (off) or GPB (on) (on - by default)\n"));
     msdk_printf(MSDK_STRING("   [-ppyr:<on,off>] - enables P-pyramid\n"));
     msdk_printf(MSDK_STRING("   [-bref] - arrange B frames in B pyramid reference structure\n"));
@@ -88,7 +90,7 @@ void PrintHelp(const msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-PicTimingSEI] - inserts picture timing SEI\n"));
     msdk_printf(MSDK_STRING("   [-mvout <file-name>] - use this to output MV predictors after PreENC\n"));
     msdk_printf(MSDK_STRING("   [-mbstat <file-name>] - use this to output per MB distortions for each frame after PreENC\n"));
-    msdk_printf(MSDK_STRING("   [-mvpin <file-name>] - use this to input MV predictors for ENCODE (Encoded Order will be enabled automatically).\n"));
+    msdk_printf(MSDK_STRING("   [-mvpin <file-name>] - use this to input MV predictors for ENCODE (Encoded Order will be enabled automatically)\n"));
 
     msdk_printf(MSDK_STRING("\n"));
 }
@@ -283,6 +285,16 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU32 nArgNum, sInputParams& 
             CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
             PARSE_CHECK(msdk_opt_read(strInput[++i], params.NumRefActiveBL1), "NumRefActiveBL1", isParseInvalid);
         }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-NumPredictorsL0")))
+        {
+            CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
+            PARSE_CHECK(msdk_opt_read(strInput[++i], params.NumMvPredictorsL0), "NumPredictorsL0", isParseInvalid);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-NumPredictorsL1")))
+        {
+            CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
+            PARSE_CHECK(msdk_opt_read(strInput[++i], params.NumMvPredictorsL1), "NumPredictorsL1", isParseInvalid);
+        }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-tff")))
         {
             params.input.nPicStruct = MFX_PICSTRUCT_FIELD_TFF;
@@ -377,6 +389,16 @@ mfxStatus CheckOptions(const sInputParams params, const msdk_char* appName)
     if (params.NumRefActiveBL1 > 2)
     {
         PrintHelp(appName, "Unsupported NumRefActiveBL1 value (must be in range [0,2])");
+        return MFX_ERR_UNSUPPORTED;
+    }
+    if (params.NumMvPredictorsL0 > 4)
+    {
+        PrintHelp(appName, "Unsupported NumMvPredictorsL0 value (must be in range [0,4])");
+        return MFX_ERR_UNSUPPORTED;
+    }
+    if (params.NumMvPredictorsL1 > 4)
+    {
+        PrintHelp(appName, "Unsupported NumMvPredictorsL1 value (must be in range [0,4])");
         return MFX_ERR_UNSUPPORTED;
     }
     if (!params.bENCODE && !params.bPREENC)

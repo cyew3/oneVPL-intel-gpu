@@ -66,25 +66,27 @@ struct sInputParams
 
     bool bENCODE;
     bool bPREENC;
-    bool bEncodedOrder;     // use EncodeOrderControl for external reordering
+    bool bEncodedOrder;        // use EncodeOrderControl for external reordering
     mfxU8  QP;
-    mfxU16 dstWidth;        // destination picture width
-    mfxU16 dstHeight;       // destination picture height
+    mfxU16 dstWidth;           // destination picture width
+    mfxU16 dstHeight;          // destination picture height
     mfxU32 nNumFrames;
     mfxU16 nNumSlices;
-    mfxU16 nRefDist;        // distance between I- or P (or GPB) - key frames, GopRefDist = 1, there are no regular B-frames used
-    mfxU16 nGopSize;        // number of frames to next I
-    mfxU16 nIdrInterval;    // distance between IDR frames in GOPs
-    mfxU16 BRefType;        // B-pyramid ON/OFF/UNKNOWN (let MSDK lib decide)
-    mfxU16 PRefType;        // P-pyramid ON/OFF
-    mfxU16 nNumRef;         // number of reference frames (DPB size)
-    mfxU16 nGopOptFlag;     // STRICT | CLOSED, default is OPEN GOP
-    mfxU16 GPB;             // indicates that HEVC encoder use regular P-frames or GPB
-    mfxU16 NumRefActiveP;   // maximal number of references for P frames
-    mfxU16 NumRefActiveBL0; // maximal number of backward references for B frames
-    mfxU16 NumRefActiveBL1; // maximal number of forward references for B frames
-    mfxU16 preencDSfactor;  // downsample input before passing to preenc (2/4/8x are supported)
-    mfxU16 PicTimingSEI;    // picture timing SEI
+    mfxU16 nRefDist;           // distance between I- or P (or GPB) - key frames, GopRefDist = 1, there are no regular B-frames used
+    mfxU16 nGopSize;           // number of frames to next I
+    mfxU16 nIdrInterval;       // distance between IDR frames in GOPs
+    mfxU16 BRefType;           // B-pyramid ON/OFF/UNKNOWN (let MSDK lib decide)
+    mfxU16 PRefType;           // P-pyramid ON/OFF
+    mfxU16 nNumRef;            // number of reference frames (DPB size)
+    mfxU16 nGopOptFlag;        // STRICT | CLOSED, default is OPEN GOP
+    mfxU16 GPB;                // indicates that HEVC encoder use regular P-frames or GPB
+    mfxU16 NumRefActiveP;      // maximal number of references for P frames
+    mfxU16 NumRefActiveBL0;    // maximal number of backward references for B frames
+    mfxU16 NumRefActiveBL1;    // maximal number of forward references for B frames
+    mfxU16 NumMvPredictorsL0;  // Number of L0 MV predictors
+    mfxU16 NumMvPredictorsL1;  // Number of L1 MV predictors
+    mfxU16 preencDSfactor;     // downsample input before passing to preenc (2/4/8x are supported)
+    mfxU16 PicTimingSEI;       // picture timing SEI
 
     sInputParams()
         : bENCODE(false)
@@ -106,6 +108,8 @@ struct sInputParams
         , NumRefActiveP(1)
         , NumRefActiveBL0(1)
         , NumRefActiveBL1(1)
+        , NumMvPredictorsL0(0)
+        , NumMvPredictorsL1(0)
         , preencDSfactor(1)            // no downsampling
         , PicTimingSEI(MFX_CODINGOPTION_OFF)
     {

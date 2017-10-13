@@ -435,13 +435,13 @@ MfxVideoParamsWrapper GetEncodeParams(const sInputParams& user_pars, const mfxFr
     // user defined settings
     pars.mfx.QPI = pars.mfx.QPP = pars.mfx.QPB = user_pars.QP;
 
-    pars.mfx.GopRefDist  = user_pars.nRefDist;
-    pars.mfx.GopPicSize  = user_pars.nGopSize;
-    pars.mfx.GopOptFlag  = user_pars.nGopOptFlag;
-    pars.mfx.IdrInterval = user_pars.nIdrInterval;
-    pars.mfx.NumRefFrame = user_pars.nNumRef;
-    pars.mfx.NumSlice    = user_pars.nNumSlices;
-    pars.mfx.EncodedOrder= user_pars.bEncodedOrder;
+    pars.mfx.GopRefDist   = user_pars.nRefDist;
+    pars.mfx.GopPicSize   = user_pars.nGopSize;
+    pars.mfx.GopOptFlag   = user_pars.nGopOptFlag;
+    pars.mfx.IdrInterval  = user_pars.nIdrInterval;
+    pars.mfx.NumRefFrame  = user_pars.nNumRef;
+    pars.mfx.NumSlice     = user_pars.nNumSlices;
+    pars.mfx.EncodedOrder = user_pars.bEncodedOrder;
 
     mfxExtCodingOption* pCO = pars.AddExtBuffer<mfxExtCodingOption>();
     if (!pCO) throw mfxError(MFX_ERR_NOT_INITIALIZED, "Failed to attach mfxExtCodingOption");
@@ -552,5 +552,6 @@ FEI_Encode* CEncodingPipeline::CreateEncode(mfxFrameInfo& in_fi)
     sts = m_pHWdev->GetHandle(MFX_HANDLE_VA_DISPLAY, &hdl);
     CHECK_STS_AND_RETURN(sts, "CreateEncode::m_pHWdev->GetHandle failed", NULL);
 
-    return new FEI_Encode(&m_mfxSession, hdl, pars, m_inParams.strDstFile, m_inParams.mvpInFile, repacker);
+    return new FEI_Encode(&m_mfxSession, hdl, pars, m_inParams.strDstFile, m_inParams.mvpInFile, repacker,
+        m_inParams.NumMvPredictorsL0, m_inParams.NumMvPredictorsL1);
 }
