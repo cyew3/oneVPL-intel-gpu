@@ -8,6 +8,7 @@
 // Copyright(C) 2016-2017 Intel Corporation. All Rights Reserved.
 //
 
+#include <mutex>
 #include "mfx_vp9_encode_hw_d3d9.h"
 #include "mfx_vp9_encode_hw_par.h"
 
@@ -342,6 +343,9 @@ mfxStatus FillSegmentMap(Task const & task,
     mfxU32 dstH = dstFi.Height;
     mfxU32 dstPitch = segMap.Pitch;
 
+    mfxCoreParam corePar = {};
+    m_pmfxCore->GetCoreParam(m_pmfxCore->pthis, &corePar);
+
     mfxFrameInfo const & srcFi = task.m_pRawFrame->pSurface->Info;
     mfxU16 srcBlockSize = MapIdToBlockSize(seg.SegmentIdBlockSize);
     mfxU32 srcW = (srcFi.Width + srcBlockSize - 1) / srcBlockSize;
@@ -359,6 +363,7 @@ mfxStatus FillSegmentMap(Task const & task,
     // for now application seg map is accepted in 32x32 and 64x64 blocks
     // and driver seg map is always in 16x16 blocks
     // need to map one to another
+
     for (mfxU32 i = 0; i < dstH; i++)
     {
         for (mfxU32 j = 0; j < dstW; j++)
@@ -499,9 +504,9 @@ void HardcodeCaps(ENCODE_CAPS_VP9& caps, mfxCoreInterface* pCore)
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     if (platform.CodeName >= MFX_PLATFORM_ICELAKE)
     {
-        // for now driver reports in caps.NumScalablePipesMinus1 log2 of max supported number of tile columns
-        // need to hardcode this caps to real number of scalable pipes supported by Gen11 LP
-        // TODO: remove this once driver behavior will be fixed.
+        // for now driver supports only 2 pipes for LP and HP configurations, but for HP it reports 4 (actual
+        // support will be added to the driver later), until then this hardcode is required
+        // TODO: remove this when actual support of 4 pipes is implemented in the driver for HP configuration
         caps.NumScalablePipesMinus1 = 1;
     }
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
@@ -545,6 +550,9 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
 
     HRESULT hr = auxDevice->Execute(AUXDEV_QUERY_ACCEL_CAPS, &guid, sizeof(guid),& m_caps, sizeof(m_caps));
     MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
+
+    PrintDdiToLogOnce(m_caps);
+
     MFX_CHECK(m_caps.EncodeFunc, MFX_ERR_DEVICE_FAILED);
 
     HardcodeCaps(m_caps, pCore);
@@ -776,9 +784,17 @@ mfxStatus D3D9Encoder::Execute(
     try
     {
         HRESULT hr = m_auxDevice->BeginFrame((IDirect3DSurface9 *)surface, 0);
+        if (FAILED(hr))
+        {
+            VP9_LOG("\n FATAL: error status from the driver on BeginFrame(): [%x]!\n", hr);
+        }
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
         hr = m_auxDevice->Execute(ENCODE_ENC_PAK_ID, encodeExecuteParams, (void *)0);
+        if (FAILED(hr))
+        {
+            VP9_LOG("\n FATAL: error status from the driver on Execute(): [%x]!\n", hr);
+        }
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
         HANDLE handle;
@@ -786,6 +802,7 @@ mfxStatus D3D9Encoder::Execute(
     }
     catch (...)
     {
+        VP9_LOG("\n FATAL: exception from the driver on executing task!\n");
         return MFX_ERR_DEVICE_FAILED;
     }
 
@@ -821,10 +838,15 @@ mfxStatus D3D9Encoder::QueryStatus(
                 (mfxU32)m_feedbackUpdate.size() * sizeof(m_feedbackUpdate[0]));
 
             MFX_CHECK(hr != D3DERR_WASSTILLDRAWING, MFX_WRN_DEVICE_BUSY);
+            if (FAILED(hr))
+            {
+                VP9_LOG("\n FATAL: error status from the driver received on quering task status: [%x]!\n", hr);
+            }
             MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
         }
         catch (...)
         {
+            VP9_LOG("\n FATAL: exception from the driver on quering task status!\n");
             return MFX_ERR_DEVICE_FAILED;
         }
 
@@ -869,6 +891,55 @@ mfxStatus D3D9Encoder::Destroy()
 
     return MFX_ERR_NONE;
 } // mfxStatus D3D9Encoder::Destroy()
+
+void PrintDdiToLog(ENCODE_CAPS_VP9 const &caps)
+{
+    caps;
+    VP9_LOG("\n\n*** DDI CAPS DUMP ***\n");
+    VP9_LOG("*** CodingLimitSet=%d\n", caps.CodingLimitSet);
+    VP9_LOG("*** Color420Only=%d\n", caps.Color420Only);
+    VP9_LOG("*** ForcedSegmentationSupport=%d\n", caps.ForcedSegmentationSupport);
+    VP9_LOG("*** FrameLevelRateCtrl=%d\n", caps.FrameLevelRateCtrl);
+    VP9_LOG("*** BRCReset=%d\n", caps.BRCReset);
+    VP9_LOG("*** AutoSegmentationSupport=%d\n", caps.AutoSegmentationSupport);
+    VP9_LOG("*** TemporalLayerRateCtrl=%d\n", caps.TemporalLayerRateCtrl);
+    VP9_LOG("*** DynamicScaling=%d\n", caps.DynamicScaling);
+    VP9_LOG("*** TileSupport=%d\n", caps.TileSupport);
+    VP9_LOG("*** NumScalablePipesMinus1=%d\n", caps.NumScalablePipesMinus1);
+    VP9_LOG("*** YUV422ReconSupport=%d\n", caps.YUV422ReconSupport);
+    VP9_LOG("*** YUV444ReconSupport=%d\n", caps.YUV444ReconSupport);
+    VP9_LOG("*** MaxEncodedBitDepth=%d\n", caps.MaxEncodedBitDepth);
+    VP9_LOG("*** UserMaxFrameSizeSupport=%d\n", caps.UserMaxFrameSizeSupport);
+    VP9_LOG("*** SegmentFeatureSupport=%d\n", caps.SegmentFeatureSupport);
+    VP9_LOG("*** DirtyRectSupport=%d\n", caps.DirtyRectSupport);
+    VP9_LOG("*** MoveRectSupport=%d\n", caps.MoveRectSupport);
+    VP9_LOG("***\n");
+    VP9_LOG("*** EncodeFunc=%d\n", caps.EncodeFunc);
+    VP9_LOG("*** HybridPakFunc=%d\n", caps.HybridPakFunc);
+    VP9_LOG("*** EncFunc=%d\n", caps.EncFunc);
+    VP9_LOG("***\n");
+    VP9_LOG("*** MaxPicWidth=%d\n", caps.MaxPicWidth);
+    VP9_LOG("*** MaxPicHeight=%d\n", caps.MaxPicHeight);
+    VP9_LOG("*** MaxNumOfDirtyRect=%d\n", caps.MaxNumOfDirtyRect);
+    VP9_LOG("*** MaxNumOfMoveRect=%d\n", caps.MaxNumOfMoveRect);
+    VP9_LOG("*** END OF DUMP ***\n");
+}
+
+std::once_flag PrintDdiToLog_flag;
+
+void PrintDdiToLogOnce(ENCODE_CAPS_VP9 const &caps)
+{
+    caps;
+#ifdef VP9_LOGGING
+    try
+    {
+        std::call_once(PrintDdiToLog_flag, PrintDdiToLog, caps);
+    }
+    catch (...)
+    {
+    }
+#endif
+}
 
 #endif // (MFX_VA_WIN)
 

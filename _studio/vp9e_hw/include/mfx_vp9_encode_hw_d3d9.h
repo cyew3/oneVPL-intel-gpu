@@ -263,6 +263,11 @@ void HardcodeCaps(
     ENCODE_CAPS_VP9& caps,
     mfxCoreInterface* pCore);
 
+void PrintDdiToLog(
+    ENCODE_CAPS_VP9 const &caps);
+
+void PrintDdiToLogOnce(ENCODE_CAPS_VP9 const &caps);
+
 class CachedFeedback
 {
 public:

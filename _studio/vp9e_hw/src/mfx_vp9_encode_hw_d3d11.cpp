@@ -191,6 +191,9 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
         // hardcoded caps are used to workaround this issue
         hr = m_pVContext->DecoderExtension(m_pVDecoder, &ext);
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
+
+        PrintDdiToLogOnce(m_caps);
+
         HardcodeCaps(m_caps, pCore);
     }
 
@@ -535,15 +538,24 @@ mfxStatus D3D11Encoder::Execute(
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "DecoderExtension");
             hr = m_pVContext->DecoderExtension(m_pVDecoder, &ext);
         }
+        if (FAILED(hr))
+        {
+            VP9_LOG("\n FATAL: error status from the driver on DecoderExtension(): [%x]!\n", hr);
+        }
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "DecoderEndFrame");
             hr = m_pVContext->DecoderEndFrame(m_pVDecoder);
         }
+        if (FAILED(hr))
+        {
+            VP9_LOG("\n FATAL: error status from the driver on DecoderEndFrame(): [%x]!\n", hr);
+        }
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
     }
     catch (...)
     {
+        VP9_LOG("\n FATAL: exception from the driver on executing task!\n");
         return MFX_ERR_DEVICE_FAILED;
     }
 
@@ -582,10 +594,15 @@ mfxStatus D3D11Encoder::QueryStatus(
             HRESULT hr = m_pVContext->DecoderExtension(m_pVDecoder, &ext);
 
             MFX_CHECK(hr != D3DERR_WASSTILLDRAWING, MFX_WRN_DEVICE_BUSY);
+            if (FAILED(hr))
+            {
+                VP9_LOG("\n FATAL: error status from the driver received on quering task status: [%x]!\n", hr);
+            }
             MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
         }
         catch (...)
         {
+            VP9_LOG("\n FATAL: exception from the driver on quering task status!\n");
             return MFX_ERR_DEVICE_FAILED;
         }
 
