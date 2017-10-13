@@ -108,13 +108,12 @@ protected:
     {
         switch (bufferId)
         {
-#if _MSDK_API > MSDK_API(1,24)
+#if MFX_VERSION >= MFX_VERSION_NEXT
         case MFX_EXTBUFF_HEVCFEI_ENC_QP:
             return VAEncQpBufferType;
 #endif
-        // FEI buffers are unsupported since VAAPI is not available for them
-        // case MFX_EXTBUFF_HEVCFEI_ENC_MV_PRED:
-        //     return VAEncFEIMVPredictorBufferType;
+        case MFX_EXTBUFF_HEVCFEI_ENC_MV_PRED:
+            return VAEncFEIMVPredictorBufferTypeIntel;
         default:
             throw mfxError(MFX_ERR_UNSUPPORTED, "Unsupported buffer type");
         }

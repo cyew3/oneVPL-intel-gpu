@@ -107,7 +107,7 @@ const mfxPluginUID & msdkGetPluginUID(mfxIMPL impl, msdkComponentType type, mfxU
                 return MFX_PLUGINID_VP8E_HW;
             }
             break;
-#if MFX_VERSION >= 1025 && !defined(_WIN32) && !defined(_WIN64)
+#if MFX_VERSION >= MFX_VERSION_NEXT && !defined(_WIN32) && !defined(_WIN64)
         case (MSDK_VENCODE | MSDK_FEI):
             switch (uCodecid)
             {

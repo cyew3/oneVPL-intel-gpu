@@ -120,7 +120,7 @@ namespace MfxHwH265FeiEncode
             vaFeiFrameControl->ctb_ctrl = ctuctrl ? ctuctrl->VaBufferID : VA_INVALID_ID;
 
             // Output buffers
-#if MFX_VERSION >= 1025
+#if MFX_VERSION >= MFX_VERSION_NEXT
             mfxExtFeiHevcPakCtuRecordV0* ctucmd = reinterpret_cast<mfxExtFeiHevcPakCtuRecordV0*>(GetBufById(task.m_bs, MFX_EXTBUFF_HEVCFEI_PAK_CTU_REC));
             vaFeiFrameControl->ctb_cmd = ctucmd ? ctucmd->VaBufferID : VA_INVALID_ID;
 
