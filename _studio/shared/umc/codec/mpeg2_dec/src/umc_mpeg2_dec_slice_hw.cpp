@@ -482,6 +482,8 @@ mm:                 Ipp32s numMB = (PictureHeader[task_num].picture_structure ==
                     if (UMC_OK != umcRes)
                         return umcRes;
 
+                    m_executed = true;
+
                     pack_w.add_to_slice_start = 0;
 
                     if(pack_w.IsProtectedBS)
@@ -928,6 +930,8 @@ mm:
                     if (UMC_OK != umcRes)
                         return umcRes;
 
+                    m_executed = true;
+
                     pack_w.add_to_slice_start = 0;
 
                     if(pack_w.IsProtectedBS)
@@ -1039,10 +1043,14 @@ mm:
               umcRes = pack_w.m_va->Execute();
               if (UMC_OK != umcRes)
                   return UMC_ERR_DEVICE_FAILED;
+
+              m_executed = true;
           }
           umcRes = pack_w.m_va->EndFrame();
-          if (UMC_OK != umcRes)
+          if (UMC_OK != umcRes || !m_executed)
               return UMC_ERR_DEVICE_FAILED;
+
+          m_executed = false;
 
           if(display_index < 0)
           {
