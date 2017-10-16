@@ -44,6 +44,9 @@
     <ClCompile Include="src\mfx_protected_transcoding_pipeline.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\mfx_ref_list_control_encoded_order.cpp">
+      <Filter>encode</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\mfx_encode_decode_quality.h">
@@ -93,6 +96,9 @@
     </ClInclude>
     <ClInclude Include="include\mfx_protected_transcoding_pipeline.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_ref_list_control_encoded_order.h">
+      <Filter>encode</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

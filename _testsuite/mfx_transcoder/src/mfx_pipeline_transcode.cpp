@@ -38,6 +38,7 @@ Copyright(c) 2008-2017 Intel Corporation. All Rights Reserved.
 #include "mfxjpeg.h"
 #include "mfx_ip_field_pair_disable_encoder.h"
 #include "mfx_field_output_encode.h"
+#include "mfx_ref_list_control_encoded_order.h"
 
 #ifdef MFX_PIPELINE_SUPPORT_VP8
     #include "mfxvp8.h"
@@ -1919,12 +1920,22 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             m_EncParams.mfx.EncodedOrder = 1;
             m_inParams.EncodedOrder = 1;
         }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-active_ref_lists_par"), VM_STRING("par-file for reference lists + reordering. Each line: <FrameOrder> <FrameType> <PicStruct> | 8 entries of <FrameOrder of a reference in L0 list> | 8 entries of <FrameOrder of a reference in L1 list> |"), OPT_FILENAME))
+        {
+            MFX_CHECK(1 + argv != argvEnd);
+            MFX_CHECK(0 == vm_string_strcpy_s(m_inParams.encOrderRefListsParFile, MFX_ARRAY_SIZE(m_inParams.encOrderRefListsParFile), argv[1]));
+            argv++;
+            m_EncParams.mfx.EncodedOrder = 1;
+            m_inParams.EncodedOrder = 1;
+
+            m_inParams.bExternalRefListEncodedOrder = true;
+        }
         else if (m_OptProc.Check(argv[0], VM_STRING("-QPOffset"), VM_STRING("QP offset per pyramid layer (8 layers max)"), OPT_SPECIAL, VM_STRING("int[1..8]")))
         {
             MFX_CHECK(1 + argv < argvEnd);
 
             m_extCodingOptions3->EnableQPOffset = MFX_CODINGOPTION_ON;
-            
+
             for (mfxU8 i = 0; i < 8 && argv+1 < argvEnd && argv[1][0] != VM_STRING('-'); i ++)
             {
                 argv ++;
@@ -2271,7 +2282,7 @@ mfxStatus MFXTranscodingPipeline::ApplyBitrateParams()
     if ((m_WinBRCMaxAvgBps || m_WinBRCSize) && (pMFXParams->mfx.RateControlMethod == MFX_RATECONTROL_LA || pMFXParams->mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD || pMFXParams->mfx.RateControlMethod == MFX_RATECONTROL_VBR || pMFXParams->mfx.RateControlMethod == MFX_RATECONTROL_QVBR))
     {
         m_extCodingOptions3->WinBRCSize  = m_WinBRCSize;
-        m_extCodingOptions3->WinBRCMaxAvgKbps = (mfxU16)IPP_MIN(65535, m_WinBRCMaxAvgBps/1000);    
+        m_extCodingOptions3->WinBRCMaxAvgKbps = (mfxU16)IPP_MIN(65535, m_WinBRCMaxAvgBps/1000);
     }
 
     if (m_ICQQuality || pMFXParams->mfx.RateControlMethod == MFX_RATECONTROL_ICQ || pMFXParams->mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ)
@@ -2756,7 +2767,7 @@ std::auto_ptr<IVideoEncode> MFXTranscodingPipeline::CreateEncoder()
         createParams = make_wrapper<IVideoEncode>(m_components[eREN].m_pSession->GetMFXSession()
             , m_inParams.strEncPlugin
             , ENCODER_MFX_PLUGIN_FILE
-            , NULL);        
+            , NULL);
     } else {
         createParams = make_wrapper<IVideoEncode>(m_components[eREN].m_pSession->GetMFXSession()
             , VM_STRING("")
@@ -2797,7 +2808,10 @@ std::auto_ptr<IVideoEncode> MFXTranscodingPipeline::CreateEncoder()
 
     if (m_inParams.EncodedOrder)
     {
-        pEncoder.reset(new EncodeOrderEncode(pEncoder, m_inParams.useEncOrderParFile, m_inParams.encOrderParFile));
+        if (m_inParams.bExternalRefListEncodedOrder)
+            pEncoder.reset(new RefListControlEncodedOrder(pEncoder, m_inParams.encOrderRefListsParFile));
+        else
+            pEncoder.reset(new EncodeOrderEncode(pEncoder, m_inParams.useEncOrderParFile, m_inParams.encOrderParFile));
     }
 
     if (m_inParams.bDisableIpFieldPair)

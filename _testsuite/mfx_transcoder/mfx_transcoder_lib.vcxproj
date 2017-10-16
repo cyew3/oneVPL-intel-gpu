@@ -271,6 +271,7 @@
     <ClCompile Include="src\mfx_latency_encode.cpp" />
     <ClCompile Include="src\mfx_protected_transcoding_pipeline.cpp" />
     <ClCompile Include="src\mfx_ref_list_control_encode.cpp" />
+    <ClCompile Include="src\mfx_ref_list_control_encoded_order.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\mfx_encoder_protected.h" />
@@ -289,6 +290,7 @@
     <ClInclude Include="include\mfx_latency_encode.h" />
     <ClInclude Include="include\mfx_protected_transcoding_pipeline.h" />
     <ClInclude Include="include\mfx_ref_list_control_encode.h" />
+    <ClInclude Include="include\mfx_ref_list_control_encoded_order.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

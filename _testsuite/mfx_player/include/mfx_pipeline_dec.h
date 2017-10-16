@@ -97,6 +97,7 @@ struct sCommandlineParams
   bool           bNoExtPicstruct;//if specified decoder wont produce extended picstruct combinations
   bool           bMultiFiles;//used in multiview render to allow create output in different files
   bool           bCreateRefListControl;
+  bool           bExternalRefListEncodedOrder;
   bool           bCreateEncFrameInfo;
   bool           bCreatePerFrameExtBuf;
   bool           bCalcCRC;//create crc calculation wrapper over filewriter
@@ -226,6 +227,8 @@ struct sCommandlineParams
 
   bool           useEncOrderParFile;
   vm_char        encOrderParFile[MAX_FILE_PATH];
+
+  vm_char        encOrderRefListsParFile[MAX_FILE_PATH];
 
   // true means using InitEx, false - Init
   bool          bInitEx;
