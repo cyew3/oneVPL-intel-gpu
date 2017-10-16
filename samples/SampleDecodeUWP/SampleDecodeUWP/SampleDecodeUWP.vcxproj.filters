@@ -41,6 +41,7 @@
     <ClInclude Include="RendererPanel.h" />
     <ClInclude Include="MSDKTime.h" />
     <ClInclude Include="base_allocator.h" />
+    <ClInclude Include="MSDKHandle.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\LockScreenLogo.scale-200.png">

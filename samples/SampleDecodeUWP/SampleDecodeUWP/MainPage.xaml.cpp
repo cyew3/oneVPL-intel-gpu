@@ -70,7 +70,7 @@ void SampleDecodeUWP::MainPage::Page_Loaded(Platform::Object^ sender, Windows::U
         ShowErrorAndExit("Cannot initialize library");
     }
 
-    if (!RendererPanel->Init(pipeline.GetHWDevHdl()))
+    if (!RendererPanel->Init(ref new CMSDKHandle(pipeline.GetHWDevHdl())))
     {
         ShowErrorAndExit("Cannot create swapchain for rendering");
     }

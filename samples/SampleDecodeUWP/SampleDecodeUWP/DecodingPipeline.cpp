@@ -20,6 +20,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "pch.h"
 #include "DecodingPipeline.h"
 #include "sample_defs.h"
+#include "MSDKHandle.h"
 
 #define WAIT_INTERVAL 20000
 #define BUFFERED_FRAMES_NUM 5
@@ -193,10 +194,9 @@ mfxStatus CDecodingPipeline::SyncOneSurface()
         decodingSurfaces.front()->LinkedSyncPoint = NULL;
 
         //--- Pushing surface to the output queue
-        Platform::IntPtr ptr = (Platform::IntPtr)pFrontSurface;
         if (rendererPanel)
         {
-            rendererPanel->EnqueueSurface((Platform::IntPtr)pFrontSurface);
+            rendererPanel->EnqueueSurface(ref new SampleDecodeUWP::CMSDKHandle(pFrontSurface));
         }
 
         decodingSurfaces.pop_front();

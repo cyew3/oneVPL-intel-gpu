@@ -1,4 +1,4 @@
-﻿/******************************************************************************\
+/******************************************************************************\
 Copyright (c) 2005-2017, Intel Corporation
 All rights reserved.
 
@@ -18,29 +18,23 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 \**********************************************************************************/
 
 #pragma once
-#include "UWPRenderer.h"
-#include "MfxFrameSurfaceExt.h"
-#include "d3d11_device.h"
-#include "MSDKHandle.h"
-
 namespace SampleDecodeUWP
 {
-	public ref class CRendererPanel sealed : public Windows::UI::Xaml::Controls::SwapChainPanel
-	{
-	public:
-		CRendererPanel();
-        bool Init(CMSDKHandle^ pDevHdl);
-        void EnqueueSurface(CMSDKHandle^ surface)
+    public ref struct CMSDKHandle sealed
+    {
+    public:
+        CMSDKHandle() {}
+    internal:
+        void* handle = 0;
+        CMSDKHandle(void* hdl)
         {
-            renderer.EnqueueSurface((CMfxFrameSurfaceExt*)((void*)*surface));
-        }
-        void SetFrameRate(double frameRate)
-        {
-            renderer.SetFrameRate(frameRate);
+            handle = hdl;
         }
 
-    private:
-        CUWPRenderer renderer;
-        void OnLayoutUpdated(Platform::Object ^sender, Platform::Object ^args);
+        operator void*()
+        {
+            return handle;
+        }
     };
 }
+

@@ -48,7 +48,7 @@ CRendererPanel::CRendererPanel()
 //    renderer.Resize((UINT)e->NewSize.Width, (UINT)e->NewSize.Height);
 //}
 
-bool CRendererPanel::Init(IntPtr pDevHdl)
+bool CRendererPanel::Init(CMSDKHandle^ pDevHdl)
 {
     mfxStatus sts = renderer.CreateSwapChain((void*)pDevHdl,320,240,false); // Swapchain buffers will be resized later
     MSDK_CHECK_STATUS_BOOL(sts, "Cannot create rendering swapchain");
