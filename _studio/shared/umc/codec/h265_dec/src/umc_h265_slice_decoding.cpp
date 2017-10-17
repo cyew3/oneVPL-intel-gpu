@@ -431,6 +431,13 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
                 pFrm->SetisLongTermRef(false);
             RefPicSetStCurr0[NumPocStCurr0] = pFrm;
             NumPocStCurr0++;
+            if (!pFrm)
+            {
+                /* Reporting about missed reference */
+                m_pCurrentFrame->SetErrorFlagged(UMC::ERROR_FRAME_REFERENCE_FRAME);
+                /* And because frame can not be decoded properly set flag "ERROR_FRAME_MAJOR" too*/
+                m_pCurrentFrame->SetErrorFlagged(UMC::ERROR_FRAME_MAJOR);
+            }
             // pcRefPic->setCheckLTMSBPresent(false);
         }
     }
@@ -448,6 +455,13 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
                 pFrm->SetisLongTermRef(false);
             RefPicSetStCurr1[NumPocStCurr1] = pFrm;
             NumPocStCurr1++;
+            if (!pFrm)
+            {
+                /* Reporting about missed reference */
+                m_pCurrentFrame->SetErrorFlagged(UMC::ERROR_FRAME_REFERENCE_FRAME);
+                /* And because frame can not be decoded properly set flag "ERROR_FRAME_MAJOR" too*/
+                m_pCurrentFrame->SetErrorFlagged(UMC::ERROR_FRAME_MAJOR);
+            }
             // pcRefPic->setCheckLTMSBPresent(false);
         }
     }
@@ -469,6 +483,13 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
             pFrm->SetisLongTermRef(true);
             RefPicSetLtCurr[NumPocLtCurr] = pFrm;
             NumPocLtCurr++;
+            if (!pFrm)
+            {
+                /* Reporting about missed reference */
+                m_pCurrentFrame->SetErrorFlagged(UMC::ERROR_FRAME_REFERENCE_FRAME);
+                /* And because frame can not be decoded properly set flag "ERROR_FRAME_MAJOR" too*/
+                m_pCurrentFrame->SetErrorFlagged(UMC::ERROR_FRAME_MAJOR);
+            }
         }
         // pFrm->setCheckLTMSBPresent(getRPS()->getCheckLTMSBPresent(i));
     }
@@ -480,7 +501,7 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
 
     if (!numPocTotalCurr) // this is error
     {
-        m_pCurrentFrame->SetErrorFlagged(UMC::ERROR_FRAME_DPB);
+        m_pCurrentFrame->SetErrorFlagged(UMC::ERROR_FRAME_REFERENCE_FRAME);
         return UMC::UMC_OK;
     }
 
