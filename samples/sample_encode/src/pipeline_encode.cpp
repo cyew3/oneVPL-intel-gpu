@@ -462,7 +462,7 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         }
         index = 32; //32 charactors for uuid
 
-        if(strlen(pInParams->uSEI) > index)
+        if(msdk_strlen(pInParams->uSEI) > index)
         {
             index++; //skip the delimiter
             if(pInParams->CodecId == MFX_CODEC_HEVC)
@@ -474,10 +474,10 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
                 pl->CtrlFlags = pInParams->uSEI[index++] == '0';
             }
         }
-        if(strlen(pInParams->uSEI) > index)
+        if(msdk_strlen(pInParams->uSEI) > index)
         {
             index++;
-            for(index; index < strlen(pInParams->uSEI); index++)
+            for(index; index < msdk_strlen(pInParams->uSEI); index++)
             {
                 msg.push_back(pInParams->uSEI[index]);
             }
