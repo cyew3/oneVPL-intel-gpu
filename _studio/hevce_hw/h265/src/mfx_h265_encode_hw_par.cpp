@@ -1154,6 +1154,9 @@ void InheritDefaultValues(
     InheritOption(extOptVSIInit->VideoFullRange,extOptVSIReset->VideoFullRange );
     InheritOption(extOptVSIInit->ColourDescriptionPresent,extOptVSIReset->ColourDescriptionPresent );
 
+    mfxExtCodingOptionDDI const* extOptDDIInit = &parInit.m_ext.DDI;
+    mfxExtCodingOptionDDI      * extOptDDIReset = &parReset.m_ext.DDI;
+    InheritOption(extOptDDIInit->LCUSize, extOptDDIReset->LCUSize);
     // not inherited:
     // InheritOption(parInit.mfx.FrameInfo.PicStruct,      parReset.mfx.FrameInfo.PicStruct);
     // InheritOption(parInit.IOPattern,                    parReset.IOPattern);
