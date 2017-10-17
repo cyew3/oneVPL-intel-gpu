@@ -66,8 +66,8 @@ void PrintHelp(const msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("                    - mixed means that picture structure should be obtained from the input stream\n"));
     msdk_printf(MSDK_STRING("   [-encode] - use extended FEI interface ENC+PAK (FEI ENCODE) (RC is forced to constant QP)\n"));
     msdk_printf(MSDK_STRING("   [-preenc dsStrength] - use extended FEI interface PREENC\n"));
-    msdk_printf(MSDK_STRING("                           if ds_strength parameter is missed or less than 2, PREENC is used on the full resolution\n"));
-    msdk_printf(MSDK_STRING("                           otherwise PREENC is used on downscaled (by VPP resize in ds_strength times) surfaces\n"));
+    msdk_printf(MSDK_STRING("                          if ds_strength parameter is missed or equal 1, PREENC is used on the full resolution\n"));
+    msdk_printf(MSDK_STRING("                          otherwise PREENC is used on downscaled (by VPP resize in ds_strength times) surfaces\n"));
     msdk_printf(MSDK_STRING("   [-EncodedOrder] - use app-level reordering to encoded order (default is display; ENCODE only)\n"));
     msdk_printf(MSDK_STRING("   [-n number] - number of frames to process\n"));
     msdk_printf(MSDK_STRING("   [-qp qp_value] - QP value for frames (default is 26)\n"));
@@ -411,9 +411,15 @@ mfxStatus CheckOptions(const sInputParams params, const msdk_char* appName)
         PrintHelp(appName, "Gop structure is not specified (GopSize = 0)");
         return MFX_ERR_UNSUPPORTED;
     }
-    if (params.nGopSize > 1 && (0 == params.nRefDist || 0 == params.nNumRef))
+    if (params.nGopSize > 1 && 0 == params.nRefDist)
     {
-        PrintHelp(appName, "Gop structure is invalid. Set NumRefFrame and GopRefDist options");
+        PrintHelp(appName, "Gop structure is invalid. Set GopRefDist option");
+        return MFX_ERR_UNSUPPORTED;
+    }
+    if (params.bPREENC && params.preencDSfactor != 1 && params.preencDSfactor != 2
+        && params.preencDSfactor != 4 && params.preencDSfactor != 8)
+    {
+        PrintHelp(appName, "Invalid DS strength value (must be 1, 2, 4 or 8)");
         return MFX_ERR_UNSUPPORTED;
     }
 

@@ -102,7 +102,7 @@ struct sInputParams
         , nIdrInterval(0xffff)         // Infinite IDR interval
         , BRefType(MFX_B_REF_UNKNOWN)
         , PRefType(MFX_P_REF_SIMPLE)
-        , nNumRef(1)
+        , nNumRef(0)
         , nGopOptFlag(0)               // OPEN GOP
         , GPB(MFX_CODINGOPTION_ON)     // use GPB frames
         , NumRefActiveP(1)
