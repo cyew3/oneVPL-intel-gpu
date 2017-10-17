@@ -3372,7 +3372,7 @@ mfxStatus  MFXDecPipeline::RunVPP(mfxFrameSurface1 *pSurface)
 
     //vpp async
     Timeout<5>    vpp_timeout;
-    for (;NULL != m_pVPP;)
+    for (mfxU32 times = 0; NULL != m_pVPP; ++times)
     {
         SrfEncCtl     vppOut           = NULL;
         SrfEncCtl     vppWork          = NULL;
@@ -3455,9 +3455,13 @@ mfxStatus  MFXDecPipeline::RunVPP(mfxFrameSurface1 *pSurface)
                 {
                     if (pSurface)
                     {
-                        if (pSurface->Info.PicStruct & MFX_PICSTRUCT_FIELD_TFF || pSurface->Info.PicStruct & MFX_PICSTRUCT_FIELD_BFF)
+                        if (pSurface->Info.PicStruct & MFX_PICSTRUCT_FIELD_TFF)
                         {
-                            vppOut.pSurface->Info.PicStruct = MFX_PICSTRUCT_FIELD_SINGLE;
+                            vppOut.pSurface->Info.PicStruct = (times & 1) ? MFX_PICSTRUCT_FIELD_BOTTOM : MFX_PICSTRUCT_FIELD_TOP;
+                        }
+                        else if (pSurface->Info.PicStruct & MFX_PICSTRUCT_FIELD_BFF)
+                        {
+                            vppOut.pSurface->Info.PicStruct = (times & 1) ? MFX_PICSTRUCT_FIELD_TOP : MFX_PICSTRUCT_FIELD_BOTTOM;
                         }
                     }
                 }
