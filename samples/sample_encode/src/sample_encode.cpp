@@ -510,6 +510,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-usei")))
         {
             VAL_CHECK(i+1 >= nArgNum, i, strInput[i]);
+            if (msdk_strlen(strInput[i + 1]) > MSDK_MAX_USER_DATA_UNREG_SEI_LEN)
+            {
+                PrintHelp(strInput[0], MSDK_STRING("error: '-usei' arguments is too long\n"));
+                return MFX_ERR_UNSUPPORTED;
+            }
             if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->uSEI))
             {
                 PrintHelp(strInput[0], MSDK_STRING("error: option '-usei' expects arguments\n"));
