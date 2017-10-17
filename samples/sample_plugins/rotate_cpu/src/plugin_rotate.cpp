@@ -423,6 +423,12 @@ mfxStatus Processor::LockFrame(mfxFrameSurface1 *frame)
     MSDK_CHECK_POINTER(m_pAlloc, MFX_ERR_NULL_PTR);
     MSDK_CHECK_POINTER(frame, MFX_ERR_NULL_PTR);
     mfxStatus sts = MFX_ERR_NONE;
+
+    // MemId=0, that is surface was created without allocator
+    // No neeed in lock/unlock
+    if (frame->Data.Y != 0 && !frame->Data.MemId)
+        return MFX_ERR_NONE;
+
     /* mutex locker */
     std::lock_guard<std::mutex> locker(mapping_mutex);
 
@@ -443,6 +449,15 @@ mfxStatus Processor::UnlockFrame(mfxFrameSurface1 *frame)
     MSDK_CHECK_POINTER(m_pAlloc, MFX_ERR_NULL_PTR);
     MSDK_CHECK_POINTER(frame, MFX_ERR_NULL_PTR);
     mfxStatus sts = MFX_ERR_NONE;
+
+    // MemId=0, that is surface was created without allocator
+    // No neeed in lock/unlock
+    if (frame->Data.Y != 0 && frame->Data.MemId == 0)
+        return MFX_ERR_NONE;
+    // Already unlocked
+    if (frame->Data.Y == 0)
+        return MFX_ERR_NONE;
+
     /* mutex locker */
     std::lock_guard<std::mutex> locker(mapping_mutex);
 
