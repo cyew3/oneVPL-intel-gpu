@@ -514,7 +514,7 @@ IPreENC* CEncodingPipeline::CreatePreENC(mfxFrameInfo& in_fi)
     if (!pExtBufInit) throw mfxError(MFX_ERR_NOT_INITIALIZED, "Failed to attach mfxExtFeiParam");
     pExtBufInit->Func = MFX_FEI_FUNCTION_PREENC;
 
-    IPreENC* pPreENC = new FEI_Preenc(&m_mfxSession, pars, m_inParams.mvoutFile, m_inParams.bFormattedMVout, m_inParams.mbstatoutFile);
+    IPreENC* pPreENC = new FEI_Preenc(&m_mfxSession, pars, m_inParams.preencCtrl, m_inParams.mvoutFile, m_inParams.bFormattedMVout, m_inParams.mbstatoutFile);
 
     if (m_inParams.preencDSfactor > 1)
     {
@@ -552,6 +552,6 @@ FEI_Encode* CEncodingPipeline::CreateEncode(mfxFrameInfo& in_fi)
     sts = m_pHWdev->GetHandle(MFX_HANDLE_VA_DISPLAY, &hdl);
     CHECK_STS_AND_RETURN(sts, "CreateEncode::m_pHWdev->GetHandle failed", NULL);
 
-    return new FEI_Encode(&m_mfxSession, hdl, pars, m_inParams.strDstFile, m_inParams.mvpInFile, repacker,
-        m_inParams.NumMvPredictorsL0, m_inParams.NumMvPredictorsL1);
+    return new FEI_Encode(&m_mfxSession, hdl, pars, m_inParams.encodeCtrl, m_inParams.strDstFile,
+        m_inParams.mvpInFile, repacker);
 }

@@ -20,8 +20,9 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "fei_utils.h"
 #include "hevc_fei_preenc.h"
 
-IPreENC::IPreENC(MfxVideoParamsWrapper& preenc_pars)
+IPreENC::IPreENC(MfxVideoParamsWrapper& preenc_pars, const mfxExtFeiPreEncCtrl& def_ctrl)
     : m_videoParams(preenc_pars)
+    , m_defFrameCtrl(def_ctrl)
 {
 }
 
@@ -85,8 +86,8 @@ mfxStatus IPreENC::ResetExtBuffers(const MfxVideoParamsWrapper & videoParams)
 /**********************************************************************************/
 
 FEI_Preenc::FEI_Preenc(MFXVideoSession* session, MfxVideoParamsWrapper& preenc_pars,
-    const msdk_char* mvoutFile, bool isMVoutFormatted, const msdk_char* mbstatoutFile)
-    : IPreENC(preenc_pars)
+    const mfxExtFeiPreEncCtrl& def_ctrl, const msdk_char* mvoutFile, bool isMVoutFormatted, const msdk_char* mbstatoutFile)
+    : IPreENC(preenc_pars, def_ctrl)
     , m_pmfxSession(session)
     , m_mfxPREENC(*m_pmfxSession)
     , m_isMVoutFormatted(isMVoutFormatted)
@@ -208,31 +209,8 @@ mfxStatus FEI_Preenc::PreInit()
     mfxExtFeiPreEncCtrl* ctrl = m_syncp.second.first.AddExtBuffer<mfxExtFeiPreEncCtrl>();
     MSDK_CHECK_POINTER(ctrl, MFX_ERR_NULL_PTR);
 
-    ctrl->PictureType = MFX_PICTYPE_FRAME;
-    ctrl->RefPictureType[0] = ctrl->PictureType;
-    ctrl->RefPictureType[1] = ctrl->PictureType;
-    ctrl->DownsampleInput = MFX_CODINGOPTION_ON;  // Default is ON
-    ctrl->DownsampleReference[0] = MFX_CODINGOPTION_OFF; // In sample_fei PreENC works only in encoded order
-    ctrl->DownsampleReference[1] = MFX_CODINGOPTION_OFF; // so all references would be already downsampled
-
-    ctrl->Qp             = m_videoParams.mfx.QPI;
-    ctrl->LenSP          = 57;    // default value from AVC PreENC initialization
-    ctrl->SearchPath     = 0;     // exhaustive (full search)
-    ctrl->SearchWindow   = 5;     // 48x40 (48 SUs)
-    ctrl->SubMBPartMask  = 0x00;  // all enabled
-    ctrl->SubPelMode     = 0x03;  // quarter-pixel
-    ctrl->IntraSAD       = 0x02;  // Haar transform
-    ctrl->InterSAD       = 0x02;  // Haar transform
-    ctrl->AdaptiveSearch = 0;     // default value from AVC PreENC initialization
-    ctrl->MVPredictor    = 0;
-    ctrl->MBQp           = 0;
-    ctrl->FTEnable       = 0;     // default value from AVC PreENC initialization
-    ctrl->IntraPartMask  = 0x00;  // all enabled
-    ctrl->RefHeight      = 32;    // default value from AVC PreENC initialization
-    ctrl->RefWidth       = 32;    // default value from AVC PreENC initialization
-    ctrl->DisableMVOutput         = 1;
-    ctrl->DisableStatisticsOutput = 1;
-    ctrl->Enable8x8Stat           = 0; // default value from AVC PreENC initialization
+    *ctrl = m_defFrameCtrl;
+    ctrl->Qp = m_videoParams.mfx.QPI;
 
     return sts;
 }

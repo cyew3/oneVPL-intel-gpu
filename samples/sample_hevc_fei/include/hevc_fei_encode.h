@@ -30,8 +30,8 @@ class FEI_Encode
 {
 public:
     FEI_Encode(MFXVideoSession* session, mfxHDL hdl, MfxVideoParamsWrapper& encode_pars,
-        const msdk_char* dst_output, const msdk_char* mvpInFile, PredictorsRepaking* rpck,
-        mfxU16 NumMvPredictorsL0, mfxU16 NumMvPredictorsL1);
+        const mfxExtFeiHevcEncFrameCtrl& def_ctrl, const msdk_char* dst_output,
+        const msdk_char* mvpInFile, PredictorsRepaking* rpck);
 
     ~FEI_Encode();
 
@@ -64,8 +64,7 @@ private:
 
     std::auto_ptr<PredictorsRepaking> m_repacker;
 
-    mfxU16 m_NumMvPredictorsL0;  // Number of L0 MV predictors
-    mfxU16 m_NumMvPredictorsL1;  // Number of L1 MV predictors
+    mfxExtFeiHevcEncFrameCtrl m_defFrameCtrl; // contain default per-frame options including user-specified
 
     mfxStatus SyncOperation();
     mfxStatus AllocateSufficientBuffer();

@@ -26,7 +26,7 @@ class IPreENC
 {
 public:
     IPreENC() {}
-    IPreENC(MfxVideoParamsWrapper& preenc_pars);
+    IPreENC(MfxVideoParamsWrapper& preenc_pars, const mfxExtFeiPreEncCtrl& def_ctrl);
     virtual ~IPreENC() {}
 
     virtual mfxStatus Init() = 0;
@@ -45,6 +45,7 @@ protected:
 
 protected:
     MfxVideoParamsWrapper m_videoParams;
+    mfxExtFeiPreEncCtrl   m_defFrameCtrl; // contain default per-frame options including user-specified
 
     std::vector<mfxExtFeiPreEncMVExtended>     m_mvs;
     std::vector<mfxExtFeiPreEncMBStatExtended> m_mbs;
@@ -56,7 +57,7 @@ private:
 class FEI_Preenc : public IPreENC
 {
 public:
-    FEI_Preenc(MFXVideoSession* session, MfxVideoParamsWrapper& preenc_pars,
+    FEI_Preenc(MFXVideoSession* session, MfxVideoParamsWrapper& preenc_pars, const mfxExtFeiPreEncCtrl& def_ctrl,
         const msdk_char* mvoutFile, bool isMVoutFormatted, const msdk_char* mbstatoutFile);
     ~FEI_Preenc();
 

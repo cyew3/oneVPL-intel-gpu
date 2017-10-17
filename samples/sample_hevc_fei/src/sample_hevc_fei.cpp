@@ -295,12 +295,12 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU32 nArgNum, sInputParams& 
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-NumPredictorsL0")))
         {
             CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
-            PARSE_CHECK(msdk_opt_read(strInput[++i], params.NumMvPredictorsL0), "NumPredictorsL0", isParseInvalid);
+            PARSE_CHECK(msdk_opt_read(strInput[++i], params.encodeCtrl.NumMvPredictors[0]), "NumPredictorsL0", isParseInvalid);
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-NumPredictorsL1")))
         {
             CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
-            PARSE_CHECK(msdk_opt_read(strInput[++i], params.NumMvPredictorsL1), "NumPredictorsL1", isParseInvalid);
+            PARSE_CHECK(msdk_opt_read(strInput[++i], params.encodeCtrl.NumMvPredictors[1]), "NumPredictorsL1", isParseInvalid);
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-tff")))
         {
@@ -398,12 +398,12 @@ mfxStatus CheckOptions(const sInputParams params, const msdk_char* appName)
         PrintHelp(appName, "Unsupported NumRefActiveBL1 value (must be in range [0,2])");
         return MFX_ERR_UNSUPPORTED;
     }
-    if (params.NumMvPredictorsL0 > 4)
+    if (params.encodeCtrl.NumMvPredictors[0] > 4)
     {
         PrintHelp(appName, "Unsupported NumMvPredictorsL0 value (must be in range [0,4])");
         return MFX_ERR_UNSUPPORTED;
     }
-    if (params.NumMvPredictorsL1 > 4)
+    if (params.encodeCtrl.NumMvPredictors[1] > 4)
     {
         PrintHelp(appName, "Unsupported NumMvPredictorsL1 value (must be in range [0,4])");
         return MFX_ERR_UNSUPPORTED;

@@ -21,16 +21,15 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "hevc_fei_encode.h"
 
 FEI_Encode::FEI_Encode(MFXVideoSession* session, mfxHDL hdl, MfxVideoParamsWrapper& encode_pars,
-        const msdk_char* dst_output, const msdk_char* mvpInFile, PredictorsRepaking* repacker,
-        mfxU16 NumMvPredictorsL0, mfxU16 NumMvPredictorsL1)
+        const mfxExtFeiHevcEncFrameCtrl& def_ctrl, const msdk_char* dst_output,
+        const msdk_char* mvpInFile, PredictorsRepaking* repacker)
     : m_pmfxSession(session)
     , m_mfxENCODE(*m_pmfxSession)
     , m_buf_allocator(hdl)
     , m_videoParams(encode_pars)
     , m_syncPoint(0)
     , m_dstFileName(dst_output)
-    , m_NumMvPredictorsL0(NumMvPredictorsL0)
-    , m_NumMvPredictorsL1(NumMvPredictorsL1)
+    , m_defFrameCtrl(def_ctrl)
 {
     if (0 != msdk_strlen(mvpInFile))
     {
@@ -82,19 +81,7 @@ mfxStatus FEI_Encode::PreInit()
     // add FEI frame ctrl with default values
     mfxExtFeiHevcEncFrameCtrl* ctrl = m_encodeCtrl.AddExtBuffer<mfxExtFeiHevcEncFrameCtrl>();
     MSDK_CHECK_POINTER(ctrl, MFX_ERR_NOT_INITIALIZED);
-    ctrl->SubPelMode         = 3;
-    ctrl->SearchWindow       = 5;
-    ctrl->NumFramePartitions = 4;
-
-    // uncomment when SearchWindow will be able to be set from command line
-    // if (!ctrl->SearchWindow)
-    // {
-    //     ctrl->SearchPath     = 0;
-    //     ctrl->LenSP          = 57;
-    //     ctrl->RefWidth       = 32;
-    //     ctrl->RefHeight      = 32;
-    //     ctrl->AdaptiveSearch = 1;
-    // }
+    *ctrl = m_defFrameCtrl;
 
     mfxExtHEVCRefLists* pRefLists = m_encodeCtrl.AddExtBuffer<mfxExtHEVCRefLists>();
     MSDK_CHECK_POINTER(pRefLists, MFX_ERR_NOT_INITIALIZED);
@@ -318,15 +305,15 @@ mfxStatus FEI_Encode::SetCtrlParams(const HevcTask& task)
 
         if (m_encodeCtrl.FrameType & MFX_FRAMETYPE_P)
         {
-            ctrl->NumMvPredictors[0] = m_NumMvPredictorsL0 ? m_NumMvPredictorsL0 :
-                m_videoParams.GetExtBuffer<mfxExtCodingOption3>()->NumRefActiveP[0];
+            ctrl->NumMvPredictors[0] = m_defFrameCtrl.NumMvPredictors[0] ? m_defFrameCtrl.NumMvPredictors[0]
+                : m_videoParams.GetExtBuffer<mfxExtCodingOption3>()->NumRefActiveP[0];
         }
         else if (m_encodeCtrl.FrameType & MFX_FRAMETYPE_B)
         {
-            ctrl->NumMvPredictors[0] = m_NumMvPredictorsL0 ? m_NumMvPredictorsL0 :
-                m_videoParams.GetExtBuffer<mfxExtCodingOption3>()->NumRefActiveBL0[0];
-            ctrl->NumMvPredictors[1] = m_NumMvPredictorsL1 ? m_NumMvPredictorsL1 :
-                m_videoParams.GetExtBuffer<mfxExtCodingOption3>()->NumRefActiveBL1[0];
+            ctrl->NumMvPredictors[0] = m_defFrameCtrl.NumMvPredictors[0] ? m_defFrameCtrl.NumMvPredictors[0]
+                : m_videoParams.GetExtBuffer<mfxExtCodingOption3>()->NumRefActiveBL0[0];
+            ctrl->NumMvPredictors[1] = m_defFrameCtrl.NumMvPredictors[1] ? m_defFrameCtrl.NumMvPredictors[1]
+                : m_videoParams.GetExtBuffer<mfxExtCodingOption3>()->NumRefActiveBL1[0];
         }
 
         mfxExtFeiHevcEncMVPredictors* pMVP = m_encodeCtrl.GetExtBuffer<mfxExtFeiHevcEncMVPredictors>();

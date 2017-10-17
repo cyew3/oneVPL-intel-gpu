@@ -84,10 +84,11 @@ struct sInputParams
     mfxU16 NumRefActiveP;      // maximal number of references for P frames
     mfxU16 NumRefActiveBL0;    // maximal number of backward references for B frames
     mfxU16 NumRefActiveBL1;    // maximal number of forward references for B frames
-    mfxU16 NumMvPredictorsL0;  // Number of L0 MV predictors
-    mfxU16 NumMvPredictorsL1;  // Number of L1 MV predictors
     mfxU16 preencDSfactor;     // downsample input before passing to preenc (2/4/8x are supported)
     mfxU16 PicTimingSEI;       // picture timing SEI
+
+    mfxExtFeiPreEncCtrl         preencCtrl;
+    mfxExtFeiHevcEncFrameCtrl   encodeCtrl;
 
     sInputParams()
         : bENCODE(false)
@@ -110,8 +111,6 @@ struct sInputParams
         , NumRefActiveP(1)
         , NumRefActiveBL0(1)
         , NumRefActiveBL1(1)
-        , NumMvPredictorsL0(0)
-        , NumMvPredictorsL1(0)
         , preencDSfactor(1)            // no downsampling
         , PicTimingSEI(MFX_CODINGOPTION_OFF)
     {
@@ -119,6 +118,31 @@ struct sInputParams
         MSDK_ZERO_MEMORY(mbstatoutFile);
         MSDK_ZERO_MEMORY(mvoutFile);
         MSDK_ZERO_MEMORY(mvpInFile);
+
+        MSDK_ZERO_MEMORY(preencCtrl);
+        preencCtrl.Header.BufferId = MFX_EXTBUFF_FEI_PREENC_CTRL;
+        preencCtrl.Header.BufferSz = sizeof(mfxExtFeiPreEncCtrl);
+
+        preencCtrl.PictureType = MFX_PICTYPE_FRAME;
+        preencCtrl.RefPictureType[0] = preencCtrl.RefPictureType[1] = preencCtrl.PictureType;
+        preencCtrl.DownsampleInput = MFX_CODINGOPTION_ON;
+        // PreENC works only in encoded order, so all references would be already downsampled
+        preencCtrl.DownsampleReference[0] = preencCtrl.DownsampleReference[1] = MFX_CODINGOPTION_OFF;
+        preencCtrl.DisableMVOutput         = 1;
+        preencCtrl.DisableStatisticsOutput = 1;
+        preencCtrl.SearchWindow   = 5;     // 48x40 (48 SUs)
+        preencCtrl.SubMBPartMask  = 0x00;  // all enabled
+        preencCtrl.SubPelMode     = 0x03;  // quarter-pixel
+        preencCtrl.IntraSAD       = 0x02;  // Haar transform
+        preencCtrl.InterSAD       = 0x02;  // Haar transform
+        preencCtrl.IntraPartMask  = 0x00;  // all enabled
+
+        MSDK_ZERO_MEMORY(encodeCtrl);
+        encodeCtrl.Header.BufferId = MFX_EXTBUFF_HEVCFEI_ENC_CTRL;
+        encodeCtrl.Header.BufferSz = sizeof(mfxExtFeiHevcEncFrameCtrl);
+        encodeCtrl.SubPelMode         = 3; // quarter-pixel motion estimation
+        encodeCtrl.SearchWindow       = 5; // 48 SUs 48x40 window full search
+        encodeCtrl.NumFramePartitions = 4; // number of partitions in frame that encoder processes concurrently
     }
 
 };
