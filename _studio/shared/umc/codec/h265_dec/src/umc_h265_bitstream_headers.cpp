@@ -684,7 +684,11 @@ UMC::Status H265HeadersBitstream::GetSequenceParamSet(H265SeqParamSet *pcSPS)
         }
     }
 
-    pcSPS->log2_min_luma_coding_block_size = GetVLCElementU() + 3;
+    Ipp32u const log2_min_luma_coding_block_size_minus3 = GetVLCElementU();
+    if (log2_min_luma_coding_block_size_minus3 > 3)
+        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
+    pcSPS->log2_min_luma_coding_block_size = log2_min_luma_coding_block_size_minus3 + 3;
 
     Ipp32u MinCbLog2SizeY = pcSPS->log2_min_luma_coding_block_size;
     Ipp32u MinCbSizeY = 1 << pcSPS->log2_min_luma_coding_block_size;
@@ -697,6 +701,11 @@ UMC::Status H265HeadersBitstream::GetSequenceParamSet(H265SeqParamSet *pcSPS)
         throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
     pcSPS->log2_max_luma_coding_block_size = log2_diff_max_min_coding_block_size + pcSPS->log2_min_luma_coding_block_size;
+    //CtbLog2SizeY = (log2_min_luma_coding_block_size_minus3 + 3) + log2_diff_max_min_luma_coding_block_size //7.3.2.2 eq. 7-10, 7-11
+    //CtbLog2SizeY derived according to active SPSs for the base layer shall be in the range of 4 to 6, inclusive. (A.2, main, main10, mainsp, rext profiles)
+    if (pcSPS->log2_max_luma_coding_block_size < 4 || pcSPS->log2_max_luma_coding_block_size > 6)
+        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
     pcSPS->MaxCUSize =  1 << pcSPS->log2_max_luma_coding_block_size;
 
     pcSPS->log2_min_transform_block_size = GetVLCElementU() + 2;
