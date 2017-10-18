@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
 //
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -16,40 +16,11 @@
 
 vm_so_handle vm_so_load(const vm_char *so_file_name)
 {
-    //mfx_trace_get_reg_string
-    HKEY hkey;
-    vm_so_handle handle = NULL;
-    TCHAR path[MAX_PATH] = _T("");
-    DWORD size = MAX_PATH;
-
     /* check error(s) */
     if (NULL == so_file_name)
         return NULL;
 
-    handle = ((vm_so_handle)LoadLibraryExW(so_file_name, NULL, 0));
-
-    /* try load from DriverStore */
-    /* WARNING, this is temporary solution */
-    if (handle == NULL)
-    {
-        if( RegOpenKeyEx( HKEY_LOCAL_MACHINE,
-        _T("SOFTWARE\\Intel\\MDF"),
-        0,
-        KEY_READ,
-        &hkey) == ERROR_SUCCESS)
-        {
-            if (ERROR_SUCCESS == RegQueryValueEx(hkey, _T("DriverStorePath"), 0, NULL, (LPBYTE)path, &size ))
-                {
-                    wcscat_s(path, MAX_PATH, _T("\\"));
-                    wcscat_s(path, MAX_PATH, so_file_name);
-                    handle = ((vm_so_handle)LoadLibraryExW(path, NULL, 0));
-                }
-        }
-        RegCloseKey(hkey);
-    }
-
-    return handle;
-
+    return ((vm_so_handle)LoadLibraryExW(so_file_name, NULL, 0));
 } /* vm_so_handle vm_so_load(vm_char *so_file_name) */
 
 vm_so_func vm_so_get_addr(vm_so_handle so_handle, const char *so_func_name)

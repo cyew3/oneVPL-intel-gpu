@@ -269,12 +269,73 @@ public:
 };
 
 #ifdef CM_WIN
+/*
+On windows we are looking for CMRT DLL in driver store directory
+Driver writes 'DriverStorePath' reg key during install.
+Use path from driver to load igfx*cmrt*.dll
+*/
+vm_so_handle cm_dll_load(const vm_char *so_file_name)
+{
+    //mfx_trace_get_reg_string
+    HKEY hkey;
+    vm_so_handle handle = NULL;
+    TCHAR path[MAX_PATH] = _T("");
+    DWORD size = sizeof(path);
+
+    /* check error(s) */
+    if (NULL == so_file_name)
+        return NULL;
+
+    handle = vm_so_load(so_file_name);
+
+    /* try load from DriverStore #1 Legacy path*/
+    if (handle == NULL)
+    {
+        if (RegOpenKeyEx(HKEY_LOCAL_MACHINE,
+            _T("SOFTWARE\\Intel\\MDF"),
+            0,
+            KEY_READ,
+            &hkey) == ERROR_SUCCESS)
+        {
+            if (ERROR_SUCCESS == RegQueryValueEx(hkey, _T("DriverStorePath"), 0, NULL, (LPBYTE)path, &size))
+            {
+                wcscat_s(path, MAX_PATH, _T("\\"));
+                wcscat_s(path, MAX_PATH, so_file_name);
+                handle =vm_so_load(path);
+            }
+            RegCloseKey(hkey);
+        }
+    }
+
+    /* try load from DriverStore #2 UWD path*/
+    if (handle == NULL)
+    {
+        if (RegOpenKeyEx(HKEY_LOCAL_MACHINE,
+            _T("SOFTWARE\\Classes\\CLSID\\{EB3C4B33-C93C-4A5C-91DE-43FDB945FF80}\\MDF"),
+            0,
+            KEY_READ,
+            &hkey) == ERROR_SUCCESS)
+        {
+            if (ERROR_SUCCESS == RegQueryValueEx(hkey, _T("DriverStorePath"), 0, NULL, (LPBYTE)path, &size))
+            {
+                wcscat_s(path, MAX_PATH, _T("\\"));
+                wcscat_s(path, MAX_PATH, so_file_name);
+                handle = vm_so_load(path);
+            }
+            RegCloseKey(hkey);
+        }
+    }
+
+    return handle;
+
+}
+
 INT CreateCmDevice(CmDevice *& pD, UINT & version, IDirect3DDeviceManager9 * pD3DDeviceMgr, UINT mode )
 {
     CmDeviceImpl * device = new CmDeviceImpl;
 
     device->m_platform = DX9;
-    device->m_dll = vm_so_load(DLL_NAME_DX9);
+    device->m_dll = cm_dll_load(DLL_NAME_DX9);
     if (device->m_dll == 0)
     {
         delete device;
@@ -308,7 +369,7 @@ INT CreateCmDevice(CmDevice* &pD, UINT& version, ID3D11Device * pD3D11Device, UI
     CmDeviceImpl * device = new CmDeviceImpl;
 
     device->m_platform = DX11;
-    device->m_dll = vm_so_load(DLL_NAME_DX11);
+    device->m_dll = cm_dll_load(DLL_NAME_DX11);
     if (device->m_dll == 0)
     {
         delete device;
