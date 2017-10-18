@@ -22,7 +22,13 @@
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     #if DDI_VERSION < 943
-        #error "Gen11/Gen12 should be compiled with DDI_VERSION >= 0.943"
+        #error "Gen11 should be compiled with DDI_VERSION >= 0.943"
+    #endif
+#endif
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+    #if DDI_VERSION < 945
+        #error "Gen12 should be compiled with DDI_VERSION >= 0.945"
     #endif
 #endif
 
@@ -405,6 +411,7 @@ namespace UMC_HEVC_DECODER
         }
     }
 
+#if DDI_VERSION >= 945
     inline
     void FillPaletteEntries(DXVA_Intel_PicParams_HEVC_SCC* pPicParam, Ipp8u numComps, Ipp32u const* entries, Ipp32u count)
     {
@@ -458,6 +465,7 @@ namespace UMC_HEVC_DECODER
             FillPaletteEntries(pPicParam, numComps, &pSeqParamSet->m_paletteInitializers[0], pSeqParamSet->sps_num_palette_predictor_initializer);
         }
     }
+#endif
 
     void PackerDXVA2intel::PackPicParams(const H265DecoderFrame *pCurrentFrame, H265DecoderFrameInfo * pSliceInfo, TaskSupplier_H265 *supplier)
     {
@@ -620,15 +628,15 @@ namespace UMC_HEVC_DECODER
     {
         PackSliceHeaderCommon(pSlice, pp, prefix_size, header);
 
-        H265SliceHeader const* ssh = pSlice->GetSliceHeader();
-        VM_ASSERT(ssh);
+        H265SliceHeader const* sh = pSlice->GetSliceHeader();
+        VM_ASSERT(sh);
 
         for (int l = 0; l < 2; l++)
         {
             EnumRefPicList eRefPicList = (l == 1 ? REF_PIC_LIST_1 : REF_PIC_LIST_0);
             for (int iRefIdx = 0; iRefIdx < pSlice->getNumRefIdx(eRefPicList); iRefIdx++)
             {
-                wpScalingParam const* wp = ssh->pred_weight_table[eRefPicList][iRefIdx];
+                wpScalingParam const* wp = sh->pred_weight_table[eRefPicList][iRefIdx];
 
                 if (eRefPicList == REF_PIC_LIST_0)
                 {
@@ -658,7 +666,7 @@ namespace UMC_HEVC_DECODER
 
 #if DDI_VERSION >= 943
     inline
-    void PackSliceHeader(H265Slice const* pSlice, DXVA_Intel_PicParams_HEVC const* pp, size_t prefix_size, DXVA_Intel_Slice_HEVC_Rext_Long* header)
+    void PackSliceHeader(H265Slice const* pSlice, DXVA_Intel_PicParams_HEVC const* pp, size_t prefix_size, DXVA_Intel_Slice_HEVC_EXT_Long* header)
     {
         PackSliceHeaderCommon(pSlice, pp, prefix_size, header);
 
@@ -698,6 +706,11 @@ namespace UMC_HEVC_DECODER
         }
 
         header->SliceRextFlags.fields.cu_chroma_qp_offset_enabled_flag = sh->cu_chroma_qp_offset_enabled_flag;
+#if DDI_VERSION >= 947
+        header->slice_act_y_qp_offset  = (CHAR)sh->slice_act_y_qp_offset;
+        header->slice_act_cb_qp_offset = (CHAR)sh->slice_act_cb_qp_offset;
+        header->slice_act_cr_qp_offset = (CHAR)sh->slice_act_cr_qp_offset;
+#endif
     }
 #endif
 
@@ -738,8 +751,8 @@ namespace UMC_HEVC_DECODER
 #endif
                 )
             {
-                DXVA_Intel_Slice_HEVC_Rext_Long* header = 0;
-                GetSliceVABuffers(m_va, &header, sizeof(DXVA_Intel_Slice_HEVC_Rext_Long), &pSliceData, rawDataSize + prefix_size, isLastSlice ? 128 : 0);
+                DXVA_Intel_Slice_HEVC_EXT_Long* header = 0;
+                GetSliceVABuffers(m_va, &header, sizeof(DXVA_Intel_Slice_HEVC_EXT_Long), &pSliceData, rawDataSize + prefix_size, isLastSlice ? 128 : 0);
                 PackSliceHeader(pSlice, pp, prefix_size, header);
             }
             else

@@ -11,7 +11,7 @@
 #ifndef __UMC_HEVC_DDI_H
 #define __UMC_HEVC_DDI_H
 
-#define DDI_VERSION 945
+#define DDI_VERSION 947
 
 #pragma warning(disable: 4201)
 
@@ -299,7 +299,7 @@ typedef struct _DXVA_Intel_Slice_HEVC_Long
 } DXVA_Intel_Slice_HEVC_Long, *LPDXVA_Intel_Slice_HEVC_Long;
 
 #if DDI_VERSION >= 943
-typedef struct _DXVA_Intel_Slice_HEVC_Rext_Long
+typedef struct _DXVA_Intel_Slice_HEVC_Ext_Long
 {
     UINT    BSNALunitDataLocation;
     UINT    SliceBytesInBuffer;
@@ -340,7 +340,7 @@ typedef struct _DXVA_Intel_Slice_HEVC_Rext_Long
     CHAR    slice_cb_qp_offset;
     CHAR    slice_cr_qp_offset;
     CHAR    slice_beta_offset_div2;                // [-6..6]
-    CHAR    slice_tc_offset_div2;                    // [-6..6]
+    CHAR    slice_tc_offset_div2;                  // [-6..6]
     UCHAR   luma_log2_weight_denom;
     UCHAR   delta_chroma_log2_weight_denom;
     CHAR    delta_luma_weight_l0[15];
@@ -366,7 +366,14 @@ typedef struct _DXVA_Intel_Slice_HEVC_Rext_Long
         } fields;
     } SliceRextFlags;
 
-} DXVA_Intel_Slice_HEVC_Rext_Long, *LPDXVA_Intel_Slice_HEVC_Rext_Long;
+#if DDI_VERSION >= 947
+    // For Screen Content Extension
+    // if SCC GUIDs are not applied, the value should be set to zeros and ignored.
+    CHAR    slice_act_y_qp_offset;                 // [-12..12]
+    CHAR    slice_act_cb_qp_offset;                // [-12..12]
+    CHAR    slice_act_cr_qp_offset;                // [-12..12]
+#endif
+} DXVA_Intel_Slice_HEVC_EXT_Long, *LPDXVA_Intel_Slice_HEVC_EXT_Long;
 #endif //DDI_VERSION > 943
 
 typedef struct _DXVA_Intel_Slice_HEVC_Short
