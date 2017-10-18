@@ -582,16 +582,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-path")))
         {
             i++;
-#if defined(_WIN32) || defined(_WIN64)
-            msdk_char wchar[MSDK_MAX_FILENAME_LEN];
-            msdk_opt_read(strInput[i], wchar);
-            std::wstring wstr(wchar);
-            std::string str(wstr.begin(), wstr.end());
+            msdk_char tmpVal[MSDK_MAX_FILENAME_LEN];
+            msdk_opt_read(strInput[i], tmpVal);
+            MSDK_MAKE_BYTE_STRING(tmpVal, pParams->pluginParams.strPluginPath);
 
-            strcpy_s(pParams->pluginParams.strPluginPath, str.c_str());
-#else
-            msdk_opt_read(strInput[i], pParams->pluginParams.strPluginPath);
-#endif
             pParams->pluginParams.type = MFX_PLUGINLOAD_TYPE_FILE;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-i:null")))

@@ -520,7 +520,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 PrintHelp(strInput[0], MSDK_STRING("error: option '-usei' expects arguments\n"));
                 return MFX_ERR_UNSUPPORTED;
             }
-            if (strlen(pParams->uSEI) < 32)
+            if (msdk_strlen(pParams->uSEI) < 32)
             {
                 PrintHelp(strInput[0], MSDK_STRING("error: option '-usei' expects at least 32 char uuid\n"));
                 return MFX_ERR_UNSUPPORTED;
@@ -596,16 +596,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         } else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-path")))
         {
             i++;
-#if defined(_WIN32) || defined(_WIN64)
-            msdk_char wchar[MSDK_MAX_FILENAME_LEN];
-            msdk_opt_read(strInput[i], wchar);
-            std::wstring wstr(wchar);
-            std::string str(wstr.begin(), wstr.end());
+            msdk_char tmpVal[MSDK_MAX_FILENAME_LEN];
+            msdk_opt_read(strInput[i], tmpVal);
 
-            strcpy_s(pParams->pluginParams.strPluginPath, str.c_str());
-#else
-            msdk_opt_read(strInput[i], pParams->pluginParams.strPluginPath);
-#endif
+            MSDK_MAKE_BYTE_STRING(tmpVal, pParams->pluginParams.strPluginPath);
             pParams->pluginParams.type = MFX_PLUGINLOAD_TYPE_FILE;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-re")))

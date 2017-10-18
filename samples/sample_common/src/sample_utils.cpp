@@ -1776,26 +1776,26 @@ void SEICalcSizeType(std::vector<mfxU8>& data, mfxU16 type, mfxU32 size)
     data.push_back(mfxU8(B));
 }
 
-mfxU8 Char2Hex(mfxI8 ch)
+mfxU8 Char2Hex(msdk_char ch)
 {
-    mfxI8 value = ch;
-    if(value >= '0' && value <='9')
+    msdk_char value = ch;
+    if(value >= MSDK_CHAR('0') && value <= MSDK_CHAR('9'))
     {
-        value -= '0';
+        value -= MSDK_CHAR('0');
     }
-    else if (value >= 'a' && value <='f')
+    else if (value >= MSDK_CHAR('a') && value <= MSDK_CHAR('f'))
     {
-        value = value - 'a' + 10;
+        value = value - MSDK_CHAR('a') + 10;
     }
-    else if (value >= 'A' && value <='F')
+    else if (value >= MSDK_CHAR('A') && value <= MSDK_CHAR('F'))
     {
-        value = value - 'A' + 10;
+        value = value - MSDK_CHAR('A') + 10;
     }
     else
     {
         value = 0;
     }
-    return value;
+    return (mfxU8)value;
 }
 
 namespace {
@@ -2355,4 +2355,3 @@ mfxU16 FourCCToChroma(mfxU32 fourCC)
 
     return MFX_CHROMAFORMAT_YUV420;
 }
-

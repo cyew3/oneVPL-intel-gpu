@@ -1712,16 +1712,10 @@ sPluginParams CmdProcessor::ParsePluginParameter(msdk_char* strPluginPath)
     }
     else
     {
-#if defined(_WIN32) || defined(_WIN64)
-        msdk_char wchar[1024];
-        msdk_opt_read(strPluginPath, wchar);
-        std::wstring wstr(wchar);
-        std::string str(wstr.begin(), wstr.end());
+        msdk_char tmpVal[MSDK_MAX_FILENAME_LEN];
+        msdk_opt_read(strPluginPath, tmpVal);
 
-        strcpy_s(pluginParams.strPluginPath, str.c_str());
-#else
-        msdk_opt_read(strPluginPath, pluginParams.strPluginPath);
-#endif
+        MSDK_MAKE_BYTE_STRING(tmpVal, pluginParams.strPluginPath);
         pluginParams.type = MFX_PLUGINLOAD_TYPE_FILE;
     }
 

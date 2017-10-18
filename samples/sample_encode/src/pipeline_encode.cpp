@@ -446,10 +446,10 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
                 pInParams->CodecId == MFX_CODEC_HEVC))
     {
         mfxPayload* pl = new mfxPayload;
-        mfxU8 size = 0;
+        mfxU16 size = 0;
         std::vector<mfxU8> data;
         std::vector<mfxU8> uuid;
-        std::vector<mfxI8> msg;
+        std::string msg;
         mfxU16 type = 5; //user data unregister
         pl->CtrlFlags = 0;
 
@@ -477,32 +477,32 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         if(msdk_strlen(pInParams->uSEI) > index)
         {
             index++;
-            for(index; index < msdk_strlen(pInParams->uSEI); index++)
-            {
-                msg.push_back(pInParams->uSEI[index]);
-            }
+
+            // Converting to byte-string if necessary
+            msdk_tstring tstr(pInParams->uSEI+index);
+            msg = std::string(tstr.begin(), tstr.end());
         }
-        size = uuid.size();
-        size += msg.size();
+        size = (mfxU16)uuid.size();
+        size += (mfxU16)msg.length();
         SEICalcSizeType(data, type, size);
-        mfxU8 calc_size = data.size();
+        mfxU16 calc_size = (mfxU16)data.size();
         size += calc_size;
-        pl->BufSize = mfxU16(size);
+        pl->BufSize = size;
         pl->Data    = new mfxU8[pl->BufSize];
         pl->NumBit  = pl->BufSize * 8;
-        pl->Type    = mfxU16(type);
+        pl->Type    = type;
 
         mfxU8* p = pl->Data;
         memcpy(p, &data[0], calc_size);
         p += calc_size;
         memcpy(p, &uuid[0], uuid.size());
         p += uuid.size();
-        memcpy(p, &msg[0], msg.size());
+        memcpy(p, msg.c_str(), msg.length());
 
         m_UserDataUnregSEI.push_back(pl);
 
         m_encCtrl.Payload = m_UserDataUnregSEI.data();
-        m_encCtrl.NumPayload = m_UserDataUnregSEI.size();
+        m_encCtrl.NumPayload = (mfxU16)m_UserDataUnregSEI.size();
     }
 
     // we don't specify profile and level and let the encoder choose those basing on parameters
