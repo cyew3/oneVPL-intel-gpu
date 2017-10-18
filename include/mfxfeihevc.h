@@ -114,7 +114,7 @@ typedef struct {
 } mfxExtFeiHevcEncCtuCtrl;
 
 
-#if MFX_VERSION >= 1025
+#if MFX_VERSION >= MFX_VERSION_NEXT
 typedef struct  {
     /* DWORD 0 */
     mfxU32    reserved0;
@@ -242,7 +242,7 @@ enum {
     MFX_EXTBUFF_HEVCFEI_ENC_QP         = MFX_MAKEFOURCC('F','H','Q','P'),
     MFX_EXTBUFF_HEVCFEI_ENC_CTU_CTRL   = MFX_MAKEFOURCC('F','H','E','C'),
 
-#if MFX_VERSION >= 1025
+#if MFX_VERSION >= MFX_VERSION_NEXT
     MFX_EXTBUFF_HEVCFEI_PAK_CTU_REC    = MFX_MAKEFOURCC('F','H','T','B'),
     MFX_EXTBUFF_HEVCFEI_PAK_CU_REC     = MFX_MAKEFOURCC('F','H','C','U'),
     MFX_EXTBUFF_HEVCFEI_ENC_DIST       = MFX_MAKEFOURCC('F','H','D','S')
