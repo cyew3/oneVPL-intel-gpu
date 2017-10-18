@@ -3037,7 +3037,6 @@ mfxStatus VAAPIEncoder::QueryStatus(
     mfxU32 waitSize;
     mfxU32 indxSurf;
     ExtVASurface currentFeedback;
-    memset(&currentFeedback, 0, sizeof(currentFeedback));
 
     UMC::AutomaticUMCMutex guard(m_guard);
 

@@ -685,7 +685,7 @@ mfxStatus VAAPIFEIPREENCEncoder::QueryStatus(
 
     for (indxSurf = 0; indxSurf < m_statFeedbackCache.size(); indxSurf++)
     {
-        ExtVASurface currentFeedback = m_statFeedbackCache[indxSurf];
+        const ExtVASurface & currentFeedback = m_statFeedbackCache[indxSurf];
 
         if (currentFeedback.number == task.m_statusReportNumber[feiFieldId])
         {
@@ -1636,7 +1636,7 @@ mfxStatus VAAPIFEIENCEncoder::QueryStatus(
 
     for (indxSurf = 0; indxSurf < m_statFeedbackCache.size(); indxSurf++)
     {
-        ExtVASurface currentFeedback = m_statFeedbackCache[indxSurf];
+        const ExtVASurface & currentFeedback = m_statFeedbackCache[indxSurf];
 
         if (currentFeedback.number == task.m_statusReportNumber[feiFieldId])
         {
@@ -2567,7 +2567,7 @@ mfxStatus VAAPIFEIPAKEncoder::QueryStatus(
 
     for (indxSurf = 0; indxSurf < m_statFeedbackCache.size(); ++indxSurf)
     {
-        ExtVASurface currentFeedback = m_statFeedbackCache[indxSurf];
+        const ExtVASurface & currentFeedback = m_statFeedbackCache[indxSurf];
 
         if (currentFeedback.number == task.m_statusReportNumber[feiFieldId])
         {
