@@ -349,6 +349,9 @@ mfxStatus CheckVideoParamCommon(mfxVideoParam *in, eMFXHWType type)
         case MFX_CODEC_JPEG:
         case MFX_CODEC_VP8:
         case MFX_CODEC_VP9:
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12P5) && (MFX_VERSION >= MFX_VERSION_NEXT)
+        case MFX_CODEC_AV1:
+#endif // PRE_SI_TARGET_PLATFORM_GEN12P5
             break;
         default:
             return MFX_ERR_INVALID_VIDEO_PARAM;

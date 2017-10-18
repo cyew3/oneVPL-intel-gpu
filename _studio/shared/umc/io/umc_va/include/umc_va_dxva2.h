@@ -61,6 +61,12 @@ DEFINE_GUID(DXVA_Intel_ModeVP9_Profile2_10bit_VLD,
 DEFINE_GUID(DXVA_Intel_ModeVP9_Profile1_YUV444_VLD,
 0x68a21c7b, 0xd58f, 0x4e74, 0x99, 0x93, 0xe4, 0xb8, 0x17, 0x2b, 0x19, 0xa0);
 
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
+// {CA44AFC5-E1D0-42e6-9154-B127186D4D40}
+DEFINE_GUID(DXVA_Intel_ModeAV1_VLD,
+    0xca44afc5, 0xe1d0, 0x42e6, 0x91, 0x54, 0xb1, 0x27, 0x18, 0x6d, 0x4d, 0x40);
+#endif // PRE_SI_TARGET_PLATFORM_GEN12P5
+
 // {1D5C4D76-B55A-4430-904C-3383A7AE3B16}
 DEFINE_GUID(DXVA_Intel_ModeVP9_Profile3_YUV444_10bit_VLD,
 0x1d5c4d76, 0xb55a, 0x4430, 0x90, 0x4c, 0x33, 0x83, 0xa7, 0xae, 0x3b, 0x16);
@@ -68,6 +74,7 @@ DEFINE_GUID(DXVA_Intel_ModeVP9_Profile3_YUV444_10bit_VLD,
 
 DEFINE_GUID(DXVA_ModeVP9_VLD_10bit_Profile2_private_copy,
 0xa4c749ef, 0x6ecf, 0x48aa, 0x84, 0x48, 0x50, 0xa7, 0xa1, 0x16, 0x5f, 0xf7);
+
 
 DEFINE_GUID_(sDXVA_Intel_ModeH264_VLD_MVC, 0xe296bf50, 0x8808, 0x4ff8, 0x92, 0xd4, 0xf1, 0xee, 0x79, 0x9f, 0xc3, 0x3c);
 
@@ -283,6 +290,9 @@ bool CheckDXVAConfig(Ipp32s profile_flags, T *config, ProtectedVA * protectedVA)
     case VP9_10_VLD_422:
     case VP9_10_VLD_444:
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
+    case AV1_VLD:
+#endif // PRE_SI_TARGET_PLATFORM_GEN12P5
         res = true;
         break;
     case MPEG2_VLD:

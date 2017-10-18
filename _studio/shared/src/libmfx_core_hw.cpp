@@ -99,6 +99,11 @@ mfxU32 ChooseProfile(mfxVideoParam * param, eMFXHWType )
         }
 #endif
         break;
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12P5) && (MFX_VERSION >= MFX_VERSION_NEXT)
+    case MFX_CODEC_AV1:
+        profile |= VA_AV1;
+        break;
+#endif // PRE_SI_TARGET_PLATFORM_GEN12P5
     case MFX_CODEC_HEVC:
         profile |= VA_H265;
 #ifndef OPEN_SOURCE
