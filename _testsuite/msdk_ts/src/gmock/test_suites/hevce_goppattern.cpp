@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2017 Intel Corporation. All Rights Reserved.
 
 File Name: hevce_goppattern.cpp
 
@@ -57,7 +57,7 @@ namespace hevce_goppattern
     const tc_struct TestSuite::test_case[] =
     {
         //invalid GopRefDist = 1, GopPicSize = 1
-        {/*00*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, 0, {}, {
+        {/*00*/ MFX_ERR_NONE, 0, {}, {
                                         { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1 },
                                         { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 1 }
                                      }
