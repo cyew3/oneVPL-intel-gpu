@@ -342,8 +342,13 @@
 
     #if defined (ENABLE_PRE_SI_FEATURES)
 
-        #define PRE_SI_TARGET_PLATFORM_GEN12 // target generation is Gen12 (TGL)
+        #define PRE_SI_TARGET_PLATFORM_GEN12P5 // target generation is Gen12p5 (TGL HP)
+        //#define PRE_SI_TARGET_PLATFORM_GEN12 // target generation is Gen12 (TGL LP, LKF)
         //#define PRE_SI_TARGET_PLATFORM_GEN11 // target generation is Gen11 (ICL, CNL-H, CNX-G)
+
+        #if defined (PRE_SI_TARGET_PLATFORM_GEN12P5)
+            #define PRE_SI_TARGET_PLATFORM_GEN12 // assume that all Gen12 features are supported on Gen12p5
+        #endif // PRE_SI_TARGET_PLATFORM_GEN12P5
 
         #if defined (PRE_SI_TARGET_PLATFORM_GEN12)
             #define PRE_SI_TARGET_PLATFORM_GEN11 // assume that all Gen11 features are supported on Gen12
