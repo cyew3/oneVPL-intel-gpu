@@ -20,14 +20,28 @@ namespace hevce_default_ref_lists
 {
     using namespace BS_HEVC2;
 
+    struct Frame
+    {
+        mfxU32 type;
+        mfxU8 nalType;
+        mfxI32 poc;
+        mfxU32 bpo;
+        mfxU16 PLayer;
+        bool   bSecondField;
+        mfxI32 lastRAP;
+        mfxI32 IPoc;
+        mfxI32 prevIPoc;
+        mfxI32 nextIPoc;
+    };
+
     struct ExternalFrame
     {
         mfxU32 type;
         mfxU8  nalType;
         mfxI32 poc;
         mfxU16 PLayer;
-        mfxU32 numRef[2];
-        mfxI32 ListX[2][16];
+        bool   bSecondField;
+        std::vector<Frame> ListX[2];
     };
 
     char FrameTypeToChar(mfxU32 type)
@@ -77,20 +91,6 @@ namespace hevce_default_ref_lists
     class EncodeEmulator
     {
     protected:
-
-        struct Frame
-        {
-            mfxU32 type;
-            mfxU8  nalType;
-            mfxI32 poc;
-            mfxU32 bpo;
-            mfxU16 PLayer;
-            bool   bSecondField;
-            mfxI32 lastRAP;
-            mfxI32 IPoc;
-            mfxI32 prevIPoc;
-            mfxI32 nextIPoc;
-        };
 
         class LastReorderedFieldInfo
         {
@@ -173,11 +173,6 @@ namespace hevce_default_ref_lists
             return RASL_N;
         }
 
-        struct GreaterOrder
-        {
-            bool operator() (Frame const & l, Frame const & r) { return l.poc > r.poc; };
-        };
-
         bool HasL1(mfxI32 poc)
         {
             for (auto it = m_dpb.begin(); it < m_dpb.end(); it++)
@@ -219,7 +214,7 @@ namespace hevce_default_ref_lists
                         bframes[i]->type |= MFX_FRAMETYPE_REF;
                 }
             }
-            mfxU32 minBPO =(mfxU32)MFX_FRAMEORDER_UNKNOWN;
+            mfxU32 minBPO = (mfxU32)MFX_FRAMEORDER_UNKNOWN;
             mfxU32 ind = 0;
             for(mfxU32 i = 0; i < (mfxU32)bframes.size(); i++)
             {
@@ -351,7 +346,7 @@ namespace hevce_default_ref_lists
         ExternalFrame ProcessFrame(mfxI32 order)
         {
             mfxI32 poc = -1;
-            ExternalFrame out = { 0, 0, poc, 0, 0 };
+            ExternalFrame out = { 0, 0, poc, 0 };
             FrameIterator itOut = m_queue.end();
 
             bool bIsFieldCoding       = !!(m_emuPar.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_SINGLE);
@@ -359,6 +354,8 @@ namespace hevce_default_ref_lists
             bool isPPyramid           = !!(MFX_P_REF_PYRAMID == CO3.PRefType);
 
             mfxU32 type = 0;
+
+            //=================1. Get type, poc, put frame in the queue=====================
             if (order >= 0)
             {
                 type = GetFrameType(m_emuPar, order - m_lastIdr);
@@ -382,21 +379,10 @@ namespace hevce_default_ref_lists
                     static const mfxU16 pattern[4] = {0,2,1,2};
                     PLayer = pattern[idx];
                 }
-
-            Frame in = {   type,
-                            (mfxU8)-1, // nalType
-                            poc,
-                            (mfxU32)MFX_FRAMEORDER_UNKNOWN, // B-pyramid order
-                            PLayer,
-                            bIsFieldCoding ? (!!(in.poc & 1)) : false,
-                            -1, // lastRAP
-                            -1, // lastI
-                            -1, // nextI
-                        };
-
-                m_queue.push_back(in);
+                m_queue.push_back({type, (mfxU8)-1, poc, (mfxU32)MFX_FRAMEORDER_UNKNOWN, PLayer, bIsFieldCoding && (poc & 1), -1, -1, -1, -1});
             }
 
+            //=================2. Reorder frames, fill output frame poc, type, etc=====================
             itOut = Reorder(order < 0, bIsFieldCoding);
             if (itOut == m_queue.end())
                 return out;
@@ -430,8 +416,13 @@ namespace hevce_default_ref_lists
                 }
             }
 
+            out.poc          = itOut->poc;
+            out.type         = itOut->type;
+            out.bSecondField = itOut->bSecondField;
+
+            //=================3. Update DPB=====================
             if (isIdr)
-                m_dpb.resize(0);
+                m_dpb.clear();
 
             if (itOut->poc > itOut->lastRAP &&
                 m_lastFrame.poc <= m_lastFrame.lastRAP)
@@ -443,121 +434,81 @@ namespace hevce_default_ref_lists
                                         m_dpb.end());
             }
 
-            // Sort DPB in POC ascending order
+            //=================4. Construct RPL=====================
             std::sort(m_dpb.begin(), m_dpb.end(),
-                    [](Frame const & lhs, Frame const & rhs) { return lhs.poc < rhs.poc; });
+                    [](Frame const & lhs, Frame const & rhs) { return lhs.poc < rhs.poc; }); // Sort DPB in POC ascending order
 
-            out.poc     = itOut->poc;
-            out.type    = itOut->type;
+            std::vector<Frame> & L0 = out.ListX[0];
+            std::vector<Frame> & L1 = out.ListX[1];
 
-            if (isI)
+            L0.clear();
+            L1.clear();
+
+            if (!isI)
             {
-                out.numRef[0] = out.numRef[1] = 0;
-            }
-            else
-            {
+                // Fill L0/L1
+                for (auto it = m_dpb.begin(); it != m_dpb.end(); it++)
+                {
+                    bool list = it->poc > out.poc;
+                    out.ListX[list].push_back(*it);
+                }
+
                 if (isPPyramid)
                 {
-                    FrameArray L0(m_dpb);
-
                     // For P-pyramid remove entries with the highest layer
                     while (L0.size() > CO3.NumRefActiveP[out.PLayer])
                     {
-                        FrameIterator weak = L0.begin();
+                        auto weak = L0.begin();
 
                         for (auto it = L0.begin(); it != L0.end(); it ++)
                         {
-                            if (weak->PLayer < it->PLayer && it->poc != m_dpb.back().poc)
+                            if (weak->PLayer < it->PLayer && it->poc != L0.back().poc)
                                 weak = it;
                         }
 
                         L0.erase(weak);
                     }
-
-                    out.numRef[0] = 0;
-
-                    for (auto entry : L0)
-                    {
-                        out.ListX[0][out.numRef[0]++] = entry.poc;
-                    }
                 }
-                else
-                {
-                    // Fill L0/L1
-                    for (auto it = m_dpb.begin(); it != m_dpb.end(); it++)
-                    {
-                        bool list = it->poc > out.poc;
-                        out.ListX[list][out.numRef[list]++] = it->poc;
-                    }
-                }
+
+                auto GreaterOrder = [](Frame const & lhs, Frame const & rhs) { return lhs.poc > rhs.poc; };
+                auto LessOrder = [](Frame const & lhs, Frame const & rhs) { return lhs.poc < rhs.poc; };
 
                 // L0 in descending order
-                std::sort(out.ListX[0], out.ListX[0] + out.numRef[0], std::greater<mfxI32>());
+                std::sort(L0.begin(), L0.end(), GreaterOrder);
                 // L1 in ascending order
-                std::sort(out.ListX[1], out.ListX[1] + out.numRef[1], std::less<mfxI32>());
+                std::sort(L1.begin(), L1.end(), LessOrder);
 
                 if ((m_emuPar.mfx.GopOptFlag & MFX_GOP_CLOSED))
                 {
                     const mfxI32 & IPoc = itOut->IPoc;
                     {
                         // Remove L0 refs beyond GOP
-                        std::vector<mfxU32> L0;
-
-                        L0.assign(out.ListX[0], out.ListX[0] + out.numRef[0]);
-
                         L0.erase(std::remove_if(L0.begin(), L0.end(),
-                                                        [&IPoc] (mfxI32 poc) { return poc < IPoc; } ),
+                                                        [&IPoc] (const Frame & frame) { return frame.poc < IPoc; } ),
                                                 L0.end());
-                        out.numRef[0] = 0;
-
-                        for (auto poc : L0)
-                        {
-                            out.ListX[0][out.numRef[0]++] = poc;
-                        }
                     }
 
                     const mfxI32 & nextIPoc = itOut->nextIPoc;
                     if (nextIPoc != -1)
                     {
                         // Remove L1 refs beyond GOP
-                        std::vector<mfxU32> L1;
-
-                        L1.assign(out.ListX[1], out.ListX[1] + out.numRef[1]);
-
                         L1.erase(std::remove_if(L1.begin(), L1.end(),
-                                                        [&nextIPoc] (mfxI32 poc) { return poc >= nextIPoc; } ),
+                                                        [&nextIPoc] (const Frame & frame) { return frame.poc >= nextIPoc; } ),
                                                 L1.end());
-                        out.numRef[1] = 0;
-
-                        for (auto poc : L1)
-                        {
-                            out.ListX[1][out.numRef[1]++] = poc;
-                        }
                     }
                 }
 
                 // if B's L1 is zero (e.g. in case of closed gop)
-                if (isB && !out.numRef[1] && out.numRef[0])
-                    out.ListX[1][out.numRef[1]++] = out.ListX[0][0];
+                if (isB && !L1.size() && L0.size())
+                    L1.push_back(L0[0]);
 
                 if (!isB)
                 {
-                    // GPB
-                    out.numRef[1] = 0;
-                    for (mfxU16 i = 0; i < out.numRef[0]; ++i)
-                        out.ListX[1][out.numRef[1]++] = out.ListX[0][i];
+                    L1 = L0;
                 }
             }
 
-            // Fill empty entries with -1
-            for (mfxU32 list = 0; list < 2; list++)
-            {
-                for (mfxU32 i = out.numRef[list]; i < 16; ++i)
-                {
-                    out.ListX[list][i] = -1;
-                }
-            }
-
+            //=================5. Put curr frame in DPB=====================
             if (isRef)
             {
                 if (m_dpb.size() == m_emuPar.mfx.NumRefFrame)
@@ -714,9 +665,10 @@ namespace hevce_default_ref_lists
 
                         for (mfxU32 idx = 0; idx < lx[list]; idx++)
                         {
+                            mfxI32 expectedPOC = (idx < emulated.ListX[list].size()) ? emulated.ListX[list][idx].poc : -1;
                             g_tsLog << " - Actual: " << actualList[idx].POC
-                                << " - Expected: " << emulated.ListX[list][idx] << "\n";
-                            EXPECT_EQ(emulated.ListX[list][idx], actualList[idx].POC)
+                                << " - Expected: " << expectedPOC << "\n";
+                            EXPECT_EQ(expectedPOC, actualList[idx].POC)
                                 << " list = " << list
                                 << " idx = " << idx << "\n";
                         }
@@ -763,7 +715,7 @@ namespace hevce_default_ref_lists
     /* 24 */{MFX_PICSTRUCT_FIELD_SINGLE,       30,         2,              0x1,          0,       1,           0,    0,   66 }, // i + B + CLOSED
     /* 25 */{MFX_PICSTRUCT_FIELD_SINGLE,       30,         2,                0,          0,       1,           0,    0,   65 }, // i + B + even calls
     /* 26 */{MFX_PICSTRUCT_FIELD_SINGLE,       30,         2,                0,          0,       1,           0,    0,    3 }, // i + B + even calls
-    /* 27 */{MFX_PICSTRUCT_FIELD_SINGLE,       30,         4,                0,          0,       2,           0,    0,   54 }, // i + 3B PYR ??
+    /* 27 */{MFX_PICSTRUCT_FIELD_SINGLE,       30,         4,                0,          0,       2,           0,    0,   54 }, // i + 3B PYR
     /* 28 */{MFX_PICSTRUCT_FIELD_SINGLE,       30,         4,                0,          0,       2,           0,    0,   53 }, // i + 3B PYR + even calls
     /* 29 */{MFX_PICSTRUCT_FIELD_SINGLE,       30,         4,                0,          0,       1,           0,    0,   53 }, // i + 3B + even calls
     /* 30 */{MFX_PICSTRUCT_FIELD_SINGLE,       30,         3,              0x3,          0,       1,           0, 0x20,  140 }, // i + 2B + CLOSED + + STRICT
