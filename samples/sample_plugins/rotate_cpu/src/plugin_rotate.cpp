@@ -22,14 +22,18 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include <stdio.h>
 #include <mutex>
 #include <map>
+#include <tuple>
 #include "plugin_rotate.h"
 
 // disable "unreferenced formal parameter" warning -
 // not all formal parameters of interface functions will be used by sample plugin
 #pragma warning(disable : 4100)
 
+// map<tuple<memid, session id>, lock count>
+typedef  std::tuple<mfxMemId, mfxU32> UniqueMid;
+std::map<UniqueMid, int> mappingResourceManager;
+
 std::mutex mapping_mutex;
-std::map<mfxMemId, int> mappingResourceManager;
 
 #define SWAP_BYTES(a, b) {mfxU8 tmp; tmp = a; a = b; b = tmp;}
 
@@ -137,10 +141,18 @@ mfxStatus Rotate::Submit(const mfxHDL *in, mfxU32 in_num, const mfxHDL *out, mfx
     m_pTasks[ind].Out = real_surface_out;
     m_pTasks[ind].bBusy = true;
 
+    // Use thread id as a session identifier
+    // As session can't be obtained from plugin
+#if defined(_WIN32) || defined(_WIN64)
+    mfxU32 tid = GetCurrentThreadId();
+#else
+    mfxU32 tid = pthread_self();
+#endif
+
     switch (m_Param.Angle)
     {
     case 180:
-        m_pTasks[ind].pProcessor = new Rotator180;
+        m_pTasks[ind].pProcessor = new Rotator180(tid);
         MSDK_CHECK_POINTER(m_pTasks[ind].pProcessor, MFX_ERR_MEMORY_ALLOC);
         break;
     default:
@@ -377,11 +389,12 @@ mfxStatus Rotate::CheckInOutFrameInfo(mfxFrameInfo *pIn, mfxFrameInfo *pOut)
 }
 
 /* Processor class implementation */
-Processor::Processor()
+Processor::Processor(mfxU32 uid)
     : m_pIn(NULL)
     , m_pOut(NULL)
     , m_pAlloc(NULL)
 {
+    m_uid = uid;
 }
 
 Processor::~Processor()
@@ -409,35 +422,35 @@ mfxStatus Processor::LockFrame(mfxFrameSurface1 *frame)
 {
     MSDK_CHECK_POINTER(m_pAlloc, MFX_ERR_NULL_PTR);
     MSDK_CHECK_POINTER(frame, MFX_ERR_NULL_PTR);
-    mfxStatus currentSts = MFX_ERR_NONE;
+    mfxStatus sts = MFX_ERR_NONE;
     /* mutex locker */
     std::lock_guard<std::mutex> locker(mapping_mutex);
 
-    auto currentSurface = mappingResourceManager.find(frame->Data.MemId);
+    auto currentSurface = mappingResourceManager.find(UniqueMid(frame->Data.MemId, m_uid));
     if(currentSurface == mappingResourceManager.end())
     {
-        currentSts = m_pAlloc->Lock(m_pAlloc->pthis, frame->Data.MemId, &frame->Data);
-        mappingResourceManager[frame->Data.MemId]=1;
+        sts = m_pAlloc->Lock(m_pAlloc->pthis, frame->Data.MemId, &frame->Data);
+        mappingResourceManager[UniqueMid(frame->Data.MemId, m_uid)] = 1;
     }
     else /* Surface was mapped before */
         currentSurface->second++;
 
-    return currentSts;
+    return sts;
 }
 
 mfxStatus Processor::UnlockFrame(mfxFrameSurface1 *frame)
 {
     MSDK_CHECK_POINTER(m_pAlloc, MFX_ERR_NULL_PTR);
     MSDK_CHECK_POINTER(frame, MFX_ERR_NULL_PTR);
-    mfxStatus currentSts = MFX_ERR_NONE;
+    mfxStatus sts = MFX_ERR_NONE;
     /* mutex locker */
     std::lock_guard<std::mutex> locker(mapping_mutex);
 
-    auto currentSurface = mappingResourceManager.find(frame->Data.MemId);
+    auto currentSurface = mappingResourceManager.find(UniqueMid(frame->Data.MemId, m_uid));
 
     /* Surface did not find in mapping map, this is fatal error */
     if(currentSurface == mappingResourceManager.end())
-        currentSts = MFX_ERR_LOCK_MEMORY;
+        sts = MFX_ERR_LOCK_MEMORY;
     else /* Surface found, do processing */
     {
         currentSurface->second--;
@@ -447,17 +460,17 @@ mfxStatus Processor::UnlockFrame(mfxFrameSurface1 *frame)
              * This may help in case resetting of pipeline
              * */
             mappingResourceManager.erase(currentSurface);
-            currentSts = m_pAlloc->Unlock(m_pAlloc->pthis, frame->Data.MemId, &frame->Data);
-            MSDK_CHECK_STATUS(currentSts, "UnlockFrame() in plugin failed");
+            sts = m_pAlloc->Unlock(m_pAlloc->pthis, frame->Data.MemId, &frame->Data);
+            MSDK_CHECK_STATUS(sts, "UnlockFrame() in plugin failed");
         }
     }
 
-    return currentSts;
+    return sts;
 }
 
 
 /* 180 degrees rotator class implementation */
-Rotator180::Rotator180() : Processor()
+Rotator180::Rotator180(mfxU32 uid) : Processor(uid)
 {
 }
 
