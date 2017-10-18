@@ -1652,7 +1652,8 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
 
         mfxStatus sts = m_mfe->Create(mfeParam, m_vaDisplay);
         MFX_CHECK_STS(sts);
-        sts = m_mfe->Join(m_vaContextEncode);
+        //progressive to be changed for particular 2 field cases
+        sts = m_mfe->Join(m_vaContextEncode,par.mfx.FrameInfo.PicStruct!=MFX_PICSTRUCT_PROGRESSIVE);
         MFX_CHECK_STS(sts);
     }
 #endif

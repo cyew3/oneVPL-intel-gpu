@@ -128,7 +128,7 @@ mfxStatus MFEVAAPIEncoder::Create(mfxExtMultiFrameParam  const & par, VADisplay 
     }
 }
 
-mfxStatus MFEVAAPIEncoder::Join(VAContextID ctx)
+mfxStatus MFEVAAPIEncoder::Join(VAContextID ctx, bool doubleField)
 {
     vm_mutex_lock(&m_mfe_guard);//need to protect in case there are streams added/removed in runtime.
     VAStatus vaSts = vaAddContext(m_vaDisplay, ctx, m_mfe_context);
@@ -158,8 +158,11 @@ mfxStatus MFEVAAPIEncoder::Join(VAContextID ctx)
     }
     if (MFX_ERR_NONE == sts)
     {
+        StreamsIter_t iter;
         // append the pool with a new item;
-        m_streams_pool.push_back(m_stream_ids_s());
+        m_streams_pool.push_back(m_stream_ids_t(ctx, MFX_ERR_NONE, doubleField));
+        iter = m_streams_pool.end();
+        m_streamsMap.insert(std::pair<VAContextID, StreamsIter_t>(ctx,--iter));
         // to deal with the situation when a number of sessions < requested
         if (m_framesToCombine < m_maxFramesToCombine)
             ++m_framesToCombine;
@@ -200,29 +203,64 @@ mfxStatus MFEVAAPIEncoder::Destroy()
 mfxStatus MFEVAAPIEncoder::Submit(VAContextID context, vm_tick timeToWait)
 {
     vm_mutex_lock(&m_mfe_guard);
-
-    // take next element from the pool and insert it to the end
+    //stream in pool corresponding to particular context;
     StreamsIter_t cur_stream;
-    MFX_CHECK_WITH_ASSERT(!m_streams_pool.empty(), MFX_ERR_MEMORY_ALLOC);
-    MFX_CHECK_WITH_ASSERT(m_framesToCombine > 0, MFX_ERR_UNDEFINED_BEHAVIOR);
+    //we can wait for less frames than expected by pipeline due to avilability.
+    mfxU32 framesToSubmit = m_framesToCombine;
+    if (m_streams_pool.empty())
+    {
+        //if current stream came to empty pool - others already submitted or in process of submission
+        //start pool from the beggining
+        while(!m_submitted_pool.empty())
+        {
+            m_submitted_pool.begin()->reset();
+            m_streams_pool.splice(m_streams_pool.end(), m_submitted_pool,m_submitted_pool.begin());
+        }
+    }
+    MFX_CHECK_WITH_ASSERT(!m_streams_pool.empty(), MFX_ERR_MEMORY_ALLOC);//if somehow both stream_pool and submitted pull empty
 
-    cur_stream = m_streams_pool.begin();
-    // prepare it
-    cur_stream->ctx = context;
-    cur_stream->sts = MFX_ERR_NONE;
-    m_toSubmit.splice(m_toSubmit.end(), m_streams_pool, m_streams_pool.begin());
+    //get curret stream by context
+    std::map<VAContextID, StreamsIter_t>::iterator iter = m_streamsMap.find(context);
+    if(iter == m_streamsMap.end())
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+    cur_stream = iter->second;
+    if(!cur_stream->isFrameSubmitted())
+    {
+        //if current context is not submitted - it is in stream pull
+        m_toSubmit.splice(m_toSubmit.end(), m_streams_pool, cur_stream);
+    }
+    else
+    {
+        //if current stream submitted - it is in submitted pool
+        //in this case mean current stream submitting it's frames faster then others,
+        //at least for 2 reasons:
+        //1 - most likely: frame rate is higher
+        //2 - amount of streams big enough so first stream submit next frame earlier than last('s)
+        //submit current
+        //take it back from submitted pull
+        m_toSubmit.splice(m_toSubmit.end(), m_submitted_pool, cur_stream);
+        cur_stream->reset();//cleanup stream state
+    }
     ++m_framesCollected;
+    if (m_streams_pool.empty())
+    {
+        //if streams are over in a pool - submit available frames
+        //such approach helps to fix situation when we got remainder
+        //less than number m_framesToCombine, so current stream does not
+        //wait to get frames from other encoders in next cycle
+        if (m_framesCollected < framesToSubmit)
+            framesToSubmit = m_framesCollected;
+    }
 
+    MFX_CHECK_WITH_ASSERT(framesToSubmit > 0, MFX_ERR_UNDEFINED_BEHAVIOR);
     vm_tick start_tick = vm_time_get_tick();
     vm_tick spent_ticks = 0;
 
-    // such a condition with ticks allows to go into loop if at least 1ms
-    // is needed to wait
-    while (m_framesCollected < m_framesToCombine &&
-           !cur_stream->isSubmitted() &&
+    while (m_framesCollected < framesToSubmit &&
+           !cur_stream->isFieldSubmitted() &&
            timeToWait > spent_ticks)
     {
-
         vm_status res = vm_cond_timed_uwait(&m_mfe_wait, &m_mfe_guard,
                                           (timeToWait - spent_ticks));
         if ((VM_OK == res) || (VM_TIMEOUT == res))
@@ -235,13 +273,14 @@ mfxStatus MFEVAAPIEncoder::Submit(VAContextID context, vm_tick timeToWait)
             return MFX_ERR_UNKNOWN;
         }
     }
-
-    if (!cur_stream->isSubmitted())
+    //for interlace we will return stream back to stream pool when first field submitted
+    //to submit next one imediately after than, and don't count it as submitted
+    if (!cur_stream->isFieldSubmitted())
     {
-        // To form a linear array of contexts
+        // Form a linear array of contexts for submission
         for (StreamsIter_t it = m_toSubmit.begin(); it != m_toSubmit.end(); ++it)
         {
-            if (!it->isSubmitted())
+            if (!it->isFieldSubmitted())
             {
                 m_contexts.push_back(it->ctx);
                 m_streams.push_back(it);
@@ -253,24 +292,21 @@ mfxStatus MFEVAAPIEncoder::Submit(VAContextID context, vm_tick timeToWait)
             for (std::vector<StreamsIter_t>::iterator it = m_streams.begin();
                  it != m_streams.end(); ++it)
             {
-                (*it)->ctx = VA_INVALID_ID;
                 (*it)->sts = MFX_ERR_UNDEFINED_BEHAVIOR;
             }
             // if cur_stream is not in m_streams (somehow)
-            cur_stream->ctx = VA_INVALID_ID;
             cur_stream->sts = MFX_ERR_UNDEFINED_BEHAVIOR;
         }
         else
         {
             VAStatus vaSts = vaMFESubmit(m_vaDisplay, m_mfe_context,
                                          &m_contexts[0], m_contexts.size());
-            // Proper error handling and passing to correct encoder
-            // TBD with VPG and implementation
+
             mfxStatus tmp_res = VA_STATUS_SUCCESS == vaSts ? MFX_ERR_NONE : MFX_ERR_DEVICE_FAILED;
             for (std::vector<StreamsIter_t>::iterator it = m_streams.begin();
                  it != m_streams.end(); ++it)
             {
-                (*it)->ctx = VA_INVALID_ID;
+                (*it)->fieldSubmitted();
                 (*it)->sts = tmp_res;
             }
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
@@ -282,10 +318,18 @@ mfxStatus MFEVAAPIEncoder::Submit(VAContextID context, vm_tick timeToWait)
         m_streams.clear();
     }
 
-    // This frame can be already submitted. in this case
-    // we have to return strm back to the pool, release mutex and exit
+    // This frame can be already submitted or errored
+    // we have to return strm to the pool, release mutex and exit
     mfxStatus res = cur_stream->sts;
-    m_streams_pool.splice(m_streams_pool.end(), m_toSubmit, cur_stream);
+    if(cur_stream->isFrameSubmitted())
+    {
+        m_submitted_pool.splice(m_submitted_pool.end(), m_toSubmit, cur_stream);
+    }
+    else
+    {
+        cur_stream->resetField();
+        m_streams_pool.splice(m_streams_pool.end(), m_toSubmit, cur_stream);
+    }
     vm_mutex_unlock(&m_mfe_guard);
     return res;
 }
