@@ -329,6 +329,7 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
 
     if (MFX_SINGLE_THREAD == m_param.flags)
     {
+        UMC::AutomaticMutex guard(m_guard);
         //let really run task to 
         MFX_CALL_INFO call = {0};
         mfxTaskHandle previousTaskHandle = {0, 0};
@@ -343,11 +344,14 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
             if (task_sts != MFX_ERR_NONE)
                 continue;
 
+            guard.Unlock();
+
             call.res = call.pTask->entryPoint.pRoutine(call.pTask->entryPoint.pState,
                                                        call.pTask->entryPoint.pParam,
                                                        call.threadNum,
                                                        call.callNum);
             
+            guard.Lock();
 
             // save the previous task's handle
             previousTaskHandle = call.taskHandle;
