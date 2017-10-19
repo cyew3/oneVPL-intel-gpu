@@ -81,6 +81,7 @@ public:
         m_lastTask.m_frameType = IDX_INVALID;
         Fill(m_lastTask.m_refPicList, IDX_INVALID);
         Fill(m_lastTask.m_numRefActive, IDX_INVALID);
+        m_lastTask.m_shNUT = IDX_INVALID;
         m_lastTask.m_lastIPoc = IDX_INVALID;
         m_lastTask.m_lastRAP = IDX_INVALID;
         Fill(m_lastTask.m_dpb[TASK_DPB_ACTIVE], IDX_INVALID);

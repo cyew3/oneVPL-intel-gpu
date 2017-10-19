@@ -86,14 +86,15 @@ mfxStatus FEI_Encode::PreInit()
     ctrl->SearchWindow       = 5;
     ctrl->NumFramePartitions = 4;
 
-    if (!ctrl->SearchWindow)
-    {
-        ctrl->SearchPath     = 0;
-        ctrl->LenSP          = 57;
-        ctrl->RefWidth       = 32;
-        ctrl->RefHeight      = 32;
-        ctrl->AdaptiveSearch = 1;
-    }
+    // uncomment when SearchWindow will be able to be set from command line
+    // if (!ctrl->SearchWindow)
+    // {
+    //     ctrl->SearchPath     = 0;
+    //     ctrl->LenSP          = 57;
+    //     ctrl->RefWidth       = 32;
+    //     ctrl->RefHeight      = 32;
+    //     ctrl->AdaptiveSearch = 1;
+    // }
 
     mfxExtHEVCRefLists* pRefLists = m_encodeCtrl.AddExtBuffer<mfxExtHEVCRefLists>();
     MSDK_CHECK_POINTER(pRefLists, MFX_ERR_NOT_INITIALIZED);
@@ -205,13 +206,13 @@ mfxStatus FEI_Encode::EncodeFrame(HevcTask* task)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
+    mfxFrameSurface1* pSurf = NULL;
     if (task)
     {
         sts = SetCtrlParams(*task);
         MSDK_CHECK_STATUS(sts, "FEI Encode::SetCtrlParams failed");
+        pSurf = task->m_surf;
     }
-
-    mfxFrameSurface1* pSurf = task->m_surf;
 
     sts = EncodeFrame(pSurf);
     MSDK_CHECK_STATUS(sts, "FEI EncodeFrame failed");

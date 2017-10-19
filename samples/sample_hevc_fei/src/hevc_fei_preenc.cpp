@@ -367,7 +367,6 @@ mfxStatus FEI_Preenc::PreEncMultiFrames(HevcTask* pTask)
     mfxStatus sts = MFX_ERR_NONE;
     HevcTask & currFrame = *pTask;
     HevcTask & task = *pTask;
-    HevcDpbArray & DPB = task.m_dpb[TASK_DPB_ACTIVE];
     mfxU8 const (&RPL)[2][MAX_DPB_SIZE] = task.m_refPicList;
 
     bool bDownsampleInput = true;

@@ -708,7 +708,8 @@ void EncodeOrderControl::ConstructRPL(HevcTask & task)
     Fill(task.m_refPicList, IDX_INVALID);
 
     mfxExtCodingOption3 * CO3 = m_par;
-    assert(CO3);
+    if (!CO3)
+        throw mfxError(MFX_ERR_NULL_PTR, "mfxExtCodingOption3 is not defined in ConstructRPL");
 
     if (task.m_frameType & MFX_FRAMETYPE_B)
     {

@@ -128,6 +128,7 @@ public:
     Decoder(const SourceFrameInfo& inPars, SurfacesPool* sp, MFXVideoSession* session)
         : IYUVSource(inPars, sp)
         , m_session(session)
+        , m_LastSyncp(0)
     {
         MSDK_ZERO_MEMORY(m_Bitstream);
         m_Bitstream.TimeStamp=(mfxU64)-1;
@@ -171,6 +172,7 @@ public:
         , m_pTarget(pTarget)
         , m_parentSession(parentSession)
         , m_pInSurface(NULL)
+        , m_LastSyncp(0)
     {
     }
     virtual ~FieldSplitter()
