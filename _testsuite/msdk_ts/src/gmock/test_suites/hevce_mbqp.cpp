@@ -313,7 +313,7 @@ int TestSuite::RunTest(unsigned int id)
     SETPARS(&cod3, EXT_COD3);
     mfxExtHEVCParam& hp = m_par;
     m_par.AsyncDepth = 1;
-    m_framesToEncode = 1;
+    m_framesToEncode = 30;
     m_mbqp_on = true;
 
     m_par.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
