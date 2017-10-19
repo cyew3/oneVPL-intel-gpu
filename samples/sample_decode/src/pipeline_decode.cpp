@@ -1567,6 +1567,8 @@ mfxStatus CDecodingPipeline::SyncOutputSurface(mfxU32 wait)
         m_pCurrentOutputSurface = NULL;
     }
 
+    MSDK_CHECK_STATUS_NO_RET(sts, "SyncOperation failed");
+
     if (MFX_ERR_NONE != sts) {
         sts = MFX_ERR_UNKNOWN;
     }
@@ -1596,7 +1598,8 @@ mfxStatus CDecodingPipeline::RunDecoding()
         }
     }
 
-    while (((sts == MFX_ERR_NONE) || (MFX_ERR_MORE_DATA == sts) || (MFX_ERR_MORE_SURFACE == sts)) && (m_nFrames > m_output_count)){
+    while (((sts == MFX_ERR_NONE) || (MFX_ERR_MORE_DATA == sts) || (MFX_ERR_MORE_SURFACE == sts)) && (m_nFrames > m_output_count))
+    {
         if (MFX_ERR_NONE != m_error) {
             msdk_printf(MSDK_STRING("DeliverOutput return error = %d\n"),m_error);
             break;
@@ -1621,6 +1624,7 @@ mfxStatus CDecodingPipeline::RunDecoding()
                 pBitstream = NULL;
             }
         }
+
         if ((MFX_ERR_NONE == sts) || (MFX_ERR_MORE_DATA == sts) || (MFX_ERR_MORE_SURFACE == sts)) {
             // here we check whether output is ready, though we do not wait...
 #ifndef __SYNC_WA
@@ -1633,6 +1637,11 @@ mfxStatus CDecodingPipeline::RunDecoding()
             }
 #endif
         }
+        else
+        {
+            MSDK_CHECK_STATUS_NO_RET(sts, "ReadNextFrame failed");
+        }
+
         if ((MFX_ERR_NONE == sts) || (MFX_ERR_MORE_DATA == sts) || (MFX_ERR_MORE_SURFACE == sts)) {
             SyncFrameSurfaces();
             SyncVppFrameSurfaces();
@@ -1668,10 +1677,12 @@ mfxStatus CDecodingPipeline::RunDecoding()
                 continue;
             }
 
-            if (!m_pCurrentFreeOutputSurface) {
+            if (!m_pCurrentFreeOutputSurface) 
+            {
                 m_pCurrentFreeOutputSurface = GetFreeOutputSurface();
             }
-            if (!m_pCurrentFreeOutputSurface) {
+            if (!m_pCurrentFreeOutputSurface) 
+            {
                 sts = MFX_ERR_NOT_FOUND;
                 break;
             }
@@ -1684,7 +1695,8 @@ mfxStatus CDecodingPipeline::RunDecoding()
         }
 
         if ((MFX_ERR_NONE == sts) || (MFX_ERR_MORE_DATA == sts) || (MFX_ERR_MORE_SURFACE == sts)) {
-            if (m_bIsCompleteFrame) {
+            if (m_bIsCompleteFrame) 
+            {
                 m_pCurrentFreeSurface->submit = m_timer_overall.Sync();
             }
             pOutSurface = NULL;
@@ -1763,6 +1775,11 @@ mfxStatus CDecodingPipeline::RunDecoding()
                 m_pCurrentFreeSurface = NULL;
             }
         }
+        else
+        {
+            MSDK_CHECK_STATUS_NO_RET(sts, "DecodeFrameAsync returned error status");
+        }
+
         if (MFX_ERR_NONE == sts)
         {
             if (m_bVppIsUsed)
@@ -1792,16 +1809,20 @@ mfxStatus CDecodingPipeline::RunDecoding()
                         m_pCurrentFreeVppSurface->frame.Info.FrameId.ViewId = pOutSurface->Info.FrameId.ViewId;
                         sts = m_pmfxVPP->RunFrameVPPAsync(pOutSurface, &(m_pCurrentFreeVppSurface->frame), NULL, &(m_pCurrentFreeOutputSurface->syncp));
 
-                        if (MFX_WRN_DEVICE_BUSY == sts) {
+                        if (MFX_WRN_DEVICE_BUSY == sts)
+                        {
                             MSDK_SLEEP(1); // just wait and then repeat the same call to RunFrameVPPAsync
                         }
                     } while (MFX_WRN_DEVICE_BUSY == sts);
 
                     // process errors
-                    if (MFX_ERR_MORE_DATA == sts) { // will never happen actually
+                    if (MFX_ERR_MORE_DATA == sts) 
+                    { // will never happen actually
                         continue;
                     }
-                    else if (MFX_ERR_NONE != sts) {
+                    else if (MFX_ERR_NONE != sts) 
+                    {
+                        MSDK_PRINT_RET_MSG(sts, "RunFrameVPPAsync failed");
                         break;
                     }
 

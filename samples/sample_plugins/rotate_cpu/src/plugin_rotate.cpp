@@ -20,7 +20,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "mfx_samples_config.h"
 
 #include <stdio.h>
-#include <mutex>
+#include "vm/thread_defs.h"
 #include <map>
 #include <tuple>
 #include "plugin_rotate.h"
@@ -430,7 +430,7 @@ mfxStatus Processor::LockFrame(mfxFrameSurface1 *frame)
         return MFX_ERR_NONE;
 
     /* mutex locker */
-    std::lock_guard<std::mutex> locker(mapping_mutex);
+    AutomaticMutex locker(mapping_mutex);
 
     auto currentSurface = mappingResourceManager.find(UniqueMid(frame->Data.MemId, m_uid));
     if(currentSurface == mappingResourceManager.end())
@@ -459,7 +459,7 @@ mfxStatus Processor::UnlockFrame(mfxFrameSurface1 *frame)
         return MFX_ERR_NONE;
 
     /* mutex locker */
-    std::lock_guard<std::mutex> locker(mapping_mutex);
+    AutomaticMutex locker(mapping_mutex);
 
     auto currentSurface = mappingResourceManager.find(UniqueMid(frame->Data.MemId, m_uid));
 

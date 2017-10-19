@@ -1463,10 +1463,13 @@ void CEncodingPipeline::Close()
 
     if (m_UserDataUnregSEI.size() > 0)
     {
-        for (auto & i_pl : m_UserDataUnregSEI)
+        for (std::vector<mfxPayload*>::iterator it = m_UserDataUnregSEI.begin();it!= m_UserDataUnregSEI.end();it++)
         {
-            if (i_pl) delete[] i_pl->Data;
-            delete i_pl;
+            if (*it)
+            {
+                delete[](*it)->Data;
+            }
+            delete (*it);
         }
         m_UserDataUnregSEI.clear();
     }
