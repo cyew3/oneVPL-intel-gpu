@@ -1016,6 +1016,11 @@ int TestSuite::RunTest(unsigned int id)
     if (!skip)
     {
         Query();
+        if ((tc.type == SLICE) && (tc.sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM))
+        {
+            if (m_par.mfx.NumSlice > m_pParOut->mfx.NumSlice)
+                throw tsOK; // NumSlice was reduced due to Caps or Resolution instead of updating level
+        }
         if ((tc.exp_level != m_pParOut->mfx.CodecLevel) &&
             (tc.exp_level != (m_pParOut->mfx.CodecLevel & 255)) &&
             (!skip_check_level))
