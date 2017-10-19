@@ -1567,12 +1567,6 @@ mfxStatus CDecodingPipeline::SyncOutputSurface(mfxU32 wait)
         m_pCurrentOutputSurface = NULL;
     }
 
-    MSDK_CHECK_STATUS_NO_RET(sts, "SyncOperation failed");
-
-    if (MFX_ERR_NONE != sts) {
-        sts = MFX_ERR_UNKNOWN;
-    }
-
     return sts;
 }
 
@@ -1751,12 +1745,11 @@ mfxStatus CDecodingPipeline::RunDecoding()
                     sts = SyncOutputSurface(MSDK_DEC_WAIT_INTERVAL);
                 } while (MFX_ERR_NONE == sts);
 
+                MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
+                if (sts) MSDK_PRINT_WRN_MSG(sts, "SyncOutputSurface failed")
+
                 while (m_synced_count != m_output_count) {
                     m_pDeliveredEvent->Wait();
-                }
-
-                if (MFX_ERR_MORE_DATA == sts) {
-                    sts = MFX_ERR_NONE;
                 }
                 break;
             } else if (MFX_ERR_INCOMPATIBLE_VIDEO_PARAM == sts) {
