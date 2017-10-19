@@ -126,14 +126,14 @@ public:
         if (mode & QP_FRAME) {
             m_pCtrl->QP = qp_frame_vector[m_fo]; //it is needed if we have not buffer
             ctrl.ctrl.QP = qp_frame_vector[m_fo];
-            for (int i = 0; i < (int)m_qp.size(); i++)
+            for (mfxI32 i = 0; i < (mfxI32)m_qp.size(); i++)
             {
                 ctrl.buf[i] = qp_frame_vector[m_fo];
             }
         } else {
             m_pCtrl->QP = qp_value;
             ctrl.ctrl.QP = qp_value;
-            for (int i = 0; i < (int)m_qp.size(); i++)
+            for (mfxI32 i = 0; i < (mfxI32)m_qp.size(); i++)
             {
                 ctrl.buf[i] = qp_value;
             }
@@ -157,10 +157,6 @@ public:
         return sts;
     }
 
-    struct LCU_QP
-    {
-        std::vector<mfxU8> buf;
-    };
     enum
     {
         MFX_PAR = 1,
@@ -200,12 +196,10 @@ public:
     tsRawReader *m_reader;
     std::vector<mfxU8> m_qp;
     std::vector<mfxU8> qp_frame_vector;
-    LCU_QP *lcu_buf;
     mfxU32 m_fo;
     mfxU32 mode;
 
     int block_size;
-    vaapiBufferAllocator *m_hevcFeiAllocator;
     mfxU32 qp_value;
 
     #ifdef DEBUG_STREAM
@@ -228,8 +222,8 @@ public:
     mfxU8  *m_buf;
     mfxU32 m_len;    //data length in m_buf
     mfxU32 m_buf_sz; //buf size
-
-    BitstreamChecker(const TestSuite::tc_struct & tc, mfxVideoParam& par)
+    bool m_mbqp_on;
+    BitstreamChecker(const TestSuite::tc_struct & tc, mfxVideoParam& par, bool mbqp_on)
         : tsParserHEVCAU()
         , m_i(0)
         , m_par(par)
@@ -239,6 +233,7 @@ public:
         , m_writer("debug.265")
 #endif
         , m_len(0)
+        , m_mbqp_on(mbqp_on)
     {
         m_buf_sz = m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height * 4 * 30;
         m_buf = new mfxU8[m_buf_sz];
@@ -269,6 +264,27 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
     while (checked++ < nFrames)
     {
         UnitType& hdr = ParseOrDie();
+
+        #if defined(LINUX32) || defined(LINUX64)
+        for (mfxU32 i = 0; i < hdr.NumUnits; i++)
+        {
+            mfxU16 type = hdr.nalu[i]->nal_unit_type;
+            if (type != 34)
+            {
+                continue;
+            }
+            auto& pps = *hdr.nalu[i]->pps;
+            mfxI32 cu_qp_delta_enabled_flag = pps.cu_qp_delta_enabled_flag;
+            if (m_mbqp_on)
+            {
+                EXPECT_EQ(cu_qp_delta_enabled_flag, 1) << " ERROR: Unexpected cu_qp_delta_enabled_flag, cu_qp_delta_enabled_flag must be 1 when we use mfxExtCodingOption3.EnableMBQP is ON";
+            } 
+            else
+            {
+                EXPECT_EQ(cu_qp_delta_enabled_flag, 0) << " ERROR: Unexpected cu_qp_delta_enabled_flag, cu_qp_delta_enabled_flag must be 0 when we use mfxExtCodingOption3.EnableMBQP is OFF";
+            }
+        }
+        #endif
     }
     bs.DataLength = 0;
 
@@ -295,15 +311,21 @@ const TestSuite::tc_struct TestSuite::test_case[] =
 
     {/*07*/ MFX_ERR_NONE, QP_NO_BUFFER | QP_STREAM,      {EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableMBQP, MFX_CODINGOPTION_ON}, 31},
 
-    {/*08*/ MFX_ERR_NONE, QP_STREAM,      {{EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableMBQP, MFX_CODINGOPTION_ON}, {MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 2}}, 20},
+    {/*08*/ MFX_ERR_NONE, QP_FRAME,      {{EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableMBQP, MFX_CODINGOPTION_ON}, {EXT_COD3, &tsStruct::mfxExtCodingOption3.GPB, 0x20}}, 20},
 
-    {/*9*/ MFX_ERR_NONE, QP_STREAM,      {{EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableMBQP, MFX_CODINGOPTION_ON}, {MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 4}}, 30},
+    {/*09*/ MFX_ERR_NONE, QP_STREAM,      {{EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableMBQP, MFX_CODINGOPTION_ON}, {EXT_COD3, &tsStruct::mfxExtCodingOption3.GPB, 0x20}}, 20},
 
-    {/*10*/ MFX_ERR_NONE, QP_STREAM,      {{EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableMBQP, MFX_CODINGOPTION_ON}, {MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 8}}, 41},
+    {/*10*/ MFX_ERR_NONE, QP_NO_BUFFER | QP_STREAM,      {{EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableMBQP, MFX_CODINGOPTION_ON}, {EXT_COD3, &tsStruct::mfxExtCodingOption3.GPB, 0x20}}, 20},
 
-    {/*11*/ MFX_ERR_NONE, QP_STREAM,      {{EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableMBQP, MFX_CODINGOPTION_ON}, {MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 3}}, 21},
+    {/*11*/ MFX_ERR_NONE, QP_STREAM,      {{EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableMBQP, MFX_CODINGOPTION_ON}, {MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 2}}, 20},
 
-    {/*12*/ MFX_ERR_NONE, QP_STREAM,      {{EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableMBQP, MFX_CODINGOPTION_ON}, {MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 2}}, 21},
+    {/*12*/ MFX_ERR_NONE, QP_STREAM,      {{EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableMBQP, MFX_CODINGOPTION_ON}, {MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 4}}, 30},
+
+    {/*13*/ MFX_ERR_NONE, QP_STREAM,      {{EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableMBQP, MFX_CODINGOPTION_ON}, {MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 8}}, 41},
+
+    {/*14*/ MFX_ERR_NONE, QP_STREAM,      {{EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableMBQP, MFX_CODINGOPTION_ON}, {MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 3}}, 21},
+
+    {/*15*/ MFX_ERR_NONE, QP_STREAM,      {{EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableMBQP, MFX_CODINGOPTION_ON}, {MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 2}}, 21},
     #else
     {/*00*/ MFX_ERR_UNSUPPORTED, QP_FRAME,       {EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableMBQP, MFX_CODINGOPTION_ON}},
     #endif
@@ -336,7 +358,7 @@ int TestSuite::RunTest(unsigned int id)
     MFXInit();
     Load();
 
-    BitstreamChecker c(tc, *m_pPar);
+    BitstreamChecker c(tc, *m_pPar, m_mbqp_on);
 
     m_bs_processor = &c;
 
@@ -351,7 +373,7 @@ int TestSuite::RunTest(unsigned int id)
     bs.Data = c.m_buf;
     bs.DataLength = c.m_len;
     bs.MaxLength = c.m_buf_sz;
-    int bitrate_frame = c.m_len;
+    mfxI32 bitrate_frame = c.m_len;
     tsBitstreamReader reader(bs, c.m_buf_sz);
     dec.m_bs_processor = &reader;
     tsSurfaceCRC32 crc_proc_yuv;
@@ -369,33 +391,32 @@ int TestSuite::RunTest(unsigned int id)
     memset(&m_bitstream, 0, sizeof(mfxBitstream));
     
     m_fo = 0;
-
+    m_mbqp_on = true;
     // 2. encode with PerMBQp setting
-    BitstreamChecker c1(tc, *m_pPar);
-    m_bs_processor = &c1;
+    BitstreamChecker check_mbqp_on(tc, *m_pPar, m_mbqp_on);
+    m_bs_processor = &check_mbqp_on;
 
     //to alloc more surfaces
     AllocSurfaces();
-    m_mbqp_on = true;
     mfxExtHEVCParam& hp = m_par;    
     cod3.EnableMBQP = MFX_CODINGOPTION_ON;
     EncodeFrames(nf);
-    tsVideoDecoder dec1(MFX_CODEC_HEVC);
+    tsVideoDecoder dec_mbqp_on(MFX_CODEC_HEVC);
 
-    mfxBitstream bs1;
-    memset(&bs1, 0, sizeof(bs1));
-    bs1.Data = c1.m_buf;
-    bs1.DataLength = c1.m_len;
-    bs1.MaxLength = c1.m_buf_sz;
-    int bitrate_ctu = c1.m_len;
-    tsBitstreamReader reader1(bs1, c1.m_buf_sz);
-    dec1.m_bs_processor = &reader1;
+    mfxBitstream bs_mbqp_on;
+    memset(&bs_mbqp_on, 0, sizeof(bs_mbqp_on));
+    bs_mbqp_on.Data = check_mbqp_on.m_buf;
+    bs_mbqp_on.DataLength = check_mbqp_on.m_len;
+    bs_mbqp_on.MaxLength = check_mbqp_on.m_buf_sz;
+    mfxI32 bitrate_ctu = check_mbqp_on.m_len;
+    tsBitstreamReader reader_mbqp_on(bs_mbqp_on, check_mbqp_on.m_buf_sz);
+    dec_mbqp_on.m_bs_processor = &reader_mbqp_on;
 
     tsSurfaceCRC32 crc_cmp_yuv;
-    dec1.m_surf_processor = &crc_cmp_yuv;
-    dec1.Init();
-    dec1.AllocSurfaces();
-    dec1.DecodeFrames(nf);
+    dec_mbqp_on.m_surf_processor = &crc_cmp_yuv;
+    dec_mbqp_on.Init();
+    dec_mbqp_on.AllocSurfaces();
+    dec_mbqp_on.DecodeFrames(nf);
 
     Ipp32u cmp_crc = crc_cmp_yuv.GetCRC();
     g_tsLog << "crc = " << crc << "\n";
@@ -405,7 +426,7 @@ int TestSuite::RunTest(unsigned int id)
         g_tsLog << "ERROR: the 2 crc values should be the same\n";
         g_tsStatus.check(MFX_ERR_ABORTED);
     } 
-    double diff = (double(abs(bitrate_ctu - bitrate_frame)) / double(std::max(bitrate_ctu, bitrate_frame) + 1)) * 100; //Percents
+    mfxF64 diff = (mfxF64(abs(bitrate_ctu - bitrate_frame)) / mfxF64(std::max(bitrate_ctu, bitrate_frame) + 1)) * 100; //Percents
     g_tsLog << "First stream Rate = " << bitrate_frame << "\n";
     g_tsLog << "Second stream Rate = " << bitrate_ctu << "\n";
     if(diff > EXPECTED_BITRATE_DIFFERENCE)
