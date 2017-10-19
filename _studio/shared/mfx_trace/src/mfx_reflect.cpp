@@ -320,58 +320,74 @@ namespace mfx_reflect
         {
             throw std::invalid_argument(std::string("Types mismatch"));
         }
+
+        mfxExtBuffer** pExtParam1 = NULL;
+        mfxExtBuffer** pExtParam2 = NULL;
+        mfxU16 numExtParam = 0;
+
         for (AccessorField field1 = data1.AccessFirstField(); field1.IsValid(); ++field1)
         {
             AccessorField field2 = data2.AccessField(field1.m_Iterator);
-            ReflectedType::SP p_mfxExtBufferType = field1.m_pReflection->m_pCollection->FindExistingType<mfxExtBuffer**>();
-            if (field1.m_pReflection->FieldType->m_TypeIndex == p_mfxExtBufferType->m_TypeIndex)
-            {
-                mfxExtBuffer** pExtParam1 = field1.Get<mfxExtBuffer**>();
-                mfxExtBuffer** pExtParam2 = field2.Get<mfxExtBuffer**>();
-                ++field1; ++field2;
-                if (!field1.IsValid() || !field2.IsValid()) break;
-                if (!(field1.m_pReflection->FieldType->m_TypeIndex == TypeIndex(typeid(mfxU16)) && field1.m_pReflection->FieldType->m_TypeIndex == TypeIndex(typeid(mfxU16)))) break;
-                mfxU16 numExtParam1 = field1.Get<mfxU16>();
-                mfxU16 numExtParam2 = field2.Get<mfxU16>();
 
-                TypeComparisonResultP extBufferCompareResult = CompareExtBufferLists(pExtParam1, numExtParam1, pExtParam2, numExtParam2, field1.m_pReflection->m_pCollection);
-                if (extBufferCompareResult != NULL)
+            if (TypeIndex(typeid(mfxExtBuffer**)) == field1.m_pReflection->FieldType->m_TypeIndex)
+            {
+                pExtParam1 = field1.Get<mfxExtBuffer**>();
+                pExtParam2 = field2.Get<mfxExtBuffer**>();
+            }
+            else if ((field1.m_pReflection->FieldName == "NumExtParam") && (field1.m_pReflection->FieldType->m_TypeIndex == TypeIndex(typeid(mfxU16))) && (field2.m_pReflection->FieldType->m_TypeIndex == TypeIndex(typeid(mfxU16))))
+            {
+                if (field1.Get<mfxU16>() == field2.Get<mfxU16>())
                 {
-                    result->splice(result->end(), *extBufferCompareResult); //move elements of *extBufferCompareResult to the end of *result
-                    if (!extBufferCompareResult->extBufferIdList.empty())
-                    {
-                        result->extBufferIdList.splice(result->extBufferIdList.end(), extBufferCompareResult->extBufferIdList);
-                    }
+                    numExtParam = field1.Get<mfxU16>();
                 }
                 else
                 {
-                    throw std::invalid_argument(std::string("Unexpected behavior - ExtBuffer comparison result is NULL"));
+                    throw std::invalid_argument(std::string("NumExtParam mismatch"));
                 }
             }
-
-            for (size_t i = 0; i < field1.m_pReflection->Count; ++i)
+            else
             {
-                field1.SetIndexElement(i);
-                field2.SetIndexElement(i);
-
-                AccessorType subtype1 = field1.AccessSubtype();
-                TypeComparisonResultP subtypeResult = NULL;
-
-                if (subtype1.m_pReflection->m_Fields.size() > 0)
+                for (size_t i = 0; i < field1.m_pReflection->Count; ++i)
                 {
-                    AccessorType subtype2 = field2.AccessSubtype();
-                    if (subtype1.m_pReflection != subtype2.m_pReflection)
+                    field1.SetIndexElement(i);
+                    field2.SetIndexElement(i);
+
+                    AccessorType subtype1 = field1.AccessSubtype();
+                    TypeComparisonResultP subtypeResult = NULL;
+
+                    if (subtype1.m_pReflection->m_Fields.size() > 0)
                     {
-                        throw std::invalid_argument(std::string("Subtypes mismatch - should never happen for same types"));
+                        AccessorType subtype2 = field2.AccessSubtype();
+                        if (subtype1.m_pReflection != subtype2.m_pReflection)
+                        {
+                            throw std::invalid_argument(std::string("Subtypes mismatch - should never happen for same types"));
+                        }
+                        subtypeResult = CompareTwoStructs(subtype1, subtype2);
                     }
-                    subtypeResult = CompareTwoStructs(subtype1, subtype2);
-                }
 
-                if (!field1.Equal(field2))
-                {
-                    FieldComparisonResult fields = { field1 , field2, subtypeResult};
-                    result->push_back(fields);
+                    if (!field1.Equal(field2))
+                    {
+                        FieldComparisonResult fields = { field1 , field2, subtypeResult };
+                        result->push_back(fields);
+                    }
                 }
+            }
+        }
+
+        if ((pExtParam1 != NULL) && (pExtParam2 != NULL) && (numExtParam > 0))
+        {
+            TypeComparisonResultP extBufferCompareResult = CompareExtBufferLists(pExtParam1, numExtParam, pExtParam2, numExtParam, data1.AccessFirstField().m_pReflection->m_pCollection);
+            if (extBufferCompareResult != NULL)
+            {
+                result->splice(result->end(), *extBufferCompareResult); //move elements of *extBufferCompareResult to the end of *result
+                if (!extBufferCompareResult->extBufferIdList.empty())
+                {
+                    result->extBufferIdList.splice(result->extBufferIdList.end(), extBufferCompareResult->extBufferIdList);
+                }
+            }
+            else
+            {
+                throw std::invalid_argument(std::string("Unexpected behavior - ExtBuffer comparison result is NULL"));
             }
         }
         return result;
@@ -381,10 +397,13 @@ namespace mfx_reflect
     {
         AccessorTypeP pExtBuffer;
         mfxU32 id = pExtBufferParam.BufferId;
-        ReflectedType::SP pTypeExtBuffer = collection.FindExtBufferTypeById(id); //find in KnownTypes this BufferId
-        if (pTypeExtBuffer != NULL)
+        if (0 != id)
         {
-            pExtBuffer = MAKE_SHARED(AccessorType,(&pExtBufferParam, *pTypeExtBuffer));
+            ReflectedType::SP pTypeExtBuffer = collection.FindExtBufferTypeById(id); //find in KnownTypes this BufferId
+            if (pTypeExtBuffer != NULL)
+            {
+                pExtBuffer = MAKE_SHARED(AccessorType, (&pExtBufferParam, *pTypeExtBuffer));
+            }
         }
         return pExtBuffer;
     }
