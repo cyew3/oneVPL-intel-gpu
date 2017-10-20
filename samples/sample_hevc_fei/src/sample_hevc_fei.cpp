@@ -98,6 +98,15 @@ void PrintHelp(const msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-mvpin::format <file-name>] - use this to input MVs for ENCODE before repacking in internal format\n"));
     msdk_printf(MSDK_STRING("                                   (Encoded Order will be enabled automatically).\n"));
 
+    msdk_printf(MSDK_STRING("   [-SearchWindow value] - specifies one of the predefined search path and window size. In range [1,8] (5 is default).\n"));
+    msdk_printf(MSDK_STRING("                           If zero value specified: -RefWidth / RefHeight, -LenSP are required\n"));
+    msdk_printf(MSDK_STRING("   [-RefWidth width] - width of search region (should be multiple of 4), maximum allowed search window is 64x32 for\n"));
+    msdk_printf(MSDK_STRING("                       one direction and 32x32 for bidirectional search\n"));
+    msdk_printf(MSDK_STRING("   [-RefHeight height] - height of search region (should be multiple of 4), maximum allowed is 32\n"));
+    msdk_printf(MSDK_STRING("   [-LenSP length] - defines number of search units in search path. In range [1,63] (default is 57)\n"));
+    msdk_printf(MSDK_STRING("   [-SearchPath value] - defines shape of search path. 0 -full, 1- diamond.\n"));
+    msdk_printf(MSDK_STRING("   [-AdaptiveSearch] - enables adaptive search\n"));
+
     msdk_printf(MSDK_STRING("\n"));
 }
 
@@ -365,6 +374,40 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU32 nArgNum, sInputParams& 
         {
             params.PicTimingSEI = MFX_CODINGOPTION_ON;
         }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-AdaptiveSearch")))
+        {
+            params.encodeCtrl.AdaptiveSearch = params.preencCtrl.AdaptiveSearch = 1;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-SearchWindow")))
+        {
+            CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
+            PARSE_CHECK(msdk_opt_read(strInput[++i], params.encodeCtrl.SearchWindow), "SearchWindow", isParseInvalid);
+            params.preencCtrl.SearchWindow = params.encodeCtrl.SearchWindow;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-LenSP")))
+        {
+            CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
+            PARSE_CHECK(msdk_opt_read(strInput[++i], params.encodeCtrl.LenSP), "LenSP", isParseInvalid);
+            params.preencCtrl.LenSP = params.encodeCtrl.LenSP;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-RefWidth")))
+        {
+            CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
+            PARSE_CHECK(msdk_opt_read(strInput[++i], params.encodeCtrl.RefWidth), "RefWidth", isParseInvalid);
+            params.preencCtrl.RefWidth = params.encodeCtrl.RefWidth;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-RefHeight")))
+        {
+            CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
+            PARSE_CHECK(msdk_opt_read(strInput[++i], params.encodeCtrl.RefHeight), "RefHeight", isParseInvalid);
+            params.preencCtrl.RefHeight = params.encodeCtrl.RefHeight;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-SearchPath")))
+        {
+            CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
+            PARSE_CHECK(msdk_opt_read(strInput[++i], params.encodeCtrl.SearchPath), "SearchPath", isParseInvalid);
+            params.preencCtrl.SearchPath = params.encodeCtrl.SearchPath;
+        }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("?")))
         {
             PrintHelp(strInput[0], NULL);
@@ -475,6 +518,31 @@ mfxStatus CheckOptions(const sInputParams params, const msdk_char* appName)
         return MFX_ERR_UNSUPPORTED;
     }
 
+    if (params.encodeCtrl.SearchWindow > 8)
+    {
+        PrintHelp(appName, "Invalid SearchWindow value");
+        return MFX_ERR_UNSUPPORTED;
+    }
+    if (params.encodeCtrl.SearchPath > 1)
+    {
+        PrintHelp(appName, "Invalid SearchPath value");
+        return MFX_ERR_UNSUPPORTED;
+    }
+    if (params.encodeCtrl.LenSP > 63)
+    {
+        PrintHelp(appName, "Invalid LenSP value");
+        return MFX_ERR_UNSUPPORTED;
+    }
+
+    if (params.encodeCtrl.RefWidth % 4 != 0 || params.encodeCtrl.RefHeight % 4 != 0
+        // check only the highest possible limit regardless of gop structure
+        || params.encodeCtrl.RefHeight > 64 || params.encodeCtrl.RefWidth > 64
+        || params.encodeCtrl.RefWidth * params.encodeCtrl.RefHeight > 2048)
+    {
+        PrintHelp(appName, "Invalid RefWidth/RefHeight value");
+        return MFX_ERR_UNSUPPORTED;
+    }
+
     return MFX_ERR_NONE;
 }
 
@@ -492,8 +560,31 @@ void AdjustOptions(sInputParams& params)
     if (params.bPREENC || (params.bENCODE && 0 != msdk_strlen(params.mvpInFile)))
     {
         if (!params.bEncodedOrder)
-            MSDK_CHECK_WRN(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, "Encoded order enabled.");
+            msdk_printf(MSDK_STRING("WARNING: Encoded order enabled.\n"));
         params.bEncodedOrder = true;
+    }
+
+    if (params.encodeCtrl.SearchWindow && (params.encodeCtrl.SearchPath || params.encodeCtrl.AdaptiveSearch
+        || params.encodeCtrl.LenSP || params.encodeCtrl.RefWidth || params.encodeCtrl.RefHeight))
+    {
+        msdk_printf(MSDK_STRING("WARNING: SearchWindow is specified."));
+        msdk_printf(MSDK_STRING("LenSP, RefWidth, RefHeight, SearchPath and AdaptiveSearch will be ignored.\n"));
+        params.encodeCtrl.LenSP = params.encodeCtrl.SearchPath = params.encodeCtrl.RefWidth =
+            params.encodeCtrl.RefHeight = params.encodeCtrl.AdaptiveSearch = 0;
+
+        params.preencCtrl.LenSP = params.preencCtrl.SearchPath = params.preencCtrl.RefWidth =
+            params.preencCtrl.RefHeight = params.preencCtrl.AdaptiveSearch = 0;
+    }
+    else if (!params.encodeCtrl.SearchWindow && (!params.encodeCtrl.LenSP || !params.encodeCtrl.RefWidth || !params.encodeCtrl.RefHeight))
+    {
+        msdk_printf(MSDK_STRING("WARNING: SearchWindow is not specified."));
+        msdk_printf(MSDK_STRING("Zero-value LenSP, RefWidth and RefHeight will be set to default.\n"));
+        if (!params.encodeCtrl.LenSP)
+            params.encodeCtrl.LenSP = params.preencCtrl.LenSP = 57;
+        if (!params.encodeCtrl.RefWidth)
+            params.encodeCtrl.RefWidth = params.preencCtrl.RefWidth = 32;
+        if (!params.encodeCtrl.RefHeight)
+            params.encodeCtrl.RefHeight = params.preencCtrl.RefHeight = 32;
     }
 
     if (params.encodeCtrl.MVPredictor == 0xffff)
@@ -510,8 +601,7 @@ void AdjustOptions(sInputParams& params)
         if (params.encodeCtrl.NumMvPredictors[0] != 0
                 || params.encodeCtrl.NumMvPredictors[1] != 0)
         {
-            MSDK_CHECK_WRN(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
-                    "No input predictor file specified for ENCODE - setting NumMVPredictors to 0");
+            msdk_printf(MSDK_STRING("No input predictors specified for ENCODE - setting NumMVPredictors to 0\n"));
         }
         params.encodeCtrl.NumMvPredictors[0] = 0;
         params.encodeCtrl.NumMvPredictors[1] = 0;
