@@ -1,3 +1,15 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2007-2017 Intel Corporation. All Rights Reserved.
+
+File Name: hevce_spspps_get.cpp
+
+\* ****************************************************************************** */
+
 #include "ts_encoder.h"
 #include "ts_parser.h"
 #include "ts_struct.h"
@@ -141,7 +153,9 @@ int TestSuite::RunTest(unsigned int id)
 
     if(tc.reset.field)
     {
-        tsStruct::set(m_pPar, *tc.reset.field, tc.reset.value);
+        // 704 is an invalid newCrop for TS_SIM
+        //tsStruct::set(m_pPar, *tc.reset.field, tc.reset.value);
+        tsStruct::set(m_pPar, *tc.reset.field, m_par.mfx.FrameInfo.CropW - 16);
     }
 
     m_par.NumExtParam = 0;
