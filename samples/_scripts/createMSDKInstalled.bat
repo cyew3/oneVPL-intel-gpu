@@ -32,14 +32,14 @@ mkdir %TargetDir%\bin\x64
 copy /Y %BuildDir%\win_Win32\bin\libmfx*.dll %TargetDir%\bin\win32\*.*
 copy /Y %BuildDir%\win_x64\bin\libmfx*.dll %TargetDir%\bin\x64\*.*
 
-mkdir %TargetDir%\igfx_s3dcontrol
-mkdir %TargetDir%\igfx_s3dcontrol\include
-mkdir %TargetDir%\igfx_s3dcontrol\lib\win32
-mkdir %TargetDir%\igfx_s3dcontrol\lib\x64
+rem mkdir %TargetDir%\igfx_s3dcontrol
+rem mkdir %TargetDir%\igfx_s3dcontrol\include
+rem mkdir %TargetDir%\igfx_s3dcontrol\lib\win32
+rem mkdir %TargetDir%\igfx_s3dcontrol\lib\x64
 
-copy %SamplesDir%\..\igfx_s3dcontrol\include\API\*.* %TargetDir%\igfx_s3dcontrol\include\*.*
-copy %SamplesDir%\..\igfx_s3dcontrol\_build\lib\win32\*.* %TargetDir%\igfx_s3dcontrol\lib\win32\*.*
-copy %SamplesDir%\..\igfx_s3dcontrol\_build\lib\x64\*.* %TargetDir%\igfx_s3dcontrol\lib\x64\*.*
+rem copy %SamplesDir%\..\igfx_s3dcontrol\include\API\*.* %TargetDir%\igfx_s3dcontrol\include\*.*
+rem copy %SamplesDir%\..\igfx_s3dcontrol\_build\lib\win32\*.* %TargetDir%\igfx_s3dcontrol\lib\win32\*.*
+rem copy %SamplesDir%\..\igfx_s3dcontrol\_build\lib\x64\*.* %TargetDir%\igfx_s3dcontrol\lib\x64\*.*
 
 
 mkdir %TargetDir%\include

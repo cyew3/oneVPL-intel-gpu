@@ -11,12 +11,6 @@ To compile samples you'll need:
    For easier debugging and building, compile all 4 versions of library 
    (all combinations of win32/x64 debug/release).
 3. MSDK Library DLLs compiled (any version, you can use precompiled binaries)
-4. igfx_s3dcontrol project (from mdp_msdk-samples repository) compiled with the same version of Visual Studio you going to use 
-   with samples (2010 by default).
-   For easier debugging and building, compile all 4 versions of library 
-   (all combinations of win32/x64 debug/release).
-
-
 
 To create MSDK_Install directory:
 1. Run createMSDKInstalled.bat providing 2 parameters:
@@ -38,11 +32,6 @@ To create MSDK_Install directory:
        Win32 (libmfx*.dll should be here)
        x64   (libmfx*.dll should be here)
      include
-     igfx_s3dcontrol
-       include (igfx_s3dcontrol.h should be here)
-       lib
-         win32 (igfx_s3dcontrol*.lib should be here)
-         x64   (igfx_s3dcontrol*.lib should be here)
      lib
        Win32 (libmfx*.lib should be here)
        x64   (libmfx*.lib should be here)

@@ -181,7 +181,7 @@ public:
     virtual void PrintInfo();
 
 protected: // functions
-    virtual mfxStatus CreateRenderingWindow(sInputParams *pParams, bool try_s3d);
+    virtual mfxStatus CreateRenderingWindow(sInputParams *pParams);
     virtual mfxStatus InitMfxParams(sInputParams *pParams);
 
     // function for allocating a specific external buffer
@@ -288,8 +288,6 @@ protected: // variables
 
     CHWDevice               *m_hwdev;
 #if D3D_SURFACES_SUPPORT
-    IGFXS3DControl          *m_pS3DControl;
-
     CDecodeD3DRender         m_d3dRender;
 #endif
 

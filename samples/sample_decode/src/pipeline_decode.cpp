@@ -143,10 +143,6 @@ CDecodingPipeline::CDecodingPipeline()
     m_bPerfMode = false;
 #endif
 
-#if D3D_SURFACES_SUPPORT
-    m_pS3DControl = NULL;
-#endif
-
     m_monitorType = 0;
     m_vLatency.reserve(1000); // reserve some space to reduce dynamic reallocation impact on pipeline execution
 }
@@ -464,7 +460,7 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
 
     if (m_eWorkMode == MODE_RENDERING)
     {
-        sts = CreateRenderingWindow(pParams, m_bIsMVC && (m_memType == D3D9_MEMORY));
+        sts = CreateRenderingWindow(pParams);
         MSDK_CHECK_STATUS(sts, "CreateRenderingWindow failed");
     }
 
@@ -510,12 +506,6 @@ void CDecodingPipeline::Close()
 {
 #if D3D_SURFACES_SUPPORT
     m_d3dRender.Close();
-
-    if (NULL != m_pS3DControl)
-    {
-        m_pS3DControl->SwitchTo2D(NULL);
-        MSDK_SAFE_DELETE(m_pS3DControl);
-    }
 #endif
     WipeMfxBitstream(&m_mfxBS);
     MSDK_SAFE_DELETE(m_pmfxDEC);
@@ -543,55 +533,11 @@ void CDecodingPipeline::Close()
     return;
 }
 
-#if D3D_SURFACES_SUPPORT
-bool operator < (const IGFX_DISPLAY_MODE &l, const IGFX_DISPLAY_MODE& r)
-{
-    if (r.ulResWidth >= 0xFFFF || r.ulResHeight >= 0xFFFF || r.ulRefreshRate >= 0xFFFF)
-        return false;
-
-         if (l.ulResWidth < r.ulResWidth) return true;
-    else if (l.ulResHeight < r.ulResHeight) return true;
-    else if (l.ulRefreshRate < r.ulRefreshRate) return true;
-
-    return false;
-}
-#endif
-
-mfxStatus CDecodingPipeline::CreateRenderingWindow(sInputParams *pParams, bool try_s3d)
+mfxStatus CDecodingPipeline::CreateRenderingWindow(sInputParams *pParams)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
-#if D3D_SURFACES_SUPPORT
-    if (try_s3d) {
-
-        m_pS3DControl = CreateIGFXS3DControl();
-        MSDK_CHECK_POINTER(m_pS3DControl, MFX_ERR_DEVICE_FAILED);
-
-        // check if s3d supported and get a list of supported display modes
-        IGFX_S3DCAPS caps;
-        MSDK_ZERO_MEMORY(caps);
-        HRESULT hr = m_pS3DControl->GetS3DCaps(&caps);
-        if (FAILED(hr) || 0 >= caps.ulNumEntries) {
-            MSDK_SAFE_DELETE(m_pS3DControl);
-            return MFX_ERR_DEVICE_FAILED;
-        }
-
-        // switch to 3D mode
-        ULONG max = 0;
-        MSDK_CHECK_POINTER(caps.S3DSupportedModes, MFX_ERR_NOT_INITIALIZED);
-        for (ULONG i = 0; i < caps.ulNumEntries; i++) {
-            if (caps.S3DSupportedModes[max] < caps.S3DSupportedModes[i])
-                max = i;
-        }
-
-        if (0 == pParams->nWallCell) {
-            hr = m_pS3DControl->SwitchTo3D(&caps.S3DSupportedModes[max]);
-            if (FAILED(hr)) {
-                MSDK_SAFE_DELETE(m_pS3DControl);
-                return MFX_ERR_DEVICE_FAILED;
-            }
-        }
-    }
+#if D3D_SURFACES_SUPPORT    
     sWindowParams windowParams;
 
     windowParams.lpWindowName = pParams->bWallNoTitle ? NULL : MSDK_STRING("sample_decode");
@@ -986,10 +932,6 @@ mfxStatus CDecodingPipeline::CreateHWDevice()
     if (NULL == m_hwdev)
         return MFX_ERR_MEMORY_ALLOC;
 
-    if (render && m_bIsMVC && m_memType == D3D9_MEMORY) {
-        sts = m_hwdev->SetHandle((mfxHandleType)MFX_HANDLE_GFXS3DCONTROL, m_pS3DControl);
-        MSDK_CHECK_STATUS(sts, "m_hwdev->SetHandle failed");
-    }
     sts = m_hwdev->Init(
         window,
         render ? (m_bIsMVC ? 2 : 1) : 0,

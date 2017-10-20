@@ -740,10 +740,6 @@ CCameraPipeline::CCameraPipeline()
     m_3dlut_33 = (mfxCam3DLutEntry*) malloc (sizeof(mfxCam3DLutEntry)*MFX_CAM_3DLUT33_SIZE);
     m_3dlut_65 = (mfxCam3DLutEntry*) malloc (sizeof(mfxCam3DLutEntry)*MFX_CAM_3DLUT65_SIZE);
 
-#if D3D_SURFACES_SUPPORT
-//    m_pS3DControl = NULL;
-#endif
-
     m_hwdev = NULL;
 
     MSDK_ZERO_MEMORY(m_mfxVideoParams);
@@ -804,20 +800,6 @@ CCameraPipeline::~CCameraPipeline()
 {
     Close();
 }
-
-#if D3D_SURFACES_SUPPORT
-bool operator < (const IGFX_DISPLAY_MODE &l, const IGFX_DISPLAY_MODE& r)
-{
-    if (r.ulResWidth >= 0xFFFF || r.ulResHeight >= 0xFFFF || r.ulRefreshRate >= 0xFFFF)
-        return false;
-
-         if (l.ulResWidth < r.ulResWidth) return true;
-    else if (l.ulResHeight < r.ulResHeight) return true;
-    else if (l.ulRefreshRate < r.ulRefreshRate) return true;
-
-    return false;
-}
-#endif
 
 bool CCameraPipeline::isBayerFormat(mfxU32 type)
 {
