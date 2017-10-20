@@ -555,6 +555,48 @@ STRUCT(mfxExtFeiPPS,
 )
 #endif //MFX_VERSION >= 1023
 
+STRUCT(mfxExtFeiPreEncCtrl,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU16,       Qp)
+    FIELD_T(mfxU16,       LenSP)
+    FIELD_T(mfxU16,       SearchPath)
+    FIELD_T(mfxU16,       SubMBPartMask)
+    FIELD_T(mfxU16,       SubPelMode)
+    FIELD_T(mfxU16,       InterSAD)
+    FIELD_T(mfxU16,       IntraSAD)
+    FIELD_T(mfxU16,       AdaptiveSearch)
+    FIELD_T(mfxU16,       MVPredictor)
+    FIELD_T(mfxU16,       MBQp)
+    FIELD_T(mfxU16,       FTEnable)
+    FIELD_T(mfxU16,       IntraPartMask)
+    FIELD_T(mfxU16,       RefWidth)
+    FIELD_T(mfxU16,       RefHeight)
+    FIELD_T(mfxU16,       SearchWindow)
+    FIELD_T(mfxU16,       DisableMVOutput)
+    FIELD_T(mfxU16,       DisableStatisticsOutput)
+    FIELD_T(mfxU16,       Enable8x8Stat)
+    FIELD_T(mfxU16,       PictureType)
+    FIELD_T(mfxU16,       DownsampleInput)
+)
+
+STRUCT(mfxExtFeiPreEncMVPredictors,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU32, NumMBAlloc)
+    FIELD_T(mfxExtFeiPreEncMVPredictors_MB*, MB)
+)
+
+STRUCT(mfxExtFeiPreEncMV,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU32, NumMBAlloc)
+    FIELD_T(mfxExtFeiPreEncMV_MB*, MB)
+)
+
+STRUCT(mfxExtFeiPreEncMBStat,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU32, NumMBAlloc)
+    FIELD_T(mfxExtFeiPreEncMBStat_MB*, MB)
+)
+
 STRUCT(mfxExtFeiEncFrameCtrl,
     FIELD_S(mfxExtBuffer, Header)
     FIELD_T(mfxU16,       SearchPath)
@@ -604,10 +646,35 @@ STRUCT(mfxExtFeiEncMBStat,
     FIELD_T(mfxU32,  NumMBAlloc)
 )
 
+STRUCT(mfxExtFeiEncQP,
+    FIELD_S(mfxExtBuffer,    Header)
+    FIELD_T(mfxU32,  NumMBAlloc)
+)
+
 STRUCT(mfxExtFeiPakMBCtrl,
     FIELD_S(mfxExtBuffer,    Header)
     FIELD_T(mfxU32,  NumMBAlloc)
     FIELD_T(mfxFeiPakMBCtrl*, MB)
+)
+
+
+STRUCT(mfxExtFeiSliceHeader,
+    FIELD_S(mfxExtBuffer,    Header)
+    FIELD_T(mfxU16,  NumSlice)
+)
+
+STRUCT(mfxExtFeiRepackCtrl,
+    FIELD_S(mfxExtBuffer,    Header)
+    FIELD_T(mfxU32,  MaxFrameSize)
+    FIELD_T(mfxU32,  NumPasses)
+)
+
+STRUCT(mfxExtFeiDecStreamOut,
+    FIELD_S(mfxExtBuffer,    Header)
+    FIELD_T(mfxU32,  NumMBAlloc)
+    FIELD_T(mfxU16,  RemapRefIdx)
+    FIELD_T(mfxU16,  PicStruct)
+    FIELD_T(mfxFeiDecStreamOutMBCtrl*, MB)
 )
 
 STRUCT(mfxExtFeiHevcEncFrameCtrl,
