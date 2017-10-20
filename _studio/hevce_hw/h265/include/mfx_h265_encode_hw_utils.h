@@ -176,9 +176,6 @@ enum
     HW_SURF_ALIGN_W         = 16,
     HW_SURF_ALIGN_H         = 16,
 
-    HW_SURF_ALIGN_LOWPOWER_W  = 32,
-    HW_SURF_ALIGN_LOWPOWER_H  = HW_SURF_ALIGN_H,
-
     CODED_PIC_ALIGN_W       = 16,
     CODED_PIC_ALIGN_H       = 16,
 //    DEFAULT_LCU_SIZE        = 32,

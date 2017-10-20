@@ -1630,12 +1630,6 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     }
 #endif
 
-    if (IsOn(par.mfx.LowPower))
-    {
-        surfAlignW = HW_SURF_ALIGN_LOWPOWER_W;
-        surfAlignH = HW_SURF_ALIGN_LOWPOWER_H;
-    }
-
     changed +=  par.CheckExtBufferParam();  // todo: check ROI?? check SliceInfo??
 
     if (par.mfx.CodecLevel !=0 && par.mfx.CodecLevel != MFX_LEVEL_HEVC_1 && LevelIdx(par.mfx.CodecLevel) == 0)
