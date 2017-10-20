@@ -41,7 +41,7 @@ namespace hevce_interlace_sei_sps_flags
     public:
         TestSuite()
             : tsVideoEncoder(MFX_CODEC_HEVC)
-            , tsParserHEVCAU(BS_HEVC::INIT_MODE_CABAC)
+            , tsParserHEVCAU(INIT_MODE_DEFAULT)
             , m_reader(NULL)
         {
             m_filler       = this;
@@ -131,7 +131,7 @@ namespace hevce_interlace_sei_sps_flags
 
             if (m_generation_mode & PAIRED)
             {
-                // In case of PAIRED test decorate picstructs with flag which idicates relations between fields
+                // In case of PAIRED test decorate picstructs with flag which indicates relations between fields
 
                 mfxU32 cur_paired_idx = isBff ? 1 - cur_field_index : cur_field_index;
 
@@ -228,7 +228,7 @@ namespace hevce_interlace_sei_sps_flags
 
             mfxU32 mode;
 
-            struct f_pair
+            struct
             {
                 mfxU32 ext_type;
                 const  tsStruct::Field* f;
