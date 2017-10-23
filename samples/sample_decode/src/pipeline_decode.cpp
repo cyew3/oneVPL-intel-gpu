@@ -222,11 +222,9 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
 
     m_nTimeout = pParams->nTimeout;
 
-    if (MFX_CODEC_CAPTURE != pParams->videoType)
-    {
-        sts = m_FileReader->Init(pParams->strSrcFile);
-        MSDK_CHECK_STATUS(sts, "m_FileReader->Init failed");
-    }
+    // Initializing file reader
+    sts = m_FileReader->Init(pParams->strSrcFile);
+    MSDK_CHECK_STATUS(sts, "m_FileReader->Init failed");
 
     mfxInitParam initPar;
     mfxExtThreadsParam threadsPar;
@@ -347,11 +345,8 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     m_mfxVideoParams.mfx.CodecId = pParams->videoType;
 
     // prepare bit stream
-    if (MFX_CODEC_CAPTURE != pParams->videoType)
-    {
-        sts = InitMfxBitstream(&m_mfxBS, 8 * 1024 * 1024);
-        MSDK_CHECK_STATUS(sts, "InitMfxBitstream failed");
-    }
+    sts = InitMfxBitstream(&m_mfxBS, 8 * 1024 * 1024);
+    MSDK_CHECK_STATUS(sts, "InitMfxBitstream failed");
 
     if (CheckVersion(&version, MSDK_FEATURE_PLUGIN_API)) {
         /* Here we actually define the following codec initialization scheme:
@@ -365,7 +360,7 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
         {
             m_pUserModule.reset(new MFXVideoUSER(m_mfxSession));
             if (pParams->videoType == MFX_CODEC_HEVC || pParams->videoType == MFX_CODEC_VP8 ||
-                pParams->videoType == MFX_CODEC_VP9 || pParams->videoType == MFX_CODEC_CAPTURE)
+                pParams->videoType == MFX_CODEC_VP9)
             {
                 m_pPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_DECODE, m_mfxSession, pParams->pluginParams.pluginGuid, 1, pParams->pluginParams.strPluginPath, (mfxU32)msdk_strnlen(pParams->pluginParams.strPluginPath,sizeof(pParams->pluginParams.strPluginPath))));
             }
@@ -485,8 +480,7 @@ bool CDecodingPipeline::IsVppRequired(sInputParams *pParams)
 #endif //MFX_VERSION >= 1022
     }
     // JPEG and Capture decoders can provide output in nv12 and rgb4 formats
-    if ((pParams->videoType == MFX_CODEC_JPEG) ||
-        ((pParams->videoType == MFX_CODEC_CAPTURE)) )
+    if (pParams->videoType == MFX_CODEC_JPEG )
     {
         bVppIsUsed |= m_fourcc && (m_fourcc != MFX_FOURCC_NV12) && (m_fourcc != MFX_FOURCC_RGB4);
     }
@@ -583,27 +577,7 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
 
     // try to find a sequence header in the stream
     // if header is not found this function exits with error (e.g. if device was lost and there's no header in the remaining stream)
-    if (MFX_CODEC_CAPTURE == pParams->videoType)
-    {
-        m_mfxVideoParams.mfx.CodecId = MFX_CODEC_CAPTURE;
-        m_mfxVideoParams.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
-        m_mfxVideoParams.mfx.FrameInfo.Width = MSDK_ALIGN32(pParams->scrWidth);
-        m_mfxVideoParams.mfx.FrameInfo.Height = MSDK_ALIGN32(pParams->scrHeight);
-        m_mfxVideoParams.mfx.FrameInfo.CropW = pParams->scrWidth;
-        m_mfxVideoParams.mfx.FrameInfo.CropH = pParams->scrHeight;
-        m_mfxVideoParams.mfx.FrameInfo.FourCC = (m_fourcc == MFX_FOURCC_RGB4) ? MFX_FOURCC_RGB4 : MFX_FOURCC_NV12;
-
-        if (!m_mfxVideoParams.mfx.FrameInfo.ChromaFormat)
-        {
-            if (MFX_FOURCC_NV12 == m_mfxVideoParams.mfx.FrameInfo.FourCC)
-                m_mfxVideoParams.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-            else if (MFX_FOURCC_RGB4 == m_mfxVideoParams.mfx.FrameInfo.FourCC)
-                m_mfxVideoParams.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
-        }
-        m_bVppIsUsed = IsVppRequired(pParams);
-    }
-
-    for (; MFX_CODEC_CAPTURE != pParams->videoType;)
+    for (;;)
     {
         // trying to find PicStruct information in AVI headers
         if ( m_mfxVideoParams.mfx.CodecId == MFX_CODEC_JPEG )
@@ -1620,11 +1594,6 @@ mfxStatus CDecodingPipeline::RunDecoding()
             MSDK_SAFE_DELETE(m_pDeliveredEvent);
             return MFX_ERR_MEMORY_ALLOC;
         }
-    }
-
-    if (MFX_CODEC_CAPTURE == this->m_mfxVideoParams.mfx.CodecId)
-    {
-        pBitstream = 0;
     }
 
     while (((sts == MFX_ERR_NONE) || (MFX_ERR_MORE_DATA == sts) || (MFX_ERR_MORE_SURFACE == sts)) && (m_nFrames > m_output_count)){

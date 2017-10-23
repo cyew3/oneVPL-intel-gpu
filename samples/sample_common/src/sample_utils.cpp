@@ -1940,7 +1940,6 @@ bool IsDecodeCodecSupported(mfxU32 codecFormat)
         case MFX_CODEC_JPEG:
         case MFX_CODEC_VP8:
         case MFX_CODEC_VP9:
-        case MFX_CODEC_CAPTURE:
         break;
     default:
         return false;
@@ -1975,7 +1974,6 @@ bool IsPluginCodecSupported(mfxU32 codecFormat)
         case MFX_CODEC_VC1:
         case MFX_CODEC_VP8:
         case MFX_CODEC_VP9:
-        case MFX_CODEC_CAPTURE:
         break;
     default:
         return false;
@@ -2024,10 +2022,6 @@ mfxStatus StrFormatToCodecFormatFourCC(msdk_char* strInput, mfxU32 &codecFormat)
         else if (0 == msdk_strcmp(strInput, MSDK_STRING("vp9")))
         {
             codecFormat = MFX_CODEC_VP9;
-        }
-        else if (0 == msdk_strcmp(strInput, MSDK_STRING("capture")))
-        {
-            codecFormat = MFX_CODEC_CAPTURE;
         }
         else if ((0 == msdk_strcmp(strInput, MSDK_STRING("raw"))))
         {

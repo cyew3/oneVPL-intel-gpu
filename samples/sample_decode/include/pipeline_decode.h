@@ -97,9 +97,6 @@ struct sInputParams
     mfxI32  SchedulingType;
     mfxI32  Priority;
 
-    mfxU16  scrWidth;
-    mfxU16  scrHeight;
-
     mfxU16  Width;
     mfxU16  Height;
 
