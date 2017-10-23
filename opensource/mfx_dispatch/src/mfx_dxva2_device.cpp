@@ -333,9 +333,9 @@ bool DXGI1Device::Init(const mfxU32 adapterNum)
 
     if (m_hModule)
     {
-        DXGICreateFactoryFunc pFunc = nullptr;
-        IDXGIFactory1 *pFactory = nullptr;
-        IDXGIAdapter1 *pAdapter = nullptr;
+        DXGICreateFactoryFunc pFunc = NULL;
+        IDXGIFactory1 *pFactory = NULL;
+        IDXGIAdapter1 *pAdapter = NULL;
         DXGI_ADAPTER_DESC1 desc = { 0 };
         mfxU32 curAdapter = 0;
         mfxU32 maxAdapters = 0;
