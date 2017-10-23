@@ -8,17 +8,18 @@ Copyright(c) 2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
-#include <mutex>
 #include <algorithm>
 #include "ts_encoder.h"
 #include "ts_decoder.h"
 #include "ts_parser.h"
 #include "ts_struct.h"
 #include "mfx_ext_buffers.h"
+/*
+// required for registry manipulations
 #if defined (WIN32)||(WIN64)
 #include "windows.h"
 #endif
-
+*/
 namespace vp9e_tiles
 {
 
@@ -1093,6 +1094,8 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
 
         return MFX_ERR_NONE;
     }
+/*
+// NB: Registry "magic" not relevant anymore, but keeped for future utilization
 
 #if defined (WIN32)||(WIN64)
 #define FAIL_ON_ERROR(STS)                                                   \
@@ -1206,7 +1209,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
 
 
 #endif
-
+*/
     mfxU32 CalcIterations(const tc_struct& tc, mfxU32& totalFramesToEncode)
     {
         // calculate number of iterations set by tc_struct
@@ -1281,11 +1284,14 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             return 0;
         }
 
+/*
+// NB: Registry "magic" not relevant anymore, but keeped for future utilization
 #if defined (WIN32)|(WIN64)
         // do "magic" with registry to unblock scalable and non-scalable encoding for tiles
-        // TODO: remove once:
-        // (1) support of scalable pipline together with HuC is unblocked in the driver ("VP9 Encode HUC Enable" eliminated)
-        // (2) driver is capable to dynamically switch between scalable and non-scalable pipelines ("Disable Media Encode Scalability" eliminated)
+        // can help with tests when:
+        // (1) working of scalable pipeline together with HuC NOT SUPPORTED in the driver ("VP9 Encode HUC Enable" eliminated)
+        // (2) driver is NOT CAPABLE to dynamically switch between scalable and non-scalable pipelines ("Disable Media Encode Scalability" eliminated)
+
         tsRegistryEditor reg;
         const HKEY rootKey = HKEY_CURRENT_USER;
 
@@ -1300,7 +1306,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             reg.SetRegKey(rootKey, TEXT("Software\\Intel\\Display\\DXVA"), TEXT("Disable Media Encode Scalability"), 1);
         }
 #endif
-
+*/
         // prepare pool of input streams
         std::map<Resolution, std::string> inputStreams;
         if (fourcc == MFX_FOURCC_NV12)
