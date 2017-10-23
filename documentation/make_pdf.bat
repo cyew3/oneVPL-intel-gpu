@@ -39,7 +39,12 @@ call :CONVERT
 
 set _PDF_BODY_OPT=--zoom 1.5
 set _Name=mediasdkfei-man
-set _Title=SDK Developer Reference for FEI
+set _Title=SDK Developer Reference for AVC FEI
+call :CONVERT
+
+set _PDF_BODY_OPT=--zoom 1.5
+set _Name=mediasdkhevcfei-man
+set _Title=SDK Developer Reference for HEVC FEI
 call :CONVERT
 
 goto :CLEANUP

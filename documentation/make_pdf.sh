@@ -42,7 +42,12 @@ Title="SDK Developer Reference for VP8"
 convert
 
 Name="mediasdkfei-man"
-Title="SDK Developer Reference for FEI"
+Title="SDK Developer Reference for AVC FEI"
 convert
+
+Name="mediasdkhevcfei-man"
+Title="SDK Developer Reference for HEVC FEI"
+convert
+
 
 echo Converting Done
