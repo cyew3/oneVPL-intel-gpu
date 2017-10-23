@@ -435,8 +435,10 @@ namespace hevce_default_ref_lists
             }
 
             //=================4. Construct RPL=====================
-            std::sort(m_dpb.begin(), m_dpb.end(),
-                    [](Frame const & lhs, Frame const & rhs) { return lhs.poc < rhs.poc; }); // Sort DPB in POC ascending order
+            auto descendingPOC = [](Frame const & lhs, Frame const & rhs) { return lhs.poc > rhs.poc; };
+            auto ascendingPOC = [](Frame const & lhs, Frame const & rhs) { return lhs.poc < rhs.poc; };
+
+            std::sort(m_dpb.begin(), m_dpb.end(), ascendingPOC);
 
             std::vector<Frame> & L0 = out.ListX[0];
             std::vector<Frame> & L1 = out.ListX[1];
@@ -453,30 +455,63 @@ namespace hevce_default_ref_lists
                     out.ListX[list].push_back(*it);
                 }
 
-                if (isPPyramid)
+                auto ascendingDistance = [&](const Frame & lhs_frame, const Frame & rhs_frame)
                 {
-                    // For P-pyramid remove entries with the highest layer
-                    while (L0.size() > CO3.NumRefActiveP[out.PLayer])
+                   mfxU32 lhs_distance = std::abs(lhs_frame.poc/2 - out.poc/2) + ((lhs_frame.bSecondField == out.bSecondField) ? 0 : 1);
+                   mfxU32 rhs_distance = std::abs(rhs_frame.poc/2 - out.poc/2) + ((rhs_frame.bSecondField == out.bSecondField) ? 0 : 1);
+
+                   return lhs_distance <= rhs_distance;
+                };
+
+                // If lists are bigger than max supported, sort them and remove extra elements
+                if (L0.size() > CO3.NumRefActiveP[0])
+                {
+                    if (isPPyramid)
                     {
-                        auto weak = L0.begin();
-
-                        for (auto it = L0.begin(); it != L0.end(); it ++)
+                        // For P-pyramid we remove entries oldest references
+                        // with the highest layer except the closest reference.
+                        std::sort(L0.begin(), L0.end(), [&](const Frame & lhs_frame, const Frame & rhs_frame)
+                                                        {
+                                                            return !ascendingDistance(lhs_frame, rhs_frame);
+                                                        });
+                        while (L0.size() > CO3.NumRefActiveP[out.PLayer])
                         {
-                            if (weak->PLayer < it->PLayer && it->poc != L0.back().poc)
-                                weak = it;
-                        }
+                            auto weak = L0.begin();
+                            for (auto it = L0.begin(); it != L0.end(); it ++)
+                            {
+                                if (weak->PLayer < it->PLayer && it->poc != L0.back().poc)
+                                {
+                                    weak = it;
+                                }
+                            }
 
-                        L0.erase(weak);
+                            L0.erase(weak);
+                        }
+                    }
+                    else
+                    {
+                        if (bIsFieldCoding)
+                        {
+                            std::sort(L0.begin(), L0.end(), ascendingDistance);
+                        }
+                        else
+                        {
+                            std::sort(L0.begin(), L0.end(), descendingPOC);
+                        }
                     }
                 }
 
-                auto GreaterOrder = [](Frame const & lhs, Frame const & rhs) { return lhs.poc > rhs.poc; };
-                auto LessOrder = [](Frame const & lhs, Frame const & rhs) { return lhs.poc < rhs.poc; };
-
-                // L0 in descending order
-                std::sort(L0.begin(), L0.end(), GreaterOrder);
-                // L1 in ascending order
-                std::sort(L1.begin(), L1.end(), LessOrder);
+                if (L1.size() > CO3.NumRefActiveBL1[0])
+                {
+                    if (bIsFieldCoding)
+                    {
+                        std::sort(L1.begin(), L1.end(), ascendingDistance);
+                    }
+                    else
+                    {
+                        std::sort(L0.begin(), L0.end(), ascendingPOC);
+                    }
+                }
 
                 if ((m_emuPar.mfx.GopOptFlag & MFX_GOP_CLOSED))
                 {
@@ -505,10 +540,23 @@ namespace hevce_default_ref_lists
                 if (!isB)
                 {
                     L1 = L0;
+                    std::sort(L1.begin(), L1.end(), descendingPOC);
                 }
+
+                // Remove extra entries
+                if (isB && L0.size() > CO3.NumRefActiveBL0[0])
+                    L0.resize(CO3.NumRefActiveBL0[0]);
+                if (!isB && L0.size() > CO3.NumRefActiveP[0])
+                    L0.resize(CO3.NumRefActiveP[0]);
+
+                if (L1.size() > CO3.NumRefActiveBL1[0])
+                    L1.resize(CO3.NumRefActiveBL1[0]);
+
+                std::sort(L0.begin(), L0.end(), descendingPOC);
+                std::sort(L1.begin(), L1.end(), ascendingPOC);
             }
 
-            //=================5. Put curr frame in DPB=====================
+            //=================5. Save current frame in DPB=====================
             if (isRef)
             {
                 if (m_dpb.size() == m_emuPar.mfx.NumRefFrame)
@@ -521,6 +569,8 @@ namespace hevce_default_ref_lists
                         // remove a picture with the highest layer
                         for (auto it = m_dpb.begin(); it != m_dpb.end(); it ++)
                         {
+                            if (bIsFieldCoding && it->poc / 2 == itOut->poc / 2)
+                                continue;
                             if (weak->PLayer < it->PLayer)
                                 weak = it;
                         }
