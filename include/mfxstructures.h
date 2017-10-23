@@ -783,7 +783,9 @@ typedef struct {
 
     mfxU16      SliceSizeReport;           /* tri-state option */
 
-    mfxU16      reserved[165];
+    mfxU16      EnableNalUnitType;         /* tri-state option */
+
+    mfxU16      reserved[164];
 #else
     mfxU16      reserved[169];
 #endif
@@ -970,7 +972,13 @@ typedef struct {
 
 typedef struct {
     mfxExtBuffer    Header;
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    mfxU32  reserved[4];
+    mfxU16  reserved1;
+    mfxU16  MfxNalUnitType;
+#else
     mfxU32  reserved[5];
+#endif
     mfxU16  SkipFrame;
 
     mfxU16  QP; /* per frame QP */
@@ -1065,6 +1073,20 @@ enum {
     MFX_FRAMETYPE_xREF          =0x4000,
     MFX_FRAMETYPE_xIDR          =0x8000
 };
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+enum {
+    MFX_HEVC_NALU_TYPE_UNKNOWN    =      0,
+    MFX_HEVC_NALU_TYPE_TRAIL_N    = ( 0+1),
+    MFX_HEVC_NALU_TYPE_TRAIL_R    = ( 1+1),
+    MFX_HEVC_NALU_TYPE_RADL_N     = ( 6+1),
+    MFX_HEVC_NALU_TYPE_RADL_R     = ( 7+1),
+    MFX_HEVC_NALU_TYPE_RASL_N     = ( 8+1),
+    MFX_HEVC_NALU_TYPE_RASL_R     = ( 9+1),
+    MFX_HEVC_NALU_TYPE_IDR_W_RADL = (19+1),
+    MFX_HEVC_NALU_TYPE_CRA_NUT    = (21+1)
+};
+#endif
 
 typedef enum {
     MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9         =1,      /* IDirect3DDeviceManager9      */

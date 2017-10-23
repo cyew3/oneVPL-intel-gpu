@@ -281,6 +281,7 @@ STRUCT(mfxPayload,
 
 STRUCT(mfxEncodeCtrl,
     FIELD_S(mfxExtBuffer  , Header     )
+    FIELD_T(mfxU16        , MfxNalUnitType)
     FIELD_T(mfxU16        , SkipFrame  )
     FIELD_T(mfxU16        , QP         )
     FIELD_T(mfxU16        , FrameType  )
@@ -792,6 +793,7 @@ STRUCT(mfxExtCodingOption3,
     FIELD_T(mfxU16      , IntraVLCFormat                )
     FIELD_T(mfxU16      , ScanType                      )
     FIELD_T(mfxU16      , SliceSizeReport               )
+    FIELD_T(mfxU16      , EnableNalUnitType             )
 )
 
 STRUCT(mfxExtLAControl,

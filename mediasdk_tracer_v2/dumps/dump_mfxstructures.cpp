@@ -47,6 +47,7 @@ std::string DumpContext::dump(const std::string structName, const mfxEncodeCtrl 
     std::string str;
     str += dump(structName + ".Header", EncodeCtrl.Header) + "\n";
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(EncodeCtrl.reserved) + "\n";
+    str += structName + ".MfxNalUnitType=" + ToString(EncodeCtrl.MfxNalUnitType) + "\n";
     str += structName + ".SkipFrame=" + ToString(EncodeCtrl.SkipFrame) + "\n";
     str += structName + ".QP=" + ToString(EncodeCtrl.QP) + "\n";
     str += structName + ".FrameType=" + ToString(EncodeCtrl.FrameType) + "\n";
@@ -217,6 +218,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCodingOp
     DUMP_FIELD(ScanType);
     DUMP_FIELD(SliceSizeReport);
 #endif
+    DUMP_FIELD(EnableNalUnitType);
     DUMP_FIELD_RESERVED(reserved);
     return str;
 }
