@@ -2541,7 +2541,7 @@ Task* TaskManager::Reorder(
     {
         top->m_insertHeaders |= m_resetHeaders;
         m_resetHeaders = 0;
-    } 
+    }
     return &*top;
 }
 
@@ -2881,7 +2881,10 @@ bool isLTR(
     return (poc == LTRCandidate) || (LTRCandidate == 0 && poc >= (mfxI32)LTRInterval);
 }
 
-#define HEVCE_FIELD_MODE 0 // 0 - the nearest  filds are used as reference in RPL, 1 - the first reference is the same polarity field, 2 - the same polarity fields are used for reference (if possible)
+// 0 - the nearest  filds are used as reference in RPL
+// 1 - the first reference is the same polarity field
+// 2 - the same polarity fields are used for reference (if possible)
+#define HEVCE_FIELD_MODE 1
 
 void ConstructRPL(
     MfxVideoParam const & par,
@@ -2972,16 +2975,14 @@ void ConstructRPL(
 #if (HEVCE_FIELD_MODE == 0)
                     bSecondField;
                     MFX_SORT_COMMON(RPL[0], numRefActive[0], Abs(DPB[RPL[0][_i]].m_poc - poc) < Abs(DPB[RPL[0][_j]].m_poc - poc));
-#else
-#if (HEVCE_FIELD_MODE == 1)
+#elif (HEVCE_FIELD_MODE == 1)
                     MFX_SORT_COMMON(RPL[0], numRefActive[0], (Abs(DPB[RPL[0][_i]].m_poc/2 - poc/2) + ((DPB[RPL[0][_i]].m_secondField == bSecondField) ? 0 : 1))< (Abs(DPB[RPL[0][_j]].m_poc/2 - poc/2) + ((DPB[RPL[0][_j]].m_secondField == bSecondField) ? 0 : 1)));
-#else
+#elif (HEVCE_FIELD_MODE == 2)
                     MFX_SORT_COMMON(RPL[0], numRefActive[0], (Abs(DPB[RPL[0][_i]].m_poc/2 - poc/2) + ((DPB[RPL[0][_i]].m_secondField == bSecondField) ? 0 : 16))< (Abs(DPB[RPL[0][_j]].m_poc/2 - poc/2)  + ((DPB[RPL[0][_j]].m_secondField == bSecondField) ? 0 : 16)));
-#endif
 #endif
                 }
                 else
-               {
+                {
                     MFX_SORT_COMMON(RPL[0], numRefActive[0], Abs(DPB[RPL[0][_i]].m_poc - poc) < Abs(DPB[RPL[0][_j]].m_poc - poc));
                 }
                 if (par.isLowDelay())
@@ -3011,14 +3012,11 @@ void ConstructRPL(
                 {
 #if (HEVCE_FIELD_MODE == 0)
                         MFX_SORT_COMMON(RPL[1], numRefActive[1], Abs(DPB[RPL[1][_i]].m_poc - poc) > Abs(DPB[RPL[1][_j]].m_poc - poc));
-#else
-#if(HEVCE_FIELD_MODE == 1)
+#elif (HEVCE_FIELD_MODE == 1)
                         MFX_SORT_COMMON(RPL[1], numRefActive[1], (Abs(DPB[RPL[1][_i]].m_poc/2 - poc/2)  + ((DPB[RPL[1][_i]].m_secondField == bSecondField) ? 0 : 1)) > (Abs(DPB[RPL[1][_j]].m_poc/2 - poc/2)  + ((DPB[RPL[1][_j]].m_secondField == bSecondField) ? 0 : 1)));
-#else
+#elif (HEVCE_FIELD_MODE == 2)
                         MFX_SORT_COMMON(RPL[1], numRefActive[1], (Abs(DPB[RPL[1][_i]].m_poc/2 - poc/2)  + ((DPB[RPL[1][_i]].m_secondField == bSecondField) ? 0 : 16)) > (Abs(DPB[RPL[1][_j]].m_poc/2 - poc/2)  + ((DPB[RPL[1][_j]].m_secondField == bSecondField) ? 0 : 16)));
 #endif
-#endif
-
                 }
                 else
                 {
