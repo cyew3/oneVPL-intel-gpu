@@ -750,7 +750,8 @@ mfxStatus MfxVideoParam::GetExtBuffers(mfxVideoParam& par, bool query)
     {
 #ifndef OPEN_SOURCE
         mfxExtCodingOptionDDI * pDDI = ExtBuffer::Get(par);
-        pDDI->LCUSize = (mfxU16)LCUSize;
+        if (pDDI)
+            pDDI->LCUSize = (mfxU16)LCUSize;
 #endif
     }
     ExtBuffer::Set(par, m_ext.AVCTL);
