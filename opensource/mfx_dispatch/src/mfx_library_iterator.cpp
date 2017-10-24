@@ -180,7 +180,8 @@ DECLSPEC_NOINLINE HMODULE GetThisDllModuleHandle()
   return hDll;
 }
 
-bool GetImplPath(int storageID, std::wstring& sImplPath)
+// msdk_disp_char* sImplPath must be allocated with size not less then msdk_disp_path_len
+bool GetImplPath(int storageID, msdk_disp_char* sImplPath)
 {
     HMODULE hModule = NULL;
 
@@ -204,37 +205,28 @@ bool GetImplPath(int storageID, std::wstring& sImplPath)
     }
 
     DWORD nSize = 0;
+    DWORD allocSize = msdk_disp_path_len;
 
-    do {
-        // enlarge capacity if insufficient and try to get name
-        sImplPath.resize(sImplPath.capacity() + MAX_PLUGIN_PATH);
-        nSize = GetModuleFileNameW(hModule, &sImplPath[0], (DWORD)sImplPath.capacity());
+    nSize = GetModuleFileNameW(hModule, &sImplPath[0], allocSize);
 
-        if (nSize  == 0 || nSize > 1024 * 1024) {
-            // nSize == 0 meanse that system can't get this info for hModule
-            // nSize > 1024 * 1024 is really big and it seems something went wrong
-            return false;
-        }
-
-    } while (ERROR_INSUFFICIENT_BUFFER == GetLastError());
+    if (nSize  == 0 || nSize == allocSize) {
+        // nSize == 0 meanse that system can't get this info for hModule
+        // nSize == allocSize buffer is too small
+        return false;
+    }
 
     // for any case because WinXP implementation of GetModuleFileName does not add \0 to the end of string
     sImplPath[nSize] = L'\0';
 
-    size_t nPos = sImplPath.find_last_of(L"/\\");
-
-    if (nPos == std::wstring::npos) {
-
-        nPos = sImplPath.length();
+    msdk_disp_char * dirSeparator = wcsrchr(sImplPath, L'\\');
+    if (dirSeparator != NULL && dirSeparator < (sImplPath + msdk_disp_path_len))
+    {
+        *++dirSeparator = 0;
     }
-
-    sImplPath = sImplPath.substr(0, nPos);
-    sImplPath += std::wstring(L"\\");
-
     return true;
 }
 
-  mfxStatus MFXLibraryIterator::Init(eMfxImplType implType, mfxIMPL implInterface, const mfxU32 adapterNum, int storageID)
+mfxStatus MFXLibraryIterator::Init(eMfxImplType implType, mfxIMPL implInterface, const mfxU32 adapterNum, int storageID)
 {
     // check error(s)
     if ((MFX_LIB_SOFTWARE != implType) &&
@@ -255,13 +247,13 @@ bool GetImplPath(int storageID, std::wstring& sImplPath)
     }
 #endif
 
-    std::wstring sCurrentModulePath;
+    msdk_disp_char  sCurrentModulePath[msdk_disp_path_len];
 
     if(!GetImplPath(storageID, sCurrentModulePath)) {
         return MFX_ERR_UNSUPPORTED;
     }
 
-    return InitFolder(implType, implInterface, adapterNum, sCurrentModulePath.c_str());
+    return InitFolder(implType, implInterface, adapterNum, sCurrentModulePath);
 
 } // mfxStatus MFXLibraryIterator::Init(eMfxImplType implType, const mfxU32 adapterNum, int storageID)
 
