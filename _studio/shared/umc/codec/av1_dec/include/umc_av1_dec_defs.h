@@ -118,6 +118,7 @@ namespace UMC_AV1_DECODER
     struct FrameHeader
         : vp92av1::FrameHeader
     {
+        Ipp8u  use_reference_buffer;
         Ipp32u display_frame_id;
 
         Ipp32u frameIdsRefFrame[UMC_VP9_DECODER::NUM_REF_FRAMES];

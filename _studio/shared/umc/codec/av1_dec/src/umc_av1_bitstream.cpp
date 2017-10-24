@@ -91,7 +91,7 @@ namespace UMC_AV1_DECODER
         if (fh->show_existing_frame)
         {
             fh->frame_to_show = GetBits(3);
-            if (sh->frame_id_numbers_present_flag)
+            if (sh->frame_id_numbers_present_flag && fh->use_reference_buffer)
             {
                 int const frame_id_len = sh->frame_id_length_minus7 + 7;
                 fh->display_frame_id = GetBits(frame_id_len);
@@ -106,18 +106,35 @@ namespace UMC_AV1_DECODER
 
         fh->frameType = static_cast<VP9_FRAME_TYPE>(GetBit());
         fh->showFrame = GetBit();
+#if !defined(UMC_AV1_DECODER_REV0)
+        fh->intraOnly = fh->showFrame ? 0 : GetBit();
+#endif
         fh->errorResilientMode = GetBit();
 
+
+#if defined(UMC_AV1_DECODER_REV0)
         if (sh->frame_id_numbers_present_flag)
         {
             int const frame_id_len = sh->frame_id_length_minus7 + 7;
             fh->display_frame_id = GetBits(frame_id_len);
         }
+#else
+        if (fh->frameType == KEY_FRAME || fh->intraOnly)
+            fh->use_reference_buffer = GetBit();
+
+        if (sh->frame_id_numbers_present_flag && fh->use_reference_buffer)
+        {
+            int const frame_id_len = sh->frame_id_length_minus7 + 7;
+            fh->display_frame_id = GetBits(frame_id_len);
+        }
+#endif
 
         if (KEY_FRAME == fh->frameType)
         {
+#if defined(UMC_AV1_DECODER_REV0)
             if (!av1_sync_code(this))
                 throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
+#endif
 
             av1_bitdepth_colorspace_sampling(this, fh);
 
@@ -134,10 +151,16 @@ namespace UMC_AV1_DECODER
         }
         else
         {
+#if defined(UMC_AV1_DECODER_REV0)
             fh->intraOnly = fh->showFrame ? 0 : GetBit();
+#else
+            if (fh->intraOnly)
+                fh->allowScreenContentTools = GetBit();
+#endif
             if (fh->errorResilientMode)
                 fh->resetFrameContext = RESET_FRAME_CONTEXT_ALL;
             else
+            {
                 if (fh->intraOnly)
                 {
                     fh->resetFrameContext = GetBit() ?
@@ -156,13 +179,16 @@ namespace UMC_AV1_DECODER
                             : RESET_FRAME_CONTEXT_CURRENT;
                     }
                 }
+            }
 
             if (fh->intraOnly)
             {
+#if !defined(UMC_AV1_DECODER_REV0)
                 fh->allowScreenContentTools = GetBit();
 
                 if (!av1_sync_code(this))
                     throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
+#endif
 
                 av1_bitdepth_colorspace_sampling(this, fh);
 
