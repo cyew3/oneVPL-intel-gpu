@@ -777,19 +777,23 @@ static mfxStatus QueryFrameLARoutine(void *pState, void *pParam, mfxU32 threadNu
 } // mfxStatus RunFrameVPPRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber)
 static mfxStatus RunFrameVPPRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber)
 {
-    mfxStatus tskRes;
+    mfxStatus sts = MFX_ERR_NONE;
 
     VideoENC_LA *pLa = (VideoENC_LA *)pState;
-    mfxENCOutput *out = (mfxENCOutput *)pParam;
+    sAsyncParams *out = (sAsyncParams *)pParam;
   
     threadNumber = threadNumber;
     callNumber = callNumber;
     
     //printf("Start Run FrameVPP %x %x %x\n", pAsyncParams->surf_in, pAsyncParams->surf_out, pAsyncParams->aux);
-    tskRes = pLa->RunFrameVmeENC(0,out);
+  
+    sts = pLa->SubmitFrameLA(out->reordered_surface);
+    MFX_CHECK(sts == MFX_ERR_NONE || sts == MFX_TASK_BUSY, sts);
+    sts = pLa->QueryFrameLA(out->stat);
+
     //printf("Run FrameVPP %x %x %x %d\n", pAsyncParams->surf_in, pAsyncParams->surf_out, pAsyncParams->aux, tskRes);
 
-    return tskRes;
+    return sts;
 
 } // mfxStatus RunFrameVPPRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber)
 mfxStatus VideoENC_LA::ResetTaskCounters()
@@ -923,7 +927,7 @@ mfxStatus VideoENC_LA::RunFrameVmeENCCheck(
         }
      
 
-        pEntryPoints[0].pRoutine = &SubmitFrameLARoutine;
+        /*pEntryPoints[0].pRoutine = &SubmitFrameLARoutine;
         pEntryPoints[0].pCompleteProc =0;
         pEntryPoints[0].pState = this;
         pEntryPoints[0].requiredNumThreads = 1;
@@ -935,18 +939,17 @@ mfxStatus VideoENC_LA::RunFrameVmeENCCheck(
         pEntryPoints[1].requiredNumThreads = 1;
         pEntryPoints[1].pParam = pAsyncParams;
 
-        numEntryPoints = 2;
+        numEntryPoints = 2;*/
 
 
-        //pAsyncParams.release(); // memory will be freed in CompleteFrameLARoutine()
 
-         /* pEntryPoints[0].pRoutine = &RunFrameVPPRoutine;
-        pEntryPoints[0].pCompleteProc = &CompleteFrameVPPRoutine;
+        pEntryPoints[0].pRoutine = &RunFrameVPPRoutine;
+        pEntryPoints[0].pCompleteProc = &CompleteFrameLARoutine;
         pEntryPoints[0].pState = this;
         pEntryPoints[0].requiredNumThreads = 1;
         pEntryPoints[0].pParam = pAsyncParams;
 
-        numEntryPoints = 1;*/
+        numEntryPoints = 1;
     }
     return sts;
 } 
@@ -1171,12 +1174,10 @@ mfxStatus CopyRawSurfaceToVideoMemory(  VideoCORE &  core,
     return MFX_ERR_NONE;
 }
 
-mfxStatus VideoENC_LA::RunFrameVmeENC(mfxENCInput * in, mfxENCOutput *out)
+mfxStatus VideoENC_LA::RunFrameVmeENC(mfxENCInput * , mfxENCOutput *)
 {
     mfxStatus sts = MFX_ERR_NONE;
-    sts = SubmitFrameLA(in ? in->InSurface: 0);
-    MFX_CHECK(sts == MFX_ERR_NONE || sts == MFX_TASK_BUSY, sts);
-    return  QueryFrameLA(out);
+    return sts;
 }
 mfxStatus VideoENC_LA::InitVMEData( sVMEFrameInfo *   pVME, 
                                     mfxU32            EncOrder, 
@@ -1527,7 +1528,6 @@ mfxStatus VideoENC_LA::QueryFrameLA(mfxENCOutput *output)
 
         aux->NumFrame   = frameNum;
         aux->NumStream  = m_LaControl.NumOutStream;
-        aux->OutSurface = frameForOutput.frameInfo.pFrame;
         aux->OutSurface->Info.PicStruct = frameForOutput.frameInfo.pFrame->Info.PicStruct;
 
         for (int j = 0; j < m_LaControl.NumOutStream; j ++)
