@@ -110,6 +110,7 @@ typedef struct
 typedef struct
 {
     mfxFrameSurface1* reordered_surface;
+    bool              bFrameLASubmitted;
     mfxFrameSurface1* output_surface;
     mfxENCOutput*     stat;
 }sAsyncParams;
@@ -245,7 +246,7 @@ public:
     mfxStatus ResetTaskCounters();
     
     mfxStatus SubmitFrameLA(mfxFrameSurface1 *pInSurface);
-    mfxStatus QueryFrameLA (mfxENCOutput *out);
+    mfxStatus QueryFrameLA (mfxFrameSurface1 *pInSurface, mfxENCOutput *out);
 
 
 protected:

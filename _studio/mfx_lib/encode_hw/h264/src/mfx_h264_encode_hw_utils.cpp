@@ -2994,7 +2994,7 @@ mfxStatus LookAheadBrc2::Init(MfxVideoParam  & video)
     m_AvgBitrate = 0;
     if (extOpt3->WinBRCSize)
     {
-        m_AvgBitrate = new AVGBitrate(extOpt3->WinBRCSize, (mfxU32)(1000.0* video.calcParam.WinBRCMaxAvgKbps/m_fr));
+        m_AvgBitrate = new AVGBitrate(extOpt3->WinBRCSize, (mfxU32)(1000.0* video.calcParam.WinBRCMaxAvgKbps / m_fr), (mfxU32)(1000.0* video.calcParam.targetKbps / m_fr), true);
     }
     m_AsyncDepth = video.AsyncDepth > 1 ? 1 : 0;
     m_first = 0;
@@ -3045,7 +3045,7 @@ mfxStatus VMEBrc::Init(MfxVideoParam  & video)
     m_AvgBitrate = 0;
     if (extOpt3->WinBRCSize)
     {
-        m_AvgBitrate = new AVGBitrate(extOpt3->WinBRCSize, (mfxU32)(1000.0 * video.calcParam.WinBRCMaxAvgKbps/m_fr));
+        m_AvgBitrate = new AVGBitrate(extOpt3->WinBRCSize, (mfxU32)(1000.0 * video.calcParam.WinBRCMaxAvgKbps/m_fr),(mfxU32)(1000.0* video.calcParam.targetKbps / m_fr),true);
     }
     return MFX_ERR_NONE;
 }
@@ -3196,7 +3196,7 @@ mfxU8 SelectQp(std::list<VMEBrc::LaFrameData>::iterator start, std::list<VMEBrc:
     //printf("SelectQp: budget = %f, size = %d, async = %d\n", budget, size, async);
     for (mfxU8 qp = 1; qp < 52; qp++)
     {
-        mfxF64 totalRate = GetTotalRate(start, end, 0, size);
+        mfxF64 totalRate = GetTotalRate(start, end, qp, size);
         if (totalRate < budget)
             return (prevTotalRate + totalRate < 2 * budget) ? qp - 1 : qp;
         else
@@ -3288,11 +3288,11 @@ mfxU8 LookAheadBrc2::GetQp(const BRCFrameParams& par)
     mfxU8 maxQp = SelectQp(m_laData, m_targetRateMin * (m_laData.size() - m_first), m_laData.size(), m_first);
     if (m_AvgBitrate)
     {
-        size_t framesForCheck = m_AvgBitrate->GetWindowSize() < m_laData.size() ? m_AvgBitrate->GetWindowSize() : m_laData.size();
-        for (mfxU32 i = (m_first + 1); i < framesForCheck; i ++)
+        size_t framesForCheck = m_AvgBitrate->GetWindowSize() < (m_laData.size() - m_first) ? m_AvgBitrate->GetWindowSize() : (m_laData.size() - m_first);
+        for (mfxU32 i = 1; i < framesForCheck; i ++)
         {
            mfxF64 budget = mfxF64(m_AvgBitrate->GetBudget(i))/(mfxF64(m_totNumMb));
-           mfxU8  QP = SelectQp(m_laData, budget, i, 0);
+           mfxU8  QP = SelectQp(m_laData, budget, i + m_first, m_first);
            if (minQp <  QP)
            {
                minQp  = QP;
@@ -3300,8 +3300,6 @@ mfxU8 LookAheadBrc2::GetQp(const BRCFrameParams& par)
            }
         }
     }
-
-
 
 
     if (m_curBaseQp < 0)
@@ -3396,6 +3394,7 @@ mfxU32 LookAheadBrc2::Report(const BRCFrameParams& par , mfxU32 dataLength, mfxU
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "LookAheadBrc2::Report");
     mfxF64 realRatePerMb = 8 * dataLength / mfxF64(m_totNumMb);
+    mfxU32 maxFS = m_bControlMaxFrame ? maxFrameSize : 0xFFFFFFF;
 
     qp = CLIPVAL(1, 51, qp);
 
@@ -3404,23 +3403,15 @@ mfxU32 LookAheadBrc2::Report(const BRCFrameParams& par , mfxU32 dataLength, mfxU
 
     m_skipped = (par.NumRecode < 100) ? 0 : 1;  //frame was skipped (panic mode)
                                          //we will skip all frames until next reference]
-
-    if (m_bControlMaxFrame && ((8 * dataLength + 24) > maxFrameSize))
-    {
-        return 1;
-    }
     if (m_AvgBitrate)
-    {
-        m_AvgBitrate->UpdateSlidingWindow(8 * dataLength, par.EncodedOrder);
-        if (!m_AvgBitrate->CheckBitrate(!m_skipped && !((par.FrameType & MFX_FRAMETYPE_I) && (qp == 51))) )
-        {
-             return 1;
-        }
-    }
+        maxFS = IPP_MIN(maxFS, m_AvgBitrate->GetMaxFrameSize(m_skipped>0, (par.FrameType & MFX_FRAMETYPE_I)!=0, par.NumRecode));
 
+    if ((8 * dataLength + 24) > maxFS)
+        return 1;
 
-    //m_coef = (mfxF32)((m_laData[0].estRate[qp])/realRatePerMb);
-
+    if (m_AvgBitrate)
+        m_AvgBitrate->UpdateSlidingWindow(8 * dataLength, par.EncodedOrder, m_skipped>0, (par.FrameType & MFX_FRAMETYPE_I)!=0, par.NumRecode, qp);
+ 
     m_framesBehind++;
     m_bitsBehind += realRatePerMb;
     mfxF64 framesBeyond = (mfxF64)(IPP_MAX(2, m_laData.size()) - 1 - m_first);
@@ -3466,20 +3457,21 @@ mfxU32 VMEBrc::Report(const BRCFrameParams& par, mfxU32 dataLength, mfxU32 /*use
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "LookAheadBrc2::Report");
     mfxF64 realRatePerMb = 8 * dataLength / mfxF64(m_totNumMb);
 
+    mfxU32 maxFS = 0xFFFFFFF;
+
     if ((m_skipped == 1) && ((par.FrameType & MFX_FRAMETYPE_B)!=0) && par.NumRecode < 100)
         return 3;  // skip mode for this frame
 
     m_skipped = (par.NumRecode < 100) ? 0 : 1;  //frame was skipped (panic mode)
-                                         //we will skip all frames until next reference]
+                                                //we will skip all frames until next reference
+    if (m_AvgBitrate)
+        maxFS = IPP_MIN(maxFS, m_AvgBitrate->GetMaxFrameSize(m_skipped>0, (par.FrameType & MFX_FRAMETYPE_I)!=0, par.NumRecode));
+
+    if ((8 * dataLength + 24) > maxFS)
+        return 1;
 
     if (m_AvgBitrate)
-    {
-        m_AvgBitrate->UpdateSlidingWindow(8 * dataLength, par.EncodedOrder);
-        if (!m_AvgBitrate->CheckBitrate(!m_skipped && !((par.FrameType & MFX_FRAMETYPE_I) && (qp == 51))) )
-        {
-             return 1;
-        }
-    }
+        m_AvgBitrate->UpdateSlidingWindow(8 * dataLength, par.EncodedOrder, m_skipped>0,(par.FrameType & MFX_FRAMETYPE_I)!=0, par.NumRecode, qp);
 
     m_framesBehind++;
     m_bitsBehind += realRatePerMb;

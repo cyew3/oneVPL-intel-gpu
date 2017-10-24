@@ -909,7 +909,7 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
 
         if (m_avg.get())
         {
-            m_avg->UpdateSlidingWindow(bitsEncoded, m_ctx.encOrder, m_ctx.bPanic, bSHStart || picType == MFX_FRAMETYPE_I,frame_par->NumRecode);
+            m_avg->UpdateSlidingWindow(bitsEncoded, m_ctx.encOrder, m_ctx.bPanic, bSHStart || picType == MFX_FRAMETYPE_I,frame_par->NumRecode, qpY);
         }
         
         m_ctx.totalDiviation += (bitsEncoded - (mfxI32)m_par.inputBitsPerFrame);
