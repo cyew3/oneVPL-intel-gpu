@@ -329,7 +329,6 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
 
     if (MFX_SINGLE_THREAD == m_param.flags)
     {
-        UMC::AutomaticMutex guard(m_guard);
         //let really run task to 
         MFX_CALL_INFO call = {0};
         mfxTaskHandle previousTaskHandle = {0, 0};
@@ -339,8 +338,9 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
         mfxU64 frequency = vm_time_get_frequency();
         while (MFX_WRN_IN_EXECUTION == pTask->opRes)
         {
+            UMC::AutomaticMutex guard(m_guard);
             task_sts = GetTask(call, previousTaskHandle, 0);
-            
+
             if (task_sts != MFX_ERR_NONE)
                 continue;
 
