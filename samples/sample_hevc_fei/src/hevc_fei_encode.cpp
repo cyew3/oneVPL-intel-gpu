@@ -288,13 +288,6 @@ mfxStatus FEI_Encode::SetCtrlParams(const HevcTask& task)
     mfxExtFeiHevcEncFrameCtrl* ctrl = m_encodeCtrl.GetExtBuffer<mfxExtFeiHevcEncFrameCtrl>();
     MSDK_CHECK_POINTER(ctrl, MFX_ERR_NOT_INITIALIZED);
 
-    // Switch on internal L0 predictors; 1 means spatial predictors
-    ctrl->MultiPred[0] = !!(m_encodeCtrl.FrameType & (MFX_FRAMETYPE_P | MFX_FRAMETYPE_B));
-
-    // Switch on internal L1 predictors; 1 means spatial predictors
-    ctrl->MultiPred[1] = (m_encodeCtrl.FrameType & MFX_FRAMETYPE_B) ||
-        ((m_encodeCtrl.FrameType & MFX_FRAMETYPE_P) && (m_videoParams.GetExtBuffer<mfxExtCodingOption3>()->GPB != MFX_CODINGOPTION_OFF));
-
     if (m_repacker.get() || m_pFile_MVP_in.get())
     {
         // Switch predictors off for I-frames.
