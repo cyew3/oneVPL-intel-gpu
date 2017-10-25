@@ -101,12 +101,57 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_Y410, res_change_tag>::test_c
 template <>
 unsigned int const TestSuiteExt<MFX_FOURCC_Y410, res_change_tag>::n_cases = sizeof(TestSuiteExt<MFX_FOURCC_Y410, res_change_tag>::test_cases) / sizeof(TestSuite::tc_struct[max_num_ctrl]);
 
+/* 12b 420 */
+template <>
+TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_P016, res_change_tag>::test_cases[][TestSuite::max_num_ctrl] =
+{
+    {/* 0*/ {"hevc/420format_12bit/TSCTX_12bit_RExt_SHARP_1_420_12.bin"},               {"hevc/420format_12bit/GENERAL_12b_420_RExt_Sony_1.bit"}},
+    {/* 1*/ {"hevc/420format_12bit/GENERAL_12b_420_RExt_Sony_1.bit"},                   {"hevc/420format_12bit/TSCTX_12bit_RExt_SHARP_1_420_12.bin", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
+    {/* 2*/ {"hevc/420format_12bit/Bitdepth_A_RExt_Sony_1_420_resized_704x576.265", 5}, {"hevc/420format_12bit/GENERAL_12b_420_RExt_Sony_1.bit", 5}},
+    {/* 3*/ {"hevc/420format_12bit/Bitdepth_A_RExt_Sony_1_420_resized_704x576.265", 5}, {"hevc/420format_12bit/GENERAL_12b_420_RExt_Sony_1.bit", 5},                {"hevc/420format_12bit/TSCTX_12bit_RExt_SHARP_1_420_12.bin", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
+    {/* 4*/ {"hevc/420format_12bit/Bitdepth_A_RExt_Sony_1_420.265", 5},                 {"hevc/420format_12bit/Bitdepth_A_RExt_Sony_1_420_resized_704x576.265", 5}, {"hevc/420format_12bit/GENERAL_12b_420_RExt_Sony_1.bit", 5}},
+};
+template <>
+unsigned int const TestSuiteExt<MFX_FOURCC_P016, res_change_tag>::n_cases = sizeof(TestSuiteExt<MFX_FOURCC_P016, res_change_tag>::test_cases) / sizeof(TestSuite::tc_struct[max_num_ctrl]);
+
+/* 12b 422 */
+template <>
+TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_Y216, res_change_tag>::test_cases[][TestSuite::max_num_ctrl] =
+{
+    {/* 0*/ {"hevc/422format_12bit/TSCTX_12bit_RExt_SHARP_1_422_12.bin"},               {"hevc/422format_12bit/GENERAL_12b_422_RExt_Sony_1.bit"}},
+    {/* 1*/ {"hevc/422format_12bit/GENERAL_12b_422_RExt_Sony_1.bit"},                   {"hevc/422format_12bit/TSCTX_12bit_RExt_SHARP_1_422_12.bin", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
+    {/* 2*/ {"hevc/422format_12bit/Bitdepth_A_RExt_Sony_1_422_resized_704x576.265", 5}, {"hevc/422format_12bit/GENERAL_12b_422_RExt_Sony_1.bit", 5}},
+    {/* 3*/ {"hevc/422format_12bit/Bitdepth_A_RExt_Sony_1_422_resized_704x576.265", 5}, {"hevc/422format_12bit/GENERAL_12b_422_RExt_Sony_1.bit", 5},                {"hevc/422format_12bit/TSCTX_12bit_RExt_SHARP_1_422_12.bin", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
+    {/* 4*/ {"hevc/422format_12bit/Bitdepth_A_RExt_Sony_1_422.265", 5},                 {"hevc/422format_12bit/Bitdepth_A_RExt_Sony_1_422_resized_704x576.265", 5}, {"hevc/422format_12bit/GENERAL_12b_422_RExt_Sony_1.bit", 5}},
+};
+template <>
+unsigned int const TestSuiteExt<MFX_FOURCC_Y216, res_change_tag>::n_cases = sizeof(TestSuiteExt<MFX_FOURCC_Y216, res_change_tag>::test_cases) / sizeof(TestSuite::tc_struct[max_num_ctrl]);
+
+/* 12b 444 */
+template <>
+TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_Y416, res_change_tag>::test_cases[][TestSuite::max_num_ctrl] =
+{
+    {/* 0*/ {"hevc/444format_12bit/TSCTX_12bit_RExt_SHARP_1.bin"},                      {"hevc/444format_12bit/GENERAL_12b_444_RExt_Sony_1.bit"}},
+    {/* 1*/ {"hevc/444format_12bit/GENERAL_12b_444_RExt_Sony_1.bit"},                   {"hevc/444format_12bit/TSCTX_12bit_RExt_SHARP_1.bin", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
+    {/* 2*/ {"hevc/444format_12bit/Bitdepth_A_RExt_Sony_1_444_resized_704x576.265", 5}, {"hevc/444format_12bit/GENERAL_12b_444_RExt_Sony_1.bit", 5}},
+    {/* 3*/ {"hevc/444format_12bit/Bitdepth_A_RExt_Sony_1_444_resized_704x576.265", 5}, {"hevc/444format_12bit/GENERAL_12b_444_RExt_Sony_1.bit", 5},                {"hevc/444format_12bit/TSCTX_12bit_RExt_SHARP_1.bin", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
+    {/* 4*/ {"hevc/444format_12bit/Bitdepth_A_RExt_Sony_1.bin", 5},                     {"hevc/444format_12bit/Bitdepth_A_RExt_Sony_1_444_resized_704x576.265", 5}, {"hevc/444format_12bit/GENERAL_12b_444_RExt_Sony_1.bit", 5}},
+};
+template <>
+unsigned int const TestSuiteExt<MFX_FOURCC_Y416, res_change_tag>::n_cases = sizeof(TestSuiteExt<MFX_FOURCC_Y416, res_change_tag>::test_cases) / sizeof(TestSuite::tc_struct[max_num_ctrl]);
+
+
 TS_REG_TEST_SUITE(hevcd_res_change,        (TestSuiteExt<MFX_FOURCC_NV12, res_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_NV12, res_change_tag>::n_cases));
 TS_REG_TEST_SUITE(hevcd_422_res_change,    (TestSuiteExt<MFX_FOURCC_YUY2, res_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_YUY2, res_change_tag>::n_cases));
 TS_REG_TEST_SUITE(hevcd_444_res_change,    (TestSuiteExt<MFX_FOURCC_AYUV, res_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_AYUV, res_change_tag>::n_cases));
+
 TS_REG_TEST_SUITE(hevc10d_res_change,      (TestSuiteExt<MFX_FOURCC_P010, res_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_P010, res_change_tag>::n_cases));
 TS_REG_TEST_SUITE(hevc10d_rext_res_change, (TestSuiteExt<MFX_FOURCC_P010, res_change_10b_422_rext_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_P010, res_change_10b_422_rext_tag>::n_cases));
 TS_REG_TEST_SUITE(hevc10d_422_res_change,  (TestSuiteExt<MFX_FOURCC_Y210, res_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_Y210, res_change_tag>::n_cases));
 TS_REG_TEST_SUITE(hevc10d_444_res_change,  (TestSuiteExt<MFX_FOURCC_Y410, res_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_Y410, res_change_tag>::n_cases));
+
+TS_REG_TEST_SUITE(hevcd_12b_420_p016_res_change, (TestSuiteExt<MFX_FOURCC_P016, res_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_P016, res_change_tag>::n_cases));
+TS_REG_TEST_SUITE(hevcd_12b_422_y216_res_change, (TestSuiteExt<MFX_FOURCC_Y216, res_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_Y216, res_change_tag>::n_cases));
+TS_REG_TEST_SUITE(hevcd_12b_444_y416_res_change, (TestSuiteExt<MFX_FOURCC_Y416, res_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_Y416, res_change_tag>::n_cases));
 
 #endif //TS_REG_INCLUDE_HEVCD_STREAM_CHANGE
