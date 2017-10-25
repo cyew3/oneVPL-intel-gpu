@@ -3184,10 +3184,7 @@ void HeaderPacker::GetSkipSlice(Task const & task, mfxU32 id, mfxU8*& buf, mfxU3
 
     codingTree(xCtu, yCtu, log2CtuSize, m_bs, sh, xCtu0, yCtu0, &context_array[0]);
 
-    m_bs.EncodeBin(CONTEXT(&context_array[0], END_OF_SLICE_FLAG_HEVC), 1);
-
     m_bs.SliceFinish();
-
 
     if (qpd_offset)
         *qpd_offset -= (mfxU32)(buf - m_bs.GetStart()) * 8;
