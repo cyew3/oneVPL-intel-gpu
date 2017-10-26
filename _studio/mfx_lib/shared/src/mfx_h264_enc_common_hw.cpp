@@ -4233,6 +4233,11 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 
     if (extOpt2->IntRefType == MFX_REFRESH_SLICE)
     {
+        if (extOpt2->IntRefCycleSize && !extOpt3->NumSliceP && !par.mfx.NumSlice)
+        {
+            extOpt2->IntRefType = MFX_REFRESH_HORIZONTAL;
+            changed = true;
+        }
         if (extOpt2->IntRefCycleSize && extOpt3->NumSliceP && (extOpt2->IntRefCycleSize != extOpt3->NumSliceP))
         {
             extOpt2->IntRefCycleSize = extOpt3->NumSliceP;
