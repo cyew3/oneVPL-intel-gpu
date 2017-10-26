@@ -33,7 +33,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 typedef  std::tuple<mfxMemId, mfxU32> UniqueMid;
 std::map<UniqueMid, int> mappingResourceManager;
 
-std::mutex mapping_mutex;
+MSDKMutex mapping_mutex;
 
 #define SWAP_BYTES(a, b) {mfxU8 tmp; tmp = a; a = b; b = tmp;}
 
