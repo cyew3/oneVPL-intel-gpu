@@ -1538,7 +1538,7 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
                     nRef[1] = (mfxU8)Min(CO3.NumRefActiveP[layer], NumRefLX[1]);
                 }
 
-                ConstructRPL(*this, dpb, !!(cur->m_frameType & MFX_FRAMETYPE_B), cur->m_poc, cur->m_tid, cur->m_secondField, rpl, nRef);
+                ConstructRPL(*this, dpb, !!(cur->m_frameType & MFX_FRAMETYPE_B), cur->m_poc, cur->m_tid, cur->m_secondField, isBFF()? !cur->m_secondField : cur->m_secondField, rpl, nRef);
 
                 Zero(rps);
                 ConstructSTRPS(dpb, rpl, nRef, cur->m_poc, rps);
@@ -2884,7 +2884,7 @@ bool isLTR(
 // 0 - the nearest  filds are used as reference in RPL
 // 1 - the first reference is the same polarity field
 // 2 - the same polarity fields are used for reference (if possible)
-#define HEVCE_FIELD_MODE 1
+#define HEVCE_FIELD_MODE 3
 
 void ConstructRPL(
     MfxVideoParam const & par,
@@ -2893,6 +2893,7 @@ void ConstructRPL(
     mfxI32 poc,
     mfxU8  tid,
     bool  bSecondField,
+    bool  bBottomField,
     mfxU8 (&RPL)[2][MAX_DPB_SIZE],
     mfxU8 (&numRefActive)[2],
     mfxExtAVCRefLists * pExtLists,
@@ -2973,12 +2974,17 @@ void ConstructRPL(
                 if (par.isField())
                 {
 #if (HEVCE_FIELD_MODE == 0)
-                    bSecondField;
+                    bSecondField; bBottomField;
                     MFX_SORT_COMMON(RPL[0], numRefActive[0], Abs(DPB[RPL[0][_i]].m_poc - poc) < Abs(DPB[RPL[0][_j]].m_poc - poc));
 #elif (HEVCE_FIELD_MODE == 1)
+                    bBottomField;
                     MFX_SORT_COMMON(RPL[0], numRefActive[0], (Abs(DPB[RPL[0][_i]].m_poc/2 - poc/2) + ((DPB[RPL[0][_i]].m_secondField == bSecondField) ? 0 : 1))< (Abs(DPB[RPL[0][_j]].m_poc/2 - poc/2) + ((DPB[RPL[0][_j]].m_secondField == bSecondField) ? 0 : 1)));
 #elif (HEVCE_FIELD_MODE == 2)
+                    bBottomField;
                     MFX_SORT_COMMON(RPL[0], numRefActive[0], (Abs(DPB[RPL[0][_i]].m_poc/2 - poc/2) + ((DPB[RPL[0][_i]].m_secondField == bSecondField) ? 0 : 16))< (Abs(DPB[RPL[0][_j]].m_poc/2 - poc/2)  + ((DPB[RPL[0][_j]].m_secondField == bSecondField) ? 0 : 16)));
+#elif (HEVCE_FIELD_MODE == 3)
+                    bSecondField;
+                    MFX_SORT_COMMON(RPL[0], numRefActive[0], (Abs(DPB[RPL[0][_i]].m_poc / 2 - poc / 2) + (isBottomField(DPB[RPL[0][_i]])== bBottomField) ? 0 : 1)< (Abs(DPB[RPL[0][_j]].m_poc / 2 - poc / 2) + (isBottomField(DPB[RPL[0][_j]]) == bBottomField) ? 0 : 1));
 #endif
                 }
                 else
@@ -3016,6 +3022,8 @@ void ConstructRPL(
                         MFX_SORT_COMMON(RPL[1], numRefActive[1], (Abs(DPB[RPL[1][_i]].m_poc/2 - poc/2)  + ((DPB[RPL[1][_i]].m_secondField == bSecondField) ? 0 : 1)) > (Abs(DPB[RPL[1][_j]].m_poc/2 - poc/2)  + ((DPB[RPL[1][_j]].m_secondField == bSecondField) ? 0 : 1)));
 #elif (HEVCE_FIELD_MODE == 2)
                         MFX_SORT_COMMON(RPL[1], numRefActive[1], (Abs(DPB[RPL[1][_i]].m_poc/2 - poc/2)  + ((DPB[RPL[1][_i]].m_secondField == bSecondField) ? 0 : 16)) > (Abs(DPB[RPL[1][_j]].m_poc/2 - poc/2)  + ((DPB[RPL[1][_j]].m_secondField == bSecondField) ? 0 : 16)));
+#elif (HEVCE_FIELD_MODE == 3)
+                       MFX_SORT_COMMON(RPL[1], numRefActive[1], (Abs(DPB[RPL[1][_i]].m_poc / 2 - poc / 2) + ((isBottomField(DPB[RPL[1][_i]]) == bBottomField) ? 0 : 1)) > (Abs(DPB[RPL[1][_j]].m_poc / 2 - poc / 2) + ((isBottomField(DPB[RPL[1][_j]]) == bBottomField) ? 0 : 1)));
 #endif
                 }
                 else
@@ -3166,6 +3174,49 @@ mfxU8 GetSHNUT(Task const & task, bool RAPIntra)
     const bool isI   = !!(task.m_frameType & MFX_FRAMETYPE_I);
     const bool isRef = !!(task.m_frameType & MFX_FRAMETYPE_REF);
     const bool isIDR = !!(task.m_frameType & MFX_FRAMETYPE_IDR);
+   
+    /* To do: add this calculation after API changes
+    if (task.m_ctrl.NalUnitType)
+    {
+        switch (task.m_ctrl.NalUnitType)
+        {
+        case MFX_HEVC_NALU_TYPE_TRAIL_R:
+            if (task.m_poc > task.m_lastRAP && isRef)
+                return TRAIL_R;
+            break;
+        case MFX_HEVC_NALU_TYPE_TRAIL_N:
+            if (task.m_poc > task.m_lastRAP && !isRef)
+                return TRAIL_N;
+            break;
+        case MFX_HEVC_NALU_TYPE_RASL_R:
+            if (task.m_poc < task.m_lastRAP && isRef)
+                return RASL_R;
+            break;
+        case MFX_HEVC_NALU_TYPE_RASL_N:
+            if (task.m_poc < task.m_lastRAP && !isRef)
+                return RASL_N;
+            break;
+        case MFX_HEVC_NALU_TYPE_RADL_R:
+            if (task.m_poc < task.m_lastRAP && isRef)
+                return RADL_R;
+            break;
+        case MFX_HEVC_NALU_TYPE_RADL_N:
+            if (task.m_poc < task.m_lastRAP && !isRef)
+                return RADL_N;
+            break;
+        case MFX_HEVC_NALU_CRA_NUT:
+            if (isI)
+                return CRA_NUT;
+            break;
+        case MFX_HEVC_NALU_IDR_W_RADL:
+            if (isIDR)
+                return IDR_W_RADL;
+        case MFX_HEVC_NALU_IDR_N_LP:
+            if (isIDR)
+                return IDR_N_LP;
+        }
+    }
+    */
 
     if (isIDR)
         return IDR_W_RADL;
@@ -3460,6 +3511,13 @@ void ConfigureTask(
     task.m_lastRAP = prevTask.m_lastRAP;
     task.m_eo = prevTask.m_eo + 1;
 
+    if (par.isField() && task.m_surf != 0 && task.m_surf->Info.PicStruct == 0)
+    {
+        task.m_surf->Info.PicStruct = (mfxU16)
+            ((par.isBFF() == task.m_secondField) ?
+                MFX_PICSTRUCT_FIELD_TFF : MFX_PICSTRUCT_FIELD_BFF); 
+    }
+
     task.m_dpb_output_delay = (task.m_fo + par.m_sps.sub_layer[0].max_num_reorder_pics - task.m_eo);
 
     InitDPB(task, prevTask, pExtListCtrl);
@@ -3483,7 +3541,7 @@ void ConfigureTask(
 
     if (!isI)
     {
-        ConstructRPL(par, task.m_dpb[TASK_DPB_ACTIVE], isB, task.m_poc, task.m_tid, task.m_secondField,
+        ConstructRPL(par, task.m_dpb[TASK_DPB_ACTIVE], isB, task.m_poc, task.m_tid, task.m_secondField, isBottomField(task),
             task.m_refPicList, task.m_numRefActive, pExtLists, pExtListCtrl);
     }
 
@@ -3523,7 +3581,7 @@ void ConfigureTask(
 
 
     task.m_shNUT = GetSHNUT(task, par.RAPIntra);
-    if (task.m_shNUT == CRA_NUT || task.m_shNUT == IDR_W_RADL)
+    if (task.m_shNUT == CRA_NUT || task.m_shNUT == IDR_W_RADL || task.m_shNUT == IDR_N_LP)
         task.m_lastRAP = task.m_poc;
 
     par.GetSliceHeader(task, prevTask, caps, task.m_sh);

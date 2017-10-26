@@ -814,6 +814,10 @@ private:
     }m_TL[8];
 };
 
+inline bool isBottomField(const DpbFrame & task)
+{
+    return (task.m_surf != 0 && (task.m_surf->Info.PicStruct & MFX_PICSTRUCT_FIELD_BOTTOM) == MFX_PICSTRUCT_FIELD_BOTTOM);
+}
 
 class MfxVideoParam : public mfxVideoParam, public TemporalLayers
 {
@@ -905,6 +909,7 @@ public:
     bool isTL()       const { return NumTL() > 1; }
     bool isSWBRC()    const {return  (IsOn(m_ext.CO2.ExtBRC) && (mfx.RateControlMethod == MFX_RATECONTROL_CBR || mfx.RateControlMethod == MFX_RATECONTROL_VBR))|| mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT ;}
     bool isField()    const { return  !!(mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_SINGLE); }
+    bool isBFF()      const { return  ((mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_BFF) == MFX_PICSTRUCT_FIELD_BFF); }
 
 private:
     void Construct(mfxVideoParam const & par);
@@ -1089,6 +1094,7 @@ void ConstructRPL(
     mfxI32 poc,
     mfxU8  tid,
     bool  bSecondField,
+    bool  bBottomField,
     mfxU8 (&RPL)[2][MAX_DPB_SIZE],
     mfxU8 (&numRefActive)[2],
     mfxExtAVCRefLists * pExtLists,
@@ -1101,10 +1107,11 @@ inline void ConstructRPL(
     mfxI32 poc,
     mfxU8  tid,
     bool  bSecondField,
+    bool  bBottomField,
     mfxU8(&RPL)[2][MAX_DPB_SIZE],
     mfxU8(&numRefActive)[2])
 {
-    ConstructRPL(par, DPB, isB, poc, tid, bSecondField, RPL, numRefActive, 0, 0);
+    ConstructRPL(par, DPB, isB, poc, tid, bSecondField, bBottomField, RPL, numRefActive, 0, 0);
 }
 
 void UpdateDPB(
