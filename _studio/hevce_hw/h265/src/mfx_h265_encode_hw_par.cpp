@@ -1451,12 +1451,12 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     // par.mfx.FrameInfo.ChromaFormat should be checked before Construct to set TargetChromaFormat correctly in case CO3 is absent
     switch(par.mfx.FrameInfo.FourCC)
     {
-    case MFX_FOURCC_A2RGB10:
     case MFX_FOURCC_AYUV:
     case MFX_FOURCC_RGB4:
         invalid += CheckOption(par.mfx.FrameInfo.ChromaFormat, (mfxU16)MFX_CHROMAFORMAT_YUV444);
         invalid += CheckOption(par.mfx.FrameInfo.BitDepthLuma, 8, 0);
         invalid += CheckOption(par.mfx.FrameInfo.BitDepthChroma, 8, 0);
+    case MFX_FOURCC_A2RGB10:
     case MFX_FOURCC_Y410:
         invalid += CheckOption(par.mfx.FrameInfo.ChromaFormat, (mfxU16)MFX_CHROMAFORMAT_YUV444);
         invalid += CheckOption(par.mfx.FrameInfo.BitDepthLuma, 10, 0);
