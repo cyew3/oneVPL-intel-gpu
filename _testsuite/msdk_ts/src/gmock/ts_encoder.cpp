@@ -242,6 +242,7 @@ tsVideoEncoder::tsVideoEncoder(mfxFeiFunction func, mfxU32 CodecId, bool useDefa
         m_par.mfx.FrameInfo.FrameRateExtD = 1;
     }
 
+
     mfxExtFeiParam& extbuffer = m_par;
     extbuffer.Func = func;
 
@@ -342,6 +343,7 @@ mfxStatus tsVideoEncoder::GetCaps(void *pCaps, mfxU32 *pCapsSize)
 {
     TRACE_FUNC2(GetCaps, pCaps, pCapsSize);
     mfxHandleType hdl_type;
+    mfxHDL hdl;
     mfxU32 count = 0;
     mfxStatus sts = MFX_ERR_UNSUPPORTED;
 
@@ -358,6 +360,20 @@ mfxStatus tsVideoEncoder::GetCaps(void *pCaps, mfxU32 *pCapsSize)
     else
         guid = DXVA2_Intel_Encode_HEVC_Main;
 
+    if (!m_is_handle_set && g_tsImpl != MFX_IMPL_SOFTWARE)
+    {
+        if (!m_pVAHandle)
+        {
+            m_pVAHandle = new frame_allocator(
+                    (g_tsImpl & MFX_IMPL_VIA_D3D11) ? frame_allocator::HARDWARE_DX11 : frame_allocator::HARDWARE,
+                    frame_allocator::ALLOC_MAX,
+                    frame_allocator::ENABLE_ALL,
+                    frame_allocator::ALLOC_EMPTY);
+        }
+        m_pVAHandle->get_hdl(hdl_type, hdl);
+        SetHandle(m_session, hdl_type, hdl);
+        m_is_handle_set = (g_tsStatus.get() >= 0);
+    }
     if (g_tsImpl & MFX_IMPL_VIA_D3D11) {
         ID3D11Device* device;
         D3D11_VIDEO_DECODER_DESC    desc = {};
@@ -444,7 +460,7 @@ mfxStatus tsVideoEncoder::GetCaps(void *pCaps, mfxU32 *pCapsSize)
             MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
         }
 
-    } else {
+    } else if (g_tsImpl != MFX_IMPL_SOFTWARE) {
         IDirect3DDeviceManager9 *device = 0;
         hdl_type = mfxHandleType::MFX_HANDLE_D3D9_DEVICE_MANAGER;
         sts = MFXVideoCORE_GetHandle(m_session, hdl_type, (mfxHDL*)&device);

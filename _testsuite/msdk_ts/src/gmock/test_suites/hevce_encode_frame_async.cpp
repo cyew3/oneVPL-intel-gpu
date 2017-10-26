@@ -140,6 +140,7 @@ namespace hevce_encode_frame_async
         //set defoult param
         m_par.mfx.FrameInfo.Width = 736;
         m_par.mfx.FrameInfo.Height = 480;
+        mfxU32 LCUSize = (g_tsHWtype >= MFX_HW_CNL) ? 64 : 32;
 
 
         if (!GetAllocator())
@@ -189,7 +190,6 @@ namespace hevce_encode_frame_async
         m_filler = reader;
 
 
-        mfxU16 LCUSize = 64;    // LCUSize=32 is for internal use only (ICL DP mode) and is not supposeed to be tested
         ENCODE_CAPS_HEVC caps = {};
         mfxU32 capSize = sizeof(ENCODE_CAPS_HEVC);
 
@@ -220,13 +220,18 @@ namespace hevce_encode_frame_async
             else
                 maxSlices = nLCUrow * nLCUcol;
 
+            //check current supported MAX number of slices
+            m_pPar->mfx.NumSlice = maxSlices;
+            g_tsStatus.disable_next_check();
+            Query();
+
             if (tc.type == NSLICE_GT_MAX) {
-                m_pPar->mfx.NumSlice = maxSlices + 1;
+                m_pPar->mfx.NumSlice = m_pParOut->mfx.NumSlice + 1;
                 g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
             } else if (tc.type == NSLICE_LT_MAX) {
-                m_pPar->mfx.NumSlice = maxSlices - 1;
+                m_pPar->mfx.NumSlice = m_pParOut->mfx.NumSlice - 1;
             } else if (tc.type == NSLICE_EQ_MAX) {
-                m_pPar->mfx.NumSlice = maxSlices;
+                m_pPar->mfx.NumSlice = m_pParOut->mfx.NumSlice;
             }
 
             Init();
