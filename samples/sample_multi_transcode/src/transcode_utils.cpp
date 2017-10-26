@@ -244,7 +244,7 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("  -WeightedPred 1/2/3\n"));
     msdk_printf(MSDK_STRING("  -WeightedBiPred 1/2/3 - 1 - default, 2 - explicit, 3 - implicit\n"));
 
-    msdk_printf(MSDK_STRING("  -extbrc::<on,off>           Enables external BRC for HEVC encoder"));
+    msdk_printf(MSDK_STRING("  -extbrc::<on,off>           Enables external BRC for AVC and HEVC encoders"));
     msdk_printf(MSDK_STRING("  -vpp_comp <sourcesNum>      Enables composition from several decoding sessions. Result is written to the file\n"));
     msdk_printf(MSDK_STRING("  -vpp_comp_only <sourcesNum> Enables composition from several decoding sessions. Result is shown on screen\n"));
     msdk_printf(MSDK_STRING("  -vpp_comp_num_tiles <Num>   Quantity of tiles for composition. if equal to 0 tiles processing ignored\n"));

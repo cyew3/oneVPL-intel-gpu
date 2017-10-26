@@ -46,6 +46,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("  3. Dump model: decoding with YUV dumping (-o option)\n"));
     msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("Options:\n"));
+    msdk_printf(MSDK_STRING("   [-?]                      - print help\n"));
     msdk_printf(MSDK_STRING("   [-hw]                     - use platform specific SDK implementation (default)\n"));
     msdk_printf(MSDK_STRING("   [-sw]                     - use software implementation, if not specified platform specific SDK implementation is used\n"));
     msdk_printf(MSDK_STRING("   [-p guid]                 - 32-character hexadecimal guid string\n"));
@@ -166,7 +167,12 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             continue;
         }
 
-        if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-sw")))
+        if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-?")))
+        {
+            PrintHelp(strInput[0], MSDK_STRING(""));
+            return MFX_ERR_ABORTED;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-sw")))
         {
             pParams->bUseHWLib = false;
         }
@@ -660,6 +666,11 @@ int main(int argc, char *argv[])
     mfxStatus sts = MFX_ERR_NONE; // return value check
 
     sts = ParseInputString(argv, (mfxU8)argc, &Params);
+    if (sts == MFX_ERR_ABORTED)
+    {
+        // No error, just need to close app normally
+        return MFX_ERR_NONE;
+    }
     MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
 
     if (Params.bIsMVC)
