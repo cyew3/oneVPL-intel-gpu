@@ -56,6 +56,9 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-w]                      - output width\n"));
     msdk_printf(MSDK_STRING("   [-h]                      - output height\n"));
     msdk_printf(MSDK_STRING("   [-di bob/adi]             - enable deinterlacing BOB/ADI\n"));
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    msdk_printf(MSDK_STRING("   [-d]                      - enable decode error report\n"));
+#endif
     msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("JPEG Chroma Type:\n"));
     msdk_printf(MSDK_STRING("   [-jpeg_rgb] - RGB Chroma Type\n"));
@@ -402,6 +405,12 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             pParams->gpuCopy = MFX_GPUCOPY_OFF;
         }
 #if !defined(_WIN32) && !defined(_WIN64)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-d")))
+        {
+            pParams->bErrorReport = true;
+        }
+#endif
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-threads_num")))
         {
             if(i + 1 >= nArgNum)

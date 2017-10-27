@@ -110,6 +110,9 @@ struct sInputParams
     bool    bRenderWin;
     mfxU32  nRenderWinX;
     mfxU32  nRenderWinY;
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    bool    bErrorReport;
+#endif
 
     mfxI32  monitorType;
 #if defined(LIBVA_SUPPORT)
@@ -177,6 +180,20 @@ public:
     void SetExtBuffersFlag()       { m_bIsExtBuffers = true; }
     virtual void PrintInfo();
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    inline void PrintDecodeErrorReport(mfxExtDecodeErrorReport *pDecodeErrorReport)
+    {
+        if (pDecodeErrorReport)
+        {
+            if (pDecodeErrorReport->ErrorTypes & MFX_ERROR_SPS)
+                msdk_printf(MSDK_STRING("[Error] SPS Error detected!\n"));
+
+            if (pDecodeErrorReport->ErrorTypes & MFX_ERROR_PPS)
+                msdk_printf(MSDK_STRING("[Error] PPS Error detected!\n"));
+        }
+    }
+#endif
+
 protected: // functions
     virtual mfxStatus CreateRenderingWindow(sInputParams *pParams);
     virtual mfxStatus InitMfxParams(sInputParams *pParams);
@@ -230,9 +247,14 @@ protected: // variables
     std::auto_ptr<MFXVideoUSER>  m_pUserModule;
     std::auto_ptr<MFXPlugin> m_pPlugin;
     std::vector<mfxExtBuffer *> m_ExtBuffers;
+    std::vector<mfxExtBuffer *> m_ExtBuffersMfxBS;
 #if MFX_VERSION >= 1022
     mfxExtDecVideoProcessing m_DecoderPostProcessing;
 #endif //MFX_VERSION >= 1022
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    mfxExtDecodeErrorReport m_DecodeErrorReport;
+#endif
 
     GeneralAllocator*       m_pGeneralAllocator;
     mfxAllocatorParams*     m_pmfxAllocatorParams;

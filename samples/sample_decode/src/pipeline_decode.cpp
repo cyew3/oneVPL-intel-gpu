@@ -133,6 +133,11 @@ CDecodingPipeline::CDecodingPipeline()
     m_DecoderPostProcessing.Header.BufferSz = sizeof(mfxExtDecVideoProcessing);
 #endif //MFX_VERSION >= 1022
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    MSDK_ZERO_MEMORY(m_DecodeErrorReport);
+    m_DecodeErrorReport.Header.BufferId = MFX_EXTBUFF_DECODE_ERROR_REPORT;
+#endif
+
     m_hwdev = NULL;
 
     m_bOutI420 = false;
@@ -513,6 +518,8 @@ void CDecodingPipeline::Close()
         DeleteExtBuffers();
     }
 
+    m_ExtBuffersMfxBS.clear();
+
     m_pPlugin.reset();
     m_mfxSession.Close();
     m_FileWriter.Close();
@@ -575,6 +582,15 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
     mfxStatus sts = MFX_ERR_NONE;
     mfxU32 &numViews = pParams->numViews;
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    if (pParams->bErrorReport)
+    {
+        m_ExtBuffersMfxBS.push_back((mfxExtBuffer *)&m_DecodeErrorReport);
+        m_mfxBS.ExtParam = reinterpret_cast<mfxExtBuffer **>(&m_ExtBuffersMfxBS[0]);
+        m_mfxBS.NumExtParam = static_cast<mfxU16>(m_ExtBuffersMfxBS.size());
+    }
+#endif
+
     // try to find a sequence header in the stream
     // if header is not found this function exits with error (e.g. if device was lost and there's no header in the remaining stream)
     for (;;)
@@ -583,8 +599,28 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
         if ( m_mfxVideoParams.mfx.CodecId == MFX_CODEC_JPEG )
             MJPEG_AVI_ParsePicStruct(&m_mfxBS);
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        if (pParams->bErrorReport)
+        {
+            mfxExtDecodeErrorReport *pDecodeErrorReport = (mfxExtDecodeErrorReport *)GetExtBuffer(m_mfxBS.ExtParam, m_mfxBS.NumExtParam, MFX_EXTBUFF_DECODE_ERROR_REPORT);
+
+            if (pDecodeErrorReport)
+                pDecodeErrorReport->ErrorTypes = 0;
+
+            // parse bit stream and fill mfx params
+            sts = m_pmfxDEC->DecodeHeader(&m_mfxBS, &m_mfxVideoParams);
+
+            PrintDecodeErrorReport(pDecodeErrorReport);
+        }
+        else
+        {
         // parse bit stream and fill mfx params
         sts = m_pmfxDEC->DecodeHeader(&m_mfxBS, &m_mfxVideoParams);
+        }
+#else
+        // parse bit stream and fill mfx params
+        sts = m_pmfxDEC->DecodeHeader(&m_mfxBS, &m_mfxVideoParams);
+#endif
         if (!sts)
         {
             m_bVppIsUsed = IsVppRequired(pParams);
@@ -1580,6 +1616,10 @@ mfxStatus CDecodingPipeline::RunDecoding()
     time_t start_time = time(0);
     MSDKThread * pDeliverThread = NULL;
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    mfxExtDecodeErrorReport *pDecodeErrorReport = NULL;
+#endif
+
     if (m_eWorkMode == MODE_RENDERING) {
         m_pDeliverOutputSemaphore = new MSDKSemaphore(sts);
         m_pDeliveredEvent = new MSDKEvent(sts, false, false);
@@ -1695,7 +1735,17 @@ mfxStatus CDecodingPipeline::RunDecoding()
             }
             pOutSurface = NULL;
             do {
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+                if (pBitstream) {
+                    pDecodeErrorReport = (mfxExtDecodeErrorReport *)GetExtBuffer(pBitstream->ExtParam, pBitstream->NumExtParam, MFX_EXTBUFF_DECODE_ERROR_REPORT);
+                }
+#endif
                 sts = m_pmfxDEC->DecodeFrameAsync(pBitstream, &(m_pCurrentFreeSurface->frame), &pOutSurface, &(m_pCurrentFreeOutputSurface->syncp));
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+                PrintDecodeErrorReport(pDecodeErrorReport);
+#endif
+
                 if (pBitstream && MFX_ERR_MORE_DATA == sts && pBitstream->MaxLength == pBitstream->DataLength)
                 {
                     mfxStatus stsExt = ExtendMfxBitstream(pBitstream, pBitstream->MaxLength * 2);
