@@ -56,6 +56,12 @@ FEI_Encode::~FEI_Encode()
         {
             m_buf_allocator.Free(pMVP);
         }
+
+        mfxExtFeiHevcEncQP* pQP = m_encodeCtrl.GetExtBuffer<mfxExtFeiHevcEncQP>();
+        if (pQP)
+        {
+            m_buf_allocator.Free(pQP);
+        }
     }
     catch(mfxError& ex)
     {
@@ -94,6 +100,14 @@ mfxStatus FEI_Encode::PreInit()
         pMVP->VaBufferID = VA_INVALID_ID;
     }
 
+    // TODO: add condition when buffer is required
+    if (0)
+    {
+        mfxExtFeiHevcEncQP* pQP = m_encodeCtrl.AddExtBuffer<mfxExtFeiHevcEncQP>();
+        MSDK_CHECK_POINTER(pQP, MFX_ERR_NOT_INITIALIZED);
+        pQP->VaBufferID = VA_INVALID_ID;
+    }
+
     sts = ResetExtBuffers(m_videoParams);
     MSDK_CHECK_STATUS(sts, "FEI Encode ResetExtBuffers failed");
 
@@ -102,13 +116,12 @@ mfxStatus FEI_Encode::PreInit()
 
 mfxStatus FEI_Encode::ResetExtBuffers(const MfxVideoParamsWrapper & videoParams)
 {
-    /* Driver uses blocks of 16x16 pixels for CTUs representation.
-       The layout of data inside those blocks is related to CTU size,
-       but the buffer size itself - doesn't.
-    */
-    static const mfxU32 element_size = 16; // Buffers granularity is always 16x16 blocks
-    mfxU32 numElements = (MSDK_ALIGN32(videoParams.mfx.FrameInfo.Width) / element_size) * (MSDK_ALIGN32(videoParams.mfx.FrameInfo.Height) / element_size);
 
+    BufferAllocRequest request;
+    MSDK_ZERO_MEMORY(request);
+
+    request.Width = videoParams.mfx.FrameInfo.CropW;
+    request.Height = videoParams.mfx.FrameInfo.CropH;
     try
     {
         mfxExtFeiHevcEncMVPredictors* pMVP = m_encodeCtrl.GetExtBuffer<mfxExtFeiHevcEncMVPredictors>();
@@ -116,17 +129,16 @@ mfxStatus FEI_Encode::ResetExtBuffers(const MfxVideoParamsWrapper & videoParams)
         {
             m_buf_allocator.Free(pMVP);
 
-            m_buf_allocator.Alloc(pMVP, numElements);
+            m_buf_allocator.Alloc(pMVP, request);
         }
 
-        // TODO: add condition when buffer is required
-        // mfxExtFeiHevcEncQP* pQP = m_encodeCtrl.GetExtBuffer<mfxExtFeiHevcEncQP>();
-        // if (pQP)
-        // {
-        //     m_buf_allocator.Free(pQP);
-        //
-        //     m_buf_allocator.Alloc(pQP, numElements);
-        // }
+        mfxExtFeiHevcEncQP* pQP = m_encodeCtrl.GetExtBuffer<mfxExtFeiHevcEncQP>();
+        if (pQP)
+        {
+            m_buf_allocator.Free(pQP);
+
+            m_buf_allocator.Alloc(pQP, request);
+        }
     }
     catch (mfxError& ex)
     {
@@ -322,9 +334,32 @@ mfxStatus FEI_Encode::SetCtrlParams(const HevcTask& task)
         }
         else
         {
-            mfxStatus sts = m_pFile_MVP_in->Read(pMVP->Data, pMVP->DataSize, 1);
+            mfxStatus sts = m_pFile_MVP_in->Read(pMVP->Data, pMVP->Pitch * pMVP->Height, 1);
             MSDK_CHECK_STATUS(sts, "FEI Encode. Read MV predictors failed");
         }
+    }
+
+    // TODO: add condition when buffer is required
+    if (0)
+    {
+        ctrl->PerCuQp = 1;
+
+        mfxExtFeiHevcEncQP* pQP = m_encodeCtrl.GetExtBuffer<mfxExtFeiHevcEncQP>();
+        MSDK_CHECK_POINTER(pQP, MFX_ERR_NOT_INITIALIZED);
+        AutoBufferLocker<mfxExtFeiHevcEncQP> lock(m_buf_allocator, *pQP);
+        //
+        // // Fill per block QP
+        // mfxU32 w_ctu = (m_videoParams.mfx.FrameInfo.CropW + 31) / 32;
+        // mfxU32 h_ctu = (m_videoParams.mfx.FrameInfo.CropW + 31) / 32;
+        // if (w_ctu > pQP->Pitch || h_ctu > pQP->Height)
+        //     MSDK_CHECK_STATUS(MFX_ERR_UNDEFINED_BEHAVIOR, "FEI Encode: wrong QP buffer size");
+        // for (mfxU32 i = 0; i < h_ctu; i++)
+        // {
+        //     for (mfxU32 j = 0; j < w_ctu; j++)
+        //     {
+        //         pQP->Data[i*pQP->Pitch + j] = i % 51 + 1;
+        //     }
+        // }
     }
 
     return MFX_ERR_NONE;

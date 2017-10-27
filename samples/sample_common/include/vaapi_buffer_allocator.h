@@ -27,6 +27,13 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include <va/va.h>
 #include "vaapi_utils.h"
 
+struct BufferAllocRequest {
+    mfxU32 Width;  // coded frame width
+    mfxU32 Height; // coded frame height
+};
+
+const mfxU32 CTU_SIZE32 = 32;
+
 // class for buffers allocation via direct access to vaapi buffers
 class vaapiBufferAllocator
 {
@@ -36,26 +43,25 @@ public:
 
     // T is external buffer structure
     template<typename T>
-    void Alloc(T * buffer, mfxU32 num_elem)
+    void Alloc(T * buffer, const BufferAllocRequest& request)
     {
         if (!buffer) throw mfxError(MFX_ERR_NULL_PTR);
         if (buffer->Data != NULL) throw mfxError(MFX_ERR_UNDEFINED_BEHAVIOR, "Buffer is already allocated and using in app");
 
-        // driver limitation for vaCreateBuffer: num_elements should be always 1
-        // and size is total size of Data array
+        if (!request.Width || !request.Height) throw mfxError(MFX_ERR_NOT_INITIALIZED, "BufferAllocRequest is uninitialized for buffer");
+
         mfxU32 va_num_elem = 1;
-        mfxU32 va_data_size = sizeof(*(T::Data)) * num_elem;
+        mfxU32 va_data_size = sizeof(*(T::Data));
+
+        CalcBufferPitchHeight(*buffer, request, va_data_size, va_num_elem);
 
         VABufferType type = GetVABufferType(buffer->Header.BufferId);
 
         VAStatus sts = m_libva.vaCreateBuffer(m_dpy, m_context, type, va_data_size, va_num_elem, NULL, &buffer->VaBufferID);
         if (sts != VA_STATUS_SUCCESS) {
-            buffer->VaBufferID = VA_INVALID_ID;
+            InvalidateBuffer(buffer);
             throw mfxError(MFX_ERR_MEMORY_ALLOC, "vaCreateBuffer failed");
         }
-
-        buffer->DataSize = va_data_size;
-        buffer->Data = NULL;
     };
 
     template<typename T>
@@ -99,11 +105,10 @@ public:
         if (sts != VA_STATUS_SUCCESS) {
             throw mfxError(MFX_ERR_DEVICE_FAILED, "vaDestroyBuffer failed");
         }
-        buffer->VaBufferID = VA_INVALID_ID;
-        buffer->Data = NULL;
+        InvalidateBuffer(buffer);
     };
 
-protected:
+private:
     VABufferType GetVABufferType(mfxU32 bufferId)
     {
         switch (bufferId)
@@ -111,12 +116,40 @@ protected:
 #if MFX_VERSION >= MFX_VERSION_NEXT
         case MFX_EXTBUFF_HEVCFEI_ENC_QP:
             return VAEncQpBufferType;
-#endif
         case MFX_EXTBUFF_HEVCFEI_ENC_MV_PRED:
             return VAEncFEIMVPredictorBufferTypeIntel;
+#endif
         default:
             throw mfxError(MFX_ERR_UNSUPPORTED, "Unsupported buffer type");
         }
+    };
+
+    template<typename T>
+    void InvalidateBuffer(T * buffer)
+    {
+        if (buffer)
+        {
+            buffer->VaBufferID = VA_INVALID_ID;
+            buffer->Data = NULL;
+            buffer->Pitch = 0;
+            buffer->Height = 0;
+        }
+    };
+
+    // generic implementation for buffer of 32x32 elements
+    template<typename T>
+    void CalcBufferPitchHeight(T& buffer,
+            const BufferAllocRequest& request,
+            mfxU32& va_pitch,
+            mfxU32& va_height)
+    {
+        buffer.Pitch = align(request.Width, CTU_SIZE32) / CTU_SIZE32;
+        buffer.Height = align(request.Height, CTU_SIZE32) / CTU_SIZE32;
+
+        // since most buffers have 1D representation in driver, so vaCreateBuffer expects
+        // va_height is 1 and va_pitch is total size of buffer->Data array
+        va_pitch = sizeof(*(T::Data)) * buffer.Pitch * buffer.Height;
+        va_height = 1;
     };
 
     MfxLoader::VA_Proxy m_libva;
@@ -124,6 +157,14 @@ protected:
     VAConfigID m_config;
     VAContextID m_context;
 };
+
+template<>
+void vaapiBufferAllocator::CalcBufferPitchHeight(mfxExtFeiHevcEncMVPredictors& buffer, const BufferAllocRequest& request,
+                                                 mfxU32& va_pitch, mfxU32& va_height);
+
+template<>
+void vaapiBufferAllocator::CalcBufferPitchHeight(mfxExtFeiHevcEncQP& buffer, const BufferAllocRequest& request,
+                                                 mfxU32& va_pitch, mfxU32& va_height);
 
 #endif //#if defined(LIBVA_SUPPORT)
 

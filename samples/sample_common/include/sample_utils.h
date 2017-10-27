@@ -718,6 +718,11 @@ void WaitForDeviceToBecomeFree(MFXVideoSession& session, mfxSyncPoint& syncPoint
 
 mfxU16 FourCCToChroma(mfxU32 fourCC);
 
+template<class T> inline T align(const T & value, const T & alignment)
+{
+    return alignment * (value / alignment + (value % alignment ? 1 : 0));
+}
+
 // class is used as custom exception
 class mfxError
 {

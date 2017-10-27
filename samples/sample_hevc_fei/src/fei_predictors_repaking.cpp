@@ -115,6 +115,9 @@ mfxStatus PredictorsRepaking::RepackPredictorsPerformance(const HevcTask& eTask,
     if (numPredPairs > mvs_vec.size())
         return MFX_ERR_UNDEFINED_BEHAVIOR;
 
+    if (m_widthCU_enc > mvp.Pitch || m_heightCU_enc > mvp.Height)
+        MSDK_CHECK_STATUS(MFX_ERR_UNDEFINED_BEHAVIOR, "Invalid MVP buffer size");
+
     const mfxI16Pair zeroPair = { 0, 0 };
 
     mfxU32 i = 0;
@@ -231,6 +234,9 @@ mfxStatus PredictorsRepaking::RepackPredictorsQuality(const HevcTask& eTask, mfx
     // check that task has enough PreENC motion vectors dumps to create MVPredictors for Encode
     if (numPredPairs > mvs_vec.size())
         return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+    if (m_widthCU_enc > mvp.Pitch || m_heightCU_enc > mvp.Height)
+        MSDK_CHECK_STATUS(MFX_ERR_UNDEFINED_BEHAVIOR, "Invalid MVP buffer size");
 
     const mfxI16Pair zeroPair = { 0, 0 };
 

@@ -383,7 +383,10 @@ int TestSuite::RunTest(unsigned int id)
     {
         feiCtrl.PerCuQp = 1;
         mfxExtFeiHevcEncQP& hevcFeiEncQp = m_ctrl;
-        m_hevcFeiAllocator->Alloc(&hevcFeiEncQp, size);
+        BufferAllocRequest buf_request;
+        buf_request.Width = m_par.mfx.FrameInfo.CropW;
+        buf_request.Height = m_par.mfx.FrameInfo.CropH;
+        m_hevcFeiAllocator->Alloc(&hevcFeiEncQp, buf_request);
         EncodeFrames(nf);
         Close();
     }
