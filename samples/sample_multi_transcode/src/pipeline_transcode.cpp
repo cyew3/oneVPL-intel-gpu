@@ -2543,7 +2543,7 @@ void CTranscodingPipeline::FreePreEncAuxPool()
          if(m_pPreEncAuxPool[i].encCtrl.ExtParam)
          {
              delete [] m_pPreEncAuxPool[i].encCtrl.ExtParam[0];
-             delete m_pPreEncAuxPool[i].encCtrl.ExtParam;
+             delete [] m_pPreEncAuxPool[i].encCtrl.ExtParam;
          }
      }
      m_pPreEncAuxPool.resize(0);
