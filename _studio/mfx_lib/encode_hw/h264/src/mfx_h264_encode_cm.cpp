@@ -129,7 +129,7 @@ CmDevice * TryCreateCmDevicePtr(VideoCORE * core, mfxU32 * version)
         D3D9Interface * d3dIface = QueryCoreInterface<D3D9Interface>(core, MFXICORED3D_GUID);
         if (d3dIface == 0)
             return 0;
-        if ((result = ::CreateCmDevice(device, *version, d3dIface->GetD3D9DeviceManager(), CM_DEVICE_CREATE_OPTION_SCRATCH_SPACE_DISABLE | CM_DEVICE_CONFIG_MIDTHREADPREEMPTION_DISENABLE)) != CM_SUCCESS)
+        if ((result = ::CreateCmDevice(device, *version, d3dIface->GetD3D9DeviceManager(), CM_DEVICE_CREATE_OPTION_SCRATCH_SPACE_DISABLE)) != CM_SUCCESS)
             return 0;
 #endif
     }
@@ -139,7 +139,7 @@ CmDevice * TryCreateCmDevicePtr(VideoCORE * core, mfxU32 * version)
         D3D11Interface * d3dIface = QueryCoreInterface<D3D11Interface>(core, MFXICORED3D11_GUID);
         if (d3dIface == 0)
             return 0;
-        if ((result = ::CreateCmDevice(device, *version, d3dIface->GetD3D11Device(), CM_DEVICE_CREATE_OPTION_SCRATCH_SPACE_DISABLE | CM_DEVICE_CONFIG_MIDTHREADPREEMPTION_DISENABLE)) != CM_SUCCESS)
+        if ((result = ::CreateCmDevice(device, *version, d3dIface->GetD3D11Device(), CM_DEVICE_CREATE_OPTION_SCRATCH_SPACE_DISABLE)) != CM_SUCCESS)
             return 0;
 #endif
     }
