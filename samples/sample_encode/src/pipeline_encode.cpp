@@ -442,6 +442,7 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     m_mfxEncParams.mfx.FrameInfo.CropW = pInParams->nDstWidth;
     m_mfxEncParams.mfx.FrameInfo.CropH = pInParams->nDstHeight;
 
+    bool bCodingOption = false;
     if(*pInParams->uSEI && (pInParams->CodecId == MFX_CODEC_AVC ||
                 pInParams->CodecId == MFX_CODEC_HEVC))
     {
@@ -503,6 +504,7 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
 
         m_encCtrl.Payload = m_UserDataUnregSEI.data();
         m_encCtrl.NumPayload = (mfxU16)m_UserDataUnregSEI.size();
+        bCodingOption = true;
     }
 
     // we don't specify profile and level and let the encoder choose those basing on parameters
@@ -520,8 +522,12 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     {
         // ViewOuput option requested
         m_CodingOption.ViewOutput = MFX_CODINGOPTION_ON;
+        bCodingOption = true;
     }
-    m_EncExtParams.push_back((mfxExtBuffer *)&m_CodingOption);
+    if (bCodingOption)
+    {
+        m_EncExtParams.push_back((mfxExtBuffer *)&m_CodingOption);
+    }
 
     // configure the depth of the look ahead BRC if specified in command line
     if (pInParams->nLADepth || pInParams->nMaxSliceSize || pInParams->nMaxFrameSize || pInParams->nBRefType || (pInParams->nExtBRC && (pInParams->CodecId == MFX_CODEC_HEVC || pInParams->CodecId == MFX_CODEC_AVC)))
