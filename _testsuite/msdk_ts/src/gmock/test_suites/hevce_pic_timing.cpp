@@ -61,8 +61,6 @@ namespace hevce_pic_timing
         mfxU32 pic_struct;
         mfxU32 source_scan_type;
         mfxU32 dublicate_flag;
-        mfxU32 numFrame;
-        mfxU32 init_pic_struct;
         bool skip;
         enum
         {
@@ -78,16 +76,10 @@ namespace hevce_pic_timing
             dublicate_flag = tc.dublicate_flag;
             skip = false;
             set_trace_level(BS_HEVC::TRACE_LEVEL_SEI);
-            numFrame = 0;
-            init_pic_struct = 0;
         }
         void SetSkip()
         {
             skip = true;
-        }
-        void SetInitPicStruct(mfxU32 pic_struct)
-        {
-            init_pic_struct = pic_struct;
         }
 
         mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames);
@@ -97,8 +89,7 @@ namespace hevce_pic_timing
     {
         mfxU32 res = 0;
         SetBuffer(bs);
-        if (init_pic_struct == MFX_PICSTRUCT_FIELD_SINGLE)
-            pic_struct = ((numFrame % 2) == 0) ? 1 : 2;
+
         UnitType& au = ParseOrDie();
 
         for (mfxU32 i = 0; i < au.NumUnits; i++)
@@ -143,7 +134,6 @@ namespace hevce_pic_timing
         }
 
         bs.DataLength = 0;
-        numFrame += nFrames;
 
         return MFX_ERR_NONE;
     }
@@ -157,16 +147,7 @@ namespace hevce_pic_timing
         {/*02*/ 0, 1, 0, MFX_CODINGOPTION_ON,
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE },
         },
-        {/*03*/ 1, 0, 0, MFX_CODINGOPTION_ON,
-            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TOP },
-        },
-        {/*04*/ 2, 0, 0, MFX_CODINGOPTION_ON,
-            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_BOTTOM },
-        },
-        {/*05*/ 0,/*expected pic struct will be calculated*/ 0, 0, MFX_CODINGOPTION_ON,
-            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_SINGLE },
-        },
-        {/*06*/ 0, 2, 0, MFX_CODINGOPTION_ON,
+        {/*03*/ 0, 2, 0, MFX_CODINGOPTION_ON,
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, 0 },
         },
 
@@ -184,6 +165,7 @@ namespace hevce_pic_timing
             mfxHandleType type;
             const char* stream = g_tsStreamPool.Get("forBehaviorTest/foster_720x576.yuv");
             g_tsStreamPool.Reg();
+
             MFXInit();
             Load();
 
@@ -248,7 +230,6 @@ namespace hevce_pic_timing
                     m_is_handle_set = (g_tsStatus.get() >= 0);
                 }
 
-                bs_proc.SetInitPicStruct(m_par.mfx.FrameInfo.PicStruct);
             }
             else
             {
