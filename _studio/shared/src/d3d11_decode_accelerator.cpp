@@ -308,7 +308,7 @@ Status MFXD3D11Accelerator::Execute()
     for (Ipp32s const type : m_bufferOrder)
     {
         UMCVACompBuffer const* pCompBuffer = FindBuffer(type);
-
+        UMC_CHECK(pCompBuffer, UMC_ERR_FAILED);
         if (!pCompBuffer->GetPtr()) continue;
         if (!pCompBuffer->GetBufferSize()) continue;
 
