@@ -611,16 +611,14 @@ namespace hevce_init
                 if ((m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_P010) && (g_tsHWtype < MFX_HW_KBL)) {
                     sts = MFX_ERR_INVALID_VIDEO_PARAM;
                 } else
-                if ((m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210) ||
-                    (m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_YUY2))  {
-                    if ((g_tsHWtype >= MFX_HW_ICL) && (g_tsConfig.lowpower == MFX_CODINGOPTION_ON)) {
+                if (((m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210) || (m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_YUY2)) &&
+                    (g_tsHWtype >= MFX_HW_ICL) &&
+                    (g_tsConfig.lowpower == MFX_CODINGOPTION_ON)) {
                         g_tsLog << "\n\nWARNING: 422 format is not supported in VDENC\n\n\n";
                         throw tsSKIP;
-                    }
-                } else {
-                    if (g_tsHWtype < MFX_HW_ICL)
-                        sts = MFX_ERR_INVALID_VIDEO_PARAM;
-                }
+                } else
+                if (g_tsHWtype < MFX_HW_ICL)
+                    sts = MFX_ERR_INVALID_VIDEO_PARAM;
             }
 
             if (tc.type == PIC_STRUCT)
