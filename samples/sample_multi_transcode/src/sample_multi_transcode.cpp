@@ -887,6 +887,12 @@ int main(int argc, char *argv[])
 {
     mfxStatus sts;
     Launcher transcode;
+    if (argc < 2)
+    {
+        msdk_printf(MSDK_STRING("[ERROR] Command line is empty. Use -? for getting help on available options.\n"));
+        return 0;
+    }
+
     sts = transcode.Init(argc, argv);
     if(sts == MFX_WRN_OUT_OF_RANGE)
     {
