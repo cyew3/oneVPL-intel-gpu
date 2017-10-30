@@ -977,6 +977,7 @@ namespace MfxHwH264Encode
             , m_mfeTimeToWait(0)
             , m_userTimeout(false)
 #endif
+            , m_hwType(MFX_HW_UNKNOWN)
         {
             Zero(m_ctrl);
             Zero(m_internalListCtrl);
@@ -1186,6 +1187,7 @@ namespace MfxHwH264Encode
         mfxU32  m_mfeTimeToWait;//set by user or used equal to frame rate latency by default
         bool m_userTimeout;
 #endif
+        eMFXHWType m_hwType;  // keep HW type information
     };
 
     typedef std::list<DdiTask>::iterator DdiTaskIter;

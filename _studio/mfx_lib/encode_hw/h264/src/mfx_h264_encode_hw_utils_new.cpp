@@ -861,7 +861,11 @@ void MfxHwH264Encode::ModifyRefPicLists(
                 }
             }
 
-            if (isField && isIPFieldPair == false)
+            // as driver have fixed arbitrary reference field polarity limitation on PV4 on BDW and SCL, so no need
+            // to WA to adjust the reflist order
+            bool isHwSupportArbiRef = ((task.m_hwType == MFX_HW_SCL) || (task.m_hwType == MFX_HW_BDW));
+
+            if (isField && (isIPFieldPair == false) && (isHwSupportArbiRef == false))
             {
                 // after modification of ref list L0 it could happen that 1st entry of the list has opposite parity to current field
                 // driver doesn't support this, and MSDK performs WA and places field of same parity to 1st place

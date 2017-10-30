@@ -2654,6 +2654,9 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         if (m_isENCPAK && (NULL != bs))
             task->m_bs = bs;
 
+        // keep the hwtype info in case of no VideoCore interface
+        task->m_hwType = m_currentPlatform;
+
         ConfigureTask(*task, m_lastTask, m_video, m_caps);
 
         Zero(task->m_IRState);
