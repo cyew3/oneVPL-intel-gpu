@@ -826,6 +826,29 @@ void MfxHwH264Encode::ModifyRefPicLists(
                 }
             }
 
+            // P and B pic's ref list need to modify if P/I flag in the DPB is true which means the sence change.
+            // as the I treated as CRA, so the P and B field don't ref on the P field of the P/I in list0.
+            // and the B don't ref on the I field of the P/I in list1.
+            if ((ps != MFX_PICSTRUCT_PROGRESSIVE) && (task.m_type[fieldId] & MFX_FRAMETYPE_PB))
+            {
+                mfxU8 index = 0;
+
+                for (index = 0; index < dpb.Size(); index++)
+                {
+                     if (dpb[index].m_PIFieldFlag)
+                     {
+                         if (task.GetPoc(fieldId) > dpb[index].m_poc[0])
+                             list0.Erase(
+                             std::remove_if(list0.Begin(), list0.End(), RefPocIsLessThan(dpb, dpb[index].m_poc[!ffid])),
+                             list0.End());
+                         else if (task.GetPoc(fieldId) < dpb[index].m_poc[0])
+                             list1.Erase(
+                             std::remove_if(list1.Begin(), list1.End(), RefPocIsGreaterThan(dpb, dpb[index].m_poc[ffid])),
+                             list1.End());
+                     }
+                }
+            }
+
             if (video.calcParam.numTemporalLayer > 0)
             {
                 list0.Erase(
@@ -1901,12 +1924,19 @@ void MfxHwH264Encode::ConfigureTask(
 
     mfxU32 const FRAME_NUM_MAX = 1 << (extSps.log2MaxFrameNumMinus4 + 4);
 
+    mfxU32 ffid = task.m_fid[0];
+    mfxU32 sfid = !ffid;
+
+    // in order not to affect original GetFrameType, add P/I field flag
+    bool isPIFieldPair      = (task.m_type[ffid] & MFX_FRAMETYPE_P) && (task.m_type[!ffid] & MFX_FRAMETYPE_I);
+    bool isPrevPIFieldPair  = (prevTask.m_type[ffid] & MFX_FRAMETYPE_P) && (prevTask.m_type[!ffid] & MFX_FRAMETYPE_I);
+
     mfxU32 numReorderFrames = GetNumReorderFrames(video);
     mfxU32 prevsfid         = prevTask.m_fid[1];
     mfxU8  idrPicFlag       = !!(task.GetFrameType() & MFX_FRAMETYPE_IDR);
-    mfxU8  intraPicFlag     = !!(task.GetFrameType() & MFX_FRAMETYPE_I);
+    mfxU8  intraPicFlag     = !!(task.GetFrameType() & MFX_FRAMETYPE_I) ? 1 : (isPIFieldPair ? 1 : 0);
     mfxU8  prevIdrFrameFlag = !!(prevTask.GetFrameType() & MFX_FRAMETYPE_IDR);
-    mfxU8  prevIFrameFlag   = !!(prevTask.GetFrameType() & MFX_FRAMETYPE_I);
+    mfxU8  prevIFrameFlag   = !!(prevTask.GetFrameType() & MFX_FRAMETYPE_I) ? 1 : (isPrevPIFieldPair ? 1 : 0);
     mfxU8  prevRefPicFlag   = !!(prevTask.GetFrameType() & MFX_FRAMETYPE_REF);
     mfxU8  prevIdrPicFlag   = !!(prevTask.m_type[prevsfid] & MFX_FRAMETYPE_IDR);
 
@@ -1932,9 +1962,6 @@ void MfxHwH264Encode::ConfigureTask(
     task.m_picNum[1] = task.m_picNum[0];
 
     task.m_idrPicId = prevTask.m_idrPicId + idrPicFlag;
-
-    mfxU32 ffid = task.m_fid[0];
-    mfxU32 sfid = !ffid;
 
     mfxU32 prevBPSeiFrameEncOrder = (extOpt2.BufferingPeriodSEI == MFX_BPSEI_IFRAME) ? task.m_encOrderI : task.m_encOrderIdr;
     mfxU32 insertBPSei = (extOpt2.BufferingPeriodSEI == MFX_BPSEI_IFRAME && intraPicFlag) || (idrPicFlag);
@@ -2164,6 +2191,13 @@ void MfxHwH264Encode::ConfigureTask(
         task.m_dpbPostEncoding = task.m_dpb[sfid];
         if (task.m_reference[sfid])
             task.m_dpbPostEncoding.Back().m_refPicFlag[sfid] = 1;
+
+        // mark the P/I field pair flag
+        if ((task.m_type[ffid] & MFX_FRAMETYPE_P)    &&
+            (task.m_type[ffid] & MFX_FRAMETYPE_REF)  &&
+            (task.m_type[sfid] & MFX_FRAMETYPE_I)    &&
+            (task.m_type[sfid] & MFX_FRAMETYPE_REF))
+            task.m_dpbPostEncoding.Back().m_PIFieldFlag = 1;
     }
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)

@@ -3430,7 +3430,7 @@ mfxStatus ImplementationAvc::EncodeFrameCheckNormalWay(
 
     mfxStatus checkSts = CheckEncodeFrameParam(
         m_video, ctrl, surface, bs,
-        m_core->IsExternalFrameAllocator(), m_caps);
+        m_core->IsExternalFrameAllocator(), m_caps, m_currentPlatform);
     if (checkSts < MFX_ERR_NONE)
         return checkSts;
 

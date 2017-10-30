@@ -394,13 +394,15 @@ namespace MfxHwH264Encode
         MfxFrameAllocResponse & pool,
         mfxMemId                mid);
 
+    // add hwType param
     mfxStatus CheckEncodeFrameParam(
         MfxVideoParam const & video,
         mfxEncodeCtrl *       ctrl,
         mfxFrameSurface1 *    surface,
         mfxBitstream *        bs,
         bool                  isExternalFrameAllocator,
-        ENCODE_CAPS const &   caps);
+        ENCODE_CAPS const &   caps,
+        eMFXHWType            hwType = MFX_HW_UNKNOWN);
 
     template<typename T> void Clear(std::vector<T> & v)
     {
@@ -774,6 +776,8 @@ namespace MfxHwH264Encode
         mfxU8   m_longTermIdxPlus1;
         mfxU8   m_longterm; // at least one field is a long term reference
         mfxU8   m_refBase;
+
+        mfxU8   m_PIFieldFlag; // for P/I field pair
 
         mfxMemId        m_midRec;
         CmSurface2D *   m_cmRaw;

@@ -4756,10 +4756,14 @@ mfxStatus MfxHwH264Encode::CheckEncodeFrameParam(
     mfxFrameSurface1 *    surface,
     mfxBitstream *        bs,
     bool                  isExternalFrameAllocator,
-    ENCODE_CAPS const &   caps)
+    ENCODE_CAPS const &   caps,
+    eMFXHWType            hwType)
 {
     mfxStatus checkSts = MFX_ERR_NONE;
     MFX_CHECK_NULL_PTR1(bs);
+
+    // remove arbitrary reference field polarity limitation on BDW and SCL
+    bool isHwSupportArbRef =  ((hwType == MFX_HW_SCL) || (hwType == MFX_HW_BDW));
 
     if(IsOn(video.mfx.LowPower) && ctrl){
         //LowPower can't encode low QPs
@@ -4822,7 +4826,8 @@ mfxStatus MfxHwH264Encode::CheckEncodeFrameParam(
             // check compatibility of fields types
             MFX_CHECK(
                 firstFieldType == secondFieldType ||
-                (firstFieldType == MFX_FRAMETYPE_I && secondFieldType == MFX_FRAMETYPE_P),
+                (firstFieldType == MFX_FRAMETYPE_I && secondFieldType == MFX_FRAMETYPE_P) ||
+                (firstFieldType == MFX_FRAMETYPE_P && secondFieldType == MFX_FRAMETYPE_I && isHwSupportArbRef),
                 MFX_ERR_INVALID_VIDEO_PARAM);
         }
     }
@@ -4833,9 +4838,10 @@ mfxStatus MfxHwH264Encode::CheckEncodeFrameParam(
             // check FrameType for forced key-frame generation
             mfxU16 type = ctrl->FrameType & (MFX_FRAMETYPE_IPB | MFX_FRAMETYPE_xIPB);
             MFX_CHECK(
-                type == (MFX_FRAMETYPE_I)                    ||
-                type == (MFX_FRAMETYPE_I | MFX_FRAMETYPE_xI) ||
-                type == (MFX_FRAMETYPE_I | MFX_FRAMETYPE_xP),
+                type   == (MFX_FRAMETYPE_I)                     ||
+                type   == (MFX_FRAMETYPE_I | MFX_FRAMETYPE_xI)  ||
+                type   == (MFX_FRAMETYPE_I | MFX_FRAMETYPE_xP)  ||
+                ((type == (MFX_FRAMETYPE_P | MFX_FRAMETYPE_xI)) && isHwSupportArbRef),
                 MFX_ERR_INVALID_VIDEO_PARAM);
         }
     }
