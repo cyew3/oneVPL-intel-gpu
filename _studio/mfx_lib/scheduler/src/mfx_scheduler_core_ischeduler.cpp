@@ -329,7 +329,7 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
 
     if (MFX_SINGLE_THREAD == m_param.flags)
     {
-        //let really run task to 
+        //let really run task to
         MFX_CALL_INFO call = {0};
         mfxTaskHandle previousTaskHandle = {0, 0};
 
@@ -338,30 +338,37 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
         mfxU64 frequency = vm_time_get_frequency();
         while (MFX_WRN_IN_EXECUTION == pTask->opRes)
         {
+            UMC::AutomaticMutex guard(m_guard);
             task_sts = GetTask(call, previousTaskHandle, 0);
-            
+
             if (task_sts != MFX_ERR_NONE)
                 continue;
+
+            guard.Unlock();
 
             call.res = call.pTask->entryPoint.pRoutine(call.pTask->entryPoint.pState,
                                                        call.pTask->entryPoint.pParam,
                                                        call.threadNum,
                                                        call.callNum);
-            
+
+            guard.Lock();
 
             // save the previous task's handle
             previousTaskHandle = call.taskHandle;
-            
+
             MarkTaskCompleted(&call, 0);
 
-                                   
             if ((mfxU32)((GetHighPerformanceCounter() - start)/frequency) > timeToWait)
                 break;
-            
+
             if (MFX_TASK_DONE!= call.res)
             {
                 vm_status vmRes;
+
+                guard.Unlock();
                 vmRes = vm_event_timed_wait(&m_hwTaskDone, 15 /*ms*/);
+                guard.Lock();
+
                 if (VM_OK == vmRes|| VM_TIMEOUT == vmRes)
                 {
                     vmRes = vm_event_reset(&m_hwTaskDone);

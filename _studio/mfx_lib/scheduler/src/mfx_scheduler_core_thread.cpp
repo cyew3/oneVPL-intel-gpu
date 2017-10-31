@@ -112,6 +112,8 @@ Ipp32u mfxSchedulerCore::scheduler_thread_proc(void *pParam)
 
 void mfxSchedulerCore::ThreadProc(MFX_SCHEDULER_THREAD_CONTEXT *pContext)
 {
+    UMC::AutomaticMutex guard(m_guard);
+
     mfxTaskHandle previousTaskHandle = {};
     const Ipp32u threadNum = pContext->threadNum;
 
@@ -124,8 +126,12 @@ void mfxSchedulerCore::ThreadProc(MFX_SCHEDULER_THREAD_CONTEXT *pContext)
         mfxRes = GetTask(call, previousTaskHandle, threadNum);
         if (MFX_ERR_NONE == mfxRes)
         {
-            // perform asynchronous operation
-            call_pRoutine(call);
+            vm_mutex_unlock(&m_guard);
+            {
+                // perform asynchronous operation
+                call_pRoutine(call);
+            }
+            vm_mutex_lock(&m_guard);
 
             pContext->workTime += call.timeSpend;
             // save the previous task's handle
@@ -138,7 +144,6 @@ void mfxSchedulerCore::ThreadProc(MFX_SCHEDULER_THREAD_CONTEXT *pContext)
         }
         else
         {
-            UMC::AutomaticMutex guard(m_guard);
             mfxU64 start, stop;
 
 #if defined(MFX_SCHEDULER_LOG)
