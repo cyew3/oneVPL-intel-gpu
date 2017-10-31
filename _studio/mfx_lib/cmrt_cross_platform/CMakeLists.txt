@@ -4,7 +4,7 @@ mfx_include_dirs( )
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
 
-set( defs "${WARNING_FLAGS}" )
+set( defs "${API_FLAGS} ${WARNING_FLAGS}" )
 set( sources "" )
 set( sources.plus "" )
 file( GLOB_RECURSE srcs "src/*.c" "src/*.cpp" )

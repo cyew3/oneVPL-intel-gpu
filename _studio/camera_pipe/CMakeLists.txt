@@ -145,6 +145,6 @@ endforeach()
 
 set( defs "-DAS_CAMERA_PLUGIN -DAS_VPP_PLUGIN -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${CAMERA_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${CAMERA_DESCRIPTION}\"\\\" ${camera_version_defs}" )
 
-set( defs "${defs} ${WARNING_FLAGS}" )
+set( defs "${defs} ${API_FLAGS} ${WARNING_FLAGS}" )
 make_library( mfx_camera_hw64 hw shared )
 set( defs "" )

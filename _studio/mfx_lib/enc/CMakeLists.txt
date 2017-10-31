@@ -9,7 +9,7 @@ foreach( dir ${vdirs} )
 endforeach()
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/umc/codec/mpeg2_enc/include )
 
-set( defs "${WARNING_FLAGS}" )
+set( defs "${API_FLAGS} ${WARNING_FLAGS}" )
 set( sources "" )
 set( sources.plus "" )
 foreach( dir ${vdirs} )

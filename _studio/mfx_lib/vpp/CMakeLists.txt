@@ -1,6 +1,6 @@
 set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
 
-set( defs "${WARNING_FLAGS}" )
+set( defs "${API_FLAGS} ${WARNING_FLAGS}" )
 
 list( APPEND cdirs
   scene_analyzer

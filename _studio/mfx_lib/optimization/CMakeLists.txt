@@ -21,7 +21,7 @@ if (ENABLE_HEVC)
   include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/h265/include )
 
 
-  set( defs "-DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN" )
+  set( defs "-DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN ${API_FLAGS}" )
   set( sources "" )
   set( sources.plus "" )
 
@@ -34,7 +34,7 @@ if (ENABLE_HEVC)
 
   # =============================================================================
 
-  set( defs "-DMFX_MAKENAME_ATOM -DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN" )
+  set( defs "-DMFX_MAKENAME_ATOM -DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN ${API_FLAGS}" )
   set( sources "" )
   set( sources.plus "" )
 
@@ -53,7 +53,7 @@ if (ENABLE_HEVC)
 
   # =============================================================================
 
-  set( defs "-DMFX_MAKENAME_AVX2 -DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN" )
+  set( defs "-DMFX_MAKENAME_AVX2 -DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN ${API_FLAGS}" )
   set( sources "" )
   set( sources.plus "" )
 
@@ -74,7 +74,7 @@ if (ENABLE_HEVC)
 
   # =============================================================================
 
-  set( defs "-DMFX_MAKENAME_PX -DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN" )
+  set( defs "-DMFX_MAKENAME_PX -DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN ${API_FLAGS}" )
   set( sources "" )
   set( sources.plus "" )
 
@@ -93,7 +93,7 @@ if (ENABLE_HEVC)
 
   # =============================================================================
 
-  set( defs "-DMFX_MAKENAME_SSE4 -DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN" )
+  set( defs "-DMFX_MAKENAME_SSE4 -DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN ${API_FLAGS}" )
   set( sources "" )
   set( sources.plus "" )
 
@@ -112,7 +112,7 @@ if (ENABLE_HEVC)
 
   # =============================================================================
 
-  set( defs "-DMFX_MAKENAME_SSSE3 -DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN" )
+  set( defs "-DMFX_MAKENAME_SSSE3 -DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN ${API_FLAGS}" )
   set( sources "" )
   set( sources.plus "" )
 

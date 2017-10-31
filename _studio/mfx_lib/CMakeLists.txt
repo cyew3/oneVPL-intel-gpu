@@ -144,7 +144,7 @@ foreach( variant
     dl
   )
 
-  set( defs "${defs} ${WARNING_FLAGS}")
+  set( defs "${API_FLAGS} ${WARNING_FLAGS} ${defs}" )
   make_library( ${mfxlibname} ${variant} shared)
   make_library( mfx${variant}_static ${variant} static)
 
@@ -234,7 +234,7 @@ list( APPEND LIBS
   pthread
   dl )
 
-set( defs "${defs} ${WARNING_FLAGS}")
+set( defs "${API_FLAGS} ${WARNING_FLAGS} ${defs}" )
 make_library( ${mfxrtlibname} hw shared)
 append_property( ${mfxrtlibname} COMPILE_FLAGS " -DMFX_RT" )
 set( defs "")
@@ -319,7 +319,7 @@ foreach( variant sw )
     )
   endif()
 
-  set( defs "${defs} ${WARNING_FLAGS}")
+  set( defs "${API_FLAGS} ${WARNING_FLAGS} ${defs}" )
   make_library( ${mfxlibname} ${variant} shared)
   #make_library( mfxaudio${variant}_static ${variant} static)
   set( defs "")

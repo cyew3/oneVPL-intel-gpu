@@ -7,6 +7,6 @@ list(APPEND sources
   ${CMAKE_CURRENT_SOURCE_DIR}/src/spl_mux_dispatcher.c
 )
 
-set(defs "${WARNING_FLAGS}")
+set(defs "${API_FLAGS} ${WARNING_FLAGS}")
 make_library( sample_spl_mux_dispatcher none static )
 set(defs "")

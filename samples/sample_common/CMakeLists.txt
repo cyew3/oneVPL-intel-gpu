@@ -12,6 +12,6 @@ if(VA_FEI MATCHES NOTFOUND)
 endif()
 
 
-set( defs "${WARNING_FLAGS}" )
-make_library( shortname universal static "nasafestring" )
+set( defs "${API_FLAGS} ${WARNING_FLAGS}" )
+make_library( shortname universal static "nosafestring" )
 set( defs "" )

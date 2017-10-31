@@ -12,6 +12,6 @@ set( sources "" )
 file( GLOB_RECURSE srcs "src/*.c" "src/*.cpp" )
 list( APPEND sources ${srcs})
 
-set( defs "${WARNING_FLAGS}" )
+set( defs "${API_FLAGS} ${WARNING_FLAGS}" )
 make_library( bitrate_control none static )
 set( defs "" )

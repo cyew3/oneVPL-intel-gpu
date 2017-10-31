@@ -38,6 +38,6 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src )
     )
 endforeach()
 
-set( defs "${defs} ${WARNING_FLAGS}" )
+set( defs "${API_FLAGS} ${WARNING_FLAGS} ${defs}" )
 make_library( encode hw static )
 set( defs "" )

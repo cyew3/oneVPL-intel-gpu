@@ -79,7 +79,7 @@ set( defs "-DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVCE_HW_PRODUCT_NAME}\"\\\" -DMFX_
 
 gen_plugins_cfg("HEVC_Encoder_HW" ${HEVC_Encoder_HW_GUID} "mfx_hevce_hw64" "02" "HEVC")
 
-set( defs " -DAS_HEVCE_PLUGIN ${defs} ${WARNING_FLAGS}" )
+set( defs " -DAS_HEVCE_PLUGIN ${API_FLAGS} ${WARNING_FLAGS} ${defs}" )
 make_library( mfx_hevce_hw64 hw shared )
 msdk_install( mfx_hevce_hw64 ${MFX_PLUGINS_DIR} )
 set( defs "" )

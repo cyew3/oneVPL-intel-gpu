@@ -31,7 +31,7 @@ set( NOT_CONFIGURED "" CACHE INTERNAL "" )
 set( SKIPPING "" CACHE INTERNAL "" )
 set( BUILDING "" CACHE INTERNAL "" )
 
-append("-std=c++11" CMAKE_CXX_FLAGS)
+append("-std=c++11 ${API_FLAGS}" CMAKE_CXX_FLAGS)
 
 create_build( )
 

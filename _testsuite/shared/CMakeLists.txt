@@ -13,9 +13,9 @@ list(APPEND sources
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test_statistics.cpp
   )
 
-set( defs "-Wall -Werror" )
+set( defs "-Wall -Werror ${API_FLAGS}" )
 make_library( shared_utils none static )
 
-set( defs "-DLUCAS_DLL ${WARNING_FLAGS}" )
+set( defs "-DLUCAS_DLL ${API_FLAGS} ${WARNING_FLAGS}" )
 make_library( shared_utils_lucas none static )
 set( defs "" )

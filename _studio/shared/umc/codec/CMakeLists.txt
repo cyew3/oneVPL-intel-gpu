@@ -46,7 +46,7 @@ endforeach( )
 
 # =============================================================================
 
-set( defs "${WARNING_FLAGS}" )
+set( defs "${API_FLAGS} ${WARNING_FLAGS}" )
 set( sources "" )
 foreach( dir ${adirs} )
   file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
@@ -65,7 +65,7 @@ foreach( dir ${dirs} )
   list( APPEND sources ${srcs})
 endforeach()
 
-set( defs "${defs} ${WARNING_FLAGS}" )
+set( defs "${API_FLAGS} ${WARNING_FLAGS} ${defs}" )
 make_library( umc_codecs_merged none static )
 set( defs "" )
 
@@ -76,5 +76,5 @@ foreach( dir ${dirs_splmux} )
   file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
   list( APPEND sources ${srcs})
 endforeach()
-set( defs "${defs} ${WARNING_FLAGS}" )
+set( defs "${API_FLAGS} ${WARNING_FLAGS} ${defs}" )
 make_library( umc_splmux_merged none static )

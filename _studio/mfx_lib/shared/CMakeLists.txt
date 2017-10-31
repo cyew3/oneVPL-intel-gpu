@@ -47,7 +47,7 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/src )
   )
 endforeach()
 
-set( defs "${WARNING_FLAGS}" )
+set( defs "${API_FLAGS} ${WARNING_FLAGS}" )
 make_library( mfx_common sw static )
 append_property( mfx_common_sw COMPILE_FLAGS " -DMFX_RT" )
 make_library( mfx_common hw static )

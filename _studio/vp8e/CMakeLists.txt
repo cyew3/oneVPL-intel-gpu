@@ -99,7 +99,7 @@ foreach( variant hw )
     dl
     )
 
-  set( defs "${defs} ${WARNING_FLAGS}" )
+  set( defs "${API_FLAGS} ${WARNING_FLAGS} ${defs}" )
   make_library( ${plugin_name} ${variant} shared)
   set( defs "" )
 

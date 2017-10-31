@@ -8,7 +8,7 @@ foreach( dir ${vdirs} )
   include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/include )
 endforeach()
 
-set( defs "${WARNING_FLAGS}" )
+set( defs "${API_FLAGS} ${WARNING_FLAGS}" )
 set( sources "" )
 set( sources.plus "" )
 foreach( dir ${vdirs} )
