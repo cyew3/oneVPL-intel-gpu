@@ -290,9 +290,11 @@ mfxStatus FEI_Encode::SetCtrlParams(const HevcTask& task)
 
     if (m_repacker.get() || m_pFile_MVP_in.get())
     {
-        // Switch predictors off for I-frames.
-        // 0 - no predictors, 7 - inherit size of block from buffers CTU setting
-        ctrl->MVPredictor = (m_encodeCtrl.FrameType & MFX_FRAMETYPE_I) ? 0 : 7;
+        // 0 - no predictors (for I-frames),
+        // 1 - enabled per 16x16 block,
+        // 2 - enabled per 32x32 block (default for repacker),
+        // 7 - inherit size of block from buffers CTU setting (default for external file with predictors)
+        ctrl->MVPredictor = (m_encodeCtrl.FrameType & MFX_FRAMETYPE_I) ? 0 : m_defFrameCtrl.MVPredictor;
 
         ctrl->NumMvPredictors[0] = ctrl->NumMvPredictors[1] = 0;
 

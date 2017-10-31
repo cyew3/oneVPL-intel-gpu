@@ -84,6 +84,8 @@ void PrintHelp(const msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-NumPredictorsL1 numPreds] - number of L1 predictors (default - assign depending on the frame type)\n"));
     msdk_printf(MSDK_STRING("   [-MultiPredL0 type] - use internal L0 MV predictors (0 - no internal MV predictor, 1 - spatial internal MV predictors)\n"));
     msdk_printf(MSDK_STRING("   [-MultiPredL1 type] - use internal L1 MV predictors (0 - no internal MV predictor, 1 - spatial internal MV predictors)\n"));
+    msdk_printf(MSDK_STRING("   [-MVPBlockSize size] - external MV predictor block size (0 - MVP ignored, 1 - MVP enabled per 16x16, 2 - MVP enabled per 32x32,\n"));
+    msdk_printf(MSDK_STRING("                                                            7 - use block size from external MV predictors structure)\n"));
     msdk_printf(MSDK_STRING("   [-gpb:<on,off>] - make HEVC encoder use regular P-frames (off) or GPB (on) (on - by default)\n"));
     msdk_printf(MSDK_STRING("   [-ppyr:<on,off>] - enables P-pyramid\n"));
     msdk_printf(MSDK_STRING("   [-bref] - arrange B frames in B pyramid reference structure\n"));
@@ -322,6 +324,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU32 nArgNum, sInputParams& 
             CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
             PARSE_CHECK(msdk_opt_read(strInput[++i], params.encodeCtrl.MultiPred[1]), "MultiPredL1", isParseInvalid);
         }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-MVPBlockSize")))
+        {
+            CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
+            PARSE_CHECK(msdk_opt_read(strInput[++i], params.encodeCtrl.MVPredictor), "MVPBlockSize", isParseInvalid);
+        }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-tff")))
         {
             params.input.nPicStruct = MFX_PICSTRUCT_FIELD_TFF;
@@ -459,6 +466,14 @@ mfxStatus CheckOptions(const sInputParams params, const msdk_char* appName)
         PrintHelp(appName, "Dumping/Reading of MV predictors in internal format with downsampling is unsupported.");
         return MFX_ERR_UNSUPPORTED;
     }
+    if (params.encodeCtrl.MVPredictor != 0 && params.encodeCtrl.MVPredictor != 1 &&
+        params.encodeCtrl.MVPredictor != 2 && params.encodeCtrl.MVPredictor != 7 &&
+        // not specified in cmd line, will be adjusted later
+        params.encodeCtrl.MVPredictor != 0xffff)
+    {
+        PrintHelp(appName, "Invalid MV predictor block size value.");
+        return MFX_ERR_UNSUPPORTED;
+    }
 
     return MFX_ERR_NONE;
 }
@@ -479,6 +494,15 @@ void AdjustOptions(sInputParams& params)
         if (!params.bEncodedOrder)
             MSDK_CHECK_WRN(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, "Encoded order enabled.");
         params.bEncodedOrder = true;
+    }
+
+    if (params.encodeCtrl.MVPredictor == 0xffff)
+    {
+        params.encodeCtrl.MVPredictor = 0;
+        if (params.bPREENC)
+            params.encodeCtrl.MVPredictor = 2;
+        if (0 != msdk_strlen(params.mvpInFile))
+            params.encodeCtrl.MVPredictor = 7;
     }
 
     if (!params.bPREENC && 0 == msdk_strlen(params.mvpInFile))
