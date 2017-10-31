@@ -3695,6 +3695,10 @@ mfxStatus ImplementationAvc::UpdateBitstream(
     task.m_bsDataLength[fid] -= skippedff;
     bitstream.Y += skippedff;
 
+    if ((!m_video.Protected || task.m_notProtected) && (*((mfxU32*)bitstream.Y) == 0x00)) {
+        MFX_LTRACE_S(MFX_TRACE_LEVEL_EXTCALL, "First 4 bytes of output bitstream don't contain Annex B NAL unit startcode - start_code_prefix_one_3bytes");
+    }
+
     mfxU32   bsSizeActual  = task.m_bsDataLength[fid];
     mfxU32   bsSizeToCopy  = task.m_bsDataLength[fid];
     mfxU32   bsSizeAvail   = task.m_bs->MaxLength - task.m_bs->DataOffset - task.m_bs->DataLength;
@@ -3913,6 +3917,11 @@ mfxStatus ImplementationAvc::UpdateBitstream(
         task.m_bs->DataLength - initialDataLength,
         task.m_fieldPicFlag,
         (task.m_type[fid] & MFX_FRAMETYPE_IDR) != 0);
+
+    if (initialDataLength == *dataLength)
+    {
+        MFX_LTRACE_S(MFX_TRACE_LEVEL_PARAMS, "Unexpected behavior : length of bitstream stayed unchanged");
+    }
 
     return MFX_ERR_NONE;
 }
