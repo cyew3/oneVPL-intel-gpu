@@ -131,8 +131,11 @@ mfxStatus VideoDECODEVP9_HW::Init(mfxVideoParam *par)
 
     m_FrameAllocator.reset(new mfx_UMC_FrameAllocator_D3D());
 
-    m_vInitPar = *par;
-    m_vPar = m_vInitPar;
+    m_vPar = m_vInitPar = *par;
+
+    m_vInitPar.IOPattern = (m_vInitPar.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
+        | (m_vInitPar.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
+        | (m_vInitPar.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY);
 
     if (0 == m_vInitPar.mfx.FrameInfo.FrameRateExtN || 0 == m_vInitPar.mfx.FrameInfo.FrameRateExtD)
     {
