@@ -297,6 +297,7 @@ typedef struct _DpbFrame
     bool     m_ltr; // is "long-term"
     bool     m_ldb; // is "low-delay B"
     bool     m_secondField;
+    bool     m_bottomField;
     mfxU8    m_codingType;
     mfxU8    m_idxRaw;
     mfxU8    m_idxRec;
@@ -814,10 +815,6 @@ private:
     }m_TL[8];
 };
 
-inline bool isBottomField(const DpbFrame & task)
-{
-    return (task.m_surf != 0 && (task.m_surf->Info.PicStruct & MFX_PICSTRUCT_FIELD_BOTTOM) == MFX_PICSTRUCT_FIELD_BOTTOM);
-}
 
 class MfxVideoParam : public mfxVideoParam, public TemporalLayers
 {
@@ -909,7 +906,7 @@ public:
     bool isTL()       const { return NumTL() > 1; }
     bool isSWBRC()    const {return  (IsOn(m_ext.CO2.ExtBRC) && (mfx.RateControlMethod == MFX_RATECONTROL_CBR || mfx.RateControlMethod == MFX_RATECONTROL_VBR))|| mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT ;}
     bool isField()    const { return  !!(mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_SINGLE); }
-    bool isBFF()      const { return  ((mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_BFF) == MFX_PICSTRUCT_FIELD_BFF); }
+    bool isBFF()      const { return  ((mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_BOTTOM) == MFX_PICSTRUCT_FIELD_BOTTOM); }
 
 private:
     void Construct(mfxVideoParam const & par);

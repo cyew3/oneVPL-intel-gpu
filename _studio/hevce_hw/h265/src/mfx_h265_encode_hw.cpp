@@ -1155,7 +1155,7 @@ mfxStatus Plugin::PrepareTask(Task& input_task)
         }
         else
         {
-            task->m_frameType = GetFrameType(m_vpar, m_frameOrder - m_lastIDR);
+            task->m_frameType = GetFrameType(m_vpar, (m_vpar.isField() ?  (m_lastIDR %2) : 0) + m_frameOrder - m_lastIDR);
             if (task->m_ctrl.FrameType & MFX_FRAMETYPE_IDR)
                 task->m_frameType = MFX_FRAMETYPE_I|MFX_FRAMETYPE_REF|MFX_FRAMETYPE_IDR;
         }
@@ -1166,7 +1166,14 @@ mfxStatus Plugin::PrepareTask(Task& input_task)
         task->m_poc = m_frameOrder - m_lastIDR;
         task->m_fo =  m_frameOrder;
         task->m_bpo = (mfxU32)MFX_FRAMEORDER_UNKNOWN;
-        task->m_secondField = m_vpar.isField() ? (!!(task->m_poc & 1)) : false;
+        task->m_secondField = m_vpar.isField() ? (!!(task->m_fo & 1)) : false;
+        task->m_bottomField = false;
+
+        if (m_vpar.isField())
+            task->m_bottomField = (task->m_surf->Info.PicStruct & (MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_BFF)) == 0 ?
+                (m_vpar.isBFF() != task->m_secondField) :
+                (task->m_surf->Info.PicStruct & MFX_PICSTRUCT_FIELD_BFF) != 0;
+
 
         m_frameOrder ++;
         task->m_stage = FRAME_ACCEPTED;

@@ -2527,7 +2527,11 @@ Task* TaskManager::Reorder(
         }
         begin = m_reordering.begin();
     }
-
+    if (m_bFieldMode)
+    {
+        if (begin != end && (begin->m_codingType & MFX_FRAMETYPE_IDR) != 0 && begin->m_secondField)
+            return &*begin;
+    }
     TaskList::iterator top = MfxHwH265Encode::Reorder(par, dpb, begin, end, flush, par.isField());
 
     if (top == end)
@@ -2985,7 +2989,7 @@ void ConstructRPL(
                     MFX_SORT_COMMON(RPL[0], numRefActive[0], (Abs(DPB[RPL[0][_i]].m_poc/2 - poc/2) + ((DPB[RPL[0][_i]].m_secondField == bSecondField) ? 0 : 16))< (Abs(DPB[RPL[0][_j]].m_poc/2 - poc/2)  + ((DPB[RPL[0][_j]].m_secondField == bSecondField) ? 0 : 16)));
 #elif (HEVCE_FIELD_MODE == 3)
                     bSecondField;
-                    MFX_SORT_COMMON(RPL[0], numRefActive[0], (Abs(DPB[RPL[0][_i]].m_poc / 2 - poc / 2) + (isBottomField(DPB[RPL[0][_i]])== bBottomField) ? 0 : 1)< (Abs(DPB[RPL[0][_j]].m_poc / 2 - poc / 2) + (isBottomField(DPB[RPL[0][_j]]) == bBottomField) ? 0 : 1));
+                    MFX_SORT_COMMON(RPL[0], numRefActive[0], (Abs(DPB[RPL[0][_i]].m_poc / 2 - poc / 2) + ((DPB[RPL[0][_i]].m_bottomField == bBottomField) ? 0 : 2))< (Abs(DPB[RPL[0][_j]].m_poc / 2 - poc / 2) + ((DPB[RPL[0][_j]].m_bottomField == bBottomField) ? 0 : 2)));
 #endif
                 }
                 else
@@ -3024,7 +3028,7 @@ void ConstructRPL(
 #elif (HEVCE_FIELD_MODE == 2)
                         MFX_SORT_COMMON(RPL[1], numRefActive[1], (Abs(DPB[RPL[1][_i]].m_poc/2 - poc/2)  + ((DPB[RPL[1][_i]].m_secondField == bSecondField) ? 0 : 16)) > (Abs(DPB[RPL[1][_j]].m_poc/2 - poc/2)  + ((DPB[RPL[1][_j]].m_secondField == bSecondField) ? 0 : 16)));
 #elif (HEVCE_FIELD_MODE == 3)
-                       MFX_SORT_COMMON(RPL[1], numRefActive[1], (Abs(DPB[RPL[1][_i]].m_poc / 2 - poc / 2) + ((isBottomField(DPB[RPL[1][_i]]) == bBottomField) ? 0 : 1)) > (Abs(DPB[RPL[1][_j]].m_poc / 2 - poc / 2) + ((isBottomField(DPB[RPL[1][_j]]) == bBottomField) ? 0 : 1)));
+                       MFX_SORT_COMMON(RPL[1], numRefActive[1], (Abs(DPB[RPL[1][_i]].m_poc / 2 - poc / 2) + ((DPB[RPL[1][_i]].m_bottomField == bBottomField) ? 0 : 2)) > (Abs(DPB[RPL[1][_j]].m_poc / 2 - poc / 2) + ((DPB[RPL[1][_j]].m_bottomField == bBottomField) ? 0 : 2)));
 #endif
                 }
                 else
@@ -3512,13 +3516,7 @@ void ConfigureTask(
     task.m_lastRAP = prevTask.m_lastRAP;
     task.m_eo = prevTask.m_eo + 1;
 
-    if (par.isField() && task.m_surf != 0 && task.m_surf->Info.PicStruct == 0)
-    {
-        task.m_surf->Info.PicStruct = (mfxU16)
-            ((par.isBFF() == task.m_secondField) ?
-                MFX_PICSTRUCT_FIELD_TFF : MFX_PICSTRUCT_FIELD_BFF); 
-    }
-
+ 
     task.m_dpb_output_delay = (task.m_fo + par.m_sps.sub_layer[0].max_num_reorder_pics - task.m_eo);
 
     InitDPB(task, prevTask, pExtListCtrl);
@@ -3542,7 +3540,7 @@ void ConfigureTask(
 
     if (!isI)
     {
-        ConstructRPL(par, task.m_dpb[TASK_DPB_ACTIVE], isB, task.m_poc, task.m_tid, task.m_secondField, isBottomField(task),
+        ConstructRPL(par, task.m_dpb[TASK_DPB_ACTIVE], isB, task.m_poc, task.m_tid, task.m_secondField, task.m_bottomField,
             task.m_refPicList, task.m_numRefActive, pExtLists, pExtListCtrl);
     }
 
