@@ -272,7 +272,8 @@ namespace hevce_interlace_invalid_scenarios
             INVALID_FRAMEORDER,
             INVALID_FRAMEORDER_RANDOM,
             INVALID_RESOLUTION,
-            RESET_ON_ODD_PICTURE
+            RESET_ON_ODD_PICTURE,
+            INIT_PROGR_ASSIGN_INTERLACE
         };
 
         struct tc_struct
@@ -310,35 +311,41 @@ namespace hevce_interlace_invalid_scenarios
 
     const TestSuite::tc_struct TestSuite::test_case[] =
     {
-        {/*00*/ INVALID_PICSTRUCT,         {{ MFX_PAR,  &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
-                                            { MFX_PAR,  &mfx_GopPicSize, 30 },
-                                            { MFX_PAR,  &mfx_GopRefDist, 1 },
-                                            { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
-                                            { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
+        {/*00*/ INVALID_PICSTRUCT,           {{ MFX_PAR,  &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
+                                              { MFX_PAR,  &mfx_GopPicSize, 30 },
+                                              { MFX_PAR,  &mfx_GopRefDist, 1 },
+                                              { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
+                                              { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
 
-        {/*01*/ INVALID_FRAMEORDER,        {{ MFX_PAR,  &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
-                                            { MFX_PAR,  &mfx_GopPicSize, 30 },
-                                            { MFX_PAR,  &mfx_GopRefDist, 1 },
-                                            { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
-                                            { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
+        {/*01*/ INVALID_FRAMEORDER,          {{ MFX_PAR,  &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
+                                              { MFX_PAR,  &mfx_GopPicSize, 30 },
+                                              { MFX_PAR,  &mfx_GopRefDist, 1 },
+                                              { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
+                                              { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
 
-        {/*02*/ INVALID_FRAMEORDER_RANDOM, {{ MFX_PAR,  &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
-                                            { MFX_PAR,  &mfx_GopPicSize, 30 },
-                                            { MFX_PAR,  &mfx_GopRefDist, 1 },
-                                            { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
-                                            { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
+        {/*02*/ INVALID_FRAMEORDER_RANDOM,   {{ MFX_PAR,  &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
+                                              { MFX_PAR,  &mfx_GopPicSize, 30 },
+                                              { MFX_PAR,  &mfx_GopRefDist, 1 },
+                                              { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
+                                              { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
 
-        {/*03*/ INVALID_RESOLUTION,        {{ MFX_PAR,  &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
-                                            { MFX_PAR,  &mfx_GopPicSize, 30 },
-                                            { MFX_PAR,  &mfx_GopRefDist, 1 },
-                                            { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
-                                            { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
+        {/*03*/ INVALID_RESOLUTION,          {{ MFX_PAR,  &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
+                                              { MFX_PAR,  &mfx_GopPicSize, 30 },
+                                              { MFX_PAR,  &mfx_GopRefDist, 1 },
+                                              { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
+                                              { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
 
-        {/*04*/ RESET_ON_ODD_PICTURE,      {{ MFX_PAR,  &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
-                                            { MFX_PAR,  &mfx_GopPicSize, 30 },
-                                            { MFX_PAR,  &mfx_GopRefDist, 1 },
-                                            { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
-                                            { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}}
+        {/*04*/ RESET_ON_ODD_PICTURE,        {{ MFX_PAR,  &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
+                                              { MFX_PAR,  &mfx_GopPicSize, 30 },
+                                              { MFX_PAR,  &mfx_GopRefDist, 1 },
+                                              { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
+                                              { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
+
+        {/*05*/ INIT_PROGR_ASSIGN_INTERLACE, {{ MFX_PAR,  &mfx_PicStruct, MFX_PICSTRUCT_PROGRESSIVE },
+                                              { MFX_PAR,  &mfx_GopPicSize, 30 },
+                                              { MFX_PAR,  &mfx_GopRefDist, 1 },
+                                              { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
+                                              { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}}
 
     };
 
