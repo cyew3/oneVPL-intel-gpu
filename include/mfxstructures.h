@@ -485,6 +485,14 @@ enum {
     MFX_PROFILE_VP9_1                       = 2,
     MFX_PROFILE_VP9_2                       = 3,
     MFX_PROFILE_VP9_3                       = 4,
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    /* AV1 Profiles */
+    MFX_PROFILE_AV1_0                       = 1,
+    MFX_PROFILE_AV1_1                       = 2,
+    MFX_PROFILE_AV1_2                       = 3,
+    MFX_PROFILE_AV1_3                       = 4,
+#endif
 };
 
 /* GopOptFlag */

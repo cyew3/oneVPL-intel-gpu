@@ -7080,6 +7080,7 @@ The `CodecProfile` enumerator itemizes codec profiles for all codecs.
 `MFX_PROFILE_VC1_SIMPLE`,<br>`MFX_PROFILE_VC1_MAIN`,<br>`MFX_PROFILE_VC1_ADVANCED`,<br> | VC-1 profiles
 `MFX_PROFILE_HEVC_MAIN`,<br>`MFX_PROFILE_HEVC_MAIN10`,<br>`MFX_PROFILE_HEVC_MAINSP`,<br>`MFX_PROFILE_HEVC_REXT`,<br>`MFX_PROFILE_HEVC_SCC`,<br> | HEVC profiles
 `MFX_PROFILE_VP9_0`,<br>`MFX_PROFILE_VP9_1`,<br>`MFX_PROFILE_VP9_2`,<br>`MFX_PROFILE_VP9_3` | VP9 profiles
+`MFX_PROFILE_AV1_0`,<br>`MFX_PROFILE_AV1_1`,<br>`MFX_PROFILE_AV1_2`,<br>`MFX_PROFILE_AV1_3` | AV1 profiles
 
 **Change History**
 
@@ -7097,6 +7098,8 @@ SDK API 1.16 adds `MFX_PROFILE_HEVC_REXT.`
 SDK API 1.19 added VP9 profile definitions.
 
 SDK API **TBD** adds `MFX_PROFILE_HEVC_SCC.`
+
+SDK API **TBD** added AV1 profile definitions.
 
 ## <a id='CodingOptionValue'>CodingOptionValue</a>
 
