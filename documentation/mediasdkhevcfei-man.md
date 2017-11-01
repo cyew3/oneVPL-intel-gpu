@@ -151,7 +151,7 @@ This extension buffer specifies frame level control for ENCODE and ENC usage mod
 `RefWidth, RefHeight` | These values specify width and height of search region in pixels. They should be multiple of 4. Maximum allowed region is 64x32 for one direction and 32x32 for bidirectional search.
 `SearchWindow` | This value specifies one of the predefined search path and window size.<br><br> 0x00 - not use predefined search window<br> 0x01 - Tiny – 4 SUs 24x24 window diamond search<br> 0x02 - Small – 9 SUs 28x28 window diamond search<br> 0x03 - Diamond – 16 SUs 48x40 window diamond search<br> 0x04 - Large Diamond – 32 SUs 48x40 window diamond search<br> 0x05 - Exhaustive – 48 SUs 48x40 window full search<br> 0x06 - Diamond – 16 SUs 64x32 window diamond search<br> 0x07 - Large Diamond – 32 SUs 64x32 window diamond search<br> 0x08 - Exhaustive – 48 SUs 64x32 window full search
 `NumMvPredictors[2]` | Number of L0/L1 MV predictors provided by the application. Up to four predictors are supported.
-`MultiPred[2]` | If this value is equal to zero, then no internal MV predictors will be used. Set it to 1 to enable additional (spatial) MV predictors from neighbor CUs.
+`MultiPred[2]` | If this value is equal to zero, then no internal MV predictors will be used. Set it to 1 to enable additional (spatial) MV predictors from neighbor CUs. Note, that disabling internal MV predictors can severely degrade video quality.
 `SubPelMode` | This value specifies sub pixel precision for motion estimation.<br><br> 0x00 - integer motion estimation<br> 0x01 - half-pixel motion estimation<br> 0x03 - quarter-pixel motion estimation<br>
 `AdaptiveSearch` | If set, adaptive search is enabled.
 `MVPredictor` | If this value is not equal to zero, then usage of MV predictors is enabled and the application should attach [mfxExtFeiHevcEncMVPredictors](#mfxExtFeiHevcEncMVPredictors) structure to the `mfxEncodeCtrl` structure at runtime. This value also specifies predictor block size: <br><br> 0x00 - MVPs are disabled <br> 0x01 - MVPs are enabled for 16x16 block <br> 0x02 - MVPs are enabled for 32x32 block <br> 0x07 - MVPs are enabled, block size is defined by `BlockSize` variable in [mfxFeiHevcEncMVPredictors](#mfxExtFeiHevcEncMVPredictors) structure.
@@ -187,15 +187,16 @@ typedef struct {
 typedef struct {
     mfxExtBuffer  Header;
     mfxU32        VaBufferID;
-    mfxU32        DataSize;
-    mfxU16        reserved0[56];
+    mfxU32        Pitch;
+    mfxU32        Height;
+    mfxU16        reserved0[54];
 
     mfxFeiHevcEncMVPredictors *Data;
 } mfxExtFeiHevcEncMVPredictors;
 ```
 
 **Description**
-This extension buffer specifies MV predictors for ENCODE and ENC usage models. To enable usage of this buffer the application should set `MVPredictor` field in the [mfxExtFeiHevcEncFrameCtrl](#mfxExtFeiHevcEncFrameCtrl) structure to none zero value.
+This extension buffer specifies MV predictors for ENCODE and ENC usage models. To enable usage of this buffer the application should set `MVPredictor` field in the [mfxExtFeiHevcEncFrameCtrl](#mfxExtFeiHevcEncFrameCtrl) structure to non-zero value.
 
 This structure is used during runtime and should be attached to the `mfxEncodeCtrl` structure for ENCODE usage model and to the `mfxENCInput` for ENC.
 
@@ -205,11 +206,11 @@ This structure is used during runtime and should be attached to the `mfxEncodeCt
 --- | ---
 `Header.BufferId` | Buffer ID, must be `MFX_EXTBUFF_HEVCFEI_ENC_MV_PRED`.
 `VaBufferID` | VA buffer ID. It is used by buffer allocator and SDK encoder and should not be directly set or changed by application.
-`DataSize` | Size of `Data` buffer in bytes.
+`Pitch`<br>`Height` | Pitch and height of `Data` buffer in elements. `Pitch` may be bigger than picture width divided by CTU size, and `Height` may be bigger than picture height divided by CTU size due to alignment requirements of underlying HW implementation. This value is set by buffer allocator and should not be directly set or changed by application.<br><br>To access an element located in specified row and column next code may be used: <br> `mfxFeiHevcEncMVPredictors *mvp = buf.Data + row * buf.Pitch + col;`
 `Data` | Buffer that holds actual MV predictors.
 `RefIdx[4]` | Array of reference indexes for each MV predictor. Index in the array is a predictor number.
 `RefL0, RefL1` | L0 and L1 reference indexes.
-`BlockSize` | Block size for witch MV predictor is specified. It is used only if `MVPredictor` variable in [mfxExtFeiHevcEncFrameCtrl](#mfxExtFeiHevcEncFrameCtrl) structure is set to 0x07.
+`BlockSize` | Block size for which MV predictors are specified. <br><br> 0x0 - disable MVPs for current block<br> 0x1 - MVPs for 16x16 blocks<br> 0x2 - MVPs for 32x32 block<br><br>It is used only if `MVPredictor` variable in [mfxExtFeiHevcEncFrameCtrl](#mfxExtFeiHevcEncFrameCtrl) structure is set to 0x07.
 `MV[4][2]` | Up to 4 MV predictors per CTU. First index is predictor number, second is 0 for L0 reference and 1 for L1 reference.<br><br>0x8000 value should be used for intra CTUs.<br><br>Number of actual predictors is defined by `NumMVPredictors[2]` value in the [mfxExtFeiHevcEncFrameCtrl](#mfxExtFeiHevcEncFrameCtrl) structure. Unused MV predictors are ignored.
 
 **Change History**
@@ -226,8 +227,9 @@ This structure is available since SDK API 1.25
 typedef struct {
     mfxExtBuffer  Header;
     mfxU32        VaBufferID;
-    mfxU32        DataSize;
-    mfxU16        reserved[8];
+    mfxU32        Pitch;
+    mfxU32        Height;
+    mfxU16        reserved[6];
 
     mfxU8    *Data;
 } mfxExtFeiHevcEncQP;
@@ -249,7 +251,7 @@ Note, that depending on HW capabilities some limitations on QP values may apply.
 --- | ---
 `Header.BufferId` | Buffer ID, must be `MFX_EXTBUFF_HEVCFEI_ENC_QP`.
 `VaBufferID` | VA buffer ID. It is used by buffer allocator and SDK encoder and should not be directly set or changed by application.
-`DataSize` | Size of `Data` buffer in bytes.
+`Pitch`<br>`Height` | Pitch and height of `Data` buffer in elements. This value is set by buffer allocator and should not be directly set or changed by application.<br><br>To access an element located in specified row and column next code may be used: <br> `mfxU8 *qp = buf.Data + row * buf.Pitch + col;`
 `Data` | Buffer that holds per CU QP values.
 
 **Change History**
@@ -275,8 +277,9 @@ typedef struct {
 typedef struct {
     mfxExtBuffer  Header;
     mfxU32        VaBufferID;
-    mfxU32        DataSize;
-    mfxU16        reserved0[56];
+    mfxU32        Pitch;
+    mfxU32        Height;
+    mfxU16        reserved0[54];
 
     mfxFeiHevcEncCtuCtrl *Data;
 } mfxExtFeiHevcEncCtuCtrl;
@@ -294,7 +297,7 @@ This structure is used during runtime and should be attached to the `mfxEncodeCt
 --- | ---
 `Header.BufferId` | Buffer ID, must be 'MFX_EXTBUFF_HEVCFEI_ENC_CTU_CTRL'.
 `VaBufferID` | VA buffer ID. It is used by buffer allocator and SDK encoder and should not be directly set or changed by application.
-`DataSize` | Size of `Data` buffer in bytes.
+`Pitch`<br>`Height` | Pitch and height of `Data` buffer in elements. `Pitch` may be bigger than picture width divided by CTU size, and `Height` may be bigger than picture height divided by CTU size due to alignment requirements of underlying HW implementation. This value is set by buffer allocator and should not be directly set or changed by application.<br><br>To access an element located in specified row and column next code may be used: <br> `mfxFeiHevcEncCtuCtrl *ctrl = buf.Data + row * buf.Pitch + col;`
 `Data` | Buffer that holds per CTU control parameters.
 `ForceToIntra` <br>`ForceToInter` | If one of these values is set to 1, then current CTU encoded accordingly, as Intra or Inter. If more than one value is set or all values are zero, then encoder decides CTU type.
 

@@ -631,19 +631,22 @@ STRUCT(mfxExtFeiHevcEncFrameCtrl,
 STRUCT(mfxExtFeiHevcEncMVPredictors,
     FIELD_S(mfxExtBuffer, Header)
     FIELD_T(mfxU32,       VaBufferID)
-    FIELD_T(mfxU32,       DataSize)
+    FIELD_T(mfxU32,       Pitch)
+    FIELD_T(mfxU32,       Height)
 )
 
 STRUCT(mfxExtFeiHevcEncCtuCtrl,
     FIELD_S(mfxExtBuffer, Header)
     FIELD_T(mfxU32,       VaBufferID)
-    FIELD_T(mfxU32,       DataSize)
+    FIELD_T(mfxU32,       Pitch)
+    FIELD_T(mfxU32,       Height)
 )
 
 STRUCT(mfxExtFeiHevcEncQP,
     FIELD_S(mfxExtBuffer, Header)
     FIELD_T(mfxU32,       VaBufferID)
-    FIELD_T(mfxU32,       DataSize)
+    FIELD_T(mfxU32,       Pitch)
+    FIELD_T(mfxU32,       Height)
     FIELD_T(mfxU8*,       Data)
 )
 

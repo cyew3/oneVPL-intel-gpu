@@ -78,8 +78,9 @@ typedef struct {
 typedef struct {
     mfxExtBuffer  Header;
     mfxU32        VaBufferID;
-    mfxU32        DataSize;
-    mfxU16        reserved0[56];
+    mfxU32        Pitch;
+    mfxU32        Height;
+    mfxU16        reserved0[54];
 
     mfxFeiHevcEncMVPredictors *Data;
 } mfxExtFeiHevcEncMVPredictors;
@@ -88,8 +89,9 @@ typedef struct {
 typedef struct {
     mfxExtBuffer  Header;
     mfxU32        VaBufferID;
-    mfxU32        DataSize;
-    mfxU16        reserved[8];
+    mfxU32        Pitch;
+    mfxU32        Height;
+    mfxU16        reserved[6];
 
     mfxU8    *Data;
 } mfxExtFeiHevcEncQP;
@@ -107,8 +109,9 @@ typedef struct {
 typedef struct {
     mfxExtBuffer Header;
     mfxU32  VaBufferID;
-    mfxU32  DataSize;
-    mfxU16  reserved0[56];
+    mfxU32  Pitch;
+    mfxU32  Height;
+    mfxU16  reserved0[54];
 
     mfxFeiHevcEncCtuCtrl *Data;
 } mfxExtFeiHevcEncCtuCtrl;
@@ -144,8 +147,9 @@ typedef struct  {
 typedef struct {
     mfxExtBuffer  Header;
     mfxU32        VaBufferID;
-    mfxU32        DataSize;
-    mfxU16        reserved0[56];
+    mfxU32        Pitch;
+    mfxU32        Height;
+    mfxU16        reserved0[54];
 
     mfxFeiHevcPakCtuRecordV0 *Data;
 } mfxExtFeiHevcPakCtuRecordV0;
@@ -212,8 +216,9 @@ typedef struct  {
 typedef struct {
     mfxExtBuffer  Header;
     mfxU32        VaBufferID;
-    mfxU32        DataSize;
-    mfxU16        reserved0[56];
+    mfxU32        Pitch;
+    mfxU32        Height;
+    mfxU16        reserved0[54];
 
     mfxFeiHevcPakCuRecordV0 *Data;
 } mfxExtFeiHevcPakCuRecordV0;
@@ -228,8 +233,9 @@ typedef struct {
 typedef struct {
     mfxExtBuffer  Header;
     mfxU32        VaBufferID;
-    mfxU32        DataSize;
-    mfxU16        reserved[8];
+    mfxU32        Pitch;
+    mfxU32        Height;
+    mfxU16        reserved[6];
 
     mfxFeiHevcDistortionCtu *Data;
 } mfxExtFeiHevcDistortion;
