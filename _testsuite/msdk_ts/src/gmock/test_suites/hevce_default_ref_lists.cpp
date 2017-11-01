@@ -435,10 +435,10 @@ namespace hevce_default_ref_lists
             }
 
             //=================4. Construct RPL=====================
-            auto descendingPOC = [](Frame const & lhs, Frame const & rhs) { return lhs.poc > rhs.poc; };
-            auto ascendingPOC = [](Frame const & lhs, Frame const & rhs) { return lhs.poc < rhs.poc; };
-
-            std::sort(m_dpb.begin(), m_dpb.end(), ascendingPOC);
+            std::sort(m_dpb.begin(), m_dpb.end(),   [](const Frame & lhs_frame, const Frame & rhs_frame)
+                                                    {
+                                                        return lhs_frame.poc < rhs_frame.poc;
+                                                    });
 
             std::vector<Frame> & L0 = out.ListX[0];
             std::vector<Frame> & L1 = out.ListX[1];
@@ -455,7 +455,7 @@ namespace hevce_default_ref_lists
                     out.ListX[list].push_back(*it);
                 }
 
-                auto ascendingDistance = [&](const Frame & lhs_frame, const Frame & rhs_frame)
+                auto preferSamePolarity = [&](const Frame & lhs_frame, const Frame & rhs_frame)
                 {
                    mfxU32 lhs_distance = std::abs(lhs_frame.poc/2 - out.poc/2) + ((lhs_frame.bSecondField == out.bSecondField) ? 0 : 1);
                    mfxU32 rhs_distance = std::abs(rhs_frame.poc/2 - out.poc/2) + ((rhs_frame.bSecondField == out.bSecondField) ? 0 : 1);
@@ -463,17 +463,38 @@ namespace hevce_default_ref_lists
                    return lhs_distance <= rhs_distance;
                 };
 
+                auto distance = [&](const Frame & lhs_frame, const Frame & rhs_frame)
+                {
+                   mfxU32 lhs_distance = std::abs(lhs_frame.poc - out.poc);
+                   mfxU32 rhs_distance = std::abs(rhs_frame.poc - out.poc);
+
+                   return lhs_distance < rhs_distance;
+                };
+
                 // If lists are bigger than max supported, sort them and remove extra elements
                 if (L0.size() > CO3.NumRefActiveP[0])
                 {
                     if (isPPyramid)
                     {
-                        // For P-pyramid we remove entries oldest references
+                        // For P-pyramid we remove oldest references
                         // with the highest layer except the closest reference.
-                        std::sort(L0.begin(), L0.end(), [&](const Frame & lhs_frame, const Frame & rhs_frame)
-                                                        {
-                                                            return !ascendingDistance(lhs_frame, rhs_frame);
-                                                        });
+
+                        if (bIsFieldCoding)
+                        {
+
+                            std::sort(L0.begin(), L0.end(), [&](const Frame & lhs_frame, const Frame & rhs_frame)
+                                                            {
+                                                                return !preferSamePolarity(lhs_frame, rhs_frame);
+                                                            });
+                        }
+                        else
+                        {
+                            std::sort(L0.begin(), L0.end(), [&](const Frame & lhs_frame, const Frame & rhs_frame)
+                                                            {
+                                                                return !distance(lhs_frame, rhs_frame);
+                                                            });
+                        }
+
                         while (L0.size() > CO3.NumRefActiveP[out.PLayer])
                         {
                             auto weak = L0.begin();
@@ -488,16 +509,14 @@ namespace hevce_default_ref_lists
                             L0.erase(weak);
                         }
                     }
+
+                    if (bIsFieldCoding)
+                    {
+                        std::sort(L0.begin(), L0.end(), preferSamePolarity);
+                    }
                     else
                     {
-                        if (bIsFieldCoding)
-                        {
-                            std::sort(L0.begin(), L0.end(), ascendingDistance);
-                        }
-                        else
-                        {
-                            std::sort(L0.begin(), L0.end(), descendingPOC);
-                        }
+                        std::sort(L0.begin(), L0.end(), distance);
                     }
                 }
 
@@ -505,11 +524,11 @@ namespace hevce_default_ref_lists
                 {
                     if (bIsFieldCoding)
                     {
-                        std::sort(L1.begin(), L1.end(), ascendingDistance);
+                        std::sort(L1.begin(), L1.end(), preferSamePolarity);
                     }
                     else
                     {
-                        std::sort(L0.begin(), L0.end(), ascendingPOC);
+                        std::sort(L1.begin(), L1.end(), distance);
                     }
                 }
 
@@ -540,7 +559,6 @@ namespace hevce_default_ref_lists
                 if (!isB)
                 {
                     L1 = L0;
-                    std::sort(L1.begin(), L1.end(), descendingPOC);
                 }
 
                 // Remove extra entries
@@ -552,8 +570,8 @@ namespace hevce_default_ref_lists
                 if (L1.size() > CO3.NumRefActiveBL1[0])
                     L1.resize(CO3.NumRefActiveBL1[0]);
 
-                std::sort(L0.begin(), L0.end(), descendingPOC);
-                std::sort(L1.begin(), L1.end(), ascendingPOC);
+                std::sort(L0.begin(), L0.end(), distance);
+                std::sort(L1.begin(), L1.end(), distance);
             }
 
             //=================5. Save current frame in DPB=====================
