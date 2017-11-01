@@ -480,6 +480,18 @@ void AdjustOptions(sInputParams& params)
             MSDK_CHECK_WRN(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, "Encoded order enabled.");
         params.bEncodedOrder = true;
     }
+
+    if (!params.bPREENC && 0 == msdk_strlen(params.mvpInFile))
+    {
+        if (params.encodeCtrl.NumMvPredictors[0] != 0
+                || params.encodeCtrl.NumMvPredictors[1] != 0)
+        {
+            MSDK_CHECK_WRN(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
+                    "No input predictor file specified for ENCODE - setting NumMVPredictors to 0");
+        }
+        params.encodeCtrl.NumMvPredictors[0] = 0;
+        params.encodeCtrl.NumMvPredictors[1] = 0;
+    }
 }
 
 #if defined(_WIN32) || defined(_WIN64)
