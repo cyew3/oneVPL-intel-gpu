@@ -3191,7 +3191,8 @@ mfxStatus VAAPIEncoder::QueryStatus(
     if (m_isENCPAK)
     {
         // Use parity to order conversion here (FEI ext buffers attached by field order, but MSDK operates in terms of fields parity)
-        sts = VAAPIEncoder::QueryStatusFEI(task, task.m_fid[fieldId], currentFeedback);
+        sts = VAAPIEncoder::QueryStatusFEI(task, task.m_fid[fieldId],
+                                           currentFeedback, codedBufferSegment->status);
         MFX_CHECK_STS(sts);
     }
 
@@ -3201,7 +3202,8 @@ mfxStatus VAAPIEncoder::QueryStatus(
 mfxStatus VAAPIEncoder::QueryStatusFEI(
     DdiTask const & task,
     mfxU32  feiFieldId,
-    ExtVASurface const & curFeedback)
+    ExtVASurface const & curFeedback,
+    mfxU32  codedStatus)
 {
 #if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCPAK) || defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC)
 
@@ -3212,18 +3214,24 @@ mfxStatus VAAPIEncoder::QueryStatusFEI(
     VABufferID vaFeiMVOutId     = curFeedback.mv;
 
     //find ext buffers
-    mfxExtFeiEncMBStat * mbstat    = NULL;
-    mfxExtFeiEncMV     * mvout     = NULL;
-    mfxExtFeiPakMBCtrl * mbcodeout = NULL;
+    mfxExtFeiEncMBStat  * mbstat     = NULL;
+    mfxExtFeiEncMV      * mvout      = NULL;
+    mfxExtFeiPakMBCtrl  * mbcodeout  = NULL;
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    mfxExtFeiRepackStat * repackStat = NULL;
+#endif
 
     // In case of single-field processing, only one buffer is attached
     mfxU32 idxToPickBuffer = task.m_singleFieldMode ? 0 : feiFieldId;
 
     if (NULL != task.m_bs)
     {
-        mbstat    = GetExtBufferFEI(task.m_bs, idxToPickBuffer);
-        mvout     = GetExtBufferFEI(task.m_bs, idxToPickBuffer);
-        mbcodeout = GetExtBufferFEI(task.m_bs, idxToPickBuffer);
+        mbstat     = GetExtBufferFEI(task.m_bs, idxToPickBuffer);
+        mvout      = GetExtBufferFEI(task.m_bs, idxToPickBuffer);
+        mbcodeout  = GetExtBufferFEI(task.m_bs, idxToPickBuffer);
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        repackStat = GetExtBufferFEI(task.m_bs, idxToPickBuffer);
+#endif
     }
 
     if (mbstat != NULL && vaFeiMBStatId != VA_INVALID_ID)
@@ -3295,6 +3303,12 @@ mfxStatus VAAPIEncoder::QueryStatusFEI(
         }
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    // Hard-coding below will get removed once related libva interface is updated
+    if (repackStat)
+        repackStat->NumPasses = (codedStatus & 0xf000000) >> 24;
+#endif
 
     return MFX_ERR_NONE;
 #else

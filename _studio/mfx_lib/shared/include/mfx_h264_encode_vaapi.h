@@ -181,7 +181,8 @@ namespace MfxHwH264Encode
         mfxStatus QueryStatusFEI(
             DdiTask const & task,
             mfxU32  feiFieldId,
-            ExtVASurface const & curFeedback);
+            ExtVASurface const & curFeedback,
+            mfxU32 codedStatus);
 
         virtual
         mfxStatus Destroy();

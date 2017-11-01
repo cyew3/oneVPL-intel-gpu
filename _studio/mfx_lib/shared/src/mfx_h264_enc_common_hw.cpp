@@ -6918,6 +6918,16 @@ mfxStatus MfxHwH264Encode::CheckFEIRunTimeExtBuffersContent(
             }
             break;
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+            case MFX_EXTBUFF_FEI_REPACK_STAT:
+            {
+                mfxExtFeiRepackStat* feiRepackStat = reinterpret_cast<mfxExtFeiRepackStat*>
+                                                     (bs->ExtParam[i]);
+                MFX_CHECK(feiRepackStat->NumPasses == 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+            }
+            break;
+#endif
+
             default:
                 //unsupported output extbuffer is attached.
                 return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;

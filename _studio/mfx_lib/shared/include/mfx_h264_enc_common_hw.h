@@ -239,6 +239,9 @@ namespace MfxHwH264Encode
     BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiPreEncCtrl,        MFX_EXTBUFF_FEI_PREENC_CTRL          );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiPreEncMVPredictors,MFX_EXTBUFF_FEI_PREENC_MV_PRED       );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiRepackCtrl,        MFX_EXTBUFF_FEI_REPACK_CTRL          );
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiRepackStat,        MFX_EXTBUFF_FEI_REPACK_STAT          );
+#endif
 #if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
     BIND_EXTBUF_TYPE_TO_ID (mfxExtIntGPUHang,           MFX_EXTBUFF_GPU_HANG                 );
 #endif
