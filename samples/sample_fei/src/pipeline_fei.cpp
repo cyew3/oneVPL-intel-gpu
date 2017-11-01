@@ -1165,6 +1165,9 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
         mfxExtFeiPakMBCtrl*       feiEncMBCode       = NULL;
         mfxExtFeiRepackCtrl*      feiRepack          = NULL;
         mfxExtPredWeightTable*    feiWeights         = NULL;
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        mfxExtFeiRepackStat*      feiRepackStat      = NULL;
+#endif
 
         bool MVPredictors = (m_appCfg.mvinFile   != NULL) || m_appCfg.bPREENC; //couple with PREENC
         bool MBCtrl       = m_appCfg.mbctrinFile != NULL;
@@ -1174,6 +1177,9 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
         bool MVOut        = m_appCfg.mvoutFile      != NULL;
         bool MBCodeOut    = m_appCfg.mbcodeoutFile  != NULL;
         bool RepackCtrl   = m_appCfg.repackctrlFile != NULL;
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        bool RepackStat   = m_appCfg.repackstatFile != NULL;
+#endif
         bool Weights      = m_appCfg.weightsFile    != NULL;
 
 
@@ -1257,6 +1263,21 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
                     memset(feiPPS[fieldId].ReferenceFrames, 0xffff, 16 * sizeof(mfxU16));
 #endif // MFX_VERSION >= 1023
                 }
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+                /* Repack Stat */
+                if (m_appCfg.bENCODE && RepackStat)
+                {
+                    if (fieldId == 0){
+                        feiRepackStat = new mfxExtFeiRepackStat[m_numOfFields];
+                        MSDK_ZERO_ARRAY(feiRepackStat, m_numOfFields);
+                    }
+                    feiRepackStat[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_REPACK_STAT;
+                    feiRepackStat[fieldId].Header.BufferSz = sizeof(mfxExtFeiRepackStat);
+
+                    feiRepackStat[fieldId].NumPasses = 0;
+                }
+#endif
 
                 /* Slice Header */
                 if (m_appCfg.bENCPAK || m_appCfg.bOnlyENC || m_appCfg.bOnlyPAK)
@@ -1483,6 +1504,16 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
                     tmpForInit->PB_bufs.out.Add(reinterpret_cast<mfxExtBuffer*>(&feiEncMBCode[fieldId]));
                 }
             }
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+            if (RepackStat){
+                for (fieldId = 0; fieldId < m_numOfFields; fieldId++){
+                    tmpForInit-> I_bufs.out.Add(reinterpret_cast<mfxExtBuffer*>
+                                                (&feiRepackStat[fieldId]));
+                    tmpForInit->PB_bufs.out.Add(reinterpret_cast<mfxExtBuffer*>
+                                                (&feiRepackStat[fieldId]));
+                }
+            }
+#endif
 
             m_encodeBufs.AddSet(tmpForInit);
 

@@ -82,6 +82,9 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-mbstat file] - file to output per MB distortions for each frame\n"));
     msdk_printf(MSDK_STRING("   [-mbqp file] - file to input per MB QPs the same for each frame\n"));
     msdk_printf(MSDK_STRING("   [-repackctrl file] - file to input max encoded frame size,number of pass and delta qp for each frame(ENCODE only)\n"));
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    msdk_printf(MSDK_STRING("   [-repackstat file] - file to output each frame's number of passes (ENCODE only)\n"));
+#endif
     msdk_printf(MSDK_STRING("   [-weights file] - file to input weights for explicit weighted prediction (ENCODE only).\n"));
     msdk_printf(MSDK_STRING("   [-ImplicitWPB] - enable implicit weighted prediction B frames (ENCODE only).\n"));
     msdk_printf(MSDK_STRING("   [-streamout file] - dump decode streamout structures\n"));
@@ -282,6 +285,13 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
             pConfig->repackctrlFile = strInput[i+1];
             i++;
         }
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-repackstat")))
+        {
+            pConfig->repackstatFile = strInput[i+1];
+            i++;
+        }
+#endif
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-weights")))
         {
             pConfig->weightsFile = strInput[i+1];
@@ -1049,7 +1059,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
         pConfig->EncodedOrder = true;
     }
 
-    if (pConfig->bPerfMode && (pConfig->mvinFile || pConfig->mvoutFile || pConfig->mbctrinFile || pConfig->mbstatoutFile || pConfig->mbcodeoutFile || pConfig->mbQpFile || pConfig->repackctrlFile || pConfig->decodestreamoutFile || pConfig->weightsFile))
+    if (pConfig->bPerfMode && (pConfig->mvinFile || pConfig->mvoutFile || pConfig->mbctrinFile || pConfig->mbstatoutFile || pConfig->mbcodeoutFile || pConfig->mbQpFile || pConfig->repackctrlFile ||
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+                               pConfig->repackstatFile ||
+#endif
+                               pConfig->decodestreamoutFile || pConfig->weightsFile))
     {
         msdk_printf(MSDK_STRING("\nWARNING: All file operations would be ignored in performance mode!\n"));
 
@@ -1060,8 +1074,26 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
         pConfig->mbcodeoutFile       = NULL;
         pConfig->mbQpFile            = NULL;
         pConfig->repackctrlFile      = NULL;
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        pConfig->repackstatFile      = NULL;
+#endif
         pConfig->decodestreamoutFile = NULL;
         pConfig->weightsFile         = NULL;
+    }
+
+    if (!pConfig->bENCODE && (pConfig->repackctrlFile
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+                              || pConfig->repackstatFile
+#endif
+       ))
+    {
+        msdk_printf(MSDK_STRING("\nWARNING: Repackctrl/Repackstat is disabled \
+                                for being only supported in ENCODE!\n"));
+        pConfig->repackctrlFile =
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        pConfig->repackstatFile =
+#endif
+          NULL;
     }
 
     if (pConfig->bENCODE || pConfig->bENCPAK || pConfig->bOnlyENC || pConfig->bOnlyPAK)

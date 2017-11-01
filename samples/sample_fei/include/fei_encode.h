@@ -53,6 +53,9 @@ public:
     FILE* m_pMBstat_out;
     FILE* m_pMV_out;
     FILE* m_pMBcode_out;
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    FILE* m_pRepackStat_out;
+#endif
 
     std::vector<mfxExtBuffer*> m_InitExtParams;
 
