@@ -151,7 +151,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         //series of parameters that uses callback function to retain it's inter dependencies
         HANDLE_GLOBAL_OPTION("-b|--bitrate|",  m_,BitRate,    OPT_INT_32, "Target bitrate in bits per second", &m_applyBitrateParams),
         HANDLE_GLOBAL_OPTION("-bm|", m_,MaxBitrate, OPT_INT_32, "Max bitrate in case of VBR", &m_applyBitrateParams),
-        HANDLE_GLOBAL_OPTION("-s|",  m_inParams.n,PicStruct,  OPT_INT_32, "0=progressive, 1=tff, 2=bff, 3=field tff, 4=field bff", &m_applyBitrateParams),
+        HANDLE_GLOBAL_OPTION("-s|",  m_inParams.n,PicStruct,  OPT_INT_32, "0=progressive, 1=tff, 2=bff, 3=field tff, 4=field bff, 5=single field, 6=single top, 7=single bottom", &m_applyBitrateParams),
 
         //constant qp support
         HANDLE_GLOBAL_OPTION("-QPI|", m_,QPI,           OPT_UINT_16,    "Constant quantizer for I frames (if RateControlMethod=3)", &m_applyBitrateParams),

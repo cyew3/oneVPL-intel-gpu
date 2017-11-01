@@ -4096,8 +4096,8 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
         m_OptProc.Check(argv[0], VM_STRING("-(spl|dec|vpp|enc):pts"), VM_STRING("prints component timestamps"))||
         m_OptProc.Check(argv[0], VM_STRING("-dec:fr"), VM_STRING("specifies constant frame rate for the whole pipeline(equals to -f)"))||
         m_OptProc.Check(argv[0], VM_STRING("-vpp:fr"), VM_STRING("do FRC from framerate of input stream to specified value(equals to -frc)"))||
-        m_OptProc.Check(argv[0], VM_STRING("-dec:picstruct"), VM_STRING("overrides picture structure for decoder output surface 0=progressive, 1=tff, 2=bff, 3=field tff, 4=field bff"))||
-        m_OptProc.Check(argv[0], VM_STRING("-vpp:picstruct"), VM_STRING("overrides picture structure for VPP output surface 0=progressive, 1=tff, 2=bff, 3=field tff, 4=field bff"))||
+        m_OptProc.Check(argv[0], VM_STRING("-dec:picstruct"), VM_STRING("overrides picture structure for decoder output surface 0=progressive, 1=tff, 2=bff, 3=field tff, 4=field bff, 5=single field, 6=single top, 7=single bottom"))||
+        m_OptProc.Check(argv[0], VM_STRING("-vpp:picstruct"), VM_STRING("overrides picture structure for VPP output surface 0=progressive, 1=tff, 2=bff, 3=field tff, 4=field bff, 5=single field, 6=single top, 7=single bottom"))||
         m_OptProc.Check(argv[0], VM_STRING("-dec:async_depth"), VM_STRING("fills mfxVideoParam.AsyncDepth to specified value in decoder.QueryIOSurface request"), OPT_INT_32)||
         m_OptProc.Check(argv[0], VM_STRING("-vpp:async_depth"), VM_STRING("fills mfxVideoParam.AsyncDepth to specified value in vpp.QueryIOSurface request"), OPT_INT_32)||
         m_OptProc.Check(argv[0], VM_STRING("-enc:async_depth"), VM_STRING("fills mfxVideoParam.AsyncDepth to specified value in encoder.QueryIOSurface request"), OPT_INT_32)||

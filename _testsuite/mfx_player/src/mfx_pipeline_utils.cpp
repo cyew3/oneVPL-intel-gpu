@@ -1010,7 +1010,7 @@ mfxU64           GetProcessMemoryLimit()
     #ifndef WIN_TRESHOLD_MOBILE
     // win threshold mobile - temporary use only 3Gb
     IsWow64Process(GetCurrentProcess(), &isWow64);
-    #endif 
+    #endif
 
     if (TRUE == isWow64)
     {
@@ -1212,6 +1212,21 @@ mfxU16 Convert_CmdPS_to_MFXPS( mfxI32 cmdPicStruct )
             mfxPS = MFX_PICSTRUCT_FIELD_BFF;
             break;
         }
+        case PIPELINE_PICSTRUCT_FIELD_TOP:
+        {
+            mfxPS = MFX_PICSTRUCT_FIELD_TOP;
+            break;
+        }
+        case PIPELINE_PICSTRUCT_FIELD_BOTTOM:
+        {
+            mfxPS = MFX_PICSTRUCT_FIELD_BOTTOM;
+            break;
+        }
+        case PIPELINE_PICSTRUCT_FIELD:
+        {
+            mfxPS = MFX_PICSTRUCT_FIELD_SINGLE;
+            break;
+        }
 
         default:
         //case PIPELINE_PICSTRUCT_UNKNOWN:
@@ -1255,6 +1270,18 @@ mfxI32 Convert_MFXPS_to_CmdPS( mfxU16 mfxPicStruct, mfxU16 extco )
             pipelinePS = PIPELINE_PICSTRUCT_PROGRESSIVE;
         break;
 
+        case MFX_PICSTRUCT_FIELD_TOP:
+            pipelinePS = PIPELINE_PICSTRUCT_FIELD_TOP;
+        break;
+
+        case MFX_PICSTRUCT_FIELD_BOTTOM:
+            pipelinePS = PIPELINE_PICSTRUCT_FIELD_BOTTOM;
+        break;
+
+        case MFX_PICSTRUCT_FIELD_SINGLE:
+            pipelinePS = PIPELINE_PICSTRUCT_FIELD;
+        break;
+
         case MFX_PICSTRUCT_UNKNOWN :
             pipelinePS = PIPELINE_PICSTRUCT_UNKNOWN;
         break;
@@ -1282,6 +1309,9 @@ mfxU16  Convert_CmdPS_to_ExtCO(mfxI32 cmdPicStruct)
 
         case PIPELINE_PICSTRUCT_FIELD_TFF2:
         case PIPELINE_PICSTRUCT_FIELD_BFF2:
+        case PIPELINE_PICSTRUCT_FIELD_TOP:
+        case PIPELINE_PICSTRUCT_FIELD_BOTTOM:
+        case PIPELINE_PICSTRUCT_FIELD:
         {
             extCO = MFX_CODINGOPTION_OFF;
             break;

@@ -62,7 +62,7 @@ enum {
 //////////////////////////////////////////////////////////////////////////
 #if defined(WIN32) || defined(WIN64)
 #define PAVP_BUILD
-#endif // defined(WIN32) || defined(WIN64) 
+#endif // defined(WIN32) || defined(WIN64)
 
 //////////////////////////////////////////////////////////////////////////
 //custom error codes - to separate errors from MFX components from errors in pipeline level
@@ -79,7 +79,7 @@ enum {
 
 
 // new warning codes
-#define PIPELINE_WRN_BUFFERING_UNAVAILABLE  MFX_USER_WRN_STATUS 
+#define PIPELINE_WRN_BUFFERING_UNAVAILABLE  MFX_USER_WRN_STATUS
 //indicates that state has switched, and process need to continue
 #define PIPELINE_WRN_SWITCH_STATE           MAKE_MFX_STATUS(MFX_USER_WRN_STATUS + 1)
 
@@ -109,7 +109,7 @@ enum {
 //max file path that is used
 #define MAX_FILE_PATH 1024
 //////////////////////////////////////////////////////////////////////////
-//extendend version of picstruct support 
+//extendend version of picstruct support
 #define PIPELINE_PICSTRUCT_NOT_SPECIFIED  -2 //picstruct not specified in command line
 #define PIPELINE_PICSTRUCT_UNKNOWN        -1 //== MFX_PICSTRUCT_UNKNOWN
 #define PIPELINE_PICSTRUCT_PROGRESSIVE     0 //== MFX_PICSTRUCT_PROGRESSIVE
@@ -117,13 +117,16 @@ enum {
 #define PIPELINE_PICSTRUCT_FIELD_BFF       2 //== MFX_PICSTRUCT_FIELD_BFF
 #define PIPELINE_PICSTRUCT_FIELD_TFF2      3 //== MFX_PICSTRUCT_FIELD_TFF + MFX_CODINGOPTION_ON
 #define PIPELINE_PICSTRUCT_FIELD_BFF2      4 //== MFX_PICSTRUCT_FIELD_BFF + MFX_CODINGOPTION_ON
+#define PIPELINE_PICSTRUCT_FIELD           5 //== MFX_PICSTRUCT_FIELD_SINGLE
+#define PIPELINE_PICSTRUCT_FIELD_TOP       6 //== MFX_PICSTRUCT_FIELD_TOP
+#define PIPELINE_PICSTRUCT_FIELD_BOTTOM    7 //== MFX_PICSTRUCT_FIELD_BOTTOM
 
 //////////////////////////////////////////////////////////////////////////
 //trace support
 
 #define TRACE_NONE         0
-#define TRACE_CONSOLE      1 
-#define TRACE_ERR_CONSOLE  2 
+#define TRACE_CONSOLE      1
+#define TRACE_ERR_CONSOLE  2
 #define TRACE_DEBUG        4
 
 //pipeline has different sink connected to each providers
