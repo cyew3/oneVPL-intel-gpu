@@ -1612,6 +1612,33 @@ This extension buffer specifies repack control parameters for ENCODE usage model
 
 This structure is available since SDK API 1.19.
 
+## mfxExtFeiRepackStat
+
+**Definition**
+
+```
+typedef struct {
+    mfxExtBuffer    Header;
+    mfxU32          NumPasses;
+    mfxU16          reserved[58];
+} mfxExtFeiRepackStat;
+```
+
+**Description**
+
+This extension buffer holds output number of actual repack passes for ENCODE usage model. It is used during runtime and should be attached to the **mfxBitstream** structure.
+
+**Members**
+
+| | |
+--- | ---
+`Header.BufferId` | Buffer ID, must be **MFX_EXTBUFF_FEI_REPACK_STAT**.
+`NumPasses` | Number of pass(es) of the repack process that has (have) been actually conducted for ENCODE usage model for each frame or field. One instance of this extension buffer needs to be attached for progressive while two for interlaced, which shall be attached in encoded order.
+
+**Change History**
+
+This structure is available since SDK API 1.25.
+
 ## mfxExtFeiDecStreamOut
 
 **Definition**
