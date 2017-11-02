@@ -199,6 +199,7 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("  -dist         Distance between I- or P- key frames \n"));
     msdk_printf(MSDK_STRING("  -num_ref      Number of reference frames\n"));
     msdk_printf(MSDK_STRING("  -bref         Arrange B frames in B pyramid reference structure\n"));
+    msdk_printf(MSDK_STRING("  -bpyr         Enable B pyramid\n"));
     msdk_printf(MSDK_STRING("  -CodecProfile          - Specifies codec profile\n"));
     msdk_printf(MSDK_STRING("  -CodecLevel            - Specifies codec level\n"));
     msdk_printf(MSDK_STRING("  -GopOptFlag:closed     - Closed gop\n"));

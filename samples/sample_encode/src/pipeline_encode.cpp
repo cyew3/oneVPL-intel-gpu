@@ -134,6 +134,7 @@ mfxStatus CEncTaskPool::SynchronizeFirstTask()
     if (NULL != m_pTasks[m_nTaskBufferStart].EncSyncP)
     {
         sts = m_pmfxSession->SyncOperation(m_pTasks[m_nTaskBufferStart].EncSyncP, MSDK_WAIT_INTERVAL);
+        MSDK_CHECK_STATUS_NO_RET(sts, "SyncOperation failed");
 
         if (MFX_ERR_NONE == sts)
         {
