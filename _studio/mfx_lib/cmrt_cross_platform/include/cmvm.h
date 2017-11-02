@@ -919,10 +919,11 @@ matrix<T, R, C>::matrix(const T2 initArray[])
 }
 
 template <typename T, uint R, uint C>
-matrix<T, R, C>::matrix()
+matrix<T, R, C>::matrix() :
 #ifdef CM_EMU
-    : array_2d_(data)
+    array_2d_(data),
 #endif
+    number(0)
 {
 
 }
