@@ -607,6 +607,10 @@ namespace ExtBuffer
         _CopyPar1(FadeDetection);
 #endif //defined(MFX_ENABLE_HEVCE_FADE_DETECTION)
 #endif //defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        _CopyPar1(EnableNalUnitType);
+#endif
     }
 
     inline void  CopySupportedParams(mfxExtCodingOptionDDI& buf_dst, mfxExtCodingOptionDDI& buf_src)

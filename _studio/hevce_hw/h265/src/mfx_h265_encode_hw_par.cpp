@@ -2324,6 +2324,13 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         changed += CheckOption(par.m_ext.HEVCParam.GeneralConstraintFlags, 0);
 #endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    if (par.mfx.EncodedOrder)
+        changed += CheckOption(CO3.EnableNalUnitType, MFX_CODINGOPTION_ON, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_UNKNOWN);
+    else
+        changed += CheckOption(CO3.EnableNalUnitType, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_UNKNOWN);
+#endif
+
     sts = CheckProfile(par, par.m_platform.CodeName);
 
     if (sts >= MFX_ERR_NONE && par.mfx.CodecLevel > 0)  // QueryIOSurf, Init or Reset
@@ -2807,6 +2814,13 @@ void SetDefaults(
                 (mfxU16)MFX_WEIGHTED_PRED_DEFAULT;
     }
 #endif //defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    if (IsOn(par.mfx.EncodedOrder))
+        CO3.EnableNalUnitType = MFX_CODINGOPTION_ON;
+    else
+        CO3.EnableNalUnitType = MFX_CODINGOPTION_OFF;
+#endif
 
 }
 

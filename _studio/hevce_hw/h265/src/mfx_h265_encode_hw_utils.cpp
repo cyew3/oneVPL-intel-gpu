@@ -2687,8 +2687,8 @@ mfxU8 GetFrameType(
         return (MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF);
 
     //if ((gopOptFlag & MFX_GOP_STRICT) == 0)
-        if (((frameOrder + 1) % gopPicSize == 0 && (gopOptFlag & MFX_GOP_CLOSED)) ||
-            (idrPicDist && (frameOrder + 1) % idrPicDist == 0))
+        if (((fo + 1) % gopPicSize == 0 && (gopOptFlag & MFX_GOP_CLOSED)) ||
+            (idrPicDist && (fo + 1) % idrPicDist == 0))
             return (MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF); // switch last B frame to P frame
 
 
@@ -3180,10 +3180,10 @@ mfxU8 GetSHNUT(Task const & task, bool RAPIntra)
     const bool isRef = !!(task.m_frameType & MFX_FRAMETYPE_REF);
     const bool isIDR = !!(task.m_frameType & MFX_FRAMETYPE_IDR);
    
-    /* To do: add this calculation after API changes
-    if (task.m_ctrl.NalUnitType)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    if (task.m_ctrl.MfxNalUnitType)
     {
-        switch (task.m_ctrl.NalUnitType)
+        switch (task.m_ctrl.MfxNalUnitType)
         {
         case MFX_HEVC_NALU_TYPE_TRAIL_R:
             if (task.m_poc > task.m_lastRAP && isRef)
@@ -3209,19 +3209,16 @@ mfxU8 GetSHNUT(Task const & task, bool RAPIntra)
             if (task.m_poc < task.m_lastRAP && !isRef)
                 return RADL_N;
             break;
-        case MFX_HEVC_NALU_CRA_NUT:
+        case MFX_HEVC_NALU_TYPE_CRA_NUT:
             if (isI)
                 return CRA_NUT;
             break;
-        case MFX_HEVC_NALU_IDR_W_RADL:
+        case MFX_HEVC_NALU_TYPE_IDR_W_RADL:
             if (isIDR)
                 return IDR_W_RADL;
-        case MFX_HEVC_NALU_IDR_N_LP:
-            if (isIDR)
-                return IDR_N_LP;
         }
     }
-    */
+#endif
 
     if (isIDR)
         return IDR_W_RADL;
@@ -3352,12 +3349,16 @@ void ConfigureTask(
             task.m_SkipMode = 0;
         }
     }
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    if (!IsOn(par.m_ext.CO3.EnableNalUnitType) && task.m_ctrl.MfxNalUnitType!=0)
+        task.m_ctrl.MfxNalUnitType = 0;
+#endif
+
 #if MFX_EXTBUFF_CU_QP_ENABLE
 
     mfxExtMBQP *mbqp = ExtBuffer::Get(task.m_ctrl);
     if (mbqp && mbqp->NumQPAlloc > 0)
         task.m_bCUQPMap = 1;
-
 #endif
 #ifdef MFX_ENABLE_HEVCE_ROI
     // process roi

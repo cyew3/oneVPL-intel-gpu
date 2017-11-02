@@ -1134,6 +1134,8 @@ mfxStatus Plugin::PrepareTask(Task& input_task)
             task->m_frameType = task->m_ctrl.FrameType;
             m_frameOrder = task->m_surf->Data.FrameOrder;
             MFX_CHECK((mfxI32)(m_frameOrder - (m_lastTask.m_eo + 1)) <= (m_vpar.mfx.GopRefDist - 1)* (m_vpar.isField() ? 2 : 1), MFX_ERR_UNDEFINED_BEHAVIOR);
+            if (!isValid(m_lastTask.m_dpb[1][0]))
+                MFX_CHECK(task->m_frameType & MFX_FRAMETYPE_IDR, MFX_ERR_UNDEFINED_BEHAVIOR);
 
             if (m_brc && m_brc->IsVMEBRC())
             {
