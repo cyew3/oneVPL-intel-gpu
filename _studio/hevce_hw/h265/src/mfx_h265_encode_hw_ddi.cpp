@@ -834,7 +834,7 @@ void FillPpsBuffer(
     pps.bUseRawPicForRef           = 0;
     pps.NumSlices                  = par.mfx.NumSlice;
 
-    pps.bEnableSliceLevelReport    = !!par.m_ext.CO2.MaxSliceSize;
+    pps.bEnableSliceLevelReport    = 0; // TODO: should be ON if ext buffer is available
     if (par.m_ext.CO2.MaxSliceSize)
         pps.MaxSliceSizeInBytes = par.m_ext.CO2.MaxSliceSize;
 
