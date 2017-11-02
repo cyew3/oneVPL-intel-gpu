@@ -718,8 +718,9 @@ mfxStatus tsRawReader::ProcessSurface(mfxFrameSurface1& s)
     return MFX_ERR_NONE;
 }
 
-mfxStatus tsRawReader::ResetFile()
+mfxStatus tsRawReader::ResetFile(bool reset_frame_order)
 {
+    if (reset_frame_order) m_cur = 0;
     return SeekToStart();
 }
 

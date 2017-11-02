@@ -26,6 +26,18 @@
         g_tsLog << "You can do it in the msdk_gmock project properties: Configuration Properties - Debbuging tab - Environment field\n";        \
     }                                                                                                                                           \
 }
+
+#define CHECK_HEVC_FEI_SUPPORT()                                                                                                                \
+{                                                                                                                                               \
+    if (g_tsImpl == MFX_IMPL_HARDWARE) {                                                                                                        \
+        if (g_tsHWtype < MFX_HW_SKL) {                                                                                                          \
+            g_tsLog << "[ SKIPPED ] HEVC FEI is not supported on current platform (SKL+ required)\n";                                           \
+            return 0;                                                                                                                           \
+        }                                                                                                                                       \
+    }                                                                                                                                           \
+    CHECK_FEI_SUPPORT();                                                                                                                        \
+}
+
 #define SKIP_IF_LINUX                                                                                                                           \
 {                                                                                                                                               \
     if(g_tsOSFamily != MFX_OS_FAMILY_WINDOWS)                                                                                                   \

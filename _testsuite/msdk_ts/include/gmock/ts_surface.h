@@ -418,7 +418,7 @@ public:
     tsRawReader(mfxBitstream bs, mfxFrameInfo fi, mfxU32 n_frames = 0xFFFFFFFF);
     ~tsRawReader();
 
-    mfxStatus ResetFile();
+    mfxStatus ResetFile(bool reset_frame_order = false);
 
     mfxStatus ProcessSurface(mfxFrameSurface1& s);
 };
