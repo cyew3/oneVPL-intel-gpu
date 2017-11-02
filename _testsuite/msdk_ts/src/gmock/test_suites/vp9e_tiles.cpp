@@ -90,6 +90,8 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         template <mfxU32 fourcc>
         int RunTest_Subtype(const unsigned int id);
 
+        static const tc_struct test_case_nv12[]; //8b  420
+
         static const unsigned int n_cases_nv12;
         static const unsigned int n_cases_p010;
         static const unsigned int n_cases_ayuv;
@@ -585,9 +587,25 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
     };
 
+    const tc_struct TestSuite::test_case_nv12[] =
+    {
+        {/*76*/ MFX_ERR_NONE, CQP | TU4,
+            { { ITER_LENGTH, SET_W(1280), SET_H(720), SET_NUM_ROWS(2), SET_NUM_COLS(1) } }
+        },
+        {/*77*/ MFX_ERR_NONE, CQP | TU4,
+            { { ITER_LENGTH, SET_W(1280), SET_H(720), SET_NUM_ROWS(1), SET_NUM_COLS(2) } }
+        },
+        {/*78*/ MFX_ERR_NONE, CBR | TU4,
+            { { ITER_LENGTH, SET_W(1280), SET_H(720), SET_NUM_ROWS(2), SET_NUM_COLS(1) } }
+        },
+        {/*79*/ MFX_ERR_NONE, CBR | TU4,
+            { { ITER_LENGTH, SET_W(1280), SET_H(720), SET_NUM_ROWS(1), SET_NUM_COLS(2) } }
+        },
+    };
+
     const unsigned int TestSuite::n_cases = sizeof(test_cases) / sizeof(tc_struct);
 
-    const unsigned int TestSuite::n_cases_nv12 = n_cases;
+    const unsigned int TestSuite::n_cases_nv12 = sizeof(TestSuite::test_case_nv12) / sizeof(tc_struct) + n_cases;
     const unsigned int TestSuite::n_cases_p010 = n_cases;
     const unsigned int TestSuite::n_cases_ayuv = n_cases;
     const unsigned int TestSuite::n_cases_y410 = n_cases;
@@ -1262,6 +1280,13 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
     template <mfxU32 fourcc>
     int TestSuite::RunTest_Subtype(const unsigned int id)
     {
+        if (fourcc == MFX_FOURCC_NV12)
+        {
+            const tc_struct* fourcc_table = TestSuite::test_case_nv12;
+            const unsigned int real_id = (id < n_cases) ? (id) : (id - n_cases);
+            const tc_struct& tc = (real_id == id) ? test_cases[real_id] : fourcc_table[real_id];
+            return RunTest(tc, fourcc, id);
+        }
         const tc_struct& tc = test_cases[id];
         return RunTest(tc, fourcc, id);
     }
@@ -1314,6 +1339,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             inputStreams.emplace(Resolution(176, 144), g_tsStreamPool.Get("forBehaviorTest/salesman_176x144_50.yuv"));
             inputStreams.emplace(Resolution(352, 288), g_tsStreamPool.Get("forBehaviorTest/salesman_352x288_50.yuv"));
             inputStreams.emplace(Resolution(704, 576), g_tsStreamPool.Get("forBehaviorTest/salesman_704x576_50.yuv"));
+            inputStreams.emplace(Resolution(1280, 720), g_tsStreamPool.Get("forBehaviorTest/park_scene_1280x720_30.yuv"));
             inputStreams.emplace(Resolution(1408, 1152), g_tsStreamPool.Get("forBehaviorTest/salesman_1408X1152_50.yuv"));
             inputStreams.emplace(Resolution(2816, 2304), g_tsStreamPool.Get("forBehaviorTest/salesman_2816x2304_50.yuv"));
             inputStreams.emplace(Resolution(5632, 4608), g_tsStreamPool.Get("forBehaviorTest/salesman_5632x4608_2.yuv"));
@@ -1424,6 +1450,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             // workaround for issue with [scalable pipeline + HuC]:
             // refresh of CABAC contexts should be disabled - attach special ext buffer
             // TODO: remove once support of scalable pipline together with HuC is unblocked in the driver
+            /*
             if (tc.type & SCALABLE_PIPE)
             {
                 mfxExtCodingOptionDDI& extDdi = iterations[0]->m_extDDI;
@@ -1431,15 +1458,18 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 extDdi.RefreshFrameContext = MFX_CODINGOPTION_OFF;
                 m_pPar->ExtParam[m_pPar->NumExtParam++] = (mfxExtBuffer*)&extDdi;
             }
+            */
             TRACE_FUNC2(MFXVideoENCODE_Init, m_session, m_pPar);
             mfxStatus sts = MFXVideoENCODE_Init(m_session, m_pPar);
             // workaround for issue with [scalable pipeline + HuC]:
             // detach special ext buffer
             // TODO: remove once support of scalable pipline together with HuC is unblocked in the driver
+            /*
             if (tc.type & SCALABLE_PIPE)
             {
                 m_pPar->ExtParam[--m_pPar->NumExtParam] = 0;
             }
+            */
             TS_TRACE(&m_pPar);
             if (tc.type & INIT)
             {
