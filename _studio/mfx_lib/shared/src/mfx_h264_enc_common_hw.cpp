@@ -4708,15 +4708,10 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     }
 
     /*explicitly force defualt number of frames, higher number will cause performance degradation
-    multi-slice can be supported only through slice map control for MFE, but not enabled as there is no
-    option to force slice map control, only through slice configuration, disable any multi-slice now
-    ToDo: after driver always force slice map for multiframe change function internals based on performance
-    results - 1 encoder vs multiple, on SKL cases with slice Map and LA MSS should scale the same way as single slice,
-    set -1 for MSS and NumMbPerSlice, big number of slices most likely will be more efficient without MFE,
-    but need to measure exact data.
+    multi-slice can be supported only through slice map control for MFE
     Adding any of Mad/MBQP/NonSkipMap/ForceIntraMap causing additional surfaces for kernel, leading to surface state cache size overhead*/
     mfxU16 numFrames = GetDefaultNumMfeFrames(par.mfx.TargetUsage, par.mfx.FrameInfo, platform, feiParam->Func,
-        1 + (par.mfx.NumSlice > 1 || extOpt2->MaxSliceSize || extOpt2->NumMbPerSlice),
+        par.mfx.NumSlice,
         (extOpt2->EnableMAD == MFX_CODINGOPTION_ON) ||  (extOpt3->EnableMBQP == MFX_CODINGOPTION_ON) ||
         (extOpt3->MBDisableSkipMap == MFX_CODINGOPTION_ON) || (extOpt3->EnableMBForceIntra == MFX_CODINGOPTION_ON));
     if (mfeParam.MaxNumFrames > numFrames)
@@ -5370,7 +5365,7 @@ void MfxHwH264Encode::SetDefaults(
         if (mfeParam->MFMode >= MFX_MF_AUTO && !mfeParam->MaxNumFrames)
         {
             mfeParam->MaxNumFrames = GetDefaultNumMfeFrames(par.mfx.TargetUsage, par.mfx.FrameInfo, platform, feiParam->Func,
-                1 + (par.mfx.NumSlice > 1 || extOpt2->MaxSliceSize || extOpt2->NumMbPerSlice),
+                par.mfx.NumSlice,
                 (extOpt2->EnableMAD == MFX_CODINGOPTION_ON) || (extOpt3->EnableMBQP == MFX_CODINGOPTION_ON) ||
                 (extOpt3->MBDisableSkipMap == MFX_CODINGOPTION_ON) || (extOpt3->EnableMBForceIntra == MFX_CODINGOPTION_ON));
         }

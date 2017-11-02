@@ -2973,7 +2973,7 @@ mfxStatus VAAPIEncoder::Execute(
     }
 #ifdef MFX_ENABLE_MFE
     if (m_mfe){
-        mfxU32 timeout = task.m_mfeTimeToWait;
+        mfxU32 timeout = task.m_mfeTimeToWait>>task.m_fieldPicFlag;
         /*if(!task.m_userTimeout)
         {
             mfxU32 passed = (task.m_beginTime - vm_time_get_tick());
@@ -2986,7 +2986,9 @@ mfxStatus VAAPIEncoder::Execute(
                 timeout = 0;
             }
         }*/
-        m_mfe->Submit(m_vaContextEncode, (task.m_flushMfe? 0 : timeout));
+        mfxStatus sts = m_mfe->Submit(m_vaContextEncode, (task.m_flushMfe? 0 : timeout));
+        if (sts != MFX_ERR_NONE)
+            return sts;
     }
 #endif
 
