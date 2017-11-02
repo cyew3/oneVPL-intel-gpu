@@ -107,7 +107,6 @@ void set_brc_params(tsExtBufType<mfxVideoParam>* p)
             p->mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD ||
             p->mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT)
         {
-            p->mfx.MaxKbps = 0;
             p->mfx.InitialDelayInKB = 0;
 
             mfxExtCodingOption2* p_cod2 = (mfxExtCodingOption2*)p->GetExtBuffer(MFX_EXTBUFF_CODING_OPTION2);
@@ -120,7 +119,7 @@ void set_brc_params(tsExtBufType<mfxVideoParam>* p)
             mfxExtCodingOption3* p_cod3 = (mfxExtCodingOption3*)p->GetExtBuffer(MFX_EXTBUFF_CODING_OPTION3);
             if (p_cod3)
             {
-                p_cod3->WinBRCMaxAvgKbps = p->mfx.MaxKbps;
+                p_cod3->WinBRCMaxAvgKbps = (mfxU16)(p->mfx.TargetKbps * 1.5);
                 p_cod3->WinBRCSize = p->mfx.FrameInfo.FrameRateExtN << 2;
             }
             p_cod2->LookAheadDepth = 20;
