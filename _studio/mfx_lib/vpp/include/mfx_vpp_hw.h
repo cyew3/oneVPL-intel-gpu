@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -206,6 +206,7 @@ namespace MfxHwVideoProcessing
     {
         mfxU32 refCount;
         std::vector<ExtSurface> surfaceListForRelease;
+        std::vector<mfxU32> subTasks;
     };
 
     struct DdiTask : public State
@@ -261,12 +262,12 @@ namespace MfxHwVideoProcessing
         bool   m_bWeave;
         bool   m_bPassThroughEnable;
         bool   m_bRefFrameEnable;
+        bool   m_multiBlt;// this flag defines mode of composition for D3D11: 1 - run few hw calls per frame (Blt), 0 - run one hw call (Blt)
 
         ExtendedConfig m_extConfig;
         mfxU16 m_IOPattern;
         mfxU16 m_surfCount[2];
     };
-
 
     class ResMngr
     {
@@ -294,6 +295,8 @@ namespace MfxHwVideoProcessing
 
             m_fwdRefCountRequired  = 0;
             m_bkwdRefCountRequired = 0;
+
+            m_multiBlt = 0;
 
             m_core = NULL;
         }
@@ -328,6 +331,10 @@ namespace MfxHwVideoProcessing
 
         mfxStatus CompleteTask(DdiTask *pTask);
         std::vector<State> m_surf[2];
+
+        mfxU32 GetSubTask(DdiTask *pTask);
+        mfxStatus DeleteSubTask(DdiTask *pTask, mfxU32 subtaskIdx);
+        bool IsMultiBlt();
 
     private:
 
@@ -385,6 +392,8 @@ namespace MfxHwVideoProcessing
 
         mfxU32 m_fwdRefCountRequired;
         mfxU32 m_bkwdRefCountRequired;
+
+        bool m_multiBlt;// this flag defines mode of composition for D3D11: 1 - run few hw calls per frame (Blt), 0 - run one hw call (Blt)
 
         VideoCORE* m_core;
     };
@@ -636,6 +645,9 @@ namespace MfxHwVideoProcessing
             mfxStatus & intSts);
 
         mfxStatus CompleteTask(DdiTask* pTask);
+
+        mfxU32 GetSubTask(DdiTask *pTask);
+        mfxStatus DeleteSubTask(DdiTask *pTask, mfxU32 subtaskIdx);
 
     private:
 

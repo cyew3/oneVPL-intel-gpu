@@ -407,7 +407,7 @@ mfxStatus VideoVPPBase::QueryIOSurf(VideoCORE* core, mfxVideoParam *par, mfxFram
 
     mfxU16 framesCountMin[2];
     mfxU16 framesCountSuggested[2];
-    mfxSts = GetExternalFramesCount(par, &pipelineList[0], (mfxU32)pipelineList.size(), framesCountMin, framesCountSuggested);
+    mfxSts = GetExternalFramesCount(core, par, &pipelineList[0], (mfxU32)pipelineList.size(), framesCountMin, framesCountSuggested);
     MFX_CHECK_STS( mfxSts );
 
     request[VPP_IN].NumFrameMin  = framesCountMin[VPP_IN];

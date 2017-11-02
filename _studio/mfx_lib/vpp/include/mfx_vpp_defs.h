@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2010-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2010-2017 Intel Corporation. All Rights Reserved.
 //
 
 /* ****************************************************************************** */
@@ -30,10 +30,13 @@
 
 // Max samples number for composition filter
 #if defined(_WIN32) || defined(_WIN64)
-    #define MAX_NUM_OF_VPP_COMPOSITE_STREAMS (8)
+    #define MAX_NUM_OF_VPP_COMPOSITE_STREAMS (128)
+    #define MAX_STREAMS_PER_TILE (8)
 #else
     #define MAX_NUM_OF_VPP_COMPOSITE_STREAMS (72)
+    #define MAX_STREAMS_PER_TILE (8)
 #endif
+
 
 // (DO_NOT_USE, DO_USE) + (MAX_NUM_OF_VPP_CONFIG_FILTERS)
 #define MAX_NUM_OF_VPP_EXT_PARAM      (2 + MAX_NUM_OF_VPP_CONFIG_FILTERS)

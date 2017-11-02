@@ -2240,7 +2240,7 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
 #ifdef DEBUG_DETAIL_INFO
     printf("\n\n---------- \n Submit Task::StatusID = %i \n----------\n\n", pParams->statusReportID);fflush(stderr);
 #endif
-    mfxStatus sts;
+    mfxStatus sts = MFX_ERR_NONE;
     MFX_CHECK_NULL_PTR1(pParams);
     if ( pParams->bCameraPipeEnabled )
     {
@@ -2250,6 +2250,8 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
     }
 
     mfxFrameInfo *outInfo = &(pParams->targetSurface.frameInfo);
+    int numRef = (pParams->execIdx == 0xffffffff) ? pParams->refCount : 1;
+    mfxU32 startIdx = (pParams->execIdx == 0xffffffff) ? 0 : pParams->execIdx;
 
     // [1] target rectangle
     RECT pRect;
@@ -2533,14 +2535,14 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
     }
 
     // [9] surface registration
-    D3D11_VIDEO_PROCESSOR_STREAM *videoProcessorStreams = new D3D11_VIDEO_PROCESSOR_STREAM[pParams->refCount];
+    D3D11_VIDEO_PROCESSOR_STREAM *videoProcessorStreams = new D3D11_VIDEO_PROCESSOR_STREAM[numRef];
     MFX_CHECK_NULL_PTR1(videoProcessorStreams);
 
-    memset(videoProcessorStreams, 0, sizeof(D3D11_VIDEO_PROCESSOR_STREAM) * pParams->refCount);
+    memset(videoProcessorStreams, 0, sizeof(D3D11_VIDEO_PROCESSOR_STREAM) * numRef);
 
     int refIdx = 0;
 
-    for (refIdx = 0; refIdx < pParams->refCount; refIdx++)
+    for (refIdx = 0; refIdx < numRef; refIdx++)
     {
         videoProcessorStreams[refIdx].Enable = TRUE;
         videoProcessorStreams[refIdx].OutputIndex = 0;//PtrToUlong(pParams->targetSurface.hdl.second);
@@ -2549,7 +2551,7 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
 
     // [10] advanced configuration
     // FRC
-    for (refIdx = 0; refIdx < pParams->refCount; refIdx++)
+    for (refIdx = 0; refIdx < numRef; refIdx++)
     {
         if( pParams->bFRCEnable )
         {
@@ -2588,17 +2590,17 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
     }
 
     // [11] reference samples
-    m_pInputView.resize(pParams->refCount);
+    m_pInputView.resize(numRef);
 
-    for (refIdx = 0; refIdx < pParams->refCount; refIdx++)
+    for (refIdx = 0; refIdx < numRef; refIdx++)
     {
-        SetStreamFrameFormat(refIdx, D3D11PictureStructureMapping(pParams->pRefSurfaces[refIdx].frameInfo.PicStruct));
+        SetStreamFrameFormat(refIdx, D3D11PictureStructureMapping(pParams->pRefSurfaces[startIdx + refIdx].frameInfo.PicStruct));
 
-        if ( pParams->pRefSurfaces[refIdx].frameInfo.FourCC == MFX_FOURCC_A2RGB10    ||
-             pParams->pRefSurfaces[refIdx].frameInfo.FourCC == MFX_FOURCC_ARGB16     ||
-             pParams->pRefSurfaces[refIdx].frameInfo.FourCC == MFX_FOURCC_AYUV       ||
-             pParams->pRefSurfaces[refIdx].frameInfo.FourCC == MFX_FOURCC_AYUV_RGB4  ||
-             pParams->pRefSurfaces[refIdx].frameInfo.FourCC == MFX_FOURCC_RGB4)
+        if ( pParams->pRefSurfaces[startIdx + refIdx].frameInfo.FourCC == MFX_FOURCC_A2RGB10    ||
+                pParams->pRefSurfaces[startIdx + refIdx].frameInfo.FourCC == MFX_FOURCC_ARGB16     ||
+                pParams->pRefSurfaces[startIdx + refIdx].frameInfo.FourCC == MFX_FOURCC_AYUV       ||
+                pParams->pRefSurfaces[startIdx + refIdx].frameInfo.FourCC == MFX_FOURCC_AYUV_RGB4  ||
+                pParams->pRefSurfaces[startIdx + refIdx].frameInfo.FourCC == MFX_FOURCC_RGB4)
         {
             // WA: if app explicitly requested LOW_POWER (e.g. using SFC instead of AVS), AlphaFillMode should not be used
             // because driver will fallback silently to AVS.
@@ -2610,10 +2612,10 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
             }
         }
 
-        mfxDrvSurface* pInputSample = &(pParams->pRefSurfaces[refIdx]);
+        mfxDrvSurface* pInputSample = &(pParams->pRefSurfaces[startIdx + refIdx]);
+        mfxFrameInfo *inInfo = &(pInputSample->frameInfo);
 
         // source cropping
-        mfxFrameInfo *inInfo = &(pInputSample->frameInfo);
         pRect.top    = inInfo->CropY;
         pRect.left   = inInfo->CropX;
         pRect.bottom = inInfo->CropH;
@@ -2627,12 +2629,12 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         if (pParams->bComposite)
         {
             // for sub-streams use DstRect info from ext buffer set by app
-            if(static_cast<int>(pParams->dstRects.size()) <= refIdx)
+            if(static_cast<int>(pParams->dstRects.size()) <= startIdx + refIdx)
             {
                 SAFE_DELETE_ARRAY(videoProcessorStreams);
                 return MFX_ERR_UNKNOWN;
             }
-            const DstRect& rec = pParams->dstRects[refIdx];
+            const DstRect& rec = pParams->dstRects[startIdx + refIdx];
             pRect.top = rec.DstY;
             pRect.left = rec.DstX;
             pRect.bottom = rec.DstY + rec.DstH;
@@ -2641,6 +2643,7 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
             FLOAT GlobalAlpha = rec.GlobalAlphaEnable ? rec.GlobalAlpha / 255.0f : 1.0f;
             SetStreamAlpha(refIdx, TRUE, GlobalAlpha);
             SetStreamLumaKey(refIdx, rec.LumaKeyEnable, rec.LumaKeyMin / 255.0f, rec.LumaKeyMax / 255.0f);
+
         }
         else
         {
@@ -2738,7 +2741,7 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         }
 
         /* Video signal info */
-        size_t index = static_cast<size_t>(refIdx) < pParams->VideoSignalInfo.size() ? refIdx : (pParams->VideoSignalInfo.size()-1);
+        size_t index = static_cast<size_t>(startIdx + refIdx) < pParams->VideoSignalInfo.size() ? startIdx + refIdx : (pParams->VideoSignalInfo.size()-1);
         if (pParams->VideoSignalInfo[index].enabled)
         {
             D3D11_VIDEO_PROCESSOR_COLOR_SPACE inColorSpace;
@@ -2786,11 +2789,11 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
 
         D3D11_VIDEO_PROCESSOR_INPUT_VIEW_DESC inputDesc;
         inputDesc.ViewDimension        = D3D11_VPIV_DIMENSION_TEXTURE2D;
-        inputDesc.Texture2D.ArraySlice = PtrToUlong(pParams->pRefSurfaces[refIdx].hdl.second);
+        inputDesc.Texture2D.ArraySlice = PtrToUlong(pParams->pRefSurfaces[startIdx + refIdx].hdl.second);
         inputDesc.FourCC               = fourCC;
         inputDesc.Texture2D.MipSlice   = 0;
 
-        ID3D11Resource*   pInputResource            = (ID3D11Resource *) (ID3D11Texture2D *)pParams->pRefSurfaces[refIdx].hdl.first;
+        ID3D11Resource*   pInputResource            = (ID3D11Resource *) (ID3D11Texture2D *)pParams->pRefSurfaces[startIdx + refIdx].hdl.first;
         ID3D11VideoProcessorInputView** ppInputView = &(m_pInputView[refIdx]);
 
         {
@@ -2809,10 +2812,10 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
 
         if(m_file)
         {
-             mfxFrameData data = { 0 };
-             data.MemId = pParams->pRefSurfaces[refIdx].memId;
-             bool external = pParams->pRefSurfaces[refIdx].bExternal;
-             mfxFrameInfo info = pParams->pRefSurfaces[refIdx].frameInfo;
+                mfxFrameData data = { 0 };
+                data.MemId = pParams->pRefSurfaces[startIdx + refIdx].memId;
+                bool external = pParams->pRefSurfaces[startIdx + refIdx].bExternal;
+                mfxFrameInfo info = pParams->pRefSurfaces[startIdx + refIdx].frameInfo;
 
             MfxVppDump::WriteFrameData(
                 m_file,
@@ -2875,9 +2878,15 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
 
     if (pParams->bComposite)
     {
-        StreamCount = pParams->refCount;
+        StreamCount = numRef;
 
-        for (refIdx = 0; refIdx < pParams->refCount; refIdx++)
+        DstRect& rec = pParams->dstRects[startIdx];
+        pRect.top = rec.DstY;
+        pRect.left = rec.DstX;
+        pRect.bottom = (rec.DstY + rec.DstH);
+        pRect.right = (rec.DstX + rec.DstW);
+
+        for (refIdx = 0; refIdx < numRef; refIdx++)
         {
             videoProcessorStreams[refIdx].ppPastSurfaces = NULL;
             videoProcessorStreams[refIdx].PastFrames     = NULL;
@@ -2886,7 +2895,26 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
 
             videoProcessorStreams[refIdx].ppFutureSurfaces = NULL;
             videoProcessorStreams[refIdx].FutureFrames     = NULL;
+
+            rec = pParams->dstRects[startIdx + refIdx];
+            pRect.top = min(rec.DstY, (mfxU32)pRect.top);
+            pRect.left = min(rec.DstX, (mfxU32)pRect.left);
+            pRect.bottom = max((rec.DstY + rec.DstH), (mfxU32)pRect.bottom);
+            pRect.right  = max((rec.DstX + rec.DstW), (mfxU32)pRect.right);
+
         }
+
+        if (startIdx)
+        {
+            SetOutputTargetRect(TRUE, &pRect); // this rect will processed by one blt, so need set for each blt excluding first, first blt processed full frame
+        }
+
+        sts = ExecuteBlt(
+        (ID3D11Texture2D *)pParams->targetSurface.hdl.first,
+        PtrToUlong(pParams->targetSurface.hdl.second),
+        StreamCount,
+        videoProcessorStreams,
+        pParams->statusReportID + startIdx);
     }
     else
     {
@@ -2899,18 +2927,18 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
 
         videoProcessorStreams[0].ppFutureSurfaces = (pParams->fwdRefCount > 0) ? &(m_pInputView[pParams->bkwdRefCount + 1]) : NULL;
         videoProcessorStreams[0].FutureFrames     = pParams->fwdRefCount;
-    }
 
-    sts = ExecuteBlt(
+        sts = ExecuteBlt(
         (ID3D11Texture2D *)pParams->targetSurface.hdl.first,
         PtrToUlong(pParams->targetSurface.hdl.second),
         StreamCount,
         videoProcessorStreams,
         pParams->statusReportID);
+    }
 
     SAFE_DELETE_ARRAY(videoProcessorStreams);
 
-    for( refIdx = 0; refIdx < pParams->refCount; refIdx++ )
+    for( refIdx = 0; refIdx < numRef; refIdx++ )
     {
         SAFE_RELEASE(m_pInputView[refIdx]);
     }

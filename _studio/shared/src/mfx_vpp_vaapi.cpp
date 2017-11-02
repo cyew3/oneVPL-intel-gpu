@@ -1376,7 +1376,6 @@ mfxStatus VAAPIVideoProcessing::RemoveBufferFromPipe(VABufferID id)
 
 
 
-#define MAX_STREAMS_PER_TILE 8
 
 BOOL    VAAPIVideoProcessing::isVideoWall(mfxExecuteParams *pParams)
 {

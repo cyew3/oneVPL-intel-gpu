@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2010-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2010-2017 Intel Corporation. All Rights Reserved.
 //
 
 /* ****************************************************************************** */
@@ -52,7 +52,8 @@ mfxU16 UpdatePicStruct( mfxU16 inPicStruct, mfxU16 outPicStruct, bool bDynamicDe
 bool IsRoiDifferent(mfxFrameSurface1 *input, mfxFrameSurface1 *output);
 
 // utility calculates frames count (in/out) to correct processing in sync/async mode by external application
-mfxStatus GetExternalFramesCount(mfxVideoParam* pParam,
+mfxStatus GetExternalFramesCount(VideoCORE* core,
+                                 mfxVideoParam* pParam,
                                  mfxU32* pListID,
                                  mfxU32 len,
                                  mfxU16 framesCountMin[2],

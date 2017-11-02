@@ -502,6 +502,8 @@ mfxStatus ResMngr::Init(
 
     m_fieldWeaving = config.m_bWeave;
 
+    m_multiBlt = config.m_multiBlt;
+
     m_core                 = core;
 
     return MFX_ERR_NONE;
@@ -756,6 +758,8 @@ mfxStatus ResMngr::ReleaseSubResource(bool bAll)
                 mfxStatus sts = m_core->DecreaseReference( &(extSrf.pSurf->Data) );
                 MFX_CHECK_STS(sts);
             }
+            m_subTaskQueue[i]->subTasks.shrink_to_fit();
+            m_subTaskQueue[i]->subTasks.clear();
             taskToRemove.push_back( m_subTaskQueue[i] );
         }
     }
@@ -795,6 +799,7 @@ ReleaseResource* ResMngr::CreateSubResource(void)
     ReleaseResource* subRes = new ReleaseResource;
     subRes->refCount = 0;
     subRes->surfaceListForRelease.clear();
+    subRes->subTasks.clear();
 
     subRes->refCount = m_outputIndexCountPerCycle;
 
@@ -819,6 +824,7 @@ ReleaseResource* ResMngr::CreateSubResourceForMode30i60p(void)
     ReleaseResource* subRes = new ReleaseResource;
     subRes->refCount = 0;
     subRes->surfaceListForRelease.clear();
+    subRes->subTasks.clear();
 
 
     subRes->refCount = m_outputIndexCountPerCycle;
@@ -948,7 +954,6 @@ mfxStatus ResMngr::FillTask(
     mfxFrameSurface1 *pOutSurface)
 {
     pInSurface;
-
     mfxU32 refIndx = 0;
 
     // bkwd
@@ -1019,6 +1024,10 @@ mfxStatus ResMngr::FillTask(
             }
         }
         pTask->m_refList.push_back(fwdSurf);
+        if (m_pSubResource && refIndx && m_multiBlt)
+        {
+            m_pSubResource->subTasks.push_back(pTask->taskIndex + refIndx);
+        }
         actualNumber++;
     }
 
@@ -1061,6 +1070,32 @@ mfxStatus ResMngr::CompleteTask(DdiTask *pTask)
 
 } // mfxStatus ResMngr::CompleteTask(DdiTask *pTask)
 
+mfxU32 ResMngr::GetSubTask(DdiTask *pTask)
+{
+    if (pTask && pTask->pSubResource && pTask->pSubResource->subTasks.size())
+        return pTask->pSubResource->subTasks[0];
+    else
+        return NO_INDEX;
+}
+
+mfxStatus ResMngr::DeleteSubTask(DdiTask *pTask, mfxU32 subtaskIdx)
+{
+    if (pTask && pTask->pSubResource)
+    {
+        std::vector<mfxU32>::iterator sub_it = find(pTask->pSubResource->subTasks.begin(), pTask->pSubResource->subTasks.end(), subtaskIdx);
+        if (sub_it != pTask->pSubResource->subTasks.end())
+        {
+            pTask->pSubResource->subTasks.erase(sub_it);
+            return MFX_ERR_NONE;
+        }
+    }
+    return MFX_ERR_NOT_FOUND;
+}
+
+bool ResMngr::IsMultiBlt()
+{
+    return m_multiBlt;
+}
 
 ////////////////////////////////////////////////////////////////////////////////////
 // TaskManager
@@ -1328,6 +1363,8 @@ mfxStatus TaskManager::FillTask(
     }
 
     pTask->taskIndex    = m_taskIndex++;
+    if ((m_taskIndex + pTask->fwdRefCount) >= NO_INDEX)
+        m_taskIndex = 1;
 
     pTask->input.timeStamp     = CURRENT_TIME_STAMP + m_actualNumber * FRAME_INTERVAL;
     pTask->input.endTimeStamp  = CURRENT_TIME_STAMP + (m_actualNumber + 1) * FRAME_INTERVAL;
@@ -1351,6 +1388,9 @@ mfxStatus TaskManager::FillTask(
             pTask,
             pInSurface,
             pOutSurface);
+        if ((COMPOSITE & m_extMode) && m_resMngr.IsMultiBlt())
+            m_taskIndex += pTask->fwdRefCount;
+
     }
     else // simple mode
     {
@@ -1427,6 +1467,8 @@ void TaskManager::UpdatePTS_Mode30i60p(
 
 } // void TaskManager::UpdatePTS_Mode30i60p(...)
 
+mfxU32 TaskManager::GetSubTask(DdiTask *pTask) { return m_resMngr.GetSubTask(pTask); }
+mfxStatus TaskManager::DeleteSubTask(DdiTask *pTask, mfxU32 subtaskIdx) { return m_resMngr.DeleteSubTask(pTask, subtaskIdx); }
 
 void TaskManager::UpdatePTS_SimpleMode(
     mfxFrameSurface1 *input,
@@ -3311,6 +3353,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
     m_executeParams.statusReportID = pTask->taskIndex;
 
     m_executeParams.iTargetInterlacingMode = DEINTERLACE_ENABLE;
+    m_executeParams.execIdx = NO_INDEX;
 
     if( !(m_executeParams.targetSurface.frameInfo.PicStruct & (MFX_PICSTRUCT_PROGRESSIVE)))
     {
@@ -3376,8 +3419,20 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
     MfxHwVideoProcessing::mfxExecuteParams  execParams = m_executeParams;
     sts = MergeRuntimeParams(pTask, &execParams);
     MFX_CHECK_STS(sts);
-
-    sts = (*m_ddi)->Execute(&execParams);
+    if (execParams.bComposite &&
+        (MFX_HW_D3D11 == m_pCore->GetVAType() && execParams.refCount > MAX_STREAMS_PER_TILE))
+    {
+        mfxU32 NumExecute = execParams.refCount;
+        for (mfxU32 execIdx = 0; execIdx < NumExecute; execIdx++)
+        {
+            execParams.execIdx = execIdx;
+            sts = (*m_ddi)->Execute(&execParams);
+            if (sts != MFX_ERR_NONE)
+                break;
+        }
+    }
+    else
+        sts = (*m_ddi)->Execute(&execParams);
     if (sts != MFX_ERR_NONE)
     {
         pTask->SetFree(true);
@@ -3438,8 +3493,21 @@ mfxStatus VideoVPPHW::QueryTaskRoutine(void *pState, void *pParam, mfxU32 thread
 
     mfxU32 currentTaskIdx = pTask->taskIndex;
 
-    if (! pTask->skipQueryStatus && ! pHwVpp->m_executeParams.mirroring) {
-        sts = (*pHwVpp->m_ddi)->QueryTaskStatus(currentTaskIdx);
+    if (!pTask->skipQueryStatus && !pHwVpp->m_executeParams.mirroring) {
+        mfxU32 currSubTaskIdx = pHwVpp->m_taskMngr.GetSubTask(pTask);
+        while (currSubTaskIdx != NO_INDEX)
+        {
+            sts = (*pHwVpp->m_ddi)->QueryTaskStatus(currSubTaskIdx);
+            if (sts == MFX_TASK_DONE || sts == MFX_ERR_NONE)
+            {
+                pHwVpp->m_taskMngr.DeleteSubTask(pTask, currSubTaskIdx);
+                currSubTaskIdx = pHwVpp->m_taskMngr.GetSubTask(pTask);
+            }
+            else
+                currSubTaskIdx = NO_INDEX;
+        }
+        if (sts == MFX_TASK_DONE || sts == MFX_ERR_NONE)
+            sts = (*pHwVpp->m_ddi)->QueryTaskStatus(currentTaskIdx);
         if (sts == MFX_ERR_DEVICE_FAILED ||
             sts == MFX_ERR_GPU_HANG)
         {
@@ -3905,16 +3973,19 @@ template <class T> void add_unique_fragments(const cRect<T> &r, std::vector< cRe
 
     while(!stack.empty()) {
         cRect<T> &cr = stack.back();
-        const cRect<T> &cf = fragments[cr.m_frag_lvl];
 
         if(cr.m_frag_lvl == frag_cnt) {
             stack.pop_back();
             fragments.push_back(cr);
-        } else if(cf.overlap(cr)) {
-            stack.pop_back();
-            fragment(cr, cf, stack);
         } else {
-            cr.m_frag_lvl++;
+            const cRect<T> &cf = fragments[cr.m_frag_lvl];
+            if (cf.overlap(cr)) {
+                stack.pop_back();
+                fragment(cr, cf, stack);
+            }
+            else {
+                cr.m_frag_lvl++;
+            }
         }
     }
 }
@@ -4636,6 +4707,12 @@ mfxStatus ConfigureExecuteParams(
                 config.m_extConfig.customRateData.fwdRefCount  = StreamCount-1; // count only secondary streams
                 config.m_extConfig.customRateData.inputFramesOrFieldPerCycle= StreamCount;
                 config.m_extConfig.customRateData.outputIndexCountPerCycle  = 1;
+
+#if defined (MFX_VA_WIN)
+                config.m_multiBlt = (StreamCount <= MAX_STREAMS_PER_TILE) ? false : true;
+#else
+                config.m_multiBlt = false; // not applicable for Linux
+#endif
 
                 executeParams.bComposite = true;
                 executeParams.bBackgroundRequired = true; /* by default background required */
