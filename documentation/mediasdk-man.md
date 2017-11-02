@@ -3572,7 +3572,7 @@ typedef struct {
     mfxU16      IntraVLCFormat;
     mfxU16      ScanType;
 
-    mfxU16      SliceSizeReport;           /* tri-state option */
+    mfxU16      EncodedUnitsInfo;          /* tri-state option */
 
     mfxU16      EnableNalUnitType;         /* tri-state option */
 
@@ -3628,7 +3628,7 @@ The application can attach this extended buffer to the [mfxVideoParam](#mfxVideo
 `QuantScaleType` | For MPEG2 specifies mapping between quantiser_scale_code and quantiser_scale (see [QuantScaleType](#QuantScaleType) enum).
 `IntraVLCFormat` | For MPEG2 specifies which table shall be used for coding of DCT coefficients of intra macroblocks (see [IntraVLCFormat](#IntraVLCFormat) enum).
 `ScanType` | For MPEG2 specifies transform coefficients scan pattern (see [ScanType](#ScanType) enum).
-`SliceSizeReport` | Turn this option ON to make slice info available in [mfxExtEncodedUnitsInfo](#mfxExtEncodedUnitsInfo).
+`EncodedUnitsInfo` | Turn this option ON to make encoded units info available in [mfxExtEncodedUnitsInfo](#mfxExtEncodedUnitsInfo).
 `EnableNalUnitType` | If this option is turned ON, then HEVC encoder uses NAL unit type provided by application in [mfxEncodeCtrl](#mfxEncodeCtrl)**::MfxNalUnitType** field. <br><br>This parameter is valid only during initialization.<br><br>Not all codecs and SDK implementations support this value. Use [Query](#MFXVideoENCODE_Query) function to check if this feature is supported.
 
 
@@ -3654,7 +3654,7 @@ The SDK API 1.21 adds `BRCPanicMode` field.
 
 The SDK API 1.23 adds `LowDelayBRC`, `EnableMBForceIntra`, `AdaptiveMaxFrameSize`, `RepartitionCheckEnable` fields.
 
-The SDK API **TBD** adds `SliceSizeReport` field.
+The SDK API **TBD** adds `EncodedUnitsInfo` field.
 
 The SDK API **TBD** adds `EnableNalUnitType` field.
 
@@ -6876,7 +6876,7 @@ typedef struct {
 
 **Description**
 
-When attached to the [mfxBitstream](#mfxBitstream) structure during [encoding](#MFXVideoENCODE_EncodeFrameAsync), structure `mfxExtEncodedUnitsInfo` is used to report information about coding units in the resulting bitstream. **Note:** If [mfxExtCodingOption3](#mfxExtCodingOption3)`::SliceSizeReport` wasn't set to `MFX_CODINGOPTION_ON` during encoder [initialization](#MFXVideoENCODE_Init), information about coded slices may be missed.
+If [mfxExtCodingOption3](#mfxExtCodingOption3)`::EncodedUnitsInfo` was set to `MFX_CODINGOPTION_ON` during encoder [initialization](#MFXVideoENCODE_Init), structure `mfxExtEncodedUnitsInfo` attached to the [mfxBitstream](#mfxBitstream) structure during [encoding](#MFXVideoENCODE_EncodeFrameAsync) is used to report information about coding units in the resulting bitstream.
 
 **Members**
 

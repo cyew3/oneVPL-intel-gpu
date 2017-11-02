@@ -782,7 +782,7 @@ typedef struct {
     mfxU16      IntraVLCFormat;            /* For MPEG2 specifies which table shall be used for coding of DCT coefficients of intra macroblocks (see IntraVLCFormat enum) */
     mfxU16      ScanType;                  /* For MPEG2 specifies transform coefficients scan pattern (see ScanType enum) */
 
-    mfxU16      SliceSizeReport;           /* tri-state option */
+    mfxU16      EncodedUnitsInfo;          /* tri-state option */
 
     mfxU16      EnableNalUnitType;         /* tri-state option */
 

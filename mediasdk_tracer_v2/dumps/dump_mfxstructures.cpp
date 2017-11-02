@@ -216,7 +216,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCodingOp
     DUMP_FIELD(QuantScaleType);
     DUMP_FIELD(IntraVLCFormat);
     DUMP_FIELD(ScanType);
-    DUMP_FIELD(SliceSizeReport);
+    DUMP_FIELD(EncodedUnitsInfo);
 #endif
     DUMP_FIELD(EnableNalUnitType);
     DUMP_FIELD_RESERVED(reserved);

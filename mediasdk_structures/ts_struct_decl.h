@@ -792,7 +792,7 @@ STRUCT(mfxExtCodingOption3,
     FIELD_T(mfxU16      , QuantScaleType                )
     FIELD_T(mfxU16      , IntraVLCFormat                )
     FIELD_T(mfxU16      , ScanType                      )
-    FIELD_T(mfxU16      , SliceSizeReport               )
+    FIELD_T(mfxU16      , EncodedUnitsInfo              )
     FIELD_T(mfxU16      , EnableNalUnitType             )
 )
 
