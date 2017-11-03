@@ -133,4 +133,6 @@ private:
     mfxVideoParamWrapper(const mfxVideoParamWrapper &);
 };
 
+mfxU8* GetFramePointer(mfxU32 fourcc, mfxFrameData const&);
+
 #endif

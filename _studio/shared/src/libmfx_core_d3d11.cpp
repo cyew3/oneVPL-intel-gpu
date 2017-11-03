@@ -675,6 +675,9 @@ mfxStatus D3D11VideoCORE::DoFastCopyWrapper(mfxFrameSurface1 *pDst, mfxU16 dstMe
     srcMemId = pSrc->Data.MemId;
     dstMemId = pDst->Data.MemId;
 
+    mfxU8* srcPtr = GetFramePointer(pSrc->Info.FourCC, pSrc->Data);
+    mfxU8* dstPtr = GetFramePointer(pDst->Info.FourCC, pDst->Data);
+
     srcTempSurface.Info = pSrc->Info;
     dstTempSurface.Info = pDst->Info;
 
@@ -685,7 +688,7 @@ mfxStatus D3D11VideoCORE::DoFastCopyWrapper(mfxFrameSurface1 *pDst, mfxU16 dstMe
     {
         if (srcMemType & MFX_MEMTYPE_SYSTEM_MEMORY)
         {
-            if (NULL == pSrc->Data.Y)
+            if (NULL == srcPtr)
             {
                 sts = LockExternalFrame(srcMemId, &srcTempSurface.Data);
                 MFX_CHECK_STS(sts);
@@ -710,7 +713,7 @@ mfxStatus D3D11VideoCORE::DoFastCopyWrapper(mfxFrameSurface1 *pDst, mfxU16 dstMe
     {
         if (srcMemType & MFX_MEMTYPE_SYSTEM_MEMORY)
         {
-            if (NULL == pSrc->Data.Y)
+            if (NULL == srcPtr)
             {
                 sts = LockFrame(srcMemId, &srcTempSurface.Data);
                 MFX_CHECK_STS(sts);
@@ -736,7 +739,7 @@ mfxStatus D3D11VideoCORE::DoFastCopyWrapper(mfxFrameSurface1 *pDst, mfxU16 dstMe
     {
         if (dstMemType & MFX_MEMTYPE_SYSTEM_MEMORY)
         {
-            if (NULL == pDst->Data.Y)
+            if (NULL == dstPtr)
             {
                 sts = LockExternalFrame(dstMemId, &dstTempSurface.Data);
                 MFX_CHECK_STS(sts);
@@ -761,7 +764,7 @@ mfxStatus D3D11VideoCORE::DoFastCopyWrapper(mfxFrameSurface1 *pDst, mfxU16 dstMe
     {
         if (dstMemType & MFX_MEMTYPE_SYSTEM_MEMORY)
         {
-            if (NULL == pDst->Data.Y)
+            if (NULL == dstPtr)
             {
                 sts = LockFrame(dstMemId, &dstTempSurface.Data);
                 MFX_CHECK_STS(sts);
@@ -822,11 +825,14 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
     mfxStatus sts = MFX_ERR_NONE;
     pDst; pSrc;
 
+    mfxU8* srcPtr = GetFramePointer(pSrc->Info.FourCC, pSrc->Data);
+    mfxU8* dstPtr = GetFramePointer(pDst->Info.FourCC, pDst->Data);
+
     // check that only memId or pointer are passed
     // otherwise don't know which type of memory copying is requested
     if (
-        (NULL != pDst->Data.Y && NULL != pDst->Data.MemId) ||
-        (NULL != pSrc->Data.Y && NULL != pSrc->Data.MemId)
+        (NULL != dstPtr && NULL != pDst->Data.MemId) ||
+        (NULL != srcPtr && NULL != pSrc->Data.MemId)
         )
     {
         return MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -873,7 +879,7 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
         }
 
     }
-    else if (NULL != pSrc->Data.MemId && NULL != pDst->Data.Y)
+    else if (NULL != pSrc->Data.MemId && NULL != dstPtr)
     {
         if (canUseCMCopy)
         {
@@ -884,7 +890,7 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
         else
         {
 
-            MFX_CHECK((pDst->Data.Y == 0) == (pDst->Data.UV == 0), MFX_ERR_UNDEFINED_BEHAVIOR);
+            MFX_CHECK(pDst->Data.UV == 0, MFX_ERR_UNDEFINED_BEHAVIOR);
             MFX_CHECK(dstPitch < 0x8000 || pDst->Info.FourCC == MFX_FOURCC_ARGB16 || pDst->Info.FourCC == MFX_FOURCC_RGB4 || pDst->Info.FourCC == MFX_FOURCC_YUY2, MFX_ERR_UNDEFINED_BEHAVIOR);
 
             ID3D11Texture2D * pSurface = reinterpret_cast<ID3D11Texture2D *>(((mfxHDLPair*)pSrc->Data.MemId)->first);
@@ -958,13 +964,13 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
             SAFE_RELEASE(pStaging);
         }
     }
-    else if (NULL != pSrc->Data.Y && NULL != pDst->Data.Y)
+    else if (NULL != srcPtr && NULL != dstPtr)
     {
         // system memories were passed
         // use common way to copy frames
 
-        MFX_CHECK((pSrc->Data.Y == 0) == (pSrc->Data.UV == 0), MFX_ERR_UNDEFINED_BEHAVIOR);
-        MFX_CHECK((pDst->Data.Y == 0) == (pDst->Data.UV == 0), MFX_ERR_UNDEFINED_BEHAVIOR);
+        MFX_CHECK(pSrc->Data.UV == 0, MFX_ERR_UNDEFINED_BEHAVIOR);
+        MFX_CHECK(pDst->Data.UV == 0, MFX_ERR_UNDEFINED_BEHAVIOR);
         MFX_CHECK(dstPitch < 0x8000 || pDst->Info.FourCC == MFX_FOURCC_RGB4 || pDst->Info.FourCC == MFX_FOURCC_YUY2, MFX_ERR_UNDEFINED_BEHAVIOR);
         MFX_CHECK(srcPitch < 0x8000 || pSrc->Info.FourCC == MFX_FOURCC_RGB4 || pSrc->Info.FourCC == MFX_FOURCC_YUY2, MFX_ERR_UNDEFINED_BEHAVIOR);
 
@@ -975,7 +981,7 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
         MFX_CHECK_STS(sts);
        
     }
-    else if (NULL != pSrc->Data.Y && NULL != pDst->Data.MemId)
+    else if (NULL != srcPtr && NULL != pDst->Data.MemId)
     {
         // source are placed in system memory, destination is in video memory
         // use common way to copy frames from system to video, most faster
@@ -995,7 +1001,7 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
         }
         else
         {
-            MFX_CHECK((pSrc->Data.Y == 0) == (pSrc->Data.UV == 0) || IsBayerFormat(pDst->Info.FourCC), MFX_ERR_UNDEFINED_BEHAVIOR);
+            MFX_CHECK(pSrc->Data.UV == 0 || IsBayerFormat(pDst->Info.FourCC), MFX_ERR_UNDEFINED_BEHAVIOR);
             MFX_CHECK(srcPitch < 0x8000 || pSrc->Info.FourCC == MFX_FOURCC_RGB4 || pSrc->Info.FourCC == MFX_FOURCC_YUY2, MFX_ERR_UNDEFINED_BEHAVIOR);
 
             ID3D11Texture2D * pSurface = reinterpret_cast<ID3D11Texture2D *>(((mfxHDLPair*)pDst->Data.MemId)->first);

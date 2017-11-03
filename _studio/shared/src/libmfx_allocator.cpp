@@ -400,10 +400,8 @@ mfxStatus mfxDefaultAllocator::LockFrame(mfxHDL pthis, mfxHDL mid, mfxFrameData 
     case MFX_FOURCC_Y410:
         ptr->PitchHigh = (mfxU16)((4 * ALIGN32(fs->info.Width)) / (1 << 16));
         ptr->PitchLow  = (mfxU16)((4 * ALIGN32(fs->info.Width)) % (1 << 16));
-        ptr->U = sptr;
-        ptr->Y = 0;
-        ptr->V = 0;
-        ptr->A = 0;
+        ptr->Y = ptr->U = ptr->V = ptr->A = 0;
+        ptr->Y410 = (mfxY410*)sptr;
         break;
 #endif // PRE_SI_TARGET_PLATFORM_GEN11
 

@@ -1105,6 +1105,9 @@ mfxStatus CommonCORE::DoFastCopyWrapper(mfxFrameSurface1 *pDst, mfxU16 dstMemTyp
     srcMemId = pSrc->Data.MemId;
     dstMemId = pDst->Data.MemId;
 
+    mfxU8* srcPtr = GetFramePointer(pSrc->Info.FourCC, pSrc->Data);
+    mfxU8* dstPtr = GetFramePointer(pDst->Info.FourCC, pDst->Data);
+
     srcTempSurface.Info = pSrc->Info;
     dstTempSurface.Info = pDst->Info;
 
@@ -1118,7 +1121,7 @@ mfxStatus CommonCORE::DoFastCopyWrapper(mfxFrameSurface1 *pDst, mfxU16 dstMemTyp
     {
         //if (srcMemType & MFX_MEMTYPE_SYSTEM_MEMORY)
         {
-            if (NULL == pSrc->Data.Y)
+            if (NULL == srcPtr)
             {
                 // only if pointers are absence
                 sts = LockExternalFrame(srcMemId, &srcTempSurface.Data);
@@ -1138,7 +1141,7 @@ mfxStatus CommonCORE::DoFastCopyWrapper(mfxFrameSurface1 *pDst, mfxU16 dstMemTyp
     {
         //if (srcMemType & MFX_MEMTYPE_SYSTEM_MEMORY)
         {
-            if (NULL == pSrc->Data.Y)
+            if (NULL == srcPtr)
             {
                 sts = LockFrame(srcMemId, &srcTempSurface.Data);
                 MFX_CHECK_STS(sts);
@@ -1158,7 +1161,7 @@ mfxStatus CommonCORE::DoFastCopyWrapper(mfxFrameSurface1 *pDst, mfxU16 dstMemTyp
     {
         //if (dstMemType & MFX_MEMTYPE_SYSTEM_MEMORY)
         {
-            if (NULL == pDst->Data.Y)
+            if (NULL == dstPtr)
             {
                 // only if pointers are absence
                 sts = LockExternalFrame(dstMemId, &dstTempSurface.Data);
@@ -1178,7 +1181,7 @@ mfxStatus CommonCORE::DoFastCopyWrapper(mfxFrameSurface1 *pDst, mfxU16 dstMemTyp
     {
         if (dstMemType & MFX_MEMTYPE_SYSTEM_MEMORY)
         {
-            if (NULL == pDst->Data.Y)
+            if (NULL == dstPtr)
             {
                 // only if pointers are absence
                 sts = LockFrame(dstMemId, &dstTempSurface.Data);
