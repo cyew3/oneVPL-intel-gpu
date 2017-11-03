@@ -1055,7 +1055,11 @@ bool MFX_JPEG_Utility::IsNeedPartialAcceleration(VideoCORE * core, mfxVideoParam
     if (par->mfx.InterleavedDec == MFX_SCANTYPE_NONINTERLEAVED)
         return true;
 
-    if (core->GetHWType() == MFX_HW_APL)
+    if (core->GetHWType() == MFX_HW_APL
+#ifndef MFX_CLOSED_PLATFORMS_DISABLE
+        || core->GetHWType() == MFX_HW_CFL
+#endif
+       )
     {
         if (par->mfx.FrameInfo.Width > 4096 || par->mfx.FrameInfo.Height > 4096)
         {
