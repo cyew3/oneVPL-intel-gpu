@@ -2333,6 +2333,10 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         sts = CorrectLevel(par, false);
     }
 
+#if defined (PRE_SI_TARGET_PLATFORM_GEN10)
+    changed += CheckTriStateOption(par.m_ext.DDI.QpAdjust);
+#endif //defined (PRE_SI_TARGET_PLATFORM_GEN10)
+
     if (sts == MFX_ERR_NONE && changed)
         sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
 
@@ -2742,6 +2746,9 @@ void SetDefaults(
 
     if (!par.m_ext.HEVCParam.SampleAdaptiveOffset)
         par.m_ext.HEVCParam.SampleAdaptiveOffset = TUDefault::SAO(par);
+
+    if (!par.m_ext.DDI.QpAdjust)
+        par.m_ext.DDI.QpAdjust = (par.mfx.TargetUsage < MFX_TARGETUSAGE_6) ? (mfxU16)MFX_CODINGOPTION_ON : (mfxU16)MFX_CODINGOPTION_OFF;
 #endif //defined(PRE_SI_TARGET_PLATFORM_GEN10)
 
     if (CO3.EnableMBQP == 0)

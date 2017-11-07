@@ -260,6 +260,7 @@ void MFXStructureRef <mfxExtCodingOptionDDI>::ConstructValues () const
     SERIALIZE_INT(CabacInitIdcPlus1);
 
     SERIALIZE_INT(LCUSize);
+    SERIALIZE_INT(QpAdjust);
     SERIALIZE_INT(WriteIVFHeaders);
     SERIALIZE_INT(RefreshFrameContext);
     SERIALIZE_INT(ChangeFrameContextIdxForTS);

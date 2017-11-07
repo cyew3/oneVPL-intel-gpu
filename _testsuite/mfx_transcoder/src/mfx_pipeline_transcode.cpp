@@ -433,10 +433,11 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_DDI_OPTION(DirectSpatialMvPredFlag, OPT_TRI_STATE,  "on=spatial, off=temporal"),
         HANDLE_DDI_OPTION(CabacInitIdcPlus1,       OPT_UINT_16,    "0-to use default value (depends on Target Usaeg), 1-cabacinitidc=0, 2-cabacinitidc=1,  etc"),
         HANDLE_DDI_OPTION(LCUSize,                 OPT_UINT_16,    "32 or 64 - overrides default value of Largest Coding Unit"),
-        HANDLE_DDI_OPTION(WriteIVFHeaders,         OPT_TRI_STATE,    ""),
-        HANDLE_DDI_OPTION(RefreshFrameContext,     OPT_TRI_STATE, ""),
+        HANDLE_DDI_OPTION(QpAdjust,                OPT_TRI_STATE,  "on/off - forces sps.QpAdjustment, default on for TU1-5, off for TU6-7"),
+        HANDLE_DDI_OPTION(WriteIVFHeaders,         OPT_TRI_STATE,  ""),
+        HANDLE_DDI_OPTION(RefreshFrameContext,     OPT_TRI_STATE,  ""),
         HANDLE_DDI_OPTION(ChangeFrameContextIdxForTS, OPT_TRI_STATE, ""),
-        HANDLE_DDI_OPTION(SuperFrameForTS,         OPT_TRI_STATE, ""),
+        HANDLE_DDI_OPTION(SuperFrameForTS,         OPT_TRI_STATE,  ""),
 
         //mfxExtEncoderCapability
         HANDLE_CAP_OPTION(MBPerSec,                OPT_BOOL,       "Query Encoder for Max MB Per Second"),

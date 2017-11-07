@@ -769,7 +769,7 @@ void FillSpsBuffer(
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN10)
     if ((par.mfx.RateControlMethod == MFX_RATECONTROL_CQP) && IsOn(par.mfx.LowPower)) {
-        sps.QpAdjustment = 1;
+        sps.QpAdjustment = IsOn(par.m_ext.DDI.QpAdjust) ? 1 : 0;
     }
 #endif //defined(PRE_SI_TARGET_PLATFORM_GEN10)
 
