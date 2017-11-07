@@ -1523,6 +1523,18 @@ bool CheckInputParams(msdk_char* strInput[], sInputParams* pParams )
         }
     }
 
+    for (mfxU32 i = 0; i < pParams->numStreams; i++)
+    {
+        const mfxVPPCompInputStream& is = pParams->compositionParam.streamInfo[i].compStream;
+
+        if ((pParams->outFrameInfo.nWidth < is.DstW + is.DstX) ||
+            (pParams->outFrameInfo.nHeight < is.DstH + is.DstY))
+        {
+            vppPrintHelp(strInput[0], MSDK_STRING("One of composing frames cannot fit into destination frame.\n"));
+            return false;
+        }
+    }
+
     return true;
 
 } // bool CheckInputParams(msdk_char* strInput[], sInputVppParams* pParams )
