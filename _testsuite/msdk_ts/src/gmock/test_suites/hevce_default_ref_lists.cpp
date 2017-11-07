@@ -14,7 +14,7 @@ Copyright(c) 2017 Intel Corporation. All Rights Reserved.
 #include <vector>
 #include <algorithm>
 
-//#define DUMP_BS
+// #define DUMP_BS
 
 namespace hevce_default_ref_lists
 {
@@ -28,6 +28,7 @@ namespace hevce_default_ref_lists
         mfxU32 bpo;
         mfxU16 PLayer;
         bool   bSecondField;
+        bool   bBottomField;
         mfxI32 lastRAP;
         mfxI32 IPoc;
         mfxI32 prevIPoc;
@@ -41,6 +42,7 @@ namespace hevce_default_ref_lists
         mfxI32 poc;
         mfxU16 PLayer;
         bool   bSecondField;
+        bool   bBottomField;
         std::vector<Frame> ListX[2];
     };
 
@@ -50,42 +52,51 @@ namespace hevce_default_ref_lists
         return (type & MFX_FRAMETYPE_REF) ? char(toupper(c)) : c;
     }
 
+    bool isBFF(mfxVideoParam const & video)
+    {
+        return ((video.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_BOTTOM) == MFX_PICSTRUCT_FIELD_BOTTOM);
+    }
+
     mfxU8 GetFrameType(
         mfxVideoParam const & video,
-        mfxU32                frameOrder)
+        mfxU32                pictureOrder,
+        bool                  isPictureOfLastFrame)
     {
         mfxU32 gopOptFlag = video.mfx.GopOptFlag;
         mfxU32 gopPicSize = video.mfx.GopPicSize;
         mfxU32 gopRefDist = video.mfx.GopRefDist;
         mfxU32 idrPicDist = gopPicSize * (video.mfx.IdrInterval);
 
-        if (gopPicSize == 0xffff) //infinite GOP
+        if (gopPicSize == 0xffff)
             idrPicDist = gopPicSize = 0xffffffff;
 
         bool bFields = !!(video.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_SINGLE);
-        mfxU32 fo = bFields ? frameOrder / 2 : frameOrder;
-        bool   bSecondField = bFields ? (frameOrder & 1) != 0 : false;
-        bool   bIdr = (idrPicDist ? fo % idrPicDist : fo) == 0;
+
+        mfxU32 frameOrder = bFields ? pictureOrder / 2 : pictureOrder;
+
+        bool   bSecondField = bFields && (pictureOrder & 1);
+        bool   bIdr = (idrPicDist ? frameOrder % idrPicDist : frameOrder) == 0;
 
         if (bIdr)
-        {
             return bSecondField ? (MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF) : (MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_IDR);
-        }
 
-        if (fo % gopPicSize == 0)
+        if (frameOrder % gopPicSize == 0)
             return (mfxU8)(bSecondField ? MFX_FRAMETYPE_P : MFX_FRAMETYPE_I) | MFX_FRAMETYPE_REF;
 
-        if (fo % gopPicSize % gopRefDist == 0)
+        if (frameOrder % gopPicSize % gopRefDist == 0)
             return (MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF);
 
         if ((gopOptFlag & MFX_GOP_STRICT) == 0)
+        {
             if (((frameOrder + 1) % gopPicSize == 0 && (gopOptFlag & MFX_GOP_CLOSED)) ||
-                (idrPicDist && (frameOrder + 1) % idrPicDist == 0))
+                (idrPicDist && (frameOrder + 1) % idrPicDist == 0) ||
+                isPictureOfLastFrame)
             {
                 return (MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF);
             }
+        }
 
-        return (MFX_FRAMETYPE_B);
+        return MFX_FRAMETYPE_B;
     }
 
     class EncodeEmulator
@@ -142,6 +153,7 @@ namespace hevce_default_ref_lists
         FrameArray                  m_dpb;
 
         tsExtBufType<mfxVideoParam> m_emuPar;
+        mfxU32                      m_nMaxFrames;
 
         mfxI32                      m_lastIdr;   // for POC calculation
         mfxI32                      m_anchorPOC; // for P-Pyramid
@@ -338,52 +350,72 @@ namespace hevce_default_ref_lists
 
         ~EncodeEmulator() {};
 
-        void Init(tsExtBufType<mfxVideoParam> & par)
+        void Init(tsExtBufType<mfxVideoParam> & par, mfxU32 nMaxFrames)
         {
             m_emuPar = par;
+            m_nMaxFrames = nMaxFrames;
         }
 
-        ExternalFrame ProcessFrame(mfxI32 order)
+        ExternalFrame ProcessFrame(const mfxFrameSurface1 & s, bool flash)
         {
-            mfxI32 poc = -1;
-            ExternalFrame out = { 0, 0, poc, 0 };
+            ExternalFrame out = { 0, 0, -1, 0 };
             FrameIterator itOut = m_queue.end();
 
             bool bIsFieldCoding       = !!(m_emuPar.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_SINGLE);
             mfxExtCodingOption3 & CO3 = m_emuPar;
             bool isPPyramid           = !!(MFX_P_REF_PYRAMID == CO3.PRefType);
 
-            mfxU32 type = 0;
-
             //=================1. Get type, poc, put frame in the queue=====================
-            if (order >= 0)
+            if (!flash)
             {
-                type = GetFrameType(m_emuPar, order - m_lastIdr);
+                bool isPictureOfLastFrameInGOP = false;
 
-                if (type & MFX_FRAMETYPE_IDR)
-                    m_lastIdr = order;
+                if ((s.Data.FrameOrder >> bIsFieldCoding) == ((m_nMaxFrames - 1) >> bIsFieldCoding)) // EOS
+                    isPictureOfLastFrameInGOP = true;
 
-                poc = order - m_lastIdr;
+                Frame frame;
 
-                if (type & MFX_FRAMETYPE_I)
+                frame.type = GetFrameType(m_emuPar, (bIsFieldCoding ? (m_lastIdr %2) : 0) + s.Data.FrameOrder - m_lastIdr, isPictureOfLastFrameInGOP);
+
+                if (frame.type & MFX_FRAMETYPE_IDR)
+                    m_lastIdr = s.Data.FrameOrder;
+
+                frame.poc          = s.Data.FrameOrder - m_lastIdr;
+                frame.bSecondField = bIsFieldCoding && (s.Data.FrameOrder & 1);
+                frame.bBottomField = false;
+                if (bIsFieldCoding)
                 {
-                    m_anchorPOC = order;
+                    frame.bBottomField = (s.Info.PicStruct & (MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_BFF)) == 0 ?
+                        (isBFF(m_emuPar) != frame.bSecondField) :
+                        (s.Info.PicStruct & MFX_PICSTRUCT_FIELD_BFF) != 0;
                 }
 
-                mfxU16 PLayer = 0;
+                if (frame.type & MFX_FRAMETYPE_I)
+                {
+                    m_anchorPOC = frame.poc;
+                }
+
                 if (isPPyramid)
                 {
                     mfxU16 & nMaxRefL0 = CO3.NumRefActiveP[0];
 
-                    mfxI32 idx = std::abs(( poc >> bIsFieldCoding) - (m_anchorPOC >> bIsFieldCoding) ) % nMaxRefL0;
+                    mfxI32 idx = std::abs(( frame.poc >> bIsFieldCoding) - (m_anchorPOC >> bIsFieldCoding) ) % nMaxRefL0;
                     static const mfxU16 pattern[4] = {0,2,1,2};
-                    PLayer = pattern[idx];
+                    frame.PLayer = pattern[idx];
                 }
-                m_queue.push_back({type, (mfxU8)-1, poc, (mfxU32)MFX_FRAMEORDER_UNKNOWN, PLayer, bIsFieldCoding && (poc & 1), -1, -1, -1, -1});
+
+                frame.nalType  = (mfxU8)-1;
+                frame.bpo      = (mfxU32)MFX_FRAMEORDER_UNKNOWN;
+                frame.lastRAP  = -1;
+                frame.IPoc     = -1;
+                frame.prevIPoc = -1;
+                frame.nextIPoc = -1;
+
+                m_queue.push_back(frame);
             }
 
             //=================2. Reorder frames, fill output frame poc, type, etc=====================
-            itOut = Reorder(order < 0, bIsFieldCoding);
+            itOut = Reorder(flash, bIsFieldCoding);
             if (itOut == m_queue.end())
                 return out;
 
@@ -419,6 +451,7 @@ namespace hevce_default_ref_lists
             out.poc          = itOut->poc;
             out.type         = itOut->type;
             out.bSecondField = itOut->bSecondField;
+            out.bBottomField = itOut->bBottomField;
 
             //=================3. Update DPB=====================
             if (isIdr)
@@ -457,8 +490,8 @@ namespace hevce_default_ref_lists
 
                 auto preferSamePolarity = [&](const Frame & lhs_frame, const Frame & rhs_frame)
                 {
-                   mfxU32 lhs_distance = std::abs(lhs_frame.poc/2 - out.poc/2) + ((lhs_frame.bSecondField == out.bSecondField) ? 0 : 1);
-                   mfxU32 rhs_distance = std::abs(rhs_frame.poc/2 - out.poc/2) + ((rhs_frame.bSecondField == out.bSecondField) ? 0 : 1);
+                   mfxU32 lhs_distance = std::abs(lhs_frame.poc/2 - out.poc/2) + ((lhs_frame.bBottomField == out.bBottomField) ? 0 : 2);
+                   mfxU32 rhs_distance = std::abs(rhs_frame.poc/2 - out.poc/2) + ((rhs_frame.bBottomField == out.bBottomField) ? 0 : 2);
 
                    return lhs_distance <= rhs_distance;
                 };
@@ -472,7 +505,7 @@ namespace hevce_default_ref_lists
                 };
 
                 // If lists are bigger than max supported, sort them and remove extra elements
-                if (L0.size() > CO3.NumRefActiveP[0])
+                if (L0.size() > (isB ? CO3.NumRefActiveBL0[0] : CO3.NumRefActiveP[0]))
                 {
                     if (isPPyramid)
                     {
@@ -509,27 +542,17 @@ namespace hevce_default_ref_lists
                             L0.erase(weak);
                         }
                     }
-
-                    if (bIsFieldCoding)
-                    {
-                        std::sort(L0.begin(), L0.end(), preferSamePolarity);
-                    }
-                    else
-                    {
-                        std::sort(L0.begin(), L0.end(), distance);
-                    }
                 }
 
-                if (L1.size() > CO3.NumRefActiveBL1[0])
+                if (bIsFieldCoding)
                 {
-                    if (bIsFieldCoding)
-                    {
-                        std::sort(L1.begin(), L1.end(), preferSamePolarity);
-                    }
-                    else
-                    {
-                        std::sort(L1.begin(), L1.end(), distance);
-                    }
+                    std::sort(L0.begin(), L0.end(), preferSamePolarity);
+                    std::sort(L1.begin(), L1.end(), preferSamePolarity);
+                }
+                else
+                {
+                    std::sort(L0.begin(), L0.end(), distance);
+                    std::sort(L1.begin(), L1.end(), distance);
                 }
 
                 if ((m_emuPar.mfx.GopOptFlag & MFX_GOP_CLOSED))
@@ -559,6 +582,7 @@ namespace hevce_default_ref_lists
                 if (!isB)
                 {
                     L1 = L0;
+                    std::sort(L1.begin(), L1.end(), distance);
                 }
 
                 // Remove extra entries
@@ -629,16 +653,21 @@ namespace hevce_default_ref_lists
     public:
         static const unsigned int n_cases;
 
+        enum
+        {
+            MFX_PAR = 1,
+            EXT_COD2,
+            EXT_COD3
+        };
+
         typedef struct
         {
-            mfxU16 PicStruct;
-            mfxU16 GopPicSize;
-            mfxU16 GopRefDist;
-            mfxU16 GopOptFlag;
-            mfxU16 IdrInterval;
-            mfxU16 BRefType;
-            mfxU16 PRefType;
-            mfxU16 GPB;
+            struct
+            {
+                mfxU32 ext_type;
+                const  tsStruct::Field* f;
+                mfxU32 v;
+            } set_par[MAX_NPARS];
             mfxU32 nFrames;
         } tc_struct;
 
@@ -662,7 +691,9 @@ namespace hevce_default_ref_lists
         {
             if (ps)
             {
-                ExternalFrame f = ProcessFrame(m_cur < m_max ? m_cur : -1);
+                ps->Data.FrameOrder = m_cur;
+                ps->Info.PicStruct = 0;
+                ExternalFrame f = ProcessFrame(*ps, m_cur < m_max ? false : true);
 
                 if (f.poc >= 0)
                     m_emu.push_back(f);
@@ -679,7 +710,7 @@ namespace hevce_default_ref_lists
         void Init()
         {
             GetVideoParam();
-            EncodeEmulator::Init(m_par);
+            EncodeEmulator::Init(m_par, m_max);
         }
 
         mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
@@ -689,6 +720,7 @@ namespace hevce_default_ref_lists
     #ifdef DUMP_BS
         m_writer.ProcessBitstream(bs, nFrames);
     #endif
+
             while (nFrames--)
             {
                 auto& hdr = ParseOrDie();
@@ -752,45 +784,151 @@ namespace hevce_default_ref_lists
         }
     };
 
+#define mfx_PicStruct   tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct
+#define mfx_GopPicSize  tsStruct::mfxVideoParam.mfx.GopPicSize
+#define mfx_GopRefDist  tsStruct::mfxVideoParam.mfx.GopRefDist
+#define mfx_GopOptFlag  tsStruct::mfxVideoParam.mfx.GopOptFlag
+#define mfx_IdrInterval tsStruct::mfxVideoParam.mfx.IdrInterval
+#define mfx_PRefType    tsStruct::mfxExtCodingOption3.PRefType
+#define mfx_BRefType    tsStruct::mfxExtCodingOption2.BRefType
+#define mfx_GPB         tsStruct::mfxExtCodingOption3.GPB
+
     const TestSuite::tc_struct TestSuite::test_case[] =
     {
-    //       PicStruct                 GopPicSize GopRefDist        GopOptFlag IdrInterval BRefType     PRefType   GPB   nFrames or
-    //                                                                                                                   nFields (for interlaced cases)
-    /* 00 */{ MFX_PICSTRUCT_PROGRESSIVE,        0,         0,                0,          0,       1,           0,    0,  300 }, // p + default
-    /* 01 */{MFX_PICSTRUCT_FIELD_SINGLE,        0,         0,                0,          0,       1,           0,    0,  600 }, // i + default
-    /* 02 */{ MFX_PICSTRUCT_PROGRESSIVE,        0,         0,                0,          1,       1,           0,    0,  300 }, // p + 1 IdrInterval
-    /* 03 */{MFX_PICSTRUCT_FIELD_SINGLE,        0,         0,                0,          1,       1,           0,    0,  600 }, // i + 1 IdrInterval
-    /* 04 */{ MFX_PICSTRUCT_PROGRESSIVE,       30,         3,                0,          0,       1,           0,    0,   70 }, // p + 2B
-    /* 05 */{MFX_PICSTRUCT_FIELD_SINGLE,       30,         3,                0,          0,       1,           0,    0,  140 }, // i + 2B
-    /* 06 */{ MFX_PICSTRUCT_PROGRESSIVE,       30,         3,                0,          1,       1,           0,    0,   70 }, // p + 2B + 1 IdrInterval
-    /* 07 */{MFX_PICSTRUCT_FIELD_SINGLE,       30,         3,                0,          1,       1,           0,    0,  140 }, // i + 2B + 1 IdrInterval
-    /* 08 */{ MFX_PICSTRUCT_PROGRESSIVE,       30,         3,              0x2,          1,       1,           0,    0,   70 }, // p + 2B + 1 IdrInterval + STRICT
-    /* 09 */{MFX_PICSTRUCT_FIELD_SINGLE,       30,         3,              0x2,          1,       1,           0,    0,  140 }, // i + 2B + 1 IdrInterval + STRICT
-    /* 10 */{ MFX_PICSTRUCT_PROGRESSIVE,       30,         4,                0,          0,       2,           0,    0,   70 }, // p + 3B PYR
-    /* 11 */{MFX_PICSTRUCT_FIELD_SINGLE,       30,         4,                0,          0,       2,           0,    0,  140 }, // i + 3B PYR
-    /* 12 */{ MFX_PICSTRUCT_PROGRESSIVE,      256,         8,                0,          0,       2,           0,    0,  300 }, // p + 7B PYR
-    /* 13 */{MFX_PICSTRUCT_FIELD_SINGLE,      256,         8,                0,          0,       2,           0,    0,  600 }, // i + 7B PYR
-    /* 14 */{ MFX_PICSTRUCT_PROGRESSIVE,       30,         4,                0,          2,       2,           0,    0,   70 }, // p + 3B PYR + 2 IdrInterval
-    /* 15 */{MFX_PICSTRUCT_FIELD_SINGLE,       30,         4,                0,          2,       2,           0,    0,  140 }, // i + 3B PYR + 2 IdrInterval
-    /* 16 */{ MFX_PICSTRUCT_PROGRESSIVE,       30,         8,                0,          2,       2,           0,    0,   70 }, // p + 7B PYR + 2 IdrInterval
-    /* 17 */{MFX_PICSTRUCT_FIELD_SINGLE,       30,         8,                0,          2,       2,           0,    0,  140 }, // i + 7B PYR + 2 IdrInterval
-    /* 18 */{ MFX_PICSTRUCT_PROGRESSIVE,       30,         8,              0x1,          0,       2,           0,    0,   70 }, // p + 7B PYR + CLOSED
-    /* 19 */{MFX_PICSTRUCT_FIELD_SINGLE,       30,         8,              0x1,          0,       2,           0,    0,  140 }, // i + 7B PYR + CLOSED
-    /* 20 */{ MFX_PICSTRUCT_PROGRESSIVE,       30,         8,              0x3,          0,       2,           0,    0,   70 }, // p + 7B PYR + CLOSED + STRICT
-    /* 21 */{MFX_PICSTRUCT_FIELD_SINGLE,       30,         8,              0x3,          0,       2,           0,    0,  140 }, // i + 7B PYR + CLOSED + STRICT
-    /* 22 */{ MFX_PICSTRUCT_PROGRESSIVE,       30,         2,                0,          0,       1,           0,    0,   32 }, // p + B
-    /* 23 */{MFX_PICSTRUCT_FIELD_SINGLE,       30,         2,                0,          0,       1,           0,    0,   64 }, // i + B
-    /* 24 */{MFX_PICSTRUCT_FIELD_SINGLE,       30,         2,              0x1,          0,       1,           0,    0,   66 }, // i + B + CLOSED
-    /* 25 */{MFX_PICSTRUCT_FIELD_SINGLE,       30,         2,                0,          0,       1,           0,    0,   65 }, // i + B + even calls
-    /* 26 */{MFX_PICSTRUCT_FIELD_SINGLE,       30,         2,                0,          0,       1,           0,    0,    3 }, // i + B + even calls
-    /* 27 */{MFX_PICSTRUCT_FIELD_SINGLE,       30,         4,                0,          0,       2,           0,    0,   54 }, // i + 3B PYR
-    /* 28 */{MFX_PICSTRUCT_FIELD_SINGLE,       30,         4,                0,          0,       2,           0,    0,   53 }, // i + 3B PYR + even calls
-    /* 29 */{MFX_PICSTRUCT_FIELD_SINGLE,       30,         4,                0,          0,       1,           0,    0,   53 }, // i + 3B + even calls
-    /* 30 */{MFX_PICSTRUCT_FIELD_SINGLE,       30,         3,              0x3,          0,       1,           0, 0x20,  140 }, // i + 2B + CLOSED + + STRICT
-    /* 31 */{ MFX_PICSTRUCT_PROGRESSIVE,       30,         2,                0,          0,       1,           0, 0x20,   70 }, // p + B + GPB off
-    /* 32 */{MFX_PICSTRUCT_FIELD_SINGLE,       30,         2,                0,          0,       1,           0, 0x20,   70 }, // i + B + GPB off
-    /* 33 */{ MFX_PICSTRUCT_PROGRESSIVE,       15,         1,                0,          0,       1,           2,    0,   70 }, // p + P-PYR
-    /* 34 */{MFX_PICSTRUCT_FIELD_SINGLE,       15,         1,                0,          0,       1,           2,    0,   70 }, // i + P-PYR
+
+        {/*00*/ {{ MFX_PAR,  &mfx_PicStruct,   MFX_PICSTRUCT_PROGRESSIVE },
+                 { MFX_PAR,  &mfx_GopPicSize,  0 },
+                 { MFX_PAR,  &mfx_GopRefDist,  0 },
+                 { EXT_COD2, &mfx_BRefType,    MFX_B_REF_OFF }},
+                300},
+        {/*01*/ {{ MFX_PAR,  &mfx_PicStruct,   MFX_PICSTRUCT_FIELD_TOP },
+                 { MFX_PAR,  &mfx_GopPicSize,  0 },
+                 { MFX_PAR,  &mfx_GopRefDist,  0 },
+                 { EXT_COD2, &mfx_BRefType,    MFX_B_REF_OFF }},
+                600},
+        {/*02*/ {{ MFX_PAR,  &mfx_PicStruct,   MFX_PICSTRUCT_FIELD_BOTTOM },
+                 { MFX_PAR,  &mfx_GopPicSize,  0 },
+                 { MFX_PAR,  &mfx_GopRefDist,  0 },
+                 { EXT_COD2, &mfx_BRefType,    MFX_B_REF_OFF }},
+                600},
+        {/*03*/ {{ MFX_PAR,  &mfx_PicStruct,   MFX_PICSTRUCT_PROGRESSIVE },
+                 { MFX_PAR,  &mfx_GopPicSize,  30 },
+                 { MFX_PAR,  &mfx_GopRefDist,  3 },
+                 { EXT_COD2, &mfx_BRefType,    MFX_B_REF_OFF }},
+                80},
+        {/*04*/ {{ MFX_PAR,  &mfx_PicStruct,   MFX_PICSTRUCT_FIELD_TOP },
+                 { MFX_PAR,  &mfx_GopPicSize,  30 },
+                 { MFX_PAR,  &mfx_GopRefDist,  3 },
+                 { EXT_COD2, &mfx_BRefType,    MFX_B_REF_OFF }},
+                163},
+        {/*05*/ {{ MFX_PAR,  &mfx_PicStruct,   MFX_PICSTRUCT_FIELD_BOTTOM },
+                 { MFX_PAR,  &mfx_GopPicSize,  30 },
+                 { MFX_PAR,  &mfx_GopRefDist,  3 },
+                 { EXT_COD2, &mfx_BRefType,    MFX_B_REF_OFF }},
+                163},
+        {/*06*/ {{ MFX_PAR,  &mfx_PicStruct,   MFX_PICSTRUCT_PROGRESSIVE },
+                 { MFX_PAR,  &mfx_GopPicSize,  30 },
+                 { MFX_PAR,  &mfx_GopRefDist,  4 },
+                 { EXT_COD2, &mfx_BRefType,    MFX_B_REF_PYRAMID }},
+                80},
+        {/*07*/ {{ MFX_PAR,  &mfx_PicStruct,   MFX_PICSTRUCT_FIELD_TOP },
+                 { MFX_PAR,  &mfx_GopPicSize,  30 },
+                 { MFX_PAR,  &mfx_GopRefDist,  4 },
+                 { EXT_COD2, &mfx_BRefType,    MFX_B_REF_PYRAMID }},
+                163},
+        {/*08*/ {{ MFX_PAR,  &mfx_PicStruct,   MFX_PICSTRUCT_FIELD_BOTTOM },
+                 { MFX_PAR,  &mfx_GopPicSize,  30 },
+                 { MFX_PAR,  &mfx_GopRefDist,  4 },
+                 { EXT_COD2, &mfx_BRefType,    MFX_B_REF_PYRAMID }},
+                163},
+        {/*09*/ {{ MFX_PAR,  &mfx_PicStruct,   MFX_PICSTRUCT_PROGRESSIVE },
+                 { MFX_PAR,  &mfx_GopPicSize,  30 },
+                 { MFX_PAR,  &mfx_GopRefDist,  8 },
+                 { EXT_COD2, &mfx_BRefType,    MFX_B_REF_PYRAMID }},
+                80},
+        {/*10*/ {{ MFX_PAR,  &mfx_PicStruct,   MFX_PICSTRUCT_FIELD_TOP },
+                 { MFX_PAR,  &mfx_GopPicSize,  30 },
+                 { MFX_PAR,  &mfx_GopRefDist,  8 },
+                 { EXT_COD2, &mfx_BRefType,    MFX_B_REF_PYRAMID }},
+                163},
+        {/*11*/ {{ MFX_PAR,  &mfx_PicStruct,   MFX_PICSTRUCT_FIELD_BOTTOM },
+                 { MFX_PAR,  &mfx_GopPicSize,  30 },
+                 { MFX_PAR,  &mfx_GopRefDist,  8 },
+                 { EXT_COD2, &mfx_BRefType,    MFX_B_REF_PYRAMID }},
+                163},
+        {/*12*/ {{ MFX_PAR,  &mfx_PicStruct,   MFX_PICSTRUCT_PROGRESSIVE },
+                 { MFX_PAR,  &mfx_GopPicSize,  30 },
+                 { MFX_PAR,  &mfx_GopRefDist,  8 },
+                 { MFX_PAR,  &mfx_IdrInterval, 1 },
+                 { EXT_COD2, &mfx_BRefType,    MFX_B_REF_PYRAMID }},
+                80},
+        {/*13*/ {{ MFX_PAR,  &mfx_PicStruct,   MFX_PICSTRUCT_FIELD_TOP },
+                 { MFX_PAR,  &mfx_GopPicSize,  30 },
+                 { MFX_PAR,  &mfx_GopRefDist,  8 },
+                 { MFX_PAR,  &mfx_IdrInterval, 1 },
+                 { EXT_COD2, &mfx_BRefType,    MFX_B_REF_PYRAMID }},
+                163},
+        {/*14*/ {{ MFX_PAR,  &mfx_PicStruct,   MFX_PICSTRUCT_FIELD_BOTTOM },
+                 { MFX_PAR,  &mfx_GopPicSize,  30 },
+                 { MFX_PAR,  &mfx_GopRefDist,  8 },
+                 { MFX_PAR,  &mfx_IdrInterval, 1 },
+                 { EXT_COD2, &mfx_BRefType,    MFX_B_REF_PYRAMID }},
+                163},
+        {/*15*/ {{ MFX_PAR,  &mfx_PicStruct,   MFX_PICSTRUCT_PROGRESSIVE },
+                 { MFX_PAR,  &mfx_GopPicSize,  30 },
+                 { MFX_PAR,  &mfx_GopRefDist,  8 },
+                 { MFX_PAR,  &mfx_GopOptFlag,  MFX_GOP_CLOSED | MFX_GOP_STRICT },
+                 { MFX_PAR,  &mfx_IdrInterval, 1 },
+                 { EXT_COD2, &mfx_BRefType,    MFX_B_REF_PYRAMID }},
+                80},
+        {/*16*/ {{ MFX_PAR,  &mfx_PicStruct,   MFX_PICSTRUCT_FIELD_TOP },
+                 { MFX_PAR,  &mfx_GopPicSize,  30 },
+                 { MFX_PAR,  &mfx_GopRefDist,  8 },
+                 { MFX_PAR,  &mfx_GopOptFlag,  MFX_GOP_CLOSED | MFX_GOP_STRICT },
+                 { MFX_PAR,  &mfx_IdrInterval, 1 },
+                 { EXT_COD2, &mfx_BRefType,    MFX_B_REF_PYRAMID }},
+                163},
+        {/*17*/ {{ MFX_PAR,  &mfx_PicStruct,   MFX_PICSTRUCT_FIELD_BOTTOM },
+                 { MFX_PAR,  &mfx_GopPicSize,  30 },
+                 { MFX_PAR,  &mfx_GopRefDist,  8 },
+                 { MFX_PAR,  &mfx_GopOptFlag,  MFX_GOP_CLOSED | MFX_GOP_STRICT },
+                 { MFX_PAR,  &mfx_IdrInterval, 1 },
+                 { EXT_COD2, &mfx_BRefType,    MFX_B_REF_PYRAMID }},
+                163},
+        {/*18*/ {{ MFX_PAR,  &mfx_PicStruct,   MFX_PICSTRUCT_PROGRESSIVE },
+                 { MFX_PAR,  &mfx_GopPicSize,  30 },
+                 { MFX_PAR,  &mfx_GopRefDist,  1 },
+                 { EXT_COD3, &mfx_PRefType,    MFX_P_REF_PYRAMID }},
+                80},
+        {/*19*/ {{ MFX_PAR,  &mfx_PicStruct,   MFX_PICSTRUCT_FIELD_TOP },
+                 { MFX_PAR,  &mfx_GopPicSize,  30 },
+                 { MFX_PAR,  &mfx_GopRefDist,  1 },
+                 { EXT_COD3, &mfx_PRefType,    MFX_P_REF_PYRAMID }},
+                163},
+        {/*20*/ {{ MFX_PAR,  &mfx_PicStruct,   MFX_PICSTRUCT_FIELD_BOTTOM },
+                 { MFX_PAR,  &mfx_GopPicSize,  30 },
+                 { MFX_PAR,  &mfx_GopRefDist,  1 },
+                 { EXT_COD3, &mfx_PRefType,    MFX_P_REF_PYRAMID }},
+                163},
+        {/*21*/ {{ MFX_PAR,  &mfx_PicStruct,   MFX_PICSTRUCT_PROGRESSIVE },
+                 { MFX_PAR,  &mfx_GopPicSize,  30 },
+                 { MFX_PAR,  &mfx_GopRefDist,  8 },
+                 { MFX_PAR,  &mfx_IdrInterval, 1 },
+                 { EXT_COD2, &mfx_BRefType,    MFX_B_REF_PYRAMID },
+                 { EXT_COD3, &mfx_GPB,         MFX_CODINGOPTION_OFF }},
+                80},
+        {/*22*/ {{ MFX_PAR,  &mfx_PicStruct,   MFX_PICSTRUCT_FIELD_TOP },
+                 { MFX_PAR,  &mfx_GopPicSize,  30 },
+                 { MFX_PAR,  &mfx_GopRefDist,  8 },
+                 { MFX_PAR,  &mfx_IdrInterval, 1 },
+                 { EXT_COD2, &mfx_BRefType,    MFX_B_REF_PYRAMID },
+                 { EXT_COD3, &mfx_GPB,         MFX_CODINGOPTION_OFF }},
+                163},
+        {/*23*/ {{ MFX_PAR,  &mfx_PicStruct,   MFX_PICSTRUCT_FIELD_BOTTOM },
+                 { MFX_PAR,  &mfx_GopPicSize,  30 },
+                 { MFX_PAR,  &mfx_GopRefDist,  1 },
+                 { EXT_COD3, &mfx_PRefType,    MFX_P_REF_PYRAMID }},
+                163},
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
@@ -801,28 +939,23 @@ namespace hevce_default_ref_lists
 
         TS_START;
 
-        mfxU32 nFrames = tc.nFrames;
+        SETPARS(m_pPar, MFX_PAR);
 
         mfxExtCodingOption2& co2 = m_par;
-        co2.BRefType = tc.BRefType;
+        SETPARS(&co2, EXT_COD2);
 
         mfxExtCodingOption3& co3 = m_par;
-        co3.PRefType = tc.PRefType;
-        co3.GPB = tc.GPB;
+        SETPARS(&co3, EXT_COD3);
 
-        m_par.mfx.FrameInfo.PicStruct = tc.PicStruct;
-        m_par.mfx.GopPicSize  = tc.GopPicSize;
-        m_par.mfx.GopRefDist  = tc.GopRefDist;
-        m_par.mfx.GopOptFlag  = tc.GopOptFlag;
-        m_par.mfx.IdrInterval = tc.IdrInterval;
-
-        m_max = nFrames;
+        m_max = tc.nFrames;
         m_par.AsyncDepth = 1;
 
         Init();
         GetVideoParam();
 
-        EncodeFrames(nFrames);
+
+
+        EncodeFrames(tc.nFrames);
         TS_END;
         return 0;
     }
