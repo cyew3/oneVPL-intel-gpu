@@ -245,7 +245,7 @@
     <ClCompile Include="src\gmock\test_suites\hevce_default_lowpower.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_dirty_rect.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_interlace_invalid_scenarios.cpp" />
-    <ClCompile Include="src\gmock\test_suites\hevce_interlace_sei_sps_flags.cpp" />
+    <ClCompile Include="src\gmock\test_suites\hevce_interlace_progressive_sei_sps_flags.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_lowlatency.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_sei_hdr.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_adaptivemaxframesize.cpp" />
@@ -408,6 +408,7 @@
     <ClCompile Include="src\gmock\test_suites\screen_capture_query.cpp" />
     <ClCompile Include="src\gmock\test_suites\screen_capture_query_io_surf.cpp" />
     <ClCompile Include="src\gmock\test_suites\slice_size_reporting.cpp" />
+    <ClCompile Include="src\gmock\test_suites\hevce_fei_invalid_runtime_parameters.cpp" />
     <ClCompile Include="src\gmock\test_suites\threading_mfxinitex.cpp" />
     <ClCompile Include="src\gmock\test_suites\trans_opaque.cpp" />
     <ClCompile Include="src\gmock\test_suites\vc1d_bs_dataflag.cpp" />
