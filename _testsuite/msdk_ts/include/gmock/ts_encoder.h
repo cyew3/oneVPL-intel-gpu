@@ -72,7 +72,7 @@ public:
     std::list<tsSharedCtrl>     m_ctrl_reorder_buffer;
     tsSharedCtrl                m_ctrl_next;
 
-    tsVideoEncoder(mfxU32 CodecId = 0, bool useDefaults = true);
+    tsVideoEncoder(mfxU32 CodecId = 0, bool useDefaults = true, MsdkPluginType type = MSDK_PLUGIN_TYPE_NONE);
     tsVideoEncoder(mfxFeiFunction func, mfxU32 CodecId = 0, bool useDefaults = true);
     ~tsVideoEncoder();
 

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -45,6 +45,7 @@ void tsPlugin::Init(std::string env, std::string platform)
         Reg(MFX_PLUGINTYPE_VIDEO_ENCODE, MFX_CODEC_HEVC, MFX_PLUGINID_HEVCE_HW);
         Reg(MFX_PLUGINTYPE_VIDEO_DECODE, MFX_CODEC_VP9, MFX_PLUGINID_VP9D_HW);
         Reg(MFX_PLUGINTYPE_VIDEO_ENCODE, MFX_CODEC_VP9, MFX_PLUGINID_VP9E_HW);
+        Reg(MFX_PLUGINTYPE_VIDEO_ENCODE, MFX_CODEC_HEVC, MFX_PLUGINID_HEVC_FEI_ENCODE, MSDK_PLUGIN_TYPE_FEI);
     }
     else
     {
@@ -56,7 +57,7 @@ void tsPlugin::Init(std::string env, std::string platform)
     while(env.size())
     {
         std::string::size_type pos = env.find_first_of(';');
-            
+
         if(pos == std::string::npos)
         {
             pos = env.size();
@@ -77,7 +78,7 @@ void tsPlugin::Init(std::string env, std::string platform)
 
 mfxU32 tsPlugin::GetType(const mfxPluginUID& uid) {
 
-    typedef std::pair<mfxU32, mfxU32> Type;
+    typedef std::tuple<mfxU32, mfxU32, MsdkPluginType> Type;
 
     auto predicate = [&](const std::pair<Type, mfxPluginUID*> &par) {
         return memcmp(uid.Data, par.second->Data, sizeof(par.second->Data)) == 0;
@@ -202,14 +203,14 @@ bool check_calls(std::vector<mfxU32> real_calls, std::vector<mfxU32> expected_ca
     bool result = true;
     std::unordered_multiset<mfxU32> _calls(real_calls.begin(), real_calls.end());
     std::unordered_multiset<mfxU32> _m_calls(expected_calls.begin(),expected_calls.end());
-    
+
     for (auto cls=_calls.cbegin();cls!=_calls.cend();)
     {
         auto mcls=_m_calls.find(*cls);
         // equal elements exist
         if (mcls!=_m_calls.end())
         {
-            // remove equal from both 
+            // remove equal from both
             cls=_calls.erase(cls);
             _m_calls.erase(mcls);
         }

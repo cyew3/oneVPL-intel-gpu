@@ -133,7 +133,7 @@ void SetFrameTypeIfRequired(mfxEncodeCtrl * pCtrl, mfxVideoParam * pPar, mfxFram
     }
 }
 
-tsVideoEncoder::tsVideoEncoder(mfxU32 CodecId, bool useDefaults)
+tsVideoEncoder::tsVideoEncoder(mfxU32 CodecId, bool useDefaults, MsdkPluginType type)
     : m_default(useDefaults)
     , m_initialized(false)
     , m_loaded(false)
@@ -195,7 +195,7 @@ tsVideoEncoder::tsVideoEncoder(mfxU32 CodecId, bool useDefaults)
             && m_par.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE)
             m_par.mfx.FrameInfo.Height = (m_par.mfx.FrameInfo.Height + 31) & ~31;
     }
-    m_uid = g_tsPlugin.UID(MFX_PLUGINTYPE_VIDEO_ENCODE, CodecId);
+    m_uid = g_tsPlugin.UID(MFX_PLUGINTYPE_VIDEO_ENCODE, CodecId, type);
     m_loaded = !m_uid;
 }
 
@@ -248,14 +248,14 @@ tsVideoEncoder::tsVideoEncoder(mfxFeiFunction func, mfxU32 CodecId, bool useDefa
     m_loaded = true;
 }
 
-tsVideoEncoder::~tsVideoEncoder() 
+tsVideoEncoder::~tsVideoEncoder()
 {
     if(m_initialized)
     {
         Close();
     }
 }
-    
+
 mfxStatus tsVideoEncoder::Init()
 {
     if(m_default)
@@ -569,13 +569,13 @@ mfxStatus tsVideoEncoder::Reset(mfxSession session, mfxVideoParam *par)
     return g_tsStatus.get();
 }
 
-mfxStatus tsVideoEncoder::GetVideoParam() 
+mfxStatus tsVideoEncoder::GetVideoParam()
 {
     if(m_default && !m_initialized)
     {
         Init();TS_CHECK_MFX;
     }
-    return GetVideoParam(m_session, m_pPar); 
+    return GetVideoParam(m_session, m_pPar);
 }
 
 mfxStatus tsVideoEncoder::GetVideoParam(mfxSession session, mfxVideoParam *par)
@@ -771,7 +771,7 @@ mfxStatus tsVideoEncoder::SyncOperation(mfxSyncPoint syncp)
 {
     mfxU32 nFrames = m_frames_buffered;
     mfxStatus res = SyncOperation(m_session, syncp, MFX_INFINITE);
-    
+
     if (m_default && m_bs_processor && g_tsStatus.get() == MFX_ERR_NONE)
     {
         g_tsStatus.check(m_bs_processor->ProcessBitstream(m_pBitstream ? *m_pBitstream : m_bitstream, nFrames));
@@ -865,7 +865,7 @@ mfxStatus tsVideoEncoder::EncodeFrames(mfxU32 n, bool check)
 
     if (check && (encoded != n))
         return MFX_ERR_UNKNOWN;
-    
+
     return g_tsStatus.get();
 }
 

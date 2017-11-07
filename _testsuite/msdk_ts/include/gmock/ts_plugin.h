@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 */
 #pragma once
@@ -53,9 +53,14 @@ typedef enum func_list {
     DecodeFrameSubmit
 } APIfuncs;
 
+enum MsdkPluginType {
+    MSDK_PLUGIN_TYPE_NONE = 0,
+    MSDK_PLUGIN_TYPE_FEI,
+};
+
 class tsPlugin {
 private:
-    std::map<std::pair<mfxU32, mfxU32>, mfxPluginUID*> m_puid;
+    std::map<std::tuple<mfxU32, mfxU32, MsdkPluginType>, mfxPluginUID*> m_puid;
     std::list<mfxPluginUID> m_uid;
     std::list<mfxPluginUID> m_list;
 
@@ -65,13 +70,13 @@ public:
     ~tsPlugin() {
     }
 
-    inline mfxPluginUID* UID(mfxU32 type, mfxU32 id = 0) {
-        return m_puid[std::make_pair(type, id)];
+    inline mfxPluginUID* UID(mfxU32 type, mfxU32 id = 0, MsdkPluginType extType = MSDK_PLUGIN_TYPE_NONE) {
+        return m_puid[std::make_tuple(type, id, extType)];
     }
 
-    inline void Reg(mfxU32 type, mfxU32 id, const mfxPluginUID uid) {
+    inline void Reg(mfxU32 type, mfxU32 id, const mfxPluginUID uid, MsdkPluginType extType = MSDK_PLUGIN_TYPE_NONE) {
         m_uid.push_back(uid);
-        m_puid[std::make_pair(type, id)] = &m_uid.back();
+        m_puid[std::make_tuple(type, id, extType)] = &m_uid.back();
     }
 
     inline std::list<mfxPluginUID> GetUserPlugins() {
