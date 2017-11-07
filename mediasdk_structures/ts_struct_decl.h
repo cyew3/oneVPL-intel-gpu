@@ -612,6 +612,7 @@ STRUCT(mfxExtFeiPakMBCtrl,
 
 STRUCT(mfxExtFeiHevcEncFrameCtrl,
     FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU16,       SearchPath)
     FIELD_T(mfxU16,       LenSP)
     FIELD_T(mfxU16,       RefWidth)
     FIELD_T(mfxU16,       RefHeight)
