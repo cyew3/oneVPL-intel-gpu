@@ -24,7 +24,9 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include <string.h>
 #include <functional>
 #include "mfxvideo.h"
-#include "vm/thread_defs.h"
+#include <memory>
+
+class MSDKMutex;
 
 struct mfxAllocatorParams
 {
@@ -65,6 +67,8 @@ private:
 // request type contains either FROM_ENCODE or FROM_VPPIN
 
 // This class does not allocate any actual memory
+class MSDKMutex;
+
 class BaseFrameAllocator: public MFXFrameAllocator
 {
 public:
@@ -77,7 +81,7 @@ public:
     virtual mfxStatus FreeFrames(mfxFrameAllocResponse *response);
 
 protected:
-    MSDKMutex mtx;
+    std::auto_ptr<MSDKMutex> mtx;
     typedef std::list<mfxFrameAllocResponse>::iterator Iter;
     static const mfxU32 MEMTYPE_FROM_MASK = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_FROM_DECODE | \
                                             MFX_MEMTYPE_FROM_VPPIN | MFX_MEMTYPE_FROM_VPPOUT | \
