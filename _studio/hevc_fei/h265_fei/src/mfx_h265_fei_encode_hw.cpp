@@ -60,6 +60,8 @@ mfxStatus H265FeiEncodePlugin::Close()
 
 mfxStatus H265FeiEncodePlugin::ExtraParametersCheck(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs)
 {
+    if (!surface) return MFX_ERR_NONE; // In case of frames draining in display order
+
     MFX_CHECK(ctrl, MFX_ERR_UNDEFINED_BEHAVIOR);
 
     mfxPlatform p = {};
@@ -82,9 +84,9 @@ mfxStatus H265FeiEncodePlugin::ExtraParametersCheck(mfxEncodeCtrl *ctrl, mfxFram
     MFX_CHECK(EncFrameCtrl->NumMvPredictors[0] <= 4, MFX_ERR_UNDEFINED_BEHAVIOR);
     MFX_CHECK(EncFrameCtrl->NumMvPredictors[1] <= 4, MFX_ERR_UNDEFINED_BEHAVIOR);
 
-    MFX_CHECK(EncFrameCtrl->MultiPred[0]       <= isICLplus ? 2 : 1,
+    MFX_CHECK(EncFrameCtrl->MultiPred[0]       <= (isICLplus ? 2 : 1),
                                                      MFX_ERR_UNDEFINED_BEHAVIOR);
-    MFX_CHECK(EncFrameCtrl->MultiPred[1]       <= isICLplus ? 2 : 1,
+    MFX_CHECK(EncFrameCtrl->MultiPred[1]       <= (isICLplus ? 2 : 1),
                                                      MFX_ERR_UNDEFINED_BEHAVIOR);
     MFX_CHECK(EncFrameCtrl->SubPelMode         <= 3 &&
               EncFrameCtrl->SubPelMode         != 2, MFX_ERR_UNDEFINED_BEHAVIOR);
@@ -95,7 +97,7 @@ mfxStatus H265FeiEncodePlugin::ExtraParametersCheck(mfxEncodeCtrl *ctrl, mfxFram
           || (EncFrameCtrl->MVPredictor == 3 && isICLplus)
           ||  EncFrameCtrl->MVPredictor == 7,        MFX_ERR_UNDEFINED_BEHAVIOR);
 
-    MFX_CHECK(EncFrameCtrl->ForceCtuSplit <= isSKL ? 1: 0, MFX_ERR_UNDEFINED_BEHAVIOR);
+    MFX_CHECK(EncFrameCtrl->ForceCtuSplit <= (isSKL ? 1: 0), MFX_ERR_UNDEFINED_BEHAVIOR);
 
     switch (EncFrameCtrl->NumFramePartitions)
     {
@@ -137,7 +139,7 @@ mfxStatus H265FeiEncodePlugin::ExtraParametersCheck(mfxEncodeCtrl *ctrl, mfxFram
 
             MFX_CHECK(EncFrameCtrl->RefWidth  % 4 == 0
                    && EncFrameCtrl->RefHeight % 4 == 0
-                   && EncFrameCtrl->RefWidth  <= (frameType & MFX_FRAMETYPE_B) ? 32 : 64
+                   && EncFrameCtrl->RefWidth  <= ((frameType & MFX_FRAMETYPE_B) ? 32 : 64)
                    && EncFrameCtrl->RefHeight <= 32,
                    MFX_ERR_UNDEFINED_BEHAVIOR);
         }
