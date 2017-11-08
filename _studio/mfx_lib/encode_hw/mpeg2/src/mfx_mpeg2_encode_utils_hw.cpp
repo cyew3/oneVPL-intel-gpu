@@ -999,15 +999,11 @@ namespace MPEG2EncoderHW
 
             if (extOpt3 && extOpt3->BRCPanicMode == MFX_CODINGOPTION_OFF)
             {
-                if (out->mfx.RateControlMethod != MFX_RATECONTROL_CBR
-                 && out->mfx.RateControlMethod != MFX_RATECONTROL_VBR
-                 && out->mfx.RateControlMethod != MFX_RATECONTROL_AVBR)
-                {
-                    extOpt3->BRCPanicMode = MFX_CODINGOPTION_UNKNOWN;
-                    bWarning = true;
-                }
                 // MPEG2 BRC panic mode disabling currently only supported on Linux
-                if (core->GetVAType() != MFX_HW_VAAPI)
+                if ((core->GetVAType() != MFX_HW_VAAPI)
+                 || (out->mfx.RateControlMethod != MFX_RATECONTROL_CBR
+                 && out->mfx.RateControlMethod != MFX_RATECONTROL_VBR
+                 && out->mfx.RateControlMethod != MFX_RATECONTROL_AVBR))
                 {
                     extOpt3->BRCPanicMode = MFX_CODINGOPTION_UNKNOWN;
                     bUnsupported = true;
