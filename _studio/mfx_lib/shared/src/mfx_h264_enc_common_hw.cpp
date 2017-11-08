@@ -4568,7 +4568,9 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     }
     if (!CheckTriStateOption(extOpt3->BRCPanicMode)) changed = true;
     if (IsOff(extOpt3->BRCPanicMode)
-     && ((par.mfx.RateControlMethod == MFX_RATECONTROL_CQP) || (vaType != MFX_HW_VAAPI))) // neither CQP nor Windows support BRC panic mode disabling
+     && (bRateControlLA(par.mfx.RateControlMethod)
+     || (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+     || (vaType != MFX_HW_VAAPI))) // neither CQP nor LA BRC modes nor Windows support BRC panic mode disabling
     {
         extOpt3->BRCPanicMode = MFX_CODINGOPTION_UNKNOWN;
         unsupported = true;
