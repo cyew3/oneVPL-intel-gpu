@@ -1324,12 +1324,12 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
 
     if(readerShift)
     {
-        msdk_printf(MSDK_STRING("P010 frames data will be shifted to MSB area to be compatible with HEVC HW input format\n"));
+        msdk_printf(MSDK_STRING("\nP010 frames data will be shifted to MSB area to be compatible with HEVC HW input format\n"));
     }
 
-    if(m_pmfxVPP && pParams->shouldUseShiftedP010Enc && !pParams->shouldUseShiftedP010Enc && pParams->bUseHWLib)
+    if(m_pmfxVPP && pParams->shouldUseShiftedP010VPP && !pParams->shouldUseShiftedP010Enc && pParams->bUseHWLib)
     {
-        msdk_printf(MSDK_STRING("ERROR: Encoder requires P010 LSB format. VPP currently supports only MSB encoding for P010 format. Sample cannot combine both of them in one pipeline.\n"));
+        msdk_printf(MSDK_STRING("ERROR: Encoder requires P010 LSB format. VPP currently supports only MSB encoding for P010 format.\nSample cannot combine both of them in one pipeline.\n"));
         return MFX_ERR_UNSUPPORTED;
     }
 
