@@ -44,22 +44,35 @@ public:
     TestSuite()
         : tsVideoEncoder(MFX_CODEC_HEVC)
         , tsParserHEVCAU(BS_HEVC::INIT_MODE_CABAC)
-        , m_mode(0)
+        , m_mode(RANDOM)
         , m_expected(0)
         , m_nFrame(0)
         , m_mbqp(0)
         , m_mbqp_on(true)
         , m_fo(0)
         , m_noiser()
+        , m_reader()
         , m_writer("debug.hevc")
     {
-        srand(time(NULL));
         m_bs_processor = this;
         m_filler = this;
+        m_mode = 0;
+        m_pPar->mfx.FrameInfo.Width = m_pPar->mfx.FrameInfo.CropW = 352;
+        m_pPar->mfx.FrameInfo.Height = m_pPar->mfx.FrameInfo.CropH = 288;
+        m_pPar->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+        m_pPar->mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+
+        m_reader = new tsRawReader(g_tsStreamPool.Get("forBehaviorTest/foreman_cif.nv12"),
+                                 m_pPar->mfx.FrameInfo);
+        g_tsStreamPool.Reg();
     }
 
     ~TestSuite()
     {
+        if (m_reader)
+        {
+            delete m_reader;
+        }
     }
 
     int RunTest(unsigned int id);
@@ -84,11 +97,11 @@ private:
     mfxU32 m_framesToEncode;
     mfxU32 m_ts;
     tsNoiseFiller m_noiser;
+    tsRawReader *m_reader;
     tsBitstreamWriter m_writer;
     mfxU32 m_cu;
     mfxU32 m_cuqp_width;
     mfxU32 m_cuqp_height;
-
     enum
     {
         MFX_PAR = 1,
@@ -102,6 +115,14 @@ private:
         RESET   = 1 << 2,
     };
 
+    enum
+    {
+        RANDOM = 1,
+        LINEAR = 2,
+        CONST_QP = 4, //For future use
+        YUV_SOURCE = 8,
+        INCORRECT_MBQP = 16,  
+    };
     struct tc_struct
     {
         mfxStatus sts;
@@ -118,18 +139,38 @@ private:
     static const tc_struct test_case[];
     mfxStatus ProcessSurface(mfxFrameSurface1& s)
     {
-        m_noiser.ProcessSurface(s);
+        if (m_mode & YUV_SOURCE)
+        {
+           m_reader->ProcessSurface(s);
+        }
+        else {
+            m_noiser.ProcessSurface(s);
+        }
         m_mbqp.clear();
         /* Granularity of MBQP buffer 16x16 blocks */
         int BlockSize = 16;
         mfxExtHEVCParam& hp = m_par;
         mfxU32 w = (hp.PicWidthInLumaSamples  + BlockSize - 1)/BlockSize;
         mfxU32 h = (hp.PicHeightInLumaSamples + BlockSize - 1)/BlockSize;
-        m_mbqp.resize(w*h);
         mfxU32 numMB = w*h;
-        for (size_t i = 0; i <  m_mbqp.size(); ++i)
+        if (m_mode & INCORRECT_MBQP)
         {
-            m_mbqp[i] = 1 + rand() % 50;
+            numMB = 0;
+        }
+        m_mbqp.resize(numMB);
+        if (m_mode & RANDOM)
+        {
+           for (size_t i = 0; i <  m_mbqp.size(); ++i)
+           {
+               m_mbqp[i] = 1 + rand() % 50;
+           }
+        }
+        else if (m_mode & LINEAR)
+        {
+           for (size_t i = 0; i <  m_mbqp.size(); ++i)
+           {
+               m_mbqp[i] = i % 50;
+           }
         }
         Ctrl& ctrl = m_ctrl[m_fo];
         ctrl.buf.resize(numMB);
@@ -199,9 +240,25 @@ void SetQP(std::vector< std::vector<Bs16u> >& QP, BS_HEVC::CQT const & cqt, Bs32
         {
             UnitType& au = ParseOrDie();
             auto& pic = *au.pic;
-            for (Bs32u i = 0; i < au.NumUnits; i++)
+            for (mfxU32 i = 0; i < au.NumUnits; i++)
             {
-                Bs16u type = au.nalu[i]->nal_unit_type;
+                mfxU16 type = au.nalu[i]->nal_unit_type;
+                //check only PPS header
+                if (type == 34)
+                {
+                    auto& pps = *au.nalu[i]->pps;
+                    mfxI32 cu_qp_delta_enabled_flag = pps.cu_qp_delta_enabled_flag;
+                    printf(" cu_qp_delta_enabled_flag = %i \n", cu_qp_delta_enabled_flag);
+                    if (m_mbqp_on)
+                    {
+                        EXPECT_EQ(cu_qp_delta_enabled_flag, 1) << " ERROR: Unexpected cu_qp_delta_enabled_flag, cu_qp_delta_enabled_flag must be 1 when we use mfxExtCodingOption3.EnableMBQP is ON";
+                    }
+                    else
+                    {
+                        EXPECT_EQ(cu_qp_delta_enabled_flag, 0) << " ERROR: Unexpected cu_qp_delta_enabled_flag, cu_qp_delta_enabled_flag must be 0 when we use mfxExtCodingOption3.EnableMBQP is OFF";
+                    }
+
+                }
                 //check slice segment only
                 if (type > 21 || ((type > 9) && (type < 16)))
                 {
@@ -211,13 +268,14 @@ void SetQP(std::vector< std::vector<Bs16u> >& QP, BS_HEVC::CQT const & cqt, Bs32
                     //not set, so expected value is m_numLCU
                     m_expected = m_numLCU;
                 }
-
+                if(m_mode & INCORRECT_MBQP)
+                    continue;
                 auto& s = *au.nalu[i]->slice;
                 BS_HEVC::SPS& sps = *pic.slice[0]->slice->sps;
-                Bs32u Log2MinTrafoSize = sps.log2_min_transform_block_size_minus2 + 2;
-                Bs32u Log2MaxTrafoSize = Log2MinTrafoSize + sps.log2_diff_max_min_transform_block_size;
-                Bs32u Width = sps.pic_width_in_luma_samples;
-                Bs32u Height = sps.pic_height_in_luma_samples;
+                mfxU32 Log2MinTrafoSize = sps.log2_min_transform_block_size_minus2 + 2;
+                mfxU32 Log2MaxTrafoSize = Log2MinTrafoSize + sps.log2_diff_max_min_transform_block_size;
+                mfxU32 Width = sps.pic_width_in_luma_samples;
+                mfxU32 Height = sps.pic_height_in_luma_samples;
                 std::vector< std::vector<Bs16u> > QP(
                            (Height + 64) >> Log2MinTrafoSize,
                            std::vector<Bs16u>((Width + 64) >> Log2MinTrafoSize, 0));
@@ -238,7 +296,7 @@ void SetQP(std::vector< std::vector<Bs16u> >& QP, BS_HEVC::CQT const & cqt, Bs32
                  m_cu =  ((y % k_lcu_w == 0) && (y != 0)) ? (m_cu_old + 2*pitch_MBQP) : m_cu_old;
                  if((y % k_lcu_w == 0) && (y != 0))
                      m_cu_old = m_cu;
-                 for (Bs32u x = 0; x < (Width >> Log2MinTrafoSize); x ++){
+                 for (mfxU32 x = 0; x < (Width >> Log2MinTrafoSize); x ++){
                        m_cu += ((x % k_lcu_w == 0) && x != 0) ? 2 : 0;
                        if(QP[y][x] != 255){
                            #if defined(LINUX32) || defined(LINUX64)
@@ -264,14 +322,14 @@ const TestSuite::tc_struct TestSuite::test_case[] =
 {
     #if defined(LINUX32) || defined(LINUX64)
     /*00 - W&H Align 32 */
-    {MFX_ERR_NONE, 0, {{EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableMBQP, MFX_CODINGOPTION_ON},
+    {MFX_ERR_NONE, RANDOM, {{EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableMBQP, MFX_CODINGOPTION_ON},
                        {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 736},
                        {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 480},
                        {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 736},
                        {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 480}}
     },
     /*01 - W&H Align 32, NumSlice = 2 */
-    {MFX_ERR_NONE, 0, {{EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableMBQP, MFX_CODINGOPTION_ON},
+    {MFX_ERR_NONE, RANDOM, {{EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableMBQP, MFX_CODINGOPTION_ON},
                        {MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 2},
                        {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 736},
                        {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 480},
@@ -279,19 +337,50 @@ const TestSuite::tc_struct TestSuite::test_case[] =
                        {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 480}}
     },
     /*02 - Cropping values unaligned on 16 */
-    {MFX_ERR_NONE, 0, {{EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableMBQP, MFX_CODINGOPTION_ON},
+    {MFX_ERR_NONE, RANDOM, {{EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableMBQP, MFX_CODINGOPTION_ON},
                        {MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 2},
+                       {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 736},
+                       {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 480},
                        {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 720-8},
                        {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 480-8}}
     },
     /*03*/
-    {MFX_ERR_NONE, 0, {{EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableMBQP, MFX_CODINGOPTION_ON},
+    {MFX_ERR_NONE, RANDOM, {{EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableMBQP, MFX_CODINGOPTION_ON},
                        {MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 2},
                        {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 352},
                        {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 288},
                        {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 352-16},
                        {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 288}}
    },
+    /*04 - W&H Align 32 */
+    {MFX_ERR_NONE, LINEAR, {{EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableMBQP, MFX_CODINGOPTION_ON},
+                       {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 736},
+                       {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 480},
+                       {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 736},
+                       {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 480}}
+    },
+    /*05 - W&H Align 32 */
+    {MFX_ERR_NONE, LINEAR | YUV_SOURCE, {{EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableMBQP, MFX_CODINGOPTION_ON},
+                       {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 352},
+                       {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 288},
+                       {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 352},
+                       {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 288}}
+    },
+    /*06 - W&H Align 32 */
+    {MFX_ERR_NONE, RANDOM | YUV_SOURCE, {{EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableMBQP, MFX_CODINGOPTION_ON},
+                       {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 352},
+                       {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 288},
+                       {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 352},
+                       {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 288}}
+    },
+    /*07*/
+    {MFX_ERR_NONE, RANDOM | INCORRECT_MBQP, {{EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableMBQP, MFX_CODINGOPTION_ON},
+                       {MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 2},
+                       {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 352},
+                       {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 288},
+                       {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 352-16},
+                       {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 288}}
+    },
     #else
     /*00*/{MFX_ERR_UNSUPPORTED, 0, {EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableMBQP, MFX_CODINGOPTION_ON}},
     #endif
@@ -304,10 +393,11 @@ int TestSuite::RunTest(unsigned int id)
     TS_START;
 
     const tc_struct& tc = test_case[id];
-
+    m_mode = tc.mode;
+    srand(id);
     MFXInit();
     Load();
-
+    m_reader->ResetFile();
     SETPARS(m_pPar, MFX_PAR);
     mfxExtCodingOption3& cod3 = m_par;
     SETPARS(&cod3, EXT_COD3);
