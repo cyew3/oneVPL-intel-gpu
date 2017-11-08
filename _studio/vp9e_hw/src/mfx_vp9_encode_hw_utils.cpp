@@ -348,8 +348,8 @@ mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
     mfxU16 alignedWidth = ALIGN_POWER_OF_TWO(frameParam.width, 3); // align to Mode Info block size (8 pixels)
     mfxU16 alignedHeight = ALIGN_POWER_OF_TWO(frameParam.height, 3); // align to Mode Info block size (8 pixels)
 
-    frameParam.modeInfoRows = alignedWidth >> 3;
-    frameParam.modeInfoCols = alignedHeight >> 3;
+    frameParam.modeInfoRows = alignedHeight >> 3;
+    frameParam.modeInfoCols = alignedWidth >> 3;
 
     frameParam.temporalLayer = CalcTemporalLayerIndex(par, task.m_frameOrderInGop);
     frameParam.nextTemporalLayer = CalcTemporalLayerIndex(par, task.m_frameOrderInGop + 1);
