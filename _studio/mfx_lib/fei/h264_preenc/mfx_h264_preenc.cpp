@@ -899,6 +899,13 @@ mfxStatus VideoENC_PREENC::RunFrameVmeENCCheck(
     m_incoming.splice(m_incoming.end(), m_free, m_free.begin());
     DdiTask& task = m_incoming.front();
 
+    /* This value have to be initialized here
+     * as we use MfxHwH264Encode::GetPicStruct
+     * (Legacy encoder do initialization  by itself)
+     * */
+    mfxExtCodingOption * extOpt = GetExtBuffer(m_video);
+    extOpt->FieldOutput = MFX_CODINGOPTION_OFF;
+
     task.m_singleFieldMode = m_bSingleFieldMode;
     task.m_picStruct       = GetPicStruct(m_video, task);
     task.m_fieldPicFlag    = task.m_picStruct[ENC] != MFX_PICSTRUCT_PROGRESSIVE;
@@ -907,13 +914,6 @@ mfxStatus VideoENC_PREENC::RunFrameVmeENCCheck(
 
     // For frame type detection
     PairU8 frame_type = PairU8(mfxU8(MFX_FRAMETYPE_UNKNOWN), mfxU8(MFX_FRAMETYPE_UNKNOWN));
-
-    /* This value have to be initialized here
-     * as we use MfxHwH264Encode::GetPicStruct
-     * (Legacy encoder do initialization  by itself)
-     * */
-    mfxExtCodingOption * extOpt = GetExtBuffer(m_video);
-    extOpt->FieldOutput = MFX_CODINGOPTION_OFF;
 
     PairU16 picStruct = GetPicStruct(m_video, input->InSurface->Info.PicStruct);
 

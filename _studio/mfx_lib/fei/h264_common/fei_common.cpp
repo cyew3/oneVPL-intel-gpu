@@ -639,11 +639,14 @@ mfxStatus MfxH264FEIcommon::CheckInitExtBuffers(const MfxVideoParam & owned_vide
 {
     // Slice number control through CO3 is not allowed
     mfxExtCodingOption3 const * extOpt3 = GetExtBuffer(owned_video);
-
-    MFX_CHECK(extOpt3->NumSliceI == owned_video.mfx.NumSlice, MFX_ERR_INVALID_VIDEO_PARAM);
-    MFX_CHECK(extOpt3->NumSliceP == owned_video.mfx.NumSlice, MFX_ERR_INVALID_VIDEO_PARAM);
-    MFX_CHECK(extOpt3->NumSliceB == owned_video.mfx.NumSlice, MFX_ERR_INVALID_VIDEO_PARAM);
-
+    mfxExtFeiParam const * feiParam = GetExtBuffer(owned_video);
+    if (feiParam->Func != MFX_FEI_FUNCTION_PREENC)
+    {
+        // NumSliceI/NumSliceP/NumSliceB are unnecessary parameters for PreENC and will not be initialized
+        MFX_CHECK(extOpt3->NumSliceI == owned_video.mfx.NumSlice, MFX_ERR_INVALID_VIDEO_PARAM);
+        MFX_CHECK(extOpt3->NumSliceP == owned_video.mfx.NumSlice, MFX_ERR_INVALID_VIDEO_PARAM);
+        MFX_CHECK(extOpt3->NumSliceB == owned_video.mfx.NumSlice, MFX_ERR_INVALID_VIDEO_PARAM);
+    }
 
     // Internal headers should be updated before CreateAccelerationService call
     const mfxExtFeiSPS* pDataSPS = GetExtBuffer(passed_video);
