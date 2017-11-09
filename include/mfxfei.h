@@ -335,12 +335,14 @@ typedef struct {
     mfxU8       DeltaQP[8];   /* list of delta QPs, only positive values */
 } mfxExtFeiRepackCtrl;
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
 /* FEI repack status */
 typedef struct {
     mfxExtBuffer    Header;
     mfxU32          NumPasses;
     mfxU16          reserved[58];
 } mfxExtFeiRepackStat;
+#endif
 
 /* 1 decode stream out */
 typedef struct {
@@ -531,7 +533,9 @@ enum {
     MFX_EXTBUFF_FEI_CODING_OPTION  = MFX_MAKEFOURCC('F','C','D','O'),
     MFX_EXTBUFF_FEI_DEC_STREAM_OUT = MFX_MAKEFOURCC('F','D','S','O'),
     MFX_EXTBUFF_FEI_REPACK_CTRL    = MFX_MAKEFOURCC('F','E','R','P'),
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     MFX_EXTBUFF_FEI_REPACK_STAT    = MFX_MAKEFOURCC('F','E','R','S')
+#endif
 };
 
 /* should be attached to mfxVideoParam during initialization to indicate FEI function */
