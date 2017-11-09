@@ -142,6 +142,11 @@ struct sInputParams
 
     mfxU16 LowDelayBRC;
 
+    mfxU16 IntRefType;
+    mfxU16 IntRefCycleSize;
+    mfxU16 IntRefQPDelta;
+    mfxU16 IntRefCycleDist;
+
     bool bUncut;
     bool shouldUseShiftedP010Enc;
     bool shouldUseShiftedP010VPP;

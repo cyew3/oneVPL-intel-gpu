@@ -531,13 +531,18 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     }
 
     // configure the depth of the look ahead BRC if specified in command line
-    if (pInParams->nLADepth || pInParams->nMaxSliceSize || pInParams->nMaxFrameSize || pInParams->nBRefType || (pInParams->nExtBRC && (pInParams->CodecId == MFX_CODEC_HEVC || pInParams->CodecId == MFX_CODEC_AVC)))
+    if (pInParams->nLADepth || pInParams->nMaxSliceSize || pInParams->nMaxFrameSize || pInParams->nBRefType ||
+        (pInParams->nExtBRC && (pInParams->CodecId == MFX_CODEC_HEVC || pInParams->CodecId == MFX_CODEC_AVC)) ||
+        pInParams->IntRefType || pInParams->IntRefCycleSize || pInParams->IntRefQPDelta )
     {
         m_CodingOption2.LookAheadDepth = pInParams->nLADepth;
         m_CodingOption2.MaxSliceSize   = pInParams->nMaxSliceSize;
         m_CodingOption2.MaxFrameSize = pInParams->nMaxFrameSize;
         m_CodingOption2.BRefType = pInParams->nBRefType;
         m_CodingOption2.ExtBRC = (pInParams->CodecId == MFX_CODEC_HEVC || pInParams->CodecId == MFX_CODEC_AVC)? pInParams->nExtBRC : 0;
+        m_CodingOption2.IntRefType = pInParams->IntRefType;
+        m_CodingOption2.IntRefCycleSize = pInParams->IntRefCycleSize;
+        m_CodingOption2.IntRefQPDelta = pInParams->IntRefQPDelta;
         m_EncExtParams.push_back((mfxExtBuffer *)&m_CodingOption2);
     }
 
@@ -550,7 +555,7 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     // set up mfxCodingOption3
     if (pInParams->nGPB || pInParams->LowDelayBRC ||
         pInParams->WeightedPred || pInParams->WeightedBiPred
-        || pInParams->nPRefType)
+        || pInParams->nPRefType || pInParams->IntRefCycleDist )
     {
         if (pInParams->CodecId == MFX_CODEC_HEVC)
         {
@@ -561,6 +566,7 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         m_CodingOption3.WeightedBiPred = pInParams->WeightedBiPred;
         m_CodingOption3.LowDelayBRC    = pInParams->LowDelayBRC;
         m_CodingOption3.PRefType       = pInParams->nPRefType;
+        m_CodingOption3.IntRefCycleDist= pInParams->IntRefCycleDist;
 
         m_EncExtParams.push_back((mfxExtBuffer *)&m_CodingOption3);
     }
