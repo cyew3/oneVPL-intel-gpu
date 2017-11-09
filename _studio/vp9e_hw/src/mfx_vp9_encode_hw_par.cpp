@@ -533,11 +533,11 @@ bool CheckChromaFormat(mfxU16 format, mfxU32 fourcc)
 }
 #endif // PRE_SI_TARGET_PLATFORM_GEN11
 
-bool CheckFourcc(mfxU32 fourcc)
+bool CheckFourcc(mfxU32 fourcc, ENCODE_CAPS_VP9 const &caps)
 {
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-    return fourcc == MFX_FOURCC_NV12 || fourcc == MFX_FOURCC_AYUV  // 8 bit
-        || fourcc == MFX_FOURCC_P010 || fourcc == MFX_FOURCC_Y410; // 10 bit
+    return fourcc == MFX_FOURCC_NV12 || (fourcc == MFX_FOURCC_AYUV && caps.YUV444ReconSupport)  // 8 bit
+        || (caps.MaxEncodedBitDepth > 0 && (fourcc == MFX_FOURCC_P010 || (fourcc == MFX_FOURCC_Y410 && caps.YUV444ReconSupport))); // 10 bit
 #else //PRE_SI_TARGET_PLATFORM_GEN11
     return fourcc == MFX_FOURCC_NV12;
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
@@ -1014,7 +1014,7 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         mfxU16& outDepthChroma = opt3.TargetBitDepthChroma;
 
         if (fourcc != 0
-            && false == CheckFourcc(fourcc))
+            && false == CheckFourcc(fourcc, caps))
         {
             fourcc = 0;
             unsupported = true;
@@ -1778,13 +1778,14 @@ mfxStatus CheckSurface(
     VP9MfxVideoParam const & video,
     mfxFrameSurface1 const & surface,
     mfxU32 initWidth,
-    mfxU32 initHeight)
+    mfxU32 initHeight,
+    ENCODE_CAPS_VP9 const &caps)
 {
     mfxExtOpaqueSurfaceAlloc const & extOpaq = GetExtBufferRef(video);
     bool isOpaq = video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && extOpaq.In.NumSurface > 0;
 
     // check that surface contains valid data
-    MFX_CHECK(CheckFourcc(surface.Info.FourCC), MFX_ERR_INVALID_VIDEO_PARAM);
+    MFX_CHECK(CheckFourcc(surface.Info.FourCC, caps), MFX_ERR_INVALID_VIDEO_PARAM);
 
     if (video.m_inMemType == INPUT_SYSTEM_MEMORY)
     {

@@ -41,7 +41,8 @@ void InheritDefaults(VP9MfxVideoParam& defaultsDst, VP9MfxVideoParam const & def
 mfxStatus CheckSurface(VP9MfxVideoParam const & video,
                        mfxFrameSurface1 const & surface,
                        mfxU32 initWidth,
-                       mfxU32 initHeight);
+                       mfxU32 initHeight,
+                       ENCODE_CAPS_VP9 const &caps);
 
 mfxStatus CheckAndFixCtrl(VP9MfxVideoParam const & video,
                           mfxEncodeCtrl & ctrl,

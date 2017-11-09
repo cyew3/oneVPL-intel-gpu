@@ -671,16 +671,16 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
             sts = LockSurface(newFrame.m_pRawFrame, m_pmfxCore);
             MFX_CHECK_STS(sts);
 
-            checkSts = CheckSurface(m_video, *surface, m_initWidth, m_initHeight);
+            ENCODE_CAPS_VP9 caps = {};
+            sts = m_ddi->QueryEncodeCaps(caps);
+            if (sts != MFX_ERR_NONE)
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+            checkSts = CheckSurface(m_video, *surface, m_initWidth, m_initHeight, caps);
             MFX_CHECK_STS(checkSts);
 
             if (ctrl)
             {
-                ENCODE_CAPS_VP9 caps = {};
-                sts = m_ddi->QueryEncodeCaps(caps);
-                if (sts != MFX_ERR_NONE)
-                    return MFX_ERR_UNDEFINED_BEHAVIOR;
-
                 mfxEncodeCtrl tmpCtrl = *ctrl;
                 checkSts = CheckAndFixCtrl(m_video, tmpCtrl, caps);
                 MFX_CHECK(checkSts >= MFX_ERR_NONE, checkSts);
