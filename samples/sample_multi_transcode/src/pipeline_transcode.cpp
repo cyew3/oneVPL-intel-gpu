@@ -367,34 +367,39 @@ mfxStatus CTranscodingPipeline::VPPPreInit(sInputParams *pParams)
 
     if (m_bEncodeEnable || m_bDecodeEnable)
     {
+        if (m_mfxDecParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_SINGLE && pParams->EncodeId != MFX_CODEC_HEVC)
+        {
+            m_bIsFieldWeaving = true;
+            m_bIsVpp = true;
+        }
+        if (m_mfxDecParams.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE && pParams->EncodeId == MFX_CODEC_HEVC && pParams->DecodeId != MFX_CODEC_HEVC)
+        {
+            m_bIsFieldSplitting = true;
+            m_bIsVpp = true;
+            m_mfxVppParams.vpp.In.PicStruct = MFX_PICSTRUCT_UNKNOWN;
+        }
+
         if ( (m_mfxDecParams.mfx.FrameInfo.CropW != pParams->nDstWidth && pParams->nDstWidth) ||
              (m_mfxDecParams.mfx.FrameInfo.CropH != pParams->nDstHeight && pParams->nDstHeight) ||
              (pParams->bEnableDeinterlacing) || (pParams->DenoiseLevel!=-1) || (pParams->DetailLevel!=-1) || (pParams->FRCAlgorithm) ||
              (bVppCompInitRequire) || (pParams->fieldProcessingMode) ||
              (pParams->EncoderFourCC && decoderFourCC && pParams->EncoderFourCC != decoderFourCC && m_bEncodeEnable))
         {
+            if (m_bIsFieldWeaving || m_bIsFieldSplitting)
+            {
+                msdk_printf(MSDK_STRING("ERROR: Field weaving or Field Splitting is enabled according to streams parameters. Other VPP filters cannot be used in this mode, please remove corresponding options.\n"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+
             m_bIsVpp = true;
+        }
+
+        if (m_bIsVpp)
+        {
             sts = InitVppMfxParams(pParams);
             MSDK_CHECK_STATUS(sts, "InitVppMfxParams failed");
         }
-        else
-        {
-            if (m_mfxDecParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_SINGLE)
-            {
-                m_bIsFieldWeaving = true;
-                m_bIsVpp = true;
-                sts = InitVppMfxParams(pParams);
-                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-            }
-            if (m_mfxDecParams.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE && pParams->EncodeId == MFX_CODEC_HEVC)
-            {
-                m_bIsFieldSplitting = true;
-                m_bIsVpp = true;
-                m_mfxVppParams.vpp.In.PicStruct = MFX_PICSTRUCT_UNKNOWN;
-                sts = InitVppMfxParams(pParams);
-                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-            }
-        }
+
         if (pParams->nRotationAngle) // plugin was requested
         {
             m_bIsPlugin = true;
