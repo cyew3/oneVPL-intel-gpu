@@ -17,12 +17,11 @@
 #include "mfx_trace.h"
 #include "mfx_timing.h"
 
-
 #ifndef MFX_DEBUG_TRACE
 #define MFX_STS_TRACE(sts) sts
 #else
 template <typename T>
-static inline T mfx_print_err(T sts, char *file, int line, char *func)
+static inline T mfx_print_err(T sts, const char *file, int line, const char *func)
 {
     if (sts)
     {
