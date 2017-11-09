@@ -27,6 +27,7 @@ Copyright(c) 2013-2017 Intel Corporation. All Rights Reserved.
   #define MFX_MAKENAME_ATOM
 
 #elif (MFX_ANDROID_PLATFORM == clovertrail)
+
   #define MFX_ENABLE_H265_VIDEO_DECODE
   #define MFX_TARGET_OPTIMIZATION_SSSE3
   #define MFX_MAKENAME_SSSE3
@@ -35,36 +36,48 @@ Copyright(c) 2013-2017 Intel Corporation. All Rights Reserved.
 #elif (MFX_ANDROID_PLATFORM == baytrail) || (MFX_ANDROID_PLATFORM == bigcore)
 
 #ifdef MFX_VA
+
   #define MFX_ENABLE_VC1_VIDEO_DECODE
+
   #define MFX_ENABLE_MPEG2_VIDEO_DECODE
+
   #define MFX_ENABLE_H265_VIDEO_DECODE
   #define MFX_TARGET_OPTIMIZATION_ATOM
   #define MFX_MAKENAME_ATOM
 
   #define MFX_ENABLE_H264_VIDEO_DECODE
+
   #define MFX_ENABLE_H264_VIDEO_ENCODE
   #define MFX_ENABLE_H264_VIDEO_BRC
   #define MFX_ENABLE_H264_VIDEO_ENCODE_HW
   #define MFX_ENABLE_MVC_VIDEO_ENCODE_HW
   #define LOWPOWERENCODE_AVC
+
   #define MFX_ENABLE_MJPEG_VIDEO_DECODE
   #define MFX_ENABLE_MJPEG_VIDEO_DECODE_HW
+
   #define MFX_ENABLE_MJPEG_VIDEO_ENCODE
+
   #define MFX_ENABLE_VP8_VIDEO_DECODE
   #define MFX_ENABLE_VP8_VIDEO_DECODE_HW
 
   #define MFX_ENABLE_VP8_VIDEO_ENCODE_HW
+
   #define MFX_ENABLE_VP9_VIDEO_DECODE
   #define MFX_ENABLE_VP9_VIDEO_DECODE_HW
 
   #define MFX_ENABLE_VPP
 
   #define MFX_ENABLE_USER_ENCODE
+
 #else // MFX_VA
+
   #define MFX_ENABLE_H265_VIDEO_DECODE
   #define MFX_TARGET_OPTIMIZATION_ATOM
   #define MFX_MAKENAME_ATOM
+
 #endif // MFX_VA
+
 #else
 
   #error "undefined platform"

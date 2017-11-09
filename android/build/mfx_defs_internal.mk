@@ -21,53 +21,54 @@ endif
 
 MDF_ROOT := $(MFX_HOME)/mdp_msdk-contrib/mdf
 
-# See http://software.intel.com/en-us/articles/intel-integrated-performance-primitives-intel-ipp-understanding-cpu-optimized-code-used-in-intel-ipp
 MFX_CFLAGS_INTERNAL_32 := -DLINUX32
 IPP_ROOT_32 := $(MEDIASDK_ROOT)/mdp_msdk-ipp_7_1-bin/linux/ia32
 
-ifneq ($(filter $(MFX_IPP), px),) # C optimized for all IA-32 processors; i386+
-# no include file for that case
-#    MFX_CFLAGS_INTERNAL_32 += -include $(IPP_ROOT_32)/tools/staticlib/ipp_px.h
+ifneq ($(filter $(MFX_IPP_OPT_LEVEL_32), px),) # C optimized for all IA-32 processors; i386+
+    # no include file for that case
 endif
-ifneq ($(filter $(MFX_IPP), a6),) # SSE; Pentium III
-# no include file for that case
-#    MFX_CFLAGS_INTERNAL_32 += -include $(IPP_ROOT_32)/tools/staticlib/ipp_a6.h
-endif
-ifneq ($(filter $(MFX_IPP), w7),) # SSE2; P4, Xeon, Centrino
+ifneq ($(filter $(MFX_IPP_OPT_LEVEL_32), w7),) # SSE2; P4, Xeon, Centrino
     MFX_CFLAGS_INTERNAL_32 += -include $(IPP_ROOT_32)/tools/staticlib/ipp_w7.h
 endif
-ifneq ($(filter $(MFX_IPP), t7),) # SSE3; Prescott, Yonah
-# no include file for that case
-#    MFX_CFLAGS_INTERNAL_32 += -include $(IPP_ROOT_32)/tools/staticlib/ipp_t7.h
-endif
-ifneq ($(filter $(MFX_IPP), v8),) # Supplemental SSE3; Core 2, Xeon 5100, Atom
+ifneq ($(filter $(MFX_IPP_OPT_LEVEL_32), v8),) # Supplemental SSE3; Core 2, Xeon 5100, Atom
     MFX_CFLAGS_INTERNAL_32 += -include $(IPP_ROOT_32)/tools/staticlib/ipp_v8.h
 endif
-ifneq ($(filter $(MFX_IPP), s8),) # Supplemental SSE3 (compiled for Atom); Atom
+ifneq ($(filter $(MFX_IPP_OPT_LEVEL_32), s8),) # Supplemental SSE3 (compiled for Atom); Atom
     MFX_CFLAGS_INTERNAL_32 += -include $(IPP_ROOT_32)/tools/staticlib/ipp_s8.h
 endif
-ifneq ($(filter $(MFX_IPP), p8),) # SSE4.1, SSE4.2, AES-NI; Penryn Nehalem, Westmere
+ifneq ($(filter $(MFX_IPP_OPT_LEVEL_32), p8),) # SSE4.1, SSE4.2, AES-NI; Penryn, Nehalem, Westmere
     MFX_CFLAGS_INTERNAL_32 += -include $(IPP_ROOT_32)/tools/staticlib/ipp_p8.h
 endif
-ifneq ($(filter $(MFX_IPP), g9),) # AVX; Sandy Bridge
+ifneq ($(filter $(MFX_IPP_OPT_LEVEL_32), g9),) # AVX; Sandy Bridge
     MFX_CFLAGS_INTERNAL_32 += -include $(IPP_ROOT_32)/tools/staticlib/ipp_g9.h
+endif
+ifneq ($(filter $(MFX_IPP_OPT_LEVEL_32), h9),) # AVX2; Haswell
+    MFX_CFLAGS_INTERNAL_32 += -include $(IPP_ROOT_32)/tools/staticlib/ipp_h9.h
 endif
 
 MFX_CFLAGS_INTERNAL_64 := -DLINUX32 -DLINUX64
 IPP_ROOT_64 := $(MEDIASDK_ROOT)/mdp_msdk-ipp_7_1-bin/linux/em64t
 
-ifneq ($(filter $(MFX_IPP), mx),)
+ifneq ($(filter $(MFX_IPP_OPT_LEVEL_64), mx),) # C optimized for all EM64T processors
 # no include file for that case
-#    MFX_CFLAGS_INTERNAL_64 += -include $(IPP_ROOT_64)/tools/staticlib/ipp_mx.h
 endif
-ifneq ($(filter $(MFX_IPP), e9),) # AVX; Sandy Bridge
+ifneq ($(filter $(MFX_IPP_OPT_LEVEL_64), m7),) # SSE3; Prescott
+    MFX_CFLAGS_INTERNAL_64 += -include $(IPP_ROOT_64)/tools/staticlib/ipp_m7.h
+endif
+ifneq ($(filter $(MFX_IPP_OPT_LEVEL_64), u8),) # Supplemental SSE3; Core 2, Xeon 5100, Atom
+    MFX_CFLAGS_INTERNAL_64 += -include $(IPP_ROOT_64)/tools/staticlib/ipp_u8.h
+endif
+ifneq ($(filter $(MFX_IPP_OPT_LEVEL_64), n8),) # Supplemental SSE3 (compiled for Atom); Atom
+    MFX_CFLAGS_INTERNAL_64 += -include $(IPP_ROOT_64)/tools/staticlib/ipp_n8.h
+endif
+ifneq ($(filter $(MFX_IPP_OPT_LEVEL_64), y8),) # SSE4.1, SSE4.2, AES-NI; Penryn, Nehalem, Westmere
+    MFX_CFLAGS_INTERNAL_64 += -include $(IPP_ROOT_64)/tools/staticlib/ipp_y8.h
+endif
+ifneq ($(filter $(MFX_IPP_OPT_LEVEL_64), e9),) # AVX; Sandy Bridge
     MFX_CFLAGS_INTERNAL_64 += -include $(IPP_ROOT_64)/tools/staticlib/ipp_e9.h
 endif
-
-ifneq ($(MFX_IPP),)
-    ifeq ($(filter w7 v8 s8 p8 g9 e9, $(MFX_IPP)),)
-        $(error Wrong cpu optimization level)
-    endif
+ifneq ($(filter $(MFX_IPP_OPT_LEVEL_64), l9),) # AVX2; Haswell
+    MFX_CFLAGS_INTERNAL_64 += -include $(IPP_ROOT_64)/tools/staticlib/ipp_l9.h
 endif
 
 MFX_CFLAGS_INTERNAL_HW := \
