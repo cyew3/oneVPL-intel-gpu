@@ -589,6 +589,17 @@ DECL_START(ENCODE_QUERY_STATUS_PARAMS)
 DECL_END
 #undef FIELD_FORMAT
 
+#define FIELD_FORMAT "%-34s"
+DECL_START(ENCODE_QUERY_STATUS_SLICE_PARAMS)
+    Trace(*((ENCODE_QUERY_STATUS_PARAMS*)&b), 0);
+    TRACE("%d", SizeOfSliceSizesBuffer);
+    TRACE("%p", SliceSizes);
+    if (b.SliceSizes) {
+        TRACE_ARRAY_ROW("%d", SliceSizes, b.SizeOfSliceSizesBuffer);
+    }
+DECL_END
+#undef FIELD_FORMAT
+
 
 #if (HEVCE_DDI_VERSION >= 960)
 

@@ -203,6 +203,7 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAccelerationService(Mf
     m_cbd.resize(MAX_DDI_BUFFERS + MaxPackedHeaders());
 
     m_maxSlices = CeilDiv(par.m_ext.HEVCParam.PicHeightInLumaSamples, par.LCUSize) * CeilDiv(par.m_ext.HEVCParam.PicWidthInLumaSamples, par.LCUSize);
+    m_maxSlices = Min(m_maxSlices, (mfxU32)MAX_SLICES);
 
     return MFX_ERR_NONE;
 }
@@ -321,9 +322,8 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Register(mfxFrameAllocRespon
     if (type == D3DDDIFMT_INTELENCODE_BITSTREAMDATA)
     {
         // Reserve space for feedback reports.
-        mfxU32 feedbackSize = FeedbackSize(m_caps.SliceLevelReportSupport ? QUERY_STATUS_PARAM_SLICE : QUERY_STATUS_PARAM_FRAME, m_maxSlices);
-        m_feedbackUpdate.Reset(response.NumFrameActual, feedbackSize);
-        m_feedbackCached.Reset(response.NumFrameActual, feedbackSize);
+        ENCODE_QUERY_STATUS_PARAM_TYPE fbType = m_pps.bEnableSliceLevelReport ? QUERY_STATUS_PARAM_SLICE : QUERY_STATUS_PARAM_FRAME;
+        m_feedbackPool.Reset(response.NumFrameActual, fbType, m_maxSlices);
     }
 
     return MFX_ERR_NONE;
@@ -496,8 +496,9 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, m
             }
         }
 
-        m_feedbackUpdate[0] = fb;
-        m_feedbackCached.Update(m_feedbackUpdate);
+        m_feedbackPool[0] = fb;
+        m_feedbackPool.Update();
+
 #else
         HANDLE handle;
         HRESULT hr;
@@ -547,20 +548,19 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryStatus(Task & task)
     // As we won't get all bitstreams we need to cache all other statuses.
 
     // first check cache.
-    const ENCODE_QUERY_STATUS_PARAMS* feedback = m_feedbackCached.Hit(task.m_statusReportNumber);
+    const ENCODE_QUERY_STATUS_PARAMS* feedback = m_feedbackPool.Get(task.m_statusReportNumber);
 
     // if task is not in cache then query its status
     if (feedback == 0 || feedback->bStatus != ENCODE_OK)
     {
         ENCODE_QUERY_STATUS_PARAMS_DESCR feedbackDescr = {};
-        feedbackDescr.StatusParamType = (m_caps.SliceLevelReportSupport && m_pps.bEnableSliceLevelReport) ? QUERY_STATUS_PARAM_SLICE : QUERY_STATUS_PARAM_FRAME;
+
+        feedbackDescr.StatusParamType = m_pps.bEnableSliceLevelReport ? QUERY_STATUS_PARAM_SLICE : QUERY_STATUS_PARAM_FRAME;
+        feedbackDescr.SizeOfStatusParamStruct = (feedbackDescr.StatusParamType == QUERY_STATUS_PARAM_SLICE) ? sizeof(ENCODE_QUERY_STATUS_SLICE_PARAMS) : sizeof(ENCODE_QUERY_STATUS_PARAMS);
 
         for (;;)
         {
             HRESULT hr;
-            feedbackDescr.SizeOfStatusParamStruct = FeedbackSize((ENCODE_QUERY_STATUS_PARAM_TYPE)feedbackDescr.StatusParamType, m_maxSlices);
-
-            m_feedbackUpdate.Reset(m_feedbackUpdate.size(), feedbackDescr.SizeOfStatusParamStruct);
 
             try
             {
@@ -568,19 +568,20 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryStatus(Task & task)
                     ENCODE_QUERY_STATUS_ID,
                     &feedbackDescr,
                     sizeof(feedbackDescr),
-                    &m_feedbackUpdate[0],
-                    (mfxU32)m_feedbackUpdate.size() * m_feedbackUpdate.feedback_size());
+                    &m_feedbackPool[0],
+                    (mfxU32)m_feedbackPool.size() * m_feedbackPool.feedback_size());
             }
             catch (...)
             {
                 return MFX_ERR_DEVICE_FAILED;
             }
 
-            if (hr == E_INVALIDARG && feedbackDescr.StatusParamType == QUERY_STATUS_PARAM_SLICE)
-            {
-                feedbackDescr.StatusParamType = QUERY_STATUS_PARAM_FRAME;
-                continue;
-            }
+            //if (hr == E_INVALIDARG && feedbackDescr.StatusParamType == QUERY_STATUS_PARAM_SLICE)
+            //{
+            //    feedbackDescr.StatusParamType = QUERY_STATUS_PARAM_FRAME;
+            //    feedbackDescr.SizeOfStatusParamStruct = sizeof(ENCODE_QUERY_STATUS_PARAMS);
+            //    continue;
+            //}
 
             MFX_CHECK(hr != D3DERR_WASSTILLDRAWING, MFX_WRN_DEVICE_BUSY);
             MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
@@ -588,16 +589,18 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryStatus(Task & task)
         }
 
         // Put all with ENCODE_OK into cache.
-        m_feedbackCached.Update(m_feedbackUpdate);
+        m_feedbackPool.Update();
 
-        feedback = m_feedbackCached.Hit(task.m_statusReportNumber);
+        feedback = m_feedbackPool.Get(task.m_statusReportNumber);
         MFX_CHECK(feedback != 0, MFX_ERR_DEVICE_FAILED);
     }
 
     switch (feedback->bStatus)
     {
+
+    case ENCODE_OK_WITH_MISMATCH:
+        assert(!"slice sizes buffer is too small");
     case ENCODE_OK:
-//        Trace(*feedback, 0);
         task.m_bsDataLength = feedback->bitstreamSize;
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
@@ -608,24 +611,24 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryStatus(Task & task)
         }
 #endif
 
+        if (m_pps.bEnableSliceLevelReport)
         {
-            mfxExtEncodedSlicesInfo* pESI = ExtBuffer::Get(task.m_ctrl);
-
-            if (pESI)
+#if defined (MFX_ENABLE_HEVCE_UNITS_INFO)
+            mfxExtEncodedUnitsInfo* pUnitsInfo = ExtBuffer::Get(*task.m_bs);
+            if (pUnitsInfo)
             {
-                pESI->NumEncodedSlice     = feedback->NumberSlices;
-                pESI->NumSliceNonCopliant = feedback->NumSlicesNonCompliant;
-                pESI->SliceSizeOverflow   = feedback->SliceSizeOverflow;
+                mfxU16 *pSize = ((ENCODE_QUERY_STATUS_SLICE_PARAMS*)feedback)->SliceSizes;
+                mfxU16 i = pUnitsInfo->NumUnitsEncoded, j = 0;
 
-                if (pESI->NumSliceSizeAlloc && pESI->SliceSize && m_caps.SliceLevelReportSupport)
-                {
-                    mfxU16* pSize = (mfxU16*)((mfxU8*)feedback + sizeof(ENCODE_QUERY_STATUS_PARAMS) + sizeof(UINT) * 4);
-                    CopyN(pESI->SliceSize, pSize, Min(feedback->NumberSlices, pESI->NumSliceSizeAlloc));
-                }
+                while (i < (pUnitsInfo->NumUnitsAlloc) && (j < feedback->NumberSlices))
+                    pUnitsInfo->UnitInfo[i++].Size = pSize[j++];
+
+                pUnitsInfo->NumUnitsEncoded += feedback->NumberSlices;
             }
+#endif
         }
 
-        m_feedbackCached.Remove(task.m_statusReportNumber);
+        m_feedbackPool.Remove(task.m_statusReportNumber);
         return MFX_ERR_NONE;
 
     case ENCODE_NOTREADY:

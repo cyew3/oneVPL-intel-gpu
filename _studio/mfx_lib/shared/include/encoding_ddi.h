@@ -144,8 +144,9 @@ typedef struct tagENCODE_QUERY_STATUS_PARAMS_DESCR
 // new encode query status interface (starting from DDI 0.915)
 typedef enum tagENCODE_QUERY_STATUS_PARAM_TYPE
 { 
-    QUERY_STATUS_PARAM_FRAME = 0, // Frame level reporting, the current default.
-    QUERY_STATUS_PARAM_SLICE = 1 // Slice level reporting, not yet supported.
+    QUERY_STATUS_PARAM_FRAME = 0, // Frame level reporting, the default, always supported
+    QUERY_STATUS_PARAM_SLICE = 1, // Slice level reporting, not always supported
+    QUERY_STATUS_PARAM_EXT = 2    // Extended Status Report Format, not always supported
 } ENCODE_QUERY_STATUS_PARAM_TYPE;
 #endif // NEW_STATUS_REPORTING_DDI_0915
 
@@ -335,10 +336,11 @@ typedef struct tagENCODE_SET_VUI_PARAMETER
 // statuses returned by ENCODE_QUERY_STATUS_ID
 enum
 {
-    ENCODE_OK           = 0,
-    ENCODE_NOTREADY     = 1,
-    ENCODE_NOTAVAILABLE = 2,
-    ENCODE_ERROR        = 3
+    ENCODE_OK               = 0,
+    ENCODE_NOTREADY         = 1,
+    ENCODE_NOTAVAILABLE     = 2,
+    ENCODE_ERROR            = 3,
+    ENCODE_OK_WITH_MISMATCH = 4
 };
 
 enum

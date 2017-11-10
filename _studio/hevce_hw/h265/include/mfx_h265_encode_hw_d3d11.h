@@ -108,8 +108,7 @@ private:
     std::vector<ENCODE_COMPBUFFERDESC>          m_cbd;
     std::vector<mfxHDLPair>                     m_reconQueue;
     std::vector<mfxHDLPair>                     m_bsQueue;
-    FeedbackStorage                             m_feedbackUpdate;
-    CachedFeedback                              m_feedbackCached;
+    FeedbackStorage                             m_feedbackPool;
 
     std::vector<ENCODE_RECT>                    m_dirtyRects;
 

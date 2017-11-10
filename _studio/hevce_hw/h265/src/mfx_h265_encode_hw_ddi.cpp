@@ -446,61 +446,89 @@ mfxStatus FillCUQPDataDDI(Task& task, MfxVideoParam &par, MFXCoreInterface& core
 
 #if defined(_WIN32) || defined(_WIN64)
 
-void CachedFeedback::Reset(mfxU32 cacheSize, mfxU32 feedbackSize)
+void FeedbackStorage::Reset(mfxU16 cacheSize, ENCODE_QUERY_STATUS_PARAM_TYPE fbType, mfxU32 maxSlices)
 {
-    m_cache.Reset(cacheSize, feedbackSize);
+    if ((fbType != QUERY_STATUS_PARAM_FRAME) &&
+        (fbType != QUERY_STATUS_PARAM_SLICE)) {
+        assert(!"unknown query function");
+        fbType = QUERY_STATUS_PARAM_FRAME;
+    }
 
-    for (size_t i = 0; i < m_cache.size(); i++)
-        m_cache[i].bStatus = ENCODE_NOTAVAILABLE;
+    m_type = fbType;
+    m_pool_size = cacheSize;
+    m_fb_size = (m_type == QUERY_STATUS_PARAM_SLICE) ? sizeof(ENCODE_QUERY_STATUS_SLICE_PARAMS) : sizeof(ENCODE_QUERY_STATUS_PARAMS);
+    m_buf.resize(m_fb_size * m_pool_size);
+    m_buf_cache.resize(m_fb_size * m_pool_size);
+
+    for (size_t i = 0; i < m_pool_size; i++) {
+        Feedback *c = (Feedback *)&m_buf_cache[i * m_fb_size];
+        c->bStatus = ENCODE_NOTAVAILABLE;
+    }
+
+    if (m_type == QUERY_STATUS_PARAM_SLICE) {
+        m_ssizes.resize(maxSlices * m_pool_size);
+        m_ssizes_cache.resize(maxSlices * m_pool_size);
+        for (size_t i = 0; i < m_pool_size; i++) {
+            ENCODE_QUERY_STATUS_SLICE_PARAMS *pSliceInfo = (ENCODE_QUERY_STATUS_SLICE_PARAMS *)&m_buf[i * m_fb_size];
+            ENCODE_QUERY_STATUS_SLICE_PARAMS *pSliceInfoCache = (ENCODE_QUERY_STATUS_SLICE_PARAMS *)&m_buf_cache[i * m_fb_size];
+            pSliceInfo->SizeOfSliceSizesBuffer = maxSlices;
+            pSliceInfoCache->SizeOfSliceSizesBuffer = maxSlices;
+            pSliceInfo->SliceSizes = &m_ssizes[i * maxSlices];
+            pSliceInfoCache->SliceSizes = &m_ssizes_cache[i * maxSlices];
+        }
+    }
 }
 
-mfxStatus CachedFeedback::Update(const FeedbackStorage& update)
+const FeedbackStorage::Feedback* FeedbackStorage::Get(mfxU32 feedbackNumber) const
 {
-    for (size_t i = 0; i < update.size(); i++)
-    {
-        const ENCODE_QUERY_STATUS_PARAMS & u = update[i];
+    for (size_t i = 0; i < m_pool_size; i++) {
+        Feedback *pFb = (Feedback *)&m_buf_cache[i * m_fb_size];
+        if (pFb->StatusReportFeedbackNumber == feedbackNumber)
+            return pFb;
+    }
+    return 0;
+}
 
-        if (u.bStatus != ENCODE_NOTAVAILABLE)
-        {
-            size_t cache = m_cache.size();
-
-            for (size_t j = 0; j < m_cache.size(); j++)
-            {
-                ENCODE_QUERY_STATUS_PARAMS & c = m_cache[j];
-
-                if (c.StatusReportFeedbackNumber == u.StatusReportFeedbackNumber)
-                {
-                    cache = j;
+mfxStatus FeedbackStorage::Update()
+{
+    for (size_t i = 0; i < m_pool_size; i++) {
+        Feedback *u = (Feedback *)&m_buf[i * m_fb_size];
+        if (u->bStatus != ENCODE_NOTAVAILABLE) {
+            Feedback *hit = 0;
+            for (size_t j = 0; j < m_pool_size; j++) {
+                Feedback *c = (Feedback *)&m_buf_cache[j * m_fb_size];
+                if (c->StatusReportFeedbackNumber == u->StatusReportFeedbackNumber) {
+                    hit = c;  // hit
                     break;
                 }
-                else if (cache == m_cache.size() && c.bStatus == ENCODE_NOTAVAILABLE)
-                {
-                    cache = j;
+                else if (hit == 0 && c->bStatus == ENCODE_NOTAVAILABLE) {
+                    hit = c;  // first free
                 }
             }
-            MFX_CHECK(cache != m_cache.size(), MFX_ERR_UNDEFINED_BEHAVIOR);
-            m_cache.copy(cache, update, i);
+            MFX_CHECK(hit != 0, MFX_ERR_UNDEFINED_BEHAVIOR);
+            CacheFeedback(hit, u);
         }
     }
     return MFX_ERR_NONE;
 }
 
-const CachedFeedback::Feedback* CachedFeedback::Hit(mfxU32 feedbackNumber) const
+// copy fb into cache
+inline void FeedbackStorage::CacheFeedback(Feedback *fb_dst, Feedback *fb_src)
 {
-    for (size_t i = 0; i < m_cache.size(); i++)
-        if (m_cache[i].StatusReportFeedbackNumber == feedbackNumber)
-            return &m_cache[i];
-
-    return 0;
+    CopyN((mfxU8*)fb_dst, (mfxU8*)fb_src, sizeof(ENCODE_QUERY_STATUS_PARAMS));
+    if (m_type == QUERY_STATUS_PARAM_SLICE) {
+        ENCODE_QUERY_STATUS_SLICE_PARAMS *pdst = (ENCODE_QUERY_STATUS_SLICE_PARAMS *)fb_dst;
+        ENCODE_QUERY_STATUS_SLICE_PARAMS *psrc = (ENCODE_QUERY_STATUS_SLICE_PARAMS *)fb_src;
+        CopyN((mfxU8*)pdst->SliceSizes, (mfxU8*)psrc->SliceSizes, psrc->FrameLevelStatus.NumberSlices * sizeof(mfxU16));
+    }
 }
 
-mfxStatus CachedFeedback::Remove(mfxU32 feedbackNumber)
+mfxStatus FeedbackStorage::Remove(mfxU32 feedbackNumber)
 {
-    for (size_t i = 0; i < m_cache.size(); i++)
-    {
-        if (m_cache[i].StatusReportFeedbackNumber == feedbackNumber)
-        {
-            m_cache[i].bStatus = ENCODE_NOTAVAILABLE;
+    for (size_t i = 0; i < m_pool_size; i++) {
+        Feedback *c = (Feedback *)&m_buf_cache[i * m_fb_size];
+        if (c->StatusReportFeedbackNumber == feedbackNumber) {
+            c->bStatus = ENCODE_NOTAVAILABLE;
             return MFX_ERR_NONE;
         }
     }
@@ -842,7 +870,12 @@ void FillPpsBuffer(
     pps.bUseRawPicForRef           = 0;
     pps.NumSlices                  = par.mfx.NumSlice;
 
-    pps.bEnableSliceLevelReport    = 0; // TODO: should be ON if ext buffer is available
+    pps.bEnableSliceLevelReport =
+#if defined (MFX_ENABLE_HEVCE_UNITS_INFO)
+        IsOn(par.m_ext.CO3.EncodedUnitsInfo) ? 1 :
+#endif
+    0;
+
     if (par.m_ext.CO2.MaxSliceSize)
         pps.MaxSliceSizeInBytes = par.m_ext.CO2.MaxSliceSize;
 

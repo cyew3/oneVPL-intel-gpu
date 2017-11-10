@@ -440,9 +440,9 @@ namespace ExtBuffer
          MFX_EXTBUFF_CODING_OPTION_SPSPPS,
          MFX_EXTBUFF_AVC_REFLIST_CTRL,
          MFX_EXTBUFF_AVC_TEMPORAL_LAYERS,
-    #ifdef MFX_UNDOCUMENTED_DUMP_FILES
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
          MFX_EXTBUFF_DUMP,
-    #endif
+#endif
          MFX_EXTBUFF_ENCODER_RESET_OPTION,
          MFX_EXTBUFF_CODING_OPTION_VPS,
          MFX_EXTBUFF_VIDEO_SIGNAL_INFO,
@@ -454,7 +454,6 @@ namespace ExtBuffer
 #if !defined(MFX_EXT_BRC_DISABLE)
          MFX_EXTBUFF_BRC,
 #endif
-         MFX_EXTBUFF_ENCODED_SLICES_INFO,
          MFX_EXTBUFF_MBQP,
          MFX_EXTBUFF_ENCODER_ROI,
          MFX_EXTBUFF_DIRTY_RECTANGLES,
@@ -496,7 +495,9 @@ namespace ExtBuffer
         EXTBUF(mfxExtPAVPOption,            MFX_EXTBUFF_PAVP_OPTION);
         EXTBUF(mfxExtAVCEncoderWiDiUsage,   MFX_EXTBUFF_ENCODER_WIDI_USAGE);
 #endif
-        EXTBUF(mfxExtEncodedSlicesInfo,     MFX_EXTBUFF_ENCODED_SLICES_INFO);
+#if defined (MFX_ENABLE_HEVCE_UNITS_INFO)
+        EXTBUF(mfxExtEncodedUnitsInfo,      MFX_EXTBUFF_ENCODED_UNITS_INFO);
+#endif
         EXTBUF(mfxExtEncoderROI,            MFX_EXTBUFF_ENCODER_ROI);
         EXTBUF(mfxExtDirtyRect,             MFX_EXTBUFF_DIRTY_RECTANGLES);
 #if !defined(MFX_EXT_BRC_DISABLE)
@@ -604,7 +605,9 @@ namespace ExtBuffer
         _CopyPar1(FadeDetection);
 #endif //defined(MFX_ENABLE_HEVCE_FADE_DETECTION)
 #endif //defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
-
+#if defined (MFX_ENABLE_HEVCE_UNITS_INFO)
+        _CopyPar1(EncodedUnitsInfo);
+#endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
         _CopyPar1(EnableNalUnitType);
 #endif
@@ -856,7 +859,6 @@ public:
 #if !defined(MFX_EXT_BRC_DISABLE)
         mfxExtBRC                   extBRC;
 #endif
-        mfxExtEncodedSlicesInfo     SliceInfo;
         mfxExtEncoderROI            ROI;
         mfxExtDirtyRect             DirtyRect;
 #ifdef MFX_ENABLE_HEVCE_HDR_SEI

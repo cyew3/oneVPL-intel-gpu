@@ -98,8 +98,7 @@ private:
     std::vector<ENCODE_COMP_BUFFER_INFO>        m_compBufInfo;
     std::vector<D3DDDIFORMAT>                   m_uncompBufInfo;
     std::vector<ENCODE_COMPBUFFERDESC>          m_cbd;
-    FeedbackStorage                             m_feedbackUpdate;
-    CachedFeedback                              m_feedbackCached;
+    FeedbackStorage                             m_feedbackPool;
 
     std::vector<ENCODE_RECT> m_dirtyRects;
 

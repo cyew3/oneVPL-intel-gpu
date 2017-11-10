@@ -709,7 +709,6 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
 #if !defined(MFX_EXT_BRC_DISABLE)
     ExtBuffer::Construct(par, m_ext.extBRC, m_ext.m_extParam, base.NumExtParam);
 #endif
-    ExtBuffer::Construct(par, m_ext.SliceInfo, m_ext.m_extParam, base.NumExtParam);
     ExtBuffer::Construct(par, m_ext.ROI, m_ext.m_extParam, base.NumExtParam);
     ExtBuffer::Construct(par, m_ext.DirtyRect, m_ext.m_extParam, base.NumExtParam);
 #ifdef MFX_ENABLE_HEVCE_HDR_SEI

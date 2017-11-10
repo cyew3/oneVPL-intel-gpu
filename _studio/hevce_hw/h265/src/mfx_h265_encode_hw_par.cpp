@@ -1630,7 +1630,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     }
 #endif
 
-    changed +=  par.CheckExtBufferParam();  // todo: check ROI?? check SliceInfo??
+    changed +=  par.CheckExtBufferParam();
 
     if (par.mfx.CodecLevel !=0 && par.mfx.CodecLevel != MFX_LEVEL_HEVC_1 && LevelIdx(par.mfx.CodecLevel) == 0)
         invalid += CheckOption(par.mfx.CodecLevel, 0); // invalid level
@@ -2155,6 +2155,13 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 
     if (caps.SliceByteSizeCtrl == 0)
         invalid += CheckOption(CO2.MaxSliceSize, 0);
+
+#if defined (MFX_ENABLE_HEVCE_UNITS_INFO)
+    changed += CheckTriStateOption(CO3.EncodedUnitsInfo);
+
+    if (caps.SliceLevelReportSupport == 0)
+        invalid += CheckOption(CO3.EncodedUnitsInfo, 0, MFX_CODINGOPTION_OFF);
+#endif
 
     if (IsOn(CO3.EnableQPOffset))
     {
@@ -2821,6 +2828,11 @@ void SetDefaults(
         CO3.EnableNalUnitType = MFX_CODINGOPTION_ON;
     else
         CO3.EnableNalUnitType = MFX_CODINGOPTION_OFF;
+#endif
+
+#if defined (MFX_ENABLE_HEVCE_UNITS_INFO)
+    if (!CO3.EncodedUnitsInfo)
+        CO3.EncodedUnitsInfo = MFX_CODINGOPTION_OFF;
 #endif
 
 }

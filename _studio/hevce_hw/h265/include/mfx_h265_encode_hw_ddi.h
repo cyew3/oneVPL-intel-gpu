@@ -70,7 +70,7 @@ static const GUID DXVA2_Intel_LowpowerEncode_HEVC_Main444_10 =
 GUID GetGUID(MfxVideoParam const & par);
 
 #ifndef OPEN_SOURCE
-const GUID GuidTable[2][2][3] = 
+const GUID GuidTable[2][2][3] =
 {
     // LowPower = OFF
     {
@@ -92,7 +92,7 @@ const GUID GuidTable[2][2][3] =
         }
     },
     // LowPower = ON
-    
+
 #if defined(PRE_SI_TARGET_PLATFORM_GEN10)
     {
         // BitDepthLuma = 8
@@ -240,70 +240,50 @@ private:
 
 #if defined(_WIN32) || defined(_WIN64)
 
-inline mfxU32 FeedbackSize(ENCODE_QUERY_STATUS_PARAM_TYPE func, mfxU32 maxSlices)
-{
-    if (func == QUERY_STATUS_PARAM_FRAME)
-        return sizeof(ENCODE_QUERY_STATUS_PARAMS);
-    if (func == QUERY_STATUS_PARAM_SLICE)
-        return sizeof(ENCODE_QUERY_STATUS_PARAMS) + sizeof(UINT) * 4 + sizeof(USHORT) * maxSlices;
-    assert(!"unknown query function");
-    return sizeof(ENCODE_QUERY_STATUS_PARAMS);
-}
-
 class FeedbackStorage
-{
-public:
-    FeedbackStorage()
-        :m_size(0)
-    {
-    }
-
-    void Reset(size_t cacheSize, mfxU32 feedbackSize)
-    {
-        m_size = feedbackSize;
-        m_buf.resize(m_size * cacheSize);
-    }
-
-    inline ENCODE_QUERY_STATUS_PARAMS& operator[] (size_t i) const
-    {
-        return *(ENCODE_QUERY_STATUS_PARAMS*)&m_buf[i * m_size];
-    }
-
-    inline size_t size() const
-    {
-        return (m_buf.size() / m_size);
-    }
-
-    inline void copy(size_t dstIdx, FeedbackStorage const & src, size_t srcIdx)
-    {
-        CopyN(&m_buf[dstIdx * m_size], &src.m_buf[srcIdx * src.m_size], Min(m_size, src.m_size));
-    }
-
-    inline mfxU32 feedback_size()
-    {
-        return m_size;
-    }
-
-private:
-    std::vector<mfxU8> m_buf;
-    mfxU32 m_size;
-};
-
-class CachedFeedback
 {
 public:
     typedef ENCODE_QUERY_STATUS_PARAMS Feedback;
 
-    void Reset(mfxU32 cacheSize, mfxU32 feedbackSize = sizeof(Feedback));
+    FeedbackStorage()
+        : m_pool_size(0)
+        , m_fb_size(0)
+    {
+    }
 
-    mfxStatus Update(FeedbackStorage const & update);
+    inline ENCODE_QUERY_STATUS_PARAMS& operator[] (size_t i) const
+    {
+        return *(ENCODE_QUERY_STATUS_PARAMS*)&m_buf[i * m_fb_size];
+    }
 
-    const Feedback * Hit(mfxU32 feedbackNumber) const;
+    inline size_t size() const
+    {
+        return m_pool_size;
+    }
+
+    inline mfxU32 feedback_size()
+    {
+        return m_fb_size;
+    }
+
+    void Reset(mfxU16 cacheSize, ENCODE_QUERY_STATUS_PARAM_TYPE fbType, mfxU32 maxSlices);
+
+    const Feedback* Get(mfxU32 feedbackNumber) const;
+
+    mfxStatus Update();
+
+    inline void CacheFeedback(Feedback *fb_dst, Feedback *fb_src);
 
     mfxStatus Remove(mfxU32 feedbackNumber);
 
 private:
-    FeedbackStorage m_cache;
+    std::vector<mfxU8> m_buf;
+    std::vector<mfxU8> m_buf_cache;
+    std::vector<mfxU16> m_ssizes;
+    std::vector<mfxU16> m_ssizes_cache;
+    mfxU32 m_fb_size;
+    mfxU16 m_pool_size;
+    ENCODE_QUERY_STATUS_PARAM_TYPE m_type;
 };
 
 void FillSpsBuffer(

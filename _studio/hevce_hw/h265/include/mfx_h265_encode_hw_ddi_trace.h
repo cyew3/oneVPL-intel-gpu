@@ -26,7 +26,10 @@ public:
     ~DDITracer();
 
     template<class T> void Trace(T const &, mfxU32) {};
-    template<class T> void TraceArray(T const * b, mfxU32 n) { for (mfxU32 i = 0; i < n; i ++) Trace(b[i], i); };
+    template<class T> void TraceArray(T const * b, mfxU32 n) {
+        if (b)
+        for (mfxU32 i = 0; i < n; i ++) Trace(b[i], i);
+    };
     inline void TraceArray(void const *, mfxU32) {};
 
     void Trace(ENCODE_COMPBUFFERDESC const & b, mfxU32 idx);
@@ -37,6 +40,7 @@ public:
     void Trace(ENCODE_PACKEDHEADER_DATA const & b, mfxU32 idx);
     void Trace(ENCODE_EXECUTE_PARAMS const & b, mfxU32 idx);
     void Trace(ENCODE_QUERY_STATUS_PARAMS const & b, mfxU32 idx);
+    void Trace(ENCODE_QUERY_STATUS_SLICE_PARAMS const & b, mfxU32 idx);
 
     void Trace(D3D11_VIDEO_DECODER_EXTENSION const & b, mfxU32 idx);
 

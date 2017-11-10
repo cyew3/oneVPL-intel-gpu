@@ -18,7 +18,6 @@
 namespace MfxHwH265Encode
 {
 
-
 mfxStatus CheckVideoParam(MfxVideoParam & par, ENCODE_CAPS_HEVC const & caps, bool bInit = false);
 void      SetDefaults    (MfxVideoParam & par, ENCODE_CAPS_HEVC const & hwCaps);
 void      InheritDefaultValues(MfxVideoParam const & parInit, MfxVideoParam &  parReset);
@@ -362,19 +361,6 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
     sts = LoadSPSPPS(m_vpar, pSPSPPS);
     MFX_CHECK_STS(sts);
 
-    if (m_vpar.m_ext.SliceInfo.SliceSize)
-    {
-        if (!m_caps.SliceLevelReportSupport)
-        {
-            return MFX_ERR_INVALID_VIDEO_PARAM;
-        }
-
-        if (!m_vpar.m_ext.CO2.MaxSliceSize)
-        {
-            return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-        }
-    }
-
     qsts = CheckVideoParam(m_vpar, m_caps, true);
     MFX_CHECK(qsts >= MFX_ERR_NONE, qsts);
 
@@ -386,7 +372,6 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
 #if MFX_EXTBUFF_CU_QP_ENABLE
     m_vpar.bMBQPInput = IsOn(m_vpar.m_ext.CO3.EnableMBQP) &&
         (m_vpar.mfx.RateControlMethod == MFX_RATECONTROL_CQP);
-
 #endif
 
     m_vpar.SyncCalculableToVideoParam();
@@ -503,7 +488,6 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
                                     request.Info.Width, request.Info.Height,
                                     request.Info.AspectRatioW, request.Info.AspectRatioH); //save block info in aspect ratio parameters
           MFX_CHECK_STS(sts);
-
     }
 #endif
 #endif
@@ -565,7 +549,6 @@ mfxStatus Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request,
     MFX_CHECK_NULL_PTR2(par, request);
 
     MFX_CHECK(par->mfx.CodecId == MFX_CODEC_HEVC, MFX_ERR_UNSUPPORTED);
-
 
     MfxVideoParam tmp = *par;
     ENCODE_CAPS_HEVC caps = {};
@@ -699,22 +682,6 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
             MFX_CHECK_STS(sts);
         }
 
-        mfxExtEncodedSlicesInfo* pSliceInfo = ExtBuffer::Get(*in);
-        if (pSliceInfo && pSliceInfo->SliceSize)
-        {
-            if (!caps.SliceLevelReportSupport)
-            {
-                return MFX_ERR_UNSUPPORTED;
-            }
-
-            // MaxSliceSize must be set for SliceSizeReport
-            mfxExtCodingOption2* pCO2 = ExtBuffer::Get(*in);
-            if (!pCO2 || !pCO2->MaxSliceSize)
-            {
-                return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-            }
-        }
-
         sts = CheckVideoParam(tmp, caps);
         if (sts == MFX_ERR_INVALID_VIDEO_PARAM)
             sts = MFX_ERR_UNSUPPORTED;
@@ -799,7 +766,6 @@ mfxStatus   Plugin::WaitingForAsyncTasks(bool bResetTasks)
             FreeTask(*task);
         m_task.Ready(task);
     }
-
 
     m_task.Reset(m_vpar.isField());
 
@@ -961,7 +927,6 @@ mfxStatus  Plugin::Reset(mfxVideoParam *par)
         return MFX_ERR_INVALID_VIDEO_PARAM; // Reset can't change parameters w/o IDR. Report an error
 
     isIdrRequired = isIdrRequired || (pResetOpt && IsOn(pResetOpt->StartNewSequence));
-
 
     bool brcReset = false;
 
@@ -1171,8 +1136,6 @@ mfxStatus Plugin::PrepareTask(Task& input_task)
             }
             MFX_CHECK(m_frameOrder != static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN), MFX_ERR_UNDEFINED_BEHAVIOR);
             MFX_CHECK(task->m_frameType != MFX_FRAMETYPE_UNKNOWN, MFX_ERR_UNDEFINED_BEHAVIOR);
-
-
         }
         else
         {
@@ -1194,7 +1157,6 @@ mfxStatus Plugin::PrepareTask(Task& input_task)
             task->m_bottomField = (task->m_surf->Info.PicStruct & (MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_BFF)) == 0 ?
                 (m_vpar.isBFF() != task->m_secondField) :
                 (task->m_surf->Info.PicStruct & MFX_PICSTRUCT_FIELD_BFF) != 0;
-
 
         m_frameOrder ++;
         task->m_stage = FRAME_ACCEPTED;
@@ -1319,6 +1281,7 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
         Task* taskForQuery = m_task.GetTaskForQuery();
         MFX_CHECK (taskForQuery, MFX_ERR_UNDEFINED_BEHAVIOR);
 
+        taskForQuery->m_bs = bs;    // bs->ExtParam can be used in QueryStatus
         sts = m_ddi->QueryStatus(*taskForQuery);
         if (sts == MFX_WRN_DEVICE_BUSY)
             return MFX_TASK_BUSY;
@@ -1345,7 +1308,6 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
 
         if (m_brc)
         {
-
             brcStatus = m_brc->PostPackFrame(m_vpar,*taskForQuery, (taskForQuery->m_bsDataLength + SEI_len)*8,0,taskForQuery->m_recode);
             //printf("m_brc->PostPackFrame poc %d, qp %d, len %d, type %d, status %d\n", taskForQuery->m_poc,taskForQuery->m_qpY, taskForQuery->m_bsDataLength,taskForQuery->m_codingType, brcStatus);
             if (brcStatus != MFX_BRC_OK)
@@ -1459,7 +1421,6 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
                 bs->FrameType |=  MFX_FRAMETYPE_P;
             }
 
-
         }
 
 #if DEBUG_REC_FRAMES_INFO
@@ -1532,7 +1493,6 @@ mfxStatus Plugin::FreeResources(mfxThreadTask /*thread_task*/, mfxStatus /*sts*/
 }
 mfxStatus Plugin::FreeTask(Task &task)
 {
-
     if (task.m_midBs)
     {
         ReleaseResource(m_bs,  task.m_midBs);
@@ -1579,7 +1539,6 @@ mfxStatus Plugin::FreeTask(Task &task)
                 ReleaseResource(m_rawSkip, task.m_midRaw);
                 task.m_midRaw = 0;
             }
-
         }
     }
     for (mfxU16 i = 0, j = 0; !isDpbEnd(task.m_dpb[TASK_DPB_BEFORE], i); i ++)
