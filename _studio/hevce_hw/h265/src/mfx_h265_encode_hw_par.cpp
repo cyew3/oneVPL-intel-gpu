@@ -2817,7 +2817,7 @@ void SetDefaults(
 #endif //defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
 
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
-    if (IsOn(par.mfx.EncodedOrder))
+    if (par.mfx.EncodedOrder)
         CO3.EnableNalUnitType = MFX_CODINGOPTION_ON;
     else
         CO3.EnableNalUnitType = MFX_CODINGOPTION_OFF;
