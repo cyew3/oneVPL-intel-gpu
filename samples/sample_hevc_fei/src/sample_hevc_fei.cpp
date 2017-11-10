@@ -84,8 +84,7 @@ void PrintHelp(const msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-NumPredictorsL1 numPreds] - number of L1 predictors (default - assign depending on the frame type)\n"));
     msdk_printf(MSDK_STRING("   [-MultiPredL0 type] - use internal L0 MV predictors (0 - no internal MV predictor, 1 - spatial internal MV predictors)\n"));
     msdk_printf(MSDK_STRING("   [-MultiPredL1 type] - use internal L1 MV predictors (0 - no internal MV predictor, 1 - spatial internal MV predictors)\n"));
-    msdk_printf(MSDK_STRING("   [-MVPBlockSize size] - external MV predictor block size (0 - MVP ignored, 1 - MVP enabled per 16x16, 2 - MVP enabled per 32x32,\n"));
-    msdk_printf(MSDK_STRING("                                                            7 - use block size from external MV predictors structure)\n"));
+    msdk_printf(MSDK_STRING("   [-MVPBlockSize size] - external MV predictor block size (0 - no MVP, 1 - MVP per 16x16, 2 - MVP per 32x32, 7 - use with -mvpin)\n"));
     msdk_printf(MSDK_STRING("   [-gpb:<on,off>] - make HEVC encoder use regular P-frames (off) or GPB (on) (on - by default)\n"));
     msdk_printf(MSDK_STRING("   [-ppyr:<on,off>] - enables P-pyramid\n"));
     msdk_printf(MSDK_STRING("   [-bref] - arrange B frames in B pyramid reference structure\n"));
@@ -373,7 +372,8 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU32 nArgNum, sInputParams& 
         }
         else
         {
-            msdk_printf(MSDK_STRING("\nWARNING: Unknown option `%s` will be ignored\n\n"), strInput[i]);
+            msdk_printf(MSDK_STRING("\nERROR: Unknown option `%s`\n\n"), strInput[i]);
+            isParseInvalid = true;
         }
     }
 
