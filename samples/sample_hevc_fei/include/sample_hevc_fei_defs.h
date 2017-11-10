@@ -462,6 +462,7 @@ struct HevcDpbFrame
     bool     m_ltr;   // is "long-term"
     bool     m_ldb;   // is "low-delay B"
     bool     m_secondField;
+    bool     m_bottomField;
     mfxU8    m_codingType;
     mfxU8    m_idxRec;
 

@@ -22,16 +22,113 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "sample_defs.h"
 #include "ref_list_manager.h"
 
-// TODO: consider replacing it with  std::sort
-#define MFX_SORT_COMMON(_AR, _SZ, _COND)\
-    for (mfxU32 _i = 0; _i < (_SZ); _i ++)\
-        for (mfxU32 _j = _i; _j < (_SZ); _j ++)\
-            if (_COND) std::swap(_AR[_i], _AR[_j]);
-#define MFX_SORT(_AR, _SZ, _OP) MFX_SORT_COMMON(_AR, _SZ, _AR[_i] _OP _AR[_j])
-#define MFX_SORT_STRUCT(_AR, _SZ, _M, _OP) MFX_SORT_COMMON(_AR, _SZ, _AR[_i]._M _OP _AR[_j]._M)
-
 namespace HevcRplUtils
 {
+
+    struct BasePredicateForRefPicure
+    {
+        typedef HevcDpbArray             Dpb;
+
+        BasePredicateForRefPicure(Dpb const & dpb)
+        : m_dpb(dpb)
+        {
+        }
+
+        Dpb const & m_dpb;
+    };
+
+    struct PocDistanceIsLess : public BasePredicateForRefPicure
+    {
+        PocDistanceIsLess(Dpb const & dpb, mfxU32 poc)
+        : BasePredicateForRefPicure(dpb)
+        , m_poc(poc)
+        {
+        }
+
+        bool operator ()(size_t l, size_t r) const
+        {
+            return
+                (std::abs(m_dpb[l].m_poc - m_poc)) <
+                (std::abs(m_dpb[r].m_poc - m_poc));
+        }
+        mfxU32 m_poc;
+    };
+
+    struct PocDistanceIsGreater : public BasePredicateForRefPicure
+    {
+        PocDistanceIsGreater(Dpb const & dpb, mfxU32 poc)
+        : BasePredicateForRefPicure(dpb)
+        , m_poc(poc)
+        {
+        }
+
+        bool operator ()(size_t l, size_t r) const
+        {
+            return
+                (std::abs(m_dpb[l].m_poc - m_poc)) >
+                (std::abs(m_dpb[r].m_poc - m_poc));
+        }
+        mfxU32 m_poc;
+    };
+
+    struct InterlacePocDistanceIsLess : public BasePredicateForRefPicure
+    {
+        InterlacePocDistanceIsLess(Dpb const & dpb, mfxU32 poc, bool IsBottomField)
+        : BasePredicateForRefPicure(dpb)
+        , m_poc(poc)
+        , m_IsBottomField(IsBottomField)
+        {
+        }
+
+        bool operator ()(size_t l, size_t r) const
+        {
+            return
+                (std::abs(m_dpb[l].m_poc / 2 - m_poc / 2) + ((m_dpb[l].m_bottomField == m_IsBottomField) ? 0 : 2)) <
+                (std::abs(m_dpb[r].m_poc / 2 - m_poc / 2) + ((m_dpb[r].m_bottomField == m_IsBottomField) ? 0 : 2));
+        }
+
+        mfxU32 m_poc;
+        bool   m_IsBottomField;
+    };
+
+    struct InterlacePocDistanceIsGreater : public BasePredicateForRefPicure
+    {
+        InterlacePocDistanceIsGreater(Dpb const & dpb, mfxU32 poc, bool IsBottomField)
+        : BasePredicateForRefPicure(dpb)
+        , m_poc(poc)
+        , m_IsBottomField(IsBottomField)
+        {
+        }
+
+        bool operator ()(size_t l, size_t r) const
+        {
+            return
+                (std::abs(m_dpb[l].m_poc / 2 - m_poc / 2) + ((m_dpb[l].m_bottomField == m_IsBottomField) ? 0 : 2)) >
+                (std::abs(m_dpb[r].m_poc / 2 - m_poc / 2) + ((m_dpb[r].m_bottomField == m_IsBottomField) ? 0 : 2));
+        }
+
+        mfxU32 m_poc;
+        bool   m_IsBottomField;
+    };
+
+    struct RefPocIsGreater : public BasePredicateForRefPicure
+    {
+        RefPocIsGreater(Dpb const & dpb)
+        : BasePredicateForRefPicure(dpb)
+        {
+        }
+
+        bool operator ()(size_t l, size_t r) const
+        {
+            return m_dpb[l].m_poc > m_dpb[r].m_poc;
+        }
+    };
+
+    bool SortByPoc(const HevcDpbFrame & l, const HevcDpbFrame & r)
+    {
+        return l.m_poc < r.m_poc;
+    }
+
     enum NALU_TYPE
     {
         TRAIL_N = 0,
@@ -101,28 +198,28 @@ namespace HevcRplUtils
         num_NALU_TYPE
     };
 
-    template<class T, class A> mfxStatus Insert(A& _to, mfxU32 _where, T const & _what)
+    template<class T, class A> void Insert(A& _to, mfxU32 _where, T const & _what)
     {
-        MSDK_CHECK_NOT_EQUAL(_where + 1 < (sizeof(_to) / sizeof(_to[0])), true, MFX_ERR_UNDEFINED_BEHAVIOR);
+        if (_where + 1 >= (sizeof(_to) / sizeof(_to[0])))
+            throw mfxError(MFX_ERR_UNDEFINED_BEHAVIOR, "Wrong ranges!");
+
         memmove(&_to[_where + 1], &_to[_where], sizeof(_to) - (_where + 1) * sizeof(_to[0]));
         _to[_where] = _what;
-        return MFX_ERR_NONE;
     }
 
-    template<class A> mfxStatus Remove(A& _from, mfxU32 _where, mfxU32 _num = 1)
+    template<class A> void Remove(A& _from, mfxU32 _where, mfxU32 _num = 1)
     {
         const mfxU32 S0 = sizeof(_from[0]);
         const mfxU32 S = sizeof(_from);
         const mfxU32 N = S / S0;
 
-        MSDK_CHECK_NOT_EQUAL(_where < N && _num <= (N - _where), true, MFX_ERR_UNDEFINED_BEHAVIOR);
+        if (_where >= N && _num <= (N - _where))
+            throw mfxError(MFX_ERR_UNDEFINED_BEHAVIOR, "Wrong ranges!");
 
         if (_where + _num < N)
             memmove(&_from[_where], &_from[_where + _num], S - ((_where + _num) * S0));
 
         memset(&_from[N - _num], IDX_INVALID, S0 * _num);
-
-        return MFX_ERR_NONE;
     }
 
     inline bool isValid(HevcDpbFrame const & frame) { return IDX_INVALID != frame.m_idxRec; }
@@ -195,7 +292,6 @@ namespace HevcRplUtils
             return i;
         return mfxU8(MAX_DPB_SIZE);
     }
-
 
     bool isBPyramid(MfxVideoParamsWrapper const & par)
     {
@@ -309,8 +405,8 @@ namespace HevcRplUtils
         // frames stored in DPB in POC ascending order,
         // LTRs before STRs (use LTR-candidate as STR as long as it possible)
 
-        MFX_SORT_STRUCT(dpb, st0, m_poc, > );
-        MFX_SORT_STRUCT((dpb + st0), mfxU16(end - st0), m_poc, >);
+        std::sort(dpb, dpb + st0, SortByPoc);
+        std::sort(dpb + st0, dpb + (mfxU16)(end - st0), SortByPoc);
 
         // sliding window over STRs
         if (end && end == par.mfx.NumRefFrame)
@@ -334,7 +430,7 @@ namespace HevcRplUtils
         if (end < MAX_DPB_SIZE)
             dpb[end++] = task;
         else
-            assert(!"DPB overflow, no space for new frame");
+            throw mfxError(MFX_ERR_UNDEFINED_BEHAVIOR, "DPB overflow, no space for new frame!");
     }
 
     mfxU8 GetFrameType(
@@ -348,6 +444,7 @@ namespace HevcRplUtils
 
         if (gopPicSize == 0xffff) //infinite GOP
             idrPicDist = gopPicSize = 0xffffffff;
+
 
         bool bField = isField(video);
         mfxU32 fo = bField ? frameOrder / 2 : frameOrder;
@@ -365,12 +462,12 @@ namespace HevcRplUtils
         if (fo % gopPicSize % gopRefDist == 0)
             return (MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF);
 
-        if (((frameOrder + 1) % gopPicSize == 0 && (gopOptFlag & MFX_GOP_CLOSED)) ||
-            (idrPicDist && (frameOrder + 1) % idrPicDist == 0))
+        if (((fo + 1) % gopPicSize == 0 && (gopOptFlag & MFX_GOP_CLOSED)) ||
+            (idrPicDist && (fo + 1) % idrPicDist == 0))
             return (MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF); // switch last B frame to P frame
 
 
-        return (MFX_FRAMETYPE_B);
+        return MFX_FRAMETYPE_B;
     }
 
     bool isLTR(
@@ -393,20 +490,14 @@ namespace HevcRplUtils
         return (poc == LTRCandidate) || (LTRCandidate == 0 && poc >= (mfxI32)LTRInterval);
     }
 
-/* 0 - the nearest  filds are used as reference in RPL,
- * 1 - the first reference is the same polarity field,
- * 2 - the same polarity fields are used for reference (if possible)
- */
-
-#define HEVCE_FIELD_MODE 2
-
     void ConstructRPL(
         MfxVideoParamsWrapper const & par,
         HevcDpbArray const & DPB,
-        bool isB,
+        bool   isB,
         mfxI32 poc,
-        bool   bSecondField,
         mfxU8  tid,
+        bool   bSecondField,
+        bool   bBottomField,
         mfxU8(&RPL)[2][MAX_DPB_SIZE],
         mfxU8(&numRefActive)[2])
     {
@@ -417,8 +508,7 @@ namespace HevcRplUtils
         mfxU8 nLTR = 0;
         mfxU8 NumStRefL0 = (mfxU8)(NumRefLX[0]);
 
-        // was with par
-        mfxU32 par_LTRInterval = 0;
+        const mfxU32 LTRInterval = 0; // currently not enabled
 
         l0 = l1 = 0;
 
@@ -429,7 +519,7 @@ namespace HevcRplUtils
 
             if (poc > DPB[i].m_poc)
             {
-                if (DPB[i].m_ltr || (par_LTRInterval && isLTR(DPB, par_LTRInterval, DPB[i].m_poc)))
+                if (DPB[i].m_ltr || (LTRInterval && isLTR(DPB, LTRInterval, DPB[i].m_poc)))
                     LTR[nLTR++] = i;
                 else
                     RPL[0][l0++] = i;
@@ -444,20 +534,11 @@ namespace HevcRplUtils
         {
             if (isField(par))
             {
-#if   (HEVCE_FIELD_MODE == 0)
-                MFX_SORT_COMMON(RPL[0], numRefActive[0],
-                                std::abs(DPB[RPL[0][_i]].m_poc - poc) < std::abs(DPB[RPL[0][_j]].m_poc - poc));
-#elif (HEVCE_FIELD_MODE == 1)
-                MFX_SORT_COMMON(RPL[0], numRefActive[0],
-                                std::abs(DPB[RPL[0][_i]].m_poc - poc) / 2 + ((DPB[RPL[0][_i]].m_secondField == bSecondField) ? 0 : 1)< (std::abs(DPB[RPL[0][_j]].m_poc - poc) / 2) + ((DPB[RPL[0][_j]].m_secondField == bSecondField) ? 0 : 1));
-#elif (HEVCE_FIELD_MODE == 2)
-                MFX_SORT_COMMON(RPL[0], numRefActive[0],
-                                std::abs(DPB[RPL[0][_i]].m_poc - poc) / 2 + ((DPB[RPL[0][_i]].m_secondField == bSecondField) ? 0 : 16)< (std::abs(DPB[RPL[0][_j]].m_poc - poc) / 2) + ((DPB[RPL[0][_j]].m_secondField == bSecondField) ? 0 : 16));
-#endif
+                std::sort(&RPL[0][0], &RPL[0][numRefActive[0]], InterlacePocDistanceIsLess(DPB, poc, bBottomField));
             }
             else
             {
-                MFX_SORT_COMMON(RPL[0], numRefActive[0], std::abs(DPB[RPL[0][_i]].m_poc - poc) < std::abs(DPB[RPL[0][_j]].m_poc - poc));
+                std::sort(&RPL[0][0], &RPL[0][numRefActive[0]], PocDistanceIsLess(DPB, poc));
             }
             if (isPPyramid(par))
             {
@@ -467,7 +548,7 @@ namespace HevcRplUtils
                     mfxI32 k = isField(par) ? 2 : 1;
 
                     // NumRefLX[0] used here as distance between "strong" STR, not NumRefActive for current frame
-                    for (i = 0; (i < l0) && (((DPB[RPL[0][0]].m_poc/k - DPB[RPL[0][i]].m_poc/k) % NumRefLX[0]) == 0) /*&& (DPB[RPL[0][i]].m_secondField == bSecondField)*/; i++);
+                    for (i = 0; (i < l0) && (((DPB[RPL[0][0]].m_poc/k - DPB[RPL[0][i]].m_poc/k) % NumRefLX[0]) == 0); i++);
 
                     Remove(RPL[0], (i >= l0 - 1) ? 0 : i);
                     l0--;
@@ -475,7 +556,7 @@ namespace HevcRplUtils
             }
             else
             {
-                Remove(RPL[0], (par_LTRInterval && !nLTR && l0 > 1), l0 - NumStRefL0);
+                Remove(RPL[0], (LTRInterval && !nLTR && l0 > 1), l0 - NumStRefL0);
                 l0 = NumStRefL0;
             }
         }
@@ -483,20 +564,11 @@ namespace HevcRplUtils
         {
             if (isField(par))
             {
-#if   (HEVCE_FIELD_MODE == 0)
-                    MFX_SORT_COMMON(RPL[1], numRefActive[1],
-                                    std::abs(DPB[RPL[1][_i]].m_poc - poc) > std::abs(DPB[RPL[1][_j]].m_poc - poc));
-#elif (HEVCE_FIELD_MODE == 1)
-                    MFX_SORT_COMMON(RPL[1], numRefActive[1],
-                                    std::abs(DPB[RPL[1][_i]].m_poc - poc) / 2 + ((DPB[RPL[1][_i]].m_secondField == bSecondField) ? 0 : 1) > (std::abs(DPB[RPL[1][_j]].m_poc - poc) / 2) + ((DPB[RPL[1][_j]].m_secondField == bSecondField) ? 0 : 1));
-#elif (HEVCE_FIELD_MODE == 2)
-                    MFX_SORT_COMMON(RPL[1], numRefActive[1],
-                                    std::abs(DPB[RPL[1][_i]].m_poc - poc) / 2 + ((DPB[RPL[1][_i]].m_secondField == bSecondField) ? 0 : 16) > (std::abs(DPB[RPL[1][_j]].m_poc - poc) / 2) + ((DPB[RPL[1][_j]].m_secondField == bSecondField) ? 0 : 16));
-#endif
+                std::sort(&RPL[1][0], &RPL[1][numRefActive[1]], InterlacePocDistanceIsGreater(DPB, poc, bBottomField));
             }
             else
             {
-                MFX_SORT_COMMON(RPL[1], numRefActive[1], std::abs(DPB[RPL[1][_i]].m_poc - poc) > std::abs(DPB[RPL[1][_j]].m_poc - poc));
+                std::sort(&RPL[1][0], &RPL[1][numRefActive[1]], PocDistanceIsGreater(DPB, poc));
             }
             Remove(RPL[1], NumRefLX[1], l1 - NumRefLX[1]);
             l1 = (mfxU8)NumRefLX[1];
@@ -504,12 +576,11 @@ namespace HevcRplUtils
 
         // reorder STRs to POC descending order
         for (mfxU8 lx = 0; lx < 2; lx++)
-            MFX_SORT_COMMON(RPL[lx], numRefActive[lx],
-                DPB[RPL[lx][_i]].m_poc < DPB[RPL[lx][_j]].m_poc);
+            std::sort(&RPL[lx][0], &RPL[lx][numRefActive[lx]], RefPocIsGreater(DPB));
 
         if (nLTR)
         {
-            MFX_SORT(LTR, nLTR, <);
+            std::sort(LTR, LTR + nLTR, std::less<mfxU8>());
             // use LTR as 2nd reference
             Insert(RPL[0], !!l0, LTR[0]);
             l0++;
@@ -607,8 +678,16 @@ HevcTask* EncodeOrderControl::ReorderFrame(mfxFrameSurface1 * surface)
         free_task->m_poc = m_frameOrder - m_lastIDR;
         free_task->m_fo =  m_frameOrder;
         free_task->m_bpo = (mfxU32)MFX_FRAMEORDER_UNKNOWN;
-        free_task->m_secondField = isField(m_par) ? (!!(free_task->m_poc & 1)) : false;
+        free_task->m_secondField = isField(m_par) ? (!!(free_task->m_fo & 1)) : false;
         free_task->m_idxRec = m_frameOrder & 0x7f; // Workaround to get unique idx and != IDX_INVALID (0xff)
+        free_task->m_bottomField = false;
+        if (isField(m_par))
+        {
+            free_task->m_bottomField = (free_task->m_surf->Info.PicStruct & (MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_BFF)) == 0 ?
+                (isBFF(m_par) != free_task->m_secondField) :
+                (free_task->m_surf->Info.PicStruct & MFX_PICSTRUCT_FIELD_BFF) != 0;
+        }
+
         m_frameOrder ++;
     }
 
@@ -628,29 +707,27 @@ HevcTask* EncodeOrderControl::ReorderFrame(mfxFrameSurface1 * surface)
             end++;
         }
 
-        if (isField(m_par) && m_secondFieldInfo.bSecondField())
+        if (isField(m_par) && m_lastFieldInfo.bFirstField())
         {
-            while (begin != end && begin->m_poc != m_secondFieldInfo.m_poc)
-                begin++;
+            while (begin != end && !m_lastFieldInfo.isCorrespondSecondField(&*begin))
+                    begin++;
 
             if (begin != end)
             {
-                m_secondFieldInfo.CorrectTaskInfo(&*begin);
-                task_to_encode = &*begin;
+                m_lastFieldInfo.CorrectTaskInfo(&*begin);
+                return &*begin;
             }
+            begin = m_reordering.begin();
         }
-        else
+        if (isField(m_par))
         {
-
-            TaskList::iterator top = FindFrameToEncode(m_par, m_lastTask.m_dpb[TASK_DPB_AFTER], begin, end, flush, isField(m_par));
-            if (top != end)
-                task_to_encode = &*top;
-
-            if (isField(m_par))
-            {
-                m_secondFieldInfo.SaveInfo(&*top);
-            }
+            if (begin != end && (begin->m_frameType & MFX_FRAMETYPE_IDR) != 0 && begin->m_secondField)
+                return &*begin;
         }
+
+        TaskList::iterator top = FindFrameToEncode(m_par, m_lastTask.m_dpb[TASK_DPB_AFTER], begin, end, flush, isField(m_par));
+        if (top != end)
+            task_to_encode = &*top;
     }
 
     if (task_to_encode)
@@ -666,7 +743,7 @@ HevcTask* EncodeOrderControl::ReorderFrame(mfxFrameSurface1 * surface)
 
         task_to_encode->m_surf->Data.FrameOrder = task_to_encode->m_fo;
 
-        // get free pointer for DS surface which will be filled in PreENC class
+        // get a free pointer for a downscaled surface which will be filled in PreENC class
         std::vector<mfxFrameSurface1*>::iterator it = std::find(m_ds_pSurf.begin(), m_ds_pSurf.end(), (mfxFrameSurface1*)NULL);
         task_to_encode->m_ds_surf = it != m_ds_pSurf.end() ? &(*it) : NULL;
 
@@ -727,7 +804,7 @@ void EncodeOrderControl::ConstructRPL(HevcTask & task)
     if ( !(task.m_frameType & MFX_FRAMETYPE_I) )
     {
         HevcRplUtils::ConstructRPL(m_par, task.m_dpb[TASK_DPB_ACTIVE], !!(task.m_frameType & MFX_FRAMETYPE_B),
-                                   task.m_poc, task.m_tid, task.m_secondField, task.m_refPicList, task.m_numRefActive);
+                                   task.m_poc, task.m_tid, task.m_secondField, task.m_bottomField, task.m_refPicList, task.m_numRefActive);
     }
 }
 
@@ -785,6 +862,9 @@ void EncodeOrderControl::ReleaseResources(HevcTask & task)
     {
         if (task.m_surf)
         {
+            // NB! Here we release an input surface, however even in non-m_lockRawRef mode
+            // dpb still contains (but doesn't use) pointers to this task.m_surf object.
+            // Need to consider cleaning up DPB.
             msdk_atomic_dec16((volatile mfxU16*)&task.m_surf->Data.Locked);
             task.m_surf = NULL;
         }

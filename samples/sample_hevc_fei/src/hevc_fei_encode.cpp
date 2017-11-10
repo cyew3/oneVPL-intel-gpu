@@ -281,8 +281,8 @@ void FillHEVCRefLists(const HevcTask& task, mfxExtHEVCRefLists & refLists)
             const mfxU8 & idx = RPL[direction][i];
             if (idx < MAX_DPB_SIZE)
             {
-                refPicList[i].FrameOrder = DPB[idx].m_surf->Data.FrameOrder;
-                refPicList[i].PicStruct  = DPB[idx].m_surf->Info.PicStruct;
+                refPicList[i].FrameOrder = DPB[idx].m_fo;
+                refPicList[i].PicStruct  = MFX_PICSTRUCT_UNKNOWN;
             }
         }
     }
