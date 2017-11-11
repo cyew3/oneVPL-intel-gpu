@@ -2353,9 +2353,9 @@ void TaskSupplier_H265::CompleteFrame(H265DecoderFrame * pFrame)
         return;
     }
 
-    slicesInfo->CheckSlices();
-
     slicesInfo->EliminateASO();
+
+    slicesInfo->EliminateErrors();
 
 #ifndef MFX_VA
     if (slicesInfo->GetSlice(0)->GetFirstMB())

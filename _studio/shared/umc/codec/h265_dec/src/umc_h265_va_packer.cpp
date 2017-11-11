@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -467,7 +467,7 @@ bool PackerVA::PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastS
 
     sliceParams->LongSliceFlags.fields.LastSliceOfPic = isLastSlice ? 1 : 0;
     // the first slice can't be a dependent slice
-    sliceParams->LongSliceFlags.fields.dependent_slice_segment_flag = sliceNum ? sliceHeader->dependent_slice_segment_flag : 0;
+    sliceParams->LongSliceFlags.fields.dependent_slice_segment_flag = sliceHeader->dependent_slice_segment_flag;
     sliceParams->LongSliceFlags.fields.slice_type = sliceHeader->slice_type;
     sliceParams->LongSliceFlags.fields.color_plane_id = sliceHeader->colour_plane_id;
     sliceParams->LongSliceFlags.fields.slice_sao_luma_flag = sliceHeader->slice_sao_luma_flag;
