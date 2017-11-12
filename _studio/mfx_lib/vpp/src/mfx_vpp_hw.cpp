@@ -1565,6 +1565,7 @@ VideoVPPHW::VideoVPPHW(IOMode mode, VideoCORE *core)
     m_config.m_surfCount[VPP_IN]   = 1;
     m_config.m_surfCount[VPP_OUT]  = 1;
     m_config.m_IOPattern = 0;
+    m_config.m_multiBlt = false;
 
     MemSetZero4mfxExecuteParams(&m_executeParams);
     memset(&m_params, 0, sizeof(mfxVideoParam));
