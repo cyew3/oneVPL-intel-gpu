@@ -3376,7 +3376,7 @@ void ConfigureTask(
             parRoi = (mfxExtEncoderROI const *)rtRoi;
 
     }
-    if (parRoi->NumROI && par.bROIViaMBQP)
+    if (parRoi && parRoi->NumROI && par.bROIViaMBQP)
         task.m_bCUQPMap = 1;
 
     task.m_numRoi = 0;
