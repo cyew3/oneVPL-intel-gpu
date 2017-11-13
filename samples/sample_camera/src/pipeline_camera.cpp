@@ -1764,6 +1764,8 @@ mfxStatus CCameraPipeline::Run()
         mfxI32 tail_asdepth, ii;
         mfxI32 frameIdx = m_nFrameIndex;
 
+        mfxStatus local_sts = MFX_ERR_NONE;
+
         tail_asdepth = tail_start;
         for (ii = 0; ii < tail_len; ii++, tail_asdepth++)
         {
@@ -1775,8 +1777,8 @@ mfxStatus CCameraPipeline::Run()
 
             camera_printf("sync tail --- %d %p %d %d \n", tail_asdepth, ppInSurf[tail_asdepth]->Data.Y16, ppInSurf[tail_asdepth]->Data.Locked, ppInSurf[tail_asdepth]->Data.FrameOrder);
 
-            sts = m_mfxSession.SyncOperation(syncpoints[tail_asdepth], MSDK_VPP_WAIT_INTERVAL);
-            MSDK_BREAK_ON_ERROR(sts);
+            local_sts = m_mfxSession.SyncOperation(syncpoints[tail_asdepth], MSDK_VPP_WAIT_INTERVAL);
+            MSDK_BREAK_ON_ERROR(local_sts);
             syncFlags[tail_asdepth] = 0;
 
             if (m_bIsRender && !quitOnFrameLimit)
@@ -1786,10 +1788,10 @@ mfxStatus CCameraPipeline::Run()
                 if (m_memTypeOut == SYSTEM_MEMORY) {
 #if MFX_D3D11_SUPPORT
                     if (m_accelType == D3D9)
-                        sts = m_pMFXd3dAllocator->Lock(m_pMFXd3dAllocator->pthis, m_pmfxSurfacesAux->Data.MemId, &m_pmfxSurfacesAux->Data);
+                        local_sts = m_pMFXd3dAllocator->Lock(m_pMFXd3dAllocator->pthis, m_pmfxSurfacesAux->Data.MemId, &m_pmfxSurfacesAux->Data);
                     else
-                        sts = m_pMFXd3dAllocator->Lock(m_pMFXd3dAllocator->pthis, MFXReadWriteMid(m_pmfxSurfacesAux->Data.MemId, MFXReadWriteMid::write), &m_pmfxSurfacesAux->Data);
-                    MSDK_BREAK_ON_ERROR(sts);
+                        local_sts = m_pMFXd3dAllocator->Lock(m_pMFXd3dAllocator->pthis, MFXReadWriteMid(m_pmfxSurfacesAux->Data.MemId, MFXReadWriteMid::write), &m_pmfxSurfacesAux->Data);
+                    MSDK_BREAK_ON_ERROR(local_sts);
                     if (ppOutSurf[tail_asdepth]->Info.CropW * 4 == ppOutSurf[tail_asdepth]->Data.Pitch && ppOutSurf[tail_asdepth]->Data.Pitch  == m_pmfxSurfacesAux->Data.Pitch)
                         memcpy_s(m_pmfxSurfacesAux->Data.B, m_pmfxSurfacesAux->Data.Pitch*m_pmfxSurfacesAux->Info.Height, ppOutSurf[tail_asdepth]->Data.B, ppOutSurf[tail_asdepth]->Info.CropW*ppOutSurf[tail_asdepth]->Info.CropH*4);
                     else {
@@ -1798,30 +1800,30 @@ mfxStatus CCameraPipeline::Run()
                     }
 
                     if (m_accelType == D3D9)
-                        sts = m_pMFXd3dAllocator->Unlock(m_pMFXd3dAllocator->pthis, m_pmfxSurfacesAux->Data.MemId, &m_pmfxSurfacesAux->Data);
+                        local_sts = m_pMFXd3dAllocator->Unlock(m_pMFXd3dAllocator->pthis, m_pmfxSurfacesAux->Data.MemId, &m_pmfxSurfacesAux->Data);
                     else
-                        sts = m_pMFXd3dAllocator->Unlock(m_pMFXd3dAllocator->pthis, MFXReadWriteMid(m_pmfxSurfacesAux->Data.MemId, MFXReadWriteMid::write), &m_pmfxSurfacesAux->Data);
+                        local_sts = m_pMFXd3dAllocator->Unlock(m_pMFXd3dAllocator->pthis, MFXReadWriteMid(m_pmfxSurfacesAux->Data.MemId, MFXReadWriteMid::write), &m_pmfxSurfacesAux->Data);
 #else
-                    sts = m_pMFXd3dAllocator->Lock(m_pMFXd3dAllocator->pthis, m_pmfxSurfacesAux->Data.MemId, &m_pmfxSurfacesAux->Data);
-                    MSDK_BREAK_ON_ERROR(sts);
+                    local_sts = m_pMFXd3dAllocator->Lock(m_pMFXd3dAllocator->pthis, m_pmfxSurfacesAux->Data.MemId, &m_pmfxSurfacesAux->Data);
+                    MSDK_BREAK_ON_ERROR(local_sts);
                     if (ppOutSurf[tail_asdepth]->Info.CropW * 4 == ppOutSurf[tail_asdepth]->Data.Pitch && ppOutSurf[tail_asdepth]->Data.Pitch  == m_pmfxSurfacesAux->Data.Pitch)
                         memcpy_s(m_pmfxSurfacesAux->Data.B, m_pmfxSurfacesAux->Data.Pitch*m_pmfxSurfacesAux->Info.Height, ppOutSurf[tail_asdepth]->Data.B, ppOutSurf[tail_asdepth]->Info.CropW*ppOutSurf[tail_asdepth]->Info.CropH*4);
                     else {
                         for (int i = 0; i < ppOutSurf[tail_asdepth]->Info.CropH; i++)
                             memcpy_s(m_pmfxSurfacesAux->Data.B + i * m_pmfxSurfacesAux->Data.Pitch, m_pmfxSurfacesAux->Data.Pitch, ppOutSurf[tail_asdepth]->Data.B + i*ppOutSurf[tail_asdepth]->Data.Pitch, ppOutSurf[tail_asdepth]->Info.CropW*4);
                     }
-                    sts = m_pMFXd3dAllocator->Unlock(m_pMFXd3dAllocator->pthis, m_pmfxSurfacesAux->Data.MemId, &m_pmfxSurfacesAux->Data);
+                    local_sts = m_pMFXd3dAllocator->Unlock(m_pMFXd3dAllocator->pthis, m_pmfxSurfacesAux->Data.MemId, &m_pmfxSurfacesAux->Data);
 #endif
-                    MSDK_BREAK_ON_ERROR(sts);
-                    sts = m_d3dRender.RenderFrame(m_pmfxSurfacesAux, m_pMFXd3dAllocator);
+                    MSDK_BREAK_ON_ERROR(local_sts);
+                    local_sts = m_d3dRender.RenderFrame(m_pmfxSurfacesAux, m_pMFXd3dAllocator);
 
                 } else
-                    sts = m_d3dRender.RenderFrame(ppOutSurf[tail_asdepth], m_pMFXd3dAllocator);
+                    local_sts = m_d3dRender.RenderFrame(ppOutSurf[tail_asdepth], m_pMFXd3dAllocator);
 #endif
 
-                if (sts == MFX_ERR_NULL_PTR)
-                    sts = MFX_ERR_NONE;
-                MSDK_BREAK_ON_ERROR(sts);
+                if (local_sts == MFX_ERR_NULL_PTR)
+                    local_sts = MFX_ERR_NONE;
+                MSDK_BREAK_ON_ERROR(local_sts);
             }
 
 
@@ -1830,10 +1832,10 @@ mfxStatus CCameraPipeline::Run()
                 if (ppOutSurf[tail_asdepth]->Data.MemId) {
 #if D3D_SURFACES_SUPPORT
                     if (m_memTypeOut == D3D11_MEMORY)
-                        sts = m_pMFXAllocatorOut->Lock(m_pMFXAllocatorOut->pthis, MFXReadWriteMid(ppOutSurf[tail_asdepth]->Data.MemId, MFXReadWriteMid::read), &ppOutSurf[tail_asdepth]->Data);
+                        local_sts = m_pMFXAllocatorOut->Lock(m_pMFXAllocatorOut->pthis, MFXReadWriteMid(ppOutSurf[tail_asdepth]->Data.MemId, MFXReadWriteMid::read), &ppOutSurf[tail_asdepth]->Data);
                     else
 #endif
-                        sts = m_pMFXAllocatorOut->Lock(m_pMFXAllocatorOut->pthis, ppOutSurf[tail_asdepth]->Data.MemId, &ppOutSurf[tail_asdepth]->Data);
+                        local_sts = m_pMFXAllocatorOut->Lock(m_pMFXAllocatorOut->pthis, ppOutSurf[tail_asdepth]->Data.MemId, &ppOutSurf[tail_asdepth]->Data);
                 }
                 camera_printf("--writing frame %d \n", ppOutSurf[tail_asdepth]->Data.FrameOrder);
 
@@ -1876,10 +1878,10 @@ mfxStatus CCameraPipeline::Run()
                 if (ppOutSurf[tail_asdepth]->Data.MemId) {
 #if D3D_SURFACES_SUPPORT
                     if (m_memTypeOut == D3D11_MEMORY)
-                        sts = m_pMFXAllocatorOut->Unlock(m_pMFXAllocatorOut->pthis, MFXReadWriteMid(ppOutSurf[tail_asdepth]->Data.MemId, MFXReadWriteMid::read), &ppOutSurf[tail_asdepth]->Data);
+                        local_sts = m_pMFXAllocatorOut->Unlock(m_pMFXAllocatorOut->pthis, MFXReadWriteMid(ppOutSurf[tail_asdepth]->Data.MemId, MFXReadWriteMid::read), &ppOutSurf[tail_asdepth]->Data);
                     else
 #endif
-                        sts = m_pMFXAllocatorOut->Unlock(m_pMFXAllocatorOut->pthis, ppOutSurf[tail_asdepth]->Data.MemId, &ppOutSurf[tail_asdepth]->Data);
+                        local_sts = m_pMFXAllocatorOut->Unlock(m_pMFXAllocatorOut->pthis, ppOutSurf[tail_asdepth]->Data.MemId, &ppOutSurf[tail_asdepth]->Data);
                 }
             }
 
@@ -1890,6 +1892,8 @@ mfxStatus CCameraPipeline::Run()
         }
         if (!quitOnFrameLimit)
             m_nFrameIndex = frameIdx;
+
+        sts = (local_sts != MFX_ERR_NONE) ? local_sts : sts;
     }
 
     m_bEnd = true;
