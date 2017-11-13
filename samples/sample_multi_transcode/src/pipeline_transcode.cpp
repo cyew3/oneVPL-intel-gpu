@@ -915,17 +915,19 @@ mfxStatus CTranscodingPipeline::Decode()
         {
             if (m_bIsFieldWeaving)
             {
+                // We might have 2 cases: decoder gives us pairs (TF BF)... or (BF)(TF). In first case we should set TFF for output, in second - BFF.
+                // So, if even input surface is BF, we set TFF for output and vise versa. For odd input surface - no matter what we set.
                 if (!(m_nProcessedFramesNum % 2))
                 {
                     if (DecExtSurface.pSurface)
                     {
                         if ((DecExtSurface.pSurface->Info.PicStruct & MFX_PICSTRUCT_FIELD_TFF))
                         {
-                            m_mfxVppParams.vpp.Out.PicStruct = MFX_PICSTRUCT_FIELD_TFF;
+                            m_mfxVppParams.vpp.Out.PicStruct = MFX_PICSTRUCT_FIELD_BFF;
                         }
                         if (DecExtSurface.pSurface->Info.PicStruct & MFX_PICSTRUCT_FIELD_BFF)
                         {
-                            m_mfxVppParams.vpp.Out.PicStruct = MFX_PICSTRUCT_FIELD_BFF;
+                            m_mfxVppParams.vpp.Out.PicStruct = MFX_PICSTRUCT_FIELD_TFF;
                         }
                     }
                 }
@@ -1695,18 +1697,19 @@ mfxStatus CTranscodingPipeline::Transcode()
         {
             if (m_bIsFieldWeaving)
             {
-                if (!(m_nProcessedFramesNum % 2))
+                // In case of field weaving output surface's parameters for ODD calls to VPPOneFrame will be ignored (because VPP will return ERR_MORE_DATA).
+                // So, we need to set output surface picstruct properly for EVEN calls (no matter what will be set for ODD calls).
+                // We might have 2 cases: decoder gives us pairs (TF BF)... or (BF)(TF). In first case we should set TFF for output, in second - BFF.
+                // So, if even input surface is BF, we set TFF for output and vise versa. For odd input surface - no matter what we set.
+                if (DecExtSurface.pSurface)
                 {
-                    if (DecExtSurface.pSurface)
+                    if ((DecExtSurface.pSurface->Info.PicStruct & MFX_PICSTRUCT_FIELD_TFF))  // Incoming Top Field in a single surface
                     {
-                        if ((DecExtSurface.pSurface->Info.PicStruct & MFX_PICSTRUCT_FIELD_TFF))
-                        {
-                            m_mfxVppParams.vpp.Out.PicStruct = MFX_PICSTRUCT_FIELD_TFF;
-                        }
-                        if (DecExtSurface.pSurface->Info.PicStruct & MFX_PICSTRUCT_FIELD_BFF)
-                        {
-                            m_mfxVppParams.vpp.Out.PicStruct = MFX_PICSTRUCT_FIELD_BFF;
-                        }
+                        m_mfxVppParams.vpp.Out.PicStruct = MFX_PICSTRUCT_FIELD_BFF;
+                    }
+                    if (DecExtSurface.pSurface->Info.PicStruct & MFX_PICSTRUCT_FIELD_BFF)    // Incoming Bottom Field in a single surface
+                    {
+                        m_mfxVppParams.vpp.Out.PicStruct = MFX_PICSTRUCT_FIELD_TFF;
                     }
                 }
                 sts = VPPOneFrame(&DecExtSurface, &VppExtSurface);
