@@ -210,7 +210,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 480 + 10 }
         }
     },
-    {/*63 Valid crop region*/ MFX_ERR_NONE, CROP, XW,
+    {/*63 Check crops*/ MFX_ERR_UNSUPPORTED, CROP, XW,
         {
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 736 },
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 480 },
@@ -220,7 +220,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropY, 0 },
         }
     },
-    {/*64 Valid crop region*/ MFX_ERR_NONE, CROP, YH,
+    {/*64 Check crops*/ MFX_ERR_UNSUPPORTED, CROP, YH,
         {
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 736 },
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 480 },

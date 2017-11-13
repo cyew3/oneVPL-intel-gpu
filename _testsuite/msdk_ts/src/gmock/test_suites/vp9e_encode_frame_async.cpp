@@ -116,8 +116,8 @@ namespace vp9e_encode_frame_async
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 100 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 100 },
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropX, 5 },
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropY, 5 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropX, 0 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropY, 0 },
             }
         },
 

@@ -141,7 +141,7 @@ namespace vp9e_init
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 480 + 10 }
             }
         },
-        {/*20 Valid crop region*/ MFX_ERR_NONE, CROP, XW,
+        {/*20 Check crops*/ MFX_ERR_INVALID_VIDEO_PARAM, CROP, XW,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 736 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 480 },
@@ -151,7 +151,7 @@ namespace vp9e_init
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropY, 0 },
             }
         },
-        {/*21 Valid crop region*/ MFX_ERR_NONE, CROP, YH,
+        {/*21 Check crops*/ MFX_ERR_INVALID_VIDEO_PARAM, CROP, YH,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 736 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 480 },
