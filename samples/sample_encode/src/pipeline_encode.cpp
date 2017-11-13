@@ -632,15 +632,7 @@ mfxStatus CEncodingPipeline::InitMfxVppParams(sInputParams *pInParams)
         m_mfxVppParams.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
     }
 
-    if (m_bIsFieldWeaving)
-    {
-        m_mfxVppParams.vpp.Out.PicStruct = MFX_PICSTRUCT_UNKNOWN;
-        m_mfxVppParams.vpp.Out.Height = m_mfxVppParams.vpp.In.Height << 1;
-        m_mfxVppParams.vpp.Out.CropH = m_mfxVppParams.vpp.In.CropH << 1;
-    }
-
     m_mfxVppParams.vpp.In.PicStruct = pInParams->nPicStruct;
-
     ConvertFrameRate(pInParams->dFrameRate, &m_mfxVppParams.vpp.In.FrameRateExtN, &m_mfxVppParams.vpp.In.FrameRateExtD);
 
     // width must be a multiple of 16
@@ -1099,7 +1091,6 @@ CEncodingPipeline::CEncodingPipeline()
     m_bCutOutput = false;
     m_bTimeOutExceed = false;
     m_bInsertIDR = false;
-    m_bIsFieldWeaving = false;
 
 }
 
@@ -1303,20 +1294,10 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     // or if different FourCC is set
     if (pParams->nWidth  != pParams->nDstWidth ||
         pParams->nHeight != pParams->nDstHeight ||
-        FileFourCC2EncFourCC(pParams->FileInputFourCC) != pParams->EncodeFourCC )
+        FileFourCC2EncFourCC(pParams->FileInputFourCC) != pParams->EncodeFourCC)
     {
         m_pmfxVPP = new MFXVideoVPP(m_mfxSession);
         MSDK_CHECK_POINTER(m_pmfxVPP, MFX_ERR_MEMORY_ALLOC);
-    }
-
-    if (pParams->nPicStruct != MFX_PICSTRUCT_PROGRESSIVE && pParams->CodecId == MFX_CODEC_HEVC)
-    {
-        m_bIsFieldWeaving = true;
-        if (!m_pmfxVPP)
-        {
-            m_pmfxVPP = new MFXVideoVPP(m_mfxSession);
-            MSDK_CHECK_POINTER(m_pmfxVPP, MFX_ERR_MEMORY_ALLOC);
-        }
     }
 
     // Determine if we should shift P010 surfaces
@@ -1756,21 +1737,6 @@ mfxStatus CEncodingPipeline::Run()
             m_statFile.StopTimeMeasurement();
             if (MVC_ENABLED & m_MVCflags) currViewNum ^= 1; // Flip between 0 and 1 for ViewId
 
-        }
-
-        if (m_bIsFieldWeaving)
-        {
-            if (!(nFramesProcessed % 2))
-            {
-                if ((m_pVppSurfaces[nVppSurfIdx].Info.PicStruct & MFX_PICSTRUCT_FIELD_TFF))
-                {
-                    m_mfxVppParams.vpp.Out.PicStruct = MFX_PICSTRUCT_FIELD_TFF;
-                }
-                if (m_pVppSurfaces[nVppSurfIdx].Info.PicStruct & MFX_PICSTRUCT_FIELD_BFF)
-                {
-                    m_mfxVppParams.vpp.Out.PicStruct = MFX_PICSTRUCT_FIELD_BFF;
-                }
-            }
         }
 
         // perform preprocessing if required

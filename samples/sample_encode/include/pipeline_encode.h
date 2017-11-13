@@ -254,7 +254,6 @@ protected:
     MemType m_memType;
     mfxU16 m_nMemBuffer;
     bool m_bExternalAlloc; // use memory allocator as external for Media SDK
-    bool m_bIsFieldWeaving;
 
     mfxFrameSurface1* m_pEncSurfaces; // frames array for encoder input (vpp output)
     mfxFrameSurface1* m_pVppSurfaces; // frames array for vpp input
