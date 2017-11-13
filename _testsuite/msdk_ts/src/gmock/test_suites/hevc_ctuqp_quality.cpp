@@ -31,10 +31,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ts_struct.h"
 #include "ts_fei_warning.h"
 #include "ts_parser.h"
-#include "vaapi_buffer_allocator.h"
 
 // This test has to check quality and bitrate for Macroblock QP feature
-// We have 3 main different cases: 
+// We have 3 main different cases:
 //a) compare stream QP (for whole stream) with stream that has QP value for each CTU
 //b) compare stream with frame QP (for each frame) with stream that has QP value for each CTU
 //c) The case when we have EnableMBQP is ON but we do not fill lcuqp buffer and do not send to MSDK
@@ -110,7 +109,7 @@ public:
             }
             else if (mode & QP_STREAM)
             {
-                m_pCtrl->QP = qp_value;  
+                m_pCtrl->QP = qp_value;
             }
             m_fo++;
             return sts;
@@ -145,7 +144,7 @@ public:
             }
             else
             {
-                m_pCtrl->NumExtParam = 0;    
+                m_pCtrl->NumExtParam = 0;
             }
         }
         else
@@ -278,7 +277,7 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
             if (m_mbqp_on)
             {
                 EXPECT_EQ(cu_qp_delta_enabled_flag, 1) << " ERROR: Unexpected cu_qp_delta_enabled_flag, cu_qp_delta_enabled_flag must be 1 when we use mfxExtCodingOption3.EnableMBQP is ON";
-            } 
+            }
             else
             {
                 EXPECT_EQ(cu_qp_delta_enabled_flag, 0) << " ERROR: Unexpected cu_qp_delta_enabled_flag, cu_qp_delta_enabled_flag must be 0 when we use mfxExtCodingOption3.EnableMBQP is OFF";
@@ -293,7 +292,7 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
 
 
 const TestSuite::tc_struct TestSuite::test_case[] =
-{ 
+{
     #if defined(LINUX32) || defined(LINUX64)
     {/*00*/ MFX_ERR_NONE, QP_STREAM,      {EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableMBQP, MFX_CODINGOPTION_ON}, 1},
 
@@ -304,7 +303,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*03*/ MFX_ERR_NONE, QP_STREAM,      {EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableMBQP, MFX_CODINGOPTION_ON}, 30},
 
     {/*04*/ MFX_ERR_NONE, QP_STREAM,      {EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableMBQP, MFX_CODINGOPTION_ON}, 42},
-    
+
     {/*05*/ MFX_ERR_NONE, QP_STREAM,      {EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableMBQP, MFX_CODINGOPTION_ON}, 51},
 
     {/*06*/ MFX_ERR_NONE, QP_FRAME,       {EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableMBQP, MFX_CODINGOPTION_ON}},
@@ -367,7 +366,7 @@ int TestSuite::RunTest(unsigned int id)
     Close();
 
     tsVideoDecoder dec(MFX_CODEC_HEVC);
-    
+
     mfxBitstream bs;
     memset(&bs, 0, sizeof(bs));
     bs.Data = c.m_buf;
@@ -382,14 +381,14 @@ int TestSuite::RunTest(unsigned int id)
     dec.Init();
     dec.AllocSurfaces();
     dec.DecodeFrames(nf);
-    
+
     Ipp32u crc = crc_proc_yuv.GetCRC();
     dec.Close();
 
     m_reader->ResetFile();
-    
+
     memset(&m_bitstream, 0, sizeof(mfxBitstream));
-    
+
     m_fo = 0;
     m_mbqp_on = true;
     // 2. encode with PerMBQp setting
@@ -398,7 +397,7 @@ int TestSuite::RunTest(unsigned int id)
 
     //to alloc more surfaces
     AllocSurfaces();
-    mfxExtHEVCParam& hp = m_par;    
+    mfxExtHEVCParam& hp = m_par;
     cod3.EnableMBQP = MFX_CODINGOPTION_ON;
     EncodeFrames(nf);
     tsVideoDecoder dec_mbqp_on(MFX_CODEC_HEVC);
@@ -425,7 +424,7 @@ int TestSuite::RunTest(unsigned int id)
     {
         g_tsLog << "ERROR: the 2 crc values should be the same\n";
         g_tsStatus.check(MFX_ERR_ABORTED);
-    } 
+    }
     mfxF64 diff = (mfxF64(abs(bitrate_ctu - bitrate_frame)) / mfxF64(std::max(bitrate_ctu, bitrate_frame) + 1)) * 100; //Percents
     g_tsLog << "First stream Rate = " << bitrate_frame << "\n";
     g_tsLog << "Second stream Rate = " << bitrate_ctu << "\n";

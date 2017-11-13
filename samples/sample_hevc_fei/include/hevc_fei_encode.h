@@ -23,7 +23,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include <vector>
 #include "sample_hevc_fei_defs.h"
 #include "ref_list_manager.h"
-#include "vaapi_buffer_allocator.h"
+#include "fei_buffer_allocator.h"
 #include "fei_predictors_repacking.h"
 
 class FEI_Encode
@@ -52,7 +52,7 @@ private:
     MFXVideoSession*        m_pmfxSession;
     MFXVideoENCODE          m_mfxENCODE;
 
-    vaapiBufferAllocator    m_buf_allocator;
+    FeiBufferAllocator    m_buf_allocator;
 
     MfxVideoParamsWrapper m_videoParams;
     mfxEncodeCtrlWrap     m_encodeCtrl;

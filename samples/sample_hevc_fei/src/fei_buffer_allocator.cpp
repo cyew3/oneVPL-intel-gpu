@@ -19,33 +19,31 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #if defined(LIBVA_SUPPORT)
 
-#include "vaapi_buffer_allocator.h"
+#include "fei_buffer_allocator.h"
 
-vaapiBufferAllocator::vaapiBufferAllocator(VADisplay dpy) :
+FeiBufferAllocator::FeiBufferAllocator(VADisplay dpy, mfxU32 width, mfxU32 height) :
     m_dpy(dpy),
     m_config(VA_INVALID_ID),
     m_context(VA_INVALID_ID)
 {
+    VAStatus vaSts = VA_STATUS_SUCCESS;
     VAConfigAttrib attrib;
-    attrib.type = VAConfigAttribStats;
+    attrib.type = VAConfigAttribRateControl;
+    attrib.value = VA_RC_CQP;
 
-    VAStatus vaSts = m_libva.vaGetConfigAttributes(m_dpy, VAProfileNone, VAEntrypointStats, &attrib, 1);
-    if (VA_STATUS_SUCCESS != vaSts) {
-        throw mfxError(MFX_ERR_DEVICE_FAILED, "Failed to get VA config attributes for buffer allocator");
-    }
-
-    vaSts = m_libva.vaCreateConfig(m_dpy, VAProfileNone, VAEntrypointStats, &attrib, 1, &m_config);
+    vaSts = m_libva.vaCreateConfig(m_dpy, VAProfileHEVCMain, VAEntrypointFEI, &attrib, 1, &m_config);
     if (VA_STATUS_SUCCESS != vaSts) {
         throw mfxError(MFX_ERR_DEVICE_FAILED, "Failed to create VA config for buffer allocator");
     }
 
-    vaSts = m_libva.vaCreateContext(m_dpy, m_config, 1920, 1088, VA_PROGRESSIVE, NULL, 0, &m_context);
+    // width and height should be max of required resolutions for encoding
+    vaSts = m_libva.vaCreateContext(m_dpy, m_config, width, height, VA_PROGRESSIVE, NULL, 0, &m_context);
     if (VA_STATUS_SUCCESS != vaSts) {
         throw mfxError(MFX_ERR_DEVICE_FAILED, "Failed to create VA context for buffer allocator");
     }
 }
 
-vaapiBufferAllocator::~vaapiBufferAllocator()
+FeiBufferAllocator::~FeiBufferAllocator()
 {
     if (m_context != VA_INVALID_ID) {
         m_libva.vaDestroyContext(m_dpy, m_context);
@@ -56,7 +54,7 @@ vaapiBufferAllocator::~vaapiBufferAllocator()
 }
 
 template<>
-void vaapiBufferAllocator::CalcBufferPitchHeight(mfxExtFeiHevcEncMVPredictors& buffer,
+void FeiBufferAllocator::CalcBufferPitchHeight(mfxExtFeiHevcEncMVPredictors& buffer,
         const BufferAllocRequest& request,
         mfxU32& va_pitch,
         mfxU32& va_height)
@@ -76,7 +74,7 @@ void vaapiBufferAllocator::CalcBufferPitchHeight(mfxExtFeiHevcEncMVPredictors& b
 }
 
 template<>
-void vaapiBufferAllocator::CalcBufferPitchHeight(mfxExtFeiHevcEncQP& buffer,
+void FeiBufferAllocator::CalcBufferPitchHeight(mfxExtFeiHevcEncQP& buffer,
         const BufferAllocRequest& request,
         mfxU32& va_pitch,
         mfxU32& va_height)

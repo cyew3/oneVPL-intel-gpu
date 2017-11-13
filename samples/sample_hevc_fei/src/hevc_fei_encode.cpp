@@ -25,7 +25,7 @@ FEI_Encode::FEI_Encode(MFXVideoSession* session, mfxHDL hdl, MfxVideoParamsWrapp
         const msdk_char* mvpInFile, PredictorsRepaking* repacker)
     : m_pmfxSession(session)
     , m_mfxENCODE(*m_pmfxSession)
-    , m_buf_allocator(hdl)
+    , m_buf_allocator(hdl, encode_pars.mfx.FrameInfo.Width, encode_pars.mfx.FrameInfo.Height)
     , m_videoParams(encode_pars)
     , m_syncPoint(0)
     , m_dstFileName(dst_output)
@@ -101,12 +101,13 @@ mfxStatus FEI_Encode::PreInit()
     }
 
     // TODO: add condition when buffer is required
-    if (0)
+#if 0
     {
         mfxExtFeiHevcEncQP* pQP = m_encodeCtrl.AddExtBuffer<mfxExtFeiHevcEncQP>();
         MSDK_CHECK_POINTER(pQP, MFX_ERR_NOT_INITIALIZED);
         pQP->VaBufferID = VA_INVALID_ID;
     }
+#endif
 
     sts = ResetExtBuffers(m_videoParams);
     MSDK_CHECK_STATUS(sts, "FEI Encode ResetExtBuffers failed");
@@ -334,33 +335,34 @@ mfxStatus FEI_Encode::SetCtrlParams(const HevcTask& task)
         }
         else
         {
-            mfxStatus sts = m_pFile_MVP_in->Read(pMVP->Data, pMVP->Pitch * pMVP->Height, 1);
+            mfxStatus sts = m_pFile_MVP_in->Read(pMVP->Data, pMVP->Pitch * pMVP->Height * sizeof(pMVP->Data[0]), 1);
             MSDK_CHECK_STATUS(sts, "FEI Encode. Read MV predictors failed");
         }
     }
 
     // TODO: add condition when buffer is required
-    if (0)
+#if 0
     {
         ctrl->PerCuQp = 1;
 
         mfxExtFeiHevcEncQP* pQP = m_encodeCtrl.GetExtBuffer<mfxExtFeiHevcEncQP>();
         MSDK_CHECK_POINTER(pQP, MFX_ERR_NOT_INITIALIZED);
         AutoBufferLocker<mfxExtFeiHevcEncQP> lock(m_buf_allocator, *pQP);
-        //
-        // // Fill per block QP
-        // mfxU32 w_ctu = (m_videoParams.mfx.FrameInfo.CropW + 31) / 32;
-        // mfxU32 h_ctu = (m_videoParams.mfx.FrameInfo.CropW + 31) / 32;
-        // if (w_ctu > pQP->Pitch || h_ctu > pQP->Height)
-        //     MSDK_CHECK_STATUS(MFX_ERR_UNDEFINED_BEHAVIOR, "FEI Encode: wrong QP buffer size");
-        // for (mfxU32 i = 0; i < h_ctu; i++)
-        // {
-        //     for (mfxU32 j = 0; j < w_ctu; j++)
-        //     {
-        //         pQP->Data[i*pQP->Pitch + j] = i % 51 + 1;
-        //     }
-        // }
+
+        // Fill per block QP
+        mfxU32 w_ctu = (m_videoParams.mfx.FrameInfo.CropW + 31) / 32;
+        mfxU32 h_ctu = (m_videoParams.mfx.FrameInfo.CropH + 31) / 32;
+        if (w_ctu > pQP->Pitch || h_ctu > pQP->Height)
+            MSDK_CHECK_STATUS(MFX_ERR_UNDEFINED_BEHAVIOR, "FEI Encode: wrong QP buffer size");
+        for (mfxU32 i = 0; i < h_ctu; i++)
+        {
+            for (mfxU32 j = 0; j < w_ctu; j++)
+            {
+                pQP->Data[i*pQP->Pitch + j] = i % 51 + 1;
+            }
+        }
     }
+#endif
 
     return MFX_ERR_NONE;
 }

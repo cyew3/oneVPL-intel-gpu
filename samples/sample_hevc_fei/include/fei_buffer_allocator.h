@@ -17,10 +17,11 @@ The original version of this sample may be obtained from https://software.intel.
 or https://software.intel.com/en-us/media-client-solutions-support.
 \**********************************************************************************/
 
-#ifndef __VAAPI_BUFFER_ALLOCATOR_H__
-#define __VAAPI_BUFFER_ALLOCATOR_H__
+#ifndef __FEI_BUFFER_ALLOCATOR_H__
+#define __FEI_BUFFER_ALLOCATOR_H__
 
 #include "mfxfeihevc.h"
+#include "sample_hevc_fei_defs.h"
 
 #if defined(LIBVA_SUPPORT)
 
@@ -35,11 +36,11 @@ struct BufferAllocRequest {
 const mfxU32 CTU_SIZE32 = 32;
 
 // class for buffers allocation via direct access to vaapi buffers
-class vaapiBufferAllocator
+class FeiBufferAllocator
 {
 public:
-    vaapiBufferAllocator(VADisplay dpy);
-    ~vaapiBufferAllocator();
+    FeiBufferAllocator(VADisplay dpy, mfxU32 width, mfxU32 height);
+    ~FeiBufferAllocator();
 
     // T is external buffer structure
     template<typename T>
@@ -159,11 +160,11 @@ private:
 };
 
 template<>
-void vaapiBufferAllocator::CalcBufferPitchHeight(mfxExtFeiHevcEncMVPredictors& buffer, const BufferAllocRequest& request,
+void FeiBufferAllocator::CalcBufferPitchHeight(mfxExtFeiHevcEncMVPredictors& buffer, const BufferAllocRequest& request,
                                                  mfxU32& va_pitch, mfxU32& va_height);
 
 template<>
-void vaapiBufferAllocator::CalcBufferPitchHeight(mfxExtFeiHevcEncQP& buffer, const BufferAllocRequest& request,
+void FeiBufferAllocator::CalcBufferPitchHeight(mfxExtFeiHevcEncQP& buffer, const BufferAllocRequest& request,
                                                  mfxU32& va_pitch, mfxU32& va_height);
 
 #endif //#if defined(LIBVA_SUPPORT)
@@ -173,7 +174,7 @@ template<typename T>
 class AutoBufferLocker
 {
 public:
-    AutoBufferLocker(vaapiBufferAllocator & allocator, T & buffer)
+    AutoBufferLocker(FeiBufferAllocator & allocator, T & buffer)
         : m_allocator(allocator)
         , m_buffer(buffer)
     {
@@ -186,7 +187,7 @@ public:
     }
 
 protected:
-    vaapiBufferAllocator & m_allocator;
+    FeiBufferAllocator & m_allocator;
     T & m_buffer;
 
 private:
@@ -194,4 +195,4 @@ private:
     AutoBufferLocker & operator =(AutoBufferLocker const &);
 };
 
-#endif // __VAAPI_BUFFER_ALLOCATOR_H__
+#endif // __FEI_BUFFER_ALLOCATOR_H__

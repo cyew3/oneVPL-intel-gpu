@@ -507,4 +507,14 @@ inline bool operator ==(HevcTask const & l, HevcTask const & r)
     return l.m_poc == r.m_poc;
 }
 
+/**********************************************************************************/
+
+inline mfxU32 align(const mfxU32 val, const mfxU32 alignment)
+{
+    STATIC_ASSERT(!(val == 0) && !(val & (val - 1)), is_power_of_2);
+    return (val + alignment - 1) & ~(alignment - 1);
+}
+
+
+
 #endif // #define __SAMPLE_HEVC_FEI_DEFS_H__

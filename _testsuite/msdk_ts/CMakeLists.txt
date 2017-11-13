@@ -26,7 +26,6 @@ list(APPEND sources
    ${MSDK_SAMPLES_ROOT}/sample_common/src/base_allocator.cpp
    ${MSDK_SAMPLES_ROOT}/sample_common/src/vaapi_device.cpp
    ${MSDK_SAMPLES_ROOT}/sample_common/src/vaapi_allocator.cpp
-   ${MSDK_SAMPLES_ROOT}/sample_common/src/vaapi_buffer_allocator.cpp
    ${MSDK_SAMPLES_ROOT}/sample_common/src/vaapi_utils.cpp
    ${MSDK_SAMPLES_ROOT}/sample_common/src/vaapi_utils_drm.cpp
    ${MSDK_SAMPLES_ROOT}/sample_common/src/vaapi_utils_x11.cpp
@@ -64,12 +63,15 @@ list(APPEND sources
 file( GLOB_RECURSE srcs "${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/*.cpp" )
 list( APPEND sources ${srcs})
 
+# enable fei specific code
 find_path( VA_FEI va/va_fei.h PATHS ${PKG_LIBVA_INCLUDEDIR} )
-get_cmake_property(_variableNames VARIABLES)
 if(VA_FEI MATCHES NOTFOUND)
-  list( REMOVE_ITEM sources ${MSDK_SAMPLES_ROOT}/sample_common/src/vaapi_buffer_allocator.cpp)
   file( GLOB_RECURSE hevc_fei_src "${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/hevc_fei*.cpp")
+  file( GLOB_RECURSE hevc_fei_src "${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/hevce_fei*.cpp")
   list( REMOVE_ITEM sources ${hevc_fei_src})
+else()
+  include_directories(${MSDK_SAMPLES_ROOT}/sample_hevc_fei/include)
+  list(APPEND sources ${MSDK_SAMPLES_ROOT}/sample_hevc_fei/src/fei_buffer_allocator.cpp)
 endif()
 
 add_definitions( -D_VARIADIC_MAX=10 )

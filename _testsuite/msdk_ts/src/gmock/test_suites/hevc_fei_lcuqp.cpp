@@ -30,7 +30,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ts_struct.h"
 #include "ts_fei_warning.h"
 #include "ts_parser.h"
-#include "vaapi_buffer_allocator.h"
+#include "fei_buffer_allocator.h"
 
 namespace hevc_fei_lcuqp
 {
@@ -263,7 +263,7 @@ private:
     mfxU32 mode;
     mfxU32 test_type;
     int  block_size;
-    vaapiBufferAllocator *m_hevcFeiAllocator;
+    FeiBufferAllocator *m_hevcFeiAllocator;
     mfxU32 m_cu;
 
 };
@@ -377,7 +377,7 @@ int TestSuite::RunTest(unsigned int id)
     mfxHDL hdl;
     mfxHandleType type;
     m_pVAHandle->get_hdl(type, hdl);
-    m_hevcFeiAllocator = new vaapiBufferAllocator((VADisplay) hdl);
+    m_hevcFeiAllocator = new FeiBufferAllocator((VADisplay) hdl, m_par.mfx.FrameInfo.Width, m_par.mfx.FrameInfo.Height);
 
     if (test_type & LCU_CHECK)
     {
