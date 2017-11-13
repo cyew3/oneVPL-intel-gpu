@@ -14,8 +14,6 @@
 #include "cm_mem_copy.h"
 #include "cm_gpu_copy_code.h"
 
-#include "mfx_common_int.h"
-
 typedef const mfxU8 mfxUC8;
 
 #define ALIGN128(X) (((mfxU32)((X)+127)) & (~ (mfxU32)127))
@@ -2487,7 +2485,7 @@ mfxStatus CmCopyWrapper::CopyVideoToSystemMemoryAPI(mfxU8 *pDst, mfxU32 dstPitch
     pCmSurface2D = CreateCmSurface2D(pSrc, width, height, false, m_tableCmRelations2, m_tableCmIndex2);
     CHECK_CM_NULL_PTR(pCmSurface2D, MFX_ERR_DEVICE_FAILED);
     
-    cmSts = m_pCmQueue->EnqueueCopyGPUToCPUFullStride(pCmSurface2D, pDst, dstPitch, dstUVOffset, 0, e);
+    cmSts = m_pCmQueue->EnqueueCopyGPUToCPUFullStride(pCmSurface2D, pDst, dstPitch, dstUVOffset, 1, e);
     
     if (CM_SUCCESS == cmSts)
     {
@@ -2690,9 +2688,6 @@ bool CmCopyWrapper::CanUseCmCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc)
 {
     IppiSize roi = {IPP_MIN(pSrc->Info.Width, pDst->Info.Width), IPP_MIN(pSrc->Info.Height, pDst->Info.Height)};
 
-    mfxU8* srcPtr = GetFramePointer(pSrc->Info.FourCC, pSrc->Data);
-    mfxU8* dstPtr = GetFramePointer(pDst->Info.FourCC, pDst->Data);
-
     if (NULL != pSrc->Data.MemId && NULL != pDst->Data.MemId)
     {
         if (pDst->Info.FourCC != MFX_FOURCC_YV12 && CM_SUPPORTED_COPY_SIZE(roi))
@@ -2700,7 +2695,7 @@ bool CmCopyWrapper::CanUseCmCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc)
             return true;
         }
     }
-    else if (NULL != pSrc->Data.MemId && NULL != dstPtr)
+    else if (NULL != pSrc->Data.MemId && NULL != pDst->Data.Y)
     {
         if (!CM_ALIGNED(pDst->Data.Pitch))
             return false;
@@ -2715,23 +2710,23 @@ bool CmCopyWrapper::CanUseCmCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc)
         {
             return true;
         }
-        else if((pDst->Info.FourCC == MFX_FOURCC_RGB4 || pDst->Info.FourCC == MFX_FOURCC_BGR4) && CM_ALIGNED(IPP_MIN(IPP_MIN(pDst->Data.R,pDst->Data.G),pDst->Data.B)) && CM_RGB_SUPPORTED_COPY_SIZE(roi)){
+        else if((pDst->Info.FourCC == MFX_FOURCC_RGB4 || pDst->Info.FourCC == MFX_FOURCC_BGR4 || pDst->Info.FourCC == MFX_FOURCC_AYUV) && CM_ALIGNED(IPP_MIN(IPP_MIN(pDst->Data.R,pDst->Data.G),pDst->Data.B)) && CM_RGB_SUPPORTED_COPY_SIZE(roi)){
             return true;
         }
         else if((pDst->Info.FourCC == MFX_FOURCC_ARGB16 || pDst->Info.FourCC == MFX_FOURCC_ABGR16) && CM_ALIGNED(IPP_MIN(IPP_MIN(pDst->Data.R,pDst->Data.G),pDst->Data.B)) && roi.height <= 10240 && roi.width <= 10240){
             return true;
         }
-        else if(pDst->Info.FourCC != MFX_FOURCC_YV12 && pDst->Info.FourCC != MFX_FOURCC_NV12 && pDst->Info.FourCC != MFX_FOURCC_P010 && pDst->Info.FourCC != MFX_FOURCC_A2RGB10 && pDst->Info.FourCC != MFX_FOURCC_UYVY && CM_ALIGNED(dstPtr) && CM_SUPPORTED_COPY_SIZE(roi)){
+        else if(pDst->Info.FourCC != MFX_FOURCC_YV12 && pDst->Info.FourCC != MFX_FOURCC_NV12 && pDst->Info.FourCC != MFX_FOURCC_P010 && pDst->Info.FourCC != MFX_FOURCC_A2RGB10 && pDst->Info.FourCC != MFX_FOURCC_UYVY && CM_ALIGNED(pDst->Data.Y) && CM_SUPPORTED_COPY_SIZE(roi)){
             return true;
         }
         else
             return false;
     }
-    else if (NULL != srcPtr && NULL != dstPtr)
+    else if (NULL != pSrc->Data.Y && NULL != pDst->Data.Y)
     {
         return false;
     }
-    else if (NULL != srcPtr && NULL != pDst->Data.MemId)
+    else if (NULL != pSrc->Data.Y && NULL != pDst->Data.MemId)
     {
         if (!CM_ALIGNED(pSrc->Data.Pitch))
             return false;
@@ -2754,7 +2749,7 @@ bool CmCopyWrapper::CanUseCmCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc)
         {
             return true;
         }
-        else if(pSrc->Info.FourCC != MFX_FOURCC_YV12 && pSrc->Info.FourCC != MFX_FOURCC_NV12 && pSrc->Info.FourCC != MFX_FOURCC_P010 && pSrc->Info.FourCC != MFX_FOURCC_A2RGB10 && pSrc->Info.FourCC != MFX_FOURCC_UYVY && CM_ALIGNED(srcPtr) && CM_SUPPORTED_COPY_SIZE(roi)){
+        else if(pSrc->Info.FourCC != MFX_FOURCC_YV12 && pSrc->Info.FourCC != MFX_FOURCC_NV12 && pSrc->Info.FourCC != MFX_FOURCC_P010 && pSrc->Info.FourCC != MFX_FOURCC_A2RGB10 && pSrc->Info.FourCC != MFX_FOURCC_UYVY && CM_ALIGNED(pSrc->Data.Y) && CM_SUPPORTED_COPY_SIZE(roi)){
             return true;
         }
     }
@@ -2798,9 +2793,7 @@ mfxStatus CmCopyWrapper::CopyVideoToSys(mfxFrameSurface1 *pDst, mfxFrameSurface1
 
     mfxU32 dstPitch = pDst->Data.PitchLow + ((mfxU32)pDst->Data.PitchHigh << 16);
 
-    mfxU8* dstPtr = GetFramePointer(pDst->Info.FourCC, pDst->Data);
-
-    if (NULL != pSrc->Data.MemId && NULL != dstPtr)
+    if (NULL != pSrc->Data.MemId && NULL != pDst->Data.Y)
     {
         if (!CM_ALIGNED(pDst->Data.Pitch) )
             return MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -2850,9 +2843,9 @@ mfxStatus CmCopyWrapper::CopyVideoToSys(mfxFrameSurface1 *pDst, mfxFrameSurface1
             sts = CopyVideoToSystemMemoryAPI(IPP_MIN(IPP_MIN(pDst->Data.R,pDst->Data.G),pDst->Data.B), pDst->Data.Pitch, (mfxU32)pSrc->Info.Height,pSrc->Data.MemId, 0, roi);
             return sts;
         }
-        else if (pDst->Info.FourCC != MFX_FOURCC_NV12 && pDst->Info.FourCC != MFX_FOURCC_YV12 && pDst->Info.FourCC != MFX_FOURCC_P010 && pDst->Info.FourCC != MFX_FOURCC_A2RGB10 && pDst->Info.FourCC != MFX_FOURCC_UYVY && CM_ALIGNED(dstPtr) && CM_SUPPORTED_COPY_SIZE(roi))
+        else if (pDst->Info.FourCC != MFX_FOURCC_NV12 && pDst->Info.FourCC != MFX_FOURCC_YV12 && pDst->Info.FourCC != MFX_FOURCC_P010 && pDst->Info.FourCC != MFX_FOURCC_A2RGB10 && pDst->Info.FourCC != MFX_FOURCC_UYVY && CM_ALIGNED(pDst->Data.Y) && CM_SUPPORTED_COPY_SIZE(roi))
         {
-            sts = CopyVideoToSystemMemoryAPI(dstPtr, pDst->Data.Pitch,(mfxU32)pDst->Info.Height, pSrc->Data.MemId, 0, roi);
+            sts = CopyVideoToSystemMemoryAPI(pDst->Data.Y, pDst->Data.Pitch,(mfxU32)pDst->Info.Height, pSrc->Data.MemId, 0, roi);
             return sts;
         }
     }
@@ -2865,15 +2858,13 @@ mfxStatus CmCopyWrapper::CopySysToVideo(mfxFrameSurface1 *pDst, mfxFrameSurface1
     mfxStatus sts = MFX_ERR_NONE;
     IppiSize roi = {IPP_MIN(pSrc->Info.Width, pDst->Info.Width), IPP_MIN(pSrc->Info.Height, pDst->Info.Height)};
 
-    mfxU8* srcPtr = GetFramePointer(pSrc->Info.FourCC, pSrc->Data);
-
     // check that region of interest is valid
     if (0 == roi.width || 0 == roi.height || m_HWType == MFX_HW_UNKNOWN)
     {
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
 
-    if (NULL != srcPtr && NULL != pDst->Data.MemId)
+    if (NULL != pSrc->Data.Y && NULL != pDst->Data.MemId)
     {
         if (!CM_ALIGNED(pSrc->Data.Pitch) )
             return MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -2920,11 +2911,11 @@ mfxStatus CmCopyWrapper::CopySysToVideo(mfxFrameSurface1 *pDst, mfxFrameSurface1
             sts = CopySystemToVideoMemoryAPI(pDst->Data.MemId, 0, IPP_MIN(IPP_MIN(pSrc->Data.R,pSrc->Data.G),pSrc->Data.B), pSrc->Data.Pitch, (mfxU32)pSrc->Info.Height, roi);
             return sts;
         }
-        else if(pSrc->Info.FourCC != MFX_FOURCC_YV12 && pSrc->Info.FourCC != MFX_FOURCC_NV12 && pSrc->Info.FourCC != MFX_FOURCC_P010  && pSrc->Info.FourCC != MFX_FOURCC_A2RGB10 && pSrc->Info.FourCC != MFX_FOURCC_UYVY && CM_ALIGNED(srcPtr) && CM_SUPPORTED_COPY_SIZE(roi)){
+        else if(pSrc->Info.FourCC != MFX_FOURCC_YV12 && pSrc->Info.FourCC != MFX_FOURCC_NV12 && pSrc->Info.FourCC != MFX_FOURCC_P010  && pSrc->Info.FourCC != MFX_FOURCC_A2RGB10 && pSrc->Info.FourCC != MFX_FOURCC_UYVY && CM_ALIGNED(pSrc->Data.Y) && CM_SUPPORTED_COPY_SIZE(roi)){
             if(pSrc->Info.FourCC == MFX_FOURCC_R16 && m_HWType >= MFX_HW_SCL)
-                sts = CopySystemToVideoMemory(pDst->Data.MemId, 0, srcPtr, pSrc->Data.Pitch, (mfxU32)pSrc->Info.Height, roi, MFX_FOURCC_R16);
+                sts = CopySystemToVideoMemory(pDst->Data.MemId, 0, pSrc->Data.Y, pSrc->Data.Pitch, (mfxU32)pSrc->Info.Height, roi, MFX_FOURCC_R16);
             else
-                sts = CopySystemToVideoMemoryAPI(pDst->Data.MemId, 0, srcPtr, pSrc->Data.Pitch, (mfxU32)pDst->Info.Height, roi);
+                sts = CopySystemToVideoMemoryAPI(pDst->Data.MemId, 0, pSrc->Data.Y, pSrc->Data.Pitch, (mfxU32)pDst->Info.Height, roi);
             return sts;
         }
     }

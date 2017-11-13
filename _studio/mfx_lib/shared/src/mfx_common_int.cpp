@@ -975,36 +975,3 @@ void mfxVideoParamWrapper::CopyVideoParam(const mfxVideoParam & par)
     NumExtParam = (mfxU16)m_buffers.GetCount();
     ExtParam = NumExtParam ? m_buffers.GetBuffers() : 0;
 }
-
-mfxU8* GetFramePointer(mfxU32 fourcc, mfxFrameData const& data)
-{
-    switch (fourcc)
-    {
-        case MFX_FOURCC_RGB3:
-        case MFX_FOURCC_RGB4:
-        case MFX_FOURCC_BGR4:
-        case MFX_FOURCC_ARGB16:
-        case MFX_FOURCC_ABGR16:  return IPP_MIN(IPP_MIN(data.R, data.G), data.B);
-
-        case MFX_FOURCC_R16:     return reinterpret_cast<mfxU8*>(data.Y16);
-
-        case MFX_FOURCC_AYUV:    return data.V;
-
-        case MFX_FOURCC_UYVY:    return data.U;
-
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-        case MFX_FOURCC_A2RGB10: return reinterpret_cast<mfxU8*>(data.A2RGB10);
-#endif
-
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= MFX_VERSION_NEXT)
-        case MFX_FOURCC_Y410:    return reinterpret_cast<mfxU8*>(data.Y410);
-#endif
-
-#if defined (PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
-        case MFX_FOURCC_Y416:    return reinterpret_cast<mfxU8*>(data.U16);
-#endif
-
-        default:
-            return data.Y;
-    }
-}
