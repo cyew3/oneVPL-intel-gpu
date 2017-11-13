@@ -39,10 +39,7 @@ static mfxStatus SetROI(
     VAEncMiscParameterBufferROI *roi_Param;
     unsigned int roi_buffer_size = sizeof(VAEncMiscParameterBufferROI);
 
-    if (roiParam_id != VA_INVALID_ID)
-    {
-        vaDestroyBuffer(vaDisplay, roiParam_id);
-    }
+    MFX_DESTROY_VABUFFER(roiParam_id, vaDisplay);
 
     vaSts = vaCreateBuffer(vaDisplay,
             vaContextEncode,
@@ -94,7 +91,9 @@ static mfxStatus SetROI(
 #endif // MFX_VERSION > 1021
 #endif // defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT)
     }
-    vaUnmapBuffer(vaDisplay, roiParam_id);
+
+    vaSts = vaUnmapBuffer(vaDisplay, roiParam_id);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
     return MFX_ERR_NONE;
 }
@@ -236,10 +235,8 @@ mfxStatus SetHRD(
     VAEncMiscParameterBuffer *misc_param;
     VAEncMiscParameterHRD *hrd_param;
 
-    if ( hrdBuf_id != VA_INVALID_ID)
-    {
-        vaDestroyBuffer(vaDisplay, hrdBuf_id);
-    }
+    MFX_DESTROY_VABUFFER(hrdBuf_id, vaDisplay);
+
     vaSts = vaCreateBuffer(vaDisplay,
                    vaContextEncode,
                    VAEncMiscParameterBufferType,
@@ -269,7 +266,8 @@ mfxStatus SetHRD(
         hrd_param->buffer_size = 0;
     }
 
-    vaUnmapBuffer(vaDisplay, hrdBuf_id);
+    vaSts = vaUnmapBuffer(vaDisplay, hrdBuf_id);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
     return MFX_ERR_NONE;
 }
@@ -285,10 +283,7 @@ mfxStatus SetRateControl(
     VAEncMiscParameterBuffer *misc_param;
     VAEncMiscParameterRateControl *rate_param;
 
-    if ( rateParamBuf_id != VA_INVALID_ID)
-    {
-        vaDestroyBuffer(vaDisplay, rateParamBuf_id);
-    }
+    MFX_DESTROY_VABUFFER(rateParamBuf_id, vaDisplay);
 
     vaSts = vaCreateBuffer(vaDisplay,
                    vaContextEncode,
@@ -329,7 +324,8 @@ mfxStatus SetRateControl(
 
     rate_param->initial_qp = par.m_pps.init_qp_minus26 + 26;
 
-    vaUnmapBuffer(vaDisplay, rateParamBuf_id);
+    vaSts = vaUnmapBuffer(vaDisplay, rateParamBuf_id);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
     return MFX_ERR_NONE;
 }
@@ -344,10 +340,7 @@ mfxStatus SetFrameRate(
     VAEncMiscParameterBuffer *misc_param;
     VAEncMiscParameterFrameRate *frameRate_param;
 
-    if ( frameRateBuf_id != VA_INVALID_ID)
-    {
-        vaDestroyBuffer(vaDisplay, frameRateBuf_id);
-    }
+    MFX_DESTROY_VABUFFER(frameRateBuf_id, vaDisplay);
 
     vaSts = vaCreateBuffer(vaDisplay,
                    vaContextEncode,
@@ -368,7 +361,8 @@ mfxStatus SetFrameRate(
 
     frameRate_param->framerate = (par.mfx.FrameInfo.FrameRateExtD << 16 )| par.mfx.FrameInfo.FrameRateExtN;
 
-    vaUnmapBuffer(vaDisplay, frameRateBuf_id);
+    vaSts = vaUnmapBuffer(vaDisplay, frameRateBuf_id);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
     return MFX_ERR_NONE;
 }
@@ -384,10 +378,7 @@ mfxStatus SetBRCParallel(
     VAEncMiscParameterBuffer *misc_param;
     VAEncMiscParameterParallelRateControl *BRCParallel_param;
 
-    if ( BRCParallel_id != VA_INVALID_ID)
-    {
-        vaDestroyBuffer(vaDisplay, BRCParallel_id);
-    }
+    MFX_DESTROY_VABUFFER(BRCParallel_id, vaDisplay);
 
     vaSts = vaCreateBuffer(vaDisplay,
                    vaContextEncode,
@@ -432,7 +423,8 @@ mfxStatus SetBRCParallel(
         BRCParallel_param->num_b_in_gop[2]  = 0;
     }
 
-    vaUnmapBuffer(vaDisplay, BRCParallel_id);
+    vaSts = vaUnmapBuffer(vaDisplay, BRCParallel_id);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
     return MFX_ERR_NONE;
 }
@@ -448,10 +440,7 @@ mfxStatus SetQualityLevelParams(
     VAEncMiscParameterBuffer *misc_param;
     VAEncMiscParameterBufferQualityLevel *quality_param;
 
-    if ( qualityParams_id != VA_INVALID_ID)
-    {
-        vaDestroyBuffer(vaDisplay, qualityParams_id);
-    }
+    MFX_DESTROY_VABUFFER(qualityParams_id, vaDisplay);
 
     vaSts = vaCreateBuffer(vaDisplay,
                    vaContextEncode,
@@ -472,7 +461,8 @@ mfxStatus SetQualityLevelParams(
 
     quality_param->quality_level = (unsigned int)(par.mfx.TargetUsage);
 
-    vaUnmapBuffer(vaDisplay, qualityParams_id);
+    vaSts = vaUnmapBuffer(vaDisplay, qualityParams_id);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
     return MFX_ERR_NONE;
 }
@@ -486,10 +476,7 @@ static mfxStatus SetMaxFrameSize(
     VAEncMiscParameterBuffer             *misc_param;
     VAEncMiscParameterBufferMaxFrameSize *p_maxFrameSize;
 
-    if ( frameSizeBuf_id != VA_INVALID_ID)
-    {
-        vaDestroyBuffer(vaDisplay, frameSizeBuf_id);
-    }
+    MFX_DESTROY_VABUFFER(frameSizeBuf_id, vaDisplay);
 
     VAStatus vaSts = vaCreateBuffer(vaDisplay,
                    vaContextEncode,
@@ -508,7 +495,8 @@ static mfxStatus SetMaxFrameSize(
 
     p_maxFrameSize->max_frame_size = userMaxFrameSize*8;    // in bits for libva
 
-    vaUnmapBuffer(vaDisplay, frameSizeBuf_id);
+    vaSts = vaUnmapBuffer(vaDisplay, frameSizeBuf_id);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
     return MFX_ERR_NONE;
 }
@@ -1302,7 +1290,8 @@ mfxStatus SetSkipFrame(
     skipParam->num_skip_frames = numSkipFrames;
     skipParam->size_skip_frames = sizeSkipFrames;
 
-    vaUnmapBuffer(vaDisplay, skipParam_id);
+    vaSts = vaUnmapBuffer(vaDisplay, skipParam_id);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
     return MFX_ERR_NONE;
 }
@@ -1733,6 +1722,7 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
                 void *pData;
                 vaSts = vaMapBuffer(m_vaDisplay, buf_id[i + 1], &pData);
                 MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
                 if (pBufferHeader && pData)
                 {
                     VAEncPackedHeaderParameterBuffer const & header = *(VAEncPackedHeaderParameterBuffer const *)pBufferHeader;
@@ -1758,7 +1748,8 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
         m_sizeSkipFrames += (skipMode.GetMode() != HEVC_SKIPFRAME_INSERT_NOTHING) ? storedSize : 0;
         {
            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
-           vaUnmapBuffer(m_vaDisplay, codedBuffer);
+           vaSts = vaUnmapBuffer(m_vaDisplay, codedBuffer);
+           MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
         }
     }
     //------------------------------------------------------------------
@@ -1876,8 +1867,9 @@ mfxStatus VAAPIEncoder::QueryStatus(Task & task)
 
                 {
                     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
-                    vaUnmapBuffer( m_vaDisplay, codedBuffer );
+                    vaSts = vaUnmapBuffer( m_vaDisplay, codedBuffer );
                 }
+                MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
                 // Sync FEI output buffers
                 MFX_CHECK_WITH_ASSERT(PostQueryExtraStage() == MFX_ERR_NONE, MFX_ERR_DEVICE_FAILED);
