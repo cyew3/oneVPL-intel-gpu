@@ -200,6 +200,16 @@ This extension buffer specifies MV predictors for ENCODE and ENC usage models. T
 
 This structure is used during runtime and should be attached to the `mfxEncodeCtrl` structure for ENCODE usage model and to the `mfxENCInput` for ENC.
 
+This buffer has different layout from AVC. Each `mfxFeiHevcEncMVPredictors` element in Data array corresponds to 16x16 block of pixels from input frame. Four such elements are combined in group that corresponds to 32x32 block of pixels. Elements are located in zig-zag order inside group and groups are located in raster scan order inside buffer. Due to such layout input frame size should be aligned to 32 before calculation of buffer size. That means that buffer width in elements should be calculated as `(((picture width + 31)/32)*32)/16` and buffer height as `(((picture height + 31)/32)*32)/16`.
+
+Figure 3 shows example of buffer layout. Blue rectangle represents input frame. Each thin line rectangle represents one element corresponding to 16x16 block of pixels. Each thick rectangle represents group of four elements corresponding to 32x32 block of pixels. Number inside rectangle represent element layout inside MVP buffer. Zero element is located at the beginning of the buffer, it is followed by first, then second and so on elements.
+
+MVP may be specified for 16x16 or 32x32 block of pixels, see description of `BlockSize` below. If MVP is specified for 16x16 block, then all four elements in group are used. For example, on Figure 3 element 0 is used for left top 16x16 block, element 2 for 16x16 block located just below first one in the frame and so on. If MVP is specified for 32x32 block then only first element from group is used, the rest are ignored. For example, on Figure 3 only 8-th element is used for 32x32 block of pixels that corresponds to 8, 9, 10 and 11 elements, three other elements 9, 10 and 11 are ignored.
+
+###### Figure 3: MVP layout
+
+![MVP layout](./pic/mvp_layout.png)
+
 **Members**
 
 | | |
