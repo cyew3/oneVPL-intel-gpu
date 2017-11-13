@@ -3353,7 +3353,6 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
     m_executeParams.statusReportID = pTask->taskIndex;
 
     m_executeParams.iTargetInterlacingMode = DEINTERLACE_ENABLE;
-    m_executeParams.execIdx = NO_INDEX;
 
     if( !(m_executeParams.targetSurface.frameInfo.PicStruct & (MFX_PICSTRUCT_PROGRESSIVE)))
     {
