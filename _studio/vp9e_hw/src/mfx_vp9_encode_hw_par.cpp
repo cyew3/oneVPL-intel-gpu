@@ -953,15 +953,16 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         unsupported = true;
     }
 
-    if (fi.Width &&
-        (fi.CropX + fi.CropW > fi.Width) ||
-        fi.Height &&
-        (fi.CropY + fi.CropH > fi.Height))
+    //VP9 doesn't support CropX, CropY due to absence of syntax in bitstream header
+    if (fi.Width  && (fi.CropW > fi.Width)  ||
+        fi.Height && (fi.CropH > fi.Height) ||
+        fi.CropX ||
+        fi.CropY)
     {
-        fi.CropX = 0;
         fi.CropW = 0;
-        fi.CropY = 0;
         fi.CropH = 0;
+        fi.CropX = 0;
+        fi.CropY = 0;
         unsupported = true;
     }
 
@@ -1594,10 +1595,25 @@ mfxStatus SetDefaults(
 
     // mfxInfomfx.FrameInfo
     mfxFrameInfo &fi = par.mfx.FrameInfo;
-
     mfxExtVP9Param& extPar = GetExtBufferRef(par);
-    SetDefault(extPar.FrameWidth, fi.Width);
-    SetDefault(extPar.FrameHeight, fi.Height);
+    if (extPar.FrameWidth)
+    {
+        SetDefault(fi.CropW, MFX_MIN(fi.Width, extPar.FrameWidth));
+    }
+    else
+    {
+        SetDefault(fi.CropW, fi.Width);
+        SetDefault(extPar.FrameWidth, fi.CropW);
+    }
+    if (extPar.FrameHeight)
+    {
+        SetDefault(fi.CropH, MFX_MIN(fi.Height, extPar.FrameHeight));
+    }
+    else
+    {
+        SetDefault(fi.CropH, fi.Height);
+        SetDefault(extPar.FrameHeight, fi.CropH);
+    }
 
     SetDefault(par.m_bufferSizeInKb, GetDefaultBufferSize(par));
 
@@ -1696,14 +1712,15 @@ mfxStatus CheckParametersAndSetDefaults(
     }
 
     // (4) crops
-    if (fi.CropW || fi.CropH || fi.CropX || fi.CropY)
+    if ((fi.CropW == 0) != (fi.CropH == 0))
     {
-        if (fi.CropW == 0 || fi.CropH == 0)
-        {
-            return MFX_ERR_INVALID_VIDEO_PARAM;
-        }
+        return MFX_ERR_INVALID_VIDEO_PARAM;
     }
-
+    mfxExtVP9Param& extPar = GetExtBufferRef(par);
+    if ((extPar.FrameWidth == 0) != (extPar.FrameHeight == 0))
+    {
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+    }
     // (5) opaque memory allocation
     if (par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
     {
