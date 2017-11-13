@@ -202,7 +202,7 @@ mfxStatus CheckInputPicStruct( mfxU16 inPicStruct )
 
 
 // rules for this algorithm see in spec
-mfxU16 UpdatePicStruct( mfxU16 inPicStruct, mfxU16 outPicStruct, bool bDynamicDeinterlace, mfxStatus& sts )
+mfxU16 UpdatePicStruct( mfxU16 inPicStruct, mfxU16 outPicStruct, bool bDynamicDeinterlace, mfxStatus& sts, mfxU32 outputFrameCounter )
 {
     mfxU16 resultPicStruct;
 
@@ -255,6 +255,26 @@ mfxU16 UpdatePicStruct( mfxU16 inPicStruct, mfxU16 outPicStruct, bool bDynamicDe
         return resultPicStruct;
     }
 
+    // INTERLACE->FIELDS
+    if( (inPicStruct & (MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_BFF)) && (outPicStruct & MFX_PICSTRUCT_FIELD_SINGLE) )
+    {
+        if (inPicStruct & MFX_PICSTRUCT_FIELD_TFF)
+        {
+            resultPicStruct = (mfxU16)((outputFrameCounter & 1) ? MFX_PICSTRUCT_FIELD_BOTTOM : MFX_PICSTRUCT_FIELD_TOP);
+        }
+        else if(inPicStruct & MFX_PICSTRUCT_FIELD_BFF)
+        {
+            resultPicStruct = (mfxU16)((outputFrameCounter & 1) ? MFX_PICSTRUCT_FIELD_TOP : MFX_PICSTRUCT_FIELD_BOTTOM);
+        }
+        else
+        {
+            resultPicStruct = outPicStruct;
+        }
+
+        sts = MFX_ERR_NONE;
+        return resultPicStruct;
+    }
+
     // INTERLACE->INTERLACE
     inPicStructCore  = inPicStruct  & (MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_BFF);
     outPicStructCore = outPicStruct & (MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_BFF);
@@ -280,14 +300,6 @@ mfxU16 UpdatePicStruct( mfxU16 inPicStruct, mfxU16 outPicStruct, bool bDynamicDe
 
     // FIELDS->INTERLACE
     if( (inPicStruct & MFX_PICSTRUCT_FIELD_SINGLE) && (outPicStruct & (MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_BFF)) )
-    {
-        resultPicStruct = outPicStruct;
-        sts = MFX_ERR_NONE;
-        return resultPicStruct;
-    }
-
-    // INTERLACE->FIELDS
-    if( (inPicStruct & (MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_BFF)) && (outPicStruct & MFX_PICSTRUCT_FIELD_SINGLE) )
     {
         resultPicStruct = outPicStruct;
         sts = MFX_ERR_NONE;

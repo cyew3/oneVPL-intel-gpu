@@ -1483,6 +1483,8 @@ mfxStatus VideoVPP_HW::VppFrameCheck(mfxFrameSurface1 *in, mfxFrameSurface1 *out
     mfxStatus internalSts = m_pHWVPP.get()->VppFrameCheck( in, out, aux, pEntryPoints, numEntryPoints);
 
     bool isInverseTelecinedEnabled = false;
+    const DdiTask* pTask = (DdiTask*)pEntryPoints[0].pParam ;
+
     isInverseTelecinedEnabled = IsFilterFound(&m_pipelineList[0], (mfxU32)m_pipelineList.size(), MFX_EXTBUFF_VPP_ITC);
 
     if (MFX_ERR_MORE_DATA == internalSts && true == isInverseTelecinedEnabled)
@@ -1492,14 +1494,14 @@ mfxStatus VideoVPP_HW::VppFrameCheck(mfxFrameSurface1 *in, mfxFrameSurface1 *out
 
     if( out && (MFX_ERR_NONE == internalSts || MFX_ERR_MORE_SURFACE == internalSts) )
     {
-        sts = PassThrough( NULL != in ? &(in->Info) : NULL, &(out->Info));
+        sts = PassThrough(NULL != in ? &(in->Info) : NULL, &(out->Info), pTask->taskIndex);
         //MFX_CHECK_STS( sts );
     }
 
     return (MFX_ERR_NONE == internalSts) ? sts : internalSts;
 }
 
-mfxStatus VideoVPP_HW::PassThrough(mfxFrameInfo* In, mfxFrameInfo* Out)
+mfxStatus VideoVPP_HW::PassThrough(mfxFrameInfo* In, mfxFrameInfo* Out, mfxU32 taskIndex)
 {
     if( In ) // no delay
     {
@@ -1507,7 +1509,7 @@ mfxStatus VideoVPP_HW::PassThrough(mfxFrameInfo* In, mfxFrameInfo* Out)
 
         Out->AspectRatioH = In->AspectRatioH;
         Out->AspectRatioW = In->AspectRatioW;
-        Out->PicStruct    = UpdatePicStruct( In->PicStruct, Out->PicStruct, m_bDynamicDeinterlace, sts );
+        Out->PicStruct    = UpdatePicStruct( In->PicStruct, Out->PicStruct, m_bDynamicDeinterlace, sts, taskIndex );
 
         m_errPrtctState.Deffered.AspectRatioH = Out->AspectRatioH;
         m_errPrtctState.Deffered.AspectRatioW = Out->AspectRatioW;
@@ -2043,7 +2045,7 @@ mfxStatus VideoVPP_SW::PassThrough(mfxFrameInfo* In, mfxFrameInfo* Out, mfxU16 r
      {
         Out->AspectRatioH = In->AspectRatioH;
         Out->AspectRatioW = In->AspectRatioW;
-        Out->PicStruct    = UpdatePicStruct( In->PicStruct, realOutPicStruct, m_bDynamicDeinterlace, sts );
+        Out->PicStruct    = UpdatePicStruct( In->PicStruct, realOutPicStruct, m_bDynamicDeinterlace, sts, 0 );
 
         m_errPrtctState.Deffered.AspectRatioH = Out->AspectRatioH;
         m_errPrtctState.Deffered.AspectRatioW = Out->AspectRatioW;

@@ -131,7 +131,7 @@ public:
 
     virtual mfxStatus RunFrameVPP(mfxFrameSurface1* in, mfxFrameSurface1* out, mfxExtVppAuxData *aux);
 
-    mfxStatus PassThrough(mfxFrameInfo* In, mfxFrameInfo* Out);
+    mfxStatus PassThrough(mfxFrameInfo* In, mfxFrameInfo* Out, mfxU32 taskIndex);
 };
 
 #if !defined (MFX_ENABLE_HW_ONLY_VPP)

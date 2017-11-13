@@ -47,7 +47,7 @@ bool IsFrameRatesCorrespondWeaving(
 // PicStruct processing
 PicStructMode GetPicStructMode(mfxU16 inPicStruct, mfxU16 outPicStruct);
 mfxStatus CheckInputPicStruct( mfxU16 inPicStruct );
-mfxU16 UpdatePicStruct( mfxU16 inPicStruct, mfxU16 outPicStruct, bool bDynamicDeinterlace, mfxStatus& sts );
+mfxU16 UpdatePicStruct( mfxU16 inPicStruct, mfxU16 outPicStruct, bool bDynamicDeinterlace, mfxStatus& sts, mfxU32 outputFrameCounter );
 
 bool IsRoiDifferent(mfxFrameSurface1 *input, mfxFrameSurface1 *output);
 
