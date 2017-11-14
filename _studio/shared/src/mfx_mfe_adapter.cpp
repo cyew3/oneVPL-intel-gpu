@@ -74,11 +74,13 @@ mfxStatus MFEVAAPIEncoder::Create(mfxExtMultiFrameParam  const & par, VADisplay 
 
     if (VA_INVALID_ID != m_mfe_context)
     {
+        vm_mutex_lock(&m_mfe_guard);
         //TMP WA for SKL due to number of frames limitation in different scenarios:
         //to simplify submission process and not add additional checks for frame wait depending on input parameters
         //if there are encoder want to run less frames within the same MFE Adapter(parent session) align to less now
         //in general just if someone set 3, but another one set 2 after that(or we need to decrease due to parameters) - use 2 for all.
         m_maxFramesToCombine = m_maxFramesToCombine > par.MaxNumFrames ? par.MaxNumFrames : m_maxFramesToCombine;
+        vm_mutex_unlock(&m_mfe_guard);
         return MFX_ERR_NONE;
     }
 
@@ -190,21 +192,29 @@ mfxStatus MFEVAAPIEncoder::Join(VAContextID ctx, bool doubleField)
 mfxStatus MFEVAAPIEncoder::Disjoin(VAContextID ctx)
 {
     vm_mutex_lock(&m_mfe_guard);//need to protect in case there are streams added/removed in runtime
+    std::map<VAContextID, StreamsIter_t>::iterator iter = m_streamsMap.find(ctx);
 #ifndef MFE_UNIFIED
     VAStatus vaSts = vaReleaseContext(m_vaDisplay, ctx, m_mfe_context);
 #else
     VAStatus vaSts = vaMFReleaseContext(m_vaDisplay, m_mfe_context, ctx);
 #endif
-    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-    if (m_framesToCombine > 0)
+    if(iter == m_streamsMap.end())
+    {
+        vm_mutex_unlock(&m_mfe_guard);
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+    m_streams_pool.erase(iter->second);
+    m_streamsMap.erase(iter);
+    if (m_framesToCombine > 0 && m_framesToCombine >= m_maxFramesToCombine)
         --m_framesToCombine;
     vm_mutex_unlock(&m_mfe_guard);
-    return MFX_ERR_NONE;
+    return (VA_STATUS_SUCCESS == vaSts)? MFX_ERR_NONE: MFX_ERR_DEVICE_FAILED;
 }
 
 mfxStatus MFEVAAPIEncoder::Destroy()
 {
-/* Disabled for now in case driver ignores doesn't support properly. 
+    vm_mutex_lock(&m_mfe_guard);
+/* Disabled for now in case driver doesn't support properly.
     for(StreamsIter_t it = m_streams_pool.begin();it == m_streams_pool.end(); it++)
     {
 #ifndef MFE_UNIFIED
@@ -215,12 +225,13 @@ mfxStatus MFEVAAPIEncoder::Destroy()
     }
 */
     VAStatus vaSts = vaDestroyContext(m_vaDisplay, VAContextID(m_mfe_context));
-    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     m_mfe_context = VA_INVALID_ID;
+    vm_mutex_unlock(&m_mfe_guard);
 
     vm_mutex_destroy(&m_mfe_guard);
     vm_cond_destroy(&m_mfe_wait);
     m_streams_pool.clear();
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 #ifndef MFE_UNIFIED
     vaCreateMFEContext = NULL;
     vaAddContext = NULL;
@@ -247,12 +258,19 @@ mfxStatus MFEVAAPIEncoder::Submit(VAContextID context, vm_tick timeToWait)
             m_streams_pool.splice(m_streams_pool.end(), m_submitted_pool,m_submitted_pool.begin());
         }
     }
-    MFX_CHECK_WITH_ASSERT(!m_streams_pool.empty(), MFX_ERR_MEMORY_ALLOC);//if somehow both stream_pool and submitted pull empty
+    if(m_streams_pool.empty())
+    {
+        vm_mutex_unlock(&m_mfe_guard);
+        return MFX_ERR_MEMORY_ALLOC;
+    }
 
     //get curret stream by context
     std::map<VAContextID, StreamsIter_t>::iterator iter = m_streamsMap.find(context);
     if(iter == m_streamsMap.end())
+    {
+        vm_mutex_unlock(&m_mfe_guard);
         return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
 
     cur_stream = iter->second;
     if(!cur_stream->isFrameSubmitted())
@@ -283,7 +301,11 @@ mfxStatus MFEVAAPIEncoder::Submit(VAContextID context, vm_tick timeToWait)
             framesToSubmit = m_framesCollected;
     }
 
-    MFX_CHECK_WITH_ASSERT(framesToSubmit > 0, MFX_ERR_UNDEFINED_BEHAVIOR);
+    if(!framesToSubmit);
+    {
+        vm_mutex_unlock(&m_mfe_guard);
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
     vm_tick start_tick = vm_time_get_tick();
     vm_tick spent_ticks = 0;
 
@@ -343,7 +365,6 @@ mfxStatus MFEVAAPIEncoder::Submit(VAContextID context, vm_tick timeToWait)
                 (*it)->fieldSubmitted();
                 (*it)->sts = tmp_res;
             }
-            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
             m_framesCollected -= m_contexts.size();
         }
         // Broadcast is done before unlock for this case to simplify the code avoiding extra ifs

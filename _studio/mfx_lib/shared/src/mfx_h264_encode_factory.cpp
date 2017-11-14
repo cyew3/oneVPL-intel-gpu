@@ -99,6 +99,7 @@ MFEVAAPIEncoder* MfxHwH264Encode::CreatePlatformMFEEncoder(VideoCORE* core)
 
     // needs to search, thus use special GUID
     ComPtrCore<MFEVAAPIEncoder> *pVideoEncoder = QueryCoreInterface<ComPtrCore<MFEVAAPIEncoder> >(core, MFXMFEDDIENCODER_SEARCH_GUID);
+    if (!pVideoEncoder) return NULL;
     if (!pVideoEncoder->get())
         *pVideoEncoder = new MFEVAAPIEncoder;
 
