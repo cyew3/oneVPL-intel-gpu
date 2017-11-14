@@ -1092,6 +1092,7 @@ CEncodingPipeline::CEncodingPipeline()
     m_bTimeOutExceed = false;
     m_bInsertIDR = false;
 
+    m_bIsFieldSplitting = false;
 }
 
 CEncodingPipeline::~CEncodingPipeline()
@@ -1223,7 +1224,7 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
 
     MSDK_CHECK_STATUS(sts, "m_mfxSession.InitEx failed");
 
-    sts = MFXQueryVersion(m_mfxSession , &version); // get real API version of the loaded library
+    sts = MFXQueryVersion(m_mfxSession, &version); // get real API version of the loaded library
     MSDK_CHECK_STATUS(sts, "MFXQueryVersion failed");
 
     if ((pParams->MVC_flags & MVC_ENABLED) != 0 && !CheckVersion(&version, MSDK_FEATURE_MVC)) {
@@ -1256,10 +1257,10 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
         *    2.a) we check if codec is distributed as a mediasdk plugin and load it if yes
         *    2.b) if codec is not in the list of mediasdk plugins, we assume, that it is supported inside mediasdk library
         */
-        if (pParams->pluginParams.type == MFX_PLUGINLOAD_TYPE_FILE && msdk_strnlen(pParams->pluginParams.strPluginPath,sizeof(pParams->pluginParams.strPluginPath)))
+        if (pParams->pluginParams.type == MFX_PLUGINLOAD_TYPE_FILE && msdk_strnlen(pParams->pluginParams.strPluginPath, sizeof(pParams->pluginParams.strPluginPath)))
         {
             m_pUserModule.reset(new MFXVideoUSER(m_mfxSession));
-            m_pPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, m_mfxSession, pParams->pluginParams.pluginGuid, 1, pParams->pluginParams.strPluginPath, (mfxU32)msdk_strnlen(pParams->pluginParams.strPluginPath,sizeof(pParams->pluginParams.strPluginPath))));
+            m_pPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, m_mfxSession, pParams->pluginParams.pluginGuid, 1, pParams->pluginParams.strPluginPath, (mfxU32)msdk_strnlen(pParams->pluginParams.strPluginPath, sizeof(pParams->pluginParams.strPluginPath))));
             if (m_pPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
         }
         else
@@ -1276,7 +1277,7 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
                 m_pPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, m_mfxSession, pParams->pluginParams.pluginGuid, 1));
                 if (m_pPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
             }
-            if(sts==MFX_ERR_UNSUPPORTED)
+            if (sts == MFX_ERR_UNSUPPORTED)
             {
                 msdk_printf(isDefaultPlugin ?
                     MSDK_STRING("Default plugin cannot be loaded (possibly you have to define plugin explicitly)\n")
@@ -1290,16 +1291,33 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     m_pmfxENC = new MFXVideoENCODE(m_mfxSession);
     MSDK_CHECK_POINTER(m_pmfxENC, MFX_ERR_MEMORY_ALLOC);
 
+    bool bVpp = false;
+    if (pParams->nPicStruct != MFX_PICSTRUCT_PROGRESSIVE && pParams->CodecId == MFX_CODEC_HEVC)
+    {
+        bVpp = true;
+        m_bIsFieldSplitting = true;
+    }
+
     // create preprocessor if resizing was requested from command line
     // or if different FourCC is set
-    if (pParams->nWidth  != pParams->nDstWidth ||
+    if (pParams->nWidth != pParams->nDstWidth ||
         pParams->nHeight != pParams->nDstHeight ||
-        FileFourCC2EncFourCC(pParams->FileInputFourCC) != pParams->EncodeFourCC)
+        FileFourCC2EncFourCC(pParams->FileInputFourCC) != pParams->EncodeFourCC )
+
+    {
+        bVpp = true;
+        if (m_bIsFieldSplitting)
+        {
+            msdk_printf(MSDK_STRING("ERROR: Field Splitting is enabled according to streams parameters. Other VPP filters cannot be used in this mode, please remove corresponding options.\n"));
+            return MFX_ERR_UNSUPPORTED;
+        }
+    }
+
+    if (bVpp)
     {
         m_pmfxVPP = new MFXVideoVPP(m_mfxSession);
         MSDK_CHECK_POINTER(m_pmfxVPP, MFX_ERR_MEMORY_ALLOC);
     }
-
     // Determine if we should shift P010 surfaces
     pParams->shouldUseShiftedP010VPP = m_pmfxVPP && pParams->memType != SYSTEM_MEMORY &&
         pParams->FileInputFourCC == MFX_FOURCC_P010;
@@ -1554,6 +1572,12 @@ mfxStatus CEncodingPipeline::ResetMFXComponents(sInputParams* pParams)
     m_mfxEncParams.mfx.FrameInfo.FourCC       = m_mfxVppParams.vpp.Out.FourCC;
     m_mfxEncParams.mfx.FrameInfo.ChromaFormat = m_mfxVppParams.vpp.Out.ChromaFormat;
 
+    if (m_bIsFieldSplitting)
+    {
+        m_mfxEncParams.mfx.FrameInfo.Height /= 2;
+        m_mfxEncParams.mfx.FrameInfo.CropH /= 2;
+    }
+
     sts = m_pmfxENC->Init(&m_mfxEncParams);
     if (MFX_WRN_PARTIAL_ACCELERATION == sts)
     {
@@ -1563,6 +1587,18 @@ mfxStatus CEncodingPipeline::ResetMFXComponents(sInputParams* pParams)
 
     MSDK_CHECK_STATUS(sts, "m_pmfxENC->Init failed");
 
+    if (m_bIsFieldSplitting)
+    {
+        if (pParams->nPicStruct & MFX_PICSTRUCT_FIELD_BFF)
+        {
+            m_mfxVppParams.vpp.In.PicStruct = MFX_PICSTRUCT_FIELD_BFF;
+        }
+        else
+        {
+            m_mfxVppParams.vpp.In.PicStruct = MFX_PICSTRUCT_FIELD_TFF;
+        }
+        m_mfxVppParams.vpp.Out.PicStruct = MFX_PICSTRUCT_FIELD_SINGLE;
+    }
     if (m_pmfxVPP)
     {
         sts = m_pmfxVPP->Init(&m_mfxVppParams);
@@ -1774,7 +1810,14 @@ mfxStatus CEncodingPipeline::Run()
             }
             else if (MFX_ERR_MORE_SURFACE == sts)
             {
+                m_pEncSurfaces[nEncSurfIdx].Info.PicStruct = m_pVppSurfaces[nVppSurfIdx].Info.PicStruct & MFX_PICSTRUCT_FIELD_TFF ?
+                    (mfxU16)MFX_PICSTRUCT_FIELD_TOP : (mfxU16)MFX_PICSTRUCT_FIELD_BOTTOM;
                 bVppMultipleOutput = true;
+            }
+            else if (sts == MFX_ERR_NONE)
+            {
+                m_pEncSurfaces[nEncSurfIdx].Info.PicStruct = m_pVppSurfaces[nVppSurfIdx].Info.PicStruct & MFX_PICSTRUCT_FIELD_TFF ?
+                    (mfxU16)MFX_PICSTRUCT_FIELD_BOTTOM : (mfxU16)MFX_PICSTRUCT_FIELD_TOP;
             }
             else
             {

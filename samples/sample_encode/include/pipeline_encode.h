@@ -297,6 +297,8 @@ protected:
     bool   m_bInsertIDR;
     bool   m_bTimeOutExceed;
 
+    bool   m_bIsFieldSplitting;
+
     mfxEncodeCtrl m_encCtrl;
 
     CTimeStatisticsReal m_statOverall;
