@@ -422,6 +422,45 @@ typedef struct tagENCODE_SET_SLICE_HEADER_HEVC_REXT : ENCODE_SET_SLICE_HEADER_HE
     SHORT   ChromaOffsetL1[15][2];
 } ENCODE_SET_SLICE_HEADER_HEVC_REXT;
 
+typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_HEVC_SCC : ENCODE_SET_SEQUENCE_PARAMETERS_HEVC
+{
+    union
+    {
+        struct
+        {
+            UINT  palette_mode_enabled_flag              : 1;
+            UINT  motion_vector_resolution_control_idc   : 2;
+            UINT  intra_boundary_filtering_disabled_flag : 1;
+            UINT  ReservedBits                           : 28;
+        } /* fields */;
+        UINT  SccEncodeToolsFlags;
+    } /* SccEncodeToolsFlags */;
+
+    UCHAR  palette_max_size;                  // [0..64]
+    UCHAR  delta_palette_max_predictor_size;  // [0..127]
+} ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_SCC;
+
+typedef struct tagENCODE_SET_PICTURE_PARAMETERS_HEVC_SCC : ENCODE_SET_PICTURE_PARAMETERS_HEVC
+{
+    union
+    {
+        struct
+        {
+           UINT  pps_curr_pic_ref_enabled_flag                   : 1;
+           UINT  residual_adaptive_colour_transform_enabled_flag : 1;
+           UINT  pps_slice_act_qp_offsets_present_flag           : 1;
+           UINT  ReservedBits6                                   : 29;
+        } /* fields */;
+        UINT  ScreenContentExtensionPicFlags;
+    } /* ScreenContentExtensionPicFlags */;
+
+    UCHAR   PredictorPaletteSize;             // [0..127]
+    USHORT  PredictorPaletteEntries[3][128];
+    CHAR    pps_act_y_qp_offset_plus5;        // [-7..17]
+    CHAR    pps_act_cb_qp_offset_plus5;       // [-7..17]
+    CHAR    pps_act_cr_qp_offset_plus3;       // [-9..15]
+} ENCODE_SET_PICTURE_PARAMETERS_HEVC_SCC;
+
 typedef struct tagENCODE_SET_QMATRIX_HEVC
 {
     UCHAR   bScalingLists4x4[3][2][16]; // 2 inter/intra 3: YUV
