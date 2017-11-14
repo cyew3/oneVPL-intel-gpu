@@ -25,6 +25,7 @@
     <ClCompile Include="UWPRenderer.cpp" />
     <ClCompile Include="RendererPanel.cpp" />
     <ClCompile Include="base_allocator.cpp" />
+    <ClCompile Include="PluginsManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -42,6 +43,7 @@
     <ClInclude Include="MSDKTime.h" />
     <ClInclude Include="base_allocator.h" />
     <ClInclude Include="MSDKHandle.h" />
+    <ClInclude Include="PluginsManager.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\LockScreenLogo.scale-200.png">

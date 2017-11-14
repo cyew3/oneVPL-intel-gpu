@@ -29,6 +29,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "UWPRenderer.h"
 #include "sample_defs.h"
 #include "RendererPanel.h"
+#include "PluginsManager.h"
 
 class CDecodingPipeline : public CThread11
 {
@@ -92,5 +93,9 @@ private:
     Windows::Storage::StorageFile^ fileSource;
 
     bool isDecodingEnding;
+
+    CPluginsManager pluginsManager;
+
+    mfxStatus CDecodingPipeline::LoadPluginsAndDecodeHeader(mfxBitstream* pBS, mfxU32 codecID);
 };
 

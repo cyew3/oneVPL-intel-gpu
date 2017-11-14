@@ -97,9 +97,9 @@ void SampleDecodeUWP::MainPage::btnOpen_Click(Platform::Object^ sender, Windows:
     picker->FileTypeFilter->Append(".bs");
     picker->FileTypeFilter->Append(".es");
     // No support for HEVC in UWP version of library so far because plugins are unsupported
-//    picker->FileTypeFilter->Append(".h265");
-//    picker->FileTypeFilter->Append(".265");
-//    picker->FileTypeFilter->Append(".hevc");
+    picker->FileTypeFilter->Append(".h265");
+    picker->FileTypeFilter->Append(".265");
+    picker->FileTypeFilter->Append(".hevc");
 
     create_task(picker->PickSingleFileAsync()).then([this](Windows::Storage::StorageFile^ file)
     {
@@ -113,10 +113,10 @@ void SampleDecodeUWP::MainPage::btnOpen_Click(Platform::Object^ sender, Windows:
             {
                 pipeline.SetCodecID(MFX_CODEC_MPEG2);
             }
-            //else if (file->FileType == ".265" || file->FileType == ".h265" || file->FileType == ".hevc")
-            //{
-            //    pipeline.SetCodecID(MFX_CODEC_HEVC);
-            //}
+            else if (file->FileType == ".265" || file->FileType == ".h265" || file->FileType == ".hevc")
+            {
+                pipeline.SetCodecID(MFX_CODEC_HEVC);
+            }
             else
             {
                 ShowMessage("Invalid type of file selected", [](auto param){});
