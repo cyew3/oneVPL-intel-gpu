@@ -143,6 +143,10 @@ protected:
 
     mfxExtVP9Segmentation m_prevSegment;
     VP9FrameLevelParam m_prevFrameParam;
+
+    bool m_isFirstFrameSubmitted;
+    mfxU32 m_firstFrameWidth;
+    mfxU32 m_firstFrameHeight;
 };
 
 } // MfxHwVP9Encode
