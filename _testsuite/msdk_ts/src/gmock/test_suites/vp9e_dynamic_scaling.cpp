@@ -200,95 +200,48 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, SET_RESOLUTION(176, 144) }
             },
         },
-        // below cases do single 2x upscale
-        {/*09*/ MFX_ERR_NONE, CQP | TU1 | SIMPLE_UPSCALE,
+
+        // below cases check that upscale above initial resolution (1st frame's resolution) not supported
+        {/*09*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, CQP | TU4 | SIMPLE_UPSCALE | ERROR_EXPECTED,
+            {
+                { ITER_LENGTH, SET_RESOLUTION(176, 144) },
+                { ITER_LENGTH, SET_RESOLUTION(352, 288) }
+            },
+        },
+        {/*10*/ MFX_ERR_INVALID_VIDEO_PARAM, CQP | TU4 | SIMPLE_UPSCALE | ERROR_EXPECTED,
+            {
+                { ITER_LENGTH, SET_RESOLUTION(352, 288) },
+                { ITER_LENGTH, SET_RESOLUTION(176, 144) },
+                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352), FRAME_HEIGHT(288+2) }
+            },
+        },
+        {/*11*/ MFX_ERR_INVALID_VIDEO_PARAM, CQP | TU4 | SIMPLE_UPSCALE | ERROR_EXPECTED,
+            {
+                { ITER_LENGTH, SET_RESOLUTION(352, 288) },
+                { ITER_LENGTH, SET_RESOLUTION(176, 144) },
+                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352+2), FRAME_HEIGHT(288) }
+            },
+        },
+        {/*12*/ MFX_ERR_INVALID_VIDEO_PARAM, CQP | TU4 | ERROR_EXPECTED,
             {
                 { 0, SET_RESOLUTION(352, 288) },
                 { ITER_LENGTH, SET_RESOLUTION(176, 144) },
                 { ITER_LENGTH, SET_RESOLUTION(352, 288) }
             },
         },
-        {/*10*/ MFX_ERR_NONE, CQP | TU4 | SIMPLE_UPSCALE,
+
+        // below case check that upscale above inited max_width and max_height not supported
+        {/*13*/ MFX_ERR_INVALID_VIDEO_PARAM, CQP | TU4 | ERROR_EXPECTED,
             {
                 { 0, SET_RESOLUTION(352, 288) },
-                { ITER_LENGTH, SET_RESOLUTION(176, 144) },
-                { ITER_LENGTH, SET_RESOLUTION(352, 288) }
+                { ITER_LENGTH, SET_RESOLUTION(352, 288) },
+                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352 + 8), FRAME_HEIGHT(288 + 8) }
             },
         },
-        {/*11*/ MFX_ERR_NONE, CQP | TU7 | SIMPLE_UPSCALE,
-            {
-                { 0, SET_RESOLUTION(352, 288) },
-                { ITER_LENGTH, SET_RESOLUTION(176, 144) },
-                { ITER_LENGTH, SET_RESOLUTION(352, 288) }
-            },
-        },
-         {/*12*/ MFX_ERR_NONE, CBR | TU1 | SIMPLE_UPSCALE,
-            {
-                { 0, SET_RESOLUTION(352, 288) },
-                { ITER_LENGTH, SET_RESOLUTION(176, 144) },
-                { ITER_LENGTH, SET_RESOLUTION(352, 288) }
-            },
-        },
-        {/*13*/ MFX_ERR_NONE, CBR | TU4 | SIMPLE_UPSCALE,
-            {
-                { 0, SET_RESOLUTION(352, 288) },
-                { ITER_LENGTH, SET_RESOLUTION(176, 144) },
-                { ITER_LENGTH, SET_RESOLUTION(352, 288) }
-            },
-        },
-        {/*14*/ MFX_ERR_NONE, CBR | TU7 | SIMPLE_UPSCALE,
-            {
-                { 0, SET_RESOLUTION(352, 288) },
-                { ITER_LENGTH, SET_RESOLUTION(176, 144) },
-                { ITER_LENGTH, SET_RESOLUTION(352, 288) }
-            },
-        },
-         {/*15*/ MFX_ERR_NONE, VBR | TU1 | SIMPLE_UPSCALE,
-            {
-                { 0, SET_RESOLUTION(352, 288) },
-                { ITER_LENGTH, SET_RESOLUTION(176, 144) },
-                { ITER_LENGTH, SET_RESOLUTION(352, 288) }
-            },
-        },
-        {/*16*/ MFX_ERR_NONE, VBR | TU4 | SIMPLE_UPSCALE,
-            {
-                { 0, SET_RESOLUTION(352, 288) },
-                { ITER_LENGTH, SET_RESOLUTION(176, 144) },
-                { ITER_LENGTH, SET_RESOLUTION(352, 288) }
-            },
-        },
-        {/*17*/ MFX_ERR_NONE, VBR | TU7 | SIMPLE_UPSCALE,
-            {
-                { 0, SET_RESOLUTION(352, 288) },
-                { ITER_LENGTH, SET_RESOLUTION(176, 144) },
-                { ITER_LENGTH, SET_RESOLUTION(352, 288) }
-            },
-        },
-        // below cases do single maximum allowed upscale (16x)
-        {/*18*/ MFX_ERR_NONE, CQP | MAX_SCALES,
-            {
-                { 0, SET_RESOLUTION(2816, 2304) },
-                { ITER_LENGTH, SET_RESOLUTION(176, 144) },
-                { ITER_LENGTH, SET_RESOLUTION(2816, 2304) }
-            },
-        },
-        {/*19*/ MFX_ERR_NONE, CBR | MAX_SCALES,
-            {
-                { 0, SET_RESOLUTION(2816, 2304) },
-                { ITER_LENGTH, SET_RESOLUTION(176, 144) },
-                { ITER_LENGTH, SET_RESOLUTION(2816, 2304) }
-            },
-        },
-        {/*20*/ MFX_ERR_NONE, VBR | MAX_SCALES,
-            {
-                { 0, SET_RESOLUTION(2816, 2304) },
-                { ITER_LENGTH, SET_RESOLUTION(176, 144) },
-                { ITER_LENGTH, SET_RESOLUTION(2816, 2304) }
-            },
-        },
+
         // below cases do consequent maximum allowed downscales (2x) till 16x accumulated downscale is reached
         // and then do maximum allowed upscale (16x)
-        {/*21*/ MFX_ERR_NONE, CQP | MAX_SCALES,
+        {/*14*/ MFX_ERR_NONE, CQP | MAX_SCALES,
             {
                 { ITER_LENGTH, SET_RESOLUTION(2816, 2304) },
                 { ITER_LENGTH, SET_RESOLUTION(1408, 1152) },
@@ -298,7 +251,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, SET_RESOLUTION(2816, 2304) },
             },
         },
-        {/*22*/ MFX_ERR_NONE, CBR | MAX_SCALES,
+        {/*15*/ MFX_ERR_NONE, CBR | MAX_SCALES,
             {
                 { ITER_LENGTH, SET_RESOLUTION(2816, 2304) },
                 { ITER_LENGTH, SET_RESOLUTION(1408, 1152) },
@@ -308,7 +261,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, SET_RESOLUTION(2816, 2304) },
             },
         },
-        {/*23*/ MFX_ERR_NONE, VBR | MAX_SCALES,
+        {/*16*/ MFX_ERR_NONE, VBR | MAX_SCALES,
             {
                 { ITER_LENGTH, SET_RESOLUTION(2816, 2304) },
                 { ITER_LENGTH, SET_RESOLUTION(1408, 1152) },
@@ -318,55 +271,61 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, SET_RESOLUTION(2816, 2304) },
             },
         },
+
         // below cases do consequent 2x downscales on each frame
-        {/*24*/ MFX_ERR_NONE, CQP | DS_ON_EACH_FRAME,
+        {/*17*/ MFX_ERR_NONE, CQP | DS_ON_EACH_FRAME,
             {
                 { 1, SET_RESOLUTION(704, 576) },
                 { 1, SET_RESOLUTION(352, 288) },
                 { 1, SET_RESOLUTION(176, 144) },
             },
         },
-        {/*25*/ MFX_ERR_NONE, CBR | DS_ON_EACH_FRAME,
+        {/*18*/ MFX_ERR_NONE, CBR | DS_ON_EACH_FRAME,
             {
                 { 1, SET_RESOLUTION(704, 576) },
                 { 1, SET_RESOLUTION(352, 288) },
                 { 1, SET_RESOLUTION(176, 144) },
             },
         },
-        {/*26*/ MFX_ERR_NONE, VBR | DS_ON_EACH_FRAME,
+        {/*19*/ MFX_ERR_NONE, VBR | DS_ON_EACH_FRAME,
             {
                 { 1, SET_RESOLUTION(704, 576) },
                 { 1, SET_RESOLUTION(352, 288) },
                 { 1, SET_RESOLUTION(176, 144) },
             },
         },
-        // below cases do consequent 2x upscales on each frame
-        {/*27*/ MFX_ERR_NONE, CQP | DS_ON_EACH_FRAME,
+
+        // below cases do consequent 2x downscale and then upscales on each frame
+        {/*20*/ MFX_ERR_NONE, CQP | DS_ON_EACH_FRAME,
             {
-                { 0, SET_RESOLUTION(704, 576) },
+                { 1, SET_RESOLUTION(704, 576) },
+                { 1, SET_RESOLUTION(352, 288) },
                 { 1, SET_RESOLUTION(176, 144) },
                 { 1, SET_RESOLUTION(352, 288) },
                 { 1, SET_RESOLUTION(704, 576) },
             },
         },
-        {/*28*/ MFX_ERR_NONE, CBR | DS_ON_EACH_FRAME,
+        {/*21*/ MFX_ERR_NONE, CBR | DS_ON_EACH_FRAME,
             {
-                { 0, SET_RESOLUTION(704, 576) },
+                { 1, SET_RESOLUTION(704, 576) },
+                { 1, SET_RESOLUTION(352, 288) },
                 { 1, SET_RESOLUTION(176, 144) },
                 { 1, SET_RESOLUTION(352, 288) },
                 { 1, SET_RESOLUTION(704, 576) },
             },
         },
-        {/*29*/ MFX_ERR_NONE, VBR | DS_ON_EACH_FRAME,
+        {/*22*/ MFX_ERR_NONE, VBR | DS_ON_EACH_FRAME,
             {
-                { 0, SET_RESOLUTION(704, 576) },
+                { 1, SET_RESOLUTION(704, 576) },
+                { 1, SET_RESOLUTION(352, 288) },
                 { 1, SET_RESOLUTION(176, 144) },
                 { 1, SET_RESOLUTION(352, 288) },
                 { 1, SET_RESOLUTION(704, 576) },
             },
         },
+
         // below cases interleave various downscales and upscales
-        {/*30*/ MFX_ERR_NONE, CQP | UPSCALE_DOWNSCALE_INTERLEAVED,
+        {/*23*/ MFX_ERR_NONE, CQP | UPSCALE_DOWNSCALE_INTERLEAVED,
             {
                 { ITER_LENGTH, SET_RESOLUTION(1408, 1152) },
                 { ITER_LENGTH, SET_RESOLUTION(704, 576) },
@@ -376,7 +335,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, SET_RESOLUTION(1408, 1152) },
             },
         },
-        {/*31*/ MFX_ERR_NONE, CBR | UPSCALE_DOWNSCALE_INTERLEAVED,
+        {/*24*/ MFX_ERR_NONE, CBR | UPSCALE_DOWNSCALE_INTERLEAVED,
             {
                 { ITER_LENGTH, SET_RESOLUTION(1408, 1152) },
                 { ITER_LENGTH, SET_RESOLUTION(704, 576) },
@@ -386,7 +345,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, SET_RESOLUTION(1408, 1152) },
             },
         },
-        {/*32*/ MFX_ERR_NONE, VBR | UPSCALE_DOWNSCALE_INTERLEAVED,
+        {/*25*/ MFX_ERR_NONE, VBR | UPSCALE_DOWNSCALE_INTERLEAVED,
             {
                 { ITER_LENGTH, SET_RESOLUTION(1408, 1152) },
                 { ITER_LENGTH, SET_RESOLUTION(704, 576) },
@@ -396,8 +355,9 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, SET_RESOLUTION(1408, 1152) },
             },
         },
+
         // below cases do downscale and upscale together with multiref
-        {/*33*/ MFX_ERR_NONE, CQP | TU1 | MULTIREF,
+        {/*26*/ MFX_ERR_NONE, CQP | TU1 | MULTIREF,
             {
                 { 4,{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 3,
                      SET_RESOLUTION(352, 288) } },
@@ -405,7 +365,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { 4, SET_RESOLUTION(352, 288) },
             },
         },
-        {/*34*/ MFX_ERR_NONE, CQP | TU1 | MULTIREF,
+        {/*27*/ MFX_ERR_NONE, CQP | TU1 | MULTIREF,
             {
                 { 5,{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 3,
                      SET_RESOLUTION(352, 288) } },
@@ -413,7 +373,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { 5, SET_RESOLUTION(352, 288) },
             },
         },
-        {/*35*/ MFX_ERR_NONE, CQP | TU1 | MULTIREF,
+        {/*28*/ MFX_ERR_NONE, CQP | TU1 | MULTIREF,
             {
                 { 6,{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 3,
                      SET_RESOLUTION(352, 288) } },
@@ -421,7 +381,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { 6, SET_RESOLUTION(352, 288) },
             },
         },
-        {/*36*/ MFX_ERR_NONE, CQP | TU4 | MULTIREF,
+        {/*29*/ MFX_ERR_NONE, CQP | TU4 | MULTIREF,
             {
                 { 3,{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 2,
                      SET_RESOLUTION(352, 288) } },
@@ -429,7 +389,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { 3, SET_RESOLUTION(352, 288) },
             },
         },
-        {/*37*/ MFX_ERR_NONE, CQP | TU4 | MULTIREF,
+        {/*30*/ MFX_ERR_NONE, CQP | TU4 | MULTIREF,
             {
                 { 4,{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 2,
                      SET_RESOLUTION(352, 288) } },
@@ -437,312 +397,312 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { 4, SET_RESOLUTION(352, 288) },
             },
         },
+
         // below cases do resolution change with key-frame
-        {/*38*/ MFX_ERR_NONE, CQP| KEY_FRAME,
+        {/*31*/ MFX_ERR_NONE, CQP| KEY_FRAME,
             {
                 { GOP_SIZE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, GOP_SIZE,
                               SET_RESOLUTION(352, 288) } },
                 { ITER_LENGTH, SET_RESOLUTION(176, 144) }
             },
         },
-        {/*39*/ MFX_ERR_NONE, CQP | KEY_FRAME,
+        {/*32*/ MFX_ERR_NONE, CQP | KEY_FRAME,
             {
                 { ITER_LENGTH, SET_RESOLUTION(352, 288) },
                 { ITER_LENGTH,{ MFX_EXT_RESET_OPTION, &tsStruct::mfxExtEncoderResetOption.StartNewSequence, MFX_CODINGOPTION_ON,
                                 SET_RESOLUTION(176, 144) } }
             },
         },
-        // below cases do single downscale and then single uscale from and to resolutions aligned to 16 but not equal to surface size
-        {/*40*/ MFX_ERR_NONE, CQP | TU1 | NOT_EQUAL_TO_SURF_SIZE,
+
+        // below cases do 2 downscales and then single uscale from and to resolutions aligned to 16 but not equal to surface size
+        {/*33*/ MFX_ERR_NONE, CQP | TU1 | NOT_EQUAL_TO_SURF_SIZE,
             {
-                { 0, SET_RESOLUTION(704, 576) },
+                { 1, SET_RESOLUTION(704, 576) },
                 { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352), FRAME_HEIGHT(240) },
                 { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176), FRAME_HEIGHT(120) },
                 { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704), FRAME_HEIGHT(480) }
             },
         },
-        {/*41*/ MFX_ERR_NONE, CQP | TU4 | NOT_EQUAL_TO_SURF_SIZE,
+        {/*34*/ MFX_ERR_NONE, CQP | TU4 | NOT_EQUAL_TO_SURF_SIZE,
             {
-                { 0, SET_RESOLUTION(704, 576) },
+                { 1, SET_RESOLUTION(704, 576) },
                 { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352), FRAME_HEIGHT(240) },
                 { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176), FRAME_HEIGHT(120) },
                 { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704), FRAME_HEIGHT(480) }
             },
         },
-        {/*42*/ MFX_ERR_NONE, CQP | TU7 | NOT_EQUAL_TO_SURF_SIZE,
+        {/*35*/ MFX_ERR_NONE, CQP | TU7 | NOT_EQUAL_TO_SURF_SIZE,
             {
-                { 0, SET_RESOLUTION(704, 576) },
+                { 1, SET_RESOLUTION(704, 576) },
                 { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352), FRAME_HEIGHT(240) },
                 { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176), FRAME_HEIGHT(120) },
                 { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704), FRAME_HEIGHT(480) }
             },
         },
-        {/*43*/ MFX_ERR_NONE, CBR | TU1 | NOT_EQUAL_TO_SURF_SIZE,
+        {/*36*/ MFX_ERR_NONE, CBR | TU1 | NOT_EQUAL_TO_SURF_SIZE,
             {
-                { 0, SET_RESOLUTION(704, 576) },
+                { 1, SET_RESOLUTION(704, 576) },
                 { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352), FRAME_HEIGHT(240) },
                 { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176), FRAME_HEIGHT(120) },
                 { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704), FRAME_HEIGHT(480) }
             },
         },
-        {/*44*/ MFX_ERR_NONE, CBR | TU4 | NOT_EQUAL_TO_SURF_SIZE,
+        {/*37*/ MFX_ERR_NONE, CBR | TU4 | NOT_EQUAL_TO_SURF_SIZE,
             {
-                { 0, SET_RESOLUTION(704, 576) },
+                { 1, SET_RESOLUTION(704, 576) },
                 { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352), FRAME_HEIGHT(240) },
                 { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176), FRAME_HEIGHT(120) },
                 { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704), FRAME_HEIGHT(480) }
             },
         },
-        {/*45*/ MFX_ERR_NONE, CBR | TU7 | NOT_EQUAL_TO_SURF_SIZE,
+        {/*38*/ MFX_ERR_NONE, CBR | TU7 | NOT_EQUAL_TO_SURF_SIZE,
             {
-                { 0, SET_RESOLUTION(704, 576) },
+                { 1, SET_RESOLUTION(704, 576) },
                 { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352), FRAME_HEIGHT(240) },
                 { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176), FRAME_HEIGHT(120) },
                 { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704), FRAME_HEIGHT(480) }
             },
         },
-        {/*46*/ MFX_ERR_NONE, VBR | TU1 | NOT_EQUAL_TO_SURF_SIZE,
+        {/*39*/ MFX_ERR_NONE, VBR | TU1 | NOT_EQUAL_TO_SURF_SIZE,
             {
-                { 0, SET_RESOLUTION(704, 576) },
+                { 1, SET_RESOLUTION(704, 576) },
                 { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352), FRAME_HEIGHT(240) },
                 { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176), FRAME_HEIGHT(120) },
                 { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704), FRAME_HEIGHT(480) }
             },
         },
-        {/*47*/ MFX_ERR_NONE, VBR | TU4 | NOT_EQUAL_TO_SURF_SIZE,
+        {/*40*/ MFX_ERR_NONE, VBR | TU4 | NOT_EQUAL_TO_SURF_SIZE,
             {
-                { 0, SET_RESOLUTION(704, 576) },
+                { 1, SET_RESOLUTION(704, 576) },
                 { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352), FRAME_HEIGHT(240) },
                 { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176), FRAME_HEIGHT(120) },
                 { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704), FRAME_HEIGHT(480) }
             },
         },
-        {/*48*/ MFX_ERR_NONE, VBR | TU7 | NOT_EQUAL_TO_SURF_SIZE,
+        {/*41*/ MFX_ERR_NONE, VBR | TU7 | NOT_EQUAL_TO_SURF_SIZE,
             {
-                { 0, SET_RESOLUTION(704, 576) },
+                { 1, SET_RESOLUTION(704, 576) },
                 { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352), FRAME_HEIGHT(240) },
                 { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176), FRAME_HEIGHT(120) },
                 { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704), FRAME_HEIGHT(480) }
             },
         },
+
         // below cases do single downscale and then single uscale from and to resolutions not aligned to 16
         // without change of Aspect Ratio (DAR)
-        {/*49*/ MFX_ERR_NONE, CQP | TU1 | NOT_EQUAL_TO_SURF_SIZE | NOT_ALIGNED,
+        {/*42*/ MFX_ERR_NONE, CQP | TU1 | NOT_EQUAL_TO_SURF_SIZE | NOT_ALIGNED,
             {
-                { 0, SET_RESOLUTION(704, 576) },
-                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352-20), FRAME_HEIGHT(288-20) },
-                { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176-10), FRAME_HEIGHT(144-10) },
-                { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-40), FRAME_HEIGHT(576-40) }
+                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352 - 30), FRAME_HEIGHT(288 - 30) },
+                { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176 - 10), FRAME_HEIGHT(144 - 10) },
+                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352 - 30), FRAME_HEIGHT(288 - 30) }
             },
         },
-        {/*50*/ MFX_ERR_NONE, CQP | TU4 | NOT_EQUAL_TO_SURF_SIZE | NOT_ALIGNED,
+        {/*43*/ MFX_ERR_NONE, CQP | TU4 | NOT_EQUAL_TO_SURF_SIZE | NOT_ALIGNED,
             {
-                { 0, SET_RESOLUTION(704, 576) },
-                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352-20), FRAME_HEIGHT(288-20) },
-                { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176-10), FRAME_HEIGHT(144-10) },
-                { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-40), FRAME_HEIGHT(576-40) }
+                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352 - 30), FRAME_HEIGHT(288 - 30) },
+                { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176 - 10), FRAME_HEIGHT(144 - 10) },
+                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352 - 30), FRAME_HEIGHT(288 - 30) }
             },
         },
-        {/*51*/ MFX_ERR_NONE, CQP | TU7 | NOT_EQUAL_TO_SURF_SIZE | NOT_ALIGNED,
+        {/*44*/ MFX_ERR_NONE, CQP | TU7 | NOT_EQUAL_TO_SURF_SIZE | NOT_ALIGNED,
             {
-                { 0, SET_RESOLUTION(704, 576) },
-                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352-20), FRAME_HEIGHT(288-20) },
-                { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176-10), FRAME_HEIGHT(144-10) },
-                { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-40), FRAME_HEIGHT(576-40) }
+                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352 - 30), FRAME_HEIGHT(288 - 30) },
+                { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176 - 10), FRAME_HEIGHT(144 - 10) },
+                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352 - 30), FRAME_HEIGHT(288 - 30) }
             },
         },
-        {/*52*/ MFX_ERR_NONE, CBR | TU1 | NOT_EQUAL_TO_SURF_SIZE | NOT_ALIGNED,
+        {/*45*/ MFX_ERR_NONE, CBR | TU1 | NOT_EQUAL_TO_SURF_SIZE | NOT_ALIGNED,
             {
-                { 0, SET_RESOLUTION(704, 576) },
-                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352-20), FRAME_HEIGHT(288-20) },
-                { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176-10), FRAME_HEIGHT(144-10) },
-                { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-40), FRAME_HEIGHT(576-40) }
+                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352 - 30), FRAME_HEIGHT(288 - 30) },
+                { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176 - 10), FRAME_HEIGHT(144 - 10) },
+                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352 - 30), FRAME_HEIGHT(288 - 30) }
             },
         },
-        {/*53*/ MFX_ERR_NONE, CBR | TU4 | NOT_EQUAL_TO_SURF_SIZE | NOT_ALIGNED,
+        {/*46*/ MFX_ERR_NONE, CBR | TU4 | NOT_EQUAL_TO_SURF_SIZE | NOT_ALIGNED,
             {
-                { 0, SET_RESOLUTION(704, 576) },
-                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352-20), FRAME_HEIGHT(288-20) },
-                { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176-10), FRAME_HEIGHT(144-10) },
-                { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-40), FRAME_HEIGHT(576-40) }
+                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352 - 30), FRAME_HEIGHT(288 - 30) },
+                { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176 - 10), FRAME_HEIGHT(144 - 10) },
+                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352 - 30), FRAME_HEIGHT(288 - 30) }
             },
         },
-        {/*54*/ MFX_ERR_NONE, CBR | TU7 | NOT_EQUAL_TO_SURF_SIZE | NOT_ALIGNED,
+        {/*47*/ MFX_ERR_NONE, CBR | TU7 | NOT_EQUAL_TO_SURF_SIZE | NOT_ALIGNED,
             {
-                { 0, SET_RESOLUTION(704, 576) },
-                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352-20), FRAME_HEIGHT(288-20) },
-                { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176-10), FRAME_HEIGHT(144-10) },
-                { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-40), FRAME_HEIGHT(576-40) }
+                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352 - 30), FRAME_HEIGHT(288 - 30) },
+                { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176 - 10), FRAME_HEIGHT(144 - 10) },
+                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352 - 30), FRAME_HEIGHT(288 - 30) }
             },
         },
-        {/*55*/ MFX_ERR_NONE, VBR | TU1 | NOT_EQUAL_TO_SURF_SIZE | NOT_ALIGNED,
+        {/*48*/ MFX_ERR_NONE, VBR | TU1 | NOT_EQUAL_TO_SURF_SIZE | NOT_ALIGNED,
             {
-                { 0, SET_RESOLUTION(704, 576) },
-                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352-20), FRAME_HEIGHT(288-20) },
-                { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176-10), FRAME_HEIGHT(144-10) },
-                { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-40), FRAME_HEIGHT(576-40) }
+                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352 - 30), FRAME_HEIGHT(288 - 30) },
+                { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176 - 10), FRAME_HEIGHT(144 - 10) },
+                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352 - 30), FRAME_HEIGHT(288 - 30) }
             },
         },
-        {/*56*/ MFX_ERR_NONE, VBR | TU4 | NOT_EQUAL_TO_SURF_SIZE | NOT_ALIGNED,
+        {/*49*/ MFX_ERR_NONE, VBR | TU4 | NOT_EQUAL_TO_SURF_SIZE | NOT_ALIGNED,
             {
-                { 0, SET_RESOLUTION(704, 576) },
-                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352-20), FRAME_HEIGHT(288-20) },
-                { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176-10), FRAME_HEIGHT(144-10) },
-                { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-40), FRAME_HEIGHT(576-40) }
+                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352 - 30), FRAME_HEIGHT(288 - 30) },
+                { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176 - 10), FRAME_HEIGHT(144 - 10) },
+                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352 - 30), FRAME_HEIGHT(288 - 30) }
             },
         },
-        {/*57*/ MFX_ERR_NONE, VBR | TU7 | NOT_EQUAL_TO_SURF_SIZE | NOT_ALIGNED,
+        {/*50*/ MFX_ERR_NONE, VBR | TU7 | NOT_EQUAL_TO_SURF_SIZE | NOT_ALIGNED,
             {
-                { 0, SET_RESOLUTION(704, 576) },
-                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352-20), FRAME_HEIGHT(288-20) },
-                { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176-10), FRAME_HEIGHT(144-10) },
-                { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-40), FRAME_HEIGHT(576-40) }
+                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352 - 30), FRAME_HEIGHT(288 - 30) },
+                { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176 - 10), FRAME_HEIGHT(144 - 10) },
+                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352 - 30), FRAME_HEIGHT(288 - 30) }
             },
         },
+
         // below cases do single downscale and then single uscale from and to resolutions not aligned to 16
         // with change of Aspect Ratio (DAR)
-        {/*58*/ MFX_ERR_NONE, CQP | TU1 | NOT_EQUAL_TO_SURF_SIZE | NOT_ALIGNED | CHANGE_OF_ASPECT_RATIO,
+        {/*51*/ MFX_ERR_NONE, CQP | TU1 | NOT_EQUAL_TO_SURF_SIZE | NOT_ALIGNED | CHANGE_OF_ASPECT_RATIO,
             {
-                { 0, SET_RESOLUTION(704, 576) },
-                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352-30), FRAME_HEIGHT(288-30) },
-                { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176-10), FRAME_HEIGHT(144-10) },
-                { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-50), FRAME_HEIGHT(576-50) }
+                { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704 - 40), FRAME_HEIGHT(576) },
+                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352 - 8), FRAME_HEIGHT(288) },
+                { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704 - 40), FRAME_HEIGHT(576 - 40) }
             },
         },
-        {/*59*/ MFX_ERR_NONE, CQP | TU4 | NOT_EQUAL_TO_SURF_SIZE | NOT_ALIGNED | CHANGE_OF_ASPECT_RATIO,
+        {/*52*/ MFX_ERR_NONE, CQP | TU4 | NOT_EQUAL_TO_SURF_SIZE | NOT_ALIGNED | CHANGE_OF_ASPECT_RATIO,
             {
-                { 0, SET_RESOLUTION(704, 576) },
-                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352-30), FRAME_HEIGHT(288-30) },
-                { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176-10), FRAME_HEIGHT(144-10) },
-                { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-50), FRAME_HEIGHT(576-50) }
+                { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704 - 40), FRAME_HEIGHT(576) },
+                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352 - 8), FRAME_HEIGHT(288) },
+                { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704 - 40), FRAME_HEIGHT(576 - 40) }
             },
         },
-        {/*60*/ MFX_ERR_NONE, CQP | TU7 | NOT_EQUAL_TO_SURF_SIZE | NOT_ALIGNED | CHANGE_OF_ASPECT_RATIO,
+        {/*53*/ MFX_ERR_NONE, CQP | TU7 | NOT_EQUAL_TO_SURF_SIZE | NOT_ALIGNED | CHANGE_OF_ASPECT_RATIO,
             {
-                { 0, SET_RESOLUTION(704, 576) },
-                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352-30), FRAME_HEIGHT(288-30) },
-                { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176-10), FRAME_HEIGHT(144-10) },
-                { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-50), FRAME_HEIGHT(576-50) }
+                { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704 - 40), FRAME_HEIGHT(576) },
+                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352 - 8), FRAME_HEIGHT(288) },
+                { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704 - 40), FRAME_HEIGHT(576 - 40) }
             },
         },
-        {/*61*/ MFX_ERR_NONE, CBR | TU1 | NOT_EQUAL_TO_SURF_SIZE | NOT_ALIGNED | CHANGE_OF_ASPECT_RATIO,
+        {/*54*/ MFX_ERR_NONE, CBR | TU1 | NOT_EQUAL_TO_SURF_SIZE | NOT_ALIGNED | CHANGE_OF_ASPECT_RATIO,
             {
-                { 0, SET_RESOLUTION(704, 576) },
-                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352-30), FRAME_HEIGHT(288-30) },
-                { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176-10), FRAME_HEIGHT(144-10) },
-                { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-50), FRAME_HEIGHT(576-50) }
+                { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704 - 40), FRAME_HEIGHT(576) },
+                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352 - 8), FRAME_HEIGHT(288) },
+                { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704 - 40), FRAME_HEIGHT(576 - 40) }
             },
         },
-        {/*62*/ MFX_ERR_NONE, CBR | TU4 | NOT_EQUAL_TO_SURF_SIZE | NOT_ALIGNED | CHANGE_OF_ASPECT_RATIO,
+        {/*55*/ MFX_ERR_NONE, CBR | TU4 | NOT_EQUAL_TO_SURF_SIZE | NOT_ALIGNED | CHANGE_OF_ASPECT_RATIO,
             {
-                { 0, SET_RESOLUTION(704, 576) },
-                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352-30), FRAME_HEIGHT(288-30) },
-                { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176-10), FRAME_HEIGHT(144-10) },
-                { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-50), FRAME_HEIGHT(576-50) }
+                { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704 - 40), FRAME_HEIGHT(576) },
+                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352 - 8), FRAME_HEIGHT(288) },
+                { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704 - 40), FRAME_HEIGHT(576 - 40) }
             },
         },
-        {/*63*/ MFX_ERR_NONE, CBR | TU7 | NOT_EQUAL_TO_SURF_SIZE | NOT_ALIGNED | CHANGE_OF_ASPECT_RATIO,
+        {/*56*/ MFX_ERR_NONE, CBR | TU7 | NOT_EQUAL_TO_SURF_SIZE | NOT_ALIGNED | CHANGE_OF_ASPECT_RATIO,
             {
-                { 0, SET_RESOLUTION(704, 576) },
-                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352-30), FRAME_HEIGHT(288-30) },
-                { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176-10), FRAME_HEIGHT(144-10) },
-                { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-50), FRAME_HEIGHT(576-50) }
+                { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704 - 40), FRAME_HEIGHT(576) },
+                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352 - 8), FRAME_HEIGHT(288) },
+                { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704 - 40), FRAME_HEIGHT(576 - 40) }
             },
         },
-        {/*64*/ MFX_ERR_NONE, VBR | TU1 | NOT_EQUAL_TO_SURF_SIZE | NOT_ALIGNED | CHANGE_OF_ASPECT_RATIO,
+        {/*57*/ MFX_ERR_NONE, VBR | TU1 | NOT_EQUAL_TO_SURF_SIZE | NOT_ALIGNED | CHANGE_OF_ASPECT_RATIO,
             {
-                { 0, SET_RESOLUTION(704, 576) },
-                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352-30), FRAME_HEIGHT(288-30) },
-                { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176-10), FRAME_HEIGHT(144-10) },
-                { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-50), FRAME_HEIGHT(576-50) }
+                { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704 - 40), FRAME_HEIGHT(576) },
+                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352 - 8), FRAME_HEIGHT(288) },
+                { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704 - 40), FRAME_HEIGHT(576 - 40) }
             },
         },
-        {/*65*/ MFX_ERR_NONE, VBR | TU4 | NOT_EQUAL_TO_SURF_SIZE | NOT_ALIGNED | CHANGE_OF_ASPECT_RATIO,
+        {/*58*/ MFX_ERR_NONE, VBR | TU4 | NOT_EQUAL_TO_SURF_SIZE | NOT_ALIGNED | CHANGE_OF_ASPECT_RATIO,
             {
-                { 0, SET_RESOLUTION(704, 576) },
-                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352-30), FRAME_HEIGHT(288-30) },
-                { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176-10), FRAME_HEIGHT(144-10) },
-                { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-50), FRAME_HEIGHT(576-50) }
+                { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704 - 40), FRAME_HEIGHT(576) },
+                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352 - 8), FRAME_HEIGHT(288) },
+                { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704 - 40), FRAME_HEIGHT(576 - 40) }
             },
         },
-        {/*66*/ MFX_ERR_NONE, VBR | TU7 | NOT_EQUAL_TO_SURF_SIZE | NOT_ALIGNED | CHANGE_OF_ASPECT_RATIO,
+        {/*59*/ MFX_ERR_NONE, VBR | TU7 | NOT_EQUAL_TO_SURF_SIZE | NOT_ALIGNED | CHANGE_OF_ASPECT_RATIO,
             {
-                { 0, SET_RESOLUTION(704, 576) },
-                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352-30), FRAME_HEIGHT(288-30) },
-                { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176-10), FRAME_HEIGHT(144-10) },
-                { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-50), FRAME_HEIGHT(576-50) }
+                { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704 - 40), FRAME_HEIGHT(576) },
+                { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352 - 8), FRAME_HEIGHT(288) },
+                { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704 - 40), FRAME_HEIGHT(576 - 40) }
             },
         },
+
         // below cases do too aggressive downscale (>2x) to check that correct error is returned
-        {/*67*/ MFX_ERR_INVALID_VIDEO_PARAM, CQP | ERROR_EXPECTED,
+        {/*60*/ MFX_ERR_INVALID_VIDEO_PARAM, CQP | ERROR_EXPECTED,
             {
                 { ITER_LENGTH, SET_RESOLUTION(352, 288) },
                 { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176), FRAME_HEIGHT(142) }
             },
         },
-        {/*68*/ MFX_ERR_INVALID_VIDEO_PARAM, CQP | ERROR_EXPECTED,
+        {/*61*/ MFX_ERR_INVALID_VIDEO_PARAM, CQP | ERROR_EXPECTED,
             {
                 { ITER_LENGTH, SET_RESOLUTION(352, 288) },
                 { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(174), FRAME_HEIGHT(144) }
             },
         },
+
         // below cases do too aggressive upscale (>16x) to check that correct error is returned
-        {/*69*/ MFX_ERR_INVALID_VIDEO_PARAM, CQP | ERROR_EXPECTED,
+        {/*62*/ MFX_ERR_INVALID_VIDEO_PARAM, CQP | ERROR_EXPECTED,
             {
-                { 0, SET_RESOLUTION(2816, 2304) },
+                { ITER_LENGTH, SET_RESOLUTION(2816, 2304) },
+                { ITER_LENGTH, SET_RESOLUTION(1408, 1152) },
+                { ITER_LENGTH, SET_RESOLUTION(704, 576) },
+                { ITER_LENGTH, SET_RESOLUTION(352, 288) },
+                { ITER_LENGTH, SET_RESOLUTION(176, 144) },
                 { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176), FRAME_HEIGHT(142) },
                 { ITER_LENGTH, SET_RESOLUTION(2816, 2304) }
             },
         },
-        {/*70*/ MFX_ERR_INVALID_VIDEO_PARAM, CQP | ERROR_EXPECTED,
+        {/*63*/ MFX_ERR_INVALID_VIDEO_PARAM, CQP | ERROR_EXPECTED,
             {
-                { 0, SET_RESOLUTION(2816, 2304) },
-                { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(174), FRAME_HEIGHT(144) },
+                { ITER_LENGTH, SET_RESOLUTION(2816, 2304) },
+                { ITER_LENGTH, SET_RESOLUTION(1408, 1152) },
+                { ITER_LENGTH, SET_RESOLUTION(704, 576) },
+                { ITER_LENGTH, SET_RESOLUTION(352, 288) },
+                { ITER_LENGTH, SET_RESOLUTION(176, 144) },
+                { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176), FRAME_HEIGHT(142) },
                 { ITER_LENGTH, SET_RESOLUTION(2816, 2304) }
             },
         },
+
         // below cases do scaling to resolution change not aligned to 2 (not aligned to chroma)
         // TODO: make proper changes for REXTs with different chroma samplings
-        {/*71*/ MFX_ERR_INVALID_VIDEO_PARAM, CQP | ERROR_EXPECTED,
+        {/*64*/ MFX_ERR_INVALID_VIDEO_PARAM, CQP | ERROR_EXPECTED,
             {
                 { ITER_LENGTH, SET_RESOLUTION(352, 288) },
                 { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176-1), FRAME_HEIGHT(144) }
             },
         },
-        {/*72*/ MFX_ERR_INVALID_VIDEO_PARAM, CQP | ERROR_EXPECTED,
+        {/*65*/ MFX_ERR_INVALID_VIDEO_PARAM, CQP | ERROR_EXPECTED,
             {
                 { ITER_LENGTH, SET_RESOLUTION(352, 288) },
                 { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176), FRAME_HEIGHT(144-1) }
             },
         },
+
         // below cases do scaling to properly aligned resolutions which are bigger than size of current surface
-        {/*73*/ MFX_ERR_INVALID_VIDEO_PARAM, CQP | ERROR_EXPECTED,
+        {/*66*/ MFX_ERR_INVALID_VIDEO_PARAM, CQP | ERROR_EXPECTED,
             {
                 { ITER_LENGTH, SET_RESOLUTION(352, 288) },
                 { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176+2), FRAME_HEIGHT(144) }
             },
         },
-        {/*74*/ MFX_ERR_INVALID_VIDEO_PARAM, CQP | ERROR_EXPECTED,
+        {/*67*/ MFX_ERR_INVALID_VIDEO_PARAM, CQP | ERROR_EXPECTED,
             {
                 { ITER_LENGTH, SET_RESOLUTION(352, 288) },
                 { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176), FRAME_HEIGHT(144+2) }
             },
         },
+
         // below cases do scaling to properly aligned resolutions which are bigger than size of initial surface
-        {/*75*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, CQP | ERROR_EXPECTED,
+        {/*68*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, CQP | ERROR_EXPECTED,
             {
                 { ITER_LENGTH, SET_RESOLUTION(176, 144) },
                 { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(176+2), FRAME_HEIGHT(144) }
             },
         },
-        {/*76*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, CQP | ERROR_EXPECTED,
+        {/*69*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, CQP | ERROR_EXPECTED,
             {
                 { ITER_LENGTH, SET_RESOLUTION(176, 144) },
                 { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(176), FRAME_HEIGHT(144+2) }
             },
         },
+
         // case below tryes to use dynamic scaling together with temporal scalability
-        {/*77*/ MFX_ERR_INVALID_VIDEO_PARAM, CQP | ERROR_EXPECTED,
+        {/*70*/ MFX_ERR_INVALID_VIDEO_PARAM, CQP | ERROR_EXPECTED,
             {
                 { ITER_LENGTH, MFX_EXT_VP9_TL, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].FrameRateScale, 1,
                                MFX_EXT_VP9_TL, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].FrameRateScale, 2,
@@ -752,11 +712,12 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                                SET_RESOLUTION(176, 144) }
             },
         },
+
         // below cases are stress tests with multiref and many upscales/downscales to not aligned resolutions
         // with change of Aspect Ratio (DAR)
-        {/*78*/ MFX_ERR_NONE, CQP | TU1 | MULTIREF | STRESS,
+        {/*71*/ MFX_ERR_NONE, CQP | TU1 | MULTIREF | STRESS,
             {
-                { 0, SET_RESOLUTION(2816, 2304),
+                { 5, WIDTH(2816), HEIGHT(2304),
                      MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 3,},
                 { 5, MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 3,
                      WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-14), FRAME_HEIGHT(576-22)},
@@ -769,9 +730,9 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { 5, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-2), FRAME_HEIGHT(576-2)},
             },
         },
-        {/*79*/ MFX_ERR_NONE, CBR | TU1 | MULTIREF | STRESS,
+        {/*72*/ MFX_ERR_NONE, CBR | TU1 | MULTIREF | STRESS,
             {
-                { 0, SET_RESOLUTION(2816, 2304),
+                { 5, WIDTH(2816), HEIGHT(2304),
                      MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 3, },
                 { 5, MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 3,
                 WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-14), FRAME_HEIGHT(576-22) },
@@ -784,9 +745,9 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { 5, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-2), FRAME_HEIGHT(576-2) },
             },
         },
-        {/*80*/ MFX_ERR_NONE, VBR | TU1 | MULTIREF | STRESS,
+        {/*73*/ MFX_ERR_NONE, VBR | TU1 | MULTIREF | STRESS,
             {
-                { 0, SET_RESOLUTION(2816, 2304),
+                { 5, WIDTH(2816), HEIGHT(2304),
                      MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 3, },
                 { 5, MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 3,
                 WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-14), FRAME_HEIGHT(576-22) },
@@ -799,9 +760,9 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { 5, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-2), FRAME_HEIGHT(576-2) },
             },
         },
-        {/*81*/ MFX_ERR_NONE, CQP | TU4 | MULTIREF | STRESS,
+        {/*74*/ MFX_ERR_NONE, CQP | TU4 | MULTIREF | STRESS,
             {
-                { 0, SET_RESOLUTION(2816, 2304),
+                { 4, WIDTH(2816), HEIGHT(2304),
                      MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 2, },
                 { 4, MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 2,
                 WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-14), FRAME_HEIGHT(576-22) },
@@ -814,9 +775,9 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { 4, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-2), FRAME_HEIGHT(576-2) },
             },
         },
-        {/*82*/ MFX_ERR_NONE, CBR | TU4 | MULTIREF | STRESS,
+        {/*75*/ MFX_ERR_NONE, CBR | TU4 | MULTIREF | STRESS,
             {
-                { 0, SET_RESOLUTION(2816, 2304),
+                { 4, WIDTH(2816), HEIGHT(2304),
                      MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 2, },
                 { 4, MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 2,
                 WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-14), FRAME_HEIGHT(576-22) },
@@ -829,9 +790,9 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { 4, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-2), FRAME_HEIGHT(576-2) },
             },
         },
-        {/*83*/ MFX_ERR_NONE, VBR | TU4 | MULTIREF | STRESS,
+        {/*76*/ MFX_ERR_NONE, VBR | TU4 | MULTIREF | STRESS,
             {
-                { 0, SET_RESOLUTION(2816, 2304),
+                { 4, WIDTH(2816), HEIGHT(2304),
                      MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 2, },
                 { 4, MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 2,
                 WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-14), FRAME_HEIGHT(576-22) },
@@ -844,9 +805,9 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { 4, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-2), FRAME_HEIGHT(576-2) },
             },
         },
-        {/*84*/ MFX_ERR_NONE, CQP | TU7 | STRESS,
+        {/*77*/ MFX_ERR_NONE, CQP | TU7 | STRESS,
             {
-                { 0, SET_RESOLUTION(2816, 2304) },
+                { 2, WIDTH(2816), HEIGHT(2304) },
                 { 2, MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 1,
                 WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-14), FRAME_HEIGHT(576-22) },
                 { 2, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352-6), FRAME_HEIGHT(288-10) },
@@ -858,9 +819,9 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { 2, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-2), FRAME_HEIGHT(576-2) },
             },
         },
-        {/*85*/ MFX_ERR_NONE, CBR | TU7 | STRESS,
+        {/*78*/ MFX_ERR_NONE, CBR | TU7 | STRESS,
             {
-                { 0, SET_RESOLUTION(2816, 2304) },
+                { 2, WIDTH(2816), HEIGHT(2304) },
                 { 2, MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 1,
                 WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-14), FRAME_HEIGHT(576-22) },
                 { 2, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352-6), FRAME_HEIGHT(288-10) },
@@ -872,9 +833,9 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { 2, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-2), FRAME_HEIGHT(576-2) },
             },
         },
-        {/*86*/ MFX_ERR_NONE, VBR | TU7 | STRESS,
+        {/*79*/ MFX_ERR_NONE, VBR | TU7 | STRESS,
             {
-                { 0, SET_RESOLUTION(2816, 2304) },
+                { 2, WIDTH(2816), HEIGHT(2304) },
                 { 2, MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 1,
                 WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-14), FRAME_HEIGHT(576-22) },
                 { 2, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352-6), FRAME_HEIGHT(288-10) },
@@ -886,9 +847,10 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { 2, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-2), FRAME_HEIGHT(576-2) },
             },
         },
+
         // below cases use streams downscaled from original 1920x1080 stream
         // they do several upscales/downscales for different QPs
-        {/*87*/ MFX_ERR_NONE, CQP | TU1 | REAL_LIFE,
+        {/*80*/ MFX_ERR_NONE, CQP | TU1 | REAL_LIFE,
             {
                 { ITER_LENGTH, MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 50,
                      MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPP, 50,
@@ -900,7 +862,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, WIDTH(1920), HEIGHT(1088), FRAME_WIDTH(1920), FRAME_HEIGHT(1080) },
             },
         },
-        {/*88*/ MFX_ERR_NONE, CQP | TU1 | REAL_LIFE,
+        {/*81*/ MFX_ERR_NONE, CQP | TU1 | REAL_LIFE,
             {
                 { ITER_LENGTH, MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 120,
                      MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPP, 120,
@@ -912,7 +874,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, WIDTH(1920), HEIGHT(1088), FRAME_WIDTH(1920), FRAME_HEIGHT(1080) },
             },
         },
-        {/*89*/ MFX_ERR_NONE, CQP | TU1 | REAL_LIFE,
+        {/*82*/ MFX_ERR_NONE, CQP | TU1 | REAL_LIFE,
             {
                 { ITER_LENGTH, MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 200,
                      MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPP, 200,
@@ -924,7 +886,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, WIDTH(1920), HEIGHT(1088), FRAME_WIDTH(1920), FRAME_HEIGHT(1080) },
             },
         },
-        {/*90*/ MFX_ERR_NONE, CQP | TU4 | REAL_LIFE,
+        {/*83*/ MFX_ERR_NONE, CQP | TU4 | REAL_LIFE,
             {
                 { ITER_LENGTH, MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 50,
                      MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPP, 50,
@@ -936,7 +898,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, WIDTH(1920), HEIGHT(1088), FRAME_WIDTH(1920), FRAME_HEIGHT(1080) },
             },
         },
-        {/*91*/ MFX_ERR_NONE, CQP | TU4 | REAL_LIFE,
+        {/*84*/ MFX_ERR_NONE, CQP | TU4 | REAL_LIFE,
             {
                 { ITER_LENGTH, MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 120,
                      MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPP, 120,
@@ -948,7 +910,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, WIDTH(1920), HEIGHT(1088), FRAME_WIDTH(1920), FRAME_HEIGHT(1080) },
             },
         },
-        {/*92*/ MFX_ERR_NONE, CQP | TU4 | REAL_LIFE,
+        {/*85*/ MFX_ERR_NONE, CQP | TU4 | REAL_LIFE,
             {
                 { ITER_LENGTH, MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 200,
                      MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPP, 200,
@@ -960,7 +922,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, WIDTH(1920), HEIGHT(1088), FRAME_WIDTH(1920), FRAME_HEIGHT(1080) },
             },
         },
-        {/*93*/ MFX_ERR_NONE, CQP | TU7 | REAL_LIFE,
+        {/*86*/ MFX_ERR_NONE, CQP | TU7 | REAL_LIFE,
             {
                 { ITER_LENGTH, MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 50,
                      MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPP, 50,
@@ -972,7 +934,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, WIDTH(1920), HEIGHT(1088), FRAME_WIDTH(1920), FRAME_HEIGHT(1080) },
             },
         },
-        {/*94*/ MFX_ERR_NONE, CQP | TU7 | REAL_LIFE,
+        {/*87*/ MFX_ERR_NONE, CQP | TU7 | REAL_LIFE,
             {
                 { ITER_LENGTH, MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 120,
                      MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPP, 120,
@@ -984,7 +946,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, WIDTH(1920), HEIGHT(1088), FRAME_WIDTH(1920), FRAME_HEIGHT(1080) },
             },
         },
-        {/*95*/ MFX_ERR_NONE, CQP | TU7 | REAL_LIFE,
+        {/*88*/ MFX_ERR_NONE, CQP | TU7 | REAL_LIFE,
             {
                 { ITER_LENGTH, MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 200,
                      MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPP, 200,
@@ -996,6 +958,98 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, WIDTH(1920), HEIGHT(1088), FRAME_WIDTH(1920), FRAME_HEIGHT(1080) },
             },
         },
+
+        // CASES BELOW DO UPSCALE CHECK (DISABLED, BECAUSE NOT SUPPORTED NOW BY THE DRIVER)
+        /*
+        // below cases do single 2x upscale
+        {MFX_ERR_NONE, CQP | TU1 | SIMPLE_UPSCALE,
+        {
+            { 0, SET_RESOLUTION(352, 288) },
+            { ITER_LENGTH, SET_RESOLUTION(176, 144) },
+            { ITER_LENGTH, SET_RESOLUTION(352, 288) }
+        },
+        },
+
+        {MFX_ERR_NONE, CQP | TU4 | SIMPLE_UPSCALE,
+        {
+            { 0, SET_RESOLUTION(352, 288) },
+            { ITER_LENGTH, SET_RESOLUTION(176, 144) },
+            { ITER_LENGTH, SET_RESOLUTION(352, 288) }
+        },
+        },
+        {MFX_ERR_NONE, CQP | TU7 | SIMPLE_UPSCALE,
+        {
+            { 0, SET_RESOLUTION(352, 288) },
+            { ITER_LENGTH, SET_RESOLUTION(176, 144) },
+            { ITER_LENGTH, SET_RESOLUTION(352, 288) }
+        },
+        },
+        {MFX_ERR_NONE, CBR | TU1 | SIMPLE_UPSCALE,
+        {
+            { 0, SET_RESOLUTION(352, 288) },
+            { ITER_LENGTH, SET_RESOLUTION(176, 144) },
+            { ITER_LENGTH, SET_RESOLUTION(352, 288) }
+        },
+        },
+        { MFX_ERR_NONE, CBR | TU4 | SIMPLE_UPSCALE,
+        {
+            { 0, SET_RESOLUTION(352, 288) },
+            { ITER_LENGTH, SET_RESOLUTION(176, 144) },
+            { ITER_LENGTH, SET_RESOLUTION(352, 288) }
+        },
+        },
+        {MFX_ERR_NONE, CBR | TU7 | SIMPLE_UPSCALE,
+        {
+            { 0, SET_RESOLUTION(352, 288) },
+            { ITER_LENGTH, SET_RESOLUTION(176, 144) },
+            { ITER_LENGTH, SET_RESOLUTION(352, 288) }
+        },
+        },
+        {MFX_ERR_NONE, VBR | TU1 | SIMPLE_UPSCALE,
+        {
+            { 0, SET_RESOLUTION(352, 288) },
+            { ITER_LENGTH, SET_RESOLUTION(176, 144) },
+            { ITER_LENGTH, SET_RESOLUTION(352, 288) }
+        },
+        },
+        {MFX_ERR_NONE, VBR | TU4 | SIMPLE_UPSCALE,
+        {
+            { 0, SET_RESOLUTION(352, 288) },
+            { ITER_LENGTH, SET_RESOLUTION(176, 144) },
+            { ITER_LENGTH, SET_RESOLUTION(352, 288) }
+        },
+        },
+        {MFX_ERR_NONE, VBR | TU7 | SIMPLE_UPSCALE,
+        {
+            { 0, SET_RESOLUTION(352, 288) },
+            { ITER_LENGTH, SET_RESOLUTION(176, 144) },
+            { ITER_LENGTH, SET_RESOLUTION(352, 288) }
+        },
+        },
+
+        // below cases do single maximum allowed upscale (16x)
+        {MFX_ERR_NONE, CQP | MAX_SCALES,
+        {
+            { 0, SET_RESOLUTION(2816, 2304) },
+            { ITER_LENGTH, SET_RESOLUTION(176, 144) },
+            { ITER_LENGTH, SET_RESOLUTION(2816, 2304) }
+        },
+        },
+        {MFX_ERR_NONE, CBR | MAX_SCALES,
+        {
+            { 0, SET_RESOLUTION(2816, 2304) },
+            { ITER_LENGTH, SET_RESOLUTION(176, 144) },
+            { ITER_LENGTH, SET_RESOLUTION(2816, 2304) }
+        },
+        },
+        {MFX_ERR_NONE, VBR | MAX_SCALES,
+        {
+            { 0, SET_RESOLUTION(2816, 2304) },
+            { ITER_LENGTH, SET_RESOLUTION(176, 144) },
+            { ITER_LENGTH, SET_RESOLUTION(2816, 2304) }
+        },
+        },
+        */
     };
 
     const unsigned int TestSuite::n_cases = sizeof(test_cases) / sizeof(tc_struct);
@@ -1575,6 +1629,10 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             pInputSurface->Data.Locked--;
             m_pInputSurfaces->erase(hdr.FrameOrder);
             const mfxF64 minPsnr = GetMinPSNR(iter.m_param[CHECK]);
+
+            g_tsLog << "INFO: frame[" << hdr.FrameOrder << "]: PSNR-Y=" << psnrY << " PSNR-U="
+                << psnrU << " PSNR-V=" << psnrV << " size=" << bs.DataLength << "\n";
+
             if (psnrY < minPsnr)
             {
                 ADD_FAILURE() << "ERROR: PSNR-Y of frame " << hdr.FrameOrder << " is equal to " << psnrY << " and lower than threshold: " << minPsnr;
@@ -1794,17 +1852,21 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
 
         for (mfxU8 idx = 1; idx < numIterations; idx++)
         {
-            if (iterations[idx]->m_firstFrame == 0 && errorExpected)
+            if (errorExpected && idx == (numIterations - 1))
             {
-                // don't expect error/warning from Reset call if it's done right after Init (before actual encoding)
-                g_tsStatus.expect(MFX_ERR_NONE);
+                // expected error should happened on the last reset
+                g_tsStatus.expect(tc.sts);
             }
             else
             {
-                g_tsStatus.expect(tc.sts);
+                g_tsStatus.expect(MFX_ERR_NONE);
             }
             *m_pPar = iterations[idx]->m_param[SET];
             m_filler = iterations[idx]->m_pRawReader;
+
+            m_pPar->mfx.FrameInfo.CropW = m_pPar->mfx.FrameInfo.Width;
+            m_pPar->mfx.FrameInfo.CropH = m_pPar->mfx.FrameInfo.Height;
+
             mfxStatus sts = Reset();
             if (sts < 0)
             {
