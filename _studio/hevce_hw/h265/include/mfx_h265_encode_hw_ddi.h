@@ -214,6 +214,8 @@ public:
 
     void Reset(MfxVideoParam const & par);
 
+    void ResetPPS(MfxVideoParam const & par);
+
     ENCODE_PACKEDHEADER_DATA* PackHeader(Task const & task, mfxU32 nut);
     ENCODE_PACKEDHEADER_DATA* PackSliceHeader(Task const & task,
         mfxU32 id,

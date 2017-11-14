@@ -65,7 +65,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAuxilliaryDevice(
     D3D11_VIDEO_DECODER_CONFIG  config = {};
     HRESULT hr;
     mfxU32 count = 0;
-    
+
     m_guid      = guid;
     m_width     = width;
     m_height    = height;
@@ -102,7 +102,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAuxilliaryDevice(
         assert( profileCount > 0 );
 
         for (UINT i = 0; i < profileCount; i ++)
-        {  
+        {
             GUID profileGuid;
 
             {
@@ -125,7 +125,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAuxilliaryDevice(
         desc.SampleWidth  = m_width;
         desc.SampleHeight = m_height;
         desc.OutputFormat = DXGI_FORMAT_NV12;
-        desc.Guid         = m_guid; 
+        desc.Guid         = m_guid;
 
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "GetVideoDecoderConfigCount");
@@ -139,13 +139,13 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAuxilliaryDevice(
         desc.SampleWidth  = m_width;
         desc.SampleHeight = m_height;
         desc.OutputFormat = DXGI_FORMAT_NV12;
-        desc.Guid         = m_guid; 
+        desc.Guid         = m_guid;
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
-        config.ConfigDecoderSpecific         = m_widi ? (ENCODE_ENC_PAK | ENCODE_WIDI) : ENCODE_ENC_PAK;  
+        config.ConfigDecoderSpecific         = m_widi ? (ENCODE_ENC_PAK | ENCODE_WIDI) : ENCODE_ENC_PAK;
         config.guidConfigBitstreamEncryption = m_pavp ? DXVA2_INTEL_PAVP : DXVA_NoEncrypt;
 #else
-        config.ConfigDecoderSpecific         = ENCODE_ENC_PAK;  
+        config.ConfigDecoderSpecific         = ENCODE_ENC_PAK;
         config.guidConfigBitstreamEncryption = DXVA_NoEncrypt;
 #endif
         if (!!m_vdecoder)
@@ -245,7 +245,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAccelerationService(M
 
     DDIHeaderPacker::Reset(par);
     m_cbd.resize(MAX_DDI_BUFFERS + MaxPackedHeaders());
-    
+
     m_maxSlices = CeilDiv(par.m_ext.HEVCParam.PicHeightInLumaSamples, par.LCUSize) * CeilDiv(par.m_ext.HEVCParam.PicWidthInLumaSamples, par.LCUSize);
 
     return MFX_ERR_NONE;
@@ -341,13 +341,13 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryCompBufferInfo(D3DDDIF
     if (!m_infoQueried)
     {
         ENCODE_FORMAT_COUNT cnt = {};
-              
+
         D3D11_VIDEO_DECODER_EXTENSION ext = {};
-        ext.Function = ENCODE_FORMAT_COUNT_ID; 
+        ext.Function = ENCODE_FORMAT_COUNT_ID;
         ext.pPrivateOutputData = &cnt;
         ext.PrivateOutputDataSize = sizeof(ENCODE_FORMAT_COUNT);
 
-        
+
         hr = DecoderExtension(ext);
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
@@ -361,13 +361,13 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryCompBufferInfo(D3DDDIF
         encodeFormats.pUncompressedFormats      = &m_uncompBufInfo[0];
 
         Zero(ext);
-        ext.Function = ENCODE_FORMATS_ID; 
+        ext.Function = ENCODE_FORMATS_ID;
         ext.pPrivateOutputData = &encodeFormats;
         ext.PrivateOutputDataSize = sizeof(ENCODE_FORMATS);
 
         hr = DecoderExtension(ext);
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
-       
+
         MFX_CHECK(encodeFormats.CompressedBufferInfoSize > 0, MFX_ERR_DEVICE_FAILED);
         MFX_CHECK(encodeFormats.UncompressedFormatSize > 0, MFX_ERR_DEVICE_FAILED);
 
@@ -389,7 +389,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryCompBufferInfo(D3DDDIF
     request.Info.Height = m_compBufInfo[i].CreationHeight;
     request.Info.FourCC = convertDXGIFormatToMFXFourCC((DXGI_FORMAT)m_compBufInfo[i].CompressedFormats);
 
-    return MFX_ERR_NONE;  
+    return MFX_ERR_NONE;
 }
 
 template<class DDI_SPS, class DDI_PPS, class DDI_SLICE>
@@ -409,11 +409,11 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Register(mfxFrameAllocRespo
 
     mfxFrameAllocator & fa = m_core->FrameAllocator();
     std::vector<mfxHDLPair> & queue = (type == D3DDDIFMT_INTELENCODE_BITSTREAMDATA) ? m_bsQueue : m_reconQueue;
-    
+
     queue.resize(response.NumFrameActual);
 
     for (mfxU32 i = 0; i < response.NumFrameActual; i++)
-    {   
+    {
         mfxHDLPair handlePair = {};
 
         mfxStatus sts = fa.GetHDL(fa.pthis, response.mids[i], (mfxHDL*)&handlePair);
@@ -457,7 +457,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, 
 
     if (!m_sps.bResetBRC)
         m_sps.bResetBRC = task.m_resetBRC;
-    
+
     FillPpsBuffer(task, m_caps, m_pps, m_dirtyRects);
     FillSliceBuffer(task, m_sps, m_pps, m_slice);
 
@@ -470,7 +470,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, 
 
     resourceList[RES_ID_BS ] = (ID3D11Resource*)m_bsQueue[task.m_idxBs].first;
     resourceList[RES_ID_RAW] = (ID3D11Resource*)surface;
-    
+
     for (mfxU32 i = 0; i < m_reconQueue.size(); i ++)
         resourceList[RES_ID_REF + i] = (ID3D11Resource*)m_reconQueue[i].first;
 
@@ -484,7 +484,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, 
         ein.IndexRecon        = RES_ID_REC;
         m_cbd[executeParams.NumCompBuffers - 1].pReserved = &ein;
     }
-    
+
     ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_SLICEDATA,        m_slice[0], m_slice.size());
     ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_BITSTREAMDATA,    RES_ID_BS,  1);
 
@@ -507,7 +507,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, 
         pPH = PackHeader(task, VPS_NUT); assert(pPH);
         ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA, *pPH, 1);
     }
-    
+
     if (task.m_insertHeaders & INSERT_SPS)
     {
         pPH = PackHeader(task, SPS_NUT); assert(pPH);
@@ -535,7 +535,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, 
 #if defined(MFX_SKIP_FRAME_SUPPORT)
         if (skipMode.NeedSkipSliceGen())
         {
-            // pack skip slice 
+            // pack skip slice
             pPH = PackSkippedSlice(task, i, &m_slice[i].SliceQpDeltaBitOffset); assert(pPH);
             ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDSLICEDATA, *pPH, 1);
             if (!skipMode.NeedDriverCall())
@@ -544,11 +544,10 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, 
 
                 //ENCODE_QUERY_STATUS_PARAMS feedback = { task.m_statusReportNumber, 0, };
                 mfxFrameData bs = { 0 };
-                
+
                 FrameLocker lock(m_core, task.m_midBs);
                 assert(bs.Y);
-                
-                
+
                 mfxU8 *  bsDataStart = bs.Y;
                 mfxU8 *  bsEnd = bs.Y + m_width * m_height;
                 mfxU8 *  bsDataEnd = bsDataStart;
@@ -632,12 +631,12 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, 
             m_pps.SkipFrameFlag = skipMode.GetMode() != 0? UCHAR(skipMode.GetMode()) : 0;
             m_pps.NumSkipFrames = 0;
             m_pps.SizeSkipFrames = 0;
-            
+
 
             ext.Function              = ENCODE_ENC_PAK_ID;
             ext.pPrivateInputData     = &executeParams;
             ext.PrivateInputDataSize  = sizeof(ENCODE_EXECUTE_PARAMS);
-            ext.ResourceCount         = (UINT)resourceList.size(); 
+            ext.ResourceCount         = (UINT)resourceList.size();
             ext.ppResourceList        = &resourceList[0];
             {
                 MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "DecoderExtension");
@@ -657,7 +656,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, 
         ext.Function              = ENCODE_ENC_PAK_ID;
         ext.pPrivateInputData     = &executeParams;
         ext.PrivateInputDataSize  = sizeof(ENCODE_EXECUTE_PARAMS);
-        ext.ResourceCount         = (UINT)resourceList.size(); 
+        ext.ResourceCount         = (UINT)resourceList.size();
         ext.ppResourceList        = &resourceList[0];
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "DecoderExtension");
@@ -690,7 +689,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryStatus(Task & task)
 
     // After SNB once reported ENCODE_OK for a certain feedbackNumber
     // it will keep reporting ENCODE_NOTAVAILABLE for same feedbackNumber.
-    // As we won't get all bitstreams we need to cache all other statuses. 
+    // As we won't get all bitstreams we need to cache all other statuses.
 
     // first check cache.
 #if defined(MFX_SKIP_FRAME_SUPPORT)

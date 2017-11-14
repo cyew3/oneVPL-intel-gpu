@@ -55,6 +55,14 @@ namespace MfxHwH265FeiEncode
         VAAPIh265FeiEncoder();
         virtual ~VAAPIh265FeiEncoder();
 
+        void SoftReset(const MfxHwH265Encode::MfxVideoParam& par)
+        {
+            m_videoParam.m_pps.cu_qp_delta_enabled_flag =
+                m_pps.pic_fields.bits.cu_qp_delta_enabled_flag = par.m_pps.cu_qp_delta_enabled_flag;
+
+            DDIHeaderPacker::ResetPPS(m_videoParam);
+        }
+
     protected:
         virtual mfxStatus PreSubmitExtraStage(MfxHwH265Encode::Task const & task);
 

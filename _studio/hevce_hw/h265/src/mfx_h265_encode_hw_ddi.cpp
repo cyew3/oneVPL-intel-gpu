@@ -277,6 +277,13 @@ void DDIHeaderPacker::Reset(MfxVideoParam const & par)
     m_packer.Reset(par);
 }
 
+void DDIHeaderPacker::ResetPPS(MfxVideoParam const & par)
+{
+    assert(!m_buf.empty());
+
+    m_packer.ResetPPS(par);
+}
+
 void DDIHeaderPacker::NewHeader()
 {
     assert(m_buf.size());

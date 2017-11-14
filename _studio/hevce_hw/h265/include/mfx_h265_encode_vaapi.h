@@ -163,7 +163,7 @@ mfxStatus SetSkipFrame(
         mfxU32                            m_height;
         mfxU32                            m_pitch;
         mfxU32                            m_h_aligned;
-        
+
         mfxU32                            m_block_width;
         mfxU32                            m_block_height;
         std::vector<mfxI8>                m_buffer;
@@ -179,7 +179,7 @@ mfxStatus SetSkipFrame(
             void Init(mfxU32 picWidthInLumaSamples, mfxU32 picHeightInLumaSamples);
     };
 #endif
-    class VAAPIEncoder : public DriverEncoder, DDIHeaderPacker, protected VABuffersHandler
+    class VAAPIEncoder : public DriverEncoder, protected DDIHeaderPacker, protected VABuffersHandler
     {
     public:
         VAAPIEncoder();

@@ -2520,6 +2520,21 @@ mfxStatus HeaderPacker::Reset(MfxVideoParam const & par)
     return sts;
 }
 
+mfxStatus HeaderPacker::ResetPPS(MfxVideoParam const & par)
+{
+    BitstreamWriter rbsp(m_rbsp, sizeof(m_rbsp));
+
+    m_sz_pps = sizeof(m_bs_pps);
+
+    PackPPS(rbsp, par.m_pps);
+    mfxStatus sts = PackRBSP(m_bs_pps, m_rbsp, m_sz_pps, CeilDiv(rbsp.GetOffset(), 8));
+    assert(!sts);
+
+    m_par = &par;
+
+    return sts;
+}
+
 #ifdef MFX_ENABLE_HEVCE_HDR_SEI
 void PackMasteringDisplayColourVolumePayload(BitstreamWriter& rbsp, MfxVideoParam const & par, Task const & task) {
     mfxExtMasteringDisplayColourVolume* pExtDisplayColour = ExtBuffer::Get(task.m_ctrl);

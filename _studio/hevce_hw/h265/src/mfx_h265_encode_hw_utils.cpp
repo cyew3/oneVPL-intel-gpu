@@ -1392,7 +1392,7 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     if (mfx.CodecProfile == MFX_PROFILE_HEVC_REXT)
     {
-        general.rext_constraint_flags_0_31 = (mfxU32)(m_ext.HEVCParam.GeneralConstraintFlags & 0xffffffff);
+        general.rext_constraint_flags_0_31  = (mfxU32)(m_ext.HEVCParam.GeneralConstraintFlags & 0xffffffff);
         general.rext_constraint_flags_32_42 = (mfxU32)(m_ext.HEVCParam.GeneralConstraintFlags >> 32);
     }
 #endif
@@ -1658,8 +1658,8 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
         m_sps.vui.colour_description_present_flag = m_ext.VSI.ColourDescriptionPresent;
         m_sps.vui.colour_primaries                = mfxU8(m_ext.VSI.ColourPrimaries);
         m_sps.vui.transfer_characteristics        = mfxU8(m_ext.VSI.TransferCharacteristics);
-        m_sps.vui.matrix_coeffs                    = mfxU8(m_ext.VSI.MatrixCoefficients);
-        m_sps.vui.video_signal_type_present_flag   =
+        m_sps.vui.matrix_coeffs                   = mfxU8(m_ext.VSI.MatrixCoefficients);
+        m_sps.vui.video_signal_type_present_flag  =
                     m_ext.VSI.VideoFormat                    != 5 ||
                     m_ext.VSI.VideoFullRange                 != 0 ||
                     m_ext.VSI.ColourDescriptionPresent       != 0;

@@ -80,6 +80,41 @@ protected:
     virtual MfxHwH265Encode::DriverEncoder* CreateHWh265Encoder(MFXCoreInterface* core, MfxHwH265Encode::ENCODER_TYPE type = MfxHwH265Encode::ENCODER_DEFAULT);
 
     virtual mfxStatus ExtraParametersCheck(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs);
+
+    virtual mfxStatus ExtraCheckVideoParam(MfxHwH265Encode::MfxVideoParam & par, ENCODE_CAPS_HEVC const & caps, bool bInit = false)
+    {
+        // HEVC FEI Encoder uses own controls to switch on LCU QP buffer
+        if (MfxHwH265Encode::IsOn(m_vpar.m_ext.CO3.EnableMBQP))
+        {
+            m_vpar.m_ext.CO3.EnableMBQP = MFX_CODINGOPTION_OFF;
+
+            return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+        }
+
+        return MFX_ERR_NONE;
+    }
+
+    virtual void ExtraTaskPreparation(MfxHwH265Encode::Task& task)
+    {
+        mfxExtFeiHevcEncFrameCtrl* EncFrameCtrl = reinterpret_cast<mfxExtFeiHevcEncFrameCtrl*>(GetBufById(task.m_ctrl, MFX_EXTBUFF_HEVCFEI_ENC_CTRL));
+
+        if (EncFrameCtrl && (!!EncFrameCtrl->PerCuQp != !!m_vpar.m_pps.cu_qp_delta_enabled_flag))
+        {
+            SoftReset(task);
+        }
+
+        return;
+    }
+
+    void SoftReset(MfxHwH265Encode::Task& task)
+    {
+        m_vpar.m_pps.cu_qp_delta_enabled_flag = 1 - m_vpar.m_pps.cu_qp_delta_enabled_flag;
+
+        // If state of CTU QP buffer changes, PPS header update required
+        task.m_insertHeaders |= MfxHwH265Encode::INSERT_PPS;
+
+        (dynamic_cast<VAAPIh265FeiEncoder*> (m_ddi.get()))->SoftReset(m_vpar);
+    }
 };
 
 } //MfxHwH265FeiEncode

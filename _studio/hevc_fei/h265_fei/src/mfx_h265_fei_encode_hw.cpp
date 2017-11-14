@@ -27,7 +27,7 @@ H265FeiEncodePlugin::~H265FeiEncodePlugin()
     Close();
 }
 
-MfxHwH265Encode::DriverEncoder* H265FeiEncodePlugin::CreateHWh265Encoder(MFXCoreInterface* core, ENCODER_TYPE type)
+DriverEncoder* H265FeiEncodePlugin::CreateHWh265Encoder(MFXCoreInterface* core, ENCODER_TYPE type)
 {
     core;
     type;
