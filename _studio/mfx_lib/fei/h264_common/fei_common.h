@@ -94,6 +94,8 @@ namespace MfxH264FEIcommon
     bool IsRunTimeInputExtBufferIdSupported(const MfxHwH264Encode::MfxVideoParam & owned_video, mfxU32 id);
     bool IsRunTimeOutputExtBufferIdSupported(const MfxHwH264Encode::MfxVideoParam & owned_video, mfxU32 id);
 
+    bool IsRunTimeExtBufferPairRequired(const MfxHwH264Encode::MfxVideoParam & owned_video, mfxU32 id);
+
     bool CheckSliceHeaderReferenceList(mfxExtFeiSliceHeader::mfxSlice::mfxSliceRef * ref, mfxU16 num_idx_active);
 
 #if MFX_VERSION >= 1023

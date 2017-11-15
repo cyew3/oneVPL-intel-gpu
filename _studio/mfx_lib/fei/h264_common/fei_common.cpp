@@ -602,19 +602,15 @@ bool MfxH264FEIcommon::FirstFieldProcessingDone(T* inParams, const DdiTask & tas
 {
 #if MFX_VERSION >= 1023
     mfxExtFeiPPS * pDataPPS = GetExtBufferFEI(inParams, 0);
-    mfxExtFeiPreEncCtrl * pDataPreEncCtrl = GetExtBufferFEI(inParams, 0);
 
-    if (!!pDataPPS == !!pDataPreEncCtrl)
+    if (!pDataPPS)
     {
-        // In this case absence of PPS and PreENC will be discovered at parameters check stage
+        // In this case absence of PPS will be discovered at parameters check stage
         return 0;
     }
 
-    mfxU16  PictureType = pDataPPS ? pDataPPS->PictureType : pDataPreEncCtrl->PictureType;
-
-    switch (PictureType)
+    switch (pDataPPS->PictureType)
     {
-        //For PAK or PREENC, Picturetype will be obtained from only one on them
     case MFX_PICTYPE_TOPFIELD:
         return task.m_fid[1] == 0; // i.e. Bottom Field was already coded and current picstruct is BFF
         break;
@@ -922,6 +918,21 @@ mfxStatus MfxH264FEIcommon::CheckRuntimeExtBuffers(T* input, U* output, const Mf
 #endif // MFX_VERSION >= 1023
     }
     return MFX_ERR_NONE;
+}
+
+bool MfxH264FEIcommon::IsRunTimeExtBufferPairRequired(const MfxVideoParam & owned_video, mfxU32 id)
+{
+    mfxExtFeiParam const & feiParam = GetExtBufferRef(owned_video);
+    bool isFeiPREENC = feiParam.Func == MFX_FEI_FUNCTION_PREENC;
+
+    // only support PreENC now, ToDo ENC and PAK
+    return (isFeiPREENC &&
+            (  id == MFX_EXTBUFF_FEI_PREENC_CTRL
+            || id == MFX_EXTBUFF_FEI_PREENC_MV_PRED
+            || id == MFX_EXTBUFF_FEI_ENC_QP
+            || id == MFX_EXTBUFF_FEI_PREENC_MV
+            || id == MFX_EXTBUFF_FEI_PREENC_MB
+            ));
 }
 
 bool MfxH264FEIcommon::CheckSliceHeaderReferenceList(mfxExtFeiSliceHeader::mfxSlice::mfxSliceRef * ref, mfxU16 num_idx_active)
