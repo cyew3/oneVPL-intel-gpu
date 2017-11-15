@@ -12,11 +12,11 @@ Copyright(c) 2017 Intel Corporation. All Rights Reserved.
 #include "ts_struct.h"
 #include "ts_parser.h"
 
-/* Test uses a special set of mfx initialization parametes which generate '0x0 0x0 0x(0)(1)(2)' sequence in a slice header of _last_ frame.
- * The test checks that the sequence '0x0 0x0 0x3 0x(0)(1)(2)' is present in a slice header of _last_ frame of output bitstream.
+/* Test uses a special set of mfx initialization parametes which generate '0x0 0x0 0x(0)(1)(2)' sequence in a slice header(s) of LAST frame.
+ * The test checks that the sequence '0x0 0x0 0x3 0x(0)(1)(2)' is present in a slice header(s) of LAST frame of output bitstream.
 **/
 
- #define DUMP_BS
+// #define DUMP_BS
 
 namespace avce_emulation_prevention_bytes
 {
@@ -91,7 +91,8 @@ namespace avce_emulation_prevention_bytes
         enum
         {
             MFX_PAR = 1,
-            EXT_COD2
+            EXT_COD2,
+            TEMP_LRS
         };
 
 #define MAX_IDR 30
@@ -153,8 +154,8 @@ namespace avce_emulation_prevention_bytes
                 {
                     if (nalu.type == 5)
                     {
-                        auto it = std::search(begin, end, &m_tc->expectedSeqeunce[0], &m_tc->expectedSeqeunce[4]);
-                        if (it == end)
+                        auto it = std::search(nalu.begin, nalu.end, &m_tc->expectedSeqeunce[0], &m_tc->expectedSeqeunce[4]);
+                        if (it == nalu.end)
                         {
                             g_tsLog << "ERROR: ";
                             g_tsLog << "Emulation prevention byte was expected but not found\n";
@@ -186,7 +187,7 @@ namespace avce_emulation_prevention_bytes
 
     const TestSuite::tc_struct TestSuite::test_case[] =
     {
-        /* 0x0 0x0 0x1 0x25 0x88 0x80 0x4 0x0 0x0 0x0 0x65 0xc0 */
+        /* slice header: 0x0 0x0 0x1 0x25 0x88 0x80 0x4 0x0 0x0 0x0 0x65 0xc0 */
         {/*00*/16, 16, {0, 1, 2, 3, 4, 5 ,6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
                         {
                             { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,     32 },
@@ -202,7 +203,7 @@ namespace avce_emulation_prevention_bytes
                         },
                         {0x0, 0x0, 0x3, 0x0}
         },
-        /* 0x0 0x0 0x1 0x25 0x88 0x80 0x4 0x0 0x0 0x1 0xbc */
+        /* slice header: 0x0 0x0 0x1 0x25 0x88 0x80 0x4 0x0 0x0 0x1 0xbc */
         {/*01*/16, 16, {0, 1, 2, 3, 4, 5 ,6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
                         {
                             { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,     32 },
@@ -218,8 +219,43 @@ namespace avce_emulation_prevention_bytes
                         },
                         {0x0, 0x0, 0x3, 0x1}
         },
-        /* 0x0 0x0 0x1 0x25 0x88 0x80 0x4 0x0 0x0 0x1 0xbc */
+        /* slice header #0: 0x0 0x0 0x1 0x25 0x88 0x80 0x4 0x0 0x0 0x1 0xbc */
+        /* slice header #1: 0x0 0x0 0x1 0x25 0x8 0x88 0x80 0x4 0x0 0x0 0x1 0xbc */
         {/*02*/16, 16, {0, 1, 2, 3, 4, 5 ,6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
+                        {
+                            { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,     32 },
+                            { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.Height,    256 },
+                            { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,     32 },
+                            { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,     256 },
+                            { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.GopRefDist,          0 },
+                            { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.GopPicSize,          8192 },
+                            { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE },
+                            { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.RateControlMethod,   MFX_RATECONTROL_CQP },
+                            { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.QPI,                 20 },
+                            { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.NumSlice,            2 },
+                            { EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame,         MFX_SKIPFRAME_INSERT_DUMMY },
+                        },
+                        {0x0, 0x0, 0x3, 0x1}
+        },
+        /* slice header: 0x0 0x0 0x1 0x25 0x88 0x80 0x4 0x0 0x0 0x1 0xbc */
+        {/*03*/16, 16, {0, 1, 2, 3, 4, 5 ,6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
+                        {
+                            { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,     32 },
+                            { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.Height,    32 },
+                            { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,     32 },
+                            { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,     32 },
+                            { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.GopRefDist,          0 },
+                            { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.GopPicSize,          8192 },
+                            { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE },
+                            { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.RateControlMethod,   MFX_RATECONTROL_CQP },
+                            { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.QPI,                 20 },
+                            { EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame,         MFX_SKIPFRAME_INSERT_DUMMY },
+                            { TEMP_LRS, &tsStruct::mfxExtAvcTemporalLayers.Layer[0].Scale,1 },
+                        },
+                        {0x0, 0x0, 0x3, 0x1}
+        },
+        /* slice header: 0x0 0x0 0x1 0x25 0x88 0x80 0x4 0x0 0x0 0x1 0xbc */
+        {/*04*/16, 16, {0, 1, 2, 3, 4, 5 ,6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
                         {
                             { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,     128 },
                             { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.Height,    128},
@@ -234,8 +270,8 @@ namespace avce_emulation_prevention_bytes
                         },
                         {0x0, 0x0, 0x3, 0x1}
         },
-        /* 0x0 0x0 0x1 0x25 0x88 0x80 0x0 0x2 0x0 0x0 0x1 0xe */
-        {/*03*/32765, 0, {},
+        /* slice header: 0x0 0x0 0x1 0x25 0x88 0x80 0x0 0x2 0x0 0x0 0x1 0xe */
+        {/*05*/32765, 0, {},
                         {
                             { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,     32 },
                             { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.Height,    32 },
@@ -252,8 +288,8 @@ namespace avce_emulation_prevention_bytes
                         },
                         {0x0, 0x0, 0x3, 0x1}
         },
-        /* 0x0 0x0 0x1 0x25 0x88 0x80 0x4 0x0 0x0 0x2 0xf0 */
-        {/*04*/16, 16, {0, 1, 2, 3, 4, 5 ,6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
+        /* slice header: 0x0 0x0 0x1 0x25 0x88 0x80 0x4 0x0 0x0 0x2 0xf0 */
+        {/*06*/16, 16, {0, 1, 2, 3, 4, 5 ,6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
                         {
                             { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,     32 },
                             { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.Height,    32 },
@@ -284,6 +320,9 @@ namespace avce_emulation_prevention_bytes
 
         mfxExtCodingOption2& co2 = m_par;
         SETPARS(&co2, EXT_COD2);
+
+        mfxExtAvcTemporalLayers& layers = m_par;
+        SETPARS(&layers, TEMP_LRS);
 
         m_par.AsyncDepth = 1;
 
