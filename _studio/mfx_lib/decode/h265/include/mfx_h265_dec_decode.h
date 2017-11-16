@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -138,6 +138,7 @@ protected:
 
     bool    m_isInit;
     bool    m_isOpaq;
+    bool    m_globalTask;
 
     mfxU16  m_frameOrder;
 
