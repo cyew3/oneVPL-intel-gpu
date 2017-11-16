@@ -36,8 +36,6 @@
 
 namespace mfx_reflect
 {
-#define MAKE_SHARED(T, ARGS) std::make_shared<T> ARGS
-
     template<class T>
     struct mfx_ext_buffer_id {
         enum { id = 0 };
@@ -107,7 +105,7 @@ namespace mfx_reflect
         return AccessField(fieldName).AccessSubtype();
     }
 
-    ReflectedType::ReflectedType(ReflectedTypesCollection *pCollection, TypeIndex typeIndex, const std::string& typeName, size_t size, bool isPointer, mfxU32 extBufferId)
+    ReflectedType::ReflectedType(ReflectedTypesCollection *pCollection, std::type_index typeIndex, const std::string& typeName, size_t size, bool isPointer, mfxU32 extBufferId)
         : m_TypeIndex(typeIndex)
         , TypeNames(1, typeName)
         , Size(size)
@@ -121,7 +119,7 @@ namespace mfx_reflect
         }
     }
 
-    ReflectedField::SP ReflectedType::AddField(TypeIndex typeIndex, const std::string &typeName, size_t typeSize, bool isPointer, size_t offset, const std::string &fieldName, size_t count, mfxU32 extBufferId)
+    ReflectedField::SP ReflectedType::AddField(std::type_index typeIndex, const std::string &typeName, size_t typeSize, bool isPointer, size_t offset, const std::string &fieldName, size_t count, mfxU32 extBufferId)
     {
         ReflectedField::SP pField;
         if (typeName.empty())
@@ -176,7 +174,7 @@ namespace mfx_reflect
         return pEmptyType;
     }
 
-    ReflectedType::SP ReflectedTypesCollection::FindExistingType(TypeIndex typeIndex)
+    ReflectedType::SP ReflectedTypesCollection::FindExistingType(std::type_index typeIndex)
     {
         Container::const_iterator it = m_KnownTypes.find(typeIndex);
         if (m_KnownTypes.end() != it)
@@ -200,19 +198,19 @@ namespace mfx_reflect
         return pEmptyExtBufferType;
     }
 
-    ReflectedType::SP ReflectedTypesCollection::DeclareType(TypeIndex typeIndex, const std::string& typeName, size_t typeSize, bool isPointer, mfxU32 extBufferId)
+    ReflectedType::SP ReflectedTypesCollection::DeclareType(std::type_index typeIndex, const std::string& typeName, size_t typeSize, bool isPointer, mfxU32 extBufferId)
     {
         if (m_KnownTypes.end() == m_KnownTypes.find(typeIndex))
         {
             ReflectedType::SP pType;
-            pType = MAKE_SHARED(ReflectedType,(this, typeIndex, typeName, typeSize, isPointer, extBufferId));
+            pType = std::make_shared<ReflectedType>(this, typeIndex, typeName, typeSize, isPointer, extBufferId);
             m_KnownTypes.insert(std::make_pair(pType->m_TypeIndex, pType));
             return pType;
         }
         throw std::invalid_argument(std::string("Unexpected behavior - type is already declared"));
     }
 
-    ReflectedType::SP ReflectedTypesCollection::FindOrDeclareType(TypeIndex typeIndex, const std::string& typeName, size_t typeSize, bool isPointer, mfxU32 extBufferId)
+    ReflectedType::SP ReflectedTypesCollection::FindOrDeclareType(std::type_index typeIndex, const std::string& typeName, size_t typeSize, bool isPointer, mfxU32 extBufferId)
     {
         ReflectedType::SP pType = FindExistingType(typeIndex);
         if (pType == NULL)
@@ -311,7 +309,7 @@ namespace mfx_reflect
 
     TypeComparisonResultP CompareTwoStructs(AccessorType data1, AccessorType data2) // Always return not null result
     {
-        TypeComparisonResultP result = MAKE_SHARED(TypeComparisonResult,());
+        TypeComparisonResultP result = std::make_shared<TypeComparisonResult>();
         if (data1.m_pReflection != data2.m_pReflection)
         {
             throw std::invalid_argument(std::string("Types mismatch"));
@@ -325,12 +323,12 @@ namespace mfx_reflect
         {
             AccessorField field2 = data2.AccessField(field1.m_Iterator);
 
-            if (TypeIndex(typeid(mfxExtBuffer**)) == field1.m_pReflection->FieldType->m_TypeIndex)
+            if (std::type_index(typeid(mfxExtBuffer**)) == field1.m_pReflection->FieldType->m_TypeIndex)
             {
                 pExtParam1 = field1.Get<mfxExtBuffer**>();
                 pExtParam2 = field2.Get<mfxExtBuffer**>();
             }
-            else if ((field1.m_pReflection->FieldName == "NumExtParam") && (field1.m_pReflection->FieldType->m_TypeIndex == TypeIndex(typeid(mfxU16))) && (field2.m_pReflection->FieldType->m_TypeIndex == TypeIndex(typeid(mfxU16))))
+            else if ((field1.m_pReflection->FieldName == "NumExtParam") && (field1.m_pReflection->FieldType->m_TypeIndex == std::type_index(typeid(mfxU16))) && (field2.m_pReflection->FieldType->m_TypeIndex == std::type_index(typeid(mfxU16))))
             {
                 if (field1.Get<mfxU16>() == field2.Get<mfxU16>())
                 {
@@ -398,7 +396,7 @@ namespace mfx_reflect
             ReflectedType::SP pTypeExtBuffer = collection.FindExtBufferTypeById(id); //find in KnownTypes this BufferId
             if (pTypeExtBuffer != NULL)
             {
-                pExtBuffer = MAKE_SHARED(AccessorType, (&pExtBufferParam, *pTypeExtBuffer));
+                pExtBuffer = std::make_shared<AccessorType>(&pExtBufferParam, *pTypeExtBuffer);
             }
         }
         return pExtBuffer;
@@ -406,7 +404,7 @@ namespace mfx_reflect
 
     TypeComparisonResultP CompareExtBufferLists(mfxExtBuffer** pExtParam1, mfxU16 numExtParam1, mfxExtBuffer** pExtParam2, mfxU16 numExtParam2, ReflectedTypesCollection* collection) //always return not null result
     {
-        TypeComparisonResultP result = MAKE_SHARED(TypeComparisonResult,());
+        TypeComparisonResultP result = std::make_shared<TypeComparisonResult>();
         if (NULL != pExtParam1 && NULL != pExtParam2 && NULL != collection)
         {
             for (int i = 0; i < numExtParam1 && i < numExtParam2; i++)
@@ -502,8 +500,8 @@ namespace mfx_reflect
         unsigned int extBufId = 0;
         extBufId = mfx_ext_buffer_id<T>::id;
         bool isPointer = false;
-        isPointer = mfx_cpp11::is_pointer<T>();
-        return type.AddField(TypeIndex(typeid(T)), typeName, sizeof(T), isPointer, offset, fieldName, count, extBufId);
+        isPointer = std::is_pointer<T>();
+        return type.AddField(std::type_index(typeid(T)), typeName, sizeof(T), isPointer, offset, fieldName, count, extBufId);
     }
 
     template <class T>
@@ -512,8 +510,8 @@ namespace mfx_reflect
         unsigned int extBufId = 0;
         extBufId = mfx_ext_buffer_id<T>::id;
         bool isPointer = false;
-        isPointer = mfx_cpp11::is_pointer<T>();
-        return collection.DeclareType(TypeIndex(typeid(T)), typeName, sizeof(T), isPointer, extBufId);
+        isPointer = std::is_pointer<T>();
+        return collection.DeclareType(std::type_index(typeid(T)), typeName, sizeof(T), isPointer, extBufId);
     }
 
     void ReflectedTypesCollection::DeclareMsdkStructs()
