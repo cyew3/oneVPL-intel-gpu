@@ -609,17 +609,20 @@ namespace hevce_init
 
             if ((tc.type == FOURCC) && (tc.sub_type == NONE))
             {
-                if ((m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_P010) && (g_tsHWtype < MFX_HW_KBL)) {
-                    sts = MFX_ERR_INVALID_VIDEO_PARAM;
+                if (m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_P010) {
+                    if (g_tsHWtype < MFX_HW_KBL)
+                        sts = MFX_ERR_UNSUPPORTED;
                 } else
-                if (((m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210) || (m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_YUY2)) &&
-                    (g_tsHWtype >= MFX_HW_ICL) &&
-                    (g_tsConfig.lowpower == MFX_CODINGOPTION_ON)) {
+                    if (((m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210) || (m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_YUY2)) &&
+                        (g_tsHWtype >= MFX_HW_ICL) &&
+                        (g_tsConfig.lowpower == MFX_CODINGOPTION_ON))
+                    {
                         g_tsLog << "\n\nWARNING: 422 format is not supported in VDENC\n\n\n";
                         throw tsSKIP;
-                } else
-                if (g_tsHWtype < MFX_HW_ICL)
-                    sts = MFX_ERR_INVALID_VIDEO_PARAM;
+                    } else
+                        if (g_tsHWtype < MFX_HW_ICL)
+                            sts = MFX_ERR_INVALID_VIDEO_PARAM;
+
             }
 
 
@@ -706,6 +709,8 @@ namespace hevce_init
             }
 
         } else {
+            if ((tc.type == FOURCC) && (tc.sub_type == NONE) && (m_pPar->mfx.FrameInfo.FourCC != MFX_FOURCC_P010))
+                sts = MFX_ERR_INVALID_VIDEO_PARAM;
             //for non hevce hw plugin, return ERR_NONE as no parameters set in mfxExtHEVCParam
             if (tc.type == EXT_BUFF)
             {
