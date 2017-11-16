@@ -51,8 +51,6 @@
     #define MFX_VA
 #endif // UMC_VA_LINUX
 
-#define MFX_HAS_CPP11
-
 #if defined(_WIN32) || defined(_WIN64)
 #undef MFX_DEBUG_TOOLS
 #define MFX_DEBUG_TOOLS

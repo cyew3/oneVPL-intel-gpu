@@ -18,26 +18,17 @@
 #include <stdexcept>
 #include "mfx_config.h"
 
-#if defined(MFX_HAS_CPP11)
 #include <typeindex>
-#else
-#include "mfx_cpp11_replacement.h"
-#endif
 
 namespace mfx_reflect
 {
-#if defined(MFX_HAS_CPP11)
     typedef std::type_index TypeIndex;
     namespace mfx_cpp11
     {
         template <class T>
         using shared_ptr = std::shared_ptr<T>;
     }
-#else
-    typedef mfx_cpp11::type_index TypeIndex;
-#endif
 
-#if defined(MFX_HAS_CPP11)
     namespace mfx_cpp11
     {
         template <class T>
@@ -46,7 +37,6 @@ namespace mfx_reflect
             return std::is_pointer<T>::value;
         }
     }
-#endif
 
     class ReflectedField;
     class ReflectedType;

@@ -270,7 +270,6 @@
     <ClCompile Include="src\mfx_trace_utils_windows.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\include\mfx_cpp11_replacement.h" />
     <ClInclude Include="..\include\mfx_reflect.h" />
     <ClInclude Include="include\mfx_evntprov.h" />
     <ClInclude Include="..\include\mfx_trace.h" />
