@@ -54,9 +54,7 @@ set(sources
   "${TRACER_DIR}/wrappers/mfx_video_fei.cpp"
   )
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-
-set(defs "${WARNING_FLAGS}")
+set(defs "${API_FLAGS} ${WARNING_FLAGS}")
 make_library(mfx-tracer none shared)
 
 set_target_properties( mfx-tracer PROPERTIES LINK_FLAGS
