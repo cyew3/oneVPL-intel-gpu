@@ -362,6 +362,12 @@ mfxStatus tsVideoEncoder::GetCaps(void *pCaps, mfxU32 *pCapsSize)
 
     if (!m_is_handle_set && g_tsImpl != MFX_IMPL_SOFTWARE)
     {
+        if (m_initialized)
+        {
+            g_tsLog << "\nERROR: Handle can't be set if encoder is already initialized!!!\n\n";
+            return MFX_ERR_INVALID_HANDLE;
+        }
+
         if (!m_pVAHandle)
         {
             m_pVAHandle = new frame_allocator(

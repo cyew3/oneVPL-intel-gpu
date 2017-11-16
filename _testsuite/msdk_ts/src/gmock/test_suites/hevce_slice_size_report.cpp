@@ -6,14 +6,49 @@ agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
 Copyright(c) 2007-2017 Intel Corporation. All Rights Reserved.
 
-File Name: slice_size_reporting.cpp
+File Name: hevce_slice_size_report.cpp
 
 \* ****************************************************************************** */
 #include "ts_encoder.h"
 #include "ts_struct.h"
 
-namespace slice_size_reporting
+namespace hevce_slice_size_report
 {
+class TestSuite : tsVideoEncoder
+{
+public:
+    TestSuite() : tsVideoEncoder(MFX_CODEC_HEVC) {}
+    ~TestSuite() { }
+    int RunTest(unsigned int id);
+    static const unsigned int n_cases;
+
+private:
+
+    enum
+    {
+        MFXINIT = 1,
+        MFXQUERY = 2,
+        MFXENCODE = 3
+    };
+
+    struct tc_struct
+    {
+        mfxStatus exp_sts;
+        mfxU32 func;
+        mfxU32 mode;
+    };
+
+    static const tc_struct test_case[];
+    const unsigned int lcu_size = 64;
+};
+
+const TestSuite::tc_struct TestSuite::test_case[] =
+{
+    { MFX_ERR_NONE, MFXQUERY, 0 },
+    { MFX_ERR_NONE, MFXINIT, 0 },
+    { MFX_ERR_NONE, MFXENCODE, 0 }
+};
+
 
 class BitstreamChecker : public tsBitstreamProcessor
 {
@@ -79,61 +114,31 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
     return MFX_ERR_NONE;
 }
 
-    enum
-    {
-        MFXINIT = 1,
-        MFXQUERY = 2,
-        MFXENCODE = 3
-    };
 
-    struct tc_struct
-    {
-        mfxStatus exp_sts;
-        mfxU32 func;
-        mfxU32 mode;
-    };
+const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
 
-
-// correct statuses. Change when feature will be developed
-
-static const tc_struct test_case[] =
-{
-    { MFX_ERR_NONE, MFXQUERY, 0},
-    { MFX_ERR_NONE, MFXINIT, 0},
-    { MFX_ERR_NONE, MFXENCODE, 0}
-};
-
-const unsigned int n_cases = sizeof(test_case)/sizeof(tc_struct);
-const unsigned int lcu_size = 64;
-
-int RunTest (mfxU32 codecId, unsigned int id)
+int TestSuite::RunTest (unsigned int id)
 {
     TS_START;
 
-    //int encoder
-    tsVideoEncoder enc(codecId);
-    enc.Init();
+    MFXInit();
 
     ENCODE_CAPS_HEVC caps = {};
     mfxU32 capSize = sizeof(ENCODE_CAPS_HEVC);
-    g_tsStatus.check(enc.GetCaps(&caps, &capSize));
-
-    enc.GetVideoParam();
-    enc.Close();
-    // now mfxSession exists but Encoder is closed
+    g_tsStatus.check(GetCaps(&caps, &capSize));
 
     if (!caps.SliceByteSizeCtrl || !caps.SliceLevelReportSupport) {
         g_tsLog << "\n\nWARNING: SliceByteSizeCtrl or SliceLevelReportSupport is not supported in this platform. Test is skipped.\n\n\n";
         throw tsSKIP;
     }
 
-    mfxU32 maxslices = ((enc.m_par.mfx.FrameInfo.Width + (lcu_size - 1)) / lcu_size) * ((enc.m_par.mfx.FrameInfo.Height + (lcu_size - 1)) / lcu_size);
+    mfxU32 maxslices = ((m_par.mfx.FrameInfo.Width + (lcu_size - 1)) / lcu_size) * ((m_par.mfx.FrameInfo.Height + (lcu_size - 1)) / lcu_size);
 
     //set input stream
     const char* stream = g_tsStreamPool.Get("forBehaviorTest/foreman_cif.nv12");
     g_tsStreamPool.Reg();
-    tsRawReader reader = tsRawReader(stream, enc.m_par.mfx.FrameInfo);
-    enc.m_filler = (tsSurfaceProcessor*)(&reader);
+    tsRawReader reader = tsRawReader(stream, m_par.mfx.FrameInfo);
+    m_filler = (tsSurfaceProcessor*)(&reader);
 
     mfxExtCodingOption2 CO2 = {0};
     CO2.Header.BufferId = MFX_EXTBUFF_CODING_OPTION2;
@@ -148,16 +153,16 @@ int RunTest (mfxU32 codecId, unsigned int id)
     mfxExtBuffer *pBuf[2];
     pBuf[0] = (mfxExtBuffer*)&CO3;
     pBuf[1] = (mfxExtBuffer*)&CO2;
-    enc.m_par.ExtParam = pBuf;
-    enc.m_par.NumExtParam = 2;
-    
+    m_par.ExtParam = pBuf;
+    m_par.NumExtParam = 2;
+
     const tc_struct& tc = test_case[id];
     g_tsStatus.expect(tc.exp_sts);
 
     if (tc.func == MFXQUERY) {
-        enc.Query();
+        Query();
     } else  if (tc.func == MFXINIT) {
-        enc.Init();
+        Init();
     } else {
 
         //set bs checker
@@ -165,10 +170,10 @@ int RunTest (mfxU32 codecId, unsigned int id)
         g_tsLog << "Set maxslices = " << maxslices << "\n";
 
         BitstreamChecker bs_check(CO2.MaxSliceSize, maxslices);
-        enc.m_bs_processor = &bs_check;
+        m_bs_processor = &bs_check;
 
-        enc.m_pPar->AsyncDepth = 1;     // sergo: WA for CNL
-        g_tsStatus.check(enc.Init());
+        m_pPar->AsyncDepth = 1;     // sergo: WA for CNL
+        g_tsStatus.check(Init());
 
         mfxExtEncodedUnitsInfo UnitInfo = { 0 };
         std::vector <mfxEncodedUnitInfo> SliceInfo;
@@ -180,10 +185,10 @@ int RunTest (mfxU32 codecId, unsigned int id)
         UnitInfo.NumUnitsAlloc = (mfxU16)SliceInfo.size();
 
         mfxExtBuffer* bsExtBuf = (mfxExtBuffer*)&UnitInfo;
-        enc.m_bitstream.ExtParam = &bsExtBuf;    //set ext buff in bs
-        enc.m_bitstream.NumExtParam = 1;
+        m_bitstream.ExtParam = &bsExtBuf;    //set ext buff in bs
+        m_bitstream.NumExtParam = 1;
 
-        enc.EncodeFrames(1);
+        EncodeFrames(1);
     }
 
     TS_END;
@@ -191,11 +196,6 @@ int RunTest (mfxU32 codecId, unsigned int id)
     return 0;
 }
 
-int AVCTest     (unsigned int id) { return RunTest(MFX_CODEC_AVC, id); }
-int MPEG2Test   (unsigned int id) { return RunTest(MFX_CODEC_MPEG2, id); }
-int HEVCTest    (unsigned int id) { return RunTest(MFX_CODEC_HEVC, id); }
+TS_REG_TEST_SUITE_CLASS(hevce_slice_size_report);
 
-TS_REG_TEST_SUITE(hevce_slice_size_report, HEVCTest, n_cases);
-TS_REG_TEST_SUITE(avce_slice_size_report, AVCTest, n_cases);
-TS_REG_TEST_SUITE(mpeg2e_slice_size_report, MPEG2Test, n_cases);
 }
