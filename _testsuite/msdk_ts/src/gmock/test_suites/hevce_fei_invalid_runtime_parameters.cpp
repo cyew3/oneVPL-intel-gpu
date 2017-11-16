@@ -28,13 +28,14 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "ts_encoder.h"
 #include "ts_struct.h"
+#include "ts_fei_warning.h"
 
 namespace hevce_fei_invalid_runtime_parameters
 {
 
     const mfxU32 frameToChangeCtrl = 2;
 
-    void SetDefaultsToGlobalCtrl(mfxExtFeiHevcEncFrameCtrl& ctrl)
+    void SetDefaultsToCtrl(mfxExtFeiHevcEncFrameCtrl& ctrl)
     {
         memset(&ctrl, 0, sizeof(ctrl));
 
@@ -399,9 +400,11 @@ namespace hevce_fei_invalid_runtime_parameters
     {
         TS_START;
 
+        CHECK_FEI_SUPPORT();
+
         const tc_struct& tc = test_case[id];
 
-        SetDefaultsToGlobalCtrl(EncCrtlInvalidParam);
+        SetDefaultsToCtrl(EncCrtlInvalidParam);
 
         // Set parameters for mfxVideoParam
         SETPARS(m_pPar, MFX_PAR);
@@ -429,7 +432,7 @@ namespace hevce_fei_invalid_runtime_parameters
 
         // ENCODE frames
         mfxExtFeiHevcEncFrameCtrl& rt_control = m_ctrl;
-        SetDefaultsToGlobalCtrl(rt_control);
+        SetDefaultsToCtrl(rt_control);
 
         // ENCODE frames
         for (mfxU32 encoded = 0; encoded < frameNumber; ++encoded)

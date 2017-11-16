@@ -29,12 +29,26 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ts_encoder.h"
 #include "ts_struct.h"
 #include "ts_parser.h"
+#include "ts_fei_warning.h"
 #include <random>
 
 namespace hevce_interlace_invalid_scenarios
 {
 
     using namespace BS_HEVC;
+
+    void SetDefaultsToCtrl(mfxExtFeiHevcEncFrameCtrl& ctrl)
+    {
+        memset(&ctrl, 0, sizeof(ctrl));
+
+        ctrl.Header.BufferId = MFX_EXTBUFF_HEVCFEI_ENC_CTRL;
+        ctrl.Header.BufferSz = sizeof(mfxExtFeiHevcEncFrameCtrl);
+        ctrl.SubPelMode         = 3; // quarter-pixel motion estimation
+        ctrl.SearchWindow       = 5; // 48 SUs 48x40 window full search
+        ctrl.NumFramePartitions = 4; // number of partitions in frame that encoder processes concurrently
+        // enable internal L0/L1 predictors: 1 - spatial predictors
+        ctrl.MultiPred[0] = ctrl.MultiPred[1] = 1;
+    }
 
     class TestSuite : public tsVideoEncoder, public tsSurfaceProcessor, public tsBitstreamProcessor, public tsParserHEVCAU
     {
@@ -72,7 +86,10 @@ namespace hevce_interlace_invalid_scenarios
 #endif
         }
 
-        int RunTest(unsigned int id);
+        template<mfxU32 uid_id>
+        int RunTest_Subtype(const unsigned int id);
+
+        int RunTest(unsigned int id, mfxPluginUID uid);
         static const unsigned int n_cases;
 
         // Generates 0 or 1 with probability 0.5
@@ -353,9 +370,33 @@ namespace hevce_interlace_invalid_scenarios
 
     const mfxU32 frameNumber = 30;
 
-    int TestSuite::RunTest(unsigned int id)
+    template<mfxU32 uid_id>
+    int TestSuite::RunTest_Subtype(const unsigned int id)
+    {
+        switch (uid_id)
+        {
+        case 1:
+            return RunTest(id, MFX_PLUGINID_HEVCE_HW);
+
+        case 2:
+            return RunTest(id, MFX_PLUGINID_HEVC_FEI_ENCODE);
+
+        default:
+            ADD_FAILURE() << "ERROR: Wrong uid_id " << uid_id;
+            throw tsFAIL;
+        }
+    }
+
+    int TestSuite::RunTest(unsigned int id, mfxPluginUID uid)
     {
         TS_START;
+
+        bool is_HEVCeFEI = memcmp(m_uid->Data, MFX_PLUGINID_HEVC_FEI_ENCODE.Data, sizeof(mfxU8) * 16) == 0;
+
+        if (is_HEVCeFEI)
+        {
+            CHECK_FEI_SUPPORT();
+        }
 
         const tc_struct& tc = test_case[id];
 
@@ -379,10 +420,17 @@ namespace hevce_interlace_invalid_scenarios
         ///////////////////////////////////////////////////////////////////////////
         MFXInit();
 
-        g_tsPlugin.Reg(MFX_PLUGINTYPE_VIDEO_ENC, MFX_CODEC_HEVC, MFX_PLUGINID_HEVCE_HW);
+        g_tsPlugin.Reg(MFX_PLUGINTYPE_VIDEO_ENC, MFX_CODEC_HEVC, uid);
         m_uid = g_tsPlugin.UID(MFX_PLUGINTYPE_VIDEO_ENC, MFX_CODEC_HEVC);
         m_loaded = false;
         Load();
+
+        // In case of FEI ENCODE additional runtime buffer required
+        if (is_HEVCeFEI)
+        {
+            mfxExtFeiHevcEncFrameCtrl& control = m_ctrl;
+            SetDefaultsToCtrl(m_ctrl);
+        }
 
         // ENCODE frames
         for (mfxU32 encoded = 0; encoded < frameNumber; ++encoded)
@@ -415,5 +463,6 @@ namespace hevce_interlace_invalid_scenarios
         return 0;
     }
 
-    TS_REG_TEST_SUITE_CLASS(hevce_interlace_invalid_scenarios);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_interlace_invalid_scenarios,     RunTest_Subtype<1>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_fei_interlace_invalid_scenarios, RunTest_Subtype<2>, n_cases);
 };

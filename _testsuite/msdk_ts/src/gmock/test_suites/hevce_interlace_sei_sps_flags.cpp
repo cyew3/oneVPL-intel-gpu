@@ -29,12 +29,26 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ts_encoder.h"
 #include "ts_struct.h"
 #include "ts_parser.h"
+#include "ts_fei_warning.h"
 #include <random>
 
 namespace hevce_interlace_sei_sps_flags
 {
 
     using namespace BS_HEVC;
+
+    void SetDefaultsToCtrl(mfxExtFeiHevcEncFrameCtrl& ctrl)
+    {
+        memset(&ctrl, 0, sizeof(ctrl));
+
+        ctrl.Header.BufferId = MFX_EXTBUFF_HEVCFEI_ENC_CTRL;
+        ctrl.Header.BufferSz = sizeof(mfxExtFeiHevcEncFrameCtrl);
+        ctrl.SubPelMode         = 3; // quarter-pixel motion estimation
+        ctrl.SearchWindow       = 5; // 48 SUs 48x40 window full search
+        ctrl.NumFramePartitions = 4; // number of partitions in frame that encoder processes concurrently
+        // enable internal L0/L1 predictors: 1 - spatial predictors
+        ctrl.MultiPred[0] = ctrl.MultiPred[1] = 1;
+    }
 
     class TestSuite : public tsVideoEncoder, public tsSurfaceProcessor, public tsBitstreamProcessor, public tsParserHEVCAU
     {
@@ -72,7 +86,10 @@ namespace hevce_interlace_sei_sps_flags
 #endif
         }
 
-        int RunTest(unsigned int id);
+        template<mfxU32 uid_id>
+        int RunTest_Subtype(const unsigned int id);
+
+        int RunTest(unsigned int id, mfxPluginUID uid);
         static const unsigned int n_cases;
 
         // See T-REC-H.265-201612 : Table D.2 – Interpretation of pic_struct
@@ -224,8 +241,6 @@ namespace hevce_interlace_sei_sps_flags
 
         struct tc_struct
         {
-            mfxStatus sts;
-
             mfxU32 mode;
 
             struct
@@ -261,158 +276,182 @@ namespace hevce_interlace_sei_sps_flags
 
     const TestSuite::tc_struct TestSuite::test_case[] =
     {
-        {/*00*/ MFX_ERR_NONE, DEFAULT,          {{ MFX_PAR,  &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
-                                                 { MFX_PAR,  &mfx_GopPicSize, 30 },
-                                                 { MFX_PAR,  &mfx_GopRefDist, 1 },
-                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
-                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
+        {/*00*/ DEFAULT,          {{ MFX_PAR,  &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
+                                   { MFX_PAR,  &mfx_GopPicSize, 30 },
+                                   { MFX_PAR,  &mfx_GopRefDist, 1 },
+                                   { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
+                                   { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
 
-        {/*01*/ MFX_ERR_NONE, DEFAULT,          {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BOTTOM },
-                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
-                                                 { MFX_PAR, &mfx_GopRefDist, 1 },
-                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
-                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
+        {/*01*/ DEFAULT,          {{ MFX_PAR,  &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BOTTOM },
+                                   { MFX_PAR,  &mfx_GopPicSize, 30 },
+                                   { MFX_PAR,  &mfx_GopRefDist, 1 },
+                                   { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
+                                   { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
 
-        {/*02*/ MFX_ERR_NONE, RANDOM,           {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
-                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
-                                                 { MFX_PAR, &mfx_GopRefDist, 1 },
-                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
-                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
+        {/*02*/ RANDOM,           {{ MFX_PAR,  &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
+                                   { MFX_PAR,  &mfx_GopPicSize, 30 },
+                                   { MFX_PAR,  &mfx_GopRefDist, 1 },
+                                   { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
+                                   { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
 
-        {/*03*/ MFX_ERR_NONE, RANDOM,           {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BOTTOM },
-                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
-                                                 { MFX_PAR, &mfx_GopRefDist, 1 },
-                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
-                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
+        {/*03*/ RANDOM,           {{ MFX_PAR,  &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BOTTOM },
+                                   { MFX_PAR,  &mfx_GopPicSize, 30 },
+                                   { MFX_PAR,  &mfx_GopRefDist, 1 },
+                                   { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
+                                   { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
 
-        {/*04*/ MFX_ERR_NONE, DEFAULT | PAIRED, {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
-                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
-                                                 { MFX_PAR, &mfx_GopRefDist, 1 },
-                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
-                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
+        {/*04*/ DEFAULT | PAIRED, {{ MFX_PAR,  &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
+                                   { MFX_PAR,  &mfx_GopPicSize, 30 },
+                                   { MFX_PAR,  &mfx_GopRefDist, 1 },
+                                   { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
+                                   { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
 
-        {/*05*/ MFX_ERR_NONE, DEFAULT | PAIRED, {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BOTTOM },
-                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
-                                                 { MFX_PAR, &mfx_GopRefDist, 1 },
-                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
-                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
+        {/*05*/ DEFAULT | PAIRED, {{ MFX_PAR,  &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BOTTOM },
+                                   { MFX_PAR,  &mfx_GopPicSize, 30 },
+                                   { MFX_PAR,  &mfx_GopRefDist, 1 },
+                                   { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
+                                   { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
 
-        {/*06*/ MFX_ERR_NONE, RANDOM | PAIRED,  {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
-                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
-                                                 { MFX_PAR, &mfx_GopRefDist, 1 },
-                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
-                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
+        {/*06*/ RANDOM | PAIRED,  {{ MFX_PAR,  &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
+                                   { MFX_PAR,  &mfx_GopPicSize, 30 },
+                                   { MFX_PAR,  &mfx_GopRefDist, 1 },
+                                   { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
+                                   { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
 
-        {/*07*/ MFX_ERR_NONE, RANDOM | PAIRED,  {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BOTTOM },
-                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
-                                                 { MFX_PAR, &mfx_GopRefDist, 1 },
-                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
-                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
+        {/*07*/ RANDOM | PAIRED,  {{ MFX_PAR,  &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BOTTOM },
+                                   { MFX_PAR,  &mfx_GopPicSize, 30 },
+                                   { MFX_PAR,  &mfx_GopRefDist, 1 },
+                                   { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
+                                   { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
 
-        {/*08*/ MFX_ERR_NONE, DEFAULT,          {{ MFX_PAR,  &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
-                                                 { MFX_PAR,  &mfx_GopPicSize, 30 },
-                                                 { MFX_PAR,  &mfx_GopRefDist, 1 },
-                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_PYRAMID },
-                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
+        {/*08*/ DEFAULT,          {{ MFX_PAR,  &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
+                                   { MFX_PAR,  &mfx_GopPicSize, 30 },
+                                   { MFX_PAR,  &mfx_GopRefDist, 1 },
+                                   { EXT_COD3, &mfx_PRefType, MFX_P_REF_PYRAMID },
+                                   { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
 
-        {/*09*/ MFX_ERR_NONE, DEFAULT,          {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BOTTOM },
-                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
-                                                 { MFX_PAR, &mfx_GopRefDist, 1 },
-                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_PYRAMID },
-                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
+        {/*09*/ DEFAULT,          {{ MFX_PAR,  &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BOTTOM },
+                                   { MFX_PAR,  &mfx_GopPicSize, 30 },
+                                   { MFX_PAR,  &mfx_GopRefDist, 1 },
+                                   { EXT_COD3, &mfx_PRefType, MFX_P_REF_PYRAMID },
+                                   { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
 
-        {/*10*/ MFX_ERR_NONE, RANDOM,           {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
-                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
-                                                 { MFX_PAR, &mfx_GopRefDist, 1 },
-                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_PYRAMID },
-                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
+        {/*10*/ RANDOM,           {{ MFX_PAR,  &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
+                                   { MFX_PAR,  &mfx_GopPicSize, 30 },
+                                   { MFX_PAR,  &mfx_GopRefDist, 1 },
+                                   { EXT_COD3, &mfx_PRefType, MFX_P_REF_PYRAMID },
+                                   { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
 
-        {/*11*/ MFX_ERR_NONE, RANDOM,           {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BOTTOM },
-                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
-                                                 { MFX_PAR, &mfx_GopRefDist, 1 },
-                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_PYRAMID },
-                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
+        {/*11*/ RANDOM,           {{ MFX_PAR,  &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BOTTOM },
+                                   { MFX_PAR,  &mfx_GopPicSize, 30 },
+                                   { MFX_PAR,  &mfx_GopRefDist, 1 },
+                                   { EXT_COD3, &mfx_PRefType, MFX_P_REF_PYRAMID },
+                                   { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
 
-        {/*12*/ MFX_ERR_NONE, DEFAULT | PAIRED, {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
-                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
-                                                 { MFX_PAR, &mfx_GopRefDist, 1 },
-                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_PYRAMID },
-                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
+        {/*12*/ DEFAULT | PAIRED, {{ MFX_PAR,  &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
+                                   { MFX_PAR,  &mfx_GopPicSize, 30 },
+                                   { MFX_PAR,  &mfx_GopRefDist, 1 },
+                                   { EXT_COD3, &mfx_PRefType, MFX_P_REF_PYRAMID },
+                                   { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
 
-        {/*13*/ MFX_ERR_NONE, DEFAULT | PAIRED, {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BOTTOM },
-                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
-                                                 { MFX_PAR, &mfx_GopRefDist, 1 },
-                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_PYRAMID },
-                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
+        {/*13*/ DEFAULT | PAIRED, {{ MFX_PAR,  &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BOTTOM },
+                                   { MFX_PAR,  &mfx_GopPicSize, 30 },
+                                   { MFX_PAR,  &mfx_GopRefDist, 1 },
+                                   { EXT_COD3, &mfx_PRefType, MFX_P_REF_PYRAMID },
+                                   { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
 
-        {/*14*/ MFX_ERR_NONE, RANDOM | PAIRED,  {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
-                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
-                                                 { MFX_PAR, &mfx_GopRefDist, 1 },
-                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_PYRAMID },
-                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
+        {/*14*/ RANDOM | PAIRED,  {{ MFX_PAR,  &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
+                                   { MFX_PAR,  &mfx_GopPicSize, 30 },
+                                   { MFX_PAR,  &mfx_GopRefDist, 1 },
+                                   { EXT_COD3, &mfx_PRefType, MFX_P_REF_PYRAMID },
+                                   { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
 
-        {/*15*/ MFX_ERR_NONE, RANDOM | PAIRED,  {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BOTTOM },
-                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
-                                                 { MFX_PAR, &mfx_GopRefDist, 1 },
-                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_PYRAMID },
-                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
+        {/*15*/ RANDOM | PAIRED,  {{ MFX_PAR,  &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BOTTOM },
+                                   { MFX_PAR,  &mfx_GopPicSize, 30 },
+                                   { MFX_PAR,  &mfx_GopRefDist, 1 },
+                                   { EXT_COD3, &mfx_PRefType, MFX_P_REF_PYRAMID },
+                                   { EXT_COD2, &mfx_BRefType, MFX_B_REF_OFF }}},
 
-        {/*16*/ MFX_ERR_NONE, DEFAULT,          {{ MFX_PAR,  &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
-                                                 { MFX_PAR,  &mfx_GopPicSize, 30 },
-                                                 { MFX_PAR,  &mfx_GopRefDist, 5 },
-                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
-                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_PYRAMID }}},
+        {/*16*/ DEFAULT,          {{ MFX_PAR,  &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
+                                   { MFX_PAR,  &mfx_GopPicSize, 30 },
+                                   { MFX_PAR,  &mfx_GopRefDist, 5 },
+                                   { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
+                                   { EXT_COD2, &mfx_BRefType, MFX_B_REF_PYRAMID }}},
 
-        {/*17*/ MFX_ERR_NONE, DEFAULT,          {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BOTTOM },
-                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
-                                                 { MFX_PAR, &mfx_GopRefDist, 5 },
-                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
-                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_PYRAMID }}},
+        {/*17*/ DEFAULT,          {{ MFX_PAR,  &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BOTTOM },
+                                   { MFX_PAR,  &mfx_GopPicSize, 30 },
+                                   { MFX_PAR,  &mfx_GopRefDist, 5 },
+                                   { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
+                                   { EXT_COD2, &mfx_BRefType, MFX_B_REF_PYRAMID }}},
 
-        {/*18*/ MFX_ERR_NONE, RANDOM,           {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
-                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
-                                                 { MFX_PAR, &mfx_GopRefDist, 5 },
-                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
-                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_PYRAMID }}},
+        {/*18*/ RANDOM,           {{ MFX_PAR,  &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
+                                   { MFX_PAR,  &mfx_GopPicSize, 30 },
+                                   { MFX_PAR,  &mfx_GopRefDist, 5 },
+                                   { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
+                                   { EXT_COD2, &mfx_BRefType, MFX_B_REF_PYRAMID }}},
 
-        {/*19*/ MFX_ERR_NONE, RANDOM,           {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BOTTOM },
-                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
-                                                 { MFX_PAR, &mfx_GopRefDist, 5 },
-                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
-                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_PYRAMID }}},
+        {/*19*/ RANDOM,           {{ MFX_PAR,  &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BOTTOM },
+                                   { MFX_PAR,  &mfx_GopPicSize, 30 },
+                                   { MFX_PAR,  &mfx_GopRefDist, 5 },
+                                   { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
+                                   { EXT_COD2, &mfx_BRefType, MFX_B_REF_PYRAMID }}},
 
-        {/*20*/ MFX_ERR_NONE, DEFAULT | PAIRED, {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
-                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
-                                                 { MFX_PAR, &mfx_GopRefDist, 5 },
-                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
-                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_PYRAMID }}},
+        {/*20*/ DEFAULT | PAIRED, {{ MFX_PAR,  &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
+                                   { MFX_PAR,  &mfx_GopPicSize, 30 },
+                                   { MFX_PAR,  &mfx_GopRefDist, 5 },
+                                   { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
+                                   { EXT_COD2, &mfx_BRefType, MFX_B_REF_PYRAMID }}},
 
-        {/*21*/ MFX_ERR_NONE, DEFAULT | PAIRED, {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BOTTOM },
-                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
-                                                 { MFX_PAR, &mfx_GopRefDist, 5 },
-                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
-                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_PYRAMID }}},
+        {/*21*/ DEFAULT | PAIRED, {{ MFX_PAR,  &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BOTTOM },
+                                   { MFX_PAR,  &mfx_GopPicSize, 30 },
+                                   { MFX_PAR,  &mfx_GopRefDist, 5 },
+                                   { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
+                                   { EXT_COD2, &mfx_BRefType, MFX_B_REF_PYRAMID }}},
 
-        {/*22*/ MFX_ERR_NONE, RANDOM | PAIRED,  {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
-                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
-                                                 { MFX_PAR, &mfx_GopRefDist, 5 },
-                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
-                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_PYRAMID }}},
+        {/*22*/ RANDOM | PAIRED,  {{ MFX_PAR,  &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TOP },
+                                   { MFX_PAR,  &mfx_GopPicSize, 30 },
+                                   { MFX_PAR,  &mfx_GopRefDist, 5 },
+                                   { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
+                                   { EXT_COD2, &mfx_BRefType, MFX_B_REF_PYRAMID }}},
 
-        {/*23*/ MFX_ERR_NONE, RANDOM | PAIRED,  {{ MFX_PAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BOTTOM },
-                                                 { MFX_PAR, &mfx_GopPicSize, 30 },
-                                                 { MFX_PAR, &mfx_GopRefDist, 5 },
-                                                 { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
-                                                 { EXT_COD2, &mfx_BRefType, MFX_B_REF_PYRAMID }}}
+        {/*23*/ RANDOM | PAIRED,  {{ MFX_PAR,  &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BOTTOM },
+                                   { MFX_PAR,  &mfx_GopPicSize, 30 },
+                                   { MFX_PAR,  &mfx_GopRefDist, 5 },
+                                   { EXT_COD3, &mfx_PRefType, MFX_P_REF_SIMPLE },
+                                   { EXT_COD2, &mfx_BRefType, MFX_B_REF_PYRAMID }}}
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
 
     const int frameNumber = 30;
 
-    int TestSuite::RunTest(unsigned int id)
+    template<mfxU32 uid_id>
+    int TestSuite::RunTest_Subtype(const unsigned int id)
+    {
+        switch (uid_id)
+        {
+        case 1:
+            return RunTest(id, MFX_PLUGINID_HEVCE_HW);
+
+        case 2:
+            return RunTest(id, MFX_PLUGINID_HEVC_FEI_ENCODE);
+
+        default:
+            ADD_FAILURE() << "ERROR: Wrong uid_id " << uid_id;
+            throw tsFAIL;
+        }
+    }
+
+    int TestSuite::RunTest(unsigned int id, mfxPluginUID uid)
     {
         TS_START;
+
+        bool is_HEVCeFEI = memcmp(m_uid->Data, MFX_PLUGINID_HEVC_FEI_ENCODE.Data, sizeof(mfxU8) * 16) == 0;
+
+        if (is_HEVCeFEI)
+        {
+            CHECK_FEI_SUPPORT();
+        }
 
         const tc_struct& tc = test_case[id];
 
@@ -432,14 +471,19 @@ namespace hevce_interlace_sei_sps_flags
         SETPARS(&CO3, EXT_COD3);
 
         ///////////////////////////////////////////////////////////////////////////
-        g_tsStatus.expect(tc.sts);
-
         MFXInit();
 
-        g_tsPlugin.Reg(MFX_PLUGINTYPE_VIDEO_ENC, MFX_CODEC_HEVC, MFX_PLUGINID_HEVCE_HW);
+        g_tsPlugin.Reg(MFX_PLUGINTYPE_VIDEO_ENC, MFX_CODEC_HEVC, uid);
         m_uid = g_tsPlugin.UID(MFX_PLUGINTYPE_VIDEO_ENC, MFX_CODEC_HEVC);
         m_loaded = false;
         Load();
+
+        // In case of FEI ENCODE additional runtime buffer required
+        if (is_HEVCeFEI)
+        {
+            mfxExtFeiHevcEncFrameCtrl& control = m_ctrl;
+            SetDefaultsToCtrl(m_ctrl);
+        }
 
         // ENCODE frames
         EncodeFrames(frameNumber);
@@ -451,5 +495,6 @@ namespace hevce_interlace_sei_sps_flags
         return 0;
     }
 
-    TS_REG_TEST_SUITE_CLASS(hevce_interlace_sei_sps_flags);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_interlace_sei_sps_flags,     RunTest_Subtype<1>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_fei_interlace_sei_sps_flags, RunTest_Subtype<2>, n_cases);
 };
