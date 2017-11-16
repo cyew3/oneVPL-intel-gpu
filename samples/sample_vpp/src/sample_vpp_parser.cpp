@@ -1508,6 +1508,32 @@ return MFX_ERR_NONE;
 
 bool CheckInputParams(msdk_char* strInput[], sInputParams* pParams )
 {
+    // Setting  default width and height if it was omitted. For composition case parameters should be define explicitely
+    if (pParams->frameInfoOut[0].nWidth == 0)
+    {
+        if (pParams->compositionParam.mode == VPP_FILTER_ENABLED_CONFIGURED)
+        {
+            vppPrintHelp(strInput[0], MSDK_STRING("ERROR: Destination width should be set explicitely in case of composition mode.\n"));
+            return false;
+        }
+        pParams->frameInfoOut[0].nWidth = pParams->frameInfoIn[0].nWidth;
+        pParams->frameInfoOut[0].CropW = pParams->frameInfoIn[0].CropW;
+        pParams->frameInfoOut[0].CropX = 0;
+    }
+
+    if (pParams->frameInfoOut[0].nHeight == 0)
+    {
+        if (pParams->compositionParam.mode == VPP_FILTER_ENABLED_CONFIGURED)
+        {
+            vppPrintHelp(strInput[0], MSDK_STRING("ERROR: Destination height should be set explicitely in case of composition mode.\n"));
+            return false;
+        }
+        pParams->frameInfoOut[0].nHeight = pParams->frameInfoIn[0].nHeight;
+        pParams->frameInfoOut[0].CropH = pParams->frameInfoIn[0].CropH;
+        pParams->frameInfoOut[0].CropY = 0;
+    }
+
+    // Checking other parameters
     if (0 == pParams->asyncNum)
     {
         vppPrintHelp(strInput[0], MSDK_STRING("Incompatible parameters: [ayncronous number must exceed 0]\n"));
@@ -1527,8 +1553,8 @@ bool CheckInputParams(msdk_char* strInput[], sInputParams* pParams )
     {
         const mfxVPPCompInputStream& is = pParams->compositionParam.streamInfo[i].compStream;
 
-        if ((pParams->outFrameInfo.nWidth < is.DstW + is.DstX) ||
-            (pParams->outFrameInfo.nHeight < is.DstH + is.DstY))
+        if ((pParams->frameInfoOut[0].nWidth < is.DstW + is.DstX) ||
+            (pParams->frameInfoOut[0].nHeight < is.DstH + is.DstY))
         {
             vppPrintHelp(strInput[0], MSDK_STRING("One of composing frames cannot fit into destination frame.\n"));
             return false;
@@ -1697,24 +1723,7 @@ mfxStatus ParseCompositionParfile(const msdk_char* parFileName, sInputParams* pP
             pParams->inFrameInfo[nStreamInd].PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
         }
     }
-    if (pParams->inFrameInfo[0].nWidth > pParams->inFrameInfo[0].CropW)
-    {
-        /* This case means alignment for Width was done */
-        pParams->outFrameInfo.nWidth = pParams->inFrameInfo[0].CropW;
-    }
-    else
-    {
-        pParams->outFrameInfo.nWidth = pParams->inFrameInfo[0].nWidth;
-    }
-    if (pParams->inFrameInfo[0].nHeight > pParams->inFrameInfo[0].CropH)
-    {
-        /* This case means alignment for Height was done */
-        pParams->outFrameInfo.nHeight = pParams->inFrameInfo[0].CropH;
-    }
-    else
-    {
-        pParams->outFrameInfo.nHeight = pParams->inFrameInfo[0].nHeight;
-    }
+
     pParams->numStreams = nStreamInd + 1;
 
     for(int i=0;i<pParams->numStreams;i++)

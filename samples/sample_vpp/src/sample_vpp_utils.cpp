@@ -291,15 +291,18 @@ mfxStatus ParseGUID(msdk_char strPlgGuid[MSDK_MAX_FILENAME_LEN], mfxU8 DataGUID[
 
     return MFX_ERR_NONE;
 }
+
 mfxStatus InitParamsVPP(mfxVideoParam* pParams, sInputParams* pInParams, mfxU32 paramID)
 {
     MSDK_CHECK_POINTER(pParams,    MFX_ERR_NULL_PTR);
     MSDK_CHECK_POINTER(pInParams,  MFX_ERR_NULL_PTR);
 
-    if (pInParams->frameInfoIn[paramID].nWidth == 0 || pInParams->frameInfoIn[paramID].nHeight == 0 ){
+    if (pInParams->compositionParam.mode != VPP_FILTER_ENABLED_CONFIGURED && (pInParams->frameInfoIn[paramID].nWidth == 0 || pInParams->frameInfoIn[paramID].nHeight == 0)){
+        vppPrintHelp(MSDK_STRING("sample_vpp"), MSDK_STRING("ERROR: Source width is not defined.\n"));
         return MFX_ERR_UNSUPPORTED;
     }
     if (pInParams->frameInfoOut[paramID].nWidth == 0 || pInParams->frameInfoOut[paramID].nHeight == 0 ){
+        vppPrintHelp(MSDK_STRING("sample_vpp"), MSDK_STRING("ERROR: Source height is not defined.\n"));
         return MFX_ERR_UNSUPPORTED;
     }
 
