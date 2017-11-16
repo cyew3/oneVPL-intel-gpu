@@ -37,7 +37,7 @@ MFXYUVDecoder::MFXYUVDecoder(IVideoSession* session,
     info.CropX         = infoIn.CropX;
     info.CropY         = infoIn.CropY;
 
-    // mynikols, bug VCSD100004627 fixed: 
+    // mynikols, bug VCSD100004627 fixed:
     //info.CropX         = 0;
     //info.CropY         = 0;
     info.CropW         = infoIn.Width;
@@ -50,21 +50,21 @@ MFXYUVDecoder::MFXYUVDecoder(IVideoSession* session,
 
     //progressive picstructure is default
     info.PicStruct     = (mfxU16)(MFX_PICSTRUCT_UNKNOWN == infoIn.PicStruct ? MFX_PICSTRUCT_PROGRESSIVE : infoIn.PicStruct);
-    
+
     //native yuv file width
     m_yuvWidth         = infoIn.Width;
     m_yuvHeight        = infoIn.Height;
-    
+
     //surface alignment requirements
     info.Width         = mfx_align((mfxU16)(infoIn.Width  + infoIn.CropX), 0x10);
     info.Height        = mfx_align((mfxU16)(infoIn.Height + infoIn.CropY), (info.PicStruct == MFX_PICSTRUCT_PROGRESSIVE)? 0x10 : 0x20);
-    
+
 
     std::auto_ptr <IBitstreamConverterFactory > bsfac (pFactory->CreateBitstreamCVTFactory(NULL));
     m_pConverter.reset(bsfac->Create(nInFourCC, info.FourCC));
     if (NULL == m_pConverter.get())
     {
-        MFX_TRACE_AND_THROW((VM_STRING("[MFXYUVDecoder] cannot create converter : %s -> %s\n"), 
+        MFX_TRACE_AND_THROW((VM_STRING("[MFXYUVDecoder] cannot create converter : %s -> %s\n"),
             GetMFXFourccString(nInFourCC).c_str(), GetMFXFourccString(info.FourCC).c_str()));
     }
 }
@@ -138,29 +138,44 @@ mfxStatus MFXYUVDecoder::DecodeFrame(mfxBitstream * bs, mfxFrameSurface1 *surfac
 
     MFX_CHECK_POINTER(m_pConverter.get());
     MFX_CHECK_STS_SKIP(sts = m_pConverter->Transform(internalBs, surface), MFX_ERR_MORE_DATA);
-    
+
     if (MFX_ERR_MORE_DATA == sts )
     {
         *internalBs = bsTmp;
-    }else
+    }
+    else
     {
         //frameorders start from 0
         surface->Data.FrameOrder = m_nFrames;
-        
+
+        // when input yuv is been reading by fields, not frames
+        // need correct picstruct in surface depending on initial one
+        if (m_vParam.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_TOP)
+        {
+            surface->Info.PicStruct = !(m_nFrames % 2)  ? MFX_PICSTRUCT_FIELD_TOP
+                                                        : MFX_PICSTRUCT_FIELD_BOTTOM;
+        }
+        else if (m_vParam.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_BOTTOM)
+        {
+            surface->Info.PicStruct = !(m_nFrames % 2)  ? MFX_PICSTRUCT_FIELD_BOTTOM
+                                                        : MFX_PICSTRUCT_FIELD_TOP;
+        }
+
         //frame readed
         m_nFrames++;
 
         if (NULL == m_pOutlineFileName)
         {
-            surface->Data.TimeStamp = ConvertmfxF642MFXTime((mfxF64)m_nFrames * (mfxF64)m_vParam.mfx.FrameInfo.FrameRateExtD / 
+            surface->Data.TimeStamp = ConvertmfxF642MFXTime((mfxF64)m_nFrames * (mfxF64)m_vParam.mfx.FrameInfo.FrameRateExtD /
                                                                                 (mfxF64) m_vParam.mfx.FrameInfo.FrameRateExtN);
-        }else
+        }
+        else
         {
             //read frameinfo from outline
             if (NULL == m_pOutlineReader.get())
             {
                 OutlineFactoryAbstract * pFactory = NULL;
-                
+
                 MFX_CHECK_POINTER(pFactory = GetOutlineFactory());
                 MFX_CHECK_POINTER((m_pOutlineReader.reset(pFactory->CreateReader()), m_pOutlineReader.get()));
                 m_pOutlineReader->Init(m_pOutlineFileName);
@@ -169,7 +184,7 @@ mfxStatus MFXYUVDecoder::DecodeFrame(mfxBitstream * bs, mfxFrameSurface1 *surfac
             //only 1 sequence
             Entry_Read *pEntry = NULL;
             MFX_CHECK_POINTER(pEntry = m_pOutlineReader->GetEntry(0, m_nFrames-1));
-            
+
             TestVideoData vData;
             m_pOutlineReader->ReadEntryStruct(pEntry, &vData);
 
@@ -226,7 +241,7 @@ mfxStatus MFXYUVDecoder::DecodeFrameAsync( mfxBitstream2 & bs
     surface_work->Info.FrameId.DependencyId = bs.DependencyId;
     *surface_out = surface_work;
     *syncp = m_syncPoint;
-    
+
     return MFX_ERR_NONE;
 }
 
@@ -236,7 +251,7 @@ mfxStatus MFXYUVDecoder::DecodeHeader(mfxBitstream *bs, mfxVideoParam *par)
     MFX_CHECK_POINTER(par);
 
     par->mfx.FrameInfo    = m_vParam.mfx.FrameInfo;
-    
+
     return MFX_ERR_NONE;
 }
 
@@ -247,7 +262,7 @@ mfxStatus MFXYUVDecoder::ConstructFrame(mfxBitstream *in, mfxBitstream *out)
         return MFX_ERR_MORE_DATA;
 
     MFX_CHECK_POINTER(out);
-    
+
     if (in->DataLength == 0)
     {
         if (out->DataLength == 0)
@@ -306,7 +321,7 @@ mfxStatus MFXYUVDecoder::QueryIOSurf(mfxVideoParam * par, mfxFrameAllocRequest *
     MFX_CHECK_POINTER(par);
 
     memcpy(&request->Info, &par->mfx.FrameInfo, sizeof(par->mfx.FrameInfo));
-    
+
     request->NumFrameSuggested = 1;
     request->NumFrameMin       = 1;
     return MFX_ERR_NONE;
@@ -320,7 +335,7 @@ mfxStatus MFXYUVDecoder::GetDecodeStat(mfxDecodeStat *stat)
     return MFX_ERR_NONE;
 }
 
-mfxStatus MFXYUVDecoder::Reset(mfxVideoParam* par) 
+mfxStatus MFXYUVDecoder::Reset(mfxVideoParam* par)
 {
     MFX_CHECK_POINTER(par);
     mfxFrameInfo &info = par->mfx.FrameInfo;
@@ -330,15 +345,15 @@ mfxStatus MFXYUVDecoder::Reset(mfxVideoParam* par)
     size_t maxSz = par->mfx.FrameInfo.Height * par->mfx.FrameInfo.Width * 4;
     if (maxSz < (size_t)par->mfx.BufferSizeInKB * 1024)
         maxSz = par->mfx.BufferSizeInKB * 1024;
-    
+
     BSUtil::Extend(&m_internalBS, maxSz);
 
 
     m_yuvWidth                      = info.CropW;
     m_yuvHeight                     = info.CropH;
-    m_vParam.mfx.FrameInfo.Width    = info.Width; 
+    m_vParam.mfx.FrameInfo.Width    = info.Width;
     m_vParam.mfx.FrameInfo.Height   = info.Height;
-    m_vParam.mfx.FrameInfo.CropW    = info.CropW; 
+    m_vParam.mfx.FrameInfo.CropW    = info.CropW;
     m_vParam.mfx.FrameInfo.CropH    = info.CropH;
     m_internalBS.DataLength         = 0;
     m_internalBS.DataOffset         = 0;
