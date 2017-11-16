@@ -73,41 +73,47 @@ namespace HevcRplUtils
 
     struct InterlacePocDistanceIsLess : public BasePredicateForRefPicure
     {
-        InterlacePocDistanceIsLess(Dpb const & dpb, mfxU32 poc, bool IsBottomField)
+        InterlacePocDistanceIsLess(Dpb const & dpb, mfxU32 poc, bool IsSecondField, bool IsBottomField)
         : BasePredicateForRefPicure(dpb)
         , m_poc(poc)
+        , m_IsSecondField(IsSecondField)
         , m_IsBottomField(IsBottomField)
         {
         }
 
         bool operator ()(size_t l, size_t r) const
         {
+            mfxI32 currFrameNum = GetFrameNum(true, m_poc, m_IsSecondField);
             return
-                (std::abs(m_dpb[l].m_poc / 2 - m_poc / 2) + ((m_dpb[l].m_bottomField == m_IsBottomField) ? 0 : 2)) <
-                (std::abs(m_dpb[r].m_poc / 2 - m_poc / 2) + ((m_dpb[r].m_bottomField == m_IsBottomField) ? 0 : 2));
+                (std::abs(GetFrameNum(true, m_dpb[l].m_poc, m_dpb[l].m_secondField) - currFrameNum) * 2 + ((m_dpb[l].m_bottomField == m_IsBottomField) ? 0 : 1)) <
+                (std::abs(GetFrameNum(true, m_dpb[r].m_poc, m_dpb[r].m_secondField) - currFrameNum) * 2 + ((m_dpb[r].m_bottomField == m_IsBottomField) ? 0 : 1));
         }
 
         mfxU32 m_poc;
+        bool   m_IsSecondField;
         bool   m_IsBottomField;
     };
 
     struct InterlacePocDistanceIsGreater : public BasePredicateForRefPicure
     {
-        InterlacePocDistanceIsGreater(Dpb const & dpb, mfxU32 poc, bool IsBottomField)
+        InterlacePocDistanceIsGreater(Dpb const & dpb, mfxU32 poc, bool IsSecondField, bool IsBottomField)
         : BasePredicateForRefPicure(dpb)
         , m_poc(poc)
+        , m_IsSecondField(IsSecondField)
         , m_IsBottomField(IsBottomField)
         {
         }
 
         bool operator ()(size_t l, size_t r) const
         {
+            mfxI32 currFrameNum = GetFrameNum(true, m_poc, m_IsSecondField);
             return
-                (std::abs(m_dpb[l].m_poc / 2 - m_poc / 2) + ((m_dpb[l].m_bottomField == m_IsBottomField) ? 0 : 2)) >
-                (std::abs(m_dpb[r].m_poc / 2 - m_poc / 2) + ((m_dpb[r].m_bottomField == m_IsBottomField) ? 0 : 2));
+                (std::abs(GetFrameNum(true, m_dpb[l].m_poc, m_dpb[l].m_secondField) - currFrameNum) * 2 + ((m_dpb[l].m_bottomField == m_IsBottomField) ? 0 : 1)) >
+                (std::abs(GetFrameNum(true, m_dpb[r].m_poc, m_dpb[r].m_secondField) - currFrameNum) * 2 + ((m_dpb[r].m_bottomField == m_IsBottomField) ? 0 : 1));
         }
 
         mfxU32 m_poc;
+        bool   m_IsSecondField;
         bool   m_IsBottomField;
     };
 
@@ -397,14 +403,12 @@ namespace HevcRplUtils
         mfxU16 end = 0; // DPB end
         mfxU16 st0 = 0; // first ST ref in DPB
         static const mfxU16 maxNumRefL0 = 3;
-        mfxU16 k = isField(par) ? 2 : 1;
 
         while (!isDpbEnd(dpb, end)) end ++;
         for (st0 = 0; st0 < end && dpb[st0].m_ltr; st0++);
 
         // frames stored in DPB in POC ascending order,
         // LTRs before STRs (use LTR-candidate as STR as long as it possible)
-
         std::sort(dpb, dpb + st0, SortByPoc);
         std::sort(dpb + st0, dpb + (mfxU16)(end - st0), SortByPoc);
 
@@ -413,10 +417,10 @@ namespace HevcRplUtils
         {
             if (isPPyramid(par) && st0 == 0)
             {
-                if (isField(par) && (dpb[1].m_poc / 2 != dpb[0].m_poc / 2))
+                if (isField(par) && (GetFrameNum(true, dpb[1].m_poc, dpb[1].m_secondField) != GetFrameNum(true, dpb[0].m_poc, dpb[0].m_secondField)))
                     st0 = 0;
                 else
-                    for (st0 = 1; ((dpb[st0].m_poc/k - dpb[0].m_poc/k) % maxNumRefL0 ) == 0 && st0 < end; st0++);
+                    for (st0 = 1; ((GetFrameNum(isField(par), dpb[st0].m_poc, dpb[st0].m_secondField) - (GetFrameNum(isField(par), dpb[0].m_poc, dpb[0].m_secondField))) % maxNumRefL0 ) == 0 && st0 < end; st0++);
             }
             else
             {
@@ -425,6 +429,7 @@ namespace HevcRplUtils
 
             Remove(dpb, st0 == end ? 0 : st0);
             end --;
+
         }
 
         if (end < MAX_DPB_SIZE)
@@ -534,7 +539,7 @@ namespace HevcRplUtils
         {
             if (isField(par))
             {
-                std::sort(&RPL[0][0], &RPL[0][numRefActive[0]], InterlacePocDistanceIsLess(DPB, poc, bBottomField));
+                std::sort(&RPL[0][0], &RPL[0][numRefActive[0]], InterlacePocDistanceIsLess(DPB, poc, bSecondField, bBottomField));
             }
             else
             {
@@ -564,7 +569,7 @@ namespace HevcRplUtils
         {
             if (isField(par))
             {
-                std::sort(&RPL[1][0], &RPL[1][numRefActive[1]], InterlacePocDistanceIsGreater(DPB, poc, bBottomField));
+                std::sort(&RPL[1][0], &RPL[1][numRefActive[1]], InterlacePocDistanceIsGreater(DPB, poc, bSecondField, bBottomField));
             }
             else
             {

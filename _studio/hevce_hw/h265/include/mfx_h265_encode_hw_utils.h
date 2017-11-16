@@ -1286,6 +1286,10 @@ public:
          return m_mode == HEVC_SKIPFRAME_BRC_ONLY;
     }
 };
+inline mfxI32 GetFrameNum(bool bField, mfxI32 Poc, bool bSecondField)
+{
+    return bField ? (Poc + (!bSecondField)) / 2 : Poc;
+}
 
 }; //namespace MfxHwH265Encode
 #endif

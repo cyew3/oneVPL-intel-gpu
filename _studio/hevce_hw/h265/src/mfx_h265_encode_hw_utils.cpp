@@ -2765,7 +2765,6 @@ void UpdateDPB(
 {
     mfxU16 end = 0; // DPB end
     mfxU16 st0 = 0; // first ST ref in DPB
-    mfxU16 k = par.isField() ? 2 : 1;
 
     while (!isDpbEnd(dpb, end)) end ++;
     for (st0 = 0; st0 < end && dpb[st0].m_ltr; st0++);
@@ -2781,10 +2780,10 @@ void UpdateDPB(
     {
         if (par.isLowDelay() && st0 == 0)
         {
-            if (par.isField() && (dpb[1].m_poc / 2 != dpb[0].m_poc / 2))
+            if (par.isField() && (GetFrameNum(true, dpb[1].m_poc, dpb[1].m_secondField) != GetFrameNum(true, dpb[0].m_poc, dpb[0].m_secondField)))
                 st0 = 0;
             else
-                for (st0 = 1; ((dpb[st0].m_poc/k - dpb[0].m_poc/k) % par.NumRefLX[0] ) == 0 && st0 < end; st0++);
+                for (st0 = 1; ((GetFrameNum(par.isField(), dpb[st0].m_poc, dpb[st0].m_secondField) - (GetFrameNum(par.isField(), dpb[0].m_poc, dpb[0].m_secondField))) % par.NumRefLX[0] ) == 0 && st0 < end; st0++);
         }
         else
         {
@@ -2798,7 +2797,7 @@ void UpdateDPB(
                     dpb[st0].m_ltr = true;
                     st0 ++;
                 }
-                else if ((dpb[st0].m_poc/k - dpb[0].m_poc/k) >= (mfxI32)par.LTRInterval)
+                else if ((GetFrameNum(par.isField(), dpb[st0].m_poc, dpb[st0].m_secondField) - (GetFrameNum(par.isField(), dpb[0].m_poc, dpb[0].m_secondField))) >= (mfxI32)par.LTRInterval)
                 {
                     dpb[st0].m_ltr = true;
                     st0 = 0;
@@ -2983,13 +2982,12 @@ void ConstructRPL(
                     MFX_SORT_COMMON(RPL[0], numRefActive[0], Abs(DPB[RPL[0][_i]].m_poc - poc) < Abs(DPB[RPL[0][_j]].m_poc - poc));
 #elif (HEVCE_FIELD_MODE == 1)
                     bBottomField;
-                    MFX_SORT_COMMON(RPL[0], numRefActive[0], (Abs(DPB[RPL[0][_i]].m_poc/2 - poc/2) + ((DPB[RPL[0][_i]].m_secondField == bSecondField) ? 0 : 1))< (Abs(DPB[RPL[0][_j]].m_poc/2 - poc/2) + ((DPB[RPL[0][_j]].m_secondField == bSecondField) ? 0 : 1)));
+                    MFX_SORT_COMMON(RPL[0], numRefActive[0], (Abs(DPB[RPL[0][_i]].m_poc/2 - poc/2)*2 + ((DPB[RPL[0][_i]].m_secondField == bSecondField) ? 0 : 1))< (Abs(DPB[RPL[0][_j]].m_poc/2 - poc/2) + ((DPB[RPL[0][_j]].m_secondField == bSecondField) ? 0 : 1)));
 #elif (HEVCE_FIELD_MODE == 2)
                     bBottomField;
                     MFX_SORT_COMMON(RPL[0], numRefActive[0], (Abs(DPB[RPL[0][_i]].m_poc/2 - poc/2) + ((DPB[RPL[0][_i]].m_secondField == bSecondField) ? 0 : 16))< (Abs(DPB[RPL[0][_j]].m_poc/2 - poc/2)  + ((DPB[RPL[0][_j]].m_secondField == bSecondField) ? 0 : 16)));
 #elif (HEVCE_FIELD_MODE == 3)
-                    bSecondField;
-                    MFX_SORT_COMMON(RPL[0], numRefActive[0], (Abs(DPB[RPL[0][_i]].m_poc / 2 - poc / 2) + ((DPB[RPL[0][_i]].m_bottomField == bBottomField) ? 0 : 2))< (Abs(DPB[RPL[0][_j]].m_poc / 2 - poc / 2) + ((DPB[RPL[0][_j]].m_bottomField == bBottomField) ? 0 : 2)));
+                    MFX_SORT_COMMON(RPL[0], numRefActive[0], (Abs(GetFrameNum(true,DPB[RPL[0][_i]].m_poc, DPB[RPL[0][_i]].m_secondField) - GetFrameNum(true, poc, bSecondField)) * 2 + ((DPB[RPL[0][_i]].m_bottomField == bBottomField) ? 0 : 1))< (Abs(GetFrameNum(true,DPB[RPL[0][_j]].m_poc, DPB[RPL[0][_j]].m_secondField) - GetFrameNum(true, poc, bSecondField)) * 2 +  ((DPB[RPL[0][_j]].m_bottomField == bBottomField) ? 0 : 1)));
 #endif
                 }
                 else
@@ -3001,10 +2999,8 @@ void ConstructRPL(
                     while (l0 > NumStRefL0)
                     {
                         mfxI32 i;
-                        mfxI32 k = par.isField() ? 2 : 1;
-
                         // !!! par.NumRefLX[0] used here as distance between "strong" STR, not NumRefActive for current frame
-                        for (i = 0; (i < l0) && (((DPB[RPL[0][0]].m_poc/k - DPB[RPL[0][i]].m_poc/k) % par.NumRefLX[0]) == 0) /*&& (DPB[RPL[0][i]].m_secondField == bSecondField)*/; i++);
+                        for (i = 0; (i < l0) && (((GetFrameNum(par.isField(),DPB[RPL[0][0]].m_poc, DPB[RPL[0][0]].m_secondField) - GetFrameNum(par.isField(),DPB[RPL[0][i]].m_poc, DPB[RPL[0][i]].m_secondField)) % par.NumRefLX[0]) == 0) /*&& (DPB[RPL[0][i]].m_secondField == bSecondField)*/; i++);
 
                         Remove(RPL[0], (i >= l0 - 1) ? 0 : i);
                         l0--;
@@ -3024,11 +3020,11 @@ void ConstructRPL(
 #if (HEVCE_FIELD_MODE == 0)
                         MFX_SORT_COMMON(RPL[1], numRefActive[1], Abs(DPB[RPL[1][_i]].m_poc - poc) > Abs(DPB[RPL[1][_j]].m_poc - poc));
 #elif (HEVCE_FIELD_MODE == 1)
-                        MFX_SORT_COMMON(RPL[1], numRefActive[1], (Abs(DPB[RPL[1][_i]].m_poc/2 - poc/2)  + ((DPB[RPL[1][_i]].m_secondField == bSecondField) ? 0 : 1)) > (Abs(DPB[RPL[1][_j]].m_poc/2 - poc/2)  + ((DPB[RPL[1][_j]].m_secondField == bSecondField) ? 0 : 1)));
+                        MFX_SORT_COMMON(RPL[1], numRefActive[1], (Abs(DPB[RPL[1][_i]].m_poc/2 - poc/2)*2  + ((DPB[RPL[1][_i]].m_secondField == bSecondField) ? 0 : 1)) > (Abs(DPB[RPL[1][_j]].m_poc/2 - poc/2)  + ((DPB[RPL[1][_j]].m_secondField == bSecondField) ? 0 : 1)));
 #elif (HEVCE_FIELD_MODE == 2)
                         MFX_SORT_COMMON(RPL[1], numRefActive[1], (Abs(DPB[RPL[1][_i]].m_poc/2 - poc/2)  + ((DPB[RPL[1][_i]].m_secondField == bSecondField) ? 0 : 16)) > (Abs(DPB[RPL[1][_j]].m_poc/2 - poc/2)  + ((DPB[RPL[1][_j]].m_secondField == bSecondField) ? 0 : 16)));
 #elif (HEVCE_FIELD_MODE == 3)
-                       MFX_SORT_COMMON(RPL[1], numRefActive[1], (Abs(DPB[RPL[1][_i]].m_poc / 2 - poc / 2) + ((DPB[RPL[1][_i]].m_bottomField == bBottomField) ? 0 : 2)) > (Abs(DPB[RPL[1][_j]].m_poc / 2 - poc / 2) + ((DPB[RPL[1][_j]].m_bottomField == bBottomField) ? 0 : 2)));
+                       MFX_SORT_COMMON(RPL[1], numRefActive[1], (Abs(GetFrameNum(true, DPB[RPL[1][_i]].m_poc, DPB[RPL[1][_i]].m_secondField) - GetFrameNum(true,poc, bSecondField))*2 + ((DPB[RPL[1][_i]].m_bottomField == bBottomField) ? 0 : 1)) > (Abs(GetFrameNum(true,DPB[RPL[1][_j]].m_poc, DPB[RPL[1][_j]].m_secondField) - GetFrameNum(true,poc, bSecondField)) * 2 + ((DPB[RPL[1][_j]].m_bottomField == bBottomField) ? 0 : 1)));
 #endif
                 }
                 else

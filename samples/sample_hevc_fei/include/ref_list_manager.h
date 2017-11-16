@@ -34,6 +34,11 @@ inline bool isBFF(MfxVideoParamsWrapper const & par)
     return  ((par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_BOTTOM) == MFX_PICSTRUCT_FIELD_BOTTOM);
 }
 
+inline mfxI32 GetFrameNum(bool bField, mfxI32 Poc, bool bSecondField)
+{
+    return bField ? (Poc + (!bSecondField)) / 2 : Poc;
+}
+
 class LastReorderedFieldInfo
 {
 public:
