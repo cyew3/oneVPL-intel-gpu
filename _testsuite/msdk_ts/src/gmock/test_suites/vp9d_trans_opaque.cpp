@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2017 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -226,14 +226,6 @@ int RunTest(const TestCase& tc, char const * const stream)
 {
     TS_START;
 
-    if (VP9 == tc.ENC &&
-        MFX_IMPL_HARDWARE == g_tsImpl && 
-        MFX_HW_KBL > g_tsHWtype)
-    {
-        g_tsLog << "SKIPPED for this platform\n";
-        return 0;
-    }
-
     tsTranscoder tr(tc.DEC, tc.ENC);
 
     tsIvfReader reader(stream, 100000);
@@ -245,11 +237,19 @@ int RunTest(const TestCase& tc, char const * const stream)
     tr.m_parDEC.IOPattern = tc.IOP & IO_OUT;
     tr.m_parENC.IOPattern = tc.IOP & IO_IN;
 
-    tr.InitPipeline();
-
     tsVideoDecoder& dec = tr;
     tsVideoVPP& vpp = tr;
     tsVideoEncoder& enc = tr;
+
+    if (VP9 == tc.ENC &&
+        (0 == memcmp(enc.m_uid->Data, MFX_PLUGINID_VP9E_HW.Data, sizeof(MFX_PLUGINID_VP9E_HW.Data))) &&
+        MFX_HW_CNL > g_tsHWtype)
+    {
+        g_tsLog << "SKIPPED for this platform\n";
+        return 0;
+    }
+
+    tr.InitPipeline();
 
     switch (tc.INV)
     {
