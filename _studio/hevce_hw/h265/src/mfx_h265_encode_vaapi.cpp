@@ -1171,11 +1171,11 @@ void CUQPMap::Init (mfxU32 picWidthInLumaSamples, mfxU32 picHeightInLumaSamples)
 {
 
     //16x32 only: driver limitation
-    m_width        = (picWidthInLumaSamples   + 31) / 32*2;
+    m_width        = (picWidthInLumaSamples   + 31) / 32;
     m_height       = (picHeightInLumaSamples  + 31) / 32;
-    m_pitch        = (((((((picWidthInLumaSamples/4 + 15)/16)*4*16) + 31)/32)*2 + 63)/64)*64;
-    m_h_aligned    = (((((((picHeightInLumaSamples/4 + 15)/16)*4*16) + 31)/32) + 3)/4)*4;
-    m_block_width  = 16;
+    m_pitch  = (((picWidthInLumaSamples + 31) >> 5) + 63) &~ 63;
+    m_h_aligned = (((picHeightInLumaSamples + 31) >> 5) + 3) &~ 3;
+    m_block_width  = 32;
     m_block_height = 32;
     m_buffer.resize(m_pitch * m_h_aligned);
     Zero(m_buffer);
