@@ -279,7 +279,7 @@ std::string DumpContext::dump(const std::string structName, const mfxFrameAllocR
     else
         str += structName + ".mids=" + "NULL" + "\n";
     str += structName + ".NumFrameActual=" + ToString(frameAllocResponse.NumFrameActual) + "\n";
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
     str += structName + ".MemType=" + ToString(frameAllocResponse.MemType) + "\n";
 #else
     str += structName + ".reserved2=" + ToString(frameAllocResponse.reserved2) + "\n";
@@ -487,7 +487,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtDecodedF
     return str;
 }
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
 std::string DumpContext::dump(const std::string structName, const mfxExtDecodeErrorReport &ExtDecodeErrorReport)
 {
     std::string str;

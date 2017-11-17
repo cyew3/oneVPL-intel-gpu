@@ -401,11 +401,22 @@ STRUCT(mfxExtAvcTemporalLayers,
     FIELD_S(mfxExtAvcTemporalLayers_Layer, Layer)
 )
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+
 STRUCT(mfxExtEncoderCapability,
     FIELD_S(mfxExtBuffer, Header)
     FIELD_T(mfxU32, MBPerSec)
     FIELD_T(mfxU16, InputMemoryTiling)
 )
+
+#else
+
+STRUCT(mfxExtEncoderCapability,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU32, MBPerSec)
+)
+
+#endif
 
 STRUCT(mfxExtEncoderResetOption,
     FIELD_S(mfxExtBuffer, Header)
@@ -677,6 +688,7 @@ STRUCT(mfxExtFeiDecStreamOut,
     FIELD_T(mfxFeiDecStreamOutMBCtrl*, MB)
 )
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
 STRUCT(mfxExtFeiHevcEncFrameCtrl,
     FIELD_S(mfxExtBuffer, Header)
     FIELD_T(mfxU16,       SearchPath)
@@ -716,6 +728,7 @@ STRUCT(mfxExtFeiHevcEncQP,
     FIELD_T(mfxU32,       Height)
     FIELD_T(mfxU8*,       Data)
 )
+#endif
 
 STRUCT(mfxExtCamGammaCorrection,
     FIELD_S(mfxExtBuffer, Header         )
@@ -816,6 +829,58 @@ STRUCT(mfxExtAVCRefLists,
     FIELD_S(mfxExtAVCRefLists_mfxRefPic, RefPicList1)
 )
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+STRUCT(mfxExtCodingOption3,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU16, NumSliceI)
+    FIELD_T(mfxU16, NumSliceP)
+    FIELD_T(mfxU16, NumSliceB)
+    FIELD_T(mfxU16, WinBRCMaxAvgKbps)
+    FIELD_T(mfxU16, WinBRCSize)
+    FIELD_T(mfxU16, QVBRQuality)
+    FIELD_T(mfxU16, EnableMBQP)
+    FIELD_T(mfxU16, IntRefCycleDist)
+    FIELD_T(mfxU16, DirectBiasAdjustment)
+    FIELD_T(mfxU16, GlobalMotionBiasAdjustment)/* tri-state option */
+    FIELD_T(mfxU16, MVCostScalingFactor)
+    FIELD_T(mfxU16, MBDisableSkipMap)/* tri-state option */
+    FIELD_T(mfxU16, WeightedPred)
+    FIELD_T(mfxU16, WeightedBiPred)
+    FIELD_T(mfxU16, AspectRatioInfoPresent) /* tri-state option */
+    FIELD_T(mfxU16, OverscanInfoPresent) /* tri-state option */
+    FIELD_T(mfxU16, OverscanAppropriate) /* tri-state option */
+    FIELD_T(mfxU16, TimingInfoPresent) /* tri-state option */
+    FIELD_T(mfxU16, BitstreamRestriction) /* tri-state option */
+    FIELD_T(mfxU16, LowDelayHrd) /* tri-state option */
+    FIELD_T(mfxU16, MotionVectorsOverPicBoundaries) /* tri-state option */
+    FIELD_T(mfxU16, Log2MaxMvLengthHorizontal) /* 0..16 */
+    FIELD_T(mfxU16, Log2MaxMvLengthVertical) /* 0..16 */
+    FIELD_T(mfxU16, ScenarioInfo)
+    FIELD_T(mfxU16, ContentInfo)
+    FIELD_T(mfxU16, PRefType)
+    FIELD_T(mfxU16, FadeDetection) /* tri-state option */
+    FIELD_T(mfxI16, DeblockingAlphaTcOffset) /* -12..12 (slice_alpha_c0_offset_div2 << 1) */
+    FIELD_T(mfxI16, DeblockingBetaOffset) /* -12..12 (slice_beta_offset_div2 << 1) */
+    FIELD_T(mfxU16, GPB)
+    FIELD_T(mfxU32, MaxFrameSizeI)
+    FIELD_T(mfxU32, MaxFrameSizeP)
+    FIELD_T(mfxU16, EnableQPOffset)
+    FIELD_T(mfxI16, QPOffset)
+    FIELD_T(mfxU16, NumRefActiveP)
+    FIELD_T(mfxU16, NumRefActiveBL0)
+    FIELD_T(mfxU16, NumRefActiveBL1)
+    FIELD_T(mfxU16, BRCPanicMode)
+    FIELD_T(mfxU16, LowDelayBRC)
+    FIELD_T(mfxU16, EnableMBForceIntra)
+    FIELD_T(mfxU16, AdaptiveMaxFrameSize)
+    FIELD_T(mfxU16, RepartitionCheckEnable) /* tri-state option */
+    FIELD_T(mfxU16, QuantScaleType)
+    FIELD_T(mfxU16, IntraVLCFormat)
+    FIELD_T(mfxU16, ScanType)
+    FIELD_T(mfxU16, EncodedUnitsInfo)
+    FIELD_T(mfxU16, EnableNalUnitType)
+)
+#else
 STRUCT(mfxExtCodingOption3,
     FIELD_S(mfxExtBuffer, Header                        )
     FIELD_T(mfxU16      , NumSliceI                     )
@@ -839,14 +904,10 @@ STRUCT(mfxExtCodingOption3,
     FIELD_T(mfxU16      , BitstreamRestriction          ) /* tri-state option */
     FIELD_T(mfxU16      , LowDelayHrd                   ) /* tri-state option */
     FIELD_T(mfxU16      , MotionVectorsOverPicBoundaries) /* tri-state option */
-    FIELD_T(mfxU16      , Log2MaxMvLengthHorizontal     ) /* 0..16 */
-    FIELD_T(mfxU16      , Log2MaxMvLengthVertical       ) /* 0..16 */
     FIELD_T(mfxU16      , ScenarioInfo                  )
     FIELD_T(mfxU16      , ContentInfo                   )
     FIELD_T(mfxU16      , PRefType                      )
     FIELD_T(mfxU16      , FadeDetection                 ) /* tri-state option */
-    FIELD_T(mfxI16      , DeblockingAlphaTcOffset       ) /* -12..12 (slice_alpha_c0_offset_div2 << 1) */
-    FIELD_T(mfxI16      , DeblockingBetaOffset          ) /* -12..12 (slice_beta_offset_div2 << 1) */
     FIELD_T(mfxU16      , GPB                           )
     FIELD_T(mfxU32      , MaxFrameSizeI                 )
     FIELD_T(mfxU32      , MaxFrameSizeP                 )
@@ -860,12 +921,10 @@ STRUCT(mfxExtCodingOption3,
     FIELD_T(mfxU16      , EnableMBForceIntra            )
     FIELD_T(mfxU16      , AdaptiveMaxFrameSize          )
     FIELD_T(mfxU16      , RepartitionCheckEnable        ) /* tri-state option */
-    FIELD_T(mfxU16      , QuantScaleType                )
-    FIELD_T(mfxU16      , IntraVLCFormat                )
-    FIELD_T(mfxU16      , ScanType                      )
     FIELD_T(mfxU16      , EncodedUnitsInfo              )
     FIELD_T(mfxU16      , EnableNalUnitType             )
 )
+#endif
 
 STRUCT(mfxExtLAControl,
     FIELD_S(mfxExtBuffer, Header       )
@@ -918,6 +977,8 @@ STRUCT(mfxExtDecodeErrorReport,
     FIELD_T(mfxU32      , ErrorTypes)
 )
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+
 STRUCT(mfxInitParam,
     FIELD_T(mfxIMPL        , Implementation )
     FIELD_S(mfxVersion     , Version        )
@@ -927,6 +988,19 @@ STRUCT(mfxInitParam,
     FIELD_T(mfxU16         , GPUCopy        )
     FIELD_T(mfxU16         , AltDependencies)
 )
+
+#else
+
+STRUCT(mfxInitParam,
+    FIELD_T(mfxIMPL, Implementation)
+    FIELD_S(mfxVersion, Version)
+    FIELD_T(mfxU16, ExternalThreads)
+    FIELD_T(mfxExtBuffer**, ExtParam)
+    FIELD_T(mfxU16, NumExtParam)
+    FIELD_T(mfxU16, GPUCopy)
+)
+
+#endif
 
 STRUCT(mfxExtThreadsParam,
     FIELD_S(mfxExtBuffer, Header        )
@@ -1009,6 +1083,8 @@ STRUCT(mfxExtMBDisableSkipMap,
 //    FIELD_T(mfxU16      , VPSId)
 //)
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+
 STRUCT(mfxExtHEVCParam,
     FIELD_S(mfxExtBuffer , Header                )
     FIELD_T(mfxU16       , PicWidthInLumaSamples )
@@ -1018,6 +1094,17 @@ STRUCT(mfxExtHEVCParam,
     FIELD_T(mfxU16       , LCUSize)
 )
 
+#else
+
+STRUCT(mfxExtHEVCParam,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU16, PicWidthInLumaSamples)
+    FIELD_T(mfxU16, PicHeightInLumaSamples)
+    FIELD_T(mfxU64, GeneralConstraintFlags)
+)
+
+#endif
+
 STRUCT(mfxExtHEVCRegion,
     FIELD_S(mfxExtBuffer, Header )
     FIELD_T(mfxU32      , RegionId)
@@ -1025,6 +1112,7 @@ STRUCT(mfxExtHEVCRegion,
     FIELD_T(mfxU16      , RegionEncoding)
 )
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
 STRUCT(mfxExtVP9DecodedFrameInfo,
     FIELD_S(mfxExtBuffer, Header )
     //FIELD_T(mfxU16      , DisplayWidth)
@@ -1070,6 +1158,7 @@ STRUCT(mfxExtVP9Param,
     FIELD_T(mfxU16      , NumTileRows)
     FIELD_T(mfxU16      , NumTileColumns)
 )
+#endif
 
 STRUCT(mfxExtMBForceIntra,
     FIELD_S(mfxExtBuffer, Header)

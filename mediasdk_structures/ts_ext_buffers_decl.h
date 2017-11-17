@@ -60,10 +60,12 @@ EXTBUF(mfxExtFEIH265Output          , MFX_EXTBUFF_FEI_H265_OUTPUT           )
 EXTBUF(mfxExtFeiSliceHeader         , MFX_EXTBUFF_FEI_SLICE                 )
 EXTBUF(mfxExtFeiRepackCtrl          , MFX_EXTBUFF_FEI_REPACK_CTRL           )
 EXTBUF(mfxExtFeiDecStreamOut        , MFX_EXTBUFF_FEI_DEC_STREAM_OUT        )
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
 EXTBUF(mfxExtFeiHevcEncFrameCtrl    , MFX_EXTBUFF_HEVCFEI_ENC_CTRL          )
 EXTBUF(mfxExtFeiHevcEncMVPredictors , MFX_EXTBUFF_HEVCFEI_ENC_MV_PRED       )
 EXTBUF(mfxExtFeiHevcEncQP           , MFX_EXTBUFF_HEVCFEI_ENC_QP            )
 EXTBUF(mfxExtFeiHevcEncCtuCtrl      , MFX_EXTBUFF_HEVCFEI_ENC_CTU_CTRL      )
+#endif
 // end of FEI
 // Camera
 EXTBUF(mfxExtCamTotalColorControl   , MFX_EXTBUF_CAM_TOTAL_COLOR_CONTROL     )
@@ -103,10 +105,12 @@ EXTBUF(mfxExtScreenCaptureParam     , MFX_EXTBUFF_SCREEN_CAPTURE_PARAM      )
 EXTBUF(mfxExtDirtyRect              , MFX_EXTBUFF_DIRTY_RECTANGLES          )
 EXTBUF(mfxExtMoveRect               , MFX_EXTBUFF_MOVING_RECTANGLES         )
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
 EXTBUF(mfxExtVP9DecodedFrameInfo    , MFX_EXTBUFF_VP9_DECODED_FRAME_INFO    )
 EXTBUF(mfxExtVP9Segmentation        , MFX_EXTBUFF_VP9_SEGMENTATION          )
 EXTBUF(mfxExtVP9TemporalLayers      , MFX_EXTBUFF_VP9_TEMPORAL_LAYERS       )
 EXTBUF(mfxExtVP9Param               , MFX_EXTBUFF_VP9_PARAM                 )
+#endif
 
 EXTBUF(mfxExtHEVCParam              , MFX_EXTBUFF_HEVC_PARAM                )
 EXTBUF(mfxExtPredWeightTable        , MFX_EXTBUFF_PRED_WEIGHT_TABLE         )

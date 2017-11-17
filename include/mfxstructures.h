@@ -191,7 +191,11 @@ typedef struct
     mfxU32 V : 10;
     mfxU32 A :  2;
 } mfxY410;
+#pragma pack(pop)
+#endif
 
+#if (MFX_VERSION >= 1025)
+#pragma pack(push, 4)
 typedef struct
 {
     mfxU32 B : 10;
@@ -247,7 +251,7 @@ typedef struct {
         mfxU8   *V;
         mfxU16  *V16;
         mfxU8   *B;
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
         mfxA2RGB10 *A2RGB10;    /* for A2RGB10 format (merged ARGB) */
 #endif
     };
@@ -789,13 +793,19 @@ typedef struct {
     mfxU16      QuantScaleType;            /* For MPEG2 specifies mapping between quantiser_scale_code and quantiser_scale (see QuantScaleType enum) */
     mfxU16      IntraVLCFormat;            /* For MPEG2 specifies which table shall be used for coding of DCT coefficients of intra macroblocks (see IntraVLCFormat enum) */
     mfxU16      ScanType;                  /* For MPEG2 specifies transform coefficients scan pattern (see ScanType enum) */
+    mfxU16      EncodedUnitsInfo;          /* tri-state option */
+    mfxU16      EnableNalUnitType;         /* tri-state option */
+
+    mfxU16      reserved[164];
+#elif (MFX_VERSION >= 1025)
+    mfxU16      reserved5[3];
 
     mfxU16      EncodedUnitsInfo;          /* tri-state option */
-
     mfxU16      EnableNalUnitType;         /* tri-state option */
 
     mfxU16      reserved[164];
 #else
+
     mfxU16      reserved[169];
 #endif
 } mfxExtCodingOption3;
@@ -882,21 +892,23 @@ enum {
     MFX_EXTBUFF_VPP_MIRRORING                   = MFX_MAKEFOURCC('M','I','R','R'),
     MFX_EXTBUFF_MV_OVER_PIC_BOUNDARIES          = MFX_MAKEFOURCC('M','V','P','B'),
     MFX_EXTBUFF_VPP_COLORFILL                   = MFX_MAKEFOURCC('V','C','L','F'),
+#if (MFX_VERSION >= 1025)
+    MFX_EXTBUFF_DECODE_ERROR_REPORT             = MFX_MAKEFOURCC('D', 'E', 'R', 'R'),
+    MFX_EXTBUFF_VPP_COLOR_CONVERSION            = MFX_MAKEFOURCC('V', 'C', 'S', 'C'),
+    MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO        = MFX_MAKEFOURCC('L', 'L', 'I', 'S'),
+    MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME = MFX_MAKEFOURCC('D', 'C', 'V', 'S'),
+    MFX_EXTBUFF_MULTI_FRAME_PARAM               = MFX_MAKEFOURCC('M', 'F', 'R', 'P'),
+    MFX_EXTBUFF_MULTI_FRAME_CONTROL             = MFX_MAKEFOURCC('M', 'F', 'R', 'C'),
+    MFX_EXTBUFF_ENCODED_UNITS_INFO              = MFX_MAKEFOURCC('E', 'N', 'U', 'I'),
+#endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
-    MFX_EXTBUFF_DECODE_ERROR_REPORT             = MFX_MAKEFOURCC('D','E','R','R'),
     MFX_EXTBUFF_DPB                             = MFX_MAKEFOURCC('E','D','P','B'),
     MFX_EXTBUFF_TEMPORAL_LAYERS                 = MFX_MAKEFOURCC('T','M','P','L'),
     MFX_EXTBUFF_AVC_SCALING_MATRIX              = MFX_MAKEFOURCC('A','V','S','M'),
     MFX_EXTBUFF_MPEG2_QUANT_MATRIX              = MFX_MAKEFOURCC('M','2','Q','M'),
-    MFX_EXTBUFF_VPP_COLOR_CONVERSION            = MFX_MAKEFOURCC('V','C','S','C'),
     MFX_EXTBUFF_VP9_SEGMENTATION                = MFX_MAKEFOURCC('9','S','E','G'),
     MFX_EXTBUFF_VP9_TEMPORAL_LAYERS             = MFX_MAKEFOURCC('9','T','M','L'),
     MFX_EXTBUFF_VP9_PARAM                       = MFX_MAKEFOURCC('9','P','A','R'),
-    MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO        = MFX_MAKEFOURCC('L','L','I','S'),
-    MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME = MFX_MAKEFOURCC('D','C','V','S'),
-    MFX_EXTBUFF_MULTI_FRAME_PARAM               = MFX_MAKEFOURCC('M','F','R','P'),
-    MFX_EXTBUFF_MULTI_FRAME_CONTROL             = MFX_MAKEFOURCC('M','F','R','C'),
-    MFX_EXTBUFF_ENCODED_UNITS_INFO              = MFX_MAKEFOURCC('E','N','U','I'),
     MFX_EXTBUFF_TASK_DEPENDENCY                 = MFX_MAKEFOURCC('S','Y','N','C'),
 #endif
 };
@@ -981,7 +993,7 @@ typedef struct {
 
 typedef struct {
     mfxExtBuffer    Header;
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
     mfxU32  reserved[4];
     mfxU16  reserved1;
     mfxU16  MfxNalUnitType;
@@ -1030,7 +1042,7 @@ enum {
     MFX_MEMTYPE_OPAQUE_FRAME    = 0x0004,
     MFX_MEMTYPE_EXPORT_FRAME    = 0x0008,
     MFX_MEMTYPE_SHARED_RESOURCE = MFX_MEMTYPE_EXPORT_FRAME,
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
     MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET = 0x1000
 #else
     MFX_MEMTYPE_RESERVED2       = 0x1000
@@ -1083,7 +1095,7 @@ enum {
     MFX_FRAMETYPE_xIDR          =0x8000
 };
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
 enum {
     MFX_HEVC_NALU_TYPE_UNKNOWN    =      0,
     MFX_HEVC_NALU_TYPE_TRAIL_N    = ( 0+1),
@@ -1208,7 +1220,7 @@ typedef struct {
     mfxU16  reserved[11];
 } mfxExtVPPImageStab;
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
 
 enum {
     MFX_PAYLOAD_OFF = 0,
@@ -1651,7 +1663,7 @@ typedef struct {
 } mfxExtHEVCParam;
 #pragma pack(pop)
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
 /*ErrorTypes in mfxExtDecodeErrorReport*/
 enum {
     MFX_ERROR_PPS           = (1 << 0),
@@ -1913,7 +1925,7 @@ typedef struct {
     mfxU16 reserved[11];
 } mfxExtVPPColorFill;
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
 
 /* ChromaSiting */
 enum {
@@ -1932,6 +1944,9 @@ typedef struct {
     mfxU16 reserved[27];
 } mfxExtColorConversion;
 
+#endif
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
 /* VP9ReferenceFrame */
 enum {
     MFX_VP9_REF_INTRA   = 0,
@@ -2011,6 +2026,9 @@ typedef struct {
     mfxU16  reserved[110];
 } mfxExtVP9Param;
 
+#endif
+
+#if (MFX_VERSION >= 1025)
 /* Multi-Frame Mode */
 enum {
     MFX_MF_DEFAULT = 0,

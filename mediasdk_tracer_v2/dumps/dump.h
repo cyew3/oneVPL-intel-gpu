@@ -444,27 +444,18 @@ public:
                         case MFX_EXTBUFF_DEC_VIDEO_PROCESSING:
                             str += dump(name, *((mfxExtDecVideoProcessing*)_struct.ExtParam[i])) + "\n";
                             break;
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+                        case MFX_EXTBUFF_BRC:
+                            str += dump(name, *((mfxExtBRC*)_struct.ExtParam[i])) + "\n";
+                            break;
+#if (MFX_VERSION >= 1025)
                         case  MFX_EXTBUFF_DECODE_ERROR_REPORT:
                             str += dump(name, *((mfxExtDecodeErrorReport*)_struct.ExtParam[i])) + "\n";
-                            break;
-                        case MFX_EXTBUFF_VP9_SEGMENTATION:
-                            str += dump(name, *((mfxExtVP9Segmentation*)_struct.ExtParam[i])) + "\n";
-                            break;
-                        case MFX_EXTBUFF_VP9_TEMPORAL_LAYERS:
-                            str += dump(name, *((mfxExtVP9TemporalLayers*)_struct.ExtParam[i])) + "\n";
-                            break;
-                        case MFX_EXTBUFF_VP9_PARAM:
-                            str += dump(name, *((mfxExtVP9Param*)_struct.ExtParam[i])) + "\n";
                             break;
                         case MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME:
                             str += dump(name, *((mfxExtMasteringDisplayColourVolume*)_struct.ExtParam[i])) + "\n";
                             break;
                         case MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO:
                             str += dump(name, *((mfxExtContentLightLevelInfo*)_struct.ExtParam[i])) + "\n";
-                            break;
-                        case MFX_EXTBUFF_BRC:
-                            str += dump(name, *((mfxExtBRC*)_struct.ExtParam[i])) + "\n";
                             break;
                         case MFX_EXTBUFF_MULTI_FRAME_PARAM:
                             str += dump(name, *((mfxExtMultiFrameParam*)_struct.ExtParam[i])) + "\n";
@@ -474,6 +465,17 @@ public:
                             break;
                         case MFX_EXTBUFF_ENCODED_UNITS_INFO:
                             str += dump(name, *((mfxExtEncodedUnitsInfo*)_struct.ExtParam[i])) + "\n";
+                            break;
+#endif
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+                        case MFX_EXTBUFF_VP9_SEGMENTATION:
+                            str += dump(name, *((mfxExtVP9Segmentation*)_struct.ExtParam[i])) + "\n";
+                            break;
+                        case MFX_EXTBUFF_VP9_TEMPORAL_LAYERS:
+                            str += dump(name, *((mfxExtVP9TemporalLayers*)_struct.ExtParam[i])) + "\n";
+                            break;
+                        case MFX_EXTBUFF_VP9_PARAM:
+                            str += dump(name, *((mfxExtVP9Param*)_struct.ExtParam[i])) + "\n";
                             break;
 #endif
                         default:
@@ -578,18 +580,22 @@ public:
     DEFINE_DUMP_FUNCTION(mfxExtMVOverPicBoundaries);
     DEFINE_DUMP_FUNCTION(mfxExtVPPColorFill);
     DEFINE_DUMP_FUNCTION(mfxExtDecVideoProcessing);
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
     DEFINE_DUMP_FUNCTION(mfxExtDecodeErrorReport);
-    DEFINE_DUMP_FUNCTION(mfxVP9SegmentParam);
-    DEFINE_DUMP_FUNCTION(mfxExtVP9Segmentation);
-    DEFINE_DUMP_FUNCTION(mfxVP9TemporalLayer);
-    DEFINE_DUMP_FUNCTION(mfxExtVP9TemporalLayers);
-    DEFINE_DUMP_FUNCTION(mfxExtVP9Param);
     DEFINE_DUMP_FUNCTION(mfxExtMasteringDisplayColourVolume);
     DEFINE_DUMP_FUNCTION(mfxExtContentLightLevelInfo);
     DEFINE_DUMP_FUNCTION(mfxExtMultiFrameParam);
     DEFINE_DUMP_FUNCTION(mfxExtMultiFrameControl);
     DEFINE_DUMP_FUNCTION(mfxExtEncodedUnitsInfo);
+#endif
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+
+    DEFINE_DUMP_FUNCTION(mfxVP9SegmentParam);
+    DEFINE_DUMP_FUNCTION(mfxExtVP9Segmentation);
+    DEFINE_DUMP_FUNCTION(mfxVP9TemporalLayer);
+    DEFINE_DUMP_FUNCTION(mfxExtVP9TemporalLayers);
+    DEFINE_DUMP_FUNCTION(mfxExtVP9Param);
 #endif
 
     //mfxsession

@@ -183,7 +183,7 @@ typedef struct {
         mfxU32    ForceToIntra     : 1;
         mfxU32    ForceToSkip      : 1;
         mfxU32    ForceToNoneSkip  : 1;
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
         mfxU32    DirectBiasAdjustment        : 1;
         mfxU32    GlobalMotionBiasAdjustment  : 1;
         mfxU32    MVCostScalingFactor         : 3;
@@ -335,7 +335,7 @@ typedef struct {
     mfxU8       DeltaQP[8];   /* list of delta QPs, only positive values */
 } mfxExtFeiRepackCtrl;
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
 /* FEI repack status */
 typedef struct {
     mfxExtBuffer    Header;
@@ -533,7 +533,7 @@ enum {
     MFX_EXTBUFF_FEI_CODING_OPTION  = MFX_MAKEFOURCC('F','C','D','O'),
     MFX_EXTBUFF_FEI_DEC_STREAM_OUT = MFX_MAKEFOURCC('F','D','S','O'),
     MFX_EXTBUFF_FEI_REPACK_CTRL    = MFX_MAKEFOURCC('F','E','R','P'),
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
     MFX_EXTBUFF_FEI_REPACK_STAT    = MFX_MAKEFOURCC('F','E','R','S')
 #endif
 };

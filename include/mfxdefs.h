@@ -31,14 +31,14 @@ File Name: mfxdefs.h
 #define __MFXDEFS_H__
 
 #define MFX_VERSION_MAJOR 1
-#define MFX_VERSION_MINOR 25
+#define MFX_VERSION_MINOR 26
 
 
 #if !defined(MFX_VERSION) && !defined(MFX_VERSION_USE_LATEST)
 #define MFX_VERSION (MFX_VERSION_MAJOR * 1000 + MFX_VERSION_MINOR)
 #endif
 
-#define MFX_VERSION_NEXT   1025
+#define MFX_VERSION_NEXT   1026
 
 #if defined(MFX_VERSION_USE_LATEST)
 #define MFX_VERSION MFX_VERSION_NEXT

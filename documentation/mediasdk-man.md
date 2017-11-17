@@ -3168,7 +3168,7 @@ The `mfxEncodeCtrl` structure contains parameters for per-frame based encoding c
 
 **Change History**
 
-This structure is available since SDK API 1.0. SDK API 1.1 extended the `QP` field. Since SDK API 1.3 specification of `QP` in display order mode is allowed. SDK API TBD adds MfxNalUnitType field.
+This structure is available since SDK API 1.0. SDK API 1.1 extended the `QP` field. Since SDK API 1.3 specification of `QP` in display order mode is allowed. SDK API 1.25 adds MfxNalUnitType field.
 
 ## <a id='mfxEncodeStat'>mfxEncodeStat</a>
 
@@ -3654,9 +3654,9 @@ The SDK API 1.21 adds `BRCPanicMode` field.
 
 The SDK API 1.23 adds `LowDelayBRC`, `EnableMBForceIntra`, `AdaptiveMaxFrameSize`, `RepartitionCheckEnable` fields.
 
-The SDK API **TBD** adds `EncodedUnitsInfo` field.
+The SDK API 1.25 adds `EncodedUnitsInfo` field.
 
-The SDK API **TBD** adds `EnableNalUnitType` field.
+The SDK API 1.25 adds `EnableNalUnitType` field.
 
 ## <a id='mfxExtCodingOptionSPSPPS'>mfxExtCodingOptionSPSPPS</a>
 
@@ -4468,7 +4468,7 @@ The `mfxExtEncoderROI` structure is used by the application to specify different
 This structure is available since SDK API 1.8.
 
 The SDK API 1.22 adds `ROIMode` and `DeltaQP` fields.
-The SDK API **TBD** adds clarification that ROI rectangle Right, Bottom  are considered exclusive and aligment rules changed.
+The SDK API 1.25 adds clarification that ROI rectangle Right, Bottom  are considered exclusive and aligment rules changed.
 
 ## <a id='mfxExtMasteringDisplayColourVolume'>mfxExtMasteringDisplayColourVolume</a>
 
@@ -4504,7 +4504,7 @@ The `mfxExtMasteringDisplayColourVolume` structure configures the HDR SEI messag
 
 **Change History**
 
-This structure is available since SDK API **TBD**.
+This structure is available since SDK API 1.25.
 
 ## <a id='mfxExtContentLightLevelInfo'>mfxExtContentLightLevelInfo</a>
 
@@ -4536,7 +4536,7 @@ The `mfxExtContentLightLevelInfo` structure configures the HDR SEI message. If a
 
 **Change History**
 
-This structure is available since SDK API **TBD**.
+This structure is available since SDK API 1.25.
 
 ## <a id='mfxExtVPPDeinterlacing'>mfxExtVPPDeinterlacing</a>
 
@@ -6064,7 +6064,7 @@ Used by the application to specify dirty regions within a frame during encoding.
 **Change History**
 
 This structure is available since SDK API 1.16.
-The SDK API **TBD** adds clarification that Dirty rectangle Right, Bottom are considered exclusive and alignment rules changed. Added clarification about (0, 0, 0, 0) Dirty rectangle case.
+The SDK API 1.25 adds clarification that Dirty rectangle Right, Bottom are considered exclusive and alignment rules changed. Added clarification about (0, 0, 0, 0) Dirty rectangle case.
 
 ## <a id='mfxExtMoveRect'>mfxExtMoveRect</a>
 
@@ -6813,7 +6813,7 @@ Multi Frame submission will gather frames from several [joined](#MFXJoinSession)
 
 **Change History**
 
-This structure is available since SDK API **TBD**.
+This structure is available since SDK API 1.25.
 
 ## <a id='mfxExtMultiFrameControl'>mfxExtMultiFrameControl</a>
 
@@ -6845,7 +6845,7 @@ If applicaiton attaches this structure to the [mfxVideoParam](#mfxVideoParam) st
 
 **Change History**
 
-This structure is available since SDK API **TBD**.
+This structure is available since SDK API 1.25.
 
 ## <a id='mfxExtEncodedUnitsInfo'>mfxExtEncodedUnitsInfo</a>
 
@@ -6894,7 +6894,7 @@ The number of filled items in `UnitInfo` is `min(NumUnitsEncoded, NumUnitsAlloc)
 
 **Change History**
 
-This structure is available since SDK API **TBD**.
+This structure is available since SDK API 1.25.
 
 ## <a id='mfxExtColorConversion'>mfxExtColorConversion</a>
 
@@ -6932,7 +6932,7 @@ ChromaSiting is applied on input or output surface depending on the scenario:
 
 **Change History**
 
-This structure is available since SDK API **TBD**.
+This structure is available since SDK API 1.25.
 
 ## <a id='mfxExtDecodeErrorReport'>mfxExtDecodeErrorReport</a>
 
@@ -6960,7 +6960,7 @@ This structure is used by the SDK decoders to report bitstream error information
 
 **Change History**
 
-This structure is available since SDK API **TBD**
+This structure is available since SDK API 1.25.
 
 # Enumerator Reference
 
@@ -7292,7 +7292,9 @@ SDK API 1.23 adds `MFX_EXTBUFF_MB_FORCE_INTRA`.
 
 SDK API 1.24 adds `MFX_EXTBUFF_BRC`.
 
-SDK API **TBD** adds `MFX_EXTBUFF_VP9_PARAM`, `MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO`, `MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME`, `MFX_EXTBUFF_BRC`, `MFX_EXTBUFF_MULTI_FRAME_PARAM`, `MFX_EXTBUFF_MULTI_FRAME_CONTROL`, `MFX_EXTBUFF_ENCODED_UNITS_INFO`, `MFX_EXTBUFF_DECODE_ERROR_REPORT`, `MFX_EXTBUFF_TASK_DEPENDENCY.
+SDK API 1.25 adds `MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO`, `MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME`, `MFX_EXTBUFF_MULTI_FRAME_PARAM`, `MFX_EXTBUFF_MULTI_FRAME_CONTROL`, `MFX_EXTBUFF_ENCODED_UNITS_INFO` and `MFX_EXTBUFF_DECODE_ERROR_REPORT`.
+
+SDK API **TBD** adds `MFX_EXTBUFF_VP9_PARAM`, `MFX_EXTBUFF_TASK_DEPENDENCY`.
 
 See additional change history in the structure definitions.
 
@@ -7411,7 +7413,7 @@ This enumerator specifies NAL unit types supported by the SDK HEVC encoder.
 
 **Change History**
 
-This enumerator is available since SDK API TBD.
+This enumerator is available since SDK API 1.25.
 
 ## <a id='FrcAlgm'>FrcAlgm</a>
 
@@ -8138,7 +8140,9 @@ The `PlatformCodeName` enumerator itemizes Intel® processor microarchitecture c
 This enumerator is available since SDK API 1.19.
 SDK API 1.22 adds `MFX_PLATFORM_APOLLOLAKE`, and `MFX_PLATFORM_KABYLAKE`.
 
-SDK API **TBD** adds `MFX_PLATFORM_GEMINILAKE`, `MFX_PLATFORM_COFFEELAKE`, `MFX_PLATFORM_CANNONLAKE`, `MFX_PLATFORM_ICELAKE`, `MFX_PLATFORM_LAKEFIELD` and `MFX_PLATFORM_TIGERLAKE`.
+SDK API 1.25 adds `MFX_PLATFORM_GEMINILAKE`, `MFX_PLATFORM_COFFEELAKE` and `MFX_PLATFORM_CANNONLAKE`.
+
+SDK API **TBD** adds `MFX_PLATFORM_ICELAKE`, `MFX_PLATFORM_LAKEFIELD` and `MFX_PLATFORM_TIGERLAKE`.
 
 ## <a id='PayloadCtrlFlags'>PayloadCtrlFlags</a>
 
@@ -8249,7 +8253,7 @@ The `MFMode` enumerator defines multi-frame submission mode.
 
 **Change History**
 
-This enumerator is available since SDK API **TBD**.
+This enumerator is available since SDK API 1.25.
 
 ## <a id='ErrorTypes'>ErrorTypes</a>
 
@@ -8269,7 +8273,7 @@ The `ErrorTypes` enumerator uses bit-ORed values to itemize bitstream error type
 
 **Change History**
 
-This enumerator is available since SDK API **TBD**
+This enumerator is available since SDK API 1.25.
 
 ## <a id='ChromaSiting'>ChromaSiting</a>
 
@@ -8290,7 +8294,7 @@ The `ChromaSiting` enumerator defines chroma location. Use bit-OR’ed values to
 
 **Change History**
 
-This enumerator is available since SDK API **TBD**.
+This enumerator is available since SDK API 1.25.
 
 # Appendices
 

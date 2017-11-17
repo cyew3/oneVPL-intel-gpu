@@ -256,7 +256,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiEncMB
     DUMP_FIELD(ForceToIntra);
     DUMP_FIELD(ForceToSkip);
     DUMP_FIELD(ForceToNoneSkip);
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
     DUMP_FIELD(DirectBiasAdjustment);
     DUMP_FIELD(GlobalMotionBiasAdjustment);
     DUMP_FIELD(MVCostScalingFactor);
