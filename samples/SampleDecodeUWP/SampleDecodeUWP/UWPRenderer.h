@@ -42,6 +42,7 @@ public:
 
     virtual bool RunOnce() override;
     void SetFrameRate(double frameRate) { timeoutTicks = (msdk_tick)(CMSDKTime::GetFrequency() / frameRate); }
+    void SetPlay(bool isPlaying);
 
 protected:
     mfxStatus RenderFrame(CMfxFrameSurfaceExt* pSrf);
@@ -61,6 +62,7 @@ protected:
     std::mutex cs;
 
     std::atomic<msdk_tick> timeoutTicks;
+    std::atomic<bool> isPlaying;
     msdk_tick prevFrameTimestamp;
 };
 

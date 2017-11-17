@@ -300,6 +300,7 @@ mfxStatus CDecodingPipeline::InitSession()
 
 void CDecodingPipeline::Play()
 {
+    rendererPanel->SetPlay(true);
     if (!IsRunning())
     {
         //--- Currently pipeline is stopped, let's start playing
@@ -324,6 +325,7 @@ void CDecodingPipeline::Stop()
 void CDecodingPipeline::Pause()
 {
     pipelineStatus = PS_PAUSED;
+    rendererPanel->SetPlay(false);
     if (OnPipelineStatusChanged)
     {
         OnPipelineStatusChanged(PS_PAUSED);

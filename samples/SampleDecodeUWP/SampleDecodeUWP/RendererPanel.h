@@ -39,6 +39,11 @@ namespace SampleDecodeUWP
             renderer.SetFrameRate(frameRate);
         }
 
+        void SetPlay(bool isPlaying)
+        {
+            renderer.SetPlay(isPlaying);
+        }
+
     private:
         CUWPRenderer renderer;
         void OnLayoutUpdated(Platform::Object ^sender, Platform::Object ^args);

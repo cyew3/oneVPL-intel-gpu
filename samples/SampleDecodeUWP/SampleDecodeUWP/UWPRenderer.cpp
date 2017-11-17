@@ -26,6 +26,7 @@ CUWPRenderer::CUWPRenderer()
     pVideoProcessor = NULL;
     prevFrameTimestamp = 0;
     SetFrameRate(100);
+    isPlaying = true;
 }
 
 mfxStatus CUWPRenderer::CreateSwapChain(mfxHDL pDevHdl, UINT width, UINT height, bool is10Bit)
@@ -227,6 +228,10 @@ void CUWPRenderer::EnqueueSurface(CMfxFrameSurfaceExt* surface)
 
 bool CUWPRenderer::RunOnce()
 {
+    if (!isPlaying)
+    {
+        return true;
+    }
     CMfxFrameSurfaceExt* pSurf = NULL;
     msdk_tick now;
     while ((now = CMSDKTime::GetTick()) - prevFrameTimestamp < timeoutTicks); // wait for exact time for the frame
@@ -251,4 +256,9 @@ CMfxFrameSurfaceExt * CUWPRenderer::PopSurface()
         outputSurfaces.pop_front();
     }
     return retVal;
+}
+
+void CUWPRenderer::SetPlay(bool isPlaying)
+{
+    this->isPlaying = isPlaying;
 }
