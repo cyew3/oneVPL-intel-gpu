@@ -3322,7 +3322,7 @@ Status TaskSupplier::AddOneFrame(MediaData * pSource)
             umsRes = DecodeHeaders(nalUnit);
             if (umsRes != UMC_OK)
             {
-                if (umsRes == UMC_NTF_NEW_RESOLUTION)
+                if (umsRes == UMC_NTF_NEW_RESOLUTION && pSource)
                 {
                     Ipp32s size = (Ipp32s)nalUnit->GetDataSize();
                     pSource->MoveDataPointer(- size - 3);
