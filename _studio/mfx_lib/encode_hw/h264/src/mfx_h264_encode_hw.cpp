@@ -3829,12 +3829,12 @@ mfxStatus ImplementationAvc::UpdateBitstream(
     if (task.m_fieldPicFlag)
         task.m_bs->FrameType = mfxU16(task.m_bs->FrameType | ((task.m_type[!task.GetFirstField()]& ~MFX_FRAMETYPE_KEYPIC) << 8));
 
-    mfxExtCodingOption * extOpt = GetExtBuffer(m_video);
+    mfxExtCodingOption const &extOpt = GetExtBufferRef(m_video);
 
     if (task.m_bs->NumExtParam > 0)
     {
         // setting of mfxExtAVCEncodedFrameInfo isn't supported for FieldOutput mode at the moment
-        if (IsOff(extOpt->FieldOutput))
+        if (IsOff(extOpt.FieldOutput))
         {
             mfxExtAVCEncodedFrameInfo * encFrameInfo = (mfxExtAVCEncodedFrameInfo*)GetExtBuffer(task.m_bs->ExtParam, task.m_bs->NumExtParam, MFX_EXTBUFF_ENCODED_FRAME_INFO);
             if (encFrameInfo)
