@@ -943,6 +943,14 @@ mfxStatus CTranscodingPipeline::Decode()
                         {
                             m_mfxVppParams.vpp.Out.PicStruct = MFX_PICSTRUCT_FIELD_SINGLE;
                             sts = VPPOneFrame(&DecExtSurface, &VppExtSurface);
+                            if (sts == MFX_ERR_MORE_SURFACE)
+                            {
+                                VppExtSurface.pSurface->Info.PicStruct = DecExtSurface.pSurface->Info.PicStruct & MFX_PICSTRUCT_FIELD_TFF ? (mfxU16)MFX_PICSTRUCT_FIELD_TOP : (mfxU16)MFX_PICSTRUCT_FIELD_BOTTOM;
+                            }
+                            else if (sts == MFX_ERR_NONE)
+                            {
+                                VppExtSurface.pSurface->Info.PicStruct = DecExtSurface.pSurface->Info.PicStruct & MFX_PICSTRUCT_FIELD_TFF ? (mfxU16)MFX_PICSTRUCT_FIELD_BOTTOM : (mfxU16)MFX_PICSTRUCT_FIELD_TOP;
+                            }
                         }
                         else
                         {
