@@ -170,7 +170,7 @@ namespace hevce_interlace_invalid_scenarios
 
                     s.Info.Height = s.Info.CropH = m_pPar->mfx.FrameInfo.Height - GetRandomNumber(1, 30);
 
-                    m_sync_status = MFX_ERR_INVALID_VIDEO_PARAM;
+                    m_submit_status = MFX_ERR_INVALID_VIDEO_PARAM;
                 }
                 break;
 
@@ -315,7 +315,8 @@ namespace hevce_interlace_invalid_scenarios
 
         mfxU32 m_test_mode = INVALID_PICSTRUCT;
 
-        mfxStatus m_sync_status = MFX_ERR_NONE;
+        mfxStatus m_sync_status   = MFX_ERR_NONE;
+        mfxStatus m_submit_status = MFX_ERR_NONE;
 
         std::mt19937 m_Gen; // random number generator
     };
@@ -444,8 +445,18 @@ namespace hevce_interlace_invalid_scenarios
             {
                 continue;
             }
+            // Set and check expected status for frame submit
+            g_tsStatus.expect(m_submit_status);
             g_tsStatus.check(); TS_CHECK_MFX;
 
+            // Return back MFX_ERR_NONE to expect correct application termination
+            g_tsStatus.expect(MFX_ERR_NONE);
+
+            // Break from encoding loop in case of error
+            if (m_submit_status != MFX_ERR_NONE)
+                break;
+
+            // Set and check expected status for frame sync
             g_tsStatus.expect(m_sync_status);
 
             SyncOperation();
