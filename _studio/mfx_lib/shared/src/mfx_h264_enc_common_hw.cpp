@@ -4757,7 +4757,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         unsupported = true;
     }
 #endif
-    if (par.calcParam.numTemporalLayer > 1 || IsMvcProfile(par.mfx.CodecProfile))
+    if ((par.calcParam.numTemporalLayer > 1 || IsMvcProfile(par.mfx.CodecProfile)) && IsOn(extOpt3->EncodedUnitsInfo))
     {
         extOpt3->EncodedUnitsInfo = MFX_CODINGOPTION_OFF;
         unsupported = true;
