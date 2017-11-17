@@ -58,9 +58,11 @@ static CodeStringTable StringsOfFourcc[] =
     { MFX_FOURCC_NV16,               VM_STRING("NV16")  },
     { MFX_FOURCC_P210,               VM_STRING("P210")  },
     { MFX_FOURCC_Y210,               VM_STRING("Y210")  },
-    { MFX_FOURCC_Y216,               VM_STRING("Y216")  },
     { MFX_FOURCC_Y410,               VM_STRING("Y410")  },
     { MFX_FOURCC_AYUV,               VM_STRING("AYUV")  },
+    { MFX_FOURCC_P016,               VM_STRING("P016")  },
+    { MFX_FOURCC_Y216,               VM_STRING("Y216")  },
+    { MFX_FOURCC_Y416,               VM_STRING("Y416")  },
 };
 
 #define DEFINE_ERR_CODE(code)\
