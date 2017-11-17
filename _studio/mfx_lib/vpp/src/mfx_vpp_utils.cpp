@@ -35,7 +35,7 @@ const mfxU32 g_TABLE_DO_NOT_USE [] =
     MFX_EXTBUFF_VPP_COMPOSITE,
     MFX_EXTBUFF_VPP_ROTATION,
     MFX_EXTBUFF_VPP_SCALING,
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
     MFX_EXTBUFF_VPP_COLOR_CONVERSION,
 #endif
     MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO,
@@ -55,7 +55,7 @@ const mfxU32 g_TABLE_DO_USE [] =
     MFX_EXTBUFF_VPP_COMPOSITE,
     MFX_EXTBUFF_VPP_ROTATION,
     MFX_EXTBUFF_VPP_SCALING,
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
     MFX_EXTBUFF_VPP_COLOR_CONVERSION,
 #endif
 #ifdef MFX_UNDOCUMENTED_VPP_VARIANCE_REPORT
@@ -83,7 +83,7 @@ const mfxU32 g_TABLE_CONFIG [] =
     MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO,
     MFX_EXTBUFF_VPP_FIELD_PROCESSING,
     MFX_EXTBUFF_VPP_SCALING,
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
     MFX_EXTBUFF_VPP_COLOR_CONVERSION,
 #endif
     MFX_EXTBUFF_VPP_MIRRORING
@@ -114,7 +114,7 @@ const mfxU32 g_TABLE_EXT_PARAM [] =
     MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO,
     MFX_EXTBUFF_VPP_FIELD_PROCESSING,
     MFX_EXTBUFF_VPP_SCALING,
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
     MFX_EXTBUFF_VPP_COLOR_CONVERSION,
 #endif
     MFX_EXTBUFF_VPP_MIRRORING
@@ -1054,7 +1054,7 @@ void ReorderPipelineListForQuality( std::vector<mfxU32> & pipelineList )
         index++;
     }
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
     if (IsFilterFound(&pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_COLOR_CONVERSION))
     {
         newList[index] = MFX_EXTBUFF_VPP_COLOR_CONVERSION;
@@ -1443,7 +1443,7 @@ mfxStatus GetPipelineList(
         }
     }
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
     if (IsFilterFound(&configList[0], configCount, MFX_EXTBUFF_VPP_COLOR_CONVERSION) && !IsFilterFound(&pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_COLOR_CONVERSION))
     {
         if (!IsFilterFound(&pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_COLOR_CONVERSION))
@@ -2629,7 +2629,7 @@ void ConvertCaps2ListDoUse(MfxHwVideoProcessing::mfxVppCaps& caps, std::vector<m
         list.push_back(MFX_EXTBUFF_VPP_SCALING);
     }
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
     if (caps.uChromaSiting)
     {
         list.push_back(MFX_EXTBUFF_VPP_COLOR_CONVERSION);

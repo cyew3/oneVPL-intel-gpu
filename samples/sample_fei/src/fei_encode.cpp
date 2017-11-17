@@ -35,7 +35,7 @@ FEI_EncodeInterface::FEI_EncodeInterface(MFXVideoSession* session, mfxU32 allocI
     , m_pMBstat_out(NULL)
     , m_pMV_out(NULL)
     , m_pMBcode_out(NULL)
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
     , m_pRepackStat_out(NULL)
 #endif
 {
@@ -104,7 +104,7 @@ FEI_EncodeInterface::~FEI_EncodeInterface()
     SAFE_FCLOSE(m_pMBstat_out);
     SAFE_FCLOSE(m_pMV_out);
     SAFE_FCLOSE(m_pMBcode_out);
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
     SAFE_FCLOSE(m_pRepackStat_out);
 #endif
 
@@ -344,7 +344,7 @@ mfxStatus FEI_EncodeInterface::FillParameters()
         }
     }
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
     if (m_pRepackStat_out == NULL && m_pAppConfig->repackstatFile != NULL)
     {
         printf("Using Repack status output file: %s\n", m_pAppConfig->repackstatFile);
@@ -793,7 +793,7 @@ mfxStatus FEI_EncodeInterface::FlushOutput(iTask* eTask)
             }
             break;
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
         case MFX_EXTBUFF_FEI_REPACK_STAT:
             if (m_pRepackStat_out)
             {
@@ -842,7 +842,7 @@ mfxStatus FEI_EncodeInterface::ResetState()
     SAFE_FSEEK(m_pMBstat_out,    0, SEEK_SET, MFX_ERR_MORE_DATA);
     SAFE_FSEEK(m_pMV_out,        0, SEEK_SET, MFX_ERR_MORE_DATA);
     SAFE_FSEEK(m_pMBcode_out,    0, SEEK_SET, MFX_ERR_MORE_DATA);
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
     SAFE_FSEEK(m_pRepackStat_out,0, SEEK_SET, MFX_ERR_MORE_DATA);
 #endif
 

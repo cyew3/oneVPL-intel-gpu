@@ -2325,7 +2325,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         changed += CheckOption(par.m_ext.HEVCParam.GeneralConstraintFlags, 0);
 #endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
     if (par.mfx.EncodedOrder)
         changed += CheckOption(CO3.EnableNalUnitType, MFX_CODINGOPTION_ON, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_UNKNOWN);
     else
@@ -2823,7 +2823,7 @@ void SetDefaults(
     }
 #endif //defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
     if (par.mfx.EncodedOrder)
         CO3.EnableNalUnitType = MFX_CODINGOPTION_ON;
     else

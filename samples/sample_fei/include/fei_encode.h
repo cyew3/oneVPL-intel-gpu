@@ -53,7 +53,7 @@ public:
     FILE* m_pMBstat_out;
     FILE* m_pMV_out;
     FILE* m_pMBcode_out;
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
     FILE* m_pRepackStat_out;
 #endif
 

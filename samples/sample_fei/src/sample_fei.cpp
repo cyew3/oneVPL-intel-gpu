@@ -82,7 +82,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-mbstat file] - file to output per MB distortions for each frame\n"));
     msdk_printf(MSDK_STRING("   [-mbqp file] - file to input per MB QPs the same for each frame\n"));
     msdk_printf(MSDK_STRING("   [-repackctrl file] - file to input max encoded frame size,number of pass and delta qp for each frame(ENCODE only)\n"));
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
     msdk_printf(MSDK_STRING("   [-repackstat file] - file to output each frame's number of passes (ENCODE only)\n"));
 #endif
     msdk_printf(MSDK_STRING("   [-weights file] - file to input weights for explicit weighted prediction (ENCODE only).\n"));
@@ -285,7 +285,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
             pConfig->repackctrlFile = strInput[i+1];
             i++;
         }
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-repackstat")))
         {
             pConfig->repackstatFile = strInput[i+1];
@@ -1060,7 +1060,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
     }
 
     if (pConfig->bPerfMode && (pConfig->mvinFile || pConfig->mvoutFile || pConfig->mbctrinFile || pConfig->mbstatoutFile || pConfig->mbcodeoutFile || pConfig->mbQpFile || pConfig->repackctrlFile ||
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
                                pConfig->repackstatFile ||
 #endif
                                pConfig->decodestreamoutFile || pConfig->weightsFile))
@@ -1074,7 +1074,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
         pConfig->mbcodeoutFile       = NULL;
         pConfig->mbQpFile            = NULL;
         pConfig->repackctrlFile      = NULL;
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
         pConfig->repackstatFile      = NULL;
 #endif
         pConfig->decodestreamoutFile = NULL;
@@ -1082,7 +1082,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
     }
 
     if (!pConfig->bENCODE && (pConfig->repackctrlFile
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
                               || pConfig->repackstatFile
 #endif
        ))
@@ -1090,7 +1090,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
         msdk_printf(MSDK_STRING("\nWARNING: Repackctrl/Repackstat is disabled \
                                 for being only supported in ENCODE!\n"));
         pConfig->repackctrlFile =
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
         pConfig->repackstatFile =
 #endif
           NULL;

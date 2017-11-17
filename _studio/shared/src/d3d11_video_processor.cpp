@@ -2289,7 +2289,7 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         MFX_CHECK_STS(sts);
     }
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
     if (m_vpreCaps.bChromaSitingControl)
     {
         VPE_VPREP_CHROMASITING_PARAM chromaSitingParams = { 0 };

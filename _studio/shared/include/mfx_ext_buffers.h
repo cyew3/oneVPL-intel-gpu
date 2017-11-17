@@ -15,11 +15,11 @@
 #include "mfx_config.h"
 #include "vm_strings.h"
 
-#if (MFX_VERSION < MFX_VERSION_NEXT)
+#if (MFX_VERSION < 1025)
 enum {
     MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET = MFX_MEMTYPE_RESERVED2
 };
-#endif // OPEN_SOURCE
+#endif
 
 #ifdef MFX_DEBUG_TOOLS
 // internal(undocumented) handles for VideoCORE::SetHandle

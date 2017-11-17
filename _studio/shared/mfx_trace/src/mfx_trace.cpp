@@ -11,11 +11,11 @@
 #include "mfxdefs.h"
 #include "mfx_trace.h"
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
 static mfx_reflect::AccessibleTypesCollection g_Reflection;
 #endif
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
 mfx_reflect::AccessibleTypesCollection GetReflection()
 {
     return g_Reflection;
@@ -39,7 +39,7 @@ extern "C"
 #include <stdlib.h>
 #include <string.h>
 #include "vm_interlocked.h"
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
 #include "mfx_reflect.h"
 #endif
 
@@ -340,7 +340,7 @@ mfxTraceU32 MFXTrace_Init()
         return sts;
     }
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
     if (g_OutputMode & (MFX_TRACE_OUTPUT_ETW | MFX_TRACE_OUTPUT_TEXTLOG))
     {
         g_Reflection.DeclareMsdkStructs();

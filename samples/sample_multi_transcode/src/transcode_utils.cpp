@@ -133,7 +133,7 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("                      -hw - platform-specific on default display adapter (default)\n"));
     msdk_printf(MSDK_STRING("                      -hw_d3d11 - platform-specific via d3d11\n"));
     msdk_printf(MSDK_STRING("                      -sw - software\n"));
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
     msdk_printf(MSDK_STRING("  -mfe_frames <N> maximum number of frames to be combined in multi-frame encode pipeline"));
     msdk_printf(MSDK_STRING("               0 - default for platform will be used\n"));
     msdk_printf(MSDK_STRING("  -mfe_mode 0|1|2|3 multi-frame encode operation mode - should be the same for all sessions\n"));
@@ -1460,7 +1460,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
                 msdk_opt_read(MSDK_CPU_ROTATE_PLUGIN, InputParams.strVPPPluginDLLPath);
             }
         }
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
         else if(0 == msdk_strcmp(argv[i], MSDK_STRING("-mfe_frames")))
         {
             VAL_CHECK(i+1 == argc, i, argv[i]);

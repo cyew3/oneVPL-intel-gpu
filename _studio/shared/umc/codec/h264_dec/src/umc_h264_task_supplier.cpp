@@ -32,7 +32,7 @@
 namespace UMC
 {
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
 inline void SetDecodeErrorTypes(NAL_Unit_Type nalUnit, mfxExtDecodeErrorReport *pDecodeErrorReport)
 {
     switch (nalUnit)
@@ -3175,7 +3175,7 @@ Status TaskSupplier::AddSource(MediaData * pSource)
     return umcRes;
 }
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
 Status TaskSupplier::ProcessNalUnit(NalUnit *nalUnit, mfxExtDecodeErrorReport * pDecodeErrorReport)
 #else
 Status TaskSupplier::ProcessNalUnit(NalUnit *nalUnit)
@@ -3205,7 +3205,7 @@ Status TaskSupplier::ProcessNalUnit(NalUnit *nalUnit)
     case NAL_UT_PREFIX:
         umcRes = DecodeHeaders(nalUnit);
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
         if (pDecodeErrorReport && umcRes == UMC_ERR_INVALID_STREAM)
            SetDecodeErrorTypes(nalUnit->GetNalUnitType(), pDecodeErrorReport);
 #endif
@@ -3259,7 +3259,7 @@ Status TaskSupplier::AddOneFrame(MediaData * pSource)
 
     do
     {
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
         MediaData::AuxInfo* aux = (pSource) ? pSource->GetAuxInfo(MFX_EXTBUFF_DECODE_ERROR_REPORT) : NULL;
         mfxExtDecodeErrorReport* pDecodeErrorReport = (aux) ? reinterpret_cast<mfxExtDecodeErrorReport*>(aux->ptr) : NULL;
 #endif
@@ -3328,7 +3328,7 @@ Status TaskSupplier::AddOneFrame(MediaData * pSource)
                     pSource->MoveDataPointer(- size - 3);
                 }
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
                 if (pDecodeErrorReport && umsRes == UMC_ERR_INVALID_STREAM)
                     SetDecodeErrorTypes(nalUnit->GetNalUnitType(), pDecodeErrorReport);
 #endif

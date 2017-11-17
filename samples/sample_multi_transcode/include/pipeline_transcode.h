@@ -700,7 +700,7 @@ namespace TranscodingSample
 
         mfxExtBRC                m_ExtBRC;
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
         // MFE mode and number of frames
         mfxExtMultiFrameParam    m_ExtMFEParam;
         // here we pass general timeout per session.

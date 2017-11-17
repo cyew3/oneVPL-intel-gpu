@@ -3175,7 +3175,7 @@ mfxU8 GetSHNUT(Task const & task, bool RAPIntra)
     const bool isRef = !!(task.m_frameType & MFX_FRAMETYPE_REF);
     const bool isIDR = !!(task.m_frameType & MFX_FRAMETYPE_IDR);
    
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
     if (task.m_ctrl.MfxNalUnitType)
     {
         switch (task.m_ctrl.MfxNalUnitType)
@@ -3344,7 +3344,7 @@ void ConfigureTask(
             task.m_SkipMode = 0;
         }
     }
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
     if (!IsOn(par.m_ext.CO3.EnableNalUnitType) && task.m_ctrl.MfxNalUnitType!=0)
         task.m_ctrl.MfxNalUnitType = 0;
 #endif

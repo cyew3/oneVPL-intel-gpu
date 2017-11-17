@@ -538,7 +538,7 @@ mfxStatus VideoVPPBase::GetVideoParam(mfxVideoParam *par)
                     case MFX_EXTBUFF_VPP_DI_30i60p:
                     case MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO:
                     case MFX_EXTBUFF_VPP_MIRRORING:
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
                     case MFX_EXTBUFF_VPP_COLOR_CONVERSION:
 #endif
                     {

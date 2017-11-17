@@ -834,7 +834,7 @@ mfxStatus GetExternalFramesCount(VideoCORE* core,
                 break;
             }
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
             case (mfxU32)MFX_EXTBUFF_VPP_COLOR_CONVERSION:
             {
                 break;

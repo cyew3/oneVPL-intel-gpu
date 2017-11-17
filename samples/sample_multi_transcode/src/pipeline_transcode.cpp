@@ -79,7 +79,7 @@ void sInputParams::Reset()
     DenoiseLevel=-1;
     DetailLevel=-1;
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
     MFMode = MFX_MF_DEFAULT;
     numMFEFrames = 0;
     mfeTimeout = 0;
@@ -173,7 +173,7 @@ CTranscodingPipeline::CTranscodingPipeline():
     m_ExtBRC.Header.BufferId = MFX_EXTBUFF_BRC;
     m_ExtBRC.Header.BufferSz = sizeof(m_ExtBRC);
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
 
     MSDK_ZERO_MEMORY(m_ExtMFEParam);
     MSDK_ZERO_MEMORY(m_ExtMFEControl);
@@ -2253,7 +2253,7 @@ mfxStatus CTranscodingPipeline::InitEncMfxParams(sInputParams *pInParams)
     m_mfxEncParams.mfx.CodecId                 = pInParams->EncodeId;
     m_mfxEncParams.mfx.TargetUsage             = pInParams->nTargetUsage; // trade-off between quality and speed
     m_mfxEncParams.AsyncDepth                  = m_AsyncDepth;
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
     if(pInParams->numMFEFrames || pInParams->MFMode)
     {
         m_ExtMFEParam.MaxNumFrames = pInParams->numMFEFrames;

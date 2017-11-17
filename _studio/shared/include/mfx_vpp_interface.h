@@ -421,7 +421,7 @@ namespace MfxHwVideoProcessing
 #endif
                ,rotation(0)
                ,scalingMode(MFX_SCALING_MODE_DEFAULT)
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
                ,chromaSiting(MFX_CHROMA_SITING_UNKNOWN)
 #endif
                ,bEOS(false)

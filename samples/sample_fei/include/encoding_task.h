@@ -170,7 +170,7 @@ struct setElem
                 }
                 break;
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
                 case MFX_EXTBUFF_FEI_REPACK_STAT:
                 {
                     mfxExtFeiRepackStat* feiRepackStat = reinterpret_cast<mfxExtFeiRepackStat*>

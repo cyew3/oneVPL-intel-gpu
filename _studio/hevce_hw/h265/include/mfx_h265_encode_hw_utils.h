@@ -608,7 +608,7 @@ namespace ExtBuffer
 #if defined (MFX_ENABLE_HEVCE_UNITS_INFO)
         _CopyPar1(EncodedUnitsInfo);
 #endif
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
         _CopyPar1(EnableNalUnitType);
 #endif
     }

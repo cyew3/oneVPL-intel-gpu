@@ -366,7 +366,7 @@ struct AppConfig
         , mbstatoutFile(NULL)
         , mbQpFile(NULL)
         , repackctrlFile(NULL)
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
         , repackstatFile(NULL)
 #endif
         , decodestreamoutFile(NULL)
@@ -482,7 +482,7 @@ struct AppConfig
     msdk_char* mbstatoutFile;
     msdk_char* mbQpFile;
     msdk_char* repackctrlFile;
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
     msdk_char* repackstatFile;
 #endif
     msdk_char* decodestreamoutFile;

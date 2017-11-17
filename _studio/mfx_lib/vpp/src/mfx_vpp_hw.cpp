@@ -1708,7 +1708,7 @@ mfxStatus VideoVPPHW::GetVideoParams(mfxVideoParam *par) const
             MFX_CHECK_NULL_PTR1(bufSc);
             bufSc->ScalingMode = m_executeParams.scalingMode;
         }
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
         else if (MFX_EXTBUFF_VPP_COLOR_CONVERSION == bufferId)
         {
             mfxExtColorConversion *bufSc = reinterpret_cast<mfxExtColorConversion *>(par->ExtParam[i]);
@@ -4310,7 +4310,7 @@ mfxStatus ConfigureExecuteParams(
 
                 break;
             }
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
             case MFX_EXTBUFF_VPP_COLOR_CONVERSION:
             {
                 if (caps.uChromaSiting )

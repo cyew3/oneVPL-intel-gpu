@@ -28,7 +28,7 @@
 #include "mfxla.h"
 #include "mfxsc.h"
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
 #include "ts_typedef.h"
 
 

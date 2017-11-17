@@ -3195,7 +3195,7 @@ mfxStatus VAAPIEncoder::QueryStatusFEI(
     mfxExtFeiEncMBStat  * mbstat     = NULL;
     mfxExtFeiEncMV      * mvout      = NULL;
     mfxExtFeiPakMBCtrl  * mbcodeout  = NULL;
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
     mfxExtFeiRepackStat * repackStat = NULL;
 #endif
 
@@ -3207,7 +3207,7 @@ mfxStatus VAAPIEncoder::QueryStatusFEI(
         mbstat     = GetExtBufferFEI(task.m_bs, idxToPickBuffer);
         mvout      = GetExtBufferFEI(task.m_bs, idxToPickBuffer);
         mbcodeout  = GetExtBufferFEI(task.m_bs, idxToPickBuffer);
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
         repackStat = GetExtBufferFEI(task.m_bs, idxToPickBuffer);
 #endif
     }
@@ -3281,7 +3281,7 @@ mfxStatus VAAPIEncoder::QueryStatusFEI(
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
     // Hard-coding below will get removed once related libva interface is updated
     if (repackStat)
         repackStat->NumPasses = (codedStatus & 0xf000000) >> 24;

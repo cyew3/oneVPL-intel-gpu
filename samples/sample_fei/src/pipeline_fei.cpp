@@ -1165,7 +1165,7 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
         mfxExtFeiPakMBCtrl*       feiEncMBCode       = NULL;
         mfxExtFeiRepackCtrl*      feiRepack          = NULL;
         mfxExtPredWeightTable*    feiWeights         = NULL;
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
         mfxExtFeiRepackStat*      feiRepackStat      = NULL;
 #endif
 
@@ -1177,7 +1177,7 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
         bool MVOut        = m_appCfg.mvoutFile      != NULL;
         bool MBCodeOut    = m_appCfg.mbcodeoutFile  != NULL;
         bool RepackCtrl   = m_appCfg.repackctrlFile != NULL;
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
         bool RepackStat   = m_appCfg.repackstatFile != NULL;
 #endif
         bool Weights      = m_appCfg.weightsFile    != NULL;
@@ -1264,7 +1264,7 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
 #endif // MFX_VERSION >= 1023
                 }
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
                 /* Repack Stat */
                 if (m_appCfg.bENCODE && RepackStat)
                 {
@@ -1504,7 +1504,7 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
                     tmpForInit->PB_bufs.out.Add(reinterpret_cast<mfxExtBuffer*>(&feiEncMBCode[fieldId]));
                 }
             }
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
             if (RepackStat){
                 for (fieldId = 0; fieldId < m_numOfFields; fieldId++){
                     tmpForInit-> I_bufs.out.Add(reinterpret_cast<mfxExtBuffer*>

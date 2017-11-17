@@ -1202,7 +1202,7 @@ mfxStatus FastCompositingDDI::Execute(mfxExecuteParams *pParams)
     //}
 
     //{
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
         FASTCOMP_CHROMASUBSAMPLING_PARAMS_V1_0 chromaSitingParams = { 0 };
         FASTCOMP_BLT_PARAMS_OBJECT chromaSitingObject;
         bool  bExternalChromeSiting = true;

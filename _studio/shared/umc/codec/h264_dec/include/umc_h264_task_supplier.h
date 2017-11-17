@@ -507,7 +507,7 @@ public:
     virtual Status AddSource(DecryptParametersWrapper* pDecryptParams) {pDecryptParams; return MFX_ERR_UNSUPPORTED;}
 #endif
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
     Status ProcessNalUnit(NalUnit *nalUnit, mfxExtDecodeErrorReport *pDecodeErrorReport);
 #else
     Status ProcessNalUnit(NalUnit *nalUnit);

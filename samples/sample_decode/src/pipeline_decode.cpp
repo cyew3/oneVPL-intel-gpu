@@ -133,7 +133,7 @@ CDecodingPipeline::CDecodingPipeline()
     m_DecoderPostProcessing.Header.BufferSz = sizeof(mfxExtDecVideoProcessing);
 #endif //MFX_VERSION >= 1022
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
     MSDK_ZERO_MEMORY(m_DecodeErrorReport);
     m_DecodeErrorReport.Header.BufferId = MFX_EXTBUFF_DECODE_ERROR_REPORT;
 #endif
@@ -584,7 +584,7 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
     mfxStatus sts = MFX_ERR_NONE;
     mfxU32 &numViews = pParams->numViews;
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
     if (pParams->bErrorReport)
     {
         m_ExtBuffersMfxBS.push_back((mfxExtBuffer *)&m_DecodeErrorReport);
@@ -601,7 +601,7 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
         if ( m_mfxVideoParams.mfx.CodecId == MFX_CODEC_JPEG )
             MJPEG_AVI_ParsePicStruct(&m_mfxBS);
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
         if (pParams->bErrorReport)
         {
             mfxExtDecodeErrorReport *pDecodeErrorReport = (mfxExtDecodeErrorReport *)GetExtBuffer(m_mfxBS.ExtParam, m_mfxBS.NumExtParam, MFX_EXTBUFF_DECODE_ERROR_REPORT);
@@ -1619,7 +1619,7 @@ mfxStatus CDecodingPipeline::RunDecoding()
     time_t start_time = time(0);
     MSDKThread * pDeliverThread = NULL;
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
     mfxExtDecodeErrorReport *pDecodeErrorReport = NULL;
 #endif
 
@@ -1738,14 +1738,14 @@ mfxStatus CDecodingPipeline::RunDecoding()
             }
             pOutSurface = NULL;
             do {
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
                 if (pBitstream) {
                     pDecodeErrorReport = (mfxExtDecodeErrorReport *)GetExtBuffer(pBitstream->ExtParam, pBitstream->NumExtParam, MFX_EXTBUFF_DECODE_ERROR_REPORT);
                 }
 #endif
                 sts = m_pmfxDEC->DecodeFrameAsync(pBitstream, &(m_pCurrentFreeSurface->frame), &pOutSurface, &(m_pCurrentFreeOutputSurface->syncp));
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
                 PrintDecodeErrorReport(pDecodeErrorReport);
 #endif
 

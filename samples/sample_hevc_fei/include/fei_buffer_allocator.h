@@ -114,7 +114,7 @@ private:
     {
         switch (bufferId)
         {
-#if MFX_VERSION >= MFX_VERSION_NEXT
+#if MFX_VERSION >= 1025
         case MFX_EXTBUFF_HEVCFEI_ENC_QP:
             return VAEncQPBufferType;
         case MFX_EXTBUFF_HEVCFEI_ENC_MV_PRED:

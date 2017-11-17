@@ -110,7 +110,7 @@ struct sInputParams
     bool    bRenderWin;
     mfxU32  nRenderWinX;
     mfxU32  nRenderWinY;
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
     bool    bErrorReport;
 #endif
 
@@ -181,7 +181,7 @@ public:
     virtual void PrintInfo();
     mfxU64 GetTotalBytesProcessed() { return totalBytesProcessed + m_mfxBS.DataOffset; }
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
     inline void PrintDecodeErrorReport(mfxExtDecodeErrorReport *pDecodeErrorReport)
     {
         if (pDecodeErrorReport)
@@ -254,7 +254,7 @@ protected: // variables
     mfxExtDecVideoProcessing m_DecoderPostProcessing;
 #endif //MFX_VERSION >= 1022
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
     mfxExtDecodeErrorReport m_DecodeErrorReport;
 #endif
 
