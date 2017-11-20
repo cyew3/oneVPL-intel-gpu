@@ -1571,7 +1571,7 @@ void CTranscodingPipeline::SetEncCtrlRT(ExtendedSurface& extSurface, bool bInser
             m_bufExtMBQP[keyId].Header.BufferId = MFX_EXTBUFF_MBQP;
             m_bufExtMBQP[keyId].Header.BufferSz = sizeof(mfxExtMBQP);
             m_bufExtMBQP[keyId].NumQPAlloc = m_QPmapWidth*m_QPmapHeight;
-            m_bufExtMBQP[keyId].QP = &(m_qpMapStorage[keyId][0]);
+            m_bufExtMBQP[keyId].QP = m_QPmapWidth*m_QPmapHeight ? &(m_qpMapStorage[keyId][0]) : NULL;
         }
 
         // Initialize *pCtrl optionally copying content of the pExtSurface.pAuxCtrl.encCtrl
