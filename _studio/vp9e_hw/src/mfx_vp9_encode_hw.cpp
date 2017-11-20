@@ -759,9 +759,7 @@ mfxStatus Plugin::ConfigTask(Task &task)
     task.m_insertIVFSeqHeader = false;
     if (frameType == KEY_FRAME)
     {
-        // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
-        //mfxExtVP9CodingOption& opt = GetExtBufferRef(curMfxPar);
-        mfxExtCodingOptionDDI& opt = GetExtBufferRef(curMfxPar);
+        mfxExtVP9Param& opt = GetExtBufferRef(curMfxPar);
         if (opt.WriteIVFHeaders != MFX_CODINGOPTION_OFF &&
             m_frameOrderInGop == 0 && m_bStartIVFSequence == true)
         {
@@ -1093,9 +1091,7 @@ mfxStatus Plugin::UpdateBitstream(
         FastCopy::Copy(bsData, bsSizeToCopy, bitstream.Y, bitstream.Pitch, roi, COPY_VIDEO_TO_SYS);
     }
 
-    // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
-    // mfxExtVP9CodingOption &opt = GetExtBufferRef(m_video);
-    mfxExtCodingOptionDDI& opt = GetExtBufferRef(m_video);
+    mfxExtVP9Param& opt = GetExtBufferRef(m_video);
 
 #ifdef SUPERFRAME_WA_MSDK
     mfxU8* pEnd = bsData + bsSizeToCopy;

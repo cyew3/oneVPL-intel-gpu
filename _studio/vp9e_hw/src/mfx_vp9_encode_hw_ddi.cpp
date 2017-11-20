@@ -388,9 +388,7 @@ namespace MfxHwVP9Encode
         localBuf.pBuffer = pBuf;
         localBuf.bitOffset = 0;
 
-        // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API
-        // mfxExtVP9CodingOption &opt = GetExtBufferRef(par);
-        mfxExtCodingOptionDDI &opt = GetExtBufferRef(par);
+        mfxExtVP9Param& opt = GetExtBufferRef(par);
         mfxU16 ivfHeaderSize = 0;
 
         if (opt.WriteIVFHeaders != MFX_CODINGOPTION_OFF)

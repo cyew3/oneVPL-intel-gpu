@@ -162,9 +162,9 @@ inline void SetOrCopy(mfxExtVP9Param *pDst, mfxExtVP9Param const *pSrc = 0, bool
     SET_OR_COPY_PAR_DONT_INHERIT(FrameWidth);
     SET_OR_COPY_PAR_DONT_INHERIT(FrameHeight);
 
-    /*
     SET_OR_COPY_PAR(WriteIVFHeaders);
 
+    /*
     for (mfxU8 i = 0; i < MAX_REF_LF_DELTAS; i++)
     {
         SET_OR_COPY_PAR(LoopFilterRefDelta[i]);
