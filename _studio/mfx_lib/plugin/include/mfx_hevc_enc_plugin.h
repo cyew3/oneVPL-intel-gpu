@@ -5,9 +5,10 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2018 Intel Corporation. All Rights Reserved.
 //
 
+#if defined(WIN64)
 #if !defined(__MFX_HEVC_ENC_PLUGIN_INCLUDED__)
 #define __MFX_HEVC_ENC_PLUGIN_INCLUDED__
 
@@ -23,8 +24,8 @@
 #if defined( AS_HEVCE_PLUGIN )
 class MFXHEVCEncoderPlugin : public MFXEncoderPlugin
 {
-    static const mfxPluginUID g_HEVCEncoderGuid;
 public:
+    static const mfxPluginUID g_HEVCEncoderGuid;
     virtual mfxStatus PluginInit(mfxCoreInterface *core);
     virtual mfxStatus PluginClose();
     virtual mfxStatus GetPluginParam(mfxPluginParam *par);
@@ -155,3 +156,4 @@ protected:
 #endif
 
 #endif  // __MFX_HEVC_ENC_PLUGIN_INCLUDED__
+#endif  // WIN64

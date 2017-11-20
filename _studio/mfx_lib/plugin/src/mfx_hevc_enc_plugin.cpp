@@ -5,8 +5,10 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2018 Intel Corporation. All Rights Reserved.
 //
+
+#if defined(WIN64)
 
 #include "mfx_hevc_enc_plugin.h"
 #include "mfx_session.h"
@@ -17,6 +19,7 @@
 
 #include "plugin_version_linux.h"
 
+#ifndef UNIFIED_PLUGIN
 PluginModuleTemplate g_PluginModule = {
     NULL,
     &MFXHEVCEncoderPlugin::Create,
@@ -38,6 +41,7 @@ MSDK_PLUGIN_API(MFXPlugin*) CreatePlugin(mfxPluginUID uid, mfxPlugin* plugin) {
     }
     return (MFXPlugin*) g_PluginModule.CreatePlugin(uid, plugin);
 }
+#endif
 
 #ifdef MFX_VA
 const mfxPluginUID MFXHEVCEncoderPlugin::g_HEVCEncoderGuid = {0xe5,0x40,0x0a,0x06,0xc7,0x4d,0x41,0xf5,0xb1,0x2d,0x43,0x0b,0xba,0xa2,0x3d,0x0b};
@@ -106,3 +110,4 @@ mfxStatus MFXHEVCEncoderPlugin::GetPluginParam(mfxPluginParam *par)
 
     return MFX_ERR_NONE;
 }
+#endif // WIN64
