@@ -120,12 +120,15 @@ mfxStatus PredictorsRepaking::RepackPredictorsPerformance(const HevcTask& eTask,
 
     const mfxI16Pair zeroPair = { 0, 0 };
 
-    mfxU32 i = 0;
+    mfxU32 linearPreEncIdx = 0;
+
     // get nPred_actual L0/L1 predictors for each CU
     for (mfxU32 rowIdx = 0; rowIdx < m_heightCU_enc; ++rowIdx) // row index for full surface (raster-scan order)
     {
-        for (mfxU32 colIdx = 0; colIdx < m_widthCU_enc; ++colIdx, ++i) // column index for full surface (raster-scan order)
+        for (mfxU32 colIdx = 0; colIdx < m_widthCU_enc; ++colIdx) // column index for full surface (raster-scan order)
         {
+            linearPreEncIdx = rowIdx * m_widthCU_ds + colIdx;
+
             // calculation of the input index for encoder after permutation from raster scan order index into 32x32 layout
             // HEVC encoder works with 32x32 layout
             mfxU32 permutEncIdx =
@@ -153,8 +156,8 @@ mfxStatus PredictorsRepaking::RepackPredictorsPerformance(const HevcTask& eTask,
                     }
                     else
                     {
-                        mvp.Data[permutEncIdx].MV[j][0] = mvs_vec[j]->MB[i].MV[0][0];
-                        mvp.Data[permutEncIdx].MV[j][1] = mvs_vec[j]->MB[i].MV[0][1];
+                        mvp.Data[permutEncIdx].MV[j][0] = mvs_vec[j]->MB[linearPreEncIdx].MV[0][0];
+                        mvp.Data[permutEncIdx].MV[j][1] = mvs_vec[j]->MB[linearPreEncIdx].MV[0][1];
                     }
                 }
                 else
@@ -240,16 +243,19 @@ mfxStatus PredictorsRepaking::RepackPredictorsQuality(const HevcTask& eTask, mfx
 
     const mfxI16Pair zeroPair = { 0, 0 };
 
-    mfxU32 i = 0;
+    mfxU32 linearPreEncIdx = 0;
     // get nPred_actual L0/L1 predictors for each CU
     for (mfxU32 rowIdx = 0; rowIdx < m_heightCU_enc; ++rowIdx) // row index for full surface (raster-scan order)
     {
-        for (mfxU32 colIdx = 0; colIdx < m_widthCU_enc; ++colIdx, ++i) // column index for full surface (raster-scan order)
+        for (mfxU32 colIdx = 0; colIdx < m_widthCU_enc; ++colIdx) // column index for full surface (raster-scan order)
         {
             // intermediate arrays to be sorted by distortion
             mfxU8 ref[4][2];
             mfxI16Pair mv[4][2];
             mfxU16 distortion[4][2];
+
+            linearPreEncIdx = rowIdx * m_widthCU_ds + colIdx;
+
             // calculation of the input index for encoder after permutation from raster scan order index into 32x32 layout
             // HEVC encoder works with 32x32 layout
             mfxU32 permutEncIdx =
@@ -277,9 +283,9 @@ mfxStatus PredictorsRepaking::RepackPredictorsQuality(const HevcTask& eTask, mfx
                     }
                     else
                     {
-                        SelectFromMV(&mvs_vec[j]->MB[i].MV[0], 16, mv[j]);
-                        distortion[j][0] = mbs_vec[j]->MB[i].Inter[0].BestDistortion;
-                        distortion[j][1] = mbs_vec[j]->MB[i].Inter[1].BestDistortion;
+                        SelectFromMV(&mvs_vec[j]->MB[linearPreEncIdx].MV[0], 16, mv[j]);
+                        distortion[j][0] = mbs_vec[j]->MB[linearPreEncIdx].Inter[0].BestDistortion;
+                        distortion[j][1] = mbs_vec[j]->MB[linearPreEncIdx].Inter[1].BestDistortion;
                     }
                 }
                 else
