@@ -1475,9 +1475,9 @@ H265DecoderFrame *TaskSupplier_H265::GetFrameToDisplayInternal(bool force)
     {
     // show oldest frame
 
-    Ipp32u countDisplayable;
-    Ipp32s maxUID;
-    Ipp32u countDPBFullness;
+    Ipp32u countDisplayable = 0;
+    Ipp32s maxUID = 0;
+    Ipp32u countDPBFullness = 0;
 
     view.pDPB->calculateInfoForDisplay(countDisplayable, countDPBFullness, maxUID);
     DEBUG_PRINT1((VM_STRING("GetAnyFrameToDisplay DPB displayable %d, maximum %d, force = %d\n"), countDisplayable, view.maxDecFrameBuffering, force));
@@ -2214,7 +2214,7 @@ UMC::Status TaskSupplier_H265::AddSlice(H265Slice * pSlice, bool )
 
     if (pSlice->m_SliceHeader.slice_type != I_SLICE)
     {
-        Ipp32u NumShortTermRefs, NumLongTermRefs;
+        Ipp32u NumShortTermRefs = 0, NumLongTermRefs = 0;
         view.pDPB->countActiveRefs(NumShortTermRefs, NumLongTermRefs);
 
         if (NumShortTermRefs + NumLongTermRefs == 0)

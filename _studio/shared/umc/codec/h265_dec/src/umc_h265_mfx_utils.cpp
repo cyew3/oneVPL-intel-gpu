@@ -407,8 +407,11 @@ mfxU32 CalculateFourcc(mfxU16 codecProfile, mfxFrameInfo const* frameInfo)
     );
 #endif
 
-    return
-        map[frameInfo->ChromaFormat][(bit_depth - 8) / 2];
+    mfxU16 const bit_depth_idx     = (bit_depth - 8) / 2;
+    mfxU16 const max_bit_depth_idx = sizeof(map) / sizeof(map[0]);
+
+    return bit_depth_idx < max_bit_depth_idx ?
+        map[frameInfo->ChromaFormat][(bit_depth - 8) / 2] : 0;
 }
 
 inline
