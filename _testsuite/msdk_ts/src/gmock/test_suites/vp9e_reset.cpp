@@ -299,6 +299,10 @@ namespace vp9e_reset
         MFXInit();
         Load();
 
+        // default width and height
+        m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 720;
+        m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 480;
+
         m_par.AsyncDepth = 2;
         if (m_par.mfx.TargetKbps == VP9E_PREDEFINED_BITRATE_VALUE) {
             m_par.mfx.RateControlMethod = MFX_RATECONTROL_VBR;
