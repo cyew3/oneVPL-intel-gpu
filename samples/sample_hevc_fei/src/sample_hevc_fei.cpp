@@ -85,6 +85,8 @@ void PrintHelp(const msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-MultiPredL0 type] - use internal L0 MV predictors (0 - no internal MV predictor, 1 - spatial internal MV predictors)\n"));
     msdk_printf(MSDK_STRING("   [-MultiPredL1 type] - use internal L1 MV predictors (0 - no internal MV predictor, 1 - spatial internal MV predictors)\n"));
     msdk_printf(MSDK_STRING("   [-MVPBlockSize size] - external MV predictor block size (0 - no MVP, 1 - MVP per 16x16, 2 - MVP per 32x32, 7 - use with -mvpin)\n"));
+    msdk_printf(MSDK_STRING("   [-ForceCtuSplit] - force splitting CTU into CU at least once\n"));
+    msdk_printf(MSDK_STRING("   [-NumFramePartitions num] - number of partitions in frame that encoder processes concurrently (1, 2, 4, 8 or 16)\n"));
     msdk_printf(MSDK_STRING("   [-gpb:<on,off>] - make HEVC encoder use regular P-frames (off) or GPB (on) (on - by default)\n"));
     msdk_printf(MSDK_STRING("   [-ppyr:<on,off>] - enables P-pyramid\n"));
     msdk_printf(MSDK_STRING("   [-bref] - arrange B frames in B pyramid reference structure\n"));
@@ -337,6 +339,15 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU32 nArgNum, sInputParams& 
             CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
             PARSE_CHECK(msdk_opt_read(strInput[++i], params.encodeCtrl.MVPredictor), "MVPBlockSize", isParseInvalid);
         }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-ForceCtuSplit")))
+        {
+            params.encodeCtrl.ForceCtuSplit = 1;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-NumFramePartitions")))
+        {
+            CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
+            PARSE_CHECK(msdk_opt_read(strInput[++i], params.encodeCtrl.NumFramePartitions), "NumFramePartitions", isParseInvalid)
+        }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-tff")))
         {
             params.input.nPicStruct = MFX_PICSTRUCT_FIELD_TFF;
@@ -476,6 +487,15 @@ mfxStatus CheckOptions(const sInputParams params, const msdk_char* appName)
     if (params.encodeCtrl.NumMvPredictors[1] > 4)
     {
         PrintHelp(appName, "Unsupported NumMvPredictorsL1 value (must be in range [0,4])");
+        return MFX_ERR_UNSUPPORTED;
+    }
+    if (!(params.encodeCtrl.NumFramePartitions == 1 ||
+          params.encodeCtrl.NumFramePartitions == 2 ||
+          params.encodeCtrl.NumFramePartitions == 4 ||
+          params.encodeCtrl.NumFramePartitions == 8 ||
+          params.encodeCtrl.NumFramePartitions == 16  ))
+    {
+        PrintHelp(appName, "Unsupported NumFramePartitions value (must be 1, 2, 4, 8 or 16)");
         return MFX_ERR_UNSUPPORTED;
     }
     if (!params.bENCODE && !params.bPREENC)
