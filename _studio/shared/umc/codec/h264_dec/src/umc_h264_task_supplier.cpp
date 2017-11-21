@@ -2555,7 +2555,7 @@ Status TaskSupplier::DecodeHeaders(NalUnit *nalUnit)
                 }
 
                 // Get rest of pic param set
-                umcRes = bitStream.GetPictureParamSetPart2(&pps);
+                umcRes = bitStream.GetPictureParamSetPart2(&pps, refSps);
                 if (UMC_OK != umcRes)
                 {
                     H264PicParamSet * old_pps = m_Headers.m_PicParams.GetHeader(pps.pic_parameter_set_id);
