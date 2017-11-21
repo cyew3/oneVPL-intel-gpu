@@ -417,7 +417,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         // below cases do 2 downscales and then single uscale from and to resolutions aligned to 16 but not equal to surface size
         {/*33*/ MFX_ERR_NONE, CQP | TU1 | NOT_EQUAL_TO_SURF_SIZE,
             {
-                { 1, SET_RESOLUTION(704, 576) },
+                { 1, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704), FRAME_HEIGHT(480) },
                 { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352), FRAME_HEIGHT(240) },
                 { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176), FRAME_HEIGHT(120) },
                 { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704), FRAME_HEIGHT(480) }
@@ -425,7 +425,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
         {/*34*/ MFX_ERR_NONE, CQP | TU4 | NOT_EQUAL_TO_SURF_SIZE,
             {
-                { 1, SET_RESOLUTION(704, 576) },
+                { 1, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704), FRAME_HEIGHT(480) },
                 { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352), FRAME_HEIGHT(240) },
                 { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176), FRAME_HEIGHT(120) },
                 { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704), FRAME_HEIGHT(480) }
@@ -433,7 +433,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
         {/*35*/ MFX_ERR_NONE, CQP | TU7 | NOT_EQUAL_TO_SURF_SIZE,
             {
-                { 1, SET_RESOLUTION(704, 576) },
+                { 1, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704), FRAME_HEIGHT(480) },
                 { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352), FRAME_HEIGHT(240) },
                 { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176), FRAME_HEIGHT(120) },
                 { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704), FRAME_HEIGHT(480) }
@@ -441,7 +441,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
         {/*36*/ MFX_ERR_NONE, CBR | TU1 | NOT_EQUAL_TO_SURF_SIZE,
             {
-                { 1, SET_RESOLUTION(704, 576) },
+                { 1, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704), FRAME_HEIGHT(480) },
                 { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352), FRAME_HEIGHT(240) },
                 { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176), FRAME_HEIGHT(120) },
                 { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704), FRAME_HEIGHT(480) }
@@ -449,7 +449,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
         {/*37*/ MFX_ERR_NONE, CBR | TU4 | NOT_EQUAL_TO_SURF_SIZE,
             {
-                { 1, SET_RESOLUTION(704, 576) },
+                { 1, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704), FRAME_HEIGHT(480) },
                 { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352), FRAME_HEIGHT(240) },
                 { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176), FRAME_HEIGHT(120) },
                 { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704), FRAME_HEIGHT(480) }
@@ -457,7 +457,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
         {/*38*/ MFX_ERR_NONE, CBR | TU7 | NOT_EQUAL_TO_SURF_SIZE,
             {
-                { 1, SET_RESOLUTION(704, 576) },
+                { 1, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704), FRAME_HEIGHT(480) },
                 { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352), FRAME_HEIGHT(240) },
                 { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176), FRAME_HEIGHT(120) },
                 { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704), FRAME_HEIGHT(480) }
@@ -465,7 +465,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
         {/*39*/ MFX_ERR_NONE, VBR | TU1 | NOT_EQUAL_TO_SURF_SIZE,
             {
-                { 1, SET_RESOLUTION(704, 576) },
+                { 1, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704), FRAME_HEIGHT(480) },
                 { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352), FRAME_HEIGHT(240) },
                 { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176), FRAME_HEIGHT(120) },
                 { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704), FRAME_HEIGHT(480) }
@@ -473,7 +473,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
         {/*40*/ MFX_ERR_NONE, VBR | TU4 | NOT_EQUAL_TO_SURF_SIZE,
             {
-                { 1, SET_RESOLUTION(704, 576) },
+                { 1, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704), FRAME_HEIGHT(480) },
                 { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352), FRAME_HEIGHT(240) },
                 { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176), FRAME_HEIGHT(120) },
                 { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704), FRAME_HEIGHT(480) }
@@ -481,7 +481,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
         {/*41*/ MFX_ERR_NONE, VBR | TU7 | NOT_EQUAL_TO_SURF_SIZE,
             {
-                { 1, SET_RESOLUTION(704, 576) },
+                { 1, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704), FRAME_HEIGHT(480) },
                 { ITER_LENGTH, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352), FRAME_HEIGHT(240) },
                 { ITER_LENGTH, WIDTH(176), HEIGHT(144), FRAME_WIDTH(176), FRAME_HEIGHT(120) },
                 { ITER_LENGTH, WIDTH(704), HEIGHT(576), FRAME_WIDTH(704), FRAME_HEIGHT(480) }
@@ -1674,12 +1674,12 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
     {
         const mfxExtVP9Param& expected = iter.m_extParam[CHECK];
         const mfxExtVP9Param& real = iter.m_extParam[GET];
-        if (expected.FrameWidth != real.FrameWidth)
+        if (expected.FrameWidth != 0 && expected.FrameWidth != real.FrameWidth)
         {
             ADD_FAILURE() << "ERROR: function " << function << " returned incorrect value for parameter FrameWidth: " << real.FrameWidth <<
                 ", expected " << expected.FrameWidth; throw tsFAIL;
         }
-        if (expected.FrameHeight != real.FrameHeight)
+        if (expected.FrameHeight != 0 && expected.FrameHeight != real.FrameHeight)
         {
             ADD_FAILURE() << "ERROR: function " << function << " returned incorrect value for parameter FrameHeight: " << real.FrameHeight <<
                 ", expected " << expected.FrameHeight; throw tsFAIL;
