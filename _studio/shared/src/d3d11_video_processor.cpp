@@ -113,21 +113,6 @@ namespace MfxVppDump
 //---------------------------------------------------------
 
 
-template<typename T> mfxU32 FindFree(std::vector<T> const & vec)
-{
-    for (size_t j = 0; j < vec.size(); j++)
-    {
-        if (vec[j].IsFree())
-        {
-            return (mfxU32)j;
-        }
-    }
-
-    return NO_INDEX;
-
-} // template<typename T> mfxU32 FindFree(std::vector<T> const & vec)
-
-
 D3D11_VIDEO_FRAME_FORMAT D3D11PictureStructureMapping(const mfxU32 PicStruct)
 {
     if (PicStruct & MFX_PICSTRUCT_PROGRESSIVE)
@@ -2250,8 +2235,8 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
     }
 
     mfxFrameInfo *outInfo = &(pParams->targetSurface.frameInfo);
-    int numRef = (pParams->execIdx == 0xffffffff) ? pParams->refCount : 1;
-    mfxU32 startIdx = (pParams->execIdx == 0xffffffff) ? 0 : pParams->execIdx;
+    int numRef = (pParams->execIdx == NO_INDEX) ? pParams->refCount : 1;
+    mfxU32 startIdx = (pParams->execIdx == NO_INDEX) ? 0 : pParams->execIdx;
 
     // [1] target rectangle
     RECT pRect;

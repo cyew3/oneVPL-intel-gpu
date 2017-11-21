@@ -392,7 +392,7 @@ namespace MfxHwVideoProcessing
                ,bBackgroundRequired(true)
                ,iBackgroundColor(0)
                ,iTilesNum4Comp(0)
-               ,execIdx(0xffffffff)//NO_INDEX
+               ,execIdx(NO_INDEX)
                ,statusReportID(0)
                ,bFieldWeaving(false)
                ,iFieldProcessingMode(0)

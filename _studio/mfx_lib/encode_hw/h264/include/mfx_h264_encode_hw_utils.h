@@ -114,9 +114,6 @@ namespace MfxHwH264Encode
         NALU_CODED_SLICE_EXT = 20,
     };
 
-    static const mfxU32 NO_INDEX      = 0xffffffff;
-    static const mfxU8  NO_INDEX_U8   = 0xff;
-    static const mfxU16  NO_INDEX_U16 = 0xffff;
 
     class DdiTask;
 

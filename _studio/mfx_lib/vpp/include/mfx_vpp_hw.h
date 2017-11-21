@@ -88,7 +88,6 @@ namespace MfxHwVideoProcessing
         bool m_free;
     };
 
-    static const mfxU32 NO_INDEX    = 0xffffffff;
 
     // Helper which checks number of allocated frames and auto-free
     class MfxFrameAllocResponse : public mfxFrameAllocResponse

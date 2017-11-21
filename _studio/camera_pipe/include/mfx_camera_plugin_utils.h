@@ -81,9 +81,6 @@
 
 namespace MfxCameraPlugin
 {
-static const mfxU32  NO_INDEX      = 0xffffffff;
-static const mfxU8   NO_INDEX_U8   = 0xff;
-static const mfxU16  NO_INDEX_U16 = 0xffff;
 
 template<class T> inline void Zero(T & obj)                { memset(&obj, 0, sizeof(obj)); }
 
