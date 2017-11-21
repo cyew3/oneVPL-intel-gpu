@@ -11,10 +11,11 @@ Copyright(c) 2016-2017 Intel Corporation. All Rights Reserved.
 #include "ts_encoder.h"
 #include "ts_struct.h"
 #include "ts_parser.h"
+#include "bs_splitter.h"
 
 namespace vp9e_encode_frame_async
 {
-    class TestSuite : tsVideoEncoder, BS_VP9_parser
+    class TestSuite : tsVideoEncoder
     {
     public:
         static const unsigned int n_cases;
@@ -134,17 +135,28 @@ namespace vp9e_encode_frame_async
         {/*17*/ MFX_ERR_NONE, NONE,
             { MFX_PAR, &tsStruct::mfxVideoParam.AsyncDepth, 10 },
         },
+
+        // IVF-headers check
+        {/*18 explicitly enabled IVF-headers*/ MFX_ERR_NONE, NONE,
+            { MFX_PAR, &tsStruct::mfxExtVP9Param.WriteIVFHeaders, MFX_CODINGOPTION_ON }
+        },
+        {/*19 explicitly disabled IVF-headers*/ MFX_ERR_NONE, NONE,
+            { MFX_PAR, &tsStruct::mfxExtVP9Param.WriteIVFHeaders, MFX_CODINGOPTION_OFF }
+        },
+        {/*20 check default state for IVF-headers [=enabled]*/ MFX_ERR_NONE, NONE,
+            { MFX_PAR, &tsStruct::mfxExtVP9Param.WriteIVFHeaders, MFX_CODINGOPTION_UNKNOWN }
+        },
     };
 
     const TestSuite::tc_struct TestSuite::test_case_nv12[] =
     {
-        {/*18*/ MFX_ERR_NULL_PTR, NONE,
+        {/*21*/ MFX_ERR_NULL_PTR, NONE,
             { MFX_SURF, &tsStruct::mfxFrameSurface1.Data.Y, 0 }
         },
-        {/*19*/ MFX_ERR_NULL_PTR, NONE,
+        {/*22*/ MFX_ERR_NULL_PTR, NONE,
             { MFX_SURF, &tsStruct::mfxFrameSurface1.Data.U, 0 }
         },
-        {/*20*/ MFX_ERR_NULL_PTR, NONE,
+        {/*23*/ MFX_ERR_NULL_PTR, NONE,
             { MFX_SURF, &tsStruct::mfxFrameSurface1.Data.V, 0 }
         },
     };
@@ -152,13 +164,13 @@ namespace vp9e_encode_frame_async
 
     const TestSuite::tc_struct TestSuite::test_case_p010[] =
     {
-        {/*18*/ MFX_ERR_NULL_PTR, NONE,
+        {/*21*/ MFX_ERR_NULL_PTR, NONE,
             { MFX_SURF, &tsStruct::mfxFrameSurface1.Data.Y16, 0 }
         },
-        {/*19*/ MFX_ERR_NULL_PTR, NONE,
+        {/*22*/ MFX_ERR_NULL_PTR, NONE,
             { MFX_SURF, &tsStruct::mfxFrameSurface1.Data.U16, 0 }
         },
-        {/*20*/ MFX_ERR_NULL_PTR, NONE,
+        {/*23*/ MFX_ERR_NULL_PTR, NONE,
             { MFX_SURF, &tsStruct::mfxFrameSurface1.Data.V16, 0 }
         },
     };
@@ -166,7 +178,7 @@ namespace vp9e_encode_frame_async
 
     const TestSuite::tc_struct TestSuite::test_case_ayuv[] =
     {
-        {/*18*/ MFX_ERR_NULL_PTR, NONE,
+        {/*21*/ MFX_ERR_NULL_PTR, NONE,
             { MFX_SURF, &tsStruct::mfxFrameSurface1.Data.Y, 0 }
         },
     };
@@ -174,7 +186,7 @@ namespace vp9e_encode_frame_async
 
     const TestSuite::tc_struct TestSuite::test_case_y410[] =
     {
-        {/*18*/ MFX_ERR_NULL_PTR, NONE,
+        {/*21*/ MFX_ERR_NULL_PTR, NONE,
             { MFX_SURF, &tsStruct::mfxFrameSurface1.Data.Y, 0 }
         },
     };
@@ -223,7 +235,6 @@ namespace vp9e_encode_frame_async
     template<mfxU32 fourcc>
     int TestSuite::RunTest_Subtype(const unsigned int id)
     {
-        //return RunTest(id, fourcc);
         const tc_struct* fourcc_table = getTestTable(fourcc);
         const unsigned int real_id = (id < n_cases) ? (id) : (id - n_cases);
         const tc_struct& tc = (real_id == id) ? test_case[real_id] : fourcc_table[real_id];
@@ -246,13 +257,13 @@ namespace vp9e_encode_frame_async
         m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = getStreamDesc(fourcc_id).h;
         m_par.mfx.QPI = m_par.mfx.QPP = 100;
 
-        SETPARS(m_pPar, MFX_PAR);
+        SETPARS(m_par, MFX_PAR);
 
         if(fourcc_id == MFX_FOURCC_NV12)
         {
             m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
             m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-        } 
+        }
         else if(fourcc_id == MFX_FOURCC_P010)
         {
             m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_P010;
@@ -338,6 +349,20 @@ namespace vp9e_encode_frame_async
         {
             unsigned  encoded = 0;
             const unsigned encode_frames_count = m_pPar->AsyncDepth > 1 ? m_pPar->AsyncDepth + 2 : 1;
+
+            bool is_ivf_mode = true;
+            mfxExtVP9Param *opt = reinterpret_cast <mfxExtVP9Param*>(m_par.GetExtBuffer(MFX_EXTBUFF_VP9_PARAM));
+            if (opt)
+            {
+                if (opt->WriteIVFHeaders == MFX_CODINGOPTION_OFF)
+                {
+                    is_ivf_mode = false;
+                    g_tsLog << "INFO: IVF-headers are disabled\n";
+                }
+            }
+
+            BS_VP9_parser stream_parser(is_ivf_mode ? BS_VP9::IVF : BS_VP9::ELEMENTARY_STREAM);
+
             while (encoded < encode_frames_count)
             {
                 m_pBitstream->DataLength = m_pBitstream->DataOffset = 0;
@@ -349,21 +374,27 @@ namespace vp9e_encode_frame_async
                 g_tsStatus.check(); TS_CHECK_MFX;
                 SyncOperation(); TS_CHECK_MFX;
 
-                BSErr bserror = set_buffer(m_pBitstream->Data, m_pBitstream->DataLength);
+                if (m_pBitstream->DataLength == 0)
+                {
+                    ADD_FAILURE() << "ERROR: Bitstream is zero size (nothing has been encoded)!\n";
+                    throw tsFAIL;
+                }
+
+                BSErr bserror = stream_parser.set_buffer(m_pBitstream->Data, m_pBitstream->DataLength);
                 if(bserror != BS_ERR_NONE)
                 {
                     ADD_FAILURE() << "ERROR: Set encoded buffer to stream parser failed!\n";
                     throw tsFAIL;
                 }
 
-                bserror = parse_next_unit();
+                bserror = stream_parser.parse_next_unit();
                 if(bserror != BS_ERR_NONE)
                 {
                     ADD_FAILURE() << "ERROR: Parsing encoded frame header failed!\n";
                     throw tsFAIL;
                 }
 
-                void *ptr = get_header();
+                void *ptr = stream_parser.get_header();
                 if(ptr == nullptr) {
                     ADD_FAILURE() << "ERROR: Obtaining header from the encoded stream failed!";
                     throw tsFAIL;

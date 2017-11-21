@@ -305,11 +305,23 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*96*/ MFX_ERR_NONE, NONE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 3 } },
     {/*97 out of range*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 4 } },
     {/*98 out of range*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 0xffff } },
+
     // LowPower
     {/*99 out of range*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE,{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_ADAPTIVE } },
     {/*100 out of range*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE,{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, 0xffff } },
     {/*101 default value*/ MFX_ERR_NONE, NONE, NONE,{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_UNKNOWN } },
     {/*102 off-unsupported value*/ MFX_ERR_UNSUPPORTED, NONE, NONE,{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_OFF } },
+
+    // IVF-headers check
+    {/*103 explicitly enabled IVF-headers*/ MFX_ERR_NONE, NONE, NONE,
+        { MFX_PAR, &tsStruct::mfxExtVP9Param.WriteIVFHeaders, MFX_CODINGOPTION_ON }
+    },
+    {/*104 explicitly disabled IVF-headers*/ MFX_ERR_NONE, NONE, NONE,
+        { MFX_PAR, &tsStruct::mfxExtVP9Param.WriteIVFHeaders, MFX_CODINGOPTION_OFF }
+    },
+    {/*105 check default state for IVF-headers [=enabled]*/ MFX_ERR_NONE, NONE, NONE,
+        { MFX_PAR, &tsStruct::mfxExtVP9Param.WriteIVFHeaders, MFX_CODINGOPTION_UNKNOWN }
+    }
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
@@ -374,7 +386,7 @@ int TestSuite::RunTest(const tc_struct& tc, unsigned int fourcc_id)
         return 0;
     }
 
-    SETPARS(m_pPar, MFX_PAR);
+    SETPARS(m_par, MFX_PAR);
 
     *m_pParOut = m_par;
 
