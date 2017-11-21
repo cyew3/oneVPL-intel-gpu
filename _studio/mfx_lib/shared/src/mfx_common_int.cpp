@@ -12,8 +12,11 @@
 #include "mfx_ext_buffers.h"
 #include "mfxpcp.h"
 #include "mfxfei.h"
+#include "mfx_utils.h"
+
 #include <stdexcept>
 #include <string>
+#include <climits>
 
 #if defined(_WIN32) || defined(_WIN64)
 #include <DXGI.h>
@@ -536,94 +539,79 @@ mfxStatus CheckEncryptedBitstream(const mfxBitstream *bs)
 }
 #endif // #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 
+#if defined(MFX_D3D11_ENABLED)
+#define MFX_FOURCC_R16_BGGR MAKEFOURCC('I','R','W','0')
+#define MFX_FOURCC_R16_RGGB MAKEFOURCC('I','R','W','1')
+#define MFX_FOURCC_R16_GRBG MAKEFOURCC('I','R','W','2')
+#define MFX_FOURCC_R16_GBRG MAKEFOURCC('I','R','W','3')
+#endif
+
+/* Check if pointers required for given FOURCC is NOT null */
+inline
+mfxStatus CheckFramePointers(mfxFrameInfo const& info, mfxFrameData const& data)
+{
+    switch (info.FourCC)
+    {
+        case MFX_FOURCC_A2RGB10:     MFX_CHECK(data.B, MFX_ERR_UNDEFINED_BEHAVIOR); break;
+
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= MFX_VERSION_NEXT)
+        case MFX_FOURCC_Y410:        MFX_CHECK(data.Y410, MFX_ERR_UNDEFINED_BEHAVIOR); break;
+
+        case MFX_FOURCC_Y210:        MFX_CHECK(data.Y16 && data.U16 && data.V16, MFX_ERR_UNDEFINED_BEHAVIOR); break;
+#endif
+
+        case MFX_FOURCC_P8:
+        case MFX_FOURCC_P8_TEXTURE:
+#if defined  (MFX_D3D11_ENABLED)
+        case MFX_FOURCC_R16_BGGR:
+        case MFX_FOURCC_R16_RGGB:
+        case MFX_FOURCC_R16_GRBG:
+        case MFX_FOURCC_R16_GBRG:
+#endif
+        case MFX_FOURCC_R16:         MFX_CHECK(data.Y, MFX_ERR_UNDEFINED_BEHAVIOR); break;
+
+        case MFX_FOURCC_NV12:
+        case MFX_FOURCC_NV16:
+        case MFX_FOURCC_P010:
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+        case MFX_FOURCC_P016:
+#endif
+        case MFX_FOURCC_P210:        MFX_CHECK(data.Y && data.UV, MFX_ERR_UNDEFINED_BEHAVIOR); break;
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+        case MFX_FOURCC_Y216:        MFX_CHECK(data.Y16 && data.U16 && data.V16, MFX_ERR_UNDEFINED_BEHAVIOR);
+        case MFX_FOURCC_Y416:        MFX_CHECK(data.Y16 && data.U16 && data.V16 && data.A , MFX_ERR_UNDEFINED_BEHAVIOR);
+#endif
+
+        case MFX_FOURCC_RGB3:        MFX_CHECK(data.R && data.G && data.B, MFX_ERR_UNDEFINED_BEHAVIOR); break;
+
+        case MFX_FOURCC_AYUV:
+        case MFX_FOURCC_AYUV_RGB4:
+        case MFX_FOURCC_RGB4:
+        case MFX_FOURCC_BGR4:
+        case MFX_FOURCC_ARGB16:
+        case MFX_FOURCC_ABGR16:      MFX_CHECK(data.R && data.G && data.B && data.A, MFX_ERR_UNDEFINED_BEHAVIOR); break;
+
+        case MFX_FOURCC_YV12:
+        case MFX_FOURCC_YUY2:
+        default:                     MFX_CHECK(data.Y && data.U && data.V, MFX_ERR_UNDEFINED_BEHAVIOR); break;
+    }
+
+    return MFX_ERR_NONE;
+}
+
+
 mfxStatus CheckFrameData(const mfxFrameSurface1 *surface)
 {
     if (!surface)
         return MFX_ERR_NULL_PTR;
 
-    if (!surface->Data.MemId)
-    {
-        mfxU32 pitch = surface->Data.PitchLow + ((mfxU32)surface->Data.PitchHigh << 16);
+    if (surface->Data.MemId)
+        return MFX_ERR_NONE;
 
-        switch (surface->Info.FourCC)
-        {
-        case MFX_FOURCC_NV12:
-        case MFX_FOURCC_P010:
-        case MFX_FOURCC_P210:
-        case MFX_FOURCC_NV16:
-            if (!surface->Data.Y || !surface->Data.UV)
-                return MFX_ERR_UNDEFINED_BEHAVIOR;
-            if (pitch > 0xFFFF)
-                return MFX_ERR_UNDEFINED_BEHAVIOR;
-            break;
-        case MFX_FOURCC_YV12:
-            if (!surface->Data.Y || !surface->Data.U || !surface->Data.V)
-                return MFX_ERR_UNDEFINED_BEHAVIOR;
-            if (pitch > 0xFFFF)
-                return MFX_ERR_UNDEFINED_BEHAVIOR;
-            break;
-        case MFX_FOURCC_YUY2:
-            if (!surface->Data.Y || !surface->Data.U || !surface->Data.V)
-                return MFX_ERR_UNDEFINED_BEHAVIOR;
-            if (pitch > 0x1FFFF)
-                return MFX_ERR_UNDEFINED_BEHAVIOR;
-            break;
-        case MFX_FOURCC_RGB3:
-        case MFX_FOURCC_A2RGB10:
-            if (!surface->Data.R || !surface->Data.G || !surface->Data.B)
-                return MFX_ERR_UNDEFINED_BEHAVIOR;
-            if (pitch > 0x2FFFF)
-                return MFX_ERR_UNDEFINED_BEHAVIOR;
-            break;
-        case MFX_FOURCC_RGB4:
-        case MFX_FOURCC_BGR4:
-        case MFX_FOURCC_AYUV:
-            if (!surface->Data.A || !surface->Data.R || !surface->Data.G || !surface->Data.B)
-                return MFX_ERR_UNDEFINED_BEHAVIOR;
-            if (pitch > 0x3FFFF)
-                return MFX_ERR_UNDEFINED_BEHAVIOR;
-            break;
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= MFX_VERSION_NEXT)
-        case MFX_FOURCC_Y210:
-            if (!surface->Data.Y16 || !surface->Data.U16 || !surface->Data.V16)
-                return MFX_ERR_UNDEFINED_BEHAVIOR;
-            break;
-        case MFX_FOURCC_Y410:
-            if (!surface->Data.Y410)
-                return MFX_ERR_UNDEFINED_BEHAVIOR;
-            break;
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
-        case MFX_FOURCC_P016:
-            if (!surface->Data.Y || !surface->Data.U || !surface->Data.V)
-                return MFX_ERR_UNDEFINED_BEHAVIOR;
-            break;
-        case MFX_FOURCC_Y216:
-            if (!surface->Data.Y16 || !surface->Data.U16 || !surface->Data.V16)
-                return MFX_ERR_UNDEFINED_BEHAVIOR;
-            break;
-        case MFX_FOURCC_Y416:
-            if (!surface->Data.A || !surface->Data.V16 || !surface->Data.Y16 || !surface->Data.U16)
-                return MFX_ERR_UNDEFINED_BEHAVIOR;
-            break;
-#endif //PRE_SI_TARGET_PLATFORM_GEN12
-        case MFX_FOURCC_P8:
-            if (!surface->Data.Y)
-                return MFX_ERR_UNDEFINED_BEHAVIOR;
-            break;
-#if defined(_WIN32) || defined(_WIN64)
-        case DXGI_FORMAT_AYUV:
-            if (!surface->Data.A || !surface->Data.R || !surface->Data.G || !surface->Data.B)
-                return MFX_ERR_UNDEFINED_BEHAVIOR;
-            if (pitch > 0x3FFFF)
-                return MFX_ERR_UNDEFINED_BEHAVIOR;
-            break;
-#endif
-        default:
-            break;
-        }
-    }
-    return MFX_ERR_NONE;
+    mfxStatus sts;
+    return
+        sts = CheckFramePointers(surface->Info, surface->Data);
 }
 
 mfxStatus CheckDecodersExtendedBuffers(mfxVideoParam const* par)
@@ -1027,4 +1015,111 @@ void mfxVideoParamWrapper::CopyVideoParam(const mfxVideoParam & par)
 
     NumExtParam = (mfxU16)m_buffers.GetCount();
     ExtParam = NumExtParam ? m_buffers.GetBuffers() : 0;
+}
+
+inline
+mfxU32 GetMinPitch(mfxU32 fourcc, mfxU16 width)
+{
+    switch (fourcc)
+    {
+        case MFX_FOURCC_P8:
+        case MFX_FOURCC_P8_TEXTURE:
+        case MFX_FOURCC_NV12:
+        case MFX_FOURCC_YV12:
+        case MFX_FOURCC_NV16:        return width * 1;
+
+#if defined  (MFX_D3D11_ENABLED)
+        case MFX_FOURCC_R16_BGGR:
+        case MFX_FOURCC_R16_RGGB:
+        case MFX_FOURCC_R16_GRBG:
+        case MFX_FOURCC_R16_GBRG:
+#endif
+        case MFX_FOURCC_R16:         return width * 2;
+
+        case MFX_FOURCC_RGB3:        return width * 3;
+
+        case MFX_FOURCC_AYUV:
+        case MFX_FOURCC_AYUV_RGB4:
+        case MFX_FOURCC_RGB4:
+        case MFX_FOURCC_BGR4:
+        case MFX_FOURCC_A2RGB10:     return width * 4;
+
+        case MFX_FOURCC_ARGB16:
+        case MFX_FOURCC_ABGR16:      return width * 8;
+
+        case MFX_FOURCC_YUY2:
+        case MFX_FOURCC_UYVY:        return width * 2;
+
+        case MFX_FOURCC_P010:
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= MFX_VERSION_NEXT)
+        case MFX_FOURCC_P016:
+#endif
+        case MFX_FOURCC_P210:        return width * 2;
+
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= MFX_VERSION_NEXT)
+        case MFX_FOURCC_Y210:
+        case MFX_FOURCC_Y410:        return width * 4;
+#endif
+
+#if defined (PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+        case MFX_FOURCC_Y216:        return width * 4;
+        case MFX_FOURCC_Y416:        return width * 8;
+#endif
+    }
+
+    return 0;
+}
+
+mfxU8* GetFramePointer(mfxU32 fourcc, mfxFrameData const& data)
+{
+    switch (fourcc)
+    {
+        case MFX_FOURCC_RGB3:
+        case MFX_FOURCC_RGB4:
+        case MFX_FOURCC_BGR4:
+        case MFX_FOURCC_ARGB16:
+        case MFX_FOURCC_ABGR16:      return IPP_MIN(IPP_MIN(data.R, data.G), data.B); break;
+
+#if defined  (MFX_D3D11_ENABLED)
+        case MFX_FOURCC_R16_BGGR:
+        case MFX_FOURCC_R16_RGGB:
+        case MFX_FOURCC_R16_GRBG:
+        case MFX_FOURCC_R16_GBRG:
+#endif
+        case MFX_FOURCC_R16:         return reinterpret_cast<mfxU8*>(data.Y16); break;
+
+        case MFX_FOURCC_AYUV:        return data.V; break;
+
+        case MFX_FOURCC_UYVY:        return data.U; break;
+
+        case MFX_FOURCC_A2RGB10:     return data.B; break;
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= MFX_VERSION_NEXT)
+        case MFX_FOURCC_Y410:        return reinterpret_cast<mfxU8*>(data.Y410); break;
+#endif
+
+#if defined (PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+        case MFX_FOURCC_Y416:        return reinterpret_cast<mfxU8*>(data.U16); break;
+#endif
+
+        default:                     return data.Y;
+    }
+}
+
+mfxStatus GetFramePointerChecked(mfxFrameInfo const& info, mfxFrameData const& data, mfxU8** ptr)
+{
+    MFX_CHECK(ptr, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+    *ptr = GetFramePointer(info.FourCC, data);
+    if (!*ptr)
+        return MFX_ERR_NONE;
+
+    mfxStatus sts = CheckFramePointers(info, data);
+    MFX_CHECK_STS(sts);
+
+    mfxU32 const pitch = (data.PitchHigh << 16) | data.PitchLow;
+    mfxU32 const min_pitch = GetMinPitch(info.FourCC, info.Width);
+
+    return
+        !min_pitch || pitch < min_pitch ? MFX_ERR_UNDEFINED_BEHAVIOR : MFX_ERR_NONE;
 }
