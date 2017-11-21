@@ -446,7 +446,7 @@ namespace hevce_interlace_sei_sps_flags
     {
         TS_START;
 
-        bool is_HEVCeFEI = memcmp(m_uid->Data, MFX_PLUGINID_HEVC_FEI_ENCODE.Data, sizeof(mfxU8) * 16) == 0;
+        bool is_HEVCeFEI = memcmp(uid.Data, MFX_PLUGINID_HEVC_FEI_ENCODE.Data, sizeof(mfxU8) * 16) == 0;
 
         if (is_HEVCeFEI)
         {
