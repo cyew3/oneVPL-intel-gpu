@@ -470,7 +470,8 @@ MfxVideoParamsWrapper GetEncodeParams(const sInputParams& user_pars, const mfxFr
 
 IYUVSource* CEncodingPipeline::CreateYUVSource()
 {
-    IYUVSource * pSource = NULL;
+    std::auto_ptr<IYUVSource> pSource;
+
     if (m_inParams.input.DecodeId)
     {
         mfxPluginUID pluginGuid = MSDK_PLUGINGUID_NULL;
@@ -483,17 +484,19 @@ IYUVSource* CEncodingPipeline::CreateYUVSource()
                 return NULL;
         }
 
-        pSource = new Decoder(m_inParams.input, &m_EncSurfPool, &m_mfxSession);
+        pSource.reset(new Decoder(m_inParams.input, &m_EncSurfPool, &m_mfxSession));
     }
     else
-        pSource = new YUVReader(m_inParams.input, &m_EncSurfPool);
+        pSource.reset(new YUVReader(m_inParams.input, &m_EncSurfPool));
 
     if (m_inParams.input.fieldSplitting)
     {
-        pSource = new FieldSplitter(pSource, m_inParams.input, &m_EncSurfPool, &m_mfxSession);
+        IYUVSource* pFieldSplitter = new FieldSplitter(pSource.get(), m_inParams.input, &m_EncSurfPool, &m_mfxSession);
+        pSource.release(); // FieldSplitter takes responsibility for memory deallocation of pSource
+        pSource.reset(pFieldSplitter);
     }
 
-    return pSource;
+    return pSource.release();
 }
 
 IPreENC* CEncodingPipeline::CreatePreENC(mfxFrameInfo& in_fi)
@@ -504,7 +507,7 @@ IPreENC* CEncodingPipeline::CreatePreENC(mfxFrameInfo& in_fi)
     MfxVideoParamsWrapper pars = GetEncodeParams(m_inParams, in_fi);
 
     mfxStatus sts = m_pParamChecker->Query(pars);
-    CHECK_STS_AND_RETURN(sts, "m_pParamChecker>Query failed", NULL);
+    CHECK_STS_AND_RETURN(sts, "m_pParamChecker->Query failed", NULL);
 
     // PreENC specific parameters
     pars.mfx.CodecId = MFX_CODEC_AVC;
@@ -514,36 +517,27 @@ IPreENC* CEncodingPipeline::CreatePreENC(mfxFrameInfo& in_fi)
     if (!pExtBufInit) throw mfxError(MFX_ERR_NOT_INITIALIZED, "Failed to attach mfxExtFeiParam");
     pExtBufInit->Func = MFX_FEI_FUNCTION_PREENC;
 
-    IPreENC* pPreENC = NULL;
-    try
-    {
-        if (0 == msdk_strlen(m_inParams.mvpInFile))
-        {
-            pPreENC = new FEI_Preenc(&m_mfxSession, pars, m_inParams.preencCtrl, m_inParams.mvoutFile, m_inParams.bFormattedMVout, m_inParams.mbstatoutFile);
+    std::auto_ptr<IPreENC> pPreENC;
 
-            if (m_inParams.preencDSfactor > 1)
-            {
-                // PreencDownsampler saves an auto-pointer for just created FEI_Preenc.
-                pPreENC = new PreencDownsampler(pPreENC, m_inParams.preencDSfactor, &m_mfxSession, m_pMFXAllocator.get());
-            }
-        }
-        else
+    if (0 == msdk_strlen(m_inParams.mvpInFile))
+    {
+        pPreENC.reset(new FEI_Preenc(&m_mfxSession, pars, m_inParams.preencCtrl, m_inParams.mvoutFile,
+            m_inParams.bFormattedMVout, m_inParams.mbstatoutFile));
+
+        if (m_inParams.preencDSfactor > 1)
         {
-            pPreENC = new Preenc_Reader(pars, m_inParams.preencCtrl, m_inParams.mvpInFile);
+            IPreENC* pPreENC_DS = new PreencDownsampler(pPreENC.get(), m_inParams.preencDSfactor, &m_mfxSession, m_pMFXAllocator.get());
+            pPreENC.release(); // PreencDownsampler saves an auto-pointer for just created FEI_Preenc
+            pPreENC.reset(pPreENC_DS);
         }
     }
-    catch(std::bad_alloc& ex)
+    else
     {
-        if (pPreENC)
-            delete pPreENC;
-        msdk_printf(MSDK_STRING("Error with dynamic PreENC allocation."));
-    }
-    catch(...)
-    {
-        throw;
+        pPreENC.reset(new Preenc_Reader(pars, m_inParams.preencCtrl, m_inParams.mvpInFile));
     }
 
-    return pPreENC;
+
+    return pPreENC.release();
 }
 
 FEI_Encode* CEncodingPipeline::CreateEncode(mfxFrameInfo& in_fi)
@@ -558,22 +552,27 @@ FEI_Encode* CEncodingPipeline::CreateEncode(mfxFrameInfo& in_fi)
 
     MfxVideoParamsWrapper pars = GetEncodeParams(m_inParams, in_fi);
     sts = m_pParamChecker->Query(pars);
-    CHECK_STS_AND_RETURN(sts, "m_pParamChecker>Query failed", NULL);
+    CHECK_STS_AND_RETURN(sts, "m_pParamChecker->Query failed", NULL);
 
-    PredictorsRepaking* repacker = NULL;
+    std::auto_ptr<PredictorsRepaking> pRepacker;
+
     if (m_inParams.bPREENC || (0 != msdk_strlen(m_inParams.mvpInFile) && m_inParams.bFormattedMVPin))
     {
-        repacker = new PredictorsRepaking();
-        sts = repacker->Init(pars, m_inParams.preencDSfactor);
-        CHECK_STS_AND_RETURN(sts, "CreateEncode::repacker->Init failed", NULL);
+        pRepacker.reset(new PredictorsRepaking());
+        sts = pRepacker->Init(pars, m_inParams.preencDSfactor);
+        CHECK_STS_AND_RETURN(sts, "CreateEncode::pRepacker->Init failed", NULL);
 
-        repacker->SetPerfomanceRepackingMode();
+        pRepacker->SetPerfomanceRepackingMode();
     }
 
     mfxHDL hdl = NULL;
     sts = m_pHWdev->GetHandle(MFX_HANDLE_VA_DISPLAY, &hdl);
     CHECK_STS_AND_RETURN(sts, "CreateEncode::m_pHWdev->GetHandle failed", NULL);
 
-    return new FEI_Encode(&m_mfxSession, hdl, pars, m_inParams.encodeCtrl, m_inParams.strDstFile,
-        m_inParams.mvpInFile, repacker);
+    FEI_Encode* pEncode = new FEI_Encode(&m_mfxSession, hdl, pars, m_inParams.encodeCtrl, m_inParams.strDstFile,
+            m_inParams.mvpInFile, pRepacker.get());
+
+    pRepacker.release(); // FEI_Encode takes responsibility for pRepakcer's deallocation
+
+    return pEncode;
 }

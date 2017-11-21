@@ -25,7 +25,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 class IPreENC
 {
 public:
-    IPreENC() {}
+    IPreENC() { Zero(m_defFrameCtrl); }
     IPreENC(const MfxVideoParamsWrapper& preenc_pars, const mfxExtFeiPreEncCtrl& def_ctrl);
     virtual ~IPreENC();
 

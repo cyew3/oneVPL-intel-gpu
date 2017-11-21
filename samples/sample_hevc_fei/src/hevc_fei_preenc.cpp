@@ -336,14 +336,14 @@ mfxStatus FEI_Preenc::PreEncOneFrame(HevcTask & currTask, const RefIdxPair & ref
 
     ctrl->RefFrame[0] = NULL;
     ctrl->RefFrame[1] = NULL;
-    if (refFramesIdx.RefL0 != IDX_INVALID)
+    if (refFramesIdx.RefL0 != IDX_INVALID && refFramesIdx.RefL0 < MAX_DPB_SIZE)
     {
         if (*currTask.m_ds_surf)
             ctrl->RefFrame[0] = *DPB[refFramesIdx.RefL0].m_ds_surf;
         else
             ctrl->RefFrame[0] = DPB[refFramesIdx.RefL0].m_surf;
     }
-    if (refFramesIdx.RefL1 != IDX_INVALID)
+    if (refFramesIdx.RefL1 != IDX_INVALID && refFramesIdx.RefL1 < MAX_DPB_SIZE)
     {
         if (*currTask.m_ds_surf)
             ctrl->RefFrame[1] = *DPB[refFramesIdx.RefL1].m_ds_surf;

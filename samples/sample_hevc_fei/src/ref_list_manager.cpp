@@ -424,7 +424,7 @@ namespace HevcRplUtils
             }
             else
             {
-                for (st0 = 0; dpb[st0].m_ltr && st0 < end; st0 ++);
+                for (st0 = 0; st0 < end && dpb[st0].m_ltr; st0++);
             }
 
             Remove(dpb, st0 == end ? 0 : st0);

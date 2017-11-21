@@ -336,10 +336,11 @@ private:
         ExtBufIterator it = std::find_if(m_ext_buf.begin(), m_ext_buf.end(), CmpExtBufById(id));
         if (it == m_ext_buf.end())
         {
-            m_ext_buf.push_back((mfxExtBuffer*)new mfxU8[size]);
-            mfxExtBuffer& ext_buf = *m_ext_buf.back();
+            mfxExtBuffer* buf = (mfxExtBuffer*)new mfxU8[size];
+            memset(buf, 0, size);
+            m_ext_buf.push_back(buf);
 
-            memset(&ext_buf, 0, size);
+            mfxExtBuffer& ext_buf = *buf;
             ext_buf.BufferId = id;
             ext_buf.BufferSz = size;
             RefreshBuffers();

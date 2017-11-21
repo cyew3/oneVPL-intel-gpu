@@ -400,7 +400,7 @@ mfxStatus CheckOptions(const sInputParams params, const msdk_char* appName)
         PrintHelp(appName, "Source file name not found");
         return MFX_ERR_UNSUPPORTED;
     }
-    if ((0 == params.input.DecodeId) && (0 == params.input.nWidth || 0 == params.input.nHeight || params.input.nWidth < 0 || params.input.nHeight < 0))
+    if ((0 == params.input.DecodeId) && (0 == params.input.nWidth || 0 == params.input.nHeight))
     {
         PrintHelp(appName, "-w -h is not specified");
         return MFX_ERR_UNSUPPORTED;
