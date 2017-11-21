@@ -926,7 +926,7 @@ mfxStatus  Plugin::Reset(mfxVideoParam *par)
     if (m_vpar.isTL() && parNew.isTL())
     {
         // calculate temporal layer for next frame
-        tempLayerIdx     = m_vpar.GetTId(m_frameOrder);
+        tempLayerIdx      = m_vpar.GetTId(m_frameOrder);
         changeTScalLayers = m_vpar.NumTL() != parNew.NumTL();
     }
 
@@ -1118,8 +1118,6 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
     else
         return MFX_ERR_MORE_DATA;
 
-    ExtraTaskPreparation(*task);
-
     task->m_bs = bs;
     *thread_task = task;
 
@@ -1305,6 +1303,8 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
             MFX_CHECK_STS(sts);
 #endif
 #endif
+            ExtraTaskPreparation(*taskForExecute);
+
             sts = m_ddi->Execute(*taskForExecute, surfaceHDL.first);
             MFX_CHECK_STS(sts);
 

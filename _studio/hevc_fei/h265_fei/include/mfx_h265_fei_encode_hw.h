@@ -72,6 +72,16 @@ public:
 
     virtual mfxStatus Close();
 
+    virtual mfxStatus Reset(mfxVideoParam *par)
+    {
+        // waiting for submitted in driver tasks
+        // This Sync is required to guarantee correct encoding of Async tasks in case of dynamic CTU QP change
+        MFX_CHECK_STS(WaitingForAsyncTasks(true));
+
+        // Call actual Reset()
+        return MfxHwH265Encode::Plugin::Reset(par);
+    }
+
 
 protected:
     explicit H265FeiEncodePlugin(bool CreateByDispatcher);
