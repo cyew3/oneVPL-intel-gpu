@@ -301,7 +301,7 @@ mfxStatus MFEVAAPIEncoder::Submit(VAContextID context, vm_tick timeToWait)
             framesToSubmit = m_framesCollected;
     }
 
-    if(!framesToSubmit);
+    if(!framesToSubmit)
     {
         vm_mutex_unlock(&m_mfe_guard);
         return MFX_ERR_UNDEFINED_BEHAVIOR;
