@@ -65,7 +65,7 @@ namespace MfxHwH265FeiEncode
                 vaSts = vaCreateBuffer(m_vaDisplay,
                     m_vaContextEncode,
                     VAEncMiscParameterBufferType,
-                    sizeof(VAEncMiscParameterBuffer) + sizeof (VAEncMiscParameterFEIFrameControlHevc),
+                    sizeof(VAEncMiscParameterBuffer) + sizeof (VAEncMiscParameterFEIFrameControlHEVC),
                     1,
                     NULL,
                     &vaFeiFrameControlId);
@@ -82,8 +82,8 @@ namespace MfxHwH265FeiEncode
             }
 
             miscParam->type = (VAEncMiscParameterType)VAEncMiscParameterTypeFEIFrameControl;
-            VAEncMiscParameterFEIFrameControlHevc* vaFeiFrameControl = (VAEncMiscParameterFEIFrameControlHevc*)miscParam->data;
-            memset(vaFeiFrameControl, 0, sizeof(VAEncMiscParameterFEIFrameControlHevc));
+            VAEncMiscParameterFEIFrameControlHEVC* vaFeiFrameControl = (VAEncMiscParameterFEIFrameControlHEVC*)miscParam->data;
+            memset(vaFeiFrameControl, 0, sizeof(VAEncMiscParameterFEIFrameControlHEVC));
 
             mfxExtFeiHevcEncFrameCtrl* EncFrameCtrl = reinterpret_cast<mfxExtFeiHevcEncFrameCtrl*>(GetBufById(task.m_ctrl, MFX_EXTBUFF_HEVCFEI_ENC_CTRL));
             MFX_CHECK(EncFrameCtrl, MFX_ERR_UNDEFINED_BEHAVIOR);
