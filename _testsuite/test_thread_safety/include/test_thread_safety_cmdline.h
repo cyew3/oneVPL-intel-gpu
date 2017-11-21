@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2017 Intel Corporation. All Rights Reserved.
 
 File Name: test_thread_safety_cmdline.h
 
@@ -41,6 +41,7 @@ protected:
     static const vm_char CodecHevc[];
     static const vm_char CodecH263[];
     static const vm_char CodecVP8[];
+    static const vm_char CodecVP9[];
 private:
     AutoArray<vm_char *> m_argv;
     mfxI32 m_argc;

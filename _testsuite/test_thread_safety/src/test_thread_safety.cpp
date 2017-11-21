@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2017 Intel Corporation. All Rights Reserved.
 
 File Name: test_thread_safety.cpp
 
@@ -248,6 +248,7 @@ Ipp32u VM_THREAD_CALLCONVENTION ThreadStarter(void *p)
         case TEST_VC1ENCODE:
         case TEST_VP8ENCODE:
         case TEST_H263ENCODE:
+        case TEST_VP9ENCODE:
             param->result = RunEncode(param->argc, param->argv, param->pExternalSync);
             break;
         default:
