@@ -204,7 +204,7 @@ namespace hevce_reset
         {/* 18*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, NONE, NONE, 1,
             { "forBehaviorTest/foster_720x576.yuv", "" },
             {
-                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 4320 + 32 },
+                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 8192 + 32 },
             }
 
         },
