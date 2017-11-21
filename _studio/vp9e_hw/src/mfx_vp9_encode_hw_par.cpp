@@ -140,7 +140,7 @@ inline void SetOrCopy(mfxInfoMFX *pDst, mfxInfoMFX const *pSrc = 0, bool zeroDst
     SET_OR_COPY_PAR(FrameInfo.Shift);
     SET_OR_COPY_PAR(FrameInfo.PicStruct);
     SET_OR_COPY_PAR(FrameInfo.FourCC);
-
+    SET_OR_COPY_PAR(NumThread);
     SET_OR_COPY_PAR(LowPower);
     SET_OR_COPY_PAR(CodecId);
     SET_OR_COPY_PAR(CodecProfile);
@@ -1143,8 +1143,8 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
 
     if (par.mfx.NumThread > 1)
     {
-        par.mfx.NumThread = 0;
-        unsupported = true;
+        par.mfx.NumThread = 1;
+        changed = true;
     }
 
     if (par.mfx.TargetUsage)
@@ -1569,7 +1569,7 @@ mfxStatus SetDefaults(
     SetDefault(par.mfx.NumRefFrame, 1);
     SetDefault(par.mfx.BRCParamMultiplier, 1);
     SetDefault(par.mfx.LowPower, MFX_CODINGOPTION_ON);
-
+    SetDefault(par.mfx.NumThread, 1);
     if (par.mfx.TargetKbps && (par.mfx.TargetKbps < par.mfx.MaxKbps))
     {
         SetDefault(par.mfx.RateControlMethod, MFX_RATECONTROL_VBR);
