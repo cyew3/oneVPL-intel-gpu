@@ -345,6 +345,8 @@ public:
         , m_pCmKernelBotField(0)
         , m_pCmKernelFrame(0)
         , m_pCmQueue(0)
+        , m_pCmBufferOut(0)
+        , m_pCmThreadSpace(0)
         , gpustep_w(0)
         , gpustep_h(0)
         , m_gpuwidth(0)
@@ -449,7 +451,7 @@ private:
     CmKernel        *m_pCmKernelFrame;
     CmQueue         *m_pCmQueue;
     CmBufferUP      *m_pCmBufferOut;
-    CmThreadSpace   * m_pCmThreadSpace;
+    CmThreadSpace   *m_pCmThreadSpace;
 
     std::map<void *, CmSurface2D *> m_tableCmRelations;
 
