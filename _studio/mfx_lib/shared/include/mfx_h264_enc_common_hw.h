@@ -775,8 +775,8 @@ namespace MfxHwH264Encode
     bool IsRunTimeExtBufferIdSupported(
         MfxVideoParam const & video, mfxU32 id);
 
-    bool IsBitstreamExtBufferIdSupported(
-        mfxU32 id);
+    bool IsRuntimeOutputExtBufferIdSupported(
+        MfxVideoParam const & video, mfxU32 id);
 
     bool IsRunTimeExtBufferPairAllowed(
         MfxVideoParam const & video, mfxU32 id);

@@ -1592,12 +1592,25 @@ bool MfxHwH264Encode::IsRunTimeExtBufferIdSupported(MfxVideoParam const & video,
         );
 }
 
-bool MfxHwH264Encode::IsBitstreamExtBufferIdSupported(mfxU32 id)
+bool MfxHwH264Encode::IsRuntimeOutputExtBufferIdSupported(MfxVideoParam const & video, mfxU32 id)
 {
+#if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
+    mfxExtFeiParam const & feiParam = GetExtBufferRef(video);
+    bool isFeiENCPAK = feiParam.Func == MFX_FEI_FUNCTION_ENCODE;
+#else
+    (void)video;
+#endif
+
     return
             id == MFX_EXTBUFF_ENCODED_FRAME_INFO
 #ifndef MFX_AVC_ENCODING_UNIT_DISABLE
             || id == MFX_EXTBUFF_ENCODED_UNITS_INFO
+#endif
+#if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
+            || (isFeiENCPAK && (
+               id == MFX_EXTBUFF_FEI_ENC_MV
+            || id == MFX_EXTBUFF_FEI_ENC_MB_STAT
+            || id == MFX_EXTBUFF_FEI_PAK_CTRL))
 #endif
             ;
 }
@@ -6426,7 +6439,7 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
     {
         MFX_CHECK_NULL_PTR1(bs->ExtParam[i]);
 
-        if (!IsBitstreamExtBufferIdSupported(ctrl->ExtParam[i]->BufferId))
+        if (!IsRuntimeOutputExtBufferIdSupported(video, bs->ExtParam[i]->BufferId))
             checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM; // don't return error in runtime, just ignore unsupported ext buffer and return warning
     }
 
@@ -6970,7 +6983,7 @@ mfxStatus MfxHwH264Encode::CheckFEIRunTimeExtBuffersContent(
 #endif
 
             default:
-                if (IsBitstreamExtBufferIdSupported(ctrl->ExtParam[i]->BufferId))
+                if (IsRuntimeOutputExtBufferIdSupported(video, bs->ExtParam[i]->BufferId))
                     break; //Allow supported buffers
                 //unsupported output extbuffer is attached.
                 return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
