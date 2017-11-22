@@ -733,6 +733,56 @@ mfxStatus CheckDecodersExtendedBuffers(mfxVideoParam const* par)
     return MFX_ERR_NONE;
 }
 
+// converts u32 nom and denom to packed u16+u16, used in va
+mfxStatus PackMfxFrameRate(mfxU32 nom, mfxU32 den, mfxU32& packed)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+    if (!nom)
+    {
+        packed = 0;
+        return sts;
+    }
+
+    if (!den) // denominator assumed 1 if is 0
+        den = 1;
+
+    if ((nom | den) >> 16) // don't fit to u16
+    {
+        mfxU32 gcd = nom; // will be greatest common divisor
+        mfxU32 rem = den;
+        while (rem > 0)
+        {
+            mfxU32 oldrem = rem;
+            rem = gcd % rem;
+            gcd = oldrem;
+        }
+        if (gcd > 1)
+        {
+            nom /= gcd;
+            den /= gcd;
+        }
+        if ((nom | den) >> 16) // still don't fit to u16 - lose precision
+        {
+            if (nom > den) // make nom 0xffff for max precision
+            {
+                den = (mfxU32)((mfxF64)den * 0xffff / nom + .5);
+                if (!den)
+                    den = 1;
+                nom = 0xffff;
+            }
+            else
+            {
+                nom = (mfxU32)((mfxF64)nom * 0xffff / den + .5);
+                den = 0xffff;
+            }
+            sts = MFX_WRN_VIDEO_PARAM_CHANGED;
+        }
+    }
+    packed = (den << 16) | nom;
+    return sts;
+}
+
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Extended Buffer class
 //////////////////////////////////////////////////////////////////////////////////////////////////////////

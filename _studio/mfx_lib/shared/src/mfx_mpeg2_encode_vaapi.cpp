@@ -16,6 +16,7 @@
 #include <assert.h>
 
 #include "libmfx_core_vaapi.h"
+#include "mfx_common_int.h"
 #include "mfx_mpeg2_encode_vaapi.h"
 #include "vaapi_ext_interface.h"
 #include <climits>
@@ -960,7 +961,7 @@ mfxStatus VAAPIEncoder::FillMiscParameterBuffer(ExecuteBuffers* pExecuteBuffers)
 
     VAStatus                      vaSts;
 
-    miscFps.framerate            = (pExecuteBuffers->m_FrameRateExtD << 16 )| pExecuteBuffers->m_FrameRateExtN;
+    PackMfxFrameRate(pExecuteBuffers->m_FrameRateExtN, pExecuteBuffers->m_FrameRateExtD, miscFps.framerate);
 
     miscQuality.PanicModeDisable = pExecuteBuffers->m_bDisablePanicMode ? 1 : 0;
 

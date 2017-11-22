@@ -17,6 +17,7 @@
 #include <va/va_enc_hevc.h>
 
 #include "libmfx_core_vaapi.h"
+#include "mfx_common_int.h"
 #include "mfx_h265_encode_vaapi.h"
 #include "mfx_h265_encode_hw_utils.h"
 
@@ -359,7 +360,7 @@ mfxStatus SetFrameRate(
     misc_param->type = VAEncMiscParameterTypeFrameRate;
     frameRate_param = (VAEncMiscParameterFrameRate *)misc_param->data;
 
-    frameRate_param->framerate = (par.mfx.FrameInfo.FrameRateExtD << 16 )| par.mfx.FrameInfo.FrameRateExtN;
+    PackMfxFrameRate(par.mfx.FrameInfo.FrameRateExtN, par.mfx.FrameInfo.FrameRateExtD, frameRate_param->framerate);
 
     vaSts = vaUnmapBuffer(vaDisplay, frameRateBuf_id);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);

@@ -39,6 +39,8 @@ mfxStatus CheckFrameData(const mfxFrameSurface1 *surface);
 
 mfxStatus CheckDecodersExtendedBuffers(mfxVideoParam const* par);
 
+mfxStatus PackMfxFrameRate(mfxU32 nom, mfxU32 denom, mfxU32& packed); // fit u32 args to u16 and pack: (den << 16) | nom, returns MFX_WRN_VIDEO_PARAM_CHANGED if result differs
+
 mfxExtBuffer* GetExtendedBuffer(mfxExtBuffer** extBuf, mfxU32 numExtBuf, mfxU32 id);
 mfxExtBuffer* GetExtendedBufferInternal(mfxExtBuffer** extBuf, mfxU32 numExtBuf, mfxU32 id);
 

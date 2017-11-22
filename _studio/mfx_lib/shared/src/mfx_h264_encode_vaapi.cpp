@@ -16,6 +16,7 @@
 #include <va/va_enc_h264.h>
 #include "mfxfei.h"
 #include "libmfx_core_vaapi.h"
+#include "mfx_common_int.h"
 #include "mfx_h264_encode_vaapi.h"
 #include "mfx_h264_encode_hw_utils.h"
 
@@ -145,7 +146,7 @@ void FillBrcStructures(
     vaBrcPar.bits_per_second = GetMaxBitrateValue(par.calcParam.maxKbps) << (6 + SCALE_FROM_DRIVER);
     if(par.calcParam.maxKbps)
         vaBrcPar.target_percentage = (unsigned int)(100.0 * (mfxF64)par.calcParam.targetKbps / (mfxF64)par.calcParam.maxKbps);
-    vaFrameRate.framerate = (par.mfx.FrameInfo.FrameRateExtD << 16 )| par.mfx.FrameInfo.FrameRateExtN;
+    PackMfxFrameRate(par.mfx.FrameInfo.FrameRateExtN, par.mfx.FrameInfo.FrameRateExtD, vaFrameRate.framerate);
 }
 
 mfxStatus SetRateControl(
@@ -249,7 +250,7 @@ mfxStatus SetFrameRate(
     misc_param->type = VAEncMiscParameterTypeFrameRate;
 
     frameRate_param = (VAEncMiscParameterFrameRate *)misc_param->data;
-    frameRate_param->framerate = (par.mfx.FrameInfo.FrameRateExtD << 16 )| par.mfx.FrameInfo.FrameRateExtN;
+    PackMfxFrameRate(par.mfx.FrameInfo.FrameRateExtN, par.mfx.FrameInfo.FrameRateExtD, frameRate_param->framerate);
 
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");

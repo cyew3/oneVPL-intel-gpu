@@ -11,6 +11,7 @@
 #include "mfx_vp8_encode_utils_hybrid_hw.h"
 #if defined (MFX_ENABLE_VP8_VIDEO_ENCODE_HW)
 #include "assert.h"
+#include "mfx_common_int.h"
 
 namespace MFX_VP8ENC
 {
@@ -337,7 +338,7 @@ void FillBrcStructures(
     vaBrcPar.bits_per_second = par.mfx.MaxKbps * 1000;
     if(par.mfx.MaxKbps)
         vaBrcPar.target_percentage = (unsigned int)(100.0 * (mfxF64)par.mfx.TargetKbps / (mfxF64)par.mfx.MaxKbps);
-    vaFrameRate.framerate = (par.mfx.FrameInfo.FrameRateExtD << 16 )| par.mfx.FrameInfo.FrameRateExtN;
+    PackMfxFrameRate(par.mfx.FrameInfo.FrameRateExtN, par.mfx.FrameInfo.FrameRateExtD, vaFrameRate.framerate);
 }
 
 mfxStatus SetRateControl(
@@ -494,7 +495,7 @@ mfxStatus SetFrameRate(
     misc_param->type = VAEncMiscParameterTypeFrameRate;
     frameRate_param = (VAEncMiscParameterFrameRate *)misc_param->data;
 
-    frameRate_param->framerate = (par.mfx.FrameInfo.FrameRateExtD << 16 )| par.mfx.FrameInfo.FrameRateExtN;
+    PackMfxFrameRate(par.mfx.FrameInfo.FrameRateExtN, par.mfx.FrameInfo.FrameRateExtD, frameRate_param->framerate);
 
     vaUnmapBuffer(m_vaDisplay, frameRateBufId);
 
