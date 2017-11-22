@@ -1958,36 +1958,22 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
         if (pSurfaceIn->Info.FourCC == MFX_FOURCC_Y410)
         {
             //full unpack Y410 to YUV444_10b not using alpha
-#pragma pack(push, 1)
-            union Y410Pixel
-            {
-                mfxU32 force4bytes;
-                struct
-                {
-                    mfxU32 u : 10;
-                    mfxU32 y : 10;
-                    mfxU32 v : 10;
-                    mfxU32 a : 2;
-                } y410;
-            };
-#pragma pack(pop)
-
             mfxU16* pDstY = pSurfaceOut->Data.Y16;
             mfxU16* pDstU = pSurfaceOut->Data.U16;
             mfxU16* pDstV = pSurfaceOut->Data.V16;
 
-            Y410Pixel const* pSrc = (Y410Pixel*)pSurfaceIn->Data.U;
+            mfxY410 const* pSrc = pSurfaceIn->Data.Y410;
 
             pitchOut /= sizeof(mfxU16);
-            pitchIn  /= sizeof(Y410Pixel);
+            pitchIn  /= sizeof(mfxY410);
 
             for (size_t i = 0; i < pSurfaceIn->Info.Height; i++)
             {
                 for (size_t j = 0; j < pSurfaceIn->Info.Width; j++)
                 {
-                    pDstY[i*pitchOut + j] = pSrc[i*pitchIn + j].y410.y;
-                    pDstU[i*pitchOut + j] = pSrc[i*pitchIn + j].y410.u;
-                    pDstV[i*pitchOut + j] = pSrc[i*pitchIn + j].y410.v;
+                    pDstY[i*pitchOut + j] = pSrc[i*pitchIn + j].Y;
+                    pDstU[i*pitchOut + j] = pSrc[i*pitchIn + j].U;
+                    pDstV[i*pitchOut + j] = pSrc[i*pitchIn + j].V;
                 }
             }
         }
