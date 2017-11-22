@@ -836,7 +836,8 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
 
         for (mfxU32 field = f_start; field <= fieldCount; ++field)
         {
-            sts = Change_DPB(task.m_dpb[field], m_rec.mids, m_recFrameOrder);
+            const mfxU32 & fieldParity = task.m_fid[field];
+            sts = Change_DPB(task.m_dpb[fieldParity], m_rec.mids, m_recFrameOrder);
             MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
         }
 
