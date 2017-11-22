@@ -179,6 +179,7 @@ public:
     void SetMultiView();
     void SetExtBuffersFlag()       { m_bIsExtBuffers = true; }
     virtual void PrintInfo();
+    mfxU64 GetTotalBytesProcessed() { return totalBytesProcessed + m_mfxBS.DataOffset; }
 
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     inline void PrintDecodeErrorReport(mfxExtDecodeErrorReport *pDecodeErrorReport)
@@ -237,6 +238,7 @@ protected: // variables
     CSmplYUVWriter          m_FileWriter;
     std::auto_ptr<CSmplBitstreamReader>  m_FileReader;
     mfxBitstream            m_mfxBS; // contains encoded data
+    mfxU64 totalBytesProcessed;
 
     MFXVideoSession         m_mfxSession;
     mfxIMPL                 m_impl;

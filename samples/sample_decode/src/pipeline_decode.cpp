@@ -149,6 +149,7 @@ CDecodingPipeline::CDecodingPipeline()
 #endif
 
     m_monitorType = 0;
+    totalBytesProcessed = 0;
     m_vLatency.reserve(1000); // reserve some space to reduce dynamic reallocation impact on pipeline execution
 }
 
@@ -228,6 +229,7 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     m_nTimeout = pParams->nTimeout;
 
     // Initializing file reader
+    totalBytesProcessed = 0;
     sts = m_FileReader->Init(pParams->strSrcFile);
     MSDK_CHECK_STATUS(sts, "m_FileReader->Init failed");
 
@@ -648,6 +650,7 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
                 MSDK_CHECK_STATUS(sts, "ExtendMfxBitstream failed");
             }
             // read a portion of data
+            totalBytesProcessed += m_mfxBS.DataOffset;
             sts = m_FileReader->ReadNextFrame(&m_mfxBS);
             if (MFX_ERR_MORE_DATA == sts &&
                 !(m_mfxBS.DataFlag & MFX_BITSTREAM_EOS))

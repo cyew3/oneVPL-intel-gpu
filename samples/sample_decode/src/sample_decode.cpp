@@ -693,12 +693,21 @@ int main(int argc, char *argv[])
 
     msdk_printf(MSDK_STRING("Decoding started\n"));
 
+    mfxU64 prevResetBytesCount = 0xFFFFFFFFFFFFFFFF;
     for (;;)
     {
         sts = Pipeline.RunDecoding();
 
         if (MFX_ERR_INCOMPATIBLE_VIDEO_PARAM == sts || MFX_ERR_DEVICE_LOST == sts || MFX_ERR_DEVICE_FAILED == sts)
         {
+            if (prevResetBytesCount == Pipeline.GetTotalBytesProcessed())
+            {
+                msdk_printf(MSDK_STRING("\nERROR: No input data was consumed since last reset. Quitting to avoid looping forever.\n"));
+                break;
+            }
+            prevResetBytesCount = Pipeline.GetTotalBytesProcessed();
+
+
             if (MFX_ERR_INCOMPATIBLE_VIDEO_PARAM == sts)
             {
                 msdk_printf(MSDK_STRING("\nERROR: Incompatible video parameters detected. Recovering...\n"));
