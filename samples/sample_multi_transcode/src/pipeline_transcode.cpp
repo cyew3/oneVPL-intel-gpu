@@ -1295,7 +1295,7 @@ mfxStatus CTranscodingPipeline::Encode()
             }
             else
             {
-                sts = Surface2BS(&VppExtSurface, &m_BSPool.back()->Bitstream,m_mfxVppParams.vpp.Out.FourCC);
+                sts = Surface2BS(&VppExtSurface, &m_BSPool.back()->Bitstream, m_encoderFourCC);
             }
         }
 
@@ -1807,7 +1807,7 @@ mfxStatus CTranscodingPipeline::Transcode()
             }
             else
             {
-                sts = Surface2BS(&VppExtSurface, &m_BSPool.back()->Bitstream,m_mfxVppParams.vpp.Out.FourCC);
+                sts = Surface2BS(&VppExtSurface, &m_BSPool.back()->Bitstream, m_encoderFourCC);
             }
         }
         else
@@ -1951,7 +1951,10 @@ mfxStatus CTranscodingPipeline::Surface2BS(ExtendedSurface* pSurf,mfxBitstream* 
 
         switch(fourCC)
         {
-        case 0: // Default value is NV12
+        case 0: // Default value is MFX_FOURCC_I420
+        case MFX_FOURCC_I420:
+            sts = NV12asI420toBS(pSurf->pSurface, pBS);
+            break;
         case MFX_FOURCC_NV12:
             sts=NV12toBS(pSurf->pSurface,pBS);
             break;
@@ -1971,6 +1974,40 @@ mfxStatus CTranscodingPipeline::Surface2BS(ExtendedSurface* pSurf,mfxBitstream* 
     return sts;
 }
 
+mfxStatus CTranscodingPipeline::NV12asI420toBS(mfxFrameSurface1* pSurface, mfxBitstream* pBS)
+{
+    mfxFrameInfo& info = pSurface->Info;
+    mfxFrameData& data = pSurface->Data;
+    if ((int)pBS->MaxLength - (int)pBS->DataLength < (int)(info.CropH*info.CropW * 3 / 2))
+    {
+        mfxStatus sts = ExtendMfxBitstream(pBS, pBS->DataLength + (int)(info.CropH*info.CropW * 3 / 2));
+        MSDK_CHECK_STATUS(sts, "ExtendMfxBitstream failed");
+    }
+
+    for (mfxU16 i = 0; i < info.CropH; i++)
+    {
+        MSDK_MEMCPY(pBS->Data + pBS->DataLength, data.Y + (info.CropY * data.Pitch + info.CropX) + i * data.Pitch, info.CropW);
+        pBS->DataLength += info.CropW;
+    }
+
+    mfxU16 h = info.CropH / 2;
+    mfxU16 w = info.CropW;
+
+    for (mfxU16 offset = 0; offset<2; offset++)
+    {
+        for (mfxU16 i = 0; i < h; i++)
+        {
+            for (mfxU16 j = offset; j < w; j += 2)
+            {
+                pBS->Data[pBS->DataLength] = *(data.UV + (info.CropY * data.Pitch / 2 + info.CropX) + i * data.Pitch + j);
+                pBS->DataLength++;
+            }
+        }
+    }
+
+    return MFX_ERR_NONE;
+}
+
 mfxStatus CTranscodingPipeline::NV12toBS(mfxFrameSurface1* pSurface,mfxBitstream* pBS)
 {
     mfxFrameInfo& info = pSurface->Info;
@@ -1987,19 +2024,10 @@ mfxStatus CTranscodingPipeline::NV12toBS(mfxFrameSurface1* pSurface,mfxBitstream
         pBS->DataLength += info.CropW;
     }
 
-    mfxU16 h = info.CropH / 2;
-    mfxU16 w = info.CropW;
-
-    for(mfxU16 offset = 0; offset<2;offset++)
+    for(mfxU16 i = 0; i < info.CropH / 2;i++)
     {
-        for (mfxU16 i = 0; i < h; i++)
-        {
-            for (mfxU16 j = offset; j < w; j += 2)
-            {
-                pBS->Data[pBS->DataLength]=*(data.UV + (info.CropY * data.Pitch / 2 + info.CropX) + i * data.Pitch + j);
-                pBS->DataLength++;
-            }
-        }
+        MSDK_MEMCPY(pBS->Data + pBS->DataLength, data.UV + (info.CropY * data.Pitch + info.CropX) + i * data.Pitch, info.CropW);
+        pBS->DataLength += info.CropW;
     }
 
     return MFX_ERR_NONE;
@@ -3334,6 +3362,8 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     m_sGenericPluginPath = pParams->strVPPPluginDLLPath;
     m_decoderPluginParams = pParams->decoderPluginParams;
     m_encoderPluginParams = pParams->encoderPluginParams;
+
+    m_encoderFourCC = pParams->EncoderFourCC;
 
 #if MFX_VERSION >= 1022
     m_ROIData = pParams->m_ROIData;

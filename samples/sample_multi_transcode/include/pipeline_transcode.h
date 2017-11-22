@@ -595,6 +595,7 @@ namespace TranscodingSample
         mfxStatus DumpSurface2File(mfxFrameSurface1* pSurface);
         mfxStatus Surface2BS(ExtendedSurface* pSurf,mfxBitstream* pBS, mfxU32 fourCC);
         mfxStatus NV12toBS(mfxFrameSurface1* pSurface,mfxBitstream* pBS);
+        mfxStatus NV12asI420toBS(mfxFrameSurface1* pSurface, mfxBitstream* pBS);
         mfxStatus RGB4toBS(mfxFrameSurface1* pSurface,mfxBitstream* pBS);
         mfxStatus YUY2toBS(mfxFrameSurface1* pSurface,mfxBitstream* pBS);
 
@@ -634,6 +635,7 @@ namespace TranscodingSample
         bool                            m_bIsInterOrJoined;
 
         mfxU32                          m_numEncoders;
+        mfxU32                          m_encoderFourCC;
 
         CSmplYUVWriter                  m_dumpVppCompFileWriter;
         mfxU32                          m_vppCompDumpRenderMode;
