@@ -733,10 +733,13 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
         if (picType != MFX_FRAMETYPE_B) 
         {
             bSHStart = true;
-            m_ctx.dQuantAb  = 1./m_ctx.Quant;
             m_ctx.SceneChange |= 16;
             m_ctx.SChPoc = frame_par->DisplayOrder;
             m_ctx.eRateSH = eRate;
+            if ((frame_par->DisplayOrder - m_ctx.SChPoc) >= (mfxU32)(m_par.frameRate*2.0))
+            {
+                m_ctx.dQuantAb  = 1./m_ctx.Quant;
+            }
             //printf("!!!!!!!!!!!!!!!!!!!!! %d m_ctx.SceneChange %d, order %d\n", frame_par->EncodedOrder, m_ctx.SceneChange, frame_par->DisplayOrder);
         }
 
@@ -749,6 +752,8 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
         MFX_CHECK(brcSts ==  MFX_BRC_OK || (!m_ctx.bPanic), MFX_ERR_NOT_ENOUGH_BUFFER);
         if (brcSts == MFX_BRC_BIG_FRAME || brcSts == MFX_BRC_SMALL_FRAME)
             m_hrd.UpdateMinMaxQPForRec(brcSts, qpY);
+        else
+            bNeedUpdateQP = true;
         status->MinFrameSize = m_hrd.GetMinFrameSize() + 7;
         //printf("%d: poc %d, size %d QP %d (%d %d), HRD sts %d, maxFrameSize %d, type %d \n",frame_par->EncodedOrder, frame_par->DisplayOrder, bitsEncoded, m_ctx.Quant, m_ctx.QuantMin, m_ctx.QuantMax, brcSts,  m_hrd.GetMaxFrameSize(), frame_par->FrameType);
     }

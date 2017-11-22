@@ -125,7 +125,7 @@ public:
         quantMinB(0)
     {}
 
-    mfxStatus Init(mfxVideoParam* par);
+    mfxStatus Init(mfxVideoParam* par, bool bFieldMode = false);
     mfxStatus GetBRCResetType(mfxVideoParam* par, bool bNewSequence, bool &bReset, bool &bSlidingWindowReset );
 };
 class cHRD
