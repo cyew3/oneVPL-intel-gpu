@@ -605,7 +605,6 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
         mfxEncodeInternalParams internal_params;
         MFX_ENTRY_POINT entryPoints[MFX_NUM_ENTRY_POINTS];
         mfxU32 numEntryPoints = MFX_NUM_ENTRY_POINTS;
-        mfxExtVppAuxData *aux;
 
         memset(&entryPoints, 0, sizeof(entryPoints));
         mfxRes = session->m_pENCODE->EncodeFrameCheck(ctrl,
@@ -614,8 +613,7 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
                                                       &reordered_surface,
                                                       &internal_params,
                                                       entryPoints,
-                                                      numEntryPoints,
-                                                      aux);
+                                                      numEntryPoints);
         // source data is OK, go forward
         if ((MFX_ERR_NONE == mfxRes) ||
             (MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == mfxRes) ||
