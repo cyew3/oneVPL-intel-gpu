@@ -2777,19 +2777,18 @@ void UpdateDPB(
     // sliding window over STRs
     if (end && end == par.mfx.NumRefFrame)
     {
-        if (par.isLowDelay() && st0 == 0)
+        if (par.isLowDelay() && st0 == 0)  //P pyramid if no LTR. Pyramid is possible if NumRefFrame > 1
         {
-            if (par.isField() && (GetFrameNum(true, dpb[1].m_poc, dpb[1].m_secondField) != GetFrameNum(true, dpb[0].m_poc, dpb[0].m_secondField)))
-                st0 = 0;
-            else
+            if (!par.isField() || GetFrameNum(true, dpb[1].m_poc, dpb[1].m_secondField) == GetFrameNum(true, dpb[0].m_poc, dpb[0].m_secondField))
                 for (st0 = 1; ((GetFrameNum(par.isField(), dpb[st0].m_poc, dpb[st0].m_secondField) - (GetFrameNum(par.isField(), dpb[0].m_poc, dpb[0].m_secondField))) % par.NumRefLX[0] ) == 0 && st0 < end; st0++);
         }
         else
         {
-            for (st0 = 0; dpb[st0].m_ltr && st0 < end; st0 ++);
+            for (st0 = 0; dpb[st0].m_ltr && st0 < end; st0 ++); // excess?
 
             if (par.LTRInterval)
             {
+                //To do: Fix LTR for field mode (two LTR should be stored). Now LTR aren't supported.
                 // mark/replace LTR in DPB
                 if (!st0)
                 {
@@ -2981,7 +2980,7 @@ void ConstructRPL(
                     MFX_SORT_COMMON(RPL[0], numRefActive[0], Abs(DPB[RPL[0][_i]].m_poc - poc) < Abs(DPB[RPL[0][_j]].m_poc - poc));
 #elif (HEVCE_FIELD_MODE == 1)
                     bBottomField;
-                    MFX_SORT_COMMON(RPL[0], numRefActive[0], (Abs(DPB[RPL[0][_i]].m_poc/2 - poc/2)*2 + ((DPB[RPL[0][_i]].m_secondField == bSecondField) ? 0 : 1))< (Abs(DPB[RPL[0][_j]].m_poc/2 - poc/2) + ((DPB[RPL[0][_j]].m_secondField == bSecondField) ? 0 : 1)));
+                    MFX_SORT_COMMON(RPL[0], numRefActive[0], (Abs(DPB[RPL[0][_i]].m_poc/2 - poc/2)*2 + ((DPB[RPL[0][_i]].m_secondField == bSecondField) ? 0 : 1))< (Abs(DPB[RPL[0][_j]].m_poc/2 - poc/2)*2 + ((DPB[RPL[0][_j]].m_secondField == bSecondField) ? 0 : 1)));
 #elif (HEVCE_FIELD_MODE == 2)
                     bBottomField;
                     MFX_SORT_COMMON(RPL[0], numRefActive[0], (Abs(DPB[RPL[0][_i]].m_poc/2 - poc/2) + ((DPB[RPL[0][_i]].m_secondField == bSecondField) ? 0 : 16))< (Abs(DPB[RPL[0][_j]].m_poc/2 - poc/2)  + ((DPB[RPL[0][_j]].m_secondField == bSecondField) ? 0 : 16)));
@@ -3019,7 +3018,7 @@ void ConstructRPL(
 #if (HEVCE_FIELD_MODE == 0)
                         MFX_SORT_COMMON(RPL[1], numRefActive[1], Abs(DPB[RPL[1][_i]].m_poc - poc) > Abs(DPB[RPL[1][_j]].m_poc - poc));
 #elif (HEVCE_FIELD_MODE == 1)
-                        MFX_SORT_COMMON(RPL[1], numRefActive[1], (Abs(DPB[RPL[1][_i]].m_poc/2 - poc/2)*2  + ((DPB[RPL[1][_i]].m_secondField == bSecondField) ? 0 : 1)) > (Abs(DPB[RPL[1][_j]].m_poc/2 - poc/2)  + ((DPB[RPL[1][_j]].m_secondField == bSecondField) ? 0 : 1)));
+                        MFX_SORT_COMMON(RPL[1], numRefActive[1], (Abs(DPB[RPL[1][_i]].m_poc/2 - poc/2)*2  + ((DPB[RPL[1][_i]].m_secondField == bSecondField) ? 0 : 1)) > (Abs(DPB[RPL[1][_j]].m_poc/2 - poc/2)*2  + ((DPB[RPL[1][_j]].m_secondField == bSecondField) ? 0 : 1)));
 #elif (HEVCE_FIELD_MODE == 2)
                         MFX_SORT_COMMON(RPL[1], numRefActive[1], (Abs(DPB[RPL[1][_i]].m_poc/2 - poc/2)  + ((DPB[RPL[1][_i]].m_secondField == bSecondField) ? 0 : 16)) > (Abs(DPB[RPL[1][_j]].m_poc/2 - poc/2)  + ((DPB[RPL[1][_j]].m_secondField == bSecondField) ? 0 : 16)));
 #elif (HEVCE_FIELD_MODE == 3)
