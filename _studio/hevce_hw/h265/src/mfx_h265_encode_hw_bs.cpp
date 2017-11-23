@@ -305,7 +305,7 @@ mfxU32 AddEmulationPreventionAndCopy(
 
     if (!bEmulationByteInsertion)
     {
-        memcpy(bsDataStart, sbegin, len);
+        memcpy_s(bsDataStart, len, sbegin, len);
         return len;
     }
 

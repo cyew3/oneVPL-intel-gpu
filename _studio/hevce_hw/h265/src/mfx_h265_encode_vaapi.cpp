@@ -1122,7 +1122,7 @@ mfxStatus VAAPIEncoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT t
     // we should register allocated HW bitstreams and recon surfaces
     MFX_CHECK( response.mids, MFX_ERR_NULL_PTR );
 
-    ExtVASurface extSurf;
+    ExtVASurface extSurf = {VA_INVALID_SURFACE, 0, 0, 0};
     VASurfaceID *pSurface = NULL;
 
     mfxFrameAllocator & allocator = m_core->FrameAllocator();
