@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2013-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2013-2017 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -270,6 +270,11 @@ mfxStatus frame_allocator::LockFrame(mfxHDL pthis, mfxMemId mid, mfxFrameData *p
     {
         ptr->Pitch = 0x8000;
         ptr->PitchHigh = 0xFFFF;
+    }
+    else if (0 != (instance->lock_mode & MIN_PITCH_LOCK))
+    {
+        ptr->Pitch = 1;
+        ptr->PitchHigh = 0;
     }
     else if (0 != (instance->lock_mode & LOCKED_SURF_LOCK))
         ptr->Locked = 1;
