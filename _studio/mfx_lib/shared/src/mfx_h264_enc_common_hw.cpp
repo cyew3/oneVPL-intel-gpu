@@ -3423,8 +3423,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         par.mfx.RateControlMethod = 0;
     }
 
-    if ((LaDSenumToFactor(extOpt2->LookAheadDS) < 2 && par.mfx.FrameInfo.Width > 1920) ||
-        (MFX_LOOKAHEAD_DS_4x == extOpt2->LookAheadDS) )
+    if (extOpt2->LookAheadDS == MFX_LOOKAHEAD_DS_4x)
     {
         extOpt2->LookAheadDS = MFX_LOOKAHEAD_DS_2x;
         changed = true;
@@ -5763,7 +5762,8 @@ void MfxHwH264Encode::SetDefaults(
 
     if (extOpt2->LookAheadDS == MFX_LOOKAHEAD_DS_UNKNOWN) // default: use LA 2X for TU3-7 and LA 1X for TU1-2
     {
-        if (par.mfx.TargetUsage > 2 || par.mfx.FrameInfo.Width >= 1920)
+        if (par.mfx.TargetUsage > 2 ||
+            (par.mfx.FrameInfo.Width >= 1920 && par.mfx.FrameInfo.PicStruct == 0)) // customer's issue
             extOpt2->LookAheadDS = MFX_LOOKAHEAD_DS_2x;
         else
             extOpt2->LookAheadDS = MFX_LOOKAHEAD_DS_OFF;
