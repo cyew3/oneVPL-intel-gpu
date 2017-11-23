@@ -219,8 +219,8 @@ int RunTest(unsigned int id)
         || test_par.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
     {
         test_vpp.CreateAllocators();
-        test_vpp.SetHandle();
     }
+    test_vpp.SetHandle();
 
     // create pool of oversized surfaces
     test_vpp.m_par.vpp.In.Width = test_vpp.m_par.vpp.In.CropW = MSDK_ALIGN16(s_oversized_w);
@@ -247,8 +247,8 @@ int RunTest(unsigned int id)
         || test_par.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
     {
         cmp_vpp.CreateAllocators();
-        cmp_vpp.SetHandle();
     }
+    cmp_vpp.SetHandle();
     // create pool of normal size surfaces
     cmp_vpp.AllocSurfaces();
     cmp_vpp.Init();
