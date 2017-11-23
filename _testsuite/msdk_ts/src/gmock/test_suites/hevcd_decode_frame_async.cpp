@@ -188,10 +188,24 @@ const DecodeSuite::tc_struct DecodeSuite::test_case[] =
     {/*21*/ MFX_ERR_NONE, {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_OPAQUE_MEMORY}}},
     {/*22*/ MFX_ERR_NONE, {INIT|MEMID, 0, {1}}},
     {/*23*/ MFX_ERR_UNDEFINED_BEHAVIOR,
-       {{INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
-        {SURF_WORK, &tsStruct::mfxFrameSurface1.Data.Y, {1}}}
+        {
+            {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
+            {SURF_WORK, &tsStruct::mfxFrameSurface1.Data.Y, {1}}
+        }
     },
-
+    {/*24*/ MFX_ERR_UNDEFINED_BEHAVIOR,
+        {
+            {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
+            {INIT|ALLOCATOR, 0, {frame_allocator::ALLOC_MAX, frame_allocator::MIN_PITCH_LOCK}},
+            {INIT|MEMID, 0, { 1 }}
+        }
+    },
+    {/*25*/ MFX_ERR_UNDEFINED_BEHAVIOR,
+        {
+            {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
+            {INIT|ALLOCATOR, 0, {frame_allocator::ALLOC_MAX, frame_allocator::MIN_PITCH_LOCK}},
+        }
+    },
 };
 
 const unsigned int DecodeSuite::n_cases = sizeof(DecodeSuite::test_case)/sizeof(DecodeSuite::tc_struct);
