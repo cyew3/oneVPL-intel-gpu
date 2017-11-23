@@ -116,6 +116,7 @@ struct sInputParams
 
     mfxU16 nGPB;
     mfxU16 nExtBRC;
+    mfxU16 nAdaptiveMaxFrameSize;
 
     mfxU16 WeightedPred;
     mfxU16 WeightedBiPred;

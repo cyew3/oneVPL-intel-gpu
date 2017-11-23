@@ -555,7 +555,8 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     // set up mfxCodingOption3
     if (pInParams->nGPB || pInParams->LowDelayBRC ||
         pInParams->WeightedPred || pInParams->WeightedBiPred
-        || pInParams->nPRefType || pInParams->IntRefCycleDist )
+        || pInParams->nPRefType || pInParams->IntRefCycleDist ||
+        pInParams->nAdaptiveMaxFrameSize)
     {
         if (pInParams->CodecId == MFX_CODEC_HEVC)
         {
@@ -567,6 +568,7 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         m_CodingOption3.LowDelayBRC    = pInParams->LowDelayBRC;
         m_CodingOption3.PRefType       = pInParams->nPRefType;
         m_CodingOption3.IntRefCycleDist= pInParams->IntRefCycleDist;
+        m_CodingOption3.AdaptiveMaxFrameSize = pInParams->nAdaptiveMaxFrameSize;
 
         m_EncExtParams.push_back((mfxExtBuffer *)&m_CodingOption3);
     }
