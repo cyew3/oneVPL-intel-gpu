@@ -1,3 +1,6 @@
+ifeq ($(USE_CAMERA_HAL_3),true)
+ifeq ($(USE_CAMERA_STUB),false)
+
 LOCAL_PATH:= $(call my-dir)
 
 include $(MFX_HOME)/mdp_msdk-lib/android/mfx_env.mk
@@ -40,3 +43,6 @@ LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := sample_mondello
 
 include $(BUILD_EXECUTABLE)
+
+endif #ifeq ($(USE_CAMERA_STUB),false)
+endif #ifeq ($(USE_CAMERA_HAL_3),true)

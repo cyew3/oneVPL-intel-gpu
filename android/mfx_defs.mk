@@ -16,7 +16,11 @@ MFX_CFLAGS := -DANDROID
 
 # Android version preference:
 ifneq ($(filter 8.% O ,$(PLATFORM_VERSION)),)
-  MFX_ANDROID_VERSION:= MFX_O
+  ifneq ($(filter 8.0.%,$(PLATFORM_VERSION)),)
+    MFX_ANDROID_VERSION:= MFX_O
+  else
+    MFX_ANDROID_VERSION:= MFX_O_MR1
+  endif
 endif
 ifneq ($(filter 7.% N ,$(PLATFORM_VERSION)),)
   MFX_ANDROID_VERSION:= MFX_N
@@ -95,6 +99,9 @@ MFX_CFLAGS += \
 
 # Setting vendor
 LOCAL_MODULE_OWNER := intel
+
+# Moving executables to proprietary location
+LOCAL_PROPRIETARY_MODULE := true
 
 # =============================================================================
 

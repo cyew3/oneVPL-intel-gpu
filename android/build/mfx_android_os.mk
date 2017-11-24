@@ -8,6 +8,13 @@
 MFX_C_INCLUDES_LIBVA := \
   $(TARGET_OUT_HEADERS)/libva
 
+ifneq ($(filter MFX_O_MR1,$(MFX_ANDROID_VERSION)),)
+  MFX_C_INCLUDES_LIBVA += \
+    frameworks/native/libs/nativebase/include \
+    frameworks/native/libs/nativewindow/include \
+    frameworks/native/libs/arect/include
+endif
+
 MFX_C_INCLUDES_OMX := \
   frameworks/native/include/media/openmax \
   frameworks/native/include/media/hardware
