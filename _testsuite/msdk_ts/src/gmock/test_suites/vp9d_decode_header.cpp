@@ -35,20 +35,12 @@ public:
         mfxU32 n_calls;
         f_pair set_par[MAX_NPARS];
     };
+
     static const tc_struct test_case[];      //base cases
-    static const tc_struct test_case_nv12[]; //8b 420
-    static const tc_struct test_case_ayuv[]; //8b 444
-    static const tc_struct test_case_p010[]; //10b 420
-    static const tc_struct test_case_y410[]; //10b 444
+    static const unsigned int n_cases;
 
     template<mfxU32 fourcc>
     int RunTest_fourcc(const unsigned int id);
-
-    static const unsigned int n_cases;
-    static const unsigned int n_cases_nv12;
-    static const unsigned int n_cases_ayuv;
-    static const unsigned int n_cases_p010;
-    static const unsigned int n_cases_y410;
 
 private:
 
@@ -101,21 +93,27 @@ struct streamDesc
 };
 
 const streamDesc streams[] = {
-    {352,288,"forBehaviorTest/foreman_cif.ivf"                                                      },
-    {432,240,"conformance/vp9/SBE/8bit_444/Stress_VP9_FC2p1ss444_432x240_250_extra_stress_2.2.0.vp9"},
-    {432,240,"conformance/vp9/SBE/10bit/Stress_VP9_FC2p2b10_432x240_050_intra_stress_1.5.vp9"       },
-    {432,240,"conformance/vp9/SBE/10bit_444/Syntax_VP9_FC2p3ss444_432x240_101_inter_basic_2.0.0.vp9"},
+    { 352, 288, "forBehaviorTest/foreman_cif.ivf"                                                       },
+    { 432, 240, "conformance/vp9/SBE/8bit_444/Stress_VP9_FC2p1ss444_432x240_250_extra_stress_2.2.0.vp9" },
+    { 432, 240, "conformance/vp9/SBE/10bit/Stress_VP9_FC2p2b10_432x240_050_intra_stress_1.5.vp9"        },
+    { 432, 240, "conformance/vp9/SBE/10bit_444/Syntax_VP9_FC2p3ss444_432x240_101_inter_basic_2.0.0.vp9" },
+    { 160, 90,  "conformance/vp9/google/vp92-2-20-12bit-yuv420.ivf"                                     },
+    { 160, 90,  "conformance/vp9/google/vp93-2-20-12bit-yuv444.ivf"                                     },
+    {}
 };
 
 const streamDesc& getStreamDesc(const mfxU32& fourcc)
 {
     switch(fourcc)
     {
-    case MFX_FOURCC_NV12: return streams[0];
-    case MFX_FOURCC_AYUV: return streams[1];
-    case MFX_FOURCC_P010: return streams[2];
-    case MFX_FOURCC_Y410: return streams[3];
-    default: assert(0); return streams[0];
+        case MFX_FOURCC_NV12: return streams[0];
+        case MFX_FOURCC_AYUV: return streams[1];
+        case MFX_FOURCC_P010: return streams[2];
+        case MFX_FOURCC_Y410: return streams[3];
+        case MFX_FOURCC_P016: return streams[4];
+        case MFX_FOURCC_Y416: return streams[5];
+
+        default: assert(0); return streams[0];
     }
 }
 
@@ -127,12 +125,24 @@ int TestSuite::RunTest_fourcc(const unsigned int id)
 
     m_par.mfx.FrameInfo.FourCC = fourcc;
     set_chromaformat_mfx(&m_par);
-    m_par.mfx.FrameInfo.Width = bsDesc.w;
-    m_par.mfx.FrameInfo.Height = bsDesc.h;
-    if(MFX_FOURCC_P010 == fourcc || MFX_FOURCC_Y410 == fourcc)
-        m_par.mfx.FrameInfo.BitDepthChroma = m_par.mfx.FrameInfo.BitDepthLuma = 10;
-    if (MFX_FOURCC_P010 == fourcc)
+
+    m_par.mfx.FrameInfo.Width  = (bsDesc.w + 15) & ~15;
+    m_par.mfx.FrameInfo.Height = (bsDesc.h + 15) & ~15;
+
+    switch (fourcc)
+    {
+        case MFX_FOURCC_P010:
+        case MFX_FOURCC_Y410: m_par.mfx.FrameInfo.BitDepthChroma = m_par.mfx.FrameInfo.BitDepthLuma = 10;
+
+        case MFX_FOURCC_P016:
+        case MFX_FOURCC_Y416: m_par.mfx.FrameInfo.BitDepthChroma = m_par.mfx.FrameInfo.BitDepthLuma = 12;
+    };
+
+    if (   fourcc == MFX_FOURCC_P010
+        || fourcc == MFX_FOURCC_P016
+        || fourcc == MFX_FOURCC_Y416)
         m_par.mfx.FrameInfo.Shift = 1;
+
     m_par_set = true; //we are not testing DecodeHeader here
 
     const tc_struct& tc = test_case[id];
@@ -215,6 +225,9 @@ TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_8b_420_decode_header,  RunTest_fourcc<MFX_F
 TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_10b_420_decode_header, RunTest_fourcc<MFX_FOURCC_P010>, n_cases);
 TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_8b_444_decode_header,  RunTest_fourcc<MFX_FOURCC_AYUV>, n_cases);
 TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_10b_444_decode_header, RunTest_fourcc<MFX_FOURCC_Y410>, n_cases);
+
+TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_12b_420_p016_decode_header, RunTest_fourcc<MFX_FOURCC_P016>, n_cases);
+TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_12b_444_y416_decode_header, RunTest_fourcc<MFX_FOURCC_Y416>, n_cases);
 
 }
 #undef TEST_NAME
