@@ -889,6 +889,7 @@ void FillPpsBuffer(
         pps.bScreenContent = 1;
     }*/
 
+#ifdef MFX_ENABLE_HEVCE_ROI
     // ROI
     pps.NumROI = (par.bROIViaMBQP) ? 0 : (mfxU8)par.m_ext.ROI.NumROI;
     if (pps.NumROI)
@@ -904,8 +905,13 @@ void FillPpsBuffer(
         {   // trimming should be done by driver
             pps.ROI[i].Roi.Left = (mfxU16)(par.m_ext.ROI.ROI[i].Left / blkSize);
             pps.ROI[i].Roi.Top = (mfxU16)(par.m_ext.ROI.ROI[i].Top / blkSize);
-            pps.ROI[i].Roi.Right = (mfxU16)(par.m_ext.ROI.ROI[i].Right / blkSize);
-            pps.ROI[i].Roi.Bottom = (mfxU16)(par.m_ext.ROI.ROI[i].Bottom / blkSize);
+            // Driver expects a rect with the 'close' right bottom edge but
+            // MSDK uses the 'open' edge rect, thus the right bottom edge which
+            // is decreased by 1 below converts 'open' -> 'close' notation
+            // We expect here boundaries are already aligned with the BlockSize
+            // and Right > Left and Bottom > Top
+            pps.ROI[i].Roi.Right = (mfxU16)(par.m_ext.ROI.ROI[i].Right / blkSize) - 1;
+            pps.ROI[i].Roi.Bottom = (mfxU16)(par.m_ext.ROI.ROI[i].Bottom / blkSize) - 1;
             pps.ROI[i].PriorityLevelOrDQp = (mfxI8)(priorityToDQPpar ? (-1)*par.m_ext.ROI.ROI[i].Priority : par.m_ext.ROI.ROI[i].Priority);
         }
         pps.MaxDeltaQp = 51;    // is used for BRC only
@@ -918,6 +924,7 @@ void FillPpsBuffer(
     // pps.NumDeltaQpForNonRectROI    // total number of different delta QPs for non-rect ROI ( + the same for rect ROI should not exceed MaxNumDeltaQP in caps
     // pps.NonRectROIDeltaQpList[0..pps.NumDeltaQpForNonRectROI-1] // delta QPs for non-rect ROI
 #endif
+#endif // MFX_ENABLE_HEVCE_ROI
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     pps.DisplayFormatSwizzle = (par.mfx.FrameInfo.FourCC == MFX_FOURCC_A2RGB10);
@@ -948,6 +955,7 @@ void FillPpsBuffer(
         pps.RefFramePOCList[i] = task.m_dpb[0][i].m_poc;
     }
 
+#ifdef MFX_ENABLE_HEVCE_ROI
     // ROI
     pps.NumROI = (mfxU8)task.m_numRoi;
     if (pps.NumROI) {
@@ -955,8 +963,13 @@ void FillPpsBuffer(
         for (mfxU16 i = 0; i < task.m_numRoi; i++) {
             pps.ROI[i].Roi.Left = (mfxU16)(task.m_roi[i].Left / blkSize);
             pps.ROI[i].Roi.Top = (mfxU16)(task.m_roi[i].Top / blkSize);
-            pps.ROI[i].Roi.Right = (mfxU16)(task.m_roi[i].Right / blkSize);
-            pps.ROI[i].Roi.Bottom = (mfxU16)(task.m_roi[i].Bottom / blkSize);
+            // Driver expects a rect with the 'close' right bottom edge but
+            // MSDK uses the 'open' edge rect, thus the right bottom edge which
+            // is decreased by 1 below converts 'open' -> 'close' notation
+            // We expect here boundaries are already aligned with the BlockSize
+            // and Right > Left and Bottom > Top
+            pps.ROI[i].Roi.Right = (mfxU16)(task.m_roi[i].Right / blkSize) - 1;
+            pps.ROI[i].Roi.Bottom = (mfxU16)(task.m_roi[i].Bottom / blkSize) - 1;
             pps.ROI[i].PriorityLevelOrDQp = (mfxI8)(task.m_bPriorityToDQPpar ? (-1)*task.m_roi[i].Priority: task.m_roi[i].Priority);
         }
         
@@ -970,6 +983,7 @@ void FillPpsBuffer(
     // pps.NumDeltaQpForNonRectROI    // total number of different delta QPs for non-rect ROI ( + the same for rect ROI should not exceed MaxNumDeltaQP in caps
     // pps.NonRectROIDeltaQpList[0..pps.NumDeltaQpForNonRectROI-1] // delta QPs for non-rect ROI
 #endif
+#endif // MFX_ENABLE_HEVCE_ROI
 
 #ifdef MFX_ENABLE_HEVCE_DIRTY_RECT
     // DirtyRect
@@ -980,8 +994,13 @@ void FillPpsBuffer(
         for (mfxU16 i = 0; i < task.m_numDirtyRect; i++) {
             dirtyRects[i].Left = (mfxU16)(task.m_dirtyRect[i].Left / blkSize);
             dirtyRects[i].Top = (mfxU16)(task.m_dirtyRect[i].Top / blkSize);
-            dirtyRects[i].Right = (mfxU16)(task.m_dirtyRect[i].Right / blkSize);
-            dirtyRects[i].Bottom = (mfxU16)(task.m_dirtyRect[i].Bottom / blkSize);
+            // Driver expects a rect with the 'close' right bottom edge but
+            // MSDK uses the 'open' edge rect, thus the right bottom edge which
+            // is decreased by 1 below converts 'open' -> 'close' notation
+            // We expect here boundaries are already aligned with the BlockSize
+            // and Right > Left and Bottom > Top
+            dirtyRects[i].Right = (mfxU16)(task.m_dirtyRect[i].Right / blkSize) - 1;
+            dirtyRects[i].Bottom = (mfxU16)(task.m_dirtyRect[i].Bottom / blkSize) - 1;
         }
         pps.pDirtyRect = &(dirtyRects[0]);
     } else {
