@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2017 Intel Corporation. All Rights Reserved.
 
 File Name: vpp_init.cpp
 
@@ -36,7 +36,7 @@ namespace vpp_init
 {
 
 //!\brief Main test class
-class TestSuite: tsVideoVPP, public tsSurfaceProcessor
+class TestSuite: protected tsVideoVPP, public tsSurfaceProcessor
 {
 public:
     //! \brief A constructor (VPP)
@@ -51,10 +51,10 @@ public:
     ~TestSuite() { }
     //! \brief Main method. Runs test case
     //! \param id - test case number
-    int RunTest(unsigned int id);
+    virtual int RunTest(unsigned int id);
     //! The number of test cases
     static const unsigned int n_cases;
-private:
+protected:
 
     enum
     {
@@ -95,6 +95,8 @@ private:
 
         return MFX_ERR_NONE;
     }
+
+    int RunTest(const tc_struct& tc);
 };
 
 mfxU64 binary_64f64u(const mfxF64 in)
@@ -392,9 +394,12 @@ const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(Test
 
 int TestSuite::RunTest(unsigned int id)
 {
-    TS_START;
-    auto& tc = test_case[id];
+    return  RunTest(test_case[id]);
+}
 
+int TestSuite::RunTest(const TestSuite::tc_struct& tc)
+{
+    TS_START;
     mfxStatus sts = tc.sts;
     SETPARS(&m_par, MFX_PAR);
 
@@ -428,7 +433,7 @@ int TestSuite::RunTest(unsigned int id)
     if (sts == MFX_ERR_NONE)
     {
         AllocSurfaces();
-        ProcessFrames(10);
+        ProcessFrames(g_tsConfig.sim ? 3 : 10);
     }
 
     TS_END;
@@ -437,4 +442,833 @@ int TestSuite::RunTest(unsigned int id)
 
 //!\brief Reg the test suite into test system
 TS_REG_TEST_SUITE_CLASS(vpp_init);
+}
+
+namespace vpp_8b_444_ayuv_init
+{
+    class TestSuite : public vpp_init::TestSuite
+    {
+    public:
+        TestSuite()
+            : vpp_init::TestSuite()
+        {
+            m_par.vpp.In.FourCC = MFX_FOURCC_AYUV;
+            m_par.vpp.In.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            m_par.vpp.Out.FourCC = MFX_FOURCC_AYUV;
+            m_par.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+        }
+
+        static const unsigned int n_cases;
+        static const tc_struct test_case[];
+
+        int RunTest(unsigned int id);
+    };
+
+    using vpp_init::binary_64f64u;
+
+    const TestSuite::tc_struct TestSuite::test_case[] =
+    {
+        {/*00*/ MFX_ERR_NONE, STANDARD,
+            {
+            },
+        },
+        {/*01*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern,           MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY},
+            },
+        },
+        {/*02*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.Protected,           MFX_PROTECTION_PAVP},
+                {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern,           MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY},
+            },
+        }
+    };
+
+    const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::test_case[0]);
+
+    int TestSuite::RunTest(unsigned int id)
+    {
+        return  vpp_init::TestSuite::RunTest(test_case[id]);
+    }
+
+    TS_REG_TEST_SUITE_CLASS(vpp_8b_444_ayuv_init);
+}
+
+namespace vpp_8b_444_ayuv_ccf_init
+{
+    class TestSuite : public vpp_init::TestSuite
+    {
+    public:
+        TestSuite()
+            : vpp_init::TestSuite()
+        {
+            m_par.vpp.In.FourCC = MFX_FOURCC_AYUV;
+            m_par.vpp.In.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            m_par.vpp.Out.FourCC = MFX_FOURCC_AYUV;
+            m_par.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+        }
+
+        static const unsigned int n_cases;
+        static const tc_struct test_case[];
+
+        int RunTest(unsigned int id);
+    };
+
+    using vpp_init::binary_64f64u;
+
+    const TestSuite::tc_struct TestSuite::test_case[] =
+    {
+        {/*00*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,       MFX_FOURCC_NV12},
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.ChromaFormat, MFX_CHROMAFORMAT_YUV420 },
+            },
+        },
+        {/*01*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,       MFX_FOURCC_YV12},
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.ChromaFormat, MFX_CHROMAFORMAT_YUV420 },
+            },
+        },
+        {/*02*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,       MFX_FOURCC_UYVY},
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.ChromaFormat, MFX_CHROMAFORMAT_YUV420 },
+            },
+        },
+        {/*03*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,       MFX_FOURCC_YUY2},
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.ChromaFormat, MFX_CHROMAFORMAT_YUV422 },
+            },
+        },
+        {/*04*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,       MFX_FOURCC_RGB4},
+            },
+        },
+        {/*05*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,          MFX_FOURCC_P010},
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.ChromaFormat,    MFX_CHROMAFORMAT_YUV420 },
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.BitDepthLuma,    10 },
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.BitDepthChroma,  10 },
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift,           1 },
+            },
+        },
+        {/*06*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,          MFX_FOURCC_Y210},
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.ChromaFormat,    MFX_CHROMAFORMAT_YUV422 },
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.BitDepthLuma,    10 },
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.BitDepthChroma,  10 },
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift,           1 },
+            },
+        },
+        {/*07*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,          MFX_FOURCC_Y410},
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.BitDepthLuma,    10 },
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.BitDepthChroma,  10 },
+            },
+        },
+        {/*08*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,          MFX_FOURCC_A2RGB10},
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.BitDepthLuma,    10 },
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.BitDepthChroma,  10 },
+            },
+        }
+    };
+
+    const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::test_case[0]);
+
+    int TestSuite::RunTest(unsigned int id)
+    {
+        return  vpp_init::TestSuite::RunTest(test_case[id]);
+    }
+
+    TS_REG_TEST_SUITE_CLASS(vpp_8b_444_ayuv_ccf_init);
+}
+
+namespace vpp_8b_444_ayuv_algo_init
+{
+    class TestSuite : public vpp_init::TestSuite
+    {
+    public:
+        TestSuite()
+            : vpp_init::TestSuite()
+        {
+            m_par.vpp.In.FourCC = MFX_FOURCC_AYUV;
+            m_par.vpp.In.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            m_par.vpp.Out.FourCC = MFX_FOURCC_AYUV;
+            m_par.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+        }
+
+        static const unsigned int n_cases;
+        static const tc_struct test_case[];
+
+        int RunTest(unsigned int id);
+    };
+
+    using vpp_init::binary_64f64u;
+
+    const TestSuite::tc_struct TestSuite::test_case[] =
+    {
+        {/*00*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct,    MFX_PICSTRUCT_FIELD_TFF},
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct,   MFX_PICSTRUCT_PROGRESSIVE},
+            },
+        },
+        {/*01*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxExtVPPDetail.DetailFactor,      50},
+            },
+        },
+        {/*02*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxExtVPPProcAmp.Brightness,       binary_64f64u(50)},
+                {MFX_PAR, &tsStruct::mfxExtVPPProcAmp.Contrast,         binary_64f64u(5)},
+                {MFX_PAR, &tsStruct::mfxExtVPPProcAmp.Hue,              binary_64f64u(-100)},
+                {MFX_PAR, &tsStruct::mfxExtVPPProcAmp.Saturation,       binary_64f64u(6)},
+            },
+        }
+    };
+
+    const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::test_case[0]);
+
+    int TestSuite::RunTest(unsigned int id)
+    {
+        return  vpp_init::TestSuite::RunTest(test_case[id]);
+    }
+
+    TS_REG_TEST_SUITE_CLASS(vpp_8b_444_ayuv_algo_init);
+}
+
+namespace vpp_10b_420_p010_init
+{
+    class TestSuite : public vpp_init::TestSuite
+    {
+    public:
+        TestSuite()
+            : vpp_init::TestSuite()
+        {
+            m_par.vpp.In.BitDepthLuma = 10;
+            m_par.vpp.In.BitDepthChroma = 10;
+            m_par.vpp.In.Shift = 1;
+            m_par.vpp.In.FourCC = MFX_FOURCC_P010;
+            m_par.vpp.In.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+            m_par.vpp.Out.BitDepthLuma = 10;
+            m_par.vpp.Out.BitDepthChroma = 10;
+            m_par.vpp.Out.Shift = 1;
+            m_par.vpp.Out.FourCC = MFX_FOURCC_P010;
+            m_par.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+        }
+        static const unsigned int n_cases;
+        static const tc_struct test_case[];
+
+        int RunTest(unsigned int id);
+    };
+
+    using vpp_init::binary_64f64u;
+
+    const TestSuite::tc_struct TestSuite::test_case[] =
+    {
+        {/*00*/ MFX_ERR_NONE, STANDARD,
+            {
+            },
+        },
+        {/*01*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern,           MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY},
+            },
+        },
+        {/*02*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.Protected,           MFX_PROTECTION_PAVP},
+                {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern,           MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY},
+            },
+        },
+    };
+
+    const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::test_case[0]);
+
+    int TestSuite::RunTest(unsigned int id)
+    {
+        return  vpp_init::TestSuite::RunTest(test_case[id]);
+    }
+
+    TS_REG_TEST_SUITE_CLASS(vpp_10b_420_p010_init);
+}
+
+namespace vpp_10b_420_p010_ccf_init
+{
+    class TestSuite : public vpp_init::TestSuite
+    {
+    public:
+        TestSuite()
+            : vpp_init::TestSuite()
+        {
+            m_par.vpp.In.BitDepthLuma = 10;
+            m_par.vpp.In.BitDepthChroma = 10;
+            m_par.vpp.In.Shift = 1;
+            m_par.vpp.In.FourCC = MFX_FOURCC_P010;
+            m_par.vpp.In.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+            m_par.vpp.Out.BitDepthLuma = 10;
+            m_par.vpp.Out.BitDepthChroma = 10;
+            m_par.vpp.Out.Shift = 1;
+            m_par.vpp.Out.FourCC = MFX_FOURCC_P010;
+            m_par.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+        }
+        static const unsigned int n_cases;
+        static const tc_struct test_case[];
+
+        int RunTest(unsigned int id);
+    };
+
+    using vpp_init::binary_64f64u;
+
+    const TestSuite::tc_struct TestSuite::test_case[] =
+    {
+        {/*00*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,          MFX_FOURCC_NV12},
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.BitDepthLuma,    8 },
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.BitDepthChroma,  8 },
+            },
+        },
+        {/*01*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,          MFX_FOURCC_YV12},
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.BitDepthLuma,    8 },
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.BitDepthChroma,  8 },
+            },
+        },
+        {/*02*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,          MFX_FOURCC_UYVY},
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.BitDepthLuma,    8 },
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.BitDepthChroma,  8 },
+            },
+        },
+        {/*03*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,          MFX_FOURCC_YUY2},
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.ChromaFormat,    MFX_CHROMAFORMAT_YUV422 },
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.BitDepthLuma,    8 },
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.BitDepthChroma,  8 },
+            },
+        },
+        {/*04*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,          MFX_FOURCC_AYUV},
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.ChromaFormat,    MFX_CHROMAFORMAT_YUV444 },
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.BitDepthLuma,    8 },
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.BitDepthChroma,  8 },
+            },
+        },
+        {/*05*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,          MFX_FOURCC_RGB4},
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.ChromaFormat,    MFX_CHROMAFORMAT_YUV444 },
+            },
+        },
+        {/*06*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,          MFX_FOURCC_Y210},
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.ChromaFormat,    MFX_CHROMAFORMAT_YUV422 },
+            },
+        },
+        {/*07*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,         MFX_FOURCC_Y410},
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.ChromaFormat,   MFX_CHROMAFORMAT_YUV444 },
+            },
+        },
+        {/*08*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,         MFX_FOURCC_A2RGB10},
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.ChromaFormat,   MFX_CHROMAFORMAT_YUV444 },
+            },
+        }
+    };
+
+    const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::test_case[0]);
+
+    int TestSuite::RunTest(unsigned int id)
+    {
+        return  vpp_init::TestSuite::RunTest(test_case[id]);
+    }
+
+    TS_REG_TEST_SUITE_CLASS(vpp_10b_420_p010_ccf_init);
+}
+
+namespace vpp_10b_420_p010_algo_init
+{
+    class TestSuite : public vpp_init::TestSuite
+    {
+    public:
+        TestSuite()
+            : vpp_init::TestSuite()
+        {
+            m_par.vpp.In.BitDepthLuma = 10;
+            m_par.vpp.In.BitDepthChroma = 10;
+            m_par.vpp.In.Shift = 1;
+            m_par.vpp.In.FourCC = MFX_FOURCC_P010;
+            m_par.vpp.In.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+            m_par.vpp.Out.BitDepthLuma = 10;
+            m_par.vpp.Out.BitDepthChroma = 10;
+            m_par.vpp.Out.Shift = 1;
+            m_par.vpp.Out.FourCC = MFX_FOURCC_P010;
+            m_par.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+        }
+        static const unsigned int n_cases;
+        static const tc_struct test_case[];
+
+        int RunTest(unsigned int id);
+    };
+
+    using vpp_init::binary_64f64u;
+
+    const TestSuite::tc_struct TestSuite::test_case[] =
+    {
+        {/*00*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct,    MFX_PICSTRUCT_FIELD_TFF},
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct,   MFX_PICSTRUCT_PROGRESSIVE},
+            },
+        },
+        {/*01*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxExtVPPDetail.DetailFactor,      50},
+            },
+        },
+        {/*02*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxExtVPPProcAmp.Brightness,       binary_64f64u(50)},
+                {MFX_PAR, &tsStruct::mfxExtVPPProcAmp.Contrast,         binary_64f64u(5)},
+                {MFX_PAR, &tsStruct::mfxExtVPPProcAmp.Hue,              binary_64f64u(-100)},
+                {MFX_PAR, &tsStruct::mfxExtVPPProcAmp.Saturation,       binary_64f64u(6)},
+            },
+        },
+    };
+
+    const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::test_case[0]);
+
+    int TestSuite::RunTest(unsigned int id)
+    {
+        return  vpp_init::TestSuite::RunTest(test_case[id]);
+    }
+
+    TS_REG_TEST_SUITE_CLASS(vpp_10b_420_p010_algo_init);
+}
+
+namespace vpp_10b_422_y210_init
+{
+    class TestSuite : public vpp_init::TestSuite
+    {
+    public:
+        TestSuite()
+            : vpp_init::TestSuite()
+        {
+            m_par.vpp.Out.BitDepthLuma = 10;
+            m_par.vpp.Out.BitDepthChroma = 10;
+            m_par.vpp.Out.Shift = 1;
+            m_par.vpp.Out.FourCC = MFX_FOURCC_Y210;
+            m_par.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+        }
+        static const unsigned int n_cases;
+        static const tc_struct test_case[];
+
+        int RunTest(unsigned int id);
+    };
+
+    using vpp_init::binary_64f64u;
+
+    const TestSuite::tc_struct TestSuite::test_case[] =
+    {
+        {/*00*/ MFX_ERR_NONE, STANDARD,
+            {
+            },
+        },
+        {/*01*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern,           MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY},
+            },
+        },
+        {/*02*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.Protected,           MFX_PROTECTION_PAVP},
+                {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern,           MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY},
+            },
+        }
+    };
+
+    const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::test_case[0]);
+
+    int TestSuite::RunTest(unsigned int id)
+    {
+        return  vpp_init::TestSuite::RunTest(test_case[id]);
+    }
+
+    TS_REG_TEST_SUITE_CLASS(vpp_10b_422_y210_init);
+}
+
+namespace vpp_10b_422_y210_ccf_init
+{
+    class TestSuite : public vpp_init::TestSuite
+    {
+    public:
+        TestSuite()
+            : vpp_init::TestSuite()
+        {
+            m_par.vpp.Out.BitDepthLuma = 10;
+            m_par.vpp.Out.BitDepthChroma = 10;
+            m_par.vpp.Out.Shift = 1;
+            m_par.vpp.Out.FourCC = MFX_FOURCC_Y210;
+            m_par.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+        }
+        static const unsigned int n_cases;
+        static const tc_struct test_case[];
+
+        int RunTest(unsigned int id);
+    };
+
+    using vpp_init::binary_64f64u;
+
+    const TestSuite::tc_struct TestSuite::test_case[] =
+    {
+        {/*00*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,          MFX_FOURCC_NV12},
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.BitDepthLuma,    8 },
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.BitDepthChroma,  8 },
+            },
+        },
+        {/*01*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,          MFX_FOURCC_YV12},
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.BitDepthLuma,    8 },
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.BitDepthChroma,  8 },
+            },
+        },
+        {/*02*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,          MFX_FOURCC_UYVY},
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.BitDepthLuma,    8 },
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.BitDepthChroma,  8 },
+            },
+        },
+        {/*03*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,          MFX_FOURCC_YUY2},
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.ChromaFormat,    MFX_CHROMAFORMAT_YUV422 },
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.BitDepthLuma,    8 },
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.BitDepthChroma,  8 },
+            },
+        },
+        {/*04*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,          MFX_FOURCC_AYUV},
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.ChromaFormat,    MFX_CHROMAFORMAT_YUV444 },
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.BitDepthLuma,    8 },
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.BitDepthChroma,  8 },
+            },
+        },
+        {/*05*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,          MFX_FOURCC_RGB4},
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.ChromaFormat,    MFX_CHROMAFORMAT_YUV444 },
+            },
+        },
+        {/*06*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,          MFX_FOURCC_P010},
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.ChromaFormat,    MFX_CHROMAFORMAT_YUV420 },
+            },
+        },
+        {/*07*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,         MFX_FOURCC_Y410},
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.ChromaFormat,   MFX_CHROMAFORMAT_YUV444 },
+            },
+        },
+        {/*08*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,         MFX_FOURCC_A2RGB10},
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.ChromaFormat,   MFX_CHROMAFORMAT_YUV444 },
+            },
+        }
+    };
+
+    const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::test_case[0]);
+
+    int TestSuite::RunTest(unsigned int id)
+    {
+        return  vpp_init::TestSuite::RunTest(test_case[id]);
+    }
+
+    TS_REG_TEST_SUITE_CLASS(vpp_10b_422_y210_ccf_init);
+}
+
+namespace vpp_10b_422_y210_algo_init
+{
+    class TestSuite : public vpp_init::TestSuite
+    {
+    public:
+        TestSuite()
+            : vpp_init::TestSuite()
+        {
+            m_par.vpp.Out.BitDepthLuma = 10;
+            m_par.vpp.Out.BitDepthChroma = 10;
+            m_par.vpp.Out.Shift = 1;
+            m_par.vpp.Out.FourCC = MFX_FOURCC_Y210;
+            m_par.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+        }
+        static const unsigned int n_cases;
+        static const tc_struct test_case[];
+
+        int RunTest(unsigned int id);
+    };
+
+    using vpp_init::binary_64f64u;
+
+    const TestSuite::tc_struct TestSuite::test_case[] =
+    {
+        {/*00*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct,    MFX_PICSTRUCT_FIELD_TFF},
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct,   MFX_PICSTRUCT_PROGRESSIVE},
+            },
+        },
+        {/*01*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxExtVPPDetail.DetailFactor,      50},
+            },
+        },
+        {/*02*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxExtVPPProcAmp.Brightness,       binary_64f64u(50)},
+                {MFX_PAR, &tsStruct::mfxExtVPPProcAmp.Contrast,         binary_64f64u(5)},
+                {MFX_PAR, &tsStruct::mfxExtVPPProcAmp.Hue,              binary_64f64u(-100)},
+                {MFX_PAR, &tsStruct::mfxExtVPPProcAmp.Saturation,       binary_64f64u(6)},
+            },
+        },
+    };
+
+    const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::test_case[0]);
+
+    int TestSuite::RunTest(unsigned int id)
+    {
+        return  vpp_init::TestSuite::RunTest(test_case[id]);
+    }
+
+    TS_REG_TEST_SUITE_CLASS(vpp_10b_422_y210_algo_init);
+}
+
+namespace vpp_10b_444_y410_init
+{
+    class TestSuite : public vpp_init::TestSuite
+    {
+    public:
+        TestSuite()
+            : vpp_init::TestSuite()
+        {
+            m_par.vpp.Out.BitDepthLuma = 10;
+            m_par.vpp.Out.BitDepthChroma = 10;
+            m_par.vpp.Out.FourCC = MFX_FOURCC_Y410;
+            m_par.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+        }
+
+        static const unsigned int n_cases;
+        static const tc_struct test_case[];
+
+        int RunTest(unsigned int id);
+    };
+
+    using vpp_init::binary_64f64u;
+
+    const TestSuite::tc_struct TestSuite::test_case[] =
+    {
+        {/*00*/ MFX_ERR_NONE, STANDARD,
+            {
+            },
+        },
+        {/*01*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern,           MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY},
+            },
+        },
+        {/*02*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.Protected,           MFX_PROTECTION_PAVP},
+                {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern,           MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY},
+            },
+        }
+    };
+
+    const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::test_case[0]);
+
+    int TestSuite::RunTest(unsigned int id)
+    {
+        return  vpp_init::TestSuite::RunTest(test_case[id]);
+    }
+
+    TS_REG_TEST_SUITE_CLASS(vpp_10b_444_y410_init);
+}
+
+namespace vpp_10b_444_y410_ccf_init
+{
+    class TestSuite : public vpp_init::TestSuite
+    {
+    public:
+        TestSuite()
+            : vpp_init::TestSuite()
+        {
+            m_par.vpp.Out.BitDepthLuma = 10;
+            m_par.vpp.Out.BitDepthChroma = 10;
+            m_par.vpp.Out.FourCC = MFX_FOURCC_Y410;
+            m_par.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+        }
+
+        static const unsigned int n_cases;
+        static const tc_struct test_case[];
+
+        int RunTest(unsigned int id);
+    };
+
+    using vpp_init::binary_64f64u;
+
+    const TestSuite::tc_struct TestSuite::test_case[] =
+    {
+        {/*00*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,          MFX_FOURCC_NV12},
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.BitDepthLuma,    8 },
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.BitDepthChroma,  8 },
+            },
+        },
+        {/*01*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,          MFX_FOURCC_YV12},
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.BitDepthLuma,    8 },
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.BitDepthChroma,  8 },
+            },
+        },
+        {/*02*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,          MFX_FOURCC_UYVY},
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.BitDepthLuma,    8 },
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.BitDepthChroma,  8 },
+            },
+        },
+        {/*03*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,          MFX_FOURCC_YUY2},
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.ChromaFormat,    MFX_CHROMAFORMAT_YUV422 },
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.BitDepthLuma,    8 },
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.BitDepthChroma,  8 },
+            },
+        },
+        {/*04*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,          MFX_FOURCC_AYUV},
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.ChromaFormat,    MFX_CHROMAFORMAT_YUV444 },
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.BitDepthLuma,    8 },
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.BitDepthChroma,  8 },
+            },
+        },
+        {/*05*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,          MFX_FOURCC_RGB4},
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.ChromaFormat,    MFX_CHROMAFORMAT_YUV444 },
+            },
+        },
+        {/*06*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,          MFX_FOURCC_P010},
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.ChromaFormat,    MFX_CHROMAFORMAT_YUV420 },
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift,           1 },
+            },
+        },
+        {/*07*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,         MFX_FOURCC_Y210},
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.ChromaFormat,   MFX_CHROMAFORMAT_YUV422 },
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift,          1 },
+            },
+        },
+        {/*08*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,         MFX_FOURCC_A2RGB10},
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.ChromaFormat,   MFX_CHROMAFORMAT_YUV444 },
+            },
+        }
+    };
+
+    const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::test_case[0]);
+
+    int TestSuite::RunTest(unsigned int id)
+    {
+        return  vpp_init::TestSuite::RunTest(test_case[id]);
+    }
+
+    TS_REG_TEST_SUITE_CLASS(vpp_10b_444_y410_ccf_init);
+}
+
+namespace vpp_10b_444_y410_algo_init
+{
+    class TestSuite : public vpp_init::TestSuite
+    {
+    public:
+        TestSuite()
+            : vpp_init::TestSuite()
+        {
+            m_par.vpp.Out.BitDepthLuma = 10;
+            m_par.vpp.Out.BitDepthChroma = 10;
+            m_par.vpp.Out.FourCC = MFX_FOURCC_Y410;
+            m_par.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+        }
+
+        static const unsigned int n_cases;
+        static const tc_struct test_case[];
+
+        int RunTest(unsigned int id);
+    };
+
+    using vpp_init::binary_64f64u;
+
+    const TestSuite::tc_struct TestSuite::test_case[] =
+    {
+        {/*00*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct,    MFX_PICSTRUCT_FIELD_TFF},
+                {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct,   MFX_PICSTRUCT_PROGRESSIVE},
+            },
+        },
+        {/*01*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxExtVPPDetail.DetailFactor,      50},
+            },
+        },
+        {/*02*/ MFX_ERR_NONE, STANDARD,
+            {
+                {MFX_PAR, &tsStruct::mfxExtVPPProcAmp.Brightness,       binary_64f64u(50)},
+                {MFX_PAR, &tsStruct::mfxExtVPPProcAmp.Contrast,         binary_64f64u(5)},
+                {MFX_PAR, &tsStruct::mfxExtVPPProcAmp.Hue,              binary_64f64u(-100)},
+                {MFX_PAR, &tsStruct::mfxExtVPPProcAmp.Saturation,       binary_64f64u(6)},
+            },
+        },
+    };
+
+    const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::test_case[0]);
+
+    int TestSuite::RunTest(unsigned int id)
+    {
+        return  vpp_init::TestSuite::RunTest(test_case[id]);
+    }
+
+    TS_REG_TEST_SUITE_CLASS(vpp_10b_444_y410_algo_init);
 }
