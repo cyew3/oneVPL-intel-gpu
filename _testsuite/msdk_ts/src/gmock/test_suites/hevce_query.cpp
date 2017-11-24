@@ -52,6 +52,7 @@ private:
         PIC_STRUCT,
         PROTECTED,
         INVALID,
+        FOURCC,
         NONE
     };
 
@@ -369,7 +370,49 @@ const TestSuite::tc_struct TestSuite::test_case[] =
                        PROTECTED, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_GPUCP_PAVP } },
     {/*71*/ MFX_ERR_UNSUPPORTED, PROTECTED, INVALID, { MFX_PAR, &tsStruct::mfxVideoParam.Protected, 0xfff } },
 
-
+    //FOURCC for REXT
+    // Y210 (4:2:2, Packed, 10 bit)
+    {/*72*/ MFX_ERR_NONE, FOURCC, NONE,
+        {
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_Y210 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV422 }
+        }
+    },
+    {/*73 ChromaFormat mismatch*/ MFX_ERR_UNSUPPORTED, FOURCC, INVALID,
+        {
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_Y210 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV420 }
+        }
+    },
+    {/*74 BitDepth mismatch*/ MFX_ERR_UNSUPPORTED, FOURCC, INVALID,
+        {
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_Y210 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV422 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, 8 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, 8 }
+        }
+    },
+    // YUY2 (4:2:2, Packed, 8 bit)
+    {/*75*/ MFX_ERR_NONE, FOURCC, NONE,
+        {
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_YUY2 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV422 }
+        }
+    },
+    {/*76 ChromaFormat mismatch*/ MFX_ERR_UNSUPPORTED, FOURCC, INVALID,
+        {
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_YUY2 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV420 }
+        }
+    },
+    {/*77 BitDepth mismatch*/ MFX_ERR_UNSUPPORTED, FOURCC, INVALID,
+        {
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_YUY2 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV422 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, 10 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, 10 }
+        }
+    },
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -449,6 +492,16 @@ int TestSuite::RunTest(unsigned int id)
             g_tsStatus.check(sts);
             return 0;
         }
+        if ((tc.type == FOURCC) && (tc.sub_type == NONE))
+        {
+            if (((m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210) || (m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_YUY2)) &&
+                (g_tsHWtype >= MFX_HW_ICL) &&
+                (g_tsConfig.lowpower == MFX_CODINGOPTION_ON))
+            {
+                g_tsLog << "\n\nWARNING: 422 format is not supported in VDENC\n\n\n";
+                throw tsSKIP;
+            }
+        }
         if ((m_pPar->mfx.RateControlMethod == MFX_RATECONTROL_AVBR) && (tc.sts == MFX_ERR_NONE))
         {
             g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
@@ -508,6 +561,10 @@ int TestSuite::RunTest(unsigned int id)
     }
     else if (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_GACC.Data, sizeof(MFX_PLUGINID_HEVCE_GACC.Data)))
     {
+        if ((tc.type == FOURCC) && (tc.sub_type == NONE) && (m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210 || m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_YUY2))
+        {
+            sts = MFX_ERR_UNSUPPORTED;
+        }
         if (tc.type == PROTECTED)
             g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
         // GACC: supported only TU = {4,5,6,7}
@@ -521,6 +578,10 @@ int TestSuite::RunTest(unsigned int id)
     }
     else
     {
+        if ((tc.type == FOURCC) && (tc.sub_type == NONE) && (m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210 || m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_YUY2))
+        {
+            sts = MFX_ERR_UNSUPPORTED;
+        }
         if (tc.type == PROTECTED)
             g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
         // different expected status for SW HEVCe and GACC
