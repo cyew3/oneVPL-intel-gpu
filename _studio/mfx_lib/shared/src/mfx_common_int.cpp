@@ -207,6 +207,10 @@ mfxStatus CheckFrameInfoCodecs(mfxFrameInfo  *info, mfxU32 codecId, bool isHW)
             && info->FourCC != MFX_FOURCC_AYUV
             && info->FourCC != MFX_FOURCC_Y410
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+            && info->FourCC != MFX_FOURCC_P016
+            && info->FourCC != MFX_FOURCC_Y416
+#endif //PRE_SI_TARGET_PLATFORM_GEN12
             )
             return MFX_ERR_INVALID_VIDEO_PARAM;
         break;

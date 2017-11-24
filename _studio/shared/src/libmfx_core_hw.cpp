@@ -30,9 +30,11 @@ mfxU32 ChooseProfile(mfxVideoParam * param, eMFXHWType )
     case MFX_CODEC_VC1:
         profile |= VA_VC1;
         break;
+
     case MFX_CODEC_MPEG2:
         profile |= VA_MPEG2;
         break;
+
     case MFX_CODEC_AVC:
         {
         profile |= VA_H264;
@@ -67,12 +69,15 @@ mfxU32 ChooseProfile(mfxVideoParam * param, eMFXHWType )
 
         }
         break;
+
     case MFX_CODEC_JPEG:
         profile |= VA_JPEG;
         break;
+
     case MFX_CODEC_VP8:
         profile |= VA_VP8;
         break;
+
     case MFX_CODEC_VP9:
         profile |= VA_VP9;
 #ifndef OPEN_SOURCE
@@ -96,14 +101,27 @@ mfxU32 ChooseProfile(mfxVideoParam * param, eMFXHWType )
             profile |= VA_PROFILE_10 | VA_PROFILE_444;
             break;
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+        case MFX_FOURCC_P016:
+            profile |= VA_PROFILE_12;
+            break;
+        case MFX_FOURCC_Y216:
+            profile |= VA_PROFILE_12 | VA_PROFILE_422;
+            break;
+        case MFX_FOURCC_Y416:
+            profile |= VA_PROFILE_12 | VA_PROFILE_444;
+            break;
+#endif //PRE_SI_TARGET_PLATFORM_GEN12
         }
 #endif
         break;
+
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12P5) && (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_CODEC_AV1:
         profile |= VA_AV1;
         break;
 #endif // PRE_SI_TARGET_PLATFORM_GEN12P5
+
     case MFX_CODEC_HEVC:
         profile |= VA_H265;
 #ifndef OPEN_SOURCE

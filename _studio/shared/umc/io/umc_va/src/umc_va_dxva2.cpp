@@ -431,12 +431,18 @@ static const GuidProfile guidProfiles[] =
 #endif
     { VP9_VLD,                                                                  DXVA_Intel_ModeVP9_Profile0_VLD },
     { VP9_VLD | VA_PROFILE_10,                                                  DXVA_Intel_ModeVP9_Profile2_10bit_VLD },
+
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     //{ VP9_VLD_422,                                                              DXVA_Intel_ModeVP9_Profile1_YUV422_VLD },
     { VP9_VLD_444,                                                              DXVA_Intel_ModeVP9_Profile1_YUV444_VLD },
     //{ VP9_10_VLD_422,                                                           DXVA_Intel_ModeVP9_Profile3_YUV422_10bit_VLD },
     { VP9_10_VLD_444,                                                           DXVA_Intel_ModeVP9_Profile3_YUV444_10bit_VLD },
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+    { VP9_12_VLD_420,                                                           DXVA_Intel_ModeVP9_Profile2_YUV420_12bit_VLD },
+    { VP9_12_VLD_444,                                                           DXVA_Intel_ModeVP9_Profile3_YUV444_12bit_VLD },
+#endif //PRE_SI_TARGET_PLATFORM_GEN12
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
     { AV1_VLD,                                                                  DXVA_Intel_ModeAV1_VLD },
@@ -545,6 +551,8 @@ bool GuidProfile::IsIntelCustomGUID(const GUID & guid)
         || guid == DXVA_Intel_ModeHEVC_VLD_SCC_Main_10Profile
         || guid == DXVA_Intel_ModeHEVC_VLD_SCC_Main444_Profile
         || guid == DXVA_Intel_ModeHEVC_VLD_SCC_Main444_10Profile
+        || guid == DXVA_Intel_ModeVP9_Profile2_YUV420_12bit_VLD
+        || guid == DXVA_Intel_ModeVP9_Profile3_YUV444_12bit_VLD
 #endif //PRE_SI_TARGET_PLATFORM_GEN12
         ;
 }

@@ -132,6 +132,15 @@ DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_SCC_Main444_Profile,
 // {AE0D4E15-2360-40a8-BF82-028E6A0DD827}
 DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_SCC_Main444_10Profile,
     0xae0d4e15, 0x2360, 0x40a8, 0xbf, 0x82, 0x2, 0x8e, 0x6a, 0xd, 0xd8, 0x27);
+
+// {A7F759DD-5F54-4d7f-8291-42E883C546FE}
+DEFINE_GUID(DXVA_Intel_ModeVP9_Profile2_YUV420_12bit_VLD, 
+    0xa7f759dd, 0x5f54, 0x4d7f, 0x82, 0x91, 0x42, 0xe8, 0x83, 0xc5, 0x46, 0xfe);
+
+// {F34FA92F-DC79-474c-B0DB-B7BD4522DF77}
+DEFINE_GUID(DXVA_Intel_ModeVP9_Profile3_YUV444_12bit_VLD, 
+    0xf34fa92f, 0xdc79, 0x474c, 0xb0, 0xdb, 0xb7, 0xbd, 0x45, 0x22, 0xdf, 0x77);
+
 #endif //PRE_SI_TARGET_PLATFORM_GEN12
 
 struct GuidProfile
@@ -285,13 +294,16 @@ bool CheckDXVAConfig(Ipp32s profile_flags, T *config, ProtectedVA * protectedVA)
     case JPEG_VLD:
     case VP8_VLD:
     case VP9_VLD:
-    case VP9_10_VLD:
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     case VP9_VLD_422:
     case VP9_VLD_444:
     case VP9_10_VLD_422:
     case VP9_10_VLD_444:
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+    case VP9_12_VLD_420:
+    case VP9_12_VLD_444:
+#endif //PRE_SI_TARGET_PLATFORM_GEN12
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
     case AV1_VLD:
 #endif // PRE_SI_TARGET_PLATFORM_GEN12P5
