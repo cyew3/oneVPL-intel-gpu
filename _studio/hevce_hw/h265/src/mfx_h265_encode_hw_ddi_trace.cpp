@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -102,6 +102,12 @@ DECL_START(ENCODE_COMPBUFFERDESC)
     case D3DDDIFMT_INTELENCODE_SPSDATA:
     case D3D11_DDI_VIDEO_ENCODER_BUFFER_SPSDATA:
 #if (HEVCE_DDI_VERSION >= 960)
+#if (HEVCE_DDI_VERSION >= 991)
+        if (m_type == ENCODER_SCC)
+            TraceArray((ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_SCC*)pBuf,
+            (b.DataSize / sizeof(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_SCC)));
+        else
+#endif
         if (m_type == ENCODER_REXT)
             TraceArray((ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_REXT*)pBuf,
                 (b.DataSize / sizeof(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_REXT)));
@@ -113,6 +119,12 @@ DECL_START(ENCODE_COMPBUFFERDESC)
     case D3DDDIFMT_INTELENCODE_PPSDATA:
     case D3D11_DDI_VIDEO_ENCODER_BUFFER_PPSDATA:
 #if (HEVCE_DDI_VERSION >= 960)
+#if (HEVCE_DDI_VERSION >= 991)
+        if (m_type == ENCODER_SCC)
+            TraceArray((ENCODE_SET_PICTURE_PARAMETERS_HEVC_SCC*)pBuf,
+            (b.DataSize / sizeof(ENCODE_SET_PICTURE_PARAMETERS_HEVC_SCC)));
+        else
+#endif
         if (m_type == ENCODER_REXT)
             TraceArray((ENCODE_SET_PICTURE_PARAMETERS_HEVC_REXT*)pBuf,
                 (b.DataSize / sizeof(ENCODE_SET_PICTURE_PARAMETERS_HEVC_REXT)));
@@ -672,6 +684,35 @@ DECL_END
 #undef FIELD_FORMAT
 
 #endif //(HEVCE_DDI_VERSION >= 960)
+
+#if (HEVCE_DDI_VERSION >= 991)
+#define FIELD_FORMAT "%-38s"
+DECL_START(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_SCC)
+   Trace((ENCODE_SET_SEQUENCE_PARAMETERS_HEVC const &)b, idx);
+   TRACE("%d", palette_mode_enabled_flag);
+   TRACE("%d", motion_vector_resolution_control_idc);
+   TRACE("%d", intra_boundary_filtering_disabled_flag);
+   TRACE("%d", palette_max_size);
+   TRACE("%d", delta_palette_max_predictor_size);
+DECL_END
+#undef FIELD_FORMAT
+
+#define FIELD_FORMAT "%-38s"
+DECL_START(ENCODE_SET_PICTURE_PARAMETERS_HEVC_SCC)
+   Trace((ENCODE_SET_PICTURE_PARAMETERS_HEVC const &)b, idx);
+   TRACE("%d", pps_curr_pic_ref_enabled_flag);
+   TRACE("%d", residual_adaptive_colour_transform_enabled_flag);
+   TRACE("%d", pps_slice_act_qp_offsets_present_flag);
+   TRACE("%d", PredictorPaletteSize);
+   TRACE("%d", pps_act_y_qp_offset_plus5);
+   TRACE("%d", pps_act_cb_qp_offset_plus5);
+   TRACE("%d", pps_act_cr_qp_offset_plus3);
+
+// pps.PredictorPaletteEntries[3][128];
+// TRACE_ARRAY_ROW("%d", cb_qp_offset_list, 6);
+DECL_END
+#undef FIELD_FORMAT
+#endif //(HEVCE_DDI_VERSION >= 991)
 
 #endif //#ifdef DDI_TRACE
 }

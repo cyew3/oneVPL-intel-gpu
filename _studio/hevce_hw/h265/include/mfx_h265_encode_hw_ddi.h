@@ -90,7 +90,7 @@ static const GUID DXVA2_Intel_LowpowerEncode_HEVC_SCC_Main444_10 =
 GUID GetGUID(MfxVideoParam const & par);
 
 #ifndef OPEN_SOURCE
-const GUID GuidTable[2][3][3] =
+const GUID GuidTable[3][3][3] =
 {
     // LowPower = OFF
     {
@@ -119,8 +119,7 @@ const GUID GuidTable[2][3][3] =
 #endif
         }
     },
-    // LowPower = ON
-
+    // LowPower = ON, SCC = OFF
 #if defined(PRE_SI_TARGET_PLATFORM_GEN10)
     {
         // BitDepthLuma = 8
@@ -141,10 +140,31 @@ const GUID GuidTable[2][3][3] =
         },
         // BitDepthLuma = 12
         {
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-#endif
+    #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+    #endif
+        }
+    },
+    #if defined(MFX_ENABLE_HEVCE_SCC)
+    // LowPower = ON, SCC = ON
+    {
+        // BitDepthLuma = 8
+        {
+            //DXVA2_Intel_Encode_HEVC_Main,
+            /*420*/ DXVA2_Intel_LowpowerEncode_HEVC_SCC_Main,
+            /*422*/ DXVA2_Intel_LowpowerEncode_HEVC_SCC_Main,
+            /*444*/ DXVA2_Intel_LowpowerEncode_HEVC_SCC_Main444
+        },
+        // BitDepthLuma = 10
+        {
+            /*420*/ DXVA2_Intel_LowpowerEncode_HEVC_SCC_Main10,
+            /*422*/ DXVA2_Intel_LowpowerEncode_HEVC_SCC_Main10,
+            /*444*/ DXVA2_Intel_LowpowerEncode_HEVC_SCC_Main444_10
+        },
+        // BitDepthLuma = 12
+        {
         }
     }
+    #endif
 #endif
 };
 #endif
@@ -155,10 +175,13 @@ class DriverEncoder;
 
 typedef enum tagENCODER_TYPE
 {
-    ENCODER_DEFAULT = 0,
+    ENCODER_DEFAULT = 0
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-    ENCODER_REXT
+    , ENCODER_REXT
 #endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if defined(MFX_ENABLE_HEVCE_SCC)
+    , ENCODER_SCC
+#endif
 } ENCODER_TYPE;
 
 DriverEncoder* CreatePlatformH265Encoder(MFXCoreInterface* core, ENCODER_TYPE type = ENCODER_DEFAULT);
@@ -373,6 +396,18 @@ void FillSliceBuffer(
     std::vector<ENCODE_SET_SLICE_HEADER_HEVC_REXT> & slice);
 
 #endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+void FillSpsBuffer(
+    MfxVideoParam const & par,
+    ENCODE_CAPS_HEVC const & /*caps*/,
+    ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_SCC & sps);
+
+void FillPpsBuffer(
+    MfxVideoParam const & par,
+    ENCODE_CAPS_HEVC const & caps,
+    ENCODE_SET_PICTURE_PARAMETERS_HEVC_SCC & pps);
+#endif //defined(PRE_SI_TARGET_PLATFORM_GEN12)
 
 #endif //defined(_WIN32) || defined(_WIN64)
 

@@ -5,13 +5,13 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2017-2018 Intel Corporation. All Rights Reserved.
 //
 #pragma once
 
 #include "encoding_ddi.h"
 
-#define HEVCE_DDI_VERSION 966
+#define HEVCE_DDI_VERSION 991
 
 typedef struct tagENCODE_CAPS_HEVC
 {

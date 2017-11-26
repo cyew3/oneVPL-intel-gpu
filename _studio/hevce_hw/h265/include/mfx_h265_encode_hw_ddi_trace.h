@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2018 Intel Corporation. All Rights Reserved.
 #include "mfx_common.h"
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
 
@@ -49,6 +49,12 @@ public:
     void Trace(ENCODE_SET_PICTURE_PARAMETERS_HEVC_REXT const & b, mfxU32 idx);
     void Trace(ENCODE_SET_SLICE_HEADER_HEVC_REXT const & b, mfxU32 idx);
 #endif // (HEVCE_DDI_VERSION >= 960)
+
+#if (HEVCE_DDI_VERSION >= 991)
+    void Trace(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_SCC const & b, mfxU32 idx);
+    void Trace(ENCODE_SET_PICTURE_PARAMETERS_HEVC_SCC const & b, mfxU32 idx);
+#endif // (HEVCE_DDI_VERSION >= 991)
+
     inline void Trace(GUID const & guid, mfxU32) { TraceGUID(guid, m_log); };
     void Trace(const char* name, mfxU32 value);
     template<mfxU32 N> inline void Trace(const char name[N], mfxU32 value) { Trace((const char*) name, value);  }

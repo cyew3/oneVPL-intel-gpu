@@ -256,6 +256,15 @@ mfxStatus SetLowpowerDefault(MfxVideoParam& par)
         return sts;
     }
 #endif
+#if defined(MFX_ENABLE_HEVCE_SCC)
+    if (par.m_platform.CodeName == MFX_PLATFORM_TIGERLAKE
+        && par.mfx.LowPower == MFX_CODINGOPTION_UNKNOWN
+        && par.mfx.CodecProfile == MFX_PROFILE_HEVC_SCC)
+    {
+        par.mfx.LowPower = MFX_CODINGOPTION_ON;
+        return sts;
+    }
+#endif
     if (par.mfx.LowPower == MFX_CODINGOPTION_UNKNOWN)
         par.mfx.LowPower = MFX_CODINGOPTION_OFF;
 
@@ -310,6 +319,11 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
     MFX_CHECK_STS(sts);
 
     mfxStatus lpsts = SetLowpowerDefault(m_vpar);
+
+#if defined(MFX_ENABLE_HEVCE_SCC)
+    if (m_vpar.mfx.CodecProfile == MFX_PROFILE_HEVC_SCC)
+        ddiType = ENCODER_SCC;
+#endif
 
     m_ddi.reset( CreateHWh265Encoder(&m_core, ddiType) );
     MFX_CHECK(m_ddi.get(), MFX_ERR_UNSUPPORTED);

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 #include "mfx_common.h"
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
@@ -33,10 +33,10 @@ GUID GetGUID(MfxVideoParam const & par)
 #ifndef OPEN_SOURCE
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     if (par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10 || par.m_ext.CO3.TargetBitDepthLuma == 10)
-        bdId = 1;;
+        bdId = 1;
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     if (par.m_ext.CO3.TargetBitDepthLuma == 12)
-        bdId = 2;;
+        bdId = 2;
 #endif
 
     cfId = Clip3<mfxU16>(MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV444, par.m_ext.CO3.TargetChromaFormatPlus1 - 1) - MFX_CHROMAFORMAT_YUV420;
@@ -51,8 +51,14 @@ GUID GetGUID(MfxVideoParam const & par)
 #endif
     if (par.m_platform.CodeName && par.m_platform.CodeName < MFX_PLATFORM_KABYLAKE)
         bdId = 0;
+    
+    mfxU16 cFamily = IsOn(par.mfx.LowPower);
 
-    guid = GuidTable[IsOn(par.mfx.LowPower)][bdId] [cfId];
+#if defined(MFX_ENABLE_HEVCE_SCC)
+    cFamily = (par.mfx.CodecProfile == MFX_PROFILE_HEVC_SCC) ? 2 : IsOn(par.mfx.LowPower);
+#endif
+
+    guid = GuidTable[cFamily][bdId] [cfId];
     DDITracer::TraceGUID(guid, stdout);
 #endif // OPEN_SOURCE
     return guid;
@@ -77,11 +83,19 @@ DriverEncoder* CreatePlatformH265Encoder(MFXCoreInterface* core, ENCODER_TYPE ty
             if (type == ENCODER_REXT)
                 return new D3D9EncoderREXT;
 #endif
+#if defined(MFX_ENABLE_HEVCE_SCC)
+            if (type == ENCODER_SCC)
+                return new D3D9EncoderSCC;
+#endif
             return new D3D9EncoderDefault;
         case MFX_IMPL_VIA_D3D11:
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
             if (type == ENCODER_REXT)
                 return new D3D11EncoderREXT;
+#endif
+#if defined(MFX_ENABLE_HEVCE_SCC)
+            if (type == ENCODER_SCC)
+                return new D3D11EncoderSCC;
 #endif
             return new D3D11EncoderDefault;
 #elif defined (MFX_VA_LINUX)
@@ -1136,7 +1150,31 @@ void FillPpsBuffer(
 }
 
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
+#if defined(MFX_ENABLE_HEVCE_SCC)
+void FillSpsBuffer(
+    MfxVideoParam const & par,
+    ENCODE_CAPS_HEVC const & caps,
+    ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_SCC & sps)
+{
+    Zero(sps);
+    FillSpsBuffer(par, caps, (ENCODE_SET_SEQUENCE_PARAMETERS_HEVC&)sps);
 
+    sps.palette_mode_enabled_flag = par.m_sps.palette_mode_enabled_flag;
+    sps.palette_max_size = (mfxU8)par.m_sps.palette_max_size;
+    sps.delta_palette_max_predictor_size = (mfxU8)par.m_sps.delta_palette_max_predictor_size;
+}
+
+void FillPpsBuffer(
+    MfxVideoParam const & par,
+    ENCODE_CAPS_HEVC const & caps,
+    ENCODE_SET_PICTURE_PARAMETERS_HEVC_SCC & pps)
+{
+    Zero(pps);
+    FillPpsBuffer(par, caps, (ENCODE_SET_PICTURE_PARAMETERS_HEVC&)pps);
+
+    pps.pps_curr_pic_ref_enabled_flag = par.m_pps.curr_pic_ref_enabled_flag;
+}
+#endif
 #endif //defined(_WIN32) || defined(_WIN64)
 
 }; // namespace MfxHwH265Encode

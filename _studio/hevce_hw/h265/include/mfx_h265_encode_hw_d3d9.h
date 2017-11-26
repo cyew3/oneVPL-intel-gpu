@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 #include "mfx_common.h"
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
@@ -136,6 +136,9 @@ private:
     }
 };
 
+#if defined(MFX_ENABLE_HEVCE_SCC)
+typedef D3D9Encoder<ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_SCC, ENCODE_SET_PICTURE_PARAMETERS_HEVC_SCC, ENCODE_SET_SLICE_HEADER_HEVC> D3D9EncoderSCC;
+#endif
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
 typedef D3D9Encoder<ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_REXT, ENCODE_SET_PICTURE_PARAMETERS_HEVC_REXT, ENCODE_SET_SLICE_HEADER_HEVC_REXT> D3D9EncoderREXT;
 #endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)

@@ -141,6 +141,24 @@ mfxStatus CheckProfile(mfxVideoParam& par, mfxU16 platform)
     case 0:
         break;
 
+#if defined(MFX_ENABLE_HEVCE_SCC)
+    case MFX_PROFILE_HEVC_SCC:
+        if (platform < MFX_PLATFORM_TIGERLAKE)
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+
+        if (pHevcPar)
+        {
+            mfxU64 REXTConstr = pHevcPar->GeneralConstraintFlags;
+
+            if (((REXTConstr & MFX_HEVC_CONSTR_REXT_MAX_8BIT) && BitDepth > 8)
+                || ((REXTConstr & MFX_HEVC_CONSTR_REXT_MAX_10BIT) && BitDepth > 10)
+                || ((REXTConstr & MFX_HEVC_CONSTR_REXT_MAX_12BIT) && BitDepth > 12)
+                || ((REXTConstr & MFX_HEVC_CONSTR_REXT_MAX_420CHROMA) && ChromaFormat > MFX_CHROMAFORMAT_YUV420)
+                || ((REXTConstr & MFX_HEVC_CONSTR_REXT_MAX_422CHROMA) && ChromaFormat > MFX_CHROMAFORMAT_YUV422))
+                return MFX_ERR_INVALID_VIDEO_PARAM;
+        }
+        break;
+#endif
     case MFX_PROFILE_HEVC_REXT:
         if (platform < MFX_PLATFORM_ICELAKE)
             return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -1371,6 +1389,16 @@ mfxU16 GetMaxChroma(MfxVideoParam const & par)
             c = Min<mfxU16>(c, MFX_CHROMAFORMAT_YUV422);
     }
 
+#if defined(MFX_ENABLE_HEVCE_SCC)
+    if (par.mfx.CodecProfile == MFX_PROFILE_HEVC_SCC)
+    {
+        mfxU64 REXTConstr = par.m_ext.HEVCParam.GeneralConstraintFlags;
+
+        if (REXTConstr & MFX_HEVC_CONSTR_REXT_MAX_420CHROMA)
+            c = Min<mfxU16>(c, MFX_CHROMAFORMAT_YUV420);
+    }
+#endif
+
     switch (par.mfx.FrameInfo.FourCC)
     {
     case MFX_FOURCC_NV12:
@@ -1442,10 +1470,14 @@ mfxU16 GetMaxBitDepth(MfxVideoParam const & par, mfxU32 MaxEncodedBitDepth = 3)
     if (par.mfx.FrameInfo.BitDepthLuma)
         d = Min(d, par.mfx.FrameInfo.BitDepthLuma);
 
-    if (par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10)
+    if ( par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10 )
         d = Min<mfxU16>(d, 10);
 
-    if (par.mfx.CodecProfile == MFX_PROFILE_HEVC_REXT)
+    if (par.mfx.CodecProfile == MFX_PROFILE_HEVC_REXT
+#if defined(MFX_ENABLE_HEVCE_SCC)
+        || par.mfx.CodecProfile == MFX_PROFILE_HEVC_SCC
+#endif
+        )
     {
         mfxU64 REXTConstr = par.m_ext.HEVCParam.GeneralConstraintFlags;
 
@@ -1680,6 +1712,9 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
             , (mfxU16)MFX_PROFILE_HEVC_MAINSP
             , (mfxU16)MFX_PROFILE_HEVC_MAIN10
             , (mfxU16)MFX_PROFILE_HEVC_REXT
+#if defined(MFX_ENABLE_HEVCE_SCC)
+            , (mfxU16)MFX_PROFILE_HEVC_SCC
+#endif
             , (mfxU16)0
             );
         break;

@@ -1407,7 +1407,11 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
     general.level_idc                   = (mfxU8)(mfx.CodecLevel & 0xFF) * 3;
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-    if (mfx.CodecProfile == MFX_PROFILE_HEVC_REXT)
+    if (mfx.CodecProfile == MFX_PROFILE_HEVC_REXT
+#if defined(MFX_ENABLE_HEVCE_SCC)
+        || mfx.CodecProfile == MFX_PROFILE_HEVC_SCC
+#endif
+        )
     {
         general.rext_constraint_flags_0_31  = (mfxU32)(m_ext.HEVCParam.GeneralConstraintFlags & 0xffffffff);
         general.rext_constraint_flags_32_42 = (mfxU32)(m_ext.HEVCParam.GeneralConstraintFlags >> 32);
@@ -1759,6 +1763,19 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
     }
 #endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
 
+#if defined(MFX_ENABLE_HEVCE_SCC)
+    if (mfx.CodecProfile == MFX_PROFILE_HEVC_SCC)
+    {
+        m_sps.curr_pic_ref_enabled_flag = 0;
+        m_sps.palette_mode_enabled_flag = 1;
+        m_sps.palette_max_size = 64;
+        m_sps.delta_palette_max_predictor_size = 64;
+        m_sps.scc_extension_flag = 1;
+
+        m_sps.extension_flag |= m_sps.scc_extension_flag;
+    }
+#endif
+
     Zero(m_pps);
     m_pps.seq_parameter_set_id = m_sps.seq_parameter_set_id;
 
@@ -1899,6 +1916,17 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
         m_pps.extension_flag |= m_pps.range_extension_flag;
     }
 #endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
+
+#if defined(MFX_ENABLE_HEVCE_SCC)
+    if (mfx.CodecProfile == MFX_PROFILE_HEVC_SCC)
+    {
+        //TBD
+        m_pps.curr_pic_ref_enabled_flag = 0;
+        m_pps.scc_extension_flag = 1;
+
+        m_pps.extension_flag |= m_pps.scc_extension_flag;
+    }
+#endif
 }
 
 mfxU16 FrameType2SliceType(mfxU32 ft)

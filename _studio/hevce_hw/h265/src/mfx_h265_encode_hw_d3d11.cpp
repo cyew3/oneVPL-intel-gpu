@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -39,7 +39,11 @@ D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::D3D11Encoder()
     , m_sps()
     , m_pps()
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-    , DDITracer(std::is_same<DDI_SPS, ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_REXT>::value ? ENCODER_REXT : ENCODER_DEFAULT)
+    , DDITracer(std::is_same<DDI_SPS, ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_REXT>::value ? ENCODER_REXT 
+#if defined(MFX_ENABLE_HEVCE_SCC)
+        : std::is_same<DDI_SPS, ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_SCC>::value ? ENCODER_SCC
+#endif
+        : ENCODER_DEFAULT)
 #endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
 {
 }
@@ -828,6 +832,9 @@ template class D3D11Encoder<ENCODE_SET_SEQUENCE_PARAMETERS_HEVC, ENCODE_SET_PICT
 template class D3D11Encoder<ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_REXT, ENCODE_SET_PICTURE_PARAMETERS_HEVC_REXT, ENCODE_SET_SLICE_HEADER_HEVC_REXT>;
 #endif
 
+#if defined(MFX_ENABLE_HEVCE_SCC)
+template class D3D11Encoder<ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_SCC, ENCODE_SET_PICTURE_PARAMETERS_HEVC_SCC, ENCODE_SET_SLICE_HEADER_HEVC>;
+#endif
 }; // namespace MfxHwH265Encode
 
 #endif // #if defined(_WIN32) || defined(_WIN64)

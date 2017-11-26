@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -775,6 +775,9 @@ mfxStatus HeaderReader::ReadSPS(BitstreamReader& bs, SPS & sps)
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
         if (   ((sps.general.profile_idc >= 4) && (sps.general.profile_idc <= 7))
+#if defined(MFX_ENABLE_HEVCE_SCC)
+            || (sps.general.profile_idc == 9) || (sps.general.profile_compatibility_flags & (0x1 << 9))
+#endif
             || (sps.general.profile_compatibility_flags & 0xf0))
         {
             sps.general.constraint.max_12bit        = bs.GetBit();
@@ -845,6 +848,9 @@ mfxStatus HeaderReader::ReadSPS(BitstreamReader& bs, SPS & sps)
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
                 if (   ((sps.sub_layer[i].profile_idc >= 4) && (sps.sub_layer[i].profile_idc <= 7))
+#if defined(MFX_ENABLE_HEVCE_SCC)
+                    || (sps.general.profile_idc == 9) || (sps.general.profile_compatibility_flags & (0x1 << 9))
+#endif
                     || (sps.sub_layer[i].profile_compatibility_flags & 0xf0))
                 {
                     sps.sub_layer[i].constraint.max_12bit        = bs.GetBit();
@@ -916,7 +922,6 @@ mfxStatus HeaderReader::ReadSPS(BitstreamReader& bs, SPS & sps)
         sps.bit_depth_luma_minus8 = bs.GetUE();
         sps.bit_depth_chroma_minus8 = bs.GetUE();
         sps.log2_max_pic_order_cnt_lsb_minus4 = bs.GetUE();
-
 
         sps.sub_layer_ordering_info_present_flag = bs.GetBit();
 
@@ -1252,8 +1257,16 @@ mfxStatus HeaderReader::ReadSPS(BitstreamReader& bs, SPS & sps)
         if (sps.extension_flag)
         {
             sps.range_extension_flag = bs.GetBit();
+#if defined(MFX_ENABLE_HEVCE_SCC)
+            if (bs.GetBits(2))
+                return MFX_ERR_UNSUPPORTED;
+            sps.scc_extension_flag = bs.GetBit();
+            if (bs.GetBits(4))
+                return MFX_ERR_UNSUPPORTED;
+#else
             if (bs.GetBits(7))
                 return MFX_ERR_UNSUPPORTED;
+#endif
         }
 
         if (sps.range_extension_flag)
@@ -1268,6 +1281,36 @@ mfxStatus HeaderReader::ReadSPS(BitstreamReader& bs, SPS & sps)
             sps.persistent_rice_adaptation_enabled_flag = bs.GetBit();
             sps.cabac_bypass_alignment_enabled_flag = bs.GetBit();
         }
+#if defined(MFX_ENABLE_HEVCE_SCC)
+        if (sps.scc_extension_flag)
+        {
+            sps.curr_pic_ref_enabled_flag = bs.GetBit();
+            sps.palette_mode_enabled_flag = bs.GetBit();
+            if (sps.palette_mode_enabled_flag)
+            {
+                sps.palette_max_size = bs.GetUE();
+                sps.delta_palette_max_predictor_size = bs.GetUE();
+                sps.palette_predictor_initializer_present_flag = bs.GetBit();
+                if (sps.palette_predictor_initializer_present_flag)
+                {
+                    return MFX_ERR_UNSUPPORTED;
+                    /*
+                    sps.num_palette_predictor_initializer_minus1 = bs.GetUE();
+                    for(mfxU32 ii=0; ii <= sps.num_palette_predictor_initializer_minus1; ii++)
+                    sps.palette_predictor_initializers[0][ii] = bs.GetBits(8+sps.bit_depth_luma_minus8);
+                    if(sps.chroma_format_idc!=0) {
+                        for(mfxU32 ii=0; ii <= sps.num_palette_predictor_initializer_minus1; ii++)
+                        sps.palette_predictor_initializers[0][ii] = bs.GetBits(8+sps.bit_depth_chroma_minus8);
+                        for(mfxU32 ii=0; ii <= sps.num_palette_predictor_initializer_minus1; ii++)
+                        sps.palette_predictor_initializers[0][ii] = bs.GetBits(8+sps.bit_depth_chroma_minus8);
+                    }
+                    */
+                }
+            }
+            sps.motion_vector_resolution_control_idc = bs.GetBits(2);
+            sps.intra_boundary_filtering_disabled_flag = bs.GetBit();
+        }
+#endif
 #else //defined(PRE_SI_TARGET_PLATFORM_GEN11)
         if (bs.GetBit()) //sps.extension_flag
             return MFX_ERR_UNSUPPORTED;
@@ -1369,9 +1412,18 @@ mfxStatus HeaderReader::ReadPPS(BitstreamReader& bs, PPS & pps)
 
         if (pps.extension_flag)
         {
+#if defined(MFX_ENABLE_HEVCE_SCC)
+            pps.range_extension_flag = bs.GetBit();
+            if (bs.GetBits(2))
+                return MFX_ERR_UNSUPPORTED;
+            pps.scc_extension_flag = bs.GetBit();
+            if (bs.GetBits(4))
+                return MFX_ERR_UNSUPPORTED;
+#else
             pps.range_extension_flag = bs.GetBit();
             if (bs.GetBits(7))
                 return MFX_ERR_UNSUPPORTED;
+#endif
         }
 
         if (pps.range_extension_flag)
@@ -1397,6 +1449,43 @@ mfxStatus HeaderReader::ReadPPS(BitstreamReader& bs, PPS & pps)
             pps.log2_sao_offset_scale_luma = bs.GetUE();
             pps.log2_sao_offset_scale_chroma = bs.GetUE();
         }
+#if defined(MFX_ENABLE_HEVCE_SCC)
+        if (pps.scc_extension_flag)
+        {
+            pps.curr_pic_ref_enabled_flag = bs.GetBit();
+            pps.residual_adaptive_colour_transform_enabled_flag = bs.GetBit();  // MBZ for Gen12
+            if (pps.residual_adaptive_colour_transform_enabled_flag) {
+                return MFX_ERR_UNSUPPORTED;
+                /*
+                pps.slice_act_qp_offsets_present_flag = bs.GetBit();
+                pps.act_y_qp_offset_plus5 = bs.GetSE();
+                pps.act_cb_qp_offset_plus5 = bs.GetSE();
+                pps.act_cr_qp_offset_plus3 = bs.GetSE();
+                */
+            }
+            pps.palette_predictor_initializer_present_flag = bs.GetBit();   // MBZ for Gen12
+            if (pps.palette_predictor_initializer_present_flag) {
+                return MFX_ERR_UNSUPPORTED;
+                /*
+                pps.num_palette_predictor_initializer = bs.GetUE();
+                if (pps.num_palette_predictor_initializer) {
+                    pps.monochrome_palette_flag = bs.GetBit();
+                    pps.luma_bit_depth_entry_minus8 = bs.GetUE();
+                    if(pps.monochrome_palette_flag)
+                        pps.chroma_bit_depth_entry_minus8 = bs.GetUE();
+                    for(mfxU32 ii=0; ii<pps.num_palette_predictor_initializer; ii++)
+                        pps.palette_predictor_initializers[0][ii] = bs.GetBits(8+pps.luma_bit_depth_entry_minus8);
+                    if (!pps.monochrome_palette_flag) {
+                        for (mfxU32 ii = 0; ii<pps.num_palette_predictor_initializer; ii++)
+                            pps.palette_predictor_initializers[1][ii] = bs.GetBits(8 + pps.chroma_bit_depth_entry_minus8);
+                        for (mfxU32 ii = 0; ii<pps.num_palette_predictor_initializer; ii++)
+                            pps.palette_predictor_initializers[2][ii] = bs.GetBits(8 + pps.chroma_bit_depth_entry_minus8);
+                    }
+                }
+                */
+            }
+        }
+#endif
 #else //defined(PRE_SI_TARGET_PLATFORM_GEN11)
         if (bs.GetBit()) //pps.extension_flag
             return MFX_ERR_UNSUPPORTED;
@@ -1861,7 +1950,13 @@ void HeaderPacker::PackSPS(BitstreamWriter& bs, SPS const & sps)
     if (sps.extension_flag)
     {
         bs.PutBit(sps.range_extension_flag);
+#if defined(MFX_ENABLE_HEVCE_SCC)
+        bs.PutBits(2, 0);
+        bs.PutBit(sps.scc_extension_flag);
+        bs.PutBits(4, 0);
+#else
         bs.PutBits(7, 0);
+#endif
     }
 
     if (sps.range_extension_flag)
@@ -1876,6 +1971,22 @@ void HeaderPacker::PackSPS(BitstreamWriter& bs, SPS const & sps)
         bs.PutBit(sps.persistent_rice_adaptation_enabled_flag);
         bs.PutBit(sps.cabac_bypass_alignment_enabled_flag);
     }
+#if defined(MFX_ENABLE_HEVCE_SCC)
+    if (sps.scc_extension_flag)
+    {
+        bs.PutBit(sps.curr_pic_ref_enabled_flag);
+        bs.PutBit(sps.palette_mode_enabled_flag);
+        if (sps.palette_mode_enabled_flag)
+        {
+            bs.PutUE(sps.palette_max_size);
+            bs.PutUE(sps.delta_palette_max_predictor_size);
+            bs.PutBit(0); // Gen12: palette_predictor_initializer_present_flag - MBZ
+        }
+        bs.PutBits(2, 0); // Gen12: motion_vector_resolution_control_idc - MBZ
+        bs.PutBit(0); // Gen12: intra_boundary_filtering_disabled_flag - MBZ
+    }
+#endif
+
 #else //defined(PRE_SI_TARGET_PLATFORM_GEN11)
     bs.PutBit(0); //sps.extension_flag
 #endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
@@ -1961,7 +2072,13 @@ void HeaderPacker::PackPPS(BitstreamWriter& bs, PPS const &  pps)
     if (pps.extension_flag)
     {
         bs.PutBit(pps.range_extension_flag);
+#if defined(MFX_ENABLE_HEVCE_SCC)
+        bs.PutBits(2, 0);
+        bs.PutBit(pps.scc_extension_flag);
+        bs.PutBits(4, 0);
+#else
         bs.PutBits(7, 0);
+#endif
     }
 
     if (pps.range_extension_flag)
@@ -1987,6 +2104,14 @@ void HeaderPacker::PackPPS(BitstreamWriter& bs, PPS const &  pps)
         bs.PutUE(pps.log2_sao_offset_scale_luma);
         bs.PutUE(pps.log2_sao_offset_scale_chroma);
     }
+#if defined(MFX_ENABLE_HEVCE_SCC)
+    if (pps.scc_extension_flag)
+    {
+        bs.PutBit(pps.curr_pic_ref_enabled_flag);
+        bs.PutBit(0); // Gen12: pps.residual_adaptive_colour_transform_enabled_flag - MBZ
+        bs.PutBit(0); // Gen12: pps.palette_predictor_initializer_present_flag - MBZ
+    }
+#endif
 #else //defined(PRE_SI_TARGET_PLATFORM_GEN11)
     bs.PutBit(0); //pps.extension_flag
 #endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
