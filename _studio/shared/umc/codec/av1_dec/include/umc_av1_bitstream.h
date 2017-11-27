@@ -21,14 +21,16 @@
 
 namespace UMC_AV1_DECODER
 {
+    class AV1DecoderFrame;
+
     class AV1Bitstream
         : public UMC_VP9_DECODER::VP9Bitstream
     {
     public:
 
         void GetSequenceHeader(SequenceHeader*);
-        void GetFrameHeaderPart1(FrameHeader*, SequenceHeader const*);
-        void GetFrameHeaderFull(FrameHeader*, SequenceHeader const*);
+        void GetFrameHeaderPart1(FrameHeader*, SequenceHeader*);
+        void GetFrameHeaderFull(FrameHeader*, SequenceHeader const*, FrameHeader const*);
 
         using UMC_VP9_DECODER::VP9Bitstream::VP9Bitstream;
 
@@ -40,6 +42,9 @@ namespace UMC_AV1_DECODER
     protected:
 
         void GetFrameSizeWithRefs(FrameHeader*);
+#if UMC_AV1_DECODER_REV >= 251
+        Ipp8u ReadSuperFrameIndex(Ipp32u sizes[8]);
+#endif
     };
 }
 

@@ -22,6 +22,8 @@
 
 namespace UMC_AV1_DECODER
 {
+    using UMC_VP9_DECODER::NUM_REF_FRAMES;
+
     class AV1DecoderFrame;
     typedef std::vector<AV1DecoderFrame*> DPBType;
 
@@ -41,17 +43,33 @@ namespace UMC_AV1_DECODER
         INTER_FRAME = 1
     };
 
+#if UMC_AV1_DECODER_REV == 0
     const Ipp8u FRAME_ID_NUMBERS_PRESENT_FLAG = 1;
     const Ipp8u FRAME_ID_LENGTH_MINUS7        = 8;   // Allows frame id up to 2^15-1
     const Ipp8u DELTA_FRAME_ID_LENGTH_MINUS2  = 12;  // Allows frame id deltas up to 2^14-1
 
     const Ipp8u INTER_REFS                    = 6;
     const Ipp8u TOTAL_REFS                    = 7;
-    const Ipp8u FRAME_CONTEXTS_LOG2           = 3;
-    const Ipp8u MAX_MODE_LF_DELTAS            = 2;
+
     const Ipp8u LOG2_SWITCHABLE_FILTERS       = 3;
 
     const Ipp8u CDEF_MAX_STRENGTHS            = 16;
+#else
+    const Ipp8u INTER_REFS                    = 7;
+    const Ipp8u TOTAL_REFS                    = 8;
+
+    const Ipp8u QM_LEVEL_BITS                 = 4;
+
+    const Ipp8u LOG2_SWITCHABLE_FILTERS       = 2;
+
+    const Ipp8u CDEF_MAX_STRENGTHS            = 8;
+
+    const Ipp8u MAX_SB_SIZE_LOG2              = 6;
+    const Ipp8u MI_SIZE_LOG2                  = 2;
+    const Ipp8u MAX_MIB_SIZE_LOG2             = MAX_SB_SIZE_LOG2 - MI_SIZE_LOG2;
+#endif
+    const Ipp8u FRAME_CONTEXTS_LOG2           = 3;
+    const Ipp8u MAX_MODE_LF_DELTAS            = 2;
 
     enum {
         RESET_FRAME_CONTEXT_NONE = 0,
@@ -91,6 +109,31 @@ namespace UMC_AV1_DECODER
         REFRESH_FRAME_CONTEXT_BACKWARD,
     };
 
+    enum TRANSFORMATION_TYPE {
+        IDENTITY = 0,      // identity transformation, 0-parameter
+        TRANSLATION = 1,   // translational motion 2-parameter
+        ROTZOOM = 2,       // simplified affine with rotation + zoom only, 4-parameter
+        AFFINE = 3,        // affine, 6-parameter
+        HORTRAPEZOID = 4,  // constrained homography, hor trapezoid, 6-parameter
+        VERTRAPEZOID = 5,  // constrained homography, ver trapezoid, 6-parameter
+        HOMOGRAPHY = 6,    // homography, 8-parameter
+        TRANS_TYPES = 7,
+    };
+
+    enum MV_REFERENCE_FRAME
+    {
+        NONE = -1,
+        INTRA_FRAME = 0,
+        LAST_FRAME = 1,
+        LAST2_FRAME = 2,
+        LAST3_FRAME = 3,
+        GOLDEN_FRAME = 4,
+        BWDREF_FRAME = 5,
+        ALTREF2_FRAME = 6,
+        ALTREF_FRAME = 7,
+        MAX_REF_FRAMES = 8
+    };
+
     struct SequenceHeader
     {
         int frame_id_numbers_present_flag;
@@ -114,6 +157,17 @@ namespace UMC_AV1_DECODER
         // 0 = ZERO_MV, MV
         Ipp8s modeDeltas[MAX_MODE_LF_DELTAS];
     };
+
+#if UMC_AV1_DECODER_REV >= 251
+    struct WarpedMotionParams {
+        TRANSFORMATION_TYPE wmtype;
+        Ipp32s wmmat[8];
+        Ipp16u alpha;
+        Ipp16u beta;
+        Ipp16u gamma;
+        Ipp16u delta;
+    };
+#endif
 
     namespace vp92av1
     {
@@ -143,24 +197,43 @@ namespace UMC_AV1_DECODER
         Ipp32u deltaLFPresentFlag;
         Ipp32u deltaLFRes;
 
+#if UMC_AV1_DECODER_REV == 0
         Ipp32u cdefDeringDamping;
         Ipp32u cdefClpfDamping;
         Ipp32u nbCdefStrengths;
-
+#else
+        Ipp32u cdefPriDamping;
+        Ipp32u cdefSecDamping;
+#endif
         Ipp32u cdefStrength[CDEF_MAX_STRENGTHS];
         Ipp32u cdefUVStrength[CDEF_MAX_STRENGTHS];
+
+#if UMC_AV1_DECODER_REV >= 251
+        Ipp32u allowInterIntraCompound;
+        Ipp32u allowMaskedCompound;
+        Ipp32u globalMotionType;
+
+        Ipp32u useQMatrix;
+        Ipp32u minQMLevel;
+        Ipp32u maxQMLevel;
+
+        WarpedMotionParams global_motion[TOTAL_REFS];
+
+        Ipp32u tileCols;
+        Ipp32u tileRows;
+#endif
 
         Ipp32u tileSizeBytes;
 
         Loopfilter lf;
     };
 
-    inline bool IsFrameIntraOnly(FrameHeader* fh)
+    inline bool IsFrameIntraOnly(FrameHeader const * fh)
     {
         return (fh->frameType == KEY_FRAME || fh->intraOnly);
     }
 
-    inline bool IsFrameResilent(FrameHeader* fh)
+    inline bool IsFrameResilent(FrameHeader const * fh)
     {
         return IsFrameIntraOnly(fh) || fh->errorResilientMode;
     }

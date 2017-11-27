@@ -52,6 +52,11 @@ namespace UMC_AV1_DECODER
         void AddError(Ipp32s e)
         { error |= e; }
 
+        void SetSeqHeader(SequenceHeader sh)
+        { seq_header = sh; }
+        SequenceHeader const& GetSeqHeader() const
+        { return seq_header; }
+
         FrameHeader& GetFrameHeader()
         { return header; }
         FrameHeader const& GetFrameHeader() const
@@ -109,6 +114,7 @@ namespace UMC_AV1_DECODER
 
         Ipp32s                            error;
 
+        SequenceHeader                    seq_header;
         FrameHeader                       header;
 
         Ipp32s                            y_dc_delta_q;

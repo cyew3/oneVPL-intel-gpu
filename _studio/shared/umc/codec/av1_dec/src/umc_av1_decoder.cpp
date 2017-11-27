@@ -28,8 +28,10 @@ namespace UMC_AV1_DECODER
         , counter(0)
         , prev_frame(nullptr)
     {
+#if UMC_AV1_DECODER_REV == 0
         //TEMP stub
         AV1Bitstream{}.GetSequenceHeader(sequence_header.get());
+#endif
     }
 
     AV1Decoder::~AV1Decoder()
@@ -51,10 +53,12 @@ namespace UMC_AV1_DECODER
         {
             try
             {
-                SequenceHeader sh;
+                SequenceHeader sh = {};
+#if UMC_AV1_DECODER_REV == 0
                 bs.GetSequenceHeader(&sh);
+#endif
 
-                FrameHeader fh;
+                FrameHeader fh = {};
                 bs.GetFrameHeaderPart1(&fh, &sh);
                 in->MoveDataPointer(fh.frameHeaderLength);
 
@@ -128,6 +132,26 @@ namespace UMC_AV1_DECODER
         return updatedFrameDPB;
     }
 
+    static void FillRefFrameSizes(FrameHeader* fh, DPBType const* dpb)
+    {
+        if (!dpb)
+            throw av1_exception(UMC::UMC_ERR_NULL_PTR);
+
+        if (dpb->empty())
+            return;
+
+        for (Ipp8u i = 0; i < NUM_REF_FRAMES; ++i)
+        {
+            AV1DecoderFrame const* frame = (*dpb)[i];
+            if (frame)
+            {
+                FrameHeader const& ref_fh = frame->GetFrameHeader();
+                fh->sizesOfRefFrame[i].width = ref_fh.width;
+                fh->sizesOfRefFrame[i].height = ref_fh.height;
+            }
+        }
+    }
+
     UMC::Status AV1Decoder::GetFrame(UMC::MediaData* in, UMC::MediaData*)
     {
         Ipp8u* src = reinterpret_cast<Ipp8u*>(in->GetDataPointer());
@@ -142,12 +166,15 @@ namespace UMC_AV1_DECODER
         AV1Bitstream bs(src, size);
 
         FrameHeader fh = {};
+        FillRefFrameSizes(&fh, &updated_refs);
         bs.GetFrameHeaderPart1(&fh, sequence_header.get());
-        bs.GetFrameHeaderFull(&fh, sequence_header.get());
+        bs.GetFrameHeaderFull(&fh, sequence_header.get(), &(prev_frame->GetFrameHeader()));
 
         AV1DecoderFrame* frame = GetFrameBuffer(fh);
         if (!frame)
             return UMC::UMC_ERR_NOT_ENOUGH_BUFFER;
+
+        frame->SetSeqHeader(*sequence_header.get());
 
         frame->AddSource(in);
         in->MoveDataPointer(size);

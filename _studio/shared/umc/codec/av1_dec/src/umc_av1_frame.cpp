@@ -42,6 +42,7 @@ namespace UMC_AV1_DECODER
 
         y_dc_delta_q = uv_dc_delta_q = uv_ac_delta_q = 0;
 
+        memset(&seq_header, 0, sizeof(seq_header));
         memset(&header, 0, sizeof(header));
         header.display_frame_id = (std::numeric_limits<Ipp32u>::max)();
         header.currFrame = -1;
