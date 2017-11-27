@@ -211,7 +211,7 @@ namespace hevce_roi
             }
         },
 
-#if defined(LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN)
+#if defined(LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_CFL)
 #if MFX_VERSION > 1021
         // one correct delta QP based region in CBR
         {/*18*/ MFX_ERR_NONE, CORRECT_ROI, NONE, MFX_ROI_MODE_QP_DELTA, 1, 32, 32, 64, 64, 20,
@@ -458,7 +458,8 @@ namespace hevce_roi
 
         if (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data)))
         {
-            if (g_tsHWtype < MFX_HW_CNL && g_tsHWtype != MFX_HW_APL) // MFX_PLUGIN_HEVCE_HW - unsupported on platform less CNL and not APL
+            // MFX_PLUGIN_HEVCE_HW - unsupported on platform less CNL and not APL, CFL
+            if (g_tsHWtype < MFX_HW_CNL && g_tsHWtype != MFX_HW_APL && g_tsHWtype != MFX_HW_CFL)
             {
                 g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
                 g_tsLog << "WARNING: Unsupported HW Platform!\n";

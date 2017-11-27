@@ -13,8 +13,8 @@ Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
 namespace
 {
 
-#if defined(LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN) || defined (WIN32)
-  #define PLATFOM_SUPPORT_ROI_DELTA_QP
+#if defined(LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN) || defined (LINUX_TARGET_PLATFORM_CFL) || defined (WIN32)
+  #define PLATFORM_SUPPORT_ROI_DELTA_QP
 #endif
 
 typedef struct
@@ -101,7 +101,7 @@ void ROI_1(tsVideoEncoder& enc, mfxVideoParam* , mfxU32 p0, mfxU32 p1, mfxU32 p2
     mfxExtEncoderROI& roi = enc.m_par;
     roi.NumROI            = p0;
 #if MFX_VERSION > 1022
-#ifdef PLATFOM_SUPPORT_ROI_DELTA_QP
+#ifdef PLATFORM_SUPPORT_ROI_DELTA_QP
     roi.ROIMode           = MFX_ROI_MODE_QP_DELTA;
 #endif  // defined(LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN)
 #endif // #if  MFX_VERSION > 1022
@@ -112,7 +112,7 @@ void ROI_1(tsVideoEncoder& enc, mfxVideoParam* , mfxU32 p0, mfxU32 p1, mfxU32 p2
         roi.ROI[i].Top        = 0+i*k;
         roi.ROI[i].Right      = k+i*k;
         roi.ROI[i].Bottom     = k+i*k;
-#ifdef PLATFOM_SUPPORT_ROI_DELTA_QP
+#ifdef PLATFORM_SUPPORT_ROI_DELTA_QP
 #if MFX_VERSION > 1022
         roi.ROI[i].DeltaQP    = p1;
 #else
@@ -127,7 +127,7 @@ void ROI_ctrl(tsVideoEncoder& enc, mfxVideoParam* , mfxU32 p0, mfxU32 p1, mfxU32
 {
     mfxExtEncoderROI& roi = enc.m_ctrl;
     roi.NumROI            = p0;
-#ifdef PLATFOM_SUPPORT_ROI_DELTA_QP
+#ifdef PLATFORM_SUPPORT_ROI_DELTA_QP
 #if MFX_VERSION > 1022
     roi.ROIMode           = MFX_ROI_MODE_QP_DELTA;
 #endif // MFX_VERSION > 1022
@@ -139,7 +139,7 @@ void ROI_ctrl(tsVideoEncoder& enc, mfxVideoParam* , mfxU32 p0, mfxU32 p1, mfxU32
         roi.ROI[i].Top        = 0+i*k;
         roi.ROI[i].Right      = k+i*k;
         roi.ROI[i].Bottom     = k+i*k;
-#ifdef PLATFOM_SUPPORT_ROI_DELTA_QP
+#ifdef PLATFORM_SUPPORT_ROI_DELTA_QP
 #if MFX_VERSION > 1022
         roi.ROI[i].DeltaQP    = p1;
 #else
@@ -173,7 +173,7 @@ typedef struct
 // When LowPower is ON, hwCaps.ROIBRCDeltaQPLevelSupport and hwCaps.ROIBRCPriorityLevelSupport don't
 // supported in driver for all RateMethodControl except CQP. So need to correct expected status(corrected in run time)
 
-#if (defined(_WIN32) || defined(_WIN64)) && !defined( PLATFOM_SUPPORT_ROI_DELTA_QP)
+#if (defined(_WIN32) || defined(_WIN64)) && !defined( PLATFORM_SUPPORT_ROI_DELTA_QP)
 tc_struct test_case[] =
 {
     //Query function
@@ -247,7 +247,7 @@ tc_struct test_case[] =
 //    {/*61*/ EncodeFrameAsync|WithROIInit|WOBuf,   MFX_ERR_NONE, AVBR,  4, 5000,    5,  ROI_1, 3,   2, 0 },
     {/*62*/ EncodeFrameAsync|WithROIInit|WOBuf,   MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 3, -25, 0 },
 };
-#elif defined( PLATFOM_SUPPORT_ROI_DELTA_QP)
+#elif defined( PLATFORM_SUPPORT_ROI_DELTA_QP)
 tc_struct test_case[] =
 {
     //Query function
