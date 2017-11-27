@@ -316,6 +316,7 @@ vm_so_handle cm_dll_load(const vm_char *so_file_name)
             KEY_READ,
             &hkey) == ERROR_SUCCESS)
         {
+            size = sizeof(path);
             if (ERROR_SUCCESS == RegQueryValueEx(hkey, _T("DriverStorePath"), 0, NULL, (LPBYTE)path, &size))
             {
                 wcscat_s(path, MAX_PATH, _T("\\"));
