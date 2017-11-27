@@ -36,6 +36,8 @@ namespace UMC_AV1_DECODER
     {
         error = 0;
         displayed = false;
+        outputted = false;
+        decoded   = false;
         data->Close();
 
         y_dc_delta_q = uv_dc_delta_q = uv_ac_delta_q = 0;
@@ -46,6 +48,10 @@ namespace UMC_AV1_DECODER
         header.frameCountInBS = 0;
         header.currFrameInBS = 0;
         memset(&header.ref_frame_map, -1, sizeof(header.ref_frame_map));
+
+        ResetRefCounter();
+        FreeReferenceFrames();
+        frame_dpb.clear();
 
         UID = -1;
     }
@@ -99,10 +105,59 @@ namespace UMC_AV1_DECODER
     bool AV1DecoderFrame::Empty() const
     { return !data->m_locked; }
 
+    bool AV1DecoderFrame::DecodingCompleted() const
+    {
+        return displayed && outputted;
+    }
+
+    bool AV1DecoderFrame::Decoded() const
+    {
+        return decoded;
+    }
+
     UMC::FrameMemID AV1DecoderFrame::GetMemID() const
     {
         VM_ASSERT(data);
         return data->GetFrameMID();
+    }
+
+    void AV1DecoderFrame::AddReferenceFrame(AV1DecoderFrame * frm)
+    {
+        if (!frm || frm == this)
+            return;
+
+        if (std::find(references.begin(), references.end(), frm) != references.end())
+            return;
+
+        frm->IncrementReference();
+        references.push_back(frm);
+    }
+
+    void AV1DecoderFrame::FreeReferenceFrames()
+    {
+        for (DPBType::iterator i = references.begin(); i != references.end(); i++)
+            (*i)->DecrementReference();
+
+        references.clear();
+    }
+
+    void AV1DecoderFrame::UpdateReferenceList()
+    {
+        if (frame_dpb.size() == 0)
+            return;
+
+        for (Ipp8u i = 0; i < INTER_REFS; ++i)
+        {
+            Ipp32s refIdx = header.activeRefIdx[i];
+            AddReferenceFrame(frame_dpb[refIdx]);
+        }
+    }
+
+    void AV1DecoderFrame::OnDecodingCompleted()
+    {
+        DecrementReference();
+        FreeReferenceFrames();
+        decoded = true;
     }
 }
 

@@ -26,6 +26,7 @@ namespace UMC_AV1_DECODER
         : allocator(nullptr)
         , sequence_header(new SequenceHeader{})
         , counter(0)
+        , prev_frame(nullptr)
     {
         //TEMP stub
         AV1Bitstream{}.GetSequenceHeader(sequence_header.get());
@@ -100,12 +101,43 @@ namespace UMC_AV1_DECODER
         return UMC::UMC_OK;
     }
 
+    DPBType DPBUpdate(AV1DecoderFrame const * prevFrame)
+    {
+        DPBType updatedFrameDPB;
+
+        DPBType const& prevFrameDPB = prevFrame->frame_dpb;
+        if (prevFrameDPB.empty())
+            updatedFrameDPB.resize(NUM_REF_FRAMES);
+        else
+            updatedFrameDPB = prevFrameDPB;
+
+        const FrameHeader& fh = prevFrame->GetFrameHeader();
+
+        for (Ipp8u i = 0; i < NUM_REF_FRAMES; i++)
+        {
+            if ((fh.refreshFrameFlags >> i) & 1)
+            {
+                if (!prevFrameDPB.empty() && prevFrameDPB[i])
+                    prevFrameDPB[i]->DecrementReference();
+
+                updatedFrameDPB[i] = const_cast<AV1DecoderFrame*>(prevFrame);
+                prevFrame->IncrementReference();
+            }
+        }
+
+        return updatedFrameDPB;
+    }
+
     UMC::Status AV1Decoder::GetFrame(UMC::MediaData* in, UMC::MediaData*)
     {
         Ipp8u* src = reinterpret_cast<Ipp8u*>(in->GetDataPointer());
         Ipp32u const size = Ipp32u(in->GetDataSize());
         if (size < MINIMAL_DATA_SIZE)
             return UMC::UMC_ERR_NOT_ENOUGH_DATA;
+
+        DPBType updated_refs;
+        if (prev_frame)
+            updated_refs = DPBUpdate(prev_frame);
 
         AV1Bitstream bs(src, size);
 
@@ -119,6 +151,10 @@ namespace UMC_AV1_DECODER
 
         frame->AddSource(in);
         in->MoveDataPointer(size);
+
+        frame->frame_dpb = updated_refs;
+        frame->UpdateReferenceList();
+        prev_frame = frame;
 
         std::unique_lock<std::mutex> l(guard);
         queue.push_back(frame);
@@ -227,6 +263,19 @@ namespace UMC_AV1_DECODER
         );
     }
 
+    void AV1Decoder::CompleteDecodedFrames()
+    {
+        std::unique_lock<std::mutex> l(guard);
+
+        std::for_each(dpb.begin(), dpb.end(),
+            [](AV1DecoderFrame* frame)
+            {
+            if (frame->DecodingCompleted() && !frame->Decoded())
+                frame->OnDecodingCompleted();
+            }
+        );
+    }
+
     AV1DecoderFrame* AV1Decoder::GetFreeFrame()
     {
         std::unique_lock<std::mutex> l(guard);
@@ -247,11 +296,15 @@ namespace UMC_AV1_DECODER
 
     AV1DecoderFrame* AV1Decoder::GetFrameBuffer(FrameHeader const& fh)
     {
+        CompleteDecodedFrames();
         AV1DecoderFrame* frame = GetFreeFrame();
         if (!frame)
             return nullptr;
 
         frame->Reset(&fh);
+
+        // increase ref counter when we get empty frame from DPB
+        frame->IncrementReference();
 
         if (fh.show_existing_frame)
         {

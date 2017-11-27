@@ -16,11 +16,17 @@
 #define __UMC_AV1_DEC_DEFS_DEC_H__
 
 #include <stdexcept>
+#include <vector>
 #include "umc_vp9_dec_defs.h"
 #include "umc_vp9_frame.h"
 
 namespace UMC_AV1_DECODER
 {
+    class AV1DecoderFrame;
+    typedef std::vector<AV1DecoderFrame*> DPBType;
+
+    using UMC_VP9_DECODER::NUM_REF_FRAMES;
+
     const Ipp8u SYNC_CODE_0 = 0x49;
     const Ipp8u SYNC_CODE_1 = 0x83;
     const Ipp8u SYNC_CODE_2 = 0x43;
@@ -121,7 +127,7 @@ namespace UMC_AV1_DECODER
         Ipp8u  use_reference_buffer;
         Ipp32u display_frame_id;
 
-        Ipp32u frameIdsRefFrame[UMC_VP9_DECODER::NUM_REF_FRAMES];
+        Ipp32u frameIdsRefFrame[NUM_REF_FRAMES];
         Ipp32s activeRefIdx[INTER_REFS];
         Ipp32u refFrameSignBias[INTER_REFS];
         Ipp32u allowScreenContentTools;

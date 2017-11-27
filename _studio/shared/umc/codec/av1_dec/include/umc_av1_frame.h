@@ -15,6 +15,7 @@
 #define __UMC_AV1_FRAME_H__
 
 #include "umc_av1_dec_defs.h"
+#include "mfx_common_decode_int.h"
 
 #include <memory>
 
@@ -26,7 +27,7 @@ namespace UMC
 
 namespace UMC_AV1_DECODER
 {
-    class AV1DecoderFrame
+    class AV1DecoderFrame : public RefCounter
     {
 
     public:
@@ -57,11 +58,18 @@ namespace UMC_AV1_DECODER
         { return header; }
 
         bool Empty() const;
+        bool DecodingCompleted() const;
+        bool Decoded() const;
 
         bool Displayed() const
         { return displayed; }
         void Displayed(bool d)
         { displayed = d; }
+
+        bool Outputted() const
+        { return outputted; }
+        void Outputted(bool o)
+        { outputted = o; }
 
         UMC::FrameData* GetFrameData()
         { return data.get(); }
@@ -70,14 +78,30 @@ namespace UMC_AV1_DECODER
 
         UMC::FrameMemID GetMemID() const;
 
+        void AddReferenceFrame(AV1DecoderFrame* frm);
+        void FreeReferenceFrames();
+        void UpdateReferenceList();
+        void OnDecodingCompleted();
+
     public:
 
         Ipp32s           UID;
+        DPBType          frame_dpb;
+
+    protected:
+        virtual void Free()
+        {
+            Reset();
+        }
 
     private:
 
         Ipp16u                            locked;
-        bool                              displayed;
+        bool                              outputted; // set in [application thread] when frame is mapped to respective output mfxFrameSurface
+        bool                              displayed; // set in [scheduler thread] when frame decoding is finished and
+                                                     // respective mfxFrameSurface prepared for output to application
+        bool                              decoded;   // set in [application thread] to signal that frame is completed and respective reference counter decremented
+                                                     // after it frame still may remain in [AV1Decoder::dpb], but only as reference
 
 
         std::unique_ptr<UMC::FrameData>   data;
@@ -90,6 +114,8 @@ namespace UMC_AV1_DECODER
         Ipp32s                            y_dc_delta_q;
         Ipp32s                            uv_dc_delta_q;
         Ipp32s                            uv_ac_delta_q;
+
+        DPBType                           references;
     };
 
 } // end namespace UMC_VP9_DECODER

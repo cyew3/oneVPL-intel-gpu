@@ -97,6 +97,7 @@ namespace UMC_AV1_DECODER
         virtual AV1DecoderFrame* GetFrameBuffer(FrameHeader const&);
 
         virtual void AllocateFrameData(UMC::VideoDataInfo const&, UMC::FrameMemID, AV1DecoderFrame*) = 0;
+        virtual void CompleteDecodedFrames();
 
     private:
 
@@ -110,11 +111,13 @@ namespace UMC_AV1_DECODER
         UMC::FrameAllocator*            allocator;
 
         std::unique_ptr<SequenceHeader> sequence_header;
-        std::vector<AV1DecoderFrame*>   dpb;
+        DPBType                         dpb;     // store of decoded frames
         std::deque<AV1DecoderFrame*>    queue;
 
         Ipp32u                          counter;
         AV1DecoderParams                params;
+
+        AV1DecoderFrame*                prev_frame;
     };
 }
 

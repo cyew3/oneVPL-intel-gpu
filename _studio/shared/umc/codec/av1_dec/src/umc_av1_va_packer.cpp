@@ -170,14 +170,14 @@ namespace UMC_AV1_DECODER
         picParam->frame_context_idx = info.frameContextIdx;
 
         if (UMC_VP9_DECODER::KEY_FRAME == info.frameType)
-            for (int i = 0; i < UMC_VP9_DECODER::NUM_REF_FRAMES; i++)
+            for (int i = 0; i < NUM_REF_FRAMES; i++)
             {
                 picParam->ref_frame_map[i].bPicEntry = UCHAR_MAX;
             }
         else
         {
-            for (mfxU8 ref = 0; ref < UMC_VP9_DECODER::NUM_REF_FRAMES; ++ref)
-                picParam->ref_frame_map[ref].bPicEntry = (UCHAR)info.ref_frame_map[ref]; // TODO: do proper mapping here
+            for (mfxU8 ref = 0; ref < NUM_REF_FRAMES; ++ref)
+                picParam->ref_frame_map[ref].bPicEntry = (UCHAR)frame->frame_dpb[ref]->GetMemID();
 
             for (mfxU8 ref_idx = 0; ref_idx < INTER_REFS; ref_idx++)
             {

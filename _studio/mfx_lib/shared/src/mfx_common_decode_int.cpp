@@ -319,3 +319,19 @@ bool IsNeedChangeVideoParam(mfxVideoParam *)
 {
     return false;
 }
+
+void RefCounter::IncrementReference() const
+{
+    m_refCounter++;
+}
+
+void RefCounter::DecrementReference()
+{
+    m_refCounter--;
+
+    VM_ASSERT(m_refCounter >= 0);
+    if (!m_refCounter)
+    {
+        Free();
+    }
+}

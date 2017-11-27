@@ -488,7 +488,11 @@ mfxStatus VideoDECODEAV1::CompleteFrame(mfxThreadTask task, mfxStatus)
     }
 
     mfxStatus sts = m_allocator->PrepareToOutput(surface_out, id, &m_video_par, m_opaque);
+#ifdef MFX_VA
+    frame->Displayed(true);
+#else
     frame->Reset();
+#endif
 
     return sts;
 }
@@ -744,7 +748,7 @@ UMC_AV1_DECODER::AV1DecoderFrame* VideoDECODEAV1::GetFrameToDisplay()
     if (!frame)
         return nullptr;
 
-    frame->Displayed(true);
+    frame->Outputted(true);
     return frame;
 }
 

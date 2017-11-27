@@ -124,4 +124,33 @@ void MoveBitstreamData(mfxBitstream& bs, mfxU32 offset)
     bs.DataLength -= offset;
 }
 
+// Memory reference counting base class
+class RefCounter
+{
+public:
+
+    RefCounter() : m_refCounter(0)
+    {
+    }
+
+    void IncrementReference() const;
+
+    void DecrementReference();
+
+    void ResetRefCounter() { m_refCounter = 0; }
+
+    Ipp32u GetRefCounter() const { return m_refCounter; }
+
+protected:
+    mutable Ipp32s m_refCounter;
+
+    virtual ~RefCounter()
+    {
+    }
+
+    virtual void Free()
+    {
+    }
+};
+
 #endif
