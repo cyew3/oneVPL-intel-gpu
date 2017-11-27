@@ -5,7 +5,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2010-2016 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2010-2017 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -214,7 +214,7 @@ mfxStatus BufferedBitstreamReader::ReadNextFrame(mfxBitstream2 &bs)
     if ( 0 == nCanWrite && bs.DataOffset )
     {
        nCanWrite = bs.DataOffset;
-       memcpy(bs.Data, bs.Data + bs.DataOffset, bs.DataLength);
+       memmove(bs.Data, bs.Data + bs.DataOffset, bs.DataLength);
        bs.DataOffset = 0;
     }
 

@@ -258,7 +258,7 @@ mfxStatus CBitstreamReader::ReadNextFrame(mfxBitstream *pBS)
 
     mfxU32 nBytesRead = 0;
 
-    memcpy(pBS->Data, pBS->Data + pBS->DataOffset, pBS->DataLength);
+    memmove(pBS->Data, pBS->Data + pBS->DataOffset, pBS->DataLength);
     pBS->DataOffset = 0;
     //invalid timestamp by default, to make decoder correctly put the timestamp
     pBS->TimeStamp = MFX_TIME_STAMP_INVALID;

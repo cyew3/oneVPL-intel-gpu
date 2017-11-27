@@ -5,7 +5,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2014-2016 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -65,7 +65,7 @@ mfxStatus BayerVideoReader::ReadNextFrame(mfxBitstream2 &bs)
 {
     CHECK_ERROR(m_bInited, false, MFX_ERR_NOT_INITIALIZED);
 
-    memcpy(bs.Data, bs.Data + bs.DataOffset, bs.DataLength);
+    memmove(bs.Data, bs.Data + bs.DataOffset, bs.DataLength);
     bs.DataOffset = 0;
     bs.TimeStamp = MFX_TIME_STAMP_INVALID;
 

@@ -72,7 +72,7 @@ public:
     {
         mfxStatus sts;
         mfxU32 nBytesRead = 0;
-        memcpy(bs.Data, bs.Data + bs.DataOffset, bs.DataLength);
+        memmove(bs.Data, bs.Data + bs.DataOffset, bs.DataLength);
         bs.DataOffset = 0;
         bs.TimeStamp = MFX_TIME_STAMP_INVALID;
         nBytesRead   = bs.MaxLength - bs.DataLength;
