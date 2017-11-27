@@ -555,7 +555,6 @@ samples/sample_common/include/parameters_dumper.h
 samples/sample_common/include/plugin_loader.h
 samples/sample_common/include/plugin_utils.h
 samples/sample_common/include/sample_defs.h
-samples/sample_common/include/sample_params.h
 samples/sample_common/include/sample_types.h
 samples/sample_common/include/sample_utils.h
 samples/sample_common/include/shared_ptr.h

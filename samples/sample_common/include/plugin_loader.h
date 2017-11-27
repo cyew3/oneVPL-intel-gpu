@@ -24,6 +24,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include "vm/so_defs.h"
 #include "sample_utils.h"
+#include "plugin_utils.h"
 //#include "mfx_plugin_module.h"
 #include <iostream>
 #include <iomanip> // for std::setfill, std::setw

@@ -48,12 +48,25 @@ typedef enum {
     MFX_PLUGINLOAD_TYPE_FILE = 2
 } MfxPluginLoadType;
 
+struct sPluginParams
+{
+    mfxPluginUID      pluginGuid;
+    mfxChar           strPluginPath[MSDK_MAX_FILENAME_LEN];
+    MfxPluginLoadType type;
+    sPluginParams()
+    {
+        MSDK_ZERO_MEMORY(*this);
+    }
+};
+
 static const mfxPluginUID MSDK_PLUGINGUID_NULL = {{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}};
 
 bool AreGuidsEqual(const mfxPluginUID& guid1, const mfxPluginUID& guid2);
 
-mfxStatus ConvertStringToGuid(const msdk_string & strGuid, mfxPluginUID & mfxGuid);
-
 const mfxPluginUID & msdkGetPluginUID(mfxIMPL impl, msdkComponentType type, mfxU32 uCodecid);
+
+sPluginParams ParsePluginGuid(msdk_char* );
+sPluginParams ParsePluginPath(msdk_char* );
+mfxStatus ConvertStringToGuid(const msdk_string & strGuid, mfxPluginUID & mfxGuid);
 
 #endif //__PLUGIN_UTILS_H__
