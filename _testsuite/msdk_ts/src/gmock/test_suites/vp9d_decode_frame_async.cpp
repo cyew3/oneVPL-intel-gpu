@@ -41,6 +41,8 @@ public:
     static const tc_struct test_case_ayuv[]; //8b 444
     static const tc_struct test_case_p010[]; //10b 420
     static const tc_struct test_case_y410[]; //10b 444
+    static const tc_struct test_case_p016[]; //12b 420
+    static const tc_struct test_case_y416[]; //12b 444
 
     template<mfxU32 fourcc>
     int RunTest_fourcc(const unsigned int id);
@@ -50,6 +52,8 @@ public:
     static const unsigned int n_cases_ayuv;
     static const unsigned int n_cases_p010;
     static const unsigned int n_cases_y410;
+    static const unsigned int n_cases_p016;
+    static const unsigned int n_cases_y416;
 
 private:
 
@@ -221,6 +225,41 @@ const TestSuite::tc_struct TestSuite::test_case_y410[] =
 };
 const unsigned int TestSuite::n_cases_y410 = sizeof(TestSuite::test_case_y410)/sizeof(TestSuite::tc_struct) + n_cases;
 
+const TestSuite::tc_struct TestSuite::test_case_p016[] =
+{
+    {/*32*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, { &tsStruct::mfxFrameSurface1.Info.BitDepthLuma, 13, RUNTIME_SURF} },
+    {/*33*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxFrameSurface1.Info.FourCC, MFX_FOURCC_P016, RUNTIME_SURF},
+                                                 {&tsStruct::mfxFrameSurface1.Info.ChromaFormat, MFX_CHROMAFORMAT_YUV422, RUNTIME_SURF},
+                                               } },
+    {/*34*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_NV12, AFTER_INIT},
+                                                      {&tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV420, AFTER_INIT},
+                                                    } },
+    {/*35*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_AYUV, AFTER_INIT},
+                                                      {&tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV444, AFTER_INIT},
+                                                    } },
+    {/*36*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_Y410, AFTER_INIT},
+                                                      {&tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV444, AFTER_INIT},
+                                                    } },
+};
+const unsigned int TestSuite::n_cases_p016 = sizeof(TestSuite::test_case_p016)/sizeof(TestSuite::tc_struct) + n_cases;
+
+const TestSuite::tc_struct TestSuite::test_case_y416[] =
+{
+    {/*32*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, { &tsStruct::mfxFrameSurface1.Info.BitDepthLuma, 13, RUNTIME_SURF} },
+    {/*33*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxFrameSurface1.Info.FourCC, MFX_FOURCC_Y416, RUNTIME_SURF},
+                                                 {&tsStruct::mfxFrameSurface1.Info.ChromaFormat, MFX_CHROMAFORMAT_YUV422, RUNTIME_SURF},
+                                               } },
+    {/*34*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_NV12, AFTER_INIT},
+                                                 {&tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV420, AFTER_INIT},
+                                               } },
+    {/*35*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_AYUV, AFTER_INIT},
+                                                 {&tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV444, AFTER_INIT},
+                                               } },
+    {/*36*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_P010, AFTER_INIT},
+                                                 {&tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV420, AFTER_INIT},
+                                               } },
+};
+const unsigned int TestSuite::n_cases_y416 = sizeof(TestSuite::test_case_y416)/sizeof(TestSuite::tc_struct) + n_cases;
 struct streamDesc
 {
     mfxU16 w;
@@ -229,10 +268,12 @@ struct streamDesc
 };
 
 const streamDesc streams[] = {
-    {352,288,"forBehaviorTest/foreman_cif.ivf"                                                      },
-    {432,240,"conformance/vp9/SBE/8bit_444/Stress_VP9_FC2p1ss444_432x240_250_extra_stress_2.2.0.vp9"},
-    {432,240,"conformance/vp9/SBE/10bit/Stress_VP9_FC2p2b10_432x240_050_intra_stress_1.5.vp9"       },
-    {432,240,"conformance/vp9/SBE/10bit_444/Syntax_VP9_FC2p3ss444_432x240_101_inter_basic_2.0.0.vp9"},
+    { 352, 288, "forBehaviorTest/foreman_cif.ivf"                                                       },
+    { 432, 240, "conformance/vp9/SBE/8bit_444/Stress_VP9_FC2p1ss444_432x240_250_extra_stress_2.2.0.vp9" },
+    { 432, 240, "conformance/vp9/SBE/10bit/Stress_VP9_FC2p2b10_432x240_050_intra_stress_1.5.vp9"        },
+    { 432, 240, "conformance/vp9/SBE/10bit_444/Syntax_VP9_FC2p3ss444_432x240_101_inter_basic_2.0.0.vp9" },
+    { 160, 90,  "conformance/vp9/google/vp92-2-20-12bit-yuv420.ivf"                                     },
+    { 160, 90,  "conformance/vp9/google/vp93-2-20-12bit-yuv444.ivf"                                     },
 };
 
 const streamDesc& getStreamDesc(const mfxU32& fourcc)
@@ -416,6 +457,9 @@ TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_8b_420_decode_frame_async,  RunTest_fourcc<
 TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_10b_420_decode_frame_async, RunTest_fourcc<MFX_FOURCC_P010>, n_cases_p010);
 TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_8b_444_decode_frame_async,  RunTest_fourcc<MFX_FOURCC_AYUV>, n_cases_ayuv);
 TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_10b_444_decode_frame_async, RunTest_fourcc<MFX_FOURCC_Y410>, n_cases_y410);
+
+TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_12b_420_p016_decode_frame_async, RunTest_fourcc<MFX_FOURCC_P016>, n_cases);
+TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_12b_444_y416_decode_frame_async, RunTest_fourcc<MFX_FOURCC_Y416>, n_cases);
 
 }
 #undef TEST_NAME
