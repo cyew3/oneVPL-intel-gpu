@@ -10,7 +10,7 @@ Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
 
 #include "ts_encoder.h"
 #include "ts_parser.h"
-
+#include "ts_struct.h"
 
 //#define DEBUG_STREAM "avce_max_bins_pcm.264"
 
@@ -69,8 +69,9 @@ public:
 #ifdef DEBUG_STREAM
     tsBitstreamWriter m_bsw;
 #endif
+    bool m_IsInterlace;
 
-    BitstreamChecker()
+    BitstreamChecker(bool IsInterlace)
         : tsParserAVC2( INIT_MODE_PARSE_SD
 #if (!defined(LINUX32) && !defined(LINUX64))
                        //use slice threading w/ auto-sync at new AU start
@@ -81,6 +82,7 @@ public:
 #ifdef DEBUG_STREAM
     , m_bsw(DEBUG_STREAM)
 #endif
+    , m_IsInterlace(IsInterlace)
     {
         set_trace_level(0);
     }
@@ -93,7 +95,12 @@ const Bs8u SubHeightC[5] = {1,2,1,1,1};
 
 mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
 {
+
+    if (m_IsInterlace)
+        nFrames *= 2;
+
     mfxU32 checked = 0;
+
 
     if (bs.Data)
         SetBuffer(bs);
@@ -198,53 +205,93 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
     return MFX_ERR_NONE;
 }
 
+enum
+{
+    MFX_PAR = 1,
+    EXT_COD
+};
+typedef struct
+{
+    struct
+    {
+        mfxU32 ext_type;
+        const  tsStruct::Field* f;
+        mfxU32 v;
+    } set_par[MAX_NPARS];
+} tc_struct;
+
+const tc_struct test_case[] =
+{
+    {/*00*/
+        {
+            { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,     1920 },
+            { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.Height,    1088 },
+            { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,     1920 },
+            { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,     1080 },
+            { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.NumSlice,            4 },
+            { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.NumRefFrame,         1 },
+            { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE },
+            { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.RateControlMethod,   MFX_RATECONTROL_VBR },
+            { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.InitialDelayInKB,    0 },
+            { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.TargetKbps,          49900 },
+            { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.MaxKbps,             50000 },
+            { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.BufferSizeInKB,      3750 },
+            { EXT_COD, &tsStruct::mfxExtCodingOption.VuiNalHrdParameters, MFX_CODINGOPTION_ON  },
+            { EXT_COD, &tsStruct::mfxExtCodingOption.VuiVclHrdParameters, MFX_CODINGOPTION_ON  },
+            { EXT_COD, &tsStruct::mfxExtCodingOption.RecoveryPointSEI,    MFX_CODINGOPTION_ON  },
+            { EXT_COD, &tsStruct::mfxExtCodingOption.SingleSeiNalUnit,    MFX_CODINGOPTION_OFF },
+            { EXT_COD, &tsStruct::mfxExtCodingOption.AUDelimiter,         MFX_CODINGOPTION_ON  },
+            { EXT_COD, &tsStruct::mfxExtCodingOption.EndOfStream,         MFX_CODINGOPTION_OFF },
+            { EXT_COD, &tsStruct::mfxExtCodingOption.PicTimingSEI,        MFX_CODINGOPTION_ON  },
+
+        },
+    },
+    {/*01*/
+        {
+            { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,     352 },
+            { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.Height,    288 },
+            { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,     352 },
+            { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,     288 },
+            { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF },
+            { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.RateControlMethod,   MFX_RATECONTROL_CQP },
+            { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.QPI,                 19 },
+            { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.QPP,                 19 },
+            { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.QPB,                 19 },
+        },
+    },
+};
+
+const unsigned int n_cases = sizeof(test_case) / sizeof(tc_struct);
+
 int test(unsigned int id)
 {
     TS_START;
+
     tsVideoEncoder enc(MFX_CODEC_AVC);
+
+    const tc_struct& tc = test_case[id];
+
+    SETPARS(enc.m_par, MFX_PAR);
+
     SFiller sf;
-    BitstreamChecker c;
+    BitstreamChecker c(enc.m_par.mfx.FrameInfo.PicStruct & (MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_BFF));
     enc.m_filler = &sf;
     enc.m_bs_processor = &c;
 
     mfxInfoMFX& mfx = enc.m_par.mfx;
-    mfxExtCodingOption& co = enc.m_par;
 
-    mfx.FrameInfo.Width  = 1920;
-    mfx.FrameInfo.Height = 1088;
-    mfx.FrameInfo.CropW  = 1920;
-    mfx.FrameInfo.CropH  = 1080;
     mfx.FrameInfo.FrameRateExtN = 24000;
     mfx.FrameInfo.FrameRateExtD = 1001;
-    mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
-    mfx.CodecProfile        = 100;
-    mfx.CodecLevel          = 41;
-    mfx.NumThread           = 0;
-    mfx.TargetUsage         = 4;
-    mfx.GopPicSize          = 24;
+    mfx.CodecProfile = 100;
+    mfx.CodecLevel   = 41;
+    mfx.NumThread    = 0;
+    mfx.TargetUsage  = 4;
+    mfx.GopPicSize   = 24;
+    mfx.GopRefDist   = (mfx.LowPower == MFX_CODINGOPTION_ON) ? 1 : 3;
+    mfx.GopOptFlag   = 1;
 
-    if (mfx.LowPower == MFX_CODINGOPTION_ON)
-        mfx.GopRefDist = 1;
-    else
-        mfx.GopRefDist = 3;
-
-    mfx.GopOptFlag          = 1;
-    mfx.IdrInterval         = 0;
-    mfx.RateControlMethod   = MFX_RATECONTROL_VBR;
-    mfx.InitialDelayInKB    = 0;
-    mfx.TargetKbps          = 49900;
-    mfx.MaxKbps             = 50000;
-    mfx.BufferSizeInKB      = 3750;
-    mfx.NumSlice            = 4;
-    mfx.NumRefFrame         = 1;
-    co.CAVLC                = 32;
-    co.RecoveryPointSEI     = 16;
-    co.SingleSeiNalUnit     = 32;
-    co.VuiVclHrdParameters  = 16;
-    co.AUDelimiter          = 16;
-    co.EndOfStream          = 32;
-    co.PicTimingSEI         = 16;
-    co.VuiNalHrdParameters  = 16;
+    mfxExtCodingOption& co = enc.m_par;
+    co.CAVLC = MFX_CODINGOPTION_OFF;
 
     enc.EncodeFrames(g_tsConfig.sim ? 10 : 300);
 
@@ -252,5 +299,5 @@ int test(unsigned int id)
     return 0;
 }
 
-TS_REG_TEST_SUITE(avce_max_bins_pcm, test, 1);
+TS_REG_TEST_SUITE(avce_max_bins_pcm, test, n_cases);
 };
