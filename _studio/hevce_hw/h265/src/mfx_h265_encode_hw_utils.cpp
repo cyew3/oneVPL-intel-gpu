@@ -1597,7 +1597,8 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
 
                 tmp.m_poc = cur->m_poc;
                 tmp.m_tid = cur->m_tid;
-                tmp.m_secondField =isField() ? (!!(tmp.m_poc & 1)) : false;
+                tmp.m_secondField = (isField()&&(tmp.m_poc & 1));
+                tmp.m_bottomField = (isBFF()!= tmp.m_secondField);
                 UpdateDPB(*this, tmp, dpb);
             }
 
@@ -2994,13 +2995,13 @@ void ConstructRPL(
                 }
                 if (par.isLowDelay())
                 {
+                    // P pyramid
                     while (l0 > NumStRefL0)
                     {
                         mfxI32 i;
                         // !!! par.NumRefLX[0] used here as distance between "strong" STR, not NumRefActive for current frame
-                        for (i = 0; (i < l0) && (((GetFrameNum(par.isField(),DPB[RPL[0][0]].m_poc, DPB[RPL[0][0]].m_secondField) - GetFrameNum(par.isField(),DPB[RPL[0][i]].m_poc, DPB[RPL[0][i]].m_secondField)) % par.NumRefLX[0]) == 0) /*&& (DPB[RPL[0][i]].m_secondField == bSecondField)*/; i++);
-
-                        Remove(RPL[0], (i >= l0 - 1) ? 0 : i);
+                        for (i = 0; (i < l0) && (((GetFrameNum(par.isField(),DPB[RPL[0][0]].m_poc, DPB[RPL[0][0]].m_secondField) - GetFrameNum(par.isField(),DPB[RPL[0][i]].m_poc, DPB[RPL[0][i]].m_secondField)) % par.NumRefLX[0]) == 0); i++);
+                        Remove(RPL[0], (i >= (par.isField() ? l0 - 2 : l0 - 1) ? 0 : i));
                         l0--;
                     }
                 }
