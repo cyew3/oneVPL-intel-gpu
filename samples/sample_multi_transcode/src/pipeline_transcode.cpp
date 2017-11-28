@@ -374,8 +374,8 @@ mfxStatus CTranscodingPipeline::VPPPreInit(sInputParams *pParams)
             m_bIsVpp = true;
         }
 
-        if ((m_mfxDecParams.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE) &&
-            (pParams->EncodeId == MFX_CODEC_HEVC) && (pParams->DecodeId != MFX_CODEC_HEVC) )
+        if ((m_mfxDecParams.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_TFF || m_mfxDecParams.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_BFF || m_mfxDecParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_UNKNOWN)
+                    && pParams->EncodeId == MFX_CODEC_HEVC && pParams->DecodeId != MFX_CODEC_HEVC )
         {
             m_bIsFieldSplitting = true;
             m_bIsVpp = true;
