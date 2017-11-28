@@ -21,10 +21,6 @@ namespace hevce_reset
     public:
         TestSuite() : tsVideoEncoder(MFX_CODEC_HEVC){}
         ~TestSuite() { }
-        int RunTest(unsigned int id);
-        static const unsigned int n_cases;
-
-    private:
 
         struct tc_struct
         {
@@ -42,6 +38,13 @@ namespace hevce_reset
             } set_par[MAX_NPARS];
         };
 
+        template<mfxU32 fourcc>
+        int RunTest_Subtype(const unsigned int id);
+
+        int RunTest(tc_struct tc, unsigned int fourcc_id);
+        static const unsigned int n_cases;
+
+    private:
         enum
         {
             MFX_PAR,
@@ -428,24 +431,79 @@ namespace hevce_reset
             { "forBehaviorTest/foster_720x576.yuv", "" },
 
         },
-
-
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
 
-    int TestSuite::RunTest(unsigned int id)
+    template<mfxU32 fourcc>
+    int TestSuite::RunTest_Subtype(const unsigned int id)
+    {
+        const tc_struct& tc = test_case[id];
+        return RunTest(tc, fourcc);
+    }
+
+    int TestSuite::RunTest(tc_struct tc, unsigned int fourcc_id)
     {
         TS_START
-        auto tc = test_case[id];
+
         mfxStatus sts = tc.sts_sw;
         tsSurfaceProcessor *reader;
         mfxHDL hdl;
         mfxHandleType type;
         mfxEncryptedData ed;
         mfxStatus init_fail = MFX_ERR_INVALID_VIDEO_PARAM;
-        const char* stream0 = g_tsStreamPool.Get(tc.stream[0]);
-        const char* stream1 = g_tsStreamPool.Get(tc.stream[1] == "" ? tc.stream[0] : tc.stream[1]);
+
+        if (fourcc_id == MFX_FOURCC_NV12)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
+        }
+        else if (fourcc_id == MFX_FOURCC_YUY2)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_YUY2;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
+        }
+        else if (fourcc_id == MFX_FOURCC_Y210)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y210;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
+        }
+        else
+        {
+            g_tsLog << "ERROR: invalid fourcc_id parameter: " << fourcc_id << "\n";
+            return 0;
+        }
+
+        const char* stream0 = nullptr;
+        const char* stream1 = nullptr;
+
+        if (m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210 || m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_YUY2)
+        {
+            //empty surface for encoding with REXT, ok for this test
+            stream0 = nullptr;
+            stream1 = nullptr;
+        }
+        else
+        {
+            //real streams for NV12
+            if (tc.stream[0] != "")
+            {
+                stream0 = g_tsStreamPool.Get(tc.stream[0]);
+            }
+
+            if (tc.stream[1] != "")
+            {
+                stream1 = g_tsStreamPool.Get(tc.stream[1]);
+            }
+            else if(tc.stream[0] != "")
+            {
+                stream1 = g_tsStreamPool.Get(tc.stream[0]);
+            }
+        }
+
         g_tsStreamPool.Reg();
 
         MFXInit();
@@ -455,7 +513,6 @@ namespace hevce_reset
         m_par.mfx.FrameInfo.Height = 576;
         m_par.mfx.FrameInfo.CropH = 0;
         m_par.mfx.FrameInfo.CropW = 0;
-
 
         SETPARS(m_pPar, MFX_PAR);
 
@@ -499,13 +556,20 @@ namespace hevce_reset
                 return 0;
             }
 
+            if ((m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210 || m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_YUY2)
+                && (g_tsHWtype < MFX_HW_ICL || g_tsConfig.lowpower == MFX_CODINGOPTION_ON))
+            {
+                g_tsLog << "\n\nWARNING: 422 format only supported on ICL+ and ENC+PAK!\n\n\n";
+                throw tsSKIP;
+            }
+
             sts = tc.sts_hw;
             m_par.mfx.FrameInfo.Width = ((m_par.mfx.FrameInfo.Width + 32 - 1) & ~(32 - 1));
             m_par.mfx.FrameInfo.Height = ((m_par.mfx.FrameInfo.Height + 32 - 1) & ~(32 - 1));
             init_fail = MFX_ERR_INVALID_VIDEO_PARAM;
         }
 
-        if (tc.stream[0] != "")
+        if (stream0)
         {
             reader = new tsRawReader(stream0, m_pPar->mfx.FrameInfo);
             m_filler = reader;
@@ -584,12 +648,12 @@ namespace hevce_reset
                     m_bitstream.EncryptedData = &ed;
                 }
 
-                if (tc.stream[1] != "")
+                if (stream1)
                 {
                     reader = new tsRawReader(stream1, m_pPar->mfx.FrameInfo);
                     m_filler = reader;
                 }
-                else if (tc.stream[0] != "")
+                else if (stream0)
                 {
                     reader = new tsRawReader(stream0, m_pPar->mfx.FrameInfo);
                     m_filler = reader;
@@ -615,5 +679,7 @@ namespace hevce_reset
         return 0;
     }
 
-    TS_REG_TEST_SUITE_CLASS(hevce_reset);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_reset, RunTest_Subtype<MFX_FOURCC_NV12>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_8b_422_yuy2_reset, RunTest_Subtype<MFX_FOURCC_YUY2>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_422_y210_reset, RunTest_Subtype<MFX_FOURCC_Y210>, n_cases);
 }
