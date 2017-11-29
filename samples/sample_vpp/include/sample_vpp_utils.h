@@ -334,7 +334,6 @@ private:
 
     PTSMaker                             *m_pPTSMaker;
     mfxU32                                m_initFcc;
-    bool m_inI420;
 };
 
 class CRawVideoWriter
