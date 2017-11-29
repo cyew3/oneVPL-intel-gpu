@@ -94,7 +94,7 @@ public:
 
 private:
     mfxStatus PreEncMultiFrames(HevcTask * task);
-    mfxStatus PreEncOneFrame(HevcTask & currTask, const RefIdxPair & refFramesIdx, const bool bDownsampleInput);
+    mfxStatus PreEncOneFrame(HevcTask & currTask, const RefIdxPair& dpbRefIdxPair, const RefIdxPair& activeRefIdxPair, const bool bDownsampleInput);
 
     mfxStatus DumpResult(HevcTask* task);
 

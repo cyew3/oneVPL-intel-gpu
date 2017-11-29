@@ -108,7 +108,7 @@ mfxStatus PredictorsRepaking::RepackPredictorsPerformance(const HevcTask& eTask,
             return MFX_ERR_UNDEFINED_BEHAVIOR;
 
         mvs_vec.push_back((*it).m_mv);
-        refIdx_vec.push_back(&(*it).m_refIdxPair);
+        refIdx_vec.push_back(&(*it).m_activeRefIdxPair);
     }
 
     // check that task has enough PreENC motion vectors dumps to create MVPredictors for Encode
@@ -231,7 +231,7 @@ mfxStatus PredictorsRepaking::RepackPredictorsQuality(const HevcTask& eTask, mfx
             return MFX_ERR_UNDEFINED_BEHAVIOR;
         mvs_vec.push_back((*it).m_mv);
         mbs_vec.push_back((*it).m_mb);
-        refIdx_vec.push_back(&(*it).m_refIdxPair);
+        refIdx_vec.push_back(&(*it).m_activeRefIdxPair);
     }
 
     // check that task has enough PreENC motion vectors dumps to create MVPredictors for Encode

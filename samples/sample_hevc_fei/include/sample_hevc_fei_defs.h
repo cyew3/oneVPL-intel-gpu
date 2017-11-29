@@ -450,7 +450,7 @@ struct PreENCOutput
 {
     mfxExtFeiPreEncMVExtended     * m_mv;
     mfxExtFeiPreEncMBStatExtended * m_mb;
-    RefIdxPair m_refIdxPair;
+    RefIdxPair m_activeRefIdxPair;
 };
 
 struct HevcDpbFrame

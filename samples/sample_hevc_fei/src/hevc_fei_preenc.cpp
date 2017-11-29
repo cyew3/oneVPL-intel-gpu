@@ -246,10 +246,10 @@ mfxStatus FEI_Preenc::DumpResult(HevcTask* task)
 
             for (std::list<PreENCOutput>::iterator it = task->m_preEncOutput.begin(); it != task->m_preEncOutput.end(); ++it)
             {
-                sts = m_pFile_MV_out->Write(&it->m_refIdxPair.RefL0, sizeof(it->m_refIdxPair.RefL0), 1);
+                sts = m_pFile_MV_out->Write(&it->m_activeRefIdxPair.RefL0, sizeof(it->m_activeRefIdxPair.RefL0), 1);
                 MSDK_CHECK_STATUS(sts, "Write MV formatted output to file failed in DumpResult");
 
-                sts = m_pFile_MV_out->Write(&it->m_refIdxPair.RefL1, sizeof(it->m_refIdxPair.RefL1), 1);
+                sts = m_pFile_MV_out->Write(&it->m_activeRefIdxPair.RefL1, sizeof(it->m_activeRefIdxPair.RefL1), 1);
                 MSDK_CHECK_STATUS(sts, "Write MV formatted output to file failed in DumpResult");
 
                 sts = m_pFile_MV_out->Write(it->m_mv->MB, sizeof(it->m_mv->MB[0]) * it->m_mv->NumMBAlloc, 1);
@@ -315,16 +315,16 @@ mfxStatus FEI_Preenc::PreEncFrame(HevcTask * task)
     return sts;
 }
 
-mfxStatus FEI_Preenc::PreEncOneFrame(HevcTask & currTask, const RefIdxPair & refFramesIdx, const bool bDownsampleInput)
+mfxStatus FEI_Preenc::PreEncOneFrame(HevcTask & task, const RefIdxPair& dpbRefIdxPair, const RefIdxPair& activeRefIdxPair, const bool bDownsampleInput)
 {
     mfxStatus sts;
-    HevcDpbArray & DPB = currTask.m_dpb[TASK_DPB_ACTIVE];
+    const HevcDpbArray & DPB = task.m_dpb[TASK_DPB_ACTIVE];
 
     mfxENCInputWrap & in = m_syncp.second.first;
 
-    in.InSurface  = *currTask.m_ds_surf ? *currTask.m_ds_surf : currTask.m_surf;
-    in.NumFrameL0 = (refFramesIdx.RefL0 != IDX_INVALID);
-    in.NumFrameL1 = (refFramesIdx.RefL1 != IDX_INVALID);
+    in.InSurface  = *task.m_ds_surf ? *task.m_ds_surf : task.m_surf;
+    in.NumFrameL0 = (dpbRefIdxPair.RefL0 != IDX_INVALID);
+    in.NumFrameL1 = (dpbRefIdxPair.RefL1 != IDX_INVALID);
 
     mfxExtFeiPreEncCtrl* ctrl = in.GetExtBuffer<mfxExtFeiPreEncCtrl>();
     MSDK_CHECK_POINTER(ctrl, MFX_ERR_NULL_PTR);
@@ -336,23 +336,23 @@ mfxStatus FEI_Preenc::PreEncOneFrame(HevcTask & currTask, const RefIdxPair & ref
 
     ctrl->RefFrame[0] = NULL;
     ctrl->RefFrame[1] = NULL;
-    if (refFramesIdx.RefL0 != IDX_INVALID && refFramesIdx.RefL0 < MAX_DPB_SIZE)
+    if (dpbRefIdxPair.RefL0 != IDX_INVALID && dpbRefIdxPair.RefL0 < MAX_DPB_SIZE)
     {
-        if (*currTask.m_ds_surf)
-            ctrl->RefFrame[0] = *DPB[refFramesIdx.RefL0].m_ds_surf;
+        if (*task.m_ds_surf)
+            ctrl->RefFrame[0] = *DPB[dpbRefIdxPair.RefL0].m_ds_surf;
         else
-            ctrl->RefFrame[0] = DPB[refFramesIdx.RefL0].m_surf;
+            ctrl->RefFrame[0] = DPB[dpbRefIdxPair.RefL0].m_surf;
     }
-    if (refFramesIdx.RefL1 != IDX_INVALID && refFramesIdx.RefL1 < MAX_DPB_SIZE)
+    if (dpbRefIdxPair.RefL1 != IDX_INVALID && dpbRefIdxPair.RefL1 < MAX_DPB_SIZE)
     {
-        if (*currTask.m_ds_surf)
-            ctrl->RefFrame[1] = *DPB[refFramesIdx.RefL1].m_ds_surf;
+        if (*task.m_ds_surf)
+            ctrl->RefFrame[1] = *DPB[dpbRefIdxPair.RefL1].m_ds_surf;
         else
-            ctrl->RefFrame[1] = DPB[refFramesIdx.RefL1].m_surf;
+            ctrl->RefFrame[1] = DPB[dpbRefIdxPair.RefL1].m_surf;
     }
 
     // disable MV output for I frames / if no reference frames provided
-    ctrl->DisableMVOutput = (currTask.m_frameType & MFX_FRAMETYPE_I) || (IDX_INVALID == refFramesIdx.RefL0 && IDX_INVALID == refFramesIdx.RefL1);
+    ctrl->DisableMVOutput = (task.m_frameType & MFX_FRAMETYPE_I) || (IDX_INVALID == dpbRefIdxPair.RefL0 && IDX_INVALID == dpbRefIdxPair.RefL1);
     // enable only if mbstat dump is required
     ctrl->DisableStatisticsOutput = m_pFile_MBstat_out.get() ? 0 : 1;
 
@@ -372,7 +372,7 @@ mfxStatus FEI_Preenc::PreEncOneFrame(HevcTask & currTask, const RefIdxPair & ref
         Copy(*mv, free_mv);
 
         stat.m_mv = ext_mv;
-        stat.m_refIdxPair = refFramesIdx;
+        stat.m_activeRefIdxPair = activeRefIdxPair;
     }
 
     if (!ctrl->DisableStatisticsOutput)
@@ -390,7 +390,7 @@ mfxStatus FEI_Preenc::PreEncOneFrame(HevcTask & currTask, const RefIdxPair & ref
     }
 
     if (stat.m_mb || stat.m_mv)
-        currTask.m_preEncOutput.push_back(stat);
+        task.m_preEncOutput.push_back(stat);
 
     mfxSyncPoint & syncp = m_syncp.first;
     sts = m_mfxPREENC.ProcessFrameAsync(&in, &out, &syncp);
@@ -406,7 +406,6 @@ mfxStatus FEI_Preenc::PreEncOneFrame(HevcTask & currTask, const RefIdxPair & ref
 mfxStatus FEI_Preenc::PreEncMultiFrames(HevcTask* pTask)
 {
     mfxStatus sts = MFX_ERR_NONE;
-    HevcTask & currFrame = *pTask;
     HevcTask & task = *pTask;
     mfxU8 const (&RPL)[2][MAX_DPB_SIZE] = task.m_refPicList;
 
@@ -416,15 +415,22 @@ mfxStatus FEI_Preenc::PreEncMultiFrames(HevcTask* pTask)
          || idxL0 < !!(task.m_frameType & MFX_FRAMETYPE_I); // tricky: use idxL0 for 1 iteration for I-frame
          ++idxL0, ++idxL1)
     {
-        RefIdxPair refFrames = {IDX_INVALID, IDX_INVALID};
+        RefIdxPair dpbRefIdxPair    = {IDX_INVALID, IDX_INVALID};
+        RefIdxPair activeRefIdxPair = {IDX_INVALID, IDX_INVALID};
 
-        if (RPL[0][idxL0] < 15)
-            refFrames.RefL0 = RPL[0][idxL0];
+        if (RPL[0][idxL0] < MAX_DPB_SIZE)
+        {
+            dpbRefIdxPair.RefL0    = RPL[0][idxL0];
+            activeRefIdxPair.RefL0 = idxL0;
+        }
 
-        if (RPL[1][idxL1] < 15)
-            refFrames.RefL1 = RPL[1][idxL1];
+        if (RPL[1][idxL1] < MAX_DPB_SIZE)
+        {
+            dpbRefIdxPair.RefL1    = RPL[1][idxL1];
+            activeRefIdxPair.RefL1 = idxL1;
+        }
 
-        mfxStatus sts = PreEncOneFrame(currFrame, refFrames, bDownsampleInput);
+        mfxStatus sts = PreEncOneFrame(task, dpbRefIdxPair, activeRefIdxPair, bDownsampleInput);
         MSDK_CHECK_STATUS(sts, "FEI PreEncOneFrame failed");
 
         // If input surface is not changed between PreENC calls
@@ -645,41 +651,41 @@ mfxStatus Preenc_Reader::PreEncFrame(HevcTask * task)
     if (numOfStructures > m_numOfStructuresPerFrame)
         MSDK_CHECK_STATUS(MFX_ERR_NOT_INITIALIZED, "Inconsistent data in MV predictors input. Unexpected number of structures.");
 
-    RefIdxPair taskRefFrames, inputRefFrames;
+    RefIdxPair actualRefIdxPair, inputRefIdxPair;
 
     for (size_t idxL0 = 0, idxL1 = 0;
         idxL0 < task->m_numRefActive[0] || idxL1 < task->m_numRefActive[1] // Iterate through L0/L1 frames
         || idxL0 < !!(task->m_frameType & MFX_FRAMETYPE_I); // tricky: use idxL0 for 1 iteration for I-frame
         ++idxL0, ++idxL1)
     {
-        taskRefFrames = { IDX_INVALID, IDX_INVALID };
+        actualRefIdxPair = { IDX_INVALID, IDX_INVALID };
 
-        if (task->m_refPicList[0][idxL0] < 15)
-            taskRefFrames.RefL0 = task->m_refPicList[0][idxL0];
+        if (task->m_refPicList[0][idxL0] < MAX_DPB_SIZE)
+            actualRefIdxPair.RefL0 = idxL0;
 
-        if (task->m_refPicList[1][idxL1] < 15)
-            taskRefFrames.RefL1 = task->m_refPicList[1][idxL1];
+        if (task->m_refPicList[1][idxL1] < MAX_DPB_SIZE)
+            actualRefIdxPair.RefL1 = idxL1;
 
         // check if ref indexes equal or not
-        inputRefFrames = { IDX_INVALID, IDX_INVALID };
+        inputRefIdxPair = { IDX_INVALID, IDX_INVALID };
 
-        sts = m_pFile_MV_in.Read(&inputRefFrames.RefL0, sizeof(inputRefFrames.RefL0), 1);
-        bytesRead += sizeof(inputRefFrames.RefL0);
+        sts = m_pFile_MV_in.Read(&inputRefIdxPair.RefL0, sizeof(inputRefIdxPair.RefL0), 1);
+        bytesRead += sizeof(inputRefIdxPair.RefL0);
         MSDK_CHECK_STATUS(sts, "FEI Preenc Reader. Read MV predictors failed");
 
-        sts = m_pFile_MV_in.Read(&inputRefFrames.RefL1, sizeof(inputRefFrames.RefL1), 1);
-        bytesRead += sizeof(inputRefFrames.RefL1);
+        sts = m_pFile_MV_in.Read(&inputRefIdxPair.RefL1, sizeof(inputRefIdxPair.RefL1), 1);
+        bytesRead += sizeof(inputRefIdxPair.RefL1);
         MSDK_CHECK_STATUS(sts, "FEI Preenc Reader. Read MV predictors failed");
 
-        if (taskRefFrames.RefL0 != inputRefFrames.RefL0 || taskRefFrames.RefL1 != inputRefFrames.RefL1)
+        if (actualRefIdxPair.RefL0 != inputRefIdxPair.RefL0 || actualRefIdxPair.RefL1 != inputRefIdxPair.RefL1)
             MSDK_CHECK_STATUS(MFX_ERR_NOT_INITIALIZED, "Inconsistent data in MV predictors input. Unexpected L0/L1 reference indexes.");
 
         PreENCOutput stat;
         MSDK_ZERO_MEMORY(stat);
 
         // disable MV output for I frames / if no reference frames provided)
-        if ((task->m_frameType & MFX_FRAMETYPE_I)
-            || (inputRefFrames.RefL0 == IDX_INVALID && inputRefFrames.RefL1 == IDX_INVALID))
+        if ((task->m_frameType & MFX_FRAMETYPE_I) ||
+            (inputRefIdxPair.RefL0 == IDX_INVALID && inputRefIdxPair.RefL1 == IDX_INVALID))
         {
             sts = m_pFile_MV_in.Seek(sizeof(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB) * m_numMB, SEEK_CUR);
             MSDK_CHECK_STATUS(sts, "FEI Preenc Reader. File seek failed");
@@ -697,7 +703,7 @@ mfxStatus Preenc_Reader::PreEncFrame(HevcTask * task)
             bytesRead += sizeof(ext_mv->MB[0])* ext_mv->NumMBAlloc;
 
             stat.m_mv = ext_mv;
-            stat.m_refIdxPair = inputRefFrames;
+            stat.m_activeRefIdxPair = inputRefIdxPair;
         }
 
         if (stat.m_mv)
