@@ -1300,6 +1300,10 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             return 0;
         }
 
+        // run the test
+        MFXInit(); TS_CHECK_MFX;
+        Load();
+
         if (g_tsHWtype < MFX_HW_ICL) // unsupported on platform less ICL
         {
             g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
@@ -1418,10 +1422,6 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         feeder->m_disable_shift_hack = true;  // this hack adds shift if fi.Shift != 0!!! Need to disable it.
 
         m_filler = feeder;
-
-        // run the test
-        MFXInit(); TS_CHECK_MFX;
-        Load();
 
         // prepare bitstream checker
         BitstreamChecker bs(&iterations, pInputSurfaces, tc.type, id);

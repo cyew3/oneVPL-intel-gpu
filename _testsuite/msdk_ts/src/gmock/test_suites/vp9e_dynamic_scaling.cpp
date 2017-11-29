@@ -1722,6 +1722,10 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             return 0;
         }
 
+        // run the test
+        MFXInit(); TS_CHECK_MFX;
+        Load();
+
         if ((fourcc == MFX_FOURCC_NV12 && g_tsHWtype < MFX_HW_CNL)
             || ((fourcc == MFX_FOURCC_P010 || fourcc == MFX_FOURCC_AYUV
                 || fourcc == MFX_FOURCC_Y410) && g_tsHWtype < MFX_HW_ICL))
@@ -1816,10 +1820,6 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             iterationStart += pIter->m_numFramesToEncode;
             iterations.push_back(pIter);
         }
-
-        // run the test
-        MFXInit(); TS_CHECK_MFX;
-        Load();
 
         // prepare bitstream checker
         BitstreamChecker bs(&iterations, pInputSurfaces, tc.type, id);
