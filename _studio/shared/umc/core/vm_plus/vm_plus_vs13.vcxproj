@@ -255,7 +255,6 @@
     <ClCompile Include="src\umc_event.cpp" />
     <ClCompile Include="src\umc_malloc.cpp" />
     <ClCompile Include="src\umc_mmap.cpp" />
-    <ClCompile Include="src\umc_pendulum.cpp" />
     <ClCompile Include="src\umc_semaphore.cpp" />
     <ClCompile Include="src\umc_sys_info.cpp" />
     <ClCompile Include="src\umc_thread.cpp" />
@@ -266,7 +265,6 @@
     <ClInclude Include="include\umc_event.h" />
     <ClInclude Include="include\umc_malloc.h" />
     <ClInclude Include="include\umc_mmap.h" />
-    <ClInclude Include="include\umc_pendulum.h" />
     <ClInclude Include="include\umc_semaphore.h" />
     <ClInclude Include="include\umc_sys_info.h" />
     <ClInclude Include="include\umc_thread.h" />
