@@ -31,18 +31,32 @@ File Name: mfxdefs.h
 #define __MFXDEFS_H__
 
 #define MFX_VERSION_MAJOR 1
-#define MFX_VERSION_MINOR 26
+#define MFX_VERSION_MINOR 25
 
+// MFX_VERSION_NEXT is always +1 from last public release
+// may be enforced by MFX_VERSION_USE_LATEST define
+// if MFX_VERSION_USE_LATEST is defined  MFX_VERSION is ignored
 
-#if !defined(MFX_VERSION) && !defined(MFX_VERSION_USE_LATEST)
-#define MFX_VERSION (MFX_VERSION_MAJOR * 1000 + MFX_VERSION_MINOR)
+#define MFX_VERSION_NEXT (MFX_VERSION_MAJOR * 1000 + MFX_VERSION_MINOR + 1)
+
+// MFX_VERSION - version of API that 'assumed' by build may be provided externally
+// if it omitted then latest stable API derived from Major.Minor is assumed
+
+#if !defined (OPENSOURCE)
+    #define MFX_VERSION_USE_LATEST
 #endif
 
-#define MFX_VERSION_NEXT   1026
-
-#if defined(MFX_VERSION_USE_LATEST)
-#define MFX_VERSION MFX_VERSION_NEXT
+#if !defined(MFX_VERSION)
+  #if defined(MFX_VERSION_USE_LATEST)
+    #define MFX_VERSION MFX_VERSION_NEXT
+  #else
+    #define MFX_VERSION (MFX_VERSION_MAJOR * 1000 + MFX_VERSION_MINOR)
+  #endif
+#else
+  #undef MFX_VERSION_MINOR
+  #define MFX_VERSION_MINOR ((MFX_VERSION) % 1000)
 #endif
+
 
 #ifdef __cplusplus
 extern "C"

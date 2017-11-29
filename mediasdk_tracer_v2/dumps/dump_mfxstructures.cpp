@@ -279,7 +279,7 @@ std::string DumpContext::dump(const std::string structName, const mfxFrameAllocR
     else
         str += structName + ".mids=" + "NULL" + "\n";
     str += structName + ".NumFrameActual=" + ToString(frameAllocResponse.NumFrameActual) + "\n";
-#if (MFX_VERSION >= 1025)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     str += structName + ".MemType=" + ToString(frameAllocResponse.MemType) + "\n";
 #else
     str += structName + ".reserved2=" + ToString(frameAllocResponse.reserved2) + "\n";
@@ -1285,6 +1285,82 @@ std::string DumpContext::dump(const std::string structName, const  mfxExtDecVide
     return str;
 }
 
+#if (MFX_VERSION >= 1025)
+std::string DumpContext::dump(const std::string structName, const  mfxExtMasteringDisplayColourVolume &_struct) {
+    std::string str;
+    str += dump(structName + ".Header", _struct.Header) + "\n";
+    str += structName + ".InsertPayloadToggle=" + ToString(_struct.InsertPayloadToggle) + "\n";
+    for (int i = 0; i < 3; i++) {
+        str += structName + ".DisplayPrimariesX[" + ToString(i) + "]=" + ToString(_struct.DisplayPrimariesX[i]) + "\n";
+        str += structName + ".DisplayPrimariesY[" + ToString(i) + "]=" + ToString(_struct.DisplayPrimariesY[i]) + "\n";
+    }
+    str += structName + ".WhitePointX=" + ToString(_struct.WhitePointX) + "\n";
+    str += structName + ".WhitePointY=" + ToString(_struct.WhitePointY) + "\n";
+    str += structName + ".MaxDisplayMasteringLuminance=" + ToString(_struct.MaxDisplayMasteringLuminance) + "\n";
+    str += structName + ".MinDisplayMasteringLuminance=" + ToString(_struct.MinDisplayMasteringLuminance) + "\n";
+
+    DUMP_FIELD_RESERVED(reserved);
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const  mfxExtContentLightLevelInfo &_struct) {
+    std::string str;
+    str += dump(structName + ".Header", _struct.Header) + "\n";
+    str += structName + ".InsertPayloadToggle=" + ToString(_struct.InsertPayloadToggle) + "\n";
+    str += structName + ".MaxContentLightLevel=" + ToString(_struct.MaxContentLightLevel) + "\n";
+    str += structName + ".MaxPicAverageLightLevel=" + ToString(_struct.MaxPicAverageLightLevel) + "\n";
+
+    DUMP_FIELD_RESERVED(reserved);
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const  mfxExtMultiFrameParam &_struct) {
+    std::string str;
+    str += dump(structName + ".Header", _struct.Header) + "\n";
+    str += structName + ".MFMode=" + ToString(_struct.MFMode) + "\n";
+    str += structName + ".MaxNumFrames=" + ToString(_struct.MaxNumFrames) + "\n";
+
+    DUMP_FIELD_RESERVED(reserved);
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const  mfxExtMultiFrameControl &_struct) {
+    std::string str;
+    str += dump(structName + ".Header", _struct.Header) + "\n";
+    str += structName + ".Timeout=" + ToString(_struct.Timeout) + "\n";
+    str += structName + ".Flush=" + ToString(_struct.Flush) + "\n";
+
+    DUMP_FIELD_RESERVED(reserved);
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const  mfxExtEncodedUnitsInfo &_struct) {
+    std::string str;
+    str += dump(structName + ".Header", _struct.Header) + "\n";
+    str += structName + ".NumUnitsAlloc=" + ToString(_struct.NumUnitsAlloc) + "\n";
+    str += structName + ".NumUnitsEncoded=" + ToString(_struct.NumUnitsEncoded) + "\n";
+
+    if (_struct.UnitInfo != NULL)
+    {
+        int count = min(_struct.NumUnitsEncoded, _struct.NumUnitsAlloc);
+        for (int i = 0; i < count; i++)
+        {
+            str += structName + ".UnitInfo[" + ToString(i) + "].Type=" + ToString(_struct.UnitInfo[i].Type) + "\n";
+            str += structName + ".UnitInfo[" + ToString(i) + "].Offset=" + ToString(_struct.UnitInfo[i].Offset) + "\n";
+            str += structName + ".UnitInfo[" + ToString(i) + "].Size=" + ToString(_struct.UnitInfo[i].Size) + "\n";
+        }
+    }
+    else
+    {
+        str += structName + ".UnitInfo=NULL\n";
+    }
+
+    DUMP_FIELD_RESERVED(reserved);
+    return str;
+}
+
+#endif
+
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
 
 std::string DumpContext::dump(const std::string structName, const  mfxVP9SegmentParam &_struct)
@@ -1361,79 +1437,6 @@ std::string DumpContext::dump(const std::string structName, const  mfxExtVP9Para
     DUMP_FIELD(NumTileRows);
     DUMP_FIELD(NumTileColumns);
 
-    return str;
-}
-
-std::string DumpContext::dump(const std::string structName, const  mfxExtMasteringDisplayColourVolume &_struct) {
-    std::string str;
-    str += dump(structName + ".Header", _struct.Header) + "\n";
-    str += structName + ".InsertPayloadToggle=" + ToString(_struct.InsertPayloadToggle) + "\n";
-    for (int i = 0; i < 3; i++) {
-        str += structName + ".DisplayPrimariesX[" + ToString(i) + "]=" + ToString(_struct.DisplayPrimariesX[i]) + "\n";
-        str += structName + ".DisplayPrimariesY[" + ToString(i) + "]=" + ToString(_struct.DisplayPrimariesY[i]) + "\n";
-    }
-    str += structName + ".WhitePointX=" + ToString(_struct.WhitePointX) + "\n";
-    str += structName + ".WhitePointY=" + ToString(_struct.WhitePointY) + "\n";
-    str += structName + ".MaxDisplayMasteringLuminance=" + ToString(_struct.MaxDisplayMasteringLuminance) + "\n";
-    str += structName + ".MinDisplayMasteringLuminance=" + ToString(_struct.MinDisplayMasteringLuminance) + "\n";
-
-    DUMP_FIELD_RESERVED(reserved);
-    return str;
-}
-
-std::string DumpContext::dump(const std::string structName, const  mfxExtContentLightLevelInfo &_struct) {
-    std::string str;
-    str += dump(structName + ".Header", _struct.Header) + "\n";
-    str += structName + ".InsertPayloadToggle=" + ToString(_struct.InsertPayloadToggle) + "\n";
-    str += structName + ".MaxContentLightLevel=" + ToString(_struct.MaxContentLightLevel) + "\n";
-    str += structName + ".MaxPicAverageLightLevel=" + ToString(_struct.MaxPicAverageLightLevel) + "\n";
-
-    DUMP_FIELD_RESERVED(reserved);
-    return str;
-}
-
-std::string DumpContext::dump(const std::string structName, const  mfxExtMultiFrameParam &_struct) {
-    std::string str;
-    str += dump(structName + ".Header", _struct.Header) + "\n";
-    str += structName + ".MFMode=" + ToString(_struct.MFMode) + "\n";
-    str += structName + ".MaxNumFrames=" + ToString(_struct.MaxNumFrames) + "\n";
-
-    DUMP_FIELD_RESERVED(reserved);
-    return str;
-}
-
-std::string DumpContext::dump(const std::string structName, const  mfxExtMultiFrameControl &_struct) {
-    std::string str;
-    str += dump(structName + ".Header", _struct.Header) + "\n";
-    str += structName + ".Timeout=" + ToString(_struct.Timeout) + "\n";
-    str += structName + ".Flush=" + ToString(_struct.Flush) + "\n";
-
-    DUMP_FIELD_RESERVED(reserved);
-    return str;
-}
-
-std::string DumpContext::dump(const std::string structName, const  mfxExtEncodedUnitsInfo &_struct) {
-    std::string str;
-    str += dump(structName + ".Header", _struct.Header) + "\n";
-    str += structName + ".NumUnitsAlloc="    + ToString(_struct.NumUnitsAlloc)    + "\n";
-    str += structName + ".NumUnitsEncoded="  + ToString(_struct.NumUnitsEncoded)  + "\n";
-
-    if(_struct.UnitInfo != NULL)
-    {
-        int count = min(_struct.NumUnitsEncoded, _struct.NumUnitsAlloc);
-        for (int i = 0; i < count; i++)
-        {
-            str += structName + ".UnitInfo[" + ToString(i) + "].Type="   + ToString(_struct.UnitInfo[i].Type)   + "\n";
-            str += structName + ".UnitInfo[" + ToString(i) + "].Offset=" + ToString(_struct.UnitInfo[i].Offset) + "\n";
-            str += structName + ".UnitInfo[" + ToString(i) + "].Size="   + ToString(_struct.UnitInfo[i].Size)   + "\n";
-        }
-    }
-    else
-    {
-        str += structName + ".UnitInfo=NULL\n";
-    }
-
-    DUMP_FIELD_RESERVED(reserved);
     return str;
 }
 
