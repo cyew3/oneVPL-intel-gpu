@@ -365,8 +365,8 @@ public:
         mfxStatus mfxRes;
 
         // call the overweighted version
-        mfxRes = EncodeFrameCheck(ctrl, surface, bs, reordered_surface, pInternalParams, pEntryPoints, numEntryPoints);
-
+        mfxRes = EncodeFrameCheck(ctrl, surface, bs, reordered_surface, pInternalParams, pEntryPoints);
+        numEntryPoints = 1;
         return mfxRes;
     }
     virtual
