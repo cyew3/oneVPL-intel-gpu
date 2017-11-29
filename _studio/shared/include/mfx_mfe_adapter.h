@@ -20,7 +20,6 @@
 #include "vm_cond.h"
 #include "vm_time.h"
 #include <mfxstructures.h>
-#define MFE_UNIFIED
 
 class MFEVAAPIEncoder
 {
@@ -89,7 +88,7 @@ private:
     vm_mutex    m_mfe_guard;
 
     VADisplay      m_vaDisplay;
-    VAMFEContextID m_mfe_context;
+    VAMFContextID  m_mfe_context;
 
     // a pool (heap) of objects
     std::list<m_stream_ids_t> m_streams_pool;
@@ -116,7 +115,7 @@ private:
     mfxU32 m_framesCollected;
 
     // We need contexts extracted from m_toSubmit to
-    // place to a linear vector to pass them to vaMFESubmit
+    // place to a linear vector to pass them to vaMFSubmit
     std::vector<VAContextID> m_contexts;
     // store iterators to particular items
     std::vector<StreamsIter_t> m_streams;
@@ -125,16 +124,6 @@ private:
 
     // currently up-to-to 3 frames worth combining
     static const mfxU32 MAX_FRAMES_TO_COMBINE = 3;
-#ifndef MFE_UNIFIED
-    // symbol is pointed by  VPG_EXT_VA_CREATE_MFECONTEXT
-    vaExtCreateMfeContext vaCreateMFEContext;
-    // symbol is pointed by  VPG_EXT_VA_ADD_CONTEXT
-    vaExtAddContext vaAddContext;
-    // symbol is pointed by  VPG_EXT_VA_RELEASE_CONTEXT
-    vaExtReleaseContext vaReleaseContext;
-    // symbol is pointed by  VPG_EXT_VA_MFE_SUBMIT
-    vaExtMfeSubmit vaMFESubmit;
-#endif
 };
 #endif // MFX_VA_LINUX && MFX_ENABLE_MFE
 

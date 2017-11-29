@@ -33,12 +33,6 @@ MFEVAAPIEncoder::MFEVAAPIEncoder() :
     , m_framesToCombine(0)
     , m_maxFramesToCombine(0)
     , m_framesCollected(0)
-#ifndef MFE_UNIFIED
-    , vaCreateMFEContext(NULL)
-    , vaAddContext(NULL)
-    , vaReleaseContext(NULL)
-    , vaMFESubmit(NULL)
-#endif
 {
     vm_cond_set_invalid(&m_mfe_wait);
     vm_mutex_set_invalid(&m_mfe_guard);
@@ -103,34 +97,7 @@ mfxStatus MFEVAAPIEncoder::Create(mfxExtMultiFrameParam  const & par, VADisplay 
 
     m_streams_pool.clear();
     m_toSubmit.clear();
-#ifndef MFE_UNIFIED
-    VADriverContextP ctx = CTX(vaDisplay);
-    void* handle = ctx->handle;
 
-    if (handle)
-    {
-        vaCreateMFEContext = (vaExtCreateMfeContext)dlsym(handle, VPG_EXT_VA_CREATE_MFECONTEXT);
-        MFX_CHECK_NULL_PTR1(vaCreateMFEContext);
-        vaAddContext = (vaExtAddContext)dlsym(handle, VPG_EXT_VA_ADD_CONTEXT);
-        MFX_CHECK_NULL_PTR1(vaAddContext);
-        vaReleaseContext = (vaExtReleaseContext)dlsym(handle, VPG_EXT_VA_RELEASE_CONTEXT);
-        MFX_CHECK_NULL_PTR1(vaReleaseContext);
-        vaMFESubmit = (vaExtMfeSubmit)dlsym(handle, VPG_EXT_VA_MFE_SUBMIT);
-        MFX_CHECK_NULL_PTR1(vaMFESubmit);
-
-        VAStatus vaSts = vaCreateMFEContext(m_vaDisplay, &m_mfe_context);
-        if (VA_STATUS_SUCCESS == vaSts)
-            return MFX_ERR_NONE;
-        else if (VA_STATUS_ERROR_UNIMPLEMENTED == vaSts)
-            return MFX_ERR_UNSUPPORTED;
-        else
-            return MFX_ERR_DEVICE_FAILED;
-    }
-    else
-    {
-        return MFX_ERR_DEVICE_FAILED;
-    }
-#else
     VAStatus vaSts = vaCreateMFContext(m_vaDisplay, &m_mfe_context);
     if (VA_STATUS_SUCCESS == vaSts)
         return MFX_ERR_NONE;
@@ -138,17 +105,15 @@ mfxStatus MFEVAAPIEncoder::Create(mfxExtMultiFrameParam  const & par, VADisplay 
         return MFX_ERR_UNSUPPORTED;
     else
         return MFX_ERR_DEVICE_FAILED;
-#endif
+
 }
 
 mfxStatus MFEVAAPIEncoder::Join(VAContextID ctx, bool doubleField)
 {
     vm_mutex_lock(&m_mfe_guard);//need to protect in case there are streams added/removed in runtime.
-#ifndef MFE_UNIFIED
-    VAStatus vaSts = vaAddContext(m_vaDisplay, ctx, m_mfe_context);
-#else
+
     VAStatus vaSts = vaMFAddContext(m_vaDisplay, m_mfe_context, ctx);
-#endif
+
     mfxStatus sts = MFX_ERR_NONE;
     switch (vaSts)
     {
@@ -193,11 +158,9 @@ mfxStatus MFEVAAPIEncoder::Disjoin(VAContextID ctx)
 {
     vm_mutex_lock(&m_mfe_guard);//need to protect in case there are streams added/removed in runtime
     std::map<VAContextID, StreamsIter_t>::iterator iter = m_streamsMap.find(ctx);
-#ifndef MFE_UNIFIED
-    VAStatus vaSts = vaReleaseContext(m_vaDisplay, ctx, m_mfe_context);
-#else
+
     VAStatus vaSts = vaMFReleaseContext(m_vaDisplay, m_mfe_context, ctx);
-#endif
+
     if(iter == m_streamsMap.end())
     {
         vm_mutex_unlock(&m_mfe_guard);
@@ -217,11 +180,7 @@ mfxStatus MFEVAAPIEncoder::Destroy()
 /* Disabled for now in case driver doesn't support properly.
     for(StreamsIter_t it = m_streams_pool.begin();it == m_streams_pool.end(); it++)
     {
-#ifndef MFE_UNIFIED
-        VAStatus vaSts = vaReleaseContext(m_vaDisplay, it->ctx, m_mfe_context);
-#else
         VAStatus vaSts = vaMFReleaseContext(m_vaDisplay, m_mfe_context, it->ctx);
-#endif
     }
 */
     VAStatus vaSts = vaDestroyContext(m_vaDisplay, VAContextID(m_mfe_context));
@@ -232,12 +191,7 @@ mfxStatus MFEVAAPIEncoder::Destroy()
     vm_cond_destroy(&m_mfe_wait);
     m_streams_pool.clear();
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-#ifndef MFE_UNIFIED
-    vaCreateMFEContext = NULL;
-    vaAddContext = NULL;
-    vaReleaseContext = NULL;
-    vaMFESubmit = NULL;
-#endif
+
     return MFX_ERR_NONE;
 }
 
@@ -351,13 +305,9 @@ mfxStatus MFEVAAPIEncoder::Submit(VAContextID context, vm_tick timeToWait)
         }
         else
         {
-#ifndef MFE_UNIFIED
-            VAStatus vaSts = vaMFESubmit(m_vaDisplay, m_mfe_context,
-                                         &m_contexts[0], m_contexts.size());
-#else
             VAStatus vaSts = vaMFSubmit(m_vaDisplay, m_mfe_context,
                                          &m_contexts[0], m_contexts.size());
-#endif
+
             mfxStatus tmp_res = VA_STATUS_SUCCESS == vaSts ? MFX_ERR_NONE : MFX_ERR_DEVICE_FAILED;
             for (std::vector<StreamsIter_t>::iterator it = m_streams.begin();
                  it != m_streams.end(); ++it)
