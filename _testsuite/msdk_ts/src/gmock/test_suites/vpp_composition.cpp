@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
 
 File Name: vpp_composition.cpp
 \* ****************************************************************************** */
@@ -66,7 +66,7 @@ namespace vpp_composition
     };
 
     //!\brief Main test class
-    class TestSuite:tsVideoVPP
+    class TestSuite : protected tsVideoVPP
     {
     public:
         //! \brief A constructor
@@ -179,57 +179,6 @@ namespace vpp_composition
           { COMP_PAR, &tsStruct::mfxVPPCompInputStream.PixelAlphaEnable, 0 },
         }
         },
-
-        {/*04*/ MFX_ERR_NONE, MFX_ERR_NONE,
-        { { MFX_PAR,  &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_AYUV },
-          { MFX_PAR,  &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_AYUV },
-          { MFX_PAR,  &tsStruct::mfxExtVPPComposite.NumInputStream, 1 },
-          { MFX_PAR,  &tsStruct::mfxExtVPPComposite.Y, 50 },
-          { MFX_PAR,  &tsStruct::mfxExtVPPComposite.U, 50 },
-          { MFX_PAR,  &tsStruct::mfxExtVPPComposite.V, 50 },
-          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstX, 5 },
-          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstY, 5 },
-          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstW, 50 },
-          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstH, 50 },
-          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.GlobalAlphaEnable, 0 },
-          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.LumaKeyEnable, 0 },
-          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.PixelAlphaEnable, 0 },
-        }
-        },
-
-        {/*05*/ MFX_ERR_NONE, MFX_ERR_NONE,
-        { { MFX_PAR,  &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_Y210 },
-          { MFX_PAR,  &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_Y210 },
-          { MFX_PAR,  &tsStruct::mfxExtVPPComposite.NumInputStream, 1 },
-          { MFX_PAR,  &tsStruct::mfxExtVPPComposite.Y, 50 },
-          { MFX_PAR,  &tsStruct::mfxExtVPPComposite.U, 50 },
-          { MFX_PAR,  &tsStruct::mfxExtVPPComposite.V, 50 },
-          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstX, 5 },
-          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstY, 5 },
-          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstW, 50 },
-          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstH, 50 },
-          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.GlobalAlphaEnable, 0 },
-          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.LumaKeyEnable, 0 },
-          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.PixelAlphaEnable, 0 },
-        }
-        },
-
-        {/*06*/ MFX_ERR_NONE, MFX_ERR_NONE,
-        { { MFX_PAR,  &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_Y410 },
-          { MFX_PAR,  &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_Y410 },
-          { MFX_PAR,  &tsStruct::mfxExtVPPComposite.NumInputStream, 1 },
-          { MFX_PAR,  &tsStruct::mfxExtVPPComposite.Y, 50 },
-          { MFX_PAR,  &tsStruct::mfxExtVPPComposite.U, 50 },
-          { MFX_PAR,  &tsStruct::mfxExtVPPComposite.V, 50 },
-          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstX, 5 },
-          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstY, 5 },
-          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstW, 50 },
-          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstH, 50 },
-          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.GlobalAlphaEnable, 0 },
-          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.LumaKeyEnable, 0 },
-          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.PixelAlphaEnable, 0 },
-        }
-        },
     };
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::test_case[0]);
 
@@ -245,10 +194,12 @@ namespace vpp_composition
         mfxStatus sts_query = tc.q_sts,
                   sts_init  = tc.i_sts;
 
-        if (g_tsHWtype < MFX_HW_CNL
-            && (m_par.vpp.In.FourCC == MFX_FOURCC_AYUV || m_par.vpp.Out.FourCC == MFX_FOURCC_AYUV
-            ||  m_par.vpp.In.FourCC == MFX_FOURCC_Y210 || m_par.vpp.Out.FourCC == MFX_FOURCC_Y210
-            ||  m_par.vpp.In.FourCC == MFX_FOURCC_Y410 || m_par.vpp.Out.FourCC == MFX_FOURCC_Y410))
+        if (   g_tsHWtype < MFX_HW_CNL
+            && (   (MFX_FOURCC_UYVY == m_par.vpp.In.FourCC || MFX_FOURCC_UYVY == m_par.vpp.Out.FourCC)
+                || (MFX_FOURCC_AYUV == m_par.vpp.In.FourCC || MFX_FOURCC_AYUV == m_par.vpp.Out.FourCC)
+                || (MFX_FOURCC_P010 == m_par.vpp.In.FourCC || MFX_FOURCC_P010 == m_par.vpp.Out.FourCC)
+                || (MFX_FOURCC_Y210 == m_par.vpp.In.FourCC || MFX_FOURCC_Y210 == m_par.vpp.Out.FourCC)
+                || (MFX_FOURCC_Y410 == m_par.vpp.In.FourCC || MFX_FOURCC_Y410 == m_par.vpp.Out.FourCC)))
         {
             if ((m_par.vpp.In.FourCC == MFX_FOURCC_AYUV || m_par.vpp.Out.FourCC == MFX_FOURCC_AYUV)
                 && g_tsOSFamily == MFX_OS_FAMILY_WINDOWS && g_tsImpl & MFX_IMPL_VIA_D3D11)
@@ -276,4 +227,188 @@ namespace vpp_composition
     }
     //! \brief Regs test suite into test system
     TS_REG_TEST_SUITE_CLASS(vpp_composition);
+}
+
+namespace vpp_8b_420_yv12_composition
+{
+    class TestSuite : public vpp_composition::TestSuite
+    {
+    public:
+        TestSuite() : vpp_composition::TestSuite()
+        {
+            m_par.vpp.In.FourCC = MFX_FOURCC_YV12;
+            m_par.vpp.In.BitDepthLuma = 8;
+            m_par.vpp.In.BitDepthChroma = 8;
+            m_par.vpp.In.Shift = 0;
+            m_par.vpp.In.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+
+            m_par.vpp.Out.FourCC = MFX_FOURCC_NV12;
+            m_par.vpp.Out.BitDepthLuma = 8;
+            m_par.vpp.Out.BitDepthChroma = 8;
+            m_par.vpp.Out.Shift = 0;
+            m_par.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+        }
+    };
+    TS_REG_TEST_SUITE_CLASS(vpp_8b_420_yv12_composition);
+}
+
+namespace vpp_8b_422_uyvy_composition
+{
+    class TestSuite : public vpp_composition::TestSuite
+    {
+    public:
+        TestSuite() : vpp_composition::TestSuite()
+        {
+            m_par.vpp.In.FourCC = MFX_FOURCC_UYVY;
+            m_par.vpp.In.BitDepthLuma = 8;
+            m_par.vpp.In.BitDepthChroma = 8;
+            m_par.vpp.In.Shift = 0;
+            m_par.vpp.In.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+
+            m_par.vpp.Out.FourCC = MFX_FOURCC_UYVY;
+            m_par.vpp.Out.BitDepthLuma = 8;
+            m_par.vpp.Out.BitDepthChroma = 8;
+            m_par.vpp.Out.Shift = 0;
+            m_par.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+        }
+    };
+    TS_REG_TEST_SUITE_CLASS(vpp_8b_422_uyvy_composition);
+}
+
+namespace vpp_8b_422_yuy2_composition
+{
+    class TestSuite : public vpp_composition::TestSuite
+    {
+    public:
+        TestSuite() : vpp_composition::TestSuite()
+        {
+            m_par.vpp.In.FourCC = MFX_FOURCC_YUY2;
+            m_par.vpp.In.BitDepthLuma = 8;
+            m_par.vpp.In.BitDepthChroma = 8;
+            m_par.vpp.In.Shift = 0;
+            m_par.vpp.In.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+
+            m_par.vpp.Out.FourCC = MFX_FOURCC_YUY2;
+            m_par.vpp.Out.BitDepthLuma = 8;
+            m_par.vpp.Out.BitDepthChroma = 8;
+            m_par.vpp.Out.Shift = 0;
+            m_par.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+        }
+    };
+    TS_REG_TEST_SUITE_CLASS(vpp_8b_422_yuy2_composition);
+}
+
+namespace vpp_8b_444_ayuv_composition
+{
+    class TestSuite : public vpp_composition::TestSuite
+    {
+    public:
+        TestSuite() : vpp_composition::TestSuite()
+        {
+            m_par.vpp.In.FourCC = MFX_FOURCC_AYUV;
+            m_par.vpp.In.BitDepthLuma = 8;
+            m_par.vpp.In.BitDepthChroma = 8;
+            m_par.vpp.In.Shift = 0;
+            m_par.vpp.In.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+
+            m_par.vpp.Out.FourCC = MFX_FOURCC_AYUV;
+            m_par.vpp.Out.BitDepthLuma = 8;
+            m_par.vpp.Out.BitDepthChroma = 8;
+            m_par.vpp.Out.Shift = 0;
+            m_par.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+        }
+    };
+    TS_REG_TEST_SUITE_CLASS(vpp_8b_444_ayuv_composition);
+}
+
+namespace vpp_8b_444_rgb4_composition
+{
+    class TestSuite : public vpp_composition::TestSuite
+    {
+    public:
+        TestSuite() : vpp_composition::TestSuite()
+        {
+            m_par.vpp.In.FourCC = MFX_FOURCC_RGB4;
+            m_par.vpp.In.BitDepthLuma = 8;
+            m_par.vpp.In.BitDepthChroma = 8;
+            m_par.vpp.In.Shift = 0;
+            m_par.vpp.In.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+
+            m_par.vpp.Out.FourCC = MFX_FOURCC_RGB4;
+            m_par.vpp.Out.BitDepthLuma = 8;
+            m_par.vpp.Out.BitDepthChroma = 8;
+            m_par.vpp.Out.Shift = 0;
+            m_par.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+        }
+    };
+    TS_REG_TEST_SUITE_CLASS(vpp_8b_444_rgb4_composition);
+}
+
+namespace vpp_10b_420_p010_composition
+{
+    class TestSuite : public vpp_composition::TestSuite
+    {
+    public:
+        TestSuite() : vpp_composition::TestSuite()
+        {
+            m_par.vpp.In.FourCC = MFX_FOURCC_P010;
+            m_par.vpp.In.BitDepthLuma = 10;
+            m_par.vpp.In.BitDepthChroma = 10;
+            m_par.vpp.In.Shift = 1;
+            m_par.vpp.In.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+
+            m_par.vpp.Out.FourCC = MFX_FOURCC_P010;
+            m_par.vpp.Out.BitDepthLuma = 10;
+            m_par.vpp.Out.BitDepthChroma = 10;
+            m_par.vpp.Out.Shift = 1;
+            m_par.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+        }
+    };
+    TS_REG_TEST_SUITE_CLASS(vpp_10b_420_p010_composition);
+}
+
+namespace vpp_10b_422_y210_composition
+{
+    class TestSuite : public vpp_composition::TestSuite
+    {
+    public:
+        TestSuite() : vpp_composition::TestSuite()
+        {
+            m_par.vpp.In.FourCC = MFX_FOURCC_Y210;
+            m_par.vpp.In.BitDepthLuma = 10;
+            m_par.vpp.In.BitDepthChroma = 10;
+            m_par.vpp.In.Shift = 1;
+            m_par.vpp.In.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+
+            m_par.vpp.Out.FourCC = MFX_FOURCC_Y210;
+            m_par.vpp.Out.BitDepthLuma = 10;
+            m_par.vpp.Out.BitDepthChroma = 10;
+            m_par.vpp.Out.Shift = 1;
+            m_par.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+        }
+    };
+    TS_REG_TEST_SUITE_CLASS(vpp_10b_422_y210_composition);
+}
+
+namespace vpp_10b_444_y410_composition
+{
+    class TestSuite : public vpp_composition::TestSuite
+    {
+    public:
+        TestSuite() : vpp_composition::TestSuite()
+        {
+            m_par.vpp.In.FourCC = MFX_FOURCC_Y410;
+            m_par.vpp.In.BitDepthLuma = 10;
+            m_par.vpp.In.BitDepthChroma = 10;
+            m_par.vpp.In.Shift = 0;
+            m_par.vpp.In.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+
+            m_par.vpp.Out.FourCC = MFX_FOURCC_Y410;
+            m_par.vpp.Out.BitDepthLuma = 10;
+            m_par.vpp.Out.BitDepthChroma = 10;
+            m_par.vpp.Out.Shift = 0;
+            m_par.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+        }
+    };
+    TS_REG_TEST_SUITE_CLASS(vpp_10b_444_y410_composition);
 }
