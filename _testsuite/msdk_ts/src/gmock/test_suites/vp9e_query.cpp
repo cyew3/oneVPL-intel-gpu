@@ -416,6 +416,24 @@ int TestSuite::RunTest(const tc_struct& tc, unsigned int fourcc_id)
         }
     }
 
+    if (0 == memcmp(m_uid->Data, MFX_PLUGINID_VP9E_HW.Data, sizeof(MFX_PLUGINID_VP9E_HW.Data)))
+    {
+        // MFX_PLUGIN_VP9E_HW unsupported on platform less CNL(NV12) and ICL(P010, AYUV, Y410)
+        if ((fourcc_id == MFX_FOURCC_NV12 && g_tsHWtype < MFX_HW_CNL)
+            || ((fourcc_id == MFX_FOURCC_P010 || fourcc_id == MFX_FOURCC_AYUV
+                || fourcc_id == MFX_FOURCC_Y410) && g_tsHWtype < MFX_HW_ICL))
+        {
+            g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
+            g_tsLog << "WARNING: Unsupported HW Platform!\n";
+            Query();
+            return 0;
+        }
+    }
+    else {
+        g_tsLog << "WARNING: loading encoder from plugin failed!\n";
+        return 0;
+    }
+
     if (tc.type == EXT_BUFF)
     {
         m_pPar->NumExtParam = 1;
@@ -439,24 +457,6 @@ int TestSuite::RunTest(const tc_struct& tc, unsigned int fourcc_id)
     }
 
     g_tsStatus.expect(tc.sts);
-
-    if (0 == memcmp(m_uid->Data, MFX_PLUGINID_VP9E_HW.Data, sizeof(MFX_PLUGINID_VP9E_HW.Data)))
-    {
-        // MFX_PLUGIN_VP9E_HW unsupported on platform less CNL(NV12) and ICL(P010, AYUV, Y410)
-        if ((fourcc_id == MFX_FOURCC_NV12 && g_tsHWtype < MFX_HW_CNL)
-            || ((fourcc_id == MFX_FOURCC_P010 || fourcc_id == MFX_FOURCC_AYUV
-                || fourcc_id == MFX_FOURCC_Y410) && g_tsHWtype < MFX_HW_ICL))
-        {
-            g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
-            g_tsLog << "WARNING: Unsupported HW Platform!\n";
-            Query();
-            return 0;
-        }
-    }
-    else {
-        g_tsLog << "WARNING: loading encoder from plugin failed!\n";
-        return 0;
-    }
 
     if (tc.type == EXT_BUFF)
     {

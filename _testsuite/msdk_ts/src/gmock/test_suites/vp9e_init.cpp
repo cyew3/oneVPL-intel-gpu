@@ -324,16 +324,6 @@ namespace vp9e_init
 
         InitAndSetAllocator();
 
-        if (tc.type == EXT_BUFF)
-        {
-            m_pPar->NumExtParam = 1;
-            m_pParOut->NumExtParam = 1;
-            m_pPar->ExtParam = NULL;
-            m_pParOut->ExtParam = NULL;
-        }
-
-        sts = tc.sts;
-
         if (0 == memcmp(m_uid->Data, MFX_PLUGINID_VP9E_HW.Data, sizeof(MFX_PLUGINID_VP9E_HW.Data)))
         {
             // MFX_PLUGIN_VP9E_HW unsupported on platform less CNL(NV12) and ICL(P010, AYUV, Y410)
@@ -351,6 +341,16 @@ namespace vp9e_init
             g_tsLog << "WARNING: loading encoder from plugin failed!\n";
             return 0;
         }
+
+        if (tc.type == EXT_BUFF)
+        {
+            m_pPar->NumExtParam = 1;
+            m_pParOut->NumExtParam = 1;
+            m_pPar->ExtParam = NULL;
+            m_pParOut->ExtParam = NULL;
+        }
+
+        sts = tc.sts;
 
         if (tc.type == EXT_BUFF)
         {
