@@ -110,11 +110,11 @@ function( get_folder folder )
 endfunction()
 
 function( get_mfx_version mfx_version_major mfx_version_minor )
-  file(STRINGS $ENV{MFX_HOME}/mdp_msdk-api/include/mfxdefs.h major REGEX "#define MFX_VERSION_MAJOR")
+  file(STRINGS $ENV{MFX_HOME}/mdp_msdk-api/include/mfxdefs.h major REGEX "#define MFX_VERSION_MAJOR" LIMIT_COUNT 1)
   if(major STREQUAL "") # old style version
      file(STRINGS $ENV{MFX_HOME}/mdp_msdk-api/include/mfxvideo.h major REGEX "#define MFX_VERSION_MAJOR")
   endif()
-  file(STRINGS $ENV{MFX_HOME}/mdp_msdk-api/include/mfxdefs.h minor REGEX "#define MFX_VERSION_MINOR")
+  file(STRINGS $ENV{MFX_HOME}/mdp_msdk-api/include/mfxdefs.h minor REGEX "#define MFX_VERSION_MINOR" LIMIT_COUNT 1)
   if(minor STREQUAL "") # old style version
      file(STRINGS $ENV{MFX_HOME}/mdp_msdk-api/include/mfxvideo.h minor REGEX "#define MFX_VERSION_MINOR")
   endif()
