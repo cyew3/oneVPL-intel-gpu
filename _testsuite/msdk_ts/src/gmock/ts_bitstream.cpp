@@ -241,7 +241,6 @@ mfxStatus tsBitstreamReaderIVF::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrame
     auto fh = reinterpret_cast<IVF_frame_header const*>(bs.Data + bs.DataOffset + bs.DataLength);
     frame_size = fh->frame_size;
 
-    bs.DataOffset += header_size;
     if(bs.MaxLength - bs.DataLength < frame_size)
     {
         return MFX_ERR_NOT_ENOUGH_BUFFER;
