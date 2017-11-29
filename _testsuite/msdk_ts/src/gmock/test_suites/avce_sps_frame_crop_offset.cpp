@@ -108,6 +108,11 @@ namespace avce_sps_frame_crop_offset
         TS_START;
         const tc_struct& tc = test_case[id];
 
+        if (g_tsOSFamily != MFX_OS_FAMILY_WINDOWS && tc.fourcc == MFX_FOURCC_RGB4) {
+            g_tsLog << "[ SKIPPED ] This test is only for windows platform\n";
+            return 0;
+        }
+
         m_par.mfx.FrameInfo.FourCC = tc.fourcc;
         m_par.mfx.FrameInfo.ChromaFormat = tc.chromaFormat;
         m_par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
