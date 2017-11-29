@@ -795,8 +795,9 @@ typedef struct {
     mfxU16      ScanType;                  /* For MPEG2 specifies transform coefficients scan pattern (see ScanType enum) */
     mfxU16      EncodedUnitsInfo;          /* tri-state option */
     mfxU16      EnableNalUnitType;         /* tri-state option */
+    mfxU16      ExtBrcAdaptiveLTR;         /* tri-state option for ExtBRC */
 
-    mfxU16      reserved[164];
+    mfxU16      reserved[163];
 #elif (MFX_VERSION >= 1025)
     mfxU16      reserved5[3];
 
