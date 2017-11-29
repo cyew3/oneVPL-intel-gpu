@@ -139,35 +139,4 @@ typedef struct _VAEncMiscParameterVP8SegmentMapParams
 } VAEncMiscParameterVP8SegmentMapParams;
 #endif // #ifdef MFX_ENABLE_VP8_VIDEO_ENCODE_HW
 
-
-/*======================= FEI ==================================*/
-#ifdef OPEN_SOURCE
-
-#define VA_ENC_FUNCTION_DEFAULT_INTEL 0x00000000
-#define VA_ENC_FUNCTION_ENC_INTEL     0x00000001
-#define VA_ENC_FUNCTION_PAK_INTEL     0x00000002
-#define VA_ENC_FUNCTION_ENC_PAK_INTEL 0x00000004
-
-#define VAEntrypointEncFEIIntel     1001
-#define VAEntrypointStatisticsIntel 1002
-
-#define VAEncMiscParameterTypeFEIFrameControlIntel 1001
-
-#define VAEncFEIMVBufferTypeIntel                   1001
-#define VAEncFEIModeBufferTypeIntel                 1002
-#define VAEncFEIDistortionBufferTypeIntel           1003
-#define VAEncFEIMBControlBufferTypeIntel            1004
-#define VAEncFEIMVPredictorBufferTypeIntel          1005
-#define VAStatsStatisticsParameterBufferTypeIntel   1006
-#define VAStatsStatisticsBufferTypeIntel            1007
-#define VAStatsMotionVectorBufferTypeIntel          1008
-#define VAStatsMVPredictorBufferTypeIntel           1009
-
-typedef struct _VAMotionVectorIntel {
-    short  mv0[2];
-    short  mv1[2];
-} VAMotionVectorIntel;
-
-#endif // OPEN_SOURCE
-
 #endif // __VAAPI_EXT_INTERFACE_H__
