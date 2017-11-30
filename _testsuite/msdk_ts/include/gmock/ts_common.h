@@ -204,20 +204,21 @@ namespace tsStruct
     class Field;
 }
 
-bool CompareParam(void* base, const tsStruct::Field& field, mfxU64 value);
-
-template <typename T>
-bool CompareParam(tsExtBufType<T> *base, const tsStruct::Field& field, mfxU64 value);
-
-template <typename T>
-bool CompareParam(tsExtBufType<T>& base, const tsStruct::Field& field, mfxU64 value);
-
 enum CompareLog
 {
     LOG_NOTHING,
     LOG_MISMATCH,
     LOG_EVERYTHING
 };
+
+bool CompareParam(void* base, const tsStruct::Field& field, mfxU64 value);
+
+template <typename T>
+bool CompareParam(tsExtBufType<T> *base, const tsStruct::Field& field, mfxU64 value, CompareLog log = LOG_MISMATCH);
+
+template <typename T>
+bool CompareParam(tsExtBufType<T>& base, const tsStruct::Field& field, mfxU64 value, CompareLog log = LOG_MISMATCH);
+
 template <typename TC_STRUCT, typename TYPE_ENUM, typename T>
 bool CompareParams(TC_STRUCT tc, T p, TYPE_ENUM type, CompareLog log = LOG_MISMATCH)
 {
@@ -226,7 +227,7 @@ bool CompareParams(TC_STRUCT tc, T p, TYPE_ENUM type, CompareLog log = LOG_MISMA
     {
         if (tc.set_par[i].f && tc.set_par[i].ext_type == type)
         {
-            bool m = CompareParam(p, *(tc.set_par[i].f), tc.set_par[i].v);
+            bool m = CompareParam(p, *(tc.set_par[i].f), tc.set_par[i].v, log);
             if (log == LOG_EVERYTHING || (m == false && log == LOG_MISMATCH))
             {
                 g_tsLog << "WARNING: CompareParams[" << i << "]." << tc.set_par[i].f->name << ( m ? "==":"!=" ) << tc.set_par[i].v << "\n";

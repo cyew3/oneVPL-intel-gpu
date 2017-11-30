@@ -17,7 +17,7 @@
 namespace vpp_reset
 {
 
-class TestSuite : tsVideoVPP, public tsSurfaceProcessor
+class TestSuite : protected tsVideoVPP, public tsSurfaceProcessor
 {
 public:
     TestSuite()
@@ -69,6 +69,8 @@ private:
 
         return MFX_ERR_NONE;
     }
+
+    bool isTcToSkip(const tc_struct& tc, tsExtBufType<mfxVideoParam>& par);
 };
 
 const TestSuite::tc_struct TestSuite::test_case[] =
@@ -99,7 +101,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {INIT, &tsStruct::mfxExtVPPDenoise.DenoiseFactor,   50},
             {INIT, &tsStruct::mfxExtVPPDetail.DetailFactor,     40},
             {INIT, &tsStruct::mfxExtVPPProcAmp.Brightness,      30},
-            {INIT, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_BOB},
+            {INIT, &tsStruct::mfxExtVPPDeinterlacing.Mode,      MFX_DEINTERLACING_BOB},
 
             {RESET, &tsStruct::mfxExtVPPDetail.DetailFactor,    80},
             {RESET, &tsStruct::mfxExtVPPDenoise.DenoiseFactor,  60},
@@ -248,7 +250,11 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     },
     {/*20*/ MFX_ERR_INVALID_VIDEO_PARAM,
         {
-            {RESET, &tsStruct::mfxVideoParam.vpp.Out.FourCC,    MFX_FOURCC_YV12},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.FourCC,         MFX_FOURCC_YV12},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.ChromaFormat,   MFX_CHROMAFORMAT_YUV420},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.BitDepthLuma,   8},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.BitDepthChroma, 8},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Shift,          0},
         },
         {}
     },
@@ -266,32 +272,162 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     },
     {/*23*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
         {
-            {RESET, &tsStruct::mfxVideoParam.vpp.In.FourCC,     MFX_FOURCC_RGB4},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.FourCC,          MFX_FOURCC_RGB4},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.ChromaFormat,   MFX_CHROMAFORMAT_YUV444},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma,   8},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 8},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.Shift,          0},
         },
         {}
     },
     {/*24*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
         {
-            {RESET, &tsStruct::mfxVideoParam.vpp.In.FourCC,     MFX_FOURCC_AYUV},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.FourCC,         MFX_FOURCC_AYUV},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.ChromaFormat,   MFX_CHROMAFORMAT_YUV444 },
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma,   8 },
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 8 },
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.Shift,          0 },
         },
         {},
     },
-    {/*25*/ MFX_ERR_INVALID_VIDEO_PARAM,
+    {/*25*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
         {
-            {RESET, &tsStruct::mfxVideoParam.vpp.Out.FourCC,    MFX_FOURCC_Y210},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.FourCC,         MFX_FOURCC_Y210},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.ChromaFormat,   MFX_CHROMAFORMAT_YUV422},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.BitDepthLuma,   10},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.BitDepthChroma, 10},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Shift,          1},
         },
         {},
         MFX_HW_ICL
     },
-    {/*26*/ MFX_ERR_INVALID_VIDEO_PARAM,
+    {/*26*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
         {
             {RESET, &tsStruct::mfxVideoParam.vpp.Out.FourCC,    MFX_FOURCC_Y410},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.ChromaFormat,   MFX_CHROMAFORMAT_YUV444},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.BitDepthLuma,   10},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.BitDepthChroma, 10},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Shift,          0},
         },
         {},
         MFX_HW_ICL
     },
+    {/*27*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+        {
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.FourCC,         MFX_FOURCC_YUY2},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.ChromaFormat,   MFX_CHROMAFORMAT_YUV422},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.BitDepthLuma,   8},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.BitDepthChroma, 8},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Shift,          0},
+        },
+        {},
+    },
+    {/*28*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+        {
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.FourCC,         MFX_FOURCC_UYVY},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.ChromaFormat,   MFX_CHROMAFORMAT_YUV422},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.BitDepthLuma,   8},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.BitDepthChroma, 8},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Shift,          0},
+        },
+        {},
+        MFX_HW_ICL
+    },
+    {/*29*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+        {
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.FourCC,         MFX_FOURCC_P010},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.ChromaFormat,   MFX_CHROMAFORMAT_YUV420},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.BitDepthLuma,   10},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.BitDepthChroma, 10},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Shift,          1},
+        },
+        {},
+    },
+    {/*30*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+        {
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.FourCC,         MFX_FOURCC_YV12},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.ChromaFormat,   MFX_CHROMAFORMAT_YUV420},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma,   8},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 8},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.Shift,          0},
+        },
+        {}
+    },
+    {/*31*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+        {
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.FourCC,          MFX_FOURCC_RGB4},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.ChromaFormat,   MFX_CHROMAFORMAT_YUV444},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.BitDepthLuma,   8},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.BitDepthChroma, 8},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Shift,          0},
+        },
+        {}
+    },
+    {/*32*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+        {
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.FourCC,         MFX_FOURCC_AYUV},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.ChromaFormat,   MFX_CHROMAFORMAT_YUV444 },
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.BitDepthLuma,   8 },
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.BitDepthChroma, 8 },
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Shift,          0 },
+        },
+        {},
+    },
+    {/*33*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+        {
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.FourCC,         MFX_FOURCC_Y210},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.ChromaFormat,   MFX_CHROMAFORMAT_YUV422},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma,   10},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 10},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.Shift,          1},
+        },
+        {},
+        MFX_HW_ICL
+    },
+    {/*34*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+        {
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.FourCC,         MFX_FOURCC_Y410},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.ChromaFormat,   MFX_CHROMAFORMAT_YUV444},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma,   10},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 10},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.Shift,          0},
+        },
+        {},
+        MFX_HW_ICL
+    },
+    {/*35*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+        {
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.FourCC,         MFX_FOURCC_YUY2},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.ChromaFormat,   MFX_CHROMAFORMAT_YUV422},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma,   8},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 8},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.Shift,          0},
+        },
+        {},
+    },
+    {/*36*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+        {
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.FourCC,         MFX_FOURCC_UYVY},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.ChromaFormat,   MFX_CHROMAFORMAT_YUV422},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma,   8},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 8},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.Shift,          0},
+        },
+        {},
+        MFX_HW_ICL
+    },
+    {/*37*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+        {
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.FourCC,         MFX_FOURCC_P010},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.ChromaFormat,   MFX_CHROMAFORMAT_YUV420},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma,   10},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 10},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.Shift,          1},
+        },
+        {},
+    },
 #if !defined(_WIN32)
-    {/*27*/ MFX_ERR_NONE,
+    {/*38*/ MFX_ERR_NONE,
         {
             {INIT,  &tsStruct::mfxExtVPPFieldProcessing.Mode,     MFX_VPP_COPY_FRAME},
 
@@ -331,16 +467,46 @@ void CreateEmptyBuffers(tsExtBufType<mfxVideoParam>& par, tsExtBufType<mfxVideoP
     }
 }
 
+bool TestSuite::isTcToSkip(const tc_struct& tc, tsExtBufType<mfxVideoParam>& par)
+{
+    if (par.vpp.In.FourCC == MFX_FOURCC_RGB4)
+    {
+        for (auto& sp : tc.set_par)
+        {
+            if (!sp.f)
+                break;
+
+            if (   sp.f->name.find("mfxExtVPPDenoise") != std::string::npos
+                || sp.f->name.find("mfxExtVPPDetail") != std::string::npos
+                || sp.f->name.find("mfxExtVPPProcAmp") != std::string::npos)
+            {
+                g_tsLog << "Filter incompatible with RGB - skip test case\n";
+                return true;
+            }
+        }
+    }
+
+    if (   tc.sts == MFX_ERR_NONE
+        || !CompareParams<const tc_struct&, decltype(RESET), decltype(par)>(tc, par, RESET, LOG_NOTHING))
+        return false;
+
+    g_tsLog << "Init parameters not changed - skip test case\n";
+    return true;
+}
+
 int TestSuite::RunTest(unsigned int id)
 {
     TS_START;
     const tc_struct& tc = test_case[id];
 
-    MFXInit();
-
     tsExtBufType<mfxVideoParam> def(m_par);
 
     SETPARS(&m_par, INIT);
+
+    if (isTcToSkip(tc, m_par))
+        throw tsSKIP;
+
+    MFXInit();
 
     CreateAllocators();
     SetFrameAllocator();
@@ -376,8 +542,8 @@ int TestSuite::RunTest(unsigned int id)
 
     //adjust expected status for
     mfxStatus expected = tc.sts;
-    if (tc.platform != MFX_HW_UNKNOWN && g_tsHWtype >= tc.platform)
-        expected = MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+    if (tc.platform != MFX_HW_UNKNOWN && g_tsHWtype < tc.platform)
+        expected = MFX_ERR_INVALID_VIDEO_PARAM;
 
     g_tsStatus.expect(expected);
     Reset(m_session, &par_reset);
@@ -451,5 +617,188 @@ int TestSuite::RunTest(unsigned int id)
 }
 
 TS_REG_TEST_SUITE_CLASS(vpp_reset);
+}
 
+namespace vpp_8b_420_yv12_reset
+{
+    class TestSuite : public vpp_reset::TestSuite
+    {
+    public:
+        TestSuite() : vpp_reset::TestSuite()
+        {
+            m_par.vpp.In.FourCC = MFX_FOURCC_YV12;
+            m_par.vpp.In.BitDepthLuma = 8;
+            m_par.vpp.In.BitDepthChroma = 8;
+            m_par.vpp.In.Shift = 0;
+            m_par.vpp.In.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+
+            m_par.vpp.Out.FourCC = MFX_FOURCC_NV12;
+            m_par.vpp.Out.BitDepthLuma = 8;
+            m_par.vpp.Out.BitDepthChroma = 8;
+            m_par.vpp.Out.Shift = 0;
+            m_par.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+        }
+    };
+    TS_REG_TEST_SUITE_CLASS(vpp_8b_420_yv12_reset);
+}
+
+namespace vpp_8b_422_uyvy_reset
+{
+    class TestSuite : public vpp_reset::TestSuite
+    {
+    public:
+        TestSuite() : vpp_reset::TestSuite()
+        {
+            m_par.vpp.In.FourCC = MFX_FOURCC_UYVY;
+            m_par.vpp.In.BitDepthLuma = 8;
+            m_par.vpp.In.BitDepthChroma = 8;
+            m_par.vpp.In.Shift = 0;
+            m_par.vpp.In.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+
+            m_par.vpp.Out.FourCC = MFX_FOURCC_UYVY;
+            m_par.vpp.Out.BitDepthLuma = 8;
+            m_par.vpp.Out.BitDepthChroma = 8;
+            m_par.vpp.Out.Shift = 0;
+            m_par.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+        }
+    };
+    TS_REG_TEST_SUITE_CLASS(vpp_8b_422_uyvy_reset);
+}
+
+namespace vpp_8b_422_yuy2_reset
+{
+    class TestSuite : public vpp_reset::TestSuite
+    {
+    public:
+        TestSuite() : vpp_reset::TestSuite()
+        {
+            m_par.vpp.In.FourCC = MFX_FOURCC_YUY2;
+            m_par.vpp.In.BitDepthLuma = 8;
+            m_par.vpp.In.BitDepthChroma = 8;
+            m_par.vpp.In.Shift = 0;
+            m_par.vpp.In.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+
+            m_par.vpp.Out.FourCC = MFX_FOURCC_YUY2;
+            m_par.vpp.Out.BitDepthLuma = 8;
+            m_par.vpp.Out.BitDepthChroma = 8;
+            m_par.vpp.Out.Shift = 0;
+            m_par.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+        }
+    };
+    TS_REG_TEST_SUITE_CLASS(vpp_8b_422_yuy2_reset);
+}
+
+namespace vpp_8b_444_ayuv_reset
+{
+    class TestSuite : public vpp_reset::TestSuite
+    {
+    public:
+        TestSuite() : vpp_reset::TestSuite()
+        {
+            m_par.vpp.In.FourCC = MFX_FOURCC_AYUV;
+            m_par.vpp.In.BitDepthLuma = 8;
+            m_par.vpp.In.BitDepthChroma = 8;
+            m_par.vpp.In.Shift = 0;
+            m_par.vpp.In.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+
+            m_par.vpp.Out.FourCC = MFX_FOURCC_AYUV;
+            m_par.vpp.Out.BitDepthLuma = 8;
+            m_par.vpp.Out.BitDepthChroma = 8;
+            m_par.vpp.Out.Shift = 0;
+            m_par.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+        }
+    };
+    TS_REG_TEST_SUITE_CLASS(vpp_8b_444_ayuv_reset);
+}
+
+namespace vpp_8b_444_rgb4_reset
+{
+    class TestSuite : public vpp_reset::TestSuite
+    {
+    public:
+        TestSuite() : vpp_reset::TestSuite()
+        {
+            m_par.vpp.In.FourCC = MFX_FOURCC_RGB4;
+            m_par.vpp.In.BitDepthLuma = 8;
+            m_par.vpp.In.BitDepthChroma = 8;
+            m_par.vpp.In.Shift = 0;
+            m_par.vpp.In.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+
+            m_par.vpp.Out.FourCC = MFX_FOURCC_RGB4;
+            m_par.vpp.Out.BitDepthLuma = 8;
+            m_par.vpp.Out.BitDepthChroma = 8;
+            m_par.vpp.Out.Shift = 0;
+            m_par.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+        }
+    };
+    TS_REG_TEST_SUITE_CLASS(vpp_8b_444_rgb4_reset);
+}
+
+namespace vpp_10b_420_p010_reset
+{
+    class TestSuite : public vpp_reset::TestSuite
+    {
+    public:
+        TestSuite() : vpp_reset::TestSuite()
+        {
+            m_par.vpp.In.FourCC = MFX_FOURCC_P010;
+            m_par.vpp.In.BitDepthLuma = 10;
+            m_par.vpp.In.BitDepthChroma = 10;
+            m_par.vpp.In.Shift = 1;
+            m_par.vpp.In.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+
+            m_par.vpp.Out.FourCC = MFX_FOURCC_P010;
+            m_par.vpp.Out.BitDepthLuma = 10;
+            m_par.vpp.Out.BitDepthChroma = 10;
+            m_par.vpp.Out.Shift = 1;
+            m_par.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+        }
+    };
+    TS_REG_TEST_SUITE_CLASS(vpp_10b_420_p010_reset);
+}
+
+namespace vpp_10b_422_y210_reset
+{
+    class TestSuite : public vpp_reset::TestSuite
+    {
+    public:
+        TestSuite() : vpp_reset::TestSuite()
+        {
+            m_par.vpp.In.FourCC = MFX_FOURCC_Y210;
+            m_par.vpp.In.BitDepthLuma = 10;
+            m_par.vpp.In.BitDepthChroma = 10;
+            m_par.vpp.In.Shift = 1;
+            m_par.vpp.In.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+
+            m_par.vpp.Out.FourCC = MFX_FOURCC_Y210;
+            m_par.vpp.Out.BitDepthLuma = 10;
+            m_par.vpp.Out.BitDepthChroma = 10;
+            m_par.vpp.Out.Shift = 1;
+            m_par.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+        }
+    };
+    TS_REG_TEST_SUITE_CLASS(vpp_10b_422_y210_reset);
+}
+
+namespace vpp_10b_444_y410_reset
+{
+    class TestSuite : public vpp_reset::TestSuite
+    {
+    public:
+        TestSuite() : vpp_reset::TestSuite()
+        {
+            m_par.vpp.In.FourCC = MFX_FOURCC_Y410;
+            m_par.vpp.In.BitDepthLuma = 10;
+            m_par.vpp.In.BitDepthChroma = 10;
+            m_par.vpp.In.Shift = 0;
+            m_par.vpp.In.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+
+            m_par.vpp.Out.FourCC = MFX_FOURCC_Y410;
+            m_par.vpp.Out.BitDepthLuma = 10;
+            m_par.vpp.Out.BitDepthChroma = 10;
+            m_par.vpp.Out.Shift = 0;
+            m_par.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+        }
+    };
+    TS_REG_TEST_SUITE_CLASS(vpp_10b_444_y410_reset);
 }

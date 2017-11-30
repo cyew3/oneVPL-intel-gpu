@@ -498,7 +498,7 @@ template void SetParam(tsExtBufType<mfxBitstream>& base, const std::string name,
 template void SetParam(tsExtBufType<mfxInitParam>& base, const std::string name, const mfxU32 offset, const mfxU32 size, mfxU64 value);
 
 template <typename T>
-bool CompareParam(tsExtBufType<T>& base, const tsStruct::Field& field, mfxU64 value)
+bool CompareParam(tsExtBufType<T>& base, const tsStruct::Field& field, mfxU64 value, CompareLog log)
 {
     assert(!field.name.empty());
     void* ptr = &base;
@@ -513,17 +513,18 @@ bool CompareParam(tsExtBufType<T>& base, const tsStruct::Field& field, mfxU64 va
         ptr = base.GetExtBuffer(bufId);
         if (ptr==NULL)
         {
-            g_tsLog << "WARNING: CompareParams expectedto find ExtBuf[" << field.name <<"] attached but it is missed\n";
+            if (log != LOG_NOTHING)
+                g_tsLog << "WARNING: CompareParams expectedto find ExtBuf[" << field.name <<"] attached but it is missed\n";
             return false;
         }
     }
     return CompareParam(ptr, field, value);
 }
 
-template bool CompareParam(tsExtBufType<mfxVideoParam>& base, const tsStruct::Field& field, mfxU64 value);
-template bool CompareParam(tsExtBufType<mfxBitstream>& base, const tsStruct::Field& field, mfxU64 value);
-template bool CompareParam(tsExtBufType<mfxInitParam>& base, const tsStruct::Field& field, mfxU64 value);
-template bool CompareParam(tsExtBufType<mfxEncodeCtrl>& base, const tsStruct::Field& field, mfxU64 value);
+template bool CompareParam(tsExtBufType<mfxVideoParam>& base, const tsStruct::Field& field, mfxU64 value, CompareLog log);
+template bool CompareParam(tsExtBufType<mfxBitstream>& base, const tsStruct::Field& field, mfxU64 value, CompareLog log);
+template bool CompareParam(tsExtBufType<mfxInitParam>& base, const tsStruct::Field& field, mfxU64 value, CompareLog log);
+template bool CompareParam(tsExtBufType<mfxEncodeCtrl>& base, const tsStruct::Field& field, mfxU64 value, CompareLog log);
 
 bool CompareParam(void* base, const tsStruct::Field& field, mfxU64 value)
 {
@@ -531,9 +532,9 @@ bool CompareParam(void* base, const tsStruct::Field& field, mfxU64 value)
 }
 
 template <typename T>
-bool CompareParam(tsExtBufType<T> *base, const tsStruct::Field& field, mfxU64 value)
+bool CompareParam(tsExtBufType<T> *base, const tsStruct::Field& field, mfxU64 value, CompareLog log)
 {
     assert(0 != base);
-    if (base)    return CompareParam(*base, field, value);
+    if (base)    return CompareParam(*base, field, value, log);
     else return false;
 }
