@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2018 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -67,6 +67,7 @@ public:
         , m_nDropCount()
         , m_bForceMVCDetection()
         , m_VP9_Smooth_DRC(false)
+        , m_bShiftWasSet(false)
       {
           PipelineObjectDescBase dsc(VIDEO_SESSION_NATIVE);
           m_Session = pFactory->CreateVideoSession(&dsc);
@@ -188,6 +189,8 @@ public:
     mfxU32                          m_OutFourcc;
 
     bool                            m_VP9_Smooth_DRC;
+
+    bool                            m_bShiftWasSet;
 
     std::vector<mfxU32>             m_SkippedFrames; // List of frames to be skipped at encoding
 
