@@ -3174,7 +3174,7 @@ mfxU8 GetSHNUT(Task const & task, bool RAPIntra)
     const bool isI   = !!(task.m_frameType & MFX_FRAMETYPE_I);
     const bool isRef = !!(task.m_frameType & MFX_FRAMETYPE_REF);
     const bool isIDR = !!(task.m_frameType & MFX_FRAMETYPE_IDR);
-   
+
 #if (MFX_VERSION >= 1025)
     if (task.m_ctrl.MfxNalUnitType)
     {
@@ -3211,6 +3211,11 @@ mfxU8 GetSHNUT(Task const & task, bool RAPIntra)
         case MFX_HEVC_NALU_TYPE_IDR_W_RADL:
             if (isIDR)
                 return IDR_W_RADL;
+            break;
+        case MFX_HEVC_NALU_TYPE_IDR_N_LP:
+            if (isIDR)
+                return IDR_N_LP;
+            break;
         }
     }
 #endif
@@ -3512,7 +3517,7 @@ void ConfigureTask(
     task.m_lastRAP = prevTask.m_lastRAP;
     task.m_eo = prevTask.m_eo + 1;
 
- 
+
     task.m_dpb_output_delay = (task.m_fo + par.m_sps.sub_layer[0].max_num_reorder_pics - task.m_eo);
 
     InitDPB(task, prevTask, pExtListCtrl);
