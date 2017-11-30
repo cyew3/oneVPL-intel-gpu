@@ -112,31 +112,20 @@ Ipp32u mfxSchedulerCore::scheduler_thread_proc(void *pParam)
 
 void mfxSchedulerCore::ThreadProc(MFX_SCHEDULER_THREAD_CONTEXT *pContext)
 {
-    UMC::AutomaticMutex guard(m_guard);
-
     mfxTaskHandle previousTaskHandle = {};
     const Ipp32u threadNum = pContext->threadNum;
 
     // main working cycle for threads
     while (false == m_bQuit)
     {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "thread_proc");
-
         MFX_CALL_INFO call = {};
         mfxStatus mfxRes;
-
-        pContext->state = MFX_SCHEDULER_THREAD_CONTEXT::Waiting;
 
         mfxRes = GetTask(call, previousTaskHandle, threadNum);
         if (MFX_ERR_NONE == mfxRes)
         {
-            pContext->state = MFX_SCHEDULER_THREAD_CONTEXT::Running;
-            vm_mutex_unlock(&m_guard);
-            {
-                // perform asynchronous operation
-                call_pRoutine(call);
-            }
-            vm_mutex_lock(&m_guard);
+            // perform asynchronous operation
+            call_pRoutine(call);
 
             pContext->workTime += call.timeSpend;
             // save the previous task's handle
@@ -207,7 +196,7 @@ void mfxSchedulerCore::WakeupThreadProc()
 
             //MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "HW Event");
             IncrementHWEventCounter();
-            WakeUpThreads(1,1);
+            WakeUpThreads((mfxU32) MFX_INVALID_THREAD_ID, MFX_SCHEDULER_HW_BUFFER_COMPLETED);
         }
     }
 }

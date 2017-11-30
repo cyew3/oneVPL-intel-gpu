@@ -113,6 +113,7 @@ mfxStatus mfxSchedulerCore::GetTask(MFX_CALL_INFO &callInfo,
                                     mfxTaskHandle previousTask,
                                     const mfxU32 threadNum)
 {
+    UMC::AutomaticMutex guard(m_guard);
     int prevTaskPriority = -1;
     mfxU32 run;
     mfxU64 totalTimeSpent[MFX_PRIORITY_NUMBER], timeSpent[MFX_PRIORITY_NUMBER];
@@ -265,43 +266,6 @@ mfxU32 GetFreeThreadNumber(MFX_THREAD_ASSIGNMENT &occupancyInfo,
 
 } // namespace
 
-bool mfxSchedulerCore::IsReadyToRun(MFX_SCHEDULER_TASK *pTask)
-{
-    // task is not ready to run (ro should not be run)
-    // if task is already done
-    if (MFX_TASK_NEED_CONTINUE != pTask->curStatus) {
-        return false;
-    }
-    // or dependencies are not resolved
-    if (false == pTask->IsDependenciesResolved()) {
-        return false;
-    }
-    // or there is no proper thread number
-    if (MFX_INVALID_THREAD_NUMBER == GetFreeThreadNumber(*(pTask->param.pThreadAssignment), pTask)) {
-        return false;
-    }
-    // or task is still waiting
-    if (pTask->param.bWaiting) {
-        // prevent entering more than 1 thread in 'waiting' task,
-        // let the thread inspect other tasks.
-        if (pTask->param.occupancy) {
-            return false;
-        } else {
-            // check the 'waiting' time period
-            // calculate the period elapsed since the last 'need-waiting' call
-            mfxU64 time = GetHighPerformanceCounter() - pTask->param.timing.timeLastEnter;
-            if (m_timeWaitPeriod > time) {
-                const mfxU64 hwCounter = GetHWEventCounter();
-
-                if (hwCounter == pTask->param.timing.hwCounterLastEnter) {
-                    return false;
-                }
-            }
-        }
-    }
-    return true;
-}
-
 mfxStatus mfxSchedulerCore::WrapUpTask(MFX_CALL_INFO &callInfo,
                                        MFX_SCHEDULER_TASK *pTask,
                                        const mfxU32 threadNum)
@@ -313,22 +277,64 @@ mfxStatus mfxSchedulerCore::WrapUpTask(MFX_CALL_INFO &callInfo,
     // Just do what need to do.
     //
 
-    if (!IsReadyToRun(pTask)) {
+    //
+    // check basic conditions
+    //
+
+        // if task is done
+    if ((MFX_TASK_NEED_CONTINUE != pTask->curStatus) ||
+        // or dependencies are not resolved
+        (false == pTask->IsDependenciesResolved()))
+    {
+        return MFX_ERR_NOT_FOUND;
+    }
+        // or non-zero thread tries to get a dedicated (hardware) task
+    if ((MFX_TASK_DEDICATED & occupancyInfo.threadingPolicy) &&
+        (threadNum))
+    {
+        return MFX_ERR_NOT_FOUND;
+    }
+    callInfo.threadNum = GetFreeThreadNumber(occupancyInfo, pTask);
+        // or there is no proper thread number
+    if (MFX_INVALID_THREAD_NUMBER == callInfo.threadNum)
+    {
         return MFX_ERR_NOT_FOUND;
     }
 
-    // non-zero thread tries to get a dedicated (hardware) task...
-    if (threadNum && (MFX_TASK_DEDICATED & occupancyInfo.threadingPolicy)) {
-        return MFX_ERR_NOT_FOUND;
+    callInfo.callNum = pTask->param.numberOfCalls;
+
+    // is the task waiting for something ?
+    if (pTask->param.bWaiting)
+    {
+        // prevent entering more than 1 thread in 'waiting' task,
+        // let the thread inspect other tasks.
+        if (pTask->param.occupancy)
+        {
+            return MFX_ERR_NOT_FOUND;
+        }
+        // check the 'waiting' time period
+        else
+        {
+            mfxU64 time;
+
+            // calculate the period elapsed since the last 'need-waiting' call
+            time = m_currentTimeStamp - pTask->param.timing.timeLastEnter;
+            if (m_timeWaitPeriod > time)
+            {
+                const mfxU64 hwCounter = GetHWEventCounter();
+
+                if (hwCounter == pTask->param.timing.hwCounterLastEnter)
+                {
+                    return MFX_ERR_NOT_FOUND;
+                }
+            }
+        }
     }
 
     //
     // everything is OK.
     // Update the task and return the parameters
     //
-
-    callInfo.threadNum = GetFreeThreadNumber(occupancyInfo, pTask);
-    callInfo.callNum = pTask->param.numberOfCalls;
 
     // update the scheduler
     m_numAssignedTasks[pTask->param.task.priority] += 1;
@@ -407,237 +413,237 @@ void mfxSchedulerCore::ResetWaitingTasks(const void *pOwner)
 
 } // void mfxSchedulerCore::ResetWaitingTasks(const void *pOwner)
 
-void mfxSchedulerCore::OnDependencyResolved(MFX_SCHEDULER_TASK *pTask)
-{
-    if (IsReadyToRun(pTask)) {
-        if (MFX_TASK_DEDICATED & pTask->param.task.threadingPolicy) {
-            m_DedicatedThreadsToWakeUp += pTask->param.task.entryPoint.requiredNumThreads;
-        } else {
-            m_RegularThreadsToWakeUp += pTask->param.task.entryPoint.requiredNumThreads;
-        }
-    }
-}
-
 void mfxSchedulerCore::MarkTaskCompleted(const MFX_CALL_INFO *pCallInfo,
                                          const mfxU32 threadNum)
 {
-    (void)pCallInfo;
-    (void)threadNum;
-
+    bool wakeUpThreads = false;
+    mfxU32 requiredNumThreads;
     bool taskReleased = false;
     mfxU32 nTraceTaskId = 0;
 
-    MFX_SCHEDULER_TASK *pTask = m_ppTaskLookUpTable[pCallInfo->taskHandle.taskID];
-    mfxU32 curTime;
-
-    // check error(s)
-    if (NULL == pTask)
+    // enter the protected code section
     {
-        return;
-    }
+        UMC::AutomaticMutex guard(m_guard);
+        MFX_SCHEDULER_TASK *pTask = m_ppTaskLookUpTable[pCallInfo->taskHandle.taskID];
+        mfxU32 curTime;
 
-    MFX_THREAD_ASSIGNMENT &occupancyInfo = *(pTask->param.pThreadAssignment);
+        // check error(s)
+        if (NULL == pTask)
+        {
+            return;
+        }
 
-    // update working time
-    curTime = GetLowResCurrentTime();
-    if (m_workingTime[m_timeIdx].startTime + MFX_TIME_STAT_PERIOD / MFX_TIME_STAT_PARTS <
-        curTime)
-    {
-        // advance the working time index. The current entry is out of time.
-        m_timeIdx = (m_timeIdx + 1) % MFX_TIME_STAT_PARTS;
-        memset(m_workingTime + m_timeIdx, 0, sizeof(m_workingTime[m_timeIdx]));
-        m_workingTime[m_timeIdx].startTime = curTime;
-    }
-    m_workingTime[m_timeIdx].time[pTask->param.task.priority] += pCallInfo->timeSpend;
+        MFX_THREAD_ASSIGNMENT &occupancyInfo = *(pTask->param.pThreadAssignment);
 
-    // update the scheduler
-    m_numAssignedTasks[pTask->param.task.priority] -= 1;
+        // update working time
+        curTime = GetLowResCurrentTime();
+        if (m_workingTime[m_timeIdx].startTime + MFX_TIME_STAT_PERIOD / MFX_TIME_STAT_PARTS <
+            curTime)
+        {
+            // advance the working time index. The current entry is out of time.
+            m_timeIdx = (m_timeIdx + 1) % MFX_TIME_STAT_PARTS;
+            memset(m_workingTime + m_timeIdx, 0, sizeof(m_workingTime[m_timeIdx]));
+            m_workingTime[m_timeIdx].startTime = curTime;
+        }
+        m_workingTime[m_timeIdx].time[pTask->param.task.priority] += pCallInfo->timeSpend;
 
-    // clean up the task object
-    pTask->param.occupancy -= 1;
-    pTask->param.threadMask &= ~(1LL << pCallInfo->threadNum);
-    if (0 == (MFX_TASK_INTER & occupancyInfo.threadingPolicy))
-    {
-        occupancyInfo.occupancy -= 1;
-        occupancyInfo.threadMask &= ~(1LL << pCallInfo->threadNum);
-    }
-    occupancyInfo.taskOccupancy -= (0 == pTask->param.occupancy) ? (1) : (0);
+        // update the scheduler
+        m_numAssignedTasks[pTask->param.task.priority] -= 1;
 
-    // Below we will notify dependent tasks that this task is done and
-    // scheduler will get notifications from dependent tasks that their
-    // dependencies are resolved. Upon these notifications scheduler will
-    // calculate how many threads we need to wakeup to handle dependent
-    // tasks.
-    m_DedicatedThreadsToWakeUp = 0;
-    m_RegularThreadsToWakeUp = 0;
+        // clean up the task object
+        pTask->param.occupancy -= 1;
+        pTask->param.threadMask &= ~(1LL << pCallInfo->threadNum);
+        if (0 == (MFX_TASK_INTER & occupancyInfo.threadingPolicy))
+        {
+            occupancyInfo.occupancy -= 1;
+            occupancyInfo.threadMask &= ~(1LL << pCallInfo->threadNum);
+        }
+        occupancyInfo.taskOccupancy -= (0 == pTask->param.occupancy) ? (1) : (0);
 
-    // try to not overwrite the newest status from other thread
-    if (pTask->param.timing.timeLastCallProcessed < pCallInfo->timeStamp)
-    {
-        pTask->param.timing.timeLastCallProcessed = pCallInfo->timeStamp;
-    }
-    // update the status of the current job
-    if (isFailed(pCallInfo->res))
-    {
-        pTask->curStatus = pCallInfo->res;
-    }
-    // do not overwrite the failed status with successful one
-    else if ((MFX_TASK_DONE == pCallInfo->res) &&
-                (MFX_TASK_NEED_CONTINUE == pTask->curStatus))
-    {
-        pTask->curStatus = pCallInfo->res;
+        // update the number of available tasks
+        if ((MFX_TASK_NEED_CONTINUE == pTask->curStatus) &&
+            ((isFailed(pCallInfo->res) || MFX_TASK_DONE == pCallInfo->res)))
+        {
+            (MFX_TASK_DEDICATED & pTask->param.task.threadingPolicy) ? (m_numHwTasks -= 1) : (m_numSwTasks -= 1);
+        }
 
-        // reset all waiting tasks with the given working object
-        ResetWaitingTasks(pCallInfo->pTask->pOwner);
-    }
-    // update the task timing
-    else if (MFX_TASK_BUSY == pCallInfo->res)
-    {
         // try to not overwrite the newest status from other thread
-        if (pTask->param.timing.timeLastCallProcessed <= pCallInfo->timeStamp)
+        if (pTask->param.timing.timeLastCallProcessed < pCallInfo->timeStamp)
         {
-            pTask->param.bWaiting = true;
+            pTask->param.timing.timeLastCallProcessed = pCallInfo->timeStamp;
         }
-        pTask->param.timing.timeOverhead += pCallInfo->timeSpend;
-    }
-    else
-    {
-        // reset all waiting tasks with the given working object
-        ResetWaitingTasks(pCallInfo->pTask->pOwner);
-    }
-    pTask->param.timing.timeSpent += pCallInfo->timeSpend;
-
-    //
-    // update task status and tasks dependencies
-    //
-
-    if (0 == pTask->param.occupancy)
-    {
-        // complete the task if it is done
-        if ((isFailed(pTask->curStatus)) ||
-            (MFX_TASK_DONE == pTask->curStatus))
+        // update the status of the current job
+        if (isFailed(pCallInfo->res))
         {
-            // store TaskId for tracing event
-            nTraceTaskId = pCallInfo->pTask->nTaskId;
+            pTask->curStatus = pCallInfo->res;
+        }
+        // do not overwrite the failed status with successful one
+        else if ((MFX_TASK_DONE == pCallInfo->res) &&
+                 (MFX_TASK_NEED_CONTINUE == pTask->curStatus))
+        {
+            wakeUpThreads = true;
+            pTask->curStatus = pCallInfo->res;
 
-            // get entry point parameters to call FreeResources
-            MFX_ENTRY_POINT &entryPoint = pTask->param.task.entryPoint;
-
-            if (entryPoint.pCompleteProc)
+            // reset all waiting tasks with the given working object
+            ResetWaitingTasks(pCallInfo->pTask->pOwner);
+        }
+        // update the task timing
+        else if (MFX_TASK_BUSY == pCallInfo->res)
+        {
+            // try to not overwrite the newest status from other thread
+            if (pTask->param.timing.timeLastCallProcessed <= pCallInfo->timeStamp)
             {
-                mfxStatus mfxRes;
-
-                // temporarily leave the protected code section
-                vm_mutex_unlock(&m_guard);
-
-                mfxRes = pTask->CompleteTask(pTask->curStatus);
-                if ((isFailed(mfxRes)) &&
-                    (MFX_ERR_NONE == pTask->curStatus)) {
-
-                    pTask->curStatus = mfxRes;
-                }
-
-                // enter the protected code section
-                vm_mutex_lock(&m_guard);
+                pTask->param.bWaiting = true;
             }
+            pTask->param.timing.timeOverhead += pCallInfo->timeSpend;
         }
-
-        // update the failed task status
-        if (isFailed(pTask->curStatus))
+        else
         {
-            //mfxU32 i;
+            wakeUpThreads = true;
 
-            // save the status
-            pTask->opRes = pTask->curStatus;
-
-            vm_cond_broadcast(&pTask->done);
-
-            // update dependencies produced from the dependency table
-            //for (i = 0; i < MFX_TASK_NUM_DEPENDENCIES; i += 1)
-            //{
-            //    if (pTask->param.task.pDst[i])
-            //    {
-            //        mfxU32 idx = pTask->param.dependencies.dstIdx[i];
-
-            //        m_pDependencyTable[idx].mfxRes = pTask->curStatus;
-            //    }
-            //}
-            ResolveDependencyTable(pTask);
-
-            // mark all dependent task as 'failed'
-            pTask->ResolveDependencies(pTask->curStatus);
-            // release all allocated resources
-            pTask->ReleaseResources();
+            // reset all waiting tasks with the given working object
+            ResetWaitingTasks(pCallInfo->pTask->pOwner);
         }
-        // process task completed
-        else if (MFX_TASK_DONE == pTask->curStatus)
+        pTask->param.timing.timeSpent += pCallInfo->timeSpend;
+
+        //
+        // update task status and tasks dependencies
+        //
+
+        if (0 == pTask->param.occupancy)
         {
-            mfxU32 i;
-
-
-            // reset jobID to avoid false waiting on complete tasks, which were reused
-            pTask->jobID = 0;
-            // save the status
-            pTask->opRes = MFX_ERR_NONE;
-
-            vm_cond_broadcast(&pTask->done);
-
-            // remove dependencies produced from the dependency table
-            for (i = 0; i < MFX_TASK_NUM_DEPENDENCIES; i += 1)
+            // complete the task if it is done
+            if ((isFailed(pTask->curStatus)) ||
+                (MFX_TASK_DONE == pTask->curStatus))
             {
-                if (pTask->param.task.pDst[i])
+                // store TaskId for tracing event
+                nTraceTaskId = pCallInfo->pTask->nTaskId;
+
+                // get entry point parameters to call FreeResources
+                MFX_ENTRY_POINT &entryPoint = pTask->param.task.entryPoint;
+
+                if (entryPoint.pCompleteProc)
                 {
-                    mfxU32 idx = pTask->param.dependencies.dstIdx[i];
+                    mfxStatus mfxRes;
 
-                    m_pDependencyTable[idx].p = NULL;
+                    // temporarily leave the protected code section
+                    guard.Unlock();
+
+                    mfxRes = pTask->CompleteTask(pTask->curStatus);
+                    if ((isFailed(mfxRes)) &&
+                        (MFX_ERR_NONE == pTask->curStatus)) {
+
+                        pTask->curStatus = mfxRes;
+                    }
+
+                    // enter the protected code section
+                    guard.Lock();
                 }
             }
 
-            // mark all dependent task as 'ready'
-            pTask->ResolveDependencies(MFX_ERR_NONE);
-            // release all allocated resources
-            pTask->ReleaseResources();
+            // update the failed task status
+            if (isFailed(pTask->curStatus))
+            {
+                //mfxU32 i;
 
-            // task object becomes free
-            taskReleased = true;
+                // save the status
+                pTask->opRes = pTask->curStatus;
+
+                vm_cond_broadcast(&pTask->done);
+
+                // update dependencies produced from the dependency table
+                //for (i = 0; i < MFX_TASK_NUM_DEPENDENCIES; i += 1)
+                //{
+                //    if (pTask->param.task.pDst[i])
+                //    {
+                //        mfxU32 idx = pTask->param.dependencies.dstIdx[i];
+
+                //        m_pDependencyTable[idx].mfxRes = pTask->curStatus;
+                //    }
+                //}
+                ResolveDependencyTable(pTask);
+
+                // mark all dependent task as 'failed'
+                pTask->ResolveDependencies(pTask->curStatus);
+                // release all allocated resources
+                pTask->ReleaseResources();
+            }
+            // process task completed
+            else if (MFX_TASK_DONE == pTask->curStatus)
+            {
+                mfxU32 i;
+
+
+                // reset jobID to avoid false waiting on complete tasks, which were reused
+                pTask->jobID = 0;
+                // save the status
+                pTask->opRes = MFX_ERR_NONE;
+
+                vm_cond_broadcast(&pTask->done);
+
+                // remove dependencies produced from the dependency table
+                for (i = 0; i < MFX_TASK_NUM_DEPENDENCIES; i += 1)
+                {
+                    if (pTask->param.task.pDst[i])
+                    {
+                        mfxU32 idx = pTask->param.dependencies.dstIdx[i];
+
+                        m_pDependencyTable[idx].p = NULL;
+                    }
+                }
+
+                // mark all dependent task as 'ready'
+                pTask->ResolveDependencies(MFX_ERR_NONE);
+                // release all allocated resources
+                pTask->ReleaseResources();
+
+                // task is done. Wake up all threads.
+                wakeUpThreads = true;
+                // task object becomes free
+                taskReleased = true;
+            }
         }
-    }
 
 #if defined(MFX_SCHEDULER_LOG)
-    if (MFX_TASK_DONE == pCallInfo->res)
-    {
-        mfxLogWriteA(m_hLog,
-                        "[% 4u] DONE %s task - %u, job - %u, res - %d, occupancy - %u, time - %u\n",
-                        threadNum,
-                        taskType[pTask->param.task.threadingPolicy],
-                        pTask->taskID, pTask->jobID,
-                        pCallInfo->res, pTask->param.occupancy,
-                        pCallInfo->timeSpend);
-        TASK_STAT stat;
-        GetNumTasks(m_pTasks, stat);
-        mfxLogWriteA(m_hLog,
-                        "[    ] Tasks: total - %u, ready - %u, waiting - %u, done - %u, failed - %u\n",
-                        stat.total,
-                        stat.ready,
-                        stat.waiting,
-                        stat.done,
-                        stat.failed);
-    }
-    else
-    {
-        mfxLogWriteA(m_hLog,
-                        "[% 4u]     %s task - %u, job - %u, res - %d, occupancy - %u, time - %u\n",
-                        threadNum,
-                        taskType[pTask->param.task.threadingPolicy],
-                        pTask->taskID, pTask->jobID,
-                        pCallInfo->res, pTask->param.occupancy,
-                        pCallInfo->timeSpend);
-    }
+        if (MFX_TASK_DONE == pCallInfo->res)
+        {
+            mfxLogWriteA(m_hLog,
+                         "[% 4u] DONE %s task - %u, job - %u, res - %d, occupancy - %u, time - %u\n",
+                         threadNum,
+                         taskType[pTask->param.task.threadingPolicy],
+                         pTask->taskID, pTask->jobID,
+                         pCallInfo->res, pTask->param.occupancy,
+                         pCallInfo->timeSpend);
+            TASK_STAT stat;
+            GetNumTasks(m_pTasks, stat);
+            mfxLogWriteA(m_hLog,
+                         "[    ] Tasks: total - %u, ready - %u, waiting - %u, done - %u, failed - %u\n",
+                         stat.total,
+                         stat.ready,
+                         stat.waiting,
+                         stat.done,
+                         stat.failed);
+        }
+        else
+        {
+            mfxLogWriteA(m_hLog,
+                         "[% 4u]     %s task - %u, job - %u, res - %d, occupancy - %u, time - %u\n",
+                         threadNum,
+                         taskType[pTask->param.task.threadingPolicy],
+                         pTask->taskID, pTask->jobID,
+                         pCallInfo->res, pTask->param.occupancy,
+                         pCallInfo->timeSpend);
+        }
 #endif // defined(MFX_SCHEDULER_LOG)
 
+        requiredNumThreads = GetNumResolvedSwTasks();
+    }
+    // leave the protected code section
+
     // wake up additional threads for this task and tasks dependent
-    if (m_DedicatedThreadsToWakeUp || m_RegularThreadsToWakeUp) {
-        WakeUpThreads(m_DedicatedThreadsToWakeUp, m_RegularThreadsToWakeUp);
+    if (wakeUpThreads)
+    {
+        WakeUpNumThreads(requiredNumThreads, threadNum);
     }
 
     // wake up external threads waiting for a free task object
@@ -652,9 +658,8 @@ void mfxSchedulerCore::MarkTaskCompleted(const MFX_CALL_INFO *pCallInfo,
         MFX_LTRACE_1(MFX_TRACE_LEVEL_SCHED, "^Completed^", "%d", nTraceTaskId);
     }
 
-}
-
-// update dependencies produced from the dependency table
+} // void mfxSchedulerCore::MarkTaskCompleted(mfxTaskHandle handle,
+                // update dependencies produced from the dependency table
 void mfxSchedulerCore::ResolveDependencyTable(MFX_SCHEDULER_TASK *pTask)
 {
     mfxU32 i;
@@ -667,4 +672,31 @@ void mfxSchedulerCore::ResolveDependencyTable(MFX_SCHEDULER_TASK *pTask)
             m_pDependencyTable[idx].mfxRes = pTask->curStatus;
         }
     }
+}
+
+mfxU32 mfxSchedulerCore::GetNumResolvedSwTasks(void) const
+{
+    mfxU32 numResolvedTasks = 0;
+
+    mfxU32 priority;
+    for (priority = 0; priority < MFX_PRIORITY_NUMBER; priority += 1)
+    {
+        MFX_SCHEDULER_TASK *pTask = m_pTasks[priority][MFX_TYPE_SOFTWARE];
+
+        // run over the tasks with particular priority
+        while (pTask)
+        {
+            // if a task has not been done yet
+            if ((MFX_TASK_NEED_CONTINUE == pTask->curStatus) &&
+            // and dependencies are resolved
+                (true == pTask->IsDependenciesResolved()))
+            {
+                numResolvedTasks++;
+            }
+
+            pTask = pTask->pNext;
+        }
+    }
+
+    return numResolvedTasks;
 }

@@ -208,8 +208,8 @@ mfxStatus mfxSchedulerCore::Initialize2(const MFX_SCHEDULER_PARAM2 *pParam)
                 // prepare context
                 m_pThreadCtx[i].threadNum = i;
                 m_pThreadCtx[i].pSchedulerCore = this;
-                vm_status vmRes = vm_cond_init(&m_pThreadCtx[i].taskAdded);
-                if (VM_OK != vmRes) {
+                umcRes = m_pThreadCtx[i].taskAdded.Init(0, 0);
+                if (UMC::UMC_OK != umcRes) {
                     return MFX_ERR_UNKNOWN;
                 }
                 // spawn a thread
@@ -329,7 +329,7 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
 
     if (MFX_SINGLE_THREAD == m_param.flags)
     {
-        //let really run task to
+        //let really run task to 
         MFX_CALL_INFO call = {0};
         mfxTaskHandle previousTaskHandle = {0, 0};
 
@@ -338,37 +338,30 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
         mfxU64 frequency = vm_time_get_frequency();
         while (MFX_WRN_IN_EXECUTION == pTask->opRes)
         {
-            UMC::AutomaticMutex guard(m_guard);
             task_sts = GetTask(call, previousTaskHandle, 0);
-
+            
             if (task_sts != MFX_ERR_NONE)
                 continue;
-
-            guard.Unlock();
 
             call.res = call.pTask->entryPoint.pRoutine(call.pTask->entryPoint.pState,
                                                        call.pTask->entryPoint.pParam,
                                                        call.threadNum,
                                                        call.callNum);
-
-            guard.Lock();
+            
 
             // save the previous task's handle
             previousTaskHandle = call.taskHandle;
-
+            
             MarkTaskCompleted(&call, 0);
 
+                                   
             if ((mfxU32)((GetHighPerformanceCounter() - start)/frequency) > timeToWait)
                 break;
-
+            
             if (MFX_TASK_DONE!= call.res)
             {
                 vm_status vmRes;
-
-                guard.Unlock();
                 vmRes = vm_event_timed_wait(&m_hwTaskDone, 15 /*ms*/);
-                guard.Lock();
-
                 if (VM_OK == vmRes|| VM_TIMEOUT == vmRes)
                 {
                     vmRes = vm_event_reset(&m_hwTaskDone);
@@ -512,9 +505,8 @@ mfxStatus mfxSchedulerCore::WaitForTaskCompletion(const void *pOwner)
         UMC::AutomaticMutex guard(m_guard);
 
         ResetWaitingTasks(pOwner);
-
-        WakeUpThreads();
     }
+    WakeUpThreads();
 
     do
     {
@@ -779,6 +771,8 @@ mfxStatus mfxSchedulerCore::AddTask(const MFX_TASK &task, mfxSyncPoint *pSyncPoi
 #ifdef MFX_TRACE_ENABLE
     MFX_LTRACE_1(MFX_TRACE_LEVEL_SCHED, "^Enqueue^", "%d", task.nTaskId);
 #endif
+    Ipp32u numThreads;
+    mfxU32 requiredNumThreads;
 
 #if defined  (MFX_VA)
 #if defined  (MFX_D3D11_ENABLED)
@@ -873,7 +867,7 @@ mfxStatus mfxSchedulerCore::AddTask(const MFX_TASK &task, mfxSyncPoint *pSyncPoi
         pAssignment->m_numRefs += 1;
 
         // saturate the number of available threads
-        Ipp32u numThreads = m_pFreeTasks->param.task.entryPoint.requiredNumThreads;
+        numThreads = m_pFreeTasks->param.task.entryPoint.requiredNumThreads;
         numThreads = (0 == numThreads) ? (m_param.numberOfThreads) : (numThreads);
         numThreads = UMC::get_min(m_param.numberOfThreads, numThreads);
         numThreads = (Ipp32u) UMC::get_min(sizeof(pAssignment->threadMask) * 8, numThreads);
@@ -951,26 +945,19 @@ mfxStatus mfxSchedulerCore::AddTask(const MFX_TASK &task, mfxSyncPoint *pSyncPoi
         // so called 'permanent' tasks.
         ResetWaitingTasks(pTask->param.task.pOwner);
 
-        mfxU32 num_hw_threads = 0, num_sw_threads = 0;
-
         // increment the number of available tasks
-        if (MFX_TASK_DEDICATED & task.threadingPolicy) {
-            num_hw_threads = numThreads;
-        } else {
-            num_sw_threads = numThreads;
-        }
+        (MFX_TASK_DEDICATED & task.threadingPolicy) ? (m_numHwTasks += 1) : (m_numSwTasks += 1);
 
-        // wake up working threads if task has resolved dependencies
-        if (IsReadyToRun(pTask)) {
-            WakeUpThreads(num_hw_threads, num_sw_threads);
-        }
-
+        requiredNumThreads = GetNumResolvedSwTasks();
         // leave the protected section
     }
 
+    // if there are tasks for waiting threads, then wake up these threads
+    WakeUpNumThreads(requiredNumThreads, (mfxU32)MFX_INVALID_THREAD_ID);
+
     return MFX_ERR_NONE;
 
-}
+} // mfxStatus mfxSchedulerCore::AddTask(const MFX_TASK &task, mfxSyncPoint *pSyncPoint,
 
 mfxStatus mfxSchedulerCore::DoWork()
 {
