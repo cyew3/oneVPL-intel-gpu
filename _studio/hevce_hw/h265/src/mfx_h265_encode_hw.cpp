@@ -988,7 +988,8 @@ mfxStatus  Plugin::Reset(mfxVideoParam *par)
         brcReset = false;
     }
 
-    m_ddi->Reset(m_vpar, brcReset);
+    sts = m_ddi->Reset(m_vpar, brcReset);
+    MFX_CHECK_STS(sts);
 
     return qsts;
 }
