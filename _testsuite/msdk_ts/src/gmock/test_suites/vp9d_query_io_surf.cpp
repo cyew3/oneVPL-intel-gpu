@@ -108,47 +108,28 @@ const TestSuite::tc_struct TestSuite::test_case[] =
 };
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
 
-struct streamDesc
-{
-    mfxU16 w;
-    mfxU16 h;
-    const char *name;
-};
-
-const streamDesc streams[] = {
-    {352,288,"forBehaviorTest/foreman_cif.ivf"                                                      },
-    {432,240,"conformance/vp9/SBE/8bit_444/Stress_VP9_FC2p1ss444_432x240_250_extra_stress_2.2.0.vp9"},
-    {432,240,"conformance/vp9/SBE/10bit/Stress_VP9_FC2p2b10_432x240_050_intra_stress_1.5.vp9"       },
-    {432,240,"conformance/vp9/SBE/10bit_444/Syntax_VP9_FC2p3ss444_432x240_101_inter_basic_2.0.0.vp9"},
-};
-
-const streamDesc& getStreamDesc(const mfxU32& fourcc)
-{
-    switch(fourcc)
-    {
-    case MFX_FOURCC_NV12: return streams[0];
-    case MFX_FOURCC_AYUV: return streams[1];
-    case MFX_FOURCC_P010: return streams[2];
-    case MFX_FOURCC_Y410: return streams[3];
-    default: assert(0); return streams[0];
-    }
-}
-
 template<const mfxU32 fourcc>
 int TestSuite::RunTest_fourcc(const unsigned int id)
 {
-    const streamDesc& bsDesc = getStreamDesc(fourcc);
-
     m_par.mfx.FrameInfo.FourCC = fourcc;
     set_chromaformat_mfx(&m_par);
-    m_par.mfx.FrameInfo.Width = bsDesc.w;
-    m_par.mfx.FrameInfo.Height = bsDesc.h;
 
-    if(MFX_FOURCC_P010 == fourcc || MFX_FOURCC_Y410 == fourcc)
-        m_par.mfx.FrameInfo.BitDepthChroma = m_par.mfx.FrameInfo.BitDepthLuma = 10;
-    if (MFX_FOURCC_P010 == fourcc)
+    switch (fourcc)
+    {
+        case MFX_FOURCC_NV12:
+        case MFX_FOURCC_AYUV: m_par.mfx.FrameInfo.BitDepthChroma = m_par.mfx.FrameInfo.BitDepthLuma = 8; break;
+
+        case MFX_FOURCC_P010:
+        case MFX_FOURCC_Y410: m_par.mfx.FrameInfo.BitDepthChroma = m_par.mfx.FrameInfo.BitDepthLuma = 10; break;
+
+        case MFX_FOURCC_P016:
+        case MFX_FOURCC_Y416: m_par.mfx.FrameInfo.BitDepthChroma = m_par.mfx.FrameInfo.BitDepthLuma = 12; break;
+    };
+
+    if (   fourcc == MFX_FOURCC_P010
+        || fourcc == MFX_FOURCC_P016
+        || fourcc == MFX_FOURCC_Y416)
         m_par.mfx.FrameInfo.Shift = 1;
-    m_par_set = true; //we are not testing DecodeHeader here
 
     const tc_struct& tc = test_case[id];
     return RunTest(tc);
@@ -211,10 +192,14 @@ int TestSuite::RunTest(const tc_struct& tc)
     return 0;
 }
 
-TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_8b_420_query_io_surf,  RunTest_fourcc<MFX_FOURCC_NV12>, n_cases);
-TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_10b_420_query_io_surf, RunTest_fourcc<MFX_FOURCC_P010>, n_cases);
-TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_8b_444_query_io_surf,  RunTest_fourcc<MFX_FOURCC_AYUV>, n_cases);
-TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_10b_444_query_io_surf, RunTest_fourcc<MFX_FOURCC_Y410>, n_cases);
+TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_8b_420_query_io_surf,       RunTest_fourcc<MFX_FOURCC_NV12>, n_cases);
+TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_10b_420_query_io_surf,      RunTest_fourcc<MFX_FOURCC_P010>, n_cases);
+
+TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_8b_444_ayuv_query_io_surf,  RunTest_fourcc<MFX_FOURCC_AYUV>, n_cases);
+TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_10b_444_y410_query_io_surf, RunTest_fourcc<MFX_FOURCC_Y410>, n_cases);
+
+TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_12b_420_p016_query_io_surf, RunTest_fourcc<MFX_FOURCC_P016>, n_cases);
+TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_12b_444_y416_query_io_surf, RunTest_fourcc<MFX_FOURCC_Y416>, n_cases);
 
 }
 
