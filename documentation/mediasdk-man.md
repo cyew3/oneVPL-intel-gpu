@@ -7408,7 +7408,7 @@ This enumerator specifies NAL unit types supported by the SDK HEVC encoder.
 | | |
 --- | ---
 `MFX_HEVC_NALU_TYPE_UNKNOWN` | The SDK encoder will decide what NAL unit type to use.
-`MFX_HEVC_NALU_TYPE_TRAIL_N`<br>`MFX_HEVC_NALU_TYPE_TRAIL_R`<br>`MFX_HEVC_NALU_TYPE_RADL_N`<br>`MFX_HEVC_NALU_TYPE_RADL_R`<br>`MFX_HEVC_NALU_TYPE_RASL_N`<br>`MFX_HEVC_NALU_TYPE_RASL_R`<br>`MFX_HEVC_NALU_TYPE_IDR_W_RADL`<br>`MFX_HEVC_NALU_TYPE_CRA_NUT` | See Table 7-1 of the ITU-T H.265 specification for the definition of these types.
+`MFX_HEVC_NALU_TYPE_TRAIL_N`<br>`MFX_HEVC_NALU_TYPE_TRAIL_R`<br>`MFX_HEVC_NALU_TYPE_RADL_N`<br>`MFX_HEVC_NALU_TYPE_RADL_R`<br>`MFX_HEVC_NALU_TYPE_RASL_N`<br>`MFX_HEVC_NALU_TYPE_RASL_R`<br>`MFX_HEVC_NALU_TYPE_IDR_W_RADL`<br>`MFX_HEVC_NALU_TYPE_IDR_N_LP`<br>`MFX_HEVC_NALU_TYPE_CRA_NUT` | See Table 7-1 of the ITU-T H.265 specification for the definition of these types.
 
 
 **Change History**

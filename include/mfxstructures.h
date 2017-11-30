@@ -1105,6 +1105,7 @@ enum {
     MFX_HEVC_NALU_TYPE_RASL_N     = ( 8+1),
     MFX_HEVC_NALU_TYPE_RASL_R     = ( 9+1),
     MFX_HEVC_NALU_TYPE_IDR_W_RADL = (19+1),
+    MFX_HEVC_NALU_TYPE_IDR_N_LP   = (20+1),
     MFX_HEVC_NALU_TYPE_CRA_NUT    = (21+1)
 };
 #endif
@@ -1801,9 +1802,9 @@ typedef struct {
     mfxU16 Type;
     mfxU16 reserved[5];
 
-    /* [4x4_Intra_Y,  4x4_Intra_Cb, 4x4_Intra_Cr, 
-        4x4_Inter_Y,  4x4_Inter_Cb, 4x4_Inter_Cr, 
-        8x8_Intra_Y,  8x8_Inter_Y,  8x8_Intra_Cb, 
+    /* [4x4_Intra_Y,  4x4_Intra_Cb, 4x4_Intra_Cr,
+        4x4_Inter_Y,  4x4_Inter_Cb, 4x4_Inter_Cr,
+        8x8_Intra_Y,  8x8_Inter_Y,  8x8_Intra_Cb,
         8x8_Inter_Cb, 8x8_Intra_Cr, 8x8_Inter_Cr] */
     mfxU8  ScalingListPresent[12];
 
