@@ -423,6 +423,7 @@
     <ClCompile Include="src\gmock\test_suites\vp9d_chroma_subsampl_change.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp9d_close.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp9d_decode_frame_async.cpp" />
+    <ClCompile Include="src\gmock\test_suites\vp9d_get_payload.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp9d_trans_opaque.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp9d_decode_header.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp9d_get_video_param.cpp" />
