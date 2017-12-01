@@ -1,3 +1,15 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2007-2017 Intel Corporation. All Rights Reserved.
+
+File Name: hevce_query_io_surf.cpp
+
+\* ****************************************************************************** */
+
 #include "ts_encoder.h"
 #include "ts_parser.h"
 #include "ts_struct.h"
@@ -15,7 +27,23 @@ namespace hevce_query_io_surf
 
         }
         ~TestSuite() {}
-        int RunTest(unsigned int id);
+
+        struct tc_struct
+        {
+            mfxStatus sts;
+            mfxU32 type;
+            struct f_pair
+            {
+                mfxU32 ext_type;
+                const  tsStruct::Field* f;
+                mfxU32 v;
+            } set_par[MAX_NPARS];
+        };
+
+        template<mfxU32 fourcc>
+        int RunTest_Subtype(const unsigned int id);
+
+        int RunTest(tc_struct tc, unsigned int fourcc_id);
 
     private:
         enum
@@ -35,18 +63,6 @@ namespace hevce_query_io_surf
             MFX_MEMTYPE_SYS_EXT = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_EXTERNAL_FRAME,
             MFX_MEMTYPE_SYS_INT = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_INTERNAL_FRAME,
             MFX_MEMTYPE_SYS = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_SYSTEM_MEMORY,
-        };
-
-        struct tc_struct
-        {
-            mfxStatus sts;
-            mfxU32 type;
-            struct f_pair
-            {
-                mfxU32 ext_type;
-                const  tsStruct::Field* f;
-                mfxU32 v;
-            } set_par[MAX_NPARS];
         };
 
         static const tc_struct test_case[];
@@ -98,13 +114,17 @@ namespace hevce_query_io_surf
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
 
+    template<mfxU32 fourcc>
+    int TestSuite::RunTest_Subtype(const unsigned int id)
+    {
+        const tc_struct& tc = test_case[id];
+        return RunTest(tc, fourcc);
+    }
 
-
-    int TestSuite::RunTest(unsigned int id)
+    int TestSuite::RunTest(tc_struct tc, unsigned int fourcc_id)
     {
         TS_START;
 
-            const tc_struct& tc = test_case[id];
             mfxU32 nFrameMin = 0;
             mfxU32 nFrameSuggested = 0;
             mfxU32 AsyncDepth = 0;
@@ -116,8 +136,31 @@ namespace hevce_query_io_surf
 
             // since memcmp() used for verification, all optional fields must be set
             m_par.mfx.FrameInfo.AspectRatioW = m_par.mfx.FrameInfo.AspectRatioH = 1;
-            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
             m_par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+
+            if (fourcc_id == MFX_FOURCC_NV12)
+            {
+                m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+                m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+                m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
+            }
+            else if (fourcc_id == MFX_FOURCC_YUY2)
+            {
+                m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_YUY2;
+                m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+                m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
+            }
+            else if (fourcc_id == MFX_FOURCC_Y210)
+            {
+                m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y210;
+                m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+                m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
+            }
+            else
+            {
+                g_tsLog << "ERROR: invalid fourcc_id parameter: " << fourcc_id << "\n";
+                return 0;
+            }
 
             SETPARS(m_pPar, MFX_PAR);
             g_tsStatus.expect(tc.sts);
@@ -130,6 +173,14 @@ namespace hevce_query_io_surf
                     g_tsLog << "WARNING: Unsupported HW Platform!\n";
                     Query();
                     return 0;
+                }
+
+                if ((m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210 || m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_YUY2)
+                    && (g_tsHWtype < MFX_HW_ICL || g_tsConfig.lowpower == MFX_CODINGOPTION_ON))
+                {
+                    g_tsStatus.expect(MFX_ERR_NONE);
+                    g_tsLog << "\n\nWARNING: 422 format only supported on ICL+ and ENC+PAK!\n\n\n";
+                    throw tsSKIP;
                 }
 
                 //HEVCE_HW need aligned width and height for 32
@@ -229,5 +280,7 @@ namespace hevce_query_io_surf
         return 0;
     }
 
-    TS_REG_TEST_SUITE_CLASS(hevce_query_io_surf);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_query_io_surf, RunTest_Subtype<MFX_FOURCC_NV12>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_8b_422_yuy2_query_io_surf, RunTest_Subtype<MFX_FOURCC_YUY2>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_422_y210_query_io_surf, RunTest_Subtype<MFX_FOURCC_Y210>, n_cases);
 }
