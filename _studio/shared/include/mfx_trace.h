@@ -78,10 +78,9 @@ enum
     MFX_TRACE_OUTPUT_TRASH  = 0x00,
     MFX_TRACE_OUTPUT_TEXTLOG = 0x01,
     MFX_TRACE_OUTPUT_STAT   = 0x02,
-#ifndef OPEN_SOURCE    
     MFX_TRACE_OUTPUT_ETW    = 0x04,
     MFX_TRACE_OUTPUT_TAL    = 0x08,
-#endif
+
     MFX_TRACE_OUTPUT_ITT    = 0x10,
     MFX_TRACE_OUTPUT_FTRACE = 0x20,
     // special keys
@@ -404,11 +403,11 @@ mfxTraceU32 MFXTrace_EndTask(mfxTraceStaticHandle *static_handle,
 
 #ifdef __cplusplus
 
-#ifndef OPEN_SOURCE
+
 #include "mfx_reflect.h"
 
 mfx_reflect::AccessibleTypesCollection GetReflection();
-#endif
+
 
 #ifdef MFX_TRACE_ENABLE
 // C++ class for BeginTask/EndTask

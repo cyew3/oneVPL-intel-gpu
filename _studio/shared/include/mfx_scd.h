@@ -20,7 +20,9 @@
 #include <map>
 
 // Include needed for CM wrapper
+#ifndef OPEN_SOURCE
 #include "cmrtex.h"
+#endif
 #include "cmrt_cross_platform.h"
 
 #include <limits.h>

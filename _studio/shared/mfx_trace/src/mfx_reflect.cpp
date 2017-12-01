@@ -23,10 +23,13 @@
 #include "mfxmvc.h"
 #include "mfxcamera.h"
 #include "mfxfei.h"
-#include "mfxfeih265.h"
-#include "mfxfeihevc.h"
 #include "mfxla.h"
+
+#ifndef OPEN_SOURCE
+#include "mfxfeihevc.h"
 #include "mfxsc.h"
+#include "mfxfeih265.h"
+#endif // !OPEN_SOURCE
 
 #if (MFX_VERSION >= 1025)
 #include "ts_typedef.h"

@@ -25,8 +25,10 @@
 #if defined(MFX_VA)
 #include "mfx_h264_encode_hw.h"
 #endif
+#ifndef OPEN_SOURCE
 #include "mfx_h264_enc_common.h"
 #include "mfx_h264_encode.h"
+#endif
 #if defined (MFX_ENABLE_MVC_VIDEO_ENCODE)
 #include "mfx_mvc_encode.h"
 #endif
@@ -38,7 +40,9 @@
 #if defined (MFX_ENABLE_MPEG2_VIDEO_ENCODE)
 #if defined(MFX_VA)
 #include "mfx_mpeg2_encode_hw.h"
+#ifndef OPEN_SOURCE
 #include "mfx_mpeg2_encode.h"
+#endif
 #else
 #include "mfx_mpeg2_encode.h"
 #endif
@@ -47,7 +51,9 @@
 #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE)
 #if defined(MFX_VA)
 #include "mfx_mjpeg_encode_hw.h"
+#ifndef OPEN_SOURCE
 #include "mfx_mjpeg_encode.h"
+#endif
 #else
 #include "mfx_mjpeg_encode.h"
 #endif
@@ -97,6 +103,7 @@ VideoENCODE *CreateENCODESpecificClass(mfxU32 CodecId, VideoCORE *core, mfxSessi
         {
             pENCODE = CreateMFXHWVideoENCODEH264(core, &mfxRes);
         }
+#ifndef OPEN_SOURCE
         else
         {
 #ifdef MFX_ENABLE_MVC_VIDEO_ENCODE
@@ -106,6 +113,7 @@ VideoENCODE *CreateENCODESpecificClass(mfxU32 CodecId, VideoCORE *core, mfxSessi
 #endif // MFX_ENABLE_MVC_VIDEO_ENCODE
                 pENCODE = new MFXVideoENCODEH264(core, &mfxRes);
         }
+#endif // OPEN_SOURCE
 
 #else //MFX_VA
 
@@ -127,10 +135,12 @@ VideoENCODE *CreateENCODESpecificClass(mfxU32 CodecId, VideoCORE *core, mfxSessi
         {
             pENCODE = new MFXVideoENCODEMPEG2_HW(core, &mfxRes);
         }
+#ifndef OPEN_SOURCE
         else
         {
             pENCODE = new MFXVideoENCODEMPEG2(core, &mfxRes);
         }
+#endif // OPEN_SOURCE
 #else //MFX_VA
         pENCODE = new MFXVideoENCODEMPEG2(core, &mfxRes);
 #endif //MFX_VA
@@ -144,10 +154,12 @@ VideoENCODE *CreateENCODESpecificClass(mfxU32 CodecId, VideoCORE *core, mfxSessi
         {
             pENCODE = new MFXVideoENCODEMJPEG_HW(core, &mfxRes);
         }
+#ifndef OPEN_SOURCE
         else
         {
             pENCODE = new MFXVideoENCODEMJPEG(core, &mfxRes);
         }
+#endif
         break;
 #else  // MFX_VA
         pENCODE = new MFXVideoENCODEMJPEG(core, &mfxRes);
@@ -204,6 +216,12 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
             if (mfxRes >= MFX_ERR_NONE &&
               mfxRes != MFX_WRN_PARTIAL_ACCELERATION)
               bIsHWENCSupport = true;
+#ifdef OPEN_SOURCE
+            if (MFX_WRN_PARTIAL_ACCELERATION == mfxRes)
+            {
+                mfxRes = MFX_ERR_UNSUPPORTED;
+            }
+#endif
         }
         // if plugin is not supported, or wrong parameters passed we should not look into library
         else
@@ -219,12 +237,16 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
                 mfxRes = MFXHWVideoENCODEH264::Query(session->m_pCORE.get(), in, out, session->m_pENCODE.get());
             if (MFX_WRN_PARTIAL_ACCELERATION == mfxRes)
             {
+#ifndef OPEN_SOURCE
 #ifdef MFX_ENABLE_MVC_VIDEO_ENCODE
                 if(in && (in->mfx.CodecProfile == MFX_PROFILE_AVC_MULTIVIEW_HIGH || in->mfx.CodecProfile == MFX_PROFILE_AVC_STEREO_HIGH))
                     mfxRes = MFXVideoENCODEMVC::Query(in, out);
                 else
 #endif
                     mfxRes = MFXVideoENCODEH264::Query(in, out);
+#else // OPEN_SOURCE
+                mfxRes = MFX_ERR_UNSUPPORTED;
+#endif // OPEN_SOURCE
             }
             else
             {
@@ -247,7 +269,11 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
             mfxRes = MFXVideoENCODEMPEG2_HW::Query(session->m_pCORE.get(), in, out);
             if (MFX_WRN_PARTIAL_ACCELERATION == mfxRes)
             {
+#ifndef OPEN_SOURCE
                 mfxRes = MFXVideoENCODEMPEG2::Query(in, out);
+#else // OPEN_SOURCE
+                mfxRes = MFX_ERR_UNSUPPORTED;
+#endif // OPEN_SOURCE
             }
             else
             {
@@ -265,7 +291,11 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
             mfxRes = MFXVideoENCODEMJPEG_HW::Query(session->m_pCORE.get(), in, out);
             if (MFX_WRN_PARTIAL_ACCELERATION == mfxRes)
             {
+#ifndef OPEN_SOURCE
                 mfxRes = MFXVideoENCODEMJPEG::Query(in, out);
+#else // OPEN_SOURCE
+                mfxRes = MFX_ERR_UNSUPPORTED;
+#endif // OPEN_SOURCE
             }
             else
             {
@@ -292,7 +322,11 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
         !bIsHWENCSupport &&
         MFX_ERR_NONE <= mfxRes)
     {
+#ifndef OPEN_SOURCE
         mfxRes = MFX_WRN_PARTIAL_ACCELERATION;
+#else // OPEN_SOURCE
+        mfxRes = MFX_ERR_UNSUPPORTED;
+#endif // OPEN_SOURCE
     }
 
 #if (MFX_VERSION >= 1025)
@@ -345,6 +379,12 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
             if (mfxRes >= MFX_ERR_NONE &&
               mfxRes != MFX_WRN_PARTIAL_ACCELERATION)
               bIsHWENCSupport = true;
+#ifdef OPEN_SOURCE
+            if (MFX_WRN_PARTIAL_ACCELERATION == mfxRes)
+            {
+                mfxRes = MFX_ERR_UNSUPPORTED;
+            }
+#endif // OPEN_SOURCE
         }
         // if plugin is not supported, or wrong parameters passed we should not look into library
         else
@@ -362,7 +402,11 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
                     mfxRes = MFXVideoENCODEMVC::QueryIOSurf(par, request);
                 else
 #endif // MFX_ENABLE_MVC_VIDEO_ENCODE
+#ifndef OPEN_SOURCE
                     mfxRes = MFXVideoENCODEH264::QueryIOSurf(par, request);
+#else // OPEN_SOURCE
+                mfxRes = MFX_ERR_UNSUPPORTED;
+#endif // OPEN_SOURCE
             }
             else
             {
@@ -386,7 +430,11 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
             mfxRes = MFXVideoENCODEMPEG2_HW::QueryIOSurf(session->m_pCORE.get(), par, request);
             if (MFX_WRN_PARTIAL_ACCELERATION  == mfxRes)
             {
+#ifndef OPEN_SOURCE
                 mfxRes = MFXVideoENCODEMPEG2::QueryIOSurf(par, request);
+#else // OPEN_SOURCE
+                mfxRes = MFX_ERR_UNSUPPORTED;
+#endif // OPEN_SOURCE
             }
             else
             {
@@ -404,7 +452,11 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
             mfxRes = MFXVideoENCODEMJPEG_HW::QueryIOSurf(session->m_pCORE.get(), par, request);
             if (MFX_WRN_PARTIAL_ACCELERATION == mfxRes)
             {
+#ifndef OPEN_SOURCE
                 mfxRes = MFXVideoENCODEMJPEG::QueryIOSurf(par, request);
+#else // OPEN_SOURCE
+                mfxRes = MFX_ERR_UNSUPPORTED;
+#endif // OPEN_SOURCE
             }
             else
             {
@@ -432,7 +484,11 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
         !bIsHWENCSupport &&
         MFX_ERR_NONE <= mfxRes)
     {
+#ifndef OPEN_SOURCE
         mfxRes = MFX_WRN_PARTIAL_ACCELERATION;
+#else // OPEN_SOURCE
+        mfxRes = MFX_ERR_UNSUPPORTED;
+#endif // OPEN_SOURCE
     }
 
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, request);
@@ -469,11 +525,15 @@ mfxStatus MFXVideoENCODE_Init(mfxSession session, mfxVideoParam *par)
         if (MFX_WRN_PARTIAL_ACCELERATION == mfxRes)
         {
             session->m_bIsHWENCSupport = false;
+#ifndef OPEN_SOURCE
 #if !defined (MFX_RT)
             session->m_pENCODE.reset(CreateENCODESpecificClass(par->mfx.CodecId, session->m_pCORE.get(), session, par));
             MFX_CHECK(session->m_pENCODE.get(), MFX_ERR_NULL_PTR);
             mfxRes = session->m_pENCODE->Init(par);
 #endif
+#else // OPEN_SOURCE
+            mfxRes = MFX_ERR_UNSUPPORTED;
+#endif // OPEN_SOURCE
         }
         else if (mfxRes >= MFX_ERR_NONE)
             session->m_bIsHWENCSupport = true;
@@ -483,7 +543,11 @@ mfxStatus MFXVideoENCODE_Init(mfxSession session, mfxVideoParam *par)
             !session->m_bIsHWENCSupport &&
             MFX_ERR_NONE <= mfxRes)
         {
+#ifndef OPEN_SOURCE
             mfxRes = MFX_WRN_PARTIAL_ACCELERATION;
+#else // OPEN_SOURCE
+            mfxRes = MFX_ERR_UNSUPPORTED;
+#endif // OPEN_SOURCE
         }
     }
     // handle error(s)
@@ -800,7 +864,11 @@ mfxStatus MFXVideoENCODE_Reset(mfxSession session, mfxVideoParam *par)
                 !session->m_bIsHWENCSupport &&
                 MFX_ERR_NONE <= mfxRes)
             {
+#ifndef OPEN_SOURCE
                 mfxRes = MFX_WRN_PARTIAL_ACCELERATION;
+#else // OPEN_SOURCE
+                mfxRes = MFX_ERR_UNSUPPORTED;
+#endif // OPEN_SOURCE
             }
         }
     }

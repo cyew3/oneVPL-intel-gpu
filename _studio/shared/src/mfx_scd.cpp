@@ -13,6 +13,7 @@
 
 #include "mfx_utils.h"
 #include "mfx_task.h"
+#include <cassert>
 
 #if defined(MFX_VA) && defined(MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP)
 
@@ -11972,16 +11973,16 @@ void SceneChangeDetector::GPUProcess()
  */
 mfxStatus SceneChangeDetector::Init(mfxI32 Width, mfxI32 Height, mfxI32 Pitch, mfxU32 interlaceMode, CmDevice* pCmDevice)
 {
-    mfxStatus sts   = MFX_ERR_NONE;
+    mfxStatus sts = MFX_ERR_NONE;
 
-    if ( m_bInited )
+    if (m_bInited)
         return MFX_ERR_NONE;
 
-    m_dataIn    = NULL;
-    support   = NULL;
+    m_dataIn = NULL;
+    support = NULL;
     videoData = NULL;
 
-    m_dataIn        = new VidData;
+    m_dataIn = new VidData;
     MFX_CHECK_NULL_PTR1(m_dataIn);
     m_dataIn->layer = NULL;
     m_dataIn->layer = new ImDetails;
@@ -11998,24 +11999,38 @@ mfxStatus SceneChangeDetector::Init(mfxI32 Width, mfxI32 Height, mfxI32 Pitch, m
     Params_Init();
 
     // [1] GetPlatformType()
+    m_cpuOpt = CPU_NONE;
+
+#ifndef OPEN_SOURCE
     Ipp32u cpuIdInfoRegs[4];
     Ipp64u featuresMask;
 
-    IppStatus ippSts = ippGetCpuFeatures( &featuresMask, cpuIdInfoRegs);
+    IppStatus ippSts = ippGetCpuFeatures(&featuresMask, cpuIdInfoRegs);
 
-    m_cpuOpt = CPU_NONE;
 
-    if(ippStsNoErr == ippSts && featuresMask & (Ipp64u)(ippCPUID_SSE42) ) // means AVX2 + BMI_I + BMI_II to prevent issues with BMI
+    if (ippStsNoErr == ippSts && featuresMask & (Ipp64u)(ippCPUID_SSE42)) // means AVX2 + BMI_I + BMI_II to prevent issues with BMI
     {
         m_cpuOpt = CPU_SSE4;
     }
 
 #ifdef MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP_AVX2
-    if(ippStsNoErr == ippSts && featuresMask & (Ipp64u)(ippCPUID_AVX2) ) // means AVX2 + BMI_I + BMI_II to prevent issues with BMI
+    if (ippStsNoErr == ippSts && featuresMask & (Ipp64u)(ippCPUID_AVX2)) // means AVX2 + BMI_I + BMI_II to prevent issues with BMI
     {
         m_cpuOpt = CPU_AVX2;
     }
 #endif
+#else // OPENSOURCE
+    if (__builtin_cpu_supports("sse4.2"))
+    {
+        m_cpuOpt = CPU_SSE4;
+    }
+#ifdef MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP_AVX2
+    if (__builtin_cpu_supports("avx2"))
+    {
+        m_cpuOpt = CPU_AVX2;
+    }
+#endif
+#endif // OPENSOURCE
 
     GPUProc = true; // UseGPU;
     m_dataIn->interlaceMode = ( interlaceMode & MFX_PICSTRUCT_PROGRESSIVE ) ? progressive_frame :
