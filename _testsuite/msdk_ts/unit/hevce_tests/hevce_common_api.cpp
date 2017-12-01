@@ -605,14 +605,18 @@ template <> void ApiTestCommon::ExpectEqual<mfxExtCodingOption3>(const mfxExtCod
     EXPECT(BitstreamRestriction);
     EXPECT(LowDelayHrd);
     EXPECT(MotionVectorsOverPicBoundaries);
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     EXPECT(Log2MaxMvLengthHorizontal);
     EXPECT(Log2MaxMvLengthVertical);
+#endif
     EXPECT(ScenarioInfo);
     EXPECT(ContentInfo);
     EXPECT(PRefType);
     EXPECT(FadeDetection);
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     EXPECT(DeblockingAlphaTcOffset);
     EXPECT(DeblockingBetaOffset);
+#endif
     EXPECT(GPB);
     EXPECT_EQ(0, MemCompare(expected, actual));
 }
