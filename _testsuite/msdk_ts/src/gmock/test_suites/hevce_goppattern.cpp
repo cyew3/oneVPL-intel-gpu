@@ -57,7 +57,7 @@ namespace hevce_goppattern
     const tc_struct TestSuite::test_case[] =
     {
         //invalid GopRefDist = 1, GopPicSize = 1
-        {/*00*/ MFX_ERR_NONE, 0, {}, {
+        {/*00*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, 0, {}, {
                                         { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1 },
                                         { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 1 }
                                      }
