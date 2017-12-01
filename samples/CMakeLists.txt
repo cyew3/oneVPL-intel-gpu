@@ -20,6 +20,10 @@ endif()
 option( ENABLE_FFMPEG "Build targets dependent on FFmpeg?" ON )
 option( ENABLE_OPENCL "Build targets dependent on OpenCL?" ON )
 
+if( ENABLE_FF )
+  set( API latest )
+endif()
+
 set( BUILDER_ROOT ${CMAKE_HOME_DIRECTORY}/../builder )
 include( ../builder/FindFunctions.cmake )
 include( ../builder/FindGlobals.cmake )
