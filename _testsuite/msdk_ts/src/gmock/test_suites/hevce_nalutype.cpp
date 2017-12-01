@@ -26,8 +26,9 @@ namespace hevce_nalutype
         DEFAULT  = 0,  /* default nalu type setting */
         EXPLICIT,      /* normal nalu type setting */
 
-        CRA2TRAIL,     /* speical case for CRA to TRAIL */
-        TRAIL2CRA,     /* speical case for TRAIL to CRA */
+        EXT_IDR_N_LP, /* special case for IDR_W_RADL to IDR_N_LP */
+        EXT_CRA2TRAIL,/* speical case for CRA to TRAIL */
+        EXT_TRAIL2CRA,/* speical case for TRAIL to CRA */
     };
 
     struct Frame
@@ -591,33 +592,37 @@ namespace hevce_nalutype
     {
         /*  NalTypeCtrl   PicStruct EncodedOrder GopRefDist GopOptFlag IdrInterval BRefType  PRefType */
         /* default nalu_type */
-        /*01*/{DEFAULT,   PROGRESSIVE,    0,       3,          0,          0,       1,        0}, // p + disp order
-        /*02*/{DEFAULT,         FIELD,    0,       3,          0,          0,       1,        0}, // i + disp order
-        /*03*/{DEFAULT,   PROGRESSIVE,    0,       1,          0,          1,       1,        2}, // p + disp order + P-PYR
-        /*04*/{DEFAULT,         FIELD,    0,       1,          0,          1,       1,        2}, // i + disp order + P-PYR
-        /*05*/{DEFAULT,   PROGRESSIVE,    0,       3,          0,          0,       2,        0}, // p + disp order + B-PYR
-        /*06*/{DEFAULT,         FIELD,    0,       3,          0,          0,       2,        0}, // i + disp order + B-PYR
-        /*07*/{DEFAULT,   PROGRESSIVE,    0,       4,          2,          2,       2,        0}, // p + disp order + B-PYR + strict
-        /*08*/{DEFAULT,         FIELD,    0,       4,          2,          2,       2,        0}, // i + disp order + B-PYR + strict
-        /*09*/{DEFAULT,   PROGRESSIVE,    1,       3,          0,          0,       1,        0}, // p + encoded order
-        /*10*/{DEFAULT,         FIELD,    1,       3,          0,          0,       1,        0}, // i + encoded order
-        /*11*/{DEFAULT,   PROGRESSIVE,    1,       3,          0,          0,       2,        0}, // p + encoded order + B-PYR
-        /*12*/{DEFAULT,         FIELD,    1,       3,          0,          0,       2,        0}, // i + encoded order + B-PYR
+        /*01*/{DEFAULT,       PROGRESSIVE,    0,       3,          0,          0,       1,        0}, // p + disp order
+        /*02*/{DEFAULT,             FIELD,    0,       3,          0,          0,       1,        0}, // i + disp order
+        /*03*/{DEFAULT,       PROGRESSIVE,    0,       1,          0,          1,       1,        2}, // p + disp order + P-PYR
+        /*04*/{DEFAULT,             FIELD,    0,       1,          0,          1,       1,        2}, // i + disp order + P-PYR
+        /*05*/{DEFAULT,       PROGRESSIVE,    0,       3,          0,          0,       2,        0}, // p + disp order + B-PYR
+        /*06*/{DEFAULT,             FIELD,    0,       3,          0,          0,       2,        0}, // i + disp order + B-PYR
+        /*07*/{DEFAULT,       PROGRESSIVE,    0,       4,          2,          2,       2,        0}, // p + disp order + B-PYR + strict
+        /*08*/{DEFAULT,             FIELD,    0,       4,          2,          2,       2,        0}, // i + disp order + B-PYR + strict
+        /*09*/{DEFAULT,       PROGRESSIVE,    1,       3,          0,          0,       1,        0}, // p + encoded order
+        /*10*/{DEFAULT,             FIELD,    1,       3,          0,          0,       1,        0}, // i + encoded order
+        /*11*/{DEFAULT,       PROGRESSIVE,    1,       3,          0,          0,       2,        0}, // p + encoded order + B-PYR
+        /*12*/{DEFAULT,             FIELD,    1,       3,          0,          0,       2,        0}, // i + encoded order + B-PYR
 
         /* external positive case */
-        /*13*/{EXPLICIT,  PROGRESSIVE,    1,       1,          0,          1,       1,        2}, // p + P-PYR
-        /*14*/{EXPLICIT,        FIELD,    1,       1,          0,          1,       1,        2}, // i + P-PYR
-        /*15*/{EXPLICIT,  PROGRESSIVE,    1,       4,          0,          1,       1,        0}, // p + 1 idrInterval
-        /*16*/{EXPLICIT,        FIELD,    1,       4,          0,          1,       1,        0}, // i + 1 idrInterval
-        /*17*/{EXPLICIT,  PROGRESSIVE,    1,       4,          0,          2,       2,        0}, // p + B-PYR
-        /*18*/{EXPLICIT,        FIELD,    1,       4,          0,          2,       2,        0}, // i + B-PYR
-        /*19*/{EXPLICIT,  PROGRESSIVE,    1,       4,          2,          2,       2,        0}, // p + B-PYR + strict
-        /*20*/{EXPLICIT,        FIELD,    1,       4,          2,          2,       2,        0}, // i + B-PYR + strict
-        /*21*/{EXPLICIT,  PROGRESSIVE,    1,       4,          3,          2,       2,        0}, // P + B-PYR + strict + close
-        /*22*/{EXPLICIT,        FIELD,    1,       4,          3,          2,       2,        0}, // i + B-PYR + strcit + close
-        /*23*/{CRA2TRAIL, PROGRESSIVE,    1,       4,          0,          2,       2,        0}, // P + B-PYR + CRA2TRAIL
-        /*24*/{CRA2TRAIL,       FIELD,    1,       4,          0,          2,       2,        0}, // i + B-PYR + CRA2TRAIL
-        /*25*/{TRAIL2CRA, PROGRESSIVE,    1,       4,          0,          2,       2,        0}, // P + B-PYR + TRAIL2CRA
+        /*13*/{EXPLICIT,      PROGRESSIVE,    1,       1,          0,          1,       1,        2}, // p + P-PYR
+        /*14*/{EXPLICIT,            FIELD,    1,       1,          0,          1,       1,        2}, // i + P-PYR
+        /*15*/{EXPLICIT,      PROGRESSIVE,    1,       4,          0,          1,       1,        0}, // p + 1 idrInterval
+        /*16*/{EXPLICIT,            FIELD,    1,       4,          0,          1,       1,        0}, // i + 1 idrInterval
+        /*17*/{EXPLICIT,      PROGRESSIVE,    1,       4,          0,          2,       2,        0}, // p + B-PYR
+        /*18*/{EXPLICIT,            FIELD,    1,       4,          0,          2,       2,        0}, // i + B-PYR
+        /*19*/{EXPLICIT,      PROGRESSIVE,    1,       4,          2,          2,       2,        0}, // p + B-PYR + strict
+        /*20*/{EXPLICIT,            FIELD,    1,       4,          2,          2,       2,        0}, // i + B-PYR + strict
+        /*21*/{EXPLICIT,      PROGRESSIVE,    1,       4,          3,          2,       2,        0}, // P + B-PYR + strict + close
+        /*22*/{EXPLICIT,            FIELD,    1,       4,          3,          2,       2,        0}, // i + B-PYR + strcit + close
+        /*23*/{EXPLICIT,      PROGRESSIVE,    1,       7,          3,          2,       2,        0}, // P + B-PYR + strict + close + RefDist=7
+        /*24*/{EXPLICIT,            FIELD,    1,       7,          3,          2,       2,        0}, // i + B-PYR + strcit + close + RefDist=7
+        /*25*/{EXT_CRA2TRAIL, PROGRESSIVE,    1,       4,          0,          2,       2,        0}, // P + B-PYR + EXT_CRA2TRAIL
+        /*26*/{EXT_CRA2TRAIL,       FIELD,    1,       4,          0,          2,       2,        0}, // i + B-PYR + EXT_CRA2TRAIL
+        /*27*/{EXT_TRAIL2CRA, PROGRESSIVE,    1,       4,          0,          2,       2,        0}, // P + B-PYR + EXT_TRAIL2CRA
+        /*28*/{EXT_IDR_N_LP,  PROGRESSIVE,    1,       4,          0,          2,       2,        0}, // P + B-PYR + EXT_IDR_N_LP
+        /*29*/{EXT_IDR_N_LP,        FIELD,    1,       4,          0,          2,       2,        0}, // i + B-PYR + EXT_IDR_N_LP
     };
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
 
@@ -650,15 +655,23 @@ namespace hevce_nalutype
             {
                 m_extFrameEmuVec.clear();
 
-                m_pCtrl->MfxNalUnitType = MFX_HEVC_NALU_TYPE_IDR_W_RADL;
-                m_extFrameEmulator.nalType = IDR_W_RADL;
+                if(m_nalTypeCtrl == EXT_IDR_N_LP)
+                {
+                    m_pCtrl->MfxNalUnitType = MFX_HEVC_NALU_TYPE_IDR_N_LP;
+                    m_extFrameEmulator.nalType = IDR_N_LP;
+                }
+                else
+                {
+                    m_pCtrl->MfxNalUnitType = MFX_HEVC_NALU_TYPE_IDR_W_RADL;
+                    m_extFrameEmulator.nalType = IDR_W_RADL;
+                }
             }
             else if (isI)
             {
                 m_pCtrl->MfxNalUnitType = MFX_HEVC_NALU_TYPE_CRA_NUT;
                 m_extFrameEmulator.nalType = CRA_NUT;
 
-                if (m_nalTypeCtrl == CRA2TRAIL)
+                if (m_nalTypeCtrl == EXT_CRA2TRAIL)
                 {
                     m_pCtrl->MfxNalUnitType = MFX_HEVC_NALU_TYPE_TRAIL_R;
                     m_extFrameEmulator.nalType = TRAIL_R;
@@ -674,7 +687,7 @@ namespace hevce_nalutype
                     m_pCtrl->MfxNalUnitType = MFX_HEVC_NALU_TYPE_TRAIL_R;
                     m_extFrameEmulator.nalType = TRAIL_R;
 
-                    if (m_nalTypeCtrl == TRAIL2CRA && isP && !bFields)
+                    if (m_nalTypeCtrl == EXT_TRAIL2CRA && isP && !bFields)
                     {
                         m_pCtrl->MfxNalUnitType = MFX_HEVC_NALU_TYPE_CRA_NUT;
                         m_extFrameEmulator.nalType = CRA_NUT;
@@ -806,6 +819,8 @@ namespace hevce_nalutype
 
             if (isLeadingPicture(nalu->nal_unit_type))
             {
+                //no leading pictures are allowed for an IDR picture with nalu type IDR_N_LP
+                EXPECT_NE(m_anchorNaluType, IDR_N_LP);
                 //leading picture precedes the closest previous IRAP picture in output order.
                 EXPECT_LT(sh.PicOrderCntVal , m_anchorPOC);
 
