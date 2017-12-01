@@ -628,14 +628,18 @@ namespace {
             ext->BitstreamRestriction = 0;
             ext->LowDelayHrd = 0;
             ext->MotionVectorsOverPicBoundaries = 0;
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
             ext->Log2MaxMvLengthHorizontal = 0;
             ext->Log2MaxMvLengthVertical = 0;
+#endif
             ext->ScenarioInfo = 0;
             ext->ContentInfo = 0;
             ext->PRefType = 0;
             ext->FadeDetection = 0;
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
             ext->DeblockingAlphaTcOffset = 0;
             ext->DeblockingBetaOffset = 0;
+#endif
             ext->GPB = 1;
         }
 
