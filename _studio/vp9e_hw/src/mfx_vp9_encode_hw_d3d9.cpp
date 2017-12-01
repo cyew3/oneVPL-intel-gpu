@@ -134,16 +134,17 @@ void FillSpsBuffer(
     mfxU32 nom = par.mfx.FrameInfo.FrameRateExtN;
     mfxU32 denom = par.mfx.FrameInfo.FrameRateExtD;
 
-    if (par.m_numLayers)
+    if (par.m_numLayers > 1)
     {
         mfxExtVP9TemporalLayers const & tl = GetExtBufferRef(par);
         assert(tl.Layer[0].FrameRateScale == 1);
+        assert(tl.Layer[1].FrameRateScale);
         sps.FrameRate[par.m_numLayers - 1].Numerator = nom;
         sps.FrameRate[par.m_numLayers - 1].Denominator = denom;
 
-        for (mfxU16 i = 1; i < par.m_numLayers; i++)
+        for (mfxI16 i = par.m_numLayers - 2; i >= 0; i--)
         {
-            mfxU16 l2lRatio = tl.Layer[i].FrameRateScale / tl.Layer[i - 1].FrameRateScale;
+            mfxU16 l2lRatio = tl.Layer[i + 1].FrameRateScale / tl.Layer[i].FrameRateScale;
             assert(l2lRatio);
             if (nom % l2lRatio == 0)
             {
@@ -154,8 +155,8 @@ void FillSpsBuffer(
                 denom *= l2lRatio;
             }
 
-            sps.FrameRate[par.m_numLayers - i - 1].Numerator = nom;
-            sps.FrameRate[par.m_numLayers - i - 1].Denominator = denom;
+            sps.FrameRate[i].Numerator = nom;
+            sps.FrameRate[i].Denominator = denom;
         }
     }
     else
