@@ -829,9 +829,17 @@ namespace
         {
             //other functions either already rejected(PAK, ENC/PreEnc absense of support) or can run bigger amount of frames(for PreEnc).
             //extSurfUsed - mean we are using  running into kernel limitation for max number of surfaces used in kernel
-            if ( func == MFX_FEI_FUNCTION_ENCODE || extSurfUsed)
+            if ( extSurfUsed)
             {
                 return 2;
+            }
+            else if (func == MFX_FEI_FUNCTION_ENCODE)
+            {
+                return 2;
+            }
+            else if (func)
+            {
+                return 1;
             }
             //TODO: this need to be verified which resolution should decrease number of MFE frames and how this depend on TU and SKU
             //also ABR workload can have better performance with >1080p Max resolution and some additional resolutions added.
