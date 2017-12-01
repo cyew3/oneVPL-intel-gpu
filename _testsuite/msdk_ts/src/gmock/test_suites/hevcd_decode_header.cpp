@@ -414,11 +414,35 @@ int TestSuite::RunTest(unsigned int id)
         EXPECT_EQ(sps.bit_depth_luma_minus8 + 8, m_par.mfx.FrameInfo.BitDepthLuma);
         EXPECT_EQ(sps.bit_depth_chroma_minus8 + 8, m_par.mfx.FrameInfo.BitDepthChroma);
 
-        if (m_par.mfx.FrameInfo.ChromaFormat == 0)
+        if ( (m_par.mfx.CodecProfile == MFX_PROFILE_HEVC_SCC) && (g_tsHWtype < MFX_HW_TGL) && (g_tsOSFamily == MFX_OS_FAMILY_LINUX) )
         {
-            if (g_tsImpl != MFX_IMPL_SOFTWARE)
-                EXPECT_EQ(0, m_par.mfx.FrameInfo.FourCC);
-            else
+            // SCC not supported before Gen12
+            EXPECT_EQ(0, m_par.mfx.FrameInfo.FourCC);
+        }
+        else
+        {
+            if (m_par.mfx.FrameInfo.ChromaFormat == 0)
+            {
+                if (g_tsImpl != MFX_IMPL_SOFTWARE)
+                    EXPECT_EQ(0, m_par.mfx.FrameInfo.FourCC);
+                else
+                {
+                    if (m_par.mfx.FrameInfo.BitDepthLuma == 8)
+                    {
+                        EXPECT_EQ(MFX_FOURCC_NV12, m_par.mfx.FrameInfo.FourCC);
+                    }
+                    else if (m_par.mfx.FrameInfo.BitDepthLuma == 10)
+                    {
+                        EXPECT_EQ(MFX_FOURCC_P010, m_par.mfx.FrameInfo.FourCC);
+                    }
+                    else
+                    {
+                        ADD_FAILURE() << "FAILED: Non supported bitdepth = " << m_par.mfx.FrameInfo.BitDepthLuma << " for chroma_format = "
+                            << m_par.mfx.FrameInfo.ChromaFormat;
+                    }
+                }
+            }
+            else if (m_par.mfx.FrameInfo.ChromaFormat == 1)
             {
                 if (m_par.mfx.FrameInfo.BitDepthLuma == 8)
                 {
@@ -428,53 +452,11 @@ int TestSuite::RunTest(unsigned int id)
                 {
                     EXPECT_EQ(MFX_FOURCC_P010, m_par.mfx.FrameInfo.FourCC);
                 }
-                else
-                {
-                    ADD_FAILURE() << "FAILED: Non supported bitdepth = " << m_par.mfx.FrameInfo.BitDepthLuma << " for chroma_format = "
-                        << m_par.mfx.FrameInfo.ChromaFormat;
-                }
-            }
-        }
-        else if (m_par.mfx.FrameInfo.ChromaFormat == 1)
-        {
-            if (m_par.mfx.FrameInfo.BitDepthLuma == 8)
-            {
-                EXPECT_EQ(MFX_FOURCC_NV12, m_par.mfx.FrameInfo.FourCC);
-            }
-            else if (m_par.mfx.FrameInfo.BitDepthLuma == 10)
-            {
-                EXPECT_EQ(MFX_FOURCC_P010, m_par.mfx.FrameInfo.FourCC);
-            }
-            else if (m_par.mfx.FrameInfo.BitDepthLuma == 12)
-            {
-                if (g_tsHWtype >= MFX_HW_TGL) //Gen12
-                {
-                    EXPECT_EQ(MFX_FOURCC_P016, m_par.mfx.FrameInfo.FourCC);
-                }
-            }
-            else
-            {
-                ADD_FAILURE() << "FAILED: Non supported bitdepth = " << m_par.mfx.FrameInfo.BitDepthLuma << " for chroma_format = "
-                    << m_par.mfx.FrameInfo.ChromaFormat;
-            }
-        }
-        else if (m_par.mfx.FrameInfo.ChromaFormat == 2)
-        {
-            if ((g_tsHWtype >= MFX_HW_ICL) || (g_tsImpl == MFX_IMPL_SOFTWARE))//Gen11 or SW
-            {
-                if (m_par.mfx.FrameInfo.BitDepthLuma == 8)
-                {
-                    EXPECT_EQ(MFX_FOURCC_YUY2, m_par.mfx.FrameInfo.FourCC);
-                }
-                else if (m_par.mfx.FrameInfo.BitDepthLuma == 10)
-                {
-                    EXPECT_EQ(MFX_FOURCC_Y210, m_par.mfx.FrameInfo.FourCC);
-                }
                 else if (m_par.mfx.FrameInfo.BitDepthLuma == 12)
                 {
-                    if (g_tsHWtype >= MFX_HW_TGL)//Gen12
+                    if (g_tsHWtype >= MFX_HW_TGL) //Gen12
                     {
-                        EXPECT_EQ(MFX_FOURCC_Y216, m_par.mfx.FrameInfo.FourCC);
+                        EXPECT_EQ(MFX_FOURCC_P016, m_par.mfx.FrameInfo.FourCC);
                     }
                 }
                 else
@@ -483,30 +465,56 @@ int TestSuite::RunTest(unsigned int id)
                         << m_par.mfx.FrameInfo.ChromaFormat;
                 }
             }
-         }
-        else if (m_par.mfx.FrameInfo.ChromaFormat == 3)
-        {
-            if (g_tsHWtype >= MFX_HW_ICL)//Gen11
+            else if (m_par.mfx.FrameInfo.ChromaFormat == 2)
             {
-                if (m_par.mfx.FrameInfo.BitDepthLuma == 8)
+                if ((g_tsHWtype >= MFX_HW_ICL) || (g_tsImpl == MFX_IMPL_SOFTWARE))//Gen11 or SW
                 {
-                    EXPECT_EQ(MFX_FOURCC_AYUV, m_par.mfx.FrameInfo.FourCC);
-                }
-                else if (m_par.mfx.FrameInfo.BitDepthLuma == 10)
-                {
-                    EXPECT_EQ(MFX_FOURCC_Y410, m_par.mfx.FrameInfo.FourCC);
-                }
-                else if (m_par.mfx.FrameInfo.BitDepthLuma == 12)//Gen12
-                {
-                    if (g_tsHWtype >= MFX_HW_TGL)
+                    if (m_par.mfx.FrameInfo.BitDepthLuma == 8)
                     {
-                        EXPECT_EQ(MFX_FOURCC_Y416, m_par.mfx.FrameInfo.FourCC);
+                        EXPECT_EQ(MFX_FOURCC_YUY2, m_par.mfx.FrameInfo.FourCC);
+                    }
+                    else if (m_par.mfx.FrameInfo.BitDepthLuma == 10)
+                    {
+                        EXPECT_EQ(MFX_FOURCC_Y210, m_par.mfx.FrameInfo.FourCC);
+                    }
+                    else if (m_par.mfx.FrameInfo.BitDepthLuma == 12)
+                    {
+                        if (g_tsHWtype >= MFX_HW_TGL)//Gen12
+                        {
+                            EXPECT_EQ(MFX_FOURCC_Y216, m_par.mfx.FrameInfo.FourCC);
+                        }
+                    }
+                    else
+                    {
+                        ADD_FAILURE() << "FAILED: Non supported bitdepth = " << m_par.mfx.FrameInfo.BitDepthLuma << " for chroma_format = "
+                            << m_par.mfx.FrameInfo.ChromaFormat;
                     }
                 }
-                else
+             }
+            else if (m_par.mfx.FrameInfo.ChromaFormat == 3)
+            {
+                if (g_tsHWtype >= MFX_HW_ICL)//Gen11
                 {
-                    ADD_FAILURE() << "FAILED: Non supported bitdepth = " << m_par.mfx.FrameInfo.BitDepthLuma << " for chroma_format = "
-                        << m_par.mfx.FrameInfo.ChromaFormat;
+                    if (m_par.mfx.FrameInfo.BitDepthLuma == 8)
+                    {
+                        EXPECT_EQ(MFX_FOURCC_AYUV, m_par.mfx.FrameInfo.FourCC);
+                    }
+                    else if (m_par.mfx.FrameInfo.BitDepthLuma == 10)
+                    {
+                        EXPECT_EQ(MFX_FOURCC_Y410, m_par.mfx.FrameInfo.FourCC);
+                    }
+                    else if (m_par.mfx.FrameInfo.BitDepthLuma == 12)//Gen12
+                    {
+                        if (g_tsHWtype >= MFX_HW_TGL)
+                        {
+                            EXPECT_EQ(MFX_FOURCC_Y416, m_par.mfx.FrameInfo.FourCC);
+                        }
+                    }
+                    else
+                    {
+                        ADD_FAILURE() << "FAILED: Non supported bitdepth = " << m_par.mfx.FrameInfo.BitDepthLuma << " for chroma_format = "
+                            << m_par.mfx.FrameInfo.ChromaFormat;
+                    }
                 }
             }
         }
