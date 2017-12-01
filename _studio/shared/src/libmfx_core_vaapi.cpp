@@ -34,6 +34,19 @@
 #include "va/va.h"
 #include <va/va_backend.h>
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+
+#else
+    #if !(defined MFX_ADAPTIVE_PLAYBACK_DISABLE)
+        enum 
+        {
+            MFX_HANDLE_VA_CONFIG_ID = 6,
+            MFX_HANDLE_VA_CONTEXT_ID = 7
+        };
+
+    #endif
+#endif
+
 #define MFX_CHECK_HDL(hdl) {if (!hdl) MFX_RETURN(MFX_ERR_INVALID_HANDLE);}
 
 typedef struct drm_i915_getparam {
@@ -380,7 +393,7 @@ VAAPIVideoCORE::GetHandle(
     UMC::AutomaticUMCMutex guard(m_guard);
 
 #ifndef MFX_ADAPTIVE_PLAYBACK_DISABLE
-    if (MFX_HANDLE_VA_CONTEXT_ID == type )
+    if (MFX_HANDLE_VA_CONTEXT_ID == (mfxU32)type )
     {
         if (m_VAContextHandle != (mfxHDL)VA_INVALID_ID)
         {
