@@ -294,6 +294,7 @@ bool CheckDXVAConfig(Ipp32s profile_flags, T *config, ProtectedVA * protectedVA)
     case JPEG_VLD:
     case VP8_VLD:
     case VP9_VLD:
+    case VP9_10_VLD:
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     case VP9_VLD_422:
     case VP9_VLD_444:
