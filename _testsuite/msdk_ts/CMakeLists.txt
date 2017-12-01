@@ -3,17 +3,14 @@ mfx_include_dirs( )
 # msdk_gmock:
 #
 include_directories (
-#  /usr/include/c++/4.6/bits
   ${MSDK_SAMPLES_ROOT}/sample_common/include/vm
   ${MSDK_SAMPLES_ROOT}/sample_common/include
   ${CMAKE_HOME_DIRECTORY}/mdp_msdk-val-tools/bs_parser/include
   ${CMAKE_HOME_DIRECTORY}/mdp_msdk-api/mediasdk_structures
-# ${CMAKE_HOME_DIRECTORY}/igfx_s3dcontrol/include
   ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/gmock
   ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/gmock/gtest/include
   ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/gmock/include
   ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/yaml-cpp/include
-# ${CMAKE_HOME_DIRECTORY}/include #included by CMake
   ${CMAKE_CURRENT_SOURCE_DIR}/include/gmock
   ${CMAKE_CURRENT_SOURCE_DIR}/include
   ${MSDK_TSUITE_ROOT}/mfx_serializer/include
@@ -74,9 +71,14 @@ else()
   list(APPEND sources ${MSDK_SAMPLES_ROOT}/sample_hevc_fei/src/fei_buffer_allocator.cpp)
 endif()
 
+if(NOT API_USE_LATEST)
+  file( GLOB_RECURSE vp9_src "${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/vp9*.cpp")
+  list( REMOVE_ITEM sources ${vp9_src})
+endif()
+
+
 add_definitions( -D_VARIADIC_MAX=10 )
 add_definitions( -DENABLE_PS=1 )
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 
 set( LIBS "" )
 set( LIBS_SUFFIX "" )
@@ -85,7 +87,6 @@ list( APPEND LIBS
   dispatch_trace
   bs_parser
   dl
-#      ippvc_l ippcc_l ippi_l ipps_l ippcore_l
   ippi_l ippdc_l ipps_l ippcore_l ippcc_l
   pthread
   mfx_serializer

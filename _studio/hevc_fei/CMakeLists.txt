@@ -1,3 +1,5 @@
+if( API_USE_LATEST )
+
 set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
 
 set(HEVC_FEI_Encoder_HW_GUID "5418a70666f94d5cb4f7b1caee86339b")
@@ -102,3 +104,4 @@ set( defs " -DAS_HEVCE_PLUGIN -DAS_HEVC_FEI_ENCODE_PLUGIN ${API_FLAGS} ${WARNING
 make_library( mfx_hevc_fei_hw64 hw shared )
 msdk_install( mfx_hevc_fei_hw64 ${MFX_PLUGINS_DIR} )
 set( defs "" )
+endif( API_USE_LATEST )
