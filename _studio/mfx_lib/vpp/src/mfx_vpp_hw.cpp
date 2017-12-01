@@ -1490,26 +1490,45 @@ mfxStatus  VideoVPPHW::CopyPassThrough(mfxFrameSurface1 *pInputSurface, mfxFrame
 {
     mfxStatus sts = MFX_ERR_NONE;
 
-    mfxU16 srcPattern, dstPattern;
-
-    srcPattern = dstPattern = MFX_MEMTYPE_EXTERNAL_FRAME;
-
-    if (m_IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY)
+    mfxU16 srcPattern = 0, dstPattern = 0;
+    switch (m_ioMode)
     {
-        srcPattern |= MFX_MEMTYPE_SYSTEM_MEMORY;
+        case SYS_TO_SYS:
+            srcPattern = MFX_MEMTYPE_SYSTEM_MEMORY;
+            dstPattern = MFX_MEMTYPE_SYSTEM_MEMORY;
+            break;
+        case SYS_TO_D3D:
+            srcPattern = MFX_MEMTYPE_SYSTEM_MEMORY;
+            dstPattern = MFX_MEMTYPE_DXVA2_DECODER_TARGET;
+            break;
+        case D3D_TO_SYS:
+            srcPattern = MFX_MEMTYPE_DXVA2_DECODER_TARGET;
+            dstPattern = MFX_MEMTYPE_SYSTEM_MEMORY;
+            break;
+        case D3D_TO_D3D:
+            srcPattern = MFX_MEMTYPE_DXVA2_DECODER_TARGET;
+            dstPattern = MFX_MEMTYPE_DXVA2_DECODER_TARGET;
+            break;
+        default:
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+
+    if (m_pCore->IsExternalFrameAllocator())
+    {
+        if (!(m_IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY) && (srcPattern & MFX_MEMTYPE_DXVA2_DECODER_TARGET)) 
+            srcPattern |= MFX_MEMTYPE_EXTERNAL_FRAME;
+        else
+            srcPattern |= MFX_MEMTYPE_INTERNAL_FRAME;
+
+        if (!(m_IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) && (dstPattern & MFX_MEMTYPE_DXVA2_DECODER_TARGET)) 
+            dstPattern |= MFX_MEMTYPE_EXTERNAL_FRAME;
+        else
+            dstPattern |= MFX_MEMTYPE_INTERNAL_FRAME;
     }
     else
     {
-        srcPattern |= MFX_MEMTYPE_DXVA2_DECODER_TARGET;
-    }
-
-    if (m_IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
-    {
-        dstPattern |= MFX_MEMTYPE_SYSTEM_MEMORY;
-    }
-    else
-    {
-        dstPattern |= MFX_MEMTYPE_DXVA2_DECODER_TARGET;
+        srcPattern |= MFX_MEMTYPE_INTERNAL_FRAME;
+        dstPattern |= MFX_MEMTYPE_INTERNAL_FRAME;
     }
 
     sts = m_pCore->DoFastCopyWrapper(pOutputSurface,
@@ -1517,12 +1536,6 @@ mfxStatus  VideoVPPHW::CopyPassThrough(mfxFrameSurface1 *pInputSurface, mfxFrame
         pInputSurface,
         srcPattern);
 
-    MFX_CHECK_STS(sts);
-
-    sts = m_pCore->DecreaseReference(&pOutputSurface->Data);
-    MFX_CHECK_STS(sts);
-
-    sts = m_pCore->DecreaseReference(&pInputSurface->Data);
     MFX_CHECK_STS(sts);
 
     return MFX_ERR_NONE;
@@ -2976,6 +2989,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
         false == IsRoiDifferent(pTask->input.pSurf, pTask->output.pSurf))
     {
         sts = CopyPassThrough(pTask->input.pSurf, pTask->output.pSurf);
+        m_taskMngr.CompleteTask(pTask);
         MFX_CHECK_STS(sts);
 
         return MFX_ERR_NONE;
@@ -4103,6 +4117,8 @@ mfxStatus ConfigureExecuteParams(
 
     executeParams.iBackgroundColor = def_back_color;
 
+    config.m_bPassThroughEnable = true;
+
     //-----------------------------------------------------
     for (mfxU32 j = 0; j < pipelineList.size(); j += 1)
     {
@@ -4136,6 +4152,7 @@ mfxStatus ConfigureExecuteParams(
                     config.m_surfCount[VPP_IN]  = IPP_MAX(2, config.m_surfCount[VPP_IN]);
                     config.m_surfCount[VPP_OUT]  = IPP_MAX(1, config.m_surfCount[VPP_OUT]);
                     config.m_extConfig.mode = IS_REFERENCES;
+                    config.m_bPassThroughEnable = false;
                 }
                 else if (MFX_DEINTERLACING_ADVANCED_NOREF == executeParams.iDeinterlacingAlgorithm)
                 {
@@ -4148,6 +4165,7 @@ mfxStatus ConfigureExecuteParams(
                     config.m_surfCount[VPP_IN]  = IPP_MAX(2, config.m_surfCount[VPP_IN]);
                     config.m_surfCount[VPP_OUT]  = IPP_MAX(1, config.m_surfCount[VPP_OUT]);
                     config.m_extConfig.mode = 0;
+                    config.m_bPassThroughEnable = false;
                 }
                 else if (0 == executeParams.iDeinterlacingAlgorithm)
                 {
@@ -4182,6 +4200,7 @@ mfxStatus ConfigureExecuteParams(
                     config.m_surfCount[VPP_IN]   = IPP_MAX(2, config.m_surfCount[VPP_IN]);
                     config.m_surfCount[VPP_OUT]  = IPP_MAX(1, config.m_surfCount[VPP_OUT]);
                     config.m_extConfig.mode = IS_REFERENCES;
+                    config.m_bPassThroughEnable = false;
                 }
                 else
                 {
@@ -4217,6 +4236,7 @@ mfxStatus ConfigureExecuteParams(
                     config.m_surfCount[VPP_OUT] = IPP_MAX(2, config.m_surfCount[VPP_OUT]);
                     executeParams.bFMDEnable = true;
                     executeParams.bDeinterlace30i60p = true;
+                    config.m_bPassThroughEnable = false;
                 }
                 else if(MFX_DEINTERLACING_BOB == executeParams.iDeinterlacingAlgorithm)
                 {
@@ -4226,6 +4246,7 @@ mfxStatus ConfigureExecuteParams(
                     config.m_surfCount[VPP_OUT] = IPP_MAX(2, config.m_surfCount[VPP_OUT]);
                     executeParams.bFMDEnable = false;
                     executeParams.bDeinterlace30i60p = true;
+                    config.m_bPassThroughEnable = false;
                 }
                 else if (MFX_DEINTERLACING_ADVANCED_NOREF == executeParams.iDeinterlacingAlgorithm)
                 {
@@ -4236,6 +4257,7 @@ mfxStatus ConfigureExecuteParams(
                     config.m_surfCount[VPP_OUT] = IPP_MAX(2, config.m_surfCount[VPP_OUT]);
                     executeParams.bFMDEnable = false;
                     executeParams.bDeinterlace30i60p = true;
+                    config.m_bPassThroughEnable = false;
                 }
                 else
                 {
@@ -4263,6 +4285,7 @@ mfxStatus ConfigureExecuteParams(
                             executeParams.bDenoiseAutoAdjust = FALSE;
                         }
                     }
+                    config.m_bPassThroughEnable = false;
                 }
                 else
                 {
@@ -4294,6 +4317,7 @@ mfxStatus ConfigureExecuteParams(
                             executeParams.rotation = extRotate->Angle;
                         }
                     }
+                    config.m_bPassThroughEnable = false;
                 }
                 else
                 {
@@ -4314,6 +4338,7 @@ mfxStatus ConfigureExecuteParams(
                             executeParams.scalingMode = extScaling->ScalingMode;
                         }
                     }
+                    config.m_bPassThroughEnable = false;
                 }
                 else
                 {
@@ -4352,6 +4377,7 @@ mfxStatus ConfigureExecuteParams(
                             executeParams.chromaSiting = extCC->ChromaSiting;
                         }
                     }
+                    config.m_bPassThroughEnable = false;
                 }
                 else
                 {
@@ -4414,6 +4440,7 @@ mfxStatus ConfigureExecuteParams(
                             }
                         }
                     }
+                    config.m_bPassThroughEnable = false;
                 }
                 else
                 {
@@ -4438,6 +4465,7 @@ mfxStatus ConfigureExecuteParams(
                         }
                         executeParams.bDetailAutoAdjust = FALSE;
                     }
+                    config.m_bPassThroughEnable = false;
                 }
                 else
                 {
@@ -4464,6 +4492,7 @@ mfxStatus ConfigureExecuteParams(
                             executeParams.bEnableProcAmp = true;
                         }
                     }
+                    config.m_bPassThroughEnable = false;
                 }
                 else
                 {
@@ -4564,6 +4593,8 @@ mfxStatus ConfigureExecuteParams(
                 inDNRatio = (mfxF64) videoParam.vpp.In.FrameRateExtD / videoParam.vpp.In.FrameRateExtN;
                 outDNRatio = (mfxF64) videoParam.vpp.Out.FrameRateExtD / videoParam.vpp.Out.FrameRateExtN;
 
+                config.m_bPassThroughEnable = false;
+
                 break;
             }
 
@@ -4583,6 +4614,8 @@ mfxStatus ConfigureExecuteParams(
                 executeParams.iDeinterlacingAlgorithm = MFX_DEINTERLACING_BOB;
                 config.m_surfCount[VPP_IN]  = IPP_MAX(2, config.m_surfCount[VPP_IN]);
                 config.m_surfCount[VPP_OUT] = IPP_MAX(2, config.m_surfCount[VPP_OUT]);
+
+                config.m_bPassThroughEnable = false;
 
                 break;
             }
@@ -4606,6 +4639,7 @@ mfxStatus ConfigureExecuteParams(
                             executeParams.istabMode = extIStab->Mode;
                         }
                     }
+                     config.m_bPassThroughEnable = false;
                 }
                 else
                 {
@@ -4758,6 +4792,8 @@ mfxStatus ConfigureExecuteParams(
                         executeParams.bBackgroundRequired = false;
                 } // if (executeParams.iTilesNum4Comp > 0)
 
+                config.m_bPassThroughEnable = false;
+
                 break;
             }
             case MFX_EXTBUFF_VPP_FIELD_PROCESSING:
@@ -4794,6 +4830,7 @@ mfxStatus ConfigureExecuteParams(
                         executeParams.iFieldProcessingMode++;
                     }
                 }
+                config.m_bPassThroughEnable = false;
                 break;
             } //case MFX_EXTBUFF_VPP_FIELD_PROCESSING:
 
@@ -4842,6 +4879,7 @@ mfxStatus ConfigureExecuteParams(
                         executeParams.VideoSignalInfoOut.NominalRange   = extVSI->Out.NominalRange;
                         executeParams.VideoSignalInfoOut.TransferMatrix = extVSI->Out.TransferMatrix;
                         executeParams.VideoSignalInfoOut.enabled        = true;
+                        config.m_bPassThroughEnable = false;
                         break;
                     }
                 }
@@ -4878,7 +4916,7 @@ mfxStatus ConfigureExecuteParams(
                 // kernel uses "0"  as a "valid" data, but HW_VPP doesn't.
                 // To prevent an issue we increment here and decrement before kernel call.
                 executeParams.iFieldProcessingMode++;
-
+                config.m_bPassThroughEnable = false;
                 break;
             }
 
@@ -4911,7 +4949,7 @@ mfxStatus ConfigureExecuteParams(
                 // kernel uses "0"  as a "valid" data, but HW_VPP doesn't.
                 // To prevent an issue we increment here and decrement before kernel call.
                 executeParams.iFieldProcessingMode++;
-
+                config.m_bPassThroughEnable = false;
                 break;
             }
 
@@ -4951,6 +4989,7 @@ mfxStatus ConfigureExecuteParams(
                     executeParams.bDetailAutoAdjust    = false;
                     executeParams.detailFactor         = 0;
                     executeParams.detailFactorOriginal = 0;
+
                 }
                 else if (MFX_EXTBUFF_VPP_PROCAMP == bufferId)
                 {
@@ -4966,6 +5005,7 @@ mfxStatus ConfigureExecuteParams(
                     executeParams.VideoSignalInfoIn.TransferMatrix  = MFX_TRANSFERMATRIX_UNKNOWN;
                     executeParams.VideoSignalInfoOut.NominalRange   = MFX_NOMINALRANGE_UNKNOWN;
                     executeParams.VideoSignalInfoOut.TransferMatrix = MFX_TRANSFERMATRIX_UNKNOWN;
+
                 }
                 else if (MFX_EXTBUFF_VPP_COMPOSITE == bufferId)
                 {
@@ -5010,6 +5050,7 @@ mfxStatus ConfigureExecuteParams(
                     executeParams.VideoSignalInfoOut.NominalRange   = MFX_NOMINALRANGE_UNKNOWN;
                     executeParams.VideoSignalInfoOut.TransferMatrix = MFX_TRANSFERMATRIX_UNKNOWN;
                     executeParams.VideoSignalInfoOut.enabled        = false;
+
                 }
                 else
                 {
@@ -5031,24 +5072,16 @@ mfxStatus ConfigureExecuteParams(
         }
     }
 
+
     if (true == executeParams.bSceneDetectionEnable && (FRC_ENABLED | config.m_extConfig.mode))
     {
         // disable scene detection
         executeParams.bSceneDetectionEnable = false;
     }
 
-    if ((FRC_ENABLED & config.m_extConfig.mode) &&
-        (2 == pipelineList.size()) &&
-        IsFilterFound(&pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_RESIZE))
+    if ((config.m_bPassThroughEnable) && (memcmp(&videoParam.vpp.In, &videoParam.vpp.Out, sizeof(mfxFrameInfo))) )
     {
-        // check that no roi or scaling was requested
-        if ((videoParam.vpp.In.Width == videoParam.vpp.Out.Width && videoParam.vpp.In.Height == videoParam.vpp.Out.Height) &&
-            (videoParam.vpp.In.CropW == videoParam.vpp.Out.CropW && videoParam.vpp.In.CropH == videoParam.vpp.Out.CropH) &&
-            (videoParam.vpp.In.CropX == videoParam.vpp.Out.CropX && videoParam.vpp.In.CropY == videoParam.vpp.Out.CropY)
-            )
-        {
-            //m_bPassThrough = true;
-        }
+            config.m_bPassThroughEnable = false;
     }
 
     if (inDNRatio == outDNRatio && !executeParams.bVarianceEnable && !executeParams.bComposite &&
@@ -5056,7 +5089,7 @@ mfxStatus ConfigureExecuteParams(
     {
         // work around
         config.m_extConfig.mode  = FRC_DISABLED;
-        config.m_bPassThroughEnable = false;
+        //config.m_bPassThroughEnable = false;
     }
 
     if (true == executeParams.bComposite && 0 == executeParams.dstRects.size()) // composition was enabled via DO USE
