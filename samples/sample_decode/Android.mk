@@ -26,6 +26,9 @@ ifeq ($(MFX_NDK),true)
    LOCAL_SHARED_LIBRARIES += libstlport-mfx libgabi++-mfx
 endif
 
+LOCAL_HEADER_LIBRARIES := \
+    $(MFX_HEADER_LIBRARIES)
+
 LOCAL_MULTILIB := both
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := sample_decode
