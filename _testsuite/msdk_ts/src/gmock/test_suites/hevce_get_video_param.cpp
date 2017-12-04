@@ -1,12 +1,21 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2007-2017 Intel Corporation. All Rights Reserved.
+
+File Name: hevce_get_video_param.cpp
+
+\* ****************************************************************************** */
+
 #include "ts_encoder.h"
 #include "ts_parser.h"
 #include "ts_struct.h"
 
-
 namespace hevce_get_video_param
 {
-
-
     class TestSuite : tsVideoEncoder
     {
     public:
@@ -17,18 +26,6 @@ namespace hevce_get_video_param
 
         }
         ~TestSuite() {}
-        int RunTest(unsigned int id);
-
-    private:
-        enum
-        {
-            MFX_PAR,
-            NULL_SESSION,
-            NOT_INIT,
-            FAILED_INIT,
-            NULL_PAR,
-            NONE
-        };
 
         struct tc_struct
         {
@@ -42,28 +39,47 @@ namespace hevce_get_video_param
             } set_par[MAX_NPARS];
         };
 
+        template<mfxU32 fourcc>
+        int RunTest_Subtype(const unsigned int id);
+
+        int RunTest(tc_struct tc, unsigned int fourcc_id);
+
+    private:
+        enum
+        {
+            MFX_PAR,
+            NULL_SESSION,
+            NOT_INIT,
+            FAILED_INIT,
+            NULL_PAR,
+            NONE
+        };
+
         static const tc_struct test_case[];
     };
 
-
     const TestSuite::tc_struct TestSuite::test_case[] =
     {
-
         {/*00*/ MFX_ERR_NONE, NONE },
         {/*01*/ MFX_ERR_INVALID_HANDLE, NULL_SESSION },
         {/*02*/ MFX_ERR_NOT_INITIALIZED, NOT_INIT },
         {/*03*/ MFX_ERR_NOT_INITIALIZED, FAILED_INIT },
         {/*04*/ MFX_ERR_NULL_PTR, NULL_PAR },
-
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
 
-    int TestSuite::RunTest(unsigned int id)
+    template<mfxU32 fourcc>
+    int TestSuite::RunTest_Subtype(const unsigned int id)
+    {
+        const tc_struct& tc = test_case[id];
+        return RunTest(tc, fourcc);
+    }
+
+    int TestSuite::RunTest(tc_struct tc, unsigned int fourcc_id)
     {
         TS_START;
 
-        const tc_struct& tc = test_case[id];
         mfxHDL hdl;
         mfxHandleType type;
         mfxVideoParam new_par = {};
@@ -91,6 +107,29 @@ namespace hevce_get_video_param
         m_par.mfx.QPP = 26;
         m_par.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
 
+        if (fourcc_id == MFX_FOURCC_NV12)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
+        }
+        else if (fourcc_id == MFX_FOURCC_YUY2)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_YUY2;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
+        }
+        else if (fourcc_id == MFX_FOURCC_Y210)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y210;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
+        }
+        else
+        {
+            g_tsLog << "ERROR: invalid fourcc_id parameter: " << fourcc_id << "\n";
+            return 0;
+        }
 
         SETPARS(m_pPar, MFX_PAR);
 
@@ -102,21 +141,26 @@ namespace hevce_get_video_param
                 );
         }
 
-
         if (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data)))
         {
             if (g_tsHWtype < MFX_HW_SKL) // MFX_PLUGIN_HEVCE_HW - unsupported on platform less SKL
             {
-            g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
-            g_tsLog << "WARNING: Unsupported HW Platform!\n";
-            Query();
-            return 0;
+                g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
+                g_tsLog << "WARNING: Unsupported HW Platform!\n";
+                Query();
+                return 0;
+            }
+
+            if ((m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210 || m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_YUY2)
+                && (g_tsHWtype < MFX_HW_ICL || g_tsConfig.lowpower == MFX_CODINGOPTION_ON))
+            {
+                g_tsLog << "\n\nWARNING: 422 format only supported on ICL+ and ENC+PAK!\n\n\n";
+                throw tsSKIP;
             }
 
             //HEVCE_HW need aligned width and height for 32
             m_par.mfx.FrameInfo.Width = ((m_par.mfx.FrameInfo.Width + 32 - 1) & ~(32 - 1));
             m_par.mfx.FrameInfo.Height = ((m_par.mfx.FrameInfo.Height + 32 - 1) & ~(32 - 1));
-
 
             //set handle
             if (!((m_par.IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY)
@@ -129,7 +173,6 @@ namespace hevce_get_video_param
                 SetHandle(m_session, type, hdl);
                 m_is_handle_set = (g_tsStatus.get() >= 0);
             }
-
         }
 
         //init
@@ -199,5 +242,7 @@ namespace hevce_get_video_param
         return 0;
     }
 
-    TS_REG_TEST_SUITE_CLASS(hevce_get_video_param);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_get_video_param, RunTest_Subtype<MFX_FOURCC_NV12>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_8b_422_yuy2_get_video_param, RunTest_Subtype<MFX_FOURCC_YUY2>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_422_y210_get_video_param, RunTest_Subtype<MFX_FOURCC_Y210>, n_cases);
 };
