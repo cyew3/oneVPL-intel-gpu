@@ -512,6 +512,16 @@ void HardcodeCaps(ENCODE_CAPS_VP9& caps, mfxCoreInterface* pCore)
     }
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
 
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+    if (platform.CodeName >= MFX_PLATFORM_TIGERLAKE)
+    {
+        // mainline driver doesn't report REXT support correctly for TGL
+        // hardcode proper CAPS values for now
+        caps.MaxEncodedBitDepth = 1; // bit depths 8 and 10 are supported
+        caps.YUV444ReconSupport = 1;
+    }
+#endif //PRE_SI_TARGET_PLATFORM_GEN12
+
 }
 
 mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
