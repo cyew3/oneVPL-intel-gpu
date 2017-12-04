@@ -937,6 +937,8 @@ mfxStatus MFXVideoENCODEMJPEG_HW::EncodeFrameCheck(
         m_pCore->IsExternalFrameAllocator());
     MFX_CHECK(checkSts >= MFX_ERR_NONE, checkSts);
 
+    mfxStatus status = checkSts;
+
     if (ctrl && ctrl->ExtParam && ctrl->NumExtParam > 0)
     {
         jpegQT = (mfxExtJPEGQuantTables*)   GetExtBuffer( ctrl->ExtParam, ctrl->NumExtParam, MFX_EXTBUFF_JPEG_QT );
@@ -1014,7 +1016,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::EncodeFrameCheck(
 
     numEntryPoints = 2;
 
-    return MFX_ERR_NONE;
+    return status;
 }
 
 
@@ -1028,11 +1030,10 @@ mfxStatus MFXVideoENCODEMJPEG_HW::CheckEncodeFrameParam(
     if (!m_bInitialized) return MFX_ERR_NOT_INITIALIZED;
 
     MFX_CHECK_NULL_PTR1(bs);
+    MFX_CHECK_NULL_PTR1(bs->Data);
 
     // Check for enough bitstream buffer size
-    if ( (0 == bs->MaxLength) ||
-         (NULL == bs->Data)   ||
-         (bs->MaxLength <= (bs->DataOffset + bs->DataLength)))
+    if ( (0 == bs->MaxLength) || (bs->MaxLength <= (bs->DataOffset + bs->DataLength)) )
         return MFX_ERR_NOT_ENOUGH_BUFFER;
 
     if ( NULL != surface )

@@ -455,6 +455,9 @@ mfxStatus D3D9Encoder::UpdateBitstream(
     IppiSize     roi       = {(int)(task.m_bsDataLength), 1};
     mfxFrameData bitstream = {0};
 
+    if (task.m_bsDataLength + task.bs->DataOffset + task.bs->DataLength > task.bs->MaxLength)
+        return MFX_ERR_NOT_ENOUGH_BUFFER;
+
     m_core->LockFrame(MemId, &bitstream);
     MFX_CHECK(bitstream.Y != 0, MFX_ERR_LOCK_MEMORY);
 
