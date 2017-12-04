@@ -717,7 +717,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         // with change of Aspect Ratio (DAR)
         {/*71*/ MFX_ERR_NONE, CQP | TU1 | MULTIREF | STRESS,
             {
-                { 5, WIDTH(2816), HEIGHT(2304),
+                { 5, SET_RESOLUTION(2816, 2304),
                      MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 3,},
                 { 5, MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 3,
                      WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-14), FRAME_HEIGHT(576-22)},
@@ -732,7 +732,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
         {/*72*/ MFX_ERR_NONE, CBR | TU1 | MULTIREF | STRESS,
             {
-                { 5, WIDTH(2816), HEIGHT(2304),
+                { 5, SET_RESOLUTION(2816, 2304),
                      MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 3, },
                 { 5, MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 3,
                 WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-14), FRAME_HEIGHT(576-22) },
@@ -747,7 +747,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
         {/*73*/ MFX_ERR_NONE, VBR | TU1 | MULTIREF | STRESS,
             {
-                { 5, WIDTH(2816), HEIGHT(2304),
+                { 5, SET_RESOLUTION(2816, 2304),
                      MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 3, },
                 { 5, MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 3,
                 WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-14), FRAME_HEIGHT(576-22) },
@@ -762,7 +762,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
         {/*74*/ MFX_ERR_NONE, CQP | TU4 | MULTIREF | STRESS,
             {
-                { 4, WIDTH(2816), HEIGHT(2304),
+                { 4, SET_RESOLUTION(2816, 2304),
                      MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 2, },
                 { 4, MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 2,
                 WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-14), FRAME_HEIGHT(576-22) },
@@ -777,7 +777,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
         {/*75*/ MFX_ERR_NONE, CBR | TU4 | MULTIREF | STRESS,
             {
-                { 4, WIDTH(2816), HEIGHT(2304),
+                { 4, SET_RESOLUTION(2816, 2304),
                      MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 2, },
                 { 4, MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 2,
                 WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-14), FRAME_HEIGHT(576-22) },
@@ -792,7 +792,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
         {/*76*/ MFX_ERR_NONE, VBR | TU4 | MULTIREF | STRESS,
             {
-                { 4, WIDTH(2816), HEIGHT(2304),
+                { 4, SET_RESOLUTION(2816, 2304),
                      MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 2, },
                 { 4, MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 2,
                 WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-14), FRAME_HEIGHT(576-22) },
@@ -807,7 +807,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
         {/*77*/ MFX_ERR_NONE, CQP | TU7 | STRESS,
             {
-                { 2, WIDTH(2816), HEIGHT(2304) },
+                { 2, SET_RESOLUTION(2816, 2304) },
                 { 2, MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 1,
                 WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-14), FRAME_HEIGHT(576-22) },
                 { 2, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352-6), FRAME_HEIGHT(288-10) },
@@ -821,7 +821,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
         {/*78*/ MFX_ERR_NONE, CBR | TU7 | STRESS,
             {
-                { 2, WIDTH(2816), HEIGHT(2304) },
+                { 2, SET_RESOLUTION(2816, 2304) },
                 { 2, MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 1,
                 WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-14), FRAME_HEIGHT(576-22) },
                 { 2, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352-6), FRAME_HEIGHT(288-10) },
@@ -835,7 +835,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
         {/*79*/ MFX_ERR_NONE, VBR | TU7 | STRESS,
             {
-                { 2, WIDTH(2816), HEIGHT(2304) },
+                { 2, SET_RESOLUTION(2816, 2304) },
                 { 2, MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 1,
                 WIDTH(704), HEIGHT(576), FRAME_WIDTH(704-14), FRAME_HEIGHT(576-22) },
                 { 2, WIDTH(352), HEIGHT(288), FRAME_WIDTH(352-6), FRAME_HEIGHT(288-10) },
