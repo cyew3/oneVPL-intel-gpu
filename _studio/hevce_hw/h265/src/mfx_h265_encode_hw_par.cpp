@@ -858,7 +858,7 @@ mfxStatus CheckAndFixRoi(MfxVideoParam  const & par, ENCODE_CAPS_HEVC const & ca
     }
 
     //// TODO: remove below macro conditional statement when ROI related caps will be correctly set up by the driver
-#if !defined(LINUX_TARGET_PLATFORM_BXTMIN) && !defined(LINUX_TARGET_PLATFORM_BXT)
+#if !defined(LINUX_TARGET_PLATFORM_BXTMIN) && !defined(LINUX_TARGET_PLATFORM_BXT) && !defined(LINUX_TARGET_PLATFORM_CFL)
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP) {
         invalid += (caps.ROIDeltaQPSupport == 0);
     }
