@@ -467,6 +467,12 @@ public:
                             str += dump(name, *((mfxExtEncodedUnitsInfo*)_struct.ExtParam[i])) + "\n";
                             break;
 #endif
+#if (MFX_VERSION >= 1026)
+                        case MFX_EXTBUFF_VPP_MCTF:
+                            str += dump(name, *((mfxExtVppMctf*)_struct.ExtParam[i])) + "\n";
+                            break;
+#endif
+
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
                         case MFX_EXTBUFF_VP9_SEGMENTATION:
                             str += dump(name, *((mfxExtVP9Segmentation*)_struct.ExtParam[i])) + "\n";
@@ -587,6 +593,10 @@ public:
     DEFINE_DUMP_FUNCTION(mfxExtMultiFrameParam);
     DEFINE_DUMP_FUNCTION(mfxExtMultiFrameControl);
     DEFINE_DUMP_FUNCTION(mfxExtEncodedUnitsInfo);
+#endif
+
+#if (MFX_VERSION >= 1026)
+    DEFINE_DUMP_FUNCTION(mfxExtVppMctf);
 #endif
 
 #if (MFX_VERSION >= MFX_VERSION_NEXT)

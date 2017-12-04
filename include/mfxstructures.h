@@ -902,6 +902,9 @@ enum {
     MFX_EXTBUFF_MULTI_FRAME_CONTROL             = MFX_MAKEFOURCC('M', 'F', 'R', 'C'),
     MFX_EXTBUFF_ENCODED_UNITS_INFO              = MFX_MAKEFOURCC('E', 'N', 'U', 'I'),
 #endif
+#if (MFX_VERSION >= 1026)
+    MFX_EXTBUFF_VPP_MCTF                        = MFX_MAKEFOURCC('M', 'C', 'T', 'F'),
+#endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     MFX_EXTBUFF_DPB                             = MFX_MAKEFOURCC('E','D','P','B'),
     MFX_EXTBUFF_TEMPORAL_LAYERS                 = MFX_MAKEFOURCC('T','M','P','L'),
@@ -2079,6 +2082,36 @@ typedef struct {
 
     mfxU16 reserved[22];
 } mfxExtEncodedUnitsInfo;
+
+#endif
+
+#if (MFX_VERSION >= 1026)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+/* MCTFTemporalMode */
+enum {
+    MFX_MCTF_TEMPORAL_MODE_UNKNOWN  = 0,
+    MFX_MCTF_TEMPORAL_MODE_SPATIAL  = 1,
+    MFX_MCTF_TEMPORAL_MODE_1REF     = 2,
+    MFX_MCTF_TEMPORAL_MODE_2REF     = 3,
+    MFX_MCTF_TEMPORAL_MODE_4REF     = 4
+};
+#endif
+
+/* MCTF initialization & runtime */
+typedef struct {
+    mfxExtBuffer Header;
+    mfxU16       FilterStrength;
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    mfxU16       Overlap;               /* tri-state option */
+    mfxU32       BitsPerPixelx100k;
+    mfxU16       Deblocking;            /* tri-state option */
+    mfxU16       TemporalMode;
+    mfxU16       MVPrecision;
+    mfxU16       reserved[21];
+#else
+    mfxU16       reserved[27];
+#endif
+} mfxExtVppMctf;
 
 #endif
 

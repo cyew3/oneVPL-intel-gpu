@@ -46,6 +46,7 @@ boldface, such as [mfxStatus](#mfxStatus).
 **GPB** | Generalized P/B picture. B-picture, containing only forward references in both L0 and L1
 **HDR** | High Dynamic Range
 **BRC** | Bit Rate Control
+**MCTF** | Motion Compensated Temporal Filter. Special type of a noise reduction filter which utilizes motion to improve efficiency of video denoising
 
 <div style="page-break-before:always" />
 
@@ -174,6 +175,7 @@ There is one special mode of deinterlacing available in combination with frame r
  **Color**><br>**Filter**˅ | **RGB4 (RGB32)** | **NV12** | **YV12** | **YUY2** | **P010** | **P210** | **NV16**
  ------------------------- | ---------------- | -------- | -------- | -------- | -------- | -------- | -------
 Denoise                    |                  | X        |          |          |          |          |
+MCTF                       |                  | X        |          |          |          |          |
 Deinterlace                |                  | X        |          |          |          |          |
 Image stabilization        |                  | X        |          |          |          |          |
 Frame rate conversion      |                  | X        |          |          |          |          |
@@ -647,9 +649,9 @@ mfxStatus MyBrcUpdate(mfxHDL pthis, mfxBRCFrameParam* par, mfxBRCFrameCtrl* ctrl
 Example 4 shows the pseudo code of the video processing procedure. The following describes a few key points:
 
 - The application uses the [MFXVideoVPP_QueryIOSurf](#MFXVideoVPP_QueryIOSurf) function to obtain the number of frame surfaces needed for input and output. The application must allocate two frame surface pools, one for the input and the other for the output.
-- The video processing function [MFXVideoVPP_RunFrameVPPAsync](#MFXVideoVPP_RunFrameVPPAsyncAsync) is asynchronous. The application must synchronize to make the output result ready, through the [MFXVideoCORE_SyncOperation](#MFXVideoCORE_SyncOperation) function.
+- The video processing function [MFXVideoVPP_RunFrameVPPAsync](#MFXVideoVPP_RunFrameVPPAsync) is asynchronous. The application must synchronize to make the output result ready, through the [MFXVideoCORE_SyncOperation](#MFXVideoCORE_SyncOperation) function.
 - The body of the video processing procedures covers three scenarios as follows:
-- If the number of frames consumed at input is equal to the number of frames generated at output, **VPP** returns [MFX_ERR_NONE](#mfxStatus) when an output is ready. The application must process the output frame after synchronization, as the [MFXVideoVPP_RunFrameVPPAsync](#MFXVideoVPP_RunFrameVPPAsyncAsync) function is asynchronous. At the end of a sequence, the application must provide a `NULL` input to drain any remaining frames.
+- If the number of frames consumed at input is equal to the number of frames generated at output, **VPP** returns [MFX_ERR_NONE](#mfxStatus) when an output is ready. The application must process the output frame after synchronization, as the [MFXVideoVPP_RunFrameVPPAsync](#MFXVideoVPP_RunFrameVPPAsync) function is asynchronous. At the end of a sequence, the application must provide a `NULL` input to drain any remaining frames.
 - If the number of frames consumed at input is more than the number of frames generated at output,  **VPP** returns [MFX_ERR_MORE_DATA](#mfxStatus) for additional input until an output is ready. When the output is ready, **VPP** returns [MFX_ERR_NONE](#mfxStatus)**.** The application must process the output frame after synchronization and provide a `NULL` input at the end of sequence to drain any remaining frames.
 - If the number of frames consumed at input is less than the number of frames generated at output, **VPP** returns either [MFX_ERR_MORE_SURFACE](#mfxStatus) (when more than one output is ready), or [MFX_ERR_NONE](#mfxStatus) (when one output is ready and **VPP** expects new input). In both cases, the application must process the output frame after synchronization and provide a `NULL` input at the end of sequence to drain any remaining frames.
 
@@ -702,6 +704,7 @@ The SDK ensures that all filters necessary to convert input format to output one
 --- | ---
 **Filter ID**                           | **Configuration structure**
 `MFX_EXTBUFF_VPP_DENOISE`               | [mfxExtVPPDenoise](#mfxExtVPPDenoise)
+`MFX_EXTBUFF_VPP_MCTF`                  | [mfxExtVppMctf](#mfxExtVppMctf)
 `MFX_EXTBUFF_VPP_DETAIL`                | [mfxExtVPPDetail](#mfxExtVPPDetail)
 `MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION` | [mfxExtVPPFrameRateConversion](#mfxExtVPPFrameRateConversion)
 `MFX_EXTBUFF_VPP_IMAGE_STABILIZATION`   | [mfxExtVPPImageStab](#mfxExtVPPImageStab)
@@ -788,7 +791,7 @@ MFXVideoCORE_SyncOperation(session,sp_e,INFINITE);
 
 The SDK simplifies the requirement for asynchronous pipeline synchronization. The application only needs to synchronize after the last SDK function. Explicit synchronization of intermediate results is not required and in fact can slow performance.
 
-The SDK tracks the dynamic pipeline construction and verifies dependency on input and output parameters to ensure the execution order of the pipeline function. In Example 6, the SDK will ensure [MFXVideoENCODE_EncodeFrameAsync](#MFXVideoENCODE_EncodeFrameAsync) does not begin its operation until [MFXVideoDECODE_DecodeFrameAsync](#MFXVideoDECODE_DecodeFrameAsync) or [MFXVideoVPP_RunFrameVPPAsync](#MFXVideoVPP_RunFrameVPPAsyncAsync) has finished.
+The SDK tracks the dynamic pipeline construction and verifies dependency on input and output parameters to ensure the execution order of the pipeline function. In Example 6, the SDK will ensure [MFXVideoENCODE_EncodeFrameAsync](#MFXVideoENCODE_EncodeFrameAsync) does not begin its operation until [MFXVideoDECODE_DecodeFrameAsync](#MFXVideoDECODE_DecodeFrameAsync) or [MFXVideoVPP_RunFrameVPPAsync](#MFXVideoVPP_RunFrameVPPAsync) has finished.
 
 During the execution of an asynchronous pipeline, the application must consider the input data in use and must not change it until the execution has completed. The application must also consider output data unavailable until the execution has finished. In addition, for encoders, the application must consider extended and payload buffers in use while the input surface is locked.
 
@@ -3920,6 +3923,66 @@ The `mfxExtVPPDenoise` structure is a hint structure that configures the **VPP**
 **Change History**
 
 This structure is available since SDK API 1.1.
+
+
+## <a id='mfxExtVppMctf'>mfxExtVppMctf</a>
+
+**Definition**
+
+```C
+/* MCTFTemporalMode */
+enum {
+    MFX_MCTF_TEMPORAL_MODE_UNKNOWN  = 0,
+    MFX_MCTF_TEMPORAL_MODE_SPATIAL  = 1,
+    MFX_MCTF_TEMPORAL_MODE_1REF     = 2,
+    MFX_MCTF_TEMPORAL_MODE_2REF     = 3,
+    MFX_MCTF_TEMPORAL_MODE_4REF     = 4
+};
+
+/* MVPrecision */
+enum {
+    MFX_MVPRECISION_UNKNOWN    = 0,
+    MFX_MVPRECISION_INTEGER    = (1 << 0),
+    MFX_MVPRECISION_HALFPEL    = (1 << 1),
+    MFX_MVPRECISION_QUARTERPEL = (1 << 2)
+};
+
+typedef struct {
+    mfxExtBuffer Header;
+    mfxU16       FilterStrength;
+    mfxU16       Overlap;            /* tri-state option */
+    mfxU32       BitsPerPixelx100k;
+    mfxU16       Deblocking;         /* tri-state option */
+    mfxU16       TemporalMode;
+    mfxU16       MVPrecision;
+    mfxU16       reserved[21];
+} mfxExtVppMctf;
+```
+
+**Description**
+
+`mfxExtVppMctf` structure allows to setup Motion-Compensated Temporal Filter (MCTF) during the VPP [initialization](#MFXVideoVPP_Init) and to control parameters at [runtime](#MFXVideoVPP_RunFrameVPPAsync). By default, MCTF is off; an application may enable it by adding [MFX_EXTBUFF_VPP_MCTF](#ExtendedBufferID) to [mfxExtVPPDoUse](#mfxExtVPPDoUse) buffer or by attaching `mfxExtVppMctf` to [mfxVideoParam](#mfxVideoParam) during [initialization](#MFXVideoVPP_Init) or [reset](#MFXVideoVPP_Reset).
+
+**Members**
+
+| | |
+--- | ---
+`Header.BufferId`   | Must be [MFX_EXTBUFF_VPP_MCTF](#ExtendedBufferID)
+`FilterStrength`    | 0..20 value (inclusive) to indicate the filter-strength of MCTF. A strength of MCTF process controls degree of possible changes of pixel values eligible for MCTF; the bigger the strength the larger the change is; it is a dimensionless quantity, values 1..20 inclusively imply strength; value 0 stands for AUTO mode and is valid during initialization or reset only; if invalid value is given, it is fixed to default value which is 0. If this field is 1..20 inclusive, MCTF operates in fixed-strength mode with the given strength of MCTF process. At runtime, value 0 and values greater than 20 are ignored.
+`Overlap`           | Turn off or turn on overlap during motion estimation/compensation. See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option.
+`BitsPerPixelx100k` | Carries information of a compressed bitstream which is a result of an encoding process followed after MCTF (if any); actual average number of bits spent per pixel in the compressed bitstream is derived as BitsPerPixelx100k divided by 100000.0. MCTF process may use this information as an additional hint to optimize filtering process for particular encoding applied afterwards.
+`Deblocking`        | Turn off or turn on deblocking filter within MCTF process. See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option.
+`TemporalMode`      | See the `MCTFTemporalMode` enumerator for values of this option. These modes are all different both in terms of quality improvements and performance; in general, 4-reference filtering provides highest quality while 1-reference filtering provides highest speed; spatial filtering process is essentially different as it does not use any processing between frames; thus it provides lowerest memory footprint.
+`MVPrecision`       | Determines how precise motion compensation process is. See the `MVPrecision` enumerator for values of this option; integer and quarter-pixel are supported.
+
+**Change History**
+
+This structure is available since SDK API 1.26.
+
+The SDK API 1.26 adds `FilterStrength` field.
+
+The SDK API **TBD** adds `Overlap`, `BitsPerPixelx100k`, `Deblocking`, `TemporalMode` and `MVPrecision` fields.
+
 
 ## <a id='mfxExtVPPDetail'>mfxExtVPPDetail</a>
 
@@ -7275,6 +7338,7 @@ The `ExtendedBufferID` enumerator itemizes and defines identifiers (`BufferId`) 
 `MFX_EXTBUFF_ENCODED_UNITS_INFO` | See the [mfxExtEncodedUnitsInfo](#mfxExtEncodedUnitsInfo) structure for details.
 `MFX_EXTBUFF_VPP_COLOR_CONVERSION` | See the [mfxExtColorConversion](#mfxExtColorConversion) structure for details.
 `MFX_EXTBUFF_TASK_DEPENDENCY` | See the [Alternative Dependencies](#Alternative_Dependencies) chapter for details.
+`MFX_EXTBUFF_VPP_MCTF` | This video processing algorithm identifier is used to enable MCTF via [mfxExtVPPDoUse](#mfxExtVPPDoUse) and together with `mfxExtVppMctf` | See the [mfxExtVppMctf](#mfxExtVppMctf) chapter for details.
 
 **Change History**
 
@@ -7307,7 +7371,7 @@ SDK API 1.24 adds `MFX_EXTBUFF_BRC`.
 
 SDK API 1.25 adds `MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO`, `MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME`, `MFX_EXTBUFF_MULTI_FRAME_PARAM`, `MFX_EXTBUFF_MULTI_FRAME_CONTROL`, `MFX_EXTBUFF_ENCODED_UNITS_INFO` and `MFX_EXTBUFF_DECODE_ERROR_REPORT`.
 
-SDK API **TBD** adds `MFX_EXTBUFF_VP9_PARAM`, `MFX_EXTBUFF_TASK_DEPENDENCY`.
+SDK API **TBD** adds `MFX_EXTBUFF_VP9_PARAM`, `MFX_EXTBUFF_TASK_DEPENDENCY`, `MFX_EXTBUFF_VPP_MCTF`.
 
 See additional change history in the structure definitions.
 

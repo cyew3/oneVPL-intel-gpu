@@ -1361,6 +1361,24 @@ std::string DumpContext::dump(const std::string structName, const  mfxExtEncoded
 
 #endif
 
+#if (MFX_VERSION >= 1026)
+std::string DumpContext::dump(const std::string structName, const  mfxExtVppMctf &_struct) {
+    std::string str;
+    str += dump(structName + ".Header", _struct.Header) + "\n";
+    str += structName + ".FilterStrength=" + ToString(_struct.FilterStrength)  + "\n";
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    str += structName + ".Overlap=" + ToString(_struct.Overlap)  + "\n";
+    str += structName + ".BitsPerPixelx100k=" + ToString(_struct.BitsPerPixelx100k)  + "\n";
+    str += structName + ".Deblocking=" + ToString(_struct.Deblocking)  + "\n";
+    str += structName + ".TemporalMode=" + ToString(_struct.TemporalMode)  + "\n";
+    str += structName + ".MVPrecision=" + ToString(_struct.MVPrecision)  + "\n";
+#endif
+    DUMP_FIELD_RESERVED(reserved);
+    return str;
+}
+
+#endif
+
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
 
 std::string DumpContext::dump(const std::string structName, const  mfxVP9SegmentParam &_struct)

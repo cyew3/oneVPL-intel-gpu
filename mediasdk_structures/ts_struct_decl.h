@@ -1236,3 +1236,20 @@ STRUCT(mfxExtSCD,
     FIELD_T(mfxU16, SceneType)
 )
 #endif // defined(__MFXSCD_H__)
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+STRUCT(mfxExtVppMctf,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU16, FilterStrength)
+    FIELD_T(mfxU16, Overlap)
+    FIELD_T(mfxU32, BitsPerPixelx100k)
+    FIELD_T(mfxU16, Deblocking)
+    FIELD_T(mfxU16, TemporalMode)
+    FIELD_T(mfxU16, MVPrecision)
+)
+#else
+STRUCT(mfxExtVppMctf,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU16, FilterStrength)
+)
+#endif
