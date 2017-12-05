@@ -400,7 +400,7 @@ namespace hevce_fei_invalid_runtime_parameters
     {
         TS_START;
 
-        CHECK_FEI_SUPPORT();
+        CHECK_HEVC_FEI_SUPPORT();
 
         const tc_struct& tc = test_case[id];
 

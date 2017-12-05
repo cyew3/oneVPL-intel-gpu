@@ -13,6 +13,7 @@ Copyright(c) 2017 Intel Corporation. All Rights Reserved.
 #include "ts_struct.h"
 #include "ts_parser.h"
 #include <vector>
+#include "ts_fei_warning.h"
 
 /* Test checks whether encoder follows a defined GOP structure with IDR requests.
  * Tests checks PSNR of resulted bistream to make sure there are no reordering issues
@@ -414,6 +415,7 @@ namespace hevce_fei_idr_insertion
         const tc_struct& tc = test_case[id];
 
         TS_START;
+        CHECK_HEVC_FEI_SUPPORT();
 
         m_tc = &tc;
 

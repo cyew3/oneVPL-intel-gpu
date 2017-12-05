@@ -13,6 +13,7 @@ Copyright(c) 2017 Intel Corporation. All Rights Reserved.
 #include "ts_parser.h"
 #include <vector>
 #include <algorithm>
+#include "ts_fei_warning.h"
 
 // #define DUMP_BS
 
@@ -674,7 +675,7 @@ namespace hevce_fei_default_ref_lists
         static const tc_struct test_case[];
 
         TestSuite()
-            : tsVideoEncoder(MFX_CODEC_HEVC, MSDK_PLUGIN_TYPE_FEI)
+            : tsVideoEncoder(MFX_CODEC_HEVC, true, MSDK_PLUGIN_TYPE_FEI)
     #ifdef DUMP_BS
             , m_writer("/tmp/debug.265")
     #endif
@@ -940,6 +941,7 @@ namespace hevce_fei_default_ref_lists
         const tc_struct& tc = test_case[id];
 
         TS_START;
+        CHECK_HEVC_FEI_SUPPORT();
 
         SETPARS(m_pPar, MFX_PAR);
 

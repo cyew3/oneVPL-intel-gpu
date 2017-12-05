@@ -450,7 +450,7 @@ namespace hevce_interlace_sei_sps_flags
 
         if (is_HEVCeFEI)
         {
-            CHECK_FEI_SUPPORT();
+            CHECK_HEVC_FEI_SUPPORT();
         }
 
         const tc_struct& tc = test_case[id];

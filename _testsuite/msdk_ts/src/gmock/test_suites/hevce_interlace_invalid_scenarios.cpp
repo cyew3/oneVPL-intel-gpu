@@ -181,7 +181,7 @@ namespace hevce_interlace_invalid_scenarios
             return sts;
         }
 
-        // See T-REC-H.265-201612 : Table D.2 – Interpretation of pic_struct
+        // See T-REC-H.265-201612 : Table D.2 - Interpretation of pic_struct
         mfxU16 ConvertMFXfieldTypeToHEVC(mfxU16 ft)
         {
             switch (ft)
@@ -396,7 +396,7 @@ namespace hevce_interlace_invalid_scenarios
 
         if (is_HEVCeFEI)
         {
-            CHECK_FEI_SUPPORT();
+            CHECK_HEVC_FEI_SUPPORT();
         }
 
         const tc_struct& tc = test_case[id];
