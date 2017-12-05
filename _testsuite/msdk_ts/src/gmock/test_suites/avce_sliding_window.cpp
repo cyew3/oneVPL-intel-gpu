@@ -142,7 +142,7 @@ namespace TEST_NAME
         { MFXVPAR, &tsStruct::mfxVideoParam.mfx.TargetKbps,{ 2000 } }
         }
         },
-#if !defined(LINUX_TARGET_PLATFORM_BXT) && !defined (LINUX_TARGET_PLATFORM_BXTMIN)
+#if !defined(LINUX_TARGET_PLATFORM_BXT) && !defined (LINUX_TARGET_PLATFORM_BXTMIN) && !defined (LINUX_TARGET_PLATFORM_CFL)
         {/*09*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
         { { QUERY | INIT | RESET | BUFPAR_3, &tsStruct::mfxExtCodingOption3.WinBRCSize,{ 15 } },
         { BUFPAR_3, &tsStruct::mfxExtCodingOption3.WinBRCMaxAvgKbps,{ 5000 } },
@@ -233,8 +233,8 @@ namespace TEST_NAME
         { MFXVPAR, &tsStruct::mfxVideoParam.mfx.TargetKbps,{ 2000 } }
         }
         },
-#endif  // !defined(LINUX_TARGET_PLATFORM_BXT) && !defined (LINUX_TARGET_PLATFORM_BXTMIN)
-#if defined(LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN)
+#endif  // !defined(LINUX_TARGET_PLATFORM_BXT) && !defined (LINUX_TARGET_PLATFORM_BXTMIN) && !defined (LINUX_TARGET_PLATFORM_CFL)
+#if defined(LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN) || defined (LINUX_TARGET_PLATFORM_CFL)
         {/*18*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
         { { QUERY | INIT | RESET | BUFPAR_3, &tsStruct::mfxExtCodingOption3.WinBRCSize,{ 15 } },
         { BUFPAR_3, &tsStruct::mfxExtCodingOption3.WinBRCMaxAvgKbps,{ 2000 } },
@@ -295,7 +295,7 @@ namespace TEST_NAME
         { MFXVPAR, &tsStruct::mfxVideoParam.mfx.TargetKbps,{ 2000 } }
         }
         },
-#endif  // defined(LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN)
+#endif  // defined(LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN) || defined (LINUX_TARGET_PLATFORM_CFL)
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
