@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2006-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2006-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_VA_FEI_H__
@@ -16,7 +16,6 @@
 #include "umc_va_linux.h"
 
 #define VA_DECODE_STREAM_OUT_ENABLE       2
-#define VADecodeStreamOutDataBufferType  -8
 
 #include <list>
 

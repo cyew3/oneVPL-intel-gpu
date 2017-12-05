@@ -2402,7 +2402,7 @@ void PackerVA::BeginFrame(H264DecoderFrame* pFrame, Ipp32s field)
             size /= 2;
 
         VAStreamOutBuffer* buffer = NULL;
-        m_va->GetCompBuffer(VADecodeStreamOutDataBufferType, reinterpret_cast<UMCVACompBuffer**>(&buffer), size, pFrame->m_index);
+        m_va->GetCompBuffer(VADecodeStreamoutBufferType, reinterpret_cast<UMCVACompBuffer**>(&buffer), size, pFrame->m_index);
         if (buffer)
         {
             buffer->BindToField(field);

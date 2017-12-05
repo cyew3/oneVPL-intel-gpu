@@ -33,7 +33,8 @@ namespace UMC
     {
         VABufferID id;
         VAStatus res =
-            vaCreateBuffer(display, ctx, static_cast<VABufferType>(VADecodeStreamOutDataBufferType), sizeof(mfxFeiDecStreamOutMBCtrl) * 4096, 1, NULL, &id);
+            vaCreateBuffer(display, ctx, static_cast<VABufferType>(VADecodeStreamoutBufferType), sizeof(mfxFeiDecStreamOutMBCtrl) * 4096, 1, NULL, &id);
+
         if (res != VA_STATUS_SUCCESS)
             return false;
 
@@ -386,7 +387,7 @@ namespace UMC
 
     void* FEIVideoAccelerator::GetCompBuffer(Ipp32s type, UMCVACompBuffer **buf, Ipp32s size, Ipp32s index)
     {
-        if (type != VADecodeStreamOutDataBufferType)
+        if (type != VADecodeStreamoutBufferType)
             return LinuxVideoAccelerator::GetCompBuffer(type, buf, size, index);
         else
         {
