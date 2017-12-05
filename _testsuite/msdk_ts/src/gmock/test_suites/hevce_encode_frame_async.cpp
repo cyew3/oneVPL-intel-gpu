@@ -22,12 +22,36 @@ namespace hevce_encode_frame_async
     public:
         static const unsigned int n_cases;
 
+        static const unsigned int n_cases_nv12;
+        static const unsigned int n_cases_yuy2;
+        static const unsigned int n_cases_y210;
+
+        struct tc_struct
+        {
+            mfxStatus sts;
+            mfxU32 type;
+            struct f_pair
+            {
+                mfxU32 ext_type;
+                const  tsStruct::Field* f;
+                mfxU32 v;
+            } set_par[MAX_NPARS];
+        };
+
+        static const tc_struct test_case_nv12[];
+        static const tc_struct test_case_yuy2[];
+        static const tc_struct test_case_y210[];
+
         TestSuite() : tsVideoEncoder(MFX_CODEC_HEVC)
         {
 
         }
         ~TestSuite() {}
-        int RunTest(unsigned int id);
+
+        template<mfxU32 fourcc>
+        int RunTest_Subtype(const unsigned int id);
+
+        int RunTest(tc_struct tc, unsigned int fourcc_id);
 
     private:
         enum
@@ -48,25 +72,11 @@ namespace hevce_encode_frame_async
             NONE
         };
 
-        struct tc_struct
-        {
-            mfxStatus sts;
-            mfxU32 type;
-            struct f_pair
-            {
-                mfxU32 ext_type;
-                const  tsStruct::Field* f;
-                mfxU32 v;
-            } set_par[MAX_NPARS];
-        };
-
         static const tc_struct test_case[];
     };
 
-
     const TestSuite::tc_struct TestSuite::test_case[] =
     {
-
         {/*00*/ MFX_ERR_INVALID_HANDLE, NULL_SESSION },
         {/*01*/ MFX_ERR_NULL_PTR, NULL_BS },
         {/*02*/ MFX_ERR_MORE_DATA, NULL_SURF },
@@ -89,24 +99,27 @@ namespace hevce_encode_frame_async
         },
         {/*09*/ MFX_ERR_NONE, NONE },
         {/*10*/ MFX_ERR_NONE, NONE,
-        {
-            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, 1 },
-            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, 51 }
-        }
-        },
-        {/*11*/ MFX_ERR_NONE, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 60000 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1001 }
             }
         },
-        {/*12*/ MFX_ERR_NONE, NONE,
+        {/*11*/ MFX_ERR_NONE, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.AspectRatioW, 16 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.AspectRatioH, 9 }
             }
         },
-        {/*13*/ MFX_ERR_NONE, CROP_XY,
+
+        {/*12*/ MFX_ERR_NONE, NSLICE_GT_MAX },  // NumSlice > MAX
+        {/*13*/ MFX_ERR_NONE, NSLICE_LT_MAX },  // NumSlice < MAX
+        {/*14*/ MFX_ERR_NONE, NSLICE_EQ_MAX },  // NumSlice == MAX
+    };
+    const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
+
+    const TestSuite::tc_struct TestSuite::test_case_nv12[] =
+    {
+        {/*15*/ MFX_ERR_NONE, CROP_XY,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 720 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 480 - 1 },
@@ -114,34 +127,129 @@ namespace hevce_encode_frame_async
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropY, 1 },
             }
         },
-        {/*14*/ MFX_ERR_NONE, NSLICE_GT_MAX },  // NumSlice > MAX
-        {/*15*/ MFX_ERR_NONE, NSLICE_LT_MAX },  // NumSlice < MAX
-        {/*16*/ MFX_ERR_NONE, NSLICE_EQ_MAX },  // NumSlice == MAX
-
+        {/*16*/ MFX_ERR_NONE, NONE,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_HEVC_MAIN },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, 51 }
+            }
+        },
     };
+    const unsigned int TestSuite::n_cases_nv12 = sizeof(TestSuite::test_case_nv12) / sizeof(TestSuite::tc_struct) + n_cases;
 
-    const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
+    const TestSuite::tc_struct TestSuite::test_case_yuy2[] =
+    {
+        {/*15*/ MFX_ERR_NONE, CROP_XY,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 352 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 288 - 1 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropX, 0 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropY, 1 },
+            }
+        },
+        {/*16*/ MFX_ERR_NONE, NONE,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_HEVC_REXT },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, 51 }
+            }
+        },
+    };
+    const unsigned int TestSuite::n_cases_yuy2 = sizeof(TestSuite::test_case_yuy2) / sizeof(TestSuite::tc_struct) + n_cases;
 
-    int TestSuite::RunTest(unsigned int id)
+    const TestSuite::tc_struct TestSuite::test_case_y210[] =
+    {
+        {/*15*/ MFX_ERR_NONE, CROP_XY,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 352 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 288 - 1 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropX, 0 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropY, 1 },
+            }
+        },
+        {/*16*/ MFX_ERR_NONE, NONE,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_HEVC_REXT },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, 51 }
+            }
+        },
+    };
+    const unsigned int TestSuite::n_cases_y210 = sizeof(TestSuite::test_case_y210) / sizeof(TestSuite::tc_struct) + n_cases;
+
+    const TestSuite::tc_struct* getTestTable(const mfxU32& fourcc)
+    {
+        switch (fourcc)
+        {
+            case MFX_FOURCC_NV12: return TestSuite::test_case_nv12;
+            case MFX_FOURCC_YUY2: return TestSuite::test_case_yuy2;
+            case MFX_FOURCC_Y210: return TestSuite::test_case_y210;
+            default: assert(0); return 0;
+        }
+    }
+
+    template<mfxU32 fourcc>
+    int TestSuite::RunTest_Subtype(const unsigned int id)
+    {
+        const tc_struct* fourcc_table = getTestTable(fourcc);
+        const unsigned int real_id = (id < n_cases) ? (id) : (id - n_cases);
+        const tc_struct& tc = (real_id == id) ? test_case[real_id] : fourcc_table[real_id];
+        return RunTest(tc, fourcc);
+    }
+
+    int TestSuite::RunTest(tc_struct tc, unsigned int fourcc_id)
     {
         TS_START;
 
-        const tc_struct& tc = test_case[id];
         mfxHDL hdl;
         mfxHandleType type;
-        const char* stream = g_tsStreamPool.Get("YUV/720x480p_30.00_4mb_h264_cabac_180s.yuv");
-        g_tsStreamPool.Reg();
+        const char* stream = nullptr;
         tsSurfaceProcessor *reader;
         mfxStatus sts;
 
-        MFXInit();
-        Load();
+        //set default param
+        if (fourcc_id == MFX_FOURCC_NV12)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
 
-        //set defoult param
-        m_par.mfx.FrameInfo.Width = 736;
-        m_par.mfx.FrameInfo.Height = 480;
+            stream = g_tsStreamPool.Get("YUV/720x480p_30.00_4mb_h264_cabac_180s.yuv");
+
+            m_par.mfx.FrameInfo.Width = 736;
+            m_par.mfx.FrameInfo.Height = 480;
+        }
+        else if (fourcc_id == MFX_FOURCC_YUY2)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_YUY2;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
+
+            stream = g_tsStreamPool.Get("YUV8bit422/Kimono1_352x288_24_yuy2.yuv");
+
+            m_par.mfx.FrameInfo.Width = 352;
+            m_par.mfx.FrameInfo.Height = 288;
+        }
+        else if (fourcc_id == MFX_FOURCC_Y210)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y210;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
+
+            stream = g_tsStreamPool.Get("YUV10bit422/Kimono1_352x288_24_y210.yuv");
+
+            m_par.mfx.FrameInfo.Width = 352;
+            m_par.mfx.FrameInfo.Height = 288;
+        }
+        else
+        {
+            g_tsLog << "ERROR: invalid fourcc_id parameter: " << fourcc_id << "\n";
+            return 0;
+        }
+
         mfxU32 LCUSize = (g_tsHWtype >= MFX_HW_CNL) ? 64 : 32;
 
+        g_tsStreamPool.Reg();
+
+        MFXInit();
+        Load();
 
         if (!GetAllocator())
         {
@@ -176,6 +284,13 @@ namespace hevce_encode_frame_async
                 return 0;
             }
 
+            if ((m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210 || m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_YUY2)
+                && (g_tsHWtype < MFX_HW_ICL || g_tsConfig.lowpower == MFX_CODINGOPTION_ON))
+            {
+                g_tsLog << "\n\nWARNING: 422 format only supported on ICL+ and ENC+PAK!\n\n\n";
+                throw tsSKIP;
+            }
+
             //HEVCE_HW need aligned width and height for 32
             m_par.mfx.FrameInfo.Width = ((m_par.mfx.FrameInfo.Width + 32 - 1) & ~(32 - 1));
             m_par.mfx.FrameInfo.Height = ((m_par.mfx.FrameInfo.Height + 32 - 1) & ~(32 - 1));
@@ -188,7 +303,6 @@ namespace hevce_encode_frame_async
 
         reader = new tsRawReader(stream, m_pPar->mfx.FrameInfo);
         m_filler = reader;
-
 
         ENCODE_CAPS_HEVC caps = {};
         mfxU32 capSize = sizeof(ENCODE_CAPS_HEVC);
@@ -236,7 +350,7 @@ namespace hevce_encode_frame_async
 
             Init();
 
-            // set test param
+            //set test param
             AllocBitstream(); TS_CHECK_MFX;
             SETPARS(m_pBitstream, MFX_BS);
             AllocSurfaces(); TS_CHECK_MFX;
@@ -256,7 +370,6 @@ namespace hevce_encode_frame_async
         //call test function
         if (tc.sts >= MFX_ERR_NONE)
         {
-
             int encoded = 0;
             while (encoded < 1)
             {
@@ -299,5 +412,7 @@ namespace hevce_encode_frame_async
         return 0;
     }
 
-    TS_REG_TEST_SUITE_CLASS(hevce_encode_frame_async);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_encode_frame_async, RunTest_Subtype<MFX_FOURCC_NV12>, n_cases_nv12);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_8b_422_yuy2_encode_frame_async, RunTest_Subtype<MFX_FOURCC_YUY2>, n_cases_yuy2);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_422_y210_encode_frame_async, RunTest_Subtype<MFX_FOURCC_Y210>, n_cases_y210);
 };
