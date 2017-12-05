@@ -104,7 +104,7 @@ struct sInputParams
         , nNumSlices(1)
         , nRefDist(0)
         , nGopSize(0)
-        , nIdrInterval(0xffff)         // Infinite IDR interval
+        , nIdrInterval(0)
         , BRefType(MFX_B_REF_UNKNOWN)
         , PRefType(MFX_P_REF_SIMPLE)
         , nNumRef(0)

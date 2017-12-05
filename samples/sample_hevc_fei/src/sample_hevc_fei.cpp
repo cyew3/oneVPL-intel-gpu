@@ -72,7 +72,9 @@ void PrintHelp(const msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-n number] - number of frames to process\n"));
     msdk_printf(MSDK_STRING("   [-qp qp_value] - QP value for frames (default is 26)\n"));
     msdk_printf(MSDK_STRING("   [-f frameRate] - video frame rate (frames per second)\n"));
-    msdk_printf(MSDK_STRING("   [-idr_interval size] - idr interval, default 0 means every I is an IDR, 1 means every other I frame is an IDR etc (default is infinite)\n"));
+    msdk_printf(MSDK_STRING("   [-idr_interval size] - if IdrInterval = 0, then only first I-frame is an IDR-frame\n"));
+    msdk_printf(MSDK_STRING("                          if IdrInterval = 1, then every I - frame is an IDR - frame\n"));
+    msdk_printf(MSDK_STRING("                          if IdrInterval = 2, then every other I - frame is an IDR - frame, etc (default is 0)\n"));
     msdk_printf(MSDK_STRING("   [-g size] - GOP size (1(default) means I-frames only)\n"));
     msdk_printf(MSDK_STRING("   [-gop_opt closed|strict] - GOP optimization flags (can be used together)\n"));
     msdk_printf(MSDK_STRING("   [-r (-GopRefDist) distance] - Distance between I- or P- key frames (1 means no B-frames) (0 - by default(I frames))\n"));
