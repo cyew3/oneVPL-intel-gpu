@@ -403,7 +403,8 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             {
                 { GOP_SIZE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, GOP_SIZE,
                               SET_RESOLUTION(352, 288) } },
-                { ITER_LENGTH, SET_RESOLUTION(176, 144) }
+                { ITER_LENGTH, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, GOP_SIZE - 1,
+                              SET_RESOLUTION(176, 144) } }
             },
         },
         {/*32*/ MFX_ERR_NONE, CQP | KEY_FRAME,
@@ -1386,6 +1387,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         mfxU32 m_testType;
         mfxU32 m_testId;
         mfxU8 m_dpbSlotsForPrevFrame;
+        mfxU8 m_numFrame;
     public:
         BitstreamChecker(
             std::vector<Iteration*>* pIterations,
@@ -1398,6 +1400,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             , m_testType(testType)
             , m_testId(testId)
             , m_dpbSlotsForPrevFrame(0)
+            , m_numFrame(0)
         {
             const mfxFrameInfo& targetFi = (*m_pIterations)[0]->m_param[CHECK].mfx.FrameInfo;
             mfxU32 w = targetFi.Width;
@@ -1480,8 +1483,6 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
 
     mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
     {
-        nFrames;
-
         //DumpCodedFrame(bs, m_testId);
 
         SetBuffer(bs);
@@ -1489,7 +1490,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         // parse uncompressed header and check values
         tsParserVP9::UnitType& hdr = ParseOrDie();
         std::vector<Iteration*>::iterator curIter =
-            std::find_if(m_pIterations->begin(), m_pIterations->end(), FindIterByFrameIdx(hdr.FrameOrder));
+            std::find_if(m_pIterations->begin(), m_pIterations->end(), FindIterByFrameIdx(m_numFrame));
 
         const Iteration& iter = **curIter;
         const mfxExtVP9Param& extParToCheck = iter.m_extParam[CHECK];
@@ -1497,18 +1498,18 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         mfxU32 expectedWidth = extParToCheck.FrameWidth;
         if (hdr.uh.width != expectedWidth)
         {
-            ADD_FAILURE() << "ERROR: frame_width_minus_1 in uncompressed header of frame " << hdr.FrameOrder << " is incorrect: " << hdr.uh.width - 1
+            ADD_FAILURE() << "ERROR: frame_width_minus_1 in uncompressed header of frame " << m_numFrame << " is incorrect: " << hdr.uh.width - 1
                 << ", expected " << expectedWidth - 1; throw tsFAIL;
         }
 
         mfxU32 expectedHeight = extParToCheck.FrameHeight;
         if (hdr.uh.height != expectedHeight)
         {
-            ADD_FAILURE() << "ERROR: frame_height_minus_1 in uncompressed header of frame " << hdr.FrameOrder << " is incorrect: " << hdr.uh.height - 1
+            ADD_FAILURE() << "ERROR: frame_height_minus_1 in uncompressed header of frame " << m_numFrame << " is incorrect: " << hdr.uh.height - 1
                 << ", expected " << expectedHeight - 1; throw tsFAIL;
         }
 
-        if (hdr.FrameOrder && hdr.FrameOrder == iter.m_firstFrame)
+        if (m_numFrame && m_numFrame == iter.m_firstFrame)
         {
             // new iteration just started - need to check all borderline conditions
             if (curIter == m_pIterations->begin())
@@ -1524,7 +1525,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 // check that kew-frame is inserted together with resolution change
                 if (hdr.uh.frame_type != 0)
                 {
-                    ADD_FAILURE() << "ERROR: Frame " << hdr.FrameOrder << "isn't key-frame";
+                    ADD_FAILURE() << "ERROR: Frame " << m_numFrame << "isn't key-frame";
                     throw tsFAIL;
                 }
             }
@@ -1536,14 +1537,14 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                     // check that no key-frame inserted at the place of resolution change
                     if (hdr.uh.frame_type != 1)
                     {
-                        ADD_FAILURE() << "ERROR: Frame " << hdr.FrameOrder << "is key-frame, but there should be no key-frame for dynamic scaling";
+                        ADD_FAILURE() << "ERROR: Frame " << m_numFrame << "is key-frame, but there should be no key-frame for dynamic scaling";
                         throw tsFAIL;
                     }
 
                     // check that reference structure is reset at the place of resolution change
                     if (hdr.uh.refresh_frame_flags != 0xff)
                     {
-                        ADD_FAILURE() << "ERROR: reference structure wasn't reset at frame " << hdr.FrameOrder;
+                        ADD_FAILURE() << "ERROR: reference structure wasn't reset at frame " << m_numFrame;
                         throw tsFAIL;
                     }
 
@@ -1554,7 +1555,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                     bool isPrevFrame = ((1 << lastRefIdx) & m_dpbSlotsForPrevFrame) != 0;
                     if (!(isSingleRef && isPrevFrame))
                     {
-                        ADD_FAILURE() << "ERROR: first frame after resolution change (" << hdr.FrameOrder << ") doesn't use immediate previous frame as single reference";
+                        ADD_FAILURE() << "ERROR: first frame after resolution change (" << m_numFrame << ") doesn't use immediate previous frame as single reference";
                         throw tsFAIL;
                     }
 
@@ -1562,7 +1563,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                     {
                         if (hdr.uh.ref[i].size_from_ref == 1)
                         {
-                            ADD_FAILURE() << "ERROR: first frame after resolution change (" << hdr.FrameOrder << ") re-uses resolution of reference frame " << i;
+                            ADD_FAILURE() << "ERROR: first frame after resolution change (" << m_numFrame << ") re-uses resolution of reference frame " << i;
                             throw tsFAIL;
                         }
                     }
@@ -1576,6 +1577,10 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         if (m_pInputSurfaces)
         {
             const mfxU32 ivfSize = hdr.FrameOrder == 0 ? MAX_IVF_HEADER_SIZE : IVF_PIC_HEADER_SIZE_BYTES;
+            if (m_numFrame && (hdr.FrameOrder == 0))
+            {
+                Reset();
+            }
 
             m_pBitstream->Data = bs.Data + ivfSize;
             m_pBitstream->DataOffset = 0;
@@ -1590,21 +1595,21 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
 
             if (sts < 0)
             {
-                ADD_FAILURE() << "ERROR: DecodeFrameAsync for frame " << hdr.FrameOrder << " failed with status: " << sts;
+                ADD_FAILURE() << "ERROR: DecodeFrameAsync for frame " << m_numFrame << " failed with status: " << sts;
                 throw tsFAIL;
             }
 
             sts = SyncOperation();
             if (sts < 0)
             {
-                ADD_FAILURE() << "ERROR: SyncOperation for frame " << hdr.FrameOrder << " failed with status: " << sts;
+                ADD_FAILURE() << "ERROR: SyncOperation for frame " << m_numFrame << " failed with status: " << sts;
                 throw tsFAIL;
             }
 
             // frame is decoded correctly - let's calculate and check PSNR for Y plane
 
             // check that respective source frame is stored
-            if (m_pInputSurfaces->find(hdr.FrameOrder) == m_pInputSurfaces->end())
+            if (m_pInputSurfaces->find(m_numFrame) == m_pInputSurfaces->end())
             {
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
             }
@@ -1616,7 +1621,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             //mfxU32 pitch = (m_pSurf->Data.PitchHigh << 16) + m_pSurf->Data.PitchLow;
             //DumpDecodedFrame(m_pSurf->Data.Y, m_pSurf->Data.UV, w, h, pitch);
 
-            mfxFrameSurface1* pInputSurface = (*m_pInputSurfaces)[hdr.FrameOrder];
+            mfxFrameSurface1* pInputSurface = (*m_pInputSurfaces)[m_numFrame];
             tsFrame src = tsFrame(*pInputSurface);
             tsFrame res = tsFrame(*m_pSurf);
             src.m_info.CropX = src.m_info.CropY = res.m_info.CropX = res.m_info.CropY = 0;
@@ -1627,30 +1632,32 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             const mfxF64 psnrU = PSNR(src, res, 1);
             const mfxF64 psnrV = PSNR(src, res, 2);
             pInputSurface->Data.Locked--;
-            m_pInputSurfaces->erase(hdr.FrameOrder);
+            m_pInputSurfaces->erase(m_numFrame);
             const mfxF64 minPsnr = GetMinPSNR(iter.m_param[CHECK]);
 
-            g_tsLog << "INFO: frame[" << hdr.FrameOrder << "]: PSNR-Y=" << psnrY << " PSNR-U="
+            g_tsLog << "INFO: frame[" << m_numFrame << "]: PSNR-Y=" << psnrY << " PSNR-U="
                 << psnrU << " PSNR-V=" << psnrV << " size=" << bs.DataLength << "\n";
 
             if (psnrY < minPsnr)
             {
-                ADD_FAILURE() << "ERROR: PSNR-Y of frame " << hdr.FrameOrder << " is equal to " << psnrY << " and lower than threshold: " << minPsnr;
+                ADD_FAILURE() << "ERROR: PSNR-Y of frame " << m_numFrame << " is equal to " << psnrY << " and lower than threshold: " << minPsnr;
                 throw tsFAIL;
             }
             if (psnrU < minPsnr)
             {
-                ADD_FAILURE() << "ERROR: PSNR-U of frame " << hdr.FrameOrder << " is equal to " << psnrU << " and lower than threshold: " << minPsnr;
+                ADD_FAILURE() << "ERROR: PSNR-U of frame " << m_numFrame << " is equal to " << psnrU << " and lower than threshold: " << minPsnr;
                 throw tsFAIL;
             }
             if (psnrV < minPsnr)
             {
-                ADD_FAILURE() << "ERROR: PSNR-V of frame " << hdr.FrameOrder << " is equal to " << psnrV << " and lower than threshold: " << minPsnr;
+                ADD_FAILURE() << "ERROR: PSNR-V of frame " << m_numFrame << " is equal to " << psnrV << " and lower than threshold: " << minPsnr;
                 throw tsFAIL;
             }
         }
 
         bs.DataLength = bs.DataOffset = 0;
+
+        m_numFrame += nFrames;
 
         return MFX_ERR_NONE;
     }
@@ -1868,6 +1875,9 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             m_pPar->mfx.FrameInfo.CropH = m_pPar->mfx.FrameInfo.Height;
 
             mfxStatus sts = Reset();
+            if (tc.type & KEY_FRAME)
+                bs.reset();
+
             if (sts < 0)
             {
                 // Reset returned error which was expected by the test
