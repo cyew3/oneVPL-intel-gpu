@@ -23,6 +23,10 @@ tsVideoPreENC::tsVideoPreENC(bool useDefaults)
     , m_filler(0)
     , m_frames_buffered(0)
     , m_uid(0)
+    , m_PreENCInput{0}
+    , m_PreENCOutput{0}
+    , m_pPreENCInput(&m_PreENCInput)
+    , m_pPreENCOutput(&m_PreENCOutput)
     , m_field_processed(0)
 {
     if (m_default)
@@ -59,6 +63,10 @@ tsVideoPreENC::tsVideoPreENC(mfxFeiFunction func, mfxU32 CodecId, bool useDefaul
     , m_filler(0)
     , m_frames_buffered(0)
     , m_uid(0)
+    , m_PreENCInput{0}
+    , m_PreENCOutput{0}
+    , m_pPreENCInput(&m_PreENCInput)
+    , m_pPreENCOutput(&m_PreENCOutput)
     , m_field_processed(0)
 {
     if(m_default)
@@ -265,13 +273,13 @@ mfxStatus tsVideoPreENC::ProcessFrameAsync()
         {
             Init();TS_CHECK_MFX;
         }
-        m_PreENCInput->InSurface = GetSurface();TS_CHECK_MFX;
+        m_pPreENCInput->InSurface = GetSurface();TS_CHECK_MFX;
         if(m_filler)
         {
-            m_PreENCInput->InSurface = m_filler->ProcessSurface(m_PreENCInput->InSurface, m_pFrameAllocator);
+            m_pPreENCInput->InSurface = m_filler->ProcessSurface(m_pPreENCInput->InSurface, m_pFrameAllocator);
         }
     }
-    mfxStatus mfxRes = ProcessFrameAsync(m_session, m_PreENCInput, m_PreENCOutput, m_pSyncPoint);
+    mfxStatus mfxRes = ProcessFrameAsync(m_session, m_pPreENCInput, m_pPreENCOutput, m_pSyncPoint);
 
     return mfxRes;
 }

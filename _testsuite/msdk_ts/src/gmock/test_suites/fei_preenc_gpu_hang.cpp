@@ -84,8 +84,6 @@ int test(mfxU32 codecId)
     preenc.AllocSurfaces();
     g_tsStatus.check();
 
-    preenc.m_PreENCInput = new mfxENCInput;
-    preenc.m_PreENCOutput = new mfxENCOutput;
     in_buffs.clear();
     out_buffs.clear();
 
@@ -127,12 +125,11 @@ int test(mfxU32 codecId)
     pBufHang->BufferSz = sizeof(mfxExtBuffer);
     in_buffs.push_back(reinterpret_cast<mfxExtBuffer *>(pBufHang));
 
-    memset(preenc.m_PreENCInput, 0x0, sizeof(mfxENCInput));
-    preenc.m_PreENCInput->NumExtParam = (mfxU16)in_buffs.size();
-    preenc.m_PreENCInput->ExtParam = in_buffs.data();
-    preenc.m_PreENCInput->NumFrameL0 = 0;
-    preenc.m_PreENCInput->NumFrameL1 = 0;
-    preenc.m_PreENCInput->InSurface = preenc.GetSurface(0);
+    preenc.m_pPreENCInput->NumExtParam = (mfxU16)in_buffs.size();
+    preenc.m_pPreENCInput->ExtParam = in_buffs.data();
+    preenc.m_pPreENCInput->NumFrameL0 = 0;
+    preenc.m_pPreENCInput->NumFrameL1 = 0;
+    preenc.m_pPreENCInput->InSurface = preenc.GetSurface(0);
 
     memset(pMv, 0x0, sizeof(mfxExtFeiPreEncMV));
     pMv->Header.BufferId = MFX_EXTBUFF_FEI_PREENC_MV;
@@ -149,9 +146,9 @@ int test(mfxU32 codecId)
     pMb->MB = new mfxExtFeiPreEncMBStat::mfxExtFeiPreEncMBStatMB[pMb->NumMBAlloc];
     out_buffs.push_back(reinterpret_cast<mfxExtBuffer *>(pMb));
 
-    memset(preenc.m_PreENCOutput,  0x0, sizeof(mfxENCOutput));
-    preenc.m_PreENCOutput->NumExtParam = (mfxU16)out_buffs.size();
-    preenc.m_PreENCOutput->ExtParam = out_buffs.data();
+    memset(preenc.m_pPreENCOutput,  0x0, sizeof(mfxENCOutput));
+    preenc.m_pPreENCOutput->NumExtParam = (mfxU16)out_buffs.size();
+    preenc.m_pPreENCOutput->ExtParam = out_buffs.data();
 
     g_tsStatus.disable();
 
@@ -166,8 +163,6 @@ int test(mfxU32 codecId)
             break;
     }
 
-    delete(preenc.m_PreENCInput);
-    delete(preenc.m_PreENCOutput);
     delete [] (pMv->MB);
     delete [] (pMb->MB);
 

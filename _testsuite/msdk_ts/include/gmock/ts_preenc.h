@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -30,8 +30,10 @@ public:
     tsSurfaceProcessor*         m_filler;
     mfxU32                      m_frames_buffered;
     mfxPluginUID*               m_uid;
-    mfxENCInput*                m_PreENCInput;
-    mfxENCOutput*               m_PreENCOutput;
+    mfxENCInput                 m_PreENCInput;
+    mfxENCOutput                m_PreENCOutput;
+    mfxENCInput*                m_pPreENCInput;
+    mfxENCOutput*               m_pPreENCOutput;
     mfxU16                      m_field_processed;
 
     tsVideoPreENC(bool useDefaults = true);
