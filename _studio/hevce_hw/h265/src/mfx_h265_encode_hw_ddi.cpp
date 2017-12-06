@@ -28,27 +28,31 @@ namespace MfxHwH265Encode
 GUID GetGUID(MfxVideoParam const & par)
 {
     GUID guid = DXVA2_Intel_Encode_HEVC_Main;
+    mfxU16 bdId = 0, cfId = 0;
 
 #ifndef OPEN_SOURCE
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-    bool is10bit =
-        (   par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10
-         || par.m_ext.CO3.TargetBitDepthLuma == 10);
-    mfxU16 cfId = Clip3<mfxU16>(MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV444, par.m_ext.CO3.TargetChromaFormatPlus1 - 1) - MFX_CHROMAFORMAT_YUV420;
+    if (par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10 || par.m_ext.CO3.TargetBitDepthLuma == 10)
+        bdId = 1;;
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+    if (par.m_ext.CO3.TargetBitDepthLuma == 12)
+        bdId = 2;;
+#endif
+
+    cfId = Clip3<mfxU16>(MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV444, par.m_ext.CO3.TargetChromaFormatPlus1 - 1) - MFX_CHROMAFORMAT_YUV420;
 
     if (par.m_platform.CodeName && par.m_platform.CodeName < MFX_PLATFORM_ICELAKE)
         cfId = 0; // platforms below ICL do not support Main422/Main444 profile, using Main instead.
 #else
-    bool is10bit =
-        (   par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10
-         || par.mfx.FrameInfo.BitDepthLuma == 10
-         || par.mfx.FrameInfo.FourCC == MFX_FOURCC_P010);
-    mfxU16 cfId = 0;
+    if (par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10 || par.mfx.FrameInfo.BitDepthLuma == 10 || par.mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
+        bdId = 1;
+
+     cfId = 0;
 #endif
     if (par.m_platform.CodeName && par.m_platform.CodeName < MFX_PLATFORM_KABYLAKE)
-        is10bit = false;
+        bdId = 0;
 
-    guid = GuidTable[IsOn(par.mfx.LowPower)][is10bit] [cfId];
+    guid = GuidTable[IsOn(par.mfx.LowPower)][bdId] [cfId];
     DDITracer::TraceGUID(guid, stdout);
 #endif // OPEN_SOURCE
     return guid;
@@ -103,6 +107,9 @@ mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, MFXCoreInterface* core)
         caps.YUV444ReconSupport = 1;
     if (!caps.Color420Only && !(caps.YUV422ReconSupport))   // VPG: caps are not correct now
         caps.YUV422ReconSupport = 1;
+#endif
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+    caps.MaxEncodedBitDepth = 2;
 #endif
 #if defined(PRE_SI_TARGET_PLATFORM_GEN10)
     mfxPlatform pltfm;
@@ -208,11 +215,13 @@ mfxStatus CheckHeaders(
         && (par.m_sps.bit_depth_luma_minus8 != 0 || par.m_sps.bit_depth_chroma_minus8 != 0)));
 
     MFX_CHECK_COND(
-      !(   (caps.MaxEncodedBitDepth == 1 || !caps.BitDepth8Only)
+      !(   (caps.MaxEncodedBitDepth == 2 || caps.MaxEncodedBitDepth == 1 || !caps.BitDepth8Only)
         && ( !(par.m_sps.bit_depth_luma_minus8 == 0
-            || par.m_sps.bit_depth_luma_minus8 == 2)
+            || par.m_sps.bit_depth_luma_minus8 == 2
+            || par.m_sps.bit_depth_luma_minus8 == 4)
           || !(par.m_sps.bit_depth_chroma_minus8 == 0
-            || par.m_sps.bit_depth_chroma_minus8 == 2))));
+            || par.m_sps.bit_depth_chroma_minus8 == 2
+            || par.m_sps.bit_depth_chroma_minus8 == 4))));
 #else
     MFX_CHECK_COND(
         !(  caps.BitDepth8Only == 1 // 8 bit only

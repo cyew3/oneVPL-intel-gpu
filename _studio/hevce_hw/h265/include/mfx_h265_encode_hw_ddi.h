@@ -67,6 +67,13 @@ static const GUID DXVA2_Intel_LowpowerEncode_HEVC_Main444_10 =
 #endif
 
 #ifdef PRE_SI_TARGET_PLATFORM_GEN12
+static const GUID DXVA2_Intel_Encode_HEVC_Main12 =
+{ 0xd6d6bc4f, 0xd51a, 0x4712, { 0x97, 0xe8, 0x75, 0x9, 0x17, 0xc8, 0x60, 0xfd } };
+static const GUID DXVA2_Intel_Encode_HEVC_Main422_12 =
+{ 0x7fef652d, 0x3233, 0x44df, { 0xac, 0xf7, 0xec, 0xfb, 0x58, 0x4d, 0xab, 0x35 } };
+static const GUID DXVA2_Intel_Encode_HEVC_Main444_12 =
+{ 0xf8fa34b7, 0x93f5, 0x45a4, { 0xbf, 0xc0, 0x38, 0x17, 0xce, 0xe6, 0xbb, 0x93 } };
+
 // GUIDs from DDI for HEVC Encoder spec 0.991
 static const GUID DXVA2_Intel_LowpowerEncode_HEVC_SCC_Main =
 { 0x2dec00c7, 0x21ee, 0x4bf8, { 0x8f, 0x0e, 0x77, 0x3f, 0x11, 0xf1, 0x26, 0xa2 } };
@@ -83,7 +90,7 @@ static const GUID DXVA2_Intel_LowpowerEncode_HEVC_SCC_Main444_10 =
 GUID GetGUID(MfxVideoParam const & par);
 
 #ifndef OPEN_SOURCE
-const GUID GuidTable[2][2][3] =
+const GUID GuidTable[2][3][3] =
 {
     // LowPower = OFF
     {
@@ -101,6 +108,14 @@ const GUID GuidTable[2][2][3] =
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
             /*422*/ DXVA2_Intel_Encode_HEVC_Main422_10,
             /*444*/ DXVA2_Intel_Encode_HEVC_Main444_10
+#endif
+        },
+        // BitDepthLuma = 12
+        {
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+            /*420*/ DXVA2_Intel_Encode_HEVC_Main12,
+            /*422*/ DXVA2_Intel_Encode_HEVC_Main422_12,
+            /*444*/ DXVA2_Intel_Encode_HEVC_Main444_12
 #endif
         }
     },
@@ -123,6 +138,11 @@ const GUID GuidTable[2][2][3] =
             /*422*/ DXVA2_Intel_LowpowerEncode_HEVC_Main422_10,
             /*444*/ DXVA2_Intel_LowpowerEncode_HEVC_Main444_10
     #endif
+        },
+        // BitDepthLuma = 12
+        {
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#endif
         }
     }
 #endif

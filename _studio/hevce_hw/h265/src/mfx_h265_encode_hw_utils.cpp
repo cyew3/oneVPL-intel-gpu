@@ -239,11 +239,17 @@ mfxStatus MfxFrameAllocResponse::Alloc(
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
         // WA for RExt formats to fix CreateTexture2D failure
-        if ((tmp.Info.FourCC == MFX_FOURCC_YUY2) ||
-            (tmp.Info.FourCC == MFX_FOURCC_Y210) ||
-            (tmp.Info.FourCC == MFX_FOURCC_P210) ||
-            (tmp.Info.FourCC == MFX_FOURCC_AYUV) ||
-            (tmp.Info.FourCC == MFX_FOURCC_Y410))
+        if ((tmp.Info.FourCC == MFX_FOURCC_YUY2)
+            || (tmp.Info.FourCC == MFX_FOURCC_Y210)
+            || (tmp.Info.FourCC == MFX_FOURCC_P210)
+            || (tmp.Info.FourCC == MFX_FOURCC_AYUV)
+            || (tmp.Info.FourCC == MFX_FOURCC_Y410)
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+            || (tmp.Info.FourCC == MFX_FOURCC_P016)
+            || (tmp.Info.FourCC == MFX_FOURCC_Y216)
+            || (tmp.Info.FourCC == MFX_FOURCC_Y416)
+#endif
+            )
             tmp.Type &= ~MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET;
 #endif
         for (int i = 0; i < req.NumFrameMin; i++)
