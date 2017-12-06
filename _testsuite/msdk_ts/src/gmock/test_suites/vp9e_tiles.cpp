@@ -1304,15 +1304,6 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         MFXInit(); TS_CHECK_MFX;
         Load();
 
-        if (g_tsHWtype < MFX_HW_ICL) // unsupported on platform less ICL
-        {
-            g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
-            g_tsLog << "WARNING: Unsupported HW Platform!\n";
-            mfxStatus sts = MFXVideoENCODE_Query(m_session, m_pPar, m_pParOut);
-            g_tsStatus.check(sts);
-            return 0;
-        }
-
 /*
 // NB: Registry "magic" not relevant anymore, but keeped for future utilization
 #if defined (WIN32)|(WIN64)
@@ -1429,6 +1420,15 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
 
         *m_pPar = iterations[0]->m_param[SET];
         mfxVideoParam* pOutPar = &iterations[0]->m_param[GET];
+
+        if (g_tsHWtype < MFX_HW_ICL) // unsupported on platform less ICL
+        {
+            g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
+            g_tsLog << "WARNING: Unsupported HW Platform!\n";
+            mfxStatus sts = MFXVideoENCODE_Query(m_session, m_pPar, m_pParOut);
+            g_tsStatus.check(sts);
+            return 0;
+        }
 
         // QUERY SECTION
         if (tc.type & QUERY)
