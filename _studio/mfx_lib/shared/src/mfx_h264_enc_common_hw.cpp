@@ -5771,7 +5771,8 @@ void MfxHwH264Encode::SetDefaults(
     if (extOpt2->LookAheadDS == MFX_LOOKAHEAD_DS_UNKNOWN) // default: use LA 2X for TU3-7 and LA 1X for TU1-2
     {
         if (par.mfx.TargetUsage > 2 ||
-            (par.mfx.FrameInfo.Width >= 1920 && par.mfx.FrameInfo.PicStruct == 0)) // customer's issue
+            (par.mfx.FrameInfo.Width >= 1920 && (par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE)) || // customer's issue
+            (par.mfx.FrameInfo.Width > 3000) )
             extOpt2->LookAheadDS = MFX_LOOKAHEAD_DS_2x;
         else
             extOpt2->LookAheadDS = MFX_LOOKAHEAD_DS_OFF;
