@@ -14,10 +14,7 @@
 #include "ts_struct.h"
 #include "ts_parser.h"
 
-#define TEST_NAME hevcd_corruption
-#define NSTREAMS 5
-
-namespace TEST_NAME
+namespace hevcd_corruption
 {
 
 /* Corrupted in mfxFrameData */
@@ -30,13 +27,16 @@ enum {
     REF_LIST  = MFX_CORRUPTION_REFERENCE_LIST     
 };
 
+template <unsigned fourcc, unsigned profile = MFX_PROFILE_UNKNOWN>
 class TestSuite : public tsVideoDecoder
 {
+
 public:
+
     TestSuite() : tsVideoDecoder(MFX_CODEC_HEVC) {}
     ~TestSuite() {}
-    int RunTest(unsigned int id);
-    static const unsigned int n_cases;
+
+    static int RunTest(unsigned int id);
 
     struct f_pair
     {
@@ -44,7 +44,10 @@ public:
         mfxU64 v;
     };
 
+    static const unsigned int n_cases;
+
 private:
+
     struct tc_struct
     {
         struct 
@@ -56,6 +59,8 @@ private:
     };
 
     static const tc_struct test_case[];
+
+    int RunTest(tc_struct const&);
 };
 
 struct mfxCorrupted {
@@ -189,31 +194,11 @@ do {                                                 \
     }
 };
 
-const TestSuite::tc_struct TestSuite::test_case[] =
-{
-    //manually corrupted streams with corruptions in slice data
-    {/*00*/ {12, "forBehaviorTest/corrupted/hevc/AMP_F_Hisilicon_3_I.bit" , {MAJOR,REF_FRAME,REF_FRAME,REF_FRAME,REF_FRAME,REF_FRAME,
-                                                                             REF_FRAME,REF_FRAME,REF_FRAME,REF_FRAME,REF_FRAME,REF_FRAME,REF_FRAME},},},
-    {/*01*/ {6, "forBehaviorTest/corrupted/hevc/AMP_F_Hisilicon_3_firstB.bit" , {0,MAJOR,REF_FRAME,REF_FRAME,REF_FRAME,REF_FRAME},},},
-    {/*02*/ {6, "forBehaviorTest/corrupted/hevc/AMP_F_Hisilicon_3_lastB.bit" , {0,0,0,0,0,MAJOR},},},
-
-    // NOTE - Gen9 HW does not set the corrupt flags correctly unless the error occurs in the last slice (reset after each slice).
-    //   Because the errors in this bistream are in slice 1 of 4, the corrupt flags will all be 0 for SKL/BXT/KBL/CFL.
-    //   See MDP-17699, MDP-27066, MDP-32230, HSD-1208699222
-    //
-    //   When/if this is fixed, this test is expected to fail and the expected values for these flags will need to be updated as follows:
-    //   {0, REF_FRAME, MAJOR, REF_FRAME, 0, 0, 0, 0, 0, REF_FRAME, REF_FRAME, REF_FRAME, MAJOR}
-    //   This bitream has errors in frame 2 (ref for 1,3) and in frame 12 (ref for 9,10,11)
-    {/*03*/ {13, "forBehaviorTest/corrupted/hevc/4K_BodyPainting_10M_1B3P.265" , {0,0,0,0,0,0,0,0,0,0,0,0,0},},},
-
-};
-
-const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
-
-int TestSuite::RunTest(unsigned int id)
+template <unsigned fourcc, unsigned profile>
+int TestSuite<fourcc, profile>::RunTest(tc_struct const& tc)
 {
     TS_START;
-    const tc_struct& tc = test_case[id];
+
     const char* sname = g_tsStreamPool.Get(tc.stream.name);
     g_tsStreamPool.Reg();
 
@@ -233,7 +218,145 @@ int TestSuite::RunTest(unsigned int id)
     return 0;
 }
 
-TS_REG_TEST_SUITE_CLASS(TEST_NAME);
-#undef TEST_NAME
+template <unsigned fourcc, unsigned profile>
+int TestSuite<fourcc, profile>::RunTest(unsigned int id)
+{
+    auto const& tc =
+        TestSuite::test_case[id];
+
+    TestSuite suite;
+    return suite.RunTest(tc);
+}
+
+/* 8b 420 */
+template <>
+const TestSuite<MFX_FOURCC_NV12>::tc_struct TestSuite<MFX_FOURCC_NV12>::test_case[] =
+{
+    //manually corrupted streams with corruptions in slice data
+    {/*00*/ {12, "forBehaviorTest/corrupted/hevc/AMP_F_Hisilicon_3_I.bit" , {MAJOR,REF_FRAME,REF_FRAME,REF_FRAME,REF_FRAME,REF_FRAME,
+                                                                             REF_FRAME,REF_FRAME,REF_FRAME,REF_FRAME,REF_FRAME,REF_FRAME,REF_FRAME},},},
+    {/*01*/ {6, "forBehaviorTest/corrupted/hevc/AMP_F_Hisilicon_3_firstB.bit" , {0,MAJOR,REF_FRAME,REF_FRAME,REF_FRAME,REF_FRAME},},},
+    {/*02*/ {6, "forBehaviorTest/corrupted/hevc/AMP_F_Hisilicon_3_lastB.bit" , {0,0,0,0,0,MAJOR},},},
+
+    // NOTE - Gen9 HW does not set the corrupt flags correctly unless the error occurs in the last slice (reset after each slice).
+    //   Because the errors in this bistream are in slice 1 of 4, the corrupt flags will all be 0 for SKL/BXT/KBL/CFL.
+    //   See MDP-17699, MDP-27066, MDP-32230, HSD-1208699222
+    //
+    //   When/if this is fixed, this test is expected to fail and the expected values for these flags will need to be updated as follows:
+    //   {0, REF_FRAME, MAJOR, REF_FRAME, 0, 0, 0, 0, 0, REF_FRAME, REF_FRAME, REF_FRAME, MAJOR}
+    //   This bitream has errors in frame 2 (ref for 1,3) and in frame 12 (ref for 9,10,11)
+    {/*03*/ {13, "forBehaviorTest/corrupted/hevc/4K_BodyPainting_10M_1B3P.265" , {0,0,0,0,0,0,0,0,0,0,0,0,0},},},
+
+};
+template <>
+const unsigned int TestSuite<MFX_FOURCC_NV12>::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
+
+/* 8b 422 */
+template <>
+const TestSuite<MFX_FOURCC_YUY2>::tc_struct TestSuite<MFX_FOURCC_YUY2>::test_case[] =
+{
+    { /*00*/
+        { 16, "forBehaviorTest/corrupted/hevc/Kimono1_704x576_24_422_8_I.265" ,
+            { MAJOR, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME } }
+    },
+    { /*01*/
+        { 16, "forBehaviorTest/corrupted/hevc/Kimono1_704x576_24_422_8_firstB.265" ,
+            {     0, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME,     MAJOR, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME } },
+    },
+    { /*02*/
+        { 16, "forBehaviorTest/corrupted/hevc/Kimono1_704x576_24_422_8_lastB.265" ,
+            {     0,         0,         0,         0,         0,         0,         0,         0,         0,         0,         0,         0,         0,         0,         0,     MAJOR } }
+    },
+};
+template <>
+const unsigned int TestSuite<MFX_FOURCC_YUY2>::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
+
+/* 8b 444 */
+template <>
+const TestSuite<MFX_FOURCC_AYUV>::tc_struct TestSuite<MFX_FOURCC_AYUV>::test_case[] =
+{
+    { /*00*/
+        { 16, "forBehaviorTest/corrupted/hevc/Kimono1_704x576_24_444_8_I.265" ,
+            { MAJOR, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME } }
+    },
+    { /*01*/
+        { 16, "forBehaviorTest/corrupted/hevc/Kimono1_704x576_24_444_8_firstB.265" ,
+            {     0, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME,     MAJOR, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME } },
+    },
+    { /*02*/
+        { 16, "forBehaviorTest/corrupted/hevc/Kimono1_704x576_24_444_8_lastB.265" ,
+            {     0,         0,         0,         0,         0,         0,         0,         0,         0,         0,         0,         0,         0,         0,         0,     MAJOR } }
+    },
+};
+template <>
+const unsigned int TestSuite<MFX_FOURCC_AYUV>::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
+
+/* 10b 420 */
+template <>
+const TestSuite<MFX_FOURCC_P010>::tc_struct TestSuite<MFX_FOURCC_P010>::test_case[] =
+{
+    { /*00*/
+        { 16, "forBehaviorTest/corrupted/hevc/Kimono1_704x576_24_420_10_I.265" ,
+            { MAJOR, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME } }
+    },
+    { /*01*/
+        { 16, "forBehaviorTest/corrupted/hevc/Kimono1_704x576_24_420_10_firstB.265" ,
+            {     0, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME,     MAJOR } },
+    },
+    { /*02*/
+        { 16, "forBehaviorTest/corrupted/hevc/Kimono1_704x576_24_420_10_nonrefB.265" ,
+            {     0, MAJOR,                                                                                 } }
+    },
+};
+template <>
+const unsigned int TestSuite<MFX_FOURCC_P010>::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
+
+/* 10b 422 */
+template <>
+const TestSuite<MFX_FOURCC_Y210>::tc_struct TestSuite<MFX_FOURCC_Y210>::test_case[] =
+{
+    { /*00*/
+        { 16, "forBehaviorTest/corrupted/hevc/Kimono1_704x576_24_422_10_I.265" ,
+            { MAJOR, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME } }
+    },
+    { /*01*/
+        { 16, "forBehaviorTest/corrupted/hevc/Kimono1_704x576_24_422_10_firstB.265" ,
+            {     0, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME,     MAJOR, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME } },
+    },
+    { /*02*/
+        { 16, "forBehaviorTest/corrupted/hevc/Kimono1_704x576_24_422_10_lastB.265" ,
+            {     0,         0,         0,         0,         0,         0,         0,         0,         0,         0,         0,         0,         0,         0,         0,     MAJOR } }
+    },
+};
+template <>
+const unsigned int TestSuite<MFX_FOURCC_Y210>::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
+
+/* 10b 444 */
+template <>
+const TestSuite<MFX_FOURCC_Y410>::tc_struct TestSuite<MFX_FOURCC_Y410>::test_case[] =
+{
+    { /*00*/
+        { 16, "forBehaviorTest/corrupted/hevc/Kimono1_704x576_24_444_10_I.265" ,
+            { MAJOR, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME } }
+    },
+    { /*01*/
+        { 16, "forBehaviorTest/corrupted/hevc/Kimono1_704x576_24_444_10_firstB.265" ,
+            {     0, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME,     MAJOR, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME, REF_FRAME } },
+    },
+    { /*02*/
+        { 16, "forBehaviorTest/corrupted/hevc/Kimono1_704x576_24_444_10_lastB.265" ,
+            {     0,         0,         0,         0,         0,         0,         0,         0,         0,         0,         0,         0,         0,         0,         0,     MAJOR } }
+    },
+};
+template <>
+const unsigned int TestSuite<MFX_FOURCC_Y410>::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
+
+TS_REG_TEST_SUITE(hevcd_corruption,              TestSuite<MFX_FOURCC_NV12>::RunTest, TestSuite<MFX_FOURCC_NV12>::n_cases);
+TS_REG_TEST_SUITE(hevcd_8b_422_yuy2_corruption,  TestSuite<MFX_FOURCC_YUY2>::RunTest, TestSuite<MFX_FOURCC_YUY2>::n_cases);
+TS_REG_TEST_SUITE(hevcd_8b_444_ayuv_corruption,  TestSuite<MFX_FOURCC_AYUV>::RunTest, TestSuite<MFX_FOURCC_AYUV>::n_cases);
+
+TS_REG_TEST_SUITE(hevcd_10b_420_p010_corruption, TestSuite<MFX_FOURCC_P010>::RunTest, TestSuite<MFX_FOURCC_P010>::n_cases);
+TS_REG_TEST_SUITE(hevcd_10b_422_y210_corruption, TestSuite<MFX_FOURCC_Y210>::RunTest, TestSuite<MFX_FOURCC_Y210>::n_cases);
+TS_REG_TEST_SUITE(hevcd_10b_444_y410_corruption, TestSuite<MFX_FOURCC_Y410>::RunTest, TestSuite<MFX_FOURCC_Y410>::n_cases);
 
 }
