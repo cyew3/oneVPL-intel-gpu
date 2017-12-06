@@ -547,6 +547,14 @@ mfxStatus MFXDecPipeline::BuildPipeline()
         m_components[eDEC].m_params.mfx.FrameInfo.BitDepthChroma = m_components[eDEC].m_params.mfx.FrameInfo.BitDepthLuma = 10;
     }
 
+    if (MFX_FOURCC_P016 == m_inParams.FrameInfo.FourCC ||
+        MFX_FOURCC_Y216 == m_inParams.FrameInfo.FourCC ||
+        MFX_FOURCC_Y416 == m_inParams.FrameInfo.FourCC)
+    {
+        m_components[eDEC].m_params.mfx.FrameInfo.BitDepthLuma = m_inParams.FrameInfo.BitDepthLuma;
+        m_components[eDEC].m_params.mfx.FrameInfo.BitDepthChroma = m_inParams.FrameInfo.BitDepthChroma;
+    }
+
     if (MFX_ERR_NONE == res && m_inParams.InputCodecType != MFX_CODEC_CAPTURE)
     {
         m_inParams.FrameInfo.Width  = streamInfo.nWidth;
@@ -3997,6 +4005,20 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
         m_YUV_Height = m_inParams.FrameInfo.Height;
         argv++;
         m_inParams.bYuvReaderMode = true;
+    }
+    else if (m_OptProc.Check(argv[0], VM_STRING("-BitDepthLuma"), VM_STRING("bit depth of luma samples for source YUV in MSDN format (left shifted)"), OPT_UINT_32))
+    {
+        MFX_CHECK(1 + argv != argvEnd);
+        MFX_PARSE_INT(m_inParams.FrameInfo.BitDepthLuma, argv[1]);
+        if (m_inParams.FrameInfo.BitDepthChroma == 0)
+            m_inParams.FrameInfo.BitDepthChroma = m_inParams.FrameInfo.BitDepthLuma;
+        argv++;
+    }
+    else if (m_OptProc.Check(argv[0], VM_STRING("-BitDepthChroma"), VM_STRING("bit depth of chroma samples for source YUV in MSDN format (left shifted)"), OPT_UINT_32))
+    {
+        MFX_CHECK(1 + argv != argvEnd);
+        MFX_PARSE_INT(m_inParams.FrameInfo.BitDepthChroma, argv[1]);
+        argv++;
     }
     else if (m_OptProc.Check(argv[0], VM_STRING("-async"), VM_STRING("maximum number of asynchronious tasks"), OPT_INT_32))
     {

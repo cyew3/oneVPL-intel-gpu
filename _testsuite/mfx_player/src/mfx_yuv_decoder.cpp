@@ -32,6 +32,8 @@ MFXYUVDecoder::MFXYUVDecoder(IVideoSession* session,
     mfxFrameInfo &info = m_vParam.mfx.FrameInfo;
     mfxFrameInfo &infoIn = frameParam.mfx.FrameInfo;
 
+    info.BitDepthLuma  = infoIn.BitDepthLuma;
+    info.BitDepthChroma = infoIn.BitDepthChroma;
     info.ChromaFormat  = infoIn.ChromaFormat;
     info.FourCC        = infoIn.FourCC;
     info.CropX         = infoIn.CropX;

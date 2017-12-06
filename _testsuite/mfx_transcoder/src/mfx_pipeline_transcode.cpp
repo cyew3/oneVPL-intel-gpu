@@ -771,11 +771,13 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             m_bUseResizing = (nPattern == 3);
 
             argv++;
-        }else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-resize_h"), VM_STRING("")))
+        }
+        else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-resize_h"), VM_STRING("")))
         {
             //quite same as new w new h options
 
-        }else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-resize_w"), VM_STRING("")))
+        }
+        else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-resize_w"), VM_STRING("")))
         {
 
         }

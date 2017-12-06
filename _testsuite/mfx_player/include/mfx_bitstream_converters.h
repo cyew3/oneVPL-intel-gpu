@@ -777,6 +777,29 @@ protected:
 };
 
 template <>
+class BSConvert<MFX_FOURCC_Y216, MFX_FOURCC_Y216>
+    : public BSConverterPacketedCopy<MFX_FOURCC_Y216, MFX_FOURCC_Y216>
+{
+    IMPLEMENT_CLONE(BSConvert<MFX_FOURCC_Y216 MFX_PP_COMMA() MFX_FOURCC_Y216>);
+public:
+    BSConvert()
+    {
+        m_sample_size = 4;
+    }
+
+protected:
+    virtual mfxU8* start_pointer(mfxFrameSurface1 *surface)
+    {
+        mfxFrameData &data = surface->Data;
+        mfxFrameInfo &info = surface->Info;
+
+        mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
+
+        return data.Y + info.CropX * m_sample_size + info.CropY * pitch;
+    }
+};
+
+template <>
 class BSConvert<MFX_FOURCC_Y410, MFX_FOURCC_Y410>
     : public BSConverterPacketedCopy<MFX_FOURCC_Y410, MFX_FOURCC_Y410>
 {
@@ -785,6 +808,29 @@ public:
     BSConvert()
     {
         m_sample_size = 4;
+    }
+
+protected:
+    virtual mfxU8* start_pointer(mfxFrameSurface1 *surface)
+    {
+        mfxFrameData &data = surface->Data;
+        mfxFrameInfo &info = surface->Info;
+
+        mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
+
+        return (mfxU8*)surface->Data.Y410 + info.CropX * m_sample_size + info.CropY * pitch;
+    }
+};
+
+template <>
+class BSConvert<MFX_FOURCC_Y416, MFX_FOURCC_Y416>
+    : public BSConverterPacketedCopy<MFX_FOURCC_Y416, MFX_FOURCC_Y416>
+{
+    IMPLEMENT_CLONE(BSConvert<MFX_FOURCC_Y416 MFX_PP_COMMA() MFX_FOURCC_Y416>);
+public:
+    BSConvert()
+    {
+        m_sample_size = 8;
     }
 
 protected:
@@ -842,5 +888,46 @@ protected:
         mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
 
         return surface->Data.V + info.CropX * m_sample_size + info.CropY * pitch;
+    }
+};
+
+template <>
+class BSConvert<MFX_FOURCC_P016, MFX_FOURCC_P016>
+    : public BSConvertBase<MFX_FOURCC_P016, MFX_FOURCC_P016>
+{
+    IMPLEMENT_CLONE(BSConvert<MFX_FOURCC_P016 MFX_PP_COMMA() MFX_FOURCC_P016>);
+
+public:
+    virtual mfxStatus Transform(mfxBitstream * bs, mfxFrameSurface1 *surface)
+    {
+        mfxFrameData &data = surface->Data;
+        mfxFrameInfo &info = surface->Info;
+
+        if (bs->DataLength < GetMinPlaneSize(info))
+        {
+            return MFX_ERR_MORE_DATA;
+        }
+
+#if defined(LINUX32) || defined (LINUX64)
+        // on Windows surfaces comes zero-initialized, on Linux have to clear non-aligned stream boundaries
+        memset(data.Y, 0, info.Width * info.Height * 2);
+        memset(data.UV, 0, info.Width * info.Height);
+#endif
+
+        IppiSize roi = { info.CropW * 2, info.CropH };
+        mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
+        mfxU8  *ptr = data.Y + (info.CropX * 2) + info.CropY * pitch;
+
+        FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
+        bs->DataOffset += roi.width * roi.height;
+        bs->DataLength -= roi.width * roi.height;
+
+        ptr = data.UV + (info.CropX * 2) + (info.CropY >> 1) * pitch;
+
+        roi.height >>= 1;
+        FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
+        bs->DataOffset += roi.width * roi.height;
+        bs->DataLength -= roi.width * roi.height;
+        return MFX_ERR_NONE;
     }
 };
