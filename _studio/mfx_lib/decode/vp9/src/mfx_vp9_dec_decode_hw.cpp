@@ -345,8 +345,20 @@ void VideoDECODEVP9_HW::ResetFrameInfo()
 
 mfxStatus VideoDECODEVP9_HW::DecodeHeader(VideoCORE* core, mfxBitstream* bs, mfxVideoParam* par)
 {
-    return
-        MFX_VP9_Utility::DecodeHeader(core, bs, par);
+    MFX_CHECK_NULL_PTR1(par);
+
+    mfxStatus sts = MFX_VP9_Utility::DecodeHeader(core, bs, par);
+    MFX_CHECK_STS(sts);
+
+    if (   par->mfx.FrameInfo.FourCC == MFX_FOURCC_P010
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+        || par->mfx.FrameInfo.FourCC == MFX_FOURCC_P016
+        || par->mfx.FrameInfo.FourCC == MFX_FOURCC_Y416
+#endif //PRE_SI_TARGET_PLATFORM_GEN12
+        )
+        par->mfx.FrameInfo.Shift = 1;
+
+    return sts;
 }
 
 static bool IsSameVideoParam(mfxVideoParam *newPar, mfxVideoParam *oldPar)
@@ -513,17 +525,17 @@ mfxStatus VideoDECODEVP9_HW::GetVideoParam(mfxVideoParam *par)
 
 void VideoDECODEVP9_HW::UpdateVideoParam(mfxVideoParam *par, VP9DecoderFrame const & frameInfo)
 {
-    par->mfx.FrameInfo.AspectRatioW = 1;
-    par->mfx.FrameInfo.AspectRatioH = 1;
+    VM_ASSERT(par);
 
-    par->mfx.FrameInfo.CropW = (mfxU16)frameInfo.width;
-    par->mfx.FrameInfo.CropH = (mfxU16)frameInfo.height;
+    MFX_VP9_Utility::FillVideoParam(frameInfo, par);
 
-    par->mfx.FrameInfo.Width = (frameInfo.width + 15) & ~0x0f;
-    par->mfx.FrameInfo.Height = (frameInfo.height + 15) & ~0x0f;
-
-    par->mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
-    par->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+    if (   par->mfx.FrameInfo.FourCC == MFX_FOURCC_P010
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+        || par->mfx.FrameInfo.FourCC == MFX_FOURCC_P016
+        || par->mfx.FrameInfo.FourCC == MFX_FOURCC_Y416
+#endif //PRE_SI_TARGET_PLATFORM_GEN12
+        )
+        par->mfx.FrameInfo.Shift = 1;
 }
 
 mfxStatus VideoDECODEVP9_HW::GetDecodeStat(mfxDecodeStat *pStat)

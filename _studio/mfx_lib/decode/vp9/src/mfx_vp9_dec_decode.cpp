@@ -27,6 +27,7 @@ void MoveBitstreamData2_VP9(mfxBitstream& bs, mfxU32 offset)
 
 #include "umc_vp9_utils.h"
 #include "umc_vp9_bitstream.h"
+#include "umc_vp9_frame.h"
 
 using namespace UMC_VP9_DECODER;
 
@@ -1104,7 +1105,9 @@ void VideoDECODEVP9::SetOutputParams(mfxFrameSurface1 *surface_work)
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #if defined(MFX_ENABLE_VP9_VIDEO_DECODE) || defined(MFX_ENABLE_VP9_VIDEO_DECODE_HW)
 
-mfxStatus MFX_VP9_Utility::Query(VideoCORE *core, mfxVideoParam *p_in, mfxVideoParam *p_out, eMFXHWType type)
+namespace MFX_VP9_Utility {
+
+mfxStatus Query(VideoCORE *core, mfxVideoParam *p_in, mfxVideoParam *p_out, eMFXHWType type)
 {
     MFX_CHECK_NULL_PTR1(p_out);
     mfxStatus  sts = MFX_ERR_NONE;
@@ -1335,7 +1338,7 @@ mfxStatus MFX_VP9_Utility::Query(VideoCORE *core, mfxVideoParam *p_in, mfxVideoP
     return sts;
 }
 
-bool MFX_VP9_Utility::CheckVideoParam(mfxVideoParam *p_in, eMFXPlatform platform)
+bool CheckVideoParam(mfxVideoParam *p_in, eMFXPlatform platform)
 {
     if (!p_in)
         return false;
@@ -1416,7 +1419,7 @@ bool MFX_VP9_Utility::CheckVideoParam(mfxVideoParam *p_in, eMFXPlatform platform
     return true;
 }
 
-mfxStatus MFX_VP9_Utility::DecodeHeader(VideoCORE* core, mfxBitstream* bs, mfxVideoParam* params)
+mfxStatus DecodeHeader(VideoCORE* /*core*/, mfxBitstream* bs, mfxVideoParam* params)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
@@ -1433,13 +1436,9 @@ mfxStatus MFX_VP9_Utility::DecodeHeader(VideoCORE* core, mfxBitstream* bs, mfxVi
 
     bool bHeaderRead = false;
 
-    mfxU32 profile = 0;
-    mfxU16 width = 0;
-    mfxU16 height = 0;
-    mfxU32 subsampling_x = 0;
-    mfxU32 subsampling_y = 0;
+    VP9DecoderFrame frame{};
+    frame.bit_depth = 8;
 
-    mfxU32 bit_depth = 8;
     for (;;)
     {
         VP9Bitstream bsReader(bs->Data + bs->DataOffset,  bs->DataLength - bs->DataOffset);
@@ -1447,12 +1446,12 @@ mfxStatus MFX_VP9_Utility::DecodeHeader(VideoCORE* core, mfxBitstream* bs, mfxVi
         if (VP9_FRAME_MARKER != bsReader.GetBits(2))
             break; // invalid
 
-        profile = bsReader.GetBit();
-        profile |= bsReader.GetBit() << 1;
-        if (profile > 2)
-            profile += bsReader.GetBit();
+        frame.profile = bsReader.GetBit();
+        frame.profile |= bsReader.GetBit() << 1;
+        if (frame.profile > 2)
+            frame.profile += bsReader.GetBit();
 
-        if (profile >= 4)
+        if (frame.profile >= 4)
             return MFX_ERR_UNDEFINED_BEHAVIOR;
 
         if (bsReader.GetBit()) // show_existing_frame
@@ -1467,36 +1466,36 @@ mfxStatus MFX_VP9_Utility::DecodeHeader(VideoCORE* core, mfxBitstream* bs, mfxVi
             if (!CheckSyncCode(&bsReader))
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
 
-            if (profile >= 2)
+            if (frame.profile >= 2)
             {
-                bit_depth = bsReader.GetBit() ? 12 : 10;
+                frame.bit_depth = bsReader.GetBit() ? 12 : 10;
             }
 
             if (SRGB != (COLOR_SPACE)bsReader.GetBits(3)) // color_space
             {
                 bsReader.GetBit(); // color_range
-                if (1 == profile || 3 == profile)
+                if (1 == frame.profile || 3 == frame.profile)
                 {
-                    subsampling_x = bsReader.GetBit();
-                    subsampling_y = bsReader.GetBit();
+                    frame.subsamplingX = bsReader.GetBit();
+                    frame.subsamplingY = bsReader.GetBit();
                     bsReader.GetBit(); // reserved_zero
                 }
                 else
                 {
-                    subsampling_x = 1;
-                    subsampling_y = 1;
+                    frame.subsamplingX = 1;
+                    frame.subsamplingY = 1;
                 }
             }
             else
             {
-                if (1 == profile || 3 == profile)
+                if (1 == frame.profile || 3 == frame.profile)
                     bsReader.GetBit();
                 else
                     break; // invalid
             }
 
-            width = (mfxU16)bsReader.GetBits(16) + 1;
-            height = (mfxU16)bsReader.GetBits(16) + 1;
+            frame.width = (mfxU16)bsReader.GetBits(16) + 1;
+            frame.height = (mfxU16)bsReader.GetBits(16) + 1;
 
             bHeaderRead = true;
         }
@@ -1512,35 +1511,35 @@ mfxStatus MFX_VP9_Utility::DecodeHeader(VideoCORE* core, mfxBitstream* bs, mfxVi
             if (!CheckSyncCode(&bsReader))
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
 
-            if (profile >= 2)
-                bit_depth = bsReader.GetBit() ? 12 : 10;
+            if (frame.profile >= 2)
+                frame.bit_depth = bsReader.GetBit() ? 12 : 10;
 
-            if (profile == 0)
+            if (frame.profile == 0)
             {
-                // There is no color format info in intra-only frame for profile 0
-                subsampling_x = 1;
-                subsampling_y = 1;
+                // There is no color format info in intra-only frame for frame.profile 0
+                frame.subsamplingX = 1;
+                frame.subsamplingY = 1;
             }
-            else // profile > 0
+            else // frame.profile > 0
             {
                 if (SRGB != (COLOR_SPACE)bsReader.GetBits(3)) // color_space
                 {
                     bsReader.GetBit(); // color_range
-                    if (1 == profile || 3 == profile)
+                    if (1 == frame.profile || 3 == frame.profile)
                     {
-                        subsampling_x = bsReader.GetBit();
-                        subsampling_y = bsReader.GetBit();
+                        frame.subsamplingX = bsReader.GetBit();
+                        frame.subsamplingY = bsReader.GetBit();
                         bsReader.GetBit(); // reserved_zero
                     }
                     else
                     {
-                        subsampling_x = 1;
-                        subsampling_y = 1;
+                        frame.subsamplingX = 1;
+                        frame.subsamplingY = 1;
                     }
                 }
                 else
                 {
-                    if (1 == profile || 3 == profile)
+                    if (1 == frame.profile || 3 == frame.profile)
                         bsReader.GetBit();
                     else
                         break; // invalid
@@ -1549,8 +1548,8 @@ mfxStatus MFX_VP9_Utility::DecodeHeader(VideoCORE* core, mfxBitstream* bs, mfxVi
 
             bsReader.GetBits(NUM_REF_FRAMES);
 
-            width = (mfxU16)bsReader.GetBits(16) + 1;
-            height = (mfxU16)bsReader.GetBits(16) + 1;
+            frame.width = (mfxU16)bsReader.GetBits(16) + 1;
+            frame.height = (mfxU16)bsReader.GetBits(16) + 1;
 
             bHeaderRead = true;
         }
@@ -1564,28 +1563,37 @@ mfxStatus MFX_VP9_Utility::DecodeHeader(VideoCORE* core, mfxBitstream* bs, mfxVi
         return MFX_ERR_MORE_DATA;
     }
 
-    params->mfx.CodecProfile = mfxU16(profile + 1);
+    FillVideoParam(frame, params);
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus FillVideoParam(UMC_VP9_DECODER::VP9DecoderFrame const& frame, mfxVideoParam* params)
+{
+    MFX_CHECK_NULL_PTR1(params);
+
+    params->mfx.CodecProfile = mfxU16(frame.profile + 1);
 
     params->mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
     params->mfx.FrameInfo.AspectRatioW = 1;
     params->mfx.FrameInfo.AspectRatioH = 1;
 
-    params->mfx.FrameInfo.CropW = width;
-    params->mfx.FrameInfo.CropH = height;
+    params->mfx.FrameInfo.CropW = static_cast<mfxU16>(frame.width);
+    params->mfx.FrameInfo.CropH = static_cast<mfxU16>(frame.height);
 
-    params->mfx.FrameInfo.Width = (params->mfx.FrameInfo.CropW + 15) & ~0x0f;
-    params->mfx.FrameInfo.Height = (params->mfx.FrameInfo.CropH + 15) & ~0x0f;
+    params->mfx.FrameInfo.Width  = UMC::align_value<mfxU16>(params->mfx.FrameInfo.CropW, 16);
+    params->mfx.FrameInfo.Height = UMC::align_value<mfxU16>(params->mfx.FrameInfo.CropH, 16);
 
-    if (!subsampling_x && !subsampling_y)
+    if (!frame.subsamplingX && !frame.subsamplingY)
         params->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
     //else if (!subsampling_x && subsampling_y)
     //    params->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV440;
-    else if (subsampling_x && !subsampling_y)
+    else if (frame.subsamplingX && !frame.subsamplingY)
         params->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
-    else if (subsampling_x && subsampling_y)
+    else if (frame.subsamplingX && frame.subsamplingY)
         params->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
 
-    switch (bit_depth)
+    switch (frame.bit_depth)
     {
         case  8:
             params->mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
@@ -1594,25 +1602,21 @@ mfxStatus MFX_VP9_Utility::DecodeHeader(VideoCORE* core, mfxBitstream* bs, mfxVi
                 params->mfx.FrameInfo.FourCC = MFX_FOURCC_AYUV;
             else if (MFX_CHROMAFORMAT_YUV422 == params->mfx.FrameInfo.ChromaFormat)
                 params->mfx.FrameInfo.FourCC = MFX_FOURCC_YUY2;
-            else
-                params->mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
-            params->mfx.FrameInfo.BitDepthLuma = 0;
-            params->mfx.FrameInfo.BitDepthChroma = 0;
+            params->mfx.FrameInfo.BitDepthLuma   = 8;
+            params->mfx.FrameInfo.BitDepthChroma = 8;
             params->mfx.FrameInfo.Shift = 0;
             break;
 
         case 10:
             params->mfx.FrameInfo.FourCC = MFX_FOURCC_P010;
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-            if(MFX_CHROMAFORMAT_YUV444 == params->mfx.FrameInfo.ChromaFormat)
+            if (MFX_CHROMAFORMAT_YUV444 == params->mfx.FrameInfo.ChromaFormat)
                 params->mfx.FrameInfo.FourCC = MFX_FOURCC_Y410;
             else if (MFX_CHROMAFORMAT_YUV422 == params->mfx.FrameInfo.ChromaFormat)
                 params->mfx.FrameInfo.FourCC = MFX_FOURCC_Y210;
-            else
-                params->mfx.FrameInfo.FourCC = MFX_FOURCC_P010;
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
-            params->mfx.FrameInfo.BitDepthLuma = 10;
+            params->mfx.FrameInfo.BitDepthLuma   = 10;
             params->mfx.FrameInfo.BitDepthChroma = 10;
             break;
 
@@ -1624,15 +1628,14 @@ mfxStatus MFX_VP9_Utility::DecodeHeader(VideoCORE* core, mfxBitstream* bs, mfxVi
             else if(MFX_CHROMAFORMAT_YUV444 == params->mfx.FrameInfo.ChromaFormat)
                 params->mfx.FrameInfo.FourCC = MFX_FOURCC_Y416;
 #endif //PRE_SI_TARGET_PLATFORM_GEN12
-            params->mfx.FrameInfo.BitDepthLuma = 12;
+            params->mfx.FrameInfo.BitDepthLuma   = 12;
             params->mfx.FrameInfo.BitDepthChroma = 12;
             break;
     }
 
-    if (core->GetPlatformType() == MFX_PLATFORM_HARDWARE && params->mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
-        params->mfx.FrameInfo.Shift = 1;
-
     return MFX_ERR_NONE;
 }
+
+} //MFX_VP9_Utility
 
 #endif // #if defined(MFX_ENABLE_VP9_VIDEO_DECODE) || defined(MFX_ENABLE_VP9_VIDEO_DECODE_HW)

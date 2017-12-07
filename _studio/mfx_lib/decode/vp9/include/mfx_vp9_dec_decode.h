@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -137,13 +137,12 @@ class VideoDECODEVP9: public VideoDECODE
 #endif // MFX_ENABLE_VP8_VIDEO_DECODE
 
 #if defined(MFX_ENABLE_VP9_VIDEO_DECODE) || defined(MFX_ENABLE_VP9_VIDEO_DECODE_HW)
-class MFX_VP9_Utility
+namespace MFX_VP9_Utility
 {
-public:
-    static mfxStatus Query(VideoCORE *pCore, mfxVideoParam *pIn, mfxVideoParam *pOut, eMFXHWType type);
-    static bool CheckVideoParam(mfxVideoParam *pIn, eMFXPlatform platform);
-    static mfxStatus DecodeHeader(VideoCORE * /*core*/, mfxBitstream *bs, mfxVideoParam *params);
-
+    mfxStatus Query(VideoCORE *pCore, mfxVideoParam *pIn, mfxVideoParam *pOut, eMFXHWType type);
+    bool CheckVideoParam(mfxVideoParam *pIn, eMFXPlatform platform);
+    mfxStatus DecodeHeader(VideoCORE * /*core*/, mfxBitstream *bs, mfxVideoParam *params);
+    mfxStatus FillVideoParam(UMC_VP9_DECODER::VP9DecoderFrame const&, mfxVideoParam* params);
 };
 
 #endif // #if defined(MFX_ENABLE_VP9_VIDEO_DECODE) || defined(MFX_ENABLE_VP9_VIDEO_DECODE_HW)
