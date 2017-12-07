@@ -1202,6 +1202,9 @@ mfxStatus Query(VideoCORE *core, mfxVideoParam *p_in, mfxVideoParam *p_out, eMFX
             }
         }
 
+        p_out->mfx.FrameInfo.BitDepthLuma   = p_in->mfx.FrameInfo.BitDepthLuma;
+        p_out->mfx.FrameInfo.BitDepthChroma = p_in->mfx.FrameInfo.BitDepthChroma;
+
         if((p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_NV12
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
             || p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_AYUV
