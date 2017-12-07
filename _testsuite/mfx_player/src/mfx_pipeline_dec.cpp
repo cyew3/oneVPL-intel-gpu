@@ -1260,6 +1260,7 @@ mfxStatus MFXDecPipeline::CreateVPP()
     //turn on field weaving
     if (m_inParams.bFieldWeaving)
     {
+        m_inParams.FrameInfo.PicStruct             = MFX_PICSTRUCT_UNKNOWN;
         m_components[eVPP].m_params.vpp.Out.CropH  = m_inParams.FrameInfo.CropH << 1;
         m_components[eVPP].m_params.vpp.Out.Height = m_inParams.FrameInfo.Height << 1;
     }
