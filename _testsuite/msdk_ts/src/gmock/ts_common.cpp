@@ -193,6 +193,7 @@ void set_chromaformat(mfxFrameInfo& frameinfo)
         case MFX_FOURCC_YV12      :
 
         case MFX_FOURCC_P010      :
+        case MFX_FOURCC_P016      :
             ChromaFormat = MFX_CHROMAFORMAT_YUV420;
             break;
         case MFX_FOURCC_NV16      :
@@ -201,11 +202,13 @@ void set_chromaformat(mfxFrameInfo& frameinfo)
 
         case MFX_FOURCC_P210      :
         case MFX_FOURCC_Y210      :
+        case MFX_FOURCC_Y216      :
             ChromaFormat = MFX_CHROMAFORMAT_YUV422;
             break;
         case MFX_FOURCC_AYUV      :
 
         case MFX_FOURCC_Y410      :
+        case MFX_FOURCC_Y416      :
 
         case MFX_FOURCC_A2RGB10   :
         case MFX_FOURCC_ARGB16    :
