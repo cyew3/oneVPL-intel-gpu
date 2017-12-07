@@ -13,8 +13,8 @@
 #include "mfx_trace.h"
 #include "mfx_common_int.h"
 
-#include "Windows.h"
-#include "WinBase.h"
+//#include "Windows.h"
+//#include "WinBase.h"
 
 typedef std::pair<mfx_reflect::AccessorField, mfx_reflect::AccessorField> PairResult_t;
 
