@@ -1342,7 +1342,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
 
     memset(&m_caps, 0, sizeof(m_caps));
 
-    m_caps.BRCReset = 1; // no bitrate resolution control
+    m_caps.BRCReset        = 1; // no bitrate resolution control
     m_caps.HeaderInsertion = 0; // we will provide headers (SPS, PPS) in binary format to the driver
 
     std::map<VAConfigAttribType, int> idx_map;
@@ -1359,7 +1359,9 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
         VAConfigAttribEncROI,
         VAConfigAttribEncSkipFrame
     };
+
     std::vector<VAConfigAttrib> attrs;
+    attrs.reserve(sizeof(attr_types) / sizeof(attr_types[0]));
 
     for (size_t i=0; i < sizeof(attr_types)/sizeof(attr_types[0]); ++i)
     {
@@ -1368,11 +1370,13 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     }
 
     VAEntrypoint entrypoint = VAEntrypointEncSlice;
+
     if ((MSDK_Private_Guid_Encode_AVC_LowPower_Query == guid) ||
         (DXVA2_INTEL_LOWPOWERENCODE_AVC == guid))
     {
         entrypoint = VAEntrypointEncSliceLP;
     }
+
     VAStatus vaSts = vaGetConfigAttributes(m_vaDisplay,
                           ConvertProfileTypeMFX2VAAPI(m_videoParam.mfx.CodecProfile),
                           entrypoint,
@@ -1380,9 +1384,9 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
     m_caps.VCMBitrateControl =
-        attrs[idx_map[VAConfigAttribRateControl]].value & VA_RC_VCM ? 1 : 0; //Video conference mode
+        (attrs[idx_map[VAConfigAttribRateControl]].value & VA_RC_VCM) ? 1 : 0; //Video conference mode
     m_caps.TrelisQuantization =
-        (attrs[idx_map[VAConfigAttribEncQuantization]].value & (~VA_ATTRIB_NOT_SUPPORTED));
+        (attrs[idx_map[VAConfigAttribEncQuantization]].value & (~VA_ATTRIB_NOT_SUPPORTED)) ? 1 : 0;
     m_caps.vaTrellisQuantization =
         attrs[idx_map[VAConfigAttribEncQuantization]].value;
     m_caps.RollingIntraRefresh =
@@ -1441,6 +1445,9 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
         m_caps.MaxNum_Reference1 = 1;
     }
 
+#if defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_CFL)
+    // Officially only APL and CFL supports ROI.
+
     if (attrs[idx_map[VAConfigAttribEncROI]].value != VA_ATTRIB_NOT_SUPPORTED)
     {
         VAConfigAttribValEncROI *VaEncROIValPtr = reinterpret_cast<VAConfigAttribValEncROI *>(&attrs[idx_map[VAConfigAttribEncROI]].value);
@@ -1451,6 +1458,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
         m_caps.ROIBRCDeltaQPLevelSupport  = VaEncROIValPtr->bits.roi_rc_qp_delta_support;
     }
     else
+#endif
     {
         m_caps.MaxNumOfROI = 0;
     }
