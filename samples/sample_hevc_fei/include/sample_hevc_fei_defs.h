@@ -110,8 +110,8 @@ struct sInputParams
         , nNumRef(0)
         , nGopOptFlag(0)               // OPEN GOP
         , GPB(MFX_CODINGOPTION_ON)     // use GPB frames
-        , NumRefActiveP(1)
-        , NumRefActiveBL0(1)
+        , NumRefActiveP(3)
+        , NumRefActiveBL0(3)
         , NumRefActiveBL1(1)
         , preencDSfactor(1)            // no downsampling
         , PicTimingSEI(MFX_CODINGOPTION_OFF)
