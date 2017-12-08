@@ -309,34 +309,32 @@ mfxStatus FEI_Encode::SetCtrlParams(const HevcTask& task)
         // 7 - inherit size of block from buffers CTU setting (default for external file with predictors)
         ctrl->MVPredictor = (m_encodeCtrl.FrameType & MFX_FRAMETYPE_I) ? 0 : m_defFrameCtrl.MVPredictor;
 
-        ctrl->NumMvPredictors[0] = ctrl->NumMvPredictors[1] = 0;
-
-        if (m_encodeCtrl.FrameType & MFX_FRAMETYPE_P)
-        {
-            ctrl->NumMvPredictors[0] = m_defFrameCtrl.NumMvPredictors[0] ? m_defFrameCtrl.NumMvPredictors[0]
-                : m_videoParams.GetExtBuffer<mfxExtCodingOption3>()->NumRefActiveP[0];
-        }
-        else if (m_encodeCtrl.FrameType & MFX_FRAMETYPE_B)
-        {
-            ctrl->NumMvPredictors[0] = m_defFrameCtrl.NumMvPredictors[0] ? m_defFrameCtrl.NumMvPredictors[0]
-                : m_videoParams.GetExtBuffer<mfxExtCodingOption3>()->NumRefActiveBL0[0];
-            ctrl->NumMvPredictors[1] = m_defFrameCtrl.NumMvPredictors[1] ? m_defFrameCtrl.NumMvPredictors[1]
-                : m_videoParams.GetExtBuffer<mfxExtCodingOption3>()->NumRefActiveBL1[0];
-        }
-
         mfxExtFeiHevcEncMVPredictors* pMVP = m_encodeCtrl.GetExtBuffer<mfxExtFeiHevcEncMVPredictors>();
         MSDK_CHECK_POINTER(pMVP, MFX_ERR_NOT_INITIALIZED);
         AutoBufferLocker<mfxExtFeiHevcEncMVPredictors> lock(m_buf_allocator, *pMVP);
 
+        ctrl->NumMvPredictors[0] = 0;
+        ctrl->NumMvPredictors[1] = 0;
+
         if (m_repacker.get())
         {
-            mfxStatus sts = m_repacker->RepackPredictors(task, *pMVP);
+            mfxStatus sts = m_repacker->RepackPredictors(task, *pMVP, ctrl->NumMvPredictors);
             MSDK_CHECK_STATUS(sts, "FEI Encode::RepackPredictors failed");
         }
         else
         {
             mfxStatus sts = m_pFile_MVP_in->Read(pMVP->Data, pMVP->Pitch * pMVP->Height * sizeof(pMVP->Data[0]), 1);
             MSDK_CHECK_STATUS(sts, "FEI Encode. Read MV predictors failed");
+
+            if (m_encodeCtrl.FrameType & MFX_FRAMETYPE_P)
+            {
+                ctrl->NumMvPredictors[0] = m_defFrameCtrl.NumMvPredictors[0];
+            }
+            else if (m_encodeCtrl.FrameType & MFX_FRAMETYPE_B)
+            {
+                ctrl->NumMvPredictors[0] = m_defFrameCtrl.NumMvPredictors[0];
+                ctrl->NumMvPredictors[1] = m_defFrameCtrl.NumMvPredictors[1];
+            }
         }
     }
 

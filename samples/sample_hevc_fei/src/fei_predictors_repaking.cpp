@@ -68,17 +68,17 @@ mfxU8 PredictorsRepaking::ConvertDSratioPower2(mfxU8 downsample_ratio)
     }
 }
 
-mfxStatus PredictorsRepaking::RepackPredictors(const HevcTask& eTask, mfxExtFeiHevcEncMVPredictors& mvp)
+mfxStatus PredictorsRepaking::RepackPredictors(const HevcTask& eTask, mfxExtFeiHevcEncMVPredictors& mvp, mfxU16 nMvPredictors[2])
 {
     mfxStatus sts = MFX_ERR_NONE;
 
     switch (m_repakingMode)
     {
     case PERFORMANCE:
-        sts = RepackPredictorsPerformance(eTask, mvp);
+        sts = RepackPredictorsPerformance(eTask, mvp, nMvPredictors);
         break;
     case QUALITY:
-        sts = RepackPredictorsQuality(eTask, mvp);
+        sts = RepackPredictorsQuality(eTask, mvp, nMvPredictors);
         break;
     default:
         return MFX_ERR_UNSUPPORTED;
@@ -87,7 +87,7 @@ mfxStatus PredictorsRepaking::RepackPredictors(const HevcTask& eTask, mfxExtFeiH
     return sts;
 }
 
-mfxStatus PredictorsRepaking::RepackPredictorsPerformance(const HevcTask& eTask, mfxExtFeiHevcEncMVPredictors& mvp)
+mfxStatus PredictorsRepaking::RepackPredictorsPerformance(const HevcTask& eTask, mfxExtFeiHevcEncMVPredictors& mvp, mfxU16 nMvPredictors[2])
 {
     std::vector<mfxExtFeiPreEncMVExtended*> mvs_vec;
     std::vector<const RefIdxPair*>          refIdx_vec;
@@ -138,10 +138,12 @@ mfxStatus PredictorsRepaking::RepackPredictorsPerformance(const HevcTask& eTask,
                 + ((rowIdx & 1) << 1);          // zero or double offset depending on the number of row index,
                                                 // zero shift for top 16x16 blocks into 32x32 layout and double for bottom blocks;
 
-            // BlockSize is used only when mfxExtFeiHevcEncFrameCtrl->MVPredictor = 7
-            // 0 - MV predictor disabled, 1 - enabled per 16x16 block,
+            // BlockSize is used only when mfxExtFeiHevcEncFrameCtrl::MVPredictor = 7
+            // 0 - MV predictor is disabled
+            // 1 - enabled per 16x16 block
             // 2 - enabled per 32x32 block (used only first 16x16 block data)
             mvp.Data[permutEncIdx].BlockSize = 2;
+
             for (mfxU32 j = 0; j < numPredPairs; ++j)
             {
                 mvp.Data[permutEncIdx].RefIdx[j].RefL0 = refIdx_vec[j]->RefL0;
@@ -202,13 +204,20 @@ mfxStatus PredictorsRepaking::RepackPredictorsPerformance(const HevcTask& eTask,
             }
         }
     }
+    /* NB: Repacker in the performance mode uses only a single (the first) predictor of each 16x16 block
+     * from each PreENC output pair "current_surface<->reference_surface"
+     * so it's valid to set a number of MVPs according to number of active references for a current frame.
+     * Such approach mitigates the code problem above
+     * that we don't clean up MVPs remained in mfxExtFeiHevcEncMVPredictors buffer from previous calls. */
+    nMvPredictors[0] = eTask.m_numRefActive[0];
+    nMvPredictors[1] = eTask.m_numRefActive[1];
 
     return MFX_ERR_NONE;
 }
 
 void SelectFromMV(const mfxI16Pair(*mv)[2], mfxI32 count, mfxI16Pair(&res)[2]);
 
-mfxStatus PredictorsRepaking::RepackPredictorsQuality(const HevcTask& eTask, mfxExtFeiHevcEncMVPredictors& mvp)
+mfxStatus PredictorsRepaking::RepackPredictorsQuality(const HevcTask& eTask, mfxExtFeiHevcEncMVPredictors& mvp, mfxU16 nMvPredictors[2])
 {
     std::vector<mfxExtFeiPreEncMVExtended*>     mvs_vec;
     std::vector<mfxExtFeiPreEncMBStatExtended*> mbs_vec;
@@ -265,8 +274,9 @@ mfxStatus PredictorsRepaking::RepackPredictorsQuality(const HevcTask& eTask, mfx
                 + ((rowIdx & 1) << 1);          // zero or double offset depending on the number of row index,
                                                 // zero shift for top 16x16 blocks into 32x32 layout and double for bottom blocks;
 
-            // BlockSize is used only when mfxExtFeiHevcEncFrameCtrl->MVPredictor = 7
-            // 0 - MV predictor disabled, 1 - enabled per 16x16 block,
+            // BlockSize is used only when mfxExtFeiHevcEncFrameCtrl::MVPredictor = 7
+            // 0 - MV predictor disabled
+            // 1 - enabled per 16x16 block
             // 2 - enabled per 32x32 block (used only first 16x16 block data)
             mvp.Data[permutEncIdx].BlockSize = 2;
             for (mfxU32 j = 0; j < numPredPairs; ++j)
@@ -374,6 +384,12 @@ mfxStatus PredictorsRepaking::RepackPredictorsQuality(const HevcTask& eTask, mfx
                 mvp.Data[permutEncIdx].RefIdx[worse[j][1]].RefL1 = ref[j][1];
             }
         }
+    }
+
+    if (nMvPredictors[0] == 0 || nMvPredictors[1] == 0)
+    {
+        MSDK_TRACE_ERROR("Not implemented! The repacker didn't set number of MPVs");
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
 
     return MFX_ERR_NONE;

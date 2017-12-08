@@ -30,7 +30,7 @@ public:
     ~PredictorsRepaking() {}
 
     mfxStatus Init(const mfxVideoParam& videoParams, mfxU8 preencDSstrength = 1);
-    mfxStatus RepackPredictors(const HevcTask& eTask, mfxExtFeiHevcEncMVPredictors& mvp);
+    mfxStatus RepackPredictors(const HevcTask& eTask, mfxExtFeiHevcEncMVPredictors& mvp, mfxU16 nMvPredictors[2]);
 
     enum
     {
@@ -54,8 +54,8 @@ private:
     mfxU16 m_heightCU_enc;       // height in CU (16x16) for encoder
 
     //functions
-    mfxStatus RepackPredictorsPerformance(const HevcTask& eTask, mfxExtFeiHevcEncMVPredictors& mvp);
-    mfxStatus RepackPredictorsQuality(const HevcTask& eTask, mfxExtFeiHevcEncMVPredictors& mvp);
+    mfxStatus RepackPredictorsPerformance(const HevcTask& eTask, mfxExtFeiHevcEncMVPredictors& mvp, mfxU16 nMvPredictors[2]);
+    mfxStatus RepackPredictorsQuality(const HevcTask& eTask, mfxExtFeiHevcEncMVPredictors& mvp, mfxU16 nMvPredictors[2]);
     mfxU8 ConvertDSratioPower2(mfxU8 DSfactor);
 
     DISALLOW_COPY_AND_ASSIGN(PredictorsRepaking);
