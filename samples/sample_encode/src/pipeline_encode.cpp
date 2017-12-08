@@ -1816,17 +1816,6 @@ mfxStatus CEncodingPipeline::Run()
             {
                 continue;
             }
-            else if (MFX_ERR_MORE_SURFACE == sts)
-            {
-                m_pEncSurfaces[nEncSurfIdx].Info.PicStruct = m_pVppSurfaces[nVppSurfIdx].Info.PicStruct & MFX_PICSTRUCT_FIELD_TFF ?
-                    (mfxU16)MFX_PICSTRUCT_FIELD_TOP : (mfxU16)MFX_PICSTRUCT_FIELD_BOTTOM;
-                bVppMultipleOutput = true;
-            }
-            else if (sts == MFX_ERR_NONE)
-            {
-                m_pEncSurfaces[nEncSurfIdx].Info.PicStruct = m_pVppSurfaces[nVppSurfIdx].Info.PicStruct & MFX_PICSTRUCT_FIELD_TFF ?
-                    (mfxU16)MFX_PICSTRUCT_FIELD_BOTTOM : (mfxU16)MFX_PICSTRUCT_FIELD_TOP;
-            }
             else
             {
                 MSDK_BREAK_ON_ERROR(sts);
