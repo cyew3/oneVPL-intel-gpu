@@ -619,6 +619,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->nPRefType = MFX_P_REF_SIMPLE;
         }
+#if (MFX_VERSION >= 1024)
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-extbrc:on")))
         {
             pParams->nExtBRC= MFX_CODINGOPTION_ON;
@@ -627,6 +628,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->nExtBRC = MFX_CODINGOPTION_OFF;
         }
+#endif
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-amfs:on")))
         {
             pParams->nAdaptiveMaxFrameSize = MFX_CODINGOPTION_ON;
@@ -635,6 +637,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->nAdaptiveMaxFrameSize = MFX_CODINGOPTION_OFF;
         }
+
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-qsv-ff")))
         {
             pParams->enableQSVFF=true;

@@ -168,10 +168,11 @@ CTranscodingPipeline::CTranscodingPipeline():
     m_ExtHEVCParam.Header.BufferId = MFX_EXTBUFF_HEVC_PARAM;
     m_ExtHEVCParam.Header.BufferSz = sizeof(mfxExtHEVCParam);
 
-
+#if (MFX_VERSION >= 1024)
     MSDK_ZERO_MEMORY(m_ExtBRC);
     m_ExtBRC.Header.BufferId = MFX_EXTBUFF_BRC;
     m_ExtBRC.Header.BufferSz = sizeof(m_ExtBRC);
+#endif
 
 #if (MFX_VERSION >= 1025)
 
@@ -2374,12 +2375,14 @@ mfxStatus CTranscodingPipeline::InitEncMfxParams(sInputParams *pInParams)
         m_EncExtParams.push_back((mfxExtBuffer*)&m_ExtHEVCParam);
     }
 
+#if (MFX_VERSION >= 1024)
     if (pInParams->nExtBRC == MFX_CODINGOPTION_ON &&
         (pInParams->EncodeId == MFX_CODEC_HEVC || pInParams->EncodeId == MFX_CODEC_AVC))
     {
         HEVCExtBRC::Create(m_ExtBRC);
         m_EncExtParams.push_back((mfxExtBuffer *)&m_ExtBRC);
     }
+#endif
 
     m_mfxEncParams.mfx.FrameInfo.CropX = 0;
     m_mfxEncParams.mfx.FrameInfo.CropY = 0;

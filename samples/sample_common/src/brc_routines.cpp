@@ -18,6 +18,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 \**********************************************************************************/
 
 #include "brc_routines.h"
+#if (MFX_VERSION >= 1024)
 #include "math.h"
 #include <algorithm>
 
@@ -991,3 +992,5 @@ mfxStatus ExtBRC::Reset(mfxVideoParam *par )
     }
     return sts;
 }
+
+#endif

@@ -42,7 +42,9 @@ CEncodingPipeline::CEncodingPipeline(AppConfig* pAppConfig)
     , m_maxQueueLength(0)
     , m_log2frameNumMax(8)
     , m_frameCount(0)
+#if (MFX_VERSION >= 1024)
     , m_frameCountInEncodedOrder(0)
+#endif
     , m_frameOrderIdrInDisplayOrder(0)
     , m_frameType((mfxU8)MFX_FRAMETYPE_UNKNOWN, (mfxU8)MFX_FRAMETYPE_UNKNOWN)
 
@@ -179,6 +181,7 @@ mfxStatus CEncodingPipeline::Init()
         m_commonFrameInfo = m_pFEI_ENCPAK->GetCommonVideoParams()->mfx.FrameInfo;
     }
 
+#if (MFX_VERSION >= 1024)
     //BRC for PAK only
     if (m_appCfg.bOnlyPAK && m_appCfg.RateControlMethod == MFX_RATECONTROL_VBR)
     {
@@ -200,6 +203,7 @@ mfxStatus CEncodingPipeline::Init()
         sts = m_BRC.Init(&tmp);
         MSDK_CHECK_STATUS(sts, "BRC initialization failed");
     }
+#endif
 
     sts = ResetMFXComponents();
     MSDK_CHECK_STATUS(sts, "ResetMFXComponents failed");
@@ -1650,6 +1654,7 @@ mfxStatus CEncodingPipeline::Run()
 
         if (m_appCfg.bENCPAK || m_appCfg.bOnlyPAK || m_appCfg.bOnlyENC)
         {
+#if (MFX_VERSION >= 1024)
             mfxBRCFrameParam BRCPar;
             mfxBRCFrameCtrl BRCCtrl;
             MSDK_ZERO_MEMORY(BRCPar);
@@ -1664,6 +1669,7 @@ mfxStatus CEncodingPipeline::Run()
                 MSDK_BREAK_ON_ERROR(sts);
                 m_appCfg.QP = BRCCtrl.QpY;
             }
+#endif
 
             sts = m_pFEI_ENCPAK->EncPakOneFrame(eTask);
             if (sts == MFX_ERR_GPU_HANG)
@@ -1674,6 +1680,7 @@ mfxStatus CEncodingPipeline::Run()
             }
             MSDK_BREAK_ON_ERROR(sts);
 
+#if (MFX_VERSION >= 1024)
             if (m_appCfg.RateControlMethod == MFX_RATECONTROL_VBR){
                 //update QP
                 BRCPar.CodedFrameSize = eTask->EncodedFrameSize;
@@ -1685,6 +1692,7 @@ mfxStatus CEncodingPipeline::Run()
                     break;
                 }
             }
+#endif
         }
 
         if (m_appCfg.bENCODE)

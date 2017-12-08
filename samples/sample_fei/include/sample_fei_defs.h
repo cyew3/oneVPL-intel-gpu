@@ -390,9 +390,10 @@ struct AppConfig
     mfxU16 refDist; //number of frames to next I,P
     mfxU16 gopSize; //number of frames to next I
     mfxU8  QP;
+#if (MFX_VERSION >= 1024)
     mfxU16 RateControlMethod;
     mfxU16 TargetKbps;
-
+#endif
     mfxU16 numSlices;
     mfxU16 numRef;           // number of reference frames (DPB size)
     mfxU16 NumRefActiveP;    // maximal number of references for P frames

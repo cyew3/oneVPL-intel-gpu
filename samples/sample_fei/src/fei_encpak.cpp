@@ -761,7 +761,9 @@ mfxStatus FEI_EncPakInterface::InitFrameParams(iTask* eTask)
 
     eTask->PAK_out.Bs = &m_mfxBS;
 
+#if (MFX_VERSION >= 1024)
     eTask->EncodedFrameSize = 0;
+#endif
 
     eTask->bufs = m_pExtBuffers->GetFreeSet();
     MSDK_CHECK_POINTER(eTask->bufs, MFX_ERR_NULL_PTR);
@@ -1168,7 +1170,9 @@ mfxStatus FEI_EncPakInterface::EncPakOneFrame(iTask* eTask)
 
     if (m_pmfxPAK)
     {
+#if (MFX_VERSION >= 1024)
         eTask->EncodedFrameSize = eTask->PAK_out.Bs->DataLength; //save frame size for BRC
+#endif
         sts = m_FileWriter.WriteNextFrame(&m_mfxBS);
         MSDK_CHECK_STATUS(sts, "FEI ENCODE: WriteNextFrame failed");
     }
