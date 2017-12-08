@@ -211,11 +211,14 @@ int TestSuite::RunTest_fourcc(const unsigned int id)
 
     switch (fourcc)
     {
+        case MFX_FOURCC_NV12:
+        case MFX_FOURCC_AYUV: m_par.mfx.FrameInfo.BitDepthChroma = m_par.mfx.FrameInfo.BitDepthLuma = 8; break;
+
         case MFX_FOURCC_P010:
-        case MFX_FOURCC_Y410: m_par.mfx.FrameInfo.BitDepthChroma = m_par.mfx.FrameInfo.BitDepthLuma = 10;
+        case MFX_FOURCC_Y410: m_par.mfx.FrameInfo.BitDepthChroma = m_par.mfx.FrameInfo.BitDepthLuma = 10; break;
 
         case MFX_FOURCC_P016:
-        case MFX_FOURCC_Y416: m_par.mfx.FrameInfo.BitDepthChroma = m_par.mfx.FrameInfo.BitDepthLuma = 12;
+        case MFX_FOURCC_Y416: m_par.mfx.FrameInfo.BitDepthChroma = m_par.mfx.FrameInfo.BitDepthLuma = 12; break;
     };
 
     if (   fourcc == MFX_FOURCC_P010
@@ -334,8 +337,9 @@ void TestSuite::AllocOpaque()
 
 TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_8b_420_reset,  RunTest_fourcc<MFX_FOURCC_NV12>, n_cases);
 TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_10b_420_reset, RunTest_fourcc<MFX_FOURCC_P010>, n_cases);
-TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_8b_444_reset,  RunTest_fourcc<MFX_FOURCC_AYUV>, n_cases);
-TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_10b_444_reset, RunTest_fourcc<MFX_FOURCC_Y410>, n_cases);
+
+TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_8b_444_ayuv_reset,  RunTest_fourcc<MFX_FOURCC_AYUV>, n_cases);
+TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_10b_444_y410_reset, RunTest_fourcc<MFX_FOURCC_Y410>, n_cases);
 
 TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_12b_420_p016_reset, RunTest_fourcc<MFX_FOURCC_P016>, n_cases);
 TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_12b_444_y416_reset, RunTest_fourcc<MFX_FOURCC_Y416>, n_cases);
