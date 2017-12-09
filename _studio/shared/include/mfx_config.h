@@ -11,6 +11,8 @@
 #ifndef _MFX_CONFIG_H_
 #define _MFX_CONFIG_H_
 
+#include "mfxdefs.h"
+
 #define CMAPIUPDATE
 #define MFX_ENABLE_VPP_COMPOSITION
 //#define MFX_ENABLE_VPP_FRC

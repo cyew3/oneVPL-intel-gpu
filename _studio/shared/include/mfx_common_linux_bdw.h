@@ -43,13 +43,13 @@
     #define MFX_ADAPTIVE_PLAYBACK_DISABLE
     #define MFX_FUTURE_FEATURE_DISABLE
 
-#else
+#endif 
 
+#if (MFX_VERSION >= 1025)
     #if !defined(AS_H264LA_PLUGIN)
         #define MFX_ENABLE_MFE
     #endif
-
-#endif
+#endif 
 
 //#define MFX_ENABLE_H264_VIDEO_PAK
 //#define MFX_ENABLE_H264_VIDEO_ENC
