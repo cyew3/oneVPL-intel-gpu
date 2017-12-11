@@ -3687,9 +3687,15 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
         {
             mfxExtVPPComposite* extComp = (mfxExtVPPComposite*)data;
             MFX_CHECK_NULL_PTR1(extComp);
-            if (MFX_HW_D3D9 == core->GetVAType() && extComp->NumInputStream) // AlphaBlending & LumaKey filters are not supported at first sub-stream on DX9
+            if (extComp->NumInputStream > MAX_NUM_OF_VPP_COMPOSITE_STREAMS)
+                sts = GetWorstSts(sts, MFX_ERR_INVALID_VIDEO_PARAM);
+            if (MFX_HW_D3D9 == core->GetVAType() && extComp->NumInputStream)
             {
-                if (extComp->InputStream[0].GlobalAlphaEnable || extComp->InputStream[0].LumaKeyEnable || extComp->InputStream[0].PixelAlphaEnable)
+                // AlphaBlending & LumaKey filters are not supported at first sub-stream on DX9, DX9 can't process more than 8 channels
+                if (extComp->InputStream[0].GlobalAlphaEnable ||
+                    extComp->InputStream[0].LumaKeyEnable ||
+                    extComp->InputStream[0].PixelAlphaEnable ||
+                    (extComp->NumInputStream > MAX_STREAMS_PER_TILE))
                 {
                     sts = GetWorstSts(sts, MFX_ERR_INVALID_VIDEO_PARAM);
                 }

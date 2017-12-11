@@ -98,14 +98,25 @@ namespace vpp_composition
         }
 
         mfxExtVPPComposite* ext_composite = (mfxExtVPPComposite*)m_par.GetExtBuffer(MFX_EXTBUFF_VPP_COMPOSITE);
-        if(ext_composite != nullptr) {
+        if (ext_composite != nullptr) {
             ext_composite->InputStream = new mfxVPPCompInputStream[ext_composite->NumInputStream];
-            for(int i = 0; i < ext_composite->NumInputStream; i++) {
-                mfxVPPCompInputStream* str = ext_composite->InputStream;
+            int x = 0, y = 0;
+            for (int i = 0; i < ext_composite->NumInputStream; i++) {
+                mfxVPPCompInputStream* str = &(ext_composite->InputStream[i]);
                 SETPARS(str, COMP_PAR);
+                if ((str->DstX == 0) && (str->DstY == 0)) {
+                    str->DstX = str->DstW * x;
+                    str->DstY = str->DstH * y;
+                    x++;
+                    if (str->DstW * (x + 1) > m_par.mfx.FrameInfo.Width) {
+                        x = 0;
+                        y++;
+                    }
+                }
                 str = nullptr;
-                return MFX_EXTBUFF_VPP_COMPOSITE;
+
             }
+            return MFX_EXTBUFF_VPP_COMPOSITE;
         }
         return 0;
     }
@@ -179,6 +190,45 @@ namespace vpp_composition
           { COMP_PAR, &tsStruct::mfxVPPCompInputStream.PixelAlphaEnable, 0 },
         }
         },
+
+        {/*04*/ MFX_ERR_NONE, MFX_ERR_NONE,
+        { { MFX_PAR,  &tsStruct::mfxVideoParam.vpp.Out.Width, 720 },
+          { MFX_PAR,  &tsStruct::mfxVideoParam.vpp.Out.Height, 480 },
+          { MFX_PAR,  &tsStruct::mfxVideoParam.vpp.Out.CropW, 720 },
+          { MFX_PAR,  &tsStruct::mfxVideoParam.vpp.Out.CropH, 480 },
+          { MFX_PAR,  &tsStruct::mfxExtVPPComposite.NumInputStream, 64 },
+          { MFX_PAR,  &tsStruct::mfxExtVPPComposite.Y, 50 },
+          { MFX_PAR,  &tsStruct::mfxExtVPPComposite.U, 50 },
+          { MFX_PAR,  &tsStruct::mfxExtVPPComposite.V, 50 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstX, 0 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstY, 0 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstW, 90 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstH, 60 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.GlobalAlphaEnable, 0 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.LumaKeyEnable, 0 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.PixelAlphaEnable, 0 },
+        }
+        },
+
+        {/*05*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM,
+        { { MFX_PAR,  &tsStruct::mfxVideoParam.vpp.Out.Width, 720 },
+          { MFX_PAR,  &tsStruct::mfxVideoParam.vpp.Out.Height, 480 },
+          { MFX_PAR,  &tsStruct::mfxVideoParam.vpp.Out.CropW, 720 },
+          { MFX_PAR,  &tsStruct::mfxVideoParam.vpp.Out.CropH, 480 },
+          { MFX_PAR,  &tsStruct::mfxExtVPPComposite.NumInputStream, 160 },
+          { MFX_PAR,  &tsStruct::mfxExtVPPComposite.Y, 50 },
+          { MFX_PAR,  &tsStruct::mfxExtVPPComposite.U, 50 },
+          { MFX_PAR,  &tsStruct::mfxExtVPPComposite.V, 50 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstX, 0 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstY, 0 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstW, 45 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstH, 48 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.GlobalAlphaEnable, 0 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.LumaKeyEnable, 0 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.PixelAlphaEnable, 0 },
+        }
+        },
+
     };
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::test_case[0]);
 
@@ -210,6 +260,15 @@ namespace vpp_composition
             {
                 sts_query = MFX_ERR_UNSUPPORTED;
                 sts_init  = MFX_ERR_INVALID_VIDEO_PARAM;
+            }
+        }
+        if ((MFX_PAR_type == MFX_EXTBUFF_VPP_COMPOSITE) && (g_tsOSFamily == MFX_OS_FAMILY_WINDOWS) && ((g_tsImpl & 0x0F00) != MFX_IMPL_VIA_D3D11))
+        {
+            mfxExtVPPComposite* ext_composite = (mfxExtVPPComposite*)m_par.GetExtBuffer(MFX_EXTBUFF_VPP_COMPOSITE);
+            if (ext_composite->NumInputStream > 8)
+            {
+                sts_query = MFX_ERR_UNSUPPORTED;
+                sts_init = MFX_ERR_INVALID_VIDEO_PARAM;
             }
         }
 
