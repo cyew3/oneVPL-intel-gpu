@@ -3818,7 +3818,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
             m_inParams.m_container = MFX_CONTAINER_RAW;
             vm_string_strcpy_s(m_inParams.strSrcFile, MFX_ARRAY_SIZE(m_inParams.strSrcFile), argv[0]);
         }
-        else if (0!=(nPattern = m_OptProc.Check(argv[0], VM_STRING("-i:(h264|mpeg2|vc1|mvc|jpeg|hevc|vp8|h263|null)"), VM_STRING("input stream is raw(non container), pipeline works without demuxing"), OPT_UNDEFINED)))
+        else if (0!=(nPattern = m_OptProc.Check(argv[0], VM_STRING("-i:(h264|mpeg2|vc1|mvc|jpeg|hevc|vp8|h263|null|av1)"), VM_STRING("input stream is raw(non container), pipeline works without demuxing"), OPT_UNDEFINED)))
         {
             MFX_CHECK(1 + argv != argvEnd);
             if (nPattern != 9)
@@ -3856,6 +3856,9 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 break;
             case 9:
                 m_inParams.InputCodecType = MFX_CODEC_CAPTURE;
+                break;
+            case 10:
+                m_inParams.InputCodecType = MFX_CODEC_AV1;
                 break;
             }
             m_inParams.m_container = MFX_CONTAINER_RAW;
