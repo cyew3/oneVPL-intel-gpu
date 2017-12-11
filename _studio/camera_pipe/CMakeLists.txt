@@ -34,6 +34,7 @@ include_directories( ${MSDK_LIB_ROOT}/plugin/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/genx/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/genx/src )
 include_directories( ${MSDK_LIB_ROOT}/cmrt_cross_platform/include )
+include_directories( ${MSDK_LIB_ROOT}/genx/copy_kernels/include )
 
 # =============================================================================
 
@@ -89,6 +90,13 @@ foreach( prefix ${MSDK_LIB_ROOT}/scheduler/src )
     ${prefix}/mfx_scheduler_core_task.cpp
     ${prefix}/mfx_scheduler_core_task_management.cpp
     ${prefix}/mfx_scheduler_core_thread.cpp
+  )
+endforeach()
+
+foreach( prefix ${MSDK_LIB_ROOT}/genx/copy_kernels/src )
+  list( APPEND sources
+    ${prefix}/genx_cht_copy_isa.cpp
+    ${prefix}/genx_skl_copy_isa.cpp
   )
 endforeach()
 

@@ -8,8 +8,9 @@ list( APPEND mdirs
   scheduler vpp encode_hw/mjpeg
   decode/h264 decode/mpeg2 decode/mjpeg cmrt_cross_platform encode_hw/h264 encode_hw/mpeg2
   decode/vc1 encode/h264 enc/mpeg2 pak/mpeg2 enc_hw/mpeg2 encode/mpeg2 encode/mjpeg
-  audio_decode/aac audio_decode/mp3 audio_encode/aac
-  )
+  audio_decode/aac audio_decode/mp3 audio_encode/aac genx/copy_kernels
+)
+
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/fei/h264_common )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/fei/h264_preenc )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/fei/h264_pak )
@@ -112,6 +113,7 @@ foreach( variant
     umc_io
     umc_va_elk_hw
     cmrt_cross_platform_hw
+    copy_kernels_hw
     decode_${variant}
     encode_hw
     enc_hw
@@ -229,6 +231,7 @@ list( APPEND LIBS
   vm
   vm_plus
   mfx_common_hw
+  copy_kernels_hw
   ${ITT_LIBS}
   ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
   pthread

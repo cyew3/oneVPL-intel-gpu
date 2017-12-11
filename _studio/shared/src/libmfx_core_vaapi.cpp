@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include <iostream>
@@ -38,7 +38,7 @@
 
 #else
     #if !(defined MFX_ADAPTIVE_PLAYBACK_DISABLE)
-        enum 
+        enum
         {
             MFX_HANDLE_VA_CONFIG_ID = 6,
             MFX_HANDLE_VA_CONTEXT_ID = 7
@@ -1152,7 +1152,7 @@ VAAPIVideoCORE::DoFastCopyExtended(
 
                     pSrc->Data.MemId = saveMemId;
                     MFX_CHECK_STS(sts);
-                    
+
                 }
 
                 {
@@ -1365,15 +1365,20 @@ void* VAAPIVideoCORE::QueryCoreInterface(const MFX_GUID &guid)
         if (!m_pCmCopy.get())
         {
             m_pCmCopy.reset(new CmCopyWrapper);
-            if (!m_pCmCopy.get()->GetCmDevice(m_Display)){
+            if (!m_pCmCopy.get()->GetCmDevice(m_Display))
+            {
                 m_bCmCopy = false;
                 m_bCmCopyAllowed = false;
                 m_pCmCopy.get()->Release();
                 m_pCmCopy.reset();
                 return NULL;
-            }else{
-                if(!m_pCmCopy.get()->Initialize(GetHWType()))
+            }
+            else
+            {
+                if (MFX_ERR_NONE != m_pCmCopy.get()->Initialize(GetHWType()))
                     return NULL;
+                else
+                    m_bCmCopy = true;
             }
         }
         return (void*)m_pCmCopy.get();

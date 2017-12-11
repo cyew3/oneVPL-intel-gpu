@@ -73,7 +73,7 @@ foreach( enc ${vencs} )
 endforeach( )
 
 
-list( APPEND vdirs_impl vpp cmrt_cross_platform genx/h264_encode genx/h265_encode)
+list( APPEND vdirs_impl vpp cmrt_cross_platform genx/h264_encode genx/h265_encode genx/copy_kernels)
 
 foreach( dir  ${vdirs} ${vdirs_impl} ${vdirs_hw} )
   include_directories( ${MSDK_LIB_ROOT}/${dir}/include )
@@ -98,7 +98,6 @@ foreach( prefix ${MSDK_LIB_ROOT}/shared/src )
     ${prefix}/mfx_enc_common.cpp
     ${prefix}/mfx_critical_error_handler.cpp
   )
-
 endforeach()
 
 foreach( prefix ${MSDK_STUDIO_ROOT}/shared/src )
@@ -117,6 +116,13 @@ endforeach()
 list( APPEND plugin_common_sources
   ${MSDK_LIB_ROOT}/cmrt_cross_platform/src/cmrt_cross_platform.cpp
 )
+
+foreach( prefix ${MSDK_LIB_ROOT}/genx/copy_kernels/src )
+  list( APPEND plugin_common_sources
+    ${prefix}/genx_cht_copy_isa.cpp
+    ${prefix}/genx_skl_copy_isa.cpp
+  )
+endforeach()
 
 foreach( prefix ${MSDK_LIB_ROOT}/scheduler/src )
   list( APPEND plugin_common_sources
