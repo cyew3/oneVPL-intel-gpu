@@ -1751,7 +1751,7 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
     m_pps.sign_data_hiding_enabled_flag         = 0;
     m_pps.cabac_init_present_flag               = 0;
     m_pps.num_ref_idx_l0_default_active_minus1  = NumRefLX[0] - 1;
-    m_pps.num_ref_idx_l1_default_active_minus1  = 0;
+    m_pps.num_ref_idx_l1_default_active_minus1  = 0; // NumRefLX[1] - 1; it's not clear now why driver crashes in case of non-zero
     m_pps.init_qp_minus26                       = 0;
     m_pps.constrained_intra_pred_flag           = 0;
 

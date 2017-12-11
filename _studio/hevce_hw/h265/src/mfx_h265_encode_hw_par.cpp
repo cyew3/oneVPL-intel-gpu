@@ -833,6 +833,36 @@ bool CheckLCUSize(mfxU32 LCUSizeSupported, mfxU32& LCUSize)
 
     return false;
 }
+
+void CheckMaxNumRef(MfxVideoParam &par)
+{
+    switch (par.m_platform.CodeName)
+    {
+    case MFX_PLATFORM_LAKEFIELD:    // VDENC only
+        {
+            mfxU16 maxNumRefsL0L1[7] = { 2, 2, 2, 2, 2, 1, 1 };
+            par.NumRefLX[0] = Min<mfxU16>(maxNumRefsL0L1[par.mfx.TargetUsage - 1], par.NumRefLX[0]);
+            par.NumRefLX[1] = par.NumRefLX[0];
+        }
+        break;
+    case MFX_PLATFORM_CANNONLAKE:
+    case MFX_PLATFORM_ICELAKE:
+    case MFX_PLATFORM_TIGERLAKE:
+    default:
+        if (IsOn(par.mfx.LowPower)) {   // VDENC
+            mfxU16 maxNumRefsL0L1[7] = { 3, 3, 2, 2, 2, 1, 1 };
+            par.NumRefLX[0] = Min<mfxU16>(maxNumRefsL0L1[par.mfx.TargetUsage - 1], par.NumRefLX[0]);
+            par.NumRefLX[1] = par.NumRefLX[0];
+        } else {   // VME
+            mfxU16 maxNumRefsL0[7] = { 4, 4, 3, 3, 3, 1, 1 };
+            mfxU16 maxNumRefsL1[7] = { 2, 2, 1, 1, 1, 1, 1 };
+            par.NumRefLX[0] = Min<mfxU16>(maxNumRefsL0[par.mfx.TargetUsage - 1], par.NumRefLX[0]);
+            par.NumRefLX[1] = Min<mfxU16>(maxNumRefsL1[par.mfx.TargetUsage - 1], par.NumRefLX[1]);
+        }
+        break;
+    }
+}
+
 #endif // PRE_SI_TARGET_PLATFORM_GEN10
 
 #ifdef MFX_ENABLE_HEVCE_ROI
@@ -2613,6 +2643,12 @@ void SetDefaults(
 
     if (!par.NumRefLX[1])
         par.NumRefLX[1] = hwCaps.MaxNum_Reference1;
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
+    if (par.m_platform.CodeName >= MFX_PLATFORM_CANNONLAKE) {
+        CheckMaxNumRef(par);
+    }
+#endif
 
     if (!par.mfx.GopRefDist)
     {
