@@ -108,7 +108,7 @@ void PrintHelp(const msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("                       one direction and 32x32 for bidirectional search\n"));
     msdk_printf(MSDK_STRING("   [-RefHeight height] - height of search region (should be multiple of 4), maximum allowed is 32\n"));
     msdk_printf(MSDK_STRING("   [-LenSP length] - defines number of search units in search path. In range [1,63] (default is 57)\n"));
-    msdk_printf(MSDK_STRING("   [-SearchPath value] - defines shape of search path. 0 -full, 1- diamond.\n"));
+    msdk_printf(MSDK_STRING("   [-SearchPath value] - defines shape of search path. 1 - diamond, 2 - full, 0 - default (full).\n"));
     msdk_printf(MSDK_STRING("   [-AdaptiveSearch] - enables adaptive search\n"));
 
     msdk_printf(MSDK_STRING("\n"));
@@ -395,31 +395,30 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU32 nArgNum, sInputParams& 
         {
             CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
             PARSE_CHECK(msdk_opt_read(strInput[++i], params.encodeCtrl.SearchWindow), "SearchWindow", isParseInvalid);
-            params.preencCtrl.SearchWindow = params.encodeCtrl.SearchWindow;
+
+            // PreENC doesn't support SearchWindow 0
+            if (params.encodeCtrl.SearchWindow)
+                params.preencCtrl.SearchWindow = params.encodeCtrl.SearchWindow;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-LenSP")))
         {
             CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
             PARSE_CHECK(msdk_opt_read(strInput[++i], params.encodeCtrl.LenSP), "LenSP", isParseInvalid);
-            params.preencCtrl.LenSP = params.encodeCtrl.LenSP;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-RefWidth")))
         {
             CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
             PARSE_CHECK(msdk_opt_read(strInput[++i], params.encodeCtrl.RefWidth), "RefWidth", isParseInvalid);
-            params.preencCtrl.RefWidth = params.encodeCtrl.RefWidth;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-RefHeight")))
         {
             CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
             PARSE_CHECK(msdk_opt_read(strInput[++i], params.encodeCtrl.RefHeight), "RefHeight", isParseInvalid);
-            params.preencCtrl.RefHeight = params.encodeCtrl.RefHeight;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-SearchPath")))
         {
             CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
             PARSE_CHECK(msdk_opt_read(strInput[++i], params.encodeCtrl.SearchPath), "SearchPath", isParseInvalid);
-            params.preencCtrl.SearchPath = params.encodeCtrl.SearchPath;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("?")))
         {
@@ -545,7 +544,7 @@ mfxStatus CheckOptions(const sInputParams params, const msdk_char* appName)
         PrintHelp(appName, "Invalid SearchWindow value");
         return MFX_ERR_UNSUPPORTED;
     }
-    if (params.encodeCtrl.SearchPath > 1)
+    if (params.encodeCtrl.SearchPath > 2)
     {
         PrintHelp(appName, "Invalid SearchPath value");
         return MFX_ERR_UNSUPPORTED;
@@ -586,27 +585,24 @@ void AdjustOptions(sInputParams& params)
         params.bEncodedOrder = true;
     }
 
-    if (params.encodeCtrl.SearchWindow && (params.encodeCtrl.SearchPath || params.encodeCtrl.AdaptiveSearch
+    if (params.encodeCtrl.SearchWindow && (params.encodeCtrl.AdaptiveSearch || params.encodeCtrl.SearchPath
         || params.encodeCtrl.LenSP || params.encodeCtrl.RefWidth || params.encodeCtrl.RefHeight))
     {
         msdk_printf(MSDK_STRING("WARNING: SearchWindow is specified."));
         msdk_printf(MSDK_STRING("LenSP, RefWidth, RefHeight, SearchPath and AdaptiveSearch will be ignored.\n"));
         params.encodeCtrl.LenSP = params.encodeCtrl.SearchPath = params.encodeCtrl.RefWidth =
             params.encodeCtrl.RefHeight = params.encodeCtrl.AdaptiveSearch = 0;
-
-        params.preencCtrl.LenSP = params.preencCtrl.SearchPath = params.preencCtrl.RefWidth =
-            params.preencCtrl.RefHeight = params.preencCtrl.AdaptiveSearch = 0;
     }
     else if (!params.encodeCtrl.SearchWindow && (!params.encodeCtrl.LenSP || !params.encodeCtrl.RefWidth || !params.encodeCtrl.RefHeight))
     {
         msdk_printf(MSDK_STRING("WARNING: SearchWindow is not specified."));
         msdk_printf(MSDK_STRING("Zero-value LenSP, RefWidth and RefHeight will be set to default.\n"));
         if (!params.encodeCtrl.LenSP)
-            params.encodeCtrl.LenSP = params.preencCtrl.LenSP = 57;
+            params.encodeCtrl.LenSP = 57;
         if (!params.encodeCtrl.RefWidth)
-            params.encodeCtrl.RefWidth = params.preencCtrl.RefWidth = 32;
+            params.encodeCtrl.RefWidth = 32;
         if (!params.encodeCtrl.RefHeight)
-            params.encodeCtrl.RefHeight = params.preencCtrl.RefHeight = 32;
+            params.encodeCtrl.RefHeight = 32;
     }
 
     if (params.encodeCtrl.MVPredictor == 0xffff)
