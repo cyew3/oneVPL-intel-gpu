@@ -1032,6 +1032,11 @@ mfxStatus CheckAndFixDirtyRect(ENCODE_CAPS_HEVC const & caps, MfxVideoParam cons
             continue;
         }
 
+        changed += CheckRange(rect->Left, mfxU32(0), mfxU32(par.mfx.FrameInfo.Width));
+        changed += CheckRange(rect->Right, mfxU32(0), mfxU32(par.mfx.FrameInfo.Width));
+        changed += CheckRange(rect->Top, mfxU32(0), mfxU32(par.mfx.FrameInfo.Height));
+        changed += CheckRange(rect->Bottom, mfxU32(0), mfxU32(par.mfx.FrameInfo.Height));
+
 #if defined(WIN64) || defined (WIN32)
         mfxU32 blkSize = 1 << (caps.BlockSize + 3);
 
@@ -1040,12 +1045,6 @@ mfxStatus CheckAndFixDirtyRect(ENCODE_CAPS_HEVC const & caps, MfxVideoParam cons
         changed += AlignDown(rect->Top,  blkSize);
         changed += AlignUp(rect->Right,  blkSize);
         changed += AlignUp(rect->Bottom, blkSize);
-
-        // check that rectangle dimensions don't conflict with each other and don't exceed frame size
-        if (rect->Left < mfxU32(0) || rect->Left > mfxU32(par.mfx.FrameInfo.Width  - blkSize))                { rect->Left = 0;   invalid++; }
-        if (rect->Top  < mfxU32(0) || rect->Top  > mfxU32(par.mfx.FrameInfo.Height - blkSize))                { rect->Top = 0;    invalid++; }
-        if (rect->Right  < mfxU32(rect->Left + blkSize) || rect->Right  > mfxU32(par.mfx.FrameInfo.Width))    { rect->Right = 0;  invalid++; }
-        if (rect->Bottom < mfxU32(rect->Top  + blkSize) || rect->Bottom > mfxU32(par.mfx.FrameInfo.Height))   { rect->Bottom = 0; invalid++; }
 #endif
     }
 
