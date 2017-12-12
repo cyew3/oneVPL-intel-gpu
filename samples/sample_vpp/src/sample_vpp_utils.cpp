@@ -815,6 +815,7 @@ CRawVideoReader::CRawVideoReader()
     m_isPerfMode = false;
     m_Repeat = 0;
     m_pPTSMaker = 0;
+    m_initFcc = 0;
 }
 
 mfxStatus CRawVideoReader::Init(const msdk_char *strFileName, PTSMaker *pPTSMaker, mfxU32 fcc)
