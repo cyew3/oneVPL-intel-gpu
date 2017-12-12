@@ -38,6 +38,10 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "brc_routines.h"
 #endif
 
+#ifndef MFX_VERSION
+#error MFX_VERSION not defined
+#endif
+
 /* This class implements a FEI pipeline */
 class CEncodingPipeline
 {

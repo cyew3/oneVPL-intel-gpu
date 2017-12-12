@@ -50,6 +50,10 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "brc_routines.h"
 #endif
 
+#ifndef MFX_VERSION
+#error MFX_VERSION not defined
+#endif
+
 msdk_tick time_get_tick(void);
 msdk_tick time_get_frequency(void);
 

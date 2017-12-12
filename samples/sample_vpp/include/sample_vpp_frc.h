@@ -23,6 +23,10 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "mfxvideo.h"
 #include <stdio.h>
 
+#ifndef MFX_VERSION
+#error MFX_VERSION not defined
+#endif
+
 class BaseFRCChecker
 {
 public:

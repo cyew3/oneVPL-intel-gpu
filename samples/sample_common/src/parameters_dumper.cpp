@@ -36,6 +36,10 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "mfxmvc.h"
 #include "mfxla.h"
 
+#ifndef MFX_VERSION
+#error MFX_VERSION not defined
+#endif
+
 #define START_PROC_ARRAY(arrName) for(unsigned int arrIdx=0;arrIdx<(sizeof(info.arrName)/sizeof(info.arrName[0]));arrIdx++){
 #define START_PROC_ARRAY_SIZE(arrName,numElems) for(unsigned int arrIdx=0;arrIdx<info.numElems;arrIdx++){
 #define SERIALIZE_INFO_ELEMENT(arrName,name) {sstr<<prefix<<MSDK_STRING(#arrName)<<MSDK_STRING("[")<<arrIdx<<MSDK_STRING("].")<<MSDK_STRING(#name)<<MSDK_STRING(":")<<info.arrName[arrIdx].name<<std::endl;}

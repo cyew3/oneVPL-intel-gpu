@@ -44,6 +44,10 @@ struct D3DAllocatorParams;
 #define MOD_SMT_PARSE_INPUT
 #endif
 
+#ifndef MFX_VERSION
+#error MFX_VERSION not defined
+#endif
+
 namespace TranscodingSample
 {
     struct sInputParams;

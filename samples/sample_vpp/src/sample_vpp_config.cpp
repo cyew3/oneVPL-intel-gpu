@@ -19,6 +19,10 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include "sample_vpp_utils.h"
 
+#ifndef MFX_VERSION
+#error MFX_VERSION not defined
+#endif
+
 mfxStatus ConfigVideoEnhancementFilters( sInputParams* pParams, sAppResources* pResources, mfxU32 paramID )
 {
     mfxVideoParam*   pVppParam = pResources->pVppParams;

@@ -26,6 +26,10 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "sample_defs.h"
 #include <vector>
 
+#ifndef MFX_VERSION
+#error MFX_VERSION not defined
+#endif
+
 namespace TranscodingSample
 {
     struct sInputParams;

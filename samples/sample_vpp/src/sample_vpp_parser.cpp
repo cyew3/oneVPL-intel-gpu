@@ -27,6 +27,10 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #define VAL_CHECK(val) {if (val) return MFX_ERR_UNKNOWN;}
 
+#ifndef MFX_VERSION
+#error MFX_VERSION not defined
+#endif
+
 void vppPrintHelp(const msdk_char *strAppName, const msdk_char *strErrorMessage)
 {
     msdk_printf(MSDK_STRING("Intel(R) Media SDK VPP Sample version %s\n"), GetMSDKSampleVersion().c_str());

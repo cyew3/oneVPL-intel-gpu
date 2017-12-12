@@ -66,6 +66,10 @@ const mfxU16 MaxFeiEncMVPNum = 4;
 #define MaxNumActiveRefBL1_i  2
 #define MaxNumActiveRefPAK    16 // PAK supports up to 16 L0 / L1 references
 
+#ifndef MFX_VERSION
+#error MFX_VERSION not defined
+#endif
+
 enum
 {
     FEI_SLICETYPE_I = 2,

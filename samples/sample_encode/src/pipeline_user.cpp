@@ -22,6 +22,10 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "pipeline_user.h"
 #include "sysmem_allocator.h"
 
+#ifndef MFX_VERSION
+#error MFX_VERSION not defined
+#endif
+
 mfxStatus CUserPipeline::InitRotateParam(sInputParams *pInParams)
 {
     MSDK_CHECK_POINTER(pInParams, MFX_ERR_NULL_PTR);

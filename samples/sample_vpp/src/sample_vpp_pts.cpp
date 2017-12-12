@@ -25,6 +25,10 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #define MFX_TIME_STAMP_FREQUENCY 90000
 
+#ifndef MFX_VERSION
+#error MFX_VERSION not defined
+#endif
+
 mfxF64 MaxTimeDifference = 0.015; // 15 ms is an edge
 
 PTSMaker::PTSMaker():m_pFRCChecker(0),

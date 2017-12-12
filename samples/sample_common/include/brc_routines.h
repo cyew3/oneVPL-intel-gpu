@@ -18,6 +18,10 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 \**********************************************************************************/
 #include "sample_defs.h"
 
+#ifndef MFX_VERSION
+#error MFX_VERSION not defined
+#endif
+
 #if (MFX_VERSION >= 1024)
 #include "mfxbrc.h"
 
@@ -361,6 +365,7 @@ namespace HEVCExtBRC
         MFX_CHECK_NULL_PTR1(pthis);
         return ((ExtBRC*)pthis)->Close() ;
     }
+
     inline mfxStatus GetFrameCtrl (mfxHDL pthis, mfxBRCFrameParam* par, mfxBRCFrameCtrl* ctrl)
     {
        MFX_CHECK_NULL_PTR1(pthis);
@@ -371,6 +376,7 @@ namespace HEVCExtBRC
         MFX_CHECK_NULL_PTR1(pthis);
         return ((ExtBRC*)pthis)->Update(par,ctrl, status) ;
     }
+
     inline mfxStatus Create(mfxExtBRC & m_BRC)
     {
         MFX_CHECK(m_BRC.pthis == NULL, MFX_ERR_UNDEFINED_BEHAVIOR);

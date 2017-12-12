@@ -20,6 +20,10 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "pipeline_fei.h"
 #include "version.h"
 
+#ifndef MFX_VERSION
+#error MFX_VERSION not defined
+#endif
+
 CEncodingPipeline::CEncodingPipeline(AppConfig* pAppConfig)
     : m_appCfg(*pAppConfig)
     , m_nAsyncDepth(1)

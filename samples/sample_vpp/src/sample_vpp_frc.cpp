@@ -23,6 +23,10 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #define MFX_TIME_STAMP_FREQUENCY 90000
 
+#ifndef MFX_VERSION
+#error MFX_VERSION not defined
+#endif
+
 static mfxI32 DI_DEEP = 2;
 
 FRCChecker::FRCChecker():m_FRateExtN_In(0),

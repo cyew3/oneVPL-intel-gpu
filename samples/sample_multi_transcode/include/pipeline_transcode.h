@@ -76,6 +76,10 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #define MAX_PREF_LEN    256
 
+#ifndef MFX_VERSION
+#error MFX_VERSION not defined
+#endif
+
 namespace TranscodingSample
 {
     extern mfxU32 MFX_STDCALL TranscodeRoutine(void   *pObj);

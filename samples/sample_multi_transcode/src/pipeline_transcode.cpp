@@ -37,6 +37,10 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #undef max
 #undef min
 
+#ifndef MFX_VERSION
+#error MFX_VERSION not defined
+#endif
+
 using namespace TranscodingSample;
 
 mfxU32 MFX_STDCALL TranscodingSample::TranscodeRoutine(void   *pObj)
@@ -1592,8 +1596,10 @@ void CTranscodingPipeline::SetEncCtrlRT(ExtendedSurface& extSurface, bool bInser
 
         // Attach additional buffer with either MBQP or ROI information
         if (m_bUseQPMap) {
+#if (MFX_VERSION >= 1022)
             FillMBQPBuffer(m_bufExtMBQP[keyId], extSurface.pSurface->Info.PicStruct);
             m_extBuffPtrStorage[keyId].push_back((mfxExtBuffer *)&m_bufExtMBQP[keyId]);
+#endif
         } else {
             if (m_ROIData.size() > m_nSubmittedFramesNum)
                 m_extBuffPtrStorage[keyId].push_back((mfxExtBuffer *)&m_ROIData[m_nSubmittedFramesNum]);
@@ -1807,6 +1813,7 @@ mfxStatus CTranscodingPipeline::Transcode()
             }
             else
             {
+
                 sts = Surface2BS(&VppExtSurface, &m_BSPool.back()->Bitstream, m_encoderFourCC);
             }
         }
@@ -2372,7 +2379,6 @@ mfxStatus CTranscodingPipeline::InitEncMfxParams(sInputParams *pInParams)
         m_ExtHEVCParam.PicHeightInLumaSamples = m_mfxEncParams.mfx.FrameInfo.CropH;
         m_EncExtParams.push_back((mfxExtBuffer*)&m_ExtHEVCParam);
     }
-
 #if (MFX_VERSION >= 1024)
     // This is for explicit extbrc only. In case of implicit (built-into-library) version - we don't need this extended buffer
     if (pInParams->nExtBRC == EXTBRC_ON &&

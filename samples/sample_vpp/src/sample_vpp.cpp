@@ -27,6 +27,10 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #define MFX_CHECK(sts) {if (sts != MFX_ERR_NONE) return sts;}
 
+#ifndef MFX_VERSION
+#error MFX_VERSION not defined
+#endif
+
 using namespace std;
 
 void IncreaseReference(mfxFrameData *ptr)

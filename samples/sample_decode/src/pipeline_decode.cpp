@@ -54,6 +54,9 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #define __SYNC_WA // avoid sync issue on Media SDK side
 
+#ifndef MFX_VERSION
+#error MFX_VERSION not defined
+#endif
 
 CDecodingPipeline::CDecodingPipeline()
 {
@@ -600,7 +603,6 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
         // trying to find PicStruct information in AVI headers
         if ( m_mfxVideoParams.mfx.CodecId == MFX_CODEC_JPEG )
             MJPEG_AVI_ParsePicStruct(&m_mfxBS);
-
 #if (MFX_VERSION >= 1025)
         if (pParams->bErrorReport)
         {
@@ -1618,7 +1620,6 @@ mfxStatus CDecodingPipeline::RunDecoding()
     CTimeInterval<>     decodeTimer(m_bIsCompleteFrame);
     time_t start_time = time(0);
     MSDKThread * pDeliverThread = NULL;
-
 #if (MFX_VERSION >= 1025)
     mfxExtDecodeErrorReport *pDecodeErrorReport = NULL;
 #endif

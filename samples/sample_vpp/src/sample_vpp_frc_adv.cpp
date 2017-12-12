@@ -22,6 +22,10 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "sample_vpp_frc_adv.h"
 #include <algorithm>
 
+#ifndef MFX_VERSION
+#error MFX_VERSION not defined
+#endif
+
 static const mfxU32 MFX_TIME_STAMP_FREQUENCY = 90000; // will go to mfxdefs.h
 
 

@@ -37,6 +37,10 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include "plugin_loader.h"
 
+#ifndef MFX_VERSION
+#error MFX_VERSION not defined
+#endif
+
 mfxStatus CResourcesPool::GetFreeTask(int resourceNum,sTask **ppTask)
 {
     // get a pointer to a free task (bit stream and sync point for encoder)

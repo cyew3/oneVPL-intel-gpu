@@ -37,6 +37,10 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "vaapi_allocator.h"
 #endif
 
+#ifndef MFX_VERSION
+#error MFX_VERSION not defined
+#endif
+
 namespace TranscodingSample
 {
     class Launcher

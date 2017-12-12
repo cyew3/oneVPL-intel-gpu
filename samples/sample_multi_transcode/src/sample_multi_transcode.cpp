@@ -28,6 +28,10 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "class_wayland.h"
 #endif
 
+#ifndef MFX_VERSION
+#error MFX_VERSION not defined
+#endif
+
 using namespace std;
 using namespace TranscodingSample;
 
@@ -593,6 +597,7 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
     bool allMFEModesEqual=true;
     bool allMFEFramesEqual=true;
     bool allMFESessionsJoined = true;
+
     mfxU16 usedMFEMaxFrames = 0;
     mfxU16 usedMFEMode = 0;
 

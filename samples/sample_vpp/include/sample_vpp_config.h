@@ -26,6 +26,10 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "mfxvideo++.h"
 //#include "mfx_ext_buffers.h"
 
+#ifndef MFX_VERSION
+#error MFX_VERSION not defined
+#endif
+
 enum
 {
     NOT_INIT_VALUE      =   0xFFF7

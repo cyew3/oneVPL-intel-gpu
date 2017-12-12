@@ -18,6 +18,9 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 \**********************************************************************************/
 #include "fei_encode.h"
 
+#ifndef MFX_VERSION
+#error MFX_VERSION not defined
+#endif
 
 FEI_EncodeInterface::FEI_EncodeInterface(MFXVideoSession* session, mfxU32 allocId, bufList* ext_bufs, AppConfig* config)
     : m_pmfxSession(session)

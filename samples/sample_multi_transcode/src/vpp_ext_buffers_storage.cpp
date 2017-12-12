@@ -31,6 +31,9 @@ or https://software.intel.com/en-us/media-client-solutions-support.
     } \
 }
 
+#ifndef MFX_VERSION
+#error MFX_VERSION not defined
+#endif
 
 using namespace TranscodingSample;
 

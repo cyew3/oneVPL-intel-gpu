@@ -47,6 +47,10 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #undef min
 
+#ifndef MFX_VERSION
+#error MFX_VERSION not defined
+#endif
+
 /* ******************************************************************* */
 
 static

@@ -68,6 +68,10 @@ using namespace TranscodingSample;
     } \
 }
 
+#ifndef MFX_VERSION
+#error MFX_VERSION not defined
+#endif
+
 msdk_tick TranscodingSample::GetTick()
 {
     return msdk_time_get_tick();
@@ -214,9 +218,11 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("  -repartitioncheck::<on,off> Enable or disable RepartitionCheckEnable mode\n"));
     msdk_printf(MSDK_STRING("  -cqp          Constant quantization parameter (CQP BRC) bitrate control method\n"));
     msdk_printf(MSDK_STRING("                              (by default constant bitrate control method is used), should be used along with -qpi, -qpp, -qpb.\n"));
+#if (MFX_VERSION >= 1022)
     msdk_printf(MSDK_STRING("  -qpi          Constant quantizer for I frames (if bitrace control method is CQP). In range [1,51]. 0 by default, i.e.no limitations on QP.\n"));
     msdk_printf(MSDK_STRING("  -qpp          Constant quantizer for P frames (if bitrace control method is CQP). In range [1,51]. 0 by default, i.e.no limitations on QP.\n"));
     msdk_printf(MSDK_STRING("  -qpb          Constant quantizer for B frames (if bitrace control method is CQP). In range [1,51]. 0 by default, i.e.no limitations on QP.\n"));
+#endif
     msdk_printf(MSDK_STRING("  -qsv-ff       Enable QSV-FF mode\n"));
 #if MFX_VERSION >= 1022
     msdk_printf(MSDK_STRING("  -roi_file <roi-file-name>\n"));
@@ -724,7 +730,9 @@ bool CmdProcessor::ParseROIFile(const msdk_char *roi_file_name, std::vector<mfxE
             mfxExtEncoderROI frame_roi;
             std::memset(&frame_roi, 0, sizeof(frame_roi));
             frame_roi.Header.BufferId = MFX_EXTBUFF_ENCODER_ROI;
+#if (MFX_VERSION >= 1022)
             frame_roi.ROIMode = MFX_ROI_MODE_QP_DELTA;
+#endif
 
             int roi_num = std::atoi(items[item_ind].c_str());
             if (roi_num < 0 || roi_num > (int)(sizeof(frame_roi.ROI) / sizeof(frame_roi.ROI[0])))
@@ -745,7 +753,9 @@ bool CmdProcessor::ParseROIFile(const msdk_char *roi_file_name, std::vector<mfxE
                 frame_roi.ROI[i].Top = std::atoi(items[item_ind + i * 5 + 2].c_str());
                 frame_roi.ROI[i].Right = std::atoi(items[item_ind + i * 5 + 3].c_str());
                 frame_roi.ROI[i].Bottom = std::atoi(items[item_ind + i * 5 + 4].c_str());
+#if (MFX_VERSION >= 1022)
                 frame_roi.ROI[i].DeltaQP = (mfxI16) std::atoi(items[item_ind +i * 5 + 5].c_str());
+#endif
             }
             frame_roi.NumROI = (mfxU16) roi_num;
             m_ROIData.push_back(frame_roi);

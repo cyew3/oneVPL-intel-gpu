@@ -31,6 +31,10 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #define VPP_MSDK_ALIGN16(SZ)  (((SZ + 15) >> 4) << 4) // round up to a multiple of 16
 #define VPP_MSDK_ALIGN32(SZ)  (((SZ + 31) >> 5) << 5) // round up to a multiple of 32
 
+#ifndef MFX_VERSION
+#error MFX_VERSION not defined
+#endif
+
 int ownRandomGenerator_32s( int lowest, int highest )
 {
     int random_integer;

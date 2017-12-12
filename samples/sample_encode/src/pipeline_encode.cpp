@@ -45,6 +45,10 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include "version.h"
 
+#ifndef MFX_VERSION
+#error MFX_VERSION not defined
+#endif
+
 /* obtain the clock tick of an uninterrupted master clock */
 msdk_tick time_get_tick(void)
 {
@@ -579,7 +583,9 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
 
         m_CodingOption3.WeightedPred   = pInParams->WeightedPred;
         m_CodingOption3.WeightedBiPred = pInParams->WeightedBiPred;
+#if (MFX_VERSION >= 1023)
         m_CodingOption3.LowDelayBRC    = pInParams->LowDelayBRC;
+#endif
         m_CodingOption3.PRefType       = pInParams->nPRefType;
         m_CodingOption3.IntRefCycleDist= pInParams->IntRefCycleDist;
         m_CodingOption3.AdaptiveMaxFrameSize = pInParams->nAdaptiveMaxFrameSize;
