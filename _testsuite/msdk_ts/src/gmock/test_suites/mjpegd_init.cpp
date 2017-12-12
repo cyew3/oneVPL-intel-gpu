@@ -177,7 +177,7 @@ int TestSuite::RunTest(unsigned int id)
             if((g_tsHWtype < MFX_HW_HSW) && (tc.sts == MFX_ERR_NONE)) {
                 expected = MFX_WRN_PARTIAL_ACCELERATION;
             }
-#if defined (LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN)
+#if defined (LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN) || defined (LINUX_TARGET_PLATFORM_CFL)
             if(expected == MFX_ERR_NONE) {
                 expected = MFX_WRN_PARTIAL_ACCELERATION;
             }
@@ -237,7 +237,7 @@ int TestSuite::RunTest(unsigned int id)
             }
             if(m_par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
             {
-#if defined (LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN)
+#if defined (LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN) || defined (LINUX_TARGET_PLATFORM_CFL)
                 g_tsStatus.expect(MFX_WRN_PARTIAL_ACCELERATION);
 #endif
                 QueryIOSurf();
@@ -283,7 +283,7 @@ int TestSuite::RunTest(unsigned int id)
 
 
     g_tsStatus.expect(MFX_ERR_NONE);
-#if defined (LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN)
+#if defined (LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN) || defined (LINUX_TARGET_PLATFORM_CFL)
     g_tsStatus.expect(MFX_WRN_PARTIAL_ACCELERATION);
 #endif
     for (mfxU32 i = 1; i < tc.num_call; i++)
