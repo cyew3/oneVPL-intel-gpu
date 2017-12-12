@@ -707,6 +707,12 @@ mfxStatus CTranscodingPipeline::EncodeOneFrame(ExtendedSurface *pExtSurface, mfx
 {
     mfxStatus sts = MFX_ERR_NONE;
 
+    if (!pBS->Data)
+    {
+        sts = AllocateSufficientBuffer(pBS);
+        MSDK_CHECK_STATUS(sts, "AllocateSufficientBuffer failed");
+    }
+
     for (;;)
     {
         // at this point surface for encoder contains either a frame from file or a frame processed by vpp
