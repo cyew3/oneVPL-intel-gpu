@@ -2,9 +2,7 @@ LOCAL_PATH:= $(call my-dir)
 
 include $(MFX_HOME)/mdp_msdk-lib/android/mfx_env.mk
 
-MFX_LOCAL_DIRS = h265
-
-MFX_LOCAL_SRC_FILES = $(addprefix h265/src/, \
+MFX_LOCAL_SRC_FILES := $(addprefix h265/src/, \
     export.cpp \
     mfx_h265_encode_hw.cpp \
     mfx_h265_encode_hw_brc.cpp \
@@ -15,30 +13,21 @@ MFX_LOCAL_SRC_FILES = $(addprefix h265/src/, \
     mfx_h265_encode_hw_utils.cpp \
     mfx_h265_encode_vaapi.cpp)
 
-MFX_LOCAL_C_INCLUDES = \
-  $(foreach dir, $(MFX_LOCAL_DIRS), $(wildcard $(LOCAL_PATH)/$(dir)/include)) \
-  $(addprefix _studio/mfx_lib/shared/include/, mfx_platform_headers.h) \
-  $(MFX_HOME)/mdp_msdk-lib/_studio/shared/umc/codec/brc/include
+MFX_LOCAL_C_INCLUDES := \
+    $(LOCAL_PATH)/h265/include \
+    $(MFX_HOME)/mdp_msdk-lib/_studio/shared/umc/codec/brc/include
 
 MFX_LOCAL_STATIC_LIBRARIES := \
     libmfx_trace_hw \
-    libumc_io_merged_hw \
     libmfx_lib_merged_hw \
     libumc_core_merged \
     libsafec \
-    libippj_l \
-    libippvc_l \
-    libippcc_l \
-    libippcv_l \
-    libippi_l \
-    libipps_l \
-    libippmsdk_l \
-    libippcore_l
+    libippi_l
 
-MFX_LOCAL_LDFLAGS += \
-  $(MFX_LDFLAGS) \
-  -Wl,--version-script=$(LOCAL_PATH)/libmfx_h265e_plugin.map \
-  -Wl,--no-warn-shared-textrel
+MFX_LOCAL_LDFLAGS := \
+    $(MFX_LDFLAGS) \
+    -Wl,--version-script=$(LOCAL_PATH)/libmfx_h265e_plugin.map \
+    -Wl,--no-warn-shared-textrel
 
 # =============================================================================
 
@@ -50,18 +39,18 @@ LOCAL_SRC_FILES := $(MFX_LOCAL_SRC_FILES)
 LOCAL_C_INCLUDES := \
     $(MFX_LOCAL_C_INCLUDES) \
     $(MFX_C_INCLUDES_INTERNAL_HW)
-LOCAL_C_INCLUDES_32 := $(MFX_C_INCLUDES_INTERNAL_HW_32)
+LOCAL_C_INCLUDES_32 := $(MFX_C_INCLUDES_INTERNAL_32)
 
 LOCAL_CFLAGS := \
     $(MFX_CFLAGS_INTERNAL_HW) \
     -DMFX_ENABLE_H265_VIDEO_ENCODE
-LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_HW_32)
+LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_32)
 
 LOCAL_STATIC_LIBRARIES := $(MFX_LOCAL_STATIC_LIBRARIES)
 
 LOCAL_LDFLAGS := $(MFX_LOCAL_LDFLAGS)
 
-LOCAL_SHARED_LIBRARIES := libva libdl
+LOCAL_SHARED_LIBRARIES := libva
 
 ifeq ($(MFX_NDK),true)
   LOCAL_SHARED_LIBRARIES += libstlport-mfx libgabi++-mfx
@@ -85,18 +74,18 @@ LOCAL_SRC_FILES := $(MFX_LOCAL_SRC_FILES)
 LOCAL_C_INCLUDES := \
     $(MFX_LOCAL_C_INCLUDES) \
     $(MFX_C_INCLUDES_INTERNAL_HW)
-LOCAL_C_INCLUDES_64 := $(MFX_C_INCLUDES_INTERNAL_HW_64)
+LOCAL_C_INCLUDES_64 := $(MFX_C_INCLUDES_INTERNAL_64)
 
 LOCAL_CFLAGS := \
     $(MFX_CFLAGS_INTERNAL_HW) \
     -DMFX_ENABLE_H265_VIDEO_ENCODE
-LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_HW_64)
+LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_64)
 
 LOCAL_STATIC_LIBRARIES := $(MFX_LOCAL_STATIC_LIBRARIES)
 
 LOCAL_LDFLAGS := $(MFX_LOCAL_LDFLAGS)
 
-LOCAL_SHARED_LIBRARIES := libva libdl
+LOCAL_SHARED_LIBRARIES := libva
 
 ifeq ($(MFX_NDK),true)
   LOCAL_SHARED_LIBRARIES += libstlport-mfx libgabi++-mfx

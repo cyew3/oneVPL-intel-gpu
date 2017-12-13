@@ -4,65 +4,60 @@ include $(MFX_HOME)/mdp_msdk-lib/android/mfx_env.mk
 
 # =============================================================================
 
-MFX_LOCAL_DECODERS = h265 h264 mpeg2 vc1 mjpeg vp8 vp9
-MFX_LOCAL_ENCODERS = h265 h264 mpeg2 vc1 mjpeg mvc svc vp8
+MFX_LOCAL_DECODERS := h265 h264 mpeg2 vc1 mjpeg vp8 vp9
+MFX_LOCAL_ENCODERS := h265 h264 mpeg2 mjpeg mvc svc vp8
 
 # Setting subdirectories to march thru
-MFX_LOCAL_DIRS = \
-    $(addprefix brc/, $(MFX_LOCAL_DECODERS)) \
-    $(addprefix bsd/, $(MFX_LOCAL_DECODERS)) \
-    $(addprefix dec/, $(MFX_LOCAL_DECODERS)) \
+MFX_LOCAL_DIRS := \
     $(addprefix enc/, $(MFX_LOCAL_ENCODERS)) \
     $(addprefix encode/, $(MFX_LOCAL_ENCODERS)) \
     $(addprefix pak/, $(MFX_LOCAL_ENCODERS)) \
     scheduler \
     fei
 
-MFX_OPTIMIZATION_DIRS = \
+MFX_OPTIMIZATION_DIRS := \
     optimization/h265/src \
     optimization/h264/src \
     optimization/h264/src/px \
     optimization/h264/src/sse
 
-MFX_LOCAL_DIRS_IMPL = \
+MFX_LOCAL_DIRS_IMPL := \
     $(addprefix decode/, $(MFX_LOCAL_DECODERS)) \
     vpp
 
-MFX_LOCAL_DIRS_HW = \
+MFX_LOCAL_DIRS_HW := \
     $(addprefix enc_hw/, $(MFX_LOCAL_ENCODERS)) \
     $(addprefix encode_hw/, $(MFX_LOCAL_ENCODERS)) \
     genx/h264_encode \
     cmrt_cross_platform
 
-MFX_OPTIMIZATION_FILES = \
+MFX_OPTIMIZATION_FILES := \
     $(patsubst $(LOCAL_PATH)/%, %, $(foreach dir, $(MFX_OPTIMIZATION_DIRS), $(wildcard $(LOCAL_PATH)/mfx_lib/$(dir)/*.cpp)))
 
-MFX_LOCAL_SRC_FILES = \
+MFX_LOCAL_SRC_FILES := \
     $(patsubst $(LOCAL_PATH)/%, %, $(foreach dir, $(MFX_LOCAL_DIRS), $(wildcard $(LOCAL_PATH)/mfx_lib/$(dir)/src/*.cpp)))
 
-MFX_LOCAL_SRC_FILES_IMPL = \
+MFX_LOCAL_SRC_FILES_IMPL := \
     $(patsubst $(LOCAL_PATH)/%, %, $(foreach dir, $(MFX_LOCAL_DIRS_IMPL), $(wildcard $(LOCAL_PATH)/mfx_lib/$(dir)/src/*.cpp))) \
     $(patsubst $(LOCAL_PATH)/%, %, $(wildcard $(LOCAL_PATH)/mfx_lib/vpp/src/vme/*.cpp))
 
-MFX_LOCAL_SRC_FILES_HW = \
+MFX_LOCAL_SRC_FILES_HW := \
     $(MFX_LOCAL_SRC_FILES_IMPL) \
     $(patsubst $(LOCAL_PATH)/%, %, $(foreach dir, $(MFX_LOCAL_DIRS_HW), $(wildcard $(LOCAL_PATH)/mfx_lib/$(dir)/src/*.cpp)))
 
-MFX_LOCAL_C_INCLUDES = \
+MFX_LOCAL_C_INCLUDES := \
     $(foreach dir, $(MFX_LOCAL_DIRS), $(wildcard $(LOCAL_PATH)/mfx_lib/$(dir)/include)) \
-    $(MFX_HOME)/mdp_msdk-contrib/SafeStringStaticLibrary/include \
-    $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/genx/field_copy/src \
-    $(MFX_HOME)/mdp_msdk-api/mediasdk_structures
+    $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/genx/field_copy/src
 
-MFX_LOCAL_C_INCLUDES_IMPL = \
+MFX_LOCAL_C_INCLUDES_IMPL := \
     $(MFX_LOCAL_C_INCLUDES) \
     $(foreach dir, $(MFX_LOCAL_DIRS_IMPL), $(wildcard $(LOCAL_PATH)/mfx_lib/$(dir)/include))
 
-MFX_LOCAL_C_INCLUDES_HW = \
+MFX_LOCAL_C_INCLUDES_HW := \
     $(MFX_LOCAL_C_INCLUDES_IMPL) \
     $(foreach dir, $(MFX_LOCAL_DIRS_HW), $(wildcard $(LOCAL_PATH)/mfx_lib/$(dir)/include))
 
-MFX_LOCAL_STATIC_LIBRARIES_HW += \
+MFX_LOCAL_STATIC_LIBRARIES_HW := \
     libmfx_lib_merged_hw \
     libumc_codecs_merged_hw \
     libumc_codecs_merged \
@@ -81,7 +76,7 @@ MFX_LOCAL_STATIC_LIBRARIES_HW += \
     libippcore_l \
     libvpx-mfx
 
-MFX_LOCAL_STATIC_LIBRARIES_SW += \
+MFX_LOCAL_STATIC_LIBRARIES_SW := \
     libmfx_lib_merged_sw \
     libumc_codecs_merged_sw \
     libumc_codecs_merged \
@@ -112,28 +107,28 @@ MFX_LOCAL_LDFLAGS_SW += \
 
 # =============================================================================
 
-UMC_DIRS = \
+UMC_DIRS := \
     mpeg2_enc h264_enc jpeg_enc \
     brc color_space_converter jpeg_common
 
-UMC_DIRS_IMPL = \
-    h265_dec h264_dec mpeg2_dec vc1_dec jpeg_dec vp8_dec vp9_dec\
+UMC_DIRS_IMPL := \
+    h265_dec h264_dec mpeg2_dec vc1_dec jpeg_dec vp8_dec vp9_dec \
     vc1_common vc1_spl jpeg_common \
     scene_analyzer color_space_converter
 
-UMC_LOCAL_C_INCLUDES = \
+UMC_LOCAL_C_INCLUDES := \
     $(foreach dir, $(UMC_DIRS), $(wildcard $(MFX_HOME)/mdp_msdk-lib/_studio/shared/umc/codec/$(dir)/include))
 
-UMC_LOCAL_C_INCLUDES_IMPL = \
+UMC_LOCAL_C_INCLUDES_IMPL := \
     $(UMC_LOCAL_C_INCLUDES) \
     $(foreach dir, $(UMC_DIRS_IMPL), $(wildcard $(MFX_HOME)/mdp_msdk-lib/_studio/shared/umc/codec/$(dir)/include))
 
-UMC_LOCAL_C_INCLUDES_HW = \
+UMC_LOCAL_C_INCLUDES_HW := \
     $(UMC_LOCAL_C_INCLUDES_IMPL)
 
 # =============================================================================
 
-MFX_SHARED_FILES_IMPL = $(addprefix mfx_lib/shared/src/, \
+MFX_SHARED_FILES_IMPL := $(addprefix mfx_lib/shared/src/, \
     mfx_brc_common.cpp \
     mfx_common_int.cpp \
     mfx_enc_common.cpp \
@@ -142,7 +137,7 @@ MFX_SHARED_FILES_IMPL = $(addprefix mfx_lib/shared/src/, \
     mfx_vc1_dec_common.cpp \
     mfx_common_decode_int.cpp)
 
-MFX_SHARED_FILES_HW = \
+MFX_SHARED_FILES_HW := \
     $(MFX_SHARED_FILES_IMPL)
 
 MFX_SHARED_FILES_HW += $(addprefix mfx_lib/shared/src/, \
@@ -150,7 +145,7 @@ MFX_SHARED_FILES_HW += $(addprefix mfx_lib/shared/src/, \
     mfx_h264_encode_vaapi.cpp \
     mfx_h264_encode_factory.cpp)
 
-MFX_LIB_SHARED_FILES_1 = $(addprefix mfx_lib/shared/src/, \
+MFX_LIB_SHARED_FILES_1 := $(addprefix mfx_lib/shared/src/, \
     libmfxsw.cpp \
     libmfxsw_async.cpp \
     libmfxsw_decode.cpp \
@@ -166,7 +161,7 @@ MFX_LIB_SHARED_FILES_1 = $(addprefix mfx_lib/shared/src/, \
     mfx_user_plugin.cpp \
     mfx_critical_error_handler.cpp)
 
-MFX_LIB_SHARED_FILES_2 = $(addprefix shared/src/, \
+MFX_LIB_SHARED_FILES_2 := $(addprefix shared/src/, \
     auxiliary_device.cpp \
     fast_copy.cpp \
     fast_compositing_ddi.cpp \
@@ -219,12 +214,12 @@ ifeq ($(MFX_IMPL_HW), true)
     $(MFX_LOCAL_C_INCLUDES_HW) \
     $(UMC_LOCAL_C_INCLUDES_HW) \
     $(MFX_C_INCLUDES_INTERNAL_HW)
-  LOCAL_C_INCLUDES_32 := $(MFX_C_INCLUDES_INTERNAL_HW_32)
-  LOCAL_C_INCLUDES_64 := $(MFX_C_INCLUDES_INTERNAL_HW_64)
+  LOCAL_C_INCLUDES_32 := $(MFX_C_INCLUDES_INTERNAL_32)
+  LOCAL_C_INCLUDES_64 := $(MFX_C_INCLUDES_INTERNAL_64)
 
   LOCAL_CFLAGS := $(MFX_CFLAGS_INTERNAL_HW)
-  LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_HW_32)
-  LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_HW_64)
+  LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_32)
+  LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_64)
 
   LOCAL_MODULE_TAGS := optional
   LOCAL_MODULE := libmfx_lib_merged_hw
@@ -272,10 +267,10 @@ ifeq ($(MFX_IMPL_HW), true)
     $(MFX_LOCAL_C_INCLUDES_HW) \
     $(UMC_LOCAL_C_INCLUDES_HW) \
     $(MFX_C_INCLUDES_INTERNAL_HW)
-  LOCAL_C_INCLUDES_32 := $(MFX_C_INCLUDES_INTERNAL_HW_32)
+  LOCAL_C_INCLUDES_32 := $(MFX_C_INCLUDES_INTERNAL_32)
 
   LOCAL_CFLAGS := $(MFX_CFLAGS_INTERNAL_HW)
-  LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_HW_32)
+  LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_32)
 
   LOCAL_STATIC_LIBRARIES := $(MFX_LOCAL_STATIC_LIBRARIES_HW)
 
@@ -307,10 +302,10 @@ ifeq ($(MFX_IMPL_HW), true)
     $(MFX_LOCAL_C_INCLUDES_HW) \
     $(UMC_LOCAL_C_INCLUDES_HW) \
     $(MFX_C_INCLUDES_INTERNAL_HW)
-  LOCAL_C_INCLUDES_64 := $(MFX_C_INCLUDES_INTERNAL_HW_64)
+  LOCAL_C_INCLUDES_64 := $(MFX_C_INCLUDES_INTERNAL_64)
 
   LOCAL_CFLAGS := $(MFX_CFLAGS_INTERNAL_HW)
-  LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_HW_64)
+  LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_64)
 
   LOCAL_STATIC_LIBRARIES := $(MFX_LOCAL_STATIC_LIBRARIES_HW)
 
