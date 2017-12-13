@@ -3,7 +3,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2015-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2015-2017 Intel Corporation. All Rights Reserved.
 \* ****************************************************************************** */
 
 /*
@@ -37,7 +37,24 @@ public:
         for (mfxU32 i = 0; i < 100; i++)
             delete [] buffers[i];
     }
-    int RunTest(unsigned int id);
+
+    struct tc_struct
+    {
+        mfxStatus sts;
+        mfxU32 mode;
+        struct f_pair
+        {
+            mfxU32 ext_type;
+            const  tsStruct::Field* f;
+            mfxU32 v;
+        } set_par[MAX_NPARS];
+        char* skips;
+    };
+
+    template<mfxU32 fourcc>
+    int RunTest_Subtype(const unsigned int id);
+
+    int RunTest(tc_struct tc, unsigned int fourcc_id);
     static const unsigned int n_cases;
 
 private:
@@ -61,19 +78,6 @@ private:
 
         RESET_ON  = 1 << 3,
         RESET_OFF = 1 << 4
-    };
-
-    struct tc_struct
-    {
-        mfxStatus sts;
-        mfxU32 mode;
-        struct f_pair
-        {
-            mfxU32 ext_type;
-            const  tsStruct::Field* f;
-            mfxU32 v;
-        } set_par[MAX_NPARS];
-        char* skips;
     };
 
     static const tc_struct test_case[];
@@ -201,11 +205,18 @@ public:
     }
 };
 
-int TestSuite::RunTest(unsigned int id)
+template<mfxU32 fourcc>
+int TestSuite::RunTest_Subtype(const unsigned int id)
+{
+    const tc_struct& tc = test_case[id];
+    return RunTest(tc, fourcc);
+}
+
+int TestSuite::RunTest(tc_struct tc, unsigned int fourcc_id)
 {
     int err = 0;
     TS_START;
-    const tc_struct& tc = test_case[id];
+
     mode = tc.mode;
 
     MFXInit();
@@ -223,6 +234,49 @@ int TestSuite::RunTest(unsigned int id)
 
     SETPARS(m_pPar, MFX_PAR);
 
+    if (fourcc_id == MFX_FOURCC_NV12)
+    {
+        m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+        m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+        m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
+    }
+    else if (fourcc_id == MFX_FOURCC_P010)
+    {
+        m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_P010;
+        m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+        m_par.mfx.FrameInfo.Shift = 1;
+        m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
+    }
+    else if (fourcc_id == MFX_FOURCC_AYUV)
+    {
+        m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_AYUV;
+        m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+        m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
+    }
+    else if (fourcc_id == MFX_FOURCC_Y410)
+    {
+        m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y410;
+        m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+        m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
+    }
+    else if (fourcc_id == MFX_FOURCC_YUY2)
+    {
+        m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_YUY2;
+        m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+        m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
+    }
+    else if (fourcc_id == MFX_FOURCC_Y210)
+    {
+        m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y210;
+        m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+        m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
+    }
+    else
+    {
+        g_tsLog << "WARNING: invalid fourcc_id parameter: " << fourcc_id << "\n";
+        return 0;
+    }
+
     //load the plugin in advance.
     if(!m_loaded)
     {
@@ -234,6 +288,22 @@ int TestSuite::RunTest(unsigned int id)
         {
             g_tsLog << "WARNING: Unsupported HW Platform!\n";
             return 0;
+        }
+        else if (m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_P010 && g_tsHWtype < MFX_HW_KBL) {
+            g_tsLog << "\n\nWARNING: P010 format only supported on KBL+!\n\n\n";
+            throw tsSKIP;
+        }
+        else if ((m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210 || m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_YUY2)
+            && (g_tsHWtype < MFX_HW_ICL || g_tsConfig.lowpower == MFX_CODINGOPTION_ON))
+        {
+            g_tsLog << "\n\nWARNING: 422 formats only supported on ICL+ and ENC+PAK!\n\n\n";
+            throw tsSKIP;
+        }
+        else if ((m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_AYUV || m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_Y410)
+            && (g_tsHWtype < MFX_HW_ICL || g_tsConfig.lowpower != MFX_CODINGOPTION_ON))
+        {
+            g_tsLog << "\n\nWARNING: 444 formats only supported on ICL+ and VDENC!\n\n\n";
+            throw tsSKIP;
         }
     } else {
         g_tsLog << "WARNING: only HEVCe HW plugin is tested\n";
@@ -294,5 +364,10 @@ int TestSuite::RunTest(unsigned int id)
     return err;
 }
 
-TS_REG_TEST_SUITE_CLASS(hevce_co2_disable_deblocking);
+TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_co2_disable_deblocking, RunTest_Subtype<MFX_FOURCC_NV12>, n_cases);
+TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_420_p010_co2_disable_deblocking, RunTest_Subtype<MFX_FOURCC_P010>, n_cases);
+TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_8b_444_ayuv_co2_disable_deblocking, RunTest_Subtype<MFX_FOURCC_AYUV>, n_cases);
+TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_444_y410_co2_disable_deblocking, RunTest_Subtype<MFX_FOURCC_Y410>, n_cases);
+TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_8b_422_yuy2_co2_disable_deblocking, RunTest_Subtype<MFX_FOURCC_YUY2>, n_cases);
+TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_422_y210_co2_disable_deblocking, RunTest_Subtype<MFX_FOURCC_Y210>, n_cases);
 };
