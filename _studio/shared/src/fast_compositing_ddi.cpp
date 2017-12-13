@@ -906,6 +906,10 @@ mfxStatus FastCompositingDDI::ConvertExecute2BltParams( mfxExecuteParams *pExecu
             {
                 pInputSample->SampleFormat.NominalRange = DXVA2_NominalRange_0_255;
             }
+            if (pExecuteParams->targetSurface.frameInfo.FourCC == MFX_FOURCC_RGB4)
+            {
+                pBltParams->bTargetYuvFullRange = 1;
+            }
             pInputSample->SampleFormat.VideoTransferMatrix = DXVA2_VideoTransferMatrix_BT601;
             //pBltParams->bTargetYuvFullRange = 1;
             pBltParams->TargetTransferMatrix = DXVA2_VideoTransferMatrix_BT601;
@@ -1075,9 +1079,18 @@ mfxStatus FastCompositingDDI::ConvertExecute2BltParams( mfxExecuteParams *pExecu
         pBltParams->BackgroundColor.Cb = (USHORT)((-0x000025e3 * R - 0x00004a7f * G + 0x00007062 * B + 0x808000) >> 8);
         pBltParams->BackgroundColor.Cr = (USHORT)(( 0x00007062 * R - 0x00005e35 * G - 0x0000122d * B + 0x808000) >> 8);
 
-        pBltParams->BackgroundColor.Y  = IPP_MAX( IPP_MIN(255 << 8, pBltParams->BackgroundColor.Y),  0); // CLIP(val, 0, 255 << 8)
-        pBltParams->BackgroundColor.Cb = IPP_MAX( IPP_MIN(255 << 8, pBltParams->BackgroundColor.Cb), 0); // CLIP(val, 0, 255 << 8)
-        pBltParams->BackgroundColor.Cr = IPP_MAX( IPP_MIN(255 << 8, pBltParams->BackgroundColor.Cr), 0); // CLIP(val, 0, 255 << 8)
+        if (pBltParams->bTargetYuvFullRange)
+        {
+            pBltParams->BackgroundColor.Y = IPP_MAX(IPP_MIN(255 << 8, pBltParams->BackgroundColor.Y), 0); // CLIP(val, 0, 255 << 8)
+            pBltParams->BackgroundColor.Cb = IPP_MAX(IPP_MIN(255 << 8, pBltParams->BackgroundColor.Cb), 0); // CLIP(val, 0, 255 << 8)
+            pBltParams->BackgroundColor.Cr = IPP_MAX(IPP_MIN(255 << 8, pBltParams->BackgroundColor.Cr), 0); // CLIP(val, 0, 255 << 8)
+        }
+        else // 16 -235
+        {
+            pBltParams->BackgroundColor.Y = IPP_MAX(IPP_MIN(235 << 8, pBltParams->BackgroundColor.Y), 16); // CLIP(val, 16, 235 << 8)
+            pBltParams->BackgroundColor.Cb = IPP_MAX(IPP_MIN(240 << 8, pBltParams->BackgroundColor.Cb), 16); // CLIP(val, 16, 240 << 8)
+            pBltParams->BackgroundColor.Cr = IPP_MAX(IPP_MIN(240 << 8, pBltParams->BackgroundColor.Cr), 16); // CLIP(val, 16, 240 << 8)
+        }
     }
 
     return MFX_ERR_NONE;

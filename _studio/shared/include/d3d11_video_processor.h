@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -245,6 +245,11 @@ enum
 
 }; // FUNCTION ID
 
+enum
+{
+    D3D11_RGB_NOMINALRANGE_16_235 = 1,
+    D3D11_RGB_NOMINALRANGE_0_255 = 0,
+};// RGB Nominal Range MSDN:https://msdn.microsoft.com/en-us/library/windows/desktop/hh447651(v=vs.85).aspx
 
 typedef struct _VPE_VERSION
 {

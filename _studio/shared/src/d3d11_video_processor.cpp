@@ -2126,7 +2126,7 @@ mfxStatus D3D11VideoProcessor::ExecuteCameraPipe(mfxExecuteParams *pParams)
 
         D3D11_VIDEO_PROCESSOR_COLOR_SPACE inColorSpace;
         inColorSpace.Usage = 0;
-        inColorSpace.RGB_Range = 1;
+        inColorSpace.RGB_Range = D3D11_RGB_NOMINALRANGE_16_235;
         inColorSpace.YCbCr_Matrix = 0;
         inColorSpace.YCbCr_xvYCC = 0;
         inColorSpace.Nominal_Range = D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_UNDEFINED;
@@ -2134,7 +2134,7 @@ mfxStatus D3D11VideoProcessor::ExecuteCameraPipe(mfxExecuteParams *pParams)
 
         D3D11_VIDEO_PROCESSOR_COLOR_SPACE outColorSpace;
         outColorSpace.Usage = 0;
-        outColorSpace.RGB_Range = 1;
+        outColorSpace.RGB_Range = D3D11_RGB_NOMINALRANGE_16_235;
         outColorSpace.YCbCr_Matrix = 0;
         outColorSpace.YCbCr_xvYCC = 0;
         outColorSpace.Nominal_Range = D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_UNDEFINED;
@@ -2653,7 +2653,7 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         {
             D3D11_VIDEO_PROCESSOR_COLOR_SPACE inColorSpace;
             inColorSpace.Usage = 0;
-            inColorSpace.RGB_Range = 1;
+            inColorSpace.RGB_Range = D3D11_RGB_NOMINALRANGE_16_235;
             inColorSpace.YCbCr_Matrix = 0;
             inColorSpace.YCbCr_xvYCC = 0;
             inColorSpace.Nominal_Range = D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_UNDEFINED;
@@ -2662,7 +2662,7 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
 
             D3D11_VIDEO_PROCESSOR_COLOR_SPACE outColorSpace;
             outColorSpace.Usage = 0;
-            outColorSpace.RGB_Range = 1;
+            outColorSpace.RGB_Range = D3D11_RGB_NOMINALRANGE_16_235;
             outColorSpace.YCbCr_Matrix = 0;
             outColorSpace.YCbCr_xvYCC = 0;
             outColorSpace.Nominal_Range = D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_UNDEFINED;
@@ -2708,7 +2708,7 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         {
             D3D11_VIDEO_PROCESSOR_COLOR_SPACE inColorSpace;
             inColorSpace.Usage = 0;
-            inColorSpace.RGB_Range       = 0; 
+            inColorSpace.RGB_Range       = D3D11_RGB_NOMINALRANGE_0_255;
             inColorSpace.YCbCr_Matrix    = 0; // bt601
             inColorSpace.YCbCr_xvYCC     = 0;
             inColorSpace.Nominal_Range   = (inInfo->FourCC == MFX_FOURCC_RGB4) ? D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_0_255 : D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_16_235;
@@ -2717,7 +2717,7 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
 
             D3D11_VIDEO_PROCESSOR_COLOR_SPACE outColorSpace;
             outColorSpace.Usage         = 0;
-            outColorSpace.RGB_Range     = 0;//;
+            outColorSpace.RGB_Range     = D3D11_RGB_NOMINALRANGE_0_255;
             outColorSpace.YCbCr_Matrix  = 0; // bt601
             outColorSpace.YCbCr_xvYCC   = 0;
             outColorSpace.Nominal_Range = (outInfo->FourCC == MFX_FOURCC_RGB4) ? D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_0_255 : D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_16_235;
@@ -2731,15 +2731,19 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         {
             D3D11_VIDEO_PROCESSOR_COLOR_SPACE inColorSpace;
             inColorSpace.Usage         = 0;
-            inColorSpace.RGB_Range     = 0; // 16-245 range
+            inColorSpace.RGB_Range     = D3D11_RGB_NOMINALRANGE_0_255;
             inColorSpace.YCbCr_Matrix  = 0; // bt601
             inColorSpace.YCbCr_xvYCC   = 0;
-            inColorSpace.Nominal_Range = D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_16_235;
+            inColorSpace.Nominal_Range = (inInfo->FourCC == MFX_FOURCC_RGB4) ? D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_0_255 : D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_16_235;
 
             if (pParams->VideoSignalInfo[index].NominalRange == MFX_NOMINALRANGE_0_255)
             {
                 inColorSpace.Nominal_Range = D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_0_255;
-                inColorSpace.RGB_Range     = 1;
+            }
+            if (pParams->VideoSignalInfo[index].NominalRange == MFX_NOMINALRANGE_16_235)
+            {
+                inColorSpace.RGB_Range = D3D11_RGB_NOMINALRANGE_16_235;
+                inColorSpace.Nominal_Range = D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_16_235;
             }
             if (pParams->VideoSignalInfo[index].TransferMatrix == MFX_TRANSFERMATRIX_BT709)
             {
@@ -2753,15 +2757,19 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         {
             D3D11_VIDEO_PROCESSOR_COLOR_SPACE outColorSpace;
             outColorSpace.Usage         = 0;
-            outColorSpace.RGB_Range     = 0;
+            outColorSpace.RGB_Range     = D3D11_RGB_NOMINALRANGE_0_255;
             outColorSpace.YCbCr_Matrix  = 0;
             outColorSpace.YCbCr_xvYCC   = 0;
-            outColorSpace.Nominal_Range = D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_16_235;
+            outColorSpace.Nominal_Range = (outInfo->FourCC == MFX_FOURCC_RGB4) ? D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_0_255 : D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_16_235;
 
             if (pParams->VideoSignalInfoOut.NominalRange == MFX_NOMINALRANGE_0_255)
             {
                 outColorSpace.Nominal_Range = D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_0_255;
-                outColorSpace.RGB_Range     = 1;
+            }
+            if (pParams->VideoSignalInfo[index].NominalRange == MFX_NOMINALRANGE_16_235)
+            {
+                outColorSpace.RGB_Range = D3D11_RGB_NOMINALRANGE_16_235;
+                outColorSpace.Nominal_Range = D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_16_235;
             }
 
             if (pParams->VideoSignalInfoOut.TransferMatrix == MFX_TRANSFERMATRIX_BT709)
@@ -2812,6 +2820,8 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
     }
 
     // [12] background color
+    D3D11_VIDEO_PROCESSOR_COLOR_SPACE realColorSpace;
+    GetOutputColorSpace(&realColorSpace);
     BOOL bYCbCr = TRUE;
     D3D11_VIDEO_COLOR Color = {0};
 
@@ -2822,11 +2832,20 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         outInfo->FourCC == MFX_FOURCC_AYUV )
     {
         bYCbCr = TRUE;
-
-        Color.YCbCr.A  = ((pParams->iBackgroundColor >> 48) & 0xff) / 255.0f;
-        Color.YCbCr.Y  = ((pParams->iBackgroundColor >> 32) & 0xff) / 255.0f;
-        Color.YCbCr.Cb = ((pParams->iBackgroundColor >> 16) & 0xff) / 255.0f;
-        Color.YCbCr.Cr = ((pParams->iBackgroundColor      ) & 0xff) / 255.0f;
+        if (realColorSpace.Nominal_Range == D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_0_255)
+        {
+            Color.YCbCr.A = ((pParams->iBackgroundColor >> 48) & 0xff) / 255.0f;
+            Color.YCbCr.Y = ((pParams->iBackgroundColor >> 32) & 0xff) / 255.0f;
+            Color.YCbCr.Cb = ((pParams->iBackgroundColor >> 16) & 0xff) / 255.0f;
+            Color.YCbCr.Cr = ((pParams->iBackgroundColor) & 0xff) / 255.0f;
+        }
+        else //default D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_16_235
+        {
+            Color.YCbCr.A = ((pParams->iBackgroundColor >> 48) & 0xff) / 255.0f;
+            Color.YCbCr.Y = (((pParams->iBackgroundColor >> 32) & 0xff) - 16) / 219.0f;
+            Color.YCbCr.Cb = (((pParams->iBackgroundColor >> 16) & 0xff) - 16) / 224.0f;
+            Color.YCbCr.Cr = (((pParams->iBackgroundColor) & 0xff) - 16) / 224.0f;
+        }
     }
     if (outInfo->FourCC == MFX_FOURCC_P010 ||
 #if defined (PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= MFX_VERSION_NEXT)
@@ -2837,10 +2856,20 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
     {
         bYCbCr = TRUE;
 
-        Color.YCbCr.A  = ((pParams->iBackgroundColor >> 48) & 0x03ff) / 1023.0f;
-        Color.YCbCr.Y  = ((pParams->iBackgroundColor >> 32) & 0x03ff) / 1023.0f;
-        Color.YCbCr.Cb = ((pParams->iBackgroundColor >> 16) & 0x03ff) / 1023.0f;
-        Color.YCbCr.Cr = ((pParams->iBackgroundColor)       & 0x03ff) / 1023.0f;
+        if (realColorSpace.Nominal_Range == D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_0_255)
+        {
+            Color.YCbCr.A = ((pParams->iBackgroundColor >> 48) & 0x03ff) / 1023.0f;
+            Color.YCbCr.Y = ((pParams->iBackgroundColor >> 32) & 0x03ff) / 1023.0f;
+            Color.YCbCr.Cb = ((pParams->iBackgroundColor >> 16) & 0x03ff) / 1023.0f;
+            Color.YCbCr.Cr = ((pParams->iBackgroundColor) & 0x03ff) / 1023.0f;
+        }
+        else //default D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_16_235
+        {
+            Color.YCbCr.A = ((pParams->iBackgroundColor >> 48) & 0x03ff) / 1023.0f;
+            Color.YCbCr.Y = (((pParams->iBackgroundColor >> 32) & 0x03ff) - 64) / 876.0f;
+            Color.YCbCr.Cb = (((pParams->iBackgroundColor >> 16) & 0x03ff) - 64) / 896.0f;
+            Color.YCbCr.Cr = (((pParams->iBackgroundColor) & 0x03ff) - 64) / 896.0f;
+        }
     }
     if (outInfo->FourCC == MFX_FOURCC_RGB3    ||
         outInfo->FourCC == MFX_FOURCC_RGB4    ||
@@ -2850,11 +2879,20 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         outInfo->FourCC == MFX_FOURCC_R16)
     {
         bYCbCr = FALSE;
-
-        Color.RGBA.A = ((pParams->iBackgroundColor >> 48) & 0xff) / 255.0f;
-        Color.RGBA.R = ((pParams->iBackgroundColor >> 32) & 0xff) / 255.0f;
-        Color.RGBA.G = ((pParams->iBackgroundColor >> 16) & 0xff) / 255.0f;
-        Color.RGBA.B = ((pParams->iBackgroundColor      ) & 0xff) / 255.0f;
+        if (realColorSpace.RGB_Range == D3D11_RGB_NOMINALRANGE_16_235)
+        {
+            Color.RGBA.A = ((pParams->iBackgroundColor >> 48) & 0xff) / 255.0f;
+            Color.RGBA.R = (((pParams->iBackgroundColor >> 32) & 0xff) - 16) / 219.0f;
+            Color.RGBA.G = (((pParams->iBackgroundColor >> 16) & 0xff) - 16) / 219.0f;
+            Color.RGBA.B = (((pParams->iBackgroundColor) & 0xff) - 16) / 219.0f;
+        }
+        else
+        {
+            Color.RGBA.A = ((pParams->iBackgroundColor >> 48) & 0xff) / 255.0f;
+            Color.RGBA.R = ((pParams->iBackgroundColor >> 32) & 0xff) / 255.0f;
+            Color.RGBA.G = ((pParams->iBackgroundColor >> 16) & 0xff) / 255.0f;
+            Color.RGBA.B = ((pParams->iBackgroundColor) & 0xff) / 255.0f;
+        }
     }
 
     SetOutputBackgroundColor(bYCbCr, &Color);
