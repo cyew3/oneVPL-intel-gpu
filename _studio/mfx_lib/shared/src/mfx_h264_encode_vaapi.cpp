@@ -2691,7 +2691,7 @@ mfxStatus VAAPIEncoder::Execute(
                                                           m_vaContextEncode, m_maxFrameSizeId), MFX_ERR_DEVICE_FAILED);
     configBuffers[buffersCount++] = m_maxFrameSizeId;
 
-#if !defined(MFX_VA_ANDROID)
+#if !defined(ANDROID)
 /*
  *  By default (0) - driver will decide.
  *  1 - disable trellis quantization

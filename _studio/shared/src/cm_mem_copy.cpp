@@ -2291,7 +2291,7 @@ CmSurface2D * CmCopyWrapper::CreateCmSurface2D(void *pSrc, mfxU32 width, mfxU32 
             ((IDirect3DSurface9 *)pSrc)->UnlockRect();
 #endif // MFX_VA_WIN
 
-#if defined(MFX_VA_LINUX) || defined(MFX_VA_ANDROID)
+#if defined(MFX_VA_LINUX)
             m_pCmDevice->CreateSurface2D(width, height, (CM_SURFACE_FORMAT)(MFX_MAKEFOURCC('N', 'V', '1', '2')), pCmSurface2D);
 #endif
         }

@@ -71,14 +71,6 @@
         #undef  UMC_VA_LINUX
         #define UMC_VA_LINUX
 
-        /* Android and Linux uses one video acceleration library: LibVA, but
-         * it is possible that their versions are different (especially during
-         * development). To simplify code development MFX_VA_ANDROID macro is introduced.
-         */
-        #if defined(ANDROID)
-            #define MFX_VA_ANDROID
-        #endif // #if defined(ANDROID)
-
     #elif defined(_WIN32) || defined(_WIN64)
 
         #undef  MFX_VA_WIN
