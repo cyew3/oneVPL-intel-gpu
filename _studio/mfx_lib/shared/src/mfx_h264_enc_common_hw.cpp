@@ -2368,9 +2368,9 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
                 changed = true;
     }
 
-#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (par.Protected != 0)
     {
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         if (!IsProtectionPavp(par.Protected) && !IsProtectionHdcp(par.Protected))
         {
             unsupported = true;
@@ -2409,8 +2409,11 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
                 extPavp->CounterIncrement = 0xC000;
             }
         }
-    }
+#else
+        unsupported = true;
+        par.Protected = 0;
 #endif // #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
+    }
 
     if (par.IOPattern != 0)
     {
