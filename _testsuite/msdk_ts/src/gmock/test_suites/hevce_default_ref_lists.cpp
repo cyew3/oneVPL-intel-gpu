@@ -524,11 +524,10 @@ namespace hevce_default_ref_lists
                     if (isPPyramid)
                     {
                         // For P-pyramid we remove oldest references
-                        // with the highest layer except the closest reference.
+                        // with the highest layer except the closest frame or field pair.
 
                         if (bIsFieldCoding)
                         {
-
                             std::sort(L0.begin(), L0.end(), [&](const Frame & lhs_frame, const Frame & rhs_frame)
                                                             {
                                                                 return !preferSamePolarity(lhs_frame, rhs_frame);
@@ -547,7 +546,10 @@ namespace hevce_default_ref_lists
                             auto weak = L0.begin();
                             for (auto it = L0.begin(); it != L0.end(); it ++)
                             {
-                                if (weak->PLayer < it->PLayer && it->poc != L0.back().poc)
+                                if (weak->PLayer < it->PLayer &&
+                                    (bIsFieldCoding ?
+                                        it->poc != L0.rbegin()[0].poc && it->poc != L0.rbegin()[1].poc :
+                                        it->poc != L0.rbegin()[0].poc))
                                 {
                                     weak = it;
                                 }
