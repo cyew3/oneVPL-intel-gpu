@@ -257,6 +257,8 @@ mfxStatus BufferedBitstreamReader::ReadNextFrame(mfxBitstream2 &bs)
             m_CurrFrame++;
         }
     }
+    else
+        return MFX_ERR_NOT_ENOUGH_BUFFER;
 
     return MFX_ERR_NONE;
 }
