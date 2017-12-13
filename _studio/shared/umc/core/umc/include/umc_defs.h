@@ -50,7 +50,7 @@
 // Linux on IA32
 */
 
-#if defined(LINUX32) || defined(__APPLE__)
+#if (defined(LINUX32) || defined(__APPLE__)) && !defined(ANDROID)
 
     // video decoders
     #define UMC_ENABLE_MJPEG_VIDEO_DECODER
@@ -87,8 +87,20 @@
 
 #if defined(ANDROID)
 
+    // video decoders
+    #define UMC_ENABLE_MJPEG_VIDEO_DECODER
+    #define UMC_ENABLE_VC1_VIDEO_DECODER
+    #define UMC_ENABLE_H264_VIDEO_DECODER
     #define UMC_ENABLE_H265_VIDEO_DECODER
+    #define UMC_ENABLE_MPEG2_VIDEO_DECODER
     #define UMC_ENABLE_VP9_VIDEO_DECODER
+
+    // video encoders
+    #define UMC_ENABLE_H264_VIDEO_ENCODER
+    #define UMC_ENABLE_MVC_VIDEO_ENCODER
+    #define UMC_ENABLE_MJPEG_VIDEO_ENCODER
+
+    #define UMC_ENABLE_UMC_SCENE_ANALYZER
 
 #endif // Android
 
