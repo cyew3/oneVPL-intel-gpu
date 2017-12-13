@@ -242,8 +242,8 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("  -w            Destination picture width, invokes VPP resize\n"));
     msdk_printf(MSDK_STRING("  -h            Destination picture height, invokes VPP resize\n"));
     msdk_printf(MSDK_STRING("  -field_processing t2t|t2b|b2t|b2b|fr2fr - Field Copy feature\n"));
-    msdk_printf(MSDK_STRING("  -WeightedPred 1/2/3\n"));
-    msdk_printf(MSDK_STRING("  -WeightedBiPred 1/2/3 - 1 - default, 2 - explicit, 3 - implicit\n"));
+    msdk_printf(MSDK_STRING("  -WeightedPred::default|implicit       Enambles weighted prediction usage\n"));
+    msdk_printf(MSDK_STRING("  -WeightedBiPred::default|implicit     Enambles weighted bi-prediction usage\n"));
 
 #if (MFX_VERSION >= 1024)
     msdk_printf(MSDK_STRING("  -extbrc::<on,off>           Enables external BRC for AVC and HEVC encoders"));
@@ -1118,25 +1118,21 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
                 InputParams.nTargetUsage = MFX_TARGETUSAGE_BALANCED;
             }
         }
-        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-WeightedPred")))
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-WeightedPred::default")))
         {
-            VAL_CHECK(i + 1 == argc, i, argv[i]);
-            i++;
-            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.WeightedPred))
-            {
-                PrintError(MSDK_STRING(" \"%s\" WeightedPred is invalid"), argv[i]);
-                return MFX_ERR_UNSUPPORTED;
-            }
+            InputParams.WeightedPred = MFX_WEIGHTED_PRED_DEFAULT;
         }
-        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-WeightedBiPred")))
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-WeightedPred::implicit")))
         {
-            VAL_CHECK(i + 1 == argc, i, argv[i]);
-            i++;
-            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.WeightedBiPred))
-            {
-                PrintError(MSDK_STRING(" \"%s\" WeightedBiPred is invalid"), argv[i]);
-                return MFX_ERR_UNSUPPORTED;
-            }
+            InputParams.WeightedPred = MFX_WEIGHTED_PRED_IMPLICIT;
+        }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-WeightedBiPred::default")))
+        {
+            InputParams.WeightedBiPred = MFX_WEIGHTED_PRED_DEFAULT;
+        }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-WeightedBiPred::implicit")))
+        {
+            InputParams.WeightedBiPred = MFX_WEIGHTED_PRED_IMPLICIT;
         }
         else if(0 == msdk_strcmp(argv[i], MSDK_STRING("-q")))
         {

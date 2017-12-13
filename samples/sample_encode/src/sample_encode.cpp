@@ -128,8 +128,8 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
                             It can benefit the video quality \n"));
     msdk_printf(MSDK_STRING("   [-LowDelayBRC]           - strictly obey average frame size set by MaxKbps\n"));
     msdk_printf(MSDK_STRING("   [-signal:tm ]            - represents transfer matrix coefficients for mfxExtVideoSignalInfo. 0 - unknown, 1 - BT709, 2 - BT601\n"));
-    msdk_printf(MSDK_STRING("   [-WeightedPred: 1/2/3]\n"));
-    msdk_printf(MSDK_STRING("   [-WeightedBiPred: 1/2/3>] - 1 - default, 2 - explicit, 3 - implicit\n"));
+    msdk_printf(MSDK_STRING("   [-WeightedPred:default|implicit ]   - enables weighted prediction mode\n"));
+    msdk_printf(MSDK_STRING("   [-WeightedBiPred:default|implicit ] - enables weighted bi-prediction mode\n"));
     msdk_printf(MSDK_STRING("   [-timeout]               - encoding in cycle not less than specific time in seconds\n"));
     msdk_printf(MSDK_STRING("   [-membuf]                - size of memory buffer in frames\n"));
     msdk_printf(MSDK_STRING("   [-uncut]                 - do not cut output file in looped mode (in case of -timeout option)\n"));
@@ -512,25 +512,21 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 return MFX_ERR_UNSUPPORTED;
             }
         }
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-WeightedPred")))
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-WeightedPred:default")))
         {
-            VAL_CHECK(i + 1 >= nArgNum, i, strInput[i]);
-
-            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->WeightedPred))
-            {
-                PrintHelp(strInput[0], MSDK_STRING("WeightedPred is invalid"));
-                return MFX_ERR_UNSUPPORTED;
-            }
+            pParams->WeightedPred = MFX_WEIGHTED_PRED_DEFAULT;
         }
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-WeightedBiPred")))
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-WeightedPred:implicit")))
         {
-            VAL_CHECK(i + 1 >= nArgNum, i, strInput[i]);
-
-            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->WeightedBiPred))
-            {
-                PrintHelp(strInput[0], MSDK_STRING("WeightedBiPred is invalid"));
-                return MFX_ERR_UNSUPPORTED;
-            }
+            pParams->WeightedPred = MFX_WEIGHTED_PRED_IMPLICIT;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-WeightedBiPred:default")))
+        {
+            pParams->WeightedBiPred = MFX_WEIGHTED_PRED_DEFAULT;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-WeightedBiPred:implicit")))
+        {
+            pParams->WeightedBiPred = MFX_WEIGHTED_PRED_IMPLICIT;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-uncut")))
         {
