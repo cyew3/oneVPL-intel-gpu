@@ -194,6 +194,13 @@ public:
 
             if (pDecodeErrorReport->ErrorTypes & MFX_ERROR_PPS)
                 msdk_printf(MSDK_STRING("[Error] PPS Error detected!\n"));
+
+            if (pDecodeErrorReport->ErrorTypes & MFX_ERROR_SLICEHEADER)
+                msdk_printf(MSDK_STRING("[Error] SliceHeader Error detected!\n"));
+
+            if (pDecodeErrorReport->ErrorTypes & MFX_ERROR_FRAME_GAP)
+                msdk_printf(MSDK_STRING("[Error] Frame Gap Error detected!\n"));
+
         }
     }
 #endif
