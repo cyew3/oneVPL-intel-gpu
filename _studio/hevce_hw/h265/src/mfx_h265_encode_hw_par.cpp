@@ -1468,6 +1468,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         invalid += CheckOption(par.mfx.FrameInfo.ChromaFormat, (mfxU16)MFX_CHROMAFORMAT_YUV444);
         invalid += CheckOption(par.mfx.FrameInfo.BitDepthLuma, 8, 0);
         invalid += CheckOption(par.mfx.FrameInfo.BitDepthChroma, 8, 0);
+        break;
     case MFX_FOURCC_A2RGB10:
     case MFX_FOURCC_Y410:
         invalid += CheckOption(par.mfx.FrameInfo.ChromaFormat, (mfxU16)MFX_CHROMAFORMAT_YUV444);
