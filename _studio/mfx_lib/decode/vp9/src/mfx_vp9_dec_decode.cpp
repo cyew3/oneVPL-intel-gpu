@@ -1441,7 +1441,7 @@ bool CheckVideoParam(mfxVideoParam *p_in, eMFXPlatform platform)
     return true;
 }
 
-mfxStatus DecodeHeader(VideoCORE* /*core*/, mfxBitstream* bs, mfxVideoParam* params)
+mfxStatus DecodeHeader(VideoCORE* core, mfxBitstream* bs, mfxVideoParam* params)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
@@ -1585,14 +1585,14 @@ mfxStatus DecodeHeader(VideoCORE* /*core*/, mfxBitstream* bs, mfxVideoParam* par
         return MFX_ERR_MORE_DATA;
     }
 
-    FillVideoParam(frame, params);
+    FillVideoParam(core, frame, params);
 
     return MFX_ERR_NONE;
 }
 
-mfxStatus FillVideoParam(UMC_VP9_DECODER::VP9DecoderFrame const& frame, mfxVideoParam* params)
+mfxStatus FillVideoParam(VideoCORE* core, UMC_VP9_DECODER::VP9DecoderFrame const& frame, mfxVideoParam* params)
 {
-    MFX_CHECK_NULL_PTR1(params);
+    MFX_CHECK_NULL_PTR2(core, params);
 
     params->mfx.CodecProfile = mfxU16(frame.profile + 1);
 
@@ -1653,6 +1653,17 @@ mfxStatus FillVideoParam(UMC_VP9_DECODER::VP9DecoderFrame const& frame, mfxVideo
             params->mfx.FrameInfo.BitDepthLuma   = 12;
             params->mfx.FrameInfo.BitDepthChroma = 12;
             break;
+    }
+
+    if (core->GetPlatformType() == MFX_PLATFORM_HARDWARE)
+    {
+        if (   params->mfx.FrameInfo.FourCC == MFX_FOURCC_P010
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+            || params->mfx.FrameInfo.FourCC == MFX_FOURCC_P016
+            || params->mfx.FrameInfo.FourCC == MFX_FOURCC_Y416
+#endif //PRE_SI_TARGET_PLATFORM_GEN12
+        )
+            params->mfx.FrameInfo.Shift = 1;
     }
 
     return MFX_ERR_NONE;

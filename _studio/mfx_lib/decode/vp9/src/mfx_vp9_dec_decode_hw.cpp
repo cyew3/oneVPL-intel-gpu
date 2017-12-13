@@ -527,7 +527,7 @@ void VideoDECODEVP9_HW::UpdateVideoParam(mfxVideoParam *par, VP9DecoderFrame con
 {
     VM_ASSERT(par);
 
-    MFX_VP9_Utility::FillVideoParam(frameInfo, par);
+    MFX_VP9_Utility::FillVideoParam(m_core, frameInfo, par);
 
     if (   par->mfx.FrameInfo.FourCC == MFX_FOURCC_P010
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
