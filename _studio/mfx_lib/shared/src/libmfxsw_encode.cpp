@@ -20,6 +20,7 @@
 #include <mfx_task.h>
 
 #include "mfxvideo++int.h"
+
 #if defined (MFX_ENABLE_H264_VIDEO_ENCODE)
 #if defined(MFX_VA)
 #include "mfx_h264_encode_hw.h"

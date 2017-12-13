@@ -38,7 +38,7 @@ extern "C"
 }
 #endif /* __cplusplus */
 
-#else // ANDROID
+#else // !defined(ANDROID)
 
 # include "safe_str_lib.h"
 

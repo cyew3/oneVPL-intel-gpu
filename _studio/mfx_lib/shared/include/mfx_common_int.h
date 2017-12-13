@@ -17,9 +17,6 @@
 #include "mfx_common.h"
 #include "mfxaudio.h"
 
-#if defined(ANDROID)
-typedef int error_t;
-#endif
 
 mfxStatus CheckFrameInfoCommon(mfxFrameInfo  *info, mfxU32 codecId);
 mfxStatus CheckFrameInfoEncoders(mfxFrameInfo  *info);
