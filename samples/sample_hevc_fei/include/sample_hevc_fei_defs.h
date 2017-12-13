@@ -149,6 +149,9 @@ struct sInputParams
         // enable internal L0/L1 predictors: 1 - spatial predictors
         encodeCtrl.MultiPred[0] = encodeCtrl.MultiPred[1] = 1;
         encodeCtrl.MVPredictor = 0; // disabled MV predictors
+        //set default values for NumMvPredictors
+        encodeCtrl.NumMvPredictors[0] = 3;
+        encodeCtrl.NumMvPredictors[1] = 1;
     }
 
 };

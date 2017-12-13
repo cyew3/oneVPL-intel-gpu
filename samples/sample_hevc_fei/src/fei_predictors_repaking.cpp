@@ -31,22 +31,27 @@ PredictorsRepaking::PredictorsRepaking() :
     m_widthCU_ds(0),
     m_heightCU_ds(0),
     m_widthCU_enc(0),
-    m_heightCU_enc(0)
+    m_heightCU_enc(0),
+    m_NumMvPredictorsL0(0),
+    m_NumMvPredictorsL1(0)
 {}
 
-mfxStatus PredictorsRepaking::Init(const mfxVideoParam& videoParams, mfxU8 downsample_ratio)
+mfxStatus PredictorsRepaking::Init(const mfxVideoParam& videoParams, mfxU16 preencDSfactor, const mfxU16 numMvPredictors[2])
 {
     if (videoParams.mfx.FrameInfo.Width == 0 || videoParams.mfx.FrameInfo.Height == 0)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
     m_width = videoParams.mfx.FrameInfo.Width;
     m_height = videoParams.mfx.FrameInfo.Height;
-    m_downsample_power2 = ConvertDSratioPower2(downsample_ratio);
+    m_downsample_power2 = ConvertDSratioPower2(preencDSfactor);
 
     m_widthCU_ds   = (MSDK_ALIGN16((MSDK_ALIGN16(m_width) >> m_downsample_power2))) >> 4;
     m_heightCU_ds  = (MSDK_ALIGN16((MSDK_ALIGN16(m_height) >> m_downsample_power2))) >> 4;
     m_widthCU_enc  = (MSDK_ALIGN32(m_width)) >> 4;
     m_heightCU_enc = (MSDK_ALIGN32(m_height)) >> 4;
+
+    m_NumMvPredictorsL0 = numMvPredictors[0];
+    m_NumMvPredictorsL1 = numMvPredictors[1];
 
     return MFX_ERR_NONE;
 }
@@ -92,7 +97,9 @@ mfxStatus PredictorsRepaking::RepackPredictorsPerformance(const HevcTask& eTask,
     std::vector<mfxExtFeiPreEncMVExtended*> mvs_vec;
     std::vector<const RefIdxPair*>          refIdx_vec;
 
-    mfxU8 numPredPairs = (std::min)(m_max_fei_enc_mvp_num, (std::max)(eTask.m_numRefActive[0], eTask.m_numRefActive[1]));
+    mfxU8 numFinalL0Predictors = (std::min)(eTask.m_numRefActive[0], (mfxU8)m_NumMvPredictorsL0);
+    mfxU8 numFinalL1Predictors = (std::min)(eTask.m_numRefActive[1], (mfxU8)m_NumMvPredictorsL1);
+    mfxU8 numPredPairs = (std::min)(m_max_fei_enc_mvp_num, (std::max)(numFinalL0Predictors, numFinalL1Predictors));
 
     // I-frames, nothing to do
     if (numPredPairs == 0 || (eTask.m_frameType & MFX_FRAMETYPE_I))
@@ -209,8 +216,8 @@ mfxStatus PredictorsRepaking::RepackPredictorsPerformance(const HevcTask& eTask,
      * so it's valid to set a number of MVPs according to number of active references for a current frame.
      * Such approach mitigates the code problem above
      * that we don't clean up MVPs remained in mfxExtFeiHevcEncMVPredictors buffer from previous calls. */
-    nMvPredictors[0] = eTask.m_numRefActive[0];
-    nMvPredictors[1] = eTask.m_numRefActive[1];
+    nMvPredictors[0] = numFinalL0Predictors;
+    nMvPredictors[1] = numFinalL1Predictors;
 
     return MFX_ERR_NONE;
 }
@@ -223,7 +230,9 @@ mfxStatus PredictorsRepaking::RepackPredictorsQuality(const HevcTask& eTask, mfx
     std::vector<mfxExtFeiPreEncMBStatExtended*> mbs_vec;
     std::vector<const RefIdxPair*>              refIdx_vec;
 
-    mfxU8 numPredPairs = (std::min)(m_max_fei_enc_mvp_num, (std::max)(eTask.m_numRefActive[0], eTask.m_numRefActive[1]));
+    mfxU8 numFinalL0Predictors = (std::min)(eTask.m_numRefActive[0], (mfxU8)m_NumMvPredictorsL0);
+    mfxU8 numFinalL1Predictors = (std::min)(eTask.m_numRefActive[1], (mfxU8)m_NumMvPredictorsL1);
+    mfxU8 numPredPairs = (std::min)(m_max_fei_enc_mvp_num, (std::max)(numFinalL0Predictors, numFinalL1Predictors));
 
     // I-frames, nothing to do
     if (numPredPairs == 0 || (eTask.m_frameType & MFX_FRAMETYPE_I))

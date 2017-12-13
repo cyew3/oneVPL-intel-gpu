@@ -559,7 +559,7 @@ FEI_Encode* CEncodingPipeline::CreateEncode(mfxFrameInfo& in_fi)
     if (m_inParams.bPREENC || (0 != msdk_strlen(m_inParams.mvpInFile) && m_inParams.bFormattedMVPin))
     {
         pRepacker.reset(new PredictorsRepaking());
-        sts = pRepacker->Init(pars, m_inParams.preencDSfactor);
+        sts = pRepacker->Init(pars, m_inParams.preencDSfactor, m_inParams.encodeCtrl.NumMvPredictors);
         CHECK_STS_AND_RETURN(sts, "CreateEncode::pRepacker->Init failed", NULL);
 
         pRepacker->SetPerfomanceRepackingMode();

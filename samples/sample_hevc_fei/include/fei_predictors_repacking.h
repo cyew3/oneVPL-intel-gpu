@@ -29,7 +29,7 @@ public:
     PredictorsRepaking();
     ~PredictorsRepaking() {}
 
-    mfxStatus Init(const mfxVideoParam& videoParams, mfxU8 preencDSstrength = 1);
+    mfxStatus Init(const mfxVideoParam& videoParams, mfxU16 preencDSfactor, const mfxU16 numMvPredictors[2]);
     mfxStatus RepackPredictors(const HevcTask& eTask, mfxExtFeiHevcEncMVPredictors& mvp, mfxU16 nMvPredictors[2]);
 
     enum
@@ -52,6 +52,8 @@ private:
     mfxU16 m_heightCU_ds;        // height in CU (16x16) of ds surface
     mfxU16 m_widthCU_enc;        // width in CU (16x16) for encoder
     mfxU16 m_heightCU_enc;       // height in CU (16x16) for encoder
+    mfxU16 m_NumMvPredictorsL0;  // maximum number of predictors for L0
+    mfxU16 m_NumMvPredictorsL1;  // maximum number of predictors for L1
 
     //functions
     mfxStatus RepackPredictorsPerformance(const HevcTask& eTask, mfxExtFeiHevcEncMVPredictors& mvp, mfxU16 nMvPredictors[2]);

@@ -79,9 +79,9 @@ void PrintHelp(const msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-gop_opt closed|strict] - GOP optimization flags (can be used together)\n"));
     msdk_printf(MSDK_STRING("   [-r (-GopRefDist) distance] - Distance between I- or P- key frames (1 means no B-frames) (0 - by default(I frames))\n"));
     msdk_printf(MSDK_STRING("   [-num_ref (-NumRefFrame) numRefs] - number of reference frames\n"));
-    msdk_printf(MSDK_STRING("   [-NumRefActiveP   numRefs] - number of maximum allowed references for P frames (up to 4)\n"));
-    msdk_printf(MSDK_STRING("   [-NumRefActiveBL0 numRefs] - number of maximum allowed backward references for B frames (up to 4)\n"));
-    msdk_printf(MSDK_STRING("   [-NumRefActiveBL1 numRefs] - number of maximum allowed forward references for B frames (up to 2)\n"));
+    msdk_printf(MSDK_STRING("   [-NumRefActiveP   numRefs] - number of maximum allowed references for P frames (up to 3)\n"));
+    msdk_printf(MSDK_STRING("   [-NumRefActiveBL0 numRefs] - number of maximum allowed backward references for B frames (up to 3)\n"));
+    msdk_printf(MSDK_STRING("   [-NumRefActiveBL1 numRefs] - number of maximum allowed forward references for B frames (up to 1)\n"));
     msdk_printf(MSDK_STRING("   [-NumPredictorsL0 numPreds] - number of maximum L0 predictors (default - assign depending on the frame type)\n"));
     msdk_printf(MSDK_STRING("   [-NumPredictorsL1 numPreds] - number of maximum L1 predictors (default - assign depending on the frame type)\n"));
     msdk_printf(MSDK_STRING("   [-MultiPredL0 type] - use internal L0 MV predictors (0 - no internal MV predictor, 1 - spatial internal MV predictors)\n"));
@@ -465,19 +465,19 @@ mfxStatus CheckOptions(const sInputParams params, const msdk_char* appName)
         PrintHelp(appName, "Invalid QP value (must be in range [0, 51])");
         return MFX_ERR_UNSUPPORTED;
     }
-    if (params.NumRefActiveP > 4)
+    if (params.NumRefActiveP > 3)
     {
-        PrintHelp(appName, "Unsupported NumRefActiveP value (must be in range [0,4])");
+        PrintHelp(appName, "Unsupported NumRefActiveP value (must be in range [0,3])");
         return MFX_ERR_UNSUPPORTED;
     }
-    if (params.NumRefActiveBL0 > 4)
+    if (params.NumRefActiveBL0 > 3)
     {
-        PrintHelp(appName, "Unsupported NumRefActiveBL0 value (must be in range [0,4])");
+        PrintHelp(appName, "Unsupported NumRefActiveBL0 value (must be in range [0,3])");
         return MFX_ERR_UNSUPPORTED;
     }
-    if (params.NumRefActiveBL1 > 2)
+    if (params.NumRefActiveBL1 > 1)
     {
-        PrintHelp(appName, "Unsupported NumRefActiveBL1 value (must be in range [0,2])");
+        PrintHelp(appName, "Unsupported NumRefActiveBL1 value (must be in range [0,1])");
         return MFX_ERR_UNSUPPORTED;
     }
     if (params.encodeCtrl.NumMvPredictors[0] > 4)
