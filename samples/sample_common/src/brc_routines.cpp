@@ -421,6 +421,7 @@ mfxStatus ExtBRC::Init (mfxVideoParam* par)
 
     m_ctx.fAbLong  = m_par.inputBitsPerFrame;
     m_ctx.fAbShort = m_par.inputBitsPerFrame;
+    m_ctx.encOrder = mfxU32(-1);
 
     mfxI32 rawSize = GetRawFrameSize(m_par.width * m_par.height ,m_par.chromaFormat, m_par.bitDepthLuma);
     mfxI32 qp = GetNewQP(rawSize, m_par.inputBitsPerFrame, m_par.quantMinI, m_par.quantMaxI, 1 , m_par.quantOffset, 0.5, false, false);
@@ -644,7 +645,7 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
         // Frame must be recoded, but encoder calls BR for another frame
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
-    if (frame_par->NumRecode == 0)
+    if (frame_par->NumRecode == 0 || m_ctx.encOrder != frame_par->EncodedOrder)
     {
         // Set context for new frame
         if (picType == MFX_FRAMETYPE_I)
@@ -689,12 +690,12 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
         {
             bSHStart = true;
             m_ctx.SceneChange |= 16;
-            m_ctx.SChPoc = frame_par->DisplayOrder;
             m_ctx.eRateSH = eRate;
-            if ((frame_par->DisplayOrder - m_ctx.SChPoc) >= (mfxU32)(m_par.frameRate*2.0))
+            if ((frame_par->DisplayOrder - m_ctx.SChPoc) >= IPP_MIN((mfxU32)(m_par.frameRate), m_par.gopRefDist))
             {
                 m_ctx.dQuantAb  = 1./m_ctx.Quant;
             }
+            m_ctx.SChPoc = frame_par->DisplayOrder;
             //printf("!!!!!!!!!!!!!!!!!!!!! %d m_ctx.SceneChange %d, order %d\n", frame_par->EncodedOrder, m_ctx.SceneChange, frame_par->DisplayOrder);
         }
 
