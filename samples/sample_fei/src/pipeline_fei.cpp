@@ -725,25 +725,25 @@ mfxStatus CEncodingPipeline::ResetIOFiles(const AppConfig & Config)
     }
     else if (m_pDECODE)
     {
-        m_pDECODE->ResetState();
+        sts = m_pDECODE->ResetState();
         MSDK_CHECK_STATUS(sts, "DECODE: ResetState failed");
     }
 
     if (m_pFEI_PreENC)
     {
-        m_pFEI_PreENC->ResetState();
+        sts = m_pFEI_PreENC->ResetState();
         MSDK_CHECK_STATUS(sts, "FEI PreENC: ResetState failed");
     }
 
     if (m_pFEI_ENCODE)
     {
-        m_pFEI_ENCODE->ResetState();
+        sts = m_pFEI_ENCODE->ResetState();
         MSDK_CHECK_STATUS(sts, "FEI ENCODE: ResetState failed");
     }
 
     if (m_pFEI_ENCPAK)
     {
-        m_pFEI_ENCPAK->ResetState();
+        sts = m_pFEI_ENCPAK->ResetState();
         MSDK_CHECK_STATUS(sts, "FEI ENCPAK: ResetState failed");
     }
 
