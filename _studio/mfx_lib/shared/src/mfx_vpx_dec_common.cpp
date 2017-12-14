@@ -413,6 +413,8 @@ namespace MFX_VPX_Utility
         return MFX_ERR_NONE;
     }
 
+#ifndef OPEN_SOURCE
+    // the function is used only by SW VP8/VP9 decoder plugins. Isn't required for open source
     mfxStatus Convert_YV12_to_NV12(mfxFrameData const* inData,  mfxFrameInfo const* inInfo, mfxFrameData* outData, mfxFrameInfo const* outInfo)
     {
         MFX_CHECK_NULL_PTR2(inData, inInfo);
@@ -461,4 +463,5 @@ namespace MFX_VPX_Utility
 
         return MFX_ERR_NONE;
     }
+#endif
 }

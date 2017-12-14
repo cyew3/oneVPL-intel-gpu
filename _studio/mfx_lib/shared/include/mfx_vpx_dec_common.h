@@ -21,7 +21,10 @@ namespace MFX_VPX_Utility
     bool CheckVideoParam(mfxVideoParam const*, mfxU32 codecId, eMFXPlatform platform = MFX_PLATFORM_HARDWARE);
     mfxStatus QueryIOSurfInternal(mfxVideoParam const*, mfxFrameAllocRequest*);
 
+#ifndef OPEN_SOURCE
+    // the function is used only by SW VP8/VP9 decoder plugins. Isn't required for open source
     mfxStatus Convert_YV12_to_NV12(mfxFrameData const* inData,  mfxFrameInfo const* inInfo, mfxFrameData* outData, mfxFrameInfo const* outInfo);
+#endif
 }
 
 #endif //__MFX_VPX_DEC_COMMON__H__
