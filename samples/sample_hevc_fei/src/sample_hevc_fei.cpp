@@ -504,6 +504,11 @@ mfxStatus CheckOptions(const sInputParams params, const msdk_char* appName)
         PrintHelp(appName, "Pipeline is unsupported. Supported pipeline: ENCODE, PreENC, PreENC + ENCODE");
         return MFX_ERR_UNSUPPORTED;
     }
+    if (params.bPREENC && 0 != msdk_strlen(params.mvpInFile))
+    {
+        PrintHelp(appName, "MV predictors from both PreENC and input file (mvpin) are not supported in one pipeline");
+        return MFX_ERR_UNSUPPORTED;
+    }
     if (0 == params.nGopSize)
     {
         PrintHelp(appName, "Gop structure is not specified (GopSize = 0)");
@@ -531,9 +536,7 @@ mfxStatus CheckOptions(const sInputParams params, const msdk_char* appName)
         return MFX_ERR_UNSUPPORTED;
     }
     if (params.encodeCtrl.MVPredictor != 0 && params.encodeCtrl.MVPredictor != 1 &&
-        params.encodeCtrl.MVPredictor != 2 && params.encodeCtrl.MVPredictor != 7 &&
-        // not specified in cmd line, will be adjusted later
-        params.encodeCtrl.MVPredictor != 0xffff)
+        params.encodeCtrl.MVPredictor != 2 && params.encodeCtrl.MVPredictor != 7)
     {
         PrintHelp(appName, "Invalid MV predictor block size value.");
         return MFX_ERR_UNSUPPORTED;
@@ -605,9 +608,9 @@ void AdjustOptions(sInputParams& params)
             params.encodeCtrl.RefHeight = 32;
     }
 
-    if (params.encodeCtrl.MVPredictor == 0xffff)
+    if (params.encodeCtrl.MVPredictor == 0 && (params.bPREENC || 0 != msdk_strlen(params.mvpInFile)))
     {
-        params.encodeCtrl.MVPredictor = 0;
+        msdk_printf(MSDK_STRING("WARNING: MV predictor block size is invalid. Adjust to 2 for PreENC (7 for -mvpin)\n"));
         if (params.bPREENC)
             params.encodeCtrl.MVPredictor = 2;
         if (0 != msdk_strlen(params.mvpInFile))
@@ -616,13 +619,14 @@ void AdjustOptions(sInputParams& params)
 
     if (!params.bPREENC && 0 == msdk_strlen(params.mvpInFile))
     {
-        if (params.encodeCtrl.NumMvPredictors[0] != 0
-                || params.encodeCtrl.NumMvPredictors[1] != 0)
+        if (params.encodeCtrl.MVPredictor != 0 || params.encodeCtrl.NumMvPredictors[0] != 0
+            || params.encodeCtrl.NumMvPredictors[1] != 0)
         {
-            msdk_printf(MSDK_STRING("No input predictors specified for ENCODE - setting NumMVPredictors to 0\n"));
+            msdk_printf(MSDK_STRING("WARNING: No MV predictors specified for ENCODE - setting MVPBlockSize and NumMVPredictors to 0\n"));
+            params.encodeCtrl.MVPredictor = 0;
+            params.encodeCtrl.NumMvPredictors[0] = 0;
+            params.encodeCtrl.NumMvPredictors[1] = 0;
         }
-        params.encodeCtrl.NumMvPredictors[0] = 0;
-        params.encodeCtrl.NumMvPredictors[1] = 0;
     }
 }
 

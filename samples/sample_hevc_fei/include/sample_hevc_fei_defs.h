@@ -148,8 +148,7 @@ struct sInputParams
         encodeCtrl.NumFramePartitions = 1; // number of partitions in frame that encoder processes concurrently
         // enable internal L0/L1 predictors: 1 - spatial predictors
         encodeCtrl.MultiPred[0] = encodeCtrl.MultiPred[1] = 1;
-        // set incorrect value for MVPs block size to adjust it in cmd line parser if user doesn't specify value
-        encodeCtrl.MVPredictor = 0xffff;
+        encodeCtrl.MVPredictor = 0; // disabled MV predictors
     }
 
 };
