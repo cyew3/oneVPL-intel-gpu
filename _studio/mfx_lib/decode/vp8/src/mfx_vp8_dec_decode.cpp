@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
 //
 
 #include <limits>
@@ -16,13 +16,11 @@
 #include "mfx_common.h"
 #include "mfx_common_decode_int.h"
 #include "mfx_enc_common.h"
+#include "mfx_vpx_dec_common.h"
 
 #include "umc_data_pointers_copy.h"
 
 #include "vm_sys_info.h"
-#include "ippcore.h"
-#include "ipps.h"
-#include "ippcc.h"
 
 #include "mfx_thread_task.h"
 
@@ -60,56 +58,6 @@ static mfxStatus vpx_convert_status(mfxI32 status)
     if (VPX_CODEC_OK != status) \
         return vpx_convert_status(status);
 
-
-static mfxStatus Convert_YV12_to_NV12(mfxFrameData* inData,  mfxFrameInfo* inInfo,
-                       mfxFrameData* outData, mfxFrameInfo* outInfo)
-{
-    MFX_CHECK_NULL_PTR2(inData, inInfo);
-    MFX_CHECK_NULL_PTR2(outData, outInfo);
-
-    IppiSize roiSize;
-
-    mfxU32  inOffset0 = 0, inOffset1 = 0;
-    mfxU32  outOffset0 = 0, outOffset1 = 0;
-
-    roiSize.width = inInfo->CropW;
-    if ((roiSize.width == 0) || (roiSize.width > inInfo->Width && inInfo->Width > 0))
-        roiSize.width = inInfo->Width;
-
-    roiSize.height = inInfo->CropH;
-    if ((roiSize.height == 0) || (roiSize.height > inInfo->Height && inInfo->Height > 0))
-        roiSize.height = inInfo->Height;
-
-    inOffset0  = inInfo->CropX        + inInfo->CropY*inData->Pitch;
-    inOffset1  = (inInfo->CropX >> 1) + (inInfo->CropY >> 1)*(inData->Pitch >> 1);
-
-    outOffset0   = outInfo->CropX        + outInfo->CropY*outData->Pitch;
-    outOffset1   = (outInfo->CropX) + (outInfo->CropY >> 1)*(outData->Pitch);
-
-    const mfxU8* pSrc[3] = {(mfxU8*)inData->Y + inOffset0,
-                          (mfxU8*)inData->V + inOffset1,
-                          (mfxU8*)inData->U + inOffset1};
-    /* [U<->V] because some reversing will be done ipp function */
-
-    mfxI32 pSrcStep[3] = {inData->Pitch,
-                        inData->Pitch >> 1,
-                        inData->Pitch >> 1};
-
-    mfxU8* pDst[2]   = {(mfxU8*)outData->Y + outOffset0,
-                      (mfxU8*)outData->UV+ outOffset1};
-
-    mfxI32 pDstStep[2] = {outData->Pitch,
-                        outData->Pitch >> 0};
-
-    IppStatus sts = ippiYCrCb420ToYCbCr420_8u_P3P2R(pSrc, pSrcStep,
-                                                    pDst[0], pDstStep[0],
-                                                    pDst[1], pDstStep[1],
-                                                    roiSize);
-    if (sts != ippStsNoErr)
-        return MFX_ERR_UNKNOWN;
-
-    return MFX_ERR_NONE;
-}
 
 VideoDECODEVP8::VideoDECODEVP8(VideoCORE *p_core, mfxStatus *p_sts)
     :VideoDECODE()
@@ -214,7 +162,7 @@ mfxStatus VideoDECODEVP8::Init(mfxVideoParam *p_params)
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
-    if (false == MFX_VP8_Utility::CheckVideoParam(p_params, type))
+    if (false == MFX_VPX_Utility::CheckVideoParam(p_params, MFX_CODEC_VP8))
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
@@ -397,7 +345,7 @@ mfxStatus VideoDECODEVP8::Reset(mfxVideoParam *p_params)
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
-    if (false == MFX_VP8_Utility::CheckVideoParam(p_params, type))
+    if (false == MFX_VPX_Utility::CheckVideoParam(p_params, MFX_CODEC_VP8))
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
@@ -797,7 +745,7 @@ static mfxStatus __CDECL VP8DECODERoutine(void *p_state, void *p_param, mfxU32 /
         outData.UV = (mfxU8*)p_thread_info->m_p_video_data->GetPlanePointer(1);
         outData.Pitch = (mfxU16)p_thread_info->m_p_video_data->GetPlanePitch(0);
 
-        mfxSts = Convert_YV12_to_NV12(&inData, &inInfo, &outData, &p_thread_info->m_p_surface_out->Info);
+        mfxSts = MFX_VPX_Utility::Convert_YV12_to_NV12(&inData, &inInfo, &outData, &p_thread_info->m_p_surface_out->Info);
 
         if (MFX_ERR_NONE == mfxSts)
         {
@@ -1118,7 +1066,7 @@ mfxStatus VideoDECODEVP8::ConstructFrame(mfxBitstream *p_in, mfxBitstream *p_out
 
     frame.frame_size = p_in->DataLength;
 
-    VP8DecodeCommon::MoveBitstreamData(*p_in, p_in->DataLength);
+    MoveBitstreamData(*p_in, p_in->DataLength);
 
     return MFX_ERR_NONE;
 

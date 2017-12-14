@@ -139,8 +139,6 @@ class VideoDECODEVP9: public VideoDECODE
 #if defined(MFX_ENABLE_VP9_VIDEO_DECODE) || defined(MFX_ENABLE_VP9_VIDEO_DECODE_HW)
 namespace MFX_VP9_Utility
 {
-    mfxStatus Query(VideoCORE *pCore, mfxVideoParam *pIn, mfxVideoParam *pOut, eMFXHWType type);
-    bool CheckVideoParam(mfxVideoParam *pIn, eMFXPlatform platform);
     mfxStatus DecodeHeader(VideoCORE * /*core*/, mfxBitstream *bs, mfxVideoParam *params);
     mfxStatus FillVideoParam(VideoCORE* /*core*/, UMC_VP9_DECODER::VP9DecoderFrame const&, mfxVideoParam* params);
 };

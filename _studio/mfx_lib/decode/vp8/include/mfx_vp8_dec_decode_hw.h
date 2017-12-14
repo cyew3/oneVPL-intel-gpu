@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef _MFX_VP8_DECODE_HW_H_
@@ -191,7 +191,6 @@ private:
 
     mfxStatus ConstructFrame(mfxBitstream *, mfxBitstream *, VP8DecodeCommon::IVF_FRAME&);
     mfxStatus PreDecodeFrame(mfxBitstream *, mfxFrameSurface1 *);
-    static mfxStatus QueryIOSurfInternal(mfxVideoParam *, mfxFrameAllocRequest *);
 
     mfxStatus DecodeFrameHeader(mfxBitstream *p_bistream);
     void UpdateSegmentation(MFX_VP8_BoolDecoder &);

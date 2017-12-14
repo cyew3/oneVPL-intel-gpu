@@ -676,6 +676,7 @@ include_directories( ${MSDK_STUDIO_ROOT}/shared/umc/codec/vp8_dec/include )
 
 list( APPEND sources ${MSDK_STUDIO_ROOT}/shared/umc/codec/vp8_dec/src/vp8_tables.cpp )
 list( APPEND sources ${MSDK_LIB_ROOT}/shared/src/libmfxsw_decode.cpp )
+list( APPEND sources ${MSDK_LIB_ROOT}/shared/src/mfx_vpx_dec_common.cpp )
 
 set( USE_STRICT_NAME TRUE )
 set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libmfxsw_plugin.map" )
@@ -812,6 +813,7 @@ include_directories( ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/libvpx/libvpx )
 include_directories( ${MSDK_STUDIO_ROOT}/shared/umc/codec/vp9_dec/include )
 
 list( APPEND sources ${MSDK_LIB_ROOT}/shared/src/libmfxsw_decode.cpp )
+list( APPEND sources ${MSDK_LIB_ROOT}/shared/src/mfx_vpx_dec_common.cpp )
 
 set( USE_STRICT_NAME TRUE )
 set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libmfxsw_plugin.map" )

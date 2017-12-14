@@ -845,6 +845,7 @@
     <ClCompile Include="..\scheduler\src\mfx_scheduler_core_task.cpp" />
     <ClCompile Include="..\scheduler\src\mfx_scheduler_core_task_management.cpp" />
     <ClCompile Include="..\scheduler\src\mfx_scheduler_core_thread.cpp" />
+    <ClCompile Include="..\shared\src\mfx_vpx_dec_common.cpp" />
     <ClCompile Include="..\vpp\src\mfx_denoise_vpp.cpp" />
     <ClCompile Include="..\vpp\src\mfx_detail_enhancement_vpp.cpp" />
     <ClCompile Include="..\vpp\src\mfx_frame_rate_conversion_vpp.cpp" />
@@ -942,6 +943,7 @@
     <ClInclude Include="..\scheduler\include\mfx_scheduler_core_handle.h" />
     <ClInclude Include="..\scheduler\include\mfx_scheduler_core_task.h" />
     <ClInclude Include="..\scheduler\include\mfx_scheduler_core_thread.h" />
+    <ClInclude Include="..\shared\include\mfx_vpx_dec_common.h" />
     <ClInclude Include="..\vpp\include\mfx_color_space_conversion_vpp.h" />
     <ClInclude Include="..\vpp\include\mfx_vpp_hw.h" />
   </ItemGroup>

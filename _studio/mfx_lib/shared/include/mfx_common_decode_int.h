@@ -116,4 +116,12 @@ mfxStatus CheckIntelDataPrivateReport(T *pConfig, mfxVideoParam *par)
 } // mfxStatus CheckIntelDataPrivateReport(...)
 #endif // defined (MFX_VA_WIN)
 
+inline
+void MoveBitstreamData(mfxBitstream& bs, mfxU32 offset)
+{
+    VM_ASSERT(offset <= bs.DataLength);
+    bs.DataOffset += offset;
+    bs.DataLength -= offset;
+}
+
 #endif

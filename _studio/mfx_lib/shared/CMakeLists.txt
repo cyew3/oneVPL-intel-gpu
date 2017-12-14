@@ -44,6 +44,7 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/src )
     ${prefix}/mfx_mpeg2_enc_common_hw.cpp
     ${prefix}/mfx_mpeg2_encode_vaapi.cpp
     ${prefix}/mfx_mpeg2_encode_factory.cpp
+    ${prefix}/mfx_vpx_dec_common.cpp                ## open-source-cut-line
   )
 endforeach()
 

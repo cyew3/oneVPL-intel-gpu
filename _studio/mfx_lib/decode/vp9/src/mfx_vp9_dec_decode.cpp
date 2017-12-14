@@ -13,15 +13,9 @@
 
 #include "mfx_common.h"
 #include "mfx_common_decode_int.h"
+#include "mfx_vpx_dec_common.h"
 #include "mfx_enc_common.h"
 #include "ipps.h"
-
-void MoveBitstreamData2_VP9(mfxBitstream& bs, mfxU32 offset)
-{
-    VM_ASSERT(offset <= bs.DataLength);
-    bs.DataOffset += offset;
-    bs.DataLength -= offset;
-}
 
 #if defined(MFX_ENABLE_VP9_VIDEO_DECODE) || defined(MFX_ENABLE_VP9_VIDEO_DECODE_HW)
 
@@ -76,56 +70,6 @@ static mfxStatus vpx_convert_status(mfxI32 status)
     if (VPX_CODEC_OK != status) \
         return vpx_convert_status(status);
 
-static mfxStatus Convert_YV12_to_NV12(mfxFrameData* inData,  mfxFrameInfo* inInfo,
-                       mfxFrameData* outData, mfxFrameInfo* outInfo)
-{
-    MFX_CHECK_NULL_PTR2(inData, inInfo);
-    MFX_CHECK_NULL_PTR2(outData, outInfo);
-
-    IppiSize roiSize;
-
-    mfxU32  inOffset0 = 0, inOffset1 = 0;
-    mfxU32  outOffset0 = 0, outOffset1 = 0;
-
-    roiSize.width = inInfo->CropW;
-    if ((roiSize.width == 0) || (roiSize.width > inInfo->Width && inInfo->Width > 0))
-        roiSize.width = inInfo->Width;
-
-    roiSize.height = inInfo->CropH;
-    if ((roiSize.height == 0) || (roiSize.height > inInfo->Height && inInfo->Height > 0))
-        roiSize.height = inInfo->Height;
-
-    inOffset0  = inInfo->CropX        + inInfo->CropY*inData->Pitch;
-    inOffset1  = (inInfo->CropX >> 1) + (inInfo->CropY >> 1)*(inData->Pitch >> 1);
-
-    outOffset0   = outInfo->CropX        + outInfo->CropY*outData->Pitch;
-    outOffset1   = (outInfo->CropX) + (outInfo->CropY >> 1)*(outData->Pitch);
-
-    const mfxU8* pSrc[3] = {(mfxU8*)inData->Y + inOffset0,
-                          (mfxU8*)inData->V + inOffset1,
-                          (mfxU8*)inData->U + inOffset1};
-    /* [U<->V] because some reversing will be done ipp function */
-
-    mfxI32 pSrcStep[3] = {inData->Pitch,
-                        inData->Pitch >> 1,
-                        inData->Pitch >> 1};
-
-    mfxU8* pDst[2]   = {(mfxU8*)outData->Y + outOffset0,
-                      (mfxU8*)outData->UV+ outOffset1};
-
-    mfxI32 pDstStep[2] = {outData->Pitch,
-                        outData->Pitch >> 0};
-
-    IppStatus sts = ippiYCrCb420ToYCbCr420_8u_P3P2R(pSrc, pSrcStep,
-                                                    pDst[0], pDstStep[0],
-                                                    pDst[1], pDstStep[1],
-                                                    roiSize);
-    if (sts != ippStsNoErr)
-        return MFX_ERR_UNKNOWN;
-
-    return MFX_ERR_NONE;
-}
-
 VideoDECODEVP9::VideoDECODEVP9(VideoCORE *core, mfxStatus *sts)
     :VideoDECODE()
     ,m_core(core)
@@ -171,7 +115,7 @@ mfxStatus VideoDECODEVP9::Init(mfxVideoParam *params)
     if (MFX_ERR_NONE > CheckVideoParamDecoders(params, m_core->IsExternalFrameAllocator(), type))
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
-    if (!MFX_VP9_Utility::CheckVideoParam(params, m_platform))
+    if (!MFX_VPX_Utility::CheckVideoParam(params, MFX_CODEC_VP9, m_platform))
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
     m_vInitPar = *params;
@@ -239,7 +183,6 @@ mfxStatus VideoDECODEVP9::Init(mfxVideoParam *params)
                 }
                 else
                 {
-                    mfxStatus sts;
                     mfxFrameAllocRequest trequest = m_request;
                     trequest.Type =  (mfxU16)p_opq_ext->Out.Type;
                     trequest.NumFrameMin = trequest.NumFrameSuggested = (mfxU16)p_opq_ext->Out.NumSurface;
@@ -344,7 +287,7 @@ mfxStatus VideoDECODEVP9::Reset(mfxVideoParam *params)
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
-    if (false == MFX_VP9_Utility::CheckVideoParam(params, m_platform))
+    if (false == MFX_VPX_Utility::CheckVideoParam(params, MFX_CODEC_VP9, m_platform))
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
@@ -473,7 +416,7 @@ mfxStatus VideoDECODEVP9::Query(VideoCORE *core, mfxVideoParam *p_in, mfxVideoPa
     MFX_CHECK_NULL_PTR1(p_out);
 
     eMFXHWType type = core->GetHWType();
-    return MFX_VP9_Utility::Query(core, p_in, p_out, type);
+    return MFX_VPX_Utility::Query(core, p_in, p_out, MFX_CODEC_VP9, type);
 }
 
 mfxStatus VideoDECODEVP9::QueryIOSurfInternal(eMFXPlatform platform, mfxVideoParam *p_params, mfxFrameAllocRequest *request)
@@ -738,7 +681,7 @@ mfxStatus VideoDECODEVP9::ReadFrameInfo(mfxU8 *pData, mfxU32 size, VP9BaseFrameI
             bsReader.GetBit(); // show_existing_frame
 
             VP9_FRAME_TYPE frameType = (VP9_FRAME_TYPE) bsReader.GetBit();
-            out->ShowFrame = bsReader.GetBit();
+            out->ShowFrame = (mfxU16)bsReader.GetBit();
             mfxU32 errorResilientMode = bsReader.GetBit();
 
             mfxU32 bit_depth = 8;
@@ -874,7 +817,7 @@ static mfxStatus __CDECL VP9DECODERoutine(void *state, void *param, mfxU32 /*thr
         outData.UV = (mfxU8*)thread_info->m_p_video_data->GetPlanePointer(1);
         outData.Pitch = (mfxU16)thread_info->m_p_video_data->GetPlanePitch(0);
 
-        mfxSts = Convert_YV12_to_NV12(&inData, &inInfo, &outData, &thread_info->m_p_surface_out->Info);
+        mfxSts = MFX_VPX_Utility::Convert_YV12_to_NV12(&inData, &inInfo, &outData, &thread_info->m_p_surface_out->Info);
 
         if (MFX_ERR_NONE == mfxSts)
         {
@@ -992,6 +935,8 @@ mfxStatus VideoDECODEVP9::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *s
         m_FrameAllocator->IncreaseReference(memId);
 
         UMC::Status umcSts = video_data->Init(surface_work->Info.Width, surface_work->Info.Height, UMC::YUV420);
+        if (umcSts != UMC::UMC_OK)
+            return ConvertStatusUmc2Mfx(umcSts);
 
         {
             const UMC::FrameData::PlaneMemoryInfo *p_info;
@@ -1066,7 +1011,7 @@ mfxStatus VideoDECODEVP9::ConstructFrame(mfxBitstream *p_in, mfxBitstream *p_out
 
     frame.frame_size = p_in->DataLength;
 
-    MoveBitstreamData2_VP9(*p_in, p_in->DataLength);
+    MoveBitstreamData(*p_in, p_in->DataLength);
 
     return MFX_ERR_NONE;
 }
@@ -1107,340 +1052,6 @@ void VideoDECODEVP9::SetOutputParams(mfxFrameSurface1 *surface_work)
 
 namespace MFX_VP9_Utility {
 
-mfxStatus Query(VideoCORE *core, mfxVideoParam *p_in, mfxVideoParam *p_out, eMFXHWType type)
-{
-    MFX_CHECK_NULL_PTR1(p_out);
-    mfxStatus  sts = MFX_ERR_NONE;
-
-    if (p_in == p_out)
-    {
-        mfxVideoParam in1;
-        MFX_INTERNAL_CPY(&in1, p_in, sizeof(mfxVideoParam));
-        return Query(core, &in1, p_out, type);
-    }
-
-    memset(&p_out->mfx, 0, sizeof(mfxInfoMFX));
-
-    if (p_in)
-    {
-        if (p_in->mfx.CodecId == MFX_CODEC_VP9)
-            p_out->mfx.CodecId = p_in->mfx.CodecId;
-
-        switch (p_in->mfx.CodecLevel)
-        {
-            case MFX_LEVEL_UNKNOWN:
-                p_out->mfx.CodecLevel = p_in->mfx.CodecLevel;
-                break;
-        }
-
-        if (p_in->mfx.NumThread < 128)
-            p_out->mfx.NumThread = p_in->mfx.NumThread;
-
-        if (p_in->AsyncDepth < MFX_MAX_ASYNC_DEPTH_VALUE) // Actually AsyncDepth > 5-7 is for debugging only.
-            p_out->AsyncDepth = p_in->AsyncDepth;
-
-        if ((p_in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) || (p_in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
-        {
-            if ( !((p_in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) && (p_in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)) )
-                p_out->IOPattern = p_in->IOPattern;
-        }
-
-        switch(p_in->mfx.FrameInfo.FourCC)
-        {
-            case MFX_FOURCC_NV12:
-            case MFX_FOURCC_P010:
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-            case MFX_FOURCC_AYUV:
-            case MFX_FOURCC_Y410:
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-            case MFX_FOURCC_P016:
-            case MFX_FOURCC_Y416:
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
-                p_out->mfx.FrameInfo.FourCC = p_in->mfx.FrameInfo.FourCC;
-                break;
-            default:
-                sts = MFX_ERR_UNSUPPORTED;
-                break;
-        }
-
-        switch(p_in->mfx.FrameInfo.ChromaFormat)
-        {
-            case MFX_CHROMAFORMAT_YUV420:
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-            case MFX_CHROMAFORMAT_YUV444:
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
-                p_out->mfx.FrameInfo.ChromaFormat = p_in->mfx.FrameInfo.ChromaFormat;
-                break;
-            default:
-                if (p_in->mfx.FrameInfo.FourCC)
-                    sts = MFX_ERR_UNSUPPORTED;
-
-                break;
-        }
-
-        if (p_in->mfx.FrameInfo.FourCC && p_in->mfx.FrameInfo.ChromaFormat)
-        {
-            if((   p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_NV12 && p_in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420)
-               || (p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_P010 && p_in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420)
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-               || (p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_AYUV && p_in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV444)
-             //|| (p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210 && p_in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV422)
-               || (p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y410 && p_in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV444)
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-               || (p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_P016 && p_in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420)
-               || (p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y416 && p_in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV444)
-#endif //PRE_SI_TARGET_PLATFORM_GEN12
-               )
-            {
-                p_out->mfx.FrameInfo.FourCC = 0;
-                p_out->mfx.FrameInfo.ChromaFormat = 0;
-                p_out->mfx.FrameInfo.BitDepthLuma = 0;
-                p_out->mfx.FrameInfo.BitDepthChroma = 0;
-                sts = MFX_ERR_UNSUPPORTED;
-            }
-        }
-
-        p_out->mfx.FrameInfo.BitDepthLuma   = p_in->mfx.FrameInfo.BitDepthLuma;
-        p_out->mfx.FrameInfo.BitDepthChroma = p_in->mfx.FrameInfo.BitDepthChroma;
-
-        if((p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_NV12
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-            || p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_AYUV
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
-            ) &&
-           ((p_in->mfx.FrameInfo.BitDepthLuma   != 0 && p_in->mfx.FrameInfo.BitDepthLuma   != 8) ||
-            (p_in->mfx.FrameInfo.BitDepthChroma != 0 && p_in->mfx.FrameInfo.BitDepthChroma != 8) ||
-            p_in->mfx.FrameInfo.Shift))
-        {
-            p_out->mfx.FrameInfo.BitDepthLuma = 0;
-            p_out->mfx.FrameInfo.BitDepthChroma = 0;
-            p_out->mfx.FrameInfo.Shift = 0;
-            sts = MFX_ERR_UNSUPPORTED;
-        }
-        if((   p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_P010
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-            || p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y410
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
-            ) &&
-           (p_in->mfx.FrameInfo.BitDepthLuma != 10 || p_in->mfx.FrameInfo.BitDepthChroma != 10))
-        {
-            p_out->mfx.FrameInfo.BitDepthLuma = 0;
-            p_out->mfx.FrameInfo.BitDepthChroma = 0;
-            p_out->mfx.FrameInfo.Shift = 0;
-            sts = MFX_ERR_UNSUPPORTED;
-        }
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-        if((   p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_P016
-            || p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y416) &&
-           (p_in->mfx.FrameInfo.BitDepthLuma != 12 || p_in->mfx.FrameInfo.BitDepthChroma != 12))
-        {
-            p_out->mfx.FrameInfo.BitDepthLuma = 0;
-            p_out->mfx.FrameInfo.BitDepthChroma = 0;
-            p_out->mfx.FrameInfo.Shift = 0;
-            sts = MFX_ERR_UNSUPPORTED;
-        }
-#endif //PRE_SI_TARGET_PLATFORM_GEN12
-
-        if (!p_in->mfx.FrameInfo.ChromaFormat && !(!p_in->mfx.FrameInfo.FourCC && !p_in->mfx.FrameInfo.ChromaFormat))
-            sts = MFX_ERR_UNSUPPORTED;
-
-        if (p_in->mfx.FrameInfo.Width % 16 == 0 && p_in->mfx.FrameInfo.Width <= 4096)
-            p_out->mfx.FrameInfo.Width = p_in->mfx.FrameInfo.Width;
-        else
-            sts = MFX_ERR_UNSUPPORTED;
-
-        if (p_in->mfx.FrameInfo.Height % 16 == 0 && p_in->mfx.FrameInfo.Height <= 2304)
-            p_out->mfx.FrameInfo.Height = p_in->mfx.FrameInfo.Height;
-        else
-            sts = MFX_ERR_UNSUPPORTED;
-
-        if (p_in->mfx.FrameInfo.CropX <= p_out->mfx.FrameInfo.Width)
-            p_out->mfx.FrameInfo.CropX = p_in->mfx.FrameInfo.CropX;
-
-        if (p_in->mfx.FrameInfo.CropY <= p_out->mfx.FrameInfo.Height)
-            p_out->mfx.FrameInfo.CropY = p_in->mfx.FrameInfo.CropY;
-
-        if (p_out->mfx.FrameInfo.CropX + p_in->mfx.FrameInfo.CropW <= p_out->mfx.FrameInfo.Width)
-            p_out->mfx.FrameInfo.CropW = p_in->mfx.FrameInfo.CropW;
-
-        if (p_out->mfx.FrameInfo.CropY + p_in->mfx.FrameInfo.CropH <= p_out->mfx.FrameInfo.Height)
-            p_out->mfx.FrameInfo.CropH = p_in->mfx.FrameInfo.CropH;
-
-        if (p_in->mfx.FrameInfo.FrameRateExtN != 0 && p_in->mfx.FrameInfo.FrameRateExtD == 0)
-        {
-            sts = MFX_ERR_UNSUPPORTED;
-        }
-        else
-        {
-            p_out->mfx.FrameInfo.FrameRateExtN = p_in->mfx.FrameInfo.FrameRateExtN;
-            p_out->mfx.FrameInfo.FrameRateExtD = p_in->mfx.FrameInfo.FrameRateExtD;
-        }
-
-        if (( p_in->mfx.FrameInfo.AspectRatioW ||  p_in->mfx.FrameInfo.AspectRatioH) &&
-            (!p_in->mfx.FrameInfo.AspectRatioW || !p_in->mfx.FrameInfo.AspectRatioH))
-        {
-            sts = MFX_ERR_UNSUPPORTED;
-        }
-        else
-        {
-            p_out->mfx.FrameInfo.AspectRatioW = p_in->mfx.FrameInfo.AspectRatioW;
-            p_out->mfx.FrameInfo.AspectRatioH = p_in->mfx.FrameInfo.AspectRatioH;
-        }
-
-        mfxStatus stsExt = CheckDecodersExtendedBuffers(p_in);
-        if (stsExt < MFX_ERR_NONE)
-            sts = MFX_ERR_UNSUPPORTED;
-
-        if (p_in->Protected)
-        {
-            sts = MFX_ERR_UNSUPPORTED;
-        }
-
-        mfxExtOpaqueSurfaceAlloc *opaque_in = (mfxExtOpaqueSurfaceAlloc *)GetExtBuffer(p_in->ExtParam, p_in->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
-        mfxExtOpaqueSurfaceAlloc *opaque_out = (mfxExtOpaqueSurfaceAlloc *)GetExtBuffer(p_out->ExtParam, p_out->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
-
-        if (opaque_in && opaque_out)
-        {
-            opaque_out->In.Type = opaque_in->In.Type;
-            opaque_out->In.NumSurface = opaque_in->In.NumSurface;
-            MFX_INTERNAL_CPY(opaque_out->In.Surfaces, opaque_in->In.Surfaces, opaque_in->In.NumSurface);
-
-            opaque_out->Out.Type = opaque_in->Out.Type;
-            opaque_out->Out.NumSurface = opaque_in->Out.NumSurface;
-            MFX_INTERNAL_CPY(opaque_out->Out.Surfaces, opaque_in->Out.Surfaces, opaque_in->Out.NumSurface);
-        }
-        else
-        {
-            if (opaque_out || opaque_in)
-            {
-                sts = MFX_ERR_UNDEFINED_BEHAVIOR;
-            }
-        }
-    }
-    else
-    {
-        p_out->mfx.CodecId = MFX_CODEC_VP9;
-        p_out->mfx.CodecProfile = 1;
-        p_out->mfx.CodecLevel = 1;
-
-        p_out->mfx.NumThread = 1;
-
-        p_out->AsyncDepth = 1;
-
-        // mfxFrameInfo
-        p_out->mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
-        p_out->mfx.FrameInfo.Width = 16;
-        p_out->mfx.FrameInfo.Height = 16;
-
-        p_out->mfx.FrameInfo.FrameRateExtN = 1;
-        p_out->mfx.FrameInfo.FrameRateExtD = 1;
-
-        p_out->mfx.FrameInfo.AspectRatioW = 1;
-        p_out->mfx.FrameInfo.AspectRatioH = 1;
-
-        p_out->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-
-        if (type == MFX_HW_UNKNOWN)
-        {
-            p_out->IOPattern = MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
-        }
-        else
-        {
-            p_out->IOPattern = MFX_IOPATTERN_OUT_VIDEO_MEMORY;
-        }
-
-        mfxExtOpaqueSurfaceAlloc * opaqueOut = (mfxExtOpaqueSurfaceAlloc *)GetExtBuffer(p_out->ExtParam, p_out->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
-        if (opaqueOut)
-        {
-        }
-    }
-
-    return sts;
-}
-
-bool CheckVideoParam(mfxVideoParam *p_in, eMFXPlatform platform)
-{
-    if (!p_in)
-        return false;
-
-    if (p_in->Protected)
-       return false;
-
-    if (MFX_CODEC_VP9 != p_in->mfx.CodecId)
-        return false;
-
-    if (platform == MFX_PLATFORM_SOFTWARE)
-        if (p_in->mfx.FrameInfo.Width > 4096 || p_in->mfx.FrameInfo.Height > 4096)
-            return false;
-
-    if (p_in->mfx.FrameInfo.Height % 16 || p_in->mfx.FrameInfo.Width % 16)
-        return false;
-
-    if (p_in->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12
-        && p_in->mfx.FrameInfo.FourCC != MFX_FOURCC_P010
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-        && p_in->mfx.FrameInfo.FourCC != MFX_FOURCC_AYUV
-        //&& p_in->mfx.FrameInfo.FourCC != MFX_FOURCC_Y210
-        && p_in->mfx.FrameInfo.FourCC != MFX_FOURCC_Y410
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-        && p_in->mfx.FrameInfo.FourCC != MFX_FOURCC_P016
-        && p_in->mfx.FrameInfo.FourCC != MFX_FOURCC_Y416
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
-        )
-        return false;
-
-    // both zero or not zero
-    if ((p_in->mfx.FrameInfo.AspectRatioW || p_in->mfx.FrameInfo.AspectRatioH) && !(p_in->mfx.FrameInfo.AspectRatioW && p_in->mfx.FrameInfo.AspectRatioH))
-        return false;
-
-    switch (p_in->mfx.FrameInfo.PicStruct)
-    {
-        case MFX_PICSTRUCT_UNKNOWN:
-        case MFX_PICSTRUCT_PROGRESSIVE:
-            break;
-
-        default:
-            return false;
-    }
-
-    switch (p_in->mfx.FrameInfo.ChromaFormat)
-    {
-    case MFX_CHROMAFORMAT_YUV420:
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-    case MFX_CHROMAFORMAT_YUV422:
-    case MFX_CHROMAFORMAT_YUV444:
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
-        break;
-
-    default:
-        return false;
-    }
-
-    if (p_in->mfx.FrameInfo.ChromaFormat)
-    {
-        if((p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_NV12 && p_in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420)
-           || (p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_P010 && p_in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420)
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-           || (p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_AYUV && p_in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV444)
-         //|| (p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210 && p_in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV422)
-           || (p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y410 && p_in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV444)
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
-           )
-        return false;
-    }
-
-    if (!(p_in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) && !(p_in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) && !(p_in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY))
-        return false;
-
-    if ((p_in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) && (p_in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) && (p_in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY))
-        return false;
-
-    return true;
-}
-
 mfxStatus DecodeHeader(VideoCORE* core, mfxBitstream* bs, mfxVideoParam* params)
 {
     mfxStatus sts = MFX_ERR_NONE;
@@ -1452,7 +1063,7 @@ mfxStatus DecodeHeader(VideoCORE* core, mfxBitstream* bs, mfxVideoParam* params)
 
     if (bs->DataLength < 3)
     {
-        MoveBitstreamData2_VP9(*bs, bs->DataLength);
+        MoveBitstreamData(*bs, bs->DataLength);
         return MFX_ERR_MORE_DATA;
     }
 
@@ -1581,7 +1192,7 @@ mfxStatus DecodeHeader(VideoCORE* core, mfxBitstream* bs, mfxVideoParam* params)
 
     if (!bHeaderRead)
     {
-        MoveBitstreamData2_VP9(*bs, bs->DataLength);
+        MoveBitstreamData(*bs, bs->DataLength);
         return MFX_ERR_MORE_DATA;
     }
 
