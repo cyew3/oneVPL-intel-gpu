@@ -111,6 +111,7 @@ _studio/mfx_lib/shared/include/mfx_task_threading_policy.h
 _studio/mfx_lib/shared/include/mfx_thread_task.h
 _studio/mfx_lib/shared/include/mfx_tools.h
 _studio/mfx_lib/shared/include/mfx_user_plugin.h
+_studio/mfx_lib/shared/include/mfx_vpx_dec_common.h
 _studio/mfx_lib/shared/src/libmfxsw.cpp
 _studio/mfx_lib/shared/src/libmfxsw_async.cpp
 _studio/mfx_lib/shared/src/libmfxsw_decode.cpp
@@ -139,6 +140,7 @@ _studio/mfx_lib/shared/src/mfx_mpeg2_encode_vaapi.cpp
 _studio/mfx_lib/shared/src/mfx_mpeg2_enc_common_hw.cpp
 _studio/mfx_lib/shared/src/mfx_session.cpp
 _studio/mfx_lib/shared/src/mfx_user_plugin.cpp
+_studio/mfx_lib/shared/src/mfx_vpx_dec_common.cpp
 _studio/mfx_lib/vpp/CMakeLists.txt
 _studio/mfx_lib/vpp/include/mfx_color_space_conversion_vpp.h
 _studio/mfx_lib/vpp/include/mfx_deinterlace_vpp.h
