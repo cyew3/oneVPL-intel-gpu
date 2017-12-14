@@ -120,3 +120,7 @@ EXTBUF(mfxExtBRC, MFX_EXTBUFF_BRC)
 #endif // defined(__MFXBRC_H__)
 
 EXTBUF(mfxExtEncodedUnitsInfo       , MFX_EXTBUFF_ENCODED_UNITS_INFO        )
+
+#if defined(__MFXSCD_H__)
+EXTBUF(mfxExtSCD, MFX_EXTBUFF_SCD)
+#endif // defined(__MFXSCD_H__)

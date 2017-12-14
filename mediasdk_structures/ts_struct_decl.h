@@ -1229,3 +1229,10 @@ STRUCT(mfxExtEncodedUnitsInfo,
     FIELD_T(mfxU16, NumUnitsAlloc)
     FIELD_T(mfxU16, NumUnitsEncoded)
 )
+
+#if defined(__MFXSCD_H__)
+STRUCT(mfxExtSCD,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU16, SceneType)
+)
+#endif // defined(__MFXSCD_H__)
