@@ -325,7 +325,7 @@ namespace TranscodingSample
 
             inline void SetDumpName(const msdk_char* name)
             {
-                DumpLogFileName = *name;
+                DumpLogFileName = name;
                 if (!DumpLogFileName.empty())
                 {
                     TurnOnDumping();
