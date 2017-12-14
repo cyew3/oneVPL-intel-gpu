@@ -58,6 +58,11 @@ namespace hevce_fei_default_ref_lists
         return ((video.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_BOTTOM) == MFX_PICSTRUCT_FIELD_BOTTOM);
     }
 
+    mfxI32 GetFrameNum(bool bField, mfxI32 Poc, bool bSecondField)
+    {
+        return bField ? (Poc + (!bSecondField)) / 2 : Poc;
+    }
+
     mfxU8 GetFrameType(
         mfxVideoParam const & video,
         mfxU32                pictureOrder,
@@ -491,8 +496,11 @@ namespace hevce_fei_default_ref_lists
 
                 auto preferSamePolarity = [&](const Frame & lhs_frame, const Frame & rhs_frame)
                 {
-                   mfxU32 lhs_distance = std::abs(lhs_frame.poc/2 - out.poc/2) + ((lhs_frame.bBottomField == out.bBottomField) ? 0 : 2);
-                   mfxU32 rhs_distance = std::abs(rhs_frame.poc/2 - out.poc/2) + ((rhs_frame.bBottomField == out.bBottomField) ? 0 : 2);
+                   mfxI32 currFrameNum = GetFrameNum(true, out.poc, out.bSecondField);
+
+                   mfxU32 lhs_distance = std::abs(GetFrameNum(true, lhs_frame.poc, lhs_frame.bSecondField) - currFrameNum) * 2 + ((lhs_frame.bBottomField == out.bBottomField) ? 0 : 1);
+
+                   mfxU32 rhs_distance = std::abs(GetFrameNum(true, rhs_frame.poc, rhs_frame.bSecondField) - currFrameNum) * 2 + ((rhs_frame.bBottomField == out.bBottomField) ? 0 : 1);
 
                    return lhs_distance <= rhs_distance;
                 };
@@ -511,7 +519,7 @@ namespace hevce_fei_default_ref_lists
                     if (isPPyramid)
                     {
                         // For P-pyramid we remove oldest references
-                        // with the highest layer except the closest reference.
+                        // with the highest layer except the closest frame or field pair.
 
                         if (bIsFieldCoding)
                         {
@@ -534,7 +542,10 @@ namespace hevce_fei_default_ref_lists
                             auto weak = L0.begin();
                             for (auto it = L0.begin(); it != L0.end(); it ++)
                             {
-                                if (weak->PLayer < it->PLayer && it->poc != L0.back().poc)
+                                if (weak->PLayer < it->PLayer &&
+                                    (bIsFieldCoding ?
+                                        it->poc != L0.rbegin()[0].poc && it->poc != L0.rbegin()[1].poc :
+                                        it->poc != L0.rbegin()[0].poc))
                                 {
                                     weak = it;
                                 }
