@@ -2261,7 +2261,11 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
     {
         int width32  = ((m_videoParam.mfx.FrameInfo.Width  + 31) >> 5) << 5;
         int height32 = ((m_videoParam.mfx.FrameInfo.Height + 31) >> 5) << 5;
-        int codedbuf_size = static_cast<int>((width32 * height32) * 400LL / (16 * 16)); //from libva spec
+        int codedbuf_size = static_cast<int>((width32 * height32) * 400LL / (16 * 16));
+
+        // To workaround an issue with VA coded bufer overflow due to IPCM violation.
+        // TODO: consider removing it once IPCM issue is fixed.
+        codedbuf_size = 2 * codedbuf_size;
 
         vaSts = vaCreateBuffer(m_vaDisplay,
                                 m_vaContextEncode,
@@ -2271,7 +2275,6 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
                                 NULL,
                                 &m_codedBufferId[feiFieldId]);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-        //configBuffers[buffersCount++] = m_codedBufferId;
         mdprintf(stderr, "m_codedBufferId=%d\n", m_codedBufferId[feiFieldId]);
     }
     m_pps.coded_buf = m_codedBufferId[feiFieldId];
