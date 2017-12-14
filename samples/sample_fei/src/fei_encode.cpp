@@ -800,8 +800,9 @@ mfxStatus FEI_EncodeInterface::FlushOutput(iTask* eTask)
                 mfxExtFeiRepackStat* repackStat = reinterpret_cast<mfxExtFeiRepackStat*>
                                                   (output_buffers[i]);
                 mfxI8 repackStatChar[64];
-                sprintf(repackStatChar, "FrameOrder %d: %d NumPasses\n",
-                        eTask->m_frameOrder, repackStat->NumPasses);
+                snprintf(repackStatChar, sizeof(repackStatChar),
+                         "FrameOrder %d: %d NumPasses\n",
+                         eTask?eTask->m_frameOrder:0, repackStat->NumPasses);
                 SAFE_FWRITE(repackStatChar, strlen(repackStatChar), 1,
                             m_pRepackStat_out, MFX_ERR_MORE_DATA);
                 repackStat->NumPasses = 0;
