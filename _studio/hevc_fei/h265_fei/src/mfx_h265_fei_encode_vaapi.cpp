@@ -94,8 +94,8 @@ namespace MfxHwH265FeiEncode
             vaFeiFrameControl->ref_width                          = EncFrameCtrl->RefWidth;
             vaFeiFrameControl->ref_height                         = EncFrameCtrl->RefHeight;
             vaFeiFrameControl->search_window                      = EncFrameCtrl->SearchWindow;
-            vaFeiFrameControl->num_mv_predictors_l0               = EncFrameCtrl->NumMvPredictors[0];
-            vaFeiFrameControl->num_mv_predictors_l1               = EncFrameCtrl->NumMvPredictors[1];
+            vaFeiFrameControl->num_mv_predictors_l0               = EncFrameCtrl->MVPredictor ? EncFrameCtrl->NumMvPredictors[0] : 0;
+            vaFeiFrameControl->num_mv_predictors_l1               = EncFrameCtrl->MVPredictor ? EncFrameCtrl->NumMvPredictors[1] : 0;
             vaFeiFrameControl->multi_pred_l0                      = EncFrameCtrl->MultiPred[0];
             vaFeiFrameControl->multi_pred_l1                      = EncFrameCtrl->MultiPred[1];
             vaFeiFrameControl->sub_pel_mode                       = EncFrameCtrl->SubPelMode;
@@ -108,13 +108,13 @@ namespace MfxHwH265FeiEncode
 
             // Input buffers
             mfxExtFeiHevcEncMVPredictors* mvp = reinterpret_cast<mfxExtFeiHevcEncMVPredictors*>(GetBufById(task.m_ctrl, MFX_EXTBUFF_HEVCFEI_ENC_MV_PRED));
-            vaFeiFrameControl->mv_predictor = mvp ? mvp->VaBufferID : VA_INVALID_ID;
+            vaFeiFrameControl->mv_predictor = (EncFrameCtrl->MVPredictor && mvp) ? mvp->VaBufferID : VA_INVALID_ID;
 
             mfxExtFeiHevcEncQP* qp = reinterpret_cast<mfxExtFeiHevcEncQP*>(GetBufById(task.m_ctrl, MFX_EXTBUFF_HEVCFEI_ENC_QP));
-            vaFeiFrameControl->qp = qp ? qp->VaBufferID : VA_INVALID_ID;
+            vaFeiFrameControl->qp = (EncFrameCtrl->PerCuQp && qp) ? qp->VaBufferID : VA_INVALID_ID;
 
             mfxExtFeiHevcEncCtuCtrl* ctuctrl = reinterpret_cast<mfxExtFeiHevcEncCtuCtrl*>(GetBufById(task.m_ctrl, MFX_EXTBUFF_HEVCFEI_ENC_CTU_CTRL));
-            vaFeiFrameControl->ctb_ctrl = ctuctrl ? ctuctrl->VaBufferID : VA_INVALID_ID;
+            vaFeiFrameControl->ctb_ctrl = (EncFrameCtrl->PerCtuInput && ctuctrl) ? ctuctrl->VaBufferID : VA_INVALID_ID;
 
             // Output buffers
 #if MFX_VERSION >= MFX_VERSION_NEXT
