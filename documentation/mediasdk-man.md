@@ -6808,8 +6808,8 @@ Multi Frame submission will gather frames from several [joined](#MFXJoinSession)
 | | |
 --- | ---
 `Header.BufferId`       | Must be [MFX_EXTBUFF_MULTI_FRAME_PARAM](#ExtendedBufferID).
-`MFMode    `            | Multi frame submission [mode](#MFMode).
-`MaxNumFrames`          | Maximum number of frames to be used for combining. Each encoder in [joined](#MFXJoinSession) sessions has to be [initialized](#MFXVideoENCODE_Init) with the same value.
+`MFMode    `            | Multi frame submission [mode](#MFMode), when buffer attached, MaxNumFrames is not equal to zero and MFMode is zero - will be set to MFX_MF_AUTO
+`MaxNumFrames`          | Maximum number of frames to be used for combining. Each encoder in [joined](#MFXJoinSession) sessions has to be [initialized](#MFXVideoENCODE_Init) with the same value, depending on parameters allowed number of frames can differ, use [query mechanizm](#MFXVideoENCODE_Query) to identify number of frames. By default along with MFX_MF_AUTO will be decided by SDK, if not set with other modes - disables multi-frame operation.
 
 **Change History**
 
@@ -6841,7 +6841,7 @@ If applicaiton attaches this structure to the [mfxVideoParam](#mfxVideoParam) st
 --- | ---
 `Header.BufferId`       | Must be [MFX_EXTBUFF_MULTI_FRAME_CONTROL](#ExtendedBufferID).
 `Flush    `             | Flushes internal frame buffer with current frame despite whether MaxNumFrames specified during [initialization](#MFXVideoENCODE_Init) through [mfxExtMultiFrameParam](#mfxExtMultiFrameParam)) reached or not.
-`Timeout`               | Time in microseconds specifying how long this encoder will wait for internal buffer of frames to collect MaxNumFrames specified during [initialization](#MFXVideoENCODE_Init) through [mfxExtMultiFrameParam](#mfxExtMultiFrameParam)), if elapse it'll flush internal buffer. Ignored with 'MFX_MF_MANUAL'.
+`Timeout`               | Time in microseconds specifying how long this encoder will wait for internal buffer of frames to collect MaxNumFrames specified during [initialization](#MFXVideoENCODE_Init) through [mfxExtMultiFrameParam](#mfxExtMultiFrameParam)), if elapse it'll flush internal buffer. Ignored with 'MFX_MF_MANUAL'. By default calculated based on target frame rate.
 
 **Change History**
 
@@ -8248,8 +8248,8 @@ The `MFMode` enumerator defines multi-frame submission mode.
 --- | ---
 `MFX_MF_DEFAULT`  | The SDK decides if multi-frame submission is enabled or disabled based on parameters, target encoder, platform, implementation, etc.
 `MFX_MF_DISABLED` | Explicitly disables multi-frame submission.
-`MFX_MF_AUTO`     | The SDK controls multi-frame submission based on timeout management, by default timeout is calculated based on requirement to reach particular output rate equal to framerate.
-`MFX_MF_MANUAL`   | Applicaiton manages multi-frame submission, The SDK will always wait for [mfxExtMultiFrameControl](#mfxExtMultiFrameControl)`::MaxNumFrames` to submit frames or until application specify [mfxExtMultiFrameControl](#mfxExtMultiFrameControl)`::Flush` with one of frames
+`MFX_MF_AUTO`     | The SDK controls multi-frame submission based on timeout management and decides amount of frames to be combined, by default timeout is calculated based on requirement to reach particular output rate equal to framerate.
+`MFX_MF_MANUAL`   | Applicaiton manages multi-frame submission, number of frames can be maximum for platform and decided by Application. The SDK will always wait for [mfxExtMultiFrameControl](#mfxExtMultiFrameControl)`::MaxNumFrames` to submit frames or until application specify [mfxExtMultiFrameControl](#mfxExtMultiFrameControl)`::Flush` with one of frames
 
 **Change History**
 
