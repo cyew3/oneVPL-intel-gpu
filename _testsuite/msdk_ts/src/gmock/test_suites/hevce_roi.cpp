@@ -78,6 +78,9 @@ namespace hevce_roi
         static const unsigned int n_cases_nv12;
         static const unsigned int n_cases_p010;
         static const unsigned int n_cases_y410;
+        static const unsigned int n_cases_ayuv;
+        static const unsigned int n_cases_yuy2;
+        static const unsigned int n_cases_y210;
 
     private:
         static const tc_struct test_case[];
@@ -382,6 +385,9 @@ namespace hevce_roi
     const unsigned int TestSuite::n_cases_nv12 = n_cases;
     const unsigned int TestSuite::n_cases_p010 = n_cases;
     const unsigned int TestSuite::n_cases_y410 = n_cases;
+    const unsigned int TestSuite::n_cases_ayuv = n_cases;
+    const unsigned int TestSuite::n_cases_yuy2 = n_cases;
+    const unsigned int TestSuite::n_cases_y210 = n_cases;
 
     struct streamDesc
     {
@@ -391,19 +397,25 @@ namespace hevce_roi
     };
 
     const streamDesc streams[] = {
-        {352, 288,  "YUV/foreman_352x288_300.yuv"},
-        {1280, 720, "YUV10bit/Suzie_ProRes_1280x720_50f.p010.yuv"},
-        {352, 288, "YUV10bit444/Kimono1_352x288_24_y410.yuv"}
+        {352, 288, "YUV/foreman_352x288_300.yuv"},
+        {1280,720, "YUV10bit/Suzie_ProRes_1280x720_50f.p010.yuv"},
+        {352, 288, "YUV10bit444/Kimono1_352x288_24_y410.yuv"},
+        {352, 288, "YUV8bit444/Kimono1_352x288_24_ayuv.yuv" },
+        {352, 288, "YUV8bit422/Kimono1_352x288_24_yuy2.yuv" },
+        {352, 288, "YUV10bit422/Kimono1_352x288_24_y210.yuv" }
     };
 
     const streamDesc& getStreamDesc(const mfxU32& id)
     {
         switch(id)
         {
-        case MFX_FOURCC_NV12: return streams[0];
-        case MFX_FOURCC_P010: return streams[1];
-        case MFX_FOURCC_Y410: return streams[2];
-        default: assert(0); return streams[0];
+            case MFX_FOURCC_NV12: return streams[0];
+            case MFX_FOURCC_P010: return streams[1];
+            case MFX_FOURCC_Y410: return streams[2];
+            case MFX_FOURCC_AYUV: return streams[3];
+            case MFX_FOURCC_YUY2: return streams[4];
+            case MFX_FOURCC_Y210: return streams[5];
+            default: assert(0); return streams[0];
         }
     }
 
@@ -446,7 +458,29 @@ namespace hevce_roi
             m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
             m_par.mfx.FrameInfo.BitDepthLuma = 10;
             m_par.mfx.FrameInfo.BitDepthChroma = 10;
-        } else
+        }
+        else if (fourcc_id == MFX_FOURCC_AYUV)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_AYUV;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            m_par.mfx.FrameInfo.BitDepthLuma = 8;
+            m_par.mfx.FrameInfo.BitDepthChroma = 8;
+        }
+        else if (fourcc_id == MFX_FOURCC_YUY2)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_YUY2;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+            m_par.mfx.FrameInfo.BitDepthLuma = 8;
+            m_par.mfx.FrameInfo.BitDepthChroma = 8;
+        }
+        else if (fourcc_id == MFX_FOURCC_Y210)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y210;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+            m_par.mfx.FrameInfo.BitDepthLuma = 10;
+            m_par.mfx.FrameInfo.BitDepthChroma = 10;
+        }
+        else
         {
             g_tsLog << "WARNING: invalid fourcc_id parameter!\n";
             return 0;
@@ -465,6 +499,23 @@ namespace hevce_roi
                 g_tsLog << "WARNING: Unsupported HW Platform!\n";
                 Query();
                 return 0;
+            }
+
+            if (m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_P010 && g_tsHWtype < MFX_HW_KBL) {
+                g_tsLog << "\n\nWARNING: P010 format only supported on KBL+!\n\n\n";
+                throw tsSKIP;
+            }
+            else if ((m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210 || m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_YUY2)
+                && (g_tsHWtype < MFX_HW_ICL || g_tsConfig.lowpower == MFX_CODINGOPTION_ON))
+            {
+                g_tsLog << "\n\nWARNING: 422 formats only supported on ICL+ and ENC+PAK!\n\n\n";
+                throw tsSKIP;
+            }
+            else if ((m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_AYUV || m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_Y410)
+                && (g_tsHWtype < MFX_HW_ICL || g_tsConfig.lowpower != MFX_CODINGOPTION_ON))
+            {
+                g_tsLog << "\n\nWARNING: 444 formats only supported on ICL+ and VDENC!\n\n\n";
+                throw tsSKIP;
             }
 
             //HEVCE_HW need aligned width and height for 32
@@ -561,4 +612,7 @@ namespace hevce_roi
     TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_roi,              RunTest_Subtype<MFX_FOURCC_NV12>, n_cases_nv12);
     TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_420_p010_roi, RunTest_Subtype<MFX_FOURCC_P010>, n_cases_p010);
     TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_444_y410_roi, RunTest_Subtype<MFX_FOURCC_Y410>, n_cases_y410);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_8b_444_ayuv_roi,  RunTest_Subtype<MFX_FOURCC_AYUV>, n_cases_ayuv);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_8b_422_yuy2_roi,  RunTest_Subtype<MFX_FOURCC_YUY2>, n_cases_yuy2);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_422_y210_roi, RunTest_Subtype<MFX_FOURCC_Y210>, n_cases_y210);
 };
