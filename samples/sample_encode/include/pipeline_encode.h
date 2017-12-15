@@ -66,6 +66,13 @@ enum MemType {
     D3D11_MEMORY  = 0x02,
 };
 
+enum ExtBRCType {
+    EXTBRC_DEFAULT,
+    EXTBRC_OFF,
+    EXTBRC_ON,
+    EXTBRC_IMPLICIT
+};
+
 struct sInputParams
 {
     mfxU16 nTargetUsage;
@@ -117,7 +124,7 @@ struct sInputParams
     mfxU16 nQPB;
 
     mfxU16 nGPB;
-    mfxU16 nExtBRC;
+    ExtBRCType nExtBRC;
     mfxU16 nAdaptiveMaxFrameSize;
 
     mfxU16 WeightedPred;

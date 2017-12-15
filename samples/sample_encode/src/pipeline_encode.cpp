@@ -539,7 +539,16 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         m_CodingOption2.MaxSliceSize   = pInParams->nMaxSliceSize;
         m_CodingOption2.MaxFrameSize = pInParams->nMaxFrameSize;
         m_CodingOption2.BRefType = pInParams->nBRefType;
-        m_CodingOption2.ExtBRC = (pInParams->CodecId == MFX_CODEC_HEVC || pInParams->CodecId == MFX_CODEC_AVC)? pInParams->nExtBRC : 0;
+
+        if (pInParams->nExtBRC != EXTBRC_DEFAULT && (pInParams->CodecId == MFX_CODEC_HEVC || pInParams->CodecId == MFX_CODEC_AVC))
+        {
+            m_CodingOption2.ExtBRC = (mfxU16)(pInParams->nExtBRC == EXTBRC_OFF ? MFX_CODINGOPTION_OFF : MFX_CODINGOPTION_ON);
+        }
+        else
+        {
+            m_CodingOption2.ExtBRC = 0;
+        }
+
         m_CodingOption2.IntRefType = pInParams->IntRefType;
         m_CodingOption2.IntRefCycleSize = pInParams->IntRefCycleSize;
         m_CodingOption2.IntRefQPDelta = pInParams->IntRefQPDelta;
@@ -547,7 +556,8 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     }
 
 #if (MFX_VERSION >= 1024)
-    if (pInParams->nExtBRC == MFX_CODINGOPTION_ON && (pInParams->CodecId == MFX_CODEC_HEVC || pInParams->CodecId == MFX_CODEC_AVC))
+    // This is for explicit extbrc only. In case of implicit (built-into-library) version - we don't need this extended buffer
+    if (pInParams->nExtBRC == EXTBRC_ON && (pInParams->CodecId == MFX_CODEC_HEVC || pInParams->CodecId == MFX_CODEC_AVC))
     {
        HEVCExtBRC::Create(m_ExtBRC);
        m_EncExtParams.push_back((mfxExtBuffer *)&m_ExtBRC);

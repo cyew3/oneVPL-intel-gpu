@@ -115,6 +115,13 @@ namespace TranscodingSample
         mfxU16 TileId;
     };
 
+    enum ExtBRCType {
+        EXTBRC_DEFAULT,
+        EXTBRC_OFF,
+        EXTBRC_ON,
+        EXTBRC_IMPLICIT
+    };
+
     struct __sInputParams
     {
         // session parameters
@@ -233,7 +240,7 @@ namespace TranscodingSample
         bool shouldUseGreedyFormula;
         bool enableQSVFF;
 
-        mfxU16 nExtBRC;
+        ExtBRCType nExtBRC;
 
 #if (MFX_VERSION >= 1025)
         mfxU16 numMFEFrames;

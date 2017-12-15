@@ -137,7 +137,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("   [-usei]                  - insert user data unregistered SEI. eg: 7fc92488825d11e7bb31be2e44b06b34:0:MSDK (uuid:type<0-preifx/1-suffix>:message)\n"));
     msdk_printf(MSDK_STRING("                              the suffix SEI for HEVCe can be inserted when CQP used or HRD disabled\n"));
 
-    msdk_printf(MSDK_STRING("   [-extbrc:<on,off>]       - External BRC for AVC and HEVC encoders"));
+    msdk_printf(MSDK_STRING("   [-extbrc:<on,off,implicit>]       - External BRC for AVC and HEVC encoders"));
 
     msdk_printf(MSDK_STRING("Example: %s h265 -i InputYUVFile -o OutputEncodedFile -w width -h height -hw -p 2fca99749fdb49aeb121a5b63ef568f7\n"), strAppName);
 #if D3D_SURFACES_SUPPORT
@@ -618,11 +618,15 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
 #if (MFX_VERSION >= 1024)
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-extbrc:on")))
         {
-            pParams->nExtBRC= MFX_CODINGOPTION_ON;
+            pParams->nExtBRC= EXTBRC_ON;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-extbrc:off")))
         {
-            pParams->nExtBRC = MFX_CODINGOPTION_OFF;
+            pParams->nExtBRC = EXTBRC_OFF;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-extbrc:implicit")))
+        {
+            pParams->nExtBRC = EXTBRC_IMPLICIT;
         }
 #endif
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-amfs:on")))

@@ -246,7 +246,7 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("  -WeightedBiPred::default|implicit     Enambles weighted bi-prediction usage\n"));
 
 #if (MFX_VERSION >= 1024)
-    msdk_printf(MSDK_STRING("  -extbrc::<on,off>           Enables external BRC for AVC and HEVC encoders"));
+    msdk_printf(MSDK_STRING("  -extbrc::<on,off,implicit>           Enables external BRC for AVC and HEVC encoders"));
 #endif
     msdk_printf(MSDK_STRING("  -vpp_comp <sourcesNum>      Enables composition from several decoding sessions. Result is written to the file\n"));
     msdk_printf(MSDK_STRING("  -vpp_comp_only <sourcesNum> Enables composition from several decoding sessions. Result is shown on screen\n"));
@@ -1625,14 +1625,19 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
             InputParams.enableQSVFF=true;
         }
 #if (MFX_VERSION >= 1024)
-        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-extbrc::on")))
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-extbrc:on")))
         {
-            InputParams.nExtBRC= MFX_CODINGOPTION_ON;
+            InputParams.nExtBRC = EXTBRC_ON;
         }
-        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-extbrc::off")))
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-extbrc:off")))
         {
-            InputParams.nExtBRC = MFX_CODINGOPTION_OFF;
+            InputParams.nExtBRC = EXTBRC_OFF;
         }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-extbrc:implicit")))
+        {
+            InputParams.nExtBRC = EXTBRC_IMPLICIT;
+        }
+
 #endif
         MOD_SMT_PARSE_INPUT
         else if((stsExtBuf = CVPPExtBuffersStorage::ParseCmdLine(argv,argc,i,&InputParams,skipped))
