@@ -464,6 +464,7 @@
     <ClCompile Include="src\gmock\test_suites\vpp_composition.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_deinterlac_inv_telec.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_donotuse.cpp" />
+    <ClCompile Include="src\gmock\test_suites\vpp_field_weaving_splitting.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_hw_wrn_filter_skipped.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_multi_view.cpp" />
