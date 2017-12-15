@@ -569,11 +569,11 @@ namespace HevcRplUtils
         {
             if (isField(par))
             {
-                std::sort(&RPL[1][0], &RPL[1][numRefActive[1]], InterlacePocDistanceIsGreater(DPB, poc, bSecondField, bBottomField));
+                std::sort(&RPL[1][0], &RPL[1][numRefActive[1]], InterlacePocDistanceIsLess(DPB, poc, bSecondField, bBottomField));
             }
             else
             {
-                std::sort(&RPL[1][0], &RPL[1][numRefActive[1]], PocDistanceIsGreater(DPB, poc));
+                std::sort(&RPL[1][0], &RPL[1][numRefActive[1]], PocDistanceIsLess(DPB, poc));
             }
             Remove(RPL[1], NumRefLX[1], l1 - NumRefLX[1]);
             l1 = (mfxU8)NumRefLX[1];
