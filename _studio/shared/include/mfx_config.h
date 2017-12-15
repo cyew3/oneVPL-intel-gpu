@@ -179,6 +179,11 @@
         //mp3
         #define MFX_ENABLE_MP3_AUDIO_DECODE
 
+        // av1
+        #if defined (MFX_VA)
+            #define MFX_ENABLE_AV1_VIDEO_DECODE
+        #endif
+
     #else // #if !defined(ANDROID)
         #include "mfx_android_defs.h"
 
@@ -227,6 +232,7 @@
         #undef MFX_ENABLE_H264_VIDEO_FEI_ENCPAK
         #undef MFX_ENABLE_H264_VIDEO_FEI_PREENC
         #undef MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE
+        #undef MFX_ENABLE_AV1_VIDEO_DECODE
     #endif // #if defined(AS_HEVCD_PLUGIN)
     #if defined(AS_CAMERA_PLUGIN)
         #define MFX_ENABLE_VPP
@@ -362,6 +368,10 @@
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     #define MFX_ENABLE_HEVCD_WPP
 #endif // PRE_SI_TARGET_PLATFORM_GEN12
+
+#if !defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
+    #undef MFX_ENABLE_AV1_VIDEO_DECODE
+#endif
 
 #define MFX_ENABLE_HEVCE_INTERLACE
 #define MFX_ENABLE_GET_CM_DEVICE

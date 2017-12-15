@@ -55,6 +55,10 @@
 #endif
 #endif
 
+#if defined (MFX_ENABLE_AV1_VIDEO_DECODE)
+#include "mfx_av1_dec_decode.h"
+#endif
+
 #ifdef MFX_ENABLE_USER_DECODE
 #include "mfx_user_plugin.h"
 #endif
@@ -127,6 +131,12 @@ VideoDECODE *CreateDECODESpecificClass(mfxU32 CodecId, VideoCORE *core, mfxSessi
 #endif // MFX_VA && MFX_ENABLE_VP9_VIDEO_DECODE_HW
 
         break;
+#endif
+
+#if defined (MFX_ENABLE_AV1_VIDEO_DECODE)
+     case MFX_CODEC_AV1:
+         pDECODE = new VideoDECODEAV1(core, &mfxRes);
+         break;
 #endif
 
     default:
@@ -230,6 +240,12 @@ mfxStatus MFXVideoDECODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
             break;
 #endif
 
+#ifdef MFX_ENABLE_AV1_VIDEO_DECODE
+        case MFX_CODEC_AV1:
+            mfxRes = VideoDECODEAV1::Query(session->m_pCORE.get(), in, out);
+            break;
+#endif
+
         default:
             mfxRes = MFX_ERR_UNSUPPORTED;
         }
@@ -318,6 +334,12 @@ mfxStatus MFXVideoDECODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
             break;
 #endif
 
+#ifdef MFX_ENABLE_AV1_VIDEO_DECODE
+        case MFX_CODEC_AV1:
+            mfxRes = VideoDECODEAV1::QueryIOSurf(session->m_pCORE.get(), par, request);
+            break;
+#endif
+
         default:
             mfxRes = MFX_ERR_UNSUPPORTED;
         }
@@ -398,6 +420,12 @@ mfxStatus MFXVideoDECODE_DecodeHeader(mfxSession session, mfxBitstream *bs, mfxV
 #if defined(MFX_ENABLE_VP9_VIDEO_DECODE) || defined (MFX_ENABLE_VP9_VIDEO_DECODE_HW)
         case MFX_CODEC_VP9:
             mfxRes = MFX_VP9_Utility::DecodeHeader(session->m_pCORE.get(), bs, par);
+            break;
+#endif
+
+#ifdef MFX_ENABLE_AV1_VIDEO_DECODE
+        case MFX_CODEC_AV1:
+            mfxRes = VideoDECODEAV1::DecodeHeader(session->m_pCORE.get(), bs, par);
             break;
 #endif
 
