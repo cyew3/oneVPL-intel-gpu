@@ -565,14 +565,16 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
 #endif
 
     // set up mfxCodingOption3
-    if (pInParams->nGPB || pInParams->LowDelayBRC ||
-        pInParams->WeightedPred || pInParams->WeightedBiPred
-        || pInParams->nPRefType || pInParams->IntRefCycleDist ||
-        pInParams->nAdaptiveMaxFrameSize)
+    if (pInParams->nGPB || pInParams->LowDelayBRC || pInParams->WeightedPred || pInParams->WeightedBiPred
+        || pInParams->nPRefType || pInParams->IntRefCycleDist || pInParams->nAdaptiveMaxFrameSize
+        || pInParams->nNumRefActiveP || pInParams->nNumRefActiveBL0 || pInParams->nNumRefActiveBL1)
     {
         if (pInParams->CodecId == MFX_CODEC_HEVC)
         {
             m_CodingOption3.GPB = pInParams->nGPB;
+            std::fill(m_CodingOption3.NumRefActiveP,   m_CodingOption3.NumRefActiveP + 8,   pInParams->nNumRefActiveP);
+            std::fill(m_CodingOption3.NumRefActiveBL0, m_CodingOption3.NumRefActiveBL0 + 8, pInParams->nNumRefActiveBL0);
+            std::fill(m_CodingOption3.NumRefActiveBL1, m_CodingOption3.NumRefActiveBL1 + 8, pInParams->nNumRefActiveBL1);
         }
 
         m_CodingOption3.WeightedPred   = pInParams->WeightedPred;

@@ -84,6 +84,9 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("   [-r distance] - Distance between I- or P- key frames (1 means no B-frames) \n"));
     msdk_printf(MSDK_STRING("   [-g size] - GOP size (default 256)\n"));
     msdk_printf(MSDK_STRING("   [-x numRefs]   - number of reference frames\n"));
+    msdk_printf(MSDK_STRING("   [-num_active_P numRefs]   - number of maximum allowed references for P frames (for HEVC only)\n"));
+    msdk_printf(MSDK_STRING("   [-num_active_BL0 numRefs] - number of maximum allowed references for B frames in L0 (for HEVC only)\n"));
+    msdk_printf(MSDK_STRING("   [-num_active_BL1 numRefs] - number of maximum allowed references for B frames in L1 (for HEVC only)\n"));
     msdk_printf(MSDK_STRING("   [-la] - use the look ahead bitrate control algorithm (LA BRC) (by default constant bitrate control method is used)\n"));
     msdk_printf(MSDK_STRING("           for H.264, H.265 encoder. Supported only with -hw option on 4th Generation Intel Core processors. \n"));
     msdk_printf(MSDK_STRING("   [-lad depth] - depth parameter for the LA BRC, the number of frames to be analyzed before encoding. In range [10,100].\n"));
@@ -615,6 +618,33 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->nPRefType = MFX_P_REF_SIMPLE;
         }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-num_active_P")))
+        {
+            VAL_CHECK(i+1 >= nArgNum, i, strInput[i]);
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nNumRefActiveP))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Number of active reference for P frames is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-num_active_BL0")))
+        {
+            VAL_CHECK(i+1 >= nArgNum, i, strInput[i]);
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nNumRefActiveBL0))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Number of active reference for B frames (L0) is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-num_active_BL1")))
+        {
+            VAL_CHECK(i+1 >= nArgNum, i, strInput[i]);
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nNumRefActiveBL1))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Number of active reference for B frames (L1) is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
 #if (MFX_VERSION >= 1024)
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-extbrc:on")))
         {
@@ -1064,6 +1094,15 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         if ((pParams->nLADepth != 1) || (!pParams->nMaxSliceSize))
         {
             PrintHelp(strInput[0], MSDK_STRING("Unsupported value of -lad parameter, must be >= 10, or 1 in case of -mss option!"));
+            return MFX_ERR_UNSUPPORTED;
+        }
+    }
+
+    if (pParams->nNumRefActiveP || pParams->nNumRefActiveBL0 || pParams->nNumRefActiveBL1)
+    {
+        if (pParams->CodecId != MFX_CODEC_HEVC)
+        {
+            PrintHelp(strInput[0], MSDK_STRING("NumRefActiveP/BL0/BL1 are supported only with HEVC encoder"));
             return MFX_ERR_UNSUPPORTED;
         }
     }
