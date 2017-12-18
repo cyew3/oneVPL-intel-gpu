@@ -353,6 +353,12 @@ mfxU16 AddTileSlices(
         nSlice = 1;
         nLcuPerSlice = nLCU;
     }
+    else if (SliceStructure == 2 && par.m_ext.CO2.NumMbPerSlice != 0)
+    {
+        //in case of NumMbPerSlice != 0 need to check alignment
+        //if it's value is not aligned, warning will be generated in CheckVideoParam() after MakeSlices() call
+        nLcuPerSlice = CeilDiv(par.m_ext.CO2.NumMbPerSlice, nCol) * nCol;
+    }
     else if (SliceStructure < 4)
     {
         nSlice = Min(nSlice, nRow);
@@ -2146,7 +2152,17 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 #if defined(PRE_SI_TARGET_PLATFORM_GEN10)
     if (par.m_ext.CO2.NumMbPerSlice != 0)
     {
-        changed += CheckOption(par.m_ext.CO2.NumMbPerSlice, par.m_slice[0].NumLCU);
+        for (std::vector<MfxHwH265Encode::MfxVideoParam::SliceInfo>::iterator it = par.m_slice.begin(); it != par.m_slice.end(); ++it)
+        {
+            if ((it != par.m_slice.end() - 1) && (par.m_slice.size() > 1))
+            {
+                changed += CheckOption(par.m_ext.CO2.NumMbPerSlice, it->NumLCU); //check all except last slice
+            }
+            else
+            {
+                changed += CheckMin(par.m_ext.CO2.NumMbPerSlice, it->NumLCU); //last slice is less or equal previous slices
+            }
+        }
     }
 #endif
 
