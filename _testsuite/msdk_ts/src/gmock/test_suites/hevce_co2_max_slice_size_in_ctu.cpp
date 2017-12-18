@@ -59,7 +59,23 @@ public:
     {
     }
 
-    int RunTest(unsigned int id);
+    struct tc_struct
+    {
+        mfxStatus sts;
+        mfxU32 mode;
+        struct f_pair
+        {
+            mfxU32 ext_type;
+            const  tsStruct::Field* f;
+            mfxU32 v;
+        } set_par[MAX_NPARS];
+        char* skips;
+    };
+
+    template<mfxU32 fourcc>
+    int RunTest_Subtype(const unsigned int id);
+
+    int RunTest(tc_struct tc, unsigned int fourcc_id);
     static const unsigned int n_cases;
 
 private:
@@ -78,19 +94,6 @@ private:
     {
         INIT    = 1 << 1,       //to set on initialization
         RESET   = 1 << 2,
-    };
-
-    struct tc_struct
-    {
-        mfxStatus sts;
-        mfxU32 mode;
-        struct f_pair
-        {
-            mfxU32 ext_type;
-            const  tsStruct::Field* f;
-            mfxU32 v;
-        } set_par[MAX_NPARS];
-        char* skips;
     };
 
     static const tc_struct test_case[];
@@ -173,11 +176,17 @@ const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(Test
 
 const int frameNumber = 20;
 
-int TestSuite::RunTest(unsigned int id)
+template<mfxU32 fourcc>
+int TestSuite::RunTest_Subtype(const unsigned int id)
+{
+    const tc_struct& tc = test_case[id];
+    return RunTest(tc, fourcc);
+}
+
+int TestSuite::RunTest(tc_struct tc, unsigned int fourcc_id)
 {
     int err = 0;
     TS_START;
-    const tc_struct& tc = test_case[id];
     m_mode = tc.mode;
 
     //This calculation is based on SKL limitation that LCU is always 32x32.
@@ -195,6 +204,49 @@ int TestSuite::RunTest(unsigned int id)
     MFXInit();
 
     SETPARS(m_pPar, MFX_PAR);
+
+    if (fourcc_id == MFX_FOURCC_NV12)
+    {
+        m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+        m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+        m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
+    }
+    else if (fourcc_id == MFX_FOURCC_P010)
+    {
+        m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_P010;
+        m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+        m_par.mfx.FrameInfo.Shift = 1;
+        m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
+    }
+    else if (fourcc_id == MFX_FOURCC_AYUV)
+    {
+        m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_AYUV;
+        m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+        m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
+    }
+    else if (fourcc_id == MFX_FOURCC_Y410)
+    {
+        m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y410;
+        m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+        m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
+    }
+    else if (fourcc_id == MFX_FOURCC_YUY2)
+    {
+        m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_YUY2;
+        m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+        m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
+    }
+    else if (fourcc_id == MFX_FOURCC_Y210)
+    {
+        m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y210;
+        m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+        m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
+    }
+    else
+    {
+        g_tsLog << "WARNING: invalid fourcc_id parameter: " << fourcc_id << "\n";
+        return 0;
+    }
 
     if (tc.sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM) {
         mfxExtCodingOption2& cod2 = m_par;
@@ -220,6 +272,22 @@ int TestSuite::RunTest(unsigned int id)
         {
             g_tsLog << "WARNING: Unsupported HW Platform!\n";
             return 0;
+        }
+        else if (m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_P010 && g_tsHWtype < MFX_HW_KBL) {
+            g_tsLog << "\n\nWARNING: P010 format only supported on KBL+!\n\n\n";
+            throw tsSKIP;
+        }
+        else if ((m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210 || m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_YUY2)
+            && (g_tsHWtype < MFX_HW_ICL || g_tsConfig.lowpower == MFX_CODINGOPTION_ON))
+        {
+            g_tsLog << "\n\nWARNING: 422 formats only supported on ICL+ and ENC+PAK!\n\n\n";
+            throw tsSKIP;
+        }
+        else if ((m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_AYUV || m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_Y410)
+            && (g_tsHWtype < MFX_HW_ICL || g_tsConfig.lowpower != MFX_CODINGOPTION_ON))
+        {
+            g_tsLog << "\n\nWARNING: 444 formats only supported on ICL+ and VDENC!\n\n\n";
+            throw tsSKIP;
         }
     } else {
         g_tsLog << "WARNING: only HEVCe HW plugin is tested\n";
@@ -259,5 +327,10 @@ int TestSuite::RunTest(unsigned int id)
     return err;
 }
 
-TS_REG_TEST_SUITE_CLASS(hevce_co2_max_slice_size_in_ctu);
+TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_co2_max_slice_size_in_ctu, RunTest_Subtype<MFX_FOURCC_NV12>, n_cases);
+TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_420_p010_co2_max_slice_size_in_ctu, RunTest_Subtype<MFX_FOURCC_P010>, n_cases);
+TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_8b_444_ayuv_co2_max_slice_size_in_ctu, RunTest_Subtype<MFX_FOURCC_AYUV>, n_cases);
+TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_444_y410_co2_max_slice_size_in_ctu, RunTest_Subtype<MFX_FOURCC_Y410>, n_cases);
+TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_8b_422_yuy2_co2_max_slice_size_in_ctu, RunTest_Subtype<MFX_FOURCC_YUY2>, n_cases);
+TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_422_y210_co2_max_slice_size_in_ctu, RunTest_Subtype<MFX_FOURCC_Y210>, n_cases);
 };
