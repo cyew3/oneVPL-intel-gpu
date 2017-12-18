@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -437,6 +437,17 @@ mfxStatus mfxDefaultAllocatorVAAPI::SetFrameData(const VAImage &va_image, mfxU32
             ptr->PitchHigh = (mfxU16)(va_image.pitches[0] / (1 << 16));
             ptr->PitchLow  = (mfxU16)(va_image.pitches[0] % (1 << 16));
             ptr->Y = pBuffer + va_image.offsets[0];
+        }
+        else mfx_res = MFX_ERR_LOCK_MEMORY;
+        break;
+    case VA_FOURCC_P010:
+        if (mfx_fourcc == MFX_FOURCC_P010)
+        {
+            ptr->PitchHigh = (mfxU16)(va_image.pitches[0] / (1 << 16));
+            ptr->PitchLow  = (mfxU16)(va_image.pitches[0] % (1 << 16));
+            ptr->Y = pBuffer + va_image.offsets[0];
+            ptr->U = pBuffer + va_image.offsets[1];
+            ptr->V = ptr->U + 2;
         }
         else mfx_res = MFX_ERR_LOCK_MEMORY;
         break;

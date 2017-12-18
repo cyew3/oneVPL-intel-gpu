@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -588,7 +588,7 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                     ptr->PitchLow  = (mfxU16)(vaapi_mid->m_image.pitches[0] % (1 << 16));
                     ptr->Y = pBuffer + vaapi_mid->m_image.offsets[0];
                     ptr->U = pBuffer + vaapi_mid->m_image.offsets[1];
-                    ptr->V = ptr->U + 1;
+                    ptr->V = ptr->U + 2;
                 }
                 else mfx_res = MFX_ERR_LOCK_MEMORY;
                 break;
