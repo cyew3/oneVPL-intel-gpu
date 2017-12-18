@@ -34,12 +34,6 @@
 
 #include "mfx_h264_encode_vaapi.h"
 
-#if defined(_DEBUG)
-#define mdprintf fprintf
-#else
-#define mdprintf(...)
-#endif
-
 using namespace MfxHwH264Encode;
 
 namespace MfxEncPREENC
@@ -607,7 +601,6 @@ static mfxStatus AsyncQuery(void * state, void * param, mfxU32 /*threadNumber*/,
 
 mfxStatus VideoENC_PREENC::QueryStatus(DdiTask& task)
 {
-    mdprintf(stderr,"query\n");
     mfxStatus sts = MFX_ERR_NONE;
     mfxU32 f = 0, f_start = 0;
     mfxU32 fieldCount = task.m_fieldPicFlag;
