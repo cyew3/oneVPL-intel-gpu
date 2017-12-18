@@ -35,8 +35,13 @@ To improve performance, HEVC FEI eliminates additional data copy inside SDK libr
 
 ![Direct access to VA buffers](./pic/va_buffers_direct_access.png)
 
-The application manages extension buffer allocation through VA API for Linux*. In order to do that, it is recommended to implement a buffer allocator and use it across the entire application. Example 1 shows the pseudo code of the buffer allocator implementation and its usage.
-Note that only extension buffers with field `VaBufferID` support direct access to VA buffers. Others must be allocated in system memory.
+The application manages extension buffer allocation through VA API for Linux*. In order to do that, it is recommended to implement a buffer allocator and use it across the entire application.
+The application must consider some driver requirements in the buffer allocator's implementation:
+* VA context should be created with the same input parameters (picture width/height, RateControlMethod) as passed in Media SDK library.
+* buffer allocation depends on HW layout implementation. See buffer structure description for more details.
+
+Example 1 shows the pseudo code of the buffer allocator implementation and its usage.
+<br>Note that only extension buffers with field `VaBufferID` support direct access to VA buffers. Others must be allocated in system memory.
 
 ###### Example 1: Buffer Allocator Pseudo Code
 ```C
@@ -45,10 +50,21 @@ Note that only extension buffers with field `VaBufferID` support direct access t
 
 class mfxBufferAllocator
 {
+
+    CreateVAContext(mfxHDL VADisplay)
+    {
+        VAConfigAttrib attrib;
+        attrib.type = VAConfigAttribRateControl;
+        attrib.value = VA_RC_CQP;
+        vaCreateConfig(VADisplay, VAProfileHEVCMain, VAEntrypointFEI, &attrib, 1, &VAConfigID);
+        vaCreateContext(VADisplay, VAConfigID, picture_width, picture_height, VA_PROGRESSIVE, NULL, 0, &VAContextID);
+    }
+
     Alloc(mfxExtBuffer buffer)
     {
-        vaCreateBuffer(VADisplay, VAContextID, VABufferType, buffer_size, num_elem, NULL, buffer.VaBufferID);
-        buffer.DataSize = buffer_size * num_elem;
+        buffer.Pitch = buffer_pitch;
+        buffer.Height = buffer_height;
+        vaCreateBuffer(VADisplay, VAContextID, VABufferType, CalcVASize(buffer_pitch, buffer_height), CalcVANumElem(buffer_pitch, buffer_height), NULL, buffer.VaBufferID);        
         buffer.Data = NULL;
     }
     Free(mfxExtBuffer buffer)
