@@ -14,6 +14,7 @@ Copyright(c) 2017 Intel Corporation. All Rights Reserved.
 #include "ts_parser.h"
 #include "ts_struct.h"
 #include "mfx_ext_buffers.h"
+
 /*
 // required for registry manipulations
 #if defined (WIN32)||(WIN64)
@@ -61,7 +62,6 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
 #define BASIC_NUM_TILE_COLS 4
 
 #define MAX_U16 0xffff
-
 #define MFX_MIN( a, b ) ( ((a) < (b)) ? (a) : (b) )
 
     struct tc_struct
@@ -854,6 +854,9 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         if (false == IsZeroExtBuf(m_extParam[SET]))
         {
             m_param[SET].ExtParam[m_param[SET].NumExtParam++] = (mfxExtBuffer*)&m_extParam[SET];
+        } else
+        {
+            m_param[SET].ExtParam[m_param[SET].NumExtParam] = nullptr;
         }
         SetAdditionalParams(m_param[SET], m_extParam[SET], fourcc, type);
 
@@ -1423,7 +1426,18 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
 
         if (g_tsHWtype < MFX_HW_ICL) // unsupported on platform less ICL
         {
-            g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
+            if (m_pPar->mfx.FrameInfo.Width > 4096 || m_pPar->mfx.FrameInfo.Height > 4096)
+            {
+                g_tsLog << "SKIPPED: Resolution > 4k isn't supported until ICL!\n";
+                return 0;
+            }
+            g_tsStatus.expect(MFX_ERR_NONE);
+            mfxExtVP9Param* vp9Param = (mfxExtVP9Param*) m_pPar->ExtParam[SET];
+            if (vp9Param && (vp9Param->NumTileRows > 1 || vp9Param->NumTileColumns > 1))
+            {
+                g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
+            }
+
             g_tsLog << "WARNING: Unsupported HW Platform!\n";
             mfxStatus sts = MFXVideoENCODE_Query(m_session, m_pPar, m_pParOut);
             g_tsStatus.check(sts);
