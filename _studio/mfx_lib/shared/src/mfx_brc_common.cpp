@@ -172,7 +172,7 @@ mfxStatus cBRCParams::Init(mfxVideoParam* par, bool bFielMode)
     mfxExtCodingOption3 * pExtCO3 = (mfxExtCodingOption3*)Hevc_GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_CODING_OPTION3);
     if (pExtCO3)
     {
-        WinBRCMaxAvgKbps = pExtCO3->WinBRCMaxAvgKbps*par->mfx.BRCParamMultiplier;
+        WinBRCMaxAvgKbps = static_cast<mfxU16>(pExtCO3->WinBRCMaxAvgKbps * k);
         WinBRCSize = pExtCO3->WinBRCSize;
     } 
     return MFX_ERR_NONE;
