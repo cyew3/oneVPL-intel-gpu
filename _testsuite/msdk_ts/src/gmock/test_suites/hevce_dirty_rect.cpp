@@ -47,7 +47,7 @@ namespace hevce_dirty_rect {
         ENCODE = 0x4
     };
 
-    mfxU32 LCUSize = 32; //for MFX_HW_CNL
+    mfxU32 BlkSize = 32; //for MFX_HW_CNL
 
     struct tc_struct {
         struct status {
@@ -92,7 +92,7 @@ namespace hevce_dirty_rect {
 
     const tc_struct TestSuite::test_case[] =
     {
-        {/*00*/{ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
+        {/*00*/{ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE },
             QUERY | INIT | ENCODE,{
             RECT_PARS(DIRTYRECT,                0, 1,   0, 0, 0, 0),
             RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, 0, 0, 0)
@@ -100,97 +100,103 @@ namespace hevce_dirty_rect {
 
         {/*01*/{ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
             QUERY | INIT | ENCODE,{
-            RECT_PARS(DIRTYRECT,                0, 1,   LCUSize, LCUSize, LCUSize * 2, LCUSize * 2),
-            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   LCUSize, LCUSize, LCUSize * 2, LCUSize * 2)
+            RECT_PARS(DIRTYRECT,                0, 1,   BlkSize, BlkSize, BlkSize * 2, BlkSize * 2),
+            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   BlkSize, BlkSize, BlkSize * 2, BlkSize * 2)
         } },
 
         {/*02*/{ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE },
             QUERY | INIT,{
-            RECT_PARS(DIRTYRECT,                0, 1,   0, 0, 0, LCUSize), // Right == Left
-            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, 0, 0, LCUSize)
+            RECT_PARS(DIRTYRECT,                0, 1,   0, 0, 0, BlkSize), // Right == Left
+            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, 0, 0, BlkSize)
         } },
 
         {/*03*/{ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE },
             QUERY | INIT,{
-            RECT_PARS(DIRTYRECT,                0, 1,   1920, 0, 0, LCUSize), // Left == Width
-            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,      0, 0, 0, LCUSize)
+            RECT_PARS(DIRTYRECT,                0, 1,   1920, 0, 0, BlkSize), // Left == Width
+            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   1920, 0, 0, BlkSize)
         } },
 
         {/*04*/{ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE },
             QUERY | INIT,{
-            RECT_PARS(DIRTYRECT,                0, 1,   0, 0, 1950, LCUSize), // Right > Width, out of bounds
-            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, 0,    0, LCUSize)
+            RECT_PARS(DIRTYRECT,                0, 1,   0, 0, 1950, BlkSize), // Right > Width, out of bounds
+            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, 0,    0, BlkSize)
         } },
 
         {/*05*/{ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE },
             QUERY | INIT,{
-            RECT_PARS(DIRTYRECT,                0, 1,   0, LCUSize, LCUSize * 2, LCUSize), // Top == Bottom
-            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, LCUSize, LCUSize * 2, 0)
+            RECT_PARS(DIRTYRECT,                0, 1,   0, BlkSize, BlkSize * 2, BlkSize), // Top == Bottom
+            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, BlkSize, BlkSize * 2, BlkSize)
         } },
 
         {/*06*/{ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE },
             QUERY | INIT,{
-            RECT_PARS(DIRTYRECT,                0, 1,   0, 1088, LCUSize, 0), // Top == Height
-            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0,    0, LCUSize, 0)
+            RECT_PARS(DIRTYRECT,                0, 1,   0, 1088, BlkSize, 0), // Top == Height
+            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, 1088, BlkSize, 0)
         } },
 
         {/*07*/{ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE },
             QUERY | INIT,{
-            RECT_PARS(DIRTYRECT,                0, 1,   0, 0, LCUSize, 1105), // Bottom > Height, out of bounds
-            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, 0, LCUSize,    0)
+            RECT_PARS(DIRTYRECT,                0, 1,   0, 0, BlkSize, 1105), // Bottom > Height, out of bounds
+            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, 0, BlkSize,    0)
         } },
 
         {/*08*/{ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE },
         QUERY | INIT,{
-            RECT_PARS(DIRTYRECT,                0, 1,   LCUSize * 2, 0, LCUSize, LCUSize), // Left > Rigth
-            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   LCUSize * 2, 0,       0, LCUSize)
+            RECT_PARS(DIRTYRECT,                0, 1,   BlkSize * 2, 0, BlkSize, BlkSize), // Left > Rigth
+            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   BlkSize * 2, 0, BlkSize, BlkSize)
         } },
 
         {/*09*/{ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE },
         QUERY | INIT,{
-            RECT_PARS(DIRTYRECT,                0, 1,   0, LCUSize * 2, LCUSize, LCUSize), // Top > Bottom
-            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, LCUSize * 2, LCUSize,       0)
+            RECT_PARS(DIRTYRECT,                0, 1,   0, BlkSize * 2, BlkSize, BlkSize), // Top > Bottom
+            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, BlkSize * 2, BlkSize, BlkSize)
         } },
 
         {/*10*/{ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE },
         QUERY | INIT,{
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  0 },
-            RECT_PARS(DIRTYRECT,                0, 1,   LCUSize * 2, 0, LCUSize, LCUSize), // Left > Rigth, Width = 0
-            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   LCUSize * 2, 0, LCUSize, LCUSize)
+            RECT_PARS(DIRTYRECT,                0, 1,   BlkSize * 2, 0, BlkSize, BlkSize), // Left > Rigth, Width = 0
+            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   BlkSize * 2, 0, BlkSize, BlkSize)
         } },
 
         {/*11*/{ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE },
         QUERY | INIT,{
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height,  0 },
-            RECT_PARS(DIRTYRECT,                0, 1,   0, LCUSize * 2, LCUSize, LCUSize), // Top > Bottom, Height = 0
-            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, LCUSize * 2, LCUSize, LCUSize)
+            RECT_PARS(DIRTYRECT,                0, 1,   0, BlkSize * 2, BlkSize, BlkSize), // Top > Bottom, Height = 0
+            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, BlkSize * 2, BlkSize, BlkSize)
         } },
 
         {/*12*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE },
         QUERY | INIT | ENCODE,{
-            RECT_PARS(DIRTYRECT,                0, 1,   LCUSize - (LCUSize - 1), LCUSize - (LCUSize - 1), LCUSize + 1, LCUSize + 1),
-            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,                         0,                       0, LCUSize * 2, LCUSize * 2)
+            RECT_PARS(DIRTYRECT,                0, 1,   BlkSize - (BlkSize - 1), BlkSize - (BlkSize - 1), BlkSize + 1, BlkSize + 1),
+            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,                         0,                       0, BlkSize * 2, BlkSize * 2)
         } },
 
-        {/*13*/{ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
+        {/*13*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE },
         QUERY | INIT | ENCODE,{
-            RECT_PARS(DIRTYRECT,                0, 2,   0, 0,     LCUSize,        LCUSize), //Rect[0]
-            RECT_PARS(DIRTYRECT,                1, 2,   0, 0, LCUSize * 2,    LCUSize * 2), //Rect[1]
-
-            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 2,   0, 0,     LCUSize,     LCUSize),
-            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 1, 2,   0, 0, LCUSize * 2, LCUSize * 2),
+            RECT_PARS(DIRTYRECT,                0, 1,   BlkSize - 1, BlkSize - 1, BlkSize + 1, BlkSize + 1),
+            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,             0,           0, BlkSize * 2, BlkSize * 2)
         } },
 
-        {/*14*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE },
+        {/*14*/{ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
+        QUERY | INIT | ENCODE,{
+            RECT_PARS(DIRTYRECT,                0, 2,   0, 0,     BlkSize,        BlkSize), //Rect[0]
+            RECT_PARS(DIRTYRECT,                1, 2,   0, 0, BlkSize * 2,    BlkSize * 2), //Rect[1]
+
+            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 2,   0, 0,     BlkSize,     BlkSize),
+            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 1, 2,   0, 0, BlkSize * 2, BlkSize * 2),
+        } },
+
+        {/*15*/{ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE },
         QUERY | INIT,{
             { DIRTYRECT, &tsStruct::mfxExtDirtyRect.NumRect, 100 }, // MAX NumRect is 64
             { DIRTYRECT_EXPECTED_QUERY, &tsStruct::mfxExtDirtyRect.NumRect, 64 }
         } },
 
-        {/*15*/{ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
+        {/*16*/{ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
         ENCODE,{
-            RECT_PARS(DIRTYRECT,                0, 1,   0, 0, LCUSize * 2, LCUSize * 2),
-            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, 0, LCUSize * 2, LCUSize * 2)
+            RECT_PARS(DIRTYRECT,                0, 1,   0, 0, BlkSize * 2, BlkSize * 2),
+            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, 0, BlkSize * 2, BlkSize * 2)
         } },
     };
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::test_case[0]);
@@ -205,7 +211,7 @@ namespace hevce_dirty_rect {
         }
 
         if (g_tsImpl == MFX_IMPL_HARDWARE) {
-            if (g_tsHWtype < MFX_HW_CNL || m_par.mfx.LowPower == MFX_CODINGOPTION_OFF) { //this test is for VDEnc only
+            if (g_tsHWtype < MFX_HW_CNL || m_par.mfx.LowPower != MFX_CODINGOPTION_ON) { //this test is for VDEnc only
                 g_tsLog << "SKIPPED for this platform\n";
                 return 0;
             }
@@ -289,6 +295,14 @@ namespace hevce_dirty_rect {
         }
 
         if (tc.type & ENCODE) {
+            if (!m_initialized) //for test-cases which expects errors on Init()
+            {
+                //Initialize without incorrect DirtyRect ext buffer
+                m_par.RemoveExtBuffer(MFX_EXTBUFF_DIRTY_RECTANGLES);
+                Init(); TS_CHECK_MFX;
+                //then set incorrect values back
+                m_par.AddExtBuffer(MFX_EXTBUFF_DIRTY_RECTANGLES, sizeof(mfxExtDirtyRect));
+            }
             m_ctrl.AddExtBuffer(MFX_EXTBUFF_DIRTY_RECTANGLES, sizeof(mfxExtDirtyRect));
             extDirtyRect = m_ctrl.GetExtBuffer(MFX_EXTBUFF_DIRTY_RECTANGLES);
 
