@@ -347,23 +347,24 @@ namespace hevce_init
         {/*48*/ MFX_ERR_NONE, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR } },
         {/*49*/ MFX_ERR_NONE, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP } },
         {/*50*/ MFX_ERR_NONE, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR } },
-        {/*51*/ MFX_ERR_INVALID_VIDEO_PARAM, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED1 } },
-        {/*52*/ MFX_ERR_INVALID_VIDEO_PARAM, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED2 } },
-        {/*53*/ MFX_ERR_INVALID_VIDEO_PARAM, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED3 } },
-        {/*54*/ MFX_ERR_INVALID_VIDEO_PARAM, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED4 } },
-        {/*55*/ MFX_ERR_INVALID_VIDEO_PARAM, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA } },
-        {/*56*/ MFX_ERR_INVALID_VIDEO_PARAM, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_ICQ } },
-        {/*57*/ MFX_ERR_INVALID_VIDEO_PARAM, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, 16 } },
+        {/*51*/ MFX_ERR_NONE, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_EXT } },
+        {/*52*/ MFX_ERR_INVALID_VIDEO_PARAM, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED1 } },
+        {/*53*/ MFX_ERR_INVALID_VIDEO_PARAM, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED2 } },
+        {/*54*/ MFX_ERR_INVALID_VIDEO_PARAM, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED3 } },
+        {/*55*/ MFX_ERR_INVALID_VIDEO_PARAM, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED4 } },
+        {/*56*/ MFX_ERR_INVALID_VIDEO_PARAM, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA } },
+        {/*57*/ MFX_ERR_INVALID_VIDEO_PARAM, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_ICQ } },
+        {/*58*/ MFX_ERR_INVALID_VIDEO_PARAM, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, 16 } },
         //encoded order
-        {/*58*/ MFX_ERR_NONE, NONE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.EncodedOrder, 1 } },
+        {/*59*/ MFX_ERR_NONE, NONE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.EncodedOrder, 1 } },
         //native
-        {/*59*/ MFX_ERR_INVALID_VIDEO_PARAM, NOT_LOAD_PLUGIN, NONE, {} },
+        {/*60*/ MFX_ERR_INVALID_VIDEO_PARAM, NOT_LOAD_PLUGIN, NONE, {} },
         //call query
-        {/*60*/ MFX_ERR_NONE, CALL_QUERY, NONE, {} },
+        {/*61*/ MFX_ERR_NONE, CALL_QUERY, NONE, {} },
         //API mfxExtHEVCParam, for HW plugin only
         //in current version PicWidthInLumaSamples/PicHeightInLumaSamples should be aligned on 16 due to hw limitation
         //after this limitation removed, expected status for case #60/#61 would be updated
-        {/*61*/ MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
+        {/*62*/ MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 1920 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 1088 },
@@ -373,7 +374,7 @@ namespace hevce_init
                 { MFX_EXT_HEVCPARAM, &tsStruct::mfxExtHEVCParam.PicHeightInLumaSamples, 1080 },
             }
         },
-        {/*62*/ MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
+        {/*63*/ MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 1920 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 1088 },
@@ -383,13 +384,13 @@ namespace hevce_init
                 { MFX_EXT_HEVCPARAM, &tsStruct::mfxExtHEVCParam.PicHeightInLumaSamples, 1088 },
             }
         },
-        {/*63*/ MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
+        {/*64*/ MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
             {
                 { MFX_EXT_HEVCPARAM, &tsStruct::mfxExtHEVCParam.PicWidthInLumaSamples, 0 },
                 { MFX_EXT_HEVCPARAM, &tsStruct::mfxExtHEVCParam.PicHeightInLumaSamples, 0 },
             }
         },
-        {/*64*/ MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
+        {/*65*/ MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 1920 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 1088 },
@@ -397,32 +398,32 @@ namespace hevce_init
                 { MFX_EXT_HEVCPARAM, &tsStruct::mfxExtHEVCParam.PicHeightInLumaSamples, 1088 + 10 },
             }
         },
-        {/*65*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
+        {/*66*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
             {
                 { MFX_EXT_HEVCPARAM, &tsStruct::mfxExtHEVCParam.PicWidthInLumaSamples, 32 },
                 { MFX_EXT_HEVCPARAM, &tsStruct::mfxExtHEVCParam.PicHeightInLumaSamples, 32 },
             }
         },
-        {/*66*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
+        {/*67*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
             {
                 { MFX_EXT_HEVCPARAM, &tsStruct::mfxExtHEVCParam.PicWidthInLumaSamples, 8 },
                 { MFX_EXT_HEVCPARAM, &tsStruct::mfxExtHEVCParam.PicHeightInLumaSamples, 8 },
             }
         },
         //GeneralConstraintFlags is not supported for HEVCE hw plugin upto Gen11
-        {/*67*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
+        {/*68*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
             {
                 { MFX_EXT_HEVCPARAM, &tsStruct::mfxExtHEVCParam.GeneralConstraintFlags, MFX_HEVC_CONSTR_REXT_MAX_12BIT }
             }
         },
-        {/*68*/ MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_HEVC_REGION,
+        {/*69*/ MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_HEVC_REGION,
             {
                 {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionId, 0},
                 {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionType, MFX_HEVC_REGION_SLICE},
                 {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionEncoding, MFX_HEVC_REGION_ENCODING_ON}
             }
         },
-        {/*69*/ MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_HEVC_REGION,
+        {/*70*/ MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_HEVC_REGION,
             {
                 {MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 2}, //multi slices
                 {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionId, 1},
@@ -430,28 +431,28 @@ namespace hevce_init
                 {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionEncoding, MFX_HEVC_REGION_ENCODING_ON}
             }
         },
-        {/*70*/ MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_REGION,
+        {/*71*/ MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_REGION,
             {
                 {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionId, 0},
                 {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionType, 1}, //unsupported type
                 {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionEncoding, MFX_HEVC_REGION_ENCODING_ON}
             }
         },
-        {/*71*/ MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_REGION,
+        {/*72*/ MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_REGION,
             {
                 {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionId, 1}, //>= slice_num
                 {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionType, MFX_HEVC_REGION_SLICE},
                 {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionEncoding, MFX_HEVC_REGION_ENCODING_ON}
             }
         },
-        {/*72*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_REGION,
+        {/*73*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_REGION,
             {
                 {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionId, 0},
                 {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionType, MFX_HEVC_REGION_SLICE},
                 {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionEncoding, 2} //invalid parameter
             }
         },
-        {/*73*/ MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_HEVC_REGION,
+        {/*74*/ MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_HEVC_REGION,
             {
                 {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionId, 1}, //>= slice_num
                 {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionType, 1}, //unsupported type
@@ -459,65 +460,65 @@ namespace hevce_init
             }
         },
         //FourCC for RExt
-        {/*74*/ MFX_ERR_NONE, FOURCC, NONE,
+        {/*75*/ MFX_ERR_NONE, FOURCC, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_P010 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV420 }
             }
         },
-        {/*75*/ MFX_ERR_NONE, FOURCC, NONE,
+        {/*76*/ MFX_ERR_NONE, FOURCC, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_Y210 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV422 }
             }
         },
-        {/*76*/ MFX_ERR_INVALID_VIDEO_PARAM, FOURCC, INVALID,
+        {/*77*/ MFX_ERR_INVALID_VIDEO_PARAM, FOURCC, INVALID,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_Y210 }
             }
         },
-        {/*77*/ MFX_ERR_NONE, FOURCC, NONE,
+        {/*78*/ MFX_ERR_NONE, FOURCC, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_YUY2 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV422 }
             }
         },
-        {/*78*/ MFX_ERR_INVALID_VIDEO_PARAM, FOURCC, INVALID,
+        {/*79*/ MFX_ERR_INVALID_VIDEO_PARAM, FOURCC, INVALID,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_YUY2 }
             }
         },
-        {/*79*/ MFX_ERR_NONE, FOURCC, NONE,
+        {/*80*/ MFX_ERR_NONE, FOURCC, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_Y410 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV444 }
             }
         },
-        {/*80*/ MFX_ERR_INVALID_VIDEO_PARAM, FOURCC, INVALID,
+        {/*81*/ MFX_ERR_INVALID_VIDEO_PARAM, FOURCC, INVALID,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_Y410 }
             }
         },
 
-        {/*81*/ MFX_ERR_NONE, FOURCC, NONE,
+        {/*82*/ MFX_ERR_NONE, FOURCC, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_AYUV },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV444 }
             }
         },
-        {/*82*/ MFX_ERR_INVALID_VIDEO_PARAM, FOURCC, INVALID,
+        {/*83*/ MFX_ERR_INVALID_VIDEO_PARAM, FOURCC, INVALID,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_AYUV },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, 0 }
             }
         },
-        {/*83*/ MFX_ERR_NONE, FOURCC, NONE,
+        {/*84*/ MFX_ERR_NONE, FOURCC, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_A2RGB10 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV444 }
             }
         },
-        {/*84*/ MFX_ERR_INVALID_VIDEO_PARAM, FOURCC, INVALID,
+        {/*85*/ MFX_ERR_INVALID_VIDEO_PARAM, FOURCC, INVALID,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_A2RGB10 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, 0 }
