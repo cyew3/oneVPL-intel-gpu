@@ -266,9 +266,11 @@ mfxU16 UpdatePicStruct( mfxU16 inPicStruct, mfxU16 outPicStruct, bool bDynamicDe
         {
             resultPicStruct = (mfxU16)((outputFrameCounter & 1) ? MFX_PICSTRUCT_FIELD_TOP : MFX_PICSTRUCT_FIELD_BOTTOM);
         }
-        else
+        else // return error on progressive input
         {
+            sts = MFX_ERR_INVALID_VIDEO_PARAM;
             resultPicStruct = outPicStruct;
+            return resultPicStruct;
         }
 
         sts = MFX_ERR_NONE;

@@ -3739,6 +3739,12 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
         mfxU32  len   = (mfxU32)pipelineList.size();
         mfxU32* pList = (len > 0) ? (mfxU32*)&pipelineList[0] : NULL;
 
+        // Input has to be interlace
+        if (!(par->vpp.In.PicStruct & MFX_PICSTRUCT_FIELD_TFF) && !(par->vpp.In.PicStruct & MFX_PICSTRUCT_FIELD_BFF))
+        {
+            sts = GetWorstSts(sts, MFX_ERR_INVALID_VIDEO_PARAM);
+        }
+
         if (!IsFilterFound(pList, len, MFX_EXTBUFF_VPP_FIELD_SPLITTING) || // FIELD_SPLITTING filter must be there
             (IsFilterFound(pList, len, MFX_EXTBUFF_VPP_RESIZE)                &&
              len > 2) ) // there are other filters except implicit RESIZE
