@@ -200,7 +200,21 @@ This extension buffer specifies MV predictors for ENCODE and ENC usage models. T
 
 This structure is used during runtime and should be attached to the `mfxEncodeCtrl` structure for ENCODE usage model and to the `mfxENCInput` for ENC.
 
-This buffer has different layout from AVC. Each `mfxFeiHevcEncMVPredictors` element in Data array corresponds to 16x16 block of pixels from input frame. Four such elements are combined in group that corresponds to 32x32 block of pixels. Elements are located in zig-zag order inside group and groups are located in raster scan order inside buffer. Due to such layout input frame size should be aligned to 32 before calculation of buffer size. That means that buffer width in elements should be calculated as `(((picture width + 31)/32)*32)/16` and buffer height as `(((picture height + 31)/32)*32)/16`.
+This buffer has different layout from AVC. Each `mfxFeiHevcEncMVPredictors` element in Data array corresponds to 16x16 block of pixels from input frame. Four such elements are combined in group that corresponds to 32x32 block of pixels. Elements are located in zig-zag order inside group and groups are located in raster scan order inside buffer. Due to such layout input frame size should be aligned to 32 before calculation of buffer size. That means that buffer width in elements should be calculated as `((picture width + 31)/32)*2` and buffer height as `((picture height + 31)/32)*2`.
+
+###### Working with MVP buffer
+```C
+mfxExtFeiHevcEncMVPredictors mvp_buffer;
+mfxU32 Pitch  = sizeof(mvp_buffer.Data[0])
+* (((picture_width + 31) / 32) * 2)
+* (((picture_height + 31) / 32) * 2);
+mfxU32 Height = 1;
+vaCreateBuffer(display, context, type, Pitch, Height, NULL, &mvp_buffer.VaBufferID);
+vaMapBuffer(display, mvp_buffer.VaBufferID, (void**)&mvp_buffer.Data);
+//Fill MVP here
+vaUnmapBuffer(display, mvp_buffer.VaBufferID);
+
+```
 
 Figure 3 shows example of buffer layout. Blue rectangle represents input frame. Each thin line rectangle represents one element corresponding to 16x16 block of pixels. Each thick rectangle represents group of four elements corresponding to 32x32 block of pixels. Number inside rectangle represent element layout inside MVP buffer. Zero element is located at the beginning of the buffer, it is followed by first, then second and so on elements.
 
@@ -221,7 +235,7 @@ MVP may be specified for 16x16 or 32x32 block of pixels, see description of `Blo
 `RefIdx[4]` | Array of reference indexes for each MV predictor. Index in the array is a predictor number.
 `RefL0, RefL1` | L0 and L1 reference indexes.
 `BlockSize` | Block size for which MV predictors are specified. <br><br> 0x0 - disable MVPs for current block<br> 0x1 - MVPs for 16x16 blocks<br> 0x2 - MVPs for 32x32 block<br><br>It is used only if `MVPredictor` variable in [mfxExtFeiHevcEncFrameCtrl](#mfxExtFeiHevcEncFrameCtrl) structure is set to 0x07.
-`MV[4][2]` | Up to 4 MV predictors per CTU. First index is predictor number, second is 0 for L0 reference and 1 for L1 reference.<br><br>0x8000 value should be used for intra CTUs.<br><br>Number of actual predictors is defined by `NumMVPredictors[2]` value in the [mfxExtFeiHevcEncFrameCtrl](#mfxExtFeiHevcEncFrameCtrl) structure. Unused MV predictors are ignored.
+`MV[4][2]` | Up to 4 MV predictors per 16x16 block. First index is predictor number, second is 0 for L0 reference and 1 for L1 reference.<br><br>0x8000 value should be used for intra CTUs.<br><br>Number of actual predictors is defined by `NumMVPredictors[2]` value in the [mfxExtFeiHevcEncFrameCtrl](#mfxExtFeiHevcEncFrameCtrl) structure. Unused MV predictors are ignored.
 
 **Change History**
 
