@@ -142,6 +142,11 @@ protected:
  
 #if (defined (MFX_ENABLE_H264_VIDEO_ENCODE) || defined (MFX_ENABLE_H265_VIDEO_ENCODE)) && !defined(MFX_EXT_BRC_DISABLE)
 
+#define MIN_RACA 0.25
+#define MAX_RACA 361.0
+#define RACA_SCALE 128.0
+
+
 namespace MfxHwH265EncodeBRC
 {
 class cBRCParams
@@ -174,6 +179,8 @@ public:
     mfxU16 height;
     mfxU16 chromaFormat;
     mfxU16 bitDepthLuma;
+    mfxU32 mRawFrameSizeInBits;
+    mfxU32 mRawFrameSizeInPixs;
 
     // GOP params
     mfxU16 gopPicSize;
@@ -194,9 +201,17 @@ public:
     mfxI32   quantMinP;
     mfxI32   quantMaxB;
     mfxI32   quantMinB;
+    mfxU32   iDQp0;
+    mfxU32   iDQp;
+    mfxU32   mNumRefsInGop;
+    bool     mIntraBoost;
+    mfxF64   mMinQstepCmplxKP;
+    mfxF64   mMinQstepRateEP;
+    mfxI32   mMinQstepCmplxKPUpdt;
+    mfxF64   mMinQstepCmplxKPUpdtErr;
 
 public:
-    cBRCParams():
+    cBRCParams() :
         rateControlMethod(0),
         bHRDConformance(0),
         bRec(0),
@@ -207,7 +222,7 @@ public:
         WinBRCSize(0),
         targetbps(0),
         maxbps(0),
-        frameRate(0),    
+        frameRate(0),
         inputBitsPerFrame(0),
         maxInputBitsPerFrame(0),
         maxFrameSizeInBits(0),
@@ -215,6 +230,8 @@ public:
         height(0),
         chromaFormat(0),
         bitDepthLuma(0),
+        mRawFrameSizeInBits(0),
+        mRawFrameSizeInPixs(0),
         gopPicSize(0),
         gopRefDist(0),
         bPyr(0),
@@ -228,7 +245,15 @@ public:
         quantMaxP(0),
         quantMinP(0),
         quantMaxB(0),
-        quantMinB(0)
+        quantMinB(0),
+        iDQp0(0),
+        iDQp(0),
+        mNumRefsInGop(0),
+        mIntraBoost(0),
+        mMinQstepCmplxKP(0),
+        mMinQstepRateEP(0),
+        mMinQstepCmplxKPUpdt(0),
+        mMinQstepCmplxKPUpdtErr(0)
     {}
 
     mfxStatus Init(mfxVideoParam* par, bool bFieldMode = false);
@@ -260,6 +285,7 @@ public:
     mfxI32    GetMaxQuant() { return m_overflowQuant -  1;}
     mfxI32    GetMinQuant() { return m_underflowQuant + 1;}
     mfxF64    GetBufferDiviation(mfxU32 targetBitrate);
+    mfxF64    GetBufferDiviation();
  
 
 
@@ -281,6 +307,7 @@ private:
 };
 struct BRC_Ctx
 {
+    mfxI32 QuantIDR;  //currect qp for intra frames
     mfxI32 QuantI;  //currect qp for intra frames
     mfxI32 QuantP;  //currect qp for P frames
     mfxI32 QuantB;  //currect qp for B frames
@@ -295,7 +322,15 @@ struct BRC_Ctx
     mfxU32 poc;             // poc of last encoded frame
     mfxI32 SceneChange;     // scene change parameter of last encoded frame
     mfxU32 SChPoc;          // poc of frame with scene change
-    mfxU32 LastIEncOrder;   // encoded order if last intra frame
+    mfxU32 LastIEncOrder;   // encoded order of last intra frame
+    mfxU32 LastIDREncOrder;   // encoded order of last intra frame
+    mfxU32 LastIQpAct;      // Qp of last intra frame
+    mfxU32 LastIFrameSize; // encoded frame size of last non B frame (is used for sceneChange)
+    mfxF64 LastICmplx;      // Qp of last intra frame
+    mfxU32 LastIQpSetOrder; // Qp of last intra frame
+    mfxU32 LastIQpMin; // Qp of last intra frame
+    mfxU32 LastIQpSet;      // Qp of last intra frame
+    
     mfxU32 LastNonBFrameSize; // encoded frame size of last non B frame (is used for sceneChange)
 
     mfxF64 fAbLong;         // frame abberation (long period)
@@ -313,26 +348,39 @@ private:
     cBRCParams m_par;
     cHRD       m_hrd;
     bool       m_bInit;
+    bool       m_bDynamicInit;
     BRC_Ctx    m_ctx;
     std::auto_ptr<AVGBitrate> m_avg;
+    mfxU32     m_SkipCount;
+    mfxU32     m_ReEncodeCount;
 
 public:
     ExtBRC():
         m_par(),
         m_hrd(),
-        m_bInit(false)
+        m_bInit(false),
+        m_bDynamicInit(false),
+        m_SkipCount(0),
+        m_ReEncodeCount(0)
     {
         memset(&m_ctx, 0, sizeof(m_ctx));
 
     }
     mfxStatus Init (mfxVideoParam* par);
     mfxStatus Reset(mfxVideoParam* par);
-    mfxStatus Close () {m_bInit = false; return MFX_ERR_NONE;}
+    mfxStatus Close () {
+        //printf("\nFrames skipped: %i \n", m_SkipCount);
+        //printf("\nNumber of re-encodes: %i \n", m_ReEncodeCount);
+        m_bInit = false; 
+        return MFX_ERR_NONE;
+    }
     mfxStatus GetFrameCtrl (mfxBRCFrameParam* par, mfxBRCFrameCtrl* ctrl);
     mfxStatus Update (mfxBRCFrameParam* par, mfxBRCFrameCtrl* ctrl, mfxBRCFrameStatus* status);
 
 protected:
-    mfxI32 GetCurQP (mfxU32 type, mfxI32 layer);
+    mfxI32 GetCurQP (mfxU32 type, mfxI32 layer, mfxU16 isRef);
+    mfxI32 GetSeqQP(mfxI32 qp, mfxU32 type, mfxI32 layer, mfxU16 isRef);
+    mfxI32 GetPicQP(mfxI32 qp, mfxU32 type, mfxI32 layer, mfxU16 isRef);
 };
 }
 namespace HEVCExtBRC

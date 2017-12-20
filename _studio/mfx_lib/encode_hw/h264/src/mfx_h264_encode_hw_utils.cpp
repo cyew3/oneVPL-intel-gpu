@@ -1286,10 +1286,10 @@ void TaskManager::UpdateDpb(
 
     if ((type & MFX_FRAMETYPE_REF) == 0)
         return; // non-reference frames doesn't change dpb
-
-    mfxExtAVCRefListCtrl const * ctrl = task.m_internalListCtrlPresent
+    mfxExtAVCRefListCtrl const * ext_ctrl = GetExtBuffer(task.m_ctrl);
+    mfxExtAVCRefListCtrl const * ctrl = (task.m_internalListCtrlPresent && (task.m_internalListCtrlHasPriority || !ext_ctrl))
         ? &task.m_internalListCtrl
-        : GetExtBuffer(task.m_ctrl);
+        : ext_ctrl;
 
     if (type & MFX_FRAMETYPE_IDR)
     {
@@ -1588,6 +1588,8 @@ namespace
         DdiTask &                        task)
     {
         task.m_internalListCtrlPresent = false;
+        task.m_internalListCtrlHasPriority = true;
+        task.m_internalListCtrlRefModLTR = false;
         InitExtBufHeader(task.m_internalListCtrl);
 
         mfxU32 numLayers  = video.calcParam.numTemporalLayer;

@@ -4064,6 +4064,10 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     }
 #endif
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    if (!CheckTriStateOption(extOpt3->ExtBrcAdaptiveLTR)) changed = true;
+#endif
+
     if (hwCaps.UserMaxFrameSizeSupport == 0 && ((extOpt2->MaxFrameSize) || (extOpt3->MaxFrameSizeI) || (extOpt3->MaxFrameSizeP)))
     {
         extOpt2->MaxFrameSize = 0;
@@ -5363,7 +5367,7 @@ void MfxHwH264Encode::SetDefaults(
     mfxExtMultiFrameControl* mfeControl = GetExtBuffer(par);
 #endif
     bool isENCPAK = (feiParam->Func == MFX_FEI_FUNCTION_ENCODE) ||
-                    (feiParam->Func == MFX_FEI_FUNCTION_ENC)    ||
+                    (feiParam->Func == MFX_FEI_FUNCTION_ENC) ||
                     (feiParam->Func == MFX_FEI_FUNCTION_PAK);
 
     bool isPAK      = feiParam->Func == MFX_FEI_FUNCTION_PAK;
@@ -5391,7 +5395,7 @@ void MfxHwH264Encode::SetDefaults(
     {
         if (par.mfx.GopRefDist == 0)
             par.mfx.GopRefDist = 1;
-        if (par.mfx.FrameInfo.PicStruct  == 0)
+        if (par.mfx.FrameInfo.PicStruct == 0)
             par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
         if (par.AsyncDepth == 0)
             par.AsyncDepth = 1;
@@ -5462,7 +5466,7 @@ void MfxHwH264Encode::SetDefaults(
 
     if (par.mfx.NumSlice == 0)
     {
-        if (extOpt2->NumMbPerSlice != 0){
+        if (extOpt2->NumMbPerSlice != 0) {
             par.mfx.NumSlice = (
                 (par.mfx.FrameInfo.Width / 16) *
                 (par.mfx.FrameInfo.Height / 16 / (fieldCodingPossible ? 2 : 1)) +
@@ -5539,25 +5543,25 @@ void MfxHwH264Encode::SetDefaults(
     }
     if ((par.mfx.RateControlMethod == MFX_RATECONTROL_LA || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT) && (extOpt3->WinBRCMaxAvgKbps || extOpt3->WinBRCSize))
     {
-      if (!extOpt3->WinBRCMaxAvgKbps)
-      {
-          extOpt3->WinBRCMaxAvgKbps = par.mfx.TargetKbps*2;
-          par.calcParam.WinBRCMaxAvgKbps = par.calcParam.targetKbps*2;
-      }
-      if (!extOpt3->WinBRCSize)
-      {
-          extOpt3->WinBRCSize = (mfxU16)(par.mfx.FrameInfo.FrameRateExtN / par.mfx.FrameInfo.FrameRateExtD);
-          extOpt3->WinBRCSize = (!extOpt3->WinBRCSize) ? 30 : extOpt3->WinBRCSize;
-      }
+        if (!extOpt3->WinBRCMaxAvgKbps)
+        {
+            extOpt3->WinBRCMaxAvgKbps = par.mfx.TargetKbps * 2;
+            par.calcParam.WinBRCMaxAvgKbps = par.calcParam.targetKbps * 2;
+        }
+        if (!extOpt3->WinBRCSize)
+        {
+            extOpt3->WinBRCSize = (mfxU16)(par.mfx.FrameInfo.FrameRateExtN / par.mfx.FrameInfo.FrameRateExtD);
+            extOpt3->WinBRCSize = (!extOpt3->WinBRCSize) ? 30 : extOpt3->WinBRCSize;
+        }
     }
 
-    if ( (!extOpt2->SkipFrame) && ((extOpt3->WinBRCSize > 0 && (par.mfx.RateControlMethod != MFX_RATECONTROL_VBR && par.mfx.RateControlMethod != MFX_RATECONTROL_QVBR)) || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD))
+    if ((!extOpt2->SkipFrame) && ((extOpt3->WinBRCSize > 0 && (par.mfx.RateControlMethod != MFX_RATECONTROL_VBR && par.mfx.RateControlMethod != MFX_RATECONTROL_QVBR)) || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD))
     {
         extOpt2->SkipFrame = MFX_SKIPFRAME_INSERT_DUMMY;
     }
 
     //WA for MVC quality problem on progressive content.
-    if(IsMvcProfile(par.mfx.CodecProfile)){
+    if (IsMvcProfile(par.mfx.CodecProfile)) {
         extDdi->NumActiveRefP = extDdi->NumActiveRefBL0 = extDdi->NumActiveRefBL1 = 1;
     }
     if (extDdi->NumActiveRefP == 0)
@@ -5716,7 +5720,7 @@ void MfxHwH264Encode::SetDefaults(
         extOpt->VuiNalHrdParameters =
             par.mfx.RateControlMethod == MFX_RATECONTROL_CQP ||
             par.mfx.RateControlMethod == MFX_RATECONTROL_AVBR ||
-            (bRateControlLA(par.mfx.RateControlMethod) && par.mfx.RateControlMethod != MFX_RATECONTROL_LA_HRD)||
+            (bRateControlLA(par.mfx.RateControlMethod) && par.mfx.RateControlMethod != MFX_RATECONTROL_LA_HRD) ||
             IsOn(extOpt2->DisableVUI)
                 ? mfxU16(MFX_CODINGOPTION_OFF)
                 : mfxU16(MFX_CODINGOPTION_ON);
@@ -5726,7 +5730,6 @@ void MfxHwH264Encode::SetDefaults(
 
     if (extOpt->NalHrdConformance == MFX_CODINGOPTION_UNKNOWN)
         extOpt->NalHrdConformance = IsOn(extOpt->VuiNalHrdParameters) || IsOn(extOpt->VuiVclHrdParameters)
-
             ? mfxU16(MFX_CODINGOPTION_ON)
             : mfxU16(MFX_CODINGOPTION_OFF);
 
@@ -5782,8 +5785,8 @@ void MfxHwH264Encode::SetDefaults(
     }
 
     if ((extOpt2->LookAheadDS != MFX_LOOKAHEAD_DS_OFF) &&
-        (extOpt2->LookAheadDS != MFX_LOOKAHEAD_DS_2x)  &&
-        (extOpt2->LookAheadDS != MFX_LOOKAHEAD_DS_4x) )
+        (extOpt2->LookAheadDS != MFX_LOOKAHEAD_DS_2x) &&
+        (extOpt2->LookAheadDS != MFX_LOOKAHEAD_DS_4x))
         extOpt2->LookAheadDS = MFX_LOOKAHEAD_DS_OFF;
 
     if (extDdi->QpUpdateRange == 0)
@@ -6050,8 +6053,28 @@ void MfxHwH264Encode::SetDefaults(
         extOpt2->MaxFrameSize = IPP_MIN(GetMaxFrameSize(par), GetFirstMaxFrameSize(par));
 
 #if MFX_VERSION >= 1023
-    if ( extOpt3->AdaptiveMaxFrameSize == MFX_CODINGOPTION_UNKNOWN)
+    if (extOpt3->AdaptiveMaxFrameSize == MFX_CODINGOPTION_UNKNOWN)
         extOpt3->AdaptiveMaxFrameSize = MFX_CODINGOPTION_OFF;
+#endif
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    if (extOpt3->ExtBrcAdaptiveLTR == MFX_CODINGOPTION_UNKNOWN) {
+        extOpt3->ExtBrcAdaptiveLTR = MFX_CODINGOPTION_OFF;
+        if (IsOn(extOpt2->ExtBRC) 
+            && (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR || par.mfx.RateControlMethod == MFX_RATECONTROL_VBR)
+            && (par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE)) {
+            mfxExtBRC * extBRC = GetExtBuffer(par);
+            if (!extBRC->pthis) {
+                extOpt3->ExtBrcAdaptiveLTR = MFX_CODINGOPTION_ON;
+            }
+        }
+    }
+    if (extOpt3->ExtBrcAdaptiveLTR == MFX_CODINGOPTION_ON) {
+        if (extOpt2->AdaptiveB == MFX_CODINGOPTION_UNKNOWN)
+            extOpt2->AdaptiveB = MFX_CODINGOPTION_ON;
+        if (extOpt2->AdaptiveI == MFX_CODINGOPTION_UNKNOWN)
+            extOpt2->AdaptiveI = MFX_CODINGOPTION_ON;
+    }
 #endif
 
     par.ApplyDefaultsToMvcSeqDesc();

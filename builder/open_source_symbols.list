@@ -37,6 +37,8 @@ MFX_ENABLE_MPEG2_VIDEO_DECODE
 MFX_ENABLE_H264_VIDEO_ENCODE_HW
 _MFX_H264_ENCODE_HW_H_
 _MFX_H264_ENCODE_HW_UTILS_H_
+_MFX_H264_SCD_H_
+ASCVIDEOSTATSBUF
 _DEBUG
 brcprintf
 __MFX_MPEG2_ENCODE_HW_FULL_H__
@@ -55,9 +57,12 @@ _MFX_H264_PREENC_H_
 _MFX_ENC_EXT_H_
 _MFX_PAK_EXT_H_
 __genx_fcopy_cmcode__
+__genx_bdw_h264_scd__
 __genx_bdw_simple_me__
+__genx_hsw_h264_scd__
 __genx_hsw_histogram__
 __genx_hsw_simple_me__
+__genx_skl_h264_scd__
 __genx_skl_histogram__
 __genx_skl_simple_me__
 __MFX_H264LA_PLUGIN_INCLUDED__

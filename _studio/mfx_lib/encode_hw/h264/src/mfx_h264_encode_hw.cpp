@@ -728,6 +728,7 @@ ImplementationAvc::ImplementationAvc(VideoCORE * core)
 , m_frameOrder(0)
 , m_baseLayerOrder(0)
 , m_frameOrderIdrInDisplayOrder(0)
+, m_frameOrderIfrInDisplayOrder(0)
 , m_frameOrderStartTScalStructure(0)
 , m_baseLayerOrderStartIntraRefresh(0)
 , m_intraStripeWidthInMBs(0)
@@ -754,6 +755,11 @@ ImplementationAvc::ImplementationAvc(VideoCORE * core)
 , m_agopFinishedLen(0)
 , m_agopDeps(0)
 #endif
+, m_enabledSwBrcLtr(false)
+, m_LtrQp(0)
+, m_LtrOrder(-1)
+, m_RefQp(0)
+, m_RefOrder(-1)
 {
     memset(&m_recNonRef, 0, sizeof(m_recNonRef));
 #if USE_AGOP
@@ -764,6 +770,8 @@ ImplementationAvc::ImplementationAvc(VideoCORE * core)
 
 ImplementationAvc::~ImplementationAvc()
 {
+    amtScd.Close();
+
     DestroyDanglingCmResources();
 
     mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(m_video);
@@ -915,6 +923,28 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         if (sts != MFX_ERR_NONE)
             return MFX_WRN_PARTIAL_ACCELERATION;
         m_video.mfx.RateControlMethod = storedRateControlMethod;
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        mfxExtCodingOption3 * extOpt3 = GetExtBuffer(m_video);
+        if (IsOn(extOpt3->ExtBrcAdaptiveLTR) &&
+            (m_video.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) &&
+            (m_video.mfx.RateControlMethod == MFX_RATECONTROL_CBR || m_video.mfx.RateControlMethod == MFX_RATECONTROL_VBR)) {
+            mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(m_video);
+            mfxU32 numActiveRefL0P = extDdi->NumActiveRefP;
+            mfxU16 nrfMin = (m_video.mfx.GopRefDist > 1 ? 2 : 1);
+            bool bPyr = (extOpt2->BRefType == MFX_B_REF_PYRAMID);
+            if (bPyr) {
+                mfxU16 refB = m_video.mfx.GopRefDist ? (m_video.mfx.GopRefDist - 1) / 2 : 0;
+                for (mfxU16 x = refB; x > 2;) {
+                    x = (x - 1) / 2;
+                    refB -= x;
+                }
+                nrfMin += refB;
+            }
+            if (m_video.mfx.NumRefFrame > nrfMin && numActiveRefL0P > 1)
+                m_enabledSwBrcLtr = true;
+        }
+#endif
     }
     else
     {
@@ -922,6 +952,8 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         if (sts != MFX_ERR_NONE)
             return MFX_WRN_PARTIAL_ACCELERATION;
     }
+
+    
 
     if (IsOn(extOpt2->EnableMAD))
     {
@@ -1293,6 +1325,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     m_failedStatus   = MFX_ERR_NONE;
     m_baseLayerOrder = 0;
     m_frameOrderIdrInDisplayOrder = 0;
+    m_frameOrderIfrInDisplayOrder = 0;
     m_frameOrderStartTScalStructure = 0;
 
     m_lastTask = DdiTask();
@@ -1356,6 +1389,14 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         m_bestGOPCost[i] = MAX_SEQUENCE_COST;
     }
 #endif
+
+    //MFX_CHECK(m_video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE, MFX_ERR_UNSUPPORTED); //Interlaced mode has not been tested for this implementation
+    
+    bool useGPUsurf = !(m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY);
+
+    amtScd.Init(m_core, m_video.mfx.FrameInfo,
+        m_video.mfx.FrameInfo.CropW, m_video.mfx.FrameInfo.CropH, m_video.mfx.FrameInfo.Width, MFX_PICSTRUCT_PROGRESSIVE, useGPUsurf);
+
     // init slice divider
     bool fieldCoding = (m_video.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) == 0;
     m_sliceDivider = MakeSliceDivider(
@@ -1648,6 +1689,7 @@ mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
         m_frameOrder                  = 0;
         m_baseLayerOrder              = 0;
         m_frameOrderIdrInDisplayOrder = 0;
+        m_frameOrderIfrInDisplayOrder = 0;
         m_frameOrderStartTScalStructure = 0;
 
         m_1stFieldStatus = MFX_ERR_NONE;
@@ -2375,6 +2417,175 @@ void ImplementationAvc::BrcPreEnc(
     m_brc.PreEnc(par, m_tmpVmeData);
 }
 
+mfxStatus ImplementationAvc::SCD_Put_Frame(DdiTask & newTask) {
+    mfxExtOpaqueSurfaceAlloc const * extOpaq = GetExtBuffer(m_video);
+    mfxFrameSurface1 * surface = newTask.m_yuv;
+
+    if (m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY || m_video.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY ||
+        (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)))
+    {
+        if (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
+        {
+            surface = m_core->GetNativeSurface(newTask.m_yuv);
+            if (surface == 0)
+                return Error(MFX_ERR_UNDEFINED_BEHAVIOR);
+        }
+        else if (m_video.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY)
+        {
+            surface = Reconstruct(newTask).m_yuv;
+            if (surface == 0)
+                return Error(MFX_ERR_UNDEFINED_BEHAVIOR);
+        
+        }
+        mfxFrameData pData = surface->Data;
+
+        if (m_video.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY)
+            amtScd.PutFrame(surface);
+        else {
+            FrameLocker lock2(m_core, pData, true);
+            if (pData.Y == 0)
+                return Error(MFX_ERR_LOCK_MEMORY);
+            amtScd.SetPitch(pData.Pitch);
+            amtScd.PutFrame(pData.Y);
+        }
+    }
+    return MFX_ERR_NONE;
+}
+
+void ImplementationAvc::SCD_Get_FrameType(DdiTask & newTask) 
+{
+    bool gopStrict = !!(m_video.mfx.GopOptFlag & MFX_GOP_STRICT);
+    mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(m_video);
+    if (IsOn(extOpt2->AdaptiveI) && !gopStrict && amtScd.Get_frame_shot_Decision() ) {
+        mfxI32 idist = (mfxI32)(m_frameOrder - m_frameOrderIfrInDisplayOrder);
+        mfxI32 idrdist = (mfxI32)(m_frameOrder - m_frameOrderIdrInDisplayOrder);
+        mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(m_video);
+        mfxI32 numRef = IPP_MIN(extDdi->NumActiveRefP, m_video.mfx.NumRefFrame);
+        
+        bool bPyr = (extOpt2->BRefType == MFX_B_REF_PYRAMID) ? true : false;
+        mfxI32 minPDist = numRef * m_video.mfx.GopRefDist;
+        mfxI32 minIdrDist = (newTask.m_frameLtrOff ? numRef : IPP_MAX(8,numRef)) * (bPyr ? 2 : m_video.mfx.GopRefDist);
+        minIdrDist = IPP_MIN(minIdrDist, m_video.mfx.GopPicSize/2);
+        minPDist = IPP_MIN(minPDist, minIdrDist);
+
+        if (!(newTask.m_type[0] & MFX_FRAMETYPE_I) && idist < minPDist && IsOn(extOpt2->AdaptiveB)) {
+            // inside ref list
+            // B to P
+            if (!bPyr) {
+                newTask.m_ctrl.FrameType = (MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF);
+                newTask.m_type = ExtendFrameType(newTask.m_ctrl.FrameType);
+                newTask.m_SceneChange = 1;
+            } else 
+                newTask.m_SceneChange = 0; // Dont break Pyr Structure
+        } else if (!(newTask.m_type[0] & MFX_FRAMETYPE_IDR) && idrdist < minIdrDist) {
+            // outside ref list
+            // B/P to I
+            if (!bPyr) {
+                newTask.m_ctrl.FrameType = (MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF);
+                newTask.m_type = ExtendFrameType(newTask.m_ctrl.FrameType);
+                newTask.m_SceneChange = 1;
+            } else 
+                newTask.m_SceneChange = 0;  // Dont break Pyr Structure
+        } else {
+            // IDR
+            newTask.m_ctrl.FrameType = (MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_IDR);
+            newTask.m_type = ExtendFrameType(newTask.m_ctrl.FrameType);
+            newTask.m_SceneChange = 1;
+        }
+    } else {
+        newTask.m_SceneChange = 0;
+    }
+}
+
+void ImplementationAvc::Prd_LTR_Operation(DdiTask & newTask) {
+    newTask.m_frameLtrRe  = 0;
+    newTask.m_LtrOrder = m_LtrOrder;
+    newTask.m_RefOrder = m_RefOrder;
+    newTask.m_LtrQp    = m_LtrQp;
+    newTask.m_RefQp    = m_RefQp;
+    newTask.m_frameLtrOff = 0;
+    newTask.m_enabledSwBrcLtr = m_enabledSwBrcLtr;
+    if (!m_enabledSwBrcLtr)
+    {
+        newTask.m_frameLtrOff = 1;
+    } else {
+        newTask.m_frameLtrOff = 0;
+        ASC_LTR_DEC scd_LTR_hint = amtScd.get_LTR_op_hint();
+
+        if (amtScd.Query_LTR_Status() && (scd_LTR_hint == NO_LTR)) {
+            //Stop LTR
+            newTask.m_frameLtrOff = 1;
+            amtScd.Reset_LTR_Status();
+        }
+        else if (!amtScd.Query_LTR_Status() && (scd_LTR_hint >= YES_LTR)) {
+            //Turn LTR on only until GoP restarts
+            newTask.m_frameLtrOff = 0;
+            amtScd.Set_LTR_Status();
+        }
+        if (m_LtrQp && m_RefQp && m_RefQp < m_LtrQp - 1 && m_LtrOrder >= 0 && m_RefOrder > m_LtrOrder) {
+            newTask.m_frameLtrRe = 1;
+        }
+    }
+}
+
+mfxStatus ImplementationAvc::CalculateRaCa(DdiTask const &task, mfxU16 &raca128) 
+{
+    mfxStatus status = MFX_ERR_NONE;
+    mfxF64 raca = 0;
+    mfxExtOpaqueSurfaceAlloc const * extOpaq = GetExtBuffer(m_video);
+    mfxFrameSurface1 * surface = task.m_yuv;
+
+    if (m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY || m_video.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY ||
+        (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)))
+    {
+        if (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
+        {
+            surface = m_core->GetNativeSurface(task.m_yuv);
+            if (surface == 0)
+                return Error(MFX_ERR_UNDEFINED_BEHAVIOR);
+            surface->Info = task.m_yuv->Info;
+        }
+        else if (m_video.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY)
+        {
+            surface = Reconstruct(task).m_yuv;
+            if (surface == 0)
+                return Error(MFX_ERR_UNDEFINED_BEHAVIOR);
+        }
+
+
+        mfxFrameData Data = surface->Data;
+        mfxFrameInfo Info = surface->Info;
+
+        if (m_video.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY) 
+            status = amtScd.calc_RsCs_Surf(surface, raca);
+        else {
+            FrameLocker lock2(m_core, Data, true);
+            if (Data.Y == 0)
+                return Error(MFX_ERR_LOCK_MEMORY);
+            mfxI32 w, h, pitch;
+            mfxU8 *ptr;
+
+            if (Info.CropH > 0 && Info.CropW > 0) {
+                w = Info.CropW;
+                h = Info.CropH;
+            } else {
+                w = Info.Width;
+                h = Info.Height;
+            }
+
+            pitch = Data.Pitch;
+            ptr = Data.Y + Info.CropX + Info.CropY * pitch;
+
+            if (ptr)
+                status = amtScd.calc_RsCs_pic(ptr, w, h, Data.Pitch, raca);
+        }
+        if (raca < MIN_RACA) raca = MIN_RACA;
+        if (raca > MAX_RACA) raca = MAX_RACA;
+        raca128 = (mfxU16)(raca * RACA_SCALE);
+    }
+    return status;
+}
+
 struct FindNonSkip
 {
     FindNonSkip(mfxU16 skipFrameMode) : m_skipFrameMode(skipFrameMode) {}
@@ -2474,6 +2685,20 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         {
             if (newTask.m_type[0] == 0)
                 newTask.m_type     = GetFrameType(m_video, m_frameOrder - m_frameOrderIdrInDisplayOrder);
+
+            if (m_enabledSwBrc 
+                && (m_video.mfx.RateControlMethod == MFX_RATECONTROL_CBR || m_video.mfx.RateControlMethod == MFX_RATECONTROL_VBR)
+                && (m_video.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE)
+                && (m_enabledSwBrcLtr || (IsOn(extOpt2->AdaptiveI) && !(m_video.mfx.GopOptFlag & MFX_GOP_STRICT)))
+               ) 
+            {
+                mfxStatus sts = SCD_Put_Frame(newTask);
+                if (sts != MFX_ERR_NONE)
+                    return Error(sts);
+                Prd_LTR_Operation(newTask);
+                SCD_Get_FrameType(newTask);
+            }
+
             newTask.m_frameOrder   = m_frameOrder;
             newTask.m_picStruct    = GetPicStruct(m_video, newTask);
             newTask.m_fieldPicFlag = newTask.m_picStruct[ENC] != MFX_PICSTRUCT_PROGRESSIVE;
@@ -2504,6 +2729,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
             if (newTask.GetFrameType() & MFX_FRAMETYPE_I)
             {
+                m_frameOrderIfrInDisplayOrder = newTask.m_frameOrder;
                 m_baseLayerOrderStartIntraRefresh = newTask.m_baseLayerOrder;
             }
 
@@ -2910,11 +3136,30 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                       return Error(sts);
             }
 
-
-             BRCFrameParams par;
-             InitFrameParams(par, &(*task));
+            BRCFrameParams par;
+            task->m_frcmplx = 0;
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+            if ((m_video.mfx.RateControlMethod == MFX_RATECONTROL_CBR || m_video.mfx.RateControlMethod == MFX_RATECONTROL_VBR)
+                && (m_video.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE)
+                && (task->GetFrameType() & MFX_FRAMETYPE_I) && (task->m_encOrder==0 || m_video.mfx.GopPicSize != 1)) {
+                mfxStatus sts = CalculateRaCa(*task, task->m_frcmplx);
+                 if (sts != MFX_ERR_NONE)
+                     return Error(sts);
+            }
+#endif
+            InitFrameParams(par, &(*task));
 
             task->m_cqpValue[0] = task->m_cqpValue[1] = m_brc.GetQp(par);
+
+            if ((m_video.mfx.RateControlMethod == MFX_RATECONTROL_CBR || m_video.mfx.RateControlMethod == MFX_RATECONTROL_VBR))
+            { 
+                m_LtrOrder = task->m_LtrOrder;
+                m_LtrQp    = (task->m_longTermFrameIdx != NO_INDEX_U8) ? task->m_cqpValue[0] : task->m_LtrQp;
+                if (task->m_type[0] & MFX_FRAMETYPE_REF) {
+                    m_RefQp = task->m_cqpValue[0];
+                    m_RefOrder = task->m_frameOrder;
+                }
+            }
 
             if (extOpt2 ->MaxSliceSize)
             {
@@ -3134,12 +3379,13 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                         task->m_cqpValue[1]= task->m_cqpValue[0];
                         // printf("Recoding 0: frame %d, qp %d\n", task->m_frameOrder, task->m_cqpValue[0]);
                         bRecoding = true;
-                }
+                        task->m_repackForBsDataLength++;
+                } 
                 if (!bRecoding)
                 {
                     BRCFrameParams par;
                     InitFrameParams(par, &(*task)); 
-                    par.NumRecode = extOpt2->MaxSliceSize ? 0 : par.NumRecode;
+                    par.NumRecode = extOpt2->MaxSliceSize ? 0 : (par.NumRecode - task->m_repackForBsDataLength);
                     mfxU32 res = m_brc.Report(par, bsDataLength, 0, hrd.GetMaxFrameSize((task->m_type[task->m_fid[0]] & MFX_FRAMETYPE_IDR)), task->m_cqpValue[0]);
                     MFX_CHECK((mfxI32)res != UMC::BRC_ERROR, MFX_ERR_UNDEFINED_BEHAVIOR);
                     if ((res != 0) && (!extOpt2->MaxSliceSize))
@@ -3202,11 +3448,27 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                         curTask = nextTask;
                     }
                     // restart  encoded task
-                    nextTask = task;
+                    nextTask = curTask = task;
                     do
                     {
+                        if (m_enabledSwBrc && (m_video.mfx.RateControlMethod == MFX_RATECONTROL_CBR || m_video.mfx.RateControlMethod == MFX_RATECONTROL_VBR)) {
+                            if (nextTask != task)
+                            {
+                                BRCFrameParams par;
+                                InitFrameParams(par, &(*nextTask));
+                                nextTask->m_cqpValue[0] = nextTask->m_cqpValue[1] = m_brc.GetQp(par);
+                            }
+                            if (nextTask->m_longTermFrameIdx != NO_INDEX_U8 && nextTask->m_LtrOrder == m_LtrOrder) {
+                                m_LtrQp = nextTask->m_cqpValue[0];
+                            } 
+                            if (nextTask->m_type[0] & MFX_FRAMETYPE_REF) {
+                                m_RefQp = nextTask->m_cqpValue[0];
+                                m_RefOrder = nextTask->m_frameOrder;
+                            }
+                        }
                         curTask = nextTask;
                         curTask->m_bsDataLength[0] = curTask->m_bsDataLength[1] = 0;
+                        
                         for (mfxU32 f = 0; f <= curTask->m_fieldPicFlag; f++)
                         {
                             PrepareSeiMessageBuffer(m_video, *curTask, curTask->m_fid[f], m_sei);

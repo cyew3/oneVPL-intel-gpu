@@ -446,6 +446,7 @@ foreach( prefix ${MSDK_LIB_ROOT}/encode_hw/h264/src )
     ${prefix}/mfx_h264_encode_hw_utils.cpp
     ${prefix}/mfx_h264_encode_hw_utils_new.cpp
     ${prefix}/mfx_h264_encode_hw.cpp
+    ${prefix}/mfx_h264_scd.cpp
   )
 endforeach()
 
@@ -457,6 +458,10 @@ foreach( prefix ${MSDK_LIB_ROOT}/genx/h264_encode/src )
     ${prefix}/genx_hsw_simple_me_proto.cpp
     ${prefix}/genx_hsw_histogram_isa.cpp
     ${prefix}/genx_skl_histogram_isa.cpp
+    ${prefix}/genx_bdw_h264_scd_isa.cpp
+    ${prefix}/genx_cnl_h264_scd_isa.cpp
+    ${prefix}/genx_hsw_h264_scd_isa.cpp
+    ${prefix}/genx_skl_h264_scd_isa.cpp
   )
 endforeach()
 

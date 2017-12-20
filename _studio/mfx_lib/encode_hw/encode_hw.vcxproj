@@ -255,6 +255,7 @@
     <ClCompile Include="h264\src\mfx_h264_encode_hw.cpp" />
     <ClCompile Include="h264\src\mfx_h264_encode_hw_utils.cpp" />
     <ClCompile Include="h264\src\mfx_h264_encode_hw_utils_new.cpp" />
+    <ClCompile Include="h264\src\mfx_h264_scd.cpp" />
     <ClCompile Include="mjpeg\src\mfx_mjpeg_encode_d3d11.cpp" />
     <ClCompile Include="mjpeg\src\mfx_mjpeg_encode_d3d9.cpp" />
     <ClCompile Include="mjpeg\src\mfx_mjpeg_encode_factory.cpp" />
