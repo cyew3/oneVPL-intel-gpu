@@ -37,7 +37,6 @@ FEI_Encode::FEI_Encode(MFXVideoSession* session, mfxHDL hdl, MfxVideoParamsWrapp
     }
 
     m_encodeCtrl.FrameType = MFX_FRAMETYPE_UNKNOWN;
-    m_encodeCtrl.QP = m_videoParams.mfx.QPI;
     MSDK_ZERO_MEMORY(m_bitstream);
 
     m_repacker.reset(repacker);
