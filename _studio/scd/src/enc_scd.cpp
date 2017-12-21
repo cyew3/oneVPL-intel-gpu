@@ -84,7 +84,7 @@ mfxStatus Plugin::GetPluginParam(mfxPluginParam *par)
     MFX_CHECK_NULL_PTR1(par);
 
     par->PluginUID          = MFX_PLUGINID_ENC_SCD;
-    par->PluginVersion      = 1;
+    par->PluginVersion      = MFX_ENC_SCD_PLUGIN_VERSION;
     par->ThreadPolicy       = MFX_THREADPOLICY_SERIAL;
     par->MaxThreadNum       = ENC_SCD_MAX_THREADS;
     par->APIVersion.Major   = MFX_VERSION_MAJOR;
@@ -117,10 +117,6 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
         out->mfx.FrameInfo.CropY           = 1;
         out->mfx.FrameInfo.CropW           = 1;
         out->mfx.FrameInfo.CropH           = 1;
-        //out->mfx.FrameInfo.FrameRateExtN   = 1;
-        //out->mfx.FrameInfo.FrameRateExtD   = 1;
-        //out->mfx.FrameInfo.AspectRatioW    = 1;
-        //out->mfx.FrameInfo.AspectRatioH    = 1;
         out->mfx.FrameInfo.ChromaFormat    = 1;
         out->mfx.FrameInfo.PicStruct       = 1;
 
@@ -287,14 +283,33 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
     MFX_CHECK_STS(sts);
 
     CmDevice* pCmDevice = 0;
-    sts = m_core.GetHandle(m_core.pthis, MFX_HANDLE_CM_DEVICE, (mfxHDL*)&pCmDevice);
-    MFX_CHECK_STS(sts);
+    UINT version;
+    INT cmSts = CM_SUCCESS;
+
+    switch (hdlType)
+    {
+#ifdef _WIN32
+    case MFX_HANDLE_D3D9_DEVICE_MANAGER:
+        cmSts = CreateCmDevice(pCmDevice, version, (IDirect3DDeviceManager9*)hdl, CM_DEVICE_CREATE_OPTION_SCRATCH_SPACE_DISABLE);
+        break;
+    case MFX_HANDLE_D3D11_DEVICE:
+        cmSts = CreateCmDevice(pCmDevice, version, (ID3D11Device*)hdl, CM_DEVICE_CREATE_OPTION_SCRATCH_SPACE_DISABLE);
+        break;
+#else
+    case MFX_HANDLE_VA_DISPLAY:
+        cmSts = CreateCmDevice(pCmDevice, version, (VADisplay*)hdl, CM_DEVICE_CREATE_OPTION_SCRATCH_SPACE_DISABLE);
+        break;
+#endif
+    default:
+        break;
+    }
+    MFX_CHECK(pCmDevice && cmSts == CM_SUCCESS, MFX_ERR_DEVICE_FAILED);
 
     sts = SCD::Init(
         par->mfx.FrameInfo.CropW,
         par->mfx.FrameInfo.CropH,
         par->mfx.FrameInfo.Width,
-        (par->mfx.FrameInfo.PicStruct & (MFX_PICSTRUCT_FIELD_SINGLE)) ? MFX_PICSTRUCT_PROGRESSIVE : par->mfx.FrameInfo.PicStruct,
+        par->mfx.FrameInfo.PicStruct,
         pCmDevice);
     MFX_CHECK_STS(sts);
 
@@ -402,9 +417,9 @@ mfxStatus Plugin::EncFrameSubmit(mfxENCInput *in, mfxENCOutput *out, mfxThreadTa
 
     for (mfxU16 i = 0; i < out->NumExtParam; i++)
     {
-        if (out->ExtParam[i]->BufferId == MFX_EXTBUFF_VPP_SCENE_CHANGE)
+        if (out->ExtParam[i]->BufferId == MFX_EXTBUFF_SCD)
         {
-            pTask->m_pResult = (mfxExtSceneChange*)out->ExtParam[i];
+            pTask->m_pResult = (mfxExtSCD*)out->ExtParam[i];
             break;
         }
     }
@@ -468,7 +483,7 @@ mfxStatus Plugin::Execute(mfxThreadTask task, mfxU32 uid_p, mfxU32 /*uid_a*/)
 
     if (pTask->m_stages[uid_p] & DO_SCD)
     {
-        mfxU16 PicStruct = In.Info.PicStruct;
+        mfxU16 PicStruct = pTask->m_surfIn->Info.PicStruct;
         mfxU32 shot[2] = {};
         mfxU32 last[2] = {};
 
@@ -478,23 +493,33 @@ mfxStatus Plugin::Execute(mfxThreadTask task, mfxU32 uid_p, mfxU32 /*uid_a*/)
         sts = GetFrameHandle(&Native.Data, &Native.Data.MemId);
         MFX_CHECK_STS(sts);
 
-        sts = SCD::MapFrame(&Native);
-        MFX_CHECK_STS(sts);
-
         if (PicStruct & MFX_PICSTRUCT_FIELD_TFF)
+        {
             SCD::SetParityTFF();
+            sts = SCD::PutFrameInterlaced((mfxHDL)Native.Data.MemId);
+            MFX_CHECK_STS(sts);
+        }
         else if (PicStruct & MFX_PICSTRUCT_FIELD_BFF)
+        {
             SCD::SetParityBFF();
-        else //if (PicStruct & (MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FIELD_SINGLE))
+            sts = SCD::PutFrameInterlaced((mfxHDL)Native.Data.MemId);
+            MFX_CHECK_STS(sts);
+        }
+        else
+        {
             SCD::SetProgressiveOp();
+            sts = SCD::PutFrameProgressive((mfxHDL)Native.Data.MemId);
+            MFX_CHECK_STS(sts);
+        }
 
-        SCD::ProcessField();
         shot[0] = SCD::Get_frame_shot_Decision();
         last[0] = SCD::Get_frame_last_in_scene();
 
         if (PicStruct & (MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_BFF))
         {
-            SCD::ProcessField();
+            sts = SCD::PutFrameInterlaced((mfxHDL)Native.Data.MemId);
+            MFX_CHECK_STS(sts);
+
             shot[1] = SCD::Get_frame_shot_Decision();
             last[1] = SCD::Get_frame_last_in_scene();
         }
@@ -504,18 +529,15 @@ mfxStatus Plugin::Execute(mfxThreadTask task, mfxU32 uid_p, mfxU32 /*uid_a*/)
             last[1] = last[0];
         }
 
-        /*printf("\n%d : shot{%d %d} last{%d %d}", pTask->m_surfIn->Data.FrameOrder, shot[0], shot[1], last[0], last[1]);
-        fflush(stdout);*/
-
         if (pTask->m_pResult)
         {
-            pTask->m_pResult->Type = MFX_SCENE_NO_CHANGE;
+            pTask->m_pResult->SceneType = MFX_SCD_SCENE_SAME;
 
-            if (shot[0] || shot[1])
-                pTask->m_pResult->Type |= MFX_SCENE_START;
+            if (shot[0])
+                pTask->m_pResult->SceneType |= MFX_SCD_SCENE_NEW_FIELD_1;
 
-            if (last[0] || last[1])
-                pTask->m_pResult->Type |= MFX_SCENE_END;
+            if (shot[1])
+                pTask->m_pResult->SceneType |= MFX_SCD_SCENE_NEW_FIELD_2;
         }
 
         pTask->m_stages[uid_p] &= ~DO_SCD;

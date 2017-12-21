@@ -2,7 +2,7 @@
 
 set _MFX_VERSION_JOINED=0
 
-for /f "tokens=3 delims= " %%i in ('findstr /C:"#define MFX_VERSION_M" %~6\mfxdefs.h') do (
+for /f "tokens=3 delims= " %%i in ('findstr /B /C:"#define MFX_VERSION_M" %~6\mfxdefs.h') do (
     set /a "_MFX_VERSION_JOINED<<=8"
     set /a "_MFX_VERSION_JOINED+=%%i"
 )

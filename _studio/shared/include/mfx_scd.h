@@ -35,33 +35,6 @@
 #include "asc_genx_hsw_isa.cpp"
 #include "asc_genx_skl_isa.cpp"
 
-
-#define OUT_BLOCK         16
-#define BLOCK_SIZE        4
-#define NumTSC            10
-#define NumSC             10
-#define FLOAT_MAX         2241178.0
-#define FRAMEMUL          16
-#define CHROMASUBSAMPLE   4
-#define SMALL_WIDTH       112
-#define SMALL_HEIGHT      64
-#define LN2               0.6931471805599453
-#define MEMALLOCERROR     1000
-#define MEMALLOCERRORU8   1001
-#define MEMALLOCERRORMV   1002
-
-#define NMAX(a,b)         ((a>b)?a:b)
-#define NMIN(a,b)         ((a<b)?a:b)
-#define NABS(a)           (((a)<0)?(-(a)):(a))
-#define NAVG(a,b)         ((a+b)/2)
-
-#define Clamp(x)          ((x<0)?0:((x>255)?255:x))
-#define TSCSTATBUFFER     3
-
-#define EXTRANEIGHBORS
-#define SAD_SEARCH_VSTEP  2  // 1=FS 2=FHS
-#define DECISION_THR      6 //Total number of trees is 13, decision has to be bigger than 6 to say it is a scene change.
-
 //using namespace MfxHwVideoProcessing;
 
 /* Special scene change detector classes/structures */
@@ -282,58 +255,6 @@ typedef mfxF32*            pmfxF32;
 typedef mfxF64*            pmfxF64;
 typedef mfxU64*            pmfxU64;
 typedef mfxI64*            pmfxI64;
-
-static mfxI32 PDISTTbl2mod[NumTSC*NumSC] =
-{
-    2, 3, 4, 5, 5, 5, 5, 5, 5, 5,
-    2, 2, 3, 4, 4, 4, 5, 5, 5, 5,
-    1, 2, 2, 3, 3, 3, 4, 4, 5, 5,
-    1, 1, 2, 2, 3, 3, 3, 4, 4, 5,
-    1, 1, 2, 2, 2, 2, 2, 3, 3, 4,
-    1, 1, 1, 2, 2, 2, 2, 3, 3, 3,
-    1, 1, 1, 1, 2, 2, 2, 2, 3, 3,
-    1, 1, 1, 1, 2, 2, 2, 2, 2, 3,
-    1, 1, 1, 1, 1, 2, 2, 2, 2, 2,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1
-};
-static mfxI32 PDISTTbl2[NumTSC*NumSC] =
-{
-    2, 3, 3, 4, 4, 5, 5, 5, 5, 5,
-    2, 2, 3, 3, 4, 4, 5, 5, 5, 5,
-    1, 2, 2, 3, 3, 3, 4, 4, 5, 5,
-    1, 1, 2, 2, 3, 3, 3, 4, 4, 5,
-    1, 1, 2, 2, 3, 3, 3, 3, 3, 4,
-    1, 1, 1, 2, 2, 3, 3, 3, 3, 3,
-    1, 1, 1, 1, 2, 2, 3, 3, 3, 3,
-    1, 1, 1, 1, 2, 2, 2, 3, 3, 3,
-    1, 1, 1, 1, 1, 2, 2, 2, 2, 2,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1
-};
-static mfxI32 PDISTTbl3[NumTSC*NumSC] =
-{
-    5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
-    5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
-    4, 5, 5, 5, 5, 5, 5, 5, 5, 5,
-    4, 4, 5, 5, 5, 5, 5, 5, 5, 5,
-    4, 4, 4, 4, 5, 5, 5, 5, 5, 5,
-    3, 3, 4, 4, 4, 5, 5, 5, 5, 5,
-    3, 3, 3, 4, 4, 4, 4, 5, 5, 5,
-    2, 2, 2, 2, 3, 4, 4, 4, 5, 5,
-    1, 2, 2, 2, 2, 3, 4, 4, 4, 5,
-    1, 1, 2, 2, 2, 2, 3, 3, 4, 4
-
-};
-static mfxF32 lmt_sc2[NumSC] = { 4.0, 9.0, 15.0, 23.0, 32.0, 42.0, 53.0, 65.0, 78.0, FLOAT_MAX }; // lower limit of SFM(Rs,Cs) range for spatial classification
-// 9 ranges of SC are: 0 0-4, 1 4-9, 2 9-15, 3 15-23, 4 23-32, 5 32-44, 6 42-53, 7 53-65, 8 65-78, 9 78->??
-static mfxF32 lmt_tsc2[NumTSC] = { 0.75, 1.5, 2.25, 3.0, 4.0, 5.0, 6.0, 7.5, 9.25, FLOAT_MAX };   // lower limit of AFD
-// 8 ranges of TSC (based on FD) are:0 0-0.75 1 0.75-1.5, 2 1.5-2.25. 3 2.25-3, 4 3-4, 5 4-5, 6 5-6, 7 6-7.5, 8 7.5-9.25, 9 9.25->??
-static mfxF32 TH[4] = { -12.0, -4.0, 4.0, 12.0 };
-
-#ifdef MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP_AVX2
-#define SCD_CPU_DISP(OPT,func, ...)  (( CPU_AVX2 == OPT ) ? func ## _AVX2(__VA_ARGS__) : (( CPU_SSE4 == OPT ) ? func ## _SSE4(__VA_ARGS__) : func ## _C(__VA_ARGS__) ))
-#else
-#define SCD_CPU_DISP(OPT,func, ...)  (( CPU_SSE4 == OPT ) ? func ## _SSE4(__VA_ARGS__) : func ## _C(__VA_ARGS__) )
-#endif
 
 class SceneChangeDetector
 {

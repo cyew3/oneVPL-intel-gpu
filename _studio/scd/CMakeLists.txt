@@ -49,6 +49,7 @@ include_directories( ${MFX_ROOTDIR}/mfx_lib/genx/scd )
 include_directories( ${MFX_ROOTDIR}/shared/include )
 include_directories( ${MFX_ROOTDIR}/mfx_lib/plugin/include )
 include_directories( ${MFX_ROOTDIR}/mfx_lib/scheduler/include )
+include_directories( ${MFX_ROOTDIR}/shared/ASC/include )
 
 # =============================================================================
 
@@ -77,6 +78,7 @@ list( APPEND LIBS
     pthread
     dl
     ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
+    asc
 )
 
 set( defs "-DMFX_VA -DMFX_VA_LINUX -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${VPP_SCD_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${VPP_SCD_DESCRIPTION}\"\\\" ${SCD_version_defs}" )
@@ -96,7 +98,6 @@ list( APPEND sources
     ${CMAKE_CURRENT_SOURCE_DIR}/src/export.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/scd_tools.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/enc_scd.cpp
-    ${MFX_ROOTDIR}/shared/src/mfx_scd.cpp
 )
 
 set( defs "-DMFX_VA -DMFX_VA_LINUX -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${ENC_SCD_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${ENC_SCD_DESCRIPTION}\"\\\" ${SCD_version_defs}" )

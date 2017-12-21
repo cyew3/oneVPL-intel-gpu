@@ -117,7 +117,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.\include;..\mfx_lib\vpp\include;..\mfx_lib\cmrt_cross_platform\include;..\mfx_lib\genx\scd;..\mfx_lib\cmut;$(MEDIASDK_ROOT)\CMRT\compiler\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\..\mdp_msdk-api\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include;..\shared\ASC\include;..\mfx_lib\vpp\include;..\mfx_lib\cmrt_cross_platform\include;..\mfx_lib\genx\scd;..\mfx_lib\cmut;$(MEDIASDK_ROOT)\CMRT\compiler\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\..\mdp_msdk-api\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_ENC_SCD_PLUGIN;WIN32;_DEBUG;_WINDOWS;_USRDLL;MFX_VA;MFX_VA_WIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -132,7 +132,7 @@
     <Link>
       <ImportLibrary>$(OutDir)\..\..\lib\$(TargetName).lib</ImportLibrary>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>cmrt_cross_platform_d.lib;ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;d3d9.lib;d3d11.lib;dxgi.lib;dxva2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ascLib_d.lib;cmrt_cross_platform_d.lib;ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;d3d9.lib;d3d11.lib;dxgi.lib;dxva2.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(MfxBuildDir)win_$(Platform)\lib;$(MfxIppLibraryDir);$(MEDIASDK_ROOT)\cmrt\compiler\lib\x86;$(MEDIASDK_ROOT)\cmrt\runtime\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>svml_disp.lib;libirc.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <SubSystem>Console</SubSystem>
@@ -148,7 +148,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.\include;..\mfx_lib\vpp\include;..\mfx_lib\cmrt_cross_platform\include;..\mfx_lib\genx\scd;..\mfx_lib\cmut;$(MEDIASDK_ROOT)\CMRT\compiler\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\..\mdp_msdk-api\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include;..\shared\ASC\include;..\mfx_lib\vpp\include;..\mfx_lib\cmrt_cross_platform\include;..\mfx_lib\genx\scd;..\mfx_lib\cmut;$(MEDIASDK_ROOT)\CMRT\compiler\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\..\mdp_msdk-api\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_ENC_SCD_PLUGIN;MFX_VA;MFX_VA_WIN;WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -161,7 +161,7 @@
     </ClCompile>
     <Link>
       <ImportLibrary>$(OutDir)\..\..\lib\$(TargetName).lib</ImportLibrary>
-      <AdditionalDependencies>cmrt_cross_platform_d.lib;ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;d3d9.lib;d3d11.lib;dxgi.lib;dxva2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ascLib_d.lib;cmrt_cross_platform_d.lib;ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;d3d9.lib;d3d11.lib;dxgi.lib;dxva2.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <AdditionalLibraryDirectories>$(MfxBuildDir)win_$(Platform)\lib;$(MfxIppLibraryDir);$(MEDIASDK_ROOT)\cmrt\compiler\lib\x64;$(MEDIASDK_ROOT)\cmrt\runtime\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -177,7 +177,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\include;..\mfx_lib\vpp\include;..\mfx_lib\cmrt_cross_platform\include;..\mfx_lib\genx\scd;..\mfx_lib\cmut;$(MEDIASDK_ROOT)\CMRT\compiler\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\..\mdp_msdk-api\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include;..\shared\ASC\include;..\mfx_lib\vpp\include;..\mfx_lib\cmrt_cross_platform\include;..\mfx_lib\genx\scd;..\mfx_lib\cmut;$(MEDIASDK_ROOT)\CMRT\compiler\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\..\mdp_msdk-api\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_ENC_SCD_PLUGIN;MFX_VA;MFX_VA_WIN;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -193,7 +193,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <TargetMachine>MachineX86</TargetMachine>
-      <AdditionalDependencies>cmrt_cross_platform.lib;ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;d3d9.lib;d3d11.lib;dxgi.lib;dxva2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ascLib.lib;cmrt_cross_platform.lib;ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;d3d9.lib;d3d11.lib;dxgi.lib;dxva2.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>svml_disp.lib;libirc.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <AdditionalLibraryDirectories>$(MfxBuildDir)win_$(Platform)\lib;$(MfxIppLibraryDir);$(MEDIASDK_ROOT)\cmrt\compiler\lib\x86;$(MEDIASDK_ROOT)\cmrt\runtime\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ImportLibrary>$(OutDir)\..\..\lib\$(TargetName).lib</ImportLibrary>
@@ -208,7 +208,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\include;..\mfx_lib\vpp\include;..\mfx_lib\cmrt_cross_platform\include;..\mfx_lib\genx\scd;..\mfx_lib\cmut;$(MEDIASDK_ROOT)\CMRT\compiler\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\..\mdp_msdk-api\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include;..\shared\ASC\include;..\mfx_lib\vpp\include;..\mfx_lib\cmrt_cross_platform\include;..\mfx_lib\genx\scd;..\mfx_lib\cmut;$(MEDIASDK_ROOT)\CMRT\compiler\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\..\mdp_msdk-api\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_ENC_SCD_PLUGIN;MFX_VA;MFX_VA_WIN;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -224,7 +224,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <AdditionalLibraryDirectories>$(MfxBuildDir)win_$(Platform)\lib;$(MfxIppLibraryDir);$(MEDIASDK_ROOT)\cmrt\compiler\lib\x64;$(MEDIASDK_ROOT)\cmrt\runtime\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>cmrt_cross_platform.lib;ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;d3d9.lib;d3d11.lib;dxgi.lib;dxva2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ascLib.lib;cmrt_cross_platform.lib;ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;d3d9.lib;d3d11.lib;dxgi.lib;dxva2.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ImportLibrary>$(OutDir)\..\..\lib\$(TargetName).lib</ImportLibrary>
     </Link>
@@ -248,7 +248,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\shared\include\mfx_scd.h" />
     <ClInclude Include="include\enc_scd.h" />
     <ClInclude Include="include\scd_tools.h" />
   </ItemGroup>
@@ -259,7 +258,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="..\shared\src\mfx_scd.cpp" />
     <ClCompile Include="src\enc_scd.cpp" />
     <ClCompile Include="src\export.cpp" />
     <ClCompile Include="src\scd_tools.cpp" />

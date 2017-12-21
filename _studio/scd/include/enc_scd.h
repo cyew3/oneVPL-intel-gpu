@@ -11,14 +11,13 @@
 
 #include "mfx_config.h"
 #include "scd_tools.h"
+#include "mfxscd.h"
 #include "mfxplugin++.h"
-#include "mfx_scd.h"
+#include "asc.h"
 
 namespace MfxEncSCD
 {
 using namespace SCDTools;
-
-static const mfxPluginUID MFX_PLUGINID_ENC_SCD = {{ 0xdf, 0xc2, 0x15, 0xb3, 0xe3, 0xd3, 0x90, 0x4d, 0x7f, 0xa5, 0x04, 0x12, 0x7e, 0xf5, 0x64, 0xd5 } };
 
 static const mfxU16 ENC_SCD_MAX_THREADS = 1;
 
@@ -40,11 +39,12 @@ struct Task
     mfxU32 m_stages[ENC_SCD_MAX_THREADS];
     mfxFrameSurface1* m_surfIn;
     mfxFrameSurface1* m_surfRealIn;
-    mfxFrameSurface1 m_surfNative;
-    mfxExtSceneChange* m_pResult;
+    mfxFrameSurface1  m_surfNative;
+    mfxExtSCD* m_pResult;
 };
 
-typedef SceneChangeDetector SCD;
+    typedef ns_asc::ASC SCD;
+    using namespace ns_asc;
 
 class Plugin
     : public MFXEncPlugin
