@@ -895,6 +895,7 @@ public:
 
     void SyncVideoToCalculableParam();
     void SyncCalculableToVideoParam();
+    void AlignCalcWithBRCParamMultiplier();
     void SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt = 0);
     void SyncHeadersToMfxParam();
 
