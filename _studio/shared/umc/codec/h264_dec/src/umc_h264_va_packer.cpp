@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -1186,7 +1186,7 @@ Ipp32s PackerDXVA2::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s c
     UMCVACompBuffer* CompBuf;
     Ipp8u *pDXVA_BitStreamBuffer = (Ipp8u*)m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &CompBuf);
 
-    if (CompBuf->GetBufferSize() - CompBuf->GetDataSize() - sizeof(start_code_prefix) < (Ipp32s)alignedSize)
+    if (CompBuf->GetBufferSize() < CompBuf->GetDataSize() + (Ipp32s)sizeof(start_code_prefix) + (Ipp32s)alignedSize)
     {
         if (sliceNum - numSlicesOfPrevField > 0)
         {
